@@ -27,7 +27,7 @@ type Query interface {
 	Exists() (bool, error)
 	Find(dest any, conds ...any) error
 	First(dest any) error
-	// FirstOr
+	FirstOr(dest any, callback func() error) error
 	FirstOrFail(dest any) error
 	// decrement
 	Get(dest any) error

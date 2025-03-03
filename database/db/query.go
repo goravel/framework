@@ -164,6 +164,30 @@ func (r *Query) First(dest any) error {
 	return nil
 }
 
+func (r *Query) FirstOr(dest any, callback func() error) error {
+	sql, args, err := r.buildSelect()
+	if err != nil {
+		return err
+	}
+
+	err = r.builder.Get(dest, sql, args...)
+	if err != nil {
+		if errors.Is(err, databasesql.ErrNoRows) {
+			r.trace(sql, args, 0, nil)
+
+			return callback()
+		}
+
+		r.trace(sql, args, -1, err)
+
+		return err
+	}
+
+	r.trace(sql, args, 1, nil)
+
+	return nil
+}
+
 func (r *Query) FirstOrFail(dest any) error {
 	sql, args, err := r.buildSelect()
 	if err != nil {

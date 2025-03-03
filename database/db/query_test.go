@@ -216,6 +216,21 @@ func (s *QueryTestSuite) TestFirst() {
 	})
 }
 
+func (s *QueryTestSuite) TestFirstOr() {
+	var user TestUser
+
+	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+	s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE name = ?", "John").Return(databasesql.ErrNoRows).Once()
+	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE name = ?", "John").Return("SELECT * FROM users WHERE name = \"John\"").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE name = \"John\"", int64(0), nil).Return().Once()
+
+	err := s.query.Where("name", "John").FirstOr(&user, func() error {
+		return errors.New("no rows")
+	})
+
+	s.Equal(errors.New("no rows"), err)
+}
+
 func (s *QueryTestSuite) TestFirstOrFail() {
 	s.Run("success", func() {
 		var user TestUser
