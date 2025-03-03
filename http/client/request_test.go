@@ -19,7 +19,6 @@ import (
 type RequestTestSuite struct {
 	suite.Suite
 	request client.Request
-	once    sync.Once
 }
 
 func TestClientTestSuite(t *testing.T) {
