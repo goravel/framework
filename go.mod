@@ -8,7 +8,7 @@ require (
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/charmbracelet/huh v0.6.0
-	github.com/charmbracelet/huh/spinner v0.0.0-20250228115947-334300b07206
+	github.com/charmbracelet/huh/spinner v0.0.0-20250303111024-59cea25b2811
 	github.com/charmbracelet/lipgloss v1.0.0
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/dromara/carbon/v2 v2.5.3
@@ -61,7 +61,7 @@ require (
 	github.com/catppuccin/go v0.2.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/charmbracelet/bubbles v0.20.0 // indirect
-	github.com/charmbracelet/bubbletea v1.3.3 // indirect
+	github.com/charmbracelet/bubbletea v1.3.4 // indirect
 	github.com/charmbracelet/x/ansi v0.8.0 // indirect
 	github.com/charmbracelet/x/exp/strings v0.0.0-20241222104055-e1130b311607 // indirect
 	github.com/charmbracelet/x/term v0.2.1 // indirect
