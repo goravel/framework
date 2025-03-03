@@ -40,7 +40,7 @@ func convertToSliceMap(data any) ([]map[string]any, error) {
 			elem := val.Index(i)
 			m, err := convertToMap(elem.Interface())
 			if err != nil {
-				return nil, err
+				return nil, errors.DatabaseUnsupportedType.Args(typ.String(), "struct, []struct, map[string]any, []map[string]any").SetModule("DB")
 			}
 			if m != nil {
 				result[i] = m
@@ -52,7 +52,7 @@ func convertToSliceMap(data any) ([]map[string]any, error) {
 	// Handle single value (struct or map)
 	m, err := convertToMap(data)
 	if err != nil {
-		return nil, err
+		return nil, errors.DatabaseUnsupportedType.Args(typ.String(), "struct, []struct, map[string]any, []map[string]any").SetModule("DB")
 	}
 	if m != nil {
 		return []map[string]any{m}, nil
@@ -82,7 +82,7 @@ func convertToMap(data any) (map[string]any, error) {
 	}
 
 	if typ.Kind() != reflect.Struct {
-		return nil, errors.DatabaseUnsupportedType.Args(typ.String(), "struct, []struct, map[string]any, []map[string]any").SetModule("DB")
+		return nil, errors.DatabaseUnsupportedType.Args(typ.String(), "struct, map[string]any").SetModule("DB")
 	}
 
 	// Handle struct

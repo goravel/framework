@@ -9,7 +9,9 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/convert"
+	"github.com/goravel/postgres"
 	"github.com/goravel/sqlite"
+	"github.com/goravel/sqlserver"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -168,6 +170,29 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 				s.Equal("multiple map1", products[0].Name)
 				s.Equal("multiple map2", products[1].Name)
 			})
+		})
+	}
+}
+
+func (s *DBTestSuite) TestInsertGetId() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			id, err := query.DB().Table("products").InsertGetId(Product{
+				Name: "insert get id",
+			})
+
+			if driver == sqlserver.Name || driver == postgres.Name {
+				s.Error(err)
+				s.Equal(int64(0), id)
+			} else {
+				s.NoError(err)
+				s.True(id > 0)
+
+				var product Product
+				err = query.DB().Table("products").Where("id", id).First(&product)
+				s.NoError(err)
+				s.Equal("insert get id", product.Name)
+			}
 		})
 	}
 }

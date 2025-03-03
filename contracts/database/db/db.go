@@ -38,8 +38,9 @@ type Query interface {
 	// increment
 	// inRandomOrder
 	Insert(data any) (*Result, error)
+	// InsertGetId returns the ID of the inserted row, only supported by MySQL and Sqlite
+	InsertGetId(data any) (int64, error)
 	// incrementEach
-	// insertGetId
 	// Join(table string, on any, args ...any) Query
 	// latest
 	// LeftJoin(table string, on any, args ...any) Query

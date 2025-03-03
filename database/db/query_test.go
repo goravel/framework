@@ -420,6 +420,52 @@ func (s *QueryTestSuite) TestInsert() {
 	})
 }
 
+func (s *QueryTestSuite) TestInsertGetId() {
+	s.Run("empty", func() {
+		id, err := s.query.InsertGetId(nil)
+		s.Equal(errors.DatabaseUnsupportedType.Args("nil", "struct, map[string]any").SetModule("DB"), err)
+		s.Equal(int64(0), id)
+	})
+
+	s.Run("success", func() {
+		user := map[string]any{
+			"name": "John",
+			"age":  25,
+		}
+
+		mockResult := &MockResult{}
+		mockResult.On("LastInsertId").Return(int64(1), nil)
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().Exec("INSERT INTO users (age,name) VALUES (?,?)", 25, "John").Return(mockResult, nil).Once()
+		s.mockDriver.EXPECT().Explain("INSERT INTO users (age,name) VALUES (?,?)", 25, "John").Return("INSERT INTO users (age,name) VALUES (25,\"John\")").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "INSERT INTO users (age,name) VALUES (25,\"John\")", int64(1), nil).Return().Once()
+
+		id, err := s.query.InsertGetId(user)
+		s.Nil(err)
+		s.Equal(int64(1), id)
+
+		mockResult.AssertExpectations(s.T())
+	})
+
+	s.Run("failed to exec", func() {
+		user := TestUser{
+			ID:   1,
+			Name: "John",
+			Age:  25,
+		}
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().Exec("INSERT INTO users (id) VALUES (?)", uint(1)).Return(nil, assert.AnError).Once()
+		s.mockDriver.EXPECT().Explain("INSERT INTO users (id) VALUES (?)", uint(1)).Return("INSERT INTO users (id) VALUES (1)").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "INSERT INTO users (id) VALUES (1)", int64(-1), assert.AnError).Return().Once()
+
+		result, err := s.query.Insert(user)
+		s.Nil(result)
+		s.Equal(assert.AnError, err)
+	})
+}
+
 // func (s *QueryTestSuite) TestLimit() {
 // 	var users []TestUser
 

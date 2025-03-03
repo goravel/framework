@@ -259,6 +259,37 @@ func (r *Query) Insert(data any) (*db.Result, error) {
 	}, nil
 }
 
+func (r *Query) InsertGetId(data any) (int64, error) {
+	mapData, err := convertToMap(data)
+	if err != nil {
+		return 0, err
+	}
+	if len(mapData) == 0 {
+		return 0, errors.DatabaseUnsupportedType.Args("nil", "struct, map[string]any").SetModule("DB")
+	}
+
+	sql, args, err := r.buildInsert([]map[string]any{mapData})
+	if err != nil {
+		return 0, err
+	}
+
+	result, err := r.builder.Exec(sql, args...)
+	if err != nil {
+		r.trace(sql, args, -1, err)
+		return 0, err
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		r.trace(sql, args, -1, err)
+		return 0, err
+	}
+
+	r.trace(sql, args, id, nil)
+
+	return id, nil
+}
+
 // func (r *Query) Limit(limit uint64) db.Query {
 // 	q := r.clone()
 // 	q.conditions.Limit = &limit
