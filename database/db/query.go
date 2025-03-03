@@ -16,6 +16,7 @@ import (
 	"github.com/goravel/framework/contracts/database/logger"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -69,6 +70,15 @@ func (r *Query) Count() (int64, error) {
 	return count, nil
 }
 
+// func (r *Query) Chunk(size int, callback func(dest []any) error) error {
+// 	sql, args, err := r.buildSelect()
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	return nil
+// }
+
 func (r *Query) Delete() (*db.Result, error) {
 	sql, args, err := r.buildDelete()
 	if err != nil {
@@ -92,6 +102,13 @@ func (r *Query) Delete() (*db.Result, error) {
 	return &db.Result{
 		RowsAffected: rowsAffected,
 	}, nil
+}
+
+func (r *Query) Distinct() db.Query {
+	q := r.clone()
+	q.conditions.Distinct = convert.Pointer(true)
+
+	return q
 }
 
 func (r *Query) DoesntExist() (bool, error) {
@@ -671,6 +688,11 @@ func (r *Query) buildSelect() (sql string, args []any, err error) {
 	}
 
 	builder := sq.Select(selects)
+
+	if r.conditions.Distinct != nil && *r.conditions.Distinct {
+		builder = builder.Distinct()
+	}
+
 	if placeholderFormat := r.placeholderFormat(); placeholderFormat != nil {
 		builder = builder.PlaceholderFormat(placeholderFormat)
 	}

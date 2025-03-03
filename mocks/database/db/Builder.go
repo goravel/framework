@@ -148,6 +148,75 @@ func (_c *Builder_Get_Call) RunAndReturn(run func(interface{}, string, ...interf
 	return _c
 }
 
+// Query provides a mock function with given fields: query, args
+func (_m *Builder) Query(query string, args ...interface{}) (*sql.Rows, error) {
+	var _ca []interface{}
+	_ca = append(_ca, query)
+	_ca = append(_ca, args...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Query")
+	}
+
+	var r0 *sql.Rows
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) (*sql.Rows, error)); ok {
+		return rf(query, args...)
+	}
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) *sql.Rows); ok {
+		r0 = rf(query, args...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*sql.Rows)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string, ...interface{}) error); ok {
+		r1 = rf(query, args...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Builder_Query_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Query'
+type Builder_Query_Call struct {
+	*mock.Call
+}
+
+// Query is a helper method to define mock.On call
+//   - query string
+//   - args ...interface{}
+func (_e *Builder_Expecter) Query(query interface{}, args ...interface{}) *Builder_Query_Call {
+	return &Builder_Query_Call{Call: _e.mock.On("Query",
+		append([]interface{}{query}, args...)...)}
+}
+
+func (_c *Builder_Query_Call) Run(run func(query string, args ...interface{})) *Builder_Query_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Builder_Query_Call) Return(_a0 *sql.Rows, _a1 error) *Builder_Query_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Builder_Query_Call) RunAndReturn(run func(string, ...interface{}) (*sql.Rows, error)) *Builder_Query_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Select provides a mock function with given fields: dest, query, args
 func (_m *Builder) Select(dest interface{}, query string, args ...interface{}) error {
 	var _ca []interface{}

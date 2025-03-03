@@ -20,6 +20,53 @@ func (_m *Query) EXPECT() *Query_Expecter {
 	return &Query_Expecter{mock: &_m.Mock}
 }
 
+// Chunk provides a mock function with given fields: size, callback
+func (_m *Query) Chunk(size int, callback func([]interface{}) error) error {
+	ret := _m.Called(size, callback)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Chunk")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(int, func([]interface{}) error) error); ok {
+		r0 = rf(size, callback)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Query_Chunk_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Chunk'
+type Query_Chunk_Call struct {
+	*mock.Call
+}
+
+// Chunk is a helper method to define mock.On call
+//   - size int
+//   - callback func([]interface{}) error
+func (_e *Query_Expecter) Chunk(size interface{}, callback interface{}) *Query_Chunk_Call {
+	return &Query_Chunk_Call{Call: _e.mock.On("Chunk", size, callback)}
+}
+
+func (_c *Query_Chunk_Call) Run(run func(size int, callback func([]interface{}) error)) *Query_Chunk_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(int), args[1].(func([]interface{}) error))
+	})
+	return _c
+}
+
+func (_c *Query_Chunk_Call) Return(_a0 error) *Query_Chunk_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_Chunk_Call) RunAndReturn(run func(int, func([]interface{}) error) error) *Query_Chunk_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Count provides a mock function with no fields
 func (_m *Query) Count() (int64, error) {
 	ret := _m.Called()
