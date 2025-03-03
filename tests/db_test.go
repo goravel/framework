@@ -46,6 +46,20 @@ func (s *DBTestSuite) TearDownSuite() {
 	}
 }
 
+func (s *DBTestSuite) TestCount() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{Name: "count_product1"},
+				{Name: "count_product2"},
+			})
+			count, err := query.DB().Table("products").Count()
+			s.NoError(err)
+			s.Equal(int64(2), count)
+		})
+	}
+}
+
 func (s *DBTestSuite) TestExists() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {

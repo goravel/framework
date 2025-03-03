@@ -15,7 +15,7 @@ type DB interface {
 
 type Query interface {
 	// commit
-	// Count(dest *int64) error
+	Count() (int64, error)
 	// Chunk(size int, callback func(rows []any) error) error
 	// CrossJoin(table string, on any, args ...any) Query
 	// DoesntExist() (bool, error)

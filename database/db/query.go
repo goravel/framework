@@ -14,7 +14,6 @@ import (
 	"github.com/goravel/framework/contracts/database/db"
 	"github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/logger"
-	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/str"
@@ -26,7 +25,6 @@ type Query struct {
 	ctx        context.Context
 	err        error
 	driver     driver.Driver
-	grammar    schema.Grammar
 	logger     logger.Logger
 	single     bool
 }
@@ -37,10 +35,9 @@ func NewQuery(ctx context.Context, driver driver.Driver, builder db.Builder, log
 		conditions: Conditions{
 			Table: table,
 		},
-		ctx:     ctx,
-		driver:  driver,
-		grammar: driver.Grammar(),
-		logger:  logger,
+		ctx:    ctx,
+		driver: driver,
+		logger: logger,
 	}
 }
 
@@ -49,6 +46,27 @@ func NewSingleQuery(ctx context.Context, driver driver.Driver, builder db.Builde
 	query.single = true
 
 	return query
+}
+
+func (r *Query) Count() (int64, error) {
+	r.conditions.Selects = []string{"COUNT(*)"}
+
+	sql, args, err := r.buildSelect()
+	if err != nil {
+		return 0, err
+	}
+
+	var count int64
+	err = r.builder.Get(&count, sql, args...)
+	if err != nil {
+		r.trace(sql, args, -1, err)
+
+		return 0, err
+	}
+
+	r.trace(sql, args, -1, nil)
+
+	return count, nil
 }
 
 func (r *Query) Delete() (*db.Result, error) {

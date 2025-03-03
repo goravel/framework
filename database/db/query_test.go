@@ -51,6 +51,22 @@ func (s *QueryTestSuite) SetupTest() {
 	s.query = NewQuery(s.ctx, s.mockDriver, s.mockBuilder, s.mockLogger, "users")
 }
 
+func (s *QueryTestSuite) TestCount() {
+	var count int64
+
+	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+	s.mockBuilder.EXPECT().Get(&count, "SELECT COUNT(*) FROM users WHERE name = ?", "John").Run(func(dest any, query string, args ...any) {
+		destCount := dest.(*int64)
+		*destCount = 1
+	}).Return(nil).Once()
+	s.mockDriver.EXPECT().Explain("SELECT COUNT(*) FROM users WHERE name = ?", "John").Return("SELECT COUNT(*) FROM users WHERE name = \"John\"").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(*) FROM users WHERE name = \"John\"", int64(-1), nil).Return().Once()
+
+	count, err := s.query.Where("name", "John").Count()
+	s.NoError(err)
+	s.Equal(int64(1), count)
+}
+
 func (s *QueryTestSuite) TestDelete() {
 	s.Run("success", func() {
 		mockResult := &MockResult{}
