@@ -75,6 +75,65 @@ func (_c *Query_Count_Call) RunAndReturn(run func() (int64, error)) *Query_Count
 	return _c
 }
 
+// CrossJoin provides a mock function with given fields: query, args
+func (_m *Query) CrossJoin(query string, args ...interface{}) db.Query {
+	var _ca []interface{}
+	_ca = append(_ca, query)
+	_ca = append(_ca, args...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CrossJoin")
+	}
+
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) db.Query); ok {
+		r0 = rf(query, args...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_CrossJoin_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CrossJoin'
+type Query_CrossJoin_Call struct {
+	*mock.Call
+}
+
+// CrossJoin is a helper method to define mock.On call
+//   - query string
+//   - args ...interface{}
+func (_e *Query_Expecter) CrossJoin(query interface{}, args ...interface{}) *Query_CrossJoin_Call {
+	return &Query_CrossJoin_Call{Call: _e.mock.On("CrossJoin",
+		append([]interface{}{query}, args...)...)}
+}
+
+func (_c *Query_CrossJoin_Call) Run(run func(query string, args ...interface{})) *Query_CrossJoin_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Query_CrossJoin_Call) Return(_a0 db.Query) *Query_CrossJoin_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_CrossJoin_Call) RunAndReturn(run func(string, ...interface{}) db.Query) *Query_CrossJoin_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Decrement provides a mock function with given fields: column, value
 func (_m *Query) Decrement(column string, value ...uint64) error {
 	_va := make([]interface{}, len(value))
@@ -887,6 +946,65 @@ func (_c *Query_InsertGetId_Call) RunAndReturn(run func(interface{}) (int64, err
 	return _c
 }
 
+// Join provides a mock function with given fields: query, args
+func (_m *Query) Join(query string, args ...interface{}) db.Query {
+	var _ca []interface{}
+	_ca = append(_ca, query)
+	_ca = append(_ca, args...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Join")
+	}
+
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) db.Query); ok {
+		r0 = rf(query, args...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_Join_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Join'
+type Query_Join_Call struct {
+	*mock.Call
+}
+
+// Join is a helper method to define mock.On call
+//   - query string
+//   - args ...interface{}
+func (_e *Query_Expecter) Join(query interface{}, args ...interface{}) *Query_Join_Call {
+	return &Query_Join_Call{Call: _e.mock.On("Join",
+		append([]interface{}{query}, args...)...)}
+}
+
+func (_c *Query_Join_Call) Run(run func(query string, args ...interface{})) *Query_Join_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Query_Join_Call) Return(_a0 db.Query) *Query_Join_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_Join_Call) RunAndReturn(run func(string, ...interface{}) db.Query) *Query_Join_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Latest provides a mock function with given fields: dest, column
 func (_m *Query) Latest(dest interface{}, column ...string) error {
 	_va := make([]interface{}, len(column))
@@ -944,6 +1062,65 @@ func (_c *Query_Latest_Call) Return(_a0 error) *Query_Latest_Call {
 }
 
 func (_c *Query_Latest_Call) RunAndReturn(run func(interface{}, ...string) error) *Query_Latest_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// LeftJoin provides a mock function with given fields: query, args
+func (_m *Query) LeftJoin(query string, args ...interface{}) db.Query {
+	var _ca []interface{}
+	_ca = append(_ca, query)
+	_ca = append(_ca, args...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for LeftJoin")
+	}
+
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) db.Query); ok {
+		r0 = rf(query, args...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_LeftJoin_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LeftJoin'
+type Query_LeftJoin_Call struct {
+	*mock.Call
+}
+
+// LeftJoin is a helper method to define mock.On call
+//   - query string
+//   - args ...interface{}
+func (_e *Query_Expecter) LeftJoin(query interface{}, args ...interface{}) *Query_LeftJoin_Call {
+	return &Query_LeftJoin_Call{Call: _e.mock.On("LeftJoin",
+		append([]interface{}{query}, args...)...)}
+}
+
+func (_c *Query_LeftJoin_Call) Run(run func(query string, args ...interface{})) *Query_LeftJoin_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Query_LeftJoin_Call) Return(_a0 db.Query) *Query_LeftJoin_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_LeftJoin_Call) RunAndReturn(run func(string, ...interface{}) db.Query) *Query_LeftJoin_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1757,6 +1934,65 @@ func (_c *Query_Pluck_Call) Return(_a0 error) *Query_Pluck_Call {
 }
 
 func (_c *Query_Pluck_Call) RunAndReturn(run func(string, interface{}) error) *Query_Pluck_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// RightJoin provides a mock function with given fields: query, args
+func (_m *Query) RightJoin(query string, args ...interface{}) db.Query {
+	var _ca []interface{}
+	_ca = append(_ca, query)
+	_ca = append(_ca, args...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RightJoin")
+	}
+
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) db.Query); ok {
+		r0 = rf(query, args...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_RightJoin_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RightJoin'
+type Query_RightJoin_Call struct {
+	*mock.Call
+}
+
+// RightJoin is a helper method to define mock.On call
+//   - query string
+//   - args ...interface{}
+func (_e *Query_Expecter) RightJoin(query interface{}, args ...interface{}) *Query_RightJoin_Call {
+	return &Query_RightJoin_Call{Call: _e.mock.On("RightJoin",
+		append([]interface{}{query}, args...)...)}
+}
+
+func (_c *Query_RightJoin_Call) Run(run func(query string, args ...interface{})) *Query_RightJoin_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Query_RightJoin_Call) Return(_a0 db.Query) *Query_RightJoin_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_RightJoin_Call) RunAndReturn(run func(string, ...interface{}) db.Query) *Query_RightJoin_Call {
 	_c.Call.Return(run)
 	return _c
 }
