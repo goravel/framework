@@ -20,7 +20,8 @@ type Query interface {
 	Count() (int64, error)
 	// Chunk Execute a callback over a given chunk size.
 	// Chunk(size int, callback func(dest []any) error) error
-	// CrossJoin(table string, on any, args ...any) Query
+	// CrossJoin specifying CROSS JOIN conditions for the query.
+	CrossJoin(query string, args ...any) Query
 	// DoesntExist Determine if no rows exist for the current query.
 	DoesntExist() (bool, error)
 	// Distinct Force the query to only return distinct results.
@@ -44,10 +45,8 @@ type Query interface {
 	Get(dest any) error
 	// GroupBy specifies the group method on the query.
 	GroupBy(column ...string) Query
-	// GroupByRaw(query string, args ...any) Query
 	// Having specifying HAVING conditions for the query.
 	Having(query any, args ...any) Query
-	// HavingRaw(query any, args ...any) Query
 	// Increment a column's value by a given amount.
 	Increment(column string, value ...uint64) error
 	// inRandomOrder
@@ -55,10 +54,12 @@ type Query interface {
 	Insert(data any) (*Result, error)
 	// InsertGetId returns the ID of the inserted row, only supported by MySQL and Sqlite
 	InsertGetId(data any) (int64, error)
-	// Join(table string, on any, args ...any) Query
+	// Join specifying JOIN conditions for the query.
+	Join(query string, args ...any) Query
 	// Latest Retrieve the latest record from the database.
 	Latest(dest any, column ...string) error
-	// LeftJoin(table string, on any, args ...any) Query
+	// LeftJoin specifying LEFT JOIN conditions for the query.
+	LeftJoin(query string, args ...any) Query
 	// Limit(limit uint64) Query
 	// lockForUpdate
 	// offset
@@ -94,7 +95,8 @@ type Query interface {
 	OrWhereRaw(raw string, args []any) Query
 	// Pluck Get a collection instance containing the values of a given column.
 	Pluck(column string, dest any) error
-	// RightJoin(table string, on any, args ...any) Query
+	// RightJoin specifying RIGHT JOIN conditions for the query.
+	RightJoin(query string, args ...any) Query
 	// Select Set the columns to be selected.
 	Select(columns ...string) Query
 	// sharedLock

@@ -67,6 +67,18 @@ func (s *QueryTestSuite) TestCount() {
 	s.Equal(int64(1), count)
 }
 
+func (s *QueryTestSuite) TestCrossJoin() {
+	var users []TestUser
+
+	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users CROSS JOIN posts as p WHERE age = ?", 25).Return(nil).Once()
+	s.mockDriver.EXPECT().Explain("SELECT * FROM users CROSS JOIN posts as p WHERE age = ?", 25).Return("SELECT * FROM users CROSS JOIN posts as p WHERE age = 25").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users CROSS JOIN posts as p WHERE age = 25", int64(0), nil).Return().Once()
+
+	err := s.query.CrossJoin("posts as p").Where("age", 25).Get(&users)
+	s.Nil(err)
+}
+
 func (s *QueryTestSuite) TestDecrement() {
 	mockResult := &MockResult{}
 	mockResult.On("RowsAffected").Return(int64(1), nil)
@@ -329,6 +341,54 @@ func (s *QueryTestSuite) TestGet() {
 	})
 }
 
+func (s *QueryTestSuite) TestGroupBy_Having() {
+	s.Run("With GroupBy and Having", func() {
+		var users []TestUser
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age = ? GROUP BY name HAVING name = ? ORDER BY name ASC", 25, "John").Run(func(dest any, query string, args ...any) {
+			destUsers := dest.(*[]TestUser)
+			*destUsers = []TestUser{{ID: 1, Name: "John", Age: 25}, {ID: 2, Name: "Jane", Age: 30}}
+		}).Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age = ? GROUP BY name HAVING name = ? ORDER BY name ASC", 25, "John").Return("SELECT * FROM users WHERE age = 25 GROUP BY name HAVING name = \"John\" ORDER BY name ASC").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 GROUP BY name HAVING name = \"John\" ORDER BY name ASC", int64(2), nil).Return().Once()
+
+		err := s.query.Where("age", 25).GroupBy("name").Having("name = ?", "John").OrderBy("name").Get(&users)
+		s.Nil(err)
+		s.mockBuilder.AssertExpectations(s.T())
+	})
+
+	s.Run("Only GroupBy", func() {
+		var users []TestUser
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age = ? GROUP BY name ORDER BY name ASC", 25).Run(func(dest any, query string, args ...any) {
+			destUsers := dest.(*[]TestUser)
+			*destUsers = []TestUser{{ID: 1, Name: "John", Age: 25}, {ID: 2, Name: "Jane", Age: 30}}
+		}).Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age = ? GROUP BY name ORDER BY name ASC", 25).Return("SELECT * FROM users WHERE age = 25 GROUP BY name ORDER BY name ASC").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 GROUP BY name ORDER BY name ASC", int64(2), nil).Return().Once()
+
+		err := s.query.Where("age", 25).GroupBy("name").OrderBy("name").Get(&users)
+		s.Nil(err)
+	})
+
+	s.Run("Only Having", func() {
+		var users []TestUser
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age = ? ORDER BY name ASC", 25).Run(func(dest any, query string, args ...any) {
+			destUsers := dest.(*[]TestUser)
+			*destUsers = []TestUser{{ID: 1, Name: "John", Age: 25}, {ID: 2, Name: "Jane", Age: 30}}
+		}).Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age = ? ORDER BY name ASC", 25).Return("SELECT * FROM users WHERE age = 25 ORDER BY name ASC").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 ORDER BY name ASC", int64(2), nil).Return().Once()
+
+		err := s.query.Where("age", 25).Having("name = ?", "John").OrderBy("name").Get(&users)
+		s.Nil(err)
+	})
+}
+
 func (s *QueryTestSuite) TestIncrement() {
 	mockResult := &MockResult{}
 	mockResult.On("RowsAffected").Return(int64(1), nil)
@@ -508,6 +568,18 @@ func (s *QueryTestSuite) TestInsertGetId() {
 	})
 }
 
+func (s *QueryTestSuite) TestJoin() {
+	var users []TestUser
+
+	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users JOIN posts as p ON users.id = p.user_id AND p.id = ? WHERE age = ?", 1, 25).Return(nil).Once()
+	s.mockDriver.EXPECT().Explain("SELECT * FROM users JOIN posts as p ON users.id = p.user_id AND p.id = ? WHERE age = ?", 1, 25).Return("SELECT * FROM users JOIN posts as p ON users.id = p.user_id AND p.id = 1 WHERE age = 25").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users JOIN posts as p ON users.id = p.user_id AND p.id = 1 WHERE age = 25", int64(0), nil).Return().Once()
+
+	err := s.query.Join("posts as p ON users.id = p.user_id AND p.id = ?", 1).Where("age", 25).Get(&users)
+	s.Nil(err)
+}
+
 // func (s *QueryTestSuite) TestLimit() {
 // 	var users []TestUser
 
@@ -544,6 +616,18 @@ func (s *QueryTestSuite) TestLatest() {
 		err := s.query.Where("age", 25).Latest(&user, "name")
 		s.Nil(err)
 	})
+}
+
+func (s *QueryTestSuite) TestLeftJoin() {
+	var users []TestUser
+
+	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users LEFT JOIN posts as p ON users.id = p.user_id AND p.id = ? WHERE age = ?", 1, 25).Return(nil).Once()
+	s.mockDriver.EXPECT().Explain("SELECT * FROM users LEFT JOIN posts as p ON users.id = p.user_id AND p.id = ? WHERE age = ?", 1, 25).Return("SELECT * FROM users LEFT JOIN posts as p ON users.id = p.user_id AND p.id = 1 WHERE age = 25").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users LEFT JOIN posts as p ON users.id = p.user_id AND p.id = 1 WHERE age = 25", int64(0), nil).Return().Once()
+
+	err := s.query.LeftJoin("posts as p ON users.id = p.user_id AND p.id = ?", 1).Where("age", 25).Get(&users)
+	s.Nil(err)
 }
 
 func (s *QueryTestSuite) TestOrderBy() {
@@ -771,6 +855,18 @@ func (s *QueryTestSuite) TestPluck() {
 	err := s.query.Where("name", "John").Pluck("name", &names)
 	s.NoError(err)
 	s.Equal([]string{"John"}, names)
+}
+
+func (s *QueryTestSuite) TestRightJoin() {
+	var users []TestUser
+
+	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users RIGHT JOIN posts as p ON users.id = p.user_id AND p.id = ? WHERE age = ?", 1, 25).Return(nil).Once()
+	s.mockDriver.EXPECT().Explain("SELECT * FROM users RIGHT JOIN posts as p ON users.id = p.user_id AND p.id = ? WHERE age = ?", 1, 25).Return("SELECT * FROM users RIGHT JOIN posts as p ON users.id = p.user_id AND p.id = 1 WHERE age = 25").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users RIGHT JOIN posts as p ON users.id = p.user_id AND p.id = 1 WHERE age = 25", int64(0), nil).Return().Once()
+
+	err := s.query.RightJoin("posts as p ON users.id = p.user_id AND p.id = ?", 1).Where("age", 25).Get(&users)
+	s.Nil(err)
 }
 
 func (s *QueryTestSuite) TestSelect() {

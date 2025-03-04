@@ -64,6 +64,16 @@ func (r *Query) Count() (int64, error) {
 	return count, nil
 }
 
+func (r *Query) CrossJoin(query string, args ...any) db.Query {
+	q := r.clone()
+	q.conditions.CrossJoin = append(q.conditions.CrossJoin, Join{
+		query: query,
+		args:  args,
+	})
+
+	return q
+}
+
 // func (r *Query) Chunk(size int, callback func(dest []any) error) error {
 // 	sql, args, err := r.buildSelect()
 // 	if err != nil {
@@ -270,6 +280,16 @@ func (r *Query) Having(query any, args ...any) db.Query {
 	return q
 }
 
+func (r *Query) Join(query string, args ...any) db.Query {
+	q := r.clone()
+	q.conditions.Join = append(q.conditions.Join, Join{
+		query: query,
+		args:  args,
+	})
+
+	return q
+}
+
 func (r *Query) Increment(column string, value ...uint64) error {
 	v := uint64(1)
 	if len(value) > 0 {
@@ -362,6 +382,16 @@ func (r *Query) Latest(dest any, column ...string) error {
 	}
 
 	return r.OrderByDesc(col).First(dest)
+}
+
+func (r *Query) LeftJoin(query string, args ...any) db.Query {
+	q := r.clone()
+	q.conditions.LeftJoin = append(q.conditions.LeftJoin, Join{
+		query: query,
+		args:  args,
+	})
+
+	return q
 }
 
 func (r *Query) OrderBy(column string) db.Query {
@@ -474,6 +504,16 @@ func (r *Query) Pluck(column string, dest any) error {
 	r.conditions.Selects = []string{column}
 
 	return r.Get(dest)
+}
+
+func (r *Query) RightJoin(query string, args ...any) db.Query {
+	q := r.clone()
+	q.conditions.RightJoin = append(q.conditions.RightJoin, Join{
+		query: query,
+		args:  args,
+	})
+
+	return q
 }
 
 func (r *Query) Select(columns ...string) db.Query {
@@ -743,6 +783,23 @@ func (r *Query) buildSelect() (sql string, args []any, err error) {
 	}
 
 	builder = builder.From(r.conditions.Table)
+
+	for _, join := range r.conditions.Join {
+		builder = builder.Join(join.query, join.args...)
+	}
+
+	for _, leftJoin := range r.conditions.LeftJoin {
+		builder = builder.LeftJoin(leftJoin.query, leftJoin.args...)
+	}
+
+	for _, rightJoin := range r.conditions.RightJoin {
+		builder = builder.RightJoin(rightJoin.query, rightJoin.args...)
+	}
+
+	for _, crossJoin := range r.conditions.CrossJoin {
+		builder = builder.CrossJoin(crossJoin.query, crossJoin.args...)
+	}
+
 	sqlizer, err := r.buildWheres(r.conditions.Where)
 	if err != nil {
 		return "", nil, err
