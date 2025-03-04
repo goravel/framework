@@ -6,7 +6,7 @@ import (
 
 type Conditions struct {
 	distinct      []any
-	group         string
+	groupBy       []string
 	having        *Having
 	join          []Join
 	limit         *int

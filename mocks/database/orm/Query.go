@@ -1163,9 +1163,9 @@ func (_c *Query_Get_Call) RunAndReturn(run func(interface{}) error) *Query_Get_C
 	return _c
 }
 
-// Group provides a mock function with given fields: name
-func (_m *Query) Group(name string) orm.Query {
-	ret := _m.Called(name)
+// Group provides a mock function with given fields: column
+func (_m *Query) Group(column string) orm.Query {
+	ret := _m.Called(column)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Group")
@@ -1173,7 +1173,7 @@ func (_m *Query) Group(name string) orm.Query {
 
 	var r0 orm.Query
 	if rf, ok := ret.Get(0).(func(string) orm.Query); ok {
-		r0 = rf(name)
+		r0 = rf(column)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(orm.Query)
@@ -1189,12 +1189,12 @@ type Query_Group_Call struct {
 }
 
 // Group is a helper method to define mock.On call
-//   - name string
-func (_e *Query_Expecter) Group(name interface{}) *Query_Group_Call {
-	return &Query_Group_Call{Call: _e.mock.On("Group", name)}
+//   - column string
+func (_e *Query_Expecter) Group(column interface{}) *Query_Group_Call {
+	return &Query_Group_Call{Call: _e.mock.On("Group", column)}
 }
 
-func (_c *Query_Group_Call) Run(run func(name string)) *Query_Group_Call {
+func (_c *Query_Group_Call) Run(run func(column string)) *Query_Group_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
@@ -1207,6 +1207,67 @@ func (_c *Query_Group_Call) Return(_a0 orm.Query) *Query_Group_Call {
 }
 
 func (_c *Query_Group_Call) RunAndReturn(run func(string) orm.Query) *Query_Group_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GroupBy provides a mock function with given fields: column
+func (_m *Query) GroupBy(column ...string) orm.Query {
+	_va := make([]interface{}, len(column))
+	for _i := range column {
+		_va[_i] = column[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GroupBy")
+	}
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(...string) orm.Query); ok {
+		r0 = rf(column...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_GroupBy_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GroupBy'
+type Query_GroupBy_Call struct {
+	*mock.Call
+}
+
+// GroupBy is a helper method to define mock.On call
+//   - column ...string
+func (_e *Query_Expecter) GroupBy(column ...interface{}) *Query_GroupBy_Call {
+	return &Query_GroupBy_Call{Call: _e.mock.On("GroupBy",
+		append([]interface{}{}, column...)...)}
+}
+
+func (_c *Query_GroupBy_Call) Run(run func(column ...string)) *Query_GroupBy_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Query_GroupBy_Call) Return(_a0 orm.Query) *Query_GroupBy_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_GroupBy_Call) RunAndReturn(run func(...string) orm.Query) *Query_GroupBy_Call {
 	_c.Call.Return(run)
 	return _c
 }

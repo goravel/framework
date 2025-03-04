@@ -249,6 +249,27 @@ func (r *Query) Get(dest any) error {
 	return nil
 }
 
+func (r *Query) GroupBy(column ...string) db.Query {
+	if len(column) == 0 {
+		return r
+	}
+
+	q := r.clone()
+	q.conditions.GroupBy = column
+
+	return q
+}
+
+func (r *Query) Having(query any, args ...any) db.Query {
+	q := r.clone()
+	q.conditions.Having = &Having{
+		query: query,
+		args:  args,
+	}
+
+	return q
+}
+
 func (r *Query) Increment(column string, value ...uint64) error {
 	v := uint64(1)
 	if len(value) > 0 {
@@ -728,7 +749,18 @@ func (r *Query) buildSelect() (sql string, args []any, err error) {
 	}
 
 	builder = builder.Where(sqlizer)
-	builder = builder.OrderBy(r.conditions.OrderBy...)
+
+	if len(r.conditions.GroupBy) > 0 {
+		builder = builder.GroupBy(r.conditions.GroupBy...)
+
+		if r.conditions.Having != nil {
+			builder = builder.Having(r.conditions.Having.query, r.conditions.Having.args...)
+		}
+	}
+
+	if len(r.conditions.OrderBy) > 0 {
+		builder = builder.OrderBy(r.conditions.OrderBy...)
+	}
 
 	if r.conditions.Limit != nil {
 		builder = builder.Limit(*r.conditions.Limit)

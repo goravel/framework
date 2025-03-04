@@ -42,9 +42,11 @@ type Query interface {
 	Decrement(column string, value ...uint64) error
 	// Get Retrieve all rows from the database.
 	Get(dest any) error
-	// GroupBy(column string) Query
+	// GroupBy specifies the group method on the query.
+	GroupBy(column ...string) Query
 	// GroupByRaw(query string, args ...any) Query
-	// having
+	// Having specifying HAVING conditions for the query.
+	Having(query any, args ...any) Query
 	// HavingRaw(query any, args ...any) Query
 	// Increment a column's value by a given amount.
 	Increment(column string, value ...uint64) error

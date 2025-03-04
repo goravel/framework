@@ -2869,7 +2869,7 @@ func (s *QueryTestSuite) TestSelect() {
 				Count string
 			}
 			var result []Result
-			s.Nil(query.Query().Model(&User{}).Select("name, count(avatar) as count").Where("id in ?", []uint{user.ID, user1.ID, user2.ID}).Group("name").Get(&result))
+			s.Nil(query.Query().Model(&User{}).Select("name, count(avatar) as count").Where("id in ?", []uint{user.ID, user1.ID, user2.ID}).GroupBy("name").Get(&result))
 			s.Equal(2, len(result))
 			s.Equal("select_user", result[0].Name)
 			s.Equal("2", result[0].Count)
@@ -2877,7 +2877,7 @@ func (s *QueryTestSuite) TestSelect() {
 			s.Equal("1", result[1].Count)
 
 			var result1 []Result
-			s.Nil(query.Query().Model(&User{}).Select("name, count(avatar) as count").Group("name").Having("name = ?", "select_user").Get(&result1))
+			s.Nil(query.Query().Model(&User{}).Select("name, count(avatar) as count").GroupBy("name").Having("name = ?", "select_user").Get(&result1))
 
 			s.Equal(1, len(result1))
 			s.Equal("select_user", result1[0].Name)

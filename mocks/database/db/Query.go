@@ -592,6 +592,126 @@ func (_c *Query_Get_Call) RunAndReturn(run func(interface{}) error) *Query_Get_C
 	return _c
 }
 
+// GroupBy provides a mock function with given fields: column
+func (_m *Query) GroupBy(column ...string) db.Query {
+	_va := make([]interface{}, len(column))
+	for _i := range column {
+		_va[_i] = column[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GroupBy")
+	}
+
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func(...string) db.Query); ok {
+		r0 = rf(column...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_GroupBy_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GroupBy'
+type Query_GroupBy_Call struct {
+	*mock.Call
+}
+
+// GroupBy is a helper method to define mock.On call
+//   - column ...string
+func (_e *Query_Expecter) GroupBy(column ...interface{}) *Query_GroupBy_Call {
+	return &Query_GroupBy_Call{Call: _e.mock.On("GroupBy",
+		append([]interface{}{}, column...)...)}
+}
+
+func (_c *Query_GroupBy_Call) Run(run func(column ...string)) *Query_GroupBy_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Query_GroupBy_Call) Return(_a0 db.Query) *Query_GroupBy_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_GroupBy_Call) RunAndReturn(run func(...string) db.Query) *Query_GroupBy_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Having provides a mock function with given fields: query, args
+func (_m *Query) Having(query interface{}, args ...interface{}) db.Query {
+	var _ca []interface{}
+	_ca = append(_ca, query)
+	_ca = append(_ca, args...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Having")
+	}
+
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) db.Query); ok {
+		r0 = rf(query, args...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_Having_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Having'
+type Query_Having_Call struct {
+	*mock.Call
+}
+
+// Having is a helper method to define mock.On call
+//   - query interface{}
+//   - args ...interface{}
+func (_e *Query_Expecter) Having(query interface{}, args ...interface{}) *Query_Having_Call {
+	return &Query_Having_Call{Call: _e.mock.On("Having",
+		append([]interface{}{query}, args...)...)}
+}
+
+func (_c *Query_Having_Call) Run(run func(query interface{}, args ...interface{})) *Query_Having_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].(interface{}), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Query_Having_Call) Return(_a0 db.Query) *Query_Having_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_Having_Call) RunAndReturn(run func(interface{}, ...interface{}) db.Query) *Query_Having_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Increment provides a mock function with given fields: column, value
 func (_m *Query) Increment(column string, value ...uint64) error {
 	_va := make([]interface{}, len(value))
