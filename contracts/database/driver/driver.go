@@ -7,7 +7,6 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/goravel/framework/contracts/database"
-	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/contracts/testing/docker"
 )
 
@@ -18,10 +17,11 @@ type Driver interface {
 	// Explain generate SQL string with given parameters
 	Explain(sql string, args ...any) string
 	Gorm() (*gorm.DB, GormQuery, error)
-	Grammar() schema.Grammar
-	Processor() schema.Processor
+	Grammar() Grammar
+	Processor() Processor
 }
 
+// TODO: Remove this, use Compile instead
 type GormQuery interface {
 	LockForUpdate() clause.Expression
 	RandomOrder() string

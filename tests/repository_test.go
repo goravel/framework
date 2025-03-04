@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/database/migration"
-	"github.com/goravel/sqlite"
 )
 
 type RepositoryTestSuite struct {
@@ -24,11 +23,11 @@ func (s *RepositoryTestSuite) SetupTest() {
 }
 
 func (s *RepositoryTestSuite) TearDownTest() {
-	if s.driverToTestQuery[sqlite.Name] != nil {
-		docker, err := s.driverToTestQuery[sqlite.Name].Driver().Docker()
-		s.NoError(err)
-		s.NoError(docker.Shutdown())
-	}
+	// if s.driverToTestQuery[sqlite.Name] != nil {
+	// 	docker, err := s.driverToTestQuery[sqlite.Name].Driver().Docker()
+	// 	s.NoError(err)
+	// 	s.NoError(docker.Shutdown())
+	// }
 }
 
 func (s *RepositoryTestSuite) TestCreate_Delete_Exists() {

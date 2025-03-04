@@ -17,12 +17,12 @@ var _ contractsschema.Schema = (*Schema)(nil)
 type Schema struct {
 	config     config.Config
 	driver     driver.Driver
-	grammar    contractsschema.Grammar
+	grammar    driver.Grammar
 	log        log.Log
 	migrations []contractsschema.Migration
 	orm        contractsorm.Orm
 	prefix     string
-	processor  contractsschema.Processor
+	processor  driver.Processor
 	schema     string
 }
 
@@ -170,8 +170,8 @@ func (r *Schema) GetColumnListing(table string) []string {
 	return names
 }
 
-func (r *Schema) GetColumns(table string) ([]contractsschema.Column, error) {
-	var dbColumns []contractsschema.DBColumn
+func (r *Schema) GetColumns(table string) ([]driver.Column, error) {
+	var dbColumns []driver.DBColumn
 	sql, err := r.grammar.CompileColumns(r.schema, table)
 	if err != nil {
 		return nil, err
@@ -188,10 +188,10 @@ func (r *Schema) GetConnection() string {
 	return r.orm.Name()
 }
 
-func (r *Schema) GetForeignKeys(table string) ([]contractsschema.ForeignKey, error) {
+func (r *Schema) GetForeignKeys(table string) ([]driver.ForeignKey, error) {
 	table = r.prefix + table
 
-	var dbForeignKeys []contractsschema.DBForeignKey
+	var dbForeignKeys []driver.DBForeignKey
 	if err := r.orm.Query().Raw(r.grammar.CompileForeignKeys(r.schema, table)).Scan(&dbForeignKeys); err != nil {
 		return nil, err
 	}
@@ -214,8 +214,8 @@ func (r *Schema) GetIndexListing(table string) []string {
 	return names
 }
 
-func (r *Schema) GetIndexes(table string) ([]contractsschema.Index, error) {
-	var dbIndexes []contractsschema.DBIndex
+func (r *Schema) GetIndexes(table string) ([]driver.Index, error) {
+	var dbIndexes []driver.DBIndex
 	sql, err := r.grammar.CompileIndexes(r.schema, table)
 	if err != nil {
 		return nil, err
@@ -243,8 +243,8 @@ func (r *Schema) GetTableListing() []string {
 	return names
 }
 
-func (r *Schema) GetTables() ([]contractsschema.Table, error) {
-	var tables []contractsschema.Table
+func (r *Schema) GetTables() ([]driver.Table, error) {
+	var tables []driver.Table
 	if err := r.orm.Query().Raw(r.grammar.CompileTables(r.orm.DatabaseName())).Scan(&tables); err != nil {
 		return nil, err
 	}
@@ -252,8 +252,8 @@ func (r *Schema) GetTables() ([]contractsschema.Table, error) {
 	return tables, nil
 }
 
-func (r *Schema) GetTypes() ([]contractsschema.Type, error) {
-	var types []contractsschema.Type
+func (r *Schema) GetTypes() ([]driver.Type, error) {
+	var types []driver.Type
 	if err := r.orm.Query().Raw(r.grammar.CompileTypes()).Scan(&types); err != nil {
 		return nil, err
 	}
@@ -261,8 +261,8 @@ func (r *Schema) GetTypes() ([]contractsschema.Type, error) {
 	return r.processor.ProcessTypes(types), nil
 }
 
-func (r *Schema) GetViews() ([]contractsschema.View, error) {
-	var views []contractsschema.View
+func (r *Schema) GetViews() ([]driver.View, error) {
+	var views []driver.View
 	if err := r.orm.Query().Raw(r.grammar.CompileViews(r.orm.DatabaseName())).Scan(&views); err != nil {
 		return nil, err
 	}

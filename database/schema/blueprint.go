@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/support/convert"
@@ -36,7 +37,7 @@ const (
 
 type Blueprint struct {
 	columns  []*ColumnDefinition
-	commands []*schema.Command
+	commands []*driver.Command
 	prefix   string
 	schema   schema.Schema
 	table    string
@@ -50,19 +51,19 @@ func NewBlueprint(schema schema.Schema, prefix, table string) *Blueprint {
 	}
 }
 
-func (r *Blueprint) BigIncrements(column string) schema.ColumnDefinition {
+func (r *Blueprint) BigIncrements(column string) driver.ColumnDefinition {
 	return r.UnsignedBigInteger(column).AutoIncrement()
 }
 
-func (r *Blueprint) BigInteger(column string) schema.ColumnDefinition {
+func (r *Blueprint) BigInteger(column string) driver.ColumnDefinition {
 	return r.createAndAddColumn("bigInteger", column)
 }
 
-func (r *Blueprint) Boolean(column string) schema.ColumnDefinition {
+func (r *Blueprint) Boolean(column string) driver.ColumnDefinition {
 	return r.createAndAddColumn("boolean", column)
 }
 
-func (r *Blueprint) Build(query orm.Query, grammar schema.Grammar) error {
+func (r *Blueprint) Build(query orm.Query, grammar driver.Grammar) error {
 	statements, err := r.ToSql(grammar)
 	if err != nil {
 		return err
@@ -77,7 +78,7 @@ func (r *Blueprint) Build(query orm.Query, grammar schema.Grammar) error {
 	return nil
 }
 
-func (r *Blueprint) Char(column string, length ...int) schema.ColumnDefinition {
+func (r *Blueprint) Char(column string, length ...int) driver.ColumnDefinition {
 	defaultLength := DefaultStringLength
 	if len(length) > 0 {
 		defaultLength = length[0]
@@ -89,32 +90,32 @@ func (r *Blueprint) Char(column string, length ...int) schema.ColumnDefinition {
 	return columnImpl
 }
 
-func (r *Blueprint) Column(column, ttype string) schema.ColumnDefinition {
+func (r *Blueprint) Column(column, ttype string) driver.ColumnDefinition {
 	return r.createAndAddColumn(ttype, column)
 }
 
 func (r *Blueprint) Comment(comment string) {
-	r.addCommand(&schema.Command{
+	r.addCommand(&driver.Command{
 		Name:  CommandTableComment,
 		Value: comment,
 	})
 }
 
 func (r *Blueprint) Create() {
-	r.addCommand(&schema.Command{
+	r.addCommand(&driver.Command{
 		Name: CommandCreate,
 	})
 }
 
-func (r *Blueprint) Decimal(column string) schema.ColumnDefinition {
+func (r *Blueprint) Decimal(column string) driver.ColumnDefinition {
 	return r.createAndAddColumn("decimal", column)
 }
 
-func (r *Blueprint) Date(column string) schema.ColumnDefinition {
+func (r *Blueprint) Date(column string) driver.ColumnDefinition {
 	return r.createAndAddColumn("date", column)
 }
 
-func (r *Blueprint) DateTime(column string, precision ...int) schema.ColumnDefinition {
+func (r *Blueprint) DateTime(column string, precision ...int) driver.ColumnDefinition {
 	columnImpl := r.createAndAddColumn("dateTime", column)
 	if len(precision) > 0 {
 		columnImpl.precision = &precision[0]
@@ -123,7 +124,7 @@ func (r *Blueprint) DateTime(column string, precision ...int) schema.ColumnDefin
 	return columnImpl
 }
 
-func (r *Blueprint) DateTimeTz(column string, precision ...int) schema.ColumnDefinition {
+func (r *Blueprint) DateTimeTz(column string, precision ...int) driver.ColumnDefinition {
 	columnImpl := r.createAndAddColumn("dateTimeTz", column)
 	if len(precision) > 0 {
 		columnImpl.precision = &precision[0]
@@ -132,18 +133,18 @@ func (r *Blueprint) DateTimeTz(column string, precision ...int) schema.ColumnDef
 	return columnImpl
 }
 
-func (r *Blueprint) Double(column string) schema.ColumnDefinition {
+func (r *Blueprint) Double(column string) driver.ColumnDefinition {
 	return r.createAndAddColumn("double", column)
 }
 
 func (r *Blueprint) Drop() {
-	r.addCommand(&schema.Command{
+	r.addCommand(&driver.Command{
 		Name: CommandDrop,
 	})
 }
 
 func (r *Blueprint) DropColumn(column ...string) {
-	r.addCommand(&schema.Command{
+	r.addCommand(&driver.Command{
 		Name:    CommandDropColumn,
 		Columns: column,
 	})
@@ -174,7 +175,7 @@ func (r *Blueprint) DropFullTextByName(name string) {
 }
 
 func (r *Blueprint) DropIfExists() {
-	r.addCommand(&schema.Command{
+	r.addCommand(&driver.Command{
 		Name: CommandDropIfExists,
 	})
 }
@@ -229,14 +230,14 @@ func (r *Blueprint) DropUniqueByName(name string) {
 	})
 }
 
-func (r *Blueprint) Enum(column string, allowed []any) schema.ColumnDefinition {
+func (r *Blueprint) Enum(column string, allowed []any) driver.ColumnDefinition {
 	columnImpl := r.createAndAddColumn("enum", column)
 	columnImpl.allowed = allowed
 
 	return columnImpl
 }
 
-func (r *Blueprint) Float(column string, precision ...int) schema.ColumnDefinition {
+func (r *Blueprint) Float(column string, precision ...int) driver.ColumnDefinition {
 	columnImpl := r.createAndAddColumn("float", column)
 	columnImpl.precision = convert.Pointer(53)
 
@@ -259,8 +260,8 @@ func (r *Blueprint) FullText(column ...string) schema.IndexDefinition {
 	return NewIndexDefinition(command)
 }
 
-func (r *Blueprint) GetAddedColumns() []schema.ColumnDefinition {
-	var columns []schema.ColumnDefinition
+func (r *Blueprint) GetAddedColumns() []driver.ColumnDefinition {
+	var columns []driver.ColumnDefinition
 	for _, column := range r.columns {
 		columns = append(columns, column)
 	}
@@ -268,7 +269,7 @@ func (r *Blueprint) GetAddedColumns() []schema.ColumnDefinition {
 	return columns
 }
 
-func (r *Blueprint) GetCommands() []*schema.Command {
+func (r *Blueprint) GetCommands() []*driver.Command {
 	return r.commands
 }
 
@@ -286,7 +287,7 @@ func (r *Blueprint) HasCommand(command string) bool {
 	return false
 }
 
-func (r *Blueprint) ID(column ...string) schema.ColumnDefinition {
+func (r *Blueprint) ID(column ...string) driver.ColumnDefinition {
 	if len(column) > 0 {
 		return r.BigIncrements(column[0])
 	}
@@ -294,7 +295,7 @@ func (r *Blueprint) ID(column ...string) schema.ColumnDefinition {
 	return r.BigIncrements("id")
 }
 
-func (r *Blueprint) Increments(column string) schema.ColumnDefinition {
+func (r *Blueprint) Increments(column string) driver.ColumnDefinition {
 	return r.IntegerIncrements(column)
 }
 
@@ -304,35 +305,35 @@ func (r *Blueprint) Index(column ...string) schema.IndexDefinition {
 	return NewIndexDefinition(command)
 }
 
-func (r *Blueprint) Integer(column string) schema.ColumnDefinition {
+func (r *Blueprint) Integer(column string) driver.ColumnDefinition {
 	return r.createAndAddColumn("integer", column)
 }
 
-func (r *Blueprint) IntegerIncrements(column string) schema.ColumnDefinition {
+func (r *Blueprint) IntegerIncrements(column string) driver.ColumnDefinition {
 	return r.UnsignedInteger(column).AutoIncrement()
 }
 
-func (r *Blueprint) Json(column string) schema.ColumnDefinition {
+func (r *Blueprint) Json(column string) driver.ColumnDefinition {
 	return r.createAndAddColumn("json", column)
 }
 
-func (r *Blueprint) Jsonb(column string) schema.ColumnDefinition {
+func (r *Blueprint) Jsonb(column string) driver.ColumnDefinition {
 	return r.createAndAddColumn("jsonb", column)
 }
 
-func (r *Blueprint) LongText(column string) schema.ColumnDefinition {
+func (r *Blueprint) LongText(column string) driver.ColumnDefinition {
 	return r.createAndAddColumn("longText", column)
 }
 
-func (r *Blueprint) MediumIncrements(column string) schema.ColumnDefinition {
+func (r *Blueprint) MediumIncrements(column string) driver.ColumnDefinition {
 	return r.UnsignedMediumInteger(column).AutoIncrement()
 }
 
-func (r *Blueprint) MediumInteger(column string) schema.ColumnDefinition {
+func (r *Blueprint) MediumInteger(column string) driver.ColumnDefinition {
 	return r.createAndAddColumn("mediumInteger", column)
 }
 
-func (r *Blueprint) MediumText(column string) schema.ColumnDefinition {
+func (r *Blueprint) MediumText(column string) driver.ColumnDefinition {
 	return r.createAndAddColumn("mediumText", column)
 }
 
@@ -341,7 +342,7 @@ func (r *Blueprint) Primary(column ...string) {
 }
 
 func (r *Blueprint) Rename(to string) {
-	command := &schema.Command{
+	command := &driver.Command{
 		Name: CommandRename,
 		To:   to,
 	}
@@ -350,7 +351,7 @@ func (r *Blueprint) Rename(to string) {
 }
 
 func (r *Blueprint) RenameColumn(from, to string) {
-	command := &schema.Command{
+	command := &driver.Command{
 		Name: CommandRenameColumn,
 		From: from,
 		To:   to,
@@ -360,7 +361,7 @@ func (r *Blueprint) RenameColumn(from, to string) {
 }
 
 func (r *Blueprint) RenameIndex(from, to string) {
-	command := &schema.Command{
+	command := &driver.Command{
 		Name: CommandRenameIndex,
 		From: from,
 		To:   to,
@@ -373,15 +374,15 @@ func (r *Blueprint) SetTable(name string) {
 	r.table = name
 }
 
-func (r *Blueprint) SmallIncrements(column string) schema.ColumnDefinition {
+func (r *Blueprint) SmallIncrements(column string) driver.ColumnDefinition {
 	return r.UnsignedSmallInteger(column).AutoIncrement()
 }
 
-func (r *Blueprint) SmallInteger(column string) schema.ColumnDefinition {
+func (r *Blueprint) SmallInteger(column string) driver.ColumnDefinition {
 	return r.createAndAddColumn("smallInteger", column)
 }
 
-func (r *Blueprint) SoftDeletes(column ...string) schema.ColumnDefinition {
+func (r *Blueprint) SoftDeletes(column ...string) driver.ColumnDefinition {
 	newColumn := "deleted_at"
 	if len(column) > 0 {
 		newColumn = column[0]
@@ -390,7 +391,7 @@ func (r *Blueprint) SoftDeletes(column ...string) schema.ColumnDefinition {
 	return r.Timestamp(newColumn).Nullable()
 }
 
-func (r *Blueprint) SoftDeletesTz(column ...string) schema.ColumnDefinition {
+func (r *Blueprint) SoftDeletesTz(column ...string) driver.ColumnDefinition {
 	newColumn := "deleted_at"
 	if len(column) > 0 {
 		newColumn = column[0]
@@ -399,7 +400,7 @@ func (r *Blueprint) SoftDeletesTz(column ...string) schema.ColumnDefinition {
 	return r.TimestampTz(newColumn).Nullable()
 }
 
-func (r *Blueprint) String(column string, length ...int) schema.ColumnDefinition {
+func (r *Blueprint) String(column string, length ...int) driver.ColumnDefinition {
 	defaultLength := DefaultStringLength
 	if len(length) > 0 {
 		defaultLength = length[0]
@@ -411,11 +412,11 @@ func (r *Blueprint) String(column string, length ...int) schema.ColumnDefinition
 	return columnImpl
 }
 
-func (r *Blueprint) Text(column string) schema.ColumnDefinition {
+func (r *Blueprint) Text(column string) driver.ColumnDefinition {
 	return r.createAndAddColumn("text", column)
 }
 
-func (r *Blueprint) Time(column string, precision ...int) schema.ColumnDefinition {
+func (r *Blueprint) Time(column string, precision ...int) driver.ColumnDefinition {
 	columnImpl := r.createAndAddColumn("time", column)
 	if len(precision) > 0 {
 		columnImpl.precision = &precision[0]
@@ -424,7 +425,7 @@ func (r *Blueprint) Time(column string, precision ...int) schema.ColumnDefinitio
 	return columnImpl
 }
 
-func (r *Blueprint) TimeTz(column string, precision ...int) schema.ColumnDefinition {
+func (r *Blueprint) TimeTz(column string, precision ...int) driver.ColumnDefinition {
 	columnImpl := r.createAndAddColumn("timeTz", column)
 	if len(precision) > 0 {
 		columnImpl.precision = &precision[0]
@@ -433,7 +434,7 @@ func (r *Blueprint) TimeTz(column string, precision ...int) schema.ColumnDefinit
 	return columnImpl
 }
 
-func (r *Blueprint) Timestamp(column string, precision ...int) schema.ColumnDefinition {
+func (r *Blueprint) Timestamp(column string, precision ...int) driver.ColumnDefinition {
 	columnImpl := r.createAndAddColumn("timestamp", column)
 	if len(precision) > 0 {
 		columnImpl.precision = &precision[0]
@@ -452,7 +453,7 @@ func (r *Blueprint) TimestampsTz(precision ...int) {
 	r.TimestampTz("updated_at", precision...).Nullable()
 }
 
-func (r *Blueprint) TimestampTz(column string, precision ...int) schema.ColumnDefinition {
+func (r *Blueprint) TimestampTz(column string, precision ...int) driver.ColumnDefinition {
 	columnImpl := r.createAndAddColumn("timestampTz", column)
 	if len(precision) > 0 {
 		columnImpl.precision = &precision[0]
@@ -461,19 +462,19 @@ func (r *Blueprint) TimestampTz(column string, precision ...int) schema.ColumnDe
 	return columnImpl
 }
 
-func (r *Blueprint) TinyIncrements(column string) schema.ColumnDefinition {
+func (r *Blueprint) TinyIncrements(column string) driver.ColumnDefinition {
 	return r.UnsignedTinyInteger(column).AutoIncrement()
 }
 
-func (r *Blueprint) TinyInteger(column string) schema.ColumnDefinition {
+func (r *Blueprint) TinyInteger(column string) driver.ColumnDefinition {
 	return r.createAndAddColumn("tinyInteger", column)
 }
 
-func (r *Blueprint) TinyText(column string) schema.ColumnDefinition {
+func (r *Blueprint) TinyText(column string) driver.ColumnDefinition {
 	return r.createAndAddColumn("tinyText", column)
 }
 
-func (r *Blueprint) ToSql(grammar schema.Grammar) ([]string, error) {
+func (r *Blueprint) ToSql(grammar driver.Grammar) ([]string, error) {
 	r.addImpliedCommands(grammar)
 
 	var statements []string
@@ -553,38 +554,38 @@ func (r *Blueprint) Unique(column ...string) schema.IndexDefinition {
 	return NewIndexDefinition(command)
 }
 
-func (r *Blueprint) UnsignedBigInteger(column string) schema.ColumnDefinition {
+func (r *Blueprint) UnsignedBigInteger(column string) driver.ColumnDefinition {
 	return r.BigInteger(column).Unsigned()
 }
 
-func (r *Blueprint) UnsignedInteger(column string) schema.ColumnDefinition {
+func (r *Blueprint) UnsignedInteger(column string) driver.ColumnDefinition {
 	return r.Integer(column).Unsigned()
 }
 
-func (r *Blueprint) UnsignedMediumInteger(column string) schema.ColumnDefinition {
+func (r *Blueprint) UnsignedMediumInteger(column string) driver.ColumnDefinition {
 	return r.MediumInteger(column).Unsigned()
 }
 
-func (r *Blueprint) UnsignedSmallInteger(column string) schema.ColumnDefinition {
+func (r *Blueprint) UnsignedSmallInteger(column string) driver.ColumnDefinition {
 	return r.SmallInteger(column).Unsigned()
 }
 
-func (r *Blueprint) UnsignedTinyInteger(column string) schema.ColumnDefinition {
+func (r *Blueprint) UnsignedTinyInteger(column string) driver.ColumnDefinition {
 	return r.TinyInteger(column).Unsigned()
 }
 
-func (r *Blueprint) addAttributeCommands(grammar schema.Grammar) {
+func (r *Blueprint) addAttributeCommands(grammar driver.Grammar) {
 	attributeCommands := grammar.GetAttributeCommands()
 	for _, column := range r.columns {
 		for _, command := range attributeCommands {
 			if command == CommandComment && (column.comment != nil || column.change) {
-				r.addCommand(&schema.Command{
+				r.addCommand(&driver.Command{
 					Column: column,
 					Name:   CommandComment,
 				})
 			}
 			if command == CommandDefault && column.def != nil {
-				r.addCommand(&schema.Command{
+				r.addCommand(&driver.Command{
 					Column: column,
 					Name:   CommandDefault,
 				})
@@ -593,11 +594,11 @@ func (r *Blueprint) addAttributeCommands(grammar schema.Grammar) {
 	}
 }
 
-func (r *Blueprint) addCommand(command *schema.Command) {
+func (r *Blueprint) addCommand(command *driver.Command) {
 	r.commands = append(r.commands, command)
 }
 
-func (r *Blueprint) addImpliedCommands(grammar schema.Grammar) {
+func (r *Blueprint) addImpliedCommands(grammar driver.Grammar) {
 	r.addAttributeCommands(grammar)
 }
 
@@ -610,7 +611,7 @@ func (r *Blueprint) createAndAddColumn(ttype, name string) *ColumnDefinition {
 	r.columns = append(r.columns, columnImpl)
 
 	if !r.isCreate() {
-		r.addCommand(&schema.Command{
+		r.addCommand(&driver.Command{
 			Name:   CommandAdd,
 			Column: columnImpl,
 		})
@@ -636,8 +637,8 @@ func (r *Blueprint) createIndexName(ttype string, columns []string) string {
 	return index
 }
 
-func (r *Blueprint) indexCommand(name string, columns []string, config ...schema.IndexConfig) *schema.Command {
-	command := &schema.Command{
+func (r *Blueprint) indexCommand(name string, columns []string, config ...schema.IndexConfig) *driver.Command {
+	command := &driver.Command{
 		Columns: columns,
 		Name:    name,
 	}

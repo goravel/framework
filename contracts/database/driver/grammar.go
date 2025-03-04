@@ -1,4 +1,4 @@
-package schema
+package driver
 
 type Grammar interface {
 	// CompileAdd Compile an add column command.
@@ -115,4 +115,58 @@ type Grammar interface {
 	TypeSmallInteger(column ColumnDefinition) string
 	// TypeString Create the column definition for a string type.
 	TypeString(column ColumnDefinition) string
+}
+
+type Schema interface {
+}
+
+type Blueprint interface {
+	// GetAddedColumns Get the added columns.
+	GetAddedColumns() []ColumnDefinition
+	// GetTableName Get the table name with prefix.
+	GetTableName() string
+	// HasCommand Determine if the blueprint has a specific command.
+	HasCommand(command string) bool
+}
+
+type Command struct {
+	Algorithm          string
+	Column             ColumnDefinition
+	Columns            []string
+	Deferrable         *bool
+	From               string
+	Index              string
+	InitiallyImmediate *bool
+	Language           string
+	Name               string
+	On                 string
+	OnDelete           string
+	OnUpdate           string
+	References         []string
+	ShouldBeSkipped    bool
+	To                 string
+	Value              string
+}
+
+type Table struct {
+	Collation string
+	Comment   string
+	Engine    string
+	Name      string
+	Schema    string
+	Size      int
+}
+
+type Type struct {
+	Category string
+	Implicit bool
+	Name     string
+	Schema   string
+	Type     string
+}
+
+type View struct {
+	Name       string
+	Schema     string
+	Definition string
 }

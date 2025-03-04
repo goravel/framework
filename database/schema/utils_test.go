@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	mocksschema "github.com/goravel/framework/mocks/database/schema"
+	mocksdriver "github.com/goravel/framework/mocks/database/driver"
 )
 
 func TestColumnDefaultValue(t *testing.T) {
@@ -27,19 +27,19 @@ func TestColumnDefaultValue(t *testing.T) {
 
 func TestColumnType(t *testing.T) {
 	// valid type
-	mockColumn := mocksschema.NewColumnDefinition(t)
+	mockColumn := mocksdriver.NewColumnDefinition(t)
 	mockColumn.EXPECT().GetType().Return("string").Once()
 
-	mockGrammar := mocksschema.NewGrammar(t)
+	mockGrammar := mocksdriver.NewGrammar(t)
 	mockGrammar.EXPECT().TypeString(mockColumn).Return("varchar").Once()
 
 	assert.Equal(t, "varchar", ColumnType(mockGrammar, mockColumn))
 
 	// invalid type
-	mockColumn1 := mocksschema.NewColumnDefinition(t)
+	mockColumn1 := mocksdriver.NewColumnDefinition(t)
 	mockColumn1.EXPECT().GetType().Return("invalid").Twice()
 
-	mockGrammar1 := mocksschema.NewGrammar(t)
+	mockGrammar1 := mocksdriver.NewGrammar(t)
 
 	assert.Equal(t, "invalid", ColumnType(mockGrammar1, mockColumn1))
 }

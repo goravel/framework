@@ -1,4 +1,4 @@
-package schema
+package driver
 
 type Processor interface {
 	ProcessColumns(dbColumns []DBColumn) []Column
@@ -35,6 +35,24 @@ type DBForeignKey struct {
 
 type DBIndex struct {
 	Columns string
+	Name    string
+	Primary bool
+	Type    string
+	Unique  bool
+}
+
+type ForeignKey struct {
+	Name           string
+	Columns        []string
+	ForeignSchema  string
+	ForeignTable   string
+	ForeignColumns []string
+	OnUpdate       string
+	OnDelete       string
+}
+
+type Index struct {
+	Columns []string
 	Name    string
 	Primary bool
 	Type    string
