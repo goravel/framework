@@ -109,6 +109,24 @@ func (r *DB) Table(name string) contractsdb.Query {
 	return NewQuery(r.ctx, r.driver, r.db, r.logger, name, nil)
 }
 
+func (r *DB) Transaction(callback func(tx contractsdb.DB) error) error {
+	tx, err := r.BeginTransaction()
+	if err != nil {
+		return err
+	}
+
+	err = callback(tx)
+	if err != nil {
+		if err := tx.Rollback(); err != nil {
+			return err
+		}
+
+		return err
+	}
+
+	return tx.Commit()
+}
+
 func (r *DB) WithContext(ctx context.Context) contractsdb.DB {
 	return NewDB(ctx, r.config, r.driver, r.log, r.db, r.tx, r.txLogs)
 }

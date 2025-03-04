@@ -11,7 +11,7 @@ type DB interface {
 	Connection(name string) DB
 	Rollback() error
 	Table(name string) Query
-	// Transaction(txFunc func(tx Query) error) error
+	Transaction(txFunc func(tx DB) error) error
 	WithContext(ctx context.Context) DB
 }
 

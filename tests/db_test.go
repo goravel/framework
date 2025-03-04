@@ -413,38 +413,79 @@ func (s *DBTestSuite) TestPluck() {
 func (s *DBTestSuite) TestTransaction() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			tx, err := query.DB().BeginTransaction()
-			s.NoError(err)
-			s.NotNil(tx)
+			s.Run("separate transaction", func() {
+				tx, err := query.DB().BeginTransaction()
+				s.NoError(err)
+				s.NotNil(tx)
 
-			result, err := tx.Table("products").Insert(Product{Name: "transaction product"})
-			s.NoError(err)
-			s.Equal(int64(1), result.RowsAffected)
+				result, err := tx.Table("products").Insert(Product{Name: "transaction product"})
+				s.NoError(err)
+				s.Equal(int64(1), result.RowsAffected)
 
-			s.NoError(tx.Commit())
+				s.NoError(tx.Commit())
 
-			var product Product
-			err = query.DB().Table("products").Where("name", "transaction product").First(&product)
-			s.NoError(err)
-			s.Equal("transaction product", product.Name)
+				var product Product
+				err = query.DB().Table("products").Where("name", "transaction product").First(&product)
+				s.NoError(err)
+				s.Equal("transaction product", product.Name)
 
-			tx, err = query.DB().BeginTransaction()
-			s.NoError(err)
-			s.NotNil(tx)
+				tx, err = query.DB().BeginTransaction()
+				s.NoError(err)
+				s.NotNil(tx)
 
-			result, err = tx.Table("products").Where("name", "transaction product").Update("name", "transaction product updated")
-			s.NoError(err)
-			s.Equal(int64(1), result.RowsAffected)
-			s.NoError(tx.Rollback())
+				result, err = tx.Table("products").Where("name", "transaction product").Update("name", "transaction product updated")
+				s.NoError(err)
+				s.Equal(int64(1), result.RowsAffected)
+				s.NoError(tx.Rollback())
 
-			var product1 Product
-			err = query.DB().Table("products").Where("name", "transaction product").First(&product1)
-			s.NoError(err)
-			s.Equal("transaction product", product1.Name)
+				var product1 Product
+				err = query.DB().Table("products").Where("name", "transaction product").First(&product1)
+				s.NoError(err)
+				s.Equal("transaction product", product1.Name)
 
-			var product2 Product
-			err = query.DB().Table("products").Where("name", "transaction product updated").FirstOrFail(&product2)
-			s.Equal(sql.ErrNoRows, err)
+				var product2 Product
+				err = query.DB().Table("products").Where("name", "transaction product updated").FirstOrFail(&product2)
+				s.Equal(sql.ErrNoRows, err)
+			})
+
+			s.Run("transaction", func() {
+				err := query.DB().Transaction(func(tx db.DB) error {
+					_, err := tx.Table("products").Insert(Product{Name: "transaction product1"})
+					if err != nil {
+						return err
+					}
+
+					_, err = tx.Table("products").Where("name", "transaction product1").Update("name", "transaction product1 updated")
+					if err != nil {
+						return err
+					}
+
+					return nil
+				})
+
+				s.NoError(err)
+
+				var product Product
+				err = query.DB().Table("products").Where("name", "transaction product1 updated").First(&product)
+				s.NoError(err)
+				s.Equal("transaction product1 updated", product.Name)
+
+				err = query.DB().Transaction(func(tx db.DB) error {
+					_, err := tx.Table("products").Where("name", "transaction product1 updated").Delete()
+					if err != nil {
+						return err
+					}
+
+					return assert.AnError
+				})
+
+				s.Equal(assert.AnError, err)
+
+				var product1 Product
+				err = query.DB().Table("products").Where("name", "transaction product1 updated").First(&product1)
+				s.NoError(err)
+				s.Equal("transaction product1 updated", product1.Name)
+			})
 		})
 	}
 }
