@@ -294,8 +294,8 @@ func (s *DBTestSuite) TestOrWhere() {
 
 			s.Run("nested condition", func() {
 				var products []Product
-				err := query.DB().Table("products").Where("name", "or where model").OrWhere(func(query db.Query) {
-					query.Where("name", "or where model1")
+				err := query.DB().Table("products").Where("name", "or where model").OrWhere(func(query db.Query) db.Query {
+					return query.Where("name", "or where model1")
 				}).Get(&products)
 				s.NoError(err)
 				s.Equal(2, len(products))
@@ -383,8 +383,8 @@ func (s *DBTestSuite) TestOrWhereNot() {
 
 			s.Run("nested condition", func() {
 				var product Product
-				err := query.DB().Table("products").Where("name", "or where not model1").OrWhereNot(func(query db.Query) {
-					query.Where("name", "or where not model2")
+				err := query.DB().Table("products").Where("name", "or where not model1").OrWhereNot(func(query db.Query) db.Query {
+					return query.Where("name", "or where not model2")
 				}).First(&product)
 				s.NoError(err)
 				s.Equal("or where not model1", product.Name)
@@ -606,8 +606,8 @@ func (s *DBTestSuite) TestWhere() {
 
 			s.Run("nested condition", func() {
 				var product Product
-				err := query.DB().Table("products").Where(func(query db.Query) {
-					query.Where("name", "where model")
+				err := query.DB().Table("products").Where(func(query db.Query) db.Query {
+					return query.Where("name", "where model")
 				}).First(&product)
 				s.NoError(err)
 				s.Equal("where model", product.Name)
@@ -730,8 +730,8 @@ func (s *DBTestSuite) TestWhereNot() {
 
 			s.Run("nested condition", func() {
 				var product Product
-				err := query.DB().Table("products").Where("name", "where not model1").WhereNot(func(query db.Query) {
-					query.Where("name", "where not model2")
+				err := query.DB().Table("products").Where("name", "where not model1").WhereNot(func(query db.Query) db.Query {
+					return query.Where("name", "where not model2")
 				}).First(&product)
 				s.NoError(err)
 				s.Equal("where not model1", product.Name)

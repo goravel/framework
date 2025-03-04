@@ -35,7 +35,10 @@ func TestBuildDB(t *testing.T) {
 				driverCallback := func() (contractsdriver.Driver, error) {
 					return mockDriver, nil
 				}
+
 				mockConfig.EXPECT().Get("database.connections.mysql.via").Return(driverCallback).Once()
+				mockConfig.EXPECT().GetBool("app.debug").Return(false).Once()
+				mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(200).Once()
 				mockDriver.EXPECT().DB().Return(&sql.DB{}, nil).Once()
 				mockDriver.EXPECT().Config().Return(database.Config{Driver: "mysql"}).Once()
 			},
@@ -93,6 +96,8 @@ func TestConnection(t *testing.T) {
 				mockConfig.EXPECT().Get("database.connections.mysql.via").Return(driverCallback).Once()
 				mockDriver.EXPECT().DB().Return(&sql.DB{}, nil).Once()
 				mockDriver.EXPECT().Config().Return(database.Config{Driver: "mysql"}).Once()
+				mockConfig.EXPECT().GetBool("app.debug").Return(false).Once()
+				mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(200).Once()
 			},
 			expectedPanic: false,
 		},
@@ -106,6 +111,8 @@ func TestConnection(t *testing.T) {
 				mockConfig.EXPECT().Get("database.connections.postgres.via").Return(driverCallback).Once()
 				mockDriver.EXPECT().DB().Return(&sql.DB{}, nil).Once()
 				mockDriver.EXPECT().Config().Return(database.Config{Driver: "postgres"}).Once()
+				mockConfig.EXPECT().GetBool("app.debug").Return(false).Once()
+				mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(200).Once()
 			},
 			expectedPanic: false,
 		},
@@ -119,6 +126,8 @@ func TestConnection(t *testing.T) {
 				mockConfig.EXPECT().Get("database.connections.mysql.via").Return(driverCallback).Once()
 				mockDriver.EXPECT().DB().Return(&sql.DB{}, nil).Once()
 				mockDriver.EXPECT().Config().Return(database.Config{Driver: "mysql"}).Once()
+				mockConfig.EXPECT().GetBool("app.debug").Return(false).Once()
+				mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(200).Once()
 
 				cachedDB, _ := BuildDB(context.Background(), mockConfig, mockLog, "mysql")
 				db.queries = map[string]contractsdb.DB{"mysql": cachedDB}
@@ -141,6 +150,9 @@ func TestConnection(t *testing.T) {
 			mockConfig = mocksconfig.NewConfig(t)
 			mockDriver = mocksdriver.NewDriver(t)
 			mockLog = mockslog.NewLog(t)
+
+			mockConfig.EXPECT().GetBool("app.debug").Return(false).Once()
+			mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(200).Once()
 
 			db := NewDB(context.Background(), mockConfig, mockDriver, mockLog, nil, nil, nil)
 			test.setup(db)

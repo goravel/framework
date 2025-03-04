@@ -618,8 +618,8 @@ func (s *QueryTestSuite) TestOrWhere() {
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? OR ((age IN (?,?) AND name = ?) OR age = ?))", "John", 25, 30, "Tom", 40).Return("SELECT * FROM users WHERE (name = \"John\" OR ((age IN (25,30) AND name = \"Tom\") OR age = 40))").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" OR ((age IN (25,30) AND name = \"Tom\") OR age = 40))", int64(0), nil).Return().Once()
 
-		err := s.query.Where("name", "John").OrWhere(func(query db.Query) {
-			query.Where("age", []int{25, 30}).Where("name", "Tom").OrWhere("age", 40)
+		err := s.query.Where("name", "John").OrWhere(func(query db.Query) db.Query {
+			return query.Where("age", []int{25, 30}).Where("name", "Tom").OrWhere("age", 40)
 		}).Get(&users)
 		s.Nil(err)
 	})
@@ -968,8 +968,8 @@ func (s *QueryTestSuite) TestWhere() {
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? AND (age IN (?,?) AND name = ?))", "John", 25, 30, "Tom").Return("SELECT * FROM users WHERE (name = \"John\" AND (age IN (25,30) AND name = \"Tom\"))").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" AND (age IN (25,30) AND name = \"Tom\"))", int64(0), nil).Return().Once()
 
-		err := s.query.Where("name", "John").Where(func(query db.Query) {
-			query.Where("age", []int{25, 30}).Where("name", "Tom")
+		err := s.query.Where("name", "John").Where(func(query db.Query) db.Query {
+			return query.Where("age", []int{25, 30}).Where("name", "Tom")
 		}).Get(&users)
 		s.Nil(err)
 	})
@@ -1094,8 +1094,8 @@ func (s *QueryTestSuite) TestWhereNot() {
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? AND NOT ((name = ? AND age IN (?,?))))", "John", "Jane", 25, 30).Return("SELECT * FROM users WHERE (name = \"John\" AND NOT ((name = \"Jane\" AND age IN (25,30))))")
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" AND NOT ((name = \"Jane\" AND age IN (25,30))))", int64(0), nil).Return().Once()
 
-		err := s.query.Where("name", "John").WhereNot(func(query db.Query) {
-			query.Where("name", "Jane").Where("age", []int{25, 30})
+		err := s.query.Where("name", "John").WhereNot(func(query db.Query) db.Query {
+			return query.Where("name", "Jane").Where("age", []int{25, 30})
 		}).Get(&users)
 		s.Nil(err)
 	})
