@@ -119,7 +119,7 @@ func (s *LoggerTestSuite) TestError() {
 	}{
 		{
 			name:      "normal error",
-			data:      []any{errors.New("test error")},
+			data:      []any{assert.AnError},
 			shouldLog: true,
 		},
 		{
@@ -129,7 +129,7 @@ func (s *LoggerTestSuite) TestError() {
 		},
 		{
 			name:      "access denied error",
-			data:      []any{errors.New("access denied for user")},
+			data:      []any{errors.New("Access denied for user")},
 			shouldLog: false,
 		},
 	}
@@ -138,12 +138,9 @@ func (s *LoggerTestSuite) TestError() {
 		s.Run(tt.name, func() {
 			ctx := context.Background()
 
-			s.mockLog.EXPECT().WithContext(ctx).Return(s.mockLog).Once()
-
 			if tt.shouldLog {
+				s.mockLog.EXPECT().WithContext(ctx).Return(s.mockLog).Once()
 				s.mockLog.EXPECT().Errorf("test message", mock.Anything).Return().Once()
-			} else {
-				s.mockLog.EXPECT().Errorf("test message", mock.Anything).Times(0)
 			}
 
 			s.logger.Errorf(ctx, "test message", tt.data...)

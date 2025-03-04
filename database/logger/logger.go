@@ -2,7 +2,6 @@ package logger
 
 import (
 	"context"
-	"net"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -15,6 +14,7 @@ import (
 	"github.com/goravel/framework/contracts/database/logger"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/str"
 )
 
 func NewLogger(config config.Config, log log.Log) logger.Logger {
@@ -60,25 +60,12 @@ func (r *Logger) Warningf(ctx context.Context, msg string, data ...any) {
 }
 
 func (r *Logger) Errorf(ctx context.Context, msg string, data ...any) {
-	// Let upper layer function deals with connection refused error
-	var cancel bool
 	for _, item := range data {
-		if tempItem, ok := item.(*net.OpError); ok {
-			if strings.Contains(tempItem.Error(), "connection refused") {
+		if tempItem, ok := item.(error); ok {
+			if str.Of(tempItem.Error()).Contains("Access denied", "connection refused") {
 				return
 			}
-
 		}
-		if tempItem, ok := item.(error); ok {
-			// Avoid duplicate output
-			if strings.Contains(tempItem.Error(), "Access denied") {
-				cancel = true
-			}
-		}
-	}
-
-	if cancel {
-		return
 	}
 
 	if r.level >= logger.Error {
