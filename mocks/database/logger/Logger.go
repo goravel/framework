@@ -27,29 +27,29 @@ func (_m *Logger) EXPECT() *Logger_Expecter {
 	return &Logger_Expecter{mock: &_m.Mock}
 }
 
-// Error provides a mock function with given fields: _a0, _a1, _a2
-func (_m *Logger) Error(_a0 context.Context, _a1 string, _a2 ...interface{}) {
+// Errorf provides a mock function with given fields: _a0, _a1, _a2
+func (_m *Logger) Errorf(_a0 context.Context, _a1 string, _a2 ...interface{}) {
 	var _ca []interface{}
 	_ca = append(_ca, _a0, _a1)
 	_ca = append(_ca, _a2...)
 	_m.Called(_ca...)
 }
 
-// Logger_Error_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Error'
-type Logger_Error_Call struct {
+// Logger_Errorf_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Errorf'
+type Logger_Errorf_Call struct {
 	*mock.Call
 }
 
-// Error is a helper method to define mock.On call
+// Errorf is a helper method to define mock.On call
 //   - _a0 context.Context
 //   - _a1 string
 //   - _a2 ...interface{}
-func (_e *Logger_Expecter) Error(_a0 interface{}, _a1 interface{}, _a2 ...interface{}) *Logger_Error_Call {
-	return &Logger_Error_Call{Call: _e.mock.On("Error",
+func (_e *Logger_Expecter) Errorf(_a0 interface{}, _a1 interface{}, _a2 ...interface{}) *Logger_Errorf_Call {
+	return &Logger_Errorf_Call{Call: _e.mock.On("Errorf",
 		append([]interface{}{_a0, _a1}, _a2...)...)}
 }
 
-func (_c *Logger_Error_Call) Run(run func(_a0 context.Context, _a1 string, _a2 ...interface{})) *Logger_Error_Call {
+func (_c *Logger_Errorf_Call) Run(run func(_a0 context.Context, _a1 string, _a2 ...interface{})) *Logger_Errorf_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		variadicArgs := make([]interface{}, len(args)-2)
 		for i, a := range args[2:] {
@@ -62,39 +62,39 @@ func (_c *Logger_Error_Call) Run(run func(_a0 context.Context, _a1 string, _a2 .
 	return _c
 }
 
-func (_c *Logger_Error_Call) Return() *Logger_Error_Call {
+func (_c *Logger_Errorf_Call) Return() *Logger_Errorf_Call {
 	_c.Call.Return()
 	return _c
 }
 
-func (_c *Logger_Error_Call) RunAndReturn(run func(context.Context, string, ...interface{})) *Logger_Error_Call {
+func (_c *Logger_Errorf_Call) RunAndReturn(run func(context.Context, string, ...interface{})) *Logger_Errorf_Call {
 	_c.Run(run)
 	return _c
 }
 
-// Info provides a mock function with given fields: _a0, _a1, _a2
-func (_m *Logger) Info(_a0 context.Context, _a1 string, _a2 ...interface{}) {
+// Infof provides a mock function with given fields: _a0, _a1, _a2
+func (_m *Logger) Infof(_a0 context.Context, _a1 string, _a2 ...interface{}) {
 	var _ca []interface{}
 	_ca = append(_ca, _a0, _a1)
 	_ca = append(_ca, _a2...)
 	_m.Called(_ca...)
 }
 
-// Logger_Info_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Info'
-type Logger_Info_Call struct {
+// Logger_Infof_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Infof'
+type Logger_Infof_Call struct {
 	*mock.Call
 }
 
-// Info is a helper method to define mock.On call
+// Infof is a helper method to define mock.On call
 //   - _a0 context.Context
 //   - _a1 string
 //   - _a2 ...interface{}
-func (_e *Logger_Expecter) Info(_a0 interface{}, _a1 interface{}, _a2 ...interface{}) *Logger_Info_Call {
-	return &Logger_Info_Call{Call: _e.mock.On("Info",
+func (_e *Logger_Expecter) Infof(_a0 interface{}, _a1 interface{}, _a2 ...interface{}) *Logger_Infof_Call {
+	return &Logger_Infof_Call{Call: _e.mock.On("Infof",
 		append([]interface{}{_a0, _a1}, _a2...)...)}
 }
 
-func (_c *Logger_Info_Call) Run(run func(_a0 context.Context, _a1 string, _a2 ...interface{})) *Logger_Info_Call {
+func (_c *Logger_Infof_Call) Run(run func(_a0 context.Context, _a1 string, _a2 ...interface{})) *Logger_Infof_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		variadicArgs := make([]interface{}, len(args)-2)
 		for i, a := range args[2:] {
@@ -107,12 +107,12 @@ func (_c *Logger_Info_Call) Run(run func(_a0 context.Context, _a1 string, _a2 ..
 	return _c
 }
 
-func (_c *Logger_Info_Call) Return() *Logger_Info_Call {
+func (_c *Logger_Infof_Call) Return() *Logger_Infof_Call {
 	_c.Call.Return()
 	return _c
 }
 
-func (_c *Logger_Info_Call) RunAndReturn(run func(context.Context, string, ...interface{})) *Logger_Info_Call {
+func (_c *Logger_Infof_Call) RunAndReturn(run func(context.Context, string, ...interface{})) *Logger_Infof_Call {
 	_c.Run(run)
 	return _c
 }
@@ -162,6 +162,51 @@ func (_c *Logger_Level_Call) Return(_a0 logger.Logger) *Logger_Level_Call {
 
 func (_c *Logger_Level_Call) RunAndReturn(run func(logger.Level) logger.Logger) *Logger_Level_Call {
 	_c.Call.Return(run)
+	return _c
+}
+
+// Panicf provides a mock function with given fields: _a0, _a1, _a2
+func (_m *Logger) Panicf(_a0 context.Context, _a1 string, _a2 ...interface{}) {
+	var _ca []interface{}
+	_ca = append(_ca, _a0, _a1)
+	_ca = append(_ca, _a2...)
+	_m.Called(_ca...)
+}
+
+// Logger_Panicf_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Panicf'
+type Logger_Panicf_Call struct {
+	*mock.Call
+}
+
+// Panicf is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 string
+//   - _a2 ...interface{}
+func (_e *Logger_Expecter) Panicf(_a0 interface{}, _a1 interface{}, _a2 ...interface{}) *Logger_Panicf_Call {
+	return &Logger_Panicf_Call{Call: _e.mock.On("Panicf",
+		append([]interface{}{_a0, _a1}, _a2...)...)}
+}
+
+func (_c *Logger_Panicf_Call) Run(run func(_a0 context.Context, _a1 string, _a2 ...interface{})) *Logger_Panicf_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-2)
+		for i, a := range args[2:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].(context.Context), args[1].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Logger_Panicf_Call) Return() *Logger_Panicf_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Logger_Panicf_Call) RunAndReturn(run func(context.Context, string, ...interface{})) *Logger_Panicf_Call {
+	_c.Run(run)
 	return _c
 }
 
@@ -249,29 +294,29 @@ func (_c *Logger_Trace_Call) RunAndReturn(run func(context.Context, carbon.Carbo
 	return _c
 }
 
-// Warn provides a mock function with given fields: _a0, _a1, _a2
-func (_m *Logger) Warn(_a0 context.Context, _a1 string, _a2 ...interface{}) {
+// Warningf provides a mock function with given fields: _a0, _a1, _a2
+func (_m *Logger) Warningf(_a0 context.Context, _a1 string, _a2 ...interface{}) {
 	var _ca []interface{}
 	_ca = append(_ca, _a0, _a1)
 	_ca = append(_ca, _a2...)
 	_m.Called(_ca...)
 }
 
-// Logger_Warn_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Warn'
-type Logger_Warn_Call struct {
+// Logger_Warningf_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Warningf'
+type Logger_Warningf_Call struct {
 	*mock.Call
 }
 
-// Warn is a helper method to define mock.On call
+// Warningf is a helper method to define mock.On call
 //   - _a0 context.Context
 //   - _a1 string
 //   - _a2 ...interface{}
-func (_e *Logger_Expecter) Warn(_a0 interface{}, _a1 interface{}, _a2 ...interface{}) *Logger_Warn_Call {
-	return &Logger_Warn_Call{Call: _e.mock.On("Warn",
+func (_e *Logger_Expecter) Warningf(_a0 interface{}, _a1 interface{}, _a2 ...interface{}) *Logger_Warningf_Call {
+	return &Logger_Warningf_Call{Call: _e.mock.On("Warningf",
 		append([]interface{}{_a0, _a1}, _a2...)...)}
 }
 
-func (_c *Logger_Warn_Call) Run(run func(_a0 context.Context, _a1 string, _a2 ...interface{})) *Logger_Warn_Call {
+func (_c *Logger_Warningf_Call) Run(run func(_a0 context.Context, _a1 string, _a2 ...interface{})) *Logger_Warningf_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		variadicArgs := make([]interface{}, len(args)-2)
 		for i, a := range args[2:] {
@@ -284,12 +329,12 @@ func (_c *Logger_Warn_Call) Run(run func(_a0 context.Context, _a1 string, _a2 ..
 	return _c
 }
 
-func (_c *Logger_Warn_Call) Return() *Logger_Warn_Call {
+func (_c *Logger_Warningf_Call) Return() *Logger_Warningf_Call {
 	_c.Call.Return()
 	return _c
 }
 
-func (_c *Logger_Warn_Call) RunAndReturn(run func(context.Context, string, ...interface{})) *Logger_Warn_Call {
+func (_c *Logger_Warningf_Call) RunAndReturn(run func(context.Context, string, ...interface{})) *Logger_Warningf_Call {
 	_c.Run(run)
 	return _c
 }

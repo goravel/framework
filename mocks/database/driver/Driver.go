@@ -189,11 +189,11 @@ func (_c *Driver_Docker_Call) RunAndReturn(run func() (docker.DatabaseDriver, er
 	return _c
 }
 
-// Explain provides a mock function with given fields: _a0, vars
-func (_m *Driver) Explain(_a0 string, vars ...interface{}) string {
+// Explain provides a mock function with given fields: _a0, args
+func (_m *Driver) Explain(_a0 string, args ...interface{}) string {
 	var _ca []interface{}
 	_ca = append(_ca, _a0)
-	_ca = append(_ca, vars...)
+	_ca = append(_ca, args...)
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
@@ -202,7 +202,7 @@ func (_m *Driver) Explain(_a0 string, vars ...interface{}) string {
 
 	var r0 string
 	if rf, ok := ret.Get(0).(func(string, ...interface{}) string); ok {
-		r0 = rf(_a0, vars...)
+		r0 = rf(_a0, args...)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -217,13 +217,13 @@ type Driver_Explain_Call struct {
 
 // Explain is a helper method to define mock.On call
 //   - _a0 string
-//   - vars ...interface{}
-func (_e *Driver_Expecter) Explain(_a0 interface{}, vars ...interface{}) *Driver_Explain_Call {
+//   - args ...interface{}
+func (_e *Driver_Expecter) Explain(_a0 interface{}, args ...interface{}) *Driver_Explain_Call {
 	return &Driver_Explain_Call{Call: _e.mock.On("Explain",
-		append([]interface{}{_a0}, vars...)...)}
+		append([]interface{}{_a0}, args...)...)}
 }
 
-func (_c *Driver_Explain_Call) Run(run func(_a0 string, vars ...interface{})) *Driver_Explain_Call {
+func (_c *Driver_Explain_Call) Run(run func(_a0 string, args ...interface{})) *Driver_Explain_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		variadicArgs := make([]interface{}, len(args)-1)
 		for i, a := range args[1:] {

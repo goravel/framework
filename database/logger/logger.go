@@ -2,7 +2,6 @@ package logger
 
 import (
 	"context"
-	"net"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -15,6 +14,7 @@ import (
 	"github.com/goravel/framework/contracts/database/logger"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/str"
 )
 
 func NewLogger(config config.Config, log log.Log) logger.Logger {
@@ -47,43 +47,34 @@ func (r *Logger) Level(level logger.Level) logger.Logger {
 	return r
 }
 
-func (r *Logger) Info(ctx context.Context, msg string, data ...any) {
+func (r *Logger) Infof(ctx context.Context, msg string, data ...any) {
 	if r.level >= logger.Info {
-		r.log.Infof(msg, data...)
+		r.log.WithContext(ctx).Infof(msg, data...)
 	}
 }
 
-func (r *Logger) Warn(ctx context.Context, msg string, data ...any) {
+func (r *Logger) Warningf(ctx context.Context, msg string, data ...any) {
 	if r.level >= logger.Warn {
-		r.log.Warningf(msg, data...)
+		r.log.WithContext(ctx).Warningf(msg, data...)
 	}
 }
 
-func (r *Logger) Error(ctx context.Context, msg string, data ...any) {
-	// Let upper layer function deals with connection refused error
-	var cancel bool
+func (r *Logger) Errorf(ctx context.Context, msg string, data ...any) {
 	for _, item := range data {
-		if tempItem, ok := item.(*net.OpError); ok {
-			if strings.Contains(tempItem.Error(), "connection refused") {
+		if tempItem, ok := item.(error); ok {
+			if str.Of(tempItem.Error()).Contains("Access denied", "connection refused") {
 				return
 			}
-
 		}
-		if tempItem, ok := item.(error); ok {
-			// Avoid duplicate output
-			if strings.Contains(tempItem.Error(), "Access denied") {
-				cancel = true
-			}
-		}
-	}
-
-	if cancel {
-		return
 	}
 
 	if r.level >= logger.Error {
-		r.log.Errorf(msg, data...)
+		r.log.WithContext(ctx).Errorf(msg, data...)
 	}
+}
+
+func (r *Logger) Panicf(ctx context.Context, msg string, data ...any) {
+	r.log.WithContext(ctx).Panicf(msg, data...)
 }
 
 func (r *Logger) Trace(ctx context.Context, begin carbon.Carbon, sql string, rowsAffected int64, err error) {
@@ -102,21 +93,21 @@ func (r *Logger) Trace(ctx context.Context, begin carbon.Carbon, sql string, row
 	switch {
 	case err != nil && r.level >= logger.Error:
 		if rowsAffected == -1 {
-			r.log.Errorf(traceErrStr, float64(elapsed.Nanoseconds())/1e6, "-", sql, err)
+			r.Errorf(ctx, traceErrStr, float64(elapsed.Nanoseconds())/1e6, "-", sql, err)
 		} else {
-			r.log.Errorf(traceErrStr, float64(elapsed.Nanoseconds())/1e6, rowsAffected, sql, err)
+			r.Errorf(ctx, traceErrStr, float64(elapsed.Nanoseconds())/1e6, rowsAffected, sql, err)
 		}
 	case elapsed > r.slowThreshold && r.slowThreshold != 0 && r.level >= logger.Warn:
 		if rowsAffected == -1 {
-			r.log.Warningf(traceWarnStr, float64(elapsed.Nanoseconds())/1e6, "-", sql)
+			r.Warningf(ctx, traceWarnStr, float64(elapsed.Nanoseconds())/1e6, "-", sql)
 		} else {
-			r.log.Warningf(traceWarnStr, float64(elapsed.Nanoseconds())/1e6, rowsAffected, sql)
+			r.Warningf(ctx, traceWarnStr, float64(elapsed.Nanoseconds())/1e6, rowsAffected, sql)
 		}
 	case r.level == logger.Info:
 		if rowsAffected == -1 {
-			r.log.Infof(traceStr, float64(elapsed.Nanoseconds())/1e6, "-", sql)
+			r.Infof(ctx, traceStr, float64(elapsed.Nanoseconds())/1e6, "-", sql)
 		} else {
-			r.log.Infof(traceStr, float64(elapsed.Nanoseconds())/1e6, rowsAffected, sql)
+			r.Infof(ctx, traceStr, float64(elapsed.Nanoseconds())/1e6, rowsAffected, sql)
 		}
 	}
 }
@@ -142,15 +133,15 @@ func (r *Gorm) LogMode(level gormlogger.LogLevel) gormlogger.Interface {
 }
 
 func (r *Gorm) Info(ctx context.Context, msg string, data ...any) {
-	r.logger.Info(ctx, msg, data...)
+	r.logger.Infof(ctx, msg, data...)
 }
 
 func (r *Gorm) Warn(ctx context.Context, msg string, data ...any) {
-	r.logger.Warn(ctx, msg, data...)
+	r.logger.Warningf(ctx, msg, data...)
 }
 
 func (r *Gorm) Error(ctx context.Context, msg string, data ...any) {
-	r.logger.Error(ctx, msg, data...)
+	r.logger.Errorf(ctx, msg, data...)
 }
 
 func (r *Gorm) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {

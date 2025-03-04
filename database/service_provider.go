@@ -11,6 +11,7 @@ import (
 	"github.com/goravel/framework/database/console"
 	consolemigration "github.com/goravel/framework/database/console/migration"
 	"github.com/goravel/framework/database/db"
+	"github.com/goravel/framework/database/logger"
 	"github.com/goravel/framework/database/migration"
 	databaseorm "github.com/goravel/framework/database/orm"
 	databaseschema "github.com/goravel/framework/database/schema"
@@ -66,7 +67,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, nil
 		}
 
-		return db.BuildDB(context.Background(), config, log, connection)
+		return db.BuildDB(context.Background(), config, logger.NewLogger(config, log), connection)
 	})
 
 	app.Singleton(contracts.BindingSchema, func(app foundation.Application) (any, error) {

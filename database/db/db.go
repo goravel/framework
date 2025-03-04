@@ -10,8 +10,6 @@ import (
 	contractsdb "github.com/goravel/framework/contracts/database/db"
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	contractslogger "github.com/goravel/framework/contracts/database/logger"
-	"github.com/goravel/framework/contracts/log"
-	"github.com/goravel/framework/database/logger"
 	"github.com/goravel/framework/errors"
 )
 
@@ -20,18 +18,17 @@ type DB struct {
 	ctx     context.Context
 	db      *sqlx.DB
 	driver  contractsdriver.Driver
-	log     log.Log
 	logger  contractslogger.Logger
 	queries map[string]contractsdb.DB
 	tx      *sqlx.Tx
 	txLogs  *[]TxLog
 }
 
-func NewDB(ctx context.Context, config config.Config, driver contractsdriver.Driver, log log.Log, db *sqlx.DB, tx *sqlx.Tx, txLogs *[]TxLog) *DB {
-	return &DB{ctx: ctx, config: config, driver: driver, log: log, logger: logger.NewLogger(config, log), db: db, queries: make(map[string]contractsdb.DB), tx: tx, txLogs: txLogs}
+func NewDB(ctx context.Context, config config.Config, driver contractsdriver.Driver, logger contractslogger.Logger, db *sqlx.DB, tx *sqlx.Tx, txLogs *[]TxLog) *DB {
+	return &DB{ctx: ctx, config: config, driver: driver, logger: logger, db: db, queries: make(map[string]contractsdb.DB), tx: tx, txLogs: txLogs}
 }
 
-func BuildDB(ctx context.Context, config config.Config, log log.Log, connection string) (*DB, error) {
+func BuildDB(ctx context.Context, config config.Config, logger contractslogger.Logger, connection string) (*DB, error) {
 	driverCallback, exist := config.Get(fmt.Sprintf("database.connections.%s.via", connection)).(func() (contractsdriver.Driver, error))
 	if !exist {
 		return nil, errors.DatabaseConfigNotFound
@@ -47,7 +44,7 @@ func BuildDB(ctx context.Context, config config.Config, log log.Log, connection 
 		return nil, err
 	}
 
-	return NewDB(ctx, config, driver, log, sqlx.NewDb(instance, driver.Config().Driver), nil, nil), nil
+	return NewDB(ctx, config, driver, logger, sqlx.NewDb(instance, driver.Config().Driver), nil, nil), nil
 }
 
 func (r *DB) BeginTransaction() (contractsdb.DB, error) {
@@ -56,7 +53,7 @@ func (r *DB) BeginTransaction() (contractsdb.DB, error) {
 		return nil, err
 	}
 
-	return NewDB(r.ctx, r.config, r.driver, r.log, nil, tx, &[]TxLog{}), nil
+	return NewDB(r.ctx, r.config, r.driver, r.logger, nil, tx, &[]TxLog{}), nil
 }
 
 func (r *DB) Commit() error {
@@ -81,9 +78,9 @@ func (r *DB) Connection(name string) contractsdb.DB {
 	}
 
 	if _, ok := r.queries[name]; !ok {
-		db, err := BuildDB(r.ctx, r.config, r.log, name)
+		db, err := BuildDB(r.ctx, r.config, r.logger, name)
 		if err != nil {
-			r.log.Panic(err.Error())
+			r.logger.Panicf(r.ctx, err.Error())
 			return nil
 		}
 		r.queries[name] = db
@@ -128,5 +125,5 @@ func (r *DB) Transaction(callback func(tx contractsdb.DB) error) error {
 }
 
 func (r *DB) WithContext(ctx context.Context) contractsdb.DB {
-	return NewDB(ctx, r.config, r.driver, r.log, r.db, r.tx, r.txLogs)
+	return NewDB(ctx, r.config, r.driver, r.logger, r.db, r.tx, r.txLogs)
 }

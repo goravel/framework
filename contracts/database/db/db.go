@@ -25,8 +25,6 @@ type Query interface {
 	DoesntExist() (bool, error)
 	// Distinct Force the query to only return distinct results.
 	Distinct() Query
-	// dump
-	// dumpRawSql
 	// Delete records from the database.
 	Delete() (*Result, error)
 	// Each(callback func(rows []any) error) error
@@ -100,8 +98,10 @@ type Query interface {
 	// sharedLock
 	// skip
 	// take
-	// ToSql
-	// ToRawSql
+	// ToSql Get the SQL representation of the query.
+	ToSql() ToSql
+	// ToRawSql Get the raw SQL representation of the query with embedded bindings.
+	ToRawSql() ToSql
 	// Update records in the database.
 	Update(column any, value ...any) (*Result, error)
 	// Value(column string, dest any) error
@@ -144,4 +144,14 @@ type Builder interface {
 	Get(dest any, query string, args ...any) error
 	Query(query string, args ...any) (*sql.Rows, error)
 	Select(dest any, query string, args ...any) error
+}
+
+type ToSql interface {
+	Count() string
+	Delete() string
+	First() string
+	Get() string
+	Insert(data any) string
+	Pluck(column string, dest any) string
+	Update(column any, value ...any) string
 }

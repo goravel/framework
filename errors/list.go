@@ -53,6 +53,8 @@ var (
 	DatabaseUnsupportedType             = New("unsupported type: %s, expected %s")
 	DatabaseInvalidArgumentNumber       = New("invalid argument number: %s, expected %s")
 	DatabaseTransactionNotStarted       = New("transaction not started")
+	DatabaseFailedToGetSql              = New("failed to get sql: %v")
+	DatabaseDataIsEmpty                 = New("data can't be empty")
 
 	DockerUnknownContainerType           = New("unknown container type")
 	DockerInsufficientDatabaseContainers = New("the number of database container is not enough, expect: %d, got: %d")
