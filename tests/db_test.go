@@ -63,6 +63,39 @@ func (s *DBTestSuite) TestCount() {
 	}
 }
 
+func (s *DBTestSuite) TestCrossJoin() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]map[string]any{
+				{
+					"name":   "cross_join_product1",
+					"weight": 100,
+					"height": 200,
+				},
+				{
+					"name":   "cross_join_product2",
+					"weight": 200,
+					"height": 100,
+				},
+			})
+
+			type Temp struct {
+				P1Name string `db:"p1_name"`
+				P2Name string `db:"p2_name"`
+			}
+			var temps []Temp
+			err := query.DB().Table("products as p1").CrossJoin("products as p2").Select("p1.name as p1_name", "p2.name as p2_name").Get(&temps)
+
+			s.NoError(err)
+			s.Equal(4, len(temps))
+			s.Contains(temps, Temp{P1Name: "cross_join_product1", P2Name: "cross_join_product1"})
+			s.Contains(temps, Temp{P1Name: "cross_join_product1", P2Name: "cross_join_product2"})
+			s.Contains(temps, Temp{P1Name: "cross_join_product2", P2Name: "cross_join_product1"})
+			s.Contains(temps, Temp{P1Name: "cross_join_product2", P2Name: "cross_join_product2"})
+		})
+	}
+}
+
 func (s *DBTestSuite) TestDecrement() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
@@ -120,6 +153,34 @@ func (s *DBTestSuite) TestExists() {
 			exists, err = query.DB().Table("products").Where("name", "exists_product").Exists()
 			s.NoError(err)
 			s.False(exists)
+		})
+	}
+}
+
+func (s *DBTestSuite) TestGroupBy_Having() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]map[string]any{
+				{
+					"name":   "group_by_having_product1",
+					"weight": 25,
+				},
+				{
+					"name":   "group_by_having_product2",
+					"weight": 25,
+				},
+				{
+					"name":   "group_by_having_product3",
+					"weight": 30,
+				},
+			})
+
+			var products []Product
+			err := query.DB().Table("products").GroupBy("weight").Having("weight > ?", 20).OrderBy("weight").Select("weight").Get(&products)
+			s.NoError(err)
+			s.Equal(2, len(products))
+			s.Equal(25, *products[0].Weight)
+			s.Equal(30, *products[1].Weight)
 		})
 	}
 }
@@ -271,6 +332,85 @@ func (s *DBTestSuite) TestInsertGetId() {
 	}
 }
 
+func (s *DBTestSuite) TestJoin() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]map[string]any{
+				{
+					"name":   "join_product1",
+					"weight": 100,
+					"height": 200,
+				},
+				{
+					"name":   "join_product2",
+					"weight": 50,
+					"height": 100,
+				},
+				{
+					"name":   "join_product3",
+					"weight": 50,
+					"height": 300,
+				},
+			})
+
+			type Temp struct {
+				P1Name   string `db:"p1_name"`
+				P1Weight int    `db:"p1_weight"`
+				P2Name   string `db:"p2_name"`
+				P2Weight int    `db:"p2_weight"`
+			}
+			var temps []Temp
+			err := query.DB().Table("products as p1").Join("products as p2 ON p1.weight = p2.height").Select("p1.name as p1_name", "p1.weight as p1_weight", "p2.name as p2_name", "p2.weight as p2_weight").Get(&temps)
+
+			s.NoError(err)
+			s.Equal(1, len(temps))
+			s.Equal("join_product1", temps[0].P1Name)
+			s.Equal(100, temps[0].P1Weight)
+			s.Equal("join_product2", temps[0].P2Name)
+			s.Equal(50, temps[0].P2Weight)
+		})
+	}
+}
+
+func (s *DBTestSuite) TestLeftJoin() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]map[string]any{
+				{
+					"name":   "join_product1",
+					"weight": 100,
+					"height": 200,
+				},
+				{
+					"name":   "join_product2",
+					"weight": 50,
+					"height": 100,
+				},
+				{
+					"name":   "join_product3",
+					"weight": 50,
+					"height": 300,
+				},
+			})
+
+			type Temp struct {
+				P1Name   *string `db:"p1_name"`
+				P1Weight *int    `db:"p1_weight"`
+				P2Name   *string `db:"p2_name"`
+				P2Weight *int    `db:"p2_weight"`
+			}
+			var temps []Temp
+			err := query.DB().Table("products as p1").LeftJoin("products as p2 ON p1.weight = p2.height").Select("p1.name as p1_name", "p1.weight as p1_weight", "p2.name as p2_name", "p2.weight as p2_weight").Get(&temps)
+
+			s.NoError(err)
+			s.Equal(3, len(temps))
+			s.Contains(temps, Temp{P1Name: convert.Pointer("join_product1"), P1Weight: convert.Pointer(100), P2Name: convert.Pointer("join_product2"), P2Weight: convert.Pointer(50)})
+			s.Contains(temps, Temp{P1Name: convert.Pointer("join_product2"), P1Weight: convert.Pointer(50)})
+			s.Contains(temps, Temp{P1Name: convert.Pointer("join_product3"), P1Weight: convert.Pointer(50)})
+		})
+	}
+}
+
 func (s *DBTestSuite) TestOrWhere() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
@@ -406,6 +546,45 @@ func (s *DBTestSuite) TestPluck() {
 
 			s.NoError(err)
 			s.Equal([]string{"pluck_product1", "pluck_product2"}, names)
+		})
+	}
+}
+
+func (s *DBTestSuite) TestRightJoin() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]map[string]any{
+				{
+					"name":   "join_product1",
+					"weight": 100,
+					"height": 200,
+				},
+				{
+					"name":   "join_product2",
+					"weight": 50,
+					"height": 100,
+				},
+				{
+					"name":   "join_product3",
+					"weight": 50,
+					"height": 300,
+				},
+			})
+
+			type Temp struct {
+				P1Name   *string `db:"p1_name"`
+				P1Weight *int    `db:"p1_weight"`
+				P2Name   *string `db:"p2_name"`
+				P2Weight *int    `db:"p2_weight"`
+			}
+			var temps []Temp
+			err := query.DB().Table("products as p1").RightJoin("products as p2 ON p1.weight = p2.height").Select("p1.name as p1_name", "p1.weight as p1_weight", "p2.name as p2_name", "p2.weight as p2_weight").Get(&temps)
+
+			s.NoError(err)
+			s.Equal(3, len(temps))
+			s.Contains(temps, Temp{P1Name: convert.Pointer("join_product1"), P1Weight: convert.Pointer(100), P2Name: convert.Pointer("join_product2"), P2Weight: convert.Pointer(50)})
+			s.Contains(temps, Temp{P2Name: convert.Pointer("join_product1"), P2Weight: convert.Pointer(100)})
+			s.Contains(temps, Temp{P2Name: convert.Pointer("join_product3"), P2Weight: convert.Pointer(50)})
 		})
 	}
 }

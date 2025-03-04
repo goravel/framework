@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
+	"strings"
 	"sync"
 
 	"github.com/spf13/cast"
@@ -433,9 +434,18 @@ func (r *Query) Get(dest any) error {
 	return r.Find(dest)
 }
 
-func (r *Query) Group(name string) contractsorm.Query {
+// DEPRECATED Use GroupBy instead.
+func (r *Query) Group(column string) contractsorm.Query {
+	return r.GroupBy(column)
+}
+
+func (r *Query) GroupBy(column ...string) contractsorm.Query {
+	if len(column) == 0 {
+		return r
+	}
+
 	conditions := r.conditions
-	conditions.group = name
+	conditions.groupBy = column
 
 	return r.setConditions(conditions)
 }
@@ -1016,12 +1026,12 @@ func (r *Query) buildDistinct(db *gormio.DB) *gormio.DB {
 }
 
 func (r *Query) buildGroup(db *gormio.DB) *gormio.DB {
-	if r.conditions.group == "" {
+	if len(r.conditions.groupBy) == 0 {
 		return db
 	}
 
-	db = db.Group(r.conditions.group)
-	r.conditions.group = ""
+	db = db.Group(strings.Join(r.conditions.groupBy, ", "))
+	r.conditions.groupBy = nil
 
 	return db
 }

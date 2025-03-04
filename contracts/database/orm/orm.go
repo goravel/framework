@@ -84,7 +84,10 @@ type Query interface {
 	// Get retrieves all rows from the database.
 	Get(dest any) error
 	// Group specifies the group method on the query.
-	Group(name string) Query
+	// DEPRECATED Use GroupBy instead.
+	Group(column string) Query
+	// GroupBy specifies the group method on the query.
+	GroupBy(column ...string) Query
 	// Having specifying HAVING conditions for the query.
 	Having(query any, args ...any) Query
 	// InRandomOrder specifies the order randomly.
