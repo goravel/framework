@@ -94,15 +94,21 @@ func (s *LoggerTestSuite) TestLevel() {
 }
 
 func (s *LoggerTestSuite) TestInfo() {
+	ctx := context.Background()
+
+	s.mockLog.EXPECT().WithContext(ctx).Return(s.mockLog).Once()
 	s.mockLog.EXPECT().Infof("test message", mock.Anything).Return().Once()
 
-	s.logger.Infof(context.Background(), "test message")
+	s.logger.Infof(ctx, "test message")
 }
 
 func (s *LoggerTestSuite) TestWarn() {
+	ctx := context.Background()
+
+	s.mockLog.EXPECT().WithContext(ctx).Return(s.mockLog).Once()
 	s.mockLog.EXPECT().Warningf("test warning", mock.Anything).Return().Once()
 
-	s.logger.Warningf(context.Background(), "test warning")
+	s.logger.Warningf(ctx, "test warning")
 }
 
 func (s *LoggerTestSuite) TestError() {
@@ -130,20 +136,28 @@ func (s *LoggerTestSuite) TestError() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
+			ctx := context.Background()
+
+			s.mockLog.EXPECT().WithContext(ctx).Return(s.mockLog).Once()
+
 			if tt.shouldLog {
 				s.mockLog.EXPECT().Errorf("test message", mock.Anything).Return().Once()
 			} else {
 				s.mockLog.EXPECT().Errorf("test message", mock.Anything).Times(0)
 			}
 
-			s.logger.Errorf(context.Background(), "test message", tt.data...)
+			s.logger.Errorf(ctx, "test message", tt.data...)
 		})
 	}
 }
 
 func (s *LoggerTestSuite) TestTrace() {
-	sql := "SELECT * FROM users"
-	rows := int64(1)
+	var (
+		ctx  = context.Background()
+		sql  = "SELECT * FROM users"
+		rows = int64(1)
+	)
+
 	tests := []struct {
 		name    string
 		rows    int64
@@ -159,6 +173,7 @@ func (s *LoggerTestSuite) TestTrace() {
 			err:     assert.AnError,
 			level:   logger.Error,
 			setup: func() {
+				s.mockLog.EXPECT().WithContext(ctx).Return(s.mockLog).Once()
 				s.mockLog.EXPECT().Errorf("[%.3fms] [rows:%v] %s\t%s", mock.Anything, rows, sql, assert.AnError).Return().Once()
 			},
 		},
@@ -169,6 +184,7 @@ func (s *LoggerTestSuite) TestTrace() {
 			err:     assert.AnError,
 			level:   logger.Error,
 			setup: func() {
+				s.mockLog.EXPECT().WithContext(ctx).Return(s.mockLog).Once()
 				s.mockLog.EXPECT().Errorf("[%.3fms] [rows:%v] %s\t%s", mock.Anything, "-", sql, assert.AnError).Return().Once()
 			},
 		},
@@ -178,6 +194,7 @@ func (s *LoggerTestSuite) TestTrace() {
 			elapsed: 300 * time.Millisecond,
 			level:   logger.Warn,
 			setup: func() {
+				s.mockLog.EXPECT().WithContext(ctx).Return(s.mockLog).Once()
 				s.mockLog.EXPECT().Warningf("[%.3fms] [rows:%v] [SLOW] %s", mock.Anything, rows, sql).Return().Once()
 			},
 		},
@@ -187,6 +204,7 @@ func (s *LoggerTestSuite) TestTrace() {
 			elapsed: 300 * time.Millisecond,
 			level:   logger.Warn,
 			setup: func() {
+				s.mockLog.EXPECT().WithContext(ctx).Return(s.mockLog).Once()
 				s.mockLog.EXPECT().Warningf("[%.3fms] [rows:%v] [SLOW] %s", mock.Anything, "-", sql).Return().Once()
 			},
 		},
@@ -196,6 +214,7 @@ func (s *LoggerTestSuite) TestTrace() {
 			elapsed: 50 * time.Millisecond,
 			level:   logger.Info,
 			setup: func() {
+				s.mockLog.EXPECT().WithContext(ctx).Return(s.mockLog).Once()
 				s.mockLog.EXPECT().Infof("[%.3fms] [rows:%v] %s", mock.Anything, rows, sql).Return().Once()
 			},
 		},
@@ -205,6 +224,7 @@ func (s *LoggerTestSuite) TestTrace() {
 			elapsed: 50 * time.Millisecond,
 			level:   logger.Info,
 			setup: func() {
+				s.mockLog.EXPECT().WithContext(ctx).Return(s.mockLog).Once()
 				s.mockLog.EXPECT().Infof("[%.3fms] [rows:%v] %s", mock.Anything, "-", sql).Return().Once()
 			},
 		},
@@ -222,7 +242,7 @@ func (s *LoggerTestSuite) TestTrace() {
 
 			s.logger.level = tt.level
 			begin := carbon.Now().SubDuration(tt.elapsed.String())
-			s.logger.Trace(context.Background(), begin, sql, tt.rows, tt.err)
+			s.logger.Trace(ctx, begin, sql, tt.rows, tt.err)
 		})
 	}
 }
