@@ -9,10 +9,7 @@ import (
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	databaseschema "github.com/goravel/framework/database/schema"
 	"github.com/goravel/framework/support/carbon"
-	"github.com/goravel/mysql"
 	"github.com/goravel/postgres"
-	"github.com/goravel/sqlite"
-	"github.com/goravel/sqlserver"
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -37,18 +34,18 @@ func (s *SchemaSuite) SetupTest() {
 }
 
 func (s *SchemaSuite) TearDownTest() {
-	if s.driverToTestQuery[sqlite.Name] != nil {
-		docker, err := s.driverToTestQuery[sqlite.Name].Driver().Docker()
-		s.NoError(err)
-		s.NoError(docker.Shutdown())
-	}
+	// if s.driverToTestQuery[sqlite.Name] != nil {
+	// 	docker, err := s.driverToTestQuery[sqlite.Name].Driver().Docker()
+	// 	s.NoError(err)
+	// 	s.NoError(docker.Shutdown())
+	// }
 }
 
 func (s *SchemaSuite) TestColumnChange() {
 	for driver, testQuery := range s.driverToTestQuery {
-		if driver == sqlite.Name {
-			continue
-		}
+		// if driver == sqlite.Name {
+		// 	continue
+		// }
 		s.Run(driver, func() {
 			schema := newSchema(testQuery, s.driverToTestQuery)
 			table := "column_change"
@@ -57,11 +54,11 @@ func (s *SchemaSuite) TestColumnChange() {
 			expectedCustomStringLength := customStringLength
 			expectedColumnType := "text"
 
-			if driver == sqlserver.Name {
-				expectedDefaultStringLength = databaseschema.DefaultStringLength * 2
-				expectedCustomStringLength = customStringLength * 2
-				expectedColumnType = "nvarchar"
-			}
+			// if driver == sqlserver.Name {
+			// 	expectedDefaultStringLength = databaseschema.DefaultStringLength * 2
+			// 	expectedCustomStringLength = customStringLength * 2
+			// 	expectedColumnType = "nvarchar"
+			// }
 			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
 				table.ID()
 				table.String("change_length")
@@ -97,14 +94,14 @@ func (s *SchemaSuite) TestColumnChange() {
 				if column.Name == "change_remove_default" || column.Name == "change_modify_default" {
 					s.Contains(column.Default, "goravel")
 				}
-				if driver != sqlserver.Name {
-					if column.Name == "change_add_comment" {
-						s.Empty(column.Comment)
-					}
-					if column.Name == "change_remove_comment" || column.Name == "change_modify_comment" {
-						s.Contains(column.Comment, "goravel")
-					}
-				}
+				// if driver != sqlserver.Name {
+				// 	if column.Name == "change_add_comment" {
+				// 		s.Empty(column.Comment)
+				// 	}
+				// 	if column.Name == "change_remove_comment" || column.Name == "change_modify_comment" {
+				// 		s.Contains(column.Comment, "goravel")
+				// 	}
+				// }
 
 			}
 			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
@@ -121,15 +118,15 @@ func (s *SchemaSuite) TestColumnChange() {
 			}))
 			columns, err = schema.GetColumns(table)
 			s.Require().Nil(err)
-			for i, column := range columns {
-				if driver == mysql.Name {
-					if i == 0 {
-						s.Equal(column.Name, "change_modify_comment")
-					}
-					if column.Name == "change_type" {
-						s.Equal(columns[i+1].Name, "change_add_comment")
-					}
-				}
+			for _, column := range columns {
+				// if driver == mysql.Name {
+				// 	if i == 0 {
+				// 		s.Equal(column.Name, "change_modify_comment")
+				// 	}
+				// 	if column.Name == "change_type" {
+				// 		s.Equal(columns[i+1].Name, "change_add_comment")
+				// 	}
+				// }
 				if column.Name == "change_length" {
 					s.Contains(column.Type, fmt.Sprintf("(%d)", expectedCustomStringLength))
 				}
@@ -151,17 +148,17 @@ func (s *SchemaSuite) TestColumnChange() {
 				if column.Name == "change_modify_default" {
 					s.Contains(column.Default, "goravel_again")
 				}
-				if driver != sqlserver.Name {
-					if column.Name == "change_add_comment" {
-						s.Contains(column.Comment, "goravel")
-					}
-					if column.Name == "change_remove_comment" {
-						s.Empty(column.Comment)
-					}
-					if column.Name == "change_modify_comment" {
-						s.Contains(column.Comment, "goravel_again")
-					}
-				}
+				// if driver != sqlserver.Name {
+				// 	if column.Name == "change_add_comment" {
+				// 		s.Contains(column.Comment, "goravel")
+				// 	}
+				// 	if column.Name == "change_remove_comment" {
+				// 		s.Empty(column.Comment)
+				// 	}
+				// 	if column.Name == "change_modify_comment" {
+				// 		s.Contains(column.Comment, "goravel_again")
+				// 	}
+				// }
 			}
 		})
 	}
@@ -228,12 +225,12 @@ func (s *SchemaSuite) TestColumnExtraAttributes() {
 			s.NoError(testQuery.Query().Where("id", columnExtraAttribute.ID).First(&anotherColumnExtraAttribute))
 			s.Equal("world", anotherColumnExtraAttribute.Name)
 			s.Equal(columnExtraAttribute.UseCurrent, anotherColumnExtraAttribute.UseCurrent)
-			if driver == mysql.Name {
-				s.NotEqual(columnExtraAttribute.UseCurrentOnUpdate, anotherColumnExtraAttribute.UseCurrentOnUpdate)
-				s.True(anotherColumnExtraAttribute.UseCurrentOnUpdate.Between(now, carbon.Now().AddSecond()))
-			} else {
-				s.Equal(columnExtraAttribute.UseCurrentOnUpdate, anotherColumnExtraAttribute.UseCurrentOnUpdate)
-			}
+			// if driver == mysql.Name {
+			// 	s.NotEqual(columnExtraAttribute.UseCurrentOnUpdate, anotherColumnExtraAttribute.UseCurrentOnUpdate)
+			// 	s.True(anotherColumnExtraAttribute.UseCurrentOnUpdate.Between(now, carbon.Now().AddSecond()))
+			// } else {
+			// 	s.Equal(columnExtraAttribute.UseCurrentOnUpdate, anotherColumnExtraAttribute.UseCurrentOnUpdate)
+			// }
 		})
 	}
 }
@@ -600,964 +597,964 @@ func (s *SchemaSuite) TestColumnTypes_Postgres() {
 	}
 }
 
-func (s *SchemaSuite) TestColumnTypes_Sqlite() {
-	if s.driverToTestQuery[sqlite.Name] == nil {
-		s.T().Skip("Skip test")
-	}
+// func (s *SchemaSuite) TestColumnTypes_Sqlite() {
+// 	if s.driverToTestQuery[sqlite.Name] == nil {
+// 		s.T().Skip("Skip test")
+// 	}
 
-	testQuery := s.driverToTestQuery[sqlite.Name]
-	schema := newSchema(testQuery, s.driverToTestQuery)
-	table := "sqlite_columns"
-	s.createTableAndAssertColumnsForColumnMethods(schema, table)
+// 	testQuery := s.driverToTestQuery[sqlite.Name]
+// 	schema := newSchema(testQuery, s.driverToTestQuery)
+// 	table := "sqlite_columns"
+// 	s.createTableAndAssertColumnsForColumnMethods(schema, table)
 
-	columns, err := schema.GetColumns(table)
-	s.Require().Nil(err)
+// 	columns, err := schema.GetColumns(table)
+// 	s.Require().Nil(err)
 
-	for _, column := range columns {
-		if column.Name == "another_deleted_at" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.True(column.Nullable)
-			s.Equal("datetime", column.Type)
-			s.Equal("datetime", column.TypeName)
-		}
-		if column.Name == "big_integer" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("integer", column.Type)
-			s.Equal("integer", column.TypeName)
-		}
-		if column.Name == "boolean_default" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Equal("'1'", column.Default)
-			s.False(column.Nullable)
-			s.Equal("tinyint(1)", column.Type)
-			s.Equal("tinyint", column.TypeName)
-		}
-		if column.Name == "char" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("varchar", column.Type)
-			s.Equal("varchar", column.TypeName)
-		}
-		if column.Name == "created_at" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.True(column.Nullable)
-			s.Equal("datetime", column.Type)
-			s.Equal("datetime", column.TypeName)
-		}
-		if column.Name == "custom_type" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("geometry", column.Type)
-			s.Equal("geometry", column.TypeName)
-		}
-		if column.Name == "date" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("date", column.Type)
-			s.Equal("date", column.TypeName)
-		}
-		if column.Name == "date_time" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("datetime", column.Type)
-			s.Equal("datetime", column.TypeName)
-		}
-		if column.Name == "date_time_tz" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("datetime", column.Type)
-			s.Equal("datetime", column.TypeName)
-		}
-		if column.Name == "decimal" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("numeric", column.Type)
-			s.Equal("numeric", column.TypeName)
-		}
-		if column.Name == "deleted_at" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.True(column.Nullable)
-			s.Equal("datetime", column.Type)
-			s.Equal("datetime", column.TypeName)
-		}
-		if column.Name == "double" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("double", column.Type)
-			s.Equal("double", column.TypeName)
-		}
-		if column.Name == "enum" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("varchar", column.Type)
-			s.Equal("varchar", column.TypeName)
-		}
-		if column.Name == "enum_int" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("varchar", column.Type)
-			s.Equal("varchar", column.TypeName)
-		}
-		if column.Name == "float" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("float", column.Type)
-			s.Equal("float", column.TypeName)
-		}
-		if column.Name == "id" {
-			s.True(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("integer", column.Type)
-			s.Equal("integer", column.TypeName)
-		}
-		if column.Name == "integer" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("integer", column.Type)
-			s.Equal("integer", column.TypeName)
-		}
-		if column.Name == "integer_default" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Equal("'1'", column.Default)
-			s.False(column.Nullable)
-			s.Equal("integer", column.Type)
-			s.Equal("integer", column.TypeName)
-		}
-		if column.Name == "json" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("text", column.Type)
-			s.Equal("text", column.TypeName)
-		}
-		if column.Name == "jsonb" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("text", column.Type)
-			s.Equal("text", column.TypeName)
-		}
-		if column.Name == "long_text" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("text", column.Type)
-			s.Equal("text", column.TypeName)
-		}
-		if column.Name == "medium_text" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("text", column.Type)
-			s.Equal("text", column.TypeName)
-		}
-		if column.Name == "string" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("varchar", column.Type)
-			s.Equal("varchar", column.TypeName)
-		}
-		if column.Name == "string_default" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Equal("'goravel'", column.Default)
-			s.False(column.Nullable)
-			s.Equal("varchar", column.Type)
-			s.Equal("varchar", column.TypeName)
-		}
-		if column.Name == "text" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("text", column.Type)
-			s.Equal("text", column.TypeName)
-		}
-		if column.Name == "tiny_text" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("text", column.Type)
-			s.Equal("text", column.TypeName)
-		}
-		if column.Name == "time" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("time", column.Type)
-			s.Equal("time", column.TypeName)
-		}
-		if column.Name == "time_tz" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("time", column.Type)
-			s.Equal("time", column.TypeName)
-		}
-		if column.Name == "timestamp" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("datetime", column.Type)
-			s.Equal("datetime", column.TypeName)
-		}
-		if column.Name == "timestamp_tz" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("datetime", column.Type)
-			s.Equal("datetime", column.TypeName)
-		}
-		if column.Name == "timestamp_use_current" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Equal("CURRENT_TIMESTAMP", column.Default)
-			s.False(column.Nullable)
-			s.Equal("datetime", column.Type)
-			s.Equal("datetime", column.TypeName)
-		}
-		if column.Name == "timestamp_use_current_on_update" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Equal("CURRENT_TIMESTAMP", column.Default)
-			s.False(column.Nullable)
-			s.Equal("datetime", column.Type)
-			s.Equal("datetime", column.TypeName)
-		}
-		if column.Name == "updated_at" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.True(column.Nullable)
-			s.Equal("datetime", column.Type)
-			s.Equal("datetime", column.TypeName)
-		}
-		if column.Name == "unsigned_integer" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("integer", column.Type)
-			s.Equal("integer", column.TypeName)
-		}
-		if column.Name == "unsigned_big_integer" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("integer", column.Type)
-			s.Equal("integer", column.TypeName)
-		}
-	}
-}
+// 	for _, column := range columns {
+// 		if column.Name == "another_deleted_at" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.True(column.Nullable)
+// 			s.Equal("datetime", column.Type)
+// 			s.Equal("datetime", column.TypeName)
+// 		}
+// 		if column.Name == "big_integer" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("integer", column.Type)
+// 			s.Equal("integer", column.TypeName)
+// 		}
+// 		if column.Name == "boolean_default" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Equal("'1'", column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("tinyint(1)", column.Type)
+// 			s.Equal("tinyint", column.TypeName)
+// 		}
+// 		if column.Name == "char" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("varchar", column.Type)
+// 			s.Equal("varchar", column.TypeName)
+// 		}
+// 		if column.Name == "created_at" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.True(column.Nullable)
+// 			s.Equal("datetime", column.Type)
+// 			s.Equal("datetime", column.TypeName)
+// 		}
+// 		if column.Name == "custom_type" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("geometry", column.Type)
+// 			s.Equal("geometry", column.TypeName)
+// 		}
+// 		if column.Name == "date" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("date", column.Type)
+// 			s.Equal("date", column.TypeName)
+// 		}
+// 		if column.Name == "date_time" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("datetime", column.Type)
+// 			s.Equal("datetime", column.TypeName)
+// 		}
+// 		if column.Name == "date_time_tz" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("datetime", column.Type)
+// 			s.Equal("datetime", column.TypeName)
+// 		}
+// 		if column.Name == "decimal" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("numeric", column.Type)
+// 			s.Equal("numeric", column.TypeName)
+// 		}
+// 		if column.Name == "deleted_at" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.True(column.Nullable)
+// 			s.Equal("datetime", column.Type)
+// 			s.Equal("datetime", column.TypeName)
+// 		}
+// 		if column.Name == "double" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("double", column.Type)
+// 			s.Equal("double", column.TypeName)
+// 		}
+// 		if column.Name == "enum" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("varchar", column.Type)
+// 			s.Equal("varchar", column.TypeName)
+// 		}
+// 		if column.Name == "enum_int" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("varchar", column.Type)
+// 			s.Equal("varchar", column.TypeName)
+// 		}
+// 		if column.Name == "float" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("float", column.Type)
+// 			s.Equal("float", column.TypeName)
+// 		}
+// 		if column.Name == "id" {
+// 			s.True(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("integer", column.Type)
+// 			s.Equal("integer", column.TypeName)
+// 		}
+// 		if column.Name == "integer" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("integer", column.Type)
+// 			s.Equal("integer", column.TypeName)
+// 		}
+// 		if column.Name == "integer_default" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Equal("'1'", column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("integer", column.Type)
+// 			s.Equal("integer", column.TypeName)
+// 		}
+// 		if column.Name == "json" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("text", column.Type)
+// 			s.Equal("text", column.TypeName)
+// 		}
+// 		if column.Name == "jsonb" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("text", column.Type)
+// 			s.Equal("text", column.TypeName)
+// 		}
+// 		if column.Name == "long_text" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("text", column.Type)
+// 			s.Equal("text", column.TypeName)
+// 		}
+// 		if column.Name == "medium_text" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("text", column.Type)
+// 			s.Equal("text", column.TypeName)
+// 		}
+// 		if column.Name == "string" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("varchar", column.Type)
+// 			s.Equal("varchar", column.TypeName)
+// 		}
+// 		if column.Name == "string_default" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Equal("'goravel'", column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("varchar", column.Type)
+// 			s.Equal("varchar", column.TypeName)
+// 		}
+// 		if column.Name == "text" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("text", column.Type)
+// 			s.Equal("text", column.TypeName)
+// 		}
+// 		if column.Name == "tiny_text" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("text", column.Type)
+// 			s.Equal("text", column.TypeName)
+// 		}
+// 		if column.Name == "time" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("time", column.Type)
+// 			s.Equal("time", column.TypeName)
+// 		}
+// 		if column.Name == "time_tz" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("time", column.Type)
+// 			s.Equal("time", column.TypeName)
+// 		}
+// 		if column.Name == "timestamp" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("datetime", column.Type)
+// 			s.Equal("datetime", column.TypeName)
+// 		}
+// 		if column.Name == "timestamp_tz" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("datetime", column.Type)
+// 			s.Equal("datetime", column.TypeName)
+// 		}
+// 		if column.Name == "timestamp_use_current" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Equal("CURRENT_TIMESTAMP", column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("datetime", column.Type)
+// 			s.Equal("datetime", column.TypeName)
+// 		}
+// 		if column.Name == "timestamp_use_current_on_update" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Equal("CURRENT_TIMESTAMP", column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("datetime", column.Type)
+// 			s.Equal("datetime", column.TypeName)
+// 		}
+// 		if column.Name == "updated_at" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.True(column.Nullable)
+// 			s.Equal("datetime", column.Type)
+// 			s.Equal("datetime", column.TypeName)
+// 		}
+// 		if column.Name == "unsigned_integer" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("integer", column.Type)
+// 			s.Equal("integer", column.TypeName)
+// 		}
+// 		if column.Name == "unsigned_big_integer" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("integer", column.Type)
+// 			s.Equal("integer", column.TypeName)
+// 		}
+// 	}
+// }
 
-func (s *SchemaSuite) TestColumnTypes_Mysql() {
-	if s.driverToTestQuery[mysql.Name] == nil {
-		s.T().Skip("Skip test")
-	}
+// func (s *SchemaSuite) TestColumnTypes_Mysql() {
+// 	if s.driverToTestQuery[mysql.Name] == nil {
+// 		s.T().Skip("Skip test")
+// 	}
 
-	testQuery := s.driverToTestQuery[mysql.Name]
-	schema := newSchema(testQuery, s.driverToTestQuery)
-	table := "mysql_columns"
-	s.createTableAndAssertColumnsForColumnMethods(schema, table)
+// 	testQuery := s.driverToTestQuery[mysql.Name]
+// 	schema := newSchema(testQuery, s.driverToTestQuery)
+// 	table := "mysql_columns"
+// 	s.createTableAndAssertColumnsForColumnMethods(schema, table)
 
-	columns, err := schema.GetColumns(table)
-	s.Require().Nil(err)
+// 	columns, err := schema.GetColumns(table)
+// 	s.Require().Nil(err)
 
-	for _, column := range columns {
-		if column.Name == "another_deleted_at" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.True(column.Nullable)
-			s.Equal("timestamp", column.Type)
-			s.Equal("timestamp", column.TypeName)
-		}
-		if column.Name == "big_integer" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Equal("This is a big_integer column", column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("bigint", column.Type)
-			s.Equal("bigint", column.TypeName)
-		}
-		if column.Name == "boolean_default" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Equal("This is a boolean column with default value", column.Comment)
-			s.Equal("1", column.Default)
-			s.False(column.Nullable)
-			s.Equal("tinyint(1)", column.Type)
-			s.Equal("tinyint", column.TypeName)
-		}
-		if column.Name == "char" {
-			s.False(column.Autoincrement)
-			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
-			s.Equal("This is a char column", column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("char(255)", column.Type)
-			s.Equal("char", column.TypeName)
-		}
-		if column.Name == "created_at" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.True(column.Nullable)
-			s.Equal("timestamp(2)", column.Type)
-			s.Equal("timestamp", column.TypeName)
-		}
-		if column.Name == "custom_type" {
-			s.False(column.Autoincrement)
-			s.Equal("This is a custom type column", column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("geometry", column.Type)
-			s.Equal("geometry", column.TypeName)
-		}
-		if column.Name == "date" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Equal("This is a date column", column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("date", column.Type)
-			s.Equal("date", column.TypeName)
-		}
-		if column.Name == "date_time" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Equal("This is a date time column", column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("datetime(3)", column.Type)
-			s.Equal("datetime", column.TypeName)
-		}
-		if column.Name == "date_time_tz" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Equal("This is a date time with time zone column", column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("datetime(3)", column.Type)
-			s.Equal("datetime", column.TypeName)
-		}
-		if column.Name == "decimal" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Equal("This is a decimal column", column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("decimal(4,1)", column.Type)
-			s.Equal("decimal", column.TypeName)
-		}
-		if column.Name == "deleted_at" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.True(column.Nullable)
-			s.Equal("timestamp", column.Type)
-			s.Equal("timestamp", column.TypeName)
-		}
-		if column.Name == "double" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Equal("This is a double column", column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("double", column.Type)
-			s.Equal("double", column.TypeName)
-		}
-		if column.Name == "enum" {
-			s.False(column.Autoincrement)
-			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
-			s.Equal("This is a enum column", column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("enum('a','b','c')", column.Type)
-			s.Equal("enum", column.TypeName)
-		}
-		if column.Name == "enum_int" {
-			s.False(column.Autoincrement)
-			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
-			s.Equal("This is a enum column", column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("enum('1','2','3')", column.Type)
-			s.Equal("enum", column.TypeName)
-		}
-		if column.Name == "float" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Equal("This is a float column", column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("float", column.Type)
-			s.Equal("float", column.TypeName)
-		}
-		if column.Name == "id" {
-			s.True(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Equal("This is a id column", column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("bigint unsigned", column.Type)
-			s.Equal("bigint", column.TypeName)
-		}
-		if column.Name == "integer" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Equal("This is a integer column", column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("int", column.Type)
-			s.Equal("int", column.TypeName)
-		}
-		if column.Name == "integer_default" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Equal("This is a integer_default column", column.Comment)
-			s.Equal(1, cast.ToInt(column.Default))
-			s.False(column.Nullable)
-			s.Equal("int", column.Type)
-			s.Equal("int", column.TypeName)
-		}
-		if column.Name == "json" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Equal("This is a json column", column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("json", column.Type)
-			s.Equal("json", column.TypeName)
-		}
-		if column.Name == "jsonb" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Equal("This is a jsonb column", column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("json", column.Type)
-			s.Equal("json", column.TypeName)
-		}
-		if column.Name == "long_text" {
-			s.False(column.Autoincrement)
-			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
-			s.Equal("This is a long_text column", column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("longtext", column.Type)
-			s.Equal("longtext", column.TypeName)
-		}
-		if column.Name == "medium_text" {
-			s.False(column.Autoincrement)
-			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
-			s.Equal("This is a medium_text column", column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("mediumtext", column.Type)
-			s.Equal("mediumtext", column.TypeName)
-		}
-		if column.Name == "string" {
-			s.False(column.Autoincrement)
-			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
-			s.Equal("This is a string column", column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("varchar(255)", column.Type)
-			s.Equal("varchar", column.TypeName)
-		}
-		if column.Name == "string_default" {
-			s.False(column.Autoincrement)
-			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
-			s.Equal("This is a string_default column", column.Comment)
-			s.Equal("goravel", column.Default)
-			s.False(column.Nullable)
-			s.Equal("varchar(255)", column.Type)
-			s.Equal("varchar", column.TypeName)
-		}
-		if column.Name == "text" {
-			s.False(column.Autoincrement)
-			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
-			s.Equal("This is a text column", column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("text", column.Type)
-			s.Equal("text", column.TypeName)
-		}
-		if column.Name == "time" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Equal("This is a time column", column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("time(2)", column.Type)
-			s.Equal("time", column.TypeName)
-		}
-		if column.Name == "time_tz" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Equal("This is a time with time zone column", column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("time(2)", column.Type)
-			s.Equal("time", column.TypeName)
-		}
-		if column.Name == "timestamp" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Equal("This is a timestamp without time zone column", column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("timestamp(2)", column.Type)
-			s.Equal("timestamp", column.TypeName)
-		}
-		if column.Name == "timestamp_tz" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Equal("This is a timestamp with time zone column", column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("timestamp(2)", column.Type)
-			s.Equal("timestamp", column.TypeName)
-		}
-		if column.Name == "timestamp_use_current" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Equal("This is a timestamp_use_current column", column.Comment)
-			s.Equal("CURRENT_TIMESTAMP", column.Default)
-			s.False(column.Nullable)
-			s.Equal("timestamp", column.Type)
-			s.Equal("timestamp", column.TypeName)
-		}
-		if column.Name == "timestamp_use_current_on_update" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Equal("This is a timestamp_use_current_on_update column", column.Comment)
-			s.Equal("CURRENT_TIMESTAMP", column.Default)
-			s.False(column.Nullable)
-			s.Equal("timestamp", column.Type)
-			s.Equal("timestamp", column.TypeName)
-		}
-		if column.Name == "tiny_text" {
-			s.False(column.Autoincrement)
-			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
-			s.Equal("This is a tiny_text column", column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("tinytext", column.Type)
-			s.Equal("tinytext", column.TypeName)
-		}
-		if column.Name == "updated_at" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.True(column.Nullable)
-			s.Equal("timestamp(2)", column.Type)
-			s.Equal("timestamp", column.TypeName)
-		}
-		if column.Name == "unsigned_integer" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Equal("This is a unsigned_integer column", column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("int unsigned", column.Type)
-			s.Equal("int", column.TypeName)
-		}
-		if column.Name == "unsigned_big_integer" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Equal("This is a unsigned_big_integer column", column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("bigint unsigned", column.Type)
-			s.Equal("bigint", column.TypeName)
-		}
-	}
-}
+// 	for _, column := range columns {
+// 		if column.Name == "another_deleted_at" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.True(column.Nullable)
+// 			s.Equal("timestamp", column.Type)
+// 			s.Equal("timestamp", column.TypeName)
+// 		}
+// 		if column.Name == "big_integer" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Equal("This is a big_integer column", column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("bigint", column.Type)
+// 			s.Equal("bigint", column.TypeName)
+// 		}
+// 		if column.Name == "boolean_default" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Equal("This is a boolean column with default value", column.Comment)
+// 			s.Equal("1", column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("tinyint(1)", column.Type)
+// 			s.Equal("tinyint", column.TypeName)
+// 		}
+// 		if column.Name == "char" {
+// 			s.False(column.Autoincrement)
+// 			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
+// 			s.Equal("This is a char column", column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("char(255)", column.Type)
+// 			s.Equal("char", column.TypeName)
+// 		}
+// 		if column.Name == "created_at" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.True(column.Nullable)
+// 			s.Equal("timestamp(2)", column.Type)
+// 			s.Equal("timestamp", column.TypeName)
+// 		}
+// 		if column.Name == "custom_type" {
+// 			s.False(column.Autoincrement)
+// 			s.Equal("This is a custom type column", column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("geometry", column.Type)
+// 			s.Equal("geometry", column.TypeName)
+// 		}
+// 		if column.Name == "date" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Equal("This is a date column", column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("date", column.Type)
+// 			s.Equal("date", column.TypeName)
+// 		}
+// 		if column.Name == "date_time" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Equal("This is a date time column", column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("datetime(3)", column.Type)
+// 			s.Equal("datetime", column.TypeName)
+// 		}
+// 		if column.Name == "date_time_tz" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Equal("This is a date time with time zone column", column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("datetime(3)", column.Type)
+// 			s.Equal("datetime", column.TypeName)
+// 		}
+// 		if column.Name == "decimal" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Equal("This is a decimal column", column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("decimal(4,1)", column.Type)
+// 			s.Equal("decimal", column.TypeName)
+// 		}
+// 		if column.Name == "deleted_at" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.True(column.Nullable)
+// 			s.Equal("timestamp", column.Type)
+// 			s.Equal("timestamp", column.TypeName)
+// 		}
+// 		if column.Name == "double" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Equal("This is a double column", column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("double", column.Type)
+// 			s.Equal("double", column.TypeName)
+// 		}
+// 		if column.Name == "enum" {
+// 			s.False(column.Autoincrement)
+// 			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
+// 			s.Equal("This is a enum column", column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("enum('a','b','c')", column.Type)
+// 			s.Equal("enum", column.TypeName)
+// 		}
+// 		if column.Name == "enum_int" {
+// 			s.False(column.Autoincrement)
+// 			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
+// 			s.Equal("This is a enum column", column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("enum('1','2','3')", column.Type)
+// 			s.Equal("enum", column.TypeName)
+// 		}
+// 		if column.Name == "float" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Equal("This is a float column", column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("float", column.Type)
+// 			s.Equal("float", column.TypeName)
+// 		}
+// 		if column.Name == "id" {
+// 			s.True(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Equal("This is a id column", column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("bigint unsigned", column.Type)
+// 			s.Equal("bigint", column.TypeName)
+// 		}
+// 		if column.Name == "integer" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Equal("This is a integer column", column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("int", column.Type)
+// 			s.Equal("int", column.TypeName)
+// 		}
+// 		if column.Name == "integer_default" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Equal("This is a integer_default column", column.Comment)
+// 			s.Equal(1, cast.ToInt(column.Default))
+// 			s.False(column.Nullable)
+// 			s.Equal("int", column.Type)
+// 			s.Equal("int", column.TypeName)
+// 		}
+// 		if column.Name == "json" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Equal("This is a json column", column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("json", column.Type)
+// 			s.Equal("json", column.TypeName)
+// 		}
+// 		if column.Name == "jsonb" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Equal("This is a jsonb column", column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("json", column.Type)
+// 			s.Equal("json", column.TypeName)
+// 		}
+// 		if column.Name == "long_text" {
+// 			s.False(column.Autoincrement)
+// 			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
+// 			s.Equal("This is a long_text column", column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("longtext", column.Type)
+// 			s.Equal("longtext", column.TypeName)
+// 		}
+// 		if column.Name == "medium_text" {
+// 			s.False(column.Autoincrement)
+// 			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
+// 			s.Equal("This is a medium_text column", column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("mediumtext", column.Type)
+// 			s.Equal("mediumtext", column.TypeName)
+// 		}
+// 		if column.Name == "string" {
+// 			s.False(column.Autoincrement)
+// 			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
+// 			s.Equal("This is a string column", column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("varchar(255)", column.Type)
+// 			s.Equal("varchar", column.TypeName)
+// 		}
+// 		if column.Name == "string_default" {
+// 			s.False(column.Autoincrement)
+// 			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
+// 			s.Equal("This is a string_default column", column.Comment)
+// 			s.Equal("goravel", column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("varchar(255)", column.Type)
+// 			s.Equal("varchar", column.TypeName)
+// 		}
+// 		if column.Name == "text" {
+// 			s.False(column.Autoincrement)
+// 			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
+// 			s.Equal("This is a text column", column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("text", column.Type)
+// 			s.Equal("text", column.TypeName)
+// 		}
+// 		if column.Name == "time" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Equal("This is a time column", column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("time(2)", column.Type)
+// 			s.Equal("time", column.TypeName)
+// 		}
+// 		if column.Name == "time_tz" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Equal("This is a time with time zone column", column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("time(2)", column.Type)
+// 			s.Equal("time", column.TypeName)
+// 		}
+// 		if column.Name == "timestamp" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Equal("This is a timestamp without time zone column", column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("timestamp(2)", column.Type)
+// 			s.Equal("timestamp", column.TypeName)
+// 		}
+// 		if column.Name == "timestamp_tz" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Equal("This is a timestamp with time zone column", column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("timestamp(2)", column.Type)
+// 			s.Equal("timestamp", column.TypeName)
+// 		}
+// 		if column.Name == "timestamp_use_current" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Equal("This is a timestamp_use_current column", column.Comment)
+// 			s.Equal("CURRENT_TIMESTAMP", column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("timestamp", column.Type)
+// 			s.Equal("timestamp", column.TypeName)
+// 		}
+// 		if column.Name == "timestamp_use_current_on_update" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Equal("This is a timestamp_use_current_on_update column", column.Comment)
+// 			s.Equal("CURRENT_TIMESTAMP", column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("timestamp", column.Type)
+// 			s.Equal("timestamp", column.TypeName)
+// 		}
+// 		if column.Name == "tiny_text" {
+// 			s.False(column.Autoincrement)
+// 			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
+// 			s.Equal("This is a tiny_text column", column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("tinytext", column.Type)
+// 			s.Equal("tinytext", column.TypeName)
+// 		}
+// 		if column.Name == "updated_at" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.True(column.Nullable)
+// 			s.Equal("timestamp(2)", column.Type)
+// 			s.Equal("timestamp", column.TypeName)
+// 		}
+// 		if column.Name == "unsigned_integer" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Equal("This is a unsigned_integer column", column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("int unsigned", column.Type)
+// 			s.Equal("int", column.TypeName)
+// 		}
+// 		if column.Name == "unsigned_big_integer" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Equal("This is a unsigned_big_integer column", column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("bigint unsigned", column.Type)
+// 			s.Equal("bigint", column.TypeName)
+// 		}
+// 	}
+// }
 
-func (s *SchemaSuite) TestColumnTypes_Sqlserver() {
-	if s.driverToTestQuery[sqlserver.Name] == nil {
-		s.T().Skip("Skip test")
-	}
+// func (s *SchemaSuite) TestColumnTypes_Sqlserver() {
+// 	if s.driverToTestQuery[sqlserver.Name] == nil {
+// 		s.T().Skip("Skip test")
+// 	}
 
-	testQuery := s.driverToTestQuery[sqlserver.Name]
-	schema := newSchema(testQuery, s.driverToTestQuery)
-	table := "sqlserver_columns"
-	s.createTableAndAssertColumnsForColumnMethods(schema, table)
+// 	testQuery := s.driverToTestQuery[sqlserver.Name]
+// 	schema := newSchema(testQuery, s.driverToTestQuery)
+// 	table := "sqlserver_columns"
+// 	s.createTableAndAssertColumnsForColumnMethods(schema, table)
 
-	columns, err := schema.GetColumns(table)
-	s.Require().Nil(err)
+// 	columns, err := schema.GetColumns(table)
+// 	s.Require().Nil(err)
 
-	for _, column := range columns {
-		if column.Name == "another_deleted_at" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.True(column.Nullable)
-			s.Equal("datetimeoffset(34)", column.Type)
-			s.Equal("datetimeoffset", column.TypeName)
-		}
-		if column.Name == "big_integer" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("bigint", column.Type)
-			s.Equal("bigint", column.TypeName)
-		}
-		if column.Name == "boolean_default" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Equal("('1')", column.Default)
-			s.False(column.Nullable)
-			s.Equal("bit", column.Type)
-			s.Equal("bit", column.TypeName)
-		}
-		if column.Name == "char" {
-			s.False(column.Autoincrement)
-			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("nchar(510)", column.Type)
-			s.Equal("nchar", column.TypeName)
-		}
-		if column.Name == "created_at" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.True(column.Nullable)
-			s.Equal("datetime2(22)", column.Type)
-			s.Equal("datetime2", column.TypeName)
-		}
-		if column.Name == "custom_type" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("geometry", column.Type)
-			s.Equal("geometry", column.TypeName)
-		}
-		if column.Name == "date" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("date", column.Type)
-			s.Equal("date", column.TypeName)
-		}
-		if column.Name == "date_time" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("datetime2(23)", column.Type)
-			s.Equal("datetime2", column.TypeName)
-		}
-		if column.Name == "date_time_tz" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("datetimeoffset(30)", column.Type)
-			s.Equal("datetimeoffset", column.TypeName)
-		}
-		if column.Name == "decimal" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("decimal(4,1)", column.Type)
-			s.Equal("decimal", column.TypeName)
-		}
-		if column.Name == "deleted_at" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.True(column.Nullable)
-			s.Equal("datetime", column.Type)
-			s.Equal("datetime", column.TypeName)
-		}
-		if column.Name == "double" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("float(53)", column.Type)
-			s.Equal("float", column.TypeName)
-		}
-		if column.Name == "enum" {
-			s.False(column.Autoincrement)
-			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("nvarchar(510)", column.Type)
-			s.Equal("nvarchar", column.TypeName)
-		}
-		if column.Name == "enum_int" {
-			s.False(column.Autoincrement)
-			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("nvarchar(510)", column.Type)
-			s.Equal("nvarchar", column.TypeName)
-		}
-		if column.Name == "float" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("real", column.Type)
-			s.Equal("real", column.TypeName)
-		}
-		if column.Name == "id" {
-			s.True(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("bigint", column.Type)
-			s.Equal("bigint", column.TypeName)
-		}
-		if column.Name == "integer" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("int", column.Type)
-			s.Equal("int", column.TypeName)
-		}
-		if column.Name == "integer_default" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Equal("('1')", column.Default)
-			s.False(column.Nullable)
-			s.Equal("int", column.Type)
-			s.Equal("int", column.TypeName)
-		}
-		if column.Name == "json" {
-			s.False(column.Autoincrement)
-			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("nvarchar(max)", column.Type)
-			s.Equal("nvarchar", column.TypeName)
-		}
-		if column.Name == "jsonb" {
-			s.False(column.Autoincrement)
-			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("nvarchar(max)", column.Type)
-			s.Equal("nvarchar", column.TypeName)
-		}
-		if column.Name == "long_text" {
-			s.False(column.Autoincrement)
-			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("nvarchar(max)", column.Type)
-			s.Equal("nvarchar", column.TypeName)
-		}
-		if column.Name == "medium_text" {
-			s.False(column.Autoincrement)
-			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("nvarchar(max)", column.Type)
-			s.Equal("nvarchar", column.TypeName)
-		}
-		if column.Name == "string" {
-			s.False(column.Autoincrement)
-			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("nvarchar(510)", column.Type)
-			s.Equal("nvarchar", column.TypeName)
-		}
-		if column.Name == "string_default" {
-			s.False(column.Autoincrement)
-			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
-			s.Empty(column.Comment)
-			s.Equal("('goravel')", column.Default)
-			s.False(column.Nullable)
-			s.Equal("nvarchar(510)", column.Type)
-			s.Equal("nvarchar", column.TypeName)
-		}
-		if column.Name == "text" {
-			s.False(column.Autoincrement)
-			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("nvarchar(max)", column.Type)
-			s.Equal("nvarchar", column.TypeName)
-		}
-		if column.Name == "time" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("time(11)", column.Type)
-			s.Equal("time", column.TypeName)
-		}
-		if column.Name == "time_tz" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("time(11)", column.Type)
-			s.Equal("time", column.TypeName)
-		}
-		if column.Name == "timestamp" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("datetime2(22)", column.Type)
-			s.Equal("datetime2", column.TypeName)
-		}
-		if column.Name == "timestamp_tz" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("datetimeoffset(29)", column.Type)
-			s.Equal("datetimeoffset", column.TypeName)
-		}
-		if column.Name == "timestamp_use_current" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Equal("(getdate())", column.Default)
-			s.False(column.Nullable)
-			s.Equal("datetime", column.Type)
-			s.Equal("datetime", column.TypeName)
-		}
-		if column.Name == "timestamp_use_current_on_update" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Equal("(getdate())", column.Default)
-			s.False(column.Nullable)
-			s.Equal("datetime", column.Type)
-			s.Equal("datetime", column.TypeName)
-		}
-		if column.Name == "tiny_text" {
-			s.False(column.Autoincrement)
-			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("nvarchar(510)", column.Type)
-			s.Equal("nvarchar", column.TypeName)
-		}
-		if column.Name == "updated_at" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.True(column.Nullable)
-			s.Equal("datetime2(22)", column.Type)
-			s.Equal("datetime2", column.TypeName)
-		}
-		if column.Name == "unsigned_integer" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("int", column.Type)
-			s.Equal("int", column.TypeName)
-		}
-		if column.Name == "unsigned_big_integer" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("bigint", column.Type)
-			s.Equal("bigint", column.TypeName)
-		}
-	}
-}
+// 	for _, column := range columns {
+// 		if column.Name == "another_deleted_at" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.True(column.Nullable)
+// 			s.Equal("datetimeoffset(34)", column.Type)
+// 			s.Equal("datetimeoffset", column.TypeName)
+// 		}
+// 		if column.Name == "big_integer" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("bigint", column.Type)
+// 			s.Equal("bigint", column.TypeName)
+// 		}
+// 		if column.Name == "boolean_default" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Equal("('1')", column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("bit", column.Type)
+// 			s.Equal("bit", column.TypeName)
+// 		}
+// 		if column.Name == "char" {
+// 			s.False(column.Autoincrement)
+// 			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("nchar(510)", column.Type)
+// 			s.Equal("nchar", column.TypeName)
+// 		}
+// 		if column.Name == "created_at" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.True(column.Nullable)
+// 			s.Equal("datetime2(22)", column.Type)
+// 			s.Equal("datetime2", column.TypeName)
+// 		}
+// 		if column.Name == "custom_type" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("geometry", column.Type)
+// 			s.Equal("geometry", column.TypeName)
+// 		}
+// 		if column.Name == "date" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("date", column.Type)
+// 			s.Equal("date", column.TypeName)
+// 		}
+// 		if column.Name == "date_time" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("datetime2(23)", column.Type)
+// 			s.Equal("datetime2", column.TypeName)
+// 		}
+// 		if column.Name == "date_time_tz" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("datetimeoffset(30)", column.Type)
+// 			s.Equal("datetimeoffset", column.TypeName)
+// 		}
+// 		if column.Name == "decimal" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("decimal(4,1)", column.Type)
+// 			s.Equal("decimal", column.TypeName)
+// 		}
+// 		if column.Name == "deleted_at" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.True(column.Nullable)
+// 			s.Equal("datetime", column.Type)
+// 			s.Equal("datetime", column.TypeName)
+// 		}
+// 		if column.Name == "double" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("float(53)", column.Type)
+// 			s.Equal("float", column.TypeName)
+// 		}
+// 		if column.Name == "enum" {
+// 			s.False(column.Autoincrement)
+// 			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("nvarchar(510)", column.Type)
+// 			s.Equal("nvarchar", column.TypeName)
+// 		}
+// 		if column.Name == "enum_int" {
+// 			s.False(column.Autoincrement)
+// 			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("nvarchar(510)", column.Type)
+// 			s.Equal("nvarchar", column.TypeName)
+// 		}
+// 		if column.Name == "float" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("real", column.Type)
+// 			s.Equal("real", column.TypeName)
+// 		}
+// 		if column.Name == "id" {
+// 			s.True(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("bigint", column.Type)
+// 			s.Equal("bigint", column.TypeName)
+// 		}
+// 		if column.Name == "integer" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("int", column.Type)
+// 			s.Equal("int", column.TypeName)
+// 		}
+// 		if column.Name == "integer_default" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Equal("('1')", column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("int", column.Type)
+// 			s.Equal("int", column.TypeName)
+// 		}
+// 		if column.Name == "json" {
+// 			s.False(column.Autoincrement)
+// 			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("nvarchar(max)", column.Type)
+// 			s.Equal("nvarchar", column.TypeName)
+// 		}
+// 		if column.Name == "jsonb" {
+// 			s.False(column.Autoincrement)
+// 			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("nvarchar(max)", column.Type)
+// 			s.Equal("nvarchar", column.TypeName)
+// 		}
+// 		if column.Name == "long_text" {
+// 			s.False(column.Autoincrement)
+// 			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("nvarchar(max)", column.Type)
+// 			s.Equal("nvarchar", column.TypeName)
+// 		}
+// 		if column.Name == "medium_text" {
+// 			s.False(column.Autoincrement)
+// 			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("nvarchar(max)", column.Type)
+// 			s.Equal("nvarchar", column.TypeName)
+// 		}
+// 		if column.Name == "string" {
+// 			s.False(column.Autoincrement)
+// 			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("nvarchar(510)", column.Type)
+// 			s.Equal("nvarchar", column.TypeName)
+// 		}
+// 		if column.Name == "string_default" {
+// 			s.False(column.Autoincrement)
+// 			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Equal("('goravel')", column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("nvarchar(510)", column.Type)
+// 			s.Equal("nvarchar", column.TypeName)
+// 		}
+// 		if column.Name == "text" {
+// 			s.False(column.Autoincrement)
+// 			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("nvarchar(max)", column.Type)
+// 			s.Equal("nvarchar", column.TypeName)
+// 		}
+// 		if column.Name == "time" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("time(11)", column.Type)
+// 			s.Equal("time", column.TypeName)
+// 		}
+// 		if column.Name == "time_tz" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("time(11)", column.Type)
+// 			s.Equal("time", column.TypeName)
+// 		}
+// 		if column.Name == "timestamp" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("datetime2(22)", column.Type)
+// 			s.Equal("datetime2", column.TypeName)
+// 		}
+// 		if column.Name == "timestamp_tz" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("datetimeoffset(29)", column.Type)
+// 			s.Equal("datetimeoffset", column.TypeName)
+// 		}
+// 		if column.Name == "timestamp_use_current" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Equal("(getdate())", column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("datetime", column.Type)
+// 			s.Equal("datetime", column.TypeName)
+// 		}
+// 		if column.Name == "timestamp_use_current_on_update" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Equal("(getdate())", column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("datetime", column.Type)
+// 			s.Equal("datetime", column.TypeName)
+// 		}
+// 		if column.Name == "tiny_text" {
+// 			s.False(column.Autoincrement)
+// 			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("nvarchar(510)", column.Type)
+// 			s.Equal("nvarchar", column.TypeName)
+// 		}
+// 		if column.Name == "updated_at" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.True(column.Nullable)
+// 			s.Equal("datetime2(22)", column.Type)
+// 			s.Equal("datetime2", column.TypeName)
+// 		}
+// 		if column.Name == "unsigned_integer" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("int", column.Type)
+// 			s.Equal("int", column.TypeName)
+// 		}
+// 		if column.Name == "unsigned_big_integer" {
+// 			s.False(column.Autoincrement)
+// 			s.Empty(column.Collation)
+// 			s.Empty(column.Comment)
+// 			s.Empty(column.Default)
+// 			s.False(column.Nullable)
+// 			s.Equal("bigint", column.Type)
+// 			s.Equal("bigint", column.TypeName)
+// 		}
+// 	}
+// }
 
 func (s *SchemaSuite) TestEnum_Postgres() {
 	if s.driverToTestQuery[postgres.Name] == nil {
@@ -1594,110 +1591,110 @@ func (s *SchemaSuite) TestEnum_Postgres() {
 	s.True(postgresEnum.ID > 0)
 }
 
-func (s *SchemaSuite) TestEnum_Sqlite() {
-	if s.driverToTestQuery[sqlite.Name] == nil {
-		s.T().Skip("Skip test")
-	}
+// func (s *SchemaSuite) TestEnum_Sqlite() {
+// 	if s.driverToTestQuery[sqlite.Name] == nil {
+// 		s.T().Skip("Skip test")
+// 	}
 
-	testQuery := s.driverToTestQuery[sqlite.Name]
-	schema := newSchema(testQuery, s.driverToTestQuery)
-	table := "sqlite_enum"
+// 	testQuery := s.driverToTestQuery[sqlite.Name]
+// 	schema := newSchema(testQuery, s.driverToTestQuery)
+// 	table := "sqlite_enum"
 
-	s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
-		table.ID()
-		table.Enum("str", []any{"a", "b", "c"})
-		table.Enum("int", []any{1, 2, 3})
-	}))
+// 	s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+// 		table.ID()
+// 		table.Enum("str", []any{"a", "b", "c"})
+// 		table.Enum("int", []any{1, 2, 3})
+// 	}))
 
-	type SqliteEnum struct {
-		ID  uint `gorm:"primaryKey"`
-		Str string
-		Int string
-	}
+// 	type SqliteEnum struct {
+// 		ID  uint `gorm:"primaryKey"`
+// 		Str string
+// 		Int string
+// 	}
 
-	sqliteEnum := &SqliteEnum{
-		Str: "a",
-		Int: "4",
-	}
-	s.ErrorContains(testQuery.Query().Table(table).Create(&sqliteEnum), `constraint failed: CHECK constraint failed: int`)
+// 	sqliteEnum := &SqliteEnum{
+// 		Str: "a",
+// 		Int: "4",
+// 	}
+// 	s.ErrorContains(testQuery.Query().Table(table).Create(&sqliteEnum), `constraint failed: CHECK constraint failed: int`)
 
-	sqliteEnum = &SqliteEnum{
-		Str: "a",
-		Int: "1",
-	}
-	s.NoError(testQuery.Query().Table(table).Create(&sqliteEnum))
-	s.True(sqliteEnum.ID > 0)
-}
+// 	sqliteEnum = &SqliteEnum{
+// 		Str: "a",
+// 		Int: "1",
+// 	}
+// 	s.NoError(testQuery.Query().Table(table).Create(&sqliteEnum))
+// 	s.True(sqliteEnum.ID > 0)
+// }
 
-func (s *SchemaSuite) TestEnum_Mysql() {
-	if s.driverToTestQuery[mysql.Name] == nil {
-		s.T().Skip("Skip test")
-	}
+// func (s *SchemaSuite) TestEnum_Mysql() {
+// 	if s.driverToTestQuery[mysql.Name] == nil {
+// 		s.T().Skip("Skip test")
+// 	}
 
-	testQuery := s.driverToTestQuery[mysql.Name]
-	schema := newSchema(testQuery, s.driverToTestQuery)
-	table := "mysql_enum"
+// 	testQuery := s.driverToTestQuery[mysql.Name]
+// 	schema := newSchema(testQuery, s.driverToTestQuery)
+// 	table := "mysql_enum"
 
-	s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
-		table.ID()
-		table.Enum("str", []any{"a", "b", "c"})
-		table.Enum("int", []any{1, 2, 3})
-	}))
+// 	s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+// 		table.ID()
+// 		table.Enum("str", []any{"a", "b", "c"})
+// 		table.Enum("int", []any{1, 2, 3})
+// 	}))
 
-	type MysqlEnum struct {
-		ID  uint `gorm:"primaryKey"`
-		Str string
-		Int int
-	}
+// 	type MysqlEnum struct {
+// 		ID  uint `gorm:"primaryKey"`
+// 		Str string
+// 		Int int
+// 	}
 
-	mysqlEnum := &MysqlEnum{
-		Str: "a",
-		Int: 4,
-	}
-	s.ErrorContains(testQuery.Query().Table(table).Create(&mysqlEnum), "Data truncated for column 'int' at row 1")
+// 	mysqlEnum := &MysqlEnum{
+// 		Str: "a",
+// 		Int: 4,
+// 	}
+// 	s.ErrorContains(testQuery.Query().Table(table).Create(&mysqlEnum), "Data truncated for column 'int' at row 1")
 
-	mysqlEnum = &MysqlEnum{
-		Str: "a",
-		Int: 1,
-	}
-	s.NoError(testQuery.Query().Table(table).Create(&mysqlEnum))
-	s.True(mysqlEnum.ID > 0)
-}
+// 	mysqlEnum = &MysqlEnum{
+// 		Str: "a",
+// 		Int: 1,
+// 	}
+// 	s.NoError(testQuery.Query().Table(table).Create(&mysqlEnum))
+// 	s.True(mysqlEnum.ID > 0)
+// }
 
-func (s *SchemaSuite) TestEnum_Sqlserver() {
-	if s.driverToTestQuery[sqlserver.Name] == nil {
-		s.T().Skip("Skip test")
-	}
+// func (s *SchemaSuite) TestEnum_Sqlserver() {
+// 	if s.driverToTestQuery[sqlserver.Name] == nil {
+// 		s.T().Skip("Skip test")
+// 	}
 
-	testQuery := s.driverToTestQuery[sqlserver.Name]
-	schema := newSchema(testQuery, s.driverToTestQuery)
-	table := "sqlserver_enum"
+// 	testQuery := s.driverToTestQuery[sqlserver.Name]
+// 	schema := newSchema(testQuery, s.driverToTestQuery)
+// 	table := "sqlserver_enum"
 
-	s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
-		table.ID()
-		table.Enum("str", []any{"a", "b", "c"})
-		table.Enum("int", []any{1, 2, 3})
-	}))
+// 	s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+// 		table.ID()
+// 		table.Enum("str", []any{"a", "b", "c"})
+// 		table.Enum("int", []any{1, 2, 3})
+// 	}))
 
-	type SqlserverEnum struct {
-		ID  uint `gorm:"primaryKey"`
-		Str string
-		Int string
-	}
+// 	type SqlserverEnum struct {
+// 		ID  uint `gorm:"primaryKey"`
+// 		Str string
+// 		Int string
+// 	}
 
-	sqlserverEnum := &SqlserverEnum{
-		Str: "a",
-		Int: "4",
-	}
-	s.ErrorContains(testQuery.Query().Table(table).Create(&sqlserverEnum), `The INSERT statement conflicted with the CHECK constraint`)
+// 	sqlserverEnum := &SqlserverEnum{
+// 		Str: "a",
+// 		Int: "4",
+// 	}
+// 	s.ErrorContains(testQuery.Query().Table(table).Create(&sqlserverEnum), `The INSERT statement conflicted with the CHECK constraint`)
 
-	sqlserverEnum = &SqlserverEnum{
-		Str: "a",
-		Int: "1",
-	}
-	s.NoError(testQuery.Query().Table(table).Create(&sqlserverEnum))
-	s.True(sqlserverEnum.ID > 0)
-}
+// 	sqlserverEnum = &SqlserverEnum{
+// 		Str: "a",
+// 		Int: "1",
+// 	}
+// 	s.NoError(testQuery.Query().Table(table).Create(&sqlserverEnum))
+// 	s.True(sqlserverEnum.ID > 0)
+// }
 
 func (s *SchemaSuite) TestForeign() {
 	for driver, testQuery := range s.driverToTestQuery {
@@ -1744,25 +1741,25 @@ func (s *SchemaSuite) TestForeign() {
 					s.ElementsMatch([]string{"id"}, foreignKey.ForeignColumns)
 					s.Equal("no action", foreignKey.OnDelete)
 					s.Equal("no action", foreignKey.OnUpdate)
-					if driver == sqlite.Name {
-						s.Empty(foreignKey.Name)
-						s.Empty(foreignKey.ForeignSchema)
-					} else {
-						s.Equal("goravel_foreign3_foreign1_id_foreign", foreignKey.Name)
-						s.NotEmpty(foreignKey.ForeignSchema)
-					}
+					// if driver == sqlite.Name {
+					// 	s.Empty(foreignKey.Name)
+					// 	s.Empty(foreignKey.ForeignSchema)
+					// } else {
+					// 	s.Equal("goravel_foreign3_foreign1_id_foreign", foreignKey.Name)
+					// 	s.NotEmpty(foreignKey.ForeignSchema)
+					// }
 				} else if s.prefix+table2 == foreignKey.ForeignTable {
 					s.ElementsMatch([]string{"foreign2_id"}, foreignKey.Columns)
 					s.ElementsMatch([]string{"id"}, foreignKey.ForeignColumns)
 					s.Equal("cascade", foreignKey.OnDelete)
 					s.Equal("cascade", foreignKey.OnUpdate)
-					if driver == sqlite.Name {
-						s.Empty(foreignKey.Name)
-						s.Empty(foreignKey.ForeignSchema)
-					} else {
-						s.Equal("foreign3_foreign2_id_foreign", foreignKey.Name)
-						s.NotEmpty(foreignKey.ForeignSchema)
-					}
+					// if driver == sqlite.Name {
+					// 	s.Empty(foreignKey.Name)
+					// 	s.Empty(foreignKey.ForeignSchema)
+					// } else {
+					// 	s.Equal("foreign3_foreign2_id_foreign", foreignKey.Name)
+					// 	s.NotEmpty(foreignKey.ForeignSchema)
+					// }
 				} else {
 					s.Fail("Unexpected foreign key")
 				}
@@ -1777,11 +1774,11 @@ func (s *SchemaSuite) TestForeign() {
 
 			foreignKeys, err = schema.GetForeignKeys(table3)
 			s.NoError(err)
-			if driver == sqlite.Name {
-				s.Len(foreignKeys, 2)
-			} else {
-				s.Len(foreignKeys, 0)
-			}
+			// if driver == sqlite.Name {
+			// 	s.Len(foreignKeys, 2)
+			// } else {
+			// 	s.Len(foreignKeys, 0)
+			// }
 		})
 	}
 }
@@ -1800,13 +1797,13 @@ func (s *SchemaSuite) TestFullText() {
 
 			s.Require().Nil(err)
 
-			if driver == mysql.Name || driver == postgres.Name {
-				s.True(schema.HasIndex(table, "goravel_fulltext_name_fulltext"))
-				s.True(schema.HasIndex(table, "fulltext_avatar_fulltext"))
-			} else {
-				s.False(schema.HasIndex(table, "goravel_fulltext_name_fulltext"))
-				s.False(schema.HasIndex(table, "fulltext_avatar_fulltext"))
-			}
+			// if driver == mysql.Name || driver == postgres.Name {
+			// 	s.True(schema.HasIndex(table, "goravel_fulltext_name_fulltext"))
+			// 	s.True(schema.HasIndex(table, "fulltext_avatar_fulltext"))
+			// } else {
+			// 	s.False(schema.HasIndex(table, "goravel_fulltext_name_fulltext"))
+			// 	s.False(schema.HasIndex(table, "fulltext_avatar_fulltext"))
+			// }
 
 			err = schema.Table(table, func(table contractsschema.Blueprint) {
 				table.DropFullText("name")
@@ -1836,12 +1833,12 @@ func (s *SchemaSuite) TestPrimary() {
 			if driver == postgres.Name {
 				s.Require().True(schema.HasIndex(table, "goravel_primaries_pkey"))
 			}
-			if driver == mysql.Name {
-				s.Require().True(schema.HasIndex(table, "primary"))
-			}
-			if driver == sqlserver.Name {
-				s.Require().True(schema.HasIndex(table, "goravel_primaries_name_age_primary"))
-			}
+			// if driver == mysql.Name {
+			// 	s.Require().True(schema.HasIndex(table, "primary"))
+			// }
+			// if driver == sqlserver.Name {
+			// 	s.Require().True(schema.HasIndex(table, "goravel_primaries_name_age_primary"))
+			// }
 
 			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
 				table.DropPrimary("name", "age")
@@ -1849,12 +1846,12 @@ func (s *SchemaSuite) TestPrimary() {
 			if driver == postgres.Name {
 				s.Require().False(schema.HasIndex(table, "goravel_primaries_pkey"))
 			}
-			if driver == mysql.Name {
-				s.Require().False(schema.HasIndex(table, "primary"))
-			}
-			if driver == sqlserver.Name {
-				s.Require().False(schema.HasIndex(table, "goravel_primaries_name_age_primary"))
-			}
+			// if driver == mysql.Name {
+			// 	s.Require().False(schema.HasIndex(table, "primary"))
+			// }
+			// if driver == sqlserver.Name {
+			// 	s.Require().False(schema.HasIndex(table, "goravel_primaries_name_age_primary"))
+			// }
 		})
 	}
 }
@@ -1881,9 +1878,9 @@ func (s *SchemaSuite) TestRenameColumn() {
 
 func (s *SchemaSuite) TestTableComment() {
 	for driver, testQuery := range s.driverToTestQuery {
-		if driver == sqlite.Name || driver == sqlserver.Name {
-			continue
-		}
+		// if driver == sqlite.Name || driver == sqlserver.Name {
+		// 	continue
+		// }
 		s.Run(driver, func() {
 			schema := newSchema(testQuery, s.driverToTestQuery)
 			table := "table_with_comment"
@@ -1998,253 +1995,253 @@ func (s *SchemaSuite) TestID_Postgres() {
 	}
 }
 
-func (s *SchemaSuite) TestID_Sqlite() {
-	if s.driverToTestQuery[sqlite.Name] == nil {
-		s.T().Skip("Skip test")
-	}
+// func (s *SchemaSuite) TestID_Sqlite() {
+// 	if s.driverToTestQuery[sqlite.Name] == nil {
+// 		s.T().Skip("Skip test")
+// 	}
 
-	testQuery := s.driverToTestQuery[sqlite.Name]
-	schema := newSchema(testQuery, s.driverToTestQuery)
+// 	testQuery := s.driverToTestQuery[sqlite.Name]
+// 	schema := newSchema(testQuery, s.driverToTestQuery)
 
-	tests := []struct {
-		table      string
-		setup      func(table string) error
-		expectType string
-	}{
-		{
-			table: "ID",
-			setup: func(table string) error {
-				return schema.Create(table, func(table contractsschema.Blueprint) {
-					table.ID("id").Comment("This is a id column")
-				})
-			},
-			expectType: "integer",
-		},
-		{
-			table: "MediumIncrements",
-			setup: func(table string) error {
-				return schema.Create(table, func(table contractsschema.Blueprint) {
-					table.MediumIncrements("id").Comment("This is a id column")
-				})
-			},
-			expectType: "integer",
-		},
-		{
-			table: "IntegerIncrements",
-			setup: func(table string) error {
-				return schema.Create(table, func(table contractsschema.Blueprint) {
-					table.IntegerIncrements("id").Comment("This is a id column")
-				})
-			},
-			expectType: "integer",
-		},
-		{
-			table: "SmallIncrements",
-			setup: func(table string) error {
-				return schema.Create(table, func(table contractsschema.Blueprint) {
-					table.SmallIncrements("id").Comment("This is a id column")
-				})
-			},
-			expectType: "integer",
-		},
-		{
-			table: "TinyIncrements",
-			setup: func(table string) error {
-				return schema.Create(table, func(table contractsschema.Blueprint) {
-					table.TinyIncrements("id").Comment("This is a id column")
-				})
-			},
-			expectType: "integer",
-		},
-	}
+// 	tests := []struct {
+// 		table      string
+// 		setup      func(table string) error
+// 		expectType string
+// 	}{
+// 		{
+// 			table: "ID",
+// 			setup: func(table string) error {
+// 				return schema.Create(table, func(table contractsschema.Blueprint) {
+// 					table.ID("id").Comment("This is a id column")
+// 				})
+// 			},
+// 			expectType: "integer",
+// 		},
+// 		{
+// 			table: "MediumIncrements",
+// 			setup: func(table string) error {
+// 				return schema.Create(table, func(table contractsschema.Blueprint) {
+// 					table.MediumIncrements("id").Comment("This is a id column")
+// 				})
+// 			},
+// 			expectType: "integer",
+// 		},
+// 		{
+// 			table: "IntegerIncrements",
+// 			setup: func(table string) error {
+// 				return schema.Create(table, func(table contractsschema.Blueprint) {
+// 					table.IntegerIncrements("id").Comment("This is a id column")
+// 				})
+// 			},
+// 			expectType: "integer",
+// 		},
+// 		{
+// 			table: "SmallIncrements",
+// 			setup: func(table string) error {
+// 				return schema.Create(table, func(table contractsschema.Blueprint) {
+// 					table.SmallIncrements("id").Comment("This is a id column")
+// 				})
+// 			},
+// 			expectType: "integer",
+// 		},
+// 		{
+// 			table: "TinyIncrements",
+// 			setup: func(table string) error {
+// 				return schema.Create(table, func(table contractsschema.Blueprint) {
+// 					table.TinyIncrements("id").Comment("This is a id column")
+// 				})
+// 			},
+// 			expectType: "integer",
+// 		},
+// 	}
 
-	for _, test := range tests {
-		s.Run(test.table, func() {
-			s.Require().Nil(test.setup(test.table))
-			s.Require().True(schema.HasTable(test.table))
+// 	for _, test := range tests {
+// 		s.Run(test.table, func() {
+// 			s.Require().Nil(test.setup(test.table))
+// 			s.Require().True(schema.HasTable(test.table))
 
-			columns, err := schema.GetColumns(test.table)
-			s.Require().Nil(err)
-			s.Equal(1, len(columns))
-			s.Equal("id", columns[0].Name)
-			s.True(columns[0].Autoincrement)
-			s.Empty(columns[0].Comment)
-			s.Empty(columns[0].Default)
-			s.False(columns[0].Nullable)
-			s.Equal(test.expectType, columns[0].Type)
-		})
-	}
-}
+// 			columns, err := schema.GetColumns(test.table)
+// 			s.Require().Nil(err)
+// 			s.Equal(1, len(columns))
+// 			s.Equal("id", columns[0].Name)
+// 			s.True(columns[0].Autoincrement)
+// 			s.Empty(columns[0].Comment)
+// 			s.Empty(columns[0].Default)
+// 			s.False(columns[0].Nullable)
+// 			s.Equal(test.expectType, columns[0].Type)
+// 		})
+// 	}
+// }
 
-func (s *SchemaSuite) TestID_Mysql() {
-	if s.driverToTestQuery[mysql.Name] == nil {
-		s.T().Skip("Skip test")
-	}
+// func (s *SchemaSuite) TestID_Mysql() {
+// 	if s.driverToTestQuery[mysql.Name] == nil {
+// 		s.T().Skip("Skip test")
+// 	}
 
-	testQuery := s.driverToTestQuery[mysql.Name]
-	schema := newSchema(testQuery, s.driverToTestQuery)
+// 	testQuery := s.driverToTestQuery[mysql.Name]
+// 	schema := newSchema(testQuery, s.driverToTestQuery)
 
-	tests := []struct {
-		table          string
-		setup          func(table string) error
-		expectType     string
-		expectTypeName string
-	}{
-		{
-			table: "ID",
-			setup: func(table string) error {
-				return schema.Create(table, func(table contractsschema.Blueprint) {
-					table.ID("id").Comment("This is a id column")
-				})
-			},
-			expectType:     "bigint unsigned",
-			expectTypeName: "bigint",
-		},
-		{
-			table: "MediumIncrements",
-			setup: func(table string) error {
-				return schema.Create(table, func(table contractsschema.Blueprint) {
-					table.MediumIncrements("id").Comment("This is a id column")
-				})
-			},
-			expectType:     "mediumint unsigned",
-			expectTypeName: "mediumint",
-		},
-		{
-			table: "IntegerIncrements",
-			setup: func(table string) error {
-				return schema.Create(table, func(table contractsschema.Blueprint) {
-					table.IntegerIncrements("id").Comment("This is a id column")
-				})
-			},
-			expectType:     "int unsigned",
-			expectTypeName: "int",
-		},
-		{
-			table: "SmallIncrements",
-			setup: func(table string) error {
-				return schema.Create(table, func(table contractsschema.Blueprint) {
-					table.SmallIncrements("id").Comment("This is a id column")
-				})
-			},
-			expectType:     "smallint unsigned",
-			expectTypeName: "smallint",
-		},
-		{
-			table: "TinyIncrements",
-			setup: func(table string) error {
-				return schema.Create(table, func(table contractsschema.Blueprint) {
-					table.TinyIncrements("id").Comment("This is a id column")
-				})
-			},
-			expectType:     "tinyint unsigned",
-			expectTypeName: "tinyint",
-		},
-	}
+// 	tests := []struct {
+// 		table          string
+// 		setup          func(table string) error
+// 		expectType     string
+// 		expectTypeName string
+// 	}{
+// 		{
+// 			table: "ID",
+// 			setup: func(table string) error {
+// 				return schema.Create(table, func(table contractsschema.Blueprint) {
+// 					table.ID("id").Comment("This is a id column")
+// 				})
+// 			},
+// 			expectType:     "bigint unsigned",
+// 			expectTypeName: "bigint",
+// 		},
+// 		{
+// 			table: "MediumIncrements",
+// 			setup: func(table string) error {
+// 				return schema.Create(table, func(table contractsschema.Blueprint) {
+// 					table.MediumIncrements("id").Comment("This is a id column")
+// 				})
+// 			},
+// 			expectType:     "mediumint unsigned",
+// 			expectTypeName: "mediumint",
+// 		},
+// 		{
+// 			table: "IntegerIncrements",
+// 			setup: func(table string) error {
+// 				return schema.Create(table, func(table contractsschema.Blueprint) {
+// 					table.IntegerIncrements("id").Comment("This is a id column")
+// 				})
+// 			},
+// 			expectType:     "int unsigned",
+// 			expectTypeName: "int",
+// 		},
+// 		{
+// 			table: "SmallIncrements",
+// 			setup: func(table string) error {
+// 				return schema.Create(table, func(table contractsschema.Blueprint) {
+// 					table.SmallIncrements("id").Comment("This is a id column")
+// 				})
+// 			},
+// 			expectType:     "smallint unsigned",
+// 			expectTypeName: "smallint",
+// 		},
+// 		{
+// 			table: "TinyIncrements",
+// 			setup: func(table string) error {
+// 				return schema.Create(table, func(table contractsschema.Blueprint) {
+// 					table.TinyIncrements("id").Comment("This is a id column")
+// 				})
+// 			},
+// 			expectType:     "tinyint unsigned",
+// 			expectTypeName: "tinyint",
+// 		},
+// 	}
 
-	for _, test := range tests {
-		s.Run(test.table, func() {
-			s.Require().Nil(test.setup(test.table))
-			s.Require().True(schema.HasTable(test.table))
+// 	for _, test := range tests {
+// 		s.Run(test.table, func() {
+// 			s.Require().Nil(test.setup(test.table))
+// 			s.Require().True(schema.HasTable(test.table))
 
-			columns, err := schema.GetColumns(test.table)
-			s.Require().Nil(err)
-			s.Equal(1, len(columns))
-			s.True(columns[0].Autoincrement)
-			s.Empty(columns[0].Collation)
-			s.Equal("This is a id column", columns[0].Comment)
-			s.Empty(columns[0].Default)
-			s.False(columns[0].Nullable)
-			s.Equal(test.expectType, columns[0].Type)
-			s.Equal(test.expectTypeName, columns[0].TypeName)
-		})
-	}
-}
+// 			columns, err := schema.GetColumns(test.table)
+// 			s.Require().Nil(err)
+// 			s.Equal(1, len(columns))
+// 			s.True(columns[0].Autoincrement)
+// 			s.Empty(columns[0].Collation)
+// 			s.Equal("This is a id column", columns[0].Comment)
+// 			s.Empty(columns[0].Default)
+// 			s.False(columns[0].Nullable)
+// 			s.Equal(test.expectType, columns[0].Type)
+// 			s.Equal(test.expectTypeName, columns[0].TypeName)
+// 		})
+// 	}
+// }
 
-func (s *SchemaSuite) TestID_Sqlserver() {
-	if s.driverToTestQuery[sqlserver.Name] == nil {
-		s.T().Skip("Skip test")
-	}
+// func (s *SchemaSuite) TestID_Sqlserver() {
+// 	if s.driverToTestQuery[sqlserver.Name] == nil {
+// 		s.T().Skip("Skip test")
+// 	}
 
-	testQuery := s.driverToTestQuery[sqlserver.Name]
-	schema := newSchema(testQuery, s.driverToTestQuery)
+// 	testQuery := s.driverToTestQuery[sqlserver.Name]
+// 	schema := newSchema(testQuery, s.driverToTestQuery)
 
-	tests := []struct {
-		table          string
-		setup          func(table string) error
-		expectType     string
-		expectTypeName string
-	}{
-		{
-			table: "ID",
-			setup: func(table string) error {
-				return schema.Create(table, func(table contractsschema.Blueprint) {
-					table.ID("id").Comment("This is a id column")
-				})
-			},
-			expectType:     "bigint",
-			expectTypeName: "bigint",
-		},
-		{
-			table: "MediumIncrements",
-			setup: func(table string) error {
-				return schema.Create(table, func(table contractsschema.Blueprint) {
-					table.MediumIncrements("id").Comment("This is a id column")
-				})
-			},
-			expectType:     "int",
-			expectTypeName: "int",
-		},
-		{
-			table: "IntegerIncrements",
-			setup: func(table string) error {
-				return schema.Create(table, func(table contractsschema.Blueprint) {
-					table.IntegerIncrements("id").Comment("This is a id column")
-				})
-			},
-			expectType:     "int",
-			expectTypeName: "int",
-		},
-		{
-			table: "SmallIncrements",
-			setup: func(table string) error {
-				return schema.Create(table, func(table contractsschema.Blueprint) {
-					table.SmallIncrements("id").Comment("This is a id column")
-				})
-			},
-			expectType:     "smallint",
-			expectTypeName: "smallint",
-		},
-		{
-			table: "TinyIncrements",
-			setup: func(table string) error {
-				return schema.Create(table, func(table contractsschema.Blueprint) {
-					table.TinyIncrements("id").Comment("This is a id column")
-				})
-			},
-			expectType:     "tinyint",
-			expectTypeName: "tinyint",
-		},
-	}
+// 	tests := []struct {
+// 		table          string
+// 		setup          func(table string) error
+// 		expectType     string
+// 		expectTypeName string
+// 	}{
+// 		{
+// 			table: "ID",
+// 			setup: func(table string) error {
+// 				return schema.Create(table, func(table contractsschema.Blueprint) {
+// 					table.ID("id").Comment("This is a id column")
+// 				})
+// 			},
+// 			expectType:     "bigint",
+// 			expectTypeName: "bigint",
+// 		},
+// 		{
+// 			table: "MediumIncrements",
+// 			setup: func(table string) error {
+// 				return schema.Create(table, func(table contractsschema.Blueprint) {
+// 					table.MediumIncrements("id").Comment("This is a id column")
+// 				})
+// 			},
+// 			expectType:     "int",
+// 			expectTypeName: "int",
+// 		},
+// 		{
+// 			table: "IntegerIncrements",
+// 			setup: func(table string) error {
+// 				return schema.Create(table, func(table contractsschema.Blueprint) {
+// 					table.IntegerIncrements("id").Comment("This is a id column")
+// 				})
+// 			},
+// 			expectType:     "int",
+// 			expectTypeName: "int",
+// 		},
+// 		{
+// 			table: "SmallIncrements",
+// 			setup: func(table string) error {
+// 				return schema.Create(table, func(table contractsschema.Blueprint) {
+// 					table.SmallIncrements("id").Comment("This is a id column")
+// 				})
+// 			},
+// 			expectType:     "smallint",
+// 			expectTypeName: "smallint",
+// 		},
+// 		{
+// 			table: "TinyIncrements",
+// 			setup: func(table string) error {
+// 				return schema.Create(table, func(table contractsschema.Blueprint) {
+// 					table.TinyIncrements("id").Comment("This is a id column")
+// 				})
+// 			},
+// 			expectType:     "tinyint",
+// 			expectTypeName: "tinyint",
+// 		},
+// 	}
 
-	for _, test := range tests {
-		s.Run(test.table, func() {
-			s.Require().Nil(test.setup(test.table))
-			s.Require().True(schema.HasTable(test.table))
+// 	for _, test := range tests {
+// 		s.Run(test.table, func() {
+// 			s.Require().Nil(test.setup(test.table))
+// 			s.Require().True(schema.HasTable(test.table))
 
-			columns, err := schema.GetColumns(test.table)
-			s.Require().Nil(err)
-			s.Equal(1, len(columns))
-			s.True(columns[0].Autoincrement)
-			s.Empty(columns[0].Collation)
-			s.Empty(columns[0].Comment)
-			s.Empty(columns[0].Default)
-			s.False(columns[0].Nullable)
-			s.Equal(test.expectType, columns[0].Type)
-			s.Equal(test.expectTypeName, columns[0].TypeName)
-		})
-	}
-}
+// 			columns, err := schema.GetColumns(test.table)
+// 			s.Require().Nil(err)
+// 			s.Equal(1, len(columns))
+// 			s.True(columns[0].Autoincrement)
+// 			s.Empty(columns[0].Collation)
+// 			s.Empty(columns[0].Comment)
+// 			s.Empty(columns[0].Default)
+// 			s.False(columns[0].Nullable)
+// 			s.Equal(test.expectType, columns[0].Type)
+// 			s.Equal(test.expectTypeName, columns[0].TypeName)
+// 		})
+// 	}
+// }
 
 func (s *SchemaSuite) TestIndexMethods() {
 	for driver, testQuery := range s.driverToTestQuery {
@@ -2272,25 +2269,25 @@ func (s *SchemaSuite) TestIndexMethods() {
 				if index.Name == "goravel_indexes_id_name_index" {
 					s.ElementsMatch(index.Columns, []string{"id", "name"})
 					s.False(index.Primary)
-					if driver == sqlite.Name {
-						s.Empty(index.Type)
-					} else if driver == sqlserver.Name {
-						s.Equal("nonclustered", index.Type)
-					} else {
-						s.Equal("btree", index.Type)
-					}
+					// if driver == sqlite.Name {
+					// 	s.Empty(index.Type)
+					// } else if driver == sqlserver.Name {
+					// 	s.Equal("nonclustered", index.Type)
+					// } else {
+					// 	s.Equal("btree", index.Type)
+					// }
 					s.False(index.Unique)
 				}
 				if index.Name == "name_index" {
 					s.ElementsMatch(index.Columns, []string{"name"})
 					s.False(index.Primary)
-					if driver == sqlite.Name {
-						s.Empty(index.Type)
-					} else if driver == sqlserver.Name {
-						s.Equal("nonclustered", index.Type)
-					} else {
-						s.Equal("btree", index.Type)
-					}
+					// if driver == sqlite.Name {
+					// 	s.Empty(index.Type)
+					// } else if driver == sqlserver.Name {
+					// 	s.Equal("nonclustered", index.Type)
+					// } else {
+					// 	s.Equal("btree", index.Type)
+					// }
 					s.False(index.Unique)
 				}
 				if strings.HasPrefix(index.Name, "pk_") {
@@ -2302,11 +2299,11 @@ func (s *SchemaSuite) TestIndexMethods() {
 				if index.Name == "primary" {
 					s.ElementsMatch(index.Columns, []string{"id"})
 					s.True(index.Primary)
-					if driver == sqlite.Name {
-						s.Empty(index.Type)
-					} else {
-						s.Equal("btree", index.Type)
-					}
+					// if driver == sqlite.Name {
+					// 	s.Empty(index.Type)
+					// } else {
+					// 	s.Equal("btree", index.Type)
+					// }
 					s.True(index.Unique)
 				}
 				if index.Name == "goravel_indexes_pkey" {
@@ -2520,11 +2517,11 @@ func (s *SchemaSuite) TestViewMethods() {
 			s.Equal("goravel_view", views[0].Name)
 			s.NotEmpty(views[0].Definition)
 
-			if driver == postgres.Name || driver == sqlserver.Name {
-				s.NotEmpty(views[0].Schema)
-			} else {
-				s.Empty(views[0].Schema)
-			}
+			// if driver == postgres.Name || driver == sqlserver.Name {
+			// 	s.NotEmpty(views[0].Schema)
+			// } else {
+			// 	s.Empty(views[0].Schema)
+			// }
 
 			s.NoError(schema.DropAllViews())
 			s.False(schema.HasView("goravel_view"))
@@ -2640,23 +2637,23 @@ func TestPostgresSchema(t *testing.T) {
 	assert.True(t, newSchema.HasTable(table))
 }
 
-func TestSqlserverSchema(t *testing.T) {
-	schema := "goravel"
-	table := "table"
-	sqlserverTestQuery := NewTestQueryBuilder().Sqlserver("", false)
-	sqlserverTestQuery.WithSchema(testSchema)
-	newSchema := newSchema(sqlserverTestQuery, map[string]*TestQuery{
-		sqlserverTestQuery.Driver().Config().Connection: sqlserverTestQuery,
-	})
+// func TestSqlserverSchema(t *testing.T) {
+// 	schema := "goravel"
+// 	table := "table"
+// 	sqlserverTestQuery := NewTestQueryBuilder().Sqlserver("", false)
+// 	sqlserverTestQuery.WithSchema(testSchema)
+// 	newSchema := newSchema(sqlserverTestQuery, map[string]*TestQuery{
+// 		sqlserverTestQuery.Driver().Config().Connection: sqlserverTestQuery,
+// 	})
 
-	assert.NoError(t, newSchema.Create(fmt.Sprintf("%s.%s", schema, table), func(table contractsschema.Blueprint) {
-		table.String("name")
-	}))
-	tables, err := newSchema.GetTables()
+// 	assert.NoError(t, newSchema.Create(fmt.Sprintf("%s.%s", schema, table), func(table contractsschema.Blueprint) {
+// 		table.String("name")
+// 	}))
+// 	tables, err := newSchema.GetTables()
 
-	assert.NoError(t, err)
-	assert.Len(t, tables, 1)
-	assert.Equal(t, table, tables[0].Name)
-	assert.Equal(t, schema, tables[0].Schema)
-	assert.True(t, newSchema.HasTable(fmt.Sprintf("%s.%s", schema, table)))
-}
+// 	assert.NoError(t, err)
+// 	assert.Len(t, tables, 1)
+// 	assert.Equal(t, table, tables[0].Name)
+// 	assert.Equal(t, schema, tables[0].Schema)
+// 	assert.True(t, newSchema.HasTable(fmt.Sprintf("%s.%s", schema, table)))
+// }

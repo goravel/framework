@@ -1,15 +1,16 @@
 package schema
 
 import (
+	"github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/support/convert"
 )
 
 type ForeignKeyDefinition struct {
-	command *schema.Command
+	command *driver.Command
 }
 
-func NewForeignKeyDefinition(command *schema.Command) schema.ForeignKeyDefinition {
+func NewForeignKeyDefinition(command *driver.Command) schema.ForeignKeyDefinition {
 	return &ForeignKeyDefinition{
 		command: command,
 	}
@@ -76,10 +77,10 @@ func (r *ForeignKeyDefinition) RestrictOnUpdate() schema.ForeignKeyDefinition {
 }
 
 type IndexDefinition struct {
-	command *schema.Command
+	command *driver.Command
 }
 
-func NewIndexDefinition(command *schema.Command) schema.IndexDefinition {
+func NewIndexDefinition(command *driver.Command) schema.IndexDefinition {
 	return &IndexDefinition{
 		command: command,
 	}

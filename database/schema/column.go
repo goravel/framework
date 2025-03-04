@@ -1,7 +1,7 @@
 package schema
 
 import (
-	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/support/convert"
 )
 
@@ -26,44 +26,44 @@ type ColumnDefinition struct {
 	useCurrentOnUpdate *bool
 }
 
-func NewColumnDefinition(name string, ttype string) schema.ColumnDefinition {
+func NewColumnDefinition(name string, ttype string) driver.ColumnDefinition {
 	return &ColumnDefinition{
 		name:  &name,
 		ttype: convert.Pointer(ttype),
 	}
 }
 
-func (r *ColumnDefinition) After(column string) schema.ColumnDefinition {
+func (r *ColumnDefinition) After(column string) driver.ColumnDefinition {
 	r.after = column
 
 	return r
 }
 
-func (r *ColumnDefinition) AutoIncrement() schema.ColumnDefinition {
+func (r *ColumnDefinition) AutoIncrement() driver.ColumnDefinition {
 	r.autoIncrement = convert.Pointer(true)
 
 	return r
 }
 
-func (r *ColumnDefinition) Change() schema.ColumnDefinition {
+func (r *ColumnDefinition) Change() driver.ColumnDefinition {
 	r.change = true
 
 	return r
 }
 
-func (r *ColumnDefinition) Comment(comment string) schema.ColumnDefinition {
+func (r *ColumnDefinition) Comment(comment string) driver.ColumnDefinition {
 	r.comment = &comment
 
 	return r
 }
 
-func (r *ColumnDefinition) Default(def any) schema.ColumnDefinition {
+func (r *ColumnDefinition) Default(def any) driver.ColumnDefinition {
 	r.def = def
 
 	return r
 }
 
-func (r *ColumnDefinition) First() schema.ColumnDefinition {
+func (r *ColumnDefinition) First() driver.ColumnDefinition {
 	r.first = true
 
 	return r
@@ -193,43 +193,43 @@ func (r *ColumnDefinition) IsSetComment() bool {
 	return r != nil && r.comment != nil
 }
 
-func (r *ColumnDefinition) Nullable() schema.ColumnDefinition {
+func (r *ColumnDefinition) Nullable() driver.ColumnDefinition {
 	r.nullable = convert.Pointer(true)
 
 	return r
 }
 
-func (r *ColumnDefinition) OnUpdate(value any) schema.ColumnDefinition {
+func (r *ColumnDefinition) OnUpdate(value any) driver.ColumnDefinition {
 	r.onUpdate = value
 
 	return r
 }
 
-func (r *ColumnDefinition) Places(places int) schema.ColumnDefinition {
+func (r *ColumnDefinition) Places(places int) driver.ColumnDefinition {
 	r.places = convert.Pointer(places)
 
 	return r
 }
 
-func (r *ColumnDefinition) Total(total int) schema.ColumnDefinition {
+func (r *ColumnDefinition) Total(total int) driver.ColumnDefinition {
 	r.total = convert.Pointer(total)
 
 	return r
 }
 
-func (r *ColumnDefinition) Unsigned() schema.ColumnDefinition {
+func (r *ColumnDefinition) Unsigned() driver.ColumnDefinition {
 	r.unsigned = convert.Pointer(true)
 
 	return r
 }
 
-func (r *ColumnDefinition) UseCurrent() schema.ColumnDefinition {
+func (r *ColumnDefinition) UseCurrent() driver.ColumnDefinition {
 	r.useCurrent = convert.Pointer(true)
 
 	return r
 }
 
-func (r *ColumnDefinition) UseCurrentOnUpdate() schema.ColumnDefinition {
+func (r *ColumnDefinition) UseCurrentOnUpdate() driver.ColumnDefinition {
 	r.useCurrentOnUpdate = convert.Pointer(true)
 
 	return r

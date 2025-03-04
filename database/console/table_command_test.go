@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/goravel/framework/contracts/console"
-	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/contracts/database/driver"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksschema "github.com/goravel/framework/mocks/database/schema"
@@ -84,7 +84,7 @@ func TestTableCommand(t *testing.T) {
 				mockContext.EXPECT().Option("database").Return("test").Once()
 				mockSchema.EXPECT().Connection("test").Return(mockSchema).Once()
 				mockContext.EXPECT().Argument(0).Return("").Once()
-				mockSchema.EXPECT().GetTables().Return([]schema.Table{{Name: "test"}}, nil).Once()
+				mockSchema.EXPECT().GetTables().Return([]driver.Table{{Name: "test"}}, nil).Once()
 				mockContext.EXPECT().Choice("Which table would you like to inspect?",
 					[]console.Choice{{Key: "test", Value: "test"}}).Return("test", nil).Once()
 				mockSchema.EXPECT().GetColumns("test").Return(nil, assert.AnError).Once()
@@ -98,7 +98,7 @@ func TestTableCommand(t *testing.T) {
 				mockContext.EXPECT().Option("database").Return("test").Once()
 				mockSchema.EXPECT().Connection("test").Return(mockSchema).Once()
 				mockContext.EXPECT().Argument(0).Return("").Once()
-				mockSchema.EXPECT().GetTables().Return([]schema.Table{{Name: "test"}}, nil).Once()
+				mockSchema.EXPECT().GetTables().Return([]driver.Table{{Name: "test"}}, nil).Once()
 				mockContext.EXPECT().Choice("Which table would you like to inspect?",
 					[]console.Choice{{Key: "test", Value: "test"}}).Return("test", nil).Once()
 				mockSchema.EXPECT().GetColumns("test").Return(nil, nil).Once()
@@ -113,7 +113,7 @@ func TestTableCommand(t *testing.T) {
 				mockContext.EXPECT().Option("database").Return("test").Once()
 				mockSchema.EXPECT().Connection("test").Return(mockSchema).Once()
 				mockContext.EXPECT().Argument(0).Return("").Once()
-				mockSchema.EXPECT().GetTables().Return([]schema.Table{{Name: "test"}}, nil).Once()
+				mockSchema.EXPECT().GetTables().Return([]driver.Table{{Name: "test"}}, nil).Once()
 				mockContext.EXPECT().Choice("Which table would you like to inspect?",
 					[]console.Choice{{Key: "test", Value: "test"}}).Return("test", nil).Once()
 				mockSchema.EXPECT().GetColumns("test").Return(nil, nil).Once()
@@ -129,19 +129,19 @@ func TestTableCommand(t *testing.T) {
 				mockContext.EXPECT().Option("database").Return("test").Once()
 				mockSchema.EXPECT().Connection("test").Return(mockSchema).Once()
 				mockContext.EXPECT().Argument(0).Return("").Once()
-				mockSchema.EXPECT().GetTables().Return([]schema.Table{
+				mockSchema.EXPECT().GetTables().Return([]driver.Table{
 					{Name: "test", Comment: "test_comment", Collation: "utf8mb4_general_ci", Engine: "InnoDB"},
 				}, nil).Once()
 				mockContext.EXPECT().Choice("Which table would you like to inspect?",
 					[]console.Choice{{Key: "test", Value: "test"}}).Return("test", nil).Once()
-				mockSchema.EXPECT().GetColumns("test").Return([]schema.Column{
+				mockSchema.EXPECT().GetColumns("test").Return([]driver.Column{
 					{Name: "foo", Type: "int(11)", TypeName: "int", Autoincrement: true, Nullable: true, Default: "bar", Collation: "utf8mb4_general_ci"},
 					{Name: "bar", Type: "varchar(32)", TypeName: "varchar", Collation: "utf8mb4_general_ci"},
 				}, nil).Once()
-				mockSchema.EXPECT().GetIndexes("test").Return([]schema.Index{
+				mockSchema.EXPECT().GetIndexes("test").Return([]driver.Index{
 					{Name: "index_foo", Type: "btree", Columns: []string{"foo", "bar"}, Unique: true, Primary: true},
 				}, nil).Once()
-				mockSchema.EXPECT().GetForeignKeys("test").Return([]schema.ForeignKey{
+				mockSchema.EXPECT().GetForeignKeys("test").Return([]driver.ForeignKey{
 					{
 						Name:           "fk_foo",
 						Columns:        []string{"foo"},

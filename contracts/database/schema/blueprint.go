@@ -1,36 +1,37 @@
 package schema
 
 import (
+	"github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/orm"
 )
 
 type Blueprint interface {
 	// BigIncrements Create a new auto-incrementing big integer (8-byte) column on the table.
-	BigIncrements(column string) ColumnDefinition
+	BigIncrements(column string) driver.ColumnDefinition
 	// BigInteger Create a new big integer (8-byte) column on the table.
-	BigInteger(column string) ColumnDefinition
+	BigInteger(column string) driver.ColumnDefinition
 	// Boolean Create a new boolean column on the table.
-	Boolean(column string) ColumnDefinition
+	Boolean(column string) driver.ColumnDefinition
 	// Build Execute the blueprint to build / modify the table.
-	Build(query orm.Query, grammar Grammar) error
+	Build(query orm.Query, grammar driver.Grammar) error
 	// Char Create a new char column on the table.
-	Char(column string, length ...int) ColumnDefinition
+	Char(column string, length ...int) driver.ColumnDefinition
 	// Column Create a new custom type column on the table.
-	Column(column string, ttype string) ColumnDefinition
+	Column(column string, ttype string) driver.ColumnDefinition
 	// Comment Add a comment to the table. (MySQL / PostgreSQL)
 	Comment(value string)
 	// Create Indicate that the table needs to be created.
 	Create()
 	// Date Create a new date column on the table.
-	Date(column string) ColumnDefinition
+	Date(column string) driver.ColumnDefinition
 	// DateTime Create a new date-time column on the table.
-	DateTime(column string, precision ...int) ColumnDefinition
+	DateTime(column string, precision ...int) driver.ColumnDefinition
 	// DateTimeTz Create a new date-time column (with time zone) on the table.
-	DateTimeTz(column string, precision ...int) ColumnDefinition
+	DateTimeTz(column string, precision ...int) driver.ColumnDefinition
 	// Decimal Create a new decimal column on the table.
-	Decimal(column string) ColumnDefinition
+	Decimal(column string) driver.ColumnDefinition
 	// Double Create a new double column on the table.
-	Double(column string) ColumnDefinition
+	Double(column string) driver.ColumnDefinition
 	// Drop Indicate that the table should be dropped.
 	Drop()
 	// DropColumn Indicate that the given columns should be dropped.
@@ -64,43 +65,43 @@ type Blueprint interface {
 	// DropUniqueByName Indicate that the given unique key should be dropped.
 	DropUniqueByName(name string)
 	// Enum Create a new enum column on the table.
-	Enum(column string, array []any) ColumnDefinition
+	Enum(column string, array []any) driver.ColumnDefinition
 	// Float Create a new float column on the table.
-	Float(column string, precision ...int) ColumnDefinition
+	Float(column string, precision ...int) driver.ColumnDefinition
 	// Foreign Specify a foreign key for the table.
 	Foreign(column ...string) ForeignKeyDefinition
 	// FullText Specify a fulltext for the table.
 	FullText(column ...string) IndexDefinition
 	// GetAddedColumns Get the added columns.
-	GetAddedColumns() []ColumnDefinition
+	GetAddedColumns() []driver.ColumnDefinition
 	// GetCommands Get the commands.
-	GetCommands() []*Command
+	GetCommands() []*driver.Command
 	// GetTableName Get the table name with prefix.
 	GetTableName() string
 	// HasCommand Determine if the blueprint has a specific command.
 	HasCommand(command string) bool
 	// ID Create a new auto-incrementing big integer (8-byte) column on the table.
-	ID(column ...string) ColumnDefinition
+	ID(column ...string) driver.ColumnDefinition
 	// Increments Create a new auto-incrementing integer (4-byte) column on the table.
-	Increments(column string) ColumnDefinition
+	Increments(column string) driver.ColumnDefinition
 	// Index Specify an index for the table.
 	Index(column ...string) IndexDefinition
 	// Integer Create a new integer (4-byte) column on the table.
-	Integer(column string) ColumnDefinition
+	Integer(column string) driver.ColumnDefinition
 	// IntegerIncrements Create a new auto-incrementing integer (4-byte) column on the table.
-	IntegerIncrements(column string) ColumnDefinition
+	IntegerIncrements(column string) driver.ColumnDefinition
 	// Json Create a new json column on the table.
-	Json(column string) ColumnDefinition
+	Json(column string) driver.ColumnDefinition
 	// Jsonb Create a new jsonb column on the table.
-	Jsonb(column string) ColumnDefinition
+	Jsonb(column string) driver.ColumnDefinition
 	// LongText Create a new long text column on the table.
-	LongText(column string) ColumnDefinition
+	LongText(column string) driver.ColumnDefinition
 	// MediumIncrements Create a new auto-incrementing medium integer (3-byte) column on the table.
-	MediumIncrements(column string) ColumnDefinition
+	MediumIncrements(column string) driver.ColumnDefinition
 	// MediumInteger Create a new medium integer (3-byte) column on the table.
-	MediumInteger(column string) ColumnDefinition
+	MediumInteger(column string) driver.ColumnDefinition
 	// MediumText Create a new medium text column on the table.
-	MediumText(column string) ColumnDefinition
+	MediumText(column string) driver.ColumnDefinition
 	// Primary Specify the primary key(s) for the table.
 	Primary(column ...string)
 	// Rename the table to a given name.
@@ -112,47 +113,47 @@ type Blueprint interface {
 	// SetTable Set the table that the blueprint operates on.
 	SetTable(name string)
 	// SmallIncrements Create a new auto-incrementing small integer (2-byte) column on the table.
-	SmallIncrements(column string) ColumnDefinition
+	SmallIncrements(column string) driver.ColumnDefinition
 	// SmallInteger Create a new small integer (2-byte) column on the table.
-	SmallInteger(column string) ColumnDefinition
+	SmallInteger(column string) driver.ColumnDefinition
 	// SoftDeletes Add a "deleted at" timestamp for the table.
-	SoftDeletes(column ...string) ColumnDefinition
+	SoftDeletes(column ...string) driver.ColumnDefinition
 	// SoftDeletesTz Add a "deleted at" timestampTz for the table.
-	SoftDeletesTz(column ...string) ColumnDefinition
+	SoftDeletesTz(column ...string) driver.ColumnDefinition
 	// String Create a new string column on the table.
-	String(column string, length ...int) ColumnDefinition
+	String(column string, length ...int) driver.ColumnDefinition
 	// Text Create a new text column on the table.
-	Text(column string) ColumnDefinition
+	Text(column string) driver.ColumnDefinition
 	// Time Create a new time column on the table.
-	Time(column string, precision ...int) ColumnDefinition
+	Time(column string, precision ...int) driver.ColumnDefinition
 	// TimeTz Create a new time column (with time zone) on the table.
-	TimeTz(column string, precision ...int) ColumnDefinition
+	TimeTz(column string, precision ...int) driver.ColumnDefinition
 	// Timestamp Create a new time column on the table.
-	Timestamp(column string, precision ...int) ColumnDefinition
+	Timestamp(column string, precision ...int) driver.ColumnDefinition
 	// Timestamps Add nullable creation and update timestamps to the table.
 	Timestamps(precision ...int)
 	// TimestampsTz Add creation and update timestampTz columns to the table.
 	TimestampsTz(precision ...int)
 	// TimestampTz Create a new time column (with time zone) on the table.
-	TimestampTz(column string, precision ...int) ColumnDefinition
+	TimestampTz(column string, precision ...int) driver.ColumnDefinition
 	// TinyIncrements Create a new auto-incrementing tiny integer (1-byte) column on the table.
-	TinyIncrements(column string) ColumnDefinition
+	TinyIncrements(column string) driver.ColumnDefinition
 	// TinyInteger Create a new tiny integer (1-byte) column on the table.
-	TinyInteger(column string) ColumnDefinition
+	TinyInteger(column string) driver.ColumnDefinition
 	// TinyText Create a new tiny text column on the table.
-	TinyText(column string) ColumnDefinition
+	TinyText(column string) driver.ColumnDefinition
 	// ToSql Get the raw SQL statements for the blueprint.
-	ToSql(grammar Grammar) ([]string, error)
+	ToSql(grammar driver.Grammar) ([]string, error)
 	// Unique Specify a unique index for the table.
 	Unique(column ...string) IndexDefinition
 	// UnsignedBigInteger Create a new unsigned big integer (8-byte) column on the table.
-	UnsignedBigInteger(column string) ColumnDefinition
+	UnsignedBigInteger(column string) driver.ColumnDefinition
 	// UnsignedInteger Create a new unsigned integer (4-byte) column on the table.
-	UnsignedInteger(column string) ColumnDefinition
+	UnsignedInteger(column string) driver.ColumnDefinition
 	// UnsignedMediumInteger Create a new unsigned medium integer (3-byte) column on the table.
-	UnsignedMediumInteger(column string) ColumnDefinition
+	UnsignedMediumInteger(column string) driver.ColumnDefinition
 	// UnsignedSmallInteger Create a new unsigned small integer (2-byte) column on the table.
-	UnsignedSmallInteger(column string) ColumnDefinition
+	UnsignedSmallInteger(column string) driver.ColumnDefinition
 	// UnsignedTinyInteger Create a new unsigned tiny integer (1-byte) column on the table.
-	UnsignedTinyInteger(column string) ColumnDefinition
+	UnsignedTinyInteger(column string) driver.ColumnDefinition
 }

@@ -6,9 +6,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/schema"
+	mocksdriver "github.com/goravel/framework/mocks/database/driver"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
-	mocksschema "github.com/goravel/framework/mocks/database/schema"
 	"github.com/goravel/framework/support/convert"
 )
 
@@ -27,7 +28,7 @@ func (s *BlueprintTestSuite) SetupTest() {
 
 func (s *BlueprintTestSuite) TestAddAttributeCommands() {
 	var (
-		mockGrammar      *mocksschema.Grammar
+		mockGrammar      *mocksdriver.Grammar
 		columnDefinition = &ColumnDefinition{
 			comment: convert.Pointer("comment"),
 		}
@@ -37,7 +38,7 @@ func (s *BlueprintTestSuite) TestAddAttributeCommands() {
 		name           string
 		columns        []*ColumnDefinition
 		setup          func()
-		expectCommands []*schema.Command
+		expectCommands []*driver.Command
 	}{
 		{
 			name: "Should not add command when columns is empty",
@@ -58,7 +59,7 @@ func (s *BlueprintTestSuite) TestAddAttributeCommands() {
 			setup: func() {
 				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{"comment"}).Once()
 			},
-			expectCommands: []*schema.Command{
+			expectCommands: []*driver.Command{
 				{
 					Column: columnDefinition,
 					Name:   "comment",
@@ -69,7 +70,7 @@ func (s *BlueprintTestSuite) TestAddAttributeCommands() {
 
 	for _, test := range tests {
 		s.Run(test.name, func() {
-			mockGrammar = mocksschema.NewGrammar(s.T())
+			mockGrammar = mocksdriver.NewGrammar(s.T())
 			s.blueprint.columns = test.columns
 			test.setup()
 
@@ -118,7 +119,7 @@ func (s *BlueprintTestSuite) TestBoolean() {
 
 func (s *BlueprintTestSuite) TestBuild() {
 	mockQuery := mocksorm.NewQuery(s.T())
-	mockGrammar := mocksschema.NewGrammar(s.T())
+	mockGrammar := mocksdriver.NewGrammar(s.T())
 
 	tests := []struct {
 		name        string
@@ -295,7 +296,7 @@ func (s *BlueprintTestSuite) TestIntegerIncrements() {
 
 func (s *BlueprintTestSuite) TestIndexCommand() {
 	s.blueprint.indexCommand("index", []string{"id", "name"})
-	s.Contains(s.blueprint.commands, &schema.Command{
+	s.Contains(s.blueprint.commands, &driver.Command{
 		Columns: []string{"id", "name"},
 		Name:    "index",
 		Index:   "goravel_users_id_name_index",
@@ -305,7 +306,7 @@ func (s *BlueprintTestSuite) TestIndexCommand() {
 		Algorithm: "custom_algorithm",
 		Name:      "custom_name",
 	})
-	s.Contains(s.blueprint.commands, &schema.Command{
+	s.Contains(s.blueprint.commands, &driver.Command{
 		Algorithm: "custom_algorithm",
 		Columns:   []string{"id", "name"},
 		Name:      "index",
@@ -315,7 +316,7 @@ func (s *BlueprintTestSuite) TestIndexCommand() {
 
 func (s *BlueprintTestSuite) TestIsCreate() {
 	s.False(s.blueprint.isCreate())
-	s.blueprint.commands = []*schema.Command{
+	s.blueprint.commands = []*driver.Command{
 		{
 			Name: CommandCreate,
 		},
@@ -431,7 +432,7 @@ func (s *BlueprintTestSuite) TestTinyInteger() {
 }
 
 func (s *BlueprintTestSuite) TestToSql() {
-	mockGrammar := mocksschema.NewGrammar(s.T())
+	mockGrammar := mocksdriver.NewGrammar(s.T())
 
 	tests := []struct {
 		name        string
@@ -465,7 +466,7 @@ func (s *BlueprintTestSuite) TestToSql() {
 				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{"comment"}).Once()
 				mockGrammar.EXPECT().CompileAdd(s.blueprint, s.blueprint.commands[0]).
 					Return("sql1").Once()
-				mockGrammar.EXPECT().CompileComment(s.blueprint, &schema.Command{
+				mockGrammar.EXPECT().CompileComment(s.blueprint, &driver.Command{
 					Column: s.blueprint.columns[0],
 					Name:   CommandComment,
 				}).Return("sql2").Once()
@@ -479,7 +480,7 @@ func (s *BlueprintTestSuite) TestToSql() {
 				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{"default"}).Once()
 				mockGrammar.EXPECT().CompileAdd(s.blueprint, s.blueprint.commands[0]).
 					Return("sql1").Once()
-				mockGrammar.EXPECT().CompileDefault(s.blueprint, &schema.Command{
+				mockGrammar.EXPECT().CompileDefault(s.blueprint, &driver.Command{
 					Column: s.blueprint.columns[0],
 					Name:   CommandDefault,
 				}).Return("sql2").Once()

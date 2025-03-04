@@ -1,7 +1,7 @@
 package tests
 
 import (
-	contractsschema "github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/database/schema"
 )
 
@@ -25,10 +25,10 @@ const (
 
 type testTables struct {
 	driver  string
-	grammar contractsschema.Grammar
+	grammar driver.Grammar
 }
 
-func newTestTables(driver string, grammar contractsschema.Grammar) *testTables {
+func newTestTables(driver string, grammar driver.Grammar) *testTables {
 	return &testTables{driver: driver, grammar: grammar}
 }
 

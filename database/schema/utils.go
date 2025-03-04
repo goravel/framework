@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/cast"
 
-	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/contracts/database/driver"
 )
 
 type Expression string
@@ -23,7 +23,7 @@ func ColumnDefaultValue(def any) string {
 	}
 }
 
-func ColumnType(grammar schema.Grammar, column schema.ColumnDefinition) string {
+func ColumnType(grammar driver.Grammar, column driver.ColumnDefinition) string {
 	t := []rune(column.GetType())
 	if len(t) == 0 {
 		return ""

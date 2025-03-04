@@ -7,6 +7,7 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/schema"
 )
 
@@ -85,7 +86,7 @@ func (r *TableCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func (r *TableCommand) display(ctx console.Context, table schema.Table) {
+func (r *TableCommand) display(ctx console.Context, table driver.Table) {
 	columns, err := r.schema.GetColumns(table.Name)
 	if err != nil {
 		ctx.Error(fmt.Sprintf("Failed to get columns: %s", err.Error()))

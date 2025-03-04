@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/orm"
 )
 
@@ -24,23 +25,23 @@ type Schema interface {
 	// GetColumnListing Get the column listing for a given table.
 	GetColumnListing(table string) []string
 	// GetColumns Get the columns for a given table.
-	GetColumns(table string) ([]Column, error)
+	GetColumns(table string) ([]driver.Column, error)
 	// GetConnection Get the connection of the schema.
 	GetConnection() string
 	// GetForeignKeys Get the foreign keys for a given table.
-	GetForeignKeys(table string) ([]ForeignKey, error)
+	GetForeignKeys(table string) ([]driver.ForeignKey, error)
 	// GetIndexListing Get the names of the indexes for a given table.
 	GetIndexListing(table string) []string
 	// GetIndexes Get the indexes for a given table.
-	GetIndexes(table string) ([]Index, error)
+	GetIndexes(table string) ([]driver.Index, error)
 	// GetTableListing Get the table listing for the database.
 	GetTableListing() []string
 	// GetTables Get the tables that belong to the database.
-	GetTables() ([]Table, error)
+	GetTables() ([]driver.Table, error)
 	// GetTypes Get the types that belong to the database.
-	GetTypes() ([]Type, error)
+	GetTypes() ([]driver.Type, error)
 	// GetViews Get the views that belong to the database.
-	GetViews() ([]View, error)
+	GetViews() ([]driver.View, error)
 	// HasColumn Determine if the given table has a given column.
 	HasColumn(table, column string) bool
 	// HasColumns Determine if the given table has given columns.
@@ -81,64 +82,4 @@ type Migration interface {
 type Connection interface {
 	// Connection Get the connection for the migration.
 	Connection() string
-}
-
-type Command struct {
-	Algorithm          string
-	Column             ColumnDefinition
-	Columns            []string
-	Deferrable         *bool
-	From               string
-	Index              string
-	InitiallyImmediate *bool
-	Language           string
-	Name               string
-	On                 string
-	OnDelete           string
-	OnUpdate           string
-	References         []string
-	ShouldBeSkipped    bool
-	To                 string
-	Value              string
-}
-
-type ForeignKey struct {
-	Name           string
-	Columns        []string
-	ForeignSchema  string
-	ForeignTable   string
-	ForeignColumns []string
-	OnUpdate       string
-	OnDelete       string
-}
-
-type Index struct {
-	Columns []string
-	Name    string
-	Primary bool
-	Type    string
-	Unique  bool
-}
-
-type Table struct {
-	Collation string
-	Comment   string
-	Engine    string
-	Name      string
-	Schema    string
-	Size      int
-}
-
-type Type struct {
-	Category string
-	Implicit bool
-	Name     string
-	Schema   string
-	Type     string
-}
-
-type View struct {
-	Name       string
-	Schema     string
-	Definition string
 }

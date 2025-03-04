@@ -12,8 +12,6 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
-	schema "github.com/goravel/framework/contracts/database/schema"
-
 	sql "database/sql"
 )
 
@@ -313,19 +311,19 @@ func (_c *Driver_Gorm_Call) RunAndReturn(run func() (*gorm.DB, driver.GormQuery,
 }
 
 // Grammar provides a mock function with no fields
-func (_m *Driver) Grammar() schema.Grammar {
+func (_m *Driver) Grammar() driver.Grammar {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Grammar")
 	}
 
-	var r0 schema.Grammar
-	if rf, ok := ret.Get(0).(func() schema.Grammar); ok {
+	var r0 driver.Grammar
+	if rf, ok := ret.Get(0).(func() driver.Grammar); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(schema.Grammar)
+			r0 = ret.Get(0).(driver.Grammar)
 		}
 	}
 
@@ -349,30 +347,30 @@ func (_c *Driver_Grammar_Call) Run(run func()) *Driver_Grammar_Call {
 	return _c
 }
 
-func (_c *Driver_Grammar_Call) Return(_a0 schema.Grammar) *Driver_Grammar_Call {
+func (_c *Driver_Grammar_Call) Return(_a0 driver.Grammar) *Driver_Grammar_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Driver_Grammar_Call) RunAndReturn(run func() schema.Grammar) *Driver_Grammar_Call {
+func (_c *Driver_Grammar_Call) RunAndReturn(run func() driver.Grammar) *Driver_Grammar_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Processor provides a mock function with no fields
-func (_m *Driver) Processor() schema.Processor {
+func (_m *Driver) Processor() driver.Processor {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Processor")
 	}
 
-	var r0 schema.Processor
-	if rf, ok := ret.Get(0).(func() schema.Processor); ok {
+	var r0 driver.Processor
+	if rf, ok := ret.Get(0).(func() driver.Processor); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(schema.Processor)
+			r0 = ret.Get(0).(driver.Processor)
 		}
 	}
 
@@ -396,12 +394,12 @@ func (_c *Driver_Processor_Call) Run(run func()) *Driver_Processor_Call {
 	return _c
 }
 
-func (_c *Driver_Processor_Call) Return(_a0 schema.Processor) *Driver_Processor_Call {
+func (_c *Driver_Processor_Call) Return(_a0 driver.Processor) *Driver_Processor_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Driver_Processor_Call) RunAndReturn(run func() schema.Processor) *Driver_Processor_Call {
+func (_c *Driver_Processor_Call) RunAndReturn(run func() driver.Processor) *Driver_Processor_Call {
 	_c.Call.Return(run)
 	return _c
 }

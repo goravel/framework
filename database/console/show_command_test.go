@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/goravel/framework/contracts/database"
-	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/contracts/database/driver"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
@@ -129,11 +129,11 @@ func TestShowCommand(t *testing.T) {
 				mockOrm.EXPECT().DB().Return(&sql.DB{}, nil).Once()
 
 				// Handle
-				mockSchema.EXPECT().GetTables().Return([]schema.Table{
+				mockSchema.EXPECT().GetTables().Return([]driver.Table{
 					{Name: "test", Size: 1024},
 				}, nil).Once()
 				mockContext.EXPECT().OptionBool("views").Return(true).Once()
-				mockSchema.EXPECT().GetViews().Return([]schema.View{
+				mockSchema.EXPECT().GetViews().Return([]driver.View{
 					{Name: "test"},
 				}, nil).Once()
 				mockSchema.EXPECT().Orm().Return(mockOrm).Once()

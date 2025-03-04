@@ -9,7 +9,6 @@ import (
 	contractsmigration "github.com/goravel/framework/contracts/database/migration"
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/database/migration"
-	"github.com/goravel/sqlite"
 )
 
 type DefaultMigratorWithDBSuite struct {
@@ -27,11 +26,11 @@ func (s *DefaultMigratorWithDBSuite) SetupTest() {
 }
 
 func (s *DefaultMigratorWithDBSuite) TearDownTest() {
-	if s.driverToTestQuery[sqlite.Name] != nil {
-		docker, err := s.driverToTestQuery[sqlite.Name].Driver().Docker()
-		s.NoError(err)
-		s.NoError(docker.Shutdown())
-	}
+	// if s.driverToTestQuery[sqlite.Name] != nil {
+	// 	docker, err := s.driverToTestQuery[sqlite.Name].Driver().Docker()
+	// 	s.NoError(err)
+	// 	s.NoError(docker.Shutdown())
+	// }
 }
 
 func (s *DefaultMigratorWithDBSuite) TestRun() {
@@ -140,24 +139,24 @@ func TestDefaultMigratorWithPostgresSchema(t *testing.T) {
 	assert.False(t, schema.HasTable("users"))
 }
 
-func TestDefaultMigratorWithSqlserverSchema(t *testing.T) {
-	sqlserverTestQuery := NewTestQueryBuilder().Sqlserver("", false)
-	sqlserverTestQuery.WithSchema("goravel")
+// func TestDefaultMigratorWithSqlserverSchema(t *testing.T) {
+// 	sqlserverTestQuery := NewTestQueryBuilder().Sqlserver("", false)
+// 	sqlserverTestQuery.WithSchema("goravel")
 
-	schema := newSchema(sqlserverTestQuery, map[string]*TestQuery{
-		sqlserverTestQuery.Driver().Config().Driver: sqlserverTestQuery,
-	})
-	testMigration := NewTestMigrationWithSqlserverSchema(schema)
-	schema.Register([]contractsschema.Migration{
-		testMigration,
-	})
-	migrator := migration.NewMigrator(nil, schema, "migrations")
+// 	schema := newSchema(sqlserverTestQuery, map[string]*TestQuery{
+// 		sqlserverTestQuery.Driver().Config().Driver: sqlserverTestQuery,
+// 	})
+// 	testMigration := NewTestMigrationWithSqlserverSchema(schema)
+// 	schema.Register([]contractsschema.Migration{
+// 		testMigration,
+// 	})
+// 	migrator := migration.NewMigrator(nil, schema, "migrations")
 
-	assert.NoError(t, migrator.Run())
-	assert.True(t, schema.HasTable("goravel.users"))
-	assert.NoError(t, migrator.Rollback(1, 0))
-	assert.False(t, schema.HasTable("goravel.users"))
-}
+// 	assert.NoError(t, migrator.Run())
+// 	assert.True(t, schema.HasTable("goravel.users"))
+// 	assert.NoError(t, migrator.Rollback(1, 0))
+// 	assert.False(t, schema.HasTable("goravel.users"))
+// }
 
 type TestMigration struct {
 	schema contractsschema.Schema

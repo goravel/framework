@@ -8,6 +8,7 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/support/str"
 )
@@ -23,10 +24,10 @@ type databaseInfo struct {
 	Name            string
 	OpenConnections int
 	Port            int
-	Tables          []schema.Table
+	Tables          []driver.Table
 	Username        string
 	Version         string
-	Views           []schema.View
+	Views           []driver.View
 }
 
 func NewShowCommand(config config.Config, schema schema.Schema) *ShowCommand {

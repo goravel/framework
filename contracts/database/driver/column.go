@@ -1,4 +1,4 @@
-package schema
+package driver
 
 type ColumnDefinition interface {
 	// After Place the column "after" another column (MySQL only)
