@@ -179,6 +179,9 @@ func (a *Auth) LoginUsingID(id any) (token string, err error) {
 	}
 
 	a.makeAuthContext(&claims, token)
+	if a.isEnabledSSO() {
+		a.ssoLogin(key, token)
+	}
 
 	return
 }
@@ -227,6 +230,10 @@ func (a *Auth) Logout() error {
 
 	delete(auth, a.guard)
 	a.ctx.WithValue(ctxKey, auth)
+	if a.isEnabledSSO() {
+		ssoCacheKey := a.getSSOCacheKey(auth[a.guard].Claims.Key)
+		a.cache.Forget(ssoCacheKey)
+	}
 
 	return nil
 }
@@ -259,6 +266,18 @@ func (a *Auth) makeAuthContext(claims *Claims, token string) {
 
 func (a *Auth) tokenIsDisabled(token string) bool {
 	return a.cache.GetBool(getDisabledCacheKey(token), false)
+}
+func (a *Auth) isEnabledSSO() bool {
+	return a.config.GetBool("jwt.sso", false)
+}
+func (a *Auth) getSSOCacheKey(id string) string {
+	ssoCacheKey := a.config.GetString("jwt.sso_cache_key", "jwt:auth")
+	return ssoCacheKey + fmt.Sprintf(":%s", id)
+}
+func (a *Auth) ssoLogin(id string, token string) {
+	ttl := a.config.GetInt("jwt.ttl")
+	ssoCacheKey := a.getSSOCacheKey(id)
+	a.cache.Put(ssoCacheKey, token, time.Duration(ttl)*time.Minute)
 }
 
 func getDisabledCacheKey(token string) string {
