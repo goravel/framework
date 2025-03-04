@@ -265,6 +265,52 @@ func (_c *DB_Table_Call) RunAndReturn(run func(string) db.Query) *DB_Table_Call 
 	return _c
 }
 
+// Transaction provides a mock function with given fields: txFunc
+func (_m *DB) Transaction(txFunc func(db.DB) error) error {
+	ret := _m.Called(txFunc)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Transaction")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(func(db.DB) error) error); ok {
+		r0 = rf(txFunc)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DB_Transaction_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Transaction'
+type DB_Transaction_Call struct {
+	*mock.Call
+}
+
+// Transaction is a helper method to define mock.On call
+//   - txFunc func(db.DB) error
+func (_e *DB_Expecter) Transaction(txFunc interface{}) *DB_Transaction_Call {
+	return &DB_Transaction_Call{Call: _e.mock.On("Transaction", txFunc)}
+}
+
+func (_c *DB_Transaction_Call) Run(run func(txFunc func(db.DB) error)) *DB_Transaction_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func(db.DB) error))
+	})
+	return _c
+}
+
+func (_c *DB_Transaction_Call) Return(_a0 error) *DB_Transaction_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *DB_Transaction_Call) RunAndReturn(run func(func(db.DB) error) error) *DB_Transaction_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // WithContext provides a mock function with given fields: ctx
 func (_m *DB) WithContext(ctx context.Context) db.DB {
 	ret := _m.Called(ctx)

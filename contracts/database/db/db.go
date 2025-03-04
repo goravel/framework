@@ -104,7 +104,6 @@ type Query interface {
 	// ToRawSql
 	// Update records in the database.
 	Update(column any, value ...any) (*Result, error)
-	// updateOrInsert
 	// Value(column string, dest any) error
 	// When executes the callback if the condition is true.
 	When(condition bool, callback func(query Query) Query) Query
