@@ -22,6 +22,108 @@ func (_m *DB) EXPECT() *DB_Expecter {
 	return &DB_Expecter{mock: &_m.Mock}
 }
 
+// BeginTransaction provides a mock function with no fields
+func (_m *DB) BeginTransaction() (db.DB, error) {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for BeginTransaction")
+	}
+
+	var r0 db.DB
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (db.DB, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() db.DB); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.DB)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DB_BeginTransaction_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BeginTransaction'
+type DB_BeginTransaction_Call struct {
+	*mock.Call
+}
+
+// BeginTransaction is a helper method to define mock.On call
+func (_e *DB_Expecter) BeginTransaction() *DB_BeginTransaction_Call {
+	return &DB_BeginTransaction_Call{Call: _e.mock.On("BeginTransaction")}
+}
+
+func (_c *DB_BeginTransaction_Call) Run(run func()) *DB_BeginTransaction_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *DB_BeginTransaction_Call) Return(_a0 db.DB, _a1 error) *DB_BeginTransaction_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *DB_BeginTransaction_Call) RunAndReturn(run func() (db.DB, error)) *DB_BeginTransaction_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Commit provides a mock function with no fields
+func (_m *DB) Commit() error {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Commit")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DB_Commit_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Commit'
+type DB_Commit_Call struct {
+	*mock.Call
+}
+
+// Commit is a helper method to define mock.On call
+func (_e *DB_Expecter) Commit() *DB_Commit_Call {
+	return &DB_Commit_Call{Call: _e.mock.On("Commit")}
+}
+
+func (_c *DB_Commit_Call) Run(run func()) *DB_Commit_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *DB_Commit_Call) Return(_a0 error) *DB_Commit_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *DB_Commit_Call) RunAndReturn(run func() error) *DB_Commit_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Connection provides a mock function with given fields: name
 func (_m *DB) Connection(name string) db.DB {
 	ret := _m.Called(name)
@@ -70,6 +172,51 @@ func (_c *DB_Connection_Call) RunAndReturn(run func(string) db.DB) *DB_Connectio
 	return _c
 }
 
+// Rollback provides a mock function with no fields
+func (_m *DB) Rollback() error {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Rollback")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DB_Rollback_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Rollback'
+type DB_Rollback_Call struct {
+	*mock.Call
+}
+
+// Rollback is a helper method to define mock.On call
+func (_e *DB_Expecter) Rollback() *DB_Rollback_Call {
+	return &DB_Rollback_Call{Call: _e.mock.On("Rollback")}
+}
+
+func (_c *DB_Rollback_Call) Run(run func()) *DB_Rollback_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *DB_Rollback_Call) Return(_a0 error) *DB_Rollback_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *DB_Rollback_Call) RunAndReturn(run func() error) *DB_Rollback_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Table provides a mock function with given fields: name
 func (_m *DB) Table(name string) db.Query {
 	ret := _m.Called(name)
@@ -114,6 +261,52 @@ func (_c *DB_Table_Call) Return(_a0 db.Query) *DB_Table_Call {
 }
 
 func (_c *DB_Table_Call) RunAndReturn(run func(string) db.Query) *DB_Table_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Transaction provides a mock function with given fields: txFunc
+func (_m *DB) Transaction(txFunc func(db.DB) error) error {
+	ret := _m.Called(txFunc)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Transaction")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(func(db.DB) error) error); ok {
+		r0 = rf(txFunc)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DB_Transaction_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Transaction'
+type DB_Transaction_Call struct {
+	*mock.Call
+}
+
+// Transaction is a helper method to define mock.On call
+//   - txFunc func(db.DB) error
+func (_e *DB_Expecter) Transaction(txFunc interface{}) *DB_Transaction_Call {
+	return &DB_Transaction_Call{Call: _e.mock.On("Transaction", txFunc)}
+}
+
+func (_c *DB_Transaction_Call) Run(run func(txFunc func(db.DB) error)) *DB_Transaction_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func(db.DB) error))
+	})
+	return _c
+}
+
+func (_c *DB_Transaction_Call) Return(_a0 error) *DB_Transaction_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *DB_Transaction_Call) RunAndReturn(run func(func(db.DB) error) error) *DB_Transaction_Call {
 	_c.Call.Return(run)
 	return _c
 }

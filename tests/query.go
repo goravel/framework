@@ -48,7 +48,7 @@ func NewTestQuery(ctx context.Context, driver contractsdriver.Driver, config con
 
 	testQuery := &TestQuery{
 		config: config,
-		db:     databasedb.NewDB(ctx, config, driver, utils.NewTestLog(), sqlx.NewDb(db, driver.Config().Driver)),
+		db:     databasedb.NewDB(ctx, config, driver, utils.NewTestLog(), sqlx.NewDb(db, driver.Config().Driver), nil, nil),
 		driver: driver,
 		query:  gorm.NewQuery(ctx, config, driver.Config(), query, gormQuery, utils.NewTestLog(), nil, nil),
 	}

@@ -27,10 +27,10 @@ type Query struct {
 	err        error
 	driver     driver.Driver
 	logger     logger.Logger
-	single     bool
+	txLogs     *[]TxLog
 }
 
-func NewQuery(ctx context.Context, driver driver.Driver, builder db.Builder, logger logger.Logger, table string) *Query {
+func NewQuery(ctx context.Context, driver driver.Driver, builder db.Builder, logger logger.Logger, table string, txLogs *[]TxLog) *Query {
 	return &Query{
 		builder: builder,
 		conditions: Conditions{
@@ -39,14 +39,8 @@ func NewQuery(ctx context.Context, driver driver.Driver, builder db.Builder, log
 		ctx:    ctx,
 		driver: driver,
 		logger: logger,
+		txLogs: txLogs,
 	}
-}
-
-func NewSingleQuery(ctx context.Context, driver driver.Driver, builder db.Builder, logger logger.Logger, table string) *Query {
-	query := NewQuery(ctx, driver, builder, logger, table)
-	query.single = true
-
-	return query
 }
 
 func (r *Query) Count() (int64, error) {
@@ -768,10 +762,10 @@ func (r *Query) buildWhere(where Where) (any, []any, error) {
 			}
 		}
 		return query, where.args, nil
-	case func(db.Query):
+	case func(db.Query) db.Query:
 		// Handle nested conditions by creating a new query and applying the callback
-		nestedQuery := NewSingleQuery(r.ctx, r.driver, r.builder, r.logger, r.conditions.Table)
-		query(nestedQuery)
+		nestedQuery := NewQuery(r.ctx, r.driver, r.builder, r.logger, r.conditions.Table, r.txLogs)
+		nestedQuery = query(nestedQuery).(*Query)
 
 		// Build the nested conditions
 		sqlizer, err := r.buildWheres(nestedQuery.conditions.Where)
@@ -834,11 +828,7 @@ func (r *Query) buildWheres(wheres []Where) (sq.Sqlizer, error) {
 }
 
 func (r *Query) clone() *Query {
-	if r.single {
-		return r
-	}
-
-	query := NewQuery(r.ctx, r.driver, r.builder, r.logger, r.conditions.Table)
+	query := NewQuery(r.ctx, r.driver, r.builder, r.logger, r.conditions.Table, r.txLogs)
 	query.conditions = r.conditions
 	query.err = r.err
 
@@ -867,5 +857,15 @@ func (r *Query) toSqlizer(query any, args []any) (sq.Sqlizer, error) {
 }
 
 func (r *Query) trace(sql string, args []any, rowsAffected int64, err error) {
-	r.logger.Trace(r.ctx, carbon.Now(), r.driver.Explain(sql, args...), rowsAffected, err)
+	if r.txLogs != nil {
+		*r.txLogs = append(*r.txLogs, TxLog{
+			ctx:          r.ctx,
+			begin:        carbon.Now(),
+			sql:          r.driver.Explain(sql, args...),
+			rowsAffected: rowsAffected,
+			err:          err,
+		})
+	} else {
+		r.logger.Trace(r.ctx, carbon.Now(), r.driver.Explain(sql, args...), rowsAffected, err)
+	}
 }

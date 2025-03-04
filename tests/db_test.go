@@ -3,6 +3,7 @@
 package tests
 
 import (
+	"database/sql"
 	"testing"
 
 	"github.com/goravel/framework/contracts/database/db"
@@ -293,8 +294,8 @@ func (s *DBTestSuite) TestOrWhere() {
 
 			s.Run("nested condition", func() {
 				var products []Product
-				err := query.DB().Table("products").Where("name", "or where model").OrWhere(func(query db.Query) {
-					query.Where("name", "or where model1")
+				err := query.DB().Table("products").Where("name", "or where model").OrWhere(func(query db.Query) db.Query {
+					return query.Where("name", "or where model1")
 				}).Get(&products)
 				s.NoError(err)
 				s.Equal(2, len(products))
@@ -382,8 +383,8 @@ func (s *DBTestSuite) TestOrWhereNot() {
 
 			s.Run("nested condition", func() {
 				var product Product
-				err := query.DB().Table("products").Where("name", "or where not model1").OrWhereNot(func(query db.Query) {
-					query.Where("name", "or where not model2")
+				err := query.DB().Table("products").Where("name", "or where not model1").OrWhereNot(func(query db.Query) db.Query {
+					return query.Where("name", "or where not model2")
 				}).First(&product)
 				s.NoError(err)
 				s.Equal("or where not model1", product.Name)
@@ -405,6 +406,86 @@ func (s *DBTestSuite) TestPluck() {
 
 			s.NoError(err)
 			s.Equal([]string{"pluck_product1", "pluck_product2"}, names)
+		})
+	}
+}
+
+func (s *DBTestSuite) TestTransaction() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			s.Run("separate transaction", func() {
+				tx, err := query.DB().BeginTransaction()
+				s.NoError(err)
+				s.NotNil(tx)
+
+				result, err := tx.Table("products").Insert(Product{Name: "transaction product"})
+				s.NoError(err)
+				s.Equal(int64(1), result.RowsAffected)
+
+				s.NoError(tx.Commit())
+
+				var product Product
+				err = query.DB().Table("products").Where("name", "transaction product").First(&product)
+				s.NoError(err)
+				s.Equal("transaction product", product.Name)
+
+				tx, err = query.DB().BeginTransaction()
+				s.NoError(err)
+				s.NotNil(tx)
+
+				result, err = tx.Table("products").Where("name", "transaction product").Update("name", "transaction product updated")
+				s.NoError(err)
+				s.Equal(int64(1), result.RowsAffected)
+				s.NoError(tx.Rollback())
+
+				var product1 Product
+				err = query.DB().Table("products").Where("name", "transaction product").First(&product1)
+				s.NoError(err)
+				s.Equal("transaction product", product1.Name)
+
+				var product2 Product
+				err = query.DB().Table("products").Where("name", "transaction product updated").FirstOrFail(&product2)
+				s.Equal(sql.ErrNoRows, err)
+			})
+
+			s.Run("transaction", func() {
+				err := query.DB().Transaction(func(tx db.DB) error {
+					_, err := tx.Table("products").Insert(Product{Name: "transaction product1"})
+					if err != nil {
+						return err
+					}
+
+					_, err = tx.Table("products").Where("name", "transaction product1").Update("name", "transaction product1 updated")
+					if err != nil {
+						return err
+					}
+
+					return nil
+				})
+
+				s.NoError(err)
+
+				var product Product
+				err = query.DB().Table("products").Where("name", "transaction product1 updated").First(&product)
+				s.NoError(err)
+				s.Equal("transaction product1 updated", product.Name)
+
+				err = query.DB().Transaction(func(tx db.DB) error {
+					_, err := tx.Table("products").Where("name", "transaction product1 updated").Delete()
+					if err != nil {
+						return err
+					}
+
+					return assert.AnError
+				})
+
+				s.Equal(assert.AnError, err)
+
+				var product1 Product
+				err = query.DB().Table("products").Where("name", "transaction product1 updated").First(&product1)
+				s.NoError(err)
+				s.Equal("transaction product1 updated", product1.Name)
+			})
 		})
 	}
 }
@@ -525,8 +606,8 @@ func (s *DBTestSuite) TestWhere() {
 
 			s.Run("nested condition", func() {
 				var product Product
-				err := query.DB().Table("products").Where(func(query db.Query) {
-					query.Where("name", "where model")
+				err := query.DB().Table("products").Where(func(query db.Query) db.Query {
+					return query.Where("name", "where model")
 				}).First(&product)
 				s.NoError(err)
 				s.Equal("where model", product.Name)
@@ -649,8 +730,8 @@ func (s *DBTestSuite) TestWhereNot() {
 
 			s.Run("nested condition", func() {
 				var product Product
-				err := query.DB().Table("products").Where("name", "where not model1").WhereNot(func(query db.Query) {
-					query.Where("name", "where not model2")
+				err := query.DB().Table("products").Where("name", "where not model1").WhereNot(func(query db.Query) db.Query {
+					return query.Where("name", "where not model2")
 				}).First(&product)
 				s.NoError(err)
 				s.Equal("where not model1", product.Name)

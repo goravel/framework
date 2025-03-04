@@ -7,24 +7,28 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"github.com/goravel/framework/contracts/config"
-	"github.com/goravel/framework/contracts/database/db"
+	contractsdb "github.com/goravel/framework/contracts/database/db"
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
+	contractslogger "github.com/goravel/framework/contracts/database/logger"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/database/logger"
 	"github.com/goravel/framework/errors"
 )
 
 type DB struct {
-	builder db.Builder
 	config  config.Config
 	ctx     context.Context
+	db      *sqlx.DB
 	driver  contractsdriver.Driver
 	log     log.Log
-	queries map[string]db.DB
+	logger  contractslogger.Logger
+	queries map[string]contractsdb.DB
+	tx      *sqlx.Tx
+	txLogs  *[]TxLog
 }
 
-func NewDB(ctx context.Context, config config.Config, driver contractsdriver.Driver, log log.Log, builder db.Builder) *DB {
-	return &DB{ctx: ctx, config: config, driver: driver, log: log, builder: builder, queries: make(map[string]db.DB)}
+func NewDB(ctx context.Context, config config.Config, driver contractsdriver.Driver, log log.Log, db *sqlx.DB, tx *sqlx.Tx, txLogs *[]TxLog) *DB {
+	return &DB{ctx: ctx, config: config, driver: driver, log: log, logger: logger.NewLogger(config, log), db: db, queries: make(map[string]contractsdb.DB), tx: tx, txLogs: txLogs}
 }
 
 func BuildDB(ctx context.Context, config config.Config, log log.Log, connection string) (*DB, error) {
@@ -43,10 +47,35 @@ func BuildDB(ctx context.Context, config config.Config, log log.Log, connection 
 		return nil, err
 	}
 
-	return NewDB(ctx, config, driver, log, sqlx.NewDb(instance, driver.Config().Driver)), nil
+	return NewDB(ctx, config, driver, log, sqlx.NewDb(instance, driver.Config().Driver), nil, nil), nil
 }
 
-func (r *DB) Connection(name string) db.DB {
+func (r *DB) BeginTransaction() (contractsdb.DB, error) {
+	tx, err := r.db.Beginx()
+	if err != nil {
+		return nil, err
+	}
+
+	return NewDB(r.ctx, r.config, r.driver, r.log, nil, tx, &[]TxLog{}), nil
+}
+
+func (r *DB) Commit() error {
+	if r.tx == nil {
+		return errors.DatabaseTransactionNotStarted
+	}
+
+	if err := r.tx.Commit(); err != nil {
+		return err
+	}
+
+	for _, log := range *r.txLogs {
+		r.logger.Trace(log.ctx, log.begin, log.sql, log.rowsAffected, log.err)
+	}
+
+	return nil
+}
+
+func (r *DB) Connection(name string) contractsdb.DB {
 	if name == "" {
 		name = r.config.GetString("database.default")
 	}
@@ -64,10 +93,40 @@ func (r *DB) Connection(name string) db.DB {
 	return r.queries[name]
 }
 
-func (r *DB) Table(name string) db.Query {
-	return NewQuery(r.ctx, r.driver, r.builder, logger.NewLogger(r.config, r.log), name)
+func (r *DB) Rollback() error {
+	if r.tx == nil {
+		return errors.DatabaseTransactionNotStarted
+	}
+
+	return r.tx.Rollback()
 }
 
-func (r *DB) WithContext(ctx context.Context) db.DB {
-	return NewDB(ctx, r.config, r.driver, r.log, r.builder)
+func (r *DB) Table(name string) contractsdb.Query {
+	if r.tx != nil {
+		return NewQuery(r.ctx, r.driver, r.tx, r.logger, name, r.txLogs)
+	}
+
+	return NewQuery(r.ctx, r.driver, r.db, r.logger, name, nil)
+}
+
+func (r *DB) Transaction(callback func(tx contractsdb.DB) error) error {
+	tx, err := r.BeginTransaction()
+	if err != nil {
+		return err
+	}
+
+	err = callback(tx)
+	if err != nil {
+		if err := tx.Rollback(); err != nil {
+			return err
+		}
+
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (r *DB) WithContext(ctx context.Context) contractsdb.DB {
+	return NewDB(ctx, r.config, r.driver, r.log, r.db, r.tx, r.txLogs)
 }
