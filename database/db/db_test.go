@@ -13,7 +13,7 @@ import (
 	"github.com/goravel/framework/errors"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksdriver "github.com/goravel/framework/mocks/database/driver"
-	mockslog "github.com/goravel/framework/mocks/log"
+	mockslogger "github.com/goravel/framework/mocks/database/logger"
 )
 
 func TestBuildDB(t *testing.T) {
@@ -37,8 +37,6 @@ func TestBuildDB(t *testing.T) {
 				}
 
 				mockConfig.EXPECT().Get("database.connections.mysql.via").Return(driverCallback).Once()
-				mockConfig.EXPECT().GetBool("app.debug").Return(false).Once()
-				mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(200).Once()
 				mockDriver.EXPECT().DB().Return(&sql.DB{}, nil).Once()
 				mockDriver.EXPECT().Config().Return(database.Config{Driver: "mysql"}).Once()
 			},
@@ -76,7 +74,7 @@ func TestConnection(t *testing.T) {
 	var (
 		mockConfig *mocksconfig.Config
 		mockDriver *mocksdriver.Driver
-		mockLog    *mockslog.Log
+		mockLogger *mockslogger.Logger
 	)
 
 	tests := []struct {
@@ -96,8 +94,6 @@ func TestConnection(t *testing.T) {
 				mockConfig.EXPECT().Get("database.connections.mysql.via").Return(driverCallback).Once()
 				mockDriver.EXPECT().DB().Return(&sql.DB{}, nil).Once()
 				mockDriver.EXPECT().Config().Return(database.Config{Driver: "mysql"}).Once()
-				mockConfig.EXPECT().GetBool("app.debug").Return(false).Once()
-				mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(200).Once()
 			},
 			expectedPanic: false,
 		},
@@ -111,8 +107,6 @@ func TestConnection(t *testing.T) {
 				mockConfig.EXPECT().Get("database.connections.postgres.via").Return(driverCallback).Once()
 				mockDriver.EXPECT().DB().Return(&sql.DB{}, nil).Once()
 				mockDriver.EXPECT().Config().Return(database.Config{Driver: "postgres"}).Once()
-				mockConfig.EXPECT().GetBool("app.debug").Return(false).Once()
-				mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(200).Once()
 			},
 			expectedPanic: false,
 		},
@@ -126,10 +120,8 @@ func TestConnection(t *testing.T) {
 				mockConfig.EXPECT().Get("database.connections.mysql.via").Return(driverCallback).Once()
 				mockDriver.EXPECT().DB().Return(&sql.DB{}, nil).Once()
 				mockDriver.EXPECT().Config().Return(database.Config{Driver: "mysql"}).Once()
-				mockConfig.EXPECT().GetBool("app.debug").Return(false).Once()
-				mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(200).Once()
 
-				cachedDB, _ := BuildDB(context.Background(), mockConfig, mockLog, "mysql")
+				cachedDB, _ := BuildDB(context.Background(), mockConfig, mockLogger, "mysql")
 				db.queries = map[string]contractsdb.DB{"mysql": cachedDB}
 			},
 			expectedPanic: false,
@@ -139,7 +131,7 @@ func TestConnection(t *testing.T) {
 			connection: "invalid",
 			setup: func(db *DB) {
 				mockConfig.EXPECT().Get("database.connections.invalid.via").Return(nil).Once()
-				mockLog.EXPECT().Panic(errors.DatabaseConfigNotFound.Error()).Once()
+				mockLogger.EXPECT().Panicf(context.Background(), errors.DatabaseConfigNotFound.Error()).Once()
 			},
 			expectedPanic: true,
 		},
@@ -149,12 +141,9 @@ func TestConnection(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			mockConfig = mocksconfig.NewConfig(t)
 			mockDriver = mocksdriver.NewDriver(t)
-			mockLog = mockslog.NewLog(t)
+			mockLogger = mockslogger.NewLogger(t)
 
-			mockConfig.EXPECT().GetBool("app.debug").Return(false).Once()
-			mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(200).Once()
-
-			db := NewDB(context.Background(), mockConfig, mockDriver, mockLog, nil, nil, nil)
+			db := NewDB(context.Background(), mockConfig, mockDriver, mockLogger, nil, nil, nil)
 			test.setup(db)
 
 			if test.expectedPanic {

@@ -269,9 +269,7 @@ func (r *Query) Insert(data any) (*db.Result, error) {
 		return nil, err
 	}
 	if len(mapData) == 0 {
-		return &db.Result{
-			RowsAffected: 0,
-		}, nil
+		return nil, errors.DatabaseDataIsEmpty
 	}
 
 	sql, args, err := r.buildInsert(mapData)
@@ -462,6 +460,16 @@ func (r *Query) Select(columns ...string) db.Query {
 	q.conditions.Selects = append(q.conditions.Selects, columns...)
 
 	return q
+}
+
+func (r *Query) ToSql() db.ToSql {
+	q := r.clone()
+	return NewToSql(q, false)
+}
+
+func (r *Query) ToRawSql() db.ToSql {
+	q := r.clone()
+	return NewToSql(q, true)
 }
 
 func (r *Query) Update(column any, value ...any) (*db.Result, error) {

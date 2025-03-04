@@ -96,13 +96,13 @@ func (s *LoggerTestSuite) TestLevel() {
 func (s *LoggerTestSuite) TestInfo() {
 	s.mockLog.EXPECT().Infof("test message", mock.Anything).Return().Once()
 
-	s.logger.Info(context.Background(), "test message")
+	s.logger.Infof(context.Background(), "test message")
 }
 
 func (s *LoggerTestSuite) TestWarn() {
 	s.mockLog.EXPECT().Warningf("test warning", mock.Anything).Return().Once()
 
-	s.logger.Warn(context.Background(), "test warning")
+	s.logger.Warningf(context.Background(), "test warning")
 }
 
 func (s *LoggerTestSuite) TestError() {
@@ -136,7 +136,7 @@ func (s *LoggerTestSuite) TestError() {
 				s.mockLog.EXPECT().Errorf("test message", mock.Anything).Times(0)
 			}
 
-			s.logger.Error(context.Background(), "test message", tt.data...)
+			s.logger.Errorf(context.Background(), "test message", tt.data...)
 		})
 	}
 }

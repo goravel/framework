@@ -347,8 +347,8 @@ func (s *QueryTestSuite) TestIncrement() {
 func (s *QueryTestSuite) TestInsert() {
 	s.Run("empty", func() {
 		result, err := s.query.Insert(nil)
-		s.Nil(err)
-		s.Equal(int64(0), result.RowsAffected)
+		s.Equal(errors.DatabaseDataIsEmpty, err)
+		s.Nil(result)
 	})
 
 	s.Run("single struct", func() {
@@ -783,6 +783,150 @@ func (s *QueryTestSuite) TestSelect() {
 
 	err := s.query.Select("id", "name").Where("name", "John").Get(&users)
 	s.Nil(err)
+}
+
+func (s *QueryTestSuite) TestToSql() {
+	s.Run("Count", func() {
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+
+		sql := s.query.Where("name", "John").ToSql().Count()
+		s.Equal("SELECT COUNT(*) FROM users WHERE name = ?", sql)
+	})
+
+	s.Run("Delete", func() {
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+
+		sql := s.query.Where("name", "John").ToSql().Delete()
+		s.Equal("DELETE FROM users WHERE name = ?", sql)
+	})
+
+	s.Run("First", func() {
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+
+		sql := s.query.Where("name", "John").ToSql().First()
+		s.Equal("SELECT * FROM users WHERE name = ?", sql)
+	})
+
+	s.Run("Get", func() {
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+
+		sql := s.query.Where("name", "John").ToSql().Get()
+		s.Equal("SELECT * FROM users WHERE name = ?", sql)
+	})
+
+	s.Run("Insert", func() {
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Times(4)
+
+		sql := s.query.Where("name", "John").ToSql().Insert(map[string]any{"name": "John"})
+		s.Equal("INSERT INTO users (name) VALUES (?)", sql)
+
+		sql = s.query.Where("name", "John").ToSql().Insert([]map[string]any{{"name": "John"}, {"name": "Jane"}})
+		s.Equal("INSERT INTO users (name) VALUES (?),(?)", sql)
+
+		sql = s.query.Where("name", "John").ToSql().Insert(TestUser{Phone: "1234567890"})
+		s.Equal("INSERT INTO users (phone) VALUES (?)", sql)
+
+		sql = s.query.Where("name", "John").ToSql().Insert([]TestUser{{Phone: "1234567890"}, {Phone: "1234567891"}})
+		s.Equal("INSERT INTO users (phone) VALUES (?),(?)", sql)
+	})
+
+	s.Run("Pluck", func() {
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+
+		sql := s.query.Where("name", "John").ToSql().Pluck("name", &[]string{})
+		s.Equal("SELECT name FROM users WHERE name = ?", sql)
+	})
+
+	s.Run("Update", func() {
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Times(3)
+
+		sql := s.query.Where("name", "John").ToSql().Update(map[string]any{"name": "Jane"})
+		s.Equal("UPDATE users SET name = ? WHERE name = ?", sql)
+
+		sql = s.query.Where("name", "John").ToSql().Update("name", "Jane")
+		s.Equal("UPDATE users SET name = ? WHERE name = ?", sql)
+
+		sql = s.query.Where("name", "John").ToSql().Update(TestUser{Phone: "1234567890"})
+		s.Equal("UPDATE users SET phone = ? WHERE name = ?", sql)
+	})
+}
+
+func (s *QueryTestSuite) TestToRawSql() {
+	s.Run("Count", func() {
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockDriver.EXPECT().Explain("SELECT COUNT(*) FROM users WHERE name = ?", "John").Return("SELECT COUNT(*) FROM users WHERE name = \"John\"").Once()
+
+		sql := s.query.Where("name", "John").ToRawSql().Count()
+		s.Equal("SELECT COUNT(*) FROM users WHERE name = \"John\"", sql)
+	})
+
+	s.Run("Delete", func() {
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockDriver.EXPECT().Explain("DELETE FROM users WHERE name = ?", "John").Return("DELETE FROM users WHERE name = \"John\"").Once()
+
+		sql := s.query.Where("name", "John").ToRawSql().Delete()
+		s.Equal("DELETE FROM users WHERE name = \"John\"", sql)
+	})
+
+	s.Run("First", func() {
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE name = ?", "John").Return("SELECT * FROM users WHERE name = \"John\"").Once()
+
+		sql := s.query.Where("name", "John").ToRawSql().First()
+		s.Equal("SELECT * FROM users WHERE name = \"John\"", sql)
+	})
+
+	s.Run("Get", func() {
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE name = ?", "John").Return("SELECT * FROM users WHERE name = \"John\"").Once()
+
+		sql := s.query.Where("name", "John").ToRawSql().Get()
+		s.Equal("SELECT * FROM users WHERE name = \"John\"", sql)
+	})
+
+	s.Run("Insert", func() {
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Times(4)
+
+		s.mockDriver.EXPECT().Explain("INSERT INTO users (name) VALUES (?)", "John").Return("INSERT INTO users (name) VALUES (\"John\")").Once()
+		sql := s.query.Where("name", "John").ToRawSql().Insert(map[string]any{"name": "John"})
+		s.Equal("INSERT INTO users (name) VALUES (\"John\")", sql)
+
+		s.mockDriver.EXPECT().Explain("INSERT INTO users (name) VALUES (?),(?)", "John", "Jane").Return("INSERT INTO users (name) VALUES (\"John\"),(\"Jane\")").Once()
+		sql = s.query.Where("name", "John").ToRawSql().Insert([]map[string]any{{"name": "John"}, {"name": "Jane"}})
+		s.Equal("INSERT INTO users (name) VALUES (\"John\"),(\"Jane\")", sql)
+
+		s.mockDriver.EXPECT().Explain("INSERT INTO users (phone) VALUES (?)", "1234567890").Return("INSERT INTO users (phone) VALUES (\"1234567890\")").Once()
+		sql = s.query.Where("name", "John").ToRawSql().Insert(TestUser{Phone: "1234567890"})
+		s.Equal("INSERT INTO users (phone) VALUES (\"1234567890\")", sql)
+
+		s.mockDriver.EXPECT().Explain("INSERT INTO users (phone) VALUES (?),(?)", "1234567890", "1234567891").Return("INSERT INTO users (phone) VALUES (\"1234567890\"),(\"1234567891\")").Once()
+		sql = s.query.Where("name", "John").ToRawSql().Insert([]TestUser{{Phone: "1234567890"}, {Phone: "1234567891"}})
+		s.Equal("INSERT INTO users (phone) VALUES (\"1234567890\"),(\"1234567891\")", sql)
+	})
+
+	s.Run("Pluck", func() {
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockDriver.EXPECT().Explain("SELECT name FROM users WHERE name = ?", "John").Return("SELECT name FROM users WHERE name = \"John\"").Once()
+
+		sql := s.query.Where("name", "John").ToRawSql().Pluck("name", &[]string{})
+		s.Equal("SELECT name FROM users WHERE name = \"John\"", sql)
+	})
+
+	s.Run("Update", func() {
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Times(3)
+
+		s.mockDriver.EXPECT().Explain("UPDATE users SET name = ? WHERE name = ?", "Jane", "John").Return("UPDATE users SET name = \"Jane\" WHERE name = \"John\"").Once()
+		sql := s.query.Where("name", "John").ToRawSql().Update(map[string]any{"name": "Jane"})
+		s.Equal("UPDATE users SET name = \"Jane\" WHERE name = \"John\"", sql)
+
+		s.mockDriver.EXPECT().Explain("UPDATE users SET name = ? WHERE name = ?", "Jane", "John").Return("UPDATE users SET name = \"Jane\" WHERE name = \"John\"").Once()
+		sql = s.query.Where("name", "John").ToRawSql().Update("name", "Jane")
+		s.Equal("UPDATE users SET name = \"Jane\" WHERE name = \"John\"", sql)
+
+		s.mockDriver.EXPECT().Explain("UPDATE users SET phone = ? WHERE name = ?", "1234567890", "John").Return("UPDATE users SET phone = \"1234567890\" WHERE name = \"John\"").Once()
+		sql = s.query.Where("name", "John").ToRawSql().Update(TestUser{Phone: "1234567890"})
+		s.Equal("UPDATE users SET phone = \"1234567890\" WHERE name = \"John\"", sql)
+	})
 }
 
 func (s *QueryTestSuite) TestUpdate() {

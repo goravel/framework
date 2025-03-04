@@ -20,9 +20,10 @@ const (
 
 type Logger interface {
 	Level(Level) Logger
-	Info(context.Context, string, ...any)
-	Warn(context.Context, string, ...any)
-	Error(context.Context, string, ...any)
+	Infof(context.Context, string, ...any)
+	Warningf(context.Context, string, ...any)
+	Errorf(context.Context, string, ...any)
+	Panicf(context.Context, string, ...any)
 	Trace(ctx context.Context, begin carbon.Carbon, sql string, rowsAffected int64, err error)
 	ToGorm() logger.Interface
 }
