@@ -62,8 +62,8 @@ github.com/gookit/color v1.4.2/go.mod h1:fqRyamkC1W8uxl+lxCQxOT09l/vYfZ+QeiX3rKQ
 github.com/gookit/color v1.5.0/go.mod h1:43aQb+Zerm/BWh2GnrgOQm7ffz7tvQXEKV6BFMl7wAo=
 github.com/gookit/color v1.5.4 h1:FZmqs7XOyGgCAxmWyPslpiok1k05wmY3SJTytgvYFs0=
 github.com/gookit/color v1.5.4/go.mod h1:pZJOeOS8DM43rXbp4AZo1n9zCU2qjpcRko0b6/QJi9w=
-github.com/goravel/postgres v0.0.2-0.20250301031856-64f47c6379d5 h1:+xzPB9+FBXCO2o8Q5Kapw1CavLPAoe1FohFyEmQu2oA=
-github.com/goravel/postgres v0.0.2-0.20250301031856-64f47c6379d5/go.mod h1:GocNrllGPXCGbASfcBHZV4J4IbiEqD+JC9H+llBc7oI=
+github.com/goravel/postgres v0.0.2-0.20250304195636-14f0decaa67c h1:TdB6ny2ePNWQW8a3NMDgjR63EDnXitJgoQz4aAd3RLM=
+github.com/goravel/postgres v0.0.2-0.20250304195636-14f0decaa67c/go.mod h1:bi7RN4/SgV+yonZ8o91EM4MgAlO7iO7faPCScdEEuuA=
 github.com/jackc/pgpassfile v1.0.0 h1:/6Hmqy13Ss2zCq62VdNG8tM1wchn8zjSGOBJ6icpsIM=
 github.com/jackc/pgpassfile v1.0.0/go.mod h1:CEx0iS5ambNFdcRtxPj5JhEz+xB6uRky5eyVu/W2HEg=
 github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 h1:iCEnooe7UlwOQYpKFhBabPMi4aNAfoODPEFNiAnClxo=

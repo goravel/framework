@@ -9,7 +9,7 @@ godebug x509negativeserial=1
 require (
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/goravel/framework v1.15.4
-	github.com/goravel/postgres v0.0.2-0.20250301031856-64f47c6379d5
+	github.com/goravel/postgres v0.0.2-0.20250304195636-14f0decaa67c
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/spf13/cast v1.7.1
 	github.com/stretchr/testify v1.10.0
