@@ -1,4 +1,4 @@
-package db
+package driver
 
 type Conditions struct {
 	CrossJoin []Join
@@ -8,6 +8,7 @@ type Conditions struct {
 	Join      []Join
 	LeftJoin  []Join
 	Limit     *uint64
+	Offset    *uint64
 	OrderBy   []string
 	RightJoin []Join
 	Selects   []string
@@ -16,17 +17,17 @@ type Conditions struct {
 }
 
 type Having struct {
-	query any
-	args  []any
+	Query any
+	Args  []any
 }
 
 type Join struct {
-	query string
-	args  []any
+	Query string
+	Args  []any
 }
 
 type Where struct {
-	query any
-	args  []any
-	or    bool
+	Query any
+	Args  []any
+	Or    bool
 }

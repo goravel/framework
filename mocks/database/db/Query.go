@@ -1125,6 +1125,102 @@ func (_c *Query_LeftJoin_Call) RunAndReturn(run func(string, ...interface{}) db.
 	return _c
 }
 
+// Limit provides a mock function with given fields: limit
+func (_m *Query) Limit(limit uint64) db.Query {
+	ret := _m.Called(limit)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Limit")
+	}
+
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func(uint64) db.Query); ok {
+		r0 = rf(limit)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_Limit_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Limit'
+type Query_Limit_Call struct {
+	*mock.Call
+}
+
+// Limit is a helper method to define mock.On call
+//   - limit uint64
+func (_e *Query_Expecter) Limit(limit interface{}) *Query_Limit_Call {
+	return &Query_Limit_Call{Call: _e.mock.On("Limit", limit)}
+}
+
+func (_c *Query_Limit_Call) Run(run func(limit uint64)) *Query_Limit_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(uint64))
+	})
+	return _c
+}
+
+func (_c *Query_Limit_Call) Return(_a0 db.Query) *Query_Limit_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_Limit_Call) RunAndReturn(run func(uint64) db.Query) *Query_Limit_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Offset provides a mock function with given fields: offset
+func (_m *Query) Offset(offset uint64) db.Query {
+	ret := _m.Called(offset)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Offset")
+	}
+
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func(uint64) db.Query); ok {
+		r0 = rf(offset)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_Offset_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Offset'
+type Query_Offset_Call struct {
+	*mock.Call
+}
+
+// Offset is a helper method to define mock.On call
+//   - offset uint64
+func (_e *Query_Expecter) Offset(offset interface{}) *Query_Offset_Call {
+	return &Query_Offset_Call{Call: _e.mock.On("Offset", offset)}
+}
+
+func (_c *Query_Offset_Call) Run(run func(offset uint64)) *Query_Offset_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(uint64))
+	})
+	return _c
+}
+
+func (_c *Query_Offset_Call) Return(_a0 db.Query) *Query_Offset_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_Offset_Call) RunAndReturn(run func(uint64) db.Query) *Query_Offset_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // OrWhere provides a mock function with given fields: query, args
 func (_m *Query) OrWhere(query interface{}, args ...interface{}) db.Query {
 	var _ca []interface{}
@@ -2217,6 +2313,53 @@ func (_c *Query_Update_Call) Return(_a0 *db.Result, _a1 error) *Query_Update_Cal
 }
 
 func (_c *Query_Update_Call) RunAndReturn(run func(interface{}, ...interface{}) (*db.Result, error)) *Query_Update_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Value provides a mock function with given fields: column, dest
+func (_m *Query) Value(column string, dest interface{}) error {
+	ret := _m.Called(column, dest)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Value")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, interface{}) error); ok {
+		r0 = rf(column, dest)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Query_Value_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Value'
+type Query_Value_Call struct {
+	*mock.Call
+}
+
+// Value is a helper method to define mock.On call
+//   - column string
+//   - dest interface{}
+func (_e *Query_Expecter) Value(column interface{}, dest interface{}) *Query_Value_Call {
+	return &Query_Value_Call{Call: _e.mock.On("Value", column, dest)}
+}
+
+func (_c *Query_Value_Call) Run(run func(column string, dest interface{})) *Query_Value_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(interface{}))
+	})
+	return _c
+}
+
+func (_c *Query_Value_Call) Return(_a0 error) *Query_Value_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_Value_Call) RunAndReturn(run func(string, interface{}) error) *Query_Value_Call {
 	_c.Call.Return(run)
 	return _c
 }

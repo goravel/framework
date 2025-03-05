@@ -13,6 +13,7 @@ import (
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/db"
 	"github.com/goravel/framework/contracts/database/driver"
+	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/logger"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
@@ -22,24 +23,26 @@ import (
 
 type Query struct {
 	builder    db.Builder
-	conditions Conditions
+	conditions contractsdriver.Conditions
 	ctx        context.Context
 	err        error
-	driver     driver.Driver
+	driver     contractsdriver.Driver
+	grammar    contractsdriver.Grammar
 	logger     logger.Logger
 	txLogs     *[]TxLog
 }
 
-func NewQuery(ctx context.Context, driver driver.Driver, builder db.Builder, logger logger.Logger, table string, txLogs *[]TxLog) *Query {
+func NewQuery(ctx context.Context, driver contractsdriver.Driver, builder db.Builder, logger logger.Logger, table string, txLogs *[]TxLog) *Query {
 	return &Query{
 		builder: builder,
-		conditions: Conditions{
+		conditions: contractsdriver.Conditions{
 			Table: table,
 		},
-		ctx:    ctx,
-		driver: driver,
-		logger: logger,
-		txLogs: txLogs,
+		ctx:     ctx,
+		driver:  driver,
+		grammar: driver.Grammar(),
+		logger:  logger,
+		txLogs:  txLogs,
 	}
 }
 
@@ -66,9 +69,9 @@ func (r *Query) Count() (int64, error) {
 
 func (r *Query) CrossJoin(query string, args ...any) db.Query {
 	q := r.clone()
-	q.conditions.CrossJoin = append(q.conditions.CrossJoin, Join{
-		query: query,
-		args:  args,
+	q.conditions.CrossJoin = append(q.conditions.CrossJoin, contractsdriver.Join{
+		Query: query,
+		Args:  args,
 	})
 
 	return q
@@ -272,9 +275,9 @@ func (r *Query) GroupBy(column ...string) db.Query {
 
 func (r *Query) Having(query any, args ...any) db.Query {
 	q := r.clone()
-	q.conditions.Having = &Having{
-		query: query,
-		args:  args,
+	q.conditions.Having = &contractsdriver.Having{
+		Query: query,
+		Args:  args,
 	}
 
 	return q
@@ -282,9 +285,9 @@ func (r *Query) Having(query any, args ...any) db.Query {
 
 func (r *Query) Join(query string, args ...any) db.Query {
 	q := r.clone()
-	q.conditions.Join = append(q.conditions.Join, Join{
-		query: query,
-		args:  args,
+	q.conditions.Join = append(q.conditions.Join, contractsdriver.Join{
+		Query: query,
+		Args:  args,
 	})
 
 	return q
@@ -368,12 +371,12 @@ func (r *Query) InsertGetId(data any) (int64, error) {
 	return id, nil
 }
 
-// func (r *Query) Limit(limit uint64) db.Query {
-// 	q := r.clone()
-// 	q.conditions.Limit = &limit
+func (r *Query) Limit(limit uint64) db.Query {
+	q := r.clone()
+	q.conditions.Limit = &limit
 
-// 	return q
-// }
+	return q
+}
 
 func (r *Query) Latest(dest any, column ...string) error {
 	col := "created_at"
@@ -386,10 +389,17 @@ func (r *Query) Latest(dest any, column ...string) error {
 
 func (r *Query) LeftJoin(query string, args ...any) db.Query {
 	q := r.clone()
-	q.conditions.LeftJoin = append(q.conditions.LeftJoin, Join{
-		query: query,
-		args:  args,
+	q.conditions.LeftJoin = append(q.conditions.LeftJoin, contractsdriver.Join{
+		Query: query,
+		Args:  args,
 	})
+
+	return q
+}
+
+func (r *Query) Offset(offset uint64) db.Query {
+	q := r.clone()
+	q.conditions.Offset = &offset
 
 	return q
 }
@@ -417,10 +427,10 @@ func (r *Query) OrderByRaw(raw string) db.Query {
 
 func (r *Query) OrWhere(query any, args ...any) db.Query {
 	q := r.clone()
-	q.conditions.Where = append(q.conditions.Where, Where{
-		query: query,
-		args:  args,
-		or:    true,
+	q.conditions.Where = append(q.conditions.Where, contractsdriver.Where{
+		Query: query,
+		Args:  args,
+		Or:    true,
 	})
 
 	return q
@@ -452,9 +462,9 @@ func (r *Query) OrWhereLike(column string, value string) db.Query {
 }
 
 func (r *Query) OrWhereNot(query any, args ...any) db.Query {
-	query, args, err := r.buildWhere(Where{
-		query: query,
-		args:  args,
+	query, args, err := r.buildWhere(contractsdriver.Where{
+		Query: query,
+		Args:  args,
 	})
 	if err != nil {
 		r.err = err
@@ -508,9 +518,9 @@ func (r *Query) Pluck(column string, dest any) error {
 
 func (r *Query) RightJoin(query string, args ...any) db.Query {
 	q := r.clone()
-	q.conditions.RightJoin = append(q.conditions.RightJoin, Join{
-		query: query,
-		args:  args,
+	q.conditions.RightJoin = append(q.conditions.RightJoin, contractsdriver.Join{
+		Query: query,
+		Args:  args,
 	})
 
 	return q
@@ -572,31 +582,9 @@ func (r *Query) Update(column any, value ...any) (*db.Result, error) {
 	}, nil
 }
 
-// func (r *Query) Value(column string, dest any) error {
-// 	r.conditions.Selects = []string{column}
-// 	r.conditions.Limit = convert.Pointer(uint64(1))
-
-// 	sql, args, err := r.buildSelect()
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	err = r.builder.Get(dest, sql, args...)
-// 	if err != nil {
-// 		if errors.Is(err, databasesql.ErrNoRows) {
-// 			r.trace(sql, args, 0, nil)
-// 			return nil
-// 		}
-
-// 		r.trace(sql, args, -1, err)
-
-// 		return err
-// 	}
-
-// 	r.trace(sql, args, -1, nil)
-
-// 	return nil
-// }
+func (r *Query) Value(column string, dest any) error {
+	return r.Select(column).Limit(1).First(dest)
+}
 
 func (r *Query) When(condition bool, callback func(query db.Query) db.Query) db.Query {
 	if condition {
@@ -608,9 +596,9 @@ func (r *Query) When(condition bool, callback func(query db.Query) db.Query) db.
 
 func (r *Query) Where(query any, args ...any) db.Query {
 	q := r.clone()
-	q.conditions.Where = append(q.conditions.Where, Where{
-		query: query,
-		args:  args,
+	q.conditions.Where = append(q.conditions.Where, contractsdriver.Where{
+		Query: query,
+		Args:  args,
 	})
 
 	return q
@@ -655,9 +643,9 @@ func (r *Query) WhereLike(column string, value string) db.Query {
 }
 
 func (r *Query) WhereNot(query any, args ...any) db.Query {
-	query, args, err := r.buildWhere(Where{
-		query: query,
-		args:  args,
+	query, args, err := r.buildWhere(contractsdriver.Where{
+		Query: query,
+		Args:  args,
 	})
 	if err != nil {
 		r.err = err
@@ -785,19 +773,19 @@ func (r *Query) buildSelect() (sql string, args []any, err error) {
 	builder = builder.From(r.conditions.Table)
 
 	for _, join := range r.conditions.Join {
-		builder = builder.Join(join.query, join.args...)
+		builder = builder.Join(join.Query, join.Args...)
 	}
 
 	for _, leftJoin := range r.conditions.LeftJoin {
-		builder = builder.LeftJoin(leftJoin.query, leftJoin.args...)
+		builder = builder.LeftJoin(leftJoin.Query, leftJoin.Args...)
 	}
 
 	for _, rightJoin := range r.conditions.RightJoin {
-		builder = builder.RightJoin(rightJoin.query, rightJoin.args...)
+		builder = builder.RightJoin(rightJoin.Query, rightJoin.Args...)
 	}
 
 	for _, crossJoin := range r.conditions.CrossJoin {
-		builder = builder.CrossJoin(crossJoin.query, crossJoin.args...)
+		builder = builder.CrossJoin(crossJoin.Query, crossJoin.Args...)
 	}
 
 	sqlizer, err := r.buildWheres(r.conditions.Where)
@@ -811,16 +799,35 @@ func (r *Query) buildSelect() (sql string, args []any, err error) {
 		builder = builder.GroupBy(r.conditions.GroupBy...)
 
 		if r.conditions.Having != nil {
-			builder = builder.Having(r.conditions.Having.query, r.conditions.Having.args...)
+			builder = builder.Having(r.conditions.Having.Query, r.conditions.Having.Args...)
 		}
 	}
 
-	if len(r.conditions.OrderBy) > 0 {
-		builder = builder.OrderBy(r.conditions.OrderBy...)
+	compileOrderByGrammar, ok := r.grammar.(driver.CompileOrderByGrammar)
+	if ok {
+		builder = compileOrderByGrammar.CompileOrderBy(builder, r.conditions)
+	} else {
+		if len(r.conditions.OrderBy) > 0 {
+			builder = builder.OrderBy(r.conditions.OrderBy...)
+		}
 	}
 
-	if r.conditions.Limit != nil {
-		builder = builder.Limit(*r.conditions.Limit)
+	compileOffsetGrammar, ok := r.grammar.(driver.CompileOffsetGrammar)
+	if ok {
+		builder = compileOffsetGrammar.CompileOffset(builder, r.conditions)
+	} else {
+		if r.conditions.Offset != nil {
+			builder = builder.Offset(*r.conditions.Offset)
+		}
+	}
+
+	compileLimitGrammar, ok := r.grammar.(driver.CompileLimitGrammar)
+	if ok {
+		builder = compileLimitGrammar.CompileLimit(builder, r.conditions)
+	} else {
+		if r.conditions.Limit != nil {
+			builder = builder.Limit(*r.conditions.Limit)
+		}
 	}
 
 	return builder.ToSql()
@@ -848,17 +855,17 @@ func (r *Query) buildUpdate(data map[string]any) (sql string, args []any, err er
 	return builder.Where(sqlizer).SetMap(data).ToSql()
 }
 
-func (r *Query) buildWhere(where Where) (any, []any, error) {
-	switch query := where.query.(type) {
+func (r *Query) buildWhere(where contractsdriver.Where) (any, []any, error) {
+	switch query := where.Query.(type) {
 	case string:
 		if !str.Of(query).Trim().Contains(" ", "?") {
-			if len(where.args) > 1 {
-				return sq.Eq{query: where.args}, nil, nil
-			} else if len(where.args) == 1 {
-				return sq.Eq{query: where.args[0]}, nil, nil
+			if len(where.Args) > 1 {
+				return sq.Eq{query: where.Args}, nil, nil
+			} else if len(where.Args) == 1 {
+				return sq.Eq{query: where.Args[0]}, nil, nil
 			}
 		}
-		return query, where.args, nil
+		return query, where.Args, nil
 	case func(db.Query) db.Query:
 		// Handle nested conditions by creating a new query and applying the callback
 		nestedQuery := NewQuery(r.ctx, r.driver, r.builder, r.logger, r.conditions.Table, r.txLogs)
@@ -872,11 +879,11 @@ func (r *Query) buildWhere(where Where) (any, []any, error) {
 
 		return sqlizer, nil, nil
 	default:
-		return where.query, where.args, nil
+		return where.Query, where.Args, nil
 	}
 }
 
-func (r *Query) buildWheres(wheres []Where) (sq.Sqlizer, error) {
+func (r *Query) buildWheres(wheres []contractsdriver.Where) (sq.Sqlizer, error) {
 	if len(wheres) == 0 {
 		return nil, nil
 	}
@@ -893,7 +900,7 @@ func (r *Query) buildWheres(wheres []Where) (sq.Sqlizer, error) {
 			return nil, err
 		}
 
-		if where.or && len(sqlizers) > 0 {
+		if where.Or && len(sqlizers) > 0 {
 			// If it's an OR condition and we have previous conditions,
 			// wrap the previous conditions in an AND and create an OR condition
 			if len(sqlizers) == 1 {
