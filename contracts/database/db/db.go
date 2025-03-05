@@ -6,12 +6,19 @@ import (
 )
 
 type DB interface {
+	// BeginTransaction Begin a transaction.
 	BeginTransaction() (DB, error)
+	// Commit Commit the transaction.
 	Commit() error
+	// Connection Get a database connection by name.
 	Connection(name string) DB
+	// Rollback Rollback the transaction.
 	Rollback() error
+	// Table Get a table instance.
 	Table(name string) Query
+	// Transaction Execute a transaction.
 	Transaction(txFunc func(tx DB) error) error
+	// WithContext Set the context for the query.
 	WithContext(ctx context.Context) DB
 }
 
@@ -60,9 +67,11 @@ type Query interface {
 	Latest(dest any, column ...string) error
 	// LeftJoin specifying LEFT JOIN conditions for the query.
 	LeftJoin(query string, args ...any) Query
-	// Limit(limit uint64) Query
+	// Limit Add a limit to the query.
+	Limit(limit uint64) Query
 	// lockForUpdate
-	// offset
+	// Offset Add an "offset" clause to the query.
+	Offset(offset uint64) Query
 	// OrderBy Add an "order by" clause to the query.
 	OrderBy(column string) Query
 	// OrderByDesc Add a descending "order by" clause to the query.
@@ -100,15 +109,14 @@ type Query interface {
 	// Select Set the columns to be selected.
 	Select(columns ...string) Query
 	// sharedLock
-	// skip
-	// take
 	// ToSql Get the SQL representation of the query.
 	ToSql() ToSql
 	// ToRawSql Get the raw SQL representation of the query with embedded bindings.
 	ToRawSql() ToSql
 	// Update records in the database.
 	Update(column any, value ...any) (*Result, error)
-	// Value(column string, dest any) error
+	// Value Get a single column's value from the first result of a query.
+	Value(column string, dest any) error
 	// When executes the callback if the condition is true.
 	When(condition bool, callback func(query Query) Query) Query
 	// Where Add a basic where clause to the query.

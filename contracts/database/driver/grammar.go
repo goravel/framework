@@ -1,5 +1,9 @@
 package driver
 
+import (
+	sq "github.com/Masterminds/squirrel"
+)
+
 type Grammar interface {
 	// CompileAdd Compile an add column command.
 	CompileAdd(blueprint Blueprint, command *Command) string
@@ -115,6 +119,18 @@ type Grammar interface {
 	TypeSmallInteger(column ColumnDefinition) string
 	// TypeString Create the column definition for a string type.
 	TypeString(column ColumnDefinition) string
+}
+
+type CompileOffsetGrammar interface {
+	CompileOffset(builder sq.SelectBuilder, conditions Conditions) sq.SelectBuilder
+}
+
+type CompileOrderByGrammar interface {
+	CompileOrderBy(builder sq.SelectBuilder, conditions Conditions) sq.SelectBuilder
+}
+
+type CompileLimitGrammar interface {
+	CompileLimit(builder sq.SelectBuilder, conditions Conditions) sq.SelectBuilder
 }
 
 type Schema interface {

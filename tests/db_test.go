@@ -10,6 +10,7 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/convert"
+	"github.com/goravel/sqlserver"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -408,6 +409,51 @@ func (s *DBTestSuite) TestLeftJoin() {
 	}
 }
 
+func (s *DBTestSuite) TestLimit() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{Name: "limit_product1"},
+				{Name: "limit_product2"},
+				{Name: "limit_product3"},
+			})
+
+			var products []Product
+			err := query.DB().Table("products").Limit(1).Get(&products)
+			s.NoError(err)
+			s.Equal(1, len(products))
+			s.Equal("limit_product1", products[0].Name)
+		})
+	}
+}
+
+func (s *DBTestSuite) TestOffset() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{Name: "offset_product1"},
+				{Name: "offset_product2"},
+				{Name: "offset_product3"},
+			})
+
+			var products []Product
+			err := query.DB().Table("products").Offset(1).Get(&products)
+			s.NoError(err)
+
+			if driver == sqlserver.Name {
+				s.Equal(3, len(products))
+				s.Equal("offset_product1", products[0].Name)
+				s.Equal("offset_product2", products[1].Name)
+				s.Equal("offset_product3", products[2].Name)
+			} else {
+				s.Equal(2, len(products))
+				s.Equal("offset_product2", products[0].Name)
+				s.Equal("offset_product3", products[1].Name)
+			}
+		})
+	}
+}
+
 func (s *DBTestSuite) TestOrWhere() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
@@ -731,19 +777,22 @@ func (s *DBTestSuite) TestUpdate_Delete() {
 	}
 }
 
-// func (s *DBTestSuite) TestValue() {
-// 	for driver, query := range s.queries {
-// 		s.Run(driver, func() {
-// 			query.DB().Table("products").Insert(Product{Name: "value_product"})
+func (s *DBTestSuite) TestValue() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{Name: "value_product"},
+				{Name: "value_product1"},
+			})
 
-// 			var name string
-// 			err := query.DB().Table("products").Where("name", "value_product").Value("name", &name)
+			var name string
+			err := query.DB().Table("products").OrderByDesc("id").Value("name", &name)
 
-// 			s.NoError(err)
-// 			s.Equal("value_product", name)
-// 		})
-// 	}
-// }
+			s.NoError(err)
+			s.Equal("value_product1", name)
+		})
+	}
+}
 
 func (s *DBTestSuite) TestWhere() {
 	for driver, query := range s.queries {

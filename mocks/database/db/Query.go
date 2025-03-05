@@ -1125,6 +1125,54 @@ func (_c *Query_LeftJoin_Call) RunAndReturn(run func(string, ...interface{}) db.
 	return _c
 }
 
+// Limit provides a mock function with given fields: limit
+func (_m *Query) Limit(limit uint64) db.Query {
+	ret := _m.Called(limit)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Limit")
+	}
+
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func(uint64) db.Query); ok {
+		r0 = rf(limit)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_Limit_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Limit'
+type Query_Limit_Call struct {
+	*mock.Call
+}
+
+// Limit is a helper method to define mock.On call
+//   - limit uint64
+func (_e *Query_Expecter) Limit(limit interface{}) *Query_Limit_Call {
+	return &Query_Limit_Call{Call: _e.mock.On("Limit", limit)}
+}
+
+func (_c *Query_Limit_Call) Run(run func(limit uint64)) *Query_Limit_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(uint64))
+	})
+	return _c
+}
+
+func (_c *Query_Limit_Call) Return(_a0 db.Query) *Query_Limit_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_Limit_Call) RunAndReturn(run func(uint64) db.Query) *Query_Limit_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // OrWhere provides a mock function with given fields: query, args
 func (_m *Query) OrWhere(query interface{}, args ...interface{}) db.Query {
 	var _ca []interface{}
