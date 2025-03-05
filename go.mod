@@ -9,7 +9,7 @@ require (
 	github.com/charmbracelet/huh/spinner v0.0.0-20250303111024-59cea25b2811
 	github.com/charmbracelet/lipgloss v1.0.0
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
-	github.com/dromara/carbon/v2 v2.5.3
+	github.com/dromara/carbon/v2 v2.5.4
 	github.com/gabriel-vasile/mimetype v1.4.8
 	github.com/go-viper/mapstructure/v2 v2.2.1
 	github.com/golang-jwt/jwt/v5 v5.2.1
