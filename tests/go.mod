@@ -10,7 +10,7 @@ require (
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/goravel/framework v1.15.4
 	github.com/goravel/postgres v0.0.2-0.20250304195636-14f0decaa67c
-	github.com/goravel/sqlserver v0.0.0-20250301031912-319b0afb01ba
+	github.com/goravel/sqlserver v0.0.0-20250305113336-06522eb6c9a8
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/spf13/cast v1.7.1
 	github.com/stretchr/testify v1.10.0
