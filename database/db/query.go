@@ -821,11 +821,11 @@ func (r *Query) buildSelect() (sql string, args []any, err error) {
 		}
 	}
 
-	if r.conditions.Limit != nil {
-		compileLimitGrammar, ok := r.grammar.(driver.CompileLimitGrammar)
-		if ok {
-			builder = compileLimitGrammar.CompileLimit(builder, r.conditions)
-		} else {
+	compileLimitGrammar, ok := r.grammar.(driver.CompileLimitGrammar)
+	if ok {
+		builder = compileLimitGrammar.CompileLimit(builder, r.conditions)
+	} else {
+		if r.conditions.Limit != nil {
 			builder = builder.Limit(*r.conditions.Limit)
 		}
 	}
