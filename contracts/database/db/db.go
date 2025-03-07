@@ -56,7 +56,8 @@ type Query interface {
 	Having(query any, args ...any) Query
 	// Increment a column's value by a given amount.
 	Increment(column string, value ...uint64) error
-	// inRandomOrder
+	// InRandomOrder Add an "in random order" clause to the query.
+	InRandomOrder() Query
 	// Insert a new record into the database.
 	Insert(data any) (*Result, error)
 	// InsertGetId returns the ID of the inserted row, only supported by MySQL and Sqlite

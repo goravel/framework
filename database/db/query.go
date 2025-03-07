@@ -306,6 +306,13 @@ func (r *Query) Increment(column string, value ...uint64) error {
 	return nil
 }
 
+func (r *Query) InRandomOrder() db.Query {
+	q := r.clone()
+	q.conditions.InRandomOrder = convert.Pointer(true)
+
+	return q
+}
+
 func (r *Query) Insert(data any) (*db.Result, error) {
 	mapData, err := convertToSliceMap(data)
 	if err != nil {
@@ -807,6 +814,10 @@ func (r *Query) buildSelect() (sql string, args []any, err error) {
 	}
 
 	builder = builder.Where(sqlizer)
+
+	if r.conditions.InRandomOrder != nil && *r.conditions.InRandomOrder {
+		builder = r.grammar.CompileInRandomOrder(builder, &r.conditions)
+	}
 
 	if len(r.conditions.GroupBy) > 0 {
 		builder = builder.GroupBy(r.conditions.GroupBy...)

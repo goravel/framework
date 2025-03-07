@@ -771,6 +771,53 @@ func (_c *Query_Having_Call) RunAndReturn(run func(interface{}, ...interface{}) 
 	return _c
 }
 
+// InRandomOrder provides a mock function with no fields
+func (_m *Query) InRandomOrder() db.Query {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for InRandomOrder")
+	}
+
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func() db.Query); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_InRandomOrder_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InRandomOrder'
+type Query_InRandomOrder_Call struct {
+	*mock.Call
+}
+
+// InRandomOrder is a helper method to define mock.On call
+func (_e *Query_Expecter) InRandomOrder() *Query_InRandomOrder_Call {
+	return &Query_InRandomOrder_Call{Call: _e.mock.On("InRandomOrder")}
+}
+
+func (_c *Query_InRandomOrder_Call) Run(run func()) *Query_InRandomOrder_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Query_InRandomOrder_Call) Return(_a0 db.Query) *Query_InRandomOrder_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_InRandomOrder_Call) RunAndReturn(run func() db.Query) *Query_InRandomOrder_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Increment provides a mock function with given fields: column, value
 func (_m *Query) Increment(column string, value ...uint64) error {
 	_va := make([]interface{}, len(value))

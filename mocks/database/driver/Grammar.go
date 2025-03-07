@@ -980,6 +980,53 @@ func (_c *Grammar_CompileFullText_Call) RunAndReturn(run func(driver.Blueprint, 
 	return _c
 }
 
+// CompileInRandomOrder provides a mock function with given fields: builder, conditions
+func (_m *Grammar) CompileInRandomOrder(builder squirrel.SelectBuilder, conditions *driver.Conditions) squirrel.SelectBuilder {
+	ret := _m.Called(builder, conditions)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompileInRandomOrder")
+	}
+
+	var r0 squirrel.SelectBuilder
+	if rf, ok := ret.Get(0).(func(squirrel.SelectBuilder, *driver.Conditions) squirrel.SelectBuilder); ok {
+		r0 = rf(builder, conditions)
+	} else {
+		r0 = ret.Get(0).(squirrel.SelectBuilder)
+	}
+
+	return r0
+}
+
+// Grammar_CompileInRandomOrder_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompileInRandomOrder'
+type Grammar_CompileInRandomOrder_Call struct {
+	*mock.Call
+}
+
+// CompileInRandomOrder is a helper method to define mock.On call
+//   - builder squirrel.SelectBuilder
+//   - conditions *driver.Conditions
+func (_e *Grammar_Expecter) CompileInRandomOrder(builder interface{}, conditions interface{}) *Grammar_CompileInRandomOrder_Call {
+	return &Grammar_CompileInRandomOrder_Call{Call: _e.mock.On("CompileInRandomOrder", builder, conditions)}
+}
+
+func (_c *Grammar_CompileInRandomOrder_Call) Run(run func(builder squirrel.SelectBuilder, conditions *driver.Conditions)) *Grammar_CompileInRandomOrder_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(squirrel.SelectBuilder), args[1].(*driver.Conditions))
+	})
+	return _c
+}
+
+func (_c *Grammar_CompileInRandomOrder_Call) Return(_a0 squirrel.SelectBuilder) *Grammar_CompileInRandomOrder_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_CompileInRandomOrder_Call) RunAndReturn(run func(squirrel.SelectBuilder, *driver.Conditions) squirrel.SelectBuilder) *Grammar_CompileInRandomOrder_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CompileIndex provides a mock function with given fields: blueprint, command
 func (_m *Grammar) CompileIndex(blueprint driver.Blueprint, command *driver.Command) string {
 	ret := _m.Called(blueprint, command)

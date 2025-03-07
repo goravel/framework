@@ -6,6 +6,7 @@ type Conditions struct {
 	GroupBy       []string
 	Having        *Having
 	Join          []Join
+	InRandomOrder *bool
 	LeftJoin      []Join
 	LockForUpdate *bool
 	Limit         *uint64

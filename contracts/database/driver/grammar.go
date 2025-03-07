@@ -133,16 +133,18 @@ type SchemaGrammar interface {
 type GormGrammar interface {
 	// CompileLockForUpdateForGorm Compile the lock for update for gorm.
 	CompileLockForUpdateForGorm() clause.Expression
-	// CompileRandomOrderForGorm Compile a random order command for gorm.
+	// CompileRandomOrderForGorm Compile the random order for gorm.
 	CompileRandomOrderForGorm() string
-	// CompileSharedLockForGorm Compile a shared lock command for gorm.
+	// CompileSharedLockForGorm Compile the shared lock for gorm.
 	CompileSharedLockForGorm() clause.Expression
 }
 
 type DBGrammar interface {
 	// CompileLockForUpdate Compile the lock for update.
 	CompileLockForUpdate(builder sq.SelectBuilder, conditions *Conditions) sq.SelectBuilder
-	// CompileSharedLock Compile a shared lock.
+	// CompileInRandomOrder Compile the random order.
+	CompileInRandomOrder(builder sq.SelectBuilder, conditions *Conditions) sq.SelectBuilder
+	// CompileSharedLock Compile the shared lock.
 	CompileSharedLock(builder sq.SelectBuilder, conditions *Conditions) sq.SelectBuilder
 }
 

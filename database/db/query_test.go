@@ -410,6 +410,22 @@ func (s *QueryTestSuite) TestIncrement() {
 	mockResult.AssertExpectations(s.T())
 }
 
+func (s *QueryTestSuite) TestInRandomOrder() {
+	var users []TestUser
+
+	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+	s.mockGrammar.EXPECT().CompileInRandomOrder(mock.Anything, mock.Anything).RunAndReturn(func(builder sq.SelectBuilder, conditions *driver.Conditions) sq.SelectBuilder {
+		conditions.OrderBy = []string{"RAND()"}
+		return builder
+	}).Once()
+	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users ORDER BY RAND()").Return(nil).Once()
+	s.mockDriver.EXPECT().Explain("SELECT * FROM users ORDER BY RAND()").Return("SELECT * FROM users ORDER BY RAND()").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users ORDER BY RAND()", int64(0), nil).Return().Once()
+
+	err := s.query.InRandomOrder().Get(&users)
+	s.Nil(err)
+}
+
 func (s *QueryTestSuite) TestInsert() {
 	s.Run("empty", func() {
 		result, err := s.query.Insert(nil)
