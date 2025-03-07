@@ -1173,6 +1173,53 @@ func (_c *Query_Limit_Call) RunAndReturn(run func(uint64) db.Query) *Query_Limit
 	return _c
 }
 
+// LockForUpdate provides a mock function with no fields
+func (_m *Query) LockForUpdate() db.Query {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for LockForUpdate")
+	}
+
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func() db.Query); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_LockForUpdate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LockForUpdate'
+type Query_LockForUpdate_Call struct {
+	*mock.Call
+}
+
+// LockForUpdate is a helper method to define mock.On call
+func (_e *Query_Expecter) LockForUpdate() *Query_LockForUpdate_Call {
+	return &Query_LockForUpdate_Call{Call: _e.mock.On("LockForUpdate")}
+}
+
+func (_c *Query_LockForUpdate_Call) Run(run func()) *Query_LockForUpdate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Query_LockForUpdate_Call) Return(_a0 db.Query) *Query_LockForUpdate_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_LockForUpdate_Call) RunAndReturn(run func() db.Query) *Query_LockForUpdate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Offset provides a mock function with given fields: offset
 func (_m *Query) Offset(offset uint64) db.Query {
 	ret := _m.Called(offset)
