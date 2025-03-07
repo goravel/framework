@@ -245,7 +245,7 @@ func (_c *Driver_Explain_Call) RunAndReturn(run func(string, ...interface{}) str
 }
 
 // Gorm provides a mock function with no fields
-func (_m *Driver) Gorm() (*gorm.DB, driver.GormQuery, error) {
+func (_m *Driver) Gorm() (*gorm.DB, error) {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
@@ -253,9 +253,8 @@ func (_m *Driver) Gorm() (*gorm.DB, driver.GormQuery, error) {
 	}
 
 	var r0 *gorm.DB
-	var r1 driver.GormQuery
-	var r2 error
-	if rf, ok := ret.Get(0).(func() (*gorm.DB, driver.GormQuery, error)); ok {
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (*gorm.DB, error)); ok {
 		return rf()
 	}
 	if rf, ok := ret.Get(0).(func() *gorm.DB); ok {
@@ -266,21 +265,13 @@ func (_m *Driver) Gorm() (*gorm.DB, driver.GormQuery, error) {
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func() driver.GormQuery); ok {
+	if rf, ok := ret.Get(1).(func() error); ok {
 		r1 = rf()
 	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(driver.GormQuery)
-		}
+		r1 = ret.Error(1)
 	}
 
-	if rf, ok := ret.Get(2).(func() error); ok {
-		r2 = rf()
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
+	return r0, r1
 }
 
 // Driver_Gorm_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Gorm'
@@ -300,12 +291,12 @@ func (_c *Driver_Gorm_Call) Run(run func()) *Driver_Gorm_Call {
 	return _c
 }
 
-func (_c *Driver_Gorm_Call) Return(_a0 *gorm.DB, _a1 driver.GormQuery, _a2 error) *Driver_Gorm_Call {
-	_c.Call.Return(_a0, _a1, _a2)
+func (_c *Driver_Gorm_Call) Return(_a0 *gorm.DB, _a1 error) *Driver_Gorm_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Driver_Gorm_Call) RunAndReturn(run func() (*gorm.DB, driver.GormQuery, error)) *Driver_Gorm_Call {
+func (_c *Driver_Gorm_Call) RunAndReturn(run func() (*gorm.DB, error)) *Driver_Gorm_Call {
 	_c.Call.Return(run)
 	return _c
 }

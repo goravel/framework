@@ -23,7 +23,7 @@ func (_m *CompileOrderByGrammar) EXPECT() *CompileOrderByGrammar_Expecter {
 }
 
 // CompileOrderBy provides a mock function with given fields: builder, conditions
-func (_m *CompileOrderByGrammar) CompileOrderBy(builder squirrel.SelectBuilder, conditions driver.Conditions) squirrel.SelectBuilder {
+func (_m *CompileOrderByGrammar) CompileOrderBy(builder squirrel.SelectBuilder, conditions *driver.Conditions) squirrel.SelectBuilder {
 	ret := _m.Called(builder, conditions)
 
 	if len(ret) == 0 {
@@ -31,7 +31,7 @@ func (_m *CompileOrderByGrammar) CompileOrderBy(builder squirrel.SelectBuilder, 
 	}
 
 	var r0 squirrel.SelectBuilder
-	if rf, ok := ret.Get(0).(func(squirrel.SelectBuilder, driver.Conditions) squirrel.SelectBuilder); ok {
+	if rf, ok := ret.Get(0).(func(squirrel.SelectBuilder, *driver.Conditions) squirrel.SelectBuilder); ok {
 		r0 = rf(builder, conditions)
 	} else {
 		r0 = ret.Get(0).(squirrel.SelectBuilder)
@@ -47,14 +47,14 @@ type CompileOrderByGrammar_CompileOrderBy_Call struct {
 
 // CompileOrderBy is a helper method to define mock.On call
 //   - builder squirrel.SelectBuilder
-//   - conditions driver.Conditions
+//   - conditions *driver.Conditions
 func (_e *CompileOrderByGrammar_Expecter) CompileOrderBy(builder interface{}, conditions interface{}) *CompileOrderByGrammar_CompileOrderBy_Call {
 	return &CompileOrderByGrammar_CompileOrderBy_Call{Call: _e.mock.On("CompileOrderBy", builder, conditions)}
 }
 
-func (_c *CompileOrderByGrammar_CompileOrderBy_Call) Run(run func(builder squirrel.SelectBuilder, conditions driver.Conditions)) *CompileOrderByGrammar_CompileOrderBy_Call {
+func (_c *CompileOrderByGrammar_CompileOrderBy_Call) Run(run func(builder squirrel.SelectBuilder, conditions *driver.Conditions)) *CompileOrderByGrammar_CompileOrderBy_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(squirrel.SelectBuilder), args[1].(driver.Conditions))
+		run(args[0].(squirrel.SelectBuilder), args[1].(*driver.Conditions))
 	})
 	return _c
 }
@@ -64,7 +64,7 @@ func (_c *CompileOrderByGrammar_CompileOrderBy_Call) Return(_a0 squirrel.SelectB
 	return _c
 }
 
-func (_c *CompileOrderByGrammar_CompileOrderBy_Call) RunAndReturn(run func(squirrel.SelectBuilder, driver.Conditions) squirrel.SelectBuilder) *CompileOrderByGrammar_CompileOrderBy_Call {
+func (_c *CompileOrderByGrammar_CompileOrderBy_Call) RunAndReturn(run func(squirrel.SelectBuilder, *driver.Conditions) squirrel.SelectBuilder) *CompileOrderByGrammar_CompileOrderBy_Call {
 	_c.Call.Return(run)
 	return _c
 }

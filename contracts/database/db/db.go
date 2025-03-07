@@ -69,7 +69,8 @@ type Query interface {
 	LeftJoin(query string, args ...any) Query
 	// Limit Add a limit to the query.
 	Limit(limit uint64) Query
-	// lockForUpdate
+	// LockForUpdate Add a lock for update to the query.
+	LockForUpdate() Query
 	// Offset Add an "offset" clause to the query.
 	Offset(offset uint64) Query
 	// OrderBy Add an "order by" clause to the query.

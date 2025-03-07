@@ -2,6 +2,7 @@ package driver
 
 import (
 	sq "github.com/Masterminds/squirrel"
+	"gorm.io/gorm/clause"
 )
 
 type Grammar interface {
@@ -49,14 +50,22 @@ type Grammar interface {
 	CompileIndex(blueprint Blueprint, command *Command) string
 	// CompileIndexes Compile the query to determine the indexes.
 	CompileIndexes(schema, table string) (string, error)
+	// CompileLockForUpdate Compile the lock for update.
+	CompileLockForUpdate(builder sq.SelectBuilder, conditions *Conditions) sq.SelectBuilder
+	// CompileLockForUpdateForGorm Compile the lock for update for gorm.
+	ComplieLockForUpdateForGorm() clause.Expression
 	// CompilePrimary Compile a primary key command.
 	CompilePrimary(blueprint Blueprint, command *Command) string
+	// CompileRandomOrder Compile a random order command for gorm.
+	CompileRandomOrderForGorm() string
 	// CompileRename Compile a rename table command.
 	CompileRename(blueprint Blueprint, command *Command) string
 	// CompileRenameColumn Compile a rename column command.
 	CompileRenameColumn(schema Schema, blueprint Blueprint, command *Command) (string, error)
 	// CompileRenameIndex Compile a rename index command.
 	CompileRenameIndex(schema Schema, blueprint Blueprint, command *Command) []string
+	// CompileSharedLock Compile a shared lock command for gorm.
+	CompileSharedLockForGorm() clause.Expression
 	// CompileTables Compile the query to determine the tables.
 	CompileTables(database string) string
 	// CompileTableComment Compile a table comment command.
@@ -122,15 +131,15 @@ type Grammar interface {
 }
 
 type CompileOffsetGrammar interface {
-	CompileOffset(builder sq.SelectBuilder, conditions Conditions) sq.SelectBuilder
+	CompileOffset(builder sq.SelectBuilder, conditions *Conditions) sq.SelectBuilder
 }
 
 type CompileOrderByGrammar interface {
-	CompileOrderBy(builder sq.SelectBuilder, conditions Conditions) sq.SelectBuilder
+	CompileOrderBy(builder sq.SelectBuilder, conditions *Conditions) sq.SelectBuilder
 }
 
 type CompileLimitGrammar interface {
-	CompileLimit(builder sq.SelectBuilder, conditions Conditions) sq.SelectBuilder
+	CompileLimit(builder sq.SelectBuilder, conditions *Conditions) sq.SelectBuilder
 }
 
 type Schema interface {

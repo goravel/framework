@@ -12,7 +12,6 @@ import (
 
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/db"
-	"github.com/goravel/framework/contracts/database/driver"
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/logger"
 	"github.com/goravel/framework/errors"
@@ -371,13 +370,6 @@ func (r *Query) InsertGetId(data any) (int64, error) {
 	return id, nil
 }
 
-func (r *Query) Limit(limit uint64) db.Query {
-	q := r.clone()
-	q.conditions.Limit = &limit
-
-	return q
-}
-
 func (r *Query) Latest(dest any, column ...string) error {
 	col := "created_at"
 	if len(column) > 0 {
@@ -393,6 +385,20 @@ func (r *Query) LeftJoin(query string, args ...any) db.Query {
 		Query: query,
 		Args:  args,
 	})
+
+	return q
+}
+
+func (r *Query) Limit(limit uint64) db.Query {
+	q := r.clone()
+	q.conditions.Limit = &limit
+
+	return q
+}
+
+func (r *Query) LockForUpdate() db.Query {
+	q := r.clone()
+	q.conditions.LockForUpdate = convert.Pointer(true)
 
 	return q
 }
@@ -803,32 +809,34 @@ func (r *Query) buildSelect() (sql string, args []any, err error) {
 		}
 	}
 
-	compileOrderByGrammar, ok := r.grammar.(driver.CompileOrderByGrammar)
+	compileOrderByGrammar, ok := r.grammar.(contractsdriver.CompileOrderByGrammar)
 	if ok {
-		builder = compileOrderByGrammar.CompileOrderBy(builder, r.conditions)
+		builder = compileOrderByGrammar.CompileOrderBy(builder, &r.conditions)
 	} else {
 		if len(r.conditions.OrderBy) > 0 {
 			builder = builder.OrderBy(r.conditions.OrderBy...)
 		}
 	}
 
-	compileOffsetGrammar, ok := r.grammar.(driver.CompileOffsetGrammar)
+	compileOffsetGrammar, ok := r.grammar.(contractsdriver.CompileOffsetGrammar)
 	if ok {
-		builder = compileOffsetGrammar.CompileOffset(builder, r.conditions)
+		builder = compileOffsetGrammar.CompileOffset(builder, &r.conditions)
 	} else {
 		if r.conditions.Offset != nil {
 			builder = builder.Offset(*r.conditions.Offset)
 		}
 	}
 
-	compileLimitGrammar, ok := r.grammar.(driver.CompileLimitGrammar)
+	compileLimitGrammar, ok := r.grammar.(contractsdriver.CompileLimitGrammar)
 	if ok {
-		builder = compileLimitGrammar.CompileLimit(builder, r.conditions)
+		builder = compileLimitGrammar.CompileLimit(builder, &r.conditions)
 	} else {
 		if r.conditions.Limit != nil {
 			builder = builder.Limit(*r.conditions.Limit)
 		}
 	}
+
+	builder = r.grammar.CompileLockForUpdate(builder, &r.conditions)
 
 	return builder.ToSql()
 }

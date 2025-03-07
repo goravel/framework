@@ -20,7 +20,7 @@ type Driver interface {
 	// Explain generates an SQL string with given parameters.
 	Explain(sql string, args ...any) string
 	// Gorm returns the Gorm database connection.
-	Gorm() (*gorm.DB, GormQuery, error)
+	Gorm() (*gorm.DB, error)
 	// Grammar returns the database grammar.
 	Grammar() Grammar
 	// Processor returns the database processor.

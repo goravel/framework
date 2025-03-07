@@ -5,12 +5,14 @@ import (
 	databasesql "database/sql"
 	"testing"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/db"
+	"github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/errors"
 	mocksdb "github.com/goravel/framework/mocks/database/db"
 	mocksdriver "github.com/goravel/framework/mocks/database/driver"
@@ -31,6 +33,7 @@ type QueryTestSuite struct {
 	ctx         context.Context
 	mockBuilder *mocksdb.Builder
 	mockDriver  *mocksdriver.Driver
+	mockGrammar *mocksdriver.Grammar
 	mockLogger  *mockslogger.Logger
 	now         carbon.Carbon
 	query       *Query
@@ -44,11 +47,12 @@ func (s *QueryTestSuite) SetupTest() {
 	s.ctx = context.Background()
 	s.mockBuilder = mocksdb.NewBuilder(s.T())
 	s.mockDriver = mocksdriver.NewDriver(s.T())
+	s.mockGrammar = mocksdriver.NewGrammar(s.T())
 	s.mockLogger = mockslogger.NewLogger(s.T())
 	s.now = carbon.Now()
 	carbon.SetTestNow(s.now)
 
-	s.mockDriver.EXPECT().Grammar().Return(mocksdriver.NewGrammar(s.T()))
+	s.mockDriver.EXPECT().Grammar().Return(s.mockGrammar)
 
 	s.query = NewQuery(s.ctx, s.mockDriver, s.mockBuilder, s.mockLogger, "users", nil)
 }
@@ -582,18 +586,6 @@ func (s *QueryTestSuite) TestJoin() {
 	s.Nil(err)
 }
 
-func (s *QueryTestSuite) TestLimit() {
-	var users []TestUser
-
-	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age = ? LIMIT 1", 25).Return(nil).Once()
-	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age = ? LIMIT 1", 25).Return("SELECT * FROM users WHERE age = 25 LIMIT 1").Once()
-	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 LIMIT 1", int64(0), nil).Return().Once()
-
-	err := s.query.Where("age", 25).Limit(1).Get(&users)
-	s.Nil(err)
-}
-
 func (s *QueryTestSuite) TestLatest() {
 	s.Run("default column", func() {
 		var user TestUser
@@ -629,6 +621,34 @@ func (s *QueryTestSuite) TestLeftJoin() {
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users LEFT JOIN posts as p ON users.id = p.user_id AND p.id = 1 WHERE age = 25", int64(0), nil).Return().Once()
 
 	err := s.query.LeftJoin("posts as p ON users.id = p.user_id AND p.id = ?", 1).Where("age", 25).Get(&users)
+	s.Nil(err)
+}
+
+func (s *QueryTestSuite) TestLockForUpdate() {
+	var users []TestUser
+
+	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+
+	s.mockGrammar.EXPECT().CompileLockForUpdate(mock.Anything, mock.Anything).RunAndReturn(func(builder sq.SelectBuilder, conditions *driver.Conditions) sq.SelectBuilder {
+		return builder.Suffix("FOR UPDATE")
+	}).Once()
+	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age = ? FOR UPDATE", 25).Return(nil).Once()
+	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age = ? FOR UPDATE", 25).Return("SELECT * FROM users WHERE age = 25 FOR UPDATE").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 FOR UPDATE", int64(0), nil).Return().Once()
+
+	err := s.query.Where("age", 25).LockForUpdate().Get(&users)
+	s.Nil(err)
+}
+
+func (s *QueryTestSuite) TestLimit() {
+	var users []TestUser
+
+	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age = ? LIMIT 1", 25).Return(nil).Once()
+	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age = ? LIMIT 1", 25).Return("SELECT * FROM users WHERE age = 25 LIMIT 1").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 LIMIT 1", int64(0), nil).Return().Once()
+
+	err := s.query.Where("age", 25).Limit(1).Get(&users)
 	s.Nil(err)
 }
 

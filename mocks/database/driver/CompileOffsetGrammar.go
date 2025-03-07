@@ -23,7 +23,7 @@ func (_m *CompileOffsetGrammar) EXPECT() *CompileOffsetGrammar_Expecter {
 }
 
 // CompileOffset provides a mock function with given fields: builder, conditions
-func (_m *CompileOffsetGrammar) CompileOffset(builder squirrel.SelectBuilder, conditions driver.Conditions) squirrel.SelectBuilder {
+func (_m *CompileOffsetGrammar) CompileOffset(builder squirrel.SelectBuilder, conditions *driver.Conditions) squirrel.SelectBuilder {
 	ret := _m.Called(builder, conditions)
 
 	if len(ret) == 0 {
@@ -31,7 +31,7 @@ func (_m *CompileOffsetGrammar) CompileOffset(builder squirrel.SelectBuilder, co
 	}
 
 	var r0 squirrel.SelectBuilder
-	if rf, ok := ret.Get(0).(func(squirrel.SelectBuilder, driver.Conditions) squirrel.SelectBuilder); ok {
+	if rf, ok := ret.Get(0).(func(squirrel.SelectBuilder, *driver.Conditions) squirrel.SelectBuilder); ok {
 		r0 = rf(builder, conditions)
 	} else {
 		r0 = ret.Get(0).(squirrel.SelectBuilder)
@@ -47,14 +47,14 @@ type CompileOffsetGrammar_CompileOffset_Call struct {
 
 // CompileOffset is a helper method to define mock.On call
 //   - builder squirrel.SelectBuilder
-//   - conditions driver.Conditions
+//   - conditions *driver.Conditions
 func (_e *CompileOffsetGrammar_Expecter) CompileOffset(builder interface{}, conditions interface{}) *CompileOffsetGrammar_CompileOffset_Call {
 	return &CompileOffsetGrammar_CompileOffset_Call{Call: _e.mock.On("CompileOffset", builder, conditions)}
 }
 
-func (_c *CompileOffsetGrammar_CompileOffset_Call) Run(run func(builder squirrel.SelectBuilder, conditions driver.Conditions)) *CompileOffsetGrammar_CompileOffset_Call {
+func (_c *CompileOffsetGrammar_CompileOffset_Call) Run(run func(builder squirrel.SelectBuilder, conditions *driver.Conditions)) *CompileOffsetGrammar_CompileOffset_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(squirrel.SelectBuilder), args[1].(driver.Conditions))
+		run(args[0].(squirrel.SelectBuilder), args[1].(*driver.Conditions))
 	})
 	return _c
 }
@@ -64,7 +64,7 @@ func (_c *CompileOffsetGrammar_CompileOffset_Call) Return(_a0 squirrel.SelectBui
 	return _c
 }
 
-func (_c *CompileOffsetGrammar_CompileOffset_Call) RunAndReturn(run func(squirrel.SelectBuilder, driver.Conditions) squirrel.SelectBuilder) *CompileOffsetGrammar_CompileOffset_Call {
+func (_c *CompileOffsetGrammar_CompileOffset_Call) RunAndReturn(run func(squirrel.SelectBuilder, *driver.Conditions) squirrel.SelectBuilder) *CompileOffsetGrammar_CompileOffset_Call {
 	_c.Call.Return(run)
 	return _c
 }
