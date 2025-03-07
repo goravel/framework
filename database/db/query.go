@@ -539,6 +539,13 @@ func (r *Query) Select(columns ...string) db.Query {
 	return q
 }
 
+func (r *Query) SharedLock() db.Query {
+	q := r.clone()
+	q.conditions.SharedLock = convert.Pointer(true)
+
+	return q
+}
+
 func (r *Query) ToSql() db.ToSql {
 	q := r.clone()
 	return NewToSql(q, false)
@@ -836,7 +843,12 @@ func (r *Query) buildSelect() (sql string, args []any, err error) {
 		}
 	}
 
-	builder = r.grammar.CompileLockForUpdate(builder, &r.conditions)
+	if r.conditions.LockForUpdate != nil && *r.conditions.LockForUpdate {
+		builder = r.grammar.CompileLockForUpdate(builder, &r.conditions)
+	}
+	if r.conditions.SharedLock != nil && *r.conditions.SharedLock {
+		builder = r.grammar.CompileSharedLock(builder, &r.conditions)
+	}
 
 	return builder.ToSql()
 }

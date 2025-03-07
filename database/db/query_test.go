@@ -625,19 +625,37 @@ func (s *QueryTestSuite) TestLeftJoin() {
 }
 
 func (s *QueryTestSuite) TestLockForUpdate() {
-	var users []TestUser
+	s.Run("FOR UPDATE", func() {
+		var users []TestUser
 
-	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
 
-	s.mockGrammar.EXPECT().CompileLockForUpdate(mock.Anything, mock.Anything).RunAndReturn(func(builder sq.SelectBuilder, conditions *driver.Conditions) sq.SelectBuilder {
-		return builder.Suffix("FOR UPDATE")
-	}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age = ? FOR UPDATE", 25).Return(nil).Once()
-	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age = ? FOR UPDATE", 25).Return("SELECT * FROM users WHERE age = 25 FOR UPDATE").Once()
-	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 FOR UPDATE", int64(0), nil).Return().Once()
+		s.mockGrammar.EXPECT().CompileLockForUpdate(mock.Anything, mock.Anything).RunAndReturn(func(builder sq.SelectBuilder, conditions *driver.Conditions) sq.SelectBuilder {
+			return builder.Suffix("FOR UPDATE")
+		}).Once()
+		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age = ? FOR UPDATE", 25).Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age = ? FOR UPDATE", 25).Return("SELECT * FROM users WHERE age = 25 FOR UPDATE").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 FOR UPDATE", int64(0), nil).Return().Once()
 
-	err := s.query.Where("age", 25).LockForUpdate().Get(&users)
-	s.Nil(err)
+		err := s.query.Where("age", 25).LockForUpdate().Get(&users)
+		s.Nil(err)
+	})
+
+	s.Run("WITH (ROWLOCK, UPDLOCK, HOLDLOCK)", func() {
+		var users []TestUser
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+
+		s.mockGrammar.EXPECT().CompileLockForUpdate(mock.Anything, mock.Anything).RunAndReturn(func(builder sq.SelectBuilder, conditions *driver.Conditions) sq.SelectBuilder {
+			return builder.From(conditions.Table + " WITH (ROWLOCK, UPDLOCK, HOLDLOCK)")
+		}).Once()
+		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WITH (ROWLOCK, UPDLOCK, HOLDLOCK) WHERE age = ?", 25).Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WITH (ROWLOCK, UPDLOCK, HOLDLOCK) WHERE age = ?", 25).Return("SELECT * FROM users WITH (ROWLOCK, UPDLOCK, HOLDLOCK) WHERE age = 25").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WITH (ROWLOCK, UPDLOCK, HOLDLOCK) WHERE age = 25", int64(0), nil).Return().Once()
+
+		err := s.query.Where("age", 25).LockForUpdate().Get(&users)
+		s.Nil(err)
+	})
 }
 
 func (s *QueryTestSuite) TestLimit() {
@@ -913,6 +931,40 @@ func (s *QueryTestSuite) TestSelect() {
 
 	err := s.query.Select("id", "name").Where("name", "John").Get(&users)
 	s.Nil(err)
+}
+
+func (s *QueryTestSuite) TestSharedLock() {
+	s.Run("FOR SHARE", func() {
+		var users []TestUser
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+
+		s.mockGrammar.EXPECT().CompileSharedLock(mock.Anything, mock.Anything).RunAndReturn(func(builder sq.SelectBuilder, conditions *driver.Conditions) sq.SelectBuilder {
+			return builder.Suffix("FOR SHARE")
+		}).Once()
+		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age = ? FOR SHARE", 25).Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age = ? FOR SHARE", 25).Return("SELECT * FROM users WHERE age = 25 FOR SHARE").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 FOR SHARE", int64(0), nil).Return().Once()
+
+		err := s.query.Where("age", 25).SharedLock().Get(&users)
+		s.Nil(err)
+	})
+
+	s.Run("WITH (ROWLOCK, HOLDLOCK)", func() {
+		var users []TestUser
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+
+		s.mockGrammar.EXPECT().CompileSharedLock(mock.Anything, mock.Anything).RunAndReturn(func(builder sq.SelectBuilder, conditions *driver.Conditions) sq.SelectBuilder {
+			return builder.From(conditions.Table + " WITH (ROWLOCK, HOLDLOCK)")
+		}).Once()
+		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WITH (ROWLOCK, HOLDLOCK) WHERE age = ?", 25).Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WITH (ROWLOCK, HOLDLOCK) WHERE age = ?", 25).Return("SELECT * FROM users WITH (ROWLOCK, HOLDLOCK) WHERE age = 25").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WITH (ROWLOCK, HOLDLOCK) WHERE age = 25", int64(0), nil).Return().Once()
+
+		err := s.query.Where("age", 25).SharedLock().Get(&users)
+		s.Nil(err)
+	})
 }
 
 func (s *QueryTestSuite) TestToSql() {

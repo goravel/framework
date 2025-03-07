@@ -1077,7 +1077,7 @@ func (r *Query) buildLockForUpdate(db *gormio.DB) *gormio.DB {
 		return db
 	}
 
-	lockForUpdate := r.grammar.ComplieLockForUpdateForGorm()
+	lockForUpdate := r.grammar.CompileLockForUpdateForGorm()
 	if lockForUpdate != nil {
 		return db.Clauses(lockForUpdate)
 	}

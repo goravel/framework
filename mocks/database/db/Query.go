@@ -2201,6 +2201,53 @@ func (_c *Query_Select_Call) RunAndReturn(run func(...string) db.Query) *Query_S
 	return _c
 }
 
+// SharedLock provides a mock function with no fields
+func (_m *Query) SharedLock() db.Query {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for SharedLock")
+	}
+
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func() db.Query); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_SharedLock_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SharedLock'
+type Query_SharedLock_Call struct {
+	*mock.Call
+}
+
+// SharedLock is a helper method to define mock.On call
+func (_e *Query_Expecter) SharedLock() *Query_SharedLock_Call {
+	return &Query_SharedLock_Call{Call: _e.mock.On("SharedLock")}
+}
+
+func (_c *Query_SharedLock_Call) Run(run func()) *Query_SharedLock_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Query_SharedLock_Call) Return(_a0 db.Query) *Query_SharedLock_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_SharedLock_Call) RunAndReturn(run func() db.Query) *Query_SharedLock_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ToRawSql provides a mock function with no fields
 func (_m *Query) ToRawSql() db.ToSql {
 	ret := _m.Called()

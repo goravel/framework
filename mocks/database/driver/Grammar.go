@@ -1131,6 +1131,53 @@ func (_c *Grammar_CompileLockForUpdate_Call) RunAndReturn(run func(squirrel.Sele
 	return _c
 }
 
+// CompileLockForUpdateForGorm provides a mock function with no fields
+func (_m *Grammar) CompileLockForUpdateForGorm() clause.Expression {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompileLockForUpdateForGorm")
+	}
+
+	var r0 clause.Expression
+	if rf, ok := ret.Get(0).(func() clause.Expression); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(clause.Expression)
+		}
+	}
+
+	return r0
+}
+
+// Grammar_CompileLockForUpdateForGorm_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompileLockForUpdateForGorm'
+type Grammar_CompileLockForUpdateForGorm_Call struct {
+	*mock.Call
+}
+
+// CompileLockForUpdateForGorm is a helper method to define mock.On call
+func (_e *Grammar_Expecter) CompileLockForUpdateForGorm() *Grammar_CompileLockForUpdateForGorm_Call {
+	return &Grammar_CompileLockForUpdateForGorm_Call{Call: _e.mock.On("CompileLockForUpdateForGorm")}
+}
+
+func (_c *Grammar_CompileLockForUpdateForGorm_Call) Run(run func()) *Grammar_CompileLockForUpdateForGorm_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Grammar_CompileLockForUpdateForGorm_Call) Return(_a0 clause.Expression) *Grammar_CompileLockForUpdateForGorm_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_CompileLockForUpdateForGorm_Call) RunAndReturn(run func() clause.Expression) *Grammar_CompileLockForUpdateForGorm_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CompilePrimary provides a mock function with given fields: blueprint, command
 func (_m *Grammar) CompilePrimary(blueprint driver.Blueprint, command *driver.Command) string {
 	ret := _m.Called(blueprint, command)
@@ -1374,6 +1421,53 @@ func (_c *Grammar_CompileRenameIndex_Call) Return(_a0 []string) *Grammar_Compile
 }
 
 func (_c *Grammar_CompileRenameIndex_Call) RunAndReturn(run func(driver.Schema, driver.Blueprint, *driver.Command) []string) *Grammar_CompileRenameIndex_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// CompileSharedLock provides a mock function with given fields: builder, conditions
+func (_m *Grammar) CompileSharedLock(builder squirrel.SelectBuilder, conditions *driver.Conditions) squirrel.SelectBuilder {
+	ret := _m.Called(builder, conditions)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompileSharedLock")
+	}
+
+	var r0 squirrel.SelectBuilder
+	if rf, ok := ret.Get(0).(func(squirrel.SelectBuilder, *driver.Conditions) squirrel.SelectBuilder); ok {
+		r0 = rf(builder, conditions)
+	} else {
+		r0 = ret.Get(0).(squirrel.SelectBuilder)
+	}
+
+	return r0
+}
+
+// Grammar_CompileSharedLock_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompileSharedLock'
+type Grammar_CompileSharedLock_Call struct {
+	*mock.Call
+}
+
+// CompileSharedLock is a helper method to define mock.On call
+//   - builder squirrel.SelectBuilder
+//   - conditions *driver.Conditions
+func (_e *Grammar_Expecter) CompileSharedLock(builder interface{}, conditions interface{}) *Grammar_CompileSharedLock_Call {
+	return &Grammar_CompileSharedLock_Call{Call: _e.mock.On("CompileSharedLock", builder, conditions)}
+}
+
+func (_c *Grammar_CompileSharedLock_Call) Run(run func(builder squirrel.SelectBuilder, conditions *driver.Conditions)) *Grammar_CompileSharedLock_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(squirrel.SelectBuilder), args[1].(*driver.Conditions))
+	})
+	return _c
+}
+
+func (_c *Grammar_CompileSharedLock_Call) Return(_a0 squirrel.SelectBuilder) *Grammar_CompileSharedLock_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_CompileSharedLock_Call) RunAndReturn(run func(squirrel.SelectBuilder, *driver.Conditions) squirrel.SelectBuilder) *Grammar_CompileSharedLock_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1652,53 +1746,6 @@ func (_c *Grammar_CompileViews_Call) Return(_a0 string) *Grammar_CompileViews_Ca
 }
 
 func (_c *Grammar_CompileViews_Call) RunAndReturn(run func(string) string) *Grammar_CompileViews_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// ComplieLockForUpdateForGorm provides a mock function with no fields
-func (_m *Grammar) ComplieLockForUpdateForGorm() clause.Expression {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for ComplieLockForUpdateForGorm")
-	}
-
-	var r0 clause.Expression
-	if rf, ok := ret.Get(0).(func() clause.Expression); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(clause.Expression)
-		}
-	}
-
-	return r0
-}
-
-// Grammar_ComplieLockForUpdateForGorm_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ComplieLockForUpdateForGorm'
-type Grammar_ComplieLockForUpdateForGorm_Call struct {
-	*mock.Call
-}
-
-// ComplieLockForUpdateForGorm is a helper method to define mock.On call
-func (_e *Grammar_Expecter) ComplieLockForUpdateForGorm() *Grammar_ComplieLockForUpdateForGorm_Call {
-	return &Grammar_ComplieLockForUpdateForGorm_Call{Call: _e.mock.On("ComplieLockForUpdateForGorm")}
-}
-
-func (_c *Grammar_ComplieLockForUpdateForGorm_Call) Run(run func()) *Grammar_ComplieLockForUpdateForGorm_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Grammar_ComplieLockForUpdateForGorm_Call) Return(_a0 clause.Expression) *Grammar_ComplieLockForUpdateForGorm_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Grammar_ComplieLockForUpdateForGorm_Call) RunAndReturn(run func() clause.Expression) *Grammar_ComplieLockForUpdateForGorm_Call {
 	_c.Call.Return(run)
 	return _c
 }

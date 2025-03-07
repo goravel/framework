@@ -13,6 +13,7 @@ type Conditions struct {
 	OrderBy       []string
 	RightJoin     []Join
 	Selects       []string
+	SharedLock    *bool
 	Table         string
 	Where         []Where
 }

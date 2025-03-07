@@ -6,6 +6,12 @@ import (
 )
 
 type Grammar interface {
+	SchemaGrammar
+	GormGrammar
+	DBGrammar
+}
+
+type SchemaGrammar interface {
 	// CompileAdd Compile an add column command.
 	CompileAdd(blueprint Blueprint, command *Command) string
 	// CompileChange Compile a change column command.
@@ -50,14 +56,8 @@ type Grammar interface {
 	CompileIndex(blueprint Blueprint, command *Command) string
 	// CompileIndexes Compile the query to determine the indexes.
 	CompileIndexes(schema, table string) (string, error)
-	// CompileLockForUpdate Compile the lock for update.
-	CompileLockForUpdate(builder sq.SelectBuilder, conditions *Conditions) sq.SelectBuilder
-	// CompileLockForUpdateForGorm Compile the lock for update for gorm.
-	ComplieLockForUpdateForGorm() clause.Expression
 	// CompilePrimary Compile a primary key command.
 	CompilePrimary(blueprint Blueprint, command *Command) string
-	// CompileRandomOrder Compile a random order command for gorm.
-	CompileRandomOrderForGorm() string
 	// CompileRename Compile a rename table command.
 	CompileRename(blueprint Blueprint, command *Command) string
 	// CompileRenameColumn Compile a rename column command.
@@ -128,6 +128,22 @@ type Grammar interface {
 	TypeSmallInteger(column ColumnDefinition) string
 	// TypeString Create the column definition for a string type.
 	TypeString(column ColumnDefinition) string
+}
+
+type GormGrammar interface {
+	// CompileLockForUpdateForGorm Compile the lock for update for gorm.
+	CompileLockForUpdateForGorm() clause.Expression
+	// CompileRandomOrderForGorm Compile a random order command for gorm.
+	CompileRandomOrderForGorm() string
+	// CompileSharedLockForGorm Compile a shared lock command for gorm.
+	CompileSharedLockForGorm() clause.Expression
+}
+
+type DBGrammar interface {
+	// CompileLockForUpdate Compile the lock for update.
+	CompileLockForUpdate(builder sq.SelectBuilder, conditions *Conditions) sq.SelectBuilder
+	// CompileSharedLock Compile a shared lock.
+	CompileSharedLock(builder sq.SelectBuilder, conditions *Conditions) sq.SelectBuilder
 }
 
 type CompileOffsetGrammar interface {

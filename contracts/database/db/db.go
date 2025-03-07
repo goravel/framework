@@ -109,7 +109,8 @@ type Query interface {
 	RightJoin(query string, args ...any) Query
 	// Select Set the columns to be selected.
 	Select(columns ...string) Query
-	// sharedLock
+	// SharedLock Add a shared lock to the query.
+	SharedLock() Query
 	// ToSql Get the SQL representation of the query.
 	ToSql() ToSql
 	// ToRawSql Get the raw SQL representation of the query with embedded bindings.
