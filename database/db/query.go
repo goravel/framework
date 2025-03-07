@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/jmoiron/sqlx"
 
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/db"
@@ -138,6 +139,28 @@ func (r *Query) DoesntExist() (bool, error) {
 	}
 
 	return count == 0, nil
+}
+
+func (r *Query) Each(callback func(row *sqlx.Rows) error) error {
+	sql, args, err := r.buildSelect()
+	if err != nil {
+		return err
+	}
+
+	rows, err := r.builder.Queryx(sql, args...)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		err := callback(rows)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (r *Query) Exists() (bool, error) {

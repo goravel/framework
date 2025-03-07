@@ -3,6 +3,8 @@ package db
 import (
 	"context"
 	"database/sql"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type DB interface {
@@ -29,13 +31,16 @@ type Query interface {
 	// Chunk(size int, callback func(dest []any) error) error
 	// CrossJoin specifying CROSS JOIN conditions for the query.
 	CrossJoin(query string, args ...any) Query
+	// Decrement the given column's values by the given amounts.
+	Decrement(column string, value ...uint64) error
+	// Delete records from the database.
+	Delete() (*Result, error)
 	// DoesntExist Determine if no rows exist for the current query.
 	DoesntExist() (bool, error)
 	// Distinct Force the query to only return distinct results.
 	Distinct() Query
-	// Delete records from the database.
-	Delete() (*Result, error)
-	// Each(callback func(rows []any) error) error
+	// Each Execute a callback over the results of the query.
+	Each(callback func(rows *sqlx.Rows) error) error
 	// Exists Determine if any rows exist for the current query.
 	Exists() (bool, error)
 	// Find Execute a query for a single record by ID.
@@ -46,8 +51,6 @@ type Query interface {
 	FirstOr(dest any, callback func() error) error
 	// FirstOrFail finds the first record that matches the given conditions or throws an error.
 	FirstOrFail(dest any) error
-	// Decrement the given column's values by the given amounts.
-	Decrement(column string, value ...uint64) error
 	// Get Retrieve all rows from the database.
 	Get(dest any) error
 	// GroupBy specifies the group method on the query.
@@ -157,7 +160,7 @@ type Result struct {
 type Builder interface {
 	Exec(query string, args ...any) (sql.Result, error)
 	Get(dest any, query string, args ...any) error
-	Query(query string, args ...any) (*sql.Rows, error)
+	Queryx(query string, args ...any) (*sqlx.Rows, error)
 	Select(dest any, query string, args ...any) error
 }
 
