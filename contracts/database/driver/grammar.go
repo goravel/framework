@@ -2,9 +2,16 @@ package driver
 
 import (
 	sq "github.com/Masterminds/squirrel"
+	"gorm.io/gorm/clause"
 )
 
 type Grammar interface {
+	SchemaGrammar
+	GormGrammar
+	DBGrammar
+}
+
+type SchemaGrammar interface {
 	// CompileAdd Compile an add column command.
 	CompileAdd(blueprint Blueprint, command *Command) string
 	// CompileChange Compile a change column command.
@@ -121,16 +128,34 @@ type Grammar interface {
 	TypeString(column ColumnDefinition) string
 }
 
+type GormGrammar interface {
+	// CompileLockForUpdateForGorm Compile the lock for update for gorm.
+	CompileLockForUpdateForGorm() clause.Expression
+	// CompileRandomOrderForGorm Compile the random order for gorm.
+	CompileRandomOrderForGorm() string
+	// CompileSharedLockForGorm Compile the shared lock for gorm.
+	CompileSharedLockForGorm() clause.Expression
+}
+
+type DBGrammar interface {
+	// CompileLockForUpdate Compile the lock for update.
+	CompileLockForUpdate(builder sq.SelectBuilder, conditions *Conditions) sq.SelectBuilder
+	// CompileInRandomOrder Compile the random order.
+	CompileInRandomOrder(builder sq.SelectBuilder, conditions *Conditions) sq.SelectBuilder
+	// CompileSharedLock Compile the shared lock.
+	CompileSharedLock(builder sq.SelectBuilder, conditions *Conditions) sq.SelectBuilder
+}
+
 type CompileOffsetGrammar interface {
-	CompileOffset(builder sq.SelectBuilder, conditions Conditions) sq.SelectBuilder
+	CompileOffset(builder sq.SelectBuilder, conditions *Conditions) sq.SelectBuilder
 }
 
 type CompileOrderByGrammar interface {
-	CompileOrderBy(builder sq.SelectBuilder, conditions Conditions) sq.SelectBuilder
+	CompileOrderBy(builder sq.SelectBuilder, conditions *Conditions) sq.SelectBuilder
 }
 
 type CompileLimitGrammar interface {
-	CompileLimit(builder sq.SelectBuilder, conditions Conditions) sq.SelectBuilder
+	CompileLimit(builder sq.SelectBuilder, conditions *Conditions) sq.SelectBuilder
 }
 
 type Schema interface {

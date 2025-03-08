@@ -23,7 +23,7 @@ func (_m *CompileLimitGrammar) EXPECT() *CompileLimitGrammar_Expecter {
 }
 
 // CompileLimit provides a mock function with given fields: builder, conditions
-func (_m *CompileLimitGrammar) CompileLimit(builder squirrel.SelectBuilder, conditions driver.Conditions) squirrel.SelectBuilder {
+func (_m *CompileLimitGrammar) CompileLimit(builder squirrel.SelectBuilder, conditions *driver.Conditions) squirrel.SelectBuilder {
 	ret := _m.Called(builder, conditions)
 
 	if len(ret) == 0 {
@@ -31,7 +31,7 @@ func (_m *CompileLimitGrammar) CompileLimit(builder squirrel.SelectBuilder, cond
 	}
 
 	var r0 squirrel.SelectBuilder
-	if rf, ok := ret.Get(0).(func(squirrel.SelectBuilder, driver.Conditions) squirrel.SelectBuilder); ok {
+	if rf, ok := ret.Get(0).(func(squirrel.SelectBuilder, *driver.Conditions) squirrel.SelectBuilder); ok {
 		r0 = rf(builder, conditions)
 	} else {
 		r0 = ret.Get(0).(squirrel.SelectBuilder)
@@ -47,14 +47,14 @@ type CompileLimitGrammar_CompileLimit_Call struct {
 
 // CompileLimit is a helper method to define mock.On call
 //   - builder squirrel.SelectBuilder
-//   - conditions driver.Conditions
+//   - conditions *driver.Conditions
 func (_e *CompileLimitGrammar_Expecter) CompileLimit(builder interface{}, conditions interface{}) *CompileLimitGrammar_CompileLimit_Call {
 	return &CompileLimitGrammar_CompileLimit_Call{Call: _e.mock.On("CompileLimit", builder, conditions)}
 }
 
-func (_c *CompileLimitGrammar_CompileLimit_Call) Run(run func(builder squirrel.SelectBuilder, conditions driver.Conditions)) *CompileLimitGrammar_CompileLimit_Call {
+func (_c *CompileLimitGrammar_CompileLimit_Call) Run(run func(builder squirrel.SelectBuilder, conditions *driver.Conditions)) *CompileLimitGrammar_CompileLimit_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(squirrel.SelectBuilder), args[1].(driver.Conditions))
+		run(args[0].(squirrel.SelectBuilder), args[1].(*driver.Conditions))
 	})
 	return _c
 }
@@ -64,7 +64,7 @@ func (_c *CompileLimitGrammar_CompileLimit_Call) Return(_a0 squirrel.SelectBuild
 	return _c
 }
 
-func (_c *CompileLimitGrammar_CompileLimit_Call) RunAndReturn(run func(squirrel.SelectBuilder, driver.Conditions) squirrel.SelectBuilder) *CompileLimitGrammar_CompileLimit_Call {
+func (_c *CompileLimitGrammar_CompileLimit_Call) RunAndReturn(run func(squirrel.SelectBuilder, *driver.Conditions) squirrel.SelectBuilder) *CompileLimitGrammar_CompileLimit_Call {
 	_c.Call.Return(run)
 	return _c
 }

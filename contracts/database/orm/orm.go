@@ -49,7 +49,7 @@ type Query interface {
 	// Create inserts new record into the database.
 	Create(value any) error
 	// Cursor returns a cursor, use scan to iterate over the returned rows.
-	Cursor() (chan Cursor, error)
+	Cursor() (chan db.Row, error)
 	// DB gets the underlying database connection.
 	DB() (*sql.DB, error)
 	// Delete deletes records matching given conditions, if the conditions are empty will delete all records.
@@ -214,11 +214,6 @@ type Association interface {
 type ConnectionModel interface {
 	// Connection gets the connection name for the model.
 	Connection() string
-}
-
-type Cursor interface {
-	// Scan scans the current row into the given destination.
-	Scan(value any) error
 }
 
 type ToSql interface {

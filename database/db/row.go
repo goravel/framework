@@ -1,23 +1,26 @@
-package gorm
+package db
 
 import (
 	"reflect"
 	"strings"
 	"time"
 
-	"github.com/go-viper/mapstructure/v2"
+	"github.com/mitchellh/mapstructure"
 	"gorm.io/gorm"
 
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/str"
 )
 
-type CursorImpl struct {
-	query *Query
-	row   map[string]any
+type Row struct {
+	row map[string]any
 }
 
-func (c *CursorImpl) Scan(value any) error {
+func NewRow(row map[string]any) *Row {
+	return &Row{row: row}
+}
+
+func (r *Row) Scan(value any) error {
 	msConfig := &mapstructure.DecoderConfig{
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
 			ToTimeHookFunc(), ToCarbonHookFunc(), ToDeletedAtHookFunc(),
@@ -34,21 +37,7 @@ func (c *CursorImpl) Scan(value any) error {
 		return err
 	}
 
-	if err := decoder.Decode(c.row); err != nil {
-		return err
-	}
-
-	for _, item := range c.query.conditions.with {
-		// Need to new a query, avoid to clear the conditions
-		query := c.query.new(c.query.instance)
-		// The new query must be cleared
-		query.clearConditions()
-		if err := query.Load(value, item.query, item.args...); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return decoder.Decode(r.row)
 }
 
 func ToTimeHookFunc() mapstructure.DecodeHookFunc {

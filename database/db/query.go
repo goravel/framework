@@ -12,7 +12,6 @@ import (
 
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/db"
-	"github.com/goravel/framework/contracts/database/driver"
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/logger"
 	"github.com/goravel/framework/errors"
@@ -77,14 +76,41 @@ func (r *Query) CrossJoin(query string, args ...any) db.Query {
 	return q
 }
 
-// func (r *Query) Chunk(size int, callback func(dest []any) error) error {
-// 	sql, args, err := r.buildSelect()
-// 	if err != nil {
-// 		return err
-// 	}
+func (r *Query) Cursor() (chan db.Row, error) {
+	sql, args, err := r.buildSelect()
+	if err != nil {
+		return nil, err
+	}
 
-// 	return nil
-// }
+	rows, err := r.builder.Queryx(sql, args...)
+	if err != nil {
+		r.trace(sql, args, -1, err)
+
+		return nil, err
+	}
+
+	ch := make(chan db.Row)
+	go func() {
+		defer rows.Close()
+		defer close(ch)
+
+		var count int64
+		for rows.Next() {
+			row := make(map[string]any)
+			if err := rows.MapScan(row); err != nil {
+				r.trace(sql, args, -1, err)
+				return
+			}
+
+			ch <- NewRow(row)
+			count++
+		}
+
+		r.trace(sql, args, count, nil)
+	}()
+
+	return ch, nil
+}
 
 func (r *Query) Decrement(column string, value ...uint64) error {
 	v := uint64(1)
@@ -307,6 +333,13 @@ func (r *Query) Increment(column string, value ...uint64) error {
 	return nil
 }
 
+func (r *Query) InRandomOrder() db.Query {
+	q := r.clone()
+	q.conditions.InRandomOrder = convert.Pointer(true)
+
+	return q
+}
+
 func (r *Query) Insert(data any) (*db.Result, error) {
 	mapData, err := convertToSliceMap(data)
 	if err != nil {
@@ -371,13 +404,6 @@ func (r *Query) InsertGetId(data any) (int64, error) {
 	return id, nil
 }
 
-func (r *Query) Limit(limit uint64) db.Query {
-	q := r.clone()
-	q.conditions.Limit = &limit
-
-	return q
-}
-
 func (r *Query) Latest(dest any, column ...string) error {
 	col := "created_at"
 	if len(column) > 0 {
@@ -393,6 +419,20 @@ func (r *Query) LeftJoin(query string, args ...any) db.Query {
 		Query: query,
 		Args:  args,
 	})
+
+	return q
+}
+
+func (r *Query) Limit(limit uint64) db.Query {
+	q := r.clone()
+	q.conditions.Limit = &limit
+
+	return q
+}
+
+func (r *Query) LockForUpdate() db.Query {
+	q := r.clone()
+	q.conditions.LockForUpdate = convert.Pointer(true)
 
 	return q
 }
@@ -529,6 +569,13 @@ func (r *Query) RightJoin(query string, args ...any) db.Query {
 func (r *Query) Select(columns ...string) db.Query {
 	q := r.clone()
 	q.conditions.Selects = append(q.conditions.Selects, columns...)
+
+	return q
+}
+
+func (r *Query) SharedLock() db.Query {
+	q := r.clone()
+	q.conditions.SharedLock = convert.Pointer(true)
 
 	return q
 }
@@ -795,6 +842,10 @@ func (r *Query) buildSelect() (sql string, args []any, err error) {
 
 	builder = builder.Where(sqlizer)
 
+	if r.conditions.InRandomOrder != nil && *r.conditions.InRandomOrder {
+		builder = r.grammar.CompileInRandomOrder(builder, &r.conditions)
+	}
+
 	if len(r.conditions.GroupBy) > 0 {
 		builder = builder.GroupBy(r.conditions.GroupBy...)
 
@@ -803,31 +854,38 @@ func (r *Query) buildSelect() (sql string, args []any, err error) {
 		}
 	}
 
-	compileOrderByGrammar, ok := r.grammar.(driver.CompileOrderByGrammar)
+	compileOrderByGrammar, ok := r.grammar.(contractsdriver.CompileOrderByGrammar)
 	if ok {
-		builder = compileOrderByGrammar.CompileOrderBy(builder, r.conditions)
+		builder = compileOrderByGrammar.CompileOrderBy(builder, &r.conditions)
 	} else {
 		if len(r.conditions.OrderBy) > 0 {
 			builder = builder.OrderBy(r.conditions.OrderBy...)
 		}
 	}
 
-	compileOffsetGrammar, ok := r.grammar.(driver.CompileOffsetGrammar)
+	compileOffsetGrammar, ok := r.grammar.(contractsdriver.CompileOffsetGrammar)
 	if ok {
-		builder = compileOffsetGrammar.CompileOffset(builder, r.conditions)
+		builder = compileOffsetGrammar.CompileOffset(builder, &r.conditions)
 	} else {
 		if r.conditions.Offset != nil {
 			builder = builder.Offset(*r.conditions.Offset)
 		}
 	}
 
-	compileLimitGrammar, ok := r.grammar.(driver.CompileLimitGrammar)
+	compileLimitGrammar, ok := r.grammar.(contractsdriver.CompileLimitGrammar)
 	if ok {
-		builder = compileLimitGrammar.CompileLimit(builder, r.conditions)
+		builder = compileLimitGrammar.CompileLimit(builder, &r.conditions)
 	} else {
 		if r.conditions.Limit != nil {
 			builder = builder.Limit(*r.conditions.Limit)
 		}
+	}
+
+	if r.conditions.LockForUpdate != nil && *r.conditions.LockForUpdate {
+		builder = r.grammar.CompileLockForUpdate(builder, &r.conditions)
+	}
+	if r.conditions.SharedLock != nil && *r.conditions.SharedLock {
+		builder = r.grammar.CompileSharedLock(builder, &r.conditions)
 	}
 
 	return builder.ToSql()

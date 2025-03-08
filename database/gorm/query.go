@@ -30,7 +30,7 @@ type Query struct {
 	ctx             context.Context
 	dbConfig        contractsdatabase.Config
 	instance        *gormio.DB
-	gormQuery       driver.GormQuery
+	grammar         driver.Grammar
 	log             log.Log
 	modelToObserver []contractsorm.ModelToObserver
 	mutex           sync.Mutex
@@ -42,7 +42,7 @@ func NewQuery(
 	config config.Config,
 	dbConfig contractsdatabase.Config,
 	db *gormio.DB,
-	gormQuery driver.GormQuery,
+	grammar driver.Grammar,
 	log log.Log,
 	modelToObserver []contractsorm.ModelToObserver,
 	conditions *Conditions,
@@ -52,7 +52,7 @@ func NewQuery(
 		ctx:             ctx,
 		dbConfig:        dbConfig,
 		instance:        db,
-		gormQuery:       gormQuery,
+		grammar:         grammar,
 		log:             log,
 		modelToObserver: modelToObserver,
 		queries:         make(map[string]*Query),
@@ -76,12 +76,12 @@ func BuildQuery(ctx context.Context, config config.Config, connection string, lo
 		return nil, contractsdatabase.Config{}, err
 	}
 
-	gorm, gormQuery, err := driver.Gorm()
+	gorm, err := driver.Gorm()
 	if err != nil {
 		return nil, driver.Config(), err
 	}
 
-	return NewQuery(ctx, config, driver.Config(), gorm, gormQuery, log, modelToObserver, nil), driver.Config(), nil
+	return NewQuery(ctx, config, driver.Config(), gorm, driver.Grammar(), log, modelToObserver, nil), driver.Config(), nil
 }
 
 func (r *Query) Association(association string) contractsorm.Association {
@@ -142,13 +142,13 @@ func (r *Query) Create(value any) error {
 	return query.create(value)
 }
 
-func (r *Query) Cursor() (chan contractsorm.Cursor, error) {
+func (r *Query) Cursor() (chan contractsdb.Row, error) {
 	with := r.conditions.with
 	query := r.buildConditions()
 	r.conditions.with = with
 
 	var err error
-	cursorChan := make(chan contractsorm.Cursor)
+	cursorChan := make(chan contractsdb.Row)
 	go func() {
 		var rows *sql.Rows
 		rows, err = query.instance.Rows()
@@ -161,9 +161,10 @@ func (r *Query) Cursor() (chan contractsorm.Cursor, error) {
 			val := make(map[string]any)
 			err = query.instance.ScanRows(rows, val)
 			if err != nil {
+				r.log.Errorf("cursor error: %v", err)
 				return
 			}
-			cursorChan <- &CursorImpl{query: r, row: val}
+			cursorChan <- &Row{query: r, row: val}
 		}
 		close(cursorChan)
 	}()
@@ -613,7 +614,7 @@ func (r *Query) Instance() *gormio.DB {
 }
 
 func (r *Query) InRandomOrder() contractsorm.Query {
-	return r.OrderByRaw(r.gormQuery.RandomOrder())
+	return r.OrderByRaw(r.grammar.CompileRandomOrderForGorm())
 }
 
 func (r *Query) InTransaction() bool {
@@ -1077,7 +1078,7 @@ func (r *Query) buildLockForUpdate(db *gormio.DB) *gormio.DB {
 		return db
 	}
 
-	lockForUpdate := r.gormQuery.LockForUpdate()
+	lockForUpdate := r.grammar.CompileLockForUpdateForGorm()
 	if lockForUpdate != nil {
 		return db.Clauses(lockForUpdate)
 	}
@@ -1179,7 +1180,7 @@ func (r *Query) buildSharedLock(db *gormio.DB) *gormio.DB {
 		return db
 	}
 
-	sharedLock := r.gormQuery.SharedLock()
+	sharedLock := r.grammar.CompileSharedLockForGorm()
 	if sharedLock != nil {
 		return db.Clauses(sharedLock)
 	}
@@ -1229,7 +1230,7 @@ func (r *Query) buildWith(db *gormio.DB) *gormio.DB {
 			if arg, ok := item.args[0].(func(contractsorm.Query) contractsorm.Query); ok {
 				newArgs := []any{
 					func(tx *gormio.DB) *gormio.DB {
-						queryImpl := NewQuery(r.ctx, r.config, r.dbConfig, tx, r.gormQuery, r.log, r.modelToObserver, nil)
+						queryImpl := NewQuery(r.ctx, r.config, r.dbConfig, tx, r.grammar, r.log, r.modelToObserver, nil)
 						query := arg(queryImpl)
 						queryImpl = query.(*Query)
 						queryImpl = queryImpl.buildConditions()
@@ -1382,7 +1383,7 @@ func (r *Query) getObserver(dest any) contractsorm.Observer {
 }
 
 func (r *Query) new(db *gormio.DB) *Query {
-	return NewQuery(r.ctx, r.config, r.dbConfig, db, r.gormQuery, r.log, r.modelToObserver, &r.conditions)
+	return NewQuery(r.ctx, r.config, r.dbConfig, db, r.grammar, r.log, r.modelToObserver, &r.conditions)
 }
 
 func (r *Query) omitCreate(value any) error {

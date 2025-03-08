@@ -134,6 +134,63 @@ func (_c *Query_CrossJoin_Call) RunAndReturn(run func(string, ...interface{}) db
 	return _c
 }
 
+// Cursor provides a mock function with no fields
+func (_m *Query) Cursor() (chan db.Row, error) {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Cursor")
+	}
+
+	var r0 chan db.Row
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (chan db.Row, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() chan db.Row); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(chan db.Row)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Query_Cursor_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Cursor'
+type Query_Cursor_Call struct {
+	*mock.Call
+}
+
+// Cursor is a helper method to define mock.On call
+func (_e *Query_Expecter) Cursor() *Query_Cursor_Call {
+	return &Query_Cursor_Call{Call: _e.mock.On("Cursor")}
+}
+
+func (_c *Query_Cursor_Call) Run(run func()) *Query_Cursor_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Query_Cursor_Call) Return(_a0 chan db.Row, _a1 error) *Query_Cursor_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Query_Cursor_Call) RunAndReturn(run func() (chan db.Row, error)) *Query_Cursor_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Decrement provides a mock function with given fields: column, value
 func (_m *Query) Decrement(column string, value ...uint64) error {
 	_va := make([]interface{}, len(value))
@@ -771,6 +828,53 @@ func (_c *Query_Having_Call) RunAndReturn(run func(interface{}, ...interface{}) 
 	return _c
 }
 
+// InRandomOrder provides a mock function with no fields
+func (_m *Query) InRandomOrder() db.Query {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for InRandomOrder")
+	}
+
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func() db.Query); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_InRandomOrder_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InRandomOrder'
+type Query_InRandomOrder_Call struct {
+	*mock.Call
+}
+
+// InRandomOrder is a helper method to define mock.On call
+func (_e *Query_Expecter) InRandomOrder() *Query_InRandomOrder_Call {
+	return &Query_InRandomOrder_Call{Call: _e.mock.On("InRandomOrder")}
+}
+
+func (_c *Query_InRandomOrder_Call) Run(run func()) *Query_InRandomOrder_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Query_InRandomOrder_Call) Return(_a0 db.Query) *Query_InRandomOrder_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_InRandomOrder_Call) RunAndReturn(run func() db.Query) *Query_InRandomOrder_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Increment provides a mock function with given fields: column, value
 func (_m *Query) Increment(column string, value ...uint64) error {
 	_va := make([]interface{}, len(value))
@@ -1169,6 +1273,53 @@ func (_c *Query_Limit_Call) Return(_a0 db.Query) *Query_Limit_Call {
 }
 
 func (_c *Query_Limit_Call) RunAndReturn(run func(uint64) db.Query) *Query_Limit_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// LockForUpdate provides a mock function with no fields
+func (_m *Query) LockForUpdate() db.Query {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for LockForUpdate")
+	}
+
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func() db.Query); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_LockForUpdate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LockForUpdate'
+type Query_LockForUpdate_Call struct {
+	*mock.Call
+}
+
+// LockForUpdate is a helper method to define mock.On call
+func (_e *Query_Expecter) LockForUpdate() *Query_LockForUpdate_Call {
+	return &Query_LockForUpdate_Call{Call: _e.mock.On("LockForUpdate")}
+}
+
+func (_c *Query_LockForUpdate_Call) Run(run func()) *Query_LockForUpdate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Query_LockForUpdate_Call) Return(_a0 db.Query) *Query_LockForUpdate_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_LockForUpdate_Call) RunAndReturn(run func() db.Query) *Query_LockForUpdate_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -2150,6 +2301,53 @@ func (_c *Query_Select_Call) Return(_a0 db.Query) *Query_Select_Call {
 }
 
 func (_c *Query_Select_Call) RunAndReturn(run func(...string) db.Query) *Query_Select_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SharedLock provides a mock function with no fields
+func (_m *Query) SharedLock() db.Query {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for SharedLock")
+	}
+
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func() db.Query); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_SharedLock_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SharedLock'
+type Query_SharedLock_Call struct {
+	*mock.Call
+}
+
+// SharedLock is a helper method to define mock.On call
+func (_e *Query_Expecter) SharedLock() *Query_SharedLock_Call {
+	return &Query_SharedLock_Call{Call: _e.mock.On("SharedLock")}
+}
+
+func (_c *Query_SharedLock_Call) Run(run func()) *Query_SharedLock_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Query_SharedLock_Call) Return(_a0 db.Query) *Query_SharedLock_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_SharedLock_Call) RunAndReturn(run func() db.Query) *Query_SharedLock_Call {
 	_c.Call.Return(run)
 	return _c
 }

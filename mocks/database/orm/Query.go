@@ -276,23 +276,23 @@ func (_c *Query_Create_Call) RunAndReturn(run func(interface{}) error) *Query_Cr
 }
 
 // Cursor provides a mock function with no fields
-func (_m *Query) Cursor() (chan orm.Cursor, error) {
+func (_m *Query) Cursor() (chan db.Row, error) {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Cursor")
 	}
 
-	var r0 chan orm.Cursor
+	var r0 chan db.Row
 	var r1 error
-	if rf, ok := ret.Get(0).(func() (chan orm.Cursor, error)); ok {
+	if rf, ok := ret.Get(0).(func() (chan db.Row, error)); ok {
 		return rf()
 	}
-	if rf, ok := ret.Get(0).(func() chan orm.Cursor); ok {
+	if rf, ok := ret.Get(0).(func() chan db.Row); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(chan orm.Cursor)
+			r0 = ret.Get(0).(chan db.Row)
 		}
 	}
 
@@ -322,12 +322,12 @@ func (_c *Query_Cursor_Call) Run(run func()) *Query_Cursor_Call {
 	return _c
 }
 
-func (_c *Query_Cursor_Call) Return(_a0 chan orm.Cursor, _a1 error) *Query_Cursor_Call {
+func (_c *Query_Cursor_Call) Return(_a0 chan db.Row, _a1 error) *Query_Cursor_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Query_Cursor_Call) RunAndReturn(run func() (chan orm.Cursor, error)) *Query_Cursor_Call {
+func (_c *Query_Cursor_Call) RunAndReturn(run func() (chan db.Row, error)) *Query_Cursor_Call {
 	_c.Call.Return(run)
 	return _c
 }

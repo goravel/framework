@@ -32,7 +32,7 @@ type TestQuery struct {
 }
 
 func NewTestQuery(ctx context.Context, driver contractsdriver.Driver, config config.Config) (*TestQuery, error) {
-	query, gormQuery, err := driver.Gorm()
+	query, err := driver.Gorm()
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func NewTestQuery(ctx context.Context, driver contractsdriver.Driver, config con
 		config: config,
 		db:     databasedb.NewDB(ctx, config, driver, logger.NewLogger(config, utils.NewTestLog()), sqlx.NewDb(db, driver.Config().Driver), nil, nil),
 		driver: driver,
-		query:  gorm.NewQuery(ctx, config, driver.Config(), query, gormQuery, utils.NewTestLog(), nil, nil),
+		query:  gorm.NewQuery(ctx, config, driver.Config(), query, driver.Grammar(), utils.NewTestLog(), nil, nil),
 	}
 
 	return testQuery, nil

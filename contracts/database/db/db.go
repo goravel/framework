@@ -3,6 +3,8 @@ package db
 import (
 	"context"
 	"database/sql"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type DB interface {
@@ -25,17 +27,18 @@ type DB interface {
 type Query interface {
 	// Count Retrieve the "count" result of the query.
 	Count() (int64, error)
-	// Chunk Execute a callback over a given chunk size.
-	// Chunk(size int, callback func(dest []any) error) error
 	// CrossJoin specifying CROSS JOIN conditions for the query.
 	CrossJoin(query string, args ...any) Query
+	// Cursor returns a cursor, use scan to iterate over the returned rows.
+	Cursor() (chan Row, error)
+	// Decrement the given column's values by the given amounts.
+	Decrement(column string, value ...uint64) error
+	// Delete records from the database.
+	Delete() (*Result, error)
 	// DoesntExist Determine if no rows exist for the current query.
 	DoesntExist() (bool, error)
 	// Distinct Force the query to only return distinct results.
 	Distinct() Query
-	// Delete records from the database.
-	Delete() (*Result, error)
-	// Each(callback func(rows []any) error) error
 	// Exists Determine if any rows exist for the current query.
 	Exists() (bool, error)
 	// Find Execute a query for a single record by ID.
@@ -46,8 +49,6 @@ type Query interface {
 	FirstOr(dest any, callback func() error) error
 	// FirstOrFail finds the first record that matches the given conditions or throws an error.
 	FirstOrFail(dest any) error
-	// Decrement the given column's values by the given amounts.
-	Decrement(column string, value ...uint64) error
 	// Get Retrieve all rows from the database.
 	Get(dest any) error
 	// GroupBy specifies the group method on the query.
@@ -56,7 +57,8 @@ type Query interface {
 	Having(query any, args ...any) Query
 	// Increment a column's value by a given amount.
 	Increment(column string, value ...uint64) error
-	// inRandomOrder
+	// InRandomOrder Add an "in random order" clause to the query.
+	InRandomOrder() Query
 	// Insert a new record into the database.
 	Insert(data any) (*Result, error)
 	// InsertGetId returns the ID of the inserted row, only supported by MySQL and Sqlite
@@ -69,7 +71,8 @@ type Query interface {
 	LeftJoin(query string, args ...any) Query
 	// Limit Add a limit to the query.
 	Limit(limit uint64) Query
-	// lockForUpdate
+	// LockForUpdate Add a lock for update to the query.
+	LockForUpdate() Query
 	// Offset Add an "offset" clause to the query.
 	Offset(offset uint64) Query
 	// OrderBy Add an "order by" clause to the query.
@@ -108,7 +111,8 @@ type Query interface {
 	RightJoin(query string, args ...any) Query
 	// Select Set the columns to be selected.
 	Select(columns ...string) Query
-	// sharedLock
+	// SharedLock Add a shared lock to the query.
+	SharedLock() Query
 	// ToSql Get the SQL representation of the query.
 	ToSql() ToSql
 	// ToRawSql Get the raw SQL representation of the query with embedded bindings.
@@ -154,7 +158,7 @@ type Result struct {
 type Builder interface {
 	Exec(query string, args ...any) (sql.Result, error)
 	Get(dest any, query string, args ...any) error
-	Query(query string, args ...any) (*sql.Rows, error)
+	Queryx(query string, args ...any) (*sqlx.Rows, error)
 	Select(dest any, query string, args ...any) error
 }
 
@@ -166,4 +170,8 @@ type ToSql interface {
 	Insert(data any) string
 	Pluck(column string, dest any) string
 	Update(column any, value ...any) string
+}
+
+type Row interface {
+	Scan(value any) error
 }
