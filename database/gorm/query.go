@@ -142,13 +142,13 @@ func (r *Query) Create(value any) error {
 	return query.create(value)
 }
 
-func (r *Query) Cursor() (chan contractsorm.Cursor, error) {
+func (r *Query) Cursor() (chan contractsdb.Row, error) {
 	with := r.conditions.with
 	query := r.buildConditions()
 	r.conditions.with = with
 
 	var err error
-	cursorChan := make(chan contractsorm.Cursor)
+	cursorChan := make(chan contractsdb.Row)
 	go func() {
 		var rows *sql.Rows
 		rows, err = query.instance.Rows()
@@ -161,9 +161,10 @@ func (r *Query) Cursor() (chan contractsorm.Cursor, error) {
 			val := make(map[string]any)
 			err = query.instance.ScanRows(rows, val)
 			if err != nil {
+				r.log.Errorf("cursor error: %v", err)
 				return
 			}
-			cursorChan <- &Cursor{query: r, row: val}
+			cursorChan <- &Row{query: r, row: val}
 		}
 		close(cursorChan)
 	}()

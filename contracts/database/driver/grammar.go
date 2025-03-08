@@ -64,8 +64,6 @@ type SchemaGrammar interface {
 	CompileRenameColumn(schema Schema, blueprint Blueprint, command *Command) (string, error)
 	// CompileRenameIndex Compile a rename index command.
 	CompileRenameIndex(schema Schema, blueprint Blueprint, command *Command) []string
-	// CompileSharedLock Compile a shared lock command for gorm.
-	CompileSharedLockForGorm() clause.Expression
 	// CompileTables Compile the query to determine the tables.
 	CompileTables(database string) string
 	// CompileTableComment Compile a table comment command.

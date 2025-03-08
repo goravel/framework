@@ -5,10 +5,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/goravel/framework/support/carbon"
-	"github.com/goravel/framework/support/str"
 	"github.com/mitchellh/mapstructure"
 	"gorm.io/gorm"
+
+	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/str"
 )
 
 type Row struct {

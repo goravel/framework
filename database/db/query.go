@@ -98,6 +98,7 @@ func (r *Query) Cursor() (chan db.Row, error) {
 		for rows.Next() {
 			row := make(map[string]any)
 			if err := rows.MapScan(row); err != nil {
+				r.trace(sql, args, -1, err)
 				return
 			}
 
@@ -164,10 +165,6 @@ func (r *Query) DoesntExist() (bool, error) {
 	}
 
 	return count == 0, nil
-}
-
-func (r *Query) Each(callback func(row db.Row) error) error {
-	return nil
 }
 
 func (r *Query) Exists() (bool, error) {
