@@ -8,87 +8,114 @@ import (
 )
 
 type DB interface {
-	// BeginTransaction Begin a transaction.
-	BeginTransaction() (DB, error)
-	// Commit Commit the transaction.
-	Commit() error
-	// Connection Get a database connection by name.
+	Tx
+	// BeginTransaction begins a transaction.
+	BeginTransaction() (Tx, error)
+	// Connection gets an Orm instance from the connection pool.
 	Connection(name string) DB
-	// Rollback Rollback the transaction.
-	Rollback() error
-	// Table Get a table instance.
-	Table(name string) Query
-	// Transaction Execute a transaction.
-	Transaction(txFunc func(tx DB) error) error
-	// WithContext Set the context for the query.
+	// Transaction runs a callback wrapped in a database transaction.
+	Transaction(txFunc func(tx Tx) error) error
+	// WithContext sets the context to be used by the Orm.
 	WithContext(ctx context.Context) DB
 }
 
+type Tx interface {
+	// Commit commits the changes in a transaction.
+	Commit() error
+	// Delete executes a delete query.
+	Delete(sql string, args ...any) (*Result, error)
+	// Exec executes a raw sql.
+	Exec(sql string, args ...any) (*Result, error)
+	// Insert executes a insert query.
+	Insert(sql string, args ...any) (*Result, error)
+	// Rollback rolls back the changes in a transaction.
+	Rollback() error
+	// Select executes a select query.
+	Select(dest any, sql string, args ...any) error
+	// Table specifies the table for the query.
+	Table(name string) Query
+	// Update executes a update query.
+	Update(sql string, args ...any) (*Result, error)
+}
+
 type Query interface {
-	// Count Retrieve the "count" result of the query.
+	// Chunk chunks the query into smaller chunks.
+	// Chunk(size int, callback func(rows []Row) error) error
+	// Count retrieves the "count" result of the query.
 	Count() (int64, error)
-	// CrossJoin specifying CROSS JOIN conditions for the query.
+	// CrossJoin specifies CROSS JOIN conditions for the query.
 	CrossJoin(query string, args ...any) Query
 	// Cursor returns a cursor, use scan to iterate over the returned rows.
 	Cursor() (chan Row, error)
-	// Decrement the given column's values by the given amounts.
+	// Decrement decrements the given column's values by the given amounts.
 	Decrement(column string, value ...uint64) error
-	// Delete records from the database.
+	// Delete deletes records from the database.
 	Delete() (*Result, error)
-	// DoesntExist Determine if no rows exist for the current query.
+	// DoesntExist determines if no rows exist for the current query.
 	DoesntExist() (bool, error)
-	// Distinct Force the query to only return distinct results.
+	// Distinct forces the query to only return distinct results.
 	Distinct() Query
-	// Exists Determine if any rows exist for the current query.
+	// Each executes the query and passes each row to the callback.
+	// Each(callback func(row Row) error) error
+	// Exists returns true if matching records exist; otherwise, it returns false.
 	Exists() (bool, error)
-	// Find Execute a query for a single record by ID.
+	// Find finds records that match given conditions.
 	Find(dest any, conds ...any) error
+	// FindOrFail finds records that match given conditions or throws an error.
+	// FindOrFail(dest any, conds ...any) error
 	// First finds record that match given conditions.
 	First(dest any) error
-	// FirstOr finds the first record that matches the given conditions or execute the callback and return its result if no record is found.
+	// FirstOr finds the first record that matches the given conditions or
+	// execute the callback and return its result if no record is found.
 	FirstOr(dest any, callback func() error) error
+	// FirstOrCreate finds the first record that matches the given attributes
+	// or create a new one with those attributes if none was found.
+	// FirstOrCreate(dest any, conds ...any) error
 	// FirstOrFail finds the first record that matches the given conditions or throws an error.
 	FirstOrFail(dest any) error
-	// Get Retrieve all rows from the database.
+	// FirstOrNew finds the first record that matches the given conditions or
+	// return a new instance of the model initialized with those attributes.
+	// FirstOrNew(dest any, attributes any, values ...any) error
+	// Get retrieves all rows from the database.
 	Get(dest any) error
 	// GroupBy specifies the group method on the query.
 	GroupBy(column ...string) Query
-	// Having specifying HAVING conditions for the query.
+	// Having specifies HAVING conditions for the query.
 	Having(query any, args ...any) Query
-	// Increment a column's value by a given amount.
+	// Increment increments a column's value by a given amount.
 	Increment(column string, value ...uint64) error
-	// InRandomOrder Add an "in random order" clause to the query.
+	// InRandomOrder specifies the order randomly.
 	InRandomOrder() Query
 	// Insert a new record into the database.
 	Insert(data any) (*Result, error)
 	// InsertGetId returns the ID of the inserted row, only supported by MySQL and Sqlite
 	InsertGetId(data any) (int64, error)
-	// Join specifying JOIN conditions for the query.
+	// Join specifies JOIN conditions for the query.
 	Join(query string, args ...any) Query
-	// Latest Retrieve the latest record from the database.
+	// Latest retrieves the latest record from the database.
 	Latest(dest any, column ...string) error
-	// LeftJoin specifying LEFT JOIN conditions for the query.
+	// LeftJoin specifies LEFT JOIN conditions for the query.
 	LeftJoin(query string, args ...any) Query
-	// Limit Add a limit to the query.
+	// Limit the number of records returned.
 	Limit(limit uint64) Query
-	// LockForUpdate Add a lock for update to the query.
+	// LockForUpdate locks the selected rows in the table for updating.
 	LockForUpdate() Query
-	// Offset Add an "offset" clause to the query.
+	// Offset specifies the number of records to skip before starting to return the records.
 	Offset(offset uint64) Query
-	// OrderBy Add an "order by" clause to the query.
+	// OrderBy specifies the order should be ascending.
 	OrderBy(column string) Query
-	// OrderByDesc Add a descending "order by" clause to the query.
+	// OrderByDesc specifies the order should be descending.
 	OrderByDesc(column string) Query
-	// OrderByRaw Add a raw "order by" clause to the query.
+	// OrderByRaw specifies the order should be raw.
 	OrderByRaw(raw string) Query
-	// OrWhere add an "or where" clause to the query.
+	// OrWhere adds an "or where" clause to the query.
 	OrWhere(query any, args ...any) Query
 	// OrWhereBetween adds an "or where column between x and y" clause to the query.
 	OrWhereBetween(column string, x, y any) Query
 	// OrWhereColumn adds an "or where column" clause to the query.
 	OrWhereColumn(column1 string, column2 ...string) Query
 	// OrWhereIn adds an "or where column in" clause to the query.
-	OrWhereIn(column string, args []any) Query
+	OrWhereIn(column string, values []any) Query
 	// OrWhereLike adds an "or where column like" clause to the query.
 	OrWhereLike(column string, value string) Query
 	// OrWhereNot adds an "or where not" clause to the query.
@@ -105,49 +132,54 @@ type Query interface {
 	OrWhereNull(column string) Query
 	// OrWhereRaw adds a raw "or where" clause to the query.
 	OrWhereRaw(raw string, args []any) Query
-	// Pluck Get a collection instance containing the values of a given column.
+	// Pluck retrieves a single column from the database.
 	Pluck(column string, dest any) error
-	// RightJoin specifying RIGHT JOIN conditions for the query.
+	// RightJoin specifies RIGHT JOIN conditions for the query.
 	RightJoin(query string, args ...any) Query
-	// Select Set the columns to be selected.
+	// Select specifies fields that should be retrieved from the database.
 	Select(columns ...string) Query
-	// SharedLock Add a shared lock to the query.
+	// SharedLock locks the selected rows in the table.
 	SharedLock() Query
-	// ToSql Get the SQL representation of the query.
+	// Sum calculates the sum of a column's values and populates the destination object.
+	// Sum(column string, dest any) error
+	// ToSql returns the query as a SQL string.
 	ToSql() ToSql
-	// ToRawSql Get the raw SQL representation of the query with embedded bindings.
+	// ToRawSql returns the query as a raw SQL string.
 	ToRawSql() ToSql
-	// Update records in the database.
+	// Update records with the given column and values
 	Update(column any, value ...any) (*Result, error)
-	// Value Get a single column's value from the first result of a query.
+	// UpdateOrCreate finds the first record that matches the given attributes
+	// or create a new one with those attributes if none was found.
+	// UpdateOrCreate(dest any, attributes any, values any) error
+	// Value gets a single column's value from the first result of a query.
 	Value(column string, dest any) error
 	// When executes the callback if the condition is true.
 	When(condition bool, callback func(query Query) Query) Query
-	// Where Add a basic where clause to the query.
+	// Where adds a "where" clause to the query.
 	Where(query any, args ...any) Query
-	// WhereBetween Add a where between statement to the query.
+	// WhereBetween adds a "where column between x and y" clause to the query.
 	WhereBetween(column string, x, y any) Query
-	// WhereColumn Add a "where" clause comparing two columns to the query.
+	// WhereColumn adds a "where" clause comparing two columns to the query.
 	WhereColumn(column1 string, column2 ...string) Query
-	// WhereExists Add an exists clause to the query.
+	// WhereExists adds an exists clause to the query.
 	WhereExists(func() Query) Query
-	// WhereIn Add a "where in" clause to the query.
-	WhereIn(column string, args []any) Query
-	// WhereLike Add a "where like" clause to the query.
+	// WhereIn adds a "where column in" clause to the query.
+	WhereIn(column string, values []any) Query
+	// WhereLike adds a "where like" clause to the query.
 	WhereLike(column string, value string) Query
-	// WhereNot Add a basic "where not" clause to the query.
+	// WhereNot adds a basic "where not" clause to the query.
 	WhereNot(query any, args ...any) Query
-	// WhereNotBetween Add a where not between statement to the query.
+	// WhereNotBetween adds a "where column not between x and y" clause to the query.
 	WhereNotBetween(column string, x, y any) Query
-	// WhereNotIn Add a "where not in" clause to the query.
-	WhereNotIn(column string, args []any) Query
-	// WhereNotLike Add a "where not like" clause to the query.
+	// WhereNotIn adds a "where column not in" clause to the query.
+	WhereNotIn(column string, values []any) Query
+	// WhereNotLike adds a "where not like" clause to the query.
 	WhereNotLike(column string, value string) Query
-	// WhereNotNull Add a "where not null" clause to the query.
+	// WhereNotNull adds a "where column is not null" clause to the query.
 	WhereNotNull(column string) Query
-	// WhereNull Add a "where null" clause to the query.
+	// WhereNull adds a "where column is null" clause to the query.
 	WhereNull(column string) Query
-	// WhereRaw Add a raw where clause to the query.
+	// WhereRaw adds a raw where clause to the query.
 	WhereRaw(raw string, args []any) Query
 }
 
@@ -156,10 +188,21 @@ type Result struct {
 }
 
 type Builder interface {
-	Exec(query string, args ...any) (sql.Result, error)
-	Get(dest any, query string, args ...any) error
-	Queryx(query string, args ...any) (*sqlx.Rows, error)
-	Select(dest any, query string, args ...any) error
+	CommonBuilder
+	Beginx() (*sqlx.Tx, error)
+}
+
+type TxBuilder interface {
+	CommonBuilder
+	Commit() error
+	Rollback() error
+}
+
+type CommonBuilder interface {
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+	GetContext(ctx context.Context, dest any, query string, args ...any) error
+	QueryxContext(ctx context.Context, query string, args ...any) (*sqlx.Rows, error)
+	SelectContext(ctx context.Context, dest any, query string, args ...any) error
 }
 
 type ToSql interface {

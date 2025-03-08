@@ -41,7 +41,10 @@ type Query interface {
 	// Association gets an association instance by name.
 	Association(association string) Association
 	// Begin begins a new transaction
+	// DEPRECATED Use BeginTransaction instead.
 	Begin() (Query, error)
+	// BeginTransaction begins a new transaction
+	BeginTransaction() (Query, error)
 	// Commit commits the changes in a transaction.
 	Commit() error
 	// Count retrieve the "count" result of the query.
@@ -68,12 +71,12 @@ type Query interface {
 	FindOrFail(dest any, conds ...any) error
 	// First finds record that match given conditions.
 	First(dest any) error
-	// FirstOrCreate finds the first record that matches the given attributes
-	// or create a new one with those attributes if none was found.
-	FirstOrCreate(dest any, conds ...any) error
 	// FirstOr finds the first record that matches the given conditions or
 	// execute the callback and return its result if no record is found.
 	FirstOr(dest any, callback func() error) error
+	// FirstOrCreate finds the first record that matches the given attributes
+	// or create a new one with those attributes if none was found.
+	FirstOrCreate(dest any, conds ...any) error
 	// FirstOrFail finds the first record that matches the given conditions or throws an error.
 	FirstOrFail(dest any) error
 	// FirstOrNew finds the first record that matches the given conditions or

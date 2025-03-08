@@ -143,7 +143,7 @@ func TestConnection(t *testing.T) {
 			mockDriver = mocksdriver.NewDriver(t)
 			mockLogger = mockslogger.NewLogger(t)
 
-			db := NewDB(context.Background(), mockConfig, mockDriver, mockLogger, nil, nil, nil)
+			db := NewDB(context.Background(), mockConfig, mockDriver, mockLogger, nil)
 			test.setup(db)
 
 			if test.expectedPanic {

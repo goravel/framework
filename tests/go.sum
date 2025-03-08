@@ -95,10 +95,10 @@ github.com/gookit/color v1.4.2/go.mod h1:fqRyamkC1W8uxl+lxCQxOT09l/vYfZ+QeiX3rKQ
 github.com/gookit/color v1.5.0/go.mod h1:43aQb+Zerm/BWh2GnrgOQm7ffz7tvQXEKV6BFMl7wAo=
 github.com/gookit/color v1.5.4 h1:FZmqs7XOyGgCAxmWyPslpiok1k05wmY3SJTytgvYFs0=
 github.com/gookit/color v1.5.4/go.mod h1:pZJOeOS8DM43rXbp4AZo1n9zCU2qjpcRko0b6/QJi9w=
-github.com/goravel/postgres v0.0.2-0.20250304195636-14f0decaa67c h1:TdB6ny2ePNWQW8a3NMDgjR63EDnXitJgoQz4aAd3RLM=
-github.com/goravel/postgres v0.0.2-0.20250304195636-14f0decaa67c/go.mod h1:bi7RN4/SgV+yonZ8o91EM4MgAlO7iO7faPCScdEEuuA=
-github.com/goravel/sqlserver v0.0.0-20250305113336-06522eb6c9a8 h1:ILm5vvPI7Z2T9AbZ8K0UfA86BwP6mPYRxF0rs/jw21k=
-github.com/goravel/sqlserver v0.0.0-20250305113336-06522eb6c9a8/go.mod h1:4ZbcCmHxaE3jhV97qmIrFCXT5M70PYVmz9PimuJ+eQU=
+github.com/goravel/postgres v0.0.2-0.20250308101510-84fe97cf908f h1:IXZuq1JI3Fst8wEBRRkH3TU0ngGTbX2BsaNl9GwYGkI=
+github.com/goravel/postgres v0.0.2-0.20250308101510-84fe97cf908f/go.mod h1:lOQxiRGy36ch1ZHDT3RhIrwMEccp/4Km3G4sv8I+iQI=
+github.com/goravel/sqlserver v0.0.0-20250308102004-17ec289e6df4 h1:oKN9RhBhHgrbBGpNPjtwQnANOoBdf/dX40Z1r0Mn0A8=
+github.com/goravel/sqlserver v0.0.0-20250308102004-17ec289e6df4/go.mod h1:L/45aUBsACppYeu3IelbDeCN9pjcyvcXKtxs3TFiyVQ=
 github.com/gorilla/securecookie v1.1.1/go.mod h1:ra0sb63/xPlUeL+yeDciTfxMRAA+MP+HVt/4epWDjd4=
 github.com/gorilla/sessions v1.2.1/go.mod h1:dk2InVEVJ0sfLlnXv9EAgkf6ecYs/i80K/zI+bUmuGM=
 github.com/hashicorp/go-uuid v1.0.2/go.mod h1:6SBZvOh/SIDV7/2o3Jml5SYk/TvGqwFJ/bN7x4byOro=
@@ -153,6 +153,8 @@ github.com/mattn/go-sqlite3 v1.14.22/go.mod h1:Uh1q+B4BYcTPb+yiD3kU8Ct7aC0hY9fxU
 github.com/microsoft/go-mssqldb v1.7.2/go.mod h1:kOvZKUdrhhFQmxLZqbwUV0rHkNkZpthMITIb2Ko1IoA=
 github.com/microsoft/go-mssqldb v1.8.0 h1:7cyZ/AT7ycDsEoWPIXibd+aVKFtteUNhDGf3aobP+tw=
 github.com/microsoft/go-mssqldb v1.8.0/go.mod h1:6znkekS3T2vp0waiMhen4GPU1BiAsrP+iXHcE7a7rFo=
+github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyuac5Z2hdY=
+github.com/mitchellh/mapstructure v1.5.0/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
 github.com/modocache/gover v0.0.0-20171022184752-b58185e213c5/go.mod h1:caMODM3PzxT8aQXRPkAt8xlV/e7d7w8GM5g0fa5F0D8=
 github.com/montanaflynn/stats v0.7.0/go.mod h1:etXPPgVO6n31NxCd9KQUMvCM+ve0ruNzt6R8Bnaayow=
 github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8/go.mod h1:HKlIX3XHQyzLZPlr7++PzdhaXEj94dEiJgZDTsxEqUI=

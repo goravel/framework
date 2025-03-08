@@ -9,8 +9,8 @@ godebug x509negativeserial=1
 require (
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/goravel/framework v1.15.4
-	github.com/goravel/postgres v0.0.2-0.20250304195636-14f0decaa67c
-	github.com/goravel/sqlserver v0.0.0-20250305113336-06522eb6c9a8
+	github.com/goravel/postgres v0.0.2-0.20250308101510-84fe97cf908f
+	github.com/goravel/sqlserver v0.0.0-20250308102004-17ec289e6df4
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/spf13/cast v1.7.1
 	github.com/stretchr/testify v1.10.0
@@ -44,6 +44,7 @@ require (
 	github.com/lithammer/fuzzysearch v1.1.8 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/microsoft/go-mssqldb v1.8.0 // indirect
+	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/pterm/pterm v0.12.80 // indirect
 	github.com/redis/go-redis/v9 v9.7.1 // indirect
