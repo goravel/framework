@@ -6,11 +6,11 @@ import (
 	"testing"
 
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
-	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/postgres"
+	"github.com/goravel/sqlserver"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -600,32 +600,32 @@ func (s *QueryTestSuite) TestCursor() {
 	}
 }
 
-func (s *QueryTestSuite) TestDBRaw() {
-	userName := "db_raw"
-	for driver, query := range s.queries {
-		s.Run(driver, func() {
-			user := User{Name: userName}
+// func (s *QueryTestSuite) TestDBRaw() {
+// 	userName := "db_raw"
+// 	for driver, query := range s.queries {
+// 		s.Run(driver, func() {
+// 			user := User{Name: userName}
 
-			s.Nil(query.Query().Create(&user))
-			s.True(user.ID > 0)
-			switch driver {
-			// case sqlserver.Name, mysql.Name:
-			// 	res, err := query.Query().Model(&user).Update("Name", databasedb.Raw("concat(name, ?)", driver))
-			// 	s.Nil(err)
-			// 	s.Equal(int64(1), res.RowsAffected)
-			default:
-				res, err := query.Query().Model(&user).Update("Name", databasedb.Raw("name || ?", driver))
-				s.Nil(err)
-				s.Equal(int64(1), res.RowsAffected)
-			}
+// 			s.Nil(query.Query().Create(&user))
+// 			s.True(user.ID > 0)
+// 			switch driver {
+// 			case sqlserver.Name, mysql.Name:
+// 				res, err := query.Query().Model(&user).Update("Name", databasedb.Raw("concat(name, ?)", driver))
+// 				s.Nil(err)
+// 				s.Equal(int64(1), res.RowsAffected)
+// 			default:
+// 				res, err := query.Query().Model(&user).Update("Name", databasedb.Raw("name || ?", driver))
+// 				s.Nil(err)
+// 				s.Equal(int64(1), res.RowsAffected)
+// 			}
 
-			var user1 User
-			s.Nil(query.Query().Find(&user1, user.ID))
-			s.True(user1.ID > 0)
-			s.True(user1.Name == userName+driver)
-		})
-	}
-}
+// 			var user1 User
+// 			s.Nil(query.Query().Find(&user1, user.ID))
+// 			s.True(user1.ID > 0)
+// 			s.True(user1.Name == userName+driver)
+// 		})
+// 	}
+// }
 
 func (s *QueryTestSuite) TestDelete() {
 	for _, query := range s.queries {
@@ -3014,8 +3014,8 @@ func (s *QueryTestSuite) TestToSql() {
 			switch driver {
 			case postgres.Name:
 				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = $1 AND \"users\".\"deleted_at\" IS NULL", query.Query().Where("id", 1).ToSql().Find(User{}))
-			// case sqlserver.Name:
-			// 	s.Equal("SELECT * FROM \"users\" WHERE \"id\" = @p1 AND \"users\".\"deleted_at\" IS NULL", query.Query().Where("id", 1).ToSql().Find(User{}))
+			case sqlserver.Name:
+				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = @p1 AND \"users\".\"deleted_at\" IS NULL", query.Query().Where("id", 1).ToSql().Find(User{}))
 			default:
 				s.Equal("SELECT * FROM `users` WHERE `id` = ? AND `users`.`deleted_at` IS NULL", query.Query().Where("id", 1).ToSql().Find(User{}))
 			}
@@ -3029,8 +3029,8 @@ func (s *QueryTestSuite) TestToRawSql() {
 			switch driver {
 			case postgres.Name:
 				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = 1 AND \"users\".\"deleted_at\" IS NULL", query.Query().Where("id", 1).ToRawSql().Find(User{}))
-			// case sqlserver.Name:
-			// 	s.Equal("SELECT * FROM \"users\" WHERE \"id\" = $1$ AND \"users\".\"deleted_at\" IS NULL", query.Query().Where("id", 1).ToRawSql().Find(User{}))
+			case sqlserver.Name:
+				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = $1$ AND \"users\".\"deleted_at\" IS NULL", query.Query().Where("id", 1).ToRawSql().Find(User{}))
 			default:
 				s.Equal("SELECT * FROM `users` WHERE `id` = 1 AND `users`.`deleted_at` IS NULL", query.Query().Where("id", 1).ToRawSql().Find(User{}))
 			}

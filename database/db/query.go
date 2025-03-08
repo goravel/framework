@@ -489,8 +489,8 @@ func (r *Query) OrWhereColumn(column1 string, column2 ...string) db.Query {
 	return r.OrWhere(sq.Expr(fmt.Sprintf("%s %s %s", column1, column2[0], column2[1])))
 }
 
-func (r *Query) OrWhereIn(column string, args []any) db.Query {
-	return r.OrWhere(column, args)
+func (r *Query) OrWhereIn(column string, values []any) db.Query {
+	return r.OrWhere(column, values)
 }
 
 func (r *Query) OrWhereLike(column string, value string) db.Query {
@@ -526,8 +526,8 @@ func (r *Query) OrWhereNotBetween(column string, x, y any) db.Query {
 	return r.OrWhere(sq.Expr(fmt.Sprintf("%s NOT BETWEEN ? AND ?", column), x, y))
 }
 
-func (r *Query) OrWhereNotIn(column string, args []any) db.Query {
-	return r.OrWhere(sq.NotEq{column: args})
+func (r *Query) OrWhereNotIn(column string, values []any) db.Query {
+	return r.OrWhere(sq.NotEq{column: values})
 }
 
 func (r *Query) OrWhereNotLike(column string, value string) db.Query {
@@ -677,8 +677,8 @@ func (r *Query) WhereExists(query func() db.Query) db.Query {
 	return r.Where(sq.Expr(fmt.Sprintf("EXISTS (%s)", sql)))
 }
 
-func (r *Query) WhereIn(column string, args []any) db.Query {
-	return r.Where(column, args)
+func (r *Query) WhereIn(column string, values []any) db.Query {
+	return r.Where(column, values)
 }
 
 func (r *Query) WhereLike(column string, value string) db.Query {
@@ -714,8 +714,8 @@ func (r *Query) WhereNotBetween(column string, x, y any) db.Query {
 	return r.Where(sq.Expr(fmt.Sprintf("%s NOT BETWEEN ? AND ?", column), x, y))
 }
 
-func (r *Query) WhereNotIn(column string, args []any) db.Query {
-	return r.Where(sq.NotEq{column: args})
+func (r *Query) WhereNotIn(column string, values []any) db.Query {
+	return r.Where(sq.NotEq{column: values})
 }
 
 func (r *Query) WhereNotLike(column string, value string) db.Query {

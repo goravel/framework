@@ -141,6 +141,10 @@ func (r *Tx) Delete(sql string, args ...any) (*contractsdb.Result, error) {
 	return r.exec(sql, args...)
 }
 
+func (r *Tx) Exec(sql string, args ...any) (*contractsdb.Result, error) {
+	return r.exec(sql, args...)
+}
+
 func (r *Tx) Insert(sql string, args ...any) (*contractsdb.Result, error) {
 	return r.exec(sql, args...)
 }

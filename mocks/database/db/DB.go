@@ -241,6 +241,75 @@ func (_c *DB_Delete_Call) RunAndReturn(run func(string, ...interface{}) (*db.Res
 	return _c
 }
 
+// Exec provides a mock function with given fields: sql, args
+func (_m *DB) Exec(sql string, args ...interface{}) (*db.Result, error) {
+	var _ca []interface{}
+	_ca = append(_ca, sql)
+	_ca = append(_ca, args...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Exec")
+	}
+
+	var r0 *db.Result
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) (*db.Result, error)); ok {
+		return rf(sql, args...)
+	}
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) *db.Result); ok {
+		r0 = rf(sql, args...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*db.Result)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string, ...interface{}) error); ok {
+		r1 = rf(sql, args...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DB_Exec_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Exec'
+type DB_Exec_Call struct {
+	*mock.Call
+}
+
+// Exec is a helper method to define mock.On call
+//   - sql string
+//   - args ...interface{}
+func (_e *DB_Expecter) Exec(sql interface{}, args ...interface{}) *DB_Exec_Call {
+	return &DB_Exec_Call{Call: _e.mock.On("Exec",
+		append([]interface{}{sql}, args...)...)}
+}
+
+func (_c *DB_Exec_Call) Run(run func(sql string, args ...interface{})) *DB_Exec_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *DB_Exec_Call) Return(_a0 *db.Result, _a1 error) *DB_Exec_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *DB_Exec_Call) RunAndReturn(run func(string, ...interface{}) (*db.Result, error)) *DB_Exec_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Insert provides a mock function with given fields: sql, args
 func (_m *DB) Insert(sql string, args ...interface{}) (*db.Result, error) {
 	var _ca []interface{}

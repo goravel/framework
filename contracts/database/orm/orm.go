@@ -71,12 +71,12 @@ type Query interface {
 	FindOrFail(dest any, conds ...any) error
 	// First finds record that match given conditions.
 	First(dest any) error
-	// FirstOrCreate finds the first record that matches the given attributes
-	// or create a new one with those attributes if none was found.
-	FirstOrCreate(dest any, conds ...any) error
 	// FirstOr finds the first record that matches the given conditions or
 	// execute the callback and return its result if no record is found.
 	FirstOr(dest any, callback func() error) error
+	// FirstOrCreate finds the first record that matches the given attributes
+	// or create a new one with those attributes if none was found.
+	FirstOrCreate(dest any, conds ...any) error
 	// FirstOrFail finds the first record that matches the given conditions or throws an error.
 	FirstOrFail(dest any) error
 	// FirstOrNew finds the first record that matches the given conditions or
