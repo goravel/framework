@@ -10,6 +10,7 @@ import (
 	databaseschema "github.com/goravel/framework/database/schema"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/postgres"
+	"github.com/goravel/sqlserver"
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -54,11 +55,11 @@ func (s *SchemaSuite) TestColumnChange() {
 			expectedCustomStringLength := customStringLength
 			expectedColumnType := "text"
 
-			// if driver == sqlserver.Name {
-			// 	expectedDefaultStringLength = databaseschema.DefaultStringLength * 2
-			// 	expectedCustomStringLength = customStringLength * 2
-			// 	expectedColumnType = "nvarchar"
-			// }
+			if driver == sqlserver.Name {
+				expectedDefaultStringLength = databaseschema.DefaultStringLength * 2
+				expectedCustomStringLength = customStringLength * 2
+				expectedColumnType = "nvarchar"
+			}
 			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
 				table.ID()
 				table.String("change_length")
