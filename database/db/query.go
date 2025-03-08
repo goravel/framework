@@ -45,6 +45,40 @@ func NewQuery(ctx context.Context, driver contractsdriver.Driver, builder db.Com
 	}
 }
 
+func (r *Query) Chunk(size uint64, callback func(rows []db.Row) error) error {
+	offset := uint64(0)
+
+	for {
+		q := r.clone()
+
+		var dest []map[string]any
+		if err := q.Offset(offset).Limit(size).Get(&dest); err != nil {
+			return err
+		}
+
+		if len(dest) == 0 {
+			break
+		}
+
+		var rowsSlice []db.Row
+		for _, row := range dest {
+			rowsSlice = append(rowsSlice, NewRow(row))
+		}
+
+		if err := callback(rowsSlice); err != nil {
+			return err
+		}
+
+		if len(dest) < int(size) {
+			break
+		}
+
+		offset += size
+	}
+
+	return nil
+}
+
 func (r *Query) Count() (int64, error) {
 	r.conditions.Selects = []string{"COUNT(*)"}
 
@@ -167,6 +201,18 @@ func (r *Query) DoesntExist() (bool, error) {
 	return count == 0, nil
 }
 
+func (r *Query) Each(callback func(row db.Row) error) error {
+	return r.Chunk(1, func(rows []db.Row) error {
+		for _, row := range rows {
+			if err := callback(row); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+}
+
 func (r *Query) Exists() (bool, error) {
 	count, err := r.Count()
 	if err != nil {
@@ -177,15 +223,9 @@ func (r *Query) Exists() (bool, error) {
 }
 
 func (r *Query) Find(dest any, conds ...any) error {
-	var q db.Query
-	if len(conds) > 2 {
-		return errors.DatabaseInvalidArgumentNumber.Args(len(conds), "1 or 2")
-	} else if len(conds) == 1 {
-		q = r.Where("id", conds...)
-	} else if len(conds) == 2 {
-		q = r.Where(conds[0], conds[1])
-	} else {
-		q = r.clone()
+	q, err := r.findQuery(dest, conds...)
+	if err != nil {
+		return err
 	}
 
 	destValue := reflect.Indirect(reflect.ValueOf(dest))
@@ -194,6 +234,20 @@ func (r *Query) Find(dest any, conds ...any) error {
 	}
 
 	return q.First(dest)
+}
+
+func (r *Query) FindOrFail(dest any, conds ...any) error {
+	q, err := r.findQuery(dest, conds...)
+	if err != nil {
+		return err
+	}
+
+	destValue := reflect.Indirect(reflect.ValueOf(dest))
+	if destValue.Kind() == reflect.Slice {
+		return q.Get(dest)
+	}
+
+	return q.FirstOrFail(dest)
 }
 
 func (r *Query) First(dest any) error {
@@ -576,6 +630,10 @@ func (r *Query) SharedLock() db.Query {
 	return q
 }
 
+func (r *Query) Sum(column string, dest any) error {
+	return r.Select(fmt.Sprintf("SUM(%s)", column)).Limit(1).First(dest)
+}
+
 func (r *Query) ToSql() db.ToSql {
 	q := r.clone()
 	return NewToSql(q, false)
@@ -623,6 +681,33 @@ func (r *Query) Update(column any, value ...any) (*db.Result, error) {
 	return &db.Result{
 		RowsAffected: rowsAffected,
 	}, nil
+}
+
+func (r *Query) UpdateOrInsert(attributes any, values any) (*db.Result, error) {
+	mapAttributes, err := convertToMap(attributes)
+	if err != nil {
+		return nil, err
+	}
+
+	mapValues, err := convertToMap(values)
+	if err != nil {
+		return nil, err
+	}
+
+	exist, err := r.clone().Where(mapAttributes).Exists()
+	if err != nil {
+		return nil, err
+	}
+
+	if exist {
+		return r.Where(mapAttributes).Update(values)
+	}
+
+	for k, v := range mapValues {
+		mapAttributes[k] = v
+	}
+
+	return r.Insert(mapAttributes)
 }
 
 func (r *Query) Value(column string, dest any) error {
@@ -920,6 +1005,8 @@ func (r *Query) buildWhere(where contractsdriver.Where) (any, []any, error) {
 			}
 		}
 		return query, where.Args, nil
+	case map[string]any:
+		return sq.Eq(query), nil, nil
 	case func(db.Query) db.Query:
 		// Handle nested conditions by creating a new query and applying the callback
 		nestedQuery := NewQuery(r.ctx, r.driver, r.builder, r.logger, r.conditions.Table, r.txLogs)
@@ -991,6 +1078,21 @@ func (r *Query) clone() *Query {
 	query.err = r.err
 
 	return query
+}
+
+func (r *Query) findQuery(dest any, conds ...any) (db.Query, error) {
+	var q db.Query
+	if len(conds) > 2 {
+		return nil, errors.DatabaseInvalidArgumentNumber.Args(len(conds), "1 or 2")
+	} else if len(conds) == 1 {
+		q = r.Where("id", conds...)
+	} else if len(conds) == 2 {
+		q = r.Where(conds[0], conds[1])
+	} else {
+		q = r.clone()
+	}
+
+	return q, nil
 }
 
 func (r *Query) placeholderFormat() database.PlaceholderFormat {
