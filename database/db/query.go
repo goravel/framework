@@ -21,7 +21,7 @@ import (
 )
 
 type Query struct {
-	builder    db.Builder
+	builder    db.CommonBuilder
 	conditions contractsdriver.Conditions
 	ctx        context.Context
 	err        error
@@ -31,7 +31,7 @@ type Query struct {
 	txLogs     *[]TxLog
 }
 
-func NewQuery(ctx context.Context, driver contractsdriver.Driver, builder db.Builder, logger logger.Logger, table string, txLogs *[]TxLog) *Query {
+func NewQuery(ctx context.Context, driver contractsdriver.Driver, builder db.CommonBuilder, logger logger.Logger, table string, txLogs *[]TxLog) *Query {
 	return &Query{
 		builder: builder,
 		conditions: contractsdriver.Conditions{
@@ -54,7 +54,7 @@ func (r *Query) Count() (int64, error) {
 	}
 
 	var count int64
-	err = r.builder.Get(&count, sql, args...)
+	err = r.builder.GetContext(r.ctx, &count, sql, args...)
 	if err != nil {
 		r.trace(sql, args, -1, err)
 
@@ -82,7 +82,7 @@ func (r *Query) Cursor() (chan db.Row, error) {
 		return nil, err
 	}
 
-	rows, err := r.builder.Queryx(sql, args...)
+	rows, err := r.builder.QueryxContext(r.ctx, sql, args...)
 	if err != nil {
 		r.trace(sql, args, -1, err)
 
@@ -132,7 +132,7 @@ func (r *Query) Delete() (*db.Result, error) {
 		return nil, err
 	}
 
-	result, err := r.builder.Exec(sql, args...)
+	result, err := r.builder.ExecContext(r.ctx, sql, args...)
 	if err != nil {
 		r.trace(sql, args, -1, err)
 		return nil, err
@@ -202,7 +202,7 @@ func (r *Query) First(dest any) error {
 		return err
 	}
 
-	err = r.builder.Get(dest, sql, args...)
+	err = r.builder.GetContext(r.ctx, dest, sql, args...)
 	if err != nil {
 		if errors.Is(err, databasesql.ErrNoRows) {
 			r.trace(sql, args, 0, nil)
@@ -225,7 +225,7 @@ func (r *Query) FirstOr(dest any, callback func() error) error {
 		return err
 	}
 
-	err = r.builder.Get(dest, sql, args...)
+	err = r.builder.GetContext(r.ctx, dest, sql, args...)
 	if err != nil {
 		if errors.Is(err, databasesql.ErrNoRows) {
 			r.trace(sql, args, 0, nil)
@@ -249,7 +249,7 @@ func (r *Query) FirstOrFail(dest any) error {
 		return err
 	}
 
-	err = r.builder.Get(dest, sql, args...)
+	err = r.builder.GetContext(r.ctx, dest, sql, args...)
 	if err != nil {
 		r.trace(sql, args, -1, err)
 
@@ -267,17 +267,13 @@ func (r *Query) Get(dest any) error {
 		return err
 	}
 
-	err = r.builder.Select(dest, sql, args...)
+	err = r.builder.SelectContext(r.ctx, dest, sql, args...)
 	if err != nil {
 		r.trace(sql, args, -1, err)
 		return err
 	}
 
-	destValue := reflect.ValueOf(dest)
-	if destValue.Kind() == reflect.Ptr {
-		destValue = destValue.Elem()
-	}
-
+	destValue := reflect.Indirect(reflect.ValueOf(dest))
 	rowsAffected := int64(-1)
 	if destValue.Kind() == reflect.Slice {
 		rowsAffected = int64(destValue.Len())
@@ -354,7 +350,7 @@ func (r *Query) Insert(data any) (*db.Result, error) {
 		return nil, err
 	}
 
-	result, err := r.builder.Exec(sql, args...)
+	result, err := r.builder.ExecContext(r.ctx, sql, args...)
 	if err != nil {
 		r.trace(sql, args, -1, err)
 		return nil, err
@@ -387,7 +383,7 @@ func (r *Query) InsertGetId(data any) (int64, error) {
 		return 0, err
 	}
 
-	result, err := r.builder.Exec(sql, args...)
+	result, err := r.builder.ExecContext(r.ctx, sql, args...)
 	if err != nil {
 		r.trace(sql, args, -1, err)
 		return 0, err
@@ -610,7 +606,7 @@ func (r *Query) Update(column any, value ...any) (*db.Result, error) {
 		return nil, err
 	}
 
-	result, err := r.builder.Exec(sql, args...)
+	result, err := r.builder.ExecContext(r.ctx, sql, args...)
 	if err != nil {
 		r.trace(sql, args, -1, err)
 		return nil, err

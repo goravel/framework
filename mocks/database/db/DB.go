@@ -23,23 +23,23 @@ func (_m *DB) EXPECT() *DB_Expecter {
 }
 
 // BeginTransaction provides a mock function with no fields
-func (_m *DB) BeginTransaction() (db.DB, error) {
+func (_m *DB) BeginTransaction() (db.Tx, error) {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for BeginTransaction")
 	}
 
-	var r0 db.DB
+	var r0 db.Tx
 	var r1 error
-	if rf, ok := ret.Get(0).(func() (db.DB, error)); ok {
+	if rf, ok := ret.Get(0).(func() (db.Tx, error)); ok {
 		return rf()
 	}
-	if rf, ok := ret.Get(0).(func() db.DB); ok {
+	if rf, ok := ret.Get(0).(func() db.Tx); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(db.DB)
+			r0 = ret.Get(0).(db.Tx)
 		}
 	}
 
@@ -69,12 +69,12 @@ func (_c *DB_BeginTransaction_Call) Run(run func()) *DB_BeginTransaction_Call {
 	return _c
 }
 
-func (_c *DB_BeginTransaction_Call) Return(_a0 db.DB, _a1 error) *DB_BeginTransaction_Call {
+func (_c *DB_BeginTransaction_Call) Return(_a0 db.Tx, _a1 error) *DB_BeginTransaction_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *DB_BeginTransaction_Call) RunAndReturn(run func() (db.DB, error)) *DB_BeginTransaction_Call {
+func (_c *DB_BeginTransaction_Call) RunAndReturn(run func() (db.Tx, error)) *DB_BeginTransaction_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -172,6 +172,144 @@ func (_c *DB_Connection_Call) RunAndReturn(run func(string) db.DB) *DB_Connectio
 	return _c
 }
 
+// Delete provides a mock function with given fields: sql, args
+func (_m *DB) Delete(sql string, args ...interface{}) (*db.Result, error) {
+	var _ca []interface{}
+	_ca = append(_ca, sql)
+	_ca = append(_ca, args...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Delete")
+	}
+
+	var r0 *db.Result
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) (*db.Result, error)); ok {
+		return rf(sql, args...)
+	}
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) *db.Result); ok {
+		r0 = rf(sql, args...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*db.Result)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string, ...interface{}) error); ok {
+		r1 = rf(sql, args...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DB_Delete_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Delete'
+type DB_Delete_Call struct {
+	*mock.Call
+}
+
+// Delete is a helper method to define mock.On call
+//   - sql string
+//   - args ...interface{}
+func (_e *DB_Expecter) Delete(sql interface{}, args ...interface{}) *DB_Delete_Call {
+	return &DB_Delete_Call{Call: _e.mock.On("Delete",
+		append([]interface{}{sql}, args...)...)}
+}
+
+func (_c *DB_Delete_Call) Run(run func(sql string, args ...interface{})) *DB_Delete_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *DB_Delete_Call) Return(_a0 *db.Result, _a1 error) *DB_Delete_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *DB_Delete_Call) RunAndReturn(run func(string, ...interface{}) (*db.Result, error)) *DB_Delete_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Insert provides a mock function with given fields: sql, args
+func (_m *DB) Insert(sql string, args ...interface{}) (*db.Result, error) {
+	var _ca []interface{}
+	_ca = append(_ca, sql)
+	_ca = append(_ca, args...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Insert")
+	}
+
+	var r0 *db.Result
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) (*db.Result, error)); ok {
+		return rf(sql, args...)
+	}
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) *db.Result); ok {
+		r0 = rf(sql, args...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*db.Result)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string, ...interface{}) error); ok {
+		r1 = rf(sql, args...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DB_Insert_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Insert'
+type DB_Insert_Call struct {
+	*mock.Call
+}
+
+// Insert is a helper method to define mock.On call
+//   - sql string
+//   - args ...interface{}
+func (_e *DB_Expecter) Insert(sql interface{}, args ...interface{}) *DB_Insert_Call {
+	return &DB_Insert_Call{Call: _e.mock.On("Insert",
+		append([]interface{}{sql}, args...)...)}
+}
+
+func (_c *DB_Insert_Call) Run(run func(sql string, args ...interface{})) *DB_Insert_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *DB_Insert_Call) Return(_a0 *db.Result, _a1 error) *DB_Insert_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *DB_Insert_Call) RunAndReturn(run func(string, ...interface{}) (*db.Result, error)) *DB_Insert_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Rollback provides a mock function with no fields
 func (_m *DB) Rollback() error {
 	ret := _m.Called()
@@ -213,6 +351,64 @@ func (_c *DB_Rollback_Call) Return(_a0 error) *DB_Rollback_Call {
 }
 
 func (_c *DB_Rollback_Call) RunAndReturn(run func() error) *DB_Rollback_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Select provides a mock function with given fields: dest, sql, args
+func (_m *DB) Select(dest interface{}, sql string, args ...interface{}) error {
+	var _ca []interface{}
+	_ca = append(_ca, dest, sql)
+	_ca = append(_ca, args...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Select")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(interface{}, string, ...interface{}) error); ok {
+		r0 = rf(dest, sql, args...)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DB_Select_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Select'
+type DB_Select_Call struct {
+	*mock.Call
+}
+
+// Select is a helper method to define mock.On call
+//   - dest interface{}
+//   - sql string
+//   - args ...interface{}
+func (_e *DB_Expecter) Select(dest interface{}, sql interface{}, args ...interface{}) *DB_Select_Call {
+	return &DB_Select_Call{Call: _e.mock.On("Select",
+		append([]interface{}{dest, sql}, args...)...)}
+}
+
+func (_c *DB_Select_Call) Run(run func(dest interface{}, sql string, args ...interface{})) *DB_Select_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-2)
+		for i, a := range args[2:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].(interface{}), args[1].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *DB_Select_Call) Return(_a0 error) *DB_Select_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *DB_Select_Call) RunAndReturn(run func(interface{}, string, ...interface{}) error) *DB_Select_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -266,7 +462,7 @@ func (_c *DB_Table_Call) RunAndReturn(run func(string) db.Query) *DB_Table_Call 
 }
 
 // Transaction provides a mock function with given fields: txFunc
-func (_m *DB) Transaction(txFunc func(db.DB) error) error {
+func (_m *DB) Transaction(txFunc func(db.Tx) error) error {
 	ret := _m.Called(txFunc)
 
 	if len(ret) == 0 {
@@ -274,7 +470,7 @@ func (_m *DB) Transaction(txFunc func(db.DB) error) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(func(db.DB) error) error); ok {
+	if rf, ok := ret.Get(0).(func(func(db.Tx) error) error); ok {
 		r0 = rf(txFunc)
 	} else {
 		r0 = ret.Error(0)
@@ -289,14 +485,14 @@ type DB_Transaction_Call struct {
 }
 
 // Transaction is a helper method to define mock.On call
-//   - txFunc func(db.DB) error
+//   - txFunc func(db.Tx) error
 func (_e *DB_Expecter) Transaction(txFunc interface{}) *DB_Transaction_Call {
 	return &DB_Transaction_Call{Call: _e.mock.On("Transaction", txFunc)}
 }
 
-func (_c *DB_Transaction_Call) Run(run func(txFunc func(db.DB) error)) *DB_Transaction_Call {
+func (_c *DB_Transaction_Call) Run(run func(txFunc func(db.Tx) error)) *DB_Transaction_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(func(db.DB) error))
+		run(args[0].(func(db.Tx) error))
 	})
 	return _c
 }
@@ -306,7 +502,76 @@ func (_c *DB_Transaction_Call) Return(_a0 error) *DB_Transaction_Call {
 	return _c
 }
 
-func (_c *DB_Transaction_Call) RunAndReturn(run func(func(db.DB) error) error) *DB_Transaction_Call {
+func (_c *DB_Transaction_Call) RunAndReturn(run func(func(db.Tx) error) error) *DB_Transaction_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Update provides a mock function with given fields: sql, args
+func (_m *DB) Update(sql string, args ...interface{}) (*db.Result, error) {
+	var _ca []interface{}
+	_ca = append(_ca, sql)
+	_ca = append(_ca, args...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Update")
+	}
+
+	var r0 *db.Result
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) (*db.Result, error)); ok {
+		return rf(sql, args...)
+	}
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) *db.Result); ok {
+		r0 = rf(sql, args...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*db.Result)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string, ...interface{}) error); ok {
+		r1 = rf(sql, args...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DB_Update_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Update'
+type DB_Update_Call struct {
+	*mock.Call
+}
+
+// Update is a helper method to define mock.On call
+//   - sql string
+//   - args ...interface{}
+func (_e *DB_Expecter) Update(sql interface{}, args ...interface{}) *DB_Update_Call {
+	return &DB_Update_Call{Call: _e.mock.On("Update",
+		append([]interface{}{sql}, args...)...)}
+}
+
+func (_c *DB_Update_Call) Run(run func(sql string, args ...interface{})) *DB_Update_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *DB_Update_Call) Return(_a0 *db.Result, _a1 error) *DB_Update_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *DB_Update_Call) RunAndReturn(run func(string, ...interface{}) (*db.Result, error)) *DB_Update_Call {
 	_c.Call.Return(run)
 	return _c
 }

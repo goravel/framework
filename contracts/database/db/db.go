@@ -8,20 +8,32 @@ import (
 )
 
 type DB interface {
+	Tx
 	// BeginTransaction Begin a transaction.
-	BeginTransaction() (DB, error)
-	// Commit Commit the transaction.
-	Commit() error
+	BeginTransaction() (Tx, error)
 	// Connection Get a database connection by name.
 	Connection(name string) DB
-	// Rollback Rollback the transaction.
-	Rollback() error
-	// Table Get a table instance.
-	Table(name string) Query
 	// Transaction Execute a transaction.
-	Transaction(txFunc func(tx DB) error) error
+	Transaction(txFunc func(tx Tx) error) error
 	// WithContext Set the context for the query.
 	WithContext(ctx context.Context) DB
+}
+
+type Tx interface {
+	// Commit Commit the transaction.
+	Commit() error
+	// Delete Execute a delete query.
+	Delete(sql string, args ...any) (*Result, error)
+	// Insert Execute a insert query.
+	Insert(sql string, args ...any) (*Result, error)
+	// Rollback Rollback the transaction.
+	Rollback() error
+	// Select Execute a select query.
+	Select(dest any, sql string, args ...any) error
+	// Table Get a table instance.
+	Table(name string) Query
+	// Update Execute a update query.
+	Update(sql string, args ...any) (*Result, error)
 }
 
 type Query interface {
@@ -156,10 +168,21 @@ type Result struct {
 }
 
 type Builder interface {
-	Exec(query string, args ...any) (sql.Result, error)
-	Get(dest any, query string, args ...any) error
-	Queryx(query string, args ...any) (*sqlx.Rows, error)
-	Select(dest any, query string, args ...any) error
+	CommonBuilder
+	Beginx() (*sqlx.Tx, error)
+}
+
+type TxBuilder interface {
+	CommonBuilder
+	Commit() error
+	Rollback() error
+}
+
+type CommonBuilder interface {
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+	GetContext(ctx context.Context, dest any, query string, args ...any) error
+	QueryxContext(ctx context.Context, query string, args ...any) (*sqlx.Rows, error)
+	SelectContext(ctx context.Context, dest any, query string, args ...any) error
 }
 
 type ToSql interface {

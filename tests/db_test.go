@@ -11,6 +11,7 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/convert"
+	"github.com/goravel/postgres"
 	"github.com/goravel/sqlserver"
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
@@ -169,6 +170,54 @@ func (s *DBTestSuite) TestCursor() {
 				s.Equal(s.now, carbon.NewDateTime(carbon.FromStdTime(cast.ToTime(products[1]["created_at"]))))
 				s.Equal(s.now, carbon.NewDateTime(carbon.FromStdTime(cast.ToTime(products[1]["updated_at"]))))
 			})
+		})
+	}
+}
+
+func (s *DBTestSuite) Test_DB_Select_Update_Delete() {
+	insertSql := "INSERT INTO products (name) VALUES (?)"
+	updateSql := "UPDATE products SET name = ? WHERE id = ?"
+	deleteSql := "DELETE FROM products WHERE id = ?"
+
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			if driver == sqlserver.Name {
+				insertSql = "INSERT INTO products (name) VALUES (@p1)"
+				updateSql = "UPDATE products SET name = @p1 WHERE id = @p2"
+				deleteSql = "DELETE FROM products WHERE id = @p1"
+			}
+			if driver == postgres.Name {
+				insertSql = "INSERT INTO products (name) VALUES ($1)"
+				updateSql = "UPDATE products SET name = $1 WHERE id = $2"
+				deleteSql = "DELETE FROM products WHERE id = $1"
+			}
+
+			result, err := query.DB().Insert(insertSql, "test_db_select_update_delete_product")
+			s.NoError(err)
+			s.Equal(int64(1), result.RowsAffected)
+
+			var products []Product
+			err = query.DB().Select(&products, "SELECT * FROM products")
+			s.NoError(err)
+			s.Equal(1, len(products))
+			s.Equal("test_db_select_update_delete_product", products[0].Name)
+
+			result, err = query.DB().Update(updateSql, "test_db_select_update_delete_product_updated", products[0].ID)
+			s.NoError(err)
+			s.Equal(int64(1), result.RowsAffected)
+
+			err = query.DB().Select(&products, "SELECT * FROM products")
+			s.NoError(err)
+			s.Equal(1, len(products))
+			s.Equal("test_db_select_update_delete_product_updated", products[0].Name)
+
+			result, err = query.DB().Delete(deleteSql, products[0].ID)
+			s.NoError(err)
+			s.Equal(int64(1), result.RowsAffected)
+
+			err = query.DB().Select(&products, "SELECT * FROM products")
+			s.NoError(err)
+			s.Equal(0, len(products))
 		})
 	}
 }
@@ -562,7 +611,7 @@ func (s *DBTestSuite) TestLockForUpdate() {
 
 			for i := 0; i < 10; i++ {
 				go func() {
-					query.DB().Transaction(func(tx db.DB) error {
+					query.DB().Transaction(func(tx db.Tx) error {
 						var product1 Product
 						err := tx.Table("products").Where("id", product.ID).LockForUpdate().First(&product1)
 						s.NoError(err)
@@ -872,7 +921,7 @@ func (s *DBTestSuite) TestTransaction() {
 			})
 
 			s.Run("transaction", func() {
-				err := query.DB().Transaction(func(tx db.DB) error {
+				err := query.DB().Transaction(func(tx db.Tx) error {
 					_, err := tx.Table("products").Insert(Product{Name: "transaction product1"})
 					if err != nil {
 						return err
@@ -893,7 +942,7 @@ func (s *DBTestSuite) TestTransaction() {
 				s.NoError(err)
 				s.Equal("transaction product1 updated", product.Name)
 
-				err = query.DB().Transaction(func(tx db.DB) error {
+				err = query.DB().Transaction(func(tx db.Tx) error {
 					_, err := tx.Table("products").Where("name", "transaction product1 updated").Delete()
 					if err != nil {
 						return err

@@ -41,7 +41,10 @@ type Query interface {
 	// Association gets an association instance by name.
 	Association(association string) Association
 	// Begin begins a new transaction
+	// DEPRECATED Use BeginTransaction instead.
 	Begin() (Query, error)
+	// BeginTransaction begins a new transaction
+	BeginTransaction() (Query, error)
 	// Commit commits the changes in a transaction.
 	Commit() error
 	// Count retrieve the "count" result of the query.

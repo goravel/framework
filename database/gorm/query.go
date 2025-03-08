@@ -90,7 +90,12 @@ func (r *Query) Association(association string) contractsorm.Association {
 	return query.instance.Association(association)
 }
 
+// DEPRECATED Use BeginTransaction instead.
 func (r *Query) Begin() (contractsorm.Query, error) {
+	return r.BeginTransaction()
+}
+
+func (r *Query) BeginTransaction() (contractsorm.Query, error) {
 	if r.InTransaction() {
 		return r, nil
 	}

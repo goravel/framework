@@ -61,7 +61,7 @@ func (s *QueryTestSuite) TestCount() {
 	var count int64
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Get(&count, "SELECT COUNT(*) FROM users WHERE name = ?", "John").Run(func(dest any, query string, args ...any) {
+	s.mockBuilder.EXPECT().GetContext(s.ctx, &count, "SELECT COUNT(*) FROM users WHERE name = ?", "John").Run(func(ctx context.Context, dest any, query string, args ...any) {
 		destCount := dest.(*int64)
 		*destCount = 1
 	}).Return(nil).Once()
@@ -77,7 +77,7 @@ func (s *QueryTestSuite) TestCrossJoin() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users CROSS JOIN posts as p WHERE age = ?", 25).Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users CROSS JOIN posts as p WHERE age = ?", 25).Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users CROSS JOIN posts as p WHERE age = ?", 25).Return("SELECT * FROM users CROSS JOIN posts as p WHERE age = 25").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users CROSS JOIN posts as p WHERE age = 25", int64(0), nil).Return().Once()
 
@@ -90,7 +90,7 @@ func (s *QueryTestSuite) TestDecrement() {
 	mockResult.On("RowsAffected").Return(int64(1), nil)
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Exec("UPDATE users SET age = age - ? WHERE name = ?", uint64(1), "John").Return(mockResult, nil).Once()
+	s.mockBuilder.EXPECT().ExecContext(s.ctx, "UPDATE users SET age = age - ? WHERE name = ?", uint64(1), "John").Return(mockResult, nil).Once()
 	s.mockDriver.EXPECT().Explain("UPDATE users SET age = age - ? WHERE name = ?", uint64(1), "John").Return("UPDATE users SET age = age - 1 WHERE name = \"John\"").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET age = age - 1 WHERE name = \"John\"", int64(1), nil).Return().Once()
 
@@ -106,7 +106,7 @@ func (s *QueryTestSuite) TestDelete() {
 		mockResult.On("RowsAffected").Return(int64(1), nil)
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Exec("DELETE FROM users WHERE (name = ? AND id = ?)", "John", 1).Return(mockResult, nil).Once()
+		s.mockBuilder.EXPECT().ExecContext(s.ctx, "DELETE FROM users WHERE (name = ? AND id = ?)", "John", 1).Return(mockResult, nil).Once()
 		s.mockDriver.EXPECT().Explain("DELETE FROM users WHERE (name = ? AND id = ?)", "John", 1).Return("DELETE FROM users WHERE (name = \"John\" AND id = 1)").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "DELETE FROM users WHERE (name = \"John\" AND id = 1)", int64(1), nil).Return().Once()
 
@@ -119,7 +119,7 @@ func (s *QueryTestSuite) TestDelete() {
 
 	s.Run("failed to exec", func() {
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Exec("DELETE FROM users WHERE (name = ? AND id = ?)", "John", 1).Return(nil, assert.AnError).Once()
+		s.mockBuilder.EXPECT().ExecContext(s.ctx, "DELETE FROM users WHERE (name = ? AND id = ?)", "John", 1).Return(nil, assert.AnError).Once()
 		s.mockDriver.EXPECT().Explain("DELETE FROM users WHERE (name = ? AND id = ?)", "John", 1).Return("DELETE FROM users WHERE (name = \"John\" AND id = 1)").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "DELETE FROM users WHERE (name = \"John\" AND id = 1)", int64(-1), assert.AnError).Return().Once()
 
@@ -132,7 +132,7 @@ func (s *QueryTestSuite) TestDelete() {
 		mockResult.On("RowsAffected").Return(int64(0), assert.AnError).Once()
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Exec("DELETE FROM users WHERE (name = ? AND id = ?)", "John", 1).Return(mockResult, nil).Once()
+		s.mockBuilder.EXPECT().ExecContext(s.ctx, "DELETE FROM users WHERE (name = ? AND id = ?)", "John", 1).Return(mockResult, nil).Once()
 		s.mockDriver.EXPECT().Explain("DELETE FROM users WHERE (name = ? AND id = ?)", "John", 1).Return("DELETE FROM users WHERE (name = \"John\" AND id = 1)").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "DELETE FROM users WHERE (name = \"John\" AND id = 1)", int64(-1), assert.AnError).Return().Once()
 
@@ -145,7 +145,7 @@ func (s *QueryTestSuite) TestDistinct() {
 	var users TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Get(&users, "SELECT DISTINCT * FROM users WHERE name = ?", "John").Return(nil).Once()
+	s.mockBuilder.EXPECT().GetContext(s.ctx, &users, "SELECT DISTINCT * FROM users WHERE name = ?", "John").Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT DISTINCT * FROM users WHERE name = ?", "John").Return("SELECT DISTINCT * FROM users WHERE name = \"John\"").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT DISTINCT * FROM users WHERE name = \"John\"", int64(1), nil).Return().Once()
 
@@ -157,7 +157,7 @@ func (s *QueryTestSuite) TestExists() {
 	var count int64
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Get(&count, "SELECT COUNT(*) FROM users WHERE name = ?", "John").Run(func(dest any, query string, args ...any) {
+	s.mockBuilder.EXPECT().GetContext(s.ctx, &count, "SELECT COUNT(*) FROM users WHERE name = ?", "John").Run(func(ctx context.Context, dest any, query string, args ...any) {
 		destCount := dest.(*int64)
 		*destCount = 1
 	}).Return(nil).Once()
@@ -174,7 +174,7 @@ func (s *QueryTestSuite) TestFind() {
 		var user TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE (name = ? AND id = ?)", "John", 1).Return(nil).Once()
+		s.mockBuilder.EXPECT().GetContext(s.ctx, &user, "SELECT * FROM users WHERE (name = ? AND id = ?)", "John", 1).Return(nil).Once()
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? AND id = ?)", "John", 1).Return("SELECT * FROM users WHERE (name = \"John\" AND id = 1)").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" AND id = 1)", int64(1), nil).Return().Once()
 
@@ -187,7 +187,7 @@ func (s *QueryTestSuite) TestFind() {
 		var users []TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE (name = ? AND id IN (?,?))", "John", 1, 2).Run(func(dest any, query string, args ...any) {
+		s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (name = ? AND id IN (?,?))", "John", 1, 2).Run(func(ctx context.Context, dest any, query string, args ...any) {
 			destUsers := dest.(*[]TestUser)
 			*destUsers = []TestUser{{ID: 1, Name: "John", Age: 25}, {ID: 2, Name: "Jane", Age: 30}}
 		}).Return(nil).Once()
@@ -203,7 +203,7 @@ func (s *QueryTestSuite) TestFind() {
 		var users TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Get(&users, "SELECT * FROM users WHERE (name = ? AND uuid = ?)", "John", "123").Return(nil).Once()
+		s.mockBuilder.EXPECT().GetContext(s.ctx, &users, "SELECT * FROM users WHERE (name = ? AND uuid = ?)", "John", "123").Return(nil).Once()
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? AND uuid = ?)", "John", "123").Return("SELECT * FROM users WHERE (name = \"John\" AND uuid = \"123\")").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" AND uuid = \"123\")", int64(1), nil).Return().Once()
 
@@ -225,7 +225,7 @@ func (s *QueryTestSuite) TestFirst() {
 		var user TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE name = ?", "John").Return(nil).Once()
+		s.mockBuilder.EXPECT().GetContext(s.ctx, &user, "SELECT * FROM users WHERE name = ?", "John").Return(nil).Once()
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE name = ?", "John").Return("SELECT * FROM users WHERE name = \"John\"").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE name = \"John\"", int64(1), nil).Return().Once()
 
@@ -238,7 +238,7 @@ func (s *QueryTestSuite) TestFirst() {
 		var user TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE name = ?", "John").Return(assert.AnError).Once()
+		s.mockBuilder.EXPECT().GetContext(s.ctx, &user, "SELECT * FROM users WHERE name = ?", "John").Return(assert.AnError).Once()
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE name = ?", "John").Return("SELECT * FROM users WHERE name = \"John\"").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE name = \"John\"", int64(-1), assert.AnError).Return().Once()
 
@@ -251,7 +251,7 @@ func (s *QueryTestSuite) TestFirst() {
 		var user TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE name = ?", "John").Return(databasesql.ErrNoRows).Once()
+		s.mockBuilder.EXPECT().GetContext(s.ctx, &user, "SELECT * FROM users WHERE name = ?", "John").Return(databasesql.ErrNoRows).Once()
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE name = ?", "John").Return("SELECT * FROM users WHERE name = \"John\"").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE name = \"John\"", int64(0), nil).Return().Once()
 
@@ -265,7 +265,7 @@ func (s *QueryTestSuite) TestFirstOr() {
 	var user TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE name = ?", "John").Return(databasesql.ErrNoRows).Once()
+	s.mockBuilder.EXPECT().GetContext(s.ctx, &user, "SELECT * FROM users WHERE name = ?", "John").Return(databasesql.ErrNoRows).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE name = ?", "John").Return("SELECT * FROM users WHERE name = \"John\"").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE name = \"John\"", int64(0), nil).Return().Once()
 
@@ -281,7 +281,7 @@ func (s *QueryTestSuite) TestFirstOrFail() {
 		var user TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE name = ?", "John").Return(nil).Once()
+		s.mockBuilder.EXPECT().GetContext(s.ctx, &user, "SELECT * FROM users WHERE name = ?", "John").Return(nil).Once()
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE name = ?", "John").Return("SELECT * FROM users WHERE name = \"John\"").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE name = \"John\"", int64(1), nil).Return().Once()
 
@@ -294,7 +294,7 @@ func (s *QueryTestSuite) TestFirstOrFail() {
 		var user TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE name = ?", "John").Return(assert.AnError).Once()
+		s.mockBuilder.EXPECT().GetContext(s.ctx, &user, "SELECT * FROM users WHERE name = ?", "John").Return(assert.AnError).Once()
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE name = ?", "John").Return("SELECT * FROM users WHERE name = \"John\"").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE name = \"John\"", int64(-1), assert.AnError).Return().Once()
 
@@ -307,7 +307,7 @@ func (s *QueryTestSuite) TestFirstOrFail() {
 		var user TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE name = ?", "John").Return(databasesql.ErrNoRows).Once()
+		s.mockBuilder.EXPECT().GetContext(s.ctx, &user, "SELECT * FROM users WHERE name = ?", "John").Return(databasesql.ErrNoRows).Once()
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE name = ?", "John").Return("SELECT * FROM users WHERE name = \"John\"").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE name = \"John\"", int64(-1), databasesql.ErrNoRows).Return().Once()
 
@@ -322,7 +322,7 @@ func (s *QueryTestSuite) TestGet() {
 		var users []TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age = ?", 25).Run(func(dest any, query string, args ...any) {
+		s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE age = ?", 25).Run(func(ctx context.Context, dest any, query string, args ...any) {
 			destUsers := dest.(*[]TestUser)
 			*destUsers = []TestUser{{ID: 1, Name: "John", Age: 25}, {ID: 2, Name: "Jane", Age: 30}}
 		}).Return(nil).Once()
@@ -338,7 +338,7 @@ func (s *QueryTestSuite) TestGet() {
 		var users []TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age = ?", 25).Return(assert.AnError).Once()
+		s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE age = ?", 25).Return(assert.AnError).Once()
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age = ?", 25).Return("SELECT * FROM users WHERE age = 25").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25", int64(-1), assert.AnError).Return().Once()
 
@@ -352,7 +352,7 @@ func (s *QueryTestSuite) TestGroupBy_Having() {
 		var users []TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age = ? GROUP BY name HAVING name = ? ORDER BY name ASC", 25, "John").Run(func(dest any, query string, args ...any) {
+		s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE age = ? GROUP BY name HAVING name = ? ORDER BY name ASC", 25, "John").Run(func(ctx context.Context, dest any, query string, args ...any) {
 			destUsers := dest.(*[]TestUser)
 			*destUsers = []TestUser{{ID: 1, Name: "John", Age: 25}, {ID: 2, Name: "Jane", Age: 30}}
 		}).Return(nil).Once()
@@ -368,7 +368,7 @@ func (s *QueryTestSuite) TestGroupBy_Having() {
 		var users []TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age = ? GROUP BY name ORDER BY name ASC", 25).Run(func(dest any, query string, args ...any) {
+		s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE age = ? GROUP BY name ORDER BY name ASC", 25).Run(func(ctx context.Context, dest any, query string, args ...any) {
 			destUsers := dest.(*[]TestUser)
 			*destUsers = []TestUser{{ID: 1, Name: "John", Age: 25}, {ID: 2, Name: "Jane", Age: 30}}
 		}).Return(nil).Once()
@@ -383,7 +383,7 @@ func (s *QueryTestSuite) TestGroupBy_Having() {
 		var users []TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age = ? ORDER BY name ASC", 25).Run(func(dest any, query string, args ...any) {
+		s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE age = ? ORDER BY name ASC", 25).Run(func(ctx context.Context, dest any, query string, args ...any) {
 			destUsers := dest.(*[]TestUser)
 			*destUsers = []TestUser{{ID: 1, Name: "John", Age: 25}, {ID: 2, Name: "Jane", Age: 30}}
 		}).Return(nil).Once()
@@ -400,7 +400,7 @@ func (s *QueryTestSuite) TestIncrement() {
 	mockResult.On("RowsAffected").Return(int64(1), nil)
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Exec("UPDATE users SET age = age + ? WHERE name = ?", uint64(1), "John").Return(mockResult, nil).Once()
+	s.mockBuilder.EXPECT().ExecContext(s.ctx, "UPDATE users SET age = age + ? WHERE name = ?", uint64(1), "John").Return(mockResult, nil).Once()
 	s.mockDriver.EXPECT().Explain("UPDATE users SET age = age + ? WHERE name = ?", uint64(1), "John").Return("UPDATE users SET age = age + 1 WHERE name = \"John\"").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET age = age + 1 WHERE name = \"John\"", int64(1), nil).Return().Once()
 
@@ -418,7 +418,7 @@ func (s *QueryTestSuite) TestInRandomOrder() {
 		conditions.OrderBy = []string{"RAND()"}
 		return builder
 	}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users ORDER BY RAND()").Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users ORDER BY RAND()").Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users ORDER BY RAND()").Return("SELECT * FROM users ORDER BY RAND()").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users ORDER BY RAND()", int64(0), nil).Return().Once()
 
@@ -444,7 +444,7 @@ func (s *QueryTestSuite) TestInsert() {
 		mockResult.On("RowsAffected").Return(int64(1), nil)
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Exec("INSERT INTO users (id) VALUES (?)", uint(1)).Return(mockResult, nil).Once()
+		s.mockBuilder.EXPECT().ExecContext(s.ctx, "INSERT INTO users (id) VALUES (?)", uint(1)).Return(mockResult, nil).Once()
 		s.mockDriver.EXPECT().Explain("INSERT INTO users (id) VALUES (?)", uint(1)).Return("INSERT INTO users (id) VALUES (1)").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "INSERT INTO users (id) VALUES (1)", int64(1), nil).Return().Once()
 
@@ -465,7 +465,7 @@ func (s *QueryTestSuite) TestInsert() {
 		mockResult.On("RowsAffected").Return(int64(2), nil)
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Exec("INSERT INTO users (id) VALUES (?),(?)", uint(1), uint(2)).Return(mockResult, nil).Once()
+		s.mockBuilder.EXPECT().ExecContext(s.ctx, "INSERT INTO users (id) VALUES (?),(?)", uint(1), uint(2)).Return(mockResult, nil).Once()
 		s.mockDriver.EXPECT().Explain("INSERT INTO users (id) VALUES (?),(?)", uint(1), uint(2)).Return("INSERT INTO users (id) VALUES (1),(2)").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "INSERT INTO users (id) VALUES (1),(2)", int64(2), nil).Return().Once()
 
@@ -487,7 +487,7 @@ func (s *QueryTestSuite) TestInsert() {
 		mockResult.On("RowsAffected").Return(int64(1), nil)
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Exec("INSERT INTO users (age,id,name) VALUES (?,?,?)", 25, 1, "John").Return(mockResult, nil).Once()
+		s.mockBuilder.EXPECT().ExecContext(s.ctx, "INSERT INTO users (age,id,name) VALUES (?,?,?)", 25, 1, "John").Return(mockResult, nil).Once()
 		s.mockDriver.EXPECT().Explain("INSERT INTO users (age,id,name) VALUES (?,?,?)", 25, 1, "John").Return("INSERT INTO users (age,id,name) VALUES (25,1,\"John\")").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "INSERT INTO users (age,id,name) VALUES (25,1,\"John\")", int64(1), nil).Return().Once()
 
@@ -508,7 +508,7 @@ func (s *QueryTestSuite) TestInsert() {
 		mockResult.On("RowsAffected").Return(int64(2), nil)
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Exec("INSERT INTO users (age,id,name) VALUES (?,?,?),(?,?,?)", 25, 1, "John", 30, 2, "Jane").Return(mockResult, nil).Once()
+		s.mockBuilder.EXPECT().ExecContext(s.ctx, "INSERT INTO users (age,id,name) VALUES (?,?,?),(?,?,?)", 25, 1, "John", 30, 2, "Jane").Return(mockResult, nil).Once()
 		s.mockDriver.EXPECT().Explain("INSERT INTO users (age,id,name) VALUES (?,?,?),(?,?,?)", 25, 1, "John", 30, 2, "Jane").Return("INSERT INTO users (age,id,name) VALUES (25,1,\"John\"),(30,2,\"Jane\")").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "INSERT INTO users (age,id,name) VALUES (25,1,\"John\"),(30,2,\"Jane\")", int64(2), nil).Return().Once()
 
@@ -534,7 +534,7 @@ func (s *QueryTestSuite) TestInsert() {
 		}
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Exec("INSERT INTO users (id) VALUES (?)", uint(1)).Return(nil, assert.AnError).Once()
+		s.mockBuilder.EXPECT().ExecContext(s.ctx, "INSERT INTO users (id) VALUES (?)", uint(1)).Return(nil, assert.AnError).Once()
 		s.mockDriver.EXPECT().Explain("INSERT INTO users (id) VALUES (?)", uint(1)).Return("INSERT INTO users (id) VALUES (1)").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "INSERT INTO users (id) VALUES (1)", int64(-1), assert.AnError).Return().Once()
 
@@ -561,7 +561,7 @@ func (s *QueryTestSuite) TestInsertGetId() {
 		mockResult.On("LastInsertId").Return(int64(1), nil)
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Exec("INSERT INTO users (age,name) VALUES (?,?)", 25, "John").Return(mockResult, nil).Once()
+		s.mockBuilder.EXPECT().ExecContext(s.ctx, "INSERT INTO users (age,name) VALUES (?,?)", 25, "John").Return(mockResult, nil).Once()
 		s.mockDriver.EXPECT().Explain("INSERT INTO users (age,name) VALUES (?,?)", 25, "John").Return("INSERT INTO users (age,name) VALUES (25,\"John\")").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "INSERT INTO users (age,name) VALUES (25,\"John\")", int64(1), nil).Return().Once()
 
@@ -580,7 +580,7 @@ func (s *QueryTestSuite) TestInsertGetId() {
 		}
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Exec("INSERT INTO users (id) VALUES (?)", uint(1)).Return(nil, assert.AnError).Once()
+		s.mockBuilder.EXPECT().ExecContext(s.ctx, "INSERT INTO users (id) VALUES (?)", uint(1)).Return(nil, assert.AnError).Once()
 		s.mockDriver.EXPECT().Explain("INSERT INTO users (id) VALUES (?)", uint(1)).Return("INSERT INTO users (id) VALUES (1)").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "INSERT INTO users (id) VALUES (1)", int64(-1), assert.AnError).Return().Once()
 
@@ -594,7 +594,7 @@ func (s *QueryTestSuite) TestJoin() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users JOIN posts as p ON users.id = p.user_id AND p.id = ? WHERE age = ?", 1, 25).Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users JOIN posts as p ON users.id = p.user_id AND p.id = ? WHERE age = ?", 1, 25).Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users JOIN posts as p ON users.id = p.user_id AND p.id = ? WHERE age = ?", 1, 25).Return("SELECT * FROM users JOIN posts as p ON users.id = p.user_id AND p.id = 1 WHERE age = 25").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users JOIN posts as p ON users.id = p.user_id AND p.id = 1 WHERE age = 25", int64(0), nil).Return().Once()
 
@@ -607,7 +607,7 @@ func (s *QueryTestSuite) TestLatest() {
 		var user TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE age = ? ORDER BY created_at DESC", 25).Return(nil).Once()
+		s.mockBuilder.EXPECT().GetContext(s.ctx, &user, "SELECT * FROM users WHERE age = ? ORDER BY created_at DESC", 25).Return(nil).Once()
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age = ? ORDER BY created_at DESC", 25).Return("SELECT * FROM users WHERE age = 25 ORDER BY created_at DESC").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 ORDER BY created_at DESC", int64(1), nil).Return().Once()
 
@@ -619,7 +619,7 @@ func (s *QueryTestSuite) TestLatest() {
 		var user TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE age = ? ORDER BY name DESC", 25).Return(nil).Once()
+		s.mockBuilder.EXPECT().GetContext(s.ctx, &user, "SELECT * FROM users WHERE age = ? ORDER BY name DESC", 25).Return(nil).Once()
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age = ? ORDER BY name DESC", 25).Return("SELECT * FROM users WHERE age = 25 ORDER BY name DESC").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 ORDER BY name DESC", int64(1), nil).Return().Once()
 
@@ -632,7 +632,7 @@ func (s *QueryTestSuite) TestLeftJoin() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users LEFT JOIN posts as p ON users.id = p.user_id AND p.id = ? WHERE age = ?", 1, 25).Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users LEFT JOIN posts as p ON users.id = p.user_id AND p.id = ? WHERE age = ?", 1, 25).Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users LEFT JOIN posts as p ON users.id = p.user_id AND p.id = ? WHERE age = ?", 1, 25).Return("SELECT * FROM users LEFT JOIN posts as p ON users.id = p.user_id AND p.id = 1 WHERE age = 25").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users LEFT JOIN posts as p ON users.id = p.user_id AND p.id = 1 WHERE age = 25", int64(0), nil).Return().Once()
 
@@ -649,7 +649,7 @@ func (s *QueryTestSuite) TestLockForUpdate() {
 		s.mockGrammar.EXPECT().CompileLockForUpdate(mock.Anything, mock.Anything).RunAndReturn(func(builder sq.SelectBuilder, conditions *driver.Conditions) sq.SelectBuilder {
 			return builder.Suffix("FOR UPDATE")
 		}).Once()
-		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age = ? FOR UPDATE", 25).Return(nil).Once()
+		s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE age = ? FOR UPDATE", 25).Return(nil).Once()
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age = ? FOR UPDATE", 25).Return("SELECT * FROM users WHERE age = 25 FOR UPDATE").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 FOR UPDATE", int64(0), nil).Return().Once()
 
@@ -665,7 +665,7 @@ func (s *QueryTestSuite) TestLockForUpdate() {
 		s.mockGrammar.EXPECT().CompileLockForUpdate(mock.Anything, mock.Anything).RunAndReturn(func(builder sq.SelectBuilder, conditions *driver.Conditions) sq.SelectBuilder {
 			return builder.From(conditions.Table + " WITH (ROWLOCK, UPDLOCK, HOLDLOCK)")
 		}).Once()
-		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WITH (ROWLOCK, UPDLOCK, HOLDLOCK) WHERE age = ?", 25).Return(nil).Once()
+		s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WITH (ROWLOCK, UPDLOCK, HOLDLOCK) WHERE age = ?", 25).Return(nil).Once()
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WITH (ROWLOCK, UPDLOCK, HOLDLOCK) WHERE age = ?", 25).Return("SELECT * FROM users WITH (ROWLOCK, UPDLOCK, HOLDLOCK) WHERE age = 25").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WITH (ROWLOCK, UPDLOCK, HOLDLOCK) WHERE age = 25", int64(0), nil).Return().Once()
 
@@ -678,7 +678,7 @@ func (s *QueryTestSuite) TestLimit() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age = ? LIMIT 1", 25).Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE age = ? LIMIT 1", 25).Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age = ? LIMIT 1", 25).Return("SELECT * FROM users WHERE age = 25 LIMIT 1").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 LIMIT 1", int64(0), nil).Return().Once()
 
@@ -690,7 +690,7 @@ func (s *QueryTestSuite) TestOffset() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age = ? OFFSET 1", 25).Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE age = ? OFFSET 1", 25).Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age = ? OFFSET 1", 25).Return("SELECT * FROM users WHERE age = 25 OFFSET 1").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 OFFSET 1", int64(0), nil).Return().Once()
 
@@ -702,7 +702,7 @@ func (s *QueryTestSuite) TestOrderBy() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age = ? ORDER BY age ASC, id ASC", 25).Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE age = ? ORDER BY age ASC, id ASC", 25).Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age = ? ORDER BY age ASC, id ASC", 25).Return("SELECT * FROM users WHERE age = 25 ORDER BY age ASC, id ASC").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 ORDER BY age ASC, id ASC", int64(0), nil).Return().Once()
 
@@ -714,7 +714,7 @@ func (s *QueryTestSuite) TestOrderByDesc() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age = ? ORDER BY age ASC, id DESC", 25).Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE age = ? ORDER BY age ASC, id DESC", 25).Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age = ? ORDER BY age ASC, id DESC", 25).Return("SELECT * FROM users WHERE age = 25 ORDER BY age ASC, id DESC").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 ORDER BY age ASC, id DESC", int64(0), nil).Return().Once()
 
@@ -726,7 +726,7 @@ func (s *QueryTestSuite) TestOrderByRaw() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age = ? ORDER BY name ASC, age DESC, id ASC", 25).Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE age = ? ORDER BY name ASC, age DESC, id ASC", 25).Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age = ? ORDER BY name ASC, age DESC, id ASC", 25).Return("SELECT * FROM users WHERE age = 25 ORDER BY name ASC, age DESC, id ASC").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 ORDER BY name ASC, age DESC, id ASC", int64(0), nil).Return().Once()
 
@@ -742,7 +742,7 @@ func (s *QueryTestSuite) TestOrWhere() {
 		var user TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE (((name = ? AND age = ?) OR age IN (?,?)) OR name = ?)", "John", 25, 30, 40, "Jane").Return(nil).Once()
+		s.mockBuilder.EXPECT().GetContext(s.ctx, &user, "SELECT * FROM users WHERE (((name = ? AND age = ?) OR age IN (?,?)) OR name = ?)", "John", 25, 30, 40, "Jane").Return(nil).Once()
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (((name = ? AND age = ?) OR age IN (?,?)) OR name = ?)", "John", 25, 30, 40, "Jane").Return("SELECT * FROM users WHERE (((name = \"John\" AND age = 25) OR age IN (30,40)) OR name = \"Jane\")").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, now, "SELECT * FROM users WHERE (((name = \"John\" AND age = 25) OR age IN (30,40)) OR name = \"Jane\")", int64(1), nil).Return().Once()
 
@@ -754,7 +754,7 @@ func (s *QueryTestSuite) TestOrWhere() {
 		var users []TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE (name = ? OR age > ?)", "John", 18).Return(nil).Once()
+		s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (name = ? OR age > ?)", "John", 18).Return(nil).Once()
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? OR age > ?)", "John", 18).Return("SELECT * FROM users WHERE (name = \"John\" OR age > 18)").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" OR age > 18)", int64(0), nil).Return().Once()
 
@@ -766,7 +766,7 @@ func (s *QueryTestSuite) TestOrWhere() {
 		var users []TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE (name = ? OR ((age IN (?,?) AND name = ?) OR age = ?))", "John", 25, 30, "Tom", 40).Return(nil).Once()
+		s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (name = ? OR ((age IN (?,?) AND name = ?) OR age = ?))", "John", 25, 30, "Tom", 40).Return(nil).Once()
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? OR ((age IN (?,?) AND name = ?) OR age = ?))", "John", 25, 30, "Tom", 40).Return("SELECT * FROM users WHERE (name = \"John\" OR ((age IN (25,30) AND name = \"Tom\") OR age = 40))").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" OR ((age IN (25,30) AND name = \"Tom\") OR age = 40))", int64(0), nil).Return().Once()
 
@@ -781,7 +781,7 @@ func (s *QueryTestSuite) TestOrWhereBetween() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE (name = ? OR age BETWEEN ? AND ?)", "John", 18, 30).Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (name = ? OR age BETWEEN ? AND ?)", "John", 18, 30).Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? OR age BETWEEN ? AND ?)", "John", 18, 30).Return("SELECT * FROM users WHERE (name = \"John\" OR age BETWEEN 18 AND 30)").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" OR age BETWEEN 18 AND 30)", int64(0), nil).Return().Once()
 
@@ -793,7 +793,7 @@ func (s *QueryTestSuite) TestOrWhereColumn() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE (name = ? OR height = weight)", "John").Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (name = ? OR height = weight)", "John").Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? OR height = weight)", "John").Return("SELECT * FROM users WHERE (name = \"John\" OR height = weight)").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" OR height = weight)", int64(0), nil).Return().Once()
 
@@ -805,7 +805,7 @@ func (s *QueryTestSuite) TestOrWhereIn() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE (name = ? OR age IN (?,?))", "John", 25, 30).Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (name = ? OR age IN (?,?))", "John", 25, 30).Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? OR age IN (?,?))", "John", 25, 30).Return("SELECT * FROM users WHERE (name = \"John\" OR age IN (25,30))").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" OR age IN (25,30))", int64(0), nil).Return().Once()
 
@@ -817,7 +817,7 @@ func (s *QueryTestSuite) TestOrWhereLike() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE (name = ? OR name LIKE ?)", "John", "%John%").Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (name = ? OR name LIKE ?)", "John", "%John%").Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? OR name LIKE ?)", "John", "%John%").Return("SELECT * FROM users WHERE (name = \"John\" OR name LIKE \"%John%\")").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" OR name LIKE \"%John%\")", int64(0), nil).Return().Once()
 
@@ -829,7 +829,7 @@ func (s *QueryTestSuite) TestOrWhereNot() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE (name = ? OR NOT (name = ?))", "John", "Jane").Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (name = ? OR NOT (name = ?))", "John", "Jane").Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? OR NOT (name = ?))", "John", "Jane").Return("SELECT * FROM users WHERE (name = \"John\" OR NOT (name = \"Jane\"))")
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" OR NOT (name = \"Jane\"))", int64(0), nil).Return().Once()
 
@@ -841,7 +841,7 @@ func (s *QueryTestSuite) TestOrWhereNotBetween() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE (name = ? OR age NOT BETWEEN ? AND ?)", "John", 18, 30).Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (name = ? OR age NOT BETWEEN ? AND ?)", "John", 18, 30).Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? OR age NOT BETWEEN ? AND ?)", "John", 18, 30).Return("SELECT * FROM users WHERE (name = \"John\" OR age NOT BETWEEN 18 AND 30)")
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" OR age NOT BETWEEN 18 AND 30)", int64(0), nil).Return().Once()
 
@@ -853,7 +853,7 @@ func (s *QueryTestSuite) TestOrWhereNotIn() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE (name = ? OR age NOT IN (?,?))", "John", 25, 30).Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (name = ? OR age NOT IN (?,?))", "John", 25, 30).Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? OR age NOT IN (?,?))", "John", 25, 30).Return("SELECT * FROM users WHERE (name = \"John\" OR age NOT IN (25,30))").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" OR age NOT IN (25,30))", int64(0), nil).Return().Once()
 
@@ -865,7 +865,7 @@ func (s *QueryTestSuite) TestOrWhereNotLike() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE (name = ? OR name NOT LIKE ?)", "John", "%John%").Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (name = ? OR name NOT LIKE ?)", "John", "%John%").Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? OR name NOT LIKE ?)", "John", "%John%").Return("SELECT * FROM users WHERE (name = \"John\" OR name NOT LIKE \"%John%\")").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" OR name NOT LIKE \"%John%\")", int64(0), nil).Return().Once()
 
@@ -877,7 +877,7 @@ func (s *QueryTestSuite) TestOrWhereNotNull() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE (name = ? OR age IS NOT NULL)", "John").Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (name = ? OR age IS NOT NULL)", "John").Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? OR age IS NOT NULL)", "John").Return("SELECT * FROM users WHERE (name = \"John\" OR age IS NOT NULL)").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" OR age IS NOT NULL)", int64(0), nil).Return().Once()
 
@@ -889,7 +889,7 @@ func (s *QueryTestSuite) TestOrWhereNull() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE (name = ? OR age IS NULL)", "John").Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (name = ? OR age IS NULL)", "John").Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? OR age IS NULL)", "John").Return("SELECT * FROM users WHERE (name = \"John\" OR age IS NULL)").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" OR age IS NULL)", int64(0), nil).Return().Once()
 
@@ -901,7 +901,7 @@ func (s *QueryTestSuite) TestOrWhereRaw() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE (name = ? OR age = ? or age = ?)", "John", 25, 30).Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (name = ? OR age = ? or age = ?)", "John", 25, 30).Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? OR age = ? or age = ?)", "John", 25, 30).Return("SELECT * FROM users WHERE (name = \"John\" OR age = 25 OR age = 30)").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" OR age = 25 OR age = 30)", int64(0), nil).Return().Once()
 
@@ -913,7 +913,7 @@ func (s *QueryTestSuite) TestPluck() {
 	var names []string
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&names, "SELECT name FROM users WHERE name = ?", "John").Run(func(dest any, query string, args ...any) {
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &names, "SELECT name FROM users WHERE name = ?", "John").Run(func(ctx context.Context, dest any, query string, args ...any) {
 		destNames := dest.(*[]string)
 		*destNames = []string{"John"}
 	}).Return(nil).Once()
@@ -929,7 +929,7 @@ func (s *QueryTestSuite) TestRightJoin() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users RIGHT JOIN posts as p ON users.id = p.user_id AND p.id = ? WHERE age = ?", 1, 25).Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users RIGHT JOIN posts as p ON users.id = p.user_id AND p.id = ? WHERE age = ?", 1, 25).Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users RIGHT JOIN posts as p ON users.id = p.user_id AND p.id = ? WHERE age = ?", 1, 25).Return("SELECT * FROM users RIGHT JOIN posts as p ON users.id = p.user_id AND p.id = 1 WHERE age = 25").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users RIGHT JOIN posts as p ON users.id = p.user_id AND p.id = 1 WHERE age = 25", int64(0), nil).Return().Once()
 
@@ -941,7 +941,7 @@ func (s *QueryTestSuite) TestSelect() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT id, name FROM users WHERE name = ?", "John").Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT id, name FROM users WHERE name = ?", "John").Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT id, name FROM users WHERE name = ?", "John").Return("SELECT id, name FROM users WHERE name = \"John\"").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT id, name FROM users WHERE name = \"John\"", int64(0), nil).Return().Once()
 
@@ -958,7 +958,7 @@ func (s *QueryTestSuite) TestSharedLock() {
 		s.mockGrammar.EXPECT().CompileSharedLock(mock.Anything, mock.Anything).RunAndReturn(func(builder sq.SelectBuilder, conditions *driver.Conditions) sq.SelectBuilder {
 			return builder.Suffix("FOR SHARE")
 		}).Once()
-		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age = ? FOR SHARE", 25).Return(nil).Once()
+		s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE age = ? FOR SHARE", 25).Return(nil).Once()
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age = ? FOR SHARE", 25).Return("SELECT * FROM users WHERE age = 25 FOR SHARE").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 FOR SHARE", int64(0), nil).Return().Once()
 
@@ -974,7 +974,7 @@ func (s *QueryTestSuite) TestSharedLock() {
 		s.mockGrammar.EXPECT().CompileSharedLock(mock.Anything, mock.Anything).RunAndReturn(func(builder sq.SelectBuilder, conditions *driver.Conditions) sq.SelectBuilder {
 			return builder.From(conditions.Table + " WITH (ROWLOCK, HOLDLOCK)")
 		}).Once()
-		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WITH (ROWLOCK, HOLDLOCK) WHERE age = ?", 25).Return(nil).Once()
+		s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WITH (ROWLOCK, HOLDLOCK) WHERE age = ?", 25).Return(nil).Once()
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WITH (ROWLOCK, HOLDLOCK) WHERE age = ?", 25).Return("SELECT * FROM users WITH (ROWLOCK, HOLDLOCK) WHERE age = 25").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WITH (ROWLOCK, HOLDLOCK) WHERE age = 25", int64(0), nil).Return().Once()
 
@@ -1139,7 +1139,7 @@ func (s *QueryTestSuite) TestUpdate() {
 		mockResult.On("RowsAffected").Return(int64(1), nil)
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Exec("UPDATE users SET phone = ? WHERE (name = ? AND id = ?)", "1234567890", "John", 1).Return(mockResult, nil).Once()
+		s.mockBuilder.EXPECT().ExecContext(s.ctx, "UPDATE users SET phone = ? WHERE (name = ? AND id = ?)", "1234567890", "John", 1).Return(mockResult, nil).Once()
 		s.mockDriver.EXPECT().Explain("UPDATE users SET phone = ? WHERE (name = ? AND id = ?)", "1234567890", "John", 1).Return("UPDATE users SET phone = \"1234567890\" WHERE (name = \"John\" AND id = 1)").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET phone = \"1234567890\" WHERE (name = \"John\" AND id = 1)", int64(1), nil).Return().Once()
 
@@ -1161,7 +1161,7 @@ func (s *QueryTestSuite) TestUpdate() {
 		mockResult.On("RowsAffected").Return(int64(1), nil)
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Exec("UPDATE users SET age = ?, name = ?, phone = ? WHERE (name = ? AND id = ?)", 25, "John", "1234567890", "John", 1).Return(mockResult, nil).Once()
+		s.mockBuilder.EXPECT().ExecContext(s.ctx, "UPDATE users SET age = ?, name = ?, phone = ? WHERE (name = ? AND id = ?)", 25, "John", "1234567890", "John", 1).Return(mockResult, nil).Once()
 		s.mockDriver.EXPECT().Explain("UPDATE users SET age = ?, name = ?, phone = ? WHERE (name = ? AND id = ?)", 25, "John", "1234567890", "John", 1).Return("UPDATE users SET age = 25, name = \"John\", phone = \"1234567890\" WHERE (name = \"John\" AND id = 1)").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET age = 25, name = \"John\", phone = \"1234567890\" WHERE (name = \"John\" AND id = 1)", int64(1), nil).Return().Once()
 
@@ -1177,7 +1177,7 @@ func (s *QueryTestSuite) TestUpdate() {
 		mockResult.On("RowsAffected").Return(int64(1), nil)
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Exec("UPDATE users SET phone = ? WHERE name = ?", "1234567890", "John").Return(mockResult, nil).Once()
+		s.mockBuilder.EXPECT().ExecContext(s.ctx, "UPDATE users SET phone = ? WHERE name = ?", "1234567890", "John").Return(mockResult, nil).Once()
 		s.mockDriver.EXPECT().Explain("UPDATE users SET phone = ? WHERE name = ?", "1234567890", "John").Return("UPDATE users SET phone = \"1234567890\" WHERE name = \"John\"").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET phone = \"1234567890\" WHERE name = \"John\"", int64(1), nil).Return().Once()
 
@@ -1201,7 +1201,7 @@ func (s *QueryTestSuite) TestUpdate() {
 		}
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Exec("UPDATE users SET phone = ? WHERE (name = ? AND id = ?)", "1234567890", "John", 1).Return(nil, assert.AnError).Once()
+		s.mockBuilder.EXPECT().ExecContext(s.ctx, "UPDATE users SET phone = ? WHERE (name = ? AND id = ?)", "1234567890", "John", 1).Return(nil, assert.AnError).Once()
 		s.mockDriver.EXPECT().Explain("UPDATE users SET phone = ? WHERE (name = ? AND id = ?)", "1234567890", "John", 1).Return("UPDATE users SET phone = \"1234567890\" WHERE (name = \"John\" AND id = 1)").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET phone = \"1234567890\" WHERE (name = \"John\" AND id = 1)", int64(-1), assert.AnError).Return().Once()
 
@@ -1221,7 +1221,7 @@ func (s *QueryTestSuite) TestUpdate() {
 		mockResult.On("RowsAffected").Return(int64(0), assert.AnError).Once()
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Exec("UPDATE users SET phone = ? WHERE (name = ? AND id = ?)", "1234567890", "John", 1).Return(mockResult, nil).Once()
+		s.mockBuilder.EXPECT().ExecContext(s.ctx, "UPDATE users SET phone = ? WHERE (name = ? AND id = ?)", "1234567890", "John", 1).Return(mockResult, nil).Once()
 		s.mockDriver.EXPECT().Explain("UPDATE users SET phone = ? WHERE (name = ? AND id = ?)", "1234567890", "John", 1).Return("UPDATE users SET phone = \"1234567890\" WHERE (name = \"John\" AND id = 1)").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET phone = \"1234567890\" WHERE (name = \"John\" AND id = 1)", int64(-1), assert.AnError).Return().Once()
 
@@ -1235,7 +1235,7 @@ func (s *QueryTestSuite) TestValue() {
 	var name string
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Get(&name, "SELECT name FROM users WHERE name = ? LIMIT 1", "John").Run(func(dest any, query string, args ...any) {
+	s.mockBuilder.EXPECT().GetContext(s.ctx, &name, "SELECT name FROM users WHERE name = ? LIMIT 1", "John").Run(func(ctx context.Context, dest any, query string, args ...any) {
 		destName := dest.(*string)
 		*destName = "John"
 	}).Return(nil).Once()
@@ -1252,7 +1252,7 @@ func (s *QueryTestSuite) TestWhen() {
 		var user TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE (name = ? AND age = ?)", "John", 25).Return(nil).Once()
+		s.mockBuilder.EXPECT().GetContext(s.ctx, &user, "SELECT * FROM users WHERE (name = ? AND age = ?)", "John", 25).Return(nil).Once()
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? AND age = ?)", "John", 25).Return("SELECT * FROM users WHERE (name = \"John\" AND age = 25)").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" AND age = 25)", int64(1), nil).Return().Once()
 
@@ -1266,7 +1266,7 @@ func (s *QueryTestSuite) TestWhen() {
 		var user TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE name = ?", "John").Return(nil).Once()
+		s.mockBuilder.EXPECT().GetContext(s.ctx, &user, "SELECT * FROM users WHERE name = ?", "John").Return(nil).Once()
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE name = ?", "John").Return("SELECT * FROM users WHERE name = \"John\"").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE name = \"John\"", int64(1), nil).Return().Once()
 
@@ -1282,7 +1282,7 @@ func (s *QueryTestSuite) TestWhere() {
 		var user TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE (name = ? AND age = ? AND age IN (?,?))", "John", 25, 25, 30).Return(nil).Once()
+		s.mockBuilder.EXPECT().GetContext(s.ctx, &user, "SELECT * FROM users WHERE (name = ? AND age = ? AND age IN (?,?))", "John", 25, 25, 30).Return(nil).Once()
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? AND age = ? AND age IN (?,?))", "John", 25, 25, 30).Return("SELECT * FROM users WHERE (name = \"John\" AND age = 25 AND age IN (25,30))").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" AND age = 25 AND age IN (25,30))", int64(1), nil).Return().Once()
 
@@ -1294,7 +1294,7 @@ func (s *QueryTestSuite) TestWhere() {
 		var users []TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age > ?", 18).Return(nil).Once()
+		s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE age > ?", 18).Return(nil).Once()
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age > ?", 18).Return("SELECT * FROM users WHERE age > 18").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age > 18", int64(0), nil).Return().Once()
 
@@ -1306,7 +1306,7 @@ func (s *QueryTestSuite) TestWhere() {
 		var users []TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE (name = ? AND (age IN (?,?) AND name = ?))", "John", 25, 30, "Tom").Return(nil).Once()
+		s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (name = ? AND (age IN (?,?) AND name = ?))", "John", 25, 30, "Tom").Return(nil).Once()
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? AND (age IN (?,?) AND name = ?))", "John", 25, 30, "Tom").Return("SELECT * FROM users WHERE (name = \"John\" AND (age IN (25,30) AND name = \"Tom\"))").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" AND (age IN (25,30) AND name = \"Tom\"))", int64(0), nil).Return().Once()
 
@@ -1321,7 +1321,7 @@ func (s *QueryTestSuite) TestWhereBetween() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age BETWEEN ? AND ?", 18, 30).Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE age BETWEEN ? AND ?", 18, 30).Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age BETWEEN ? AND ?", 18, 30).Return("SELECT * FROM users WHERE age BETWEEN 18 AND 30").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age BETWEEN 18 AND 30", int64(0), nil).Return().Once()
 
@@ -1334,7 +1334,7 @@ func (s *QueryTestSuite) TestWhereColumn() {
 
 	s.Run("simple condition", func() {
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE (age = height AND name = ?)", "John").Return(nil).Once()
+		s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (age = height AND name = ?)", "John").Return(nil).Once()
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (age = height AND name = ?)", "John").Return("SELECT * FROM users WHERE (age = height AND name = \"John\")").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (age = height AND name = \"John\")", int64(0), nil).Return().Once()
 
@@ -1344,7 +1344,7 @@ func (s *QueryTestSuite) TestWhereColumn() {
 
 	s.Run("with operator", func() {
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE (age > height AND name = ?)", "John").Return(nil).Once()
+		s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (age > height AND name = ?)", "John").Return(nil).Once()
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (age > height AND name = ?)", "John").Return("SELECT * FROM users WHERE (age > height AND name = \"John\")").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (age > height AND name = \"John\")", int64(0), nil).Return().Once()
 
@@ -1368,7 +1368,7 @@ func (s *QueryTestSuite) TestWhereExists() {
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Twice()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM agents WHERE age = ?", 25).Return("SELECT * FROM agents WHERE age = 25").Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE (name = ? AND EXISTS (SELECT * FROM agents WHERE age = 25))", "John").Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (name = ? AND EXISTS (SELECT * FROM agents WHERE age = 25))", "John").Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? AND EXISTS (SELECT * FROM agents WHERE age = 25))", "John").Return("SELECT * FROM users WHERE (name = \"John\" AND EXISTS (SELECT * FROM agents WHERE age = 25))").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" AND EXISTS (SELECT * FROM agents WHERE age = 25))", int64(0), nil).Return().Once()
 
@@ -1383,7 +1383,7 @@ func (s *QueryTestSuite) TestWhereIn() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age IN (?,?)", 25, 30).Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE age IN (?,?)", 25, 30).Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age IN (?,?)", 25, 30).Return("SELECT * FROM users WHERE age IN (25,30)").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age IN (25,30)", int64(0), nil).Return().Once()
 
@@ -1395,7 +1395,7 @@ func (s *QueryTestSuite) TestWhereLike() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE name LIKE ?", "%John%").Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE name LIKE ?", "%John%").Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE name LIKE ?", "%John%").Return("SELECT * FROM users WHERE name LIKE \"%John%\"")
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE name LIKE \"%John%\"", int64(0), nil).Return().Once()
 
@@ -1408,7 +1408,7 @@ func (s *QueryTestSuite) TestWhereNot() {
 		var users []TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE (name = ? AND NOT (name = ?))", "John", "Jane").Return(nil).Once()
+		s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (name = ? AND NOT (name = ?))", "John", "Jane").Return(nil).Once()
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? AND NOT (name = ?))", "John", "Jane").Return("SELECT * FROM users WHERE (name = \"John\" AND NOT (name = \"Jane\"))")
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" AND NOT (name = \"Jane\"))", int64(0), nil).Return().Once()
 
@@ -1420,7 +1420,7 @@ func (s *QueryTestSuite) TestWhereNot() {
 		var users []TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE (name = ? AND NOT (age > ?))", "John", 18).Return(nil).Once()
+		s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (name = ? AND NOT (age > ?))", "John", 18).Return(nil).Once()
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? AND NOT (age > ?))", "John", 18).Return("SELECT * FROM users WHERE (name = \"John\" AND NOT (age > 18))")
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" AND NOT (age > 18))", int64(0), nil).Return().Once()
 
@@ -1432,7 +1432,7 @@ func (s *QueryTestSuite) TestWhereNot() {
 		var users []TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE (name = ? AND NOT ((name = ? AND age IN (?,?))))", "John", "Jane", 25, 30).Return(nil).Once()
+		s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (name = ? AND NOT ((name = ? AND age IN (?,?))))", "John", "Jane", 25, 30).Return(nil).Once()
 		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? AND NOT ((name = ? AND age IN (?,?))))", "John", "Jane", 25, 30).Return("SELECT * FROM users WHERE (name = \"John\" AND NOT ((name = \"Jane\" AND age IN (25,30))))")
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" AND NOT ((name = \"Jane\" AND age IN (25,30))))", int64(0), nil).Return().Once()
 
@@ -1447,7 +1447,7 @@ func (s *QueryTestSuite) TestWhereNotBetween() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age NOT BETWEEN ? AND ?", 18, 30).Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE age NOT BETWEEN ? AND ?", 18, 30).Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age NOT BETWEEN ? AND ?", 18, 30).Return("SELECT * FROM users WHERE age NOT BETWEEN 18 AND 30")
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age NOT BETWEEN 18 AND 30", int64(0), nil).Return().Once()
 
@@ -1459,7 +1459,7 @@ func (s *QueryTestSuite) TestWhereNotIn() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age NOT IN (?,?)", 25, 30).Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE age NOT IN (?,?)", 25, 30).Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age NOT IN (?,?)", 25, 30).Return("SELECT * FROM users WHERE age NOT IN (25,30)")
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age NOT IN (25,30)", int64(0), nil).Return().Once()
 
@@ -1471,7 +1471,7 @@ func (s *QueryTestSuite) TestWhereNotLike() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE name NOT LIKE ?", "%John%").Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE name NOT LIKE ?", "%John%").Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE name NOT LIKE ?", "%John%").Return("SELECT * FROM users WHERE name NOT LIKE \"%John%\"")
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE name NOT LIKE \"%John%\"", int64(0), nil).Return().Once()
 
@@ -1483,7 +1483,7 @@ func (s *QueryTestSuite) TestWhereNotNull() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age IS NOT NULL").Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE age IS NOT NULL").Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age IS NOT NULL").Return("SELECT * FROM users WHERE age IS NOT NULL")
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age IS NOT NULL", int64(0), nil).Return().Once()
 
@@ -1495,7 +1495,7 @@ func (s *QueryTestSuite) TestWhereNull() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age IS NULL").Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE age IS NULL").Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age IS NULL").Return("SELECT * FROM users WHERE age IS NULL")
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age IS NULL", int64(0), nil).Return().Once()
 
@@ -1507,7 +1507,7 @@ func (s *QueryTestSuite) TestWhereRaw() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age = ? or age = ?", 25, 30).Return(nil).Once()
+	s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE age = ? or age = ?", 25, 30).Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age = ? or age = ?", 25, 30).Return("SELECT * FROM users WHERE age = 25 or age = 30")
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 or age = 30", int64(0), nil).Return().Once()
 

@@ -129,6 +129,63 @@ func (_c *Query_Begin_Call) RunAndReturn(run func() (orm.Query, error)) *Query_B
 	return _c
 }
 
+// BeginTransaction provides a mock function with no fields
+func (_m *Query) BeginTransaction() (orm.Query, error) {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for BeginTransaction")
+	}
+
+	var r0 orm.Query
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (orm.Query, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() orm.Query); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Query_BeginTransaction_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BeginTransaction'
+type Query_BeginTransaction_Call struct {
+	*mock.Call
+}
+
+// BeginTransaction is a helper method to define mock.On call
+func (_e *Query_Expecter) BeginTransaction() *Query_BeginTransaction_Call {
+	return &Query_BeginTransaction_Call{Call: _e.mock.On("BeginTransaction")}
+}
+
+func (_c *Query_BeginTransaction_Call) Run(run func()) *Query_BeginTransaction_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Query_BeginTransaction_Call) Return(_a0 orm.Query, _a1 error) *Query_BeginTransaction_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Query_BeginTransaction_Call) RunAndReturn(run func() (orm.Query, error)) *Query_BeginTransaction_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Commit provides a mock function with no fields
 func (_m *Query) Commit() error {
 	ret := _m.Called()
