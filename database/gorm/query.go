@@ -163,7 +163,7 @@ func (r *Query) Cursor() (chan contractsorm.Cursor, error) {
 			if err != nil {
 				return
 			}
-			cursorChan <- &CursorImpl{query: r, row: val}
+			cursorChan <- &Cursor{query: r, row: val}
 		}
 		close(cursorChan)
 	}()

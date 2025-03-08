@@ -5,12 +5,14 @@ package tests
 import (
 	"database/sql"
 	"testing"
+	"time"
 
 	"github.com/goravel/framework/contracts/database/db"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/sqlserver"
+	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -90,6 +92,83 @@ func (s *DBTestSuite) TestCrossJoin() {
 			s.Contains(temps, Temp{P1Name: "cross_join_product1", P2Name: "cross_join_product2"})
 			s.Contains(temps, Temp{P1Name: "cross_join_product2", P2Name: "cross_join_product1"})
 			s.Contains(temps, Temp{P1Name: "cross_join_product2", P2Name: "cross_join_product2"})
+		})
+	}
+}
+
+func (s *DBTestSuite) TestCursor() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{
+					Name: "cursor_product1", Weight: convert.Pointer(100), Model: Model{
+						Timestamps: Timestamps{
+							CreatedAt: s.now,
+							UpdatedAt: s.now,
+						},
+					},
+				},
+				{
+					Name: "cursor_product2", Weight: convert.Pointer(200), Model: Model{
+						Timestamps: Timestamps{
+							CreatedAt: s.now,
+							UpdatedAt: s.now,
+						},
+					},
+				},
+			})
+
+			s.Run("Bind Struct", func() {
+				rows, err := query.DB().Table("products").Cursor()
+				s.NoError(err)
+
+				var products []Product
+				for row := range rows {
+					var product Product
+					err = row.Scan(&product)
+
+					s.NoError(err)
+					s.True(product.ID > 0)
+
+					products = append(products, product)
+				}
+
+				s.Equal(2, len(products))
+				s.Equal("cursor_product1", products[0].Name)
+				s.Equal(100, *products[0].Weight)
+				s.Equal(s.now, products[0].CreatedAt)
+				s.Equal(s.now, products[0].UpdatedAt)
+				s.Equal("cursor_product2", products[1].Name)
+				s.Equal(200, *products[1].Weight)
+				s.Equal(s.now, products[1].CreatedAt)
+				s.Equal(s.now, products[1].UpdatedAt)
+			})
+
+			s.Run("Bind Map", func() {
+				rows, err := query.DB().Table("products").Cursor()
+				s.NoError(err)
+
+				var products []map[string]any
+				for row := range rows {
+					var product map[string]any
+					err = row.Scan(&product)
+
+					s.NoError(err)
+					s.True(cast.ToUint(product["id"]) > 0)
+
+					products = append(products, product)
+				}
+
+				s.Equal(2, len(products))
+				s.Equal("cursor_product1", cast.ToString(products[0]["name"]))
+				s.Equal(100, cast.ToInt(products[0]["weight"]))
+				s.Equal(s.now, carbon.NewDateTime(carbon.FromStdTime(cast.ToTime(products[0]["created_at"]))))
+				s.Equal(s.now, carbon.NewDateTime(carbon.FromStdTime(cast.ToTime(products[0]["updated_at"]))))
+				s.Equal("cursor_product2", cast.ToString(products[1]["name"]))
+				s.Equal(200, cast.ToInt(products[1]["weight"]))
+				s.Equal(s.now, carbon.NewDateTime(carbon.FromStdTime(cast.ToTime(products[1]["created_at"]))))
+				s.Equal(s.now, carbon.NewDateTime(carbon.FromStdTime(cast.ToTime(products[1]["updated_at"]))))
+			})
 		})
 	}
 }
@@ -207,6 +286,47 @@ func (s *DBTestSuite) TestIncrement() {
 				s.NoError(err)
 				s.Equal(106, *product.Weight)
 			})
+		})
+	}
+}
+
+func (s *DBTestSuite) TestInRandomOrder() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{Name: "in_random_order_product1"},
+				{Name: "in_random_order_product2"},
+				{Name: "in_random_order_product3"},
+				{Name: "in_random_order_product4"},
+				{Name: "in_random_order_product5"},
+				{Name: "in_random_order_product6"},
+				{Name: "in_random_order_product7"},
+				{Name: "in_random_order_product8"},
+				{Name: "in_random_order_product9"},
+				{Name: "in_random_order_product10"},
+			})
+
+			var products1 []Product
+			err := query.DB().Table("products").InRandomOrder().Get(&products1)
+			s.NoError(err)
+			s.Equal(10, len(products1))
+
+			var names1 []string
+			for _, product := range products1 {
+				names1 = append(names1, product.Name)
+			}
+
+			var products2 []Product
+			err = query.DB().Table("products").InRandomOrder().Get(&products2)
+			s.NoError(err)
+			s.Equal(10, len(products2))
+
+			var names2 []string
+			for _, product := range products2 {
+				names2 = append(names2, product.Name)
+			}
+
+			s.NotEqual(names1, names2)
 		})
 	}
 }
@@ -427,6 +547,45 @@ func (s *DBTestSuite) TestLimit() {
 	}
 }
 
+func (s *DBTestSuite) TestLockForUpdate() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{Name: "lock_for_update_product"},
+			})
+
+			var product Product
+			err := query.DB().Table("products").Where("name", "lock_for_update_product").First(&product)
+			s.NoError(err)
+			s.Equal("lock_for_update_product", product.Name)
+			s.True(product.ID > 0)
+
+			for i := 0; i < 10; i++ {
+				go func() {
+					query.DB().Transaction(func(tx db.DB) error {
+						var product1 Product
+						err := tx.Table("products").Where("id", product.ID).LockForUpdate().First(&product1)
+						s.NoError(err)
+						s.True(product1.ID > 0)
+
+						_, err = tx.Table("products").Where("id", product1.ID).Update("name", product1.Name+"1")
+						s.NoError(err)
+
+						return nil
+					})
+				}()
+			}
+
+			time.Sleep(2 * time.Second)
+
+			err = query.DB().Table("products").Where("id", product.ID).First(&product)
+			s.NoError(err)
+			s.Equal("lock_for_update_product1111111111", product.Name)
+			s.True(product.ID > 0)
+		})
+	}
+}
+
 func (s *DBTestSuite) TestOffset() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
@@ -628,6 +787,48 @@ func (s *DBTestSuite) TestRightJoin() {
 			s.Contains(temps, Temp{P1Name: convert.Pointer("join_product1"), P1Weight: convert.Pointer(100), P2Name: convert.Pointer("join_product2"), P2Weight: convert.Pointer(50)})
 			s.Contains(temps, Temp{P2Name: convert.Pointer("join_product1"), P2Weight: convert.Pointer(100)})
 			s.Contains(temps, Temp{P2Name: convert.Pointer("join_product3"), P2Weight: convert.Pointer(50)})
+		})
+	}
+}
+
+func (s *DBTestSuite) TestSharedLock() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{Name: "shared_lock_product"},
+			})
+
+			var product Product
+			err := query.DB().Table("products").Where("name", "shared_lock_product").SharedLock().First(&product)
+			s.NoError(err)
+			s.Equal("shared_lock_product", product.Name)
+			s.True(product.ID > 0)
+
+			tx, err := query.DB().BeginTransaction()
+			s.NoError(err)
+
+			var product1 Product
+			err = tx.Table("products").Where("id", product.ID).SharedLock().First(&product1)
+			s.NoError(err)
+			s.Equal("shared_lock_product", product1.Name)
+			s.True(product1.ID > 0)
+
+			var product2 Product
+			err = query.DB().Table("products").Where("id", product.ID).SharedLock().First(&product2)
+			s.NoError(err)
+			s.Equal("shared_lock_product", product2.Name)
+			s.True(product2.ID > 0)
+
+			product1.Name += "1"
+			_, err = tx.Table("products").Where("id", product1.ID).Update("name", product1.Name)
+			s.NoError(err)
+
+			s.NoError(tx.Commit())
+
+			err = query.DB().Table("products").Where("id", product.ID).SharedLock().First(&product)
+			s.NoError(err)
+			s.Equal("shared_lock_product1", product.Name)
+			s.True(product.ID > 0)
 		})
 	}
 }

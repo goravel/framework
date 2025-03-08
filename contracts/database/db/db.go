@@ -27,10 +27,10 @@ type DB interface {
 type Query interface {
 	// Count Retrieve the "count" result of the query.
 	Count() (int64, error)
-	// Chunk Execute a callback over a given chunk size.
-	// Chunk(size int, callback func(dest []any) error) error
 	// CrossJoin specifying CROSS JOIN conditions for the query.
 	CrossJoin(query string, args ...any) Query
+	// Cursor returns a cursor, use scan to iterate over the returned rows.
+	Cursor() (chan Row, error)
 	// Decrement the given column's values by the given amounts.
 	Decrement(column string, value ...uint64) error
 	// Delete records from the database.
@@ -39,8 +39,6 @@ type Query interface {
 	DoesntExist() (bool, error)
 	// Distinct Force the query to only return distinct results.
 	Distinct() Query
-	// Each Execute a callback over the results of the query.
-	Each(callback func(rows *sqlx.Rows) error) error
 	// Exists Determine if any rows exist for the current query.
 	Exists() (bool, error)
 	// Find Execute a query for a single record by ID.
@@ -172,4 +170,8 @@ type ToSql interface {
 	Insert(data any) string
 	Pluck(column string, dest any) string
 	Update(column any, value ...any) string
+}
+
+type Row interface {
+	Scan(value any) error
 }

@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/jmoiron/sqlx"
 
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/db"
@@ -77,14 +76,40 @@ func (r *Query) CrossJoin(query string, args ...any) db.Query {
 	return q
 }
 
-// func (r *Query) Chunk(size int, callback func(dest []any) error) error {
-// 	sql, args, err := r.buildSelect()
-// 	if err != nil {
-// 		return err
-// 	}
+func (r *Query) Cursor() (chan db.Row, error) {
+	sql, args, err := r.buildSelect()
+	if err != nil {
+		return nil, err
+	}
 
-// 	return nil
-// }
+	rows, err := r.builder.Queryx(sql, args...)
+	if err != nil {
+		r.trace(sql, args, -1, err)
+
+		return nil, err
+	}
+
+	ch := make(chan db.Row)
+	go func() {
+		defer rows.Close()
+		defer close(ch)
+
+		var count int64
+		for rows.Next() {
+			row := make(map[string]any)
+			if err := rows.MapScan(row); err != nil {
+				return
+			}
+
+			ch <- NewRow(row)
+			count++
+		}
+
+		r.trace(sql, args, count, nil)
+	}()
+
+	return ch, nil
+}
 
 func (r *Query) Decrement(column string, value ...uint64) error {
 	v := uint64(1)
@@ -141,25 +166,7 @@ func (r *Query) DoesntExist() (bool, error) {
 	return count == 0, nil
 }
 
-func (r *Query) Each(callback func(row *sqlx.Rows) error) error {
-	sql, args, err := r.buildSelect()
-	if err != nil {
-		return err
-	}
-
-	rows, err := r.builder.Queryx(sql, args...)
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		err := callback(rows)
-		if err != nil {
-			return err
-		}
-	}
-
+func (r *Query) Each(callback func(row db.Row) error) error {
 	return nil
 }
 
