@@ -62,23 +62,23 @@ func (s *ApplicationTestSuite) SetupTest() {
 }
 
 func (s *ApplicationTestSuite) TestPath() {
-	s.Equal(filepath.Join("app", "goravel.go"), s.app.Path("goravel.go"))
+	s.Equal(filepath.Join(support.RootPath, "app", "goravel.go"), s.app.Path("goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestBasePath() {
-	s.Equal("goravel.go", s.app.BasePath("goravel.go"))
+	s.Equal(filepath.Join(support.RootPath, "goravel.go"), s.app.BasePath("goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestConfigPath() {
-	s.Equal(filepath.Join("config", "goravel.go"), s.app.ConfigPath("goravel.go"))
+	s.Equal(filepath.Join(support.RootPath, "config", "goravel.go"), s.app.ConfigPath("goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestDatabasePath() {
-	s.Equal(filepath.Join("database", "goravel.go"), s.app.DatabasePath("goravel.go"))
+	s.Equal(filepath.Join(support.RootPath, "database", "goravel.go"), s.app.DatabasePath("goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestStoragePath() {
-	s.Equal(filepath.Join("storage", "goravel.go"), s.app.StoragePath("goravel.go"))
+	s.Equal(filepath.Join(support.RootPath, "storage", "goravel.go"), s.app.StoragePath("goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestLangPath() {
@@ -89,11 +89,11 @@ func (s *ApplicationTestSuite) TestLangPath() {
 		return mockConfig, nil
 	})
 
-	s.Equal(filepath.Join("test", "goravel.go"), s.app.LangPath("goravel.go"))
+	s.Equal(filepath.Join(support.RootPath, "test", "goravel.go"), s.app.LangPath("goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestPublicPath() {
-	s.Equal(filepath.Join("public", "goravel.go"), s.app.PublicPath("goravel.go"))
+	s.Equal(filepath.Join(support.RootPath, "public", "goravel.go"), s.app.PublicPath("goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestExecutablePath() {
