@@ -223,7 +223,7 @@ func (r *Query) Exists() (bool, error) {
 }
 
 func (r *Query) Find(dest any, conds ...any) error {
-	q, err := r.findQuery(dest, conds...)
+	q, err := r.findQuery(conds)
 	if err != nil {
 		return err
 	}
@@ -237,7 +237,7 @@ func (r *Query) Find(dest any, conds ...any) error {
 }
 
 func (r *Query) FindOrFail(dest any, conds ...any) error {
-	q, err := r.findQuery(dest, conds...)
+	q, err := r.findQuery(conds)
 	if err != nil {
 		return err
 	}
@@ -631,7 +631,7 @@ func (r *Query) SharedLock() db.Query {
 }
 
 func (r *Query) Sum(column string, dest any) error {
-	return r.Select(fmt.Sprintf("SUM(%s)", column)).Limit(1).First(dest)
+	return r.Select(fmt.Sprintf("SUM(%s)", column)).First(dest)
 }
 
 func (r *Query) ToSql() db.ToSql {
@@ -1080,7 +1080,7 @@ func (r *Query) clone() *Query {
 	return query
 }
 
-func (r *Query) findQuery(dest any, conds ...any) (db.Query, error) {
+func (r *Query) findQuery(conds []any) (db.Query, error) {
 	var q db.Query
 	if len(conds) > 2 {
 		return nil, errors.DatabaseInvalidArgumentNumber.Args(len(conds), "1 or 2")
