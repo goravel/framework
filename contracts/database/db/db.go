@@ -39,6 +39,8 @@ type Tx interface {
 }
 
 type Query interface {
+	// Chunk chunks the query into smaller chunks.
+	// Chunk(size int, callback func(rows []Row) error) error
 	// Count retrieves the "count" result of the query.
 	Count() (int64, error)
 	// CrossJoin specifies CROSS JOIN conditions for the query.
@@ -53,6 +55,8 @@ type Query interface {
 	DoesntExist() (bool, error)
 	// Distinct forces the query to only return distinct results.
 	Distinct() Query
+	// Each executes the query and passes each row to the callback.
+	// Each(callback func(row Row) error) error
 	// Exists returns true if matching records exist; otherwise, it returns false.
 	Exists() (bool, error)
 	// Find finds records that match given conditions.
