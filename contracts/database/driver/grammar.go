@@ -2,7 +2,6 @@ package driver
 
 import (
 	sq "github.com/Masterminds/squirrel"
-	"github.com/goravel/framework/contracts/database/orm"
 	"gorm.io/gorm/clause"
 )
 
@@ -62,9 +61,9 @@ type SchemaGrammar interface {
 	// CompileRename Compile a rename table command.
 	CompileRename(blueprint Blueprint, command *Command) string
 	// CompileRenameColumn Compile a rename column command.
-	CompileRenameColumn(schema Schema, blueprint Blueprint, command *Command) (string, error)
+	CompileRenameColumn(blueprint Blueprint, command *Command, columns []Column) (string, error)
 	// CompileRenameIndex Compile a rename index command.
-	CompileRenameIndex(schema Schema, blueprint Blueprint, command *Command) []string
+	CompileRenameIndex(blueprint Blueprint, command *Command, indexes []Index) []string
 	// CompileTables Compile the query to determine the tables.
 	CompileTables(database string) string
 	// CompileTableComment Compile a table comment command.
@@ -157,15 +156,6 @@ type CompileOrderByGrammar interface {
 
 type CompileLimitGrammar interface {
 	CompileLimit(builder sq.SelectBuilder, conditions *Conditions) sq.SelectBuilder
-}
-
-type Schema interface {
-	// GetColumns Get the columns for a given table.
-	GetColumns(table string) ([]Column, error)
-	// GetIndexes Get the indexes for a given table.
-	GetIndexes(table string) ([]Index, error)
-	// Orm Get the orm instance.
-	Orm() orm.Orm
 }
 
 type Blueprint interface {

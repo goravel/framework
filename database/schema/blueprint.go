@@ -529,13 +529,21 @@ func (r *Blueprint) ToSql(grammar driver.Grammar) ([]string, error) {
 		case CommandRename:
 			statements = append(statements, grammar.CompileRename(r, command))
 		case CommandRenameColumn:
-			statement, err := grammar.CompileRenameColumn(r.schema, r, command)
+			columns, err := r.schema.GetColumns(r.GetTableName())
+			if err != nil {
+				return statements, err
+			}
+			statement, err := grammar.CompileRenameColumn(r, command, columns)
 			if err != nil {
 				return statements, err
 			}
 			statements = append(statements, statement)
 		case CommandRenameIndex:
-			statements = append(statements, grammar.CompileRenameIndex(r.schema, r, command)...)
+			indexes, err := r.schema.GetIndexes(r.GetTableName())
+			if err != nil {
+				return statements, err
+			}
+			statements = append(statements, grammar.CompileRenameIndex(r, command, indexes)...)
 		case CommandTableComment:
 			if statement := grammar.CompileTableComment(r, command); statement != "" {
 				statements = append(statements, statement)
