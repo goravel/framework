@@ -49,27 +49,30 @@ func (r *Query) Chunk(size uint64, callback func(rows []db.Row) error) error {
 	offset := uint64(0)
 
 	for {
-		q := r.clone()
-
-		var dest []map[string]any
-		if err := q.Offset(offset).Limit(size).Get(&dest); err != nil {
+		rows, err := r.clone().Offset(offset).Limit(size).Cursor()
+		if err != nil {
 			return err
 		}
 
-		if len(dest) == 0 {
+		var destSlice []db.Row
+		for row := range rows {
+			var dest map[string]any
+			if err := row.Scan(&dest); err != nil {
+				return err
+			}
+
+			destSlice = append(destSlice, NewRow(dest))
+		}
+
+		if len(destSlice) == 0 {
 			break
 		}
 
-		var rowsSlice []db.Row
-		for _, row := range dest {
-			rowsSlice = append(rowsSlice, NewRow(row))
-		}
-
-		if err := callback(rowsSlice); err != nil {
+		if err := callback(destSlice); err != nil {
 			return err
 		}
 
-		if len(dest) < int(size) {
+		if len(destSlice) < int(size) {
 			break
 		}
 
