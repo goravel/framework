@@ -40,7 +40,7 @@ type Tx interface {
 
 type Query interface {
 	// Chunk chunks the query into smaller chunks.
-	// Chunk(size int, callback func(rows []Row) error) error
+	Chunk(size uint64, callback func(rows []Row) error) error
 	// Count retrieves the "count" result of the query.
 	Count() (int64, error)
 	// CrossJoin specifies CROSS JOIN conditions for the query.
@@ -56,26 +56,20 @@ type Query interface {
 	// Distinct forces the query to only return distinct results.
 	Distinct() Query
 	// Each executes the query and passes each row to the callback.
-	// Each(callback func(row Row) error) error
+	Each(callback func(row Row) error) error
 	// Exists returns true if matching records exist; otherwise, it returns false.
 	Exists() (bool, error)
 	// Find finds records that match given conditions.
 	Find(dest any, conds ...any) error
 	// FindOrFail finds records that match given conditions or throws an error.
-	// FindOrFail(dest any, conds ...any) error
+	FindOrFail(dest any, conds ...any) error
 	// First finds record that match given conditions.
 	First(dest any) error
 	// FirstOr finds the first record that matches the given conditions or
 	// execute the callback and return its result if no record is found.
 	FirstOr(dest any, callback func() error) error
-	// FirstOrCreate finds the first record that matches the given attributes
-	// or create a new one with those attributes if none was found.
-	// FirstOrCreate(dest any, conds ...any) error
 	// FirstOrFail finds the first record that matches the given conditions or throws an error.
 	FirstOrFail(dest any) error
-	// FirstOrNew finds the first record that matches the given conditions or
-	// return a new instance of the model initialized with those attributes.
-	// FirstOrNew(dest any, attributes any, values ...any) error
 	// Get retrieves all rows from the database.
 	Get(dest any) error
 	// GroupBy specifies the group method on the query.
@@ -141,16 +135,16 @@ type Query interface {
 	// SharedLock locks the selected rows in the table.
 	SharedLock() Query
 	// Sum calculates the sum of a column's values and populates the destination object.
-	// Sum(column string, dest any) error
+	Sum(column string, dest any) error
 	// ToSql returns the query as a SQL string.
 	ToSql() ToSql
 	// ToRawSql returns the query as a raw SQL string.
 	ToRawSql() ToSql
 	// Update records with the given column and values
 	Update(column any, value ...any) (*Result, error)
-	// UpdateOrCreate finds the first record that matches the given attributes
+	// UpdateOrInsert finds the first record that matches the given attributes
 	// or create a new one with those attributes if none was found.
-	// UpdateOrCreate(dest any, attributes any, values any) error
+	UpdateOrInsert(attributes any, values any) (*Result, error)
 	// Value gets a single column's value from the first result of a query.
 	Value(column string, dest any) error
 	// When executes the callback if the condition is true.

@@ -64,6 +64,35 @@ func (s *DBTestSuite) TestCount() {
 	}
 }
 
+func (s *DBTestSuite) TestChunk() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{Name: "chunk_product1"},
+				{Name: "chunk_product2"},
+				{Name: "chunk_product3"},
+			})
+
+			var products []Product
+			err := query.DB().Table("products").Chunk(2, func(rows []db.Row) error {
+				for _, row := range rows {
+					var product Product
+					err := row.Scan(&product)
+					s.NoError(err)
+					products = append(products, product)
+				}
+
+				return nil
+			})
+			s.NoError(err)
+			s.Equal(3, len(products))
+			s.Equal("chunk_product1", products[0].Name)
+			s.Equal("chunk_product2", products[1].Name)
+			s.Equal("chunk_product3", products[2].Name)
+		})
+	}
+}
+
 func (s *DBTestSuite) TestCrossJoin() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
@@ -882,6 +911,22 @@ func (s *DBTestSuite) TestSharedLock() {
 	}
 }
 
+func (s *DBTestSuite) TestSum() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{Name: "sum_product1", Weight: convert.Pointer(100)},
+				{Name: "sum_product2", Weight: convert.Pointer(200)},
+			})
+
+			var sum int
+			err := query.DB().Table("products").Sum("weight", &sum)
+			s.NoError(err)
+			s.Equal(300, sum)
+		})
+	}
+}
+
 func (s *DBTestSuite) TestTransaction() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
@@ -1023,6 +1068,76 @@ func (s *DBTestSuite) TestUpdate_Delete() {
 			err = query.DB().Table("products").Where("name", []string{"update structs1 updated", "update structs2 updated"}).Where("deleted_at", nil).Get(&products2)
 			s.NoError(err)
 			s.Equal(0, len(products2))
+		})
+	}
+}
+
+func (s *DBTestSuite) TestUpdateOrInsert() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			s.Run("map", func() {
+				result, err := query.DB().Table("products").Where("height", 100).UpdateOrInsert(map[string]any{
+					"name": "update or insert product1",
+				}, map[string]any{
+					"weight": 200,
+				})
+				s.NoError(err)
+				s.Equal(int64(1), result.RowsAffected)
+
+				var product1 Product
+				err = query.DB().Table("products").Where("name", "update or insert product1").First(&product1)
+				s.NoError(err)
+				s.True(product1.ID > 0)
+				s.Equal("update or insert product1", product1.Name)
+				s.Equal(200, *product1.Weight)
+				s.Nil(product1.Height)
+
+				result, err = query.DB().Table("products").UpdateOrInsert(map[string]any{
+					"name": "update or insert product1",
+				}, map[string]any{
+					"weight": 300,
+				})
+				s.NoError(err)
+				s.Equal(int64(1), result.RowsAffected)
+
+				var product2 Product
+				err = query.DB().Table("products").Where("name", "update or insert product1").First(&product2)
+				s.NoError(err)
+				s.Equal("update or insert product1", product2.Name)
+				s.Equal(300, *product2.Weight)
+			})
+
+			s.Run("struct", func() {
+				result, err := query.DB().Table("products").Where("height", 100).UpdateOrInsert(Product{
+					Name: "update or insert product2",
+				}, Product{
+					Weight: convert.Pointer(200),
+				})
+				s.NoError(err)
+				s.Equal(int64(1), result.RowsAffected)
+
+				var product1 Product
+				err = query.DB().Table("products").Where("name", "update or insert product2").First(&product1)
+				s.NoError(err)
+				s.True(product1.ID > 0)
+				s.Equal("update or insert product2", product1.Name)
+				s.Equal(200, *product1.Weight)
+				s.Nil(product1.Height)
+
+				result, err = query.DB().Table("products").UpdateOrInsert(Product{
+					Name: "update or insert product2",
+				}, Product{
+					Weight: convert.Pointer(300),
+				})
+				s.NoError(err)
+				s.Equal(int64(1), result.RowsAffected)
+
+				var product2 Product
+				err = query.DB().Table("products").Where("name", "update or insert product2").First(&product2)
+				s.NoError(err)
+				s.Equal("update or insert product2", product2.Name)
+				s.Equal(300, *product2.Weight)
+			})
 		})
 	}
 }

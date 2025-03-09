@@ -24,6 +24,7 @@ import (
 type TestUser struct {
 	ID    uint   `db:"id"`
 	Phone string `db:"phone"`
+	Email string `db:"email"`
 	Name  string `db:"-"`
 	Age   int
 }
@@ -217,6 +218,70 @@ func (s *QueryTestSuite) TestFind() {
 
 		err := s.query.Where("name", "John").Find(&users, 1, 2, 3)
 		s.Equal(errors.DatabaseInvalidArgumentNumber.Args(3, "1 or 2"), err)
+	})
+}
+
+func (s *QueryTestSuite) TestFindOrFail() {
+	s.Run("single ID", func() {
+		var user TestUser
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().GetContext(s.ctx, &user, "SELECT * FROM users WHERE (name = ? AND id = ?)", "John", 1).Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? AND id = ?)", "John", 1).Return("SELECT * FROM users WHERE (name = \"John\" AND id = 1)").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" AND id = 1)", int64(1), nil).Return().Once()
+
+		err := s.query.Where("name", "John").FindOrFail(&user, 1)
+
+		s.NoError(err)
+	})
+
+	s.Run("multiple ID", func() {
+		var users []TestUser
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (name = ? AND id IN (?,?))", "John", 1, 2).Run(func(ctx context.Context, dest any, query string, args ...any) {
+			destUsers := dest.(*[]TestUser)
+			*destUsers = []TestUser{{ID: 1, Name: "John", Age: 25}, {ID: 2, Name: "Jane", Age: 30}}
+		}).Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? AND id IN (?,?))", "John", 1, 2).Return("SELECT * FROM users WHERE (name = \"John\" AND id IN (1,2))").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" AND id IN (1,2))", int64(2), nil).Return().Once()
+
+		err := s.query.Where("name", "John").FindOrFail(&users, []int{1, 2})
+
+		s.NoError(err)
+	})
+
+	s.Run("primary key is not id", func() {
+		var users TestUser
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().GetContext(s.ctx, &users, "SELECT * FROM users WHERE (name = ? AND uuid = ?)", "John", "123").Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? AND uuid = ?)", "John", "123").Return("SELECT * FROM users WHERE (name = \"John\" AND uuid = \"123\")").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" AND uuid = \"123\")", int64(1), nil).Return().Once()
+
+		err := s.query.Where("name", "John").FindOrFail(&users, "uuid", "123")
+
+		s.NoError(err)
+	})
+
+	s.Run("invalid argument number", func() {
+		var users []TestUser
+
+		err := s.query.Where("name", "John").FindOrFail(&users, 1, 2, 3)
+		s.Equal(errors.DatabaseInvalidArgumentNumber.Args(3, "1 or 2"), err)
+	})
+
+	s.Run("record not found", func() {
+		var user TestUser
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().GetContext(s.ctx, &user, "SELECT * FROM users WHERE (name = ? AND id = ?)", "John", 1).Return(databasesql.ErrNoRows).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? AND id = ?)", "John", 1).Return("SELECT * FROM users WHERE (name = \"John\" AND id = 1)").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" AND id = 1)", int64(-1), databasesql.ErrNoRows).Return().Once()
+
+		err := s.query.Where("name", "John").FindOrFail(&user, 1)
+
+		s.Equal(databasesql.ErrNoRows, err)
 	})
 }
 
@@ -983,6 +1048,22 @@ func (s *QueryTestSuite) TestSharedLock() {
 	})
 }
 
+func (s *QueryTestSuite) TestSum() {
+	var sum int64
+
+	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+	s.mockBuilder.EXPECT().GetContext(s.ctx, &sum, "SELECT SUM(age) FROM users WHERE age = ?", 25).Run(func(ctx context.Context, dest any, query string, args ...any) {
+		destSum := dest.(*int64)
+		*destSum = 25
+	}).Return(nil).Once()
+	s.mockDriver.EXPECT().Explain("SELECT SUM(age) FROM users WHERE age = ?", 25).Return("SELECT SUM(age) FROM users WHERE age = 25").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT SUM(age) FROM users WHERE age = 25", int64(1), nil).Return().Once()
+
+	err := s.query.Where("age", 25).Sum("age", &sum)
+	s.Nil(err)
+	s.Equal(int64(25), sum)
+}
+
 func (s *QueryTestSuite) TestToSql() {
 	s.Run("Count", func() {
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
@@ -1228,6 +1309,165 @@ func (s *QueryTestSuite) TestUpdate() {
 		result, err := s.query.Where("name", "John").Where("id", 1).Update(user)
 		s.Nil(result)
 		s.Equal(assert.AnError, err)
+	})
+}
+
+func (s *QueryTestSuite) TestUpdateOrInsert() {
+	s.Run("update record with struct", func() {
+		var count int64
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().GetContext(s.ctx, &count, "SELECT COUNT(*) FROM users WHERE (id = ? AND email = ?)", 1, "john@example.com").Run(func(ctx context.Context, dest any, query string, args ...any) {
+			destCount := dest.(*int64)
+			*destCount = 1
+		}).Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT COUNT(*) FROM users WHERE (id = ? AND email = ?)", 1, "john@example.com").Return("SELECT COUNT(*) FROM users WHERE (id = 1 AND email = \"john@example.com\")").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(*) FROM users WHERE (id = 1 AND email = \"john@example.com\")", int64(-1), nil).Return().Once()
+
+		mockResult := &MockResult{}
+		mockResult.On("RowsAffected").Return(int64(1), nil)
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().ExecContext(s.ctx, "UPDATE users SET phone = ? WHERE (id = ? AND email = ?)", "1234567890", 1, "john@example.com").Return(mockResult, nil).Once()
+		s.mockDriver.EXPECT().Explain("UPDATE users SET phone = ? WHERE (id = ? AND email = ?)", "1234567890", 1, "john@example.com").Return("UPDATE users SET phone = \"1234567890\" WHERE (id = 1 AND email = \"john@example.com\")").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET phone = \"1234567890\" WHERE (id = 1 AND email = \"john@example.com\")", int64(1), nil).Return().Once()
+
+		whereUser := TestUser{
+			Email: "john@example.com",
+		}
+		user := TestUser{
+			Phone: "1234567890",
+		}
+		result, err := s.query.Where("id", 1).UpdateOrInsert(whereUser, user)
+		s.Nil(err)
+		s.Equal(int64(1), result.RowsAffected)
+
+		mockResult.AssertExpectations(s.T())
+	})
+
+	s.Run("update record with struct and map", func() {
+		var count int64
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().GetContext(s.ctx, &count, "SELECT COUNT(*) FROM users WHERE (id = ? AND email = ?)", 1, "john@example.com").Run(func(ctx context.Context, dest any, query string, args ...any) {
+			destCount := dest.(*int64)
+			*destCount = 1
+		}).Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT COUNT(*) FROM users WHERE (id = ? AND email = ?)", 1, "john@example.com").Return("SELECT COUNT(*) FROM users WHERE (id = 1 AND email = \"john@example.com\")").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(*) FROM users WHERE (id = 1 AND email = \"john@example.com\")", int64(-1), nil).Return().Once()
+
+		mockResult := &MockResult{}
+		mockResult.On("RowsAffected").Return(int64(1), nil)
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().ExecContext(s.ctx, "UPDATE users SET phone = ? WHERE (id = ? AND email = ?)", "1234567890", 1, "john@example.com").Return(mockResult, nil).Once()
+		s.mockDriver.EXPECT().Explain("UPDATE users SET phone = ? WHERE (id = ? AND email = ?)", "1234567890", 1, "john@example.com").Return("UPDATE users SET phone = \"1234567890\" WHERE (id = 1 AND email = \"john@example.com\")").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET phone = \"1234567890\" WHERE (id = 1 AND email = \"john@example.com\")", int64(1), nil).Return().Once()
+
+		whereUser := TestUser{
+			Email: "john@example.com",
+		}
+		user := map[string]any{
+			"phone": "1234567890",
+		}
+		result, err := s.query.Where("id", 1).UpdateOrInsert(whereUser, user)
+		s.Nil(err)
+		s.Equal(int64(1), result.RowsAffected)
+
+		mockResult.AssertExpectations(s.T())
+	})
+
+	s.Run("update record with map and struct", func() {
+		var count int64
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().GetContext(s.ctx, &count, "SELECT COUNT(*) FROM users WHERE (id = ? AND email = ?)", 1, "john@example.com").Run(func(ctx context.Context, dest any, query string, args ...any) {
+			destCount := dest.(*int64)
+			*destCount = 1
+		}).Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT COUNT(*) FROM users WHERE (id = ? AND email = ?)", 1, "john@example.com").Return("SELECT COUNT(*) FROM users WHERE (id = 1 AND email = \"john@example.com\")").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(*) FROM users WHERE (id = 1 AND email = \"john@example.com\")", int64(-1), nil).Return().Once()
+
+		mockResult := &MockResult{}
+		mockResult.On("RowsAffected").Return(int64(1), nil)
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().ExecContext(s.ctx, "UPDATE users SET phone = ? WHERE (id = ? AND email = ?)", "1234567890", 1, "john@example.com").Return(mockResult, nil).Once()
+		s.mockDriver.EXPECT().Explain("UPDATE users SET phone = ? WHERE (id = ? AND email = ?)", "1234567890", 1, "john@example.com").Return("UPDATE users SET phone = \"1234567890\" WHERE (id = 1 AND email = \"john@example.com\")").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET phone = \"1234567890\" WHERE (id = 1 AND email = \"john@example.com\")", int64(1), nil).Return().Once()
+
+		whereUser := map[string]any{
+			"email": "john@example.com",
+		}
+		user := TestUser{
+			Phone: "1234567890",
+		}
+		result, err := s.query.Where("id", 1).UpdateOrInsert(whereUser, user)
+		s.Nil(err)
+		s.Equal(int64(1), result.RowsAffected)
+
+		mockResult.AssertExpectations(s.T())
+	})
+
+	s.Run("update record with map", func() {
+		var count int64
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().GetContext(s.ctx, &count, "SELECT COUNT(*) FROM users WHERE (id = ? AND email = ?)", 1, "john@example.com").Run(func(ctx context.Context, dest any, query string, args ...any) {
+			destCount := dest.(*int64)
+			*destCount = 1
+		}).Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT COUNT(*) FROM users WHERE (id = ? AND email = ?)", 1, "john@example.com").Return("SELECT COUNT(*) FROM users WHERE (id = 1 AND email = \"john@example.com\")").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(*) FROM users WHERE (id = 1 AND email = \"john@example.com\")", int64(-1), nil).Return().Once()
+
+		mockResult := &MockResult{}
+		mockResult.On("RowsAffected").Return(int64(1), nil)
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().ExecContext(s.ctx, "UPDATE users SET phone = ? WHERE (id = ? AND email = ?)", "1234567890", 1, "john@example.com").Return(mockResult, nil).Once()
+		s.mockDriver.EXPECT().Explain("UPDATE users SET phone = ? WHERE (id = ? AND email = ?)", "1234567890", 1, "john@example.com").Return("UPDATE users SET phone = \"1234567890\" WHERE (id = 1 AND email = \"john@example.com\")").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET phone = \"1234567890\" WHERE (id = 1 AND email = \"john@example.com\")", int64(1), nil).Return().Once()
+
+		whereUser := map[string]any{
+			"email": "john@example.com",
+		}
+		user := map[string]any{
+			"phone": "1234567890",
+		}
+		result, err := s.query.Where("id", 1).UpdateOrInsert(whereUser, user)
+		s.Nil(err)
+		s.Equal(int64(1), result.RowsAffected)
+
+		mockResult.AssertExpectations(s.T())
+	})
+
+	s.Run("insert record with struct", func() {
+		var count int64
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().GetContext(s.ctx, &count, "SELECT COUNT(*) FROM users WHERE (id = ? AND email = ?)", 1, "john@example.com").Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT COUNT(*) FROM users WHERE (id = ? AND email = ?)", 1, "john@example.com").Return("SELECT COUNT(*) FROM users WHERE (id = 1 AND email = \"john@example.com\")").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(*) FROM users WHERE (id = 1 AND email = \"john@example.com\")", int64(-1), nil).Return().Once()
+
+		mockResult := &MockResult{}
+		mockResult.On("RowsAffected").Return(int64(1), nil)
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().ExecContext(s.ctx, "INSERT INTO users (email,phone) VALUES (?,?)", "john@example.com", "1234567890").Return(mockResult, nil).Once()
+		s.mockDriver.EXPECT().Explain("INSERT INTO users (email,phone) VALUES (?,?)", "john@example.com", "1234567890").Return("INSERT INTO users (email,phone) VALUES (\"john@example.com\", \"1234567890\")").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "INSERT INTO users (email,phone) VALUES (\"john@example.com\", \"1234567890\")", int64(1), nil).Return().Once()
+
+		whereUser := TestUser{
+			Email: "john@example.com",
+		}
+		user := TestUser{
+			Phone: "1234567890",
+		}
+		result, err := s.query.Where("id", 1).UpdateOrInsert(whereUser, user)
+		s.Nil(err)
+		s.Equal(int64(1), result.RowsAffected)
+
+		mockResult.AssertExpectations(s.T())
 	})
 }
 

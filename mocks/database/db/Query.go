@@ -20,6 +20,53 @@ func (_m *Query) EXPECT() *Query_Expecter {
 	return &Query_Expecter{mock: &_m.Mock}
 }
 
+// Chunk provides a mock function with given fields: size, callback
+func (_m *Query) Chunk(size uint64, callback func([]db.Row) error) error {
+	ret := _m.Called(size, callback)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Chunk")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(uint64, func([]db.Row) error) error); ok {
+		r0 = rf(size, callback)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Query_Chunk_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Chunk'
+type Query_Chunk_Call struct {
+	*mock.Call
+}
+
+// Chunk is a helper method to define mock.On call
+//   - size uint64
+//   - callback func([]db.Row) error
+func (_e *Query_Expecter) Chunk(size interface{}, callback interface{}) *Query_Chunk_Call {
+	return &Query_Chunk_Call{Call: _e.mock.On("Chunk", size, callback)}
+}
+
+func (_c *Query_Chunk_Call) Run(run func(size uint64, callback func([]db.Row) error)) *Query_Chunk_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(uint64), args[1].(func([]db.Row) error))
+	})
+	return _c
+}
+
+func (_c *Query_Chunk_Call) Return(_a0 error) *Query_Chunk_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_Chunk_Call) RunAndReturn(run func(uint64, func([]db.Row) error) error) *Query_Chunk_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Count provides a mock function with no fields
 func (_m *Query) Count() (int64, error) {
 	ret := _m.Called()
@@ -411,6 +458,52 @@ func (_c *Query_DoesntExist_Call) RunAndReturn(run func() (bool, error)) *Query_
 	return _c
 }
 
+// Each provides a mock function with given fields: callback
+func (_m *Query) Each(callback func(db.Row) error) error {
+	ret := _m.Called(callback)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Each")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(func(db.Row) error) error); ok {
+		r0 = rf(callback)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Query_Each_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Each'
+type Query_Each_Call struct {
+	*mock.Call
+}
+
+// Each is a helper method to define mock.On call
+//   - callback func(db.Row) error
+func (_e *Query_Expecter) Each(callback interface{}) *Query_Each_Call {
+	return &Query_Each_Call{Call: _e.mock.On("Each", callback)}
+}
+
+func (_c *Query_Each_Call) Run(run func(callback func(db.Row) error)) *Query_Each_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func(db.Row) error))
+	})
+	return _c
+}
+
+func (_c *Query_Each_Call) Return(_a0 error) *Query_Each_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_Each_Call) RunAndReturn(run func(func(db.Row) error) error) *Query_Each_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Exists provides a mock function with no fields
 func (_m *Query) Exists() (bool, error) {
 	ret := _m.Called()
@@ -519,6 +612,63 @@ func (_c *Query_Find_Call) Return(_a0 error) *Query_Find_Call {
 }
 
 func (_c *Query_Find_Call) RunAndReturn(run func(interface{}, ...interface{}) error) *Query_Find_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// FindOrFail provides a mock function with given fields: dest, conds
+func (_m *Query) FindOrFail(dest interface{}, conds ...interface{}) error {
+	var _ca []interface{}
+	_ca = append(_ca, dest)
+	_ca = append(_ca, conds...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FindOrFail")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) error); ok {
+		r0 = rf(dest, conds...)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Query_FindOrFail_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindOrFail'
+type Query_FindOrFail_Call struct {
+	*mock.Call
+}
+
+// FindOrFail is a helper method to define mock.On call
+//   - dest interface{}
+//   - conds ...interface{}
+func (_e *Query_Expecter) FindOrFail(dest interface{}, conds ...interface{}) *Query_FindOrFail_Call {
+	return &Query_FindOrFail_Call{Call: _e.mock.On("FindOrFail",
+		append([]interface{}{dest}, conds...)...)}
+}
+
+func (_c *Query_FindOrFail_Call) Run(run func(dest interface{}, conds ...interface{})) *Query_FindOrFail_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].(interface{}), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Query_FindOrFail_Call) Return(_a0 error) *Query_FindOrFail_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_FindOrFail_Call) RunAndReturn(run func(interface{}, ...interface{}) error) *Query_FindOrFail_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -2352,6 +2502,53 @@ func (_c *Query_SharedLock_Call) RunAndReturn(run func() db.Query) *Query_Shared
 	return _c
 }
 
+// Sum provides a mock function with given fields: column, dest
+func (_m *Query) Sum(column string, dest interface{}) error {
+	ret := _m.Called(column, dest)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Sum")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, interface{}) error); ok {
+		r0 = rf(column, dest)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Query_Sum_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Sum'
+type Query_Sum_Call struct {
+	*mock.Call
+}
+
+// Sum is a helper method to define mock.On call
+//   - column string
+//   - dest interface{}
+func (_e *Query_Expecter) Sum(column interface{}, dest interface{}) *Query_Sum_Call {
+	return &Query_Sum_Call{Call: _e.mock.On("Sum", column, dest)}
+}
+
+func (_c *Query_Sum_Call) Run(run func(column string, dest interface{})) *Query_Sum_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(interface{}))
+	})
+	return _c
+}
+
+func (_c *Query_Sum_Call) Return(_a0 error) *Query_Sum_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_Sum_Call) RunAndReturn(run func(string, interface{}) error) *Query_Sum_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ToRawSql provides a mock function with no fields
 func (_m *Query) ToRawSql() db.ToSql {
 	ret := _m.Called()
@@ -2511,6 +2708,65 @@ func (_c *Query_Update_Call) Return(_a0 *db.Result, _a1 error) *Query_Update_Cal
 }
 
 func (_c *Query_Update_Call) RunAndReturn(run func(interface{}, ...interface{}) (*db.Result, error)) *Query_Update_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdateOrInsert provides a mock function with given fields: attributes, values
+func (_m *Query) UpdateOrInsert(attributes interface{}, values interface{}) (*db.Result, error) {
+	ret := _m.Called(attributes, values)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateOrInsert")
+	}
+
+	var r0 *db.Result
+	var r1 error
+	if rf, ok := ret.Get(0).(func(interface{}, interface{}) (*db.Result, error)); ok {
+		return rf(attributes, values)
+	}
+	if rf, ok := ret.Get(0).(func(interface{}, interface{}) *db.Result); ok {
+		r0 = rf(attributes, values)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*db.Result)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(interface{}, interface{}) error); ok {
+		r1 = rf(attributes, values)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Query_UpdateOrInsert_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateOrInsert'
+type Query_UpdateOrInsert_Call struct {
+	*mock.Call
+}
+
+// UpdateOrInsert is a helper method to define mock.On call
+//   - attributes interface{}
+//   - values interface{}
+func (_e *Query_Expecter) UpdateOrInsert(attributes interface{}, values interface{}) *Query_UpdateOrInsert_Call {
+	return &Query_UpdateOrInsert_Call{Call: _e.mock.On("UpdateOrInsert", attributes, values)}
+}
+
+func (_c *Query_UpdateOrInsert_Call) Run(run func(attributes interface{}, values interface{})) *Query_UpdateOrInsert_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(interface{}), args[1].(interface{}))
+	})
+	return _c
+}
+
+func (_c *Query_UpdateOrInsert_Call) Return(_a0 *db.Result, _a1 error) *Query_UpdateOrInsert_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Query_UpdateOrInsert_Call) RunAndReturn(run func(interface{}, interface{}) (*db.Result, error)) *Query_UpdateOrInsert_Call {
 	_c.Call.Return(run)
 	return _c
 }
