@@ -23,7 +23,7 @@ func NewRow(row map[string]any) *Row {
 func (r *Row) Scan(value any) error {
 	msConfig := &mapstructure.DecoderConfig{
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
-			ToTimeHookFunc(), ToCarbonHookFunc(), ToDeletedAtHookFunc(),
+			ToStringHookFunc(), ToTimeHookFunc(), ToCarbonHookFunc(), ToDeletedAtHookFunc(),
 		),
 		Squash: true,
 		Result: value,
@@ -38,6 +38,23 @@ func (r *Row) Scan(value any) error {
 	}
 
 	return decoder.Decode(r.row)
+}
+
+// ToStringHookFunc is a hook function that converts []uint8 to string.
+// Mysql returns []uint8 for String type when scanning the rows.
+func ToStringHookFunc() mapstructure.DecodeHookFunc {
+	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
+		if t != reflect.TypeOf("") {
+			return data, nil
+		}
+
+		dataSlice, ok := data.([]uint8)
+		if ok {
+			return string(dataSlice), nil
+		}
+
+		return data, nil
+	}
 }
 
 func ToTimeHookFunc() mapstructure.DecodeHookFunc {
