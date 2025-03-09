@@ -72,27 +72,27 @@ func (app *Application) Commands(commands []contractsconsole.Command) {
 }
 
 func (app *Application) Path(path ...string) string {
-	path = append([]string{"app"}, path...)
-	return filepath.Join(path...)
+	path = append([]string{support.RelativePath, "app"}, path...)
+	return app.absPath(path...)
 }
 
 func (app *Application) BasePath(path ...string) string {
-	return filepath.Join(path...)
+	return app.absPath(path...)
 }
 
 func (app *Application) ConfigPath(path ...string) string {
-	path = append([]string{"config"}, path...)
-	return filepath.Join(path...)
+	path = append([]string{support.RelativePath, "config"}, path...)
+	return app.absPath(path...)
 }
 
 func (app *Application) DatabasePath(path ...string) string {
-	path = append([]string{"database"}, path...)
-	return filepath.Join(path...)
+	path = append([]string{support.RelativePath, "database"}, path...)
+	return app.absPath(path...)
 }
 
 func (app *Application) StoragePath(path ...string) string {
-	path = append([]string{"storage"}, path...)
-	return filepath.Join(path...)
+	path = append([]string{support.RelativePath, "storage"}, path...)
+	return app.absPath(path...)
 }
 
 func (app *Application) LangPath(path ...string) string {
@@ -101,18 +101,18 @@ func (app *Application) LangPath(path ...string) string {
 		defaultPath = configFacade.GetString("app.lang_path", defaultPath)
 	}
 
-	path = append([]string{defaultPath}, path...)
-	return filepath.Join(path...)
+	path = append([]string{support.RelativePath, defaultPath}, path...)
+	return app.absPath(path...)
 }
 
 func (app *Application) PublicPath(path ...string) string {
-	path = append([]string{"public"}, path...)
-	return filepath.Join(path...)
+	path = append([]string{support.RelativePath, "public"}, path...)
+	return app.absPath(path...)
 }
 
 func (app *Application) ExecutablePath(path ...string) string {
 	path = append([]string{support.RootPath}, path...)
-	return filepath.Join(path...)
+	return app.absPath(path...)
 }
 
 func (app *Application) Publishes(packageName string, paths map[string]string, groups ...string) {
@@ -167,6 +167,16 @@ func (app *Application) About(section string, items []foundation.AboutItem) {
 
 func (app *Application) IsLocale(ctx context.Context, locale string) bool {
 	return app.CurrentLocale(ctx) == locale
+}
+
+// absPath ensures the returned path is absolute
+func (app *Application) absPath(paths ...string) string {
+	path := filepath.Join(paths...)
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return path
+	}
+	return abs
 }
 
 func (app *Application) addPublishGroup(group string, paths map[string]string) {
