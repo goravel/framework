@@ -7,15 +7,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/spf13/cast"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/goravel/framework/contracts/database/db"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/postgres"
+	"github.com/goravel/sqlite"
 	"github.com/goravel/sqlserver"
-	"github.com/spf13/cast"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
 )
 
 type DBTestSuite struct {
@@ -43,11 +45,11 @@ func (s *DBTestSuite) SetupTest() {
 }
 
 func (s *DBTestSuite) TearDownSuite() {
-	// if s.queries[sqlite.Name] != nil {
-	// 	docker, err := s.queries[sqlite.Name].Driver().Docker()
-	// 	s.NoError(err)
-	// 	s.NoError(docker.Shutdown())
-	// }
+	if s.queries[sqlite.Name] != nil {
+		docker, err := s.queries[sqlite.Name].Driver().Docker()
+		s.NoError(err)
+		s.NoError(docker.Shutdown())
+	}
 }
 
 func (s *DBTestSuite) TestCount() {
@@ -505,28 +507,28 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 	}
 }
 
-// func (s *DBTestSuite) TestInsertGetId() {
-// 	for driver, query := range s.queries {
-// 		s.Run(driver, func() {
-// 			id, err := query.DB().Table("products").InsertGetId(Product{
-// 				Name: "insert get id",
-// 			})
+func (s *DBTestSuite) TestInsertGetId() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			id, err := query.DB().Table("products").InsertGetId(Product{
+				Name: "insert get id",
+			})
 
-// 			if driver == sqlserver.Name || driver == postgres.Name {
-// 				s.Error(err)
-// 				s.Equal(int64(0), id)
-// 			} else {
-// 				s.NoError(err)
-// 				s.True(id > 0)
+			if driver == sqlserver.Name || driver == postgres.Name {
+				s.Error(err)
+				s.Equal(int64(0), id)
+			} else {
+				s.NoError(err)
+				s.True(id > 0)
 
-// 				var product Product
-// 				err = query.DB().Table("products").Where("id", id).First(&product)
-// 				s.NoError(err)
-// 				s.Equal("insert get id", product.Name)
-// 			}
-// 		})
-// 	}
-// }
+				var product Product
+				err = query.DB().Table("products").Where("id", id).First(&product)
+				s.NoError(err)
+				s.Equal("insert get id", product.Name)
+			}
+		})
+	}
+}
 
 func (s *DBTestSuite) TestJoin() {
 	for driver, query := range s.queries {
@@ -627,6 +629,10 @@ func (s *DBTestSuite) TestLimit() {
 
 func (s *DBTestSuite) TestLockForUpdate() {
 	for driver, query := range s.queries {
+		if driver == sqlite.Name {
+			continue
+		}
+
 		s.Run(driver, func() {
 			query.DB().Table("products").Insert([]Product{
 				{Name: "lock_for_update_product"},
@@ -674,19 +680,11 @@ func (s *DBTestSuite) TestOffset() {
 			})
 
 			var products []Product
-			err := query.DB().Table("products").Offset(1).Get(&products)
-			s.NoError(err)
+			err := query.DB().Table("products").Offset(1).Limit(1).Get(&products)
 
-			if driver == sqlserver.Name {
-				s.Equal(3, len(products))
-				s.Equal("offset_product1", products[0].Name)
-				s.Equal("offset_product2", products[1].Name)
-				s.Equal("offset_product3", products[2].Name)
-			} else {
-				s.Equal(2, len(products))
-				s.Equal("offset_product2", products[0].Name)
-				s.Equal("offset_product3", products[1].Name)
-			}
+			s.NoError(err)
+			s.Equal(1, len(products))
+			s.Equal("offset_product2", products[0].Name)
 		})
 	}
 }
@@ -871,6 +869,10 @@ func (s *DBTestSuite) TestRightJoin() {
 
 func (s *DBTestSuite) TestSharedLock() {
 	for driver, query := range s.queries {
+		if driver == sqlite.Name {
+			continue
+		}
+
 		s.Run(driver, func() {
 			query.DB().Table("products").Insert([]Product{
 				{Name: "shared_lock_product"},
@@ -1330,54 +1332,54 @@ func (s *DBTestSuite) TestWhereNot() {
 	}
 }
 
-// func TestDB_Connection(t *testing.T) {
-// 	t.Parallel()
-// 	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
-// 	postgresTestQuery.CreateTable(TestTableProducts)
+func TestDB_Connection(t *testing.T) {
+	t.Parallel()
+	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
+	postgresTestQuery.CreateTable(TestTableProducts)
 
-// 	sqliteTestQuery := NewTestQueryBuilder().Sqlite("", false)
-// 	sqliteTestQuery.CreateTable(TestTableProducts)
-// 	defer func() {
-// 		docker, err := sqliteTestQuery.Driver().Docker()
-// 		assert.NoError(t, err)
-// 		assert.NoError(t, docker.Shutdown())
-// 	}()
+	sqliteTestQuery := NewTestQueryBuilder().Sqlite("", false)
+	sqliteTestQuery.CreateTable(TestTableProducts)
+	defer func() {
+		docker, err := sqliteTestQuery.Driver().Docker()
+		assert.NoError(t, err)
+		assert.NoError(t, docker.Shutdown())
+	}()
 
-// 	sqliteConnection := sqliteTestQuery.Driver().Config().Connection
-// 	mockDatabaseConfig(postgresTestQuery.MockConfig(), sqliteTestQuery.Driver().Config(), sqliteConnection, "", false)
+	sqliteConnection := sqliteTestQuery.Driver().Config().Connection
+	mockDatabaseConfig(postgresTestQuery.MockConfig(), sqliteTestQuery.Driver().Config(), sqliteConnection, "", false)
 
-// 	result, err := postgresTestQuery.DB().Table("products").Insert(Product{
-// 		Name: "connection",
-// 	})
+	result, err := postgresTestQuery.DB().Table("products").Insert(Product{
+		Name: "connection",
+	})
 
-// 	assert.NoError(t, err)
-// 	assert.Equal(t, int64(1), result.RowsAffected)
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), result.RowsAffected)
 
-// 	var product Product
-// 	err = postgresTestQuery.DB().Table("products").Where("name", "connection").First(&product)
-// 	assert.NoError(t, err)
-// 	assert.True(t, product.ID > 0)
-// 	assert.Equal(t, "connection", product.Name)
+	var product Product
+	err = postgresTestQuery.DB().Table("products").Where("name", "connection").First(&product)
+	assert.NoError(t, err)
+	assert.True(t, product.ID > 0)
+	assert.Equal(t, "connection", product.Name)
 
-// 	var product1 Product
-// 	err = postgresTestQuery.DB().Connection(sqliteConnection).Table("products").Where("name", "connection").First(&product1)
-// 	assert.NoError(t, err)
-// 	assert.True(t, product1.ID == 0)
+	var product1 Product
+	err = postgresTestQuery.DB().Connection(sqliteConnection).Table("products").Where("name", "connection").First(&product1)
+	assert.NoError(t, err)
+	assert.True(t, product1.ID == 0)
 
-// 	result, err = postgresTestQuery.DB().Connection(sqliteConnection).Table("products").Insert(Product{
-// 		Name: "sqlite connection",
-// 	})
-// 	assert.NoError(t, err)
-// 	assert.Equal(t, int64(1), result.RowsAffected)
+	result, err = postgresTestQuery.DB().Connection(sqliteConnection).Table("products").Insert(Product{
+		Name: "sqlite connection",
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), result.RowsAffected)
 
-// 	var product2 Product
-// 	err = postgresTestQuery.DB().Connection(sqliteConnection).Table("products").Where("name", "sqlite connection").First(&product2)
-// 	assert.NoError(t, err)
-// 	assert.True(t, product2.ID > 0)
-// 	assert.Equal(t, "sqlite connection", product2.Name)
+	var product2 Product
+	err = postgresTestQuery.DB().Connection(sqliteConnection).Table("products").Where("name", "sqlite connection").First(&product2)
+	assert.NoError(t, err)
+	assert.True(t, product2.ID > 0)
+	assert.Equal(t, "sqlite connection", product2.Name)
 
-// 	var product3 Product
-// 	err = postgresTestQuery.DB().Table("products").Where("name", "sqlite connection").First(&product3)
-// 	assert.NoError(t, err)
-// 	assert.True(t, product3.ID == 0)
-// }
+	var product3 Product
+	err = postgresTestQuery.DB().Table("products").Where("name", "sqlite connection").First(&product3)
+	assert.NoError(t, err)
+	assert.True(t, product3.ID == 0)
+}

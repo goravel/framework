@@ -67,6 +67,53 @@ func (_c *Blueprint_GetAddedColumns_Call) RunAndReturn(run func() []driver.Colum
 	return _c
 }
 
+// GetCommands provides a mock function with no fields
+func (_m *Blueprint) GetCommands() []*driver.Command {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetCommands")
+	}
+
+	var r0 []*driver.Command
+	if rf, ok := ret.Get(0).(func() []*driver.Command); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*driver.Command)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_GetCommands_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetCommands'
+type Blueprint_GetCommands_Call struct {
+	*mock.Call
+}
+
+// GetCommands is a helper method to define mock.On call
+func (_e *Blueprint_Expecter) GetCommands() *Blueprint_GetCommands_Call {
+	return &Blueprint_GetCommands_Call{Call: _e.mock.On("GetCommands")}
+}
+
+func (_c *Blueprint_GetCommands_Call) Run(run func()) *Blueprint_GetCommands_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Blueprint_GetCommands_Call) Return(_a0 []*driver.Command) *Blueprint_GetCommands_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_GetCommands_Call) RunAndReturn(run func() []*driver.Command) *Blueprint_GetCommands_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetTableName provides a mock function with no fields
 func (_m *Blueprint) GetTableName() string {
 	ret := _m.Called()

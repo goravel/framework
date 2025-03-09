@@ -2,6 +2,7 @@ package driver
 
 import (
 	sq "github.com/Masterminds/squirrel"
+	"github.com/goravel/framework/contracts/database/orm"
 	"gorm.io/gorm/clause"
 )
 
@@ -159,11 +160,19 @@ type CompileLimitGrammar interface {
 }
 
 type Schema interface {
+	// GetColumns Get the columns for a given table.
+	GetColumns(table string) ([]Column, error)
+	// GetIndexes Get the indexes for a given table.
+	GetIndexes(table string) ([]Index, error)
+	// Orm Get the orm instance.
+	Orm() orm.Orm
 }
 
 type Blueprint interface {
 	// GetAddedColumns Get the added columns.
 	GetAddedColumns() []ColumnDefinition
+	// GetCommands Get the commands.
+	GetCommands() []*Command
 	// GetTableName Get the table name with prefix.
 	GetTableName() string
 	// HasCommand Determine if the blueprint has a specific command.

@@ -10,6 +10,7 @@ import (
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/postgres"
+	"github.com/goravel/sqlite"
 )
 
 type OrmSuite struct {
@@ -45,11 +46,11 @@ func (s *OrmSuite) SetupTest() {
 }
 
 func (s *OrmSuite) TearDownSuite() {
-	// if s.queries[sqlite.Name] != nil {
-	// 	docker, err := s.queries[sqlite.Name].Driver().Docker()
-	// 	s.NoError(err)
-	// 	s.NoError(docker.Shutdown())
-	// }
+	if s.queries[sqlite.Name] != nil {
+		docker, err := s.queries[sqlite.Name].Driver().Docker()
+		s.NoError(err)
+		s.NoError(docker.Shutdown())
+	}
 }
 
 func (s *OrmSuite) TestConnection() {
