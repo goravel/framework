@@ -1364,9 +1364,9 @@ func (_c *Grammar_CompileRename_Call) RunAndReturn(run func(driver.Blueprint, *d
 	return _c
 }
 
-// CompileRenameColumn provides a mock function with given fields: schema, blueprint, command
-func (_m *Grammar) CompileRenameColumn(schema driver.Schema, blueprint driver.Blueprint, command *driver.Command) (string, error) {
-	ret := _m.Called(schema, blueprint, command)
+// CompileRenameColumn provides a mock function with given fields: blueprint, command, columns
+func (_m *Grammar) CompileRenameColumn(blueprint driver.Blueprint, command *driver.Command, columns []driver.Column) (string, error) {
+	ret := _m.Called(blueprint, command, columns)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CompileRenameColumn")
@@ -1374,17 +1374,17 @@ func (_m *Grammar) CompileRenameColumn(schema driver.Schema, blueprint driver.Bl
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(driver.Schema, driver.Blueprint, *driver.Command) (string, error)); ok {
-		return rf(schema, blueprint, command)
+	if rf, ok := ret.Get(0).(func(driver.Blueprint, *driver.Command, []driver.Column) (string, error)); ok {
+		return rf(blueprint, command, columns)
 	}
-	if rf, ok := ret.Get(0).(func(driver.Schema, driver.Blueprint, *driver.Command) string); ok {
-		r0 = rf(schema, blueprint, command)
+	if rf, ok := ret.Get(0).(func(driver.Blueprint, *driver.Command, []driver.Column) string); ok {
+		r0 = rf(blueprint, command, columns)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(driver.Schema, driver.Blueprint, *driver.Command) error); ok {
-		r1 = rf(schema, blueprint, command)
+	if rf, ok := ret.Get(1).(func(driver.Blueprint, *driver.Command, []driver.Column) error); ok {
+		r1 = rf(blueprint, command, columns)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1398,16 +1398,16 @@ type Grammar_CompileRenameColumn_Call struct {
 }
 
 // CompileRenameColumn is a helper method to define mock.On call
-//   - schema driver.Schema
 //   - blueprint driver.Blueprint
 //   - command *driver.Command
-func (_e *Grammar_Expecter) CompileRenameColumn(schema interface{}, blueprint interface{}, command interface{}) *Grammar_CompileRenameColumn_Call {
-	return &Grammar_CompileRenameColumn_Call{Call: _e.mock.On("CompileRenameColumn", schema, blueprint, command)}
+//   - columns []driver.Column
+func (_e *Grammar_Expecter) CompileRenameColumn(blueprint interface{}, command interface{}, columns interface{}) *Grammar_CompileRenameColumn_Call {
+	return &Grammar_CompileRenameColumn_Call{Call: _e.mock.On("CompileRenameColumn", blueprint, command, columns)}
 }
 
-func (_c *Grammar_CompileRenameColumn_Call) Run(run func(schema driver.Schema, blueprint driver.Blueprint, command *driver.Command)) *Grammar_CompileRenameColumn_Call {
+func (_c *Grammar_CompileRenameColumn_Call) Run(run func(blueprint driver.Blueprint, command *driver.Command, columns []driver.Column)) *Grammar_CompileRenameColumn_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(driver.Schema), args[1].(driver.Blueprint), args[2].(*driver.Command))
+		run(args[0].(driver.Blueprint), args[1].(*driver.Command), args[2].([]driver.Column))
 	})
 	return _c
 }
@@ -1417,22 +1417,22 @@ func (_c *Grammar_CompileRenameColumn_Call) Return(_a0 string, _a1 error) *Gramm
 	return _c
 }
 
-func (_c *Grammar_CompileRenameColumn_Call) RunAndReturn(run func(driver.Schema, driver.Blueprint, *driver.Command) (string, error)) *Grammar_CompileRenameColumn_Call {
+func (_c *Grammar_CompileRenameColumn_Call) RunAndReturn(run func(driver.Blueprint, *driver.Command, []driver.Column) (string, error)) *Grammar_CompileRenameColumn_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// CompileRenameIndex provides a mock function with given fields: schema, blueprint, command
-func (_m *Grammar) CompileRenameIndex(schema driver.Schema, blueprint driver.Blueprint, command *driver.Command) []string {
-	ret := _m.Called(schema, blueprint, command)
+// CompileRenameIndex provides a mock function with given fields: blueprint, command, indexes
+func (_m *Grammar) CompileRenameIndex(blueprint driver.Blueprint, command *driver.Command, indexes []driver.Index) []string {
+	ret := _m.Called(blueprint, command, indexes)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CompileRenameIndex")
 	}
 
 	var r0 []string
-	if rf, ok := ret.Get(0).(func(driver.Schema, driver.Blueprint, *driver.Command) []string); ok {
-		r0 = rf(schema, blueprint, command)
+	if rf, ok := ret.Get(0).(func(driver.Blueprint, *driver.Command, []driver.Index) []string); ok {
+		r0 = rf(blueprint, command, indexes)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]string)
@@ -1448,16 +1448,16 @@ type Grammar_CompileRenameIndex_Call struct {
 }
 
 // CompileRenameIndex is a helper method to define mock.On call
-//   - schema driver.Schema
 //   - blueprint driver.Blueprint
 //   - command *driver.Command
-func (_e *Grammar_Expecter) CompileRenameIndex(schema interface{}, blueprint interface{}, command interface{}) *Grammar_CompileRenameIndex_Call {
-	return &Grammar_CompileRenameIndex_Call{Call: _e.mock.On("CompileRenameIndex", schema, blueprint, command)}
+//   - indexes []driver.Index
+func (_e *Grammar_Expecter) CompileRenameIndex(blueprint interface{}, command interface{}, indexes interface{}) *Grammar_CompileRenameIndex_Call {
+	return &Grammar_CompileRenameIndex_Call{Call: _e.mock.On("CompileRenameIndex", blueprint, command, indexes)}
 }
 
-func (_c *Grammar_CompileRenameIndex_Call) Run(run func(schema driver.Schema, blueprint driver.Blueprint, command *driver.Command)) *Grammar_CompileRenameIndex_Call {
+func (_c *Grammar_CompileRenameIndex_Call) Run(run func(blueprint driver.Blueprint, command *driver.Command, indexes []driver.Index)) *Grammar_CompileRenameIndex_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(driver.Schema), args[1].(driver.Blueprint), args[2].(*driver.Command))
+		run(args[0].(driver.Blueprint), args[1].(*driver.Command), args[2].([]driver.Index))
 	})
 	return _c
 }
@@ -1467,7 +1467,7 @@ func (_c *Grammar_CompileRenameIndex_Call) Return(_a0 []string) *Grammar_Compile
 	return _c
 }
 
-func (_c *Grammar_CompileRenameIndex_Call) RunAndReturn(run func(driver.Schema, driver.Blueprint, *driver.Command) []string) *Grammar_CompileRenameIndex_Call {
+func (_c *Grammar_CompileRenameIndex_Call) RunAndReturn(run func(driver.Blueprint, *driver.Command, []driver.Index) []string) *Grammar_CompileRenameIndex_Call {
 	_c.Call.Return(run)
 	return _c
 }

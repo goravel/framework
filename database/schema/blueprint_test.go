@@ -10,12 +10,14 @@ import (
 	"github.com/goravel/framework/contracts/database/schema"
 	mocksdriver "github.com/goravel/framework/mocks/database/driver"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
+	mocksschema "github.com/goravel/framework/mocks/database/schema"
 	"github.com/goravel/framework/support/convert"
 )
 
 type BlueprintTestSuite struct {
 	suite.Suite
-	blueprint *Blueprint
+	mockSchema *mocksschema.Schema
+	blueprint  *Blueprint
 }
 
 func TestBlueprintTestSuite(t *testing.T) {
@@ -23,7 +25,9 @@ func TestBlueprintTestSuite(t *testing.T) {
 }
 
 func (s *BlueprintTestSuite) SetupTest() {
-	s.blueprint = NewBlueprint(nil, "goravel_", "users")
+	s.mockSchema = mocksschema.NewSchema(s.T())
+
+	s.blueprint = NewBlueprint(s.mockSchema, "goravel_", "users")
 }
 
 func (s *BlueprintTestSuite) TestAddAttributeCommands() {
@@ -611,9 +615,17 @@ func (s *BlueprintTestSuite) TestToSql() {
 			name: "Rename index command",
 			setup: func() {
 				s.blueprint.RenameIndex("old_index", "new_index")
+				s.mockSchema.EXPECT().GetIndexes(s.blueprint.GetTableName()).Return([]driver.Index{
+					{
+						Name: "old_index",
+					},
+				}, nil).Once()
 				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{}).Once()
-				mockGrammar.EXPECT().CompileRenameIndex(s.blueprint.schema, s.blueprint, s.blueprint.commands[0]).
-					Return([]string{"ALTER INDEX old_index RENAME TO new_index"}).Once()
+				mockGrammar.EXPECT().CompileRenameIndex(s.blueprint, s.blueprint.commands[0], []driver.Index{
+					{
+						Name: "old_index",
+					},
+				}).Return([]string{"ALTER INDEX old_index RENAME TO new_index"}).Once()
 			},
 			expectedSQL: []string{"ALTER INDEX old_index RENAME TO new_index"},
 		},
