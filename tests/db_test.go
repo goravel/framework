@@ -206,11 +206,11 @@ func (s *DBTestSuite) TestCursor() {
 }
 
 func (s *DBTestSuite) Test_DB_Select_Update_Delete() {
-	insertSql := "INSERT INTO products (name) VALUES (?)"
-	updateSql := "UPDATE products SET name = ? WHERE id = ?"
-	deleteSql := "DELETE FROM products WHERE id = ?"
-
 	for driver, query := range s.queries {
+		insertSql := "INSERT INTO products (name) VALUES (?)"
+		updateSql := "UPDATE products SET name = ? WHERE id = ?"
+		deleteSql := "DELETE FROM products WHERE id = ?"
+
 		s.Run(driver, func() {
 			if driver == sqlserver.Name {
 				insertSql = "INSERT INTO products (name) VALUES (@p1)"
