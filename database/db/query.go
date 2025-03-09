@@ -56,12 +56,7 @@ func (r *Query) Chunk(size uint64, callback func(rows []db.Row) error) error {
 
 		var destSlice []db.Row
 		for row := range rows {
-			var dest map[string]any
-			if err := row.Scan(&dest); err != nil {
-				return err
-			}
-
-			destSlice = append(destSlice, NewRow(dest))
+			destSlice = append(destSlice, row)
 		}
 
 		if len(destSlice) == 0 {

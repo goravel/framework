@@ -4,12 +4,16 @@ import (
 	"fmt"
 	"strconv"
 	"testing"
+	"time"
 
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
+	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/mysql"
 	"github.com/goravel/postgres"
+	"github.com/goravel/sqlite"
 	"github.com/goravel/sqlserver"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -41,11 +45,11 @@ func (s *QueryTestSuite) SetupTest() {
 }
 
 func (s *QueryTestSuite) TearDownSuite() {
-	// if s.queries[sqlite.Name] != nil {
-	// 	docker, err := s.queries[sqlite.Name].Driver().Docker()
-	// 	s.NoError(err)
-	// 	s.NoError(docker.Shutdown())
-	// }
+	if s.queries[sqlite.Name] != nil {
+		docker, err := s.queries[sqlite.Name].Driver().Docker()
+		s.NoError(err)
+		s.NoError(docker.Shutdown())
+	}
 }
 
 func (s *QueryTestSuite) TestAssociation() {
@@ -600,32 +604,32 @@ func (s *QueryTestSuite) TestCursor() {
 	}
 }
 
-// func (s *QueryTestSuite) TestDBRaw() {
-// 	userName := "db_raw"
-// 	for driver, query := range s.queries {
-// 		s.Run(driver, func() {
-// 			user := User{Name: userName}
+func (s *QueryTestSuite) TestDBRaw() {
+	userName := "db_raw"
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			user := User{Name: userName}
 
-// 			s.Nil(query.Query().Create(&user))
-// 			s.True(user.ID > 0)
-// 			switch driver {
-// 			case sqlserver.Name, mysql.Name:
-// 				res, err := query.Query().Model(&user).Update("Name", databasedb.Raw("concat(name, ?)", driver))
-// 				s.Nil(err)
-// 				s.Equal(int64(1), res.RowsAffected)
-// 			default:
-// 				res, err := query.Query().Model(&user).Update("Name", databasedb.Raw("name || ?", driver))
-// 				s.Nil(err)
-// 				s.Equal(int64(1), res.RowsAffected)
-// 			}
+			s.Nil(query.Query().Create(&user))
+			s.True(user.ID > 0)
+			switch driver {
+			case sqlserver.Name, mysql.Name:
+				res, err := query.Query().Model(&user).Update("Name", databasedb.Raw("concat(name, ?)", driver))
+				s.Nil(err)
+				s.Equal(int64(1), res.RowsAffected)
+			default:
+				res, err := query.Query().Model(&user).Update("Name", databasedb.Raw("name || ?", driver))
+				s.Nil(err)
+				s.Equal(int64(1), res.RowsAffected)
+			}
 
-// 			var user1 User
-// 			s.Nil(query.Query().Find(&user1, user.ID))
-// 			s.True(user1.ID > 0)
-// 			s.True(user1.Name == userName+driver)
-// 		})
-// 	}
-// }
+			var user1 User
+			s.Nil(query.Query().Find(&user1, user.ID))
+			s.True(user1.ID > 0)
+			s.True(user1.Name == userName+driver)
+		})
+	}
+}
 
 func (s *QueryTestSuite) TestDelete() {
 	for _, query := range s.queries {
@@ -2086,38 +2090,40 @@ func (s *QueryTestSuite) TestJoin() {
 	}
 }
 
-// func (s *QueryTestSuite) TestLockForUpdate() {
-// 	for driver, query := range s.queries {
-// 		if driver != sqlite.Name {
-// 			s.Run(driver, func() {
-// 				user := User{Name: "lock_for_update_user"}
-// 				s.Nil(query.Query().Create(&user))
-// 				s.True(user.ID > 0)
+func (s *QueryTestSuite) TestLockForUpdate() {
+	for driver, query := range s.queries {
+		if driver == sqlite.Name {
+			continue
+		}
 
-// 				for i := 0; i < 10; i++ {
-// 					go func() {
-// 						tx, err := query.Query().Begin()
-// 						s.Nil(err)
+		s.Run(driver, func() {
+			user := User{Name: "lock_for_update_user"}
+			s.Nil(query.Query().Create(&user))
+			s.True(user.ID > 0)
 
-// 						var user1 User
-// 						s.Nil(tx.LockForUpdate().Find(&user1, user.ID))
-// 						s.True(user1.ID > 0)
-// 						user1.Name += "1"
-// 						s.Nil(tx.Save(&user1))
+			for i := 0; i < 10; i++ {
+				go func() {
+					tx, err := query.Query().Begin()
+					s.Nil(err)
 
-// 						s.Nil(tx.Commit())
-// 					}()
-// 				}
+					var user1 User
+					s.Nil(tx.LockForUpdate().Find(&user1, user.ID))
+					s.True(user1.ID > 0)
+					user1.Name += "1"
+					s.Nil(tx.Save(&user1))
 
-// 				time.Sleep(2 * time.Second)
+					s.Nil(tx.Commit())
+				}()
+			}
 
-// 				var user2 User
-// 				s.Nil(query.Query().Find(&user2, user.ID))
-// 				s.Equal("lock_for_update_user1111111111", user2.Name)
-// 			})
-// 		}
-// 	}
-// }
+			time.Sleep(2 * time.Second)
+
+			var user2 User
+			s.Nil(query.Query().Find(&user2, user.ID))
+			s.Equal("lock_for_update_user1111111111", user2.Name)
+		})
+	}
+}
 
 func (s *QueryTestSuite) TestOffset() {
 	for driver, query := range s.queries {
@@ -2882,36 +2888,38 @@ func (s *QueryTestSuite) TestSelect() {
 	}
 }
 
-// func (s *QueryTestSuite) TestSharedLock() {
-// 	for driver, query := range s.queries {
-// 		if driver != sqlite.Name {
-// 			s.Run(driver, func() {
-// 				user := User{Name: "shared_lock_user"}
-// 				s.Nil(query.Query().Create(&user))
-// 				s.True(user.ID > 0)
+func (s *QueryTestSuite) TestSharedLock() {
+	for driver, query := range s.queries {
+		if driver == sqlite.Name {
+			continue
+		}
 
-// 				tx, err := query.Query().Begin()
-// 				s.Nil(err)
-// 				var user1 User
-// 				s.Nil(tx.SharedLock().Find(&user1, user.ID))
-// 				s.True(user1.ID > 0)
+		s.Run(driver, func() {
+			user := User{Name: "shared_lock_user"}
+			s.Nil(query.Query().Create(&user))
+			s.True(user.ID > 0)
 
-// 				var user2 User
-// 				s.Nil(query.Query().SharedLock().Find(&user2, user.ID))
-// 				s.True(user2.ID > 0)
+			tx, err := query.Query().Begin()
+			s.Nil(err)
+			var user1 User
+			s.Nil(tx.SharedLock().Find(&user1, user.ID))
+			s.True(user1.ID > 0)
 
-// 				user1.Name += "1"
-// 				s.Nil(tx.Save(&user1))
+			var user2 User
+			s.Nil(query.Query().SharedLock().Find(&user2, user.ID))
+			s.True(user2.ID > 0)
 
-// 				s.Nil(tx.Commit())
+			user1.Name += "1"
+			s.Nil(tx.Save(&user1))
 
-// 				var user3 User
-// 				s.Nil(query.Query().Find(&user3, user.ID))
-// 				s.Equal("shared_lock_user1", user3.Name)
-// 			})
-// 		}
-// 	}
-// }
+			s.Nil(tx.Commit())
+
+			var user3 User
+			s.Nil(query.Query().Find(&user3, user.ID))
+			s.Equal("shared_lock_user1", user3.Name)
+		})
+	}
+}
 
 func (s *QueryTestSuite) TestSoftDelete() {
 	for driver, query := range s.queries {
@@ -3579,106 +3587,106 @@ func (s *QueryTestSuite) TestWithNesting() {
 	}
 }
 
-// func TestCustomConnection(t *testing.T) {
-// 	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
-// 	postgresTestQuery.CreateTable(TestTableReviews, TestTableProducts)
+func TestCustomConnection(t *testing.T) {
+	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
+	postgresTestQuery.CreateTable(TestTableReviews, TestTableProducts)
 
-// 	sqliteTestQuery := NewTestQueryBuilder().Sqlite("", false)
-// 	sqliteTestQuery.CreateTable(TestTableReviews, TestTableProducts)
+	sqliteTestQuery := NewTestQueryBuilder().Sqlite("", false)
+	sqliteTestQuery.CreateTable(TestTableReviews, TestTableProducts)
 
-// 	query := postgresTestQuery.Query()
+	query := postgresTestQuery.Query()
 
-// 	review := Review{Body: "create_review"}
-// 	assert.Nil(t, query.Create(&review))
-// 	assert.True(t, review.ID > 0)
+	review := Review{Body: "create_review"}
+	assert.Nil(t, query.Create(&review))
+	assert.True(t, review.ID > 0)
 
-// 	var review1 Review
-// 	assert.Nil(t, query.Where("body", "create_review").First(&review1))
-// 	assert.True(t, review1.ID > 0)
+	var review1 Review
+	assert.Nil(t, query.Where("body", "create_review").First(&review1))
+	assert.True(t, review1.ID > 0)
 
-// 	mockDatabaseConfig(postgresTestQuery.MockConfig(), sqliteTestQuery.Driver().Config(), "sqlite", "", false)
+	mockDatabaseConfig(postgresTestQuery.MockConfig(), sqliteTestQuery.Driver().Config(), "sqlite", "", false)
 
-// 	product := Product{Name: "create_product"}
-// 	assert.Nil(t, query.Create(&product))
-// 	assert.True(t, product.ID > 0)
+	product := Product{Name: "create_product"}
+	assert.Nil(t, query.Create(&product))
+	assert.True(t, product.ID > 0)
 
-// 	var product1 Product
-// 	assert.Nil(t, query.Where("name", "create_product").First(&product1))
-// 	assert.True(t, product1.ID > 0)
+	var product1 Product
+	assert.Nil(t, query.Where("name", "create_product").First(&product1))
+	assert.True(t, product1.ID > 0)
 
-// 	var product2 Product
-// 	assert.Nil(t, query.Where("name", "create_product1").First(&product2))
-// 	assert.True(t, product2.ID == 0)
+	var product2 Product
+	assert.Nil(t, query.Where("name", "create_product1").First(&product2))
+	assert.True(t, product2.ID == 0)
 
-// 	mockDatabaseConfig(postgresTestQuery.MockConfig(), postgresTestQuery.Driver().Config(), "dummy", "", false)
+	mockDatabaseConfig(postgresTestQuery.MockConfig(), postgresTestQuery.Driver().Config(), "dummy", "", false)
 
-// 	person := Person{Name: "create_person"}
-// 	assert.NotNil(t, query.Create(&person))
-// 	assert.True(t, person.ID == 0)
+	person := Person{Name: "create_person"}
+	assert.NotNil(t, query.Create(&person))
+	assert.True(t, person.ID == 0)
 
-// 	docker, err := sqliteTestQuery.Driver().Docker()
-// 	assert.NoError(t, err)
-// 	assert.NoError(t, docker.Shutdown())
-// }
+	docker, err := sqliteTestQuery.Driver().Docker()
+	assert.NoError(t, err)
+	assert.NoError(t, docker.Shutdown())
+}
 
-// func TestReadWriteSeparate(t *testing.T) {
-// 	dbs := NewTestQueryBuilder().AllOfReadWrite()
+func TestReadWriteSeparate(t *testing.T) {
+	dbs := NewTestQueryBuilder().AllOfReadWrite()
 
-// 	for drive, db := range dbs {
-// 		t.Run(drive, func(t *testing.T) {
-// 			db["read"].CreateTable(TestTableUsers)
-// 			db["write"].CreateTable(TestTableUsers)
+	for drive, db := range dbs {
+		t.Run(drive, func(t *testing.T) {
+			db["read"].CreateTable(TestTableUsers)
+			db["write"].CreateTable(TestTableUsers)
 
-// 			user1 := User{Name: "user"}
-// 			assert.Nil(t, db["mix"].Query().Create(&user1))
-// 			assert.True(t, user1.ID > 0)
+			user1 := User{Name: "user"}
+			assert.Nil(t, db["mix"].Query().Create(&user1))
+			assert.True(t, user1.ID > 0)
 
-// 			var user2 User
-// 			assert.Nil(t, db["mix"].Query().Find(&user2, user1.ID))
-// 			assert.True(t, user2.ID == 0)
+			var user2 User
+			assert.Nil(t, db["mix"].Query().Find(&user2, user1.ID))
+			assert.True(t, user2.ID == 0)
 
-// 			var user3 User
-// 			assert.Nil(t, db["read"].Query().Find(&user3, user1.ID))
-// 			assert.True(t, user3.ID == 0)
+			var user3 User
+			assert.Nil(t, db["read"].Query().Find(&user3, user1.ID))
+			assert.True(t, user3.ID == 0)
 
-// 			var user4 User
-// 			assert.Nil(t, db["write"].Query().Find(&user4, user1.ID))
-// 			assert.True(t, user4.ID > 0)
-// 		})
-// 	}
+			var user4 User
+			assert.Nil(t, db["write"].Query().Find(&user4, user1.ID))
+			assert.True(t, user4.ID > 0)
+		})
+	}
 
-// 	docker, err := dbs[sqlite.Name]["read"].Driver().Docker()
-// 	assert.NoError(t, err)
-// 	assert.NoError(t, docker.Shutdown())
+	docker, err := dbs[sqlite.Name]["read"].Driver().Docker()
+	assert.NoError(t, err)
+	assert.NoError(t, docker.Shutdown())
 
-// 	docker, err = dbs[sqlite.Name]["write"].Driver().Docker()
-// 	assert.NoError(t, err)
-// 	assert.NoError(t, docker.Shutdown())
-// }
+	docker, err = dbs[sqlite.Name]["write"].Driver().Docker()
+	assert.NoError(t, err)
+	assert.NoError(t, docker.Shutdown())
+}
 
-// func TestTablePrefixAndSingular(t *testing.T) {
-// 	queries := NewTestQueryBuilder().All("goravel_", true)
+func TestTablePrefixAndSingular(t *testing.T) {
+	queries := NewTestQueryBuilder().All("goravel_", true)
 
-// 	for drive, query := range queries {
-// 		t.Run(drive, func(t *testing.T) {
-// 			query.CreateTable(TestTableUser)
+	for drive, query := range queries {
+		t.Run(drive, func(t *testing.T) {
+			query.CreateTable(TestTableUser)
 
-// 			user := User{Name: "user"}
-// 			assert.Nil(t, query.Query().Create(&user))
-// 			assert.True(t, user.ID > 0)
+			user := User{Name: "user"}
+			assert.Nil(t, query.Query().Create(&user))
+			assert.True(t, user.ID > 0)
 
-// 			var user1 User
-// 			assert.Nil(t, query.Query().Find(&user1, user.ID))
-// 			assert.True(t, user1.ID > 0)
-// 		})
-// 	}
+			var user1 User
+			assert.Nil(t, query.Query().Find(&user1, user.ID))
+			assert.True(t, user1.ID > 0)
+		})
+	}
 
-// 	if queries[sqlite.Name] != nil {
-// 		docker, err := queries[sqlite.Name].Driver().Docker()
-// 		assert.NoError(t, err)
-// 		assert.NoError(t, docker.Shutdown())
-// 	}
-// }
+	if queries[sqlite.Name] != nil {
+		docker, err := queries[sqlite.Name].Driver().Docker()
+		assert.NoError(t, err)
+		assert.NoError(t, docker.Shutdown())
+	}
+}
 
 func TestPostgresWithSchema(t *testing.T) {
 	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
@@ -3694,19 +3702,19 @@ func TestPostgresWithSchema(t *testing.T) {
 	assert.True(t, user1.ID > 0)
 }
 
-// func TestSqlserverWithSchema(t *testing.T) {
-// 	sqlserverTestQuery := NewTestQueryBuilder().Sqlserver("", false)
-// 	sqlserverTestQuery.WithSchema(testSchema)
-// 	sqlserverTestQuery.CreateTable(TestTableSchema)
+func TestSqlserverWithSchema(t *testing.T) {
+	sqlserverTestQuery := NewTestQueryBuilder().Sqlserver("", false)
+	sqlserverTestQuery.WithSchema(testSchema)
+	sqlserverTestQuery.CreateTable(TestTableSchema)
 
-// 	schema := Schema{Name: "first_schema"}
-// 	assert.Nil(t, sqlserverTestQuery.Query().Create(&schema))
-// 	assert.True(t, schema.ID > 0)
+	schema := Schema{Name: "first_schema"}
+	assert.Nil(t, sqlserverTestQuery.Query().Create(&schema))
+	assert.True(t, schema.ID > 0)
 
-// 	var schema1 Schema
-// 	assert.Nil(t, sqlserverTestQuery.Query().Where("name", "first_schema").First(&schema1))
-// 	assert.True(t, schema1.ID > 0)
-// }
+	var schema1 Schema
+	assert.Nil(t, sqlserverTestQuery.Query().Where("name", "first_schema").First(&schema1))
+	assert.True(t, schema1.ID > 0)
+}
 
 func paginator(page string, limit string) func(methods contractsorm.Query) contractsorm.Query {
 	return func(query contractsorm.Query) contractsorm.Query {
