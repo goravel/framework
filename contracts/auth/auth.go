@@ -4,23 +4,34 @@ import (
 	"time"
 )
 
-type Auth interface {
-	// Guard attempts to get the guard against the local cache.
-	Guard(name string) Auth
-	// Parse the given token.
-	Parse(token string) (*Payload, error)
+type Guard interface {
+	// Check whether user logged in or not
+	Check() bool
+
+	// Check whether user *not* logged in or not | !Check()
+	Guest() bool
+
 	// User returns the current authenticated user.
 	User(user any) error
 	// ID returns the current user id.
 	ID() (string, error)
 	// Login logs a user into the application.
-	Login(user any) (token string, err error)
+	Login(user any) (err error)
 	// LoginUsingID logs the given user ID into the application.
-	LoginUsingID(id any) (token string, err error)
-	// Refresh the token for the current user.
-	Refresh() (token string, err error)
+	LoginUsingID(id any) (err error)
 	// Logout logs the user out of the application.
 	Logout() error
+}
+
+type Auth interface {
+	Guard
+	// Guard attempts to get the guard against the local cache.
+	Guard(name string) Auth
+}
+
+type UserProvider interface {
+	RetriveById(any) (any, error)
+	RetriveByCredentials(map[string]any) (any, error)
 }
 
 type Payload struct {
