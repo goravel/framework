@@ -70,7 +70,7 @@ func (a *JwtGuard) Check() bool {
 }
 
 func (a *JwtGuard) Guest() bool {
-	return a.Check() == false
+	return !a.Check()
 }
 
 func (a *JwtGuard) ID() (string, error) {
