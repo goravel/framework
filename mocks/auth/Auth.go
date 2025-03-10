@@ -65,50 +65,50 @@ func (_c *Auth_Check_Call) RunAndReturn(run func() bool) *Auth_Check_Call {
 	return _c
 }
 
-// Guard provides a mock function with given fields: name
-func (_m *Auth) Guard(name string) auth.Auth {
+// GetGuard provides a mock function with given fields: name
+func (_m *Auth) GetGuard(name string) auth.Guard {
 	ret := _m.Called(name)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Guard")
+		panic("no return value specified for GetGuard")
 	}
 
-	var r0 auth.Auth
-	if rf, ok := ret.Get(0).(func(string) auth.Auth); ok {
+	var r0 auth.Guard
+	if rf, ok := ret.Get(0).(func(string) auth.Guard); ok {
 		r0 = rf(name)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(auth.Auth)
+			r0 = ret.Get(0).(auth.Guard)
 		}
 	}
 
 	return r0
 }
 
-// Auth_Guard_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Guard'
-type Auth_Guard_Call struct {
+// Auth_GetGuard_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetGuard'
+type Auth_GetGuard_Call struct {
 	*mock.Call
 }
 
-// Guard is a helper method to define mock.On call
+// GetGuard is a helper method to define mock.On call
 //   - name string
-func (_e *Auth_Expecter) Guard(name interface{}) *Auth_Guard_Call {
-	return &Auth_Guard_Call{Call: _e.mock.On("Guard", name)}
+func (_e *Auth_Expecter) GetGuard(name interface{}) *Auth_GetGuard_Call {
+	return &Auth_GetGuard_Call{Call: _e.mock.On("GetGuard", name)}
 }
 
-func (_c *Auth_Guard_Call) Run(run func(name string)) *Auth_Guard_Call {
+func (_c *Auth_GetGuard_Call) Run(run func(name string)) *Auth_GetGuard_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *Auth_Guard_Call) Return(_a0 auth.Auth) *Auth_Guard_Call {
+func (_c *Auth_GetGuard_Call) Return(_a0 auth.Guard) *Auth_GetGuard_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Auth_Guard_Call) RunAndReturn(run func(string) auth.Auth) *Auth_Guard_Call {
+func (_c *Auth_GetGuard_Call) RunAndReturn(run func(string) auth.Guard) *Auth_GetGuard_Call {
 	_c.Call.Return(run)
 	return _c
 }
