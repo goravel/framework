@@ -201,7 +201,13 @@ func (a *JwtGuard) Refresh() (token string, err error) {
 		return "", errors.AuthRefreshTimeExceeded
 	}
 
-	return a.LoginUsingID(auth[a.guard].Claims.Key)
+	err = a.LoginUsingID(auth[a.guard].Claims.Key)
+
+	if err != nil {
+		return "", err
+	}
+
+	return auth[a.guard].Token, nil
 }
 
 func (a *JwtGuard) Logout() error {
@@ -249,8 +255,20 @@ func (a *JwtGuard) makeAuthContext(claims *Claims, token string) {
 	if !ok {
 		guards = make(Guards)
 	}
-	guards[a.guard] = &Guard{claims, token}
+	guards[a.guard] = &GuardItem{claims, token}
 	a.ctx.WithValue(ctxKey, guards)
+}
+
+func (a *JwtGuard) GetGuardInfo() (*GuardItem, error) {
+	guards, ok := a.ctx.Value(ctxKey).(Guards)
+	if !ok {
+		return nil, ErrorParseTokenFirst
+	}
+	if guard, exists := guards[a.guard]; exists {
+		return guard, nil
+	}
+
+	return nil, ErrorParseTokenFirst
 }
 
 func (a *JwtGuard) tokenIsDisabled(token string) bool {

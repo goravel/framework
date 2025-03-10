@@ -26,7 +26,7 @@ type Guard interface {
 type Auth interface {
 	Guard
 	// Guard attempts to get the guard against the local cache.
-	Guard(name string) Auth
+	GetGuard(name string) Guard
 }
 
 type UserProvider interface {
