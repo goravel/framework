@@ -4,7 +4,6 @@ import (
 	"database/sql"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/testing/docker"
@@ -25,11 +24,4 @@ type Driver interface {
 	Grammar() Grammar
 	// Processor returns the database processor.
 	Processor() Processor
-}
-
-// TODO: Remove this, use Compile instead
-type GormQuery interface {
-	LockForUpdate() clause.Expression
-	RandomOrder() string
-	SharedLock() clause.Expression
 }
