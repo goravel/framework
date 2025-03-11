@@ -348,6 +348,51 @@ func (_c *Driver_Grammar_Call) RunAndReturn(run func() driver.Grammar) *Driver_G
 	return _c
 }
 
+// Pool provides a mock function with no fields
+func (_m *Driver) Pool() database.Pool {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Pool")
+	}
+
+	var r0 database.Pool
+	if rf, ok := ret.Get(0).(func() database.Pool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(database.Pool)
+	}
+
+	return r0
+}
+
+// Driver_Pool_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Pool'
+type Driver_Pool_Call struct {
+	*mock.Call
+}
+
+// Pool is a helper method to define mock.On call
+func (_e *Driver_Expecter) Pool() *Driver_Pool_Call {
+	return &Driver_Pool_Call{Call: _e.mock.On("Pool")}
+}
+
+func (_c *Driver_Pool_Call) Run(run func()) *Driver_Pool_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Driver_Pool_Call) Return(_a0 database.Pool) *Driver_Pool_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Driver_Pool_Call) RunAndReturn(run func() database.Pool) *Driver_Pool_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Processor provides a mock function with no fields
 func (_m *Driver) Processor() driver.Processor {
 	ret := _m.Called()
