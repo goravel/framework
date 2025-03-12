@@ -4,30 +4,31 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/goravel/framework/contracts/http"
+	contractshttp "github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/http"
 )
 
-func PerMinute(maxAttempts int) http.Limit {
+func PerMinute(maxAttempts int) contractshttp.Limit {
 	return NewLimit(maxAttempts, 1)
 }
 
-func PerMinutes(decayMinutes, maxAttempts int) http.Limit {
+func PerMinutes(decayMinutes, maxAttempts int) contractshttp.Limit {
 	return NewLimit(maxAttempts, decayMinutes)
 }
 
-func PerHour(maxAttempts int) http.Limit {
+func PerHour(maxAttempts int) contractshttp.Limit {
 	return NewLimit(maxAttempts, 60)
 }
 
-func PerHours(decayHours, maxAttempts int) http.Limit {
+func PerHours(decayHours, maxAttempts int) contractshttp.Limit {
 	return NewLimit(maxAttempts, 60*decayHours)
 }
 
-func PerDay(maxAttempts int) http.Limit {
+func PerDay(maxAttempts int) contractshttp.Limit {
 	return NewLimit(maxAttempts, 60*24)
 }
 
-func PerDays(decayDays, maxAttempts int) http.Limit {
+func PerDays(decayDays, maxAttempts int) contractshttp.Limit {
 	return NewLimit(maxAttempts, 60*24*decayDays)
 }
 
@@ -35,32 +36,32 @@ type Limit struct {
 	// The rate limit signature key.
 	Key string
 	// The store instance.
-	Store Store
+	Store contractshttp.Store
 	// The response generator callback.
-	ResponseCallback func(ctx http.Context)
+	ResponseCallback func(ctx contractshttp.Context)
 }
 
 func NewLimit(maxAttempts, decayMinutes int) *Limit {
-	instance, err := NewStore(uint64(maxAttempts), time.Duration(decayMinutes)*time.Minute)
+	instance, err := NewStore(http.CacheFacade, http.JsonFacade, uint64(maxAttempts), time.Duration(decayMinutes)*time.Minute)
 	if err != nil {
 		panic(fmt.Sprintf("failed to load rate limiter store: %v", err))
 	}
 
 	return &Limit{
 		Store: instance,
-		ResponseCallback: func(ctx http.Context) {
-			ctx.Request().Abort(http.StatusTooManyRequests)
+		ResponseCallback: func(ctx contractshttp.Context) {
+			ctx.Request().Abort(contractshttp.StatusTooManyRequests)
 		},
 	}
 }
 
-func (r *Limit) By(key string) http.Limit {
+func (r *Limit) By(key string) contractshttp.Limit {
 	r.Key = key
 
 	return r
 }
 
-func (r *Limit) Response(callable func(ctx http.Context)) http.Limit {
+func (r *Limit) Response(callable func(ctx contractshttp.Context)) contractshttp.Limit {
 	r.ResponseCallback = callable
 
 	return r

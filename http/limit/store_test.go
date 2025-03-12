@@ -8,13 +8,12 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/goravel/framework/http"
 	cachemocks "github.com/goravel/framework/mocks/cache"
 )
 
 type StoreTestSuite struct {
 	suite.Suite
-	store     Store
+	store     *Store
 	mockCache *cachemocks.Cache
 }
 
@@ -23,11 +22,7 @@ func TestStoreTestSuite(t *testing.T) {
 }
 
 func (s *StoreTestSuite) SetupTest() {
-	mockCache := &cachemocks.Cache{}
-	s.mockCache = mockCache
-	http.CacheFacade = mockCache
-
-	impl, err := NewStore(10, time.Second)
+	impl, err := NewStore(s.mockCache, nil, 10, time.Second)
 	s.NoError(err)
 	s.store = impl
 }

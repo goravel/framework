@@ -68,6 +68,8 @@ var (
 	GrpcEmptyServerPort         = New("port can't be empty")
 	GrpcInvalidInterceptorsType = New("the type of clients.%s.interceptors must be []string")
 
+	HttpRateLimitFailedToTakeToken = New("failed to take token")
+
 	LangFileNotExist = New("translation file does not exist")
 
 	LogDriverCircularReference = New("%s driver can't include self channel").SetModule(ModuleLog)
