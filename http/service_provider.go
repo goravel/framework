@@ -14,6 +14,7 @@ type ServiceProvider struct{}
 var (
 	CacheFacade       cache.Cache
 	RateLimiterFacade http.RateLimiter
+	JsonFacade        foundation.Json
 )
 
 func (http *ServiceProvider) Register(app foundation.Application) {
@@ -28,6 +29,7 @@ func (http *ServiceProvider) Register(app foundation.Application) {
 func (http *ServiceProvider) Boot(app foundation.Application) {
 	CacheFacade = app.MakeCache()
 	RateLimiterFacade = app.MakeRateLimiter()
+	JsonFacade = app.GetJson()
 
 	http.registerCommands(app)
 }

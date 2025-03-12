@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/goravel/framework/contracts/cache"
+	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/http"
 	"github.com/goravel/framework/support/carbon"
 )
@@ -59,6 +60,7 @@ type store struct {
 	tokens   uint64
 	interval time.Duration
 	cache    cache.Cache
+	json     foundation.Json
 }
 
 func NewStore(tokens uint64, interval time.Duration) (Store, error) {
@@ -78,6 +80,7 @@ func NewStore(tokens uint64, interval time.Duration) (Store, error) {
 		tokens:   tokens,
 		interval: interval,
 		cache:    http.CacheFacade,
+		json:     http.JsonFacade,
 	}
 
 	return s, nil
@@ -87,24 +90,32 @@ func NewStore(tokens uint64, interval time.Duration) (Store, error) {
 // successful, it returns true, otherwise false. It also returns the configured
 // limit, remaining tokens, and reset time.
 func (s *store) Take(_ context.Context, key string) (uint64, uint64, uint64, bool, error) {
-	b, ok := s.cache.Get(key).(*Bucket)
-	if ok {
-		return b.take()
-	}
-
-	nb := NewBucket(s.tokens, s.interval)
-	if err := s.cache.Put(key, nb, s.interval); err != nil {
+	bucket, err := s.getBucket(key)
+	if err != nil {
 		return 0, 0, 0, false, err
 	}
 
-	return nb.take()
+	if bucket != nil {
+		return bucket.take()
+	}
+
+	bucket, err = s.putBucket(key, s.tokens, s.interval)
+	if err != nil {
+		return 0, 0, 0, false, err
+	}
+
+	return bucket.take()
 }
 
 // Get retrieves the information about the key, if any exists.
 func (s *store) Get(_ context.Context, key string) (uint64, uint64, error) {
-	b, ok := s.cache.Get(key).(*Bucket)
-	if ok {
-		return b.get()
+	bucket, err := s.getBucket(key)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	if bucket != nil {
+		return bucket.get()
 	}
 
 	return 0, 0, nil
@@ -112,22 +123,56 @@ func (s *store) Get(_ context.Context, key string) (uint64, uint64, error) {
 
 // Set configures the Bucket-specific tokens and interval.
 func (s *store) Set(_ context.Context, key string, tokens uint64, interval time.Duration) error {
-	b := NewBucket(tokens, interval)
-	return s.cache.Put(key, b, interval)
+	_, err := s.putBucket(key, tokens, interval)
+
+	return err
 }
 
 // Burst adds the provided value to the Bucket's currently available tokens.
 func (s *store) Burst(_ context.Context, key string, tokens uint64) error {
-	b, ok := s.cache.Get(key).(*Bucket)
-	if ok {
-		b.lock.Lock()
-		b.availableTokens = b.availableTokens + tokens
-		b.lock.Unlock()
+	bucket, err := s.getBucket(key)
+	if err != nil {
+		return err
+	}
+
+	if bucket != nil {
+		bucket.lock.Lock()
+		bucket.availableTokens = bucket.availableTokens + tokens
+		bucket.lock.Unlock()
 		return nil
 	}
 
-	nb := NewBucket(s.tokens+tokens, s.interval)
-	return s.cache.Put(key, nb, s.interval)
+	_, err = s.putBucket(key, s.tokens+tokens, s.interval)
+
+	return err
+}
+
+func (s *store) getBucket(key string) (*Bucket, error) {
+	jsonData := s.cache.GetString(key)
+	if jsonData == "" {
+		return nil, nil
+	}
+
+	bucket := &Bucket{}
+	if err := s.json.Unmarshal([]byte(jsonData), bucket); err != nil {
+		return nil, err
+	}
+
+	return bucket, nil
+}
+
+func (s *store) putBucket(key string, tokens uint64, interval time.Duration) (*Bucket, error) {
+	bucket := NewBucket(tokens, interval)
+	jsonData, err := s.json.Marshal(bucket)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.cache.Put(key, jsonData, interval); err != nil {
+		return nil, err
+	}
+
+	return bucket, nil
 }
 
 // Bucket is an internal wrapper around a taker.
