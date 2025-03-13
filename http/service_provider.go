@@ -7,6 +7,7 @@ import (
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/http/console"
 )
 
@@ -30,9 +31,24 @@ func (http *ServiceProvider) Register(app foundation.Application) {
 
 func (http *ServiceProvider) Boot(app foundation.Application) {
 	CacheFacade = app.MakeCache()
+	if CacheFacade == nil {
+		panic(errors.CacheFacadeNotSet.SetModule(errors.ModuleHttp))
+	}
+
 	LogFacade = app.MakeLog()
+	if LogFacade == nil {
+		panic(errors.LogFacadeNotSet.SetModule(errors.ModuleHttp))
+	}
+
 	RateLimiterFacade = app.MakeRateLimiter()
+	if RateLimiterFacade == nil {
+		panic(errors.RateLimiterFacadeNotSet.SetModule(errors.ModuleHttp))
+	}
+
 	JsonFacade = app.GetJson()
+	if JsonFacade == nil {
+		panic(errors.JSONParserNotSet.SetModule(errors.ModuleHttp))
+	}
 
 	http.registerCommands(app)
 }

@@ -1,7 +1,6 @@
 package limit
 
 import (
-	"fmt"
 	"time"
 
 	contractshttp "github.com/goravel/framework/contracts/http"
@@ -42,10 +41,7 @@ type Limit struct {
 }
 
 func NewLimit(maxAttempts, decayMinutes int) *Limit {
-	instance, err := NewStore(http.CacheFacade, http.JsonFacade, uint64(maxAttempts), time.Duration(decayMinutes)*time.Minute)
-	if err != nil {
-		panic(fmt.Sprintf("failed to load rate limiter store: %v", err))
-	}
+	instance := NewStore(http.CacheFacade, http.JsonFacade, uint64(maxAttempts), time.Duration(decayMinutes)*time.Minute)
 
 	return &Limit{
 		Store: instance,

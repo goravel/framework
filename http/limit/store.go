@@ -16,7 +16,7 @@ type Store struct {
 	json     foundation.Json
 }
 
-func NewStore(cache cache.Cache, json foundation.Json, tokens uint64, interval time.Duration) (*Store, error) {
+func NewStore(cache cache.Cache, json foundation.Json, tokens uint64, interval time.Duration) *Store {
 	if tokens <= 0 {
 		tokens = 1
 	}
@@ -32,7 +32,7 @@ func NewStore(cache cache.Cache, json foundation.Json, tokens uint64, interval t
 		json:     json,
 	}
 
-	return s, nil
+	return s
 }
 
 // Take attempts to remove a token from the named key. If the take is
@@ -80,12 +80,11 @@ func (s *Store) Get(ctx context.Context, key string) (tokens uint64, remaining u
 	if err != nil {
 		return 0, 0, err
 	}
-
-	if bucket != nil {
-		return bucket.get()
+	if bucket == nil {
+		return 0, 0, nil
 	}
 
-	return 0, 0, nil
+	return bucket.get()
 }
 
 // Set configures the Bucket-specific tokens and interval.

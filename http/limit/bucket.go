@@ -8,12 +8,11 @@ import (
 
 // Bucket is an internal wrapper around a taker.
 type Bucket struct {
-	// StartTime is the number of nanoseconds from unix epoch when this Bucket was
-	// initially created.
+	// StartTime is the number of nanoseconds from unix epoch when this Bucket was initially created.
 	StartTime uint64
 
-	// MaxTokens is the maximum number of tokens permitted on the Bucket at any
-	// time. The number of available tokens will never exceed this value.
+	// MaxTokens is the maximum number of tokens permitted on the Bucket at any time.
+	// The number of available tokens will never exceed this value.
 	MaxTokens uint64
 
 	// Interval is the time at which ticking should occur.
@@ -22,8 +21,7 @@ type Bucket struct {
 	// AvailableTokens is the current point-in-time number of tokens remaining.
 	AvailableTokens uint64
 
-	// LastTick is the last clock tick, used to re-calculate the number of tokens
-	// on the Bucket.
+	// LastTick is the last clock tick, used to re-calculate the number of tokens on the Bucket.
 	LastTick uint64
 }
 
@@ -62,7 +60,6 @@ func (b *Bucket) take() (tokens uint64, remaining uint64, reset uint64, ok bool,
 	}
 
 	currTick := tick(b.StartTime, now, b.Interval)
-
 	tokens = b.MaxTokens
 	reset = b.StartTime + ((currTick + 1) * uint64(b.Interval))
 
