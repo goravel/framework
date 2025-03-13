@@ -68,7 +68,8 @@ var (
 	GrpcEmptyServerPort         = New("port can't be empty")
 	GrpcInvalidInterceptorsType = New("the type of clients.%s.interceptors must be []string")
 
-	HttpRateLimitFailedToTakeToken = New("failed to take token")
+	HttpRateLimitFailedToTakeToken     = New("failed to take token")
+	HttpRateLimitFailedToCheckThrottle = New("failed to check throttle: %s")
 
 	LangFileNotExist = New("translation file does not exist")
 

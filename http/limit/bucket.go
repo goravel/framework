@@ -8,40 +8,40 @@ import (
 
 // Bucket is an internal wrapper around a taker.
 type Bucket struct {
-	// startTime is the number of nanoseconds from unix epoch when this Bucket was
+	// StartTime is the number of nanoseconds from unix epoch when this Bucket was
 	// initially created.
-	startTime uint64
+	StartTime uint64
 
-	// maxTokens is the maximum number of tokens permitted on the Bucket at any
+	// MaxTokens is the maximum number of tokens permitted on the Bucket at any
 	// time. The number of available tokens will never exceed this value.
-	maxTokens uint64
+	MaxTokens uint64
 
-	// interval is the time at which ticking should occur.
-	interval time.Duration
+	// Interval is the time at which ticking should occur.
+	Interval time.Duration
 
-	// availableTokens is the current point-in-time number of tokens remaining.
-	availableTokens uint64
+	// AvailableTokens is the current point-in-time number of tokens remaining.
+	AvailableTokens uint64
 
-	// lastTick is the last clock tick, used to re-calculate the number of tokens
+	// LastTick is the last clock tick, used to re-calculate the number of tokens
 	// on the Bucket.
-	lastTick uint64
+	LastTick uint64
 }
 
 // NewBucket creates a new Bucket from the given tokens and interval.
 func NewBucket(tokens uint64, interval time.Duration) *Bucket {
 	b := &Bucket{
-		startTime:       uint64(carbon.Now().TimestampNano()),
-		maxTokens:       tokens,
-		availableTokens: tokens,
-		interval:        interval,
+		StartTime:       uint64(carbon.Now().TimestampNano()),
+		MaxTokens:       tokens,
+		AvailableTokens: tokens,
+		Interval:        interval,
 	}
 	return b
 }
 
 // get returns information about the Bucket.
-func (b *Bucket) get() (tokens uint64, remaining uint64, retErr error) {
-	tokens = b.maxTokens
-	remaining = b.availableTokens
+func (b *Bucket) get() (tokens uint64, remaining uint64, err error) {
+	tokens = b.MaxTokens
+	remaining = b.AvailableTokens
 	return
 }
 
@@ -49,34 +49,34 @@ func (b *Bucket) get() (tokens uint64, remaining uint64, retErr error) {
 // available and the clock has ticked forward, it recalculates the number of
 // tokens and retries. It returns the limit, remaining tokens, time until
 // refresh, and whether the take was successful.
-func (b *Bucket) take() (tokens uint64, remaining uint64, reset uint64, ok bool, retErr error) {
+func (b *Bucket) take() (tokens uint64, remaining uint64, reset uint64, ok bool, err error) {
 	// Capture the current request time, current tick, and amount of time until
 	// the Bucket resets.
 	now := uint64(carbon.Now().TimestampNano())
 
 	// If the current time is before the start time, it means the server clock was
 	// reset to an earlier time. In that case, rebase to 0.
-	if now < b.startTime {
-		b.startTime = now
-		b.lastTick = 0
+	if now < b.StartTime {
+		b.StartTime = now
+		b.LastTick = 0
 	}
 
-	currTick := tick(b.startTime, now, b.interval)
+	currTick := tick(b.StartTime, now, b.Interval)
 
-	tokens = b.maxTokens
-	reset = b.startTime + ((currTick + 1) * uint64(b.interval))
+	tokens = b.MaxTokens
+	reset = b.StartTime + ((currTick + 1) * uint64(b.Interval))
 
 	// If we're on a new tick since last assessment, perform
 	// a full reset up to maxTokens.
-	if b.lastTick < currTick {
-		b.availableTokens = b.maxTokens
-		b.lastTick = currTick
+	if b.LastTick < currTick {
+		b.AvailableTokens = b.MaxTokens
+		b.LastTick = currTick
 	}
 
-	if b.availableTokens > 0 {
-		b.availableTokens--
+	if b.AvailableTokens > 0 {
+		b.AvailableTokens--
 		ok = true
-		remaining = b.availableTokens
+		remaining = b.AvailableTokens
 	}
 
 	return

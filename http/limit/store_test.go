@@ -2,13 +2,16 @@ package limit
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
+	"github.com/gookit/goutil/testutil/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	cachemocks "github.com/goravel/framework/mocks/cache"
+	"github.com/goravel/framework/support/debug"
 )
 
 type StoreTestSuite struct {
@@ -79,9 +82,9 @@ func (s *StoreTestSuite) TestStore_Burst() {
 func (s *StoreTestSuite) TestBucket_NewBucket() {
 	b := NewBucket(10, time.Second)
 	s.NotNil(b)
-	s.Equal(uint64(10), b.maxTokens)
-	s.Equal(uint64(10), b.availableTokens)
-	s.Equal(time.Second, b.interval)
+	s.Equal(uint64(10), b.MaxTokens)
+	s.Equal(uint64(10), b.AvailableTokens)
+	s.Equal(time.Second, b.Interval)
 }
 
 func (s *StoreTestSuite) TestBucket_Get() {
@@ -113,4 +116,12 @@ func (s *StoreTestSuite) TestBucket_Take_Failure() {
 	s.Equal(uint64(0), tokens)
 	s.Equal(uint64(0), remaining)
 	s.NotZero(reset)
+}
+
+func TestA(t *testing.T) {
+
+	bucket := NewBucket(10, time.Second)
+	data, err := json.Marshal(bucket)
+	debug.Dump(string(data), err)
+	assert.True(t, false)
 }
