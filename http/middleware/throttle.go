@@ -29,6 +29,8 @@ func Throttle(name string) httpcontract.Middleware {
 		if limiter := http.RateLimiterFacade.Limiter(name); limiter != nil {
 			if limits := limiter(ctx); len(limits) > 0 {
 				for index, limit := range limits {
+					// TODO: We should not use the limit instance directly, but use the contract instead, it's very hard to test currently.
+					// Add test cases after optimizing the logic: https://github.com/goravel/goravel/issues/629
 					if instance, exist := limit.(*httplimit.Limit); exist {
 						tokens, remaining, reset, ok, err := instance.Store.Take(ctx, key(ctx, instance, name, index))
 						if err != nil {

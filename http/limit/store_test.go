@@ -41,14 +41,14 @@ func (s *StoreTestSuite) SetupTest() {
 }
 
 func (s *StoreTestSuite) setupSuccessfulLock() {
-	s.mockCache.On("Lock", s.testKey+":lock", time.Second).Return(s.mockLock).Once()
-	s.mockLock.On("Block", time.Second).Return(true).Once()
-	s.mockLock.On("Release").Return(true).Once()
+	s.mockCache.EXPECT().Lock(s.testKey+":lock", time.Second).Return(s.mockLock).Once()
+	s.mockLock.EXPECT().Block(time.Second).Return(true).Once()
+	s.mockLock.EXPECT().Release().Return(true).Once()
 }
 
 func (s *StoreTestSuite) setupFailedLock() {
-	s.mockCache.On("Lock", s.testKey+":lock", time.Second).Return(s.mockLock).Once()
-	s.mockLock.On("Block", time.Second).Return(false).Once()
+	s.mockCache.EXPECT().Lock(s.testKey+":lock", time.Second).Return(s.mockLock).Once()
+	s.mockLock.EXPECT().Block(time.Second).Return(false).Once()
 }
 
 func (s *StoreTestSuite) setupSuccessfulGetBucket() {
@@ -56,23 +56,23 @@ func (s *StoreTestSuite) setupSuccessfulGetBucket() {
 	bucket := NewBucket(10, time.Minute)
 	jsonData, _ := s.json.Marshal(bucket)
 
-	s.mockCache.On("WithContext", s.ctx).Return(s.mockCache).Once()
-	s.mockCache.On("GetString", s.testKey).Return(string(jsonData)).Once()
+	s.mockCache.EXPECT().WithContext(s.ctx).Return(s.mockCache).Once()
+	s.mockCache.EXPECT().GetString(s.testKey).Return(string(jsonData)).Once()
 }
 
 func (s *StoreTestSuite) setupEmptyGetBucket() {
-	s.mockCache.On("WithContext", s.ctx).Return(s.mockCache).Once()
-	s.mockCache.On("GetString", s.testKey).Return("").Once()
+	s.mockCache.EXPECT().WithContext(s.ctx).Return(s.mockCache).Once()
+	s.mockCache.EXPECT().GetString(s.testKey).Return("").Once()
 }
 
 func (s *StoreTestSuite) setupSuccessfulPutBucket(interval time.Duration) {
-	s.mockCache.On("WithContext", s.ctx).Return(s.mockCache).Once()
-	s.mockCache.On("Put", s.testKey, mock.AnythingOfType("string"), interval).Return(nil).Once()
+	s.mockCache.EXPECT().WithContext(s.ctx).Return(s.mockCache).Once()
+	s.mockCache.EXPECT().Put(s.testKey, mock.AnythingOfType("string"), interval).Return(nil).Once()
 }
 
 func (s *StoreTestSuite) setupFailedPutBucket(interval time.Duration) {
-	s.mockCache.On("WithContext", s.ctx).Return(s.mockCache).Once()
-	s.mockCache.On("Put", s.testKey, mock.AnythingOfType("string"), interval).Return(errors.New("cache put error")).Once()
+	s.mockCache.EXPECT().WithContext(s.ctx).Return(s.mockCache).Once()
+	s.mockCache.EXPECT().Put(s.testKey, mock.AnythingOfType("string"), interval).Return(errors.New("cache put error")).Once()
 }
 
 // Test constructor with valid values
@@ -134,8 +134,8 @@ func (s *StoreTestSuite) TestStore_Take_GetBucketError() {
 	// Create a valid bucket structure but with invalid field values
 	// This will prevent the divide by zero error in the tick function
 	jsonData := `{"StartTime":1000,"MaxTokens":10,"Interval":"invalid","AvailableTokens":5,"LastTick":0}`
-	s.mockCache.On("WithContext", s.ctx).Return(s.mockCache).Once()
-	s.mockCache.On("GetString", s.testKey).Return(jsonData).Once()
+	s.mockCache.EXPECT().WithContext(s.ctx).Return(s.mockCache).Once()
+	s.mockCache.EXPECT().GetString(s.testKey).Return(jsonData).Once()
 
 	tokens, remaining, reset, ok, err := s.store.Take(s.ctx, s.testKey)
 
@@ -185,8 +185,8 @@ func (s *StoreTestSuite) TestStore_Take_NoAvailableTokens() {
 	bucket.AvailableTokens = 0
 	jsonData, _ := s.json.Marshal(bucket)
 
-	s.mockCache.On("WithContext", s.ctx).Return(s.mockCache).Once()
-	s.mockCache.On("GetString", s.testKey).Return(string(jsonData)).Once()
+	s.mockCache.EXPECT().WithContext(s.ctx).Return(s.mockCache).Once()
+	s.mockCache.EXPECT().GetString(s.testKey).Return(string(jsonData)).Once()
 	s.setupSuccessfulPutBucket(time.Minute)
 
 	tokens, remaining, reset, ok, err := s.store.Take(s.ctx, s.testKey)
@@ -227,8 +227,8 @@ func (s *StoreTestSuite) TestStore_Get_GetBucketError() {
 
 	// Completely invalid JSON that will definitely cause an unmarshal error
 	jsonData := `{this is not valid JSON at all}`
-	s.mockCache.On("WithContext", s.ctx).Return(s.mockCache).Once()
-	s.mockCache.On("GetString", s.testKey).Return(jsonData).Once()
+	s.mockCache.EXPECT().WithContext(s.ctx).Return(s.mockCache).Once()
+	s.mockCache.EXPECT().GetString(s.testKey).Return(jsonData).Once()
 
 	tokens, remaining, err := s.store.Get(s.ctx, s.testKey)
 
@@ -315,8 +315,8 @@ func (s *StoreTestSuite) TestStore_Burst_GetBucketError() {
 
 	// Completely invalid JSON that will definitely cause an unmarshal error
 	jsonData := `{this is not valid JSON at all}`
-	s.mockCache.On("WithContext", s.ctx).Return(s.mockCache).Once()
-	s.mockCache.On("GetString", s.testKey).Return(jsonData).Once()
+	s.mockCache.EXPECT().WithContext(s.ctx).Return(s.mockCache).Once()
+	s.mockCache.EXPECT().GetString(s.testKey).Return(jsonData).Once()
 
 	// We don't need to mock the Put method because the function should return early with an error
 
@@ -340,15 +340,15 @@ func (s *StoreTestSuite) TestStore_Burst_PutBucketError() {
 func (s *StoreTestSuite) TestStore_CacheWithContext() {
 	customCtx := context.WithValue(context.Background(), "key", "value")
 
-	s.mockCache.On("Lock", s.testKey+":lock", time.Second).Return(s.mockLock).Once()
-	s.mockLock.On("Block", time.Second).Return(true).Once()
-	s.mockLock.On("Release").Return(true).Once()
+	s.mockCache.EXPECT().Lock(s.testKey+":lock", time.Second).Return(s.mockLock).Once()
+	s.mockLock.EXPECT().Block(time.Second).Return(true).Once()
+	s.mockLock.EXPECT().Release().Return(true).Once()
 
-	s.mockCache.On("WithContext", customCtx).Return(s.mockCache).Once()
-	s.mockCache.On("GetString", s.testKey).Return("").Once()
+	s.mockCache.EXPECT().WithContext(customCtx).Return(s.mockCache).Once()
+	s.mockCache.EXPECT().GetString(s.testKey).Return("").Once()
 
-	s.mockCache.On("WithContext", customCtx).Return(s.mockCache).Once()
-	s.mockCache.On("Put", s.testKey, mock.AnythingOfType("string"), time.Second).Return(nil).Once()
+	s.mockCache.EXPECT().WithContext(customCtx).Return(s.mockCache).Once()
+	s.mockCache.EXPECT().Put(s.testKey, mock.AnythingOfType("string"), time.Second).Return(nil).Once()
 
 	tokens, remaining, reset, ok, err := s.store.Take(customCtx, s.testKey)
 
@@ -397,8 +397,8 @@ func (s *StoreTestSuite) TestStore_MultipleOperations() {
 	bucket.AvailableTokens = 9
 	jsonData, _ := s.json.Marshal(bucket)
 
-	s.mockCache.On("WithContext", s.ctx).Return(s.mockCache).Once()
-	s.mockCache.On("GetString", s.testKey).Return(string(jsonData)).Once()
+	s.mockCache.EXPECT().WithContext(s.ctx).Return(s.mockCache).Once()
+	s.mockCache.EXPECT().GetString(s.testKey).Return(string(jsonData)).Once()
 
 	tokens2, remaining2, err2 := s.store.Get(s.ctx, s.testKey)
 
@@ -409,8 +409,8 @@ func (s *StoreTestSuite) TestStore_MultipleOperations() {
 	// Then burst the bucket
 	s.setupSuccessfulLock()
 
-	s.mockCache.On("WithContext", s.ctx).Return(s.mockCache).Once()
-	s.mockCache.On("GetString", s.testKey).Return(string(jsonData)).Once()
+	s.mockCache.EXPECT().WithContext(s.ctx).Return(s.mockCache).Once()
+	s.mockCache.EXPECT().GetString(s.testKey).Return(string(jsonData)).Once()
 	s.setupSuccessfulPutBucket(time.Minute)
 
 	err3 := s.store.Burst(s.ctx, s.testKey, 5)
@@ -425,8 +425,8 @@ func (s *StoreTestSuite) TestStore_MultipleOperations() {
 	bucket.AvailableTokens = 14
 	jsonData, _ = s.json.Marshal(bucket)
 
-	s.mockCache.On("WithContext", s.ctx).Return(s.mockCache).Once()
-	s.mockCache.On("GetString", s.testKey).Return(string(jsonData)).Once()
+	s.mockCache.EXPECT().WithContext(s.ctx).Return(s.mockCache).Once()
+	s.mockCache.EXPECT().GetString(s.testKey).Return(string(jsonData)).Once()
 
 	tokens4, remaining4, err4 := s.store.Get(s.ctx, s.testKey)
 
