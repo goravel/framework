@@ -38,21 +38,21 @@ func NewStore(cache cache.Cache, json foundation.Json, tokens uint64, interval t
 // Take attempts to remove a token from the named key. If the take is
 // successful, it returns true, otherwise false. It also returns the configured
 // limit, remaining tokens, and reset time.
-func (s *Store) Take(ctx context.Context, key string) (tokens uint64, remaining uint64, reset uint64, ok bool, err error) {
-	lock, err := s.lock(key)
+func (r *Store) Take(ctx context.Context, key string) (tokens uint64, remaining uint64, reset uint64, ok bool, err error) {
+	lock, err := r.lock(key)
 	if err != nil {
 		return 0, 0, 0, false, err
 	}
 
 	defer lock.Release()
 
-	bucket, err := s.getBucket(ctx, key)
+	bucket, err := r.getBucket(ctx, key)
 	if err != nil {
 		return 0, 0, 0, false, err
 	}
 
 	if bucket == nil {
-		bucket = NewBucket(s.tokens, s.interval)
+		bucket = NewBucket(r.tokens, r.interval)
 	}
 
 	tokens, remaining, reset, ok, err = bucket.take()
@@ -60,7 +60,7 @@ func (s *Store) Take(ctx context.Context, key string) (tokens uint64, remaining 
 		return 0, 0, 0, false, err
 	}
 
-	if err := s.putBucket(ctx, key, bucket); err != nil {
+	if err := r.putBucket(ctx, key, bucket); err != nil {
 		return 0, 0, 0, false, err
 	}
 
@@ -68,15 +68,15 @@ func (s *Store) Take(ctx context.Context, key string) (tokens uint64, remaining 
 }
 
 // Get retrieves the information about the key.
-func (s *Store) Get(ctx context.Context, key string) (tokens uint64, remaining uint64, err error) {
-	lock, err := s.lock(key)
+func (r *Store) Get(ctx context.Context, key string) (tokens uint64, remaining uint64, err error) {
+	lock, err := r.lock(key)
 	if err != nil {
 		return 0, 0, err
 	}
 
 	defer lock.Release()
 
-	bucket, err := s.getBucket(ctx, key)
+	bucket, err := r.getBucket(ctx, key)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -88,8 +88,8 @@ func (s *Store) Get(ctx context.Context, key string) (tokens uint64, remaining u
 }
 
 // Set configures the Bucket-specific tokens and interval.
-func (s *Store) Set(ctx context.Context, key string, tokens uint64, interval time.Duration) error {
-	lock, err := s.lock(key)
+func (r *Store) Set(ctx context.Context, key string, tokens uint64, interval time.Duration) error {
+	lock, err := r.lock(key)
 	if err != nil {
 		return err
 	}
@@ -98,19 +98,19 @@ func (s *Store) Set(ctx context.Context, key string, tokens uint64, interval tim
 
 	bucket := NewBucket(tokens, interval)
 
-	return s.putBucket(ctx, key, bucket)
+	return r.putBucket(ctx, key, bucket)
 }
 
 // Burst adds the provided value to the Bucket's currently available tokens.
-func (s *Store) Burst(ctx context.Context, key string, tokens uint64) error {
-	lock, err := s.lock(key)
+func (r *Store) Burst(ctx context.Context, key string, tokens uint64) error {
+	lock, err := r.lock(key)
 	if err != nil {
 		return err
 	}
 
 	defer lock.Release()
 
-	bucket, err := s.getBucket(ctx, key)
+	bucket, err := r.getBucket(ctx, key)
 	if err != nil {
 		return err
 	}
@@ -118,38 +118,38 @@ func (s *Store) Burst(ctx context.Context, key string, tokens uint64) error {
 	if bucket != nil {
 		bucket.AvailableTokens = bucket.AvailableTokens + tokens
 	} else {
-		bucket = NewBucket(s.tokens+tokens, s.interval)
+		bucket = NewBucket(r.tokens+tokens, r.interval)
 	}
 
-	return s.putBucket(ctx, key, bucket)
+	return r.putBucket(ctx, key, bucket)
 }
 
-func (s *Store) getBucket(ctx context.Context, key string) (*Bucket, error) {
-	jsonData := s.cache.WithContext(ctx).GetString(key)
+func (r *Store) getBucket(ctx context.Context, key string) (*Bucket, error) {
+	jsonData := r.cache.WithContext(ctx).GetString(key)
 	if jsonData == "" {
 		return nil, nil
 	}
 
 	bucket := &Bucket{}
-	if err := s.json.Unmarshal([]byte(jsonData), bucket); err != nil {
+	if err := r.json.Unmarshal([]byte(jsonData), bucket); err != nil {
 		return nil, err
 	}
 
 	return bucket, nil
 }
 
-func (s *Store) putBucket(ctx context.Context, key string, bucket *Bucket) error {
-	jsonData, err := s.json.Marshal(bucket)
+func (r *Store) putBucket(ctx context.Context, key string, bucket *Bucket) error {
+	jsonData, err := r.json.Marshal(bucket)
 	if err != nil {
 		return err
 	}
 
-	return s.cache.WithContext(ctx).Put(key, string(jsonData), bucket.Interval)
+	return r.cache.WithContext(ctx).Put(key, string(jsonData), bucket.Interval)
 }
 
-func (s *Store) lock(key string) (cache.Lock, error) {
-	lock := s.cache.Lock(key+":lock", s.interval)
-	if !lock.Block(s.interval) {
+func (r *Store) lock(key string) (cache.Lock, error) {
+	lock := r.cache.Lock(key+":lock", r.interval)
+	if !lock.Block(r.interval) {
 		return nil, errors.HttpRateLimitFailedToTakeToken
 	}
 

@@ -338,6 +338,7 @@ func (s *StoreTestSuite) TestStore_Burst_PutBucketError() {
 
 // Test cache operations with context
 func (s *StoreTestSuite) TestStore_CacheWithContext() {
+	//nolint:all
 	customCtx := context.WithValue(context.Background(), "key", "value")
 
 	s.mockCache.EXPECT().Lock(s.testKey+":lock", time.Second).Return(s.mockLock).Once()

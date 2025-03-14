@@ -132,8 +132,12 @@ func (s *BucketTestSuite) TestBucketTakeMultiple() {
 	s.NotZero(reset2)
 
 	// Take until empty
-	bucket.take()                                           // 2 remaining
-	bucket.take()                                           // 1 remaining
+	_, _, _, ok, err := bucket.take() // 2 remaining
+	s.NoError(err)
+	s.True(ok)
+	_, _, _, ok, err = bucket.take() // 1 remaining
+	s.NoError(err)
+	s.True(ok)
 	tokens5, remaining5, reset5, ok5, err5 := bucket.take() // 0 remaining
 	s.NoError(err5)
 	s.True(ok5)
@@ -210,8 +214,12 @@ func (s *BucketTestSuite) TestBucketLastTickUpdate() {
 	bucket := NewBucket(2, interval)
 
 	// Take all tokens
-	bucket.take()
-	bucket.take()
+	_, _, _, ok, err := bucket.take()
+	s.NoError(err)
+	s.True(ok)
+	_, _, _, ok, err = bucket.take()
+	s.NoError(err)
+	s.True(ok)
 
 	// Record the current LastTick
 	initialLastTick := bucket.LastTick
@@ -220,7 +228,9 @@ func (s *BucketTestSuite) TestBucketLastTickUpdate() {
 	time.Sleep(interval + 10*time.Millisecond)
 
 	// Take a token (this should update LastTick)
-	bucket.take()
+	_, _, _, ok, err = bucket.take()
+	s.NoError(err)
+	s.True(ok)
 
 	// LastTick should be updated
 	s.Greater(bucket.LastTick, initialLastTick)
