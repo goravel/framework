@@ -35,7 +35,6 @@ func Throttle(name string) httpcontract.Middleware {
 						tokens, remaining, reset, ok, err := instance.Store.Take(ctx, key(ctx, instance, name, index))
 						if err != nil {
 							http.LogFacade.Error(errors.HttpRateLimitFailedToCheckThrottle.Args(err))
-							ctx.Request().Next()
 							break
 						}
 

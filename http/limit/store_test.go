@@ -42,13 +42,13 @@ func (s *StoreTestSuite) SetupTest() {
 
 func (s *StoreTestSuite) setupSuccessfulLock() {
 	s.mockCache.EXPECT().Lock(s.testKey+":lock", time.Second).Return(s.mockLock).Once()
-	s.mockLock.EXPECT().Block(time.Second).Return(true).Once()
+	s.mockLock.EXPECT().BlockWithTicker(time.Second, 10*time.Millisecond).Return(true).Once()
 	s.mockLock.EXPECT().Release().Return(true).Once()
 }
 
 func (s *StoreTestSuite) setupFailedLock() {
 	s.mockCache.EXPECT().Lock(s.testKey+":lock", time.Second).Return(s.mockLock).Once()
-	s.mockLock.EXPECT().Block(time.Second).Return(false).Once()
+	s.mockLock.EXPECT().BlockWithTicker(time.Second, 10*time.Millisecond).Return(false).Once()
 }
 
 func (s *StoreTestSuite) setupSuccessfulGetBucket() {
@@ -342,7 +342,7 @@ func (s *StoreTestSuite) TestStore_CacheWithContext() {
 	customCtx := context.WithValue(context.Background(), "key", "value")
 
 	s.mockCache.EXPECT().Lock(s.testKey+":lock", time.Second).Return(s.mockLock).Once()
-	s.mockLock.EXPECT().Block(time.Second).Return(true).Once()
+	s.mockLock.EXPECT().BlockWithTicker(time.Second, 10*time.Millisecond).Return(true).Once()
 	s.mockLock.EXPECT().Release().Return(true).Once()
 
 	s.mockCache.EXPECT().WithContext(customCtx).Return(s.mockCache).Once()

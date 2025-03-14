@@ -149,7 +149,7 @@ func (r *Store) putBucket(ctx context.Context, key string, bucket *Bucket) error
 
 func (r *Store) lock(key string) (cache.Lock, error) {
 	lock := r.cache.Lock(key+":lock", r.interval)
-	if !lock.Block(r.interval) {
+	if !lock.BlockWithTicker(r.interval, 10*time.Millisecond) {
 		return nil, errors.HttpRateLimitFailedToTakeToken
 	}
 

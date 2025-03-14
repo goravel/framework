@@ -29,8 +29,17 @@ func NewLock(instance contractscache.Driver, key string, t ...time.Duration) *Lo
 }
 
 func (r *Lock) Block(t time.Duration, callback ...func()) bool {
+	return r.BlockWithTicker(t, 1*time.Second, callback...)
+}
+
+func (r *Lock) BlockWithTicker(t time.Duration, ti time.Duration, callback ...func()) bool {
+	// If the lock is already acquired, return true. Otherwise, try to get after one second (Ticker).
+	if r.Get(callback...) {
+		return true
+	}
+
 	timer := time.NewTimer(t)
-	ticker := time.NewTicker(1 * time.Second)
+	ticker := time.NewTicker(ti)
 	defer ticker.Stop()
 
 	res := make(chan bool, 1)

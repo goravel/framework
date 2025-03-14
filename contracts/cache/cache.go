@@ -52,6 +52,9 @@ type Driver interface {
 type Lock interface {
 	// Block attempt to acquire the lock for the given number of seconds.
 	Block(t time.Duration, callback ...func()) bool
+	// BlockWithTicker attempt to acquire the lock for the given number of seconds,
+	// the second parameter is a ticker that will be used to check if the lock is available.
+	BlockWithTicker(t time.Duration, ticker time.Duration, callback ...func()) bool
 	// Get attempts to acquire the lock.
 	Get(callback ...func()) bool
 	// Release the lock.
