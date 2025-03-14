@@ -6,6 +6,8 @@ import (
 	consolecontract "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/http/console"
 )
 
@@ -13,7 +15,9 @@ type ServiceProvider struct{}
 
 var (
 	CacheFacade       cache.Cache
+	LogFacade         log.Log
 	RateLimiterFacade http.RateLimiter
+	JsonFacade        foundation.Json
 )
 
 func (http *ServiceProvider) Register(app foundation.Application) {
@@ -27,7 +31,24 @@ func (http *ServiceProvider) Register(app foundation.Application) {
 
 func (http *ServiceProvider) Boot(app foundation.Application) {
 	CacheFacade = app.MakeCache()
+	if CacheFacade == nil {
+		panic(errors.CacheFacadeNotSet.SetModule(errors.ModuleHttp))
+	}
+
+	LogFacade = app.MakeLog()
+	if LogFacade == nil {
+		panic(errors.LogFacadeNotSet.SetModule(errors.ModuleHttp))
+	}
+
 	RateLimiterFacade = app.MakeRateLimiter()
+	if RateLimiterFacade == nil {
+		panic(errors.RateLimiterFacadeNotSet.SetModule(errors.ModuleHttp))
+	}
+
+	JsonFacade = app.GetJson()
+	if JsonFacade == nil {
+		panic(errors.JSONParserNotSet.SetModule(errors.ModuleHttp))
+	}
 
 	http.registerCommands(app)
 }

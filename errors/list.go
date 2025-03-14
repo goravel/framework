@@ -1,19 +1,20 @@
 package errors
 
 var (
-	ApplicationNotSet    = New("application instance is not initialized")
-	ArtisanFacadeNotSet  = New("artisan facade is not initialized")
-	CacheFacadeNotSet    = New("cache facade is not initialized")
-	ConfigFacadeNotSet   = New("config facade is not initialized")
-	JSONParserNotSet     = New("JSON parser is not initialized")
-	LogFacadeNotSet      = New("log facade is not initialized")
-	OrmFacadeNotSet      = New("orm facade is not initialized")
-	QueueFacadeNotSet    = New("queue facade is not initialized")
-	ScheduleFacadeNotSet = New("schedule facade is not initialized")
-	StorageFacadeNotSet  = New("storage facade is not initialized")
-	InvalidHttpContext   = New("invalid http context")
-	RouteFacadeNotSet    = New("route facade is not initialized")
-	SessionFacadeNotSet  = New("session facade is not initialized")
+	ApplicationNotSet       = New("application instance is not initialized")
+	ArtisanFacadeNotSet     = New("artisan facade is not initialized")
+	CacheFacadeNotSet       = New("cache facade is not initialized")
+	ConfigFacadeNotSet      = New("config facade is not initialized")
+	JSONParserNotSet        = New("JSON parser is not initialized")
+	LogFacadeNotSet         = New("log facade is not initialized")
+	OrmFacadeNotSet         = New("orm facade is not initialized")
+	QueueFacadeNotSet       = New("queue facade is not initialized")
+	RateLimiterFacadeNotSet = New("rate limiter facade is not initialized")
+	ScheduleFacadeNotSet    = New("schedule facade is not initialized")
+	StorageFacadeNotSet     = New("storage facade is not initialized")
+	InvalidHttpContext      = New("invalid http context")
+	RouteFacadeNotSet       = New("route facade is not initialized")
+	SessionFacadeNotSet     = New("session facade is not initialized")
 
 	AuthEmptySecret         = New("authentication secret is missing or required")
 	AuthInvalidClaims       = New("authentication token contains invalid claims")
@@ -67,6 +68,9 @@ var (
 	GrpcEmptyServerHost         = New("host can't be empty")
 	GrpcEmptyServerPort         = New("port can't be empty")
 	GrpcInvalidInterceptorsType = New("the type of clients.%s.interceptors must be []string")
+
+	HttpRateLimitFailedToTakeToken     = New("failed to take token")
+	HttpRateLimitFailedToCheckThrottle = New("failed to check throttle: %s")
 
 	LangFileNotExist = New("translation file does not exist")
 

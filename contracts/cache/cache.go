@@ -35,7 +35,7 @@ type Driver interface {
 	Has(key string) bool
 	// Increment increments the value of an item in the cache.
 	Increment(key string, value ...int64) (int64, error)
-	// Lock get a lock instance.
+	// Lock get a lock instance, the lock will not be expired if the second parameter is not set.
 	Lock(key string, t ...time.Duration) Lock
 	// Put Driver an item in the cache for a given time.
 	Put(key string, value any, t time.Duration) error
@@ -52,6 +52,9 @@ type Driver interface {
 type Lock interface {
 	// Block attempt to acquire the lock for the given number of seconds.
 	Block(t time.Duration, callback ...func()) bool
+	// BlockWithTicker attempt to acquire the lock for the given number of seconds,
+	// the second parameter is a ticker that will be used to check if the lock is available.
+	BlockWithTicker(t time.Duration, ticker time.Duration, callback ...func()) bool
 	// Get attempts to acquire the lock.
 	Get(callback ...func()) bool
 	// Release the lock.
