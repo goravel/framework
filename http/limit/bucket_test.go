@@ -305,9 +305,15 @@ func (s *BucketTestSuite) TestBucketWithVeryLargeInterval() {
 	s.NotZero(reset)
 
 	// Take all remaining tokens
-	bucket.take()
-	bucket.take()
-	bucket.take()
+	_, _, _, ok, err := bucket.take()
+	s.NoError(err)
+	s.True(ok)
+	_, _, _, ok, err = bucket.take()
+	s.NoError(err)
+	s.True(ok)
+	_, _, _, ok, err = bucket.take()
+	s.NoError(err)
+	s.True(ok)
 	tokens, remaining, _, lastOk, _ := bucket.take()
 
 	// Bucket should be empty now
