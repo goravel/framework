@@ -29,8 +29,8 @@ func (s *ContainerTestSuite) TestBind() {
 	}
 	s.container.Bind("Bind", callback)
 
-	concrete, exist := s.container.bindings.Load("Bind")
-	s.True(exist)
+	concrete, ok := s.container.bindings.Load("Bind")
+	s.True(ok)
 	ins, ok := concrete.(instance)
 	s.True(ok)
 	s.False(ins.shared)
@@ -51,8 +51,8 @@ func (s *ContainerTestSuite) TestBindWith() {
 	}
 	s.container.BindWith("BindWith", callback)
 
-	concrete, exist := s.container.bindings.Load("BindWith")
-	s.True(exist)
+	concrete, ok := s.container.bindings.Load("BindWith")
+	s.True(ok)
 	ins, ok := concrete.(instance)
 	s.True(ok)
 	s.False(ins.shared)
@@ -71,8 +71,8 @@ func (s *ContainerTestSuite) TestInstance() {
 	impl := 1
 	s.container.Instance("Instance", impl)
 
-	concrete, exist := s.container.bindings.Load("Instance")
-	s.True(exist)
+	concrete, ok := s.container.bindings.Load("Instance")
+	s.True(ok)
 	ins, ok := concrete.(instance)
 	s.True(ok)
 	s.True(ins.shared)
@@ -80,55 +80,52 @@ func (s *ContainerTestSuite) TestInstance() {
 	s.Equal(impl, ins.concrete)
 }
 
-func (s *ContainerTestSuite) TestSingleton() {
+func (s *ContainerTestSuite) TestSingleton_Refresh() {
 	callback := func(app foundation.Application) (any, error) {
 		return 1, nil
 	}
 	s.container.Singleton(contracts.BindingConfig, callback)
 	s.container.Singleton("Singleton", callback)
 
-	_, exist := s.container.bindings.Load(contracts.BindingConfig)
-	s.True(exist)
+	res, err := s.container.Make(contracts.BindingConfig)
+	s.Nil(err)
+	s.Equal(1, res)
 
-	concrete, exist := s.container.bindings.Load("Singleton")
-	s.True(exist)
+	res, err = s.container.Make("Singleton")
+	s.Nil(err)
+	s.Equal(1, res)
 
-	ins, ok := concrete.(instance)
+	ins, ok := s.container.instances.Load("Singleton")
 	s.True(ok)
-	s.True(ins.shared)
-	s.NotNil(ins.concrete)
-	switch concrete := ins.concrete.(type) {
-	case func(app foundation.Application) (any, error):
-		concreteImpl, err := concrete(nil)
-		s.Equal(1, concreteImpl)
-		s.Nil(err)
-	default:
-		s.Fail("concrete err")
-	}
+	s.Equal(1, ins)
 
 	s.container.Refresh("Singleton")
 
-	_, exist = s.container.instances.Load("Singleton")
-	s.False(exist)
+	res, ok = s.container.instances.Load("Singleton")
+	s.False(ok)
+	s.Nil(res)
 
-	_, exist = s.container.instances.Load(contracts.BindingConfig)
-	s.True(exist)
-
-	s.container.Singleton("Singleton", callback)
-	concrete, exist = s.container.bindings.Load("Singleton")
-	s.True(exist)
-	ins, ok = concrete.(instance)
+	res, ok = s.container.instances.Load(contracts.BindingConfig)
 	s.True(ok)
-	s.True(ins.shared)
-	s.NotNil(ins.concrete)
+	s.Equal(1, res)
+
+	res, err = s.container.Make("Singleton")
+	s.Nil(err)
+	s.Equal(1, res)
+
+	ins, ok = s.container.instances.Load("Singleton")
+	s.True(ok)
+	s.Equal(1, ins)
 
 	s.container.Refresh()
 
-	_, exist = s.container.instances.Load("Singleton")
-	s.False(exist)
+	res, ok = s.container.instances.Load("Singleton")
+	s.False(ok)
+	s.Nil(res)
 
-	_, exist = s.container.instances.Load(contracts.BindingConfig)
-	s.True(exist)
+	res, ok = s.container.instances.Load(contracts.BindingConfig)
+	s.True(ok)
+	s.Equal(1, res)
 }
 
 func (s *ContainerTestSuite) TestMake() {
