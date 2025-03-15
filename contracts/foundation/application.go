@@ -131,6 +131,8 @@ type Application interface {
 	// MakeWith resolves the given type with the given parameters from the container.
 	MakeWith(key any, parameters map[string]any) (any, error)
 	// Refresh modules after changing config, will refresh all bindings except for config if no bindings provided.
+	// Notice, this method only refreshs the facade, if another facade injects the facade previously, the another
+	// facades should be refresh simulaneously.
 	Refresh(bindings ...any)
 	// Singleton registers a shared binding in the container.
 	Singleton(key any, callback func(app Application) (any, error))
