@@ -323,12 +323,12 @@ func (c *Container) MakeWith(key any, parameters map[string]any) (any, error) {
 
 func (c *Container) Refresh(bindings ...any) {
 	if len(bindings) == 0 {
-		c.instances.Range(func(key, value any) bool {
-			if key == contracts.BindingConfig {
-				return true
-			}
+		// configInstance, ok := c.instances.Load(contracts.BindingConfig)
 
-			c.instances.Delete(key)
+		c.instances.Range(func(key, value any) bool {
+			if key != contracts.BindingConfig {
+				c.instances.Delete(key)
+			}
 
 			return true
 		})

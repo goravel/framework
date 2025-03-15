@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/contracts"
 	"github.com/goravel/framework/contracts/foundation"
 )
 
@@ -83,10 +84,15 @@ func (s *ContainerTestSuite) TestSingleton() {
 	callback := func(app foundation.Application) (any, error) {
 		return 1, nil
 	}
+	s.container.Singleton(contracts.BindingConfig, callback)
 	s.container.Singleton("Singleton", callback)
+
+	_, exist := s.container.bindings.Load(contracts.BindingConfig)
+	s.True(exist)
 
 	concrete, exist := s.container.bindings.Load("Singleton")
 	s.True(exist)
+
 	ins, ok := concrete.(instance)
 	s.True(ok)
 	s.True(ins.shared)
@@ -101,8 +107,12 @@ func (s *ContainerTestSuite) TestSingleton() {
 	}
 
 	s.container.Refresh("Singleton")
+
 	_, exist = s.container.instances.Load("Singleton")
 	s.False(exist)
+
+	_, exist = s.container.instances.Load(contracts.BindingConfig)
+	s.True(exist)
 
 	s.container.Singleton("Singleton", callback)
 	concrete, exist = s.container.bindings.Load("Singleton")
@@ -111,6 +121,14 @@ func (s *ContainerTestSuite) TestSingleton() {
 	s.True(ok)
 	s.True(ins.shared)
 	s.NotNil(ins.concrete)
+
+	s.container.Refresh()
+
+	_, exist = s.container.instances.Load("Singleton")
+	s.False(exist)
+
+	_, exist = s.container.instances.Load(contracts.BindingConfig)
+	s.True(exist)
 }
 
 func (s *ContainerTestSuite) TestMake() {
