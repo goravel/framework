@@ -321,8 +321,22 @@ func (c *Container) MakeWith(key any, parameters map[string]any) (any, error) {
 	return c.make(key, parameters)
 }
 
-func (c *Container) Refresh(key any) {
-	c.instances.Delete(key)
+func (c *Container) Refresh(bindings ...any) {
+	if len(bindings) == 0 {
+		c.instances.Range(func(key, value any) bool {
+			if key == contracts.BindingConfig {
+				return true
+			}
+
+			c.instances.Delete(key)
+
+			return true
+		})
+	} else {
+		for _, binding := range bindings {
+			c.instances.Delete(binding)
+		}
+	}
 }
 
 func (c *Container) Singleton(key any, callback func(app contractsfoundation.Application) (any, error)) {
