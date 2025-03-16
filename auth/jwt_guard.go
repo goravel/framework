@@ -10,12 +10,10 @@ import (
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/database"
 	"github.com/spf13/cast"
-	"gorm.io/gorm/clause"
 
 	contractsauth "github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/contracts/config"
-	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/http"
 )
 
@@ -29,14 +27,12 @@ type GuardItem struct {
 	Token  string
 }
 
-type Guards map[string]*GuardItem
-
 type JwtGuard struct {
-	cache  cache.Cache
-	config config.Config
-	ctx    http.Context
-	guard  string
-	orm    orm.Orm
+	cache    cache.Cache
+	config   config.Config
+	ctx      http.Context
+	guard    string
+	provider contractsauth.UserProvider
 }
 
 // User need parse token first.
@@ -45,16 +41,23 @@ func (a *JwtGuard) User(user any) error {
 	if !ok || auth[a.guard] == nil {
 		return errors.AuthParseTokenFirst
 	}
-	if auth[a.guard].Claims == nil {
+	guard, ok := auth[a.guard].(GuardItem)
+	if !ok {
 		return errors.AuthParseTokenFirst
 	}
-	if auth[a.guard].Claims.Key == "" {
+	if guard.Claims == nil {
+		return errors.AuthParseTokenFirst
+	}
+	if guard.Claims.Key == "" {
 		return errors.AuthInvalidKey
 	}
-	if auth[a.guard].Token == "" {
+	if guard.Token == "" {
 		return errors.AuthTokenExpired
 	}
-	if err := a.orm.Query().FindOrFail(user, clause.Eq{Column: clause.PrimaryColumn, Value: auth[a.guard].Claims.Key}); err != nil {
+
+	user, err := a.provider.RetriveById(guard.Claims.Key)
+
+	if err != nil {
 		return err
 	}
 
@@ -78,11 +81,17 @@ func (a *JwtGuard) ID() (string, error) {
 	if !ok || auth[a.guard] == nil {
 		return "", errors.AuthParseTokenFirst
 	}
-	if auth[a.guard].Token == "" {
+
+	guard, ok := auth[a.guard].(GuardItem)
+	if !ok {
+		return "", errors.AuthParseTokenFirst
+	}
+
+	if guard.Token == "" {
 		return "", errors.AuthTokenExpired
 	}
 
-	return auth[a.guard].Claims.Key, nil
+	return guard.Claims.Key, nil
 }
 
 func (a *JwtGuard) Parse(token string) (*contractsauth.Payload, error) {
@@ -185,7 +194,13 @@ func (a *JwtGuard) Refresh() (token string, err error) {
 	if !ok || auth[a.guard] == nil {
 		return "", errors.AuthParseTokenFirst
 	}
-	if auth[a.guard].Claims == nil {
+
+	guard, ok := auth[a.guard].(GuardItem)
+	if !ok {
+		return "", errors.AuthParseTokenFirst
+	}
+
+	if guard.Claims == nil {
 		return "", errors.AuthParseTokenFirst
 	}
 
@@ -196,23 +211,33 @@ func (a *JwtGuard) Refresh() (token string, err error) {
 		refreshTtl = 60 * 24 * 365 * 100
 	}
 
-	expireTime := carbon.FromStdTime(auth[a.guard].Claims.ExpiresAt.Time).AddMinutes(refreshTtl)
+	expireTime := carbon.FromStdTime(guard.Claims.ExpiresAt.Time).AddMinutes(refreshTtl)
 	if nowTime.Gt(expireTime) {
 		return "", errors.AuthRefreshTimeExceeded
 	}
 
-	err = a.LoginUsingID(auth[a.guard].Claims.Key)
+	err = a.LoginUsingID(guard.Claims.Key)
 
 	if err != nil {
 		return "", err
 	}
 
-	return auth[a.guard].Token, nil
+	return guard.Token, nil
 }
 
 func (a *JwtGuard) Logout() error {
 	auth, ok := a.ctx.Value(ctxKey).(Guards)
-	if !ok || auth[a.guard] == nil || auth[a.guard].Token == "" {
+
+	if !ok || auth[a.guard] == nil {
+		return errors.AuthParseTokenFirst
+	}
+
+	guard, ok := auth[a.guard].(GuardItem)
+	if !ok {
+		return errors.AuthParseTokenFirst
+	}
+
+	if guard.Token == "" {
 		return nil
 	}
 
@@ -220,7 +245,7 @@ func (a *JwtGuard) Logout() error {
 		return errors.CacheSupportRequired.SetModule(errors.ModuleAuth)
 	}
 
-	if err := a.cache.Put(getDisabledCacheKey(auth[a.guard].Token),
+	if err := a.cache.Put(getDisabledCacheKey(guard.Token),
 		true,
 		time.Duration(a.getTtl())*time.Minute,
 	); err != nil {
@@ -264,8 +289,9 @@ func (a *JwtGuard) GetGuardInfo() (*GuardItem, error) {
 	if !ok {
 		return nil, ErrorParseTokenFirst
 	}
-	if guard, exists := guards[a.guard]; exists {
-		return guard, nil
+
+	if guard, ok := guards[a.guard].(GuardItem); ok {
+		return &guard, nil
 	}
 
 	return nil, ErrorParseTokenFirst
@@ -279,12 +305,12 @@ func getDisabledCacheKey(token string) string {
 	return "jwt:disabled:" + token
 }
 
-func NewJwtGuard(guard string, cache cache.Cache, config config.Config, ctx http.Context, orm orm.Orm) *JwtGuard {
+func NewJwtGuard(guard string, cache cache.Cache, config config.Config, ctx http.Context, provider contractsauth.UserProvider) *JwtGuard {
 	return &JwtGuard{
-		cache:  cache,
-		config: config,
-		ctx:    ctx,
-		guard:  guard,
-		orm:    orm,
+		cache:    cache,
+		config:   config,
+		ctx:      ctx,
+		guard:    guard,
+		provider: provider,
 	}
 }
