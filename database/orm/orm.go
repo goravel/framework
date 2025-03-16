@@ -25,7 +25,7 @@ type Orm struct {
 	mutex           sync.Mutex
 	query           contractsorm.Query
 	queries         map[string]contractsorm.Query
-	refresh         func(key any)
+	refresh         func(key ...any)
 }
 
 func NewOrm(
@@ -37,7 +37,7 @@ func NewOrm(
 	queries map[string]contractsorm.Query,
 	log log.Log,
 	modelToObserver []contractsorm.ModelToObserver,
-	refresh func(key any),
+	refresh func(key ...any),
 ) *Orm {
 	return &Orm{
 		ctx:             ctx,
@@ -52,7 +52,7 @@ func NewOrm(
 	}
 }
 
-func BuildOrm(ctx context.Context, config config.Config, connection string, log log.Log, refresh func(key any)) (*Orm, error) {
+func BuildOrm(ctx context.Context, config config.Config, connection string, log log.Log, refresh func(key ...any)) (*Orm, error) {
 	query, dbConfig, err := gorm.BuildQuery(ctx, config, connection, log, nil)
 	if err != nil {
 		return NewOrm(ctx, config, connection, dbConfig, nil, nil, log, nil, refresh), err
