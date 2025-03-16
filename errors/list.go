@@ -1,19 +1,20 @@
 package errors
 
 var (
-	ApplicationNotSet    = New("application instance is not initialized")
-	ArtisanFacadeNotSet  = New("artisan facade is not initialized")
-	CacheFacadeNotSet    = New("cache facade is not initialized")
-	ConfigFacadeNotSet   = New("config facade is not initialized")
-	JSONParserNotSet     = New("json parser is not initialized")
-	LogFacadeNotSet      = New("log facade is not initialized")
-	OrmFacadeNotSet      = New("orm facade is not initialized")
-	QueueFacadeNotSet    = New("queue facade is not initialized")
-	ScheduleFacadeNotSet = New("schedule facade is not initialized")
-	StorageFacadeNotSet  = New("storage facade is not initialized")
-	InvalidHttpContext   = New("invalid http context")
-	RouteFacadeNotSet    = New("route facade is not initialized")
-	SessionFacadeNotSet  = New("session facade is not initialized")
+	ApplicationNotSet       = New("application instance is not initialized")
+	ArtisanFacadeNotSet     = New("artisan facade is not initialized")
+	CacheFacadeNotSet       = New("cache facade is not initialized")
+	ConfigFacadeNotSet      = New("config facade is not initialized")
+	JSONParserNotSet        = New("JSON parser is not initialized")
+	LogFacadeNotSet         = New("log facade is not initialized")
+	OrmFacadeNotSet         = New("orm facade is not initialized")
+	QueueFacadeNotSet       = New("queue facade is not initialized")
+	RateLimiterFacadeNotSet = New("rate limiter facade is not initialized")
+	ScheduleFacadeNotSet    = New("schedule facade is not initialized")
+	StorageFacadeNotSet     = New("storage facade is not initialized")
+	InvalidHttpContext      = New("invalid http context")
+	RouteFacadeNotSet       = New("route facade is not initialized")
+	SessionFacadeNotSet     = New("session facade is not initialized")
 
 	AuthEmptySecret         = New("authentication secret is missing or required")
 	AuthInvalidClaims       = New("authentication token contains invalid claims")
@@ -68,6 +69,9 @@ var (
 	FilesystemDriverNotSupported  = New("invalid driver: %s, only support local, custom")
 	FilesystemFileNotExist        = New("file doesn't exist")
 	FilesystemInvalidCustomDriver = New("init %s disk fail: via must be implement filesystem.Driver or func() (filesystem.Driver, error)")
+
+	HttpRateLimitFailedToTakeToken     = New("failed to take token")
+	HttpRateLimitFailedToCheckThrottle = New("failed to check throttle: %s")
 
 	GrpcEmptyClientHost         = New("client's host can't be empty")
 	GrpcEmptyClientPort         = New("client's port can't be empty")
