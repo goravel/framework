@@ -16,6 +16,7 @@ import (
 	contractsauth "github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/errors"
+	mocksAuth "github.com/goravel/framework/mocks/auth"
 	mockscache "github.com/goravel/framework/mocks/cache"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
@@ -94,6 +95,15 @@ func Background() http.Context {
 		response: nil,
 		values:   make(map[any]any),
 	}
+}
+
+type MockProvider struct{}
+
+func (m MockProvider) RetriveById(user any, id any) (any, error) {
+	v := reflect.ValueOf(user).Elem()
+	v.FieldByName("ID").SetUint(1)
+	v.FieldByName("Name").SetString("MockUser")
+	return user, nil
 }
 
 type AuthTestSuite struct {
@@ -904,6 +914,53 @@ func (s *AuthTestSuite) TestCheck() {
 	s.Nil(err)
 	s.True(s.auth.Check())
 	s.False(s.auth.Guest())
+}
+
+func (s *AuthTestSuite) TestAuth_ExtendGuard() {
+	s.auth.Extend("session", func(name string, a contractsauth.Auth, up contractsauth.UserProvider) contractsauth.Guard {
+		mockGuard := mocksAuth.NewGuard(s.T())
+		mockGuard.EXPECT().ID().Return("session-id-xxxx", nil)
+		return mockGuard
+	})
+
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.driver").Return("session").Once()
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.provider").Return("admin").Once()
+	s.mockConfig.EXPECT().GetString("auth.providers.admin.driver").Return("orm").Once()
+	s.mockConfig.EXPECT().Get("auth.providers.admin.model").Return(reflect.TypeOf((*User)(nil))).Once()
+
+	guard, err := s.auth.GetGuard("admin")
+	s.Nil(err)
+
+	id, err := guard.ID()
+	s.Nil(err)
+
+	s.Equal("session-id-xxxx", id)
+}
+
+func (s *AuthTestSuite) TestAuth_ExtendProvider() {
+	s.auth.Provider("mock", func(a contractsauth.Auth) contractsauth.UserProvider {
+		mockProvider := MockProvider{}
+
+		return mockProvider
+	})
+
+	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Once()
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.driver").Return("jwt").Once()
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.provider").Return("admin").Once()
+	s.mockConfig.EXPECT().Get("auth.guards.admin.ttl").Return(2).Once()
+	s.mockConfig.EXPECT().GetString("auth.providers.admin.driver").Return("mock").Once()
+
+	guard, err := s.auth.GetGuard("admin")
+	s.Nil(err)
+
+	authUser := User{}
+	err = guard.LoginUsingID(1)
+	s.Nil(err)
+
+	err = guard.User(&authUser)
+	s.Nil(err)
+	s.Equal("MockUser", authUser.Name)
+	s.Equal(uint(1), authUser.ID)
 }
 
 func (s *AuthTestSuite) TestGetTtl() {

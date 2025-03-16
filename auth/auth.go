@@ -56,6 +56,10 @@ func (a *AuthManager) Resolve(name string) (contractsauth.Guard, error) {
 	userProviderName := a.config.GetString(fmt.Sprintf("auth.guards.%s.provider", name))
 	provider, err := a.createUserProvider(userProviderName)
 
+	if guard, ok := a.guards[name]; ok {
+		return guard, nil
+	}
+
 	if guardFunc, ok := a.customGuards[driverName]; ok {
 
 		if err != nil {
