@@ -47,7 +47,7 @@ func Throttle(name string) httpcontract.Middleware {
 							ctx.Response().Header(HeaderRateLimitReset, strconv.Itoa(int(resetTime.Timestamp())))
 							ctx.Response().Header(HeaderRetryAfter, strconv.Itoa(int(retryAfter)))
 							response(ctx, instance)
-							break
+							return
 						}
 					}
 				}
