@@ -8,7 +8,6 @@ import (
 	contractsauth "github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/contracts/foundation"
 	"gorm.io/gorm/clause"
 )
 
@@ -35,9 +34,7 @@ func (o OrmUserProvider) RetriveByCredentials(credentials map[string]any) (any, 
 }
 
 // RetriveById implements auth.UserProvider.
-func (o OrmUserProvider) RetriveById(id any) (any, error) {
-	user := reflect.New(o.model)
-
+func (o OrmUserProvider) RetriveById(user any, id any) (any, error) {
 	if err := o.orm.Query().FindOrFail(user, clause.Eq{Column: clause.PrimaryColumn, Value: id}); err != nil {
 		return nil, err
 	}
@@ -45,8 +42,8 @@ func (o OrmUserProvider) RetriveById(id any) (any, error) {
 	return user, nil
 }
 
-func NewOrmUserProvider(name string, orm orm.Orm, config config.Config) (contractsauth.UserProvider, error) {
-	model := config.Get(fmt.Sprintf("auth.providers.%s.model", name))
+func NewOrmUserProvider(providerName string, orm orm.Orm, config config.Config) (contractsauth.UserProvider, error) {
+	model := config.Get(fmt.Sprintf("auth.providers.%s.model", providerName))
 
 	if model, ok := model.(reflect.Type); ok {
 		return OrmUserProvider{
@@ -55,5 +52,5 @@ func NewOrmUserProvider(name string, orm orm.Orm, config config.Config) (contrac
 		}, nil
 	}
 
-	return nil, errors.New(fmt.Sprintf("You must define the auth.providers.%s.model to create user_provider", name))
+	return nil, errors.New(fmt.Sprintf("You must define the auth.providers.%s.model to create user_provider", providerName))
 }

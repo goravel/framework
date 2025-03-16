@@ -29,10 +29,14 @@ type Guards map[string]interface{}
 
 func NewAuth(guard string, cache cache.Cache, config config.Config, ctx http.Context, orm orm.Orm) *AuthManager {
 	manager := &AuthManager{
-		cache:  cache,
-		config: config,
-		ctx:    ctx,
-		orm:    orm,
+		cache:           cache,
+		config:          config,
+		ctx:             ctx,
+		orm:             orm,
+		guards:          map[string]contractsauth.Guard{},
+		providers:       map[string]contractsauth.UserProvider{},
+		customGuards:    map[string]contractsauth.AuthGuardFunc{},
+		customProviders: map[string]contractsauth.UserProviderFunc{},
 	}
 
 	guardname := config.GetString("auth.defaults.guard")
@@ -57,12 +61,12 @@ func (a *AuthManager) Resolve(name string) (contractsauth.Guard, error) {
 		return a.guards[name], nil
 	}
 
-	switch name {
+	switch driverName {
 	case "jwt":
 		a.guards[name] = NewJwtGuard(name, a.cache, a.config, a.ctx, provider)
 		return a.guards[name], nil
 	default:
-		return nil, errors.New(fmt.Sprintf("Guard `%s` was not found", name))
+		return nil, errors.New(fmt.Sprintf("Driver %s for Guard `%s` was not found", driverName, name))
 	}
 }
 
@@ -79,7 +83,7 @@ func (a *AuthManager) createUserProvider(name string) (contractsauth.UserProvide
 
 	switch driverName {
 	case "orm":
-		provider, err := NewOrmUserProvider(driverName, a.orm, a.config)
+		provider, err := NewOrmUserProvider(name, a.orm, a.config)
 
 		if err != nil {
 			return nil, err

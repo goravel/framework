@@ -41,7 +41,7 @@ func (a *JwtGuard) User(user any) error {
 	if !ok || auth[a.guard] == nil {
 		return errors.AuthParseTokenFirst
 	}
-	guard, ok := auth[a.guard].(GuardItem)
+	guard, ok := auth[a.guard].(*GuardItem)
 	if !ok {
 		return errors.AuthParseTokenFirst
 	}
@@ -55,7 +55,7 @@ func (a *JwtGuard) User(user any) error {
 		return errors.AuthTokenExpired
 	}
 
-	user, err := a.provider.RetriveById(guard.Claims.Key)
+	user, err := a.provider.RetriveById(user, guard.Claims.Key)
 
 	if err != nil {
 		return err
@@ -82,7 +82,7 @@ func (a *JwtGuard) ID() (string, error) {
 		return "", errors.AuthParseTokenFirst
 	}
 
-	guard, ok := auth[a.guard].(GuardItem)
+	guard, ok := auth[a.guard].(*GuardItem)
 	if !ok {
 		return "", errors.AuthParseTokenFirst
 	}
@@ -195,7 +195,7 @@ func (a *JwtGuard) Refresh() (token string, err error) {
 		return "", errors.AuthParseTokenFirst
 	}
 
-	guard, ok := auth[a.guard].(GuardItem)
+	guard, ok := auth[a.guard].(*GuardItem)
 	if !ok {
 		return "", errors.AuthParseTokenFirst
 	}
@@ -232,13 +232,13 @@ func (a *JwtGuard) Logout() error {
 		return errors.AuthParseTokenFirst
 	}
 
-	guard, ok := auth[a.guard].(GuardItem)
+	guard, ok := auth[a.guard].(*GuardItem)
 	if !ok {
 		return errors.AuthParseTokenFirst
 	}
 
 	if guard.Token == "" {
-		return nil
+		return errors.AuthParseTokenFirst
 	}
 
 	if a.cache == nil {
@@ -280,7 +280,12 @@ func (a *JwtGuard) makeAuthContext(claims *Claims, token string) {
 	if !ok {
 		guards = make(Guards)
 	}
-	guards[a.guard] = &GuardItem{claims, token}
+	if guard, ok := guards[a.guard].(*GuardItem); ok {
+		guard.Claims = claims
+		guard.Token = token
+	} else {
+		guards[a.guard] = &GuardItem{claims, token}
+	}
 	a.ctx.WithValue(ctxKey, guards)
 }
 
@@ -290,8 +295,8 @@ func (a *JwtGuard) GetGuardInfo() (*GuardItem, error) {
 		return nil, ErrorParseTokenFirst
 	}
 
-	if guard, ok := guards[a.guard].(GuardItem); ok {
-		return &guard, nil
+	if guard, ok := guards[a.guard].(*GuardItem); ok {
+		return guard, nil
 	}
 
 	return nil, ErrorParseTokenFirst

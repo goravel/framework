@@ -30,7 +30,7 @@ type Auth interface {
 }
 
 type UserProvider interface {
-	RetriveById(any) (any, error)
+	RetriveById(any, any) (any, error)
 	RetriveByCredentials(map[string]any) (any, error)
 }
 
