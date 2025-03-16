@@ -82,6 +82,68 @@ func (_c *Lock_Block_Call) RunAndReturn(run func(time.Duration, ...func()) bool)
 	return _c
 }
 
+// BlockWithTicker provides a mock function with given fields: t, ticker, callback
+func (_m *Lock) BlockWithTicker(t time.Duration, ticker time.Duration, callback ...func()) bool {
+	_va := make([]interface{}, len(callback))
+	for _i := range callback {
+		_va[_i] = callback[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, t, ticker)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for BlockWithTicker")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(time.Duration, time.Duration, ...func()) bool); ok {
+		r0 = rf(t, ticker, callback...)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// Lock_BlockWithTicker_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BlockWithTicker'
+type Lock_BlockWithTicker_Call struct {
+	*mock.Call
+}
+
+// BlockWithTicker is a helper method to define mock.On call
+//   - t time.Duration
+//   - ticker time.Duration
+//   - callback ...func()
+func (_e *Lock_Expecter) BlockWithTicker(t interface{}, ticker interface{}, callback ...interface{}) *Lock_BlockWithTicker_Call {
+	return &Lock_BlockWithTicker_Call{Call: _e.mock.On("BlockWithTicker",
+		append([]interface{}{t, ticker}, callback...)...)}
+}
+
+func (_c *Lock_BlockWithTicker_Call) Run(run func(t time.Duration, ticker time.Duration, callback ...func())) *Lock_BlockWithTicker_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]func(), len(args)-2)
+		for i, a := range args[2:] {
+			if a != nil {
+				variadicArgs[i] = a.(func())
+			}
+		}
+		run(args[0].(time.Duration), args[1].(time.Duration), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Lock_BlockWithTicker_Call) Return(_a0 bool) *Lock_BlockWithTicker_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Lock_BlockWithTicker_Call) RunAndReturn(run func(time.Duration, time.Duration, ...func()) bool) *Lock_BlockWithTicker_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ForceRelease provides a mock function with no fields
 func (_m *Lock) ForceRelease() bool {
 	ret := _m.Called()

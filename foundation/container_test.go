@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/contracts"
 	"github.com/goravel/framework/contracts/foundation"
 )
 
@@ -79,38 +80,52 @@ func (s *ContainerTestSuite) TestInstance() {
 	s.Equal(impl, ins.concrete)
 }
 
-func (s *ContainerTestSuite) TestSingleton() {
+func (s *ContainerTestSuite) TestSingleton_Refresh() {
 	callback := func(app foundation.Application) (any, error) {
 		return 1, nil
 	}
+	s.container.Singleton(contracts.BindingConfig, callback)
 	s.container.Singleton("Singleton", callback)
 
-	concrete, exist := s.container.bindings.Load("Singleton")
-	s.True(exist)
-	ins, ok := concrete.(instance)
+	res, err := s.container.Make(contracts.BindingConfig)
+	s.Nil(err)
+	s.Equal(1, res)
+
+	res, err = s.container.Make("Singleton")
+	s.Nil(err)
+	s.Equal(1, res)
+
+	ins, ok := s.container.instances.Load("Singleton")
 	s.True(ok)
-	s.True(ins.shared)
-	s.NotNil(ins.concrete)
-	switch concrete := ins.concrete.(type) {
-	case func(app foundation.Application) (any, error):
-		concreteImpl, err := concrete(nil)
-		s.Equal(1, concreteImpl)
-		s.Nil(err)
-	default:
-		s.Fail("concrete err")
-	}
+	s.Equal(1, ins)
 
 	s.container.Refresh("Singleton")
-	_, exist = s.container.instances.Load("Singleton")
-	s.False(exist)
 
-	s.container.Singleton("Singleton", callback)
-	concrete, exist = s.container.bindings.Load("Singleton")
-	s.True(exist)
-	ins, ok = concrete.(instance)
+	res, ok = s.container.instances.Load("Singleton")
+	s.False(ok)
+	s.Nil(res)
+
+	res, ok = s.container.instances.Load(contracts.BindingConfig)
 	s.True(ok)
-	s.True(ins.shared)
-	s.NotNil(ins.concrete)
+	s.Equal(1, res)
+
+	res, err = s.container.Make("Singleton")
+	s.Nil(err)
+	s.Equal(1, res)
+
+	ins, ok = s.container.instances.Load("Singleton")
+	s.True(ok)
+	s.Equal(1, ins)
+
+	s.container.Refresh()
+
+	res, ok = s.container.instances.Load("Singleton")
+	s.False(ok)
+	s.Nil(res)
+
+	res, ok = s.container.instances.Load(contracts.BindingConfig)
+	s.True(ok)
+	s.Equal(1, res)
 }
 
 func (s *ContainerTestSuite) TestMake() {

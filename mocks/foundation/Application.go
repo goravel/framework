@@ -2167,9 +2167,11 @@ func (_c *Application_Publishes_Call) RunAndReturn(run func(string, map[string]s
 	return _c
 }
 
-// Refresh provides a mock function with given fields: key
-func (_m *Application) Refresh(key interface{}) {
-	_m.Called(key)
+// Refresh provides a mock function with given fields: bindings
+func (_m *Application) Refresh(bindings ...interface{}) {
+	var _ca []interface{}
+	_ca = append(_ca, bindings...)
+	_m.Called(_ca...)
 }
 
 // Application_Refresh_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Refresh'
@@ -2178,14 +2180,21 @@ type Application_Refresh_Call struct {
 }
 
 // Refresh is a helper method to define mock.On call
-//   - key interface{}
-func (_e *Application_Expecter) Refresh(key interface{}) *Application_Refresh_Call {
-	return &Application_Refresh_Call{Call: _e.mock.On("Refresh", key)}
+//   - bindings ...interface{}
+func (_e *Application_Expecter) Refresh(bindings ...interface{}) *Application_Refresh_Call {
+	return &Application_Refresh_Call{Call: _e.mock.On("Refresh",
+		append([]interface{}{}, bindings...)...)}
 }
 
-func (_c *Application_Refresh_Call) Run(run func(key interface{})) *Application_Refresh_Call {
+func (_c *Application_Refresh_Call) Run(run func(bindings ...interface{})) *Application_Refresh_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(interface{}))
+		variadicArgs := make([]interface{}, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -2195,7 +2204,7 @@ func (_c *Application_Refresh_Call) Return() *Application_Refresh_Call {
 	return _c
 }
 
-func (_c *Application_Refresh_Call) RunAndReturn(run func(interface{})) *Application_Refresh_Call {
+func (_c *Application_Refresh_Call) RunAndReturn(run func(...interface{})) *Application_Refresh_Call {
 	_c.Run(run)
 	return _c
 }

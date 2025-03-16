@@ -11,6 +11,7 @@ var (
 	ModuleFilesystem = "filesystem"
 	ModuleGrpc       = "grpc"
 	ModuleHash       = "hash"
+	ModuleHttp       = "http"
 	ModuleLang       = "lang"
 	ModuleLog        = "log"
 	ModuleMail       = "mail"
@@ -22,5 +23,4 @@ var (
 	ModuleSchedule   = "schedule"
 	ModuleSession    = "session"
 	ModuleTesting    = "testing"
-	ModuleHttp       = "http"
 )
