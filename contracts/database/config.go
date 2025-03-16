@@ -14,6 +14,8 @@ type Config struct {
 	Dialector         gorm.Dialector
 	Driver            string
 	Host              string
+	NameReplacer      Replacer
+	NoLowerCase       bool
 	Password          string
 	Port              int
 	Prefix            string
@@ -21,8 +23,16 @@ type Config struct {
 	Username          string
 	Version           string
 	PlaceholderFormat PlaceholderFormat
+	Singular          bool
+	Sslmode           string
+	Timezone          string
 }
 
 type PlaceholderFormat interface {
 	ReplacePlaceholders(sql string) (string, error)
+}
+
+// Replacer replacer interface like strings.Replacer
+type Replacer interface {
+	Replace(name string) string
 }

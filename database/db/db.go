@@ -6,12 +6,15 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/jmoiron/sqlx"
+	gormio "gorm.io/gorm"
 
 	"github.com/goravel/framework/contracts/config"
 	contractsdb "github.com/goravel/framework/contracts/database/db"
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	contractslogger "github.com/goravel/framework/contracts/database/logger"
+	"github.com/goravel/framework/contracts/log"
+	databasedriver "github.com/goravel/framework/database/driver"
+	databaselogger "github.com/goravel/framework/database/logger"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 )
@@ -20,25 +23,29 @@ type DB struct {
 	contractsdb.Tx
 	config  config.Config
 	ctx     context.Context
-	db      contractsdb.Builder
 	driver  contractsdriver.Driver
+	gorm    *gormio.DB
+	log     log.Log
 	logger  contractslogger.Logger
 	queries map[string]contractsdb.DB
 }
 
-func NewDB(ctx context.Context, config config.Config, driver contractsdriver.Driver, logger contractslogger.Logger, db contractsdb.Builder) *DB {
+func NewDB(ctx context.Context, config config.Config, driver contractsdriver.Driver, log log.Log, gorm *gormio.DB) *DB {
+	logger := databaselogger.NewLogger(config, log)
+
 	return &DB{
-		Tx:      NewTx(ctx, driver, logger, db, nil, &[]TxLog{}),
+		Tx:      NewTx(ctx, driver, logger, gorm, nil, &[]TxLog{}),
 		ctx:     ctx,
 		config:  config,
 		driver:  driver,
+		gorm:    gorm,
+		log:     log,
 		logger:  logger,
-		db:      db,
 		queries: make(map[string]contractsdb.DB),
 	}
 }
 
-func BuildDB(ctx context.Context, config config.Config, logger contractslogger.Logger, connection string) (*DB, error) {
+func BuildDB(ctx context.Context, config config.Config, log log.Log, connection string) (*DB, error) {
 	driverCallback, exist := config.Get(fmt.Sprintf("database.connections.%s.via", connection)).(func() (contractsdriver.Driver, error))
 	if !exist {
 		return nil, errors.DatabaseConfigNotFound
@@ -49,12 +56,14 @@ func BuildDB(ctx context.Context, config config.Config, logger contractslogger.L
 		return nil, err
 	}
 
-	instance, err := driver.DB()
+	pool := driver.Pool()
+	gorm, err := databasedriver.BuildGorm(config, log, pool)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewDB(ctx, config, driver, logger, sqlx.NewDb(instance, driver.Config().Driver)), nil
+	//sqlx.NewDb(instance, driver.Config().Driver)
+	return NewDB(ctx, config, driver, log, gorm), nil
 }
 
 func (r *DB) BeginTransaction() (contractsdb.Tx, error) {
@@ -72,9 +81,9 @@ func (r *DB) Connection(name string) contractsdb.DB {
 	}
 
 	if _, ok := r.queries[name]; !ok {
-		db, err := BuildDB(r.ctx, r.config, r.logger, name)
+		db, err := BuildDB(r.ctx, r.config, r.log, name)
 		if err != nil {
-			r.logger.Panicf(r.ctx, err.Error())
+			r.log.WithContext(r.ctx).Panicf(err.Error())
 			return nil
 		}
 		r.queries[name] = db
@@ -103,21 +112,21 @@ func (r *DB) Transaction(callback func(tx contractsdb.Tx) error) error {
 }
 
 func (r *DB) WithContext(ctx context.Context) contractsdb.DB {
-	return NewDB(ctx, r.config, r.driver, r.logger, r.db)
+	return NewDB(ctx, r.config, r.driver, r.log, r.db)
 }
 
 type Tx struct {
 	ctx    context.Context
-	db     contractsdb.Builder
 	driver contractsdriver.Driver
+	gorm   *gormio.DB
 	logger contractslogger.Logger
 	tx     contractsdb.TxBuilder
 	txLogs *[]TxLog
 }
 
-func NewTx(ctx context.Context, driver contractsdriver.Driver, logger contractslogger.Logger, db contractsdb.Builder, tx contractsdb.TxBuilder, txLogs *[]TxLog) *Tx {
+func NewTx(ctx context.Context, driver contractsdriver.Driver, logger contractslogger.Logger, gorm *gormio.DB, tx contractsdb.TxBuilder, txLogs *[]TxLog) *Tx {
 	return &Tx{
-		ctx: ctx, driver: driver, logger: logger, db: db, tx: tx, txLogs: txLogs,
+		ctx: ctx, driver: driver, logger: logger, gorm: gorm, tx: tx, txLogs: txLogs,
 	}
 }
 

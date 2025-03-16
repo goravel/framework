@@ -14,7 +14,7 @@ type Driver interface {
 	// DEPRECATED
 	Config() database.Config
 	// DB returns the database connection.
-	// DEPRECATED
+	// DEPRECATED: 123
 	DB() (*sql.DB, error)
 	// Docker returns the database driver for Docker.
 	Docker() (docker.DatabaseDriver, error)

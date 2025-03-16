@@ -73,10 +73,6 @@ func (r *Logger) Errorf(ctx context.Context, msg string, data ...any) {
 	}
 }
 
-func (r *Logger) Panicf(ctx context.Context, msg string, data ...any) {
-	r.log.WithContext(ctx).Panicf(msg, data...)
-}
-
 func (r *Logger) Trace(ctx context.Context, begin carbon.Carbon, sql string, rowsAffected int64, err error) {
 	if r.level <= logger.Silent {
 		return
