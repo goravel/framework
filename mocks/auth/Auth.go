@@ -66,7 +66,7 @@ func (_c *Auth_Check_Call) RunAndReturn(run func() bool) *Auth_Check_Call {
 }
 
 // GetGuard provides a mock function with given fields: name
-func (_m *Auth) GetGuard(name string) auth.Guard {
+func (_m *Auth) GetGuard(name string) (auth.Guard, error) {
 	ret := _m.Called(name)
 
 	if len(ret) == 0 {
@@ -74,6 +74,10 @@ func (_m *Auth) GetGuard(name string) auth.Guard {
 	}
 
 	var r0 auth.Guard
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (auth.Guard, error)); ok {
+		return rf(name)
+	}
 	if rf, ok := ret.Get(0).(func(string) auth.Guard); ok {
 		r0 = rf(name)
 	} else {
@@ -82,7 +86,13 @@ func (_m *Auth) GetGuard(name string) auth.Guard {
 		}
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(name)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Auth_GetGuard_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetGuard'
@@ -103,12 +113,12 @@ func (_c *Auth_GetGuard_Call) Run(run func(name string)) *Auth_GetGuard_Call {
 	return _c
 }
 
-func (_c *Auth_GetGuard_Call) Return(_a0 auth.Guard) *Auth_GetGuard_Call {
-	_c.Call.Return(_a0)
+func (_c *Auth_GetGuard_Call) Return(_a0 auth.Guard, _a1 error) *Auth_GetGuard_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Auth_GetGuard_Call) RunAndReturn(run func(string) auth.Guard) *Auth_GetGuard_Call {
+func (_c *Auth_GetGuard_Call) RunAndReturn(run func(string) (auth.Guard, error)) *Auth_GetGuard_Call {
 	_c.Call.Return(run)
 	return _c
 }
