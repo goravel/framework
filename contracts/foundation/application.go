@@ -49,6 +49,8 @@ type Application interface {
 	DatabasePath(path ...string) string
 	// StoragePath get the path to the storage directory.
 	StoragePath(path ...string) string
+	// ResourcePath get the path to the resources directory.
+	ResourcePath(path ...string) string
 	// LangPath get the path to the language files.
 	LangPath(path ...string) string
 	// PublicPath get the path to the public directory.
