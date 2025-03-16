@@ -75,9 +75,9 @@ func (_c *UserProvider_RetriveByCredentials_Call) RunAndReturn(run func(map[stri
 	return _c
 }
 
-// RetriveById provides a mock function with given fields: _a0
-func (_m *UserProvider) RetriveById(_a0 interface{}) (interface{}, error) {
-	ret := _m.Called(_a0)
+// RetriveById provides a mock function with given fields: _a0, _a1
+func (_m *UserProvider) RetriveById(_a0 interface{}, _a1 interface{}) (interface{}, error) {
+	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for RetriveById")
@@ -85,19 +85,19 @@ func (_m *UserProvider) RetriveById(_a0 interface{}) (interface{}, error) {
 
 	var r0 interface{}
 	var r1 error
-	if rf, ok := ret.Get(0).(func(interface{}) (interface{}, error)); ok {
-		return rf(_a0)
+	if rf, ok := ret.Get(0).(func(interface{}, interface{}) (interface{}, error)); ok {
+		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(interface{}) interface{}); ok {
-		r0 = rf(_a0)
+	if rf, ok := ret.Get(0).(func(interface{}, interface{}) interface{}); ok {
+		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(interface{})
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(interface{}) error); ok {
-		r1 = rf(_a0)
+	if rf, ok := ret.Get(1).(func(interface{}, interface{}) error); ok {
+		r1 = rf(_a0, _a1)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -112,13 +112,14 @@ type UserProvider_RetriveById_Call struct {
 
 // RetriveById is a helper method to define mock.On call
 //   - _a0 interface{}
-func (_e *UserProvider_Expecter) RetriveById(_a0 interface{}) *UserProvider_RetriveById_Call {
-	return &UserProvider_RetriveById_Call{Call: _e.mock.On("RetriveById", _a0)}
+//   - _a1 interface{}
+func (_e *UserProvider_Expecter) RetriveById(_a0 interface{}, _a1 interface{}) *UserProvider_RetriveById_Call {
+	return &UserProvider_RetriveById_Call{Call: _e.mock.On("RetriveById", _a0, _a1)}
 }
 
-func (_c *UserProvider_RetriveById_Call) Run(run func(_a0 interface{})) *UserProvider_RetriveById_Call {
+func (_c *UserProvider_RetriveById_Call) Run(run func(_a0 interface{}, _a1 interface{})) *UserProvider_RetriveById_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(interface{}))
+		run(args[0].(interface{}), args[1].(interface{}))
 	})
 	return _c
 }
@@ -128,7 +129,7 @@ func (_c *UserProvider_RetriveById_Call) Return(_a0 interface{}, _a1 error) *Use
 	return _c
 }
 
-func (_c *UserProvider_RetriveById_Call) RunAndReturn(run func(interface{}) (interface{}, error)) *UserProvider_RetriveById_Call {
+func (_c *UserProvider_RetriveById_Call) RunAndReturn(run func(interface{}, interface{}) (interface{}, error)) *UserProvider_RetriveById_Call {
 	_c.Call.Return(run)
 	return _c
 }
