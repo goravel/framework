@@ -28,13 +28,17 @@ type AuthManager struct {
 type Guards map[string]interface{}
 
 func NewAuth(guard string, cache cache.Cache, config config.Config, ctx http.Context, orm orm.Orm) *AuthManager {
-	return &AuthManager{
+	manager := &AuthManager{
 		cache:  cache,
 		config: config,
 		ctx:    ctx,
-		Guard:  NewJwtGuard(guard, cache, config, ctx, orm),
 		orm:    orm,
 	}
+
+	guardname := config.GetString("auth.defaults.guard")
+	manager.Guard, _ = manager.GetGuard(guardname)
+
+	return manager
 }
 
 func (a *AuthManager) Resolve(name string) (contractsauth.Guard, error) {
