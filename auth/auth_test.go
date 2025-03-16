@@ -900,7 +900,8 @@ func (s *AuthTestSuite) TestCheck() {
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(0).Once()
 	s.False(s.auth.Check())
 	s.True(s.auth.Guest())
-	s.auth.LoginUsingID(1)
+	err := s.auth.LoginUsingID(1)
+	s.Nil(err)
 	s.True(s.auth.Check())
 	s.False(s.auth.Guest())
 }
