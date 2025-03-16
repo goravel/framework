@@ -17,64 +17,6 @@ func (_m *UserProvider) EXPECT() *UserProvider_Expecter {
 	return &UserProvider_Expecter{mock: &_m.Mock}
 }
 
-// RetriveByCredentials provides a mock function with given fields: _a0
-func (_m *UserProvider) RetriveByCredentials(_a0 map[string]interface{}) (interface{}, error) {
-	ret := _m.Called(_a0)
-
-	if len(ret) == 0 {
-		panic("no return value specified for RetriveByCredentials")
-	}
-
-	var r0 interface{}
-	var r1 error
-	if rf, ok := ret.Get(0).(func(map[string]interface{}) (interface{}, error)); ok {
-		return rf(_a0)
-	}
-	if rf, ok := ret.Get(0).(func(map[string]interface{}) interface{}); ok {
-		r0 = rf(_a0)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(interface{})
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(map[string]interface{}) error); ok {
-		r1 = rf(_a0)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// UserProvider_RetriveByCredentials_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RetriveByCredentials'
-type UserProvider_RetriveByCredentials_Call struct {
-	*mock.Call
-}
-
-// RetriveByCredentials is a helper method to define mock.On call
-//   - _a0 map[string]interface{}
-func (_e *UserProvider_Expecter) RetriveByCredentials(_a0 interface{}) *UserProvider_RetriveByCredentials_Call {
-	return &UserProvider_RetriveByCredentials_Call{Call: _e.mock.On("RetriveByCredentials", _a0)}
-}
-
-func (_c *UserProvider_RetriveByCredentials_Call) Run(run func(_a0 map[string]interface{})) *UserProvider_RetriveByCredentials_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(map[string]interface{}))
-	})
-	return _c
-}
-
-func (_c *UserProvider_RetriveByCredentials_Call) Return(_a0 interface{}, _a1 error) *UserProvider_RetriveByCredentials_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *UserProvider_RetriveByCredentials_Call) RunAndReturn(run func(map[string]interface{}) (interface{}, error)) *UserProvider_RetriveByCredentials_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // RetriveById provides a mock function with given fields: _a0, _a1
 func (_m *UserProvider) RetriveById(_a0 interface{}, _a1 interface{}) (interface{}, error) {
 	ret := _m.Called(_a0, _a1)

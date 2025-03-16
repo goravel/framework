@@ -25,13 +25,13 @@ type Guard interface {
 
 type Auth interface {
 	Guard
-	// Guard attempts to get the guard against the local cache.
 	GetGuard(name string) (Guard, error)
+	Extend(name string, fn AuthGuardFunc)
+	Provider(name string, fn UserProviderFunc)
 }
 
 type UserProvider interface {
 	RetriveById(any, any) (any, error)
-	RetriveByCredentials(map[string]any) (any, error)
 }
 
 type UserProviderFunc func(Auth) UserProvider

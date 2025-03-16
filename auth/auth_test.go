@@ -642,7 +642,7 @@ func (s *AuthTestSuite) TestUser_Success_MultipleParse() {
 	s.NotNil(guard)
 
 	err := guard.LoginUsingID(1)
-	s.Nil(err, "Unable to LoginUsingID")
+	s.Nil(err)
 
 	guard1Info, err := guard.GetGuardInfo()
 	s.Nil(err)
@@ -893,6 +893,16 @@ func (s *AuthTestSuite) TestMakeAuthContext() {
 	s.True(ok)
 	s.Equal(&GuardItem{nil, "1"}, guards[testUserGuard])
 	s.Equal(&GuardItem{nil, "2"}, guards[testAdminGuard])
+}
+
+func (s *AuthTestSuite) TestCheck() {
+	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Once()
+	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(0).Once()
+	s.False(s.auth.Check())
+	s.True(s.auth.Guest())
+	s.auth.LoginUsingID(1)
+	s.True(s.auth.Check())
+	s.False(s.auth.Guest())
 }
 
 func (s *AuthTestSuite) TestGetTtl() {

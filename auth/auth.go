@@ -43,6 +43,14 @@ func NewAuth(guard string, cache cache.Cache, config config.Config, ctx http.Con
 	return manager
 }
 
+func (a *AuthManager) Extend(name string, fn contractsauth.AuthGuardFunc) {
+	a.customGuards[name] = fn
+}
+
+func (a *AuthManager) Provider(name string, fn contractsauth.UserProviderFunc) {
+	a.customProviders[name] = fn
+}
+
 func (a *AuthManager) Resolve(name string) (contractsauth.Guard, error) {
 	driverName := a.config.GetString(fmt.Sprintf("auth.guards.%s.driver", name))
 	userProviderName := a.config.GetString(fmt.Sprintf("auth.guards.%s.provider", name))

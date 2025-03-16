@@ -65,6 +65,40 @@ func (_c *Auth_Check_Call) RunAndReturn(run func() bool) *Auth_Check_Call {
 	return _c
 }
 
+// Extend provides a mock function with given fields: name, fn
+func (_m *Auth) Extend(name string, fn auth.AuthGuardFunc) {
+	_m.Called(name, fn)
+}
+
+// Auth_Extend_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Extend'
+type Auth_Extend_Call struct {
+	*mock.Call
+}
+
+// Extend is a helper method to define mock.On call
+//   - name string
+//   - fn auth.AuthGuardFunc
+func (_e *Auth_Expecter) Extend(name interface{}, fn interface{}) *Auth_Extend_Call {
+	return &Auth_Extend_Call{Call: _e.mock.On("Extend", name, fn)}
+}
+
+func (_c *Auth_Extend_Call) Run(run func(name string, fn auth.AuthGuardFunc)) *Auth_Extend_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(auth.AuthGuardFunc))
+	})
+	return _c
+}
+
+func (_c *Auth_Extend_Call) Return() *Auth_Extend_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Auth_Extend_Call) RunAndReturn(run func(string, auth.AuthGuardFunc)) *Auth_Extend_Call {
+	_c.Run(run)
+	return _c
+}
+
 // GetGuard provides a mock function with given fields: name
 func (_m *Auth) GetGuard(name string) (auth.Guard, error) {
 	ret := _m.Called(name)
@@ -357,6 +391,40 @@ func (_c *Auth_Logout_Call) Return(_a0 error) *Auth_Logout_Call {
 
 func (_c *Auth_Logout_Call) RunAndReturn(run func() error) *Auth_Logout_Call {
 	_c.Call.Return(run)
+	return _c
+}
+
+// Provider provides a mock function with given fields: name, fn
+func (_m *Auth) Provider(name string, fn auth.UserProviderFunc) {
+	_m.Called(name, fn)
+}
+
+// Auth_Provider_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Provider'
+type Auth_Provider_Call struct {
+	*mock.Call
+}
+
+// Provider is a helper method to define mock.On call
+//   - name string
+//   - fn auth.UserProviderFunc
+func (_e *Auth_Expecter) Provider(name interface{}, fn interface{}) *Auth_Provider_Call {
+	return &Auth_Provider_Call{Call: _e.mock.On("Provider", name, fn)}
+}
+
+func (_c *Auth_Provider_Call) Run(run func(name string, fn auth.UserProviderFunc)) *Auth_Provider_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(auth.UserProviderFunc))
+	})
+	return _c
+}
+
+func (_c *Auth_Provider_Call) Return() *Auth_Provider_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Auth_Provider_Call) RunAndReturn(run func(string, auth.UserProviderFunc)) *Auth_Provider_Call {
+	_c.Run(run)
 	return _c
 }
 
