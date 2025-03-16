@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"errors"
 	"fmt"
 
 	contractsauth "github.com/goravel/framework/contracts/auth"
@@ -39,8 +38,7 @@ func NewAuth(guard string, cache cache.Cache, config config.Config, ctx http.Con
 		customProviders: map[string]contractsauth.UserProviderFunc{},
 	}
 
-	guardname := config.GetString("auth.defaults.guard")
-	manager.Guard, _ = manager.GetGuard(guardname)
+	manager.Guard, _ = manager.GetGuard(guard)
 
 	return manager
 }
@@ -66,7 +64,7 @@ func (a *AuthManager) Resolve(name string) (contractsauth.Guard, error) {
 		a.guards[name] = NewJwtGuard(name, a.cache, a.config, a.ctx, provider)
 		return a.guards[name], nil
 	default:
-		return nil, errors.New(fmt.Sprintf("Driver %s for Guard `%s` was not found", driverName, name))
+		return nil, fmt.Errorf("Driver %s for Guard `%s` was not found", driverName, name)
 	}
 }
 
@@ -92,7 +90,7 @@ func (a *AuthManager) createUserProvider(name string) (contractsauth.UserProvide
 		a.providers[driverName] = provider
 		return a.providers[driverName], nil
 	default:
-		return nil, errors.New(fmt.Sprintf("User Provider %s was not found", driverName))
+		return nil, fmt.Errorf("User Provider %s was not found", driverName)
 	}
 }
 

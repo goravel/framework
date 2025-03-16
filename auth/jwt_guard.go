@@ -55,7 +55,7 @@ func (a *JwtGuard) User(user any) error {
 		return errors.AuthTokenExpired
 	}
 
-	user, err := a.provider.RetriveById(user, guard.Claims.Key)
+	_, err := a.provider.RetriveById(user, guard.Claims.Key)
 
 	if err != nil {
 		return err

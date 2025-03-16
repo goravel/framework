@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 
@@ -52,5 +51,5 @@ func NewOrmUserProvider(providerName string, orm orm.Orm, config config.Config) 
 		}, nil
 	}
 
-	return nil, errors.New(fmt.Sprintf("You must define the auth.providers.%s.model to create user_provider", providerName))
+	return nil, fmt.Errorf("You must define the auth.providers.%s.model to create user_provider", providerName)
 }
