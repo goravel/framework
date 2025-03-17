@@ -81,6 +81,10 @@ func (s *ApplicationTestSuite) TestStoragePath() {
 	s.Equal(filepath.Join(support.RootPath, "storage", "goravel.go"), s.app.StoragePath("goravel.go"))
 }
 
+func (s *ApplicationTestSuite) TestResourcePath() {
+	s.Equal(filepath.Join(support.RootPath, "resources", "goravel.go"), s.app.ResourcePath("goravel.go"))
+}
+
 func (s *ApplicationTestSuite) TestLangPath() {
 	mockConfig := mocksconfig.NewConfig(s.T())
 	mockConfig.EXPECT().GetString("app.lang_path", "lang").Return("test").Once()

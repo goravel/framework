@@ -24,6 +24,10 @@ func Storage(paths ...string) string {
 	return facades.App().StoragePath(paths...)
 }
 
+func Resource(paths ...string) string {
+	return facades.App().ResourcePath(paths...)
+}
+
 func Lang(paths ...string) string {
 	return facades.App().LangPath(paths...)
 }

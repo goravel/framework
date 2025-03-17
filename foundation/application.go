@@ -95,6 +95,11 @@ func (app *Application) StoragePath(path ...string) string {
 	return app.absPath(path...)
 }
 
+func (app *Application) ResourcePath(path ...string) string {
+	path = append([]string{support.RelativePath, "resources"}, path...)
+	return app.absPath(path...)
+}
+
 func (app *Application) LangPath(path ...string) string {
 	defaultPath := "lang"
 	if configFacade := app.MakeConfig(); configFacade != nil {
