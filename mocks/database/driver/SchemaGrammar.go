@@ -1468,6 +1468,51 @@ func (_c *SchemaGrammar_CompileUnique_Call) RunAndReturn(run func(driver.Bluepri
 	return _c
 }
 
+// CompileVersion provides a mock function with no fields
+func (_m *SchemaGrammar) CompileVersion() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompileVersion")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// SchemaGrammar_CompileVersion_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompileVersion'
+type SchemaGrammar_CompileVersion_Call struct {
+	*mock.Call
+}
+
+// CompileVersion is a helper method to define mock.On call
+func (_e *SchemaGrammar_Expecter) CompileVersion() *SchemaGrammar_CompileVersion_Call {
+	return &SchemaGrammar_CompileVersion_Call{Call: _e.mock.On("CompileVersion")}
+}
+
+func (_c *SchemaGrammar_CompileVersion_Call) Run(run func()) *SchemaGrammar_CompileVersion_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *SchemaGrammar_CompileVersion_Call) Return(_a0 string) *SchemaGrammar_CompileVersion_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *SchemaGrammar_CompileVersion_Call) RunAndReturn(run func() string) *SchemaGrammar_CompileVersion_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CompileViews provides a mock function with given fields: database
 func (_m *SchemaGrammar) CompileViews(database string) string {
 	ret := _m.Called(database)

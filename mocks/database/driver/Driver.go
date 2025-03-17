@@ -24,51 +24,6 @@ func (_m *Driver) EXPECT() *Driver_Expecter {
 	return &Driver_Expecter{mock: &_m.Mock}
 }
 
-// Config provides a mock function with no fields
-func (_m *Driver) Config() database.Config {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for Config")
-	}
-
-	var r0 database.Config
-	if rf, ok := ret.Get(0).(func() database.Config); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(database.Config)
-	}
-
-	return r0
-}
-
-// Driver_Config_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Config'
-type Driver_Config_Call struct {
-	*mock.Call
-}
-
-// Config is a helper method to define mock.On call
-func (_e *Driver_Expecter) Config() *Driver_Config_Call {
-	return &Driver_Config_Call{Call: _e.mock.On("Config")}
-}
-
-func (_c *Driver_Config_Call) Run(run func()) *Driver_Config_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Driver_Config_Call) Return(_a0 database.Config) *Driver_Config_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Driver_Config_Call) RunAndReturn(run func() database.Config) *Driver_Config_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // Docker provides a mock function with no fields
 func (_m *Driver) Docker() (docker.DatabaseDriver, error) {
 	ret := _m.Called()

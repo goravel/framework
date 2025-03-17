@@ -1798,6 +1798,51 @@ func (_c *Grammar_CompileUnique_Call) RunAndReturn(run func(driver.Blueprint, *d
 	return _c
 }
 
+// CompileVersion provides a mock function with no fields
+func (_m *Grammar) CompileVersion() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompileVersion")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_CompileVersion_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompileVersion'
+type Grammar_CompileVersion_Call struct {
+	*mock.Call
+}
+
+// CompileVersion is a helper method to define mock.On call
+func (_e *Grammar_Expecter) CompileVersion() *Grammar_CompileVersion_Call {
+	return &Grammar_CompileVersion_Call{Call: _e.mock.On("CompileVersion")}
+}
+
+func (_c *Grammar_CompileVersion_Call) Run(run func()) *Grammar_CompileVersion_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Grammar_CompileVersion_Call) Return(_a0 string) *Grammar_CompileVersion_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_CompileVersion_Call) RunAndReturn(run func() string) *Grammar_CompileVersion_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CompileViews provides a mock function with given fields: database
 func (_m *Grammar) CompileViews(database string) string {
 	ret := _m.Called(database)

@@ -8,6 +8,7 @@ type Pool struct {
 }
 
 type Config struct {
+	Charset      string
 	Connection   string
 	Dsn          string
 	Database     string
@@ -20,11 +21,12 @@ type Config struct {
 	Port         int
 	Prefix       string
 	Schema       string
-	Username     string
-	Version      string
 	Singular     bool
 	Sslmode      string
 	Timezone     string
+	Username     string
+	// DEPRECATED
+	Version string
 }
 
 // Replacer replacer interface like strings.Replacer
