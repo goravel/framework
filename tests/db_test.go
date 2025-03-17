@@ -1345,8 +1345,9 @@ func TestDB_Connection(t *testing.T) {
 		assert.NoError(t, docker.Shutdown())
 	}()
 
-	sqliteConnection := sqliteTestQuery.Driver().Config().Connection
-	mockDatabaseConfig(postgresTestQuery.MockConfig(), sqliteTestQuery.Driver().Config(), sqliteConnection, "", false)
+	dbConfig := sqliteTestQuery.Driver().Pool().Writers[0]
+	sqliteConnection := dbConfig.Connection
+	mockDatabaseConfig(postgresTestQuery.MockConfig(), dbConfig, sqliteConnection, "", false)
 
 	result, err := postgresTestQuery.DB().Table("products").Insert(Product{
 		Name: "connection",

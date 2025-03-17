@@ -124,9 +124,10 @@ func (s *DefaultMigratorWithDBSuite) TestStatus() {
 func TestDefaultMigratorWithPostgresSchema(t *testing.T) {
 	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
 	postgresTestQuery.WithSchema("goravel")
+	driverName := postgresTestQuery.Driver().Pool().Writers[0].Driver
 
 	schema := newSchema(postgresTestQuery, map[string]*TestQuery{
-		postgresTestQuery.Driver().Config().Driver: postgresTestQuery,
+		driverName: postgresTestQuery,
 	})
 	testMigration := NewTestMigration(schema)
 	schema.Register([]contractsschema.Migration{
@@ -143,9 +144,10 @@ func TestDefaultMigratorWithPostgresSchema(t *testing.T) {
 func TestDefaultMigratorWithSqlserverSchema(t *testing.T) {
 	sqlserverTestQuery := NewTestQueryBuilder().Sqlserver("", false)
 	sqlserverTestQuery.WithSchema("goravel")
+	driverName := sqlserverTestQuery.Driver().Pool().Writers[0].Driver
 
 	schema := newSchema(sqlserverTestQuery, map[string]*TestQuery{
-		sqlserverTestQuery.Driver().Config().Driver: sqlserverTestQuery,
+		driverName: sqlserverTestQuery,
 	})
 	testMigration := NewTestMigrationWithSqlserverSchema(schema)
 	schema.Register([]contractsschema.Migration{

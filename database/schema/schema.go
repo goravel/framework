@@ -26,11 +26,16 @@ type Schema struct {
 	schema     string
 }
 
-func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, driver driver.Driver, migrations []contractsschema.Migration) *Schema {
-	prefix := driver.Config().Prefix
+func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, driver driver.Driver, migrations []contractsschema.Migration) (*Schema, error) {
+	writers := driver.Pool().Writers
+	if len(writers) == 0 {
+		return nil, errors.DatabaseConfigNotFound
+	}
+
+	prefix := writers[0].Prefix
+	schema := writers[0].Schema
 	grammar := driver.Grammar()
 	processor := driver.Processor()
-	schema := driver.Config().Schema
 
 	return &Schema{
 		config:     config,
@@ -42,11 +47,17 @@ func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, driver d
 		prefix:     prefix,
 		processor:  processor,
 		schema:     schema,
-	}
+	}, nil
 }
 
 func (r *Schema) Connection(name string) contractsschema.Schema {
-	return NewSchema(r.config, r.log, r.orm.Connection(name), r.driver, r.migrations)
+	schema, err := NewSchema(r.config, r.log, r.orm.Connection(name), r.driver, r.migrations)
+	if err != nil {
+		r.log.Panic(errors.SchemaConnectionNotFound.Args(name).SetModule(errors.ModuleSchedule).Error())
+		return nil
+	}
+
+	return schema
 }
 
 func (r *Schema) Create(table string, callback func(table contractsschema.Blueprint)) error {

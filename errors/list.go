@@ -132,6 +132,7 @@ var (
 	SchemaFailedToRenameTable  = New("failed to rename %s table: %v")
 	SchemaEmptyReferenceString = New("reference string can't be empty")
 	SchemaErrorReferenceFormat = New("invalid format: too many dots in reference")
+	SchemaConnectionNotFound   = New("connection %s not found")
 
 	SessionDriverAlreadyExists   = New("session driver [%s] already exists")
 	SessionDriverExtensionFailed = New("session failed to extend session [%s] driver [%v]")

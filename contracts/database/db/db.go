@@ -194,6 +194,7 @@ type TxBuilder interface {
 
 type CommonBuilder interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+	Explain(sql string, args ...any) string
 	GetContext(ctx context.Context, dest any, query string, args ...any) error
 	QueryxContext(ctx context.Context, query string, args ...any) (*sqlx.Rows, error)
 	SelectContext(ctx context.Context, dest any, query string, args ...any) error

@@ -2624,7 +2624,7 @@ func TestPostgresSchema(t *testing.T) {
 	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
 	postgresTestQuery.WithSchema(testSchema)
 	newSchema := newSchema(postgresTestQuery, map[string]*TestQuery{
-		postgresTestQuery.Driver().Config().Connection: postgresTestQuery,
+		postgresTestQuery.Driver().Pool().Writers[0].Connection: postgresTestQuery,
 	})
 
 	assert.NoError(t, newSchema.Create(table, func(table contractsschema.Blueprint) {
@@ -2646,7 +2646,7 @@ func TestSqlserverSchema(t *testing.T) {
 	sqlserverTestQuery := NewTestQueryBuilder().Sqlserver("", false)
 	sqlserverTestQuery.WithSchema(testSchema)
 	newSchema := newSchema(sqlserverTestQuery, map[string]*TestQuery{
-		sqlserverTestQuery.Driver().Config().Connection: sqlserverTestQuery,
+		sqlserverTestQuery.Driver().Pool().Writers[0].Connection: sqlserverTestQuery,
 	})
 
 	assert.NoError(t, newSchema.Create(fmt.Sprintf("%s.%s", schema, table), func(table contractsschema.Blueprint) {

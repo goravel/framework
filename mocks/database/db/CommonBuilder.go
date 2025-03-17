@@ -95,6 +95,63 @@ func (_c *CommonBuilder_ExecContext_Call) RunAndReturn(run func(context.Context,
 	return _c
 }
 
+// Explain provides a mock function with given fields: _a0, args
+func (_m *CommonBuilder) Explain(_a0 string, args ...interface{}) string {
+	var _ca []interface{}
+	_ca = append(_ca, _a0)
+	_ca = append(_ca, args...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Explain")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) string); ok {
+		r0 = rf(_a0, args...)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// CommonBuilder_Explain_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Explain'
+type CommonBuilder_Explain_Call struct {
+	*mock.Call
+}
+
+// Explain is a helper method to define mock.On call
+//   - _a0 string
+//   - args ...interface{}
+func (_e *CommonBuilder_Expecter) Explain(_a0 interface{}, args ...interface{}) *CommonBuilder_Explain_Call {
+	return &CommonBuilder_Explain_Call{Call: _e.mock.On("Explain",
+		append([]interface{}{_a0}, args...)...)}
+}
+
+func (_c *CommonBuilder_Explain_Call) Run(run func(_a0 string, args ...interface{})) *CommonBuilder_Explain_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *CommonBuilder_Explain_Call) Return(_a0 string) *CommonBuilder_Explain_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *CommonBuilder_Explain_Call) RunAndReturn(run func(string, ...interface{}) string) *CommonBuilder_Explain_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetContext provides a mock function with given fields: ctx, dest, query, args
 func (_m *CommonBuilder) GetContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
 	var _ca []interface{}

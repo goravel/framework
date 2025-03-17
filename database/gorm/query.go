@@ -18,6 +18,7 @@ import (
 	"github.com/goravel/framework/contracts/database/driver"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/log"
+	databasedriver "github.com/goravel/framework/database/driver"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/database"
 )
@@ -76,12 +77,13 @@ func BuildQuery(ctx context.Context, config config.Config, connection string, lo
 		return nil, contractsdatabase.Config{}, err
 	}
 
-	gorm, err := driver.Gorm()
+	pool := driver.Pool()
+	gorm, err := databasedriver.BuildGorm(config, log, pool)
 	if err != nil {
-		return nil, driver.Config(), err
+		return nil, pool.Writers[0], err
 	}
 
-	return NewQuery(ctx, config, driver.Config(), gorm, driver.Grammar(), log, modelToObserver, nil), driver.Config(), nil
+	return NewQuery(ctx, config, pool.Writers[0], gorm, driver.Grammar(), log, modelToObserver, nil), pool.Writers[0], nil
 }
 
 func (r *Query) Association(association string) contractsorm.Association {

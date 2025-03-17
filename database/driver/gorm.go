@@ -41,6 +41,25 @@ func BuildGorm(config config.Config, log log.Log, pool database.Pool) (*gorm.DB,
 		return nil, err
 	}
 
+	maxIdleConns := config.GetInt("database.pool.max_idle_conns", 10)
+	maxOpenConns := config.GetInt("database.pool.max_open_conns", 100)
+	connMaxIdleTime := config.GetDuration("database.pool.conn_max_idletime", 3600)
+	connMaxLifetime := config.GetDuration("database.pool.conn_max_lifetime", 3600)
+
+	if len(pool.Writers) == 1 && len(pool.Readers) == 0 {
+		db, err := instance.DB()
+		if err != nil {
+			return nil, err
+		}
+
+		db.SetMaxIdleConns(maxIdleConns)
+		db.SetMaxOpenConns(maxOpenConns)
+		db.SetConnMaxIdleTime(connMaxIdleTime * time.Second)
+		db.SetConnMaxLifetime(connMaxLifetime * time.Second)
+
+		return instance, nil
+	}
+
 	var (
 		writeDialectors []gorm.Dialector
 		readDialectors  []gorm.Dialector
@@ -54,15 +73,17 @@ func BuildGorm(config config.Config, log log.Log, pool database.Pool) (*gorm.DB,
 		readDialectors = append(readDialectors, reader.Dialector)
 	}
 
-	instance.Use(dbresolver.Register(dbresolver.Config{
+	if err := instance.Use(dbresolver.Register(dbresolver.Config{
 		Sources:           writeDialectors,
 		Replicas:          readDialectors,
 		Policy:            dbresolver.RandomPolicy{},
 		TraceResolverMode: true,
-	}).SetMaxIdleConns(config.GetInt("database.pool.max_idle_conns", 10)).
-		SetMaxOpenConns(config.GetInt("database.pool.max_open_conns", 100)).
-		SetConnMaxLifetime(config.GetDuration("database.pool.conn_max_lifetime", 3600) * time.Second).
-		SetConnMaxIdleTime(config.GetDuration("database.pool.conn_max_idletime", 3600) * time.Second))
+	}).SetMaxIdleConns(maxIdleConns).
+		SetMaxOpenConns(maxOpenConns).
+		SetConnMaxLifetime(connMaxLifetime * time.Second).
+		SetConnMaxIdleTime(connMaxIdleTime * time.Second)); err != nil {
+		return nil, err
+	}
 
 	return instance, nil
 }

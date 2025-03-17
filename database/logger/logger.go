@@ -41,6 +41,10 @@ type Logger struct {
 	slowThreshold time.Duration
 }
 
+func (r *Logger) Log() log.Log {
+	return r.log
+}
+
 func (r *Logger) Level(level logger.Level) logger.Logger {
 	r.level = level
 
@@ -71,6 +75,10 @@ func (r *Logger) Errorf(ctx context.Context, msg string, data ...any) {
 	if r.level >= logger.Error {
 		r.log.WithContext(ctx).Errorf(msg, data...)
 	}
+}
+
+func (r *Logger) Panicf(ctx context.Context, msg string, data ...any) {
+	r.log.WithContext(ctx).Panicf(msg, data...)
 }
 
 func (r *Logger) Trace(ctx context.Context, begin carbon.Carbon, sql string, rowsAffected int64, err error) {

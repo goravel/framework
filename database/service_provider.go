@@ -96,7 +96,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, err
 		}
 
-		return databaseschema.NewSchema(config, log, orm, driver, nil), nil
+		return databaseschema.NewSchema(config, log, orm, driver, nil)
 	})
 	app.Singleton(contracts.BindingSeeder, func(app foundation.Application) (any, error) {
 		return databaseseeder.NewSeederFacade(), nil

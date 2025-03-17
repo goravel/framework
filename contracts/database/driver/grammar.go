@@ -144,6 +144,8 @@ type DBGrammar interface {
 	CompileInRandomOrder(builder sq.SelectBuilder, conditions *Conditions) sq.SelectBuilder
 	// CompileSharedLock Compile the shared lock.
 	CompileSharedLock(builder sq.SelectBuilder, conditions *Conditions) sq.SelectBuilder
+	// CompilePlaceholderFormat Compile the placeholder format.
+	CompilePlaceholderFormat() PlaceholderFormat
 }
 
 type CompileOffsetGrammar interface {
@@ -167,6 +169,10 @@ type Blueprint interface {
 	GetTableName() string
 	// HasCommand Determine if the blueprint has a specific command.
 	HasCommand(command string) bool
+}
+
+type PlaceholderFormat interface {
+	ReplacePlaceholders(sql string) (string, error)
 }
 
 type Command struct {

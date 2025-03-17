@@ -1225,6 +1225,53 @@ func (_c *Grammar_CompileLockForUpdateForGorm_Call) RunAndReturn(run func() clau
 	return _c
 }
 
+// CompilePlaceholderFormat provides a mock function with no fields
+func (_m *Grammar) CompilePlaceholderFormat() driver.PlaceholderFormat {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompilePlaceholderFormat")
+	}
+
+	var r0 driver.PlaceholderFormat
+	if rf, ok := ret.Get(0).(func() driver.PlaceholderFormat); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(driver.PlaceholderFormat)
+		}
+	}
+
+	return r0
+}
+
+// Grammar_CompilePlaceholderFormat_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompilePlaceholderFormat'
+type Grammar_CompilePlaceholderFormat_Call struct {
+	*mock.Call
+}
+
+// CompilePlaceholderFormat is a helper method to define mock.On call
+func (_e *Grammar_Expecter) CompilePlaceholderFormat() *Grammar_CompilePlaceholderFormat_Call {
+	return &Grammar_CompilePlaceholderFormat_Call{Call: _e.mock.On("CompilePlaceholderFormat")}
+}
+
+func (_c *Grammar_CompilePlaceholderFormat_Call) Run(run func()) *Grammar_CompilePlaceholderFormat_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Grammar_CompilePlaceholderFormat_Call) Return(_a0 driver.PlaceholderFormat) *Grammar_CompilePlaceholderFormat_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_CompilePlaceholderFormat_Call) RunAndReturn(run func() driver.PlaceholderFormat) *Grammar_CompilePlaceholderFormat_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CompilePrimary provides a mock function with given fields: blueprint, command
 func (_m *Grammar) CompilePrimary(blueprint driver.Blueprint, command *driver.Command) string {
 	ret := _m.Called(blueprint, command)
