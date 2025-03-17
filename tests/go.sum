@@ -105,8 +105,8 @@ github.com/gookit/color v1.4.2/go.mod h1:fqRyamkC1W8uxl+lxCQxOT09l/vYfZ+QeiX3rKQ
 github.com/gookit/color v1.5.0/go.mod h1:43aQb+Zerm/BWh2GnrgOQm7ffz7tvQXEKV6BFMl7wAo=
 github.com/gookit/color v1.5.4 h1:FZmqs7XOyGgCAxmWyPslpiok1k05wmY3SJTytgvYFs0=
 github.com/gookit/color v1.5.4/go.mod h1:pZJOeOS8DM43rXbp4AZo1n9zCU2qjpcRko0b6/QJi9w=
-github.com/goravel/mysql v0.0.0-20250309093339-e95afbdc24c8 h1:hLnnHjSt0yDZaDzC4if/h9DFAmcuV0QGjOIE/NaP2t0=
-github.com/goravel/mysql v0.0.0-20250309093339-e95afbdc24c8/go.mod h1:Ukas52rYCU+Ln6om5/buPSss8YjX5uPl+poMG71BYCA=
+github.com/goravel/mysql v0.0.0-20250316083353-0799b646c6a8 h1:DOUiGK0vIzPgxWf5jOyfB2g/yBKxg8tJjQnGzj4f0s4=
+github.com/goravel/mysql v0.0.0-20250316083353-0799b646c6a8/go.mod h1:Ukas52rYCU+Ln6om5/buPSss8YjX5uPl+poMG71BYCA=
 github.com/goravel/postgres v0.0.2-0.20250309093253-9f6835a6a3cd h1:z+WPzBwCI1RJBXW5chJT3pBbHezc28RIRp0JWPRJQu0=
 github.com/goravel/postgres v0.0.2-0.20250309093253-9f6835a6a3cd/go.mod h1:RYYEt6CXTVujrOuPajqv2S2AvPIEps8swD4t7SvRfSM=
 github.com/goravel/sqlite v0.0.0-20250309093411-f33520b3a6ae h1:1sTwlJD21AdeJigvt0/5E547Kcd/hYi90wufiYhegKc=
