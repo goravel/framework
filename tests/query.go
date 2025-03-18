@@ -12,8 +12,9 @@ import (
 	"github.com/goravel/framework/contracts/database/orm"
 	contractsdocker "github.com/goravel/framework/contracts/testing/docker"
 	databasedb "github.com/goravel/framework/database/db"
-	"github.com/goravel/framework/database/gorm"
-	"github.com/goravel/framework/database/logger"
+	databasedriver "github.com/goravel/framework/database/driver"
+	databasegorm "github.com/goravel/framework/database/gorm"
+	databaselogger "github.com/goravel/framework/database/logger"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/str"
@@ -26,7 +27,6 @@ import (
 	sqlitecontracts "github.com/goravel/sqlite/contracts"
 	"github.com/goravel/sqlserver"
 	sqlservercontracts "github.com/goravel/sqlserver/contracts"
-	"github.com/jmoiron/sqlx"
 )
 
 type TestQuery struct {
@@ -37,28 +37,29 @@ type TestQuery struct {
 }
 
 func NewTestQuery(ctx context.Context, driver contractsdriver.Driver, config config.Config) (*TestQuery, error) {
-	query, err := driver.Gorm()
+	pool := driver.Pool()
+	gorm, err := databasedriver.BuildGorm(config, utils.NewTestLog(), pool)
 	if err != nil {
 		return nil, err
 	}
 
-	db, err := driver.DB()
+	db, err := databasedb.NewDB(ctx, config, driver, databaselogger.NewLogger(config, utils.NewTestLog()), gorm)
 	if err != nil {
 		return nil, err
 	}
 
 	testQuery := &TestQuery{
 		config: config,
-		db:     databasedb.NewDB(ctx, config, driver, logger.NewLogger(config, utils.NewTestLog()), sqlx.NewDb(db, driver.Config().Driver)),
+		db:     db,
 		driver: driver,
-		query:  gorm.NewQuery(ctx, config, driver.Config(), query, driver.Grammar(), utils.NewTestLog(), nil, nil),
+		query:  databasegorm.NewQuery(ctx, config, pool.Writers[0], gorm, driver.Grammar(), utils.NewTestLog(), nil, nil),
 	}
 
 	return testQuery, nil
 }
 
 func (r *TestQuery) CreateTable(testTables ...TestTable) {
-	driverName := r.driver.Config().Driver
+	driverName := r.driver.Pool().Writers[0].Driver
 
 	for table, callback := range newTestTables(driverName, r.Driver().Grammar()).All() {
 		if (len(testTables) == 0 && table != TestTableSchema) || slices.Contains(testTables, table) {
@@ -97,24 +98,25 @@ func (r *TestQuery) Query() orm.Query {
 }
 
 func (r *TestQuery) WithSchema(schema string) {
-	if r.driver.Config().Driver != postgres.Name && r.driver.Config().Driver != sqlserver.Name {
-		panic(fmt.Sprintf("%s does not support schema", r.driver.Config().Driver))
+	dbConfig := r.driver.Pool().Writers[0]
+	if dbConfig.Driver != postgres.Name && dbConfig.Driver != sqlserver.Name {
+		panic(fmt.Sprintf("%s does not support schema", dbConfig.Driver))
 	}
 
 	if _, err := r.query.Exec(fmt.Sprintf(`CREATE SCHEMA "%s"`, schema)); err != nil {
 		panic(fmt.Sprintf("create schema %s failed: %v", schema, err))
 	}
 
-	if r.driver.Config().Driver == sqlserver.Name {
+	if dbConfig.Driver == sqlserver.Name {
 		return
 	}
 
-	r.MockConfig().EXPECT().Add(fmt.Sprintf("database.connections.%s.schema", r.driver.Config().Connection), schema)
-	r.config.Add(fmt.Sprintf("database.connections.%s.schema", r.driver.Config().Driver), schema)
+	r.MockConfig().EXPECT().Add(fmt.Sprintf("database.connections.%s.schema", dbConfig.Connection), schema)
+	r.config.Add(fmt.Sprintf("database.connections.%s.schema", dbConfig.Driver), schema)
 
-	query, _, err := gorm.BuildQuery(context.Background(), r.config, r.driver.Config().Driver, utils.NewTestLog(), nil)
+	query, _, err := databasegorm.BuildQuery(context.Background(), r.config, dbConfig.Driver, utils.NewTestLog(), nil)
 	if err != nil {
-		panic(fmt.Sprintf("connect to %s failed: %v", r.driver.Config().Driver, err))
+		panic(fmt.Sprintf("connect to %s failed: %v", dbConfig.Driver, err))
 	}
 
 	r.query = query
@@ -134,10 +136,10 @@ func (r *TestQueryBuilder) All(prefix string, singular bool) map[string]*TestQue
 	sqliteTestQuery := r.Sqlite(prefix, singular)
 
 	return map[string]*TestQuery{
-		postgresTestQuery.Driver().Config().Driver:  postgresTestQuery,
-		mysqlTestQuery.Driver().Config().Driver:     mysqlTestQuery,
-		sqlserverTestQuery.Driver().Config().Driver: sqlserverTestQuery,
-		sqliteTestQuery.Driver().Config().Driver:    sqliteTestQuery,
+		postgresTestQuery.Driver().Pool().Writers[0].Driver:  postgresTestQuery,
+		mysqlTestQuery.Driver().Pool().Writers[0].Driver:     mysqlTestQuery,
+		sqlserverTestQuery.Driver().Pool().Writers[0].Driver: sqlserverTestQuery,
+		sqliteTestQuery.Driver().Pool().Writers[0].Driver:    sqliteTestQuery,
 	}
 }
 
@@ -200,9 +202,9 @@ func (r *TestQueryBuilder) SqliteWithReadWrite() map[string]*TestQuery {
 		"write": writeTestQuery,
 		"read":  readTestQuery,
 		"mix": r.mix(sqlite.Name, contractsdocker.DatabaseConfig{
-			Database: writeTestQuery.Driver().Config().Database,
+			Database: writeTestQuery.Driver().Pool().Writers[0].Database,
 		}, contractsdocker.DatabaseConfig{
-			Database: readTestQuery.Driver().Config().Database,
+			Database: readTestQuery.Driver().Pool().Writers[0].Database,
 		}),
 	}
 }

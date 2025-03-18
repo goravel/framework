@@ -10,7 +10,6 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 
-	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/db"
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/logger"
@@ -21,27 +20,27 @@ import (
 )
 
 type Query struct {
-	builder    db.CommonBuilder
-	conditions contractsdriver.Conditions
-	ctx        context.Context
-	err        error
-	driver     contractsdriver.Driver
-	grammar    contractsdriver.Grammar
-	logger     logger.Logger
-	txLogs     *[]TxLog
+	conditions   contractsdriver.Conditions
+	ctx          context.Context
+	err          error
+	grammar      contractsdriver.Grammar
+	logger       logger.Logger
+	readBuilder  db.CommonBuilder
+	txLogs       *[]TxLog
+	writeBuilder db.CommonBuilder
 }
 
-func NewQuery(ctx context.Context, driver contractsdriver.Driver, builder db.CommonBuilder, logger logger.Logger, table string, txLogs *[]TxLog) *Query {
+func NewQuery(ctx context.Context, readBuilder db.CommonBuilder, writeBuilder db.CommonBuilder, grammar contractsdriver.Grammar, logger logger.Logger, table string, txLogs *[]TxLog) *Query {
 	return &Query{
-		builder: builder,
 		conditions: contractsdriver.Conditions{
 			Table: table,
 		},
-		ctx:     ctx,
-		driver:  driver,
-		grammar: driver.Grammar(),
-		logger:  logger,
-		txLogs:  txLogs,
+		ctx:          ctx,
+		grammar:      grammar,
+		logger:       logger,
+		readBuilder:  readBuilder,
+		txLogs:       txLogs,
+		writeBuilder: writeBuilder,
 	}
 }
 
@@ -86,14 +85,14 @@ func (r *Query) Count() (int64, error) {
 	}
 
 	var count int64
-	err = r.builder.GetContext(r.ctx, &count, sql, args...)
+	err = r.readBuilder.GetContext(r.ctx, &count, sql, args...)
 	if err != nil {
-		r.trace(sql, args, -1, err)
+		r.trace(r.readBuilder, sql, args, -1, err)
 
 		return 0, err
 	}
 
-	r.trace(sql, args, -1, nil)
+	r.trace(r.readBuilder, sql, args, -1, nil)
 
 	return count, nil
 }
@@ -114,9 +113,9 @@ func (r *Query) Cursor() (chan db.Row, error) {
 		return nil, err
 	}
 
-	rows, err := r.builder.QueryxContext(r.ctx, sql, args...)
+	rows, err := r.readBuilder.QueryxContext(r.ctx, sql, args...)
 	if err != nil {
-		r.trace(sql, args, -1, err)
+		r.trace(r.readBuilder, sql, args, -1, err)
 
 		return nil, err
 	}
@@ -130,7 +129,7 @@ func (r *Query) Cursor() (chan db.Row, error) {
 		for rows.Next() {
 			row := make(map[string]any)
 			if err := rows.MapScan(row); err != nil {
-				r.trace(sql, args, -1, err)
+				r.trace(r.readBuilder, sql, args, -1, err)
 				return
 			}
 
@@ -138,7 +137,7 @@ func (r *Query) Cursor() (chan db.Row, error) {
 			count++
 		}
 
-		r.trace(sql, args, count, nil)
+		r.trace(r.readBuilder, sql, args, count, nil)
 	}()
 
 	return ch, nil
@@ -164,19 +163,19 @@ func (r *Query) Delete() (*db.Result, error) {
 		return nil, err
 	}
 
-	result, err := r.builder.ExecContext(r.ctx, sql, args...)
+	result, err := r.writeBuilder.ExecContext(r.ctx, sql, args...)
 	if err != nil {
-		r.trace(sql, args, -1, err)
+		r.trace(r.writeBuilder, sql, args, -1, err)
 		return nil, err
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		r.trace(sql, args, -1, err)
+		r.trace(r.writeBuilder, sql, args, -1, err)
 		return nil, err
 	}
 
-	r.trace(sql, args, rowsAffected, nil)
+	r.trace(r.writeBuilder, sql, args, rowsAffected, nil)
 
 	return &db.Result{
 		RowsAffected: rowsAffected,
@@ -254,19 +253,19 @@ func (r *Query) First(dest any) error {
 		return err
 	}
 
-	err = r.builder.GetContext(r.ctx, dest, sql, args...)
+	err = r.readBuilder.GetContext(r.ctx, dest, sql, args...)
 	if err != nil {
 		if errors.Is(err, databasesql.ErrNoRows) {
-			r.trace(sql, args, 0, nil)
+			r.trace(r.readBuilder, sql, args, 0, nil)
 			return nil
 		}
 
-		r.trace(sql, args, -1, err)
+		r.trace(r.readBuilder, sql, args, -1, err)
 
 		return err
 	}
 
-	r.trace(sql, args, 1, nil)
+	r.trace(r.readBuilder, sql, args, 1, nil)
 
 	return nil
 }
@@ -277,20 +276,20 @@ func (r *Query) FirstOr(dest any, callback func() error) error {
 		return err
 	}
 
-	err = r.builder.GetContext(r.ctx, dest, sql, args...)
+	err = r.readBuilder.GetContext(r.ctx, dest, sql, args...)
 	if err != nil {
 		if errors.Is(err, databasesql.ErrNoRows) {
-			r.trace(sql, args, 0, nil)
+			r.trace(r.readBuilder, sql, args, 0, nil)
 
 			return callback()
 		}
 
-		r.trace(sql, args, -1, err)
+		r.trace(r.readBuilder, sql, args, -1, err)
 
 		return err
 	}
 
-	r.trace(sql, args, 1, nil)
+	r.trace(r.readBuilder, sql, args, 1, nil)
 
 	return nil
 }
@@ -301,14 +300,14 @@ func (r *Query) FirstOrFail(dest any) error {
 		return err
 	}
 
-	err = r.builder.GetContext(r.ctx, dest, sql, args...)
+	err = r.readBuilder.GetContext(r.ctx, dest, sql, args...)
 	if err != nil {
-		r.trace(sql, args, -1, err)
+		r.trace(r.readBuilder, sql, args, -1, err)
 
 		return err
 	}
 
-	r.trace(sql, args, 1, nil)
+	r.trace(r.readBuilder, sql, args, 1, nil)
 
 	return nil
 }
@@ -319,9 +318,9 @@ func (r *Query) Get(dest any) error {
 		return err
 	}
 
-	err = r.builder.SelectContext(r.ctx, dest, sql, args...)
+	err = r.readBuilder.SelectContext(r.ctx, dest, sql, args...)
 	if err != nil {
-		r.trace(sql, args, -1, err)
+		r.trace(r.readBuilder, sql, args, -1, err)
 		return err
 	}
 
@@ -331,7 +330,7 @@ func (r *Query) Get(dest any) error {
 		rowsAffected = int64(destValue.Len())
 	}
 
-	r.trace(sql, args, rowsAffected, nil)
+	r.trace(r.readBuilder, sql, args, rowsAffected, nil)
 
 	return nil
 }
@@ -402,19 +401,19 @@ func (r *Query) Insert(data any) (*db.Result, error) {
 		return nil, err
 	}
 
-	result, err := r.builder.ExecContext(r.ctx, sql, args...)
+	result, err := r.writeBuilder.ExecContext(r.ctx, sql, args...)
 	if err != nil {
-		r.trace(sql, args, -1, err)
+		r.trace(r.writeBuilder, sql, args, -1, err)
 		return nil, err
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		r.trace(sql, args, -1, err)
+		r.trace(r.writeBuilder, sql, args, -1, err)
 		return nil, err
 	}
 
-	r.trace(sql, args, rowsAffected, nil)
+	r.trace(r.writeBuilder, sql, args, rowsAffected, nil)
 
 	return &db.Result{
 		RowsAffected: rowsAffected,
@@ -435,19 +434,19 @@ func (r *Query) InsertGetId(data any) (int64, error) {
 		return 0, err
 	}
 
-	result, err := r.builder.ExecContext(r.ctx, sql, args...)
+	result, err := r.writeBuilder.ExecContext(r.ctx, sql, args...)
 	if err != nil {
-		r.trace(sql, args, -1, err)
+		r.trace(r.writeBuilder, sql, args, -1, err)
 		return 0, err
 	}
 
 	id, err := result.LastInsertId()
 	if err != nil {
-		r.trace(sql, args, -1, err)
+		r.trace(r.writeBuilder, sql, args, -1, err)
 		return 0, err
 	}
 
-	r.trace(sql, args, id, nil)
+	r.trace(r.writeBuilder, sql, args, id, nil)
 
 	return id, nil
 }
@@ -662,19 +661,19 @@ func (r *Query) Update(column any, value ...any) (*db.Result, error) {
 		return nil, err
 	}
 
-	result, err := r.builder.ExecContext(r.ctx, sql, args...)
+	result, err := r.writeBuilder.ExecContext(r.ctx, sql, args...)
 	if err != nil {
-		r.trace(sql, args, -1, err)
+		r.trace(r.writeBuilder, sql, args, -1, err)
 		return nil, err
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		r.trace(sql, args, -1, err)
+		r.trace(r.writeBuilder, sql, args, -1, err)
 		return nil, err
 	}
 
-	r.trace(sql, args, rowsAffected, nil)
+	r.trace(r.writeBuilder, sql, args, rowsAffected, nil)
 
 	return &db.Result{
 		RowsAffected: rowsAffected,
@@ -755,7 +754,7 @@ func (r *Query) WhereExists(query func() db.Query) db.Query {
 		return r
 	}
 
-	sql = r.driver.Explain(sql, args...)
+	sql = r.readBuilder.Explain(sql, args...)
 
 	return r.Where(sq.Expr(fmt.Sprintf("EXISTS (%s)", sql)))
 }
@@ -827,7 +826,7 @@ func (r *Query) buildDelete() (sql string, args []any, err error) {
 	}
 
 	builder := sq.Delete(r.conditions.Table)
-	if placeholderFormat := r.placeholderFormat(); placeholderFormat != nil {
+	if placeholderFormat := r.grammar.CompilePlaceholderFormat(); placeholderFormat != nil {
 		builder = builder.PlaceholderFormat(placeholderFormat)
 	}
 
@@ -849,7 +848,7 @@ func (r *Query) buildInsert(data []map[string]any) (sql string, args []any, err 
 	}
 
 	builder := sq.Insert(r.conditions.Table)
-	if placeholderFormat := r.placeholderFormat(); placeholderFormat != nil {
+	if placeholderFormat := r.grammar.CompilePlaceholderFormat(); placeholderFormat != nil {
 		builder = builder.PlaceholderFormat(placeholderFormat)
 	}
 
@@ -892,7 +891,7 @@ func (r *Query) buildSelect() (sql string, args []any, err error) {
 		builder = builder.Distinct()
 	}
 
-	if placeholderFormat := r.placeholderFormat(); placeholderFormat != nil {
+	if placeholderFormat := r.grammar.CompilePlaceholderFormat(); placeholderFormat != nil {
 		builder = builder.PlaceholderFormat(placeholderFormat)
 	}
 
@@ -980,7 +979,7 @@ func (r *Query) buildUpdate(data map[string]any) (sql string, args []any, err er
 	}
 
 	builder := sq.Update(r.conditions.Table)
-	if placeholderFormat := r.placeholderFormat(); placeholderFormat != nil {
+	if placeholderFormat := r.grammar.CompilePlaceholderFormat(); placeholderFormat != nil {
 		builder = builder.PlaceholderFormat(placeholderFormat)
 	}
 
@@ -1007,7 +1006,7 @@ func (r *Query) buildWhere(where contractsdriver.Where) (any, []any, error) {
 		return sq.Eq(query), nil, nil
 	case func(db.Query) db.Query:
 		// Handle nested conditions by creating a new query and applying the callback
-		nestedQuery := NewQuery(r.ctx, r.driver, r.builder, r.logger, r.conditions.Table, r.txLogs)
+		nestedQuery := NewQuery(r.ctx, r.readBuilder, r.writeBuilder, r.grammar, r.logger, r.conditions.Table, r.txLogs)
 		nestedQuery = query(nestedQuery).(*Query)
 
 		// Build the nested conditions
@@ -1071,7 +1070,7 @@ func (r *Query) buildWheres(wheres []contractsdriver.Where) (sq.Sqlizer, error) 
 }
 
 func (r *Query) clone() *Query {
-	query := NewQuery(r.ctx, r.driver, r.builder, r.logger, r.conditions.Table, r.txLogs)
+	query := NewQuery(r.ctx, r.readBuilder, r.writeBuilder, r.grammar, r.logger, r.conditions.Table, r.txLogs)
 	query.conditions = r.conditions
 	query.err = r.err
 
@@ -1093,14 +1092,6 @@ func (r *Query) findQuery(conds []any) (db.Query, error) {
 	return q, nil
 }
 
-func (r *Query) placeholderFormat() database.PlaceholderFormat {
-	if r.driver.Config().PlaceholderFormat != nil {
-		return r.driver.Config().PlaceholderFormat
-	}
-
-	return nil
-}
-
 func (r *Query) toSqlizer(query any, args []any) (sq.Sqlizer, error) {
 	switch q := query.(type) {
 	case map[string]any:
@@ -1114,16 +1105,16 @@ func (r *Query) toSqlizer(query any, args []any) (sq.Sqlizer, error) {
 	}
 }
 
-func (r *Query) trace(sql string, args []any, rowsAffected int64, err error) {
+func (r *Query) trace(builder db.CommonBuilder, sql string, args []any, rowsAffected int64, err error) {
 	if r.txLogs != nil {
 		*r.txLogs = append(*r.txLogs, TxLog{
 			ctx:          r.ctx,
 			begin:        carbon.Now(),
-			sql:          r.driver.Explain(sql, args...),
+			sql:          builder.Explain(sql, args...),
 			rowsAffected: rowsAffected,
 			err:          err,
 		})
 	} else {
-		r.logger.Trace(r.ctx, carbon.Now(), r.driver.Explain(sql, args...), rowsAffected, err)
+		r.logger.Trace(r.ctx, carbon.Now(), builder.Explain(sql, args...), rowsAffected, err)
 	}
 }

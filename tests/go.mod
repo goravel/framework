@@ -13,7 +13,6 @@ require (
 	github.com/goravel/postgres v0.0.2-0.20250309093253-9f6835a6a3cd
 	github.com/goravel/sqlite v0.0.0-20250309093411-f33520b3a6ae
 	github.com/goravel/sqlserver v0.0.0-20250309093235-f8673bca5608
-	github.com/jmoiron/sqlx v1.4.0
 	github.com/spf13/cast v1.7.1
 	github.com/stretchr/testify v1.10.0
 	gorm.io/gorm v1.25.12
@@ -47,6 +46,7 @@ require (
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
+	github.com/jmoiron/sqlx v1.4.0 // indirect
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/lithammer/fuzzysearch v1.1.8 // indirect

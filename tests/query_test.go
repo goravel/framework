@@ -423,7 +423,7 @@ func (s *QueryTestSuite) TestCreate() {
 			{
 				name: "success when refresh connection",
 				setup: func() {
-					mockDatabaseConfig(query.MockConfig(), s.additionalQuery.Driver().Config(), "dummy", "", false)
+					mockDatabaseConfig(query.MockConfig(), s.additionalQuery.Driver().Pool().Writers[0], "dummy", "", false)
 
 					people := People{Body: "create_people"}
 					s.Nil(query.Query().Create(&people))
@@ -701,7 +701,7 @@ func (s *QueryTestSuite) TestDelete() {
 					s.Equal(uint(0), user1.ID)
 
 					// refresh connection
-					mockDatabaseConfig(query.MockConfig(), s.additionalQuery.Driver().Config(), "dummy", "", false)
+					mockDatabaseConfig(query.MockConfig(), s.additionalQuery.Driver().Pool().Writers[0], "dummy", "", false)
 
 					people := People{Body: "delete_people"}
 					s.Nil(query.Query().Create(&people))
@@ -1792,7 +1792,7 @@ func (s *QueryTestSuite) TestFirst() {
 		s.True(user1.ID > 0)
 
 		// refresh connection
-		mockDatabaseConfig(query.MockConfig(), s.additionalQuery.Driver().Config(), "dummy", "", false)
+		mockDatabaseConfig(query.MockConfig(), s.additionalQuery.Driver().Pool().Writers[0], "dummy", "", false)
 
 		people := People{Body: "first_people"}
 		s.Nil(query.Query().Create(&people))
@@ -2048,7 +2048,7 @@ func (s *QueryTestSuite) TestGet() {
 			s.Equal(1, len(user1))
 
 			// refresh connection
-			mockDatabaseConfig(query.MockConfig(), s.additionalQuery.Driver().Config(), "dummy", "", false)
+			mockDatabaseConfig(query.MockConfig(), s.additionalQuery.Driver().Pool().Writers[0], "dummy", "", false)
 
 			people := People{Body: "get_people"}
 			s.Nil(query.Query().Create(&people))
@@ -3604,7 +3604,7 @@ func TestCustomConnection(t *testing.T) {
 	assert.Nil(t, query.Where("body", "create_review").First(&review1))
 	assert.True(t, review1.ID > 0)
 
-	mockDatabaseConfig(postgresTestQuery.MockConfig(), sqliteTestQuery.Driver().Config(), "sqlite", "", false)
+	mockDatabaseConfig(postgresTestQuery.MockConfig(), sqliteTestQuery.Driver().Pool().Writers[0], "sqlite", "", false)
 
 	product := Product{Name: "create_product"}
 	assert.Nil(t, query.Create(&product))
@@ -3618,7 +3618,7 @@ func TestCustomConnection(t *testing.T) {
 	assert.Nil(t, query.Where("name", "create_product1").First(&product2))
 	assert.True(t, product2.ID == 0)
 
-	mockDatabaseConfig(postgresTestQuery.MockConfig(), postgresTestQuery.Driver().Config(), "dummy", "", false)
+	mockDatabaseConfig(postgresTestQuery.MockConfig(), postgresTestQuery.Driver().Pool().Writers[0], "dummy", "", false)
 
 	person := Person{Name: "create_person"}
 	assert.NotNil(t, query.Create(&person))
@@ -3629,7 +3629,7 @@ func TestCustomConnection(t *testing.T) {
 	assert.NoError(t, docker.Shutdown())
 }
 
-func TestReadWriteSeparate(t *testing.T) {
+func TestOrmReadWriteSeparate(t *testing.T) {
 	dbs := NewTestQueryBuilder().AllOfReadWrite()
 
 	for drive, db := range dbs {

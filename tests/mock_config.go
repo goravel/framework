@@ -2,6 +2,7 @@ package tests
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/driver"
@@ -25,8 +26,8 @@ func mockDatabaseConfigWithoutWriteAndRead(mockConfig *mocksconfig.Config, confi
 	mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(200)
 	mockConfig.EXPECT().GetInt("database.pool.max_idle_conns", 10).Return(10)
 	mockConfig.EXPECT().GetInt("database.pool.max_open_conns", 100).Return(100)
-	mockConfig.EXPECT().GetInt("database.pool.conn_max_idletime", 3600).Return(3600)
-	mockConfig.EXPECT().GetInt("database.pool.conn_max_lifetime", 3600).Return(3600)
+	mockConfig.EXPECT().GetDuration("database.pool.conn_max_idletime", time.Duration(3600)).Return(time.Duration(3600))
+	mockConfig.EXPECT().GetDuration("database.pool.conn_max_lifetime", time.Duration(3600)).Return(time.Duration(3600))
 
 	mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.host", connection)).Return(config.Host)
 	mockConfig.EXPECT().GetInt(fmt.Sprintf("database.connections.%s.port", connection)).Return(config.Port)

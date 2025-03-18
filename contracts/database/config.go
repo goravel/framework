@@ -1,20 +1,33 @@
 package database
 
-type Config struct {
-	Connection        string
-	Dsn               string
-	Database          string
-	Driver            string
-	Host              string
-	Password          string
-	Port              int
-	Prefix            string
-	Schema            string
-	Username          string
-	Version           string
-	PlaceholderFormat PlaceholderFormat
+import "gorm.io/gorm"
+
+type Pool struct {
+	Readers []Config
+	Writers []Config
 }
 
-type PlaceholderFormat interface {
-	ReplacePlaceholders(sql string) (string, error)
+type Config struct {
+	Charset      string
+	Connection   string
+	Dsn          string
+	Database     string
+	Dialector    gorm.Dialector
+	Driver       string
+	Host         string
+	NameReplacer Replacer
+	NoLowerCase  bool
+	Password     string
+	Port         int
+	Prefix       string
+	Schema       string
+	Singular     bool
+	Sslmode      string
+	Timezone     string
+	Username     string
+}
+
+// Replacer replacer interface like strings.Replacer
+type Replacer interface {
+	Replace(name string) string
 }

@@ -41,6 +41,10 @@ type Logger struct {
 	slowThreshold time.Duration
 }
 
+func (r *Logger) Log() log.Log {
+	return r.log
+}
+
 func (r *Logger) Level(level logger.Level) logger.Logger {
 	r.level = level
 

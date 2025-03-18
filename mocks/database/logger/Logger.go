@@ -9,6 +9,8 @@ import (
 
 	gormlogger "gorm.io/gorm/logger"
 
+	log "github.com/goravel/framework/contracts/log"
+
 	logger "github.com/goravel/framework/contracts/database/logger"
 
 	mock "github.com/stretchr/testify/mock"
@@ -161,6 +163,53 @@ func (_c *Logger_Level_Call) Return(_a0 logger.Logger) *Logger_Level_Call {
 }
 
 func (_c *Logger_Level_Call) RunAndReturn(run func(logger.Level) logger.Logger) *Logger_Level_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Log provides a mock function with no fields
+func (_m *Logger) Log() log.Log {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Log")
+	}
+
+	var r0 log.Log
+	if rf, ok := ret.Get(0).(func() log.Log); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(log.Log)
+		}
+	}
+
+	return r0
+}
+
+// Logger_Log_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Log'
+type Logger_Log_Call struct {
+	*mock.Call
+}
+
+// Log is a helper method to define mock.On call
+func (_e *Logger_Expecter) Log() *Logger_Log_Call {
+	return &Logger_Log_Call{Call: _e.mock.On("Log")}
+}
+
+func (_c *Logger_Log_Call) Run(run func()) *Logger_Log_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Logger_Log_Call) Return(_a0 log.Log) *Logger_Log_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Logger_Log_Call) RunAndReturn(run func() log.Log) *Logger_Log_Call {
 	_c.Call.Return(run)
 	return _c
 }

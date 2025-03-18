@@ -505,51 +505,6 @@ func (_c *Orm_Transaction_Call) RunAndReturn(run func(func(orm.Query) error) err
 	return _c
 }
 
-// Version provides a mock function with no fields
-func (_m *Orm) Version() string {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for Version")
-	}
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	return r0
-}
-
-// Orm_Version_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Version'
-type Orm_Version_Call struct {
-	*mock.Call
-}
-
-// Version is a helper method to define mock.On call
-func (_e *Orm_Expecter) Version() *Orm_Version_Call {
-	return &Orm_Version_Call{Call: _e.mock.On("Version")}
-}
-
-func (_c *Orm_Version_Call) Run(run func()) *Orm_Version_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Orm_Version_Call) Return(_a0 string) *Orm_Version_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Orm_Version_Call) RunAndReturn(run func() string) *Orm_Version_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // WithContext provides a mock function with given fields: ctx
 func (_m *Orm) WithContext(ctx context.Context) orm.Orm {
 	ret := _m.Called(ctx)

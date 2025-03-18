@@ -6,12 +6,16 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
+	"gorm.io/plugin/dbresolver"
 
 	"github.com/goravel/framework/contracts/config"
 	contractsdb "github.com/goravel/framework/contracts/database/db"
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	contractslogger "github.com/goravel/framework/contracts/database/logger"
+	"github.com/goravel/framework/contracts/log"
+	databasedriver "github.com/goravel/framework/database/driver"
+	databaselogger "github.com/goravel/framework/database/logger"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 )
@@ -20,25 +24,25 @@ type DB struct {
 	contractsdb.Tx
 	config  config.Config
 	ctx     context.Context
-	db      contractsdb.Builder
 	driver  contractsdriver.Driver
+	gorm    *gorm.DB
 	logger  contractslogger.Logger
 	queries map[string]contractsdb.DB
 }
 
-func NewDB(ctx context.Context, config config.Config, driver contractsdriver.Driver, logger contractslogger.Logger, db contractsdb.Builder) *DB {
+func NewDB(ctx context.Context, config config.Config, driver contractsdriver.Driver, logger contractslogger.Logger, gormDB *gorm.DB) (*DB, error) {
 	return &DB{
-		Tx:      NewTx(ctx, driver, logger, db, nil, &[]TxLog{}),
+		Tx:      NewTx(ctx, driver, logger, gormDB, nil, &[]TxLog{}),
 		ctx:     ctx,
 		config:  config,
 		driver:  driver,
+		gorm:    gormDB,
 		logger:  logger,
-		db:      db,
 		queries: make(map[string]contractsdb.DB),
-	}
+	}, nil
 }
 
-func BuildDB(ctx context.Context, config config.Config, logger contractslogger.Logger, connection string) (*DB, error) {
+func BuildDB(ctx context.Context, config config.Config, log log.Log, connection string) (*DB, error) {
 	driverCallback, exist := config.Get(fmt.Sprintf("database.connections.%s.via", connection)).(func() (contractsdriver.Driver, error))
 	if !exist {
 		return nil, errors.DatabaseConfigNotFound
@@ -49,21 +53,25 @@ func BuildDB(ctx context.Context, config config.Config, logger contractslogger.L
 		return nil, err
 	}
 
-	instance, err := driver.DB()
+	pool := driver.Pool()
+	gorm, err := databasedriver.BuildGorm(config, log, pool)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewDB(ctx, config, driver, logger, sqlx.NewDb(instance, driver.Config().Driver)), nil
+	logger := databaselogger.NewLogger(config, log)
+
+	return NewDB(ctx, config, driver, logger, gorm)
 }
 
 func (r *DB) BeginTransaction() (contractsdb.Tx, error) {
-	tx, err := r.db.Beginx()
+	driverName := r.driver.Pool().Writers[0].Driver
+	txBuilder, err := NewTxBuilder(r.gorm.Clauses(dbresolver.Write), driverName)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewTx(r.ctx, r.driver, r.logger, nil, tx, &[]TxLog{}), nil
+	return NewTx(r.ctx, r.driver, r.logger, nil, txBuilder, &[]TxLog{}), nil
 }
 
 func (r *DB) Connection(name string) contractsdb.DB {
@@ -72,7 +80,7 @@ func (r *DB) Connection(name string) contractsdb.DB {
 	}
 
 	if _, ok := r.queries[name]; !ok {
-		db, err := BuildDB(r.ctx, r.config, r.logger, name)
+		db, err := BuildDB(r.ctx, r.config, r.logger.Log(), name)
 		if err != nil {
 			r.logger.Panicf(r.ctx, err.Error())
 			return nil
@@ -103,30 +111,52 @@ func (r *DB) Transaction(callback func(tx contractsdb.Tx) error) error {
 }
 
 func (r *DB) WithContext(ctx context.Context) contractsdb.DB {
-	return NewDB(ctx, r.config, r.driver, r.logger, r.db)
+	db, err := NewDB(ctx, r.config, r.driver, r.logger, r.gorm)
+	if err != nil {
+		r.logger.Panicf(r.ctx, err.Error())
+		return nil
+	}
+	return db
 }
 
 type Tx struct {
-	ctx    context.Context
-	db     contractsdb.Builder
-	driver contractsdriver.Driver
-	logger contractslogger.Logger
-	tx     contractsdb.TxBuilder
-	txLogs *[]TxLog
+	ctx        context.Context
+	driverName string
+	gormDB     *gorm.DB
+	grammar    contractsdriver.Grammar
+	logger     contractslogger.Logger
+	txBuilder  contractsdb.TxBuilder
+	txLogs     *[]TxLog
 }
 
-func NewTx(ctx context.Context, driver contractsdriver.Driver, logger contractslogger.Logger, db contractsdb.Builder, tx contractsdb.TxBuilder, txLogs *[]TxLog) *Tx {
+func NewTx(
+	ctx context.Context,
+	driver contractsdriver.Driver,
+	logger contractslogger.Logger,
+	gormDB *gorm.DB,
+	txBuilder contractsdb.TxBuilder,
+	txLogs *[]TxLog,
+) *Tx {
+	pool := driver.Pool()
+	driverName := pool.Writers[0].Driver
+
 	return &Tx{
-		ctx: ctx, driver: driver, logger: logger, db: db, tx: tx, txLogs: txLogs,
+		ctx:        ctx,
+		driverName: driverName,
+		gormDB:     gormDB,
+		grammar:    driver.Grammar(),
+		logger:     logger,
+		txBuilder:  txBuilder,
+		txLogs:     txLogs,
 	}
 }
 
 func (r *Tx) Commit() error {
-	if r.tx == nil {
+	if r.txBuilder == nil {
 		return errors.DatabaseTransactionNotStarted
 	}
 
-	if err := r.tx.Commit(); err != nil {
+	if err := r.txBuilder.Commit(); err != nil {
 		return err
 	}
 
@@ -150,28 +180,32 @@ func (r *Tx) Insert(sql string, args ...any) (*contractsdb.Result, error) {
 }
 
 func (r *Tx) Rollback() error {
-	if r.tx == nil {
+	if r.txBuilder == nil {
 		return errors.DatabaseTransactionNotStarted
 	}
 
-	return r.tx.Rollback()
+	return r.txBuilder.Rollback()
 }
 
 func (r *Tx) Select(dest any, sql string, args ...any) error {
 	var (
+		builder contractsdb.CommonBuilder
 		realSql string
 		err     error
 	)
 
-	realSql = r.driver.Explain(sql, args...)
-
-	if r.tx != nil {
-		err = r.tx.SelectContext(r.ctx, dest, realSql, args...)
+	if r.txBuilder != nil {
+		builder = r.txBuilder
 	} else {
-		err = r.db.SelectContext(r.ctx, dest, realSql, args...)
+		builder, err = r.readBuilder()
+		if err != nil {
+			return err
+		}
 	}
 
-	if err != nil {
+	realSql = builder.Explain(sql, args...)
+
+	if err = builder.SelectContext(r.ctx, dest, realSql, args...); err != nil {
 		r.logger.Trace(r.ctx, carbon.Now(), realSql, -1, err)
 
 		return err
@@ -189,11 +223,23 @@ func (r *Tx) Select(dest any, sql string, args ...any) error {
 }
 
 func (r *Tx) Table(name string) contractsdb.Query {
-	if r.tx != nil {
-		return NewQuery(r.ctx, r.driver, r.tx, r.logger, name, r.txLogs)
+	if r.txBuilder != nil {
+		return NewQuery(r.ctx, r.txBuilder, r.txBuilder, r.grammar, r.logger, name, r.txLogs)
 	}
 
-	return NewQuery(r.ctx, r.driver, r.db, r.logger, name, nil)
+	readBuilder, err := r.readBuilder()
+	if err != nil {
+		r.logger.Panicf(r.ctx, err.Error())
+		return nil
+	}
+
+	writeBuilder, err := r.writeBuilder()
+	if err != nil {
+		r.logger.Panicf(r.ctx, err.Error())
+		return nil
+	}
+
+	return NewQuery(r.ctx, readBuilder, writeBuilder, r.grammar, r.logger, name, nil)
 }
 
 func (r *Tx) Update(sql string, args ...any) (*contractsdb.Result, error) {
@@ -202,18 +248,23 @@ func (r *Tx) Update(sql string, args ...any) (*contractsdb.Result, error) {
 
 func (r *Tx) exec(sql string, args ...any) (*contractsdb.Result, error) {
 	var (
-		result databasesql.Result
-		err    error
+		builder contractsdb.CommonBuilder
+		realSql string
+		result  databasesql.Result
+		err     error
 	)
 
-	realSql := r.driver.Explain(sql, args...)
-
-	if r.tx != nil {
-		result, err = r.tx.ExecContext(r.ctx, sql, args...)
+	if r.txBuilder != nil {
+		builder = r.txBuilder
 	} else {
-		result, err = r.db.ExecContext(r.ctx, sql, args...)
+		builder, err = r.writeBuilder()
+		if err != nil {
+			return nil, err
+		}
 	}
 
+	realSql = builder.Explain(sql, args...)
+	result, err = builder.ExecContext(r.ctx, sql, args...)
 	if err != nil {
 		r.logger.Trace(r.ctx, carbon.Now(), realSql, -1, err)
 		return nil, err
@@ -228,4 +279,22 @@ func (r *Tx) exec(sql string, args ...any) (*contractsdb.Result, error) {
 	r.logger.Trace(r.ctx, carbon.Now(), realSql, rowsAffected, nil)
 
 	return &contractsdb.Result{RowsAffected: rowsAffected}, nil
+}
+
+func (r *Tx) readBuilder() (contractsdb.Builder, error) {
+	builder, err := NewBuilder(r.gormDB.Clauses(dbresolver.Read), r.driverName)
+	if err != nil {
+		return nil, err
+	}
+
+	return builder, nil
+}
+
+func (r *Tx) writeBuilder() (contractsdb.Builder, error) {
+	builder, err := NewBuilder(r.gormDB.Clauses(dbresolver.Write), r.driverName)
+	if err != nil {
+		return nil, err
+	}
+
+	return builder, nil
 }
