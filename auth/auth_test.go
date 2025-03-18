@@ -604,7 +604,7 @@ func (s *AuthTestSuite) TestUser_RefreshExpired() {
 }
 
 func (s *AuthTestSuite) TestUser_Success() {
-	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel")
+	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Twice()
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(2).Once()
 
 	err := s.auth.LoginUsingID(1)
@@ -633,11 +633,11 @@ func (s *AuthTestSuite) TestUser_Success() {
 func (s *AuthTestSuite) TestUser_Success_MultipleParse() {
 	testAdminGuard := "admin"
 
-	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel")
+	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Times(4)
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(2)
 	s.mockConfig.EXPECT().Get("auth.guards.admin.ttl").Return(2)
 
-	s.mockConfig.EXPECT().GetString("auth.guards.admin.driver").Return("jwt")
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.driver").Return("jwt").Once()
 	s.mockConfig.EXPECT().GetString("auth.guards.admin.provider").Return("admin").Once()
 	s.mockConfig.EXPECT().GetString("auth.providers.admin.driver").Return("orm").Once()
 
@@ -886,9 +886,9 @@ func (s *AuthTestSuite) TestLogout_Error_TTL_Is_0() {
 func (s *AuthTestSuite) TestMakeAuthContext() {
 	testAdminGuard := "admin"
 
-	s.mockConfig.EXPECT().GetString("auth.guards.admin.driver").Return("jwt")
-	s.mockConfig.EXPECT().GetString("auth.guards.admin.provider").Return("admin")
-	s.mockConfig.EXPECT().GetString("auth.providers.admin.driver").Return("orm")
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.driver").Return("jwt").Once()
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.provider").Return("admin").Once()
+	s.mockConfig.EXPECT().GetString("auth.providers.admin.driver").Return("orm").Once()
 
 	s.GetGuard("user").makeAuthContext(nil, "1")
 	guards, ok := s.auth.ctx.Value(ctxKey).(Guards)
