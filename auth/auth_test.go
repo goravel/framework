@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"reflect"
 	"sync"
 	"testing"
 	"time"
@@ -97,15 +96,6 @@ func Background() http.Context {
 	}
 }
 
-type MockProvider struct{}
-
-func (m MockProvider) RetriveById(user any, id any) error {
-	v := reflect.ValueOf(user).Elem()
-	v.FieldByName("ID").SetUint(1)
-	v.FieldByName("Name").SetString("MockUser")
-	return nil
-}
-
 type AuthTestSuite struct {
 	suite.Suite
 	auth        *Auth
@@ -129,7 +119,6 @@ func (s *AuthTestSuite) SetupTest() {
 	s.mockConfig.EXPECT().GetString("auth.guards.user.driver").Return("jwt")
 	s.mockConfig.EXPECT().GetString("auth.guards.user.provider").Return("user")
 	s.mockConfig.EXPECT().GetString("auth.providers.user.driver").Return("orm")
-	s.mockConfig.EXPECT().Get("auth.providers.user.model").Return(reflect.TypeOf((*User)(nil)))
 	if auth, err := NewAuth(testUserGuard, s.mockCache, s.mockConfig, s.mockContext, s.mockOrm); err == nil {
 		s.auth = auth
 	}
@@ -644,12 +633,10 @@ func (s *AuthTestSuite) TestUser_Success_MultipleParse() {
 	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel")
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(2)
 	s.mockConfig.EXPECT().Get("auth.guards.admin.ttl").Return(2)
-	s.mockConfig.EXPECT().Get("auth.providers.user.model").Return(reflect.TypeOf((*User)(nil)))
 
 	s.mockConfig.EXPECT().GetString("auth.guards.admin.driver").Return("jwt")
 	s.mockConfig.EXPECT().GetString("auth.guards.admin.provider").Return("admin").Once()
 	s.mockConfig.EXPECT().GetString("auth.providers.admin.driver").Return("orm").Once()
-	s.mockConfig.EXPECT().Get("auth.providers.admin.model").Return(reflect.TypeOf((*User)(nil))).Once()
 
 	guard := s.GetGuard(testUserGuard)
 	s.NotNil(guard)
@@ -896,7 +883,6 @@ func (s *AuthTestSuite) TestMakeAuthContext() {
 	s.mockConfig.EXPECT().GetString("auth.guards.admin.driver").Return("jwt")
 	s.mockConfig.EXPECT().GetString("auth.guards.admin.provider").Return("admin")
 	s.mockConfig.EXPECT().GetString("auth.providers.admin.driver").Return("orm")
-	s.mockConfig.EXPECT().Get("auth.providers.admin.model").Return(reflect.TypeOf((*User)(nil)))
 
 	s.GetGuard("user").makeAuthContext(nil, "1")
 	guards, ok := s.auth.ctx.Value(ctxKey).(Guards)
@@ -931,7 +917,6 @@ func (s *AuthTestSuite) TestAuth_ExtendGuard() {
 	s.mockConfig.EXPECT().GetString("auth.guards.admin.driver").Return("session").Once()
 	s.mockConfig.EXPECT().GetString("auth.guards.admin.provider").Return("admin").Once()
 	s.mockConfig.EXPECT().GetString("auth.providers.admin.driver").Return("orm").Once()
-	s.mockConfig.EXPECT().Get("auth.providers.admin.model").Return(reflect.TypeOf((*User)(nil))).Once()
 
 	guard, err := s.auth.GetGuard("admin")
 	s.Nil(err)
@@ -944,12 +929,14 @@ func (s *AuthTestSuite) TestAuth_ExtendGuard() {
 
 func (s *AuthTestSuite) TestAuth_ExtendProvider() {
 	user := User{}
-	mockProvider := mocksauth.UserProvider{}
-	mockProvider.EXPECT().RetriveById(&user, 1).Run(func(user, id interface{}) {
+	mockProvider := mocksauth.NewUserProvider(s.T())
+	mockProvider.EXPECT().RetriveById(&user, "1").Return(nil).Run(func(user, id interface{}) {
 		if user, ok := user.(*User); ok {
 			user.Name = "MockUser"
+			user.ID = 1
 		}
 	})
+
 	s.auth.Provider("mock", func(auth contractsauth.Auth) (contractsauth.UserProvider, error) {
 		return mockProvider, nil
 	})
