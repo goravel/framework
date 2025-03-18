@@ -18,7 +18,9 @@ type Guard interface {
 	// Login logs a user into the application.
 	Login(user any) (err error)
 	// LoginUsingID logs the given user ID into the application.
-	LoginUsingID(id any) (err error)
+	LoginUsingID(id any) (token string, err error)
+	// Refresh the token for the current user.
+	Refresh() (token string, err error)
 	// Logout logs the user out of the application.
 	Logout() error
 }

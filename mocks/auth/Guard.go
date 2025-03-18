@@ -209,21 +209,31 @@ func (_c *Guard_Login_Call) RunAndReturn(run func(interface{}) error) *Guard_Log
 }
 
 // LoginUsingID provides a mock function with given fields: id
-func (_m *Guard) LoginUsingID(id interface{}) error {
+func (_m *Guard) LoginUsingID(id interface{}) (string, error) {
 	ret := _m.Called(id)
 
 	if len(ret) == 0 {
 		panic("no return value specified for LoginUsingID")
 	}
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(interface{}) error); ok {
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(interface{}) (string, error)); ok {
+		return rf(id)
+	}
+	if rf, ok := ret.Get(0).(func(interface{}) string); ok {
 		r0 = rf(id)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(string)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(interface{}) error); ok {
+		r1 = rf(id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Guard_LoginUsingID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LoginUsingID'
@@ -244,12 +254,12 @@ func (_c *Guard_LoginUsingID_Call) Run(run func(id interface{})) *Guard_LoginUsi
 	return _c
 }
 
-func (_c *Guard_LoginUsingID_Call) Return(err error) *Guard_LoginUsingID_Call {
-	_c.Call.Return(err)
+func (_c *Guard_LoginUsingID_Call) Return(token string, err error) *Guard_LoginUsingID_Call {
+	_c.Call.Return(token, err)
 	return _c
 }
 
-func (_c *Guard_LoginUsingID_Call) RunAndReturn(run func(interface{}) error) *Guard_LoginUsingID_Call {
+func (_c *Guard_LoginUsingID_Call) RunAndReturn(run func(interface{}) (string, error)) *Guard_LoginUsingID_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -295,6 +305,61 @@ func (_c *Guard_Logout_Call) Return(_a0 error) *Guard_Logout_Call {
 }
 
 func (_c *Guard_Logout_Call) RunAndReturn(run func() error) *Guard_Logout_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Refresh provides a mock function with no fields
+func (_m *Guard) Refresh() (string, error) {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Refresh")
+	}
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (string, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Guard_Refresh_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Refresh'
+type Guard_Refresh_Call struct {
+	*mock.Call
+}
+
+// Refresh is a helper method to define mock.On call
+func (_e *Guard_Expecter) Refresh() *Guard_Refresh_Call {
+	return &Guard_Refresh_Call{Call: _e.mock.On("Refresh")}
+}
+
+func (_c *Guard_Refresh_Call) Run(run func()) *Guard_Refresh_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Guard_Refresh_Call) Return(token string, err error) *Guard_Refresh_Call {
+	_c.Call.Return(token, err)
+	return _c
+}
+
+func (_c *Guard_Refresh_Call) RunAndReturn(run func() (string, error)) *Guard_Refresh_Call {
 	_c.Call.Return(run)
 	return _c
 }

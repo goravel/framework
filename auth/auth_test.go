@@ -129,7 +129,7 @@ func (s *AuthTestSuite) TestLoginUsingID_EmptySecret() {
 
 	guard, err := s.auth.GetGuard("user")
 	s.Nil(err)
-	err = guard.LoginUsingID(1)
+	_, err = guard.LoginUsingID(1)
 	s.ErrorIs(err, errors.AuthEmptySecret)
 }
 
@@ -139,7 +139,7 @@ func (s *AuthTestSuite) TestLoginUsingID_InvalidKey() {
 
 	guard, err := s.auth.GetGuard("user")
 	s.Nil(err)
-	err = guard.LoginUsingID("")
+	_, err = guard.LoginUsingID("")
 	s.ErrorIs(err, errors.AuthInvalidKey)
 }
 
@@ -151,7 +151,7 @@ func (s *AuthTestSuite) TestLoginUsingID() {
 
 	guard, err := s.auth.GetGuard("user")
 	s.Nil(err)
-	err = guard.LoginUsingID(0)
+	_, err = guard.LoginUsingID(0)
 	s.Nil(err)
 
 	// jwt.ttl == 0
@@ -159,7 +159,7 @@ func (s *AuthTestSuite) TestLoginUsingID() {
 
 	guard, err = s.auth.GetGuard("user")
 	s.Nil(err)
-	err = guard.LoginUsingID(1)
+	_, err = guard.LoginUsingID(1)
 	s.Nil(err)
 }
 
@@ -260,7 +260,7 @@ func (s *AuthTestSuite) TestParse_TokenExpired() {
 	guard, err := s.auth.GetGuard("user")
 	s.Nil(err)
 
-	err = guard.LoginUsingID(1)
+	_, err = guard.LoginUsingID(1)
 	s.Nil(err)
 
 	carbon.SetTestNow(now.AddMinutes(2))
@@ -308,7 +308,7 @@ func (s *AuthTestSuite) TestParse_Success() {
 	guard, err := s.auth.GetGuard("user")
 	s.Nil(err)
 
-	err = guard.LoginUsingID(1)
+	_, err = guard.LoginUsingID(1)
 	s.Nil(err)
 
 	if guard, ok := guard.(*JwtGuard); ok {
@@ -334,7 +334,7 @@ func (s *AuthTestSuite) TestParse_SuccessWithPrefix() {
 	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Twice()
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(2).Once()
 
-	err := s.auth.LoginUsingID(1)
+	_, err := s.auth.LoginUsingID(1)
 	s.Nil(err)
 
 	guard, err := s.auth.GetGuard("user")
@@ -408,7 +408,7 @@ func (s *AuthTestSuite) TestID_Success() {
 
 	guard := s.GetGuard("user")
 	s.NotNil(guard)
-	err := guard.LoginUsingID(1)
+	_, err := guard.LoginUsingID(1)
 	s.Nil(err)
 
 	guardInfo, err := guard.GetAuthToken()
@@ -433,7 +433,7 @@ func (s *AuthTestSuite) TestID_TokenExpired() {
 	guard := s.GetGuard("user")
 	s.NotNil(guard)
 	// Log in to get a token
-	err := guard.LoginUsingID(1)
+	_, err := guard.LoginUsingID(1)
 	s.Nil(err)
 
 	guardInfo, err := guard.GetAuthToken()
@@ -479,7 +479,7 @@ func (s *AuthTestSuite) TestUser_DBError() {
 	guard := s.GetGuard("user")
 	s.NotNil(guard)
 
-	err := guard.LoginUsingID(1)
+	_, err := guard.LoginUsingID(1)
 	s.Nil(err)
 
 	guradInfo, err := guard.GetAuthToken()
@@ -507,7 +507,7 @@ func (s *AuthTestSuite) TestUser_Expired() {
 	guard := s.GetGuard("user")
 	s.NotNil(guard)
 
-	err := guard.LoginUsingID(1)
+	_, err := guard.LoginUsingID(1)
 	s.Nil(err)
 
 	guardInfo, err := guard.GetAuthToken()
@@ -544,7 +544,7 @@ func (s *AuthTestSuite) TestUser_RefreshExpired() {
 	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Twice()
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(2).Once()
 
-	err := s.auth.LoginUsingID(1)
+	_, err := s.auth.LoginUsingID(1)
 	s.Nil(err)
 
 	guard := s.GetGuard("user")
@@ -580,7 +580,7 @@ func (s *AuthTestSuite) TestUser_Success() {
 	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Twice()
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(2).Once()
 
-	err := s.auth.LoginUsingID(1)
+	_, err := s.auth.LoginUsingID(1)
 	s.Nil(err)
 
 	guard := s.GetGuard("user")
@@ -617,14 +617,14 @@ func (s *AuthTestSuite) TestUser_Success_MultipleParse() {
 	guard := s.GetGuard(testUserGuard)
 	s.NotNil(guard)
 
-	err := guard.LoginUsingID(1)
+	_, err := guard.LoginUsingID(1)
 	s.Nil(err)
 
 	guard1Info, err := guard.GetAuthToken()
 	s.Nil(err)
 
 	adminGuard := s.GetGuard(testAdminGuard)
-	err = adminGuard.LoginUsingID(2)
+	_, err = adminGuard.LoginUsingID(2)
 	s.Nil(err)
 
 	guard2Info, err := adminGuard.GetAuthToken()
@@ -671,7 +671,7 @@ func (s *AuthTestSuite) TestRefresh_RefreshTimeExceeded() {
 	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Twice()
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(2).Once()
 
-	err := s.auth.LoginUsingID(2)
+	_, err := s.auth.LoginUsingID(2)
 	s.Nil(err)
 
 	guard := s.GetGuard("user")
@@ -701,7 +701,7 @@ func (s *AuthTestSuite) TestRefresh_Success() {
 	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Times(4)
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(2).Times(3)
 
-	err := s.auth.LoginUsingID(1)
+	_, err := s.auth.LoginUsingID(1)
 	s.Nil(err)
 
 	guard := s.GetGuard("user")
@@ -747,7 +747,7 @@ func (s *AuthTestSuite) TestLogout_CacheUnsupported() {
 	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Once()
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(2).Once()
 
-	err := s.auth.LoginUsingID(1)
+	_, err := s.auth.LoginUsingID(1)
 	s.Nil(err)
 	s.EqualError(s.auth.Logout(), errors.CacheSupportRequired.SetModule(errors.ModuleAuth).Error())
 }
@@ -764,7 +764,7 @@ func (s *AuthTestSuite) TestLogout_SetDisabledCacheError() {
 	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Twice()
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(2).Twice()
 
-	err := s.auth.LoginUsingID(1)
+	_, err := s.auth.LoginUsingID(1)
 	s.Nil(err)
 
 	guard := s.GetGuard("user")
@@ -788,7 +788,7 @@ func (s *AuthTestSuite) TestLogout_Success() {
 	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Twice()
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(2).Twice()
 
-	err := s.auth.LoginUsingID(1)
+	_, err := s.auth.LoginUsingID(1)
 	s.Nil(err)
 
 	guard := s.GetGuard("user")
@@ -812,7 +812,7 @@ func (s *AuthTestSuite) TestLogout_Success_TTL_Is_0() {
 	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Twice()
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(0).Twice()
 
-	err := s.auth.LoginUsingID(1)
+	_, err := s.auth.LoginUsingID(1)
 	s.Nil(err)
 
 	guard := s.GetGuard("user")
@@ -836,7 +836,7 @@ func (s *AuthTestSuite) TestLogout_Error_TTL_Is_0() {
 	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Twice()
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(0).Twice()
 
-	err := s.auth.LoginUsingID(1)
+	_, err := s.auth.LoginUsingID(1)
 	s.Nil(err)
 
 	guard := s.GetGuard("user")
@@ -880,7 +880,7 @@ func (s *AuthTestSuite) TestCheck() {
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(0).Once()
 	s.False(s.auth.Check())
 	s.True(s.auth.Guest())
-	err := s.auth.LoginUsingID(1)
+	_, err := s.auth.LoginUsingID(1)
 	s.Nil(err)
 	s.True(s.auth.Check())
 	s.False(s.auth.Guest())
@@ -930,7 +930,7 @@ func (s *AuthTestSuite) TestAuth_ExtendProvider() {
 	s.Nil(err)
 
 	authUser := User{}
-	err = guard.LoginUsingID(1)
+	_, err = guard.LoginUsingID(1)
 	s.Nil(err)
 
 	err = guard.User(&authUser)

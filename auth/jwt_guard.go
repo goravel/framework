@@ -92,26 +92,27 @@ func (r *JwtGuard) ID() (string, error) {
 	return guard.Claims.Key, nil
 }
 
-func (r *JwtGuard) Login(user any) (err error) {
+func (r *JwtGuard) Login(user any) error {
 	id := database.GetID(user)
 	if id == nil {
 		return errors.AuthNoPrimaryKeyField
 	}
 
-	return r.LoginUsingID(id)
+	_, err := r.LoginUsingID(id)
+	return err
 }
 
-func (r *JwtGuard) LoginUsingID(id any) (err error) {
+func (r *JwtGuard) LoginUsingID(id any) (token string, err error) {
 	jwtSecret := r.config.GetString("jwt.secret")
 	if jwtSecret == "" {
-		return errors.AuthEmptySecret
+		return "", errors.AuthEmptySecret
 	}
 
 	nowTime := carbon.Now()
 	expireTime := nowTime.AddMinutes(r.getTtl()).StdTime()
 	key := cast.ToString(id)
 	if key == "" {
-		return errors.AuthInvalidKey
+		return "", errors.AuthInvalidKey
 	}
 	claims := Claims{
 		key,
@@ -123,9 +124,9 @@ func (r *JwtGuard) LoginUsingID(id any) (err error) {
 	}
 
 	tokenClaims := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	token, err := tokenClaims.SignedString([]byte(jwtSecret))
+	token, err = tokenClaims.SignedString([]byte(jwtSecret))
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	r.makeAuthContext(&claims, token)
@@ -247,13 +248,13 @@ func (a *JwtGuard) Refresh() (token string, err error) {
 		return "", errors.AuthRefreshTimeExceeded
 	}
 
-	err = a.LoginUsingID(guard.Claims.Key)
+	token, err = a.LoginUsingID(guard.Claims.Key)
 
 	if err != nil {
 		return "", err
 	}
 
-	return guard.Token, nil
+	return
 }
 
 // User need parse token first.
