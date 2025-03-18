@@ -63,11 +63,7 @@ func (r *JwtGuard) GetAuthToken() (*AuthToken, error) {
 		return nil, ErrorParseTokenFirst
 	}
 
-	if guard, ok := guards[r.guard]; ok {
-		return guard, nil
-	}
-
-	return nil, ErrorParseTokenFirst
+	return r.authToken(guards)
 }
 
 func (r *JwtGuard) Guest() bool {
@@ -75,18 +71,9 @@ func (r *JwtGuard) Guest() bool {
 }
 
 func (r *JwtGuard) ID() (string, error) {
-	auth, ok := r.ctx.Value(ctxKey).(Guards)
-	if !ok || auth[r.guard] == nil {
-		return "", errors.AuthParseTokenFirst
-	}
-
-	guard, ok := auth[r.guard]
-	if !ok {
-		return "", errors.AuthParseTokenFirst
-	}
-
-	if guard.Token == "" {
-		return "", errors.AuthTokenExpired
+	guard, err := r.GetAuthToken()
+	if err != nil {
+		return "", err
 	}
 
 	return guard.Claims.Key, nil
@@ -135,19 +122,14 @@ func (r *JwtGuard) LoginUsingID(id any) (token string, err error) {
 }
 
 func (r *JwtGuard) Logout() error {
-	auth, ok := r.ctx.Value(ctxKey).(Guards)
-
-	if !ok || auth[r.guard] == nil {
-		return errors.AuthParseTokenFirst
-	}
-
-	guard, ok := auth[r.guard]
+	guards, ok := r.ctx.Value(ctxKey).(Guards)
 	if !ok {
 		return errors.AuthParseTokenFirst
 	}
 
-	if guard.Token == "" {
-		return errors.AuthParseTokenFirst
+	guard, err := r.authToken(guards)
+	if err != nil {
+		return err
 	}
 
 	if r.cache == nil {
@@ -161,8 +143,8 @@ func (r *JwtGuard) Logout() error {
 		return err
 	}
 
-	delete(auth, r.guard)
-	r.ctx.WithValue(ctxKey, auth)
+	delete(guards, r.guard)
+	r.ctx.WithValue(ctxKey, guards)
 
 	return nil
 }
@@ -221,23 +203,15 @@ func (r *JwtGuard) Parse(token string) (*contractsauth.Payload, error) {
 }
 
 // Refresh need parse token first.
-func (a *JwtGuard) Refresh() (token string, err error) {
-	auth, ok := a.ctx.Value(ctxKey).(Guards)
-	if !ok || auth[a.guard] == nil {
-		return "", errors.AuthParseTokenFirst
-	}
+func (r *JwtGuard) Refresh() (token string, err error) {
+	guard, err := r.GetAuthToken()
 
-	guard, ok := auth[a.guard]
-	if !ok {
-		return "", errors.AuthParseTokenFirst
-	}
-
-	if guard.Claims == nil {
-		return "", errors.AuthParseTokenFirst
+	if err != nil {
+		return "", err
 	}
 
 	nowTime := carbon.Now()
-	refreshTtl := a.config.GetInt("jwt.refresh_ttl")
+	refreshTtl := r.config.GetInt("jwt.refresh_ttl")
 	if refreshTtl == 0 {
 		// 100 years
 		refreshTtl = 60 * 24 * 365 * 100
@@ -248,7 +222,7 @@ func (a *JwtGuard) Refresh() (token string, err error) {
 		return "", errors.AuthRefreshTimeExceeded
 	}
 
-	token, err = a.LoginUsingID(guard.Claims.Key)
+	token, err = r.LoginUsingID(guard.Claims.Key)
 
 	if err != nil {
 		return "", err
@@ -259,31 +233,36 @@ func (a *JwtGuard) Refresh() (token string, err error) {
 
 // User need parse token first.
 func (r *JwtGuard) User(user any) error {
-	auth, ok := r.ctx.Value(ctxKey).(Guards)
-	if !ok {
-		return errors.AuthParseTokenFirst
-	}
-	guard, ok := auth[r.guard]
-	if !ok {
-		return errors.AuthParseTokenFirst
-	}
-	if guard.Claims == nil {
-		return errors.AuthParseTokenFirst
-	}
-	if guard.Claims.Key == "" {
-		return errors.AuthInvalidKey
-	}
-	if guard.Token == "" {
-		return errors.AuthTokenExpired
-	}
-
-	err := r.provider.RetriveByID(user, guard.Claims.Key)
+	guard, err := r.GetAuthToken()
 
 	if err != nil {
 		return err
 	}
 
-	return nil
+	err = r.provider.RetriveByID(user, guard.Claims.Key)
+
+	return err
+}
+
+func (r *JwtGuard) authToken(guards Guards) (*AuthToken, error) {
+	guard, ok := guards[r.guard]
+	if ok {
+		return guard, nil
+	}
+
+	if guard.Token == "" {
+		return nil, errors.AuthTokenExpired
+	}
+
+	if guard.Claims == nil {
+		return nil, errors.AuthParseTokenFirst
+	}
+
+	if guard.Claims.Key == "" {
+		return nil, errors.AuthInvalidKey
+	}
+
+	return nil, ErrorParseTokenFirst
 }
 
 func (r *JwtGuard) getTtl() int {
