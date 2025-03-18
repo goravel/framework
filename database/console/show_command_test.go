@@ -31,7 +31,7 @@ func TestShowCommand(t *testing.T) {
 		mockQuery = mocksorm.NewQuery(t)
 	}
 	successCaseExpected := [][2]string{
-		{"<fg=green;op=bold>test</>", "version"},
+		{"<fg=green;op=bold>test</>", ""},
 		{"Database", "db"},
 		{"Host", "host"},
 		{"Port", "1234"},

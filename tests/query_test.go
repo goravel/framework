@@ -3629,7 +3629,7 @@ func TestCustomConnection(t *testing.T) {
 	assert.NoError(t, docker.Shutdown())
 }
 
-func TestReadWriteSeparate(t *testing.T) {
+func TestOrmReadWriteSeparate(t *testing.T) {
 	dbs := NewTestQueryBuilder().AllOfReadWrite()
 
 	for drive, db := range dbs {

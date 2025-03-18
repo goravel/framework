@@ -1384,3 +1384,39 @@ func TestDB_Connection(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, product3.ID == 0)
 }
+
+func TestDbReadWriteSeparate(t *testing.T) {
+	dbs := NewTestQueryBuilder().AllOfReadWrite()
+
+	for drive, db := range dbs {
+		t.Run(drive, func(t *testing.T) {
+			db["read"].CreateTable(TestTableProducts)
+			db["write"].CreateTable(TestTableProducts)
+
+			product1 := Product{Name: "read write separate product"}
+			result, err := db["mix"].DB().Table("products").Insert(&product1)
+			assert.Nil(t, err)
+			assert.Equal(t, int64(1), result.RowsAffected)
+
+			var product2 Product
+			assert.Nil(t, db["mix"].DB().Table("products").Where("name", product1.Name).First(&product2))
+			assert.True(t, product2.ID == 0)
+
+			var product3 Product
+			assert.Nil(t, db["read"].DB().Table("products").Where("name", product1.Name).First(&product3))
+			assert.True(t, product3.ID == 0)
+
+			var product4 Product
+			assert.Nil(t, db["write"].DB().Table("products").Where("name", product1.Name).First(&product4))
+			assert.True(t, product4.ID > 0)
+		})
+	}
+
+	docker, err := dbs[sqlite.Name]["read"].Driver().Docker()
+	assert.NoError(t, err)
+	assert.NoError(t, docker.Shutdown())
+
+	docker, err = dbs[sqlite.Name]["write"].Driver().Docker()
+	assert.NoError(t, err)
+	assert.NoError(t, docker.Shutdown())
+}
