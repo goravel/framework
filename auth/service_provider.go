@@ -38,7 +38,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		}
 
 		return NewAuth(config.GetString("auth.defaults.guard"),
-			cacheFacade, config, ctx, ormFacade), nil
+			cacheFacade, config, ctx, ormFacade)
 	})
 	app.Singleton(contracts.BindingGate, func(app foundation.Application) (any, error) {
 		return access.NewGate(context.Background()), nil

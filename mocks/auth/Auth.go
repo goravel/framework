@@ -66,7 +66,7 @@ func (_c *Auth_Check_Call) RunAndReturn(run func() bool) *Auth_Check_Call {
 }
 
 // Extend provides a mock function with given fields: name, fn
-func (_m *Auth) Extend(name string, fn auth.AuthGuardFunc) {
+func (_m *Auth) Extend(name string, fn auth.GuardFunc) {
 	_m.Called(name, fn)
 }
 
@@ -77,14 +77,14 @@ type Auth_Extend_Call struct {
 
 // Extend is a helper method to define mock.On call
 //   - name string
-//   - fn auth.AuthGuardFunc
+//   - fn auth.GuardFunc
 func (_e *Auth_Expecter) Extend(name interface{}, fn interface{}) *Auth_Extend_Call {
 	return &Auth_Extend_Call{Call: _e.mock.On("Extend", name, fn)}
 }
 
-func (_c *Auth_Extend_Call) Run(run func(name string, fn auth.AuthGuardFunc)) *Auth_Extend_Call {
+func (_c *Auth_Extend_Call) Run(run func(name string, fn auth.GuardFunc)) *Auth_Extend_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(auth.AuthGuardFunc))
+		run(args[0].(string), args[1].(auth.GuardFunc))
 	})
 	return _c
 }
@@ -94,7 +94,7 @@ func (_c *Auth_Extend_Call) Return() *Auth_Extend_Call {
 	return _c
 }
 
-func (_c *Auth_Extend_Call) RunAndReturn(run func(string, auth.AuthGuardFunc)) *Auth_Extend_Call {
+func (_c *Auth_Extend_Call) RunAndReturn(run func(string, auth.GuardFunc)) *Auth_Extend_Call {
 	_c.Run(run)
 	return _c
 }

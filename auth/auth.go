@@ -10,9 +10,7 @@ import (
 	"github.com/goravel/framework/contracts/http"
 )
 
-const ctxKey = "GoravelAuth"
-
-type AuthManager struct {
+type Auth struct {
 	contractsauth.Guard
 	cache           cache.Cache
 	config          config.Config
@@ -20,95 +18,97 @@ type AuthManager struct {
 	orm             orm.Orm
 	guards          map[string]contractsauth.Guard
 	providers       map[string]contractsauth.UserProvider
-	customGuards    map[string]contractsauth.AuthGuardFunc
+	customGuards    map[string]contractsauth.GuardFunc
 	customProviders map[string]contractsauth.UserProviderFunc
 }
 
-type Guards map[string]interface{}
-
-func NewAuth(guard string, cache cache.Cache, config config.Config, ctx http.Context, orm orm.Orm) *AuthManager {
-	manager := &AuthManager{
+func NewAuth(guard string, cache cache.Cache, config config.Config, ctx http.Context, orm orm.Orm) (*Auth, error) {
+	auth := &Auth{
 		cache:           cache,
 		config:          config,
 		ctx:             ctx,
 		orm:             orm,
 		guards:          map[string]contractsauth.Guard{},
 		providers:       map[string]contractsauth.UserProvider{},
-		customGuards:    map[string]contractsauth.AuthGuardFunc{},
+		customGuards:    map[string]contractsauth.GuardFunc{},
 		customProviders: map[string]contractsauth.UserProviderFunc{},
 	}
 
-	manager.Guard, _ = manager.GetGuard(guard)
+	defaultGuard, err := auth.GetGuard(guard)
+	if err != nil {
+		return nil, err
+	}
 
-	return manager
+	auth.Guard = defaultGuard
+	return auth, nil
 }
 
-func (a *AuthManager) Extend(name string, fn contractsauth.AuthGuardFunc) {
-	a.customGuards[name] = fn
+func (r *Auth) Extend(name string, fn contractsauth.GuardFunc) {
+	r.customGuards[name] = fn
 }
 
-func (a *AuthManager) Provider(name string, fn contractsauth.UserProviderFunc) {
-	a.customProviders[name] = fn
+func (r *Auth) Provider(name string, fn contractsauth.UserProviderFunc) {
+	r.customProviders[name] = fn
 }
 
-func (a *AuthManager) Resolve(name string) (contractsauth.Guard, error) {
-	driverName := a.config.GetString(fmt.Sprintf("auth.guards.%s.driver", name))
-	userProviderName := a.config.GetString(fmt.Sprintf("auth.guards.%s.provider", name))
-	provider, err := a.createUserProvider(userProviderName)
+func (r *Auth) resolve(name string) (contractsauth.Guard, error) {
+	driverName := r.config.GetString(fmt.Sprintf("auth.guards.%s.driver", name))
+	userProviderName := r.config.GetString(fmt.Sprintf("auth.guards.%s.provider", name))
+	provider, err := r.createUserProvider(userProviderName)
 
-	if guard, ok := a.guards[name]; ok {
+	if guard, ok := r.guards[name]; ok {
 		return guard, nil
 	}
 
-	if guardFunc, ok := a.customGuards[driverName]; ok {
+	if guardFunc, ok := r.customGuards[driverName]; ok {
 
 		if err != nil {
 			return nil, err
 		}
 
-		a.guards[name] = guardFunc(name, a, provider)
+		r.guards[name] = guardFunc(name, r, provider)
 
-		return a.guards[name], nil
+		return r.guards[name], nil
 	}
 
 	switch driverName {
 	case "jwt":
-		a.guards[name] = NewJwtGuard(name, a.cache, a.config, a.ctx, provider)
-		return a.guards[name], nil
+		r.guards[name] = NewJwtGuard(name, r.cache, r.config, r.ctx, provider)
+		return r.guards[name], nil
 	default:
 		return nil, fmt.Errorf("Driver %s for Guard `%s` was not found", driverName, name)
 	}
 }
 
-func (a *AuthManager) createUserProvider(name string) (contractsauth.UserProvider, error) {
-	driverName := a.config.GetString(fmt.Sprintf("auth.providers.%s.driver", name))
-
-	if provider, ok := a.providers[name]; ok {
+func (r *Auth) createUserProvider(name string) (contractsauth.UserProvider, error) {
+	if provider, ok := r.providers[name]; ok {
 		return provider, nil
 	}
 
-	if providerFunc, ok := a.customProviders[driverName]; ok {
-		return providerFunc(a), nil
+	driverName := r.config.GetString(fmt.Sprintf("auth.providers.%s.driver", name))
+
+	if providerFunc, ok := r.customProviders[driverName]; ok {
+		return providerFunc(r)
 	}
 
 	switch driverName {
 	case "orm":
-		provider, err := NewOrmUserProvider(name, a.orm, a.config)
+		provider, err := NewOrmUserProvider(name, r.orm, r.config)
 
 		if err != nil {
 			return nil, err
 		}
 
-		a.providers[driverName] = provider
-		return a.providers[driverName], nil
+		r.providers[driverName] = provider
+		return r.providers[driverName], nil
 	default:
 		return nil, fmt.Errorf("User Provider %s was not found", driverName)
 	}
 }
 
-func (a *AuthManager) GetGuard(name string) (contractsauth.Guard, error) {
-	if guard, ok := a.guards[name]; ok {
+func (r *Auth) GetGuard(name string) (contractsauth.Guard, error) {
+	if guard, ok := r.guards[name]; ok {
 		return guard, nil
 	}
-	return a.Resolve(name)
+	return r.resolve(name)
 }

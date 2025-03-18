@@ -21,7 +21,7 @@ func (_m *UserProviderFunc) EXPECT() *UserProviderFunc_Expecter {
 }
 
 // Execute provides a mock function with given fields: _a0
-func (_m *UserProviderFunc) Execute(_a0 auth.Auth) auth.UserProvider {
+func (_m *UserProviderFunc) Execute(_a0 auth.Auth) (auth.UserProvider, error) {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
@@ -29,6 +29,10 @@ func (_m *UserProviderFunc) Execute(_a0 auth.Auth) auth.UserProvider {
 	}
 
 	var r0 auth.UserProvider
+	var r1 error
+	if rf, ok := ret.Get(0).(func(auth.Auth) (auth.UserProvider, error)); ok {
+		return rf(_a0)
+	}
 	if rf, ok := ret.Get(0).(func(auth.Auth) auth.UserProvider); ok {
 		r0 = rf(_a0)
 	} else {
@@ -37,7 +41,13 @@ func (_m *UserProviderFunc) Execute(_a0 auth.Auth) auth.UserProvider {
 		}
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(auth.Auth) error); ok {
+		r1 = rf(_a0)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // UserProviderFunc_Execute_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Execute'
@@ -58,12 +68,12 @@ func (_c *UserProviderFunc_Execute_Call) Run(run func(_a0 auth.Auth)) *UserProvi
 	return _c
 }
 
-func (_c *UserProviderFunc_Execute_Call) Return(_a0 auth.UserProvider) *UserProviderFunc_Execute_Call {
-	_c.Call.Return(_a0)
+func (_c *UserProviderFunc_Execute_Call) Return(_a0 auth.UserProvider, _a1 error) *UserProviderFunc_Execute_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *UserProviderFunc_Execute_Call) RunAndReturn(run func(auth.Auth) auth.UserProvider) *UserProviderFunc_Execute_Call {
+func (_c *UserProviderFunc_Execute_Call) RunAndReturn(run func(auth.Auth) (auth.UserProvider, error)) *UserProviderFunc_Execute_Call {
 	_c.Call.Return(run)
 	return _c
 }

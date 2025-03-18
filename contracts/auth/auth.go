@@ -26,16 +26,16 @@ type Guard interface {
 type Auth interface {
 	Guard
 	GetGuard(name string) (Guard, error)
-	Extend(name string, fn AuthGuardFunc)
+	Extend(name string, fn GuardFunc)
 	Provider(name string, fn UserProviderFunc)
 }
 
 type UserProvider interface {
-	RetriveById(any, any) (any, error)
+	RetriveById(user any, id any) error
 }
 
-type UserProviderFunc func(Auth) UserProvider
-type AuthGuardFunc func(string, Auth, UserProvider) Guard
+type UserProviderFunc func(auth Auth) (UserProvider, error)
+type GuardFunc func(string, Auth, UserProvider) Guard
 
 type Payload struct {
 	Guard    string
