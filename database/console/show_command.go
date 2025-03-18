@@ -26,8 +26,9 @@ type databaseInfo struct {
 	Port            int
 	Tables          []driver.Table
 	Username        string
-	Version         string
-	Views           []driver.View
+	// TODO: We want to reconstruct the way to get the version of the database, comment it out temporarily.
+	// Version string
+	Views []driver.View
 }
 
 func NewShowCommand(config config.Config, schema schema.Schema) *ShowCommand {
@@ -81,7 +82,6 @@ func (r *ShowCommand) Handle(ctx console.Context) error {
 		Name:     dbConfig.Driver,
 		Port:     dbConfig.Port,
 		Username: dbConfig.Username,
-		Version:  dbConfig.Version,
 	}
 
 	db, err := r.schema.Orm().DB()
@@ -109,7 +109,7 @@ func (r *ShowCommand) Handle(ctx console.Context) error {
 
 func (r *ShowCommand) display(ctx console.Context, info databaseInfo) {
 	ctx.NewLine()
-	ctx.TwoColumnDetail(fmt.Sprintf("<fg=green;op=bold>%s</>", info.Name), info.Version)
+	ctx.TwoColumnDetail(fmt.Sprintf("<fg=green;op=bold>%s</>", info.Name), "")
 	ctx.TwoColumnDetail("Database", info.Database)
 	ctx.TwoColumnDetail("Host", info.Host)
 	ctx.TwoColumnDetail("Port", cast.ToString(info.Port))

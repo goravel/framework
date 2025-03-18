@@ -69,7 +69,6 @@ func TestShowCommand(t *testing.T) {
 					Host:     "host",
 					Port:     1234,
 					Username: "username",
-					Version:  "version",
 				}).Once()
 
 				// getDataBaseInfo
@@ -94,7 +93,6 @@ func TestShowCommand(t *testing.T) {
 					Host:     "host",
 					Port:     1234,
 					Username: "username",
-					Version:  "version",
 				}).Once()
 
 				// getDataBaseInfo
@@ -121,7 +119,6 @@ func TestShowCommand(t *testing.T) {
 					Host:     "host",
 					Port:     1234,
 					Username: "username",
-					Version:  "version",
 				}).Once()
 
 				// getDataBaseInfo

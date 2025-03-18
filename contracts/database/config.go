@@ -25,8 +25,6 @@ type Config struct {
 	Sslmode      string
 	Timezone     string
 	Username     string
-	// DEPRECATED
-	Version string
 }
 
 // Replacer replacer interface like strings.Replacer

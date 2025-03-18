@@ -154,10 +154,6 @@ func (r *Orm) Transaction(txFunc func(tx contractsorm.Query) error) error {
 	}
 }
 
-func (r *Orm) Version() string {
-	return r.dbConfig.Version
-}
-
 func (r *Orm) WithContext(ctx context.Context) contractsorm.Orm {
 	if http, ok := ctx.(contractshttp.Context); ok {
 		ctx = http.Context()

@@ -31,8 +31,6 @@ type Orm interface {
 	SetQuery(query Query)
 	// Transaction runs a callback wrapped in a database transaction.
 	Transaction(txFunc func(tx Query) error) error
-	// Version gets the current database version.
-	Version() string
 	// WithContext sets the context to be used by the Orm.
 	WithContext(ctx context.Context) Orm
 }
