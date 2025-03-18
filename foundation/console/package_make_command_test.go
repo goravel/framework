@@ -42,7 +42,12 @@ func (s *PackageMakeCommandTestSuite) TestExtend() {
 
 	if len(got.Flags) > 0 {
 		s.Run("should have correctly configured StringFlag", func() {
-			flag, ok := got.Flags[0].(*command.StringFlag)
+			managerFlag, ok := got.Flags[0].(*command.BoolFlag)
+			if !ok {
+				s.Fail("First flag is not BoolFlag (got type: %T)", got.Flags[0])
+			}
+
+			rootFlag, ok := got.Flags[1].(*command.StringFlag)
 			if !ok {
 				s.Fail("First flag is not StringFlag (got type: %T)", got.Flags[0])
 			}
@@ -52,10 +57,13 @@ func (s *PackageMakeCommandTestSuite) TestExtend() {
 				got      interface{}
 				expected interface{}
 			}{
-				{"Name", flag.Name, "root"},
-				{"Aliases", flag.Aliases, []string{"r"}},
-				{"Usage", flag.Usage, "The root path of package, default: packages"},
-				{"Value", flag.Value, "packages"},
+				{"Name", rootFlag.Name, "root"},
+				{"Aliases", rootFlag.Aliases, []string{"r"}},
+				{"Usage", rootFlag.Usage, "The root path of package, default: packages"},
+				{"Value", rootFlag.Value, "packages"},
+				{"Name", managerFlag.Name, "manager"},
+				{"Aliases", managerFlag.Aliases, []string{"m"}},
+				{"Usage", managerFlag.Usage, "Create a package manager"},
 			}
 
 			for _, tc := range testCases {
@@ -93,10 +101,11 @@ func (s *PackageMakeCommandTestSuite) TestHandle() {
 			},
 		},
 		{
-			name: "name is sms and use default root",
+			name: "name is sms and use default root(hasn't manager)",
 			setup: func() {
 				mockContext.EXPECT().Argument(0).Return("sms").Once()
 				mockContext.EXPECT().Option("root").Return("packages").Once()
+				mockContext.EXPECT().OptionBool("manager").Return(false).Once()
 				mockContext.EXPECT().Success("Package created successfully: packages/sms").Once()
 			},
 			assert: func() {
@@ -113,10 +122,33 @@ func (s *PackageMakeCommandTestSuite) TestHandle() {
 			},
 		},
 		{
+			name: "name is sms and use default root(has manager)",
+			setup: func() {
+				mockContext.EXPECT().Argument(0).Return("sms").Once()
+				mockContext.EXPECT().Option("root").Return("packages").Once()
+				mockContext.EXPECT().OptionBool("manager").Return(true).Once()
+				mockContext.EXPECT().Success("Package created successfully: packages/sms").Once()
+			},
+			assert: func() {
+				s.NoError(NewPackageMakeCommand().Handle(mockContext))
+				s.True(file.Exists("packages/sms/README.md"))
+				s.True(file.Exists("packages/sms/service_provider.go"))
+				s.True(file.Exists("packages/sms/sms.go"))
+				s.True(file.Exists("packages/sms/config/sms.go"))
+				s.True(file.Exists("packages/sms/contracts/sms.go"))
+				s.True(file.Exists("packages/sms/facades/sms.go"))
+				s.True(file.Contain("packages/sms/facades/sms.go", "goravel/packages/sms"))
+				s.True(file.Contain("packages/sms/facades/sms.go", "goravel/packages/sms/contracts"))
+				s.True(file.Exists("packages/sms/manager/manager.go"))
+				s.NoError(file.Remove("packages"))
+			},
+		},
+		{
 			name: "name is github.com/goravel/sms and use other root",
 			setup: func() {
 				mockContext.EXPECT().Argument(0).Return("github.com/goravel/sms-aws").Once()
 				mockContext.EXPECT().Option("root").Return("package").Once()
+				mockContext.EXPECT().OptionBool("manager").Return(false).Once()
 				mockContext.EXPECT().Success("Package created successfully: package/github_com_goravel_sms_aws").Once()
 			},
 			assert: func() {

@@ -31,6 +31,12 @@ func (r *PackageMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
 		Flags: []command.Flag{
+			&command.BoolFlag{
+				Name:               "manager",
+				Aliases:            []string{"m"},
+				Usage:              "Create a package manager",
+				DisableDefaultText: true,
+			},
 			&command.StringFlag{
 				Name:    "root",
 				Aliases: []string{"r"},
@@ -72,12 +78,16 @@ func (r *PackageMakeCommand) Handle(ctx console.Context) error {
 	packageName := packageName(pkg)
 	packageMakeCommandStubs := NewPackageMakeCommandStubs(pkg, root)
 	files := map[string]func() string{
-		"README.md":                        packageMakeCommandStubs.Readme,
-		"service_provider.go":              packageMakeCommandStubs.ServiceProvider,
-		packageName + ".go":                packageMakeCommandStubs.Main,
-		"config/" + packageName + ".go":    packageMakeCommandStubs.Config,
-		"contracts/" + packageName + ".go": packageMakeCommandStubs.Contracts,
-		"facades/" + packageName + ".go":   packageMakeCommandStubs.Facades,
+		"README.md":           packageMakeCommandStubs.Readme,
+		"service_provider.go": packageMakeCommandStubs.ServiceProvider,
+		packageName + ".go":   packageMakeCommandStubs.Main,
+		filepath.Join("config", packageName+".go"):    packageMakeCommandStubs.Config,
+		filepath.Join("contracts", packageName+".go"): packageMakeCommandStubs.Contracts,
+		filepath.Join("facades", packageName+".go"):   packageMakeCommandStubs.Facades,
+	}
+
+	if ctx.OptionBool("manager") {
+		files[filepath.Join("manager", "manager.go")] = packageMakeCommandStubs.Manager
 	}
 
 	for path, content := range files {
