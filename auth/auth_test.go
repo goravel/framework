@@ -943,9 +943,14 @@ func (s *AuthTestSuite) TestAuth_ExtendGuard() {
 }
 
 func (s *AuthTestSuite) TestAuth_ExtendProvider() {
+	user := User{}
+	mockProvider := mocksauth.UserProvider{}
+	mockProvider.EXPECT().RetriveById(&user, 1).Run(func(user, id interface{}) {
+		if user, ok := user.(*User); ok {
+			user.Name = "MockUser"
+		}
+	})
 	s.auth.Provider("mock", func(auth contractsauth.Auth) (contractsauth.UserProvider, error) {
-		mockProvider := MockProvider{}
-
 		return mockProvider, nil
 	})
 
