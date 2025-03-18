@@ -47,37 +47,15 @@ func (r *Auth) Extend(name string, fn contractsauth.GuardFunc) {
 	r.customGuards[name] = fn
 }
 
-func (r *Auth) Provider(name string, fn contractsauth.UserProviderFunc) {
-	r.customProviders[name] = fn
-}
-
-func (r *Auth) resolve(name string) (contractsauth.Guard, error) {
-	driverName := r.config.GetString(fmt.Sprintf("auth.guards.%s.driver", name))
-	userProviderName := r.config.GetString(fmt.Sprintf("auth.guards.%s.provider", name))
-	provider, err := r.createUserProvider(userProviderName)
-
+func (r *Auth) GetGuard(name string) (contractsauth.Guard, error) {
 	if guard, ok := r.guards[name]; ok {
 		return guard, nil
 	}
+	return r.resolve(name)
+}
 
-	if guardFunc, ok := r.customGuards[driverName]; ok {
-
-		if err != nil {
-			return nil, err
-		}
-
-		r.guards[name] = guardFunc(name, r, provider)
-
-		return r.guards[name], nil
-	}
-
-	switch driverName {
-	case "jwt":
-		r.guards[name] = NewJwtGuard(name, r.cache, r.config, r.ctx, provider)
-		return r.guards[name], nil
-	default:
-		return nil, fmt.Errorf("Driver %s for Guard `%s` was not found", driverName, name)
-	}
+func (r *Auth) Provider(name string, fn contractsauth.UserProviderFunc) {
+	r.customProviders[name] = fn
 }
 
 func (r *Auth) createUserProvider(name string) (contractsauth.UserProvider, error) {
@@ -106,9 +84,26 @@ func (r *Auth) createUserProvider(name string) (contractsauth.UserProvider, erro
 	}
 }
 
-func (r *Auth) GetGuard(name string) (contractsauth.Guard, error) {
-	if guard, ok := r.guards[name]; ok {
-		return guard, nil
+func (r *Auth) resolve(name string) (contractsauth.Guard, error) {
+	driverName := r.config.GetString(fmt.Sprintf("auth.guards.%s.driver", name))
+	userProviderName := r.config.GetString(fmt.Sprintf("auth.guards.%s.provider", name))
+	provider, err := r.createUserProvider(userProviderName)
+
+	if guardFunc, ok := r.customGuards[driverName]; ok {
+		if err != nil {
+			return nil, err
+		}
+
+		r.guards[name] = guardFunc(name, r, provider)
+
+		return r.guards[name], nil
 	}
-	return r.resolve(name)
+
+	switch driverName {
+	case "jwt":
+		r.guards[name] = NewJwtGuard(name, r.cache, r.config, r.ctx, provider)
+		return r.guards[name], nil
+	default:
+		return nil, fmt.Errorf("Driver %s for Guard `%s` was not found", driverName, name)
+	}
 }

@@ -39,33 +39,14 @@ type JwtGuard struct {
 	provider contractsauth.UserProvider
 }
 
-// User need parse token first.
-func (r *JwtGuard) User(user any) error {
-	auth, ok := r.ctx.Value(ctxKey).(Guards)
-	if !ok {
-		return errors.AuthParseTokenFirst
+func NewJwtGuard(guard string, cache cache.Cache, config config.Config, ctx http.Context, provider contractsauth.UserProvider) *JwtGuard {
+	return &JwtGuard{
+		cache:    cache,
+		config:   config,
+		ctx:      ctx,
+		guard:    guard,
+		provider: provider,
 	}
-	guard, ok := auth[r.guard]
-	if !ok {
-		return errors.AuthParseTokenFirst
-	}
-	if guard.Claims == nil {
-		return errors.AuthParseTokenFirst
-	}
-	if guard.Claims.Key == "" {
-		return errors.AuthInvalidKey
-	}
-	if guard.Token == "" {
-		return errors.AuthTokenExpired
-	}
-
-	err := r.provider.RetriveById(user, guard.Claims.Key)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (r *JwtGuard) Check() bool {
@@ -74,6 +55,19 @@ func (r *JwtGuard) Check() bool {
 	}
 
 	return true
+}
+
+func (r *JwtGuard) GetAuthToken() (*AuthToken, error) {
+	guards, ok := r.ctx.Value(ctxKey).(Guards)
+	if !ok {
+		return nil, ErrorParseTokenFirst
+	}
+
+	if guard, ok := guards[r.guard]; ok {
+		return guard, nil
+	}
+
+	return nil, ErrorParseTokenFirst
 }
 
 func (r *JwtGuard) Guest() bool {
@@ -96,6 +90,80 @@ func (r *JwtGuard) ID() (string, error) {
 	}
 
 	return guard.Claims.Key, nil
+}
+
+func (r *JwtGuard) Login(user any) (err error) {
+	id := database.GetID(user)
+	if id == nil {
+		return errors.AuthNoPrimaryKeyField
+	}
+
+	return r.LoginUsingID(id)
+}
+
+func (r *JwtGuard) LoginUsingID(id any) (err error) {
+	jwtSecret := r.config.GetString("jwt.secret")
+	if jwtSecret == "" {
+		return errors.AuthEmptySecret
+	}
+
+	nowTime := carbon.Now()
+	expireTime := nowTime.AddMinutes(r.getTtl()).StdTime()
+	key := cast.ToString(id)
+	if key == "" {
+		return errors.AuthInvalidKey
+	}
+	claims := Claims{
+		key,
+		jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expireTime),
+			IssuedAt:  jwt.NewNumericDate(nowTime.StdTime()),
+			Subject:   r.guard,
+		},
+	}
+
+	tokenClaims := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	token, err := tokenClaims.SignedString([]byte(jwtSecret))
+	if err != nil {
+		return err
+	}
+
+	r.makeAuthContext(&claims, token)
+
+	return
+}
+
+func (r *JwtGuard) Logout() error {
+	auth, ok := r.ctx.Value(ctxKey).(Guards)
+
+	if !ok || auth[r.guard] == nil {
+		return errors.AuthParseTokenFirst
+	}
+
+	guard, ok := auth[r.guard]
+	if !ok {
+		return errors.AuthParseTokenFirst
+	}
+
+	if guard.Token == "" {
+		return errors.AuthParseTokenFirst
+	}
+
+	if r.cache == nil {
+		return errors.CacheSupportRequired.SetModule(errors.ModuleAuth)
+	}
+
+	if err := r.cache.Put(getDisabledCacheKey(guard.Token),
+		true,
+		time.Duration(r.getTtl())*time.Minute,
+	); err != nil {
+		return err
+	}
+
+	delete(auth, r.guard)
+	r.ctx.WithValue(ctxKey, auth)
+
+	return nil
 }
 
 func (r *JwtGuard) Parse(token string) (*contractsauth.Payload, error) {
@@ -151,47 +219,6 @@ func (r *JwtGuard) Parse(token string) (*contractsauth.Payload, error) {
 	}, nil
 }
 
-func (r *JwtGuard) Login(user any) (err error) {
-	id := database.GetID(user)
-	if id == nil {
-		return errors.AuthNoPrimaryKeyField
-	}
-
-	return r.LoginUsingID(id)
-}
-
-func (r *JwtGuard) LoginUsingID(id any) (err error) {
-	jwtSecret := r.config.GetString("jwt.secret")
-	if jwtSecret == "" {
-		return errors.AuthEmptySecret
-	}
-
-	nowTime := carbon.Now()
-	expireTime := nowTime.AddMinutes(r.getTtl()).StdTime()
-	key := cast.ToString(id)
-	if key == "" {
-		return errors.AuthInvalidKey
-	}
-	claims := Claims{
-		key,
-		jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expireTime),
-			IssuedAt:  jwt.NewNumericDate(nowTime.StdTime()),
-			Subject:   r.guard,
-		},
-	}
-
-	tokenClaims := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	token, err := tokenClaims.SignedString([]byte(jwtSecret))
-	if err != nil {
-		return err
-	}
-
-	r.makeAuthContext(&claims, token)
-
-	return
-}
-
 // Refresh need parse token first.
 func (a *JwtGuard) Refresh() (token string, err error) {
 	auth, ok := a.ctx.Value(ctxKey).(Guards)
@@ -229,35 +256,31 @@ func (a *JwtGuard) Refresh() (token string, err error) {
 	return guard.Token, nil
 }
 
-func (r *JwtGuard) Logout() error {
+// User need parse token first.
+func (r *JwtGuard) User(user any) error {
 	auth, ok := r.ctx.Value(ctxKey).(Guards)
-
-	if !ok || auth[r.guard] == nil {
+	if !ok {
 		return errors.AuthParseTokenFirst
 	}
-
 	guard, ok := auth[r.guard]
 	if !ok {
 		return errors.AuthParseTokenFirst
 	}
-
-	if guard.Token == "" {
+	if guard.Claims == nil {
 		return errors.AuthParseTokenFirst
 	}
-
-	if r.cache == nil {
-		return errors.CacheSupportRequired.SetModule(errors.ModuleAuth)
+	if guard.Claims.Key == "" {
+		return errors.AuthInvalidKey
+	}
+	if guard.Token == "" {
+		return errors.AuthTokenExpired
 	}
 
-	if err := r.cache.Put(getDisabledCacheKey(guard.Token),
-		true,
-		time.Duration(r.getTtl())*time.Minute,
-	); err != nil {
+	err := r.provider.RetriveById(user, guard.Claims.Key)
+
+	if err != nil {
 		return err
 	}
-
-	delete(auth, r.guard)
-	r.ctx.WithValue(ctxKey, auth)
 
 	return nil
 }
@@ -293,33 +316,10 @@ func (r *JwtGuard) makeAuthContext(claims *Claims, token string) {
 	r.ctx.WithValue(ctxKey, guards)
 }
 
-func (r *JwtGuard) GetAuthToken() (*AuthToken, error) {
-	guards, ok := r.ctx.Value(ctxKey).(Guards)
-	if !ok {
-		return nil, ErrorParseTokenFirst
-	}
-
-	if guard, ok := guards[r.guard]; ok {
-		return guard, nil
-	}
-
-	return nil, ErrorParseTokenFirst
-}
-
 func (r *JwtGuard) tokenIsDisabled(token string) bool {
 	return r.cache.GetBool(getDisabledCacheKey(token), false)
 }
 
 func getDisabledCacheKey(token string) string {
 	return "jwt:disabled:" + token
-}
-
-func NewJwtGuard(guard string, cache cache.Cache, config config.Config, ctx http.Context, provider contractsauth.UserProvider) *JwtGuard {
-	return &JwtGuard{
-		cache:    cache,
-		config:   config,
-		ctx:      ctx,
-		guard:    guard,
-		provider: provider,
-	}
 }
