@@ -909,7 +909,7 @@ func (s *AuthTestSuite) TestAuth_ExtendGuard() {
 func (s *AuthTestSuite) TestAuth_ExtendProvider() {
 	user := User{}
 	mockProvider := mocksauth.NewUserProvider(s.T())
-	mockProvider.EXPECT().RetriveById(&user, "1").Return(nil).Run(func(user, id interface{}) {
+	mockProvider.EXPECT().RetriveByID(&user, "1").Return(nil).Run(func(user, id interface{}) {
 		if user, ok := user.(*User); ok {
 			user.Name = "MockUser"
 			user.ID = 1
@@ -937,6 +937,26 @@ func (s *AuthTestSuite) TestAuth_ExtendProvider() {
 	s.Nil(err)
 	s.Equal("MockUser", authUser.Name)
 	s.Equal(uint(1), authUser.ID)
+}
+
+func (s *AuthTestSuite) TestAuth_GuardDriverNotFoundException() {
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.driver").Return("unknown").Once()
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.provider").Return("admin").Once()
+	s.mockConfig.EXPECT().GetString("auth.providers.admin.driver").Return("orm").Once()
+
+	guard, err := s.auth.GetGuard("admin")
+	s.Nil(guard)
+	s.ErrorIs(err, errors.AuthGuardDriverNotFound)
+}
+
+func (s *AuthTestSuite) TestAuth_ProviderDriverNotFoundException() {
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.driver").Return("jwt").Once()
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.provider").Return("admin").Once()
+	s.mockConfig.EXPECT().GetString("auth.providers.admin.driver").Return("unknown").Once()
+
+	guard, err := s.auth.GetGuard("admin")
+	s.Nil(guard)
+	s.ErrorIs(err, errors.AuthProviderDriverNotFound)
 }
 
 func (s *AuthTestSuite) TestGetTtl() {

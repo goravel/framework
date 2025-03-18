@@ -8,6 +8,7 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/errors"
 )
 
 type Auth struct {
@@ -80,7 +81,7 @@ func (r *Auth) createUserProvider(name string) (contractsauth.UserProvider, erro
 		r.providers[driverName] = provider
 		return r.providers[driverName], nil
 	default:
-		return nil, fmt.Errorf("User Provider %s was not found", driverName)
+		return nil, errors.AuthProviderDriverNotFound.Args(driverName, name)
 	}
 }
 
@@ -88,6 +89,10 @@ func (r *Auth) resolve(name string) (contractsauth.Guard, error) {
 	driverName := r.config.GetString(fmt.Sprintf("auth.guards.%s.driver", name))
 	userProviderName := r.config.GetString(fmt.Sprintf("auth.guards.%s.provider", name))
 	provider, err := r.createUserProvider(userProviderName)
+
+	if err != nil {
+		return nil, err
+	}
 
 	if guardFunc, ok := r.customGuards[driverName]; ok {
 		if err != nil {
@@ -104,6 +109,6 @@ func (r *Auth) resolve(name string) (contractsauth.Guard, error) {
 		r.guards[name] = NewJwtGuard(name, r.cache, r.config, r.ctx, provider)
 		return r.guards[name], nil
 	default:
-		return nil, fmt.Errorf("Driver %s for Guard `%s` was not found", driverName, name)
+		return nil, errors.AuthGuardDriverNotFound.Args(driverName, name)
 	}
 }
