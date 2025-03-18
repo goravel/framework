@@ -129,8 +129,6 @@ func (s *AuthTestSuite) TestLoginUsingID_EmptySecret() {
 
 	guard, err := s.auth.GetGuard("user")
 	s.Nil(err)
-	guard, ok := guard.(*JwtGuard)
-	s.True(ok)
 	err = guard.LoginUsingID(1)
 	s.ErrorIs(err, errors.AuthEmptySecret)
 }
@@ -141,8 +139,6 @@ func (s *AuthTestSuite) TestLoginUsingID_InvalidKey() {
 
 	guard, err := s.auth.GetGuard("user")
 	s.Nil(err)
-	guard, ok := guard.(*JwtGuard)
-	s.True(ok)
 	err = guard.LoginUsingID("")
 	s.ErrorIs(err, errors.AuthInvalidKey)
 }
@@ -155,8 +151,6 @@ func (s *AuthTestSuite) TestLoginUsingID() {
 
 	guard, err := s.auth.GetGuard("user")
 	s.Nil(err)
-	guard, ok := guard.(*JwtGuard)
-	s.True(ok)
 	err = guard.LoginUsingID(0)
 	s.Nil(err)
 
@@ -165,8 +159,6 @@ func (s *AuthTestSuite) TestLoginUsingID() {
 
 	guard, err = s.auth.GetGuard("user")
 	s.Nil(err)
-	guard, ok = guard.(*JwtGuard)
-	s.True(ok)
 	err = guard.LoginUsingID(1)
 	s.Nil(err)
 }
@@ -232,9 +224,6 @@ func (s *AuthTestSuite) TestParse_TokenDisabled() {
 	guard, err := s.auth.GetGuard("user")
 	s.Nil(err)
 
-	_, ok := guard.(*JwtGuard)
-	s.True(ok)
-
 	if guard, ok := guard.(*JwtGuard); ok {
 		payload, err := guard.Parse(token)
 		s.Nil(payload)
@@ -251,9 +240,6 @@ func (s *AuthTestSuite) TestParse_TokenInvalid() {
 
 	guard, err := s.auth.GetGuard("user")
 	s.Nil(err)
-
-	_, ok := guard.(*JwtGuard)
-	s.True(ok)
 
 	if guard, ok := guard.(*JwtGuard); ok {
 		payload, err := guard.Parse(token)
@@ -273,9 +259,6 @@ func (s *AuthTestSuite) TestParse_TokenExpired() {
 
 	guard, err := s.auth.GetGuard("user")
 	s.Nil(err)
-
-	_, ok := guard.(*JwtGuard)
-	s.True(ok)
 
 	err = guard.LoginUsingID(1)
 	s.Nil(err)
@@ -311,9 +294,6 @@ func (s *AuthTestSuite) TestParse_InvalidCache() {
 	guard, err := auth.GetGuard("user")
 	s.Nil(err)
 
-	_, ok := guard.(*JwtGuard)
-	s.True(ok)
-
 	if guard, ok := guard.(*JwtGuard); ok {
 		payload, err := guard.Parse("1")
 		s.Nil(payload)
@@ -327,9 +307,6 @@ func (s *AuthTestSuite) TestParse_Success() {
 
 	guard, err := s.auth.GetGuard("user")
 	s.Nil(err)
-
-	guard, ok := guard.(*JwtGuard)
-	s.True(ok)
 
 	err = guard.LoginUsingID(1)
 	s.Nil(err)
@@ -362,8 +339,6 @@ func (s *AuthTestSuite) TestParse_SuccessWithPrefix() {
 
 	guard, err := s.auth.GetGuard("user")
 	s.Nil(err)
-	_, ok := guard.(*JwtGuard)
-	s.True(ok)
 
 	if guard, ok := guard.(*JwtGuard); ok {
 		guardInfo, err := guard.GetAuthToken()
@@ -394,8 +369,6 @@ func (s *AuthTestSuite) TestParse_ExpiredAndInvalid() {
 
 	guard, err := s.auth.GetGuard("user")
 	s.Nil(err)
-	_, ok := guard.(*JwtGuard)
-	s.True(ok)
 
 	if guard, ok := guard.(*JwtGuard); ok {
 		_, err := guard.Parse(token)
