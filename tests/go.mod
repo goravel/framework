@@ -9,10 +9,10 @@ godebug x509negativeserial=1
 require (
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/goravel/framework v1.15.5
-	github.com/goravel/mysql v0.0.0-20250316083353-0799b646c6a8
-	github.com/goravel/postgres v0.0.2-0.20250309093253-9f6835a6a3cd
-	github.com/goravel/sqlite v0.0.0-20250309093411-f33520b3a6ae
-	github.com/goravel/sqlserver v0.0.0-20250309093235-f8673bca5608
+	github.com/goravel/mysql v0.0.0-20250318093433-06edc43d4422
+	github.com/goravel/postgres v0.0.2-0.20250318092521-93842de4f14c
+	github.com/goravel/sqlite v0.0.0-20250318094148-8a4f7d6a18c0
+	github.com/goravel/sqlserver v0.0.0-20250318094026-9a4c1bca164c
 	github.com/spf13/cast v1.7.1
 	github.com/stretchr/testify v1.10.0
 	gorm.io/gorm v1.25.12
@@ -34,7 +34,7 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
 	github.com/glebarez/go-sqlite v1.22.0 // indirect
 	github.com/glebarez/sqlite v1.11.0 // indirect
-	github.com/go-sql-driver/mysql v1.8.1 // indirect
+	github.com/go-sql-driver/mysql v1.9.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/golang-sql/civil v0.0.0-20220223132316-b832511892a9 // indirect
 	github.com/golang-sql/sqlexp v0.1.0 // indirect
@@ -70,7 +70,7 @@ require (
 	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/term v0.30.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250127172529-29210b9bc287 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250313205543-e70fdf4c4cb4 // indirect
 	google.golang.org/grpc v1.71.0 // indirect
 	google.golang.org/protobuf v1.36.5 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
@@ -78,10 +78,10 @@ require (
 	gorm.io/driver/postgres v1.5.11 // indirect
 	gorm.io/driver/sqlserver v1.5.4 // indirect
 	gorm.io/plugin/dbresolver v1.5.3 // indirect
-	modernc.org/libc v1.61.11 // indirect
+	modernc.org/libc v1.61.13 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.8.2 // indirect
-	modernc.org/sqlite v1.34.5 // indirect
+	modernc.org/sqlite v1.36.1 // indirect
 )
 
 replace (

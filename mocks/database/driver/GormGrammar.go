@@ -160,51 +160,6 @@ func (_c *GormGrammar_CompileSharedLockForGorm_Call) RunAndReturn(run func() cla
 	return _c
 }
 
-// CompileVersion provides a mock function with no fields
-func (_m *GormGrammar) CompileVersion() string {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for CompileVersion")
-	}
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	return r0
-}
-
-// GormGrammar_CompileVersion_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompileVersion'
-type GormGrammar_CompileVersion_Call struct {
-	*mock.Call
-}
-
-// CompileVersion is a helper method to define mock.On call
-func (_e *GormGrammar_Expecter) CompileVersion() *GormGrammar_CompileVersion_Call {
-	return &GormGrammar_CompileVersion_Call{Call: _e.mock.On("CompileVersion")}
-}
-
-func (_c *GormGrammar_CompileVersion_Call) Run(run func()) *GormGrammar_CompileVersion_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *GormGrammar_CompileVersion_Call) Return(_a0 string) *GormGrammar_CompileVersion_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *GormGrammar_CompileVersion_Call) RunAndReturn(run func() string) *GormGrammar_CompileVersion_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // NewGormGrammar creates a new instance of GormGrammar. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewGormGrammar(t interface {

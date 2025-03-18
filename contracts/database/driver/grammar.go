@@ -12,7 +12,6 @@ type Grammar interface {
 }
 
 type SchemaGrammar interface {
-	CommonGrammar
 	// CompileAdd Compile an add column command.
 	CompileAdd(blueprint Blueprint, command *Command) string
 	// CompileChange Compile a change column command.
@@ -130,7 +129,6 @@ type SchemaGrammar interface {
 }
 
 type GormGrammar interface {
-	CommonGrammar
 	// CompileLockForUpdateForGorm Compile the lock for update for gorm.
 	CompileLockForUpdateForGorm() clause.Expression
 	// CompileRandomOrderForGorm Compile the random order for gorm.
@@ -140,18 +138,15 @@ type GormGrammar interface {
 }
 
 type DBGrammar interface {
-	CommonGrammar
 	// CompileLockForUpdate Compile the lock for update.
 	CompileLockForUpdate(builder sq.SelectBuilder, conditions *Conditions) sq.SelectBuilder
 	// CompileInRandomOrder Compile the random order.
 	CompileInRandomOrder(builder sq.SelectBuilder, conditions *Conditions) sq.SelectBuilder
-	// CompileSharedLock Compile the shared lock.
-	CompileSharedLock(builder sq.SelectBuilder, conditions *Conditions) sq.SelectBuilder
 	// CompilePlaceholderFormat Compile the placeholder format.
 	CompilePlaceholderFormat() PlaceholderFormat
-}
-
-type CommonGrammar interface {
+	// CompileSharedLock Compile the shared lock.
+	CompileSharedLock(builder sq.SelectBuilder, conditions *Conditions) sq.SelectBuilder
+	// CompileVersion Compile the version.
 	CompileVersion() string
 }
 
