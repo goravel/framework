@@ -18,8 +18,8 @@ func NewOrmUserProvider(providerName string, orm orm.Orm, config config.Config) 
 	}, nil
 }
 
-// RetriveById implements auth.UserProvider.
-func (r *OrmUserProvider) RetriveById(user any, id any) error {
+// RetriveByID implements auth.UserProvider.
+func (r *OrmUserProvider) RetriveByID(user any, id any) error {
 	if err := r.orm.Query().FindOrFail(user, clause.Eq{Column: clause.PrimaryColumn, Value: id}); err != nil {
 		return err
 	}

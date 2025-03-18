@@ -33,7 +33,7 @@ type Auth interface {
 }
 
 type UserProvider interface {
-	RetriveById(user any, id any) error
+	RetriveByID(user any, id any) error
 }
 
 type UserProviderFunc func(auth Auth) (UserProvider, error)
