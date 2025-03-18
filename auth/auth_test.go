@@ -116,9 +116,9 @@ func (s *AuthTestSuite) SetupTest() {
 	s.mockContext = Background()
 	s.mockOrm = mocksorm.NewOrm(s.T())
 	s.mockDB = mocksorm.NewQuery(s.T())
-	s.mockConfig.EXPECT().GetString("auth.guards.user.driver").Return("jwt")
-	s.mockConfig.EXPECT().GetString("auth.guards.user.provider").Return("user")
-	s.mockConfig.EXPECT().GetString("auth.providers.user.driver").Return("orm")
+	s.mockConfig.EXPECT().GetString("auth.guards.user.driver").Return("jwt").Once()
+	s.mockConfig.EXPECT().GetString("auth.guards.user.provider").Return("user").Once()
+	s.mockConfig.EXPECT().GetString("auth.providers.user.driver").Return("orm").Once()
 	if auth, err := NewAuth(testUserGuard, s.mockCache, s.mockConfig, s.mockContext, s.mockOrm); err == nil {
 		s.auth = auth
 	}
@@ -302,6 +302,9 @@ func (s *AuthTestSuite) TestParse_TokenExpired() {
 }
 
 func (s *AuthTestSuite) TestParse_InvalidCache() {
+	s.mockConfig.EXPECT().GetString("auth.guards.user.driver").Return("jwt").Once()
+	s.mockConfig.EXPECT().GetString("auth.guards.user.provider").Return("user").Once()
+	s.mockConfig.EXPECT().GetString("auth.providers.user.driver").Return("orm").Once()
 	auth, err := NewAuth(testUserGuard, nil, s.mockConfig, s.mockContext, s.mockOrm)
 	s.Nil(err)
 
@@ -762,6 +765,9 @@ func (s *AuthTestSuite) TestRefresh_Success() {
 }
 
 func (s *AuthTestSuite) TestLogout_CacheUnsupported() {
+	s.mockConfig.EXPECT().GetString("auth.guards.user.driver").Return("jwt").Once()
+	s.mockConfig.EXPECT().GetString("auth.guards.user.provider").Return("user").Once()
+	s.mockConfig.EXPECT().GetString("auth.providers.user.driver").Return("orm").Once()
 	if auth, err := NewAuth(testUserGuard, nil, s.mockConfig, s.mockContext, s.mockOrm); err == nil {
 		s.auth = auth
 	}
