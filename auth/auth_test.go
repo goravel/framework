@@ -449,8 +449,9 @@ func (s *AuthTestSuite) TestID_TokenExpired() {
 	s.ErrorIs(err, errors.AuthTokenExpired)
 
 	// Now, call the ID method and expect it to return an empty value
-	id, _ := s.auth.ID()
+	id, err := s.auth.ID()
 	s.Empty(id)
+	s.ErrorIs(err, errors.AuthTokenExpired)
 
 	carbon.UnsetTestNow()
 }

@@ -246,12 +246,8 @@ func (r *JwtGuard) User(user any) error {
 
 func (r *JwtGuard) authToken(guards Guards) (*AuthToken, error) {
 	guard, ok := guards[r.guard]
-	if ok {
-		return guard, nil
-	}
-
-	if guard.Token == "" {
-		return nil, errors.AuthTokenExpired
+	if !ok || guard == nil {
+		return nil, ErrorParseTokenFirst
 	}
 
 	if guard.Claims == nil {
@@ -262,7 +258,11 @@ func (r *JwtGuard) authToken(guards Guards) (*AuthToken, error) {
 		return nil, errors.AuthInvalidKey
 	}
 
-	return nil, ErrorParseTokenFirst
+	if guard.Token == "" {
+		return nil, errors.AuthTokenExpired
+	}
+
+	return guard, nil
 }
 
 func (r *JwtGuard) getTtl() int {
