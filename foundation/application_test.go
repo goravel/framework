@@ -3,7 +3,6 @@ package foundation
 import (
 	"os"
 	"path/filepath"
-	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -154,7 +153,6 @@ func (s *ApplicationTestSuite) TestMakeAuth() {
 	mockConfig.EXPECT().GetString("auth.guards.user.driver").Return("jwt").Once()
 	mockConfig.EXPECT().GetString("auth.guards.user.provider").Return("user").Once()
 	mockConfig.EXPECT().GetString("auth.providers.user.driver").Return("orm").Once()
-	mockConfig.EXPECT().Get("auth.providers.user.model").Return(reflect.TypeOf(map[string]any{})).Once()
 
 	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
