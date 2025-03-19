@@ -606,9 +606,9 @@ func (s *QueryTestSuite) TestInsert() {
 	})
 }
 
-func (s *QueryTestSuite) TestInsertGetId() {
+func (s *QueryTestSuite) TestInsertGetID() {
 	s.Run("empty", func() {
-		id, err := s.query.InsertGetId(nil)
+		id, err := s.query.InsertGetID(nil)
 		s.Equal(errors.DatabaseUnsupportedType.Args("nil", "struct, map[string]any").SetModule("DB"), err)
 		s.Equal(int64(0), id)
 	})
@@ -627,7 +627,7 @@ func (s *QueryTestSuite) TestInsertGetId() {
 		s.mockWriteBuilder.EXPECT().Explain("INSERT INTO users (age,name) VALUES (?,?)", 25, "John").Return("INSERT INTO users (age,name) VALUES (25,\"John\")").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "INSERT INTO users (age,name) VALUES (25,\"John\")", int64(1), nil).Return().Once()
 
-		id, err := s.query.InsertGetId(user)
+		id, err := s.query.InsertGetID(user)
 		s.Nil(err)
 		s.Equal(int64(1), id)
 
@@ -646,8 +646,8 @@ func (s *QueryTestSuite) TestInsertGetId() {
 		s.mockWriteBuilder.EXPECT().Explain("INSERT INTO users (id) VALUES (?)", uint(1)).Return("INSERT INTO users (id) VALUES (1)").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "INSERT INTO users (id) VALUES (1)", int64(-1), assert.AnError).Return().Once()
 
-		result, err := s.query.Insert(user)
-		s.Nil(result)
+		id, err := s.query.InsertGetID(user)
+		s.Equal(int64(0), id)
 		s.Equal(assert.AnError, err)
 	})
 }
@@ -1509,6 +1509,22 @@ func (s *QueryTestSuite) TestWhen() {
 
 		err := s.query.Where("name", "John").When(false, func(query db.Query) db.Query {
 			return query.Where("age", 25)
+		}).First(&user)
+		s.Nil(err)
+	})
+
+	s.Run("when condition is false with false callback", func() {
+		var user TestUser
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().GetContext(s.ctx, &user, "SELECT * FROM users WHERE (name = ? AND age = ?)", "John", 30).Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT * FROM users WHERE (name = ? AND age = ?)", "John", 30).Return("SELECT * FROM users WHERE (name = \"John\" AND age = 30)").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" AND age = 30)", int64(1), nil).Return().Once()
+
+		err := s.query.Where("name", "John").When(false, func(query db.Query) db.Query {
+			return query.Where("age", 25)
+		}, func(query db.Query) db.Query {
+			return query.Where("age", 30)
 		}).First(&user)
 		s.Nil(err)
 	})

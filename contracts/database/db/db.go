@@ -82,8 +82,8 @@ type Query interface {
 	InRandomOrder() Query
 	// Insert a new record into the database.
 	Insert(data any) (*Result, error)
-	// InsertGetId returns the ID of the inserted row, only supported by MySQL and Sqlite
-	InsertGetId(data any) (int64, error)
+	// InsertGetID returns the ID of the inserted row, only supported by MySQL and Sqlite
+	InsertGetID(data any) (int64, error)
 	// Join specifies JOIN conditions for the query.
 	Join(query string, args ...any) Query
 	// Latest retrieves the latest record from the database, default column is "created_at"
@@ -148,7 +148,7 @@ type Query interface {
 	// Value gets a single column's value from the first result of a query.
 	Value(column string, dest any) error
 	// When executes the callback if the condition is true.
-	When(condition bool, callback func(query Query) Query) Query
+	When(condition bool, callback func(query Query) Query, falseCallback ...func(query Query) Query) Query
 	// Where adds a "where" clause to the query.
 	Where(query any, args ...any) Query
 	// WhereBetween adds a "where column between x and y" clause to the query.

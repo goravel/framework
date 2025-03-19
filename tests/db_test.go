@@ -515,10 +515,10 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 	}
 }
 
-func (s *DBTestSuite) TestInsertGetId() {
+func (s *DBTestSuite) TestInsertGetID() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			id, err := query.DB().Table("products").InsertGetId(Product{
+			id, err := query.DB().Table("products").InsertGetID(Product{
 				Name: "insert get id",
 			})
 

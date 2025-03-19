@@ -420,7 +420,7 @@ func (r *Query) Insert(data any) (*db.Result, error) {
 	}, nil
 }
 
-func (r *Query) InsertGetId(data any) (int64, error) {
+func (r *Query) InsertGetID(data any) (int64, error) {
 	mapData, err := convertToMap(data)
 	if err != nil {
 		return 0, err
@@ -717,9 +717,13 @@ func (r *Query) Value(column string, dest any) error {
 	return r.Select(column).Limit(1).First(dest)
 }
 
-func (r *Query) When(condition bool, callback func(query db.Query) db.Query) db.Query {
+func (r *Query) When(condition bool, callback func(query db.Query) db.Query, falseCallback ...func(query db.Query) db.Query) db.Query {
 	if condition {
 		return callback(r)
+	}
+
+	if len(falseCallback) > 0 {
+		return falseCallback[0](r)
 	}
 
 	return r
