@@ -205,7 +205,7 @@ func (s *DBTestSuite) TestCursor() {
 	}
 }
 
-func (s *DBTestSuite) Test_DB_Select_Update_Delete() {
+func (s *DBTestSuite) Test_DB_Select_Insert_Update_Delete_Exec() {
 	for driver, query := range s.queries {
 		insertSql := "INSERT INTO products (name) VALUES (?)"
 		updateSql := "UPDATE products SET name = ? WHERE id = ?"
@@ -249,6 +249,9 @@ func (s *DBTestSuite) Test_DB_Select_Update_Delete() {
 			err = query.DB().Select(&products, "SELECT * FROM products")
 			s.NoError(err)
 			s.Equal(0, len(products))
+
+			err = query.DB().Statement("drop table products")
+			s.NoError(err)
 		})
 	}
 }

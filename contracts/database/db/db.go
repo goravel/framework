@@ -24,14 +24,14 @@ type Tx interface {
 	Commit() error
 	// Delete executes a delete query.
 	Delete(sql string, args ...any) (*Result, error)
-	// Exec executes a raw sql.
-	Exec(sql string, args ...any) (*Result, error)
 	// Insert executes a insert query.
 	Insert(sql string, args ...any) (*Result, error)
 	// Rollback rolls back the changes in a transaction.
 	Rollback() error
 	// Select executes a select query.
 	Select(dest any, sql string, args ...any) error
+	// Statement executes a raw sql.
+	Statement(sql string, args ...any) error
 	// Table specifies the table for the query.
 	Table(name string) Query
 	// Update executes a update query.

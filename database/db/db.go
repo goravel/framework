@@ -171,10 +171,6 @@ func (r *Tx) Delete(sql string, args ...any) (*contractsdb.Result, error) {
 	return r.exec(sql, args...)
 }
 
-func (r *Tx) Exec(sql string, args ...any) (*contractsdb.Result, error) {
-	return r.exec(sql, args...)
-}
-
 func (r *Tx) Insert(sql string, args ...any) (*contractsdb.Result, error) {
 	return r.exec(sql, args...)
 }
@@ -220,6 +216,12 @@ func (r *Tx) Select(dest any, sql string, args ...any) error {
 	r.logger.Trace(r.ctx, carbon.Now(), realSql, rowsAffected, nil)
 
 	return nil
+}
+
+func (r *Tx) Statement(sql string, args ...any) error {
+	_, err := r.exec(sql, args...)
+
+	return err
 }
 
 func (r *Tx) Table(name string) contractsdb.Query {
