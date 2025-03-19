@@ -1259,14 +1259,13 @@ func (_c *Query_Join_Call) RunAndReturn(run func(string, ...interface{}) db.Quer
 	return _c
 }
 
-// Latest provides a mock function with given fields: dest, column
-func (_m *Query) Latest(dest interface{}, column ...string) error {
+// Latest provides a mock function with given fields: column
+func (_m *Query) Latest(column ...string) db.Query {
 	_va := make([]interface{}, len(column))
 	for _i := range column {
 		_va[_i] = column[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, dest)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
@@ -1274,11 +1273,13 @@ func (_m *Query) Latest(dest interface{}, column ...string) error {
 		panic("no return value specified for Latest")
 	}
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(interface{}, ...string) error); ok {
-		r0 = rf(dest, column...)
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func(...string) db.Query); ok {
+		r0 = rf(column...)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Query)
+		}
 	}
 
 	return r0
@@ -1290,32 +1291,31 @@ type Query_Latest_Call struct {
 }
 
 // Latest is a helper method to define mock.On call
-//   - dest interface{}
 //   - column ...string
-func (_e *Query_Expecter) Latest(dest interface{}, column ...interface{}) *Query_Latest_Call {
+func (_e *Query_Expecter) Latest(column ...interface{}) *Query_Latest_Call {
 	return &Query_Latest_Call{Call: _e.mock.On("Latest",
-		append([]interface{}{dest}, column...)...)}
+		append([]interface{}{}, column...)...)}
 }
 
-func (_c *Query_Latest_Call) Run(run func(dest interface{}, column ...string)) *Query_Latest_Call {
+func (_c *Query_Latest_Call) Run(run func(column ...string)) *Query_Latest_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]string, len(args)-1)
-		for i, a := range args[1:] {
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
 			if a != nil {
 				variadicArgs[i] = a.(string)
 			}
 		}
-		run(args[0].(interface{}), variadicArgs...)
+		run(variadicArgs...)
 	})
 	return _c
 }
 
-func (_c *Query_Latest_Call) Return(_a0 error) *Query_Latest_Call {
+func (_c *Query_Latest_Call) Return(_a0 db.Query) *Query_Latest_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Query_Latest_Call) RunAndReturn(run func(interface{}, ...string) error) *Query_Latest_Call {
+func (_c *Query_Latest_Call) RunAndReturn(run func(...string) db.Query) *Query_Latest_Call {
 	_c.Call.Return(run)
 	return _c
 }
