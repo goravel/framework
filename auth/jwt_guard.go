@@ -202,7 +202,13 @@ func (r *JwtGuard) Parse(token string) (*contractsauth.Payload, error) {
 
 // Refresh need parse token first.
 func (r *JwtGuard) Refresh() (token string, err error) {
-	guard, err := r.GetAuthToken()
+	guards, ok := r.ctx.Value(ctxKey).(Guards)
+	if !ok || guards[r.guard] == nil {
+		return "", errors.AuthParseTokenFirst
+	}
+	if guards[r.guard].Claims == nil {
+		return "", errors.AuthParseTokenFirst
+	}
 
 	if err != nil {
 		return "", err
@@ -215,12 +221,12 @@ func (r *JwtGuard) Refresh() (token string, err error) {
 		refreshTtl = 60 * 24 * 365 * 100
 	}
 
-	expireTime := carbon.FromStdTime(guard.Claims.ExpiresAt.Time).AddMinutes(refreshTtl)
+	expireTime := carbon.FromStdTime(guards[r.guard].Claims.ExpiresAt.Time).AddMinutes(refreshTtl)
 	if nowTime.Gt(expireTime) {
 		return "", errors.AuthRefreshTimeExceeded
 	}
 
-	token, err = r.LoginUsingID(guard.Claims.Key)
+	token, err = r.LoginUsingID(guards[r.guard].Claims.Key)
 
 	if err != nil {
 		return "", err
