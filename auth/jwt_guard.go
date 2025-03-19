@@ -226,13 +226,7 @@ func (r *JwtGuard) Refresh() (token string, err error) {
 		return "", errors.AuthRefreshTimeExceeded
 	}
 
-	token, err = r.LoginUsingID(guards[r.guard].Claims.Key)
-
-	if err != nil {
-		return "", err
-	}
-
-	return
+	return r.LoginUsingID(guards[r.guard].Claims.Key)
 }
 
 // User need parse token first.
