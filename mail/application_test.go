@@ -44,6 +44,7 @@ func (s *ApplicationTestSuite) TestSendMailBy465Port() {
 		Attach([]string{"../logo.png"}).
 		Subject("Goravel Test 465").
 		Content(Html("<h1>Hello Goravel</h1>")).
+		Headers(map[string]string{"Test-Mailer-Port": "465"}).
 		Send())
 }
 
@@ -55,6 +56,7 @@ func (s *ApplicationTestSuite) TestSendMailBy587Port() {
 		Attach([]string{"../logo.png"}).
 		Subject("Goravel Test 587").
 		Content(Html("<h1>Hello Goravel</h1>")).
+		Headers(map[string]string{"Test-Mailer-Port": "587"}).
 		Send())
 }
 
@@ -67,6 +69,7 @@ func (s *ApplicationTestSuite) TestSendMailWithFrom() {
 		Attach([]string{"../logo.png"}).
 		Subject("Goravel Test 587 With From").
 		Content(Html("<h1>Hello Goravel</h1>")).
+		Headers(map[string]string{"Test-Mailer-Port": "587", "Test-Mailer-From": testFromAddress}).
 		Send())
 }
 
@@ -99,6 +102,7 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 		Attach([]string{"../logo.png"}).
 		Subject("Goravel Test Queue").
 		Content(Html("<h1>Hello Goravel</h1>")).
+		Headers(map[string]string{"Test-Mailer": "QueueMail"}).
 		Queue())
 	time.Sleep(3 * time.Second)
 }
@@ -130,6 +134,7 @@ func (s *ApplicationTestSuite) TestQueueMailWithConnection() {
 		Attach([]string{"../logo.png"}).
 		Subject("Goravel Test Queue with connection").
 		Content(Html("<h1>Hello Goravel</h1>")).
+		Headers(map[string]string{"Test-Mailer": "QueueMailWithConnection"}).
 		Queue(Queue().OnConnection("redis").OnQueue("test")))
 	time.Sleep(3 * time.Second)
 }
@@ -233,6 +238,12 @@ func (m *TestMailable) Envelope() *mail.Envelope {
 		From:    Address(testFromAddress, testFromName),
 		Subject: "Goravel Test 587 With Mailable",
 		To:      []string{testTo},
+	}
+}
+
+func (m *TestMailable) Headers() map[string]string {
+	return map[string]string{
+		"Test-Mailer": "TestMailable",
 	}
 }
 
