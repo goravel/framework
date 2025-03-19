@@ -673,7 +673,7 @@ func (s *QueryTestSuite) TestLatest() {
 		s.mockReadBuilder.EXPECT().Explain("SELECT * FROM users WHERE age = ? ORDER BY created_at DESC", 25).Return("SELECT * FROM users WHERE age = 25 ORDER BY created_at DESC").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 ORDER BY created_at DESC", int64(1), nil).Return().Once()
 
-		err := s.query.Where("age", 25).Latest(&user)
+		err := s.query.Where("age", 25).Latest().First(&user)
 		s.Nil(err)
 	})
 
@@ -685,7 +685,7 @@ func (s *QueryTestSuite) TestLatest() {
 		s.mockReadBuilder.EXPECT().Explain("SELECT * FROM users WHERE age = ? ORDER BY name DESC", 25).Return("SELECT * FROM users WHERE age = 25 ORDER BY name DESC").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 ORDER BY name DESC", int64(1), nil).Return().Once()
 
-		err := s.query.Where("age", 25).Latest(&user, "name")
+		err := s.query.Where("age", 25).Latest("name").First(&user)
 		s.Nil(err)
 	})
 }

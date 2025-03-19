@@ -86,8 +86,8 @@ type Query interface {
 	InsertGetId(data any) (int64, error)
 	// Join specifies JOIN conditions for the query.
 	Join(query string, args ...any) Query
-	// Latest retrieves the latest record from the database.
-	Latest(dest any, column ...string) error
+	// Latest retrieves the latest record from the database, default column is "created_at"
+	Latest(column ...string) Query
 	// LeftJoin specifies LEFT JOIN conditions for the query.
 	LeftJoin(query string, args ...any) Query
 	// Limit the number of records returned.

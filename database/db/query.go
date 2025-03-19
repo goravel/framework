@@ -451,13 +451,13 @@ func (r *Query) InsertGetId(data any) (int64, error) {
 	return id, nil
 }
 
-func (r *Query) Latest(dest any, column ...string) error {
+func (r *Query) Latest(column ...string) db.Query {
 	col := "created_at"
 	if len(column) > 0 {
 		col = column[0]
 	}
 
-	return r.OrderByDesc(col).First(dest)
+	return r.OrderByDesc(col)
 }
 
 func (r *Query) LeftJoin(query string, args ...any) db.Query {
