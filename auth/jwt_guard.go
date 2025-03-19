@@ -14,7 +14,6 @@ import (
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
-	"github.com/goravel/framework/support/database"
 )
 
 type Claims struct {
@@ -80,7 +79,7 @@ func (r *JwtGuard) ID() (string, error) {
 }
 
 func (r *JwtGuard) Login(user any) error {
-	id := database.GetID(user)
+	id := r.provider.GetID(user)
 	if id == nil {
 		return errors.AuthNoPrimaryKeyField
 	}

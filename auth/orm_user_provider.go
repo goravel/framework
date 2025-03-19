@@ -6,6 +6,7 @@ import (
 	contractsauth "github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/support/database"
 )
 
 type OrmUserProvider struct {
@@ -16,6 +17,11 @@ func NewOrmUserProvider(providerName string, orm orm.Orm, config config.Config) 
 	return &OrmUserProvider{
 		orm: orm,
 	}, nil
+}
+
+// GetID implements auth.UserProvider.
+func (r *OrmUserProvider) GetID(user any) any {
+	return database.GetID(user)
 }
 
 // RetriveByID implements auth.UserProvider.

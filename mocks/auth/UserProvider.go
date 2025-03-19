@@ -17,6 +17,54 @@ func (_m *UserProvider) EXPECT() *UserProvider_Expecter {
 	return &UserProvider_Expecter{mock: &_m.Mock}
 }
 
+// GetID provides a mock function with given fields: user
+func (_m *UserProvider) GetID(user interface{}) interface{} {
+	ret := _m.Called(user)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetID")
+	}
+
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func(interface{}) interface{}); ok {
+		r0 = rf(user)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(interface{})
+		}
+	}
+
+	return r0
+}
+
+// UserProvider_GetID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetID'
+type UserProvider_GetID_Call struct {
+	*mock.Call
+}
+
+// GetID is a helper method to define mock.On call
+//   - user interface{}
+func (_e *UserProvider_Expecter) GetID(user interface{}) *UserProvider_GetID_Call {
+	return &UserProvider_GetID_Call{Call: _e.mock.On("GetID", user)}
+}
+
+func (_c *UserProvider_GetID_Call) Run(run func(user interface{})) *UserProvider_GetID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(interface{}))
+	})
+	return _c
+}
+
+func (_c *UserProvider_GetID_Call) Return(_a0 interface{}) *UserProvider_GetID_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *UserProvider_GetID_Call) RunAndReturn(run func(interface{}) interface{}) *UserProvider_GetID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // RetriveByID provides a mock function with given fields: user, id
 func (_m *UserProvider) RetriveByID(user interface{}, id interface{}) error {
 	ret := _m.Called(user, id)
