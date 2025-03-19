@@ -233,6 +233,11 @@ func (s *DBTestSuite) Test_DB_Select_Insert_Update_Delete_Exec() {
 			s.Equal(1, len(products))
 			s.Equal("test_db_select_update_delete_product", products[0].Name)
 
+			var product Product
+			err = query.DB().Select(&product, "SELECT * FROM products")
+			s.NoError(err)
+			s.Equal("test_db_select_update_delete_product", product.Name)
+
 			result, err = query.DB().Update(updateSql, "test_db_select_update_delete_product_updated", products[0].ID)
 			s.NoError(err)
 			s.Equal(int64(1), result.RowsAffected)

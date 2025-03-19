@@ -201,16 +201,23 @@ func (r *Tx) Select(dest any, sql string, args ...any) error {
 
 	realSql = builder.Explain(sql, args...)
 
-	if err = builder.SelectContext(r.ctx, dest, realSql, args...); err != nil {
-		r.logger.Trace(r.ctx, carbon.Now(), realSql, -1, err)
-
-		return err
-	}
-
 	destValue := reflect.Indirect(reflect.ValueOf(dest))
-	rowsAffected := int64(-1)
+
+	rowsAffected := int64(1)
 	if destValue.Kind() == reflect.Slice {
+		if err = builder.SelectContext(r.ctx, dest, realSql, args...); err != nil {
+			r.logger.Trace(r.ctx, carbon.Now(), realSql, -1, err)
+
+			return err
+		}
+
 		rowsAffected = int64(destValue.Len())
+	} else {
+		if err = builder.GetContext(r.ctx, dest, realSql, args...); err != nil {
+			r.logger.Trace(r.ctx, carbon.Now(), realSql, -1, err)
+
+			return err
+		}
 	}
 
 	r.logger.Trace(r.ctx, carbon.Now(), realSql, rowsAffected, nil)
