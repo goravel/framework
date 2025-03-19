@@ -20,24 +20,34 @@ func (_m *GuardFunc) EXPECT() *GuardFunc_Expecter {
 	return &GuardFunc_Expecter{mock: &_m.Mock}
 }
 
-// Execute provides a mock function with given fields: _a0, _a1, _a2
-func (_m *GuardFunc) Execute(_a0 string, _a1 auth.Auth, _a2 auth.UserProvider) auth.GuardDriver {
-	ret := _m.Called(_a0, _a1, _a2)
+// Execute provides a mock function with given fields: name, _a1, userProvider
+func (_m *GuardFunc) Execute(name string, _a1 auth.Auth, userProvider auth.UserProvider) (auth.GuardDriver, error) {
+	ret := _m.Called(name, _a1, userProvider)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Execute")
 	}
 
 	var r0 auth.GuardDriver
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string, auth.Auth, auth.UserProvider) (auth.GuardDriver, error)); ok {
+		return rf(name, _a1, userProvider)
+	}
 	if rf, ok := ret.Get(0).(func(string, auth.Auth, auth.UserProvider) auth.GuardDriver); ok {
-		r0 = rf(_a0, _a1, _a2)
+		r0 = rf(name, _a1, userProvider)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(auth.GuardDriver)
 		}
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(string, auth.Auth, auth.UserProvider) error); ok {
+		r1 = rf(name, _a1, userProvider)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // GuardFunc_Execute_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Execute'
@@ -46,26 +56,26 @@ type GuardFunc_Execute_Call struct {
 }
 
 // Execute is a helper method to define mock.On call
-//   - _a0 string
+//   - name string
 //   - _a1 auth.Auth
-//   - _a2 auth.UserProvider
-func (_e *GuardFunc_Expecter) Execute(_a0 interface{}, _a1 interface{}, _a2 interface{}) *GuardFunc_Execute_Call {
-	return &GuardFunc_Execute_Call{Call: _e.mock.On("Execute", _a0, _a1, _a2)}
+//   - userProvider auth.UserProvider
+func (_e *GuardFunc_Expecter) Execute(name interface{}, _a1 interface{}, userProvider interface{}) *GuardFunc_Execute_Call {
+	return &GuardFunc_Execute_Call{Call: _e.mock.On("Execute", name, _a1, userProvider)}
 }
 
-func (_c *GuardFunc_Execute_Call) Run(run func(_a0 string, _a1 auth.Auth, _a2 auth.UserProvider)) *GuardFunc_Execute_Call {
+func (_c *GuardFunc_Execute_Call) Run(run func(name string, _a1 auth.Auth, userProvider auth.UserProvider)) *GuardFunc_Execute_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string), args[1].(auth.Auth), args[2].(auth.UserProvider))
 	})
 	return _c
 }
 
-func (_c *GuardFunc_Execute_Call) Return(_a0 auth.GuardDriver) *GuardFunc_Execute_Call {
-	_c.Call.Return(_a0)
+func (_c *GuardFunc_Execute_Call) Return(guard auth.GuardDriver, err error) *GuardFunc_Execute_Call {
+	_c.Call.Return(guard, err)
 	return _c
 }
 
-func (_c *GuardFunc_Execute_Call) RunAndReturn(run func(string, auth.Auth, auth.UserProvider) auth.GuardDriver) *GuardFunc_Execute_Call {
+func (_c *GuardFunc_Execute_Call) RunAndReturn(run func(string, auth.Auth, auth.UserProvider) (auth.GuardDriver, error)) *GuardFunc_Execute_Call {
 	_c.Call.Return(run)
 	return _c
 }

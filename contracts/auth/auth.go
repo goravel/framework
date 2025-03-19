@@ -12,7 +12,7 @@ type GuardDriver interface {
 	// User returns the current authenticated user.
 	User(user any) error
 	// ID returns the current user id.
-	ID() (string, error)
+	ID() (token string, err error)
 	// Login logs a user into the application.
 	Login(user any) (token string, err error)
 	// LoginUsingID logs the given user ID into the application.
@@ -38,7 +38,7 @@ type UserProvider interface {
 }
 
 type UserProviderFunc func(auth Auth) (UserProvider, error)
-type GuardFunc func(string, Auth, UserProvider) GuardDriver
+type GuardFunc func(name string, auth Auth, userProvider UserProvider) (guard GuardDriver, err error)
 
 type Payload struct {
 	Guard    string

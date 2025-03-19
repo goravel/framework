@@ -247,8 +247,8 @@ func (_c *Auth_ID_Call) Run(run func()) *Auth_ID_Call {
 	return _c
 }
 
-func (_c *Auth_ID_Call) Return(_a0 string, _a1 error) *Auth_ID_Call {
-	_c.Call.Return(_a0, _a1)
+func (_c *Auth_ID_Call) Return(token string, err error) *Auth_ID_Call {
+	_c.Call.Return(token, err)
 	return _c
 }
 

@@ -23,7 +23,7 @@ type Auth struct {
 	customProviders map[string]contractsauth.UserProviderFunc
 }
 
-func NewAuth(guard string, cache cache.Cache, config config.Config, ctx http.Context, orm orm.Orm) (*Auth, error) {
+func NewAuth(cache cache.Cache, config config.Config, ctx http.Context, orm orm.Orm) (*Auth, error) {
 	auth := &Auth{
 		cache:           cache,
 		config:          config,
@@ -35,7 +35,7 @@ func NewAuth(guard string, cache cache.Cache, config config.Config, ctx http.Con
 		customProviders: map[string]contractsauth.UserProviderFunc{},
 	}
 
-	defaultGuard, err := auth.Guard(guard)
+	defaultGuard, err := auth.Guard(config.GetString("auth.defaults.guard"))
 	if err != nil {
 		return nil, err
 	}
@@ -99,9 +99,14 @@ func (r *Auth) resolve(name string) (contractsauth.GuardDriver, error) {
 			return nil, err
 		}
 
-		r.guards[name] = guardFunc(name, r, provider)
+		guard, err := guardFunc(name, r, provider)
+		if err != nil {
+			return nil, err
+		}
 
-		return r.guards[name], nil
+		r.guards[name] = guard
+
+		return guard, nil
 	}
 
 	switch driverName {

@@ -155,8 +155,8 @@ func (_c *GuardDriver_ID_Call) Run(run func()) *GuardDriver_ID_Call {
 	return _c
 }
 
-func (_c *GuardDriver_ID_Call) Return(_a0 string, _a1 error) *GuardDriver_ID_Call {
-	_c.Call.Return(_a0, _a1)
+func (_c *GuardDriver_ID_Call) Return(token string, err error) *GuardDriver_ID_Call {
+	_c.Call.Return(token, err)
 	return _c
 }
 
