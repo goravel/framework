@@ -24,14 +24,14 @@ type Tx interface {
 	Commit() error
 	// Delete executes a delete query.
 	Delete(sql string, args ...any) (*Result, error)
-	// Exec executes a raw sql.
-	Exec(sql string, args ...any) (*Result, error)
 	// Insert executes a insert query.
 	Insert(sql string, args ...any) (*Result, error)
 	// Rollback rolls back the changes in a transaction.
 	Rollback() error
 	// Select executes a select query.
 	Select(dest any, sql string, args ...any) error
+	// Statement executes a raw sql.
+	Statement(sql string, args ...any) error
 	// Table specifies the table for the query.
 	Table(name string) Query
 	// Update executes a update query.
@@ -82,12 +82,12 @@ type Query interface {
 	InRandomOrder() Query
 	// Insert a new record into the database.
 	Insert(data any) (*Result, error)
-	// InsertGetId returns the ID of the inserted row, only supported by MySQL and Sqlite
-	InsertGetId(data any) (int64, error)
+	// InsertGetID returns the ID of the inserted row, only supported by MySQL and Sqlite
+	InsertGetID(data any) (int64, error)
 	// Join specifies JOIN conditions for the query.
 	Join(query string, args ...any) Query
-	// Latest retrieves the latest record from the database.
-	Latest(dest any, column ...string) error
+	// Latest retrieves the latest record from the database, default column is "created_at"
+	Latest(column ...string) Query
 	// LeftJoin specifies LEFT JOIN conditions for the query.
 	LeftJoin(query string, args ...any) Query
 	// Limit the number of records returned.
@@ -126,6 +126,8 @@ type Query interface {
 	OrWhereNull(column string) Query
 	// OrWhereRaw adds a raw "or where" clause to the query.
 	OrWhereRaw(raw string, args []any) Query
+	// Paginate the given query into a simple paginator.
+	Paginate(page, limit int, dest any, total *int64) error
 	// Pluck retrieves a single column from the database.
 	Pluck(column string, dest any) error
 	// RightJoin specifies RIGHT JOIN conditions for the query.
@@ -135,7 +137,7 @@ type Query interface {
 	// SharedLock locks the selected rows in the table.
 	SharedLock() Query
 	// Sum calculates the sum of a column's values and populates the destination object.
-	Sum(column string, dest any) error
+	Sum(column string) (int64, error)
 	// ToSql returns the query as a SQL string.
 	ToSql() ToSql
 	// ToRawSql returns the query as a raw SQL string.
@@ -148,7 +150,7 @@ type Query interface {
 	// Value gets a single column's value from the first result of a query.
 	Value(column string, dest any) error
 	// When executes the callback if the condition is true.
-	When(condition bool, callback func(query Query) Query) Query
+	When(condition bool, callback func(query Query) Query, falseCallback ...func(query Query) Query) Query
 	// Where adds a "where" clause to the query.
 	Where(query any, args ...any) Query
 	// WhereBetween adds a "where column between x and y" clause to the query.

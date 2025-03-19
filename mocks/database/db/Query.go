@@ -1144,12 +1144,12 @@ func (_c *Query_Insert_Call) RunAndReturn(run func(interface{}) (*db.Result, err
 	return _c
 }
 
-// InsertGetId provides a mock function with given fields: data
-func (_m *Query) InsertGetId(data interface{}) (int64, error) {
+// InsertGetID provides a mock function with given fields: data
+func (_m *Query) InsertGetID(data interface{}) (int64, error) {
 	ret := _m.Called(data)
 
 	if len(ret) == 0 {
-		panic("no return value specified for InsertGetId")
+		panic("no return value specified for InsertGetID")
 	}
 
 	var r0 int64
@@ -1172,30 +1172,30 @@ func (_m *Query) InsertGetId(data interface{}) (int64, error) {
 	return r0, r1
 }
 
-// Query_InsertGetId_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertGetId'
-type Query_InsertGetId_Call struct {
+// Query_InsertGetID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertGetID'
+type Query_InsertGetID_Call struct {
 	*mock.Call
 }
 
-// InsertGetId is a helper method to define mock.On call
+// InsertGetID is a helper method to define mock.On call
 //   - data interface{}
-func (_e *Query_Expecter) InsertGetId(data interface{}) *Query_InsertGetId_Call {
-	return &Query_InsertGetId_Call{Call: _e.mock.On("InsertGetId", data)}
+func (_e *Query_Expecter) InsertGetID(data interface{}) *Query_InsertGetID_Call {
+	return &Query_InsertGetID_Call{Call: _e.mock.On("InsertGetID", data)}
 }
 
-func (_c *Query_InsertGetId_Call) Run(run func(data interface{})) *Query_InsertGetId_Call {
+func (_c *Query_InsertGetID_Call) Run(run func(data interface{})) *Query_InsertGetID_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(interface{}))
 	})
 	return _c
 }
 
-func (_c *Query_InsertGetId_Call) Return(_a0 int64, _a1 error) *Query_InsertGetId_Call {
+func (_c *Query_InsertGetID_Call) Return(_a0 int64, _a1 error) *Query_InsertGetID_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Query_InsertGetId_Call) RunAndReturn(run func(interface{}) (int64, error)) *Query_InsertGetId_Call {
+func (_c *Query_InsertGetID_Call) RunAndReturn(run func(interface{}) (int64, error)) *Query_InsertGetID_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1259,14 +1259,13 @@ func (_c *Query_Join_Call) RunAndReturn(run func(string, ...interface{}) db.Quer
 	return _c
 }
 
-// Latest provides a mock function with given fields: dest, column
-func (_m *Query) Latest(dest interface{}, column ...string) error {
+// Latest provides a mock function with given fields: column
+func (_m *Query) Latest(column ...string) db.Query {
 	_va := make([]interface{}, len(column))
 	for _i := range column {
 		_va[_i] = column[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, dest)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
@@ -1274,11 +1273,13 @@ func (_m *Query) Latest(dest interface{}, column ...string) error {
 		panic("no return value specified for Latest")
 	}
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(interface{}, ...string) error); ok {
-		r0 = rf(dest, column...)
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func(...string) db.Query); ok {
+		r0 = rf(column...)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Query)
+		}
 	}
 
 	return r0
@@ -1290,32 +1291,31 @@ type Query_Latest_Call struct {
 }
 
 // Latest is a helper method to define mock.On call
-//   - dest interface{}
 //   - column ...string
-func (_e *Query_Expecter) Latest(dest interface{}, column ...interface{}) *Query_Latest_Call {
+func (_e *Query_Expecter) Latest(column ...interface{}) *Query_Latest_Call {
 	return &Query_Latest_Call{Call: _e.mock.On("Latest",
-		append([]interface{}{dest}, column...)...)}
+		append([]interface{}{}, column...)...)}
 }
 
-func (_c *Query_Latest_Call) Run(run func(dest interface{}, column ...string)) *Query_Latest_Call {
+func (_c *Query_Latest_Call) Run(run func(column ...string)) *Query_Latest_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]string, len(args)-1)
-		for i, a := range args[1:] {
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
 			if a != nil {
 				variadicArgs[i] = a.(string)
 			}
 		}
-		run(args[0].(interface{}), variadicArgs...)
+		run(variadicArgs...)
 	})
 	return _c
 }
 
-func (_c *Query_Latest_Call) Return(_a0 error) *Query_Latest_Call {
+func (_c *Query_Latest_Call) Return(_a0 db.Query) *Query_Latest_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Query_Latest_Call) RunAndReturn(run func(interface{}, ...string) error) *Query_Latest_Call {
+func (_c *Query_Latest_Call) RunAndReturn(run func(...string) db.Query) *Query_Latest_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -2288,6 +2288,55 @@ func (_c *Query_OrderByRaw_Call) RunAndReturn(run func(string) db.Query) *Query_
 	return _c
 }
 
+// Paginate provides a mock function with given fields: page, limit, dest, total
+func (_m *Query) Paginate(page int, limit int, dest interface{}, total *int64) error {
+	ret := _m.Called(page, limit, dest, total)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Paginate")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(int, int, interface{}, *int64) error); ok {
+		r0 = rf(page, limit, dest, total)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Query_Paginate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Paginate'
+type Query_Paginate_Call struct {
+	*mock.Call
+}
+
+// Paginate is a helper method to define mock.On call
+//   - page int
+//   - limit int
+//   - dest interface{}
+//   - total *int64
+func (_e *Query_Expecter) Paginate(page interface{}, limit interface{}, dest interface{}, total interface{}) *Query_Paginate_Call {
+	return &Query_Paginate_Call{Call: _e.mock.On("Paginate", page, limit, dest, total)}
+}
+
+func (_c *Query_Paginate_Call) Run(run func(page int, limit int, dest interface{}, total *int64)) *Query_Paginate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(int), args[1].(int), args[2].(interface{}), args[3].(*int64))
+	})
+	return _c
+}
+
+func (_c *Query_Paginate_Call) Return(_a0 error) *Query_Paginate_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_Paginate_Call) RunAndReturn(run func(int, int, interface{}, *int64) error) *Query_Paginate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Pluck provides a mock function with given fields: column, dest
 func (_m *Query) Pluck(column string, dest interface{}) error {
 	ret := _m.Called(column, dest)
@@ -2502,22 +2551,32 @@ func (_c *Query_SharedLock_Call) RunAndReturn(run func() db.Query) *Query_Shared
 	return _c
 }
 
-// Sum provides a mock function with given fields: column, dest
-func (_m *Query) Sum(column string, dest interface{}) error {
-	ret := _m.Called(column, dest)
+// Sum provides a mock function with given fields: column
+func (_m *Query) Sum(column string) (int64, error) {
+	ret := _m.Called(column)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Sum")
 	}
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string, interface{}) error); ok {
-		r0 = rf(column, dest)
+	var r0 int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (int64, error)); ok {
+		return rf(column)
+	}
+	if rf, ok := ret.Get(0).(func(string) int64); ok {
+		r0 = rf(column)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(int64)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(column)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Query_Sum_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Sum'
@@ -2527,24 +2586,23 @@ type Query_Sum_Call struct {
 
 // Sum is a helper method to define mock.On call
 //   - column string
-//   - dest interface{}
-func (_e *Query_Expecter) Sum(column interface{}, dest interface{}) *Query_Sum_Call {
-	return &Query_Sum_Call{Call: _e.mock.On("Sum", column, dest)}
+func (_e *Query_Expecter) Sum(column interface{}) *Query_Sum_Call {
+	return &Query_Sum_Call{Call: _e.mock.On("Sum", column)}
 }
 
-func (_c *Query_Sum_Call) Run(run func(column string, dest interface{})) *Query_Sum_Call {
+func (_c *Query_Sum_Call) Run(run func(column string)) *Query_Sum_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(interface{}))
+		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *Query_Sum_Call) Return(_a0 error) *Query_Sum_Call {
-	_c.Call.Return(_a0)
+func (_c *Query_Sum_Call) Return(_a0 int64, _a1 error) *Query_Sum_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Query_Sum_Call) RunAndReturn(run func(string, interface{}) error) *Query_Sum_Call {
+func (_c *Query_Sum_Call) RunAndReturn(run func(string) (int64, error)) *Query_Sum_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -2818,17 +2876,24 @@ func (_c *Query_Value_Call) RunAndReturn(run func(string, interface{}) error) *Q
 	return _c
 }
 
-// When provides a mock function with given fields: condition, callback
-func (_m *Query) When(condition bool, callback func(db.Query) db.Query) db.Query {
-	ret := _m.Called(condition, callback)
+// When provides a mock function with given fields: condition, callback, falseCallback
+func (_m *Query) When(condition bool, callback func(db.Query) db.Query, falseCallback ...func(db.Query) db.Query) db.Query {
+	_va := make([]interface{}, len(falseCallback))
+	for _i := range falseCallback {
+		_va[_i] = falseCallback[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, condition, callback)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for When")
 	}
 
 	var r0 db.Query
-	if rf, ok := ret.Get(0).(func(bool, func(db.Query) db.Query) db.Query); ok {
-		r0 = rf(condition, callback)
+	if rf, ok := ret.Get(0).(func(bool, func(db.Query) db.Query, ...func(db.Query) db.Query) db.Query); ok {
+		r0 = rf(condition, callback, falseCallback...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(db.Query)
@@ -2846,13 +2911,21 @@ type Query_When_Call struct {
 // When is a helper method to define mock.On call
 //   - condition bool
 //   - callback func(db.Query) db.Query
-func (_e *Query_Expecter) When(condition interface{}, callback interface{}) *Query_When_Call {
-	return &Query_When_Call{Call: _e.mock.On("When", condition, callback)}
+//   - falseCallback ...func(db.Query) db.Query
+func (_e *Query_Expecter) When(condition interface{}, callback interface{}, falseCallback ...interface{}) *Query_When_Call {
+	return &Query_When_Call{Call: _e.mock.On("When",
+		append([]interface{}{condition, callback}, falseCallback...)...)}
 }
 
-func (_c *Query_When_Call) Run(run func(condition bool, callback func(db.Query) db.Query)) *Query_When_Call {
+func (_c *Query_When_Call) Run(run func(condition bool, callback func(db.Query) db.Query, falseCallback ...func(db.Query) db.Query)) *Query_When_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(bool), args[1].(func(db.Query) db.Query))
+		variadicArgs := make([]func(db.Query) db.Query, len(args)-2)
+		for i, a := range args[2:] {
+			if a != nil {
+				variadicArgs[i] = a.(func(db.Query) db.Query)
+			}
+		}
+		run(args[0].(bool), args[1].(func(db.Query) db.Query), variadicArgs...)
 	})
 	return _c
 }
@@ -2862,7 +2935,7 @@ func (_c *Query_When_Call) Return(_a0 db.Query) *Query_When_Call {
 	return _c
 }
 
-func (_c *Query_When_Call) RunAndReturn(run func(bool, func(db.Query) db.Query) db.Query) *Query_When_Call {
+func (_c *Query_When_Call) RunAndReturn(run func(bool, func(db.Query) db.Query, ...func(db.Query) db.Query) db.Query) *Query_When_Call {
 	_c.Call.Return(run)
 	return _c
 }

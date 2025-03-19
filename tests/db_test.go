@@ -205,7 +205,7 @@ func (s *DBTestSuite) TestCursor() {
 	}
 }
 
-func (s *DBTestSuite) Test_DB_Select_Update_Delete() {
+func (s *DBTestSuite) Test_DB_Select_Insert_Update_Delete_Statement() {
 	for driver, query := range s.queries {
 		insertSql := "INSERT INTO products (name) VALUES (?)"
 		updateSql := "UPDATE products SET name = ? WHERE id = ?"
@@ -233,6 +233,11 @@ func (s *DBTestSuite) Test_DB_Select_Update_Delete() {
 			s.Equal(1, len(products))
 			s.Equal("test_db_select_update_delete_product", products[0].Name)
 
+			var product Product
+			err = query.DB().Select(&product, "SELECT * FROM products")
+			s.NoError(err)
+			s.Equal("test_db_select_update_delete_product", product.Name)
+
 			result, err = query.DB().Update(updateSql, "test_db_select_update_delete_product_updated", products[0].ID)
 			s.NoError(err)
 			s.Equal(int64(1), result.RowsAffected)
@@ -249,6 +254,9 @@ func (s *DBTestSuite) Test_DB_Select_Update_Delete() {
 			err = query.DB().Select(&products, "SELECT * FROM products")
 			s.NoError(err)
 			s.Equal(0, len(products))
+
+			err = query.DB().Statement("drop table products")
+			s.NoError(err)
 		})
 	}
 }
@@ -507,10 +515,10 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 	}
 }
 
-func (s *DBTestSuite) TestInsertGetId() {
+func (s *DBTestSuite) TestInsertGetID() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			id, err := query.DB().Table("products").InsertGetId(Product{
+			id, err := query.DB().Table("products").InsertGetID(Product{
 				Name: "insert get id",
 			})
 
@@ -811,6 +819,37 @@ func (s *DBTestSuite) TestOrWhereNot() {
 	}
 }
 
+func (s *DBTestSuite) TestPaginate() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{Name: "paginate_product1"},
+				{Name: "paginate_product2"},
+				{Name: "paginate_product3"},
+				{Name: "paginate_product4"},
+				{Name: "paginate_product5"},
+			})
+
+			var products []Product
+			var total int64
+			err := query.DB().Table("products").WhereLike("name", "paginate_product%").Paginate(1, 2, &products, &total)
+			s.NoError(err)
+			s.Equal(2, len(products))
+			s.Equal(int64(5), total)
+			s.Equal("paginate_product1", products[0].Name)
+			s.Equal("paginate_product2", products[1].Name)
+
+			products = []Product{}
+			err = query.DB().Table("products").WhereLike("name", "paginate_product%").Paginate(2, 2, &products, &total)
+			s.NoError(err)
+			s.Equal(2, len(products))
+			s.Equal(int64(5), total)
+			s.Equal("paginate_product3", products[0].Name)
+			s.Equal("paginate_product4", products[1].Name)
+		})
+	}
+}
+
 func (s *DBTestSuite) TestPluck() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
@@ -921,10 +960,9 @@ func (s *DBTestSuite) TestSum() {
 				{Name: "sum_product2", Weight: convert.Pointer(200)},
 			})
 
-			var sum int
-			err := query.DB().Table("products").Sum("weight", &sum)
+			sum, err := query.DB().Table("products").Sum("weight")
 			s.NoError(err)
-			s.Equal(300, sum)
+			s.Equal(int64(300), sum)
 		})
 	}
 }

@@ -420,7 +420,7 @@ func (r *Query) Insert(data any) (*db.Result, error) {
 	}, nil
 }
 
-func (r *Query) InsertGetId(data any) (int64, error) {
+func (r *Query) InsertGetID(data any) (int64, error) {
 	mapData, err := convertToMap(data)
 	if err != nil {
 		return 0, err
@@ -451,13 +451,13 @@ func (r *Query) InsertGetId(data any) (int64, error) {
 	return id, nil
 }
 
-func (r *Query) Latest(dest any, column ...string) error {
+func (r *Query) Latest(column ...string) db.Query {
 	col := "created_at"
 	if len(column) > 0 {
 		col = column[0]
 	}
 
-	return r.OrderByDesc(col).First(dest)
+	return r.OrderByDesc(col)
 }
 
 func (r *Query) LeftJoin(query string, args ...any) db.Query {
@@ -597,6 +597,20 @@ func (r *Query) OrWhereRaw(raw string, args []any) db.Query {
 	return r.OrWhere(sq.Expr(raw, args...))
 }
 
+func (r *Query) Paginate(page, limit int, dest any, total *int64) error {
+	offset := (page - 1) * limit
+
+	q := r.clone()
+	count, err := q.Count()
+	if err != nil {
+		return err
+	}
+
+	*total = count
+
+	return r.Offset(uint64(offset)).Limit(uint64(limit)).Get(dest)
+}
+
 func (r *Query) Pluck(column string, dest any) error {
 	r.conditions.Selects = []string{column}
 
@@ -627,8 +641,14 @@ func (r *Query) SharedLock() db.Query {
 	return q
 }
 
-func (r *Query) Sum(column string, dest any) error {
-	return r.Select(fmt.Sprintf("SUM(%s)", column)).First(dest)
+func (r *Query) Sum(column string) (int64, error) {
+	var sum int64
+	err := r.Select(fmt.Sprintf("SUM(%s)", column)).First(&sum)
+	if err != nil {
+		return 0, err
+	}
+
+	return sum, nil
 }
 
 func (r *Query) ToSql() db.ToSql {
@@ -711,9 +731,13 @@ func (r *Query) Value(column string, dest any) error {
 	return r.Select(column).Limit(1).First(dest)
 }
 
-func (r *Query) When(condition bool, callback func(query db.Query) db.Query) db.Query {
+func (r *Query) When(condition bool, callback func(query db.Query) db.Query, falseCallback ...func(query db.Query) db.Query) db.Query {
 	if condition {
 		return callback(r)
+	}
+
+	if len(falseCallback) > 0 {
+		return falseCallback[0](r)
 	}
 
 	return r
