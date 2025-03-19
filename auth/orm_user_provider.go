@@ -26,9 +26,5 @@ func (r *OrmUserProvider) GetID(user any) any {
 
 // RetriveByID implements auth.UserProvider.
 func (r *OrmUserProvider) RetriveByID(user any, id any) error {
-	if err := r.orm.Query().FindOrFail(user, clause.Eq{Column: clause.PrimaryColumn, Value: id}); err != nil {
-		return err
-	}
-
-	return nil
+	return r.orm.Query().FindOrFail(user, clause.Eq{Column: clause.PrimaryColumn, Value: id})
 }
