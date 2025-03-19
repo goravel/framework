@@ -205,7 +205,7 @@ func (s *DBTestSuite) TestCursor() {
 	}
 }
 
-func (s *DBTestSuite) Test_DB_Select_Insert_Update_Delete_Exec() {
+func (s *DBTestSuite) Test_DB_Select_Insert_Update_Delete_Statement() {
 	for driver, query := range s.queries {
 		insertSql := "INSERT INTO products (name) VALUES (?)"
 		updateSql := "UPDATE products SET name = ? WHERE id = ?"
