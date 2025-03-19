@@ -4,21 +4,21 @@ import (
 	"time"
 )
 
-type Guard interface {
+type GuardDriver interface {
 	// Check whether user logged in or not
 	Check() bool
-
 	// Check whether user *not* logged in or not | !Check()
 	Guest() bool
-
 	// User returns the current authenticated user.
 	User(user any) error
 	// ID returns the current user id.
 	ID() (string, error)
 	// Login logs a user into the application.
-	Login(user any) (err error)
+	Login(user any) (token string, err error)
 	// LoginUsingID logs the given user ID into the application.
 	LoginUsingID(id any) (token string, err error)
+	// Parse the given token.
+	Parse(token string) (*Payload, error)
 	// Refresh the token for the current user.
 	Refresh() (token string, err error)
 	// Logout logs the user out of the application.
@@ -26,8 +26,8 @@ type Guard interface {
 }
 
 type Auth interface {
-	Guard
-	GetGuard(name string) (Guard, error)
+	GuardDriver
+	Guard(name string) (GuardDriver, error)
 	Extend(name string, fn GuardFunc)
 	Provider(name string, fn UserProviderFunc)
 }
@@ -38,7 +38,7 @@ type UserProvider interface {
 }
 
 type UserProviderFunc func(auth Auth) (UserProvider, error)
-type GuardFunc func(string, Auth, UserProvider) Guard
+type GuardFunc func(string, Auth, UserProvider) GuardDriver
 
 type Payload struct {
 	Guard    string

@@ -12,12 +12,12 @@ import (
 )
 
 type Auth struct {
-	contractsauth.Guard
+	contractsauth.GuardDriver
 	cache           cache.Cache
 	config          config.Config
 	ctx             http.Context
 	orm             orm.Orm
-	guards          map[string]contractsauth.Guard
+	guards          map[string]contractsauth.GuardDriver
 	providers       map[string]contractsauth.UserProvider
 	customGuards    map[string]contractsauth.GuardFunc
 	customProviders map[string]contractsauth.UserProviderFunc
@@ -29,18 +29,18 @@ func NewAuth(guard string, cache cache.Cache, config config.Config, ctx http.Con
 		config:          config,
 		ctx:             ctx,
 		orm:             orm,
-		guards:          map[string]contractsauth.Guard{},
+		guards:          map[string]contractsauth.GuardDriver{},
 		providers:       map[string]contractsauth.UserProvider{},
 		customGuards:    map[string]contractsauth.GuardFunc{},
 		customProviders: map[string]contractsauth.UserProviderFunc{},
 	}
 
-	defaultGuard, err := auth.GetGuard(guard)
+	defaultGuard, err := auth.Guard(guard)
 	if err != nil {
 		return nil, err
 	}
 
-	auth.Guard = defaultGuard
+	auth.GuardDriver = defaultGuard
 	return auth, nil
 }
 
@@ -48,7 +48,7 @@ func (r *Auth) Extend(name string, fn contractsauth.GuardFunc) {
 	r.customGuards[name] = fn
 }
 
-func (r *Auth) GetGuard(name string) (contractsauth.Guard, error) {
+func (r *Auth) Guard(name string) (contractsauth.GuardDriver, error) {
 	if guard, ok := r.guards[name]; ok {
 		return guard, nil
 	}
@@ -85,7 +85,7 @@ func (r *Auth) createUserProvider(name string) (contractsauth.UserProvider, erro
 	}
 }
 
-func (r *Auth) resolve(name string) (contractsauth.Guard, error) {
+func (r *Auth) resolve(name string) (contractsauth.GuardDriver, error) {
 	driverName := r.config.GetString(fmt.Sprintf("auth.guards.%s.driver", name))
 	userProviderName := r.config.GetString(fmt.Sprintf("auth.guards.%s.provider", name))
 	provider, err := r.createUserProvider(userProviderName)

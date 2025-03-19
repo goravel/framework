@@ -21,19 +21,19 @@ func (_m *GuardFunc) EXPECT() *GuardFunc_Expecter {
 }
 
 // Execute provides a mock function with given fields: _a0, _a1, _a2
-func (_m *GuardFunc) Execute(_a0 string, _a1 auth.Auth, _a2 auth.UserProvider) auth.Guard {
+func (_m *GuardFunc) Execute(_a0 string, _a1 auth.Auth, _a2 auth.UserProvider) auth.GuardDriver {
 	ret := _m.Called(_a0, _a1, _a2)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Execute")
 	}
 
-	var r0 auth.Guard
-	if rf, ok := ret.Get(0).(func(string, auth.Auth, auth.UserProvider) auth.Guard); ok {
+	var r0 auth.GuardDriver
+	if rf, ok := ret.Get(0).(func(string, auth.Auth, auth.UserProvider) auth.GuardDriver); ok {
 		r0 = rf(_a0, _a1, _a2)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(auth.Guard)
+			r0 = ret.Get(0).(auth.GuardDriver)
 		}
 	}
 
@@ -60,12 +60,12 @@ func (_c *GuardFunc_Execute_Call) Run(run func(_a0 string, _a1 auth.Auth, _a2 au
 	return _c
 }
 
-func (_c *GuardFunc_Execute_Call) Return(_a0 auth.Guard) *GuardFunc_Execute_Call {
+func (_c *GuardFunc_Execute_Call) Return(_a0 auth.GuardDriver) *GuardFunc_Execute_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *GuardFunc_Execute_Call) RunAndReturn(run func(string, auth.Auth, auth.UserProvider) auth.Guard) *GuardFunc_Execute_Call {
+func (_c *GuardFunc_Execute_Call) RunAndReturn(run func(string, auth.Auth, auth.UserProvider) auth.GuardDriver) *GuardFunc_Execute_Call {
 	_c.Call.Return(run)
 	return _c
 }

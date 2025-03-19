@@ -78,14 +78,13 @@ func (r *JwtGuard) ID() (string, error) {
 	return guard.Claims.Key, nil
 }
 
-func (r *JwtGuard) Login(user any) error {
+func (r *JwtGuard) Login(user any) (token string, err error) {
 	id := r.provider.GetID(user)
 	if id == nil {
-		return errors.AuthNoPrimaryKeyField
+		return "", errors.AuthNoPrimaryKeyField
 	}
 
-	_, err := r.LoginUsingID(id)
-	return err
+	return r.LoginUsingID(id)
 }
 
 func (r *JwtGuard) LoginUsingID(id any) (token string, err error) {

@@ -99,24 +99,24 @@ func (_c *Auth_Extend_Call) RunAndReturn(run func(string, auth.GuardFunc)) *Auth
 	return _c
 }
 
-// GetGuard provides a mock function with given fields: name
-func (_m *Auth) GetGuard(name string) (auth.Guard, error) {
+// Guard provides a mock function with given fields: name
+func (_m *Auth) Guard(name string) (auth.GuardDriver, error) {
 	ret := _m.Called(name)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetGuard")
+		panic("no return value specified for Guard")
 	}
 
-	var r0 auth.Guard
+	var r0 auth.GuardDriver
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (auth.Guard, error)); ok {
+	if rf, ok := ret.Get(0).(func(string) (auth.GuardDriver, error)); ok {
 		return rf(name)
 	}
-	if rf, ok := ret.Get(0).(func(string) auth.Guard); ok {
+	if rf, ok := ret.Get(0).(func(string) auth.GuardDriver); ok {
 		r0 = rf(name)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(auth.Guard)
+			r0 = ret.Get(0).(auth.GuardDriver)
 		}
 	}
 
@@ -129,30 +129,30 @@ func (_m *Auth) GetGuard(name string) (auth.Guard, error) {
 	return r0, r1
 }
 
-// Auth_GetGuard_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetGuard'
-type Auth_GetGuard_Call struct {
+// Auth_Guard_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Guard'
+type Auth_Guard_Call struct {
 	*mock.Call
 }
 
-// GetGuard is a helper method to define mock.On call
+// Guard is a helper method to define mock.On call
 //   - name string
-func (_e *Auth_Expecter) GetGuard(name interface{}) *Auth_GetGuard_Call {
-	return &Auth_GetGuard_Call{Call: _e.mock.On("GetGuard", name)}
+func (_e *Auth_Expecter) Guard(name interface{}) *Auth_Guard_Call {
+	return &Auth_Guard_Call{Call: _e.mock.On("Guard", name)}
 }
 
-func (_c *Auth_GetGuard_Call) Run(run func(name string)) *Auth_GetGuard_Call {
+func (_c *Auth_Guard_Call) Run(run func(name string)) *Auth_Guard_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *Auth_GetGuard_Call) Return(_a0 auth.Guard, _a1 error) *Auth_GetGuard_Call {
+func (_c *Auth_Guard_Call) Return(_a0 auth.GuardDriver, _a1 error) *Auth_Guard_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Auth_GetGuard_Call) RunAndReturn(run func(string) (auth.Guard, error)) *Auth_GetGuard_Call {
+func (_c *Auth_Guard_Call) RunAndReturn(run func(string) (auth.GuardDriver, error)) *Auth_Guard_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -258,21 +258,31 @@ func (_c *Auth_ID_Call) RunAndReturn(run func() (string, error)) *Auth_ID_Call {
 }
 
 // Login provides a mock function with given fields: user
-func (_m *Auth) Login(user interface{}) error {
+func (_m *Auth) Login(user interface{}) (string, error) {
 	ret := _m.Called(user)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Login")
 	}
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(interface{}) error); ok {
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(interface{}) (string, error)); ok {
+		return rf(user)
+	}
+	if rf, ok := ret.Get(0).(func(interface{}) string); ok {
 		r0 = rf(user)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(string)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(interface{}) error); ok {
+		r1 = rf(user)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Auth_Login_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Login'
@@ -293,12 +303,12 @@ func (_c *Auth_Login_Call) Run(run func(user interface{})) *Auth_Login_Call {
 	return _c
 }
 
-func (_c *Auth_Login_Call) Return(err error) *Auth_Login_Call {
-	_c.Call.Return(err)
+func (_c *Auth_Login_Call) Return(token string, err error) *Auth_Login_Call {
+	_c.Call.Return(token, err)
 	return _c
 }
 
-func (_c *Auth_Login_Call) RunAndReturn(run func(interface{}) error) *Auth_Login_Call {
+func (_c *Auth_Login_Call) RunAndReturn(run func(interface{}) (string, error)) *Auth_Login_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -400,6 +410,64 @@ func (_c *Auth_Logout_Call) Return(_a0 error) *Auth_Logout_Call {
 }
 
 func (_c *Auth_Logout_Call) RunAndReturn(run func() error) *Auth_Logout_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Parse provides a mock function with given fields: token
+func (_m *Auth) Parse(token string) (*auth.Payload, error) {
+	ret := _m.Called(token)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Parse")
+	}
+
+	var r0 *auth.Payload
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (*auth.Payload, error)); ok {
+		return rf(token)
+	}
+	if rf, ok := ret.Get(0).(func(string) *auth.Payload); ok {
+		r0 = rf(token)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*auth.Payload)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(token)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Auth_Parse_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Parse'
+type Auth_Parse_Call struct {
+	*mock.Call
+}
+
+// Parse is a helper method to define mock.On call
+//   - token string
+func (_e *Auth_Expecter) Parse(token interface{}) *Auth_Parse_Call {
+	return &Auth_Parse_Call{Call: _e.mock.On("Parse", token)}
+}
+
+func (_c *Auth_Parse_Call) Run(run func(token string)) *Auth_Parse_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Auth_Parse_Call) Return(_a0 *auth.Payload, _a1 error) *Auth_Parse_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Auth_Parse_Call) RunAndReturn(run func(string) (*auth.Payload, error)) *Auth_Parse_Call {
 	_c.Call.Return(run)
 	return _c
 }
