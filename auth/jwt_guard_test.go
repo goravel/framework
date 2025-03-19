@@ -232,11 +232,9 @@ func (s *AuthTestSuite) TestParse_TokenDisabled() {
 	guard, err := s.auth.Guard("user")
 	s.Nil(err)
 
-	if guard, ok := guard.(*JwtGuard); ok {
-		payload, err := guard.Parse(token)
-		s.Nil(payload)
-		s.EqualError(err, errors.AuthTokenDisabled.Error())
-	}
+	payload, err := guard.Parse(token)
+	s.Nil(payload)
+	s.EqualError(err, errors.AuthTokenDisabled.Error())
 }
 
 func (s *AuthTestSuite) TestParse_TokenInvalid() {
@@ -249,11 +247,9 @@ func (s *AuthTestSuite) TestParse_TokenInvalid() {
 	guard, err := s.auth.Guard("user")
 	s.Nil(err)
 
-	if guard, ok := guard.(*JwtGuard); ok {
-		payload, err := guard.Parse(token)
-		s.Nil(payload)
-		s.NotNil(err)
-	}
+	payload, err := guard.Parse(token)
+	s.Nil(payload)
+	s.NotNil(err)
 }
 
 func (s *AuthTestSuite) TestParse_TokenExpired() {
@@ -279,16 +275,14 @@ func (s *AuthTestSuite) TestParse_TokenExpired() {
 
 	s.mockCache.EXPECT().GetBool("jwt:disabled:"+guardInfo.Token, false).Return(false).Once()
 
-	if guard, ok := guard.(*JwtGuard); ok {
-		payload, err := guard.Parse(guardInfo.Token)
-		s.Equal(&contractsauth.Payload{
-			Guard:    testUserGuard,
-			Key:      "1",
-			ExpireAt: jwt.NewNumericDate(expireAt).Local(),
-			IssuedAt: jwt.NewNumericDate(issuedAt).Local(),
-		}, payload)
-		s.ErrorIs(err, errors.AuthTokenExpired)
-	}
+	payload, err := guard.Parse(guardInfo.Token)
+	s.Equal(&contractsauth.Payload{
+		Guard:    testUserGuard,
+		Key:      "1",
+		ExpireAt: jwt.NewNumericDate(expireAt).Local(),
+		IssuedAt: jwt.NewNumericDate(issuedAt).Local(),
+	}, payload)
+	s.ErrorIs(err, errors.AuthTokenExpired)
 
 	carbon.UnsetTestNow()
 }
@@ -304,11 +298,9 @@ func (s *AuthTestSuite) TestParse_InvalidCache() {
 	guard, err := auth.Guard("user")
 	s.Nil(err)
 
-	if guard, ok := guard.(*JwtGuard); ok {
-		payload, err := guard.Parse("1")
-		s.Nil(payload)
-		s.EqualError(err, errors.CacheSupportRequired.SetModule(errors.ModuleAuth).Error())
-	}
+	payload, err := guard.Parse("1")
+	s.Nil(payload)
+	s.EqualError(err, errors.CacheSupportRequired.SetModule(errors.ModuleAuth).Error())
 }
 
 func (s *AuthTestSuite) TestParse_Success() {
@@ -382,11 +374,9 @@ func (s *AuthTestSuite) TestParse_ExpiredAndInvalid() {
 	guard, err := s.auth.Guard("user")
 	s.Nil(err)
 
-	if guard, ok := guard.(*JwtGuard); ok {
-		token, err := guard.Parse(token)
-		s.ErrorIs(err, errors.AuthInvalidToken)
-		s.Empty(token)
-	}
+	payload, err := guard.Parse(token)
+	s.ErrorIs(err, errors.AuthInvalidToken)
+	s.Empty(payload)
 }
 
 func (s *AuthTestSuite) TestUser_NoParse() {
