@@ -126,6 +126,8 @@ type Query interface {
 	OrWhereNull(column string) Query
 	// OrWhereRaw adds a raw "or where" clause to the query.
 	OrWhereRaw(raw string, args []any) Query
+	// Paginate the given query into a simple paginator.
+	Paginate(page, limit int, dest any, total *int64) error
 	// Pluck retrieves a single column from the database.
 	Pluck(column string, dest any) error
 	// RightJoin specifies RIGHT JOIN conditions for the query.

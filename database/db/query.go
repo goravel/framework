@@ -597,6 +597,20 @@ func (r *Query) OrWhereRaw(raw string, args []any) db.Query {
 	return r.OrWhere(sq.Expr(raw, args...))
 }
 
+func (r *Query) Paginate(page, limit int, dest any, total *int64) error {
+	offset := (page - 1) * limit
+
+	q := r.clone()
+	count, err := q.Count()
+	if err != nil {
+		return err
+	}
+
+	*total = count
+
+	return r.Offset(uint64(offset)).Limit(uint64(limit)).Get(dest)
+}
+
 func (r *Query) Pluck(column string, dest any) error {
 	r.conditions.Selects = []string{column}
 

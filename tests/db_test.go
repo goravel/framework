@@ -819,6 +819,37 @@ func (s *DBTestSuite) TestOrWhereNot() {
 	}
 }
 
+func (s *DBTestSuite) TestPaginate() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{Name: "paginate_product1"},
+				{Name: "paginate_product2"},
+				{Name: "paginate_product3"},
+				{Name: "paginate_product4"},
+				{Name: "paginate_product5"},
+			})
+
+			var products []Product
+			var total int64
+			err := query.DB().Table("products").WhereLike("name", "paginate_product%").Paginate(1, 2, &products, &total)
+			s.NoError(err)
+			s.Equal(2, len(products))
+			s.Equal(int64(5), total)
+			s.Equal("paginate_product1", products[0].Name)
+			s.Equal("paginate_product2", products[1].Name)
+
+			products = []Product{}
+			err = query.DB().Table("products").WhereLike("name", "paginate_product%").Paginate(2, 2, &products, &total)
+			s.NoError(err)
+			s.Equal(2, len(products))
+			s.Equal(int64(5), total)
+			s.Equal("paginate_product3", products[0].Name)
+			s.Equal("paginate_product4", products[1].Name)
+		})
+	}
+}
+
 func (s *DBTestSuite) TestPluck() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
