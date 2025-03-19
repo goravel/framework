@@ -135,7 +135,7 @@ type Query interface {
 	// SharedLock locks the selected rows in the table.
 	SharedLock() Query
 	// Sum calculates the sum of a column's values and populates the destination object.
-	Sum(column string, dest any) error
+	Sum(column string) (int64, error)
 	// ToSql returns the query as a SQL string.
 	ToSql() ToSql
 	// ToRawSql returns the query as a raw SQL string.

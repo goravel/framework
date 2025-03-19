@@ -2502,22 +2502,32 @@ func (_c *Query_SharedLock_Call) RunAndReturn(run func() db.Query) *Query_Shared
 	return _c
 }
 
-// Sum provides a mock function with given fields: column, dest
-func (_m *Query) Sum(column string, dest interface{}) error {
-	ret := _m.Called(column, dest)
+// Sum provides a mock function with given fields: column
+func (_m *Query) Sum(column string) (int64, error) {
+	ret := _m.Called(column)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Sum")
 	}
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string, interface{}) error); ok {
-		r0 = rf(column, dest)
+	var r0 int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (int64, error)); ok {
+		return rf(column)
+	}
+	if rf, ok := ret.Get(0).(func(string) int64); ok {
+		r0 = rf(column)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(int64)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(column)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Query_Sum_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Sum'
@@ -2527,24 +2537,23 @@ type Query_Sum_Call struct {
 
 // Sum is a helper method to define mock.On call
 //   - column string
-//   - dest interface{}
-func (_e *Query_Expecter) Sum(column interface{}, dest interface{}) *Query_Sum_Call {
-	return &Query_Sum_Call{Call: _e.mock.On("Sum", column, dest)}
+func (_e *Query_Expecter) Sum(column interface{}) *Query_Sum_Call {
+	return &Query_Sum_Call{Call: _e.mock.On("Sum", column)}
 }
 
-func (_c *Query_Sum_Call) Run(run func(column string, dest interface{})) *Query_Sum_Call {
+func (_c *Query_Sum_Call) Run(run func(column string)) *Query_Sum_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(interface{}))
+		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *Query_Sum_Call) Return(_a0 error) *Query_Sum_Call {
-	_c.Call.Return(_a0)
+func (_c *Query_Sum_Call) Return(_a0 int64, _a1 error) *Query_Sum_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Query_Sum_Call) RunAndReturn(run func(string, interface{}) error) *Query_Sum_Call {
+func (_c *Query_Sum_Call) RunAndReturn(run func(string) (int64, error)) *Query_Sum_Call {
 	_c.Call.Return(run)
 	return _c
 }

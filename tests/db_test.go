@@ -929,10 +929,9 @@ func (s *DBTestSuite) TestSum() {
 				{Name: "sum_product2", Weight: convert.Pointer(200)},
 			})
 
-			var sum int
-			err := query.DB().Table("products").Sum("weight", &sum)
+			sum, err := query.DB().Table("products").Sum("weight")
 			s.NoError(err)
-			s.Equal(300, sum)
+			s.Equal(int64(300), sum)
 		})
 	}
 }

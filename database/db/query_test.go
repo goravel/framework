@@ -1056,7 +1056,7 @@ func (s *QueryTestSuite) TestSum() {
 	s.mockReadBuilder.EXPECT().Explain("SELECT SUM(age) FROM users WHERE age = ?", 25).Return("SELECT SUM(age) FROM users WHERE age = 25").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT SUM(age) FROM users WHERE age = 25", int64(1), nil).Return().Once()
 
-	err := s.query.Where("age", 25).Sum("age", &sum)
+	sum, err := s.query.Where("age", 25).Sum("age")
 	s.Nil(err)
 	s.Equal(int64(25), sum)
 }

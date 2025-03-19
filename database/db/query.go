@@ -627,8 +627,14 @@ func (r *Query) SharedLock() db.Query {
 	return q
 }
 
-func (r *Query) Sum(column string, dest any) error {
-	return r.Select(fmt.Sprintf("SUM(%s)", column)).First(dest)
+func (r *Query) Sum(column string) (int64, error) {
+	var sum int64
+	err := r.Select(fmt.Sprintf("SUM(%s)", column)).First(&sum)
+	if err != nil {
+		return 0, err
+	}
+
+	return sum, nil
 }
 
 func (r *Query) ToSql() db.ToSql {
