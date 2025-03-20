@@ -154,6 +154,9 @@ func (s *ApplicationTestSuite) TestMakeArtisan() {
 func (s *ApplicationTestSuite) TestMakeAuth() {
 	mockConfig := mocksconfig.NewConfig(s.T())
 	mockConfig.EXPECT().GetString("auth.defaults.guard").Return("user").Once()
+	mockConfig.EXPECT().GetString("auth.guards.user.driver").Return("jwt").Once()
+	mockConfig.EXPECT().GetString("auth.guards.user.provider").Return("user").Once()
+	mockConfig.EXPECT().GetString("auth.providers.user.driver").Return("orm").Once()
 
 	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
