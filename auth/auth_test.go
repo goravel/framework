@@ -15,6 +15,7 @@ import (
 	contractsauth "github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/errors"
+	mocksauth "github.com/goravel/framework/mocks/auth"
 	mockscache "github.com/goravel/framework/mocks/cache"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
@@ -115,13 +116,106 @@ func (s *AuthTestSuite) SetupTest() {
 	s.mockContext = Background()
 	s.mockOrm = mocksorm.NewOrm(s.T())
 	s.mockDB = mocksorm.NewQuery(s.T())
-	s.auth = NewAuth(testUserGuard, s.mockCache, s.mockConfig, s.mockContext, s.mockOrm)
+	s.mockConfig.EXPECT().GetString("auth.defaults.guard").Return("user").Once()
+	s.mockConfig.EXPECT().GetString("auth.guards.user.driver").Return("jwt").Once()
+	s.mockConfig.EXPECT().GetString("auth.guards.user.provider").Return("user").Once()
+	s.mockConfig.EXPECT().GetString("auth.providers.user.driver").Return("orm").Once()
+	if auth, err := NewAuth(s.mockCache, s.mockConfig, s.mockContext, s.mockOrm); err == nil {
+		s.auth = auth
+	}
 }
 
+func (s *AuthTestSuite) TestCheck() {
+	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Once()
+	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(0).Once()
+	s.False(s.auth.Check())
+	s.True(s.auth.Guest())
+	token, err := s.auth.LoginUsingID(1)
+	s.Nil(err)
+	s.NotEmpty(token)
+	s.True(s.auth.Check())
+	s.False(s.auth.Guest())
+}
+
+func (s *AuthTestSuite) TestAuth_ExtendGuard() {
+	s.auth.Extend("session", func(name string, a contractsauth.Auth, up contractsauth.UserProvider) (contractsauth.GuardDriver, error) {
+		mockGuard := mocksauth.NewGuardDriver(s.T())
+		mockGuard.EXPECT().ID().Return("session-id-xxxx", nil)
+		return mockGuard, nil
+	})
+
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.driver").Return("session").Once()
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.provider").Return("admin").Once()
+	s.mockConfig.EXPECT().GetString("auth.providers.admin.driver").Return("orm").Once()
+
+	guard, err := s.auth.Guard("admin")
+	s.Nil(err)
+
+	id, err := guard.ID()
+	s.Nil(err)
+
+	s.Equal("session-id-xxxx", id)
+}
+
+func (s *AuthTestSuite) TestAuth_ExtendProvider() {
+	user := User{}
+	mockProvider := mocksauth.NewUserProvider(s.T())
+	mockProvider.EXPECT().RetriveByID(&user, "1").Return(nil).Run(func(user, id any) {
+		if user, ok := user.(*User); ok {
+			user.Name = "MockUser"
+			user.ID = 1
+		}
+	})
+
+	s.auth.Provider("mock", func(auth contractsauth.Auth) (contractsauth.UserProvider, error) {
+		return mockProvider, nil
+	})
+
+	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Once()
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.driver").Return("jwt").Once()
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.provider").Return("admin").Once()
+	s.mockConfig.EXPECT().Get("auth.guards.admin.ttl").Return(2).Once()
+	s.mockConfig.EXPECT().GetString("auth.providers.admin.driver").Return("mock").Once()
+
+	guard, err := s.auth.Guard("admin")
+	s.Nil(err)
+
+	authUser := User{}
+	token, err := guard.LoginUsingID(1)
+	s.Nil(err)
+	s.NotEmpty(token)
+
+	err = guard.User(&authUser)
+	s.Nil(err)
+	s.Equal("MockUser", authUser.Name)
+	s.Equal(uint(1), authUser.ID)
+}
+
+func (s *AuthTestSuite) TestAuth_GuardDriverNotFoundException() {
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.driver").Return("unknown").Once()
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.provider").Return("admin").Once()
+	s.mockConfig.EXPECT().GetString("auth.providers.admin.driver").Return("orm").Once()
+
+	guard, err := s.auth.Guard("admin")
+	s.Nil(guard)
+	s.ErrorIs(err, errors.AuthGuardDriverNotFound)
+}
+
+func (s *AuthTestSuite) TestAuth_ProviderDriverNotFoundException() {
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.driver").Return("jwt").Once()
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.provider").Return("admin").Once()
+	s.mockConfig.EXPECT().GetString("auth.providers.admin.driver").Return("unknown").Once()
+
+	guard, err := s.auth.Guard("admin")
+	s.Nil(guard)
+	s.ErrorIs(err, errors.AuthProviderDriverNotFound)
+}
 func (s *AuthTestSuite) TestLoginUsingID_EmptySecret() {
 	s.mockConfig.EXPECT().GetString("jwt.secret").Return("").Once()
 
-	token, err := s.auth.LoginUsingID(1)
+	guard, err := s.auth.Guard("user")
+	s.Nil(err)
+	token, err := guard.LoginUsingID(1)
 	s.Empty(token)
 	s.ErrorIs(err, errors.AuthEmptySecret)
 }
@@ -130,7 +224,9 @@ func (s *AuthTestSuite) TestLoginUsingID_InvalidKey() {
 	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Once()
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(2).Once()
 
-	token, err := s.auth.LoginUsingID("")
+	guard, err := s.auth.Guard("user")
+	s.Nil(err)
+	token, err := guard.LoginUsingID("")
 	s.Empty(token)
 	s.ErrorIs(err, errors.AuthInvalidKey)
 }
@@ -141,16 +237,20 @@ func (s *AuthTestSuite) TestLoginUsingID() {
 	// jwt.ttl > 0
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(2).Once()
 
-	token, err := s.auth.LoginUsingID(1)
-	s.NotEmpty(token)
+	guard, err := s.auth.Guard("user")
 	s.Nil(err)
+	token, err := guard.LoginUsingID(0)
+	s.Nil(err)
+	s.NotEmpty(token)
 
 	// jwt.ttl == 0
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(0).Once()
 
-	token, err = s.auth.LoginUsingID(1)
-	s.NotEmpty(token)
+	guard, err = s.auth.Guard("user")
 	s.Nil(err)
+	token, err = guard.LoginUsingID(1)
+	s.Nil(err)
+	s.NotEmpty(token)
 }
 
 func (s *AuthTestSuite) TestLogin_Model() {
@@ -162,8 +262,8 @@ func (s *AuthTestSuite) TestLogin_Model() {
 	user.ID = 1
 	user.Name = "Goravel"
 	token, err := s.auth.Login(&user)
-	s.NotEmpty(token)
 	s.Nil(err)
+	s.NotEmpty(token)
 }
 
 func (s *AuthTestSuite) TestLogin_CustomModel() {
@@ -179,8 +279,8 @@ func (s *AuthTestSuite) TestLogin_CustomModel() {
 	user.ID = 1
 	user.Name = "Goravel"
 	token, err := s.auth.Login(&user)
-	s.NotEmpty(token)
 	s.Nil(err)
+	s.NotEmpty(token)
 }
 
 func (s *AuthTestSuite) TestLogin_ErrorModel() {
@@ -193,8 +293,8 @@ func (s *AuthTestSuite) TestLogin_ErrorModel() {
 	errorUser.ID = 1
 	errorUser.Name = "Goravel"
 	token, err := s.auth.Login(&errorUser)
-	s.Empty(token)
 	s.EqualError(err, errors.AuthNoPrimaryKeyField.Error())
+	s.Empty(token)
 }
 
 func (s *AuthTestSuite) TestLogin_NoPrimaryKey() {
@@ -207,15 +307,18 @@ func (s *AuthTestSuite) TestLogin_NoPrimaryKey() {
 	user.ID = 1
 	user.Name = "Goravel"
 	token, err := s.auth.Login(&user)
-	s.Empty(token)
 	s.ErrorIs(err, errors.AuthNoPrimaryKeyField)
+	s.Empty(token)
 }
 
 func (s *AuthTestSuite) TestParse_TokenDisabled() {
 	token := "1"
 	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(true).Once()
 
-	payload, err := s.auth.Parse(token)
+	guard, err := s.auth.Guard("user")
+	s.Nil(err)
+
+	payload, err := guard.Parse(token)
 	s.Nil(payload)
 	s.EqualError(err, errors.AuthTokenDisabled.Error())
 }
@@ -227,7 +330,10 @@ func (s *AuthTestSuite) TestParse_TokenInvalid() {
 	token := "1"
 	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
 
-	payload, err := s.auth.Parse(token)
+	guard, err := s.auth.Guard("user")
+	s.Nil(err)
+
+	payload, err := guard.Parse(token)
 	s.Nil(payload)
 	s.NotNil(err)
 }
@@ -240,14 +346,22 @@ func (s *AuthTestSuite) TestParse_TokenExpired() {
 	now := carbon.Now()
 	issuedAt := now.StdTime()
 	expireAt := now.AddMinutes(2).StdTime()
-	token, err := s.auth.LoginUsingID(1)
+
+	guard, err := s.auth.Guard("user")
 	s.Nil(err)
+
+	token, err := guard.LoginUsingID(1)
+	s.Nil(err)
+	s.NotEmpty(token)
 
 	carbon.SetTestNow(now.AddMinutes(2))
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
+	guardInfo, err := guard.(*JwtGuard).GetAuthToken()
+	s.Nil(err)
 
-	payload, err := s.auth.Parse(token)
+	s.mockCache.EXPECT().GetBool("jwt:disabled:"+guardInfo.Token, false).Return(false).Once()
+
+	payload, err := guard.Parse(guardInfo.Token)
 	s.Equal(&contractsauth.Payload{
 		Guard:    testUserGuard,
 		Key:      "1",
@@ -260,8 +374,17 @@ func (s *AuthTestSuite) TestParse_TokenExpired() {
 }
 
 func (s *AuthTestSuite) TestParse_InvalidCache() {
-	auth := NewAuth(testUserGuard, nil, s.mockConfig, s.mockContext, s.mockOrm)
-	payload, err := auth.Parse("1")
+	s.mockConfig.EXPECT().GetString("auth.defaults.guard").Return("user").Once()
+	s.mockConfig.EXPECT().GetString("auth.guards.user.driver").Return("jwt").Once()
+	s.mockConfig.EXPECT().GetString("auth.guards.user.provider").Return("user").Once()
+	s.mockConfig.EXPECT().GetString("auth.providers.user.driver").Return("orm").Once()
+	auth, err := NewAuth(nil, s.mockConfig, s.mockContext, s.mockOrm)
+	s.Nil(err)
+
+	guard, err := auth.Guard("user")
+	s.Nil(err)
+
+	payload, err := guard.Parse("1")
 	s.Nil(payload)
 	s.EqualError(err, errors.CacheSupportRequired.SetModule(errors.ModuleAuth).Error())
 }
@@ -270,20 +393,29 @@ func (s *AuthTestSuite) TestParse_Success() {
 	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Twice()
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(2).Once()
 
-	token, err := s.auth.LoginUsingID(1)
+	guard, err := s.auth.Guard("user")
 	s.Nil(err)
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
-
-	payload, err := s.auth.Parse(token)
-	now := carbon.Now()
-	s.Equal(&contractsauth.Payload{
-		Guard:    testUserGuard,
-		Key:      "1",
-		ExpireAt: jwt.NewNumericDate(now.AddMinutes(2).StdTime()).Local(),
-		IssuedAt: jwt.NewNumericDate(now.StdTime()).Local(),
-	}, payload)
+	token, err := guard.LoginUsingID(1)
 	s.Nil(err)
+	s.NotEmpty(token)
+
+	if guard, ok := guard.(*JwtGuard); ok {
+		guardInfo, err := guard.GetAuthToken()
+		s.Nil(err)
+
+		s.mockCache.EXPECT().GetBool("jwt:disabled:"+guardInfo.Token, false).Return(false).Once()
+
+		payload, err := guard.Parse(guardInfo.Token)
+		now := carbon.Now()
+		s.Equal(&contractsauth.Payload{
+			Guard:    testUserGuard,
+			Key:      "1",
+			ExpireAt: jwt.NewNumericDate(now.AddMinutes(2).StdTime()).Local(),
+			IssuedAt: jwt.NewNumericDate(now.StdTime()).Local(),
+		}, payload)
+		s.Nil(err)
+	}
 }
 
 func (s *AuthTestSuite) TestParse_SuccessWithPrefix() {
@@ -293,18 +425,27 @@ func (s *AuthTestSuite) TestParse_SuccessWithPrefix() {
 
 	token, err := s.auth.LoginUsingID(1)
 	s.Nil(err)
+	s.NotEmpty(token)
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
-
-	payload, err := s.auth.Parse("Bearer " + token)
-	now := carbon.Now()
-	s.Equal(&contractsauth.Payload{
-		Guard:    testUserGuard,
-		Key:      "1",
-		ExpireAt: jwt.NewNumericDate(now.AddMinutes(2).StdTime()).Local(),
-		IssuedAt: jwt.NewNumericDate(now.StdTime()).Local(),
-	}, payload)
+	guard, err := s.auth.Guard("user")
 	s.Nil(err)
+
+	if guard, ok := guard.(*JwtGuard); ok {
+		guardInfo, err := guard.GetAuthToken()
+		s.Nil(err)
+
+		s.mockCache.EXPECT().GetBool("jwt:disabled:"+guardInfo.Token, false).Return(false).Once()
+
+		payload, err := guard.Parse(guardInfo.Token)
+		now := carbon.Now()
+		s.Equal(&contractsauth.Payload{
+			Guard:    testUserGuard,
+			Key:      "1",
+			ExpireAt: jwt.NewNumericDate(now.AddMinutes(2).StdTime()).Local(),
+			IssuedAt: jwt.NewNumericDate(now.StdTime()).Local(),
+		}, payload)
+		s.Nil(err)
+	}
 
 	carbon.UnsetTestNow()
 }
@@ -316,8 +457,12 @@ func (s *AuthTestSuite) TestParse_ExpiredAndInvalid() {
 
 	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
 
-	_, err := s.auth.Parse(token)
+	guard, err := s.auth.Guard("user")
+	s.Nil(err)
+
+	payload, err := guard.Parse(token)
 	s.ErrorIs(err, errors.AuthInvalidToken)
+	s.Empty(payload)
 }
 
 func (s *AuthTestSuite) TestUser_NoParse() {
@@ -332,18 +477,37 @@ func (s *AuthTestSuite) TestID_NoParse() {
 	s.Empty(id)
 }
 
+func (s *AuthTestSuite) GetGuard(name string) *JwtGuard {
+	guard, err := s.auth.Guard(name)
+
+	if err != nil {
+		return nil
+	}
+
+	if guard, ok := guard.(*JwtGuard); ok {
+		return guard
+	}
+
+	return nil
+}
+
 func (s *AuthTestSuite) TestID_Success() {
 	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Twice()
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(2).Once()
 
-	// Log in to get a token
-	token, err := s.auth.LoginUsingID(1)
+	guard := s.GetGuard("user")
+	s.NotNil(guard)
+	token, err := guard.LoginUsingID(1)
+	s.Nil(err)
+	s.NotEmpty(token)
+
+	guardInfo, err := guard.GetAuthToken()
 	s.Nil(err)
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
+	s.mockCache.EXPECT().GetBool("jwt:disabled:"+guardInfo.Token, false).Return(false).Once()
 
 	// Parse the token
-	payload, err := s.auth.Parse(token)
+	payload, err := guard.Parse(guardInfo.Token)
 	s.Nil(err)
 	s.NotNil(payload)
 
@@ -356,22 +520,29 @@ func (s *AuthTestSuite) TestID_TokenExpired() {
 	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Twice()
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(2).Once()
 
+	guard := s.GetGuard("user")
+	s.NotNil(guard)
 	// Log in to get a token
-	token, err := s.auth.LoginUsingID(1)
+	token, err := guard.LoginUsingID(1)
+	s.NotEmpty(token)
+	s.Nil(err)
+
+	guardInfo, err := guard.GetAuthToken()
 	s.Nil(err)
 
 	// Set the token as expired
 	carbon.SetTestNow(carbon.Now().AddMinutes(3))
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
+	s.mockCache.EXPECT().GetBool("jwt:disabled:"+guardInfo.Token, false).Return(false).Once()
 
 	// Parse the token
-	_, err = s.auth.Parse(token)
+	_, err = guard.Parse(guardInfo.Token)
 	s.ErrorIs(err, errors.AuthTokenExpired)
 
 	// Now, call the ID method and expect it to return an empty value
-	id, _ := s.auth.ID()
+	id, err := s.auth.ID()
 	s.Empty(id)
+	s.ErrorIs(err, errors.AuthTokenExpired)
 
 	carbon.UnsetTestNow()
 }
@@ -383,8 +554,12 @@ func (s *AuthTestSuite) TestID_TokenInvalid() {
 	token := "invalidToken"
 	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
 
-	_, err := s.auth.Parse(token)
+	guard := s.GetGuard("user")
+	s.NotNil(guard)
+
+	payload, err := guard.Parse(token)
 	s.ErrorIs(err, errors.AuthInvalidToken)
+	s.Nil(payload)
 
 	id, _ := s.auth.ID()
 	s.Empty(id)
@@ -394,12 +569,19 @@ func (s *AuthTestSuite) TestUser_DBError() {
 	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Twice()
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(2).Once()
 
-	token, err := s.auth.LoginUsingID(1)
+	guard := s.GetGuard("user")
+	s.NotNil(guard)
+
+	token, err := guard.LoginUsingID(1)
+	s.Nil(err)
+	s.NotEmpty(token)
+
+	guradInfo, err := guard.GetAuthToken()
 	s.Nil(err)
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
+	s.mockCache.EXPECT().GetBool("jwt:disabled:"+guradInfo.Token, false).Return(false).Once()
 
-	payload, err := s.auth.Parse(token)
+	payload, err := guard.Parse(guradInfo.Token)
 	s.NotNil(payload)
 	s.Nil(err)
 
@@ -416,15 +598,21 @@ func (s *AuthTestSuite) TestUser_Expired() {
 	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Times(3)
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(2).Twice()
 
-	token, err := s.auth.LoginUsingID(1)
+	guard := s.GetGuard("user")
+	s.NotNil(guard)
+
+	token, err := guard.LoginUsingID(1)
+	s.Nil(err)
 	s.NotEmpty(token)
+
+	guardInfo, err := guard.GetAuthToken()
 	s.Nil(err)
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
+	s.mockCache.EXPECT().GetBool("jwt:disabled:"+guardInfo.Token, false).Return(false).Once()
 
 	carbon.SetTestNow(carbon.Now().AddMinutes(2))
 
-	payload, err := s.auth.Parse(token)
+	payload, err := guard.Parse(guardInfo.Token)
 	s.NotNil(payload)
 	s.ErrorIs(err, errors.AuthTokenExpired)
 
@@ -434,7 +622,7 @@ func (s *AuthTestSuite) TestUser_Expired() {
 
 	s.mockConfig.EXPECT().GetInt("jwt.refresh_ttl").Return(2).Once()
 
-	token, err = s.auth.Refresh()
+	token, err = s.GetGuard("user").Refresh()
 	s.NotEmpty(token)
 	s.Nil(err)
 
@@ -452,14 +640,20 @@ func (s *AuthTestSuite) TestUser_RefreshExpired() {
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(2).Once()
 
 	token, err := s.auth.LoginUsingID(1)
+	s.Nil(err)
 	s.NotEmpty(token)
+
+	guard := s.GetGuard("user")
+	s.NotNil(guard)
+
+	guardInfo, err := guard.GetAuthToken()
 	s.Nil(err)
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
+	s.mockCache.EXPECT().GetBool("jwt:disabled:"+guardInfo.Token, false).Return(false).Once()
 
 	carbon.SetTestNow(carbon.Now().AddMinutes(2))
 
-	payload, err := s.auth.Parse(token)
+	payload, err := guard.Parse(guardInfo.Token)
 	s.NotNil(payload)
 	s.ErrorIs(err, errors.AuthTokenExpired)
 
@@ -471,7 +665,7 @@ func (s *AuthTestSuite) TestUser_RefreshExpired() {
 
 	carbon.SetTestNow(carbon.Now().AddMinutes(2))
 
-	token, err = s.auth.Refresh()
+	token, err = guard.Refresh()
 	s.Empty(token)
 	s.EqualError(err, errors.AuthRefreshTimeExceeded.Error())
 
@@ -484,10 +678,17 @@ func (s *AuthTestSuite) TestUser_Success() {
 
 	token, err := s.auth.LoginUsingID(1)
 	s.Nil(err)
+	s.NotEmpty(token)
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
+	guard := s.GetGuard("user")
+	s.NotNil(guard)
 
-	payload, err := s.auth.Parse(token)
+	guardInfo, err := guard.GetAuthToken()
+	s.Nil(err)
+
+	s.mockCache.EXPECT().GetBool("jwt:disabled:"+guardInfo.Token, false).Return(false).Once()
+
+	payload, err := guard.Parse(guardInfo.Token)
 	s.NotNil(payload)
 	s.Nil(err)
 
@@ -495,36 +696,50 @@ func (s *AuthTestSuite) TestUser_Success() {
 	s.mockOrm.EXPECT().Query().Return(s.mockDB)
 	s.mockDB.EXPECT().FindOrFail(&user, clause.Eq{Column: clause.PrimaryColumn, Value: "1"}).Return(nil).Once()
 
-	err = s.auth.User(&user)
+	err = guard.User(&user)
 	s.Nil(err)
 }
 
 func (s *AuthTestSuite) TestUser_Success_MultipleParse() {
 	testAdminGuard := "admin"
 
-	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Twice()
-	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(2).Once()
+	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Times(4)
+	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(2)
+	s.mockConfig.EXPECT().Get("auth.guards.admin.ttl").Return(2)
 
-	token1, err := s.auth.LoginUsingID(1)
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.driver").Return("jwt").Once()
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.provider").Return("admin").Once()
+	s.mockConfig.EXPECT().GetString("auth.providers.admin.driver").Return("orm").Once()
+
+	guard := s.GetGuard(testUserGuard)
+	s.NotNil(guard)
+
+	token, err := guard.LoginUsingID(1)
+	s.Nil(err)
+	s.NotEmpty(token)
+
+	guard1Info, err := guard.GetAuthToken()
 	s.Nil(err)
 
-	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Twice()
-	s.mockConfig.EXPECT().Get("auth.guards.admin.ttl").Return(2).Once()
+	adminGuard := s.GetGuard(testAdminGuard)
+	token, err = adminGuard.LoginUsingID(2)
+	s.Nil(err)
+	s.NotEmpty(token)
 
-	token2, err := s.auth.Guard(testAdminGuard).LoginUsingID(2)
+	guard2Info, err := adminGuard.GetAuthToken()
 	s.Nil(err)
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token1, false).Return(false).Once()
+	s.mockCache.EXPECT().GetBool("jwt:disabled:"+guard1Info.Token, false).Return(false).Once()
 
-	payload, err := s.auth.Parse(token1)
+	payload, err := guard.Parse(guard1Info.Token)
 	s.Nil(err)
 	s.NotNil(payload)
 	s.Equal(testUserGuard, payload.Guard)
 	s.Equal("1", payload.Key)
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token2, false).Return(false).Once()
+	s.mockCache.EXPECT().GetBool("jwt:disabled:"+guard2Info.Token, false).Return(false).Once()
 
-	payload, err = s.auth.Guard(testAdminGuard).Parse(token2)
+	payload, err = adminGuard.Parse(guard2Info.Token)
 	s.Nil(err)
 	s.NotNil(payload)
 	s.Equal(testAdminGuard, payload.Guard)
@@ -534,19 +749,19 @@ func (s *AuthTestSuite) TestUser_Success_MultipleParse() {
 	s.mockOrm.EXPECT().Query().Return(s.mockDB)
 	s.mockDB.EXPECT().FindOrFail(&user1, clause.Eq{Column: clause.PrimaryColumn, Value: "1"}).Return(nil).Once()
 
-	err = s.auth.User(&user1)
+	err = guard.User(&user1)
 	s.Nil(err)
 
 	var user2 User
 	s.mockOrm.EXPECT().Query().Return(s.mockDB)
 	s.mockDB.EXPECT().FindOrFail(&user2, clause.Eq{Column: clause.PrimaryColumn, Value: "2"}).Return(nil).Once()
 
-	err = s.auth.Guard(testAdminGuard).User(&user2)
+	err = adminGuard.User(&user2)
 	s.Nil(err)
 }
 
 func (s *AuthTestSuite) TestRefresh_NotParse() {
-	token, err := s.auth.Refresh()
+	token, err := s.GetGuard("user").Refresh()
 	s.Empty(token)
 	s.EqualError(err, errors.AuthParseTokenFirst.Error())
 }
@@ -556,12 +771,18 @@ func (s *AuthTestSuite) TestRefresh_RefreshTimeExceeded() {
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(2).Once()
 
 	token, err := s.auth.LoginUsingID(2)
+	s.Nil(err)
+	s.NotEmpty(token)
 
+	guard := s.GetGuard("user")
+	s.NotNil(guard)
+
+	guradInfo, err := guard.GetAuthToken()
 	s.Nil(err)
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
+	s.mockCache.EXPECT().GetBool("jwt:disabled:"+guradInfo.Token, false).Return(false).Once()
 
-	payload, err := s.auth.Parse(token)
+	payload, err := guard.Parse(guradInfo.Token)
 	s.NotNil(payload)
 	s.Nil(err)
 
@@ -569,7 +790,7 @@ func (s *AuthTestSuite) TestRefresh_RefreshTimeExceeded() {
 
 	carbon.SetTestNow(carbon.Now().AddMinutes(4))
 
-	token, err = s.auth.Refresh()
+	token, err = guard.Refresh()
 	s.Empty(token)
 	s.EqualError(err, errors.AuthRefreshTimeExceeded.Error())
 
@@ -582,10 +803,17 @@ func (s *AuthTestSuite) TestRefresh_Success() {
 
 	token, err := s.auth.LoginUsingID(1)
 	s.Nil(err)
+	s.NotEmpty(token)
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
+	guard := s.GetGuard("user")
+	s.NotNil(guard)
 
-	payload, err := s.auth.Parse(token)
+	guradInfo, err := guard.GetAuthToken()
+	s.Nil(err)
+
+	s.mockCache.EXPECT().GetBool("jwt:disabled:"+guradInfo.Token, false).Return(false).Once()
+
+	payload, err := guard.Parse(guradInfo.Token)
 	s.NotNil(payload)
 	s.Nil(err)
 
@@ -594,7 +822,7 @@ func (s *AuthTestSuite) TestRefresh_Success() {
 
 	carbon.SetTestNow(carbon.Now().AddMinutes(2))
 
-	token, err = s.auth.Refresh()
+	token, err = guard.Refresh()
 	s.NotEmpty(token)
 	s.Nil(err)
 
@@ -603,7 +831,7 @@ func (s *AuthTestSuite) TestRefresh_Success() {
 
 	carbon.SetTestNow(carbon.Now().AddMinutes(2))
 
-	token, err = s.auth.Refresh()
+	token, err = guard.Refresh()
 	s.NotEmpty(token)
 	s.Nil(err)
 
@@ -611,18 +839,28 @@ func (s *AuthTestSuite) TestRefresh_Success() {
 }
 
 func (s *AuthTestSuite) TestLogout_CacheUnsupported() {
-	s.auth = NewAuth(testUserGuard, nil, s.mockConfig, s.mockContext, s.mockOrm)
+	s.mockConfig.EXPECT().GetString("auth.defaults.guard").Return("user").Once()
+	s.mockConfig.EXPECT().GetString("auth.guards.user.driver").Return("jwt").Once()
+	s.mockConfig.EXPECT().GetString("auth.guards.user.provider").Return("user").Once()
+	s.mockConfig.EXPECT().GetString("auth.providers.user.driver").Return("orm").Once()
+	if auth, err := NewAuth(nil, s.mockConfig, s.mockContext, s.mockOrm); err == nil {
+		s.auth = auth
+	}
 	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Once()
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(2).Once()
 
 	token, err := s.auth.LoginUsingID(1)
-	s.NotEmpty(token)
 	s.Nil(err)
+	s.NotEmpty(token)
 	s.EqualError(s.auth.Logout(), errors.CacheSupportRequired.SetModule(errors.ModuleAuth).Error())
 }
 
 func (s *AuthTestSuite) TestLogout_NotParse() {
-	s.Nil(s.auth.Logout())
+	s.EqualError(s.auth.Logout(), errors.AuthParseTokenFirst.Error())
+	s.mockContext.WithValue(ctxKey, Guards{"user": nil})
+	s.EqualError(s.auth.Logout(), errors.AuthParseTokenFirst.Error())
+	s.mockContext.WithValue(ctxKey, Guards{"user": &AuthToken{}})
+	s.EqualError(s.auth.Logout(), errors.AuthParseTokenFirst.Error())
 }
 
 func (s *AuthTestSuite) TestLogout_SetDisabledCacheError() {
@@ -631,10 +869,17 @@ func (s *AuthTestSuite) TestLogout_SetDisabledCacheError() {
 
 	token, err := s.auth.LoginUsingID(1)
 	s.Nil(err)
+	s.NotEmpty(token)
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
+	guard := s.GetGuard("user")
+	s.NotNil(guard)
 
-	payload, err := s.auth.Parse(token)
+	guardInfo, err := guard.GetAuthToken()
+	s.Nil(err)
+
+	s.mockCache.EXPECT().GetBool("jwt:disabled:"+guardInfo.Token, false).Return(false).Once()
+
+	payload, err := guard.Parse(guardInfo.Token)
 	s.NotNil(payload)
 	s.Nil(err)
 
@@ -648,12 +893,18 @@ func (s *AuthTestSuite) TestLogout_Success() {
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(2).Twice()
 
 	token, err := s.auth.LoginUsingID(1)
+	s.Nil(err)
 	s.NotEmpty(token)
+
+	guard := s.GetGuard("user")
+	s.NotNil(guard)
+
+	guardInfo, err := guard.GetAuthToken()
 	s.Nil(err)
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
+	s.mockCache.EXPECT().GetBool("jwt:disabled:"+guardInfo.Token, false).Return(false).Once()
 
-	payload, err := s.auth.Parse(token)
+	payload, err := guard.Parse(guardInfo.Token)
 	s.NotNil(payload)
 	s.Nil(err)
 
@@ -667,12 +918,18 @@ func (s *AuthTestSuite) TestLogout_Success_TTL_Is_0() {
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(0).Twice()
 
 	token, err := s.auth.LoginUsingID(1)
+	s.Nil(err)
 	s.NotEmpty(token)
+
+	guard := s.GetGuard("user")
+	s.NotNil(guard)
+
+	guardInfo, err := guard.GetAuthToken()
 	s.Nil(err)
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
+	s.mockCache.EXPECT().GetBool("jwt:disabled:"+guardInfo.Token, false).Return(false).Once()
 
-	payload, err := s.auth.Parse(token)
+	payload, err := guard.Parse(guardInfo.Token)
 	s.NotNil(payload)
 	s.Nil(err)
 
@@ -686,12 +943,18 @@ func (s *AuthTestSuite) TestLogout_Error_TTL_Is_0() {
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(0).Twice()
 
 	token, err := s.auth.LoginUsingID(1)
+	s.Nil(err)
 	s.NotEmpty(token)
+
+	guard := s.GetGuard("user")
+	s.NotNil(guard)
+
+	guardInfo, err := guard.GetAuthToken()
 	s.Nil(err)
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
+	s.mockCache.EXPECT().GetBool("jwt:disabled:"+guardInfo.Token, false).Return(false).Once()
 
-	payload, err := s.auth.Parse(token)
+	payload, err := guard.Parse(guardInfo.Token)
 	s.NotNil(payload)
 	s.Nil(err)
 
@@ -703,16 +966,20 @@ func (s *AuthTestSuite) TestLogout_Error_TTL_Is_0() {
 func (s *AuthTestSuite) TestMakeAuthContext() {
 	testAdminGuard := "admin"
 
-	s.auth.makeAuthContext(nil, "1")
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.driver").Return("jwt").Once()
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.provider").Return("admin").Once()
+	s.mockConfig.EXPECT().GetString("auth.providers.admin.driver").Return("orm").Once()
+
+	s.GetGuard("user").makeAuthContext(nil, "1")
 	guards, ok := s.auth.ctx.Value(ctxKey).(Guards)
 	s.True(ok)
-	s.Equal(&Guard{nil, "1"}, guards[testUserGuard])
+	s.Equal(&AuthToken{nil, "1"}, guards[testUserGuard])
 
-	s.auth.Guard(testAdminGuard).(*Auth).makeAuthContext(nil, "2")
+	s.GetGuard(testAdminGuard).makeAuthContext(nil, "2")
 	guards, ok = s.auth.ctx.Value(ctxKey).(Guards)
 	s.True(ok)
-	s.Equal(&Guard{nil, "1"}, guards[testUserGuard])
-	s.Equal(&Guard{nil, "2"}, guards[testAdminGuard])
+	s.Equal(&AuthToken{nil, "1"}, guards[testUserGuard])
+	s.Equal(&AuthToken{nil, "2"}, guards[testAdminGuard])
 }
 
 func (s *AuthTestSuite) TestGetTtl() {
@@ -756,7 +1023,7 @@ func (s *AuthTestSuite) TestGetTtl() {
 	for _, test := range tests {
 		s.Run(test.name, func() {
 			test.setup()
-			ttl := s.auth.getTtl()
+			ttl := s.GetGuard("user").getTtl()
 			s.Equal(test.expected, ttl)
 		})
 	}
