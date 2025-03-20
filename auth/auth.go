@@ -67,7 +67,13 @@ func (r *Auth) createUserProvider(name string) (contractsauth.UserProvider, erro
 	driverName := r.config.GetString(fmt.Sprintf("auth.providers.%s.driver", name))
 
 	if providerFunc, ok := r.customProviders[driverName]; ok {
-		return providerFunc(r)
+		provider, err := providerFunc(r)
+		if err != nil {
+			return nil, err
+		}
+
+		r.providers[driverName] = provider
+		return provider, nil
 	}
 
 	switch driverName {

@@ -41,7 +41,7 @@ func (s *AuthTestSuite) TestAuth_ExtendGuard() {
 func (s *AuthTestSuite) TestAuth_ExtendProvider() {
 	user := User{}
 	mockProvider := mocksauth.NewUserProvider(s.T())
-	mockProvider.EXPECT().RetriveByID(&user, "1").Return(nil).Run(func(user, id interface{}) {
+	mockProvider.EXPECT().RetriveByID(&user, "1").Return(nil).Run(func(user, id any) {
 		if user, ok := user.(*User); ok {
 			user.Name = "MockUser"
 			user.ID = 1

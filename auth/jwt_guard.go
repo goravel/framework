@@ -210,10 +210,6 @@ func (r *JwtGuard) Refresh() (token string, err error) {
 		return "", errors.AuthParseTokenFirst
 	}
 
-	if err != nil {
-		return "", err
-	}
-
 	nowTime := carbon.Now()
 	refreshTtl := r.config.GetInt("jwt.refresh_ttl")
 	if refreshTtl == 0 {
