@@ -404,7 +404,7 @@ type Book struct {
 type Author struct {
 	Model
 	BookID uint
-	Name   string
+	Name   string `db:"name"`
 }
 
 func (r *Author) Factory() factory.Factory {
