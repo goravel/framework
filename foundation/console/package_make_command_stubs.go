@@ -123,54 +123,36 @@ func DummyCamelName() contracts.DummyCamelName {
 	return content
 }
 
-func (r PackageMakeCommandStubs) Manager() string {
+func (r PackageMakeCommandStubs) Setup() string {
 	content := `package main
 
 import (
 	"os"
-	"path"
 	"path/filepath"
 	"runtime/debug"
-    "strings"
+	"strings"
 
 	pkgcontracts "github.com/goravel/framework/contracts/packages"
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/support/path"
 )
-
-var (
-	module string
-	dir    string
-	force  bool
-)
-
-func init() {
-	for i, arg := range os.Args {
-		if arg == "--force" || arg == "-f" {
-			force = true
-		}
-
-		if (arg == "--dir" || arg == "-d") && len(os.Args) > i+1 {
-			dir = os.Args[i+1]
-		}
-	}
-
-	if info, ok := debug.ReadBuildInfo(); ok && strings.HasSuffix(info.Path, "manager") {
-		module = path.Dir(info.Path)
-	}
-
-	if dir == "" {
-		dir, _ = os.Getwd()
-	}
-}
 
 func main() {
-	var pkg = packages.Manager{
-		ContinueOnError: force,
+	info, ok := debug.ReadBuildInfo()
+	if !ok || !strings.HasSuffix(info.Path, "setup") {
+		color.Errorln("Package module name is empty, please run command with module name.")
+		return
+	}
+	module := filepath.Dir(info.Path)
+	force := len(os.Args) == 3 && (os.Args[2] == "--force" || os.Args[2] == "-f")
+
+	var pkg = &packages.Setup{
+		Force: force,
 		Module:          module,
 		OnInstall: []pkgcontracts.FileModifier{
 			packages.ModifyGoFile{
-				File: filepath.Join("config", "app.go"),
+				File: path.Config("app.go"),
 				Modifiers: []pkgcontracts.GoNodeModifier{
 					packages.AddImportSpec(module),
 					packages.AddProviderSpec(
@@ -181,7 +163,7 @@ func main() {
 		},
 		OnUninstall: []pkgcontracts.FileModifier{
 			packages.ModifyGoFile{
-				File: filepath.Join("config", "app.go"),
+				File: path.Config("app.go"),
 				Modifiers: []pkgcontracts.GoNodeModifier{
 					packages.RemoveImportSpec(module),
 					packages.RemoveProviderSpec("&DummyName.ServiceProvider{}"),
@@ -190,30 +172,29 @@ func main() {
 		},
 	}
 
-    if module == "" {
-		color.Errorln("Package module name is empty, please run command with module name.")
-		return
-	}
-
-	if len(os.Args) > 1 && os.Args[1] == "install" {
-		err := pkg.Install(dir)
-		if err != nil {
-			color.Errorln(err)
-			return
-		}
-		color.Successf("Package %s installed successfully\n", module)
-	}
-
-	if len(os.Args) > 1 && os.Args[1] == "uninstall" {
-		err := pkg.Uninstall(dir)
-		if err != nil {
-			color.Errorln(err)
-			return
-		}
-		color.Successf("Package %s uninstalled successfully\n", module)
+	if len(os.Args) > 1 {
+		execute(pkg, os.Args[1])
 	}
 }
 
+func execute(pkg pkgcontracts.Setup, command string) {
+	var err error
+	switch command {
+	case "install":
+		err = pkg.Install()
+	case "uninstall":
+		err = pkg.Uninstall()
+	default:
+		return
+	}
+
+	if err != nil {
+		color.Errorln(err)
+		os.Exit(1)
+	}
+
+	color.Successf("Package %sed successfully\n", command)
+}
 `
 	content = strings.ReplaceAll(content, "DummyName", r.name)
 

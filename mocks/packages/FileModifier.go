@@ -17,17 +17,17 @@ func (_m *FileModifier) EXPECT() *FileModifier_Expecter {
 	return &FileModifier_Expecter{mock: &_m.Mock}
 }
 
-// Apply provides a mock function with given fields: dir
-func (_m *FileModifier) Apply(dir string) error {
-	ret := _m.Called(dir)
+// Apply provides a mock function with no fields
+func (_m *FileModifier) Apply() error {
+	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Apply")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string) error); ok {
-		r0 = rf(dir)
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -41,14 +41,13 @@ type FileModifier_Apply_Call struct {
 }
 
 // Apply is a helper method to define mock.On call
-//   - dir string
-func (_e *FileModifier_Expecter) Apply(dir interface{}) *FileModifier_Apply_Call {
-	return &FileModifier_Apply_Call{Call: _e.mock.On("Apply", dir)}
+func (_e *FileModifier_Expecter) Apply() *FileModifier_Apply_Call {
+	return &FileModifier_Apply_Call{Call: _e.mock.On("Apply")}
 }
 
-func (_c *FileModifier_Apply_Call) Run(run func(dir string)) *FileModifier_Apply_Call {
+func (_c *FileModifier_Apply_Call) Run(run func()) *FileModifier_Apply_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		run()
 	})
 	return _c
 }
@@ -58,7 +57,7 @@ func (_c *FileModifier_Apply_Call) Return(_a0 error) *FileModifier_Apply_Call {
 	return _c
 }
 
-func (_c *FileModifier_Apply_Call) RunAndReturn(run func(string) error) *FileModifier_Apply_Call {
+func (_c *FileModifier_Apply_Call) RunAndReturn(run func() error) *FileModifier_Apply_Call {
 	_c.Call.Return(run)
 	return _c
 }

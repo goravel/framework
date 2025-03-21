@@ -66,9 +66,9 @@ func AddConfigSpec(path, name, statement string) packages.GoNodeModifier {
 
 // AddImportSpec adds an import statement to the file.
 func AddImportSpec(path string, name ...string) packages.GoNodeModifier {
-	matcher := MatchLastOf(MatchTypeOf(&dst.ImportSpec{}))
-	if isThirdParty(path) {
-		matcher = MatchTypeOf(&dst.ImportSpec{})
+	matcher := MatchTypeOf(&dst.ImportSpec{})
+	if !isThirdParty(path) {
+		matcher = MatchLastOf(matcher)
 	}
 
 	return ModifyGoNode{

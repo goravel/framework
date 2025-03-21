@@ -47,11 +47,10 @@ func TestHelperTestSuite(t *testing.T) {
 }
 
 func (s *HelperTestSuite) TestHelper() {
-	cases := []struct {
+	tests := []struct {
 		name      string
 		modifiers []packages.GoNodeModifier
-
-		assert func(filename string)
+		assert    func(filename string)
 	}{
 		{
 			name: "AddConfigSpec(not exist)",
@@ -59,7 +58,18 @@ func (s *HelperTestSuite) TestHelper() {
 				AddConfigSpec("app", "key", `"value"`),
 			},
 			assert: func(content string) {
-				s.Contains(content, `"key": "value",`)
+				s.Contains(content, `func init() {
+	config := facades.Config()
+	config.Add("app", map[string]any{
+		"name":  config.Env("APP_NAME", "Goravel"),
+		"exist": map[string]any{},
+		"providers": []foundation.ServiceProvider{
+			&auth.AuthServiceProvider{},
+			&crypt.ServiceProvider{},
+		},
+		"key": "value",
+	})
+}`)
 			},
 		},
 		{
@@ -77,7 +87,19 @@ func (s *HelperTestSuite) TestHelper() {
 				AddConfigSpec("app.exist", "key", `"value"`),
 			},
 			assert: func(content string) {
-				s.Contains(content, `"key": "value"`)
+				s.Contains(content, `func init() {
+	config := facades.Config()
+	config.Add("app", map[string]any{
+		"name": config.Env("APP_NAME", "Goravel"),
+		"exist": map[string]any{
+			"key": "value",
+		},
+		"providers": []foundation.ServiceProvider{
+			&auth.AuthServiceProvider{},
+			&crypt.ServiceProvider{},
+		},
+	})
+}`)
 			},
 		},
 		{
@@ -164,19 +186,18 @@ func (s *HelperTestSuite) TestHelper() {
 		},
 	}
 
-	for _, tc := range cases {
-		s.Run(tc.name, func() {
-			dir := s.T().TempDir()
-			filename := "test.go"
-			s.Require().NoError(file.PutContent(filepath.Join(dir, filename), s.content))
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			sourceFile := filepath.Join(s.T().TempDir(), "test.go")
+			s.Require().NoError(file.PutContent(sourceFile, s.content))
 			mg := ModifyGoFile{
-				File:      filename,
-				Modifiers: tc.modifiers,
+				File:      sourceFile,
+				Modifiers: tt.modifiers,
 			}
-			s.Require().NoError(mg.Apply(dir))
-			content, err := file.GetContent(filepath.Join(dir, filename))
+			s.Require().NoError(mg.Apply())
+			content, err := file.GetContent(sourceFile)
 			s.Require().NoError(err)
-			tc.assert(content)
+			tt.assert(content)
 		})
 	}
 }

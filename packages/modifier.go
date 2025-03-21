@@ -3,7 +3,6 @@ package packages
 import (
 	"bytes"
 	"fmt"
-	"path/filepath"
 
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
@@ -22,9 +21,8 @@ type ModifyGoNode struct {
 	Matchers []packages.GoNodeMatcher
 }
 
-func (g ModifyGoFile) Apply(dir string) error {
-	fp := filepath.Join(dir, g.File)
-	source, err := file.GetContent(fp)
+func (r ModifyGoFile) Apply() error {
+	source, err := file.GetContent(r.File)
 	if err != nil {
 		return err
 	}
@@ -34,9 +32,9 @@ func (g ModifyGoFile) Apply(dir string) error {
 		return err
 	}
 
-	for i := range g.Modifiers {
-		if err = g.Modifiers[i].Apply(df); err != nil {
-			return fmt.Errorf("error modifying file %s: %v", g.File, err)
+	for i := range r.Modifiers {
+		if err = r.Modifiers[i].Apply(df); err != nil {
+			return fmt.Errorf("error modifying file %s: %v", r.File, err)
 		}
 	}
 
@@ -46,7 +44,7 @@ func (g ModifyGoFile) Apply(dir string) error {
 		return err
 	}
 
-	return file.PutContent(fp, buf.String())
+	return file.PutContent(r.File, buf.String())
 }
 
 func (g ModifyGoNode) Apply(node dst.Node) (err error) {
