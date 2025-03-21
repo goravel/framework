@@ -81,6 +81,8 @@ func (r *ToSql) Update(column any, value ...any) string {
 }
 
 func (r *ToSql) generate(builder db.CommonBuilder, sql string, args []any, err error) string {
+	defer queryPool.Put(r.query)
+
 	if err != nil {
 		r.query.logger.Errorf(r.query.ctx, errors.DatabaseFailedToGetSql.Args(err).Error())
 
