@@ -123,95 +123,35 @@ func DummyCamelName() contracts.DummyCamelName {
 	return content
 }
 
-func (r PackageMakeCommandStubs) Manager() string {
+func (r PackageMakeCommandStubs) Setup() string {
 	content := `package main
 
 import (
 	"os"
-	"path"
-	"path/filepath"
-	"runtime/debug"
-    "strings"
 
-	pkgcontracts "github.com/goravel/framework/contracts/packages"
+	contractspackages "github.com/goravel/framework/contracts/packages"
 	"github.com/goravel/framework/packages"
-	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/support/path"
 )
-
-var (
-	module string
-	dir    string
-	force  bool
-)
-
-func init() {
-	for i, arg := range os.Args {
-		if arg == "--force" || arg == "-f" {
-			force = true
-		}
-
-		if (arg == "--dir" || arg == "-d") && len(os.Args) > i+1 {
-			dir = os.Args[i+1]
-		}
-	}
-
-	if info, ok := debug.ReadBuildInfo(); ok && strings.HasSuffix(info.Path, "manager") {
-		module = path.Dir(info.Path)
-	}
-
-	if dir == "" {
-		dir, _ = os.Getwd()
-	}
-}
 
 func main() {
-	var pkg = packages.Manager{
-		ContinueOnError: force,
-		Module:          module,
-		OnInstall: []pkgcontracts.FileModifier{
-			packages.ModifyGoFile{
-				File: filepath.Join("config", "app.go"),
-				Modifiers: []pkgcontracts.GoNodeModifier{
-					packages.AddImportSpec(module),
-					packages.AddProviderSpec(
-						"&DummyName.ServiceProvider{}",
-					),
-				},
-			},
+	setup := packages.Setup(os.Args)
+	setup.Install(packages.ModifyGoFile{
+		File: path.Config("app.go"),
+		Modifiers: []contractspackages.GoNodeModifier{
+			packages.AddImportSpec(setup.Module),
+			packages.AddProviderSpec("&DummyName.ServiceProvider{}"),
 		},
-		OnUninstall: []pkgcontracts.FileModifier{
-			packages.ModifyGoFile{
-				File: filepath.Join("config", "app.go"),
-				Modifiers: []pkgcontracts.GoNodeModifier{
-					packages.RemoveImportSpec(module),
-					packages.RemoveProviderSpec("&DummyName.ServiceProvider{}"),
-				},
-			},
+	})
+	setup.Uninstall(packages.ModifyGoFile{
+		File: path.Config("app.go"),
+		Modifiers: []contractspackages.GoNodeModifier{
+			packages.RemoveImportSpec(setup.Module),
+			packages.RemoveProviderSpec("&DummyName.ServiceProvider{}"),
 		},
-	}
+	})
 
-    if module == "" {
-		color.Errorln("Package module name is empty, please run command with module name.")
-		return
-	}
-
-	if len(os.Args) > 1 && os.Args[1] == "install" {
-		err := pkg.Install(dir)
-		if err != nil {
-			color.Errorln(err)
-			return
-		}
-		color.Successf("Package %s installed successfully\n", module)
-	}
-
-	if len(os.Args) > 1 && os.Args[1] == "uninstall" {
-		err := pkg.Uninstall(dir)
-		if err != nil {
-			color.Errorln(err)
-			return
-		}
-		color.Successf("Package %s uninstalled successfully\n", module)
-	}
+	setup.Execute()
 }
 
 `

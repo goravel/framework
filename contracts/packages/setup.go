@@ -6,12 +6,13 @@ import (
 )
 
 type FileModifier interface {
-	Apply(dir string) error
+	Apply() error
 }
 
-type Manager interface {
-	Install(dir string) error
-	Uninstall(dir string) error
+type Setup interface {
+	Install(modifiers ...FileModifier)
+	Uninstall(modifiers ...FileModifier)
+	Execute()
 }
 
 type GoNodeMatcher interface {

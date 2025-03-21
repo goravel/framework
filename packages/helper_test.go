@@ -47,11 +47,10 @@ func TestHelperTestSuite(t *testing.T) {
 }
 
 func (s *HelperTestSuite) TestHelper() {
-	cases := []struct {
+	tests := []struct {
 		name      string
 		modifiers []packages.GoNodeModifier
-
-		assert func(filename string)
+		assert    func(filename string)
 	}{
 		{
 			name: "AddConfigSpec(not exist)",
@@ -59,7 +58,18 @@ func (s *HelperTestSuite) TestHelper() {
 				AddConfigSpec("app", "key", `"value"`),
 			},
 			assert: func(content string) {
-				s.Contains(content, `"key": "value",`)
+				s.Contains(content, `func init() {
+	config := facades.Config()
+	config.Add("app", map[string]any{
+		"name":  config.Env("APP_NAME", "Goravel"),
+		"exist": map[string]any{},
+		"providers": []foundation.ServiceProvider{
+			&auth.AuthServiceProvider{},
+			&crypt.ServiceProvider{},
+		},
+		"key": "value",
+	})
+}`)
 			},
 		},
 		{
@@ -77,7 +87,19 @@ func (s *HelperTestSuite) TestHelper() {
 				AddConfigSpec("app.exist", "key", `"value"`),
 			},
 			assert: func(content string) {
-				s.Contains(content, `"key": "value"`)
+				s.Contains(content, `func init() {
+	config := facades.Config()
+	config.Add("app", map[string]any{
+		"name": config.Env("APP_NAME", "Goravel"),
+		"exist": map[string]any{
+			"key": "value",
+		},
+		"providers": []foundation.ServiceProvider{
+			&auth.AuthServiceProvider{},
+			&crypt.ServiceProvider{},
+		},
+	})
+}`)
 			},
 		},
 		{
@@ -86,7 +108,13 @@ func (s *HelperTestSuite) TestHelper() {
 				AddImportSpec("github.com/goravel/test", "t"),
 			},
 			assert: func(content string) {
-				s.Contains(content, `t "github.com/goravel/test"`)
+				s.Contains(content, `import (
+	"github.com/goravel/framework/auth"
+	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/crypt"
+	"github.com/goravel/framework/facades"
+	t "github.com/goravel/test"
+)`)
 			},
 		},
 		{
@@ -95,7 +123,18 @@ func (s *HelperTestSuite) TestHelper() {
 				AddProviderSpec("&test.ServiceProvider{}"),
 			},
 			assert: func(content string) {
-				s.Contains(content, "&crypt.ServiceProvider{},\n\t\t\t&test.ServiceProvider{}")
+				s.Contains(content, `func init() {
+	config := facades.Config()
+	config.Add("app", map[string]any{
+		"name":  config.Env("APP_NAME", "Goravel"),
+		"exist": map[string]any{},
+		"providers": []foundation.ServiceProvider{
+			&auth.AuthServiceProvider{},
+			&crypt.ServiceProvider{},
+			&test.ServiceProvider{},
+		},
+	})
+}`)
 			},
 		},
 		{
@@ -104,7 +143,17 @@ func (s *HelperTestSuite) TestHelper() {
 				AddProviderSpec("&crypt.ServiceProvider{}"),
 			},
 			assert: func(content string) {
-				s.Contains(content, "&crypt.ServiceProvider{}")
+				s.Contains(content, `func init() {
+	config := facades.Config()
+	config.Add("app", map[string]any{
+		"name":  config.Env("APP_NAME", "Goravel"),
+		"exist": map[string]any{},
+		"providers": []foundation.ServiceProvider{
+			&auth.AuthServiceProvider{},
+			&crypt.ServiceProvider{},
+		},
+	})
+}`)
 			},
 		},
 		{
@@ -113,7 +162,18 @@ func (s *HelperTestSuite) TestHelper() {
 				AddProviderSpecAfter("&test.ServiceProvider{}", "&auth.AuthServiceProvider{}"),
 			},
 			assert: func(content string) {
-				s.Contains(content, "&auth.AuthServiceProvider{},\n\t\t\t&test.ServiceProvider{}")
+				s.Contains(content, `func init() {
+	config := facades.Config()
+	config.Add("app", map[string]any{
+		"name":  config.Env("APP_NAME", "Goravel"),
+		"exist": map[string]any{},
+		"providers": []foundation.ServiceProvider{
+			&auth.AuthServiceProvider{},
+			&test.ServiceProvider{},
+			&crypt.ServiceProvider{},
+		},
+	})
+}`)
 			},
 		},
 		{
@@ -122,7 +182,18 @@ func (s *HelperTestSuite) TestHelper() {
 				AddProviderSpecBefore("&test.ServiceProvider{}", "&auth.AuthServiceProvider{}"),
 			},
 			assert: func(content string) {
-				s.Contains(content, "&test.ServiceProvider{},\n\t\t\t&auth.AuthServiceProvider{}")
+				s.Contains(content, `func init() {
+	config := facades.Config()
+	config.Add("app", map[string]any{
+		"name":  config.Env("APP_NAME", "Goravel"),
+		"exist": map[string]any{},
+		"providers": []foundation.ServiceProvider{
+			&test.ServiceProvider{},
+			&auth.AuthServiceProvider{},
+			&crypt.ServiceProvider{},
+		},
+	})
+}`)
 			},
 		},
 		{
@@ -164,19 +235,18 @@ func (s *HelperTestSuite) TestHelper() {
 		},
 	}
 
-	for _, tc := range cases {
-		s.Run(tc.name, func() {
-			dir := s.T().TempDir()
-			filename := "test.go"
-			s.Require().NoError(file.PutContent(filepath.Join(dir, filename), s.content))
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			sourceFile := filepath.Join(s.T().TempDir(), "test.go")
+			s.Require().NoError(file.PutContent(sourceFile, s.content))
 			mg := ModifyGoFile{
-				File:      filename,
-				Modifiers: tc.modifiers,
+				File:      sourceFile,
+				Modifiers: tt.modifiers,
 			}
-			s.Require().NoError(mg.Apply(dir))
-			content, err := file.GetContent(filepath.Join(dir, filename))
+			s.Require().NoError(mg.Apply())
+			content, err := file.GetContent(sourceFile)
 			s.Require().NoError(err)
-			tc.assert(content)
+			tt.assert(content)
 		})
 	}
 }

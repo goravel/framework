@@ -18,16 +18,16 @@ type (
 	MatchGoNodes []packages.GoNodeMatcher
 )
 
-func (gn MatchGoNode) MatchCursor(cursor *dstutil.Cursor) bool {
-	if gn.first || gn.last {
-		if gn.MatchNode(cursor.Node()) {
+func (r MatchGoNode) MatchCursor(cursor *dstutil.Cursor) bool {
+	if r.first || r.last {
+		if r.MatchNode(cursor.Node()) {
 			pr := reflect.Indirect(reflect.ValueOf(cursor.Parent())).FieldByName(cursor.Name())
 			if pr.Kind() == reflect.Slice || pr.Kind() == reflect.Array {
-				if gn.first {
+				if r.first {
 					return cursor.Index() == 0
 				}
 
-				if gn.last {
+				if r.last {
 					return cursor.Index() == pr.Len()-1
 				}
 			}
@@ -36,25 +36,25 @@ func (gn MatchGoNode) MatchCursor(cursor *dstutil.Cursor) bool {
 		return false
 	}
 
-	return gn.MatchNode(cursor.Node())
+	return r.MatchNode(cursor.Node())
 }
 
-func (gn MatchGoNode) MatchNode(node dst.Node) bool {
-	return gn.match(node)
+func (r MatchGoNode) MatchNode(node dst.Node) bool {
+	return r.match(node)
 }
 
-func (gns MatchGoNodes) MatchNodes(nodes []dst.Node) bool {
-	if len(gns) == 0 {
+func (r MatchGoNodes) MatchNodes(nodes []dst.Node) bool {
+	if len(r) == 0 {
 		return true
 	}
 
-	if len(nodes) != len(gns) {
+	if len(nodes) != len(r) {
 		return false
 	}
 
 	for i := range nodes {
-		if len(gns) > i {
-			if !gns[i].MatchNode(nodes[i]) {
+		if len(r) > i {
+			if !r[i].MatchNode(nodes[i]) {
 				return false
 			}
 		}

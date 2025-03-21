@@ -16,13 +16,11 @@ import (
 
 type ModifyGoFileTestSuite struct {
 	suite.Suite
-	dir  string
 	file string
 }
 
 func (s *ModifyGoFileTestSuite) SetupTest() {
-	s.dir = s.T().TempDir()
-	s.file = "test.go"
+	s.file = filepath.Join(s.T().TempDir(), "test.go")
 }
 
 func (s *ModifyGoFileTestSuite) TearDownTest() {}
@@ -32,7 +30,7 @@ func TestModifyGoFileTestSuite(t *testing.T) {
 }
 
 func (s *ModifyGoFileTestSuite) TestModifyGoFile() {
-	cases := []struct {
+	tests := []struct {
 		name   string
 		setup  func(g *ModifyGoFile)
 		assert func(err error)
@@ -50,7 +48,7 @@ func (s *ModifyGoFileTestSuite) TestModifyGoFile() {
 			name: "parse file failed",
 			setup: func(g *ModifyGoFile) {
 				g.File = s.file
-				s.NoError(file.PutContent(filepath.Join(s.dir, s.file), "package main \n invalid go code"))
+				s.NoError(file.PutContent(s.file, "package main \n invalid go code"))
 			},
 			assert: func(err error) {
 				s.Error(err)
@@ -66,7 +64,7 @@ func main() {
 	fmt.Println("Hello, test!")
 }
 `
-				s.NoError(file.PutContent(filepath.Join(s.dir, s.file), src))
+				s.NoError(file.PutContent(s.file, src))
 				g.Modifiers = []packages.GoNodeModifier{
 					&ModifyGoNode{
 						Action: func(_ *dstutil.Cursor) {
@@ -92,7 +90,7 @@ func main() {
 	fmt.Println("Hello, test!")
 }
 `
-				s.NoError(file.PutContent(filepath.Join(s.dir, s.file), src))
+				s.NoError(file.PutContent(s.file, src))
 				g.Modifiers = []packages.GoNodeModifier{
 					&ModifyGoNode{
 						Action: func(cursor *dstutil.Cursor) {
@@ -109,17 +107,17 @@ func main() {
 			},
 			assert: func(err error) {
 				s.NoError(err)
-				content, err := file.GetContent(filepath.Join(s.dir, s.file))
+				content, err := file.GetContent(s.file)
 				s.NoError(err)
 				s.Contains(content, `fmt.Println("Hello, test!!!")`)
 			},
 		},
 	}
-	for _, tc := range cases {
-		s.Run(tc.name, func() {
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
 			g := &ModifyGoFile{}
-			tc.setup(g)
-			tc.assert(g.Apply(s.dir))
+			tt.setup(g)
+			tt.assert(g.Apply())
 		})
 	}
 }

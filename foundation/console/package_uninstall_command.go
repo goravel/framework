@@ -1,7 +1,6 @@
 package console
 
 import (
-	"fmt"
 	"os/exec"
 	"strings"
 
@@ -9,6 +8,7 @@ import (
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/color"
+	supportconsole "github.com/goravel/framework/support/console"
 )
 
 type PackageUninstallCommand struct {
@@ -46,11 +46,10 @@ func (r *PackageUninstallCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *PackageUninstallCommand) Handle(ctx console.Context) error {
-	var (
-		err error
-		pkg = ctx.Argument(0)
-	)
+
+	pkg := ctx.Argument(0)
 	if pkg == "" {
+		var err error
 		pkg, err = ctx.Ask("Enter the package name to uninstall", console.AskOption{
 			Placeholder: " E.g example.com/pkg",
 			Prompt:      ">",
@@ -68,44 +67,26 @@ func (r *PackageUninstallCommand) Handle(ctx console.Context) error {
 		}
 	}
 
-	pkg, _, _ = strings.Cut(pkg, "@")
-	manager := pkg + "/manager"
+	pkgPath, _, _ := strings.Cut(pkg, "@")
+	setup := pkgPath + "/setup"
 
 	// uninstall package
-	var output []byte
-	uninstall := exec.Command("go", "run", manager, "uninstall")
+	uninstall := exec.Command("go", "run", setup, "uninstall")
 	if ctx.OptionBool("force") {
 		uninstall.Args = append(uninstall.Args, "--force")
 	}
 
-	if err = ctx.Spinner(fmt.Sprintf("> @%s", strings.Join(uninstall.Args, " ")), console.SpinnerOption{
-		Action: func() error {
-			output, err = uninstall.CombinedOutput()
-
-			return err
-		},
-	}); err != nil {
-		color.Errorf("failed to uninstall package: %s\n", err.Error())
-		if len(output) > 0 {
-			color.Red().Println(string(output))
-		}
+	if err := supportconsole.ExecuteCommand(ctx, uninstall); err != nil {
+		color.Errorln("failed to uninstall package:")
+		color.Red().Println(err.Error())
 
 		return nil
 	}
 
 	// tidy go.mod file
-	tidy := exec.Command("go", "mod", "tidy")
-	if err = ctx.Spinner(fmt.Sprintf("> @%s", strings.Join(tidy.Args, " ")), console.SpinnerOption{
-		Action: func() error {
-			output, err = tidy.CombinedOutput()
-
-			return err
-		},
-	}); err != nil {
-		color.Errorf("failed to tidy go.mod file: %s\n", err.Error())
-		if len(output) > 0 {
-			color.Red().Println(string(output))
-		}
+	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
+		color.Errorln("failed to tidy go.mod file:")
+		color.Red().Println(err.Error())
 
 		return nil
 	}
