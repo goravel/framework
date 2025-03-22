@@ -61,6 +61,8 @@ func (app *Application) Boot() {
 		console.NewEnvDecryptCommand(),
 		console.NewTestMakeCommand(),
 		console.NewPackageMakeCommand(),
+		console.NewPackageInstallCommand(),
+		console.NewPackageUninstallCommand(),
 		console.NewVendorPublishCommand(app.publishes, app.publishGroups),
 	})
 	app.setTimezone()
