@@ -3733,9 +3733,17 @@ func Benchmark_Orm(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		err := query.Query().Model(&Author{}).Create(map[string]any{
-			"name": "benchmark",
-		})
+		author := Author{
+			Name:   "benchmark",
+			BookID: 1,
+		}
+		err := query.Query().Create(&author)
+		if err != nil {
+			b.Error(err)
+		}
+
+		var authors []Author
+		err = query.Query().Limit(50).Find(&authors)
 		if err != nil {
 			b.Error(err)
 		}

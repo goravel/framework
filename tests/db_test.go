@@ -1467,8 +1467,15 @@ func Benchmark_DB(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		_, err := query.DB().Table("authors").Insert(Author{
-			Name: "benchmark",
+			BookID: 1,
+			Name:   "benchmark",
 		})
+		if err != nil {
+			b.Error(err)
+		}
+
+		var authors []Author
+		err = query.DB().Table("authors").Limit(50).Find(&authors)
 		if err != nil {
 			b.Error(err)
 		}

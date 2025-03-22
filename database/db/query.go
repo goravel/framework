@@ -7,7 +7,6 @@ import (
 	"reflect"
 	"sort"
 	"strings"
-	"sync"
 
 	sq "github.com/Masterminds/squirrel"
 
@@ -19,10 +18,6 @@ import (
 	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/framework/support/str"
 )
-
-var queryPool = sync.Pool{New: func() any {
-	return &Query{}
-}}
 
 type Query struct {
 	conditions   contractsdriver.Conditions
@@ -36,19 +31,17 @@ type Query struct {
 }
 
 func NewQuery(ctx context.Context, readBuilder db.CommonBuilder, writeBuilder db.CommonBuilder, grammar contractsdriver.Grammar, logger logger.Logger, table string, txLogs *[]TxLog) *Query {
-	query := queryPool.Get().(*Query)
-	query.conditions = contractsdriver.Conditions{
-		Table: table,
+	return &Query{
+		conditions: contractsdriver.Conditions{
+			Table: table,
+		},
+		ctx:          ctx,
+		grammar:      grammar,
+		logger:       logger,
+		readBuilder:  readBuilder,
+		txLogs:       txLogs,
+		writeBuilder: writeBuilder,
 	}
-	query.ctx = ctx
-	query.err = nil
-	query.grammar = grammar
-	query.logger = logger
-	query.readBuilder = readBuilder
-	query.txLogs = txLogs
-	query.writeBuilder = writeBuilder
-
-	return query
 }
 
 func (r *Query) Chunk(size uint64, callback func(rows []db.Row) error) error {
@@ -1147,8 +1140,6 @@ func (r *Query) toSqlizer(query any, args []any) (sq.Sqlizer, error) {
 }
 
 func (r *Query) trace(builder db.CommonBuilder, sql string, args []any, now carbon.Carbon, rowsAffected int64, err error) {
-	defer queryPool.Put(r)
-
 	if r.txLogs != nil {
 		*r.txLogs = append(*r.txLogs, TxLog{
 			ctx:          r.ctx,

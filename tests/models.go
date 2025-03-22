@@ -403,7 +403,7 @@ type Book struct {
 
 type Author struct {
 	Model
-	BookID uint
+	BookID uint   `db:"book_id"`
 	Name   string `db:"name"`
 }
 
