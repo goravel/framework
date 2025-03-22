@@ -11,6 +11,8 @@ type Mail interface {
 	Content(content Content) Mail
 	// From set the sender of Mail.
 	From(address Address) Mail
+	// Headers adds custom headers to the Mail.
+	Headers(headers map[string]string) Mail
 	// Queue a given Mail
 	Queue(mailable ...Mailable) error
 	// Send the Mail
@@ -28,6 +30,8 @@ type Mailable interface {
 	Content() *Content
 	// Envelope set the envelope of Mailable.
 	Envelope() *Envelope
+	// Headers adds custom headers to the Mail.
+	Headers() map[string]string
 	// Queue set the queue of Mailable.
 	Queue() *Queue
 }

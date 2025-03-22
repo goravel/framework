@@ -23,8 +23,8 @@ func (r *SendMailJob) Signature() string {
 
 // Handle Execute the job.
 func (r *SendMailJob) Handle(args ...any) error {
-	if len(args) != 8 {
-		return fmt.Errorf("expected 8 arguments, got %d", len(args))
+	if len(args) != 9 {
+		return fmt.Errorf("expected 9 arguments, got %d", len(args))
 	}
 
 	from, ok := args[0].(string)
@@ -67,5 +67,10 @@ func (r *SendMailJob) Handle(args ...any) error {
 		return fmt.Errorf("ATTACHMENTS should be of type []string")
 	}
 
-	return SendMail(r.config, from, subject, body, recipient, cc, bcc, replyTo, attachments)
+	headers, ok := args[8].(map[string]string)
+	if !ok {
+		return fmt.Errorf("HEADERS should be of type map[string]string")
+	}
+
+	return SendMail(r.config, from, subject, body, recipient, cc, bcc, replyTo, attachments, headers)
 }

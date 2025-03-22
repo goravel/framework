@@ -260,6 +260,54 @@ func (_c *Mail_From_Call) RunAndReturn(run func(mail.Address) mail.Mail) *Mail_F
 	return _c
 }
 
+// Headers provides a mock function with given fields: headers
+func (_m *Mail) Headers(headers map[string]string) mail.Mail {
+	ret := _m.Called(headers)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Headers")
+	}
+
+	var r0 mail.Mail
+	if rf, ok := ret.Get(0).(func(map[string]string) mail.Mail); ok {
+		r0 = rf(headers)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(mail.Mail)
+		}
+	}
+
+	return r0
+}
+
+// Mail_Headers_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Headers'
+type Mail_Headers_Call struct {
+	*mock.Call
+}
+
+// Headers is a helper method to define mock.On call
+//   - headers map[string]string
+func (_e *Mail_Expecter) Headers(headers interface{}) *Mail_Headers_Call {
+	return &Mail_Headers_Call{Call: _e.mock.On("Headers", headers)}
+}
+
+func (_c *Mail_Headers_Call) Run(run func(headers map[string]string)) *Mail_Headers_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(map[string]string))
+	})
+	return _c
+}
+
+func (_c *Mail_Headers_Call) Return(_a0 mail.Mail) *Mail_Headers_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Mail_Headers_Call) RunAndReturn(run func(map[string]string) mail.Mail) *Mail_Headers_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Queue provides a mock function with given fields: mailable
 func (_m *Mail) Queue(mailable ...mail.Mailable) error {
 	_va := make([]interface{}, len(mailable))

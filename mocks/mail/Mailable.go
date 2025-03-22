@@ -161,6 +161,53 @@ func (_c *Mailable_Envelope_Call) RunAndReturn(run func() *mail.Envelope) *Maila
 	return _c
 }
 
+// Headers provides a mock function with no fields
+func (_m *Mailable) Headers() map[string]string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Headers")
+	}
+
+	var r0 map[string]string
+	if rf, ok := ret.Get(0).(func() map[string]string); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]string)
+		}
+	}
+
+	return r0
+}
+
+// Mailable_Headers_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Headers'
+type Mailable_Headers_Call struct {
+	*mock.Call
+}
+
+// Headers is a helper method to define mock.On call
+func (_e *Mailable_Expecter) Headers() *Mailable_Headers_Call {
+	return &Mailable_Headers_Call{Call: _e.mock.On("Headers")}
+}
+
+func (_c *Mailable_Headers_Call) Run(run func()) *Mailable_Headers_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Mailable_Headers_Call) Return(_a0 map[string]string) *Mailable_Headers_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Mailable_Headers_Call) RunAndReturn(run func() map[string]string) *Mailable_Headers_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Queue provides a mock function with no fields
 func (_m *Mailable) Queue() *mail.Queue {
 	ret := _m.Called()

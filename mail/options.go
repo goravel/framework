@@ -42,6 +42,11 @@ func (r *QueueMail) Envelope() *mail.Envelope {
 	return &mail.Envelope{}
 }
 
+// Headers add custom headers to the mail.
+func (r *QueueMail) Headers() map[string]string {
+	return map[string]string{}
+}
+
 // Queue set the queue of the mail
 func (r *QueueMail) Queue() *mail.Queue {
 	return r.queue
