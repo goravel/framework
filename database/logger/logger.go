@@ -17,6 +17,12 @@ import (
 	"github.com/goravel/framework/support/str"
 )
 
+var (
+	traceStr     = "[%.3fms] [rows:%v] %s"
+	traceWarnStr = "[%.3fms] [rows:%v] [SLOW] %s"
+	traceErrStr  = "[%.3fms] [rows:%v] %s\t%s"
+)
+
 func NewLogger(config config.Config, log log.Log) logger.Logger {
 	level := logger.Warn
 	if config.GetBool("app.debug") {
@@ -85,12 +91,6 @@ func (r *Logger) Trace(ctx context.Context, begin carbon.Carbon, sql string, row
 	if r.level <= logger.Silent {
 		return
 	}
-
-	var (
-		traceStr     = "[%.3fms] [rows:%v] %s"
-		traceWarnStr = "[%.3fms] [rows:%v] [SLOW] %s"
-		traceErrStr  = "[%.3fms] [rows:%v] %s\t%s"
-	)
 
 	elapsed := begin.DiffInDuration()
 
