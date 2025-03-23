@@ -8,6 +8,7 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/errors"
 )
 
@@ -16,6 +17,7 @@ type Auth struct {
 	cache           cache.Cache
 	config          config.Config
 	ctx             http.Context
+	log             log.Log
 	orm             orm.Orm
 	guards          map[string]contractsauth.GuardDriver
 	providers       map[string]contractsauth.UserProvider
@@ -23,11 +25,12 @@ type Auth struct {
 	customProviders map[string]contractsauth.UserProviderFunc
 }
 
-func NewAuth(cache cache.Cache, config config.Config, ctx http.Context, orm orm.Orm) (*Auth, error) {
+func NewAuth(ctx http.Context, cache cache.Cache, config config.Config, log log.Log, orm orm.Orm) (*Auth, error) {
 	auth := &Auth{
 		cache:           cache,
 		config:          config,
 		ctx:             ctx,
+		log:             log,
 		orm:             orm,
 		guards:          map[string]contractsauth.GuardDriver{},
 		providers:       map[string]contractsauth.UserProvider{},
@@ -35,10 +38,7 @@ func NewAuth(cache cache.Cache, config config.Config, ctx http.Context, orm orm.
 		customProviders: map[string]contractsauth.UserProviderFunc{},
 	}
 
-	defaultGuard, err := auth.Guard(config.GetString("auth.defaults.guard"))
-	if err != nil {
-		return nil, err
-	}
+	defaultGuard := auth.Guard(config.GetString("auth.defaults.guard"))
 
 	auth.GuardDriver = defaultGuard
 	return auth, nil
@@ -48,11 +48,18 @@ func (r *Auth) Extend(name string, fn contractsauth.GuardFunc) {
 	r.customGuards[name] = fn
 }
 
-func (r *Auth) Guard(name string) (contractsauth.GuardDriver, error) {
+func (r *Auth) Guard(name string) contractsauth.GuardDriver {
 	if guard, ok := r.guards[name]; ok {
-		return guard, nil
+		return guard
 	}
-	return r.resolve(name)
+
+	guard, err := r.resolve(name)
+	if err != nil {
+		r.log.Panic(err.Error())
+		return nil
+	}
+
+	return guard
 }
 
 func (r *Auth) Provider(name string, fn contractsauth.UserProviderFunc) {
@@ -101,10 +108,6 @@ func (r *Auth) resolve(name string) (contractsauth.GuardDriver, error) {
 	}
 
 	if guardFunc, ok := r.customGuards[driverName]; ok {
-		if err != nil {
-			return nil, err
-		}
-
 		guard, err := guardFunc(name, r, provider)
 		if err != nil {
 			return nil, err

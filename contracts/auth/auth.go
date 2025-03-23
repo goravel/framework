@@ -27,7 +27,7 @@ type GuardDriver interface {
 
 type Auth interface {
 	GuardDriver
-	Guard(name string) (GuardDriver, error)
+	Guard(name string) GuardDriver
 	Extend(name string, fn GuardFunc)
 	Provider(name string, fn UserProviderFunc)
 }

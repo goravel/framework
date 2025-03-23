@@ -21,15 +21,20 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		if config == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleAuth)
 		}
-		cacheFacade := app.MakeCache()
-		if cacheFacade == nil {
+		cache := app.MakeCache()
+		if cache == nil {
 			return nil, errors.CacheFacadeNotSet.SetModule(errors.ModuleAuth)
 		}
 
-		ormFacade := app.MakeOrm()
-		if ormFacade == nil {
+		orm := app.MakeOrm()
+		if orm == nil {
 			// The Orm module will print the error message, so it's safe to return nil.
 			return nil, nil
+		}
+
+		log := app.MakeLog()
+		if log == nil {
+			return nil, errors.LogFacadeNotSet.SetModule(errors.ModuleAuth)
 		}
 
 		ctx, ok := parameters["ctx"].(http.Context)
@@ -37,7 +42,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, errors.InvalidHttpContext.SetModule(errors.ModuleAuth)
 		}
 
-		return NewAuth(cacheFacade, config, ctx, ormFacade)
+		return NewAuth(ctx, cache, config, log, orm)
 	})
 	app.Singleton(contracts.BindingGate, func(app foundation.Application) (any, error) {
 		return access.NewGate(context.Background()), nil
