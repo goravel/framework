@@ -218,7 +218,6 @@ func (r *testTables) authors() ([]string, error) {
 	blueprint.UnsignedBigInteger("book_id").Nullable()
 	blueprint.String("name")
 	blueprint.Timestamps()
-	blueprint.SoftDeletes()
 
 	createSql, err := blueprint.ToSql(r.grammar)
 	if err != nil {

@@ -30,6 +30,8 @@ func TestApplicationTestSuite(t *testing.T) {
 		color.Errorln("No mail tests run, need create .env based on .env.example, then initialize it")
 		return
 	}
+
+	suite.Run(t, new(ApplicationTestSuite))
 }
 
 func (s *ApplicationTestSuite) SetupTest() {
@@ -108,6 +110,10 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 }
 
 func (s *ApplicationTestSuite) TestQueueMailWithConnection() {
+	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Twice()
+	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("async").Twice()
+	s.mockConfig.On("GetInt", "queue.connections.redis.size", 100).Return(100).Twice()
+
 	queueFacade := queue.NewApplication(s.mockConfig)
 	queueFacade.Register([]queuecontract.Job{
 		NewSendMailJob(s.mockConfig),
@@ -167,6 +173,7 @@ func mockConfig(mailPort int) *configmock.Config {
 	mockConfig.On("GetString", "queue.default").Return("async")
 	mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default")
 	mockConfig.On("GetString", "queue.connections.async.driver").Return("async")
+	mockConfig.On("GetInt", "queue.connections.async.size", 100).Return(100)
 	mockConfig.On("GetString", "queue.failed.database").Return("database")
 	mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs")
 

@@ -1458,3 +1458,26 @@ func TestDbReadWriteSeparate(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NoError(t, docker.Shutdown())
 }
+
+func Benchmark_DB(b *testing.B) {
+	query := NewTestQueryBuilder().Postgres("", false)
+	query.CreateTable(TestTableAuthors)
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		_, err := query.DB().Table("authors").Insert(Author{
+			BookID: 1,
+			Name:   "benchmark",
+		})
+		if err != nil {
+			b.Error(err)
+		}
+
+		var authors []Author
+		err = query.DB().Table("authors").Limit(50).Find(&authors)
+		if err != nil {
+			b.Error(err)
+		}
+	}
+}

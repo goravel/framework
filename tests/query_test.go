@@ -3725,3 +3725,27 @@ func paginator(page string, limit string) func(methods contractsorm.Query) contr
 		return query.Offset(offset).Limit(limit)
 	}
 }
+
+func Benchmark_Orm(b *testing.B) {
+	query := NewTestQueryBuilder().Postgres("", false)
+	query.CreateTable(TestTableAuthors)
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		author := Author{
+			Name:   "benchmark",
+			BookID: 1,
+		}
+		err := query.Query().Create(&author)
+		if err != nil {
+			b.Error(err)
+		}
+
+		var authors []Author
+		err = query.Query().Limit(50).Find(&authors)
+		if err != nil {
+			b.Error(err)
+		}
+	}
+}
