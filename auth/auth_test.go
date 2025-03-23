@@ -113,6 +113,8 @@ func TestAuthTestSuite(t *testing.T) {
 }
 
 func (s *AuthTestSuite) SetupTest() {
+	guards = sync.Map{}
+	providers = sync.Map{}
 	s.mockCache = mockscache.NewCache(s.T())
 	s.mockConfig = mocksconfig.NewConfig(s.T())
 	s.mockContext = Background()
@@ -123,9 +125,10 @@ func (s *AuthTestSuite) SetupTest() {
 	s.mockConfig.EXPECT().GetString("auth.guards.user.driver").Return("jwt").Once()
 	s.mockConfig.EXPECT().GetString("auth.guards.user.provider").Return("user").Once()
 	s.mockConfig.EXPECT().GetString("auth.providers.user.driver").Return("orm").Once()
-	if auth, err := NewAuth(s.mockContext, s.mockCache, s.mockConfig, s.mockLog, s.mockOrm); err == nil {
-		s.auth = auth
-	}
+
+	auth, err := NewAuth(s.mockContext, s.mockCache, s.mockConfig, s.mockLog, s.mockOrm)
+	s.Require().Nil(err)
+	s.auth = auth
 }
 
 func (s *AuthTestSuite) TestCheck() {
@@ -366,6 +369,8 @@ func (s *AuthTestSuite) TestParse_TokenExpired() {
 }
 
 func (s *AuthTestSuite) TestParse_InvalidCache() {
+	guards = sync.Map{}
+	providers = sync.Map{}
 	s.mockConfig.EXPECT().GetString("auth.defaults.guard").Return("user").Once()
 	s.mockConfig.EXPECT().GetString("auth.guards.user.driver").Return("jwt").Once()
 	s.mockConfig.EXPECT().GetString("auth.guards.user.provider").Return("user").Once()
@@ -819,20 +824,22 @@ func (s *AuthTestSuite) TestRefresh_Success() {
 }
 
 func (s *AuthTestSuite) TestLogout_CacheUnsupported() {
+	guards = sync.Map{}
+	providers = sync.Map{}
 	s.mockConfig.EXPECT().GetString("auth.defaults.guard").Return("user").Once()
 	s.mockConfig.EXPECT().GetString("auth.guards.user.driver").Return("jwt").Once()
 	s.mockConfig.EXPECT().GetString("auth.guards.user.provider").Return("user").Once()
 	s.mockConfig.EXPECT().GetString("auth.providers.user.driver").Return("orm").Once()
-	if auth, err := NewAuth(s.mockContext, nil, s.mockConfig, nil, s.mockOrm); err == nil {
-		s.auth = auth
-	}
 	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Once()
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(2).Once()
 
-	token, err := s.auth.LoginUsingID(1)
+	auth, err := NewAuth(s.mockContext, nil, s.mockConfig, nil, s.mockOrm)
+	s.Nil(err)
+
+	token, err := auth.LoginUsingID(1)
 	s.Nil(err)
 	s.NotEmpty(token)
-	s.EqualError(s.auth.Logout(), errors.CacheSupportRequired.SetModule(errors.ModuleAuth).Error())
+	s.EqualError(auth.Logout(), errors.CacheSupportRequired.SetModule(errors.ModuleAuth).Error())
 }
 
 func (s *AuthTestSuite) TestLogout_NotParse() {

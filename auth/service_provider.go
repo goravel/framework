@@ -38,11 +38,12 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		}
 
 		ctx, ok := parameters["ctx"].(http.Context)
-		if !ok {
-			return nil, errors.InvalidHttpContext.SetModule(errors.ModuleAuth)
+		if ok {
+			return NewAuth(ctx, cache, config, log, orm)
 		}
 
-		return NewAuth(ctx, cache, config, log, orm)
+		// ctx is unnecessary when calling facades.Auth().Extend()
+		return NewAuth(nil, cache, config, log, orm)
 	})
 	app.Singleton(contracts.BindingGate, func(app foundation.Application) (any, error) {
 		return access.NewGate(context.Background()), nil

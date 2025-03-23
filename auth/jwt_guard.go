@@ -38,14 +38,18 @@ type JwtGuard struct {
 	provider contractsauth.UserProvider
 }
 
-func NewJwtGuard(guard string, cache cache.Cache, config config.Config, ctx http.Context, provider contractsauth.UserProvider) *JwtGuard {
+func NewJwtGuard(ctx http.Context, guard string, cache cache.Cache, config config.Config, provider contractsauth.UserProvider) (*JwtGuard, error) {
+	if ctx == nil {
+		return nil, errors.InvalidHttpContext.SetModule(errors.ModuleAuth)
+	}
+
 	return &JwtGuard{
 		cache:    cache,
 		config:   config,
 		ctx:      ctx,
 		guard:    guard,
 		provider: provider,
-	}
+	}, nil
 }
 
 func (r *JwtGuard) Check() bool {

@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"sync"
 
 	contractsauth "github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/cache"
@@ -12,6 +13,11 @@ import (
 	"github.com/goravel/framework/errors"
 )
 
+var (
+	guards    = sync.Map{}
+	providers = sync.Map{}
+)
+
 type Auth struct {
 	contractsauth.GuardDriver
 	cache           cache.Cache
@@ -19,8 +25,6 @@ type Auth struct {
 	ctx             http.Context
 	log             log.Log
 	orm             orm.Orm
-	guards          map[string]contractsauth.GuardDriver
-	providers       map[string]contractsauth.UserProvider
 	customGuards    map[string]contractsauth.GuardFunc
 	customProviders map[string]contractsauth.UserProviderFunc
 }
@@ -32,8 +36,6 @@ func NewAuth(ctx http.Context, cache cache.Cache, config config.Config, log log.
 		ctx:             ctx,
 		log:             log,
 		orm:             orm,
-		guards:          map[string]contractsauth.GuardDriver{},
-		providers:       map[string]contractsauth.UserProvider{},
 		customGuards:    map[string]contractsauth.GuardFunc{},
 		customProviders: map[string]contractsauth.UserProviderFunc{},
 	}
@@ -49,8 +51,8 @@ func (r *Auth) Extend(name string, fn contractsauth.GuardFunc) {
 }
 
 func (r *Auth) Guard(name string) contractsauth.GuardDriver {
-	if guard, ok := r.guards[name]; ok {
-		return guard
+	if guard, ok := guards.Load(name); ok {
+		return guard.(contractsauth.GuardDriver)
 	}
 
 	guard, err := r.resolve(name)
@@ -67,8 +69,8 @@ func (r *Auth) Provider(name string, fn contractsauth.UserProviderFunc) {
 }
 
 func (r *Auth) createUserProvider(name string) (contractsauth.UserProvider, error) {
-	if provider, ok := r.providers[name]; ok {
-		return provider, nil
+	if provider, ok := providers.Load(name); ok {
+		return provider.(contractsauth.UserProvider), nil
 	}
 
 	driverName := r.config.GetString(fmt.Sprintf("auth.providers.%s.driver", name))
@@ -79,7 +81,7 @@ func (r *Auth) createUserProvider(name string) (contractsauth.UserProvider, erro
 			return nil, err
 		}
 
-		r.providers[driverName] = provider
+		providers.Store(driverName, provider)
 		return provider, nil
 	}
 
@@ -91,8 +93,8 @@ func (r *Auth) createUserProvider(name string) (contractsauth.UserProvider, erro
 			return nil, err
 		}
 
-		r.providers[driverName] = provider
-		return r.providers[driverName], nil
+		providers.Store(driverName, provider)
+		return provider, nil
 	default:
 		return nil, errors.AuthProviderDriverNotFound.Args(driverName, name)
 	}
@@ -113,15 +115,21 @@ func (r *Auth) resolve(name string) (contractsauth.GuardDriver, error) {
 			return nil, err
 		}
 
-		r.guards[name] = guard
+		guards.Store(name, guard)
 
 		return guard, nil
 	}
 
 	switch driverName {
 	case "jwt":
-		r.guards[name] = NewJwtGuard(name, r.cache, r.config, r.ctx, provider)
-		return r.guards[name], nil
+		guard, err := NewJwtGuard(r.ctx, name, r.cache, r.config, provider)
+		if err != nil {
+			return nil, err
+		}
+
+		guards.Store(name, guard)
+
+		return guard, nil
 	default:
 		return nil, errors.AuthGuardDriverNotFound.Args(driverName, name)
 	}
