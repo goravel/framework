@@ -167,6 +167,9 @@ func (s *ApplicationTestSuite) TestMakeAuth() {
 	s.app.Singleton(contracts.BindingOrm, func(app foundation.Application) (any, error) {
 		return &mocksorm.Orm{}, nil
 	})
+	s.app.Singleton(contracts.BindingLog, func(app foundation.Application) (any, error) {
+		return &mockslog.Log{}, nil
+	})
 
 	serviceProvider := &auth.ServiceProvider{}
 	serviceProvider.Register(s.app)
