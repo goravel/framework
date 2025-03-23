@@ -74,10 +74,13 @@ func (c *Container) MakeArtisan() contractsconsole.Artisan {
 	return instance.(contractsconsole.Artisan)
 }
 
-func (c *Container) MakeAuth(ctx contractshttp.Context) contractsauth.Auth {
-	instance, err := c.MakeWith(contracts.BindingAuth, map[string]any{
-		"ctx": ctx,
-	})
+func (c *Container) MakeAuth(ctx ...contractshttp.Context) contractsauth.Auth {
+	parameters := map[string]any{}
+	if len(ctx) > 0 {
+		parameters["ctx"] = ctx[0]
+	}
+
+	instance, err := c.MakeWith(contracts.BindingAuth, parameters)
 	if err != nil {
 		color.Errorln(err)
 		return nil

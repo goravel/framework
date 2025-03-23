@@ -6,10 +6,19 @@ import (
 	"github.com/goravel/framework/auth/access"
 	"github.com/goravel/framework/auth/console"
 	"github.com/goravel/framework/contracts"
+	"github.com/goravel/framework/contracts/cache"
+	"github.com/goravel/framework/contracts/config"
 	contractconsole "github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/errors"
+)
+
+var (
+	cacheFacade  cache.Cache
+	configFacade config.Config
+	ormFacade    orm.Orm
 )
 
 type ServiceProvider struct {
@@ -17,17 +26,18 @@ type ServiceProvider struct {
 
 func (r *ServiceProvider) Register(app foundation.Application) {
 	app.BindWith(contracts.BindingAuth, func(app foundation.Application, parameters map[string]any) (any, error) {
-		config := app.MakeConfig()
-		if config == nil {
+		configFacade = app.MakeConfig()
+		if configFacade == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleAuth)
 		}
-		cache := app.MakeCache()
-		if cache == nil {
+
+		cacheFacade = app.MakeCache()
+		if cacheFacade == nil {
 			return nil, errors.CacheFacadeNotSet.SetModule(errors.ModuleAuth)
 		}
 
-		orm := app.MakeOrm()
-		if orm == nil {
+		ormFacade = app.MakeOrm()
+		if ormFacade == nil {
 			// The Orm module will print the error message, so it's safe to return nil.
 			return nil, nil
 		}
@@ -37,13 +47,13 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, errors.LogFacadeNotSet.SetModule(errors.ModuleAuth)
 		}
 
-		ctx, ok := parameters["ctx"].(http.Context)
+		ctx, ok := parameters["ctx"]
 		if ok {
-			return NewAuth(ctx, cache, config, log, orm)
+			return NewAuth(ctx.(http.Context), configFacade, log)
 		}
 
 		// ctx is unnecessary when calling facades.Auth().Extend()
-		return NewAuth(nil, cache, config, log, orm)
+		return NewAuth(nil, configFacade, log)
 	})
 	app.Singleton(contracts.BindingGate, func(app foundation.Application) (any, error) {
 		return access.NewGate(context.Background()), nil

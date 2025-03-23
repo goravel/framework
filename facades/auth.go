@@ -7,11 +7,7 @@ import (
 )
 
 func Auth(ctx ...http.Context) auth.Auth {
-	if len(ctx) > 0 {
-		return App().MakeAuth(ctx[0])
-	}
-
-	return App().MakeAuth(nil)
+	return App().MakeAuth(ctx...)
 }
 
 func Gate() access.Gate {

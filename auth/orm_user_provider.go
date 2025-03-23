@@ -4,18 +4,22 @@ import (
 	"gorm.io/gorm/clause"
 
 	contractsauth "github.com/goravel/framework/contracts/auth"
-	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/support/database"
 )
 
+var _ contractsauth.UserProviderFunc = NewOrmUserProvider
+
 type OrmUserProvider struct {
+	ctx http.Context
 	orm orm.Orm
 }
 
-func NewOrmUserProvider(providerName string, orm orm.Orm, config config.Config) (contractsauth.UserProvider, error) {
+func NewOrmUserProvider(ctx http.Context) (contractsauth.UserProvider, error) {
 	return &OrmUserProvider{
-		orm: orm,
+		ctx: ctx,
+		orm: ormFacade,
 	}, nil
 }
 
@@ -26,5 +30,5 @@ func (r *OrmUserProvider) GetID(user any) any {
 
 // RetriveByID implements auth.UserProvider.
 func (r *OrmUserProvider) RetriveByID(user any, id any) error {
-	return r.orm.Query().FindOrFail(user, clause.Eq{Column: clause.PrimaryColumn, Value: id})
+	return r.orm.WithContext(r.ctx.Context()).Query().FindOrFail(user, clause.Eq{Column: clause.PrimaryColumn, Value: id})
 }

@@ -8,7 +8,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
-	testifymock "github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm/clause"
 
@@ -22,80 +22,6 @@ import (
 	mockslog "github.com/goravel/framework/mocks/log"
 	"github.com/goravel/framework/support/carbon"
 )
-
-var testUserGuard = "user"
-
-type User struct {
-	ID        uint `gorm:"primaryKey" json:"id"`
-	Name      string
-	CreatedAt carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at"`
-	UpdatedAt carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at"`
-}
-
-type Context struct {
-	ctx      context.Context
-	request  http.ContextRequest
-	response http.ContextResponse
-	values   map[any]any
-	mu       sync.RWMutex
-}
-
-func (r *Context) Deadline() (deadline time.Time, ok bool) {
-	return r.ctx.Deadline()
-}
-
-func (r *Context) Done() <-chan struct{} {
-	return r.ctx.Done()
-}
-
-func (r *Context) Err() error {
-	return r.ctx.Err()
-}
-
-func (r *Context) Value(key interface{}) any {
-	if k, ok := key.(string); ok {
-		r.mu.RLock()
-		v, ok := r.values[k]
-		r.mu.RUnlock()
-
-		if ok {
-			return v
-		}
-	}
-
-	return r.ctx.Value(key)
-}
-
-func (r *Context) Context() context.Context {
-	return r.ctx
-}
-
-func (r *Context) WithContext(newCtx context.Context) {
-	r.ctx = newCtx
-}
-
-func (r *Context) WithValue(key any, value any) {
-	r.mu.Lock()
-	r.values[key] = value
-	r.mu.Unlock()
-}
-
-func (r *Context) Request() http.ContextRequest {
-	return r.request
-}
-
-func (r *Context) Response() http.ContextResponse {
-	return r.response
-}
-
-func Background() http.Context {
-	return &Context{
-		ctx:      context.Background(),
-		request:  nil,
-		response: nil,
-		values:   make(map[any]any),
-	}
-}
 
 type AuthTestSuite struct {
 	suite.Suite
@@ -113,20 +39,23 @@ func TestAuthTestSuite(t *testing.T) {
 }
 
 func (s *AuthTestSuite) SetupTest() {
-	guards = sync.Map{}
-	providers = sync.Map{}
 	s.mockCache = mockscache.NewCache(s.T())
 	s.mockConfig = mocksconfig.NewConfig(s.T())
 	s.mockContext = Background()
 	s.mockOrm = mocksorm.NewOrm(s.T())
 	s.mockDB = mocksorm.NewQuery(s.T())
 	s.mockLog = mockslog.NewLog(s.T())
+
+	cacheFacade = s.mockCache
+	configFacade = s.mockConfig
+	ormFacade = s.mockOrm
+
 	s.mockConfig.EXPECT().GetString("auth.defaults.guard").Return("user").Once()
 	s.mockConfig.EXPECT().GetString("auth.guards.user.driver").Return("jwt").Once()
 	s.mockConfig.EXPECT().GetString("auth.guards.user.provider").Return("user").Once()
 	s.mockConfig.EXPECT().GetString("auth.providers.user.driver").Return("orm").Once()
 
-	auth, err := NewAuth(s.mockContext, s.mockCache, s.mockConfig, s.mockLog, s.mockOrm)
+	auth, err := NewAuth(s.mockContext, s.mockConfig, s.mockLog)
 	s.Require().Nil(err)
 	s.auth = auth
 }
@@ -143,16 +72,20 @@ func (s *AuthTestSuite) TestCheck() {
 	s.False(s.auth.Guest())
 }
 
-func (s *AuthTestSuite) TestAuth_ExtendGuard() {
-	s.auth.Extend("session", func(name string, a contractsauth.Auth, up contractsauth.UserProvider) (contractsauth.GuardDriver, error) {
+func (s *AuthTestSuite) TestAuth_CustomGuardAndProvider() {
+	mockProvider := mocksauth.NewUserProvider(s.T())
+	s.auth.Extend("session", func(ctx http.Context, name string, userProvider contractsauth.UserProvider) (contractsauth.GuardDriver, error) {
 		mockGuard := mocksauth.NewGuardDriver(s.T())
 		mockGuard.EXPECT().ID().Return("session-id-xxxx", nil)
 		return mockGuard, nil
 	})
+	s.auth.Provider("mock", func(ctx http.Context) (contractsauth.UserProvider, error) {
+		return mockProvider, nil
+	})
 
 	s.mockConfig.EXPECT().GetString("auth.guards.admin.driver").Return("session").Once()
 	s.mockConfig.EXPECT().GetString("auth.guards.admin.provider").Return("admin").Once()
-	s.mockConfig.EXPECT().GetString("auth.providers.admin.driver").Return("orm").Once()
+	s.mockConfig.EXPECT().GetString("auth.providers.admin.driver").Return("mock").Once()
 
 	guard := s.auth.Guard("admin")
 
@@ -162,43 +95,8 @@ func (s *AuthTestSuite) TestAuth_ExtendGuard() {
 	s.Equal("session-id-xxxx", id)
 }
 
-func (s *AuthTestSuite) TestAuth_ExtendProvider() {
-	user := User{}
-	mockProvider := mocksauth.NewUserProvider(s.T())
-	mockProvider.EXPECT().RetriveByID(&user, "1").Return(nil).Run(func(user, id any) {
-		if user, ok := user.(*User); ok {
-			user.Name = "MockUser"
-			user.ID = 1
-		}
-	})
-
-	s.auth.Provider("mock", func(auth contractsauth.Auth) (contractsauth.UserProvider, error) {
-		return mockProvider, nil
-	})
-
-	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Once()
-	s.mockConfig.EXPECT().GetString("auth.guards.admin.driver").Return("jwt").Once()
-	s.mockConfig.EXPECT().GetString("auth.guards.admin.provider").Return("admin").Once()
-	s.mockConfig.EXPECT().Get("auth.guards.admin.ttl").Return(2).Once()
-	s.mockConfig.EXPECT().GetString("auth.providers.admin.driver").Return("mock").Once()
-
-	guard := s.auth.Guard("admin")
-
-	authUser := User{}
-	token, err := guard.LoginUsingID(1)
-	s.Nil(err)
-	s.NotEmpty(token)
-
-	err = guard.User(&authUser)
-	s.Nil(err)
-	s.Equal("MockUser", authUser.Name)
-	s.Equal(uint(1), authUser.ID)
-}
-
 func (s *AuthTestSuite) TestAuth_GuardDriverNotFoundException() {
 	s.mockConfig.EXPECT().GetString("auth.guards.admin.driver").Return("unknown").Once()
-	s.mockConfig.EXPECT().GetString("auth.guards.admin.provider").Return("admin").Once()
-	s.mockConfig.EXPECT().GetString("auth.providers.admin.driver").Return("orm").Once()
 	s.mockLog.EXPECT().Panic(errors.AuthGuardDriverNotFound.Args("unknown", "admin").Error()).Once()
 
 	guard := s.auth.Guard("admin")
@@ -369,13 +267,11 @@ func (s *AuthTestSuite) TestParse_TokenExpired() {
 }
 
 func (s *AuthTestSuite) TestParse_InvalidCache() {
-	guards = sync.Map{}
-	providers = sync.Map{}
 	s.mockConfig.EXPECT().GetString("auth.defaults.guard").Return("user").Once()
 	s.mockConfig.EXPECT().GetString("auth.guards.user.driver").Return("jwt").Once()
 	s.mockConfig.EXPECT().GetString("auth.guards.user.provider").Return("user").Once()
 	s.mockConfig.EXPECT().GetString("auth.providers.user.driver").Return("orm").Once()
-	auth, err := NewAuth(s.mockContext, nil, s.mockConfig, nil, s.mockOrm)
+	auth, err := NewAuth(s.mockContext, s.mockConfig, s.mockLog)
 	s.Nil(err)
 
 	guard := auth.Guard("user")
@@ -824,8 +720,6 @@ func (s *AuthTestSuite) TestRefresh_Success() {
 }
 
 func (s *AuthTestSuite) TestLogout_CacheUnsupported() {
-	guards = sync.Map{}
-	providers = sync.Map{}
 	s.mockConfig.EXPECT().GetString("auth.defaults.guard").Return("user").Once()
 	s.mockConfig.EXPECT().GetString("auth.guards.user.driver").Return("jwt").Once()
 	s.mockConfig.EXPECT().GetString("auth.guards.user.provider").Return("user").Once()
@@ -833,7 +727,7 @@ func (s *AuthTestSuite) TestLogout_CacheUnsupported() {
 	s.mockConfig.EXPECT().GetString("jwt.secret").Return("Goravel").Once()
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(2).Once()
 
-	auth, err := NewAuth(s.mockContext, nil, s.mockConfig, nil, s.mockOrm)
+	auth, err := NewAuth(s.mockContext, s.mockConfig, s.mockLog)
 	s.Nil(err)
 
 	token, err := auth.LoginUsingID(1)
@@ -844,9 +738,9 @@ func (s *AuthTestSuite) TestLogout_CacheUnsupported() {
 
 func (s *AuthTestSuite) TestLogout_NotParse() {
 	s.EqualError(s.auth.Logout(), errors.AuthParseTokenFirst.Error())
-	s.mockContext.WithValue(ctxKey, Guards{"user": nil})
+	s.mockContext.WithValue(ctxJwtKey, Guards{"user": nil})
 	s.EqualError(s.auth.Logout(), errors.AuthParseTokenFirst.Error())
-	s.mockContext.WithValue(ctxKey, Guards{"user": &AuthToken{}})
+	s.mockContext.WithValue(ctxJwtKey, Guards{"user": &JwtToken{}})
 	s.EqualError(s.auth.Logout(), errors.AuthParseTokenFirst.Error())
 }
 
@@ -870,7 +764,7 @@ func (s *AuthTestSuite) TestLogout_SetDisabledCacheError() {
 	s.NotNil(payload)
 	s.Nil(err)
 
-	s.mockCache.EXPECT().Put(testifymock.Anything, true, 2*time.Minute).Return(errors.New("error")).Once()
+	s.mockCache.EXPECT().Put(mock.Anything, true, 2*time.Minute).Return(errors.New("error")).Once()
 
 	s.EqualError(s.auth.Logout(), "error")
 }
@@ -895,7 +789,7 @@ func (s *AuthTestSuite) TestLogout_Success() {
 	s.NotNil(payload)
 	s.Nil(err)
 
-	s.mockCache.EXPECT().Put(testifymock.Anything, true, 2*time.Minute).Return(nil).Once()
+	s.mockCache.EXPECT().Put(mock.Anything, true, 2*time.Minute).Return(nil).Once()
 
 	s.Nil(s.auth.Logout())
 }
@@ -920,7 +814,7 @@ func (s *AuthTestSuite) TestLogout_Success_TTL_Is_0() {
 	s.NotNil(payload)
 	s.Nil(err)
 
-	s.mockCache.EXPECT().Put(testifymock.Anything, true, time.Duration(60*24*365*100)*time.Minute).Return(nil).Once()
+	s.mockCache.EXPECT().Put(mock.Anything, true, time.Duration(60*24*365*100)*time.Minute).Return(nil).Once()
 
 	s.Nil(s.auth.Logout())
 }
@@ -945,7 +839,7 @@ func (s *AuthTestSuite) TestLogout_Error_TTL_Is_0() {
 	s.NotNil(payload)
 	s.Nil(err)
 
-	s.mockCache.EXPECT().Put(testifymock.Anything, true, time.Duration(60*24*365*100)*time.Minute).Return(assert.AnError).Once()
+	s.mockCache.EXPECT().Put(mock.Anything, true, time.Duration(60*24*365*100)*time.Minute).Return(assert.AnError).Once()
 
 	s.EqualError(s.auth.Logout(), assert.AnError.Error())
 }
@@ -958,60 +852,87 @@ func (s *AuthTestSuite) TestMakeAuthContext() {
 	s.mockConfig.EXPECT().GetString("auth.providers.admin.driver").Return("orm").Once()
 
 	s.GetGuard("user").makeAuthContext(nil, "1")
-	guards, ok := s.auth.ctx.Value(ctxKey).(Guards)
+	guards, ok := s.auth.ctx.Value(ctxJwtKey).(Guards)
 	s.True(ok)
-	s.Equal(&AuthToken{nil, "1"}, guards[testUserGuard])
+	s.Equal(&JwtToken{nil, "1"}, guards[testUserGuard])
 
 	s.GetGuard(testAdminGuard).makeAuthContext(nil, "2")
-	guards, ok = s.auth.ctx.Value(ctxKey).(Guards)
+	guards, ok = s.auth.ctx.Value(ctxJwtKey).(Guards)
 	s.True(ok)
-	s.Equal(&AuthToken{nil, "1"}, guards[testUserGuard])
-	s.Equal(&AuthToken{nil, "2"}, guards[testAdminGuard])
+	s.Equal(&JwtToken{nil, "1"}, guards[testUserGuard])
+	s.Equal(&JwtToken{nil, "2"}, guards[testAdminGuard])
 }
 
-func (s *AuthTestSuite) TestGetTtl() {
-	tests := []struct {
-		name     string
-		setup    func()
-		expected int
-	}{
-		{
-			name: "GuardTtlIsNil",
-			setup: func() {
-				s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(nil).Once()
-				s.mockConfig.EXPECT().GetInt("jwt.ttl").Return(2).Once()
-			},
-			expected: 2,
-		},
-		{
-			name: "GuardTtlIsNotNil",
-			setup: func() {
-				s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(1).Once()
-			},
-			expected: 1,
-		},
-		{
-			name: "GuardTtlIsZero",
-			setup: func() {
-				s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(0).Once()
-			},
-			expected: 60 * 24 * 365 * 100,
-		},
-		{
-			name: "JwtTtlIsZero",
-			setup: func() {
-				s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(nil).Once()
-				s.mockConfig.EXPECT().GetInt("jwt.ttl").Return(0).Once()
-			},
-			expected: 60 * 24 * 365 * 100,
-		},
+var testUserGuard = "user"
+
+type User struct {
+	ID        uint `gorm:"primaryKey" json:"id"`
+	Name      string
+	CreatedAt carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at"`
+	UpdatedAt carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at"`
+}
+
+type Context struct {
+	ctx      context.Context
+	request  http.ContextRequest
+	response http.ContextResponse
+	values   map[any]any
+	mu       sync.RWMutex
+}
+
+func (r *Context) Deadline() (deadline time.Time, ok bool) {
+	return r.ctx.Deadline()
+}
+
+func (r *Context) Done() <-chan struct{} {
+	return r.ctx.Done()
+}
+
+func (r *Context) Err() error {
+	return r.ctx.Err()
+}
+
+func (r *Context) Value(key interface{}) any {
+	if k, ok := key.(string); ok {
+		r.mu.RLock()
+		v, ok := r.values[k]
+		r.mu.RUnlock()
+
+		if ok {
+			return v
+		}
 	}
 
-	for _, test := range tests {
-		s.Run(test.name, func() {
-			test.setup()
-			ttl := s.GetGuard("user").getTtl()
-			s.Equal(test.expected, ttl)
-		})
+	return r.ctx.Value(key)
+}
+
+func (r *Context) Context() context.Context {
+	return r.ctx
+}
+
+func (r *Context) WithContext(newCtx context.Context) {
+	r.ctx = newCtx
+}
+
+func (r *Context) WithValue(key any, value any) {
+	r.mu.Lock()
+	r.values[key] = value
+	r.mu.Unlock()
+}
+
+func (r *Context) Request() http.ContextRequest {
+	return r.request
+}
+
+func (r *Context) Response() http.ContextResponse {
+	return r.response
+}
+
+func Background() http.Context {
+	return &Context{
+		ctx:      context.Background(),
+		request:  nil,
+		response: nil,
+		values:   make(map[any]any),
 	}
 }
