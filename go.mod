@@ -6,19 +6,19 @@ require (
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/charmbracelet/huh v0.6.0
-	github.com/charmbracelet/huh/spinner v0.0.0-20250315225456-0761ac7eb2e8
+	github.com/charmbracelet/huh/spinner v0.0.0-20250320172351-ff9123a4929b
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/dromara/carbon/v2 v2.5.4
 	github.com/gabriel-vasile/mimetype v1.4.8
 	github.com/go-viper/mapstructure/v2 v2.2.1
-	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/google/uuid v1.6.0
 	github.com/gookit/validate v1.5.4
 	github.com/goravel/file-rotatelogs/v2 v2.4.2
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/pterm/pterm v0.12.80
-	github.com/redis/go-redis/v9 v9.7.1
+	github.com/redis/go-redis/v9 v9.7.3
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rotisserie/eris v0.5.4
@@ -61,7 +61,7 @@ require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/catppuccin/go v0.2.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/charmbracelet/bubbles v0.20.0 // indirect
+	github.com/charmbracelet/bubbles v0.20.1-0.20250320170029-54f28b650198 // indirect
 	github.com/charmbracelet/bubbletea v1.3.4 // indirect
 	github.com/charmbracelet/x/ansi v0.8.0 // indirect
 	github.com/charmbracelet/x/exp/strings v0.0.0-20241222104055-e1130b311607 // indirect
