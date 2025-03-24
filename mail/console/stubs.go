@@ -13,6 +13,11 @@ import (
 type DummyMail struct {
 }
 
+// Headers add custom headers to the mail.
+func (receiver *DummyMail) Headers() map[string]string {
+	return map[string]string{}
+}
+
 // Attachments attach files to the mail
 func (receiver *DummyMail) Attachments() []string{
 	return []string{}
