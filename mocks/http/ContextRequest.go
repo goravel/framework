@@ -950,7 +950,7 @@ func (_c *ContextRequest_InputInt64_Call) RunAndReturn(run func(string, ...int64
 }
 
 // InputMap provides a mock function with given fields: key, defaultValue
-func (_m *ContextRequest) InputMap(key string, defaultValue ...map[string]string) map[string]string {
+func (_m *ContextRequest) InputMap(key string, defaultValue ...map[string]interface{}) map[string]interface{} {
 	_va := make([]interface{}, len(defaultValue))
 	for _i := range defaultValue {
 		_va[_i] = defaultValue[_i]
@@ -964,12 +964,12 @@ func (_m *ContextRequest) InputMap(key string, defaultValue ...map[string]string
 		panic("no return value specified for InputMap")
 	}
 
-	var r0 map[string]string
-	if rf, ok := ret.Get(0).(func(string, ...map[string]string) map[string]string); ok {
+	var r0 map[string]interface{}
+	if rf, ok := ret.Get(0).(func(string, ...map[string]interface{}) map[string]interface{}); ok {
 		r0 = rf(key, defaultValue...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]string)
+			r0 = ret.Get(0).(map[string]interface{})
 		}
 	}
 
@@ -983,18 +983,18 @@ type ContextRequest_InputMap_Call struct {
 
 // InputMap is a helper method to define mock.On call
 //   - key string
-//   - defaultValue ...map[string]string
+//   - defaultValue ...map[string]interface{}
 func (_e *ContextRequest_Expecter) InputMap(key interface{}, defaultValue ...interface{}) *ContextRequest_InputMap_Call {
 	return &ContextRequest_InputMap_Call{Call: _e.mock.On("InputMap",
 		append([]interface{}{key}, defaultValue...)...)}
 }
 
-func (_c *ContextRequest_InputMap_Call) Run(run func(key string, defaultValue ...map[string]string)) *ContextRequest_InputMap_Call {
+func (_c *ContextRequest_InputMap_Call) Run(run func(key string, defaultValue ...map[string]interface{})) *ContextRequest_InputMap_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]map[string]string, len(args)-1)
+		variadicArgs := make([]map[string]interface{}, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(map[string]string)
+				variadicArgs[i] = a.(map[string]interface{})
 			}
 		}
 		run(args[0].(string), variadicArgs...)
@@ -1002,12 +1002,75 @@ func (_c *ContextRequest_InputMap_Call) Run(run func(key string, defaultValue ..
 	return _c
 }
 
-func (_c *ContextRequest_InputMap_Call) Return(_a0 map[string]string) *ContextRequest_InputMap_Call {
+func (_c *ContextRequest_InputMap_Call) Return(_a0 map[string]interface{}) *ContextRequest_InputMap_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ContextRequest_InputMap_Call) RunAndReturn(run func(string, ...map[string]string) map[string]string) *ContextRequest_InputMap_Call {
+func (_c *ContextRequest_InputMap_Call) RunAndReturn(run func(string, ...map[string]interface{}) map[string]interface{}) *ContextRequest_InputMap_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// InputMapArray provides a mock function with given fields: key, defaultValue
+func (_m *ContextRequest) InputMapArray(key string, defaultValue ...[]map[string]interface{}) []map[string]interface{} {
+	_va := make([]interface{}, len(defaultValue))
+	for _i := range defaultValue {
+		_va[_i] = defaultValue[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, key)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for InputMapArray")
+	}
+
+	var r0 []map[string]interface{}
+	if rf, ok := ret.Get(0).(func(string, ...[]map[string]interface{}) []map[string]interface{}); ok {
+		r0 = rf(key, defaultValue...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]map[string]interface{})
+		}
+	}
+
+	return r0
+}
+
+// ContextRequest_InputMapArray_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InputMapArray'
+type ContextRequest_InputMapArray_Call struct {
+	*mock.Call
+}
+
+// InputMapArray is a helper method to define mock.On call
+//   - key string
+//   - defaultValue ...[]map[string]interface{}
+func (_e *ContextRequest_Expecter) InputMapArray(key interface{}, defaultValue ...interface{}) *ContextRequest_InputMapArray_Call {
+	return &ContextRequest_InputMapArray_Call{Call: _e.mock.On("InputMapArray",
+		append([]interface{}{key}, defaultValue...)...)}
+}
+
+func (_c *ContextRequest_InputMapArray_Call) Run(run func(key string, defaultValue ...[]map[string]interface{})) *ContextRequest_InputMapArray_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([][]map[string]interface{}, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.([]map[string]interface{})
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *ContextRequest_InputMapArray_Call) Return(_a0 []map[string]interface{}) *ContextRequest_InputMapArray_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ContextRequest_InputMapArray_Call) RunAndReturn(run func(string, ...[]map[string]interface{}) []map[string]interface{}) *ContextRequest_InputMapArray_Call {
 	_c.Call.Return(run)
 	return _c
 }
