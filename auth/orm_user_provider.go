@@ -35,5 +35,5 @@ func (r *OrmUserProvider) GetID(user any) (any, error) {
 
 // RetriveByID implements auth.UserProvider.
 func (r *OrmUserProvider) RetriveByID(user any, id any) error {
-	return r.orm.WithContext(r.ctx.Context()).Query().FindOrFail(user, clause.Eq{Column: clause.PrimaryColumn, Value: id})
+	return r.orm.WithContext(r.ctx).Query().FindOrFail(user, clause.Eq{Column: clause.PrimaryColumn, Value: id})
 }

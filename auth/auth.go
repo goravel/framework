@@ -36,8 +36,11 @@ func NewAuth(ctx http.Context, config config.Config, log log.Log) (*Auth, error)
 
 	defaultGuardName := config.GetString("auth.defaults.guard")
 	auth.defaultGuardName = defaultGuardName
-	defaultGuard := auth.guard(defaultGuardName)
-	auth.GuardDriver = defaultGuard
+
+	if ctx != nil {
+		defaultGuard := auth.guard(defaultGuardName)
+		auth.GuardDriver = defaultGuard
+	}
 
 	return auth, nil
 }
