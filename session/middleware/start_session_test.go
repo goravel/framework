@@ -268,7 +268,11 @@ func (r *TestRequest) InputArray(string, ...[]string) []string {
 	panic("do not need to implement it")
 }
 
-func (r *TestRequest) InputMap(string, ...map[string]string) map[string]string {
+func (r *TestRequest) InputMap(string, ...map[string]any) map[string]any {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) InputMapArray(string, ...[]map[string]any) []map[string]any {
 	panic("do not need to implement it")
 }
 

@@ -65,7 +65,8 @@ type ContextRequest interface {
 	// Input retrieves data from the request in the following order: JSON, form, query, and route parameters.
 	Input(key string, defaultValue ...string) string
 	InputArray(key string, defaultValue ...[]string) []string
-	InputMap(key string, defaultValue ...map[string]string) map[string]string
+	InputMap(key string, defaultValue ...map[string]any) map[string]any
+	InputMapArray(key string, defaultValue ...[]map[string]any) []map[string]any
 	InputInt(key string, defaultValue ...int) int
 	InputInt64(key string, defaultValue ...int64) int64
 	InputBool(key string, defaultValue ...bool) bool
