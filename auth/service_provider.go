@@ -41,7 +41,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return NewAuth(ctx.(http.Context), configFacade, log)
 		}
 
-		// ctx is unnecessary when calling facades.Auth().Extend()
+		// ctx is optional when calling facades.Auth().Extend()
 		return NewAuth(nil, configFacade, log)
 	})
 	app.Singleton(contracts.BindingGate, func(app foundation.Application) (any, error) {
