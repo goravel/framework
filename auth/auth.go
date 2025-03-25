@@ -18,9 +18,10 @@ var (
 
 type Auth struct {
 	contractsauth.GuardDriver
-	config config.Config
-	ctx    http.Context
-	log    log.Log
+	config           config.Config
+	ctx              http.Context
+	defaultGuardName string
+	log              log.Log
 }
 
 func NewAuth(ctx http.Context, config config.Config, log log.Log) (*Auth, error) {
@@ -33,7 +34,9 @@ func NewAuth(ctx http.Context, config config.Config, log log.Log) (*Auth, error)
 	auth.Extend("jwt", NewJwtGuard)
 	auth.Provider("orm", NewOrmUserProvider)
 
-	defaultGuard := auth.Guard(config.GetString("auth.defaults.guard"))
+	defaultGuardName := config.GetString("auth.defaults.guard")
+	auth.defaultGuardName = defaultGuardName
+	defaultGuard := auth.guard(defaultGuardName)
 	auth.GuardDriver = defaultGuard
 
 	return auth, nil
@@ -44,27 +47,11 @@ func (r *Auth) Extend(name string, fn contractsauth.GuardFunc) {
 }
 
 func (r *Auth) Guard(name string) contractsauth.GuardDriver {
-	driverName := r.config.GetString(fmt.Sprintf("auth.guards.%s.driver", name))
-	guardFunc, ok := guardFuncs.Load(driverName)
-	if !ok {
-		r.log.Panic(errors.AuthGuardDriverNotFound.Args(driverName, name).Error())
-		return nil
+	if name == "" || name == r.defaultGuardName {
+		return r.GuardDriver
 	}
 
-	userProviderName := r.config.GetString(fmt.Sprintf("auth.guards.%s.provider", name))
-	userProvider, err := r.createUserProvider(userProviderName)
-	if err != nil {
-		r.log.Panic(err.Error())
-		return nil
-	}
-
-	guard, err := guardFunc.(contractsauth.GuardFunc)(r.ctx, name, userProvider)
-	if err != nil {
-		r.log.Panic(err.Error())
-		return nil
-	}
-
-	return guard
+	return r.guard(name)
 }
 
 func (r *Auth) Provider(name string, fn contractsauth.UserProviderFunc) {
@@ -86,4 +73,28 @@ func (r *Auth) createUserProvider(name string) (contractsauth.UserProvider, erro
 	}
 
 	return provider, nil
+}
+
+func (r *Auth) guard(name string) contractsauth.GuardDriver {
+	driverName := r.config.GetString(fmt.Sprintf("auth.guards.%s.driver", name))
+	guardFunc, ok := guardFuncs.Load(driverName)
+	if !ok {
+		r.log.Panic(errors.AuthGuardDriverNotFound.Args(driverName, name).Error())
+		return nil
+	}
+
+	userProviderName := r.config.GetString(fmt.Sprintf("auth.guards.%s.provider", name))
+	userProvider, err := r.createUserProvider(userProviderName)
+	if err != nil {
+		r.log.Panic(err.Error())
+		return nil
+	}
+
+	guard, err := guardFunc.(contractsauth.GuardFunc)(r.ctx, name, userProvider)
+	if err != nil {
+		r.log.Panic(err.Error())
+		return nil
+	}
+
+	return guard
 }

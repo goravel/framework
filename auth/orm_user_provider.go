@@ -6,6 +6,7 @@ import (
 	contractsauth "github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/database"
 )
 
@@ -17,6 +18,10 @@ type OrmUserProvider struct {
 }
 
 func NewOrmUserProvider(ctx http.Context) (contractsauth.UserProvider, error) {
+	if ormFacade == nil {
+		return nil, errors.OrmFacadeNotSet.SetModule(errors.ModuleAuth)
+	}
+
 	return &OrmUserProvider{
 		ctx: ctx,
 		orm: ormFacade,
@@ -24,8 +29,8 @@ func NewOrmUserProvider(ctx http.Context) (contractsauth.UserProvider, error) {
 }
 
 // GetID implements auth.UserProvider.
-func (r *OrmUserProvider) GetID(user any) any {
-	return database.GetID(user)
+func (r *OrmUserProvider) GetID(user any) (any, error) {
+	return database.GetID(user), nil
 }
 
 // RetriveByID implements auth.UserProvider.

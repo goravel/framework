@@ -48,6 +48,9 @@ func NewJwtGuard(ctx http.Context, name string, userProvider contractsauth.UserP
 	if ctx == nil {
 		return nil, errors.InvalidHttpContext.SetModule(errors.ModuleAuth)
 	}
+	if cacheFacade == nil {
+		return nil, errors.CacheFacadeNotSet.SetModule(errors.ModuleAuth)
+	}
 
 	jwtSecret := configFacade.GetString("jwt.secret")
 	if jwtSecret == "" {
@@ -83,13 +86,13 @@ func (r *JwtGuard) Check() bool {
 	return true
 }
 
-func (r *JwtGuard) GetAuthToken() (*JwtToken, error) {
+func (r *JwtGuard) GetJwtToken() (*JwtToken, error) {
 	guards, ok := r.ctx.Value(ctxJwtKey).(Guards)
 	if !ok {
 		return nil, ErrorParseTokenFirst
 	}
 
-	return r.authToken(guards)
+	return r.jwtToken(guards)
 }
 
 func (r *JwtGuard) Guest() bool {
@@ -97,7 +100,7 @@ func (r *JwtGuard) Guest() bool {
 }
 
 func (r *JwtGuard) ID() (string, error) {
-	guard, err := r.GetAuthToken()
+	guard, err := r.GetJwtToken()
 	if err != nil {
 		return "", err
 	}
@@ -106,7 +109,10 @@ func (r *JwtGuard) ID() (string, error) {
 }
 
 func (r *JwtGuard) Login(user any) (token string, err error) {
-	id := r.provider.GetID(user)
+	id, err := r.provider.GetID(user)
+	if err != nil {
+		return "", err
+	}
 	if id == nil {
 		return "", errors.AuthNoPrimaryKeyField
 	}
@@ -147,13 +153,9 @@ func (r *JwtGuard) Logout() error {
 		return errors.AuthParseTokenFirst
 	}
 
-	guard, err := r.authToken(guards)
+	guard, err := r.jwtToken(guards)
 	if err != nil {
 		return err
-	}
-
-	if r.cache == nil {
-		return errors.CacheSupportRequired.SetModule(errors.ModuleAuth)
 	}
 
 	if err := r.cache.Put(getDisabledCacheKey(guard.Token),
@@ -171,9 +173,6 @@ func (r *JwtGuard) Logout() error {
 
 func (r *JwtGuard) Parse(token string) (*contractsauth.Payload, error) {
 	token = strings.ReplaceAll(token, "Bearer ", "")
-	if r.cache == nil {
-		return nil, errors.CacheSupportRequired.SetModule(errors.ModuleAuth)
-	}
 	if r.tokenIsDisabled(token) {
 		return nil, errors.AuthTokenDisabled
 	}
@@ -241,7 +240,7 @@ func (r *JwtGuard) Refresh() (token string, err error) {
 
 // User need parse token first.
 func (r *JwtGuard) User(user any) error {
-	guard, err := r.GetAuthToken()
+	guard, err := r.GetJwtToken()
 
 	if err != nil {
 		return err
@@ -252,25 +251,25 @@ func (r *JwtGuard) User(user any) error {
 	return err
 }
 
-func (r *JwtGuard) authToken(guards Guards) (*JwtToken, error) {
-	guard, ok := guards[r.guard]
-	if !ok || guard == nil {
+func (r *JwtGuard) jwtToken(guards Guards) (*JwtToken, error) {
+	jwtToken, ok := guards[r.guard]
+	if !ok || jwtToken == nil {
 		return nil, ErrorParseTokenFirst
 	}
 
-	if guard.Claims == nil {
+	if jwtToken.Claims == nil {
 		return nil, errors.AuthParseTokenFirst
 	}
 
-	if guard.Claims.Key == "" {
+	if jwtToken.Claims.Key == "" {
 		return nil, errors.AuthInvalidKey
 	}
 
-	if guard.Token == "" {
+	if jwtToken.Token == "" {
 		return nil, errors.AuthTokenExpired
 	}
 
-	return guard, nil
+	return jwtToken, nil
 }
 
 func (r *JwtGuard) makeAuthContext(claims *Claims, token string) {

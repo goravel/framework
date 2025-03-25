@@ -35,7 +35,7 @@ type GuardDriver interface {
 }
 
 type UserProvider interface {
-	GetID(user any) any
+	GetID(user any) (any, error)
 	RetriveByID(user any, id any) error
 }
 

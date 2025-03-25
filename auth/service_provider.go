@@ -31,17 +31,6 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleAuth)
 		}
 
-		cacheFacade = app.MakeCache()
-		if cacheFacade == nil {
-			return nil, errors.CacheFacadeNotSet.SetModule(errors.ModuleAuth)
-		}
-
-		ormFacade = app.MakeOrm()
-		if ormFacade == nil {
-			// The Orm module will print the error message, so it's safe to return nil.
-			return nil, nil
-		}
-
 		log := app.MakeLog()
 		if log == nil {
 			return nil, errors.LogFacadeNotSet.SetModule(errors.ModuleAuth)
@@ -61,6 +50,9 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (r *ServiceProvider) Boot(app foundation.Application) {
+	cacheFacade = app.MakeCache()
+	ormFacade = app.MakeOrm()
+
 	r.registerCommands(app)
 }
 
