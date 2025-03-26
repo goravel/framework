@@ -65,13 +65,7 @@ func (r *BuildCommand) Handle(ctx console.Context) error {
 		ctx.Warning("*     Application In Production!     *")
 		ctx.Warning("**************************************")
 
-		answer, err := ctx.Confirm("Do you really wish to run this command?")
-		if err != nil {
-			ctx.Error(fmt.Sprintf("Confirm error: %v", err))
-			return nil
-		}
-
-		if !answer {
+		if !ctx.Confirm("Do you really wish to run this command?") {
 			ctx.Warning("Command cancelled!")
 			return nil
 		}

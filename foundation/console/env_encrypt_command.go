@@ -63,11 +63,8 @@ func (r *EnvEncryptCommand) Handle(ctx console.Context) error {
 		ctx.Error("Environment file not found.")
 		return nil
 	}
-	if file.Exists(name) {
-		answer, _ := ctx.Confirm("Encrypted environment file already exists, are you sure to overwrite?")
-		if !answer {
-			return nil
-		}
+	if file.Exists(name) && !ctx.Confirm("Encrypted environment file already exists, are you sure to overwrite?") {
+		return nil
 	}
 
 	ciphertext, err := r.encrypt(plaintext, []byte(key))

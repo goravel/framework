@@ -67,11 +67,8 @@ func (r *EnvDecryptCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	if file.Exists(support.EnvFilePath) {
-		answer, _ := ctx.Confirm("Environment file already exists, are you sure to overwrite?")
-		if !answer {
-			return nil
-		}
+	if file.Exists(support.EnvFilePath) && !ctx.Confirm("Environment file already exists, are you sure to overwrite?") {
+		return nil
 	}
 
 	plaintext, err := r.decrypt(ciphertext, []byte(key))

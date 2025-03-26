@@ -106,7 +106,7 @@ func (r *CliContext) Comment(message string) {
 	color.Debugln(message)
 }
 
-func (r *CliContext) Confirm(question string, option ...console.ConfirmOption) (bool, error) {
+func (r *CliContext) Confirm(question string, option ...console.ConfirmOption) bool {
 	input := huh.NewConfirm().Title(question)
 	answer := false
 	if len(option) > 0 {
@@ -123,10 +123,12 @@ func (r *CliContext) Confirm(question string, option ...console.ConfirmOption) (
 	}
 
 	if err := input.Value(&answer).Run(); err != nil {
-		return false, err
+		r.Error(err.Error())
+		
+		return false
 	}
 
-	return answer, nil
+	return answer
 }
 
 func (r *CliContext) Error(message string) {

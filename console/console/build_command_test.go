@@ -39,24 +39,13 @@ func TestBuildCommand(t *testing.T) {
 			},
 		},
 		{
-			name: "Sad path - env is prod and confirm error",
-			setup: func() {
-				mockConfig.EXPECT().GetString("app.env").Return("production").Once()
-				mockContext.EXPECT().Warning("**************************************").Once()
-				mockContext.EXPECT().Warning("*     Application In Production!     *").Once()
-				mockContext.EXPECT().Warning("**************************************").Once()
-				mockContext.EXPECT().Confirm("Do you really wish to run this command?").Return(false, errors.New("error")).Once()
-				mockContext.EXPECT().Error("Confirm error: error").Once()
-			},
-		},
-		{
 			name: "Sad path - env is prod and confirm false",
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("production").Once()
 				mockContext.EXPECT().Warning("**************************************").Once()
 				mockContext.EXPECT().Warning("*     Application In Production!     *").Once()
 				mockContext.EXPECT().Warning("**************************************").Once()
-				mockContext.EXPECT().Confirm("Do you really wish to run this command?").Return(false, nil).Once()
+				mockContext.EXPECT().Confirm("Do you really wish to run this command?").Return(false).Once()
 				mockContext.EXPECT().Warning("Command cancelled!").Once()
 			},
 		},

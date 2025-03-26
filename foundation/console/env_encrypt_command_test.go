@@ -95,7 +95,7 @@ func (s *EnvEncryptCommandTestSuite) TestHandle() {
 
 		mockContext.EXPECT().Option("key").Return(EnvFileEncryptValidKey).Once()
 		mockContext.EXPECT().Option("name").Return(support.EnvFileEncryptPath).Once()
-		mockContext.EXPECT().Confirm("Encrypted environment file already exists, are you sure to overwrite?").Return(false, nil).Once()
+		mockContext.EXPECT().Confirm("Encrypted environment file already exists, are you sure to overwrite?").Return(false).Once()
 
 		s.Nil(cmd.Handle(mockContext))
 	})
@@ -123,7 +123,7 @@ func (s *EnvEncryptCommandTestSuite) TestHandle() {
 
 		mockContext.EXPECT().Option("key").Return(EnvFileEncryptValidKey).Once()
 		mockContext.EXPECT().Option("name").Return(support.EnvFileEncryptPath).Once()
-		mockContext.EXPECT().Confirm("Encrypted environment file already exists, are you sure to overwrite?").Return(true, nil).Once()
+		mockContext.EXPECT().Confirm("Encrypted environment file already exists, are you sure to overwrite?").Return(true).Once()
 		mockContext.EXPECT().Success("Environment successfully encrypted.").Once()
 		mockContext.EXPECT().TwoColumnDetail("Key", EnvFileEncryptValidKey).Once()
 		mockContext.EXPECT().TwoColumnDetail("Cipher", support.EnvFileEncryptCipher).Once()

@@ -119,7 +119,7 @@ func (s *EnvDecryptCommandTestSuite) TestHandle() {
 
 		mockContext.EXPECT().Option("key").Return(EnvFileDecryptValidKey).Once()
 		mockContext.EXPECT().Option("name").Return(support.EnvFileEncryptPath).Once()
-		mockContext.EXPECT().Confirm("Environment file already exists, are you sure to overwrite?").Return(false, nil).Once()
+		mockContext.EXPECT().Confirm("Environment file already exists, are you sure to overwrite?").Return(false).Once()
 		s.Nil(cmd.Handle(mockContext))
 	})
 
@@ -133,7 +133,7 @@ func (s *EnvDecryptCommandTestSuite) TestHandle() {
 
 		mockContext.EXPECT().Option("key").Return(EnvFileDecryptValidKey).Once()
 		mockContext.EXPECT().Option("name").Return(support.EnvFileEncryptPath).Once()
-		mockContext.EXPECT().Confirm("Environment file already exists, are you sure to overwrite?").Return(true, nil).Once()
+		mockContext.EXPECT().Confirm("Environment file already exists, are you sure to overwrite?").Return(true).Once()
 		mockContext.EXPECT().Success("Encrypted environment successfully decrypted.").Once()
 
 		s.Nil(cmd.Handle(mockContext))
