@@ -161,12 +161,11 @@ func TestConfirmToProceed(t *testing.T) {
 			expectResult: true,
 		},
 		{
-			name: "confirm returns err",
+			name: "confirm returns false",
 			env:  "production",
 			setup: func() {
 				mockCtx.EXPECT().OptionBool("force").Return(false).Once()
-				mockCtx.EXPECT().Confirm("Are you sure you want to run this command?").Return(false, assert.AnError).Once()
-				mockCtx.EXPECT().Error(errors.ConsoleFailedToConfirm.Args(assert.AnError).Error()).Once()
+				mockCtx.EXPECT().Confirm("Are you sure you want to run this command?").Return(false).Once()
 			},
 			expectResult: false,
 		},
@@ -175,7 +174,7 @@ func TestConfirmToProceed(t *testing.T) {
 			env:  "production",
 			setup: func() {
 				mockCtx.EXPECT().OptionBool("force").Return(false).Once()
-				mockCtx.EXPECT().Confirm("Are you sure you want to run this command?").Return(true, nil).Once()
+				mockCtx.EXPECT().Confirm("Are you sure you want to run this command?").Return(true).Once()
 			},
 			expectResult: true,
 		},

@@ -41,13 +41,8 @@ func TestKeyGenerateCommand(t *testing.T) {
 	assert.True(t, len(env) > 10)
 
 	mockConfig.EXPECT().GetString("app.env").Return("production").Once()
-	mockContext.EXPECT().Confirm("Do you really wish to run this command?").Return(false, nil).Once()
+	mockContext.EXPECT().Confirm("Do you really wish to run this command?").Return(false).Once()
 	mockContext.EXPECT().Warning("Command cancelled!").Once()
-	assert.Nil(t, keyGenerateCommand.Handle(mockContext))
-
-	mockConfig.EXPECT().GetString("app.env").Return("production").Once()
-	mockContext.EXPECT().Confirm("Do you really wish to run this command?").Return(false, assert.AnError).Once()
-	mockContext.EXPECT().Error(assert.AnError.Error()).Once()
 	assert.Nil(t, keyGenerateCommand.Handle(mockContext))
 
 	env, err = os.ReadFile(support.EnvFilePath)
@@ -84,7 +79,7 @@ func TestKeyGenerateCommandWithCustomEnvFile(t *testing.T) {
 	assert.True(t, len(env) > 10)
 
 	mockConfig.EXPECT().GetString("app.env").Return("production").Once()
-	mockContext.EXPECT().Confirm("Do you really wish to run this command?").Return(false, nil).Once()
+	mockContext.EXPECT().Confirm("Do you really wish to run this command?").Return(false).Once()
 	mockContext.EXPECT().Warning("Command cancelled!").Once()
 	assert.Nil(t, keyGenerateCommand.Handle(mockContext))
 

@@ -46,13 +46,7 @@ func (r *KeyGenerateCommand) Handle(ctx console.Context) error {
 		color.Warningln("*     Application In Production!     *")
 		color.Warningln("**************************************")
 
-		answer, err := ctx.Confirm("Do you really wish to run this command?")
-		if err != nil {
-			ctx.Error(err.Error())
-			return nil
-		}
-
-		if !answer {
+		if !ctx.Confirm("Do you really wish to run this command?") {
 			ctx.Warning("Command cancelled!")
 			return nil
 		}

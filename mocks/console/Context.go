@@ -290,7 +290,7 @@ func (_c *Context_Comment_Call) RunAndReturn(run func(string)) *Context_Comment_
 }
 
 // Confirm provides a mock function with given fields: question, option
-func (_m *Context) Confirm(question string, option ...console.ConfirmOption) (bool, error) {
+func (_m *Context) Confirm(question string, option ...console.ConfirmOption) bool {
 	_va := make([]interface{}, len(option))
 	for _i := range option {
 		_va[_i] = option[_i]
@@ -305,23 +305,13 @@ func (_m *Context) Confirm(question string, option ...console.ConfirmOption) (bo
 	}
 
 	var r0 bool
-	var r1 error
-	if rf, ok := ret.Get(0).(func(string, ...console.ConfirmOption) (bool, error)); ok {
-		return rf(question, option...)
-	}
 	if rf, ok := ret.Get(0).(func(string, ...console.ConfirmOption) bool); ok {
 		r0 = rf(question, option...)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	if rf, ok := ret.Get(1).(func(string, ...console.ConfirmOption) error); ok {
-		r1 = rf(question, option...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // Context_Confirm_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Confirm'
@@ -350,12 +340,12 @@ func (_c *Context_Confirm_Call) Run(run func(question string, option ...console.
 	return _c
 }
 
-func (_c *Context_Confirm_Call) Return(_a0 bool, _a1 error) *Context_Confirm_Call {
-	_c.Call.Return(_a0, _a1)
+func (_c *Context_Confirm_Call) Return(_a0 bool) *Context_Confirm_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Context_Confirm_Call) RunAndReturn(run func(string, ...console.ConfirmOption) (bool, error)) *Context_Confirm_Call {
+func (_c *Context_Confirm_Call) RunAndReturn(run func(string, ...console.ConfirmOption) bool) *Context_Confirm_Call {
 	_c.Call.Return(run)
 	return _c
 }

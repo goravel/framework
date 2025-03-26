@@ -82,7 +82,7 @@ func TestWipeCommand(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("production").Once()
 				mockContext.EXPECT().OptionBool("force").Return(false).Once()
-				mockContext.EXPECT().Confirm("Are you sure you want to run this command?").Return(true, nil).Once()
+				mockContext.EXPECT().Confirm("Are you sure you want to run this command?").Return(true).Once()
 				mockContext.EXPECT().Option("database").Return("postgres").Once()
 				mockContext.EXPECT().OptionBool("drop-views").Return(true).Once()
 				mockSchema.EXPECT().Connection("postgres").Return(mockSchema).Once()
@@ -102,8 +102,7 @@ func TestWipeCommand(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("production").Once()
 				mockContext.EXPECT().OptionBool("force").Return(false).Once()
-				mockContext.EXPECT().Confirm("Are you sure you want to run this command?").Return(false, assert.AnError).Once()
-				mockContext.EXPECT().Error(errors.ConsoleFailedToConfirm.Args(assert.AnError).Error()).Once()
+				mockContext.EXPECT().Confirm("Are you sure you want to run this command?").Return(false).Once()
 				mockContext.EXPECT().Warning(errors.ConsoleRunInProduction.Error()).Once()
 			},
 		},
@@ -112,7 +111,7 @@ func TestWipeCommand(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("production").Once()
 				mockContext.EXPECT().OptionBool("force").Return(false).Once()
-				mockContext.EXPECT().Confirm("Are you sure you want to run this command?").Return(false, nil).Once()
+				mockContext.EXPECT().Confirm("Are you sure you want to run this command?").Return(false).Once()
 				mockContext.EXPECT().Warning(errors.ConsoleRunInProduction.Error()).Once()
 			},
 		},

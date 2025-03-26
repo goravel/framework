@@ -91,11 +91,5 @@ func ConfirmToProceed(ctx console.Context, env string) bool {
 		return true
 	}
 
-	confirmed, err := ctx.Confirm("Are you sure you want to run this command?")
-	if err != nil {
-		ctx.Error(errors.ConsoleFailedToConfirm.Args(err).Error())
-		return false
-	}
-
-	return confirmed
+	return ctx.Confirm("Are you sure you want to run this command?")
 }

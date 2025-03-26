@@ -27,7 +27,7 @@ type Context interface {
 	// Comment writes a comment message to the console.
 	Comment(message string)
 	// Confirm prompts the user for a confirmation.
-	Confirm(question string, option ...ConfirmOption) (bool, error)
+	Confirm(question string, option ...ConfirmOption) bool
 	// Argument get the value of a command argument.
 	Argument(index int) string
 	// Arguments get all the arguments passed to command.
