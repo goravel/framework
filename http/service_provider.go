@@ -5,6 +5,7 @@ import (
 
 	"github.com/goravel/framework/contracts"
 	"github.com/goravel/framework/contracts/cache"
+	"github.com/goravel/framework/contracts/config"
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http"
@@ -19,6 +20,7 @@ type ServiceProvider struct{}
 
 var (
 	CacheFacade       cache.Cache
+	ConfigFacade      config.Config
 	LogFacade         log.Log
 	RateLimiterFacade http.RateLimiter
 	JsonFacade        foundation.Json
@@ -32,8 +34,8 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		return NewView(), nil
 	})
 	app.Bind(contracts.BindingHttp, func(app foundation.Application) (any, error) {
-		c := app.MakeConfig()
-		if c == nil {
+		ConfigFacade = app.MakeConfig()
+		if ConfigFacade == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleHttp)
 		}
 
@@ -42,15 +44,14 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, errors.JSONParserNotSet.SetModule(errors.ModuleHttp)
 		}
 
-		config := &contractsclient.Config{
-			Timeout:             c.GetDuration("http.client.timeout", 30*time.Second),
-			BaseUrl:             c.GetString("http.client.base_url"),
-			MaxIdleConns:        c.GetInt("http.client.max_idle_conns"),
-			MaxIdleConnsPerHost: c.GetInt("http.client.max_idle_conns_per_host"),
-			MaxConnsPerHost:     c.GetInt("http.client.max_conns_per_host"),
-			IdleConnTimeout:     c.GetDuration("http.client.idle_conn_timeout"),
-		}
-		return client.NewRequest(config, j), nil
+		return client.NewRequest(&contractsclient.Config{
+			Timeout:             ConfigFacade.GetDuration("http.client.timeout", 30*time.Second),
+			BaseUrl:             ConfigFacade.GetString("http.client.base_url"),
+			MaxIdleConns:        ConfigFacade.GetInt("http.client.max_idle_conns"),
+			MaxIdleConnsPerHost: ConfigFacade.GetInt("http.client.max_idle_conns_per_host"),
+			MaxConnsPerHost:     ConfigFacade.GetInt("http.client.max_conns_per_host"),
+			IdleConnTimeout:     ConfigFacade.GetDuration("http.client.idle_conn_timeout"),
+		}, j), nil
 	})
 }
 
@@ -78,7 +79,7 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 	r.registerCommands(app)
 }
 
-func (http *ServiceProvider) registerCommands(app foundation.Application) {
+func (r *ServiceProvider) registerCommands(app foundation.Application) {
 	app.Commands([]contractsconsole.Command{
 		&console.RequestMakeCommand{},
 		&console.ControllerMakeCommand{},
