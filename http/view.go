@@ -1,6 +1,7 @@
 package http
 
 import (
+	"path/filepath"
 	"sync"
 
 	"github.com/goravel/framework/support/file"
@@ -15,7 +16,7 @@ func NewView() *View {
 }
 
 func (r *View) Exists(view string) bool {
-	return file.Exists("resources/views/" + view)
+	return file.Exists(filepath.Join("resources", "views", view))
 }
 
 func (r *View) Share(key string, value any) {
