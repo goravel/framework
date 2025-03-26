@@ -399,6 +399,64 @@ func (_c *ContextRequest_File_Call) RunAndReturn(run func(string) (filesystem.Fi
 	return _c
 }
 
+// Files provides a mock function with given fields: name
+func (_m *ContextRequest) Files(name string) ([]filesystem.File, error) {
+	ret := _m.Called(name)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Files")
+	}
+
+	var r0 []filesystem.File
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) ([]filesystem.File, error)); ok {
+		return rf(name)
+	}
+	if rf, ok := ret.Get(0).(func(string) []filesystem.File); ok {
+		r0 = rf(name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]filesystem.File)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(name)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ContextRequest_Files_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Files'
+type ContextRequest_Files_Call struct {
+	*mock.Call
+}
+
+// Files is a helper method to define mock.On call
+//   - name string
+func (_e *ContextRequest_Expecter) Files(name interface{}) *ContextRequest_Files_Call {
+	return &ContextRequest_Files_Call{Call: _e.mock.On("Files", name)}
+}
+
+func (_c *ContextRequest_Files_Call) Run(run func(name string)) *ContextRequest_Files_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *ContextRequest_Files_Call) Return(_a0 []filesystem.File, _a1 error) *ContextRequest_Files_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *ContextRequest_Files_Call) RunAndReturn(run func(string) ([]filesystem.File, error)) *ContextRequest_Files_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // FullUrl provides a mock function with no fields
 func (_m *ContextRequest) FullUrl() string {
 	ret := _m.Called()
