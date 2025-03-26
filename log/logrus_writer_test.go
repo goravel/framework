@@ -13,11 +13,8 @@ import (
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/goravel/framework/contracts/filesystem"
 	contractshttp "github.com/goravel/framework/contracts/http"
 	logcontracts "github.com/goravel/framework/contracts/log"
-	contractsession "github.com/goravel/framework/contracts/session"
-	"github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/foundation/json"
 	configmock "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/support/carbon"
@@ -616,10 +613,8 @@ func (h *CustomHook) Fire(entry logcontracts.Entry) error {
 	return nil
 }
 
-type TestRequest struct{}
-
-func (r *TestRequest) Header(key string, defaultValue ...string) string {
-	panic("do not need to implement it")
+type TestRequest struct {
+	contractshttp.ContextRequest
 }
 
 func (r *TestRequest) Headers() nethttp.Header {
@@ -637,20 +632,8 @@ func (r *TestRequest) Path() string {
 	return "/test"
 }
 
-func (r *TestRequest) Url() string {
-	panic("do not need to implement it")
-}
-
 func (r *TestRequest) FullUrl() string {
 	return "http://localhost:3000/"
-}
-
-func (r *TestRequest) Ip() string {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) Host() string {
-	panic("do not need to implement it")
 }
 
 func (r *TestRequest) All() map[string]any {
@@ -660,196 +643,17 @@ func (r *TestRequest) All() map[string]any {
 	}
 }
 
-func (r *TestRequest) Cookie(key string, defaultValue ...string) string {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) Bind(obj any) error {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) BindQuery(any) error {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) Route(key string) string {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) RouteInt(key string) int {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) RouteInt64(key string) int64 {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) Query(key string, defaultValue ...string) string {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) QueryInt(key string, defaultValue ...int) int {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) QueryInt64(key string, defaultValue ...int64) int64 {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) QueryBool(key string, defaultValue ...bool) bool {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) QueryArray(key string) []string {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) QueryMap(key string) map[string]string {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) Queries() map[string]string {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) HasSession() bool {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) SetSession(contractsession.Session) contractshttp.ContextRequest {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) Session() contractsession.Session {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) Input(key string, defaultValue ...string) string {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) InputArray(key string, defaultValue ...[]string) []string {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) InputMap(key string, defaultValue ...map[string]any) map[string]any {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) InputMapArray(key string, defaultValue ...[]map[string]any) []map[string]any {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) InputInt(key string, defaultValue ...int) int {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) InputInt64(key string, defaultValue ...int64) int64 {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) InputBool(key string, defaultValue ...bool) bool {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) File(name string) (filesystem.File, error) {
-	panic("do not need to implement it")
-}
-
 func (r *TestRequest) Abort(code ...int) {
-}
-
-func (r *TestRequest) AbortWithStatus(code int) {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) AbortWithStatusJson(code int, jsonObj any) {
-	panic("do not need to implement it")
 }
 
 func (r *TestRequest) Next() {}
 
-func (r *TestRequest) Origin() *nethttp.Request {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) Validate(rules map[string]string, options ...validation.Option) (validation.Validator, error) {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) ValidateRequest(request contractshttp.FormRequest) (validation.Errors, error) {
-	panic("do not need to implement it")
-}
-
 type TestResponse struct {
-}
-
-func (r *TestResponse) Cookie(cookie contractshttp.Cookie) contractshttp.ContextResponse {
-	panic("do not need to implement it")
-}
-
-func (r *TestResponse) Data(code int, contentType string, data []byte) contractshttp.AbortableResponse {
-	panic("do not need to implement it")
-}
-
-func (r *TestResponse) Download(filepath, filename string) contractshttp.Response {
-	panic("do not need to implement it")
-}
-
-func (r *TestResponse) File(filepath string) contractshttp.Response {
-	panic("do not need to implement it")
-}
-
-func (r *TestResponse) Header(key, value string) contractshttp.ContextResponse {
-	panic("do not need to implement it")
-}
-
-func (r *TestResponse) Json(code int, obj any) contractshttp.AbortableResponse {
-	panic("do not need to implement it")
-}
-
-func (r *TestResponse) NoContent(...int) contractshttp.AbortableResponse {
-	panic("do not need to implement it")
+	contractshttp.ContextResponse
 }
 
 func (r *TestResponse) Origin() contractshttp.ResponseOrigin {
 	return &TestResponseOrigin{ctx: r}
-}
-
-func (r *TestResponse) Redirect(code int, location string) contractshttp.AbortableResponse {
-	panic("do not need to implement it")
-}
-
-func (r *TestResponse) String(code int, format string, values ...any) contractshttp.AbortableResponse {
-	panic("do not need to implement it")
-}
-
-func (r *TestResponse) Success() contractshttp.ResponseStatus {
-	panic("do not need to implement it")
-}
-
-func (r *TestResponse) Status(code int) contractshttp.ResponseStatus {
-	panic("do not need to implement it")
-}
-
-func (r *TestResponse) Stream(int, func(w contractshttp.StreamWriter) error) contractshttp.Response {
-	panic("do not need to implement it")
-}
-
-func (r *TestResponse) WithoutCookie(name string) contractshttp.ContextResponse {
-	panic("do not need to implement it")
-}
-
-func (r *TestResponse) Writer() nethttp.ResponseWriter {
-	panic("do not need to implement it")
-}
-
-func (r *TestResponse) Flush() {
-	panic("do not need to implement it")
-}
-
-func (r *TestResponse) View() contractshttp.ResponseView {
-	panic("do not need to implement it")
 }
 
 type TestResponseOrigin struct {
