@@ -72,6 +72,7 @@ type ContextRequest interface {
 	InputBool(key string, defaultValue ...bool) bool
 	// File retrieves a file by its key from the request.
 	File(name string) (filesystem.File, error)
+	Files(name string) ([]filesystem.File, error)
 
 	// Abort aborts the request with the specified HTTP status code, default is 400.
 	Abort(code ...int)
