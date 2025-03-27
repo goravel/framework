@@ -31,11 +31,11 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 
 		locale := config.GetString("app.locale")
 		fallback := config.GetString("app.fallback_locale")
-		path := config.Get("app.lang_path", "lang")
+		path := config.GetString("app.lang_path", "lang")
 
 		var loader contractstranslation.Loader
-		if f, ok := path.(fs.FS); ok {
-			loader = NewFSLoader(f, app.GetJson())
+		if f, ok := config.Get("app.lang_fs").(fs.FS); ok {
+			loader = NewFSLoader(path, f, app.GetJson())
 		} else {
 			loader = NewFileLoader([]string{cast.ToString(path)}, app.GetJson())
 		}

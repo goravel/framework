@@ -10,12 +10,14 @@ import (
 )
 
 type FSLoader struct {
+	path string
 	fs   fs.FS
 	json foundation.Json
 }
 
-func NewFSLoader(fs fs.FS, json foundation.Json) contractstranslation.Loader {
+func NewFSLoader(path string, fs fs.FS, json foundation.Json) contractstranslation.Loader {
 	return &FSLoader{
+		path: path,
 		fs:   fs,
 		json: json,
 	}
@@ -23,9 +25,9 @@ func NewFSLoader(fs fs.FS, json foundation.Json) contractstranslation.Loader {
 
 func (f *FSLoader) Load(locale string, group string) (map[string]any, error) {
 	var val map[string]any
-	fullPath := path.Join(locale, group+".json")
+	fullPath := path.Join(f.path, locale, group+".json")
 	if group == "*" {
-		fullPath = path.Join(locale + ".json")
+		fullPath = path.Join(f.path, locale+".json")
 	}
 
 	data, err := fs.ReadFile(f.fs, fullPath)
