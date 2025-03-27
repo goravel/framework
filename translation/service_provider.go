@@ -2,9 +2,13 @@ package translation
 
 import (
 	"context"
+	"io/fs"
+
+	"github.com/spf13/cast"
 
 	"github.com/goravel/framework/contracts"
 	"github.com/goravel/framework/contracts/foundation"
+	contractstranslation "github.com/goravel/framework/contracts/translation"
 	"github.com/goravel/framework/errors"
 )
 
@@ -27,11 +31,16 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 
 		locale := config.GetString("app.locale")
 		fallback := config.GetString("app.fallback_locale")
-		path := config.GetString("app.lang_path", "lang")
-		loader := NewFileLoader([]string{path}, app.GetJson())
-		trans := NewTranslator(parameters["ctx"].(context.Context), loader, locale, fallback, logger)
+		path := config.Get("app.lang_path", "lang")
 
-		return trans, nil
+		var loader contractstranslation.Loader
+		if f, ok := path.(fs.FS); ok {
+			loader = NewFSLoader(f, app.GetJson())
+		} else {
+			loader = NewFileLoader([]string{cast.ToString(path)}, app.GetJson())
+		}
+
+		return NewTranslator(parameters["ctx"].(context.Context), loader, locale, fallback, logger), nil
 	})
 }
 
