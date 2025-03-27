@@ -61,7 +61,7 @@ func (s *OrmUserProviderTestSuite) TestRetriveByID() {
 	}
 	user := &User{}
 
-	s.mockOrm.EXPECT().WithContext(s.mockContext.Context()).Return(s.mockOrm).Once()
+	s.mockOrm.EXPECT().WithContext(s.mockContext).Return(s.mockOrm).Once()
 	s.mockOrm.EXPECT().Query().Return(s.mockDB).Once()
 	s.mockDB.EXPECT().FindOrFail(user, mock.Anything).Return(nil).Once()
 
@@ -76,7 +76,7 @@ func (s *OrmUserProviderTestSuite) TestRetriveByID_WithError() {
 	}
 	user := &User{}
 
-	s.mockOrm.EXPECT().WithContext(s.mockContext.Context()).Return(s.mockOrm).Once()
+	s.mockOrm.EXPECT().WithContext(s.mockContext).Return(s.mockOrm).Once()
 	s.mockOrm.EXPECT().Query().Return(s.mockDB).Once()
 	s.mockDB.EXPECT().FindOrFail(user, mock.Anything).Return(assert.AnError).Once()
 
