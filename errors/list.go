@@ -32,7 +32,6 @@ var (
 	CacheForeverFailed             = New("cache forever is failed")
 	CacheMemoryInvalidIntValueType = New("value type of %s is not *atomic.Int64 or *int64 or *atomic.Int32 or *int32")
 	CacheStoreContractNotFulfilled = New("%s doesn't implement contracts/cache/store")
-	CacheSupportRequired           = New("cache support is required")
 
 	ConsoleDropAllTablesFailed = New("drop all tables failed: %v")
 	ConsoleDropAllTypesFailed  = New("drop all types failed: %v")

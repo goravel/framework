@@ -6,8 +6,8 @@ import (
 	"github.com/goravel/framework/contracts/http"
 )
 
-func Auth(ctx http.Context) auth.Auth {
-	return App().MakeAuth(ctx)
+func Auth(ctx ...http.Context) auth.Auth {
+	return App().MakeAuth(ctx...)
 }
 
 func Gate() access.Gate {

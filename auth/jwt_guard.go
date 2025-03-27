@@ -16,16 +16,18 @@ import (
 	"github.com/goravel/framework/support/carbon"
 )
 
+var _ contractsauth.GuardFunc = NewJwtGuard
+
 type Claims struct {
 	Key string `json:"key"`
 	jwt.RegisteredClaims
 }
 
-const ctxKey = "GoravelAuth"
+const ctxJwtKey = "GoravelAuthJwt"
 
-type Guards map[string]*AuthToken
+type Guards map[string]*JwtToken
 
-type AuthToken struct {
+type JwtToken struct {
 	Claims *Claims
 	Token  string
 }
@@ -36,16 +38,44 @@ type JwtGuard struct {
 	ctx      http.Context
 	guard    string
 	provider contractsauth.UserProvider
+
+	secret     string
+	ttl        int
+	refreshTtl int
 }
 
-func NewJwtGuard(guard string, cache cache.Cache, config config.Config, ctx http.Context, provider contractsauth.UserProvider) *JwtGuard {
-	return &JwtGuard{
-		cache:    cache,
-		config:   config,
-		ctx:      ctx,
-		guard:    guard,
-		provider: provider,
+func NewJwtGuard(ctx http.Context, name string, userProvider contractsauth.UserProvider) (contractsauth.GuardDriver, error) {
+	if ctx == nil {
+		return nil, errors.InvalidHttpContext.SetModule(errors.ModuleAuth)
 	}
+	if cacheFacade == nil {
+		return nil, errors.CacheFacadeNotSet.SetModule(errors.ModuleAuth)
+	}
+
+	jwtSecret := configFacade.GetString("jwt.secret")
+	if jwtSecret == "" {
+		return nil, errors.AuthEmptySecret
+	}
+
+	ttl := getTtl(configFacade, name)
+
+	refreshTtl := configFacade.GetInt("jwt.refresh_ttl")
+	if refreshTtl == 0 {
+		// 100 years
+		refreshTtl = 60 * 24 * 365 * 100
+	}
+
+	return &JwtGuard{
+		cache:    cacheFacade,
+		config:   configFacade,
+		ctx:      ctx,
+		guard:    name,
+		provider: userProvider,
+
+		secret:     jwtSecret,
+		ttl:        ttl,
+		refreshTtl: refreshTtl,
+	}, nil
 }
 
 func (r *JwtGuard) Check() bool {
@@ -56,13 +86,13 @@ func (r *JwtGuard) Check() bool {
 	return true
 }
 
-func (r *JwtGuard) GetAuthToken() (*AuthToken, error) {
-	guards, ok := r.ctx.Value(ctxKey).(Guards)
+func (r *JwtGuard) GetJwtToken() (*JwtToken, error) {
+	guards, ok := r.ctx.Value(ctxJwtKey).(Guards)
 	if !ok {
 		return nil, ErrorParseTokenFirst
 	}
 
-	return r.authToken(guards)
+	return r.jwtToken(guards)
 }
 
 func (r *JwtGuard) Guest() bool {
@@ -70,7 +100,7 @@ func (r *JwtGuard) Guest() bool {
 }
 
 func (r *JwtGuard) ID() (string, error) {
-	guard, err := r.GetAuthToken()
+	guard, err := r.GetJwtToken()
 	if err != nil {
 		return "", err
 	}
@@ -79,7 +109,10 @@ func (r *JwtGuard) ID() (string, error) {
 }
 
 func (r *JwtGuard) Login(user any) (token string, err error) {
-	id := r.provider.GetID(user)
+	id, err := r.provider.GetID(user)
+	if err != nil {
+		return "", err
+	}
 	if id == nil {
 		return "", errors.AuthNoPrimaryKeyField
 	}
@@ -88,13 +121,8 @@ func (r *JwtGuard) Login(user any) (token string, err error) {
 }
 
 func (r *JwtGuard) LoginUsingID(id any) (token string, err error) {
-	jwtSecret := r.config.GetString("jwt.secret")
-	if jwtSecret == "" {
-		return "", errors.AuthEmptySecret
-	}
-
 	nowTime := carbon.Now()
-	expireTime := nowTime.AddMinutes(r.getTtl()).StdTime()
+	expireTime := nowTime.AddMinutes(r.ttl).StdTime()
 	key := cast.ToString(id)
 	if key == "" {
 		return "", errors.AuthInvalidKey
@@ -109,7 +137,7 @@ func (r *JwtGuard) LoginUsingID(id any) (token string, err error) {
 	}
 
 	tokenClaims := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	token, err = tokenClaims.SignedString([]byte(jwtSecret))
+	token, err = tokenClaims.SignedString([]byte(r.secret))
 	if err != nil {
 		return "", err
 	}
@@ -120,45 +148,37 @@ func (r *JwtGuard) LoginUsingID(id any) (token string, err error) {
 }
 
 func (r *JwtGuard) Logout() error {
-	guards, ok := r.ctx.Value(ctxKey).(Guards)
+	guards, ok := r.ctx.Value(ctxJwtKey).(Guards)
 	if !ok {
 		return errors.AuthParseTokenFirst
 	}
 
-	guard, err := r.authToken(guards)
+	guard, err := r.jwtToken(guards)
 	if err != nil {
 		return err
 	}
 
-	if r.cache == nil {
-		return errors.CacheSupportRequired.SetModule(errors.ModuleAuth)
-	}
-
 	if err := r.cache.Put(getDisabledCacheKey(guard.Token),
 		true,
-		time.Duration(r.getTtl())*time.Minute,
+		time.Duration(r.ttl)*time.Minute,
 	); err != nil {
 		return err
 	}
 
 	delete(guards, r.guard)
-	r.ctx.WithValue(ctxKey, guards)
+	r.ctx.WithValue(ctxJwtKey, guards)
 
 	return nil
 }
 
 func (r *JwtGuard) Parse(token string) (*contractsauth.Payload, error) {
 	token = strings.ReplaceAll(token, "Bearer ", "")
-	if r.cache == nil {
-		return nil, errors.CacheSupportRequired.SetModule(errors.ModuleAuth)
-	}
 	if r.tokenIsDisabled(token) {
 		return nil, errors.AuthTokenDisabled
 	}
 
-	jwtSecret := r.config.GetString("jwt.secret")
 	tokenClaims, err := jwt.ParseWithClaims(token, &Claims{}, func(token *jwt.Token) (any, error) {
-		return []byte(jwtSecret), nil
+		return []byte(r.secret), nil
 	}, jwt.WithTimeFunc(func() time.Time {
 		return carbon.Now().StdTime()
 	}))
@@ -202,7 +222,7 @@ func (r *JwtGuard) Parse(token string) (*contractsauth.Payload, error) {
 
 // Refresh need parse token first.
 func (r *JwtGuard) Refresh() (token string, err error) {
-	guards, ok := r.ctx.Value(ctxKey).(Guards)
+	guards, ok := r.ctx.Value(ctxJwtKey).(Guards)
 	if !ok || guards[r.guard] == nil {
 		return "", errors.AuthParseTokenFirst
 	}
@@ -210,15 +230,8 @@ func (r *JwtGuard) Refresh() (token string, err error) {
 		return "", errors.AuthParseTokenFirst
 	}
 
-	nowTime := carbon.Now()
-	refreshTtl := r.config.GetInt("jwt.refresh_ttl")
-	if refreshTtl == 0 {
-		// 100 years
-		refreshTtl = 60 * 24 * 365 * 100
-	}
-
-	expireTime := carbon.FromStdTime(guards[r.guard].Claims.ExpiresAt.Time).AddMinutes(refreshTtl)
-	if nowTime.Gt(expireTime) {
+	expireTime := carbon.FromStdTime(guards[r.guard].Claims.ExpiresAt.Time).AddMinutes(r.refreshTtl)
+	if carbon.Now().Gt(expireTime) {
 		return "", errors.AuthRefreshTimeExceeded
 	}
 
@@ -227,7 +240,7 @@ func (r *JwtGuard) Refresh() (token string, err error) {
 
 // User need parse token first.
 func (r *JwtGuard) User(user any) error {
-	guard, err := r.GetAuthToken()
+	guard, err := r.GetJwtToken()
 
 	if err != nil {
 		return err
@@ -238,32 +251,54 @@ func (r *JwtGuard) User(user any) error {
 	return err
 }
 
-func (r *JwtGuard) authToken(guards Guards) (*AuthToken, error) {
-	guard, ok := guards[r.guard]
-	if !ok || guard == nil {
+func (r *JwtGuard) jwtToken(guards Guards) (*JwtToken, error) {
+	jwtToken, ok := guards[r.guard]
+	if !ok || jwtToken == nil {
 		return nil, ErrorParseTokenFirst
 	}
 
-	if guard.Claims == nil {
+	if jwtToken.Claims == nil {
 		return nil, errors.AuthParseTokenFirst
 	}
 
-	if guard.Claims.Key == "" {
+	if jwtToken.Claims.Key == "" {
 		return nil, errors.AuthInvalidKey
 	}
 
-	if guard.Token == "" {
+	if jwtToken.Token == "" {
 		return nil, errors.AuthTokenExpired
 	}
 
-	return guard, nil
+	return jwtToken, nil
 }
 
-func (r *JwtGuard) getTtl() int {
+func (r *JwtGuard) makeAuthContext(claims *Claims, token string) {
+	guards, ok := r.ctx.Value(ctxJwtKey).(Guards)
+	if !ok {
+		guards = make(Guards)
+	}
+	if guard, ok := guards[r.guard]; ok {
+		guard.Claims = claims
+		guard.Token = token
+	} else {
+		guards[r.guard] = &JwtToken{claims, token}
+	}
+	r.ctx.WithValue(ctxJwtKey, guards)
+}
+
+func (r *JwtGuard) tokenIsDisabled(token string) bool {
+	return r.cache.GetBool(getDisabledCacheKey(token), false)
+}
+
+func getDisabledCacheKey(token string) string {
+	return "jwt:disabled:" + token
+}
+
+func getTtl(config config.Config, guard string) int {
 	var ttl int
-	guardTtl := r.config.Get(fmt.Sprintf("auth.guards.%s.ttl", r.guard))
+	guardTtl := config.Get(fmt.Sprintf("auth.guards.%s.ttl", guard))
 	if guardTtl == nil {
-		ttl = r.config.GetInt("jwt.ttl")
+		ttl = config.GetInt("jwt.ttl")
 	} else {
 		ttl = cast.ToInt(guardTtl)
 	}
@@ -274,26 +309,4 @@ func (r *JwtGuard) getTtl() int {
 	}
 
 	return ttl
-}
-
-func (r *JwtGuard) makeAuthContext(claims *Claims, token string) {
-	guards, ok := r.ctx.Value(ctxKey).(Guards)
-	if !ok {
-		guards = make(Guards)
-	}
-	if guard, ok := guards[r.guard]; ok {
-		guard.Claims = claims
-		guard.Token = token
-	} else {
-		guards[r.guard] = &AuthToken{claims, token}
-	}
-	r.ctx.WithValue(ctxKey, guards)
-}
-
-func (r *JwtGuard) tokenIsDisabled(token string) bool {
-	return r.cache.GetBool(getDisabledCacheKey(token), false)
-}
-
-func getDisabledCacheKey(token string) string {
-	return "jwt:disabled:" + token
 }

@@ -812,16 +812,22 @@ func (_c *Application_MakeArtisan_Call) RunAndReturn(run func() console.Artisan)
 }
 
 // MakeAuth provides a mock function with given fields: ctx
-func (_m *Application) MakeAuth(ctx http.Context) auth.Auth {
-	ret := _m.Called(ctx)
+func (_m *Application) MakeAuth(ctx ...http.Context) auth.Auth {
+	_va := make([]interface{}, len(ctx))
+	for _i := range ctx {
+		_va[_i] = ctx[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for MakeAuth")
 	}
 
 	var r0 auth.Auth
-	if rf, ok := ret.Get(0).(func(http.Context) auth.Auth); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(...http.Context) auth.Auth); ok {
+		r0 = rf(ctx...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(auth.Auth)
@@ -837,14 +843,21 @@ type Application_MakeAuth_Call struct {
 }
 
 // MakeAuth is a helper method to define mock.On call
-//   - ctx http.Context
-func (_e *Application_Expecter) MakeAuth(ctx interface{}) *Application_MakeAuth_Call {
-	return &Application_MakeAuth_Call{Call: _e.mock.On("MakeAuth", ctx)}
+//   - ctx ...http.Context
+func (_e *Application_Expecter) MakeAuth(ctx ...interface{}) *Application_MakeAuth_Call {
+	return &Application_MakeAuth_Call{Call: _e.mock.On("MakeAuth",
+		append([]interface{}{}, ctx...)...)}
 }
 
-func (_c *Application_MakeAuth_Call) Run(run func(ctx http.Context)) *Application_MakeAuth_Call {
+func (_c *Application_MakeAuth_Call) Run(run func(ctx ...http.Context)) *Application_MakeAuth_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(http.Context))
+		variadicArgs := make([]http.Context, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(http.Context)
+			}
+		}
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -854,7 +867,7 @@ func (_c *Application_MakeAuth_Call) Return(_a0 auth.Auth) *Application_MakeAuth
 	return _c
 }
 
-func (_c *Application_MakeAuth_Call) RunAndReturn(run func(http.Context) auth.Auth) *Application_MakeAuth_Call {
+func (_c *Application_MakeAuth_Call) RunAndReturn(run func(...http.Context) auth.Auth) *Application_MakeAuth_Call {
 	_c.Call.Return(run)
 	return _c
 }
