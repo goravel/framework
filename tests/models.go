@@ -22,7 +22,7 @@ type BaseModel struct {
 }
 
 type NullableSoftDeletes struct {
-	DeletedAt *gorm.DeletedAt `gorm:"column:deleted_at" json:"deleted_at " db:"deleted_at"`
+	DeletedAt *gorm.DeletedAt `gorm:"column:deleted_at" json:"deleted_at" db:"deleted_at"`
 }
 
 type NullableTimestamps struct {
