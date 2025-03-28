@@ -10,14 +10,14 @@ import (
 	"github.com/goravel/framework/support/carbon"
 )
 
-type Model struct {
+type BaseModel struct {
 	ID uint `gorm:"primaryKey" json:"id"`
-	Timestamps
+	NullableTimestamps
 }
 
-type Timestamps struct {
-	CreatedAt carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at"`
-	UpdatedAt carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at"`
+type NullableTimestamps struct {
+	CreatedAt *carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at"`
+	UpdatedAt *carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at"`
 }
 
 type TestStruct struct {
@@ -62,7 +62,7 @@ func TestGetID(t *testing.T) {
 			description: "return value with Model",
 			setup: func(description string) {
 				type User struct {
-					Model
+					BaseModel
 					Name   string
 					Avatar string
 				}
@@ -99,7 +99,7 @@ func TestGetID(t *testing.T) {
 			description: "return value with Model",
 			setup: func(description string) {
 				type User struct {
-					Model
+					BaseModel
 					Name   string
 					Avatar string
 				}

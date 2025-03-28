@@ -16,23 +16,23 @@ type contextKey int
 
 const testContextKey contextKey = 0
 
-type Model struct {
+type BaseModel struct {
 	ID uint `gorm:"primaryKey" json:"id"`
-	Timestamps
+	NullableTimestamps
 }
 
-type SoftDeletes struct {
-	DeletedAt gorm.DeletedAt `gorm:"column:deleted_at" json:"deleted_at" db:"deleted_at"`
+type NullableSoftDeletes struct {
+	DeletedAt *gorm.DeletedAt `gorm:"column:deleted_at" json:"deleted_at"`
 }
 
-type Timestamps struct {
-	CreatedAt carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at" db:"created_at"`
-	UpdatedAt carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at" db:"updated_at"`
+type NullableTimestamps struct {
+	CreatedAt *carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at"`
+	UpdatedAt *carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at"`
 }
 
 type User struct {
-	Model
-	SoftDeletes
+	BaseModel
+	NullableSoftDeletes
 	Name    string
 	Bio     *string
 	Avatar  string
@@ -379,14 +379,14 @@ func (r *UserFactory) Definition() map[string]any {
 }
 
 type Role struct {
-	Model
+	BaseModel
 	Name   string
 	Avatar string
 	Users  []*User `gorm:"many2many:role_user"`
 }
 
 type Address struct {
-	Model
+	BaseModel
 	UserID   uint
 	Name     string
 	Province string
@@ -394,7 +394,7 @@ type Address struct {
 }
 
 type Book struct {
-	Model
+	BaseModel
 	UserID uint
 	Name   string
 	User   *User
@@ -402,7 +402,7 @@ type Book struct {
 }
 
 type Author struct {
-	Model
+	BaseModel
 	BookID uint   `db:"book_id"`
 	Name   string `db:"name"`
 }
@@ -426,7 +426,7 @@ func (r *AuthorFactory) Definition() map[string]any {
 }
 
 type House struct {
-	Model
+	BaseModel
 	Name          string
 	HouseableID   uint
 	HouseableType string
@@ -437,15 +437,15 @@ func (r *House) Factory() string {
 }
 
 type Phone struct {
-	Model
+	BaseModel
 	Name          string
 	PhoneableID   uint
 	PhoneableType string
 }
 
 type Product struct {
-	Model
-	SoftDeletes
+	BaseModel
+	NullableSoftDeletes
 	Name   string `db:"name"`
 	Weight *int   `db:"weight"`
 	Height *int   `db:"height"`
@@ -456,8 +456,8 @@ func (r *Product) Connection() string {
 }
 
 type Review struct {
-	Model
-	SoftDeletes
+	BaseModel
+	NullableSoftDeletes
 	Body string
 }
 
@@ -466,8 +466,8 @@ func (r *Review) Connection() string {
 }
 
 type People struct {
-	Model
-	SoftDeletes
+	BaseModel
+	NullableSoftDeletes
 	Body string
 }
 
@@ -476,8 +476,8 @@ func (r *People) Connection() string {
 }
 
 type Person struct {
-	Model
-	SoftDeletes
+	BaseModel
+	NullableSoftDeletes
 	Name string
 }
 
@@ -486,8 +486,8 @@ func (r *Person) Connection() string {
 }
 
 type Box struct {
-	Model
-	SoftDeletes
+	BaseModel
+	NullableSoftDeletes
 	Name string
 }
 
@@ -496,7 +496,7 @@ func (r *Box) Connection() string {
 }
 
 type Schema struct {
-	Model
+	BaseModel
 	Name string
 }
 

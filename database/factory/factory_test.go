@@ -12,23 +12,23 @@ import (
 	"github.com/goravel/framework/support/carbon"
 )
 
-type Model struct {
+type BaseModel struct {
 	ID uint `gorm:"primaryKey" json:"id"`
-	Timestamps
+	NullableTimestamps
 }
 
-type SoftDeletes struct {
-	DeletedAt gormio.DeletedAt `gorm:"column:deleted_at" json:"deleted_at"`
+type NullableSoftDeletes struct {
+	DeletedAt *gormio.DeletedAt `gorm:"column:deleted_at" json:"deleted_at"`
 }
 
-type Timestamps struct {
-	CreatedAt carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at"`
-	UpdatedAt carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at"`
+type NullableTimestamps struct {
+	CreatedAt *carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at"`
+	UpdatedAt *carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at"`
 }
 
 type User struct {
-	Model
-	SoftDeletes
+	BaseModel
+	NullableSoftDeletes
 	Name   string
 	Avatar string
 }
@@ -52,7 +52,7 @@ func (u *UserFactory) Definition() map[string]any {
 }
 
 type House struct {
-	Model
+	BaseModel
 	Name          string
 	HouseableID   uint
 	HouseableType string
