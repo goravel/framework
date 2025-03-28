@@ -13,17 +13,17 @@ import (
 )
 
 type BaseModel struct {
-	ID uint `gorm:"primaryKey" json:"id"`
+	ID uint `gorm:"primaryKey" json:"id" db:"id"`
 	NullableTimestamps
 }
 
 type NullableSoftDeletes struct {
-	DeletedAt *gormio.DeletedAt `gorm:"column:deleted_at" json:"deleted_at"`
+	DeletedAt *gormio.DeletedAt `gorm:"column:deleted_at" json:"deleted_at" db:"deleted_at"`
 }
 
 type NullableTimestamps struct {
-	CreatedAt *carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at"`
-	UpdatedAt *carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at"`
+	CreatedAt *carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at" db:"created_at"`
+	UpdatedAt *carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at" db:"updated_at"`
 }
 
 type User struct {
