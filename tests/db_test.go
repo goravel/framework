@@ -168,12 +168,12 @@ func (s *DBTestSuite) TestCursor() {
 				s.Equal(2, len(products))
 				s.Equal("cursor_product1", products[0].Name)
 				s.Equal(100, *products[0].Weight)
-				s.Equal(s.now, products[0].CreatedAt)
-				s.Equal(s.now, products[0].UpdatedAt)
+				s.Equal(&s.now, products[0].CreatedAt)
+				s.Equal(&s.now, products[0].UpdatedAt)
 				s.Equal("cursor_product2", products[1].Name)
 				s.Equal(200, *products[1].Weight)
-				s.Equal(s.now, products[1].CreatedAt)
-				s.Equal(s.now, products[1].UpdatedAt)
+				s.Equal(&s.now, products[1].CreatedAt)
+				s.Equal(&s.now, products[1].UpdatedAt)
 			})
 
 			s.Run("Bind Map", func() {
@@ -441,9 +441,11 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 				s.NoError(err)
 				s.True(product.ID > 0)
 				s.Equal("single struct", product.Name)
-				s.Equal(s.now, product.CreatedAt)
-				s.Equal(s.now, product.UpdatedAt)
-				s.False(product.DeletedAt.Valid)
+				s.NotNil(product.CreatedAt)
+				s.Equal(&s.now, product.CreatedAt)
+				s.NotNil(product.UpdatedAt)
+				s.Equal(&s.now, product.UpdatedAt)
+				s.Nil(product.DeletedAt)
 			})
 
 			s.Run("multiple structs", func() {
@@ -485,9 +487,9 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 				err = query.DB().Table("products").Where("name", "single map").Where("deleted_at", nil).First(&product)
 				s.NoError(err)
 				s.Equal("single map", product.Name)
-				s.Equal(s.now, product.CreatedAt)
-				s.Equal(s.now, product.UpdatedAt)
-				s.False(product.DeletedAt.Valid)
+				s.Equal(&s.now, product.CreatedAt)
+				s.Equal(&s.now, product.UpdatedAt)
+				s.Nil(product.DeletedAt)
 			})
 
 			s.Run("multiple map", func() {
