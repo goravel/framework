@@ -36,11 +36,9 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		var loader contractstranslation.Loader
 		if f, ok := config.Get("app.lang_fs").(fs.FS); ok {
 			loader = NewFSLoader(path, f, app.GetJson())
-		} else {
-			loader = NewFileLoader([]string{cast.ToString(path)}, app.GetJson())
 		}
 
-		return NewTranslator(parameters["ctx"].(context.Context), loader, locale, fallback, logger), nil
+		return NewTranslator(parameters["ctx"].(context.Context), loader, NewFileLoader([]string{cast.ToString(path)}, app.GetJson()), locale, fallback, logger), nil
 	})
 }
 
