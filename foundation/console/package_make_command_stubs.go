@@ -122,3 +122,40 @@ func DummyCamelName() contracts.DummyCamelName {
 
 	return content
 }
+
+func (r PackageMakeCommandStubs) Setup() string {
+	content := `package main
+
+import (
+	"os"
+
+	contractspackages "github.com/goravel/framework/contracts/packages"
+	"github.com/goravel/framework/packages"
+	"github.com/goravel/framework/support/path"
+)
+
+func main() {
+	setup := packages.Setup(os.Args)
+	setup.Install(packages.ModifyGoFile{
+		File: path.Config("app.go"),
+		Modifiers: []contractspackages.GoNodeModifier{
+			packages.AddImportSpec(setup.Module),
+			packages.AddProviderSpec("&DummyName.ServiceProvider{}"),
+		},
+	})
+	setup.Uninstall(packages.ModifyGoFile{
+		File: path.Config("app.go"),
+		Modifiers: []contractspackages.GoNodeModifier{
+			packages.RemoveImportSpec(setup.Module),
+			packages.RemoveProviderSpec("&DummyName.ServiceProvider{}"),
+		},
+	})
+
+	setup.Execute()
+}
+
+`
+	content = strings.ReplaceAll(content, "DummyName", r.name)
+
+	return content
+}
