@@ -133,18 +133,18 @@ func (s *DBTestSuite) TestCursor() {
 		s.Run(driver, func() {
 			query.DB().Table("products").Insert([]Product{
 				{
-					Name: "cursor_product1", Weight: convert.Pointer(100), Model: Model{
-						Timestamps: Timestamps{
-							CreatedAt: s.now,
-							UpdatedAt: s.now,
+					Name: "cursor_product1", Weight: convert.Pointer(100), BaseModel: BaseModel{
+						NullableTimestamps: NullableTimestamps{
+							CreatedAt: &s.now,
+							UpdatedAt: &s.now,
 						},
 					},
 				},
 				{
-					Name: "cursor_product2", Weight: convert.Pointer(200), Model: Model{
-						Timestamps: Timestamps{
-							CreatedAt: s.now,
-							UpdatedAt: s.now,
+					Name: "cursor_product2", Weight: convert.Pointer(200), BaseModel: BaseModel{
+						NullableTimestamps: NullableTimestamps{
+							CreatedAt: &s.now,
+							UpdatedAt: &s.now,
 						},
 					},
 				},
@@ -425,10 +425,10 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 			s.Run("single struct", func() {
 				result, err := query.DB().Table("products").Insert(Product{
 					Name: "single struct",
-					Model: Model{
-						Timestamps: Timestamps{
-							CreatedAt: s.now,
-							UpdatedAt: s.now,
+					BaseModel: BaseModel{
+						NullableTimestamps: NullableTimestamps{
+							CreatedAt: &s.now,
+							UpdatedAt: &s.now,
 						},
 					},
 				})
@@ -450,10 +450,10 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 				result, err := query.DB().Table("products").Insert([]Product{
 					{
 						Name: "multiple structs1",
-						Model: Model{
-							Timestamps: Timestamps{
-								CreatedAt: s.now,
-								UpdatedAt: s.now,
+						BaseModel: BaseModel{
+							NullableTimestamps: NullableTimestamps{
+								CreatedAt: &s.now,
+								UpdatedAt: &s.now,
 							},
 						},
 					},
@@ -1053,10 +1053,10 @@ func (s *DBTestSuite) TestUpdate_Delete() {
 			result, err := query.DB().Table("products").Insert([]Product{
 				{
 					Name: "update structs1",
-					Model: Model{
-						Timestamps: Timestamps{
-							CreatedAt: s.now,
-							UpdatedAt: s.now,
+					BaseModel: BaseModel{
+						NullableTimestamps: NullableTimestamps{
+							CreatedAt: &s.now,
+							UpdatedAt: &s.now,
 						},
 					},
 				},
@@ -1204,10 +1204,10 @@ func (s *DBTestSuite) TestWhere() {
 		s.Run(driver, func() {
 			query.DB().Table("products").Insert(Product{
 				Name: "where model",
-				Model: Model{
-					Timestamps: Timestamps{
-						CreatedAt: s.now,
-						UpdatedAt: s.now,
+				BaseModel: BaseModel{
+					NullableTimestamps: NullableTimestamps{
+						CreatedAt: &s.now,
+						UpdatedAt: &s.now,
 					},
 				},
 			})
