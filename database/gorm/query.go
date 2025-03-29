@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
+	"time"
 
 	"github.com/spf13/cast"
 	"gorm.io/driver/mysql"
@@ -13,6 +14,8 @@ import (
 	"gorm.io/driver/sqlserver"
 	gormio "gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"gorm.io/gorm/schema"
+	"gorm.io/plugin/dbresolver"
 
 	"github.com/goravel/framework/contracts/config"
 	contractsdatabase "github.com/goravel/framework/contracts/database"
@@ -21,6 +24,7 @@ import (
 	"github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/gorm/hints"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/database"
 )
 
@@ -71,12 +75,87 @@ func BuildQuery(ctx context.Context, config config.Config, connection string, lo
 		return nil, errors.OrmDatabaseConfigNotFound
 	}
 
-	gorm, err := NewGorm(config, configBuilder, log)
+	gorm, err := BuildGorm(config, configBuilder, log)
 	if err != nil {
 		return nil, err
 	}
 
 	return NewQuery(ctx, config, writeConfigs[0], gorm, log, modelToObserver, nil), nil
+}
+
+func BuildGorm(config config.Config, configBuilder contractsdatabase.ConfigBuilder, log log.Log) (*gormio.DB, error) {
+	readConfigs := configBuilder.Reads()
+	writeConfigs := configBuilder.Writes()
+	if len(writeConfigs) == 0 {
+		return nil, errors.OrmDatabaseConfigNotFound
+	}
+
+	readDialectors, err := getDialectors(readConfigs)
+	if err != nil {
+		return nil, err
+	}
+
+	writeDialectors, err := getDialectors(writeConfigs)
+	if err != nil {
+		return nil, err
+	}
+	if len(writeDialectors) == 0 {
+		return nil, errors.OrmNoDialectorsFound
+	}
+
+	logger := NewLogger(config, log)
+	gormConfig := &gormio.Config{
+		DisableForeignKeyConstraintWhenMigrating: true,
+		SkipDefaultTransaction:                   true,
+		Logger:                                   logger,
+		NowFunc: func() time.Time {
+			return carbon.Now().StdTime()
+		},
+		NamingStrategy: schema.NamingStrategy{
+			TablePrefix:   writeConfigs[0].Prefix,
+			SingularTable: writeConfigs[0].Singular,
+			NoLowerCase:   writeConfigs[0].NoLowerCase,
+			NameReplacer:  writeConfigs[0].NameReplacer,
+		},
+	}
+
+	instance, err := gormio.Open(writeDialectors[0], gormConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	maxIdleConns := config.GetInt("database.pool.max_idle_conns", 10)
+	maxOpenConns := config.GetInt("database.pool.max_open_conns", 100)
+	connMaxIdleTime := time.Duration(config.GetInt("database.pool.conn_max_idletime", 3600)) * time.Second
+	connMaxLifetime := time.Duration(config.GetInt("database.pool.conn_max_lifetime", 3600)) * time.Second
+
+	if len(writeConfigs) == 1 && len(readConfigs) == 0 {
+		db, err := instance.DB()
+		if err != nil {
+			return nil, err
+		}
+
+		db.SetMaxIdleConns(maxIdleConns)
+		db.SetMaxOpenConns(maxOpenConns)
+		db.SetConnMaxIdleTime(connMaxIdleTime)
+		db.SetConnMaxLifetime(connMaxLifetime)
+
+		return instance, nil
+	}
+
+	if err := instance.Use(dbresolver.Register(dbresolver.Config{
+		Sources:           writeDialectors,
+		Replicas:          readDialectors,
+		Policy:            dbresolver.RandomPolicy{},
+		TraceResolverMode: true,
+	}).SetMaxIdleConns(maxIdleConns).
+		SetMaxOpenConns(maxOpenConns).
+		SetConnMaxLifetime(connMaxLifetime).
+		SetConnMaxIdleTime(connMaxIdleTime)); err != nil {
+		return nil, err
+	}
+
+	return instance, nil
 }
 
 func (r *Query) Association(association string) contractsorm.Association {
@@ -786,9 +865,10 @@ func (r *Query) Select(query any, args ...any) contractsorm.Query {
 	return r.setConditions(conditions)
 }
 
-func (r *Query) SetContext(ctx context.Context) {
-	r.ctx = ctx
-	r.instance.Statement.Context = ctx
+func (r *Query) WithContext(ctx context.Context) contractsorm.Query {
+	instance := r.instance.WithContext(ctx)
+
+	return NewQuery(ctx, r.config, r.fullConfig, instance, r.log, r.modelToObserver, nil)
 }
 
 func (r *Query) SharedLock() contractsorm.Query {
