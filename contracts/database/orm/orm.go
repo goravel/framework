@@ -189,8 +189,8 @@ type Query interface {
 	With(query string, args ...any) Query
 }
 
-type QueryWithSetContext interface {
-	SetContext(ctx context.Context)
+type QueryWithContext interface {
+	WithContext(ctx context.Context) Query
 }
 
 type QueryWithObserver interface {

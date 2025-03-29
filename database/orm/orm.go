@@ -9,7 +9,6 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
-	contractshttp "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/database/factory"
 	"github.com/goravel/framework/database/gorm"
@@ -126,6 +125,12 @@ func (r *Orm) Observe(model any, observer contractsorm.Observer) {
 }
 
 func (r *Orm) Query() contractsorm.Query {
+	if r.ctx != context.Background() {
+		if queryWithContext, ok := r.query.(contractsorm.QueryWithContext); ok {
+			return queryWithContext.WithContext(r.ctx)
+		}
+	}
+
 	return r.query
 }
 
@@ -155,19 +160,5 @@ func (r *Orm) Transaction(txFunc func(tx contractsorm.Query) error) error {
 }
 
 func (r *Orm) WithContext(ctx context.Context) contractsorm.Orm {
-	if http, ok := ctx.(contractshttp.Context); ok {
-		ctx = http.Context()
-	}
-
-	for _, query := range r.queries {
-		if queryWithSetContext, ok := query.(contractsorm.QueryWithSetContext); ok {
-			queryWithSetContext.SetContext(ctx)
-		}
-	}
-
-	if queryWithSetContext, ok := r.query.(contractsorm.QueryWithSetContext); ok {
-		queryWithSetContext.SetContext(ctx)
-	}
-
 	return NewOrm(ctx, r.config, r.connection, r.dbConfig, r.query, r.queries, r.log, r.modelToObserver, r.refresh)
 }

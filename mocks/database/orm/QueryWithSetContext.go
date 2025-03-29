@@ -5,6 +5,7 @@ package orm
 import (
 	context "context"
 
+	orm "github.com/goravel/framework/contracts/database/orm"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -22,8 +23,23 @@ func (_m *QueryWithSetContext) EXPECT() *QueryWithSetContext_Expecter {
 }
 
 // SetContext provides a mock function with given fields: ctx
-func (_m *QueryWithSetContext) SetContext(ctx context.Context) {
-	_m.Called(ctx)
+func (_m *QueryWithSetContext) SetContext(ctx context.Context) orm.Query {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SetContext")
+	}
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(context.Context) orm.Query); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
 }
 
 // QueryWithSetContext_SetContext_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetContext'
@@ -44,13 +60,13 @@ func (_c *QueryWithSetContext_SetContext_Call) Run(run func(ctx context.Context)
 	return _c
 }
 
-func (_c *QueryWithSetContext_SetContext_Call) Return() *QueryWithSetContext_SetContext_Call {
-	_c.Call.Return()
+func (_c *QueryWithSetContext_SetContext_Call) Return(_a0 orm.Query) *QueryWithSetContext_SetContext_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *QueryWithSetContext_SetContext_Call) RunAndReturn(run func(context.Context)) *QueryWithSetContext_SetContext_Call {
-	_c.Run(run)
+func (_c *QueryWithSetContext_SetContext_Call) RunAndReturn(run func(context.Context) orm.Query) *QueryWithSetContext_SetContext_Call {
+	_c.Call.Return(run)
 	return _c
 }
 

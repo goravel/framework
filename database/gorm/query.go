@@ -822,9 +822,10 @@ func (r *Query) Select(query any, args ...any) contractsorm.Query {
 	return r.setConditions(conditions)
 }
 
-func (r *Query) SetContext(ctx context.Context) {
-	r.ctx = ctx
-	r.instance.Statement.Context = ctx
+func (r *Query) WithContext(ctx context.Context) contractsorm.Query {
+	instance := r.instance.WithContext(ctx)
+
+	return NewQuery(ctx, r.config, r.dbConfig, instance, r.grammar, r.log, r.modelToObserver, nil)
 }
 
 func (r *Query) SharedLock() contractsorm.Query {
