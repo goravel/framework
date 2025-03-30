@@ -245,9 +245,9 @@ func TestShutdown(t *testing.T) {
 			beforeEach()
 			test.setup()
 			if test.force {
-				app.Shutdown(true)
+				assert.NoError(t, app.Shutdown(true))
 			} else {
-				app.Shutdown()
+				assert.NoError(t, app.Shutdown())
 			}
 		})
 	}
@@ -289,7 +289,7 @@ func TestListen(t *testing.T) {
 			}()
 
 			time.Sleep(1 * time.Second)
-			app.Shutdown()
+			assert.NoError(t, app.Shutdown())
 			assert.True(t, <-done)
 		})
 	}
