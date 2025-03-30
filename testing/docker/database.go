@@ -68,7 +68,7 @@ func (r *Database) Ready() error {
 		return err
 	}
 
-	r.orm.Refresh()
+	r.orm.Fresh()
 
 	return nil
 }

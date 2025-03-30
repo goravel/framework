@@ -17,7 +17,7 @@ type Grpc interface {
 	// Server gets the gRPC server instance.
 	Server() *grpc.Server
 	// Shutdown stops the gRPC server.
-	Shutdown(force ...bool)
+	Shutdown(force ...bool) error
 	// UnaryServerInterceptors sets the gRPC server interceptors.
 	UnaryServerInterceptors([]grpc.UnaryServerInterceptor)
 	// UnaryClientInterceptorGroups sets the gRPC client interceptor groups.

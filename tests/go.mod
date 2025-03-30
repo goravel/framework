@@ -7,14 +7,19 @@ toolchain go1.24.1
 godebug x509negativeserial=1
 
 require (
+	github.com/Masterminds/squirrel v1.5.4
 	github.com/brianvoe/gofakeit/v7 v7.2.1
+	github.com/dave/dst v0.27.3
+	github.com/dromara/carbon/v2 v2.5.4
 	github.com/goravel/framework v1.15.5
 	github.com/goravel/mysql v0.0.0-20250319075542-87a68d535125
 	github.com/goravel/postgres v0.0.2-0.20250319075525-0a0ea3bfa69a
 	github.com/goravel/sqlite v0.0.0-20250319075628-124c135617fd
 	github.com/goravel/sqlserver v0.0.0-20250319075606-f46d3d99251e
+	github.com/jmoiron/sqlx v1.4.0
 	github.com/spf13/cast v1.7.1
 	github.com/stretchr/testify v1.10.0
+	google.golang.org/grpc v1.71.0
 	gorm.io/gorm v1.25.12
 )
 
@@ -24,12 +29,10 @@ require (
 	atomicgo.dev/schedule v0.1.0 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/Masterminds/semver/v3 v3.3.1 // indirect
-	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/containerd/console v1.0.4 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
-	github.com/dromara/carbon/v2 v2.5.4 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
 	github.com/glebarez/go-sqlite v1.22.0 // indirect
@@ -46,7 +49,6 @@ require (
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
-	github.com/jmoiron/sqlx v1.4.0 // indirect
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/lithammer/fuzzysearch v1.1.8 // indirect
@@ -71,7 +73,6 @@ require (
 	golang.org/x/term v0.30.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250313205543-e70fdf4c4cb4 // indirect
-	google.golang.org/grpc v1.71.0 // indirect
 	google.golang.org/protobuf v1.36.5 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/mysql v1.5.7 // indirect
