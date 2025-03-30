@@ -110,7 +110,7 @@ func (r *Application) ResourcePath(path ...string) string {
 func (r *Application) LangPath(path ...string) string {
 	defaultPath := "lang"
 	if configFacade := r.MakeConfig(); configFacade != nil {
-		defaultPath = configFacade.GetString("r.lang_path", defaultPath)
+		defaultPath = configFacade.GetString("app.lang_path", defaultPath)
 	}
 
 	path = append([]string{support.RelativePath, defaultPath}, path...)
@@ -227,7 +227,7 @@ func (r *Application) getConfiguredServiceProviders() []foundation.ServiceProvid
 		return []foundation.ServiceProvider{}
 	}
 
-	providers, ok := configFacade.Get("r.providers").([]foundation.ServiceProvider)
+	providers, ok := configFacade.Get("app.providers").([]foundation.ServiceProvider)
 	if !ok {
 		color.Warningln("providers configuration is not of type []foundation.ServiceProvider. Skipping registering service providers.")
 		return []foundation.ServiceProvider{}
@@ -287,7 +287,7 @@ func (r *Application) setTimezone() {
 		return
 	}
 
-	carbon.SetTimezone(configFacade.GetString("r.timezone", carbon.UTC))
+	carbon.SetTimezone(configFacade.GetString("app.timezone", carbon.UTC))
 }
 
 func setEnv() {
