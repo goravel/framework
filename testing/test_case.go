@@ -22,7 +22,7 @@ func (r *TestCase) Seed(seeders ...contractsseeder.Seeder) {
 		panic(errors.ArtisanFacadeNotSet.SetModule(errors.ModuleTesting))
 	}
 
-	if err := artisanFacade.Call("db:seed" + getCommandOptionOfSeeders(seeders)); err != nil {
+	if err := artisanFacade.Call("--no-ansi db:seed" + getCommandOptionOfSeeders(seeders)); err != nil {
 		panic(err)
 	}
 }
@@ -32,7 +32,7 @@ func (r *TestCase) RefreshDatabase(seeders ...contractsseeder.Seeder) {
 		panic(errors.ArtisanFacadeNotSet.SetModule(errors.ModuleTesting))
 	}
 
-	if err := artisanFacade.Call("migrate:refresh" + getCommandOptionOfSeeders(seeders)); err != nil {
+	if err := artisanFacade.Call("--no-ansi migrate:refresh" + getCommandOptionOfSeeders(seeders)); err != nil {
 		panic(err)
 	}
 }
