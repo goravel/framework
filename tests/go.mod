@@ -10,9 +10,9 @@ require (
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/goravel/framework v1.15.5
 	github.com/goravel/mysql v0.0.0-20250319075542-87a68d535125
-	github.com/goravel/postgres v0.0.2-0.20250319075525-0a0ea3bfa69a
+	github.com/goravel/postgres v0.0.2-0.20250330093640-b98bb13d6d4b
 	github.com/goravel/sqlite v0.0.0-20250319075628-124c135617fd
-	github.com/goravel/sqlserver v0.0.0-20250319075606-f46d3d99251e
+	github.com/goravel/sqlserver v0.0.0-20250330044523-bf0931bdcdff
 	github.com/spf13/cast v1.7.1
 	github.com/stretchr/testify v1.10.0
 	gorm.io/gorm v1.25.12
@@ -56,7 +56,7 @@ require (
 	github.com/ncruces/go-strftime v0.1.9 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/pterm/pterm v0.12.80 // indirect
-	github.com/redis/go-redis/v9 v9.7.1 // indirect
+	github.com/redis/go-redis/v9 v9.7.3 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/samber/lo v1.49.1 // indirect
