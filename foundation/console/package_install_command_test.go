@@ -145,14 +145,6 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 				}), "Package package@unknown installed successfully")
 			},
 		},
-		{
-			name: "package install success(real)",
-			setup: func() {
-				// TODO: A real package needs to be created to test installation
-				// when goravel/goravel upgrades all internal default dependencies to the latest version.
-			},
-			assert: func() {},
-		},
 	}
 	for _, test := range tests {
 		s.Run(test.name, func() {

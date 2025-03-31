@@ -64,9 +64,9 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 			setup: func() {
 				mockContext.EXPECT().Argument(0).Return("").Once()
 				mockContext.EXPECT().Ask("Enter the package name to uninstall", mock.Anything).
-					RunAndReturn(func(_ string, option ...console.AskOption) (string, error) {
-						return "", option[0].Validate("")
-					}).Once()
+						RunAndReturn(func(_ string, option ...console.AskOption) (string, error) {
+							return "", option[0].Validate("")
+						}).Once()
 				mockContext.EXPECT().Error("the package name cannot be empty").Once()
 			},
 			assert: func() {
@@ -80,9 +80,9 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 				mockContext.EXPECT().Argument(0).Return("package@unknown").Once()
 				mockContext.EXPECT().OptionBool("force").Return(false).Once()
 				mockContext.EXPECT().Spinner("> @go run package/setup uninstall", mock.Anything).
-					RunAndReturn(func(s string, option console.SpinnerOption) error {
-						return option.Action()
-					}).Once()
+						RunAndReturn(func(s string, option console.SpinnerOption) error {
+							return option.Action()
+						}).Once()
 			},
 			assert: func() {
 				captureOutput := color.CaptureOutput(func(w io.Writer) {
@@ -101,9 +101,9 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 				mockContext.EXPECT().OptionBool("force").Return(true).Once()
 				mockContext.EXPECT().Spinner("> @go run package/setup uninstall --force", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).
-					RunAndReturn(func(s string, option console.SpinnerOption) error {
-						return option.Action()
-					}).Once()
+						RunAndReturn(func(s string, option console.SpinnerOption) error {
+							return option.Action()
+						}).Once()
 			},
 			assert: func() {
 				captureOutput := color.CaptureOutput(func(w io.Writer) {
@@ -127,14 +127,6 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 					s.NoError(NewPackageUninstallCommand().Handle(mockContext))
 				}), "Package package@unknown uninstalled successfully")
 			},
-		},
-		{
-			name: "package uninstall success(real)",
-			setup: func() {
-				// TODO: A real package needs to be created to test uninstallation
-				// when goravel/goravel upgrades all internal default dependencies to the latest version.
-			},
-			assert: func() {},
 		},
 	}
 	for _, test := range tests {
