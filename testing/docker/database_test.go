@@ -170,7 +170,7 @@ func (s *DatabaseTestSuite) SetupTest() {
 }
 
 func (s *DatabaseTestSuite) TestReady() {
-	s.mockOrm.EXPECT().Refresh().Once()
+	s.mockOrm.EXPECT().Fresh().Once()
 	s.mockDatabaseDriver.EXPECT().Ready().Return(nil).Once()
 
 	s.Nil(s.database.Ready())

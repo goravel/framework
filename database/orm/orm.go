@@ -24,7 +24,7 @@ type Orm struct {
 	mutex           sync.Mutex
 	query           contractsorm.Query
 	queries         map[string]contractsorm.Query
-	refresh         func(key ...any)
+	fresh           func(key ...any)
 }
 
 func NewOrm(
@@ -36,7 +36,7 @@ func NewOrm(
 	queries map[string]contractsorm.Query,
 	log log.Log,
 	modelToObserver []contractsorm.ModelToObserver,
-	refresh func(key ...any),
+	fresh func(key ...any),
 ) *Orm {
 	return &Orm{
 		ctx:             ctx,
@@ -47,21 +47,21 @@ func NewOrm(
 		modelToObserver: modelToObserver,
 		query:           query,
 		queries:         queries,
-		refresh:         refresh,
+		fresh:           fresh,
 	}
 }
 
-func BuildOrm(ctx context.Context, config config.Config, connection string, log log.Log, refresh func(key ...any)) (*Orm, error) {
+func BuildOrm(ctx context.Context, config config.Config, connection string, log log.Log, fresh func(key ...any)) (*Orm, error) {
 	query, dbConfig, err := gorm.BuildQuery(ctx, config, connection, log, nil)
 	if err != nil {
-		return NewOrm(ctx, config, connection, dbConfig, nil, nil, log, nil, refresh), err
+		return NewOrm(ctx, config, connection, dbConfig, nil, nil, log, nil, fresh), err
 	}
 
 	queries := map[string]contractsorm.Query{
 		connection: query,
 	}
 
-	return NewOrm(ctx, config, connection, dbConfig, query, queries, log, nil, refresh), nil
+	return NewOrm(ctx, config, connection, dbConfig, query, queries, log, nil, fresh), nil
 }
 
 func (r *Orm) Config() database.Config {
@@ -73,19 +73,19 @@ func (r *Orm) Connection(name string) contractsorm.Orm {
 		name = r.config.GetString("database.default")
 	}
 	if instance, exist := r.queries[name]; exist {
-		return NewOrm(r.ctx, r.config, name, r.dbConfig, instance, r.queries, r.log, r.modelToObserver, r.refresh)
+		return NewOrm(r.ctx, r.config, name, r.dbConfig, instance, r.queries, r.log, r.modelToObserver, r.fresh)
 	}
 
 	query, dbConfig, err := gorm.BuildQuery(r.ctx, r.config, name, r.log, r.modelToObserver)
 	if err != nil || query == nil {
 		r.log.Errorf("[Orm] Init %s connection error: %v", name, err)
 
-		return NewOrm(r.ctx, r.config, name, dbConfig, nil, r.queries, r.log, r.modelToObserver, r.refresh)
+		return NewOrm(r.ctx, r.config, name, dbConfig, nil, r.queries, r.log, r.modelToObserver, r.fresh)
 	}
 
 	r.queries[name] = query
 
-	return NewOrm(r.ctx, r.config, name, dbConfig, query, r.queries, r.log, r.modelToObserver, r.refresh)
+	return NewOrm(r.ctx, r.config, name, dbConfig, query, r.queries, r.log, r.modelToObserver, r.fresh)
 }
 
 func (r *Orm) DB() (*sql.DB, error) {
@@ -138,8 +138,8 @@ func (r *Orm) SetQuery(query contractsorm.Query) {
 	r.query = query
 }
 
-func (r *Orm) Refresh() {
-	r.refresh(contracts.BindingOrm)
+func (r *Orm) Fresh() {
+	r.fresh(contracts.BindingOrm)
 }
 
 func (r *Orm) Transaction(txFunc func(tx contractsorm.Query) error) error {
@@ -160,5 +160,5 @@ func (r *Orm) Transaction(txFunc func(tx contractsorm.Query) error) error {
 }
 
 func (r *Orm) WithContext(ctx context.Context) contractsorm.Orm {
-	return NewOrm(ctx, r.config, r.connection, r.dbConfig, r.query, r.queries, r.log, r.modelToObserver, r.refresh)
+	return NewOrm(ctx, r.config, r.connection, r.dbConfig, r.query, r.queries, r.log, r.modelToObserver, r.fresh)
 }

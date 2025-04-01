@@ -91,13 +91,15 @@ func (app *Application) Server() *grpc.Server {
 	return app.server
 }
 
-func (app *Application) Shutdown(force ...bool) {
+func (app *Application) Shutdown(force ...bool) error {
 	if len(force) > 0 && force[0] {
 		app.server.Stop()
-		return
+		return nil
 	}
 
 	app.server.GracefulStop()
+
+	return nil
 }
 
 func (app *Application) UnaryServerInterceptors(unaryServerInterceptors []grpc.UnaryServerInterceptor) {

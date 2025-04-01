@@ -8,7 +8,7 @@ type Body interface {
 	SetField(key string, value any) Body
 	SetFields(fields map[string]any) Body
 	SetFile(fieldName, filePath string) Body
-	SetFiles(files map[string]string) Body
+	SetFiles(files map[string][]string) Body
 }
 
 type Reader interface {

@@ -237,14 +237,27 @@ func (_c *Grpc_Server_Call) RunAndReturn(run func() *grpc.Server) *Grpc_Server_C
 }
 
 // Shutdown provides a mock function with given fields: force
-func (_m *Grpc) Shutdown(force ...bool) {
+func (_m *Grpc) Shutdown(force ...bool) error {
 	_va := make([]interface{}, len(force))
 	for _i := range force {
 		_va[_i] = force[_i]
 	}
 	var _ca []interface{}
 	_ca = append(_ca, _va...)
-	_m.Called(_ca...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Shutdown")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(...bool) error); ok {
+		r0 = rf(force...)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // Grpc_Shutdown_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Shutdown'
@@ -272,13 +285,13 @@ func (_c *Grpc_Shutdown_Call) Run(run func(force ...bool)) *Grpc_Shutdown_Call {
 	return _c
 }
 
-func (_c *Grpc_Shutdown_Call) Return() *Grpc_Shutdown_Call {
-	_c.Call.Return()
+func (_c *Grpc_Shutdown_Call) Return(_a0 error) *Grpc_Shutdown_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Grpc_Shutdown_Call) RunAndReturn(run func(...bool)) *Grpc_Shutdown_Call {
-	_c.Run(run)
+func (_c *Grpc_Shutdown_Call) RunAndReturn(run func(...bool) error) *Grpc_Shutdown_Call {
+	_c.Call.Return(run)
 	return _c
 }
 
