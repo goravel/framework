@@ -33,7 +33,7 @@ func TestDispatchSync(t *testing.T) {
 		},
 	}
 
-	jobs := NewJobImpl()
+	jobs := NewJobRespository()
 	jobs.Register([]queue.Job{
 		&Test{},
 	})

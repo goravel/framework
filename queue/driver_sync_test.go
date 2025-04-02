@@ -2,25 +2,23 @@ package queue
 
 import (
 	"testing"
-	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/queue"
-	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
 )
 
 var (
-	testSyncJob      = 0
-	testChainSyncJob = 0
+	testJobOne []any
+	testJobTwo []any
 )
 
 type DriverSyncTestSuite struct {
 	suite.Suite
 	app        *Application
-	mockConfig *mocksconfig.Config
-	mockQueue  *mocksqueue.Queue
+	mockConfig *mocksqueue.Config
 }
 
 func TestDriverSyncTestSuite(t *testing.T) {
@@ -28,67 +26,110 @@ func TestDriverSyncTestSuite(t *testing.T) {
 }
 
 func (s *DriverSyncTestSuite) SetupTest() {
-	testSyncJob = 0
-	testChainSyncJob = 0
-	s.mockConfig = mocksconfig.NewConfig(s.T())
-	s.mockQueue = mocksqueue.NewQueue(s.T())
-	s.app = NewApplication(s.mockConfig)
-	s.app.Register([]queue.Job{&TestSyncJob{}, &TestChainSyncJob{}})
-	s.mockConfig.EXPECT().GetString("queue.default").Return("sync").Twice()
-	s.mockConfig.EXPECT().GetString("queue.connections.sync.queue", "default").Return("default").Once()
+	testJobOne = nil
+	testJobTwo = nil
+
+	s.mockConfig = mocksqueue.NewConfig(s.T())
+
+	s.mockConfig.EXPECT().DefaultConnection().Return("sync").Once()
+	s.mockConfig.EXPECT().Queue("sync", "").Return("sync_queue").Once()
+	s.mockConfig.EXPECT().Driver("sync").Return(queue.DriverSync).Once()
+
+	s.app = &Application{
+		config: s.mockConfig,
+		job:    NewJobRespository(),
+	}
+
+	s.app.Register([]queue.Job{&TestJobOne{}, &TestJobTwo{}, &TestJobErr{}})
 }
 
-func (s *DriverSyncTestSuite) TestSyncQueue() {
-	s.mockConfig.EXPECT().GetString("app.name").Return("goravel").Once()
-	s.Nil(s.app.Job(&TestSyncJob{}, []any{"TestSyncQueue", 1}).DispatchSync())
-	s.Equal(1, testSyncJob)
+func (s *DriverSyncTestSuite) TestDispatch() {
+	args := []any{"a", 1, []string{"b", "c"}, []int{1, 2, 3}, map[string]any{"d": "e"}}
+
+	s.Nil(s.app.Job(&TestJobOne{}, args).Dispatch())
+	s.Equal(args, testJobOne)
 }
 
-func (s *DriverSyncTestSuite) TestChainSyncQueue() {
-	s.mockConfig.EXPECT().GetString("app.name").Return("goravel").Twice()
-	s.mockConfig.EXPECT().GetString("queue.connections.sync.driver").Return("sync").Once()
+func (s *DriverSyncTestSuite) TestChainDispatch() {
+	argsOne := []any{"a", 1, []string{"b", "c"}, []int{1, 2, 3}, map[string]any{"d": "e"}}
+	argsTwo := []any{"a", 2, []string{"d", "f"}, []int{4, 5, 6}, map[string]any{"g": "h"}}
 
 	s.Nil(s.app.Chain([]queue.Jobs{
 		{
-			Job:  &TestChainSyncJob{},
-			Args: []any{"TestChainSyncJob", 1},
+			Job:  &TestJobOne{},
+			Args: argsOne,
 		},
 		{
-			Job:  &TestSyncJob{},
-			Args: []any{"TestSyncJob", 1},
+			Job:  &TestJobTwo{},
+			Args: argsTwo,
 		},
-	}).OnQueue("chain").Dispatch())
+	}).Dispatch())
 
-	time.Sleep(2 * time.Second)
-	s.Equal(1, testChainSyncJob)
+	s.Equal(argsOne, testJobOne)
+	s.Equal(argsTwo, testJobTwo)
 }
 
-type TestSyncJob struct {
+func (s *DriverSyncTestSuite) TestChainDispatchWithError() {
+	argsOne := []any{"a", 1, []string{"b", "c"}, []int{1, 2, 3}, map[string]any{"d": "e"}}
+	argsTwo := []any{"a", 2, []string{"d", "f"}, []int{4, 5, 6}, map[string]any{"g": "h"}}
+
+	s.Equal(assert.AnError, s.app.Chain([]queue.Jobs{
+		{
+			Job:  &TestJobOne{},
+			Args: argsOne,
+		},
+		{
+			Job: &TestJobErr{},
+		},
+		{
+			Job:  &TestJobTwo{},
+			Args: argsTwo,
+		},
+	}).Dispatch())
+
+	s.Equal(argsOne, testJobOne)
+	s.Nil(testJobTwo)
+}
+
+type TestJobOne struct {
 }
 
 // Signature The name and signature of the job.
-func (receiver *TestSyncJob) Signature() string {
-	return "test_sync_job"
+func (r *TestJobOne) Signature() string {
+	return "test_job_one"
 }
 
 // Handle Execute the job.
-func (receiver *TestSyncJob) Handle(args ...any) error {
-	testSyncJob++
+func (r *TestJobOne) Handle(args ...any) error {
+	testJobOne = args
 
 	return nil
 }
 
-type TestChainSyncJob struct {
+type TestJobTwo struct {
 }
 
 // Signature The name and signature of the job.
-func (receiver *TestChainSyncJob) Signature() string {
-	return "test_chain_sync_job"
+func (r *TestJobTwo) Signature() string {
+	return "test_job_two"
 }
 
 // Handle Execute the job.
-func (receiver *TestChainSyncJob) Handle(args ...any) error {
-	testChainSyncJob++
+func (r *TestJobTwo) Handle(args ...any) error {
+	testJobTwo = args
 
 	return nil
+}
+
+type TestJobErr struct {
+}
+
+// Signature The name and signature of the job.
+func (r *TestJobErr) Signature() string {
+	return "test_job_err"
+}
+
+// Handle Execute the job.
+func (r *TestJobErr) Handle(args ...any) error {
+	return assert.AnError
 }

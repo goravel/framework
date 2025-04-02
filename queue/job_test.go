@@ -10,7 +10,7 @@ import (
 
 type JobTestSuite struct {
 	suite.Suite
-	jobManager *JobImpl
+	jobManager *JobRespository
 }
 
 func TestJobTestSuite(t *testing.T) {
@@ -18,7 +18,7 @@ func TestJobTestSuite(t *testing.T) {
 }
 
 func (s *JobTestSuite) SetupTest() {
-	s.jobManager = NewJobImpl()
+	s.jobManager = NewJobRespository()
 }
 
 func (s *JobTestSuite) RegisterJobsSuccessfully() {

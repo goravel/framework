@@ -13,7 +13,7 @@ type Application struct {
 func NewApplication(config contractsconfig.Config) *Application {
 	return &Application{
 		config: NewConfig(config),
-		job:    NewJobImpl(),
+		job:    NewJobRespository(),
 	}
 }
 
@@ -45,6 +45,9 @@ func (app *Application) Worker(payloads ...queue.Args) queue.Worker {
 	}
 	if payloads[0].Connection == "" {
 		payloads[0].Connection = defaultConnection
+	}
+	if payloads[0].Queue == "" {
+		payloads[0].Queue = "default"
 	}
 	if payloads[0].Concurrent == 0 {
 		payloads[0].Concurrent = 1

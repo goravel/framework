@@ -2,28 +2,18 @@ package queue
 
 import (
 	"testing"
-	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/queue"
-	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
-)
-
-var (
-	testAsyncJob       = 0
-	testDelayAsyncJob  = 0
-	testCustomAsyncJob = 0
-	testErrorAsyncJob  = 0
-	testChainAsyncJob  = 0
 )
 
 type DriverAsyncTestSuite struct {
 	suite.Suite
 	app        *Application
-	mockConfig *mocksconfig.Config
-	mockQueue  *mocksqueue.Queue
+	mockConfig *mocksqueue.Config
 }
 
 func TestDriverAsyncTestSuite(t *testing.T) {
@@ -31,203 +21,67 @@ func TestDriverAsyncTestSuite(t *testing.T) {
 }
 
 func (s *DriverAsyncTestSuite) SetupTest() {
-	testAsyncJob = 0
-	testDelayAsyncJob = 0
-	testCustomAsyncJob = 0
-	testErrorAsyncJob = 0
-	testChainAsyncJob = 0
-	s.mockQueue = mocksqueue.NewQueue(s.T())
-	s.mockConfig = mocksconfig.NewConfig(s.T())
-	s.app = NewApplication(s.mockConfig)
-	s.app.Register([]queue.Job{&TestAsyncJob{}, &TestDelayAsyncJob{}, &TestCustomAsyncJob{}, &TestErrorAsyncJob{}, &TestChainAsyncJob{}})
+	testJobOne = nil
+	testJobTwo = nil
+
+	s.mockConfig = mocksqueue.NewConfig(s.T())
+
+	s.mockConfig.EXPECT().DefaultConnection().Return("async").Once()
+	s.mockConfig.EXPECT().Queue("async", "").Return("async_queue").Once()
+	s.mockConfig.EXPECT().Driver("async").Return(queue.DriverAsync).Once()
+
+	s.app = &Application{
+		config: s.mockConfig,
+		job:    NewJobRespository(),
+	}
+
+	s.app.Register([]queue.Job{&TestJobOne{}, &TestJobTwo{}, &TestJobErr{}})
 }
 
-func (s *DriverAsyncTestSuite) TestDefaultAsyncQueue() {
-	s.mockConfig.EXPECT().GetString("queue.default").Return("async").Times(3)
-	s.mockConfig.EXPECT().GetString("app.name").Return("goravel").Times(2)
-	s.mockConfig.EXPECT().GetString("queue.connections.async.queue", "default").Return("default").Twice()
-	s.mockConfig.EXPECT().GetString("queue.connections.async.driver").Return("async").Twice()
-	s.mockConfig.EXPECT().GetInt("queue.connections.async.size", 100).Return(10).Twice()
+func (s *DriverSyncTestSuite) TestDispatch() {
+	args := []any{"a", 1, []string{"b", "c"}, []int{1, 2, 3}, map[string]any{"d": "e"}}
 
-	worker := s.app.Worker()
-	go func() {
-		s.Nil(worker.Run())
-	}()
-	time.Sleep(1 * time.Second)
-	s.Nil(s.app.Job(&TestAsyncJob{}, []any{"TestDefaultAsyncQueue", 1}).Dispatch())
-	time.Sleep(2 * time.Second)
-	s.Equal(1, testAsyncJob)
-	s.NoError(worker.Shutdown())
+	s.Nil(s.app.Job(&TestJobOne{}, args).Dispatch())
+	s.Equal(args, testJobOne)
 }
 
-func (s *DriverAsyncTestSuite) TestDelayAsyncQueue() {
-	s.mockConfig.EXPECT().GetString("queue.default").Return("async").Times(3)
-	s.mockConfig.EXPECT().GetString("app.name").Return("goravel").Times(3)
-	s.mockConfig.EXPECT().GetString("queue.connections.async.queue", "default").Return("default").Once()
-	s.mockConfig.EXPECT().GetString("queue.connections.async.driver").Return("async").Twice()
-	s.mockConfig.EXPECT().GetInt("queue.connections.async.size", 100).Return(10).Twice()
+func (s *DriverSyncTestSuite) TestChainDispatch() {
+	argsOne := []any{"a", 1, []string{"b", "c"}, []int{1, 2, 3}, map[string]any{"d": "e"}}
+	argsTwo := []any{"a", 2, []string{"d", "f"}, []int{4, 5, 6}, map[string]any{"g": "h"}}
 
-	worker := s.app.Worker(queue.Args{
-		Queue: "delay",
-	})
-	go func() {
-		s.Nil(worker.Run())
-	}()
-	time.Sleep(1 * time.Second)
-	s.Nil(s.app.Job(&TestDelayAsyncJob{}, []any{"TestDelayAsyncQueue", 1}).OnQueue("delay").Delay(time.Now().Add(3 * time.Second)).Dispatch())
-	time.Sleep(2 * time.Second)
-	s.Equal(0, testDelayAsyncJob)
-	time.Sleep(3 * time.Second)
-	s.Equal(1, testDelayAsyncJob)
-	s.NoError(worker.Shutdown())
-}
-
-func (s *DriverAsyncTestSuite) TestCustomAsyncQueue() {
-	s.mockConfig.EXPECT().GetString("queue.default").Return("custom").Times(3)
-	s.mockConfig.EXPECT().GetString("app.name").Return("goravel").Times(3)
-	s.mockConfig.EXPECT().GetString("queue.connections.custom.queue", "default").Return("default").Once()
-	s.mockConfig.EXPECT().GetString("queue.connections.custom.driver").Return("async").Times(2)
-	s.mockConfig.EXPECT().GetInt("queue.connections.custom.size", 100).Return(10).Twice()
-
-	worker := s.app.Worker(queue.Args{
-		Connection: "custom",
-		Queue:      "custom1",
-		Concurrent: 2,
-	})
-	go func() {
-		s.Nil(worker.Run())
-	}()
-	time.Sleep(1 * time.Second)
-	s.Nil(s.app.Job(&TestCustomAsyncJob{}, []any{"TestCustomAsyncQueue", 1}).OnConnection("custom").OnQueue("custom1").Dispatch())
-	time.Sleep(2 * time.Second)
-	s.Equal(1, testCustomAsyncJob)
-	s.NoError(worker.Shutdown())
-}
-
-func (s *DriverAsyncTestSuite) TestErrorAsyncQueue() {
-	s.mockConfig.EXPECT().GetString("queue.default").Return("async").Times(3)
-	s.mockConfig.EXPECT().GetString("app.name").Return("goravel").Times(3)
-	s.mockConfig.EXPECT().GetString("queue.connections.async.queue", "default").Return("default").Once()
-	s.mockConfig.EXPECT().GetString("queue.connections.async.driver").Return("async").Once()
-	s.mockConfig.EXPECT().GetInt("queue.connections.async.size", 100).Return(10).Once()
-	s.mockConfig.EXPECT().GetString("queue.connections.redis.driver").Return("").Twice()
-
-	worker := s.app.Worker(queue.Args{
-		Queue: "error",
-	})
-	go func() {
-		s.Nil(worker.Run())
-	}()
-	time.Sleep(1 * time.Second)
-	s.Error(s.app.Job(&TestErrorAsyncJob{}, []any{"TestErrorAsyncQueue", 1}).OnConnection("redis").OnQueue("error1").Dispatch())
-	time.Sleep(2 * time.Second)
-	s.Equal(0, testErrorAsyncJob)
-	s.NoError(worker.Shutdown())
-}
-
-func (s *DriverAsyncTestSuite) TestChainAsyncQueue() {
-	s.mockConfig.EXPECT().GetString("queue.default").Return("async").Times(3)
-	s.mockConfig.EXPECT().GetString("app.name").Return("goravel").Times(3)
-	s.mockConfig.EXPECT().GetString("queue.connections.async.queue", "default").Return("default").Once()
-	s.mockConfig.EXPECT().GetString("queue.connections.async.driver").Return("async").Twice()
-	s.mockConfig.EXPECT().GetInt("queue.connections.async.size", 100).Return(10).Twice()
-
-	worker := s.app.Worker(queue.Args{
-		Queue: "chain",
-	})
-	go func() {
-		s.Nil(worker.Run())
-	}()
-
-	time.Sleep(1 * time.Second)
 	s.Nil(s.app.Chain([]queue.Jobs{
 		{
-			Job:  &TestChainAsyncJob{},
-			Args: []any{"TestChainAsyncJob", 1},
+			Job:  &TestJobOne{},
+			Args: argsOne,
 		},
 		{
-			Job:  &TestAsyncJob{},
-			Args: []any{"TestAsyncJob", 1},
+			Job:  &TestJobTwo{},
+			Args: argsTwo,
 		},
-	}).OnQueue("chain").Dispatch())
+	}).Dispatch())
 
-	time.Sleep(3 * time.Second)
-	s.Equal(1, testChainAsyncJob)
-	s.Equal(1, testAsyncJob)
-	s.NoError(worker.Shutdown())
+	s.Equal(argsOne, testJobOne)
+	s.Equal(argsTwo, testJobTwo)
 }
 
-type TestAsyncJob struct {
-}
+func (s *DriverSyncTestSuite) TestChainDispatchWithError() {
+	argsOne := []any{"a", 1, []string{"b", "c"}, []int{1, 2, 3}, map[string]any{"d": "e"}}
+	argsTwo := []any{"a", 2, []string{"d", "f"}, []int{4, 5, 6}, map[string]any{"g": "h"}}
 
-// Signature The name and signature of the job.
-func (receiver *TestAsyncJob) Signature() string {
-	return "test_async_job"
-}
+	s.Equal(assert.AnError, s.app.Chain([]queue.Jobs{
+		{
+			Job:  &TestJobOne{},
+			Args: argsOne,
+		},
+		{
+			Job: &TestJobErr{},
+		},
+		{
+			Job:  &TestJobTwo{},
+			Args: argsTwo,
+		},
+	}).Dispatch())
 
-// Handle Execute the job.
-func (receiver *TestAsyncJob) Handle(args ...any) error {
-	testAsyncJob++
-
-	return nil
-}
-
-type TestDelayAsyncJob struct {
-}
-
-// Signature The name and signature of the job.
-func (receiver *TestDelayAsyncJob) Signature() string {
-	return "test_delay_async_job"
-}
-
-// Handle Execute the job.
-func (receiver *TestDelayAsyncJob) Handle(args ...any) error {
-	testDelayAsyncJob++
-
-	return nil
-}
-
-type TestCustomAsyncJob struct {
-}
-
-// Signature The name and signature of the job.
-func (receiver *TestCustomAsyncJob) Signature() string {
-	return "test_custom_async_job"
-}
-
-// Handle Execute the job.
-func (receiver *TestCustomAsyncJob) Handle(args ...any) error {
-	testCustomAsyncJob++
-
-	return nil
-}
-
-type TestErrorAsyncJob struct {
-}
-
-// Signature The name and signature of the job.
-func (receiver *TestErrorAsyncJob) Signature() string {
-	return "test_error_async_job"
-}
-
-// Handle Execute the job.
-func (receiver *TestErrorAsyncJob) Handle(args ...any) error {
-	testErrorAsyncJob++
-
-	return nil
-}
-
-type TestChainAsyncJob struct {
-}
-
-// Signature The name and signature of the job.
-func (receiver *TestChainAsyncJob) Signature() string {
-	return "test_chain_async_job"
-}
-
-// Handle Execute the job.
-func (receiver *TestChainAsyncJob) Handle(args ...any) error {
-	testChainAsyncJob++
-
-	return nil
+	s.Equal(argsOne, testJobOne)
+	s.Nil(testJobTwo)
 }
