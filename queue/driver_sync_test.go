@@ -2,6 +2,7 @@ package queue
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -25,15 +26,8 @@ func TestDriverSyncTestSuite(t *testing.T) {
 	suite.Run(t, new(DriverSyncTestSuite))
 }
 
-func (s *DriverSyncTestSuite) SetupTest() {
-	testJobOne = nil
-	testJobTwo = nil
-
+func (s *DriverSyncTestSuite) SetupSuite() {
 	s.mockConfig = mocksqueue.NewConfig(s.T())
-
-	s.mockConfig.EXPECT().DefaultConnection().Return("sync").Once()
-	s.mockConfig.EXPECT().Queue("sync", "").Return("sync_queue").Once()
-	s.mockConfig.EXPECT().Driver("sync").Return(queue.DriverSync).Once()
 
 	s.app = &Application{
 		config: s.mockConfig,
@@ -41,6 +35,22 @@ func (s *DriverSyncTestSuite) SetupTest() {
 	}
 
 	s.app.Register([]queue.Job{&TestJobOne{}, &TestJobTwo{}, &TestJobErr{}})
+}
+
+func (s *DriverSyncTestSuite) SetupTest() {
+	testJobOne = nil
+	testJobTwo = nil
+
+	s.mockConfig.EXPECT().DefaultConnection().Return("sync").Once()
+	s.mockConfig.EXPECT().Queue("sync", "").Return("sync_queue").Once()
+	s.mockConfig.EXPECT().Driver("sync").Return(queue.DriverSync).Once()
+}
+
+func (s *DriverSyncTestSuite) TestDelay() {
+	args := []any{"a", 1, []string{"b", "c"}, []int{1, 2, 3}, map[string]any{"d": "e"}}
+
+	s.Nil(s.app.Job(&TestJobOne{}, args).Delay(time.Now().Add(time.Second)).Dispatch())
+	s.Equal(args, testJobOne)
 }
 
 func (s *DriverSyncTestSuite) TestDispatch() {
