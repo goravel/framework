@@ -22,19 +22,6 @@ func NewAsync(connection string, size int) *Async {
 	}
 }
 
-func (r *Async) Connection() string {
-	return r.connection
-}
-
-func (r *Async) Driver() string {
-	return contractsqueue.DriverAsync
-}
-
-func (r *Async) Push(job contractsqueue.Job, args []any, queue string) error {
-	r.getQueue(queue) <- contractsqueue.Jobs{Job: job, Args: args}
-	return nil
-}
-
 func (r *Async) Bulk(jobs []contractsqueue.Jobs, queue string) error {
 	for _, job := range jobs {
 		go func() {
@@ -46,6 +33,14 @@ func (r *Async) Bulk(jobs []contractsqueue.Jobs, queue string) error {
 	}
 
 	return nil
+}
+
+func (r *Async) Connection() string {
+	return r.connection
+}
+
+func (r *Async) Driver() string {
+	return contractsqueue.DriverAsync
 }
 
 func (r *Async) Later(delay time.Time, job contractsqueue.Job, args []any, queue string) error {
@@ -70,6 +65,11 @@ func (r *Async) Pop(queue string) (contractsqueue.Job, []any, error) {
 	default:
 		return nil, nil, errors.QueueDriverNoJobFound.Args(queue)
 	}
+}
+
+func (r *Async) Push(job contractsqueue.Job, args []any, queue string) error {
+	r.getQueue(queue) <- contractsqueue.Jobs{Job: job, Args: args}
+	return nil
 }
 
 func (r *Async) getQueue(queue string) chan contractsqueue.Jobs {
