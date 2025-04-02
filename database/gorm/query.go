@@ -924,13 +924,6 @@ func (r *Query) UpdateOrCreate(dest any, attributes any, values any) error {
 
 func (r *Query) Where(query any, args ...any) contractsorm.Query {
 	conditions := r.conditions
-
-	if scope, ok := query.(func(contractsorm.Query) contractsorm.Query); ok {
-		conditions.scopes = append(r.conditions.scopes, scope)
-
-		return r.setConditions(conditions)
-	}
-
 	conditions.where = append(r.conditions.where, Where{
 		query: query,
 		args:  args,

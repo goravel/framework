@@ -3212,12 +3212,6 @@ func (s *QueryTestSuite) TestWhere() {
 			var user4 User
 			s.Nil(query.Query().Where("name", "where_user").Find(&user4))
 			s.True(user4.ID > 0)
-
-			var user5 User
-			s.Nil(query.Query().Where(func(query contractsorm.Query) contractsorm.Query {
-				return query.Where("name = ?", "where_user")
-			}).Find(&user5))
-			s.True(user5.ID > 0)
 		})
 	}
 }
