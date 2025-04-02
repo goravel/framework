@@ -1198,6 +1198,17 @@ func (r *Query) buildSharedLock(db *gormio.DB) *gormio.DB {
 	return db
 }
 
+func (r *Query) buildSubquery(db *gormio.DB, sub func(contractsorm.Query) contractsorm.Query) *gormio.DB {
+	queryImpl := NewQuery(r.ctx, r.config, r.dbConfig, db, r.grammar, r.log, r.modelToObserver, nil)
+	query := sub(queryImpl)
+	var ok bool
+	if queryImpl, ok = query.(*Query); ok {
+		db = db.Where(queryImpl.buildWhere(db.Session(&gormio.Session{NewDB: true, Initialized: true})))
+	}
+
+	return db
+}
+
 func (r *Query) buildTable(db *gormio.DB) *gormio.DB {
 	if r.conditions.table == nil {
 		return db
@@ -1215,6 +1226,11 @@ func (r *Query) buildWhere(db *gormio.DB) *gormio.DB {
 	}
 
 	for _, item := range r.conditions.where {
+		if sub, ok := item.query.(func(contractsorm.Query) contractsorm.Query); ok {
+			db = r.buildSubquery(db, sub)
+			continue
+		}
+
 		if item.or {
 			db = db.Or(item.query, item.args...)
 		} else {
