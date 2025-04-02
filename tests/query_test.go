@@ -3215,8 +3215,8 @@ func (s *QueryTestSuite) TestWhere() {
 
 			var user5 User
 			s.Nil(query.Query().Where(func(query contractsorm.Query) contractsorm.Query {
-				return query.Where("name = ?", "where_user")
-			}).Find(&user5))
+				return query.Where("name = ?", "where_user").OrWhere("name", "where_user1")
+			}).Where("avatar", "where_avatar").Find(&user5))
 			s.True(user5.ID > 0)
 		})
 	}
