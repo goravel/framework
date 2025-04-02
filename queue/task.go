@@ -16,29 +16,35 @@ type Task struct {
 }
 
 func NewTask(config queue.Config, job queue.Job, args ...[]any) *Task {
-	if len(args) == 0 {
-		args = append(args, []any{})
+	var arg []any
+	if len(args) > 0 {
+		arg = args[0]
 	}
+
+	connection := config.DefaultConnection()
+
 	return &Task{
 		config:     config,
-		connection: config.DefaultConnection(),
+		connection: connection,
 		jobs: []queue.Jobs{
 			{
 				Job:  job,
-				Args: args[0],
+				Args: arg,
 			},
 		},
-		queue: config.Queue(config.DefaultConnection(), ""),
+		queue: config.Queue(connection, ""),
 	}
 }
 
 func NewChainTask(config queue.Config, jobs []queue.Jobs) *Task {
+	connection := config.DefaultConnection()
+
 	return &Task{
 		config:     config,
-		connection: config.DefaultConnection(),
+		connection: connection,
 		chain:      true,
 		jobs:       jobs,
-		queue:      config.Queue(config.DefaultConnection(), ""),
+		queue:      config.Queue(connection, ""),
 	}
 }
 
