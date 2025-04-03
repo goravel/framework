@@ -80,6 +80,8 @@ github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f h1:lO4WD4F/r
 github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f/go.mod h1:cuUVRXasLTGF7a8hSLbxyZXjz+1KgoB3wDUb6vlszIc=
 github.com/dromara/carbon/v2 v2.5.4 h1:BkftNHVCkEwzv6ZuFiB/R1rLHaw6ufbCVkyLDCf3GeY=
 github.com/dromara/carbon/v2 v2.5.4/go.mod h1:zyPlND2o27sKKkRmdgLbk/qYxkmmH6Z4eE8OoM0w3DM=
+github.com/dromara/carbon/v2 v2.5.5 h1:hr2qIvTXQyi1YMJtxFT4Q/DjpGqv0NUyRP+SPJVI3vE=
+github.com/dromara/carbon/v2 v2.5.5/go.mod h1:Baj3A1uBBctJmpZWJd6/+WWnmIuY2pobR6IOpB6xigc=
 github.com/dustin/go-humanize v1.0.1 h1:GzkhY7T5VNhEkwH0PVJgjz+fX1rhBrR7pRT3mDkpeCY=
 github.com/dustin/go-humanize v1.0.1/go.mod h1:Mu1zIs6XwVuF/gI1OepvI0qD18qycQx+mFykh5fBlto=
 github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f h1:Y/CXytFA4m6baUTXGLOoWe4PQhGxaX0KpnayAqC48p4=
