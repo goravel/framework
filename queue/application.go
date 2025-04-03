@@ -17,31 +17,31 @@ func NewApplication(config contractsconfig.Config) *Application {
 	}
 }
 
-func (app *Application) Chain(jobs []queue.Jobs) queue.Task {
-	return NewChainTask(app.config, jobs)
+func (r *Application) Chain(jobs []queue.Jobs) queue.Task {
+	return NewChainTask(r.config, jobs)
 }
 
-func (app *Application) GetJob(signature string) (queue.Job, error) {
-	return app.job.Get(signature)
+func (r *Application) GetJob(signature string) (queue.Job, error) {
+	return r.job.Get(signature)
 }
 
-func (app *Application) GetJobs() []queue.Job {
-	return app.job.All()
+func (r *Application) GetJobs() []queue.Job {
+	return r.job.All()
 }
 
-func (app *Application) Job(job queue.Job, args ...[]any) queue.Task {
-	return NewTask(app.config, job, args...)
+func (r *Application) Job(job queue.Job, args ...[]any) queue.Task {
+	return NewTask(r.config, job, args...)
 }
 
-func (app *Application) Register(jobs []queue.Job) {
-	app.job.Register(jobs)
+func (r *Application) Register(jobs []queue.Job) {
+	r.job.Register(jobs)
 }
 
-func (app *Application) Worker(payloads ...queue.Args) queue.Worker {
-	defaultConnection := app.config.DefaultConnection()
+func (r *Application) Worker(payloads ...queue.Args) queue.Worker {
+	defaultConnection := r.config.DefaultConnection()
 
 	if len(payloads) == 0 {
-		return NewWorker(app.config, 1, defaultConnection, app.config.Queue(defaultConnection, ""), app.job)
+		return NewWorker(r.config, 1, defaultConnection, r.config.Queue(defaultConnection, ""), r.job)
 	}
 	if payloads[0].Connection == "" {
 		payloads[0].Connection = defaultConnection
@@ -53,5 +53,5 @@ func (app *Application) Worker(payloads ...queue.Args) queue.Worker {
 		payloads[0].Concurrent = 1
 	}
 
-	return NewWorker(app.config, payloads[0].Concurrent, payloads[0].Connection, app.config.Queue(payloads[0].Connection, payloads[0].Queue), app.job)
+	return NewWorker(r.config, payloads[0].Concurrent, payloads[0].Connection, r.config.Queue(payloads[0].Connection, payloads[0].Queue), r.job)
 }

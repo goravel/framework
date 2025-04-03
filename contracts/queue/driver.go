@@ -3,7 +3,6 @@ package queue
 import "time"
 
 const DriverSync string = "sync"
-const DriverAsync string = "async"
 const DriverCustom string = "custom"
 
 type Driver interface {
