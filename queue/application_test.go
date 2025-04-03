@@ -31,7 +31,7 @@ func (s *ApplicationTestSuite) SetupSuite() {
 
 	s.app = &Application{
 		config: s.mockConfig,
-		job:    NewJobRespository(),
+		job:    NewJobRepository(),
 	}
 
 	s.app.Register([]queue.Job{&TestJobOne{}, &TestJobTwo{}, &TestJobErr{}})
