@@ -16,17 +16,17 @@ var (
 	testJobTwo []any
 )
 
-type DriverSyncTestSuite struct {
+type ApplicationTestSuite struct {
 	suite.Suite
 	app        *Application
 	mockConfig *mocksqueue.Config
 }
 
-func TestDriverSyncTestSuite(t *testing.T) {
-	suite.Run(t, new(DriverSyncTestSuite))
+func TestApplicationTestSuite(t *testing.T) {
+	suite.Run(t, new(ApplicationTestSuite))
 }
 
-func (s *DriverSyncTestSuite) SetupSuite() {
+func (s *ApplicationTestSuite) SetupSuite() {
 	s.mockConfig = mocksqueue.NewConfig(s.T())
 
 	s.app = &Application{
@@ -37,7 +37,7 @@ func (s *DriverSyncTestSuite) SetupSuite() {
 	s.app.Register([]queue.Job{&TestJobOne{}, &TestJobTwo{}, &TestJobErr{}})
 }
 
-func (s *DriverSyncTestSuite) SetupTest() {
+func (s *ApplicationTestSuite) SetupTest() {
 	testJobOne = nil
 	testJobTwo = nil
 
@@ -46,21 +46,21 @@ func (s *DriverSyncTestSuite) SetupTest() {
 	s.mockConfig.EXPECT().Driver("sync").Return(queue.DriverSync).Once()
 }
 
-func (s *DriverSyncTestSuite) TestDelay() {
+func (s *ApplicationTestSuite) TestDelay() {
 	args := []any{"a", 1, []string{"b", "c"}, []int{1, 2, 3}, map[string]any{"d": "e"}}
 
 	s.Nil(s.app.Job(&TestJobOne{}, args).Delay(time.Now().Add(time.Second)).Dispatch())
 	s.Equal(args, testJobOne)
 }
 
-func (s *DriverSyncTestSuite) TestDispatch() {
+func (s *ApplicationTestSuite) TestDispatch() {
 	args := []any{"a", 1, []string{"b", "c"}, []int{1, 2, 3}, map[string]any{"d": "e"}}
 
 	s.Nil(s.app.Job(&TestJobOne{}, args).Dispatch())
 	s.Equal(args, testJobOne)
 }
 
-func (s *DriverSyncTestSuite) TestChainDispatch() {
+func (s *ApplicationTestSuite) TestChainDispatch() {
 	argsOne := []any{"a", 1, []string{"b", "c"}, []int{1, 2, 3}, map[string]any{"d": "e"}}
 	argsTwo := []any{"a", 2, []string{"d", "f"}, []int{4, 5, 6}, map[string]any{"g": "h"}}
 
@@ -79,7 +79,7 @@ func (s *DriverSyncTestSuite) TestChainDispatch() {
 	s.Equal(argsTwo, testJobTwo)
 }
 
-func (s *DriverSyncTestSuite) TestChainDispatchWithError() {
+func (s *ApplicationTestSuite) TestChainDispatchWithError() {
 	argsOne := []any{"a", 1, []string{"b", "c"}, []int{1, 2, 3}, map[string]any{"d": "e"}}
 	argsTwo := []any{"a", 2, []string{"d", "f"}, []int{4, 5, 6}, map[string]any{"g": "h"}}
 
