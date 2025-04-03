@@ -27,6 +27,7 @@ import (
 	mockscache "github.com/goravel/framework/mocks/cache"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksconsole "github.com/goravel/framework/mocks/console"
+	mocksdb "github.com/goravel/framework/mocks/database/db"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
 	mockslog "github.com/goravel/framework/mocks/log"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
@@ -324,7 +325,9 @@ func (s *ApplicationTestSuite) TestMakeQueue() {
 	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
 		return &mocksconfig.Config{}, nil
 	})
-
+	s.app.Singleton(contracts.BindingDB, func(app foundation.Application) (any, error) {
+		return &mocksdb.DB{}, nil
+	})
 	s.app.Singleton(contracts.BindingLog, func(app foundation.Application) (any, error) {
 		return &mockslog.Log{}, nil
 	})
