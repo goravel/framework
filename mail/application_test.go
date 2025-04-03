@@ -11,7 +11,6 @@ import (
 	"github.com/goravel/framework/contracts/mail"
 	contractsqueue "github.com/goravel/framework/contracts/queue"
 	mocksconfig "github.com/goravel/framework/mocks/config"
-	mocksqueue "github.com/goravel/framework/mocks/queue"
 	"github.com/goravel/framework/queue"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/color"
@@ -22,8 +21,7 @@ var testBcc, testCc, testTo, testFromAddress, testFromName string
 
 type ApplicationTestSuite struct {
 	suite.Suite
-	mockConfig      *mocksconfig.Config
-	mockQueueConfig *mocksqueue.Config
+	mockConfig *mocksconfig.Config
 }
 
 func TestApplicationTestSuite(t *testing.T) {
