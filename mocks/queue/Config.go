@@ -3,7 +3,7 @@
 package queue
 
 import (
-	orm "github.com/goravel/framework/contracts/database/orm"
+	db "github.com/goravel/framework/contracts/database/db"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -157,19 +157,19 @@ func (_c *Config_Driver_Call) RunAndReturn(run func(string) string) *Config_Driv
 }
 
 // FailedJobsQuery provides a mock function with no fields
-func (_m *Config) FailedJobsQuery() orm.Query {
+func (_m *Config) FailedJobsQuery() db.Query {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for FailedJobsQuery")
 	}
 
-	var r0 orm.Query
-	if rf, ok := ret.Get(0).(func() orm.Query); ok {
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func() db.Query); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(orm.Query)
+			r0 = ret.Get(0).(db.Query)
 		}
 	}
 
@@ -193,12 +193,12 @@ func (_c *Config_FailedJobsQuery_Call) Run(run func()) *Config_FailedJobsQuery_C
 	return _c
 }
 
-func (_c *Config_FailedJobsQuery_Call) Return(_a0 orm.Query) *Config_FailedJobsQuery_Call {
+func (_c *Config_FailedJobsQuery_Call) Return(_a0 db.Query) *Config_FailedJobsQuery_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Config_FailedJobsQuery_Call) RunAndReturn(run func() orm.Query) *Config_FailedJobsQuery_Call {
+func (_c *Config_FailedJobsQuery_Call) RunAndReturn(run func() db.Query) *Config_FailedJobsQuery_Call {
 	_c.Call.Return(run)
 	return _c
 }
