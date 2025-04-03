@@ -2,8 +2,10 @@ package queue
 
 import "time"
 
-const DriverSync string = "sync"
-const DriverCustom string = "custom"
+const (
+	DriverSync   string = "sync"
+	DriverCustom string = "custom"
+)
 
 type Driver interface {
 	// Bulk pushes a slice of jobs onto the queue.
