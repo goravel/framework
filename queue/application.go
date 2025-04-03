@@ -1,19 +1,21 @@
 package queue
 
 import (
-	contractsconfig "github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/queue"
 )
 
 type Application struct {
 	config queue.Config
 	job    queue.JobRepository
+	log    log.Log
 }
 
-func NewApplication(config contractsconfig.Config) *Application {
+func NewApplication(config queue.Config, job queue.JobRepository, log log.Log) *Application {
 	return &Application{
-		config: NewConfig(config),
-		job:    NewJobRespository(),
+		config: config,
+		job:    job,
+		log:    log,
 	}
 }
 
@@ -41,7 +43,7 @@ func (r *Application) Worker(payloads ...queue.Args) queue.Worker {
 	defaultConnection := r.config.DefaultConnection()
 
 	if len(payloads) == 0 {
-		return NewWorker(r.config, 1, defaultConnection, r.config.Queue(defaultConnection, ""), r.job)
+		return NewWorker(r.config, 1, defaultConnection, r.config.Queue(defaultConnection, ""), r.job, r.log)
 	}
 	if payloads[0].Connection == "" {
 		payloads[0].Connection = defaultConnection
@@ -53,5 +55,5 @@ func (r *Application) Worker(payloads ...queue.Args) queue.Worker {
 		payloads[0].Concurrent = 1
 	}
 
-	return NewWorker(r.config, payloads[0].Concurrent, payloads[0].Connection, r.config.Queue(payloads[0].Connection, payloads[0].Queue), r.job)
+	return NewWorker(r.config, payloads[0].Concurrent, payloads[0].Connection, r.config.Queue(payloads[0].Connection, payloads[0].Queue), r.job, r.log)
 }

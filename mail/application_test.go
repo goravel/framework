@@ -1,7 +1,6 @@
 package mail
 
 import (
-	"context"
 	"os"
 	"testing"
 	"time"
@@ -10,8 +9,9 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/mail"
-	queuecontract "github.com/goravel/framework/contracts/queue"
-	configmock "github.com/goravel/framework/mocks/config"
+	contractsqueue "github.com/goravel/framework/contracts/queue"
+	mocksconfig "github.com/goravel/framework/mocks/config"
+	mocksqueue "github.com/goravel/framework/mocks/queue"
 	"github.com/goravel/framework/queue"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/color"
@@ -22,7 +22,8 @@ var testBcc, testCc, testTo, testFromAddress, testFromName string
 
 type ApplicationTestSuite struct {
 	suite.Suite
-	mockConfig *configmock.Config
+	mockConfig      *mocksconfig.Config
+	mockQueueConfig *mocksqueue.Config
 }
 
 func TestApplicationTestSuite(t *testing.T) {
@@ -35,10 +36,11 @@ func TestApplicationTestSuite(t *testing.T) {
 }
 
 func (s *ApplicationTestSuite) SetupTest() {
-	s.mockConfig = mockConfig(465)
 }
 
-func (s *ApplicationTestSuite) TestSendMailBy465Port() {
+func (s *ApplicationTestSuite) TestSendMail() {
+	s.mockConfig = mockConfig(465)
+
 	app := NewApplication(s.mockConfig, nil)
 	s.Nil(app.To([]string{testTo}).
 		Cc([]string{testCc}).
@@ -50,19 +52,9 @@ func (s *ApplicationTestSuite) TestSendMailBy465Port() {
 		Send())
 }
 
-func (s *ApplicationTestSuite) TestSendMailBy587Port() {
-	app := NewApplication(s.mockConfig, nil)
-	s.Nil(app.To([]string{testTo}).
-		Cc([]string{testCc}).
-		Bcc([]string{testBcc}).
-		Attach([]string{"../logo.png"}).
-		Subject("Goravel Test 587").
-		Content(Html("<h1>Hello Goravel</h1>")).
-		Headers(map[string]string{"Test-Mailer-Port": "587"}).
-		Send())
-}
+func (s *ApplicationTestSuite) TestSendMailWithFromBy587Port() {
+	s.mockConfig = mockConfig(587)
 
-func (s *ApplicationTestSuite) TestSendMailWithFrom() {
 	app := NewApplication(s.mockConfig, nil)
 	s.Nil(app.From(Address(testFromAddress, testFromName)).
 		To([]string{testTo}).
@@ -76,28 +68,22 @@ func (s *ApplicationTestSuite) TestSendMailWithFrom() {
 }
 
 func (s *ApplicationTestSuite) TestSendMailWithMailable() {
+	s.mockConfig = mockConfig(465)
+
 	app := NewApplication(s.mockConfig, nil)
 	s.Nil(app.Send(NewTestMailable()))
 }
 
 func (s *ApplicationTestSuite) TestQueueMail() {
-	queueFacade := queue.NewApplication(s.mockConfig)
-	queueFacade.Register([]queuecontract.Job{
+	s.mockConfig = mockConfig(465)
+
+	queueFacade := queue.NewApplication(queue.NewConfig(s.mockConfig, nil), queue.NewJobRepository(), nil)
+	queueFacade.Register([]contractsqueue.Job{
 		NewSendMailJob(s.mockConfig),
 	})
 
 	app := NewApplication(s.mockConfig, queueFacade)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-	go func(ctx context.Context) {
-		s.Nil(queueFacade.Worker().Run())
-
-		for range ctx.Done() {
-			return
-		}
-	}(ctx)
-	time.Sleep(3 * time.Second)
 	s.Nil(app.To([]string{testTo}).
 		Cc([]string{testCc}).
 		Bcc([]string{testBcc}).
@@ -109,71 +95,25 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 	time.Sleep(3 * time.Second)
 }
 
-func (s *ApplicationTestSuite) TestQueueMailWithConnection() {
-	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Twice()
-	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("async").Twice()
-	s.mockConfig.On("GetInt", "queue.connections.redis.size", 100).Return(100).Twice()
-
-	queueFacade := queue.NewApplication(s.mockConfig)
-	queueFacade.Register([]queuecontract.Job{
-		NewSendMailJob(s.mockConfig),
-	})
-
-	app := NewApplication(s.mockConfig, queueFacade)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-	go func(ctx context.Context) {
-		s.Nil(queueFacade.Worker(queuecontract.Args{
-			Connection: "redis",
-			Queue:      "test",
-		}).Run())
-
-		for range ctx.Done() {
-			return
-		}
-	}(ctx)
-	time.Sleep(3 * time.Second)
-	s.Nil(app.To([]string{testTo}).
-		Cc([]string{testCc}).
-		Bcc([]string{testBcc}).
-		Attach([]string{"../logo.png"}).
-		Subject("Goravel Test Queue with connection").
-		Content(Html("<h1>Hello Goravel</h1>")).
-		Headers(map[string]string{"Test-Mailer": "QueueMailWithConnection"}).
-		Queue(Queue().OnConnection("redis").OnQueue("test")))
-	time.Sleep(3 * time.Second)
-}
-
 func (s *ApplicationTestSuite) TestQueueMailWithMailable() {
-	queueFacade := queue.NewApplication(s.mockConfig)
-	queueFacade.Register([]queuecontract.Job{
+	s.mockConfig = mockConfig(465)
+
+	queueFacade := queue.NewApplication(queue.NewConfig(s.mockConfig, nil), queue.NewJobRepository(), nil)
+	queueFacade.Register([]contractsqueue.Job{
 		NewSendMailJob(s.mockConfig),
 	})
 
 	app := NewApplication(s.mockConfig, queueFacade)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-	go func(ctx context.Context) {
-		s.Nil(queueFacade.Worker().Run())
-
-		for range ctx.Done() {
-			return
-		}
-	}(ctx)
-	time.Sleep(3 * time.Second)
 	s.Nil(app.Queue(NewTestMailable()))
-	time.Sleep(3 * time.Second)
 }
 
-func mockConfig(mailPort int) *configmock.Config {
-	mockConfig := &configmock.Config{}
+func mockConfig(mailPort int) *mocksconfig.Config {
+	mockConfig := &mocksconfig.Config{}
 	mockConfig.On("GetString", "app.name").Return("goravel")
-	mockConfig.On("GetString", "queue.default").Return("async")
-	mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default")
-	mockConfig.On("GetString", "queue.connections.async.driver").Return("async")
-	mockConfig.On("GetInt", "queue.connections.async.size", 100).Return(100)
+	mockConfig.On("GetString", "queue.default").Return("sync")
+	mockConfig.On("GetString", "queue.connections.sync.queue", "default").Return("default")
+	mockConfig.On("GetString", "queue.connections.sync.driver").Return("sync")
 	mockConfig.On("GetString", "queue.failed.database").Return("database")
 	mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs")
 
@@ -243,7 +183,7 @@ func (m *TestMailable) Envelope() *mail.Envelope {
 		Bcc:     []string{testBcc},
 		Cc:      []string{testCc},
 		From:    Address(testFromAddress, testFromName),
-		Subject: "Goravel Test 587 With Mailable",
+		Subject: "Goravel Test Mailable",
 		To:      []string{testTo},
 	}
 }

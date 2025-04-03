@@ -4,17 +4,18 @@ import (
 	"fmt"
 
 	contractsconfig "github.com/goravel/framework/contracts/config"
-	"github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/contracts/database/db"
 )
 
 type Config struct {
 	config contractsconfig.Config
+	db     db.DB
 }
 
-func NewConfig(config contractsconfig.Config) queue.Config {
+func NewConfig(config contractsconfig.Config, db db.DB) *Config {
 	return &Config{
 		config: config,
+		db:     db,
 	}
 }
 
@@ -34,10 +35,11 @@ func (r *Config) Driver(connection string) string {
 	return r.config.GetString(fmt.Sprintf("queue.connections.%s.driver", connection))
 }
 
-func (r *Config) FailedJobsQuery() orm.Query {
+func (r *Config) FailedJobsQuery() db.Query {
 	connection := r.config.GetString("queue.failed.database")
 	table := r.config.GetString("queue.failed.table")
-	return OrmFacade.Connection(connection).Query().Table(table)
+
+	return r.db.Connection(connection).Table(table)
 }
 
 func (r *Config) Queue(connection, queue string) string {
