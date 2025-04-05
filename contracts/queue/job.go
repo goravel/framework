@@ -19,5 +19,5 @@ type JobRepository interface {
 type Jobs struct {
 	Job   Job
 	Args  []any
-	Delay time.Time
+	Delay *time.Time
 }
