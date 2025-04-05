@@ -124,7 +124,7 @@ func TestBuildWithError(t *testing.T) {
 func TestMultipartWithInvalidFilePath(t *testing.T) {
 	body := NewBody(BodyTypeMultipart).
 		SetField("name", "krishan").
-		SetFiles(map[string]string{"nonexistent": "nonexistent.txt"})
+		SetFiles(map[string][]string{"nonexistent": {"nonexistent.txt"}})
 
 	_, err := body.Build()
 	assert.Error(t, err, "Expected error for nonexistent file path")

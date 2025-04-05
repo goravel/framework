@@ -8,11 +8,11 @@ godebug x509negativeserial=1
 
 require (
 	github.com/brianvoe/gofakeit/v7 v7.2.1
-	github.com/goravel/framework v1.15.5
+	github.com/goravel/framework v1.15.6
 	github.com/goravel/mysql v0.0.0-20250319075542-87a68d535125
-	github.com/goravel/postgres v0.0.2-0.20250319075525-0a0ea3bfa69a
+	github.com/goravel/postgres v0.0.2-0.20250330093640-b98bb13d6d4b
 	github.com/goravel/sqlite v0.0.0-20250319075628-124c135617fd
-	github.com/goravel/sqlserver v0.0.0-20250319075606-f46d3d99251e
+	github.com/goravel/sqlserver v0.0.0-20250330044523-bf0931bdcdff
 	github.com/spf13/cast v1.7.1
 	github.com/stretchr/testify v1.10.0
 	gorm.io/gorm v1.25.12
@@ -72,7 +72,7 @@ require (
 	golang.org/x/text v0.23.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250313205543-e70fdf4c4cb4 // indirect
 	google.golang.org/grpc v1.71.0 // indirect
-	google.golang.org/protobuf v1.36.5 // indirect
+	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/mysql v1.5.7 // indirect
 	gorm.io/driver/postgres v1.5.11 // indirect
@@ -85,7 +85,7 @@ require (
 )
 
 replace (
-	github.com/goravel/framework v1.15.5 => ../
+	github.com/goravel/framework v1.15.6 => ../
 	github.com/goravel/mysql v0.0.0 => github.com/goravel/mysql v0.0.0
 	github.com/goravel/postgres v0.0.0 => github.com/goravel/postgres v0.0.0
 	github.com/goravel/sqlite v0.0.0 => github.com/goravel/sqlite v0.0.0

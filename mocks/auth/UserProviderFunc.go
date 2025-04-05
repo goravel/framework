@@ -4,6 +4,8 @@ package auth
 
 import (
 	auth "github.com/goravel/framework/contracts/auth"
+	http "github.com/goravel/framework/contracts/http"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -20,9 +22,9 @@ func (_m *UserProviderFunc) EXPECT() *UserProviderFunc_Expecter {
 	return &UserProviderFunc_Expecter{mock: &_m.Mock}
 }
 
-// Execute provides a mock function with given fields: _a0
-func (_m *UserProviderFunc) Execute(_a0 auth.Auth) (auth.UserProvider, error) {
-	ret := _m.Called(_a0)
+// Execute provides a mock function with given fields: ctx
+func (_m *UserProviderFunc) Execute(ctx http.Context) (auth.UserProvider, error) {
+	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Execute")
@@ -30,19 +32,19 @@ func (_m *UserProviderFunc) Execute(_a0 auth.Auth) (auth.UserProvider, error) {
 
 	var r0 auth.UserProvider
 	var r1 error
-	if rf, ok := ret.Get(0).(func(auth.Auth) (auth.UserProvider, error)); ok {
-		return rf(_a0)
+	if rf, ok := ret.Get(0).(func(http.Context) (auth.UserProvider, error)); ok {
+		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func(auth.Auth) auth.UserProvider); ok {
-		r0 = rf(_a0)
+	if rf, ok := ret.Get(0).(func(http.Context) auth.UserProvider); ok {
+		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(auth.UserProvider)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(auth.Auth) error); ok {
-		r1 = rf(_a0)
+	if rf, ok := ret.Get(1).(func(http.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -56,14 +58,14 @@ type UserProviderFunc_Execute_Call struct {
 }
 
 // Execute is a helper method to define mock.On call
-//   - _a0 auth.Auth
-func (_e *UserProviderFunc_Expecter) Execute(_a0 interface{}) *UserProviderFunc_Execute_Call {
-	return &UserProviderFunc_Execute_Call{Call: _e.mock.On("Execute", _a0)}
+//   - ctx http.Context
+func (_e *UserProviderFunc_Expecter) Execute(ctx interface{}) *UserProviderFunc_Execute_Call {
+	return &UserProviderFunc_Execute_Call{Call: _e.mock.On("Execute", ctx)}
 }
 
-func (_c *UserProviderFunc_Execute_Call) Run(run func(_a0 auth.Auth)) *UserProviderFunc_Execute_Call {
+func (_c *UserProviderFunc_Execute_Call) Run(run func(ctx http.Context)) *UserProviderFunc_Execute_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(auth.Auth))
+		run(args[0].(http.Context))
 	})
 	return _c
 }
@@ -73,7 +75,7 @@ func (_c *UserProviderFunc_Execute_Call) Return(_a0 auth.UserProvider, _a1 error
 	return _c
 }
 
-func (_c *UserProviderFunc_Execute_Call) RunAndReturn(run func(auth.Auth) (auth.UserProvider, error)) *UserProviderFunc_Execute_Call {
+func (_c *UserProviderFunc_Execute_Call) RunAndReturn(run func(http.Context) (auth.UserProvider, error)) *UserProviderFunc_Execute_Call {
 	_c.Call.Return(run)
 	return _c
 }

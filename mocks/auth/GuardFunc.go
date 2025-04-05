@@ -4,6 +4,8 @@ package auth
 
 import (
 	auth "github.com/goravel/framework/contracts/auth"
+	http "github.com/goravel/framework/contracts/http"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -20,9 +22,9 @@ func (_m *GuardFunc) EXPECT() *GuardFunc_Expecter {
 	return &GuardFunc_Expecter{mock: &_m.Mock}
 }
 
-// Execute provides a mock function with given fields: name, _a1, userProvider
-func (_m *GuardFunc) Execute(name string, _a1 auth.Auth, userProvider auth.UserProvider) (auth.GuardDriver, error) {
-	ret := _m.Called(name, _a1, userProvider)
+// Execute provides a mock function with given fields: ctx, name, userProvider
+func (_m *GuardFunc) Execute(ctx http.Context, name string, userProvider auth.UserProvider) (auth.GuardDriver, error) {
+	ret := _m.Called(ctx, name, userProvider)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Execute")
@@ -30,19 +32,19 @@ func (_m *GuardFunc) Execute(name string, _a1 auth.Auth, userProvider auth.UserP
 
 	var r0 auth.GuardDriver
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string, auth.Auth, auth.UserProvider) (auth.GuardDriver, error)); ok {
-		return rf(name, _a1, userProvider)
+	if rf, ok := ret.Get(0).(func(http.Context, string, auth.UserProvider) (auth.GuardDriver, error)); ok {
+		return rf(ctx, name, userProvider)
 	}
-	if rf, ok := ret.Get(0).(func(string, auth.Auth, auth.UserProvider) auth.GuardDriver); ok {
-		r0 = rf(name, _a1, userProvider)
+	if rf, ok := ret.Get(0).(func(http.Context, string, auth.UserProvider) auth.GuardDriver); ok {
+		r0 = rf(ctx, name, userProvider)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(auth.GuardDriver)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string, auth.Auth, auth.UserProvider) error); ok {
-		r1 = rf(name, _a1, userProvider)
+	if rf, ok := ret.Get(1).(func(http.Context, string, auth.UserProvider) error); ok {
+		r1 = rf(ctx, name, userProvider)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -56,26 +58,26 @@ type GuardFunc_Execute_Call struct {
 }
 
 // Execute is a helper method to define mock.On call
+//   - ctx http.Context
 //   - name string
-//   - _a1 auth.Auth
 //   - userProvider auth.UserProvider
-func (_e *GuardFunc_Expecter) Execute(name interface{}, _a1 interface{}, userProvider interface{}) *GuardFunc_Execute_Call {
-	return &GuardFunc_Execute_Call{Call: _e.mock.On("Execute", name, _a1, userProvider)}
+func (_e *GuardFunc_Expecter) Execute(ctx interface{}, name interface{}, userProvider interface{}) *GuardFunc_Execute_Call {
+	return &GuardFunc_Execute_Call{Call: _e.mock.On("Execute", ctx, name, userProvider)}
 }
 
-func (_c *GuardFunc_Execute_Call) Run(run func(name string, _a1 auth.Auth, userProvider auth.UserProvider)) *GuardFunc_Execute_Call {
+func (_c *GuardFunc_Execute_Call) Run(run func(ctx http.Context, name string, userProvider auth.UserProvider)) *GuardFunc_Execute_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(auth.Auth), args[2].(auth.UserProvider))
+		run(args[0].(http.Context), args[1].(string), args[2].(auth.UserProvider))
 	})
 	return _c
 }
 
-func (_c *GuardFunc_Execute_Call) Return(guard auth.GuardDriver, err error) *GuardFunc_Execute_Call {
-	_c.Call.Return(guard, err)
+func (_c *GuardFunc_Execute_Call) Return(_a0 auth.GuardDriver, _a1 error) *GuardFunc_Execute_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *GuardFunc_Execute_Call) RunAndReturn(run func(string, auth.Auth, auth.UserProvider) (auth.GuardDriver, error)) *GuardFunc_Execute_Call {
+func (_c *GuardFunc_Execute_Call) RunAndReturn(run func(http.Context, string, auth.UserProvider) (auth.GuardDriver, error)) *GuardFunc_Execute_Call {
 	_c.Call.Return(run)
 	return _c
 }

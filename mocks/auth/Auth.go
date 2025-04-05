@@ -100,7 +100,7 @@ func (_c *Auth_Extend_Call) RunAndReturn(run func(string, auth.GuardFunc)) *Auth
 }
 
 // Guard provides a mock function with given fields: name
-func (_m *Auth) Guard(name string) (auth.GuardDriver, error) {
+func (_m *Auth) Guard(name string) auth.GuardDriver {
 	ret := _m.Called(name)
 
 	if len(ret) == 0 {
@@ -108,10 +108,6 @@ func (_m *Auth) Guard(name string) (auth.GuardDriver, error) {
 	}
 
 	var r0 auth.GuardDriver
-	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (auth.GuardDriver, error)); ok {
-		return rf(name)
-	}
 	if rf, ok := ret.Get(0).(func(string) auth.GuardDriver); ok {
 		r0 = rf(name)
 	} else {
@@ -120,13 +116,7 @@ func (_m *Auth) Guard(name string) (auth.GuardDriver, error) {
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(name)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // Auth_Guard_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Guard'
@@ -147,12 +137,12 @@ func (_c *Auth_Guard_Call) Run(run func(name string)) *Auth_Guard_Call {
 	return _c
 }
 
-func (_c *Auth_Guard_Call) Return(_a0 auth.GuardDriver, _a1 error) *Auth_Guard_Call {
-	_c.Call.Return(_a0, _a1)
+func (_c *Auth_Guard_Call) Return(_a0 auth.GuardDriver) *Auth_Guard_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Auth_Guard_Call) RunAndReturn(run func(string) (auth.GuardDriver, error)) *Auth_Guard_Call {
+func (_c *Auth_Guard_Call) RunAndReturn(run func(string) auth.GuardDriver) *Auth_Guard_Call {
 	_c.Call.Return(run)
 	return _c
 }

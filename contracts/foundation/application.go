@@ -9,6 +9,7 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/crypt"
+	"github.com/goravel/framework/contracts/database/db"
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/contracts/database/seeder"
@@ -35,50 +36,58 @@ type AboutItem struct {
 }
 
 type Application interface {
+	// About add information to the application's about command.
+	About(section string, items []AboutItem)
 	// Boot register and bootstrap configured service providers.
 	Boot()
 	// Commands register the given commands with the console application.
 	Commands([]console.Command)
-	// Path gets the path respective to "app" directory.
-	Path(path ...string) string
-	// BasePath get the base path of the Goravel installation.
-	BasePath(path ...string) string
-	// ConfigPath get the path to the configuration files.
-	ConfigPath(path ...string) string
-	// DatabasePath get the path to the database directory.
-	DatabasePath(path ...string) string
-	// StoragePath get the path to the storage directory.
-	StoragePath(path ...string) string
-	// ResourcePath get the path to the resources directory.
-	ResourcePath(path ...string) string
-	// LangPath get the path to the language files.
-	LangPath(path ...string) string
-	// PublicPath get the path to the public directory.
-	PublicPath(path ...string) string
-	// ExecutablePath get the path to the executable of the running Goravel application.
-	ExecutablePath(path ...string) string
+	// GetJson get the JSON implementation.
+	GetJson() Json
+	// IsLocale get the current application locale.
+	IsLocale(ctx context.Context, locale string) bool
 	// Publishes register the given paths to be published by the "vendor:publish" command.
 	Publishes(packageName string, paths map[string]string, groups ...string)
-	// CurrentLocale get the current application locale.
-	CurrentLocale(ctx context.Context) string
+	// Refresh all modules after changing config, will call the Boot method simultaneously.
+	Refresh()
+	// SetJson set the JSON implementation.
+	SetJson(json Json)
 	// SetLocale set the current application locale.
 	SetLocale(ctx context.Context, locale string) context.Context
 	// Version gets the version number of the application.
 	Version() string
-	// IsLocale get the current application locale.
-	IsLocale(ctx context.Context, locale string) bool
-	// SetJson set the JSON implementation.
-	SetJson(json Json)
-	// GetJson get the JSON implementation.
-	GetJson() Json
-	// About add information to the application's about command.
-	About(section string, items []AboutItem)
+
+	// Paths
+	// BasePath get the base path of the Goravel installation.
+	BasePath(path ...string) string
+	// ConfigPath get the path to the configuration files.
+	ConfigPath(path ...string) string
+	// CurrentLocale get the current application locale.
+	CurrentLocale(ctx context.Context) string
+	// DatabasePath get the path to the database directory.
+	DatabasePath(path ...string) string
+	// ExecutablePath get the path to the executable of the running Goravel application.
+	ExecutablePath(path ...string) string
+	// LangPath get the path to the language files.
+	LangPath(path ...string) string
+	// Path gets the path respective to "app" directory.
+	Path(path ...string) string
+	// PublicPath get the path to the public directory.
+	PublicPath(path ...string) string
+	// ResourcePath get the path to the resources directory.
+	ResourcePath(path ...string) string
+	// StoragePath get the path to the storage directory.
+	StoragePath(path ...string) string
 
 	// Container
 	// Bind registers a binding with the container.
 	Bind(key any, callback func(app Application) (any, error))
 	// BindWith registers a binding with the container.
 	BindWith(key any, callback func(app Application, parameters map[string]any) (any, error))
+	// Fresh modules after changing config, will fresh all bindings except for config if no bindings provided.
+	// Notice, this method only freshs the facade, if another facade injects the facade previously, the another
+	// facades should be fresh simulaneously.
+	Fresh(bindings ...any)
 	// Instance registers an existing instance as shared in the container.
 	Instance(key, instance any)
 	// Make resolves the given type from the container.
@@ -86,13 +95,15 @@ type Application interface {
 	// MakeArtisan resolves the artisan console instance.
 	MakeArtisan() console.Artisan
 	// MakeAuth resolves the auth instance.
-	MakeAuth(ctx http.Context) auth.Auth
+	MakeAuth(ctx ...http.Context) auth.Auth
 	// MakeCache resolves the cache instance.
 	MakeCache() cache.Cache
 	// MakeConfig resolves the config instance.
 	MakeConfig() config.Config
 	// MakeCrypt resolves the crypt instance.
 	MakeCrypt() crypt.Crypt
+	// MakeDB resolves the db instance.
+	MakeDB() db.DB
 	// MakeEvent resolves the event instance.
 	MakeEvent() event.Instance
 	// MakeGate resolves the gate instance.
@@ -135,10 +146,6 @@ type Application interface {
 	MakeSeeder() seeder.Facade
 	// MakeWith resolves the given type with the given parameters from the container.
 	MakeWith(key any, parameters map[string]any) (any, error)
-	// Refresh modules after changing config, will refresh all bindings except for config if no bindings provided.
-	// Notice, this method only refreshs the facade, if another facade injects the facade previously, the another
-	// facades should be refresh simulaneously.
-	Refresh(bindings ...any)
 	// Singleton registers a shared binding in the container.
 	Singleton(key any, callback func(app Application) (any, error))
 }

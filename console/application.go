@@ -2,6 +2,7 @@ package console
 
 import (
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/urfave/cli/v2"
@@ -102,7 +103,7 @@ func (r *Application) CallAndExit(command string) {
 
 // Run a command. Args come from os.Args.
 func (r *Application) Run(args []string, exitIfArtisan bool) error {
-	if noANSI || env.IsNoANSI() {
+	if noANSI || env.IsNoANSI() || slices.Contains(args, "--no-ansi") {
 		color.Disable()
 	}
 

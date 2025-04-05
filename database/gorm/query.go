@@ -822,9 +822,10 @@ func (r *Query) Select(query any, args ...any) contractsorm.Query {
 	return r.setConditions(conditions)
 }
 
-func (r *Query) SetContext(ctx context.Context) {
-	r.ctx = ctx
-	r.instance.Statement.Context = ctx
+func (r *Query) WithContext(ctx context.Context) contractsorm.Query {
+	instance := r.instance.WithContext(ctx)
+
+	return NewQuery(ctx, r.config, r.dbConfig, instance, r.grammar, r.log, r.modelToObserver, nil)
 }
 
 func (r *Query) SharedLock() contractsorm.Query {
@@ -1197,6 +1198,18 @@ func (r *Query) buildSharedLock(db *gormio.DB) *gormio.DB {
 	return db
 }
 
+func (r *Query) buildSubquery(sub func(contractsorm.Query) contractsorm.Query) *gormio.DB {
+	db := r.instance.Session(&gormio.Session{NewDB: true, Initialized: true})
+	queryImpl := NewQuery(r.ctx, r.config, r.dbConfig, db, r.grammar, r.log, r.modelToObserver, nil)
+	query := sub(queryImpl)
+	var ok bool
+	if queryImpl, ok = query.(*Query); ok {
+		return queryImpl.buildWhere(db)
+	}
+
+	return db
+}
+
 func (r *Query) buildTable(db *gormio.DB) *gormio.DB {
 	if r.conditions.table == nil {
 		return db
@@ -1214,6 +1227,11 @@ func (r *Query) buildWhere(db *gormio.DB) *gormio.DB {
 	}
 
 	for _, item := range r.conditions.where {
+		if sub, ok := item.query.(func(contractsorm.Query) contractsorm.Query); ok {
+			item.query = r.buildSubquery(sub)
+			item.args = nil
+		}
+
 		if item.or {
 			db = db.Or(item.query, item.args...)
 		} else {

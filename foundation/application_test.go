@@ -157,6 +157,9 @@ func (s *ApplicationTestSuite) TestMakeAuth() {
 	mockConfig.EXPECT().GetString("auth.guards.user.driver").Return("jwt").Once()
 	mockConfig.EXPECT().GetString("auth.guards.user.provider").Return("user").Once()
 	mockConfig.EXPECT().GetString("auth.providers.user.driver").Return("orm").Once()
+	mockConfig.EXPECT().GetString("jwt.secret").Return("secret").Once()
+	mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(100).Once()
+	mockConfig.EXPECT().GetInt("jwt.refresh_ttl").Return(100).Once()
 
 	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
@@ -167,9 +170,13 @@ func (s *ApplicationTestSuite) TestMakeAuth() {
 	s.app.Singleton(contracts.BindingOrm, func(app foundation.Application) (any, error) {
 		return &mocksorm.Orm{}, nil
 	})
+	s.app.Singleton(contracts.BindingLog, func(app foundation.Application) (any, error) {
+		return &mockslog.Log{}, nil
+	})
 
 	serviceProvider := &auth.ServiceProvider{}
 	serviceProvider.Register(s.app)
+	serviceProvider.Boot(s.app)
 
 	s.NotNil(s.app.MakeAuth(http.Background()))
 }
