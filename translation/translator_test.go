@@ -3,12 +3,14 @@ package translation
 import (
 	"context"
 	"testing"
+	"testing/fstest"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	translationcontract "github.com/goravel/framework/contracts/translation"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/foundation/json"
 	"github.com/goravel/framework/http"
 	mocklog "github.com/goravel/framework/mocks/log"
 	mockloader "github.com/goravel/framework/mocks/translation"
@@ -357,6 +359,40 @@ func (t *TranslatorTestSuite) TestLoad() {
 	err = translator.load("en", "foo/test")
 	t.NoError(err)
 	t.Equal("one", loaded["en"]["foo/test"]["bar"])
+}
+
+func (t *TranslatorTestSuite) TestLoadFS() {
+	mockFS := fstest.MapFS{
+		"lang/cn/test.json": &fstest.MapFile{Data: []byte(`{"foo": "bar", "baz": {"foo": "bar"}}`)},
+	}
+
+	translator := NewTranslator(t.ctx, NewFSLoader("lang", mockFS, json.NewJson()), t.mockLoader, "en", "en", t.mockLog)
+	t.mockLoader.On("Load", "en", "test").Once().Return(map[string]any{
+		"foo": "one",
+		"bar": "two",
+	}, nil)
+
+	// Case: Not loaded, successful load
+	err := translator.load("en", "test")
+	t.NoError(err)
+	t.Equal("one", loaded["en"]["test"]["foo"])
+
+	// Case: Already loaded
+	err = translator.load("en", "test")
+	t.NoError(err)
+	t.Equal("two", loaded["en"]["test"]["bar"])
+
+	// Case: Loaded from FS
+	t.mockLoader.On("Load", "cn", "test").Once().Return(nil, errors.LangFileNotExist)
+	err = translator.load("cn", "test")
+	t.NoError(err)
+	t.Equal("bar", loaded["cn"]["test"]["foo"])
+
+	// Case: Not loaded, loader returns an error
+	t.mockLoader.On("Load", "es", "folder3").Once().Return(nil, errors.LangFileNotExist)
+	err = translator.load("es", "folder3")
+	t.EqualError(err, "translation file does not exist")
+	t.Nil(loaded["folder3"])
 }
 
 func (t *TranslatorTestSuite) TestIsLoaded() {

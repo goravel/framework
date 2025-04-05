@@ -194,9 +194,9 @@ func (t *Translator) load(locale string, group string) error {
 	translations, err := t.fileLoader.Load(locale, group)
 	if err != nil && t.fsLoader != nil {
 		translations, err = t.fsLoader.Load(locale, group)
-	}
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	if loaded[locale] == nil {
