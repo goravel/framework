@@ -131,6 +131,8 @@ var (
 	QueueDriverFailedToPop      = New("failed to pop job from %s queue: %v")
 	QueueJobNotFound            = New("job not found: %s")
 	QueueFailedToSaveFailedJob  = New("failed to save failed job: %v")
+	QueueEmptyJobSignature      = New("job signature can't be empty")
+	QueueDuplicateJobSignature  = New("duplicate job signature: %s")
 
 	RouteDefaultDriverNotSet = New("please set default driver")
 	RouteInvalidDriver       = New("init %s route driver fail: route must be implement route.Route or func() (route.Route, error)")
