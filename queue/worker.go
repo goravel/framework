@@ -5,35 +5,44 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/RichardKnop/machinery/v2"
 	"github.com/google/uuid"
 
+	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 )
 
 type Worker struct {
-	concurrent    int
-	config        queue.Config
-	connection    string
+	config queue.Config
+	job    queue.JobRepository
+	log    log.Log
+
+	connection string
+	queue      string
+	concurrent int
+
+	currentDelay  time.Duration
 	failedJobChan chan FailedJob
 	isShutdown    atomic.Bool
-	job           queue.JobRepository
-	queue         string
-	wg            sync.WaitGroup
-	currentDelay  time.Duration
 	maxDelay      time.Duration
+	machinery     *machinery.Worker
+	wg            sync.WaitGroup
 }
 
-func NewWorker(config queue.Config, concurrent int, connection string, queue string, job queue.JobRepository) *Worker {
+func NewWorker(config queue.Config, job queue.JobRepository, log log.Log, connection, queue string, concurrent int) *Worker {
 	return &Worker{
-		concurrent:    concurrent,
-		config:        config,
-		connection:    connection,
-		job:           job,
-		queue:         queue,
-		failedJobChan: make(chan FailedJob, concurrent),
+		config: config,
+		job:    job,
+		log:    log,
+
+		connection: connection,
+		queue:      queue,
+		concurrent: concurrent,
+
 		currentDelay:  1 * time.Second,
+		failedJobChan: make(chan FailedJob, concurrent),
 		maxDelay:      32 * time.Second,
 	}
 }
@@ -41,13 +50,19 @@ func NewWorker(config queue.Config, concurrent int, connection string, queue str
 func (r *Worker) Run() error {
 	r.isShutdown.Store(false)
 
+	if err := r.RunMachinery(); err != nil {
+		return err
+	}
+
 	driver, err := NewDriver(r.connection, r.config)
 	if err != nil {
 		return err
 	}
 	if driver.Driver() == queue.DriverSync {
-		return errors.QueueDriverSyncNotNeedRun.Args(r.queue)
+		return errors.QueueDriverSyncNotNeedToRun.Args(r.connection)
 	}
+
+	redisQueue := r.config.Queue(r.connection, r.queue)
 
 	for i := 0; i < r.concurrent; i++ {
 		r.wg.Add(1)
@@ -58,10 +73,10 @@ func (r *Worker) Run() error {
 					return
 				}
 
-				job, args, err := driver.Pop(r.queue)
+				job, args, err := driver.Pop(redisQueue)
 				if err != nil {
 					if !errors.Is(err, errors.QueueDriverNoJobFound) {
-						LogFacade.Error(errors.QueueDriverFailedToPop.Args(r.queue, err))
+						r.log.Error(errors.QueueDriverFailedToPop.Args(redisQueue, err))
 
 						r.currentDelay *= 2
 						if r.currentDelay > r.maxDelay {
@@ -80,7 +95,7 @@ func (r *Worker) Run() error {
 					r.failedJobChan <- FailedJob{
 						UUID:       uuid.New(),
 						Connection: r.connection,
-						Queue:      r.queue,
+						Queue:      redisQueue,
 						Payload:    args,
 						Exception:  err.Error(),
 						FailedAt:   carbon.DateTime{Carbon: carbon.Now()},
@@ -94,8 +109,8 @@ func (r *Worker) Run() error {
 	go func() {
 		defer r.wg.Done()
 		for job := range r.failedJobChan {
-			if err = r.config.FailedJobsQuery().Create(&job); err != nil {
-				LogFacade.Error(errors.QueueFailedToSaveFailedJob.Args(err))
+			if _, err = r.config.FailedJobsQuery().Insert(&job); err != nil {
+				r.log.Error(errors.QueueFailedToSaveFailedJob.Args(err))
 			}
 		}
 	}()
@@ -105,8 +120,30 @@ func (r *Worker) Run() error {
 	return nil
 }
 
+// RunMachinery will be removed in v1.17
+func (r *Worker) RunMachinery() error {
+	machinery := NewMachinery(r.config.Config(), r.log, r.job.All(), r.connection, r.queue, r.concurrent)
+	if !machinery.ExistTasks() {
+		return nil
+	}
+
+	worker, err := machinery.Run()
+	if err != nil {
+		return err
+	}
+
+	r.machinery = worker
+
+	return nil
+}
+
 func (r *Worker) Shutdown() error {
 	r.isShutdown.Store(true)
 	close(r.failedJobChan)
+
+	if r.machinery != nil {
+		r.machinery.Quit()
+	}
+
 	return nil
 }

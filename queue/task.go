@@ -3,47 +3,53 @@ package queue
 import (
 	"time"
 
-	"github.com/goravel/framework/contracts/queue"
+	contractsqueue "github.com/goravel/framework/contracts/queue"
 )
 
 type Task struct {
-	config     queue.Config
+	config     contractsqueue.Config
 	connection string
 	chain      bool
 	delay      time.Time
-	jobs       []queue.Jobs
+	jobs       []contractsqueue.Jobs
 	queue      string
 }
 
-func NewTask(config queue.Config, job queue.Job, args ...[]any) *Task {
-	if len(args) == 0 {
-		args = append(args, []any{})
+func NewTask(config contractsqueue.Config, job contractsqueue.Job, args ...[]any) *Task {
+	var arg []any
+	if len(args) > 0 {
+		arg = args[0]
 	}
+
+	connection, queue, _ := config.Default()
+
 	return &Task{
 		config:     config,
-		connection: config.DefaultConnection(),
-		jobs: []queue.Jobs{
+		connection: connection,
+		jobs: []contractsqueue.Jobs{
 			{
 				Job:  job,
-				Args: args[0],
+				Args: arg,
 			},
 		},
-		queue: config.Queue(config.DefaultConnection(), ""),
+		queue: config.Queue(connection, queue),
 	}
 }
 
-func NewChainTask(config queue.Config, jobs []queue.Jobs) *Task {
+func NewChainTask(config contractsqueue.Config, jobs []contractsqueue.Jobs) *Task {
+	connection, queue, _ := config.Default()
+
 	return &Task{
 		config:     config,
-		connection: config.DefaultConnection(),
+		connection: connection,
 		chain:      true,
 		jobs:       jobs,
-		queue:      config.Queue(config.DefaultConnection(), ""),
+		queue:      config.Queue(connection, queue),
 	}
 }
 
 // Delay sets a delay time for the task
-func (r *Task) Delay(delay time.Time) queue.Task {
+func (r *Task) Delay(delay time.Time) contractsqueue.Task {
 	r.delay = delay
 	return r
 }
@@ -82,13 +88,13 @@ func (r *Task) DispatchSync() error {
 }
 
 // OnConnection sets the connection name
-func (r *Task) OnConnection(connection string) queue.Task {
+func (r *Task) OnConnection(connection string) contractsqueue.Task {
 	r.connection = connection
 	return r
 }
 
 // OnQueue sets the queue name
-func (r *Task) OnQueue(queue string) queue.Task {
+func (r *Task) OnQueue(queue string) contractsqueue.Task {
 	r.queue = r.config.Queue(r.connection, queue)
 	return r
 }

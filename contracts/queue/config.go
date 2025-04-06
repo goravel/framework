@@ -1,13 +1,16 @@
 package queue
 
-import "github.com/goravel/framework/contracts/database/orm"
+import (
+	"github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/contracts/database/db"
+)
 
 type Config interface {
+	Config() config.Config
 	Debug() bool
-	DefaultConnection() string
+	Default() (connection, queue string, concurrent int)
 	Driver(connection string) string
-	FailedJobsQuery() orm.Query
+	FailedJobsQuery() db.Query
 	Queue(connection, queue string) string
-	Size(connection string) int
 	Via(connection string) any
 }

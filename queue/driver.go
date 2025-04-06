@@ -6,11 +6,11 @@ import (
 )
 
 func NewDriver(connection string, config queue.Config) (queue.Driver, error) {
-	switch config.Driver(connection) {
+	driver := config.Driver(connection)
+
+	switch driver {
 	case queue.DriverSync:
 		return NewSync(connection), nil
-	case queue.DriverAsync:
-		return NewAsync(connection, config.Size(connection)), nil
 	case queue.DriverCustom:
 		custom := config.Via(connection)
 		if driver, ok := custom.(queue.Driver); ok {
@@ -21,6 +21,6 @@ func NewDriver(connection string, config queue.Config) (queue.Driver, error) {
 		}
 		return nil, errors.QueueDriverInvalid.Args(connection)
 	default:
-		return nil, errors.QueueDriverNotSupported.Args(config.Driver(connection))
+		return nil, errors.QueueDriverNotSupported.Args(driver)
 	}
 }
