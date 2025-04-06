@@ -34,9 +34,15 @@ func (s *ConfigTestSuite) TestDebug() {
 	s.False(s.config.Debug())
 }
 
-func (s *ConfigTestSuite) TestDefaultConnection() {
+func (s *ConfigTestSuite) TestDefault() {
 	s.mockConfig.EXPECT().GetString("queue.default").Return("redis").Once()
-	s.Equal("redis", s.config.DefaultConnection())
+	s.mockConfig.EXPECT().GetString("queue.connections.redis.queue", "default").Return("default").Once()
+	s.mockConfig.EXPECT().GetInt("queue.connections.redis.concurrent", 1).Return(2).Once()
+
+	connection, queue, concurrent := s.config.Default()
+	s.Equal("redis", connection)
+	s.Equal("default", queue)
+	s.Equal(2, concurrent)
 }
 
 func (s *ConfigTestSuite) TestDriver() {
@@ -77,17 +83,6 @@ func (s *ConfigTestSuite) TestQueue() {
 	// Test with custom queue
 	s.mockConfig.EXPECT().GetString("app.name").Return("myapp").Once()
 	s.Equal("myapp_queues:custom", s.config.Queue("redis", "custom"))
-}
-
-func (s *ConfigTestSuite) TestSize() {
-	// Test with empty connection (should use default)
-	s.mockConfig.EXPECT().GetString("queue.default").Return("redis").Once()
-	s.mockConfig.EXPECT().GetInt("queue.connections.redis.size", 100).Return(200).Once()
-	s.Equal(200, s.config.Size(""))
-
-	// Test with specific connection
-	s.mockConfig.EXPECT().GetInt("queue.connections.sync.size", 100).Return(50).Once()
-	s.Equal(50, s.config.Size("sync"))
 }
 
 func (s *ConfigTestSuite) TestVia() {

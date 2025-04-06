@@ -28,8 +28,8 @@ func (s *TaskTestSuite) SetupTest() {
 
 func (s *TaskTestSuite) TestNewTask() {
 	// Setup expectations
-	s.mockConfig.EXPECT().DefaultConnection().Return("default").Once()
-	s.mockConfig.EXPECT().Queue("default", "").Return("default_queue").Once()
+	s.mockConfig.EXPECT().Default().Return("default", "default", 1).Once()
+	s.mockConfig.EXPECT().Queue("default", "default").Return("default_queue").Once()
 
 	// Create a new task
 	args := []any{"arg1", "arg2"}
@@ -48,8 +48,8 @@ func (s *TaskTestSuite) TestNewTask() {
 
 func (s *TaskTestSuite) TestNewTaskWithoutArgs() {
 	// Setup expectations
-	s.mockConfig.EXPECT().DefaultConnection().Return("default").Once()
-	s.mockConfig.EXPECT().Queue("default", "").Return("default_queue").Once()
+	s.mockConfig.EXPECT().Default().Return("default", "default", 1).Once()
+	s.mockConfig.EXPECT().Queue("default", "default").Return("default_queue").Once()
 
 	// Create a new task without args
 	task := NewTask(s.mockConfig, s.mockJob)
@@ -67,8 +67,8 @@ func (s *TaskTestSuite) TestNewTaskWithoutArgs() {
 
 func (s *TaskTestSuite) TestNewChainTask() {
 	// Setup expectations
-	s.mockConfig.EXPECT().DefaultConnection().Return("default").Once()
-	s.mockConfig.EXPECT().Queue("default", "").Return("default_queue").Once()
+	s.mockConfig.EXPECT().Default().Return("default", "default", 1).Once()
+	s.mockConfig.EXPECT().Queue("default", "default").Return("default_queue").Once()
 
 	// Create jobs for the chain
 	jobs := []queue.Jobs{
@@ -96,8 +96,8 @@ func (s *TaskTestSuite) TestNewChainTask() {
 
 func (s *TaskTestSuite) TestDelay() {
 	// Setup expectations
-	s.mockConfig.EXPECT().DefaultConnection().Return("default").Once()
-	s.mockConfig.EXPECT().Queue("default", "").Return("default_queue").Once()
+	s.mockConfig.EXPECT().Default().Return("default", "default", 1).Once()
+	s.mockConfig.EXPECT().Queue("default", "default").Return("default_queue").Once()
 
 	// Create a new task
 	task := NewTask(s.mockConfig, s.mockJob)
@@ -113,8 +113,8 @@ func (s *TaskTestSuite) TestDelay() {
 
 func (s *TaskTestSuite) TestOnConnection() {
 	// Setup expectations
-	s.mockConfig.EXPECT().DefaultConnection().Return("default").Once()
-	s.mockConfig.EXPECT().Queue("default", "").Return("default_queue").Once()
+	s.mockConfig.EXPECT().Default().Return("default", "default", 1).Once()
+	s.mockConfig.EXPECT().Queue("default", "default").Return("default_queue").Once()
 
 	// Create a new task
 	task := NewTask(s.mockConfig, s.mockJob)
@@ -130,8 +130,8 @@ func (s *TaskTestSuite) TestOnConnection() {
 
 func (s *TaskTestSuite) TestOnQueue() {
 	// Setup expectations
-	s.mockConfig.EXPECT().DefaultConnection().Return("default").Once()
-	s.mockConfig.EXPECT().Queue("default", "").Return("default_queue").Once()
+	s.mockConfig.EXPECT().Default().Return("default", "default", 1).Once()
+	s.mockConfig.EXPECT().Queue("default", "default").Return("default_queue").Once()
 	s.mockConfig.EXPECT().Queue("default", "high").Return("high_queue").Once()
 
 	// Create a new task
@@ -148,8 +148,8 @@ func (s *TaskTestSuite) TestOnQueue() {
 
 func (s *TaskTestSuite) TestDispatchSync() {
 	// Setup expectations
-	s.mockConfig.EXPECT().DefaultConnection().Return("default").Once()
-	s.mockConfig.EXPECT().Queue("default", "").Return("default_queue").Once()
+	s.mockConfig.EXPECT().Default().Return("default", "default", 1).Once()
+	s.mockConfig.EXPECT().Queue("default", "default").Return("default_queue").Once()
 	s.mockJob.EXPECT().Handle([]any{"arg1"}...).Return(nil).Once()
 
 	// Create a new task
@@ -164,8 +164,8 @@ func (s *TaskTestSuite) TestDispatchSync() {
 
 func (s *TaskTestSuite) TestDispatchSyncWithError() {
 	// Setup expectations
-	s.mockConfig.EXPECT().DefaultConnection().Return("default").Once()
-	s.mockConfig.EXPECT().Queue("default", "").Return("default_queue").Once()
+	s.mockConfig.EXPECT().Default().Return("default", "default", 1).Once()
+	s.mockConfig.EXPECT().Queue("default", "default").Return("default_queue").Once()
 	s.mockJob.EXPECT().Handle([]any{"arg1"}...).Return(assert.AnError).Once()
 
 	// Create a new task
@@ -180,8 +180,8 @@ func (s *TaskTestSuite) TestDispatchSyncWithError() {
 
 func (s *TaskTestSuite) TestDispatchSyncChain() {
 	// Setup expectations
-	s.mockConfig.EXPECT().DefaultConnection().Return("default").Once()
-	s.mockConfig.EXPECT().Queue("default", "").Return("default_queue").Once()
+	s.mockConfig.EXPECT().Default().Return("default", "default", 1).Once()
+	s.mockConfig.EXPECT().Queue("default", "default").Return("default_queue").Once()
 	s.mockJob.EXPECT().Handle([]any{"arg1"}...).Return(nil).Once()
 	s.mockJob.EXPECT().Handle([]any{"arg2"}...).Return(nil).Once()
 
@@ -209,8 +209,8 @@ func (s *TaskTestSuite) TestDispatchSyncChain() {
 
 func (s *TaskTestSuite) TestDispatchSyncChainWithError() {
 	// Setup expectations
-	s.mockConfig.EXPECT().DefaultConnection().Return("default").Once()
-	s.mockConfig.EXPECT().Queue("default", "").Return("default_queue").Once()
+	s.mockConfig.EXPECT().Default().Return("default", "default", 1).Once()
+	s.mockConfig.EXPECT().Queue("default", "default").Return("default_queue").Once()
 	s.mockJob.EXPECT().Handle([]any{"arg1"}...).Return(nil).Once()
 	s.mockJob.EXPECT().Handle([]any{"arg2"}...).Return(assert.AnError).Once()
 
