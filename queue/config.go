@@ -19,6 +19,10 @@ func NewConfig(config contractsconfig.Config, db db.DB) *Config {
 	}
 }
 
+func (r *Config) Config() contractsconfig.Config {
+	return r.config
+}
+
 func (r *Config) Debug() bool {
 	return r.config.GetBool("app.debug")
 }
