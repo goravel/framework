@@ -3,7 +3,9 @@
 package queue
 
 import (
+	config "github.com/goravel/framework/contracts/config"
 	db "github.com/goravel/framework/contracts/database/db"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -18,6 +20,53 @@ type Config_Expecter struct {
 
 func (_m *Config) EXPECT() *Config_Expecter {
 	return &Config_Expecter{mock: &_m.Mock}
+}
+
+// Config provides a mock function with no fields
+func (_m *Config) Config() config.Config {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Config")
+	}
+
+	var r0 config.Config
+	if rf, ok := ret.Get(0).(func() config.Config); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(config.Config)
+		}
+	}
+
+	return r0
+}
+
+// Config_Config_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Config'
+type Config_Config_Call struct {
+	*mock.Call
+}
+
+// Config is a helper method to define mock.On call
+func (_e *Config_Expecter) Config() *Config_Config_Call {
+	return &Config_Config_Call{Call: _e.mock.On("Config")}
+}
+
+func (_c *Config_Config_Call) Run(run func()) *Config_Config_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Config_Config_Call) Return(_a0 config.Config) *Config_Config_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Config_Config_Call) RunAndReturn(run func() config.Config) *Config_Config_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // Debug provides a mock function with no fields

@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/RichardKnop/machinery/v2"
 	"github.com/google/uuid"
 
 	"github.com/goravel/framework/contracts/log"
@@ -25,6 +26,7 @@ type Worker struct {
 	wg            sync.WaitGroup
 	currentDelay  time.Duration
 	maxDelay      time.Duration
+	machinery     *machinery.Worker
 }
 
 func NewWorker(config queue.Config, concurrent int, connection string, queue string, job queue.JobRepository, log log.Log) *Worker {
@@ -43,6 +45,10 @@ func NewWorker(config queue.Config, concurrent int, connection string, queue str
 
 func (r *Worker) Run() error {
 	r.isShutdown.Store(false)
+
+	if err := r.RunMachinery(); err != nil {
+		return err
+	}
 
 	driver, err := NewDriver(r.connection, r.config)
 	if err != nil {
@@ -108,8 +114,30 @@ func (r *Worker) Run() error {
 	return nil
 }
 
+// RunMachinery will be removed in v1.17
+func (r *Worker) RunMachinery() error {
+	machinery := NewMachinery(r.config.Config(), r.log, r.job.All(), r.connection, r.queue, r.concurrent)
+	if !machinery.ExistTasks() {
+		return nil
+	}
+
+	worker, err := machinery.Run()
+	if err != nil {
+		return err
+	}
+
+	r.machinery = worker
+
+	return nil
+}
+
 func (r *Worker) Shutdown() error {
 	r.isShutdown.Store(true)
 	close(r.failedJobChan)
+
+	if r.machinery != nil {
+		r.machinery.Quit()
+	}
+
 	return nil
 }

@@ -1,8 +1,12 @@
 package queue
 
-import "github.com/goravel/framework/contracts/database/db"
+import (
+	"github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/contracts/database/db"
+)
 
 type Config interface {
+	Config() config.Config
 	Debug() bool
 	DefaultConnection() string
 	Driver(connection string) string
