@@ -15,30 +15,34 @@ import (
 )
 
 type Worker struct {
-	concurrent    int
-	config        queue.Config
-	connection    string
+	config queue.Config
+	job    queue.JobRepository
+	log    log.Log
+
+	connection string
+	queue      string
+	concurrent int
+
+	currentDelay  time.Duration
 	failedJobChan chan FailedJob
 	isShutdown    atomic.Bool
-	job           queue.JobRepository
-	log           log.Log
-	queue         string
-	wg            sync.WaitGroup
-	currentDelay  time.Duration
 	maxDelay      time.Duration
 	machinery     *machinery.Worker
+	wg            sync.WaitGroup
 }
 
-func NewWorker(config queue.Config, concurrent int, connection string, queue string, job queue.JobRepository, log log.Log) *Worker {
+func NewWorker(config queue.Config, job queue.JobRepository, log log.Log, connection, queue string, concurrent int) *Worker {
 	return &Worker{
-		concurrent:    concurrent,
-		config:        config,
-		connection:    connection,
-		job:           job,
-		log:           log,
-		queue:         queue,
-		failedJobChan: make(chan FailedJob, concurrent),
+		config: config,
+		job:    job,
+		log:    log,
+
+		connection: connection,
+		queue:      queue,
+		concurrent: concurrent,
+
 		currentDelay:  1 * time.Second,
+		failedJobChan: make(chan FailedJob, concurrent),
 		maxDelay:      32 * time.Second,
 	}
 }
@@ -58,6 +62,8 @@ func (r *Worker) Run() error {
 		return errors.QueueDriverSyncNotNeedToRun.Args(r.connection)
 	}
 
+	redisQueue := r.config.Queue(r.connection, r.queue)
+
 	for i := 0; i < r.concurrent; i++ {
 		r.wg.Add(1)
 		go func() {
@@ -67,10 +73,10 @@ func (r *Worker) Run() error {
 					return
 				}
 
-				job, args, err := driver.Pop(r.queue)
+				job, args, err := driver.Pop(redisQueue)
 				if err != nil {
 					if !errors.Is(err, errors.QueueDriverNoJobFound) {
-						r.log.Error(errors.QueueDriverFailedToPop.Args(r.queue, err))
+						r.log.Error(errors.QueueDriverFailedToPop.Args(redisQueue, err))
 
 						r.currentDelay *= 2
 						if r.currentDelay > r.maxDelay {
@@ -89,7 +95,7 @@ func (r *Worker) Run() error {
 					r.failedJobChan <- FailedJob{
 						UUID:       uuid.New(),
 						Connection: r.connection,
-						Queue:      r.queue,
+						Queue:      redisQueue,
 						Payload:    args,
 						Exception:  err.Error(),
 						FailedAt:   carbon.DateTime{Carbon: carbon.Now()},

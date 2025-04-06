@@ -40,20 +40,20 @@ func (r *Application) Register(jobs []queue.Job) {
 }
 
 func (r *Application) Worker(payloads ...queue.Args) queue.Worker {
-	defaultConnection := r.config.DefaultConnection()
+	defaultConnection, defaultQueue, defaultConcurrent := r.config.Default()
 
 	if len(payloads) == 0 {
-		return NewWorker(r.config, 1, defaultConnection, r.config.Queue(defaultConnection, ""), r.job, r.log)
+		return NewWorker(r.config, r.job, r.log, defaultConnection, defaultQueue, defaultConcurrent)
 	}
 	if payloads[0].Connection == "" {
 		payloads[0].Connection = defaultConnection
 	}
 	if payloads[0].Queue == "" {
-		payloads[0].Queue = "default"
+		payloads[0].Queue = defaultQueue
 	}
 	if payloads[0].Concurrent == 0 {
-		payloads[0].Concurrent = 1
+		payloads[0].Concurrent = defaultConcurrent
 	}
 
-	return NewWorker(r.config, payloads[0].Concurrent, payloads[0].Connection, r.config.Queue(payloads[0].Connection, payloads[0].Queue), r.job, r.log)
+	return NewWorker(r.config, r.job, r.log, payloads[0].Connection, payloads[0].Queue, payloads[0].Concurrent)
 }
