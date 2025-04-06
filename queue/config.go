@@ -10,12 +10,16 @@ import (
 type Config struct {
 	config contractsconfig.Config
 	db     db.DB
+
+	defaultConnection string
 }
 
 func NewConfig(config contractsconfig.Config, db db.DB) *Config {
 	return &Config{
 		config: config,
 		db:     db,
+
+		defaultConnection: config.GetString("queue.default"),
 	}
 }
 
@@ -27,13 +31,21 @@ func (r *Config) Debug() bool {
 	return r.config.GetBool("app.debug")
 }
 
-func (r *Config) DefaultConnection() string {
-	return r.config.GetString("queue.default")
+func (r *Config) Default() (connection, queue string, concurrent int) {
+	connection = r.config.GetString("queue.default")
+	queue = r.config.GetString(fmt.Sprintf("queue.connections.%s.queue", connection), "default")
+	concurrent = r.config.GetInt(fmt.Sprintf("queue.connections.%s.concurrent", connection), 1)
+
+	if concurrent < 1 {
+		concurrent = 1
+	}
+
+	return
 }
 
 func (r *Config) Driver(connection string) string {
 	if connection == "" {
-		connection = r.DefaultConnection()
+		connection = r.defaultConnection
 	}
 
 	return r.config.GetString(fmt.Sprintf("queue.connections.%s.driver", connection))
@@ -51,27 +63,13 @@ func (r *Config) Queue(connection, queue string) string {
 	if appName == "" {
 		appName = "goravel"
 	}
-	if connection == "" {
-		connection = r.DefaultConnection()
-	}
-	if queue == "" {
-		queue = r.config.GetString(fmt.Sprintf("queue.connections.%s.queue", connection), "default")
-	}
 
-	return fmt.Sprintf("%s_queues:%s", appName, queue)
-}
-
-func (r *Config) Size(connection string) int {
-	if connection == "" {
-		connection = r.DefaultConnection()
-	}
-
-	return r.config.GetInt(fmt.Sprintf("queue.connections.%s.size", connection), 100)
+	return fmt.Sprintf("%s_queues:%s_%s", appName, connection, queue)
 }
 
 func (r *Config) Via(connection string) any {
 	if connection == "" {
-		connection = r.DefaultConnection()
+		connection = r.defaultConnection
 	}
 
 	return r.config.Get(fmt.Sprintf("queue.connections.%s.via", connection))

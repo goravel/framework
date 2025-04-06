@@ -29,7 +29,7 @@ func (s *WorkerTestSuite) SetupTest() {
 	s.mockLog = mockslog.NewLog(s.T())
 	s.mockJob = mocksqueue.NewJobRepository(s.T())
 
-	s.worker = NewWorker(s.mockConfig, 2, "sync", "default", s.mockJob, s.mockLog)
+	s.worker = NewWorker(s.mockConfig, s.mockJob, s.mockLog, "sync", "default", 2)
 }
 
 func (s *WorkerTestSuite) TestNewWorker() {
