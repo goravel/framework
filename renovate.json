@@ -38,6 +38,6 @@
       "matchFileNames": ["tests/go.mod"]
     }
   ],
-  "ignoreDeps": ["github.com/vektra/mockery/v2"],
+  "ignoreDeps": ["github.com/vektra/mockery/v2", "github.com/dromara/carbon/v2"],
   "ignorePaths": []
 }
