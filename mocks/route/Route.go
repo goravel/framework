@@ -164,7 +164,7 @@ func (_c *Route_Get_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Rout
 }
 
 // GlobalMiddleware provides a mock function with given fields: middlewares
-func (_m *Route) GlobalMiddleware(middlewares ...http.Handler) {
+func (_m *Route) GlobalMiddleware(middlewares ...http.Middleware) {
 	_va := make([]interface{}, len(middlewares))
 	for _i := range middlewares {
 		_va[_i] = middlewares[_i]
@@ -180,18 +180,18 @@ type Route_GlobalMiddleware_Call struct {
 }
 
 // GlobalMiddleware is a helper method to define mock.On call
-//   - middlewares ...http.Handler
+//   - middlewares ...http.Middleware
 func (_e *Route_Expecter) GlobalMiddleware(middlewares ...interface{}) *Route_GlobalMiddleware_Call {
 	return &Route_GlobalMiddleware_Call{Call: _e.mock.On("GlobalMiddleware",
 		append([]interface{}{}, middlewares...)...)}
 }
 
-func (_c *Route_GlobalMiddleware_Call) Run(run func(middlewares ...http.Handler)) *Route_GlobalMiddleware_Call {
+func (_c *Route_GlobalMiddleware_Call) Run(run func(middlewares ...http.Middleware)) *Route_GlobalMiddleware_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]http.Handler, len(args)-0)
+		variadicArgs := make([]http.Middleware, len(args)-0)
 		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(http.Handler)
+				variadicArgs[i] = a.(http.Middleware)
 			}
 		}
 		run(variadicArgs...)
@@ -204,7 +204,7 @@ func (_c *Route_GlobalMiddleware_Call) Return() *Route_GlobalMiddleware_Call {
 	return _c
 }
 
-func (_c *Route_GlobalMiddleware_Call) RunAndReturn(run func(...http.Handler)) *Route_GlobalMiddleware_Call {
+func (_c *Route_GlobalMiddleware_Call) RunAndReturn(run func(...http.Middleware)) *Route_GlobalMiddleware_Call {
 	_c.Run(run)
 	return _c
 }
