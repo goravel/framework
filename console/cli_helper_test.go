@@ -40,10 +40,36 @@ func TestShowCommandHelp_HelpPrinterCustom(t *testing.T) {
 			containsOutput: []string{
 				color.Yellow().Sprint("Description:"),
 				color.Yellow().Sprint("Usage:"),
+				color.Yellow().Sprint("Global options:"),
+				color.Green().Sprint("-h, --help"),
+				color.Green().Sprint("    --no-ansi"),
+				color.Green().Sprint("-v, --version"),
 				color.Yellow().Sprint("Options:"),
 				color.Green().Sprint("-b, --bool"),
 				color.Green().Sprint("-i, --int"),
 				color.Blue().Sprint("int"),
+				color.Green().Sprint("-h, --help"),
+			},
+		},
+		{
+			name: "print command help(check flag sorted)",
+			call: "help --no-ansi test:foo",
+			containsOutput: []string{
+				`Description:
+   Test command
+
+Usage:
+   test [global options] test:foo [options]
+
+Global options:
+   -h, --help       Show help
+       --no-ansi    Force disable ANSI output
+   -v, --version    Print the version
+
+Options:
+   -b, --bool    Bool flag [default: false]
+   -i, --int     int flag [default: 0]
+   -h, --help    Show help`,
 			},
 		},
 		{
@@ -170,4 +196,29 @@ func (receiver *TestFooCommand) Handle(_ console.Context) error {
 
 func (receiver *TestBarCommand) Signature() string {
 	return "test:bar"
+}
+
+func TestLexicographicLess(t *testing.T) {
+	tests := []struct {
+		i        string
+		j        string
+		expected bool
+	}{
+		{"", "a", true},
+		{"a", "", false},
+		{"a", "a", false},
+		{"a", "A", false},
+		{"A", "a", true},
+		{"aa", "a", false},
+		{"a", "aa", true},
+		{"a", "b", true},
+		{"a", "B", true},
+		{"A", "b", true},
+		{"A", "B", true},
+	}
+
+	for _, tt := range tests {
+		actual := lexicographicLess(tt.i, tt.j)
+		assert.Equal(t, tt.expected, actual)
+	}
 }

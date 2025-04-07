@@ -22,12 +22,6 @@ var (
 		HideDefault: true,
 		Usage:       "Force disable ANSI output",
 	}
-
-	globalFlags = []cli.Flag{
-		noANSIFlag,
-		cli.HelpFlag,
-		cli.VersionFlag,
-	}
 )
 
 type Application struct {

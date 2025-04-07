@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"slices"
 	"sort"
 	"strings"
 	"text/tabwriter"
@@ -38,7 +37,7 @@ var (
 {{ yellow "Usage:" }}
    {{if .UsageText}}{{wrap (colorize .UsageText) 3}}{{end}}{{if .VisibleFlags}}
 
-{{ yellow "Global options:" }}{{template "flagTemplate" .VisibleFlags}}{{end}}{{if .VisibleCommands}}
+{{ yellow "Global options:" }}{{template "flagTemplate" (sortVisibleFlags .)}}{{end}}{{if .VisibleCommands}}
 
 {{ yellow "Available commands:" }}{{template "commandTemplate" .}}{{end}}
 `
@@ -47,16 +46,16 @@ var (
    {{ (colorize .Usage) }}
 
 {{ yellow "Usage:" }}
-   {{template "usageTemplate" .}}{{if globalFlags}}
+   {{template "usageTemplate" .}}{{with $root := .Root}}
 
-{{ yellow "Global options:" }}{{template "flagTemplate" globalFlags}}{{end}}{{if .VisibleFlags}}
+{{ yellow "Global options:" }}{{template "flagTemplate"  (sortVisibleFlags $root)}}{{end}}{{if .VisibleFlags}}
 
-{{ yellow "Options:" }}{{template "flagTemplate" .VisibleFlags}}{{end}}
+{{ yellow "Options:" }}{{template "flagTemplate" (sortVisibleFlags .)}}{{end}}
 `
 	commandTemplate = `{{ $cv := offsetCommands .VisibleCommands 5}}{{range .VisibleCategories}}{{if .Name}}
  {{yellow .Name}}:{{end}}{{range (sortCommands .VisibleCommands)}}
   {{$s := join .Names ", "}}{{green $s}}{{ $sp := subtract $cv (offset $s 3) }}{{ indent $sp ""}}{{wrap (colorize .Usage) $cv}}{{end}}{{end}}`
-	flagTemplate = `{{ $cv := offsetFlags . 5}}{{range  (sortFlags .)}}
+	flagTemplate = `{{ $cv := offsetFlags . 5}}{{range  .}}
    {{$s := getFlagName .}}{{green $s}}{{ $sp := subtract $cv (offset $s 1) }}{{ indent $sp ""}}{{$us := (capitalize .Usage)}}{{wrap (colorize $us) $cv}}{{$df := getFlagDefaultText . }}{{if $df}} {{yellow $df}}{{end}}{{end}}`
 	usageTemplate = `{{if .UsageText}}{{wrap (colorize .UsageText) 3}}{{else}}{{(helpName .FullName)}}{{if .VisibleFlags}} [options]{{end}}{{if .ArgsUsage}}{{.ArgsUsage}}{{else}}{{if .Args}} [arguments...]{{end}}{{end}}{{end}}`
 )
@@ -294,7 +293,6 @@ func printHelpCustom(out io.Writer, templ string, data interface{}, _ map[string
 	funcMap := template.FuncMap{
 		"capitalize":         capitalize,
 		"colorize":           colorize,
-		"globalFlags":        func() []cli.Flag { return globalFlags },
 		"getFlagName":        getFlagName,
 		"getFlagDefaultText": getFlagDefaultText,
 		"indent":             indent,
@@ -303,7 +301,7 @@ func printHelpCustom(out io.Writer, templ string, data interface{}, _ map[string
 		"offset":             offset,
 		"offsetCommands":     offsetCommands,
 		"offsetFlags":        offsetFlags,
-		"sortFlags":          sortFlags,
+		"sortVisibleFlags":   sortVisibleFlags,
 		"sortCommands":       sortCommands,
 		"subtract":           subtract,
 		"trim":               strings.TrimSpace,
@@ -354,10 +352,21 @@ func sortCommands(commands []*cli.Command) []*cli.Command {
 	return commands
 }
 
-func sortFlags(flags []cli.Flag) []cli.Flag {
+func sortVisibleFlags(cmd *cli.Command) []cli.Flag {
+	var (
+		flags       = cmd.VisibleFlags()
+		globalFlags = cmd.Root().VisibleFlags()
+	)
 	sort.Sort(cli.FlagsByName(flags))
+
+	globalFlagNames := make(map[string]struct{})
+	for i := range globalFlags {
+		globalFlagNames[getFlagName(globalFlags[i])] = struct{}{}
+	}
 	sort.Slice(flags, func(i, j int) bool {
-		return slices.Contains(globalFlags, flags[j]) && !slices.Contains(globalFlags, flags[i])
+		_, isGlobalI := globalFlagNames[getFlagName(flags[i])]
+		_, isGlobalJ := globalFlagNames[getFlagName(flags[j])]
+		return !isGlobalI && isGlobalJ
 	})
 
 	return flags
