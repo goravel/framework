@@ -200,3 +200,8 @@ func CaptureOutput(f func(w io.Writer)) string {
 func Disable() {
 	pterm.DisableColor()
 }
+
+// Enable enables color output
+func Enable() {
+	pterm.EnableColor()
+}

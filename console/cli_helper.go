@@ -198,6 +198,14 @@ func getFlagName(flag cli.Flag) string {
 	return prefixed
 }
 
+func handleNoANSI() {
+	if noANSI || env.IsNoANSI() {
+		color.Disable()
+	} else {
+		color.Enable()
+	}
+}
+
 func helpName(fullName string) string {
 	var namePath []string
 	for i, name := range strings.Split(fullName, " ") {
@@ -321,9 +329,8 @@ func printHelpCustom(out io.Writer, templ string, data interface{}, _ map[string
 		}
 	}
 
-	if noANSI || env.IsNoANSI() {
-		color.Disable()
-	}
+	handleNoANSI()
+
 	err := t.Execute(w, data)
 	if err != nil {
 		// If the writer is closed, t.Execute will fail, and there's nothing
@@ -341,6 +348,8 @@ func printTemplateError(err error) {
 }
 
 func printVersion(cmd *cli.Command) {
+	handleNoANSI()
+
 	_, _ = fmt.Fprintf(cmd.Writer, "%v %v\n", cmd.Usage, color.Green().Sprint(cmd.Version))
 }
 

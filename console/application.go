@@ -99,6 +99,8 @@ func (r *Application) CallAndExit(command string) {
 func (r *Application) Run(args []string, exitIfArtisan bool) error {
 	if noANSI || env.IsNoANSI() || slices.Contains(args, "--no-ansi") {
 		color.Disable()
+	} else {
+		color.Enable()
 	}
 
 	artisanIndex := -1
