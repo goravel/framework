@@ -73,11 +73,7 @@ type Router interface {
 
 // Info represents a request route's specification which contains method and path and its handler.
 type Info struct {
-	Method      string
-	Path        string
-	Handler     string
-	HandlerFunc contractshttp.HandlerFunc
+	Method  string
+	Path    string
+	Handler string
 }
-
-// Infos defines a Info slice.
-type Infos []Info
