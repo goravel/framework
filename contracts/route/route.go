@@ -70,3 +70,14 @@ type Router interface {
 	// StaticFS registers a new route with a path prefix to serve static files from the provided file system.
 	StaticFS(relativePath string, fs http.FileSystem)
 }
+
+// Info represents a request route's specification which contains method and path and its handler.
+type Info struct {
+	Method      string
+	Path        string
+	Handler     string
+	HandlerFunc contractshttp.HandlerFunc
+}
+
+// Infos defines a Info slice.
+type Infos []Info
