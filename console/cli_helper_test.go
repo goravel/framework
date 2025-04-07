@@ -88,7 +88,7 @@ func TestShowCommandHelp_HelpPrinterCustom(t *testing.T) {
 			name: "option needs a value",
 			call: "test:foo --int",
 			containsOutput: []string{
-				color.Red().Sprint("The 'int' option requires a value."),
+				color.Red().Sprint("The '--int' option requires a value."),
 			},
 		},
 		{
