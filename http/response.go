@@ -24,8 +24,6 @@ func (r *DataResponse) Render() error {
 }
 
 func (r *DataResponse) Abort() error {
-	// In net/http, aborting just means stopping the handler chain
-	// and writing the response immediately
 	return r.Render()
 }
 
@@ -133,26 +131,14 @@ func (r *StringResponse) Abort() error {
 type HtmlResponse struct {
 	data any
 	w    http.ResponseWriter
-	view string
 }
 
 func (r *HtmlResponse) Render() error {
 	r.w.Header().Set("Content-Type", "text/html")
 	r.w.WriteHeader(http.StatusOK)
 
-	// Here, we'd need an HTML template rendering mechanism
-	// This is a simplified version assuming the view is already HTML content
-	if htmlStr, ok := r.data.(string); ok {
-		_, err := r.w.Write([]byte(htmlStr))
-		return err
-	} else {
-		jsonData, err := json.Marshal(r.data)
-		if err != nil {
-			return err
-		}
-		_, err = r.w.Write(jsonData)
-		return err
-	}
+	// TODO: Implement HTML rendering logic
+	return nil
 }
 
 // StreamResponse represents a streaming response
