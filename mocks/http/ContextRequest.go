@@ -1223,38 +1223,6 @@ func (_c *ContextRequest_Method_Call) RunAndReturn(run func() string) *ContextRe
 	return _c
 }
 
-// Next provides a mock function with no fields
-func (_m *ContextRequest) Next() {
-	_m.Called()
-}
-
-// ContextRequest_Next_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Next'
-type ContextRequest_Next_Call struct {
-	*mock.Call
-}
-
-// Next is a helper method to define mock.On call
-func (_e *ContextRequest_Expecter) Next() *ContextRequest_Next_Call {
-	return &ContextRequest_Next_Call{Call: _e.mock.On("Next")}
-}
-
-func (_c *ContextRequest_Next_Call) Run(run func()) *ContextRequest_Next_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *ContextRequest_Next_Call) Return() *ContextRequest_Next_Call {
-	_c.Call.Return()
-	return _c
-}
-
-func (_c *ContextRequest_Next_Call) RunAndReturn(run func()) *ContextRequest_Next_Call {
-	_c.Run(run)
-	return _c
-}
-
 // Origin provides a mock function with no fields
 func (_m *ContextRequest) Origin() *nethttp.Request {
 	ret := _m.Called()

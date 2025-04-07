@@ -20,9 +20,9 @@ func (_m *HandlerFunc) EXPECT() *HandlerFunc_Expecter {
 	return &HandlerFunc_Expecter{mock: &_m.Mock}
 }
 
-// Execute provides a mock function with given fields: _a0
-func (_m *HandlerFunc) Execute(_a0 http.Context) http.Response {
-	ret := _m.Called(_a0)
+// Execute provides a mock function with given fields: ctx
+func (_m *HandlerFunc) Execute(ctx http.Context) http.Response {
+	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Execute")
@@ -30,7 +30,7 @@ func (_m *HandlerFunc) Execute(_a0 http.Context) http.Response {
 
 	var r0 http.Response
 	if rf, ok := ret.Get(0).(func(http.Context) http.Response); ok {
-		r0 = rf(_a0)
+		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(http.Response)
@@ -46,12 +46,12 @@ type HandlerFunc_Execute_Call struct {
 }
 
 // Execute is a helper method to define mock.On call
-//   - _a0 http.Context
-func (_e *HandlerFunc_Expecter) Execute(_a0 interface{}) *HandlerFunc_Execute_Call {
-	return &HandlerFunc_Execute_Call{Call: _e.mock.On("Execute", _a0)}
+//   - ctx http.Context
+func (_e *HandlerFunc_Expecter) Execute(ctx interface{}) *HandlerFunc_Execute_Call {
+	return &HandlerFunc_Execute_Call{Call: _e.mock.On("Execute", ctx)}
 }
 
-func (_c *HandlerFunc_Execute_Call) Run(run func(_a0 http.Context)) *HandlerFunc_Execute_Call {
+func (_c *HandlerFunc_Execute_Call) Run(run func(ctx http.Context)) *HandlerFunc_Execute_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(http.Context))
 	})
