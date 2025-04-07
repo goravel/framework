@@ -44,7 +44,7 @@ type Router interface {
 	// Prefix adds a common prefix to the routes registered with the router.
 	Prefix(addr string) Router
 	// Middleware sets the middleware for the router.
-	Middleware(middlewares ...contractshttp.Handler) Router
+	Middleware(middlewares ...contractshttp.Middleware) Router
 
 	// Any registers a new route responding to all verbs.
 	Any(relativePath string, handler contractshttp.HandlerFunc)
