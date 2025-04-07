@@ -7,7 +7,7 @@ import (
 	"github.com/goravel/framework/support/color"
 )
 
-func StartSession() func(next http.Handler) http.Handler {
+func StartSession() http.Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(ctx http.Context) http.Response {
 			req := ctx.Request()

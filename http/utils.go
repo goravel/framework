@@ -19,8 +19,8 @@ func HTTPHandlerToHandler(h nethttp.Handler) http.Handler {
 	})
 }
 
-// HTTPMiddlewareToHandler converts a net/http middleware to a Goravel http.Handler
-func HTTPMiddlewareToHandler(mw func(nethttp.Handler) nethttp.Handler) func(http.Handler) http.Handler {
+// HTTPMiddlewareToMiddleware converts a net/http middleware to a Goravel http.Middleware
+func HTTPMiddlewareToMiddleware(mw func(nethttp.Handler) nethttp.Handler) http.Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(ctx http.Context) http.Response {
 			var response http.Response

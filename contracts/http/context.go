@@ -4,8 +4,7 @@ import (
 	"context"
 )
 
-// Deprecated: Use Handler instead.
-type Middleware = Handler
+type Middleware func(next Handler) Handler
 
 type HandlerFunc func(ctx Context) Response
 

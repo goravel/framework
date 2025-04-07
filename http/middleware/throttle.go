@@ -24,7 +24,7 @@ const (
 	HeaderRetryAfter = "Retry-After"
 )
 
-func Throttle(name string) func(next httpcontract.Handler) httpcontract.Handler {
+func Throttle(name string) httpcontract.Middleware {
 	return func(next httpcontract.Handler) httpcontract.Handler {
 		return httpcontract.HandlerFunc(func(ctx httpcontract.Context) httpcontract.Response {
 			if limiter := http.RateLimiterFacade.Limiter(name); limiter != nil {
