@@ -13,6 +13,7 @@ require (
 	github.com/dromara/carbon/v2 v2.5.4
 	github.com/gabriel-vasile/mimetype v1.4.8
 	github.com/go-viper/mapstructure/v2 v2.2.1
+	github.com/gofiber/schema v1.3.0
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/google/uuid v1.6.0
 	github.com/gookit/validate v1.5.4

@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -17,7 +18,9 @@ func TestContextTestSuite(t *testing.T) {
 }
 
 func (s *ContextTestSuite) SetupTest() {
-	s.ctx = NewContext()
+	r := httptest.NewRequest("GET", "/", nil)
+	w := httptest.NewRecorder()
+	s.ctx = NewContext(r, w)
 }
 
 func (s *ContextTestSuite) TestContext() {
@@ -37,9 +40,9 @@ func (s *ContextTestSuite) TestWithValue() {
 }
 
 func (s *ContextTestSuite) TestRequest() {
-	s.Nil(s.ctx.Request())
+	s.NotEmpty(s.ctx.Request())
 }
 
 func (s *ContextTestSuite) TestResponse() {
-	s.Nil(s.ctx.Response())
+	s.NotEmpty(s.ctx.Response())
 }

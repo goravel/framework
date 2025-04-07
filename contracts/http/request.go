@@ -76,13 +76,6 @@ type ContextRequest interface {
 
 	// Abort aborts the request with the specified HTTP status code, default is 400.
 	Abort(code ...int)
-	// AbortWithStatus aborts the request with the specified HTTP status code.
-	// DEPRECATED: Use Abort instead.
-	AbortWithStatus(code int)
-	// AbortWithStatusJson aborts the request with the specified HTTP status code
-	// and returns a JSON response object.
-	// DEPRECATED: Use Response().Json().Abort() instead.
-	AbortWithStatusJson(code int, jsonObj any)
 	// Origin retrieves the underlying *http.Request object for advanced request handling.
 	Origin() *http.Request
 
