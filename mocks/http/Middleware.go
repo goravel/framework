@@ -20,50 +20,50 @@ func (_m *Middleware) EXPECT() *Middleware_Expecter {
 	return &Middleware_Expecter{mock: &_m.Mock}
 }
 
-// ServeHTTP provides a mock function with given fields: ctx
-func (_m *Middleware) ServeHTTP(ctx http.Context) http.Response {
-	ret := _m.Called(ctx)
+// Execute provides a mock function with given fields: next
+func (_m *Middleware) Execute(next http.Handler) http.Handler {
+	ret := _m.Called(next)
 
 	if len(ret) == 0 {
-		panic("no return value specified for ServeHTTP")
+		panic("no return value specified for Execute")
 	}
 
-	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(http.Context) http.Response); ok {
-		r0 = rf(ctx)
+	var r0 http.Handler
+	if rf, ok := ret.Get(0).(func(http.Handler) http.Handler); ok {
+		r0 = rf(next)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.Response)
+			r0 = ret.Get(0).(http.Handler)
 		}
 	}
 
 	return r0
 }
 
-// Middleware_ServeHTTP_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ServeHTTP'
-type Middleware_ServeHTTP_Call struct {
+// Middleware_Execute_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Execute'
+type Middleware_Execute_Call struct {
 	*mock.Call
 }
 
-// ServeHTTP is a helper method to define mock.On call
-//   - ctx http.Context
-func (_e *Middleware_Expecter) ServeHTTP(ctx interface{}) *Middleware_ServeHTTP_Call {
-	return &Middleware_ServeHTTP_Call{Call: _e.mock.On("ServeHTTP", ctx)}
+// Execute is a helper method to define mock.On call
+//   - next http.Handler
+func (_e *Middleware_Expecter) Execute(next interface{}) *Middleware_Execute_Call {
+	return &Middleware_Execute_Call{Call: _e.mock.On("Execute", next)}
 }
 
-func (_c *Middleware_ServeHTTP_Call) Run(run func(ctx http.Context)) *Middleware_ServeHTTP_Call {
+func (_c *Middleware_Execute_Call) Run(run func(next http.Handler)) *Middleware_Execute_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(http.Context))
+		run(args[0].(http.Handler))
 	})
 	return _c
 }
 
-func (_c *Middleware_ServeHTTP_Call) Return(_a0 http.Response) *Middleware_ServeHTTP_Call {
+func (_c *Middleware_Execute_Call) Return(_a0 http.Handler) *Middleware_Execute_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Middleware_ServeHTTP_Call) RunAndReturn(run func(http.Context) http.Response) *Middleware_ServeHTTP_Call {
+func (_c *Middleware_Execute_Call) RunAndReturn(run func(http.Handler) http.Handler) *Middleware_Execute_Call {
 	_c.Call.Return(run)
 	return _c
 }
