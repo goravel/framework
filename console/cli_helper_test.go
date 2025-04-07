@@ -24,7 +24,7 @@ func TestShowCommandHelp_HelpPrinterCustom(t *testing.T) {
 		containsOutput []string
 	}{
 		{
-			name: "print app help",
+			name: "print_app_help",
 			containsOutput: []string{
 				color.Yellow().Sprint("Usage:"),
 				color.Yellow().Sprint("Global options:"),
@@ -35,33 +35,59 @@ func TestShowCommandHelp_HelpPrinterCustom(t *testing.T) {
 			},
 		},
 		{
-			name: "print command help",
+			name: "print_command_help",
 			call: "help test:foo",
 			containsOutput: []string{
 				color.Yellow().Sprint("Description:"),
 				color.Yellow().Sprint("Usage:"),
+				color.Yellow().Sprint("Global options:"),
+				color.Green().Sprint("-h, --help"),
+				color.Green().Sprint("    --no-ansi"),
+				color.Green().Sprint("-v, --version"),
 				color.Yellow().Sprint("Options:"),
 				color.Green().Sprint("-b, --bool"),
 				color.Green().Sprint("-i, --int"),
 				color.Blue().Sprint("int"),
+				color.Green().Sprint("-h, --help"),
 			},
 		},
 		{
-			name: "print version",
+			name: "print_command_help(check_flag_sorted)",
+			call: "help --no-ansi test:foo",
+			containsOutput: []string{
+				`Description:
+   Test command
+
+Usage:
+   test [global options] test:foo [options]
+
+Global options:
+   -h, --help       Show help
+       --no-ansi    Force disable ANSI output
+   -v, --version    Print the version
+
+Options:
+   -b, --bool    Bool flag [default: false]
+   -i, --int     int flag [default: 0]
+   -h, --help    Show help`,
+			},
+		},
+		{
+			name: "print_version",
 			call: "--version",
 			containsOutput: []string{
 				"test " + color.Green().Sprint("test"),
 			},
 		},
 		{
-			name: "command not found",
+			name: "command_not_found",
 			call: "not-found",
 			containsOutput: []string{
 				color.New(color.FgLightRed).Sprint("Command 'not-found' is not defined."),
 			},
 		},
 		{
-			name: "command not found(suggest)",
+			name: "command_not_found(suggest)",
 			call: "test",
 			containsOutput: []string{
 				color.New(color.FgLightRed).Sprint("Command 'test' is not defined. Did you mean one of these?"),
@@ -70,7 +96,7 @@ func TestShowCommandHelp_HelpPrinterCustom(t *testing.T) {
 			},
 		},
 		{
-			name: "command not found(suggest)",
+			name: "command_not_found(suggest)",
 			call: "fo",
 			containsOutput: []string{
 				color.New(color.FgLightRed).Sprint("Command 'fo' is not defined. Did you mean this?"),
@@ -78,28 +104,28 @@ func TestShowCommandHelp_HelpPrinterCustom(t *testing.T) {
 			},
 		},
 		{
-			name: "option not found",
+			name: "option_not_found",
 			call: "test:foo --not-found",
 			containsOutput: []string{
 				color.Red().Sprint("The 'not-found' option does not exist."),
 			},
 		},
 		{
-			name: "option needs a value",
+			name: "option_needs_a_value",
 			call: "test:foo --int",
 			containsOutput: []string{
-				color.Red().Sprint("The 'int' option requires a value."),
+				color.Red().Sprint("The '--int' option requires a value."),
 			},
 		},
 		{
-			name: "option value is not valid",
+			name: "option_value_is_not_valid",
 			call: "test:foo --int not-a-number",
 			containsOutput: []string{
 				color.Red().Sprint("Invalid value 'not-a-number' for option 'int'."),
 			},
 		},
 		{
-			name: "no ansi color",
+			name: "no_ansi_color",
 			call: "--no-ansi",
 			containsOutput: []string{
 				"test test",
@@ -170,4 +196,29 @@ func (receiver *TestFooCommand) Handle(_ console.Context) error {
 
 func (receiver *TestBarCommand) Signature() string {
 	return "test:bar"
+}
+
+func TestLexicographicLess(t *testing.T) {
+	tests := []struct {
+		i        string
+		j        string
+		expected bool
+	}{
+		{"", "a", true},
+		{"a", "", false},
+		{"a", "a", false},
+		{"a", "A", false},
+		{"A", "a", true},
+		{"aa", "a", false},
+		{"a", "aa", true},
+		{"a", "b", true},
+		{"a", "B", true},
+		{"A", "b", true},
+		{"A", "B", true},
+	}
+
+	for _, tt := range tests {
+		actual := lexicographicLess(tt.i, tt.j)
+		assert.Equal(t, tt.expected, actual)
+	}
 }
