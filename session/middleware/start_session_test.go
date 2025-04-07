@@ -23,7 +23,7 @@ import (
 func testHttpSessionMiddleware(next nethttp.Handler, mockConfig *configmocks.Config) nethttp.Handler {
 	return nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
 		mockConfigFacade(mockConfig)
-		StartSession()(http.ConvertHandler(next)).ServeHTTP(NewTestContext(r.Context(), next, w, r))
+		StartSession()(http.HTTPHandlerToHandler(next)).ServeHTTP(NewTestContext(r.Context(), next, w, r))
 	})
 }
 
