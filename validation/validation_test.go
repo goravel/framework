@@ -11,7 +11,7 @@ import (
 	contractshttp "github.com/goravel/framework/contracts/http"
 	httpvalidate "github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/http"
+	"github.com/goravel/framework/mocks/http"
 )
 
 func TestMake(t *testing.T) {
@@ -19,9 +19,8 @@ func TestMake(t *testing.T) {
 		A string
 	}
 
-	ctx := http.NewContext()
-	// nolint:all
-	ctx.WithValue("test", "test")
+	ctx := http.NewContext(t)
+	ctx.EXPECT().Value("test").Return("test").Once()
 
 	tests := []struct {
 		description        string

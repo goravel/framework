@@ -22,7 +22,7 @@ import (
 	contractsession "github.com/goravel/framework/contracts/session"
 	contractsvalidate "github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/filesystem"
-	"github.com/goravel/framework/support/json"
+	"github.com/goravel/framework/foundation/json"
 	"github.com/goravel/framework/validation"
 )
 
@@ -112,7 +112,7 @@ func (r *ContextRequest) Bind(obj any) error {
 			return nil
 		}
 
-		return json.Unmarshal(bodyBytes, obj)
+		return json.NewJson().Unmarshal(bodyBytes, obj)
 	} else if strings.Contains(contentType, "application/x-www-form-urlencoded") {
 		if err := r.r.ParseForm(); err != nil {
 			return err
@@ -382,7 +382,7 @@ func (r *ContextRequest) Input(key string, defaultValue ...string) string {
 	if valueFromHttpBody != nil {
 		switch reflect.ValueOf(valueFromHttpBody).Kind() {
 		case reflect.Map:
-			valueFromHttpBodyObByte, err := json.Marshal(valueFromHttpBody)
+			valueFromHttpBodyObByte, err := json.NewJson().Marshal(valueFromHttpBody)
 			if err != nil {
 				return ""
 			}
@@ -687,7 +687,7 @@ func getHttpBody(ctx *Context) (map[string]any, error) {
 		}
 
 		if len(bodyBytes) > 0 {
-			if err := json.Unmarshal(bodyBytes, &data); err != nil {
+			if err = json.NewJson().Unmarshal(bodyBytes, &data); err != nil {
 				return nil, fmt.Errorf("decode json [%v] error: %v", string(bodyBytes), err)
 			}
 
