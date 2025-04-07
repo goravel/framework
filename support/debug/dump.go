@@ -2,6 +2,8 @@ package debug
 
 import (
 	"io"
+	"reflect"
+	"runtime"
 
 	"github.com/davecgh/go-spew/spew"
 )
@@ -22,4 +24,9 @@ func FDump(w io.Writer, v ...any) {
 // And this is a wrapper around spew.Sdump.
 func SDump(v ...any) string {
 	return spew.Sdump(v...)
+}
+
+// FunctionName returns the name of the function passed as an argument.
+func FunctionName(f any) string {
+	return runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
 }

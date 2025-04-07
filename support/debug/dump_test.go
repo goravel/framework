@@ -47,3 +47,8 @@ func TestSDump(t *testing.T) {
 	assert.Equal(t, `(string) (len=3) "foo"
 `, SDump("foo"))
 }
+
+func TestFunctionName(t *testing.T) {
+	f := func() {}
+	assert.Equal(t, "github.com/goravel/framework/support/debug.TestFunctionName.func1", FunctionName(f))
+}
