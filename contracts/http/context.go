@@ -4,9 +4,19 @@ import (
 	"context"
 )
 
-type Middleware func(Context)
+// Deprecated: Use Handler instead.
+type Middleware = Handler
 
-type HandlerFunc func(Context) Response
+type HandlerFunc func(ctx Context) Response
+
+// ServeHTTP calls f(w, r).
+func (f HandlerFunc) ServeHTTP(ctx Context) Response {
+	return f(ctx)
+}
+
+type Handler interface {
+	ServeHTTP(ctx Context) Response
+}
 
 type ResourceController interface {
 	// Index method for controller

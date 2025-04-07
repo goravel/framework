@@ -14,6 +14,7 @@ import (
 	contractshttp "github.com/goravel/framework/contracts/http"
 	contractsession "github.com/goravel/framework/contracts/session"
 	"github.com/goravel/framework/foundation/json"
+	"github.com/goravel/framework/http"
 	configmocks "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/session"
 	"github.com/goravel/framework/support/file"
@@ -22,7 +23,7 @@ import (
 func testHttpSessionMiddleware(next nethttp.Handler, mockConfig *configmocks.Config) nethttp.Handler {
 	return nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
 		mockConfigFacade(mockConfig)
-		StartSession()(NewTestContext(r.Context(), next, w, r))
+		StartSession()(http.ConvertHandler(next)).ServeHTTP(NewTestContext(r.Context(), next, w, r))
 	})
 }
 
@@ -169,6 +170,10 @@ func (r *TestRequest) HasSession() bool {
 	return ok
 }
 
+func (r *TestRequest) Origin() *nethttp.Request {
+	return r.ctx.request
+}
+
 func (r *TestRequest) Session() contractsession.Session {
 	s, ok := r.ctx.Value("session").(contractsession.Session)
 	if !ok {
@@ -221,4 +226,8 @@ func (r *TestResponse) Cookie(cookie contractshttp.Cookie) contractshttp.Context
 
 func (r *TestResponse) Header(string, string) contractshttp.ContextResponse {
 	return r
+}
+
+func (r *TestResponse) Writer() nethttp.ResponseWriter {
+	return r.ctx.writer
 }

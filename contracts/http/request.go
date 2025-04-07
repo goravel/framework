@@ -83,8 +83,6 @@ type ContextRequest interface {
 	// and returns a JSON response object.
 	// DEPRECATED: Use Response().Json().Abort() instead.
 	AbortWithStatusJson(code int, jsonObj any)
-	// Next skips the current request handler, allowing the next middleware or handler to be executed.
-	Next()
 	// Origin retrieves the underlying *http.Request object for advanced request handling.
 	Origin() *http.Request
 

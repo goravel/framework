@@ -24,37 +24,38 @@ const (
 	HeaderRetryAfter = "Retry-After"
 )
 
-func Throttle(name string) httpcontract.Middleware {
-	return func(ctx httpcontract.Context) {
-		if limiter := http.RateLimiterFacade.Limiter(name); limiter != nil {
-			if limits := limiter(ctx); len(limits) > 0 {
-				for index, limit := range limits {
-					// TODO: We should not use the limit instance directly, but use the contract instead, it's very hard to test currently.
-					// Add test cases after optimizing the logic: https://github.com/goravel/goravel/issues/629
-					if instance, exist := limit.(*httplimit.Limit); exist {
-						tokens, remaining, reset, ok, err := instance.Store.Take(ctx, key(ctx, instance, name, index))
-						if err != nil {
-							http.LogFacade.Error(errors.HttpRateLimitFailedToCheckThrottle.Args(err))
-							break
-						}
+func Throttle(name string) func(next httpcontract.Handler) httpcontract.Handler {
+	return func(next httpcontract.Handler) httpcontract.Handler {
+		return httpcontract.HandlerFunc(func(ctx httpcontract.Context) httpcontract.Response {
+			if limiter := http.RateLimiterFacade.Limiter(name); limiter != nil {
+				if limits := limiter(ctx); len(limits) > 0 {
+					for index, limit := range limits {
+						// TODO: We should not use the limit instance directly, but use the contract instead, it's very hard to test currently.
+						// Add test cases after optimizing the logic: https://github.com/goravel/goravel/issues/629
+						if instance, exist := limit.(*httplimit.Limit); exist {
+							tokens, remaining, reset, ok, err := instance.Store.Take(ctx, key(ctx, instance, name, index))
+							if err != nil {
+								http.LogFacade.Error(errors.HttpRateLimitFailedToCheckThrottle.Args(err))
+								break
+							}
 
-						resetTime := carbon.FromTimestampNano(int64(reset)).SetTimezone(carbon.UTC)
-						retryAfter := carbon.Now().DiffInSeconds(resetTime)
-						ctx.Response().Header(HeaderRateLimitLimit, strconv.FormatUint(tokens, 10))
-						ctx.Response().Header(HeaderRateLimitRemaining, strconv.FormatUint(remaining, 10))
+							resetTime := carbon.FromTimestampNano(int64(reset)).SetTimezone(carbon.UTC)
+							retryAfter := carbon.Now().DiffInSeconds(resetTime)
+							ctx.Response().Header(HeaderRateLimitLimit, strconv.FormatUint(tokens, 10))
+							ctx.Response().Header(HeaderRateLimitRemaining, strconv.FormatUint(remaining, 10))
 
-						if !ok {
-							ctx.Response().Header(HeaderRateLimitReset, strconv.Itoa(int(resetTime.Timestamp())))
-							ctx.Response().Header(HeaderRetryAfter, strconv.Itoa(int(retryAfter)))
-							response(ctx, instance)
-							return
+							if !ok {
+								ctx.Response().Header(HeaderRateLimitReset, strconv.Itoa(int(resetTime.Timestamp())))
+								ctx.Response().Header(HeaderRetryAfter, strconv.Itoa(int(retryAfter)))
+								return response(ctx, instance)
+							}
 						}
 					}
 				}
 			}
-		}
 
-		ctx.Request().Next()
+			return next.ServeHTTP(ctx)
+		})
 	}
 }
 
@@ -67,12 +68,9 @@ func key(ctx httpcontract.Context, limit *httplimit.Limit, name string, index in
 	return fmt.Sprintf("throttle:%s:%d:%s", name, index, limit.Key)
 }
 
-func response(ctx httpcontract.Context, limit *httplimit.Limit) {
+func response(ctx httpcontract.Context, limit *httplimit.Limit) httpcontract.Response {
 	if limit.ResponseCallback != nil {
 		limit.ResponseCallback(ctx)
-	} else {
-		if ctx.Request() != nil {
-			ctx.Request().Abort(httpcontract.StatusTooManyRequests)
-		}
 	}
+	return ctx.Response().Status(httpcontract.StatusTooManyRequests).String(httpcontract.StatusText(httpcontract.StatusTooManyRequests))
 }

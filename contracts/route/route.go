@@ -15,7 +15,7 @@ type Route interface {
 	// Fallback registers a handler to be executed when no other route was matched.
 	Fallback(handler contractshttp.HandlerFunc)
 	// GlobalMiddleware registers global middleware to be applied to all routes of the router.
-	GlobalMiddleware(middlewares ...contractshttp.Middleware)
+	GlobalMiddleware(middlewares ...contractshttp.Handler)
 	// Listen starts the HTTP server and listens on the specified listener.
 	Listen(l net.Listener) error
 	// ListenTLS starts the HTTPS server and listens on the specified listener.
@@ -44,7 +44,7 @@ type Router interface {
 	// Prefix adds a common prefix to the routes registered with the router.
 	Prefix(addr string) Router
 	// Middleware sets the middleware for the router.
-	Middleware(middlewares ...contractshttp.Middleware) Router
+	Middleware(middlewares ...contractshttp.Handler) Router
 
 	// Any registers a new route responding to all verbs.
 	Any(relativePath string, handler contractshttp.HandlerFunc)
