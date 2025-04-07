@@ -127,20 +127,6 @@ func (r *StringResponse) Abort() error {
 	return r.Render()
 }
 
-// HtmlResponse represents an HTML response
-type HtmlResponse struct {
-	data any
-	w    http.ResponseWriter
-}
-
-func (r *HtmlResponse) Render() error {
-	r.w.Header().Set("Content-Type", "text/html")
-	r.w.WriteHeader(http.StatusOK)
-
-	// TODO: Implement HTML rendering logic
-	return nil
-}
-
 // StreamResponse represents a streaming response
 type StreamResponse struct {
 	code   int
