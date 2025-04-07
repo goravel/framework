@@ -6,10 +6,10 @@ import (
 
 type Middleware func(next Handler) Handler
 
-type HandleFunc func(ctx Context) Response
+type HandlerFunc func(ctx Context) Response
 
 // ServeHTTP calls f(w, r).
-func (f HandleFunc) ServeHTTP(ctx Context) Response {
+func (f HandlerFunc) ServeHTTP(ctx Context) Response {
 	return f(ctx)
 }
 

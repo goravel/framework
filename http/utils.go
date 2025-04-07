@@ -6,14 +6,14 @@ import (
 	"github.com/goravel/framework/contracts/http"
 )
 
-// HTTPHandlerFuncToHandlerFunc converts a net/http HandleFunc to a Goravel http.Handler
+// HTTPHandlerFuncToHandlerFunc converts a net/http HandlerFunc to a Goravel http.Handler
 func HTTPHandlerFuncToHandlerFunc(h nethttp.HandlerFunc) http.Handler {
 	return HTTPHandlerToHandler(h)
 }
 
 // HTTPHandlerToHandler converts a net/http Handler to a Goravel http.Handler
 func HTTPHandlerToHandler(h nethttp.Handler) http.Handler {
-	return http.HandleFunc(func(ctx http.Context) http.Response {
+	return http.HandlerFunc(func(ctx http.Context) http.Response {
 		h.ServeHTTP(ctx.Response().Writer(), ctx.Request().Origin())
 		return nil
 	})
@@ -22,7 +22,7 @@ func HTTPHandlerToHandler(h nethttp.Handler) http.Handler {
 // HTTPMiddlewareToMiddleware converts a net/http middleware to a Goravel http.Middleware
 func HTTPMiddlewareToMiddleware(mw func(nethttp.Handler) nethttp.Handler) http.Middleware {
 	return func(next http.Handler) http.Handler {
-		return http.HandleFunc(func(ctx http.Context) http.Response {
+		return http.HandlerFunc(func(ctx http.Context) http.Response {
 			var response http.Response
 
 			// create a net/http handler to wrap the Goravel handler
@@ -47,4 +47,17 @@ func HandlerToHTTPHandler(h http.Handler) nethttp.Handler {
 			_, _ = w.Write([]byte(err.Error()))
 		}
 	})
+}
+
+// MiddlewareToHTTPMiddleware converts a Goravel http.Middleware to a net/http middleware
+func MiddlewareToHTTPMiddleware(mw http.Middleware) func(nethttp.Handler) nethttp.Handler {
+	return func(next nethttp.Handler) nethttp.Handler {
+		return nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
+			nextHandler := http.HandlerFunc(func(ctx http.Context) http.Response {
+				next.ServeHTTP(w, r)
+				return nil
+			})
+			mw(nextHandler).ServeHTTP(NewContext(r, w))
+		})
+	}
 }

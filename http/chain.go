@@ -21,7 +21,7 @@ func (mws Middlewares) Handler(h http.Handler) http.Handler {
 
 // HandlerFunc builds and returns a http.Handler from the chain of middlewares,
 // with `h http.Handler` as the final handler.
-func (mws Middlewares) HandlerFunc(h http.HandleFunc) http.Handler {
+func (mws Middlewares) HandlerFunc(h http.HandlerFunc) http.Handler {
 	return &ChainHandler{h, chain(mws, h), mws}
 }
 
@@ -40,9 +40,20 @@ func (c *ChainHandler) ServeHTTP(ctx http.Context) http.Response {
 // chain builds a http.Handler composed of an inline middleware stack and endpoint
 // handler in the order they are passed.
 func chain(middlewares []http.Middleware, endpoint http.Handler) http.Handler {
+	// Middleware and endpoint MUST NOT both be nil
+	if len(middlewares) == 0 && endpoint == nil {
+		panic("http: no endpoint or middleware provided")
+	}
+
 	// Return ahead of time if there aren't any middlewares for the chain
 	if len(middlewares) == 0 {
 		return endpoint
+	}
+
+	if endpoint == nil {
+		endpoint = http.HandlerFunc(func(ctx http.Context) http.Response {
+			return nil
+		})
 	}
 
 	// Wrap the end handler with the middleware chain

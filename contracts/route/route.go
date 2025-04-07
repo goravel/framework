@@ -13,7 +13,7 @@ type GroupFunc func(router Router)
 type Route interface {
 	Router
 	// Fallback registers a handler to be executed when no other route was matched.
-	Fallback(handler contractshttp.HandleFunc)
+	Fallback(handler contractshttp.HandlerFunc)
 	// GlobalMiddleware registers global middleware to be applied to all routes of the router.
 	GlobalMiddleware(middlewares ...contractshttp.Middleware)
 	// Listen starts the HTTP server and listens on the specified listener.
@@ -47,19 +47,19 @@ type Router interface {
 	Middleware(middlewares ...contractshttp.Middleware) Router
 
 	// Any registers a new route responding to all verbs.
-	Any(relativePath string, handler contractshttp.HandleFunc)
+	Any(relativePath string, handler contractshttp.HandlerFunc)
 	// Get registers a new GET route with the router.
-	Get(relativePath string, handler contractshttp.HandleFunc)
+	Get(relativePath string, handler contractshttp.HandlerFunc)
 	// Post registers a new POST route with the router.
-	Post(relativePath string, handler contractshttp.HandleFunc)
+	Post(relativePath string, handler contractshttp.HandlerFunc)
 	// Delete registers a new DELETE route with the router.
-	Delete(relativePath string, handler contractshttp.HandleFunc)
+	Delete(relativePath string, handler contractshttp.HandlerFunc)
 	// Patch registers a new PATCH route with the router.
-	Patch(relativePath string, handler contractshttp.HandleFunc)
+	Patch(relativePath string, handler contractshttp.HandlerFunc)
 	// Put registers a new PUT route with the router.
-	Put(relativePath string, handler contractshttp.HandleFunc)
+	Put(relativePath string, handler contractshttp.HandlerFunc)
 	// Options registers a new OPTIONS route with the router.
-	Options(relativePath string, handler contractshttp.HandleFunc)
+	Options(relativePath string, handler contractshttp.HandlerFunc)
 	// Resource registers RESTful routes for a resource controller.
 	Resource(relativePath string, controller contractshttp.ResourceController)
 
