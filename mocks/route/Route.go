@@ -29,7 +29,7 @@ func (_m *Route) EXPECT() *Route_Expecter {
 }
 
 // Any provides a mock function with given fields: relativePath, handler
-func (_m *Route) Any(relativePath string, handler http.HandlerFunc) {
+func (_m *Route) Any(relativePath string, handler http.HandleFunc) {
 	_m.Called(relativePath, handler)
 }
 
@@ -40,14 +40,14 @@ type Route_Any_Call struct {
 
 // Any is a helper method to define mock.On call
 //   - relativePath string
-//   - handler http.HandlerFunc
+//   - handler http.HandleFunc
 func (_e *Route_Expecter) Any(relativePath interface{}, handler interface{}) *Route_Any_Call {
 	return &Route_Any_Call{Call: _e.mock.On("Any", relativePath, handler)}
 }
 
-func (_c *Route_Any_Call) Run(run func(relativePath string, handler http.HandlerFunc)) *Route_Any_Call {
+func (_c *Route_Any_Call) Run(run func(relativePath string, handler http.HandleFunc)) *Route_Any_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(http.HandlerFunc))
+		run(args[0].(string), args[1].(http.HandleFunc))
 	})
 	return _c
 }
@@ -57,13 +57,13 @@ func (_c *Route_Any_Call) Return() *Route_Any_Call {
 	return _c
 }
 
-func (_c *Route_Any_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Route_Any_Call {
+func (_c *Route_Any_Call) RunAndReturn(run func(string, http.HandleFunc)) *Route_Any_Call {
 	_c.Run(run)
 	return _c
 }
 
 // Delete provides a mock function with given fields: relativePath, handler
-func (_m *Route) Delete(relativePath string, handler http.HandlerFunc) {
+func (_m *Route) Delete(relativePath string, handler http.HandleFunc) {
 	_m.Called(relativePath, handler)
 }
 
@@ -74,14 +74,14 @@ type Route_Delete_Call struct {
 
 // Delete is a helper method to define mock.On call
 //   - relativePath string
-//   - handler http.HandlerFunc
+//   - handler http.HandleFunc
 func (_e *Route_Expecter) Delete(relativePath interface{}, handler interface{}) *Route_Delete_Call {
 	return &Route_Delete_Call{Call: _e.mock.On("Delete", relativePath, handler)}
 }
 
-func (_c *Route_Delete_Call) Run(run func(relativePath string, handler http.HandlerFunc)) *Route_Delete_Call {
+func (_c *Route_Delete_Call) Run(run func(relativePath string, handler http.HandleFunc)) *Route_Delete_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(http.HandlerFunc))
+		run(args[0].(string), args[1].(http.HandleFunc))
 	})
 	return _c
 }
@@ -91,13 +91,13 @@ func (_c *Route_Delete_Call) Return() *Route_Delete_Call {
 	return _c
 }
 
-func (_c *Route_Delete_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Route_Delete_Call {
+func (_c *Route_Delete_Call) RunAndReturn(run func(string, http.HandleFunc)) *Route_Delete_Call {
 	_c.Run(run)
 	return _c
 }
 
 // Fallback provides a mock function with given fields: handler
-func (_m *Route) Fallback(handler http.HandlerFunc) {
+func (_m *Route) Fallback(handler http.HandleFunc) {
 	_m.Called(handler)
 }
 
@@ -107,14 +107,14 @@ type Route_Fallback_Call struct {
 }
 
 // Fallback is a helper method to define mock.On call
-//   - handler http.HandlerFunc
+//   - handler http.HandleFunc
 func (_e *Route_Expecter) Fallback(handler interface{}) *Route_Fallback_Call {
 	return &Route_Fallback_Call{Call: _e.mock.On("Fallback", handler)}
 }
 
-func (_c *Route_Fallback_Call) Run(run func(handler http.HandlerFunc)) *Route_Fallback_Call {
+func (_c *Route_Fallback_Call) Run(run func(handler http.HandleFunc)) *Route_Fallback_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(http.HandlerFunc))
+		run(args[0].(http.HandleFunc))
 	})
 	return _c
 }
@@ -124,13 +124,13 @@ func (_c *Route_Fallback_Call) Return() *Route_Fallback_Call {
 	return _c
 }
 
-func (_c *Route_Fallback_Call) RunAndReturn(run func(http.HandlerFunc)) *Route_Fallback_Call {
+func (_c *Route_Fallback_Call) RunAndReturn(run func(http.HandleFunc)) *Route_Fallback_Call {
 	_c.Run(run)
 	return _c
 }
 
 // Get provides a mock function with given fields: relativePath, handler
-func (_m *Route) Get(relativePath string, handler http.HandlerFunc) {
+func (_m *Route) Get(relativePath string, handler http.HandleFunc) {
 	_m.Called(relativePath, handler)
 }
 
@@ -141,14 +141,14 @@ type Route_Get_Call struct {
 
 // Get is a helper method to define mock.On call
 //   - relativePath string
-//   - handler http.HandlerFunc
+//   - handler http.HandleFunc
 func (_e *Route_Expecter) Get(relativePath interface{}, handler interface{}) *Route_Get_Call {
 	return &Route_Get_Call{Call: _e.mock.On("Get", relativePath, handler)}
 }
 
-func (_c *Route_Get_Call) Run(run func(relativePath string, handler http.HandlerFunc)) *Route_Get_Call {
+func (_c *Route_Get_Call) Run(run func(relativePath string, handler http.HandleFunc)) *Route_Get_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(http.HandlerFunc))
+		run(args[0].(string), args[1].(http.HandleFunc))
 	})
 	return _c
 }
@@ -158,7 +158,7 @@ func (_c *Route_Get_Call) Return() *Route_Get_Call {
 	return _c
 }
 
-func (_c *Route_Get_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Route_Get_Call {
+func (_c *Route_Get_Call) RunAndReturn(run func(string, http.HandleFunc)) *Route_Get_Call {
 	_c.Run(run)
 	return _c
 }
@@ -444,7 +444,7 @@ func (_c *Route_Middleware_Call) RunAndReturn(run func(...http.Middleware) route
 }
 
 // Options provides a mock function with given fields: relativePath, handler
-func (_m *Route) Options(relativePath string, handler http.HandlerFunc) {
+func (_m *Route) Options(relativePath string, handler http.HandleFunc) {
 	_m.Called(relativePath, handler)
 }
 
@@ -455,14 +455,14 @@ type Route_Options_Call struct {
 
 // Options is a helper method to define mock.On call
 //   - relativePath string
-//   - handler http.HandlerFunc
+//   - handler http.HandleFunc
 func (_e *Route_Expecter) Options(relativePath interface{}, handler interface{}) *Route_Options_Call {
 	return &Route_Options_Call{Call: _e.mock.On("Options", relativePath, handler)}
 }
 
-func (_c *Route_Options_Call) Run(run func(relativePath string, handler http.HandlerFunc)) *Route_Options_Call {
+func (_c *Route_Options_Call) Run(run func(relativePath string, handler http.HandleFunc)) *Route_Options_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(http.HandlerFunc))
+		run(args[0].(string), args[1].(http.HandleFunc))
 	})
 	return _c
 }
@@ -472,13 +472,13 @@ func (_c *Route_Options_Call) Return() *Route_Options_Call {
 	return _c
 }
 
-func (_c *Route_Options_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Route_Options_Call {
+func (_c *Route_Options_Call) RunAndReturn(run func(string, http.HandleFunc)) *Route_Options_Call {
 	_c.Run(run)
 	return _c
 }
 
 // Patch provides a mock function with given fields: relativePath, handler
-func (_m *Route) Patch(relativePath string, handler http.HandlerFunc) {
+func (_m *Route) Patch(relativePath string, handler http.HandleFunc) {
 	_m.Called(relativePath, handler)
 }
 
@@ -489,14 +489,14 @@ type Route_Patch_Call struct {
 
 // Patch is a helper method to define mock.On call
 //   - relativePath string
-//   - handler http.HandlerFunc
+//   - handler http.HandleFunc
 func (_e *Route_Expecter) Patch(relativePath interface{}, handler interface{}) *Route_Patch_Call {
 	return &Route_Patch_Call{Call: _e.mock.On("Patch", relativePath, handler)}
 }
 
-func (_c *Route_Patch_Call) Run(run func(relativePath string, handler http.HandlerFunc)) *Route_Patch_Call {
+func (_c *Route_Patch_Call) Run(run func(relativePath string, handler http.HandleFunc)) *Route_Patch_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(http.HandlerFunc))
+		run(args[0].(string), args[1].(http.HandleFunc))
 	})
 	return _c
 }
@@ -506,13 +506,13 @@ func (_c *Route_Patch_Call) Return() *Route_Patch_Call {
 	return _c
 }
 
-func (_c *Route_Patch_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Route_Patch_Call {
+func (_c *Route_Patch_Call) RunAndReturn(run func(string, http.HandleFunc)) *Route_Patch_Call {
 	_c.Run(run)
 	return _c
 }
 
 // Post provides a mock function with given fields: relativePath, handler
-func (_m *Route) Post(relativePath string, handler http.HandlerFunc) {
+func (_m *Route) Post(relativePath string, handler http.HandleFunc) {
 	_m.Called(relativePath, handler)
 }
 
@@ -523,14 +523,14 @@ type Route_Post_Call struct {
 
 // Post is a helper method to define mock.On call
 //   - relativePath string
-//   - handler http.HandlerFunc
+//   - handler http.HandleFunc
 func (_e *Route_Expecter) Post(relativePath interface{}, handler interface{}) *Route_Post_Call {
 	return &Route_Post_Call{Call: _e.mock.On("Post", relativePath, handler)}
 }
 
-func (_c *Route_Post_Call) Run(run func(relativePath string, handler http.HandlerFunc)) *Route_Post_Call {
+func (_c *Route_Post_Call) Run(run func(relativePath string, handler http.HandleFunc)) *Route_Post_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(http.HandlerFunc))
+		run(args[0].(string), args[1].(http.HandleFunc))
 	})
 	return _c
 }
@@ -540,7 +540,7 @@ func (_c *Route_Post_Call) Return() *Route_Post_Call {
 	return _c
 }
 
-func (_c *Route_Post_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Route_Post_Call {
+func (_c *Route_Post_Call) RunAndReturn(run func(string, http.HandleFunc)) *Route_Post_Call {
 	_c.Run(run)
 	return _c
 }
@@ -594,7 +594,7 @@ func (_c *Route_Prefix_Call) RunAndReturn(run func(string) route.Router) *Route_
 }
 
 // Put provides a mock function with given fields: relativePath, handler
-func (_m *Route) Put(relativePath string, handler http.HandlerFunc) {
+func (_m *Route) Put(relativePath string, handler http.HandleFunc) {
 	_m.Called(relativePath, handler)
 }
 
@@ -605,14 +605,14 @@ type Route_Put_Call struct {
 
 // Put is a helper method to define mock.On call
 //   - relativePath string
-//   - handler http.HandlerFunc
+//   - handler http.HandleFunc
 func (_e *Route_Expecter) Put(relativePath interface{}, handler interface{}) *Route_Put_Call {
 	return &Route_Put_Call{Call: _e.mock.On("Put", relativePath, handler)}
 }
 
-func (_c *Route_Put_Call) Run(run func(relativePath string, handler http.HandlerFunc)) *Route_Put_Call {
+func (_c *Route_Put_Call) Run(run func(relativePath string, handler http.HandleFunc)) *Route_Put_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(http.HandlerFunc))
+		run(args[0].(string), args[1].(http.HandleFunc))
 	})
 	return _c
 }
@@ -622,7 +622,7 @@ func (_c *Route_Put_Call) Return() *Route_Put_Call {
 	return _c
 }
 
-func (_c *Route_Put_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Route_Put_Call {
+func (_c *Route_Put_Call) RunAndReturn(run func(string, http.HandleFunc)) *Route_Put_Call {
 	_c.Run(run)
 	return _c
 }

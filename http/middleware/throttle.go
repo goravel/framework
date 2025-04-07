@@ -26,7 +26,7 @@ const (
 
 func Throttle(name string) httpcontract.Middleware {
 	return func(next httpcontract.Handler) httpcontract.Handler {
-		return httpcontract.HandlerFunc(func(ctx httpcontract.Context) httpcontract.Response {
+		return httpcontract.HandleFunc(func(ctx httpcontract.Context) httpcontract.Response {
 			if limiter := http.RateLimiterFacade.Limiter(name); limiter != nil {
 				if limits := limiter(ctx); len(limits) > 0 {
 					for index, limit := range limits {
