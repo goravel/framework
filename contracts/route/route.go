@@ -40,7 +40,7 @@ type Route interface {
 
 type Router interface {
 	// Group creates a new router group with the specified handler.
-	Group(handler GroupFunc)
+	Group(handler GroupFunc) Router
 	// Prefix adds a common prefix to the routes registered with the router.
 	Prefix(addr string) Router
 	// Middleware sets the middleware for the router.
