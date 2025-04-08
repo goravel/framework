@@ -67,10 +67,10 @@ func (r *SendMailJob) Handle(args ...any) error {
 		return fmt.Errorf("ATTACHMENTS should be of type []string")
 	}
 
-	headers, ok := args[8].(map[string]string)
+	headers, ok := args[8].([]string)
 	if !ok {
-		return fmt.Errorf("HEADERS should be of type map[string]string")
+		return fmt.Errorf("HEADERS should be of type []string")
 	}
 
-	return SendMail(r.config, from, subject, body, recipient, cc, bcc, replyTo, attachments, headers)
+	return SendMail(r.config, from, subject, body, recipient, cc, bcc, replyTo, attachments, convertSliceHeadersToMap(headers))
 }

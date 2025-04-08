@@ -8,7 +8,7 @@ type Queue interface {
 	// GetJobs get all jobs
 	GetJobs() []Job
 	// Job add a job to queue
-	Job(job Job, args ...[]any) Task
+	Job(job Job, args ...[]Arg) Task
 	// Register register jobs
 	Register(jobs []Job)
 	// Worker create a queue worker
@@ -27,4 +27,9 @@ type Args struct {
 	Queue string
 	// Concurrent num
 	Concurrent int
+}
+
+type Arg struct {
+	Type  string
+	Value any
 }
