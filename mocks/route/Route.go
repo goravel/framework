@@ -210,8 +210,23 @@ func (_c *Route_GlobalMiddleware_Call) RunAndReturn(run func(...http.Middleware)
 }
 
 // Group provides a mock function with given fields: handler
-func (_m *Route) Group(handler route.GroupFunc) {
-	_m.Called(handler)
+func (_m *Route) Group(handler route.GroupFunc) route.Router {
+	ret := _m.Called(handler)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Group")
+	}
+
+	var r0 route.Router
+	if rf, ok := ret.Get(0).(func(route.GroupFunc) route.Router); ok {
+		r0 = rf(handler)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(route.Router)
+		}
+	}
+
+	return r0
 }
 
 // Route_Group_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Group'
@@ -232,13 +247,13 @@ func (_c *Route_Group_Call) Run(run func(handler route.GroupFunc)) *Route_Group_
 	return _c
 }
 
-func (_c *Route_Group_Call) Return() *Route_Group_Call {
-	_c.Call.Return()
+func (_c *Route_Group_Call) Return(_a0 route.Router) *Route_Group_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Route_Group_Call) RunAndReturn(run func(route.GroupFunc)) *Route_Group_Call {
-	_c.Run(run)
+func (_c *Route_Group_Call) RunAndReturn(run func(route.GroupFunc) route.Router) *Route_Group_Call {
+	_c.Call.Return(run)
 	return _c
 }
 
