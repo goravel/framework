@@ -14,6 +14,8 @@ type Route interface {
 	Router
 	// Fallback registers a handler to be executed when no other route was matched.
 	Fallback(handler contractshttp.HandlerFunc)
+	// NotAllowed registers a handler to be executed when a method is not allowed.
+	NotAllowed(handler contractshttp.HandlerFunc)
 	// GlobalMiddleware registers global middleware to be applied to all routes of the router.
 	GlobalMiddleware(middlewares ...contractshttp.Middleware)
 	// Listen starts the HTTP server and listens on the specified listener.
@@ -34,8 +36,6 @@ type Route interface {
 	ServeHTTP(writer http.ResponseWriter, request *http.Request)
 	// Shutdown gracefully stop the serve.
 	Shutdown(ctx ...context.Context) error
-	// Test method to simulate HTTP requests (Fiber driver only)
-	Test(request *http.Request) (*http.Response, error)
 }
 
 type Router interface {
