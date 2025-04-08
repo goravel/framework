@@ -48,12 +48,6 @@ func NewWorker(config queue.Config, job queue.JobRepository, log log.Log, connec
 }
 
 func (r *Worker) Run() error {
-	r.isShutdown.Store(false)
-
-	if err := r.RunMachinery(); err != nil {
-		return err
-	}
-
 	driver, err := NewDriver(r.connection, r.config)
 	if err != nil {
 		return err
@@ -62,7 +56,13 @@ func (r *Worker) Run() error {
 		return errors.QueueDriverSyncNotNeedToRun.Args(r.connection)
 	}
 
-	redisQueue := r.config.Queue(r.connection, r.queue)
+	r.isShutdown.Store(false)
+
+	if err := r.RunMachinery(); err != nil {
+		return err
+	}
+
+	queueKey := r.config.QueueKey(r.connection, r.queue)
 
 	for i := 0; i < r.concurrent; i++ {
 		r.wg.Add(1)
@@ -73,10 +73,10 @@ func (r *Worker) Run() error {
 					return
 				}
 
-				job, args, err := driver.Pop(redisQueue)
+				job, args, err := driver.Pop(queueKey)
 				if err != nil {
 					if !errors.Is(err, errors.QueueDriverNoJobFound) {
-						r.log.Error(errors.QueueDriverFailedToPop.Args(redisQueue, err))
+						r.log.Error(errors.QueueDriverFailedToPop.Args(queueKey, err))
 
 						r.currentDelay *= 2
 						if r.currentDelay > r.maxDelay {
@@ -95,7 +95,7 @@ func (r *Worker) Run() error {
 					r.failedJobChan <- FailedJob{
 						UUID:       uuid.New(),
 						Connection: r.connection,
-						Queue:      redisQueue,
+						Queue:      queueKey,
 						Payload:    args,
 						Exception:  err.Error(),
 						FailedAt:   carbon.DateTime{Carbon: carbon.Now()},
@@ -122,12 +122,17 @@ func (r *Worker) Run() error {
 
 // RunMachinery will be removed in v1.17
 func (r *Worker) RunMachinery() error {
-	machinery := NewMachinery(r.config.Config(), r.log, r.job.All(), r.connection, r.queue, r.concurrent)
-	if !machinery.ExistTasks() {
+	instance := NewMachinery(r.config.Config(), r.log, r.job.All(), r.connection, r.queue, r.concurrent)
+	if !instance.ExistTasks() {
 		return nil
 	}
 
-	worker, err := machinery.Run()
+	var (
+		worker *machinery.Worker
+		err    error
+	)
+
+	worker, err = instance.Run()
 	if err != nil {
 		return err
 	}

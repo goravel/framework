@@ -11,6 +11,6 @@ type Config interface {
 	Default() (connection, queue string, concurrent int)
 	Driver(connection string) string
 	FailedJobsQuery() db.Query
-	Queue(connection, queue string) string
+	QueueKey(connection, queue string) string
 	Via(connection string) any
 }

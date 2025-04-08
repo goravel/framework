@@ -10,16 +10,12 @@ import (
 type Config struct {
 	config contractsconfig.Config
 	db     db.DB
-
-	defaultConnection string
 }
 
 func NewConfig(config contractsconfig.Config, db db.DB) *Config {
 	return &Config{
 		config: config,
 		db:     db,
-
-		defaultConnection: config.GetString("queue.default"),
 	}
 }
 
@@ -44,10 +40,6 @@ func (r *Config) Default() (connection, queue string, concurrent int) {
 }
 
 func (r *Config) Driver(connection string) string {
-	if connection == "" {
-		connection = r.defaultConnection
-	}
-
 	return r.config.GetString(fmt.Sprintf("queue.connections.%s.driver", connection))
 }
 
@@ -58,7 +50,7 @@ func (r *Config) FailedJobsQuery() db.Query {
 	return r.db.Connection(connection).Table(table)
 }
 
-func (r *Config) Queue(connection, queue string) string {
+func (r *Config) QueueKey(connection, queue string) string {
 	appName := r.config.GetString("app.name")
 	if appName == "" {
 		appName = "goravel"
@@ -68,9 +60,5 @@ func (r *Config) Queue(connection, queue string) string {
 }
 
 func (r *Config) Via(connection string) any {
-	if connection == "" {
-		connection = r.defaultConnection
-	}
-
 	return r.config.Get(fmt.Sprintf("queue.connections.%s.via", connection))
 }

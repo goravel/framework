@@ -121,6 +121,7 @@ var (
 	QueueDriverFailedToPop      = New("failed to pop job from %s queue: %v")
 	QueueJobNotFound            = New("job not found: %s")
 	QueueFailedToSaveFailedJob  = New("failed to save failed job: %v")
+	QueueFailedToRunMachinery   = New("failed to run machinery: %v")
 	QueueEmptyJobSignature      = New("job signature can't be empty")
 	QueueDuplicateJobSignature  = New("duplicate job signature: %s")
 

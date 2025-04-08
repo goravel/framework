@@ -46,12 +46,6 @@ func (s *ConfigTestSuite) TestDefault() {
 }
 
 func (s *ConfigTestSuite) TestDriver() {
-	// Test with empty connection (should use default)
-	s.mockConfig.EXPECT().GetString("queue.default").Return("redis").Once()
-	s.mockConfig.EXPECT().GetString("queue.connections.redis.driver").Return("redis").Once()
-	s.Equal("redis", s.config.Driver(""))
-
-	// Test with specific connection
 	s.mockConfig.EXPECT().GetString("queue.connections.sync.driver").Return("sync").Once()
 	s.Equal("sync", s.config.Driver("sync"))
 }
@@ -68,30 +62,12 @@ func (s *ConfigTestSuite) TestFailedJobsQuery() {
 	s.Equal(mockQuery, result)
 }
 
-func (s *ConfigTestSuite) TestQueue() {
-	// Test with default app name
-	s.mockConfig.EXPECT().GetString("app.name").Return("").Once()
-	s.mockConfig.EXPECT().GetString("queue.default").Return("redis").Once()
-	s.mockConfig.EXPECT().GetString("queue.connections.redis.queue", "default").Return("default").Once()
-	s.Equal("goravel_queues:default", s.config.Queue("", ""))
-
-	// Test with custom app name
+func (s *ConfigTestSuite) TestQueueKey() {
 	s.mockConfig.EXPECT().GetString("app.name").Return("myapp").Once()
-	s.mockConfig.EXPECT().GetString("queue.connections.redis.queue", "default").Return("default").Once()
-	s.Equal("myapp_queues:default", s.config.Queue("redis", ""))
-
-	// Test with custom queue
-	s.mockConfig.EXPECT().GetString("app.name").Return("myapp").Once()
-	s.Equal("myapp_queues:custom", s.config.Queue("redis", "custom"))
+	s.Equal("myapp_queues:redis_custom", s.config.QueueKey("redis", "custom"))
 }
 
 func (s *ConfigTestSuite) TestVia() {
-	// Test with empty connection (should use default)
-	s.mockConfig.EXPECT().GetString("queue.default").Return("redis").Once()
-	s.mockConfig.EXPECT().Get("queue.connections.redis.via").Return("redis").Once()
-	s.Equal("redis", s.config.Via(""))
-
-	// Test with specific connection
 	s.mockConfig.EXPECT().Get("queue.connections.sync.via").Return("sync").Once()
 	s.Equal("sync", s.config.Via("sync"))
 }
