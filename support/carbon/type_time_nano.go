@@ -5,8 +5,6 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"time"
-
-	"github.com/dromara/carbon/v2"
 )
 
 // TimeNano defines a TimeNano struct.
@@ -24,7 +22,7 @@ func NewTimeNano(carbon Carbon) TimeNano {
 // Scan implements driver.Scanner interface.
 // 实现 driver.Scanner 接口
 func (t *TimeNano) Scan(src any) error {
-	c := carbon.NewCarbon()
+	c := Carbon{}
 	switch v := src.(type) {
 	case []byte:
 		c = Parse(string(v), DefaultTimezone)

@@ -5,8 +5,6 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"time"
-
-	"github.com/dromara/carbon/v2"
 )
 
 // Time defines a Time struct.
@@ -24,7 +22,7 @@ func NewTime(carbon Carbon) Time {
 // Scan implements driver.Scanner interface.
 // 实现 driver.Scanner 接口
 func (t *Time) Scan(src interface{}) error {
-	c := carbon.NewCarbon()
+	c := Carbon{}
 	switch v := src.(type) {
 	case []byte:
 		c = Parse(string(v), DefaultTimezone)

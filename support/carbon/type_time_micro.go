@@ -5,8 +5,6 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"time"
-
-	"github.com/dromara/carbon/v2"
 )
 
 // TimeMicro defines a TimeMicro struct.
@@ -24,7 +22,7 @@ func NewTimeMicro(carbon Carbon) TimeMicro {
 // Scan implements driver.Scanner interface.
 // 实现 driver.Scanner 接口
 func (t *TimeMicro) Scan(src any) error {
-	c := carbon.NewCarbon()
+	c := Carbon{}
 	switch v := src.(type) {
 	case []byte:
 		c = Parse(string(v), DefaultTimezone)

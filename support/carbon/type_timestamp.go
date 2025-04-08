@@ -24,7 +24,6 @@ func NewTimestamp(carbon Carbon) Timestamp {
 // 实现 driver.Scanner 接口
 func (t *Timestamp) Scan(src interface{}) (err error) {
 	ts := int64(0)
-	c := Carbon{}
 	switch v := src.(type) {
 	case []byte:
 		ts, err = strconv.ParseInt(string(v), 10, 64)
@@ -39,14 +38,12 @@ func (t *Timestamp) Scan(src interface{}) (err error) {
 	case int64:
 		ts = v
 	case time.Time:
-		c = FromStdTime(v, DefaultTimezone)
-		*t = NewTimestamp(c)
+		*t = NewTimestamp(FromStdTime(v, DefaultTimezone))
 		return t.Error
 	default:
 		return failedScanError(src)
 	}
-	c = FromTimestamp(ts, DefaultTimezone)
-	*t = NewTimestamp(c)
+	*t = NewTimestamp(FromTimestamp(ts, DefaultTimezone))
 	return t.Error
 }
 
