@@ -694,6 +694,53 @@ func (_c *Route_Resource_Call) RunAndReturn(run func(string, http.ResourceContro
 	return _c
 }
 
+// Routes provides a mock function with no fields
+func (_m *Route) Routes() []route.Info {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Routes")
+	}
+
+	var r0 []route.Info
+	if rf, ok := ret.Get(0).(func() []route.Info); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]route.Info)
+		}
+	}
+
+	return r0
+}
+
+// Route_Routes_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Routes'
+type Route_Routes_Call struct {
+	*mock.Call
+}
+
+// Routes is a helper method to define mock.On call
+func (_e *Route_Expecter) Routes() *Route_Routes_Call {
+	return &Route_Routes_Call{Call: _e.mock.On("Routes")}
+}
+
+func (_c *Route_Routes_Call) Run(run func()) *Route_Routes_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Route_Routes_Call) Return(_a0 []route.Info) *Route_Routes_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Route_Routes_Call) RunAndReturn(run func() []route.Info) *Route_Routes_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Run provides a mock function with given fields: host
 func (_m *Route) Run(host ...string) error {
 	_va := make([]interface{}, len(host))
