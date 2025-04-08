@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"strconv"
 	"time"
-
-	"github.com/dromara/carbon/v2"
 )
 
 // TimestampMilli defines a TimestampMilli struct.
@@ -26,7 +24,7 @@ func NewTimestampMilli(carbon Carbon) TimestampMilli {
 // 实现 driver.Scanner 接口
 func (t *TimestampMilli) Scan(src interface{}) (err error) {
 	ts := int64(0)
-	c := carbon.NewCarbon()
+	c := Carbon{}
 	switch v := src.(type) {
 	case []byte:
 		ts, err = strconv.ParseInt(string(v), 10, 64)
@@ -82,7 +80,7 @@ func (t TimestampMilli) MarshalJSON() ([]byte, error) {
 // 实现 json.Unmarshaler 接口
 func (t *TimestampMilli) UnmarshalJSON(b []byte) error {
 	value := string(bytes.Trim(b, `"`))
-	c := carbon.NewCarbon()
+	c := Carbon{}
 	if value == "" || value == "null" || value == "0" {
 		return nil
 	}
