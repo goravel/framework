@@ -15,6 +15,14 @@ func TestSetTestNow(t *testing.T) {
 	assert.False(t, IsTestNow())
 }
 
+func TestSetTimezone(t *testing.T) {
+	defer SetTimezone(UTC)
+
+	SetTimezone(PRC)
+	c := Parse("2020-01-01 00:00:00")
+	assert.Equal(t, "2020-01-01 00:00:00 +0800 CST", c.ToString())
+}
+
 func TestTimezone(t *testing.T) {
 	timezones := []string{Local, UTC, GMT, EET, WET, CET, EST, MST, Cuba, Egypt, Eire, Greenwich, Iceland, Iran,
 		Israel, Jamaica, Japan, Libya, Poland, Portugal, PRC, Singapore, Turkey, Shanghai, Chongqing, Harbin, Urumqi,
