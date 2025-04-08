@@ -15,9 +15,9 @@ type Driver interface {
 	// Driver returns the driver name for the driver.
 	Driver() string
 	// Later pushes the job onto the queue after a delay.
-	Later(delay time.Time, job Job, args []any, queue string) error
+	Later(delay time.Time, job Job, args []Arg, queue string) error
 	// Pop pops the next job off of the queue.
-	Pop(queue string) (Job, []any, error)
+	Pop(queue string) (Job, []Arg, error)
 	// Push pushes the job onto the queue.
-	Push(job Job, args []any, queue string) error
+	Push(job Job, args []Arg, queue string) error
 }
