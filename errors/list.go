@@ -132,6 +132,7 @@ var (
 	QueueJobNotFound            = New("job not found: %s")
 	QueueJobRegisterFailed      = New("job register failed: %v")
 	QueueFailedToSaveFailedJob  = New("failed to save failed job: %v")
+	QueueFailedToRunMachinery   = New("failed to run machinery: %v")
 	QueueEmptyJobSignature      = New("job signature can't be empty")
 	QueueDuplicateJobSignature  = New("duplicate job signature: %s")
 
