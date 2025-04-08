@@ -77,7 +77,6 @@ func (t Timestamp) MarshalJSON() ([]byte, error) {
 // 实现 json.Unmarshaler 接口
 func (t *Timestamp) UnmarshalJSON(b []byte) error {
 	value := string(bytes.Trim(b, `"`))
-	c := Carbon{}
 	if value == "" || value == "null" || value == "0" {
 		return nil
 	}
@@ -85,8 +84,7 @@ func (t *Timestamp) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return invalidTimestampError(value)
 	}
-	c = FromTimestamp(ts, DefaultTimezone)
-	*t = NewTimestamp(c)
+	*t = NewTimestamp(FromTimestamp(ts, DefaultTimezone))
 	return t.Error
 }
 
