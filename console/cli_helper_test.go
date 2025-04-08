@@ -24,7 +24,7 @@ func TestShowCommandHelp_HelpPrinterCustom(t *testing.T) {
 		containsOutput []string
 	}{
 		{
-			name: "print_app_help",
+			name: "print app help",
 			containsOutput: []string{
 				color.Yellow().Sprint("Usage:"),
 				color.Yellow().Sprint("Global options:"),
@@ -35,7 +35,7 @@ func TestShowCommandHelp_HelpPrinterCustom(t *testing.T) {
 			},
 		},
 		{
-			name: "print_command_help",
+			name: "print command help",
 			call: "help test:foo",
 			containsOutput: []string{
 				color.Yellow().Sprint("Description:"),
@@ -52,7 +52,7 @@ func TestShowCommandHelp_HelpPrinterCustom(t *testing.T) {
 			},
 		},
 		{
-			name: "print_command_help(check_flag_sorted)",
+			name: "print command help(check flag sorted)",
 			call: "help --no-ansi test:foo",
 			containsOutput: []string{
 				`Description:
@@ -73,21 +73,21 @@ Options:
 			},
 		},
 		{
-			name: "print_version",
+			name: "print version",
 			call: "--version",
 			containsOutput: []string{
 				"test " + color.Green().Sprint("test"),
 			},
 		},
 		{
-			name: "command_not_found",
+			name: "command not found",
 			call: "not-found",
 			containsOutput: []string{
 				color.New(color.FgLightRed).Sprint("Command 'not-found' is not defined."),
 			},
 		},
 		{
-			name: "command_not_found(suggest)",
+			name: "command not found(suggest)",
 			call: "test",
 			containsOutput: []string{
 				color.New(color.FgLightRed).Sprint("Command 'test' is not defined. Did you mean one of these?"),
@@ -96,7 +96,7 @@ Options:
 			},
 		},
 		{
-			name: "command_not_found(suggest)",
+			name: "command not found(suggest)",
 			call: "fo",
 			containsOutput: []string{
 				color.New(color.FgLightRed).Sprint("Command 'fo' is not defined. Did you mean this?"),
@@ -104,28 +104,28 @@ Options:
 			},
 		},
 		{
-			name: "option_not_found",
+			name: "option not found",
 			call: "test:foo --not-found",
 			containsOutput: []string{
 				color.Red().Sprint("The 'not-found' option does not exist."),
 			},
 		},
 		{
-			name: "option_needs_a_value",
+			name: "option needs a value",
 			call: "test:foo --int",
 			containsOutput: []string{
 				color.Red().Sprint("The '--int' option requires a value."),
 			},
 		},
 		{
-			name: "option_value_is_not_valid",
+			name: "option value is not valid",
 			call: "test:foo --int not-a-number",
 			containsOutput: []string{
 				color.Red().Sprint("Invalid value 'not-a-number' for option 'int'."),
 			},
 		},
 		{
-			name: "no_ansi_color",
+			name: "no ansi color",
 			call: "--no-ansi",
 			containsOutput: []string{
 				"test test",
