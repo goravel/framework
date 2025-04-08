@@ -128,6 +128,6 @@ func FromTimeNano(hour int, minute int, second int, nanosecond int, timezone ...
 }
 
 // FromStdTime return a Carbon object of given time.Time object.
-func FromStdTime(time stdtime.Time) Carbon {
-	return carbon.CreateFromStdTime(time)
+func FromStdTime(time stdtime.Time, timezone ...string) Carbon {
+	return carbon.CreateFromStdTime(time, timezone...)
 }
