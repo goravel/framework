@@ -32,7 +32,16 @@ func (s *TaskTestSuite) TestNewTask() {
 	s.mockConfig.EXPECT().QueueKey("default", "default").Return("default_queue").Once()
 
 	// Create a new task
-	args := []any{"arg1", "arg2"}
+	args := []queue.Arg{
+		{
+			Type:  "string",
+			Value: "arg1",
+		},
+		{
+			Type:  "string",
+			Value: "arg2",
+		},
+	}
 	task := NewTask(s.mockConfig, s.mockJob, args)
 
 	// Assertions
@@ -73,12 +82,22 @@ func (s *TaskTestSuite) TestNewChainTask() {
 	// Create jobs for the chain
 	jobs := []queue.Jobs{
 		{
-			Job:  s.mockJob,
-			Args: []any{"arg1"},
+			Job: s.mockJob,
+			Args: []queue.Arg{
+				{
+					Type:  "string",
+					Value: "arg1",
+				},
+			},
 		},
 		{
-			Job:  s.mockJob,
-			Args: []any{"arg2"},
+			Job: s.mockJob,
+			Args: []queue.Arg{
+				{
+					Type:  "string",
+					Value: "arg2",
+				},
+			},
 		},
 	}
 
@@ -153,7 +172,12 @@ func (s *TaskTestSuite) TestDispatchSync() {
 	s.mockJob.EXPECT().Handle([]any{"arg1"}...).Return(nil).Once()
 
 	// Create a new task
-	task := NewTask(s.mockConfig, s.mockJob, []any{"arg1"})
+	task := NewTask(s.mockConfig, s.mockJob, []queue.Arg{
+		{
+			Type:  "string",
+			Value: "arg1",
+		},
+	})
 
 	// Dispatch synchronously
 	err := task.DispatchSync()
@@ -169,7 +193,12 @@ func (s *TaskTestSuite) TestDispatchSyncWithError() {
 	s.mockJob.EXPECT().Handle([]any{"arg1"}...).Return(assert.AnError).Once()
 
 	// Create a new task
-	task := NewTask(s.mockConfig, s.mockJob, []any{"arg1"})
+	task := NewTask(s.mockConfig, s.mockJob, []queue.Arg{
+		{
+			Type:  "string",
+			Value: "arg1",
+		},
+	})
 
 	// Dispatch synchronously
 	err := task.DispatchSync()
@@ -188,12 +217,22 @@ func (s *TaskTestSuite) TestDispatchSyncChain() {
 	// Create jobs for the chain
 	jobs := []queue.Jobs{
 		{
-			Job:  s.mockJob,
-			Args: []any{"arg1"},
+			Job: s.mockJob,
+			Args: []queue.Arg{
+				{
+					Type:  "string",
+					Value: "arg1",
+				},
+			},
 		},
 		{
-			Job:  s.mockJob,
-			Args: []any{"arg2"},
+			Job: s.mockJob,
+			Args: []queue.Arg{
+				{
+					Type:  "string",
+					Value: "arg2",
+				},
+			},
 		},
 	}
 
@@ -217,12 +256,22 @@ func (s *TaskTestSuite) TestDispatchSyncChainWithError() {
 	// Create jobs for the chain
 	jobs := []queue.Jobs{
 		{
-			Job:  s.mockJob,
-			Args: []any{"arg1"},
+			Job: s.mockJob,
+			Args: []queue.Arg{
+				{
+					Type:  "string",
+					Value: "arg1",
+				},
+			},
 		},
 		{
-			Job:  s.mockJob,
-			Args: []any{"arg2"},
+			Job: s.mockJob,
+			Args: []queue.Arg{
+				{
+					Type:  "string",
+					Value: "arg2",
+				},
+			},
 		},
 	}
 

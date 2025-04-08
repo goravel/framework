@@ -91,7 +91,12 @@ func (r *Worker) Run() error {
 
 				r.currentDelay = 1 * time.Second
 
-				if err = r.job.Call(job.Signature(), args); err != nil {
+				var realArgs []any
+				for _, arg := range args {
+					realArgs = append(realArgs, arg.Value)
+				}
+
+				if err = r.job.Call(job.Signature(), realArgs); err != nil {
 					r.failedJobChan <- FailedJob{
 						UUID:       uuid.New(),
 						Connection: r.connection,

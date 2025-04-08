@@ -15,8 +15,8 @@ type Task struct {
 	queueKey   string
 }
 
-func NewTask(config contractsqueue.Config, job contractsqueue.Job, args ...[]any) *Task {
-	var arg []any
+func NewTask(config contractsqueue.Config, job contractsqueue.Job, args ...[]contractsqueue.Arg) *Task {
+	var arg []contractsqueue.Arg
 	if len(args) > 0 {
 		arg = args[0]
 	}
@@ -76,14 +76,25 @@ func (r *Task) Dispatch() error {
 func (r *Task) DispatchSync() error {
 	if r.chain {
 		for _, job := range r.jobs {
-			if err := job.Job.Handle(job.Args...); err != nil {
+			var realArgs []any
+			for _, arg := range job.Args {
+				realArgs = append(realArgs, arg.Value)
+			}
+
+			if err := job.Job.Handle(realArgs...); err != nil {
 				return err
 			}
 		}
+
 		return nil
 	} else {
 		job := r.jobs[0]
-		return job.Job.Handle(job.Args...)
+		var realArgs []any
+		for _, arg := range job.Args {
+			realArgs = append(realArgs, arg.Value)
+		}
+
+		return job.Job.Handle(realArgs...)
 	}
 }
 

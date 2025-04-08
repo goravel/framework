@@ -47,23 +47,89 @@ func (s *SyncTestSuite) SetupTest() {
 }
 
 func (s *SyncTestSuite) TestDelay() {
-	args := []any{"a", 1, []string{"b", "c"}, []int{1, 2, 3}, map[string]any{"d": "e"}}
-
+	args := []queue.Arg{
+		{
+			Type:  "string",
+			Value: "a",
+		},
+		{
+			Type:  "int",
+			Value: 1,
+		},
+		{
+			Type:  "[]string",
+			Value: []string{"b", "c"},
+		},
+		{
+			Type:  "[]int",
+			Value: []int{1, 2, 3},
+		},
+	}
 	s.Nil(s.app.Job(&TestJobOne{}, args).Delay(time.Now().Add(time.Second)).Dispatch())
-	s.Equal(args, testJobOne)
+	s.Equal([]any{"a", 1, []string{"b", "c"}, []int{1, 2, 3}}, testJobOne)
 }
 
 func (s *SyncTestSuite) TestDispatch() {
-	args := []any{"a", 1, []string{"b", "c"}, []int{1, 2, 3}, map[string]any{"d": "e"}}
+	args := []queue.Arg{
+		{
+			Type:  "string",
+			Value: "a",
+		},
+		{
+			Type:  "int",
+			Value: 1,
+		},
+		{
+			Type:  "[]string",
+			Value: []string{"b", "c"},
+		},
+		{
+			Type:  "[]int",
+			Value: []int{1, 2, 3},
+		},
+	}
 
 	s.Nil(s.app.Job(&TestJobOne{}, args).Dispatch())
-	s.Equal(args, testJobOne)
+	s.Equal([]any{"a", 1, []string{"b", "c"}, []int{1, 2, 3}}, testJobOne)
 }
 
 func (s *SyncTestSuite) TestChainDispatch() {
-	argsOne := []any{"a", 1, []string{"b", "c"}, []int{1, 2, 3}, map[string]any{"d": "e"}}
-	argsTwo := []any{"a", 2, []string{"d", "f"}, []int{4, 5, 6}, map[string]any{"g": "h"}}
-
+	argsOne := []queue.Arg{
+		{
+			Type:  "string",
+			Value: "a",
+		},
+		{
+			Type:  "int",
+			Value: 1,
+		},
+		{
+			Type:  "[]string",
+			Value: []string{"b", "c"},
+		},
+		{
+			Type:  "[]int",
+			Value: []int{1, 2, 3},
+		},
+	}
+	argsTwo := []queue.Arg{
+		{
+			Type:  "string",
+			Value: "a",
+		},
+		{
+			Type:  "int",
+			Value: 2,
+		},
+		{
+			Type:  "[]string",
+			Value: []string{"d", "f"},
+		},
+		{
+			Type:  "[]int",
+			Value: []int{4, 5, 6},
+		},
+	}
 	s.Nil(s.app.Chain([]queue.Jobs{
 		{
 			Job:  &TestJobOne{},
@@ -75,13 +141,47 @@ func (s *SyncTestSuite) TestChainDispatch() {
 		},
 	}).Dispatch())
 
-	s.Equal(argsOne, testJobOne)
-	s.Equal(argsTwo, testJobTwo)
+	s.Equal([]any{"a", 1, []string{"b", "c"}, []int{1, 2, 3}}, testJobOne)
+	s.Equal([]any{"a", 2, []string{"d", "f"}, []int{4, 5, 6}}, testJobTwo)
 }
 
 func (s *SyncTestSuite) TestChainDispatchWithError() {
-	argsOne := []any{"a", 1, []string{"b", "c"}, []int{1, 2, 3}, map[string]any{"d": "e"}}
-	argsTwo := []any{"a", 2, []string{"d", "f"}, []int{4, 5, 6}, map[string]any{"g": "h"}}
+	argsOne := []queue.Arg{
+		{
+			Type:  "string",
+			Value: "a",
+		},
+		{
+			Type:  "int",
+			Value: 1,
+		},
+		{
+			Type:  "[]string",
+			Value: []string{"b", "c"},
+		},
+		{
+			Type:  "[]int",
+			Value: []int{1, 2, 3},
+		},
+	}
+	argsTwo := []queue.Arg{
+		{
+			Type:  "string",
+			Value: "a",
+		},
+		{
+			Type:  "int",
+			Value: 2,
+		},
+		{
+			Type:  "[]string",
+			Value: []string{"d", "f"},
+		},
+		{
+			Type:  "[]int",
+			Value: []int{4, 5, 6},
+		},
+	}
 
 	s.Equal(assert.AnError, s.app.Chain([]queue.Jobs{
 		{
@@ -97,7 +197,7 @@ func (s *SyncTestSuite) TestChainDispatchWithError() {
 		},
 	}).Dispatch())
 
-	s.Equal(argsOne, testJobOne)
+	s.Equal([]any{"a", 1, []string{"b", "c"}, []int{1, 2, 3}}, testJobOne)
 	s.Nil(testJobTwo)
 }
 

@@ -24,8 +24,13 @@ func (r *Sync) Driver() string {
 	return queue.DriverSync
 }
 
-func (r *Sync) Push(job queue.Job, args []any, _ string) error {
-	return job.Handle(args...)
+func (r *Sync) Push(job queue.Job, args []queue.Arg, _ string) error {
+	var realArgs []any
+	for _, arg := range args {
+		realArgs = append(realArgs, arg.Value)
+	}
+
+	return job.Handle(realArgs...)
 }
 
 func (r *Sync) Bulk(jobs []queue.Jobs, _ string) error {
@@ -33,7 +38,11 @@ func (r *Sync) Bulk(jobs []queue.Jobs, _ string) error {
 		if job.Delay != nil {
 			time.Sleep(time.Until(*job.Delay))
 		}
-		if err := job.Job.Handle(job.Args...); err != nil {
+		var realArgs []any
+		for _, arg := range job.Args {
+			realArgs = append(realArgs, arg.Value)
+		}
+		if err := job.Job.Handle(realArgs...); err != nil {
 			return err
 		}
 	}
@@ -41,12 +50,17 @@ func (r *Sync) Bulk(jobs []queue.Jobs, _ string) error {
 	return nil
 }
 
-func (r *Sync) Later(delay time.Time, job queue.Job, args []any, _ string) error {
+func (r *Sync) Later(delay time.Time, job queue.Job, args []queue.Arg, _ string) error {
+	var realArgs []any
+	for _, arg := range args {
+		realArgs = append(realArgs, arg.Value)
+	}
 	time.Sleep(time.Until(delay))
-	return job.Handle(args...)
+
+	return job.Handle(realArgs...)
 }
 
-func (r *Sync) Pop(_ string) (queue.Job, []any, error) {
+func (r *Sync) Pop(_ string) (queue.Job, []queue.Arg, error) {
 	// sync driver does not support pop
 	return nil, nil, nil
 }

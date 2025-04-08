@@ -174,7 +174,7 @@ func (_c *Queue_GetJobs_Call) RunAndReturn(run func() []queue.Job) *Queue_GetJob
 }
 
 // Job provides a mock function with given fields: job, args
-func (_m *Queue) Job(job queue.Job, args ...[]interface{}) queue.Task {
+func (_m *Queue) Job(job queue.Job, args ...[]queue.Arg) queue.Task {
 	_va := make([]interface{}, len(args))
 	for _i := range args {
 		_va[_i] = args[_i]
@@ -189,7 +189,7 @@ func (_m *Queue) Job(job queue.Job, args ...[]interface{}) queue.Task {
 	}
 
 	var r0 queue.Task
-	if rf, ok := ret.Get(0).(func(queue.Job, ...[]interface{}) queue.Task); ok {
+	if rf, ok := ret.Get(0).(func(queue.Job, ...[]queue.Arg) queue.Task); ok {
 		r0 = rf(job, args...)
 	} else {
 		if ret.Get(0) != nil {
@@ -207,18 +207,18 @@ type Queue_Job_Call struct {
 
 // Job is a helper method to define mock.On call
 //   - job queue.Job
-//   - args ...[]interface{}
+//   - args ...[]queue.Arg
 func (_e *Queue_Expecter) Job(job interface{}, args ...interface{}) *Queue_Job_Call {
 	return &Queue_Job_Call{Call: _e.mock.On("Job",
 		append([]interface{}{job}, args...)...)}
 }
 
-func (_c *Queue_Job_Call) Run(run func(job queue.Job, args ...[]interface{})) *Queue_Job_Call {
+func (_c *Queue_Job_Call) Run(run func(job queue.Job, args ...[]queue.Arg)) *Queue_Job_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([][]interface{}, len(args)-1)
+		variadicArgs := make([][]queue.Arg, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.([]interface{})
+				variadicArgs[i] = a.([]queue.Arg)
 			}
 		}
 		run(args[0].(queue.Job), variadicArgs...)
@@ -231,7 +231,7 @@ func (_c *Queue_Job_Call) Return(_a0 queue.Task) *Queue_Job_Call {
 	return _c
 }
 
-func (_c *Queue_Job_Call) RunAndReturn(run func(queue.Job, ...[]interface{}) queue.Task) *Queue_Job_Call {
+func (_c *Queue_Job_Call) RunAndReturn(run func(queue.Job, ...[]queue.Arg) queue.Task) *Queue_Job_Call {
 	_c.Call.Return(run)
 	return _c
 }

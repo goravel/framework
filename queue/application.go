@@ -31,7 +31,7 @@ func (r *Application) GetJobs() []queue.Job {
 	return r.job.All()
 }
 
-func (r *Application) Job(job queue.Job, args ...[]any) queue.Task {
+func (r *Application) Job(job queue.Job, args ...[]queue.Arg) queue.Task {
 	return NewTask(r.config, job, args...)
 }
 
