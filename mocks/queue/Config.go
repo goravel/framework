@@ -269,12 +269,12 @@ func (_c *Config_FailedJobsQuery_Call) RunAndReturn(run func() db.Query) *Config
 	return _c
 }
 
-// Queue provides a mock function with given fields: connection, _a1
-func (_m *Config) Queue(connection string, _a1 string) string {
+// QueueKey provides a mock function with given fields: connection, _a1
+func (_m *Config) QueueKey(connection string, _a1 string) string {
 	ret := _m.Called(connection, _a1)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Queue")
+		panic("no return value specified for QueueKey")
 	}
 
 	var r0 string
@@ -287,31 +287,31 @@ func (_m *Config) Queue(connection string, _a1 string) string {
 	return r0
 }
 
-// Config_Queue_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Queue'
-type Config_Queue_Call struct {
+// Config_QueueKey_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'QueueKey'
+type Config_QueueKey_Call struct {
 	*mock.Call
 }
 
-// Queue is a helper method to define mock.On call
+// QueueKey is a helper method to define mock.On call
 //   - connection string
 //   - _a1 string
-func (_e *Config_Expecter) Queue(connection interface{}, _a1 interface{}) *Config_Queue_Call {
-	return &Config_Queue_Call{Call: _e.mock.On("Queue", connection, _a1)}
+func (_e *Config_Expecter) QueueKey(connection interface{}, _a1 interface{}) *Config_QueueKey_Call {
+	return &Config_QueueKey_Call{Call: _e.mock.On("QueueKey", connection, _a1)}
 }
 
-func (_c *Config_Queue_Call) Run(run func(connection string, _a1 string)) *Config_Queue_Call {
+func (_c *Config_QueueKey_Call) Run(run func(connection string, _a1 string)) *Config_QueueKey_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string), args[1].(string))
 	})
 	return _c
 }
 
-func (_c *Config_Queue_Call) Return(_a0 string) *Config_Queue_Call {
+func (_c *Config_QueueKey_Call) Return(_a0 string) *Config_QueueKey_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Config_Queue_Call) RunAndReturn(run func(string, string) string) *Config_Queue_Call {
+func (_c *Config_QueueKey_Call) RunAndReturn(run func(string, string) string) *Config_QueueKey_Call {
 	_c.Call.Return(run)
 	return _c
 }

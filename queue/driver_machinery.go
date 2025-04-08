@@ -41,7 +41,7 @@ func NewMachinery(config config.Config, log contractslog.Log, jobs []queue.Job, 
 		appName = "goravel"
 	}
 
-	redisQueue := fmt.Sprintf("%s_%s:%s", appName, "queues", queue)
+	queueKey := fmt.Sprintf("%s_%s:%s", appName, "queues", queue)
 
 	var redisDSN string
 	if redisPassword == "" {
@@ -51,7 +51,7 @@ func NewMachinery(config config.Config, log contractslog.Log, jobs []queue.Job, 
 	}
 
 	machineryConfig := &machineryconfig.Config{
-		DefaultQueue: redisQueue,
+		DefaultQueue: queueKey,
 		Redis:        &machineryconfig.RedisConfig{},
 	}
 
@@ -76,8 +76,22 @@ func NewMachinery(config config.Config, log contractslog.Log, jobs []queue.Job, 
 	}
 }
 
+func (r *Machinery) ExistTasks() bool {
+	delayedTasks, err := r.broker.GetDelayedTasks()
+	if err != nil {
+		return false
+	}
+
+	pendingTasks, err := r.broker.GetPendingTasks(r.config.DefaultQueue)
+	if err != nil {
+		return false
+	}
+
+	return len(delayedTasks) > 0 || len(pendingTasks) > 0
+}
+
 func (r *Machinery) Run() (*machinery.Worker, error) {
-	server := machinery.NewServer(r.config, r.broker, r.backend, eager.New())
+	server := r.Server()
 
 	jobTasks, err := jobs2Tasks(r.jobs)
 	if err != nil {
@@ -102,18 +116,8 @@ func (r *Machinery) Run() (*machinery.Worker, error) {
 	return worker, nil
 }
 
-func (r *Machinery) ExistTasks() bool {
-	delayedTasks, err := r.broker.GetDelayedTasks()
-	if err != nil {
-		return false
-	}
-
-	pendingTasks, err := r.broker.GetPendingTasks(r.config.DefaultQueue)
-	if err != nil {
-		return false
-	}
-
-	return len(delayedTasks) > 0 || len(pendingTasks) > 0
+func (r *Machinery) Server() *machinery.Server {
+	return machinery.NewServer(r.config, r.broker, r.backend, eager.New())
 }
 
 func jobs2Tasks(jobs []queue.Job) (map[string]any, error) {

@@ -12,7 +12,7 @@ type Task struct {
 	chain      bool
 	delay      time.Time
 	jobs       []contractsqueue.Jobs
-	queue      string
+	queueKey   string
 }
 
 func NewTask(config contractsqueue.Config, job contractsqueue.Job, args ...[]any) *Task {
@@ -32,7 +32,7 @@ func NewTask(config contractsqueue.Config, job contractsqueue.Job, args ...[]any
 				Args: arg,
 			},
 		},
-		queue: config.Queue(connection, queue),
+		queueKey: config.QueueKey(connection, queue),
 	}
 }
 
@@ -44,7 +44,7 @@ func NewChainTask(config contractsqueue.Config, jobs []contractsqueue.Jobs) *Tas
 		connection: connection,
 		chain:      true,
 		jobs:       jobs,
-		queue:      config.Queue(connection, queue),
+		queueKey:   config.QueueKey(connection, queue),
 	}
 }
 
@@ -62,13 +62,13 @@ func (r *Task) Dispatch() error {
 	}
 
 	if r.chain {
-		return driver.Bulk(r.jobs, r.queue)
+		return driver.Bulk(r.jobs, r.queueKey)
 	} else {
 		job := r.jobs[0]
 		if !r.delay.IsZero() {
-			return driver.Later(r.delay, job.Job, job.Args, r.queue)
+			return driver.Later(r.delay, job.Job, job.Args, r.queueKey)
 		}
-		return driver.Push(job.Job, job.Args, r.queue)
+		return driver.Push(job.Job, job.Args, r.queueKey)
 	}
 }
 
@@ -95,6 +95,6 @@ func (r *Task) OnConnection(connection string) contractsqueue.Task {
 
 // OnQueue sets the queue name
 func (r *Task) OnQueue(queue string) contractsqueue.Task {
-	r.queue = r.config.Queue(r.connection, queue)
+	r.queueKey = r.config.QueueKey(r.connection, queue)
 	return r
 }
