@@ -11,11 +11,9 @@ import (
 	"github.com/goravel/framework/contracts/http"
 	contractsclient "github.com/goravel/framework/contracts/http/client"
 	"github.com/goravel/framework/contracts/log"
-	"github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/http/client"
 	"github.com/goravel/framework/http/console"
-	"github.com/goravel/framework/support/color"
 )
 
 type ServiceProvider struct{}
@@ -24,7 +22,6 @@ var (
 	CacheFacade       cache.Cache
 	ConfigFacade      config.Config
 	LogFacade         log.Log
-	ValidationFacade  validation.Validation
 	RateLimiterFacade http.RateLimiter
 	JsonFacade        foundation.Json
 )
@@ -77,11 +74,6 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 	JsonFacade = app.GetJson()
 	if JsonFacade == nil {
 		panic(errors.JSONParserNotSet.SetModule(errors.ModuleHttp))
-	}
-
-	ValidationFacade = app.MakeValidation()
-	if ValidationFacade == nil {
-		color.Errorln(errors.New("validation facade is not initialized").SetModule(errors.ModuleHttp))
 	}
 
 	r.registerCommands(app)
