@@ -443,6 +443,39 @@ func (_c *Route_Middleware_Call) RunAndReturn(run func(...http.Middleware) route
 	return _c
 }
 
+// NotAllowed provides a mock function with given fields: handler
+func (_m *Route) NotAllowed(handler http.HandlerFunc) {
+	_m.Called(handler)
+}
+
+// Route_NotAllowed_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'NotAllowed'
+type Route_NotAllowed_Call struct {
+	*mock.Call
+}
+
+// NotAllowed is a helper method to define mock.On call
+//   - handler http.HandlerFunc
+func (_e *Route_Expecter) NotAllowed(handler interface{}) *Route_NotAllowed_Call {
+	return &Route_NotAllowed_Call{Call: _e.mock.On("NotAllowed", handler)}
+}
+
+func (_c *Route_NotAllowed_Call) Run(run func(handler http.HandlerFunc)) *Route_NotAllowed_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(http.HandlerFunc))
+	})
+	return _c
+}
+
+func (_c *Route_NotAllowed_Call) Return() *Route_NotAllowed_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Route_NotAllowed_Call) RunAndReturn(run func(http.HandlerFunc)) *Route_NotAllowed_Call {
+	_c.Run(run)
+	return _c
+}
+
 // Options provides a mock function with given fields: relativePath, handler
 func (_m *Route) Options(relativePath string, handler http.HandlerFunc) {
 	_m.Called(relativePath, handler)
@@ -1052,64 +1085,6 @@ func (_c *Route_StaticFile_Call) Return() *Route_StaticFile_Call {
 
 func (_c *Route_StaticFile_Call) RunAndReturn(run func(string, string)) *Route_StaticFile_Call {
 	_c.Run(run)
-	return _c
-}
-
-// Test provides a mock function with given fields: request
-func (_m *Route) Test(request *nethttp.Request) (*nethttp.Response, error) {
-	ret := _m.Called(request)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Test")
-	}
-
-	var r0 *nethttp.Response
-	var r1 error
-	if rf, ok := ret.Get(0).(func(*nethttp.Request) (*nethttp.Response, error)); ok {
-		return rf(request)
-	}
-	if rf, ok := ret.Get(0).(func(*nethttp.Request) *nethttp.Response); ok {
-		r0 = rf(request)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*nethttp.Response)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(*nethttp.Request) error); ok {
-		r1 = rf(request)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// Route_Test_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Test'
-type Route_Test_Call struct {
-	*mock.Call
-}
-
-// Test is a helper method to define mock.On call
-//   - request *nethttp.Request
-func (_e *Route_Expecter) Test(request interface{}) *Route_Test_Call {
-	return &Route_Test_Call{Call: _e.mock.On("Test", request)}
-}
-
-func (_c *Route_Test_Call) Run(run func(request *nethttp.Request)) *Route_Test_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*nethttp.Request))
-	})
-	return _c
-}
-
-func (_c *Route_Test_Call) Return(_a0 *nethttp.Response, _a1 error) *Route_Test_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *Route_Test_Call) RunAndReturn(run func(*nethttp.Request) (*nethttp.Response, error)) *Route_Test_Call {
-	_c.Call.Return(run)
 	return _c
 }
 
