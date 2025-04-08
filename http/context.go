@@ -2,32 +2,23 @@ package http
 
 import (
 	"context"
-	nethttp "net/http"
-	"net/http/httptest"
 
 	"github.com/goravel/framework/contracts/http"
 )
 
 func Background() http.Context {
-	r := httptest.NewRequest("GET", "/", nil)
-	w := httptest.NewRecorder()
-	return NewContext(r, w)
+	return NewContext()
 }
 
 type Ctx context.Context
 
-// Context represents an HTTP request/response context
 type Context struct {
 	Ctx
-	r *nethttp.Request
-	w nethttp.ResponseWriter
 }
 
-func NewContext(r *nethttp.Request, w nethttp.ResponseWriter) *Context {
+func NewContext() *Context {
 	return &Context{
-		Ctx: Ctx(r.Context()),
-		r:   r,
-		w:   w,
+		Ctx: context.Background(),
 	}
 }
 
@@ -46,11 +37,9 @@ func (c *Context) WithValue(key any, value any) {
 }
 
 func (c *Context) Request() http.ContextRequest {
-	return NewContextRequest(c, LogFacade, ValidationFacade)
+	return nil
 }
 
 func (c *Context) Response() http.ContextResponse {
-	return NewContextResponse(c.w, c.r, &ResponseOrigin{
-		ResponseWriter: c.w,
-	})
+	return nil
 }
