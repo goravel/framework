@@ -13,10 +13,10 @@ func SetTestNow(testTime Carbon) {
 	carbon.SetTestNow(testTime)
 }
 
-// Deprecated: it will be deprecated in the future, please use 'CleanTestNow' instead
 // UnsetTestNow Unset the test time.
+// Deprecated: it will be deprecated in the future, please use 'CleanTestNow' instead
 func UnsetTestNow() {
-	carbon.CleanTestNow()
+	CleanTestNow()
 }
 
 // CleanTestNow clean the test time.
