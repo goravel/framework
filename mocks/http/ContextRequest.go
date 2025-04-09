@@ -28,52 +28,6 @@ func (_m *ContextRequest) EXPECT() *ContextRequest_Expecter {
 	return &ContextRequest_Expecter{mock: &_m.Mock}
 }
 
-// Abort provides a mock function with given fields: code
-func (_m *ContextRequest) Abort(code ...int) {
-	_va := make([]interface{}, len(code))
-	for _i := range code {
-		_va[_i] = code[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, _va...)
-	_m.Called(_ca...)
-}
-
-// ContextRequest_Abort_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Abort'
-type ContextRequest_Abort_Call struct {
-	*mock.Call
-}
-
-// Abort is a helper method to define mock.On call
-//   - code ...int
-func (_e *ContextRequest_Expecter) Abort(code ...interface{}) *ContextRequest_Abort_Call {
-	return &ContextRequest_Abort_Call{Call: _e.mock.On("Abort",
-		append([]interface{}{}, code...)...)}
-}
-
-func (_c *ContextRequest_Abort_Call) Run(run func(code ...int)) *ContextRequest_Abort_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]int, len(args)-0)
-		for i, a := range args[0:] {
-			if a != nil {
-				variadicArgs[i] = a.(int)
-			}
-		}
-		run(variadicArgs...)
-	})
-	return _c
-}
-
-func (_c *ContextRequest_Abort_Call) Return() *ContextRequest_Abort_Call {
-	_c.Call.Return()
-	return _c
-}
-
-func (_c *ContextRequest_Abort_Call) RunAndReturn(run func(...int)) *ContextRequest_Abort_Call {
-	_c.Run(run)
-	return _c
-}
-
 // All provides a mock function with no fields
 func (_m *ContextRequest) All() map[string]interface{} {
 	ret := _m.Called()
