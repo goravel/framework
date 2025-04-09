@@ -190,13 +190,6 @@ func (r *TestRequest) SetSession(session contractsession.Session) contractshttp.
 	return r
 }
 
-func (r *TestRequest) Abort(code ...int) {
-}
-
-func (r *TestRequest) Next() {
-	r.ctx.next.ServeHTTP(r.ctx.writer, r.ctx.request)
-}
-
 type TestResponse struct {
 	contractshttp.ContextResponse
 	ctx *TestContext

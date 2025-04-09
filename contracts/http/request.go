@@ -74,8 +74,6 @@ type ContextRequest interface {
 	File(name string) (filesystem.File, error)
 	Files(name string) ([]filesystem.File, error)
 
-	// Abort aborts the request with the specified HTTP status code, default is 400.
-	Abort(code ...int)
 	// Origin retrieves the underlying *http.Request object for advanced request handling.
 	Origin() *http.Request
 

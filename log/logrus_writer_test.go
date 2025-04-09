@@ -643,11 +643,6 @@ func (r *TestRequest) All() map[string]any {
 	}
 }
 
-func (r *TestRequest) Abort(code ...int) {
-}
-
-func (r *TestRequest) Next() {}
-
 type TestResponse struct {
 	contractshttp.ContextResponse
 }
