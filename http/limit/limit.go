@@ -37,7 +37,7 @@ type Limit struct {
 	// The store instance.
 	Store contractshttp.Store
 	// The response generator callback.
-	ResponseCallback func(ctx contractshttp.Context)
+	ResponseCallback contractshttp.HandlerFunc
 }
 
 func NewLimit(maxAttempts, decayMinutes int) *Limit {
@@ -45,8 +45,8 @@ func NewLimit(maxAttempts, decayMinutes int) *Limit {
 
 	return &Limit{
 		Store: instance,
-		ResponseCallback: func(ctx contractshttp.Context) {
-			ctx.Request().Abort(contractshttp.StatusTooManyRequests)
+		ResponseCallback: func(ctx contractshttp.Context) error {
+			return ctx.Response().Status(contractshttp.StatusTooManyRequests).String(contractshttp.StatusText(contractshttp.StatusTooManyRequests))
 		},
 	}
 }
@@ -57,8 +57,8 @@ func (r *Limit) By(key string) contractshttp.Limit {
 	return r
 }
 
-func (r *Limit) Response(callable func(ctx contractshttp.Context)) contractshttp.Limit {
-	r.ResponseCallback = callable
+func (r *Limit) Response(callback contractshttp.HandlerFunc) contractshttp.Limit {
+	r.ResponseCallback = callback
 
 	return r
 }

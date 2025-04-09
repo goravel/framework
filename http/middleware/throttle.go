@@ -69,8 +69,5 @@ func key(ctx httpcontract.Context, limit *httplimit.Limit, name string, index in
 }
 
 func response(ctx httpcontract.Context, limit *httplimit.Limit) error {
-	if limit.ResponseCallback != nil {
-		limit.ResponseCallback(ctx)
-	}
-	return ctx.Response().Status(httpcontract.StatusTooManyRequests).String(httpcontract.StatusText(httpcontract.StatusTooManyRequests))
+	return limit.ResponseCallback(ctx)
 }
