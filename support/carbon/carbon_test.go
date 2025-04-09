@@ -168,3 +168,81 @@ func TestErrorTime(t *testing.T) {
 	assert.NotNil(t, FromTimestampMicro(timestamp, timezone).Error, "It should catch an exception in CreateFromTimestampMicro()")
 	assert.NotNil(t, FromTimestampNano(timestamp, timezone).Error, "It should catch an exception in CreateFromTimestampNano()")
 }
+
+func TestParseWithLayouts(t *testing.T) {
+	t.Run("empty time", func(t *testing.T) {
+		assert.Empty(t, ParseWithLayouts("", []string{DateTimeLayout}).ToString())
+	})
+
+	t.Run("invalid time", func(t *testing.T) {
+		assert.True(t, ParseWithLayouts("0", []string{DateTimeLayout}).HasError())
+		assert.True(t, ParseWithLayouts("xxx", []string{DateTimeLayout}).HasError())
+
+		assert.Empty(t, ParseWithLayouts("0", []string{DateTimeLayout}).ToString())
+		assert.Empty(t, ParseWithLayouts("xxx", []string{DateTimeLayout}).ToString())
+	})
+
+	t.Run("empty layouts", func(t *testing.T) {
+		assert.Equal(t, "2020-08-05 13:14:15 +0000 UTC", ParseWithLayouts("2020-08-05 13:14:15", []string{}).ToString())
+		assert.Equal(t, "2006-01-02 15:04:05", ParseWithLayouts("2020-08-05 13:14:15", []string{}).CurrentLayout())
+	})
+
+	t.Run("invalid timezone", func(t *testing.T) {
+		assert.True(t, ParseWithLayouts("2020-08-05 13:14:15", []string{DateLayout}, "").HasError())
+		assert.True(t, ParseWithLayouts("2020-08-05 13:14:15", []string{DateLayout}, "xxx").HasError())
+
+		assert.Empty(t, ParseWithLayouts("2020-08-05 13:14:15", []string{DateLayout}, "").ToString())
+		assert.Empty(t, ParseWithLayouts("2020-08-05 13:14:15", []string{DateLayout}, "xxx").ToString())
+	})
+
+	t.Run("without timezone", func(t *testing.T) {
+		c := ParseWithLayouts("2020|08|05 13|14|15", []string{"2006|01|02 15|04|05", "2006|1|2 3|4|5"})
+		assert.Equal(t, "2020-08-05 13:14:15 +0000 UTC", c.ToString())
+		assert.Equal(t, "2006|01|02 15|04|05", c.CurrentLayout())
+	})
+
+	t.Run("with timezone", func(t *testing.T) {
+		c := ParseWithLayouts("2020|08|05 13|14|15", []string{"2006|01|02 15|04|05", "2006|1|2 3|4|5"}, PRC)
+		assert.Equal(t, "2020-08-05 13:14:15 +0800 CST", c.ToString())
+		assert.Equal(t, "2006|01|02 15|04|05", c.CurrentLayout())
+	})
+}
+
+func TestParseWithFormats(t *testing.T) {
+	t.Run("empty time", func(t *testing.T) {
+		assert.Empty(t, ParseWithFormats("", []string{DateTimeFormat}).ToString())
+	})
+
+	t.Run("invalid time", func(t *testing.T) {
+		assert.True(t, ParseWithFormats("0", []string{DateTimeLayout}).HasError())
+		assert.True(t, ParseWithFormats("xxx", []string{DateTimeLayout}).HasError())
+
+		assert.Empty(t, ParseWithFormats("0", []string{DateTimeLayout}).ToString())
+		assert.Empty(t, ParseWithFormats("xxx", []string{DateTimeLayout}).ToString())
+	})
+
+	t.Run("empty layouts", func(t *testing.T) {
+		assert.Equal(t, "2020-08-05 13:14:15 +0000 UTC", ParseWithFormats("2020-08-05 13:14:15", []string{}).ToString())
+		assert.Equal(t, "2006-01-02 15:04:05", ParseWithFormats("2020-08-05 13:14:15", []string{}).CurrentLayout())
+	})
+
+	t.Run("invalid timezone", func(t *testing.T) {
+		assert.True(t, ParseWithFormats("2020-08-05 13:14:15", []string{DateFormat}, "").HasError())
+		assert.True(t, ParseWithFormats("2020-08-05 13:14:15", []string{DateFormat}, "xxx").HasError())
+
+		assert.Empty(t, ParseWithFormats("2020-08-05 13:14:15", []string{DateFormat}, "").ToString())
+		assert.Empty(t, ParseWithFormats("2020-08-05 13:14:15", []string{DateFormat}, "xxx").ToString())
+	})
+
+	t.Run("without timezone", func(t *testing.T) {
+		c := ParseWithFormats("2020|08|05 13|14|15", []string{"Y|m|d H|i|s", "y|m|d h|i|s"})
+		assert.Equal(t, "2020-08-05 13:14:15 +0000 UTC", c.ToString())
+		assert.Equal(t, "2006|01|02 15|04|05", c.CurrentLayout())
+	})
+
+	t.Run("with timezone", func(t *testing.T) {
+		c := ParseWithFormats("2020|08|05 13|14|15", []string{"Y|m|d H|i|s", "y|m|d h|i|s"}, PRC)
+		assert.Equal(t, "2020-08-05 13:14:15 +0800 CST", c.ToString())
+		assert.Equal(t, "2006|01|02 15|04|05", c.CurrentLayout())
+	})
+}
