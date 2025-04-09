@@ -68,17 +68,17 @@ func (_c *Limit_By_Call) RunAndReturn(run func(string) http.Limit) *Limit_By_Cal
 	return _c
 }
 
-// Response provides a mock function with given fields: _a0
-func (_m *Limit) Response(_a0 func(http.Context)) http.Limit {
-	ret := _m.Called(_a0)
+// Response provides a mock function with given fields: callback
+func (_m *Limit) Response(callback http.HandlerFunc) http.Limit {
+	ret := _m.Called(callback)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Response")
 	}
 
 	var r0 http.Limit
-	if rf, ok := ret.Get(0).(func(func(http.Context)) http.Limit); ok {
-		r0 = rf(_a0)
+	if rf, ok := ret.Get(0).(func(http.HandlerFunc) http.Limit); ok {
+		r0 = rf(callback)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(http.Limit)
@@ -94,14 +94,14 @@ type Limit_Response_Call struct {
 }
 
 // Response is a helper method to define mock.On call
-//   - _a0 func(http.Context)
-func (_e *Limit_Expecter) Response(_a0 interface{}) *Limit_Response_Call {
-	return &Limit_Response_Call{Call: _e.mock.On("Response", _a0)}
+//   - callback http.HandlerFunc
+func (_e *Limit_Expecter) Response(callback interface{}) *Limit_Response_Call {
+	return &Limit_Response_Call{Call: _e.mock.On("Response", callback)}
 }
 
-func (_c *Limit_Response_Call) Run(run func(_a0 func(http.Context))) *Limit_Response_Call {
+func (_c *Limit_Response_Call) Run(run func(callback http.HandlerFunc)) *Limit_Response_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(func(http.Context)))
+		run(args[0].(http.HandlerFunc))
 	})
 	return _c
 }
@@ -111,7 +111,7 @@ func (_c *Limit_Response_Call) Return(_a0 http.Limit) *Limit_Response_Call {
 	return _c
 }
 
-func (_c *Limit_Response_Call) RunAndReturn(run func(func(http.Context)) http.Limit) *Limit_Response_Call {
+func (_c *Limit_Response_Call) RunAndReturn(run func(http.HandlerFunc) http.Limit) *Limit_Response_Call {
 	_c.Call.Return(run)
 	return _c
 }
