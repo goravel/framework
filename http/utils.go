@@ -37,27 +37,3 @@ func HTTPMiddlewareToMiddleware(mw func(nethttp.Handler) nethttp.Handler) http.M
 		})
 	}
 }
-
-// HandlerToHTTPHandler converts a Goravel http.Handler to a net/http Handler
-func HandlerToHTTPHandler(h http.Handler) nethttp.Handler {
-	return nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
-		if err := h.ServeHTTP(NewContext(r, w)).Render(); err != nil {
-			// Handle the error
-			w.WriteHeader(nethttp.StatusInternalServerError)
-			_, _ = w.Write([]byte(err.Error()))
-		}
-	})
-}
-
-// MiddlewareToHTTPMiddleware converts a Goravel http.Middleware to a net/http middleware
-func MiddlewareToHTTPMiddleware(mw http.Middleware) func(nethttp.Handler) nethttp.Handler {
-	return func(next nethttp.Handler) nethttp.Handler {
-		return nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
-			nextHandler := http.HandlerFunc(func(ctx http.Context) http.Response {
-				next.ServeHTTP(w, r)
-				return nil
-			})
-			mw(nextHandler).ServeHTTP(NewContext(r, w))
-		})
-	}
-}

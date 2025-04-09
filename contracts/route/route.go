@@ -36,6 +36,8 @@ type Route interface {
 	ServeHTTP(writer http.ResponseWriter, request *http.Request)
 	// Shutdown gracefully stop the serve.
 	Shutdown(ctx ...context.Context) error
+	// Test method to simulate HTTP requests.
+	Test(request *http.Request) (*http.Response, error)
 }
 
 type Router interface {
