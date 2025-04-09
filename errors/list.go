@@ -139,6 +139,6 @@ var (
 	ValidationEmptyData       = New("data can't be empty")
 	ValidationEmptyRules      = New("rules can't be empty")
 
-	CarbonFailedScan       = New("failed to scan %s as carbon")
+	CarbonFailedScan       = New("failed to scan %v as carbon")
 	CarbonInvalidTimestamp = New("invalid timestamp %v")
 )
