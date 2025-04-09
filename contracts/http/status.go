@@ -5,8 +5,6 @@ import (
 )
 
 const (
-	DefaultAbortStatus = http.StatusBadRequest
-
 	StatusContinue           = http.StatusContinue
 	StatusSwitchingProtocols = http.StatusSwitchingProtocols
 	StatusProcessing         = http.StatusProcessing
