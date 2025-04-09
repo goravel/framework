@@ -20,13 +20,6 @@ import (
 	"github.com/goravel/framework/support/file"
 )
 
-func testHttpSessionMiddleware(next nethttp.Handler, mockConfig *configmocks.Config) nethttp.Handler {
-	return nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
-		mockConfigFacade(mockConfig)
-		StartSession()(http.HTTPHandlerToHandler(next)).ServeHTTP(NewTestContext(r.Context(), next, w, r))
-	})
-}
-
 func mockConfigFacade(mockConfig *configmocks.Config) {
 	mockConfig.On("GetString", "session.driver").Return("file").Twice()
 	mockConfig.On("GetInt", "session.lifetime").Return(60).Once()
@@ -45,7 +38,16 @@ func TestStartSession(t *testing.T) {
 	mockConfig.On("GetInt", "session.gc_interval", 30).Return(30).Once()
 	mockConfig.On("GetString", "session.files").Return("storage/framework/sessions").Once()
 	session.SessionFacade = session.NewManager(mockConfig, json.NewJson())
-	server := httptest.NewServer(testHttpSessionMiddleware(nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
+
+	httpSessionMiddleware := func(next nethttp.Handler, mockConfig *configmocks.Config) nethttp.Handler {
+		return nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
+			mockConfigFacade(mockConfig)
+			err := StartSession()(http.HTTPHandlerToHandler(next)).ServeHTTP(NewTestContext(r.Context(), next, w, r))
+			assert.NoError(t, err)
+		})
+	}
+
+	server := httptest.NewServer(httpSessionMiddleware(nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
 		switch r.URL.Path {
 		case "/add":
 			s := r.Context().Value("session").(contractsession.Session)
