@@ -53,6 +53,18 @@ func TestNow(t *testing.T) {
 	assert.Equal(t, shanghaiNow.SubHours(8).ToDateTimeString(), utcNow.ToDateTimeString())
 }
 
+func TestCleanTestNow(t *testing.T) {
+	now := Parse("2020-08-05")
+
+	SetTestNow(now)
+	assert.Equal(t, "2020-08-05", Now().ToDateString())
+	assert.True(t, IsTestNow())
+
+	CleanTestNow()
+	assert.Equal(t, stdtime.Now().In(stdtime.UTC).Format(DateTimeLayout), Now().ToDateTimeString())
+	assert.False(t, IsTestNow())
+}
+
 func TestParse(t *testing.T) {
 	time := Parse("2020-01-01 00:00:00", carbon.UTC)
 	assert.Equal(t, "2020-01-01 00:00:00", time.ToDateTimeString(carbon.UTC))
