@@ -21,20 +21,18 @@ func (_m *ResourceController) EXPECT() *ResourceController_Expecter {
 }
 
 // Destroy provides a mock function with given fields: _a0
-func (_m *ResourceController) Destroy(_a0 http.Context) http.Response {
+func (_m *ResourceController) Destroy(_a0 http.Context) error {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Destroy")
 	}
 
-	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(http.Context) http.Response); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func(http.Context) error); ok {
 		r0 = rf(_a0)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.Response)
-		}
+		r0 = ret.Error(0)
 	}
 
 	return r0
@@ -58,31 +56,29 @@ func (_c *ResourceController_Destroy_Call) Run(run func(_a0 http.Context)) *Reso
 	return _c
 }
 
-func (_c *ResourceController_Destroy_Call) Return(_a0 http.Response) *ResourceController_Destroy_Call {
+func (_c *ResourceController_Destroy_Call) Return(_a0 error) *ResourceController_Destroy_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ResourceController_Destroy_Call) RunAndReturn(run func(http.Context) http.Response) *ResourceController_Destroy_Call {
+func (_c *ResourceController_Destroy_Call) RunAndReturn(run func(http.Context) error) *ResourceController_Destroy_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Index provides a mock function with given fields: _a0
-func (_m *ResourceController) Index(_a0 http.Context) http.Response {
+func (_m *ResourceController) Index(_a0 http.Context) error {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Index")
 	}
 
-	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(http.Context) http.Response); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func(http.Context) error); ok {
 		r0 = rf(_a0)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.Response)
-		}
+		r0 = ret.Error(0)
 	}
 
 	return r0
@@ -106,31 +102,29 @@ func (_c *ResourceController_Index_Call) Run(run func(_a0 http.Context)) *Resour
 	return _c
 }
 
-func (_c *ResourceController_Index_Call) Return(_a0 http.Response) *ResourceController_Index_Call {
+func (_c *ResourceController_Index_Call) Return(_a0 error) *ResourceController_Index_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ResourceController_Index_Call) RunAndReturn(run func(http.Context) http.Response) *ResourceController_Index_Call {
+func (_c *ResourceController_Index_Call) RunAndReturn(run func(http.Context) error) *ResourceController_Index_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Show provides a mock function with given fields: _a0
-func (_m *ResourceController) Show(_a0 http.Context) http.Response {
+func (_m *ResourceController) Show(_a0 http.Context) error {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Show")
 	}
 
-	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(http.Context) http.Response); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func(http.Context) error); ok {
 		r0 = rf(_a0)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.Response)
-		}
+		r0 = ret.Error(0)
 	}
 
 	return r0
@@ -154,31 +148,29 @@ func (_c *ResourceController_Show_Call) Run(run func(_a0 http.Context)) *Resourc
 	return _c
 }
 
-func (_c *ResourceController_Show_Call) Return(_a0 http.Response) *ResourceController_Show_Call {
+func (_c *ResourceController_Show_Call) Return(_a0 error) *ResourceController_Show_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ResourceController_Show_Call) RunAndReturn(run func(http.Context) http.Response) *ResourceController_Show_Call {
+func (_c *ResourceController_Show_Call) RunAndReturn(run func(http.Context) error) *ResourceController_Show_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Store provides a mock function with given fields: _a0
-func (_m *ResourceController) Store(_a0 http.Context) http.Response {
+func (_m *ResourceController) Store(_a0 http.Context) error {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Store")
 	}
 
-	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(http.Context) http.Response); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func(http.Context) error); ok {
 		r0 = rf(_a0)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.Response)
-		}
+		r0 = ret.Error(0)
 	}
 
 	return r0
@@ -202,31 +194,29 @@ func (_c *ResourceController_Store_Call) Run(run func(_a0 http.Context)) *Resour
 	return _c
 }
 
-func (_c *ResourceController_Store_Call) Return(_a0 http.Response) *ResourceController_Store_Call {
+func (_c *ResourceController_Store_Call) Return(_a0 error) *ResourceController_Store_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ResourceController_Store_Call) RunAndReturn(run func(http.Context) http.Response) *ResourceController_Store_Call {
+func (_c *ResourceController_Store_Call) RunAndReturn(run func(http.Context) error) *ResourceController_Store_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Update provides a mock function with given fields: _a0
-func (_m *ResourceController) Update(_a0 http.Context) http.Response {
+func (_m *ResourceController) Update(_a0 http.Context) error {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Update")
 	}
 
-	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(http.Context) http.Response); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func(http.Context) error); ok {
 		r0 = rf(_a0)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.Response)
-		}
+		r0 = ret.Error(0)
 	}
 
 	return r0
@@ -250,12 +240,12 @@ func (_c *ResourceController_Update_Call) Run(run func(_a0 http.Context)) *Resou
 	return _c
 }
 
-func (_c *ResourceController_Update_Call) Return(_a0 http.Response) *ResourceController_Update_Call {
+func (_c *ResourceController_Update_Call) Return(_a0 error) *ResourceController_Update_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ResourceController_Update_Call) RunAndReturn(run func(http.Context) http.Response) *ResourceController_Update_Call {
+func (_c *ResourceController_Update_Call) RunAndReturn(run func(http.Context) error) *ResourceController_Update_Call {
 	_c.Call.Return(run)
 	return _c
 }

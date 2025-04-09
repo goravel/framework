@@ -21,20 +21,18 @@ func (_m *ResponseStatus) EXPECT() *ResponseStatus_Expecter {
 }
 
 // Data provides a mock function with given fields: contentType, data
-func (_m *ResponseStatus) Data(contentType string, data []byte) http.AbortableResponse {
+func (_m *ResponseStatus) Data(contentType string, data []byte) error {
 	ret := _m.Called(contentType, data)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Data")
 	}
 
-	var r0 http.AbortableResponse
-	if rf, ok := ret.Get(0).(func(string, []byte) http.AbortableResponse); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, []byte) error); ok {
 		r0 = rf(contentType, data)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.AbortableResponse)
-		}
+		r0 = ret.Error(0)
 	}
 
 	return r0
@@ -59,31 +57,29 @@ func (_c *ResponseStatus_Data_Call) Run(run func(contentType string, data []byte
 	return _c
 }
 
-func (_c *ResponseStatus_Data_Call) Return(_a0 http.AbortableResponse) *ResponseStatus_Data_Call {
+func (_c *ResponseStatus_Data_Call) Return(_a0 error) *ResponseStatus_Data_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ResponseStatus_Data_Call) RunAndReturn(run func(string, []byte) http.AbortableResponse) *ResponseStatus_Data_Call {
+func (_c *ResponseStatus_Data_Call) RunAndReturn(run func(string, []byte) error) *ResponseStatus_Data_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Json provides a mock function with given fields: obj
-func (_m *ResponseStatus) Json(obj interface{}) http.AbortableResponse {
+func (_m *ResponseStatus) Json(obj interface{}) error {
 	ret := _m.Called(obj)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Json")
 	}
 
-	var r0 http.AbortableResponse
-	if rf, ok := ret.Get(0).(func(interface{}) http.AbortableResponse); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func(interface{}) error); ok {
 		r0 = rf(obj)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.AbortableResponse)
-		}
+		r0 = ret.Error(0)
 	}
 
 	return r0
@@ -107,31 +103,29 @@ func (_c *ResponseStatus_Json_Call) Run(run func(obj interface{})) *ResponseStat
 	return _c
 }
 
-func (_c *ResponseStatus_Json_Call) Return(_a0 http.AbortableResponse) *ResponseStatus_Json_Call {
+func (_c *ResponseStatus_Json_Call) Return(_a0 error) *ResponseStatus_Json_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ResponseStatus_Json_Call) RunAndReturn(run func(interface{}) http.AbortableResponse) *ResponseStatus_Json_Call {
+func (_c *ResponseStatus_Json_Call) RunAndReturn(run func(interface{}) error) *ResponseStatus_Json_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Stream provides a mock function with given fields: step
-func (_m *ResponseStatus) Stream(step func(http.StreamWriter) error) http.Response {
+func (_m *ResponseStatus) Stream(step func(http.StreamWriter) error) error {
 	ret := _m.Called(step)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Stream")
 	}
 
-	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(func(http.StreamWriter) error) http.Response); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func(func(http.StreamWriter) error) error); ok {
 		r0 = rf(step)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.Response)
-		}
+		r0 = ret.Error(0)
 	}
 
 	return r0
@@ -155,18 +149,18 @@ func (_c *ResponseStatus_Stream_Call) Run(run func(step func(http.StreamWriter) 
 	return _c
 }
 
-func (_c *ResponseStatus_Stream_Call) Return(_a0 http.Response) *ResponseStatus_Stream_Call {
+func (_c *ResponseStatus_Stream_Call) Return(_a0 error) *ResponseStatus_Stream_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ResponseStatus_Stream_Call) RunAndReturn(run func(func(http.StreamWriter) error) http.Response) *ResponseStatus_Stream_Call {
+func (_c *ResponseStatus_Stream_Call) RunAndReturn(run func(func(http.StreamWriter) error) error) *ResponseStatus_Stream_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // String provides a mock function with given fields: format, values
-func (_m *ResponseStatus) String(format string, values ...interface{}) http.AbortableResponse {
+func (_m *ResponseStatus) String(format string, values ...interface{}) error {
 	var _ca []interface{}
 	_ca = append(_ca, format)
 	_ca = append(_ca, values...)
@@ -176,13 +170,11 @@ func (_m *ResponseStatus) String(format string, values ...interface{}) http.Abor
 		panic("no return value specified for String")
 	}
 
-	var r0 http.AbortableResponse
-	if rf, ok := ret.Get(0).(func(string, ...interface{}) http.AbortableResponse); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) error); ok {
 		r0 = rf(format, values...)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.AbortableResponse)
-		}
+		r0 = ret.Error(0)
 	}
 
 	return r0
@@ -214,12 +206,12 @@ func (_c *ResponseStatus_String_Call) Run(run func(format string, values ...inte
 	return _c
 }
 
-func (_c *ResponseStatus_String_Call) Return(_a0 http.AbortableResponse) *ResponseStatus_String_Call {
+func (_c *ResponseStatus_String_Call) Return(_a0 error) *ResponseStatus_String_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ResponseStatus_String_Call) RunAndReturn(run func(string, ...interface{}) http.AbortableResponse) *ResponseStatus_String_Call {
+func (_c *ResponseStatus_String_Call) RunAndReturn(run func(string, ...interface{}) error) *ResponseStatus_String_Call {
 	_c.Call.Return(run)
 	return _c
 }

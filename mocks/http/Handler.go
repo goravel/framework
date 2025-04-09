@@ -21,20 +21,18 @@ func (_m *Handler) EXPECT() *Handler_Expecter {
 }
 
 // ServeHTTP provides a mock function with given fields: ctx
-func (_m *Handler) ServeHTTP(ctx http.Context) http.Response {
+func (_m *Handler) ServeHTTP(ctx http.Context) error {
 	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ServeHTTP")
 	}
 
-	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(http.Context) http.Response); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func(http.Context) error); ok {
 		r0 = rf(ctx)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.Response)
-		}
+		r0 = ret.Error(0)
 	}
 
 	return r0
@@ -58,12 +56,12 @@ func (_c *Handler_ServeHTTP_Call) Run(run func(ctx http.Context)) *Handler_Serve
 	return _c
 }
 
-func (_c *Handler_ServeHTTP_Call) Return(_a0 http.Response) *Handler_ServeHTTP_Call {
+func (_c *Handler_ServeHTTP_Call) Return(_a0 error) *Handler_ServeHTTP_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Handler_ServeHTTP_Call) RunAndReturn(run func(http.Context) http.Response) *Handler_ServeHTTP_Call {
+func (_c *Handler_ServeHTTP_Call) RunAndReturn(run func(http.Context) error) *Handler_ServeHTTP_Call {
 	_c.Call.Return(run)
 	return _c
 }
