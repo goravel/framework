@@ -5,6 +5,8 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"time"
+
+	"github.com/goravel/framework/errors"
 )
 
 // TimeMilli defines a TimeMilli struct.
@@ -33,7 +35,7 @@ func (t *TimeMilli) Scan(src any) error {
 	case int64:
 		c = FromTimestamp(v, DefaultTimezone)
 	default:
-		return failedScanError(v)
+		return errors.CarbonInvalidTimestamp
 	}
 	if c.Error == nil {
 		*t = NewTimeMilli(c)

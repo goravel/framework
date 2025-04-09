@@ -5,6 +5,8 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"time"
+
+	"github.com/goravel/framework/errors"
 )
 
 // DateTime defines a DateTime struct.
@@ -33,7 +35,7 @@ func (t *DateTime) Scan(src interface{}) error {
 	case int64:
 		c = FromTimestamp(v, DefaultTimezone)
 	default:
-		return failedScanError(v)
+		return errors.CarbonFailedScan
 	}
 	if c.Error == nil {
 		*t = NewDateTime(c)

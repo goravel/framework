@@ -5,6 +5,8 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"time"
+
+	"github.com/goravel/framework/errors"
 )
 
 // TimeNano defines a TimeNano struct.
@@ -33,7 +35,7 @@ func (t *TimeNano) Scan(src any) error {
 	case int64:
 		c = FromTimestamp(v, DefaultTimezone)
 	default:
-		return failedScanError(v)
+		return errors.CarbonInvalidTimestamp
 	}
 	if c.Error == nil {
 		*t = NewTimeNano(c)

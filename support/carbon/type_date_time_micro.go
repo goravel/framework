@@ -5,6 +5,8 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"time"
+
+	"github.com/goravel/framework/errors"
 )
 
 // DateTimeMicro defines a DateTimeMicro struct.
@@ -33,7 +35,7 @@ func (t *DateTimeMicro) Scan(src interface{}) error {
 	case int64:
 		c = FromTimestamp(v, DefaultTimezone)
 	default:
-		return failedScanError(v)
+		return errors.CarbonFailedScan
 	}
 	if c.Error == nil {
 		*t = NewDateTimeMicro(c)

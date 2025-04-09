@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strconv"
 	"time"
+
+	"github.com/goravel/framework/errors"
 )
 
 // TimestampMicro defines a TimestampMicro struct.
@@ -28,12 +30,12 @@ func (t *TimestampMicro) Scan(src interface{}) (err error) {
 	case []byte:
 		ts, err = strconv.ParseInt(string(v), 10, 64)
 		if err != nil {
-			return invalidTimestampError(string(v))
+			return errors.CarbonInvalidTimestamp
 		}
 	case string:
 		ts, err = strconv.ParseInt(v, 10, 64)
 		if err != nil {
-			return invalidTimestampError(v)
+			return errors.CarbonInvalidTimestamp
 		}
 	case int64:
 		ts = v
@@ -41,7 +43,7 @@ func (t *TimestampMicro) Scan(src interface{}) (err error) {
 		*t = NewTimestampMicro(FromStdTime(v, DefaultTimezone))
 		return t.Error
 	default:
-		return failedScanError(src)
+		return errors.CarbonInvalidTimestamp
 	}
 	*t = NewTimestampMicro(FromTimestampMicro(ts, DefaultTimezone))
 	return t.Error
@@ -82,7 +84,7 @@ func (t *TimestampMicro) UnmarshalJSON(b []byte) error {
 	}
 	ts, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
-		return invalidTimestampError(value)
+		return errors.CarbonInvalidTimestamp
 	}
 	*t = NewTimestampMicro(FromTimestampMicro(ts, DefaultTimezone))
 	return t.Error
