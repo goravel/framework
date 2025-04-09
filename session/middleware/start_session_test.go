@@ -14,8 +14,8 @@ import (
 	contractshttp "github.com/goravel/framework/contracts/http"
 	contractsession "github.com/goravel/framework/contracts/session"
 	"github.com/goravel/framework/foundation/json"
-	"github.com/goravel/framework/http"
 	configmocks "github.com/goravel/framework/mocks/config"
+	"github.com/goravel/framework/route"
 	"github.com/goravel/framework/session"
 	"github.com/goravel/framework/support/file"
 )
@@ -42,7 +42,7 @@ func TestStartSession(t *testing.T) {
 	httpSessionMiddleware := func(next nethttp.Handler, mockConfig *configmocks.Config) nethttp.Handler {
 		return nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
 			mockConfigFacade(mockConfig)
-			err := StartSession()(http.HTTPHandlerToHandler(next)).ServeHTTP(NewTestContext(r.Context(), next, w, r))
+			err := StartSession()(route.HTTPHandlerToHandler(next)).ServeHTTP(NewTestContext(r.Context(), next, w, r))
 			assert.NoError(t, err)
 		})
 	}
