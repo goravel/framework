@@ -8,7 +8,7 @@ type Middleware func(next Handler) Handler
 
 type HandlerFunc func(ctx Context) error
 
-// ServeHTTP calls f(w, r).
+// ServeHTTP calls f(ctx).
 func (f HandlerFunc) ServeHTTP(ctx Context) error {
 	return f(ctx)
 }
