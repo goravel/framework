@@ -6,8 +6,6 @@ import (
 	"github.com/dromara/carbon/v2"
 )
 
-type Carbon = carbon.Carbon
-
 // timezone constants
 // 时区常量
 const (
@@ -165,4 +163,75 @@ const (
 	ShortTimeMilliLayout     = carbon.ShortTimeMilliLayout
 	ShortTimeMicroLayout     = carbon.ShortTimeMicroLayout
 	ShortTimeNanoLayout      = carbon.ShortTimeNanoLayout
+)
+
+// format constants
+// 格式模板常量
+const (
+	AtomFormat     = carbon.AtomFormat
+	ANSICFormat    = carbon.ANSICFormat
+	CookieFormat   = carbon.CookieFormat
+	KitchenFormat  = carbon.KitchenFormat
+	RssFormat      = carbon.RssFormat
+	RubyDateFormat = carbon.RubyDateFormat
+	UnixDateFormat = carbon.UnixDateFormat
+
+	RFC1036Format      = carbon.RFC1036Format
+	RFC1123Format      = carbon.RFC1123Format
+	RFC1123ZFormat     = carbon.RFC1123ZFormat
+	RFC2822Format      = carbon.RFC2822Format
+	RFC3339Format      = carbon.RFC3339Format
+	RFC3339MilliFormat = carbon.RFC3339MilliFormat
+	RFC3339MicroFormat = carbon.RFC3339MicroFormat
+	RFC3339NanoFormat  = carbon.RFC3339NanoFormat
+	RFC7231Format      = carbon.RFC7231Format
+	RFC822Format       = carbon.RFC822Format
+	RFC822ZFormat      = carbon.RFC822ZFormat
+	RFC850Format       = carbon.RFC850Format
+
+	ISO8601Format      = carbon.ISO8601Format
+	ISO8601MilliFormat = carbon.ISO8601MilliFormat
+	ISO8601MicroFormat = carbon.ISO8601MicroFormat
+	ISO8601NanoFormat  = carbon.ISO8601NanoFormat
+
+	ISO8601ZuluFormat      = carbon.ISO8601ZuluFormat
+	ISO8601ZuluMilliFormat = carbon.ISO8601ZuluMilliFormat
+	ISO8601ZuluMicroFormat = carbon.ISO8601ZuluMicroFormat
+	ISO8601ZuluNanoFormat  = carbon.ISO8601ZuluNanoFormat
+
+	FormattedDateFormat    = carbon.FormattedDateFormat
+	FormattedDayDateFormat = carbon.FormattedDayDateFormat
+
+	DayDateTimeFormat        = carbon.DayDateTimeFormat
+	DateTimeFormat           = carbon.DateTimeFormat
+	DateTimeMilliFormat      = carbon.DateTimeMilliFormat
+	DateTimeMicroFormat      = carbon.DateTimeMicroFormat
+	DateTimeNanoFormat       = carbon.DateTimeNanoFormat
+	ShortDateTimeFormat      = carbon.ShortDateTimeFormat
+	ShortDateTimeMilliFormat = carbon.ShortDateTimeMilliFormat
+	ShortDateTimeMicroFormat = carbon.ShortDateTimeMicroFormat
+	ShortDateTimeNanoFormat  = carbon.ShortDateTimeNanoFormat
+
+	DateFormat           = carbon.DateFormat
+	DateMilliFormat      = carbon.DateMilliFormat
+	DateMicroFormat      = carbon.DateMicroFormat
+	DateNanoFormat       = carbon.DateNanoFormat
+	ShortDateFormat      = carbon.ShortDateFormat
+	ShortDateMilliFormat = carbon.ShortDateMilliFormat
+	ShortDateMicroFormat = carbon.ShortDateMicroFormat
+	ShortDateNanoFormat  = carbon.ShortDateNanoFormat
+
+	TimeFormat           = carbon.TimeFormat
+	TimeMilliFormat      = carbon.TimeMilliFormat
+	TimeMicroFormat      = carbon.TimeMicroFormat
+	TimeNanoFormat       = carbon.TimeNanoFormat
+	ShortTimeFormat      = carbon.ShortTimeFormat
+	ShortTimeMilliFormat = carbon.ShortTimeMilliFormat
+	ShortTimeMicroFormat = carbon.ShortTimeMicroFormat
+	ShortTimeNanoFormat  = carbon.ShortTimeNanoFormat
+
+	TimestampFormat      = carbon.TimestampFormat
+	TimestampMilliFormat = carbon.TimestampMilliFormat
+	TimestampMicroFormat = carbon.TimestampMicroFormat
+	TimestampNanoFormat  = carbon.TimestampNanoFormat
 )
