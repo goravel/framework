@@ -35,7 +35,7 @@ func (t *Date) Scan(src interface{}) error {
 	case int64:
 		c = FromTimestamp(v, DefaultTimezone)
 	default:
-		return errors.CarbonFailedScan
+		return errors.CarbonFailedScan.Args(v)
 	}
 	if c.Error == nil {
 		*t = NewDate(c)

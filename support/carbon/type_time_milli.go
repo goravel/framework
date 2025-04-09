@@ -35,7 +35,7 @@ func (t *TimeMilli) Scan(src any) error {
 	case int64:
 		c = FromTimestamp(v, DefaultTimezone)
 	default:
-		return errors.CarbonInvalidTimestamp
+		return errors.CarbonInvalidTimestamp.Args(v)
 	}
 	if c.Error == nil {
 		*t = NewTimeMilli(c)

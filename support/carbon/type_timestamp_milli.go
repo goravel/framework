@@ -30,12 +30,12 @@ func (t *TimestampMilli) Scan(src interface{}) (err error) {
 	case []byte:
 		ts, err = strconv.ParseInt(string(v), 10, 64)
 		if err != nil {
-			return errors.CarbonInvalidTimestamp
+			return errors.CarbonInvalidTimestamp.Args(v)
 		}
 	case string:
 		ts, err = strconv.ParseInt(v, 10, 64)
 		if err != nil {
-			return errors.CarbonInvalidTimestamp
+			return errors.CarbonInvalidTimestamp.Args(v)
 		}
 	case int64:
 		ts = v
@@ -43,7 +43,7 @@ func (t *TimestampMilli) Scan(src interface{}) (err error) {
 		*t = NewTimestampMilli(FromStdTime(v, DefaultTimezone))
 		return t.Error
 	default:
-		return errors.CarbonInvalidTimestamp
+		return errors.CarbonInvalidTimestamp.Args(v)
 	}
 	*t = NewTimestampMilli(FromTimestampMilli(ts, DefaultTimezone))
 	return t.Error
@@ -84,7 +84,7 @@ func (t *TimestampMilli) UnmarshalJSON(b []byte) error {
 	}
 	ts, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
-		return errors.CarbonInvalidTimestamp
+		return errors.CarbonInvalidTimestamp.Args(value)
 	}
 	*t = NewTimestampMilli(FromTimestampMilli(ts, DefaultTimezone))
 	return t.Error
