@@ -33,7 +33,7 @@ type ChainHandler struct {
 	Middlewares Middlewares
 }
 
-func (c *ChainHandler) ServeHTTP(ctx http.Context) http.Response {
+func (c *ChainHandler) ServeHTTP(ctx http.Context) error {
 	return c.chain.ServeHTTP(ctx)
 }
 
