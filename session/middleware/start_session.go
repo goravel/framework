@@ -9,7 +9,7 @@ import (
 
 func StartSession() http.Middleware {
 	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(ctx http.Context) http.Response {
+		return http.HandlerFunc(func(ctx http.Context) error {
 			req := ctx.Request()
 
 			// Check if session exists

@@ -6,28 +6,28 @@ import (
 
 type Middleware func(next Handler) Handler
 
-type HandlerFunc func(ctx Context) Response
+type HandlerFunc func(ctx Context) error
 
 // ServeHTTP calls f(w, r).
-func (f HandlerFunc) ServeHTTP(ctx Context) Response {
+func (f HandlerFunc) ServeHTTP(ctx Context) error {
 	return f(ctx)
 }
 
 type Handler interface {
-	ServeHTTP(ctx Context) Response
+	ServeHTTP(ctx Context) error
 }
 
 type ResourceController interface {
 	// Index method for controller
-	Index(Context) Response
+	Index(Context) error
 	// Show method for controller
-	Show(Context) Response
+	Show(Context) error
 	// Store method for controller
-	Store(Context) Response
+	Store(Context) error
 	// Update method for controller
-	Update(Context) Response
+	Update(Context) error
 	// Destroy method for controller
-	Destroy(Context) Response
+	Destroy(Context) error
 }
 
 type Context interface {

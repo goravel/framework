@@ -26,7 +26,7 @@ const (
 
 func Throttle(name string) httpcontract.Middleware {
 	return func(next httpcontract.Handler) httpcontract.Handler {
-		return httpcontract.HandlerFunc(func(ctx httpcontract.Context) httpcontract.Response {
+		return httpcontract.HandlerFunc(func(ctx httpcontract.Context) error {
 			if limiter := http.RateLimiterFacade.Limiter(name); limiter != nil {
 				if limits := limiter(ctx); len(limits) > 0 {
 					for index, limit := range limits {
@@ -68,7 +68,7 @@ func key(ctx httpcontract.Context, limit *httplimit.Limit, name string, index in
 	return fmt.Sprintf("throttle:%s:%d:%s", name, index, limit.Key)
 }
 
-func response(ctx httpcontract.Context, limit *httplimit.Limit) httpcontract.Response {
+func response(ctx httpcontract.Context, limit *httplimit.Limit) error {
 	if limit.ResponseCallback != nil {
 		limit.ResponseCallback(ctx)
 	}

@@ -11,7 +11,7 @@ type ContextResponse interface {
 	// Cookie adds a cookie to the response.
 	Cookie(cookie Cookie) ContextResponse
 	// Data write the given data to the response.
-	Data(code int, contentType string, data []byte) AbortableResponse
+	Data(code int, contentType string, data []byte) error
 	// Download initiates a file download by specifying the file path and the desired filename
 	Download(filepath, filename string) Response
 	// File serves a file located at the specified file path as the response.
@@ -19,16 +19,16 @@ type ContextResponse interface {
 	// Header sets an HTTP header field with the given key and value.
 	Header(key, value string) ContextResponse
 	// Json sends a JSON response with the specified status code and data object.
-	Json(code int, obj any) AbortableResponse
+	Json(code int, obj any) error
 	// NoContent sends a response with no-body and the specified status code.
-	NoContent(code ...int) AbortableResponse
+	NoContent(code ...int) error
 	// Origin returns the ResponseOrigin
 	Origin() ResponseOrigin
 	// Redirect performs an HTTP redirect to the specified location with the given status code.
-	Redirect(code int, location string) AbortableResponse
+	Redirect(code int, location string) error
 	// String writes a string response with the specified status code and format.
 	// The 'values' parameter can be used to replace placeholders in the format string.
-	String(code int, format string, values ...any) AbortableResponse
+	String(code int, format string, values ...any) error
 	// Success returns ResponseStatus with a 200 status code.
 	Success() ResponseStatus
 	// Status sets the HTTP response status code and returns the ResponseStatus.
@@ -45,14 +45,8 @@ type ContextResponse interface {
 	Flush()
 }
 
-type Response interface {
-	Render() error
-}
-
-type AbortableResponse interface {
-	Response
-	Abort() error
-}
+// Response DEPRECATED: Use error instead
+type Response = error
 
 type StreamWriter interface {
 	// Write writes the specified data to the response.
@@ -67,11 +61,11 @@ type StreamWriter interface {
 
 type ResponseStatus interface {
 	// Data write the given data to the Response.
-	Data(contentType string, data []byte) AbortableResponse
+	Data(contentType string, data []byte) error
 	// Json sends a JSON AbortResponse with the specified data object.
-	Json(obj any) AbortableResponse
+	Json(obj any) error
 	// String writes a string AbortResponse with the specified format and values.
-	String(format string, values ...any) AbortableResponse
+	String(format string, values ...any) error
 	// Stream sends a streaming response with the specified status code and the given reader.
 	Stream(step func(w StreamWriter) error) Response
 }
