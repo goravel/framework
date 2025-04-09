@@ -4,6 +4,8 @@ package schema
 
 import (
 	driver "github.com/goravel/framework/contracts/database/driver"
+	enum "github.com/goravel/framework/support/enum"
+
 	mock "github.com/stretchr/testify/mock"
 
 	orm "github.com/goravel/framework/contracts/database/orm"
@@ -279,7 +281,7 @@ func (_c *Blueprint_Char_Call) RunAndReturn(run func(string, ...int) driver.Colu
 }
 
 // Column provides a mock function with given fields: column, ttype
-func (_m *Blueprint) Column(column string, ttype string) driver.ColumnDefinition {
+func (_m *Blueprint) Column(column string, ttype enum.Enum[string, string]) driver.ColumnDefinition {
 	ret := _m.Called(column, ttype)
 
 	if len(ret) == 0 {
@@ -287,7 +289,7 @@ func (_m *Blueprint) Column(column string, ttype string) driver.ColumnDefinition
 	}
 
 	var r0 driver.ColumnDefinition
-	if rf, ok := ret.Get(0).(func(string, string) driver.ColumnDefinition); ok {
+	if rf, ok := ret.Get(0).(func(string, enum.Enum[string, string]) driver.ColumnDefinition); ok {
 		r0 = rf(column, ttype)
 	} else {
 		if ret.Get(0) != nil {
@@ -305,14 +307,14 @@ type Blueprint_Column_Call struct {
 
 // Column is a helper method to define mock.On call
 //   - column string
-//   - ttype string
+//   - ttype enum.Enum[string,string]
 func (_e *Blueprint_Expecter) Column(column interface{}, ttype interface{}) *Blueprint_Column_Call {
 	return &Blueprint_Column_Call{Call: _e.mock.On("Column", column, ttype)}
 }
 
-func (_c *Blueprint_Column_Call) Run(run func(column string, ttype string)) *Blueprint_Column_Call {
+func (_c *Blueprint_Column_Call) Run(run func(column string, ttype enum.Enum[string, string])) *Blueprint_Column_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string))
+		run(args[0].(string), args[1].(enum.Enum[string, string]))
 	})
 	return _c
 }
@@ -322,7 +324,7 @@ func (_c *Blueprint_Column_Call) Return(_a0 driver.ColumnDefinition) *Blueprint_
 	return _c
 }
 
-func (_c *Blueprint_Column_Call) RunAndReturn(run func(string, string) driver.ColumnDefinition) *Blueprint_Column_Call {
+func (_c *Blueprint_Column_Call) RunAndReturn(run func(string, enum.Enum[string, string]) driver.ColumnDefinition) *Blueprint_Column_Call {
 	_c.Call.Return(run)
 	return _c
 }

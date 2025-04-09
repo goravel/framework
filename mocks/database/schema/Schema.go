@@ -926,6 +926,53 @@ func (_c *Schema_GetViews_Call) RunAndReturn(run func() ([]driver.View, error)) 
 	return _c
 }
 
+// GoTypeMap provides a mock function with no fields
+func (_m *Schema) GoTypeMap() map[string]schema.GoTypeMapping {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GoTypeMap")
+	}
+
+	var r0 map[string]schema.GoTypeMapping
+	if rf, ok := ret.Get(0).(func() map[string]schema.GoTypeMapping); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]schema.GoTypeMapping)
+		}
+	}
+
+	return r0
+}
+
+// Schema_GoTypeMap_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GoTypeMap'
+type Schema_GoTypeMap_Call struct {
+	*mock.Call
+}
+
+// GoTypeMap is a helper method to define mock.On call
+func (_e *Schema_Expecter) GoTypeMap() *Schema_GoTypeMap_Call {
+	return &Schema_GoTypeMap_Call{Call: _e.mock.On("GoTypeMap")}
+}
+
+func (_c *Schema_GoTypeMap_Call) Run(run func()) *Schema_GoTypeMap_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Schema_GoTypeMap_Call) Return(_a0 map[string]schema.GoTypeMapping) *Schema_GoTypeMap_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Schema_GoTypeMap_Call) RunAndReturn(run func() map[string]schema.GoTypeMapping) *Schema_GoTypeMap_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // HasColumn provides a mock function with given fields: table, column
 func (_m *Schema) HasColumn(table string, column string) bool {
 	ret := _m.Called(table, column)
