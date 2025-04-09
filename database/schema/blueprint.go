@@ -56,11 +56,11 @@ func (r *Blueprint) BigIncrements(column string) driver.ColumnDefinition {
 }
 
 func (r *Blueprint) BigInteger(column string) driver.ColumnDefinition {
-	return r.createAndAddColumn("bigInteger", column)
+	return r.createAndAddColumn(schema.TypeBigInteger, column)
 }
 
 func (r *Blueprint) Boolean(column string) driver.ColumnDefinition {
-	return r.createAndAddColumn("boolean", column)
+	return r.createAndAddColumn(schema.TypeBoolean, column)
 }
 
 func (r *Blueprint) Build(query orm.Query, grammar driver.Grammar) error {
@@ -84,13 +84,13 @@ func (r *Blueprint) Char(column string, length ...int) driver.ColumnDefinition {
 		defaultLength = length[0]
 	}
 
-	columnImpl := r.createAndAddColumn("char", column)
+	columnImpl := r.createAndAddColumn(schema.TypeChar, column)
 	columnImpl.length = &defaultLength
 
 	return columnImpl
 }
 
-func (r *Blueprint) Column(column, ttype string) driver.ColumnDefinition {
+func (r *Blueprint) Column(column string, ttype schema.ColumnType) driver.ColumnDefinition {
 	return r.createAndAddColumn(ttype, column)
 }
 
@@ -108,15 +108,15 @@ func (r *Blueprint) Create() {
 }
 
 func (r *Blueprint) Decimal(column string) driver.ColumnDefinition {
-	return r.createAndAddColumn("decimal", column)
+	return r.createAndAddColumn(schema.TypeDecimal, column)
 }
 
 func (r *Blueprint) Date(column string) driver.ColumnDefinition {
-	return r.createAndAddColumn("date", column)
+	return r.createAndAddColumn(schema.TypeDate, column)
 }
 
 func (r *Blueprint) DateTime(column string, precision ...int) driver.ColumnDefinition {
-	columnImpl := r.createAndAddColumn("dateTime", column)
+	columnImpl := r.createAndAddColumn(schema.TypeDateTime, column)
 	if len(precision) > 0 {
 		columnImpl.precision = &precision[0]
 	}
@@ -125,7 +125,7 @@ func (r *Blueprint) DateTime(column string, precision ...int) driver.ColumnDefin
 }
 
 func (r *Blueprint) DateTimeTz(column string, precision ...int) driver.ColumnDefinition {
-	columnImpl := r.createAndAddColumn("dateTimeTz", column)
+	columnImpl := r.createAndAddColumn(schema.TypeDateTimeTZ, column)
 	if len(precision) > 0 {
 		columnImpl.precision = &precision[0]
 	}
@@ -134,7 +134,7 @@ func (r *Blueprint) DateTimeTz(column string, precision ...int) driver.ColumnDef
 }
 
 func (r *Blueprint) Double(column string) driver.ColumnDefinition {
-	return r.createAndAddColumn("double", column)
+	return r.createAndAddColumn(schema.TypeDouble, column)
 }
 
 func (r *Blueprint) Drop() {
@@ -231,14 +231,14 @@ func (r *Blueprint) DropUniqueByName(name string) {
 }
 
 func (r *Blueprint) Enum(column string, allowed []any) driver.ColumnDefinition {
-	columnImpl := r.createAndAddColumn("enum", column)
+	columnImpl := r.createAndAddColumn(schema.TypeEnum, column)
 	columnImpl.allowed = allowed
 
 	return columnImpl
 }
 
 func (r *Blueprint) Float(column string, precision ...int) driver.ColumnDefinition {
-	columnImpl := r.createAndAddColumn("float", column)
+	columnImpl := r.createAndAddColumn(schema.TypeFloat, column)
 	columnImpl.precision = convert.Pointer(53)
 
 	if len(precision) > 0 {
@@ -306,7 +306,7 @@ func (r *Blueprint) Index(column ...string) schema.IndexDefinition {
 }
 
 func (r *Blueprint) Integer(column string) driver.ColumnDefinition {
-	return r.createAndAddColumn("integer", column)
+	return r.createAndAddColumn(schema.TypeInteger, column)
 }
 
 func (r *Blueprint) IntegerIncrements(column string) driver.ColumnDefinition {
@@ -314,15 +314,15 @@ func (r *Blueprint) IntegerIncrements(column string) driver.ColumnDefinition {
 }
 
 func (r *Blueprint) Json(column string) driver.ColumnDefinition {
-	return r.createAndAddColumn("json", column)
+	return r.createAndAddColumn(schema.TypeJson, column)
 }
 
 func (r *Blueprint) Jsonb(column string) driver.ColumnDefinition {
-	return r.createAndAddColumn("jsonb", column)
+	return r.createAndAddColumn(schema.TypeJsonb, column)
 }
 
 func (r *Blueprint) LongText(column string) driver.ColumnDefinition {
-	return r.createAndAddColumn("longText", column)
+	return r.createAndAddColumn(schema.TypeLongText, column)
 }
 
 func (r *Blueprint) MediumIncrements(column string) driver.ColumnDefinition {
@@ -330,11 +330,11 @@ func (r *Blueprint) MediumIncrements(column string) driver.ColumnDefinition {
 }
 
 func (r *Blueprint) MediumInteger(column string) driver.ColumnDefinition {
-	return r.createAndAddColumn("mediumInteger", column)
+	return r.createAndAddColumn(schema.TypeMediumInteger, column)
 }
 
 func (r *Blueprint) MediumText(column string) driver.ColumnDefinition {
-	return r.createAndAddColumn("mediumText", column)
+	return r.createAndAddColumn(schema.TypeMediumText, column)
 }
 
 func (r *Blueprint) Primary(column ...string) {
@@ -379,7 +379,7 @@ func (r *Blueprint) SmallIncrements(column string) driver.ColumnDefinition {
 }
 
 func (r *Blueprint) SmallInteger(column string) driver.ColumnDefinition {
-	return r.createAndAddColumn("smallInteger", column)
+	return r.createAndAddColumn(schema.TypeSmallInteger, column)
 }
 
 func (r *Blueprint) SoftDeletes(column ...string) driver.ColumnDefinition {
@@ -406,18 +406,18 @@ func (r *Blueprint) String(column string, length ...int) driver.ColumnDefinition
 		defaultLength = length[0]
 	}
 
-	columnImpl := r.createAndAddColumn("string", column)
+	columnImpl := r.createAndAddColumn(schema.TypeString, column)
 	columnImpl.length = &defaultLength
 
 	return columnImpl
 }
 
 func (r *Blueprint) Text(column string) driver.ColumnDefinition {
-	return r.createAndAddColumn("text", column)
+	return r.createAndAddColumn(schema.TypeText, column)
 }
 
 func (r *Blueprint) Time(column string, precision ...int) driver.ColumnDefinition {
-	columnImpl := r.createAndAddColumn("time", column)
+	columnImpl := r.createAndAddColumn(schema.TypeTime, column)
 	if len(precision) > 0 {
 		columnImpl.precision = &precision[0]
 	}
@@ -426,7 +426,7 @@ func (r *Blueprint) Time(column string, precision ...int) driver.ColumnDefinitio
 }
 
 func (r *Blueprint) TimeTz(column string, precision ...int) driver.ColumnDefinition {
-	columnImpl := r.createAndAddColumn("timeTz", column)
+	columnImpl := r.createAndAddColumn(schema.TypeTimeTZ, column)
 	if len(precision) > 0 {
 		columnImpl.precision = &precision[0]
 	}
@@ -435,7 +435,7 @@ func (r *Blueprint) TimeTz(column string, precision ...int) driver.ColumnDefinit
 }
 
 func (r *Blueprint) Timestamp(column string, precision ...int) driver.ColumnDefinition {
-	columnImpl := r.createAndAddColumn("timestamp", column)
+	columnImpl := r.createAndAddColumn(schema.TypeTimestamp, column)
 	if len(precision) > 0 {
 		columnImpl.precision = &precision[0]
 	}
@@ -454,7 +454,7 @@ func (r *Blueprint) TimestampsTz(precision ...int) {
 }
 
 func (r *Blueprint) TimestampTz(column string, precision ...int) driver.ColumnDefinition {
-	columnImpl := r.createAndAddColumn("timestampTz", column)
+	columnImpl := r.createAndAddColumn(schema.TypeTimestampTZ, column)
 	if len(precision) > 0 {
 		columnImpl.precision = &precision[0]
 	}
@@ -467,11 +467,11 @@ func (r *Blueprint) TinyIncrements(column string) driver.ColumnDefinition {
 }
 
 func (r *Blueprint) TinyInteger(column string) driver.ColumnDefinition {
-	return r.createAndAddColumn("tinyInteger", column)
+	return r.createAndAddColumn(schema.TypeTinyInteger, column)
 }
 
 func (r *Blueprint) TinyText(column string) driver.ColumnDefinition {
-	return r.createAndAddColumn("tinyText", column)
+	return r.createAndAddColumn(schema.TypeTinyText, column)
 }
 
 func (r *Blueprint) ToSql(grammar driver.Grammar) ([]string, error) {
@@ -610,10 +610,10 @@ func (r *Blueprint) addImpliedCommands(grammar driver.Grammar) {
 	r.addAttributeCommands(grammar)
 }
 
-func (r *Blueprint) createAndAddColumn(ttype, name string) *ColumnDefinition {
+func (r *Blueprint) createAndAddColumn(ttype schema.ColumnType, name string) *ColumnDefinition {
 	columnImpl := &ColumnDefinition{
 		name:  &name,
-		ttype: convert.Pointer(ttype),
+		ttype: convert.Pointer(ttype.Value()),
 	}
 
 	r.columns = append(r.columns, columnImpl)

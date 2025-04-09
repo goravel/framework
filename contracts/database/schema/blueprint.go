@@ -17,7 +17,7 @@ type Blueprint interface {
 	// Char Create a new char column on the table.
 	Char(column string, length ...int) driver.ColumnDefinition
 	// Column Create a new custom type column on the table.
-	Column(column string, ttype string) driver.ColumnDefinition
+	Column(column string, ttype ColumnType) driver.ColumnDefinition
 	// Comment Add a comment to the table. (MySQL / PostgreSQL)
 	Comment(value string)
 	// Create Indicate that the table needs to be created.

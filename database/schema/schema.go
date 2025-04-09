@@ -281,6 +281,10 @@ func (r *Schema) GetViews() ([]driver.View, error) {
 	return views, nil
 }
 
+func (r *Schema) GoTypeMap() map[string]contractsschema.GoTypeMapping {
+	return nil
+}
+
 func (r *Schema) HasColumn(table, column string) bool {
 	return slices.Contains(r.GetColumnListing(table), column)
 }
