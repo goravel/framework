@@ -2,6 +2,8 @@ package route
 
 import "github.com/goravel/framework/contracts/http"
 
+// Code from github.com/go-chi/chi under MIT License, modified for Goravel usage.
+
 // Middlewares type is a slice of standard middleware handlers with methods
 // to compose middleware chains and http.Handler's.
 type Middlewares []http.Middleware
