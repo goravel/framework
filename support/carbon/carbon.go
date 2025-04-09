@@ -6,6 +6,8 @@ import (
 	"github.com/dromara/carbon/v2"
 )
 
+type Carbon = carbon.Carbon
+
 // SetTestNow Set the test time. Remember to unset after used.
 func SetTestNow(testTime Carbon) {
 	carbon.SetTestNow(testTime)
@@ -45,6 +47,16 @@ func ParseByFormat(value, format string, timezone ...string) Carbon {
 // ParseByLayout return a Carbon object of given value and layout.
 func ParseByLayout(value, layout string, timezone ...string) Carbon {
 	return carbon.ParseByLayout(value, layout, timezone...)
+}
+
+// ParseWithFormats parses time string with formats as a Carbon instance.
+func ParseWithFormats(value string, formats []string, timezone ...string) Carbon {
+	return carbon.ParseWithFormats(value, formats, timezone...)
+}
+
+// ParseWithLayouts parses time string with layouts as a Carbon instance.
+func ParseWithLayouts(value string, layouts []string, timezone ...string) Carbon {
+	return carbon.ParseWithLayouts(value, layouts, timezone...)
 }
 
 // FromTimestamp return a Carbon object of given timestamp.
