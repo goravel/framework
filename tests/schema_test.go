@@ -9,7 +9,6 @@ import (
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	databaseschema "github.com/goravel/framework/database/schema"
 	"github.com/goravel/framework/support/carbon"
-	"github.com/goravel/framework/support/enum"
 	"github.com/goravel/mysql"
 	"github.com/goravel/postgres"
 	"github.com/goravel/sqlite"
@@ -2539,9 +2538,9 @@ func (s *SchemaSuite) createTableAndAssertColumnsForColumnMethods(schema contrac
 		table.Boolean("boolean_default").Default(true).Comment("This is a boolean column with default value")
 		table.Char("char").Comment("This is a char column")
 		if schema.GetConnection() != postgres.Name {
-			table.Column("custom_type", enum.New("geometry", "geometry")).Comment("This is a custom type column")
+			table.Column("custom_type", "geometry").Comment("This is a custom type column")
 		} else {
-			table.Column("custom_type", enum.New("macaddr", "macaddr")).Comment("This is a custom type column")
+			table.Column("custom_type", "macaddr").Comment("This is a custom type column")
 		}
 		table.Date("date").Comment("This is a date column")
 		table.DateTime("date_time", 3).Comment("This is a date time column")

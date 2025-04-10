@@ -8,6 +8,7 @@ import (
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/support/convert"
+	"github.com/goravel/framework/support/enum"
 )
 
 const (
@@ -90,8 +91,8 @@ func (r *Blueprint) Char(column string, length ...int) driver.ColumnDefinition {
 	return columnImpl
 }
 
-func (r *Blueprint) Column(column string, ttype schema.ColumnType) driver.ColumnDefinition {
-	return r.createAndAddColumn(ttype, column)
+func (r *Blueprint) Column(column string, ttype string) driver.ColumnDefinition {
+	return r.createAndAddColumn(enum.New(ttype, ttype), column)
 }
 
 func (r *Blueprint) Comment(comment string) {
