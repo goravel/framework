@@ -42,6 +42,8 @@ type Schema interface {
 	GetTypes() ([]driver.Type, error)
 	// GetViews Get the views that belong to the database.
 	GetViews() ([]driver.View, error)
+	// GoTypeMap returns the mapping of schema types to Go types.
+	GoTypeMap() map[string]GoTypeMapping
 	// HasColumn Determine if the given table has a given column.
 	HasColumn(table, column string) bool
 	// HasColumns Determine if the given table has given columns.
@@ -82,4 +84,11 @@ type Migration interface {
 type Connection interface {
 	// Connection Get the connection for the migration.
 	Connection() string
+}
+
+type GoTypeMapping struct {
+	Type                string
+	NullType            string
+	Imports             []string
+	PrecisionBasedTypes map[string]GoTypeMapping
 }
