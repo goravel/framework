@@ -22,7 +22,7 @@ func TestChainHandlerWithNoMiddlewares(t *testing.T) {
 	middlewares := Chain()
 
 	finalHandler := &mockshttp.Handler{}
-	finalHandler.On("ServeHTTP", mock.Anything).Return(nil)
+	finalHandler.EXPECT().ServeHTTP(mock.Anything).Return(nil)
 
 	handler := middlewares.Handler(finalHandler)
 	mockCtx := &mockshttp.Context{}
@@ -47,7 +47,7 @@ func TestChainHandlerWithSingleMiddleware(t *testing.T) {
 	middlewares := Chain(middleware)
 
 	finalHandler := &mockshttp.Handler{}
-	finalHandler.On("ServeHTTP", mock.Anything).Return(nil)
+	finalHandler.EXPECT().ServeHTTP(mock.Anything).Return(nil)
 
 	handler := middlewares.Handler(finalHandler)
 	mockCtx := &mockshttp.Context{}
@@ -59,7 +59,7 @@ func TestChainHandlerWithSingleMiddleware(t *testing.T) {
 }
 
 func TestChainHandlerWithMultipleMiddlewares(t *testing.T) {
-	executionOrder := []string{}
+	var executionOrder []string
 
 	middleware1 := func(next http.Handler) http.Handler {
 		return &middlewareHandler{
@@ -89,7 +89,7 @@ func TestChainHandlerWithMultipleMiddlewares(t *testing.T) {
 	middlewares := Chain(middleware1, middleware2, middleware3)
 
 	finalHandler := &mockshttp.Handler{}
-	finalHandler.On("ServeHTTP", mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+	finalHandler.EXPECT().ServeHTTP(mock.Anything).Return(nil).Run(func(ctx http.Context) {
 		executionOrder = append(executionOrder, "finalHandler")
 	})
 
@@ -117,7 +117,7 @@ func TestChainHandlerFuncWithMiddlewares(t *testing.T) {
 
 	middlewares := Chain(middleware)
 
-	handlerFunc := http.HandlerFunc(func(ctx http.Context) http.Response {
+	handlerFunc := http.HandlerFunc(func(ctx http.Context) error {
 		handlerFuncCalled = true
 		return nil
 	})
@@ -134,7 +134,7 @@ func TestChainHandlerFuncWithMiddlewares(t *testing.T) {
 func TestChainHandlerImplementsHttpHandler(t *testing.T) {
 	middlewares := Chain()
 	finalHandler := &mockshttp.Handler{}
-	finalHandler.On("ServeHTTP", mock.Anything).Return(nil)
+	finalHandler.EXPECT().ServeHTTP(mock.Anything).Return(nil)
 
 	handler := middlewares.Handler(finalHandler)
 
@@ -146,7 +146,7 @@ type middlewareHandler struct {
 	fn   func()
 }
 
-func (m *middlewareHandler) ServeHTTP(ctx http.Context) http.Response {
+func (m *middlewareHandler) ServeHTTP(ctx http.Context) error {
 	m.fn()
 	return m.next.ServeHTTP(ctx)
 }

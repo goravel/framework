@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	contractshttp "github.com/goravel/framework/contracts/http"
 	mockshttp "github.com/goravel/framework/mocks/http"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -23,21 +24,18 @@ func TestHTTPHandlerFuncToHandlerFunc(t *testing.T) {
 	mockResponse := &mockshttp.ContextResponse{}
 	mockRequest := &mockshttp.ContextRequest{}
 
-	mockCtx.On("Response").Return(mockResponse)
-	mockCtx.On("Request").Return(mockRequest)
+	mockCtx.EXPECT().Response().Return(mockResponse)
+	mockCtx.EXPECT().Request().Return(mockRequest)
 
 	mockWriter := httptest.NewRecorder()
-	mockResponse.On("Writer").Return(mockWriter)
+	mockResponse.EXPECT().Writer().Return(mockWriter)
 
 	mockHttpReq := httptest.NewRequest("GET", "/test", nil)
-	mockRequest.On("Origin").Return(mockHttpReq)
+	mockRequest.EXPECT().Origin().Return(mockHttpReq)
 
 	assert.Nil(t, goravel.ServeHTTP(mockCtx))
 
 	assert.True(t, called)
-	mockCtx.AssertExpectations(t)
-	mockResponse.AssertExpectations(t)
-	mockRequest.AssertExpectations(t)
 }
 
 func TestHTTPHandlerToHandler(t *testing.T) {
@@ -53,22 +51,19 @@ func TestHTTPHandlerToHandler(t *testing.T) {
 	mockResponse := &mockshttp.ContextResponse{}
 	mockRequest := &mockshttp.ContextRequest{}
 
-	mockCtx.On("Response").Return(mockResponse)
-	mockCtx.On("Request").Return(mockRequest)
+	mockCtx.EXPECT().Response().Return(mockResponse)
+	mockCtx.EXPECT().Request().Return(mockRequest)
 
 	mockWriter := httptest.NewRecorder()
-	mockResponse.On("Writer").Return(mockWriter)
+	mockResponse.EXPECT().Writer().Return(mockWriter)
 
 	mockHttpReq := httptest.NewRequest("POST", "/test", nil)
-	mockRequest.On("Origin").Return(mockHttpReq)
+	mockRequest.EXPECT().Origin().Return(mockHttpReq)
 
 	assert.Nil(t, goravel.ServeHTTP(mockCtx))
 
 	assert.True(t, called)
 	assert.Equal(t, http.StatusCreated, mockWriter.Code)
-	mockCtx.AssertExpectations(t)
-	mockResponse.AssertExpectations(t)
-	mockRequest.AssertExpectations(t)
 }
 
 func TestHTTPMiddlewareToMiddleware(t *testing.T) {
@@ -86,7 +81,7 @@ func TestHTTPMiddlewareToMiddleware(t *testing.T) {
 	goravelMiddleware := HTTPMiddlewareToMiddleware(middleware)
 
 	nextHandler := &mockshttp.Handler{}
-	nextHandler.On("ServeHTTP", mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+	nextHandler.EXPECT().ServeHTTP(mock.Anything).Return(nil).Run(func(ctx contractshttp.Context) {
 		handlerCalled = true
 	})
 
@@ -96,22 +91,18 @@ func TestHTTPMiddlewareToMiddleware(t *testing.T) {
 	mockResponse := &mockshttp.ContextResponse{}
 	mockRequest := &mockshttp.ContextRequest{}
 
-	mockCtx.On("Response").Return(mockResponse)
-	mockCtx.On("Request").Return(mockRequest)
+	mockCtx.EXPECT().Response().Return(mockResponse)
+	mockCtx.EXPECT().Request().Return(mockRequest)
 
 	mockWriter := httptest.NewRecorder()
-	mockResponse.On("Writer").Return(mockWriter)
+	mockResponse.EXPECT().Writer().Return(mockWriter)
 
 	mockHttpReq := httptest.NewRequest("GET", "/test", nil)
-	mockRequest.On("Origin").Return(mockHttpReq)
+	mockRequest.EXPECT().Origin().Return(mockHttpReq)
 
 	assert.Nil(t, handler.ServeHTTP(mockCtx))
 
 	assert.True(t, middlewareCalled)
 	assert.True(t, handlerCalled)
 	assert.Equal(t, "middleware", mockWriter.Header().Get("X-Test"))
-	mockCtx.AssertExpectations(t)
-	mockResponse.AssertExpectations(t)
-	mockRequest.AssertExpectations(t)
-	nextHandler.AssertExpectations(t)
 }
