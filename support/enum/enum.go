@@ -1,13 +1,17 @@
 package enum
 
-import "github.com/spf13/cast"
+import (
+	"encoding/json"
+
+	"github.com/spf13/cast"
+)
 
 type Enum[K comparable, V any] struct {
 	key   K
 	value V
 }
 
-func NewEnum[K comparable, V any](key K, value V) Enum[K, V] {
+func New[K comparable, V any](key K, value V) Enum[K, V] {
 	return Enum[K, V]{
 		key:   key,
 		value: value,
@@ -24,6 +28,10 @@ func (r Enum[K, V]) Value() V {
 
 func (r Enum[K, V]) String() string {
 	return cast.ToString(r.value)
+}
+
+func (r Enum[K, V]) MarshalJSON() ([]byte, error) {
+	return json.Marshal(r.value)
 }
 
 func ParseEnumByKey[K comparable, V any](id K, enumMap map[K]Enum[K, V]) Enum[K, V] {
