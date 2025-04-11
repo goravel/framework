@@ -8,35 +8,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSetTestNow(t *testing.T) {
-	SetTestNow(Now().SubHour())
-	assert.True(t, IsTestNow())
-	UnsetTestNow()
-	assert.False(t, IsTestNow())
-}
-
 func TestSetTimezone(t *testing.T) {
 	defer SetTimezone(UTC)
 
 	SetTimezone(PRC)
-	c := Parse("2020-01-01 00:00:00")
-	assert.Equal(t, "2020-01-01 00:00:00 +0800 CST", c.ToString())
-}
-
-func TestSetLocale(t *testing.T) {
-	defer SetLocale("en")
-
-	SetLocale("zh-CN")
-
 	c := Parse("2025-04-11 00:00:00")
 
-	assert.Equal(t, "zh-CN", c.Locale())
-	assert.Equal(t, "白羊座", c.Constellation())
-	assert.Equal(t, "春季", c.Season())
-	assert.Equal(t, "四月", c.ToMonthString())
-	assert.Equal(t, "4月", c.ToShortMonthString())
-	assert.Equal(t, "星期五", c.ToWeekString())
-	assert.Equal(t, "周五", c.ToShortWeekString())
+	assert.Equal(t, PRC, c.Timezone())
+	assert.Equal(t, "CST", c.ZoneName())
+	assert.Equal(t, 28800, c.ZoneOffset())
+	assert.Equal(t, "2025-04-11 00:00:00 +0800 CST", c.ToString())
 }
 
 func TestSetLocation(t *testing.T) {
@@ -52,16 +33,38 @@ func TestSetLocation(t *testing.T) {
 	assert.Equal(t, "2025-04-11 00:00:00 +0800 CST", c.ToString())
 }
 
-func TestTimezone(t *testing.T) {
-	defer SetTimezone(UTC)
+func TestSetLocale(t *testing.T) {
+	defer SetLocale("en")
 
-	SetTimezone(PRC)
+	SetLocale("zh-CN")
 	c := Parse("2025-04-11 00:00:00")
 
-	assert.Equal(t, PRC, c.Timezone())
-	assert.Equal(t, "CST", c.ZoneName())
-	assert.Equal(t, 28800, c.ZoneOffset())
-	assert.Equal(t, "2025-04-11 00:00:00 +0800 CST", c.ToString())
+	assert.Equal(t, "zh-CN", c.Locale())
+	assert.Equal(t, "白羊座", c.Constellation())
+	assert.Equal(t, "春季", c.Season())
+	assert.Equal(t, "四月", c.ToMonthString())
+	assert.Equal(t, "4月", c.ToShortMonthString())
+	assert.Equal(t, "星期五", c.ToWeekString())
+	assert.Equal(t, "周五", c.ToShortWeekString())
+}
+
+func TestSetTestNow(t *testing.T) {
+	SetTestNow(Now().SubHour())
+	assert.True(t, IsTestNow())
+	UnsetTestNow()
+	assert.False(t, IsTestNow())
+}
+
+func TestCleanTestNow(t *testing.T) {
+	now := Parse("2020-08-05")
+
+	SetTestNow(now)
+	assert.Equal(t, "2020-08-05", Now().ToDateString())
+	assert.True(t, IsTestNow())
+
+	CleanTestNow()
+	assert.Equal(t, stdtime.Now().In(stdtime.UTC).Format(DateTimeLayout), Now().ToDateTimeString())
+	assert.False(t, IsTestNow())
 }
 
 func TestNow(t *testing.T) {
@@ -75,18 +78,6 @@ func TestNow(t *testing.T) {
 	utcNow := Now()
 	shanghaiNow := Now(Shanghai)
 	assert.Equal(t, shanghaiNow.SubHours(8).ToDateTimeString(), utcNow.ToDateTimeString())
-}
-
-func TestCleanTestNow(t *testing.T) {
-	now := Parse("2020-08-05")
-
-	SetTestNow(now)
-	assert.Equal(t, "2020-08-05", Now().ToDateString())
-	assert.True(t, IsTestNow())
-
-	CleanTestNow()
-	assert.Equal(t, stdtime.Now().In(stdtime.UTC).Format(DateTimeLayout), Now().ToDateTimeString())
-	assert.False(t, IsTestNow())
 }
 
 func TestParse(t *testing.T) {
