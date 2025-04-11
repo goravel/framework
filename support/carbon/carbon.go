@@ -13,11 +13,6 @@ func SetTimezone(timezone string) {
 	carbon.SetTimezone(timezone)
 }
 
-// SetLocation sets time location.
-func SetLocation(loc *stdtime.Location) {
-	carbon.SetLocation(loc)
-}
-
 // SetLocale sets language locale.
 func SetLocale(locale string) {
 	carbon.SetLocale(locale)

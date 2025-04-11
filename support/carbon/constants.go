@@ -76,6 +76,23 @@ const (
 	December  = carbon.December  // 十二月
 )
 
+// constellation constants
+// 星座常量
+const (
+	Aries       = "Aries"       // 白羊座
+	Taurus      = "Taurus"      // 金牛座
+	Gemini      = "Gemini"      // 双子座
+	Cancer      = "Cancer"      // 巨蟹座
+	Leo         = "Leo"         // 狮子座
+	Virgo       = "Virgo"       // 处女座
+	Libra       = "Libra"       // 天秤座
+	Scorpio     = "Scorpio"     // 天蝎座
+	Sagittarius = "Sagittarius" // 射手座
+	Capricorn   = "Capricorn"   // 摩羯座
+	Aquarius    = "Aquarius"    // 水瓶座
+	Pisces      = "Pisces"      // 双鱼座
+)
+
 // week constants
 // 星期常量
 const (
@@ -88,6 +105,15 @@ const (
 	Sunday    = carbon.Sunday    // 周日
 )
 
+// season constants
+// 季节常量
+const (
+	Spring = "Spring" // 春季
+	Summer = "Summer" // 夏季
+	Autumn = "Autumn" // 秋季
+	Winter = "Winter" // 冬季
+)
+
 // number constants
 // 数字常量
 const (
@@ -98,7 +124,7 @@ const (
 	MonthsPerYear      = 12     // 每年12月
 	MonthsPerQuarter   = 3      // 每季度3月
 	WeeksPerNormalYear = 52     // 每常规年52周
-	weeksPerLongYear   = 53     // 每长年53周
+	WeeksPerLongYear   = 53     // 每长年53周
 	WeeksPerMonth      = 4      // 每月4周
 	DaysPerLeapYear    = 366    // 每闰年366天
 	DaysPerNormalYear  = 365    // 每常规年365天
