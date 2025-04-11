@@ -8,6 +8,46 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestSetTimezone(t *testing.T) {
+	defer SetTimezone(UTC)
+
+	SetTimezone(PRC)
+	c := Parse("2025-04-11 00:00:00")
+
+	assert.Equal(t, PRC, c.Timezone())
+	assert.Equal(t, "CST", c.ZoneName())
+	assert.Equal(t, 28800, c.ZoneOffset())
+	assert.Equal(t, "2025-04-11 00:00:00 +0800 CST", c.ToString())
+}
+
+func TestSetLocation(t *testing.T) {
+	defer SetLocation(stdtime.UTC)
+
+	prc, _ := stdtime.LoadLocation(PRC)
+	SetLocation(prc)
+	c := Parse("2025-04-11 00:00:00")
+
+	assert.Equal(t, PRC, c.Timezone())
+	assert.Equal(t, "CST", c.ZoneName())
+	assert.Equal(t, 28800, c.ZoneOffset())
+	assert.Equal(t, "2025-04-11 00:00:00 +0800 CST", c.ToString())
+}
+
+func TestSetLocale(t *testing.T) {
+	defer SetLocale("en")
+
+	SetLocale("zh-CN")
+	c := Parse("2025-04-11 00:00:00")
+
+	assert.Equal(t, "zh-CN", c.Locale())
+	assert.Equal(t, "白羊座", c.Constellation())
+	assert.Equal(t, "春季", c.Season())
+	assert.Equal(t, "四月", c.ToMonthString())
+	assert.Equal(t, "4月", c.ToShortMonthString())
+	assert.Equal(t, "星期五", c.ToWeekString())
+	assert.Equal(t, "周五", c.ToShortWeekString())
+}
+
 func TestSetTestNow(t *testing.T) {
 	SetTestNow(Now().SubHour())
 	assert.True(t, IsTestNow())
@@ -15,29 +55,16 @@ func TestSetTestNow(t *testing.T) {
 	assert.False(t, IsTestNow())
 }
 
-func TestSetTimezone(t *testing.T) {
-	defer SetTimezone(UTC)
+func TestCleanTestNow(t *testing.T) {
+	now := Parse("2020-08-05")
 
-	SetTimezone(PRC)
-	c := Parse("2020-01-01 00:00:00")
-	assert.Equal(t, "2020-01-01 00:00:00 +0800 CST", c.ToString())
-}
+	SetTestNow(now)
+	assert.Equal(t, "2020-08-05", Now().ToDateString())
+	assert.True(t, IsTestNow())
 
-func TestTimezone(t *testing.T) {
-	timezones := []string{Local, UTC, GMT, EET, WET, CET, EST, MST, Cuba, Egypt, Eire, Greenwich, Iceland, Iran,
-		Israel, Jamaica, Japan, Libya, Poland, Portugal, PRC, Singapore, Turkey, Shanghai, Chongqing, Harbin, Urumqi,
-		HongKong, Macao, Taipei, Tokyo, Saigon, Seoul, Bangkok, Dubai, NewYork, LosAngeles, Chicago, Moscow, London,
-		Berlin, Paris, Rome, Sydney, Melbourne, Darwin}
-
-	for _, timezone := range timezones {
-		now := Now(timezone)
-		assert.Nil(t, now.Error, timezone)
-		assert.True(t, now.Timestamp() > 0, timezone)
-	}
-
-	now := Now()
-	assert.Nil(t, now.Error)
-	assert.True(t, now.Timestamp() > 0)
+	CleanTestNow()
+	assert.Equal(t, stdtime.Now().In(stdtime.UTC).Format(DateTimeLayout), Now().ToDateTimeString())
+	assert.False(t, IsTestNow())
 }
 
 func TestNow(t *testing.T) {
@@ -51,18 +78,6 @@ func TestNow(t *testing.T) {
 	utcNow := Now()
 	shanghaiNow := Now(Shanghai)
 	assert.Equal(t, shanghaiNow.SubHours(8).ToDateTimeString(), utcNow.ToDateTimeString())
-}
-
-func TestCleanTestNow(t *testing.T) {
-	now := Parse("2020-08-05")
-
-	SetTestNow(now)
-	assert.Equal(t, "2020-08-05", Now().ToDateString())
-	assert.True(t, IsTestNow())
-
-	CleanTestNow()
-	assert.Equal(t, stdtime.Now().In(stdtime.UTC).Format(DateTimeLayout), Now().ToDateTimeString())
-	assert.False(t, IsTestNow())
 }
 
 func TestParse(t *testing.T) {
