@@ -149,4 +149,7 @@ var (
 	ValidationEmptyRules      = New("rules can't be empty")
 
 	CommandEmptyPackageName = New("the package name cannot be empty")
+
+	CarbonFailedScan       = New("failed to scan %v as carbon")
+	CarbonInvalidTimestamp = New("invalid timestamp %v")
 )
