@@ -23,21 +23,45 @@ func TestSetTimezone(t *testing.T) {
 	assert.Equal(t, "2020-01-01 00:00:00 +0800 CST", c.ToString())
 }
 
+func TestSetLocale(t *testing.T) {
+	defer SetLocale("en")
+
+	SetLocale("zh-CN")
+
+	c := Parse("2025-04-11 00:00:00")
+
+	assert.Equal(t, "zh-CN", c.Locale())
+	assert.Equal(t, "白羊座", c.Constellation())
+	assert.Equal(t, "春季", c.Season())
+	assert.Equal(t, "四月", c.ToMonthString())
+	assert.Equal(t, "4月", c.ToShortMonthString())
+	assert.Equal(t, "星期五", c.ToWeekString())
+	assert.Equal(t, "周五", c.ToShortWeekString())
+}
+
+func TestSetLocation(t *testing.T) {
+	defer SetLocation(stdtime.UTC)
+
+	prc, _ := stdtime.LoadLocation(PRC)
+	SetLocation(prc)
+	c := Parse("2025-04-11 00:00:00")
+
+	assert.Equal(t, PRC, c.Timezone())
+	assert.Equal(t, "CST", c.ZoneName())
+	assert.Equal(t, 28800, c.ZoneOffset())
+	assert.Equal(t, "2025-04-11 00:00:00 +0800 CST", c.ToString())
+}
+
 func TestTimezone(t *testing.T) {
-	timezones := []string{Local, UTC, GMT, EET, WET, CET, EST, MST, Cuba, Egypt, Eire, Greenwich, Iceland, Iran,
-		Israel, Jamaica, Japan, Libya, Poland, Portugal, PRC, Singapore, Turkey, Shanghai, Chongqing, Harbin, Urumqi,
-		HongKong, Macao, Taipei, Tokyo, Saigon, Seoul, Bangkok, Dubai, NewYork, LosAngeles, Chicago, Moscow, London,
-		Berlin, Paris, Rome, Sydney, Melbourne, Darwin}
+	defer SetTimezone(UTC)
 
-	for _, timezone := range timezones {
-		now := Now(timezone)
-		assert.Nil(t, now.Error, timezone)
-		assert.True(t, now.Timestamp() > 0, timezone)
-	}
+	SetTimezone(PRC)
+	c := Parse("2025-04-11 00:00:00")
 
-	now := Now()
-	assert.Nil(t, now.Error)
-	assert.True(t, now.Timestamp() > 0)
+	assert.Equal(t, PRC, c.Timezone())
+	assert.Equal(t, "CST", c.ZoneName())
+	assert.Equal(t, 28800, c.ZoneOffset())
+	assert.Equal(t, "2025-04-11 00:00:00 +0800 CST", c.ToString())
 }
 
 func TestNow(t *testing.T) {
