@@ -17,14 +17,15 @@ import (
 )
 
 type Translator struct {
-	ctx      context.Context
-	loader   translationcontract.Loader
-	locale   string
-	fallback string
-	selector *MessageSelector
-	key      string
-	logger   logcontract.Log
-	mu       sync.Mutex
+	ctx        context.Context
+	fsLoader   translationcontract.Loader
+	fileLoader translationcontract.Loader
+	locale     string
+	fallback   string
+	selector   *MessageSelector
+	key        string
+	logger     logcontract.Log
+	mu         sync.Mutex
 }
 
 // loaded is a map structure used to store loaded translation data.
@@ -43,14 +44,15 @@ const (
 	localeKey         = contextKey("locale")
 )
 
-func NewTranslator(ctx context.Context, loader translationcontract.Loader, locale string, fallback string, logger logcontract.Log) *Translator {
+func NewTranslator(ctx context.Context, fsLoader translationcontract.Loader, fileLoader translationcontract.Loader, locale string, fallback string, logger logcontract.Log) *Translator {
 	return &Translator{
-		ctx:      ctx,
-		loader:   loader,
-		locale:   locale,
-		fallback: fallback,
-		selector: NewMessageSelector(),
-		logger:   logger,
+		ctx:        ctx,
+		fsLoader:   fsLoader,
+		fileLoader: fileLoader,
+		locale:     locale,
+		fallback:   fallback,
+		selector:   NewMessageSelector(),
+		logger:     logger,
 	}
 }
 
@@ -189,7 +191,10 @@ func (t *Translator) load(locale string, group string) error {
 		return nil
 	}
 
-	translations, err := t.loader.Load(locale, group)
+	translations, err := t.fileLoader.Load(locale, group)
+	if err != nil && t.fsLoader != nil {
+		translations, err = t.fsLoader.Load(locale, group)
+	}
 	if err != nil {
 		return err
 	}
