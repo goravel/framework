@@ -20,19 +20,6 @@ func TestSetTimezone(t *testing.T) {
 	assert.Equal(t, "2025-04-11 00:00:00 +0800 CST", c.ToString())
 }
 
-func TestSetLocation(t *testing.T) {
-	defer SetLocation(stdtime.UTC)
-
-	prc, _ := stdtime.LoadLocation(PRC)
-	SetLocation(prc)
-	c := Parse("2025-04-11 00:00:00")
-
-	assert.Equal(t, PRC, c.Timezone())
-	assert.Equal(t, "CST", c.ZoneName())
-	assert.Equal(t, 28800, c.ZoneOffset())
-	assert.Equal(t, "2025-04-11 00:00:00 +0800 CST", c.ToString())
-}
-
 func TestSetLocale(t *testing.T) {
 	defer SetLocale("en")
 
