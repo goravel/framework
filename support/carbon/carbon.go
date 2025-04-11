@@ -8,22 +8,7 @@ import (
 
 type Carbon = carbon.Carbon
 
-// SetTimezone sets timezone.
-func SetTimezone(timezone string) {
-	carbon.SetTimezone(timezone)
-}
-
-// SetLocation sets time location.
-func SetLocation(loc *stdtime.Location) {
-	carbon.SetLocation(loc)
-}
-
-// SetLocale sets language locale.
-func SetLocale(locale string) {
-	carbon.SetLocale(locale)
-}
-
-// SetTestNow sets the test time, remember to clean after use.
+// SetTestNow sets the test time. Remember to unset after used.
 func SetTestNow(testTime Carbon) {
 	carbon.SetTestNow(testTime)
 }
@@ -42,6 +27,11 @@ func CleanTestNow() {
 // IsTestNow determines if the test now time is set.
 func IsTestNow() bool {
 	return carbon.IsTestNow()
+}
+
+// SetTimezone sets timezone.
+func SetTimezone(timezone string) {
+	carbon.SetTimezone(timezone)
 }
 
 // Now returns a Carbon object of now.
