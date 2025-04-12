@@ -73,7 +73,7 @@ func (r *Worker) Run() error {
 					return
 				}
 
-				job, args, err := driver.Pop(queueKey)
+				task, err := driver.Pop(queueKey)
 				if err != nil {
 					if !errors.Is(err, errors.QueueDriverNoJobFound) {
 						r.log.Error(errors.QueueDriverFailedToPop.Args(queueKey, err))
@@ -91,17 +91,12 @@ func (r *Worker) Run() error {
 
 				r.currentDelay = 1 * time.Second
 
-				var realArgs []any
-				for _, arg := range args {
-					realArgs = append(realArgs, arg.Value)
-				}
-
-				if err = r.job.Call(job.Signature(), realArgs); err != nil {
+				if err = r.job.Call(task.Data.Job.Signature(), filterArgsType(task.Data.Args)); err != nil {
 					r.failedJobChan <- FailedJob{
 						UUID:       uuid.New(),
 						Connection: r.connection,
 						Queue:      queueKey,
-						Payload:    args,
+						Payload:    task.Data.Args,
 						Exception:  err.Error(),
 						FailedAt:   carbon.DateTime{Carbon: carbon.Now()},
 					}

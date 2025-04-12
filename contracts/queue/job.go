@@ -9,6 +9,19 @@ type Job interface {
 	Handle(args ...any) error
 }
 
+type PendingJob interface {
+	// Dispatch dispatches the task.
+	Dispatch() error
+	// DispatchSync dispatches the task synchronously.
+	DispatchSync() error
+	// Delay dispatches the task after the given delay.
+	Delay(time time.Time) PendingJob
+	// OnConnection sets the connection of the task.
+	OnConnection(connection string) PendingJob
+	// OnQueue sets the queue of the task.
+	OnQueue(queue string) PendingJob
+}
+
 type JobRepository interface {
 	All() []Job
 	Call(signature string, args []any) error

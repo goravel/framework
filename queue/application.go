@@ -19,8 +19,8 @@ func NewApplication(config queue.Config, job queue.JobRepository, log log.Log) *
 	}
 }
 
-func (r *Application) Chain(jobs []queue.Jobs) queue.Task {
-	return NewChainTask(r.config, jobs)
+func (r *Application) Chain(jobs []queue.Jobs) queue.PendingJob {
+	return NewPendingChainJob(r.config, jobs)
 }
 
 func (r *Application) GetJob(signature string) (queue.Job, error) {
@@ -31,8 +31,8 @@ func (r *Application) GetJobs() []queue.Job {
 	return r.job.All()
 }
 
-func (r *Application) Job(job queue.Job, args ...[]queue.Arg) queue.Task {
-	return NewTask(r.config, job, args...)
+func (r *Application) Job(job queue.Job, args ...[]queue.Arg) queue.PendingJob {
+	return NewPendingJob(r.config, job, args...)
 }
 
 func (r *Application) Register(jobs []queue.Job) {
