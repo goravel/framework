@@ -42,7 +42,7 @@ func (s *TaskTestSuite) TestNewTask() {
 			Value: "arg2",
 		},
 	}
-	task := NewTask(s.mockConfig, s.mockJob, args)
+	task := NewPendingJob(s.mockConfig, s.mockJob, args)
 
 	// Assertions
 	s.Equal(s.mockConfig, task.config)
@@ -61,7 +61,7 @@ func (s *TaskTestSuite) TestNewTaskWithoutArgs() {
 	s.mockConfig.EXPECT().QueueKey("default", "default").Return("default_queue").Once()
 
 	// Create a new task without args
-	task := NewTask(s.mockConfig, s.mockJob)
+	task := NewPendingJob(s.mockConfig, s.mockJob)
 
 	// Assertions
 	s.Equal(s.mockConfig, task.config)
@@ -102,7 +102,7 @@ func (s *TaskTestSuite) TestNewChainTask() {
 	}
 
 	// Create a new chain task
-	task := NewChainTask(s.mockConfig, jobs)
+	task := NewPendingChainJob(s.mockConfig, jobs)
 
 	// Assertions
 	s.Equal(s.mockConfig, task.config)
@@ -119,7 +119,7 @@ func (s *TaskTestSuite) TestDelay() {
 	s.mockConfig.EXPECT().QueueKey("default", "default").Return("default_queue").Once()
 
 	// Create a new task
-	task := NewTask(s.mockConfig, s.mockJob)
+	task := NewPendingJob(s.mockConfig, s.mockJob)
 
 	// Set a delay
 	delayTime := time.Now().Add(5 * time.Minute)
@@ -136,7 +136,7 @@ func (s *TaskTestSuite) TestOnConnection() {
 	s.mockConfig.EXPECT().QueueKey("default", "default").Return("default_queue").Once()
 
 	// Create a new task
-	task := NewTask(s.mockConfig, s.mockJob)
+	task := NewPendingJob(s.mockConfig, s.mockJob)
 
 	// Change connection
 	newConnection := "redis"
@@ -154,7 +154,7 @@ func (s *TaskTestSuite) TestOnQueue() {
 	s.mockConfig.EXPECT().QueueKey("default", "high").Return("high_queue").Once()
 
 	// Create a new task
-	task := NewTask(s.mockConfig, s.mockJob)
+	task := NewPendingJob(s.mockConfig, s.mockJob)
 
 	// Change queue
 	newQueue := "high"
@@ -172,7 +172,7 @@ func (s *TaskTestSuite) TestDispatchSync() {
 	s.mockJob.EXPECT().Handle([]any{"arg1"}...).Return(nil).Once()
 
 	// Create a new task
-	task := NewTask(s.mockConfig, s.mockJob, []queue.Arg{
+	task := NewPendingJob(s.mockConfig, s.mockJob, []queue.Arg{
 		{
 			Type:  "string",
 			Value: "arg1",
@@ -193,7 +193,7 @@ func (s *TaskTestSuite) TestDispatchSyncWithError() {
 	s.mockJob.EXPECT().Handle([]any{"arg1"}...).Return(assert.AnError).Once()
 
 	// Create a new task
-	task := NewTask(s.mockConfig, s.mockJob, []queue.Arg{
+	task := NewPendingJob(s.mockConfig, s.mockJob, []queue.Arg{
 		{
 			Type:  "string",
 			Value: "arg1",
@@ -237,7 +237,7 @@ func (s *TaskTestSuite) TestDispatchSyncChain() {
 	}
 
 	// Create a new chain task
-	task := NewChainTask(s.mockConfig, jobs)
+	task := NewPendingChainJob(s.mockConfig, jobs)
 
 	// Dispatch synchronously
 	err := task.DispatchSync()
@@ -276,7 +276,7 @@ func (s *TaskTestSuite) TestDispatchSyncChainWithError() {
 	}
 
 	// Create a new chain task
-	task := NewChainTask(s.mockConfig, jobs)
+	task := NewPendingChainJob(s.mockConfig, jobs)
 
 	// Dispatch synchronously
 	err := task.DispatchSync()

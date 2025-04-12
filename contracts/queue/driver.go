@@ -8,16 +8,16 @@ const (
 )
 
 type Driver interface {
-	// Bulk pushes a slice of jobs onto the queue.
-	Bulk(jobs []Jobs, queue string) error
 	// Connection returns the connection name for the driver.
 	Connection() string
 	// Driver returns the driver name for the driver.
 	Driver() string
 	// Later pushes the job onto the queue after a delay.
-	Later(delay time.Time, job Job, args []Arg, queue string) error
+	Later(delay time.Time, task Task, queue string) error
+	// Name returns the name of the driver.
+	Name() string
 	// Pop pops the next job off of the queue.
-	Pop(queue string) (Job, []Arg, error)
+	Pop(queue string) (*Task, error)
 	// Push pushes the job onto the queue.
-	Push(job Job, args []Arg, queue string) error
+	Push(task Task, queue string) error
 }
