@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/goravel/framework/contracts/queue"
-	"github.com/spf13/cast"
 )
 
 var (
@@ -28,14 +27,6 @@ func (r *Sync) Connection() string {
 
 func (r *Sync) Driver() string {
 	return queue.DriverSync
-}
-
-func (r *Sync) Later(delay time.Time, task queue.Task, _ string) error {
-	if !delay.IsZero() {
-		time.Sleep(time.Until(delay))
-	}
-
-	return r.Push(task, "")
 }
 
 func (r *Sync) Name() string {
@@ -69,25 +60,4 @@ func (r *Sync) Push(task queue.Task, _ string) error {
 	}
 
 	return nil
-}
-
-func filterArgsType(args []queue.Arg) []any {
-	realArgs := make([]any, 0, len(args))
-	for _, arg := range args {
-		switch arg.Type {
-		case "string":
-			realArgs = append(realArgs, cast.ToString(arg.Value))
-		case "int":
-			realArgs = append(realArgs, cast.ToInt(arg.Value))
-		case "bool":
-			realArgs = append(realArgs, cast.ToBool(arg.Value))
-		case "[]string":
-			realArgs = append(realArgs, cast.ToStringSlice(arg.Value))
-		case "[]int":
-			realArgs = append(realArgs, cast.ToIntSlice(arg.Value))
-		case "[]bool":
-			realArgs = append(realArgs, cast.ToBoolSlice(arg.Value))
-		}
-	}
-	return realArgs
 }
