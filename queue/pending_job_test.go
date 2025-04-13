@@ -11,27 +11,22 @@ import (
 	mocksqueue "github.com/goravel/framework/mocks/queue"
 )
 
-type TaskTestSuite struct {
+type PendingJobTestSuite struct {
 	suite.Suite
 	mockConfig *mocksqueue.Config
-	mockJob    *mocksqueue.Job
 }
 
-func TestTaskTestSuite(t *testing.T) {
-	suite.Run(t, new(TaskTestSuite))
+func TestPendingJobTestSuite(t *testing.T) {
+	suite.Run(t, new(PendingJobTestSuite))
 }
 
-func (s *TaskTestSuite) SetupTest() {
+func (s *PendingJobTestSuite) SetupTest() {
 	s.mockConfig = mocksqueue.NewConfig(s.T())
-	s.mockJob = mocksqueue.NewJob(s.T())
-}
-
-func (s *TaskTestSuite) TestNewTask() {
-	// Setup expectations
 	s.mockConfig.EXPECT().Default().Return("default", "default", 1).Once()
 	s.mockConfig.EXPECT().QueueKey("default", "default").Return("default_queue").Once()
+}
 
-	// Create a new task
+func (s *PendingJobTestSuite) TestNewPendingJob() {
 	args := []queue.Arg{
 		{
 			Type:  "string",
@@ -42,47 +37,33 @@ func (s *TaskTestSuite) TestNewTask() {
 			Value: "arg2",
 		},
 	}
-	task := NewPendingJob(s.mockConfig, s.mockJob, args)
+	pendingJob := NewPendingJob(s.mockConfig, &TestJobOne{}, args)
 
-	// Assertions
-	s.Equal(s.mockConfig, task.config)
-	s.Equal("default", task.connection)
-	s.Equal("default_queue", task.queueKey)
-	s.False(task.chain)
-	s.True(task.delay.IsZero())
-	s.Len(task.jobs, 1)
-	s.Equal(s.mockJob, task.jobs[0].Job)
-	s.Equal(args, task.jobs[0].Args)
+	s.Equal(s.mockConfig, pendingJob.config)
+	s.Equal("default", pendingJob.connection)
+	s.Equal("default_queue", pendingJob.queueKey)
+	s.NotEmpty(pendingJob.task.Uuid)
+	s.Equal(&TestJobOne{}, pendingJob.task.Jobs.Job)
+	s.Equal(args, pendingJob.task.Args)
+	s.True(pendingJob.delay.IsZero())
 }
 
-func (s *TaskTestSuite) TestNewTaskWithoutArgs() {
-	// Setup expectations
-	s.mockConfig.EXPECT().Default().Return("default", "default", 1).Once()
-	s.mockConfig.EXPECT().QueueKey("default", "default").Return("default_queue").Once()
+func (s *PendingJobTestSuite) TestNewPendingJobWithoutArgs() {
+	pendingJob := NewPendingJob(s.mockConfig, &TestJobOne{})
 
-	// Create a new task without args
-	task := NewPendingJob(s.mockConfig, s.mockJob)
-
-	// Assertions
-	s.Equal(s.mockConfig, task.config)
-	s.Equal("default", task.connection)
-	s.Equal("default_queue", task.queueKey)
-	s.False(task.chain)
-	s.True(task.delay.IsZero())
-	s.Len(task.jobs, 1)
-	s.Equal(s.mockJob, task.jobs[0].Job)
-	s.Empty(task.jobs[0].Args)
+	s.Equal(s.mockConfig, pendingJob.config)
+	s.Equal("default", pendingJob.connection)
+	s.Equal("default_queue", pendingJob.queueKey)
+	s.NotEmpty(pendingJob.task.Uuid)
+	s.Equal(&TestJobOne{}, pendingJob.task.Jobs.Job)
+	s.Empty(pendingJob.task.Args)
+	s.True(pendingJob.delay.IsZero())
 }
 
-func (s *TaskTestSuite) TestNewChainTask() {
-	// Setup expectations
-	s.mockConfig.EXPECT().Default().Return("default", "default", 1).Once()
-	s.mockConfig.EXPECT().QueueKey("default", "default").Return("default_queue").Once()
-
-	// Create jobs for the chain
+func (s *PendingJobTestSuite) TestNewPendingChainJob() {
 	jobs := []queue.Jobs{
 		{
-			Job: s.mockJob,
+			Job: &TestJobOne{},
 			Args: []queue.Arg{
 				{
 					Type:  "string",
@@ -91,133 +72,94 @@ func (s *TaskTestSuite) TestNewChainTask() {
 			},
 		},
 		{
-			Job: s.mockJob,
+			Job: &TestJobOne{},
 			Args: []queue.Arg{
 				{
 					Type:  "string",
 					Value: "arg2",
 				},
 			},
+			Delay: time.Now().Add(1 * time.Minute),
 		},
 	}
 
-	// Create a new chain task
-	task := NewPendingChainJob(s.mockConfig, jobs)
+	pendingChainJob := NewPendingChainJob(s.mockConfig, jobs)
 
-	// Assertions
-	s.Equal(s.mockConfig, task.config)
-	s.Equal("default", task.connection)
-	s.Equal("default_queue", task.queueKey)
-	s.True(task.chain)
-	s.True(task.delay.IsZero())
-	s.Equal(jobs, task.jobs)
+	s.Equal(s.mockConfig, pendingChainJob.config)
+	s.Equal("default", pendingChainJob.connection)
+	s.Equal("default_queue", pendingChainJob.queueKey)
+	s.NotEmpty(pendingChainJob.task.Uuid)
+	s.Equal(jobs[0].Job, pendingChainJob.task.Job)
+	s.Equal(jobs[0].Args, pendingChainJob.task.Args)
+	s.True(pendingChainJob.delay.IsZero())
+	s.Equal(jobs[1].Job, pendingChainJob.task.Chain[0].Job)
+	s.Equal(jobs[1].Args, pendingChainJob.task.Chain[0].Args)
+	s.Equal(jobs[1].Delay, pendingChainJob.task.Chain[0].Delay)
 }
 
-func (s *TaskTestSuite) TestDelay() {
-	// Setup expectations
-	s.mockConfig.EXPECT().Default().Return("default", "default", 1).Once()
-	s.mockConfig.EXPECT().QueueKey("default", "default").Return("default_queue").Once()
+func (s *PendingJobTestSuite) TestDelay() {
+	pendingJob := NewPendingJob(s.mockConfig, &TestJobOne{})
 
-	// Create a new task
-	task := NewPendingJob(s.mockConfig, s.mockJob)
-
-	// Set a delay
 	delayTime := time.Now().Add(5 * time.Minute)
-	taskWithDelay := task.Delay(delayTime)
+	pendingJobWithDelay := pendingJob.Delay(delayTime)
 
-	// Assertions
-	s.Equal(delayTime, task.delay)
-	s.Equal(task, taskWithDelay)
+	s.Equal(delayTime, pendingJob.delay)
+	s.Equal(pendingJob, pendingJobWithDelay)
 }
 
-func (s *TaskTestSuite) TestOnConnection() {
-	// Setup expectations
-	s.mockConfig.EXPECT().Default().Return("default", "default", 1).Once()
-	s.mockConfig.EXPECT().QueueKey("default", "default").Return("default_queue").Once()
+func (s *PendingJobTestSuite) TestOnConnection() {
+	pendingJob := NewPendingJob(s.mockConfig, &TestJobOne{})
 
-	// Create a new task
-	task := NewPendingJob(s.mockConfig, s.mockJob)
-
-	// Change connection
 	newConnection := "redis"
-	taskWithNewConnection := task.OnConnection(newConnection)
+	pendingJobWithNewConnection := pendingJob.OnConnection(newConnection)
 
-	// Assertions
-	s.Equal(newConnection, task.connection)
-	s.Equal(task, taskWithNewConnection)
+	s.Equal(newConnection, pendingJob.connection)
+	s.Equal(pendingJob, pendingJobWithNewConnection)
 }
 
-func (s *TaskTestSuite) TestOnQueue() {
-	// Setup expectations
-	s.mockConfig.EXPECT().Default().Return("default", "default", 1).Once()
-	s.mockConfig.EXPECT().QueueKey("default", "default").Return("default_queue").Once()
+func (s *PendingJobTestSuite) TestOnQueue() {
 	s.mockConfig.EXPECT().QueueKey("default", "high").Return("high_queue").Once()
 
-	// Create a new task
-	task := NewPendingJob(s.mockConfig, s.mockJob)
+	pendingJob := NewPendingJob(s.mockConfig, &TestJobOne{})
 
-	// Change queue
 	newQueue := "high"
-	taskWithNewQueue := task.OnQueue(newQueue)
+	pendingJobWithNewQueue := pendingJob.OnQueue(newQueue)
 
-	// Assertions
-	s.Equal("high_queue", task.queueKey)
-	s.Equal(task, taskWithNewQueue)
+	s.Equal("high_queue", pendingJob.queueKey)
+	s.Equal(pendingJob, pendingJobWithNewQueue)
 }
 
-func (s *TaskTestSuite) TestDispatchSync() {
-	// Setup expectations
-	s.mockConfig.EXPECT().Default().Return("default", "default", 1).Once()
-	s.mockConfig.EXPECT().QueueKey("default", "default").Return("default_queue").Once()
-	s.mockJob.EXPECT().Handle([]any{"arg1"}...).Return(nil).Once()
-
-	// Create a new task
-	task := NewPendingJob(s.mockConfig, s.mockJob, []queue.Arg{
+func (s *PendingJobTestSuite) TestDispatchSync() {
+	pendingJob := NewPendingJob(s.mockConfig, &TestJobOne{}, []queue.Arg{
 		{
 			Type:  "string",
 			Value: "arg1",
 		},
 	})
 
-	// Dispatch synchronously
-	err := task.DispatchSync()
+	err := pendingJob.DispatchSync()
 
-	// Assertions
 	s.Nil(err)
+	s.Equal([]any{"arg1"}, testJobOne)
 }
 
-func (s *TaskTestSuite) TestDispatchSyncWithError() {
-	// Setup expectations
-	s.mockConfig.EXPECT().Default().Return("default", "default", 1).Once()
-	s.mockConfig.EXPECT().QueueKey("default", "default").Return("default_queue").Once()
-	s.mockJob.EXPECT().Handle([]any{"arg1"}...).Return(assert.AnError).Once()
-
-	// Create a new task
-	task := NewPendingJob(s.mockConfig, s.mockJob, []queue.Arg{
+func (s *PendingJobTestSuite) TestDispatchSyncWithError() {
+	pendingJob := NewPendingJob(s.mockConfig, &TestJobErr{}, []queue.Arg{
 		{
 			Type:  "string",
 			Value: "arg1",
 		},
 	})
 
-	// Dispatch synchronously
-	err := task.DispatchSync()
+	err := pendingJob.DispatchSync()
 
-	// Assertions
 	s.Equal(assert.AnError, err)
 }
 
-func (s *TaskTestSuite) TestDispatchSyncChain() {
-	// Setup expectations
-	s.mockConfig.EXPECT().Default().Return("default", "default", 1).Once()
-	s.mockConfig.EXPECT().QueueKey("default", "default").Return("default_queue").Once()
-	s.mockJob.EXPECT().Handle([]any{"arg1"}...).Return(nil).Once()
-	s.mockJob.EXPECT().Handle([]any{"arg2"}...).Return(nil).Once()
-
-	// Create jobs for the chain
+func (s *PendingJobTestSuite) TestDispatchSyncChain() {
 	jobs := []queue.Jobs{
 		{
-			Job: s.mockJob,
+			Job: &TestJobOne{},
 			Args: []queue.Arg{
 				{
 					Type:  "string",
@@ -226,7 +168,7 @@ func (s *TaskTestSuite) TestDispatchSyncChain() {
 			},
 		},
 		{
-			Job: s.mockJob,
+			Job: &TestJobTwo{},
 			Args: []queue.Arg{
 				{
 					Type:  "string",
@@ -236,27 +178,19 @@ func (s *TaskTestSuite) TestDispatchSyncChain() {
 		},
 	}
 
-	// Create a new chain task
-	task := NewPendingChainJob(s.mockConfig, jobs)
+	pendingChainJob := NewPendingChainJob(s.mockConfig, jobs)
 
-	// Dispatch synchronously
-	err := task.DispatchSync()
+	err := pendingChainJob.DispatchSync()
 
-	// Assertions
 	s.Nil(err)
+	s.Equal([]any{"arg1"}, testJobOne)
+	s.Equal([]any{"arg2"}, testJobTwo)
 }
 
-func (s *TaskTestSuite) TestDispatchSyncChainWithError() {
-	// Setup expectations
-	s.mockConfig.EXPECT().Default().Return("default", "default", 1).Once()
-	s.mockConfig.EXPECT().QueueKey("default", "default").Return("default_queue").Once()
-	s.mockJob.EXPECT().Handle([]any{"arg1"}...).Return(nil).Once()
-	s.mockJob.EXPECT().Handle([]any{"arg2"}...).Return(assert.AnError).Once()
-
-	// Create jobs for the chain
+func (s *PendingJobTestSuite) TestDispatchSyncChainWithError() {
 	jobs := []queue.Jobs{
 		{
-			Job: s.mockJob,
+			Job: &TestJobOne{},
 			Args: []queue.Arg{
 				{
 					Type:  "string",
@@ -265,7 +199,7 @@ func (s *TaskTestSuite) TestDispatchSyncChainWithError() {
 			},
 		},
 		{
-			Job: s.mockJob,
+			Job: &TestJobErr{},
 			Args: []queue.Arg{
 				{
 					Type:  "string",
@@ -275,12 +209,10 @@ func (s *TaskTestSuite) TestDispatchSyncChainWithError() {
 		},
 	}
 
-	// Create a new chain task
-	task := NewPendingChainJob(s.mockConfig, jobs)
+	pendingChainJob := NewPendingChainJob(s.mockConfig, jobs)
 
-	// Dispatch synchronously
-	err := task.DispatchSync()
+	err := pendingChainJob.DispatchSync()
 
-	// Assertions
 	s.Equal(assert.AnError, err)
+	s.Equal([]any{"arg1"}, testJobOne)
 }

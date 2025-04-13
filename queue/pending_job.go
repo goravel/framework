@@ -11,9 +11,7 @@ import (
 type PendingJob struct {
 	config     contractsqueue.Config
 	connection string
-	chain      bool
-	delay      *time.Time
-	jobs       []contractsqueue.Jobs
+	delay      time.Time
 	queueKey   string
 	task       contractsqueue.Task
 }
@@ -32,7 +30,7 @@ func NewPendingJob(config contractsqueue.Config, job contractsqueue.Job, args ..
 		queueKey:   config.QueueKey(connection, queue),
 		task: contractsqueue.Task{
 			Uuid: uuid.New().String(),
-			Data: contractsqueue.TaskData{
+			Jobs: contractsqueue.Jobs{
 				Job:  job,
 				Args: arg,
 			},
@@ -41,13 +39,23 @@ func NewPendingJob(config contractsqueue.Config, job contractsqueue.Job, args ..
 }
 
 func NewPendingChainJob(config contractsqueue.Config, jobs []contractsqueue.Jobs) *PendingJob {
-	var chained []contractsqueue.TaskData
+	if len(jobs) == 0 {
+		return nil
+	}
+
+	var chain []contractsqueue.Jobs
 	for _, job := range jobs[1:] {
-		chained = append(chained, contractsqueue.TaskData{
+		chain = append(chain, contractsqueue.Jobs{
 			Job:   job.Job,
 			Args:  job.Args,
 			Delay: job.Delay,
 		})
+	}
+
+	job := contractsqueue.Jobs{
+		Job:   jobs[0].Job,
+		Args:  jobs[0].Args,
+		Delay: jobs[0].Delay,
 	}
 
 	connection, queue, _ := config.Default()
@@ -57,20 +65,16 @@ func NewPendingChainJob(config contractsqueue.Config, jobs []contractsqueue.Jobs
 		connection: connection,
 		queueKey:   config.QueueKey(connection, queue),
 		task: contractsqueue.Task{
-			Uuid: uuid.New().String(),
-			Data: contractsqueue.TaskData{
-				Job:     jobs[0].Job,
-				Args:    jobs[0].Args,
-				Delay:   jobs[0].Delay,
-				Chained: chained,
-			},
+			Uuid:  uuid.New().String(),
+			Jobs:  job,
+			Chain: chain,
 		},
 	}
 }
 
 // Delay sets a delay time for the task
 func (r *PendingJob) Delay(delay time.Time) contractsqueue.PendingJob {
-	r.delay = &delay
+	r.delay = delay
 	return r
 }
 
@@ -81,11 +85,11 @@ func (r *PendingJob) Dispatch() error {
 		return err
 	}
 
-	if r.delay != nil && !r.delay.IsZero() {
-		if r.task.Data.Delay != nil && !r.task.Data.Delay.IsZero() {
-			*r.task.Data.Delay = r.task.Data.Delay.Add(carbon.Now().DiffAbsInDuration(carbon.FromStdTime(*r.delay)))
+	if !r.delay.IsZero() {
+		if !r.task.Delay.IsZero() {
+			r.task.Delay = r.task.Delay.Add(carbon.Now().DiffAbsInDuration(carbon.FromStdTime(r.delay)))
 		} else {
-			r.task.Data.Delay = r.delay
+			r.task.Delay = r.delay
 		}
 	}
 
@@ -94,19 +98,9 @@ func (r *PendingJob) Dispatch() error {
 
 // DispatchSync dispatches the task synchronously
 func (r *PendingJob) DispatchSync() error {
-	if err := r.task.Data.Job.Handle(filterArgsType(r.task.Data.Args)...); err != nil {
-		return err
-	}
+	syncDriver := NewSync(r.connection)
 
-	if len(r.task.Data.Chained) > 0 {
-		for _, job := range r.task.Data.Chained {
-			if err := job.Job.Handle(filterArgsType(job.Args)...); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
+	return syncDriver.Push(r.task, r.queueKey)
 }
 
 // OnConnection sets the connection name

@@ -30,7 +30,7 @@ type JobRepository interface {
 }
 
 type Jobs struct {
-	Job   Job
-	Args  []Arg
-	Delay *time.Time
+	Job   Job       `json:"job"`
+	Args  []Arg     `json:"args"`
+	Delay time.Time `json:"delay"`
 }
