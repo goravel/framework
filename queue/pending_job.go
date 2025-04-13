@@ -12,7 +12,7 @@ type PendingJob struct {
 	config     contractsqueue.Config
 	connection string
 	delay      time.Time
-	queueKey   string
+	queue      string
 	task       contractsqueue.Task
 }
 
@@ -27,7 +27,7 @@ func NewPendingJob(config contractsqueue.Config, job contractsqueue.Job, args ..
 	return &PendingJob{
 		config:     config,
 		connection: connection,
-		queueKey:   config.QueueKey(connection, queue),
+		queue:      queue,
 		task: contractsqueue.Task{
 			Uuid: uuid.New().String(),
 			Jobs: contractsqueue.Jobs{
@@ -63,7 +63,7 @@ func NewPendingChainJob(config contractsqueue.Config, jobs []contractsqueue.Jobs
 	return &PendingJob{
 		config:     config,
 		connection: connection,
-		queueKey:   config.QueueKey(connection, queue),
+		queue:      queue,
 		task: contractsqueue.Task{
 			Uuid:  uuid.New().String(),
 			Jobs:  job,
@@ -93,14 +93,14 @@ func (r *PendingJob) Dispatch() error {
 		}
 	}
 
-	return driver.Push(r.task, r.queueKey)
+	return driver.Push(r.task, r.config.QueueKey(r.connection, r.queue))
 }
 
 // DispatchSync dispatches the task synchronously
 func (r *PendingJob) DispatchSync() error {
 	syncDriver := NewSync(r.connection)
 
-	return syncDriver.Push(r.task, r.queueKey)
+	return syncDriver.Push(r.task, r.config.QueueKey(r.connection, r.queue))
 }
 
 // OnConnection sets the connection name
@@ -111,6 +111,6 @@ func (r *PendingJob) OnConnection(connection string) contractsqueue.PendingJob {
 
 // OnQueue sets the queue name
 func (r *PendingJob) OnQueue(queue string) contractsqueue.PendingJob {
-	r.queueKey = r.config.QueueKey(r.connection, queue)
+	r.queue = queue
 	return r
 }
