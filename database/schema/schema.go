@@ -490,8 +490,8 @@ func getDefaultGoTypeMapping() map[string]contractsschema.GoTypeMapping {
 			Imports:  []string{},
 		},
 		contractsschema.TypeEnum.Value(): {
-			Type:     "string",
-			NullType: "*string",
+			Type:     "any",
+			NullType: "any",
 			Imports:  []string{},
 		},
 		contractsschema.TypeFloat.Value(): {

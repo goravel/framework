@@ -126,6 +126,8 @@ type SchemaGrammar interface {
 	TypeSmallInteger(column ColumnDefinition) string
 	// TypeString Create the column definition for a string type.
 	TypeString(column ColumnDefinition) string
+	// TypePatternMapping returns a list of regex-based mappings from database-specific types to schema types.
+	TypePatternMapping() []TypePatternMapping
 }
 
 type GormGrammar interface {
@@ -217,4 +219,9 @@ type View struct {
 	Name       string
 	Schema     string
 	Definition string
+}
+
+type TypePatternMapping struct {
+	Pattern    string
+	SchemaType string
 }
