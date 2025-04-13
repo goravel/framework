@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/auth"
@@ -380,9 +381,9 @@ func (s *ApplicationTestSuite) TestMakeSchedule() {
 
 func (s *ApplicationTestSuite) TestMakeSession() {
 	mockConfig := mocksconfig.NewConfig(s.T())
-	mockConfig.EXPECT().GetInt("session.lifetime").Return(120).Once()
-	mockConfig.EXPECT().GetInt("session.gc_interval", 30).Return(30).Once()
-	mockConfig.EXPECT().GetString("session.files").Return("storage/framework/sessions").Once()
+	mockConfig.EXPECT().Get("session.drivers", mock.AnythingOfType("map[string]interface {}")).Return(
+		map[string]any{},
+	).Once()
 
 	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
 		return mockConfig, nil

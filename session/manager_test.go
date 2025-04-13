@@ -2,51 +2,25 @@ package session
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/foundation"
-	sessioncontract "github.com/goravel/framework/contracts/session"
+	contractssession "github.com/goravel/framework/contracts/session"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation/json"
 	mockconfig "github.com/goravel/framework/mocks/config"
+	mocksession "github.com/goravel/framework/mocks/session"
+	"github.com/goravel/framework/session/driver"
 )
 
-type MockSessionDriver struct {
-	mock.Mock
-}
-
-func (m *MockSessionDriver) Close() error {
-	args := m.Called()
-	return args.Error(0)
-}
-func (m *MockSessionDriver) Destroy(id string) error {
-	args := m.Called(id)
-	return args.Error(0)
-}
-func (m *MockSessionDriver) Gc(maxLifetime int) error {
-	args := m.Called(maxLifetime)
-	return args.Error(0)
-}
-func (m *MockSessionDriver) Open(path string, name string) error {
-	args := m.Called(path, name)
-	return args.Error(0)
-}
-func (m *MockSessionDriver) Read(id string) (string, error) {
-	args := m.Called(id)
-	return args.String(0), args.Error(1)
-}
-func (m *MockSessionDriver) Write(id string, data string) error {
-	args := m.Called(id, data)
-	return args.Error(0)
-}
-
-func MockDriverFactory(mockDriverInstance *MockSessionDriver) func() (sessioncontract.Driver, error) {
-	return func() (sessioncontract.Driver, error) {
+func MockDriverFactory(mockDriverInstance *mocksession.Driver) func() (contractssession.Driver, error) {
+	return func() (contractssession.Driver, error) {
 		if mockDriverInstance == nil {
-			return nil, fmt.Errorf("mock driver instance not provided to factory")
+			return nil, fmt.Errorf("mock driver instance not provided")
 		}
 		return mockDriverInstance, nil
 	}
@@ -54,23 +28,21 @@ func MockDriverFactory(mockDriverInstance *MockSessionDriver) func() (sessioncon
 
 type CustomDriver struct{}
 
-func NewCustomDriver() (sessioncontract.Driver, error) {
-	return &CustomDriver{}, nil
-}
-func (c *CustomDriver) Close() error                { return nil }
-func (c *CustomDriver) Destroy(string) error        { return nil }
-func (c *CustomDriver) Gc(int) error                { return nil }
-func (c *CustomDriver) Open(string, string) error   { return nil }
-func (c *CustomDriver) Read(string) (string, error) { return "", nil }
-func (c *CustomDriver) Write(string, string) error  { return nil }
+func NewCustomDriverFactory() (contractssession.Driver, error) { return &CustomDriver{}, nil }
+func (c *CustomDriver) Close() error                           { return nil }
+func (c *CustomDriver) Destroy(string) error                   { return nil }
+func (c *CustomDriver) Gc(int) error                           { return nil }
+func (c *CustomDriver) Open(string, string) error              { return nil }
+func (c *CustomDriver) Read(string) (string, error)            { return "", nil }
+func (c *CustomDriver) Write(string, string) error             { return nil }
 
 type ManagerTestSuite struct {
 	suite.Suite
-	mockConfig        *mockconfig.Config
-	manager           *Manager
-	json              foundation.Json
-	mockFileDriver    *MockSessionDriver
-	mockFileDriverVia func() (sessioncontract.Driver, error)
+	mockConfig       *mockconfig.Config
+	manager          *Manager
+	json             foundation.Json
+	mockOtherDriver  *mocksession.Driver
+	mockOtherFactory func() (contractssession.Driver, error)
 }
 
 func TestManagerTestSuite(t *testing.T) {
@@ -80,153 +52,260 @@ func TestManagerTestSuite(t *testing.T) {
 func (s *ManagerTestSuite) SetupTest() {
 	s.mockConfig = mockconfig.NewConfig(s.T())
 	s.json = json.NewJson()
-	s.mockFileDriver = new(MockSessionDriver)
-	s.mockFileDriverVia = MockDriverFactory(s.mockFileDriver)
+	s.mockOtherDriver = new(mocksession.Driver)
+	s.mockOtherFactory = MockDriverFactory(s.mockOtherDriver)
 
 	s.mockConfig.On("Get", "session.drivers", mock.AnythingOfType("map[string]interface {}")).Return(
-
-		map[string]any{
-			"file": map[string]any{
-				"via": s.mockFileDriverVia,
-			},
-		},
+		map[string]any{},
 	).Maybe()
 
 	s.manager = NewManager(s.mockConfig, s.json)
 	s.Require().NotNil(s.manager)
-
 }
 
-func (s *ManagerTestSuite) TearDownTest() {
+func (s *ManagerTestSuite) TearDownSuite() {
+	testPath := "storage/framework"
+	if _, err := os.Stat(testPath); err == nil {
+		os.RemoveAll(testPath)
+	}
 	s.mockConfig.AssertExpectations(s.T())
-
 }
 
-func (s *ManagerTestSuite) TestDriver_ResolveConfiguredFileDriver() {
+func (s *ManagerTestSuite) TestDriver_ResolveInternalFileDriver() {
 
-	s.mockConfig.On("GetString", "session.driver").Return("file").Maybe()
-	s.mockConfig.On("GetInt", "session.gc_interval").Return(30).Maybe()
+	s.mockConfig.On("GetString", "session.driver").Return("file").Once()
+	s.mockConfig.On("GetInt", "session.lifetime").Return(120).Once()
+	s.mockConfig.On("GetString", "session.files").Return("storage/framework/sessions_test_manager").Once()
+	s.mockConfig.On("GetInt", "session.gc_interval").Return(30).Once()
 
-	driver, err := s.manager.Driver("file")
+	driverInstance, err := s.manager.Driver("file")
 	s.Nil(err)
-	s.NotNil(driver)
+	s.NotNil(driverInstance)
 
-	s.Equal(s.mockFileDriver, driver)
+	s.IsType(&driver.File{}, driverInstance, "Expected internal file driver type")
 }
 
-func (s *ManagerTestSuite) TestDriver_ResolveDefaultDriver() {
+func (s *ManagerTestSuite) TestDriver_ResolveDefaultDriver_InternalFile() {
+	s.mockConfig.On("GetString", "session.driver").Return("file").Once()
+	s.mockConfig.On("GetInt", "session.lifetime").Return(120).Once()
+	s.mockConfig.On("GetString", "session.files").Return("storage/framework/sessions_test_manager").Once()
+	s.mockConfig.On("GetInt", "session.gc_interval").Return(30).Once()
+
+	driverInstance, err := s.manager.Driver()
+	s.Nil(err)
+	s.NotNil(driverInstance)
+	s.IsType(&driver.File{}, driverInstance, "Expected internal file driver type for default")
+}
+
+func (s *ManagerTestSuite) TestDriver_ResolveFileDriver_OverriddenByConfig() {
+
+	s.mockConfig.On("GetString", "session.driver").Return("file").Once()
+	s.mockConfig.On("GetInt", "session.lifetime").Return(120).Once()
+	s.mockConfig.On("GetString", "session.files").Return("storage/framework/sessions_test_manager").Once()
+	s.mockConfig.On("GetInt", "session.gc_interval").Return(30).Once()
 
 	s.mockConfig.ExpectedCalls = nil
+
+	s.mockConfig.On("GetString", "session.driver").Return("file").Once()
+	s.mockConfig.On("Get", "session.drivers", mock.AnythingOfType("map[string]interface {}")).Return(
+		map[string]any{
+			"file": map[string]any{
+				"via": s.mockOtherFactory,
+			},
+		},
+	).Once()
+
+	s.manager = NewManager(s.mockConfig, s.json)
+	s.Require().NotNil(s.manager)
+
+	s.mockConfig.On("GetInt", "session.gc_interval").Return(30).Once()
+
+	driverInstance, err := s.manager.Driver("file")
+	s.Nil(err)
+	s.NotNil(driverInstance)
+
+	s.Equal(s.mockOtherDriver, driverInstance, "Expected mock driver due to config override")
+	s.IsType(&mocksession.Driver{}, driverInstance)
+}
+
+func (s *ManagerTestSuite) TestDriver_ResolveFileDriver_OverriddenByExtend() {
+
 	s.mockConfig.On("GetString", "session.driver").Return("file").Once()
 	s.mockConfig.On("GetInt", "session.gc_interval").Return(30).Once()
 
-	driver, err := s.manager.Driver()
+	err := s.manager.Extend("file", func() contractssession.Driver {
+
+		return s.mockOtherDriver
+	})
 	s.Nil(err)
-	s.NotNil(driver)
-	s.Equal(s.mockFileDriver, driver)
+
+	driverInstance, err := s.manager.Driver("file")
+	s.Nil(err)
+	s.NotNil(driverInstance)
+
+	s.Equal(s.mockOtherDriver, driverInstance, "Expected mock driver due to Extend override")
+	s.IsType(&mocksession.Driver{}, driverInstance)
 }
 
-func (s *ManagerTestSuite) TestDriver_ResolveExtendedDriver() {
+func (s *ManagerTestSuite) TestDriver_ResolveCustomDriver_FromConfig() {
 
-	s.mockConfig.On("GetString", "session.driver").Return("file").Maybe()
-	s.mockConfig.On("GetInt", "session.gc_interval").Return(30).Maybe()
+	s.mockConfig.ExpectedCalls = nil
+	s.mockConfig.On("GetString", "session.driver").Return("file").Once()
+	s.mockConfig.On("Get", "session.drivers", mock.AnythingOfType("map[string]interface {}")).Return(
+		map[string]any{
+			"custom": map[string]any{
+				"via": MockDriverFactory(s.mockOtherDriver),
+			},
+		},
+	).Once()
 
-	err := s.manager.Extend("test", func() sessioncontract.Driver {
-		d, _ := NewCustomDriver()
+	s.manager = NewManager(s.mockConfig, s.json)
+	s.Require().NotNil(s.manager)
+
+	s.mockConfig.On("GetInt", "session.gc_interval").Return(30).Once()
+
+	driverInstance, err := s.manager.Driver("custom")
+	s.Nil(err)
+	s.NotNil(driverInstance)
+	s.Equal(s.mockOtherDriver, driverInstance, "Expected mock driver for custom driver from config")
+}
+
+func (s *ManagerTestSuite) TestDriver_ResolveCustomDriver_FromExtend() {
+
+	s.mockConfig.On("GetString", "session.driver").Return("file").Once()
+	s.mockConfig.On("GetInt", "session.gc_interval").Return(30).Once()
+
+	err := s.manager.Extend("extended_custom", func() contractssession.Driver {
+
+		d, _ := NewCustomDriverFactory()
 		return d
 	})
 	s.Nil(err)
 
-	driver, err := s.manager.Driver("test")
+	driverInstance, err := s.manager.Driver("extended_custom")
 	s.Nil(err)
-	s.NotNil(driver)
-	s.Equal("*session.CustomDriver", fmt.Sprintf("%T", driver))
+	s.NotNil(driverInstance)
+	s.IsType(&CustomDriver{}, driverInstance)
 }
 
 func (s *ManagerTestSuite) TestDriver_NotSupported() {
+	mockConfig := mockconfig.NewConfig(s.T())
+	mockConfig.On("GetString", "session.driver").Return("not_supported").Twice()
+	mockConfig.On("Get", "session.drivers", mock.AnythingOfType("map[string]interface {}")).Return(
+		map[string]any{},
+	).Once()
 
-	s.mockConfig.ExpectedCalls = nil
-	s.mockConfig.On("GetString", "session.driver").Return("not_supported")
+	manager := NewManager(mockConfig, s.json)
+	s.Require().NotNil(manager)
 
-	driver, err := s.manager.Driver()
-	s.NotNil(err)
-	s.ErrorIs(err, errors.SessionDriverNotSupported)
-	s.Equal(errors.SessionDriverNotSupported.Args("not_supported").Error(), err.Error())
-	s.Nil(driver)
+	driverInstance, err := manager.Driver(mockConfig.GetString("session.driver"))
+	s.ErrorIs(err, errors.SessionDriverNotSupported.Args("not_supported"))
+	s.Nil(driverInstance)
 }
 
 func (s *ManagerTestSuite) TestDriver_NotSet() {
+	mockConfig := mockconfig.NewConfig(s.T())
+	mockConfig.On("GetString", "session.driver").Return("").Once()
+	mockConfig.On("Get", "session.drivers", mock.AnythingOfType("map[string]interface {}")).Return(
+		map[string]any{},
+	).Once()
 
-	s.mockConfig.ExpectedCalls = nil
-	s.mockConfig.On("GetString", "session.driver").Return("").Once()
+	manager := NewManager(mockConfig, s.json)
+	s.Require().NotNil(manager)
 
-	driver, err := s.manager.Driver()
-	s.NotNil(err)
+	driverInstance, err := manager.Driver()
 	s.ErrorIs(err, errors.SessionDriverIsNotSet)
-	s.Nil(driver)
+	s.Nil(driverInstance)
 }
 
 func (s *ManagerTestSuite) TestExtend() {
 
-	s.mockConfig.On("GetString", "session.driver").Return("file").Maybe()
-	s.mockConfig.On("GetInt", "session.gc_interval").Return(30).Maybe()
+	s.mockConfig.On("GetString", "session.driver").Return("file").Once()
+	s.mockConfig.On("GetInt", "session.gc_interval").Return(30).Once()
 
-	err := s.manager.Extend("test", func() sessioncontract.Driver {
-		d, _ := NewCustomDriver()
+	err := s.manager.Extend("test", func() contractssession.Driver {
+		d, _ := NewCustomDriverFactory()
 		return d
 	})
 	s.Nil(err)
 
-	driver, err := s.manager.Driver("test")
+	driverInstance, err := s.manager.Driver("test")
 	s.Nil(err)
-	s.NotNil(driver)
-	s.Equal("*session.CustomDriver", fmt.Sprintf("%T", driver))
+	s.NotNil(driverInstance)
+	s.IsType(&CustomDriver{}, driverInstance)
 }
 
 func (s *ManagerTestSuite) TestExtend_AlreadyExists() {
 
-	err1 := s.manager.Extend("test", func() sessioncontract.Driver {
-		d, _ := NewCustomDriver()
-		return d
-	})
+	s.mockConfig.On("GetString", "session.driver").Return("file").Once()
+	s.mockConfig.On("GetInt", "session.gc_interval").Return(30).Once()
+
+	err1 := s.manager.Extend("test", func() contractssession.Driver { d, _ := NewCustomDriverFactory(); return d })
 	s.Nil(err1)
 
-	err2 := s.manager.Extend("test", func() sessioncontract.Driver {
-		d, _ := NewCustomDriver()
-		return d
-	})
-	s.NotNil(err2)
-	s.ErrorIs(err2, errors.SessionDriverAlreadyExists)
-	s.EqualError(err2, errors.SessionDriverAlreadyExists.Args("test").Error())
+	err2 := s.manager.Extend("test", func() contractssession.Driver { d, _ := NewCustomDriverFactory(); return d })
+	s.ErrorIs(err2, errors.SessionDriverAlreadyExists.Args("test"))
+
+	instanceExists, errResolve := s.manager.Driver("test")
+	s.Nil(errResolve)
+
+	s.IsType(&CustomDriver{}, instanceExists)
 }
 
-func (s *ManagerTestSuite) TestBuildSession() {
+func (s *ManagerTestSuite) TestBuildSession_WithInternalFileDriver() {
 
-	s.mockConfig.On("GetString", "session.cookie").Return("test_cookie").Once()
-	s.mockConfig.On("GetString", "session.driver").Return("file").Maybe()
-	s.mockConfig.On("GetInt", "session.gc_interval").Return(30).Maybe()
+	s.mockConfig.On("GetString", "session.driver").Return("file").Once()
+	s.mockConfig.On("GetInt", "session.gc_interval").Return(30).Once()
+	s.mockConfig.On("GetInt", "session.lifetime").Return(120).Once()
+	s.mockConfig.On("GetString", "session.files").Return("storage/framework/sessions_test_manager").Once()
+	s.mockConfig.On("GetString", "session.cookie").Return("goravel_test_session").Maybe()
 
-	driver, err := s.manager.Driver(s.manager.getDefaultDriver())
+	driverInstance, err := s.manager.Driver()
 	s.Nil(err)
-	s.Require().NotNil(driver)
-	s.Equal(s.mockFileDriver, driver)
+	s.Require().NotNil(driverInstance)
+	s.IsType(&driver.File{}, driverInstance)
 
-	session, err := s.manager.BuildSession(driver)
+	session, err := s.manager.BuildSession(driverInstance)
 	s.Nil(err)
 	s.Require().NotNil(session)
 
-	session.Put("name", "goravel")
-	s.Equal("test_cookie", session.GetName())
-	s.Equal("goravel", session.Get("name"))
-	s.NotEmpty(session.GetID(), "Session ID should be generated or set")
+	session.Put("data", "value_internal")
+	s.Equal("value_internal", session.Get("data"))
 
 	s.manager.ReleaseSession(session)
-	s.Empty(session.GetName(), "Session name should be empty after release")
-	s.Empty(session.All(), "Session attributes should be empty after release")
+	s.Empty(session.All())
+}
+
+func (s *ManagerTestSuite) TestBuildSession_WithMockDriver() {
+
+	s.mockConfig.ExpectedCalls = nil
+	s.mockConfig.On("Get", "session.drivers", mock.AnythingOfType("map[string]interface {}")).Return(
+		map[string]any{"mockdrv": map[string]any{"via": s.mockOtherFactory}},
+	).Once()
+	s.mockConfig.On("GetString", "session.driver").Return("mockdrv").Once()
+	s.mockConfig.On("GetInt", "session.gc_interval").Return(30).Once()
+	s.mockConfig.On("GetString", "session.cookie").Return("mock_cookie").Once()
+
+	s.manager = NewManager(s.mockConfig, s.json)
+
+	driverInstance, err := s.manager.Driver("mockdrv")
+	s.Nil(err)
+	s.Require().NotNil(driverInstance)
+	s.Equal(s.mockOtherDriver, driverInstance)
+
+	session, err := s.manager.BuildSession(driverInstance)
+	s.Nil(err)
+	s.Require().NotNil(session)
+
+	session.Put("data", "value_mock")
+	s.Equal("mock_cookie", session.GetName())
+	s.Equal("value_mock", session.Get("data"))
+
+	s.manager.ReleaseSession(session)
+	s.Empty(session.All())
 }
 
 func (s *ManagerTestSuite) TestBuildSession_NilDriver() {
-
 	session, err := s.manager.BuildSession(nil)
 	s.ErrorIs(err, errors.SessionDriverIsNotSet)
 	s.Nil(session)
@@ -234,10 +313,8 @@ func (s *ManagerTestSuite) TestBuildSession_NilDriver() {
 
 func (s *ManagerTestSuite) TestGetDefaultDriver() {
 
-	s.mockConfig.ExpectedCalls = nil
-	s.mockConfig.On("GetString", "session.driver").Return("custom_default").Once()
-
-	s.Equal("custom_default", s.manager.getDefaultDriver())
+	s.mockConfig.On("GetString", "session.driver").Return("file").Once()
+	s.Equal("file", s.manager.getDefaultDriver())
 }
 
 func BenchmarkSession_ManagerInteraction(b *testing.B) {
@@ -245,27 +322,27 @@ func BenchmarkSession_ManagerInteraction(b *testing.B) {
 	s.SetT(&testing.T{})
 	s.SetupTest()
 
-	s.mockConfig.On("GetString", "session.driver", "file").Return("file")
-	s.mockConfig.On("GetInt", "session.gc_interval", 30).Return(30)
+	s.mockConfig.On("GetString", "session.driver").Return("file")
+	s.mockConfig.On("GetInt", "session.gc_interval").Return(30)
 	s.mockConfig.On("GetString", "session.cookie").Return("bench_cookie")
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 
-		driver, err := s.manager.Driver()
+		driverInstance, err := s.manager.Driver()
 		if err != nil {
-			b.Fatalf("Driver() failed during benchmark: %v", err)
+			b.Fatalf("Driver() failed: %v", err)
 		}
-		if driver == nil {
-			b.Fatal("Driver() returned nil driver during benchmark")
+		if driverInstance == nil {
+			b.Fatal("Driver() returned nil")
 		}
 
-		session, err := s.manager.BuildSession(driver)
+		session, err := s.manager.BuildSession(driverInstance)
 		if err != nil {
-			b.Fatalf("BuildSession() failed during benchmark: %v", err)
+			b.Fatalf("BuildSession() failed: %v", err)
 		}
 		if session == nil {
-			b.Fatal("BuildSession() returned nil session during benchmark")
+			b.Fatal("BuildSession() returned nil")
 		}
 
 		s.manager.ReleaseSession(session)
