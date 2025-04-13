@@ -33,27 +33,37 @@ func (r *Sync) Name() string {
 	return Name
 }
 
-func (r *Sync) Pop(_ string) (*queue.Task, error) {
+func (r *Sync) Pop(_ string) (queue.Task, error) {
 	// sync driver does not support pop
-	return nil, nil
+	return queue.Task{}, nil
 }
 
 func (r *Sync) Push(task queue.Task, _ string) error {
-	if task.Data.Delay != nil && !task.Data.Delay.IsZero() {
-		time.Sleep(time.Until(*task.Data.Delay))
+	if !task.Delay.IsZero() {
+		time.Sleep(time.Until(task.Delay))
 	}
 
-	if err := task.Data.Job.Handle(filterArgsType(task.Data.Args)...); err != nil {
+	var realArgs []any
+	for _, arg := range task.Args {
+		realArgs = append(realArgs, arg.Value)
+	}
+
+	if err := task.Job.Handle(realArgs...); err != nil {
 		return err
 	}
 
-	if len(task.Data.Chained) > 0 {
-		for _, chained := range task.Data.Chained {
-			if chained.Delay != nil && !chained.Delay.IsZero() {
-				time.Sleep(time.Until(*chained.Delay))
+	if len(task.Chain) > 0 {
+		for _, chain := range task.Chain {
+			if !chain.Delay.IsZero() {
+				time.Sleep(time.Until(chain.Delay))
 			}
 
-			if err := chained.Job.Handle(filterArgsType(chained.Args)...); err != nil {
+			var realArgs []any
+			for _, arg := range chain.Args {
+				realArgs = append(realArgs, arg.Value)
+			}
+
+			if err := chain.Job.Handle(realArgs...); err != nil {
 				return err
 			}
 		}

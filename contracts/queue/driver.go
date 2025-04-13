@@ -13,7 +13,7 @@ type Driver interface {
 	// Name returns the name of the driver.
 	Name() string
 	// Pop pops the next job off of the queue.
-	Pop(queue string) (*Task, error)
+	Pop(queue string) (Task, error)
 	// Push pushes the job onto the queue.
 	Push(task Task, queue string) error
 }

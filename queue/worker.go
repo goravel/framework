@@ -91,12 +91,12 @@ func (r *Worker) Run() error {
 
 				r.currentDelay = 1 * time.Second
 
-				if err = r.job.Call(task.Data.Job.Signature(), filterArgsType(task.Data.Args)); err != nil {
+				if err = r.job.Call(task.Job.Signature(), filterArgsType(task.Args)); err != nil {
 					r.failedJobChan <- FailedJob{
 						UUID:       uuid.New(),
 						Connection: r.connection,
 						Queue:      queueKey,
-						Payload:    task.Data.Args,
+						Payload:    task.Args,
 						Exception:  err.Error(),
 						FailedAt:   carbon.DateTime{Carbon: carbon.Now()},
 					}
@@ -104,14 +104,18 @@ func (r *Worker) Run() error {
 					continue
 				}
 
-				if len(task.Data.Chained) > 0 {
-					for _, chained := range task.Data.Chained {
-						if err = r.job.Call(chained.Job.Signature(), filterArgsType(chained.Args)); err != nil {
+				if len(task.Chain) > 0 {
+					for _, chain := range task.Chain {
+						if !chain.Delay.IsZero() {
+							time.Sleep(time.Until(chain.Delay))
+						}
+
+						if err = r.job.Call(chain.Job.Signature(), filterArgsType(chain.Args)); err != nil {
 							r.failedJobChan <- FailedJob{
 								UUID:       uuid.New(),
 								Connection: r.connection,
 								Queue:      queueKey,
-								Payload:    task.Data.Args,
+								Payload:    chain.Args,
 								Exception:  err.Error(),
 								FailedAt:   carbon.DateTime{Carbon: carbon.Now()},
 							}
