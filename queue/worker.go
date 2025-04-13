@@ -100,6 +100,25 @@ func (r *Worker) Run() error {
 						Exception:  err.Error(),
 						FailedAt:   carbon.DateTime{Carbon: carbon.Now()},
 					}
+
+					continue
+				}
+
+				if len(task.Data.Chained) > 0 {
+					for _, chained := range task.Data.Chained {
+						if err = r.job.Call(chained.Job.Signature(), filterArgsType(chained.Args)); err != nil {
+							r.failedJobChan <- FailedJob{
+								UUID:       uuid.New(),
+								Connection: r.connection,
+								Queue:      queueKey,
+								Payload:    task.Data.Args,
+								Exception:  err.Error(),
+								FailedAt:   carbon.DateTime{Carbon: carbon.Now()},
+							}
+
+							continue
+						}
+					}
 				}
 			}
 		}()

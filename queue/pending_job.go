@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	contractsqueue "github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/support/carbon"
 )
 
 type PendingJob struct {
@@ -81,8 +82,13 @@ func (r *PendingJob) Dispatch() error {
 	}
 
 	if r.delay != nil && !r.delay.IsZero() {
-		return driver.Later(*r.delay, r.task, r.queueKey)
+		if r.task.Data.Delay != nil && !r.task.Data.Delay.IsZero() {
+			*r.task.Data.Delay = r.task.Data.Delay.Add(carbon.Now().DiffAbsInDuration(carbon.FromStdTime(*r.delay)))
+		} else {
+			r.task.Data.Delay = r.delay
+		}
 	}
+
 	return driver.Push(r.task, r.queueKey)
 }
 
