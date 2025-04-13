@@ -23,7 +23,6 @@ func TestPendingJobTestSuite(t *testing.T) {
 func (s *PendingJobTestSuite) SetupTest() {
 	s.mockConfig = mocksqueue.NewConfig(s.T())
 	s.mockConfig.EXPECT().Default().Return("default", "default", 1).Once()
-	s.mockConfig.EXPECT().QueueKey("default", "default").Return("default_queue").Once()
 }
 
 func (s *PendingJobTestSuite) TestNewPendingJob() {
@@ -41,7 +40,7 @@ func (s *PendingJobTestSuite) TestNewPendingJob() {
 
 	s.Equal(s.mockConfig, pendingJob.config)
 	s.Equal("default", pendingJob.connection)
-	s.Equal("default_queue", pendingJob.queueKey)
+	s.Equal("default", pendingJob.queue)
 	s.NotEmpty(pendingJob.task.Uuid)
 	s.Equal(&TestJobOne{}, pendingJob.task.Jobs.Job)
 	s.Equal(args, pendingJob.task.Args)
@@ -53,7 +52,7 @@ func (s *PendingJobTestSuite) TestNewPendingJobWithoutArgs() {
 
 	s.Equal(s.mockConfig, pendingJob.config)
 	s.Equal("default", pendingJob.connection)
-	s.Equal("default_queue", pendingJob.queueKey)
+	s.Equal("default", pendingJob.queue)
 	s.NotEmpty(pendingJob.task.Uuid)
 	s.Equal(&TestJobOne{}, pendingJob.task.Jobs.Job)
 	s.Empty(pendingJob.task.Args)
@@ -87,7 +86,7 @@ func (s *PendingJobTestSuite) TestNewPendingChainJob() {
 
 	s.Equal(s.mockConfig, pendingChainJob.config)
 	s.Equal("default", pendingChainJob.connection)
-	s.Equal("default_queue", pendingChainJob.queueKey)
+	s.Equal("default", pendingChainJob.queue)
 	s.NotEmpty(pendingChainJob.task.Uuid)
 	s.Equal(jobs[0].Job, pendingChainJob.task.Job)
 	s.Equal(jobs[0].Args, pendingChainJob.task.Args)
@@ -118,14 +117,12 @@ func (s *PendingJobTestSuite) TestOnConnection() {
 }
 
 func (s *PendingJobTestSuite) TestOnQueue() {
-	s.mockConfig.EXPECT().QueueKey("default", "high").Return("high_queue").Once()
-
 	pendingJob := NewPendingJob(s.mockConfig, &TestJobOne{})
 
 	newQueue := "high"
 	pendingJobWithNewQueue := pendingJob.OnQueue(newQueue)
 
-	s.Equal("high_queue", pendingJob.queueKey)
+	s.Equal("high", pendingJob.queue)
 	s.Equal(pendingJob, pendingJobWithNewQueue)
 }
 
