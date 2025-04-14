@@ -139,6 +139,7 @@ var (
 	SessionDriverExtensionFailed = New("session failed to extend session [%s] driver [%v]")
 	SessionDriverIsNotSet        = New("session driver is not set")
 	SessionDriverNotSupported    = New("session driver [%s] not supported")
+	SessionDriverRegisterFailed  = New("Error registering session drivers : error [%v]")
 
 	UnknownFileExtension = New("unknown file extension")
 
