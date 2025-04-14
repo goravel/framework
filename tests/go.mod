@@ -85,7 +85,7 @@ require (
 )
 
 replace (
-	github.com/goravel/framework v1.15.6 => ../
+	github.com/goravel/framework v1.15.7 => ../
 	github.com/goravel/mysql v0.0.0 => github.com/goravel/mysql v0.0.0
 	github.com/goravel/postgres v0.0.0 => github.com/goravel/postgres v0.0.0
 	github.com/goravel/sqlite v0.0.0 => github.com/goravel/sqlite v0.0.0
