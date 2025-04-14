@@ -1,4 +1,4 @@
-package packages
+package modify
 
 import (
 	"path/filepath"
@@ -6,16 +6,18 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/goravel/framework/contracts/packages"
+	contractmatch "github.com/goravel/framework/contracts/packages/match"
+	"github.com/goravel/framework/contracts/packages/modify"
+	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/support/file"
 )
 
-type HelperTestSuite struct {
+type ModifyActionsTestSuite struct {
 	suite.Suite
 	content string
 }
 
-func (s *HelperTestSuite) SetupTest() {
+func (s *ModifyActionsTestSuite) SetupTest() {
 	s.content = `package config
 
 import (
@@ -40,22 +42,24 @@ func init() {
 }`
 }
 
-func (s *HelperTestSuite) TearDownTest() {}
+func (s *ModifyActionsTestSuite) TearDownTest() {}
 
-func TestHelperTestSuite(t *testing.T) {
-	suite.Run(t, new(HelperTestSuite))
+func TestModifyActionsTestSuite(t *testing.T) {
+	suite.Run(t, new(ModifyActionsTestSuite))
 }
 
-func (s *HelperTestSuite) TestHelper() {
+func (s *ModifyActionsTestSuite) TestActions() {
 	tests := []struct {
-		name      string
-		modifiers []packages.GoNodeModifier
-		assert    func(filename string)
+		name     string
+		matchers []contractmatch.GoNode
+		actions  []modify.Action
+		assert   func(filename string)
 	}{
 		{
-			name: "AddConfigSpec(not exist)",
-			modifiers: []packages.GoNodeModifier{
-				AddConfigSpec("app", "key", `"value"`),
+			name:     "add config (not exist)",
+			matchers: match.Config("app"),
+			actions: []modify.Action{
+				AddConfig("key", `"value"`),
 			},
 			assert: func(content string) {
 				s.Contains(content, `func init() {
@@ -73,18 +77,20 @@ func (s *HelperTestSuite) TestHelper() {
 			},
 		},
 		{
-			name: "AddConfigSpec(exist)",
-			modifiers: []packages.GoNodeModifier{
-				AddConfigSpec("app", "name", `"Goravel"`),
+			name:     "add config (exist)",
+			matchers: match.Config("app"),
+			actions: []modify.Action{
+				AddConfig("name", `"Goravel"`),
 			},
 			assert: func(content string) {
 				s.NotContains(content, `"name": "Goravel"`)
 			},
 		},
 		{
-			name: "AddConfigSpec(to map)",
-			modifiers: []packages.GoNodeModifier{
-				AddConfigSpec("app.exist", "key", `"value"`),
+			name:     "add config (to map)",
+			matchers: match.Config("app.exist"),
+			actions: []modify.Action{
+				AddConfig("key", `"value"`),
 			},
 			assert: func(content string) {
 				s.Contains(content, `func init() {
@@ -103,9 +109,10 @@ func (s *HelperTestSuite) TestHelper() {
 			},
 		},
 		{
-			name: "AddImportSpec",
-			modifiers: []packages.GoNodeModifier{
-				AddImportSpec("github.com/goravel/test", "t"),
+			name:     "add import",
+			matchers: []contractmatch.GoNode{match.Imports()},
+			actions: []modify.Action{
+				AddImport("github.com/goravel/test", "t"),
 			},
 			assert: func(content string) {
 				s.Contains(content, `import (
@@ -118,9 +125,10 @@ func (s *HelperTestSuite) TestHelper() {
 			},
 		},
 		{
-			name: "AddProviderSpec(not exist)",
-			modifiers: []packages.GoNodeModifier{
-				AddProviderSpec("&test.ServiceProvider{}"),
+			name:     "add provider (not exist)",
+			matchers: match.Providers(),
+			actions: []modify.Action{
+				AddProvider("&test.ServiceProvider{}"),
 			},
 			assert: func(content string) {
 				s.Contains(content, `func init() {
@@ -138,9 +146,10 @@ func (s *HelperTestSuite) TestHelper() {
 			},
 		},
 		{
-			name: "AddProviderSpec(exist)",
-			modifiers: []packages.GoNodeModifier{
-				AddProviderSpec("&crypt.ServiceProvider{}"),
+			name:     "add provider (exist)",
+			matchers: match.Providers(),
+			actions: []modify.Action{
+				AddProvider("&crypt.ServiceProvider{}"),
 			},
 			assert: func(content string) {
 				s.Contains(content, `func init() {
@@ -157,29 +166,10 @@ func (s *HelperTestSuite) TestHelper() {
 			},
 		},
 		{
-			name: "AddProviderSpecAfter",
-			modifiers: []packages.GoNodeModifier{
-				AddProviderSpecAfter("&test.ServiceProvider{}", "&auth.AuthServiceProvider{}"),
-			},
-			assert: func(content string) {
-				s.Contains(content, `func init() {
-	config := facades.Config()
-	config.Add("app", map[string]any{
-		"name":  config.Env("APP_NAME", "Goravel"),
-		"exist": map[string]any{},
-		"providers": []foundation.ServiceProvider{
-			&auth.AuthServiceProvider{},
-			&test.ServiceProvider{},
-			&crypt.ServiceProvider{},
-		},
-	})
-}`)
-			},
-		},
-		{
-			name: "AddProviderSpecBefore",
-			modifiers: []packages.GoNodeModifier{
-				AddProviderSpecBefore("&test.ServiceProvider{}", "&auth.AuthServiceProvider{}"),
+			name:     "add provider before",
+			matchers: match.Providers(),
+			actions: []modify.Action{
+				AddProvider("&test.ServiceProvider{}", "&auth.AuthServiceProvider{}"),
 			},
 			assert: func(content string) {
 				s.Contains(content, `func init() {
@@ -197,36 +187,40 @@ func (s *HelperTestSuite) TestHelper() {
 			},
 		},
 		{
-			name: "RemoveConfigSpec",
-			modifiers: []packages.GoNodeModifier{
-				RemoveConfigSpec("app.providers"),
+			name:     "remove config",
+			matchers: match.Config("app"),
+			actions: []modify.Action{
+				RemoveConfig("providers"),
 			},
 			assert: func(content string) {
 				s.NotContains(content, "providers")
 			},
 		},
 		{
-			name: "RemoveImportSpec",
-			modifiers: []packages.GoNodeModifier{
-				RemoveImportSpec("github.com/goravel/framework/auth"),
+			name:     "remove import",
+			matchers: []contractmatch.GoNode{match.Imports()},
+			actions: []modify.Action{
+				RemoveImport("github.com/goravel/framework/auth"),
 			},
 			assert: func(content string) {
 				s.NotContains(content, `"github.com/goravel/framework/auth"`)
 			},
 		},
 		{
-			name: "RemoveProviderSpec",
-			modifiers: []packages.GoNodeModifier{
-				RemoveProviderSpec("&auth.AuthServiceProvider{}"),
+			name:     "remove provider",
+			matchers: match.Providers(),
+			actions: []modify.Action{
+				RemoveProvider("&auth.AuthServiceProvider{}"),
 			},
 			assert: func(content string) {
 				s.NotContains(content, "&auth.AuthServiceProvider{}")
 			},
 		},
 		{
-			name: "ReplaceConfigSpec",
-			modifiers: []packages.GoNodeModifier{
-				ReplaceConfigSpec("app.name", `"Goravel"`),
+			name:     "replace config",
+			matchers: match.Config("app"),
+			actions: []modify.Action{
+				ReplaceConfig("name", `"Goravel"`),
 			},
 			assert: func(content string) {
 				s.Contains(content, `"name":  "Goravel"`)
@@ -239,11 +233,7 @@ func (s *HelperTestSuite) TestHelper() {
 		s.Run(tt.name, func() {
 			sourceFile := filepath.Join(s.T().TempDir(), "test.go")
 			s.Require().NoError(file.PutContent(sourceFile, s.content))
-			mg := ModifyGoFile{
-				File:      sourceFile,
-				Modifiers: tt.modifiers,
-			}
-			s.Require().NoError(mg.Apply())
+			s.Require().NoError(File(sourceFile).Find(tt.matchers...).Modify(tt.actions...).Apply())
 			content, err := file.GetContent(sourceFile)
 			s.Require().NoError(err)
 			tt.assert(content)

@@ -7,45 +7,56 @@ import (
 	"strings"
 
 	"github.com/goravel/framework/contracts/packages"
+	"github.com/goravel/framework/contracts/packages/modify"
 	"github.com/goravel/framework/support/color"
 )
 
 type setup struct {
-	Force       bool
-	Module      string
 	command     string
-	onInstall   []packages.FileModifier
-	onUninstall []packages.FileModifier
+	force       bool
+	module      string
+	onInstall   []modify.GoFile
+	onUninstall []modify.GoFile
 }
 
-func Setup(args []string) *setup {
+var osExit = os.Exit
+
+func GetModulePath() string {
+	if info, ok := debug.ReadBuildInfo(); ok && strings.HasSuffix(info.Path, "setup") {
+		return filepath.Dir(info.Path)
+	}
+
+	return ""
+}
+
+func Setup(args []string) packages.Setup {
 	st := &setup{}
 
 	if len(args) > 1 && (args[1] == "install" || args[1] == "uninstall") {
 		st.command = args[1]
 	}
-
-	if info, ok := debug.ReadBuildInfo(); ok && strings.HasSuffix(info.Path, "setup") {
-		st.Module = filepath.Dir(info.Path)
-	}
-
-	st.Force = len(args) == 3 && (args[2] == "--force" || args[2] == "-f")
+	st.module = GetModulePath()
+	st.force = len(args) == 3 && (args[2] == "--force" || args[2] == "-f")
 
 	return st
 }
 
-func (r *setup) Install(modifiers ...packages.FileModifier) {
+func (r *setup) Install(modifiers ...modify.GoFile) packages.Setup {
 	r.onInstall = modifiers
+
+	return r
 }
 
-func (r *setup) Uninstall(modifiers ...packages.FileModifier) {
+func (r *setup) Uninstall(modifiers ...modify.GoFile) packages.Setup {
 	r.onUninstall = modifiers
+
+	return r
 }
 
 func (r *setup) Execute() {
-	if r.Module == "" {
+	if r.module == "" {
 		color.Errorln("package module name is empty, please run command with module name.")
-		os.Exit(1)
+		osExit(1)
 	}
 
 	if r.command == "install" {
@@ -53,7 +64,7 @@ func (r *setup) Execute() {
 			r.reportError(r.onInstall[i].Apply())
 		}
 
-		color.Successln("Package installed successfully")
+		color.Successln("package installed successfully")
 	}
 
 	if r.command == "uninstall" {
@@ -61,19 +72,19 @@ func (r *setup) Execute() {
 			r.reportError(r.onUninstall[i].Apply())
 		}
 
-		color.Successln("Package uninstalled successfully")
+		color.Successln("package uninstalled successfully")
 	}
 
 }
 
 func (r *setup) reportError(err error) {
 	if err != nil {
-		if r.Force {
+		if r.force {
 			color.Warningln(err)
 			return
 		}
 
 		color.Errorln(err)
-		os.Exit(1)
+		osExit(1)
 	}
 }

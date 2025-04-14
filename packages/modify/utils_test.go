@@ -1,4 +1,4 @@
-package packages
+package modify
 
 import (
 	"bytes"
@@ -28,16 +28,16 @@ func (s *UtilsTestSuite) TestExprExists() {
 		s.Run("expr exists", func() {
 			s.True(
 				ExprExists(
-					MustParseStatement("&some.Struct{}").(dst.Expr),
-					MustParseStatement("[]any{&some.Struct{}}").(*dst.CompositeLit).Elts,
+					MustParseExpr("&some.Struct{}").(dst.Expr),
+					MustParseExpr("[]any{&some.Struct{}}").(*dst.CompositeLit).Elts,
 				),
 			)
 		})
 		s.Run("expr does not exist", func() {
 			s.False(
 				ExprExists(
-					MustParseStatement("&some.Struct{}").(dst.Expr),
-					MustParseStatement("[]any{&some.OtherStruct{}}").(*dst.CompositeLit).Elts,
+					MustParseExpr("&some.Struct{}").(dst.Expr),
+					MustParseExpr("[]any{&some.OtherStruct{}}").(*dst.CompositeLit).Elts,
 				),
 			)
 		})
@@ -51,7 +51,7 @@ func (s *UtilsTestSuite) TestKeyExists() {
 			s.True(
 				KeyExists(
 					&dst.BasicLit{Kind: token.STRING, Value: strconv.Quote("someKey")},
-					MustParseStatement(`map[string]any{"someKey":"exist"}`).(*dst.CompositeLit).Elts,
+					MustParseExpr(`map[string]any{"someKey":"exist"}`).(*dst.CompositeLit).Elts,
 				),
 			)
 		})
@@ -59,7 +59,7 @@ func (s *UtilsTestSuite) TestKeyExists() {
 			s.False(
 				KeyExists(
 					&dst.BasicLit{Kind: token.STRING, Value: strconv.Quote("someKey")},
-					MustParseStatement(`map[string]any{"otherKey":"exist"}`).(*dst.CompositeLit).Elts,
+					MustParseExpr(`map[string]any{"otherKey":"exist"}`).(*dst.CompositeLit).Elts,
 				),
 			)
 		})
@@ -69,13 +69,13 @@ func (s *UtilsTestSuite) TestKeyExists() {
 func (s *UtilsTestSuite) TestMustParseStatement() {
 	s.Run("parse failed", func() {
 		s.Panics(func() {
-			MustParseStatement("var invalid:=syntax")
+			MustParseExpr("var invalid:=syntax")
 		})
 	})
 
 	s.Run("parse success", func() {
 		s.NotPanics(func() {
-			s.NotNil(MustParseStatement(`struct{x *int}`))
+			s.NotNil(MustParseExpr(`struct{x *int}`))
 		})
 	})
 }

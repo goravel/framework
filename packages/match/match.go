@@ -1,4 +1,4 @@
-package packages
+package match
 
 import (
 	"reflect"
@@ -7,18 +7,18 @@ import (
 	"github.com/dave/dst"
 	"github.com/dave/dst/dstutil"
 
-	"github.com/goravel/framework/contracts/packages"
+	"github.com/goravel/framework/contracts/packages/match"
 )
 
 type (
-	MatchGoNode struct {
+	GoNode struct {
 		first, last bool
 		match       func(node dst.Node) bool
 	}
-	MatchGoNodes []packages.GoNodeMatcher
+	GoNodes []match.GoNode
 )
 
-func (r MatchGoNode) MatchCursor(cursor *dstutil.Cursor) bool {
+func (r GoNode) MatchCursor(cursor *dstutil.Cursor) bool {
 	if r.first || r.last {
 		if r.MatchNode(cursor.Node()) {
 			pr := reflect.Indirect(reflect.ValueOf(cursor.Parent())).FieldByName(cursor.Name())
@@ -39,11 +39,11 @@ func (r MatchGoNode) MatchCursor(cursor *dstutil.Cursor) bool {
 	return r.MatchNode(cursor.Node())
 }
 
-func (r MatchGoNode) MatchNode(node dst.Node) bool {
+func (r GoNode) MatchNode(node dst.Node) bool {
 	return r.match(node)
 }
 
-func (r MatchGoNodes) MatchNodes(nodes []dst.Node) bool {
+func (r GoNodes) MatchNodes(nodes []dst.Node) bool {
 	if len(r) == 0 {
 		return true
 	}
@@ -63,20 +63,20 @@ func (r MatchGoNodes) MatchNodes(nodes []dst.Node) bool {
 	return true
 }
 
-func MatchAnyNode() packages.GoNodeMatcher {
-	return &MatchGoNode{
+func AnyNode() match.GoNode {
+	return &GoNode{
 		match: func(node dst.Node) bool {
 			return true
 		},
 	}
 }
 
-func MatchAnyNodes() MatchGoNodes {
-	return MatchGoNodes{}
+func AnyNodes() GoNodes {
+	return GoNodes{}
 }
 
-func MatchArrayType(elt, l packages.GoNodeMatcher) packages.GoNodeMatcher {
-	return MatchGoNode{
+func ArrayType(elt, l match.GoNode) match.GoNode {
+	return GoNode{
 		match: func(n dst.Node) bool {
 			if e, ok := n.(*dst.ArrayType); ok {
 				return elt.MatchNode(e.Elt) && l.MatchNode(e.Len)
@@ -87,8 +87,8 @@ func MatchArrayType(elt, l packages.GoNodeMatcher) packages.GoNodeMatcher {
 	}
 }
 
-func MatchBasicLit(value string) packages.GoNodeMatcher {
-	return MatchGoNode{
+func BasicLit(value string) match.GoNode {
+	return GoNode{
 		match: func(n dst.Node) bool {
 			if e, ok := n.(*dst.BasicLit); ok {
 				return e.Value == value
@@ -99,8 +99,8 @@ func MatchBasicLit(value string) packages.GoNodeMatcher {
 	}
 }
 
-func MatchCallExpr(fun packages.GoNodeMatcher, args MatchGoNodes) packages.GoNodeMatcher {
-	return MatchGoNode{
+func CallExpr(fun match.GoNode, args GoNodes) match.GoNode {
+	return GoNode{
 		match: func(n dst.Node) bool {
 			if e, ok := n.(*dst.CallExpr); ok {
 				var nodes = make([]dst.Node, len(e.Args))
@@ -116,8 +116,8 @@ func MatchCallExpr(fun packages.GoNodeMatcher, args MatchGoNodes) packages.GoNod
 	}
 }
 
-func MatchCompositeLit(t packages.GoNodeMatcher) packages.GoNodeMatcher {
-	return MatchGoNode{
+func CompositeLit(t match.GoNode) match.GoNode {
+	return GoNode{
 		match: func(n dst.Node) bool {
 			if e, ok := n.(*dst.CompositeLit); ok {
 				return t.MatchNode(e.Type)
@@ -128,24 +128,23 @@ func MatchCompositeLit(t packages.GoNodeMatcher) packages.GoNodeMatcher {
 	}
 }
 
-func MatchEqualNode(n dst.Node) packages.GoNodeMatcher {
-	return MatchGoNode{
+func EqualNode(n dst.Node) match.GoNode {
+	return GoNode{
 		match: func(node dst.Node) bool {
 			return dstNodeEq(n, node)
 		},
 	}
 }
 
-func MatchEqualStatement(statement string) packages.GoNodeMatcher {
-	return MatchGoNode{
-		match: func(node dst.Node) bool {
-			return dstNodeEq(MustParseStatement(statement), node)
-		},
+func FirstOf(n match.GoNode) match.GoNode {
+	return GoNode{
+		first: true,
+		match: n.MatchNode,
 	}
 }
 
-func MatchFuncDecl(name packages.GoNodeMatcher) packages.GoNodeMatcher {
-	return MatchGoNode{
+func FuncDecl(name match.GoNode) match.GoNode {
+	return GoNode{
 		match: func(n dst.Node) bool {
 			if e, ok := n.(*dst.FuncDecl); ok {
 				return name.MatchNode(e.Name)
@@ -156,8 +155,8 @@ func MatchFuncDecl(name packages.GoNodeMatcher) packages.GoNodeMatcher {
 	}
 }
 
-func MatchIdent(name string) packages.GoNodeMatcher {
-	return MatchGoNode{
+func Ident(name string) match.GoNode {
+	return GoNode{
 		match: func(n dst.Node) bool {
 			if ident, ok := n.(*dst.Ident); ok {
 				return ident.Name == name
@@ -168,8 +167,8 @@ func MatchIdent(name string) packages.GoNodeMatcher {
 	}
 }
 
-func MatchImportSpec(path string, name ...string) packages.GoNodeMatcher {
-	return MatchGoNode{
+func ImportSpec(path string, name ...string) match.GoNode {
+	return GoNode{
 		match: func(n dst.Node) bool {
 			if im, ok := n.(*dst.ImportSpec); ok {
 				if im.Path.Value == strconv.Quote(path) {
@@ -186,8 +185,8 @@ func MatchImportSpec(path string, name ...string) packages.GoNodeMatcher {
 	}
 }
 
-func MatchKeyValueExpr(key, value packages.GoNodeMatcher) packages.GoNodeMatcher {
-	return MatchGoNode{
+func KeyValueExpr(key, value match.GoNode) match.GoNode {
+	return GoNode{
 		match: func(n dst.Node) bool {
 			if e, ok := n.(*dst.KeyValueExpr); ok {
 				return key.MatchNode(e.Key) && value.MatchNode(e.Value)
@@ -198,15 +197,15 @@ func MatchKeyValueExpr(key, value packages.GoNodeMatcher) packages.GoNodeMatcher
 	}
 }
 
-func MatchLastOf(n packages.GoNodeMatcher) packages.GoNodeMatcher {
-	return MatchGoNode{
+func LastOf(n match.GoNode) match.GoNode {
+	return GoNode{
 		last:  true,
 		match: n.MatchNode,
 	}
 }
 
-func MatchSelectorExpr(x, sel packages.GoNodeMatcher) packages.GoNodeMatcher {
-	return MatchGoNode{
+func SelectorExpr(x, sel match.GoNode) match.GoNode {
+	return GoNode{
 		match: func(n dst.Node) bool {
 			if e, ok := n.(*dst.SelectorExpr); ok {
 				return x.MatchNode(e.X) && sel.MatchNode(e.Sel)
@@ -217,8 +216,8 @@ func MatchSelectorExpr(x, sel packages.GoNodeMatcher) packages.GoNodeMatcher {
 	}
 }
 
-func MatchTypeOf[T any](_ T) packages.GoNodeMatcher {
-	return MatchGoNode{
+func TypeOf[T any](_ T) match.GoNode {
+	return GoNode{
 		match: func(node dst.Node) bool {
 			_, ok := node.(T)
 			return ok

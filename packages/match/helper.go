@@ -1,0 +1,72 @@
+package match
+
+import (
+	"go/token"
+	"strconv"
+	"strings"
+
+	"github.com/dave/dst"
+
+	"github.com/goravel/framework/contracts/packages/match"
+)
+
+func Config(key string) []match.GoNode {
+	keys := strings.Split(key, ".")
+	matchers := []match.GoNode{
+		FuncDecl(Ident("init")),
+		CallExpr(
+			SelectorExpr(
+				Ident("config"),
+				Ident("Add"),
+			),
+			GoNodes{
+				BasicLit(strconv.Quote(keys[0])),
+				AnyNode(),
+			},
+		),
+	}
+
+	for _, k := range keys[1:] {
+		matchers = append(matchers, KeyValueExpr(BasicLit(strconv.Quote(k)), AnyNode()))
+	}
+
+	return matchers
+}
+
+func Imports() match.GoNode {
+	return GoNode{
+		match: func(n dst.Node) bool {
+			if block, ok := n.(*dst.GenDecl); ok {
+				return block.Tok == token.IMPORT
+			}
+
+			return false
+		},
+	}
+}
+
+func Providers() []match.GoNode {
+	return []match.GoNode{
+		FuncDecl(Ident("init")),
+		CallExpr(
+			SelectorExpr(
+				Ident("config"),
+				Ident("Add"),
+			),
+			GoNodes{
+				BasicLit(strconv.Quote("app")),
+				AnyNode(),
+			},
+		),
+		KeyValueExpr(BasicLit(strconv.Quote("providers")), AnyNode()),
+		CompositeLit(
+			ArrayType(
+				SelectorExpr(
+					Ident("foundation"),
+					Ident("ServiceProvider"),
+				),
+				AnyNode(),
+			),
+		),
+	}
+}
