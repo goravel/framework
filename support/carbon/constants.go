@@ -1,8 +1,6 @@
 package carbon
 
 import (
-	stdtime "time"
-
 	"github.com/dromara/carbon/v2"
 )
 
@@ -79,18 +77,18 @@ const (
 // constellation constants
 // 星座常量
 const (
-	Aries       = "Aries"       // 白羊座
-	Taurus      = "Taurus"      // 金牛座
-	Gemini      = "Gemini"      // 双子座
-	Cancer      = "Cancer"      // 巨蟹座
-	Leo         = "Leo"         // 狮子座
-	Virgo       = "Virgo"       // 处女座
-	Libra       = "Libra"       // 天秤座
-	Scorpio     = "Scorpio"     // 天蝎座
-	Sagittarius = "Sagittarius" // 射手座
-	Capricorn   = "Capricorn"   // 摩羯座
-	Aquarius    = "Aquarius"    // 水瓶座
-	Pisces      = "Pisces"      // 双鱼座
+	Aries       = carbon.Aries       // 白羊座
+	Taurus      = carbon.Taurus      // 金牛座
+	Gemini      = carbon.Gemini      // 双子座
+	Cancer      = carbon.Cancer      // 巨蟹座
+	Leo         = carbon.Leo         // 狮子座
+	Virgo       = carbon.Virgo       // 处女座
+	Libra       = carbon.Libra       // 天秤座
+	Scorpio     = carbon.Scorpio     // 天蝎座
+	Sagittarius = carbon.Sagittarius // 射手座
+	Capricorn   = carbon.Capricorn   // 摩羯座
+	Aquarius    = carbon.Aquarius    // 水瓶座
+	Pisces      = carbon.Pisces      // 双鱼座
 )
 
 // week constants
@@ -108,51 +106,51 @@ const (
 // season constants
 // 季节常量
 const (
-	Spring = "Spring" // 春季
-	Summer = "Summer" // 夏季
-	Autumn = "Autumn" // 秋季
-	Winter = "Winter" // 冬季
+	Spring = carbon.Spring // 春季
+	Summer = carbon.Summer // 夏季
+	Autumn = carbon.Autumn // 秋季
+	Winter = carbon.Winter // 冬季
 )
 
 // number constants
 // 数字常量
 const (
-	YearsPerMillennium = 1000   // 每千年1000年
-	YearsPerCentury    = 100    // 每世纪100年
-	YearsPerDecade     = 10     // 每十年10年
-	QuartersPerYear    = 4      // 每年4个季度
-	MonthsPerYear      = 12     // 每年12月
-	MonthsPerQuarter   = 3      // 每季度3月
-	WeeksPerNormalYear = 52     // 每常规年52周
-	WeeksPerLongYear   = 53     // 每长年53周
-	WeeksPerMonth      = 4      // 每月4周
-	DaysPerLeapYear    = 366    // 每闰年366天
-	DaysPerNormalYear  = 365    // 每常规年365天
-	DaysPerWeek        = 7      // 每周7天
-	HoursPerWeek       = 168    // 每周168小时
-	HoursPerDay        = 24     // 每天24小时
-	MinutesPerDay      = 1440   // 每天1440分钟
-	MinutesPerHour     = 60     // 每小时60分钟
-	SecondsPerWeek     = 604800 // 每周604800秒
-	SecondsPerDay      = 86400  // 每天86400秒
-	SecondsPerHour     = 3600   // 每小时3600秒
-	SecondsPerMinute   = 60     // 每分钟60秒
+	YearsPerMillennium = carbon.YearsPerMillennium // 每千年1000年
+	YearsPerCentury    = carbon.YearsPerCentury    // 每世纪100年
+	YearsPerDecade     = carbon.YearsPerDecade     // 每十年10年
+	QuartersPerYear    = carbon.QuartersPerYear    // 每年4个季度
+	MonthsPerYear      = carbon.MonthsPerYear      // 每年12月
+	MonthsPerQuarter   = carbon.MonthsPerQuarter   // 每季度3月
+	WeeksPerNormalYear = carbon.WeeksPerNormalYear // 每常规年52周
+	WeeksPerLongYear   = carbon.WeeksPerLongYear   // 每长年53周
+	WeeksPerMonth      = carbon.WeeksPerMonth      // 每月4周
+	DaysPerLeapYear    = carbon.DaysPerLeapYear    // 每闰年366天
+	DaysPerNormalYear  = carbon.DaysPerNormalYear  // 每常规年365天
+	DaysPerWeek        = carbon.DaysPerWeek        // 每周7天
+	HoursPerWeek       = carbon.HoursPerWeek       // 每周168小时
+	HoursPerDay        = carbon.HoursPerDay        // 每天24小时
+	MinutesPerDay      = carbon.MinutesPerDay      // 每天1440分钟
+	MinutesPerHour     = carbon.MinutesPerHour     // 每小时60分钟
+	SecondsPerWeek     = carbon.SecondsPerWeek     // 每周604800秒
+	SecondsPerDay      = carbon.SecondsPerDay      // 每天86400秒
+	SecondsPerHour     = carbon.SecondsPerHour     // 每小时3600秒
+	SecondsPerMinute   = carbon.SecondsPerMinute   // 每分钟60秒
 )
 
 // layout constants
 // 布局模板常量
 const (
-	ANSICLayout              = stdtime.ANSIC
-	UnixDateLayout           = stdtime.UnixDate
-	RubyDateLayout           = stdtime.RubyDate
-	RFC822Layout             = stdtime.RFC822
-	RFC822ZLayout            = stdtime.RFC822Z
-	RFC850Layout             = stdtime.RFC850
-	RFC1123Layout            = stdtime.RFC1123
-	RFC1123ZLayout           = stdtime.RFC1123Z
-	RssLayout                = stdtime.RFC1123Z
-	KitchenLayout            = stdtime.Kitchen
-	RFC2822Layout            = stdtime.RFC1123Z
+	ANSICLayout              = carbon.ANSICLayout
+	UnixDateLayout           = carbon.UnixDateLayout
+	RubyDateLayout           = carbon.RubyDateLayout
+	RFC822Layout             = carbon.RFC822Layout
+	RFC822ZLayout            = carbon.RFC822ZLayout
+	RFC850Layout             = carbon.RFC850Layout
+	RFC1123Layout            = carbon.RFC1123Layout
+	RFC1123ZLayout           = carbon.RFC1123ZLayout
+	RssLayout                = carbon.RssLayout
+	KitchenLayout            = carbon.KitchenLayout
+	RFC2822Layout            = carbon.RFC2822Layout
 	CookieLayout             = carbon.CookieLayout
 	RFC3339Layout            = carbon.RFC3339Layout
 	RFC3339MilliLayout       = carbon.RFC3339MilliLayout
