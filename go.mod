@@ -6,7 +6,7 @@ require (
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/charmbracelet/huh v0.6.0
-	github.com/charmbracelet/huh/spinner v0.0.0-20250404222243-039c3ae6c42c
+	github.com/charmbracelet/huh/spinner v0.0.0-20250410174039-76d1f8226680
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/dave/dst v0.27.3
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
@@ -31,7 +31,7 @@ require (
 	github.com/urfave/cli/v3 v3.1.1
 	github.com/vektra/mockery/v2 v2.53.2
 	golang.org/x/crypto v0.37.0
-	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394
+	golang.org/x/exp v0.0.0-20250408133849-7e4ce0ab07d0
 	google.golang.org/grpc v1.71.1
 	google.golang.org/protobuf v1.36.6
 	gorm.io/gorm v1.25.12
@@ -52,7 +52,7 @@ require (
 	github.com/rs/zerolog v1.33.0 // indirect
 	github.com/spf13/cobra v1.9.1 // indirect
 	golang.org/x/mod v0.24.0 // indirect
-	golang.org/x/tools v0.31.0 // indirect
+	golang.org/x/tools v0.32.0 // indirect
 )
 
 require (
@@ -63,7 +63,7 @@ require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/catppuccin/go v0.2.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/charmbracelet/bubbles v0.20.1-0.20250320170029-54f28b650198 // indirect
+	github.com/charmbracelet/bubbles v0.21.0 // indirect
 	github.com/charmbracelet/bubbletea v1.3.4 // indirect
 	github.com/charmbracelet/x/ansi v0.8.0 // indirect
 	github.com/charmbracelet/x/exp/strings v0.0.0-20241222104055-e1130b311607 // indirect
@@ -104,7 +104,7 @@ require (
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/net v0.37.0 // indirect
+	golang.org/x/net v0.39.0 // indirect
 	golang.org/x/sync v0.13.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect
 	golang.org/x/term v0.31.0 // indirect
