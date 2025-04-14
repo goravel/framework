@@ -19,7 +19,6 @@ var _ contractssession.Manager = (*Manager)(nil)
 type Manager struct {
 	config      config.Config
 	drivers     map[string]contractssession.Driver
-	factories   map[string]func() contractssession.Driver
 	json        foundation.Json
 	sessionPool sync.Pool
 	mu          sync.RWMutex
@@ -27,16 +26,15 @@ type Manager struct {
 
 func NewManager(config config.Config, json foundation.Json) *Manager {
 	manager := &Manager{
-		config:    config,
-		drivers:   make(map[string]contractssession.Driver),
-		factories: make(map[string]func() contractssession.Driver),
-		json:      json,
+		config:  config,
+		drivers: make(map[string]contractssession.Driver),
+		json:    json,
 		sessionPool: sync.Pool{New: func() any {
 			return NewSession("", nil, json)
 		},
 		},
 	}
-	// Reads config ONLY to find drivers.
+
 	manager.registerConfiguredDrivers()
 	return manager
 }
@@ -59,7 +57,6 @@ func (m *Manager) BuildSession(handler contractssession.Driver, sessionID ...str
 	return session, nil
 }
 
-// Driver retrieves the session driver factory by name and instantiates if needed.
 func (m *Manager) Driver(name ...string) (contractssession.Driver, error) {
 	driverName := m.getDefaultDriver()
 	if len(name) > 0 && name[0] != "" {
@@ -77,34 +74,8 @@ func (m *Manager) Driver(name ...string) (contractssession.Driver, error) {
 		return driverInstance, nil
 	}
 
-	m.mu.RLock()
-	factory, factoryExists := m.factories[driverName]
-	m.mu.RUnlock()
-
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	driverInstance, instanceExists = m.drivers[driverName]
-	if instanceExists {
-		return driverInstance, nil
-	}
-
-	if factoryExists {
-		driverInstance = factory() // Call the factory registered via Extend/config
-		if driverInstance == nil {
-			return nil, errors.New(fmt.Sprintf("Factory for session driver '%s' returned nil", driverName))
-		}
-
-		m.drivers[driverName] = driverInstance
-		m.startGcTimer(driverInstance) // Pass the concrete instance
-		return driverInstance, nil
-	}
-
 	if driverName == "file" {
-		lifetime := m.config.GetInt("session.lifetime")
-		fileDriver := driver.NewFile(m.config.GetString("session.files"), lifetime)
-		driverInstance = fileDriver
-		m.drivers[driverName] = driverInstance
+		driverInstance = m.file()
 		m.startGcTimer(driverInstance)
 		return driverInstance, nil
 	}
@@ -112,15 +83,16 @@ func (m *Manager) Driver(name ...string) (contractssession.Driver, error) {
 	return nil, errors.SessionDriverNotSupported.Args(driverName)
 }
 
-// Extend registers a factory function for a given driver name.
-func (m *Manager) Extend(driver string, factory func() contractssession.Driver) error {
+func (m *Manager) Extend(driver string, handler func() contractssession.Driver) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	if _, exists := m.factories[driver]; exists {
+	if _, exists := m.drivers[driver]; exists {
 		return errors.SessionDriverAlreadyExists.Args(driver)
 	}
-	m.factories[driver] = factory
+
+	m.drivers[driver] = handler()
+	m.startGcTimer(m.drivers[driver])
 	return nil
 }
 
@@ -137,59 +109,52 @@ func (m *Manager) acquireSession() contractssession.Session {
 	return session
 }
 
-// getDefaultDriver reads the default driver name from config.
+func (m *Manager) custom(driver string) (contractssession.Driver, error) {
+	if custom, ok := m.config.Get(fmt.Sprintf("session.drivers.%s.via", driver)).(contractssession.Driver); ok {
+		return custom, nil
+	}
+	if custom, ok := m.config.Get(fmt.Sprintf("session.drivers.%s.via", driver)).(func() (contractssession.Driver, error)); ok {
+		return custom()
+	}
+
+	return nil, errors.CacheStoreContractNotFulfilled.Args(driver)
+}
+
+func (m *Manager) file() contractssession.Driver {
+	lifetime := m.config.GetInt("session.lifetime")
+	return driver.NewFile(m.config.GetString("session.files"), lifetime)
+}
+
 func (m *Manager) getDefaultDriver() string {
 	return m.config.GetString("session.driver")
 }
 
-// registerConfiguredDrivers ONLY reads from config.
-func (m *Manager) registerConfiguredDrivers() {
+func (m *Manager) registerConfiguredDrivers() error {
 	configuredDrivers := m.config.Get("session.drivers", map[string]any{})
 	driversMap, ok := configuredDrivers.(map[string]any)
 	if !ok {
-		return
+		return nil
 	}
-	for name, driverConfigAny := range driversMap {
-		driverConfig, ok := driverConfigAny.(map[string]any)
-		if !ok {
+	for name := range driversMap {
 
-			continue
-		}
+		driver := m.config.GetString(fmt.Sprintf("session.drivers.%s.driver", name))
 
-		viaFactoryAny, exists := driverConfig["via"]
-		if !exists {
-
-			continue
-		}
-
-		// Factory from config: func() (contractssession.Driver, error)
-		viaFactoryWithError, ok := viaFactoryAny.(func() (contractssession.Driver, error))
-		if !ok {
-			continue
-		}
-
-		// Wrapper for Extend signature: func() contractssession.Driver
-		factoryWrapper := func() contractssession.Driver {
-			driverInstance, err := viaFactoryWithError()
+		switch driver {
+		case "custom":
+			driverInstance, err := m.custom(name)
 			if err != nil {
-				color.Errorf("Error creating driver instance for '%s': %s\n", name, err)
-				return nil
+				return err
 			}
-			if driverInstance == nil {
-				color.Errorf("Driver instance for '%s' is nil\n", name)
-				return nil
-			}
-			return driverInstance
-		}
-
-		err := m.Extend(name, factoryWrapper)
-		if err != nil {
-			color.Errorf("Failed to register driver '%s': %s\n", name, err)
+			m.drivers[name] = driverInstance
+			m.startGcTimer(driverInstance)
+		default:
+			return errors.CacheDriverNotSupported.Args(driver)
 		}
 	}
+
+	return nil
 }
 
-// startGcTimer remains (it operates on the Driver interface).
 func (m *Manager) startGcTimer(driverInstance contractssession.Driver) {
 	interval := m.config.GetInt("session.gc_interval")
 	if interval <= 0 {

@@ -41,9 +41,9 @@ func mockConfigFacade(mockConfig *configmocks.Config) {
 func TestStartSession(t *testing.T) {
 	mockConfig := &configmocks.Config{}
 	session.ConfigFacade = mockConfig
-	mockConfig.On("GetInt", "session.lifetime").Return(120).Once()
-	mockConfig.On("GetInt", "session.gc_interval").Return(30).Once()
-	mockConfig.On("GetString", "session.files").Return("storage/framework/sessions").Once()
+	mockConfig.On("GetInt", "session.lifetime").Return(120).Twice()
+	mockConfig.On("GetInt", "session.gc_interval").Return(30).Twice()
+	mockConfig.On("GetString", "session.files").Return("storage/framework/sessions").Twice()
 	mockConfig.On("Get", "session.drivers", mock.AnythingOfType("map[string]interface {}")).Return(
 		map[string]any{},
 	).Once()
