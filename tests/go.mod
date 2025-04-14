@@ -11,7 +11,7 @@ require (
 	github.com/goravel/framework v1.15.7
 	github.com/goravel/mysql v0.0.0-20250407013050-8071d135b27d
 	github.com/goravel/postgres v0.0.2-0.20250407022030-aa4400f1a0de
-	github.com/goravel/sqlite v0.0.0-20250407083918-0629b063788e
+	github.com/goravel/sqlite v0.0.0-20250414101217-fbee7100fe08
 	github.com/goravel/sqlserver v0.0.0-20250330044523-bf0931bdcdff
 	github.com/spf13/cast v1.7.1
 	github.com/stretchr/testify v1.10.0

@@ -102,8 +102,8 @@ github.com/goravel/mysql v0.0.0-20250407013050-8071d135b27d h1:dRd0IfdiMPsAmxX/q
 github.com/goravel/mysql v0.0.0-20250407013050-8071d135b27d/go.mod h1:OXkVcMXvytqQUe5cVzTSPDF/wkARJBwmgZHXqXCdeRQ=
 github.com/goravel/postgres v0.0.2-0.20250407022030-aa4400f1a0de h1:gchMsWBTXXRRU9X5yvhegVsGM/kXMCNO87wXL9Ew1VA=
 github.com/goravel/postgres v0.0.2-0.20250407022030-aa4400f1a0de/go.mod h1:bO15c7uvf8C6kF+EdqAQlDOOl6xu7tsExBxXqz2uZSU=
-github.com/goravel/sqlite v0.0.0-20250407083918-0629b063788e h1:VbOkIUBC1nVL22N0W0uNY0chrMYRl2qyH3G2BiSBALU=
-github.com/goravel/sqlite v0.0.0-20250407083918-0629b063788e/go.mod h1:5vA0WzKRSr5l/ORAHp/zWiA0HVBZorXgGCJmquoilek=
+github.com/goravel/sqlite v0.0.0-20250414101217-fbee7100fe08 h1:OTJkEMJ+++E5qvXi+bDo75dDuz7EmXFjgCTJfHYndXA=
+github.com/goravel/sqlite v0.0.0-20250414101217-fbee7100fe08/go.mod h1:5vA0WzKRSr5l/ORAHp/zWiA0HVBZorXgGCJmquoilek=
 github.com/goravel/sqlserver v0.0.0-20250330044523-bf0931bdcdff h1:+TwXv8FpyvrxxFdHGmIe9RQq1Yq/94WG228XNmBklso=
 github.com/goravel/sqlserver v0.0.0-20250330044523-bf0931bdcdff/go.mod h1:Q6aTX6yg5L1rNlK+N7KWbCMyTsKtiqxbLvRXcQKoImI=
 github.com/gorilla/securecookie v1.1.1/go.mod h1:ra0sb63/xPlUeL+yeDciTfxMRAA+MP+HVt/4epWDjd4=
