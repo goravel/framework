@@ -2672,6 +2672,53 @@ func (_c *Grammar_TypeMediumText_Call) RunAndReturn(run func(driver.ColumnDefini
 	return _c
 }
 
+// TypePatternMapping provides a mock function with no fields
+func (_m *Grammar) TypePatternMapping() []driver.TypePatternMapping {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for TypePatternMapping")
+	}
+
+	var r0 []driver.TypePatternMapping
+	if rf, ok := ret.Get(0).(func() []driver.TypePatternMapping); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]driver.TypePatternMapping)
+		}
+	}
+
+	return r0
+}
+
+// Grammar_TypePatternMapping_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TypePatternMapping'
+type Grammar_TypePatternMapping_Call struct {
+	*mock.Call
+}
+
+// TypePatternMapping is a helper method to define mock.On call
+func (_e *Grammar_Expecter) TypePatternMapping() *Grammar_TypePatternMapping_Call {
+	return &Grammar_TypePatternMapping_Call{Call: _e.mock.On("TypePatternMapping")}
+}
+
+func (_c *Grammar_TypePatternMapping_Call) Run(run func()) *Grammar_TypePatternMapping_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Grammar_TypePatternMapping_Call) Return(_a0 []driver.TypePatternMapping) *Grammar_TypePatternMapping_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_TypePatternMapping_Call) RunAndReturn(run func() []driver.TypePatternMapping) *Grammar_TypePatternMapping_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // TypeSmallInteger provides a mock function with given fields: column
 func (_m *Grammar) TypeSmallInteger(column driver.ColumnDefinition) string {
 	ret := _m.Called(column)
