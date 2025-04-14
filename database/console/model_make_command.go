@@ -193,7 +193,7 @@ func (r *ModelMakeCommand) getStub() string {
 }
 
 func (r *ModelMakeCommand) buildTableNameMethod(structName, tableName string) string {
-	return fmt.Sprintf("func (m *%s) TableName() string {\n\treturn \"%s\"\n}", structName, tableName)
+	return fmt.Sprintf("func (r *%s) TableName() string {\n\treturn \"%s\"\n}", structName, tableName)
 }
 
 func (r *ModelMakeCommand) buildField(name, goType, tags string) string {
@@ -263,12 +263,6 @@ func generateField(column driver.Column, typePatternMapping []driver.TypePattern
 	}
 
 	tagParts := []string{fmt.Sprintf(`json:"%s"`, column.Name)}
-
-	gormTag := fmt.Sprintf("column:%s", column.Name)
-	if column.Autoincrement {
-		gormTag += ";autoIncrement"
-	}
-	tagParts = append(tagParts, fmt.Sprintf(`gorm:"%s"`, gormTag))
 
 	return fieldInfo{
 		Name:    str.Of(column.Name).Studly().String(),
