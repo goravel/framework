@@ -100,6 +100,14 @@ func (r *PendingJob) Dispatch() error {
 func (r *PendingJob) DispatchSync() error {
 	syncDriver := NewSync(r.connection)
 
+	if !r.delay.IsZero() {
+		if !r.task.Delay.IsZero() {
+			r.task.Delay = r.task.Delay.Add(carbon.Now().DiffAbsInDuration(carbon.FromStdTime(r.delay)))
+		} else {
+			r.task.Delay = r.delay
+		}
+	}
+
 	return syncDriver.Push(r.task, r.config.QueueKey(r.connection, r.queue))
 }
 
