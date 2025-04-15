@@ -14,11 +14,13 @@ import (
 
 type ModifyActionsTestSuite struct {
 	suite.Suite
-	content string
+	config   string
+	console  string
+	database string
 }
 
 func (s *ModifyActionsTestSuite) SetupTest() {
-	s.content = `package config
+	s.config = `package config
 
 import (
 	"github.com/goravel/framework/auth"
@@ -40,6 +42,48 @@ func init() {
 		},
 	})
 }`
+	s.console = `package console
+
+import (
+	"github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/schedule"
+	"goravel/app/console/commands"
+)
+
+type Kernel struct {
+}
+
+func (kernel Kernel) Schedule() []schedule.Event {
+	return []schedule.Event{}
+}
+
+func (kernel Kernel) Commands() []console.Command {
+	return []console.Command{}
+}`
+	s.database = `package database
+
+import (
+	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/contracts/database/seeder"
+
+	"goravel/database/migrations"
+	"goravel/database/seeders"
+)
+
+type Kernel struct {
+}
+
+func (kernel Kernel) Migrations() []schema.Migration {
+	return []schema.Migration{
+		&migrations.M20240915060148CreateUsersTable{},
+	}
+}
+
+func (kernel Kernel) Seeders() []seeder.Seeder {
+	return []seeder.Seeder{
+		&seeders.DatabaseSeeder{},
+	}
+}`
 }
 
 func (s *ModifyActionsTestSuite) TearDownTest() {}
@@ -51,12 +95,14 @@ func TestModifyActionsTestSuite(t *testing.T) {
 func (s *ModifyActionsTestSuite) TestActions() {
 	tests := []struct {
 		name     string
+		content  string
 		matchers []contractmatch.GoNode
 		actions  []modify.Action
 		assert   func(filename string)
 	}{
 		{
 			name:     "add config (not exist)",
+			content:  s.config,
 			matchers: match.Config("app"),
 			actions: []modify.Action{
 				AddConfig("key", `"value"`),
@@ -78,6 +124,7 @@ func (s *ModifyActionsTestSuite) TestActions() {
 		},
 		{
 			name:     "add config (exist)",
+			content:  s.config,
 			matchers: match.Config("app"),
 			actions: []modify.Action{
 				AddConfig("name", `"Goravel"`),
@@ -88,6 +135,7 @@ func (s *ModifyActionsTestSuite) TestActions() {
 		},
 		{
 			name:     "add config (to map)",
+			content:  s.config,
 			matchers: match.Config("app.exist"),
 			actions: []modify.Action{
 				AddConfig("key", `"value"`),
@@ -110,6 +158,7 @@ func (s *ModifyActionsTestSuite) TestActions() {
 		},
 		{
 			name:     "add import",
+			content:  s.config,
 			matchers: []contractmatch.GoNode{match.Imports()},
 			actions: []modify.Action{
 				AddImport("github.com/goravel/test", "t"),
@@ -126,6 +175,7 @@ func (s *ModifyActionsTestSuite) TestActions() {
 		},
 		{
 			name:     "add provider (not exist)",
+			content:  s.config,
 			matchers: match.Providers(),
 			actions: []modify.Action{
 				AddProvider("&test.ServiceProvider{}"),
@@ -147,6 +197,7 @@ func (s *ModifyActionsTestSuite) TestActions() {
 		},
 		{
 			name:     "add provider (exist)",
+			content:  s.config,
 			matchers: match.Providers(),
 			actions: []modify.Action{
 				AddProvider("&crypt.ServiceProvider{}"),
@@ -167,6 +218,7 @@ func (s *ModifyActionsTestSuite) TestActions() {
 		},
 		{
 			name:     "add provider before",
+			content:  s.config,
 			matchers: match.Providers(),
 			actions: []modify.Action{
 				AddProvider("&test.ServiceProvider{}", "&auth.AuthServiceProvider{}"),
@@ -188,6 +240,7 @@ func (s *ModifyActionsTestSuite) TestActions() {
 		},
 		{
 			name:     "remove config",
+			content:  s.config,
 			matchers: match.Config("app"),
 			actions: []modify.Action{
 				RemoveConfig("providers"),
@@ -198,6 +251,7 @@ func (s *ModifyActionsTestSuite) TestActions() {
 		},
 		{
 			name:     "remove import",
+			content:  s.config,
 			matchers: []contractmatch.GoNode{match.Imports()},
 			actions: []modify.Action{
 				RemoveImport("github.com/goravel/framework/auth"),
@@ -208,6 +262,7 @@ func (s *ModifyActionsTestSuite) TestActions() {
 		},
 		{
 			name:     "remove provider",
+			content:  s.config,
 			matchers: match.Providers(),
 			actions: []modify.Action{
 				RemoveProvider("&auth.AuthServiceProvider{}"),
@@ -218,6 +273,7 @@ func (s *ModifyActionsTestSuite) TestActions() {
 		},
 		{
 			name:     "replace config",
+			content:  s.config,
 			matchers: match.Config("app"),
 			actions: []modify.Action{
 				ReplaceConfig("name", `"Goravel"`),
@@ -227,12 +283,60 @@ func (s *ModifyActionsTestSuite) TestActions() {
 				s.NotContains(content, `config.Env("APP_NAME", "Goravel")`)
 			},
 		},
+		{
+			name:     "add migration",
+			content:  s.database,
+			matchers: match.Migrations(),
+			actions: []modify.Action{
+				Register("&migrations.M20250301000000CreateFailedJobsTable{}"),
+			},
+			assert: func(content string) {
+				s.Contains(content, `func (kernel Kernel) Migrations() []schema.Migration {
+	return []schema.Migration{
+		&migrations.M20240915060148CreateUsersTable{},
+		&migrations.M20250301000000CreateFailedJobsTable{},
+	}
+}`)
+			},
+		},
+		{
+			name:     "add seeder",
+			content:  s.database,
+			matchers: match.Seeders(),
+			actions: []modify.Action{
+				Register("&seeders.TestSeeder{}"),
+			},
+			assert: func(content string) {
+				s.Contains(content, `func (kernel Kernel) Seeders() []seeder.Seeder {
+	return []seeder.Seeder{
+		&seeders.DatabaseSeeder{},
+		&seeders.TestSeeder{},
+	}
+}`)
+			},
+		},
+		{
+			name:     "register command",
+			content:  s.console,
+			matchers: match.Commands(),
+			actions: []modify.Action{
+				Register("&commands.Test{}"),
+			},
+			assert: func(content string) {
+				s.Contains(content, `
+func (kernel Kernel) Commands() []console.Command {
+	return []console.Command{
+		&commands.Test{},
+	}
+}`)
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
 			sourceFile := filepath.Join(s.T().TempDir(), "test.go")
-			s.Require().NoError(file.PutContent(sourceFile, s.content))
+			s.Require().NoError(file.PutContent(sourceFile, tt.content))
 			s.Require().NoError(File(sourceFile).Find(tt.matchers...).Modify(tt.actions...).Apply())
 			content, err := file.GetContent(sourceFile)
 			s.Require().NoError(err)

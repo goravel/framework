@@ -33,6 +33,22 @@ func Config(key string) []match.GoNode {
 	return matchers
 }
 
+func Commands() []match.GoNode {
+	return []match.GoNode{
+		FuncDecl(Ident("Commands")),
+		TypeOf(&dst.ReturnStmt{}),
+		CompositeLit(
+			ArrayType(
+				SelectorExpr(
+					Ident("console"),
+					Ident("Command"),
+				),
+				AnyNode(),
+			),
+		),
+	}
+}
+
 func Imports() match.GoNode {
 	return GoNode{
 		match: func(n dst.Node) bool {
@@ -42,6 +58,22 @@ func Imports() match.GoNode {
 
 			return false
 		},
+	}
+}
+
+func Migrations() []match.GoNode {
+	return []match.GoNode{
+		FuncDecl(Ident("Migrations")),
+		TypeOf(&dst.ReturnStmt{}),
+		CompositeLit(
+			ArrayType(
+				SelectorExpr(
+					Ident("schema"),
+					Ident("Migration"),
+				),
+				AnyNode(),
+			),
+		),
 	}
 }
 
@@ -64,6 +96,22 @@ func Providers() []match.GoNode {
 				SelectorExpr(
 					Ident("foundation"),
 					Ident("ServiceProvider"),
+				),
+				AnyNode(),
+			),
+		),
+	}
+}
+
+func Seeders() []match.GoNode {
+	return []match.GoNode{
+		FuncDecl(Ident("Seeders")),
+		TypeOf(&dst.ReturnStmt{}),
+		CompositeLit(
+			ArrayType(
+				SelectorExpr(
+					Ident("seeder"),
+					Ident("Seeder"),
 				),
 				AnyNode(),
 			),

@@ -27,7 +27,6 @@ func AddConfig(name, expression string) modify.Action {
 		key := WrapNewline(&dst.BasicLit{Kind: token.STRING, Value: strconv.Quote(name)})
 		if KeyExists(key, value.Elts) {
 			color.Warningln(fmt.Sprintf("key [%s] already exists,using ReplaceConfig instead if you want to update it", name))
-
 			return
 		}
 
@@ -62,7 +61,6 @@ func AddImport(path string, name ...string) modify.Action {
 		// into stdlib, third-party, and local packages.
 		if isThirdParty(path) {
 			node.Specs = append([]dst.Spec{WrapNewline(im)}, node.Specs...)
-
 			return
 		}
 		node.Specs = append(node.Specs, WrapNewline(im))
@@ -81,19 +79,27 @@ func AddProvider(expression string, before ...string) modify.Action {
 				// check if beforeExpr is existing and insert provider before it
 				if i := ExprIndex(beforeExpr, node.Elts); i >= 0 {
 					node.Elts = slices.Insert(node.Elts, i, provider)
-
 					return
 				}
-
 				color.Warningln(fmt.Sprintf("provider [%s] not found, cannot insert before it", before[0]))
 			}
 
 			// insert provider at the end
 			node.Elts = append(node.Elts, provider)
-
 			return
 		}
 		color.Warningln(fmt.Sprintf("provider [%s] already exists", expression))
+	}
+}
+
+// Register adds expressions to the matched specified array.
+func Register(expression string) modify.Action {
+	return func(cursor *dstutil.Cursor) {
+		expr := MustParseExpr(expression).(dst.Expr)
+		node := cursor.Node().(*dst.CompositeLit)
+		if !ExprExists(expr, node.Elts) {
+			node.Elts = append(node.Elts, expr)
+		}
 	}
 }
 
@@ -157,9 +163,7 @@ func ReplaceConfig(name, expression string) modify.Action {
 				Key:   key,
 				Value: WrapNewline(MustParseExpr(expression)).(dst.Expr),
 			})
-
 			return
 		}
-
 	}
 }
