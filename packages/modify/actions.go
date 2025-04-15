@@ -3,6 +3,7 @@ package modify
 import (
 	"fmt"
 	"go/token"
+	"slices"
 	"strconv"
 
 	"github.com/dave/dst"
@@ -24,7 +25,7 @@ func AddConfig(name, expression string) modify.Action {
 			value = node.Args[1].(*dst.CompositeLit)
 		}
 		key := WrapNewline(&dst.BasicLit{Kind: token.STRING, Value: strconv.Quote(name)})
-		if exists, _ := KeyExists(key, value.Elts); exists {
+		if KeyExists(key, value.Elts) {
 			color.Warningln(fmt.Sprintf("key [%s] already exists,using ReplaceConfig instead if you want to update it", name))
 
 			return
@@ -73,13 +74,13 @@ func AddProvider(expression string, before ...string) modify.Action {
 	return func(cursor *dstutil.Cursor) {
 		provider := MustParseExpr(expression).(dst.Expr)
 		node := cursor.Node().(*dst.CompositeLit)
-		if exist, _ := ExprExists(provider, node.Elts); !exist {
+		if !ExprExists(provider, node.Elts) {
 			if len(before) > 0 {
 				beforeExpr := MustParseExpr(before[0]).(dst.Expr)
 
 				// check if beforeExpr is existing and insert provider before it
-				if has, i := ExprExists(beforeExpr, node.Elts); has {
-					node.Elts = append(node.Elts[:i], append([]dst.Expr{provider}, node.Elts[i:]...)...)
+				if i := ExprIndex(beforeExpr, node.Elts); i >= 0 {
+					node.Elts = slices.Insert(node.Elts, i, provider)
 
 					return
 				}
@@ -109,11 +110,12 @@ func RemoveConfig(name string) modify.Action {
 		key := WrapNewline(&dst.BasicLit{Kind: token.STRING, Value: strconv.Quote(name)})
 
 		// remove config
-		if exist, i := KeyExists(key, value.Elts); exist {
-			value.Elts = append(value.Elts[:i], value.Elts[i+1:]...)
-
-			return
-		}
+		value.Elts = slices.DeleteFunc(value.Elts, func(expr dst.Expr) bool {
+			if kv, ok := expr.(*dst.KeyValueExpr); ok {
+				return match.EqualNode(key).MatchNode(kv.Key)
+			}
+			return false
+		})
 	}
 }
 
@@ -121,14 +123,9 @@ func RemoveConfig(name string) modify.Action {
 func RemoveImport(path string, name ...string) modify.Action {
 	return func(cursor *dstutil.Cursor) {
 		node := cursor.Node().(*dst.GenDecl)
-		for i, spec := range node.Specs {
-			// remove import spec
-			if match.ImportSpec(path, name...).MatchNode(spec) {
-				node.Specs = append(node.Specs[:i], node.Specs[i+1:]...)
-
-				return
-			}
-		}
+		node.Specs = slices.DeleteFunc(node.Specs, func(spec dst.Spec) bool {
+			return match.ImportSpec(path, name...).MatchNode(spec)
+		})
 	}
 }
 
@@ -137,11 +134,9 @@ func RemoveProvider(expression string) modify.Action {
 	return func(cursor *dstutil.Cursor) {
 		provider := MustParseExpr(expression).(dst.Expr)
 		node := cursor.Node().(*dst.CompositeLit)
-
-		// remove provider
-		if exist, i := ExprExists(provider, node.Elts); exist {
-			node.Elts = append(node.Elts[:i], node.Elts[i+1:]...)
-		}
+		node.Elts = slices.DeleteFunc(node.Elts, func(expr dst.Expr) bool {
+			return match.EqualNode(provider).MatchNode(expr)
+		})
 	}
 }
 
@@ -157,7 +152,7 @@ func ReplaceConfig(name, expression string) modify.Action {
 		key := WrapNewline(&dst.BasicLit{Kind: token.STRING, Value: strconv.Quote(name)})
 
 		// replace config
-		if exist, i := KeyExists(key, value.Elts); exist {
+		if i := KeyIndex(key, value.Elts); i >= 0 {
 			value.Elts[i] = WrapNewline(&dst.KeyValueExpr{
 				Key:   key,
 				Value: WrapNewline(MustParseExpr(expression)).(dst.Expr),
