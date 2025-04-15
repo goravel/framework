@@ -120,7 +120,7 @@ func (m *Manager) custom(driver string) (contractssession.Driver, error) {
 		return custom()
 	}
 
-	return nil, errors.CacheStoreContractNotFulfilled.Args(driver)
+	return nil, errors.SessionDriverContractNotFulfilled.Args(driver)
 }
 
 func (m *Manager) file() contractssession.Driver {
@@ -143,6 +143,10 @@ func (m *Manager) registerConfiguredDrivers() error {
 		driver := m.config.GetString(fmt.Sprintf("session.drivers.%s.driver", name))
 
 		switch driver {
+		case "file":
+			driverInstance := m.file()
+			m.drivers[name] = driverInstance
+			m.startGcTimer(driverInstance)
 		case "custom":
 			driverInstance, err := m.custom(name)
 			if err != nil {
