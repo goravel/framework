@@ -10,7 +10,7 @@ import (
 	"github.com/dave/dst/dstutil"
 	"github.com/stretchr/testify/suite"
 
-	contractmatch "github.com/goravel/framework/contracts/packages/match"
+	contractsmatch "github.com/goravel/framework/contracts/packages/match"
 	"github.com/goravel/framework/contracts/packages/modify"
 	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/support/file"
@@ -36,7 +36,7 @@ func (s *ModifyGoFileTestSuite) TestModifyGoFile() {
 		name     string
 		setup    func()
 		actions  []modify.Action
-		matchers []contractmatch.GoNode
+		matchers []contractsmatch.GoNode
 		assert   func(err error)
 	}{
 		{
@@ -65,7 +65,7 @@ func main() {
 `
 				s.Require().NoError(file.PutContent(s.file, src))
 			},
-			matchers: []contractmatch.GoNode{
+			matchers: []contractsmatch.GoNode{
 				match.BasicLit("Hello, test!"),
 			},
 			assert: func(err error) {
@@ -89,7 +89,7 @@ func main() {
 					Value: strconv.Quote("Hello, test!!!"),
 				})
 			}},
-			matchers: []contractmatch.GoNode{
+			matchers: []contractsmatch.GoNode{
 				match.BasicLit(strconv.Quote("Hello, test!")),
 			},
 			assert: func(err error) {

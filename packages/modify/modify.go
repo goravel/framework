@@ -3,6 +3,7 @@ package modify
 import (
 	"bytes"
 	"fmt"
+	"path/filepath"
 
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/goravel/framework/contracts/packages/match"
 	"github.com/goravel/framework/contracts/packages/modify"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -19,9 +21,12 @@ type GoFile struct {
 }
 
 func File(file string) modify.GoFile {
-	return &GoFile{
-		file: file,
+	switch filepath.Ext(file) {
+	case ".go":
+		return &GoFile{file: file}
 	}
+
+	return nil
 }
 
 func (r GoFile) Apply() error {
@@ -37,7 +42,7 @@ func (r GoFile) Apply() error {
 
 	for i := range r.modifiers {
 		if err = r.modifiers[i].Apply(df); err != nil {
-			return fmt.Errorf("error modifying file %s: %v", r.file, err)
+			return errors.PackageModifyGoFileFail.Args(r.file, err)
 		}
 	}
 
@@ -46,7 +51,7 @@ func (r GoFile) Apply() error {
 	if err != nil {
 		return err
 	}
-	
+
 	return file.PutContent(r.file, buf.String())
 }
 
@@ -110,7 +115,7 @@ func (r GoNode) Apply(node dst.Node) (err error) {
 
 	if !matched {
 		count := len(r.matchers)
-		return fmt.Errorf("%d out of %d matchers did not match", count-current, count)
+		return errors.PackageMatchGoNodeFail.Args(count-current, count)
 	}
 
 	return nil

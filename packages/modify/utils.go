@@ -11,21 +11,21 @@ import (
 	"github.com/goravel/framework/packages/match"
 )
 
-func ExprExists(x dst.Expr, y []dst.Expr) bool {
+func ExprExists(x []dst.Expr, y dst.Expr) bool {
 	return ExprIndex(x, y) >= 0
 }
 
-func ExprIndex(x dst.Expr, y []dst.Expr) int {
-	return slices.IndexFunc(y, func(expr dst.Expr) bool {
-		return match.EqualNode(x).MatchNode(expr)
+func ExprIndex(x []dst.Expr, y dst.Expr) int {
+	return slices.IndexFunc(x, func(expr dst.Expr) bool {
+		return match.EqualNode(y).MatchNode(expr)
 	})
 }
 
-func KeyExists(key dst.Expr, kvs []dst.Expr) bool {
-	return KeyIndex(key, kvs) >= 0
+func KeyExists(kvs []dst.Expr, key dst.Expr) bool {
+	return KeyIndex(kvs, key) >= 0
 }
 
-func KeyIndex(key dst.Expr, kvs []dst.Expr) int {
+func KeyIndex(kvs []dst.Expr, key dst.Expr) int {
 	return slices.IndexFunc(kvs, func(expr dst.Expr) bool {
 		if kv, ok := expr.(*dst.KeyValueExpr); ok {
 			return match.EqualNode(key).MatchNode(kv.Key)

@@ -1,7 +1,6 @@
 package modify
 
 import (
-	"fmt"
 	"go/token"
 	"slices"
 	"strconv"
@@ -10,6 +9,7 @@ import (
 	"github.com/dave/dst/dstutil"
 
 	"github.com/goravel/framework/contracts/packages/modify"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/support/color"
 )
@@ -25,8 +25,8 @@ func AddConfig(name, expression string) modify.Action {
 			value = node.Args[1].(*dst.CompositeLit)
 		}
 		key := WrapNewline(&dst.BasicLit{Kind: token.STRING, Value: strconv.Quote(name)})
-		if KeyExists(key, value.Elts) {
-			color.Warningln(fmt.Sprintf("key [%s] already exists,using ReplaceConfig instead if you want to update it", name))
+		if KeyExists(value.Elts, key) {
+			color.Warningln(errors.PackageConfigKeyExists.Args(name))
 			return
 		}
 
@@ -72,23 +72,23 @@ func AddProvider(expression string, before ...string) modify.Action {
 	return func(cursor *dstutil.Cursor) {
 		provider := MustParseExpr(expression).(dst.Expr)
 		node := cursor.Node().(*dst.CompositeLit)
-		if !ExprExists(provider, node.Elts) {
-			if len(before) > 0 {
-				beforeExpr := MustParseExpr(before[0]).(dst.Expr)
-
-				// check if beforeExpr is existing and insert provider before it
-				if i := ExprIndex(beforeExpr, node.Elts); i >= 0 {
-					node.Elts = slices.Insert(node.Elts, i, provider)
-					return
-				}
-				color.Warningln(fmt.Sprintf("provider [%s] not found, cannot insert before it", before[0]))
-			}
-
-			// insert provider at the end
-			node.Elts = append(node.Elts, provider)
+		if ExprExists(node.Elts, provider) {
+			color.Warningln(errors.PackageProviderExists.Args(expression))
 			return
 		}
-		color.Warningln(fmt.Sprintf("provider [%s] already exists", expression))
+		if len(before) > 0 {
+			beforeExpr := MustParseExpr(before[0]).(dst.Expr)
+
+			// check if beforeExpr is existing and insert provider before it
+			if i := ExprIndex(node.Elts, beforeExpr); i >= 0 {
+				node.Elts = slices.Insert(node.Elts, i, provider)
+				return
+			}
+			color.Warningln(errors.PackageProviderNotFound.Args(before[0]))
+		}
+
+		// insert provider at the end
+		node.Elts = append(node.Elts, provider)
 	}
 }
 
@@ -97,7 +97,7 @@ func Register(expression string) modify.Action {
 	return func(cursor *dstutil.Cursor) {
 		expr := MustParseExpr(expression).(dst.Expr)
 		node := cursor.Node().(*dst.CompositeLit)
-		if !ExprExists(expr, node.Elts) {
+		if !ExprExists(node.Elts, expr) {
 			node.Elts = append(node.Elts, expr)
 		}
 	}
@@ -130,7 +130,7 @@ func RemoveImport(path string, name ...string) modify.Action {
 	return func(cursor *dstutil.Cursor) {
 		node := cursor.Node().(*dst.GenDecl)
 		node.Specs = slices.DeleteFunc(node.Specs, func(spec dst.Spec) bool {
-			return match.ImportSpec(path, name...).MatchNode(spec)
+			return match.Import(path, name...).MatchNode(spec)
 		})
 	}
 }
@@ -158,7 +158,7 @@ func ReplaceConfig(name, expression string) modify.Action {
 		key := WrapNewline(&dst.BasicLit{Kind: token.STRING, Value: strconv.Quote(name)})
 
 		// replace config
-		if i := KeyIndex(key, value.Elts); i >= 0 {
+		if i := KeyIndex(value.Elts, key); i >= 0 {
 			value.Elts[i] = WrapNewline(&dst.KeyValueExpr{
 				Key:   key,
 				Value: WrapNewline(MustParseExpr(expression)).(dst.Expr),

@@ -28,28 +28,28 @@ func (s *UtilsTestSuite) TestExprExists() {
 		s.Run("expr exists", func() {
 			s.True(
 				ExprExists(
-					MustParseExpr("&some.Struct{}").(dst.Expr),
 					MustParseExpr("[]any{&some.Struct{}}").(*dst.CompositeLit).Elts,
+					MustParseExpr("&some.Struct{}").(dst.Expr),
 				),
 			)
 			s.NotEqual(-1,
 				ExprIndex(
-					MustParseExpr("&some.Struct{}").(dst.Expr),
 					MustParseExpr("[]any{&some.Struct{}}").(*dst.CompositeLit).Elts,
+					MustParseExpr("&some.Struct{}").(dst.Expr),
 				),
 			)
 		})
 		s.Run("expr does not exist", func() {
 			s.False(
 				ExprExists(
-					MustParseExpr("&some.Struct{}").(dst.Expr),
 					MustParseExpr("[]any{&some.OtherStruct{}}").(*dst.CompositeLit).Elts,
+					MustParseExpr("&some.Struct{}").(dst.Expr),
 				),
 			)
 			s.Equal(-1,
 				ExprIndex(
-					MustParseExpr("&some.Struct{}").(dst.Expr),
 					MustParseExpr("[]any{&some.OtherStruct{}}").(*dst.CompositeLit).Elts,
+					MustParseExpr("&some.Struct{}").(dst.Expr),
 				),
 			)
 		})
@@ -62,28 +62,28 @@ func (s *UtilsTestSuite) TestKeyExists() {
 		s.Run("key exists", func() {
 			s.True(
 				KeyExists(
-					&dst.BasicLit{Kind: token.STRING, Value: strconv.Quote("someKey")},
 					MustParseExpr(`map[string]any{"someKey":"exist"}`).(*dst.CompositeLit).Elts,
+					&dst.BasicLit{Kind: token.STRING, Value: strconv.Quote("someKey")},
 				),
 			)
 			s.NotEqual(-1,
 				KeyIndex(
-					&dst.BasicLit{Kind: token.STRING, Value: strconv.Quote("someKey")},
 					MustParseExpr(`map[string]any{"someKey":"exist"}`).(*dst.CompositeLit).Elts,
+					&dst.BasicLit{Kind: token.STRING, Value: strconv.Quote("someKey")},
 				),
 			)
 		})
 		s.Run("key does not exist", func() {
 			s.False(
 				KeyExists(
-					&dst.BasicLit{Kind: token.STRING, Value: strconv.Quote("someKey")},
 					MustParseExpr(`map[string]any{"otherKey":"exist"}`).(*dst.CompositeLit).Elts,
+					&dst.BasicLit{Kind: token.STRING, Value: strconv.Quote("someKey")},
 				),
 			)
 			s.Equal(-1,
 				KeyIndex(
-					&dst.BasicLit{Kind: token.STRING, Value: strconv.Quote("someKey")},
 					MustParseExpr(`map[string]any{"otherKey":"exist"}`).(*dst.CompositeLit).Elts,
+					&dst.BasicLit{Kind: token.STRING, Value: strconv.Quote("someKey")},
 				),
 			)
 		})

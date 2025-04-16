@@ -63,6 +63,20 @@ func (r GoNodes) MatchNodes(nodes []dst.Node) bool {
 	return true
 }
 
+func AnyOf(matchers ...match.GoNode) match.GoNode {
+	return GoNode{
+		match: func(node dst.Node) bool {
+			for _, matcher := range matchers {
+				if matcher.MatchNode(node) {
+					return true
+				}
+			}
+
+			return false
+		},
+	}
+}
+
 func AnyNode() match.GoNode {
 	return &GoNode{
 		match: func(node dst.Node) bool {
@@ -143,7 +157,7 @@ func FirstOf(n match.GoNode) match.GoNode {
 	}
 }
 
-func FuncDecl(name match.GoNode) match.GoNode {
+func Func(name match.GoNode) match.GoNode {
 	return GoNode{
 		match: func(n dst.Node) bool {
 			if e, ok := n.(*dst.FuncDecl); ok {
@@ -167,7 +181,7 @@ func Ident(name string) match.GoNode {
 	}
 }
 
-func ImportSpec(path string, name ...string) match.GoNode {
+func Import(path string, name ...string) match.GoNode {
 	return GoNode{
 		match: func(n dst.Node) bool {
 			if im, ok := n.(*dst.ImportSpec); ok {

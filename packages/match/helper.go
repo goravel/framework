@@ -13,10 +13,19 @@ import (
 func Config(key string) []match.GoNode {
 	keys := strings.Split(key, ".")
 	matchers := []match.GoNode{
-		FuncDecl(Ident("init")),
+		Func(Ident("init")),
 		CallExpr(
 			SelectorExpr(
-				Ident("config"),
+				AnyOf(
+					Ident("config"),
+					CallExpr(
+						SelectorExpr(
+							Ident("facades"),
+							Ident("Config"),
+						),
+						AnyNodes(),
+					),
+				),
 				Ident("Add"),
 			),
 			GoNodes{
@@ -35,7 +44,7 @@ func Config(key string) []match.GoNode {
 
 func Commands() []match.GoNode {
 	return []match.GoNode{
-		FuncDecl(Ident("Commands")),
+		Func(Ident("Commands")),
 		TypeOf(&dst.ReturnStmt{}),
 		CompositeLit(
 			ArrayType(
@@ -49,21 +58,23 @@ func Commands() []match.GoNode {
 	}
 }
 
-func Imports() match.GoNode {
-	return GoNode{
-		match: func(n dst.Node) bool {
-			if block, ok := n.(*dst.GenDecl); ok {
-				return block.Tok == token.IMPORT
-			}
+func Imports() []match.GoNode {
+	return []match.GoNode{
+		GoNode{
+			match: func(n dst.Node) bool {
+				if block, ok := n.(*dst.GenDecl); ok {
+					return block.Tok == token.IMPORT
+				}
 
-			return false
+				return false
+			},
 		},
 	}
 }
 
 func Migrations() []match.GoNode {
 	return []match.GoNode{
-		FuncDecl(Ident("Migrations")),
+		Func(Ident("Migrations")),
 		TypeOf(&dst.ReturnStmt{}),
 		CompositeLit(
 			ArrayType(
@@ -79,7 +90,7 @@ func Migrations() []match.GoNode {
 
 func Providers() []match.GoNode {
 	return []match.GoNode{
-		FuncDecl(Ident("init")),
+		Func(Ident("init")),
 		CallExpr(
 			SelectorExpr(
 				Ident("config"),
@@ -105,7 +116,7 @@ func Providers() []match.GoNode {
 
 func Seeders() []match.GoNode {
 	return []match.GoNode{
-		FuncDecl(Ident("Seeders")),
+		Func(Ident("Seeders")),
 		TypeOf(&dst.ReturnStmt{}),
 		CompositeLit(
 			ArrayType(

@@ -15,14 +15,37 @@ import (
 
 type MatchHelperTestSuite struct {
 	suite.Suite
-	config   *dst.File
-	console  *dst.File
-	database *dst.File
+	configChained  *dst.File
+	configVariable *dst.File
+	console        *dst.File
+	database       *dst.File
 }
 
 func (s *MatchHelperTestSuite) SetupTest() {
 	var err error
-	s.config, err = decorator.Parse(`package config
+	s.configChained, err = decorator.Parse(`package config
+
+import (
+	"github.com/goravel/framework/auth"
+	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/crypt"
+	"github.com/goravel/framework/facades"
+)
+
+func Boot() {}
+
+func init() {
+	facades.Config().Add("app", map[string]any{
+		"name":  config.Env("APP_NAME", "Goravel"),
+		"key": "value",
+		"providers": []foundation.ServiceProvider{
+			&auth.AuthServiceProvider{},
+			&crypt.ServiceProvider{},
+		},
+	})
+}`)
+	s.Require().NoError(err)
+	s.configVariable, err = decorator.Parse(`package config
 
 import (
 	"github.com/goravel/framework/auth"
@@ -96,28 +119,8 @@ func (kernel Kernel) Seeders() []seeder.Seeder {
 
 func (s *MatchHelperTestSuite) TearDownTest() {}
 
-func TestHelperTestSuite(t *testing.T) {
+func TestMatchHelperTestSuite(t *testing.T) {
 	suite.Run(t, new(MatchHelperTestSuite))
-}
-
-func (s *MatchHelperTestSuite) match(source *dst.File, matchers []match.GoNode) (matched dst.Node) {
-	var current int
-	dstutil.Apply(source, func(cursor *dstutil.Cursor) bool {
-		if current >= len(matchers) {
-			return false
-		}
-		if matchers[current].MatchCursor(cursor) {
-			current++
-			if current == len(matchers) {
-				matched = cursor.Node()
-				return false
-			}
-		}
-
-		return true
-	}, nil)
-
-	return
 }
 
 func (s *MatchHelperTestSuite) TestHelper() {
@@ -128,22 +131,31 @@ func (s *MatchHelperTestSuite) TestHelper() {
 		assert   func(node dst.Node)
 	}{
 		{
-			name:     "match config",
-			file:     s.config,
+			name:     "match config (chained call)",
+			file:     s.configChained,
 			matchers: Config("app.key"),
 			assert: func(node dst.Node) {
-				KeyValueExpr(
-					BasicLit(strconv.Quote("exist")),
+				s.True(KeyValueExpr(
+					BasicLit(strconv.Quote("key")),
 					BasicLit(strconv.Quote("value")),
-				)
+				).MatchNode(node))
 			},
 		},
 		{
-			name: "match imports",
-			file: s.config,
-			matchers: []match.GoNode{
-				Imports(),
+			name:     "match config (variable-based call)",
+			file:     s.configVariable,
+			matchers: Config("app.key"),
+			assert: func(node dst.Node) {
+				s.True(KeyValueExpr(
+					BasicLit(strconv.Quote("key")),
+					BasicLit(strconv.Quote("value")),
+				).MatchNode(node))
 			},
+		},
+		{
+			name:     "match imports",
+			file:     s.configVariable,
+			matchers: Imports(),
 			assert: func(node dst.Node) {
 				n, ok := node.(*dst.GenDecl)
 				s.True(ok)
@@ -153,7 +165,7 @@ func (s *MatchHelperTestSuite) TestHelper() {
 		},
 		{
 			name:     "match providers",
-			file:     s.config,
+			file:     s.configVariable,
 			matchers: Providers(),
 			assert: func(node dst.Node) {
 				s.True(CompositeLit(EqualNode(&dst.ArrayType{
@@ -216,4 +228,24 @@ func (s *MatchHelperTestSuite) TestHelper() {
 			tt.assert(matched)
 		})
 	}
+}
+
+func (s *MatchHelperTestSuite) match(source *dst.File, matchers []match.GoNode) (matched dst.Node) {
+	var current int
+	dstutil.Apply(source, func(cursor *dstutil.Cursor) bool {
+		if current >= len(matchers) {
+			return false
+		}
+		if matchers[current].MatchCursor(cursor) {
+			current++
+			if current == len(matchers) {
+				matched = cursor.Node()
+				return false
+			}
+		}
+
+		return true
+	}, nil)
+
+	return
 }

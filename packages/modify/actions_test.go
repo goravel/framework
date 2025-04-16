@@ -159,7 +159,7 @@ func (s *ModifyActionsTestSuite) TestActions() {
 		{
 			name:     "add import",
 			content:  s.config,
-			matchers: []contractmatch.GoNode{match.Imports()},
+			matchers: match.Imports(),
 			actions: []modify.Action{
 				AddImport("github.com/goravel/test", "t"),
 			},
@@ -252,7 +252,7 @@ func (s *ModifyActionsTestSuite) TestActions() {
 		{
 			name:     "remove import",
 			content:  s.config,
-			matchers: []contractmatch.GoNode{match.Imports()},
+			matchers: match.Imports(),
 			actions: []modify.Action{
 				RemoveImport("github.com/goravel/framework/auth"),
 			},

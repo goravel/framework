@@ -8,6 +8,7 @@ import (
 
 	"github.com/goravel/framework/contracts/packages"
 	"github.com/goravel/framework/contracts/packages/modify"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/color"
 )
 
@@ -55,7 +56,7 @@ func (r *setup) Uninstall(modifiers ...modify.GoFile) packages.Setup {
 
 func (r *setup) Execute() {
 	if r.module == "" {
-		color.Errorln("package module name is empty, please run command with module name.")
+		color.Errorln(errors.PackageModuleNameEmpty)
 		osExit(1)
 	}
 

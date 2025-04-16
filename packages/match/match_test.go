@@ -158,7 +158,7 @@ func (s *MatchGoNodeTestSuite) TestMatch() {
 		},
 		{
 			name:    "match function",
-			matcher: FuncDecl(Ident("Boot")),
+			matcher: Func(Ident("Boot")),
 			assert: func(node dst.Node) {
 				fn, ok := node.(*dst.FuncDecl)
 				s.True(ok)
@@ -167,7 +167,7 @@ func (s *MatchGoNodeTestSuite) TestMatch() {
 		},
 		{
 			name:    "match import spec",
-			matcher: ImportSpec("github.com/goravel/framework/facades", "facades"),
+			matcher: Import("github.com/goravel/framework/facades", "facades"),
 			assert: func(node dst.Node) {
 				s.True(
 					EqualNode(node).MatchNode(
@@ -188,16 +188,16 @@ func (s *MatchGoNodeTestSuite) TestMatch() {
 			assert: func(node dst.Node) {
 				n, ok := node.(*dst.ImportSpec)
 				s.True(ok)
-				s.True(ImportSpec("github.com/goravel/framework/auth").MatchNode(n))
+				s.True(Import("github.com/goravel/framework/auth").MatchNode(n))
 			},
 		},
 		{
-			name:    "match first of import spec",
+			name:    "match last of import spec",
 			matcher: LastOf(TypeOf(&dst.ImportSpec{})),
 			assert: func(node dst.Node) {
 				n, ok := node.(*dst.ImportSpec)
 				s.True(ok)
-				s.True(ImportSpec("github.com/goravel/framework/facades", "facades").MatchNode(n))
+				s.True(Import("github.com/goravel/framework/facades", "facades").MatchNode(n))
 			},
 		},
 		{
