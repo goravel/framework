@@ -1,13 +1,18 @@
 package console
 
 import (
+	"fmt"
 	"path/filepath"
 	"strings"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/packages/match"
+	"github.com/goravel/framework/packages/modify"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
+	"github.com/goravel/framework/support/path"
 )
 
 type SeederMakeCommand struct {
@@ -49,11 +54,21 @@ func (r *SeederMakeCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	if err := file.PutContent(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
+	if err = file.PutContent(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName(), m.GetSignature())); err != nil {
 		return err
 	}
 
 	ctx.Success("Seeder created successfully")
+
+	if err = modify.GoFile(path.Database("kernel.go")).
+		Find(match.Imports()...).Modify(modify.AddImport(m.GetPackageImportPath())).
+		Find(match.Seeders()...).Modify(modify.Register(fmt.Sprintf("&%s.%s{}", m.GetPackageName(), m.GetStructName()))).
+		Apply(); err != nil {
+		ctx.Warning(errors.DatabaseSeederRegisterFailed.Args(err.Error()).Error())
+		return nil
+	}
+
+	ctx.Success("Seeder registered successfully")
 
 	return nil
 }
@@ -63,8 +78,9 @@ func (r *SeederMakeCommand) getStub() string {
 }
 
 // populateStub Populate the place-holders in the command stub.
-func (r *SeederMakeCommand) populateStub(stub string, packageName, structName string) string {
+func (r *SeederMakeCommand) populateStub(stub string, packageName, structName, signature string) string {
 	stub = strings.ReplaceAll(stub, "DummySeeder", structName)
+	stub = strings.ReplaceAll(stub, "DummySignature", signature)
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 
 	return stub

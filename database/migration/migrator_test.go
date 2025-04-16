@@ -58,7 +58,9 @@ func (s *MigratorSuite) TestCreate() {
 	path := filepath.Join(pwd, "database", "migrations")
 	name := "create_users_table"
 
-	s.NoError(s.migrator.Create(name))
+	fileName, err := s.migrator.Create(name)
+	s.NoError(err)
+	s.Equal("20240817214501_"+name, fileName)
 
 	migrationFile := filepath.Join(path, "20240817214501_"+name+".go")
 	s.True(file.Exists(migrationFile))

@@ -2,11 +2,16 @@ package migration
 
 import (
 	"fmt"
+	"runtime/debug"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/database/migration"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/packages/match"
+	"github.com/goravel/framework/packages/modify"
+	"github.com/goravel/framework/support/path"
+	"github.com/goravel/framework/support/str"
 )
 
 type MigrateMakeCommand struct {
@@ -57,12 +62,25 @@ func (r *MigrateMakeCommand) Handle(ctx console.Context) error {
 		}
 	}
 
-	if err := r.migrator.Create(name); err != nil {
+	fileName, err := r.migrator.Create(name)
+	if err != nil {
 		ctx.Error(errors.MigrationCreateFailed.Args(err).Error())
 		return nil
 	}
 
 	ctx.Success(fmt.Sprintf("Created Migration: %s", name))
+
+	info, _ := debug.ReadBuildInfo()
+	structName := str.Of(fileName).Prepend("m_").Studly().String()
+	if err = modify.GoFile(path.Database("kernel.go")).
+		Find(match.Imports()...).Modify(modify.AddImport(fmt.Sprintf("%s/database/migrations", info.Main.Path))).
+		Find(match.Migrations()...).Modify(modify.Register(fmt.Sprintf("&migrations.%s{}", structName))).
+		Apply(); err != nil {
+		ctx.Warning(errors.MigrationRegisterFailed.Args(err).Error())
+		return nil
+	}
+
+	ctx.Success("Migration registered successfully")
 
 	return nil
 }

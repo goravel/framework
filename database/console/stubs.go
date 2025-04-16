@@ -52,7 +52,7 @@ type DummySeeder struct {
 
 // Signature The name and signature of the seeder.
 func (s *DummySeeder) Signature() string {
-	return "DummySeeder"
+	return "DummySignature"
 }
 
 // Run executes the seeder logic.

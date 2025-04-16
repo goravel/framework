@@ -21,21 +21,31 @@ func (_m *Migrator) EXPECT() *Migrator_Expecter {
 }
 
 // Create provides a mock function with given fields: name
-func (_m *Migrator) Create(name string) error {
+func (_m *Migrator) Create(name string) (string, error) {
 	ret := _m.Called(name)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Create")
 	}
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string) error); ok {
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (string, error)); ok {
+		return rf(name)
+	}
+	if rf, ok := ret.Get(0).(func(string) string); ok {
 		r0 = rf(name)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(string)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(name)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Migrator_Create_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Create'
@@ -56,12 +66,12 @@ func (_c *Migrator_Create_Call) Run(run func(name string)) *Migrator_Create_Call
 	return _c
 }
 
-func (_c *Migrator_Create_Call) Return(_a0 error) *Migrator_Create_Call {
-	_c.Call.Return(_a0)
+func (_c *Migrator_Create_Call) Return(_a0 string, _a1 error) *Migrator_Create_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Migrator_Create_Call) RunAndReturn(run func(string) error) *Migrator_Create_Call {
+func (_c *Migrator_Create_Call) RunAndReturn(run func(string) (string, error)) *Migrator_Create_Call {
 	_c.Call.Return(run)
 	return _c
 }

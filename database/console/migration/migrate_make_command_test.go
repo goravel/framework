@@ -1,6 +1,7 @@
 package migration
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,16 +32,22 @@ func TestMigrateMakeCommand(t *testing.T) {
 			setup: func() {
 				mockContext.EXPECT().Argument(0).Return("").Once()
 				mockContext.EXPECT().Ask("Enter the migration name", mock.Anything).Return("create_users_table", nil).Once()
-				mockMigrator.EXPECT().Create("create_users_table").Return(nil).Once()
+				mockMigrator.EXPECT().Create("create_users_table").Return("", nil).Once()
 				mockContext.EXPECT().Success("Created Migration: create_users_table").Once()
+				mockContext.EXPECT().Warning(mock.MatchedBy(func(msg string) bool {
+					return strings.HasPrefix(msg, "migration register failed:")
+				})).Once()
 			},
 		},
 		{
 			name: "Happy path - name is not empty",
 			setup: func() {
 				mockContext.EXPECT().Argument(0).Return("create_users_table").Once()
-				mockMigrator.EXPECT().Create("create_users_table").Return(nil).Once()
+				mockMigrator.EXPECT().Create("create_users_table").Return("", nil).Once()
 				mockContext.EXPECT().Success("Created Migration: create_users_table").Once()
+				mockContext.EXPECT().Warning(mock.MatchedBy(func(msg string) bool {
+					return strings.HasPrefix(msg, "migration register failed:")
+				})).Once()
 			},
 		},
 		{
@@ -55,7 +62,7 @@ func TestMigrateMakeCommand(t *testing.T) {
 			name: "Sad path - failed to create",
 			setup: func() {
 				mockContext.EXPECT().Argument(0).Return("create_users_table").Once()
-				mockMigrator.EXPECT().Create("create_users_table").Return(assert.AnError).Once()
+				mockMigrator.EXPECT().Create("create_users_table").Return("", assert.AnError).Once()
 				mockContext.EXPECT().Error(errors.MigrationCreateFailed.Args(assert.AnError).Error()).Once()
 			},
 		},
