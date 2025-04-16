@@ -1,25 +1,11 @@
 package packages
 
 import (
-	"github.com/dave/dst"
-	"github.com/dave/dst/dstutil"
+	"github.com/goravel/framework/contracts/packages/modify"
 )
 
-type FileModifier interface {
-	Apply() error
-}
-
 type Setup interface {
-	Install(modifiers ...FileModifier)
-	Uninstall(modifiers ...FileModifier)
+	Install(modifiers ...modify.File) Setup
+	Uninstall(modifiers ...modify.File) Setup
 	Execute()
-}
-
-type GoNodeMatcher interface {
-	MatchNode(node dst.Node) bool
-	MatchCursor(cursor *dstutil.Cursor) bool
-}
-
-type GoNodeModifier interface {
-	Apply(node dst.Node) error
 }

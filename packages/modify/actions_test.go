@@ -1,0 +1,346 @@
+package modify
+
+import (
+	"path/filepath"
+	"testing"
+
+	"github.com/stretchr/testify/suite"
+
+	contractmatch "github.com/goravel/framework/contracts/packages/match"
+	"github.com/goravel/framework/contracts/packages/modify"
+	"github.com/goravel/framework/packages/match"
+	"github.com/goravel/framework/support/file"
+)
+
+type ModifyActionsTestSuite struct {
+	suite.Suite
+	config   string
+	console  string
+	database string
+}
+
+func (s *ModifyActionsTestSuite) SetupTest() {
+	s.config = `package config
+
+import (
+	"github.com/goravel/framework/auth"
+	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/crypt"
+	"github.com/goravel/framework/facades"
+)
+
+func Boot() {}
+
+func init() {
+	config := facades.Config()
+	config.Add("app", map[string]any{
+		"name":  config.Env("APP_NAME", "Goravel"),
+		"exist": map[string]any{},
+		"providers": []foundation.ServiceProvider{
+			&auth.AuthServiceProvider{},
+			&crypt.ServiceProvider{},
+		},
+	})
+}`
+	s.console = `package console
+
+import (
+	"github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/schedule"
+	"goravel/app/console/commands"
+)
+
+type Kernel struct {
+}
+
+func (kernel Kernel) Schedule() []schedule.Event {
+	return []schedule.Event{}
+}
+
+func (kernel Kernel) Commands() []console.Command {
+	return []console.Command{}
+}`
+	s.database = `package database
+
+import (
+	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/contracts/database/seeder"
+
+	"goravel/database/migrations"
+	"goravel/database/seeders"
+)
+
+type Kernel struct {
+}
+
+func (kernel Kernel) Migrations() []schema.Migration {
+	return []schema.Migration{
+		&migrations.M20240915060148CreateUsersTable{},
+	}
+}
+
+func (kernel Kernel) Seeders() []seeder.Seeder {
+	return []seeder.Seeder{
+		&seeders.DatabaseSeeder{},
+	}
+}`
+}
+
+func (s *ModifyActionsTestSuite) TearDownTest() {}
+
+func TestModifyActionsTestSuite(t *testing.T) {
+	suite.Run(t, new(ModifyActionsTestSuite))
+}
+
+func (s *ModifyActionsTestSuite) TestActions() {
+	tests := []struct {
+		name     string
+		content  string
+		matchers []contractmatch.GoNode
+		actions  []modify.Action
+		assert   func(filename string)
+	}{
+		{
+			name:     "add config (not exist)",
+			content:  s.config,
+			matchers: match.Config("app"),
+			actions: []modify.Action{
+				AddConfig("key", `"value"`),
+			},
+			assert: func(content string) {
+				s.Contains(content, `func init() {
+	config := facades.Config()
+	config.Add("app", map[string]any{
+		"name":  config.Env("APP_NAME", "Goravel"),
+		"exist": map[string]any{},
+		"providers": []foundation.ServiceProvider{
+			&auth.AuthServiceProvider{},
+			&crypt.ServiceProvider{},
+		},
+		"key": "value",
+	})
+}`)
+			},
+		},
+		{
+			name:     "add config (exist)",
+			content:  s.config,
+			matchers: match.Config("app"),
+			actions: []modify.Action{
+				AddConfig("name", `"Goravel"`),
+			},
+			assert: func(content string) {
+				s.NotContains(content, `"name": "Goravel"`)
+			},
+		},
+		{
+			name:     "add config (to map)",
+			content:  s.config,
+			matchers: match.Config("app.exist"),
+			actions: []modify.Action{
+				AddConfig("key", `"value"`),
+			},
+			assert: func(content string) {
+				s.Contains(content, `func init() {
+	config := facades.Config()
+	config.Add("app", map[string]any{
+		"name": config.Env("APP_NAME", "Goravel"),
+		"exist": map[string]any{
+			"key": "value",
+		},
+		"providers": []foundation.ServiceProvider{
+			&auth.AuthServiceProvider{},
+			&crypt.ServiceProvider{},
+		},
+	})
+}`)
+			},
+		},
+		{
+			name:     "add import",
+			content:  s.config,
+			matchers: match.Imports(),
+			actions: []modify.Action{
+				AddImport("github.com/goravel/test", "t"),
+			},
+			assert: func(content string) {
+				s.Contains(content, `import (
+	"github.com/goravel/framework/auth"
+	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/crypt"
+	"github.com/goravel/framework/facades"
+	t "github.com/goravel/test"
+)`)
+			},
+		},
+		{
+			name:     "add provider at the beginning",
+			content:  s.config,
+			matchers: match.Providers(),
+			actions: []modify.Action{
+				Register("&test.ServiceProvider{}", "*"),
+			},
+			assert: func(content string) {
+				s.Contains(content, `func init() {
+	config := facades.Config()
+	config.Add("app", map[string]any{
+		"name":  config.Env("APP_NAME", "Goravel"),
+		"exist": map[string]any{},
+		"providers": []foundation.ServiceProvider{
+			&test.ServiceProvider{},
+			&auth.AuthServiceProvider{},
+			&crypt.ServiceProvider{},
+		},
+	})
+}`)
+			},
+		},
+		{
+			name:     "add provider (exist)",
+			content:  s.config,
+			matchers: match.Providers(),
+			actions: []modify.Action{
+				Register("&crypt.ServiceProvider{}"),
+			},
+			assert: func(content string) {
+				s.Contains(content, `func init() {
+	config := facades.Config()
+	config.Add("app", map[string]any{
+		"name":  config.Env("APP_NAME", "Goravel"),
+		"exist": map[string]any{},
+		"providers": []foundation.ServiceProvider{
+			&auth.AuthServiceProvider{},
+			&crypt.ServiceProvider{},
+		},
+	})
+}`)
+			},
+		},
+		{
+			name:     "add provider before",
+			content:  s.config,
+			matchers: match.Providers(),
+			actions: []modify.Action{
+				Register("&test.ServiceProvider{}", "&auth.AuthServiceProvider{}"),
+			},
+			assert: func(content string) {
+				s.Contains(content, `func init() {
+	config := facades.Config()
+	config.Add("app", map[string]any{
+		"name":  config.Env("APP_NAME", "Goravel"),
+		"exist": map[string]any{},
+		"providers": []foundation.ServiceProvider{
+			&test.ServiceProvider{},
+			&auth.AuthServiceProvider{},
+			&crypt.ServiceProvider{},
+		},
+	})
+}`)
+			},
+		},
+		{
+			name:     "remove config",
+			content:  s.config,
+			matchers: match.Config("app"),
+			actions: []modify.Action{
+				RemoveConfig("providers"),
+			},
+			assert: func(content string) {
+				s.NotContains(content, "providers")
+			},
+		},
+		{
+			name:     "remove import",
+			content:  s.config,
+			matchers: match.Imports(),
+			actions: []modify.Action{
+				RemoveImport("github.com/goravel/framework/auth"),
+			},
+			assert: func(content string) {
+				s.NotContains(content, `"github.com/goravel/framework/auth"`)
+			},
+		},
+		{
+			name:     "remove provider",
+			content:  s.config,
+			matchers: match.Providers(),
+			actions: []modify.Action{
+				Unregister("&auth.AuthServiceProvider{}"),
+			},
+			assert: func(content string) {
+				s.NotContains(content, "&auth.AuthServiceProvider{}")
+			},
+		},
+		{
+			name:     "replace config",
+			content:  s.config,
+			matchers: match.Config("app"),
+			actions: []modify.Action{
+				ReplaceConfig("name", `"Goravel"`),
+			},
+			assert: func(content string) {
+				s.Contains(content, `"name":  "Goravel"`)
+				s.NotContains(content, `config.Env("APP_NAME", "Goravel")`)
+			},
+		},
+		{
+			name:     "add migration",
+			content:  s.database,
+			matchers: match.Migrations(),
+			actions: []modify.Action{
+				Register("&migrations.M20250301000000CreateFailedJobsTable{}"),
+			},
+			assert: func(content string) {
+				s.Contains(content, `func (kernel Kernel) Migrations() []schema.Migration {
+	return []schema.Migration{
+		&migrations.M20240915060148CreateUsersTable{},
+		&migrations.M20250301000000CreateFailedJobsTable{},
+	}
+}`)
+			},
+		},
+		{
+			name:     "add seeder",
+			content:  s.database,
+			matchers: match.Seeders(),
+			actions: []modify.Action{
+				Register("&seeders.TestSeeder{}"),
+			},
+			assert: func(content string) {
+				s.Contains(content, `func (kernel Kernel) Seeders() []seeder.Seeder {
+	return []seeder.Seeder{
+		&seeders.DatabaseSeeder{},
+		&seeders.TestSeeder{},
+	}
+}`)
+			},
+		},
+		{
+			name:     "register command",
+			content:  s.console,
+			matchers: match.Commands(),
+			actions: []modify.Action{
+				Register("&commands.Test{}"),
+			},
+			assert: func(content string) {
+				s.Contains(content, `
+func (kernel Kernel) Commands() []console.Command {
+	return []console.Command{
+		&commands.Test{},
+	}
+}`)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			sourceFile := filepath.Join(s.T().TempDir(), "test.go")
+			s.Require().NoError(file.PutContent(sourceFile, tt.content))
+			s.Require().NoError(GoFile(sourceFile).Find(tt.matchers...).Modify(tt.actions...).Apply())
+			content, err := file.GetContent(sourceFile)
+			s.Require().NoError(err)
+			tt.assert(content)
+		})
+	}
+}

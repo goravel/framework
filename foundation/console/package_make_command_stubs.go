@@ -129,29 +129,25 @@ func (r PackageMakeCommandStubs) Setup() string {
 import (
 	"os"
 
-	contractspackages "github.com/goravel/framework/contracts/packages"
 	"github.com/goravel/framework/packages"
+	"github.com/goravel/framework/packages/match"
+	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support/path"
 )
 
 func main() {
-	setup := packages.Setup(os.Args)
-	setup.Install(packages.ModifyGoFile{
-		File: path.Config("app.go"),
-		Modifiers: []contractspackages.GoNodeModifier{
-			packages.AddImportSpec(setup.Module),
-			packages.AddProviderSpec("&DummyName.ServiceProvider{}"),
-		},
-	})
-	setup.Uninstall(packages.ModifyGoFile{
-		File: path.Config("app.go"),
-		Modifiers: []contractspackages.GoNodeModifier{
-			packages.RemoveImportSpec(setup.Module),
-			packages.RemoveProviderSpec("&DummyName.ServiceProvider{}"),
-		},
-	})
-
-	setup.Execute()
+	packages.Setup(os.Args).
+		Install(
+			modify.File(path.Config("app.go")).
+				Find(match.Imports()...).Modify(modify.AddImport(packages.GetModulePath())).
+				Find(match.Providers()...).Modify(modify.AddProvider("&DummyName.ServiceProvider{}")),
+		).
+		Uninstall(
+			modify.File(path.Config("app.go")).
+				Find(match.Imports()...).Modify(modify.RemoveImport(packages.GetModulePath())).
+				Find(match.Providers()...).Modify(modify.RemoveProvider("&DummyName.ServiceProvider{}")),
+		).
+		Execute()
 }
 
 `

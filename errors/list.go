@@ -113,6 +113,13 @@ var (
 	OrmRecordNotFound              = New("record not found")
 	OrmDeletedAtColumnNotFound     = New("deleted at column not found")
 
+	PackageConfigKeyExists       = New("config key '%s' already exists,using ReplaceConfig instead if you want to update it").SetModule(ModulePackages)
+	PackageMatchGoNodeFail       = New("%d out of %d matchers did not match").SetModule(ModulePackages)
+	PackageModifyGoFileFail      = New("modify go file '%s' failed: %v").SetModule(ModulePackages)
+	PackageModuleNameEmpty       = New("package module name is empty, please run command with module name").SetModule(ModulePackages)
+	PackageRegistrationDuplicate = New("'%s' had been registered").SetModule(ModulePackages)
+	PackageRegistrationNotFound  = New("'%s' not found, cannot insert before it").SetModule(ModulePackages)
+
 	QueueDriverNoJobFound      = New("no job found in %s queue")
 	QueueDriverSyncNotNeedRun  = New("queue %s driver sync not need run")
 	QueueDriverNotSupported    = New("unknown queue driver: %s")
