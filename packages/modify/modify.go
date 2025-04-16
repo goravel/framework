@@ -3,7 +3,6 @@ package modify
 import (
 	"bytes"
 	"fmt"
-	"path/filepath"
 
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
@@ -15,21 +14,16 @@ import (
 	"github.com/goravel/framework/support/file"
 )
 
-type GoFile struct {
+type goFile struct {
 	file      string
 	modifiers []modify.GoNode
 }
 
-func File(file string) modify.GoFile {
-	switch filepath.Ext(file) {
-	case ".go":
-		return &GoFile{file: file}
-	}
-
-	return nil
+func GoFile(file string) modify.GoFile {
+	return &goFile{file: file}
 }
 
-func (r GoFile) Apply() error {
+func (r goFile) Apply() error {
 	source, err := file.GetContent(r.file)
 	if err != nil {
 		return err
@@ -55,7 +49,7 @@ func (r GoFile) Apply() error {
 	return file.PutContent(r.file, buf.String())
 }
 
-func (r GoFile) Find(matchers ...match.GoNode) modify.GoNode {
+func (r goFile) Find(matchers ...match.GoNode) modify.GoNode {
 	modifier := &GoNode{
 		matchers: matchers,
 		file:     &r,
@@ -66,7 +60,7 @@ func (r GoFile) Find(matchers ...match.GoNode) modify.GoNode {
 
 type GoNode struct {
 	actions  []modify.Action
-	file     *GoFile
+	file     *goFile
 	matchers []match.GoNode
 }
 

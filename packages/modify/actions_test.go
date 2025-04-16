@@ -337,7 +337,7 @@ func (kernel Kernel) Commands() []console.Command {
 		s.Run(tt.name, func() {
 			sourceFile := filepath.Join(s.T().TempDir(), "test.go")
 			s.Require().NoError(file.PutContent(sourceFile, tt.content))
-			s.Require().NoError(File(sourceFile).Find(tt.matchers...).Modify(tt.actions...).Apply())
+			s.Require().NoError(GoFile(sourceFile).Find(tt.matchers...).Modify(tt.actions...).Apply())
 			content, err := file.GetContent(sourceFile)
 			s.Require().NoError(err)
 			tt.assert(content)
