@@ -157,6 +157,58 @@ func (s *ModifyActionsTestSuite) TestActions() {
 			},
 		},
 		{
+			name:     "add config (with comment)",
+			content:  s.config,
+			matchers: match.Config("app"),
+			actions: []modify.Action{
+				AddConfig("drivers", `map[string]any{
+    "fiber": map[string]any{
+        // prefork mode, see https://docs.gofiber.io/api/fiber/#config
+        "prefork": false,
+        // Optional, default is 4096 KB
+        "body_limit": 4096,
+        "header_limit": 4096,
+        "route": func() (route.Route, error) {
+            return fiberfacades.Route("fiber"), nil
+        },
+        // Optional, default is "html/template"
+        "template": func() (fiber.Views, error) {
+            return html.New("./resources/views", ".tmpl"), nil
+        },
+    },
+}`),
+			},
+			assert: func(content string) {
+				s.Contains(content, `func init() {
+	config := facades.Config()
+	config.Add("app", map[string]any{
+		"name":  config.Env("APP_NAME", "Goravel"),
+		"exist": map[string]any{},
+		"providers": []foundation.ServiceProvider{
+			&auth.AuthServiceProvider{},
+			&crypt.ServiceProvider{},
+		},
+		"drivers": map[string]any{
+			"fiber": map[string]any{
+				// prefork mode, see https://docs.gofiber.io/api/fiber/#config
+				"prefork": false,
+				// Optional, default is 4096 KB
+				"body_limit":   4096,
+				"header_limit": 4096,
+				"route": func() (route.Route, error) {
+					return fiberfacades.Route("fiber"), nil
+				},
+				// Optional, default is "html/template"
+				"template": func() (fiber.Views, error) {
+					return html.New("./resources/views", ".tmpl"), nil
+				},
+			},
+		},
+	})
+}`)
+			},
+		},
+		{
 			name:     "add import",
 			content:  s.config,
 			matchers: match.Imports(),

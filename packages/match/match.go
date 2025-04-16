@@ -258,8 +258,6 @@ func dstExprEq(x, y dst.Expr) bool {
 		return x == y
 	}
 
-	dstutil.Unparen(x)
-
 	switch x := x.(type) {
 	case *dst.ArrayType:
 		y, ok := y.(*dst.ArrayType)
