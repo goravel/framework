@@ -67,39 +67,34 @@ func AddImport(path string, name ...string) modify.Action {
 	}
 }
 
-// AddProvider adds a provider to the service providers array.
-func AddProvider(expression string, before ...string) modify.Action {
-	return func(cursor *dstutil.Cursor) {
-		provider := MustParseExpr(expression).(dst.Expr)
-		node := cursor.Node().(*dst.CompositeLit)
-		if ExprExists(node.Elts, provider) {
-			color.Warningln(errors.PackageProviderExists.Args(expression))
-			return
-		}
-		if len(before) > 0 {
-			beforeExpr := MustParseExpr(before[0]).(dst.Expr)
-
-			// check if beforeExpr is existing and insert provider before it
-			if i := ExprIndex(node.Elts, beforeExpr); i >= 0 {
-				node.Elts = slices.Insert(node.Elts, i, provider)
-				return
-			}
-			color.Warningln(errors.PackageProviderNotFound.Args(before[0]))
-		}
-
-		// insert provider at the end
-		node.Elts = append(node.Elts, provider)
-	}
-}
-
-// Register adds expressions to the matched specified array.
-func Register(expression string) modify.Action {
+// Register adds a registration to the matched specified array.
+func Register(expression string, before ...string) modify.Action {
 	return func(cursor *dstutil.Cursor) {
 		expr := MustParseExpr(expression).(dst.Expr)
 		node := cursor.Node().(*dst.CompositeLit)
-		if !ExprExists(node.Elts, expr) {
-			node.Elts = append(node.Elts, expr)
+		if ExprExists(node.Elts, expr) {
+			color.Warningln(errors.PackageRegistrationDuplicate.Args(expression))
+			return
 		}
+		if len(before) > 0 {
+			// check if before is "*" and insert registration at the beginning
+			if before[0] == "*" {
+				node.Elts = slices.Insert(node.Elts, 0, expr)
+				return
+			}
+
+			// check if beforeExpr is existing and insert registration before it
+			beforeExpr := MustParseExpr(before[0]).(dst.Expr)
+			if i := ExprIndex(node.Elts, beforeExpr); i >= 0 {
+				node.Elts = slices.Insert(node.Elts, i, expr)
+				return
+			}
+
+			color.Warningln(errors.PackageRegistrationNotFound.Args(before[0]))
+		}
+
+		// insert registration at the end
+		node.Elts = append(node.Elts, expr)
 	}
 }
 
@@ -135,17 +130,7 @@ func RemoveImport(path string, name ...string) modify.Action {
 	}
 }
 
-// RemoveProvider removes a provider from the service providers array.
-func RemoveProvider(expression string) modify.Action {
-	return func(cursor *dstutil.Cursor) {
-		provider := MustParseExpr(expression).(dst.Expr)
-		node := cursor.Node().(*dst.CompositeLit)
-		node.Elts = slices.DeleteFunc(node.Elts, func(expr dst.Expr) bool {
-			return match.EqualNode(provider).MatchNode(expr)
-		})
-	}
-}
-
+// ReplaceConfig replaces a configuration key with the given expression in the config file.
 func ReplaceConfig(name, expression string) modify.Action {
 	return func(cursor *dstutil.Cursor) {
 		var value *dst.CompositeLit
@@ -165,5 +150,16 @@ func ReplaceConfig(name, expression string) modify.Action {
 			})
 			return
 		}
+	}
+}
+
+// Unregister remove a registration from the matched specified array.
+func Unregister(expression string) modify.Action {
+	return func(cursor *dstutil.Cursor) {
+		expr := MustParseExpr(expression).(dst.Expr)
+		node := cursor.Node().(*dst.CompositeLit)
+		node.Elts = slices.DeleteFunc(node.Elts, func(ex dst.Expr) bool {
+			return match.EqualNode(expr).MatchNode(ex)
+		})
 	}
 }

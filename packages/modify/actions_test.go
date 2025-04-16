@@ -174,11 +174,11 @@ func (s *ModifyActionsTestSuite) TestActions() {
 			},
 		},
 		{
-			name:     "add provider (not exist)",
+			name:     "add provider at the beginning",
 			content:  s.config,
 			matchers: match.Providers(),
 			actions: []modify.Action{
-				AddProvider("&test.ServiceProvider{}"),
+				Register("&test.ServiceProvider{}", "*"),
 			},
 			assert: func(content string) {
 				s.Contains(content, `func init() {
@@ -187,9 +187,9 @@ func (s *ModifyActionsTestSuite) TestActions() {
 		"name":  config.Env("APP_NAME", "Goravel"),
 		"exist": map[string]any{},
 		"providers": []foundation.ServiceProvider{
+			&test.ServiceProvider{},
 			&auth.AuthServiceProvider{},
 			&crypt.ServiceProvider{},
-			&test.ServiceProvider{},
 		},
 	})
 }`)
@@ -200,7 +200,7 @@ func (s *ModifyActionsTestSuite) TestActions() {
 			content:  s.config,
 			matchers: match.Providers(),
 			actions: []modify.Action{
-				AddProvider("&crypt.ServiceProvider{}"),
+				Register("&crypt.ServiceProvider{}"),
 			},
 			assert: func(content string) {
 				s.Contains(content, `func init() {
@@ -221,7 +221,7 @@ func (s *ModifyActionsTestSuite) TestActions() {
 			content:  s.config,
 			matchers: match.Providers(),
 			actions: []modify.Action{
-				AddProvider("&test.ServiceProvider{}", "&auth.AuthServiceProvider{}"),
+				Register("&test.ServiceProvider{}", "&auth.AuthServiceProvider{}"),
 			},
 			assert: func(content string) {
 				s.Contains(content, `func init() {
@@ -265,7 +265,7 @@ func (s *ModifyActionsTestSuite) TestActions() {
 			content:  s.config,
 			matchers: match.Providers(),
 			actions: []modify.Action{
-				RemoveProvider("&auth.AuthServiceProvider{}"),
+				Unregister("&auth.AuthServiceProvider{}"),
 			},
 			assert: func(content string) {
 				s.NotContains(content, "&auth.AuthServiceProvider{}")

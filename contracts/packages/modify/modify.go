@@ -9,8 +9,12 @@ import (
 
 type Action func(cursor *dstutil.Cursor)
 
-type GoFile interface {
+type File interface {
 	Apply() error
+}
+
+type GoFile interface {
+	File
 	Find(matchers ...match.GoNode) GoNode
 }
 

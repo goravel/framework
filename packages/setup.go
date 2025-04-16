@@ -16,8 +16,8 @@ type setup struct {
 	command     string
 	force       bool
 	module      string
-	onInstall   []modify.GoFile
-	onUninstall []modify.GoFile
+	onInstall   []modify.File
+	onUninstall []modify.File
 }
 
 var osExit = os.Exit
@@ -42,13 +42,13 @@ func Setup(args []string) packages.Setup {
 	return st
 }
 
-func (r *setup) Install(modifiers ...modify.GoFile) packages.Setup {
+func (r *setup) Install(modifiers ...modify.File) packages.Setup {
 	r.onInstall = modifiers
 
 	return r
 }
 
-func (r *setup) Uninstall(modifiers ...modify.GoFile) packages.Setup {
+func (r *setup) Uninstall(modifiers ...modify.File) packages.Setup {
 	r.onUninstall = modifiers
 
 	return r
