@@ -57,7 +57,7 @@ func (s *MachineryTestSuite) SetupTest() {
 
 func (s *MachineryTestSuite) TestDispatch() {
 	job := &TestJobOne{}
-	s.machinery.Server().SendTask(&tasks.Signature{
+	_, err := s.machinery.Server().SendTask(&tasks.Signature{
 		Name: job.Signature(),
 		Args: []tasks.Arg{
 			{
@@ -79,6 +79,7 @@ func (s *MachineryTestSuite) TestDispatch() {
 		},
 	})
 
+	s.Require().NoError(err)
 	s.Require().True(s.machinery.ExistTasks())
 
 	worker, err := s.machinery.Run()
@@ -96,7 +97,7 @@ func (s *MachineryTestSuite) TestDispatch() {
 
 func (s *MachineryTestSuite) TestDelay() {
 	job := &TestJobOne{}
-	s.machinery.Server().SendTask(&tasks.Signature{
+	_, err := s.machinery.Server().SendTask(&tasks.Signature{
 		Name: job.Signature(),
 		Args: []tasks.Arg{
 			{
@@ -119,6 +120,7 @@ func (s *MachineryTestSuite) TestDelay() {
 		ETA: convert.Pointer(time.Now().Add(time.Second * 1)),
 	})
 
+	s.Require().NoError(err)
 	s.Require().True(s.machinery.ExistTasks())
 
 	worker, err := s.machinery.Run()
