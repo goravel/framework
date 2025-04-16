@@ -112,6 +112,7 @@ func mockConfig(mailPort int) *mocksconfig.Config {
 	mockConfig.On("GetString", "queue.default").Return("sync")
 	mockConfig.On("GetString", "queue.connections.sync.queue", "default").Return("default")
 	mockConfig.On("GetString", "queue.connections.sync.driver").Return("sync")
+	mockConfig.On("GetInt", "queue.connections.sync.concurrent", 1).Return(1)
 	mockConfig.On("GetString", "queue.failed.database").Return("database")
 	mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs")
 

@@ -1,12 +1,9 @@
 package queue
 
 import (
-	"fmt"
-
 	"github.com/spf13/cast"
 
 	"github.com/goravel/framework/contracts/queue"
-	"github.com/goravel/framework/support/debug"
 )
 
 func filterArgsType(args []queue.Arg) []any {
@@ -48,11 +45,8 @@ func filterArgsType(args []queue.Arg) []any {
 		case "[]int8":
 			var int8Slice []int8
 			for _, v := range cast.ToSlice(arg.Value) {
-				fmt.Printf("v: %+v\n", v)
-				fmt.Printf("v1: %+v\n", cast.ToInt8(v))
 				int8Slice = append(int8Slice, cast.ToInt8(v))
 			}
-			debug.Dump(arg.Type, arg.Value, int8Slice)
 			realArgs = append(realArgs, int8Slice)
 		case "[]int16":
 			var int16Slice []int16
