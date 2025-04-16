@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	contractshttp "github.com/goravel/framework/contracts/http"
@@ -40,9 +41,12 @@ func mockConfigFacade(mockConfig *configmocks.Config) {
 func TestStartSession(t *testing.T) {
 	mockConfig := &configmocks.Config{}
 	session.ConfigFacade = mockConfig
-	mockConfig.On("GetInt", "session.lifetime").Return(120).Once()
-	mockConfig.On("GetInt", "session.gc_interval", 30).Return(30).Once()
-	mockConfig.On("GetString", "session.files").Return("storage/framework/sessions").Once()
+	mockConfig.On("GetInt", "session.lifetime").Return(120).Twice()
+	mockConfig.On("GetInt", "session.gc_interval").Return(30).Twice()
+	mockConfig.On("GetString", "session.files").Return("storage/framework/sessions").Twice()
+	mockConfig.On("Get", "session.drivers", mock.AnythingOfType("map[string]interface {}")).Return(
+		map[string]any{},
+	).Once()
 	session.SessionFacade = session.NewManager(mockConfig, json.NewJson())
 	server := httptest.NewServer(testHttpSessionMiddleware(nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
 		switch r.URL.Path {

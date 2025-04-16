@@ -135,10 +135,12 @@ var (
 	SchemaErrorReferenceFormat = New("invalid format: too many dots in reference")
 	SchemaConnectionNotFound   = New("connection %s not found")
 
-	SessionDriverAlreadyExists   = New("session driver [%s] already exists")
-	SessionDriverExtensionFailed = New("session failed to extend session [%s] driver [%v]")
-	SessionDriverIsNotSet        = New("session driver is not set")
-	SessionDriverNotSupported    = New("session driver [%s] not supported")
+	SessionDriverAlreadyExists        = New("session driver [%s] already exists")
+	SessionDriverExtensionFailed      = New("session failed to extend session [%s] driver [%v]")
+	SessionDriverIsNotSet             = New("session driver is not set")
+	SessionDriverNotSupported         = New("session driver [%s] not supported")
+	SessionDriverRegisterFailed       = New("failed to register session drivers: %v")
+	SessionDriverContractNotFulfilled = New("%s doesn't implement contracts/session/driver")
 
 	UnknownFileExtension = New("unknown file extension")
 
