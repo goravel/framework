@@ -61,8 +61,8 @@ func (r *SeederMakeCommand) Handle(ctx console.Context) error {
 	ctx.Success("Seeder created successfully")
 
 	if err = modify.GoFile(path.Database("kernel.go")).
-		Find(match.Imports()...).Modify(modify.AddImport(m.GetPackageImportPath())).
-		Find(match.Seeders()...).Modify(modify.Register(fmt.Sprintf("&%s.%s{}", m.GetPackageName(), m.GetStructName()))).
+		Find(match.Imports()).Modify(modify.AddImport(m.GetPackageImportPath())).
+		Find(match.Seeders()).Modify(modify.Register(fmt.Sprintf("&%s.%s{}", m.GetPackageName(), m.GetStructName()))).
 		Apply(); err != nil {
 		ctx.Warning(errors.DatabaseSeederRegisterFailed.Args(err.Error()).Error())
 		return nil

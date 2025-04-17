@@ -73,8 +73,8 @@ func (r *MigrateMakeCommand) Handle(ctx console.Context) error {
 	info, _ := debug.ReadBuildInfo()
 	structName := str.Of(fileName).Prepend("m_").Studly().String()
 	if err = modify.GoFile(path.Database("kernel.go")).
-		Find(match.Imports()...).Modify(modify.AddImport(fmt.Sprintf("%s/database/migrations", info.Main.Path))).
-		Find(match.Migrations()...).Modify(modify.Register(fmt.Sprintf("&migrations.%s{}", structName))).
+		Find(match.Imports()).Modify(modify.AddImport(fmt.Sprintf("%s/database/migrations", info.Main.Path))).
+		Find(match.Migrations()).Modify(modify.Register(fmt.Sprintf("&migrations.%s{}", structName))).
 		Apply(); err != nil {
 		ctx.Warning(errors.MigrationRegisterFailed.Args(err).Error())
 		return nil

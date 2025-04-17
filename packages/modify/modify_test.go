@@ -105,7 +105,7 @@ func main() {
 			if tt.setup != nil {
 				tt.setup()
 			}
-			tt.assert(GoFile(s.file).Find(tt.matchers...).Modify(tt.actions...).Apply())
+			tt.assert(GoFile(s.file).Find(tt.matchers).Modify(tt.actions...).Apply())
 		})
 	}
 }

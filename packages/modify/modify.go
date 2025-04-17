@@ -49,7 +49,7 @@ func (r goFile) Apply() error {
 	return file.PutContent(r.file, buf.String())
 }
 
-func (r goFile) Find(matchers ...match.GoNode) modify.GoNode {
+func (r goFile) Find(matchers []match.GoNode) modify.GoNode {
 	modifier := &GoNode{
 		matchers: matchers,
 		file:     &r,
