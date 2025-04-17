@@ -217,6 +217,11 @@ type ConnectionModel interface {
 	Connection() string
 }
 
+type ModelScope interface {
+	// Scopes gets the model's global scopes.
+	Scopes() map[string]func(Query) Query
+}
+
 type ToSql interface {
 	Count() string
 	Create(value any) string
