@@ -1,7 +1,6 @@
 package modify
 
 import (
-	"go/parser"
 	"slices"
 	"strings"
 
@@ -35,15 +34,20 @@ func KeyIndex(kvs []dst.Expr, key dst.Expr) int {
 }
 
 func MustParseExpr(x string) (node dst.Node) {
-	exp, err := parser.ParseExpr(x)
-	if err == nil {
-		node, err = decorator.Decorate(nil, exp)
-	}
+	src := "package p\nvar _ = " + x
+	file, err := decorator.Parse(src)
 	if err != nil {
 		panic(err)
 	}
 
-	return WrapNewline(node)
+	spec := file.Decls[0].(*dst.GenDecl).Specs[0].(*dst.ValueSpec)
+	expr := spec.Values[0]
+
+	// handle outer comments for expr
+	expr.Decorations().Start = file.Decls[0].(*dst.GenDecl).Decorations().Start
+	expr.Decorations().End = file.Decls[0].(*dst.GenDecl).Decorations().End
+
+	return WrapNewline(expr)
 }
 
 func WrapNewline[T dst.Node](node T) T {
