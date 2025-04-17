@@ -58,7 +58,7 @@ func (s *MakeTestSuite) TestGetStructName() {
 	s.Equal("Lowercase", s.make.GetStructName())
 }
 
-func (s *MakeTestSuite) TestGetImportPath() {
+func (s *MakeTestSuite) TestGetPackageImportPath() {
 	s.Contains(s.make.GetPackageImportPath(), "/app/rules")
 
 	s.make.name = "user/Lowercase"
