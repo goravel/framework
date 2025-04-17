@@ -38,6 +38,16 @@ func (s *MakeTestSuite) TestGetFilePath() {
 	s.Equal(filepath.Join(pwd, s.make.root, "user", "lowercase.go"), s.make.GetFilePath())
 }
 
+func (s *MakeTestSuite) TestGetSignature() {
+	s.Equal("Lowercase", s.make.GetSignature())
+
+	s.make.name = "user/Lowercase"
+	s.Equal("UserLowercase", s.make.GetSignature())
+
+	s.make.name = "user/Lowercase/Uppercase"
+	s.Equal("UserLowercaseUppercase", s.make.GetSignature())
+}
+
 func (s *MakeTestSuite) TestGetStructName() {
 	s.Equal("Lowercase", s.make.GetStructName())
 
@@ -46,6 +56,16 @@ func (s *MakeTestSuite) TestGetStructName() {
 
 	s.make.name = "user/Lowercase"
 	s.Equal("Lowercase", s.make.GetStructName())
+}
+
+func (s *MakeTestSuite) TestGetPackageImportPath() {
+	s.Contains(s.make.GetPackageImportPath(), "/app/rules")
+
+	s.make.name = "user/Lowercase"
+	s.Contains(s.make.GetPackageImportPath(), "/app/rules/user")
+
+	s.make.name = "user/Lowercase/Uppercase"
+	s.Contains(s.make.GetPackageImportPath(), "/app/rules/user/Lowercase")
 }
 
 func (s *MakeTestSuite) TestGetPackageName() {

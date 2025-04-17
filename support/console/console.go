@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 
 	"github.com/goravel/framework/contracts/console"
@@ -52,11 +53,33 @@ func (m *Make) GetFilePath() string {
 	return filepath.Join(pwd, m.root, m.GetFolderPath(), str.Of(m.GetStructName()).Snake().String()+".go")
 }
 
+func (m *Make) GetSignature() string {
+	return str.Of(filepath.Join(m.GetFolderPath(), m.GetStructName())).
+		Replace(string(filepath.Separator), "_").Studly().String()
+}
+
 func (m *Make) GetStructName() string {
 	name := strings.TrimSuffix(m.name, ".go")
 	segments := strings.Split(name, "/")
 
 	return str.Of(segments[len(segments)-1]).Studly().String()
+}
+
+func (m *Make) GetPackageImportPath() string {
+	var paths []string
+	if info, ok := debug.ReadBuildInfo(); ok {
+		paths = append(paths, info.Main.Path)
+	}
+
+	if len(m.root) > 0 {
+		paths = append(paths, strings.Split(m.root, string(filepath.Separator))...)
+	}
+
+	if folders := m.GetFolderPath(); len(folders) > 0 {
+		paths = append(paths, strings.Split(folders, string(filepath.Separator))...)
+	}
+
+	return strings.Join(paths, "/")
 }
 
 func (m *Make) GetPackageName() string {

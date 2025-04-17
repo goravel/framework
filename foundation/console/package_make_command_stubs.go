@@ -139,13 +139,13 @@ func main() {
 	packages.Setup(os.Args).
 		Install(
 			modify.File(path.Config("app.go")).
-				Find(match.Imports()...).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()...).Modify(modify.AddProvider("&DummyName.ServiceProvider{}")),
+				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
+				Find(match.Providers()).Modify(modify.AddProvider("&DummyName.ServiceProvider{}")),
 		).
 		Uninstall(
 			modify.File(path.Config("app.go")).
-				Find(match.Imports()...).Modify(modify.RemoveImport(packages.GetModulePath())).
-				Find(match.Providers()...).Modify(modify.RemoveProvider("&DummyName.ServiceProvider{}")),
+				Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())).
+				Find(match.Providers()).Modify(modify.RemoveProvider("&DummyName.ServiceProvider{}")),
 		).
 		Execute()
 }

@@ -15,7 +15,7 @@ type File interface {
 
 type GoFile interface {
 	File
-	Find(matchers ...match.GoNode) GoNode
+	Find(matchers []match.GoNode) GoNode
 }
 
 type GoNode interface {

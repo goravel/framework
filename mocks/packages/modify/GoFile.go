@@ -68,22 +68,16 @@ func (_c *GoFile_Apply_Call) RunAndReturn(run func() error) *GoFile_Apply_Call {
 }
 
 // Find provides a mock function with given fields: matchers
-func (_m *GoFile) Find(matchers ...match.GoNode) modify.GoNode {
-	_va := make([]interface{}, len(matchers))
-	for _i := range matchers {
-		_va[_i] = matchers[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
+func (_m *GoFile) Find(matchers []match.GoNode) modify.GoNode {
+	ret := _m.Called(matchers)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Find")
 	}
 
 	var r0 modify.GoNode
-	if rf, ok := ret.Get(0).(func(...match.GoNode) modify.GoNode); ok {
-		r0 = rf(matchers...)
+	if rf, ok := ret.Get(0).(func([]match.GoNode) modify.GoNode); ok {
+		r0 = rf(matchers)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(modify.GoNode)
@@ -99,21 +93,14 @@ type GoFile_Find_Call struct {
 }
 
 // Find is a helper method to define mock.On call
-//   - matchers ...match.GoNode
-func (_e *GoFile_Expecter) Find(matchers ...interface{}) *GoFile_Find_Call {
-	return &GoFile_Find_Call{Call: _e.mock.On("Find",
-		append([]interface{}{}, matchers...)...)}
+//   - matchers []match.GoNode
+func (_e *GoFile_Expecter) Find(matchers interface{}) *GoFile_Find_Call {
+	return &GoFile_Find_Call{Call: _e.mock.On("Find", matchers)}
 }
 
-func (_c *GoFile_Find_Call) Run(run func(matchers ...match.GoNode)) *GoFile_Find_Call {
+func (_c *GoFile_Find_Call) Run(run func(matchers []match.GoNode)) *GoFile_Find_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]match.GoNode, len(args)-0)
-		for i, a := range args[0:] {
-			if a != nil {
-				variadicArgs[i] = a.(match.GoNode)
-			}
-		}
-		run(variadicArgs...)
+		run(args[0].([]match.GoNode))
 	})
 	return _c
 }
@@ -123,7 +110,7 @@ func (_c *GoFile_Find_Call) Return(_a0 modify.GoNode) *GoFile_Find_Call {
 	return _c
 }
 
-func (_c *GoFile_Find_Call) RunAndReturn(run func(...match.GoNode) modify.GoNode) *GoFile_Find_Call {
+func (_c *GoFile_Find_Call) RunAndReturn(run func([]match.GoNode) modify.GoNode) *GoFile_Find_Call {
 	_c.Call.Return(run)
 	return _c
 }

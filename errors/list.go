@@ -51,6 +51,7 @@ var (
 	DatabaseTableIsRequired             = New("table is required")
 	DatabaseForceIsRequiredInProduction = New("application in production use --force to run this command")
 	DatabaseSeederNotFound              = New("not found %s seeder")
+	DatabaseSeederRegisterFailed        = New("seeder register failed: %v")
 	DatabaseFailToRunSeeder             = New("fail to run seeder: %v")
 	DatabaseUnsupportedType             = New("unsupported type: %s, expected %s")
 	DatabaseInvalidArgumentNumber       = New("invalid argument number: %s, expected %s")
@@ -92,6 +93,7 @@ var (
 	MigrationMigrateFailed   = New("migrate failed: %v")
 	MigrationNameIsRequired  = New("migration name cannot be empty")
 	MigrationRefreshFailed   = New("migration refresh failed: %v")
+	MigrationRegisterFailed  = New("migration register failed: %v")
 	MigrationResetFailed     = New("migration reset failed: %v")
 	MigrationRollbackFailed  = New("migration rollback failed: %v")
 
