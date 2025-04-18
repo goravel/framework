@@ -154,11 +154,13 @@ var (
 
 	UnknownFileExtension = New("unknown file extension")
 
-	ValidationDataInvalidType = New("data must be map[string]any or map[string][]string or struct")
-	ValidationDuplicateFilter = New("duplicate filter name: %s")
-	ValidationDuplicateRule   = New("duplicate rule name: %s")
-	ValidationEmptyData       = New("data can't be empty")
-	ValidationEmptyRules      = New("rules can't be empty")
+	ValidationDataInvalidType      = New("data must be map[string]any or map[string][]string or struct")
+	ValidationDuplicateFilter      = New("duplicate filter name: %s")
+	ValidationDuplicateRule        = New("duplicate rule name: %s")
+	ValidationEmptyData            = New("data can't be empty")
+	ValidationEmptyRules           = New("rules can't be empty")
+	ValidationFilterRegisterFailed = New("filter register failed: %v")
+	ValidationRuleRegisterFailed   = New("rule register failed: %v")
 
 	CommandEmptyPackageName = New("the package name cannot be empty")
 )

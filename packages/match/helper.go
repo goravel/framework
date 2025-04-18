@@ -129,3 +129,35 @@ func Seeders() []match.GoNode {
 		),
 	}
 }
+
+func ValidationRules() []match.GoNode {
+	return []match.GoNode{
+		Func(Ident("rules")),
+		TypeOf(&dst.ReturnStmt{}),
+		CompositeLit(
+			ArrayType(
+				SelectorExpr(
+					Ident("validation"),
+					Ident("Rule"),
+				),
+				AnyNode(),
+			),
+		),
+	}
+}
+
+func ValidationFilters() []match.GoNode {
+	return []match.GoNode{
+		Func(Ident("filters")),
+		TypeOf(&dst.ReturnStmt{}),
+		CompositeLit(
+			ArrayType(
+				SelectorExpr(
+					Ident("validation"),
+					Ident("Filter"),
+				),
+				AnyNode(),
+			),
+		),
+	}
+}

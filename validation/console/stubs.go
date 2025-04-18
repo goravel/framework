@@ -15,7 +15,7 @@ type DummyRule struct {
 
 // Signature The name of the rule.
 func (receiver *DummyRule) Signature() string {
-	return "DummyName"
+	return "DummySignature"
 }
 
 // Passes Determine if the validation rule passes.
@@ -38,7 +38,7 @@ type DummyFilter struct {
 
 // Signature The signature of the filter.
 func (receiver *DummyFilter) Signature() string {
-	return "DummyName"
+	return "DummySignature"
 }
 
 // Handle defines the filter function to apply.
