@@ -64,7 +64,7 @@ func (r *SeederMakeCommand) Handle(ctx console.Context) error {
 		Find(match.Imports()).Modify(modify.AddImport(m.GetPackageImportPath())).
 		Find(match.Seeders()).Modify(modify.Register(fmt.Sprintf("&%s.%s{}", m.GetPackageName(), m.GetStructName()))).
 		Apply(); err != nil {
-		ctx.Warning(errors.DatabaseSeederRegisterFailed.Args(err.Error()).Error())
+		ctx.Warning(errors.DatabaseSeederRegisterFailed.Args(err).Error())
 		return nil
 	}
 
