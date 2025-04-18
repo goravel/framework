@@ -31,7 +31,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		queueConfig := NewConfig(config, db)
 		job := NewJobRepository()
 
-		return NewApplication(queueConfig, job, log), nil
+		return NewApplication(queueConfig, job, app.GetJson(), log), nil
 	})
 }
 

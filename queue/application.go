@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/queue"
 )
@@ -8,13 +9,15 @@ import (
 type Application struct {
 	config queue.Config
 	job    queue.JobRepository
+	json   foundation.Json
 	log    log.Log
 }
 
-func NewApplication(config queue.Config, job queue.JobRepository, log log.Log) *Application {
+func NewApplication(config queue.Config, job queue.JobRepository, json foundation.Json, log log.Log) *Application {
 	return &Application{
 		config: config,
 		job:    job,
+		json:   json,
 		log:    log,
 	}
 }
@@ -43,7 +46,7 @@ func (r *Application) Worker(payloads ...queue.Args) queue.Worker {
 	defaultConnection, defaultQueue, defaultConcurrent := r.config.Default()
 
 	if len(payloads) == 0 {
-		return NewWorker(r.config, r.job, r.log, defaultConnection, defaultQueue, defaultConcurrent)
+		return NewWorker(r.config, r.job, r.json, r.log, defaultConnection, defaultQueue, defaultConcurrent)
 	}
 	if payloads[0].Connection == "" {
 		payloads[0].Connection = defaultConnection
@@ -55,5 +58,5 @@ func (r *Application) Worker(payloads ...queue.Args) queue.Worker {
 		payloads[0].Concurrent = defaultConcurrent
 	}
 
-	return NewWorker(r.config, r.job, r.log, payloads[0].Connection, payloads[0].Queue, payloads[0].Concurrent)
+	return NewWorker(r.config, r.job, r.json, r.log, payloads[0].Connection, payloads[0].Queue, payloads[0].Concurrent)
 }

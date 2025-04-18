@@ -216,7 +216,7 @@ func (s *ApplicationTestSuite) TestMakeCrypt() {
 	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
-	s.app.SetJson(json.NewJson())
+	s.app.SetJson(json.New())
 
 	serviceProvider := &crypt.ServiceProvider{}
 	serviceProvider.Register(s.app)
@@ -299,7 +299,7 @@ func (s *ApplicationTestSuite) TestMakeLog() {
 
 	mockConfig.EXPECT().GetString("logging.default").Return("").Once()
 
-	s.app.SetJson(json.NewJson())
+	s.app.SetJson(json.New())
 
 	serviceProvider := &frameworklog.ServiceProvider{}
 	serviceProvider.Register(s.app)
@@ -391,7 +391,7 @@ func (s *ApplicationTestSuite) TestMakeSession() {
 	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
-	s.app.SetJson(json.NewJson())
+	s.app.SetJson(json.New())
 
 	serviceProvider := &frameworksession.ServiceProvider{}
 	// error

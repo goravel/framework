@@ -13,7 +13,7 @@ import (
 )
 
 func TestNewApplication(t *testing.T) {
-	j := json.NewJson()
+	j := json.New()
 	app, err := NewApplication(nil, j)
 	assert.Nil(t, err)
 	assert.NotNil(t, app)
@@ -44,7 +44,7 @@ func TestApplication_Channel(t *testing.T) {
 	mockConfig.On("GetString", "logging.channels.test.path").Return("test")
 	mockConfig.On("GetString", "logging.channels.test.level").Return("debug")
 	mockConfig.On("GetBool", "logging.channels.test.print").Return(true)
-	app, err := NewApplication(mockConfig, json.NewJson())
+	app, err := NewApplication(mockConfig, json.New())
 	assert.Nil(t, err)
 	assert.NotNil(t, app)
 	assert.NotNil(t, app.Channel(""))
@@ -70,7 +70,7 @@ func TestApplication_Stack(t *testing.T) {
 	mockConfig.On("GetString", "logging.channels.test.path").Return("test")
 	mockConfig.On("GetString", "logging.channels.test.level").Return("debug")
 	mockConfig.On("GetBool", "logging.channels.test.print").Return(true)
-	app, err := NewApplication(mockConfig, json.NewJson())
+	app, err := NewApplication(mockConfig, json.New())
 	assert.Nil(t, err)
 	assert.NotNil(t, app)
 	assert.NotNil(t, app.Stack([]string{}))
