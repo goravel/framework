@@ -30,7 +30,7 @@ func TestLogrus(t *testing.T) {
 	var (
 		mockConfig *configmock.Config
 		log        *Application
-		j          = json.NewJson()
+		j          = json.New()
 		err        error
 	)
 
@@ -398,7 +398,7 @@ func TestLogrusWithCustomLogger(t *testing.T) {
 
 	filename := "custom.log"
 
-	logger, err := NewApplication(mockConfig, json.NewJson())
+	logger, err := NewApplication(mockConfig, json.New())
 	assert.Nil(t, err)
 	assert.NotNil(t, logger)
 
@@ -421,7 +421,7 @@ func TestLogrusWithCustomLogger(t *testing.T) {
 func TestLogrus_Fatal(t *testing.T) {
 	mockConfig := initMockConfig()
 	mockDriverConfig(mockConfig)
-	log, err := NewApplication(mockConfig, json.NewJson())
+	log, err := NewApplication(mockConfig, json.New())
 	assert.Nil(t, err)
 	assert.NotNil(t, log)
 
@@ -443,7 +443,7 @@ func TestLogrus_Fatal(t *testing.T) {
 func TestLogrus_Fatalf(t *testing.T) {
 	mockConfig := initMockConfig()
 	mockDriverConfig(mockConfig)
-	log, err := NewApplication(mockConfig, json.NewJson())
+	log, err := NewApplication(mockConfig, json.New())
 	assert.Nil(t, err)
 	assert.NotNil(t, log)
 
@@ -465,7 +465,7 @@ func TestLogrus_Fatalf(t *testing.T) {
 func Benchmark_Debug(b *testing.B) {
 	mockConfig := initMockConfig()
 	mockDriverConfig(mockConfig)
-	log, err := NewApplication(mockConfig, json.NewJson())
+	log, err := NewApplication(mockConfig, json.New())
 	assert.Nil(b, err)
 	assert.NotNil(b, log)
 
@@ -479,7 +479,7 @@ func Benchmark_Debug(b *testing.B) {
 func Benchmark_Info(b *testing.B) {
 	mockConfig := initMockConfig()
 	mockDriverConfig(mockConfig)
-	log, err := NewApplication(mockConfig, json.NewJson())
+	log, err := NewApplication(mockConfig, json.New())
 	assert.Nil(b, err)
 	assert.NotNil(b, log)
 
@@ -493,7 +493,7 @@ func Benchmark_Info(b *testing.B) {
 func Benchmark_Warning(b *testing.B) {
 	mockConfig := initMockConfig()
 	mockDriverConfig(mockConfig)
-	log, err := NewApplication(mockConfig, json.NewJson())
+	log, err := NewApplication(mockConfig, json.New())
 	assert.Nil(b, err)
 	assert.NotNil(b, log)
 
@@ -507,7 +507,7 @@ func Benchmark_Warning(b *testing.B) {
 func Benchmark_Error(b *testing.B) {
 	mockConfig := initMockConfig()
 	mockDriverConfig(mockConfig)
-	log, err := NewApplication(mockConfig, json.NewJson())
+	log, err := NewApplication(mockConfig, json.New())
 	assert.Nil(b, err)
 	assert.NotNil(b, log)
 
@@ -525,7 +525,7 @@ func Benchmark_Fatal(b *testing.B) {
 func Benchmark_Panic(b *testing.B) {
 	mockConfig := initMockConfig()
 	mockDriverConfig(mockConfig)
-	log, err := NewApplication(mockConfig, json.NewJson())
+	log, err := NewApplication(mockConfig, json.New())
 	assert.Nil(b, err)
 	assert.NotNil(b, log)
 

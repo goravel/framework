@@ -1,10 +1,124 @@
 package queue
 
 import (
+	"time"
+
 	"github.com/spf13/cast"
 
+	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/queue"
 )
+
+type Task struct {
+	Job
+	Uuid  string `json:"uuid"`
+	Chain []Job  `json:"chain"`
+}
+
+type Job struct {
+	Signature string      `json:"signature"`
+	Args      []queue.Arg `json:"args"`
+	Delay     *time.Time  `json:"delay"`
+}
+
+func TaskToJson(task queue.Task, json foundation.Json) ([]byte, error) {
+	chain := make([]Job, len(task.Chain))
+	for i, taskData := range task.Chain {
+		for j, arg := range taskData.Args {
+			// To avoid converting []uint8 to base64
+			if arg.Type == "[]uint8" {
+				taskData.Args[j].Value = cast.ToIntSlice(arg.Value)
+			}
+		}
+
+		job := Job{
+			Signature: taskData.Job.Signature(),
+			Args:      taskData.Args,
+		}
+
+		if !taskData.Delay.IsZero() {
+			job.Delay = &taskData.Delay
+		}
+
+		chain[i] = job
+	}
+
+	var args []queue.Arg
+	for _, arg := range task.Args {
+		if arg.Type == "[]uint8" {
+			arg.Value = cast.ToIntSlice(arg.Value)
+		}
+		args = append(args, arg)
+	}
+
+	job := Job{
+		Signature: task.Job.Signature(),
+		Args:      args,
+	}
+
+	if !task.Delay.IsZero() {
+		job.Delay = &task.Delay
+	}
+
+	t := Task{
+		Uuid:  task.UUID,
+		Job:   job,
+		Chain: chain,
+	}
+
+	payload, err := json.Marshal(t)
+	if err != nil {
+		return nil, err
+	}
+
+	return payload, nil
+}
+
+func JsonToTask(payload string, jobRepository queue.JobRepository, json foundation.Json) (queue.Task, error) {
+	var task Task
+	if err := json.Unmarshal([]byte(payload), &task); err != nil {
+		return queue.Task{}, err
+	}
+
+	chain := make([]queue.Jobs, len(task.Chain))
+	for i, item := range task.Chain {
+		job, err := jobRepository.Get(item.Signature)
+		if err != nil {
+			return queue.Task{}, err
+		}
+
+		jobs := queue.Jobs{
+			Job:  job,
+			Args: item.Args,
+		}
+
+		if item.Delay != nil && !item.Delay.IsZero() {
+			jobs.Delay = *item.Delay
+		}
+
+		chain[i] = jobs
+	}
+
+	job, err := jobRepository.Get(task.Job.Signature)
+	if err != nil {
+		return queue.Task{}, err
+	}
+
+	jobs := queue.Jobs{
+		Job:  job,
+		Args: task.Args,
+	}
+
+	if task.Delay != nil && !task.Delay.IsZero() {
+		jobs.Delay = *task.Delay
+	}
+
+	return queue.Task{
+		UUID:  task.Uuid,
+		Jobs:  jobs,
+		Chain: chain,
+	}, nil
+}
 
 func filterArgsType(args []queue.Arg) []any {
 	realArgs := make([]any, 0, len(args))

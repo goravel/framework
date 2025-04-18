@@ -10,6 +10,7 @@ import (
 
 	"github.com/goravel/framework/contracts/mail"
 	contractsqueue "github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/foundation/json"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/queue"
 	"github.com/goravel/framework/support"
@@ -75,7 +76,7 @@ func (s *ApplicationTestSuite) TestSendMailWithMailable() {
 func (s *ApplicationTestSuite) TestQueueMail() {
 	s.mockConfig = mockConfig(465)
 
-	queueFacade := queue.NewApplication(queue.NewConfig(s.mockConfig, nil), queue.NewJobRepository(), nil)
+	queueFacade := queue.NewApplication(queue.NewConfig(s.mockConfig, nil), queue.NewJobRepository(), json.New(), nil)
 	queueFacade.Register([]contractsqueue.Job{
 		NewSendMailJob(s.mockConfig),
 	})
@@ -96,7 +97,7 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 func (s *ApplicationTestSuite) TestQueueMailWithMailable() {
 	s.mockConfig = mockConfig(465)
 
-	queueFacade := queue.NewApplication(queue.NewConfig(s.mockConfig, nil), queue.NewJobRepository(), nil)
+	queueFacade := queue.NewApplication(queue.NewConfig(s.mockConfig, nil), queue.NewJobRepository(), json.New(), nil)
 	queueFacade.Register([]contractsqueue.Job{
 		NewSendMailJob(s.mockConfig),
 	})

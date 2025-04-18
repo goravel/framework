@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
@@ -47,50 +48,13 @@ func (s *SyncTestSuite) SetupTest() {
 }
 
 func (s *SyncTestSuite) TestDelay() {
-	args := []queue.Arg{
-		{
-			Type:  "string",
-			Value: "a",
-		},
-		{
-			Type:  "int",
-			Value: 1,
-		},
-		{
-			Type:  "[]string",
-			Value: []string{"b", "c"},
-		},
-		{
-			Type:  "[]int",
-			Value: []int{1, 2, 3},
-		},
-	}
-	s.Nil(s.app.Job(&TestJobOne{}, args).Delay(time.Now().Add(time.Second)).Dispatch())
-	s.Equal([]any{"a", 1, []string{"b", "c"}, []int{1, 2, 3}}, testJobOne)
+	s.Nil(s.app.Job(&TestJobOne{}, testArgs).Delay(time.Now().Add(time.Second)).Dispatch())
+	s.Equal(convertTestQueueArgs(testArgs), testJobOne)
 }
 
 func (s *SyncTestSuite) TestDispatch() {
-	args := []queue.Arg{
-		{
-			Type:  "string",
-			Value: "a",
-		},
-		{
-			Type:  "int",
-			Value: 1,
-		},
-		{
-			Type:  "[]string",
-			Value: []string{"b", "c"},
-		},
-		{
-			Type:  "[]int",
-			Value: []int{1, 2, 3},
-		},
-	}
-
-	s.Nil(s.app.Job(&TestJobOne{}, args).Dispatch())
-	s.Equal([]any{"a", 1, []string{"b", "c"}, []int{1, 2, 3}}, testJobOne)
+	s.Nil(s.app.Job(&TestJobOne{}, testArgs).Dispatch())
+	s.Equal(convertTestQueueArgs(testArgs), testJobOne)
 }
 
 func (s *SyncTestSuite) TestChainDispatch() {
@@ -242,4 +206,138 @@ func (r *TestJobErr) Signature() string {
 // Handle Execute the job.
 func (r *TestJobErr) Handle(args ...any) error {
 	return assert.AnError
+}
+
+var (
+	testArgs = []queue.Arg{
+		{
+			Type:  "bool",
+			Value: true,
+		},
+		{
+			Type:  "int",
+			Value: 1,
+		},
+		{
+			Type:  "int8",
+			Value: int8(1),
+		},
+		{
+			Type:  "int16",
+			Value: int16(1),
+		},
+		{
+			Type:  "int32",
+			Value: int32(1),
+		},
+		{
+			Type:  "int64",
+			Value: int64(1),
+		},
+		{
+			Type:  "uint",
+			Value: uint(1),
+		},
+		{
+			Type:  "uint8",
+			Value: uint8(1),
+		},
+		{
+			Type:  "uint16",
+			Value: uint16(1),
+		},
+		{
+			Type:  "uint32",
+			Value: uint32(1),
+		},
+		{
+			Type:  "uint64",
+			Value: uint64(1),
+		},
+		{
+			Type:  "float32",
+			Value: float32(1.1),
+		},
+		{
+			Type:  "float64",
+			Value: float64(1.2),
+		},
+		{
+			Type:  "string",
+			Value: "test",
+		},
+		{
+			Type:  "[]bool",
+			Value: []bool{true, false},
+		},
+		{
+			Type:  "[]int",
+			Value: []int{1, 2, 3},
+		},
+		{
+			Type:  "[]int8",
+			Value: []int8{1, 2, 3},
+		},
+		{
+			Type:  "[]int16",
+			Value: []int16{1, 2, 3},
+		},
+		{
+			Type:  "[]int32",
+			Value: []int32{1, 2, 3},
+		},
+		{
+			Type:  "[]int64",
+			Value: []int64{1, 2, 3},
+		},
+		{
+			Type:  "[]uint",
+			Value: []uint{1, 2, 3},
+		},
+		{
+			Type:  "[]uint8",
+			Value: []uint8{1, 2, 3},
+		},
+		{
+			Type:  "[]uint16",
+			Value: []uint16{1, 2, 3},
+		},
+		{
+			Type:  "[]uint32",
+			Value: []uint32{1, 2, 3},
+		},
+		{
+			Type:  "[]uint64",
+			Value: []uint64{1, 2, 3},
+		},
+		{
+			Type:  "[]float32",
+			Value: []float32{1.1, 1.2, 1.3},
+		},
+		{
+			Type:  "[]float64",
+			Value: []float64{1.1, 1.2, 1.3},
+		},
+		{
+			Type:  "[]string",
+			Value: []string{"test", "test2", "test3"},
+		},
+	}
+)
+
+func convertTestQueueArgs(queueArgs []queue.Arg) []any {
+	var args []any
+	for _, arg := range queueArgs {
+		if arg.Type == "[]uint8" {
+			var uint8Slice []uint8
+			for _, v := range cast.ToIntSlice(arg.Value) {
+				uint8Slice = append(uint8Slice, uint8(v))
+			}
+			args = append(args, uint8Slice)
+		} else {
+			args = append(args, arg.Value)
+		}
+	}
+
+	return args
 }

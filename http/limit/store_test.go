@@ -33,7 +33,7 @@ func TestStoreTestSuite(t *testing.T) {
 func (s *StoreTestSuite) SetupTest() {
 	s.mockCache = cachemocks.NewCache(s.T())
 	s.mockLock = cachemocks.NewLock(s.T())
-	s.json = json.NewJson()
+	s.json = json.New()
 	s.store = NewStore(s.mockCache, s.json, 10, time.Second)
 	s.ctx = context.Background()
 	s.testKey = "testKey"

@@ -2,6 +2,6 @@ package queue
 
 type Task struct {
 	Jobs
-	Uuid  string `json:"uuid"`
+	UUID  string `json:"uuid"`
 	Chain []Jobs `json:"chain"`
 }

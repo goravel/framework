@@ -3,21 +3,19 @@ package queue
 import (
 	"sync"
 
-	"github.com/google/uuid"
-
 	contractsqueue "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 )
 
 type FailedJob struct {
-	ID         uint                 `gorm:"primaryKey" db:"id"`           // The unique ID of the job.
-	UUID       uuid.UUID            `db:"uuid"`                           // The UUID of the job.
-	Connection string               `db:"connection"`                     // The name of the connection the job belongs to.
-	Queue      string               `db:"queue"`                          // The name of the queue the job belongs to.
-	Payload    []contractsqueue.Arg `gorm:"serializer:json" db:"payload"` // The arguments passed to the job.
-	Exception  string               `db:"exception"`                      // The exception that caused the job to fail.
-	FailedAt   carbon.DateTime      `db:"failed_at"`                      // The timestamp when the job failed.
+	ID         uint            `gorm:"primaryKey" db:"id"`
+	UUID       string          `db:"uuid"`
+	Connection string          `db:"connection"`
+	Queue      string          `db:"queue"`
+	Payload    string          `db:"payload"`
+	Exception  string          `db:"exception"`
+	FailedAt   carbon.DateTime `db:"failed_at"`
 }
 
 type JobRepository struct {

@@ -29,7 +29,7 @@ func NewPendingJob(config contractsqueue.Config, job contractsqueue.Job, args ..
 		connection: connection,
 		queue:      queue,
 		task: contractsqueue.Task{
-			Uuid: uuid.New().String(),
+			UUID: uuid.New().String(),
 			Jobs: contractsqueue.Jobs{
 				Job:  job,
 				Args: arg,
@@ -65,7 +65,7 @@ func NewPendingChainJob(config contractsqueue.Config, jobs []contractsqueue.Jobs
 		connection: connection,
 		queue:      queue,
 		task: contractsqueue.Task{
-			Uuid:  uuid.New().String(),
+			UUID:  uuid.New().String(),
 			Jobs:  job,
 			Chain: chain,
 		},
