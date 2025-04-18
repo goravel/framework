@@ -19,6 +19,7 @@ type MatchHelperTestSuite struct {
 	configVariable *dst.File
 	console        *dst.File
 	database       *dst.File
+	validation     *dst.File
 }
 
 func (s *MatchHelperTestSuite) SetupTest() {
@@ -112,6 +113,45 @@ func (kernel Kernel) Migrations() []schema.Migration {
 func (kernel Kernel) Seeders() []seeder.Seeder {
 	return []seeder.Seeder{
 		&seeders.DatabaseSeeder{},
+	}
+}`)
+	s.Require().NoError(err)
+	s.validation, err = decorator.Parse(`package providers
+
+import (
+	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/contracts/validation"
+	"github.com/goravel/framework/facades"
+
+	"goravel/app/filters"
+	"goravel/app/rules"
+)
+
+type ValidationServiceProvider struct {
+}
+
+func (receiver *ValidationServiceProvider) Register(app foundation.Application) {
+
+}
+
+func (receiver *ValidationServiceProvider) Boot(app foundation.Application) {
+	if err := facades.Validation().AddRules(receiver.rules()); err != nil {
+		facades.Log().Errorf("add rules error: %+v", err)
+	}
+	if err := facades.Validation().AddFilters(receiver.filters()); err != nil {
+		facades.Log().Errorf("add filters error: %+v", err)
+	}
+}
+
+func (receiver *ValidationServiceProvider) rules() []validation.Rule {
+	return []validation.Rule{
+		&rules.Uppercase{},
+	}
+}
+
+func (receiver *ValidationServiceProvider) filters() []validation.Filter {
+	return []validation.Filter{
+		&filters.ToInt{},
 	}
 }`)
 	s.Require().NoError(err)
@@ -214,6 +254,34 @@ func (s *MatchHelperTestSuite) TestHelper() {
 					Elt: &dst.SelectorExpr{
 						X:   &dst.Ident{Name: "console"},
 						Sel: &dst.Ident{Name: "Command"},
+					},
+				})).MatchNode(node))
+				s.Len(node.(*dst.CompositeLit).Elts, 1)
+			},
+		},
+		{
+			name:     "match validation rules",
+			file:     s.validation,
+			matchers: ValidationRules(),
+			assert: func(node dst.Node) {
+				s.True(CompositeLit(EqualNode(&dst.ArrayType{
+					Elt: &dst.SelectorExpr{
+						X:   &dst.Ident{Name: "validation"},
+						Sel: &dst.Ident{Name: "Rule"},
+					},
+				})).MatchNode(node))
+				s.Len(node.(*dst.CompositeLit).Elts, 1)
+			},
+		},
+		{
+			name:     "match validation filters",
+			file:     s.validation,
+			matchers: ValidationFilters(),
+			assert: func(node dst.Node) {
+				s.True(CompositeLit(EqualNode(&dst.ArrayType{
+					Elt: &dst.SelectorExpr{
+						X:   &dst.Ident{Name: "validation"},
+						Sel: &dst.Ident{Name: "Filter"},
 					},
 				})).MatchNode(node))
 				s.Len(node.(*dst.CompositeLit).Elts, 1)
