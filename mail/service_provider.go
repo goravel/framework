@@ -4,7 +4,7 @@ import (
 	"github.com/goravel/framework/contracts"
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
-	"github.com/goravel/framework/contracts/queue"
+	contractsqueue "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/mail/console"
 	"github.com/goravel/framework/support/color"
@@ -22,11 +22,12 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleMail)
 		}
 
-		queueFacade := app.MakeQueue()
-		if queueFacade == nil {
+		queue := app.MakeQueue()
+		if queue == nil {
 			return nil, errors.QueueFacadeNotSet.SetModule(errors.ModuleMail)
 		}
-		return NewApplication(config, queueFacade), nil
+
+		return NewApplication(config, queue), nil
 	})
 }
 
@@ -51,7 +52,7 @@ func (r *ServiceProvider) registerJobs(app foundation.Application) {
 		return
 	}
 
-	queueFacade.Register([]queue.Job{
+	queueFacade.Register([]contractsqueue.Job{
 		NewSendMailJob(configFacade),
 	})
 }

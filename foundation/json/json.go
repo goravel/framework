@@ -11,7 +11,7 @@ type Json struct {
 	unmarshal func([]byte, any) error
 }
 
-func NewJson() foundation.Json {
+func New() foundation.Json {
 	return &Json{
 		marshal:   encodingjson.Marshal,
 		unmarshal: encodingjson.Unmarshal,

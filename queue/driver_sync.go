@@ -6,6 +6,11 @@ import (
 	"github.com/goravel/framework/contracts/queue"
 )
 
+var (
+	Name              = "sync"
+	_    queue.Driver = &Sync{}
+)
+
 type Sync struct {
 	connection string
 }
@@ -24,27 +29,45 @@ func (r *Sync) Driver() string {
 	return queue.DriverSync
 }
 
-func (r *Sync) Push(job queue.Job, args []any, _ string) error {
-	return job.Handle(args...)
+func (r *Sync) Name() string {
+	return Name
 }
 
-func (r *Sync) Bulk(jobs []queue.Jobs, _ string) error {
-	for _, job := range jobs {
-		time.Sleep(time.Until(job.Delay))
-		if err := job.Job.Handle(job.Args...); err != nil {
-			return err
+func (r *Sync) Pop(_ string) (queue.Task, error) {
+	// sync driver does not support pop
+	return queue.Task{}, nil
+}
+
+func (r *Sync) Push(task queue.Task, _ string) error {
+	if !task.Delay.IsZero() {
+		time.Sleep(time.Until(task.Delay))
+	}
+
+	var realArgs []any
+	for _, arg := range task.Args {
+		realArgs = append(realArgs, arg.Value)
+	}
+
+	if err := task.Job.Handle(realArgs...); err != nil {
+		return err
+	}
+
+	if len(task.Chain) > 0 {
+		for _, chain := range task.Chain {
+			if !chain.Delay.IsZero() {
+				time.Sleep(time.Until(chain.Delay))
+			}
+
+			var realArgs []any
+			for _, arg := range chain.Args {
+				realArgs = append(realArgs, arg.Value)
+			}
+
+			if err := chain.Job.Handle(realArgs...); err != nil {
+				return err
+			}
 		}
 	}
 
 	return nil
-}
-
-func (r *Sync) Later(delay time.Time, job queue.Job, args []any, _ string) error {
-	time.Sleep(time.Until(delay))
-	return job.Handle(args...)
-}
-
-func (r *Sync) Pop(_ string) (queue.Job, []any, error) {
-	// sync driver does not support pop
-	return nil, nil, nil
 }

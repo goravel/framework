@@ -51,7 +51,7 @@ func TestManagerTestSuite(t *testing.T) {
 
 func (s *ManagerTestSuite) SetupTest() {
 	s.mockConfig = mockconfig.NewConfig(s.T())
-	s.json = json.NewJson()
+	s.json = json.New()
 	s.mockOtherDriver = new(mocksession.Driver)
 	s.mockOtherFactory = MockDriverFactory(s.mockOtherDriver)
 

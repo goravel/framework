@@ -2,7 +2,7 @@ package event
 
 import (
 	"github.com/goravel/framework/contracts/event"
-	queuecontract "github.com/goravel/framework/contracts/queue"
+	contractsqueue "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
 )
 
@@ -10,10 +10,10 @@ type Task struct {
 	args      []event.Arg
 	event     event.Event
 	listeners []event.Listener
-	queue     queuecontract.Queue
+	queue     contractsqueue.Queue
 }
 
-func NewTask(queue queuecontract.Queue, args []event.Arg, event event.Event, listeners []event.Listener) *Task {
+func NewTask(queue contractsqueue.Queue, args []event.Arg, event event.Event, listeners []event.Listener) *Task {
 	return &Task{
 		args:      args,
 		event:     event,
@@ -61,10 +61,13 @@ func (receiver *Task) Dispatch() error {
 	return nil
 }
 
-func eventArgsToQueueArgs(args []event.Arg) []any {
-	var queueArgs []any
+func eventArgsToQueueArgs(args []event.Arg) []contractsqueue.Arg {
+	var queueArgs []contractsqueue.Arg
 	for _, arg := range args {
-		queueArgs = append(queueArgs, arg.Value)
+		queueArgs = append(queueArgs, contractsqueue.Arg{
+			Type:  arg.Type,
+			Value: arg.Value,
+		})
 	}
 
 	return queueArgs

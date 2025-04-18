@@ -3,7 +3,9 @@
 package queue
 
 import (
-	orm "github.com/goravel/framework/contracts/database/orm"
+	config "github.com/goravel/framework/contracts/config"
+	db "github.com/goravel/framework/contracts/database/db"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -18,6 +20,53 @@ type Config_Expecter struct {
 
 func (_m *Config) EXPECT() *Config_Expecter {
 	return &Config_Expecter{mock: &_m.Mock}
+}
+
+// Config provides a mock function with no fields
+func (_m *Config) Config() config.Config {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Config")
+	}
+
+	var r0 config.Config
+	if rf, ok := ret.Get(0).(func() config.Config); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(config.Config)
+		}
+	}
+
+	return r0
+}
+
+// Config_Config_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Config'
+type Config_Config_Call struct {
+	*mock.Call
+}
+
+// Config is a helper method to define mock.On call
+func (_e *Config_Expecter) Config() *Config_Config_Call {
+	return &Config_Config_Call{Call: _e.mock.On("Config")}
+}
+
+func (_c *Config_Config_Call) Run(run func()) *Config_Config_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Config_Config_Call) Return(_a0 config.Config) *Config_Config_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Config_Config_Call) RunAndReturn(run func() config.Config) *Config_Config_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // Debug provides a mock function with no fields
@@ -65,47 +114,64 @@ func (_c *Config_Debug_Call) RunAndReturn(run func() bool) *Config_Debug_Call {
 	return _c
 }
 
-// DefaultConnection provides a mock function with no fields
-func (_m *Config) DefaultConnection() string {
+// Default provides a mock function with no fields
+func (_m *Config) Default() (string, string, int) {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for DefaultConnection")
+		panic("no return value specified for Default")
 	}
 
 	var r0 string
+	var r1 string
+	var r2 int
+	if rf, ok := ret.Get(0).(func() (string, string, int)); ok {
+		return rf()
+	}
 	if rf, ok := ret.Get(0).(func() string); ok {
 		r0 = rf()
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func() string); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Get(1).(string)
+	}
+
+	if rf, ok := ret.Get(2).(func() int); ok {
+		r2 = rf()
+	} else {
+		r2 = ret.Get(2).(int)
+	}
+
+	return r0, r1, r2
 }
 
-// Config_DefaultConnection_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DefaultConnection'
-type Config_DefaultConnection_Call struct {
+// Config_Default_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Default'
+type Config_Default_Call struct {
 	*mock.Call
 }
 
-// DefaultConnection is a helper method to define mock.On call
-func (_e *Config_Expecter) DefaultConnection() *Config_DefaultConnection_Call {
-	return &Config_DefaultConnection_Call{Call: _e.mock.On("DefaultConnection")}
+// Default is a helper method to define mock.On call
+func (_e *Config_Expecter) Default() *Config_Default_Call {
+	return &Config_Default_Call{Call: _e.mock.On("Default")}
 }
 
-func (_c *Config_DefaultConnection_Call) Run(run func()) *Config_DefaultConnection_Call {
+func (_c *Config_Default_Call) Run(run func()) *Config_Default_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run()
 	})
 	return _c
 }
 
-func (_c *Config_DefaultConnection_Call) Return(_a0 string) *Config_DefaultConnection_Call {
-	_c.Call.Return(_a0)
+func (_c *Config_Default_Call) Return(connection string, _a1 string, concurrent int) *Config_Default_Call {
+	_c.Call.Return(connection, _a1, concurrent)
 	return _c
 }
 
-func (_c *Config_DefaultConnection_Call) RunAndReturn(run func() string) *Config_DefaultConnection_Call {
+func (_c *Config_Default_Call) RunAndReturn(run func() (string, string, int)) *Config_Default_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -157,19 +223,19 @@ func (_c *Config_Driver_Call) RunAndReturn(run func(string) string) *Config_Driv
 }
 
 // FailedJobsQuery provides a mock function with no fields
-func (_m *Config) FailedJobsQuery() orm.Query {
+func (_m *Config) FailedJobsQuery() db.Query {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for FailedJobsQuery")
 	}
 
-	var r0 orm.Query
-	if rf, ok := ret.Get(0).(func() orm.Query); ok {
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func() db.Query); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(orm.Query)
+			r0 = ret.Get(0).(db.Query)
 		}
 	}
 
@@ -193,22 +259,22 @@ func (_c *Config_FailedJobsQuery_Call) Run(run func()) *Config_FailedJobsQuery_C
 	return _c
 }
 
-func (_c *Config_FailedJobsQuery_Call) Return(_a0 orm.Query) *Config_FailedJobsQuery_Call {
+func (_c *Config_FailedJobsQuery_Call) Return(_a0 db.Query) *Config_FailedJobsQuery_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Config_FailedJobsQuery_Call) RunAndReturn(run func() orm.Query) *Config_FailedJobsQuery_Call {
+func (_c *Config_FailedJobsQuery_Call) RunAndReturn(run func() db.Query) *Config_FailedJobsQuery_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Queue provides a mock function with given fields: connection, _a1
-func (_m *Config) Queue(connection string, _a1 string) string {
+// QueueKey provides a mock function with given fields: connection, _a1
+func (_m *Config) QueueKey(connection string, _a1 string) string {
 	ret := _m.Called(connection, _a1)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Queue")
+		panic("no return value specified for QueueKey")
 	}
 
 	var r0 string
@@ -221,77 +287,31 @@ func (_m *Config) Queue(connection string, _a1 string) string {
 	return r0
 }
 
-// Config_Queue_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Queue'
-type Config_Queue_Call struct {
+// Config_QueueKey_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'QueueKey'
+type Config_QueueKey_Call struct {
 	*mock.Call
 }
 
-// Queue is a helper method to define mock.On call
+// QueueKey is a helper method to define mock.On call
 //   - connection string
 //   - _a1 string
-func (_e *Config_Expecter) Queue(connection interface{}, _a1 interface{}) *Config_Queue_Call {
-	return &Config_Queue_Call{Call: _e.mock.On("Queue", connection, _a1)}
+func (_e *Config_Expecter) QueueKey(connection interface{}, _a1 interface{}) *Config_QueueKey_Call {
+	return &Config_QueueKey_Call{Call: _e.mock.On("QueueKey", connection, _a1)}
 }
 
-func (_c *Config_Queue_Call) Run(run func(connection string, _a1 string)) *Config_Queue_Call {
+func (_c *Config_QueueKey_Call) Run(run func(connection string, _a1 string)) *Config_QueueKey_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string), args[1].(string))
 	})
 	return _c
 }
 
-func (_c *Config_Queue_Call) Return(_a0 string) *Config_Queue_Call {
+func (_c *Config_QueueKey_Call) Return(_a0 string) *Config_QueueKey_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Config_Queue_Call) RunAndReturn(run func(string, string) string) *Config_Queue_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// Size provides a mock function with given fields: connection
-func (_m *Config) Size(connection string) int {
-	ret := _m.Called(connection)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Size")
-	}
-
-	var r0 int
-	if rf, ok := ret.Get(0).(func(string) int); ok {
-		r0 = rf(connection)
-	} else {
-		r0 = ret.Get(0).(int)
-	}
-
-	return r0
-}
-
-// Config_Size_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Size'
-type Config_Size_Call struct {
-	*mock.Call
-}
-
-// Size is a helper method to define mock.On call
-//   - connection string
-func (_e *Config_Expecter) Size(connection interface{}) *Config_Size_Call {
-	return &Config_Size_Call{Call: _e.mock.On("Size", connection)}
-}
-
-func (_c *Config_Size_Call) Run(run func(connection string)) *Config_Size_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
-	})
-	return _c
-}
-
-func (_c *Config_Size_Call) Return(_a0 int) *Config_Size_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Config_Size_Call) RunAndReturn(run func(string) int) *Config_Size_Call {
+func (_c *Config_QueueKey_Call) RunAndReturn(run func(string, string) string) *Config_QueueKey_Call {
 	_c.Call.Return(run)
 	return _c
 }

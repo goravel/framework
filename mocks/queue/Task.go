@@ -23,19 +23,19 @@ func (_m *Task) EXPECT() *Task_Expecter {
 }
 
 // Delay provides a mock function with given fields: _a0
-func (_m *Task) Delay(_a0 time.Time) queue.Task {
+func (_m *Task) Delay(_a0 time.Time) queue.PendingJob {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Delay")
 	}
 
-	var r0 queue.Task
-	if rf, ok := ret.Get(0).(func(time.Time) queue.Task); ok {
+	var r0 queue.PendingJob
+	if rf, ok := ret.Get(0).(func(time.Time) queue.PendingJob); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(queue.Task)
+			r0 = ret.Get(0).(queue.PendingJob)
 		}
 	}
 
@@ -60,12 +60,12 @@ func (_c *Task_Delay_Call) Run(run func(_a0 time.Time)) *Task_Delay_Call {
 	return _c
 }
 
-func (_c *Task_Delay_Call) Return(_a0 queue.Task) *Task_Delay_Call {
+func (_c *Task_Delay_Call) Return(_a0 queue.PendingJob) *Task_Delay_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Task_Delay_Call) RunAndReturn(run func(time.Time) queue.Task) *Task_Delay_Call {
+func (_c *Task_Delay_Call) RunAndReturn(run func(time.Time) queue.PendingJob) *Task_Delay_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -161,19 +161,19 @@ func (_c *Task_DispatchSync_Call) RunAndReturn(run func() error) *Task_DispatchS
 }
 
 // OnConnection provides a mock function with given fields: connection
-func (_m *Task) OnConnection(connection string) queue.Task {
+func (_m *Task) OnConnection(connection string) queue.PendingJob {
 	ret := _m.Called(connection)
 
 	if len(ret) == 0 {
 		panic("no return value specified for OnConnection")
 	}
 
-	var r0 queue.Task
-	if rf, ok := ret.Get(0).(func(string) queue.Task); ok {
+	var r0 queue.PendingJob
+	if rf, ok := ret.Get(0).(func(string) queue.PendingJob); ok {
 		r0 = rf(connection)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(queue.Task)
+			r0 = ret.Get(0).(queue.PendingJob)
 		}
 	}
 
@@ -198,30 +198,30 @@ func (_c *Task_OnConnection_Call) Run(run func(connection string)) *Task_OnConne
 	return _c
 }
 
-func (_c *Task_OnConnection_Call) Return(_a0 queue.Task) *Task_OnConnection_Call {
+func (_c *Task_OnConnection_Call) Return(_a0 queue.PendingJob) *Task_OnConnection_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Task_OnConnection_Call) RunAndReturn(run func(string) queue.Task) *Task_OnConnection_Call {
+func (_c *Task_OnConnection_Call) RunAndReturn(run func(string) queue.PendingJob) *Task_OnConnection_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // OnQueue provides a mock function with given fields: _a0
-func (_m *Task) OnQueue(_a0 string) queue.Task {
+func (_m *Task) OnQueue(_a0 string) queue.PendingJob {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for OnQueue")
 	}
 
-	var r0 queue.Task
-	if rf, ok := ret.Get(0).(func(string) queue.Task); ok {
+	var r0 queue.PendingJob
+	if rf, ok := ret.Get(0).(func(string) queue.PendingJob); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(queue.Task)
+			r0 = ret.Get(0).(queue.PendingJob)
 		}
 	}
 
@@ -246,12 +246,12 @@ func (_c *Task_OnQueue_Call) Run(run func(_a0 string)) *Task_OnQueue_Call {
 	return _c
 }
 
-func (_c *Task_OnQueue_Call) Return(_a0 queue.Task) *Task_OnQueue_Call {
+func (_c *Task_OnQueue_Call) Return(_a0 queue.PendingJob) *Task_OnQueue_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Task_OnQueue_Call) RunAndReturn(run func(string) queue.Task) *Task_OnQueue_Call {
+func (_c *Task_OnQueue_Call) RunAndReturn(run func(string) queue.PendingJob) *Task_OnQueue_Call {
 	_c.Call.Return(run)
 	return _c
 }

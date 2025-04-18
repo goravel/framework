@@ -30,7 +30,7 @@ func (s *GeneralTestSuite) SetupTest() {
 		Level:   logrus.InfoLevel,
 		Message: "Test Message",
 	}
-	s.json = json.NewJson()
+	s.json = json.New()
 }
 
 func (s *GeneralTestSuite) TestFormat() {

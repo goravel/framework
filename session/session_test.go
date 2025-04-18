@@ -27,7 +27,7 @@ func TestSessionTestSuite(t *testing.T) {
 
 func (s *SessionTestSuite) SetupTest() {
 	s.driver = mocksession.NewDriver(s.T())
-	s.json = json.NewJson()
+	s.json = json.New()
 	s.session = s.getSession()
 }
 

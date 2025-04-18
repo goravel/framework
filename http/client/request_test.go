@@ -33,7 +33,7 @@ func (s *RequestTestSuite) SetupTest() {
 		MaxIdleConnsPerHost: 0,
 		IdleConnTimeout:     30 * time.Second,
 	}
-	s.request = NewRequest(config, json.NewJson())
+	s.request = NewRequest(config, json.New())
 }
 
 func (s *RequestTestSuite) TestClone() {
