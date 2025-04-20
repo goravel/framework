@@ -10,12 +10,12 @@ type Job interface {
 }
 
 type PendingJob interface {
+	// Delay dispatches the task after the given delay.
+	Delay(time time.Time) PendingJob
 	// Dispatch dispatches the task.
 	Dispatch() error
 	// DispatchSync dispatches the task synchronously.
 	DispatchSync() error
-	// Delay dispatches the task after the given delay.
-	Delay(time time.Time) PendingJob
 	// OnConnection sets the connection of the task.
 	OnConnection(connection string) PendingJob
 	// OnQueue sets the queue of the task.
