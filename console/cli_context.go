@@ -202,24 +202,19 @@ func (r *CliContext) OptionFloat64Slice(key string) []float64 {
 }
 
 func (r *CliContext) OptionInt(key string) int {
-	return int(r.instance.Int(key))
-}
-
-func (r *CliContext) OptionIntSlice(key string) []int {
-	var intSlice []int
-	for _, v := range r.instance.IntSlice(key) {
-		intSlice = append(intSlice, int(v))
-	}
-
-	return intSlice
-}
-
-func (r *CliContext) OptionInt64(key string) int64 {
 	return r.instance.Int(key)
 }
 
-func (r *CliContext) OptionInt64Slice(key string) []int64 {
+func (r *CliContext) OptionIntSlice(key string) []int {
 	return r.instance.IntSlice(key)
+}
+
+func (r *CliContext) OptionInt64(key string) int64 {
+	return r.instance.Int64(key)
+}
+
+func (r *CliContext) OptionInt64Slice(key string) []int64 {
+	return r.instance.Int64Slice(key)
 }
 
 func (r *CliContext) Secret(question string, option ...console.SecretOption) (string, error) {
