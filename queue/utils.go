@@ -6,7 +6,8 @@ import (
 	"github.com/spf13/cast"
 
 	"github.com/goravel/framework/contracts/foundation"
-	"github.com/goravel/framework/contracts/queue"
+	contractsqueue "github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/support/convert"
 )
 
 type Task struct {
@@ -16,12 +17,12 @@ type Task struct {
 }
 
 type Job struct {
-	Signature string      `json:"signature"`
-	Args      []queue.Arg `json:"args"`
-	Delay     *time.Time  `json:"delay"`
+	Signature string               `json:"signature"`
+	Args      []contractsqueue.Arg `json:"args"`
+	Delay     *time.Time           `json:"delay"`
 }
 
-func TaskToJson(task queue.Task, json foundation.Json) ([]byte, error) {
+func TaskToJson(task contractsqueue.Task, json foundation.Json) ([]byte, error) {
 	chain := make([]Job, len(task.Chain))
 	for i, taskData := range task.Chain {
 		for j, arg := range taskData.Args {
@@ -43,7 +44,7 @@ func TaskToJson(task queue.Task, json foundation.Json) ([]byte, error) {
 		chain[i] = job
 	}
 
-	var args []queue.Arg
+	var args []contractsqueue.Arg
 	for _, arg := range task.Args {
 		if arg.Type == "[]uint8" {
 			arg.Value = cast.ToIntSlice(arg.Value)
@@ -74,20 +75,20 @@ func TaskToJson(task queue.Task, json foundation.Json) ([]byte, error) {
 	return payload, nil
 }
 
-func JsonToTask(payload string, jobRepository queue.JobRepository, json foundation.Json) (queue.Task, error) {
+func JsonToTask(payload string, queue contractsqueue.Queue, json foundation.Json) (contractsqueue.Task, error) {
 	var task Task
 	if err := json.Unmarshal([]byte(payload), &task); err != nil {
-		return queue.Task{}, err
+		return contractsqueue.Task{}, err
 	}
 
-	chain := make([]queue.Jobs, len(task.Chain))
+	chain := make([]contractsqueue.Jobs, len(task.Chain))
 	for i, item := range task.Chain {
-		job, err := jobRepository.Get(item.Signature)
+		job, err := queue.GetJob(item.Signature)
 		if err != nil {
-			return queue.Task{}, err
+			return contractsqueue.Task{}, err
 		}
 
-		jobs := queue.Jobs{
+		jobs := contractsqueue.Jobs{
 			Job:  job,
 			Args: item.Args,
 		}
@@ -99,12 +100,12 @@ func JsonToTask(payload string, jobRepository queue.JobRepository, json foundati
 		chain[i] = jobs
 	}
 
-	job, err := jobRepository.Get(task.Job.Signature)
+	job, err := queue.GetJob(task.Job.Signature)
 	if err != nil {
-		return queue.Task{}, err
+		return contractsqueue.Task{}, err
 	}
 
-	jobs := queue.Jobs{
+	jobs := contractsqueue.Jobs{
 		Job:  job,
 		Args: task.Args,
 	}
@@ -113,14 +114,14 @@ func JsonToTask(payload string, jobRepository queue.JobRepository, json foundati
 		jobs.Delay = *task.Delay
 	}
 
-	return queue.Task{
+	return contractsqueue.Task{
 		UUID:  task.Uuid,
 		Jobs:  jobs,
 		Chain: chain,
 	}, nil
 }
 
-func filterArgsType(args []queue.Arg) []any {
+func ConvertArgs(args []contractsqueue.Arg) []any {
 	realArgs := make([]any, 0, len(args))
 	for _, arg := range args {
 		switch arg.Type {
@@ -157,71 +158,27 @@ func filterArgsType(args []queue.Arg) []any {
 		case "[]int":
 			realArgs = append(realArgs, cast.ToIntSlice(arg.Value))
 		case "[]int8":
-			var int8Slice []int8
-			for _, v := range cast.ToSlice(arg.Value) {
-				int8Slice = append(int8Slice, cast.ToInt8(v))
-			}
-			realArgs = append(realArgs, int8Slice)
+			realArgs = append(realArgs, convert.ToSlice[int8](arg.Value))
 		case "[]int16":
-			var int16Slice []int16
-			for _, v := range cast.ToSlice(arg.Value) {
-				int16Slice = append(int16Slice, cast.ToInt16(v))
-			}
-			realArgs = append(realArgs, int16Slice)
+			realArgs = append(realArgs, convert.ToSlice[int16](arg.Value))
 		case "[]int32":
-			var int32Slice []int32
-			for _, v := range cast.ToSlice(arg.Value) {
-				int32Slice = append(int32Slice, cast.ToInt32(v))
-			}
-			realArgs = append(realArgs, int32Slice)
+			realArgs = append(realArgs, convert.ToSlice[int32](arg.Value))
 		case "[]int64":
-			var int64Slice []int64
-			for _, v := range cast.ToSlice(arg.Value) {
-				int64Slice = append(int64Slice, cast.ToInt64(v))
-			}
-			realArgs = append(realArgs, int64Slice)
+			realArgs = append(realArgs, convert.ToSlice[int64](arg.Value))
 		case "[]uint":
-			var uintSlice []uint
-			for _, v := range cast.ToSlice(arg.Value) {
-				uintSlice = append(uintSlice, cast.ToUint(v))
-			}
-			realArgs = append(realArgs, uintSlice)
+			realArgs = append(realArgs, convert.ToSlice[uint](arg.Value))
 		case "[]uint8":
-			var uint8Slice []uint8
-			for _, v := range cast.ToSlice(arg.Value) {
-				uint8Slice = append(uint8Slice, cast.ToUint8(v))
-			}
-			realArgs = append(realArgs, uint8Slice)
+			realArgs = append(realArgs, convert.ToSlice[uint8](arg.Value))
 		case "[]uint16":
-			var uint16Slice []uint16
-			for _, v := range cast.ToSlice(arg.Value) {
-				uint16Slice = append(uint16Slice, cast.ToUint16(v))
-			}
-			realArgs = append(realArgs, uint16Slice)
+			realArgs = append(realArgs, convert.ToSlice[uint16](arg.Value))
 		case "[]uint32":
-			var uint32Slice []uint32
-			for _, v := range cast.ToSlice(arg.Value) {
-				uint32Slice = append(uint32Slice, cast.ToUint32(v))
-			}
-			realArgs = append(realArgs, uint32Slice)
+			realArgs = append(realArgs, convert.ToSlice[uint32](arg.Value))
 		case "[]uint64":
-			var uint64Slice []uint64
-			for _, v := range cast.ToSlice(arg.Value) {
-				uint64Slice = append(uint64Slice, cast.ToUint64(v))
-			}
-			realArgs = append(realArgs, uint64Slice)
+			realArgs = append(realArgs, convert.ToSlice[uint64](arg.Value))
 		case "[]float32":
-			var float32Slice []float32
-			for _, v := range cast.ToSlice(arg.Value) {
-				float32Slice = append(float32Slice, cast.ToFloat32(v))
-			}
-			realArgs = append(realArgs, float32Slice)
+			realArgs = append(realArgs, convert.ToSlice[float32](arg.Value))
 		case "[]float64":
-			var float64Slice []float64
-			for _, v := range cast.ToSlice(arg.Value) {
-				float64Slice = append(float64Slice, cast.ToFloat64(v))
-			}
-			realArgs = append(realArgs, float64Slice)
+			realArgs = append(realArgs, convert.ToSlice[float64](arg.Value))
 		case "[]string":
 			realArgs = append(realArgs, cast.ToStringSlice(arg.Value))
 		}

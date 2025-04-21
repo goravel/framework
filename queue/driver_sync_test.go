@@ -49,12 +49,12 @@ func (s *SyncTestSuite) SetupTest() {
 
 func (s *SyncTestSuite) TestDelay() {
 	s.Nil(s.app.Job(&TestJobOne{}, testArgs).Delay(time.Now().Add(time.Second)).Dispatch())
-	s.Equal(convertTestQueueArgs(testArgs), testJobOne)
+	s.Equal(ConvertArgs(testArgs), testJobOne)
 }
 
 func (s *SyncTestSuite) TestDispatch() {
 	s.Nil(s.app.Job(&TestJobOne{}, testArgs).Dispatch())
-	s.Equal(convertTestQueueArgs(testArgs), testJobOne)
+	s.Equal(ConvertArgs(testArgs), testJobOne)
 }
 
 func (s *SyncTestSuite) TestChainDispatch() {

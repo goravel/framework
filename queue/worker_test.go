@@ -198,7 +198,7 @@ func (s *WorkerTestSuite) Test_run() {
 
 		time.Sleep(500 * time.Millisecond)
 
-		s.Equal(convertTestQueueArgs(testArgs), testJobOne)
+		s.Equal(ConvertArgs(testArgs), testJobOne)
 
 		s.NoError(worker.Shutdown())
 	})

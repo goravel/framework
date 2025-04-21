@@ -105,7 +105,7 @@ func (r *Worker) call(task queue.Task) error {
 		time.Sleep(time.Until(task.Delay))
 	}
 
-	if err := r.job.Call(task.Job.Signature(), filterArgsType(task.Args)); err != nil {
+	if err := r.job.Call(task.Job.Signature(), ConvertArgs(task.Args)); err != nil {
 		payload, jsonErr := TaskToJson(task, r.json)
 		if jsonErr != nil {
 			return errors.QueueFailedToConvertTaskToJson.Args(jsonErr, task)
