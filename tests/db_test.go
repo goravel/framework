@@ -22,7 +22,7 @@ import (
 
 type DBTestSuite struct {
 	suite.Suite
-	now     carbon.DateTime
+	now     carbon.LayoutType[carbon.DateTime]
 	queries map[string]*TestQuery
 }
 
@@ -34,7 +34,7 @@ func TestDBTestSuite(t *testing.T) {
 }
 
 func (s *DBTestSuite) SetupSuite() {
-	s.now = carbon.NewDateTime(carbon.FromDateTime(2025, 1, 2, 3, 4, 5))
+	s.now = carbon.NewLayoutType[carbon.DateTime](carbon.FromDateTime(2025, 1, 2, 3, 4, 5))
 	s.queries = NewTestQueryBuilder().All("", false)
 }
 
@@ -194,12 +194,12 @@ func (s *DBTestSuite) TestCursor() {
 				s.Equal(2, len(products))
 				s.Equal("cursor_product1", cast.ToString(products[0]["name"]))
 				s.Equal(100, cast.ToInt(products[0]["weight"]))
-				s.Equal(s.now, carbon.NewDateTime(carbon.FromStdTime(cast.ToTime(products[0]["created_at"]))))
-				s.Equal(s.now, carbon.NewDateTime(carbon.FromStdTime(cast.ToTime(products[0]["updated_at"]))))
+				s.Equal(s.now, carbon.NewLayoutType[carbon.DateTime](carbon.FromStdTime(cast.ToTime(products[0]["created_at"]))))
+				s.Equal(s.now, carbon.NewLayoutType[carbon.DateTime](carbon.FromStdTime(cast.ToTime(products[0]["updated_at"]))))
 				s.Equal("cursor_product2", cast.ToString(products[1]["name"]))
 				s.Equal(200, cast.ToInt(products[1]["weight"]))
-				s.Equal(s.now, carbon.NewDateTime(carbon.FromStdTime(cast.ToTime(products[1]["created_at"]))))
-				s.Equal(s.now, carbon.NewDateTime(carbon.FromStdTime(cast.ToTime(products[1]["updated_at"]))))
+				s.Equal(s.now, carbon.NewLayoutType[carbon.DateTime](carbon.FromStdTime(cast.ToTime(products[1]["created_at"]))))
+				s.Equal(s.now, carbon.NewLayoutType[carbon.DateTime](carbon.FromStdTime(cast.ToTime(products[1]["updated_at"]))))
 			})
 		})
 	}

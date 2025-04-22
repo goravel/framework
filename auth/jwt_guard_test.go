@@ -446,8 +446,8 @@ var testUserGuard = "user"
 type User struct {
 	ID        uint `gorm:"primaryKey" json:"id"`
 	Name      string
-	CreatedAt carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at"`
-	UpdatedAt carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at"`
+	CreatedAt carbon.LayoutType[carbon.DateTime] `gorm:"autoCreateTime;column:created_at" json:"created_at"`
+	UpdatedAt carbon.LayoutType[carbon.DateTime] `gorm:"autoUpdateTime;column:updated_at" json:"updated_at"`
 }
 
 type Context struct {

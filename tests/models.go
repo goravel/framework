@@ -26,8 +26,8 @@ type SoftDeletes struct {
 }
 
 type Timestamps struct {
-	CreatedAt carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at" db:"created_at"`
-	UpdatedAt carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at" db:"updated_at"`
+	CreatedAt carbon.LayoutType[carbon.DateTime] `gorm:"autoCreateTime;column:created_at" json:"created_at" db:"created_at"`
+	UpdatedAt carbon.LayoutType[carbon.DateTime] `gorm:"autoUpdateTime;column:updated_at" json:"updated_at" db:"updated_at"`
 }
 
 type User struct {
@@ -373,8 +373,8 @@ func (r *UserFactory) Definition() map[string]any {
 	return map[string]any{
 		"Name":      faker.Name(),
 		"Avatar":    faker.Email(),
-		"CreatedAt": carbon.NewDateTime(carbon.Now()),
-		"UpdatedAt": carbon.NewDateTime(carbon.Now()),
+		"CreatedAt": carbon.NewLayoutType[carbon.DateTime](carbon.Now()),
+		"UpdatedAt": carbon.NewLayoutType[carbon.DateTime](carbon.Now()),
 	}
 }
 
@@ -420,8 +420,8 @@ func (r *AuthorFactory) Definition() map[string]any {
 		"ID":        1,
 		"BookID":    2,
 		"Name":      faker.Name(),
-		"CreatedAt": carbon.NewDateTime(carbon.Now()),
-		"UpdatedAt": carbon.NewDateTime(carbon.Now()),
+		"CreatedAt": carbon.NewLayoutType[carbon.DateTime](carbon.Now()),
+		"UpdatedAt": carbon.NewLayoutType[carbon.DateTime](carbon.Now()),
 	}
 }
 

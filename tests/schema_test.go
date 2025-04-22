@@ -185,14 +185,14 @@ func (s *SchemaSuite) TestColumnExtraAttributes() {
 			}))
 
 			type ColumnExtraAttribute struct {
-				ID                 uint            `gorm:"primaryKey" json:"id"`
-				Name               string          `json:"name"`
-				Nullable           *string         `json:"nullable"`
-				StringDefault      string          `json:"string_default"`
-				IntegerDefault     int             `json:"integer_default"`
-				BoolDefault        bool            `json:"bool_default"`
-				UseCurrent         carbon.DateTime `json:"use_current"`
-				UseCurrentOnUpdate carbon.DateTime `json:"use_current_on_update"`
+				ID                 uint                               `gorm:"primaryKey" json:"id"`
+				Name               string                             `json:"name"`
+				Nullable           *string                            `json:"nullable"`
+				StringDefault      string                             `json:"string_default"`
+				IntegerDefault     int                                `json:"integer_default"`
+				BoolDefault        bool                               `json:"bool_default"`
+				UseCurrent         carbon.LayoutType[carbon.DateTime] `json:"use_current"`
+				UseCurrentOnUpdate carbon.LayoutType[carbon.DateTime] `json:"use_current_on_update"`
 			}
 
 			// SubSecond: Avoid milliseconds difference
