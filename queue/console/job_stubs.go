@@ -12,7 +12,7 @@ type DummyJob struct {
 
 // Signature The name and signature of the job.
 func (receiver *DummyJob) Signature() string {
-	return "DummyName"
+	return "DummySignature"
 }
 
 // Handle Execute the job.
