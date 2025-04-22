@@ -21,23 +21,23 @@ import (
 
 func TestBind_Rule(t *testing.T) {
 	type Data struct {
-		A              string                                    `form:"a" json:"a"`
-		B              int                                       `form:"b" json:"b"`
-		File           *multipart.FileHeader                     `form:"file" json:"file"`
-		Ages           []int                                     `form:"ages" json:"ages"`
-		Names          []string                                  `form:"names" json:"names"`
-		DateTime       *carbon.LayoutType[carbon.DateTime]       `form:"date_time" json:"date_time"`
-		DateTimeMilli  *carbon.LayoutType[carbon.DateTimeMilli]  `form:"date_time_milli" json:"date_time_milli"`
-		DateTimeMicro  *carbon.LayoutType[carbon.DateTimeMicro]  `form:"date_time_micro" json:"date_time_micro"`
-		DateTimeNano   *carbon.LayoutType[carbon.DateTimeNano]   `form:"date_time_nano" json:"date_time_nano"`
-		Date           *carbon.LayoutType[carbon.Date]           `form:"date" json:"date"`
-		DateMilli      *carbon.LayoutType[carbon.DateMilli]      `form:"date_milli" json:"date_milli"`
-		DateMicro      *carbon.LayoutType[carbon.DateMicro]      `form:"date_micro" json:"date_micro"`
-		DateNano       *carbon.LayoutType[carbon.DateNano]       `form:"date_nano" json:"date_nano"`
-		Timestamp      *carbon.LayoutType[carbon.Timestamp]      `form:"timestamp" json:"timestamp"`
-		TimestampMilli *carbon.LayoutType[carbon.TimestampMilli] `form:"timestamp_milli" json:"timestamp_milli"`
-		TimestampMicro *carbon.LayoutType[carbon.TimestampMicro] `form:"timestamp_micro" json:"timestamp_micro"`
-		TimestampNano  *carbon.LayoutType[carbon.TimestampNano]  `form:"timestamp_nano" json:"timestamp_nano"`
+		A              string                                       `form:"a" json:"a"`
+		B              int                                          `form:"b" json:"b"`
+		File           *multipart.FileHeader                        `form:"file" json:"file"`
+		Ages           []int                                        `form:"ages" json:"ages"`
+		Names          []string                                     `form:"names" json:"names"`
+		DateTime       *carbon.LayoutType[carbon.DateTime]          `form:"date_time" json:"date_time"`
+		DateTimeMilli  *carbon.LayoutType[carbon.DateTimeMilli]     `form:"date_time_milli" json:"date_time_milli"`
+		DateTimeMicro  *carbon.LayoutType[carbon.DateTimeMicro]     `form:"date_time_micro" json:"date_time_micro"`
+		DateTimeNano   *carbon.LayoutType[carbon.DateTimeNano]      `form:"date_time_nano" json:"date_time_nano"`
+		Date           *carbon.LayoutType[carbon.Date]              `form:"date" json:"date"`
+		DateMilli      *carbon.LayoutType[carbon.DateMilli]         `form:"date_milli" json:"date_milli"`
+		DateMicro      *carbon.LayoutType[carbon.DateMicro]         `form:"date_micro" json:"date_micro"`
+		DateNano       *carbon.LayoutType[carbon.DateNano]          `form:"date_nano" json:"date_nano"`
+		Timestamp      *carbon.TimestampType[carbon.Timestamp]      `form:"timestamp" json:"timestamp"`
+		TimestampMilli *carbon.TimestampType[carbon.TimestampMilli] `form:"timestamp_milli" json:"timestamp_milli"`
+		TimestampMicro *carbon.TimestampType[carbon.TimestampMicro] `form:"timestamp_micro" json:"timestamp_micro"`
+		TimestampNano  *carbon.TimestampType[carbon.TimestampNano]  `form:"timestamp_nano" json:"timestamp_nano"`
 	}
 
 	tests := []struct {
