@@ -32,7 +32,7 @@ type JwtGuardTestSuite struct {
 	mockDB           *mocksorm.Query
 	mockLog          *mockslog.Log
 	mockUserProvider *mocksauth.UserProvider
-	now              carbon.Carbon
+	now              *carbon.Carbon
 }
 
 func TestJwtGuardTestSuite(t *testing.T) {
@@ -151,7 +151,7 @@ func (s *JwtGuardTestSuite) TestParse_TokenExpired() {
 	}, payload)
 	s.ErrorIs(err, errors.AuthTokenExpired)
 
-	carbon.UnsetTestNow()
+	carbon.CleanTestNow()
 }
 
 func (s *JwtGuardTestSuite) TestParse_Success() {
@@ -221,7 +221,7 @@ func (s *JwtGuardTestSuite) TestID_TokenExpired() {
 	s.Empty(id)
 	s.ErrorIs(err, errors.AuthTokenExpired)
 
-	carbon.UnsetTestNow()
+	carbon.CleanTestNow()
 }
 
 func (s *JwtGuardTestSuite) TestID_TokenInvalid() {
@@ -306,7 +306,7 @@ func (s *JwtGuardTestSuite) TestUser_RefreshExpired() {
 	s.Empty(token)
 	s.EqualError(err, errors.AuthRefreshTimeExceeded.Error())
 
-	carbon.UnsetTestNow()
+	carbon.CleanTestNow()
 }
 
 func (s *JwtGuardTestSuite) TestUser_Success() {

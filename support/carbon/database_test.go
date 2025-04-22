@@ -18,10 +18,10 @@ type User struct {
 	TimeMicro LayoutType[TimeMicro] `json:"time_micro"`
 	TimeNano  LayoutType[TimeNano]  `json:"time_nano"`
 
-	DateTime      FormatType[DateTime]      `json:"date_time"`
-	DateTimeMilli FormatType[DateTimeMilli] `json:"date_time_milli"`
-	DateTimeMicro FormatType[DateTimeMicro] `json:"date_time_micro"`
-	DateTimeNano  FormatType[DateTimeNano]  `json:"date_time_nano"`
+	DateTime      LayoutType[DateTime]      `json:"date_time"`
+	DateTimeMilli LayoutType[DateTimeMilli] `json:"date_time_milli"`
+	DateTimeMicro LayoutType[DateTimeMicro] `json:"date_time_micro"`
+	DateTimeNano  LayoutType[DateTimeNano]  `json:"date_time_nano"`
 
 	Timestamp      TimestampType[Timestamp]      `json:"timestamp"`
 	TimestampMilli TimestampType[TimestampMilli] `json:"timestamp_milli"`
@@ -44,10 +44,10 @@ func TestType_MarshalJSON(t *testing.T) {
 	user.TimeMicro = NewLayoutType[TimeMicro](c)
 	user.TimeNano = NewLayoutType[TimeNano](c)
 
-	user.DateTime = NewFormatType[DateTime](c)
-	user.DateTimeMilli = NewFormatType[DateTimeMilli](c)
-	user.DateTimeMicro = NewFormatType[DateTimeMicro](c)
-	user.DateTimeNano = NewFormatType[DateTimeNano](c)
+	user.DateTime = NewLayoutType[DateTime](c)
+	user.DateTimeMilli = NewLayoutType[DateTimeMilli](c)
+	user.DateTimeMicro = NewLayoutType[DateTimeMicro](c)
+	user.DateTimeNano = NewLayoutType[DateTimeNano](c)
 
 	user.Timestamp = NewTimestampType[Timestamp](c)
 	user.TimestampMilli = NewTimestampType[TimestampMilli](c)

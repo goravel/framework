@@ -12,14 +12,6 @@ func NewLayoutType[T LayoutFactory](c *Carbon) LayoutType[T] {
 	return LayoutType[T](carbon.NewLayoutType[T](c))
 }
 
-type FormatFactory = carbon.FormatFactory
-
-type FormatType[T FormatFactory] = carbon.FormatType[T]
-
-func NewFormatType[T FormatFactory](c *Carbon) FormatType[T] {
-	return FormatType[T](carbon.NewFormatType[T](c))
-}
-
 type TimestampFactory = carbon.TimestampFactory
 
 type TimestampType[T TimestampFactory] = carbon.TimestampType[T]

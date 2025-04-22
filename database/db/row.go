@@ -80,58 +80,58 @@ func ToCarbonHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
 		if f == reflect.TypeOf(time.Time{}) {
 			switch t {
-			case reflect.TypeOf(carbon.DateTime{}):
-				return carbon.NewDateTime(carbon.FromStdTime(data.(time.Time))), nil
-			case reflect.TypeOf(carbon.DateTimeMilli{}):
-				return carbon.NewDateTimeMilli(carbon.FromStdTime(data.(time.Time))), nil
-			case reflect.TypeOf(carbon.DateTimeMicro{}):
-				return carbon.NewDateTimeMicro(carbon.FromStdTime(data.(time.Time))), nil
-			case reflect.TypeOf(carbon.DateTimeNano{}):
-				return carbon.NewDateTimeNano(carbon.FromStdTime(data.(time.Time))), nil
-			case reflect.TypeOf(carbon.Date{}):
-				return carbon.NewDate(carbon.FromStdTime(data.(time.Time))), nil
-			case reflect.TypeOf(carbon.DateMilli{}):
-				return carbon.NewDateMilli(carbon.FromStdTime(data.(time.Time))), nil
-			case reflect.TypeOf(carbon.DateMicro{}):
-				return carbon.NewDateMicro(carbon.FromStdTime(data.(time.Time))), nil
-			case reflect.TypeOf(carbon.DateNano{}):
-				return carbon.NewDateNano(carbon.FromStdTime(data.(time.Time))), nil
-			case reflect.TypeOf(carbon.Timestamp{}):
-				return carbon.NewTimestamp(carbon.FromStdTime(data.(time.Time))), nil
-			case reflect.TypeOf(carbon.TimestampMilli{}):
-				return carbon.NewTimestampMilli(carbon.FromStdTime(data.(time.Time))), nil
-			case reflect.TypeOf(carbon.TimestampMicro{}):
-				return carbon.NewTimestampMicro(carbon.FromStdTime(data.(time.Time))), nil
-			case reflect.TypeOf(carbon.TimestampNano{}):
-				return carbon.NewTimestampNano(carbon.FromStdTime(data.(time.Time))), nil
+			case reflect.TypeOf(carbon.LayoutType[carbon.DateTime]{}):
+				return carbon.NewLayoutType[carbon.DateTime](carbon.FromStdTime(data.(time.Time))), nil
+			case reflect.TypeOf(carbon.LayoutType[carbon.DateTimeMilli]{}):
+				return carbon.NewLayoutType[carbon.DateTimeMilli](carbon.FromStdTime(data.(time.Time))), nil
+			case reflect.TypeOf(carbon.LayoutType[carbon.DateTimeMicro]{}):
+				return carbon.NewLayoutType[carbon.DateTimeMicro](carbon.FromStdTime(data.(time.Time))), nil
+			case reflect.TypeOf(carbon.LayoutType[carbon.DateTimeNano]{}):
+				return carbon.NewLayoutType[carbon.DateTimeNano](carbon.FromStdTime(data.(time.Time))), nil
+			case reflect.TypeOf(carbon.LayoutType[carbon.Date]{}):
+				return carbon.NewLayoutType[carbon.Date](carbon.FromStdTime(data.(time.Time))), nil
+			case reflect.TypeOf(carbon.LayoutType[carbon.DateMilli]{}):
+				return carbon.NewLayoutType[carbon.DateMilli](carbon.FromStdTime(data.(time.Time))), nil
+			case reflect.TypeOf(carbon.LayoutType[carbon.DateMicro]{}):
+				return carbon.NewLayoutType[carbon.DateMicro](carbon.FromStdTime(data.(time.Time))), nil
+			case reflect.TypeOf(carbon.LayoutType[carbon.DateNano]{}):
+				return carbon.NewLayoutType[carbon.DateNano](carbon.FromStdTime(data.(time.Time))), nil
+			case reflect.TypeOf(carbon.TimestampType[carbon.Timestamp]{}):
+				return carbon.NewTimestampType[carbon.Timestamp](carbon.FromStdTime(data.(time.Time))), nil
+			case reflect.TypeOf(carbon.TimestampType[carbon.TimestampMilli]{}):
+				return carbon.NewTimestampType[carbon.TimestampMilli](carbon.FromStdTime(data.(time.Time))), nil
+			case reflect.TypeOf(carbon.TimestampType[carbon.TimestampMicro]{}):
+				return carbon.NewTimestampType[carbon.TimestampMicro](carbon.FromStdTime(data.(time.Time))), nil
+			case reflect.TypeOf(carbon.TimestampType[carbon.TimestampNano]{}):
+				return carbon.NewTimestampType[carbon.TimestampNano](carbon.FromStdTime(data.(time.Time))), nil
 			}
 		}
 		if f.Kind() == reflect.String {
 			switch t {
-			case reflect.TypeOf(carbon.DateTime{}):
-				return carbon.NewDateTime(carbon.Parse(data.(string))), nil
-			case reflect.TypeOf(carbon.DateTimeMilli{}):
-				return carbon.NewDateTimeMilli(carbon.Parse(data.(string))), nil
-			case reflect.TypeOf(carbon.DateTimeMicro{}):
-				return carbon.NewDateTimeMicro(carbon.Parse(data.(string))), nil
-			case reflect.TypeOf(carbon.DateTimeNano{}):
-				return carbon.NewDateTimeNano(carbon.Parse(data.(string))), nil
-			case reflect.TypeOf(carbon.Date{}):
-				return carbon.NewDate(carbon.Parse(data.(string))), nil
-			case reflect.TypeOf(carbon.DateMilli{}):
-				return carbon.NewDateMilli(carbon.Parse(data.(string))), nil
-			case reflect.TypeOf(carbon.DateMicro{}):
-				return carbon.NewDateMicro(carbon.Parse(data.(string))), nil
-			case reflect.TypeOf(carbon.DateNano{}):
-				return carbon.NewDateNano(carbon.Parse(data.(string))), nil
-			case reflect.TypeOf(carbon.Timestamp{}):
-				return carbon.NewTimestamp(carbon.Parse(data.(string))), nil
-			case reflect.TypeOf(carbon.TimestampMilli{}):
-				return carbon.NewTimestampMilli(carbon.Parse(data.(string))), nil
-			case reflect.TypeOf(carbon.TimestampMicro{}):
-				return carbon.NewTimestampMicro(carbon.Parse(data.(string))), nil
-			case reflect.TypeOf(carbon.TimestampNano{}):
-				return carbon.NewTimestampNano(carbon.Parse(data.(string))), nil
+			case reflect.TypeOf(carbon.LayoutType[carbon.DateTime]{}):
+				return carbon.NewLayoutType[carbon.DateTime](carbon.Parse(data.(string))), nil
+			case reflect.TypeOf(carbon.LayoutType[carbon.DateTimeMilli]{}):
+				return carbon.NewLayoutType[carbon.DateTimeMilli](carbon.Parse(data.(string))), nil
+			case reflect.TypeOf(carbon.LayoutType[carbon.DateTimeMicro]{}):
+				return carbon.NewLayoutType[carbon.DateTimeMicro](carbon.Parse(data.(string))), nil
+			case reflect.TypeOf(carbon.LayoutType[carbon.DateTimeNano]{}):
+				return carbon.NewLayoutType[carbon.DateTimeNano](carbon.Parse(data.(string))), nil
+			case reflect.TypeOf(carbon.LayoutType[carbon.Date]{}):
+				return carbon.NewLayoutType[carbon.Date](carbon.Parse(data.(string))), nil
+			case reflect.TypeOf(carbon.LayoutType[carbon.DateMilli]{}):
+				return carbon.NewLayoutType[carbon.DateMilli](carbon.Parse(data.(string))), nil
+			case reflect.TypeOf(carbon.LayoutType[carbon.DateMicro]{}):
+				return carbon.NewLayoutType[carbon.DateMicro](carbon.Parse(data.(string))), nil
+			case reflect.TypeOf(carbon.LayoutType[carbon.DateNano]{}):
+				return carbon.NewLayoutType[carbon.DateNano](carbon.Parse(data.(string))), nil
+			case reflect.TypeOf(carbon.TimestampType[carbon.Timestamp]{}):
+				return carbon.NewTimestampType[carbon.Timestamp](carbon.Parse(data.(string))), nil
+			case reflect.TypeOf(carbon.TimestampType[carbon.TimestampMilli]{}):
+				return carbon.NewTimestampType[carbon.TimestampMilli](carbon.Parse(data.(string))), nil
+			case reflect.TypeOf(carbon.TimestampType[carbon.TimestampMicro]{}):
+				return carbon.NewTimestampType[carbon.TimestampMicro](carbon.Parse(data.(string))), nil
+			case reflect.TypeOf(carbon.TimestampType[carbon.TimestampNano]{}):
+				return carbon.NewTimestampType[carbon.TimestampNano](carbon.Parse(data.(string))), nil
 			}
 		}
 
