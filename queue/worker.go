@@ -83,7 +83,7 @@ func (r *Worker) Run() error {
 						Queue:      r.queue,
 						Payload:    args,
 						Exception:  err.Error(),
-						FailedAt:   carbon.DateTime{Carbon: carbon.Now()},
+						FailedAt:   carbon.NewLayoutType[carbon.DateTime](carbon.Now()),
 					}
 				}
 			}

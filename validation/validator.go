@@ -148,55 +148,167 @@ func (v *Validator) castValue() mapstructure.DecodeHookFunc {
 			}
 		case reflect.Struct:
 			switch to.Type() {
-			case reflect.TypeOf(carbon.Carbon{}):
-				castedValue = castCarbon(from, nil)
-			case reflect.TypeOf(carbon.DateTime{}):
-				castedValue = castCarbon(from, func(c carbon.Carbon) any {
-					return carbon.NewDateTime(c)
+			case reflect.TypeOf(carbon.LayoutType[carbon.DateTime]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewLayoutType[carbon.DateTime](c)
 				})
-			case reflect.TypeOf(carbon.DateTimeMilli{}):
-				castedValue = castCarbon(from, func(c carbon.Carbon) any {
-					return carbon.NewDateTimeMilli(c)
+			case reflect.TypeOf(carbon.LayoutType[carbon.DateTimeMilli]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewLayoutType[carbon.DateTimeMilli](c)
 				})
-			case reflect.TypeOf(carbon.DateTimeMicro{}):
-				castedValue = castCarbon(from, func(c carbon.Carbon) any {
-					return carbon.NewDateTimeMicro(c)
+			case reflect.TypeOf(carbon.LayoutType[carbon.DateTimeMicro]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewLayoutType[carbon.DateTimeMicro](c)
 				})
-			case reflect.TypeOf(carbon.DateTimeNano{}):
-				castedValue = castCarbon(from, func(c carbon.Carbon) any {
-					return carbon.NewDateTimeNano(c)
+			case reflect.TypeOf(carbon.LayoutType[carbon.DateTimeNano]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewLayoutType[carbon.DateTimeNano](c)
 				})
-			case reflect.TypeOf(carbon.Date{}):
-				castedValue = castCarbon(from, func(c carbon.Carbon) any {
-					return carbon.NewDate(c)
+			case reflect.TypeOf(carbon.LayoutType[carbon.Date]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewLayoutType[carbon.Date](c)
 				})
-			case reflect.TypeOf(carbon.DateMilli{}):
-				castedValue = castCarbon(from, func(c carbon.Carbon) any {
-					return carbon.NewDateMilli(c)
+			case reflect.TypeOf(carbon.LayoutType[carbon.DateMilli]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewLayoutType[carbon.DateMilli](c)
 				})
-			case reflect.TypeOf(carbon.DateMicro{}):
-				castedValue = castCarbon(from, func(c carbon.Carbon) any {
-					return carbon.NewDateMicro(c)
+			case reflect.TypeOf(carbon.LayoutType[carbon.DateMicro]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewLayoutType[carbon.DateMicro](c)
 				})
-			case reflect.TypeOf(carbon.DateNano{}):
-				castedValue = castCarbon(from, func(c carbon.Carbon) any {
-					return carbon.NewDateNano(c)
+			case reflect.TypeOf(carbon.LayoutType[carbon.DateNano]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewLayoutType[carbon.DateNano](c)
 				})
-			case reflect.TypeOf(carbon.Timestamp{}):
-				castedValue = castCarbon(from, func(c carbon.Carbon) any {
-					return carbon.NewTimestamp(c)
+			case reflect.TypeOf(carbon.LayoutType[carbon.Time]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewLayoutType[carbon.Time](c)
 				})
-			case reflect.TypeOf(carbon.TimestampMilli{}):
-				castedValue = castCarbon(from, func(c carbon.Carbon) any {
-					return carbon.NewTimestampMilli(c)
+			case reflect.TypeOf(carbon.LayoutType[carbon.TimeMilli]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewLayoutType[carbon.TimeMilli](c)
 				})
-			case reflect.TypeOf(carbon.TimestampMicro{}):
-				castedValue = castCarbon(from, func(c carbon.Carbon) any {
-					return carbon.NewTimestampMicro(c)
+			case reflect.TypeOf(carbon.LayoutType[carbon.TimeMicro]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewLayoutType[carbon.TimeMicro](c)
 				})
-			case reflect.TypeOf(carbon.TimestampNano{}):
-				castedValue = castCarbon(from, func(c carbon.Carbon) any {
-					return carbon.NewTimestampNano(c)
+			case reflect.TypeOf(carbon.LayoutType[carbon.TimeNano]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewLayoutType[carbon.TimeNano](c)
+				})
+
+			case reflect.TypeOf(carbon.LayoutType[carbon.DateTime]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewLayoutType[carbon.DateTime](c)
+				})
+			case reflect.TypeOf(carbon.LayoutType[carbon.DateTimeMilli]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewLayoutType[carbon.DateTimeMilli](c)
+				})
+			case reflect.TypeOf(carbon.LayoutType[carbon.DateTimeMicro]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewLayoutType[carbon.DateTimeMicro](c)
+				})
+			case reflect.TypeOf(carbon.LayoutType[carbon.DateTimeNano]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewLayoutType[carbon.DateTimeNano](c)
+				})
+			case reflect.TypeOf(carbon.LayoutType[carbon.Date]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewLayoutType[carbon.Date](c)
+				})
+			case reflect.TypeOf(carbon.LayoutType[carbon.DateMilli]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewLayoutType[carbon.DateMilli](c)
+				})
+			case reflect.TypeOf(carbon.LayoutType[carbon.DateMicro]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewLayoutType[carbon.DateMicro](c)
+				})
+			case reflect.TypeOf(carbon.LayoutType[carbon.DateNano]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewLayoutType[carbon.DateNano](c)
+				})
+			case reflect.TypeOf(carbon.LayoutType[carbon.Time]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewLayoutType[carbon.Time](c)
+				})
+			case reflect.TypeOf(carbon.LayoutType[carbon.TimeMilli]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewLayoutType[carbon.TimeMilli](c)
+				})
+			case reflect.TypeOf(carbon.LayoutType[carbon.TimeMicro]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewLayoutType[carbon.TimeMicro](c)
+				})
+			case reflect.TypeOf(carbon.LayoutType[carbon.TimeNano]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewLayoutType[carbon.TimeNano](c)
+				})
+
+			case reflect.TypeOf(carbon.FormatType[carbon.DateTime]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewFormatType[carbon.DateTime](c)
+				})
+			case reflect.TypeOf(carbon.FormatType[carbon.DateTimeMilli]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewFormatType[carbon.DateTimeMilli](c)
+				})
+			case reflect.TypeOf(carbon.FormatType[carbon.DateTimeMicro]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewFormatType[carbon.DateTimeMicro](c)
+				})
+			case reflect.TypeOf(carbon.FormatType[carbon.DateTimeNano]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewFormatType[carbon.DateTimeNano](c)
+				})
+			case reflect.TypeOf(carbon.FormatType[carbon.Date]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewFormatType[carbon.Date](c)
+				})
+			case reflect.TypeOf(carbon.FormatType[carbon.DateMilli]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewFormatType[carbon.DateMilli](c)
+				})
+			case reflect.TypeOf(carbon.FormatType[carbon.DateMicro]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewFormatType[carbon.DateMicro](c)
+				})
+			case reflect.TypeOf(carbon.FormatType[carbon.DateNano]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewFormatType[carbon.DateNano](c)
+				})
+			case reflect.TypeOf(carbon.FormatType[carbon.Time]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewFormatType[carbon.Time](c)
+				})
+			case reflect.TypeOf(carbon.FormatType[carbon.TimeMilli]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewFormatType[carbon.TimeMilli](c)
+				})
+			case reflect.TypeOf(carbon.FormatType[carbon.TimeMicro]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewFormatType[carbon.TimeMicro](c)
+				})
+			case reflect.TypeOf(carbon.FormatType[carbon.TimeNano]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewFormatType[carbon.TimeNano](c)
+				})
+			case reflect.TypeOf(carbon.TimestampType[carbon.Timestamp]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewTimestampType[carbon.Timestamp](c)
+				})
+			case reflect.TypeOf(carbon.TimestampType[carbon.TimestampMilli]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewTimestampType[carbon.TimestampMilli](c)
+				})
+			case reflect.TypeOf(carbon.TimestampType[carbon.TimestampMicro]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewTimestampType[carbon.TimestampMicro](c)
+				})
+			case reflect.TypeOf(carbon.TimestampType[carbon.TimestampNano]{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return carbon.NewTimestampType[carbon.TimestampNano](c)
 				})
 			}
 		default:
@@ -212,8 +324,8 @@ func (v *Validator) castValue() mapstructure.DecodeHookFunc {
 	}
 }
 
-func castCarbon(from reflect.Value, transfrom func(carbon carbon.Carbon) any) any {
-	var c carbon.Carbon
+func castCarbon(from reflect.Value, transfrom func(carbon *carbon.Carbon) any) any {
+	var c *carbon.Carbon
 
 	switch len(cast.ToString(from.Interface())) {
 	case 10:
