@@ -177,25 +177,20 @@ func flagsToCliFlags(flags []command.Flag) []cli.Flag {
 				Aliases:  flag.Aliases,
 				Usage:    flag.Usage,
 				Required: flag.Required,
-				Value:    int64(flag.Value),
+				Value:    flag.Value,
 			})
 		case command.FlagTypeIntSlice:
 			flag := flag.(*command.IntSliceFlag)
-			var int64Slice []int64
-			for _, v := range flag.Value {
-				int64Slice = append(int64Slice, int64(v))
-			}
-
 			cliFlags = append(cliFlags, &cli.IntSliceFlag{
 				Name:     flag.Name,
 				Aliases:  flag.Aliases,
 				Usage:    flag.Usage,
 				Required: flag.Required,
-				Value:    cli.NewIntSlice(int64Slice...).Value(),
+				Value:    flag.Value,
 			})
 		case command.FlagTypeInt64:
 			flag := flag.(*command.Int64Flag)
-			cliFlags = append(cliFlags, &cli.IntFlag{
+			cliFlags = append(cliFlags, &cli.Int64Flag{
 				Name:     flag.Name,
 				Aliases:  flag.Aliases,
 				Usage:    flag.Usage,
@@ -204,12 +199,12 @@ func flagsToCliFlags(flags []command.Flag) []cli.Flag {
 			})
 		case command.FlagTypeInt64Slice:
 			flag := flag.(*command.Int64SliceFlag)
-			cliFlags = append(cliFlags, &cli.IntSliceFlag{
+			cliFlags = append(cliFlags, &cli.Int64SliceFlag{
 				Name:     flag.Name,
 				Aliases:  flag.Aliases,
 				Usage:    flag.Usage,
 				Required: flag.Required,
-				Value:    cli.NewIntSlice(flag.Value...).Value(),
+				Value:    flag.Value,
 			})
 		case command.FlagTypeString:
 			flag := flag.(*command.StringFlag)
@@ -227,7 +222,7 @@ func flagsToCliFlags(flags []command.Flag) []cli.Flag {
 				Aliases:  flag.Aliases,
 				Usage:    flag.Usage,
 				Required: flag.Required,
-				Value:    cli.NewStringSlice(flag.Value...).Value(),
+				Value:    flag.Value,
 			})
 		}
 	}
