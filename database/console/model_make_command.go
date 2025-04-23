@@ -5,7 +5,6 @@ import (
 	"go/format"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 	"text/template"
 
@@ -37,14 +36,12 @@ type fieldInfo struct {
 type ModelMakeCommand struct {
 	artisan console.Artisan
 	schema  schema.Schema
-	grammar driver.Grammar
 }
 
-func NewModelMakeCommand(artisan console.Artisan, schema schema.Schema, grammar driver.Grammar) *ModelMakeCommand {
+func NewModelMakeCommand(artisan console.Artisan, schema schema.Schema) *ModelMakeCommand {
 	return &ModelMakeCommand{
 		artisan: artisan,
 		schema:  schema,
-		grammar: grammar,
 	}
 }
 
@@ -158,8 +155,7 @@ func (r *ModelMakeCommand) generateModelInfo(columns []driver.Column, structName
 		info.Imports["github.com/goravel/framework/database/orm"] = struct{}{}
 	}
 
-	typePatternMapping := r.grammar.TypePatternMapping()
-	goTypeMapping := r.schema.GoTypeMap()
+	goTypeMapping := r.schema.GoTypes()
 
 	for _, col := range columns {
 		skip := false
@@ -173,7 +169,7 @@ func (r *ModelMakeCommand) generateModelInfo(columns []driver.Column, structName
 			continue
 		}
 
-		field := generateField(col, typePatternMapping, goTypeMapping)
+		field := generateField(col, goTypeMapping)
 		if len(field.Imports) > 0 {
 			for _, importPath := range field.Imports {
 				info.Imports[importPath] = struct{}{}
@@ -243,69 +239,38 @@ func formatGoCode(source string) (string, error) {
 	return string(formatted), nil
 }
 
-func generateField(column driver.Column, typePatternMapping []driver.TypePatternMapping, goTypeMapping map[string]schema.GoTypeMapping) fieldInfo {
-	schemaType := getSchemaType(column.Type, typePatternMapping)
+func generateField(column driver.Column, typeMapping []schema.GoTypeMapping) fieldInfo {
+	typeInfo := getSchemaType(column.Type, typeMapping)
 
-	goType := "any"
-	var imports []string
-
-	if schemaType != "" {
-		if typeInfo, ok := goTypeMapping[schemaType]; ok {
-			goType = typeInfo.Type
-			if column.Nullable && typeInfo.NullType != "" {
-				goType = typeInfo.NullType
-			}
-
-			imports = typeInfo.Imports
-
-			// TODO: discuss precision based typing
-		}
+	goType := typeInfo.Type
+	if column.Nullable && typeInfo.NullType != "" {
+		goType = typeInfo.NullType
 	}
 
 	tagParts := []string{fmt.Sprintf(`json:"%s"`, column.Name)}
+
+	gormTag := fmt.Sprintf("column:%s", column.Name)
+	if column.Autoincrement {
+		gormTag += ";autoIncrement"
+	}
+	tagParts = append(tagParts, fmt.Sprintf(`gorm:"%s"`, gormTag))
 
 	return fieldInfo{
 		Name:    str.Of(column.Name).Studly().String(),
 		Type:    goType,
 		Tags:    "`" + strings.Join(tagParts, " ") + "`",
-		Imports: imports,
+		Imports: typeInfo.Imports,
 	}
 }
 
-func getSchemaType(ttype string, typePatternMapping []driver.TypePatternMapping) string {
-	for _, mapping := range typePatternMapping {
+func getSchemaType(ttype string, typeMapping []schema.GoTypeMapping) schema.GoTypeMapping {
+	for _, mapping := range typeMapping {
 		if matched, err := regexp.MatchString(mapping.Pattern, ttype); err == nil && matched {
-			return mapping.SchemaType
+			return mapping
 		}
 	}
 
-	return ""
-}
-
-func matchPrecisionRange(precision int, rangeStr string) bool {
-	parts := strings.Split(rangeStr, ":")
-	switch len(parts) {
-	case 1:
-		if val, err := strconv.Atoi(parts[0]); err == nil {
-			return precision == val
-		}
-	case 2:
-		start, end := parts[0], parts[1]
-		if start == "" {
-			if limit, err := strconv.Atoi(end); err == nil {
-				return precision <= limit
-			}
-		} else if end == "" {
-			if limit, err := strconv.Atoi(start); err == nil {
-				return precision >= limit
-			}
-		} else {
-			if s, err := strconv.Atoi(start); err == nil {
-				if e, err := strconv.Atoi(end); err == nil {
-					return precision >= s && precision <= e
-				}
-			}
-		}
+	return schema.GoTypeMapping{
+		Type: "any",
 	}
-	return false
 }

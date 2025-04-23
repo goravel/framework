@@ -281,32 +281,35 @@ func (r *Schema) GetViews() ([]driver.View, error) {
 	return views, nil
 }
 
-func (r *Schema) GoTypeMap() map[string]contractsschema.GoTypeMapping {
-	typeMapping := getDefaultGoTypeMapping()
-	mappingConfig, ok := r.config.Get("database.model.mapping").(map[string]contractsschema.GoTypeMapping)
-	if ok {
-		for schemaType, configMapping := range mappingConfig {
-			if defaultEntry, exists := typeMapping[schemaType]; exists {
-				if configMapping.Type != "" {
-					defaultEntry.Type = configMapping.Type
-				}
-				if configMapping.NullType != "" {
-					defaultEntry.NullType = configMapping.NullType
-				}
-				if configMapping.Imports != nil {
-					defaultEntry.Imports = configMapping.Imports
-				}
-				if configMapping.PrecisionBasedTypes != nil {
-					defaultEntry.PrecisionBasedTypes = configMapping.PrecisionBasedTypes
-				}
-				typeMapping[schemaType] = defaultEntry
-			} else {
-				typeMapping[schemaType] = configMapping
+func (r *Schema) GoTypes() []contractsschema.GoTypeMapping {
+	defaultMappings := defaultGoTypeMappings()
+	configMappings, ok := r.config.Get("database.model.mapping").([]contractsschema.GoTypeMapping)
+	if !ok {
+		return defaultMappings
+	}
+
+	typeIndex := map[string]int{}
+	for i, mapping := range defaultMappings {
+		typeIndex[mapping.Pattern] = i
+	}
+
+	for _, cfg := range configMappings {
+		if idx, exists := typeIndex[cfg.Pattern]; exists {
+			if cfg.Type != "" {
+				defaultMappings[idx].Type = cfg.Type
 			}
+			if cfg.NullType != "" {
+				defaultMappings[idx].NullType = cfg.NullType
+			}
+			if cfg.Imports != nil {
+				defaultMappings[idx].Imports = cfg.Imports
+			}
+		} else {
+			defaultMappings = append(defaultMappings, cfg)
 		}
 	}
 
-	return typeMapping
+	return defaultMappings
 }
 
 func (r *Schema) HasColumn(table, column string) bool {
@@ -447,132 +450,21 @@ func (r *Schema) createBlueprint(table string) contractsschema.Blueprint {
 	return NewBlueprint(r, r.prefix, table)
 }
 
-func getDefaultGoTypeMapping() map[string]contractsschema.GoTypeMapping {
-	return map[string]contractsschema.GoTypeMapping{
-		contractsschema.TypeBigInteger.Value(): {
-			Type:     "int64",
-			NullType: "*int64",
-			Imports:  []string{},
-		},
-		contractsschema.TypeBoolean.Value(): {
-			Type:     "bool",
-			NullType: "*bool",
-			Imports:  []string{},
-		},
-		contractsschema.TypeChar.Value(): {
-			Type:     "string",
-			NullType: "*string",
-			Imports:  []string{},
-		},
-		contractsschema.TypeDate.Value(): {
-			Type:     "carbon.DateTime",
-			NullType: "*carbon.DateTime",
-			Imports:  []string{"github.com/goravel/framework/support/carbon"},
-		},
-		contractsschema.TypeDateTime.Value(): {
-			Type:     "carbon.DateTime",
-			NullType: "*carbon.DateTime",
-			Imports:  []string{"github.com/goravel/framework/support/carbon"},
-		},
-		contractsschema.TypeDateTimeTZ.Value(): {
-			Type:     "carbon.DateTime",
-			NullType: "*carbon.DateTime",
-			Imports:  []string{"github.com/goravel/framework/support/carbon"},
-		},
-		contractsschema.TypeDecimal.Value(): {
-			Type:     "float64",
-			NullType: "*float64",
-			Imports:  []string{},
-		},
-		contractsschema.TypeDouble.Value(): {
-			Type:     "float64",
-			NullType: "*float64",
-			Imports:  []string{},
-		},
-		contractsschema.TypeEnum.Value(): {
-			Type:     "any",
-			NullType: "any",
-			Imports:  []string{},
-		},
-		contractsschema.TypeFloat.Value(): {
-			Type:     "float32",
-			NullType: "*float32",
-			Imports:  []string{},
-		},
-		contractsschema.TypeInteger.Value(): {
-			Type:     "int",
-			NullType: "*int",
-			Imports:  []string{},
-		},
-		contractsschema.TypeJson.Value(): {
-			Type:     "string",
-			NullType: "*string",
-			Imports:  []string{},
-		},
-		contractsschema.TypeJsonb.Value(): {
-			Type:     "string",
-			NullType: "*string",
-			Imports:  []string{},
-		},
-		contractsschema.TypeLongText.Value(): {
-			Type:     "string",
-			NullType: "*string",
-			Imports:  []string{},
-		},
-		contractsschema.TypeMediumInteger.Value(): {
-			Type:     "int",
-			NullType: "*int",
-			Imports:  []string{},
-		},
-		contractsschema.TypeMediumText.Value(): {
-			Type:     "string",
-			NullType: "*string",
-			Imports:  []string{},
-		},
-		contractsschema.TypeSmallInteger.Value(): {
-			Type:     "int16",
-			NullType: "*int16",
-			Imports:  []string{},
-		},
-		contractsschema.TypeString.Value(): {
-			Type:     "string",
-			NullType: "*string",
-			Imports:  []string{},
-		},
-		contractsschema.TypeText.Value(): {
-			Type:     "string",
-			NullType: "*string",
-			Imports:  []string{},
-		},
-		contractsschema.TypeTime.Value(): {
-			Type:     "carbon.DateTime",
-			NullType: "*carbon.DateTime",
-			Imports:  []string{"github.com/goravel/framework/support/carbon"},
-		},
-		contractsschema.TypeTimeTZ.Value(): {
-			Type:     "carbon.DateTime",
-			NullType: "*carbon.DateTime",
-			Imports:  []string{"github.com/goravel/framework/support/carbon"},
-		},
-		contractsschema.TypeTimestamp.Value(): {
-			Type:     "carbon.DateTime",
-			NullType: "*carbon.DateTime",
-			Imports:  []string{"github.com/goravel/framework/support/carbon"},
-		},
-		contractsschema.TypeTimestampTZ.Value(): {
-			Type:     "carbon.DateTime",
-			NullType: "*carbon.DateTime",
-			Imports:  []string{"github.com/goravel/framework/support/carbon"},
-		},
-		contractsschema.TypeTinyInteger.Value(): {
-			Type:     "int8",
-			NullType: "*int8",
-			Imports:  []string{},
-		},
-		contractsschema.TypeTinyText.Value(): {
-			Type:     "string",
-			NullType: "*string",
-			Imports:  []string{},
-		},
+func defaultGoTypeMappings() []contractsschema.GoTypeMapping {
+	return []contractsschema.GoTypeMapping{
+		{Pattern: "(?i)bigint", Type: "int64", NullType: "*int64"},
+		{Pattern: "(?i)tinyint", Type: "int8", NullType: "*int8"},
+		{Pattern: "(?i)smallint", Type: "int16", NullType: "*int16"},
+		{Pattern: "(?i)int|integer", Type: "int", NullType: "*int"},
+		{Pattern: "(?i)float|real", Type: "float32", NullType: "*float32"},
+		{Pattern: "(?i)double|double precision", Type: "float64", NullType: "*float64"},
+		{Pattern: "(?i)decimal|numeric", Type: "float64", NullType: "*float64"},
+		{Pattern: "(?i)bool|boolean", Type: "bool", NullType: "*bool"},
+		{Pattern: "(?i)char|varchar|text|tinytext|mediumtext|longtext", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)json", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)date|datetime|timestamp|time", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Imports: []string{"github.com/goravel/framework/support/carbon"}},
+		{Pattern: "(?i)enum|set", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)blob|binary|varbinary|bytea", Type: "[]byte", NullType: "[]byte"},
+		{Pattern: ".*", Type: "any", NullType: "any"},
 	}
 }
