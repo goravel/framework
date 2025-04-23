@@ -20,6 +20,7 @@ type MatchHelperTestSuite struct {
 	console        *dst.File
 	database       *dst.File
 	validation     *dst.File
+	jobs           *dst.File
 }
 
 func (s *MatchHelperTestSuite) SetupTest() {
@@ -155,6 +156,34 @@ func (receiver *ValidationServiceProvider) filters() []validation.Filter {
 	}
 }`)
 	s.Require().NoError(err)
+	s.jobs, err = decorator.Parse(`package providers
+
+import (
+	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/facades"
+	
+	"goravel/app/jobs"
+)
+
+type QueueServiceProvider struct {
+}
+
+func (receiver *QueueServiceProvider) Register(app foundation.Application) {
+	facades.Queue().Register(receiver.Jobs())
+}
+
+func (receiver *QueueServiceProvider) Boot(app foundation.Application) {
+
+}
+
+func (receiver *QueueServiceProvider) Jobs() []queue.Job {
+	return []queue.Job{
+		&jobs.Test{},
+	}
+}
+`)
+	s.Require().NoError(err)
 }
 
 func (s *MatchHelperTestSuite) TearDownTest() {}
@@ -282,6 +311,20 @@ func (s *MatchHelperTestSuite) TestHelper() {
 					Elt: &dst.SelectorExpr{
 						X:   &dst.Ident{Name: "validation"},
 						Sel: &dst.Ident{Name: "Filter"},
+					},
+				})).MatchNode(node))
+				s.Len(node.(*dst.CompositeLit).Elts, 1)
+			},
+		},
+		{
+			name:     "match jobs",
+			file:     s.jobs,
+			matchers: Jobs(),
+			assert: func(node dst.Node) {
+				s.True(CompositeLit(EqualNode(&dst.ArrayType{
+					Elt: &dst.SelectorExpr{
+						X:   &dst.Ident{Name: "queue"},
+						Sel: &dst.Ident{Name: "Job"},
 					},
 				})).MatchNode(node))
 				s.Len(node.(*dst.CompositeLit).Elts, 1)

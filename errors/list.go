@@ -73,14 +73,14 @@ var (
 	FilesystemFileNotExist        = New("file doesn't exist")
 	FilesystemInvalidCustomDriver = New("init %s disk fail: via must be implement filesystem.Driver or func() (filesystem.Driver, error)")
 
-	HttpRateLimitFailedToTakeToken     = New("failed to take token")
-	HttpRateLimitFailedToCheckThrottle = New("failed to check throttle: %s")
-
 	GrpcEmptyClientHost         = New("client's host can't be empty")
 	GrpcEmptyClientPort         = New("client's port can't be empty")
 	GrpcEmptyServerHost         = New("host can't be empty")
 	GrpcEmptyServerPort         = New("port can't be empty")
 	GrpcInvalidInterceptorsType = New("the type of clients.%s.interceptors must be []string")
+
+	HttpRateLimitFailedToTakeToken     = New("failed to take token")
+	HttpRateLimitFailedToCheckThrottle = New("failed to check throttle: %s")
 
 	LangFileNotExist = New("translation file does not exist")
 
@@ -128,8 +128,9 @@ var (
 	QueueDriverNotSupported    = New("unknown queue driver: %s")
 	QueueDriverInvalid         = New("%s doesn't implement contracts/queue/driver")
 	QueueDriverFailedToPop     = New("failed to pop job from %s queue: %v")
-	QueueJobNotFound           = New("job not found: %s")
 	QueueFailedToSaveFailedJob = New("failed to save failed job: %v")
+	QueueJobNotFound           = New("job not found: %s")
+	QueueJobRegisterFailed     = New("job register failed: %v")
 
 	RouteDefaultDriverNotSet = New("please set default driver")
 	RouteInvalidDriver       = New("init %s route driver fail: route must be implement route.Route or func() (route.Route, error)")

@@ -72,6 +72,22 @@ func Imports() []match.GoNode {
 	}
 }
 
+func Jobs() []match.GoNode {
+	return []match.GoNode{
+		Func(Ident("Jobs")),
+		TypeOf(&dst.ReturnStmt{}),
+		CompositeLit(
+			ArrayType(
+				SelectorExpr(
+					Ident("queue"),
+					Ident("Job"),
+				),
+				AnyNode(),
+			),
+		),
+	}
+}
+
 func Migrations() []match.GoNode {
 	return []match.GoNode{
 		Func(Ident("Migrations")),
