@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
@@ -324,20 +323,3 @@ var (
 		},
 	}
 )
-
-func convertTestQueueArgs(queueArgs []queue.Arg) []any {
-	var args []any
-	for _, arg := range queueArgs {
-		if arg.Type == "[]uint8" {
-			var uint8Slice []uint8
-			for _, v := range cast.ToIntSlice(arg.Value) {
-				uint8Slice = append(uint8Slice, uint8(v))
-			}
-			args = append(args, uint8Slice)
-		} else {
-			args = append(args, arg.Value)
-		}
-	}
-
-	return args
-}

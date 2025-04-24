@@ -185,7 +185,7 @@ func (s *WorkerTestSuite) Test_run() {
 		mockDriver := mocksqueue.NewDriver(s.T())
 		mockDriver.EXPECT().Pop(queueKey).Return(successTask, nil).Once()
 
-		s.mockJob.EXPECT().Call(successTask.Job.Signature(), make([]any, 0)).Return(nil).Once()
+		s.mockJob.EXPECT().Call(successTask.Job.Signature(), ConvertArgs(testArgs)).Return(nil).Once()
 
 		mockDriver.EXPECT().Pop(queueKey).Return(contractsqueue.Task{}, errors.QueueDriverNoJobFound).Once()
 
@@ -197,8 +197,6 @@ func (s *WorkerTestSuite) Test_run() {
 		}()
 
 		time.Sleep(500 * time.Millisecond)
-
-		s.Equal(ConvertArgs(testArgs), testJobOne)
 
 		s.NoError(worker.Shutdown())
 	})
