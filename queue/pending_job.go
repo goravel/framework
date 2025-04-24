@@ -85,13 +85,7 @@ func (r *PendingJob) Dispatch() error {
 		return err
 	}
 
-	if !r.delay.IsZero() {
-		if !r.task.Delay.IsZero() {
-			r.task.Delay = r.task.Delay.Add(carbon.Now().DiffAbsInDuration(carbon.FromStdTime(r.delay)))
-		} else {
-			r.task.Delay = r.delay
-		}
-	}
+	r.recalculateDelay()
 
 	return driver.Push(r.task, r.config.QueueKey(r.connection, r.queue))
 }
@@ -100,13 +94,7 @@ func (r *PendingJob) Dispatch() error {
 func (r *PendingJob) DispatchSync() error {
 	syncDriver := NewSync(r.connection)
 
-	if !r.delay.IsZero() {
-		if !r.task.Delay.IsZero() {
-			r.task.Delay = r.task.Delay.Add(carbon.Now().DiffAbsInDuration(carbon.FromStdTime(r.delay)))
-		} else {
-			r.task.Delay = r.delay
-		}
-	}
+	r.recalculateDelay()
 
 	return syncDriver.Push(r.task, r.config.QueueKey(r.connection, r.queue))
 }
@@ -121,4 +109,14 @@ func (r *PendingJob) OnConnection(connection string) contractsqueue.PendingJob {
 func (r *PendingJob) OnQueue(queue string) contractsqueue.PendingJob {
 	r.queue = queue
 	return r
+}
+
+func (r *PendingJob) recalculateDelay() {
+	if !r.delay.IsZero() {
+		if !r.task.Delay.IsZero() {
+			r.task.Delay = r.task.Delay.Add(carbon.Now().DiffAbsInDuration(carbon.FromStdTime(r.delay)))
+		} else {
+			r.task.Delay = r.delay
+		}
+	}
 }
