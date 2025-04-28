@@ -60,7 +60,7 @@ func (f *FileTestSuite) TestGc() {
 	value, err = driver.Read("foo")
 	f.Nil(err)
 	f.Equal("", value)
-	carbon.UnsetTestNow()
+	carbon.CleanTestNow()
 
 	// file does not exist
 	driver = NewFile("foo", 300)
@@ -84,13 +84,13 @@ func (f *FileTestSuite) TestRead() {
 	value, err = driver.Read("foo")
 	f.Nil(err)
 	f.Equal("bar", value)
-	carbon.UnsetTestNow()
+	carbon.CleanTestNow()
 
 	carbon.SetTestNow(carbon.Now(carbon.UTC).AddMinutes(f.getMinutes()).AddSecond())
 	value, err = driver.Read("foo")
 	f.Nil(err)
 	f.Equal("", value)
-	carbon.UnsetTestNow()
+	carbon.CleanTestNow()
 }
 
 func (f *FileTestSuite) TestWrite() {
