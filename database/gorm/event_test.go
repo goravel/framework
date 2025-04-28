@@ -171,7 +171,7 @@ func (s *EventTestSuite) TestGetAttribute() {
 
 	for _, event := range events {
 		s.EqualValues(2, event.GetAttribute("ID"))
-		s.Equal(*carbon.NewDateTime(now), event.GetAttribute("CreatedAt"))
+		s.Equal(carbon.NewDateTime(now), event.GetAttribute("CreatedAt"))
 		s.Equal("avatar1", event.GetAttribute("Avatar"))
 	}
 
@@ -183,8 +183,8 @@ func (s *EventTestSuite) TestGetAttribute() {
 
 	for _, event := range events {
 		s.Equal(testEventModel.ID, event.GetAttribute("ID"))
-		s.Equal(&testEventModel.CreatedAt, event.GetAttribute("CreatedAt"))
-		s.Equal(&testEventModel.Name, event.GetAttribute("Name"))
+		s.Equal(testEventModel.CreatedAt, event.GetAttribute("CreatedAt"))
+		s.Equal(testEventModel.Name, event.GetAttribute("Name"))
 	}
 }
 
@@ -197,8 +197,8 @@ func (s *EventTestSuite) TestGetOriginal() {
 	s.Equal("avatar", event.GetOriginal("Avatar"))
 	s.Equal(true, event.GetOriginal("IsAdmin"))
 	s.Equal(0, event.GetOriginal("IsManage"))
-	s.Equal(&testNow, event.GetOriginal("AdminAt"))
-	s.Equal(&testNow, event.GetOriginal("ManageAt"))
+	s.Equal(testNow, event.GetOriginal("AdminAt"))
+	s.Equal(testNow, event.GetOriginal("ManageAt"))
 	s.Nil(event.GetOriginal("No"))
 }
 
