@@ -135,16 +135,16 @@ func (s *DBTestSuite) TestCursor() {
 				{
 					Name: "cursor_product1", Weight: convert.Pointer(100), Model: Model{
 						Timestamps: Timestamps{
-							CreatedAt: s.now,
-							UpdatedAt: s.now,
+							CreatedAt: *s.now,
+							UpdatedAt: *s.now,
 						},
 					},
 				},
 				{
 					Name: "cursor_product2", Weight: convert.Pointer(200), Model: Model{
 						Timestamps: Timestamps{
-							CreatedAt: s.now,
-							UpdatedAt: s.now,
+							CreatedAt: *s.now,
+							UpdatedAt: *s.now,
 						},
 					},
 				},
@@ -427,8 +427,8 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 					Name: "single struct",
 					Model: Model{
 						Timestamps: Timestamps{
-							CreatedAt: s.now,
-							UpdatedAt: s.now,
+							CreatedAt: *s.now,
+							UpdatedAt: *s.now,
 						},
 					},
 				})
@@ -452,8 +452,8 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 						Name: "multiple structs1",
 						Model: Model{
 							Timestamps: Timestamps{
-								CreatedAt: s.now,
-								UpdatedAt: s.now,
+								CreatedAt: *s.now,
+								UpdatedAt: *s.now,
 							},
 						},
 					},
@@ -1055,8 +1055,8 @@ func (s *DBTestSuite) TestUpdate_Delete() {
 					Name: "update structs1",
 					Model: Model{
 						Timestamps: Timestamps{
-							CreatedAt: s.now,
-							UpdatedAt: s.now,
+							CreatedAt: *s.now,
+							UpdatedAt: *s.now,
 						},
 					},
 				},
@@ -1206,8 +1206,8 @@ func (s *DBTestSuite) TestWhere() {
 				Name: "where model",
 				Model: Model{
 					Timestamps: Timestamps{
-						CreatedAt: s.now,
-						UpdatedAt: s.now,
+						CreatedAt: *s.now,
+						UpdatedAt: *s.now,
 					},
 				},
 			})
