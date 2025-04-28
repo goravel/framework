@@ -122,7 +122,8 @@ func (r *JwtGuard) Login(user any) (token string, err error) {
 
 func (r *JwtGuard) LoginUsingID(id any) (token string, err error) {
 	nowTime := carbon.Now()
-	expireTime := nowTime.AddMinutes(r.ttl).StdTime()
+	copyTime := nowTime.Copy()
+	expireTime := copyTime.AddMinutes(r.ttl).StdTime()
 	key := cast.ToString(id)
 	if key == "" {
 		return "", errors.AuthInvalidKey
