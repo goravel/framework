@@ -1139,7 +1139,7 @@ func (r *Query) toSqlizer(query any, args []any) (sq.Sqlizer, error) {
 	}
 }
 
-func (r *Query) trace(builder db.CommonBuilder, sql string, args []any, now carbon.Carbon, rowsAffected int64, err error) {
+func (r *Query) trace(builder db.CommonBuilder, sql string, args []any, now *carbon.Carbon, rowsAffected int64, err error) {
 	if r.txLogs != nil {
 		*r.txLogs = append(*r.txLogs, TxLog{
 			ctx:          r.ctx,

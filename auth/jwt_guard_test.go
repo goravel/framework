@@ -32,7 +32,7 @@ type JwtGuardTestSuite struct {
 	mockDB           *mocksorm.Query
 	mockLog          *mockslog.Log
 	mockUserProvider *mocksauth.UserProvider
-	now              carbon.Carbon
+	now              *carbon.Carbon
 }
 
 func TestJwtGuardTestSuite(t *testing.T) {

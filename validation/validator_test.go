@@ -926,13 +926,13 @@ func TestCastCarbon(t *testing.T) {
 	tests := []struct {
 		name      string
 		from      reflect.Value
-		transform func(carbon carbon.Carbon) any
+		transform func(carbon *carbon.Carbon) any
 		assert    func(result any)
 	}{
 		{
 			name: "Happy path - length 10 string",
 			from: reflect.ValueOf("2024-07-04"),
-			transform: func(c carbon.Carbon) any {
+			transform: func(c *carbon.Carbon) any {
 				return carbon.NewDate(c)
 			},
 			assert: func(result any) {
@@ -943,7 +943,7 @@ func TestCastCarbon(t *testing.T) {
 		{
 			name: "Happy path - length 10 int",
 			from: reflect.ValueOf(1720087252),
-			transform: func(c carbon.Carbon) any {
+			transform: func(c *carbon.Carbon) any {
 				return carbon.NewTimestamp(c)
 			},
 			assert: func(result any) {
@@ -954,7 +954,7 @@ func TestCastCarbon(t *testing.T) {
 		{
 			name: "Happy path - length 13 int",
 			from: reflect.ValueOf(1720087252123),
-			transform: func(c carbon.Carbon) any {
+			transform: func(c *carbon.Carbon) any {
 				return carbon.NewTimestampMilli(c)
 			},
 			assert: func(result any) {
@@ -965,7 +965,7 @@ func TestCastCarbon(t *testing.T) {
 		{
 			name: "Sad path - length 13 string",
 			from: reflect.ValueOf("1720087252123"),
-			transform: func(c carbon.Carbon) any {
+			transform: func(c *carbon.Carbon) any {
 				return carbon.NewTimestampMilli(c)
 			},
 			assert: func(result any) {
@@ -976,7 +976,7 @@ func TestCastCarbon(t *testing.T) {
 		{
 			name: "Happy path - length 13 Y-m-d H",
 			from: reflect.ValueOf("2024-07-04 10"),
-			transform: func(c carbon.Carbon) any {
+			transform: func(c *carbon.Carbon) any {
 				return carbon.NewTimestampMilli(c)
 			},
 			assert: func(result any) {
@@ -986,7 +986,7 @@ func TestCastCarbon(t *testing.T) {
 		{
 			name: "Happy path - length 16 int",
 			from: reflect.ValueOf(1720087252123456),
-			transform: func(c carbon.Carbon) any {
+			transform: func(c *carbon.Carbon) any {
 				return carbon.NewTimestampMicro(c)
 			},
 			assert: func(result any) {
@@ -997,7 +997,7 @@ func TestCastCarbon(t *testing.T) {
 		{
 			name: "Happy path - length 16 string",
 			from: reflect.ValueOf("1720087252123456"),
-			transform: func(c carbon.Carbon) any {
+			transform: func(c *carbon.Carbon) any {
 				return carbon.NewTimestampMicro(c)
 			},
 			assert: func(result any) {
@@ -1008,7 +1008,7 @@ func TestCastCarbon(t *testing.T) {
 		{
 			name: "Happy path - length 16 Y-m-d H:i",
 			from: reflect.ValueOf("2024-07-04 10:00"),
-			transform: func(c carbon.Carbon) any {
+			transform: func(c *carbon.Carbon) any {
 				return carbon.NewDateTime(c)
 			},
 			assert: func(result any) {
@@ -1019,7 +1019,7 @@ func TestCastCarbon(t *testing.T) {
 		{
 			name: "Happy path - length 19 int",
 			from: reflect.ValueOf(1720087252123456789),
-			transform: func(c carbon.Carbon) any {
+			transform: func(c *carbon.Carbon) any {
 				return carbon.NewTimestampNano(c)
 			},
 			assert: func(result any) {
@@ -1030,7 +1030,7 @@ func TestCastCarbon(t *testing.T) {
 		{
 			name: "Happy path - length 19 int",
 			from: reflect.ValueOf("1720087252123456789"),
-			transform: func(c carbon.Carbon) any {
+			transform: func(c *carbon.Carbon) any {
 				return carbon.NewTimestampNano(c)
 			},
 			assert: func(result any) {
@@ -1041,7 +1041,7 @@ func TestCastCarbon(t *testing.T) {
 		{
 			name: "Happy path - length 19 Y-m-d H:i:s",
 			from: reflect.ValueOf("2024-07-04 10:00:52"),
-			transform: func(c carbon.Carbon) any {
+			transform: func(c *carbon.Carbon) any {
 				return carbon.NewDateTime(c)
 			},
 			assert: func(result any) {
@@ -1052,7 +1052,7 @@ func TestCastCarbon(t *testing.T) {
 		{
 			name: "Happy path - length other",
 			from: reflect.ValueOf("2024-07-04 10:00:52.123"),
-			transform: func(c carbon.Carbon) any {
+			transform: func(c *carbon.Carbon) any {
 				return carbon.NewDateTimeMilli(c)
 			},
 			assert: func(result any) {
