@@ -414,7 +414,7 @@ func (s *LocalTestSuite) TestSize() {
 func (s *LocalTestSuite) TestTemporaryUrl() {
 	s.Nil(s.local.Put("TemporaryUrl/1.txt", "Goravel"))
 	s.True(s.local.Exists("TemporaryUrl/1.txt"))
-	url, err := s.local.TemporaryUrl("TemporaryUrl/1.txt", carbon.Now().AddSeconds(5).StdTime())
+	url, err := s.local.TemporaryUrl("TemporaryUrl/1.txt", carbon.Now().Copy().AddSeconds(5).StdTime())
 	s.Nil(err)
 	s.NotEmpty(url)
 	s.Nil(s.local.DeleteDirectory("TemporaryUrl"))

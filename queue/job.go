@@ -11,13 +11,13 @@ import (
 )
 
 type FailedJob struct {
-	ID         uint            `gorm:"primaryKey"` // The unique ID of the job.
-	UUID       uuid.UUID       // The UUID of the job.
-	Connection string          // The name of the connection the job belongs to.
-	Queue      string          // The name of the queue the job belongs to.
-	Payload    []any           `gorm:"serializer:json"` // The arguments passed to the job.
-	Exception  string          // The exception that caused the job to fail.
-	FailedAt   carbon.DateTime // The timestamp when the job failed.
+	ID         uint             `gorm:"primaryKey"` // The unique ID of the job.
+	UUID       uuid.UUID        // The UUID of the job.
+	Connection string           // The name of the connection the job belongs to.
+	Queue      string           // The name of the queue the job belongs to.
+	Payload    []any            `gorm:"serializer:json"` // The arguments passed to the job.
+	Exception  string           // The exception that caused the job to fail.
+	FailedAt   *carbon.DateTime // The timestamp when the job failed.
 }
 
 type JobImpl struct {
