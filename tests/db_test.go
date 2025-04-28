@@ -22,7 +22,7 @@ import (
 
 type DBTestSuite struct {
 	suite.Suite
-	now     carbon.DateTime
+	now     *carbon.DateTime
 	queries map[string]*TestQuery
 }
 

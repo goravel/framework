@@ -11,7 +11,7 @@ import (
 
 type TxLog struct {
 	ctx          context.Context
-	begin        carbon.Carbon
+	begin        *carbon.Carbon
 	sql          string
 	rowsAffected int64
 	err          error

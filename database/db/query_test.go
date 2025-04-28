@@ -35,7 +35,7 @@ type QueryTestSuite struct {
 	mockLogger       *mockslogger.Logger
 	mockReadBuilder  *mocksdb.Builder
 	mockWriteBuilder *mocksdb.Builder
-	now              carbon.Carbon
+	now              *carbon.Carbon
 	query            *Query
 }
 

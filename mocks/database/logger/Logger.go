@@ -307,7 +307,7 @@ func (_c *Logger_ToGorm_Call) RunAndReturn(run func() gormlogger.Interface) *Log
 }
 
 // Trace provides a mock function with given fields: ctx, begin, sql, rowsAffected, err
-func (_m *Logger) Trace(ctx context.Context, begin carbon.Carbon, sql string, rowsAffected int64, err error) {
+func (_m *Logger) Trace(ctx context.Context, begin *carbon.Carbon, sql string, rowsAffected int64, err error) {
 	_m.Called(ctx, begin, sql, rowsAffected, err)
 }
 
