@@ -192,7 +192,7 @@ func (s *EventTestSuite) TestGetOriginal() {
 	event := NewEvent(testQuery, &testEventModel, map[string]any{"avatar": "avatar1"})
 
 	s.EqualValues(1, event.GetOriginal("ID"))
-	s.Equal(*carbon.NewDateTime(carbon.FromStdTime(testNow)), event.GetOriginal("CreatedAt"))
+	s.Equal(carbon.NewDateTime(carbon.FromStdTime(testNow)), event.GetOriginal("CreatedAt"))
 	s.Equal("name", event.GetOriginal("Name"))
 	s.Equal("avatar", event.GetOriginal("Avatar"))
 	s.Equal(true, event.GetOriginal("IsAdmin"))
