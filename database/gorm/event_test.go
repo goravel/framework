@@ -351,8 +351,8 @@ func (s *EventTestSuite) TestColumnNames() {
 func TestStructToMap(t *testing.T) {
 	assert.EqualValues(t, map[string]any{
 		"i_d":        testEventModel.ID,
-		"created_at": &testEventModel.CreatedAt,
-		"updated_at": &testEventModel.UpdatedAt,
+		"created_at": testEventModel.CreatedAt,
+		"updated_at": testEventModel.UpdatedAt,
 		"name":       testEventModel.Name,
 		"avatar":     testEventModel.Avatar,
 		"is_admin":   testEventModel.IsAdmin,
