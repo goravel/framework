@@ -11,7 +11,7 @@ import (
 func TestSetTestNow(t *testing.T) {
 	SetTestNow(Now().SubHour())
 	assert.True(t, IsTestNow())
-	UnsetTestNow()
+	CleanTestNow()
 	assert.False(t, IsTestNow())
 }
 
@@ -36,7 +36,7 @@ func TestNow(t *testing.T) {
 	SetTestNow(Now().SubSeconds(10))
 	stdtime.Sleep(2 * stdtime.Second)
 	testNow := Now().Timestamp()
-	UnsetTestNow()
+	CleanTestNow()
 	now := Now().Timestamp()
 	assert.True(t, now-testNow >= 10)
 
