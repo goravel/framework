@@ -2,7 +2,6 @@ package gorm
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"strings"
 
@@ -195,11 +194,9 @@ func (e *Event) getDestOfMap() map[string]any {
 
 		destType := reflect.TypeOf(e.dest)
 		if destType.Kind() == reflect.Pointer {
-			fmt.Println("aa")
 			destType = destType.Elem()
 		}
 		if destType.Kind() == reflect.Struct {
-			fmt.Println("bb")
 			destOfMap = structToMap(e.dest)
 		}
 	}
