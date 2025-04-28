@@ -936,7 +936,7 @@ func TestCastCarbon(t *testing.T) {
 				return carbon.NewDate(c)
 			},
 			assert: func(result any) {
-				assert.IsType(t, carbon.Date{}, result)
+				assert.IsType(t, &carbon.Date{}, result)
 				assert.Equal(t, "2024-07-04", result.(*carbon.Date).ToDateString())
 			},
 		},
@@ -947,7 +947,7 @@ func TestCastCarbon(t *testing.T) {
 				return carbon.NewTimestamp(c)
 			},
 			assert: func(result any) {
-				assert.IsType(t, carbon.Timestamp{}, result)
+				assert.IsType(t, &carbon.Timestamp{}, result)
 				assert.Equal(t, "2024-07-04 10:00:52", result.(*carbon.Timestamp).ToDateTimeString())
 			},
 		},
@@ -958,7 +958,7 @@ func TestCastCarbon(t *testing.T) {
 				return carbon.NewTimestampMilli(c)
 			},
 			assert: func(result any) {
-				assert.IsType(t, carbon.TimestampMilli{}, result)
+				assert.IsType(t, &carbon.TimestampMilli{}, result)
 				assert.Equal(t, "2024-07-04 10:00:52.123", result.(*carbon.TimestampMilli).ToDateTimeMilliString())
 			},
 		},
@@ -969,7 +969,7 @@ func TestCastCarbon(t *testing.T) {
 				return carbon.NewTimestampMilli(c)
 			},
 			assert: func(result any) {
-				assert.IsType(t, carbon.TimestampMilli{}, result)
+				assert.IsType(t, &carbon.TimestampMilli{}, result)
 				assert.Equal(t, "2024-07-04 10:00:52.123", result.(*carbon.TimestampMilli).ToDateTimeMilliString())
 			},
 		},
@@ -990,7 +990,7 @@ func TestCastCarbon(t *testing.T) {
 				return carbon.NewTimestampMicro(c)
 			},
 			assert: func(result any) {
-				assert.IsType(t, carbon.TimestampMicro{}, result)
+				assert.IsType(t, &carbon.TimestampMicro{}, result)
 				assert.Equal(t, "2024-07-04 10:00:52.123456", result.(*carbon.TimestampMicro).ToDateTimeMicroString())
 			},
 		},
@@ -1001,7 +1001,7 @@ func TestCastCarbon(t *testing.T) {
 				return carbon.NewTimestampMicro(c)
 			},
 			assert: func(result any) {
-				assert.IsType(t, carbon.TimestampMicro{}, result)
+				assert.IsType(t, &carbon.TimestampMicro{}, result)
 				assert.Equal(t, "2024-07-04 10:00:52.123456", result.(*carbon.TimestampMicro).ToDateTimeMicroString())
 			},
 		},
@@ -1012,7 +1012,7 @@ func TestCastCarbon(t *testing.T) {
 				return carbon.NewDateTime(c)
 			},
 			assert: func(result any) {
-				assert.IsType(t, carbon.DateTime{}, result)
+				assert.IsType(t, &carbon.DateTime{}, result)
 				assert.Equal(t, "2024-07-04 10:00:00", result.(*carbon.DateTime).ToDateTimeString())
 			},
 		},
@@ -1023,7 +1023,7 @@ func TestCastCarbon(t *testing.T) {
 				return carbon.NewTimestampNano(c)
 			},
 			assert: func(result any) {
-				assert.IsType(t, carbon.TimestampNano{}, result)
+				assert.IsType(t, &carbon.TimestampNano{}, result)
 				assert.Equal(t, "2024-07-04 10:00:52.123456789", result.(*carbon.TimestampNano).ToDateTimeNanoString())
 			},
 		},
@@ -1034,7 +1034,7 @@ func TestCastCarbon(t *testing.T) {
 				return carbon.NewTimestampNano(c)
 			},
 			assert: func(result any) {
-				assert.IsType(t, carbon.TimestampNano{}, result)
+				assert.IsType(t, &carbon.TimestampNano{}, result)
 				assert.Equal(t, "2024-07-04 10:00:52.123456789", result.(*carbon.TimestampNano).ToDateTimeNanoString())
 			},
 		},
@@ -1045,7 +1045,7 @@ func TestCastCarbon(t *testing.T) {
 				return carbon.NewDateTime(c)
 			},
 			assert: func(result any) {
-				assert.IsType(t, carbon.DateTime{}, result)
+				assert.IsType(t, &carbon.DateTime{}, result)
 				assert.Equal(t, "2024-07-04 10:00:52", result.(*carbon.DateTime).ToDateTimeString())
 			},
 		},
@@ -1056,7 +1056,7 @@ func TestCastCarbon(t *testing.T) {
 				return carbon.NewDateTimeMilli(c)
 			},
 			assert: func(result any) {
-				assert.IsType(t, carbon.DateTimeMilli{}, result)
+				assert.IsType(t, &carbon.DateTimeMilli{}, result)
 				assert.Equal(t, "2024-07-04 10:00:52.123", result.(*carbon.DateTimeMilli).ToDateTimeMilliString())
 			},
 		},
