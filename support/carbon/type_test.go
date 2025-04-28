@@ -8,88 +8,128 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type Person struct {
-	Name         string         `json:"name"`
-	Age          int            `json:"age"`
-	Birthday1    DateTime       `json:"birthday1"`
-	Birthday2    DateTimeMilli  `json:"birthday2"`
-	Birthday3    DateTimeMicro  `json:"birthday3"`
-	Birthday4    DateTimeNano   `json:"birthday4"`
-	GraduatedAt1 Date           `json:"graduated_at1"`
-	GraduatedAt2 DateMilli      `json:"graduated_at2"`
-	GraduatedAt3 DateMicro      `json:"graduated_at3"`
-	GraduatedAt4 DateNano       `json:"graduated_at4"`
-	CreatedAt1   Timestamp      `json:"created_at1"`
-	CreatedAt2   TimestampMilli `json:"created_at2"`
-	CreatedAt3   TimestampMicro `json:"created_at3"`
-	CreatedAt4   TimestampNano  `json:"created_at4"`
+type User struct {
+	Carbon1 Carbon  `json:"carbon1"`
+	Carbon2 *Carbon `json:"carbon2"`
+
+	Date      Date      `json:"date"`
+	DateMilli DateMilli `json:"date_milli"`
+	DateMicro DateMicro `json:"date_micro"`
+	DateNano  DateNano  `json:"date_nano"`
+
+	Time      Time      `json:"time"`
+	TimeMilli TimeMilli `json:"time_milli"`
+	TimeMicro TimeMicro `json:"time_micro"`
+	TimeNano  TimeNano  `json:"time_nano"`
+
+	DateTime      DateTime      `json:"date_time"`
+	DateTimeMilli DateTimeMilli `json:"date_time_milli"`
+	DateTimeMicro DateTimeMicro `json:"date_time_micro"`
+	DateTimeNano  DateTimeNano  `json:"date_time_nano"`
+
+	Timestamp      Timestamp      `json:"timestamp"`
+	TimestampMilli TimestampMilli `json:"timestamp_milli"`
+	TimestampMicro TimestampMicro `json:"timestamp_micro"`
+	TimestampNano  TimestampNano  `json:"timestamp_nano"`
+
+	CreatedAt *DateTime  `json:"created_at"`
+	UpdatedAt *DateTime  `json:"updated_at"`
+	DeletedAt *Timestamp `json:"deleted_at"`
 }
 
-var person Person
+var user User
 
 func TestMarshalJSON(t *testing.T) {
-	person = Person{
-		Name:         "goravel",
-		Age:          18,
-		Birthday1:    DateTime{Now().SubYears(18)},
-		Birthday2:    DateTimeMilli{Now().SubYears(18)},
-		Birthday3:    DateTimeMicro{Now().SubYears(18)},
-		Birthday4:    DateTimeNano{Now().SubYears(18)},
-		GraduatedAt1: Date{Parse("2020-08-05 13:14:15")},
-		GraduatedAt2: DateMilli{Parse("2020-08-05 13:14:15.999")},
-		GraduatedAt3: DateMicro{Parse("2020-08-05 13:14:15.999999")},
-		GraduatedAt4: DateNano{Parse("2020-08-05 13:14:15.999999999")},
-		CreatedAt1:   Timestamp{Parse("2023-08-05 13:14:15")},
-		CreatedAt2:   TimestampMilli{Parse("2024-08-05 13:14:15.999")},
-		CreatedAt3:   TimestampMicro{Parse("2025-08-05 13:14:15.999999")},
-		CreatedAt4:   TimestampNano{Parse("2025-08-05 13:14:15.999999999")},
-	}
-	data, err := json.Marshal(&person)
+	c := Parse("2020-08-05 13:14:15.999999999")
+
+	user.Carbon1 = *c
+	user.Carbon2 = c
+
+	user.Date = *NewDate(c)
+	user.DateMilli = *NewDateMilli(c)
+	user.DateMicro = *NewDateMicro(c)
+	user.DateNano = *NewDateNano(c)
+
+	user.Time = *NewTime(c)
+	user.TimeMilli = *NewTimeMilli(c)
+	user.TimeMicro = *NewTimeMicro(c)
+	user.TimeNano = *NewTimeNano(c)
+
+	user.DateTime = *NewDateTime(c)
+	user.DateTimeMilli = *NewDateTimeMilli(c)
+	user.DateTimeMicro = *NewDateTimeMicro(c)
+	user.DateTimeNano = *NewDateTimeNano(c)
+
+	user.Timestamp = *NewTimestamp(c)
+	user.TimestampMilli = *NewTimestampMilli(c)
+	user.TimestampMicro = *NewTimestampMicro(c)
+	user.TimestampNano = *NewTimestampNano(c)
+
+	user.CreatedAt = NewDateTime(c)
+	user.UpdatedAt = NewDateTime(c)
+	user.DeletedAt = NewTimestamp(c)
+	data, err := json.Marshal(&user)
 	assert.Nil(t, err)
-	fmt.Printf("Person output by json:\n%s\n", data)
+	fmt.Printf("user output by json:\n%s\n", data)
 }
 
 func TestUnmarshalJSON(t *testing.T) {
 	str := `{
-		"name": "goravel",
-		"age": 18,
-		"birthday1": "2003-07-16 16:22:02",
-		"birthday2": "2003-07-16 16:22:02.999",
-		"birthday3": "2003-07-16 16:22:02.999999",
-		"birthday4": "2003-07-16 16:22:02.999999999",
-		"graduated_at1": "2020-08-05",
-		"graduated_at2": "2020-08-05.999",
-		"graduated_at3": "2020-08-05.999999",
-		"graduated_at4": "2020-08-05.999999999",
-		"created_at1": 1596604455,
-		"created_at2": 1596604455999,
-		"created_at3": 1596604455999999,
-		"created_at4": 1596604455999999999
+		"carbon1":"2020-08-05 13:14:15",
+		"carbon2":"2020-08-05 13:14:15",
+		"date":"2020-08-05",
+		"date_milli":"2020-08-05.999",
+		"date_micro":"2020-08-05.999999",
+		"date_nano":"2020-08-05.999999999",
+		"time":"13:14:15",
+		"time_milli":"13:14:15.999",
+		"time_micro":"13:14:15.999999",
+		"time_nano":"13:14:15.999999999",
+		"date_time":"2020-08-05 13:14:15",
+		"date_time_milli":"2020-08-05 13:14:15.999",
+		"date_time_micro":"2020-08-05 13:14:15.999999",
+		"date_time_nano":"2020-08-05 13:14:15.999999999",
+		"timestamp":1596633255,
+		"timestamp_milli":1596633255999,
+		"timestamp_micro":1596633255999999,
+		"timestamp_nano":1596633255999999999,
+		"created_at":"2020-08-05 13:14:15",
+		"updated_at":"2020-08-05 13:14:15",
+		"deleted_at":1596633255
 	}`
 
-	err := json.Unmarshal([]byte(str), &person)
-	assert.Nil(t, err)
-	fmt.Printf("Json string parse to person:\n%+v\n", person)
-}
+	assert.NoError(t, json.Unmarshal([]byte(str), &user))
 
-func TestErrorJson(t *testing.T) {
-	str := `{
-		"name": "",
-		"age": 0,
-		"birthday1": "",
-		"birthday2": "",
-		"birthday3": "",
-		"birthday4": "",
-		"graduated_at1": "xxx",
-		"graduated_at2": "xxx",
-		"graduated_at3": "xxx",
-		"graduated_at4": "xxx",
-		"created_at1": 0,
-		"created_at2": 0,
-		"created_at3": 0,
-		"created_at4": 0
-	}`
-	err := json.Unmarshal([]byte(str), &person)
-	assert.NotNil(t, err)
-	fmt.Printf("Json string parse to person:\n%+v\n", person)
+	assert.Equal(t, "2020-08-05 13:14:15", user.Carbon1.String())
+	assert.Equal(t, "2020-08-05 13:14:15", user.Carbon2.String())
+
+	assert.Equal(t, "2020-08-05", user.Date.String())
+	assert.Equal(t, "2020-08-05.999", user.DateMilli.String())
+	assert.Equal(t, "2020-08-05.999999", user.DateMicro.String())
+	assert.Equal(t, "2020-08-05.999999999", user.DateNano.String())
+
+	assert.Equal(t, "13:14:15", user.Time.String())
+	assert.Equal(t, "13:14:15.999", user.TimeMilli.String())
+	assert.Equal(t, "13:14:15.999999", user.TimeMicro.String())
+	assert.Equal(t, "13:14:15.999999999", user.TimeNano.String())
+
+	assert.Equal(t, "2020-08-05 13:14:15", user.DateTime.String())
+	assert.Equal(t, "2020-08-05 13:14:15.999", user.DateTimeMilli.String())
+	assert.Equal(t, "2020-08-05 13:14:15.999999", user.DateTimeMicro.String())
+	assert.Equal(t, "2020-08-05 13:14:15.999999999", user.DateTimeNano.String())
+
+	assert.Equal(t, "1596633255", user.Timestamp.String())
+	assert.Equal(t, "1596633255999", user.TimestampMilli.String())
+	assert.Equal(t, "1596633255999999", user.TimestampMicro.String())
+	assert.Equal(t, "1596633255999999999", user.TimestampNano.String())
+
+	assert.Equal(t, int64(1596633255), user.Timestamp.Int64())
+	assert.Equal(t, int64(1596633255999), user.TimestampMilli.Int64())
+	assert.Equal(t, int64(1596633255999999), user.TimestampMicro.Int64())
+	assert.Equal(t, int64(1596633255999999999), user.TimestampNano.Int64())
+
+	assert.Equal(t, "2020-08-05 13:14:15", user.CreatedAt.String())
+	assert.Equal(t, "2020-08-05 13:14:15", user.UpdatedAt.String())
+	assert.Equal(t, "1596633255", user.DeletedAt.String())
+	assert.Equal(t, int64(1596633255), user.DeletedAt.Int64())
 }
