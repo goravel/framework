@@ -191,7 +191,6 @@ func (e *Event) getDestOfMap() map[string]any {
 			destOfMap[str.Of(key).Snake().String()] = value
 		}
 	} else {
-
 		destType := reflect.TypeOf(e.dest)
 		if destType.Kind() == reflect.Pointer {
 			destType = destType.Elem()
