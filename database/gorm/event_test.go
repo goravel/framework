@@ -17,8 +17,8 @@ type Model struct {
 }
 
 type Timestamps struct {
-	CreatedAt *carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at"`
-	UpdatedAt *carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at"`
+	CreatedAt carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at"`
+	UpdatedAt carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at"`
 }
 
 type TestEventModel struct {
@@ -38,7 +38,7 @@ var testEventModel = TestEventModel{
 	Model: Model{
 		ID: 1,
 		Timestamps: Timestamps{
-			CreatedAt: carbon.NewDateTime(carbon.FromStdTime(testNow)),
+			CreatedAt: *carbon.NewDateTime(carbon.FromStdTime(testNow)),
 		},
 	},
 	Name:     "name",
@@ -76,8 +76,8 @@ func (s *EventTestSuite) SetupTest() {
 			Model: Model{
 				ID: 1,
 				Timestamps: Timestamps{
-					CreatedAt: carbon.NewDateTime(carbon.FromStdTime(testNow)),
-					UpdatedAt: carbon.NewDateTime(carbon.FromStdTime(testNow)),
+					CreatedAt: *carbon.NewDateTime(carbon.FromStdTime(testNow)),
+					UpdatedAt: *carbon.NewDateTime(carbon.FromStdTime(testNow)),
 				},
 			},
 			Avatar: "avatar1", IsAdmin: false, IsManage: 1, AdminAt: time.Now(), ManageAt: testNow}),
@@ -85,8 +85,8 @@ func (s *EventTestSuite) SetupTest() {
 			Model: Model{
 				ID: 1,
 				Timestamps: Timestamps{
-					CreatedAt: carbon.NewDateTime(carbon.FromStdTime(testNow)),
-					UpdatedAt: carbon.NewDateTime(carbon.FromStdTime(testNow)),
+					CreatedAt: *carbon.NewDateTime(carbon.FromStdTime(testNow)),
+					UpdatedAt: *carbon.NewDateTime(carbon.FromStdTime(testNow)),
 				},
 			},
 			Avatar: "avatar1", IsAdmin: false, IsManage: 1, AdminAt: time.Now(), ManageAt: testNow}),
@@ -155,14 +155,14 @@ func (s *EventTestSuite) TestGetAttribute() {
 	events := []*Event{
 		NewEvent(testQuery, &testEventModel, map[string]any{
 			"ID":        2,
-			"CreatedAt": carbon.NewDateTime(now),
+			"CreatedAt": *carbon.NewDateTime(now),
 			"Avatar":    "avatar1",
 		}),
 		NewEvent(testQuery, &testEventModel, TestEventModel{
 			Model: Model{
 				ID: 2,
 				Timestamps: Timestamps{
-					CreatedAt: carbon.NewDateTime(now),
+					CreatedAt: *carbon.NewDateTime(now),
 				},
 			},
 			Avatar: "avatar1",
@@ -171,7 +171,7 @@ func (s *EventTestSuite) TestGetAttribute() {
 
 	for _, event := range events {
 		s.EqualValues(2, event.GetAttribute("ID"))
-		s.Equal(carbon.NewDateTime(now), event.GetAttribute("CreatedAt"))
+		s.Equal(*carbon.NewDateTime(now), event.GetAttribute("CreatedAt"))
 		s.Equal("avatar1", event.GetAttribute("Avatar"))
 	}
 
@@ -192,7 +192,7 @@ func (s *EventTestSuite) TestGetOriginal() {
 	event := NewEvent(testQuery, &testEventModel, map[string]any{"avatar": "avatar1"})
 
 	s.EqualValues(1, event.GetOriginal("ID"))
-	s.Equal(carbon.NewDateTime(carbon.FromStdTime(testNow)), event.GetOriginal("CreatedAt"))
+	s.Equal(*carbon.NewDateTime(carbon.FromStdTime(testNow)), event.GetOriginal("CreatedAt"))
 	s.Equal("name", event.GetOriginal("Name"))
 	s.Equal("avatar", event.GetOriginal("Avatar"))
 	s.Equal(true, event.GetOriginal("IsAdmin"))
