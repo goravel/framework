@@ -2,8 +2,10 @@ package schedule
 
 import (
 	"github.com/goravel/framework/contracts"
+	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
+	scheduleconsole "github.com/goravel/framework/schedule/console"
 )
 
 type ServiceProvider struct {
@@ -36,5 +38,12 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (r *ServiceProvider) Boot(app foundation.Application) {
+	r.registerCommands(app)
+}
 
+func (r *ServiceProvider) registerCommands(app foundation.Application) {
+	app.MakeArtisan().Register([]console.Command{
+		scheduleconsole.NewListCommand(app.MakeSchedule()),
+		scheduleconsole.NewRunCommand(app.MakeSchedule()),
+	})
 }

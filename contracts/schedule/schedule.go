@@ -9,6 +9,8 @@ type Schedule interface {
 	Call(callback func()) Event
 	// Command adds a new Artisan command event to the schedule.
 	Command(command string) Event
+	// Events returns all registered schedule events.
+	Events() []Event
 	// Register schedules.
 	Register(events []Event)
 	// Run schedules.

@@ -118,6 +118,53 @@ func (_c *Schedule_Command_Call) RunAndReturn(run func(string) schedule.Event) *
 	return _c
 }
 
+// Events provides a mock function with no fields
+func (_m *Schedule) Events() []schedule.Event {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Events")
+	}
+
+	var r0 []schedule.Event
+	if rf, ok := ret.Get(0).(func() []schedule.Event); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// Schedule_Events_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Events'
+type Schedule_Events_Call struct {
+	*mock.Call
+}
+
+// Events is a helper method to define mock.On call
+func (_e *Schedule_Expecter) Events() *Schedule_Events_Call {
+	return &Schedule_Events_Call{Call: _e.mock.On("Events")}
+}
+
+func (_c *Schedule_Events_Call) Run(run func()) *Schedule_Events_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Schedule_Events_Call) Return(_a0 []schedule.Event) *Schedule_Events_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Schedule_Events_Call) RunAndReturn(run func() []schedule.Event) *Schedule_Events_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Register provides a mock function with given fields: events
 func (_m *Schedule) Register(events []schedule.Event) {
 	_m.Called(events)

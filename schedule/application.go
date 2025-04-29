@@ -17,6 +17,7 @@ type Application struct {
 	artisan console.Artisan
 	cache   cache.Cache
 	cron    *cron.Cron
+	events  []schedule.Event
 	log     log.Log
 	debug   bool
 }
@@ -27,7 +28,7 @@ func NewApplication(artisan console.Artisan, cache cache.Cache, log log.Log, deb
 		cache:   cache,
 		cron: cron.New(cron.WithParser(cron.NewParser(
 			cron.SecondOptional|cron.Minute|cron.Hour|cron.Dom|cron.Month|cron.Dow|cron.Descriptor,
-		)), cron.WithLogger(NewLogger(log, debug))),
+		)), cron.WithLogger(NewLogger(log, debug)), cron.WithLocation(carbon.Now().StdTime().Location())),
 		log:   log,
 		debug: debug,
 	}
@@ -39,6 +40,10 @@ func (app *Application) Call(callback func()) schedule.Event {
 
 func (app *Application) Command(command string) schedule.Event {
 	return NewCommandEvent(command)
+}
+
+func (app *Application) Events() []schedule.Event {
+	return app.events
 }
 
 func (app *Application) Register(events []schedule.Event) {
@@ -78,7 +83,9 @@ func (app *Application) addEvents(events []schedule.Event) {
 
 		if err != nil {
 			app.log.Errorf("add schedule error: %v", err)
+			continue
 		}
+		app.events = append(app.events, event)
 	}
 }
 
