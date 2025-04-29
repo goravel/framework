@@ -13,6 +13,7 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database/logger"
 	"github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/str"
 )
@@ -150,7 +151,8 @@ func (r *Gorm) Error(ctx context.Context, msg string, data ...any) {
 
 func (r *Gorm) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {
 	sql, rowsAffected := fc()
-	r.logger.Trace(ctx, carbon.FromStdTime(begin), sql, rowsAffected, err)
+	tz := facades.Config().GetString("app.timezone")
+	r.logger.Trace(ctx, carbon.FromStdTime(begin).SetTimezone(tz), sql, rowsAffected, err)
 }
 
 // FileWithLineNum return the file name and line number of the current file
