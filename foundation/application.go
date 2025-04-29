@@ -53,6 +53,7 @@ func NewApplication() foundation.Application {
 
 // Boot Register and bootstrap configured service providers.
 func (r *Application) Boot() {
+	r.setTimezone()
 	r.registerConfiguredServiceProviders()
 	r.bootConfiguredServiceProviders()
 	r.registerCommands([]contractsconsole.Command{
@@ -65,7 +66,6 @@ func (r *Application) Boot() {
 		console.NewPackageUninstallCommand(),
 		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
 	})
-	r.setTimezone()
 	r.bootArtisan()
 }
 

@@ -18,19 +18,19 @@ func TestNewApplication(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, app)
 
-	mockConfig := &mocksconfig.Config{}
-	mockConfig.On("GetString", "logging.default").Return("test")
-	mockConfig.On("GetString", "logging.channels.test.driver").Return("single")
-	mockConfig.On("GetString", "logging.channels.test.path").Return("test")
-	mockConfig.On("GetString", "logging.channels.test.level").Return("debug")
-	mockConfig.On("GetBool", "logging.channels.test.print").Return(true)
+	mockConfig := mocksconfig.NewConfig(t)
+	mockConfig.EXPECT().GetString("logging.default").Return("test").Once()
+	mockConfig.EXPECT().GetString("logging.channels.test.driver").Return("single").Once()
+	mockConfig.EXPECT().GetString("logging.channels.test.path").Return("test").Once()
+	mockConfig.EXPECT().GetString("logging.channels.test.level").Return("debug").Once()
+	mockConfig.EXPECT().GetBool("logging.channels.test.print").Return(true).Once()
 	app, err = NewApplication(mockConfig, j)
 	assert.Nil(t, err)
 	assert.NotNil(t, app)
 
 	mockConfig = &mocksconfig.Config{}
-	mockConfig.On("GetString", "logging.default").Return("test")
-	mockConfig.On("GetString", "logging.channels.test.driver").Return("test")
+	mockConfig.EXPECT().GetString("logging.default").Return("test").Once()
+	mockConfig.EXPECT().GetString("logging.channels.test.driver").Return("test").Once()
 
 	app, err = NewApplication(mockConfig, j)
 	assert.EqualError(t, err, errors.LogDriverNotSupported.Args("test").Error())
@@ -38,52 +38,52 @@ func TestNewApplication(t *testing.T) {
 }
 
 func TestApplication_Channel(t *testing.T) {
-	mockConfig := &mocksconfig.Config{}
-	mockConfig.On("GetString", "logging.default").Return("test")
-	mockConfig.On("GetString", "logging.channels.test.driver").Return("single")
-	mockConfig.On("GetString", "logging.channels.test.path").Return("test")
-	mockConfig.On("GetString", "logging.channels.test.level").Return("debug")
-	mockConfig.On("GetBool", "logging.channels.test.print").Return(true)
+	mockConfig := mocksconfig.NewConfig(t)
+	mockConfig.EXPECT().GetString("logging.default").Return("test").Once()
+	mockConfig.EXPECT().GetString("logging.channels.test.driver").Return("single").Once()
+	mockConfig.EXPECT().GetString("logging.channels.test.path").Return("test").Once()
+	mockConfig.EXPECT().GetString("logging.channels.test.level").Return("debug").Once()
+	mockConfig.EXPECT().GetBool("logging.channels.test.print").Return(true).Once()
 	app, err := NewApplication(mockConfig, json.NewJson())
 	assert.Nil(t, err)
 	assert.NotNil(t, app)
 	assert.NotNil(t, app.Channel(""))
 
-	mockConfig.On("GetString", "logging.channels.dummy.driver").Return("daily")
-	mockConfig.On("GetString", "logging.channels.dummy.path").Return("dummy")
-	mockConfig.On("GetString", "logging.channels.dummy.level").Return("debug")
-	mockConfig.On("GetBool", "logging.channels.dummy.print").Return(true)
-	mockConfig.On("GetInt", "logging.channels.dummy.days").Return(1)
+	mockConfig.EXPECT().GetString("logging.channels.dummy.driver").Return("daily").Once()
+	mockConfig.EXPECT().GetString("logging.channels.dummy.path").Return("dummy").Once()
+	mockConfig.EXPECT().GetString("logging.channels.dummy.level").Return("debug").Once()
+	mockConfig.EXPECT().GetBool("logging.channels.dummy.print").Return(true).Once()
+	mockConfig.EXPECT().GetInt("logging.channels.dummy.days").Return(1).Once()
 	writer := app.Channel("dummy")
 	assert.NotNil(t, writer)
 
-	mockConfig.On("GetString", "logging.channels.test2.driver").Return("test2")
+	mockConfig.EXPECT().GetString("logging.channels.test2.driver").Return("test2").Once()
 	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
 		assert.Nil(t, app.Channel("test2"))
 	}), errors.LogDriverNotSupported.Args("test2").Error())
 }
 
 func TestApplication_Stack(t *testing.T) {
-	mockConfig := &mocksconfig.Config{}
-	mockConfig.On("GetString", "logging.default").Return("test")
-	mockConfig.On("GetString", "logging.channels.test.driver").Return("single")
-	mockConfig.On("GetString", "logging.channels.test.path").Return("test")
-	mockConfig.On("GetString", "logging.channels.test.level").Return("debug")
-	mockConfig.On("GetBool", "logging.channels.test.print").Return(true)
+	mockConfig := mocksconfig.NewConfig(t)
+	mockConfig.EXPECT().GetString("logging.default").Return("test").Once()
+	mockConfig.EXPECT().GetString("logging.channels.test.driver").Return("single").Once()
+	mockConfig.EXPECT().GetString("logging.channels.test.path").Return("test").Once()
+	mockConfig.EXPECT().GetString("logging.channels.test.level").Return("debug").Once()
+	mockConfig.EXPECT().GetBool("logging.channels.test.print").Return(true).Once()
 	app, err := NewApplication(mockConfig, json.NewJson())
 	assert.Nil(t, err)
 	assert.NotNil(t, app)
 	assert.NotNil(t, app.Stack([]string{}))
 
-	mockConfig.On("GetString", "logging.channels.test2.driver").Return("test2")
+	mockConfig.EXPECT().GetString("logging.channels.test2.driver").Return("test2").Once()
 	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
 		assert.Nil(t, app.Stack([]string{"", "test2", "daily"}))
 	}), errors.LogDriverNotSupported.Args("test2").Error())
 
-	mockConfig.On("GetString", "logging.channels.dummy.driver").Return("daily")
-	mockConfig.On("GetString", "logging.channels.dummy.path").Return("dummy")
-	mockConfig.On("GetString", "logging.channels.dummy.level").Return("debug")
-	mockConfig.On("GetBool", "logging.channels.dummy.print").Return(true)
-	mockConfig.On("GetInt", "logging.channels.dummy.days").Return(1)
+	mockConfig.EXPECT().GetString("logging.channels.dummy.driver").Return("daily").Once()
+	mockConfig.EXPECT().GetString("logging.channels.dummy.path").Return("dummy").Once()
+	mockConfig.EXPECT().GetString("logging.channels.dummy.level").Return("debug").Once()
+	mockConfig.EXPECT().GetBool("logging.channels.dummy.print").Return(true).Once()
+	mockConfig.EXPECT().GetInt("logging.channels.dummy.days").Return(1).Once()
 	assert.NotNil(t, app.Stack([]string{"dummy"}))
 }

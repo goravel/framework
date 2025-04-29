@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -45,12 +45,7 @@ func (general *General) Format(entry *logrus.Entry) ([]byte, error) {
 		b = &bytes.Buffer{}
 	}
 
-	cstSh, err := time.LoadLocation(general.config.GetString("app.timezone"))
-	if err != nil {
-		return nil, err
-	}
-
-	timestamp := entry.Time.In(cstSh).Format("2006-01-02 15:04:05")
+	timestamp := carbon.FromStdTime(entry.Time).Format(carbon.DateTimeLayout)
 	b.WriteString(fmt.Sprintf("[%s] %s.%s: %s\n", timestamp, general.config.GetString("app.env"), entry.Level, entry.Message))
 	data := entry.Data
 	if len(data) > 0 {
