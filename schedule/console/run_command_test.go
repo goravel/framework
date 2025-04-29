@@ -12,7 +12,7 @@ import (
 
 func TestRunCommand(t *testing.T) {
 	mockSchedule := schedulemocks.NewSchedule(t)
-	runCommand := NewRunCommand(mockSchedule)
+	runCommand := NewRun(mockSchedule)
 
 	mockSchedule.EXPECT().Run().Once()
 

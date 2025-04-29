@@ -65,7 +65,7 @@ func (s *EventTestSuite) TestEveryFifteenMinutes() {
 }
 
 func (s *EventTestSuite) TestEveryThirtyMinutes() {
-	s.Equal("0,30 * * * *", s.event.EveryThirtyMinutes().GetCron())
+	s.Equal("*/30 * * * *", s.event.EveryThirtyMinutes().GetCron())
 }
 
 func (s *EventTestSuite) TestEveryTwoHours() {

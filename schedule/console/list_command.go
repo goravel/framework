@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"regexp"
 	"runtime"
+	"strings"
+	"unicode/utf8"
 
 	"github.com/robfig/cron/v3"
 
@@ -22,7 +24,7 @@ type List struct {
 	schedule schedule.Schedule
 }
 
-func NewListCommand(schedule schedule.Schedule) *List {
+func NewList(schedule schedule.Schedule) *List {
 	return &List{
 		schedule: schedule,
 	}
@@ -48,7 +50,15 @@ func (r *List) Extend() command.Extend {
 // Handle Execute the console command.
 func (r *List) Handle(ctx console.Context) error {
 	ctx.NewLine()
-	for _, event := range r.schedule.Events() {
+	events := r.schedule.Events()
+	if len(events) == 0 {
+		ctx.Warning("No scheduled tasks have been defined.")
+		return nil
+	}
+
+	cronExpressionSpacing := r.getCronExpressionSpacing(events)
+
+	for _, event := range events {
 		cmd := event.GetName()
 
 		// display artisan command signature,when it has command
@@ -69,9 +79,28 @@ func (r *List) Handle(ctx console.Context) error {
 		if nd := r.getNextDueDate(event.GetCron()); len(nd) > 0 {
 			nextDue = fmt.Sprintf("<fg=7472a3>Next Due: %s</>", nd)
 		}
-		ctx.TwoColumnDetail(fmt.Sprintf("<fg=yellow>%s</>  %s", event.GetCron(), cmd), nextDue)
+		ctx.TwoColumnDetail(fmt.Sprintf("<fg=yellow>%s</>  %s", r.formatCronExpression(event.GetCron(), cronExpressionSpacing), cmd), nextDue)
 	}
 	return nil
+}
+
+func (r *List) formatCronExpression(expression string, spacing []int) string {
+	parts := strings.Fields(expression)
+	padded := make([]string, len(spacing))
+
+	for i := 0; i < len(spacing); i++ {
+		val := ""
+		if i < len(parts) {
+			val = parts[i]
+		}
+		padLen := spacing[i] - utf8.RuneCountInString(val)
+		if padLen < 0 {
+			padLen = 0
+		}
+		padded[i] = val + strings.Repeat(" ", padLen)
+	}
+
+	return strings.Join(padded, " ")
 }
 
 func (r *List) getClosureLocation(closure any) (file string, line int) {
@@ -84,6 +113,32 @@ func (r *List) getClosureLocation(closure any) (file string, line int) {
 	}
 
 	return
+}
+
+func (r *List) getCronExpressionSpacing(events []schedule.Event) []int {
+	var rows [][]int
+	for _, event := range events {
+		parts := strings.Fields(event.GetCron())
+		lengths := make([]int, len(parts))
+		for i, part := range parts {
+			lengths[i] = utf8.RuneCountInString(part)
+		}
+		rows = append(rows, lengths)
+	}
+	if len(rows) == 0 {
+		return []int{}
+	}
+
+	spacing := make([]int, len(rows[0]))
+	for _, row := range rows {
+		for i, length := range row {
+			if length > spacing[i] {
+				spacing[i] = length
+			}
+		}
+	}
+
+	return spacing
 }
 
 func (r *List) getNextDueDate(cronSpec string) string {

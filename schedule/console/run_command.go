@@ -10,7 +10,7 @@ type Run struct {
 	schedule schedule.Schedule
 }
 
-func NewRunCommand(schedule schedule.Schedule) *Run {
+func NewRun(schedule schedule.Schedule) *Run {
 	return &Run{
 		schedule: schedule,
 	}
