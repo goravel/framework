@@ -75,8 +75,8 @@ func TestLogrus(t *testing.T) {
 		{
 			name: "No Debug",
 			setup: func() {
-				mockConfig.On("GetString", "logging.channels.daily.level").Return("info").Once()
-				mockConfig.On("GetString", "logging.channels.single.level").Return("info").Once()
+				mockConfig.EXPECT().GetString("logging.channels.daily.level").Return("info").Once()
+				mockConfig.EXPECT().GetString("logging.channels.single.level").Return("info").Once()
 				log, err = NewApplication(mockConfig, j)
 				log.Debug("No Debug Goravel")
 			},
@@ -385,20 +385,16 @@ func TestLogrus(t *testing.T) {
 			test.setup()
 			assert.Nil(t, err)
 			test.assert()
-
-			mockConfig.AssertExpectations(t)
 		})
 	}
 	_ = file.Remove("storage")
 }
 
 func TestLogrusWithCustomLogger(t *testing.T) {
-	mockConfig := &configmock.Config{}
-	mockConfig.On("GetString", "logging.default").Return("customLogger").Once()
-	mockConfig.On("GetString", "logging.channels.customLogger.driver").Return("custom").Twice()
-	mockConfig.On("Get", "logging.channels.customLogger.via").Return(&CustomLogger{}).Twice()
-	mockConfig.On("GetString", "app.timezone").Return("UTC")
-	mockConfig.On("GetString", "app.env").Return("test")
+	mockConfig := configmock.NewConfig(t)
+	mockConfig.EXPECT().GetString("logging.default").Return("customLogger").Once()
+	mockConfig.EXPECT().GetString("logging.channels.customLogger.driver").Return("custom").Twice()
+	mockConfig.EXPECT().Get("logging.channels.customLogger.via").Return(&CustomLogger{}).Twice()
 
 	filename := "custom.log"
 
@@ -547,26 +543,24 @@ func Benchmark_Panic(b *testing.B) {
 
 func initMockConfig() *configmock.Config {
 	mockConfig := &configmock.Config{}
-
-	mockConfig.On("GetString", "logging.default").Return("stack").Once()
-	mockConfig.On("GetString", "logging.channels.stack.driver").Return("stack").Once()
+	mockConfig.EXPECT().GetString("logging.default").Return("stack").Once()
+	mockConfig.EXPECT().GetString("logging.channels.stack.driver").Return("stack").Once()
 	mockConfig.On("Get", "logging.channels.stack.channels").Return([]string{"single", "daily"}).Once()
-	mockConfig.On("GetString", "logging.channels.daily.driver").Return("daily").Once()
-	mockConfig.On("GetString", "logging.channels.daily.path").Return(singleLog).Once()
-	mockConfig.On("GetInt", "logging.channels.daily.days").Return(7).Once()
-	mockConfig.On("GetBool", "logging.channels.daily.print").Return(false).Once()
-	mockConfig.On("GetString", "logging.channels.single.driver").Return("single").Once()
-	mockConfig.On("GetString", "logging.channels.single.path").Return(singleLog).Once()
-	mockConfig.On("GetBool", "logging.channels.single.print").Return(false).Once()
+	mockConfig.EXPECT().GetString("logging.channels.daily.driver").Return("daily").Once()
+	mockConfig.EXPECT().GetString("logging.channels.daily.path").Return(singleLog).Once()
+	mockConfig.EXPECT().GetInt("logging.channels.daily.days").Return(7).Once()
+	mockConfig.EXPECT().GetBool("logging.channels.daily.print").Return(false).Once()
+	mockConfig.EXPECT().GetString("logging.channels.single.driver").Return("single").Once()
+	mockConfig.EXPECT().GetString("logging.channels.single.path").Return(singleLog).Once()
+	mockConfig.EXPECT().GetBool("logging.channels.single.print").Return(false).Once()
 
 	return mockConfig
 }
 
 func mockDriverConfig(mockConfig *configmock.Config) {
-	mockConfig.On("GetString", "logging.channels.daily.level").Return("debug").Once()
-	mockConfig.On("GetString", "logging.channels.single.level").Return("debug").Once()
-	mockConfig.On("GetString", "app.timezone").Return("UTC")
-	mockConfig.On("GetString", "app.env").Return("test")
+	mockConfig.EXPECT().GetString("logging.channels.daily.level").Return("debug").Once()
+	mockConfig.EXPECT().GetString("logging.channels.single.level").Return("debug").Once()
+	mockConfig.EXPECT().GetString("app.env").Return("test")
 }
 
 type CustomLogger struct {
