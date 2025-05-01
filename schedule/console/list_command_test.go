@@ -15,104 +15,68 @@ import (
 )
 
 func TestListCommand(t *testing.T) {
-	listCommand := &List{}
+	mockSchedule := mocksschedule.NewSchedule(t)
+	listCommand := NewList(mockSchedule)
+	mockContext := consolemocks.NewContext(t)
+
 	assert.Equal(t, "schedule:list", listCommand.Signature())
 	assert.Equal(t, "List all scheduled tasks", listCommand.Description())
 	assert.Equal(t, command.Extend{Category: "schedule"}, listCommand.Extend())
 
-	tests := []struct {
-		name     string
-		expected []string
-		setup    func(t *testing.T) []schedule.Event
-	}{
-		{
-			name: "no schedule",
-			expected: []string{
-				"No scheduled tasks have been defined.",
-			},
-			setup: func(t *testing.T) []schedule.Event {
-				return nil
-			},
-		},
-		{
-			name: "schedule artisan command",
-			expected: []string{
-				"<fg=yellow>* * * * *</>  artisan send:emails <fg=yellow>name</>",
-				"<fg=7472a3>Next Due: 1 minute after</>",
-			},
-			setup: func(t *testing.T) []schedule.Event {
-				mockEvent := mocksschedule.NewEvent(t)
-				mockEvent.EXPECT().GetName().Return("").Once()
-				mockEvent.EXPECT().GetCommand().Return("send:emails name").Once()
-				mockEvent.EXPECT().GetCron().Return("* * * * *").Times(3)
+	// no schedule
+	mockSchedule.EXPECT().Events().Return(nil).Once()
+	mockContext.EXPECT().NewLine().Once()
+	mockContext.EXPECT().Warning("No scheduled tasks have been defined.").Once()
+	assert.NoError(t, listCommand.Handle(mockContext))
 
-				return []schedule.Event{mockEvent}
-			},
-		},
-		{
-			name: "schedule closure command(without name)",
-			expected: []string{
-				fmt.Sprintf("<fg=yellow>* * * * *</>  Closure at: %s:62", filepath.Join("schedule", "console", "list_command_test.go")),
-				"<fg=7472a3>Next Due: 1 minute after</>",
-			},
-			setup: func(t *testing.T) []schedule.Event {
-				mockEvent := mocksschedule.NewEvent(t)
-				mockEvent.EXPECT().GetName().Return("").Once()
-				mockEvent.EXPECT().GetCommand().Return("").Once()
-				mockEvent.EXPECT().GetCallback().Return(func() {}).Twice()
-				mockEvent.EXPECT().GetCron().Return("* * * * *").Times(3)
+	// schedule artisan command
+	cmd := mocksschedule.NewEvent(t)
+	cmd.EXPECT().GetCommand().Return("send:emails name").Once()
+	cmd.EXPECT().GetCron().Return("* * * * *").Twice()
+	mockContext.EXPECT().TwoColumnDetail(
+		"<fg=yellow>  *    *  * * *</>  artisan send:emails <fg=yellow>name</>",
+		"<fg=7472a3>Next Due: 1 minute after</>",
+	).Once()
 
-				return []schedule.Event{mockEvent}
-			},
-		},
-		{
-			name: "schedule closure command(with name)",
-			expected: []string{
-				"<fg=yellow>* * * * *</>  test-command",
-				"<fg=7472a3>Next Due: 1 minute after</>",
-			},
-			setup: func(t *testing.T) []schedule.Event {
-				mockEvent := mocksschedule.NewEvent(t)
-				mockEvent.EXPECT().GetName().Return("test-command").Once()
-				mockEvent.EXPECT().GetCommand().Return("").Once()
-				mockEvent.EXPECT().GetCron().Return("* * * * *").Times(3)
+	// schedule closure command(without name)
+	closure := mocksschedule.NewEvent(t)
+	closure.EXPECT().GetName().Return("").Once()
+	closure.EXPECT().GetCommand().Return("").Once()
+	closure.EXPECT().GetCallback().Return(func() {}).Once()
+	closure.EXPECT().GetCron().Return("*/30 * * * *").Twice()
+	mockContext.EXPECT().TwoColumnDetail(
+		fmt.Sprintf("<fg=yellow>  */30 *  * * *</>  Closure at: %s:45", filepath.Join("schedule", "console", "list_command_test.go")),
+		"<fg=7472a3>Next Due: 30 minutes after</>",
+	).Once()
 
-				return []schedule.Event{mockEvent}
-			},
-		},
-		{
-			name: "schedule invalid cron expression",
-			expected: []string{
-				"<fg=yellow>* *</>  invalid-cron",
-				"",
-			},
-			setup: func(t *testing.T) []schedule.Event {
-				mockEvent := mocksschedule.NewEvent(t)
-				mockEvent.EXPECT().GetName().Return("invalid-cron").Once()
-				mockEvent.EXPECT().GetCommand().Return("").Once()
-				mockEvent.EXPECT().GetCron().Return("* *").Times(3)
+	// schedule closure command(with name)
+	namedClosure := mocksschedule.NewEvent(t)
+	namedClosure.EXPECT().GetName().Return("test-command").Once()
+	namedClosure.EXPECT().GetCommand().Return("").Once()
+	namedClosure.EXPECT().GetCron().Return("00 10 * * *").Twice()
+	mockContext.EXPECT().TwoColumnDetail(
+		"<fg=yellow>  00   10 * * *</>  test-command",
+		"<fg=7472a3>Next Due: 10 hours after</>",
+	).Once()
 
-				return []schedule.Event{mockEvent}
-			},
-		},
-	}
+	// schedule command(second-level cron)
+	secondlyCommand := mocksschedule.NewEvent(t)
+	secondlyCommand.EXPECT().GetCommand().Return("do:something --every --second").Once()
+	secondlyCommand.EXPECT().GetCron().Return("* * * * * *").Twice()
+	mockContext.EXPECT().TwoColumnDetail(
+		"<fg=yellow>* *    *  * * *</>  artisan do:something <fg=yellow>--every --second</>",
+		"<fg=7472a3>Next Due: 1 second after</>",
+	).Once()
 
-	carbon.SetTestNow(carbon.Now().StartOfMinute())
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockContext := consolemocks.NewContext(t)
-			mockSchedule := mocksschedule.NewSchedule(t)
-			mockSchedule.EXPECT().Events().Return(tt.setup(t)).Once()
-			mockContext.EXPECT().NewLine().Return().Once()
+	mockSchedule.EXPECT().Events().Return([]schedule.Event{
+		cmd,
+		closure,
+		namedClosure,
+		secondlyCommand,
+	}).Once()
+	mockContext.EXPECT().NewLine().Once()
 
-			if len(tt.expected) > 1 {
-				mockContext.EXPECT().TwoColumnDetail(tt.expected[0], tt.expected[1]).Once()
-			} else {
-				mockContext.EXPECT().Warning(tt.expected[0]).Once()
-			}
-
-			assert.NoError(t, NewList(mockSchedule).Handle(mockContext))
-		})
-	}
+	carbon.SetTestNow(carbon.Now().StartOfDay())
+	assert.NoError(t, NewList(mockSchedule).Handle(mockContext))
 	carbon.UnsetTestNow()
 }

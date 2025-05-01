@@ -56,30 +56,13 @@ func (r *List) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	cronExpressionSpacing := r.getCronExpressionSpacing(events)
-
+	spacing := r.getCronExpressionSpacing(events)
 	for _, event := range events {
-		cmd := event.GetName()
-
-		// display artisan command signature,when it has command
-		if c := event.GetCommand(); c != "" {
-			cmd = "artisan " + c
-			// highlight the parameters...
-			cmd = regexp.MustCompile(`(artisan [\w\-:]+) (.+)`).ReplaceAllString(cmd, `$1 <fg=yellow>$2</>`)
-		}
-
-		// display closure location,when it doesn't have a name
-		if len(cmd) == 0 && event.GetCallback() != nil {
-			file, line := r.getClosureLocation(event.GetCallback())
-			file, _ = filepath.Rel(str.Of(file).Dirname(3).String(), file)
-			cmd = fmt.Sprintf("Closure at: %s:%d", file, line)
-		}
-
-		var nextDue string
-		if nd := r.getNextDueDate(event.GetCron()); len(nd) > 0 {
-			nextDue = fmt.Sprintf("<fg=7472a3>Next Due: %s</>", nd)
-		}
-		ctx.TwoColumnDetail(fmt.Sprintf("<fg=yellow>%s</>  %s", r.formatCronExpression(event.GetCron(), cronExpressionSpacing), cmd), nextDue)
+		expression := event.GetCron()
+		ctx.TwoColumnDetail(
+			fmt.Sprintf("<fg=yellow>%s</>  %s", r.formatCronExpression(expression, spacing), r.getCommand(event)),
+			fmt.Sprintf("<fg=7472a3>Next Due: %s</>", r.getNextDueDate(expression)),
+		)
 	}
 	return nil
 }
@@ -88,19 +71,34 @@ func (r *List) formatCronExpression(expression string, spacing []int) string {
 	parts := strings.Fields(expression)
 	padded := make([]string, len(spacing))
 
-	for i := 0; i < len(spacing); i++ {
-		val := ""
-		if i < len(parts) {
-			val = parts[i]
-		}
-		padLen := spacing[i] - utf8.RuneCountInString(val)
-		if padLen < 0 {
-			padLen = 0
-		}
-		padded[i] = val + strings.Repeat(" ", padLen)
+	// if parts length is less than spacing, prepend empty strings to ensure alignment
+	parts = append(make([]string, len(spacing)-len(parts)), parts...)
+
+	for i := range padded {
+		val := parts[i]
+		padded[i] = val + strings.Repeat(" ", max(spacing[i]-utf8.RuneCountInString(val), 0))
 	}
 
 	return strings.Join(padded, " ")
+}
+
+func (r *List) getCommand(event schedule.Event) string {
+	// display artisan command signature
+	if c := event.GetCommand(); c != "" {
+		// highlight the parameters...
+		return regexp.MustCompile(`(artisan [\w\-:]+) (.+)`).ReplaceAllString("artisan "+c, `$1 <fg=yellow>$2</>`)
+	}
+
+	// display name
+	if name := event.GetName(); len(name) > 0 {
+		return name
+	}
+
+	// display closure location
+	file, line := r.getClosureLocation(event.GetCallback())
+	file, _ = filepath.Rel(str.Of(file).Dirname(3).String(), file)
+
+	return fmt.Sprintf("Closure at: %s:%d", file, line)
 }
 
 func (r *List) getClosureLocation(closure any) (file string, line int) {
@@ -116,26 +114,21 @@ func (r *List) getClosureLocation(closure any) (file string, line int) {
 }
 
 func (r *List) getCronExpressionSpacing(events []schedule.Event) []int {
-	var rows [][]int
+	// supports both six-field (second-level) and five-field (minute-level) cron expressions.
+	spacing := make([]int, 6)
+
 	for _, event := range events {
 		parts := strings.Fields(event.GetCron())
-		lengths := make([]int, len(parts))
+		offset := len(spacing) - len(parts)
 		for i, part := range parts {
-			lengths[i] = utf8.RuneCountInString(part)
+			spacing[offset+i] = max(spacing[offset+i], utf8.RuneCountInString(part))
 		}
-		rows = append(rows, lengths)
-	}
-	if len(rows) == 0 {
-		return []int{}
 	}
 
-	spacing := make([]int, len(rows[0]))
-	for _, row := range rows {
-		for i, length := range row {
-			if length > spacing[i] {
-				spacing[i] = length
-			}
-		}
+	// if the first field (seconds) is not used
+	// return spacing for five fields (minute-level cron)
+	if spacing[0] == 0 {
+		return spacing[1:]
 	}
 
 	return spacing
