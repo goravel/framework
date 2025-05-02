@@ -927,19 +927,19 @@ func (_c *Schema_GetViews_Call) RunAndReturn(run func() ([]driver.View, error)) 
 }
 
 // GoTypes provides a mock function with no fields
-func (_m *Schema) GoTypes() []schema.GoTypeMapping {
+func (_m *Schema) GoTypes() []schema.GoType {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for GoTypes")
 	}
 
-	var r0 []schema.GoTypeMapping
-	if rf, ok := ret.Get(0).(func() []schema.GoTypeMapping); ok {
+	var r0 []schema.GoType
+	if rf, ok := ret.Get(0).(func() []schema.GoType); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]schema.GoTypeMapping)
+			r0 = ret.Get(0).([]schema.GoType)
 		}
 	}
 
@@ -963,12 +963,12 @@ func (_c *Schema_GoTypes_Call) Run(run func()) *Schema_GoTypes_Call {
 	return _c
 }
 
-func (_c *Schema_GoTypes_Call) Return(_a0 []schema.GoTypeMapping) *Schema_GoTypes_Call {
+func (_c *Schema_GoTypes_Call) Return(_a0 []schema.GoType) *Schema_GoTypes_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Schema_GoTypes_Call) RunAndReturn(run func() []schema.GoTypeMapping) *Schema_GoTypes_Call {
+func (_c *Schema_GoTypes_Call) RunAndReturn(run func() []schema.GoType) *Schema_GoTypes_Call {
 	_c.Call.Return(run)
 	return _c
 }
