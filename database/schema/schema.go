@@ -281,9 +281,9 @@ func (r *Schema) GetViews() ([]driver.View, error) {
 	return views, nil
 }
 
-func (r *Schema) GoTypes() []contractsschema.GoTypeMapping {
+func (r *Schema) GoTypes() []contractsschema.GoType {
 	defaults := defaultGoTypeMappings()
-	configMappings, ok := r.config.Get("database.model.mapping").([]contractsschema.GoTypeMapping)
+	configMappings, ok := r.config.Get("database.model.mapping").([]contractsschema.GoType)
 	if !ok || len(configMappings) == 0 {
 		return defaults
 	}
@@ -308,9 +308,9 @@ func (r *Schema) GoTypes() []contractsschema.GoTypeMapping {
 		}
 	}
 
-	var result []contractsschema.GoTypeMapping
+	var result []contractsschema.GoType
 	if newPatternCount == 0 {
-		result = make([]contractsschema.GoTypeMapping, len(defaults))
+		result = make([]contractsschema.GoType, len(defaults))
 		copy(result, defaults)
 
 		for _, cfg := range configMappings {
@@ -329,7 +329,7 @@ func (r *Schema) GoTypes() []contractsschema.GoTypeMapping {
 		return result
 	}
 
-	result = make([]contractsschema.GoTypeMapping, 0, len(defaults)+newPatternCount)
+	result = make([]contractsschema.GoType, 0, len(defaults)+newPatternCount)
 
 	result = append(result, defaults[:fallbackIdx]...)
 
@@ -501,8 +501,8 @@ func (r *Schema) createBlueprint(table string) contractsschema.Blueprint {
 	return NewBlueprint(r, r.prefix, table)
 }
 
-func defaultGoTypeMappings() []contractsschema.GoTypeMapping {
-	return []contractsschema.GoTypeMapping{
+func defaultGoTypeMappings() []contractsschema.GoType {
+	return []contractsschema.GoType{
 		// Special cases first - these need to be matched before general patterns
 		{Pattern: "(?i)^tinyint\\(1\\)$", Type: "bool", NullType: "*bool"}, // MySQL boolean representation
 

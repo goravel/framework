@@ -159,11 +159,11 @@ func (r *ModelMakeCommand) generateModelInfo(columns []driver.Column, structName
 
 	if hasCreatedAt && hasUpdatedAt {
 		if hasNullableTimestamps {
-			// if hasId {
-			// 	modelEmbed = "orm.NullableModel"
-			// } else {
-			// 	timestampsEmbed = "orm.NullableTimestamps"
-			// }
+			if hasId {
+				modelEmbed = "orm.NullableModel"
+			} else {
+				timestampsEmbed = "orm.NullableTimestamps"
+			}
 		} else {
 			if hasId {
 				modelEmbed = "orm.Model"
@@ -175,7 +175,7 @@ func (r *ModelMakeCommand) generateModelInfo(columns []driver.Column, structName
 
 	if hasDeletedAt {
 		if hasNullableSoftDeletes {
-			// softDeletesEmbed = "orm.NullableSoftDeletes"
+			softDeletesEmbed = "orm.NullableSoftDeletes"
 		} else {
 			softDeletesEmbed = "orm.SoftDeletes"
 		}
@@ -277,7 +277,7 @@ func formatGoCode(source []byte) (string, error) {
 	return string(formatted), nil
 }
 
-func generateField(column driver.Column, typeMapping []schema.GoTypeMapping) fieldDefinition {
+func generateField(column driver.Column, typeMapping []schema.GoType) fieldDefinition {
 	typeInfo := getSchemaType(column.Type, typeMapping)
 
 	goType := typeInfo.Type
@@ -302,7 +302,7 @@ func generateField(column driver.Column, typeMapping []schema.GoTypeMapping) fie
 	}
 }
 
-func getSchemaType(ttype string, typeMapping []schema.GoTypeMapping) schema.GoTypeMapping {
+func getSchemaType(ttype string, typeMapping []schema.GoType) schema.GoType {
 	for _, mapping := range typeMapping {
 		matched, err := regexp.MatchString(mapping.Pattern, ttype)
 		if err == nil && matched {
@@ -310,7 +310,7 @@ func getSchemaType(ttype string, typeMapping []schema.GoTypeMapping) schema.GoTy
 		}
 	}
 
-	return schema.GoTypeMapping{
+	return schema.GoType{
 		Type: "any",
 	}
 }
