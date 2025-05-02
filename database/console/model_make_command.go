@@ -128,38 +128,67 @@ func (r *ModelMakeCommand) generateModelInfo(columns []driver.Column, structName
 		TableName: tableName,
 	}
 
-	var hasID, hasCreatedAt, hasUpdatedAt, hasDeletedAt bool
+	var hasId, hasCreatedAt, hasUpdatedAt, hasDeletedAt bool
+	var isCreatedAtNullable, isUpdatedAtNullable, isDeletedAtNullable bool
 	standardColumns := make(map[string]bool)
 
 	for _, col := range columns {
 		switch col.Name {
 		case "id":
-			hasID = true
+			hasId = true
 			standardColumns["id"] = true
 		case "created_at":
 			hasCreatedAt = true
+			isCreatedAtNullable = col.Nullable
 			standardColumns["created_at"] = true
 		case "updated_at":
 			hasUpdatedAt = true
+			isUpdatedAtNullable = col.Nullable
 			standardColumns["updated_at"] = true
 		case "deleted_at":
 			hasDeletedAt = true
+			isDeletedAtNullable = col.Nullable
 			standardColumns["deleted_at"] = true
 		}
 	}
 
-	embedOrmModel := hasID && hasCreatedAt && hasUpdatedAt
-	embedOrmTimestamps := !embedOrmModel && hasCreatedAt && hasUpdatedAt
-	embedOrmSoftDeletes := hasDeletedAt
+	var modelEmbed, timestampsEmbed, softDeletesEmbed string
 
-	if embedOrmModel {
-		info.Embeds = append(info.Embeds, "orm.Model")
+	hasNullableTimestamps := (hasCreatedAt && isCreatedAtNullable) || (hasUpdatedAt && isUpdatedAtNullable)
+	hasNullableSoftDeletes := hasDeletedAt && isDeletedAtNullable
+
+	if hasCreatedAt && hasUpdatedAt {
+		if hasNullableTimestamps {
+			// if hasId {
+			// 	modelEmbed = "orm.NullableModel"
+			// } else {
+			// 	timestampsEmbed = "orm.NullableTimestamps"
+			// }
+		} else {
+			if hasId {
+				modelEmbed = "orm.Model"
+			} else {
+				timestampsEmbed = "orm.Timestamps"
+			}
+		}
 	}
-	if embedOrmTimestamps {
-		info.Embeds = append(info.Embeds, "orm.Timestamps")
+
+	if hasDeletedAt {
+		if hasNullableSoftDeletes {
+			// softDeletesEmbed = "orm.NullableSoftDeletes"
+		} else {
+			softDeletesEmbed = "orm.SoftDeletes"
+		}
 	}
-	if embedOrmSoftDeletes {
-		info.Embeds = append(info.Embeds, "orm.SoftDeletes")
+
+	if modelEmbed != "" {
+		info.Embeds = append(info.Embeds, modelEmbed)
+	}
+	if timestampsEmbed != "" {
+		info.Embeds = append(info.Embeds, timestampsEmbed)
+	}
+	if softDeletesEmbed != "" {
+		info.Embeds = append(info.Embeds, softDeletesEmbed)
 	}
 
 	if len(info.Embeds) > 0 {
@@ -169,12 +198,12 @@ func (r *ModelMakeCommand) generateModelInfo(columns []driver.Column, structName
 	goTypeMapping := r.schema.GoTypes()
 
 	for _, col := range columns {
-		if (embedOrmModel || embedOrmTimestamps) &&
+		if (modelEmbed != "" || timestampsEmbed != "") &&
 			(col.Name == "id" || col.Name == "created_at" || col.Name == "updated_at") {
 			continue
 		}
 
-		if embedOrmSoftDeletes && col.Name == "deleted_at" {
+		if softDeletesEmbed != "" && col.Name == "deleted_at" {
 			continue
 		}
 
