@@ -1,6 +1,7 @@
 package console
 
 import (
+	"bytes"
 	"fmt"
 	"go/format"
 	"path/filepath"
@@ -17,7 +18,7 @@ import (
 	"github.com/goravel/framework/support/str"
 )
 
-type modelInfo struct {
+type modelDefinition struct {
 	Fields          []string
 	Embeds          []string
 	Imports         map[string]struct{}
@@ -26,7 +27,7 @@ type modelInfo struct {
 	TableNameMethod string
 }
 
-type fieldInfo struct {
+type fieldDefinition struct {
 	Name    string
 	Type    string
 	Tags    string
@@ -79,7 +80,9 @@ func (r *ModelMakeCommand) Handle(ctx console.Context) error {
 	}
 
 	table := ctx.Option("table")
-	modelInfo := modelInfo{}
+	model := modelDefinition{
+		Imports: make(map[string]struct{}),
+	}
 	structName := m.GetStructName()
 
 	if table != "" {
@@ -87,21 +90,22 @@ func (r *ModelMakeCommand) Handle(ctx console.Context) error {
 			ctx.Error(fmt.Sprintf("table %s does not exist", table))
 			return nil
 		}
+
 		columns, err := r.schema.GetColumns(table)
 		if err != nil {
 			ctx.Error(err.Error())
 			return nil
 		}
 
-		modelInfo, err = r.generateModelInfo(columns, structName, table)
+		model, err = r.generateModelInfo(columns, structName, table)
 		if err != nil {
 			ctx.Error(err.Error())
 			return nil
 		}
-		ctx.Info(fmt.Sprintf("Generated %d fields and %d embeds from table '%s'", len(modelInfo.Fields), len(modelInfo.Embeds), table))
+		ctx.Info(fmt.Sprintf("Generated %d fields and %d embeds from table '%s'", len(model.Fields), len(model.Embeds), table))
 	}
 
-	stubContent, err := r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName(), modelInfo)
+	stubContent, err := r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName(), model)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
@@ -116,8 +120,8 @@ func (r *ModelMakeCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func (r *ModelMakeCommand) generateModelInfo(columns []driver.Column, structName, tableName string) (modelInfo, error) {
-	info := modelInfo{
+func (r *ModelMakeCommand) generateModelInfo(columns []driver.Column, structName, tableName string) (modelDefinition, error) {
+	info := modelDefinition{
 		Imports:   make(map[string]struct{}),
 		Fields:    []string{},
 		Embeds:    []string{},
@@ -125,16 +129,22 @@ func (r *ModelMakeCommand) generateModelInfo(columns []driver.Column, structName
 	}
 
 	var hasID, hasCreatedAt, hasUpdatedAt, hasDeletedAt bool
+	standardColumns := make(map[string]bool)
+
 	for _, col := range columns {
 		switch col.Name {
 		case "id":
 			hasID = true
+			standardColumns["id"] = true
 		case "created_at":
 			hasCreatedAt = true
+			standardColumns["created_at"] = true
 		case "updated_at":
 			hasUpdatedAt = true
+			standardColumns["updated_at"] = true
 		case "deleted_at":
 			hasDeletedAt = true
+			standardColumns["deleted_at"] = true
 		}
 	}
 
@@ -151,6 +161,7 @@ func (r *ModelMakeCommand) generateModelInfo(columns []driver.Column, structName
 	if embedOrmSoftDeletes {
 		info.Embeds = append(info.Embeds, "orm.SoftDeletes")
 	}
+
 	if len(info.Embeds) > 0 {
 		info.Imports["github.com/goravel/framework/database/orm"] = struct{}{}
 	}
@@ -158,23 +169,21 @@ func (r *ModelMakeCommand) generateModelInfo(columns []driver.Column, structName
 	goTypeMapping := r.schema.GoTypes()
 
 	for _, col := range columns {
-		skip := false
-		switch col.Name {
-		case "id", "created_at", "updated_at":
-			skip = embedOrmModel || embedOrmTimestamps
-		case "deleted_at":
-			skip = embedOrmSoftDeletes
+		if (embedOrmModel || embedOrmTimestamps) &&
+			(col.Name == "id" || col.Name == "created_at" || col.Name == "updated_at") {
+			continue
 		}
-		if skip {
+
+		if embedOrmSoftDeletes && col.Name == "deleted_at" {
 			continue
 		}
 
 		field := generateField(col, goTypeMapping)
-		if len(field.Imports) > 0 {
-			for _, importPath := range field.Imports {
-				info.Imports[importPath] = struct{}{}
-			}
+
+		for _, importPath := range field.Imports {
+			info.Imports[importPath] = struct{}{}
 		}
+
 		info.Fields = append(info.Fields, r.buildField(field.Name, field.Type, field.Tags))
 	}
 
@@ -196,7 +205,7 @@ func (r *ModelMakeCommand) buildField(name, goType, tags string) string {
 	return fmt.Sprintf("%-15s %-10s %s", name, goType, tags)
 }
 
-func (r *ModelMakeCommand) populateStub(stub, packageName, structName string, modelInfo modelInfo) (string, error) {
+func (r *ModelMakeCommand) populateStub(stub, packageName, structName string, modelInfo modelDefinition) (string, error) {
 	templateData := struct {
 		PackageName     string
 		StructName      string
@@ -218,12 +227,12 @@ func (r *ModelMakeCommand) populateStub(stub, packageName, structName string, mo
 		return "", fmt.Errorf("failed to parse stub template: %w", err)
 	}
 
-	var buf strings.Builder
+	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, templateData); err != nil {
 		return "", err
 	}
 
-	formatted, err := formatGoCode(buf.String())
+	formatted, err := formatGoCode(buf.Bytes())
 	if err != nil {
 		return "", fmt.Errorf("failed to format generated Go code: %w", err)
 	}
@@ -231,15 +240,15 @@ func (r *ModelMakeCommand) populateStub(stub, packageName, structName string, mo
 	return formatted, nil
 }
 
-func formatGoCode(source string) (string, error) {
-	formatted, err := format.Source([]byte(source))
+func formatGoCode(source []byte) (string, error) {
+	formatted, err := format.Source(source)
 	if err != nil {
 		return "", err
 	}
 	return string(formatted), nil
 }
 
-func generateField(column driver.Column, typeMapping []schema.GoTypeMapping) fieldInfo {
+func generateField(column driver.Column, typeMapping []schema.GoTypeMapping) fieldDefinition {
 	typeInfo := getSchemaType(column.Type, typeMapping)
 
 	goType := typeInfo.Type
@@ -253,9 +262,10 @@ func generateField(column driver.Column, typeMapping []schema.GoTypeMapping) fie
 	if column.Autoincrement {
 		gormTag += ";autoIncrement"
 	}
+
 	tagParts = append(tagParts, fmt.Sprintf(`gorm:"%s"`, gormTag))
 
-	return fieldInfo{
+	return fieldDefinition{
 		Name:    str.Of(column.Name).Studly().String(),
 		Type:    goType,
 		Tags:    "`" + strings.Join(tagParts, " ") + "`",
@@ -265,7 +275,8 @@ func generateField(column driver.Column, typeMapping []schema.GoTypeMapping) fie
 
 func getSchemaType(ttype string, typeMapping []schema.GoTypeMapping) schema.GoTypeMapping {
 	for _, mapping := range typeMapping {
-		if matched, err := regexp.MatchString(mapping.Pattern, ttype); err == nil && matched {
+		matched, err := regexp.MatchString(mapping.Pattern, ttype)
+		if err == nil && matched {
 			return mapping
 		}
 	}

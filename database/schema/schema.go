@@ -282,34 +282,85 @@ func (r *Schema) GetViews() ([]driver.View, error) {
 }
 
 func (r *Schema) GoTypes() []contractsschema.GoTypeMapping {
-	defaultMappings := defaultGoTypeMappings()
+	defaults := defaultGoTypeMappings()
 	configMappings, ok := r.config.Get("database.model.mapping").([]contractsschema.GoTypeMapping)
-	if !ok {
-		return defaultMappings
+	if !ok || len(configMappings) == 0 {
+		return defaults
 	}
 
-	typeIndex := map[string]int{}
-	for i, mapping := range defaultMappings {
-		typeIndex[mapping.Pattern] = i
-	}
-
-	for _, cfg := range configMappings {
-		if idx, exists := typeIndex[cfg.Pattern]; exists {
-			if cfg.Type != "" {
-				defaultMappings[idx].Type = cfg.Type
-			}
-			if cfg.NullType != "" {
-				defaultMappings[idx].NullType = cfg.NullType
-			}
-			if cfg.Imports != nil {
-				defaultMappings[idx].Imports = cfg.Imports
-			}
-		} else {
-			defaultMappings = append(defaultMappings, cfg)
+	fallbackIdx := len(defaults) - 1
+	for i, m := range defaults {
+		if m.Pattern == ".*" {
+			fallbackIdx = i
+			break
 		}
 	}
 
-	return defaultMappings
+	patternMap := make(map[string]int, len(defaults))
+	for i, m := range defaults {
+		patternMap[m.Pattern] = i
+	}
+
+	newPatternCount := 0
+	for _, cfg := range configMappings {
+		if _, exists := patternMap[cfg.Pattern]; !exists {
+			newPatternCount++
+		}
+	}
+
+	var result []contractsschema.GoTypeMapping
+	if newPatternCount == 0 {
+		result = make([]contractsschema.GoTypeMapping, len(defaults))
+		copy(result, defaults)
+
+		for _, cfg := range configMappings {
+			if idx, exists := patternMap[cfg.Pattern]; exists {
+				if cfg.Type != "" {
+					result[idx].Type = cfg.Type
+				}
+				if cfg.NullType != "" {
+					result[idx].NullType = cfg.NullType
+				}
+				if cfg.Imports != nil {
+					result[idx].Imports = cfg.Imports
+				}
+			}
+		}
+		return result
+	}
+
+	result = make([]contractsschema.GoTypeMapping, 0, len(defaults)+newPatternCount)
+
+	result = append(result, defaults[:fallbackIdx]...)
+
+	for _, cfg := range configMappings {
+		if _, exists := patternMap[cfg.Pattern]; !exists {
+			result = append(result, cfg)
+		}
+	}
+
+	result = append(result, defaults[fallbackIdx:]...)
+
+	for _, cfg := range configMappings {
+		if _, exists := patternMap[cfg.Pattern]; exists {
+			for i, mapping := range result {
+				if mapping.Pattern == cfg.Pattern {
+					if cfg.Type != "" {
+						result[i].Type = cfg.Type
+					}
+					if cfg.NullType != "" {
+						result[i].NullType = cfg.NullType
+					}
+					if cfg.Imports != nil {
+						result[i].Imports = cfg.Imports
+					}
+					break
+				}
+			}
+		}
+	}
+
+	return result
 }
 
 func (r *Schema) HasColumn(table, column string) bool {
@@ -452,19 +503,106 @@ func (r *Schema) createBlueprint(table string) contractsschema.Blueprint {
 
 func defaultGoTypeMappings() []contractsschema.GoTypeMapping {
 	return []contractsschema.GoTypeMapping{
-		{Pattern: "(?i)bigint", Type: "int64", NullType: "*int64"},
-		{Pattern: "(?i)tinyint", Type: "int8", NullType: "*int8"},
-		{Pattern: "(?i)smallint", Type: "int16", NullType: "*int16"},
-		{Pattern: "(?i)int|integer", Type: "int", NullType: "*int"},
-		{Pattern: "(?i)float|real", Type: "float32", NullType: "*float32"},
-		{Pattern: "(?i)double|double precision", Type: "float64", NullType: "*float64"},
-		{Pattern: "(?i)decimal|numeric", Type: "float64", NullType: "*float64"},
-		{Pattern: "(?i)bool|boolean", Type: "bool", NullType: "*bool"},
-		{Pattern: "(?i)char|varchar|text|tinytext|mediumtext|longtext", Type: "string", NullType: "*string"},
-		{Pattern: "(?i)json", Type: "string", NullType: "*string"},
-		{Pattern: "(?i)date|datetime|timestamp|time", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Imports: []string{"github.com/goravel/framework/support/carbon"}},
-		{Pattern: "(?i)enum|set", Type: "string", NullType: "*string"},
-		{Pattern: "(?i)blob|binary|varbinary|bytea", Type: "[]byte", NullType: "[]byte"},
+		// Special cases first - these need to be matched before general patterns
+		{Pattern: "(?i)^tinyint\\(1\\)$", Type: "bool", NullType: "*bool"}, // MySQL boolean representation
+
+		// Boolean types
+		{Pattern: "(?i)^bool$", Type: "bool", NullType: "*bool"},
+		{Pattern: "(?i)^boolean$", Type: "bool", NullType: "*bool"},
+		{Pattern: "(?i)^bit\\(1\\)$", Type: "bool", NullType: "*bool"}, // Single bit as boolean
+		{Pattern: "(?i)^bit$", Type: "bool", NullType: "*bool"},
+
+		// Integer types - ordered from most specific to general
+		{Pattern: "(?i)^bigserial$", Type: "int64", NullType: "*int64"}, // PostgreSQL
+		{Pattern: "(?i)^bigint$", Type: "int64", NullType: "*int64"},
+		{Pattern: "(?i)^smallserial$", Type: "int16", NullType: "*int16"}, // PostgreSQL
+		{Pattern: "(?i)^smallint$", Type: "int16", NullType: "*int16"},
+		{Pattern: "(?i)^int2$", Type: "int16", NullType: "*int16"}, // PostgreSQL
+		{Pattern: "(?i)^serial$", Type: "int", NullType: "*int"},   // PostgreSQL
+		{Pattern: "(?i)^integer$", Type: "int", NullType: "*int"},
+		{Pattern: "(?i)^int$", Type: "int", NullType: "*int"},
+		{Pattern: "(?i)^int4$", Type: "int", NullType: "*int"},          // PostgreSQL
+		{Pattern: "(?i)^mediumint$", Type: "int32", NullType: "*int32"}, // MySQL
+		{Pattern: "(?i)^tinyint$", Type: "int8", NullType: "*int8"},     // MySQL (when not tinyint(1))
+		{Pattern: "(?i)^int8$", Type: "int8", NullType: "*int8"},        // PostgreSQL
+
+		// Floating point types
+		{Pattern: "(?i)^double precision$", Type: "float64", NullType: "*float64"},
+		{Pattern: "(?i)^double$", Type: "float64", NullType: "*float64"},
+		{Pattern: "(?i)^float8$", Type: "float64", NullType: "*float64"}, // PostgreSQL
+		{Pattern: "(?i)^float4$", Type: "float32", NullType: "*float32"}, // PostgreSQL
+		{Pattern: "(?i)^float$", Type: "float32", NullType: "*float32"},  // MySQL
+		{Pattern: "(?i)^real$", Type: "float32", NullType: "*float32"},
+
+		// Decimal types
+		{Pattern: "(?i)^money$", Type: "float64", NullType: "*float64"}, // PostgreSQL
+		{Pattern: "(?i)^decimal$", Type: "float64", NullType: "*float64"},
+		{Pattern: "(?i)^numeric$", Type: "float64", NullType: "*float64"},
+
+		// String types - longer/specific types first
+		{Pattern: "(?i)^character varying$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^varchar$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^character$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^longtext$", Type: "string", NullType: "*string"},   // MySQL
+		{Pattern: "(?i)^mediumtext$", Type: "string", NullType: "*string"}, // MySQL
+		{Pattern: "(?i)^tinytext$", Type: "string", NullType: "*string"},   // MySQL
+		{Pattern: "(?i)^nvarchar$", Type: "string", NullType: "*string"},   // SQL Server
+		{Pattern: "(?i)^ntext$", Type: "string", NullType: "*string"},      // SQL Server
+		{Pattern: "(?i)^nchar$", Type: "string", NullType: "*string"},      // SQL Server
+		{Pattern: "(?i)^text$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^char$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^citext$", Type: "string", NullType: "*string"}, // PostgreSQL
+
+		// JSON types
+		{Pattern: "(?i)^jsonb$", Type: "string", NullType: "*string"}, // PostgreSQL
+		{Pattern: "(?i)^json$", Type: "string", NullType: "*string"},
+
+		// Date and Time types
+		{Pattern: "(?i)^timestamptz$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Imports: []string{"github.com/goravel/framework/support/carbon"}}, // PostgreSQL
+		{Pattern: "(?i)^timestamp$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Imports: []string{"github.com/goravel/framework/support/carbon"}},
+		{Pattern: "(?i)^datetime$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Imports: []string{"github.com/goravel/framework/support/carbon"}}, // MySQL
+		{Pattern: "(?i)^timetz$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Imports: []string{"github.com/goravel/framework/support/carbon"}},   // PostgreSQL
+		{Pattern: "(?i)^time$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Imports: []string{"github.com/goravel/framework/support/carbon"}},
+		{Pattern: "(?i)^date$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Imports: []string{"github.com/goravel/framework/support/carbon"}},
+		{Pattern: "(?i)^interval$", Type: "string", NullType: "*string"}, // PostgreSQL
+
+		// Enum types
+		{Pattern: "(?i)^enum$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^set$", Type: "string", NullType: "*string"},
+
+		// Binary types - larger types first
+		{Pattern: "(?i)^longblob$", Type: "[]byte", NullType: "[]byte"},   // MySQL
+		{Pattern: "(?i)^mediumblob$", Type: "[]byte", NullType: "[]byte"}, // MySQL
+		{Pattern: "(?i)^tinyblob$", Type: "[]byte", NullType: "[]byte"},   // MySQL
+		{Pattern: "(?i)^blob$", Type: "[]byte", NullType: "[]byte"},       // MySQL
+		{Pattern: "(?i)^varbinary$", Type: "[]byte", NullType: "[]byte"},  // MySQL/SQL Server
+		{Pattern: "(?i)^binary$", Type: "[]byte", NullType: "[]byte"},     // MySQL/SQL Server
+		{Pattern: "(?i)^bytea$", Type: "[]byte", NullType: "[]byte"},      // PostgreSQL
+
+		// Network types (PostgreSQL)
+		{Pattern: "(?i)^macaddr$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^cidr$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^inet$", Type: "string", NullType: "*string"},
+
+		// Geometric types (PostgreSQL)
+		{Pattern: "(?i)^circle$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^polygon$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^path$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^box$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^lseg$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^line$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^point$", Type: "string", NullType: "*string"},
+
+		// UUID type
+		{Pattern: "(?i)^uuid$", Type: "string", NullType: "*string"},
+
+		// XML
+		{Pattern: "(?i)^xml$", Type: "string", NullType: "*string"},
+
+		// SQLite specific
+		{Pattern: "(?i)^rowid$", Type: "int64", NullType: "*int64"}, // SQLite
+
+		// Fallback for unknown types
 		{Pattern: ".*", Type: "any", NullType: "any"},
 	}
 }
