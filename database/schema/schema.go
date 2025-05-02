@@ -24,6 +24,7 @@ type Schema struct {
 	prefix     string
 	processor  driver.Processor
 	schema     string
+	goTypes    []contractsschema.GoType
 }
 
 func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, driver driver.Driver, migrations []contractsschema.Migration) (*Schema, error) {
@@ -47,6 +48,7 @@ func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, driver d
 		prefix:     prefix,
 		processor:  processor,
 		schema:     schema,
+		goTypes:    defaultGoTypes(),
 	}, nil
 }
 
@@ -166,6 +168,11 @@ func (r *Schema) DropIfExists(table string) error {
 	return nil
 }
 
+func (r *Schema) Extend(extend *contractsschema.Extension) contractsschema.Schema {
+	r.extendGoTypes(extend.GoTypes)
+	return r
+}
+
 func (r *Schema) GetColumnListing(table string) []string {
 	columns, err := r.GetColumns(table)
 	if err != nil {
@@ -282,85 +289,7 @@ func (r *Schema) GetViews() ([]driver.View, error) {
 }
 
 func (r *Schema) GoTypes() []contractsschema.GoType {
-	defaults := defaultGoTypeMappings()
-	configMappings, ok := r.config.Get("database.model.mapping").([]contractsschema.GoType)
-	if !ok || len(configMappings) == 0 {
-		return defaults
-	}
-
-	fallbackIdx := len(defaults) - 1
-	for i, m := range defaults {
-		if m.Pattern == ".*" {
-			fallbackIdx = i
-			break
-		}
-	}
-
-	patternMap := make(map[string]int, len(defaults))
-	for i, m := range defaults {
-		patternMap[m.Pattern] = i
-	}
-
-	newPatternCount := 0
-	for _, cfg := range configMappings {
-		if _, exists := patternMap[cfg.Pattern]; !exists {
-			newPatternCount++
-		}
-	}
-
-	var result []contractsschema.GoType
-	if newPatternCount == 0 {
-		result = make([]contractsschema.GoType, len(defaults))
-		copy(result, defaults)
-
-		for _, cfg := range configMappings {
-			if idx, exists := patternMap[cfg.Pattern]; exists {
-				if cfg.Type != "" {
-					result[idx].Type = cfg.Type
-				}
-				if cfg.NullType != "" {
-					result[idx].NullType = cfg.NullType
-				}
-				if cfg.Imports != nil {
-					result[idx].Imports = cfg.Imports
-				}
-			}
-		}
-		return result
-	}
-
-	result = make([]contractsschema.GoType, 0, len(defaults)+newPatternCount)
-
-	result = append(result, defaults[:fallbackIdx]...)
-
-	for _, cfg := range configMappings {
-		if _, exists := patternMap[cfg.Pattern]; !exists {
-			result = append(result, cfg)
-		}
-	}
-
-	result = append(result, defaults[fallbackIdx:]...)
-
-	for _, cfg := range configMappings {
-		if _, exists := patternMap[cfg.Pattern]; exists {
-			for i, mapping := range result {
-				if mapping.Pattern == cfg.Pattern {
-					if cfg.Type != "" {
-						result[i].Type = cfg.Type
-					}
-					if cfg.NullType != "" {
-						result[i].NullType = cfg.NullType
-					}
-					if cfg.Imports != nil {
-						result[i].Imports = cfg.Imports
-					}
-					break
-				}
-			}
-		}
-	}
-
-	return result
+	return r.goTypes
 }
 
 func (r *Schema) HasColumn(table, column string) bool {
@@ -501,7 +430,90 @@ func (r *Schema) createBlueprint(table string) contractsschema.Blueprint {
 	return NewBlueprint(r, r.prefix, table)
 }
 
-func defaultGoTypeMappings() []contractsschema.GoType {
+func (r *Schema) extendGoTypes(goTypes []contractsschema.GoType) {
+	if goTypes == nil || len(goTypes) == 0 {
+		return
+	}
+
+	defaults := r.goTypes
+	fallbackIdx := len(defaults) - 1
+	for i, m := range defaults {
+		if m.Pattern == ".*" {
+			fallbackIdx = i
+			break
+		}
+	}
+
+	patternMap := make(map[string]int, len(defaults))
+	for i, m := range defaults {
+		patternMap[m.Pattern] = i
+	}
+
+	newPatternCount := 0
+	for _, cfg := range goTypes {
+		if _, exists := patternMap[cfg.Pattern]; !exists {
+			newPatternCount++
+		}
+	}
+
+	var result []contractsschema.GoType
+	if newPatternCount == 0 {
+		result = make([]contractsschema.GoType, len(defaults))
+		copy(result, defaults)
+
+		for _, cfg := range goTypes {
+			if idx, exists := patternMap[cfg.Pattern]; exists {
+				if cfg.Type != "" {
+					result[idx].Type = cfg.Type
+				}
+				if cfg.NullType != "" {
+					result[idx].NullType = cfg.NullType
+				}
+				if cfg.Imports != nil {
+					result[idx].Imports = cfg.Imports
+				}
+			}
+		}
+
+		r.goTypes = result
+		return
+	}
+
+	result = make([]contractsschema.GoType, 0, len(defaults)+newPatternCount)
+
+	result = append(result, defaults[:fallbackIdx]...)
+
+	for _, cfg := range goTypes {
+		if _, exists := patternMap[cfg.Pattern]; !exists {
+			result = append(result, cfg)
+		}
+	}
+
+	result = append(result, defaults[fallbackIdx:]...)
+
+	for _, cfg := range goTypes {
+		if _, exists := patternMap[cfg.Pattern]; exists {
+			for i, mapping := range result {
+				if mapping.Pattern == cfg.Pattern {
+					if cfg.Type != "" {
+						result[i].Type = cfg.Type
+					}
+					if cfg.NullType != "" {
+						result[i].NullType = cfg.NullType
+					}
+					if cfg.Imports != nil {
+						result[i].Imports = cfg.Imports
+					}
+					break
+				}
+			}
+		}
+	}
+
+	r.goTypes = result
+}
+
+func defaultGoTypes() []contractsschema.GoType {
 	return []contractsschema.GoType{
 		// Special cases first - these need to be matched before general patterns
 		{Pattern: "(?i)^tinyint\\(1\\)$", Type: "bool", NullType: "*bool"}, // MySQL boolean representation
