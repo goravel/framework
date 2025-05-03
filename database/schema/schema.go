@@ -431,7 +431,7 @@ func (r *Schema) createBlueprint(table string) contractsschema.Blueprint {
 }
 
 func (r *Schema) extendGoTypes(goTypes []contractsschema.GoType) {
-	if goTypes == nil || len(goTypes) == 0 {
+	if len(goTypes) == 0 {
 		return
 	}
 

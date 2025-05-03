@@ -117,7 +117,7 @@ func (r *ModelMakeCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	ctx.Success("Model created successfully: " + m.GetFilePath())
+	ctx.Success("Model created successfully")
 	return nil
 }
 
