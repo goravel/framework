@@ -13,6 +13,7 @@ import (
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/errors"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
@@ -87,7 +88,7 @@ func (r *ModelMakeCommand) Handle(ctx console.Context) error {
 
 	if table != "" {
 		if !r.schema.HasTable(table) {
-			ctx.Error(fmt.Sprintf("table %s does not exist", table))
+			ctx.Error(errors.SchemaTableNotFound.Args(table).Error())
 			return nil
 		}
 
@@ -112,8 +113,8 @@ func (r *ModelMakeCommand) Handle(ctx console.Context) error {
 	}
 
 	if err := file.PutContent(m.GetFilePath(), stubContent); err != nil {
-		ctx.Error(fmt.Sprintf("Error writing model file: %v", err))
-		return err
+		ctx.Error(err.Error())
+		return nil
 	}
 
 	ctx.Success("Model created successfully: " + m.GetFilePath())
@@ -253,7 +254,7 @@ func (r *ModelMakeCommand) populateStub(stub, packageName, structName string, mo
 
 	tmpl, err := template.New("model").Parse(stub)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse stub template: %w", err)
+		return "", errors.TemplateFailedToParse.Args(err.Error())
 	}
 
 	var buf bytes.Buffer
@@ -263,7 +264,7 @@ func (r *ModelMakeCommand) populateStub(stub, packageName, structName string, mo
 
 	formatted, err := formatGoCode(buf.Bytes())
 	if err != nil {
-		return "", fmt.Errorf("failed to format generated Go code: %w", err)
+		return "", errors.TemplateFailedToFormateGoCode.Args(err.Error())
 	}
 
 	return formatted, nil
