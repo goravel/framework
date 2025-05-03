@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	databaseschema "github.com/goravel/framework/database/schema"
 	"github.com/goravel/framework/support/carbon"
@@ -2659,4 +2660,164 @@ func TestSqlserverSchema(t *testing.T) {
 	assert.Equal(t, table, tables[0].Name)
 	assert.Equal(t, schema, tables[0].Schema)
 	assert.True(t, newSchema.HasTable(fmt.Sprintf("%s.%s", schema, table)))
+}
+
+func (s *SchemaSuite) TestExtend() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver, func() {
+			schema := newSchema(testQuery, s.driverToTestQuery)
+			table := "extend_test"
+
+			originalGoTypes := schema.GoTypes()
+
+			customGoTypes := []contractsschema.GoType{
+				{Pattern: "uuid", Type: "uuid.UUID", NullType: "uuid.NullUUID", Imports: []string{"github.com/google/uuid"}},
+				{Pattern: "point", Type: "geom.Point", NullType: "*geom.Point", Imports: []string{"github.com/twpayne/go-geom"}},
+				// Override an existing type
+				{Pattern: "(?i)^jsonb$", Type: "jsonb.RawMessage", NullType: "*jsonb.RawMessage", Imports: []string{"github.com/jmoiron/sqlx/types"}},
+			}
+
+			schema.Extend(&contractsschema.Extension{
+				GoTypes: customGoTypes,
+			})
+			extendedGoTypes := schema.GoTypes()
+
+			s.Greater(len(extendedGoTypes), len(originalGoTypes), "Extended GoTypes list should be longer than original")
+
+			uuidType, found := findGoType("uuid", extendedGoTypes)
+			s.True(found, "uuid type should be added")
+			s.Equal("uuid.UUID", uuidType.Type)
+			s.Equal("uuid.NullUUID", uuidType.NullType)
+			s.Contains(uuidType.Imports, "github.com/google/uuid")
+
+			pointType, found := findGoType("point", extendedGoTypes)
+			s.True(found, "point type should be added")
+			s.Equal("geom.Point", pointType.Type)
+			s.Equal("*geom.Point", pointType.NullType)
+			s.Contains(pointType.Imports, "github.com/twpayne/go-geom")
+
+			// Check that existing type was overridden
+			jsonbPattern := "(?i)^jsonb$"
+			originalJsonb, found := findGoType(jsonbPattern, originalGoTypes)
+			s.True(found, "jsonb type should exist in original types")
+			s.Equal("string", originalJsonb.Type, "Original jsonb type should be string")
+
+			extendedJsonb, found := findGoType(jsonbPattern, extendedGoTypes)
+			s.True(found, "jsonb type should exist in extended types")
+			s.Equal("jsonb.RawMessage", extendedJsonb.Type, "Extended jsonb type should be jsonb.RawMessage")
+			s.Equal("*jsonb.RawMessage", extendedJsonb.NullType)
+			s.Contains(extendedJsonb.Imports, "github.com/jmoiron/sqlx/types")
+
+			// Create a table with both original and extended types to test if they work
+			if driver == postgres.Name {
+				// Only test with Postgres since it natively supports UUID and geometric types
+				s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+					table.ID()
+					table.String("name")
+					// This will use our custom UUID type
+					table.Column("identifier", "uuid")
+					table.Column("location", "point")
+					table.Column("metadata", "jsonb")
+				}))
+
+				columns, err := schema.GetColumns(table)
+				s.NoError(err)
+				s.Len(columns, 5)
+
+				columnNameMap := make(map[string]bool)
+				for _, col := range columns {
+					columnNameMap[col.Name] = true
+				}
+
+				s.True(columnNameMap["identifier"], "UUID column should exist")
+				s.True(columnNameMap["location"], "Point column should exist")
+				s.True(columnNameMap["metadata"], "JSONB column should exist")
+			}
+		})
+	}
+}
+
+// TestOverrideDefaultTypeWithExtend tests overriding a default type with Extend
+func (s *SchemaSuite) TestOverrideDefaultTypeWithExtend() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver, func() {
+			schema := newSchema(testQuery, s.driverToTestQuery)
+			table := "override_type_test"
+
+			// Define custom type extensions to override timestamp type
+			customGoTypes := []contractsschema.GoType{
+				{Pattern: "(?i)^timestamp$", Type: "time.Time", NullType: "*time.Time", Imports: []string{"time"}},
+			}
+
+			schema.Extend(&contractsschema.Extension{
+				GoTypes: customGoTypes,
+			})
+
+			extendedGoTypes := schema.GoTypes()
+
+			timestampType, found := findGoType("(?i)^timestamp$", extendedGoTypes)
+			s.True(found, "timestamp type should exist")
+			s.Equal("time.Time", timestampType.Type, "timestamp should be overridden to time.Time")
+			s.Equal("*time.Time", timestampType.NullType)
+			s.Contains(timestampType.Imports, "time")
+			s.Equal(1, len(timestampType.Imports), "Should only have one import: time")
+
+			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+				table.ID()
+				table.String("name")
+				table.Timestamp("created_at")
+			}))
+
+			columns, err := schema.GetColumns(table)
+			s.NoError(err)
+			s.Len(columns, 3)
+
+			var createdAtCol *contractsdriver.Column
+			for i, col := range columns {
+				if col.Name == "created_at" {
+					createdAtCol = &columns[i]
+					break
+				}
+			}
+
+			s.NotNil(createdAtCol, "created_at column should exist")
+		})
+	}
+}
+
+// TestEmptyExtend tests that Extend works correctly with empty extensions
+func (s *SchemaSuite) TestEmptyExtend() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver, func() {
+			schema := newSchema(testQuery, s.driverToTestQuery)
+
+			originalGoTypes := schema.GoTypes()
+			originalLength := len(originalGoTypes)
+
+			schema.Extend(&contractsschema.Extension{
+				GoTypes: []contractsschema.GoType{},
+			})
+
+			extendedGoTypes := schema.GoTypes()
+			s.Equal(originalLength, len(extendedGoTypes), "GoTypes list should be unchanged after empty extension")
+
+			for i, originalType := range originalGoTypes {
+				s.Equal(originalType.Pattern, extendedGoTypes[i].Pattern,
+					"Pattern of type at index %d should be unchanged", i)
+				s.Equal(originalType.Type, extendedGoTypes[i].Type,
+					"Type of type at index %d should be unchanged", i)
+				s.Equal(originalType.NullType, extendedGoTypes[i].NullType,
+					"NullType of type at index %d should be unchanged", i)
+			}
+		})
+	}
+}
+
+func findGoType(pattern string, types []contractsschema.GoType) (contractsschema.GoType, bool) {
+	for _, t := range types {
+		if t.Pattern == pattern {
+			return t, true
+		}
+	}
+	return contractsschema.GoType{}, false
 }
