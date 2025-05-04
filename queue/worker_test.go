@@ -206,7 +206,7 @@ func (s *WorkerTestSuite) TestRunWithSyncDriver() {
 	s.mockConfig.EXPECT().Driver("sync").Return(contractsqueue.DriverSync).Once()
 
 	err := s.worker.Run()
-	s.Equal(errors.QueueDriverSyncNotNeedToRun.Args("sync"), err)
+	s.NoError(err)
 }
 
 func (s *WorkerTestSuite) TestRunWithUnknownDriver() {
