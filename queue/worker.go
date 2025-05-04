@@ -12,6 +12,7 @@ import (
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/color"
 )
 
 type Worker struct {
@@ -55,7 +56,8 @@ func (r *Worker) Run() error {
 		return err
 	}
 	if driver.Driver() == queue.DriverSync {
-		return errors.QueueDriverSyncNotNeedToRun.Args(r.connection)
+		color.Warningln(errors.QueueDriverSyncNotNeedToRun.Args(r.connection).SetModule(errors.ModuleQueue).Error())
+		return nil
 	}
 
 	r.isShutdown.Store(false)
