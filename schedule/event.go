@@ -106,7 +106,7 @@ func (receiver *Event) EveryFifteenMinutes() schedule.Event {
 
 // EveryThirtyMinutes Schedule the event to run every thirty minutes.
 func (receiver *Event) EveryThirtyMinutes() schedule.Event {
-	return receiver.Cron(receiver.spliceIntoPosition(1, "0,30"))
+	return receiver.Cron(receiver.spliceIntoPosition(1, "*/30"))
 }
 
 // EveryTwoHours Schedule the event to run every two hours.
