@@ -114,12 +114,12 @@ func (r *Container) add() error {
 	}
 	defer f.Close()
 
-	content, err := json.NewJson().Marshal(databaseConfigs)
+	content, err := json.NewJson().MarshalString(databaseConfigs)
 	if err != nil {
 		return err
 	}
 
-	_, err = f.WriteString(string(content))
+	_, err = f.WriteString(content)
 	if err != nil {
 		return err
 	}

@@ -114,9 +114,9 @@ func (r *AssertableJson) First(key string, callback func(contractshttp.Assertabl
 	}
 
 	firstItem := array[0]
-	itemJson, err := r.json.Marshal(firstItem)
+	itemJson, err := r.json.MarshalString(firstItem)
 	if assert.NoError(r.t, err, "Failed to marshal the first item") {
-		newJson, err := NewAssertableJSON(r.t, r.json, string(itemJson))
+		newJson, err := NewAssertableJSON(r.t, r.json, itemJson)
 		if assert.NoError(r.t, err, "Failed to create AssertableJSON for first item") {
 			callback(newJson)
 		}
@@ -141,12 +141,12 @@ func (r *AssertableJson) HasWithScope(key string, length int, callback func(cont
 	}
 
 	if len(array) > 0 {
-		itemJson, err := r.json.Marshal(array[0])
+		itemJson, err := r.json.MarshalString(array[0])
 		if !assert.NoError(r.t, err, "Failed to marshal the first item of array") {
 			return r
 		}
 
-		newJson, err := NewAssertableJSON(r.t, r.json, string(itemJson))
+		newJson, err := NewAssertableJSON(r.t, r.json, itemJson)
 		if !assert.NoError(r.t, err, "Failed to create AssertableJSON for first item in scoped array") {
 			return r
 		}
@@ -169,12 +169,12 @@ func (r *AssertableJson) Each(key string, callback func(contractshttp.Assertable
 	}
 
 	for _, item := range array {
-		itemJson, err := r.json.Marshal(item)
+		itemJson, err := r.json.MarshalString(item)
 		if !assert.NoError(r.t, err) {
 			continue
 		}
 
-		newJson, err := NewAssertableJSON(r.t, r.json, string(itemJson))
+		newJson, err := NewAssertableJSON(r.t, r.json, itemJson)
 		if !assert.NoError(r.t, err) {
 			continue
 		}
