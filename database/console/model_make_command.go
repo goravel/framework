@@ -23,8 +23,6 @@ type modelDefinition struct {
 	Fields          []string
 	Embeds          []string
 	Imports         map[string]struct{}
-	NeedsTableName  bool
-	TableName       string
 	TableNameMethod string
 }
 
@@ -103,7 +101,6 @@ func (r *ModelMakeCommand) Handle(ctx console.Context) error {
 			ctx.Error(err.Error())
 			return nil
 		}
-		ctx.Info(fmt.Sprintf("Generated %d fields and %d embeds from table '%s'", len(model.Fields), len(model.Embeds), table))
 	}
 
 	stubContent, err := r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName(), model)
@@ -123,50 +120,49 @@ func (r *ModelMakeCommand) Handle(ctx console.Context) error {
 
 func (r *ModelMakeCommand) generateModelInfo(columns []driver.Column, structName, tableName string) (modelDefinition, error) {
 	info := modelDefinition{
-		Imports:   make(map[string]struct{}),
-		Fields:    []string{},
-		Embeds:    []string{},
-		TableName: tableName,
+		Imports: make(map[string]struct{}),
+		Fields:  []string{},
+		Embeds:  []string{},
 	}
 
-	var hasId, hasCreatedAt, hasUpdatedAt, hasDeletedAt bool
+	var hasID, hasCreatedAt, hasUpdatedAt, hasDeletedAt bool
 	var isCreatedAtNullable, isUpdatedAtNullable, isDeletedAtNullable bool
 	standardColumns := make(map[string]bool)
 
-	for _, col := range columns {
-		switch col.Name {
+	for _, column := range columns {
+		switch column.Name {
 		case "id":
-			hasId = true
+			hasID = true
 			standardColumns["id"] = true
 		case "created_at":
 			hasCreatedAt = true
-			isCreatedAtNullable = col.Nullable
+			isCreatedAtNullable = column.Nullable
 			standardColumns["created_at"] = true
 		case "updated_at":
 			hasUpdatedAt = true
-			isUpdatedAtNullable = col.Nullable
+			isUpdatedAtNullable = column.Nullable
 			standardColumns["updated_at"] = true
 		case "deleted_at":
 			hasDeletedAt = true
-			isDeletedAtNullable = col.Nullable
+			isDeletedAtNullable = column.Nullable
 			standardColumns["deleted_at"] = true
 		}
 	}
 
 	var modelEmbed, timestampsEmbed, softDeletesEmbed string
 
-	hasNullableTimestamps := (hasCreatedAt && isCreatedAtNullable) || (hasUpdatedAt && isUpdatedAtNullable)
+	hasNullableTimestamps := (hasCreatedAt && isCreatedAtNullable) && (hasUpdatedAt && isUpdatedAtNullable)
 	hasNullableSoftDeletes := hasDeletedAt && isDeletedAtNullable
 
 	if hasCreatedAt && hasUpdatedAt {
 		if hasNullableTimestamps {
-			if hasId {
+			if hasID {
 				modelEmbed = "orm.NullableModel"
 			} else {
 				timestampsEmbed = "orm.NullableTimestamps"
 			}
 		} else {
-			if hasId {
+			if hasID {
 				modelEmbed = "orm.Model"
 			} else {
 				timestampsEmbed = "orm.Timestamps"
@@ -217,7 +213,6 @@ func (r *ModelMakeCommand) generateModelInfo(columns []driver.Column, structName
 		info.Fields = append(info.Fields, r.buildField(field.Name, field.Type, field.Tags))
 	}
 
-	info.NeedsTableName = true
 	info.TableNameMethod = r.buildTableNameMethod(structName, tableName)
 
 	return info, nil
@@ -228,6 +223,10 @@ func (r *ModelMakeCommand) getStub() string {
 }
 
 func (r *ModelMakeCommand) buildTableNameMethod(structName, tableName string) string {
+	if tableName == "" {
+		return ""
+	}
+
 	return fmt.Sprintf("func (r *%s) TableName() string {\n\treturn \"%s\"\n}", structName, tableName)
 }
 
@@ -286,14 +285,14 @@ func generateField(column driver.Column, typeMapping []schema.GoType) fieldDefin
 		goType = typeInfo.NullType
 	}
 
-	tagParts := []string{fmt.Sprintf(`json:"%s"`, column.Name)}
-
-	gormTag := fmt.Sprintf("column:%s", column.Name)
-	if column.Autoincrement {
-		gormTag += ";autoIncrement"
+	tagParts := []string{
+		fmt.Sprintf(`json:"%s"`, column.Name),
+		fmt.Sprintf(`db:"%s"`, column.Name),
 	}
 
-	tagParts = append(tagParts, fmt.Sprintf(`gorm:"%s"`, gormTag))
+	if column.Autoincrement {
+		tagParts = append(tagParts, fmt.Sprintf(`gorm:"%s"`, "autoIncrement"))
+	}
 
 	return fieldDefinition{
 		Name:    str.Of(column.Name).Studly().String(),

@@ -2759,8 +2759,7 @@ func (s *SchemaSuite) TestOverrideDefaultTypeWithExtend() {
 			s.True(found, "timestamp type should exist")
 			s.Equal("time.Time", timestampType.Type, "timestamp should be overridden to time.Time")
 			s.Equal("*time.Time", timestampType.NullType)
-			s.Contains(timestampType.Imports, "time")
-			s.Equal(1, len(timestampType.Imports), "Should only have one import: time")
+			s.Equal(timestampType.Imports, []string{"time"})
 
 			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
 				table.ID()
@@ -2770,17 +2769,11 @@ func (s *SchemaSuite) TestOverrideDefaultTypeWithExtend() {
 
 			columns, err := schema.GetColumns(table)
 			s.NoError(err)
-			s.Len(columns, 3)
-
-			var createdAtCol *contractsdriver.Column
-			for i, col := range columns {
-				if col.Name == "created_at" {
-					createdAtCol = &columns[i]
-					break
-				}
-			}
-
-			s.NotNil(createdAtCol, "created_at column should exist")
+			s.Equal(columns, []contractsdriver.Column{
+				{Name: "id", Type: "bigint", TypeName: "int8", Autoincrement: true, Nullable: false},
+				{Name: "name", Type: "character varying", TypeName: "varchar", Nullable: true},
+				{Name: "created_at", Type: "timestamp", TypeName: "timestamp", Nullable: true},
+			})
 		})
 	}
 }
@@ -2808,6 +2801,8 @@ func (s *SchemaSuite) TestEmptyExtend() {
 					"Type of type at index %d should be unchanged", i)
 				s.Equal(originalType.NullType, extendedGoTypes[i].NullType,
 					"NullType of type at index %d should be unchanged", i)
+				s.Equal(originalType.Imports, extendedGoTypes[i].Imports,
+					"Imports of type at index %d should be unchanged", i)
 			}
 		})
 	}
