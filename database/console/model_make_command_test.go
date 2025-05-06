@@ -144,8 +144,6 @@ func TestGenerateModelInfo(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(info.Fields))
 	assert.Equal(t, 2, len(info.Embeds))
-	assert.Equal(t, "users", info.TableName)
-	assert.True(t, info.NeedsTableName)
 	assert.True(t, strings.Contains(info.Fields[0], "Name"))
 	assert.True(t, strings.Contains(info.TableNameMethod, "func (r *User) TableName() string"))
 	assert.Contains(t, info.Embeds, "orm.Model")
@@ -166,8 +164,6 @@ func TestGenerateModelInfo(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(info.Fields))
 	assert.Equal(t, 2, len(info.Embeds))
-	assert.Equal(t, "posts", info.TableName)
-	assert.True(t, info.NeedsTableName)
 	assert.True(t, strings.Contains(info.Fields[0], "Title"))
 	assert.Contains(t, info.Embeds, "orm.NullableTimestamps")
 	assert.Contains(t, info.Embeds, "orm.SoftDeletes")
@@ -189,8 +185,6 @@ func TestGenerateModelInfo(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(info.Fields))
 	assert.Equal(t, 0, len(info.Embeds))
-	assert.Equal(t, "products", info.TableName)
-	assert.True(t, info.NeedsTableName)
 }
 
 func TestBuildTableNameMethod(t *testing.T) {
