@@ -60,7 +60,7 @@ func NewDatabase(app foundation.Application, connection string) (*Database, erro
 }
 
 func (r *Database) Migrate() error {
-	return r.artisan.Call("migrate")
+	return r.artisan.Call("--no-ansi migrate")
 }
 
 func (r *Database) Ready() error {
@@ -68,7 +68,7 @@ func (r *Database) Ready() error {
 		return err
 	}
 
-	r.orm.Refresh()
+	r.orm.Fresh()
 
 	return nil
 }

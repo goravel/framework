@@ -32,7 +32,7 @@ const (
 
 type BodyImpl struct {
 	data       map[string]any
-	fileFields map[string]string
+	fileFields map[string][]string
 	bodyType   BodyType
 }
 
@@ -46,7 +46,7 @@ func NewBody(bodyType ...BodyType) http.Body {
 
 	return &BodyImpl{
 		data:       make(map[string]any),
-		fileFields: make(map[string]string),
+		fileFields: make(map[string][]string),
 		bodyType:   bt,
 	}
 }
@@ -77,12 +77,12 @@ func (r *BodyImpl) SetFields(fields map[string]any) http.Body {
 }
 
 func (r *BodyImpl) SetFile(fieldName, filePath string) http.Body {
-	maps.Set(r.fileFields, fieldName, filePath)
+	maps.Set(r.fileFields, fieldName, []string{filePath})
 	r.bodyType = BodyTypeMultipart
 	return r
 }
 
-func (r *BodyImpl) SetFiles(files map[string]string) http.Body {
+func (r *BodyImpl) SetFiles(files map[string][]string) http.Body {
 	r.fileFields = collect.Merge(r.fileFields, files)
 	r.bodyType = BodyTypeMultipart
 	return r
@@ -135,9 +135,11 @@ func (r *BodyImpl) addFormFields(writer *multipart.Writer) error {
 }
 
 func (r *BodyImpl) addFiles(writer *multipart.Writer) error {
-	for fieldName, filePath := range r.fileFields {
-		if err := r.addFile(writer, fieldName, filePath); err != nil {
-			return err
+	for fieldName, filePaths := range r.fileFields {
+		for _, filePath := range filePaths {
+			if err := r.addFile(writer, fieldName, filePath); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

@@ -58,7 +58,9 @@ func (s *MigratorSuite) TestCreate() {
 	path := filepath.Join(pwd, "database", "migrations")
 	name := "create_users_table"
 
-	s.NoError(s.migrator.Create(name))
+	fileName, err := s.migrator.Create(name)
+	s.NoError(err)
+	s.Equal("20240817214501_"+name, fileName)
 
 	migrationFile := filepath.Join(path, "20240817214501_"+name+".go")
 	s.True(file.Exists(migrationFile))
@@ -214,6 +216,7 @@ func (s *MigratorSuite) TestReset() {
 		{
 			name: "Get ran failed",
 			setup: func() {
+				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
 				s.mockRepository.EXPECT().GetRan().Return(nil, assert.AnError).Once()
 			},
 			expectErr: assert.AnError.Error(),
@@ -223,6 +226,7 @@ func (s *MigratorSuite) TestReset() {
 			setup: func() {
 				previousConnection := "postgres"
 				testMigration := NewTestMigration(s.mockSchema)
+				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
 				s.mockRepository.EXPECT().GetRan().Return([]string{testMigration.Signature()}, nil).Once()
 
 				s.mockSchema.EXPECT().Migrations().Return([]contractsschema.Migration{

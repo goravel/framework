@@ -1,4 +1,4 @@
-package packages
+package match
 
 import (
 	"go/token"
@@ -7,9 +7,10 @@ import (
 
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
+	"github.com/dave/dst/dstutil"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/goravel/framework/contracts/packages"
+	"github.com/goravel/framework/contracts/packages/match"
 )
 
 type MatchGoNodeTestSuite struct {
@@ -24,7 +25,7 @@ func (s *MatchGoNodeTestSuite) SetupTest() {
 import (
 	"github.com/goravel/framework/auth"
 	"github.com/goravel/framework/contracts/foundation"
-	"github.com/goravel/framework/facades"
+	facades "github.com/goravel/framework/facades"
 )
 
 func Boot() {}
@@ -47,37 +48,37 @@ func TestMatchGoNodeTestSuite(t *testing.T) {
 	suite.Run(t, new(MatchGoNodeTestSuite))
 }
 
-func (s *MatchGoNodeTestSuite) match(matcher packages.GoNodeMatcher) (matched dst.Node) {
-	dst.Inspect(s.source, func(node dst.Node) bool {
-		if matcher.MatchNode(node) {
-			matched = node
+func (s *MatchGoNodeTestSuite) match(matcher match.GoNode) (matched dst.Node) {
+	dstutil.Apply(s.source, func(cursor *dstutil.Cursor) bool {
+		if matcher.MatchCursor(cursor) {
+			matched = cursor.Node()
 			return false
 		}
 		return true
-	})
+	}, nil)
 
 	return
 }
 
 func (s *MatchGoNodeTestSuite) TestMatch() {
 
-	cases := []struct {
+	tests := []struct {
 		name    string
-		matcher packages.GoNodeMatcher
+		matcher match.GoNode
 		assert  func(node dst.Node)
 	}{
 		{
 			name: "match array type",
-			matcher: MatchArrayType(
-				MatchSelectorExpr(
-					MatchIdent("foundation"),
-					MatchIdent("ServiceProvider"),
+			matcher: ArrayType(
+				SelectorExpr(
+					Ident("foundation"),
+					Ident("ServiceProvider"),
 				),
-				MatchAnyNode(),
+				AnyNode(),
 			),
 			assert: func(node dst.Node) {
 				s.True(
-					MatchEqualNode(node).MatchNode(
+					EqualNode(node).MatchNode(
 						&dst.ArrayType{
 							Elt: &dst.SelectorExpr{
 								X:   &dst.Ident{Name: "foundation"},
@@ -90,12 +91,12 @@ func (s *MatchGoNodeTestSuite) TestMatch() {
 		},
 		{
 			name: "match  call expr",
-			matcher: MatchCallExpr(
-				MatchSelectorExpr(
-					MatchIdent("config"),
-					MatchIdent("Add"),
+			matcher: CallExpr(
+				SelectorExpr(
+					Ident("config"),
+					Ident("Add"),
 				),
-				MatchAnyNodes(),
+				AnyNodes(),
 			),
 			assert: func(node dst.Node) {
 				call, ok := node.(*dst.CallExpr)
@@ -103,7 +104,7 @@ func (s *MatchGoNodeTestSuite) TestMatch() {
 
 				// check if the function is config.Add
 				s.True(
-					MatchEqualNode(call.Fun).MatchNode(
+					EqualNode(call.Fun).MatchNode(
 						&dst.SelectorExpr{
 							X:   &dst.Ident{Name: "config"},
 							Sel: &dst.Ident{Name: "Add"},
@@ -113,7 +114,7 @@ func (s *MatchGoNodeTestSuite) TestMatch() {
 
 				// check if the first argument is "app"
 				s.True(
-					MatchEqualNode(call.Args[0]).MatchNode(
+					EqualNode(call.Args[0]).MatchNode(
 						&dst.BasicLit{
 							Kind:  token.STRING,
 							Value: strconv.Quote("app"),
@@ -124,10 +125,10 @@ func (s *MatchGoNodeTestSuite) TestMatch() {
 		},
 		{
 			name:    "match composite lit",
-			matcher: MatchCompositeLit(MatchTypeOf(&dst.MapType{})),
+			matcher: CompositeLit(TypeOf(&dst.MapType{})),
 			assert: func(node dst.Node) {
 				s.False(
-					MatchEqualNode(node).MatchNode(
+					EqualNode(node).MatchNode(
 						&dst.CompositeLit{
 							Type: &dst.MapType{
 								Key:   &dst.Ident{Name: "string"},
@@ -145,7 +146,7 @@ func (s *MatchGoNodeTestSuite) TestMatch() {
 				cl, ok := node.(*dst.CompositeLit)
 				s.True(ok)
 				s.True(
-					MatchEqualNode(cl.Type).MatchNode(&dst.MapType{
+					EqualNode(cl.Type).MatchNode(&dst.MapType{
 						Key:   &dst.Ident{Name: "string"},
 						Value: &dst.Ident{Name: "any"},
 					}),
@@ -157,7 +158,7 @@ func (s *MatchGoNodeTestSuite) TestMatch() {
 		},
 		{
 			name:    "match function",
-			matcher: MatchFuncDecl(MatchIdent("Boot")),
+			matcher: Func(Ident("Boot")),
 			assert: func(node dst.Node) {
 				fn, ok := node.(*dst.FuncDecl)
 				s.True(ok)
@@ -166,11 +167,12 @@ func (s *MatchGoNodeTestSuite) TestMatch() {
 		},
 		{
 			name:    "match import spec",
-			matcher: MatchImportSpec("github.com/goravel/framework/facades"),
+			matcher: Import("github.com/goravel/framework/facades", "facades"),
 			assert: func(node dst.Node) {
 				s.True(
-					MatchEqualNode(node).MatchNode(
+					EqualNode(node).MatchNode(
 						&dst.ImportSpec{
+							Name: &dst.Ident{Name: "facades"},
 							Path: &dst.BasicLit{
 								Kind:  token.STRING,
 								Value: strconv.Quote("github.com/goravel/framework/facades"),
@@ -181,13 +183,31 @@ func (s *MatchGoNodeTestSuite) TestMatch() {
 			},
 		},
 		{
+			name:    "match first of import spec",
+			matcher: FirstOf(TypeOf(&dst.ImportSpec{})),
+			assert: func(node dst.Node) {
+				n, ok := node.(*dst.ImportSpec)
+				s.True(ok)
+				s.True(Import("github.com/goravel/framework/auth").MatchNode(n))
+			},
+		},
+		{
+			name:    "match last of import spec",
+			matcher: LastOf(TypeOf(&dst.ImportSpec{})),
+			assert: func(node dst.Node) {
+				n, ok := node.(*dst.ImportSpec)
+				s.True(ok)
+				s.True(Import("github.com/goravel/framework/facades", "facades").MatchNode(n))
+			},
+		},
+		{
 			name:    "match key value expr",
-			matcher: MatchKeyValueExpr(MatchBasicLit(strconv.Quote("providers")), MatchAnyNode()),
+			matcher: KeyValueExpr(BasicLit(strconv.Quote("providers")), AnyNode()),
 			assert: func(node dst.Node) {
 				kv, ok := node.(*dst.KeyValueExpr)
 				s.True(ok)
 				s.True(
-					MatchEqualNode(kv.Key).MatchNode(
+					EqualNode(kv.Key).MatchNode(
 						&dst.BasicLit{
 							Kind:  token.STRING,
 							Value: strconv.Quote("providers"),
@@ -198,12 +218,11 @@ func (s *MatchGoNodeTestSuite) TestMatch() {
 		},
 	}
 
-	for _, tc := range cases {
-		s.Run(tc.name, func() {
-			matched := s.match(tc.matcher)
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			matched := s.match(tt.matcher)
 			s.NotNil(matched)
-			tc.assert(matched)
+			tt.assert(matched)
 		})
 	}
-
 }

@@ -1,11 +1,15 @@
 package console
 
 import (
+	"fmt"
 	"path/filepath"
 	"strings"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/packages/match"
+	"github.com/goravel/framework/packages/modify"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
@@ -46,12 +50,22 @@ func (r *JobMakeCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	if err := file.PutContent(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
+	if err := file.PutContent(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName(), m.GetSignature())); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
 
 	ctx.Success("Job created successfully")
+
+	if err = modify.GoFile(filepath.Join("app", "providers", "queue_service_provider.go")).
+		Find(match.Imports()).Modify(modify.AddImport(m.GetPackageImportPath())).
+		Find(match.Jobs()).Modify(modify.Register(fmt.Sprintf("&%s.%s{}", m.GetPackageName(), m.GetStructName()))).
+		Apply(); err != nil {
+		ctx.Warning(errors.QueueJobRegisterFailed.Args(err).Error())
+		return nil
+	}
+
+	ctx.Success("Job registered successfully")
 
 	return nil
 }
@@ -61,9 +75,9 @@ func (r *JobMakeCommand) getStub() string {
 }
 
 // populateStub Populate the place-holders in the command stub.
-func (r *JobMakeCommand) populateStub(stub string, packageName, structName string) string {
+func (r *JobMakeCommand) populateStub(stub string, packageName, structName, signature string) string {
 	stub = strings.ReplaceAll(stub, "DummyJob", structName)
-	stub = strings.ReplaceAll(stub, "DummyName", str.Of(structName).Snake().String())
+	stub = strings.ReplaceAll(stub, "DummySignature", str.Of(signature).Snake().String())
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 
 	return stub

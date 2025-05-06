@@ -48,7 +48,7 @@ func (f *File) Gc(maxLifetime int) error {
 			return err
 		}
 
-		if !info.IsDir() && info.ModTime().Before(cutoffTime.StdTime()) {
+		if !info.IsDir() && info.ModTime().UTC().Before(cutoffTime.StdTime()) {
 			return os.Remove(path)
 		}
 

@@ -45,7 +45,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		}
 
 		return client.NewRequest(&contractsclient.Config{
-			Timeout:             ConfigFacade.GetDuration("http.client.timeout", 30*time.Second),
+			Timeout:             time.Duration(ConfigFacade.GetInt("http.client.timeout", 30)) * time.Second,
 			BaseUrl:             ConfigFacade.GetString("http.client.base_url"),
 			MaxIdleConns:        ConfigFacade.GetInt("http.client.max_idle_conns"),
 			MaxIdleConnsPerHost: ConfigFacade.GetInt("http.client.max_idle_conns_per_host"),

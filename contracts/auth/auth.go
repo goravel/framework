@@ -35,7 +35,9 @@ type GuardDriver interface {
 }
 
 type UserProvider interface {
+	// GetID returns the user id.
 	GetID(user any) (any, error)
+	// RetriveByID returns the user by id, user should be a pointer.
 	RetriveByID(user any, id any) error
 }
 

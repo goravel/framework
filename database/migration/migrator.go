@@ -29,7 +29,7 @@ func NewMigrator(artisan console.Artisan, schema contractsschema.Schema, table s
 	}
 }
 
-func (r *Migrator) Create(name string) error {
+func (r *Migrator) Create(name string) (string, error) {
 	table, create := TableGuesser{}.Guess(name)
 
 	stub := r.creator.GetStub(table, create)
@@ -39,10 +39,10 @@ func (r *Migrator) Create(name string) error {
 
 	// Create the up.sql file.
 	if err := supportfile.PutContent(r.creator.GetPath(fileName), r.creator.PopulateStub(stub, fileName, table)); err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return fileName, nil
 }
 
 func (r *Migrator) Fresh() error {
@@ -57,6 +57,10 @@ func (r *Migrator) Fresh() error {
 }
 
 func (r *Migrator) Reset() error {
+	if err := r.prepareDatabase(); err != nil {
+		return err
+	}
+
 	ran, err := r.repository.GetRan()
 	if err != nil {
 		return err

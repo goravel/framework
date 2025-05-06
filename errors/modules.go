@@ -17,6 +17,7 @@ var (
 	ModuleMail       = "mail"
 	ModuleMigration  = "migration"
 	ModuleOrm        = "orm"
+	ModulePackages   = "packages"
 	ModuleQueue      = "queue"
 	ModuleRoute      = "route"
 	ModuleSchema     = "schema"

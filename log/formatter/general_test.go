@@ -25,7 +25,7 @@ func TestGeneralTestSuite(t *testing.T) {
 }
 
 func (s *GeneralTestSuite) SetupTest() {
-	s.mockConfig = &configmock.Config{}
+	s.mockConfig = configmock.NewConfig(s.T())
 	s.entry = &logrus.Entry{
 		Level:   logrus.InfoLevel,
 		Message: "Test Message",
@@ -34,8 +34,7 @@ func (s *GeneralTestSuite) SetupTest() {
 }
 
 func (s *GeneralTestSuite) TestFormat() {
-	s.mockConfig.On("GetString", "app.timezone").Return("UTC")
-	s.mockConfig.On("GetString", "app.env").Return("test")
+	s.mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
 	general := NewGeneral(s.mockConfig, s.json)
 	tests := []struct {
@@ -84,7 +83,6 @@ func (s *GeneralTestSuite) TestFormat() {
 			test.setup()
 			test.assert()
 		})
-		s.mockConfig.AssertExpectations(s.T())
 	}
 }
 

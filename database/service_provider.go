@@ -40,7 +40,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, nil
 		}
 
-		orm, err := databaseorm.BuildOrm(ctx, config, connection, log, app.Refresh)
+		orm, err := databaseorm.BuildOrm(ctx, config, connection, log, app.Fresh)
 		if err != nil {
 			color.Warningln(errors.OrmInitConnection.Args(connection, err).SetModule(errors.ModuleOrm))
 

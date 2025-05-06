@@ -272,7 +272,7 @@ func (_c *Body_SetFile_Call) RunAndReturn(run func(string, string) http.Body) *B
 }
 
 // SetFiles provides a mock function with given fields: files
-func (_m *Body) SetFiles(files map[string]string) http.Body {
+func (_m *Body) SetFiles(files map[string][]string) http.Body {
 	ret := _m.Called(files)
 
 	if len(ret) == 0 {
@@ -280,7 +280,7 @@ func (_m *Body) SetFiles(files map[string]string) http.Body {
 	}
 
 	var r0 http.Body
-	if rf, ok := ret.Get(0).(func(map[string]string) http.Body); ok {
+	if rf, ok := ret.Get(0).(func(map[string][]string) http.Body); ok {
 		r0 = rf(files)
 	} else {
 		if ret.Get(0) != nil {
@@ -297,14 +297,14 @@ type Body_SetFiles_Call struct {
 }
 
 // SetFiles is a helper method to define mock.On call
-//   - files map[string]string
+//   - files map[string][]string
 func (_e *Body_Expecter) SetFiles(files interface{}) *Body_SetFiles_Call {
 	return &Body_SetFiles_Call{Call: _e.mock.On("SetFiles", files)}
 }
 
-func (_c *Body_SetFiles_Call) Run(run func(files map[string]string)) *Body_SetFiles_Call {
+func (_c *Body_SetFiles_Call) Run(run func(files map[string][]string)) *Body_SetFiles_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(map[string]string))
+		run(args[0].(map[string][]string))
 	})
 	return _c
 }
@@ -314,7 +314,7 @@ func (_c *Body_SetFiles_Call) Return(_a0 http.Body) *Body_SetFiles_Call {
 	return _c
 }
 
-func (_c *Body_SetFiles_Call) RunAndReturn(run func(map[string]string) http.Body) *Body_SetFiles_Call {
+func (_c *Body_SetFiles_Call) RunAndReturn(run func(map[string][]string) http.Body) *Body_SetFiles_Call {
 	_c.Call.Return(run)
 	return _c
 }

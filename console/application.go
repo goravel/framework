@@ -1,10 +1,12 @@
 package console
 
 import (
+	"context"
 	"os"
+	"slices"
 	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
@@ -15,32 +17,25 @@ import (
 var (
 	noANSI     bool
 	noANSIFlag = &cli.BoolFlag{
-		Name:               "no-ansi",
-		Destination:        &noANSI,
-		DisableDefaultText: true,
-		Usage:              "Force disable ANSI output",
-	}
-
-	globalFlags = []cli.Flag{
-		noANSIFlag,
-		cli.HelpFlag,
-		cli.VersionFlag,
+		Name:        "no-ansi",
+		Destination: &noANSI,
+		HideDefault: true,
+		Usage:       "Force disable ANSI output",
 	}
 )
 
 type Application struct {
-	instance   *cli.App
+	instance   *cli.Command
 	useArtisan bool
 }
 
 // NewApplication Create a new Artisan application.
 // Will add artisan flag to the command if useArtisan is true.
 func NewApplication(name, usage, usageText, version string, useArtisan bool) console.Artisan {
-	instance := cli.NewApp()
+	instance := &cli.Command{}
 	instance.Name = name
 	instance.Usage = usage
 	instance.UsageText = usageText
-	instance.HelpName = name + " [global options]"
 	instance.Version = version
 	instance.CommandNotFound = commandNotFound
 	instance.OnUsageError = onUsageError
@@ -58,8 +53,8 @@ func (r *Application) Register(commands []console.Command) {
 		cliCommand := cli.Command{
 			Name:  item.Signature(),
 			Usage: item.Description(),
-			Action: func(ctx *cli.Context) error {
-				return item.Handle(NewCliContext(ctx))
+			Action: func(_ context.Context, cmd *cli.Command) error {
+				return item.Handle(NewCliContext(cmd))
 			},
 			Category:     item.Extend().Category,
 			ArgsUsage:    item.Extend().ArgsUsage,
@@ -102,8 +97,10 @@ func (r *Application) CallAndExit(command string) {
 
 // Run a command. Args come from os.Args.
 func (r *Application) Run(args []string, exitIfArtisan bool) error {
-	if noANSI || env.IsNoANSI() {
+	if noANSI || env.IsNoANSI() || slices.Contains(args, "--no-ansi") {
 		color.Disable()
+	} else {
+		color.Enable()
 	}
 
 	artisanIndex := -1
@@ -125,7 +122,7 @@ func (r *Application) Run(args []string, exitIfArtisan bool) error {
 		}
 
 		cliArgs := append([]string{args[0]}, args[artisanIndex+1:]...)
-		if err := r.instance.Run(cliArgs); err != nil {
+		if err := r.instance.Run(context.Background(), cliArgs); err != nil {
 			if exitIfArtisan {
 				panic(err.Error())
 			}
@@ -148,16 +145,16 @@ func flagsToCliFlags(flags []command.Flag) []cli.Flag {
 		case command.FlagTypeBool:
 			flag := flag.(*command.BoolFlag)
 			cliFlags = append(cliFlags, &cli.BoolFlag{
-				Name:               flag.Name,
-				Aliases:            flag.Aliases,
-				DisableDefaultText: flag.DisableDefaultText,
-				Usage:              flag.Usage,
-				Required:           flag.Required,
-				Value:              flag.Value,
+				Name:        flag.Name,
+				Aliases:     flag.Aliases,
+				HideDefault: flag.DisableDefaultText,
+				Usage:       flag.Usage,
+				Required:    flag.Required,
+				Value:       flag.Value,
 			})
 		case command.FlagTypeFloat64:
 			flag := flag.(*command.Float64Flag)
-			cliFlags = append(cliFlags, &cli.Float64Flag{
+			cliFlags = append(cliFlags, &cli.FloatFlag{
 				Name:     flag.Name,
 				Aliases:  flag.Aliases,
 				Usage:    flag.Usage,
@@ -166,12 +163,12 @@ func flagsToCliFlags(flags []command.Flag) []cli.Flag {
 			})
 		case command.FlagTypeFloat64Slice:
 			flag := flag.(*command.Float64SliceFlag)
-			cliFlags = append(cliFlags, &cli.Float64SliceFlag{
+			cliFlags = append(cliFlags, &cli.FloatSliceFlag{
 				Name:     flag.Name,
 				Aliases:  flag.Aliases,
 				Usage:    flag.Usage,
 				Required: flag.Required,
-				Value:    cli.NewFloat64Slice(flag.Value...),
+				Value:    cli.NewFloatSlice(flag.Value...).Value(),
 			})
 		case command.FlagTypeInt:
 			flag := flag.(*command.IntFlag)
@@ -189,7 +186,7 @@ func flagsToCliFlags(flags []command.Flag) []cli.Flag {
 				Aliases:  flag.Aliases,
 				Usage:    flag.Usage,
 				Required: flag.Required,
-				Value:    cli.NewIntSlice(flag.Value...),
+				Value:    flag.Value,
 			})
 		case command.FlagTypeInt64:
 			flag := flag.(*command.Int64Flag)
@@ -207,7 +204,7 @@ func flagsToCliFlags(flags []command.Flag) []cli.Flag {
 				Aliases:  flag.Aliases,
 				Usage:    flag.Usage,
 				Required: flag.Required,
-				Value:    cli.NewInt64Slice(flag.Value...),
+				Value:    flag.Value,
 			})
 		case command.FlagTypeString:
 			flag := flag.(*command.StringFlag)
@@ -225,7 +222,7 @@ func flagsToCliFlags(flags []command.Flag) []cli.Flag {
 				Aliases:  flag.Aliases,
 				Usage:    flag.Usage,
 				Required: flag.Required,
-				Value:    cli.NewStringSlice(flag.Value...),
+				Value:    flag.Value,
 			})
 		}
 	}

@@ -2,6 +2,7 @@ package console
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -22,6 +23,9 @@ func TestRuleMakeCommand(t *testing.T) {
 	mockContext.EXPECT().Argument(0).Return("Uppercase").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Rule created successfully").Once()
+	mockContext.EXPECT().Warning(mock.MatchedBy(func(msg string) bool {
+		return strings.HasPrefix(msg, "rule register failed:")
+	})).Once()
 	assert.Nil(t, requestMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("app/rules/uppercase.go"))
 
@@ -33,9 +37,14 @@ func TestRuleMakeCommand(t *testing.T) {
 	mockContext.EXPECT().Argument(0).Return("User/Phone").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Rule created successfully").Once()
+	mockContext.EXPECT().Success("Rule registered successfully").Once()
+	assert.NoError(t, file.PutContent("app/providers/validation_service_provider.go", validationServiceProvider))
 	assert.Nil(t, requestMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("app/rules/User/phone.go"))
 	assert.True(t, file.Contain("app/rules/User/phone.go", "package User"))
 	assert.True(t, file.Contain("app/rules/User/phone.go", "type Phone struct"))
+	assert.True(t, file.Contain("app/rules/User/phone.go", "user_phone"))
+	assert.True(t, file.Contain("app/providers/validation_service_provider.go", "app/rules/User"))
+	assert.True(t, file.Contain("app/providers/validation_service_provider.go", "&User.Phone{}"))
 	assert.Nil(t, file.Remove("app"))
 }

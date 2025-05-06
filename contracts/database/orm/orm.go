@@ -25,8 +25,8 @@ type Orm interface {
 	Observe(model any, observer Observer)
 	// Query gets a new query builder instance.
 	Query() Query
-	// Refresh resets the Orm instance.
-	Refresh()
+	// Fresh resets the Orm instance.
+	Fresh()
 	// SetQuery sets the query builder instance.
 	SetQuery(query Query)
 	// Transaction runs a callback wrapped in a database transaction.
@@ -189,8 +189,8 @@ type Query interface {
 	With(query string, args ...any) Query
 }
 
-type QueryWithSetContext interface {
-	SetContext(ctx context.Context)
+type QueryWithContext interface {
+	WithContext(ctx context.Context) Query
 }
 
 type QueryWithObserver interface {

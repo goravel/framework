@@ -1,4 +1,4 @@
-package packages
+package modify
 
 import (
 	"go/token"
@@ -10,7 +10,9 @@ import (
 	"github.com/dave/dst/dstutil"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/goravel/framework/contracts/packages"
+	contractsmatch "github.com/goravel/framework/contracts/packages/match"
+	"github.com/goravel/framework/contracts/packages/modify"
+	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -31,23 +33,21 @@ func TestModifyGoFileTestSuite(t *testing.T) {
 
 func (s *ModifyGoFileTestSuite) TestModifyGoFile() {
 	tests := []struct {
-		name   string
-		setup  func(g *ModifyGoFile)
-		assert func(err error)
+		name     string
+		setup    func()
+		actions  []modify.Action
+		matchers []contractsmatch.GoNode
+		assert   func(err error)
 	}{
 		{
 			name: "get file content failed",
-			setup: func(g *ModifyGoFile) {
-				g.File = s.file
-			},
 			assert: func(err error) {
 				s.Error(err)
 			},
 		},
 		{
 			name: "parse file failed",
-			setup: func(g *ModifyGoFile) {
-				g.File = s.file
+			setup: func() {
 				s.NoError(file.PutContent(s.file, "package main \n invalid go code"))
 			},
 			assert: func(err error) {
@@ -56,25 +56,17 @@ func (s *ModifyGoFileTestSuite) TestModifyGoFile() {
 		},
 		{
 			name: "apply modifier failed",
-			setup: func(g *ModifyGoFile) {
-				g.File = s.file
+			setup: func() {
 				src := `package main
 import "fmt"
 func main() {
 	fmt.Println("Hello, test!")
 }
 `
-				s.NoError(file.PutContent(s.file, src))
-				g.Modifiers = []packages.GoNodeModifier{
-					&ModifyGoNode{
-						Action: func(_ *dstutil.Cursor) {
-
-						},
-						Matchers: []packages.GoNodeMatcher{
-							MatchBasicLit("Hello, test!"),
-						},
-					},
-				}
+				s.Require().NoError(file.PutContent(s.file, src))
+			},
+			matchers: []contractsmatch.GoNode{
+				match.BasicLit("Hello, test!"),
 			},
 			assert: func(err error) {
 				s.Error(err)
@@ -82,28 +74,23 @@ func main() {
 		},
 		{
 			name: "apply modifier success",
-			setup: func(g *ModifyGoFile) {
-				g.File = s.file
+			setup: func() {
 				src := `package main
 import "fmt"
 func main() {
 	fmt.Println("Hello, test!")
 }
 `
-				s.NoError(file.PutContent(s.file, src))
-				g.Modifiers = []packages.GoNodeModifier{
-					&ModifyGoNode{
-						Action: func(cursor *dstutil.Cursor) {
-							cursor.Replace(&dst.BasicLit{
-								Kind:  token.STRING,
-								Value: strconv.Quote("Hello, test!!!"),
-							})
-						},
-						Matchers: []packages.GoNodeMatcher{
-							MatchBasicLit(strconv.Quote("Hello, test!")),
-						},
-					},
-				}
+				s.Require().NoError(file.PutContent(s.file, src))
+			},
+			actions: []modify.Action{func(cursor *dstutil.Cursor) {
+				cursor.Replace(&dst.BasicLit{
+					Kind:  token.STRING,
+					Value: strconv.Quote("Hello, test!!!"),
+				})
+			}},
+			matchers: []contractsmatch.GoNode{
+				match.BasicLit(strconv.Quote("Hello, test!")),
 			},
 			assert: func(err error) {
 				s.NoError(err)
@@ -115,9 +102,10 @@ func main() {
 	}
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			g := &ModifyGoFile{}
-			tt.setup(g)
-			tt.assert(g.Apply())
+			if tt.setup != nil {
+				tt.setup()
+			}
+			tt.assert(GoFile(s.file).Find(tt.matchers).Modify(tt.actions...).Apply())
 		})
 	}
 }

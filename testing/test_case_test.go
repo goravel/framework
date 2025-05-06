@@ -27,24 +27,24 @@ func (s *TestCaseSuite) SetupTest() {
 }
 
 func (s *TestCaseSuite) TestSeed() {
-	s.mockArtisan.On("Call", "db:seed").Return(nil).Once()
+	s.mockArtisan.On("Call", "--no-ansi db:seed").Return(nil).Once()
 	s.testCase.Seed()
 
-	s.mockArtisan.On("Call", "db:seed --seeder mock").Return(nil).Once()
+	s.mockArtisan.On("Call", "--no-ansi db:seed --seeder mock").Return(nil).Once()
 	s.testCase.Seed(&MockSeeder{})
 
 	s.Panics(func() {
-		s.mockArtisan.On("Call", "db:seed").Return(assert.AnError).Once()
+		s.mockArtisan.On("Call", "--no-ansi db:seed").Return(assert.AnError).Once()
 		s.testCase.Seed()
 	})
 }
 
 func (s *TestCaseSuite) TestRefreshDatabase() {
-	s.mockArtisan.On("Call", "migrate:refresh").Return(nil).Once()
+	s.mockArtisan.On("Call", "--no-ansi migrate:refresh").Return(nil).Once()
 	s.testCase.RefreshDatabase()
 
 	s.Panics(func() {
-		s.mockArtisan.On("Call", "migrate:refresh").Return(assert.AnError).Once()
+		s.mockArtisan.On("Call", "--no-ansi migrate:refresh").Return(assert.AnError).Once()
 		s.testCase.RefreshDatabase()
 	})
 }

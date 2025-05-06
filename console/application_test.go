@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
@@ -58,7 +58,7 @@ func TestFlagsToCliFlags(t *testing.T) {
 			assert.Equal(t, boolFlag.Value, cliBoolFlag.Value)
 		case command.FlagTypeFloat64:
 			float64Flag := flag.(*command.Float64Flag)
-			cliFloat64Flag := cliFlags[i].(*cli.Float64Flag)
+			cliFloat64Flag := cliFlags[i].(*cli.FloatFlag)
 			assert.Equal(t, float64Flag.Name, cliFloat64Flag.Name)
 			assert.Equal(t, float64Flag.Aliases, cliFloat64Flag.Aliases)
 			assert.Equal(t, float64Flag.Usage, cliFloat64Flag.Usage)
@@ -66,12 +66,12 @@ func TestFlagsToCliFlags(t *testing.T) {
 			assert.Equal(t, float64Flag.Value, cliFloat64Flag.Value)
 		case command.FlagTypeFloat64Slice:
 			float64SliceFlag := flag.(*command.Float64SliceFlag)
-			cliFloat64SliceFlag := cliFlags[i].(*cli.Float64SliceFlag)
+			cliFloat64SliceFlag := cliFlags[i].(*cli.FloatSliceFlag)
 			assert.Equal(t, float64SliceFlag.Name, cliFloat64SliceFlag.Name)
 			assert.Equal(t, float64SliceFlag.Aliases, cliFloat64SliceFlag.Aliases)
 			assert.Equal(t, float64SliceFlag.Usage, cliFloat64SliceFlag.Usage)
 			assert.Equal(t, float64SliceFlag.Required, cliFloat64SliceFlag.Required)
-			assert.Equal(t, cli.NewFloat64Slice(float64SliceFlag.Value...), cliFloat64SliceFlag.Value)
+			assert.Equal(t, float64SliceFlag.Value, cliFloat64SliceFlag.Value)
 		case command.FlagTypeInt:
 			intFlag := flag.(*command.IntFlag)
 			cliIntFlag := cliFlags[i].(*cli.IntFlag)
@@ -79,7 +79,7 @@ func TestFlagsToCliFlags(t *testing.T) {
 			assert.Equal(t, intFlag.Aliases, cliIntFlag.Aliases)
 			assert.Equal(t, intFlag.Usage, cliIntFlag.Usage)
 			assert.Equal(t, intFlag.Required, cliIntFlag.Required)
-			assert.Equal(t, intFlag.Value, cliIntFlag.Value)
+			assert.Equal(t, intFlag.Value, int(cliIntFlag.Value))
 		case command.FlagTypeIntSlice:
 			intSliceFlag := flag.(*command.IntSliceFlag)
 			cliIntSliceFlag := cliFlags[i].(*cli.IntSliceFlag)
@@ -87,7 +87,7 @@ func TestFlagsToCliFlags(t *testing.T) {
 			assert.Equal(t, intSliceFlag.Aliases, cliIntSliceFlag.Aliases)
 			assert.Equal(t, intSliceFlag.Usage, cliIntSliceFlag.Usage)
 			assert.Equal(t, intSliceFlag.Required, cliIntSliceFlag.Required)
-			assert.Equal(t, cli.NewIntSlice(intSliceFlag.Value...), cliIntSliceFlag.Value)
+			assert.Equal(t, intSliceFlag.Value, cliIntSliceFlag.Value)
 		case command.FlagTypeInt64:
 			int64Flag := flag.(*command.Int64Flag)
 			cliInt64Flag := cliFlags[i].(*cli.Int64Flag)
@@ -103,7 +103,7 @@ func TestFlagsToCliFlags(t *testing.T) {
 			assert.Equal(t, int64SliceFlag.Aliases, cliInt64SliceFlag.Aliases)
 			assert.Equal(t, int64SliceFlag.Usage, cliInt64SliceFlag.Usage)
 			assert.Equal(t, int64SliceFlag.Required, cliInt64SliceFlag.Required)
-			assert.Equal(t, cli.NewInt64Slice(int64SliceFlag.Value...), cliInt64SliceFlag.Value)
+			assert.Equal(t, int64SliceFlag.Value, cliInt64SliceFlag.Value)
 		case command.FlagTypeString:
 			stringFlag := flag.(*command.StringFlag)
 			cliStringFlag := cliFlags[i].(*cli.StringFlag)
@@ -119,7 +119,7 @@ func TestFlagsToCliFlags(t *testing.T) {
 			assert.Equal(t, stringSliceFlag.Aliases, cliStringSliceFlag.Aliases)
 			assert.Equal(t, stringSliceFlag.Usage, cliStringSliceFlag.Usage)
 			assert.Equal(t, stringSliceFlag.Required, cliStringSliceFlag.Required)
-			assert.Equal(t, cli.NewStringSlice(stringSliceFlag.Value...), cliStringSliceFlag.Value)
+			assert.Equal(t, stringSliceFlag.Value, cliStringSliceFlag.Value)
 		}
 	}
 }

@@ -8,17 +8,17 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/mattn/go-runewidth"
 	"github.com/pterm/pterm"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/support/color"
 )
 
 type CliContext struct {
-	instance *cli.Context
+	instance *cli.Command
 }
 
-func NewCliContext(instance *cli.Context) *CliContext {
+func NewCliContext(instance *cli.Command) *CliContext {
 	return &CliContext{instance}
 }
 
@@ -124,7 +124,7 @@ func (r *CliContext) Confirm(question string, option ...console.ConfirmOption) b
 
 	if err := input.Value(&answer).Run(); err != nil {
 		r.Error(err.Error())
-		
+
 		return false
 	}
 
@@ -194,11 +194,11 @@ func (r *CliContext) OptionBool(key string) bool {
 }
 
 func (r *CliContext) OptionFloat64(key string) float64 {
-	return r.instance.Float64(key)
+	return r.instance.Float(key)
 }
 
 func (r *CliContext) OptionFloat64Slice(key string) []float64 {
-	return r.instance.Float64Slice(key)
+	return r.instance.FloatSlice(key)
 }
 
 func (r *CliContext) OptionInt(key string) int {

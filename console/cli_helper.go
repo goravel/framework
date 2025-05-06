@@ -1,17 +1,18 @@
 package console
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
-	"slices"
 	"sort"
 	"strings"
 	"text/tabwriter"
 	"text/template"
+	"unicode"
 
 	"github.com/charmbracelet/huh"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"github.com/xrash/smetrics"
 
 	"github.com/goravel/framework/support/color"
@@ -20,8 +21,9 @@ import (
 
 func init() {
 	cli.HelpPrinterCustom = printHelpCustom
-	cli.AppHelpTemplate = appHelpTemplate
+	cli.RootCommandHelpTemplate = appHelpTemplate
 	cli.CommandHelpTemplate = commandHelpTemplate
+	cli.SubcommandHelpTemplate = commandHelpTemplate
 	cli.VersionPrinter = printVersion
 	huh.ErrUserAborted = cli.Exit(color.Red().Sprint("Cancelled."), 0)
 }
@@ -35,7 +37,7 @@ var (
 {{ yellow "Usage:" }}
    {{if .UsageText}}{{wrap (colorize .UsageText) 3}}{{end}}{{if .VisibleFlags}}
 
-{{ yellow "Global options:" }}{{template "flagTemplate" .VisibleFlags}}{{end}}{{if .VisibleCommands}}
+{{ yellow "Global options:" }}{{template "flagTemplate" (sortVisibleFlags .)}}{{end}}{{if .VisibleCommands}}
 
 {{ yellow "Available commands:" }}{{template "commandTemplate" .}}{{end}}
 `
@@ -44,18 +46,18 @@ var (
    {{ (colorize .Usage) }}
 
 {{ yellow "Usage:" }}
-   {{template "usageTemplate" .}}{{if globalFlags}}
+   {{template "usageTemplate" .}}{{with $root := .Root}}
 
-{{ yellow "Global options:" }}{{template "flagTemplate" globalFlags}}{{end}}{{if .VisibleFlags}}
+{{ yellow "Global options:" }}{{template "flagTemplate"  (sortVisibleFlags $root)}}{{end}}{{if .VisibleFlags}}
 
-{{ yellow "Options:" }}{{template "flagTemplate" .VisibleFlags}}{{end}}
+{{ yellow "Options:" }}{{template "flagTemplate" (sortVisibleFlags .)}}{{end}}
 `
 	commandTemplate = `{{ $cv := offsetCommands .VisibleCommands 5}}{{range .VisibleCategories}}{{if .Name}}
  {{yellow .Name}}:{{end}}{{range (sortCommands .VisibleCommands)}}
   {{$s := join .Names ", "}}{{green $s}}{{ $sp := subtract $cv (offset $s 3) }}{{ indent $sp ""}}{{wrap (colorize .Usage) $cv}}{{end}}{{end}}`
-	flagTemplate = `{{ $cv := offsetFlags . 5}}{{range  (sortFlags .)}}
+	flagTemplate = `{{ $cv := offsetFlags . 5}}{{range  .}}
    {{$s := getFlagName .}}{{green $s}}{{ $sp := subtract $cv (offset $s 1) }}{{ indent $sp ""}}{{$us := (capitalize .Usage)}}{{wrap (colorize $us) $cv}}{{$df := getFlagDefaultText . }}{{if $df}} {{yellow $df}}{{end}}{{end}}`
-	usageTemplate = `{{if .UsageText}}{{wrap (colorize .UsageText) 3}}{{else}}{{.HelpName}}{{if .VisibleFlags}} [options]{{end}}{{if .ArgsUsage}}{{.ArgsUsage}}{{else}}{{if .Args}} [arguments...]{{end}}{{end}}{{end}}`
+	usageTemplate = `{{if .UsageText}}{{wrap (colorize .UsageText) 3}}{{else}}{{(helpName .FullName)}}{{if .VisibleFlags}} [options]{{end}}{{if .ArgsUsage}}{{.ArgsUsage}}{{else}}{{if .Args}} [arguments...]{{end}}{{end}}{{end}}`
 )
 
 // colorsFuncMap is a map of functions for coloring text.
@@ -88,14 +90,14 @@ func colorize(text string) string {
 
 }
 
-func commandNotFound(ctx *cli.Context, command string) {
+func commandNotFound(_ context.Context, cmd *cli.Command, command string) {
 	var (
 		msgTxt     = fmt.Sprintf("Command '%s' is not defined.", command)
 		suggestion string
 	)
 	if alternatives := findAlternatives(command, func() (collection []string) {
-		for i := range ctx.App.Commands {
-			collection = append(collection, ctx.App.Commands[i].Names()...)
+		for i := range cmd.Commands {
+			collection = append(collection, cmd.Commands[i].Names()...)
 		}
 		return
 	}()); len(alternatives) > 0 {
@@ -174,7 +176,7 @@ func findAlternatives(name string, collection []string) (result []string) {
 
 func getFlagDefaultText(flag cli.DocGenerationFlag) string {
 	defaultValueString := ""
-	if bf, ok := flag.(*cli.BoolFlag); !ok || !bf.DisableDefaultText {
+	if bf, ok := flag.(*cli.BoolFlag); !ok || bf.IsDefaultVisible() {
 		if s := flag.GetDefaultText(); s != "" {
 			defaultValueString = fmt.Sprintf(`[default: %s]`, s)
 		}
@@ -183,7 +185,7 @@ func getFlagDefaultText(flag cli.DocGenerationFlag) string {
 }
 
 func getFlagName(flag cli.Flag) string {
-	names := flag.(cli.DocGenerationFlag).Names()
+	names := flag.Names()
 	sort.Slice(names, func(i, j int) bool {
 		return len(names[i]) < len(names[j])
 	})
@@ -196,9 +198,59 @@ func getFlagName(flag cli.Flag) string {
 	return prefixed
 }
 
+func handleNoANSI() {
+	if noANSI || env.IsNoANSI() {
+		color.Disable()
+	} else {
+		color.Enable()
+	}
+}
+
+func helpName(fullName string) string {
+	var namePath []string
+	for i, name := range strings.Split(fullName, " ") {
+		namePath = append(namePath, name)
+		if i == 0 {
+			namePath = append(namePath, "[global options]")
+		}
+	}
+
+	if len(namePath) > 1 {
+		fullName = strings.Join(namePath, " ")
+	}
+
+	return fullName
+}
+
 func indent(spaces int, v string) string {
 	pad := strings.Repeat(" ", spaces)
 	return pad + strings.Replace(v, "\n", "\n"+pad, -1)
+}
+
+// lexicographicLess compares strings alphabetically considering case.
+func lexicographicLess(i, j string) bool {
+	iRunes := []rune(i)
+	jRunes := []rune(j)
+
+	lenShared := len(iRunes)
+	if lenShared > len(jRunes) {
+		lenShared = len(jRunes)
+	}
+
+	for index := 0; index < lenShared; index++ {
+		ir := iRunes[index]
+		jr := jRunes[index]
+
+		if lir, ljr := unicode.ToLower(ir), unicode.ToLower(jr); lir != ljr {
+			return lir < ljr
+		}
+
+		if ir != jr {
+			return ir < jr
+		}
+	}
+
+	return i < j
 }
 
 func offset(input string, fixed int) int {
@@ -225,12 +277,12 @@ func offsetFlags(flags []cli.Flag, fixed int) int {
 	return maxLen + fixed
 }
 
-func onUsageError(_ *cli.Context, err error, _ bool) error {
+func onUsageError(_ context.Context, _ *cli.Command, err error, _ bool) error {
 	if flag, ok := strings.CutPrefix(err.Error(), "flag provided but not defined: -"); ok {
 		color.Red().Printfln("The '%s' option does not exist.", flag)
 		return nil
 	}
-	if flag, ok := strings.CutPrefix(err.Error(), "flag needs an argument: -"); ok {
+	if flag, ok := strings.CutPrefix(err.Error(), "flag needs an argument: "); ok {
 		color.Red().Printfln("The '%s' option requires a value.", flag)
 		return nil
 	}
@@ -249,15 +301,15 @@ func printHelpCustom(out io.Writer, templ string, data interface{}, _ map[string
 	funcMap := template.FuncMap{
 		"capitalize":         capitalize,
 		"colorize":           colorize,
-		"globalFlags":        func() []cli.Flag { return globalFlags },
 		"getFlagName":        getFlagName,
 		"getFlagDefaultText": getFlagDefaultText,
 		"indent":             indent,
+		"helpName":           helpName,
 		"join":               strings.Join,
 		"offset":             offset,
 		"offsetCommands":     offsetCommands,
 		"offsetFlags":        offsetFlags,
-		"sortFlags":          sortFlags,
+		"sortVisibleFlags":   sortVisibleFlags,
 		"sortCommands":       sortCommands,
 		"subtract":           subtract,
 		"trim":               strings.TrimSpace,
@@ -277,9 +329,8 @@ func printHelpCustom(out io.Writer, templ string, data interface{}, _ map[string
 		}
 	}
 
-	if noANSI || env.IsNoANSI() {
-		color.Disable()
-	}
+	handleNoANSI()
+
 	err := t.Execute(w, data)
 	if err != nil {
 		// If the writer is closed, t.Execute will fail, and there's nothing
@@ -296,20 +347,35 @@ func printTemplateError(err error) {
 	}
 }
 
-func printVersion(ctx *cli.Context) {
-	_, _ = fmt.Fprintf(ctx.App.Writer, "%v %v\n", ctx.App.Usage, color.Green().Sprint(ctx.App.Version))
+func printVersion(cmd *cli.Command) {
+	handleNoANSI()
+
+	_, _ = fmt.Fprintf(cmd.Writer, "%v %v\n", cmd.Usage, color.Green().Sprint(cmd.Version))
 }
 
 func sortCommands(commands []*cli.Command) []*cli.Command {
-	sort.Sort(cli.CommandsByName(commands))
+	sort.Slice(commands, func(i, j int) bool {
+		return lexicographicLess(commands[i].Name, commands[j].Name)
+	})
 
 	return commands
 }
 
-func sortFlags(flags []cli.Flag) []cli.Flag {
+func sortVisibleFlags(cmd *cli.Command) []cli.Flag {
+	var (
+		flags       = cmd.VisibleFlags()
+		globalFlags = cmd.Root().VisibleFlags()
+	)
 	sort.Sort(cli.FlagsByName(flags))
+
+	globalFlagNames := make(map[string]struct{})
+	for i := range globalFlags {
+		globalFlagNames[getFlagName(globalFlags[i])] = struct{}{}
+	}
 	sort.Slice(flags, func(i, j int) bool {
-		return slices.Contains(globalFlags, flags[j]) && !slices.Contains(globalFlags, flags[i])
+		_, isGlobalI := globalFlagNames[getFlagName(flags[i])]
+		_, isGlobalJ := globalFlagNames[getFlagName(flags[j])]
+		return !isGlobalI && isGlobalJ
 	})
 
 	return flags
