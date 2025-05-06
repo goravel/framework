@@ -9,6 +9,7 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/convert"
 )
 
 func ClientOriginalExtension(file string) string {
@@ -80,7 +81,7 @@ func GetContent(file string) (string, error) {
 		return "", err
 	}
 
-	return string(data), nil
+	return convert.UnsafeString(data), nil
 }
 
 func LastModified(file, timezone string) (time.Time, error) {

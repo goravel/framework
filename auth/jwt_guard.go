@@ -14,6 +14,7 @@ import (
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/convert"
 )
 
 var _ contractsauth.GuardFunc = NewJwtGuard
@@ -137,7 +138,7 @@ func (r *JwtGuard) LoginUsingID(id any) (token string, err error) {
 	}
 
 	tokenClaims := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	token, err = tokenClaims.SignedString([]byte(r.secret))
+	token, err = tokenClaims.SignedString(convert.UnsafeBytes(r.secret))
 	if err != nil {
 		return "", err
 	}
@@ -178,7 +179,7 @@ func (r *JwtGuard) Parse(token string) (*contractsauth.Payload, error) {
 	}
 
 	tokenClaims, err := jwt.ParseWithClaims(token, &Claims{}, func(token *jwt.Token) (any, error) {
-		return []byte(r.secret), nil
+		return convert.UnsafeBytes(r.secret), nil
 	}, jwt.WithTimeFunc(func() time.Time {
 		return carbon.Now().StdTime()
 	}))

@@ -12,6 +12,7 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/support/convert"
 )
 
 type AES struct {
@@ -37,9 +38,8 @@ func NewAES(config config.Config, json foundation.Json) (*AES, error) {
 		return nil, errors.CryptInvalidAppKeyLength.Args(keyLength)
 	}
 
-	keyBytes := []byte(key)
 	return &AES{
-		key:  keyBytes,
+		key:  convert.UnsafeBytes(key),
 		json: json,
 	}, nil
 }
@@ -51,7 +51,7 @@ func (b *AES) EncryptString(value string) (string, error) {
 		return "", err
 	}
 
-	plaintext := []byte(value)
+	plaintext := convert.UnsafeBytes(value)
 
 	iv := make([]byte, 12)
 	if _, err = io.ReadFull(rand.Reader, iv); err != nil {
@@ -117,5 +117,5 @@ func (b *AES) DecryptString(payload string) (string, error) {
 		return "", err
 	}
 
-	return string(plaintext), nil
+	return convert.UnsafeString(plaintext), nil
 }

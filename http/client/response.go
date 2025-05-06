@@ -7,6 +7,7 @@ import (
 
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http/client"
+	"github.com/goravel/framework/support/convert"
 )
 
 var _ client.Response = (*Response)(nil)
@@ -64,7 +65,7 @@ func (r *Response) Json() (map[string]any, error) {
 		return nil, err
 	}
 
-	if err := r.json.Unmarshal([]byte(content), &r.decoded); err != nil {
+	if err := r.json.UnmarshalString(content, &r.decoded); err != nil {
 		return nil, err
 	}
 
@@ -186,7 +187,7 @@ func (r *Response) getContent() (string, error) {
 		return "", err
 	}
 
-	r.content = string(content)
+	r.content = convert.UnsafeString(content)
 	return r.content, nil
 }
 

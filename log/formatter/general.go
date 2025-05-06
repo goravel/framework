@@ -70,12 +70,12 @@ func (general *General) formatData(data logrus.Fields) (string, error) {
 	if len(data) > 0 {
 		removedData := deleteKey(data, "root")
 		if len(removedData) > 0 {
-			removedDataBytes, err := general.json.Marshal(removedData)
+			removedDataStr, err := general.json.MarshalString(removedData)
 			if err != nil {
 				return "", err
 			}
 
-			builder.WriteString(fmt.Sprintf("fields: %s\n", string(removedDataBytes)))
+			builder.WriteString(fmt.Sprintf("fields: %s\n", removedDataStr))
 		}
 
 		root, err := cast.ToStringMapE(data["root"])

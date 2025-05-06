@@ -20,7 +20,7 @@ type AssertableJson struct {
 
 func NewAssertableJSON(t *testing.T, json foundation.Json, jsonStr string) (contractshttp.AssertableJSON, error) {
 	var decoded map[string]any
-	err := json.Unmarshal([]byte(jsonStr), &decoded)
+	err := json.UnmarshalString(jsonStr, &decoded)
 	if err != nil {
 		return nil, err
 	}

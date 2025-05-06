@@ -228,7 +228,7 @@ func (r *Request) doRequest(method, uri string, body io.Reader) (client.Response
 			return nil, err
 		}
 
-		if err := r.json.Unmarshal([]byte(body), r.bind); err != nil {
+		if err := r.json.UnmarshalString(body, r.bind); err != nil {
 			return nil, err
 		}
 	}

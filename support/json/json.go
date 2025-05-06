@@ -27,11 +27,20 @@ func Unmarshal(data []byte, v any) error {
 
 // MarshalString serializes the given value to a JSON-encoded string.
 func MarshalString(v any) (string, error) {
-	s, err := Marshal(v)
-	return string(s), err
+	app := foundation.App
+	if app == nil {
+		return "", errors.ApplicationNotSet
+	}
+
+	return app.GetJson().MarshalString(v)
 }
 
 // UnmarshalString deserializes the given JSON-encoded string into the provided value.
 func UnmarshalString(data string, v any) error {
-	return Unmarshal([]byte(data), v)
+	app := foundation.App
+	if app == nil {
+		return errors.ApplicationNotSet
+	}
+
+	return app.GetJson().UnmarshalString(data, v)
 }
