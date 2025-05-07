@@ -151,12 +151,12 @@ func (s *Session) Remove(key string) any {
 func (s *Session) Save() error {
 	s.ageFlashData()
 
-	data, err := s.json.Marshal(s.attributes)
+	data, err := s.json.MarshalString(s.attributes)
 	if err != nil {
 		return err
 	}
 
-	if err = s.driver.Write(s.GetID(), string(data)); err != nil {
+	if err = s.driver.Write(s.GetID(), data); err != nil {
 		return err
 	}
 
@@ -245,7 +245,7 @@ func (s *Session) readFromHandler() map[string]any {
 	}
 	var data map[string]any
 	if value != "" {
-		if err := s.json.Unmarshal([]byte(value), &data); err != nil {
+		if err := s.json.UnmarshalString(value, &data); err != nil {
 			color.Errorln(err)
 			return nil
 		}

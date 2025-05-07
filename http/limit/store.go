@@ -131,7 +131,7 @@ func (r *Store) getBucket(ctx context.Context, key string) (*Bucket, error) {
 	}
 
 	bucket := &Bucket{}
-	if err := r.json.Unmarshal([]byte(jsonData), bucket); err != nil {
+	if err := r.json.UnmarshalString(jsonData, bucket); err != nil {
 		return nil, err
 	}
 
@@ -139,12 +139,12 @@ func (r *Store) getBucket(ctx context.Context, key string) (*Bucket, error) {
 }
 
 func (r *Store) putBucket(ctx context.Context, key string, bucket *Bucket) error {
-	jsonData, err := r.json.Marshal(bucket)
+	jsonData, err := r.json.MarshalString(bucket)
 	if err != nil {
 		return err
 	}
 
-	return r.cache.WithContext(ctx).Put(key, string(jsonData), bucket.Interval)
+	return r.cache.WithContext(ctx).Put(key, jsonData, bucket.Interval)
 }
 
 func (r *Store) lock(key string) (cache.Lock, error) {

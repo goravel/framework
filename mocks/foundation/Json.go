@@ -75,6 +75,62 @@ func (_c *Json_Marshal_Call) RunAndReturn(run func(interface{}) ([]byte, error))
 	return _c
 }
 
+// MarshalString provides a mock function with given fields: _a0
+func (_m *Json) MarshalString(_a0 interface{}) (string, error) {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for MarshalString")
+	}
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(interface{}) (string, error)); ok {
+		return rf(_a0)
+	}
+	if rf, ok := ret.Get(0).(func(interface{}) string); ok {
+		r0 = rf(_a0)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(interface{}) error); ok {
+		r1 = rf(_a0)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Json_MarshalString_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MarshalString'
+type Json_MarshalString_Call struct {
+	*mock.Call
+}
+
+// MarshalString is a helper method to define mock.On call
+//   - _a0 interface{}
+func (_e *Json_Expecter) MarshalString(_a0 interface{}) *Json_MarshalString_Call {
+	return &Json_MarshalString_Call{Call: _e.mock.On("MarshalString", _a0)}
+}
+
+func (_c *Json_MarshalString_Call) Run(run func(_a0 interface{})) *Json_MarshalString_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(interface{}))
+	})
+	return _c
+}
+
+func (_c *Json_MarshalString_Call) Return(_a0 string, _a1 error) *Json_MarshalString_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Json_MarshalString_Call) RunAndReturn(run func(interface{}) (string, error)) *Json_MarshalString_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Unmarshal provides a mock function with given fields: _a0, _a1
 func (_m *Json) Unmarshal(_a0 []byte, _a1 interface{}) error {
 	ret := _m.Called(_a0, _a1)
@@ -118,6 +174,53 @@ func (_c *Json_Unmarshal_Call) Return(_a0 error) *Json_Unmarshal_Call {
 }
 
 func (_c *Json_Unmarshal_Call) RunAndReturn(run func([]byte, interface{}) error) *Json_Unmarshal_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UnmarshalString provides a mock function with given fields: _a0, _a1
+func (_m *Json) UnmarshalString(_a0 string, _a1 interface{}) error {
+	ret := _m.Called(_a0, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UnmarshalString")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, interface{}) error); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Json_UnmarshalString_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UnmarshalString'
+type Json_UnmarshalString_Call struct {
+	*mock.Call
+}
+
+// UnmarshalString is a helper method to define mock.On call
+//   - _a0 string
+//   - _a1 interface{}
+func (_e *Json_Expecter) UnmarshalString(_a0 interface{}, _a1 interface{}) *Json_UnmarshalString_Call {
+	return &Json_UnmarshalString_Call{Call: _e.mock.On("UnmarshalString", _a0, _a1)}
+}
+
+func (_c *Json_UnmarshalString_Call) Run(run func(_a0 string, _a1 interface{})) *Json_UnmarshalString_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(interface{}))
+	})
+	return _c
+}
+
+func (_c *Json_UnmarshalString_Call) Return(_a0 error) *Json_UnmarshalString_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Json_UnmarshalString_Call) RunAndReturn(run func(string, interface{}) error) *Json_UnmarshalString_Call {
 	_c.Call.Return(run)
 	return _c
 }

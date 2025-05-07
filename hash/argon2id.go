@@ -10,6 +10,7 @@ import (
 	"golang.org/x/crypto/argon2"
 
 	"github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/support/convert"
 )
 
 type Argon2id struct {
@@ -48,7 +49,7 @@ func (a *Argon2id) Make(value string) (string, error) {
 		return "", err
 	}
 
-	hash := argon2.IDKey([]byte(value), salt, a.time, a.memory, a.threads, a.keyLen)
+	hash := argon2.IDKey(convert.UnsafeBytes(value), salt, a.time, a.memory, a.threads, a.keyLen)
 
 	return fmt.Sprintf(a.format, a.version, a.memory, a.time, a.threads, base64.RawStdEncoding.EncodeToString(salt), base64.RawStdEncoding.EncodeToString(hash)), nil
 }
@@ -87,7 +88,7 @@ func (a *Argon2id) Check(value, hash string) bool {
 		return false
 	}
 
-	hashToCompare := argon2.IDKey([]byte(value), salt, time, memory, threads, uint32(len(decodedHash)))
+	hashToCompare := argon2.IDKey(convert.UnsafeBytes(value), salt, time, memory, threads, uint32(len(decodedHash)))
 
 	return subtle.ConstantTimeCompare(decodedHash, hashToCompare) == 1
 }

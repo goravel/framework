@@ -1,5 +1,7 @@
 package convert
 
+import "unsafe"
+
 // Tap calls the given callback with the given value then returns the value.
 //
 //	Tap("foo", func(s string) {
@@ -66,4 +68,30 @@ func Default[T comparable](values ...T) T {
 //	Pointer(1) // *int(1)
 func Pointer[T any](value T) *T {
 	return &value
+}
+
+// Fast method from https://github.com/gofiber/utils/blob/master/convert.go
+
+// UnsafeString returns a string pointer without allocation
+func UnsafeString(b []byte) string {
+	// the new way is slower `return unsafe.String(unsafe.SliceData(b), len(b))`
+	// unsafe.Pointer variant: 0.3538 ns/op vs unsafe.String variant: 0.5410 ns/op
+	return *(*string)(unsafe.Pointer(&b))
+}
+
+// UnsafeBytes returns a byte pointer without allocation.
+func UnsafeBytes(s string) []byte {
+	return unsafe.Slice(unsafe.StringData(s), len(s))
+}
+
+// CopyString copies a string to make it immutable
+func CopyString(s string) string {
+	return string(UnsafeBytes(s))
+}
+
+// CopyBytes copies a slice to make it immutable
+func CopyBytes(b []byte) []byte {
+	tmp := make([]byte, len(b))
+	copy(tmp, b)
+	return tmp
 }

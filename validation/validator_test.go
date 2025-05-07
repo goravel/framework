@@ -775,9 +775,9 @@ func TestCastValue(t *testing.T) {
 					O: []string{"1"},
 					P: map[string]string{"a": "aa"},
 				}
-				jsonStr, err := json.NewJson().Marshal(body)
+				jsonBytes, err := json.NewJson().Marshal(body)
 				assert.Nil(t, err)
-				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBuffer(jsonStr))
+				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBuffer(jsonBytes))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
 				data, err := validate.FromRequest(request)
@@ -843,9 +843,9 @@ func TestCastValue(t *testing.T) {
 					"o": []int{1},
 					"p": map[string]string{"a": "aa"},
 				}
-				jsonStr, err := json.NewJson().Marshal(body)
+				jsonBytes, err := json.NewJson().Marshal(body)
 				assert.Nil(t, err)
-				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBuffer(jsonStr))
+				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBuffer(jsonBytes))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
 				data, err := validate.FromRequest(request)
