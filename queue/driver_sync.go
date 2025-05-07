@@ -39,34 +39,33 @@ func (r *Sync) Pop(_ string) (queue.Task, error) {
 }
 
 func (r *Sync) Push(task queue.Task, _ string) error {
-	if !task.Delay.IsZero() {
-		time.Sleep(time.Until(task.Delay))
-	}
-
-	var realArgs []any
-	for _, arg := range task.Args {
-		realArgs = append(realArgs, arg.Value)
-	}
-
-	if err := task.Job.Handle(realArgs...); err != nil {
+	if err := push(task.Jobs); err != nil {
 		return err
 	}
 
 	if len(task.Chain) > 0 {
 		for _, chain := range task.Chain {
-			if !chain.Delay.IsZero() {
-				time.Sleep(time.Until(chain.Delay))
-			}
-
-			var realArgs []any
-			for _, arg := range chain.Args {
-				realArgs = append(realArgs, arg.Value)
-			}
-
-			if err := chain.Job.Handle(realArgs...); err != nil {
+			if err := push(chain); err != nil {
 				return err
 			}
 		}
+	}
+
+	return nil
+}
+
+func push(job queue.Jobs) error {
+	if !job.Delay.IsZero() {
+		time.Sleep(time.Until(job.Delay))
+	}
+
+	var realArgs []any
+	for _, arg := range job.Args {
+		realArgs = append(realArgs, arg.Value)
+	}
+
+	if err := job.Job.Handle(realArgs...); err != nil {
+		return err
 	}
 
 	return nil

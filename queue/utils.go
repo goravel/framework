@@ -12,7 +12,7 @@ import (
 
 type Task struct {
 	Job
-	Uuid  string `json:"uuid"`
+	UUID  string `json:"uuid"`
 	Chain []Job  `json:"chain"`
 }
 
@@ -62,7 +62,7 @@ func TaskToJson(task contractsqueue.Task, json foundation.Json) ([]byte, error) 
 	}
 
 	t := Task{
-		Uuid:  task.UUID,
+		UUID:  task.UUID,
 		Job:   job,
 		Chain: chain,
 	}
@@ -115,7 +115,7 @@ func JsonToTask(payload string, queue contractsqueue.Queue, json foundation.Json
 	}
 
 	return contractsqueue.Task{
-		UUID:  task.Uuid,
+		UUID:  task.UUID,
 		Jobs:  jobs,
 		Chain: chain,
 	}, nil

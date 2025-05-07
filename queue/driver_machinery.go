@@ -79,11 +79,13 @@ func NewMachinery(config config.Config, log contractslog.Log, jobs []queue.Job, 
 func (r *Machinery) ExistTasks() bool {
 	delayedTasks, err := r.broker.GetDelayedTasks()
 	if err != nil {
+		r.log.Errorf("failed to check old delay tasks: %v", err)
 		return false
 	}
 
 	pendingTasks, err := r.broker.GetPendingTasks(r.config.DefaultQueue)
 	if err != nil {
+		r.log.Errorf("failed to check pending tasks: %v", err)
 		return false
 	}
 
@@ -124,15 +126,16 @@ func jobs2Tasks(jobs []queue.Job) (map[string]any, error) {
 	tasks := make(map[string]any)
 
 	for _, job := range jobs {
-		if job.Signature() == "" {
+		signature := job.Signature()
+		if signature == "" {
 			return nil, errors.QueueEmptyJobSignature
 		}
 
-		if tasks[job.Signature()] != nil {
-			return nil, errors.QueueDuplicateJobSignature.Args(job.Signature())
+		if tasks[signature] != nil {
+			return nil, errors.QueueDuplicateJobSignature.Args(signature)
 		}
 
-		tasks[job.Signature()] = job.Handle
+		tasks[signature] = job.Handle
 	}
 
 	return tasks, nil
