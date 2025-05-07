@@ -469,8 +469,11 @@ func (r *Schema) extendGoTypes(goTypes []contractsschema.GoType) {
 				if cfg.NullType != "" {
 					result[idx].NullType = cfg.NullType
 				}
-				if cfg.Imports != nil {
-					result[idx].Imports = cfg.Imports
+				if cfg.Import != "" {
+					result[idx].Import = cfg.Import
+				}
+				if cfg.NullImport != "" {
+					result[idx].NullImport = cfg.NullImport
 				}
 			}
 		}
@@ -501,8 +504,11 @@ func (r *Schema) extendGoTypes(goTypes []contractsschema.GoType) {
 					if cfg.NullType != "" {
 						result[i].NullType = cfg.NullType
 					}
-					if cfg.Imports != nil {
-						result[i].Imports = cfg.Imports
+					if cfg.Import != "" {
+						result[i].Import = cfg.Import
+					}
+					if cfg.NullImport != "" {
+						result[i].NullImport = cfg.NullImport
 					}
 					break
 				}
@@ -570,12 +576,12 @@ func defaultGoTypes() []contractsschema.GoType {
 		{Pattern: "(?i)^json$", Type: "string", NullType: "*string"},
 
 		// Date and Time types
-		{Pattern: "(?i)^timestamptz$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Imports: []string{"github.com/goravel/framework/support/carbon"}}, // PostgreSQL
-		{Pattern: "(?i)^timestamp$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Imports: []string{"github.com/goravel/framework/support/carbon"}},
-		{Pattern: "(?i)^datetime$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Imports: []string{"github.com/goravel/framework/support/carbon"}}, // MySQL
-		{Pattern: "(?i)^timetz$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Imports: []string{"github.com/goravel/framework/support/carbon"}},   // PostgreSQL
-		{Pattern: "(?i)^time$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Imports: []string{"github.com/goravel/framework/support/carbon"}},
-		{Pattern: "(?i)^date$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Imports: []string{"github.com/goravel/framework/support/carbon"}},
+		{Pattern: "(?i)^timestamptz$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"}, // PostgreSQL
+		{Pattern: "(?i)^timestamp$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},
+		{Pattern: "(?i)^datetime$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"}, // MySQL
+		{Pattern: "(?i)^timetz$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},   // PostgreSQL
+		{Pattern: "(?i)^time$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},
+		{Pattern: "(?i)^date$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},
 		{Pattern: "(?i)^interval$", Type: "string", NullType: "*string"}, // PostgreSQL
 
 		// Enum types

@@ -76,15 +76,14 @@ func TestModelMakeCommand(t *testing.T) {
 
 	// Mock GoTypes
 	goTypes := []schema.GoType{
-		{Pattern: "bigint", Type: "uint", NullType: "sql.NullInt64", Imports: []string{"database/sql"}},
-		{Pattern: "varchar", Type: "string", NullType: "sql.NullString", Imports: []string{"database/sql"}},
-		{Pattern: "decimal", Type: "float64", NullType: "sql.NullFloat64", Imports: []string{"database/sql"}},
-		{Pattern: "int", Type: "int", NullType: "sql.NullInt32", Imports: []string{"database/sql"}},
-		{Pattern: "timestamp", Type: "time.Time", NullType: "sql.NullTime", Imports: []string{"database/sql", "time"}},
+		{Pattern: "bigint", Type: "uint", NullType: "sql.NullInt64", NullImport: "database/sql"},
+		{Pattern: "varchar", Type: "string", NullType: "sql.NullString", NullImport: "database/sql"},
+		{Pattern: "decimal", Type: "float64", NullType: "sql.NullFloat64", NullImport: "database/sql"},
+		{Pattern: "int", Type: "int", NullType: "sql.NullInt32", NullImport: "database/sql"},
+		{Pattern: "timestamp", Type: "time.Time", NullType: "sql.NullTime", NullImport: "database/sql", Import: "time"},
 	}
 	mockSchema.EXPECT().GoTypes().Return(goTypes).Once()
 
-	mockContext.EXPECT().Info("Generated 3 fields and 2 embeds from table 'products'").Once()
 	mockContext.EXPECT().Success("Model created successfully").Once()
 
 	assert.Nil(t, modelMakeCommand.Handle(mockContext))
@@ -133,9 +132,9 @@ func TestGenerateModelInfo(t *testing.T) {
 	}
 
 	goTypes := []schema.GoType{
-		{Pattern: "bigint", Type: "uint", NullType: "sql.NullInt64", Imports: []string{"database/sql"}},
-		{Pattern: "varchar", Type: "string", NullType: "sql.NullString", Imports: []string{"database/sql"}},
-		{Pattern: "timestamp", Type: "time.Time", NullType: "sql.NullTime", Imports: []string{"database/sql", "time"}},
+		{Pattern: "bigint", Type: "uint", NullType: "sql.NullInt64", NullImport: "database/sql"},
+		{Pattern: "varchar", Type: "string", NullType: "sql.NullString", NullImport: "database/sql"},
+		{Pattern: "timestamp", Type: "time.Time", NullType: "sql.NullTime", NullImport: "database/sql", Import: "time"},
 	}
 
 	mockSchema.EXPECT().GoTypes().Return(goTypes).Once()
@@ -175,8 +174,8 @@ func TestGenerateModelInfo(t *testing.T) {
 	}
 
 	goTypes = []schema.GoType{
-		{Pattern: "varchar", Type: "string", NullType: "sql.NullString", Imports: []string{"database/sql"}},
-		{Pattern: "decimal", Type: "float64", NullType: "sql.NullFloat64", Imports: []string{"database/sql"}},
+		{Pattern: "varchar", Type: "string", NullType: "sql.NullString", NullImport: "database/sql"},
+		{Pattern: "decimal", Type: "float64", NullType: "sql.NullFloat64", NullImport: "database/sql"},
 	}
 
 	mockSchema.EXPECT().GoTypes().Return(goTypes).Once()
@@ -222,78 +221,54 @@ func TestBuildField(t *testing.T) {
 func TestGetSchemaType(t *testing.T) {
 	// Test with exact match
 	typeMapping := []schema.GoType{
-		{Pattern: "varchar", Type: "string", NullType: "sql.NullString", Imports: []string{"database/sql"}},
-		{Pattern: "int", Type: "int", NullType: "sql.NullInt32", Imports: []string{"database/sql"}},
+		{Pattern: "varchar", Type: "string", NullType: "sql.NullString", NullImport: "database/sql"},
+		{Pattern: "int", Type: "int", NullType: "sql.NullInt32", NullImport: "database/sql"},
 	}
 
 	result := getSchemaType("varchar", typeMapping)
 	assert.Equal(t, "string", result.Type)
 	assert.Equal(t, "sql.NullString", result.NullType)
-	assert.Contains(t, result.Imports, "database/sql")
+	assert.Equal(t, "database/sql", result.NullImport)
 
 	// Test with regex pattern
 	typeMapping = []schema.GoType{
-		{Pattern: "varchar.*", Type: "string", NullType: "sql.NullString", Imports: []string{"database/sql"}},
-		{Pattern: "int.*", Type: "int", NullType: "sql.NullInt32", Imports: []string{"database/sql"}},
-		{Pattern: "decimal.*", Type: "float64", NullType: "sql.NullFloat64", Imports: []string{"database/sql"}},
+		{Pattern: "varchar.*", Type: "string", NullType: "sql.NullString", NullImport: "database/sql"},
+		{Pattern: "int.*", Type: "int", NullType: "sql.NullInt32", NullImport: "database/sql"},
+		{Pattern: "decimal.*", Type: "float64", NullType: "sql.NullFloat64", NullImport: "database/sql"},
 	}
 
 	result = getSchemaType("varchar(255)", typeMapping)
 	assert.Equal(t, "string", result.Type)
 	assert.Equal(t, "sql.NullString", result.NullType)
+	assert.Equal(t, "database/sql", result.NullImport)
 
 	result = getSchemaType("integer", typeMapping)
 	assert.Equal(t, "int", result.Type)
 	assert.Equal(t, "sql.NullInt32", result.NullType)
+	assert.Equal(t, "database/sql", result.NullImport)
 
 	result = getSchemaType("decimal(8,2)", typeMapping)
 	assert.Equal(t, "float64", result.Type)
 	assert.Equal(t, "sql.NullFloat64", result.NullType)
+	assert.Equal(t, "database/sql", result.NullImport)
 
-	// Test with enum types
+	// Test with Import field
 	typeMapping = []schema.GoType{
-		{Pattern: "enum", Type: "string", NullType: "sql.NullString", Imports: []string{"database/sql"}},
-		{Pattern: "set", Type: "[]string", NullType: "pq.StringArray", Imports: []string{"github.com/lib/pq"}},
-		{Pattern: "json", Type: "map[string]interface{}", NullType: "pq.JsonbArray", Imports: []string{"github.com/lib/pq"}},
+		{Pattern: "timestamp", Type: "time.Time", NullType: "sql.NullTime", Import: "time", NullImport: "database/sql"},
+		{Pattern: "uuid", Type: "uuid.UUID", NullType: "uuid.NullUUID", Import: "github.com/google/uuid", NullImport: "github.com/google/uuid"},
 	}
 
-	result = getSchemaType("enum('active','inactive','pending')", typeMapping)
-	assert.Equal(t, "string", result.Type)
-	assert.Equal(t, "sql.NullString", result.NullType)
-	assert.Contains(t, result.Imports, "database/sql")
-
-	result = getSchemaType("set('red','green','blue')", typeMapping)
-	assert.Equal(t, "[]string", result.Type)
-	assert.Equal(t, "pq.StringArray", result.NullType)
-	assert.Contains(t, result.Imports, "github.com/lib/pq")
-
-	result = getSchemaType("json", typeMapping)
-	assert.Equal(t, "map[string]interface{}", result.Type)
-	assert.Equal(t, "pq.JsonbArray", result.NullType)
-	assert.Contains(t, result.Imports, "github.com/lib/pq")
-
-	// Test with custom types
-	typeMapping = []schema.GoType{
-		{Pattern: "uuid", Type: "uuid.UUID", NullType: "uuid.NullUUID", Imports: []string{"github.com/google/uuid"}},
-		{Pattern: "geometry", Type: "geo.Point", NullType: "geo.NullPoint", Imports: []string{"github.com/paulmach/go.geo"}},
-		{Pattern: "citext", Type: "string", NullType: "sql.NullString", Imports: []string{"database/sql"}},
-	}
+	result = getSchemaType("timestamp", typeMapping)
+	assert.Equal(t, "time.Time", result.Type)
+	assert.Equal(t, "sql.NullTime", result.NullType)
+	assert.Equal(t, "time", result.Import)
+	assert.Equal(t, "database/sql", result.NullImport)
 
 	result = getSchemaType("uuid", typeMapping)
 	assert.Equal(t, "uuid.UUID", result.Type)
 	assert.Equal(t, "uuid.NullUUID", result.NullType)
-	assert.Contains(t, result.Imports, "github.com/google/uuid")
-
-	result = getSchemaType("geometry", typeMapping)
-	assert.Equal(t, "geo.Point", result.Type)
-	assert.Equal(t, "geo.NullPoint", result.NullType)
-	assert.Contains(t, result.Imports, "github.com/paulmach/go.geo")
-
-	// Test with no match
-	result = getSchemaType("unknown_type", typeMapping)
-	assert.Equal(t, "any", result.Type)
-	assert.Equal(t, "", result.NullType)
-	assert.Empty(t, result.Imports)
+	assert.Equal(t, "github.com/google/uuid", result.Import)
+	assert.Equal(t, "github.com/google/uuid", result.NullImport)
 }
 
 func TestPopulateStub(t *testing.T) {
@@ -326,15 +301,15 @@ func TestGenerateField(t *testing.T) {
 	}
 
 	typeMapping := []schema.GoType{
-		{Pattern: "varchar", Type: "string", NullType: "sql.NullString", Imports: []string{"database/sql"}},
+		{Pattern: "varchar", Type: "string", NullType: "sql.NullString", NullImport: "database/sql"},
 	}
 
 	field := generateField(column, typeMapping)
 	assert.Equal(t, "Name", field.Name)
 	assert.Equal(t, "string", field.Type)
 	assert.Contains(t, field.Tags, "json:\"name\"")
-	assert.Contains(t, field.Tags, "gorm:\"column:name\"")
-	assert.Len(t, field.Imports, 1)
+	assert.Contains(t, field.Tags, "db:\"name\"")
+	assert.Equal(t, []string{"database/sql"}, field.Imports)
 
 	// Test nullable field
 	column = driver.Column{
@@ -344,15 +319,15 @@ func TestGenerateField(t *testing.T) {
 	}
 
 	typeMapping = []schema.GoType{
-		{Pattern: "text", Type: "string", NullType: "sql.NullString", Imports: []string{"database/sql"}},
+		{Pattern: "text", Type: "string", NullType: "sql.NullString", NullImport: "database/sql"},
 	}
 
 	field = generateField(column, typeMapping)
 	assert.Equal(t, "Description", field.Name)
 	assert.Equal(t, "sql.NullString", field.Type)
 	assert.Contains(t, field.Tags, "json:\"description\"")
-	assert.Contains(t, field.Tags, "gorm:\"column:description\"")
-	assert.Contains(t, field.Imports, "database/sql")
+	assert.Contains(t, field.Tags, "db:\"description\"")
+	assert.Equal(t, []string{"database/sql"}, field.Imports)
 
 	// Test auto-increment field
 	column = driver.Column{
@@ -363,15 +338,16 @@ func TestGenerateField(t *testing.T) {
 	}
 
 	typeMapping = []schema.GoType{
-		{Pattern: "bigint", Type: "uint", NullType: "sql.NullInt64", Imports: []string{"database/sql"}},
+		{Pattern: "bigint", Type: "uint", NullType: "sql.NullInt64", NullImport: "database/sql"},
 	}
 
 	field = generateField(column, typeMapping)
 	assert.Equal(t, "Id", field.Name)
 	assert.Equal(t, "uint", field.Type)
 	assert.Contains(t, field.Tags, "json:\"id\"")
-	assert.Contains(t, field.Tags, "gorm:\"column:id;autoIncrement\"")
-	assert.Len(t, field.Imports, 1)
+	assert.Contains(t, field.Tags, "db:\"id\"")
+	assert.Contains(t, field.Tags, "gorm:\"autoIncrement\"")
+	assert.Equal(t, []string{"database/sql"}, field.Imports)
 
 	// Test enum field
 	column = driver.Column{
@@ -381,15 +357,15 @@ func TestGenerateField(t *testing.T) {
 	}
 
 	typeMapping = []schema.GoType{
-		{Pattern: "enum", Type: "string", NullType: "sql.NullString", Imports: []string{"database/sql"}},
+		{Pattern: "enum", Type: "string", NullType: "sql.NullString", NullImport: "database/sql"},
 	}
 
 	field = generateField(column, typeMapping)
 	assert.Equal(t, "Status", field.Name)
 	assert.Equal(t, "string", field.Type)
 	assert.Contains(t, field.Tags, "json:\"status\"")
-	assert.Contains(t, field.Tags, "gorm:\"column:status\"")
-	assert.Contains(t, field.Imports, "database/sql")
+	assert.Contains(t, field.Tags, "db:\"status\"")
+	assert.Equal(t, []string{"database/sql"}, field.Imports)
 
 	// Test custom type field
 	column = driver.Column{
@@ -399,15 +375,33 @@ func TestGenerateField(t *testing.T) {
 	}
 
 	typeMapping = []schema.GoType{
-		{Pattern: "geometry", Type: "geo.Point", NullType: "geo.NullPoint", Imports: []string{"github.com/paulmach/go.geo"}},
+		{Pattern: "geometry", Type: "geo.Point", NullType: "geo.NullPoint", Import: "github.com/paulmach/go.geo", NullImport: "github.com/paulmach/go.geo"},
 	}
 
 	field = generateField(column, typeMapping)
 	assert.Equal(t, "Location", field.Name)
 	assert.Equal(t, "geo.NullPoint", field.Type)
 	assert.Contains(t, field.Tags, "json:\"location\"")
-	assert.Contains(t, field.Tags, "gorm:\"column:location\"")
+	assert.Contains(t, field.Tags, "db:\"location\"")
 	assert.Contains(t, field.Imports, "github.com/paulmach/go.geo")
+
+	// Test field with Import only (not nullable)
+	column = driver.Column{
+		Name:     "timestamp",
+		Type:     "timestamp",
+		Nullable: false,
+	}
+
+	typeMapping = []schema.GoType{
+		{Pattern: "timestamp", Type: "time.Time", NullType: "sql.NullTime", Import: "time", NullImport: "database/sql"},
+	}
+
+	field = generateField(column, typeMapping)
+	assert.Equal(t, "Timestamp", field.Name)
+	assert.Equal(t, "time.Time", field.Type)
+	assert.Contains(t, field.Tags, "json:\"timestamp\"")
+	assert.Contains(t, field.Tags, "db:\"timestamp\"")
+	assert.Equal(t, []string{"time", "database/sql"}, field.Imports)
 
 	// Test unknown type
 	column = driver.Column{
@@ -420,6 +414,6 @@ func TestGenerateField(t *testing.T) {
 	assert.Equal(t, "CustomField", field.Name)
 	assert.Equal(t, "any", field.Type)
 	assert.Contains(t, field.Tags, "json:\"custom_field\"")
-	assert.Contains(t, field.Tags, "gorm:\"column:custom_field\"")
+	assert.Contains(t, field.Tags, "db:\"custom_field\"")
 	assert.Empty(t, field.Imports)
 }

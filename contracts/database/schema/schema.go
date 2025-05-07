@@ -96,8 +96,9 @@ type Extension struct {
 // GoType represents a database column type to Go type mapping
 // This is kept for backward compatibility
 type GoType struct {
-	Pattern  string
-	Type     string
-	NullType string
-	Imports  []string
+	Pattern    string
+	Type       string
+	Import     string
+	NullType   string
+	NullImport string
 }

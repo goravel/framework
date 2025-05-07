@@ -285,6 +285,15 @@ func generateField(column driver.Column, typeMapping []schema.GoType) fieldDefin
 		goType = typeInfo.NullType
 	}
 
+	imports := make([]string, 0, 2)
+	if typeInfo.Import != "" {
+		imports = append(imports, typeInfo.Import)
+	}
+
+	if typeInfo.NullImport != "" {
+		imports = append(imports, typeInfo.NullImport)
+	}
+
 	tagParts := []string{
 		fmt.Sprintf(`json:"%s"`, column.Name),
 		fmt.Sprintf(`db:"%s"`, column.Name),
@@ -298,7 +307,7 @@ func generateField(column driver.Column, typeMapping []schema.GoType) fieldDefin
 		Name:    str.Of(column.Name).Studly().String(),
 		Type:    goType,
 		Tags:    "`" + strings.Join(tagParts, " ") + "`",
-		Imports: typeInfo.Imports,
+		Imports: imports,
 	}
 }
 

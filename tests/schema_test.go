@@ -2671,10 +2671,10 @@ func (s *SchemaSuite) TestExtend() {
 			originalGoTypes := schema.GoTypes()
 
 			customGoTypes := []contractsschema.GoType{
-				{Pattern: "uuid", Type: "uuid.UUID", NullType: "uuid.NullUUID", Imports: []string{"github.com/google/uuid"}},
-				{Pattern: "point", Type: "geom.Point", NullType: "*geom.Point", Imports: []string{"github.com/twpayne/go-geom"}},
+				{Pattern: "uuid", Type: "uuid.UUID", NullType: "uuid.NullUUID", Import: "github.com/google/uuid"},
+				{Pattern: "point", Type: "geom.Point", NullType: "*geom.Point", Import: "github.com/twpayne/go-geom"},
 				// Override an existing type
-				{Pattern: "(?i)^jsonb$", Type: "jsonb.RawMessage", NullType: "*jsonb.RawMessage", Imports: []string{"github.com/jmoiron/sqlx/types"}},
+				{Pattern: "(?i)^jsonb$", Type: "jsonb.RawMessage", NullType: "*jsonb.RawMessage", Import: "github.com/jmoiron/sqlx/types"},
 			}
 
 			schema.Extend(&contractsschema.Extension{
@@ -2688,13 +2688,13 @@ func (s *SchemaSuite) TestExtend() {
 			s.True(found, "uuid type should be added")
 			s.Equal("uuid.UUID", uuidType.Type)
 			s.Equal("uuid.NullUUID", uuidType.NullType)
-			s.Contains(uuidType.Imports, "github.com/google/uuid")
+			s.Equal("github.com/google/uuid", uuidType.Import)
 
 			pointType, found := findGoType("point", extendedGoTypes)
 			s.True(found, "point type should be added")
 			s.Equal("geom.Point", pointType.Type)
 			s.Equal("*geom.Point", pointType.NullType)
-			s.Contains(pointType.Imports, "github.com/twpayne/go-geom")
+			s.Equal("github.com/twpayne/go-geom", pointType.Import)
 
 			// Check that existing type was overridden
 			jsonbPattern := "(?i)^jsonb$"
@@ -2706,7 +2706,7 @@ func (s *SchemaSuite) TestExtend() {
 			s.True(found, "jsonb type should exist in extended types")
 			s.Equal("jsonb.RawMessage", extendedJsonb.Type, "Extended jsonb type should be jsonb.RawMessage")
 			s.Equal("*jsonb.RawMessage", extendedJsonb.NullType)
-			s.Contains(extendedJsonb.Imports, "github.com/jmoiron/sqlx/types")
+			s.Equal("github.com/jmoiron/sqlx/types", extendedJsonb.Import)
 
 			// Create a table with both original and extended types to test if they work
 			if driver == postgres.Name {
@@ -2746,7 +2746,7 @@ func (s *SchemaSuite) TestOverrideDefaultTypeWithExtend() {
 
 			// Define custom type extensions to override timestamp type
 			customGoTypes := []contractsschema.GoType{
-				{Pattern: "(?i)^timestamp$", Type: "time.Time", NullType: "*time.Time", Imports: []string{"time"}},
+				{Pattern: "(?i)^timestamp$", Type: "time.Time", NullType: "*time.Time", Import: "time"},
 			}
 
 			schema.Extend(&contractsschema.Extension{
@@ -2759,7 +2759,7 @@ func (s *SchemaSuite) TestOverrideDefaultTypeWithExtend() {
 			s.True(found, "timestamp type should exist")
 			s.Equal("time.Time", timestampType.Type, "timestamp should be overridden to time.Time")
 			s.Equal("*time.Time", timestampType.NullType)
-			s.Equal(timestampType.Imports, []string{"time"})
+			s.Equal("time", timestampType.Import, "timestamp should import time package")
 
 			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
 				table.ID()
@@ -2801,8 +2801,10 @@ func (s *SchemaSuite) TestEmptyExtend() {
 					"Type of type at index %d should be unchanged", i)
 				s.Equal(originalType.NullType, extendedGoTypes[i].NullType,
 					"NullType of type at index %d should be unchanged", i)
-				s.Equal(originalType.Imports, extendedGoTypes[i].Imports,
+				s.Equal(originalType.Import, extendedGoTypes[i].Import,
 					"Imports of type at index %d should be unchanged", i)
+				s.Equal(originalType.NullImport, extendedGoTypes[i].NullImport,
+					"Import of NullType at index %d should be unchanged", i)
 			}
 		})
 	}
