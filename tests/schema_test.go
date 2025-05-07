@@ -2763,17 +2763,17 @@ func (s *SchemaSuite) TestOverrideDefaultTypeWithExtend() {
 
 			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
 				table.ID()
-				table.String("name")
+				table.String("name").Nullable()
 				table.Timestamp("created_at")
 			}))
 
 			columns, err := schema.GetColumns(table)
 			s.NoError(err)
-			s.Equal(columns, []contractsdriver.Column{
-				{Name: "id", Type: "bigint", TypeName: "int8", Autoincrement: true, Nullable: false},
-				{Name: "name", Type: "character varying", TypeName: "varchar", Nullable: true},
-				{Name: "created_at", Type: "timestamp", TypeName: "timestamp", Nullable: true},
-			})
+			s.Equal([]contractsdriver.Column{
+				{Name: "id", Type: "integer", TypeName: "integer", Autoincrement: true, Nullable: false},
+				{Name: "name", Type: "varchar", TypeName: "varchar", Nullable: true},
+				{Name: "created_at", Type: "datetime", TypeName: "datetime", Nullable: false},
+			}, columns)
 		})
 	}
 }
