@@ -117,7 +117,7 @@ func (r *Worker) call(task queue.Task) error {
 			UUID:       task.UUID,
 			Connection: r.connection,
 			Queue:      r.queue,
-			Payload:    string(payload),
+			Payload:    payload,
 			Exception:  err.Error(),
 			FailedAt:   carbon.NewDateTime(carbon.Now()),
 		}

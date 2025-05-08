@@ -22,7 +22,7 @@ type Job struct {
 	Delay     *time.Time           `json:"delay"`
 }
 
-func TaskToJson(task contractsqueue.Task, json foundation.Json) ([]byte, error) {
+func TaskToJson(task contractsqueue.Task, json foundation.Json) (string, error) {
 	chain := make([]Job, len(task.Chain))
 	for i, taskData := range task.Chain {
 		for j, arg := range taskData.Args {
@@ -67,9 +67,9 @@ func TaskToJson(task contractsqueue.Task, json foundation.Json) ([]byte, error) 
 		Chain: chain,
 	}
 
-	payload, err := json.Marshal(t)
+	payload, err := json.MarshalString(t)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	return payload, nil
