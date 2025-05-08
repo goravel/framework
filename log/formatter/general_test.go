@@ -1,8 +1,10 @@
 package formatter
 
 import (
+	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -27,6 +29,7 @@ func TestGeneralTestSuite(t *testing.T) {
 func (s *GeneralTestSuite) SetupTest() {
 	s.mockConfig = configmock.NewConfig(s.T())
 	s.entry = &logrus.Entry{
+		Time:    time.Now(),
 		Level:   logrus.InfoLevel,
 		Message: "Test Message",
 	}
@@ -70,6 +73,7 @@ func (s *GeneralTestSuite) TestFormat() {
 			assert: func() {
 				formatLog, err := general.Format(s.entry)
 				s.Nil(err)
+				s.Contains(string(formatLog), fmt.Sprintf("[%s] test.info: Test Message", s.entry.Time.In(time.UTC).Format(time.DateTime)))
 				s.Contains(string(formatLog), "[Code] 200")
 				s.Contains(string(formatLog), "[Domain] example.com")
 				s.Contains(string(formatLog), "[Owner] owner")

@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -25,6 +26,7 @@ type Worker struct {
 	connection string
 	queue      string
 	concurrent int
+	debug      bool
 
 	currentDelay  time.Duration
 	failedJobChan chan FailedJob
@@ -44,6 +46,7 @@ func NewWorker(config queue.Config, job queue.JobRepository, json foundation.Jso
 		connection: connection,
 		queue:      queue,
 		concurrent: concurrent,
+		debug:      config.Debug(),
 
 		currentDelay:  1 * time.Second,
 		failedJobChan: make(chan FailedJob, concurrent),
@@ -140,6 +143,10 @@ func (r *Worker) call(task queue.Task) error {
 }
 
 func (r *Worker) run(driver queue.Driver) error {
+	if r.debug {
+		color.Infoln(fmt.Sprintf("Processing jobs from [%s] connection and [%s] queue\n", r.connection, r.queue))
+	}
+
 	queueKey := r.config.QueueKey(r.connection, r.queue)
 
 	for i := 0; i < r.concurrent; i++ {
@@ -211,6 +218,10 @@ func (r *Worker) run(driver queue.Driver) error {
 }
 
 func (r *Worker) printRunningLog(task queue.Task) {
+	if !r.debug {
+		return
+	}
+
 	datetime := color.Gray().Sprint(carbon.Now().ToDateTimeString())
 	status := "<fg=yellow;op=bold>RUNNING</>"
 	first := datetime + " " + task.Job.Signature()
@@ -220,6 +231,10 @@ func (r *Worker) printRunningLog(task queue.Task) {
 }
 
 func (r *Worker) printSuccessLog(task queue.Task, duration string) {
+	if !r.debug {
+		return
+	}
+
 	datetime := color.Gray().Sprint(carbon.Now().ToDateTimeString())
 	status := "<fg=green;op=bold>DONE</>"
 	duration = color.Gray().Sprint(duration)
@@ -230,6 +245,10 @@ func (r *Worker) printSuccessLog(task queue.Task, duration string) {
 }
 
 func (r *Worker) printFailedLog(task queue.Task, duration string) {
+	if !r.debug {
+		return
+	}
+
 	datetime := color.Gray().Sprint(carbon.Now().ToDateTimeString())
 	status := "<fg=red;op=bold>FAIL</>"
 	duration = color.Gray().Sprint(duration)

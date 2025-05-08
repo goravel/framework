@@ -31,6 +31,8 @@ func TestWorkerTestSuite(t *testing.T) {
 
 func (s *WorkerTestSuite) SetupTest() {
 	s.mockConfig = mocksqueue.NewConfig(s.T())
+	s.mockConfig.EXPECT().Debug().Return(true).Once()
+
 	s.mockLog = mockslog.NewLog(s.T())
 	s.mockJob = mocksqueue.NewJobRepository(s.T())
 
@@ -70,6 +72,7 @@ func (s *WorkerTestSuite) Test_run() {
 	}
 
 	s.Run("no job found", func() {
+		s.mockConfig.EXPECT().Debug().Return(true).Once()
 		s.mockConfig.EXPECT().QueueKey(connection, queue).Return(queueKey).Once()
 
 		mockDriver := mocksqueue.NewDriver(s.T())
@@ -88,6 +91,7 @@ func (s *WorkerTestSuite) Test_run() {
 	})
 
 	s.Run("failed to pop job", func() {
+		s.mockConfig.EXPECT().Debug().Return(true).Once()
 		s.mockConfig.EXPECT().QueueKey(connection, queue).Return(queueKey).Once()
 
 		mockDriver := mocksqueue.NewDriver(s.T())
@@ -108,6 +112,7 @@ func (s *WorkerTestSuite) Test_run() {
 	})
 
 	s.Run("failed to call job", func() {
+		s.mockConfig.EXPECT().Debug().Return(true).Once()
 		mockFailedJobsQuery := mocksdb.NewQuery(s.T())
 
 		s.mockConfig.EXPECT().QueueKey(connection, queue).Return(queueKey).Once()
@@ -153,6 +158,7 @@ func (s *WorkerTestSuite) Test_run() {
 
 		mockFailedJobsQuery := mocksdb.NewQuery(s.T())
 
+		s.mockConfig.EXPECT().Debug().Return(true).Once()
 		s.mockConfig.EXPECT().QueueKey(connection, queue).Return(queueKey).Once()
 
 		mockDriver := mocksqueue.NewDriver(s.T())
@@ -180,6 +186,7 @@ func (s *WorkerTestSuite) Test_run() {
 	})
 
 	s.Run("success", func() {
+		s.mockConfig.EXPECT().Debug().Return(true).Once()
 		s.mockConfig.EXPECT().QueueKey(connection, queue).Return(queueKey).Once()
 
 		mockDriver := mocksqueue.NewDriver(s.T())
