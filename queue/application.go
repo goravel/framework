@@ -43,7 +43,9 @@ func (r *Application) Register(jobs []queue.Job) {
 }
 
 func (r *Application) Worker(payloads ...queue.Args) queue.Worker {
-	defaultConnection, defaultQueue, defaultConcurrent := r.config.Default()
+	defaultConnection := r.config.DefaultConnection()
+	defaultQueue := r.config.DefaultQueue()
+	defaultConcurrent := r.config.DefaultConcurrent()
 
 	if len(payloads) == 0 {
 		return NewWorker(r.config, r.job, r.json, r.log, defaultConnection, defaultQueue, defaultConcurrent)

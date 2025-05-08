@@ -34,15 +34,21 @@ func (s *ConfigTestSuite) TestDebug() {
 	s.False(s.config.Debug())
 }
 
-func (s *ConfigTestSuite) TestDefault() {
+func (s *ConfigTestSuite) TestDefaultConnection() {
+	s.mockConfig.EXPECT().GetString("queue.default").Return("redis").Once()
+	s.Equal("redis", s.config.DefaultConnection())
+}
+
+func (s *ConfigTestSuite) TestDefaultQueue() {
 	s.mockConfig.EXPECT().GetString("queue.default").Return("redis").Once()
 	s.mockConfig.EXPECT().GetString("queue.connections.redis.queue", "default").Return("default").Once()
-	s.mockConfig.EXPECT().GetInt("queue.connections.redis.concurrent", 1).Return(2).Once()
+	s.Equal("default", s.config.DefaultQueue())
+}
 
-	connection, queue, concurrent := s.config.Default()
-	s.Equal("redis", connection)
-	s.Equal("default", queue)
-	s.Equal(2, concurrent)
+func (s *ConfigTestSuite) TestDefaultConcurrent() {
+	s.mockConfig.EXPECT().GetString("queue.default").Return("redis").Once()
+	s.mockConfig.EXPECT().GetInt("queue.connections.redis.concurrent", 1).Return(2).Once()
+	s.Equal(2, s.config.DefaultConcurrent())
 }
 
 func (s *ConfigTestSuite) TestDriver() {

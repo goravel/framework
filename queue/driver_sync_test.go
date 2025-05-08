@@ -41,7 +41,8 @@ func (s *SyncTestSuite) SetupTest() {
 	testJobOne = nil
 	testJobTwo = nil
 
-	s.mockConfig.EXPECT().Default().Return("sync", "default", 1).Once()
+	s.mockConfig.EXPECT().DefaultConnection().Return("sync").Once()
+	s.mockConfig.EXPECT().DefaultQueue().Return("default").Once()
 	s.mockConfig.EXPECT().QueueKey("sync", "default").Return("sync_queue").Once()
 	s.mockConfig.EXPECT().Driver("sync").Return(queue.DriverSync).Once()
 }

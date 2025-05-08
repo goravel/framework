@@ -114,64 +114,137 @@ func (_c *Config_Debug_Call) RunAndReturn(run func() bool) *Config_Debug_Call {
 	return _c
 }
 
-// Default provides a mock function with no fields
-func (_m *Config) Default() (string, string, int) {
+// DefaultConcurrent provides a mock function with no fields
+func (_m *Config) DefaultConcurrent() int {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for Default")
+		panic("no return value specified for DefaultConcurrent")
 	}
 
-	var r0 string
-	var r1 string
-	var r2 int
-	if rf, ok := ret.Get(0).(func() (string, string, int)); ok {
-		return rf()
-	}
-	if rf, ok := ret.Get(0).(func() string); ok {
+	var r0 int
+	if rf, ok := ret.Get(0).(func() int); ok {
 		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(string)
+		r0 = ret.Get(0).(int)
 	}
 
-	if rf, ok := ret.Get(1).(func() string); ok {
-		r1 = rf()
-	} else {
-		r1 = ret.Get(1).(string)
-	}
-
-	if rf, ok := ret.Get(2).(func() int); ok {
-		r2 = rf()
-	} else {
-		r2 = ret.Get(2).(int)
-	}
-
-	return r0, r1, r2
+	return r0
 }
 
-// Config_Default_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Default'
-type Config_Default_Call struct {
+// Config_DefaultConcurrent_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DefaultConcurrent'
+type Config_DefaultConcurrent_Call struct {
 	*mock.Call
 }
 
-// Default is a helper method to define mock.On call
-func (_e *Config_Expecter) Default() *Config_Default_Call {
-	return &Config_Default_Call{Call: _e.mock.On("Default")}
+// DefaultConcurrent is a helper method to define mock.On call
+func (_e *Config_Expecter) DefaultConcurrent() *Config_DefaultConcurrent_Call {
+	return &Config_DefaultConcurrent_Call{Call: _e.mock.On("DefaultConcurrent")}
 }
 
-func (_c *Config_Default_Call) Run(run func()) *Config_Default_Call {
+func (_c *Config_DefaultConcurrent_Call) Run(run func()) *Config_DefaultConcurrent_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run()
 	})
 	return _c
 }
 
-func (_c *Config_Default_Call) Return(connection string, _a1 string, concurrent int) *Config_Default_Call {
-	_c.Call.Return(connection, _a1, concurrent)
+func (_c *Config_DefaultConcurrent_Call) Return(_a0 int) *Config_DefaultConcurrent_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Config_Default_Call) RunAndReturn(run func() (string, string, int)) *Config_Default_Call {
+func (_c *Config_DefaultConcurrent_Call) RunAndReturn(run func() int) *Config_DefaultConcurrent_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DefaultConnection provides a mock function with no fields
+func (_m *Config) DefaultConnection() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for DefaultConnection")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Config_DefaultConnection_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DefaultConnection'
+type Config_DefaultConnection_Call struct {
+	*mock.Call
+}
+
+// DefaultConnection is a helper method to define mock.On call
+func (_e *Config_Expecter) DefaultConnection() *Config_DefaultConnection_Call {
+	return &Config_DefaultConnection_Call{Call: _e.mock.On("DefaultConnection")}
+}
+
+func (_c *Config_DefaultConnection_Call) Run(run func()) *Config_DefaultConnection_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Config_DefaultConnection_Call) Return(_a0 string) *Config_DefaultConnection_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Config_DefaultConnection_Call) RunAndReturn(run func() string) *Config_DefaultConnection_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DefaultQueue provides a mock function with no fields
+func (_m *Config) DefaultQueue() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for DefaultQueue")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Config_DefaultQueue_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DefaultQueue'
+type Config_DefaultQueue_Call struct {
+	*mock.Call
+}
+
+// DefaultQueue is a helper method to define mock.On call
+func (_e *Config_Expecter) DefaultQueue() *Config_DefaultQueue_Call {
+	return &Config_DefaultQueue_Call{Call: _e.mock.On("DefaultQueue")}
+}
+
+func (_c *Config_DefaultQueue_Call) Run(run func()) *Config_DefaultQueue_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Config_DefaultQueue_Call) Return(_a0 string) *Config_DefaultQueue_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Config_DefaultQueue_Call) RunAndReturn(run func() string) *Config_DefaultQueue_Call {
 	_c.Call.Return(run)
 	return _c
 }

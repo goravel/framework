@@ -22,7 +22,8 @@ func NewPendingJob(config contractsqueue.Config, job contractsqueue.Job, args ..
 		arg = args[0]
 	}
 
-	connection, queue, _ := config.Default()
+	connection := config.DefaultConnection()
+	queue := config.DefaultQueue()
 
 	return &PendingJob{
 		config:     config,
@@ -58,7 +59,8 @@ func NewPendingChainJob(config contractsqueue.Config, jobs []contractsqueue.Jobs
 		Delay: jobs[0].Delay,
 	}
 
-	connection, queue, _ := config.Default()
+	connection := config.DefaultConnection()
+	queue := config.DefaultQueue()
 
 	return &PendingJob{
 		config:     config,

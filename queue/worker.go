@@ -13,6 +13,7 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/support/console"
 )
 
 type Worker struct {
@@ -103,11 +104,17 @@ func (r *Worker) Shutdown() error {
 }
 
 func (r *Worker) call(task queue.Task) error {
+	r.printRunningLog(task)
+
 	if !task.Delay.IsZero() {
 		time.Sleep(time.Until(task.Delay))
 	}
 
-	if err := r.job.Call(task.Job.Signature(), ConvertArgs(task.Args)); err != nil {
+	now := carbon.Now()
+	err := r.job.Call(task.Job.Signature(), ConvertArgs(task.Args))
+	duration := carbon.Now().DiffAbsInDuration(now).String()
+
+	if err != nil {
 		payload, jsonErr := TaskToJson(task, r.json)
 		if jsonErr != nil {
 			return errors.QueueFailedToConvertTaskToJson.Args(jsonErr, task)
@@ -121,9 +128,13 @@ func (r *Worker) call(task queue.Task) error {
 			Exception:  err.Error(),
 			FailedAt:   carbon.NewDateTime(carbon.Now()),
 		}
+
+		r.printFailedLog(task, duration)
+
+		return nil
 	}
 
-	// TODO: print success log
+	r.printSuccessLog(task, duration)
 
 	return nil
 }
@@ -191,12 +202,39 @@ func (r *Worker) run(driver queue.Driver) error {
 			if _, err := r.config.FailedJobsQuery().Insert(&job); err != nil {
 				r.log.Error(errors.QueueFailedToSaveFailedJob.Args(err, job))
 			}
-
-			// TODO: print failed log
 		}
 	}()
 
 	r.wg.Wait()
 
 	return nil
+}
+
+func (r *Worker) printRunningLog(task queue.Task) {
+	datetime := color.Gray().Sprint(carbon.Now().ToDateTimeString())
+	status := "<fg=yellow;op=bold>RUNNING</>"
+	first := datetime + " " + task.Job.Signature()
+	second := status
+
+	color.Default().Println(console.TwoColumnDetail(first, second))
+}
+
+func (r *Worker) printSuccessLog(task queue.Task, duration string) {
+	datetime := color.Gray().Sprint(carbon.Now().ToDateTimeString())
+	status := "<fg=green;op=bold>DONE</>"
+	duration = color.Gray().Sprint(duration)
+	first := datetime + " " + task.Job.Signature()
+	second := duration + " " + status
+
+	color.Default().Println(console.TwoColumnDetail(first, second))
+}
+
+func (r *Worker) printFailedLog(task queue.Task, duration string) {
+	datetime := color.Gray().Sprint(carbon.Now().ToDateTimeString())
+	status := "<fg=red;op=bold>FAIL</>"
+	duration = color.Gray().Sprint(duration)
+	first := datetime + " " + task.Job.Signature()
+	second := duration + " " + status
+
+	color.Default().Println(console.TwoColumnDetail(first, second))
 }
