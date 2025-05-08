@@ -36,7 +36,7 @@ func init() {
 	}
 	app.registerBaseServiceProviders()
 	app.bootBaseServiceProviders()
-	app.SetJson(json.NewJson())
+	app.SetJson(json.New())
 	App = app
 }
 

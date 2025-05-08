@@ -366,7 +366,7 @@ func (t *TranslatorTestSuite) TestLoadFS() {
 		"lang/cn/test.json": &fstest.MapFile{Data: []byte(`{"foo": "bar", "baz": {"foo": "bar"}}`)},
 	}
 
-	translator := NewTranslator(t.ctx, NewFSLoader("lang", mockFS, json.NewJson()), t.mockLoader, "en", "en", t.mockLog)
+	translator := NewTranslator(t.ctx, NewFSLoader("lang", mockFS, json.New()), t.mockLoader, "en", "en", t.mockLog)
 	t.mockLoader.On("Load", "en", "test").Once().Return(map[string]any{
 		"foo": "one",
 		"bar": "two",
