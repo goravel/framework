@@ -37,7 +37,7 @@ func (f *File) Gc(maxLifetime int) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
-	cutoffTime := carbon.Now(carbon.UTC).Copy().SubSeconds(maxLifetime)
+	cutoffTime := carbon.Now(carbon.UTC).SubSeconds(maxLifetime)
 
 	if !file.Exists(f.path) {
 		return nil
@@ -70,7 +70,7 @@ func (f *File) Read(id string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		if modified.After(carbon.Now(carbon.UTC).Copy().SubMinutes(f.minutes).StdTime()) {
+		if modified.After(carbon.Now(carbon.UTC).SubMinutes(f.minutes).StdTime()) {
 			data, err := os.ReadFile(path)
 			if err != nil {
 				return "", err

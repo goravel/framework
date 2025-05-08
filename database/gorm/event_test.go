@@ -25,6 +25,7 @@ type TestEventModel struct {
 	Model
 	Name     string
 	Avatar   string
+	Height   *string
 	IsAdmin  bool
 	IsManage int `gorm:"column:manage"`
 	AdminAt  time.Time
@@ -359,6 +360,7 @@ func TestStructToMap(t *testing.T) {
 		"manage":     testEventModel.IsManage,
 		"admin_at":   testEventModel.AdminAt,
 		"manage_at":  testEventModel.ManageAt,
+		"height":     testEventModel.Height,
 	}, structToMap(testEventModel))
 }
 

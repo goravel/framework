@@ -351,8 +351,8 @@ func (s *QueryTestSuite) TestCreate() {
 					s.Nil(query.Query().Table("users").Create(map[string]any{
 						"name":       "create_by_map_name1",
 						"avatar":     "create_by_map_avatar1",
-						"created_at": carbon.Now().ToDateTimeString(),
-						"updated_at": carbon.Now().ToDateTimeString(),
+						"created_at": carbon.Now(),
+						"updated_at": carbon.Now(),
 					}))
 
 					var user1 User
@@ -364,8 +364,8 @@ func (s *QueryTestSuite) TestCreate() {
 					s.Nil(query.Query().Model(User{}).Create(map[string]any{
 						"Name":      "create_by_map_name2",
 						"Avatar":    "create_by_map_avatar2",
-						"CreatedAt": carbon.Now().ToDateTimeString(),
-						"UpdatedAt": carbon.Now().ToDateTimeString(),
+						"CreatedAt": carbon.Now(),
+						"UpdatedAt": carbon.Now(),
 					}))
 
 					var user2 User
@@ -382,14 +382,14 @@ func (s *QueryTestSuite) TestCreate() {
 						{
 							"name":       "batch_create_by_map_name1",
 							"avatar":     "batch_create_by_map_avatar1",
-							"created_at": carbon.Now().ToDateTimeString(),
-							"updated_at": carbon.Now().ToDateTimeString(),
+							"created_at": carbon.Now(),
+							"updated_at": carbon.Now(),
 						},
 						{
 							"name":       "batch_create_by_map_name2",
 							"avatar":     "batch_create_by_map_avatar2",
-							"created_at": carbon.Now().ToDateTimeString(),
-							"updated_at": carbon.Now().ToDateTimeString(),
+							"created_at": carbon.Now(),
+							"updated_at": carbon.Now(),
 						},
 					}))
 
@@ -403,14 +403,14 @@ func (s *QueryTestSuite) TestCreate() {
 						{
 							"Name":      "batch_create_by_map_name3",
 							"Avatar":    "batch_create_by_map_avatar3",
-							"CreatedAt": carbon.Now().ToDateTimeString(),
-							"UpdatedAt": carbon.Now().ToDateTimeString(),
+							"CreatedAt": carbon.Now(),
+							"UpdatedAt": carbon.Now(),
 						},
 						{
 							"Name":      "batch_create_by_map_name4",
 							"Avatar":    "batch_create_by_map_avatar4",
-							"CreatedAt": carbon.Now().ToDateTimeString(),
-							"UpdatedAt": carbon.Now().ToDateTimeString(),
+							"CreatedAt": carbon.Now(),
+							"UpdatedAt": carbon.Now(),
 						},
 					}))
 
@@ -435,8 +435,8 @@ func (s *QueryTestSuite) TestCreate() {
 
 					s.Nil(query.Query().Model(&People{}).Create(map[string]any{
 						"body":       "create_people1",
-						"created_at": carbon.Now().ToDateTimeString(),
-						"updated_at": carbon.Now().ToDateTimeString(),
+						"created_at": carbon.Now(),
+						"updated_at": carbon.Now(),
 					}))
 
 					var people1 People
@@ -801,8 +801,8 @@ func (s *QueryTestSuite) TestEvent_Creating() {
 					s.Nil(query.Query().Model(&User{}).Create(map[string]any{
 						"name":       "event_creating_by_map_name",
 						"avatar":     "event_creating_by_map_avatar",
-						"created_at": carbon.Now().ToDateTimeString(),
-						"updated_at": carbon.Now().ToDateTimeString(),
+						"created_at": carbon.Now(),
+						"updated_at": carbon.Now(),
 					}))
 
 					var user User
@@ -898,8 +898,8 @@ func (s *QueryTestSuite) TestEvent_Created() {
 					userMap := map[string]any{
 						"name":       "event_created_by_map_name",
 						"avatar":     "event_created_by_map_avatar",
-						"created_at": carbon.Now().ToDateTimeString(),
-						"updated_at": carbon.Now().ToDateTimeString(),
+						"created_at": carbon.Now(),
+						"updated_at": carbon.Now(),
 					}
 					s.Nil(query.Query().Model(&User{}).Create(userMap))
 
@@ -1013,8 +1013,8 @@ func (s *QueryTestSuite) TestEvent_Saving() {
 					userMap := map[string]any{
 						"name":       "event_saving_create_by_map_name",
 						"avatar":     "event_saving_create_by_map_avatar",
-						"created_at": carbon.Now().ToDateTimeString(),
-						"updated_at": carbon.Now().ToDateTimeString(),
+						"created_at": carbon.Now(),
+						"updated_at": carbon.Now(),
 					}
 					s.Nil(query.Query().Model(&User{}).Create(userMap))
 					s.Equal("event_saving_create_by_map_avatar1", userMap["avatar"])
@@ -1134,8 +1134,8 @@ func (s *QueryTestSuite) TestEvent_Saved() {
 					userMap := map[string]any{
 						"name":       "event_saved_create_by_map_name",
 						"avatar":     "event_saved_create_by_map_avatar",
-						"created_at": carbon.Now().ToDateTimeString(),
-						"updated_at": carbon.Now().ToDateTimeString(),
+						"created_at": carbon.Now(),
+						"updated_at": carbon.Now(),
 					}
 					s.Nil(query.Query().Model(&User{}).Create(userMap))
 					s.Equal("event_saved_create_by_map_avatar1", userMap["avatar"])

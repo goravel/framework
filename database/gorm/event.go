@@ -347,16 +347,9 @@ func structToMap(data any) map[string]any {
 				res[dbColumn] = fieldValue.Interface()
 				continue
 			}
-			if fieldType.Anonymous && fieldValue.Elem().Kind() == reflect.Struct {
-				subStructMap := structToMap(fieldValue.Interface())
-				for key, value := range subStructMap {
-					res[key] = value
-				}
-				continue
-			}
 		}
 
-		if fieldValue.Kind() == reflect.Struct && fieldType.Anonymous {
+		if (fieldValue.Kind() == reflect.Struct || fieldValue.Kind() == reflect.Pointer) && fieldType.Anonymous {
 			subStructMap := structToMap(fieldValue.Interface())
 			for key, value := range subStructMap {
 				res[key] = value
