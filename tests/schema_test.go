@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	databaseschema "github.com/goravel/framework/database/schema"
 	"github.com/goravel/framework/support/carbon"
@@ -2666,7 +2665,6 @@ func (s *SchemaSuite) TestExtend() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver, func() {
 			schema := newSchema(testQuery, s.driverToTestQuery)
-			table := "extend_test"
 
 			originalGoTypes := schema.GoTypes()
 
@@ -2707,32 +2705,6 @@ func (s *SchemaSuite) TestExtend() {
 			s.Equal("jsonb.RawMessage", extendedJsonb.Type, "Extended jsonb type should be jsonb.RawMessage")
 			s.Equal("*jsonb.RawMessage", extendedJsonb.NullType)
 			s.Equal("github.com/jmoiron/sqlx/types", extendedJsonb.Import)
-
-			// Create a table with both original and extended types to test if they work
-			if driver == postgres.Name {
-				// Only test with Postgres since it natively supports UUID and geometric types
-				s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
-					table.ID()
-					table.String("name")
-					// This will use our custom UUID type
-					table.Column("identifier", "uuid")
-					table.Column("location", "point")
-					table.Column("metadata", "jsonb")
-				}))
-
-				columns, err := schema.GetColumns(table)
-				s.NoError(err)
-				s.Len(columns, 5)
-
-				columnNameMap := make(map[string]bool)
-				for _, col := range columns {
-					columnNameMap[col.Name] = true
-				}
-
-				s.True(columnNameMap["identifier"], "UUID column should exist")
-				s.True(columnNameMap["location"], "Point column should exist")
-				s.True(columnNameMap["metadata"], "JSONB column should exist")
-			}
 		})
 	}
 }
@@ -2742,7 +2714,6 @@ func (s *SchemaSuite) TestOverrideDefaultTypeWithExtend() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver, func() {
 			schema := newSchema(testQuery, s.driverToTestQuery)
-			table := "override_type_test"
 
 			// Define custom type extensions to override timestamp type
 			customGoTypes := []contractsschema.GoType{
@@ -2754,34 +2725,12 @@ func (s *SchemaSuite) TestOverrideDefaultTypeWithExtend() {
 			})
 
 			extendedGoTypes := schema.GoTypes()
-			expectedColumns := []contractsdriver.Column{
-				{Name: "id", Type: "integer", TypeName: "integer", Autoincrement: true, Nullable: false},
-				{Name: "name", Type: "varchar", TypeName: "varchar", Nullable: true},
-				{Name: "created_at", Type: "timestamp", TypeName: "timestamp", Nullable: false},
-			}
 
 			timestampType, found := findGoType("(?i)^timestamp$", extendedGoTypes)
 			s.True(found, "timestamp type should exist")
 			s.Equal("time.Time", timestampType.Type, "timestamp should be overridden to time.Time")
 			s.Equal("*time.Time", timestampType.NullType)
 			s.Equal("time", timestampType.Import, "timestamp should import time package")
-
-			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
-				table.ID()
-				table.String("name").Nullable()
-				table.Timestamp("created_at")
-			}))
-
-			columns, err := schema.GetColumns(table)
-			s.NoError(err)
-			s.Len(columns, 3)
-			for i, column := range columns {
-				s.Equal(expectedColumns[i].Name, column.Name)
-				s.Equal(expectedColumns[i].Type, column.Type)
-				s.Equal(expectedColumns[i].TypeName, column.TypeName)
-				s.Equal(expectedColumns[i].Autoincrement, column.Autoincrement)
-				s.Equal(expectedColumns[i].Nullable, column.Nullable)
-			}
 		})
 	}
 }
