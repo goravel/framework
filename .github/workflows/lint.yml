@@ -10,3 +10,6 @@ jobs:
   lint:
     uses: goravel/.github/.github/workflows/lint.yml@master
     secrets: inherit
+  govulncheck:
+    uses: goravel/.github/.github/workflows/govulncheck.yml@master
+    secrets: inherit
