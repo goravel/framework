@@ -430,90 +430,47 @@ func (r *Schema) createBlueprint(table string) contractsschema.Blueprint {
 	return NewBlueprint(r, r.prefix, table)
 }
 
-func (r *Schema) extendGoTypes(goTypes []contractsschema.GoType) {
-	if len(goTypes) == 0 {
+// extendGoTypes merges user-provided GoType overrides and additions into the schema's default mappings.
+// New patterns (not present in defaults) are prepended for highest priority. Existing patterns are updated with non-zero override fields.
+func (r *Schema) extendGoTypes(overrides []contractsschema.GoType) {
+	if len(overrides) == 0 {
 		return
 	}
 
 	defaults := r.goTypes
-	fallbackIdx := len(defaults) - 1
-	for i, m := range defaults {
-		if m.Pattern == ".*" {
-			fallbackIdx = i
-			break
+	defaultPatterns := make(map[string]bool, len(defaults))
+	for _, d := range defaults {
+		defaultPatterns[d.Pattern] = true
+	}
+
+	overrideMap := make(map[string]contractsschema.GoType, len(overrides))
+	var newPatterns []contractsschema.GoType
+	for _, o := range overrides {
+		overrideMap[o.Pattern] = o
+		if !defaultPatterns[o.Pattern] {
+			newPatterns = append(newPatterns, o)
 		}
 	}
 
-	patternMap := make(map[string]int, len(defaults))
-	for i, m := range defaults {
-		patternMap[m.Pattern] = i
-	}
+	result := make([]contractsschema.GoType, 0, len(defaults)+len(newPatterns))
+	result = append(result, newPatterns...)
 
-	newPatternCount := 0
-	for _, cfg := range goTypes {
-		if _, exists := patternMap[cfg.Pattern]; !exists {
-			newPatternCount++
-		}
-	}
-
-	var result []contractsschema.GoType
-	if newPatternCount == 0 {
-		result = make([]contractsschema.GoType, len(defaults))
-		copy(result, defaults)
-
-		for _, cfg := range goTypes {
-			if idx, exists := patternMap[cfg.Pattern]; exists {
-				if cfg.Type != "" {
-					result[idx].Type = cfg.Type
-				}
-				if cfg.NullType != "" {
-					result[idx].NullType = cfg.NullType
-				}
-				if cfg.Import != "" {
-					result[idx].Import = cfg.Import
-				}
-				if cfg.NullImport != "" {
-					result[idx].NullImport = cfg.NullImport
-				}
+	for _, d := range defaults {
+		if o, exists := overrideMap[d.Pattern]; exists {
+			if o.Type != "" {
+				d.Type = o.Type
+			}
+			if o.NullType != "" {
+				d.NullType = o.NullType
+			}
+			if o.Import != "" {
+				d.Import = o.Import
+			}
+			if o.NullImport != "" {
+				d.NullImport = o.NullImport
 			}
 		}
-
-		r.goTypes = result
-		return
-	}
-
-	result = make([]contractsschema.GoType, 0, len(defaults)+newPatternCount)
-
-	result = append(result, defaults[:fallbackIdx]...)
-
-	for _, cfg := range goTypes {
-		if _, exists := patternMap[cfg.Pattern]; !exists {
-			result = append(result, cfg)
-		}
-	}
-
-	result = append(result, defaults[fallbackIdx:]...)
-
-	for _, cfg := range goTypes {
-		if _, exists := patternMap[cfg.Pattern]; exists {
-			for i, mapping := range result {
-				if mapping.Pattern == cfg.Pattern {
-					if cfg.Type != "" {
-						result[i].Type = cfg.Type
-					}
-					if cfg.NullType != "" {
-						result[i].NullType = cfg.NullType
-					}
-					if cfg.Import != "" {
-						result[i].Import = cfg.Import
-					}
-					if cfg.NullImport != "" {
-						result[i].NullImport = cfg.NullImport
-					}
-					break
-				}
-			}
-		}
+		result = append(result, d)
 	}
 
 	r.goTypes = result
