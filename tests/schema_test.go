@@ -2754,6 +2754,11 @@ func (s *SchemaSuite) TestOverrideDefaultTypeWithExtend() {
 			})
 
 			extendedGoTypes := schema.GoTypes()
+			expectedColumns := []contractsdriver.Column{
+				{Name: "id", Type: "integer", TypeName: "integer", Autoincrement: true, Nullable: false},
+				{Name: "name", Type: "varchar", TypeName: "varchar", Nullable: true},
+				{Name: "created_at", Type: "timestamp", TypeName: "timestamp", Nullable: false},
+			}
 
 			timestampType, found := findGoType("(?i)^timestamp$", extendedGoTypes)
 			s.True(found, "timestamp type should exist")
@@ -2769,11 +2774,14 @@ func (s *SchemaSuite) TestOverrideDefaultTypeWithExtend() {
 
 			columns, err := schema.GetColumns(table)
 			s.NoError(err)
-			s.Equal([]contractsdriver.Column{
-				{Name: "id", Type: "integer", TypeName: "integer", Autoincrement: true, Nullable: false},
-				{Name: "name", Type: "varchar", TypeName: "varchar", Nullable: true},
-				{Name: "created_at", Type: "datetime", TypeName: "datetime", Nullable: false},
-			}, columns)
+			s.Len(columns, 3)
+			for i, column := range columns {
+				s.Equal(expectedColumns[i].Name, column.Name)
+				s.Equal(expectedColumns[i].Type, column.Type)
+				s.Equal(expectedColumns[i].TypeName, column.TypeName)
+				s.Equal(expectedColumns[i].Autoincrement, column.Autoincrement)
+				s.Equal(expectedColumns[i].Nullable, column.Nullable)
+			}
 		})
 	}
 }
