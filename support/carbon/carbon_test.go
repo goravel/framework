@@ -54,6 +54,18 @@ func TestCleanTestNow(t *testing.T) {
 	assert.False(t, IsTestNow())
 }
 
+func TestUnsetTestNow(t *testing.T) {
+	now := Parse("2020-08-05")
+
+	SetTestNow(now)
+	assert.Equal(t, "2020-08-05", Now().ToDateString())
+	assert.True(t, IsTestNow())
+
+	UnsetTestNow()
+	assert.Equal(t, stdtime.Now().In(stdtime.UTC).Format(DateTimeLayout), Now().ToDateTimeString())
+	assert.False(t, IsTestNow())
+}
+
 func TestNow(t *testing.T) {
 	SetTestNow(Now().SubSeconds(10))
 	stdtime.Sleep(2 * stdtime.Second)
