@@ -23,6 +23,11 @@ func SetTestNow(c *Carbon) {
 	carbon.SetTestNow(c)
 }
 
+// UnsetTestNow Unset the test time.
+func UnsetTestNow() {
+	CleanTestNow()
+}
+
 // CleanTestNow cleans the test time.
 func CleanTestNow() {
 	carbon.CleanTestNow()
