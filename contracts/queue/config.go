@@ -8,7 +8,9 @@ import (
 type Config interface {
 	Config() config.Config
 	Debug() bool
-	Default() (connection, queue string, concurrent int)
+	DefaultConnection() string
+	DefaultQueue() string
+	DefaultConcurrent() int
 	Driver(connection string) string
 	FailedJobsQuery() db.Query
 	QueueKey(connection, queue string) string

@@ -27,16 +27,22 @@ func (r *Config) Debug() bool {
 	return r.config.GetBool("app.debug")
 }
 
-func (r *Config) Default() (connection, queue string, concurrent int) {
-	connection = r.config.GetString("queue.default")
-	queue = r.config.GetString(fmt.Sprintf("queue.connections.%s.queue", connection), "default")
-	concurrent = r.config.GetInt(fmt.Sprintf("queue.connections.%s.concurrent", connection), 1)
+func (r *Config) DefaultConnection() string {
+	return r.config.GetString("queue.default")
+}
+
+func (r *Config) DefaultQueue() string {
+	return r.config.GetString(fmt.Sprintf("queue.connections.%s.queue", r.DefaultConnection()), "default")
+}
+
+func (r *Config) DefaultConcurrent() int {
+	concurrent := r.config.GetInt(fmt.Sprintf("queue.connections.%s.concurrent", r.DefaultConnection()), 1)
 
 	if concurrent < 1 {
 		concurrent = 1
 	}
 
-	return
+	return concurrent
 }
 
 func (r *Config) Driver(connection string) string {

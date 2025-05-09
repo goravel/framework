@@ -24,7 +24,8 @@ func TestPendingJobTestSuite(t *testing.T) {
 
 func (s *PendingJobTestSuite) SetupTest() {
 	s.mockConfig = mocksqueue.NewConfig(s.T())
-	s.mockConfig.EXPECT().Default().Return("default", "default", 1).Once()
+	s.mockConfig.EXPECT().DefaultConnection().Return("default").Once()
+	s.mockConfig.EXPECT().DefaultQueue().Return("default").Once()
 }
 
 func (s *PendingJobTestSuite) TestDelay() {
