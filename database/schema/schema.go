@@ -168,7 +168,7 @@ func (r *Schema) DropIfExists(table string) error {
 	return nil
 }
 
-func (r *Schema) Extend(extend *contractsschema.Extension) contractsschema.Schema {
+func (r *Schema) Extend(extend contractsschema.Extension) contractsschema.Schema {
 	r.extendGoTypes(extend.GoTypes)
 	return r
 }

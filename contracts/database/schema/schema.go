@@ -23,7 +23,7 @@ type Schema interface {
 	// DropIfExists Drop a table from the schema if exists.
 	DropIfExists(table string) error
 	// Extend the schema with given extend parameter.
-	Extend(extend *Extension) Schema
+	Extend(extend Extension) Schema
 	// GetColumnListing Get the column listing for a given table.
 	GetColumnListing(table string) []string
 	// GetColumns Get the columns for a given table.
