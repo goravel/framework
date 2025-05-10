@@ -394,7 +394,7 @@ func (_c *Schema_DropIfExists_Call) RunAndReturn(run func(string) error) *Schema
 }
 
 // Extend provides a mock function with given fields: extend
-func (_m *Schema) Extend(extend *schema.Extension) schema.Schema {
+func (_m *Schema) Extend(extend schema.Extension) schema.Schema {
 	ret := _m.Called(extend)
 
 	if len(ret) == 0 {
@@ -402,7 +402,7 @@ func (_m *Schema) Extend(extend *schema.Extension) schema.Schema {
 	}
 
 	var r0 schema.Schema
-	if rf, ok := ret.Get(0).(func(*schema.Extension) schema.Schema); ok {
+	if rf, ok := ret.Get(0).(func(schema.Extension) schema.Schema); ok {
 		r0 = rf(extend)
 	} else {
 		if ret.Get(0) != nil {
@@ -419,14 +419,14 @@ type Schema_Extend_Call struct {
 }
 
 // Extend is a helper method to define mock.On call
-//   - extend *schema.Extension
+//   - extend schema.Extension
 func (_e *Schema_Expecter) Extend(extend interface{}) *Schema_Extend_Call {
 	return &Schema_Extend_Call{Call: _e.mock.On("Extend", extend)}
 }
 
-func (_c *Schema_Extend_Call) Run(run func(extend *schema.Extension)) *Schema_Extend_Call {
+func (_c *Schema_Extend_Call) Run(run func(extend schema.Extension)) *Schema_Extend_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*schema.Extension))
+		run(args[0].(schema.Extension))
 	})
 	return _c
 }
@@ -436,7 +436,7 @@ func (_c *Schema_Extend_Call) Return(_a0 schema.Schema) *Schema_Extend_Call {
 	return _c
 }
 
-func (_c *Schema_Extend_Call) RunAndReturn(run func(*schema.Extension) schema.Schema) *Schema_Extend_Call {
+func (_c *Schema_Extend_Call) RunAndReturn(run func(schema.Extension) schema.Schema) *Schema_Extend_Call {
 	_c.Call.Return(run)
 	return _c
 }
