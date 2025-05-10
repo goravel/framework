@@ -4,15 +4,29 @@ type Stubs struct {
 }
 
 func (r Stubs) Model() string {
-	return `package DummyPackage
+	return `package {{.PackageName}}
 
+{{if .Imports -}}
 import (
-	"github.com/goravel/framework/database/orm"
+{{- range $path, $_ := .Imports }}
+	"{{$path}}"
+{{- end }}
 )
+{{- end }}
 
-type DummyModel struct {
-	orm.Model
+type {{.StructName}} struct {
+{{- range .Embeds }}
+	{{.}}
+{{- end }}
+{{- range .Fields }}
+	{{.}}
+{{- end }}
 }
+
+{{- if .TableNameMethod }}
+
+{{.TableNameMethod}}
+{{- end }}
 `
 }
 

@@ -150,6 +150,7 @@ var (
 	SchemaEmptyReferenceString = New("reference string can't be empty")
 	SchemaErrorReferenceFormat = New("invalid format: too many dots in reference")
 	SchemaConnectionNotFound   = New("connection %s not found")
+	SchemaTableNotFound        = New("table %s not found")
 
 	SessionDriverAlreadyExists        = New("session driver [%s] already exists")
 	SessionDriverExtensionFailed      = New("session failed to extend session [%s] driver [%v]")
@@ -157,6 +158,9 @@ var (
 	SessionDriverNotSupported         = New("session driver [%s] not supported")
 	SessionDriverRegisterFailed       = New("failed to register session drivers: %v")
 	SessionDriverContractNotFulfilled = New("%s doesn't implement contracts/session/driver")
+
+	TemplateFailedToParse         = New("failed to parse template: %v")
+	TemplateFailedToFormateGoCode = New("failed to format go code: %v")
 
 	UnknownFileExtension = New("unknown file extension")
 
