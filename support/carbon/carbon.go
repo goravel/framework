@@ -23,6 +23,7 @@ func SetTestNow(c *Carbon) {
 	carbon.SetTestNow(c)
 }
 
+// Deprecated: it will be removed in the future, use ClearTestNow instead.
 // UnsetTestNow unsets the test time.
 func UnsetTestNow() {
 	ClearTestNow()
