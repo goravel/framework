@@ -71,6 +71,16 @@ func ParseByFormat[T string | []string](value string, format T, timezone ...stri
 	return
 }
 
+// ParseWithLayouts returns a Carbon object with multiple fuzzy layouts.
+func ParseWithLayouts(value string, layouts []string, timezone ...string) *Carbon {
+	return carbon.ParseWithLayouts(value, layouts, timezone...)
+}
+
+// ParseWithFormats returns a Carbon object with multiple fuzzy formats.
+func ParseWithFormats(value string, formats []string, timezone ...string) *Carbon {
+	return carbon.ParseWithFormats(value, formats, timezone...)
+}
+
 // FromTimestamp returns a Carbon object of given timestamp.
 func FromTimestamp(timestamp int64, timezone ...string) *Carbon {
 	return carbon.CreateFromTimestamp(timestamp, timezone...)
