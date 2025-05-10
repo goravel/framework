@@ -1,168 +1,135 @@
-package carbon_test
+package carbon
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 
-	"github.com/goravel/framework/support/carbon"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCarbonType(t *testing.T) {
-	type Model struct {
-		Carbon1 carbon.Carbon  `json:"carbon1"`
-		Carbon2 *carbon.Carbon `json:"carbon2"`
-	}
+type User struct {
+	Carbon1 Carbon  `json:"carbon1"`
+	Carbon2 *Carbon `json:"carbon2"`
 
-	var model1 Model
-	c := carbon.Parse("2020-08-05 13:14:15.999999999")
-	model1.Carbon1 = *c
-	model1.Carbon2 = c
+	Date      Date      `json:"date"`
+	DateMilli DateMilli `json:"date_milli"`
+	DateMicro DateMicro `json:"date_micro"`
+	DateNano  DateNano  `json:"date_nano"`
 
-	v, e := json.Marshal(&model1)
-	assert.Nil(t, e)
-	assert.Equal(t, `{"carbon1":"2020-08-05 13:14:15","carbon2":"2020-08-05 13:14:15"}`, string(v))
+	Time      Time      `json:"time"`
+	TimeMilli TimeMilli `json:"time_milli"`
+	TimeMicro TimeMicro `json:"time_micro"`
+	TimeNano  TimeNano  `json:"time_nano"`
 
-	var model2 Model
-	assert.NoError(t, json.Unmarshal(v, &model2))
+	DateTime      DateTime      `json:"date_time"`
+	DateTimeMilli DateTimeMilli `json:"date_time_milli"`
+	DateTimeMicro DateTimeMicro `json:"date_time_micro"`
+	DateTimeNano  DateTimeNano  `json:"date_time_nano"`
 
-	assert.Equal(t, "2020-08-05 13:14:15", model2.Carbon1.String())
-	assert.Equal(t, "2020-08-05 13:14:15", model2.Carbon2.String())
+	Timestamp      Timestamp      `json:"timestamp"`
+	TimestampMilli TimestampMilli `json:"timestamp_milli"`
+	TimestampMicro TimestampMicro `json:"timestamp_micro"`
+	TimestampNano  TimestampNano  `json:"timestamp_nano"`
 
+	CreatedAt *DateTime  `json:"created_at"`
+	UpdatedAt *DateTime  `json:"updated_at"`
+	DeletedAt *Timestamp `json:"deleted_at"`
 }
 
-func TestBuiltinType(t *testing.T) {
-	type Model struct {
-		Date      carbon.Date      `json:"date"`
-		DateMilli carbon.DateMilli `json:"date_milli"`
-		DateMicro carbon.DateMicro `json:"date_micro"`
-		DateNano  carbon.DateNano  `json:"date_nano"`
+var user User
 
-		Time      carbon.Time      `json:"time"`
-		TimeMilli carbon.TimeMilli `json:"time_milli"`
-		TimeMicro carbon.TimeMicro `json:"time_micro"`
-		TimeNano  carbon.TimeNano  `json:"time_nano"`
+func TestMarshalJSON(t *testing.T) {
+	c := Parse("2020-08-05 13:14:15.999999999")
 
-		DateTime      carbon.DateTime      `json:"date_time"`
-		DateTimeMilli carbon.DateTimeMilli `json:"date_time_milli"`
-		DateTimeMicro carbon.DateTimeMicro `json:"date_time_micro"`
-		DateTimeNano  carbon.DateTimeNano  `json:"date_time_nano"`
+	user.Carbon1 = *c
+	user.Carbon2 = c
 
-		CreatedAt *carbon.DateTime `json:"created_at"`
-		UpdatedAt *carbon.DateTime `json:"updated_at"`
+	user.Date = *NewDate(c)
+	user.DateMilli = *NewDateMilli(c)
+	user.DateMicro = *NewDateMicro(c)
+	user.DateNano = *NewDateNano(c)
 
-		Timestamp      carbon.Timestamp      `json:"timestamp"`
-		TimestampMilli carbon.TimestampMilli `json:"timestamp_milli"`
-		TimestampMicro carbon.TimestampMicro `json:"timestamp_micro"`
-		TimestampNano  carbon.TimestampNano  `json:"timestamp_nano"`
+	user.Time = *NewTime(c)
+	user.TimeMilli = *NewTimeMilli(c)
+	user.TimeMicro = *NewTimeMicro(c)
+	user.TimeNano = *NewTimeNano(c)
 
-		DeletedAt *carbon.Timestamp `json:"deleted_at"`
-	}
+	user.DateTime = *NewDateTime(c)
+	user.DateTimeMilli = *NewDateTimeMilli(c)
+	user.DateTimeMicro = *NewDateTimeMicro(c)
+	user.DateTimeNano = *NewDateTimeNano(c)
 
-	var model1 Model
-	c := carbon.Parse("2020-08-05 13:14:15.999999999")
+	user.Timestamp = *NewTimestamp(c)
+	user.TimestampMilli = *NewTimestampMilli(c)
+	user.TimestampMicro = *NewTimestampMicro(c)
+	user.TimestampNano = *NewTimestampNano(c)
 
-	model1.Date = *carbon.NewDate(c)
-	model1.DateMilli = *carbon.NewDateMilli(c)
-	model1.DateMicro = *carbon.NewDateMicro(c)
-	model1.DateNano = *carbon.NewDateNano(c)
-
-	model1.Time = *carbon.NewTime(c)
-	model1.TimeMilli = *carbon.NewTimeMilli(c)
-	model1.TimeMicro = *carbon.NewTimeMicro(c)
-	model1.TimeNano = *carbon.NewTimeNano(c)
-
-	model1.DateTime = *carbon.NewDateTime(c)
-	model1.DateTimeMilli = *carbon.NewDateTimeMilli(c)
-	model1.DateTimeMicro = *carbon.NewDateTimeMicro(c)
-	model1.DateTimeNano = *carbon.NewDateTimeNano(c)
-
-	model1.Timestamp = *carbon.NewTimestamp(c)
-	model1.TimestampMilli = *carbon.NewTimestampMilli(c)
-	model1.TimestampMicro = *carbon.NewTimestampMicro(c)
-	model1.TimestampNano = *carbon.NewTimestampNano(c)
-
-	model1.CreatedAt = carbon.NewDateTime(c)
-	model1.UpdatedAt = carbon.NewDateTime(c)
-	model1.DeletedAt = carbon.NewTimestamp(c)
-
-	v, e := json.Marshal(&model1)
-	assert.Nil(t, e)
-	assert.Equal(t, `{"date":"2020-08-05","date_milli":"2020-08-05.999","date_micro":"2020-08-05.999999","date_nano":"2020-08-05.999999999","time":"13:14:15","time_milli":"13:14:15.999","time_micro":"13:14:15.999999","time_nano":"13:14:15.999999999","date_time":"2020-08-05 13:14:15","date_time_milli":"2020-08-05 13:14:15.999","date_time_micro":"2020-08-05 13:14:15.999999","date_time_nano":"2020-08-05 13:14:15.999999999","created_at":"2020-08-05 13:14:15","updated_at":"2020-08-05 13:14:15","timestamp":1596633255,"timestamp_milli":1596633255999,"timestamp_micro":1596633255999999,"timestamp_nano":1596633255999999999,"deleted_at":1596633255}`, string(v))
-
-	var model2 Model
-	assert.NoError(t, json.Unmarshal(v, &model2))
-
-	assert.Equal(t, "2020-08-05", model2.Date.String())
-	assert.Equal(t, "2020-08-05.999", model2.DateMilli.String())
-	assert.Equal(t, "2020-08-05.999999", model2.DateMicro.String())
-	assert.Equal(t, "2020-08-05.999999999", model2.DateNano.String())
-
-	assert.Equal(t, "13:14:15", model2.Time.String())
-	assert.Equal(t, "13:14:15.999", model2.TimeMilli.String())
-	assert.Equal(t, "13:14:15.999999", model2.TimeMicro.String())
-	assert.Equal(t, "13:14:15.999999999", model2.TimeNano.String())
-
-	assert.Equal(t, "2020-08-05 13:14:15", model2.DateTime.String())
-	assert.Equal(t, "2020-08-05 13:14:15.999", model2.DateTimeMilli.String())
-	assert.Equal(t, "2020-08-05 13:14:15.999999", model2.DateTimeMicro.String())
-	assert.Equal(t, "2020-08-05 13:14:15.999999999", model2.DateTimeNano.String())
-
-	assert.Equal(t, "1596633255", model2.Timestamp.String())
-	assert.Equal(t, "1596633255999", model2.TimestampMilli.String())
-	assert.Equal(t, "1596633255999999", model2.TimestampMicro.String())
-	assert.Equal(t, "1596633255999999999", model2.TimestampNano.String())
-
-	assert.Equal(t, int64(1596633255), model2.Timestamp.Int64())
-	assert.Equal(t, int64(1596633255999), model2.TimestampMilli.Int64())
-	assert.Equal(t, int64(1596633255999999), model2.TimestampMicro.Int64())
-	assert.Equal(t, int64(1596633255999999999), model2.TimestampNano.Int64())
-
-	assert.Equal(t, "2020-08-05 13:14:15", model2.CreatedAt.String())
-	assert.Equal(t, "2020-08-05 13:14:15", model2.UpdatedAt.String())
-	assert.Equal(t, "1596633255", model2.DeletedAt.String())
-	assert.Equal(t, int64(1596633255), model2.DeletedAt.Int64())
+	user.CreatedAt = NewDateTime(c)
+	user.UpdatedAt = NewDateTime(c)
+	user.DeletedAt = NewTimestamp(c)
+	data, err := json.Marshal(&user)
+	assert.Nil(t, err)
+	fmt.Printf("user output by json:\n%s\n", data)
 }
 
-type ISO8601Type string
+func TestUnmarshalJSON(t *testing.T) {
+	str := `{
+		"carbon1":"2020-08-05 13:14:15",
+		"carbon2":"2020-08-05 13:14:15",
+		"date":"2020-08-05",
+		"date_milli":"2020-08-05.999",
+		"date_micro":"2020-08-05.999999",
+		"date_nano":"2020-08-05.999999999",
+		"time":"13:14:15",
+		"time_milli":"13:14:15.999",
+		"time_micro":"13:14:15.999999",
+		"time_nano":"13:14:15.999999999",
+		"date_time":"2020-08-05 13:14:15",
+		"date_time_milli":"2020-08-05 13:14:15.999",
+		"date_time_micro":"2020-08-05 13:14:15.999999",
+		"date_time_nano":"2020-08-05 13:14:15.999999999",
+		"timestamp":1596633255,
+		"timestamp_milli":1596633255999,
+		"timestamp_micro":1596633255999999,
+		"timestamp_nano":1596633255999999999,
+		"created_at":"2020-08-05 13:14:15",
+		"updated_at":"2020-08-05 13:14:15",
+		"deleted_at":1596633255
+	}`
 
-func (t ISO8601Type) Format() string {
-	return carbon.ISO8601Format
-}
+	assert.NoError(t, json.Unmarshal([]byte(str), &user))
 
-type RFC3339Type string
+	assert.Equal(t, "2020-08-05 13:14:15", user.Carbon1.String())
+	assert.Equal(t, "2020-08-05 13:14:15", user.Carbon2.String())
 
-func (t RFC3339Type) Layout() string {
-	return carbon.RFC3339Layout
-}
+	assert.Equal(t, "2020-08-05", user.Date.String())
+	assert.Equal(t, "2020-08-05.999", user.DateMilli.String())
+	assert.Equal(t, "2020-08-05.999999", user.DateMicro.String())
+	assert.Equal(t, "2020-08-05.999999999", user.DateNano.String())
 
-func TestCustomerType(t *testing.T) {
-	type Model struct {
-		Customer1 carbon.FormatType[ISO8601Type] `json:"customer1"`
-		Customer2 carbon.LayoutType[RFC3339Type] `json:"customer2"`
+	assert.Equal(t, "13:14:15", user.Time.String())
+	assert.Equal(t, "13:14:15.999", user.TimeMilli.String())
+	assert.Equal(t, "13:14:15.999999", user.TimeMicro.String())
+	assert.Equal(t, "13:14:15.999999999", user.TimeNano.String())
 
-		CreatedAt *carbon.FormatType[ISO8601Type] `json:"created_at"`
-		UpdatedAt *carbon.LayoutType[RFC3339Type] `json:"updated_at"`
-	}
+	assert.Equal(t, "2020-08-05 13:14:15", user.DateTime.String())
+	assert.Equal(t, "2020-08-05 13:14:15.999", user.DateTimeMilli.String())
+	assert.Equal(t, "2020-08-05 13:14:15.999999", user.DateTimeMicro.String())
+	assert.Equal(t, "2020-08-05 13:14:15.999999999", user.DateTimeNano.String())
 
-	var model1 Model
-	c := carbon.Parse("2020-08-05 13:14:15.999999999")
+	assert.Equal(t, "1596633255", user.Timestamp.String())
+	assert.Equal(t, "1596633255999", user.TimestampMilli.String())
+	assert.Equal(t, "1596633255999999", user.TimestampMicro.String())
+	assert.Equal(t, "1596633255999999999", user.TimestampNano.String())
 
-	model1.Customer1 = *carbon.NewFormatType[ISO8601Type](c)
-	model1.Customer2 = *carbon.NewLayoutType[RFC3339Type](c)
+	assert.Equal(t, int64(1596633255), user.Timestamp.Int64())
+	assert.Equal(t, int64(1596633255999), user.TimestampMilli.Int64())
+	assert.Equal(t, int64(1596633255999999), user.TimestampMicro.Int64())
+	assert.Equal(t, int64(1596633255999999999), user.TimestampNano.Int64())
 
-	model1.CreatedAt = carbon.NewFormatType[ISO8601Type](c)
-	model1.UpdatedAt = carbon.NewLayoutType[RFC3339Type](c)
-
-	v, e := json.Marshal(&model1)
-	assert.Nil(t, e)
-	assert.Equal(t, `{"customer1":"2020-08-05T13:14:15+00:00","customer2":"2020-08-05T13:14:15Z","created_at":"2020-08-05T13:14:15+00:00","updated_at":"2020-08-05T13:14:15Z"}`, string(v))
-
-	var model2 Model
-	assert.NoError(t, json.Unmarshal(v, &model2))
-
-	assert.Equal(t, "2020-08-05T13:14:15+00:00", model2.Customer1.String())
-	assert.Equal(t, "2020-08-05T13:14:15Z", model2.Customer2.String())
-	assert.Equal(t, "2020-08-05T13:14:15+00:00", model2.CreatedAt.String())
-	assert.Equal(t, "2020-08-05T13:14:15Z", model2.UpdatedAt.String())
+	assert.Equal(t, "2020-08-05 13:14:15", user.CreatedAt.String())
+	assert.Equal(t, "2020-08-05 13:14:15", user.UpdatedAt.String())
+	assert.Equal(t, "1596633255", user.DeletedAt.String())
+	assert.Equal(t, int64(1596633255), user.DeletedAt.Int64())
 }
