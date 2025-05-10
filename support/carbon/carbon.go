@@ -49,24 +49,26 @@ func Parse(value string, timezone ...string) *Carbon {
 	return carbon.Parse(value, timezone...)
 }
 
-// ParseByFormat returns a Carbon object by a confirmed format.
-func ParseByFormat(value, format string, timezone ...string) *Carbon {
-	return carbon.ParseByFormat(value, format, timezone...)
-}
-
 // ParseByLayout returns a Carbon object by a confirmed layout.
-func ParseByLayout(value, layout string, timezone ...string) *Carbon {
-	return carbon.ParseByLayout(value, layout, timezone...)
+func ParseByLayout[T string | []string](value string, layout T, timezone ...string) (c *Carbon) {
+	switch v := any(layout).(type) {
+	case string:
+		c = carbon.ParseByLayout(value, v, timezone...)
+	case []string:
+		c = carbon.ParseWithLayouts(value, v, timezone...)
+	}
+	return
 }
 
-// ParseWithFormats returns a Carbon object with multiple fuzzy formats.
-func ParseWithFormats(value string, formats []string, timezone ...string) *Carbon {
-	return carbon.ParseWithFormats(value, formats, timezone...)
-}
-
-// ParseWithLayouts returns a Carbon object with multiple fuzzy layouts.
-func ParseWithLayouts(value string, layouts []string, timezone ...string) *Carbon {
-	return carbon.ParseWithLayouts(value, layouts, timezone...)
+// ParseByFormat returns a Carbon object by a confirmed format.
+func ParseByFormat[T string | []string](value string, format T, timezone ...string) (c *Carbon) {
+	switch v := any(format).(type) {
+	case string:
+		c = carbon.ParseByFormat(value, v, timezone...)
+	case []string:
+		c = carbon.ParseWithFormats(value, v, timezone...)
+	}
+	return
 }
 
 // FromTimestamp returns a Carbon object of given timestamp.
