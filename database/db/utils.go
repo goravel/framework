@@ -134,9 +134,6 @@ func convertToMap(data any) (map[string]any, error) {
 		}
 
 		fieldValue := val.Field(i)
-		if fieldValue.Kind() == reflect.Ptr && !fieldValue.IsNil() {
-			fieldValue = fieldValue.Elem()
-		}
 		if fieldValue.IsZero() {
 			continue
 		}
