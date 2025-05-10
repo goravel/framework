@@ -66,7 +66,7 @@ func (s *MigratorSuite) TestCreate() {
 	s.True(file.Exists(migrationFile))
 
 	defer func() {
-		carbon.CleanTestNow()
+		carbon.ClearTestNow()
 		s.NoError(file.Remove("database"))
 	}()
 }

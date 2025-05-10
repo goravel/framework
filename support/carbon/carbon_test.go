@@ -38,18 +38,18 @@ func TestSetLocale(t *testing.T) {
 func TestSetTestNow(t *testing.T) {
 	SetTestNow(Now().SubHour())
 	assert.True(t, IsTestNow())
-	CleanTestNow()
+	ClearTestNow()
 	assert.False(t, IsTestNow())
 }
 
-func TestCleanTestNow(t *testing.T) {
+func TestClearTestNow(t *testing.T) {
 	now := Parse("2020-08-05")
 
 	SetTestNow(now)
 	assert.Equal(t, "2020-08-05", Now().ToDateString())
 	assert.True(t, IsTestNow())
 
-	CleanTestNow()
+	ClearTestNow()
 	assert.Equal(t, stdtime.Now().In(stdtime.UTC).Format(DateTimeLayout), Now().ToDateTimeString())
 	assert.False(t, IsTestNow())
 }
@@ -70,7 +70,7 @@ func TestNow(t *testing.T) {
 	SetTestNow(Now().SubSeconds(10))
 	stdtime.Sleep(2 * stdtime.Second)
 	testNow := Now().Timestamp()
-	CleanTestNow()
+	ClearTestNow()
 	now := Now().Timestamp()
 	assert.True(t, now-testNow >= 10)
 

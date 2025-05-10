@@ -78,5 +78,5 @@ func TestListCommand(t *testing.T) {
 
 	carbon.SetTestNow(carbon.Now().StartOfDay())
 	assert.NoError(t, NewList(mockSchedule).Handle(mockContext))
-	carbon.CleanTestNow()
+	carbon.ClearTestNow()
 }
