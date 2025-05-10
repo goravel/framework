@@ -307,7 +307,7 @@ func (_c *Logger_ToGorm_Call) RunAndReturn(run func() gormlogger.Interface) *Log
 }
 
 // Trace provides a mock function with given fields: ctx, begin, sql, rowsAffected, err
-func (_m *Logger) Trace(ctx context.Context, begin carbon.Carbon, sql string, rowsAffected int64, err error) {
+func (_m *Logger) Trace(ctx context.Context, begin *carbon.Carbon, sql string, rowsAffected int64, err error) {
 	_m.Called(ctx, begin, sql, rowsAffected, err)
 }
 
@@ -318,7 +318,7 @@ type Logger_Trace_Call struct {
 
 // Trace is a helper method to define mock.On call
 //   - ctx context.Context
-//   - begin carbon.Carbon
+//   - begin *carbon.Carbon
 //   - sql string
 //   - rowsAffected int64
 //   - err error
@@ -326,9 +326,9 @@ func (_e *Logger_Expecter) Trace(ctx interface{}, begin interface{}, sql interfa
 	return &Logger_Trace_Call{Call: _e.mock.On("Trace", ctx, begin, sql, rowsAffected, err)}
 }
 
-func (_c *Logger_Trace_Call) Run(run func(ctx context.Context, begin carbon.Carbon, sql string, rowsAffected int64, err error)) *Logger_Trace_Call {
+func (_c *Logger_Trace_Call) Run(run func(ctx context.Context, begin *carbon.Carbon, sql string, rowsAffected int64, err error)) *Logger_Trace_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(carbon.Carbon), args[2].(string), args[3].(int64), args[4].(error))
+		run(args[0].(context.Context), args[1].(*carbon.Carbon), args[2].(string), args[3].(int64), args[4].(error))
 	})
 	return _c
 }
@@ -338,7 +338,7 @@ func (_c *Logger_Trace_Call) Return() *Logger_Trace_Call {
 	return _c
 }
 
-func (_c *Logger_Trace_Call) RunAndReturn(run func(context.Context, carbon.Carbon, string, int64, error)) *Logger_Trace_Call {
+func (_c *Logger_Trace_Call) RunAndReturn(run func(context.Context, *carbon.Carbon, string, int64, error)) *Logger_Trace_Call {
 	_c.Run(run)
 	return _c
 }

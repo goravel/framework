@@ -32,7 +32,7 @@ type JwtGuardTestSuite struct {
 	mockDB           *mocksorm.Query
 	mockLog          *mockslog.Log
 	mockUserProvider *mocksauth.UserProvider
-	now              carbon.Carbon
+	now              *carbon.Carbon
 }
 
 func TestJwtGuardTestSuite(t *testing.T) {
@@ -129,13 +129,13 @@ func (s *JwtGuardTestSuite) TestParse_TokenInvalid() {
 
 func (s *JwtGuardTestSuite) TestParse_TokenExpired() {
 	issuedAt := s.now.StdTime()
-	expireAt := s.now.AddMinutes(2).StdTime()
+	expireAt := s.now.Copy().AddMinutes(2).StdTime()
 
 	token, err := s.jwtGuard.LoginUsingID(1)
 	s.Nil(err)
 	s.NotEmpty(token)
 
-	carbon.SetTestNow(s.now.AddMinutes(2))
+	carbon.SetTestNow(s.now.Copy().AddMinutes(2))
 
 	guardInfo, err := s.jwtGuard.GetJwtToken()
 	s.Nil(err)
@@ -151,7 +151,7 @@ func (s *JwtGuardTestSuite) TestParse_TokenExpired() {
 	}, payload)
 	s.ErrorIs(err, errors.AuthTokenExpired)
 
-	carbon.UnsetTestNow()
+	carbon.ClearTestNow()
 }
 
 func (s *JwtGuardTestSuite) TestParse_Success() {
@@ -167,8 +167,8 @@ func (s *JwtGuardTestSuite) TestParse_Success() {
 	s.Equal(&contractsauth.Payload{
 		Guard:    testUserGuard,
 		Key:      "1",
-		ExpireAt: jwt.NewNumericDate(s.now.AddMinutes(2).StdTime()).Local(),
-		IssuedAt: jwt.NewNumericDate(s.now.StdTime()).Local(),
+		ExpireAt: jwt.NewNumericDate(s.now.Copy().AddMinutes(2).StdTime()).Local(),
+		IssuedAt: jwt.NewNumericDate(s.now.Copy().StdTime()).Local(),
 	}, payload)
 }
 
@@ -221,7 +221,7 @@ func (s *JwtGuardTestSuite) TestID_TokenExpired() {
 	s.Empty(id)
 	s.ErrorIs(err, errors.AuthTokenExpired)
 
-	carbon.UnsetTestNow()
+	carbon.ClearTestNow()
 }
 
 func (s *JwtGuardTestSuite) TestID_TokenInvalid() {
@@ -263,7 +263,7 @@ func (s *JwtGuardTestSuite) TestUser_Expired_Refresh() {
 
 	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
 
-	carbon.SetTestNow(s.now.AddMinutes(2))
+	carbon.SetTestNow(s.now.Copy().AddMinutes(2))
 
 	payload, err := s.jwtGuard.Parse(token)
 	s.NotNil(payload)
@@ -290,7 +290,7 @@ func (s *JwtGuardTestSuite) TestUser_RefreshExpired() {
 
 	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
 
-	carbon.SetTestNow(s.now.AddMinutes(2))
+	carbon.SetTestNow(s.now.Copy().AddMinutes(2))
 
 	payload, err := s.jwtGuard.Parse(token)
 	s.NotNil(payload)
@@ -300,13 +300,13 @@ func (s *JwtGuardTestSuite) TestUser_RefreshExpired() {
 	err = s.jwtGuard.User(&user)
 	s.EqualError(err, errors.AuthTokenExpired.Error())
 
-	carbon.SetTestNow(s.now.AddMinutes(5))
+	carbon.SetTestNow(s.now.Copy().AddMinutes(5))
 
 	token, err = s.jwtGuard.Refresh()
 	s.Empty(token)
 	s.EqualError(err, errors.AuthRefreshTimeExceeded.Error())
 
-	carbon.UnsetTestNow()
+	carbon.ClearTestNow()
 }
 
 func (s *JwtGuardTestSuite) TestUser_Success() {
@@ -446,8 +446,8 @@ var testUserGuard = "user"
 type User struct {
 	ID        uint `gorm:"primaryKey" json:"id"`
 	Name      string
-	CreatedAt carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at"`
-	UpdatedAt carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at"`
+	CreatedAt *carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at"`
+	UpdatedAt *carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at"`
 }
 
 type Context struct {
