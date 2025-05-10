@@ -2675,7 +2675,7 @@ func (s *SchemaSuite) TestExtend() {
 				{Pattern: "(?i)^jsonb$", Type: "jsonb.RawMessage", NullType: "*jsonb.RawMessage", Import: "github.com/jmoiron/sqlx/types"},
 			}
 
-			schema.Extend(&contractsschema.Extension{
+			schema.Extend(contractsschema.Extension{
 				GoTypes: customGoTypes,
 			})
 			extendedGoTypes := schema.GoTypes()
@@ -2720,7 +2720,7 @@ func (s *SchemaSuite) TestOverrideDefaultTypeWithExtend() {
 				{Pattern: "(?i)^timestamp$", Type: "time.Time", NullType: "*time.Time", Import: "time"},
 			}
 
-			schema.Extend(&contractsschema.Extension{
+			schema.Extend(contractsschema.Extension{
 				GoTypes: customGoTypes,
 			})
 
@@ -2744,7 +2744,7 @@ func (s *SchemaSuite) TestEmptyExtend() {
 			originalGoTypes := schema.GoTypes()
 			originalLength := len(originalGoTypes)
 
-			schema.Extend(&contractsschema.Extension{
+			schema.Extend(contractsschema.Extension{
 				GoTypes: []contractsschema.GoType{},
 			})
 
