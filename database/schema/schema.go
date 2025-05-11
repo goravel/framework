@@ -483,76 +483,110 @@ func defaultGoTypes() []contractsschema.GoType {
 
 		// Boolean types
 		{Pattern: "(?i)^bool(ean)?$", Type: "bool", NullType: "*bool"},
-		{Pattern: "(?i)^bit(\\(1\\))?$", Type: "bool", NullType: "*bool"}, // Match both bit and bit(1)
+		{Pattern: "(?i)^bit(\\(1\\))?$", Type: "bool", NullType: "*bool"}, // Single bit as boolean
 
 		// Integer types - ordered from most specific to general
-		{Pattern: "(?i)^bigserial(\\(\\d+\\))?$", Type: "int64", NullType: "*int64"}, // PostgreSQL
+		// Unsigned variants (MySQL)
+		{Pattern: "(?i)^bigint\\s+unsigned(\\(\\d+\\))?$", Type: "uint64", NullType: "*uint64"},
+		{Pattern: "(?i)^int(eger)?\\s+unsigned(\\(\\d+\\))?$", Type: "uint32", NullType: "*uint32"},
+		{Pattern: "(?i)^mediumint\\s+unsigned(\\(\\d+\\))?$", Type: "uint32", NullType: "*uint32"},
+		{Pattern: "(?i)^smallint\\s+unsigned(\\(\\d+\\))?$", Type: "uint16", NullType: "*uint16"},
+		{Pattern: "(?i)^tinyint\\s+unsigned(\\(\\d+\\))?$", Type: "uint8", NullType: "*uint8"},
+
+		// PostgreSQL serials
+		{Pattern: "(?i)^bigserial(\\(\\d+\\))?$", Type: "int64", NullType: "*int64"},
+		{Pattern: "(?i)^serial(\\(\\d+\\))?$", Type: "int", NullType: "*int"},
+		{Pattern: "(?i)^smallserial(\\(\\d+\\))?$", Type: "int16", NullType: "*int16"},
+
+		// Standard integer types
 		{Pattern: "(?i)^bigint(\\(\\d+\\))?$", Type: "int64", NullType: "*int64"},
-		{Pattern: "(?i)^smallserial(\\(\\d+\\))?$", Type: "int16", NullType: "*int16"}, // PostgreSQL
-		{Pattern: "(?i)^smallint(\\(\\d+\\))?$", Type: "int16", NullType: "*int16"},
-		{Pattern: "(?i)^int2(\\(\\d+\\))?$", Type: "int16", NullType: "*int16"}, // PostgreSQL
-		{Pattern: "(?i)^serial(\\(\\d+\\))?$", Type: "int", NullType: "*int"},   // PostgreSQL
-		{Pattern: "(?i)^integer(\\(\\d+\\))?$", Type: "int", NullType: "*int"},
-		{Pattern: "(?i)^int(\\(\\d+\\))?$", Type: "int", NullType: "*int"},
-		{Pattern: "(?i)^int4(\\(\\d+\\))?$", Type: "int", NullType: "*int"},          // PostgreSQL
+		{Pattern: "(?i)^int8(\\(\\d+\\))?$", Type: "int64", NullType: "*int64"},      // PostgreSQL
 		{Pattern: "(?i)^mediumint(\\(\\d+\\))?$", Type: "int32", NullType: "*int32"}, // MySQL
-		{Pattern: "(?i)^tinyint(\\(\\d+\\))?$", Type: "int8", NullType: "*int8"},     // MySQL (when not tinyint(1))
-		{Pattern: "(?i)^int8(\\(\\d+\\))?$", Type: "int8", NullType: "*int8"},        // PostgreSQL
+		{Pattern: "(?i)^int(eger)?(\\(\\d+\\))?$", Type: "int", NullType: "*int"},
+		{Pattern: "(?i)^int4(\\(\\d+\\))?$", Type: "int32", NullType: "*int32"}, // PostgreSQL
+		{Pattern: "(?i)^smallint(\\(\\d+\\))?$", Type: "int16", NullType: "*int16"},
+		{Pattern: "(?i)^int2(\\(\\d+\\))?$", Type: "int16", NullType: "*int16"},  // PostgreSQL
+		{Pattern: "(?i)^tinyint(\\(\\d+\\))?$", Type: "int8", NullType: "*int8"}, // MySQL (when not tinyint(1))
+		{Pattern: "(?i)^year(\\(\\d+\\))?$", Type: "int16", NullType: "*int16"},  // MySQL YEAR type
+
+		// Bit/binary integer types
+		{Pattern: "(?i)^bit(\\(\\d+\\))?$", Type: "[]byte", NullType: "[]byte"}, // Multi-bit
+
+		// Fixed-precision types
+		{Pattern: "(?i)^money(\\(\\d+,?\\d*\\))?$", Type: "float64", NullType: "*float64"}, // PostgreSQL, SQL Server
+		{Pattern: "(?i)^decimal(\\(\\d+,?\\d*\\))?$", Type: "float64", NullType: "*float64"},
+		{Pattern: "(?i)^dec(\\(\\d+,?\\d*\\))?$", Type: "float64", NullType: "*float64"},
+		{Pattern: "(?i)^numeric(\\(\\d+,?\\d*\\))?$", Type: "float64", NullType: "*float64"},
+		{Pattern: "(?i)^fixed(\\(\\d+,?\\d*\\))?$", Type: "float64", NullType: "*float64"}, // MySQL
 
 		// Floating point types
-		{Pattern: "(?i)^double precision(\\(\\d+,\\d+\\))?$", Type: "float64", NullType: "*float64"},
-		{Pattern: "(?i)^double(\\(\\d+,\\d+\\))?$", Type: "float64", NullType: "*float64"},
+		{Pattern: "(?i)^double precision(\\(\\d+,?\\d*\\))?$", Type: "float64", NullType: "*float64"},
+		{Pattern: "(?i)^double(\\(\\d+,?\\d*\\))?$", Type: "float64", NullType: "*float64"},
 		{Pattern: "(?i)^float8(\\(\\d+,?\\d*\\))?$", Type: "float64", NullType: "*float64"}, // PostgreSQL
 		{Pattern: "(?i)^float4(\\(\\d+,?\\d*\\))?$", Type: "float32", NullType: "*float32"}, // PostgreSQL
 		{Pattern: "(?i)^float(\\(\\d+,?\\d*\\))?$", Type: "float32", NullType: "*float32"},  // MySQL
 		{Pattern: "(?i)^real(\\(\\d+,?\\d*\\))?$", Type: "float32", NullType: "*float32"},
 
-		// Decimal types
-		{Pattern: "(?i)^money(\\(\\d+,?\\d*\\))?$", Type: "float64", NullType: "*float64"}, // PostgreSQL
-		{Pattern: "(?i)^decimal(\\(\\d+,?\\d*\\))?$", Type: "float64", NullType: "*float64"},
-		{Pattern: "(?i)^numeric(\\(\\d+,?\\d*\\))?$", Type: "float64", NullType: "*float64"},
-
 		// String types - longer/specific types first
-		{Pattern: "(?i)^character varying(\\(\\d+\\))?$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^character\\s+varying(\\(\\d+\\))?$", Type: "string", NullType: "*string"},
 		{Pattern: "(?i)^varchar(\\(\\d+\\))?$", Type: "string", NullType: "*string"},
 		{Pattern: "(?i)^character(\\(\\d+\\))?$", Type: "string", NullType: "*string"},
-		{Pattern: "(?i)^longtext$", Type: "string", NullType: "*string"},              // MySQL
-		{Pattern: "(?i)^mediumtext$", Type: "string", NullType: "*string"},            // MySQL
-		{Pattern: "(?i)^tinytext$", Type: "string", NullType: "*string"},              // MySQL
 		{Pattern: "(?i)^nvarchar(\\(\\d+\\))?$", Type: "string", NullType: "*string"}, // SQL Server
-		{Pattern: "(?i)^ntext$", Type: "string", NullType: "*string"},                 // SQL Server
 		{Pattern: "(?i)^nchar(\\(\\d+\\))?$", Type: "string", NullType: "*string"},    // SQL Server
+		{Pattern: "(?i)^national\\s+char(acter)?(\\(\\d+\\))?$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^national\\s+varchar(\\(\\d+\\))?$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^longtext$", Type: "string", NullType: "*string"},   // MySQL
+		{Pattern: "(?i)^mediumtext$", Type: "string", NullType: "*string"}, // MySQL
+		{Pattern: "(?i)^tinytext$", Type: "string", NullType: "*string"},   // MySQL
+		{Pattern: "(?i)^ntext$", Type: "string", NullType: "*string"},      // SQL Server
 		{Pattern: "(?i)^text(\\(\\d+\\))?$", Type: "string", NullType: "*string"},
 		{Pattern: "(?i)^char(\\(\\d+\\))?$", Type: "string", NullType: "*string"},
-		{Pattern: "(?i)^citext$", Type: "string", NullType: "*string"}, // PostgreSQL
+		{Pattern: "(?i)^varchar2(\\(\\d+\\))?$", Type: "string", NullType: "*string"},  // Oracle
+		{Pattern: "(?i)^nvarchar2(\\(\\d+\\))?$", Type: "string", NullType: "*string"}, // Oracle
+		{Pattern: "(?i)^citext$", Type: "string", NullType: "*string"},                 // PostgreSQL
 
 		// JSON types
 		{Pattern: "(?i)^jsonb$", Type: "string", NullType: "*string"}, // PostgreSQL
 		{Pattern: "(?i)^json$", Type: "string", NullType: "*string"},
 
 		// Date and Time types
-		{Pattern: "(?i)^timestamptz(\\(\\d+\\))?$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"}, // PostgreSQL
+		{Pattern: "(?i)^timestamptz(\\(\\d+\\))?$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},                             // PostgreSQL
+		{Pattern: "(?i)^timestamp(\\(\\d+\\))?\\s+with(out)?\\s+time\\s+zone$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"}, // PostgreSQL
 		{Pattern: "(?i)^timestamp(\\(\\d+\\))?$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},
-		{Pattern: "(?i)^datetime(\\(\\d+\\))?$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"}, // MySQL
-		{Pattern: "(?i)^timetz(\\(\\d+\\))?$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},   // PostgreSQL
+		{Pattern: "(?i)^datetime(\\(\\d+\\))?$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},                           // MySQL
+		{Pattern: "(?i)^datetime2(\\(\\d+\\))?$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},                          // SQL Server
+		{Pattern: "(?i)^datetimeoffset(\\(\\d+\\))?$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},                     // SQL Server
+		{Pattern: "(?i)^smalldatetime$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},                                   // SQL Server
+		{Pattern: "(?i)^timetz(\\(\\d+\\))?$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},                             // PostgreSQL
+		{Pattern: "(?i)^time(\\(\\d+\\))?\\s+with(out)?\\s+time\\s+zone$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"}, // PostgreSQL
 		{Pattern: "(?i)^time(\\(\\d+\\))?$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},
 		{Pattern: "(?i)^date$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},
 		{Pattern: "(?i)^interval$", Type: "string", NullType: "*string"}, // PostgreSQL
 
+		// Range types (PostgreSQL)
+		{Pattern: "(?i)^int4range$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^int8range$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^numrange$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^tsrange$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^tstzrange$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^daterange$", Type: "string", NullType: "*string"},
+
 		// Enum types
-		{Pattern: "(?i)^enum\\([^)]*\\)$", Type: "string", NullType: "*string"}, // Match enum with parameters
-		{Pattern: "(?i)^set\\([^)]*\\)$", Type: "string", NullType: "*string"},  // Match set with parameters
+		{Pattern: "(?i)^enum\\([^)]*\\)$", Type: "string", NullType: "*string"}, // MySQL
+		{Pattern: "(?i)^set\\([^)]*\\)$", Type: "string", NullType: "*string"},  // MySQL
 
 		// Binary types - larger types first
 		{Pattern: "(?i)^longblob$", Type: "[]byte", NullType: "[]byte"},               // MySQL
 		{Pattern: "(?i)^mediumblob$", Type: "[]byte", NullType: "[]byte"},             // MySQL
 		{Pattern: "(?i)^tinyblob$", Type: "[]byte", NullType: "[]byte"},               // MySQL
 		{Pattern: "(?i)^blob(\\(\\d+\\))?$", Type: "[]byte", NullType: "[]byte"},      // MySQL
+		{Pattern: "(?i)^image$", Type: "[]byte", NullType: "[]byte"},                  // SQL Server
 		{Pattern: "(?i)^varbinary(\\(\\d+\\))?$", Type: "[]byte", NullType: "[]byte"}, // MySQL/SQL Server
 		{Pattern: "(?i)^binary(\\(\\d+\\))?$", Type: "[]byte", NullType: "[]byte"},    // MySQL/SQL Server
 		{Pattern: "(?i)^bytea$", Type: "[]byte", NullType: "[]byte"},                  // PostgreSQL
 
 		// Network types (PostgreSQL)
+		{Pattern: "(?i)^macaddr8$", Type: "string", NullType: "*string"},
 		{Pattern: "(?i)^macaddr$", Type: "string", NullType: "*string"},
 		{Pattern: "(?i)^cidr$", Type: "string", NullType: "*string"},
 		{Pattern: "(?i)^inet$", Type: "string", NullType: "*string"},
@@ -566,14 +600,28 @@ func defaultGoTypes() []contractsschema.GoType {
 		{Pattern: "(?i)^line$", Type: "string", NullType: "*string"},
 		{Pattern: "(?i)^point$", Type: "string", NullType: "*string"},
 
-		// UUID type
-		{Pattern: "(?i)^uuid$", Type: "string", NullType: "*string"},
+		// UUID/GUID types
+		{Pattern: "(?i)^uuid$", Type: "string", NullType: "*string"},             // PostgreSQL
+		{Pattern: "(?i)^uniqueidentifier$", Type: "string", NullType: "*string"}, // SQL Server
 
-		// XML
+		// XML and other text types
 		{Pattern: "(?i)^xml$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^rowversion$", Type: "[]byte", NullType: "[]byte"}, // SQL Server
+
+		// Spatial/Geometry types
+		{Pattern: "(?i)^geometry$", Type: "string", NullType: "*string"},    // MySQL/PostgreSQL/SQL Server
+		{Pattern: "(?i)^geography$", Type: "string", NullType: "*string"},   // SQL Server
+		{Pattern: "(?i)^st_geometry$", Type: "string", NullType: "*string"}, // PostgreSQL PostGIS
+
+		// Miscellaneous specialized types
+		{Pattern: "(?i)^hstore$", Type: "map[string]string", NullType: "*map[string]string"}, // PostgreSQL
+		{Pattern: "(?i)^hierarchyid$", Type: "string", NullType: "*string"},                  // SQL Server
 
 		// SQLite specific
 		{Pattern: "(?i)^rowid$", Type: "int64", NullType: "*int64"}, // SQLite
+
+		// Array types (PostgreSQL)
+		{Pattern: "(?i)^(.+)\\[\\]$", Type: "string", NullType: "*string"}, // Match any array type like "text[]"
 
 		// Fallback for unknown types
 		{Pattern: ".*", Type: "any", NullType: "any"},
