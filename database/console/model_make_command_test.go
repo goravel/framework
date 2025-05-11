@@ -384,7 +384,7 @@ func TestGenerateField(t *testing.T) {
 	assert.Equal(t, "uint", field.Type)
 	assert.Contains(t, field.Tags, "json:\"id\"")
 	assert.Contains(t, field.Tags, "db:\"id\"")
-	assert.Contains(t, field.Tags, "gorm:\"autoIncrement\"")
+	assert.Contains(t, field.Tags, "gorm:\"primaryKey\"")
 	assert.Equal(t, []string{"database/sql"}, field.Imports)
 
 	// Test enum field
