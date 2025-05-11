@@ -2680,7 +2680,7 @@ func (s *SchemaSuite) TestExtend() {
 			})
 			extendedGoTypes := schema.GoTypes()
 
-			s.Equal(len(extendedGoTypes)+2, len(originalGoTypes), "Extended GoTypes list should be longer than original")
+			s.Equal(len(originalGoTypes)+2, len(extendedGoTypes), "Extended GoTypes list should be longer than original")
 
 			uuidType, found := findGoType("uuid", extendedGoTypes)
 			s.True(found, "uuid type should be added")
