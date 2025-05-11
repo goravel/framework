@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/convert"
 )
 
 type Model struct {
@@ -17,8 +18,8 @@ type Model struct {
 }
 
 type Timestamps struct {
-	CreatedAt carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at"`
-	UpdatedAt carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at"`
+	CreatedAt *carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at"`
+	UpdatedAt *carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at"`
 }
 
 type TestEventModel struct {
@@ -349,17 +350,42 @@ func (s *EventTestSuite) TestColumnNames() {
 }
 
 func TestStructToMap(t *testing.T) {
+	type TestStruct struct {
+		Model
+		Name     string
+		Avatar   *string
+		IsAdmin  bool
+		IsManage int `gorm:"column:manage"`
+		AdminAt  time.Time
+		high     int
+	}
+
+	testStruct := TestStruct{
+		Model: Model{
+			ID: 1,
+			Timestamps: Timestamps{
+				CreatedAt: carbon.NewDateTime(carbon.FromStdTime(testNow)),
+				UpdatedAt: carbon.NewDateTime(carbon.FromStdTime(testNow)),
+			},
+		},
+		Name:     "name",
+		Avatar:   convert.Pointer("avatar"),
+		IsAdmin:  true,
+		IsManage: 2,
+		AdminAt:  testNow,
+		high:     1,
+	}
+
 	assert.EqualValues(t, map[string]any{
-		"i_d":        testEventModel.ID,
-		"created_at": testEventModel.CreatedAt,
-		"updated_at": testEventModel.UpdatedAt,
-		"name":       testEventModel.Name,
-		"avatar":     testEventModel.Avatar,
-		"is_admin":   testEventModel.IsAdmin,
-		"manage":     testEventModel.IsManage,
-		"admin_at":   testEventModel.AdminAt,
-		"manage_at":  testEventModel.ManageAt,
-	}, structToMap(testEventModel))
+		"i_d":        testStruct.ID,
+		"created_at": testStruct.CreatedAt,
+		"updated_at": testStruct.UpdatedAt,
+		"name":       testStruct.Name,
+		"avatar":     testStruct.Avatar,
+		"is_admin":   testStruct.IsAdmin,
+		"manage":     testStruct.IsManage,
+		"admin_at":   testStruct.AdminAt,
+	}, structToMap(testStruct))
 }
 
 func TestStructNameToDbColumnName(t *testing.T) {

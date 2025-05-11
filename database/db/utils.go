@@ -11,7 +11,7 @@ import (
 
 type TxLog struct {
 	ctx          context.Context
-	begin        carbon.Carbon
+	begin        *carbon.Carbon
 	sql          string
 	rowsAffected int64
 	err          error
@@ -134,9 +134,6 @@ func convertToMap(data any) (map[string]any, error) {
 		}
 
 		fieldValue := val.Field(i)
-		if fieldValue.Kind() == reflect.Ptr && !fieldValue.IsNil() {
-			fieldValue = fieldValue.Elem()
-		}
 		if fieldValue.IsZero() {
 			continue
 		}

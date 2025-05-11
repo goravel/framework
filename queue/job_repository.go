@@ -9,13 +9,13 @@ import (
 )
 
 type FailedJob struct {
-	ID         uint            `gorm:"primaryKey" db:"id"`
-	UUID       string          `db:"uuid"`
-	Connection string          `db:"connection"`
-	Queue      string          `db:"queue"`
-	Payload    string          `db:"payload"`
-	Exception  string          `db:"exception"`
-	FailedAt   carbon.DateTime `db:"failed_at"`
+	ID         uint             `gorm:"primaryKey" db:"id"`
+	UUID       string           `db:"uuid"`
+	Connection string           `db:"connection"`
+	Queue      string           `db:"queue"`
+	Payload    string           `db:"payload"`
+	Exception  string           `db:"exception"`
+	FailedAt   *carbon.DateTime `db:"failed_at"`
 }
 
 type JobRepository struct {
