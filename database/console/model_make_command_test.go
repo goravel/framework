@@ -3,7 +3,6 @@ package console
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -176,11 +175,16 @@ func TestGenerateModelInfo(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(info.Fields))
 	assert.Equal(t, 2, len(info.Embeds))
-	assert.True(t, strings.Contains(info.Fields[0], "Name"))
-	assert.True(t, strings.Contains(info.TableNameMethod, "func (r *User) TableName() string"))
-	assert.Contains(t, info.Embeds, "orm.Model")
-	assert.Contains(t, info.Embeds, "orm.NullableSoftDeletes")
-	assert.Contains(t, info.Imports, "github.com/goravel/framework/database/orm")
+	assert.Contains(t, info.Fields[0], "Name")
+	assert.Equal(t, "func (r *User) TableName() string {\n\treturn \"users\"\n}", info.TableNameMethod)
+	assert.Equal(t, []string{
+		"orm.Model",
+		"orm.NullableSoftDeletes",
+	}, info.Embeds)
+	assert.Equal(t, map[string]struct{}{
+		"database/sql": {},
+		"github.com/goravel/framework/database/orm": {},
+	}, info.Imports)
 
 	// Test with only nullable timestamps (no id, with soft deletes)
 	columns = []driver.Column{
@@ -196,9 +200,11 @@ func TestGenerateModelInfo(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(info.Fields))
 	assert.Equal(t, 2, len(info.Embeds))
-	assert.True(t, strings.Contains(info.Fields[0], "Title"))
-	assert.Contains(t, info.Embeds, "orm.NullableTimestamps")
-	assert.Contains(t, info.Embeds, "orm.SoftDeletes")
+	assert.Contains(t, info.Fields[0], "Title")
+	assert.Equal(t, []string{
+		"orm.NullableTimestamps",
+		"orm.SoftDeletes",
+	}, info.Embeds)
 
 	// Test with no standard columns
 	columns = []driver.Column{
@@ -345,8 +351,7 @@ func TestGenerateField(t *testing.T) {
 	field := generateField(column, typeMapping)
 	assert.Equal(t, "Name", field.Name)
 	assert.Equal(t, "string", field.Type)
-	assert.Contains(t, field.Tags, "json:\"name\"")
-	assert.Contains(t, field.Tags, "db:\"name\"")
+	assert.Equal(t, "`json:\"name\" db:\"name\"`", field.Tags)
 	assert.Equal(t, []string{"database/sql"}, field.Imports)
 
 	// Test nullable field
@@ -363,8 +368,7 @@ func TestGenerateField(t *testing.T) {
 	field = generateField(column, typeMapping)
 	assert.Equal(t, "Description", field.Name)
 	assert.Equal(t, "sql.NullString", field.Type)
-	assert.Contains(t, field.Tags, "json:\"description\"")
-	assert.Contains(t, field.Tags, "db:\"description\"")
+	assert.Equal(t, "`json:\"description\" db:\"description\"`", field.Tags)
 	assert.Equal(t, []string{"database/sql"}, field.Imports)
 
 	// Test auto-increment field
@@ -382,9 +386,7 @@ func TestGenerateField(t *testing.T) {
 	field = generateField(column, typeMapping)
 	assert.Equal(t, "Id", field.Name)
 	assert.Equal(t, "uint", field.Type)
-	assert.Contains(t, field.Tags, "json:\"id\"")
-	assert.Contains(t, field.Tags, "db:\"id\"")
-	assert.Contains(t, field.Tags, "gorm:\"primaryKey\"")
+	assert.Equal(t, "`json:\"id\" db:\"id\" gorm:\"primaryKey\"`", field.Tags)
 	assert.Equal(t, []string{"database/sql"}, field.Imports)
 
 	// Test enum field
@@ -401,8 +403,7 @@ func TestGenerateField(t *testing.T) {
 	field = generateField(column, typeMapping)
 	assert.Equal(t, "Status", field.Name)
 	assert.Equal(t, "string", field.Type)
-	assert.Contains(t, field.Tags, "json:\"status\"")
-	assert.Contains(t, field.Tags, "db:\"status\"")
+	assert.Equal(t, "`json:\"status\" db:\"status\"`", field.Tags)
 	assert.Equal(t, []string{"database/sql"}, field.Imports)
 
 	// Test custom type field
@@ -419,8 +420,7 @@ func TestGenerateField(t *testing.T) {
 	field = generateField(column, typeMapping)
 	assert.Equal(t, "Location", field.Name)
 	assert.Equal(t, "geo.NullPoint", field.Type)
-	assert.Contains(t, field.Tags, "json:\"location\"")
-	assert.Contains(t, field.Tags, "db:\"location\"")
+	assert.Equal(t, "`json:\"location\" db:\"location\"`", field.Tags)
 	assert.Contains(t, field.Imports, "github.com/paulmach/go.geo")
 
 	// Test field with Import only (not nullable)
@@ -437,8 +437,7 @@ func TestGenerateField(t *testing.T) {
 	field = generateField(column, typeMapping)
 	assert.Equal(t, "Timestamp", field.Name)
 	assert.Equal(t, "time.Time", field.Type)
-	assert.Contains(t, field.Tags, "json:\"timestamp\"")
-	assert.Contains(t, field.Tags, "db:\"timestamp\"")
+	assert.Equal(t, "`json:\"timestamp\" db:\"timestamp\"`", field.Tags)
 	assert.Equal(t, []string{"time", "database/sql"}, field.Imports)
 
 	// Test unknown type
@@ -451,7 +450,6 @@ func TestGenerateField(t *testing.T) {
 	field = generateField(column, typeMapping)
 	assert.Equal(t, "CustomField", field.Name)
 	assert.Equal(t, "any", field.Type)
-	assert.Contains(t, field.Tags, "json:\"custom_field\"")
-	assert.Contains(t, field.Tags, "db:\"custom_field\"")
+	assert.Equal(t, "`json:\"custom_field\" db:\"custom_field\"`", field.Tags)
 	assert.Empty(t, field.Imports)
 }
