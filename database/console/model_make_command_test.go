@@ -38,6 +38,16 @@ func TestModelMakeCommand(t *testing.T) {
 	assert.Nil(t, modelMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("app/models/user.go"))
 
+	// Verify the entire content of the basic model file
+	userModel, err := file.GetContent("app/models/user.go")
+	assert.Nil(t, err)
+	expectedUserContent := `package models
+
+type User struct {
+}
+`
+	assert.Equal(t, expectedUserContent, userModel)
+
 	// Test: Model already exists
 	mockContext.EXPECT().Argument(0).Return("User").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
@@ -53,6 +63,16 @@ func TestModelMakeCommand(t *testing.T) {
 	assert.True(t, file.Exists("app/models/User/phone.go"))
 	assert.True(t, file.Contain("app/models/User/phone.go", "package User"))
 	assert.True(t, file.Contain("app/models/User/phone.go", "type Phone struct"))
+
+	// Verify the entire content of the model in subdirectory
+	phoneModel, err := file.GetContent("app/models/User/phone.go")
+	assert.Nil(t, err)
+	expectedPhoneContent := `package User
+
+type Phone struct {
+}
+`
+	assert.Equal(t, expectedPhoneContent, phoneModel)
 
 	// Test: Create model from table schema
 	mockContext.EXPECT().Argument(0).Return("Product").Once()
@@ -87,15 +107,28 @@ func TestModelMakeCommand(t *testing.T) {
 	mockContext.EXPECT().Success("Model created successfully").Once()
 
 	assert.Nil(t, modelMakeCommand.Handle(mockContext))
-	assert.True(t, file.Exists("app/models/product.go"))
-	assert.True(t, file.Contain("app/models/product.go", "package models"))
-	assert.True(t, file.Contain("app/models/product.go", "type Product struct"))
-	assert.True(t, file.Contain("app/models/product.go", "orm.NullableModel"))
-	assert.True(t, file.Contain("app/models/product.go", "orm.NullableSoftDeletes"))
-	assert.True(t, file.Contain("app/models/product.go", "Name"))
-	assert.True(t, file.Contain("app/models/product.go", "Price"))
-	assert.True(t, file.Contain("app/models/product.go", "Stock"))
-	assert.True(t, file.Contain("app/models/product.go", "TableName"))
+	model, err := file.GetContent("app/models/product.go")
+	assert.Nil(t, err)
+	expectedContent := `package models
+
+import (
+	"database/sql"
+	"github.com/goravel/framework/database/orm"
+)
+
+type Product struct {
+	orm.BaseModel
+	orm.NullableSoftDeletes
+	Name  string        ` + "`json:\"name\" db:\"name\"`" + `
+	Price float64       ` + "`json:\"price\" db:\"price\"`" + `
+	Stock sql.NullInt32 ` + "`json:\"stock\" db:\"stock\"`" + `
+}
+
+func (r *Product) TableName() string {
+	return "products"
+}
+`
+	assert.Equal(t, expectedContent, model)
 
 	// Test: Table doesn't exist
 	mockContext.EXPECT().Argument(0).Return("Invalid").Once()
@@ -284,12 +317,17 @@ func TestPopulateStub(t *testing.T) {
 		TableNameMethod: "",
 	}
 
+	expectedContent := `package models
+
+type User struct {
+	ID   uint
+	Name string
+}
+`
+
 	result, err := modelMakeCommand.populateStub(stub, "models", "User", modelInfo)
 	assert.Nil(t, err)
-	assert.Contains(t, result, "package models")
-	assert.Contains(t, result, "type User struct")
-	assert.Contains(t, result, "ID   uint")
-	assert.Contains(t, result, "Name string")
+	assert.Equal(t, expectedContent, result)
 }
 
 func TestGenerateField(t *testing.T) {

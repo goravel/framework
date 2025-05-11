@@ -482,50 +482,48 @@ func defaultGoTypes() []contractsschema.GoType {
 		{Pattern: "(?i)^tinyint\\(1\\)$", Type: "bool", NullType: "*bool"}, // MySQL boolean representation
 
 		// Boolean types
-		{Pattern: "(?i)^bool$", Type: "bool", NullType: "*bool"},
-		{Pattern: "(?i)^boolean$", Type: "bool", NullType: "*bool"},
-		{Pattern: "(?i)^bit\\(1\\)$", Type: "bool", NullType: "*bool"}, // Single bit as boolean
-		{Pattern: "(?i)^bit$", Type: "bool", NullType: "*bool"},
+		{Pattern: "(?i)^bool(ean)?$", Type: "bool", NullType: "*bool"},
+		{Pattern: "(?i)^bit(\\(1\\))?$", Type: "bool", NullType: "*bool"}, // Match both bit and bit(1)
 
 		// Integer types - ordered from most specific to general
-		{Pattern: "(?i)^bigserial$", Type: "int64", NullType: "*int64"}, // PostgreSQL
-		{Pattern: "(?i)^bigint$", Type: "int64", NullType: "*int64"},
-		{Pattern: "(?i)^smallserial$", Type: "int16", NullType: "*int16"}, // PostgreSQL
-		{Pattern: "(?i)^smallint$", Type: "int16", NullType: "*int16"},
-		{Pattern: "(?i)^int2$", Type: "int16", NullType: "*int16"}, // PostgreSQL
-		{Pattern: "(?i)^serial$", Type: "int", NullType: "*int"},   // PostgreSQL
-		{Pattern: "(?i)^integer$", Type: "int", NullType: "*int"},
-		{Pattern: "(?i)^int$", Type: "int", NullType: "*int"},
-		{Pattern: "(?i)^int4$", Type: "int", NullType: "*int"},          // PostgreSQL
-		{Pattern: "(?i)^mediumint$", Type: "int32", NullType: "*int32"}, // MySQL
-		{Pattern: "(?i)^tinyint$", Type: "int8", NullType: "*int8"},     // MySQL (when not tinyint(1))
-		{Pattern: "(?i)^int8$", Type: "int8", NullType: "*int8"},        // PostgreSQL
+		{Pattern: "(?i)^bigserial(\\(\\d+\\))?$", Type: "int64", NullType: "*int64"}, // PostgreSQL
+		{Pattern: "(?i)^bigint(\\(\\d+\\))?$", Type: "int64", NullType: "*int64"},
+		{Pattern: "(?i)^smallserial(\\(\\d+\\))?$", Type: "int16", NullType: "*int16"}, // PostgreSQL
+		{Pattern: "(?i)^smallint(\\(\\d+\\))?$", Type: "int16", NullType: "*int16"},
+		{Pattern: "(?i)^int2(\\(\\d+\\))?$", Type: "int16", NullType: "*int16"}, // PostgreSQL
+		{Pattern: "(?i)^serial(\\(\\d+\\))?$", Type: "int", NullType: "*int"},   // PostgreSQL
+		{Pattern: "(?i)^integer(\\(\\d+\\))?$", Type: "int", NullType: "*int"},
+		{Pattern: "(?i)^int(\\(\\d+\\))?$", Type: "int", NullType: "*int"},
+		{Pattern: "(?i)^int4(\\(\\d+\\))?$", Type: "int", NullType: "*int"},          // PostgreSQL
+		{Pattern: "(?i)^mediumint(\\(\\d+\\))?$", Type: "int32", NullType: "*int32"}, // MySQL
+		{Pattern: "(?i)^tinyint(\\(\\d+\\))?$", Type: "int8", NullType: "*int8"},     // MySQL (when not tinyint(1))
+		{Pattern: "(?i)^int8(\\(\\d+\\))?$", Type: "int8", NullType: "*int8"},        // PostgreSQL
 
 		// Floating point types
-		{Pattern: "(?i)^double precision$", Type: "float64", NullType: "*float64"},
-		{Pattern: "(?i)^double$", Type: "float64", NullType: "*float64"},
-		{Pattern: "(?i)^float8$", Type: "float64", NullType: "*float64"}, // PostgreSQL
-		{Pattern: "(?i)^float4$", Type: "float32", NullType: "*float32"}, // PostgreSQL
-		{Pattern: "(?i)^float$", Type: "float32", NullType: "*float32"},  // MySQL
-		{Pattern: "(?i)^real$", Type: "float32", NullType: "*float32"},
+		{Pattern: "(?i)^double precision(\\(\\d+,\\d+\\))?$", Type: "float64", NullType: "*float64"},
+		{Pattern: "(?i)^double(\\(\\d+,\\d+\\))?$", Type: "float64", NullType: "*float64"},
+		{Pattern: "(?i)^float8(\\(\\d+,?\\d*\\))?$", Type: "float64", NullType: "*float64"}, // PostgreSQL
+		{Pattern: "(?i)^float4(\\(\\d+,?\\d*\\))?$", Type: "float32", NullType: "*float32"}, // PostgreSQL
+		{Pattern: "(?i)^float(\\(\\d+,?\\d*\\))?$", Type: "float32", NullType: "*float32"},  // MySQL
+		{Pattern: "(?i)^real(\\(\\d+,?\\d*\\))?$", Type: "float32", NullType: "*float32"},
 
 		// Decimal types
-		{Pattern: "(?i)^money$", Type: "float64", NullType: "*float64"}, // PostgreSQL
-		{Pattern: "(?i)^decimal$", Type: "float64", NullType: "*float64"},
-		{Pattern: "(?i)^numeric$", Type: "float64", NullType: "*float64"},
+		{Pattern: "(?i)^money(\\(\\d+,?\\d*\\))?$", Type: "float64", NullType: "*float64"}, // PostgreSQL
+		{Pattern: "(?i)^decimal(\\(\\d+,?\\d*\\))?$", Type: "float64", NullType: "*float64"},
+		{Pattern: "(?i)^numeric(\\(\\d+,?\\d*\\))?$", Type: "float64", NullType: "*float64"},
 
 		// String types - longer/specific types first
-		{Pattern: "(?i)^character varying$", Type: "string", NullType: "*string"},
-		{Pattern: "(?i)^varchar$", Type: "string", NullType: "*string"},
-		{Pattern: "(?i)^character$", Type: "string", NullType: "*string"},
-		{Pattern: "(?i)^longtext$", Type: "string", NullType: "*string"},   // MySQL
-		{Pattern: "(?i)^mediumtext$", Type: "string", NullType: "*string"}, // MySQL
-		{Pattern: "(?i)^tinytext$", Type: "string", NullType: "*string"},   // MySQL
-		{Pattern: "(?i)^nvarchar$", Type: "string", NullType: "*string"},   // SQL Server
-		{Pattern: "(?i)^ntext$", Type: "string", NullType: "*string"},      // SQL Server
-		{Pattern: "(?i)^nchar$", Type: "string", NullType: "*string"},      // SQL Server
-		{Pattern: "(?i)^text$", Type: "string", NullType: "*string"},
-		{Pattern: "(?i)^char$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^character varying(\\(\\d+\\))?$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^varchar(\\(\\d+\\))?$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^character(\\(\\d+\\))?$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^longtext$", Type: "string", NullType: "*string"},              // MySQL
+		{Pattern: "(?i)^mediumtext$", Type: "string", NullType: "*string"},            // MySQL
+		{Pattern: "(?i)^tinytext$", Type: "string", NullType: "*string"},              // MySQL
+		{Pattern: "(?i)^nvarchar(\\(\\d+\\))?$", Type: "string", NullType: "*string"}, // SQL Server
+		{Pattern: "(?i)^ntext$", Type: "string", NullType: "*string"},                 // SQL Server
+		{Pattern: "(?i)^nchar(\\(\\d+\\))?$", Type: "string", NullType: "*string"},    // SQL Server
+		{Pattern: "(?i)^text(\\(\\d+\\))?$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^char(\\(\\d+\\))?$", Type: "string", NullType: "*string"},
 		{Pattern: "(?i)^citext$", Type: "string", NullType: "*string"}, // PostgreSQL
 
 		// JSON types
@@ -533,26 +531,26 @@ func defaultGoTypes() []contractsschema.GoType {
 		{Pattern: "(?i)^json$", Type: "string", NullType: "*string"},
 
 		// Date and Time types
-		{Pattern: "(?i)^timestamptz$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"}, // PostgreSQL
-		{Pattern: "(?i)^timestamp$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},
-		{Pattern: "(?i)^datetime$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"}, // MySQL
-		{Pattern: "(?i)^timetz$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},   // PostgreSQL
-		{Pattern: "(?i)^time$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},
+		{Pattern: "(?i)^timestamptz(\\(\\d+\\))?$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"}, // PostgreSQL
+		{Pattern: "(?i)^timestamp(\\(\\d+\\))?$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},
+		{Pattern: "(?i)^datetime(\\(\\d+\\))?$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"}, // MySQL
+		{Pattern: "(?i)^timetz(\\(\\d+\\))?$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},   // PostgreSQL
+		{Pattern: "(?i)^time(\\(\\d+\\))?$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},
 		{Pattern: "(?i)^date$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},
 		{Pattern: "(?i)^interval$", Type: "string", NullType: "*string"}, // PostgreSQL
 
 		// Enum types
-		{Pattern: "(?i)^enum$", Type: "string", NullType: "*string"},
-		{Pattern: "(?i)^set$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^enum\\([^)]*\\)$", Type: "string", NullType: "*string"}, // Match enum with parameters
+		{Pattern: "(?i)^set\\([^)]*\\)$", Type: "string", NullType: "*string"},  // Match set with parameters
 
 		// Binary types - larger types first
-		{Pattern: "(?i)^longblob$", Type: "[]byte", NullType: "[]byte"},   // MySQL
-		{Pattern: "(?i)^mediumblob$", Type: "[]byte", NullType: "[]byte"}, // MySQL
-		{Pattern: "(?i)^tinyblob$", Type: "[]byte", NullType: "[]byte"},   // MySQL
-		{Pattern: "(?i)^blob$", Type: "[]byte", NullType: "[]byte"},       // MySQL
-		{Pattern: "(?i)^varbinary$", Type: "[]byte", NullType: "[]byte"},  // MySQL/SQL Server
-		{Pattern: "(?i)^binary$", Type: "[]byte", NullType: "[]byte"},     // MySQL/SQL Server
-		{Pattern: "(?i)^bytea$", Type: "[]byte", NullType: "[]byte"},      // PostgreSQL
+		{Pattern: "(?i)^longblob$", Type: "[]byte", NullType: "[]byte"},               // MySQL
+		{Pattern: "(?i)^mediumblob$", Type: "[]byte", NullType: "[]byte"},             // MySQL
+		{Pattern: "(?i)^tinyblob$", Type: "[]byte", NullType: "[]byte"},               // MySQL
+		{Pattern: "(?i)^blob(\\(\\d+\\))?$", Type: "[]byte", NullType: "[]byte"},      // MySQL
+		{Pattern: "(?i)^varbinary(\\(\\d+\\))?$", Type: "[]byte", NullType: "[]byte"}, // MySQL/SQL Server
+		{Pattern: "(?i)^binary(\\(\\d+\\))?$", Type: "[]byte", NullType: "[]byte"},    // MySQL/SQL Server
+		{Pattern: "(?i)^bytea$", Type: "[]byte", NullType: "[]byte"},                  // PostgreSQL
 
 		// Network types (PostgreSQL)
 		{Pattern: "(?i)^macaddr$", Type: "string", NullType: "*string"},

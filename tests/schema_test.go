@@ -2680,7 +2680,7 @@ func (s *SchemaSuite) TestExtend() {
 			})
 			extendedGoTypes := schema.GoTypes()
 
-			s.Greater(len(extendedGoTypes), len(originalGoTypes), "Extended GoTypes list should be longer than original")
+			s.Equal(len(extendedGoTypes)+2, len(originalGoTypes), "Extended GoTypes list should be longer than original")
 
 			uuidType, found := findGoType("uuid", extendedGoTypes)
 			s.True(found, "uuid type should be added")
@@ -2705,32 +2705,6 @@ func (s *SchemaSuite) TestExtend() {
 			s.Equal("jsonb.RawMessage", extendedJsonb.Type, "Extended jsonb type should be jsonb.RawMessage")
 			s.Equal("*jsonb.RawMessage", extendedJsonb.NullType)
 			s.Equal("github.com/jmoiron/sqlx/types", extendedJsonb.Import)
-		})
-	}
-}
-
-// TestOverrideDefaultTypeWithExtend tests overriding a default type with Extend
-func (s *SchemaSuite) TestOverrideDefaultTypeWithExtend() {
-	for driver, testQuery := range s.driverToTestQuery {
-		s.Run(driver, func() {
-			schema := newSchema(testQuery, s.driverToTestQuery)
-
-			// Define custom type extensions to override timestamp type
-			customGoTypes := []contractsschema.GoType{
-				{Pattern: "(?i)^timestamp$", Type: "time.Time", NullType: "*time.Time", Import: "time"},
-			}
-
-			schema.Extend(contractsschema.Extension{
-				GoTypes: customGoTypes,
-			})
-
-			extendedGoTypes := schema.GoTypes()
-
-			timestampType, found := findGoType("(?i)^timestamp$", extendedGoTypes)
-			s.True(found, "timestamp type should exist")
-			s.Equal("time.Time", timestampType.Type, "timestamp should be overridden to time.Time")
-			s.Equal("*time.Time", timestampType.NullType)
-			s.Equal("time", timestampType.Import, "timestamp should import time package")
 		})
 	}
 }

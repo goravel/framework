@@ -157,7 +157,7 @@ func (r *ModelMakeCommand) generateModelInfo(columns []driver.Column, structName
 	if hasCreatedAt && hasUpdatedAt {
 		if hasNullableTimestamps {
 			if hasID {
-				modelEmbed = "orm.NullableModel"
+				modelEmbed = "orm.BaseModel"
 			} else {
 				timestampsEmbed = "orm.NullableTimestamps"
 			}
@@ -194,17 +194,22 @@ func (r *ModelMakeCommand) generateModelInfo(columns []driver.Column, structName
 
 	goTypeMapping := r.schema.GoTypes()
 
-	for _, col := range columns {
-		if (modelEmbed != "" || timestampsEmbed != "") &&
-			(col.Name == "id" || col.Name == "created_at" || col.Name == "updated_at") {
+	for _, column := range columns {
+		name := column.Name
+		if modelEmbed != "" &&
+			(name == "id" || name == "created_at" || name == "updated_at") {
 			continue
 		}
 
-		if softDeletesEmbed != "" && col.Name == "deleted_at" {
+		if timestampsEmbed != "" && (name == "created_at" || name == "updated_at") {
 			continue
 		}
 
-		field := generateField(col, goTypeMapping)
+		if softDeletesEmbed != "" && name == "deleted_at" {
+			continue
+		}
+
+		field := generateField(column, goTypeMapping)
 
 		for _, importPath := range field.Imports {
 			info.Imports[importPath] = struct{}{}
@@ -300,7 +305,7 @@ func generateField(column driver.Column, typeMapping []schema.GoType) fieldDefin
 	}
 
 	if column.Autoincrement {
-		tagParts = append(tagParts, fmt.Sprintf(`gorm:"%s"`, "autoIncrement"))
+		tagParts = append(tagParts, fmt.Sprintf(`gorm:"%s"`, "primaryKey"))
 	}
 
 	return fieldDefinition{
