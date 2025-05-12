@@ -22,6 +22,8 @@ type Schema interface {
 	DropColumns(table string, columns []string) error
 	// DropIfExists Drop a table from the schema if exists.
 	DropIfExists(table string) error
+	// Extend the schema with given extend parameter.
+	Extend(extend Extension) Schema
 	// GetColumnListing Get the column listing for a given table.
 	GetColumnListing(table string) []string
 	// GetColumns Get the columns for a given table.
@@ -42,6 +44,8 @@ type Schema interface {
 	GetTypes() ([]driver.Type, error)
 	// GetViews Get the views that belong to the database.
 	GetViews() ([]driver.View, error)
+	// GoTypes returns the mapping of schema types to Go types.
+	GoTypes() []GoType
 	// HasColumn Determine if the given table has a given column.
 	HasColumn(table, column string) bool
 	// HasColumns Determine if the given table has given columns.
@@ -82,4 +86,19 @@ type Migration interface {
 type Connection interface {
 	// Connection Get the connection for the migration.
 	Connection() string
+}
+
+// Extension represents an extension for the schema
+type Extension struct {
+	GoTypes []GoType
+}
+
+// GoType represents a database column type to Go type mapping
+// This is kept for backward compatibility
+type GoType struct {
+	Pattern    string
+	Type       string
+	Import     string
+	NullType   string
+	NullImport string
 }

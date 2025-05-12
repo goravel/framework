@@ -393,6 +393,54 @@ func (_c *Schema_DropIfExists_Call) RunAndReturn(run func(string) error) *Schema
 	return _c
 }
 
+// Extend provides a mock function with given fields: extend
+func (_m *Schema) Extend(extend schema.Extension) schema.Schema {
+	ret := _m.Called(extend)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Extend")
+	}
+
+	var r0 schema.Schema
+	if rf, ok := ret.Get(0).(func(schema.Extension) schema.Schema); ok {
+		r0 = rf(extend)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.Schema)
+		}
+	}
+
+	return r0
+}
+
+// Schema_Extend_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Extend'
+type Schema_Extend_Call struct {
+	*mock.Call
+}
+
+// Extend is a helper method to define mock.On call
+//   - extend schema.Extension
+func (_e *Schema_Expecter) Extend(extend interface{}) *Schema_Extend_Call {
+	return &Schema_Extend_Call{Call: _e.mock.On("Extend", extend)}
+}
+
+func (_c *Schema_Extend_Call) Run(run func(extend schema.Extension)) *Schema_Extend_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.Extension))
+	})
+	return _c
+}
+
+func (_c *Schema_Extend_Call) Return(_a0 schema.Schema) *Schema_Extend_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Schema_Extend_Call) RunAndReturn(run func(schema.Extension) schema.Schema) *Schema_Extend_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetColumnListing provides a mock function with given fields: table
 func (_m *Schema) GetColumnListing(table string) []string {
 	ret := _m.Called(table)
@@ -922,6 +970,53 @@ func (_c *Schema_GetViews_Call) Return(_a0 []driver.View, _a1 error) *Schema_Get
 }
 
 func (_c *Schema_GetViews_Call) RunAndReturn(run func() ([]driver.View, error)) *Schema_GetViews_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GoTypes provides a mock function with no fields
+func (_m *Schema) GoTypes() []schema.GoType {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GoTypes")
+	}
+
+	var r0 []schema.GoType
+	if rf, ok := ret.Get(0).(func() []schema.GoType); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]schema.GoType)
+		}
+	}
+
+	return r0
+}
+
+// Schema_GoTypes_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GoTypes'
+type Schema_GoTypes_Call struct {
+	*mock.Call
+}
+
+// GoTypes is a helper method to define mock.On call
+func (_e *Schema_Expecter) GoTypes() *Schema_GoTypes_Call {
+	return &Schema_GoTypes_Call{Call: _e.mock.On("GoTypes")}
+}
+
+func (_c *Schema_GoTypes_Call) Run(run func()) *Schema_GoTypes_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Schema_GoTypes_Call) Return(_a0 []schema.GoType) *Schema_GoTypes_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Schema_GoTypes_Call) RunAndReturn(run func() []schema.GoType) *Schema_GoTypes_Call {
 	_c.Call.Return(run)
 	return _c
 }

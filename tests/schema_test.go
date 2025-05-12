@@ -2660,3 +2660,92 @@ func TestSqlserverSchema(t *testing.T) {
 	assert.Equal(t, schema, tables[0].Schema)
 	assert.True(t, newSchema.HasTable(fmt.Sprintf("%s.%s", schema, table)))
 }
+
+func (s *SchemaSuite) TestExtend() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver, func() {
+			schema := newSchema(testQuery, s.driverToTestQuery)
+
+			originalGoTypes := schema.GoTypes()
+
+			customGoTypes := []contractsschema.GoType{
+				{Pattern: "uuid", Type: "uuid.UUID", NullType: "uuid.NullUUID", Import: "github.com/google/uuid"},
+				{Pattern: "point", Type: "geom.Point", NullType: "*geom.Point", Import: "github.com/twpayne/go-geom"},
+				// Override an existing type
+				{Pattern: "(?i)^jsonb$", Type: "jsonb.RawMessage", NullType: "*jsonb.RawMessage", Import: "github.com/jmoiron/sqlx/types"},
+			}
+
+			schema.Extend(contractsschema.Extension{
+				GoTypes: customGoTypes,
+			})
+			extendedGoTypes := schema.GoTypes()
+
+			s.Equal(len(originalGoTypes)+2, len(extendedGoTypes), "Extended GoTypes list should be longer than original")
+
+			uuidType, found := findGoType("uuid", extendedGoTypes)
+			s.True(found, "uuid type should be added")
+			s.Equal("uuid.UUID", uuidType.Type)
+			s.Equal("uuid.NullUUID", uuidType.NullType)
+			s.Equal("github.com/google/uuid", uuidType.Import)
+
+			pointType, found := findGoType("point", extendedGoTypes)
+			s.True(found, "point type should be added")
+			s.Equal("geom.Point", pointType.Type)
+			s.Equal("*geom.Point", pointType.NullType)
+			s.Equal("github.com/twpayne/go-geom", pointType.Import)
+
+			// Check that existing type was overridden
+			jsonbPattern := "(?i)^jsonb$"
+			originalJsonb, found := findGoType(jsonbPattern, originalGoTypes)
+			s.True(found, "jsonb type should exist in original types")
+			s.Equal("string", originalJsonb.Type, "Original jsonb type should be string")
+
+			extendedJsonb, found := findGoType(jsonbPattern, extendedGoTypes)
+			s.True(found, "jsonb type should exist in extended types")
+			s.Equal("jsonb.RawMessage", extendedJsonb.Type, "Extended jsonb type should be jsonb.RawMessage")
+			s.Equal("*jsonb.RawMessage", extendedJsonb.NullType)
+			s.Equal("github.com/jmoiron/sqlx/types", extendedJsonb.Import)
+		})
+	}
+}
+
+// TestEmptyExtend tests that Extend works correctly with empty extensions
+func (s *SchemaSuite) TestEmptyExtend() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver, func() {
+			schema := newSchema(testQuery, s.driverToTestQuery)
+
+			originalGoTypes := schema.GoTypes()
+			originalLength := len(originalGoTypes)
+
+			schema.Extend(contractsschema.Extension{
+				GoTypes: []contractsschema.GoType{},
+			})
+
+			extendedGoTypes := schema.GoTypes()
+			s.Equal(originalLength, len(extendedGoTypes), "GoTypes list should be unchanged after empty extension")
+
+			for i, originalType := range originalGoTypes {
+				s.Equal(originalType.Pattern, extendedGoTypes[i].Pattern,
+					"Pattern of type at index %d should be unchanged", i)
+				s.Equal(originalType.Type, extendedGoTypes[i].Type,
+					"Type of type at index %d should be unchanged", i)
+				s.Equal(originalType.NullType, extendedGoTypes[i].NullType,
+					"NullType of type at index %d should be unchanged", i)
+				s.Equal(originalType.Import, extendedGoTypes[i].Import,
+					"Imports of type at index %d should be unchanged", i)
+				s.Equal(originalType.NullImport, extendedGoTypes[i].NullImport,
+					"Import of NullType at index %d should be unchanged", i)
+			}
+		})
+	}
+}
+
+func findGoType(pattern string, types []contractsschema.GoType) (contractsschema.GoType, bool) {
+	for _, t := range types {
+		if t.Pattern == pattern {
+			return t, true
+		}
+	}
+	return contractsschema.GoType{}, false
+}

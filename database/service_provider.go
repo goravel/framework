@@ -124,7 +124,7 @@ func (r *ServiceProvider) registerCommands(app foundation.Application) {
 			consolemigration.NewMigrateRefreshCommand(artisan),
 			consolemigration.NewMigrateFreshCommand(artisan, migrator),
 			consolemigration.NewMigrateStatusCommand(migrator),
-			console.NewModelMakeCommand(),
+			console.NewModelMakeCommand(artisan, schema),
 			console.NewObserverMakeCommand(),
 			console.NewSeedCommand(config, seeder),
 			console.NewSeederMakeCommand(),
