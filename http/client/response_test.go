@@ -22,7 +22,7 @@ func TestResponseTestSuite(t *testing.T) {
 }
 
 func (s *ResponseTestSuite) SetupSuite() {
-	s.mockJson = json.NewJson()
+	s.mockJson = json.New()
 }
 
 func (s *ResponseTestSuite) TestBody() {

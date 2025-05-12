@@ -39,7 +39,7 @@ func (f *FileLoaderTestSuite) TearDownSuite() {
 }
 
 func (f *FileLoaderTestSuite) SetupTest() {
-	f.json = json.NewJson()
+	f.json = json.New()
 }
 
 func (f *FileLoaderTestSuite) TestLoad() {

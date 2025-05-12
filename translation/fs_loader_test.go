@@ -23,7 +23,7 @@ func TestFSLoaderTestSuite(t *testing.T) {
 }
 
 func (f *FSLoaderTestSuite) SetupTest() {
-	f.json = json.NewJson()
+	f.json = json.New()
 
 	f.mockFS = fstest.MapFS{
 		"lang/en/test.json":         &fstest.MapFile{Data: []byte(`{"foo": "bar", "baz": {"foo": "bar"}}`)},

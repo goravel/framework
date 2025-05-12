@@ -1,17 +1,14 @@
 package console
 
 import (
-	"strings"
-
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/huh/spinner"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/mattn/go-runewidth"
-	"github.com/pterm/pterm"
 	"github.com/urfave/cli/v3"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/support/color"
+	supportconsole "github.com/goravel/framework/support/console"
 )
 
 type CliContext struct {
@@ -152,7 +149,7 @@ func (r *CliContext) MultiSelect(question string, choices []console.Choice, opti
 
 	options := make([]huh.Option[string], len(choices))
 	for i, choice := range choices {
-		options[i] = huh.NewOption[string](choice.Key, choice.Value).Selected(choice.Selected)
+		options[i] = huh.NewOption(choice.Key, choice.Value).Selected(choice.Selected)
 	}
 
 	input := huh.NewMultiSelect[string]().Title(question).Options(options...)
@@ -287,29 +284,5 @@ func (r *CliContext) WithProgressBar(items []any, callback func(any) error) ([]a
 }
 
 func (r *CliContext) TwoColumnDetail(first, second string, filler ...rune) {
-	margin := func(s string, left, right int) string {
-		var builder strings.Builder
-		if left > 0 {
-			builder.WriteString(strings.Repeat(" ", left))
-		}
-		builder.WriteString(s)
-		if right > 0 {
-			builder.WriteString(strings.Repeat(" ", right))
-		}
-		return builder.String()
-	}
-	width := func(s string) int {
-		return runewidth.StringWidth(pterm.RemoveColorFromString(s))
-	}
-	first = margin(first, 2, 1)
-	if w := width(second); w > 0 {
-		second = margin(second, 1, 2)
-	} else {
-		second = margin(second, 0, 2)
-	}
-	fillingText := ""
-	if w := pterm.GetTerminalWidth() - width(first) - width(second); w > 0 {
-		fillingText = color.Gray().Sprint(strings.Repeat(string(append(filler, '.')[0]), w))
-	}
-	r.Line(first + fillingText + second)
+	r.Line(supportconsole.TwoColumnDetail(first, second, filler...))
 }

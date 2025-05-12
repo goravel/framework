@@ -3,14 +3,17 @@ package console
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
+	"github.com/pterm/pterm"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
+	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -207,6 +210,35 @@ func TestConfirmToProceed(t *testing.T) {
 			result := ConfirmToProceed(mockCtx, tt.env)
 
 			assert.Equal(t, tt.expectResult, result)
+		})
+	}
+}
+
+func TestTwoColumnDetail(t *testing.T) {
+	tests := []struct {
+		name   string
+		first  string
+		second string
+		output string
+	}{
+		{
+			name:  "only has first column",
+			first: color.Yellow().Sprint("Name"),
+			output: "  " + color.Yellow().Sprint("Name") + " " +
+				color.Gray().Sprint(strings.Repeat(".", pterm.GetTerminalWidth()-len("Name")-5)) + "  ",
+		},
+		{
+			name:   "has first and second column",
+			first:  "Test",
+			second: color.Green().Sprint("Passed"),
+			output: "  Test " + color.Gray().Sprint(
+				strings.Repeat(".", pterm.GetTerminalWidth()-len("Test")-len("Passed")-6),
+			) + " " + color.Green().Sprint("Passed") + "  ",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.output, TwoColumnDetail(tt.first, tt.second))
 		})
 	}
 }

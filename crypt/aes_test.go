@@ -18,7 +18,7 @@ type AesTestSuite struct {
 func TestAesTestSuite(t *testing.T) {
 	mockConfig := &configmock.Config{}
 	mockConfig.On("GetString", "app.key").Return("11111111111111111111111111111111").Once()
-	aes, err := NewAES(mockConfig, json.NewJson())
+	aes, err := NewAES(mockConfig, json.New())
 
 	assert.NoError(t, err)
 
@@ -66,7 +66,7 @@ func (s *AesTestSuite) TestDecryptString() {
 func Benchmark_EncryptString(b *testing.B) {
 	mockConfig := &configmock.Config{}
 	mockConfig.On("GetString", "app.key").Return("11111111111111111111111111111111").Once()
-	aes, err := NewAES(mockConfig, json.NewJson())
+	aes, err := NewAES(mockConfig, json.New())
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -84,7 +84,7 @@ func Benchmark_EncryptString(b *testing.B) {
 func Benchmark_DecryptString(b *testing.B) {
 	mockConfig := &configmock.Config{}
 	mockConfig.On("GetString", "app.key").Return("11111111111111111111111111111111").Once()
-	aes, err := NewAES(mockConfig, json.NewJson())
+	aes, err := NewAES(mockConfig, json.New())
 	if err != nil {
 		b.Fatal(err)
 	}

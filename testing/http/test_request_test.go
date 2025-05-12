@@ -38,7 +38,7 @@ func (s *TestRequestSuite) SetupTest() {
 		defaultHeaders:    make(map[string]string),
 		defaultCookies:    make(map[string]string),
 		sessionAttributes: make(map[string]any),
-		json:              json.NewJson(),
+		json:              json.New(),
 		route:             s.mockRoute,
 		session:           s.mockSessionManager,
 	}

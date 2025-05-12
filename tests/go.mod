@@ -2,20 +2,20 @@ module github.com/goravel/framework/tests
 
 go 1.23.0
 
-toolchain go1.24.2
+toolchain go1.24.3
 
 godebug x509negativeserial=1
 
 require (
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/goravel/framework v1.15.7
-	github.com/goravel/mysql v0.0.0-20250407013050-8071d135b27d
-	github.com/goravel/postgres v0.0.2-0.20250407022030-aa4400f1a0de
+	github.com/goravel/mysql v0.0.0-20250505024708-6e80a9e2722e
+	github.com/goravel/postgres v0.0.2-0.20250505023735-5f80ea438e0c
 	github.com/goravel/sqlite v0.0.0-20250414101217-fbee7100fe08
 	github.com/goravel/sqlserver v0.0.0-20250330044523-bf0931bdcdff
-	github.com/spf13/cast v1.7.1
+	github.com/spf13/cast v1.8.0
 	github.com/stretchr/testify v1.10.0
-	gorm.io/gorm v1.25.12
+	gorm.io/gorm v1.26.1
 )
 
 require (
@@ -29,8 +29,8 @@ require (
 	github.com/containerd/console v1.0.4 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
-	github.com/dromara/carbon/v2 v2.5.4 // indirect
-	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
+	github.com/dromara/carbon/v2 v2.6.4 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.9 // indirect
 	github.com/go-sql-driver/mysql v1.9.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/golang-sql/civil v0.0.0-20220223132316-b832511892a9 // indirect
@@ -54,28 +54,29 @@ require (
 	github.com/ncruces/julianday v1.0.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/pterm/pterm v0.12.80 // indirect
-	github.com/redis/go-redis/v9 v9.7.3 // indirect
+	github.com/redis/go-redis/v9 v9.8.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
-	github.com/samber/lo v1.49.1 // indirect
+	github.com/rogpeppe/go-internal v1.13.1 // indirect
+	github.com/samber/lo v1.50.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/tetratelabs/wazero v1.9.0 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
-	golang.org/x/crypto v0.37.0 // indirect
-	golang.org/x/exp v0.0.0-20250408133849-7e4ce0ab07d0 // indirect
-	golang.org/x/net v0.39.0 // indirect
-	golang.org/x/sync v0.13.0 // indirect
-	golang.org/x/sys v0.32.0 // indirect
-	golang.org/x/term v0.31.0 // indirect
-	golang.org/x/text v0.24.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250313205543-e70fdf4c4cb4 // indirect
-	google.golang.org/grpc v1.71.1 // indirect
+	golang.org/x/crypto v0.38.0 // indirect
+	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6 // indirect
+	golang.org/x/net v0.40.0 // indirect
+	golang.org/x/sync v0.14.0 // indirect
+	golang.org/x/sys v0.33.0 // indirect
+	golang.org/x/term v0.32.0 // indirect
+	golang.org/x/text v0.25.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250428153025-10db94c68c34 // indirect
+	google.golang.org/grpc v1.72.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/mysql v1.5.7 // indirect
 	gorm.io/driver/postgres v1.5.11 // indirect
 	gorm.io/driver/sqlserver v1.5.4 // indirect
-	gorm.io/plugin/dbresolver v1.5.3 // indirect
+	gorm.io/plugin/dbresolver v1.6.0 // indirect
 )
 
 replace (

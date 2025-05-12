@@ -45,7 +45,7 @@ func (general *General) Format(entry *logrus.Entry) ([]byte, error) {
 		b = &bytes.Buffer{}
 	}
 
-	timestamp := carbon.FromStdTime(entry.Time).Format(carbon.DateTimeLayout)
+	timestamp := carbon.FromStdTime(entry.Time).ToDateTimeString()
 	b.WriteString(fmt.Sprintf("[%s] %s.%s: %s\n", timestamp, general.config.GetString("app.env"), entry.Level, entry.Message))
 	data := entry.Data
 	if len(data) > 0 {
@@ -65,12 +65,12 @@ func (general *General) formatData(data logrus.Fields) (string, error) {
 	if len(data) > 0 {
 		removedData := deleteKey(data, "root")
 		if len(removedData) > 0 {
-			removedDataBytes, err := general.json.Marshal(removedData)
+			removedDataStr, err := general.json.MarshalString(removedData)
 			if err != nil {
 				return "", err
 			}
 
-			builder.WriteString(fmt.Sprintf("fields: %s\n", string(removedDataBytes)))
+			builder.WriteString(fmt.Sprintf("fields: %s\n", removedDataStr))
 		}
 
 		root, err := cast.ToStringMapE(data["root"])

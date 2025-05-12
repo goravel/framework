@@ -47,7 +47,7 @@ func TestStartSession(t *testing.T) {
 	mockConfig.On("Get", "session.drivers", mock.AnythingOfType("map[string]interface {}")).Return(
 		map[string]any{},
 	).Once()
-	session.SessionFacade = session.NewManager(mockConfig, json.NewJson())
+	session.SessionFacade = session.NewManager(mockConfig, json.New())
 	server := httptest.NewServer(testHttpSessionMiddleware(nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
 		switch r.URL.Path {
 		case "/add":

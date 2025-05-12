@@ -1,54 +1,64 @@
 package queue
 
 import (
-	contractsconfig "github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/queue"
 )
 
 type Application struct {
 	config queue.Config
 	job    queue.JobRepository
+	json   foundation.Json
+	log    log.Log
 }
 
-func NewApplication(config contractsconfig.Config) *Application {
+func NewApplication(config queue.Config, job queue.JobRepository, json foundation.Json, log log.Log) *Application {
 	return &Application{
-		config: NewConfig(config),
-		job:    NewJobImpl(),
+		config: config,
+		job:    job,
+		json:   json,
+		log:    log,
 	}
 }
 
-func (app *Application) Chain(jobs []queue.Jobs) queue.Task {
-	return NewChainTask(app.config, jobs)
+func (r *Application) Chain(jobs []queue.Jobs) queue.PendingJob {
+	return NewPendingChainJob(r.config, jobs)
 }
 
-func (app *Application) GetJob(signature string) (queue.Job, error) {
-	return app.job.Get(signature)
+func (r *Application) GetJob(signature string) (queue.Job, error) {
+	return r.job.Get(signature)
 }
 
-func (app *Application) GetJobs() []queue.Job {
-	return app.job.All()
+func (r *Application) GetJobs() []queue.Job {
+	return r.job.All()
 }
 
-func (app *Application) Job(job queue.Job, args ...[]any) queue.Task {
-	return NewTask(app.config, job, args...)
+func (r *Application) Job(job queue.Job, args ...[]queue.Arg) queue.PendingJob {
+	return NewPendingJob(r.config, job, args...)
 }
 
-func (app *Application) Register(jobs []queue.Job) {
-	app.job.Register(jobs)
+func (r *Application) Register(jobs []queue.Job) {
+	r.job.Register(jobs)
 }
 
-func (app *Application) Worker(payloads ...queue.Args) queue.Worker {
-	defaultConnection := app.config.DefaultConnection()
+func (r *Application) Worker(payloads ...queue.Args) queue.Worker {
+	defaultConnection := r.config.DefaultConnection()
+	defaultQueue := r.config.DefaultQueue()
+	defaultConcurrent := r.config.DefaultConcurrent()
 
 	if len(payloads) == 0 {
-		return NewWorker(app.config, 1, defaultConnection, app.config.Queue(defaultConnection, ""), app.job)
+		return NewWorker(r.config, r.job, r.json, r.log, defaultConnection, defaultQueue, defaultConcurrent)
 	}
 	if payloads[0].Connection == "" {
 		payloads[0].Connection = defaultConnection
 	}
+	if payloads[0].Queue == "" {
+		payloads[0].Queue = defaultQueue
+	}
 	if payloads[0].Concurrent == 0 {
-		payloads[0].Concurrent = 1
+		payloads[0].Concurrent = defaultConcurrent
 	}
 
-	return NewWorker(app.config, payloads[0].Concurrent, payloads[0].Connection, app.config.Queue(payloads[0].Connection, payloads[0].Queue), app.job)
+	return NewWorker(r.config, r.job, r.json, r.log, payloads[0].Connection, payloads[0].Queue, payloads[0].Concurrent)
 }

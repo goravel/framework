@@ -727,57 +727,167 @@ func TestFails(t *testing.T) {
 }
 
 func TestCastValue(t *testing.T) {
+	date := "2024-07-04"
+	dateTime := "2024-07-04 10:00:52"
+	timestamp := int64(1720087252)
+	timestampMilli := int64(1720087252000)
+	timestampMicro := int64(1720087252000000)
+	timestampNano := int64(1720087252000000000)
+
 	type Data struct {
-		A string            `form:"a" json:"a"`
-		B int               `form:"b" json:"b"`
-		C int8              `form:"c" json:"c"`
-		D int16             `form:"d" json:"d"`
-		E int32             `form:"e" json:"e"`
-		F int64             `form:"f" json:"f"`
-		G uint              `form:"g" json:"g"`
-		H uint8             `form:"h" json:"h"`
-		I uint16            `form:"i" json:"i"`
-		J uint32            `form:"j" json:"j"`
-		K uint64            `form:"k" json:"k"`
-		L bool              `form:"l" json:"l"`
-		M float32           `form:"m" json:"m"`
-		N float64           `form:"n" json:"n"`
-		O []string          `form:"o" json:"o"`
-		P map[string]string `form:"p" json:"p"`
+		String                string                 `form:"String" json:"String"`
+		Int                   int                    `form:"Int" json:"Int"`
+		Int8                  int8                   `form:"Int8" json:"Int8"`
+		Int16                 int16                  `form:"Int16" json:"Int16"`
+		Int32                 int32                  `form:"Int32" json:"Int32"`
+		Int64                 int64                  `form:"Int64" json:"Int64"`
+		Uint                  uint                   `form:"Uint" json:"Uint"`
+		Uint8                 uint8                  `form:"Uint8" json:"Uint8"`
+		Uint16                uint16                 `form:"Uint16" json:"Uint16"`
+		Uint32                uint32                 `form:"Uint32" json:"Uint32"`
+		Uint64                uint64                 `form:"Uint64" json:"Uint64"`
+		Bool                  bool                   `form:"Bool" json:"Bool"`
+		Float32               float32                `form:"Float32" json:"Float32"`
+		Float64               float64                `form:"Float64" json:"Float64"`
+		StringSlice           []string               `form:"StringSlice" json:"StringSlice"`
+		IntSlice              []int                  `form:"IntSlice" json:"IntSlice"`
+		BoolSlice             []bool                 `form:"BoolSlice" json:"BoolSlice"`
+		FloatSlice            []float64              `form:"FloatSlice" json:"FloatSlice"`
+		Map                   map[string]string      `form:"Map" json:"Map"`
+		PointerCarbon         *carbon.Carbon         `form:"PointerCarbon" json:"PointerCarbon"`
+		PointerDateTime       *carbon.DateTime       `form:"PointerDateTime" json:"PointerDateTime"`
+		PointerDateTimeMilli  *carbon.DateTimeMilli  `form:"PointerDateTimeMilli" json:"PointerDateTimeMilli"`
+		PointerDateTimeMicro  *carbon.DateTimeMicro  `form:"PointerDateTimeMicro" json:"PointerDateTimeMicro"`
+		PointerDateTimeNano   *carbon.DateTimeNano   `form:"PointerDateTimeNano" json:"PointerDateTimeNano"`
+		PointerDate           *carbon.Date           `form:"PointerDate" json:"PointerDate"`
+		PointerDateMilli      *carbon.DateMilli      `form:"PointerDateMilli" json:"PointerDateMilli"`
+		PointerDateMicro      *carbon.DateMicro      `form:"PointerDateMicro" json:"PointerDateMicro"`
+		PointerDateNano       *carbon.DateNano       `form:"PointerDateNano" json:"PointerDateNano"`
+		PointerTimestamp      *carbon.Timestamp      `form:"PointerTimestamp" json:"PointerTimestamp"`
+		PointerTimestampMilli *carbon.TimestampMilli `form:"PointerTimestampMilli" json:"PointerTimestampMilli"`
+		PointerTimestampMicro *carbon.TimestampMicro `form:"PointerTimestampMicro" json:"PointerTimestampMicro"`
+		PointerTimestampNano  *carbon.TimestampNano  `form:"PointerTimestampNano" json:"PointerTimestampNano"`
+		Carbon                carbon.Carbon          `form:"Carbon" json:"Carbon"`
+		DateTime              carbon.DateTime        `form:"DateTime" json:"DateTime"`
+		DateTimeMilli         carbon.DateTimeMilli   `form:"DateTimeMilli" json:"DateTimeMilli"`
+		DateTimeMicro         carbon.DateTimeMicro   `form:"DateTimeMicro" json:"DateTimeMicro"`
+		DateTimeNano          carbon.DateTimeNano    `form:"DateTimeNano" json:"DateTimeNano"`
+		Date                  carbon.Date            `form:"Date" json:"Date"`
+		DateMilli             carbon.DateMilli       `form:"DateMilli" json:"DateMilli"`
+		DateMicro             carbon.DateMicro       `form:"DateMicro" json:"DateMicro"`
+		DateNano              carbon.DateNano        `form:"DateNano" json:"DateNano"`
+		Timestamp             carbon.Timestamp       `form:"Timestamp" json:"Timestamp"`
+		TimestampMilli        carbon.TimestampMilli  `form:"TimestampMilli" json:"TimestampMilli"`
+		TimestampMicro        carbon.TimestampMicro  `form:"TimestampMicro" json:"TimestampMicro"`
+		TimestampNano         carbon.TimestampNano   `form:"TimestampNano" json:"TimestampNano"`
+	}
+
+	wantData := Data{
+		String:                "1",
+		Int:                   1,
+		Int8:                  2,
+		Int16:                 3,
+		Int32:                 4,
+		Int64:                 5,
+		Uint:                  6,
+		Uint8:                 7,
+		Uint16:                8,
+		Uint32:                9,
+		Uint64:                10,
+		Bool:                  true,
+		Float32:               11.11,
+		Float64:               12.12,
+		StringSlice:           []string{"1"},
+		IntSlice:              []int{1},
+		BoolSlice:             []bool{true, false},
+		FloatSlice:            []float64{11.11, 12.12},
+		Map:                   map[string]string{"a": "aa"},
+		PointerCarbon:         carbon.Parse(dateTime),
+		PointerDateTime:       carbon.NewDateTime(carbon.Parse(dateTime)),
+		PointerDateTimeMilli:  carbon.NewDateTimeMilli(carbon.Parse(dateTime)),
+		PointerDateTimeMicro:  carbon.NewDateTimeMicro(carbon.Parse(dateTime)),
+		PointerDateTimeNano:   carbon.NewDateTimeNano(carbon.Parse(dateTime)),
+		PointerDate:           carbon.NewDate(carbon.Parse(date)),
+		PointerDateMilli:      carbon.NewDateMilli(carbon.Parse(date)),
+		PointerDateMicro:      carbon.NewDateMicro(carbon.Parse(date)),
+		PointerDateNano:       carbon.NewDateNano(carbon.Parse(date)),
+		PointerTimestamp:      carbon.NewTimestamp(carbon.FromTimestamp(timestamp)),
+		PointerTimestampMilli: carbon.NewTimestampMilli(carbon.FromTimestampMilli(timestampMilli)),
+		PointerTimestampMicro: carbon.NewTimestampMicro(carbon.FromTimestampMicro(timestampMicro)),
+		PointerTimestampNano:  carbon.NewTimestampNano(carbon.FromTimestampNano(timestampNano)),
+		Carbon:                *carbon.Parse(dateTime),
+		DateTime:              *carbon.NewDateTime(carbon.Parse(dateTime)),
+		DateTimeMilli:         *carbon.NewDateTimeMilli(carbon.Parse(dateTime)),
+		DateTimeMicro:         *carbon.NewDateTimeMicro(carbon.Parse(dateTime)),
+		DateTimeNano:          *carbon.NewDateTimeNano(carbon.Parse(dateTime)),
+		Date:                  *carbon.NewDate(carbon.Parse(date)),
+		DateMilli:             *carbon.NewDateMilli(carbon.Parse(date)),
+		DateMicro:             *carbon.NewDateMicro(carbon.Parse(date)),
+		DateNano:              *carbon.NewDateNano(carbon.Parse(date)),
+		Timestamp:             *carbon.NewTimestamp(carbon.FromTimestamp(timestamp)),
+		TimestampMilli:        *carbon.NewTimestampMilli(carbon.FromTimestampMilli(timestampMilli)),
+		TimestampMicro:        *carbon.NewTimestampMicro(carbon.FromTimestampMicro(timestampMicro)),
+		TimestampNano:         *carbon.NewTimestampNano(carbon.FromTimestampNano(timestampNano)),
 	}
 
 	tests := []struct {
-		name       string
-		data       validate.DataFace
-		rules      map[string]string
-		filters    map[string]string
-		expectData Data
-		expectErr  error
+		name    string
+		data    validate.DataFace
+		wantErr error
 	}{
 		{
-			name: "success without cast data",
+			name: "success with struct",
 			data: func() validate.DataFace {
 				body := &Data{
-					A: "1",
-					B: 1,
-					C: 1,
-					D: 1,
-					E: 1,
-					F: 1,
-					G: 1,
-					H: 1,
-					I: 1,
-					J: 1,
-					K: 1,
-					L: true,
-					M: 1,
-					N: 1,
-					O: []string{"1"},
-					P: map[string]string{"a": "aa"},
+					String:                "1",
+					Int:                   1,
+					Int8:                  2,
+					Int16:                 3,
+					Int32:                 4,
+					Int64:                 5,
+					Uint:                  6,
+					Uint8:                 7,
+					Uint16:                8,
+					Uint32:                9,
+					Uint64:                10,
+					Bool:                  true,
+					Float32:               11.11,
+					Float64:               12.12,
+					StringSlice:           []string{"1"},
+					IntSlice:              []int{1},
+					BoolSlice:             []bool{true, false},
+					FloatSlice:            []float64{11.11, 12.12},
+					Map:                   map[string]string{"a": "aa"},
+					PointerCarbon:         carbon.Parse(dateTime),
+					PointerDateTime:       carbon.NewDateTime(carbon.Parse(dateTime)),
+					PointerDateTimeMilli:  carbon.NewDateTimeMilli(carbon.Parse(dateTime)),
+					PointerDateTimeMicro:  carbon.NewDateTimeMicro(carbon.Parse(dateTime)),
+					PointerDateTimeNano:   carbon.NewDateTimeNano(carbon.Parse(dateTime)),
+					PointerDate:           carbon.NewDate(carbon.Parse(dateTime)),
+					PointerDateMilli:      carbon.NewDateMilli(carbon.Parse(dateTime)),
+					PointerDateMicro:      carbon.NewDateMicro(carbon.Parse(dateTime)),
+					PointerDateNano:       carbon.NewDateNano(carbon.Parse(dateTime)),
+					PointerTimestamp:      carbon.NewTimestamp(carbon.Parse(dateTime)),
+					PointerTimestampMilli: carbon.NewTimestampMilli(carbon.Parse(dateTime)),
+					PointerTimestampMicro: carbon.NewTimestampMicro(carbon.Parse(dateTime)),
+					PointerTimestampNano:  carbon.NewTimestampNano(carbon.Parse(dateTime)),
+					Carbon:                *carbon.Parse(dateTime),
+					DateTime:              *carbon.NewDateTime(carbon.Parse(dateTime)),
+					DateTimeMilli:         *carbon.NewDateTimeMilli(carbon.Parse(dateTime)),
+					DateTimeMicro:         *carbon.NewDateTimeMicro(carbon.Parse(dateTime)),
+					DateTimeNano:          *carbon.NewDateTimeNano(carbon.Parse(dateTime)),
+					Date:                  *carbon.NewDate(carbon.Parse(dateTime)),
+					DateMilli:             *carbon.NewDateMilli(carbon.Parse(dateTime)),
+					DateMicro:             *carbon.NewDateMicro(carbon.Parse(dateTime)),
+					DateNano:              *carbon.NewDateNano(carbon.Parse(dateTime)),
+					Timestamp:             *carbon.NewTimestamp(carbon.Parse(dateTime)),
+					TimestampMilli:        *carbon.NewTimestampMilli(carbon.Parse(dateTime)),
+					TimestampMicro:        *carbon.NewTimestampMicro(carbon.Parse(dateTime)),
+					TimestampNano:         *carbon.NewTimestampNano(carbon.Parse(dateTime)),
 				}
-				jsonStr, err := json.NewJson().Marshal(body)
+				jsonBytes, err := json.New().Marshal(body)
 				assert.Nil(t, err)
-				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBuffer(jsonStr))
+				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBuffer(jsonBytes))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
 				data, err := validate.FromRequest(request)
@@ -785,67 +895,60 @@ func TestCastValue(t *testing.T) {
 
 				return data
 			}(),
-			rules: map[string]string{
-				"a": "required",
-				"b": "required",
-				"c": "required",
-				"d": "required",
-				"e": "required",
-				"f": "required",
-				"g": "required",
-				"h": "required",
-				"i": "required",
-				"j": "required",
-				"k": "required",
-				"l": "required",
-				"m": "required",
-				"n": "required",
-				"o": "required",
-				"p": "required",
-			},
-			filters: map[string]string{},
-			expectData: Data{
-				A: "1",
-				B: 1,
-				C: 1,
-				D: 1,
-				E: 1,
-				F: 1,
-				G: 1,
-				H: 1,
-				I: 1,
-				J: 1,
-				K: 1,
-				L: true,
-				M: 1,
-				N: 1,
-				O: []string{"1"},
-				P: map[string]string{"a": "aa"},
-			},
-		}, {
-			name: "success with cast data",
+		},
+		{
+			name: "success with map",
 			data: func() validate.DataFace {
 				body := map[string]any{
-					"a": 1,
-					"b": "1",
-					"c": "1",
-					"d": "1",
-					"e": "1",
-					"f": "1",
-					"g": "1",
-					"h": "1",
-					"i": "1",
-					"j": "1",
-					"k": "1",
-					"l": "true",
-					"m": "1",
-					"n": "1",
-					"o": []int{1},
-					"p": map[string]string{"a": "aa"},
+					"String":                "1",
+					"Int":                   "1",
+					"Int8":                  "2",
+					"Int16":                 "3",
+					"Int32":                 "4",
+					"Int64":                 "5",
+					"Uint":                  "6",
+					"Uint8":                 "7",
+					"Uint16":                "8",
+					"Uint32":                "9",
+					"Uint64":                "10",
+					"Bool":                  "true",
+					"Float32":               "11.11",
+					"Float64":               "12.12",
+					"StringSlice":           []string{"1"},
+					"IntSlice":              []string{"1"},
+					"BoolSlice":             []string{"true", "false"},
+					"FloatSlice":            []string{"11.11", "12.12"},
+					"Map":                   map[string]string{"a": "aa"},
+					"PointerCarbon":         dateTime,
+					"PointerDateTime":       dateTime,
+					"PointerDateTimeMilli":  dateTime,
+					"PointerDateTimeMicro":  dateTime,
+					"PointerDateTimeNano":   dateTime,
+					"PointerDate":           date,
+					"PointerDateMilli":      date,
+					"PointerDateMicro":      date,
+					"PointerDateNano":       date,
+					"PointerTimestamp":      timestamp,
+					"PointerTimestampMilli": timestampMilli,
+					"PointerTimestampMicro": timestampMicro,
+					"PointerTimestampNano":  timestampNano,
+					"Carbon":                dateTime,
+					"DateTime":              dateTime,
+					"DateTimeMilli":         dateTime,
+					"DateTimeMicro":         dateTime,
+					"DateTimeNano":          dateTime,
+					"Date":                  date,
+					"DateMilli":             date,
+					"DateMicro":             date,
+					"DateNano":              date,
+					"Timestamp":             timestamp,
+					"TimestampMilli":        timestampMilli,
+					"TimestampMicro":        timestampMicro,
+					"TimestampNano":         timestampNano,
 				}
-				jsonStr, err := json.NewJson().Marshal(body)
+				jsonBytes, err := json.New().Marshal(body)
 				assert.Nil(t, err)
-				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBuffer(jsonStr))
+				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBuffer(jsonBytes))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
 				data, err := validate.FromRequest(request)
@@ -853,71 +956,23 @@ func TestCastValue(t *testing.T) {
 
 				return data
 			}(),
-			rules: map[string]string{
-				"a": "required",
-				"b": "required",
-				"c": "required",
-				"d": "required",
-				"e": "required",
-				"f": "required",
-				"g": "required",
-				"h": "required",
-				"i": "required",
-				"j": "required",
-				"k": "required",
-				"l": "required",
-				"m": "required",
-				"n": "required",
-				"o": "required",
-				"p": "required",
-			},
-			filters: map[string]string{},
-			expectData: Data{
-				A: "1",
-				B: 1,
-				C: 1,
-				D: 1,
-				E: 1,
-				F: 1,
-				G: 1,
-				H: 1,
-				I: 1,
-				J: 1,
-				K: 1,
-				L: true,
-				M: 1,
-				N: 1,
-				O: []string{"1"},
-				P: map[string]string{"a": "aa"},
-			},
 		},
 	}
 
 	validation := NewValidation()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			validator, err := validation.Make(test.data, test.rules, Filters(test.filters))
+			validator, err := validation.Make(test.data, map[string]string{
+				"String": "required",
+			})
 			assert.Nil(t, err)
+
+			assert.False(t, validator.Fails())
 
 			var data Data
 			err = validator.Bind(&data)
-			assert.Nil(t, test.expectErr, err)
-			assert.Equal(t, test.expectData.A, data.A)
-			assert.Equal(t, test.expectData.B, data.B)
-			assert.Equal(t, test.expectData.C, data.C)
-			assert.Equal(t, test.expectData.D, data.D)
-			assert.Equal(t, test.expectData.E, data.E)
-			assert.Equal(t, test.expectData.F, data.F)
-			assert.Equal(t, test.expectData.G, data.G)
-			assert.Equal(t, test.expectData.H, data.H)
-			assert.Equal(t, test.expectData.I, data.I)
-			assert.Equal(t, test.expectData.J, data.J)
-			assert.Equal(t, test.expectData.K, data.K)
-			assert.Equal(t, test.expectData.L, data.L)
-			assert.Equal(t, test.expectData.M, data.M)
-			assert.Equal(t, test.expectData.N, data.N)
-			assert.Equal(t, test.expectData.O, data.O)
-			assert.Equal(t, test.expectData.P, data.P)
+			assert.Nil(t, test.wantErr, err)
+			assert.Equal(t, wantData, data)
 		})
 	}
 }
@@ -926,138 +981,138 @@ func TestCastCarbon(t *testing.T) {
 	tests := []struct {
 		name      string
 		from      reflect.Value
-		transform func(carbon carbon.Carbon) any
+		transform func(carbon *carbon.Carbon) any
 		assert    func(result any)
 	}{
 		{
 			name: "Happy path - length 10 string",
 			from: reflect.ValueOf("2024-07-04"),
-			transform: func(c carbon.Carbon) any {
+			transform: func(c *carbon.Carbon) any {
 				return carbon.NewDate(c)
 			},
 			assert: func(result any) {
-				assert.IsType(t, carbon.Date{}, result)
-				assert.Equal(t, "2024-07-04", result.(carbon.Date).ToDateString())
+				assert.IsType(t, &carbon.Date{}, result)
+				assert.Equal(t, "2024-07-04", result.(*carbon.Date).ToDateString())
 			},
 		},
 		{
 			name: "Happy path - length 10 int",
 			from: reflect.ValueOf(1720087252),
-			transform: func(c carbon.Carbon) any {
+			transform: func(c *carbon.Carbon) any {
 				return carbon.NewTimestamp(c)
 			},
 			assert: func(result any) {
-				assert.IsType(t, carbon.Timestamp{}, result)
-				assert.Equal(t, "2024-07-04 10:00:52", result.(carbon.Timestamp).ToDateTimeString())
+				assert.IsType(t, &carbon.Timestamp{}, result)
+				assert.Equal(t, "2024-07-04 10:00:52", result.(*carbon.Timestamp).ToDateTimeString())
 			},
 		},
 		{
 			name: "Happy path - length 13 int",
 			from: reflect.ValueOf(1720087252123),
-			transform: func(c carbon.Carbon) any {
+			transform: func(c *carbon.Carbon) any {
 				return carbon.NewTimestampMilli(c)
 			},
 			assert: func(result any) {
-				assert.IsType(t, carbon.TimestampMilli{}, result)
-				assert.Equal(t, "2024-07-04 10:00:52.123", result.(carbon.TimestampMilli).ToDateTimeMilliString())
+				assert.IsType(t, &carbon.TimestampMilli{}, result)
+				assert.Equal(t, "2024-07-04 10:00:52.123", result.(*carbon.TimestampMilli).ToDateTimeMilliString())
 			},
 		},
 		{
 			name: "Sad path - length 13 string",
 			from: reflect.ValueOf("1720087252123"),
-			transform: func(c carbon.Carbon) any {
+			transform: func(c *carbon.Carbon) any {
 				return carbon.NewTimestampMilli(c)
 			},
 			assert: func(result any) {
-				assert.IsType(t, carbon.TimestampMilli{}, result)
-				assert.Equal(t, "2024-07-04 10:00:52.123", result.(carbon.TimestampMilli).ToDateTimeMilliString())
+				assert.IsType(t, &carbon.TimestampMilli{}, result)
+				assert.Equal(t, "2024-07-04 10:00:52.123", result.(*carbon.TimestampMilli).ToDateTimeMilliString())
 			},
 		},
 		{
 			name: "Happy path - length 13 Y-m-d H",
 			from: reflect.ValueOf("2024-07-04 10"),
-			transform: func(c carbon.Carbon) any {
+			transform: func(c *carbon.Carbon) any {
 				return carbon.NewTimestampMilli(c)
 			},
 			assert: func(result any) {
-				assert.Equal(t, "2024-07-04 10:00:00", result.(carbon.TimestampMilli).ToDateTimeString())
+				assert.Equal(t, "2024-07-04 10:00:00", result.(*carbon.TimestampMilli).ToDateTimeString())
 			},
 		},
 		{
 			name: "Happy path - length 16 int",
 			from: reflect.ValueOf(1720087252123456),
-			transform: func(c carbon.Carbon) any {
+			transform: func(c *carbon.Carbon) any {
 				return carbon.NewTimestampMicro(c)
 			},
 			assert: func(result any) {
-				assert.IsType(t, carbon.TimestampMicro{}, result)
-				assert.Equal(t, "2024-07-04 10:00:52.123456", result.(carbon.TimestampMicro).ToDateTimeMicroString())
+				assert.IsType(t, &carbon.TimestampMicro{}, result)
+				assert.Equal(t, "2024-07-04 10:00:52.123456", result.(*carbon.TimestampMicro).ToDateTimeMicroString())
 			},
 		},
 		{
 			name: "Happy path - length 16 string",
 			from: reflect.ValueOf("1720087252123456"),
-			transform: func(c carbon.Carbon) any {
+			transform: func(c *carbon.Carbon) any {
 				return carbon.NewTimestampMicro(c)
 			},
 			assert: func(result any) {
-				assert.IsType(t, carbon.TimestampMicro{}, result)
-				assert.Equal(t, "2024-07-04 10:00:52.123456", result.(carbon.TimestampMicro).ToDateTimeMicroString())
+				assert.IsType(t, &carbon.TimestampMicro{}, result)
+				assert.Equal(t, "2024-07-04 10:00:52.123456", result.(*carbon.TimestampMicro).ToDateTimeMicroString())
 			},
 		},
 		{
 			name: "Happy path - length 16 Y-m-d H:i",
 			from: reflect.ValueOf("2024-07-04 10:00"),
-			transform: func(c carbon.Carbon) any {
+			transform: func(c *carbon.Carbon) any {
 				return carbon.NewDateTime(c)
 			},
 			assert: func(result any) {
-				assert.IsType(t, carbon.DateTime{}, result)
-				assert.Equal(t, "2024-07-04 10:00:00", result.(carbon.DateTime).ToDateTimeString())
+				assert.IsType(t, &carbon.DateTime{}, result)
+				assert.Equal(t, "2024-07-04 10:00:00", result.(*carbon.DateTime).ToDateTimeString())
 			},
 		},
 		{
 			name: "Happy path - length 19 int",
 			from: reflect.ValueOf(1720087252123456789),
-			transform: func(c carbon.Carbon) any {
+			transform: func(c *carbon.Carbon) any {
 				return carbon.NewTimestampNano(c)
 			},
 			assert: func(result any) {
-				assert.IsType(t, carbon.TimestampNano{}, result)
-				assert.Equal(t, "2024-07-04 10:00:52.123456789", result.(carbon.TimestampNano).ToDateTimeNanoString())
+				assert.IsType(t, &carbon.TimestampNano{}, result)
+				assert.Equal(t, "2024-07-04 10:00:52.123456789", result.(*carbon.TimestampNano).ToDateTimeNanoString())
 			},
 		},
 		{
 			name: "Happy path - length 19 int",
 			from: reflect.ValueOf("1720087252123456789"),
-			transform: func(c carbon.Carbon) any {
+			transform: func(c *carbon.Carbon) any {
 				return carbon.NewTimestampNano(c)
 			},
 			assert: func(result any) {
-				assert.IsType(t, carbon.TimestampNano{}, result)
-				assert.Equal(t, "2024-07-04 10:00:52.123456789", result.(carbon.TimestampNano).ToDateTimeNanoString())
+				assert.IsType(t, &carbon.TimestampNano{}, result)
+				assert.Equal(t, "2024-07-04 10:00:52.123456789", result.(*carbon.TimestampNano).ToDateTimeNanoString())
 			},
 		},
 		{
 			name: "Happy path - length 19 Y-m-d H:i:s",
 			from: reflect.ValueOf("2024-07-04 10:00:52"),
-			transform: func(c carbon.Carbon) any {
+			transform: func(c *carbon.Carbon) any {
 				return carbon.NewDateTime(c)
 			},
 			assert: func(result any) {
-				assert.IsType(t, carbon.DateTime{}, result)
-				assert.Equal(t, "2024-07-04 10:00:52", result.(carbon.DateTime).ToDateTimeString())
+				assert.IsType(t, &carbon.DateTime{}, result)
+				assert.Equal(t, "2024-07-04 10:00:52", result.(*carbon.DateTime).ToDateTimeString())
 			},
 		},
 		{
 			name: "Happy path - length other",
 			from: reflect.ValueOf("2024-07-04 10:00:52.123"),
-			transform: func(c carbon.Carbon) any {
+			transform: func(c *carbon.Carbon) any {
 				return carbon.NewDateTimeMilli(c)
 			},
 			assert: func(result any) {
-				assert.IsType(t, carbon.DateTimeMilli{}, result)
-				assert.Equal(t, "2024-07-04 10:00:52.123", result.(carbon.DateTimeMilli).ToDateTimeMilliString())
+				assert.IsType(t, &carbon.DateTimeMilli{}, result)
+				assert.Equal(t, "2024-07-04 10:00:52.123", result.(*carbon.DateTimeMilli).ToDateTimeMilliString())
 			},
 		},
 	}

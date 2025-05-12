@@ -1,22 +1,28 @@
 package queue
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	contractsqueue "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
-	mocksconfig "github.com/goravel/framework/mocks/config"
-	mocksorm "github.com/goravel/framework/mocks/database/orm"
+	"github.com/goravel/framework/foundation/json"
+	mocksdb "github.com/goravel/framework/mocks/database/db"
+	mockslog "github.com/goravel/framework/mocks/log"
+	mocksqueue "github.com/goravel/framework/mocks/queue"
+	"github.com/goravel/framework/support/carbon"
 )
 
 type WorkerTestSuite struct {
 	suite.Suite
-	app        *Application
-	mockConfig *mocksconfig.Config
+	mockConfig *mocksqueue.Config
+	mockLog    *mockslog.Log
+	mockJob    *mocksqueue.JobRepository
+	worker     *Worker
 }
 
 func TestWorkerTestSuite(t *testing.T) {
@@ -24,81 +30,203 @@ func TestWorkerTestSuite(t *testing.T) {
 }
 
 func (s *WorkerTestSuite) SetupTest() {
+	s.mockConfig = mocksqueue.NewConfig(s.T())
+	s.mockConfig.EXPECT().Debug().Return(true).Once()
 
+	s.mockLog = mockslog.NewLog(s.T())
+	s.mockJob = mocksqueue.NewJobRepository(s.T())
+
+	s.worker = NewWorker(s.mockConfig, s.mockJob, json.New(), s.mockLog, "sync", "default", 2)
 }
 
-func (s *WorkerTestSuite) TestRun_Success() {
-	s.mockConfig = mocksconfig.NewConfig(s.T())
-	s.mockConfig.EXPECT().GetString("queue.default").Return("async").Times(3)
-	s.mockConfig.EXPECT().GetString("app.name").Return("goravel").Times(2)
-	s.mockConfig.EXPECT().GetString("queue.connections.async.queue", "default").Return("default").Times(2)
-	s.mockConfig.EXPECT().GetString("queue.connections.async.driver").Return("async").Twice()
-	s.mockConfig.EXPECT().GetInt("queue.connections.async.size", 100).Return(10).Twice()
-	s.app = NewApplication(s.mockConfig)
+func (s *WorkerTestSuite) TestNewWorker() {
+	s.Equal(2, s.worker.concurrent)
+	s.Equal("sync", s.worker.connection)
+	s.Equal("default", s.worker.queue)
+	s.Equal(1*time.Second, s.worker.currentDelay)
+	s.Equal(32*time.Second, s.worker.maxDelay)
+}
 
-	testJob := &MockJob{
-		signature: "mock_job",
+func (s *WorkerTestSuite) Test_run() {
+	now := time.Now()
+	carbon.SetTestNow(carbon.FromStdTime(now))
+	connection := "redis"
+	queue := "default"
+	queueKey := fmt.Sprintf("%s_%s:%s_%s", "goravel", "queues", connection, queue)
+	errorTask := contractsqueue.Task{
+		Jobs: contractsqueue.Jobs{
+			Job:   &TestJobErr{},
+			Delay: time.Now().Add(1 * time.Hour),
+		},
+		UUID:  "test",
+		Chain: []contractsqueue.Jobs{},
 	}
-	s.app.Register([]contractsqueue.Job{testJob})
-
-	worker := s.app.Worker()
-	go func() {
-		s.NoError(worker.Run())
-	}()
-
-	time.Sleep(1 * time.Second)
-	s.NoError(s.app.Job(testJob, []any{}).Dispatch())
-	time.Sleep(2 * time.Second)
-	s.True(testJob.called)
-	s.NoError(worker.Shutdown())
-}
-
-func (s *WorkerTestSuite) TestRun_FailedJob() {
-	s.mockConfig = mocksconfig.NewConfig(s.T())
-	s.mockConfig.EXPECT().GetString("queue.default").Return("async").Times(3)
-	s.mockConfig.EXPECT().GetString("app.name").Return("goravel").Times(2)
-	s.mockConfig.EXPECT().GetString("queue.connections.async.queue", "default").Return("default").Times(2)
-	s.mockConfig.EXPECT().GetString("queue.connections.async.driver").Return("async").Twice()
-	s.mockConfig.EXPECT().GetInt("queue.connections.async.size", 100).Return(10).Twice()
-	s.mockConfig.EXPECT().GetString("queue.failed.database").Return("database").Once()
-	s.mockConfig.EXPECT().GetString("queue.failed.table").Return("failed_jobs").Once()
-	s.app = NewApplication(s.mockConfig)
-
-	mockOrm := mocksorm.NewOrm(s.T())
-	mockQuery := mocksorm.NewQuery(s.T())
-	mockOrm.EXPECT().Connection("database").Return(mockOrm)
-	mockOrm.EXPECT().Query().Return(mockQuery)
-	mockQuery.EXPECT().Table("failed_jobs").Return(mockQuery)
-	mockQuery.EXPECT().Create(mock.Anything).Return(nil)
-	OrmFacade = mockOrm
-
-	testJob := &MockFailedJob{
-		signature: "mock_failed_job",
+	successTask := contractsqueue.Task{
+		Jobs: contractsqueue.Jobs{
+			Job:   &TestJobOne{},
+			Args:  testArgs,
+			Delay: time.Now().Add(1 * time.Hour),
+		},
+		UUID:  "test",
+		Chain: []contractsqueue.Jobs{},
 	}
-	s.app.Register([]contractsqueue.Job{testJob})
 
-	worker := s.app.Worker()
-	go func() {
-		s.NoError(worker.Run())
-	}()
+	s.Run("no job found", func() {
+		s.mockConfig.EXPECT().Debug().Return(true).Once()
+		s.mockConfig.EXPECT().QueueKey(connection, queue).Return(queueKey).Once()
 
-	time.Sleep(1 * time.Second)
-	s.NoError(s.app.Job(testJob, []any{}).Dispatch())
-	time.Sleep(2 * time.Second)
-	s.True(testJob.called)
-	s.NoError(worker.Shutdown())
+		mockDriver := mocksqueue.NewDriver(s.T())
+		mockDriver.EXPECT().Pop(queueKey).Return(contractsqueue.Task{}, errors.QueueDriverNoJobFound).Once()
+
+		worker := NewWorker(s.mockConfig, s.mockJob, json.New(), s.mockLog, connection, queue, 1)
+
+		go func() {
+			err := worker.run(mockDriver)
+			s.NoError(err)
+		}()
+
+		time.Sleep(500 * time.Millisecond)
+
+		s.NoError(worker.Shutdown())
+	})
+
+	s.Run("failed to pop job", func() {
+		s.mockConfig.EXPECT().Debug().Return(true).Once()
+		s.mockConfig.EXPECT().QueueKey(connection, queue).Return(queueKey).Once()
+
+		mockDriver := mocksqueue.NewDriver(s.T())
+		mockDriver.EXPECT().Pop(queueKey).Return(contractsqueue.Task{}, assert.AnError).Once()
+
+		s.mockLog.EXPECT().Error(errors.QueueDriverFailedToPop.Args(queueKey, assert.AnError)).Once()
+
+		worker := NewWorker(s.mockConfig, s.mockJob, json.New(), s.mockLog, connection, queue, 1)
+
+		go func() {
+			err := worker.run(mockDriver)
+			s.NoError(err)
+		}()
+
+		time.Sleep(500 * time.Millisecond)
+
+		s.NoError(worker.Shutdown())
+	})
+
+	s.Run("failed to call job", func() {
+		s.mockConfig.EXPECT().Debug().Return(true).Once()
+		mockFailedJobsQuery := mocksdb.NewQuery(s.T())
+
+		s.mockConfig.EXPECT().QueueKey(connection, queue).Return(queueKey).Once()
+
+		mockDriver := mocksqueue.NewDriver(s.T())
+		mockDriver.EXPECT().Pop(queueKey).Return(errorTask, nil).Once()
+
+		s.mockJob.EXPECT().Call(errorTask.Job.Signature(), make([]any, 0)).Return(assert.AnError).Once()
+
+		s.mockConfig.EXPECT().FailedJobsQuery().Return(mockFailedJobsQuery).Once()
+		mockFailedJobsQuery.EXPECT().Insert(&FailedJob{
+			UUID:       errorTask.UUID,
+			Connection: connection,
+			Queue:      queue,
+			Payload:    "{\"signature\":\"test_job_err\",\"args\":null,\"delay\":null,\"uuid\":\"test\",\"chain\":[]}",
+			Exception:  assert.AnError.Error(),
+			FailedAt:   carbon.NewDateTime(carbon.Now()),
+		}).Return(nil, nil).Once()
+
+		mockDriver.EXPECT().Pop(queueKey).Return(contractsqueue.Task{}, errors.QueueDriverNoJobFound).Once()
+
+		worker := NewWorker(s.mockConfig, s.mockJob, json.New(), s.mockLog, connection, queue, 1)
+
+		go func() {
+			err := worker.run(mockDriver)
+			s.NoError(err)
+		}()
+
+		time.Sleep(500 * time.Millisecond)
+
+		s.NoError(worker.Shutdown())
+	})
+
+	s.Run("failed to insert failed job", func() {
+		failedJob := &FailedJob{
+			UUID:       errorTask.UUID,
+			Connection: connection,
+			Queue:      queue,
+			Payload:    "{\"signature\":\"test_job_err\",\"args\":null,\"delay\":null,\"uuid\":\"test\",\"chain\":[]}",
+			Exception:  assert.AnError.Error(),
+			FailedAt:   carbon.NewDateTime(carbon.Now()),
+		}
+
+		mockFailedJobsQuery := mocksdb.NewQuery(s.T())
+
+		s.mockConfig.EXPECT().Debug().Return(true).Once()
+		s.mockConfig.EXPECT().QueueKey(connection, queue).Return(queueKey).Once()
+
+		mockDriver := mocksqueue.NewDriver(s.T())
+		mockDriver.EXPECT().Pop(queueKey).Return(errorTask, nil).Once()
+
+		s.mockJob.EXPECT().Call(errorTask.Job.Signature(), make([]any, 0)).Return(assert.AnError).Once()
+
+		s.mockConfig.EXPECT().FailedJobsQuery().Return(mockFailedJobsQuery).Once()
+		mockFailedJobsQuery.EXPECT().Insert(failedJob).Return(nil, assert.AnError).Once()
+
+		s.mockLog.EXPECT().Error(errors.QueueFailedToSaveFailedJob.Args(assert.AnError, failedJob)).Once()
+
+		mockDriver.EXPECT().Pop(queueKey).Return(contractsqueue.Task{}, errors.QueueDriverNoJobFound).Once()
+
+		worker := NewWorker(s.mockConfig, s.mockJob, json.New(), s.mockLog, connection, queue, 1)
+
+		go func() {
+			err := worker.run(mockDriver)
+			s.NoError(err)
+		}()
+
+		time.Sleep(500 * time.Millisecond)
+
+		s.NoError(worker.Shutdown())
+	})
+
+	s.Run("success", func() {
+		s.mockConfig.EXPECT().Debug().Return(true).Once()
+		s.mockConfig.EXPECT().QueueKey(connection, queue).Return(queueKey).Once()
+
+		mockDriver := mocksqueue.NewDriver(s.T())
+		mockDriver.EXPECT().Pop(queueKey).Return(successTask, nil).Once()
+
+		s.mockJob.EXPECT().Call(successTask.Job.Signature(), ConvertArgs(testArgs)).Return(nil).Once()
+
+		mockDriver.EXPECT().Pop(queueKey).Return(contractsqueue.Task{}, errors.QueueDriverNoJobFound).Once()
+
+		worker := NewWorker(s.mockConfig, s.mockJob, json.New(), s.mockLog, connection, queue, 1)
+
+		go func() {
+			err := worker.run(mockDriver)
+			s.NoError(err)
+		}()
+
+		time.Sleep(500 * time.Millisecond)
+
+		s.NoError(worker.Shutdown())
+	})
 }
 
-type MockFailedJob struct {
-	signature string
-	called    bool
+func (s *WorkerTestSuite) TestRunWithSyncDriver() {
+	s.mockConfig.EXPECT().Driver("sync").Return(contractsqueue.DriverSync).Once()
+
+	err := s.worker.Run()
+	s.NoError(err)
 }
 
-func (m *MockFailedJob) Signature() string {
-	return m.signature
+func (s *WorkerTestSuite) TestRunWithUnknownDriver() {
+	s.mockConfig.EXPECT().Driver("sync").Return("unknown").Once()
+
+	err := s.worker.Run()
+	s.Equal(errors.QueueDriverNotSupported.Args("unknown"), err)
 }
 
-func (m *MockFailedJob) Handle(args ...any) error {
-	m.called = true
-	return errors.New("failed job")
+func (s *WorkerTestSuite) TestShutdown() {
+	s.worker.isShutdown.Store(false)
+
+	err := s.worker.Shutdown()
+	s.NoError(err)
+	s.True(s.worker.isShutdown.Load())
 }
