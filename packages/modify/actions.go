@@ -123,6 +123,10 @@ func RemoveConfig(name string) modify.Action {
 // RemoveImport removes an import statement from the file.
 func RemoveImport(path string, name ...string) modify.Action {
 	return func(cursor *dstutil.Cursor) {
+		if IsUsingImport(cursor.Parent().(*dst.File), path, name...) {
+			return
+		}
+
 		node := cursor.Node().(*dst.GenDecl)
 		node.Specs = slices.DeleteFunc(node.Specs, func(spec dst.Spec) bool {
 			return match.Import(path, name...).MatchNode(spec)
