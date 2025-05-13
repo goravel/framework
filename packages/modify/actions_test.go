@@ -2,6 +2,7 @@ package modify
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -302,8 +303,19 @@ func (s *ModifyActionsTestSuite) TestActions() {
 			},
 		},
 		{
-			name:     "remove import",
+			name:     "remove import(in use)",
 			content:  s.config,
+			matchers: match.Imports(),
+			actions: []modify.Action{
+				RemoveImport("github.com/goravel/framework/auth"),
+			},
+			assert: func(content string) {
+				s.Contains(content, `"github.com/goravel/framework/auth"`)
+			},
+		},
+		{
+			name:     "remove import(not in use)",
+			content:  strings.Replace(s.config, "&auth.AuthServiceProvider{},", "", 1),
 			matchers: match.Imports(),
 			actions: []modify.Action{
 				RemoveImport("github.com/goravel/framework/auth"),

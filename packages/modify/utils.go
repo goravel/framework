@@ -20,6 +20,26 @@ func ExprIndex(x []dst.Expr, y dst.Expr) int {
 	})
 }
 
+func IsUsingImport(df *dst.File, path string, name ...string) bool {
+	if len(name) == 0 {
+		split := strings.Split(path, "/")
+		name = append(name, split[len(split)-1])
+	}
+
+	var used bool
+	dst.Inspect(df, func(n dst.Node) bool {
+		sel, ok := n.(*dst.SelectorExpr)
+		if ok && isTopName(sel.X, name[0]) {
+			used = true
+
+			return false
+		}
+		return true
+	})
+
+	return used
+}
+
 func KeyExists(kvs []dst.Expr, key dst.Expr) bool {
 	return KeyIndex(kvs, key) >= 0
 }
@@ -71,4 +91,10 @@ func isThirdParty(importPath string) bool {
 	// Third party package import path usually contains "." (".com", ".org", ...)
 	// This logic is taken from golang.org/x/tools/imports package.
 	return strings.Contains(importPath, ".")
+}
+
+// isTopName returns true if n is a top-level unresolved identifier with the given name.
+func isTopName(n dst.Expr, name string) bool {
+	id, ok := n.(*dst.Ident)
+	return ok && id.Name == name && id.Obj == nil
 }

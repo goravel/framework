@@ -144,8 +144,8 @@ func main() {
 		).
 		Uninstall(
 			modify.File(path.Config("app.go")).
-				Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.RemoveProvider("&DummyName.ServiceProvider{}")),
+				Find(match.Providers()).Modify(modify.RemoveProvider("&DummyName.ServiceProvider{}")).
+				Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
 		).
 		Execute()
 }
