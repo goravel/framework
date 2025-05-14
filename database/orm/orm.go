@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/goravel/framework/contracts"
 	"github.com/goravel/framework/contracts/config"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/log"
@@ -23,7 +22,7 @@ type Orm struct {
 	mutex           sync.Mutex
 	query           contractsorm.Query
 	queries         map[string]contractsorm.Query
-	refresh         func(key ...any)
+	refresh         func()
 }
 
 func NewOrm(
@@ -34,7 +33,7 @@ func NewOrm(
 	queries map[string]contractsorm.Query,
 	log log.Log,
 	modelToObserver []contractsorm.ModelToObserver,
-	refresh func(key ...any),
+	refresh func(),
 ) *Orm {
 	return &Orm{
 		ctx:             ctx,
@@ -48,7 +47,7 @@ func NewOrm(
 	}
 }
 
-func BuildOrm(ctx context.Context, config config.Config, connection string, log log.Log, refresh func(key ...any)) (*Orm, error) {
+func BuildOrm(ctx context.Context, config config.Config, connection string, log log.Log, refresh func()) (*Orm, error) {
 	query, err := gorm.BuildQuery(ctx, config, connection, log, nil)
 	if err != nil {
 		return NewOrm(ctx, config, connection, nil, nil, log, nil, refresh), err
@@ -132,7 +131,7 @@ func (r *Orm) SetQuery(query contractsorm.Query) {
 }
 
 func (r *Orm) Refresh() {
-	r.refresh(contracts.BindingOrm)
+	r.refresh()
 }
 
 func (r *Orm) Transaction(txFunc func(tx contractsorm.Query) error) error {

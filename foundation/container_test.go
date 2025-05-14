@@ -80,7 +80,7 @@ func (s *ContainerTestSuite) TestInstance() {
 	s.Equal(impl, ins.concrete)
 }
 
-func (s *ContainerTestSuite) TestSingleton_Refresh() {
+func (s *ContainerTestSuite) TestSingleton_Fresh() {
 	callback := func(app foundation.Application) (any, error) {
 		return 1, nil
 	}
@@ -99,7 +99,7 @@ func (s *ContainerTestSuite) TestSingleton_Refresh() {
 	s.True(ok)
 	s.Equal(1, ins)
 
-	s.container.Refresh("Singleton")
+	s.container.Fresh("Singleton")
 
 	res, ok = s.container.instances.Load("Singleton")
 	s.False(ok)
@@ -117,7 +117,7 @@ func (s *ContainerTestSuite) TestSingleton_Refresh() {
 	s.True(ok)
 	s.Equal(1, ins)
 
-	s.container.Refresh()
+	s.container.Fresh()
 
 	res, ok = s.container.instances.Load("Singleton")
 	s.False(ok)
