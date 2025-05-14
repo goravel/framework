@@ -51,7 +51,7 @@ func NewOrm(
 func BuildOrm(ctx context.Context, config config.Config, connection string, log log.Log, refresh func(key ...any)) (*Orm, error) {
 	query, err := gorm.BuildQuery(ctx, config, connection, log, nil)
 	if err != nil {
-		return nil, err
+		return NewOrm(ctx, config, connection, nil, nil, log, nil, refresh), err
 	}
 
 	queries := map[string]contractsorm.Query{

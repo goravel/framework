@@ -321,7 +321,7 @@ func (c *Container) MakeWith(key any, parameters map[string]any) (any, error) {
 	return c.make(key, parameters)
 }
 
-func (c *Container) Refresh(bindings ...any) {
+func (c *Container) Fresh(bindings ...any) {
 	if len(bindings) == 0 {
 		c.instances.Range(func(key, value any) bool {
 			if key != contracts.BindingConfig {

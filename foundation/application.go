@@ -52,6 +52,7 @@ func NewApplication() foundation.Application {
 
 // Boot Register and bootstrap configured service providers.
 func (app *Application) Boot() {
+	app.setTimezone()
 	app.registerConfiguredServiceProviders()
 	app.bootConfiguredServiceProviders()
 	app.registerCommands([]contractsconsole.Command{
@@ -60,7 +61,6 @@ func (app *Application) Boot() {
 		console.NewPackageMakeCommand(),
 		console.NewVendorPublishCommand(app.publishes, app.publishGroups),
 	})
-	app.setTimezone()
 	app.bootArtisan()
 }
 
@@ -90,6 +90,11 @@ func (app *Application) DatabasePath(path ...string) string {
 func (app *Application) StoragePath(path ...string) string {
 	path = append([]string{"storage"}, path...)
 	return filepath.Join(path...)
+}
+
+func (app *Application) Refresh() {
+	app.Fresh()
+	app.Boot()
 }
 
 func (app *Application) LangPath(path ...string) string {
