@@ -55,7 +55,7 @@ func ParseByLayout[T string | []string](value string, layout T, timezone ...stri
 	case string:
 		c = carbon.ParseByLayout(value, v, timezone...)
 	case []string:
-		c = carbon.ParseWithLayouts(value, v, timezone...)
+		c = carbon.ParseByLayouts(value, v, timezone...)
 	}
 	return
 }
@@ -66,7 +66,7 @@ func ParseByFormat[T string | []string](value string, format T, timezone ...stri
 	case string:
 		c = carbon.ParseByFormat(value, v, timezone...)
 	case []string:
-		c = carbon.ParseWithFormats(value, v, timezone...)
+		c = carbon.ParseByFormats(value, v, timezone...)
 	}
 	return
 }
