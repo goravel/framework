@@ -29,7 +29,7 @@ func TestGeneralTestSuite(t *testing.T) {
 func (s *GeneralTestSuite) SetupTest() {
 	s.mockConfig = configmock.NewConfig(s.T())
 	s.entry = &logrus.Entry{
-		Time:    time.Now(),
+		Time:    time.Now().In(time.UTC),
 		Level:   logrus.InfoLevel,
 		Message: "Test Message",
 	}

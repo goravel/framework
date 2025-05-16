@@ -4,6 +4,7 @@ import (
 	stdtime "time"
 
 	"github.com/dromara/carbon/v2"
+	"github.com/goravel/framework/support/debug"
 )
 
 type Carbon = carbon.Carbon
@@ -15,7 +16,10 @@ func SetTimezone(timezone string) {
 
 // SetLocale sets language locale.
 func SetLocale(locale string) {
-	carbon.SetLocale(locale)
+	c := carbon.SetLocale(locale)
+	year, month, day := c.Date()
+	hour, minute, second := c.Time()
+	debug.Dump(c, c.Error, year, month, day, hour, minute, second, c.IsInvalid())
 }
 
 // SetTestNow sets the test time, remember to clean after use.
@@ -24,6 +28,7 @@ func SetTestNow(c *Carbon) {
 }
 
 // UnsetTestNow unsets the test time.
+//
 // Deprecated: it will be removed in the future, use ClearTestNow instead.
 func UnsetTestNow() {
 	ClearTestNow()
@@ -31,7 +36,7 @@ func UnsetTestNow() {
 
 // ClearTestNow clears the test time.
 func ClearTestNow() {
-	carbon.CleanTestNow()
+	carbon.ClearTestNow()
 }
 
 // IsTestNow determines if the test now time is set.
@@ -55,7 +60,7 @@ func ParseByLayout[T string | []string](value string, layout T, timezone ...stri
 	case string:
 		c = carbon.ParseByLayout(value, v, timezone...)
 	case []string:
-		c = carbon.ParseWithLayouts(value, v, timezone...)
+		c = carbon.ParseByLayouts(value, v, timezone...)
 	}
 	return
 }
@@ -66,18 +71,20 @@ func ParseByFormat[T string | []string](value string, format T, timezone ...stri
 	case string:
 		c = carbon.ParseByFormat(value, v, timezone...)
 	case []string:
-		c = carbon.ParseWithFormats(value, v, timezone...)
+		c = carbon.ParseByFormats(value, v, timezone...)
 	}
 	return
 }
 
 // ParseWithLayouts returns a Carbon object with multiple fuzzy layouts.
+//
 // Deprecated: it will be removed in the future, use ParseByLayout instead.
 func ParseWithLayouts(value string, layouts []string, timezone ...string) *Carbon {
 	return carbon.ParseWithLayouts(value, layouts, timezone...)
 }
 
 // ParseWithFormats returns a Carbon object with multiple fuzzy formats.
+//
 // Deprecated: it will be removed in the future, use ParseByFormat instead.
 func ParseWithFormats(value string, formats []string, timezone ...string) *Carbon {
 	return carbon.ParseWithFormats(value, formats, timezone...)

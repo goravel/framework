@@ -1,10 +1,12 @@
 package carbon
 
 import (
+	"fmt"
 	"testing"
 	stdtime "time"
 
 	"github.com/dromara/carbon/v2"
+	"github.com/goravel/framework/support/debug"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,8 +25,14 @@ func TestSetTimezone(t *testing.T) {
 func TestSetLocale(t *testing.T) {
 	defer SetLocale("en")
 
-	SetLocale("zh-CN")
+	SetLocale("ar")
 	c := Parse("2025-04-11 00:00:00")
+
+	fmt.Println("--------------------------------")
+	year, month, day := c.Date()
+	hour, minute, second := c.Time()
+	debug.Dump(c, c.Error, year, month, day, hour, minute, second, c.IsInvalid())
+	fmt.Println("--------------------------------")
 
 	assert.Equal(t, "zh-CN", c.Locale())
 	assert.Equal(t, "白羊座", c.Constellation())
