@@ -26,7 +26,10 @@ func TestSetLocale(t *testing.T) {
 
 	SetLocale("zh-CN")
 	c := Parse("2025-04-11 00:00:00")
-	debug.Dump(c)
+
+	year, month, day := c.Date()
+	hour, minute, second := c.Time()
+	debug.Dump(c, c.Error, year, month, day, hour, minute, second, c.IsInvalid())
 
 	assert.Equal(t, "zh-CN", c.Locale())
 	assert.Equal(t, "白羊座", c.Constellation())
