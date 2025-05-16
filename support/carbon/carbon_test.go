@@ -25,7 +25,7 @@ func TestSetTimezone(t *testing.T) {
 func TestSetLocale(t *testing.T) {
 	defer SetLocale("en")
 
-	SetLocale("zh-CN")
+	SetLocale("ar")
 	c := Parse("2025-04-11 00:00:00")
 
 	fmt.Println("--------------------------------")
