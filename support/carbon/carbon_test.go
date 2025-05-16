@@ -5,6 +5,7 @@ import (
 	stdtime "time"
 
 	"github.com/dromara/carbon/v2"
+	"github.com/goravel/framework/support/debug"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,6 +26,7 @@ func TestSetLocale(t *testing.T) {
 
 	SetLocale("zh-CN")
 	c := Parse("2025-04-11 00:00:00")
+	debug.Dump(c)
 
 	assert.Equal(t, "zh-CN", c.Locale())
 	assert.Equal(t, "白羊座", c.Constellation())
