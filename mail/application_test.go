@@ -76,7 +76,7 @@ func (s *ApplicationTestSuite) TestSendMailWithMailable() {
 func (s *ApplicationTestSuite) TestQueueMail() {
 	s.mockConfig = mockConfig(465)
 
-	queueFacade := queue.NewApplication(queue.NewConfig(s.mockConfig, nil), queue.NewJobRepository(), json.New(), nil)
+	queueFacade := queue.NewApplication(queue.NewConfig(s.mockConfig), nil, queue.NewJobRepository(), json.New(), nil)
 	queueFacade.Register([]contractsqueue.Job{
 		NewSendMailJob(s.mockConfig),
 	})
@@ -97,7 +97,7 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 func (s *ApplicationTestSuite) TestQueueMailWithMailable() {
 	s.mockConfig = mockConfig(465)
 
-	queueFacade := queue.NewApplication(queue.NewConfig(s.mockConfig, nil), queue.NewJobRepository(), json.New(), nil)
+	queueFacade := queue.NewApplication(queue.NewConfig(s.mockConfig), nil, queue.NewJobRepository(), json.New(), nil)
 	queueFacade.Register([]contractsqueue.Job{
 		NewSendMailJob(s.mockConfig),
 	})

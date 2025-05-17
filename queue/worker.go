@@ -1,13 +1,13 @@
 package queue
 
 import (
-	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/RichardKnop/machinery/v2"
 
+	"github.com/goravel/framework/contracts/database/db"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/queue"
@@ -19,6 +19,7 @@ import (
 
 type Worker struct {
 	config queue.Config
+	db     db.DB
 	job    queue.JobRepository
 	json   foundation.Json
 	log    log.Log
@@ -36,9 +37,10 @@ type Worker struct {
 	wg            sync.WaitGroup
 }
 
-func NewWorker(config queue.Config, job queue.JobRepository, json foundation.Json, log log.Log, connection, queue string, concurrent int) *Worker {
+func NewWorker(config queue.Config, db db.DB, job queue.JobRepository, json foundation.Json, log log.Log, connection, queue string, concurrent int) *Worker {
 	return &Worker{
 		config: config,
+		db:     db,
 		job:    job,
 		json:   json,
 		log:    log,
@@ -75,7 +77,7 @@ func (r *Worker) Run() error {
 
 // RunMachinery will be removed in v1.17
 func (r *Worker) RunMachinery() error {
-	instance := NewMachinery(r.config.Config(), r.log, r.job.All(), r.connection, r.queue, r.concurrent)
+	instance := NewMachinery(r.config, r.log, r.job.All(), r.connection, r.queue, r.concurrent)
 	if !instance.ExistTasks() {
 		return nil
 	}
@@ -142,9 +144,66 @@ func (r *Worker) call(task queue.Task) error {
 	return nil
 }
 
+func (r *Worker) logFailedJob(job FailedJob) {
+	failedDatabase := r.config.FailedDatabase()
+	failedTable := r.config.FailedTable()
+
+	isDbDisabled := failedDatabase == "" || failedTable == "" || r.db == nil
+	if isDbDisabled {
+		r.log.Error(errors.QueueJobFailed.Args(job))
+		return
+	}
+
+	_, err := r.db.Connection(failedDatabase).Table(failedTable).Insert(&job)
+	if err != nil {
+		r.log.Error(errors.QueueFailedToSaveFailedJob.Args(err, job))
+	}
+}
+
+func (r *Worker) printRunningLog(task queue.Task) {
+	if !r.debug {
+		return
+	}
+
+	datetime := color.Gray().Sprint(carbon.Now().ToDateTimeString())
+	status := "<fg=yellow;op=bold>RUNNING</>"
+	first := datetime + " " + task.Job.Signature()
+	second := status
+
+	color.Default().Println(console.TwoColumnDetail(first, second))
+}
+
+func (r *Worker) printSuccessLog(task queue.Task, duration string) {
+	if !r.debug {
+		return
+	}
+
+	datetime := color.Gray().Sprint(carbon.Now().ToDateTimeString())
+	status := "<fg=green;op=bold>DONE</>"
+	duration = color.Gray().Sprint(duration)
+	first := datetime + " " + task.Job.Signature()
+	second := duration + " " + status
+
+	color.Default().Println(console.TwoColumnDetail(first, second))
+}
+
+func (r *Worker) printFailedLog(task queue.Task, duration string) {
+	if !r.debug {
+		return
+	}
+
+	datetime := color.Gray().Sprint(carbon.Now().ToDateTimeString())
+	status := "<fg=red;op=bold>FAIL</>"
+	duration = color.Gray().Sprint(duration)
+	first := datetime + " " + task.Job.Signature()
+	second := duration + " " + status
+
+	color.Default().Println(console.TwoColumnDetail(first, second))
+}
+
 func (r *Worker) run(driver queue.Driver) error {
 	if r.debug {
-		color.Infoln(fmt.Sprintf("Processing jobs from [%s] connection and [%s] queue\n", r.connection, r.queue))
+		color.Infoln(errors.QueueProcessingJobs.Args(r.connection, r.queue))
 	}
 
 	queueKey := r.config.QueueKey(r.connection, r.queue)
@@ -206,54 +265,11 @@ func (r *Worker) run(driver queue.Driver) error {
 	go func() {
 		defer r.wg.Done()
 		for job := range r.failedJobChan {
-			if _, err := r.config.FailedJobsQuery().Insert(&job); err != nil {
-				r.log.Error(errors.QueueFailedToSaveFailedJob.Args(err, job))
-			}
+			r.logFailedJob(job)
 		}
 	}()
 
 	r.wg.Wait()
 
 	return nil
-}
-
-func (r *Worker) printRunningLog(task queue.Task) {
-	if !r.debug {
-		return
-	}
-
-	datetime := color.Gray().Sprint(carbon.Now().ToDateTimeString())
-	status := "<fg=yellow;op=bold>RUNNING</>"
-	first := datetime + " " + task.Job.Signature()
-	second := status
-
-	color.Default().Println(console.TwoColumnDetail(first, second))
-}
-
-func (r *Worker) printSuccessLog(task queue.Task, duration string) {
-	if !r.debug {
-		return
-	}
-
-	datetime := color.Gray().Sprint(carbon.Now().ToDateTimeString())
-	status := "<fg=green;op=bold>DONE</>"
-	duration = color.Gray().Sprint(duration)
-	first := datetime + " " + task.Job.Signature()
-	second := duration + " " + status
-
-	color.Default().Println(console.TwoColumnDetail(first, second))
-}
-
-func (r *Worker) printFailedLog(task queue.Task, duration string) {
-	if !r.debug {
-		return
-	}
-
-	datetime := color.Gray().Sprint(carbon.Now().ToDateTimeString())
-	status := "<fg=red;op=bold>FAIL</>"
-	duration = color.Gray().Sprint(duration)
-	first := datetime + " " + task.Job.Signature()
-	second := duration + " " + status
-
-	color.Default().Println(console.TwoColumnDetail(first, second))
 }
