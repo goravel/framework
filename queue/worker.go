@@ -148,7 +148,7 @@ func (r *Worker) logFailedJob(job FailedJob) {
 	failedDatabase := r.config.FailedDatabase()
 	failedTable := r.config.FailedTable()
 
-	isDbDisabled := failedDatabase == "" || failedTable == "" || r.db == nil
+	isDbDisabled := r.db == nil || failedDatabase == "" || failedTable == ""
 	if isDbDisabled {
 		r.log.Error(errors.QueueJobFailed.Args(job))
 		return
