@@ -34,6 +34,7 @@ func BuildGorm(config config.Config, log log.Log, pool database.Pool) (*gorm.DB,
 			NoLowerCase:   pool.Writers[0].NoLowerCase,
 			NameReplacer:  pool.Writers[0].NameReplacer,
 		},
+		DisableAutomaticPing: !config.GetBool("database.check_connection_on_start", false),
 	}
 
 	instance, err := gorm.Open(pool.Writers[0].Dialector, gormConfig)

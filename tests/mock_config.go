@@ -23,6 +23,7 @@ func mockDatabaseConfig(mockConfig *mocksconfig.Config, config database.Config, 
 
 func mockDatabaseConfigWithoutWriteAndRead(mockConfig *mocksconfig.Config, config database.Config, connection string, prefix string, singular bool) {
 	mockConfig.EXPECT().GetBool("app.debug").Return(true)
+	mockConfig.EXPECT().GetBool("database.check_connection_on_start", false).Return(true)
 	mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(200)
 	mockConfig.EXPECT().GetInt("database.pool.max_idle_conns", 10).Return(10)
 	mockConfig.EXPECT().GetInt("database.pool.max_open_conns", 100).Return(100)
