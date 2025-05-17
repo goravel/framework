@@ -18,20 +18,16 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleQueue)
 		}
 
-		db := app.MakeDB()
-		if db == nil {
-			return nil, errors.DBFacadeNotSet.SetModule(errors.ModuleQueue)
-		}
-
 		log := app.MakeLog()
 		if log == nil {
 			return nil, errors.LogFacadeNotSet.SetModule(errors.ModuleQueue)
 		}
 
-		queueConfig := NewConfig(config, db)
+		queueConfig := NewConfig(config)
 		job := NewJobRepository()
+		db := app.MakeDB()
 
-		return NewApplication(queueConfig, job, app.GetJson(), log), nil
+		return NewApplication(queueConfig, db, job, app.GetJson(), log), nil
 	})
 }
 
