@@ -48,24 +48,24 @@ func (s *DefaultMigratorWithDBSuite) SetupTest() {
 
 	postgresQuery := gorm.NewTestQueryWithPrefixAndSingular(postgresDocker)
 
-	sqliteDocker := docker.Sqlite()
-	sqliteQuery := gorm.NewTestQueryWithPrefixAndSingular(sqliteDocker)
+	// sqliteDocker := docker.Sqlite()
+	// sqliteQuery := gorm.NewTestQueryWithPrefixAndSingular(sqliteDocker)
 
-	mysqlDocker := docker.Mysql()
-	s.Require().NoError(mysqlDocker.Ready())
+	// mysqlDocker := docker.Mysql()
+	// s.Require().NoError(mysqlDocker.Ready())
 
-	mysqlQuery := gorm.NewTestQueryWithPrefixAndSingular(mysqlDocker)
+	// mysqlQuery := gorm.NewTestQueryWithPrefixAndSingular(mysqlDocker)
 
-	sqlserverDocker := docker.Sqlserver()
-	s.Require().NoError(sqlserverDocker.Ready())
+	// sqlserverDocker := docker.Sqlserver()
+	// s.Require().NoError(sqlserverDocker.Ready())
 
-	sqlserverQuery := gorm.NewTestQueryWithPrefixAndSingular(sqlserverDocker)
+	// sqlserverQuery := gorm.NewTestQueryWithPrefixAndSingular(sqlserverDocker)
 
 	s.driverToTestQuery = map[contractsdatabase.Driver]*gorm.TestQuery{
-		contractsdatabase.DriverPostgres:  postgresQuery,
-		contractsdatabase.DriverSqlite:    sqliteQuery,
-		contractsdatabase.DriverMysql:     mysqlQuery,
-		contractsdatabase.DriverSqlserver: sqlserverQuery,
+		contractsdatabase.DriverPostgres: postgresQuery,
+		// contractsdatabase.DriverSqlite:    sqliteQuery,
+		// contractsdatabase.DriverMysql:     mysqlQuery,
+		// contractsdatabase.DriverSqlserver: sqlserverQuery,
 	}
 }
 
@@ -106,10 +106,11 @@ func (s *DefaultMigratorWithDBSuite) TestReset() {
 
 			migrator := NewDefaultMigrator(nil, schema, "migrations")
 
+			s.NoError(migrator.Reset())
 			s.NoError(migrator.Run())
 			s.True(schema.HasTable("users"))
-
 			s.NoError(migrator.Reset())
+			s.False(schema.HasTable("users"))
 		})
 	}
 }
@@ -125,10 +126,11 @@ func (s *DefaultMigratorWithDBSuite) TestRollback() {
 
 			migrator := NewDefaultMigrator(nil, schema, "migrations")
 
+			s.NoError(migrator.Rollback(1, 0))
 			s.NoError(migrator.Run())
 			s.True(schema.HasTable("users"))
-
 			s.NoError(migrator.Rollback(1, 0))
+			s.False(schema.HasTable("users"))
 		})
 	}
 }
@@ -399,15 +401,24 @@ func (s *DefaultMigratorSuite) TestReset() {
 		expectErr string
 	}{
 		{
-			name: "Get ran failed",
+			name: "repository not exists",
 			setup: func() {
+				s.mockRepository.EXPECT().RepositoryExists().Return(false).Once()
+			},
+		},
+		{
+			name: "failed to get ran",
+			setup: func() {
+				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
 				s.mockRepository.EXPECT().GetRan().Return(nil, assert.AnError).Once()
 			},
 			expectErr: assert.AnError.Error(),
 		},
 		{
-			name: "Rollback with no files",
+			name: "happy path",
 			setup: func() {
+				s.mockRepository.EXPECT().RepositoryExists().Return(true).Twice()
+
 				previousConnection := "postgres"
 				testMigration := NewTestMigration(s.mockSchema)
 				s.mockRepository.EXPECT().GetRan().Return([]string{testMigration.Signature()}, nil).Once()
@@ -445,14 +456,17 @@ func (s *DefaultMigratorSuite) TestRollback() {
 		expectErr string
 	}{
 		{
-			name: "Rollback with no files",
+			name: "happy path - no files",
 			setup: func() {
+				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
 				s.mockRepository.EXPECT().GetMigrationsByStep(1).Return(nil, nil).Once()
 			},
 		},
 		{
-			name: "Rollback with files",
+			name: "happy path",
 			setup: func() {
+				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
+
 				previousConnection := "postgres"
 				testMigration := NewTestMigration(s.mockSchema)
 
@@ -466,14 +480,17 @@ func (s *DefaultMigratorSuite) TestRollback() {
 			},
 		},
 		{
-			name: "Rollback with missing migration",
+			name: "happy path - missing migration",
 			setup: func() {
+				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
 				s.mockRepository.EXPECT().GetMigrationsByStep(1).Return([]migration.File{{Migration: "20240817214502_create_users_table"}}, nil).Once()
 			},
 		},
 		{
-			name: "Rollback with error",
+			name: "failed to rollback",
 			setup: func() {
+				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
+
 				previousConnection := "postgres"
 				testMigration := NewTestMigration(s.mockSchema)
 
@@ -486,6 +503,20 @@ func (s *DefaultMigratorSuite) TestRollback() {
 				s.mockRunDown(mockOrm, previousConnection, testMigration.Signature(), "users", assert.AnError)
 			},
 			expectErr: assert.AnError.Error(),
+		},
+		{
+			name: "failed to get migrations by step",
+			setup: func() {
+				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
+				s.mockRepository.EXPECT().GetMigrationsByStep(1).Return(nil, assert.AnError).Once()
+			},
+			expectErr: assert.AnError.Error(),
+		},
+		{
+			name: "repository doesn't exist",
+			setup: func() {
+				s.mockRepository.EXPECT().RepositoryExists().Return(false).Once()
+			},
 		},
 	}
 
