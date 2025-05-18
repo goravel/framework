@@ -3422,7 +3422,7 @@ func (s *QueryTestSuite) TestWhereBetween() {
 			s.True(len(users) == 3)
 
 			var users1 []User
-			s.Nil(query.Query().WhereBetween("created_at", now, now.AddDays(1)).Find(&users1))
+			s.Nil(query.Query().WhereBetween("created_at", now.SubDay(), now.AddDay()).Find(&users1))
 			s.True(len(users1) == 3)
 		})
 	}
