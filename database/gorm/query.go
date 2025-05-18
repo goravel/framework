@@ -949,19 +949,19 @@ func (r *Query) OrWhereNotIn(column string, values []any) contractsorm.Query {
 }
 
 func (r *Query) WhereBetween(column string, x, y any) contractsorm.Query {
-	return r.Where(fmt.Sprintf("%s BETWEEN %v AND %v", column, x, y))
+	return r.Where(fmt.Sprintf("%s BETWEEN ? AND ?", column), x, y)
 }
 
 func (r *Query) WhereNotBetween(column string, x, y any) contractsorm.Query {
-	return r.Where(fmt.Sprintf("%s NOT BETWEEN %v AND %v", column, x, y))
+	return r.Where(fmt.Sprintf("%s NOT BETWEEN ? AND ?", column), x, y)
 }
 
 func (r *Query) OrWhereBetween(column string, x, y any) contractsorm.Query {
-	return r.OrWhere(fmt.Sprintf("%s BETWEEN %v AND %v", column, x, y))
+	return r.OrWhere(fmt.Sprintf("%s BETWEEN ? AND ?", column), x, y)
 }
 
 func (r *Query) OrWhereNotBetween(column string, x, y any) contractsorm.Query {
-	return r.OrWhere(fmt.Sprintf("%s NOT BETWEEN %v AND %v", column, x, y))
+	return r.OrWhere(fmt.Sprintf("%s NOT BETWEEN ? AND ?", column), x, y)
 }
 
 func (r *Query) OrWhereNull(column string) contractsorm.Query {
