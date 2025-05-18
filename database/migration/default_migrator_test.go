@@ -48,24 +48,24 @@ func (s *DefaultMigratorWithDBSuite) SetupTest() {
 
 	postgresQuery := gorm.NewTestQueryWithPrefixAndSingular(postgresDocker)
 
-	// sqliteDocker := docker.Sqlite()
-	// sqliteQuery := gorm.NewTestQueryWithPrefixAndSingular(sqliteDocker)
+	sqliteDocker := docker.Sqlite()
+	sqliteQuery := gorm.NewTestQueryWithPrefixAndSingular(sqliteDocker)
 
-	// mysqlDocker := docker.Mysql()
-	// s.Require().NoError(mysqlDocker.Ready())
+	mysqlDocker := docker.Mysql()
+	s.Require().NoError(mysqlDocker.Ready())
 
-	// mysqlQuery := gorm.NewTestQueryWithPrefixAndSingular(mysqlDocker)
+	mysqlQuery := gorm.NewTestQueryWithPrefixAndSingular(mysqlDocker)
 
-	// sqlserverDocker := docker.Sqlserver()
-	// s.Require().NoError(sqlserverDocker.Ready())
+	sqlserverDocker := docker.Sqlserver()
+	s.Require().NoError(sqlserverDocker.Ready())
 
-	// sqlserverQuery := gorm.NewTestQueryWithPrefixAndSingular(sqlserverDocker)
+	sqlserverQuery := gorm.NewTestQueryWithPrefixAndSingular(sqlserverDocker)
 
 	s.driverToTestQuery = map[contractsdatabase.Driver]*gorm.TestQuery{
-		contractsdatabase.DriverPostgres: postgresQuery,
-		// contractsdatabase.DriverSqlite:    sqliteQuery,
-		// contractsdatabase.DriverMysql:     mysqlQuery,
-		// contractsdatabase.DriverSqlserver: sqlserverQuery,
+		contractsdatabase.DriverPostgres:  postgresQuery,
+		contractsdatabase.DriverSqlite:    sqliteQuery,
+		contractsdatabase.DriverMysql:     mysqlQuery,
+		contractsdatabase.DriverSqlserver: sqlserverQuery,
 	}
 }
 
