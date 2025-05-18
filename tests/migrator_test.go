@@ -65,10 +65,11 @@ func (s *DefaultMigratorWithDBSuite) TestReset() {
 
 			migrator := migration.NewMigrator(nil, schema, "migrations")
 
+			s.NoError(migrator.Reset())
 			s.NoError(migrator.Run())
 			s.True(schema.HasTable("users"))
-
 			s.NoError(migrator.Reset())
+			s.False(schema.HasTable("users"))
 		})
 	}
 }
@@ -84,10 +85,11 @@ func (s *DefaultMigratorWithDBSuite) TestRollback() {
 
 			migrator := migration.NewMigrator(nil, schema, "migrations")
 
+			s.NoError(migrator.Rollback(1, 0))
 			s.NoError(migrator.Run())
 			s.True(schema.HasTable("users"))
-
 			s.NoError(migrator.Rollback(1, 0))
+			s.False(schema.HasTable("users"))
 		})
 	}
 }
