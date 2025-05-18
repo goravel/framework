@@ -639,6 +639,7 @@ func (r *testTables) peoples() string {
 	switch r.driver {
 	case contractsdatabase.DriverMysql:
 		return `
+DROP TABLE IF EXISTS peoples;
 CREATE TABLE peoples (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   body varchar(255) NOT NULL,
@@ -652,6 +653,7 @@ CREATE TABLE peoples (
 `
 	case contractsdatabase.DriverPostgres:
 		return `
+DROP TABLE IF EXISTS peoples;
 CREATE TABLE peoples (
   id SERIAL PRIMARY KEY NOT NULL,
   body varchar(255) NOT NULL,
@@ -662,6 +664,7 @@ CREATE TABLE peoples (
 `
 	case contractsdatabase.DriverSqlite:
 		return `
+DROP TABLE IF EXISTS peoples;
 CREATE TABLE peoples (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
   body varchar(255) NOT NULL,
@@ -672,6 +675,7 @@ CREATE TABLE peoples (
 `
 	case contractsdatabase.DriverSqlserver:
 		return `
+DROP TABLE IF EXISTS peoples;
 CREATE TABLE peoples (
   id bigint NOT NULL IDENTITY(1,1),
   body varchar(255) NOT NULL,
@@ -690,6 +694,7 @@ func (r *testTables) reviews() string {
 	switch r.driver {
 	case contractsdatabase.DriverMysql:
 		return `
+DROP TABLE IF EXISTS reviews;
 CREATE TABLE reviews (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   body varchar(255) NOT NULL,
@@ -703,6 +708,7 @@ CREATE TABLE reviews (
 `
 	case contractsdatabase.DriverPostgres:
 		return `
+DROP TABLE IF EXISTS reviews;
 CREATE TABLE reviews (
   id SERIAL PRIMARY KEY NOT NULL,
   body varchar(255) NOT NULL,
@@ -713,6 +719,7 @@ CREATE TABLE reviews (
 `
 	case contractsdatabase.DriverSqlite:
 		return `
+DROP TABLE IF EXISTS reviews;
 CREATE TABLE reviews (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
   body varchar(255) NOT NULL,
@@ -723,6 +730,7 @@ CREATE TABLE reviews (
 `
 	case contractsdatabase.DriverSqlserver:
 		return `
+DROP TABLE IF EXISTS reviews;
 CREATE TABLE reviews (
   id bigint NOT NULL IDENTITY(1,1),
   body varchar(255) NOT NULL,
@@ -741,6 +749,7 @@ func (r *testTables) products() string {
 	switch r.driver {
 	case contractsdatabase.DriverMysql:
 		return `
+DROP TABLE IF EXISTS products;
 CREATE TABLE products (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   name varchar(255) NOT NULL,
@@ -754,6 +763,7 @@ CREATE TABLE products (
 `
 	case contractsdatabase.DriverPostgres:
 		return `
+DROP TABLE IF EXISTS products;
 CREATE TABLE products (
   id SERIAL PRIMARY KEY NOT NULL,
   name varchar(255) NOT NULL,
@@ -764,6 +774,7 @@ CREATE TABLE products (
 `
 	case contractsdatabase.DriverSqlite:
 		return `
+DROP TABLE IF EXISTS products;
 CREATE TABLE products (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
   name varchar(255) NOT NULL,
@@ -774,6 +785,7 @@ CREATE TABLE products (
 `
 	case contractsdatabase.DriverSqlserver:
 		return `
+DROP TABLE IF EXISTS products;
 CREATE TABLE products (
   id bigint NOT NULL IDENTITY(1,1),
   name varchar(255) NOT NULL,
@@ -792,6 +804,7 @@ func (r *testTables) users() string {
 	switch r.driver {
 	case contractsdatabase.DriverMysql:
 		return `
+DROP TABLE IF EXISTS users;
 CREATE TABLE users (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   name varchar(255) NOT NULL,
@@ -807,6 +820,7 @@ CREATE TABLE users (
 `
 	case contractsdatabase.DriverPostgres:
 		return `
+DROP TABLE IF EXISTS users;
 CREATE TABLE users (
   id SERIAL PRIMARY KEY NOT NULL,
   name varchar(255) NOT NULL,
@@ -819,6 +833,7 @@ CREATE TABLE users (
 `
 	case contractsdatabase.DriverSqlite:
 		return `
+DROP TABLE IF EXISTS users;
 CREATE TABLE users (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
   name varchar(255) NOT NULL,
@@ -831,6 +846,7 @@ CREATE TABLE users (
 `
 	case contractsdatabase.DriverSqlserver:
 		return `
+DROP TABLE IF EXISTS users;
 CREATE TABLE users (
   id bigint NOT NULL IDENTITY(1,1),
   name varchar(255) NOT NULL,
@@ -851,6 +867,7 @@ func (r *testTables) goravelUser() string {
 	switch r.driver {
 	case contractsdatabase.DriverMysql:
 		return `
+DROP TABLE IF EXISTS goravel_user;
 CREATE TABLE goravel_user (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   name varchar(255) NOT NULL,
@@ -866,6 +883,7 @@ CREATE TABLE goravel_user (
 `
 	case contractsdatabase.DriverPostgres:
 		return `
+DROP TABLE IF EXISTS goravel_user;
 CREATE TABLE goravel_user (
   id SERIAL PRIMARY KEY NOT NULL,
   name varchar(255) NOT NULL,
@@ -878,6 +896,7 @@ CREATE TABLE goravel_user (
 `
 	case contractsdatabase.DriverSqlite:
 		return `
+DROP TABLE IF EXISTS goravel_user;
 CREATE TABLE goravel_user (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
   name varchar(255) NOT NULL,
@@ -890,6 +909,7 @@ CREATE TABLE goravel_user (
 `
 	case contractsdatabase.DriverSqlserver:
 		return `
+DROP TABLE IF EXISTS goravel_user;
 CREATE TABLE goravel_user (
   id bigint NOT NULL IDENTITY(1,1),
   name varchar(255) NOT NULL,
@@ -910,6 +930,7 @@ func (r *testTables) addresses() string {
 	switch r.driver {
 	case contractsdatabase.DriverMysql:
 		return `
+DROP TABLE IF EXISTS addresses;
 CREATE TABLE addresses (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   user_id bigint(20) unsigned DEFAULT NULL,
@@ -924,6 +945,7 @@ CREATE TABLE addresses (
 `
 	case contractsdatabase.DriverPostgres:
 		return `
+DROP TABLE IF EXISTS addresses;
 CREATE TABLE addresses (
   id SERIAL PRIMARY KEY NOT NULL,
   user_id int DEFAULT NULL,
@@ -935,6 +957,7 @@ CREATE TABLE addresses (
 `
 	case contractsdatabase.DriverSqlite:
 		return `
+DROP TABLE IF EXISTS addresses;
 CREATE TABLE addresses (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
   user_id int DEFAULT NULL,
@@ -946,6 +969,7 @@ CREATE TABLE addresses (
 `
 	case contractsdatabase.DriverSqlserver:
 		return `
+DROP TABLE IF EXISTS addresses;
 CREATE TABLE addresses (
   id bigint NOT NULL IDENTITY(1,1),
   user_id bigint DEFAULT NULL,
@@ -965,6 +989,7 @@ func (r *testTables) books() string {
 	switch r.driver {
 	case contractsdatabase.DriverMysql:
 		return `
+DROP TABLE IF EXISTS books;
 CREATE TABLE books (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   user_id bigint(20) unsigned DEFAULT NULL,
@@ -978,6 +1003,7 @@ CREATE TABLE books (
 `
 	case contractsdatabase.DriverPostgres:
 		return `
+DROP TABLE IF EXISTS books;
 CREATE TABLE books (
   id SERIAL PRIMARY KEY NOT NULL,
   user_id int DEFAULT NULL,
@@ -988,6 +1014,7 @@ CREATE TABLE books (
 `
 	case contractsdatabase.DriverSqlite:
 		return `
+DROP TABLE IF EXISTS books;
 CREATE TABLE books (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
   user_id int DEFAULT NULL,
@@ -998,6 +1025,7 @@ CREATE TABLE books (
 `
 	case contractsdatabase.DriverSqlserver:
 		return `
+DROP TABLE IF EXISTS books;
 CREATE TABLE books (
   id bigint NOT NULL IDENTITY(1,1),
   user_id bigint DEFAULT NULL,
@@ -1016,6 +1044,7 @@ func (r *testTables) authors() string {
 	switch r.driver {
 	case contractsdatabase.DriverMysql:
 		return `
+DROP TABLE IF EXISTS authors;
 CREATE TABLE authors (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   book_id bigint(20) unsigned DEFAULT NULL,
@@ -1029,6 +1058,7 @@ CREATE TABLE authors (
 `
 	case contractsdatabase.DriverPostgres:
 		return `
+DROP TABLE IF EXISTS authors;
 CREATE TABLE authors (
   id SERIAL PRIMARY KEY NOT NULL,
   book_id int DEFAULT NULL,
@@ -1039,6 +1069,7 @@ CREATE TABLE authors (
 `
 	case contractsdatabase.DriverSqlite:
 		return `
+DROP TABLE IF EXISTS authors;
 CREATE TABLE authors (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
   book_id int DEFAULT NULL,
@@ -1049,6 +1080,7 @@ CREATE TABLE authors (
 `
 	case contractsdatabase.DriverSqlserver:
 		return `
+DROP TABLE IF EXISTS authors;
 CREATE TABLE authors (
   id bigint NOT NULL IDENTITY(1,1),
   book_id bigint DEFAULT NULL,
@@ -1067,6 +1099,7 @@ func (r *testTables) roles() string {
 	switch r.driver {
 	case contractsdatabase.DriverMysql:
 		return `
+DROP TABLE IF EXISTS roles;
 CREATE TABLE roles (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   name varchar(255) NOT NULL,
@@ -1079,6 +1112,7 @@ CREATE TABLE roles (
 `
 	case contractsdatabase.DriverPostgres:
 		return `
+DROP TABLE IF EXISTS roles;
 CREATE TABLE roles (
   id SERIAL PRIMARY KEY NOT NULL,
   name varchar(255) NOT NULL,
@@ -1088,6 +1122,7 @@ CREATE TABLE roles (
 `
 	case contractsdatabase.DriverSqlite:
 		return `
+DROP TABLE IF EXISTS roles;
 CREATE TABLE roles (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
   name varchar(255) NOT NULL,
@@ -1097,6 +1132,7 @@ CREATE TABLE roles (
 `
 	case contractsdatabase.DriverSqlserver:
 		return `
+DROP TABLE IF EXISTS roles;
 CREATE TABLE roles (
   id bigint NOT NULL IDENTITY(1,1),
   name varchar(255) NOT NULL,
@@ -1114,6 +1150,7 @@ func (r *testTables) houses() string {
 	switch r.driver {
 	case contractsdatabase.DriverMysql:
 		return `
+DROP TABLE IF EXISTS houses;
 CREATE TABLE houses (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   name varchar(255) NOT NULL,
@@ -1128,6 +1165,7 @@ CREATE TABLE houses (
 `
 	case contractsdatabase.DriverPostgres:
 		return `
+DROP TABLE IF EXISTS houses;
 CREATE TABLE houses (
   id SERIAL PRIMARY KEY NOT NULL,
   name varchar(255) NOT NULL,
@@ -1139,6 +1177,7 @@ CREATE TABLE houses (
 `
 	case contractsdatabase.DriverSqlite:
 		return `
+DROP TABLE IF EXISTS houses;
 CREATE TABLE houses (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
   name varchar(255) NOT NULL,
@@ -1150,6 +1189,7 @@ CREATE TABLE houses (
 `
 	case contractsdatabase.DriverSqlserver:
 		return `
+DROP TABLE IF EXISTS houses;
 CREATE TABLE houses (
   id bigint NOT NULL IDENTITY(1,1),
   name varchar(255) NOT NULL,
@@ -1169,6 +1209,7 @@ func (r *testTables) phones() string {
 	switch r.driver {
 	case contractsdatabase.DriverMysql:
 		return `
+DROP TABLE IF EXISTS phones;
 CREATE TABLE phones (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   name varchar(255) NOT NULL,
@@ -1183,6 +1224,7 @@ CREATE TABLE phones (
 `
 	case contractsdatabase.DriverPostgres:
 		return `
+DROP TABLE IF EXISTS phones;
 CREATE TABLE phones (
   id SERIAL PRIMARY KEY NOT NULL,
   name varchar(255) NOT NULL,
@@ -1194,6 +1236,7 @@ CREATE TABLE phones (
 `
 	case contractsdatabase.DriverSqlite:
 		return `
+DROP TABLE IF EXISTS phones;
 CREATE TABLE phones (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
   name varchar(255) NOT NULL,
@@ -1205,6 +1248,7 @@ CREATE TABLE phones (
 `
 	case contractsdatabase.DriverSqlserver:
 		return `
+DROP TABLE IF EXISTS phones;
 CREATE TABLE phones (
   id bigint NOT NULL IDENTITY(1,1),
   name varchar(255) NOT NULL,
@@ -1224,6 +1268,7 @@ func (r *testTables) roleUser() string {
 	switch r.driver {
 	case contractsdatabase.DriverMysql:
 		return `
+DROP TABLE IF EXISTS role_user;
 CREATE TABLE role_user (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   role_id bigint(20) unsigned NOT NULL,
@@ -1233,6 +1278,7 @@ CREATE TABLE role_user (
 `
 	case contractsdatabase.DriverPostgres:
 		return `
+DROP TABLE IF EXISTS role_user;
 CREATE TABLE role_user (
   id SERIAL PRIMARY KEY NOT NULL,
   role_id int NOT NULL,
@@ -1241,6 +1287,7 @@ CREATE TABLE role_user (
 `
 	case contractsdatabase.DriverSqlite:
 		return `
+DROP TABLE IF EXISTS role_user;
 CREATE TABLE role_user (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
   role_id int NOT NULL,
@@ -1249,6 +1296,7 @@ CREATE TABLE role_user (
 `
 	case contractsdatabase.DriverSqlserver:
 		return `
+DROP TABLE IF EXISTS role_user;
 CREATE TABLE role_user (
   id bigint NOT NULL IDENTITY(1,1),
   role_id bigint NOT NULL,
@@ -1265,6 +1313,7 @@ func (r *testTables) schema() string {
 	switch r.driver {
 	case contractsdatabase.DriverMysql:
 		return `
+DROP TABLE IF EXISTS goravel.schemas;
 CREATE TABLE goravel.schemas (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   name varchar(255) NOT NULL,
@@ -1277,6 +1326,7 @@ CREATE TABLE goravel.schemas (
 `
 	case contractsdatabase.DriverPostgres:
 		return `
+DROP TABLE IF EXISTS goravel.schemas;
 CREATE TABLE goravel.schemas (
   id SERIAL PRIMARY KEY NOT NULL,
   name varchar(255) NOT NULL,
@@ -1286,6 +1336,7 @@ CREATE TABLE goravel.schemas (
 `
 	case contractsdatabase.DriverSqlite:
 		return `
+DROP TABLE IF EXISTS goravel.schemas;
 CREATE TABLE goravel.schemas (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
   name varchar(255) NOT NULL,
@@ -1295,6 +1346,7 @@ CREATE TABLE goravel.schemas (
 `
 	case contractsdatabase.DriverSqlserver:
 		return `
+DROP TABLE IF EXISTS goravel.schemas;
 CREATE TABLE goravel.schemas (
   id bigint NOT NULL IDENTITY(1,1),
   name varchar(255) NOT NULL,

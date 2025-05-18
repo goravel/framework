@@ -171,3 +171,5 @@ require (
 	modernc.org/memory v1.8.1 // indirect
 	modernc.org/sqlite v1.34.4 // indirect
 )
+
+replace github.com/dromara/carbon/v2 => github.com/dromara/carbon/v2 v2.5.8

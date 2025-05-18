@@ -43,15 +43,16 @@ func (s *QueryTestSuite) SetupSuite() {
 
 	testQueries := NewTestQueries()
 	s.queries = testQueries.Queries()
+	s.additionalQuery = testQueries.QueryOfAdditional()
+}
+
+func (s *QueryTestSuite) SetupTest() {
 	for _, query := range s.queries {
 		query.CreateTable()
 	}
 
-	s.additionalQuery = testQueries.QueryOfAdditional()
 	s.additionalQuery.CreateTable()
 }
-
-func (s *QueryTestSuite) SetupTest() {}
 
 func (s *QueryTestSuite) TearDownSuite() {
 	if s.queries[database.DriverSqlite] != nil {
