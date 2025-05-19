@@ -2,7 +2,6 @@ package carbon
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -70,7 +69,7 @@ func TestMarshalJSON(t *testing.T) {
 	user.DeletedAt = NewTimestamp(c)
 	data, err := json.Marshal(&user)
 	assert.Nil(t, err)
-	fmt.Printf("user output by json:\n%s\n", data)
+	assert.Equal(t, `{"carbon1":"2020-08-05 13:14:15","carbon2":"2020-08-05 13:14:15","date":"2020-08-05","date_milli":"2020-08-05.999","date_micro":"2020-08-05.999999","date_nano":"2020-08-05.999999999","time":"13:14:15","time_milli":"13:14:15.999","time_micro":"13:14:15.999999","time_nano":"13:14:15.999999999","date_time":"2020-08-05 13:14:15","date_time_milli":"2020-08-05 13:14:15.999","date_time_micro":"2020-08-05 13:14:15.999999","date_time_nano":"2020-08-05 13:14:15.999999999","timestamp":1596633255,"timestamp_milli":1596633255999,"timestamp_micro":1596633255999999,"timestamp_nano":1596633255999999999,"created_at":"2020-08-05 13:14:15","updated_at":"2020-08-05 13:14:15","deleted_at":1596633255}`, string(data))
 }
 
 func TestUnmarshalJSON(t *testing.T) {
