@@ -9,10 +9,10 @@ godebug x509negativeserial=1
 require (
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/goravel/framework v1.15.7
-	github.com/goravel/mysql v0.0.0-20250512071610-0d78c3ccb283
-	github.com/goravel/postgres v0.0.2-0.20250512014831-ed423383da87
-	github.com/goravel/sqlite v0.0.0-20250414101217-fbee7100fe08
-	github.com/goravel/sqlserver v0.0.0-20250330044523-bf0931bdcdff
+	github.com/goravel/mysql v0.0.0-20250513044545-aa0501be0038
+	github.com/goravel/postgres v0.0.2-0.20250513045706-d077324f72e7
+	github.com/goravel/sqlite v0.0.0-20250513044555-d43b50b2f7d5
+	github.com/goravel/sqlserver v0.0.0-20250513034410-09b770f4d4d3
 	github.com/spf13/cast v1.8.0
 	github.com/stretchr/testify v1.10.0
 	gorm.io/gorm v1.26.1
@@ -69,8 +69,8 @@ require (
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/term v0.32.0 // indirect
 	golang.org/x/text v0.25.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250428153025-10db94c68c34 // indirect
-	google.golang.org/grpc v1.72.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250505200425-f936aa4a68b2 // indirect
+	google.golang.org/grpc v1.72.1 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/mysql v1.5.7 // indirect
