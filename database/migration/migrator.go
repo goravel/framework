@@ -63,10 +63,6 @@ func (r *Migrator) Reset() error {
 		return nil
 	}
 
-	if err := r.prepareDatabase(); err != nil {
-		return err
-	}
-
 	ran, err := r.repository.GetRan()
 	if err != nil {
 		return err

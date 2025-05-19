@@ -222,7 +222,7 @@ func (s *MigratorSuite) TestReset() {
 		{
 			name: "failed to get ran",
 			setup: func() {
-				s.mockRepository.EXPECT().RepositoryExists().Return(true).Twice()
+				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
 				s.mockRepository.EXPECT().GetRan().Return(nil, assert.AnError).Once()
 			},
 			expectErr: assert.AnError.Error(),
@@ -234,7 +234,6 @@ func (s *MigratorSuite) TestReset() {
 
 				previousConnection := "postgres"
 				testMigration := NewTestMigration(s.mockSchema)
-				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
 				s.mockRepository.EXPECT().GetRan().Return([]string{testMigration.Signature()}, nil).Once()
 
 				s.mockSchema.EXPECT().Migrations().Return([]contractsschema.Migration{
