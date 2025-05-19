@@ -4,7 +4,6 @@ import (
 	stdtime "time"
 
 	"github.com/dromara/carbon/v2"
-	"github.com/goravel/framework/support/debug"
 )
 
 type Carbon = carbon.Carbon
@@ -16,10 +15,7 @@ func SetTimezone(timezone string) {
 
 // SetLocale sets language locale.
 func SetLocale(locale string) {
-	c := carbon.SetLocale(locale)
-	year, month, day := c.Date()
-	hour, minute, second := c.Time()
-	debug.Dump(c, c.Error, year, month, day, hour, minute, second, c.IsInvalid())
+	carbon.SetLocale(locale)
 }
 
 // SetTestNow sets the test time, remember to clean after use.
