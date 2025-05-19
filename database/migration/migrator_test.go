@@ -222,8 +222,7 @@ func (s *MigratorSuite) TestReset() {
 		{
 			name: "failed to get ran",
 			setup: func() {
-				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
-				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
+				s.mockRepository.EXPECT().RepositoryExists().Return(true).Twice()
 				s.mockRepository.EXPECT().GetRan().Return(nil, assert.AnError).Once()
 			},
 			expectErr: assert.AnError.Error(),
