@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	contractshttp "github.com/goravel/framework/contracts/http"
@@ -18,6 +17,7 @@ import (
 	configmocks "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/session"
 	"github.com/goravel/framework/support/file"
+	"github.com/goravel/framework/support/path"
 )
 
 func testHttpSessionMiddleware(next nethttp.Handler, mockConfig *configmocks.Config) nethttp.Handler {
@@ -28,9 +28,8 @@ func testHttpSessionMiddleware(next nethttp.Handler, mockConfig *configmocks.Con
 }
 
 func mockConfigFacade(mockConfig *configmocks.Config) {
-	mockConfig.On("GetString", "session.driver").Return("file").Twice()
-	mockConfig.On("GetInt", "session.lifetime").Return(60).Once()
-	mockConfig.On("GetString", "session.cookie").Return("goravel_session").Once()
+	mockConfig.On("GetString", "session.driver").Return("file").Once()
+	mockConfig.On("GetInt", "session.lifetime", 120).Return(120).Once()
 	mockConfig.On("GetString", "session.path").Return("/").Once()
 	mockConfig.On("GetString", "session.domain").Return("").Once()
 	mockConfig.On("GetBool", "session.secure").Return(false).Once()
@@ -39,14 +38,15 @@ func mockConfigFacade(mockConfig *configmocks.Config) {
 }
 
 func TestStartSession(t *testing.T) {
-	mockConfig := &configmocks.Config{}
+	mockConfig := configmocks.NewConfig(t)
 	session.ConfigFacade = mockConfig
-	mockConfig.On("GetInt", "session.lifetime").Return(120).Twice()
-	mockConfig.On("GetInt", "session.gc_interval").Return(30).Twice()
-	mockConfig.On("GetString", "session.files").Return("storage/framework/sessions").Twice()
-	mockConfig.On("Get", "session.drivers", mock.AnythingOfType("map[string]interface {}")).Return(
-		map[string]any{},
-	).Once()
+	mockConfig.EXPECT().GetString("session.driver", "file").Return("file").Once()
+	mockConfig.EXPECT().GetString("session.drivers.file.driver").Return("file").Once()
+	mockConfig.EXPECT().GetInt("session.lifetime", 120).Return(120).Once()
+	mockConfig.EXPECT().GetInt("session.gc_interval", 30).Return(30).Once()
+	mockConfig.EXPECT().GetString("session.files").Return(path.Storage("framework/sessions")).Once()
+	mockConfig.EXPECT().GetString("session.cookie").Return("goravel_session").Once()
+
 	session.SessionFacade = session.NewManager(mockConfig, json.New())
 	server := httptest.NewServer(testHttpSessionMiddleware(nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
 		switch r.URL.Path {
@@ -80,7 +80,6 @@ func TestStartSession(t *testing.T) {
 	assert.Equal(t, cookie.Value, resp.Cookies()[0].Value)
 
 	assert.NoError(t, file.Remove("storage"))
-	mockConfig.AssertExpectations(t)
 }
 
 type TestContext struct {
