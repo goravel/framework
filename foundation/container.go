@@ -145,6 +145,9 @@ func (r *Container) MakeDB() contractsdb.DB {
 		color.Errorln(err)
 		return nil
 	}
+	if instance == nil {
+		return nil
+	}
 
 	return instance.(contractsdb.DB)
 }

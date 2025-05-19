@@ -322,8 +322,9 @@ func (s *ApplicationTestSuite) TestMakeMail() {
 }
 
 func (s *ApplicationTestSuite) TestMakeQueue() {
+	mockConfig := mocksconfig.NewConfig(s.T())
 	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
-		return &mocksconfig.Config{}, nil
+		return mockConfig, nil
 	})
 	s.app.Singleton(contracts.BindingDB, func(app foundation.Application) (any, error) {
 		return &mocksdb.DB{}, nil
@@ -334,6 +335,14 @@ func (s *ApplicationTestSuite) TestMakeQueue() {
 
 	serviceProvider := &queue.ServiceProvider{}
 	serviceProvider.Register(s.app)
+
+	mockConfig.EXPECT().GetString("queue.default").Return("redis").Once()
+	mockConfig.EXPECT().GetString("queue.connections.redis.queue", "default").Return("default").Once()
+	mockConfig.EXPECT().GetInt("queue.connections.redis.concurrent", 1).Return(2).Once()
+	mockConfig.EXPECT().GetString("app.name", "goravel").Return("goravel").Once()
+	mockConfig.EXPECT().GetBool("app.debug").Return(true).Once()
+	mockConfig.EXPECT().GetString("queue.failed.database").Return("mysql").Once()
+	mockConfig.EXPECT().GetString("queue.failed.table").Return("failed_jobs").Once()
 
 	s.NotNil(s.app.MakeQueue())
 }

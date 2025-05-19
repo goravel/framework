@@ -34,14 +34,14 @@ func TestQueryTestSuite(t *testing.T) {
 
 func (s *QueryTestSuite) SetupSuite() {
 	s.queries = NewTestQueryBuilder().All("", false)
-	for _, query := range s.queries {
-		query.CreateTable()
-	}
 	s.additionalQuery = NewTestQueryBuilder().Postgres("", false)
-	s.additionalQuery.CreateTable()
 }
 
 func (s *QueryTestSuite) SetupTest() {
+	for _, query := range s.queries {
+		query.CreateTable()
+	}
+	s.additionalQuery.CreateTable()
 }
 
 func (s *QueryTestSuite) TearDownSuite() {
@@ -3311,6 +3311,8 @@ func (s *QueryTestSuite) TestOrWhereNotIn() {
 func (s *QueryTestSuite) TestWhereBetween() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
+			now := carbon.Now()
+
 			user := User{Name: "where_between_user", Avatar: "where_between_avatar"}
 			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
@@ -3326,6 +3328,10 @@ func (s *QueryTestSuite) TestWhereBetween() {
 			var users []User
 			s.Nil(query.Query().WhereBetween("id", user.ID, user2.ID).Find(&users))
 			s.True(len(users) == 3)
+
+			var users1 []User
+			s.Nil(query.Query().WhereBetween("created_at", now.Copy().SubDay(), now.AddDay()).Find(&users1))
+			s.True(len(users1) == 3)
 		})
 	}
 }
@@ -3345,6 +3351,9 @@ func (s *QueryTestSuite) TestWhereNotBetween() {
 			s.Nil(query.Query().Create(&user2))
 			s.True(user2.ID > 0)
 
+			now := carbon.Now().AddSecond()
+			time.Sleep(2 * time.Second)
+
 			user3 := User{Name: "where_not_between_user", Avatar: "where_not_between_avatar_2"}
 			s.Nil(query.Query().Create(&user3))
 			s.True(user3.ID > 0)
@@ -3353,6 +3362,11 @@ func (s *QueryTestSuite) TestWhereNotBetween() {
 			s.Nil(query.Query().Where("name = ?", "where_not_between_user").WhereNotBetween("id", user.ID, user2.ID).Find(&users))
 			s.True(len(users) == 1)
 			s.True(users[0].ID == user3.ID)
+
+			var users1 []User
+			s.Nil(query.Query().Where("name = ?", "where_not_between_user").WhereNotBetween("created_at", now.Copy().SubDay(), now).Find(&users1))
+			s.True(len(users1) == 1)
+			s.True(users1[0].ID == user3.ID)
 		})
 	}
 }
@@ -3372,6 +3386,9 @@ func (s *QueryTestSuite) TestOrWhereBetween() {
 			s.Nil(query.Query().Create(&user2))
 			s.True(user2.ID > 0)
 
+			now := carbon.Now().AddSecond()
+			time.Sleep(2 * time.Second)
+
 			user3 := User{Name: "or_where_between_user_3", Avatar: "or_where_between_avatar_3"}
 			s.Nil(query.Query().Create(&user3))
 			s.True(user3.ID > 0)
@@ -3379,6 +3396,10 @@ func (s *QueryTestSuite) TestOrWhereBetween() {
 			var users []User
 			s.Nil(query.Query().Where("name = ?", "or_where_between_user_3").OrWhereBetween("id", user.ID, user2.ID).Find(&users))
 			s.True(len(users) == 4)
+
+			var users1 []User
+			s.Nil(query.Query().Where("name = ?", "or_where_between_user_3").OrWhereBetween("created_at", now.Copy().SubDay(), now).Find(&users1))
+			s.True(len(users1) == 4)
 		})
 	}
 }
@@ -3398,13 +3419,20 @@ func (s *QueryTestSuite) TestOrWhereNotBetween() {
 			s.Nil(query.Query().Create(&user2))
 			s.True(user2.ID > 0)
 
+			now := carbon.Now().AddSecond()
+			time.Sleep(2 * time.Second)
+
 			user3 := User{Name: "or_where_between_user_3", Avatar: "or_where_between_avatar_3"}
 			s.Nil(query.Query().Create(&user3))
 			s.True(user3.ID > 0)
 
 			var users []User
 			s.Nil(query.Query().Where("name = ?", "or_where_between_user_3").OrWhereNotBetween("id", user.ID, user2.ID).Find(&users))
-			s.True(len(users) >= 1)
+			s.True(len(users) == 1)
+
+			var users1 []User
+			s.Nil(query.Query().Where("name = ?", "or_where_between_user_3").OrWhereNotBetween("created_at", now.Copy().SubDay(), now).Find(&users1))
+			s.True(len(users1) == 1)
 		})
 	}
 }
