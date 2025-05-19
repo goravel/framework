@@ -216,17 +216,24 @@ func (s *MigratorSuite) TestReset() {
 		{
 			name: "Get ran failed",
 			setup: func() {
+				s.mockRepository.EXPECT().RepositoryExists().Return(false).Once()
+			},
+		},
+		{
+			name: "failed to get ran",
+			setup: func() {
 				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
 				s.mockRepository.EXPECT().GetRan().Return(nil, assert.AnError).Once()
 			},
 			expectErr: assert.AnError.Error(),
 		},
 		{
-			name: "Rollback with no files",
+			name: "happy path",
 			setup: func() {
+				s.mockRepository.EXPECT().RepositoryExists().Return(true).Twice()
+
 				previousConnection := "postgres"
 				testMigration := NewTestMigration(s.mockSchema)
-				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
 				s.mockRepository.EXPECT().GetRan().Return([]string{testMigration.Signature()}, nil).Once()
 
 				s.mockSchema.EXPECT().Migrations().Return([]contractsschema.Migration{
@@ -262,14 +269,17 @@ func (s *MigratorSuite) TestRollback() {
 		expectErr string
 	}{
 		{
-			name: "Rollback with no files",
+			name: "happy path - no files",
 			setup: func() {
+				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
 				s.mockRepository.EXPECT().GetMigrationsByStep(1).Return(nil, nil).Once()
 			},
 		},
 		{
-			name: "Rollback with files",
+			name: "happy path",
 			setup: func() {
+				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
+
 				previousConnection := "postgres"
 				testMigration := NewTestMigration(s.mockSchema)
 
@@ -283,14 +293,17 @@ func (s *MigratorSuite) TestRollback() {
 			},
 		},
 		{
-			name: "Rollback with missing migration",
+			name: "happy path - missing migration",
 			setup: func() {
+				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
 				s.mockRepository.EXPECT().GetMigrationsByStep(1).Return([]migration.File{{Migration: "20240817214502_create_users_table"}}, nil).Once()
 			},
 		},
 		{
-			name: "Rollback with error",
+			name: "failed to rollback",
 			setup: func() {
+				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
+
 				previousConnection := "postgres"
 				testMigration := NewTestMigration(s.mockSchema)
 
@@ -303,6 +316,20 @@ func (s *MigratorSuite) TestRollback() {
 				s.mockRunDown(mockOrm, previousConnection, testMigration.Signature(), "users", assert.AnError)
 			},
 			expectErr: assert.AnError.Error(),
+		},
+		{
+			name: "failed to get migrations by step",
+			setup: func() {
+				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
+				s.mockRepository.EXPECT().GetMigrationsByStep(1).Return(nil, assert.AnError).Once()
+			},
+			expectErr: assert.AnError.Error(),
+		},
+		{
+			name: "repository doesn't exist",
+			setup: func() {
+				s.mockRepository.EXPECT().RepositoryExists().Return(false).Once()
+			},
 		},
 	}
 
