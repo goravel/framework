@@ -58,6 +58,12 @@ func (r *DefaultMigrator) Fresh() error {
 }
 
 func (r *DefaultMigrator) Reset() error {
+	if !r.repository.RepositoryExists() {
+		color.Warningln("Migration table not found")
+
+		return nil
+	}
+
 	ran, err := r.repository.GetRan()
 	if err != nil {
 		return err
@@ -67,6 +73,12 @@ func (r *DefaultMigrator) Reset() error {
 }
 
 func (r *DefaultMigrator) Rollback(step, batch int) error {
+	if !r.repository.RepositoryExists() {
+		color.Warningln("Migration table not found")
+
+		return nil
+	}
+
 	files, err := r.getFilesForRollback(step, batch)
 	if err != nil {
 		return err
