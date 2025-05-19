@@ -2,7 +2,7 @@ package packages
 
 import (
 	"os"
-	"path/filepath"
+	"path"
 	"runtime/debug"
 	"strings"
 
@@ -24,7 +24,7 @@ var osExit = os.Exit
 
 func GetModulePath() string {
 	if info, ok := debug.ReadBuildInfo(); ok && strings.HasSuffix(info.Path, "setup") {
-		return filepath.Dir(info.Path)
+		return path.Dir(info.Path)
 	}
 
 	return ""
