@@ -25,7 +25,7 @@ func TestTableCommand(t *testing.T) {
 		mockSchema = mocksschema.NewSchema(t)
 	}
 	successCaseExpected := [][2]string{
-		{"<fg=green;op=bold>test</>", "<fg=gray>test_comment</>"},
+		{"<fg=green;op=bold>public.test</>", "<fg=gray>test_comment</>"},
 		{"Columns", "2"},
 		{"Size", "0.000 MB"},
 		{"Engine", "InnoDB"},
@@ -130,7 +130,7 @@ func TestTableCommand(t *testing.T) {
 				mockSchema.EXPECT().Connection("test").Return(mockSchema).Once()
 				mockContext.EXPECT().Argument(0).Return("").Once()
 				mockSchema.EXPECT().GetTables().Return([]driver.Table{
-					{Name: "test", Comment: "test_comment", Collation: "utf8mb4_general_ci", Engine: "InnoDB"},
+					{Name: "test", Comment: "test_comment", Collation: "utf8mb4_general_ci", Engine: "InnoDB", Schema: "public"},
 				}, nil).Once()
 				mockContext.EXPECT().Choice("Which table would you like to inspect?",
 					[]console.Choice{{Key: "test", Value: "test"}}).Return("test", nil).Once()
