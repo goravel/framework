@@ -13,7 +13,7 @@ type ColumnDefinition interface {
 	Comment(comment string) ColumnDefinition
 	// Default set the default value
 	Default(def any) ColumnDefinition
-	// First place the column "first" in the table (MySQL only)
+	// First sets the column "first" in the table (MySQL only)
 	First() ColumnDefinition
 	// GeneratedAs creates an identity column with specified sequence options (PostgreSQL only)
 	GeneratedAs(expression ...string) ColumnDefinition
