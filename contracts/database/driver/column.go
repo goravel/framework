@@ -15,7 +15,7 @@ type ColumnDefinition interface {
 	Default(def any) ColumnDefinition
 	// First place the column "first" in the table (MySQL only)
 	First() ColumnDefinition
-	// GeneratedAs create an identity column with specified sequence options (PostgreSQL only)
+	// GeneratedAs creates an identity column with specified sequence options (PostgreSQL only)
 	GeneratedAs(expression ...string) ColumnDefinition
 	// GetAfter returns the after value
 	GetAfter() string
