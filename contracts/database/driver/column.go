@@ -1,7 +1,7 @@
 package driver
 
 type ColumnDefinition interface {
-	// After place the column "after" another column (MySQL only)
+	// After sets the column "after" another column (MySQL only)
 	After(column string) ColumnDefinition
 	// Always defines the precedence of sequence values over input for an identity column (PostgreSQL only)
 	Always() ColumnDefinition
