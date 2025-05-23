@@ -22,6 +22,7 @@ type Manager struct {
 
 	cookie        string
 	defaultDriver string
+	files         string
 	gcInterval    int
 	lifetime      int
 
@@ -33,6 +34,7 @@ type Manager struct {
 func NewManager(config config.Config, json foundation.Json) *Manager {
 	cookie := config.GetString("session.cookie")
 	defaultDriver := config.GetString("session.driver", "file")
+	files := config.GetString("session.files")
 	gcInterval := config.GetInt("session.gc_interval", 30)
 	lifetime := config.GetInt("session.lifetime", 120)
 
@@ -42,6 +44,7 @@ func NewManager(config config.Config, json foundation.Json) *Manager {
 
 		cookie:        cookie,
 		defaultDriver: defaultDriver,
+		files:         files,
 		gcInterval:    gcInterval,
 		lifetime:      lifetime,
 
@@ -111,10 +114,11 @@ func (m *Manager) acquireSession() contractssession.Session {
 }
 
 func (m *Manager) custom(driver string) (contractssession.Driver, error) {
-	if custom, ok := m.config.Get(fmt.Sprintf("session.drivers.%s.via", driver)).(contractssession.Driver); ok {
+	via := m.config.Get(fmt.Sprintf("session.drivers.%s.via", driver))
+	if custom, ok := via.(contractssession.Driver); ok {
 		return custom, nil
 	}
-	if custom, ok := m.config.Get(fmt.Sprintf("session.drivers.%s.via", driver)).(func() (contractssession.Driver, error)); ok {
+	if custom, ok := via.(func() (contractssession.Driver, error)); ok {
 		return custom()
 	}
 
@@ -122,7 +126,7 @@ func (m *Manager) custom(driver string) (contractssession.Driver, error) {
 }
 
 func (m *Manager) file() contractssession.Driver {
-	return driver.NewFile(m.config.GetString("session.files"), m.lifetime)
+	return driver.NewFile(m.files, m.lifetime)
 }
 
 func (m *Manager) registerDriver(name string) error {

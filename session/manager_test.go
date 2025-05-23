@@ -91,7 +91,7 @@ func (s *ManagerTestSuite) TestDriver_ResolveDefaultDriver_InternalFile() {
 
 func (s *ManagerTestSuite) TestDriver_ResolveCustomDriver() {
 	s.mockConfig.On("GetString", "session.drivers.my_driver.driver").Return("custom").Once()
-	s.mockConfig.On("Get", "session.drivers.my_driver.via").Return(s.mockOtherFactory).Twice()
+	s.mockConfig.On("Get", "session.drivers.my_driver.via").Return(s.mockOtherFactory).Once()
 
 	driverInstance, err := s.manager.Driver("my_driver")
 	s.Nil(err)
@@ -126,7 +126,7 @@ func (s *ManagerTestSuite) TestBuildSession_WithInternalFileDriver() {
 
 func (s *ManagerTestSuite) TestBuildSession_WithMockDriver() {
 	s.mockConfig.EXPECT().GetString("session.drivers.mock.driver").Return("custom").Once()
-	s.mockConfig.EXPECT().Get("session.drivers.mock.via").Return(s.mockOtherFactory).Twice()
+	s.mockConfig.EXPECT().Get("session.drivers.mock.via").Return(s.mockOtherFactory).Once()
 
 	driverInstance, err := s.manager.Driver("mock")
 	s.Nil(err)
