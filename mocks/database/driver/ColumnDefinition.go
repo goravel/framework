@@ -68,6 +68,53 @@ func (_c *ColumnDefinition_After_Call) RunAndReturn(run func(string) driver.Colu
 	return _c
 }
 
+// Always provides a mock function with no fields
+func (_m *ColumnDefinition) Always() driver.ColumnDefinition {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Always")
+	}
+
+	var r0 driver.ColumnDefinition
+	if rf, ok := ret.Get(0).(func() driver.ColumnDefinition); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(driver.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// ColumnDefinition_Always_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Always'
+type ColumnDefinition_Always_Call struct {
+	*mock.Call
+}
+
+// Always is a helper method to define mock.On call
+func (_e *ColumnDefinition_Expecter) Always() *ColumnDefinition_Always_Call {
+	return &ColumnDefinition_Always_Call{Call: _e.mock.On("Always")}
+}
+
+func (_c *ColumnDefinition_Always_Call) Run(run func()) *ColumnDefinition_Always_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_Always_Call) Return(_a0 driver.ColumnDefinition) *ColumnDefinition_Always_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_Always_Call) RunAndReturn(run func() driver.ColumnDefinition) *ColumnDefinition_Always_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // AutoIncrement provides a mock function with no fields
 func (_m *ColumnDefinition) AutoIncrement() driver.ColumnDefinition {
 	ret := _m.Called()
@@ -305,6 +352,67 @@ func (_c *ColumnDefinition_First_Call) RunAndReturn(run func() driver.ColumnDefi
 	return _c
 }
 
+// GeneratedAs provides a mock function with given fields: expression
+func (_m *ColumnDefinition) GeneratedAs(expression ...string) driver.ColumnDefinition {
+	_va := make([]interface{}, len(expression))
+	for _i := range expression {
+		_va[_i] = expression[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GeneratedAs")
+	}
+
+	var r0 driver.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(...string) driver.ColumnDefinition); ok {
+		r0 = rf(expression...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(driver.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// ColumnDefinition_GeneratedAs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GeneratedAs'
+type ColumnDefinition_GeneratedAs_Call struct {
+	*mock.Call
+}
+
+// GeneratedAs is a helper method to define mock.On call
+//   - expression ...string
+func (_e *ColumnDefinition_Expecter) GeneratedAs(expression ...interface{}) *ColumnDefinition_GeneratedAs_Call {
+	return &ColumnDefinition_GeneratedAs_Call{Call: _e.mock.On("GeneratedAs",
+		append([]interface{}{}, expression...)...)}
+}
+
+func (_c *ColumnDefinition_GeneratedAs_Call) Run(run func(expression ...string)) *ColumnDefinition_GeneratedAs_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_GeneratedAs_Call) Return(_a0 driver.ColumnDefinition) *ColumnDefinition_GeneratedAs_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_GeneratedAs_Call) RunAndReturn(run func(...string) driver.ColumnDefinition) *ColumnDefinition_GeneratedAs_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetAfter provides a mock function with no fields
 func (_m *ColumnDefinition) GetAfter() string {
 	ret := _m.Called()
@@ -530,6 +638,51 @@ func (_c *ColumnDefinition_GetDefault_Call) Return(_a0 interface{}) *ColumnDefin
 }
 
 func (_c *ColumnDefinition_GetDefault_Call) RunAndReturn(run func() interface{}) *ColumnDefinition_GetDefault_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetGeneratedAs provides a mock function with no fields
+func (_m *ColumnDefinition) GetGeneratedAs() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetGeneratedAs")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// ColumnDefinition_GetGeneratedAs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetGeneratedAs'
+type ColumnDefinition_GetGeneratedAs_Call struct {
+	*mock.Call
+}
+
+// GetGeneratedAs is a helper method to define mock.On call
+func (_e *ColumnDefinition_Expecter) GetGeneratedAs() *ColumnDefinition_GetGeneratedAs_Call {
+	return &ColumnDefinition_GetGeneratedAs_Call{Call: _e.mock.On("GetGeneratedAs")}
+}
+
+func (_c *ColumnDefinition_GetGeneratedAs_Call) Run(run func()) *ColumnDefinition_GetGeneratedAs_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_GetGeneratedAs_Call) Return(_a0 string) *ColumnDefinition_GetGeneratedAs_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_GetGeneratedAs_Call) RunAndReturn(run func() string) *ColumnDefinition_GetGeneratedAs_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1031,6 +1184,51 @@ func (_c *ColumnDefinition_GetUseCurrentOnUpdate_Call) RunAndReturn(run func() b
 	return _c
 }
 
+// IsAlways provides a mock function with no fields
+func (_m *ColumnDefinition) IsAlways() bool {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for IsAlways")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// ColumnDefinition_IsAlways_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsAlways'
+type ColumnDefinition_IsAlways_Call struct {
+	*mock.Call
+}
+
+// IsAlways is a helper method to define mock.On call
+func (_e *ColumnDefinition_Expecter) IsAlways() *ColumnDefinition_IsAlways_Call {
+	return &ColumnDefinition_IsAlways_Call{Call: _e.mock.On("IsAlways")}
+}
+
+func (_c *ColumnDefinition_IsAlways_Call) Run(run func()) *ColumnDefinition_IsAlways_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_IsAlways_Call) Return(_a0 bool) *ColumnDefinition_IsAlways_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_IsAlways_Call) RunAndReturn(run func() bool) *ColumnDefinition_IsAlways_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // IsChange provides a mock function with no fields
 func (_m *ColumnDefinition) IsChange() bool {
 	ret := _m.Called()
@@ -1162,6 +1360,51 @@ func (_c *ColumnDefinition_IsSetComment_Call) Return(_a0 bool) *ColumnDefinition
 }
 
 func (_c *ColumnDefinition_IsSetComment_Call) RunAndReturn(run func() bool) *ColumnDefinition_IsSetComment_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// IsSetGeneratedAs provides a mock function with no fields
+func (_m *ColumnDefinition) IsSetGeneratedAs() bool {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for IsSetGeneratedAs")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// ColumnDefinition_IsSetGeneratedAs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsSetGeneratedAs'
+type ColumnDefinition_IsSetGeneratedAs_Call struct {
+	*mock.Call
+}
+
+// IsSetGeneratedAs is a helper method to define mock.On call
+func (_e *ColumnDefinition_Expecter) IsSetGeneratedAs() *ColumnDefinition_IsSetGeneratedAs_Call {
+	return &ColumnDefinition_IsSetGeneratedAs_Call{Call: _e.mock.On("IsSetGeneratedAs")}
+}
+
+func (_c *ColumnDefinition_IsSetGeneratedAs_Call) Run(run func()) *ColumnDefinition_IsSetGeneratedAs_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_IsSetGeneratedAs_Call) Return(_a0 bool) *ColumnDefinition_IsSetGeneratedAs_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_IsSetGeneratedAs_Call) RunAndReturn(run func() bool) *ColumnDefinition_IsSetGeneratedAs_Call {
 	_c.Call.Return(run)
 	return _c
 }

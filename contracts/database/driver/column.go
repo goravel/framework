@@ -1,8 +1,10 @@
 package driver
 
 type ColumnDefinition interface {
-	// After Place the column "after" another column (MySQL only)
+	// After sets the column "after" another column (MySQL only)
 	After(column string) ColumnDefinition
+	// Always defines the precedence of sequence values over input for an identity column (PostgreSQL only)
+	Always() ColumnDefinition
 	// AutoIncrement set the column as auto increment
 	AutoIncrement() ColumnDefinition
 	// Change the column (MySQL / PostgreSQL / SQL Server)
@@ -11,8 +13,10 @@ type ColumnDefinition interface {
 	Comment(comment string) ColumnDefinition
 	// Default set the default value
 	Default(def any) ColumnDefinition
-	// First Place the column "first" in the table (MySQL only)
+	// First sets the column "first" in the table (MySQL only)
 	First() ColumnDefinition
+	// GeneratedAs creates an identity column with specified sequence options (PostgreSQL only)
+	GeneratedAs(expression ...string) ColumnDefinition
 	// GetAfter returns the after value
 	GetAfter() string
 	// GetAllowed returns the allowed value
@@ -23,6 +27,8 @@ type ColumnDefinition interface {
 	GetComment() (comment string)
 	// GetDefault returns the default value
 	GetDefault() any
+	// GetGeneratedAs returns the generatedAs value
+	GetGeneratedAs() string
 	// GetLength returns the length value
 	GetLength() int
 	// GetName returns the name value
@@ -45,12 +51,16 @@ type ColumnDefinition interface {
 	GetUseCurrent() bool
 	// GetUseCurrentOnUpdate returns the useCurrentOnUpdate value
 	GetUseCurrentOnUpdate() bool
+	// IsAlways returns the always value
+	IsAlways() bool
 	// IsChange returns true if the column has changed
 	IsChange() bool
 	// IsFirst returns true if the column is first
 	IsFirst() bool
 	// IsSetComment returns true if the comment value is set
 	IsSetComment() bool
+	// IsSetGeneratedAs returns true if the generatedAs value is set
+	IsSetGeneratedAs() bool
 	// OnUpdate sets the column to use the value on update (Mysql only)
 	OnUpdate(value any) ColumnDefinition
 	// Places set the decimal places
