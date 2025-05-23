@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/gookit/validate"
 	"github.com/spf13/cast"
@@ -17,6 +18,7 @@ import (
 
 	"github.com/goravel/framework/foundation/json"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/convert"
 )
 
 func TestBind_Rule(t *testing.T) {
@@ -39,6 +41,7 @@ func TestBind_Rule(t *testing.T) {
 		TimestampMilli *carbon.TimestampMilli `form:"timestamp_milli" json:"timestamp_milli"`
 		TimestampMicro *carbon.TimestampMicro `form:"timestamp_micro" json:"timestamp_micro"`
 		TimestampNano  *carbon.TimestampNano  `form:"timestamp_nano" json:"timestamp_nano"`
+		Time           *time.Time             `form:"time" json:"time"`
 	}
 
 	tests := []struct {
@@ -542,6 +545,40 @@ func TestBind_Rule(t *testing.T) {
 			},
 		},
 		{
+			name: "data is post request with Time",
+			data: func() validate.DataFace {
+				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"time": "2025-05-23 22:16:39"}`))
+				request.Header.Set("Content-Type", "application/json")
+				assert.Nil(t, err)
+
+				data, err := validate.FromRequest(request)
+				assert.Nil(t, err)
+
+				return data
+			}(),
+			rules: map[string]string{"time": "required"},
+			assert: func(data Data) {
+				assert.Equal(t, "2025-05-23 22:16:39", data.Time.Format("2006-01-02 15:04:05"))
+			},
+		},
+		{
+			name: "data is post request with Time(date)",
+			data: func() validate.DataFace {
+				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"time": "2025-05-23"}`))
+				request.Header.Set("Content-Type", "application/json")
+				assert.Nil(t, err)
+
+				data, err := validate.FromRequest(request)
+				assert.Nil(t, err)
+
+				return data
+			}(),
+			rules: map[string]string{"time": "required"},
+			assert: func(data Data) {
+				assert.Equal(t, "2025-05-23", data.Time.Format("2006-01-02"))
+			},
+		},
+		{
 			name: "data is post request with body",
 			data: func() validate.DataFace {
 				request := buildRequest(t)
@@ -767,6 +804,7 @@ func TestCastValue(t *testing.T) {
 		PointerTimestampMilli *carbon.TimestampMilli `form:"PointerTimestampMilli" json:"PointerTimestampMilli"`
 		PointerTimestampMicro *carbon.TimestampMicro `form:"PointerTimestampMicro" json:"PointerTimestampMicro"`
 		PointerTimestampNano  *carbon.TimestampNano  `form:"PointerTimestampNano" json:"PointerTimestampNano"`
+		PointerTime           *time.Time             `form:"PointerTime" json:"PointerTime"`
 		Carbon                carbon.Carbon          `form:"Carbon" json:"Carbon"`
 		DateTime              carbon.DateTime        `form:"DateTime" json:"DateTime"`
 		DateTimeMilli         carbon.DateTimeMilli   `form:"DateTimeMilli" json:"DateTimeMilli"`
@@ -780,6 +818,7 @@ func TestCastValue(t *testing.T) {
 		TimestampMilli        carbon.TimestampMilli  `form:"TimestampMilli" json:"TimestampMilli"`
 		TimestampMicro        carbon.TimestampMicro  `form:"TimestampMicro" json:"TimestampMicro"`
 		TimestampNano         carbon.TimestampNano   `form:"TimestampNano" json:"TimestampNano"`
+		Time                  time.Time              `form:"Time" json:"Time"`
 	}
 
 	wantData := Data{
@@ -815,6 +854,7 @@ func TestCastValue(t *testing.T) {
 		PointerTimestampMilli: carbon.NewTimestampMilli(carbon.FromTimestampMilli(timestampMilli)),
 		PointerTimestampMicro: carbon.NewTimestampMicro(carbon.FromTimestampMicro(timestampMicro)),
 		PointerTimestampNano:  carbon.NewTimestampNano(carbon.FromTimestampNano(timestampNano)),
+		PointerTime:           convert.Pointer(carbon.NewDateTime(carbon.Parse(dateTime)).StdTime()),
 		Carbon:                *carbon.Parse(dateTime),
 		DateTime:              *carbon.NewDateTime(carbon.Parse(dateTime)),
 		DateTimeMilli:         *carbon.NewDateTimeMilli(carbon.Parse(dateTime)),
@@ -828,6 +868,7 @@ func TestCastValue(t *testing.T) {
 		TimestampMilli:        *carbon.NewTimestampMilli(carbon.FromTimestampMilli(timestampMilli)),
 		TimestampMicro:        *carbon.NewTimestampMicro(carbon.FromTimestampMicro(timestampMicro)),
 		TimestampNano:         *carbon.NewTimestampNano(carbon.FromTimestampNano(timestampNano)),
+		Time:                  carbon.NewDateTime(carbon.Parse(dateTime)).StdTime(),
 	}
 
 	tests := []struct {
@@ -871,6 +912,7 @@ func TestCastValue(t *testing.T) {
 					PointerTimestampMilli: carbon.NewTimestampMilli(carbon.Parse(dateTime)),
 					PointerTimestampMicro: carbon.NewTimestampMicro(carbon.Parse(dateTime)),
 					PointerTimestampNano:  carbon.NewTimestampNano(carbon.Parse(dateTime)),
+					PointerTime:           convert.Pointer(carbon.NewDateTime(carbon.Parse(dateTime)).StdTime()),
 					Carbon:                *carbon.Parse(dateTime),
 					DateTime:              *carbon.NewDateTime(carbon.Parse(dateTime)),
 					DateTimeMilli:         *carbon.NewDateTimeMilli(carbon.Parse(dateTime)),
@@ -884,6 +926,7 @@ func TestCastValue(t *testing.T) {
 					TimestampMilli:        *carbon.NewTimestampMilli(carbon.Parse(dateTime)),
 					TimestampMicro:        *carbon.NewTimestampMicro(carbon.Parse(dateTime)),
 					TimestampNano:         *carbon.NewTimestampNano(carbon.Parse(dateTime)),
+					Time:                  carbon.NewDateTime(carbon.Parse(dateTime)).StdTime(),
 				}
 				jsonBytes, err := json.New().Marshal(body)
 				assert.Nil(t, err)
@@ -932,6 +975,7 @@ func TestCastValue(t *testing.T) {
 					"PointerTimestampMilli": timestampMilli,
 					"PointerTimestampMicro": timestampMicro,
 					"PointerTimestampNano":  timestampNano,
+					"PointerTime":           dateTime,
 					"Carbon":                dateTime,
 					"DateTime":              dateTime,
 					"DateTimeMilli":         dateTime,
@@ -945,6 +989,7 @@ func TestCastValue(t *testing.T) {
 					"TimestampMilli":        timestampMilli,
 					"TimestampMicro":        timestampMicro,
 					"TimestampNano":         timestampNano,
+					"Time":                  dateTime,
 				}
 				jsonBytes, err := json.New().Marshal(body)
 				assert.Nil(t, err)
