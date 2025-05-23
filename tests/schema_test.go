@@ -1820,6 +1820,43 @@ func (s *SchemaSuite) TestFullText() {
 	}
 }
 
+func (s *SchemaSuite) TestGeneratedAs_Postgres() {
+	if s.driverToTestQuery[postgres.Name] == nil {
+		s.T().Skip("Skip test")
+	}
+
+	testQuery := s.driverToTestQuery[postgres.Name]
+	schema := newSchema(testQuery, s.driverToTestQuery)
+	table := "postgres_generated_as"
+
+	s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+		table.ID()
+		table.String("name")
+		table.Integer("small_integer").GeneratedAs()
+		table.BigInteger("integer").GeneratedAs("START WITH 10 INCREMENT BY 2")
+		table.SmallInteger("big_integer").GeneratedAs("START WITH 20 INCREMENT BY 5").Always()
+
+	}))
+
+	type PostgresGeneratedAs struct {
+		ID           uint `gorm:"primaryKey"`
+		Name         string
+		SmallInteger int
+		Integer      int32
+		BigInteger   int64
+	}
+
+	s.NoError(testQuery.Query().Table(table).Create([]map[string]any{{"name": "test_1"}, {"name": "test_2"}, {"name": "test_3"}}))
+
+	var postgresGeneratedAsList []PostgresGeneratedAs
+	s.NoError(testQuery.Query().Table(table).Find(&postgresGeneratedAsList))
+	s.Len(postgresGeneratedAsList, 3)
+
+	s.Equal(PostgresGeneratedAs{1, "test_1", 1, 10, 20}, postgresGeneratedAsList[0])
+	s.Equal(PostgresGeneratedAs{2, "test_2", 2, 12, 25}, postgresGeneratedAsList[1])
+	s.Equal(PostgresGeneratedAs{3, "test_3", 3, 14, 30}, postgresGeneratedAsList[2])
+}
+
 func (s *SchemaSuite) TestPrimary() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver, func() {
