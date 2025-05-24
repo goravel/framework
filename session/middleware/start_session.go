@@ -44,7 +44,7 @@ func StartSession() http.Middleware {
 		ctx.Response().Cookie(http.Cookie{
 			Name:     s.GetName(),
 			Value:    s.GetID(),
-			Expires:  carbon.Now().AddMinutes(config.GetInt("session.lifetime")).StdTime(),
+			Expires:  carbon.Now().AddMinutes(config.GetInt("session.lifetime", 120)).StdTime(),
 			Path:     config.GetString("session.path"),
 			Domain:   config.GetString("session.domain"),
 			Secure:   config.GetBool("session.secure"),
