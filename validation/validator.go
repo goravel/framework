@@ -3,6 +3,7 @@ package validation
 import (
 	"net/url"
 	"reflect"
+	"time"
 
 	"github.com/go-viper/mapstructure/v2"
 	"github.com/gookit/validate"
@@ -197,6 +198,10 @@ func (v *Validator) castValue() mapstructure.DecodeHookFunc {
 			case reflect.TypeOf(carbon.TimestampNano{}):
 				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
 					return carbon.NewTimestampNano(c)
+				})
+			case reflect.TypeOf(time.Time{}):
+				castedValue = castCarbon(from, func(c *carbon.Carbon) any {
+					return c.StdTime()
 				})
 			}
 		default:
