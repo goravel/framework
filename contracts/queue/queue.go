@@ -2,7 +2,7 @@ package queue
 
 type Queue interface {
 	// Chain creates a chain of jobs to be processed one by one, passing
-	Chain(jobs []Jobs) PendingJob
+	Chain(jobs []ChainJob) PendingJob
 	// GetJob get job by signature
 	GetJob(signature string) (Job, error)
 	// GetJobs get all jobs

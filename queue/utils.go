@@ -75,20 +75,20 @@ func TaskToJson(task contractsqueue.Task, json foundation.Json) (string, error) 
 	return payload, nil
 }
 
-func JsonToTask(payload string, queue contractsqueue.Queue, json foundation.Json) (contractsqueue.Task, error) {
+func JsonToTask(payload string, jobStorer contractsqueue.JobStorer, json foundation.Json) (contractsqueue.Task, error) {
 	var task Task
 	if err := json.Unmarshal([]byte(payload), &task); err != nil {
 		return contractsqueue.Task{}, err
 	}
 
-	chain := make([]contractsqueue.Jobs, len(task.Chain))
+	chain := make([]contractsqueue.ChainJob, len(task.Chain))
 	for i, item := range task.Chain {
-		job, err := queue.GetJob(item.Signature)
+		job, err := jobStorer.Get(item.Signature)
 		if err != nil {
 			return contractsqueue.Task{}, err
 		}
 
-		jobs := contractsqueue.Jobs{
+		jobs := contractsqueue.ChainJob{
 			Job:  job,
 			Args: item.Args,
 		}
@@ -100,12 +100,12 @@ func JsonToTask(payload string, queue contractsqueue.Queue, json foundation.Json
 		chain[i] = jobs
 	}
 
-	job, err := queue.GetJob(task.Job.Signature)
+	job, err := jobStorer.Get(task.Job.Signature)
 	if err != nil {
 		return contractsqueue.Task{}, err
 	}
 
-	jobs := contractsqueue.Jobs{
+	jobs := contractsqueue.ChainJob{
 		Job:  job,
 		Args: task.Args,
 	}
@@ -115,9 +115,9 @@ func JsonToTask(payload string, queue contractsqueue.Queue, json foundation.Json
 	}
 
 	return contractsqueue.Task{
-		UUID:  task.UUID,
-		Jobs:  jobs,
-		Chain: chain,
+		UUID:     task.UUID,
+		ChainJob: jobs,
+		Chain:    chain,
 	}, nil
 }
 

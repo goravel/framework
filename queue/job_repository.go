@@ -18,16 +18,16 @@ type FailedJob struct {
 	FailedAt   *carbon.DateTime `db:"failed_at"`
 }
 
-type JobRepository struct {
+type JobStorer struct {
 	jobs sync.Map
 }
 
-func NewJobRepository() *JobRepository {
-	return &JobRepository{}
+func NewJobStorer() *JobStorer {
+	return &JobStorer{}
 }
 
 // All gets all registered jobs
-func (r *JobRepository) All() []contractsqueue.Job {
+func (r *JobStorer) All() []contractsqueue.Job {
 	var jobs []contractsqueue.Job
 	r.jobs.Range(func(_, value any) bool {
 		jobs = append(jobs, value.(contractsqueue.Job))
@@ -38,7 +38,7 @@ func (r *JobRepository) All() []contractsqueue.Job {
 }
 
 // Call calls a registered job using its signature
-func (r *JobRepository) Call(signature string, args []any) error {
+func (r *JobStorer) Call(signature string, args []any) error {
 	job, err := r.Get(signature)
 	if err != nil {
 		return err
@@ -48,7 +48,7 @@ func (r *JobRepository) Call(signature string, args []any) error {
 }
 
 // Get gets a registered job using its signature
-func (r *JobRepository) Get(signature string) (contractsqueue.Job, error) {
+func (r *JobStorer) Get(signature string) (contractsqueue.Job, error) {
 	if job, ok := r.jobs.Load(signature); ok {
 		return job.(contractsqueue.Job), nil
 	}
@@ -57,7 +57,7 @@ func (r *JobRepository) Get(signature string) (contractsqueue.Job, error) {
 }
 
 // Register registers jobs to the job manager
-func (r *JobRepository) Register(jobs []contractsqueue.Job) {
+func (r *JobStorer) Register(jobs []contractsqueue.Job) {
 	for _, job := range jobs {
 		r.jobs.Store(job.Signature(), job)
 	}

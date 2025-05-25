@@ -30,8 +30,8 @@ func (s *SyncTestSuite) SetupSuite() {
 	s.mockConfig = mocksqueue.NewConfig(s.T())
 
 	s.app = &Application{
-		config: s.mockConfig,
-		job:    NewJobRepository(),
+		config:    s.mockConfig,
+		jobStorer: NewJobStorer(),
 	}
 
 	s.app.Register([]queue.Job{&TestJobOne{}, &TestJobTwo{}, &TestJobErr{}})
@@ -43,7 +43,6 @@ func (s *SyncTestSuite) SetupTest() {
 
 	s.mockConfig.EXPECT().DefaultConnection().Return("sync").Once()
 	s.mockConfig.EXPECT().DefaultQueue().Return("default").Once()
-	s.mockConfig.EXPECT().QueueKey("sync", "default").Return("sync_queue").Once()
 	s.mockConfig.EXPECT().Driver("sync").Return(queue.DriverSync).Once()
 }
 
@@ -94,7 +93,7 @@ func (s *SyncTestSuite) TestChainDispatch() {
 			Value: []int{4, 5, 6},
 		},
 	}
-	s.Nil(s.app.Chain([]queue.Jobs{
+	s.Nil(s.app.Chain([]queue.ChainJob{
 		{
 			Job:  &TestJobOne{},
 			Args: argsOne,
@@ -147,7 +146,7 @@ func (s *SyncTestSuite) TestChainDispatchWithError() {
 		},
 	}
 
-	s.Equal(assert.AnError, s.app.Chain([]queue.Jobs{
+	s.Equal(assert.AnError, s.app.Chain([]queue.ChainJob{
 		{
 			Job:  &TestJobOne{},
 			Args: argsOne,

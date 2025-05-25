@@ -20,7 +20,8 @@ import (
 type Worker struct {
 	config queue.Config
 	db     db.DB
-	job    queue.JobRepository
+	driver queue.Driver
+	job    queue.JobStorer
 	json   foundation.Json
 	log    log.Log
 
@@ -37,10 +38,16 @@ type Worker struct {
 	wg            sync.WaitGroup
 }
 
-func NewWorker(config queue.Config, db db.DB, job queue.JobRepository, json foundation.Json, log log.Log, connection, queue string, concurrent int) *Worker {
+func NewWorker(config queue.Config, db db.DB, job queue.JobStorer, json foundation.Json, log log.Log, connection, queue string, concurrent int) *Worker {
+	driver, err := NewDriver(connection, config, db, job, json)
+	if err != nil {
+		panic(err)
+	}
+
 	return &Worker{
 		config: config,
 		db:     db,
+		driver: driver,
 		job:    job,
 		json:   json,
 		log:    log,
@@ -57,11 +64,7 @@ func NewWorker(config queue.Config, db db.DB, job queue.JobRepository, json foun
 }
 
 func (r *Worker) Run() error {
-	driver, err := NewDriver(r.connection, r.config)
-	if err != nil {
-		return err
-	}
-	if driver.Driver() == queue.DriverSync {
+	if r.driver.Driver() == queue.DriverSync {
 		color.Warningln(errors.QueueDriverSyncNotNeedToRun.Args(r.connection).SetModule(errors.ModuleQueue).Error())
 		return nil
 	}
@@ -72,7 +75,7 @@ func (r *Worker) Run() error {
 		return err
 	}
 
-	return r.run(driver)
+	return r.run()
 }
 
 // RunMachinery will be removed in v1.17
@@ -112,12 +115,12 @@ func (r *Worker) call(task queue.Task) error {
 	r.printRunningLog(task)
 
 	if !task.Delay.IsZero() {
-		time.Sleep(time.Until(task.Delay))
+		time.Sleep(carbon.FromStdTime(task.Delay).DiffAbsInDuration())
 	}
 
 	now := carbon.Now()
 	err := r.job.Call(task.Job.Signature(), ConvertArgs(task.Args))
-	duration := carbon.Now().DiffAbsInDuration(now).String()
+	duration := now.DiffAbsInDuration().String()
 
 	if err != nil {
 		payload, jsonErr := TaskToJson(task, r.json)
@@ -201,12 +204,10 @@ func (r *Worker) printFailedLog(task queue.Task, duration string) {
 	color.Default().Println(console.TwoColumnDetail(first, second))
 }
 
-func (r *Worker) run(driver queue.Driver) error {
+func (r *Worker) run() error {
 	if r.debug {
 		color.Infoln(errors.QueueProcessingJobs.Args(r.connection, r.queue))
 	}
-
-	queueKey := r.config.QueueKey(r.connection, r.queue)
 
 	for i := 0; i < r.concurrent; i++ {
 		r.wg.Add(1)
@@ -217,10 +218,10 @@ func (r *Worker) run(driver queue.Driver) error {
 					return
 				}
 
-				task, err := driver.Pop(queueKey)
+				reservedJob, err := r.driver.Pop(r.queue)
 				if err != nil {
 					if !errors.Is(err, errors.QueueDriverNoJobFound) {
-						r.log.Error(errors.QueueDriverFailedToPop.Args(queueKey, err))
+						r.log.Error(errors.QueueDriverFailedToPop.Args(r.queue, err))
 
 						r.currentDelay *= 2
 						if r.currentDelay > r.maxDelay {
@@ -235,8 +236,11 @@ func (r *Worker) run(driver queue.Driver) error {
 
 				r.currentDelay = 1 * time.Second
 
-				// the main job should be delayed in the driver
-				task.Delay = time.Time{}
+				task := reservedJob.Task()
+				if !task.Delay.IsZero() {
+					time.Sleep(carbon.FromStdTime(task.Delay).DiffAbsInDuration())
+				}
+
 				if err := r.call(task); err != nil {
 					r.log.Error(err)
 					continue
@@ -245,9 +249,9 @@ func (r *Worker) run(driver queue.Driver) error {
 				if len(task.Chain) > 0 {
 					for i, chain := range task.Chain {
 						chainTask := queue.Task{
-							Jobs:  chain,
-							UUID:  task.UUID,
-							Chain: task.Chain[i+1:],
+							ChainJob: chain,
+							UUID:     task.UUID,
+							Chain:    task.Chain[i+1:],
 						}
 
 						if err := r.call(chainTask); err != nil {
@@ -255,6 +259,10 @@ func (r *Worker) run(driver queue.Driver) error {
 							continue
 						}
 					}
+				}
+
+				if err := reservedJob.Delete(); err != nil {
+					r.log.Error(errors.QueueFailedToDeleteReservedJob.Args(reservedJob, err))
 				}
 			}
 		}()

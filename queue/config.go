@@ -70,10 +70,6 @@ func (r *Config) FailedTable() string {
 	return r.failedTable
 }
 
-func (r *Config) QueueKey(connection, queue string) string {
-	return fmt.Sprintf("%s_queues:%s_%s", r.appName, connection, queue)
-}
-
 func (r *Config) Via(connection string) any {
 	return r.Get(fmt.Sprintf("queue.connections.%s.via", connection))
 }

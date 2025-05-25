@@ -1,22 +1,26 @@
 package queue
 
 import (
-	"github.com/goravel/framework/contracts/queue"
+	contractsdb "github.com/goravel/framework/contracts/database/db"
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
+	contractsqueue "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
 )
 
-func NewDriver(connection string, config queue.Config) (queue.Driver, error) {
+func NewDriver(connection string, config contractsqueue.Config, db contractsdb.DB, jobStorer contractsqueue.JobStorer, json contractsfoundation.Json) (contractsqueue.Driver, error) {
 	driver := config.Driver(connection)
 
 	switch driver {
-	case queue.DriverSync:
-		return NewSync(connection), nil
-	case queue.DriverCustom:
+	case contractsqueue.DriverSync:
+		return NewSync(), nil
+	case contractsqueue.DriverDatabase:
+		return NewDatabase(config, db, jobStorer, json, connection)
+	case contractsqueue.DriverCustom:
 		custom := config.Via(connection)
-		if driver, ok := custom.(queue.Driver); ok {
+		if driver, ok := custom.(contractsqueue.Driver); ok {
 			return driver, nil
 		}
-		if driver, ok := custom.(func() (queue.Driver, error)); ok {
+		if driver, ok := custom.(func() (contractsqueue.Driver, error)); ok {
 			return driver()
 		}
 		return nil, errors.QueueDriverInvalid.Args(connection)

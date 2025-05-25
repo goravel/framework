@@ -22,7 +22,7 @@ type WorkerTestSuite struct {
 	mockConfig *mocksqueue.Config
 	mockDB     *mocksdb.DB
 	mockLog    *mockslog.Log
-	mockJob    *mocksqueue.JobRepository
+	mockJob    *mocksqueue.JobStorer
 	worker     *Worker
 }
 
@@ -36,7 +36,7 @@ func (s *WorkerTestSuite) SetupTest() {
 
 	s.mockDB = mocksdb.NewDB(s.T())
 	s.mockLog = mockslog.NewLog(s.T())
-	s.mockJob = mocksqueue.NewJobRepository(s.T())
+	s.mockJob = mocksqueue.NewJobStorer(s.T())
 
 	s.worker = NewWorker(s.mockConfig, s.mockDB, s.mockJob, json.New(), s.mockLog, "sync", "default", 2)
 }
@@ -56,21 +56,21 @@ func (s *WorkerTestSuite) Test_run() {
 	queue := "default"
 	queueKey := fmt.Sprintf("%s_%s:%s_%s", "goravel", "queues", connection, queue)
 	errorTask := contractsqueue.Task{
-		Jobs: contractsqueue.Jobs{
+		ChainJob: contractsqueue.ChainJob{
 			Job:   &TestJobErr{},
 			Delay: time.Now().Add(1 * time.Hour),
 		},
 		UUID:  "test",
-		Chain: []contractsqueue.Jobs{},
+		Chain: []contractsqueue.ChainJob{},
 	}
 	successTask := contractsqueue.Task{
-		Jobs: contractsqueue.Jobs{
+		ChainJob: contractsqueue.ChainJob{
 			Job:   &TestJobOne{},
 			Args:  testArgs,
 			Delay: time.Now().Add(1 * time.Hour),
 		},
 		UUID:  "test",
-		Chain: []contractsqueue.Jobs{},
+		Chain: []contractsqueue.ChainJob{},
 	}
 	failedJob := &FailedJob{
 		UUID:       errorTask.UUID,
@@ -83,15 +83,14 @@ func (s *WorkerTestSuite) Test_run() {
 
 	s.Run("no job found", func() {
 		s.mockConfig.EXPECT().Debug().Return(true).Once()
-		s.mockConfig.EXPECT().QueueKey(connection, queue).Return(queueKey).Once()
 
 		mockDriver := mocksqueue.NewDriver(s.T())
-		mockDriver.EXPECT().Pop(queueKey).Return(contractsqueue.Task{}, errors.QueueDriverNoJobFound).Once()
+		mockDriver.EXPECT().Pop(queueKey).Return(nil, errors.QueueDriverNoJobFound).Once()
 
 		worker := NewWorker(s.mockConfig, s.mockDB, s.mockJob, json.New(), s.mockLog, connection, queue, 1)
 
 		go func() {
-			err := worker.run(mockDriver)
+			err := worker.run()
 			s.NoError(err)
 		}()
 
@@ -102,17 +101,16 @@ func (s *WorkerTestSuite) Test_run() {
 
 	s.Run("failed to pop job", func() {
 		s.mockConfig.EXPECT().Debug().Return(true).Once()
-		s.mockConfig.EXPECT().QueueKey(connection, queue).Return(queueKey).Once()
 
 		mockDriver := mocksqueue.NewDriver(s.T())
-		mockDriver.EXPECT().Pop(queueKey).Return(contractsqueue.Task{}, assert.AnError).Once()
+		mockDriver.EXPECT().Pop(queueKey).Return(nil, assert.AnError).Once()
 
 		s.mockLog.EXPECT().Error(errors.QueueDriverFailedToPop.Args(queueKey, assert.AnError)).Once()
 
 		worker := NewWorker(s.mockConfig, s.mockDB, s.mockJob, json.New(), s.mockLog, connection, queue, 1)
 
 		go func() {
-			err := worker.run(mockDriver)
+			err := worker.run()
 			s.NoError(err)
 		}()
 
@@ -123,23 +121,25 @@ func (s *WorkerTestSuite) Test_run() {
 
 	s.Run("job failed, print log when db is nil", func() {
 		s.mockConfig.EXPECT().Debug().Return(true).Once()
-		s.mockConfig.EXPECT().QueueKey(connection, queue).Return(queueKey).Once()
 		s.mockConfig.EXPECT().FailedDatabase().Return("mysql").Once()
 		s.mockConfig.EXPECT().FailedTable().Return("failed_jobs").Once()
 
 		mockDriver := mocksqueue.NewDriver(s.T())
-		mockDriver.EXPECT().Pop(queueKey).Return(errorTask, nil).Once()
+		mockReservedJob := mocksqueue.NewReservedJob(s.T())
+
+		mockDriver.EXPECT().Pop(queueKey).Return(mockReservedJob, nil).Once()
+		mockReservedJob.EXPECT().Task().Return(errorTask).Once()
 
 		s.mockJob.EXPECT().Call(errorTask.Job.Signature(), make([]any, 0)).Return(assert.AnError).Once()
 
-		mockDriver.EXPECT().Pop(queueKey).Return(contractsqueue.Task{}, errors.QueueDriverNoJobFound).Once()
+		mockDriver.EXPECT().Pop(queueKey).Return(nil, errors.QueueDriverNoJobFound).Once()
 
 		s.mockLog.EXPECT().Error(errors.QueueJobFailed.Args(failedJob)).Once()
 
 		worker := NewWorker(s.mockConfig, nil, s.mockJob, json.New(), s.mockLog, connection, queue, 1)
 
 		go func() {
-			err := worker.run(mockDriver)
+			err := worker.run()
 			s.NoError(err)
 		}()
 
@@ -150,23 +150,25 @@ func (s *WorkerTestSuite) Test_run() {
 
 	s.Run("job failed, print log when FailedDatabase is empty", func() {
 		s.mockConfig.EXPECT().Debug().Return(true).Once()
-		s.mockConfig.EXPECT().QueueKey(connection, queue).Return(queueKey).Once()
 		s.mockConfig.EXPECT().FailedDatabase().Return("").Once()
 		s.mockConfig.EXPECT().FailedTable().Return("failed_jobs").Once()
 
 		mockDriver := mocksqueue.NewDriver(s.T())
-		mockDriver.EXPECT().Pop(queueKey).Return(errorTask, nil).Once()
+		mockReservedJob := mocksqueue.NewReservedJob(s.T())
+
+		mockDriver.EXPECT().Pop(queueKey).Return(mockReservedJob, nil).Once()
+		mockReservedJob.EXPECT().Task().Return(errorTask).Once()
 
 		s.mockJob.EXPECT().Call(errorTask.Job.Signature(), make([]any, 0)).Return(assert.AnError).Once()
 
-		mockDriver.EXPECT().Pop(queueKey).Return(contractsqueue.Task{}, errors.QueueDriverNoJobFound).Once()
+		mockDriver.EXPECT().Pop(queueKey).Return(nil, errors.QueueDriverNoJobFound).Once()
 
 		s.mockLog.EXPECT().Error(errors.QueueJobFailed.Args(failedJob)).Once()
 
 		worker := NewWorker(s.mockConfig, s.mockDB, s.mockJob, json.New(), s.mockLog, connection, queue, 1)
 
 		go func() {
-			err := worker.run(mockDriver)
+			err := worker.run()
 			s.NoError(err)
 		}()
 
@@ -177,23 +179,25 @@ func (s *WorkerTestSuite) Test_run() {
 
 	s.Run("job failed, print log when FailedTable is empty", func() {
 		s.mockConfig.EXPECT().Debug().Return(true).Once()
-		s.mockConfig.EXPECT().QueueKey(connection, queue).Return(queueKey).Once()
 		s.mockConfig.EXPECT().FailedDatabase().Return("mysql").Once()
 		s.mockConfig.EXPECT().FailedTable().Return("").Once()
 
 		mockDriver := mocksqueue.NewDriver(s.T())
-		mockDriver.EXPECT().Pop(queueKey).Return(errorTask, nil).Once()
+		mockReservedJob := mocksqueue.NewReservedJob(s.T())
+
+		mockDriver.EXPECT().Pop(queueKey).Return(mockReservedJob, nil).Once()
+		mockReservedJob.EXPECT().Task().Return(errorTask).Once()
 
 		s.mockJob.EXPECT().Call(errorTask.Job.Signature(), make([]any, 0)).Return(assert.AnError).Once()
 
-		mockDriver.EXPECT().Pop(queueKey).Return(contractsqueue.Task{}, errors.QueueDriverNoJobFound).Once()
+		mockDriver.EXPECT().Pop(queueKey).Return(nil, errors.QueueDriverNoJobFound).Once()
 
 		s.mockLog.EXPECT().Error(errors.QueueJobFailed.Args(failedJob)).Once()
 
 		worker := NewWorker(s.mockConfig, nil, s.mockJob, json.New(), s.mockLog, connection, queue, 1)
 
 		go func() {
-			err := worker.run(mockDriver)
+			err := worker.run()
 			s.NoError(err)
 		}()
 
@@ -204,12 +208,14 @@ func (s *WorkerTestSuite) Test_run() {
 
 	s.Run("job failed, insert failed job", func() {
 		s.mockConfig.EXPECT().Debug().Return(true).Once()
-		s.mockConfig.EXPECT().QueueKey(connection, queue).Return(queueKey).Once()
 		s.mockConfig.EXPECT().FailedDatabase().Return("mysql").Once()
 		s.mockConfig.EXPECT().FailedTable().Return("failed_jobs").Once()
 
 		mockDriver := mocksqueue.NewDriver(s.T())
-		mockDriver.EXPECT().Pop(queueKey).Return(errorTask, nil).Once()
+		mockReservedJob := mocksqueue.NewReservedJob(s.T())
+
+		mockDriver.EXPECT().Pop(queueKey).Return(mockReservedJob, nil).Once()
+		mockReservedJob.EXPECT().Task().Return(errorTask).Once()
 
 		s.mockJob.EXPECT().Call(errorTask.Job.Signature(), make([]any, 0)).Return(assert.AnError).Once()
 
@@ -218,12 +224,12 @@ func (s *WorkerTestSuite) Test_run() {
 		s.mockDB.EXPECT().Table("failed_jobs").Return(mockQuery).Once()
 		mockQuery.EXPECT().Insert(failedJob).Return(nil, nil).Once()
 
-		mockDriver.EXPECT().Pop(queueKey).Return(contractsqueue.Task{}, errors.QueueDriverNoJobFound).Once()
+		mockDriver.EXPECT().Pop(queueKey).Return(nil, errors.QueueDriverNoJobFound).Once()
 
 		worker := NewWorker(s.mockConfig, s.mockDB, s.mockJob, json.New(), s.mockLog, connection, queue, 1)
 
 		go func() {
-			err := worker.run(mockDriver)
+			err := worker.run()
 			s.NoError(err)
 		}()
 
@@ -234,12 +240,14 @@ func (s *WorkerTestSuite) Test_run() {
 
 	s.Run("failed to insert failed job", func() {
 		s.mockConfig.EXPECT().Debug().Return(true).Once()
-		s.mockConfig.EXPECT().QueueKey(connection, queue).Return(queueKey).Once()
 		s.mockConfig.EXPECT().FailedDatabase().Return("mysql").Once()
 		s.mockConfig.EXPECT().FailedTable().Return("failed_jobs").Once()
 
 		mockDriver := mocksqueue.NewDriver(s.T())
-		mockDriver.EXPECT().Pop(queueKey).Return(errorTask, nil).Once()
+		mockReservedJob := mocksqueue.NewReservedJob(s.T())
+
+		mockDriver.EXPECT().Pop(queueKey).Return(mockReservedJob, nil).Once()
+		mockReservedJob.EXPECT().Task().Return(errorTask).Once()
 
 		s.mockJob.EXPECT().Call(errorTask.Job.Signature(), make([]any, 0)).Return(assert.AnError).Once()
 
@@ -250,12 +258,12 @@ func (s *WorkerTestSuite) Test_run() {
 
 		s.mockLog.EXPECT().Error(errors.QueueFailedToSaveFailedJob.Args(assert.AnError, failedJob)).Once()
 
-		mockDriver.EXPECT().Pop(queueKey).Return(contractsqueue.Task{}, errors.QueueDriverNoJobFound).Once()
+		mockDriver.EXPECT().Pop(queueKey).Return(nil, errors.QueueDriverNoJobFound).Once()
 
 		worker := NewWorker(s.mockConfig, s.mockDB, s.mockJob, json.New(), s.mockLog, connection, queue, 1)
 
 		go func() {
-			err := worker.run(mockDriver)
+			err := worker.run()
 			s.NoError(err)
 		}()
 
@@ -266,19 +274,22 @@ func (s *WorkerTestSuite) Test_run() {
 
 	s.Run("success", func() {
 		s.mockConfig.EXPECT().Debug().Return(true).Once()
-		s.mockConfig.EXPECT().QueueKey(connection, queue).Return(queueKey).Once()
 
 		mockDriver := mocksqueue.NewDriver(s.T())
-		mockDriver.EXPECT().Pop(queueKey).Return(successTask, nil).Once()
+		mockReservedJob := mocksqueue.NewReservedJob(s.T())
+
+		mockDriver.EXPECT().Pop(queueKey).Return(mockReservedJob, nil).Once()
+		mockReservedJob.EXPECT().Task().Return(successTask).Once()
 
 		s.mockJob.EXPECT().Call(successTask.Job.Signature(), ConvertArgs(testArgs)).Return(nil).Once()
+		mockReservedJob.EXPECT().Delete().Return(nil).Once()
 
-		mockDriver.EXPECT().Pop(queueKey).Return(contractsqueue.Task{}, errors.QueueDriverNoJobFound).Once()
+		mockDriver.EXPECT().Pop(queueKey).Return(nil, errors.QueueDriverNoJobFound).Once()
 
 		worker := NewWorker(s.mockConfig, s.mockDB, s.mockJob, json.New(), s.mockLog, connection, queue, 1)
 
 		go func() {
-			err := worker.run(mockDriver)
+			err := worker.run()
 			s.NoError(err)
 		}()
 
