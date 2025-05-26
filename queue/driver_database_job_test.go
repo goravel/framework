@@ -15,10 +15,10 @@ import (
 
 type DatabaseReservedJobTestSuite struct {
 	suite.Suite
-	mockDB    *mocksdb.DB
-	mockJob   *mocksqueue.JobStorer
-	mockJson  *mocksfoundation.Json
-	jobsTable string
+	mockDB        *mocksdb.DB
+	mockJobStorer *mocksqueue.JobStorer
+	mockJson      *mocksfoundation.Json
+	jobsTable     string
 }
 
 func TestDatabaseReservedJobTestSuite(t *testing.T) {
@@ -27,7 +27,7 @@ func TestDatabaseReservedJobTestSuite(t *testing.T) {
 
 func (s *DatabaseReservedJobTestSuite) SetupTest() {
 	s.mockDB = mocksdb.NewDB(s.T())
-	s.mockJob = mocksqueue.NewJobStorer(s.T())
+	s.mockJobStorer = mocksqueue.NewJobStorer(s.T())
 	s.mockJson = mocksfoundation.NewJson(s.T())
 	s.jobsTable = "jobs"
 }
@@ -41,7 +41,7 @@ func (s *DatabaseReservedJobTestSuite) TestNewDatabaseReservedJob() {
 			Run(func(_ []byte, taskPtr any) {
 				taskPtr.(*Task).Job.Signature = testJobOne.Signature()
 			}).Return(nil).Once()
-		s.mockJob.EXPECT().Get(testJobOne.Signature()).Return(testJobOne, nil).Once()
+		s.mockJobStorer.EXPECT().Get(testJobOne.Signature()).Return(testJobOne, nil).Once()
 
 		databaseJob := &DatabaseJob{
 			ID:      1,
@@ -49,7 +49,7 @@ func (s *DatabaseReservedJobTestSuite) TestNewDatabaseReservedJob() {
 			Payload: "{\"signature\":\"test_job_one\",\"args\":null,\"delay\":null,\"uuid\":\"test\",\"chain\":[]}",
 		}
 
-		reservedJob, err := NewDatabaseReservedJob(databaseJob, s.mockDB, s.mockJob, s.mockJson, s.jobsTable)
+		reservedJob, err := NewDatabaseReservedJob(databaseJob, s.mockDB, s.mockJobStorer, s.mockJson, s.jobsTable)
 
 		s.NoError(err)
 		s.NotNil(reservedJob)
@@ -70,7 +70,7 @@ func (s *DatabaseReservedJobTestSuite) TestNewDatabaseReservedJob() {
 			Payload: "invalid json",
 		}
 
-		reservedJob, err := NewDatabaseReservedJob(databaseJob, s.mockDB, s.mockJob, s.mockJson, s.jobsTable)
+		reservedJob, err := NewDatabaseReservedJob(databaseJob, s.mockDB, s.mockJobStorer, s.mockJson, s.jobsTable)
 
 		s.Equal(assert.AnError, err)
 		s.Nil(reservedJob)

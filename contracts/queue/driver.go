@@ -6,10 +6,6 @@ const (
 	DriverCustom   string = "custom"
 )
 
-type DriverManager interface {
-	Get(connection string) (Driver, error)
-}
-
 type Driver interface {
 	// Driver returns the driver name for the driver.
 	Driver() string
