@@ -20,9 +20,9 @@ func (_m *Migrator) EXPECT() *Migrator_Expecter {
 	return &Migrator_Expecter{mock: &_m.Mock}
 }
 
-// Create provides a mock function with given fields: name
-func (_m *Migrator) Create(name string) (string, error) {
-	ret := _m.Called(name)
+// Create provides a mock function with given fields: name, modelName
+func (_m *Migrator) Create(name string, modelName string) (string, error) {
+	ret := _m.Called(name, modelName)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Create")
@@ -30,17 +30,17 @@ func (_m *Migrator) Create(name string) (string, error) {
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (string, error)); ok {
-		return rf(name)
+	if rf, ok := ret.Get(0).(func(string, string) (string, error)); ok {
+		return rf(name, modelName)
 	}
-	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(name)
+	if rf, ok := ret.Get(0).(func(string, string) string); ok {
+		r0 = rf(name, modelName)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(name)
+	if rf, ok := ret.Get(1).(func(string, string) error); ok {
+		r1 = rf(name, modelName)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -55,13 +55,14 @@ type Migrator_Create_Call struct {
 
 // Create is a helper method to define mock.On call
 //   - name string
-func (_e *Migrator_Expecter) Create(name interface{}) *Migrator_Create_Call {
-	return &Migrator_Create_Call{Call: _e.mock.On("Create", name)}
+//   - modelName string
+func (_e *Migrator_Expecter) Create(name interface{}, modelName interface{}) *Migrator_Create_Call {
+	return &Migrator_Create_Call{Call: _e.mock.On("Create", name, modelName)}
 }
 
-func (_c *Migrator_Create_Call) Run(run func(name string)) *Migrator_Create_Call {
+func (_c *Migrator_Create_Call) Run(run func(name string, modelName string)) *Migrator_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		run(args[0].(string), args[1].(string))
 	})
 	return _c
 }
@@ -71,7 +72,7 @@ func (_c *Migrator_Create_Call) Return(_a0 string, _a1 error) *Migrator_Create_C
 	return _c
 }
 
-func (_c *Migrator_Create_Call) RunAndReturn(run func(string) (string, error)) *Migrator_Create_Call {
+func (_c *Migrator_Create_Call) RunAndReturn(run func(string, string) (string, error)) *Migrator_Create_Call {
 	_c.Call.Return(run)
 	return _c
 }

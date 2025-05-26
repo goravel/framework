@@ -756,6 +756,52 @@ func (_c *Schema_GetIndexes_Call) RunAndReturn(run func(string) ([]driver.Index,
 	return _c
 }
 
+// GetModel provides a mock function with given fields: name
+func (_m *Schema) GetModel(name string) schema.Model {
+	ret := _m.Called(name)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetModel")
+	}
+
+	var r0 schema.Model
+	if rf, ok := ret.Get(0).(func(string) schema.Model); ok {
+		r0 = rf(name)
+	} else {
+		r0 = ret.Get(0).(schema.Model)
+	}
+
+	return r0
+}
+
+// Schema_GetModel_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetModel'
+type Schema_GetModel_Call struct {
+	*mock.Call
+}
+
+// GetModel is a helper method to define mock.On call
+//   - name string
+func (_e *Schema_Expecter) GetModel(name interface{}) *Schema_GetModel_Call {
+	return &Schema_GetModel_Call{Call: _e.mock.On("GetModel", name)}
+}
+
+func (_c *Schema_GetModel_Call) Run(run func(name string)) *Schema_GetModel_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Schema_GetModel_Call) Return(_a0 schema.Model) *Schema_GetModel_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Schema_GetModel_Call) RunAndReturn(run func(string) schema.Model) *Schema_GetModel_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetTableListing provides a mock function with no fields
 func (_m *Schema) GetTableListing() []string {
 	ret := _m.Called()
