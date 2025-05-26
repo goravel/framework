@@ -25,6 +25,7 @@ type Schema struct {
 	processor  driver.Processor
 	schema     string
 	goTypes    []contractsschema.GoType
+	models     []contractsschema.Model
 }
 
 func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, driver driver.Driver, migrations []contractsschema.Migration) (*Schema, error) {
@@ -49,6 +50,7 @@ func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, driver d
 		processor:  processor,
 		schema:     schema,
 		goTypes:    defaultGoTypes(),
+		models:     make([]contractsschema.Model, 0),
 	}, nil
 }
 
@@ -170,6 +172,7 @@ func (r *Schema) DropIfExists(table string) error {
 
 func (r *Schema) Extend(extend contractsschema.Extension) contractsschema.Schema {
 	r.extendGoTypes(extend.GoTypes)
+	r.extendModels(extend.Models)
 	return r
 }
 
@@ -290,6 +293,16 @@ func (r *Schema) GetViews() ([]driver.View, error) {
 
 func (r *Schema) GoTypes() []contractsschema.GoType {
 	return r.goTypes
+}
+
+func (r *Schema) GetModel(name string) contractsschema.Model {
+	for _, model := range r.models {
+		if model.Name == name {
+			return model
+		}
+	}
+
+	return contractsschema.Model{}
 }
 
 func (r *Schema) HasColumn(table, column string) bool {
@@ -474,6 +487,20 @@ func (r *Schema) extendGoTypes(overrides []contractsschema.GoType) {
 	}
 
 	r.goTypes = result
+}
+
+func (r *Schema) extendModels(models []contractsschema.Model) {
+	if len(models) == 0 {
+		return
+	}
+
+	for _, model := range models {
+		if !slices.ContainsFunc(r.models, func(m contractsschema.Model) bool {
+			return m.Name == model.Name
+		}) {
+			r.models = append(r.models, model)
+		}
+	}
 }
 
 func defaultGoTypes() []contractsschema.GoType {

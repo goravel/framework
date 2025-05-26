@@ -46,6 +46,8 @@ type Schema interface {
 	GetViews() ([]driver.View, error)
 	// GoTypes returns the mapping of schema types to Go types.
 	GoTypes() []GoType
+	// GetModel Get the model from the registered models by name.
+	GetModel(name string) Model
 	// HasColumn Determine if the given table has a given column.
 	HasColumn(table, column string) bool
 	// HasColumns Determine if the given table has given columns.
@@ -91,6 +93,7 @@ type Connection interface {
 // Extension represents an extension for the schema
 type Extension struct {
 	GoTypes []GoType
+	Models  []Model
 }
 
 // GoType represents a database column type to Go type mapping
@@ -101,4 +104,17 @@ type GoType struct {
 	Import     string
 	NullType   string
 	NullImport string
+}
+
+type Model struct {
+	Name string
+	Type any
+}
+
+func (r Model) IsZero() bool {
+	return r.Name == "" && r.Type == nil
+}
+
+func (r Model) IsValid() bool {
+	return r.Name != "" && r.Type != nil
 }
