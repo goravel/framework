@@ -129,7 +129,7 @@ func (r *Query) Cursor() chan db.Row {
 			if len(sql) > 0 {
 				r.trace(r.readBuilder, sql, args, now, count, err)
 			}
-			
+
 			close(ch)
 		}()
 
@@ -150,6 +150,10 @@ func (r *Query) Cursor() chan db.Row {
 
 			ch <- NewRow(row, nil)
 			count++
+		}
+
+		if err = rows.Err(); err != nil {
+			return
 		}
 	}()
 

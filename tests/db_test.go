@@ -200,6 +200,18 @@ func (s *DBTestSuite) TestCursor() {
 				s.Equal(s.now, carbon.NewDateTime(carbon.FromStdTime(cast.ToTime(products[1]["created_at"]))))
 				s.Equal(s.now, carbon.NewDateTime(carbon.FromStdTime(cast.ToTime(products[1]["updated_at"]))))
 			})
+
+			s.Run("Cursor error", func() {
+				for row := range query.DB().Table("not_exist").Cursor() {
+					err1 := row.Err()
+					s.Error(err1)
+
+					err2 := row.Scan(map[string]any{})
+					s.Error(err2)
+
+					s.Equal(err1, err2)
+				}
+			})
 		})
 	}
 }
