@@ -18,8 +18,13 @@ type PendingJob struct {
 	task          contractsqueue.Task
 }
 
-func NewPendingJob(config contractsqueue.Config, db contractsdb.DB, jobStorer contractsqueue.JobStorer, json contractsfoundation.Json, job contractsqueue.Job, args ...[]contractsqueue.Arg) (
-	*PendingJob, error) {
+func NewPendingJob(
+	config contractsqueue.Config,
+	db contractsdb.DB,
+	jobStorer contractsqueue.JobStorer,
+	json contractsfoundation.Json,
+	job contractsqueue.Job,
+	args ...[]contractsqueue.Arg) *PendingJob {
 	var arg []contractsqueue.Arg
 	if len(args) > 0 {
 		arg = args[0]
@@ -39,13 +44,17 @@ func NewPendingJob(config contractsqueue.Config, db contractsdb.DB, jobStorer co
 				Args: arg,
 			},
 		},
-	}, nil
+	}
 }
 
-func NewPendingChainJob(config contractsqueue.Config, db contractsdb.DB, jobStorer contractsqueue.JobStorer, json contractsfoundation.Json, jobs []contractsqueue.ChainJob) (
-	*PendingJob, error) {
+func NewPendingChainJob(
+	config contractsqueue.Config,
+	db contractsdb.DB,
+	jobStorer contractsqueue.JobStorer,
+	json contractsfoundation.Json,
+	jobs []contractsqueue.ChainJob) *PendingJob {
 	if len(jobs) == 0 {
-		return nil, nil
+		return nil
 	}
 
 	var chain []contractsqueue.ChainJob
@@ -75,7 +84,7 @@ func NewPendingChainJob(config contractsqueue.Config, db contractsdb.DB, jobStor
 			ChainJob: job,
 			Chain:    chain,
 		},
-	}, nil
+	}
 }
 
 // Delay sets a delay time for the task

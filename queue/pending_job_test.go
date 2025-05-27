@@ -115,8 +115,7 @@ func (s *PendingJobTestSuite) TestNewPendingChainJob() {
 	mockConfig.EXPECT().DefaultConnection().Return("default").Once()
 	mockConfig.EXPECT().DefaultQueue().Return("default").Once()
 
-	pendingChainJob, err := NewPendingChainJob(mockConfig, nil, nil, nil, jobs)
-	s.NoError(err)
+	pendingChainJob := NewPendingChainJob(mockConfig, nil, nil, nil, jobs)
 
 	s.Equal("default", pendingChainJob.connection)
 	s.Equal("default", pendingChainJob.queue)
@@ -146,8 +145,7 @@ func (s *PendingJobTestSuite) TestNewPendingJob() {
 		mockConfig.EXPECT().DefaultConnection().Return("default").Once()
 		mockConfig.EXPECT().DefaultQueue().Return("default").Once()
 
-		pendingJob, err := NewPendingJob(mockConfig, nil, nil, nil, &TestJobOne{}, args)
-		s.NoError(err)
+		pendingJob := NewPendingJob(mockConfig, nil, nil, nil, &TestJobOne{}, args)
 
 		s.Equal("default", pendingJob.connection)
 		s.Equal("default", pendingJob.queue)
@@ -162,8 +160,7 @@ func (s *PendingJobTestSuite) TestNewPendingJob() {
 		mockConfig.EXPECT().DefaultConnection().Return("default").Once()
 		mockConfig.EXPECT().DefaultQueue().Return("default").Once()
 
-		pendingJob, err := NewPendingJob(mockConfig, nil, nil, nil, &TestJobOne{})
-		s.NoError(err)
+		pendingJob := NewPendingJob(mockConfig, nil, nil, nil, &TestJobOne{})
 
 		s.Equal("default", pendingJob.connection)
 		s.Equal("default", pendingJob.queue)

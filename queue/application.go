@@ -26,11 +26,7 @@ func NewApplication(config queue.Config, db db.DB, job queue.JobStorer, json fou
 }
 
 func (r *Application) Chain(jobs []queue.ChainJob) queue.PendingJob {
-	pendingJob, err := NewPendingChainJob(r.config, r.db, r.jobStorer, r.json, jobs)
-	if err != nil {
-		panic(err)
-	}
-	return pendingJob
+	return NewPendingChainJob(r.config, r.db, r.jobStorer, r.json, jobs)
 }
 
 func (r *Application) GetJob(signature string) (queue.Job, error) {
@@ -42,11 +38,7 @@ func (r *Application) GetJobs() []queue.Job {
 }
 
 func (r *Application) Job(job queue.Job, args ...[]queue.Arg) queue.PendingJob {
-	pendingJob, err := NewPendingJob(r.config, r.db, r.jobStorer, r.json, job, args...)
-	if err != nil {
-		panic(err)
-	}
-	return pendingJob
+	return NewPendingJob(r.config, r.db, r.jobStorer, r.json, job, args...)
 }
 
 func (r *Application) Register(jobs []queue.Job) {
