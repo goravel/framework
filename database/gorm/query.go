@@ -164,6 +164,7 @@ func (r *Query) Cursor() chan contractsdb.Row {
 			if err != nil {
 				cursorChan <- &Row{query: r, err: err}
 			}
+
 			close(cursorChan)
 		}()
 
@@ -173,15 +174,15 @@ func (r *Query) Cursor() chan contractsdb.Row {
 		defer rows.Close()
 
 		for rows.Next() {
-			if err = rows.Err(); err != nil {
-				return
-			}
-
 			val := make(map[string]any)
 			if err = query.instance.ScanRows(rows, val); err != nil {
 				return
 			}
 			cursorChan <- &Row{query: r, row: val}
+		}
+
+		if err = rows.Err(); err != nil {
+			return
 		}
 	}()
 	return cursorChan

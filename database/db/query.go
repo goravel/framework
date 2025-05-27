@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/jmoiron/sqlx"
 
 	"github.com/goravel/framework/contracts/database/db"
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
@@ -48,13 +49,13 @@ func (r *Query) Chunk(size uint64, callback func(rows []db.Row) error) error {
 	offset := uint64(0)
 
 	for {
-		rows, err := r.clone().Offset(offset).Limit(size).Cursor()
-		if err != nil {
-			return err
-		}
+		rows := r.clone().Offset(offset).Limit(size).Cursor()
 
 		var destSlice []db.Row
 		for row := range rows {
+			if err := row.Err(); err != nil {
+				return err
+			}
 			destSlice = append(destSlice, row)
 		}
 
@@ -108,41 +109,51 @@ func (r *Query) CrossJoin(query string, args ...any) db.Query {
 	return q
 }
 
-func (r *Query) Cursor() (chan db.Row, error) {
-	sql, args, err := r.buildSelect()
-	if err != nil {
-		return nil, err
-	}
-
-	now := carbon.Now()
-	rows, err := r.readBuilder.QueryxContext(r.ctx, sql, args...)
-	if err != nil {
-		r.trace(r.readBuilder, sql, args, now, -1, err)
-
-		return nil, err
-	}
-
+func (r *Query) Cursor() chan db.Row {
 	ch := make(chan db.Row)
 	go func() {
-		defer rows.Close()
-		defer close(ch)
+		var (
+			args  []any
+			count int64 = -1
+			err   error
+			now   = carbon.Now()
+			rows  *sqlx.Rows
+			sql   string
+		)
 
-		var count int64
+		defer func() {
+			if err != nil {
+				ch <- NewRow(nil, err)
+			}
+
+			if len(sql) > 0 {
+				r.trace(r.readBuilder, sql, args, now, count, err)
+			}
+			
+			close(ch)
+		}()
+
+		if sql, args, err = r.buildSelect(); err != nil {
+			return
+		}
+
+		if rows, err = r.readBuilder.QueryxContext(r.ctx, sql, args...); err != nil {
+			return
+		}
+		defer rows.Close()
+
 		for rows.Next() {
 			row := make(map[string]any)
-			if err := rows.MapScan(row); err != nil {
-				r.trace(r.readBuilder, sql, args, now, -1, err)
+			if err = rows.MapScan(row); err != nil {
 				return
 			}
 
-			ch <- NewRow(row)
+			ch <- NewRow(row, nil)
 			count++
 		}
-
-		r.trace(r.readBuilder, sql, args, now, count, nil)
 	}()
 
-	return ch, nil
+	return ch
 }
 
 func (r *Query) Decrement(column string, value ...uint64) error {

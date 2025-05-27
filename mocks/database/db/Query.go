@@ -182,7 +182,7 @@ func (_c *Query_CrossJoin_Call) RunAndReturn(run func(string, ...interface{}) db
 }
 
 // Cursor provides a mock function with no fields
-func (_m *Query) Cursor() (chan db.Row, error) {
+func (_m *Query) Cursor() chan db.Row {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
@@ -190,10 +190,6 @@ func (_m *Query) Cursor() (chan db.Row, error) {
 	}
 
 	var r0 chan db.Row
-	var r1 error
-	if rf, ok := ret.Get(0).(func() (chan db.Row, error)); ok {
-		return rf()
-	}
 	if rf, ok := ret.Get(0).(func() chan db.Row); ok {
 		r0 = rf()
 	} else {
@@ -202,13 +198,7 @@ func (_m *Query) Cursor() (chan db.Row, error) {
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // Query_Cursor_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Cursor'
@@ -228,12 +218,12 @@ func (_c *Query_Cursor_Call) Run(run func()) *Query_Cursor_Call {
 	return _c
 }
 
-func (_c *Query_Cursor_Call) Return(_a0 chan db.Row, _a1 error) *Query_Cursor_Call {
-	_c.Call.Return(_a0, _a1)
+func (_c *Query_Cursor_Call) Return(_a0 chan db.Row) *Query_Cursor_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Query_Cursor_Call) RunAndReturn(run func() (chan db.Row, error)) *Query_Cursor_Call {
+func (_c *Query_Cursor_Call) RunAndReturn(run func() chan db.Row) *Query_Cursor_Call {
 	_c.Call.Return(run)
 	return _c
 }

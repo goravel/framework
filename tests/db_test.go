@@ -7,10 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/spf13/cast"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
-
 	"github.com/goravel/framework/contracts/database/db"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
@@ -18,6 +14,9 @@ import (
 	"github.com/goravel/postgres"
 	"github.com/goravel/sqlite"
 	"github.com/goravel/sqlserver"
+	"github.com/spf13/cast"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
 type DBTestSuite struct {
@@ -151,14 +150,14 @@ func (s *DBTestSuite) TestCursor() {
 			})
 
 			s.Run("Bind Struct", func() {
-				rows, err := query.DB().Table("products").Cursor()
-				s.NoError(err)
+				rows := query.DB().Table("products").Cursor()
 
 				var products []Product
 				for row := range rows {
-					var product Product
-					err = row.Scan(&product)
+					s.NoError(row.Err())
 
+					var product Product
+					err := row.Scan(&product)
 					s.NoError(err)
 					s.True(product.ID > 0)
 
@@ -177,14 +176,14 @@ func (s *DBTestSuite) TestCursor() {
 			})
 
 			s.Run("Bind Map", func() {
-				rows, err := query.DB().Table("products").Cursor()
-				s.NoError(err)
+				rows := query.DB().Table("products").Cursor()
 
 				var products []map[string]any
 				for row := range rows {
-					var product map[string]any
-					err = row.Scan(&product)
+					s.NoError(row.Err())
 
+					var product map[string]any
+					err := row.Scan(&product)
 					s.NoError(err)
 					s.True(cast.ToUint(product["id"]) > 0)
 
