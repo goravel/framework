@@ -30,7 +30,7 @@ func (r *DriverCreator) Create(connection string) (contractsqueue.Driver, error)
 	case contractsqueue.DriverSync:
 		return NewSync(), nil
 	case contractsqueue.DriverDatabase:
-		if r.db == nil || r.db.Connection(connection) == nil {
+		if r.db == nil {
 			return nil, errors.QueueInvalidDatabaseConnection.Args(connection)
 		}
 
