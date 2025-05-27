@@ -6,6 +6,10 @@ const (
 	DriverCustom   string = "custom"
 )
 
+type DriverCreator interface {
+	Create(connection string) (Driver, error)
+}
+
 type Driver interface {
 	// Driver returns the driver name for the driver.
 	Driver() string

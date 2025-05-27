@@ -59,7 +59,11 @@ func (r *Application) Worker(payloads ...queue.Args) queue.Worker {
 	defaultConcurrent := r.config.DefaultConcurrent()
 
 	if len(payloads) == 0 {
-		return NewWorker(r.config, r.db, r.jobStorer, r.json, r.log, defaultConnection, defaultQueue, defaultConcurrent)
+		worker, err := NewWorker(r.config, r.db, r.jobStorer, r.json, r.log, defaultConnection, defaultQueue, defaultConcurrent)
+		if err != nil {
+			panic(err)
+		}
+		return worker
 	}
 	if payloads[0].Connection == "" {
 		payloads[0].Connection = defaultConnection
@@ -71,5 +75,10 @@ func (r *Application) Worker(payloads ...queue.Args) queue.Worker {
 		payloads[0].Concurrent = defaultConcurrent
 	}
 
-	return NewWorker(r.config, r.db, r.jobStorer, r.json, r.log, payloads[0].Connection, payloads[0].Queue, payloads[0].Concurrent)
+	worker, err := NewWorker(r.config, r.db, r.jobStorer, r.json, r.log, payloads[0].Connection, payloads[0].Queue, payloads[0].Concurrent)
+	if err != nil {
+		panic(err)
+	}
+
+	return worker
 }

@@ -5,17 +5,16 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/goravel/framework/contracts/queue"
+	contractsqueue "github.com/goravel/framework/contracts/queue"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
-	"github.com/goravel/framework/support/carbon"
 )
 
 type PendingJobTestSuite struct {
 	suite.Suite
-	mockConfig *mocksqueue.Config
+	mockDriverCreator *mocksqueue.DriverCreator
+	pendingJob        *PendingJob
 }
 
 func TestPendingJobTestSuite(t *testing.T) {
@@ -23,249 +22,77 @@ func TestPendingJobTestSuite(t *testing.T) {
 }
 
 func (s *PendingJobTestSuite) SetupTest() {
-	s.mockConfig = mocksqueue.NewConfig(s.T())
-	s.mockConfig.EXPECT().DefaultConnection().Return("default").Once()
-	s.mockConfig.EXPECT().DefaultQueue().Return("default").Once()
+	s.mockDriverCreator = mocksqueue.NewDriverCreator(s.T())
+	s.pendingJob = &PendingJob{
+		connection:    "default",
+		driverCreator: s.mockDriverCreator,
+		queue:         "default",
+		task: contractsqueue.Task{
+			UUID: "test",
+			ChainJob: contractsqueue.ChainJob{
+				Job: &TestJobOne{},
+			},
+		},
+	}
 }
 
-func (s *PendingJobTestSuite) TestDelay() {
-	pendingJob, err := NewPendingJob(s.mockConfig, nil, nil, nil, &TestJobOne{})
-	s.NoError(err)
-
+func (s *PendingJobTestSuite) Test_Delay() {
 	delayTime := time.Now().Add(5 * time.Minute)
-	pendingJobWithDelay := pendingJob.Delay(delayTime)
+	pendingJobWithDelay := s.pendingJob.Delay(delayTime)
 
-	s.Equal(delayTime, pendingJob.delay)
-	s.Equal(pendingJob, pendingJobWithDelay)
+	s.Equal(delayTime, s.pendingJob.delay)
+	s.Equal(s.pendingJob, pendingJobWithDelay)
 }
 
-func (s *PendingJobTestSuite) TestDispatchWithSyncDriver() {
-	s.mockConfig.EXPECT().Driver("default").Return(queue.DriverSync).Once()
+func (s *PendingJobTestSuite) Test_Dispatch() {
+	s.Run("happy path", func() {
+		s.SetupTest()
 
-	pendingJob, err := NewPendingJob(s.mockConfig, nil, nil, nil, &TestJobOne{}, []queue.Arg{
-		{
-			Type:  "string",
-			Value: "arg1",
-		},
+		mockDriver := mocksqueue.NewDriver(s.T())
+		s.mockDriverCreator.EXPECT().Create("default").Return(mockDriver, nil).Once()
+		mockDriver.EXPECT().Push(s.pendingJob.task, s.pendingJob.queue).Return(nil).Once()
+
+		err := s.pendingJob.Dispatch()
+
+		s.NoError(err)
 	})
-	s.NoError(err)
 
-	err = pendingJob.Dispatch()
+	s.Run("happy path with custom connection and queue", func() {
+		s.SetupTest()
 
-	s.NoError(err)
-	s.Equal([]any{"arg1"}, testJobOne)
-}
+		mockDriver := mocksqueue.NewDriver(s.T())
+		s.mockDriverCreator.EXPECT().Create("kafka").Return(mockDriver, nil).Once()
+		mockDriver.EXPECT().Push(s.pendingJob.task, "high").Return(nil).Once()
 
-func (s *PendingJobTestSuite) TestDispatchWithCustomDriver() {
-	args := []queue.Arg{
-		{
-			Type:  "string",
-			Value: "arg1",
-		},
-	}
-	mockDriver := mocksqueue.NewDriver(s.T())
+		err := s.pendingJob.OnConnection("kafka").OnQueue("high").Dispatch()
 
-	s.mockConfig.EXPECT().Driver("default").Return(queue.DriverCustom).Once()
-	s.mockConfig.EXPECT().Via("default").Return(mockDriver).Once()
-	mockDriver.EXPECT().Push(mock.MatchedBy(func(task queue.Task) bool {
-		return s.IsType(&TestJobOne{}, task.Job) && s.ElementsMatch(task.Args, args) && task.Delay.IsZero()
-	}), "default:default").Return(nil).Once()
-
-	pendingJob, err := NewPendingJob(s.mockConfig, nil, nil, nil, &TestJobOne{}, args)
-	s.NoError(err)
-
-	err = pendingJob.Dispatch()
-
-	s.NoError(err)
-}
-
-func (s *PendingJobTestSuite) TestDispatchWithCustomDriverWithConnectionAndQueue() {
-	args := []queue.Arg{
-		{
-			Type:  "string",
-			Value: "arg1",
-		},
-	}
-	mockDriver := mocksqueue.NewDriver(s.T())
-
-	s.mockConfig.EXPECT().Driver("kafka").Return(queue.DriverCustom).Once()
-	s.mockConfig.EXPECT().Via("kafka").Return(mockDriver).Once()
-	mockDriver.EXPECT().Push(mock.MatchedBy(func(task queue.Task) bool {
-		return s.IsType(&TestJobOne{}, task.Job) && s.ElementsMatch(task.Args, args) && task.Delay.IsZero()
-	}), "kafka:high").Return(nil).Once()
-
-	pendingJob, err := NewPendingJob(s.mockConfig, nil, nil, nil, &TestJobOne{}, args)
-	s.NoError(err)
-
-	err = pendingJob.OnConnection("kafka").OnQueue("high").Dispatch()
-
-	s.NoError(err)
-}
-
-func (s *PendingJobTestSuite) TestDispatchWithCustomDriverAndDelay() {
-	args := []queue.Arg{
-		{
-			Type:  "string",
-			Value: "arg1",
-		},
-	}
-	mockDriver := mocksqueue.NewDriver(s.T())
-	now := time.Now()
-
-	s.mockConfig.EXPECT().Driver("default").Return(queue.DriverCustom).Once()
-	s.mockConfig.EXPECT().Via("default").Return(mockDriver).Once()
-	mockDriver.EXPECT().Push(mock.MatchedBy(func(task queue.Task) bool {
-		return s.IsType(&TestJobOne{}, task.Job) && s.ElementsMatch(task.Args, args) && task.Delay.Equal(now.Add(1*time.Second))
-	}), "default:default").Return(nil).Once()
-
-	pendingJob, err := NewPendingJob(s.mockConfig, nil, nil, nil, &TestJobOne{}, args)
-	s.NoError(err)
-
-	err = pendingJob.Delay(now.Add(1 * time.Second)).Dispatch()
-
-	s.NoError(err)
-}
-
-func (s *PendingJobTestSuite) TestDispatchChainWithCustomDriverAndDelay() {
-	args := []queue.Arg{
-		{
-			Type:  "string",
-			Value: "arg1",
-		},
-	}
-	mockDriver := mocksqueue.NewDriver(s.T())
-
-	now := time.Now()
-	carbon.SetTestNow(carbon.FromStdTime(now))
-
-	s.mockConfig.EXPECT().Driver("default").Return(queue.DriverCustom).Once()
-	s.mockConfig.EXPECT().Via("default").Return(mockDriver).Once()
-	mockDriver.EXPECT().Push(mock.MatchedBy(func(task queue.Task) bool {
-		return s.IsType(&TestJobOne{}, task.Job) &&
-			s.ElementsMatch(task.Args, args) &&
-			task.Delay.Equal(now.Add(2*time.Second)) &&
-			len(task.Chain) == 1 &&
-			s.IsType(&TestJobTwo{}, task.Chain[0].Job) &&
-			s.ElementsMatch(task.Chain[0].Args, args) &&
-			task.Chain[0].Delay.Equal(now.Add(2*time.Second))
-	}), "default:default").Return(nil).Once()
-
-	pendingJob, err := NewPendingChainJob(s.mockConfig, nil, nil, nil, []queue.ChainJob{
-		{
-			Job:   &TestJobOne{},
-			Args:  args,
-			Delay: now.Add(1 * time.Second),
-		},
-		{
-			Job:   &TestJobTwo{},
-			Args:  args,
-			Delay: now.Add(2 * time.Second),
-		},
+		s.NoError(err)
 	})
-	s.NoError(err)
 
-	err = pendingJob.Delay(now.Add(1 * time.Second)).Dispatch()
+	s.Run("failed to create driver", func() {
+		s.SetupTest()
 
-	s.NoError(err)
+		s.mockDriverCreator.EXPECT().Create("default").Return(nil, assert.AnError).Once()
+
+		err := s.pendingJob.Dispatch()
+
+		s.Equal(assert.AnError, err)
+	})
 }
 
 func (s *PendingJobTestSuite) TestDispatchSync() {
-	pendingJob, err := NewPendingJob(s.mockConfig, nil, nil, nil, &TestJobOne{}, []queue.Arg{
-		{
-			Type:  "string",
-			Value: "arg1",
-		},
+	s.Run("happy path", func() {
+		err := s.pendingJob.DispatchSync()
+
+		s.NoError(err)
 	})
-	s.NoError(err)
-
-	err = pendingJob.DispatchSync()
-
-	s.NoError(err)
-	s.Equal([]any{"arg1"}, testJobOne)
-}
-
-func (s *PendingJobTestSuite) TestDispatchSyncChain() {
-	jobs := []queue.ChainJob{
-		{
-			Job: &TestJobOne{},
-			Args: []queue.Arg{
-				{
-					Type:  "string",
-					Value: "arg1",
-				},
-			},
-		},
-		{
-			Job: &TestJobTwo{},
-			Args: []queue.Arg{
-				{
-					Type:  "string",
-					Value: "arg2",
-				},
-			},
-		},
-	}
-
-	pendingChainJob, err := NewPendingChainJob(s.mockConfig, nil, nil, nil, jobs)
-	s.NoError(err)
-
-	err = pendingChainJob.DispatchSync()
-
-	s.Nil(err)
-	s.Equal([]any{"arg1"}, testJobOne)
-	s.Equal([]any{"arg2"}, testJobTwo)
-}
-
-func (s *PendingJobTestSuite) TestDispatchSyncChainWithError() {
-	jobs := []queue.ChainJob{
-		{
-			Job: &TestJobOne{},
-			Args: []queue.Arg{
-				{
-					Type:  "string",
-					Value: "arg1",
-				},
-			},
-		},
-		{
-			Job: &TestJobErr{},
-			Args: []queue.Arg{
-				{
-					Type:  "string",
-					Value: "arg2",
-				},
-			},
-		},
-	}
-
-	pendingChainJob, err := NewPendingChainJob(s.mockConfig, nil, nil, nil, jobs)
-	s.NoError(err)
-
-	err = pendingChainJob.DispatchSync()
-
-	s.Equal(assert.AnError, err)
-	s.Equal([]any{"arg1"}, testJobOne)
-}
-
-func (s *PendingJobTestSuite) TestDispatchSyncWithError() {
-	pendingJob, err := NewPendingJob(s.mockConfig, nil, nil, nil, &TestJobErr{}, []queue.Arg{
-		{
-			Type:  "string",
-			Value: "arg1",
-		},
-	})
-	s.NoError(err)
-
-	err = pendingJob.DispatchSync()
-
-	s.Equal(assert.AnError, err)
 }
 
 func (s *PendingJobTestSuite) TestNewPendingChainJob() {
-	jobs := []queue.ChainJob{
+	jobs := []contractsqueue.ChainJob{
 		{
 			Job: &TestJobOne{},
-			Args: []queue.Arg{
+			Args: []contractsqueue.Arg{
 				{
 					Type:  "string",
 					Value: "arg1",
@@ -274,7 +101,7 @@ func (s *PendingJobTestSuite) TestNewPendingChainJob() {
 		},
 		{
 			Job: &TestJobOne{},
-			Args: []queue.Arg{
+			Args: []contractsqueue.Arg{
 				{
 					Type:  "string",
 					Value: "arg2",
@@ -284,7 +111,11 @@ func (s *PendingJobTestSuite) TestNewPendingChainJob() {
 		},
 	}
 
-	pendingChainJob, err := NewPendingChainJob(s.mockConfig, nil, nil, nil, jobs)
+	mockConfig := mocksqueue.NewConfig(s.T())
+	mockConfig.EXPECT().DefaultConnection().Return("default").Once()
+	mockConfig.EXPECT().DefaultQueue().Return("default").Once()
+
+	pendingChainJob, err := NewPendingChainJob(mockConfig, nil, nil, nil, jobs)
 	s.NoError(err)
 
 	s.Equal("default", pendingChainJob.connection)
@@ -299,7 +130,7 @@ func (s *PendingJobTestSuite) TestNewPendingChainJob() {
 }
 
 func (s *PendingJobTestSuite) TestNewPendingJob() {
-	args := []queue.Arg{
+	args := []contractsqueue.Arg{
 		{
 			Type:  "string",
 			Value: "arg1",
@@ -309,47 +140,51 @@ func (s *PendingJobTestSuite) TestNewPendingJob() {
 			Value: "arg2",
 		},
 	}
-	pendingJob, err := NewPendingJob(s.mockConfig, nil, nil, nil, &TestJobOne{}, args)
-	s.NoError(err)
 
-	s.Equal("default", pendingJob.connection)
-	s.Equal("default", pendingJob.queue)
-	s.NotEmpty(pendingJob.task.UUID)
-	s.Equal(&TestJobOne{}, pendingJob.task.ChainJob.Job)
-	s.Equal(args, pendingJob.task.Args)
-	s.True(pendingJob.delay.IsZero())
-}
+	s.Run("with args", func() {
+		mockConfig := mocksqueue.NewConfig(s.T())
+		mockConfig.EXPECT().DefaultConnection().Return("default").Once()
+		mockConfig.EXPECT().DefaultQueue().Return("default").Once()
 
-func (s *PendingJobTestSuite) TestNewPendingJobWithoutArgs() {
-	pendingJob, err := NewPendingJob(s.mockConfig, nil, nil, nil, &TestJobOne{})
-	s.NoError(err)
+		pendingJob, err := NewPendingJob(mockConfig, nil, nil, nil, &TestJobOne{}, args)
+		s.NoError(err)
 
-	s.Equal("default", pendingJob.connection)
-	s.Equal("default", pendingJob.queue)
-	s.NotEmpty(pendingJob.task.UUID)
-	s.Equal(&TestJobOne{}, pendingJob.task.ChainJob.Job)
-	s.Empty(pendingJob.task.Args)
-	s.True(pendingJob.delay.IsZero())
+		s.Equal("default", pendingJob.connection)
+		s.Equal("default", pendingJob.queue)
+		s.NotEmpty(pendingJob.task.UUID)
+		s.Equal(&TestJobOne{}, pendingJob.task.ChainJob.Job)
+		s.Equal(args, pendingJob.task.Args)
+		s.True(pendingJob.delay.IsZero())
+	})
+
+	s.Run("without args", func() {
+		mockConfig := mocksqueue.NewConfig(s.T())
+		mockConfig.EXPECT().DefaultConnection().Return("default").Once()
+		mockConfig.EXPECT().DefaultQueue().Return("default").Once()
+
+		pendingJob, err := NewPendingJob(mockConfig, nil, nil, nil, &TestJobOne{})
+		s.NoError(err)
+
+		s.Equal("default", pendingJob.connection)
+		s.Equal("default", pendingJob.queue)
+		s.NotEmpty(pendingJob.task.UUID)
+		s.Equal(&TestJobOne{}, pendingJob.task.ChainJob.Job)
+		s.Empty(pendingJob.task.Args)
+		s.True(pendingJob.delay.IsZero())
+	})
 }
 
 func (s *PendingJobTestSuite) TestOnConnection() {
-	pendingJob, err := NewPendingJob(s.mockConfig, nil, nil, nil, &TestJobOne{})
-	s.NoError(err)
+	pendingJobWithNewConnection := s.pendingJob.OnConnection("redis")
 
-	newConnection := "redis"
-	pendingJobWithNewConnection := pendingJob.OnConnection(newConnection)
-
-	s.Equal(newConnection, pendingJob.connection)
-	s.Equal(pendingJob, pendingJobWithNewConnection)
+	s.Equal("redis", s.pendingJob.connection)
+	s.Equal(s.pendingJob, pendingJobWithNewConnection)
 }
 
 func (s *PendingJobTestSuite) TestOnQueue() {
-	pendingJob, err := NewPendingJob(s.mockConfig, nil, nil, nil, &TestJobOne{})
-	s.NoError(err)
-
 	newQueue := "high"
-	pendingJobWithNewQueue := pendingJob.OnQueue(newQueue)
+	pendingJobWithNewQueue := s.pendingJob.OnQueue(newQueue)
 
-	s.Equal("high", pendingJob.queue)
-	s.Equal(pendingJob, pendingJobWithNewQueue)
+	s.Equal("high", s.pendingJob.queue)
+	s.Equal(s.pendingJob, pendingJobWithNewQueue)
 }

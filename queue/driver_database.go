@@ -29,9 +29,10 @@ func NewDatabase(
 	jobStorer contractsqueue.JobStorer,
 	json contractsfoundation.Json,
 	connection string) (*Database, error) {
+
 	dbConnection := config.GetString(fmt.Sprintf("queue.connections.%s.connection", connection))
 	if dbConnection == "" {
-		return nil, errors.QueueInvalidDatabaseConnection.Args(dbConnection)
+		return nil, errors.QueueInvalidDatabaseConnection.Args(connection)
 	}
 
 	return &Database{

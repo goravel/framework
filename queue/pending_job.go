@@ -11,11 +11,11 @@ import (
 )
 
 type PendingJob struct {
-	connection string
-	driver     contractsqueue.Driver
-	delay      time.Time
-	queue      string
-	task       contractsqueue.Task
+	connection    string
+	driverCreator contractsqueue.DriverCreator
+	delay         time.Time
+	queue         string
+	task          contractsqueue.Task
 }
 
 func NewPendingJob(config contractsqueue.Config, db contractsdb.DB, jobStorer contractsqueue.JobStorer, json contractsfoundation.Json, job contractsqueue.Job, args ...[]contractsqueue.Arg) (
@@ -27,15 +27,11 @@ func NewPendingJob(config contractsqueue.Config, db contractsdb.DB, jobStorer co
 
 	connection := config.DefaultConnection()
 	queue := config.DefaultQueue()
-	driver, err := NewDriver(connection, config, db, jobStorer, json)
-	if err != nil {
-		return nil, err
-	}
 
 	return &PendingJob{
-		connection: connection,
-		driver:     driver,
-		queue:      queue,
+		connection:    connection,
+		driverCreator: NewDriverCreator(config, db, jobStorer, json),
+		queue:         queue,
 		task: contractsqueue.Task{
 			UUID: uuid.New().String(),
 			ChainJob: contractsqueue.ChainJob{
@@ -69,15 +65,11 @@ func NewPendingChainJob(config contractsqueue.Config, db contractsdb.DB, jobStor
 
 	connection := config.DefaultConnection()
 	queue := config.DefaultQueue()
-	driver, err := NewDriver(connection, config, db, jobStorer, json)
-	if err != nil {
-		return nil, err
-	}
 
 	return &PendingJob{
-		connection: connection,
-		driver:     driver,
-		queue:      queue,
+		connection:    connection,
+		driverCreator: NewDriverCreator(config, db, jobStorer, json),
+		queue:         queue,
 		task: contractsqueue.Task{
 			UUID:     uuid.New().String(),
 			ChainJob: job,
@@ -94,9 +86,14 @@ func (r *PendingJob) Delay(delay time.Time) contractsqueue.PendingJob {
 
 // Dispatch dispatches the task
 func (r *PendingJob) Dispatch() error {
+	driver, err := r.driverCreator.Create(r.connection)
+	if err != nil {
+		return err
+	}
+
 	r.recalculateDelay()
 
-	return r.driver.Push(r.task, r.queue)
+	return driver.Push(r.task, r.queue)
 }
 
 // DispatchSync dispatches the task synchronously

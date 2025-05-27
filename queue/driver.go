@@ -7,16 +7,36 @@ import (
 	"github.com/goravel/framework/errors"
 )
 
-func NewDriver(connection string, config contractsqueue.Config, db contractsdb.DB, jobStorer contractsqueue.JobStorer, json contractsfoundation.Json) (contractsqueue.Driver, error) {
-	driver := config.Driver(connection)
+type DriverCreator struct {
+	config    contractsqueue.Config
+	db        contractsdb.DB
+	jobStorer contractsqueue.JobStorer
+	json      contractsfoundation.Json
+}
+
+func NewDriverCreator(config contractsqueue.Config, db contractsdb.DB, jobStorer contractsqueue.JobStorer, json contractsfoundation.Json) *DriverCreator {
+	return &DriverCreator{
+		config:    config,
+		db:        db,
+		jobStorer: jobStorer,
+		json:      json,
+	}
+}
+
+func (r *DriverCreator) Create(connection string) (contractsqueue.Driver, error) {
+	driver := r.config.Driver(connection)
 
 	switch driver {
 	case contractsqueue.DriverSync:
 		return NewSync(), nil
 	case contractsqueue.DriverDatabase:
-		return NewDatabase(config, db, jobStorer, json, connection)
+		if r.db == nil || r.db.Connection(connection) == nil {
+			return nil, errors.QueueInvalidDatabaseConnection.Args(connection)
+		}
+
+		return NewDatabase(r.config, r.db, r.jobStorer, r.json, connection)
 	case contractsqueue.DriverCustom:
-		custom := config.Via(connection)
+		custom := r.config.Via(connection)
 		if driver, ok := custom.(contractsqueue.Driver); ok {
 			return driver, nil
 		}

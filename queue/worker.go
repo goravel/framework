@@ -38,10 +38,11 @@ type Worker struct {
 	wg            sync.WaitGroup
 }
 
-func NewWorker(config queue.Config, db db.DB, job queue.JobStorer, json foundation.Json, log log.Log, connection, queue string, concurrent int) *Worker {
-	driver, err := NewDriver(connection, config, db, job, json)
+func NewWorker(config queue.Config, db db.DB, job queue.JobStorer, json foundation.Json, log log.Log, connection, queue string, concurrent int) (*Worker, error) {
+	driverCreator := NewDriverCreator(config, db, job, json)
+	driver, err := driverCreator.Create(connection)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	return &Worker{
@@ -60,7 +61,7 @@ func NewWorker(config queue.Config, db db.DB, job queue.JobStorer, json foundati
 		currentDelay:  1 * time.Second,
 		failedJobChan: make(chan FailedJob, concurrent),
 		maxDelay:      32 * time.Second,
-	}
+	}, nil
 }
 
 func (r *Worker) Run() error {
@@ -139,7 +140,7 @@ func (r *Worker) call(task queue.Task) error {
 
 		r.printFailedLog(task, duration)
 
-		return nil
+		return errors.QueueFailedToCallJob
 	}
 
 	r.printSuccessLog(task, duration)
@@ -235,14 +236,17 @@ func (r *Worker) run() error {
 				}
 
 				r.currentDelay = 1 * time.Second
-
 				task := reservedJob.Task()
-				if !task.Delay.IsZero() {
-					time.Sleep(carbon.FromStdTime(task.Delay).DiffAbsInDuration())
-				}
 
 				if err := r.call(task); err != nil {
-					r.log.Error(err)
+					if !errors.Is(err, errors.QueueFailedToCallJob) {
+						r.log.Error(err)
+					}
+
+					if err := reservedJob.Delete(); err != nil {
+						r.log.Error(errors.QueueFailedToDeleteReservedJob.Args(reservedJob, err))
+					}
+
 					continue
 				}
 
@@ -255,8 +259,10 @@ func (r *Worker) run() error {
 						}
 
 						if err := r.call(chainTask); err != nil {
-							r.log.Error(err)
-							continue
+							if !errors.Is(err, errors.QueueFailedToCallJob) {
+								r.log.Error(err)
+							}
+							break
 						}
 					}
 				}

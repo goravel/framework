@@ -36,10 +36,6 @@ type ReservedJob interface {
 	Task() Task
 }
 
-type ReservedJobCreator interface {
-	New(JobRecord) (ReservedJob, error)
-}
-
 type JobStorer interface {
 	All() []Job
 	Call(signature string, args []any) error
