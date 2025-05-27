@@ -10,11 +10,20 @@ import (
 )
 
 type Row struct {
+	err   error
 	query *Query
 	row   map[string]any
 }
 
+func (r *Row) Err() error {
+	return r.err
+}
+
 func (r *Row) Scan(value any) error {
+	if r.err != nil {
+		return r.err
+	}
+
 	msConfig := &mapstructure.DecoderConfig{
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
 			db.ToTimeHookFunc(), db.ToCarbonHookFunc(), db.ToDeletedAtHookFunc(),

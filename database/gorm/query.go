@@ -149,33 +149,42 @@ func (r *Query) Create(value any) error {
 	return query.create(value)
 }
 
-func (r *Query) Cursor() (chan contractsdb.Row, error) {
+func (r *Query) Cursor() chan contractsdb.Row {
 	with := r.conditions.with
 	query := r.buildConditions()
 	r.conditions.with = with
 
-	var err error
 	cursorChan := make(chan contractsdb.Row)
 	go func() {
-		var rows *sql.Rows
-		rows, err = query.instance.Rows()
-		if err != nil {
+		var (
+			err  error
+			rows *sql.Rows
+		)
+		defer func() {
+			if err != nil {
+				cursorChan <- &Row{query: r, err: err}
+			}
+			close(cursorChan)
+		}()
+
+		if rows, err = query.instance.Rows(); err != nil {
 			return
 		}
 		defer rows.Close()
 
 		for rows.Next() {
+			if err = rows.Err(); err != nil {
+				return
+			}
+
 			val := make(map[string]any)
-			err = query.instance.ScanRows(rows, val)
-			if err != nil {
-				r.log.Errorf("cursor error: %v", err)
+			if err = query.instance.ScanRows(rows, val); err != nil {
 				return
 			}
 			cursorChan <- &Row{query: r, row: val}
 		}
-		close(cursorChan)
 	}()
-	return cursorChan, err
+	return cursorChan
 }
 
 func (r *Query) DB() (*sql.DB, error) {

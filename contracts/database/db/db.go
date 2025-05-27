@@ -213,5 +213,6 @@ type ToSql interface {
 }
 
 type Row interface {
+	Err() error
 	Scan(value any) error
 }

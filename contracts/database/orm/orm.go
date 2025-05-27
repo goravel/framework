@@ -50,7 +50,7 @@ type Query interface {
 	// Create inserts new record into the database.
 	Create(value any) error
 	// Cursor returns a cursor, use scan to iterate over the returned rows.
-	Cursor() (chan db.Row, error)
+	Cursor() chan db.Row
 	// DB gets the underlying database connection.
 	DB() (*sql.DB, error)
 	// Delete deletes records matching given conditions, if the conditions are empty will delete all records.

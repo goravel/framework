@@ -577,12 +577,13 @@ func (s *QueryTestSuite) TestCursor() {
 			s.Nil(err)
 			s.Equal(int64(1), res.RowsAffected)
 
-			users, err := query.Query().Model(&User{}).Where("name = ?", "cursor_user").WithTrashed().With("Address").With("Books").Cursor()
-			s.Nil(err)
+			users := query.Query().Model(&User{}).Where("name = ?", "cursor_user").WithTrashed().With("Address").With("Books").Cursor()
+
 			var size int
 			var addressNum int
 			var bookNum int
 			for row := range users {
+				s.Nil(row.Err())
 				var tempUser User
 				s.Nil(row.Scan(&tempUser))
 				s.True(tempUser.ID > 0)
