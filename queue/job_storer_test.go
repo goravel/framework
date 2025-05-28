@@ -28,7 +28,7 @@ func (j *MockJob) Handle(args ...any) error {
 
 type JobRepositoryTestSuite struct {
 	suite.Suite
-	jobRepository *JobRepository
+	jobStorer *JobStorer
 }
 
 func TestJobRepositoryTestSuite(t *testing.T) {
@@ -36,11 +36,11 @@ func TestJobRepositoryTestSuite(t *testing.T) {
 }
 
 func (s *JobRepositoryTestSuite) SetupTest() {
-	s.jobRepository = NewJobRepository()
+	s.jobStorer = NewJobStorer()
 }
 
 func (s *JobRepositoryTestSuite) TestNewJobRepository() {
-	repo := NewJobRepository()
+	repo := NewJobStorer()
 	s.NotNil(repo)
 }
 
@@ -50,10 +50,10 @@ func (s *JobRepositoryTestSuite) TestRegister() {
 	job2 := &MockJob{signature: "job2"}
 
 	// Register jobs
-	s.jobRepository.Register([]queue.Job{job1, job2})
+	s.jobStorer.Register([]queue.Job{job1, job2})
 
 	// Verify jobs were registered
-	allJobs := s.jobRepository.All()
+	allJobs := s.jobStorer.All()
 	s.Len(allJobs, 2)
 
 	// Check if both jobs are in the repository
@@ -76,15 +76,15 @@ func (s *JobRepositoryTestSuite) TestRegister() {
 func (s *JobRepositoryTestSuite) TestGet() {
 	// Create and register a mock job
 	job := &MockJob{signature: "test_job"}
-	s.jobRepository.Register([]queue.Job{job})
+	s.jobStorer.Register([]queue.Job{job})
 
 	// Test getting an existing job
-	retrievedJob, err := s.jobRepository.Get("test_job")
+	retrievedJob, err := s.jobStorer.Get("test_job")
 	s.NoError(err)
 	s.Equal("test_job", retrievedJob.Signature())
 
 	// Test getting a non-existent job
-	_, err = s.jobRepository.Get("non_existent_job")
+	_, err = s.jobStorer.Get("non_existent_job")
 	s.Error(err)
 	s.Equal(errors.QueueJobNotFound.Args("non_existent_job"), err)
 }
@@ -92,40 +92,40 @@ func (s *JobRepositoryTestSuite) TestGet() {
 func (s *JobRepositoryTestSuite) TestCall() {
 	// Create and register a mock job
 	job := &MockJob{signature: "test_job"}
-	s.jobRepository.Register([]queue.Job{job})
+	s.jobStorer.Register([]queue.Job{job})
 
 	// Test calling an existing job
 	args := []any{"arg1", "arg2"}
-	err := s.jobRepository.Call("test_job", args)
+	err := s.jobStorer.Call("test_job", args)
 	s.NoError(err)
 	s.Equal(args, job.args)
 
 	// Test calling a non-existent job
-	err = s.jobRepository.Call("non_existent_job", args)
+	err = s.jobStorer.Call("non_existent_job", args)
 	s.Error(err)
 	s.Equal(errors.QueueJobNotFound.Args("non_existent_job"), err)
 
 	// Test calling a job that returns an error
 	errorJob := &MockJob{signature: "error_job", handleErr: assert.AnError}
-	s.jobRepository.Register([]queue.Job{errorJob})
-	err = s.jobRepository.Call("error_job", args)
+	s.jobStorer.Register([]queue.Job{errorJob})
+	err = s.jobStorer.Call("error_job", args)
 	s.Error(err)
 	s.Equal(assert.AnError, err)
 }
 
 func (s *JobRepositoryTestSuite) TestAll() {
 	// Initially, there should be no jobs
-	s.Empty(s.jobRepository.All())
+	s.Empty(s.jobStorer.All())
 
 	// Register some jobs
 	job1 := &MockJob{signature: "job1"}
 	job2 := &MockJob{signature: "job2"}
 	job3 := &MockJob{signature: "job3"}
 
-	s.jobRepository.Register([]queue.Job{job1, job2, job3})
+	s.jobStorer.Register([]queue.Job{job1, job2, job3})
 
 	// Get all jobs
-	allJobs := s.jobRepository.All()
+	allJobs := s.jobStorer.All()
 
 	// Verify the number of jobs
 	s.Len(allJobs, 3)

@@ -60,10 +60,6 @@ func (s *ConfigTestSuite) TestFailedTable() {
 	s.Equal("failed_jobs", s.config.FailedTable())
 }
 
-func (s *ConfigTestSuite) TestQueueKey() {
-	s.Equal("goravel_queues:redis_custom", s.config.QueueKey("redis", "custom"))
-}
-
 func (s *ConfigTestSuite) TestVia() {
 	s.mockConfig.EXPECT().Get("queue.connections.sync.via").Return("sync").Once()
 	s.Equal("sync", s.config.Via("sync"))

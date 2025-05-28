@@ -733,53 +733,6 @@ func (_c *Config_GetString_Call) RunAndReturn(run func(string, ...string) string
 	return _c
 }
 
-// QueueKey provides a mock function with given fields: connection, _a1
-func (_m *Config) QueueKey(connection string, _a1 string) string {
-	ret := _m.Called(connection, _a1)
-
-	if len(ret) == 0 {
-		panic("no return value specified for QueueKey")
-	}
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func(string, string) string); ok {
-		r0 = rf(connection, _a1)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	return r0
-}
-
-// Config_QueueKey_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'QueueKey'
-type Config_QueueKey_Call struct {
-	*mock.Call
-}
-
-// QueueKey is a helper method to define mock.On call
-//   - connection string
-//   - _a1 string
-func (_e *Config_Expecter) QueueKey(connection interface{}, _a1 interface{}) *Config_QueueKey_Call {
-	return &Config_QueueKey_Call{Call: _e.mock.On("QueueKey", connection, _a1)}
-}
-
-func (_c *Config_QueueKey_Call) Run(run func(connection string, _a1 string)) *Config_QueueKey_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string))
-	})
-	return _c
-}
-
-func (_c *Config_QueueKey_Call) Return(_a0 string) *Config_QueueKey_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Config_QueueKey_Call) RunAndReturn(run func(string, string) string) *Config_QueueKey_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // Via provides a mock function with given fields: connection
 func (_m *Config) Via(connection string) interface{} {
 	ret := _m.Called(connection)

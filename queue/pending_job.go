@@ -4,19 +4,27 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	contractsdb "github.com/goravel/framework/contracts/database/db"
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	contractsqueue "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/support/carbon"
 )
 
 type PendingJob struct {
-	config     contractsqueue.Config
-	connection string
-	delay      time.Time
-	queue      string
-	task       contractsqueue.Task
+	connection    string
+	driverCreator contractsqueue.DriverCreator
+	delay         time.Time
+	queue         string
+	task          contractsqueue.Task
 }
 
-func NewPendingJob(config contractsqueue.Config, job contractsqueue.Job, args ...[]contractsqueue.Arg) *PendingJob {
+func NewPendingJob(
+	config contractsqueue.Config,
+	db contractsdb.DB,
+	jobStorer contractsqueue.JobStorer,
+	json contractsfoundation.Json,
+	job contractsqueue.Job,
+	args ...[]contractsqueue.Arg) *PendingJob {
 	var arg []contractsqueue.Arg
 	if len(args) > 0 {
 		arg = args[0]
@@ -26,12 +34,12 @@ func NewPendingJob(config contractsqueue.Config, job contractsqueue.Job, args ..
 	queue := config.DefaultQueue()
 
 	return &PendingJob{
-		config:     config,
-		connection: connection,
-		queue:      queue,
+		connection:    connection,
+		driverCreator: NewDriverCreator(config, db, jobStorer, json),
+		queue:         queue,
 		task: contractsqueue.Task{
 			UUID: uuid.New().String(),
-			Jobs: contractsqueue.Jobs{
+			ChainJob: contractsqueue.ChainJob{
 				Job:  job,
 				Args: arg,
 			},
@@ -39,21 +47,26 @@ func NewPendingJob(config contractsqueue.Config, job contractsqueue.Job, args ..
 	}
 }
 
-func NewPendingChainJob(config contractsqueue.Config, jobs []contractsqueue.Jobs) *PendingJob {
+func NewPendingChainJob(
+	config contractsqueue.Config,
+	db contractsdb.DB,
+	jobStorer contractsqueue.JobStorer,
+	json contractsfoundation.Json,
+	jobs []contractsqueue.ChainJob) *PendingJob {
 	if len(jobs) == 0 {
 		return nil
 	}
 
-	var chain []contractsqueue.Jobs
+	var chain []contractsqueue.ChainJob
 	for _, job := range jobs[1:] {
-		chain = append(chain, contractsqueue.Jobs{
+		chain = append(chain, contractsqueue.ChainJob{
 			Job:   job.Job,
 			Args:  job.Args,
 			Delay: job.Delay,
 		})
 	}
 
-	job := contractsqueue.Jobs{
+	job := contractsqueue.ChainJob{
 		Job:   jobs[0].Job,
 		Args:  jobs[0].Args,
 		Delay: jobs[0].Delay,
@@ -63,13 +76,13 @@ func NewPendingChainJob(config contractsqueue.Config, jobs []contractsqueue.Jobs
 	queue := config.DefaultQueue()
 
 	return &PendingJob{
-		config:     config,
-		connection: connection,
-		queue:      queue,
+		connection:    connection,
+		driverCreator: NewDriverCreator(config, db, jobStorer, json),
+		queue:         queue,
 		task: contractsqueue.Task{
-			UUID:  uuid.New().String(),
-			Jobs:  job,
-			Chain: chain,
+			UUID:     uuid.New().String(),
+			ChainJob: job,
+			Chain:    chain,
 		},
 	}
 }
@@ -82,23 +95,23 @@ func (r *PendingJob) Delay(delay time.Time) contractsqueue.PendingJob {
 
 // Dispatch dispatches the task
 func (r *PendingJob) Dispatch() error {
-	driver, err := NewDriver(r.connection, r.config)
+	driver, err := r.driverCreator.Create(r.connection)
 	if err != nil {
 		return err
 	}
 
 	r.recalculateDelay()
 
-	return driver.Push(r.task, r.config.QueueKey(r.connection, r.queue))
+	return driver.Push(r.task, r.queue)
 }
 
 // DispatchSync dispatches the task synchronously
 func (r *PendingJob) DispatchSync() error {
-	syncDriver := NewSync(r.connection)
+	syncDriver := NewSync()
 
 	r.recalculateDelay()
 
-	return syncDriver.Push(r.task, r.config.QueueKey(r.connection, r.queue))
+	return syncDriver.Push(r.task, r.queue)
 }
 
 // OnConnection sets the connection name

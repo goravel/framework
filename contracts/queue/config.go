@@ -13,6 +13,5 @@ type Config interface {
 	Driver(connection string) string
 	FailedDatabase() string
 	FailedTable() string
-	QueueKey(connection, queue string) string
 	Via(connection string) any
 }

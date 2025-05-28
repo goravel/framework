@@ -21,7 +21,7 @@ func (_m *Queue) EXPECT() *Queue_Expecter {
 }
 
 // Chain provides a mock function with given fields: jobs
-func (_m *Queue) Chain(jobs []queue.Jobs) queue.PendingJob {
+func (_m *Queue) Chain(jobs []queue.ChainJob) queue.PendingJob {
 	ret := _m.Called(jobs)
 
 	if len(ret) == 0 {
@@ -29,7 +29,7 @@ func (_m *Queue) Chain(jobs []queue.Jobs) queue.PendingJob {
 	}
 
 	var r0 queue.PendingJob
-	if rf, ok := ret.Get(0).(func([]queue.Jobs) queue.PendingJob); ok {
+	if rf, ok := ret.Get(0).(func([]queue.ChainJob) queue.PendingJob); ok {
 		r0 = rf(jobs)
 	} else {
 		if ret.Get(0) != nil {
@@ -46,14 +46,14 @@ type Queue_Chain_Call struct {
 }
 
 // Chain is a helper method to define mock.On call
-//   - jobs []queue.Jobs
+//   - jobs []queue.ChainJob
 func (_e *Queue_Expecter) Chain(jobs interface{}) *Queue_Chain_Call {
 	return &Queue_Chain_Call{Call: _e.mock.On("Chain", jobs)}
 }
 
-func (_c *Queue_Chain_Call) Run(run func(jobs []queue.Jobs)) *Queue_Chain_Call {
+func (_c *Queue_Chain_Call) Run(run func(jobs []queue.ChainJob)) *Queue_Chain_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]queue.Jobs))
+		run(args[0].([]queue.ChainJob))
 	})
 	return _c
 }
@@ -63,7 +63,7 @@ func (_c *Queue_Chain_Call) Return(_a0 queue.PendingJob) *Queue_Chain_Call {
 	return _c
 }
 
-func (_c *Queue_Chain_Call) RunAndReturn(run func([]queue.Jobs) queue.PendingJob) *Queue_Chain_Call {
+func (_c *Queue_Chain_Call) RunAndReturn(run func([]queue.ChainJob) queue.PendingJob) *Queue_Chain_Call {
 	_c.Call.Return(run)
 	return _c
 }

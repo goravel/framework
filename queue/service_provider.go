@@ -24,7 +24,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		}
 
 		queueConfig := NewConfig(config)
-		job := NewJobRepository()
+		job := NewJobStorer()
 		db := app.MakeDB()
 
 		return NewApplication(queueConfig, db, job, app.GetJson(), log), nil
