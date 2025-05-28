@@ -199,3 +199,40 @@ func (s *EventTestSuite) TestDelayIfStillRunning() {
 	s.event.DelayIfStillRunning()
 	s.True(s.event.GetDelayIfStillRunning())
 }
+
+func (s *EventTestSuite) TestSimplifyRanges() {
+	tests := []struct {
+		name     string
+		numbers  []int
+		expected string
+	}{
+		{
+			name:     "consecutive range",
+			numbers:  []int{1, 2, 3, 4, 5},
+			expected: "1-5",
+		},
+		{
+			name:     "non-consecutive range",
+			numbers:  []int{1, 2, 7},
+			expected: "1-2,7",
+		},
+		{
+			name:     "mixed range",
+			numbers:  []int{1, 2, 3, 5, 6, 8},
+			expected: "1-3,5-6,8",
+		},
+		{
+			name:     "single number",
+			numbers:  []int{42},
+			expected: "42",
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			result := simplifyRanges(tt.numbers...)
+			s.Equal(tt.expected, result)
+		})
+	}
+
+}
