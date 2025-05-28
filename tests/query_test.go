@@ -577,12 +577,13 @@ func (s *QueryTestSuite) TestCursor() {
 			s.Nil(err)
 			s.Equal(int64(1), res.RowsAffected)
 
-			users, err := query.Query().Model(&User{}).Where("name = ?", "cursor_user").WithTrashed().With("Address").With("Books").Cursor()
-			s.Nil(err)
+			// success
+			users := query.Query().Model(&User{}).Where("name = ?", "cursor_user").WithTrashed().With("Address").With("Books").Cursor()
 			var size int
 			var addressNum int
 			var bookNum int
 			for row := range users {
+				s.Nil(row.Err())
 				var tempUser User
 				s.Nil(row.Scan(&tempUser))
 				s.True(tempUser.ID > 0)
@@ -600,6 +601,17 @@ func (s *QueryTestSuite) TestCursor() {
 			s.Equal(3, size)
 			s.Equal(1, addressNum)
 			s.Equal(1, bookNum)
+
+			// error
+			for row := range query.Query().Table("not_exist").Cursor() {
+				err1 := row.Err()
+				s.Error(err1)
+
+				err2 := row.Scan(map[string]any{})
+				s.Error(err2)
+
+				s.Equal(err1, err2)
+			}
 		})
 	}
 }

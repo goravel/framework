@@ -46,7 +46,7 @@ type Query interface {
 	// CrossJoin specifies CROSS JOIN conditions for the query.
 	CrossJoin(query string, args ...any) Query
 	// Cursor returns a cursor, use scan to iterate over the returned rows.
-	Cursor() (chan Row, error)
+	Cursor() chan Row
 	// Decrement decrements the given column's values by the given amounts.
 	Decrement(column string, value ...uint64) error
 	// Delete deletes records from the database.
@@ -213,5 +213,6 @@ type ToSql interface {
 }
 
 type Row interface {
+	Err() error
 	Scan(value any) error
 }
