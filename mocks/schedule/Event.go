@@ -3,6 +3,8 @@
 package schedule
 
 import (
+	time "time"
+
 	schedule "github.com/goravel/framework/contracts/schedule"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -20,9 +22,9 @@ func (_m *Event) EXPECT() *Event_Expecter {
 	return &Event_Expecter{mock: &_m.Mock}
 }
 
-// At provides a mock function with given fields: time
-func (_m *Event) At(time string) schedule.Event {
-	ret := _m.Called(time)
+// At provides a mock function with given fields: _a0
+func (_m *Event) At(_a0 string) schedule.Event {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for At")
@@ -30,7 +32,7 @@ func (_m *Event) At(time string) schedule.Event {
 
 	var r0 schedule.Event
 	if rf, ok := ret.Get(0).(func(string) schedule.Event); ok {
-		r0 = rf(time)
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(schedule.Event)
@@ -46,12 +48,12 @@ type Event_At_Call struct {
 }
 
 // At is a helper method to define mock.On call
-//   - time string
-func (_e *Event_Expecter) At(time interface{}) *Event_At_Call {
-	return &Event_At_Call{Call: _e.mock.On("At", time)}
+//   - _a0 string
+func (_e *Event_Expecter) At(_a0 interface{}) *Event_At_Call {
+	return &Event_At_Call{Call: _e.mock.On("At", _a0)}
 }
 
-func (_c *Event_At_Call) Run(run func(time string)) *Event_At_Call {
+func (_c *Event_At_Call) Run(run func(_a0 string)) *Event_At_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
@@ -163,9 +165,9 @@ func (_c *Event_Daily_Call) RunAndReturn(run func() schedule.Event) *Event_Daily
 	return _c
 }
 
-// DailyAt provides a mock function with given fields: time
-func (_m *Event) DailyAt(time string) schedule.Event {
-	ret := _m.Called(time)
+// DailyAt provides a mock function with given fields: _a0
+func (_m *Event) DailyAt(_a0 string) schedule.Event {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DailyAt")
@@ -173,7 +175,7 @@ func (_m *Event) DailyAt(time string) schedule.Event {
 
 	var r0 schedule.Event
 	if rf, ok := ret.Get(0).(func(string) schedule.Event); ok {
-		r0 = rf(time)
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(schedule.Event)
@@ -189,12 +191,12 @@ type Event_DailyAt_Call struct {
 }
 
 // DailyAt is a helper method to define mock.On call
-//   - time string
-func (_e *Event_Expecter) DailyAt(time interface{}) *Event_DailyAt_Call {
-	return &Event_DailyAt_Call{Call: _e.mock.On("DailyAt", time)}
+//   - _a0 string
+func (_e *Event_Expecter) DailyAt(_a0 interface{}) *Event_DailyAt_Call {
+	return &Event_DailyAt_Call{Call: _e.mock.On("DailyAt", _a0)}
 }
 
-func (_c *Event_DailyAt_Call) Run(run func(time string)) *Event_DailyAt_Call {
+func (_c *Event_DailyAt_Call) Run(run func(_a0 string)) *Event_DailyAt_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
@@ -207,6 +209,67 @@ func (_c *Event_DailyAt_Call) Return(_a0 schedule.Event) *Event_DailyAt_Call {
 }
 
 func (_c *Event_DailyAt_Call) RunAndReturn(run func(string) schedule.Event) *Event_DailyAt_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Days provides a mock function with given fields: days
+func (_m *Event) Days(days ...time.Weekday) schedule.Event {
+	_va := make([]interface{}, len(days))
+	for _i := range days {
+		_va[_i] = days[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Days")
+	}
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func(...time.Weekday) schedule.Event); ok {
+		r0 = rf(days...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// Event_Days_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Days'
+type Event_Days_Call struct {
+	*mock.Call
+}
+
+// Days is a helper method to define mock.On call
+//   - days ...time.Weekday
+func (_e *Event_Expecter) Days(days ...interface{}) *Event_Days_Call {
+	return &Event_Days_Call{Call: _e.mock.On("Days",
+		append([]interface{}{}, days...)...)}
+}
+
+func (_c *Event_Days_Call) Run(run func(days ...time.Weekday)) *Event_Days_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]time.Weekday, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(time.Weekday)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Event_Days_Call) Return(_a0 schedule.Event) *Event_Days_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_Days_Call) RunAndReturn(run func(...time.Weekday) schedule.Event) *Event_Days_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -305,6 +368,53 @@ func (_c *Event_EveryFifteenMinutes_Call) RunAndReturn(run func() schedule.Event
 	return _c
 }
 
+// EveryFifteenSeconds provides a mock function with no fields
+func (_m *Event) EveryFifteenSeconds() schedule.Event {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for EveryFifteenSeconds")
+	}
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func() schedule.Event); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// Event_EveryFifteenSeconds_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EveryFifteenSeconds'
+type Event_EveryFifteenSeconds_Call struct {
+	*mock.Call
+}
+
+// EveryFifteenSeconds is a helper method to define mock.On call
+func (_e *Event_Expecter) EveryFifteenSeconds() *Event_EveryFifteenSeconds_Call {
+	return &Event_EveryFifteenSeconds_Call{Call: _e.mock.On("EveryFifteenSeconds")}
+}
+
+func (_c *Event_EveryFifteenSeconds_Call) Run(run func()) *Event_EveryFifteenSeconds_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Event_EveryFifteenSeconds_Call) Return(_a0 schedule.Event) *Event_EveryFifteenSeconds_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_EveryFifteenSeconds_Call) RunAndReturn(run func() schedule.Event) *Event_EveryFifteenSeconds_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // EveryFiveMinutes provides a mock function with no fields
 func (_m *Event) EveryFiveMinutes() schedule.Event {
 	ret := _m.Called()
@@ -348,6 +458,53 @@ func (_c *Event_EveryFiveMinutes_Call) Return(_a0 schedule.Event) *Event_EveryFi
 }
 
 func (_c *Event_EveryFiveMinutes_Call) RunAndReturn(run func() schedule.Event) *Event_EveryFiveMinutes_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// EveryFiveSeconds provides a mock function with no fields
+func (_m *Event) EveryFiveSeconds() schedule.Event {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for EveryFiveSeconds")
+	}
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func() schedule.Event); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// Event_EveryFiveSeconds_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EveryFiveSeconds'
+type Event_EveryFiveSeconds_Call struct {
+	*mock.Call
+}
+
+// EveryFiveSeconds is a helper method to define mock.On call
+func (_e *Event_Expecter) EveryFiveSeconds() *Event_EveryFiveSeconds_Call {
+	return &Event_EveryFiveSeconds_Call{Call: _e.mock.On("EveryFiveSeconds")}
+}
+
+func (_c *Event_EveryFiveSeconds_Call) Run(run func()) *Event_EveryFiveSeconds_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Event_EveryFiveSeconds_Call) Return(_a0 schedule.Event) *Event_EveryFiveSeconds_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_EveryFiveSeconds_Call) RunAndReturn(run func() schedule.Event) *Event_EveryFiveSeconds_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -493,6 +650,53 @@ func (_c *Event_EveryMinute_Call) RunAndReturn(run func() schedule.Event) *Event
 	return _c
 }
 
+// EverySecond provides a mock function with no fields
+func (_m *Event) EverySecond() schedule.Event {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for EverySecond")
+	}
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func() schedule.Event); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// Event_EverySecond_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EverySecond'
+type Event_EverySecond_Call struct {
+	*mock.Call
+}
+
+// EverySecond is a helper method to define mock.On call
+func (_e *Event_Expecter) EverySecond() *Event_EverySecond_Call {
+	return &Event_EverySecond_Call{Call: _e.mock.On("EverySecond")}
+}
+
+func (_c *Event_EverySecond_Call) Run(run func()) *Event_EverySecond_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Event_EverySecond_Call) Return(_a0 schedule.Event) *Event_EverySecond_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_EverySecond_Call) RunAndReturn(run func() schedule.Event) *Event_EverySecond_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // EverySixHours provides a mock function with no fields
 func (_m *Event) EverySixHours() schedule.Event {
 	ret := _m.Called()
@@ -587,6 +791,53 @@ func (_c *Event_EveryTenMinutes_Call) RunAndReturn(run func() schedule.Event) *E
 	return _c
 }
 
+// EveryTenSeconds provides a mock function with no fields
+func (_m *Event) EveryTenSeconds() schedule.Event {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for EveryTenSeconds")
+	}
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func() schedule.Event); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// Event_EveryTenSeconds_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EveryTenSeconds'
+type Event_EveryTenSeconds_Call struct {
+	*mock.Call
+}
+
+// EveryTenSeconds is a helper method to define mock.On call
+func (_e *Event_Expecter) EveryTenSeconds() *Event_EveryTenSeconds_Call {
+	return &Event_EveryTenSeconds_Call{Call: _e.mock.On("EveryTenSeconds")}
+}
+
+func (_c *Event_EveryTenSeconds_Call) Run(run func()) *Event_EveryTenSeconds_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Event_EveryTenSeconds_Call) Return(_a0 schedule.Event) *Event_EveryTenSeconds_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_EveryTenSeconds_Call) RunAndReturn(run func() schedule.Event) *Event_EveryTenSeconds_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // EveryThirtyMinutes provides a mock function with no fields
 func (_m *Event) EveryThirtyMinutes() schedule.Event {
 	ret := _m.Called()
@@ -630,6 +881,53 @@ func (_c *Event_EveryThirtyMinutes_Call) Return(_a0 schedule.Event) *Event_Every
 }
 
 func (_c *Event_EveryThirtyMinutes_Call) RunAndReturn(run func() schedule.Event) *Event_EveryThirtyMinutes_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// EveryThirtySeconds provides a mock function with no fields
+func (_m *Event) EveryThirtySeconds() schedule.Event {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for EveryThirtySeconds")
+	}
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func() schedule.Event); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// Event_EveryThirtySeconds_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EveryThirtySeconds'
+type Event_EveryThirtySeconds_Call struct {
+	*mock.Call
+}
+
+// EveryThirtySeconds is a helper method to define mock.On call
+func (_e *Event_Expecter) EveryThirtySeconds() *Event_EveryThirtySeconds_Call {
+	return &Event_EveryThirtySeconds_Call{Call: _e.mock.On("EveryThirtySeconds")}
+}
+
+func (_c *Event_EveryThirtySeconds_Call) Run(run func()) *Event_EveryThirtySeconds_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Event_EveryThirtySeconds_Call) Return(_a0 schedule.Event) *Event_EveryThirtySeconds_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_EveryThirtySeconds_Call) RunAndReturn(run func() schedule.Event) *Event_EveryThirtySeconds_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -728,6 +1026,53 @@ func (_c *Event_EveryThreeMinutes_Call) RunAndReturn(run func() schedule.Event) 
 	return _c
 }
 
+// EveryTwentySeconds provides a mock function with no fields
+func (_m *Event) EveryTwentySeconds() schedule.Event {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for EveryTwentySeconds")
+	}
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func() schedule.Event); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// Event_EveryTwentySeconds_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EveryTwentySeconds'
+type Event_EveryTwentySeconds_Call struct {
+	*mock.Call
+}
+
+// EveryTwentySeconds is a helper method to define mock.On call
+func (_e *Event_Expecter) EveryTwentySeconds() *Event_EveryTwentySeconds_Call {
+	return &Event_EveryTwentySeconds_Call{Call: _e.mock.On("EveryTwentySeconds")}
+}
+
+func (_c *Event_EveryTwentySeconds_Call) Run(run func()) *Event_EveryTwentySeconds_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Event_EveryTwentySeconds_Call) Return(_a0 schedule.Event) *Event_EveryTwentySeconds_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_EveryTwentySeconds_Call) RunAndReturn(run func() schedule.Event) *Event_EveryTwentySeconds_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // EveryTwoHours provides a mock function with no fields
 func (_m *Event) EveryTwoHours() schedule.Event {
 	ret := _m.Called()
@@ -818,6 +1163,100 @@ func (_c *Event_EveryTwoMinutes_Call) Return(_a0 schedule.Event) *Event_EveryTwo
 }
 
 func (_c *Event_EveryTwoMinutes_Call) RunAndReturn(run func() schedule.Event) *Event_EveryTwoMinutes_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// EveryTwoSeconds provides a mock function with no fields
+func (_m *Event) EveryTwoSeconds() schedule.Event {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for EveryTwoSeconds")
+	}
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func() schedule.Event); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// Event_EveryTwoSeconds_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EveryTwoSeconds'
+type Event_EveryTwoSeconds_Call struct {
+	*mock.Call
+}
+
+// EveryTwoSeconds is a helper method to define mock.On call
+func (_e *Event_Expecter) EveryTwoSeconds() *Event_EveryTwoSeconds_Call {
+	return &Event_EveryTwoSeconds_Call{Call: _e.mock.On("EveryTwoSeconds")}
+}
+
+func (_c *Event_EveryTwoSeconds_Call) Run(run func()) *Event_EveryTwoSeconds_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Event_EveryTwoSeconds_Call) Return(_a0 schedule.Event) *Event_EveryTwoSeconds_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_EveryTwoSeconds_Call) RunAndReturn(run func() schedule.Event) *Event_EveryTwoSeconds_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Fridays provides a mock function with no fields
+func (_m *Event) Fridays() schedule.Event {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Fridays")
+	}
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func() schedule.Event); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// Event_Fridays_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Fridays'
+type Event_Fridays_Call struct {
+	*mock.Call
+}
+
+// Fridays is a helper method to define mock.On call
+func (_e *Event_Expecter) Fridays() *Event_Fridays_Call {
+	return &Event_Fridays_Call{Call: _e.mock.On("Fridays")}
+}
+
+func (_c *Event_Fridays_Call) Run(run func()) *Event_Fridays_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Event_Fridays_Call) Return(_a0 schedule.Event) *Event_Fridays_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_Fridays_Call) RunAndReturn(run func() schedule.Event) *Event_Fridays_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1234,6 +1673,100 @@ func (_c *Event_IsOnOneServer_Call) RunAndReturn(run func() bool) *Event_IsOnOne
 	return _c
 }
 
+// Mondays provides a mock function with no fields
+func (_m *Event) Mondays() schedule.Event {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Mondays")
+	}
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func() schedule.Event); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// Event_Mondays_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Mondays'
+type Event_Mondays_Call struct {
+	*mock.Call
+}
+
+// Mondays is a helper method to define mock.On call
+func (_e *Event_Expecter) Mondays() *Event_Mondays_Call {
+	return &Event_Mondays_Call{Call: _e.mock.On("Mondays")}
+}
+
+func (_c *Event_Mondays_Call) Run(run func()) *Event_Mondays_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Event_Mondays_Call) Return(_a0 schedule.Event) *Event_Mondays_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_Mondays_Call) RunAndReturn(run func() schedule.Event) *Event_Mondays_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Monthly provides a mock function with no fields
+func (_m *Event) Monthly() schedule.Event {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Monthly")
+	}
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func() schedule.Event); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// Event_Monthly_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Monthly'
+type Event_Monthly_Call struct {
+	*mock.Call
+}
+
+// Monthly is a helper method to define mock.On call
+func (_e *Event_Expecter) Monthly() *Event_Monthly_Call {
+	return &Event_Monthly_Call{Call: _e.mock.On("Monthly")}
+}
+
+func (_c *Event_Monthly_Call) Run(run func()) *Event_Monthly_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Event_Monthly_Call) Return(_a0 schedule.Event) *Event_Monthly_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_Monthly_Call) RunAndReturn(run func() schedule.Event) *Event_Monthly_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Name provides a mock function with given fields: name
 func (_m *Event) Name(name string) schedule.Event {
 	ret := _m.Called(name)
@@ -1329,6 +1862,100 @@ func (_c *Event_OnOneServer_Call) RunAndReturn(run func() schedule.Event) *Event
 	return _c
 }
 
+// Quarterly provides a mock function with no fields
+func (_m *Event) Quarterly() schedule.Event {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Quarterly")
+	}
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func() schedule.Event); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// Event_Quarterly_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Quarterly'
+type Event_Quarterly_Call struct {
+	*mock.Call
+}
+
+// Quarterly is a helper method to define mock.On call
+func (_e *Event_Expecter) Quarterly() *Event_Quarterly_Call {
+	return &Event_Quarterly_Call{Call: _e.mock.On("Quarterly")}
+}
+
+func (_c *Event_Quarterly_Call) Run(run func()) *Event_Quarterly_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Event_Quarterly_Call) Return(_a0 schedule.Event) *Event_Quarterly_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_Quarterly_Call) RunAndReturn(run func() schedule.Event) *Event_Quarterly_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Saturdays provides a mock function with no fields
+func (_m *Event) Saturdays() schedule.Event {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Saturdays")
+	}
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func() schedule.Event); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// Event_Saturdays_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Saturdays'
+type Event_Saturdays_Call struct {
+	*mock.Call
+}
+
+// Saturdays is a helper method to define mock.On call
+func (_e *Event_Expecter) Saturdays() *Event_Saturdays_Call {
+	return &Event_Saturdays_Call{Call: _e.mock.On("Saturdays")}
+}
+
+func (_c *Event_Saturdays_Call) Run(run func()) *Event_Saturdays_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Event_Saturdays_Call) Return(_a0 schedule.Event) *Event_Saturdays_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_Saturdays_Call) RunAndReturn(run func() schedule.Event) *Event_Saturdays_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // SkipIfStillRunning provides a mock function with no fields
 func (_m *Event) SkipIfStillRunning() schedule.Event {
 	ret := _m.Called()
@@ -1372,6 +1999,443 @@ func (_c *Event_SkipIfStillRunning_Call) Return(_a0 schedule.Event) *Event_SkipI
 }
 
 func (_c *Event_SkipIfStillRunning_Call) RunAndReturn(run func() schedule.Event) *Event_SkipIfStillRunning_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Sundays provides a mock function with no fields
+func (_m *Event) Sundays() schedule.Event {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Sundays")
+	}
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func() schedule.Event); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// Event_Sundays_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Sundays'
+type Event_Sundays_Call struct {
+	*mock.Call
+}
+
+// Sundays is a helper method to define mock.On call
+func (_e *Event_Expecter) Sundays() *Event_Sundays_Call {
+	return &Event_Sundays_Call{Call: _e.mock.On("Sundays")}
+}
+
+func (_c *Event_Sundays_Call) Run(run func()) *Event_Sundays_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Event_Sundays_Call) Return(_a0 schedule.Event) *Event_Sundays_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_Sundays_Call) RunAndReturn(run func() schedule.Event) *Event_Sundays_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Thursdays provides a mock function with no fields
+func (_m *Event) Thursdays() schedule.Event {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Thursdays")
+	}
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func() schedule.Event); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// Event_Thursdays_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Thursdays'
+type Event_Thursdays_Call struct {
+	*mock.Call
+}
+
+// Thursdays is a helper method to define mock.On call
+func (_e *Event_Expecter) Thursdays() *Event_Thursdays_Call {
+	return &Event_Thursdays_Call{Call: _e.mock.On("Thursdays")}
+}
+
+func (_c *Event_Thursdays_Call) Run(run func()) *Event_Thursdays_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Event_Thursdays_Call) Return(_a0 schedule.Event) *Event_Thursdays_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_Thursdays_Call) RunAndReturn(run func() schedule.Event) *Event_Thursdays_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Tuesdays provides a mock function with no fields
+func (_m *Event) Tuesdays() schedule.Event {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Tuesdays")
+	}
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func() schedule.Event); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// Event_Tuesdays_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Tuesdays'
+type Event_Tuesdays_Call struct {
+	*mock.Call
+}
+
+// Tuesdays is a helper method to define mock.On call
+func (_e *Event_Expecter) Tuesdays() *Event_Tuesdays_Call {
+	return &Event_Tuesdays_Call{Call: _e.mock.On("Tuesdays")}
+}
+
+func (_c *Event_Tuesdays_Call) Run(run func()) *Event_Tuesdays_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Event_Tuesdays_Call) Return(_a0 schedule.Event) *Event_Tuesdays_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_Tuesdays_Call) RunAndReturn(run func() schedule.Event) *Event_Tuesdays_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TwiceDaily provides a mock function with given fields: hours
+func (_m *Event) TwiceDaily(hours ...int) schedule.Event {
+	_va := make([]interface{}, len(hours))
+	for _i := range hours {
+		_va[_i] = hours[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TwiceDaily")
+	}
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func(...int) schedule.Event); ok {
+		r0 = rf(hours...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// Event_TwiceDaily_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TwiceDaily'
+type Event_TwiceDaily_Call struct {
+	*mock.Call
+}
+
+// TwiceDaily is a helper method to define mock.On call
+//   - hours ...int
+func (_e *Event_Expecter) TwiceDaily(hours ...interface{}) *Event_TwiceDaily_Call {
+	return &Event_TwiceDaily_Call{Call: _e.mock.On("TwiceDaily",
+		append([]interface{}{}, hours...)...)}
+}
+
+func (_c *Event_TwiceDaily_Call) Run(run func(hours ...int)) *Event_TwiceDaily_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]int, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(int)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Event_TwiceDaily_Call) Return(_a0 schedule.Event) *Event_TwiceDaily_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_TwiceDaily_Call) RunAndReturn(run func(...int) schedule.Event) *Event_TwiceDaily_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Wednesdays provides a mock function with no fields
+func (_m *Event) Wednesdays() schedule.Event {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Wednesdays")
+	}
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func() schedule.Event); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// Event_Wednesdays_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Wednesdays'
+type Event_Wednesdays_Call struct {
+	*mock.Call
+}
+
+// Wednesdays is a helper method to define mock.On call
+func (_e *Event_Expecter) Wednesdays() *Event_Wednesdays_Call {
+	return &Event_Wednesdays_Call{Call: _e.mock.On("Wednesdays")}
+}
+
+func (_c *Event_Wednesdays_Call) Run(run func()) *Event_Wednesdays_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Event_Wednesdays_Call) Return(_a0 schedule.Event) *Event_Wednesdays_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_Wednesdays_Call) RunAndReturn(run func() schedule.Event) *Event_Wednesdays_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Weekdays provides a mock function with no fields
+func (_m *Event) Weekdays() schedule.Event {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Weekdays")
+	}
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func() schedule.Event); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// Event_Weekdays_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Weekdays'
+type Event_Weekdays_Call struct {
+	*mock.Call
+}
+
+// Weekdays is a helper method to define mock.On call
+func (_e *Event_Expecter) Weekdays() *Event_Weekdays_Call {
+	return &Event_Weekdays_Call{Call: _e.mock.On("Weekdays")}
+}
+
+func (_c *Event_Weekdays_Call) Run(run func()) *Event_Weekdays_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Event_Weekdays_Call) Return(_a0 schedule.Event) *Event_Weekdays_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_Weekdays_Call) RunAndReturn(run func() schedule.Event) *Event_Weekdays_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Weekends provides a mock function with no fields
+func (_m *Event) Weekends() schedule.Event {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Weekends")
+	}
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func() schedule.Event); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// Event_Weekends_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Weekends'
+type Event_Weekends_Call struct {
+	*mock.Call
+}
+
+// Weekends is a helper method to define mock.On call
+func (_e *Event_Expecter) Weekends() *Event_Weekends_Call {
+	return &Event_Weekends_Call{Call: _e.mock.On("Weekends")}
+}
+
+func (_c *Event_Weekends_Call) Run(run func()) *Event_Weekends_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Event_Weekends_Call) Return(_a0 schedule.Event) *Event_Weekends_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_Weekends_Call) RunAndReturn(run func() schedule.Event) *Event_Weekends_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Weekly provides a mock function with no fields
+func (_m *Event) Weekly() schedule.Event {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Weekly")
+	}
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func() schedule.Event); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// Event_Weekly_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Weekly'
+type Event_Weekly_Call struct {
+	*mock.Call
+}
+
+// Weekly is a helper method to define mock.On call
+func (_e *Event_Expecter) Weekly() *Event_Weekly_Call {
+	return &Event_Weekly_Call{Call: _e.mock.On("Weekly")}
+}
+
+func (_c *Event_Weekly_Call) Run(run func()) *Event_Weekly_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Event_Weekly_Call) Return(_a0 schedule.Event) *Event_Weekly_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_Weekly_Call) RunAndReturn(run func() schedule.Event) *Event_Weekly_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Yearly provides a mock function with no fields
+func (_m *Event) Yearly() schedule.Event {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Yearly")
+	}
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func() schedule.Event); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// Event_Yearly_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Yearly'
+type Event_Yearly_Call struct {
+	*mock.Call
+}
+
+// Yearly is a helper method to define mock.On call
+func (_e *Event_Expecter) Yearly() *Event_Yearly_Call {
+	return &Event_Yearly_Call{Call: _e.mock.On("Yearly")}
+}
+
+func (_c *Event_Yearly_Call) Run(run func()) *Event_Yearly_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Event_Yearly_Call) Return(_a0 schedule.Event) *Event_Yearly_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_Yearly_Call) RunAndReturn(run func() schedule.Event) *Event_Yearly_Call {
 	_c.Call.Return(run)
 	return _c
 }
