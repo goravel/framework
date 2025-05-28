@@ -214,11 +214,12 @@ func (r *Query) Cursor() (chan contractsorm.Cursor, error) {
 	query := r.buildConditions()
 	r.conditions.with = with
 
-	var err error
 	cursorChan := make(chan contractsorm.Cursor)
 	go func() {
+		defer close(cursorChan)
+
 		var rows *sql.Rows
-		rows, err = query.instance.Rows()
+		rows, err := query.instance.Rows()
 		if err != nil {
 			return
 		}
@@ -232,9 +233,8 @@ func (r *Query) Cursor() (chan contractsorm.Cursor, error) {
 			}
 			cursorChan <- &CursorImpl{query: r, row: val}
 		}
-		close(cursorChan)
 	}()
-	return cursorChan, err
+	return cursorChan, nil
 }
 
 func (r *Query) DB() (*sql.DB, error) {
