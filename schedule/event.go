@@ -1,7 +1,10 @@
 package schedule
 
 import (
+	"slices"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/goravel/framework/contracts/schedule"
 )
@@ -31,174 +34,347 @@ func NewCommandEvent(command string) *Event {
 	}
 }
 
-// At Schedule the command at a given time.
-func (receiver *Event) At(time string) schedule.Event {
-	return receiver.DailyAt(time)
+// At schedule the command at a given time.
+func (r *Event) At(time string) schedule.Event {
+	return r.DailyAt(time)
 }
 
 // Cron The Cron expression representing the event's frequency.
-func (receiver *Event) Cron(expression string) schedule.Event {
-	receiver.cron = expression
+func (r *Event) Cron(expression string) schedule.Event {
+	r.cron = expression
 
-	return receiver
+	return r
 }
 
-// Daily Schedule the event to run daily.
-func (receiver *Event) Daily() schedule.Event {
-	event := receiver.Cron(receiver.spliceIntoPosition(1, "0"))
+// Daily schedule the event to run daily.
+func (r *Event) Daily() schedule.Event {
+	event := r.Cron(r.spliceIntoPosition(1, "0"))
 
-	return event.Cron(receiver.spliceIntoPosition(2, "0"))
+	return event.Cron(r.spliceIntoPosition(2, "0"))
 }
 
-// DailyAt Schedule the event to run daily at a given time (10:00, 19:30, etc).
-func (receiver *Event) DailyAt(time string) schedule.Event {
+// DailyAt schedule the event to run daily at a given time (10:00, 19:30, etc).
+func (r *Event) DailyAt(time string) schedule.Event {
 	segments := strings.Split(time, ":")
-	event := receiver.Cron(receiver.spliceIntoPosition(2, segments[0]))
+	event := r.Cron(r.spliceIntoPosition(2, segments[0]))
 
 	if len(segments) == 2 {
-		return event.Cron(receiver.spliceIntoPosition(1, segments[1]))
+		return event.Cron(r.spliceIntoPosition(1, segments[1]))
 	} else {
-		return event.Cron(receiver.spliceIntoPosition(1, "0"))
+		return event.Cron(r.spliceIntoPosition(1, "0"))
 	}
 }
 
-// DelayIfStillRunning Do not allow the event to overlap each other.
-func (receiver *Event) DelayIfStillRunning() schedule.Event {
-	receiver.delayIfStillRunning = true
+// TwiceDaily schedule the event to run twice a day,default at 1:00 and 13:00.
+func (r *Event) TwiceDaily(hours ...int) schedule.Event {
+	first, second := 1, 13
+	if len(hours) >= 2 {
+		first, second = hours[0], hours[1]
+	}
 
-	return receiver
+	return r.Cron(r.spliceIntoPosition(2, simplifyRanges(first, second)))
 }
 
-// EveryMinute Schedule the event to run every minute.
-func (receiver *Event) EveryMinute() schedule.Event {
-	return receiver.Cron(receiver.spliceIntoPosition(1, "*"))
+// DelayIfStillRunning do not allow the event to overlap each other.
+func (r *Event) DelayIfStillRunning() schedule.Event {
+	r.delayIfStillRunning = true
+
+	return r
 }
 
-// EveryTwoMinutes Schedule the event to run every two minutes.
-func (receiver *Event) EveryTwoMinutes() schedule.Event {
-	return receiver.Cron(receiver.spliceIntoPosition(1, "*/2"))
+// EverySecond schedule the event to run every second.
+func (r *Event) EverySecond() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(0, "*"))
 }
 
-// EveryThreeMinutes Schedule the event to run every three minutes.
-func (receiver *Event) EveryThreeMinutes() schedule.Event {
-	return receiver.Cron(receiver.spliceIntoPosition(1, "*/3"))
+// EveryTwoSeconds schedule the event to run every two seconds.
+func (r *Event) EveryTwoSeconds() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(0, "*/2"))
 }
 
-// EveryFourMinutes Schedule the event to run every four minutes.
-func (receiver *Event) EveryFourMinutes() schedule.Event {
-	return receiver.Cron(receiver.spliceIntoPosition(1, "*/4"))
+// EveryFiveSeconds schedule the event to run every five seconds.
+func (r *Event) EveryFiveSeconds() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(0, "*/5"))
 }
 
-// EveryFiveMinutes Schedule the event to run every five minutes.
-func (receiver *Event) EveryFiveMinutes() schedule.Event {
-	return receiver.Cron(receiver.spliceIntoPosition(1, "*/5"))
+// EveryTenSeconds schedule the event to run every ten seconds.
+func (r *Event) EveryTenSeconds() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(0, "*/10"))
 }
 
-// EveryTenMinutes Schedule the event to run every ten minutes.
-func (receiver *Event) EveryTenMinutes() schedule.Event {
-	return receiver.Cron(receiver.spliceIntoPosition(1, "*/10"))
+// EveryFifteenSeconds schedule the event to run every fifteen seconds.
+func (r *Event) EveryFifteenSeconds() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(0, "*/15"))
 }
 
-// EveryFifteenMinutes Schedule the event to run every fifteen minutes.
-func (receiver *Event) EveryFifteenMinutes() schedule.Event {
-	return receiver.Cron(receiver.spliceIntoPosition(1, "*/15"))
+// EveryTwentySeconds schedule the event to run every twenty seconds.
+func (r *Event) EveryTwentySeconds() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(0, "*/20"))
 }
 
-// EveryThirtyMinutes Schedule the event to run every thirty minutes.
-func (receiver *Event) EveryThirtyMinutes() schedule.Event {
-	return receiver.Cron(receiver.spliceIntoPosition(1, "*/30"))
+// EveryThirtySeconds schedule the event to run every thirty seconds.
+func (r *Event) EveryThirtySeconds() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(0, "*/30"))
 }
 
-// EveryTwoHours Schedule the event to run every two hours.
-func (receiver *Event) EveryTwoHours() schedule.Event {
-	event := receiver.Cron(receiver.spliceIntoPosition(1, "0"))
-
-	return event.Cron(receiver.spliceIntoPosition(2, "*/2"))
+// EveryMinute schedule the event to run every minute.
+func (r *Event) EveryMinute() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(1, "*"))
 }
 
-// EveryThreeHours Schedule the event to run every three hours.
-func (receiver *Event) EveryThreeHours() schedule.Event {
-	event := receiver.Cron(receiver.spliceIntoPosition(1, "0"))
-
-	return event.Cron(receiver.spliceIntoPosition(2, "*/3"))
+// EveryTwoMinutes schedule the event to run every two minutes.
+func (r *Event) EveryTwoMinutes() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(1, "*/2"))
 }
 
-// EveryFourHours Schedule the event to run every four hours.
-func (receiver *Event) EveryFourHours() schedule.Event {
-	event := receiver.Cron(receiver.spliceIntoPosition(1, "0"))
-
-	return event.Cron(receiver.spliceIntoPosition(2, "*/4"))
+// EveryThreeMinutes schedule the event to run every three minutes.
+func (r *Event) EveryThreeMinutes() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(1, "*/3"))
 }
 
-// EverySixHours Schedule the event to run every six hours.
-func (receiver *Event) EverySixHours() schedule.Event {
-	event := receiver.Cron(receiver.spliceIntoPosition(1, "0"))
-
-	return event.Cron(receiver.spliceIntoPosition(2, "*/6"))
+// EveryFourMinutes schedule the event to run every four minutes.
+func (r *Event) EveryFourMinutes() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(1, "*/4"))
 }
 
-func (receiver *Event) GetCron() string {
-	return receiver.cron
+// EveryFiveMinutes schedule the event to run every five minutes.
+func (r *Event) EveryFiveMinutes() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(1, "*/5"))
 }
 
-func (receiver *Event) GetCommand() string {
-	return receiver.command
+// EveryTenMinutes schedule the event to run every ten minutes.
+func (r *Event) EveryTenMinutes() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(1, "*/10"))
 }
 
-func (receiver *Event) GetCallback() func() {
-	return receiver.callback
+// EveryFifteenMinutes schedule the event to run every fifteen minutes.
+func (r *Event) EveryFifteenMinutes() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(1, "*/15"))
 }
 
-func (receiver *Event) GetName() string {
-	return receiver.name
+// EveryThirtyMinutes schedule the event to run every thirty minutes.
+func (r *Event) EveryThirtyMinutes() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(1, "*/30"))
 }
 
-func (receiver *Event) GetSkipIfStillRunning() bool {
-	return receiver.skipIfStillRunning
+// EveryTwoHours schedule the event to run every two hours.
+func (r *Event) EveryTwoHours() schedule.Event {
+	event := r.Cron(r.spliceIntoPosition(1, "0"))
+
+	return event.Cron(r.spliceIntoPosition(2, "*/2"))
 }
 
-func (receiver *Event) GetDelayIfStillRunning() bool {
-	return receiver.delayIfStillRunning
+// EveryThreeHours schedule the event to run every three hours.
+func (r *Event) EveryThreeHours() schedule.Event {
+	event := r.Cron(r.spliceIntoPosition(1, "0"))
+
+	return event.Cron(r.spliceIntoPosition(2, "*/3"))
 }
 
-// Hourly Schedule the event to run hourly.
-func (receiver *Event) Hourly() schedule.Event {
-	return receiver.Cron(receiver.spliceIntoPosition(1, "0"))
+// EveryFourHours schedule the event to run every four hours.
+func (r *Event) EveryFourHours() schedule.Event {
+	event := r.Cron(r.spliceIntoPosition(1, "0"))
+
+	return event.Cron(r.spliceIntoPosition(2, "*/4"))
 }
 
-// HourlyAt Schedule the event to run hourly at a given offset in the hour.
-func (receiver *Event) HourlyAt(offset []string) schedule.Event {
-	return receiver.Cron(receiver.spliceIntoPosition(1, strings.Join(offset, ",")))
+// EverySixHours schedule the event to run every six hours.
+func (r *Event) EverySixHours() schedule.Event {
+	event := r.Cron(r.spliceIntoPosition(1, "0"))
+
+	return event.Cron(r.spliceIntoPosition(2, "*/6"))
 }
 
-func (receiver *Event) IsOnOneServer() bool {
-	return receiver.onOneServer
+func (r *Event) GetCron() string {
+	return r.cron
 }
 
-func (receiver *Event) Name(name string) schedule.Event {
-	receiver.name = name
-
-	return receiver
+func (r *Event) GetCommand() string {
+	return r.command
 }
 
-func (receiver *Event) OnOneServer() schedule.Event {
-	receiver.onOneServer = true
-
-	return receiver
+func (r *Event) GetCallback() func() {
+	return r.callback
 }
 
-// SkipIfStillRunning Do not allow the event to overlap each other.
-func (receiver *Event) SkipIfStillRunning() schedule.Event {
-	receiver.skipIfStillRunning = true
-
-	return receiver
+func (r *Event) GetName() string {
+	return r.name
 }
 
-// spliceIntoPosition Splice the given value into the given position of the expression.
-func (receiver *Event) spliceIntoPosition(position int, value string) string {
-	segments := strings.Split(receiver.GetCron(), " ")
+func (r *Event) GetSkipIfStillRunning() bool {
+	return r.skipIfStillRunning
+}
+
+func (r *Event) GetDelayIfStillRunning() bool {
+	return r.delayIfStillRunning
+}
+
+// Hourly schedule the event to run hourly.
+func (r *Event) Hourly() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(1, "0"))
+}
+
+// HourlyAt schedule the event to run hourly at a given offset in the hour.
+func (r *Event) HourlyAt(offset []string) schedule.Event {
+	return r.Cron(r.spliceIntoPosition(1, strings.Join(offset, ",")))
+}
+
+// Days schedule the event to run on specific days of the week.
+func (r *Event) Days(days ...time.Weekday) schedule.Event {
+	if len(days) == 0 {
+		return r
+	}
+
+	return r.Cron(r.spliceIntoPosition(5, simplifyRanges(days...)))
+}
+
+// Weekdays schedule the event to run on weekdays (Monday to Friday).
+func (r *Event) Weekdays() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(5, formatRange(time.Monday, time.Friday)))
+}
+
+// Weekends schedule the event to run on weekends (Saturday and Sunday).
+func (r *Event) Weekends() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(5, simplifyRanges(time.Saturday, time.Sunday)))
+}
+
+// Mondays schedule the event to run on Mondays.
+func (r *Event) Mondays() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(5, simplifyRanges(time.Monday)))
+}
+
+// Tuesdays schedule the event to run on Tuesdays.
+func (r *Event) Tuesdays() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(5, simplifyRanges(time.Tuesday)))
+}
+
+// Wednesdays schedule the event to run on Wednesdays.
+func (r *Event) Wednesdays() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(5, simplifyRanges(time.Wednesday)))
+}
+
+// Thursdays schedule the event to run on Thursdays.
+func (r *Event) Thursdays() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(5, simplifyRanges(time.Thursday)))
+}
+
+// Fridays schedule the event to run on Fridays.
+func (r *Event) Fridays() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(5, simplifyRanges(time.Friday)))
+}
+
+// Saturdays schedule the event to run on Saturdays.
+func (r *Event) Saturdays() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(5, simplifyRanges(time.Saturday)))
+}
+
+// Sundays schedule the event to run on Sundays.
+func (r *Event) Sundays() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(5, simplifyRanges(time.Sunday)))
+}
+
+// Weekly schedule the event to run weekly.
+func (r *Event) Weekly() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(1, "0")).
+		Cron(r.spliceIntoPosition(2, "0")).
+		Cron(r.spliceIntoPosition(5, "0"))
+}
+
+// Monthly schedule the event to run monthly.
+func (r *Event) Monthly() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(1, "0")).
+		Cron(r.spliceIntoPosition(2, "0")).
+		Cron(r.spliceIntoPosition(3, "1"))
+}
+
+// Quarterly schedule the event to run quarterly.
+func (r *Event) Quarterly() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(1, "0")).
+		Cron(r.spliceIntoPosition(2, "0")).
+		Cron(r.spliceIntoPosition(3, "1")).
+		Cron(r.spliceIntoPosition(4, "1-12/3"))
+}
+
+// Yearly schedule the event to run yearly.
+func (r *Event) Yearly() schedule.Event {
+	return r.Cron(r.spliceIntoPosition(1, "0")).
+		Cron(r.spliceIntoPosition(2, "0")).
+		Cron(r.spliceIntoPosition(3, "1")).
+		Cron(r.spliceIntoPosition(4, "1"))
+}
+
+func (r *Event) IsOnOneServer() bool {
+	return r.onOneServer
+}
+
+func (r *Event) Name(name string) schedule.Event {
+	r.name = name
+
+	return r
+}
+
+func (r *Event) OnOneServer() schedule.Event {
+	r.onOneServer = true
+
+	return r
+}
+
+// SkipIfStillRunning do not allow the event to overlap each other.
+func (r *Event) SkipIfStillRunning() schedule.Event {
+	r.skipIfStillRunning = true
+
+	return r
+}
+
+// spliceIntoPosition splice the given value into the given position of the expression.
+func (r *Event) spliceIntoPosition(position int, value string) string {
+	segments := strings.Split(r.GetCron(), " ")
+
+	if position == 0 {
+		// if position is 0, it indicates a second-level cron expression.
+		segments = append([]string{value}, segments...)
+
+		return strings.Join(segments, " ")
+	}
 
 	segments[position-1] = value
 
 	return strings.Join(segments, " ")
+}
+
+// simplifyRanges simplifies a list of integers into a string representation of ranges.
+// For example, [1, 2, 3, 5, 6, 8] becomes "1-3,5-6,8".
+func simplifyRanges[T ~int | ~int8 | ~int16 | ~int32 | ~int64](nums ...T) string {
+	if len(nums) == 0 {
+		return ""
+	}
+
+	slices.Sort(nums)
+	nums = slices.Compact(nums)
+
+	var (
+		result []string
+		start  = nums[0]
+		end    = nums[0]
+	)
+
+	for i := 1; i < len(nums); i++ {
+		if nums[i] == end+1 {
+			end = nums[i]
+		} else {
+			result = append(result, formatRange(start, end))
+			start = nums[i]
+			end = nums[i]
+		}
+	}
+	result = append(result, formatRange(start, end))
+
+	return strings.Join(result, ",")
+}
+
+func formatRange[T ~int | ~int8 | ~int16 | ~int32 | ~int64](start, end T) string {
+	if start == end {
+		return strconv.FormatInt(int64(start), 10)
+	}
+	return strconv.FormatInt(int64(start), 10) + "-" + strconv.FormatInt(int64(end), 10)
 }
