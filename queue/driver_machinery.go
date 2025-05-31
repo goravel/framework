@@ -21,6 +21,7 @@ import (
 type Machinery struct {
 	appName       string
 	log           contractslog.Log
+	queueToServer map[string]*machinery.Server
 	redisDatabase int
 	redisDSN      string
 }
@@ -54,6 +55,7 @@ func NewMachinery(config config.Config, log contractslog.Log, connection string)
 	return &Machinery{
 		appName:       appName,
 		log:           log,
+		queueToServer: make(map[string]*machinery.Server),
 		redisDatabase: redisDatabase,
 		redisDSN:      redisDSN,
 	}
@@ -116,6 +118,10 @@ func (r *Machinery) Run(jobs []contractsqueue.Job, queue string, concurrent int)
 }
 
 func (r *Machinery) Server(queue string) *machinery.Server {
+	if server, ok := r.queueToServer[queue]; ok {
+		return server
+	}
+
 	machineryConfig := &machineryconfig.Config{
 		DefaultQueue: r.queueKey(queue),
 		Redis:        &machineryconfig.RedisConfig{},
@@ -124,7 +130,10 @@ func (r *Machinery) Server(queue string) *machinery.Server {
 	broker := redisbroker.NewGR(machineryConfig, []string{r.redisDSN}, r.redisDatabase)
 	backend := redisbackend.NewGR(machineryConfig, []string{r.redisDSN}, r.redisDatabase)
 
-	return machinery.NewServer(machineryConfig, broker, backend, eager.New())
+	server := machinery.NewServer(machineryConfig, broker, backend, eager.New())
+	r.queueToServer[queue] = server
+
+	return server
 }
 
 func (r *Machinery) pushChain(task contractsqueue.Task, queue string) error {
