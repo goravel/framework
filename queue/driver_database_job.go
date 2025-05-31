@@ -9,12 +9,12 @@ import (
 
 type DatabaseReservedJob struct {
 	db        contractsdb.DB
-	job       *DatabaseJob
+	jobRecord *DatabaseJobRecord
 	jobsTable string
 	task      contractsqueue.Task
 }
 
-func NewDatabaseReservedJob(job *DatabaseJob, db contractsdb.DB, jobStorer contractsqueue.JobStorer, json contractsfoundation.Json, jobsTable string) (*DatabaseReservedJob, error) {
+func NewDatabaseReservedJob(job *DatabaseJobRecord, db contractsdb.DB, jobStorer contractsqueue.JobStorer, json contractsfoundation.Json, jobsTable string) (*DatabaseReservedJob, error) {
 	task, err := JsonToTask(job.Payload, jobStorer, json)
 	if err != nil {
 		return nil, err
@@ -22,14 +22,14 @@ func NewDatabaseReservedJob(job *DatabaseJob, db contractsdb.DB, jobStorer contr
 
 	return &DatabaseReservedJob{
 		db:        db,
-		job:       job,
+		jobRecord: job,
 		jobsTable: jobsTable,
 		task:      task,
 	}, nil
 }
 
 func (r *DatabaseReservedJob) Delete() error {
-	_, err := r.db.Table(r.jobsTable).Where("id", r.job.ID).Delete()
+	_, err := r.db.Table(r.jobsTable).Where("id", r.jobRecord.ID).Delete()
 
 	return err
 }
@@ -38,7 +38,7 @@ func (r *DatabaseReservedJob) Task() contractsqueue.Task {
 	return r.task
 }
 
-type DatabaseJob struct {
+type DatabaseJobRecord struct {
 	ID          uint             `db:"id"`
 	Queue       string           `db:"queue"`
 	Payload     string           `db:"payload"`
@@ -48,13 +48,13 @@ type DatabaseJob struct {
 	CreatedAt   *carbon.DateTime `db:"created_at"`
 }
 
-func (r *DatabaseJob) Increment() int {
+func (r *DatabaseJobRecord) Increment() int {
 	r.Attempts++
 
 	return r.Attempts
 }
 
-func (r *DatabaseJob) Touch() *carbon.DateTime {
+func (r *DatabaseJobRecord) Touch() *carbon.DateTime {
 	r.ReservedAt = carbon.NewDateTime(carbon.Now())
 
 	return r.ReservedAt

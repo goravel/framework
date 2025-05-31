@@ -126,6 +126,53 @@ func (_c *Queue_GetJob_Call) RunAndReturn(run func(string) (queue.Job, error)) *
 	return _c
 }
 
+// GetJobStorer provides a mock function with no fields
+func (_m *Queue) GetJobStorer() queue.JobStorer {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetJobStorer")
+	}
+
+	var r0 queue.JobStorer
+	if rf, ok := ret.Get(0).(func() queue.JobStorer); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(queue.JobStorer)
+		}
+	}
+
+	return r0
+}
+
+// Queue_GetJobStorer_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetJobStorer'
+type Queue_GetJobStorer_Call struct {
+	*mock.Call
+}
+
+// GetJobStorer is a helper method to define mock.On call
+func (_e *Queue_Expecter) GetJobStorer() *Queue_GetJobStorer_Call {
+	return &Queue_GetJobStorer_Call{Call: _e.mock.On("GetJobStorer")}
+}
+
+func (_c *Queue_GetJobStorer_Call) Run(run func()) *Queue_GetJobStorer_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Queue_GetJobStorer_Call) Return(_a0 queue.JobStorer) *Queue_GetJobStorer_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Queue_GetJobStorer_Call) RunAndReturn(run func() queue.JobStorer) *Queue_GetJobStorer_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetJobs provides a mock function with no fields
 func (_m *Queue) GetJobs() []queue.Job {
 	ret := _m.Called()

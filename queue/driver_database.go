@@ -50,7 +50,7 @@ func (r *Database) Driver() string {
 }
 
 func (r *Database) Pop(queue string) (contractsqueue.ReservedJob, error) {
-	var databaseJob DatabaseJob
+	var databaseJob DatabaseJobRecord
 
 	if err := r.db.Transaction(func(tx contractsdb.Tx) error {
 		if err := tx.Table(r.jobsTable).LockForUpdate().Where("queue", queue).Where(func(q contractsdb.Query) contractsdb.Query {
@@ -102,7 +102,7 @@ func (r *Database) Push(task contractsqueue.Task, queue string) error {
 		return err
 	}
 
-	job := DatabaseJob{
+	job := DatabaseJobRecord{
 		Queue:       queue,
 		Payload:     payload,
 		AvailableAt: availableAt,

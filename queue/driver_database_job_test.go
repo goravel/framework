@@ -43,7 +43,7 @@ func (s *DatabaseReservedJobTestSuite) TestNewDatabaseReservedJob() {
 			}).Return(nil).Once()
 		s.mockJobStorer.EXPECT().Get(testJobOne.Signature()).Return(testJobOne, nil).Once()
 
-		databaseJob := &DatabaseJob{
+		databaseJob := &DatabaseJobRecord{
 			ID:      1,
 			Queue:   "default",
 			Payload: "{\"signature\":\"test_job_one\",\"args\":null,\"delay\":null,\"uuid\":\"test\",\"chain\":[]}",
@@ -53,7 +53,7 @@ func (s *DatabaseReservedJobTestSuite) TestNewDatabaseReservedJob() {
 
 		s.NoError(err)
 		s.NotNil(reservedJob)
-		s.Equal(databaseJob, reservedJob.job)
+		s.Equal(databaseJob, reservedJob.jobRecord)
 		s.Equal(s.mockDB, reservedJob.db)
 		s.Equal(s.jobsTable, reservedJob.jobsTable)
 	})
@@ -64,7 +64,7 @@ func (s *DatabaseReservedJobTestSuite) TestNewDatabaseReservedJob() {
 		s.mockJson.EXPECT().Unmarshal([]byte("invalid json"), &task).
 			Return(assert.AnError).Once()
 
-		databaseJob := &DatabaseJob{
+		databaseJob := &DatabaseJobRecord{
 			ID:      1,
 			Queue:   "default",
 			Payload: "invalid json",
@@ -102,7 +102,7 @@ func (s *DatabaseReservedJobTestSuite) TestDelete() {
 
 			reservedJob := &DatabaseReservedJob{
 				db:        s.mockDB,
-				job:       &DatabaseJob{ID: id},
+				jobRecord: &DatabaseJobRecord{ID: id},
 				jobsTable: s.jobsTable,
 			}
 
@@ -161,7 +161,7 @@ func (s *DatabaseJobTestSuite) TestIncrement() {
 
 	for _, test := range tests {
 		s.Run(test.name, func() {
-			job := &DatabaseJob{
+			job := &DatabaseJobRecord{
 				Attempts: test.initialAttempts,
 			}
 
@@ -192,7 +192,7 @@ func (s *DatabaseJobTestSuite) TestTouch() {
 			now := carbon.Now()
 			carbon.SetTestNow(now)
 
-			job := &DatabaseJob{
+			job := &DatabaseJobRecord{
 				ReservedAt: test.initialReservedAt,
 			}
 

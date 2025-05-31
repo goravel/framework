@@ -132,8 +132,8 @@ func (s *DatabaseTestSuite) TestPop() {
 				mockQuery.EXPECT().Where(mock.Anything).Return(mockQuery).Once()
 				mockQuery.EXPECT().OrderBy("id").Return(mockQuery).Once()
 
-				var databaseJob DatabaseJob
-				wantDatabaseJob := DatabaseJob{
+				var databaseJob DatabaseJobRecord
+				wantDatabaseJob := DatabaseJobRecord{
 					ID:       1,
 					Queue:    queue,
 					Payload:  payload,
@@ -141,7 +141,7 @@ func (s *DatabaseTestSuite) TestPop() {
 				}
 				mockQuery.EXPECT().First(&databaseJob).
 					Run(func(dest any) {
-						*dest.(*DatabaseJob) = wantDatabaseJob
+						*dest.(*DatabaseJobRecord) = wantDatabaseJob
 					}).Return(nil).Once()
 
 				mockTx.EXPECT().Table(s.jobsTable).Return(mockQuery).Once()
@@ -165,7 +165,7 @@ func (s *DatabaseTestSuite) TestPop() {
 			},
 			wantReservedJob: &DatabaseReservedJob{
 				db: s.mockDB,
-				job: &DatabaseJob{
+				jobRecord: &DatabaseJobRecord{
 					ID:         1,
 					Queue:      queue,
 					Payload:    payload,
@@ -235,7 +235,7 @@ func (s *DatabaseTestSuite) TestPush() {
 				s.mockJson.EXPECT().MarshalString(internalTask).Return(payload, nil).Once()
 				mockQuery := mocksdb.NewQuery(s.T())
 				s.mockDB.EXPECT().Table(s.jobsTable).Return(mockQuery).Once()
-				mockQuery.EXPECT().Insert(&DatabaseJob{
+				mockQuery.EXPECT().Insert(&DatabaseJobRecord{
 					Queue:       queue,
 					Payload:     payload,
 					AvailableAt: carbon.NewDateTime(carbon.Now()),
@@ -257,14 +257,14 @@ func (s *DatabaseTestSuite) TestPush() {
 				s.mockJson.EXPECT().MarshalString(internalTask).Return(payload, nil).Once()
 				mockQuery := mocksdb.NewQuery(s.T())
 				s.mockDB.EXPECT().Table(s.jobsTable).Return(mockQuery).Once()
-				mockQuery.EXPECT().Insert(&DatabaseJob{
+				mockQuery.EXPECT().Insert(&DatabaseJobRecord{
 					Queue:       queue,
 					Payload:     payload,
 					AvailableAt: carbon.NewDateTime(carbon.Now()),
 					CreatedAt:   carbon.NewDateTime(carbon.Now()),
 				}).Return(nil, assert.AnError).Once()
 			},
-			expectedError: errors.QueueFailedToInsertJobToDatabase.Args(&DatabaseJob{
+			expectedError: errors.QueueFailedToInsertJobToDatabase.Args(&DatabaseJobRecord{
 				Queue:       queue,
 				Payload:     payload,
 				AvailableAt: carbon.NewDateTime(carbon.Now()),

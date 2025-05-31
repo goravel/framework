@@ -2,8 +2,6 @@ package queue
 
 import (
 	"time"
-
-	"github.com/goravel/framework/support/carbon"
 )
 
 type Job interface {
@@ -11,11 +9,6 @@ type Job interface {
 	Signature() string
 	// Handle executes the job.
 	Handle(args ...any) error
-}
-
-type JobRecord interface {
-	Increment() int
-	Touch() *carbon.DateTime
 }
 
 type PendingJob interface {
