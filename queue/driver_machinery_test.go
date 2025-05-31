@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/RichardKnop/machinery/v2"
 	machinerylog "github.com/RichardKnop/machinery/v2/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -61,6 +62,7 @@ func (s *MachineryTestSuite) SetupTest() {
 	s.machinery = &Machinery{
 		appName:       "goravel",
 		log:           log,
+		queueToServer: make(map[string]*machinery.Server),
 		redisDatabase: 0,
 		redisDSN:      fmt.Sprintf("localhost:%d", s.docker.Config().Port),
 	}
