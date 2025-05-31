@@ -70,11 +70,11 @@ func (r *Worker) Run() error {
 		return nil
 	}
 
+	r.isShutdown.Store(false)
+
 	if r.driver.Driver() == queue.DriverMachinery {
 		return r.RunMachinery()
 	}
-
-	r.isShutdown.Store(false)
 
 	return r.run()
 }
