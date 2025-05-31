@@ -39,7 +39,7 @@ type Worker struct {
 }
 
 func NewWorker(config queue.Config, db db.DB, job queue.JobStorer, json foundation.Json, log log.Log, connection, queue string, concurrent int) (*Worker, error) {
-	driverCreator := NewDriverCreator(config, db, job, json)
+	driverCreator := NewDriverCreator(config, db, job, json, log)
 	driver, err := driverCreator.Create(connection)
 	if err != nil {
 		return nil, err
@@ -70,28 +70,25 @@ func (r *Worker) Run() error {
 		return nil
 	}
 
-	r.isShutdown.Store(false)
-
-	if err := r.RunMachinery(); err != nil {
-		return err
+	if r.driver.Driver() == queue.DriverMachinery {
+		return r.RunMachinery()
 	}
+
+	r.isShutdown.Store(false)
 
 	return r.run()
 }
 
 // RunMachinery will be removed in v1.17
 func (r *Worker) RunMachinery() error {
-	instance := NewMachinery(r.config, r.log, r.job.All(), r.connection, r.queue, r.concurrent)
-	if !instance.ExistTasks() {
-		return nil
-	}
+	instance := NewMachinery(r.config, r.log, r.connection)
 
 	var (
 		worker *machinery.Worker
 		err    error
 	)
 
-	worker, err = instance.Run()
+	worker, err = instance.Run(r.job.All(), r.queue, r.concurrent)
 	if err != nil {
 		return err
 	}

@@ -1,9 +1,10 @@
 package queue
 
 const (
-	DriverSync     string = "sync"
-	DriverDatabase string = "database"
-	DriverCustom   string = "custom"
+	DriverSync      string = "sync"
+	DriverDatabase  string = "database"
+	DriverMachinery string = "machinery"
+	DriverCustom    string = "custom"
 )
 
 type DriverCreator interface {
