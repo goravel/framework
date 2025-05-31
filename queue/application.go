@@ -37,6 +37,10 @@ func (r *Application) GetJobs() []queue.Job {
 	return r.jobStorer.All()
 }
 
+func (r *Application) GetJobStorer() queue.JobStorer {
+	return r.jobStorer
+}
+
 func (r *Application) Job(job queue.Job, args ...[]queue.Arg) queue.PendingJob {
 	return NewPendingJob(r.config, r.db, r.jobStorer, r.json, job, args...)
 }
