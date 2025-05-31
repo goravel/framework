@@ -7,6 +7,7 @@ import (
 	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	contractsqueue "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/queue/utils"
 	"github.com/goravel/framework/support/carbon"
 )
 
@@ -97,7 +98,7 @@ func (r *Database) Push(task contractsqueue.Task, queue string) error {
 		availableAt = carbon.NewDateTime(carbon.FromStdTime(task.Delay))
 	}
 
-	payload, err := TaskToJson(task, r.json)
+	payload, err := utils.TaskToJson(task, r.json)
 	if err != nil {
 		return err
 	}

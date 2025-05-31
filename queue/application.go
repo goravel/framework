@@ -27,6 +27,10 @@ func NewApplication(config queue.Config, db db.DB, job queue.JobStorer, json fou
 	}
 }
 
+func (r *Application) Connection(name string) (queue.Driver, error) {
+	return NewDriverCreator(r.config, r.db, r.jobStorer, r.json, r.log).Create(name)
+}
+
 func (r *Application) Chain(jobs []queue.ChainJob) queue.PendingJob {
 	return NewPendingChainJob(r.config, r.db, r.jobStorer, r.json, jobs, r.log)
 }

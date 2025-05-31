@@ -1,4 +1,4 @@
-package queue
+package utils
 
 import (
 	"testing"
@@ -253,6 +253,11 @@ func TestJsonToTask(t *testing.T) {
 	}
 }
 
+var (
+	testJobOne []any
+	testJobTwo []any
+)
+
 func TestConvertArgs(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -335,4 +340,34 @@ func TestConvertArgs(t *testing.T) {
 			assert.Equal(t, test.expected, result)
 		})
 	}
+}
+
+type TestJobOne struct {
+}
+
+// Signature The name and signature of the job.
+func (r *TestJobOne) Signature() string {
+	return "test_job_one"
+}
+
+// Handle Execute the job.
+func (r *TestJobOne) Handle(args ...any) error {
+	testJobOne = args
+
+	return nil
+}
+
+type TestJobTwo struct {
+}
+
+// Signature The name and signature of the job.
+func (r *TestJobTwo) Signature() string {
+	return "test_job_two"
+}
+
+// Handle Execute the job.
+func (r *TestJobTwo) Handle(args ...any) error {
+	testJobTwo = args
+
+	return nil
 }
