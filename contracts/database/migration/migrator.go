@@ -13,7 +13,7 @@ type Status struct {
 
 type Migrator interface {
 	// Create a new migration file.
-	Create(name string) (string, error)
+	Create(name string, modelName string) (string, error)
 	// Fresh the migrations.
 	Fresh() error
 	// Reset the migrations.
