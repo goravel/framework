@@ -4,6 +4,7 @@ import (
 	contractsdb "github.com/goravel/framework/contracts/database/db"
 	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	contractsqueue "github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/queue/utils"
 	"github.com/goravel/framework/support/carbon"
 )
 
@@ -15,7 +16,7 @@ type DatabaseReservedJob struct {
 }
 
 func NewDatabaseReservedJob(job *DatabaseJobRecord, db contractsdb.DB, jobStorer contractsqueue.JobStorer, json contractsfoundation.Json, jobsTable string) (*DatabaseReservedJob, error) {
-	task, err := JsonToTask(job.Payload, jobStorer, json)
+	task, err := utils.JsonToTask(job.Payload, jobStorer, json)
 	if err != nil {
 		return nil, err
 	}

@@ -13,6 +13,7 @@ import (
 	mocksdb "github.com/goravel/framework/mocks/database/db"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
+	"github.com/goravel/framework/queue/utils"
 	"github.com/goravel/framework/support/carbon"
 )
 
@@ -151,12 +152,12 @@ func (s *DatabaseTestSuite) TestPop() {
 					"reserved_at": carbon.NewDateTime(carbon.Now()),
 				}).Return(nil, nil).Once()
 
-				var task Task
+				var task utils.Task
 				s.mockJson.EXPECT().Unmarshal([]byte(payload), &task).
 					Run(func(_ []byte, taskPtr any) {
-						*taskPtr.(*Task) = Task{
+						*taskPtr.(*utils.Task) = utils.Task{
 							UUID: "test",
-							Job: Job{
+							Job: utils.Job{
 								Signature: testJobOne.Signature(),
 							},
 						}
@@ -214,12 +215,12 @@ func (s *DatabaseTestSuite) TestPush() {
 			Job: &TestJobOne{},
 		},
 	}
-	internalTask := Task{
+	internalTask := utils.Task{
 		UUID: "test",
-		Job: Job{
+		Job: utils.Job{
 			Signature: testJobOne.Signature(),
 		},
-		Chain: []Job{},
+		Chain: []utils.Job{},
 	}
 	carbon.SetTestNow(carbon.Now())
 	defer carbon.ClearTestNow()

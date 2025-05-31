@@ -13,6 +13,7 @@ import (
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	mockslog "github.com/goravel/framework/mocks/log"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
+	"github.com/goravel/framework/queue/utils"
 	"github.com/goravel/framework/support/carbon"
 )
 
@@ -110,7 +111,7 @@ func (s *WorkerTestSuite) Test_call() {
 	s.Run("happy path", func() {
 		s.SetupTest()
 
-		s.mockJob.EXPECT().Call(task.Job.Signature(), ConvertArgs(task.Args)).Return(nil).Once()
+		s.mockJob.EXPECT().Call(task.Job.Signature(), utils.ConvertArgs(task.Args)).Return(nil).Once()
 
 		err := s.worker.call(task)
 		s.NoError(err)
@@ -119,15 +120,15 @@ func (s *WorkerTestSuite) Test_call() {
 	s.Run("failed to call job", func() {
 		s.SetupTest()
 
-		s.mockJob.EXPECT().Call(task.Job.Signature(), ConvertArgs(task.Args)).Return(assert.AnError).Once()
-		s.mockJson.EXPECT().MarshalString(Task{
-			Job: Job{
+		s.mockJob.EXPECT().Call(task.Job.Signature(), utils.ConvertArgs(task.Args)).Return(assert.AnError).Once()
+		s.mockJson.EXPECT().MarshalString(utils.Task{
+			Job: utils.Job{
 				Signature: task.Job.Signature(),
 				Args:      task.Args,
 				Delay:     &task.Delay,
 			},
 			UUID: "test",
-			Chain: []Job{
+			Chain: []utils.Job{
 				{
 					Signature: task.Chain[0].Job.Signature(),
 					Args:      task.Chain[0].Args,
@@ -223,12 +224,12 @@ func (s *WorkerTestSuite) Test_run() {
 		UUID:  "test",
 		Chain: []contractsqueue.ChainJob{},
 	}
-	errorInternalTask := Task{
-		Job: Job{
+	errorInternalTask := utils.Task{
+		Job: utils.Job{
 			Signature: testJobErr.Signature(),
 		},
 		UUID:  "test",
-		Chain: []Job{},
+		Chain: []utils.Job{},
 	}
 
 	failedJob := &FailedJob{
@@ -373,14 +374,14 @@ func (s *WorkerTestSuite) Test_run() {
 
 		// call
 		s.mockJob.EXPECT().Call(errorTaskWithChain.Job.Signature(), make([]any, 0)).Return(nil).Once()
-		s.mockJob.EXPECT().Call(errorTaskWithChain.Chain[0].Job.Signature(), ConvertArgs(args)).Return(assert.AnError).Once()
-		s.mockJson.EXPECT().MarshalString(Task{
-			Job: Job{
+		s.mockJob.EXPECT().Call(errorTaskWithChain.Chain[0].Job.Signature(), utils.ConvertArgs(args)).Return(assert.AnError).Once()
+		s.mockJson.EXPECT().MarshalString(utils.Task{
+			Job: utils.Job{
 				Signature: errorTaskWithChain.Chain[0].Job.Signature(),
 				Args:      args,
 			},
 			UUID:  "test",
-			Chain: []Job{},
+			Chain: []utils.Job{},
 		}).Return("{\"signature\":\"test_job_err\",\"args\":[{\"type\":\"string\",\"value\":\"test\"}],\"delay\":null,\"uuid\":\"test\",\"chain\":[]}", nil).Once()
 
 		// run
@@ -431,7 +432,7 @@ func (s *WorkerTestSuite) Test_run() {
 		mockReservedJob.EXPECT().Task().Return(successTask).Once()
 
 		// call
-		s.mockJob.EXPECT().Call(successTask.Job.Signature(), ConvertArgs(testArgs)).Return(nil).Once()
+		s.mockJob.EXPECT().Call(successTask.Job.Signature(), utils.ConvertArgs(testArgs)).Return(nil).Once()
 
 		// run
 		mockReservedJob.EXPECT().Delete().Return(nil).Once()
@@ -470,7 +471,7 @@ func (s *WorkerTestSuite) Test_run() {
 
 		// call
 		s.mockJob.EXPECT().Call(successTaskWithChain.Job.Signature(), make([]any, 0)).Return(nil).Once()
-		s.mockJob.EXPECT().Call(successTaskWithChain.Chain[0].Job.Signature(), ConvertArgs(testArgs)).Return(nil).Once()
+		s.mockJob.EXPECT().Call(successTaskWithChain.Chain[0].Job.Signature(), utils.ConvertArgs(testArgs)).Return(nil).Once()
 
 		// run
 		mockReservedJob.EXPECT().Delete().Return(nil).Once()

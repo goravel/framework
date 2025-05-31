@@ -10,6 +10,7 @@ import (
 	mocksdb "github.com/goravel/framework/mocks/database/db"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
+	"github.com/goravel/framework/queue/utils"
 	"github.com/goravel/framework/support/carbon"
 )
 
@@ -34,12 +35,12 @@ func (s *DatabaseReservedJobTestSuite) SetupTest() {
 
 func (s *DatabaseReservedJobTestSuite) TestNewDatabaseReservedJob() {
 	s.Run("happy path", func() {
-		var task Task
+		var task utils.Task
 
 		testJobOne := &TestJobOne{}
 		s.mockJson.EXPECT().Unmarshal([]byte("{\"signature\":\"test_job_one\",\"args\":null,\"delay\":null,\"uuid\":\"test\",\"chain\":[]}"), &task).
 			Run(func(_ []byte, taskPtr any) {
-				taskPtr.(*Task).Job.Signature = testJobOne.Signature()
+				taskPtr.(*utils.Task).Job.Signature = testJobOne.Signature()
 			}).Return(nil).Once()
 		s.mockJobStorer.EXPECT().Get(testJobOne.Signature()).Return(testJobOne, nil).Once()
 
@@ -59,7 +60,7 @@ func (s *DatabaseReservedJobTestSuite) TestNewDatabaseReservedJob() {
 	})
 
 	s.Run("invalid payload", func() {
-		var task Task
+		var task utils.Task
 
 		s.mockJson.EXPECT().Unmarshal([]byte("invalid json"), &task).
 			Return(assert.AnError).Once()

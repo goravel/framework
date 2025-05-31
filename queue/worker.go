@@ -12,6 +12,7 @@ import (
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/queue/utils"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/console"
@@ -117,11 +118,11 @@ func (r *Worker) call(task queue.Task) error {
 	}
 
 	now := carbon.Now()
-	err := r.job.Call(task.Job.Signature(), ConvertArgs(task.Args))
+	err := r.job.Call(task.Job.Signature(), utils.ConvertArgs(task.Args))
 	duration := now.DiffAbsInDuration().String()
 
 	if err != nil {
-		payload, jsonErr := TaskToJson(task, r.json)
+		payload, jsonErr := utils.TaskToJson(task, r.json)
 		if jsonErr != nil {
 			return errors.QueueFailedToConvertTaskToJson.Args(jsonErr, task)
 		}
