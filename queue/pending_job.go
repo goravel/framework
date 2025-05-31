@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	contractsdb "github.com/goravel/framework/contracts/database/db"
 	contractsfoundation "github.com/goravel/framework/contracts/foundation"
+	contractslog "github.com/goravel/framework/contracts/log"
 	contractsqueue "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/support/carbon"
 )
@@ -24,6 +25,7 @@ func NewPendingJob(
 	jobStorer contractsqueue.JobStorer,
 	json contractsfoundation.Json,
 	job contractsqueue.Job,
+	log contractslog.Log,
 	args ...[]contractsqueue.Arg) *PendingJob {
 	var arg []contractsqueue.Arg
 	if len(args) > 0 {
@@ -35,7 +37,7 @@ func NewPendingJob(
 
 	return &PendingJob{
 		connection:    connection,
-		driverCreator: NewDriverCreator(config, db, jobStorer, json),
+		driverCreator: NewDriverCreator(config, db, jobStorer, json, log),
 		queue:         queue,
 		task: contractsqueue.Task{
 			UUID: uuid.New().String(),
@@ -52,7 +54,9 @@ func NewPendingChainJob(
 	db contractsdb.DB,
 	jobStorer contractsqueue.JobStorer,
 	json contractsfoundation.Json,
-	jobs []contractsqueue.ChainJob) *PendingJob {
+	jobs []contractsqueue.ChainJob,
+	log contractslog.Log,
+) *PendingJob {
 	if len(jobs) == 0 {
 		return nil
 	}
@@ -77,7 +81,7 @@ func NewPendingChainJob(
 
 	return &PendingJob{
 		connection:    connection,
-		driverCreator: NewDriverCreator(config, db, jobStorer, json),
+		driverCreator: NewDriverCreator(config, db, jobStorer, json, log),
 		queue:         queue,
 		task: contractsqueue.Task{
 			UUID:     uuid.New().String(),

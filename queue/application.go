@@ -1,6 +1,8 @@
 package queue
 
 import (
+	"fmt"
+
 	"github.com/goravel/framework/contracts/database/db"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/log"
@@ -26,7 +28,7 @@ func NewApplication(config queue.Config, db db.DB, job queue.JobStorer, json fou
 }
 
 func (r *Application) Chain(jobs []queue.ChainJob) queue.PendingJob {
-	return NewPendingChainJob(r.config, r.db, r.jobStorer, r.json, jobs)
+	return NewPendingChainJob(r.config, r.db, r.jobStorer, r.json, jobs, r.log)
 }
 
 func (r *Application) GetJob(signature string) (queue.Job, error) {
@@ -42,7 +44,7 @@ func (r *Application) GetJobStorer() queue.JobStorer {
 }
 
 func (r *Application) Job(job queue.Job, args ...[]queue.Arg) queue.PendingJob {
-	return NewPendingJob(r.config, r.db, r.jobStorer, r.json, job, args...)
+	return NewPendingJob(r.config, r.db, r.jobStorer, r.json, job, r.log, args...)
 }
 
 func (r *Application) Register(jobs []queue.Job) {
@@ -65,10 +67,10 @@ func (r *Application) Worker(payloads ...queue.Args) queue.Worker {
 		payloads[0].Connection = defaultConnection
 	}
 	if payloads[0].Queue == "" {
-		payloads[0].Queue = defaultQueue
+		payloads[0].Queue = r.config.GetString(fmt.Sprintf("queue.connections.%s.queue", payloads[0].Connection), "default")
 	}
 	if payloads[0].Concurrent == 0 {
-		payloads[0].Concurrent = defaultConcurrent
+		payloads[0].Concurrent = r.config.GetInt(fmt.Sprintf("queue.connections.%s.concurrent", payloads[0].Connection), 1)
 	}
 
 	worker, err := NewWorker(r.config, r.db, r.jobStorer, r.json, r.log, payloads[0].Connection, payloads[0].Queue, payloads[0].Concurrent)
