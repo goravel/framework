@@ -5,12 +5,14 @@ type Queue interface {
 	Connection(name string) (Driver, error)
 	// Chain creates a chain of jobs to be processed one by one, passing
 	Chain(jobs []ChainJob) PendingJob
+	// Failer gets failed jobs
+	Failer() Failer
 	// GetJob gets job by signature
 	GetJob(signature string) (Job, error)
 	// GetJobs gets all jobs
 	GetJobs() []Job
 	// GetJobStorer gets job storer
-	GetJobStorer() JobStorer
+	JobStorer() JobStorer
 	// Job add a job to queue
 	Job(job Job, args ...[]Arg) PendingJob
 	// Register register jobs
