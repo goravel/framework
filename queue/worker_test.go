@@ -13,6 +13,7 @@ import (
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	mockslog "github.com/goravel/framework/mocks/log"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
+	"github.com/goravel/framework/queue/models"
 	"github.com/goravel/framework/queue/utils"
 	"github.com/goravel/framework/support/carbon"
 )
@@ -54,7 +55,7 @@ func (s *WorkerTestSuite) SetupTest() {
 		debug:      true,
 
 		currentDelay:  1 * time.Second,
-		failedJobChan: make(chan FailedJob, 1),
+		failedJobChan: make(chan models.FailedJob, 1),
 		maxDelay:      32 * time.Second,
 	}
 }
@@ -144,7 +145,7 @@ func (s *WorkerTestSuite) Test_call() {
 
 func (s *WorkerTestSuite) Test_logFailedJob() {
 
-	failedJob := FailedJob{
+	failedJob := models.FailedJob{
 		UUID: "test",
 	}
 
@@ -232,7 +233,7 @@ func (s *WorkerTestSuite) Test_run() {
 		Chain: []utils.Job{},
 	}
 
-	failedJob := &FailedJob{
+	failedJob := &models.FailedJob{
 		UUID:       errorTask.UUID,
 		Connection: connection,
 		Queue:      queue,
@@ -394,7 +395,7 @@ func (s *WorkerTestSuite) Test_run() {
 		s.mockDB.EXPECT().Connection("mysql").Return(s.mockDB).Once()
 		mockQuery := mocksdb.NewQuery(s.T())
 		s.mockDB.EXPECT().Table("failed_jobs").Return(mockQuery).Once()
-		mockQuery.EXPECT().Insert(&FailedJob{
+		mockQuery.EXPECT().Insert(&models.FailedJob{
 			UUID:       errorTaskWithChain.UUID,
 			Connection: connection,
 			Queue:      queue,

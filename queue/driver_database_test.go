@@ -13,6 +13,7 @@ import (
 	mocksdb "github.com/goravel/framework/mocks/database/db"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
+	"github.com/goravel/framework/queue/models"
 	"github.com/goravel/framework/queue/utils"
 	"github.com/goravel/framework/support/carbon"
 )
@@ -133,16 +134,16 @@ func (s *DatabaseTestSuite) TestPop() {
 				mockQuery.EXPECT().Where(mock.Anything).Return(mockQuery).Once()
 				mockQuery.EXPECT().OrderBy("id").Return(mockQuery).Once()
 
-				var databaseJob DatabaseJobRecord
-				wantDatabaseJob := DatabaseJobRecord{
+				var job models.Job
+				wantJob := models.Job{
 					ID:       1,
 					Queue:    queue,
 					Payload:  payload,
 					Attempts: 0,
 				}
-				mockQuery.EXPECT().First(&databaseJob).
+				mockQuery.EXPECT().First(&job).
 					Run(func(dest any) {
-						*dest.(*DatabaseJobRecord) = wantDatabaseJob
+						*dest.(*models.Job) = wantJob
 					}).Return(nil).Once()
 
 				mockTx.EXPECT().Table(s.jobsTable).Return(mockQuery).Once()
@@ -153,8 +154,8 @@ func (s *DatabaseTestSuite) TestPop() {
 				}).Return(nil, nil).Once()
 
 				var task utils.Task
-				s.mockJson.EXPECT().Unmarshal([]byte(payload), &task).
-					Run(func(_ []byte, taskPtr any) {
+				s.mockJson.EXPECT().UnmarshalString(payload, &task).
+					Run(func(_ string, taskPtr any) {
 						*taskPtr.(*utils.Task) = utils.Task{
 							UUID: "test",
 							Job: utils.Job{
@@ -166,7 +167,7 @@ func (s *DatabaseTestSuite) TestPop() {
 			},
 			wantReservedJob: &DatabaseReservedJob{
 				db: s.mockDB,
-				jobRecord: &DatabaseJobRecord{
+				job: &models.Job{
 					ID:         1,
 					Queue:      queue,
 					Payload:    payload,
@@ -179,7 +180,6 @@ func (s *DatabaseTestSuite) TestPop() {
 					ChainJob: contractsqueue.ChainJob{
 						Job: testJobOne,
 					},
-					Chain: []contractsqueue.ChainJob{},
 				},
 			},
 			wantError: nil,
@@ -236,7 +236,7 @@ func (s *DatabaseTestSuite) TestPush() {
 				s.mockJson.EXPECT().MarshalString(internalTask).Return(payload, nil).Once()
 				mockQuery := mocksdb.NewQuery(s.T())
 				s.mockDB.EXPECT().Table(s.jobsTable).Return(mockQuery).Once()
-				mockQuery.EXPECT().Insert(&DatabaseJobRecord{
+				mockQuery.EXPECT().Insert(&models.Job{
 					Queue:       queue,
 					Payload:     payload,
 					AvailableAt: carbon.NewDateTime(carbon.Now()),
@@ -258,14 +258,14 @@ func (s *DatabaseTestSuite) TestPush() {
 				s.mockJson.EXPECT().MarshalString(internalTask).Return(payload, nil).Once()
 				mockQuery := mocksdb.NewQuery(s.T())
 				s.mockDB.EXPECT().Table(s.jobsTable).Return(mockQuery).Once()
-				mockQuery.EXPECT().Insert(&DatabaseJobRecord{
+				mockQuery.EXPECT().Insert(&models.Job{
 					Queue:       queue,
 					Payload:     payload,
 					AvailableAt: carbon.NewDateTime(carbon.Now()),
 					CreatedAt:   carbon.NewDateTime(carbon.Now()),
 				}).Return(nil, assert.AnError).Once()
 			},
-			expectedError: errors.QueueFailedToInsertJobToDatabase.Args(&DatabaseJobRecord{
+			expectedError: errors.QueueFailedToInsertJobToDatabase.Args(&models.Job{
 				Queue:       queue,
 				Payload:     payload,
 				AvailableAt: carbon.NewDateTime(carbon.Now()),

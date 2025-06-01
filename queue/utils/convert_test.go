@@ -157,12 +157,12 @@ func TestJsonToTask(t *testing.T) {
 		expectedError error
 	}{
 		{
-			name:    "successful conversion with simple task",
+			name:    "happy path - conversion with simple task",
 			payload: "{\"uuid\":\"test-uuid\",\"signature\":\"test_job_one\",\"args\":[]}",
 			setup: func() {
 				var task Task
-				mockJson.EXPECT().Unmarshal([]byte("{\"uuid\":\"test-uuid\",\"signature\":\"test_job_one\",\"args\":[]}"), &task).
-					Run(func(_ []byte, taskPtr any) {
+				mockJson.EXPECT().UnmarshalString("{\"uuid\":\"test-uuid\",\"signature\":\"test_job_one\",\"args\":[]}", &task).
+					Run(func(_ string, taskPtr any) {
 						taskPtr.(*Task).UUID = "test-uuid"
 						taskPtr.(*Task).Job.Signature = "test_job_one"
 					}).Return(nil).Once()
@@ -173,17 +173,16 @@ func TestJsonToTask(t *testing.T) {
 				ChainJob: contractsqueue.ChainJob{
 					Job: &TestJobOne{},
 				},
-				Chain: []contractsqueue.ChainJob{},
 			},
 			expectedError: nil,
 		},
 		{
-			name:    "successful conversion with task chain",
+			name:    "happy path - conversion with task chain",
 			payload: "{\"uuid\":\"test-uuid\",\"signature\":\"test_job_one\",\"args\":[],\"chain\":[{\"signature\":\"test_job_two\",\"args\":[{\"type\":\"int\",\"value\":42}]}]}",
 			setup: func() {
 				var task Task
-				mockJson.EXPECT().Unmarshal([]byte("{\"uuid\":\"test-uuid\",\"signature\":\"test_job_one\",\"args\":[],\"chain\":[{\"signature\":\"test_job_two\",\"args\":[{\"type\":\"int\",\"value\":42}]}]}"), &task).
-					Run(func(_ []byte, taskPtr any) {
+				mockJson.EXPECT().UnmarshalString("{\"uuid\":\"test-uuid\",\"signature\":\"test_job_one\",\"args\":[],\"chain\":[{\"signature\":\"test_job_two\",\"args\":[{\"type\":\"int\",\"value\":42}]}]}", &task).
+					Run(func(_ string, taskPtr any) {
 						taskPtr.(*Task).UUID = "test-uuid"
 						taskPtr.(*Task).Job.Signature = "test_job_one"
 						taskPtr.(*Task).Chain = []Job{
@@ -219,7 +218,7 @@ func TestJsonToTask(t *testing.T) {
 			payload: "invalid json",
 			setup: func() {
 				var task Task
-				mockJson.EXPECT().Unmarshal([]byte("invalid json"), &task).Return(assert.AnError).Once()
+				mockJson.EXPECT().UnmarshalString("invalid json", &task).Return(assert.AnError).Once()
 			},
 			expectedTask:  contractsqueue.Task{},
 			expectedError: assert.AnError,
@@ -229,8 +228,8 @@ func TestJsonToTask(t *testing.T) {
 			payload: "{\"uuid\":\"test-uuid\",\"signature\":\"test_job_one\",\"args\":[]}",
 			setup: func() {
 				var task Task
-				mockJson.EXPECT().Unmarshal([]byte("{\"uuid\":\"test-uuid\",\"signature\":\"test_job_one\",\"args\":[]}"), &task).
-					Run(func(_ []byte, taskPtr any) {
+				mockJson.EXPECT().UnmarshalString("{\"uuid\":\"test-uuid\",\"signature\":\"test_job_one\",\"args\":[]}", &task).
+					Run(func(_ string, taskPtr any) {
 						taskPtr.(*Task).UUID = "test-uuid"
 						taskPtr.(*Task).Job.Signature = "test_job_one"
 					}).Return(nil).Once()

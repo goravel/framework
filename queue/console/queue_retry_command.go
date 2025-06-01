@@ -1,8 +1,6 @@
 package console
 
 import (
-	"github.com/spf13/cast"
-
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
@@ -50,6 +48,11 @@ func (r *QueueRetryCommand) Extend() command.Extend {
 		Category: "queue",
 		Flags: []command.Flag{
 			&command.BoolFlag{
+				Name:    "connection",
+				Aliases: []string{"c"},
+				Usage:   "Retry all of the failed jobs for the specified connection",
+			},
+			&command.BoolFlag{
 				Name:    "queue",
 				Aliases: []string{"q"},
 				Usage:   "Retry all of the failed jobs for the specified queue",
@@ -63,7 +66,7 @@ func (r *QueueRetryCommand) Handle(ctx console.Context) error {
 	ids, err := r.getJobIDs(ctx)
 	if err != nil {
 		ctx.Error(err.Error())
-		return err
+		return nil
 	}
 
 	if len(ids) == 0 {
@@ -78,8 +81,9 @@ func (r *QueueRetryCommand) Handle(ctx console.Context) error {
 		now := carbon.Now()
 
 		var failedJob models.FailedJob
-		if err := r.failedJobQuery.Where("id", id).First(&failedJob); err != nil {
-			return err
+		if err := r.failedJobQuery.Where("id", id).FirstOrFail(&failedJob); err != nil {
+			ctx.Error(err.Error())
+			continue
 		}
 
 		if failedJob.ID == 0 {
@@ -107,7 +111,6 @@ func (r *QueueRetryCommand) Handle(ctx console.Context) error {
 
 func (r *QueueRetryCommand) getJobIDs(ctx console.Context) ([]string, error) {
 	uuids := ctx.Arguments()
-
 	var ids []string
 
 	if len(uuids) == 1 && uuids[0] == "all" {
@@ -118,8 +121,21 @@ func (r *QueueRetryCommand) getJobIDs(ctx console.Context) ([]string, error) {
 		return ids, nil
 	}
 
-	if queue := ctx.Option("queue"); queue != "" {
-		if err := r.failedJobQuery.Where("queue", queue).Pluck("id", &ids); err != nil {
+	connection := ctx.Option("connection")
+	queue := ctx.Option("queue")
+
+	if connection != "" || queue != "" {
+		query := r.failedJobQuery
+
+		if connection != "" {
+			query = query.Where("connection", connection)
+		}
+
+		if queue != "" {
+			query = query.Where("queue", queue)
+		}
+
+		if err := query.Pluck("id", &ids); err != nil {
 			return nil, err
 		}
 
@@ -130,7 +146,12 @@ func (r *QueueRetryCommand) getJobIDs(ctx console.Context) ([]string, error) {
 		return nil, nil
 	}
 
-	if err := r.failedJobQuery.WhereIn("uuid", cast.ToSlice(uuids)).Pluck("id", &ids); err != nil {
+	uuidsAny := make([]any, len(uuids))
+	for i, uuid := range uuids {
+		uuidsAny[i] = uuid
+	}
+
+	if err := r.failedJobQuery.WhereIn("uuid", uuidsAny).Pluck("id", &ids); err != nil {
 		return nil, err
 	}
 

@@ -77,12 +77,12 @@ func TaskToJson(task contractsqueue.Task, json foundation.Json) (string, error) 
 
 func JsonToTask(payload string, jobStorer contractsqueue.JobStorer, json foundation.Json) (contractsqueue.Task, error) {
 	var task Task
-	if err := json.Unmarshal([]byte(payload), &task); err != nil {
+	if err := json.UnmarshalString(payload, &task); err != nil {
 		return contractsqueue.Task{}, err
 	}
 
-	chain := make([]contractsqueue.ChainJob, len(task.Chain))
-	for i, item := range task.Chain {
+	var chain []contractsqueue.ChainJob
+	for _, item := range task.Chain {
 		job, err := jobStorer.Get(item.Signature)
 		if err != nil {
 			return contractsqueue.Task{}, err
@@ -97,7 +97,7 @@ func JsonToTask(payload string, jobStorer contractsqueue.JobStorer, json foundat
 			jobs.Delay = *item.Delay
 		}
 
-		chain[i] = jobs
+		chain = append(chain, jobs)
 	}
 
 	job, err := jobStorer.Get(task.Job.Signature)

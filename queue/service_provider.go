@@ -38,5 +38,6 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 func (r *ServiceProvider) registerCommands(app foundation.Application) {
 	app.MakeArtisan().Register([]console.Command{
 		&queueconsole.JobMakeCommand{},
+		queueconsole.NewQueueRetryCommand(app.MakeConfig(), app.MakeDB(), app.MakeQueue(), app.GetJson()),
 	})
 }

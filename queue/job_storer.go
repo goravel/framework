@@ -5,18 +5,7 @@ import (
 
 	contractsqueue "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/support/carbon"
 )
-
-type FailedJob struct {
-	ID         uint             `gorm:"primaryKey" db:"id"`
-	UUID       string           `db:"uuid"`
-	Connection string           `db:"connection"`
-	Queue      string           `db:"queue"`
-	Payload    string           `db:"payload"`
-	Exception  string           `db:"exception"`
-	FailedAt   *carbon.DateTime `db:"failed_at"`
-}
 
 type JobStorer struct {
 	jobs sync.Map

@@ -12,6 +12,7 @@ import (
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/queue/models"
 	"github.com/goravel/framework/queue/utils"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/color"
@@ -32,7 +33,7 @@ type Worker struct {
 	debug      bool
 
 	currentDelay  time.Duration
-	failedJobChan chan FailedJob
+	failedJobChan chan models.FailedJob
 	isShutdown    atomic.Bool
 	maxDelay      time.Duration
 	machinery     *machinery.Worker
@@ -60,7 +61,7 @@ func NewWorker(config queue.Config, db db.DB, job queue.JobStorer, json foundati
 		debug:      config.Debug(),
 
 		currentDelay:  1 * time.Second,
-		failedJobChan: make(chan FailedJob, concurrent),
+		failedJobChan: make(chan models.FailedJob, concurrent),
 		maxDelay:      32 * time.Second,
 	}, nil
 }
@@ -127,7 +128,7 @@ func (r *Worker) call(task queue.Task) error {
 			return errors.QueueFailedToConvertTaskToJson.Args(jsonErr, task)
 		}
 
-		r.failedJobChan <- FailedJob{
+		r.failedJobChan <- models.FailedJob{
 			UUID:       task.UUID,
 			Connection: r.connection,
 			Queue:      r.queue,
@@ -146,7 +147,7 @@ func (r *Worker) call(task queue.Task) error {
 	return nil
 }
 
-func (r *Worker) logFailedJob(job FailedJob) {
+func (r *Worker) logFailedJob(job models.FailedJob) {
 	failedDatabase := r.config.FailedDatabase()
 	failedTable := r.config.FailedTable()
 

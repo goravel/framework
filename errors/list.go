@@ -136,6 +136,7 @@ var (
 	QueueFailedToConvertTaskToJson   = New("failed to convert task to json: %v, task: %+v")
 	QueueFailedToDeleteFailedJob     = New("failed to delete failed job: %+v, err: %v")
 	QueueFailedToDeleteReservedJob   = New("failed to delete reserved job: %+v, err: %v")
+	QueueFailedToGetFailedJob        = New("failed to get failed job: %+v, err: %v")
 	QueueFailedToInsertJobToDatabase = New("failed to insert job to database: %+v, err: %v")
 	QueueFailedToReserveJob          = New("failed to reserve job: %+v, err: %v")
 	QueueFailedToRetryJob            = New("failed to retry job: %+v, err: %v")
