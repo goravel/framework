@@ -9,6 +9,7 @@ import (
 
 	"github.com/goravel/framework/contracts/queue"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
+	"github.com/goravel/framework/queue/utils"
 )
 
 var (
@@ -48,12 +49,12 @@ func (s *SyncTestSuite) SetupTest() {
 
 func (s *SyncTestSuite) TestDelay() {
 	s.Nil(s.app.Job(&TestJobOne{}, testArgs).Delay(time.Now().Add(time.Second)).Dispatch())
-	s.Equal(ConvertArgs(testArgs), testJobOne)
+	s.Equal(utils.ConvertArgs(testArgs), testJobOne)
 }
 
 func (s *SyncTestSuite) TestDispatch() {
 	s.Nil(s.app.Job(&TestJobOne{}, testArgs).Dispatch())
-	s.Equal(ConvertArgs(testArgs), testJobOne)
+	s.Equal(utils.ConvertArgs(testArgs), testJobOne)
 }
 
 func (s *SyncTestSuite) TestChainDispatch() {

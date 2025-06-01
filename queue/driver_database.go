@@ -7,6 +7,8 @@ import (
 	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	contractsqueue "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/queue/models"
+	"github.com/goravel/framework/queue/utils"
 	"github.com/goravel/framework/support/carbon"
 )
 
@@ -50,7 +52,7 @@ func (r *Database) Driver() string {
 }
 
 func (r *Database) Pop(queue string) (contractsqueue.ReservedJob, error) {
-	var databaseJob DatabaseJobRecord
+	var job models.Job
 
 	if err := r.db.Transaction(func(tx contractsdb.Tx) error {
 		if err := tx.Table(r.jobsTable).LockForUpdate().Where("queue", queue).Where(func(q contractsdb.Query) contractsdb.Query {
@@ -62,23 +64,23 @@ func (r *Database) Pop(queue string) (contractsqueue.ReservedJob, error) {
 			// .OrWhere(func(q1 contractsdb.Query) contractsdb.Query {
 			// 	return r.isReservedButExpired(q1)
 			// })
-		}).OrderBy("id").First(&databaseJob); err != nil {
+		}).OrderBy("id").First(&job); err != nil {
 			return err
 		}
 
-		if databaseJob.ID == 0 {
+		if job.ID == 0 {
 			return errors.QueueDriverNoJobFound.Args(queue)
 		}
 
-		databaseJob.Increment()
-		databaseJob.Touch()
+		job.Increment()
+		job.Touch()
 
-		_, err := tx.Table(r.jobsTable).Where("id", databaseJob.ID).Update(map[string]any{
-			"attempts":    databaseJob.Attempts,
-			"reserved_at": databaseJob.ReservedAt,
+		_, err := tx.Table(r.jobsTable).Where("id", job.ID).Update(map[string]any{
+			"attempts":    job.Attempts,
+			"reserved_at": job.ReservedAt,
 		})
 		if err != nil {
-			return errors.QueueFailedToReserveJob.Args(databaseJob, err)
+			return errors.QueueFailedToReserveJob.Args(job, err)
 		}
 
 		return nil
@@ -86,7 +88,7 @@ func (r *Database) Pop(queue string) (contractsqueue.ReservedJob, error) {
 		return nil, err
 	}
 
-	return NewDatabaseReservedJob(&databaseJob, r.db, r.jobStorer, r.json, r.jobsTable)
+	return NewDatabaseReservedJob(&job, r.db, r.jobStorer, r.json, r.jobsTable)
 }
 
 func (r *Database) Push(task contractsqueue.Task, queue string) error {
@@ -97,12 +99,12 @@ func (r *Database) Push(task contractsqueue.Task, queue string) error {
 		availableAt = carbon.NewDateTime(carbon.FromStdTime(task.Delay))
 	}
 
-	payload, err := TaskToJson(task, r.json)
+	payload, err := utils.TaskToJson(task, r.json)
 	if err != nil {
 		return err
 	}
 
-	job := DatabaseJobRecord{
+	job := models.Job{
 		Queue:       queue,
 		Payload:     payload,
 		AvailableAt: availableAt,

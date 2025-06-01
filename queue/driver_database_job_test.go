@@ -10,6 +10,8 @@ import (
 	mocksdb "github.com/goravel/framework/mocks/database/db"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
+	"github.com/goravel/framework/queue/models"
+	"github.com/goravel/framework/queue/utils"
 	"github.com/goravel/framework/support/carbon"
 )
 
@@ -34,46 +36,46 @@ func (s *DatabaseReservedJobTestSuite) SetupTest() {
 
 func (s *DatabaseReservedJobTestSuite) TestNewDatabaseReservedJob() {
 	s.Run("happy path", func() {
-		var task Task
+		var task utils.Task
 
 		testJobOne := &TestJobOne{}
-		s.mockJson.EXPECT().Unmarshal([]byte("{\"signature\":\"test_job_one\",\"args\":null,\"delay\":null,\"uuid\":\"test\",\"chain\":[]}"), &task).
-			Run(func(_ []byte, taskPtr any) {
-				taskPtr.(*Task).Job.Signature = testJobOne.Signature()
+		s.mockJson.EXPECT().UnmarshalString("{\"signature\":\"test_job_one\",\"args\":null,\"delay\":null,\"uuid\":\"test\",\"chain\":[]}", &task).
+			Run(func(_ string, taskPtr any) {
+				taskPtr.(*utils.Task).Job.Signature = testJobOne.Signature()
 			}).Return(nil).Once()
 		s.mockJobStorer.EXPECT().Get(testJobOne.Signature()).Return(testJobOne, nil).Once()
 
-		databaseJob := &DatabaseJobRecord{
+		job := &models.Job{
 			ID:      1,
 			Queue:   "default",
 			Payload: "{\"signature\":\"test_job_one\",\"args\":null,\"delay\":null,\"uuid\":\"test\",\"chain\":[]}",
 		}
 
-		reservedJob, err := NewDatabaseReservedJob(databaseJob, s.mockDB, s.mockJobStorer, s.mockJson, s.jobsTable)
+		databaseReservedJob, err := NewDatabaseReservedJob(job, s.mockDB, s.mockJobStorer, s.mockJson, s.jobsTable)
 
 		s.NoError(err)
-		s.NotNil(reservedJob)
-		s.Equal(databaseJob, reservedJob.jobRecord)
-		s.Equal(s.mockDB, reservedJob.db)
-		s.Equal(s.jobsTable, reservedJob.jobsTable)
+		s.NotNil(databaseReservedJob)
+		s.Equal(job, databaseReservedJob.job)
+		s.Equal(s.mockDB, databaseReservedJob.db)
+		s.Equal(s.jobsTable, databaseReservedJob.jobsTable)
 	})
 
 	s.Run("invalid payload", func() {
-		var task Task
+		var task utils.Task
 
-		s.mockJson.EXPECT().Unmarshal([]byte("invalid json"), &task).
+		s.mockJson.EXPECT().UnmarshalString("invalid json", &task).
 			Return(assert.AnError).Once()
 
-		databaseJob := &DatabaseJobRecord{
+		job := &models.Job{
 			ID:      1,
 			Queue:   "default",
 			Payload: "invalid json",
 		}
 
-		reservedJob, err := NewDatabaseReservedJob(databaseJob, s.mockDB, s.mockJobStorer, s.mockJson, s.jobsTable)
+		databaseReservedJob, err := NewDatabaseReservedJob(job, s.mockDB, s.mockJobStorer, s.mockJson, s.jobsTable)
 
 		s.Equal(assert.AnError, err)
-		s.Nil(reservedJob)
+		s.Nil(databaseReservedJob)
 	})
 }
 
@@ -100,13 +102,13 @@ func (s *DatabaseReservedJobTestSuite) TestDelete() {
 			mockQuery.EXPECT().Where("id", id).Return(mockQuery).Once()
 			mockQuery.EXPECT().Delete().Return(nil, test.expectedError).Once()
 
-			reservedJob := &DatabaseReservedJob{
+			databsaeReservedJob := &DatabaseReservedJob{
 				db:        s.mockDB,
-				jobRecord: &DatabaseJobRecord{ID: id},
+				job:       &models.Job{ID: id},
 				jobsTable: s.jobsTable,
 			}
 
-			err := reservedJob.Delete()
+			err := databsaeReservedJob.Delete()
 
 			s.Equal(test.expectedError, err)
 		})
@@ -161,7 +163,7 @@ func (s *DatabaseJobTestSuite) TestIncrement() {
 
 	for _, test := range tests {
 		s.Run(test.name, func() {
-			job := &DatabaseJobRecord{
+			job := &models.Job{
 				Attempts: test.initialAttempts,
 			}
 
@@ -192,7 +194,7 @@ func (s *DatabaseJobTestSuite) TestTouch() {
 			now := carbon.Now()
 			carbon.SetTestNow(now)
 
-			job := &DatabaseJobRecord{
+			job := &models.Job{
 				ReservedAt: test.initialReservedAt,
 			}
 

@@ -68,6 +68,64 @@ func (_c *Queue_Chain_Call) RunAndReturn(run func([]queue.ChainJob) queue.Pendin
 	return _c
 }
 
+// Connection provides a mock function with given fields: name
+func (_m *Queue) Connection(name string) (queue.Driver, error) {
+	ret := _m.Called(name)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Connection")
+	}
+
+	var r0 queue.Driver
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (queue.Driver, error)); ok {
+		return rf(name)
+	}
+	if rf, ok := ret.Get(0).(func(string) queue.Driver); ok {
+		r0 = rf(name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(queue.Driver)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(name)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Queue_Connection_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Connection'
+type Queue_Connection_Call struct {
+	*mock.Call
+}
+
+// Connection is a helper method to define mock.On call
+//   - name string
+func (_e *Queue_Expecter) Connection(name interface{}) *Queue_Connection_Call {
+	return &Queue_Connection_Call{Call: _e.mock.On("Connection", name)}
+}
+
+func (_c *Queue_Connection_Call) Run(run func(name string)) *Queue_Connection_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Queue_Connection_Call) Return(_a0 queue.Driver, _a1 error) *Queue_Connection_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Queue_Connection_Call) RunAndReturn(run func(string) (queue.Driver, error)) *Queue_Connection_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetJob provides a mock function with given fields: signature
 func (_m *Queue) GetJob(signature string) (queue.Job, error) {
 	ret := _m.Called(signature)
