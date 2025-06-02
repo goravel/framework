@@ -16,7 +16,7 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.2.1
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/google/uuid v1.6.0
-	github.com/gookit/validate v1.5.4
+	github.com/gookit/validate v1.5.5
 	github.com/goravel/file-rotatelogs/v2 v2.4.2
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/pterm/pterm v0.12.80
@@ -26,7 +26,7 @@ require (
 	github.com/rotisserie/eris v0.5.4
 	github.com/samber/lo v1.50.0
 	github.com/sirupsen/logrus v1.9.3
-	github.com/spf13/cast v1.8.0
+	github.com/spf13/cast v1.9.1
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v3 v3.3.3
