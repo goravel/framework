@@ -222,15 +222,13 @@ func (s *WorkerTestSuite) Test_run() {
 		ChainJob: contractsqueue.ChainJob{
 			Job: testJobErr,
 		},
-		UUID:  "test",
-		Chain: []contractsqueue.ChainJob{},
+		UUID: "test",
 	}
 	errorInternalTask := utils.Task{
 		Job: utils.Job{
 			Signature: testJobErr.Signature(),
 		},
-		UUID:  "test",
-		Chain: []utils.Job{},
+		UUID: "test",
 	}
 
 	failedJob := &models.FailedJob{
@@ -381,8 +379,7 @@ func (s *WorkerTestSuite) Test_run() {
 				Signature: errorTaskWithChain.Chain[0].Job.Signature(),
 				Args:      args,
 			},
-			UUID:  "test",
-			Chain: []utils.Job{},
+			UUID: "test",
 		}).Return("{\"signature\":\"test_job_err\",\"args\":[{\"type\":\"string\",\"value\":\"test\"}],\"delay\":null,\"uuid\":\"test\",\"chain\":[]}", nil).Once()
 
 		// run
