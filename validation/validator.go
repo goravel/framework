@@ -43,6 +43,10 @@ func (v *Validator) Bind(ptr any) error {
 	// we want user can the original data that is not defined in the rules,
 	// so that user doesn't need to define rules for all fields.
 	data := v.instance.SafeData()
+	prtType := reflect.TypeOf(ptr)
+	if prtType.Kind() == reflect.Ptr {
+		prtType = prtType.Elem()
+	}
 
 	if formData, ok := v.data.(*validate.FormData); ok {
 		if values, ok := v.data.Src().(url.Values); ok {
@@ -54,7 +58,16 @@ func (v *Validator) Bind(ptr any) error {
 
 			for key, value := range formData.Files {
 				if _, exist := data[key]; !exist {
-					data[key] = value
+					for i := 0; i < prtType.NumField(); i++ {
+						field := prtType.Field(i)
+						if field.Tag.Get("form") == key {
+							if field.Type.Kind() == reflect.Slice {
+								data[key] = value
+							} else {
+								data[key] = value[0]
+							}
+						}
+					}
 				}
 			}
 		}

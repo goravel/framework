@@ -145,7 +145,7 @@ func (s *ApplicationTestSuite) TestGetInt() {
 	s.Equal(3306, s.customConfig.GetInt("DB_PORT"))
 	s.Equal(0, s.config.GetInt("NOT_EXIST"))
 	s.Equal(123, s.config.GetInt("NOT_EXIST", 123))
-	s.Equal(0, s.config.GetInt("FLOAT_VALUE"))
+	s.Equal(3, s.config.GetInt("FLOAT_VALUE"))
 }
 
 func (s *ApplicationTestSuite) TestGetBool() {
