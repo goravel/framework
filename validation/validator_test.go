@@ -113,6 +113,21 @@ func TestBind_Rule(t *testing.T) {
 			},
 		},
 		{
+			name: "data is get request with names",
+			data: func() validate.DataFace {
+				request, err := http.NewRequest(http.MethodGet, "/?names=a&names=b", nil)
+				assert.Nil(t, err)
+				data, err := validate.FromRequest(request)
+				assert.Nil(t, err)
+
+				return data
+			}(),
+			rules: map[string]string{"names": "required|array|len:2"},
+			assert: func(data Data) {
+				assert.Equal(t, []string{"a", "b"}, data.Names)
+			},
+		},
+		{
 			name: "data is post request",
 			data: func() validate.DataFace {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"a":"Goravel", "b": 1, "ages": [1, 2], "names": ["a", "b"]}`))
