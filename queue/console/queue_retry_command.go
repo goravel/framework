@@ -8,8 +8,6 @@ import (
 	"github.com/goravel/framework/contracts/foundation"
 	contractsqueue "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/queue/models"
-	"github.com/goravel/framework/queue/utils"
 	"github.com/goravel/framework/support/carbon"
 )
 
@@ -63,13 +61,18 @@ func (r *QueueRetryCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *QueueRetryCommand) Handle(ctx console.Context) error {
-	ids, err := r.getJobIDs(ctx)
+	if r.db == nil {
+		ctx.Error(errors.DBFacadeNotSet.Error())
+		return nil
+	}
+
+	failedJobs, err := r.queue.Failer().Get(ctx.Option("connection"), ctx.Option("queue"), ctx.Arguments())
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
 
-	if len(ids) == 0 {
+	if len(failedJobs) == 0 {
 		ctx.Info(errors.QueueNoRetryableJobsFound.Error())
 		return nil
 	}
@@ -77,85 +80,20 @@ func (r *QueueRetryCommand) Handle(ctx console.Context) error {
 	ctx.Info(errors.QueuePushingFailedJob.Error())
 	ctx.Line("")
 
-	for _, id := range ids {
+	for _, failedJob := range failedJobs {
 		now := carbon.Now()
 
-		var failedJob models.FailedJob
-		if err := r.failedJobQuery.Where("id", id).FirstOrFail(&failedJob); err != nil {
-			ctx.Error(err.Error())
-			continue
-		}
-
-		if failedJob.ID == 0 {
-			ctx.Error(errors.QueueFailedJobNotFound.Args(id).Error())
-			continue
-		}
-
-		if err := r.retryJob(failedJob); err != nil {
+		if err := failedJob.Retry(); err != nil {
 			ctx.Error(errors.QueueFailedToRetryJob.Args(failedJob, err).Error())
 			continue
 		}
 
-		if _, err := r.failedJobQuery.Where("id", id).Delete(); err != nil {
-			ctx.Error(errors.QueueFailedToDeleteFailedJob.Args(failedJob, err).Error())
-			continue
-		}
-
-		r.printSuccess(ctx, failedJob.UUID, now.DiffAbsInDuration().String())
+		r.printSuccess(ctx, failedJob.UUID(), now.DiffAbsInDuration().String())
 	}
 
 	ctx.Line("")
 
 	return nil
-}
-
-func (r *QueueRetryCommand) getJobIDs(ctx console.Context) ([]string, error) {
-	uuids := ctx.Arguments()
-	var ids []string
-
-	if len(uuids) == 1 && uuids[0] == "all" {
-		if err := r.failedJobQuery.Pluck("id", &ids); err != nil {
-			return nil, err
-		}
-
-		return ids, nil
-	}
-
-	connection := ctx.Option("connection")
-	queue := ctx.Option("queue")
-
-	if connection != "" || queue != "" {
-		query := r.failedJobQuery
-
-		if connection != "" {
-			query = query.Where("connection", connection)
-		}
-
-		if queue != "" {
-			query = query.Where("queue", queue)
-		}
-
-		if err := query.Pluck("id", &ids); err != nil {
-			return nil, err
-		}
-
-		return ids, nil
-	}
-
-	if len(uuids) == 0 {
-		return nil, nil
-	}
-
-	uuidsAny := make([]any, len(uuids))
-	for i, uuid := range uuids {
-		uuidsAny[i] = uuid
-	}
-
-	if err := r.failedJobQuery.WhereIn("uuid", uuidsAny).Pluck("id", &ids); err != nil {
-		return nil, err
-	}
-
-	return ids, nil
 }
 
 func (r *QueueRetryCommand) printSuccess(ctx console.Context, uuid, duration string) {
@@ -164,18 +102,4 @@ func (r *QueueRetryCommand) printSuccess(ctx console.Context, uuid, duration str
 	second := duration + " " + status
 
 	ctx.TwoColumnDetail(first, second)
-}
-
-func (r *QueueRetryCommand) retryJob(failedJob models.FailedJob) error {
-	connection, err := r.queue.Connection(failedJob.Connection)
-	if err != nil {
-		return err
-	}
-
-	task, err := utils.JsonToTask(failedJob.Payload, r.queue.GetJobStorer(), r.json)
-	if err != nil {
-		return err
-	}
-
-	return connection.Push(task, failedJob.Queue)
 }

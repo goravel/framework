@@ -44,7 +44,6 @@ func TestTaskToJson(t *testing.T) {
 							{Type: "string", Value: "test"},
 						},
 					},
-					Chain: []Job{},
 				}
 				mockJson.EXPECT().MarshalString(expectedTask).Return("{\"test\":true}", nil).Once()
 			},
@@ -103,7 +102,6 @@ func TestTaskToJson(t *testing.T) {
 						Signature: "test_job_one",
 						Delay:     convert.Pointer(carbon.Now().StdTime()),
 					},
-					Chain: []Job{},
 				}
 				mockJson.EXPECT().MarshalString(expectedTask).Return("{\"test\":true}", nil).Once()
 			},
@@ -124,7 +122,6 @@ func TestTaskToJson(t *testing.T) {
 					Job: Job{
 						Signature: "test_job_one",
 					},
-					Chain: []Job{},
 				}
 				mockJson.EXPECT().MarshalString(expectedTask).Return("", assert.AnError).Once()
 			},

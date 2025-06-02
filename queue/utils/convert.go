@@ -23,8 +23,8 @@ type Job struct {
 }
 
 func TaskToJson(task contractsqueue.Task, json foundation.Json) (string, error) {
-	chain := make([]Job, len(task.Chain))
-	for i, taskData := range task.Chain {
+	var chain []Job
+	for _, taskData := range task.Chain {
 		for j, arg := range taskData.Args {
 			// To avoid converting []uint8 to base64
 			if arg.Type == "[]uint8" {
@@ -41,7 +41,7 @@ func TaskToJson(task contractsqueue.Task, json foundation.Json) (string, error) 
 			job.Delay = &taskData.Delay
 		}
 
-		chain[i] = job
+		chain = append(chain, job)
 	}
 
 	var args []contractsqueue.Arg

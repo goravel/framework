@@ -43,7 +43,11 @@ func (r *Application) GetJobs() []queue.Job {
 	return r.jobStorer.All()
 }
 
-func (r *Application) GetJobStorer() queue.JobStorer {
+func (r *Application) Failer() queue.Failer {
+	return NewFailer(r.config, r.db, r, r.json)
+}
+
+func (r *Application) JobStorer() queue.JobStorer {
 	return r.jobStorer
 }
 
