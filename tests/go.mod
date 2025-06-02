@@ -9,11 +9,11 @@ godebug x509negativeserial=1
 require (
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/goravel/framework v1.15.8
-	github.com/goravel/mysql v0.0.0-20250513044545-aa0501be0038
-	github.com/goravel/postgres v0.0.2-0.20250523045701-23b33d6c263c
+	github.com/goravel/mysql v0.0.0-20250602022220-ce71147dc799
+	github.com/goravel/postgres v0.0.2-0.20250602020044-c77d678d1b56
 	github.com/goravel/sqlite v0.0.0-20250513044555-d43b50b2f7d5
 	github.com/goravel/sqlserver v0.0.0-20250513034410-09b770f4d4d3
-	github.com/spf13/cast v1.8.0
+	github.com/spf13/cast v1.9.1
 	github.com/stretchr/testify v1.10.0
 	gorm.io/gorm v1.30.0
 )
