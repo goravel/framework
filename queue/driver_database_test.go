@@ -220,7 +220,6 @@ func (s *DatabaseTestSuite) TestPush() {
 		Job: utils.Job{
 			Signature: testJobOne.Signature(),
 		},
-		Chain: []utils.Job{},
 	}
 	carbon.SetTestNow(carbon.Now())
 	defer carbon.ClearTestNow()
