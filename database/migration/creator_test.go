@@ -78,7 +78,7 @@ func (r *M202410131203CreateUsersTable) Up() error {
 	if !facades.Schema().HasTable("users") {
 		return facades.Schema().Create("users", func(table schema.Blueprint) {
 			table.ID()
-			table.Timestamps()
+			table.TimestampsTz()
 		})
 	}
 
