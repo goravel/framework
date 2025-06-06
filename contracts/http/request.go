@@ -18,7 +18,9 @@ type ContextRequest interface {
 	Headers() http.Header
 	// Method retrieves the HTTP request method (e.g., GET, POST, PUT).
 	Method() string
-	// Path retrieves the current path information for the request.
+	// OriginPath retrieves the original path of the request: /users/{id}
+	OriginPath() string
+	// Path retrieves the current path information for the request: /users/1
 	Path() string
 	// Url retrieves the URL (excluding the query string) for the request.
 	Url() string
