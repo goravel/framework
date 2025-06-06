@@ -74,7 +74,6 @@ type Router interface {
 }
 
 type RouteInfo struct {
-	Method  string
-	Path    string
-	Handler string
+	Method string
+	Path   string
 }
