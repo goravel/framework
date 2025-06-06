@@ -1302,6 +1302,38 @@ func (_c *ContextRequest_Origin_Call) RunAndReturn(run func() *nethttp.Request) 
 	return _c
 }
 
+// OriginPath provides a mock function with no fields
+func (_m *ContextRequest) OriginPath() {
+	_m.Called()
+}
+
+// ContextRequest_OriginPath_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OriginPath'
+type ContextRequest_OriginPath_Call struct {
+	*mock.Call
+}
+
+// OriginPath is a helper method to define mock.On call
+func (_e *ContextRequest_Expecter) OriginPath() *ContextRequest_OriginPath_Call {
+	return &ContextRequest_OriginPath_Call{Call: _e.mock.On("OriginPath")}
+}
+
+func (_c *ContextRequest_OriginPath_Call) Run(run func()) *ContextRequest_OriginPath_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ContextRequest_OriginPath_Call) Return() *ContextRequest_OriginPath_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *ContextRequest_OriginPath_Call) RunAndReturn(run func()) *ContextRequest_OriginPath_Call {
+	_c.Run(run)
+	return _c
+}
+
 // Path provides a mock function with no fields
 func (_m *ContextRequest) Path() string {
 	ret := _m.Called()
