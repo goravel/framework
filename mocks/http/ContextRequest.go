@@ -1303,8 +1303,21 @@ func (_c *ContextRequest_Origin_Call) RunAndReturn(run func() *nethttp.Request) 
 }
 
 // OriginPath provides a mock function with no fields
-func (_m *ContextRequest) OriginPath() {
-	_m.Called()
+func (_m *ContextRequest) OriginPath() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for OriginPath")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
 }
 
 // ContextRequest_OriginPath_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OriginPath'
@@ -1324,13 +1337,13 @@ func (_c *ContextRequest_OriginPath_Call) Run(run func()) *ContextRequest_Origin
 	return _c
 }
 
-func (_c *ContextRequest_OriginPath_Call) Return() *ContextRequest_OriginPath_Call {
-	_c.Call.Return()
+func (_c *ContextRequest_OriginPath_Call) Return(_a0 string) *ContextRequest_OriginPath_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ContextRequest_OriginPath_Call) RunAndReturn(run func()) *ContextRequest_OriginPath_Call {
-	_c.Run(run)
+func (_c *ContextRequest_OriginPath_Call) RunAndReturn(run func() string) *ContextRequest_OriginPath_Call {
+	_c.Call.Return(run)
 	return _c
 }
 
