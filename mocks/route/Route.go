@@ -163,6 +163,53 @@ func (_c *Route_Get_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Rout
 	return _c
 }
 
+// GetRoutes provides a mock function with no fields
+func (_m *Route) GetRoutes() []route.RouteInfo {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetRoutes")
+	}
+
+	var r0 []route.RouteInfo
+	if rf, ok := ret.Get(0).(func() []route.RouteInfo); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]route.RouteInfo)
+		}
+	}
+
+	return r0
+}
+
+// Route_GetRoutes_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetRoutes'
+type Route_GetRoutes_Call struct {
+	*mock.Call
+}
+
+// GetRoutes is a helper method to define mock.On call
+func (_e *Route_Expecter) GetRoutes() *Route_GetRoutes_Call {
+	return &Route_GetRoutes_Call{Call: _e.mock.On("GetRoutes")}
+}
+
+func (_c *Route_GetRoutes_Call) Run(run func()) *Route_GetRoutes_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Route_GetRoutes_Call) Return(_a0 []route.RouteInfo) *Route_GetRoutes_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Route_GetRoutes_Call) RunAndReturn(run func() []route.RouteInfo) *Route_GetRoutes_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GlobalMiddleware provides a mock function with given fields: middlewares
 func (_m *Route) GlobalMiddleware(middlewares ...http.Middleware) {
 	_va := make([]interface{}, len(middlewares))
