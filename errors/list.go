@@ -150,6 +150,10 @@ var (
 	QueueProcessingJobs              = New("Processing jobs from [%s] connection and [%s] queue")
 	QueuePushingFailedJob            = New("Pushing failed queue jobs back onto the queue")
 
+	RedisHostNotConfigured = New("redis host is not configured for connection [%s] at path '%s.host'")
+	RedisInitDockerFailed  = New("init Redis docker error: %v")
+	RedisNoContainerId     = New("no container id return when creating Redis docker")
+
 	RouteDefaultDriverNotSet = New("please set default driver")
 	RouteInvalidDriver       = New("init %s route driver fail: route must be implement route.Route or func() (route.Route, error)")
 

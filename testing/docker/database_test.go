@@ -19,7 +19,6 @@ import (
 
 func TestNewDatabase(t *testing.T) {
 	var (
-		mockApp            *mocksfoundation.Application
 		mockArtisan        *mocksconsole.Artisan
 		mockConfig         *mocksconfig.Config
 		mockOrm            *mocksorm.Orm
@@ -28,7 +27,6 @@ func TestNewDatabase(t *testing.T) {
 	)
 
 	beforeEach := func() {
-		mockApp = mocksfoundation.NewApplication(t)
 		mockArtisan = mocksconsole.NewArtisan(t)
 		mockConfig = mocksconfig.NewConfig(t)
 		mockOrm = mocksorm.NewOrm(t)
@@ -50,9 +48,6 @@ func TestNewDatabase(t *testing.T) {
 				mockConfig.EXPECT().Get("database.connections.mysql.via").Return(func() (contractsdriver.Driver, error) {
 					return mockDatabaseDriver, nil
 				}).Once()
-				mockApp.EXPECT().MakeArtisan().Return(mockArtisan).Once()
-				mockApp.EXPECT().MakeConfig().Return(mockConfig).Once()
-				mockApp.EXPECT().MakeOrm().Return(mockOrm).Once()
 			},
 		},
 		{
@@ -63,9 +58,6 @@ func TestNewDatabase(t *testing.T) {
 				mockConfig.EXPECT().Get("database.connections.mysql.via").Return(func() (contractsdriver.Driver, error) {
 					return mockDatabaseDriver, nil
 				}).Once()
-				mockApp.EXPECT().MakeArtisan().Return(mockArtisan).Once()
-				mockApp.EXPECT().MakeConfig().Return(mockConfig).Once()
-				mockApp.EXPECT().MakeOrm().Return(mockOrm).Once()
 			},
 		},
 		{
@@ -76,8 +68,6 @@ func TestNewDatabase(t *testing.T) {
 				mockConfig.EXPECT().Get("database.connections.mysql.via").Return(func() (contractsdriver.Driver, error) {
 					return mockDatabaseDriver, nil
 				}).Once()
-				mockApp.EXPECT().MakeArtisan().Return(mockArtisan).Once()
-				mockApp.EXPECT().MakeConfig().Return(mockConfig).Once()
 			},
 			wantErr: assert.AnError,
 		},
@@ -88,8 +78,6 @@ func TestNewDatabase(t *testing.T) {
 				mockConfig.EXPECT().Get("database.connections.mysql.via").Return(func() (contractsdriver.Driver, error) {
 					return nil, assert.AnError
 				}).Once()
-				mockApp.EXPECT().MakeArtisan().Return(mockArtisan).Once()
-				mockApp.EXPECT().MakeConfig().Return(mockConfig).Once()
 			},
 			wantErr: assert.AnError,
 		},
@@ -100,8 +88,6 @@ func TestNewDatabase(t *testing.T) {
 				mockConfig.EXPECT().Get("database.connections.mysql.via").Return(func() error {
 					return nil
 				}).Once()
-				mockApp.EXPECT().MakeArtisan().Return(mockArtisan).Once()
-				mockApp.EXPECT().MakeConfig().Return(mockConfig).Once()
 			},
 			wantErr: errors.DatabaseConfigNotFound,
 		},
@@ -109,8 +95,6 @@ func TestNewDatabase(t *testing.T) {
 			name: "error when artisan facade is not set",
 			setup: func() {
 				mockConfig.EXPECT().GetString("database.default").Return("mysql").Once()
-				mockApp.EXPECT().MakeArtisan().Return(nil).Once()
-				mockApp.EXPECT().MakeConfig().Return(mockConfig).Once()
 			},
 			wantErr: errors.ArtisanFacadeNotSet,
 		},
@@ -127,7 +111,7 @@ func TestNewDatabase(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			beforeEach()
 			tt.setup()
-			gotDatabase, err := NewDatabase(mockApp, tt.connection)
+			gotDatabase, err := NewDatabase(mockArtisan, mockConfig, mockOrm, tt.connection)
 
 			if tt.wantErr != nil {
 				assert.EqualError(t, err, tt.wantErr.Error())
