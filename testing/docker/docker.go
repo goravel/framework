@@ -15,10 +15,14 @@ func NewDocker(app foundation.Application) *Docker {
 	}
 }
 
-func (receiver *Docker) Database(connection ...string) (docker.Database, error) {
+func (r *Docker) Cache(connection string) (docker.Cache, error) {
+	return nil, nil
+}
+
+func (r *Docker) Database(connection ...string) (docker.Database, error) {
 	if len(connection) == 0 {
-		return NewDatabase(receiver.app, "")
+		return NewDatabase(r.app.MakeArtisan(), r.app.MakeConfig(), r.app.MakeOrm(), "")
 	} else {
-		return NewDatabase(receiver.app, connection[0])
+		return NewDatabase(r.app.MakeArtisan(), r.app.MakeConfig(), r.app.MakeOrm(), connection[0])
 	}
 }

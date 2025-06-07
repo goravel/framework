@@ -20,6 +20,64 @@ func (_m *Docker) EXPECT() *Docker_Expecter {
 	return &Docker_Expecter{mock: &_m.Mock}
 }
 
+// Cache provides a mock function with given fields: connection
+func (_m *Docker) Cache(connection string) (docker.Cache, error) {
+	ret := _m.Called(connection)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Cache")
+	}
+
+	var r0 docker.Cache
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (docker.Cache, error)); ok {
+		return rf(connection)
+	}
+	if rf, ok := ret.Get(0).(func(string) docker.Cache); ok {
+		r0 = rf(connection)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(docker.Cache)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(connection)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Docker_Cache_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Cache'
+type Docker_Cache_Call struct {
+	*mock.Call
+}
+
+// Cache is a helper method to define mock.On call
+//   - connection string
+func (_e *Docker_Expecter) Cache(connection interface{}) *Docker_Cache_Call {
+	return &Docker_Cache_Call{Call: _e.mock.On("Cache", connection)}
+}
+
+func (_c *Docker_Cache_Call) Run(run func(connection string)) *Docker_Cache_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Docker_Cache_Call) Return(_a0 docker.Cache, _a1 error) *Docker_Cache_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Docker_Cache_Call) RunAndReturn(run func(string) (docker.Cache, error)) *Docker_Cache_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Database provides a mock function with given fields: connection
 func (_m *Docker) Database(connection ...string) (docker.Database, error) {
 	_va := make([]interface{}, len(connection))
