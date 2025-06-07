@@ -6,7 +6,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
+	contractsconfig "github.com/goravel/framework/contracts/config"
+	contractsconsole "github.com/goravel/framework/contracts/console"
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
+	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/errors"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksconsole "github.com/goravel/framework/mocks/console"
@@ -18,30 +21,26 @@ import (
 )
 
 func TestNewDatabase(t *testing.T) {
-	var (
-		mockArtisan        *mocksconsole.Artisan
-		mockConfig         *mocksconfig.Config
-		mockOrm            *mocksorm.Orm
-		mockDatabaseDriver *mocksdriver.Driver
-		mockDockerDriver   *mocksdocker.DatabaseDriver
-	)
-
-	beforeEach := func() {
-		mockArtisan = mocksconsole.NewArtisan(t)
-		mockConfig = mocksconfig.NewConfig(t)
-		mockOrm = mocksorm.NewOrm(t)
-		mockDatabaseDriver = mocksdriver.NewDriver(t)
-		mockDockerDriver = mocksdocker.NewDatabaseDriver(t)
-	}
+	mockArtisan := mocksconsole.NewArtisan(t)
+	mockConfig := mocksconfig.NewConfig(t)
+	mockOrm := mocksorm.NewOrm(t)
+	mockDatabaseDriver := mocksdriver.NewDriver(t)
+	mockDockerDriver := mocksdocker.NewDatabaseDriver(t)
 
 	tests := []struct {
 		name       string
+		artisan    contractsconsole.Artisan
+		config     contractsconfig.Config
+		orm        contractsorm.Orm
 		connection string
 		setup      func()
 		wantErr    error
 	}{
 		{
-			name: "success when connection is empty",
+			name:    "success when connection is empty",
+			artisan: mockArtisan,
+			config:  mockConfig,
+			orm:     mockOrm,
 			setup: func() {
 				mockDatabaseDriver.EXPECT().Docker().Return(mockDockerDriver, nil).Once()
 				mockConfig.EXPECT().GetString("database.default").Return("mysql").Once()
@@ -52,6 +51,9 @@ func TestNewDatabase(t *testing.T) {
 		},
 		{
 			name:       "success when connection is not empty",
+			artisan:    mockArtisan,
+			config:     mockConfig,
+			orm:        mockOrm,
 			connection: "mysql",
 			setup: func() {
 				mockDatabaseDriver.EXPECT().Docker().Return(mockDockerDriver, nil).Once()
@@ -61,7 +63,10 @@ func TestNewDatabase(t *testing.T) {
 			},
 		},
 		{
-			name: "error when Docker returns an error",
+			name:    "error when Docker returns an error",
+			artisan: mockArtisan,
+			config:  mockConfig,
+			orm:     mockOrm,
 			setup: func() {
 				mockDatabaseDriver.EXPECT().Docker().Return(nil, assert.AnError).Once()
 				mockConfig.EXPECT().GetString("database.default").Return("mysql").Once()
@@ -72,7 +77,10 @@ func TestNewDatabase(t *testing.T) {
 			wantErr: assert.AnError,
 		},
 		{
-			name: "error when init database driver returns an error",
+			name:    "error when init database driver returns an error",
+			artisan: mockArtisan,
+			config:  mockConfig,
+			orm:     mockOrm,
 			setup: func() {
 				mockConfig.EXPECT().GetString("database.default").Return("mysql").Once()
 				mockConfig.EXPECT().Get("database.connections.mysql.via").Return(func() (contractsdriver.Driver, error) {
@@ -82,7 +90,10 @@ func TestNewDatabase(t *testing.T) {
 			wantErr: assert.AnError,
 		},
 		{
-			name: "error when database driver doesn't exist",
+			name:    "error when database driver doesn't exist",
+			artisan: mockArtisan,
+			config:  mockConfig,
+			orm:     mockOrm,
 			setup: func() {
 				mockConfig.EXPECT().GetString("database.default").Return("mysql").Once()
 				mockConfig.EXPECT().Get("database.connections.mysql.via").Return(func() error {
@@ -92,26 +103,29 @@ func TestNewDatabase(t *testing.T) {
 			wantErr: errors.DatabaseConfigNotFound,
 		},
 		{
-			name: "error when artisan facade is not set",
-			setup: func() {
-				mockConfig.EXPECT().GetString("database.default").Return("mysql").Once()
-			},
+			name:    "error when artisan facade is not set",
+			setup:   func() {},
 			wantErr: errors.ArtisanFacadeNotSet,
 		},
 		{
-			name: "error when config facade is not set",
-			setup: func() {
-				mockApp.EXPECT().MakeConfig().Return(nil).Once()
-			},
+			name:    "error when config facade is not set",
+			artisan: mockArtisan,
+			setup:   func() {},
 			wantErr: errors.ConfigFacadeNotSet,
+		},
+		{
+			name:    "error when orm facade is not set",
+			artisan: mockArtisan,
+			config:  mockConfig,
+			setup:   func() {},
+			wantErr: errors.OrmFacadeNotSet,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			beforeEach()
 			tt.setup()
-			gotDatabase, err := NewDatabase(mockArtisan, mockConfig, mockOrm, tt.connection)
+			gotDatabase, err := NewDatabase(tt.artisan, tt.config, tt.orm, tt.connection)
 
 			if tt.wantErr != nil {
 				assert.EqualError(t, err, tt.wantErr.Error())

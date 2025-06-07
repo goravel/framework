@@ -21,11 +21,11 @@ type Database struct {
 }
 
 func NewDatabase(artisan contractsconsole.Artisan, config contractsconfig.Config, orm contractsorm.Orm, connection string) (*Database, error) {
-	if config == nil {
-		return nil, errors.ConfigFacadeNotSet
-	}
 	if artisan == nil {
 		return nil, errors.ArtisanFacadeNotSet
+	}
+	if config == nil {
+		return nil, errors.ConfigFacadeNotSet
 	}
 	if orm == nil {
 		return nil, errors.OrmFacadeNotSet
