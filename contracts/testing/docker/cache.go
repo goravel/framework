@@ -1,6 +1,6 @@
 package docker
 
-type Cache interface {
+type CacheDriver interface {
 	// Build a cache container, it doesn't wait for the cache to be ready, the Ready method needs to be called if
 	// you want to check the container status.
 	Build() error

@@ -11,7 +11,7 @@ type Testing interface {
 
 type Docker interface {
 	// Cache gets a cache connection instance.
-	Cache(connection string) (docker.Cache, error)
+	Cache(connection string) (docker.CacheDriver, error)
 	// Database gets a database connection instance.
 	Database(connection ...string) (docker.Database, error)
 }

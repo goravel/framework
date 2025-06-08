@@ -29,10 +29,11 @@ var (
 	AuthGuardDriverNotFound    = New("driver %s for guard %s was not found")
 	AuthProviderDriverNotFound = New("driver %s for user provider %s was not found")
 
-	CacheDriverNotSupported        = New("invalid driver: %s, only support memory, custom")
-	CacheForeverFailed             = New("cache forever is failed")
-	CacheMemoryInvalidIntValueType = New("value type of %s is not *atomic.Int64 or *int64 or *atomic.Int32 or *int32")
-	CacheStoreContractNotFulfilled = New("%s doesn't implement contracts/cache/store")
+	CacheDriverNotSupported           = New("invalid driver: %s, only support memory, custom")
+	CacheForeverFailed                = New("cache forever is failed")
+	CacheMemoryDriverNotSupportDocker = New("memory driver doesn't support docker")
+	CacheMemoryInvalidIntValueType    = New("value type of %s is not *atomic.Int64 or *int64 or *atomic.Int32 or *int32")
+	CacheStoreContractNotFulfilled    = New("%s doesn't implement contracts/cache/store")
 
 	ConsoleCommandRegisterFailed = New("command register failed: %v")
 	ConsoleDropAllTablesFailed   = New("drop all tables failed: %v")

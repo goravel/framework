@@ -21,7 +21,7 @@ func NewDocker(artisan contractsconsole.Artisan, config contractsconfig.Config, 
 	}
 }
 
-func (r *Docker) Cache(connection string) (docker.Cache, error) {
+func (r *Docker) Cache(connection string) (docker.CacheDriver, error) {
 	return nil, nil
 }
 

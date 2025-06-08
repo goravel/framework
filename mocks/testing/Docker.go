@@ -21,23 +21,23 @@ func (_m *Docker) EXPECT() *Docker_Expecter {
 }
 
 // Cache provides a mock function with given fields: connection
-func (_m *Docker) Cache(connection string) (docker.Cache, error) {
+func (_m *Docker) Cache(connection string) (docker.CacheDriver, error) {
 	ret := _m.Called(connection)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Cache")
 	}
 
-	var r0 docker.Cache
+	var r0 docker.CacheDriver
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (docker.Cache, error)); ok {
+	if rf, ok := ret.Get(0).(func(string) (docker.CacheDriver, error)); ok {
 		return rf(connection)
 	}
-	if rf, ok := ret.Get(0).(func(string) docker.Cache); ok {
+	if rf, ok := ret.Get(0).(func(string) docker.CacheDriver); ok {
 		r0 = rf(connection)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(docker.Cache)
+			r0 = ret.Get(0).(docker.CacheDriver)
 		}
 	}
 
@@ -68,12 +68,12 @@ func (_c *Docker_Cache_Call) Run(run func(connection string)) *Docker_Cache_Call
 	return _c
 }
 
-func (_c *Docker_Cache_Call) Return(_a0 docker.Cache, _a1 error) *Docker_Cache_Call {
+func (_c *Docker_Cache_Call) Return(_a0 docker.CacheDriver, _a1 error) *Docker_Cache_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Docker_Cache_Call) RunAndReturn(run func(string) (docker.Cache, error)) *Docker_Cache_Call {
+func (_c *Docker_Cache_Call) RunAndReturn(run func(string) (docker.CacheDriver, error)) *Docker_Cache_Call {
 	_c.Call.Return(run)
 	return _c
 }
