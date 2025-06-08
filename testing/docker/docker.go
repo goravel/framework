@@ -1,17 +1,23 @@
 package docker
 
 import (
-	"github.com/goravel/framework/contracts/foundation"
+	contractsconfig "github.com/goravel/framework/contracts/config"
+	contractsconsole "github.com/goravel/framework/contracts/console"
+	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/testing/docker"
 )
 
 type Docker struct {
-	app foundation.Application
+	artisan contractsconsole.Artisan
+	config  contractsconfig.Config
+	orm     contractsorm.Orm
 }
 
-func NewDocker(app foundation.Application) *Docker {
+func NewDocker(artisan contractsconsole.Artisan, config contractsconfig.Config, orm contractsorm.Orm) *Docker {
 	return &Docker{
-		app: app,
+		artisan: artisan,
+		config:  config,
+		orm:     orm,
 	}
 }
 
@@ -21,8 +27,8 @@ func (r *Docker) Cache(connection string) (docker.Cache, error) {
 
 func (r *Docker) Database(connection ...string) (docker.Database, error) {
 	if len(connection) == 0 {
-		return NewDatabase(r.app.MakeArtisan(), r.app.MakeConfig(), r.app.MakeOrm(), "")
+		return NewDatabase(r.artisan, r.config, r.orm, "")
 	} else {
-		return NewDatabase(r.app.MakeArtisan(), r.app.MakeConfig(), r.app.MakeOrm(), connection[0])
+		return NewDatabase(r.artisan, r.config, r.orm, connection[0])
 	}
 }

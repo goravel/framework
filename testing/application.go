@@ -1,21 +1,27 @@
 package testing
 
 import (
-	"github.com/goravel/framework/contracts/foundation"
+	contractsconfig "github.com/goravel/framework/contracts/config"
+	contractsconsole "github.com/goravel/framework/contracts/console"
+	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/testing/docker"
 )
 
 type Application struct {
-	app foundation.Application
+	artisan contractsconsole.Artisan
+	config  contractsconfig.Config
+	orm     contractsorm.Orm
 }
 
-func NewApplication(app foundation.Application) *Application {
+func NewApplication(artisan contractsconsole.Artisan, config contractsconfig.Config, orm contractsorm.Orm) *Application {
 	return &Application{
-		app: app,
+		artisan: artisan,
+		config:  config,
+		orm:     orm,
 	}
 }
 
-func (receiver *Application) Docker() testing.Docker {
-	return docker.NewDocker(receiver.app)
+func (r *Application) Docker() testing.Docker {
+	return docker.NewDocker(r.artisan, r.config, r.orm)
 }
