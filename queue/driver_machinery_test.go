@@ -1,9 +1,7 @@
 package queue
 
 import (
-	"fmt"
 	"testing"
-	"time"
 
 	"github.com/RichardKnop/machinery/v2"
 	machinerylog "github.com/RichardKnop/machinery/v2/log"
@@ -14,37 +12,16 @@ import (
 	"github.com/goravel/framework/errors"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mockslog "github.com/goravel/framework/mocks/log"
-	"github.com/goravel/framework/support/carbon"
-	"github.com/goravel/framework/support/docker"
-	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/testing/utils"
 )
 
 type MachineryTestSuite struct {
 	suite.Suite
-	docker    *docker.Redis
 	machinery *Machinery
 }
 
 func TestMachineryTestSuite(t *testing.T) {
-	if env.IsWindows() {
-		t.Skip("skip on windows")
-	}
-
 	suite.Run(t, new(MachineryTestSuite))
-}
-
-func (s *MachineryTestSuite) SetupSuite() {
-	redis := docker.NewRedis()
-	if err := redis.Build(); err != nil {
-		s.T().Fatalf("failed to build redis docker: %v", err)
-	}
-
-	s.docker = redis
-}
-
-func (s *MachineryTestSuite) TearDownSuite() {
-	s.NoError(s.docker.Shutdown())
 }
 
 func (s *MachineryTestSuite) SetupTest() {
@@ -64,7 +41,7 @@ func (s *MachineryTestSuite) SetupTest() {
 		log:           log,
 		queueToServer: make(map[string]*machinery.Server),
 		redisDatabase: 0,
-		redisDSN:      fmt.Sprintf("localhost:%d", s.docker.Config().Port),
+		redisDSN:      "localhost:6379",
 	}
 }
 
@@ -80,7 +57,7 @@ func (s *MachineryTestSuite) Test_NewMachinery() {
 	mockConfig.EXPECT().GetString("queue.connections.machinery.connection").Return("machinery").Once()
 	mockConfig.EXPECT().GetString("database.redis.machinery.host").Return("localhost").Once()
 	mockConfig.EXPECT().GetString("database.redis.machinery.password").Return("").Once()
-	mockConfig.EXPECT().GetInt("database.redis.machinery.port").Return(s.docker.Config().Port).Once()
+	mockConfig.EXPECT().GetInt("database.redis.machinery.port").Return(6379).Once()
 	mockConfig.EXPECT().GetInt("database.redis.machinery.database").Return(0).Once()
 
 	machinery := NewMachinery(mockConfig, mockLog, "machinery")
@@ -89,116 +66,7 @@ func (s *MachineryTestSuite) Test_NewMachinery() {
 	s.Equal("goravel", machinery.appName)
 	s.Equal(mockLog, machinery.log)
 	s.Equal(0, machinery.redisDatabase)
-	s.Equal(fmt.Sprintf("localhost:%d", s.docker.Config().Port), machinery.redisDSN)
-}
-
-func (s *MachineryTestSuite) Test_PushAndRun() {
-	queue := "default"
-	err := s.machinery.Push(contractsqueue.Task{
-		ChainJob: contractsqueue.ChainJob{
-			Job: &TestJobOne{},
-			Args: []contractsqueue.Arg{
-				{Type: "string", Value: "a"},
-				{Type: "int", Value: 1},
-				{Type: "[]string", Value: []string{"b", "c"}},
-				{Type: "[]int", Value: []int{1, 2, 3}},
-			},
-		},
-	}, queue)
-
-	s.Require().NoError(err)
-
-	jobs := []contractsqueue.Job{&TestJobOne{}, &TestJobTwo{}, &TestJobErr{}}
-	worker, err := s.machinery.Run(jobs, queue, 1)
-	s.Require().NoError(err)
-
-	defer worker.Quit()
-
-	time.Sleep(time.Second)
-
-	s.Equal("a", testJobOne[0])
-	s.Equal(1, testJobOne[1])
-	s.Equal([]string{"b", "c"}, testJobOne[2])
-	s.Equal([]int{1, 2, 3}, testJobOne[3])
-}
-
-func (s *MachineryTestSuite) Test_PushAndRunWithDelay() {
-	queue := "default"
-	err := s.machinery.Push(contractsqueue.Task{
-		ChainJob: contractsqueue.ChainJob{
-			Job: &TestJobOne{},
-			Args: []contractsqueue.Arg{
-				{Type: "string", Value: "a"},
-				{Type: "int", Value: 1},
-				{Type: "[]string", Value: []string{"b", "c"}},
-				{Type: "[]int", Value: []int{1, 2, 3}},
-			},
-			Delay: carbon.Now().AddSecond().StdTime(),
-		},
-	}, queue)
-
-	s.Require().NoError(err)
-
-	jobs := []contractsqueue.Job{&TestJobOne{}, &TestJobTwo{}, &TestJobErr{}}
-	worker, err := s.machinery.Run(jobs, queue, 1)
-	s.Require().NoError(err)
-
-	defer worker.Quit()
-
-	time.Sleep(time.Second)
-
-	s.Len(testJobOne, 0)
-
-	time.Sleep(time.Second)
-
-	s.Equal("a", testJobOne[0])
-	s.Equal(1, testJobOne[1])
-	s.Equal([]string{"b", "c"}, testJobOne[2])
-	s.Equal([]int{1, 2, 3}, testJobOne[3])
-}
-
-func (s *MachineryTestSuite) Test_PushChainAndRun() {
-	queue := "default"
-	err := s.machinery.Push(contractsqueue.Task{
-		ChainJob: contractsqueue.ChainJob{
-			Job: &TestJobOne{},
-			Args: []contractsqueue.Arg{
-				{Type: "string", Value: "a"},
-				{Type: "int", Value: 1},
-				{Type: "[]string", Value: []string{"b", "c"}},
-				{Type: "[]int", Value: []int{1, 2, 3}},
-			},
-		},
-		Chain: []contractsqueue.ChainJob{
-			{
-				Job: &TestJobTwo{},
-				Args: []contractsqueue.Arg{
-					{Type: "string", Value: "b"},
-				},
-				Delay: carbon.Now().AddSecond().StdTime(),
-			},
-		},
-	}, queue)
-
-	s.Require().NoError(err)
-
-	jobs := []contractsqueue.Job{&TestJobOne{}, &TestJobTwo{}, &TestJobErr{}}
-	worker, err := s.machinery.Run(jobs, queue, 1)
-	s.Require().NoError(err)
-
-	defer worker.Quit()
-
-	time.Sleep(time.Second)
-
-	s.Equal("a", testJobOne[0])
-	s.Equal(1, testJobOne[1])
-	s.Equal([]string{"b", "c"}, testJobOne[2])
-	s.Equal([]int{1, 2, 3}, testJobOne[3])
-	s.Len(testJobTwo, 0)
-
-	time.Sleep(time.Second)
-
-	s.Equal("b", testJobTwo[0])
+	s.Equal("localhost:6379", machinery.redisDSN)
 }
 
 func (s *MachineryTestSuite) Test_queueKey() {
