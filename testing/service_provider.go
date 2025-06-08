@@ -22,7 +22,7 @@ type ServiceProvider struct {
 
 func (r *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(contracts.BindingTesting, func(app foundation.Application) (any, error) {
-		return NewApplication(app), nil
+		return NewApplication(app.MakeArtisan(), app.MakeCache(), app.MakeConfig(), app.MakeOrm()), nil
 	})
 }
 

@@ -3,6 +3,8 @@ package cache
 import (
 	"context"
 	"time"
+
+	"github.com/goravel/framework/contracts/testing/docker"
 )
 
 type Cache interface {
@@ -15,6 +17,8 @@ type Driver interface {
 	Add(key string, value any, t time.Duration) bool
 	// Decrement decrements the value of an item in the cache.
 	Decrement(key string, value ...int64) (int64, error)
+	// Docker gets the docker driver.
+	Docker() (docker.CacheDriver, error)
 	// Forever add an item in the cache indefinitely.
 	Forever(key string, value any) bool
 	// Forget removes an item from the cache.
