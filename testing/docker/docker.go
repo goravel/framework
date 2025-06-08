@@ -1,28 +1,40 @@
 package docker
 
 import (
+	contractscache "github.com/goravel/framework/contracts/cache"
 	contractsconfig "github.com/goravel/framework/contracts/config"
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/testing/docker"
+	"github.com/goravel/framework/errors"
 )
 
 type Docker struct {
 	artisan contractsconsole.Artisan
+	cache   contractscache.Cache
 	config  contractsconfig.Config
 	orm     contractsorm.Orm
 }
 
-func NewDocker(artisan contractsconsole.Artisan, config contractsconfig.Config, orm contractsorm.Orm) *Docker {
+func NewDocker(artisan contractsconsole.Artisan, cache contractscache.Cache, config contractsconfig.Config, orm contractsorm.Orm) *Docker {
 	return &Docker{
 		artisan: artisan,
+		cache:   cache,
 		config:  config,
 		orm:     orm,
 	}
 }
 
-func (r *Docker) Cache(connection string) (docker.CacheDriver, error) {
-	return nil, nil
+func (r *Docker) Cache(store ...string) (docker.CacheDriver, error) {
+	if r.config == nil {
+		return nil, errors.ConfigFacadeNotSet
+	}
+
+	if len(store) == 0 {
+		store = append(store, r.config.GetString("cache.default"))
+	}
+
+	return r.cache.Store(store[0]).Docker()
 }
 
 func (r *Docker) Database(connection ...string) (docker.Database, error) {
