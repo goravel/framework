@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	contractsdocker "github.com/goravel/framework/contracts/testing/docker"
+	"github.com/goravel/framework/support/env"
 )
 
 type ImageDriverTestSuite struct {
@@ -15,6 +16,10 @@ type ImageDriverTestSuite struct {
 }
 
 func TestImageDriverTestSuite(t *testing.T) {
+	if env.IsWindows() {
+		t.Skip("Skipping image driver test on Windows")
+	}
+
 	suite.Run(t, new(ImageDriverTestSuite))
 }
 
