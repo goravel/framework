@@ -42,7 +42,7 @@ func TestJwtGuardTestSuite(t *testing.T) {
 func (s *JwtGuardTestSuite) SetupTest() {
 	s.mockCache = mockscache.NewCache(s.T())
 	s.mockConfig = mocksconfig.NewConfig(s.T())
-	s.mockContext = Background(s.T())
+	s.mockContext = Background()
 	s.mockDB = mocksorm.NewQuery(s.T())
 	s.mockLog = mockslog.NewLog(s.T())
 	s.mockUserProvider = mocksauth.NewUserProvider(s.T())
