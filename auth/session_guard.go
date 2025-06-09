@@ -6,16 +6,12 @@ import (
 	"github.com/spf13/cast"
 
 	contractsauth "github.com/goravel/framework/contracts/auth"
-	"github.com/goravel/framework/contracts/cache"
-	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/http"
 	contractsession "github.com/goravel/framework/contracts/session"
 	"github.com/goravel/framework/errors"
 )
 
 type SessionGuard struct {
-	cache    cache.Cache
-	config   config.Config
 	session  contractsession.Session
 	ctx      http.Context
 	guard    string
@@ -35,8 +31,6 @@ func NewSessionGuard(ctx http.Context, name string, userProvider contractsauth.U
 	}
 
 	return &SessionGuard{
-		cache:    cacheFacade,
-		config:   configFacade,
 		session:  session,
 		ctx:      ctx,
 		guard:    name,
@@ -44,7 +38,6 @@ func NewSessionGuard(ctx http.Context, name string, userProvider contractsauth.U
 	}, nil
 }
 
-// Check implements auth.GuardDriver.
 func (r *SessionGuard) Check() bool {
 	_, err := r.ID()
 
@@ -55,12 +48,10 @@ func (r *SessionGuard) Check() bool {
 	return false
 }
 
-// Guest implements auth.GuardDriver.
 func (r *SessionGuard) Guest() bool {
 	return !r.Check()
 }
 
-// ID implements auth.GuardDriver.
 func (r *SessionGuard) ID() (token string, err error) {
 	sessionName := r.getSessionName()
 	userId := r.session.Get(sessionName, nil)
@@ -76,7 +67,6 @@ func (r *SessionGuard) ID() (token string, err error) {
 	return "", errors.AuthInvalidKey
 }
 
-// Login implements auth.GuardDriver.
 func (r *SessionGuard) Login(user any) (token string, err error) {
 	id, err := r.provider.GetID(user)
 	if err != nil {
@@ -93,22 +83,17 @@ func (r *SessionGuard) Login(user any) (token string, err error) {
 	return "", errors.AuthNoPrimaryKeyField
 }
 
-// LoginUsingID implements auth.GuardDriver.
 func (r *SessionGuard) LoginUsingID(id any) (token string, err error) {
 	sessionName := r.getSessionName()
 	key := cast.ToString(id)
 	if key == "" {
 		return "", errors.AuthInvalidKey
 	}
-	if err := r.provider.RetriveByID(new(interface{}), id); err != nil {
-		return "", err
-	}
 	r.session.Put(sessionName, id)
 
 	return "", nil
 }
 
-// Logout implements auth.GuardDriver.
 func (r *SessionGuard) Logout() error {
 	sessionName := r.getSessionName()
 	r.session.Forget(sessionName)
@@ -116,17 +101,14 @@ func (r *SessionGuard) Logout() error {
 	return nil
 }
 
-// Parse implements auth.GuardDriver.
 func (r *SessionGuard) Parse(token string) (*contractsauth.Payload, error) {
-	panic("unimplemented")
+	return nil, errors.AuthUnsupportedDriverMethod.Args("session")
 }
 
-// Refresh implements auth.GuardDriver.
 func (r *SessionGuard) Refresh() (token string, err error) {
-	panic("unimplemented")
+	return "", errors.AuthUnsupportedDriverMethod.Args("session")
 }
 
-// User implements auth.GuardDriver.
 func (r *SessionGuard) User(user any) error {
 	id, err := r.ID()
 
