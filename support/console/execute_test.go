@@ -21,10 +21,11 @@ func TestExecuteCommand(t *testing.T) {
 	}
 
 	tests := []struct {
-		name   string
-		cmd    *exec.Cmd
-		setup  func()
-		expect error
+		name    string
+		cmd     *exec.Cmd
+		message []string
+		setup   func()
+		expect  error
 	}{
 		{
 			name: "execute command failed",
@@ -49,13 +50,23 @@ func TestExecuteCommand(t *testing.T) {
 			},
 			expect: nil,
 		},
+		{
+			name:    "execute command with spinner message",
+			cmd:     exec.Command("ls"),
+			message: []string{"list files"},
+			setup: func() {
+				mockCtx.EXPECT().Spinner("list files", mock.Anything).RunAndReturn(func(_ string, option console.SpinnerOption) error {
+					return option.Action()
+				}).Once()
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			beforeEach()
 			tt.setup()
-			result := ExecuteCommand(mockCtx, tt.cmd)
+			result := ExecuteCommand(mockCtx, tt.cmd, tt.message...)
 
 			assert.Equal(t, tt.expect, result)
 		})

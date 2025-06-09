@@ -10,6 +10,7 @@ import (
 
 	contractscache "github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/contracts/testing/docker"
 	"github.com/goravel/framework/errors"
 )
 
@@ -57,6 +58,10 @@ func (r *Memory) Decrement(key string, value ...int64) (int64, error) {
 	default:
 		return 0, errors.CacheMemoryInvalidIntValueType.Args(key)
 	}
+}
+
+func (r *Memory) Docker() (docker.CacheDriver, error) {
+	return nil, errors.CacheMemoryDriverNotSupportDocker
 }
 
 // Forever Put an item in the cache indefinitely.

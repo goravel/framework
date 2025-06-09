@@ -8,14 +8,14 @@ godebug x509negativeserial=1
 
 require (
 	github.com/brianvoe/gofakeit/v7 v7.2.1
-	github.com/goravel/framework v1.15.7
-	github.com/goravel/mysql v0.0.0-20250505024708-6e80a9e2722e
-	github.com/goravel/postgres v0.0.2-0.20250505023735-5f80ea438e0c
-	github.com/goravel/sqlite v0.0.0-20250414101217-fbee7100fe08
-	github.com/goravel/sqlserver v0.0.0-20250330044523-bf0931bdcdff
-	github.com/spf13/cast v1.8.0
+	github.com/goravel/framework v1.15.8
+	github.com/goravel/mysql v0.0.0-20250602022220-ce71147dc799
+	github.com/goravel/postgres v0.0.2-0.20250602020044-c77d678d1b56
+	github.com/goravel/sqlite v0.0.0-20250513044555-d43b50b2f7d5
+	github.com/goravel/sqlserver v0.0.0-20250513034410-09b770f4d4d3
+	github.com/spf13/cast v1.9.1
 	github.com/stretchr/testify v1.10.0
-	gorm.io/gorm v1.26.1
+	gorm.io/gorm v1.30.0
 )
 
 require (
@@ -29,12 +29,13 @@ require (
 	github.com/containerd/console v1.0.4 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
-	github.com/dromara/carbon/v2 v2.6.4 // indirect
+	github.com/dromara/carbon/v2 v2.6.6 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.9 // indirect
 	github.com/go-sql-driver/mysql v1.9.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/golang-sql/civil v0.0.0-20220223132316-b832511892a9 // indirect
 	github.com/golang-sql/sqlexp v0.1.0 // indirect
+	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gookit/color v1.5.4 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
@@ -62,6 +63,7 @@ require (
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/tetratelabs/wazero v1.9.0 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
+	go.opentelemetry.io/otel/sdk/metric v1.35.0 // indirect
 	golang.org/x/crypto v0.38.0 // indirect
 	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6 // indirect
 	golang.org/x/net v0.40.0 // indirect
@@ -69,8 +71,8 @@ require (
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/term v0.32.0 // indirect
 	golang.org/x/text v0.25.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250428153025-10db94c68c34 // indirect
-	google.golang.org/grpc v1.72.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250512202823-5a2f75b736a9 // indirect
+	google.golang.org/grpc v1.72.1 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/mysql v1.5.7 // indirect
@@ -80,7 +82,7 @@ require (
 )
 
 replace (
-	github.com/goravel/framework v1.15.7 => ../
+	github.com/goravel/framework => ../
 	github.com/goravel/mysql v0.0.0 => github.com/goravel/mysql v0.0.0
 	github.com/goravel/postgres v0.0.0 => github.com/goravel/postgres v0.0.0
 	github.com/goravel/sqlite v0.0.0 => github.com/goravel/sqlite v0.0.0

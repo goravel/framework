@@ -2,6 +2,7 @@ package schedule
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -34,6 +35,39 @@ func (s *EventTestSuite) TestDaily() {
 func (s *EventTestSuite) TestDailyAt() {
 	s.Equal("30 10 * * *", s.event.DailyAt("10:30").GetCron())
 	s.Equal("0 10 * * *", s.event.DailyAt("10").GetCron())
+}
+
+func (s *EventTestSuite) TestTwiceDaily() {
+	s.Equal("* 1,13 * * *", s.event.TwiceDaily().GetCron())
+	s.Equal("* 5,15 * * *", s.event.TwiceDaily(5, 15).GetCron())
+}
+
+func (s *EventTestSuite) TestEverySecond() {
+	s.Equal("* * * * * *", s.event.EverySecond().GetCron())
+}
+
+func (s *EventTestSuite) TestEveryTwoSeconds() {
+	s.Equal("*/2 * * * * *", s.event.EveryTwoSeconds().GetCron())
+}
+
+func (s *EventTestSuite) TestEveryFiveSeconds() {
+	s.Equal("*/5 * * * * *", s.event.EveryFiveSeconds().GetCron())
+}
+
+func (s *EventTestSuite) TestEveryTenSeconds() {
+	s.Equal("*/10 * * * * *", s.event.EveryTenSeconds().GetCron())
+}
+
+func (s *EventTestSuite) TestEveryFifteenSeconds() {
+	s.Equal("*/15 * * * * *", s.event.EveryFifteenSeconds().GetCron())
+}
+
+func (s *EventTestSuite) TestEveryTwentySeconds() {
+	s.Equal("*/20 * * * * *", s.event.EveryTwentySeconds().GetCron())
+}
+
+func (s *EventTestSuite) TestEveryThirtySeconds() {
+	s.Equal("*/30 * * * * *", s.event.EveryThirtySeconds().GetCron())
 }
 
 func (s *EventTestSuite) TestEveryMinute() {
@@ -99,6 +133,63 @@ func (s *EventTestSuite) TestHourlyAt() {
 	s.Equal("10,20 * * * *", s.event.HourlyAt([]string{"10", "20"}).GetCron())
 }
 
+func (s *EventTestSuite) TestDays() {
+	s.Equal("* * * * 1,5", s.event.Days(time.Monday, time.Friday).GetCron())
+	s.Equal("* * * * 0-1,5-6", s.event.Days(time.Sunday, time.Monday, time.Friday, time.Saturday).GetCron())
+}
+
+func (s *EventTestSuite) TestWeekdays() {
+	s.Equal("* * * * 1-5", s.event.Weekdays().GetCron())
+}
+
+func (s *EventTestSuite) TestWeekends() {
+	s.Equal("* * * * 0,6", s.event.Weekends().GetCron())
+}
+
+func (s *EventTestSuite) TestMondays() {
+	s.Equal("* * * * 1", s.event.Mondays().GetCron())
+}
+
+func (s *EventTestSuite) TestTuesdays() {
+	s.Equal("* * * * 2", s.event.Tuesdays().GetCron())
+}
+
+func (s *EventTestSuite) TestWednesdays() {
+	s.Equal("* * * * 3", s.event.Wednesdays().GetCron())
+}
+
+func (s *EventTestSuite) TestThursdays() {
+	s.Equal("* * * * 4", s.event.Thursdays().GetCron())
+}
+
+func (s *EventTestSuite) TestFridays() {
+	s.Equal("* * * * 5", s.event.Fridays().GetCron())
+}
+
+func (s *EventTestSuite) TestSaturdays() {
+	s.Equal("* * * * 6", s.event.Saturdays().GetCron())
+}
+
+func (s *EventTestSuite) TestSundays() {
+	s.Equal("* * * * 0", s.event.Sundays().GetCron())
+}
+
+func (s *EventTestSuite) TestWeekly() {
+	s.Equal("0 0 * * 0", s.event.Weekly().GetCron())
+}
+
+func (s *EventTestSuite) TestMonthly() {
+	s.Equal("0 0 1 * *", s.event.Monthly().GetCron())
+}
+
+func (s *EventTestSuite) TestQuarterly() {
+	s.Equal("0 0 1 1-12/3 *", s.event.Quarterly().GetCron())
+}
+
+func (s *EventTestSuite) TestYearly() {
+	s.Equal("0 0 1 1 *", s.event.Yearly().GetCron())
+}
+
 func (s *EventTestSuite) TestSkipIfStillRunning() {
 	s.event.SkipIfStillRunning()
 	s.True(s.event.GetSkipIfStillRunning())
@@ -107,4 +198,41 @@ func (s *EventTestSuite) TestSkipIfStillRunning() {
 func (s *EventTestSuite) TestDelayIfStillRunning() {
 	s.event.DelayIfStillRunning()
 	s.True(s.event.GetDelayIfStillRunning())
+}
+
+func (s *EventTestSuite) TestSimplifyRanges() {
+	tests := []struct {
+		name     string
+		numbers  []int
+		expected string
+	}{
+		{
+			name:     "consecutive range",
+			numbers:  []int{1, 2, 3, 4, 5},
+			expected: "1-5",
+		},
+		{
+			name:     "non-consecutive range",
+			numbers:  []int{1, 2, 7},
+			expected: "1-2,7",
+		},
+		{
+			name:     "mixed range",
+			numbers:  []int{1, 2, 3, 5, 6, 8},
+			expected: "1-3,5-6,8",
+		},
+		{
+			name:     "single number",
+			numbers:  []int{42},
+			expected: "42",
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			result := simplifyRanges(tt.numbers...)
+			s.Equal(tt.expected, result)
+		})
+	}
+
 }

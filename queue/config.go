@@ -4,67 +4,72 @@ import (
 	"fmt"
 
 	contractsconfig "github.com/goravel/framework/contracts/config"
-	"github.com/goravel/framework/contracts/database/db"
 )
 
 type Config struct {
-	config contractsconfig.Config
-	db     db.DB
+	contractsconfig.Config
+
+	appName           string
+	debug             bool
+	defaultConnection string
+	defaultQueue      string
+	defaultConcurrent int
+	failedDatabase    string
+	failedTable       string
 }
 
-func NewConfig(config contractsconfig.Config, db db.DB) *Config {
-	return &Config{
-		config: config,
-		db:     db,
+func NewConfig(config contractsconfig.Config) *Config {
+	defaultConnection := config.GetString("queue.default")
+	defaultQueue := config.GetString(fmt.Sprintf("queue.connections.%s.queue", defaultConnection), "default")
+	defaultConcurrent := config.GetInt(fmt.Sprintf("queue.connections.%s.concurrent", defaultConnection), 1)
+
+	if defaultConcurrent < 1 {
+		defaultConcurrent = 1
 	}
-}
 
-func (r *Config) Config() contractsconfig.Config {
-	return r.config
+	c := &Config{
+		Config: config,
+
+		appName:           config.GetString("app.name", "goravel"),
+		debug:             config.GetBool("app.debug"),
+		defaultConnection: defaultConnection,
+		defaultQueue:      defaultQueue,
+		defaultConcurrent: defaultConcurrent,
+		failedDatabase:    config.GetString("queue.failed.database"),
+		failedTable:       config.GetString("queue.failed.table"),
+	}
+
+	return c
 }
 
 func (r *Config) Debug() bool {
-	return r.config.GetBool("app.debug")
+	return r.debug
 }
 
 func (r *Config) DefaultConnection() string {
-	return r.config.GetString("queue.default")
+	return r.defaultConnection
 }
 
 func (r *Config) DefaultQueue() string {
-	return r.config.GetString(fmt.Sprintf("queue.connections.%s.queue", r.DefaultConnection()), "default")
+	return r.defaultQueue
 }
 
 func (r *Config) DefaultConcurrent() int {
-	concurrent := r.config.GetInt(fmt.Sprintf("queue.connections.%s.concurrent", r.DefaultConnection()), 1)
-
-	if concurrent < 1 {
-		concurrent = 1
-	}
-
-	return concurrent
+	return r.defaultConcurrent
 }
 
 func (r *Config) Driver(connection string) string {
-	return r.config.GetString(fmt.Sprintf("queue.connections.%s.driver", connection))
+	return r.GetString(fmt.Sprintf("queue.connections.%s.driver", connection))
 }
 
-func (r *Config) FailedJobsQuery() db.Query {
-	connection := r.config.GetString("queue.failed.database")
-	table := r.config.GetString("queue.failed.table")
-
-	return r.db.Connection(connection).Table(table)
+func (r *Config) FailedDatabase() string {
+	return r.failedDatabase
 }
 
-func (r *Config) QueueKey(connection, queue string) string {
-	appName := r.config.GetString("app.name")
-	if appName == "" {
-		appName = "goravel"
-	}
-
-	return fmt.Sprintf("%s_queues:%s_%s", appName, connection, queue)
+func (r *Config) FailedTable() string {
+	return r.failedTable
 }
 
 func (r *Config) Via(connection string) any {
-	return r.config.Get(fmt.Sprintf("queue.connections.%s.via", connection))
+	return r.Get(fmt.Sprintf("queue.connections.%s.via", connection))
 }

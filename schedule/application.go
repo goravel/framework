@@ -2,6 +2,7 @@ package schedule
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/robfig/cron/v3"
@@ -92,7 +93,11 @@ func (app *Application) addEvents(events []schedule.Event) {
 func (app *Application) getJob(event schedule.Event) cron.Job {
 	return cron.FuncJob(func() {
 		if event.IsOnOneServer() && event.GetName() != "" {
-			if app.cache.Lock(event.GetName()+carbon.Now().Format("Hi"), 1*time.Hour).Get() {
+			keySuffix := carbon.Now().Format("Hi")
+			if segments := strings.Split(event.GetCron(), " "); len(segments) == 6 {
+				keySuffix = carbon.Now().Format("His")
+			}
+			if app.cache.Lock(event.GetName()+keySuffix, 1*time.Hour).Get() {
 				app.runJob(event)
 			}
 		} else {

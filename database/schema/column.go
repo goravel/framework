@@ -8,11 +8,13 @@ import (
 type ColumnDefinition struct {
 	after              string
 	allowed            []any
+	always             bool
 	autoIncrement      *bool
 	change             bool
 	comment            *string
 	def                any
 	first              bool
+	generatedAs        *string
 	length             *int
 	name               *string
 	nullable           *bool
@@ -35,6 +37,12 @@ func NewColumnDefinition(name string, ttype string) driver.ColumnDefinition {
 
 func (r *ColumnDefinition) After(column string) driver.ColumnDefinition {
 	r.after = column
+
+	return r
+}
+
+func (r *ColumnDefinition) Always() driver.ColumnDefinition {
+	r.always = true
 
 	return r
 }
@@ -69,6 +77,13 @@ func (r *ColumnDefinition) First() driver.ColumnDefinition {
 	return r
 }
 
+func (r *ColumnDefinition) GeneratedAs(expression ...string) driver.ColumnDefinition {
+	expression = append(expression, "")
+	r.generatedAs = &expression[0]
+
+	return r
+}
+
 func (r *ColumnDefinition) GetAfter() string {
 	return r.after
 }
@@ -95,6 +110,14 @@ func (r *ColumnDefinition) GetComment() string {
 
 func (r *ColumnDefinition) GetDefault() any {
 	return r.def
+}
+
+func (r *ColumnDefinition) GetGeneratedAs() string {
+	if r.generatedAs != nil {
+		return *r.generatedAs
+	}
+
+	return ""
 }
 
 func (r *ColumnDefinition) GetName() string {
@@ -181,6 +204,10 @@ func (r *ColumnDefinition) GetUseCurrentOnUpdate() bool {
 	return false
 }
 
+func (r *ColumnDefinition) IsAlways() bool {
+	return r.always
+}
+
 func (r *ColumnDefinition) IsChange() bool {
 	return r.change
 }
@@ -191,6 +218,10 @@ func (r *ColumnDefinition) IsFirst() bool {
 
 func (r *ColumnDefinition) IsSetComment() bool {
 	return r != nil && r.comment != nil
+}
+
+func (r *ColumnDefinition) IsSetGeneratedAs() bool {
+	return r != nil && r.generatedAs != nil
 }
 
 func (r *ColumnDefinition) Nullable() driver.ColumnDefinition {

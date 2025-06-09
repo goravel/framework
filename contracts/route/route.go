@@ -14,6 +14,8 @@ type Route interface {
 	Router
 	// Fallback registers a handler to be executed when no other route was matched.
 	Fallback(handler contractshttp.HandlerFunc)
+	// GetRoutes retrieves all the routes registered with the router.
+	GetRoutes() []RouteInfo
 	// GlobalMiddleware registers global middleware to be applied to all routes of the router.
 	GlobalMiddleware(middlewares ...contractshttp.Middleware)
 	// Listen starts the HTTP server and listens on the specified listener.
@@ -69,4 +71,9 @@ type Router interface {
 	StaticFile(relativePath, filepath string)
 	// StaticFS registers a new route with a path prefix to serve static files from the provided file system.
 	StaticFS(relativePath string, fs http.FileSystem)
+}
+
+type RouteInfo struct {
+	Method string
+	Path   string
 }

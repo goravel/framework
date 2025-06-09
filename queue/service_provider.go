@@ -18,20 +18,16 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleQueue)
 		}
 
-		db := app.MakeDB()
-		if db == nil {
-			return nil, errors.DBFacadeNotSet.SetModule(errors.ModuleQueue)
-		}
-
 		log := app.MakeLog()
 		if log == nil {
 			return nil, errors.LogFacadeNotSet.SetModule(errors.ModuleQueue)
 		}
 
-		queueConfig := NewConfig(config, db)
-		job := NewJobRepository()
+		queueConfig := NewConfig(config)
+		job := NewJobStorer()
+		db := app.MakeDB()
 
-		return NewApplication(queueConfig, job, app.GetJson(), log), nil
+		return NewApplication(queueConfig, db, job, app.GetJson(), log), nil
 	})
 }
 
@@ -42,5 +38,6 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 func (r *ServiceProvider) registerCommands(app foundation.Application) {
 	app.MakeArtisan().Register([]console.Command{
 		&queueconsole.JobMakeCommand{},
+		queueconsole.NewQueueRetryCommand(app.MakeConfig(), app.MakeDB(), app.MakeQueue(), app.GetJson()),
 	})
 }

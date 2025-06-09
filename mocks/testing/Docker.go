@@ -20,6 +20,77 @@ func (_m *Docker) EXPECT() *Docker_Expecter {
 	return &Docker_Expecter{mock: &_m.Mock}
 }
 
+// Cache provides a mock function with given fields: store
+func (_m *Docker) Cache(store ...string) (docker.CacheDriver, error) {
+	_va := make([]interface{}, len(store))
+	for _i := range store {
+		_va[_i] = store[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Cache")
+	}
+
+	var r0 docker.CacheDriver
+	var r1 error
+	if rf, ok := ret.Get(0).(func(...string) (docker.CacheDriver, error)); ok {
+		return rf(store...)
+	}
+	if rf, ok := ret.Get(0).(func(...string) docker.CacheDriver); ok {
+		r0 = rf(store...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(docker.CacheDriver)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(...string) error); ok {
+		r1 = rf(store...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Docker_Cache_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Cache'
+type Docker_Cache_Call struct {
+	*mock.Call
+}
+
+// Cache is a helper method to define mock.On call
+//   - store ...string
+func (_e *Docker_Expecter) Cache(store ...interface{}) *Docker_Cache_Call {
+	return &Docker_Cache_Call{Call: _e.mock.On("Cache",
+		append([]interface{}{}, store...)...)}
+}
+
+func (_c *Docker_Cache_Call) Run(run func(store ...string)) *Docker_Cache_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Docker_Cache_Call) Return(_a0 docker.CacheDriver, _a1 error) *Docker_Cache_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Docker_Cache_Call) RunAndReturn(run func(...string) (docker.CacheDriver, error)) *Docker_Cache_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Database provides a mock function with given fields: connection
 func (_m *Docker) Database(connection ...string) (docker.Database, error) {
 	_va := make([]interface{}, len(connection))

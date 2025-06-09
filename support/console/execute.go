@@ -9,8 +9,12 @@ import (
 	"github.com/goravel/framework/contracts/console"
 )
 
-func ExecuteCommand(ctx console.Context, cmd *exec.Cmd) error {
-	return ctx.Spinner(fmt.Sprintf("> @%s", strings.Join(cmd.Args, " ")), console.SpinnerOption{
+func ExecuteCommand(ctx console.Context, cmd *exec.Cmd, message ...string) error {
+	if len(message) == 0 {
+		message = []string{fmt.Sprintf("> @%s", strings.Join(cmd.Args, " "))}
+	}
+
+	return ctx.Spinner(message[0], console.SpinnerOption{
 		Action: func() error {
 			output, err := cmd.CombinedOutput()
 			if err != nil && len(output) > 0 {

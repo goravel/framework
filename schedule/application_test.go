@@ -19,6 +19,7 @@ type ApplicationTestSuite struct {
 }
 
 func TestApplicationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(ApplicationTestSuite))
 }
 
@@ -27,10 +28,10 @@ func (s *ApplicationTestSuite) SetupTest() {
 
 func (s *ApplicationTestSuite) TestCallAndCommand() {
 	mockArtisan := mocksconsole.NewArtisan(s.T())
-	mockArtisan.EXPECT().Call("test --name Goravel argument0 argument1").Return(nil).Once()
+	mockArtisan.EXPECT().Call("test --name Goravel argument0 argument1").Return(nil).Times(2)
 
 	mockLog := mockslog.NewLog(s.T())
-	mockLog.EXPECT().Error("panic", mock.Anything).Return().Once()
+	mockLog.EXPECT().Error("panic", mock.Anything).Return().Times(4)
 
 	immediatelyCall := 0
 	delayIfStillRunningCall := 0
@@ -40,29 +41,29 @@ func (s *ApplicationTestSuite) TestCallAndCommand() {
 	app.Register([]schedule.Event{
 		app.Call(func() {
 			panic(1)
-		}).EveryMinute(),
+		}).Cron("* * * * * *"),
 		app.Call(func() {
 			immediatelyCall++
-		}).EveryMinute(),
+		}).Cron("* * * * * *"),
 		app.Call(func() {
-			time.Sleep(3 * time.Second)
+			time.Sleep(2 * time.Second)
 			delayIfStillRunningCall++
-		}).Cron("*/2 * * * * *").DelayIfStillRunning(),
+		}).Cron("* * * * * *").DelayIfStillRunning(),
 		app.Call(func() {
-			time.Sleep(3 * time.Second)
+			time.Sleep(2 * time.Second)
 			skipIfStillRunningCall++
-		}).Cron("*/2 * * * * *").SkipIfStillRunning(),
-		app.Command("test --name Goravel argument0 argument1").EveryMinute(),
+		}).Cron("* * * * * *").SkipIfStillRunning(),
+		app.Command("test --name Goravel argument0 argument1").Cron("*/2 * * * * *"),
 	})
 
 	go app.Run()
 
-	time.Sleep(60 * time.Second)
+	time.Sleep(4 * time.Second)
 
 	s.NoError(app.Shutdown())
-	s.Equal(1, immediatelyCall)
-	s.Equal(30, delayIfStillRunningCall)
-	s.Equal(15, skipIfStillRunningCall)
+	s.Equal(4, immediatelyCall)
+	s.Equal(4, delayIfStillRunningCall)
+	s.Equal(2, skipIfStillRunningCall)
 }
 
 func (s *ApplicationTestSuite) TestOnOneServer() {

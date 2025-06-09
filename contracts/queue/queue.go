@@ -1,12 +1,18 @@
 package queue
 
 type Queue interface {
+	// Connection gets a driver instance by connection name
+	Connection(name string) (Driver, error)
 	// Chain creates a chain of jobs to be processed one by one, passing
-	Chain(jobs []Jobs) PendingJob
-	// GetJob get job by signature
+	Chain(jobs []ChainJob) PendingJob
+	// Failer gets failed jobs
+	Failer() Failer
+	// GetJob gets job by signature
 	GetJob(signature string) (Job, error)
-	// GetJobs get all jobs
+	// GetJobs gets all jobs
 	GetJobs() []Job
+	// GetJobStorer gets job storer
+	JobStorer() JobStorer
 	// Job add a job to queue
 	Job(job Job, args ...[]Arg) PendingJob
 	// Register register jobs

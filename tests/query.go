@@ -16,7 +16,6 @@ import (
 	databasegorm "github.com/goravel/framework/database/gorm"
 	databaselogger "github.com/goravel/framework/database/logger"
 	mocksconfig "github.com/goravel/framework/mocks/config"
-	"github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/str"
 	"github.com/goravel/framework/testing/utils"
 	"github.com/goravel/mysql"
@@ -239,7 +238,7 @@ func (r *TestQueryBuilder) single(driver string, prefix string, singular bool) (
 		databaseDriver = sqlserver.NewSqlserver(mockConfig, utils.NewTestLog(), connection)
 	}
 
-	container := docker.NewContainer(dockerDriver)
+	container := NewContainer(dockerDriver)
 	containerInstance, err := container.Build()
 	if err != nil {
 		panic(err)

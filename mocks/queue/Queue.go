@@ -21,7 +21,7 @@ func (_m *Queue) EXPECT() *Queue_Expecter {
 }
 
 // Chain provides a mock function with given fields: jobs
-func (_m *Queue) Chain(jobs []queue.Jobs) queue.PendingJob {
+func (_m *Queue) Chain(jobs []queue.ChainJob) queue.PendingJob {
 	ret := _m.Called(jobs)
 
 	if len(ret) == 0 {
@@ -29,7 +29,7 @@ func (_m *Queue) Chain(jobs []queue.Jobs) queue.PendingJob {
 	}
 
 	var r0 queue.PendingJob
-	if rf, ok := ret.Get(0).(func([]queue.Jobs) queue.PendingJob); ok {
+	if rf, ok := ret.Get(0).(func([]queue.ChainJob) queue.PendingJob); ok {
 		r0 = rf(jobs)
 	} else {
 		if ret.Get(0) != nil {
@@ -46,14 +46,14 @@ type Queue_Chain_Call struct {
 }
 
 // Chain is a helper method to define mock.On call
-//   - jobs []queue.Jobs
+//   - jobs []queue.ChainJob
 func (_e *Queue_Expecter) Chain(jobs interface{}) *Queue_Chain_Call {
 	return &Queue_Chain_Call{Call: _e.mock.On("Chain", jobs)}
 }
 
-func (_c *Queue_Chain_Call) Run(run func(jobs []queue.Jobs)) *Queue_Chain_Call {
+func (_c *Queue_Chain_Call) Run(run func(jobs []queue.ChainJob)) *Queue_Chain_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]queue.Jobs))
+		run(args[0].([]queue.ChainJob))
 	})
 	return _c
 }
@@ -63,7 +63,112 @@ func (_c *Queue_Chain_Call) Return(_a0 queue.PendingJob) *Queue_Chain_Call {
 	return _c
 }
 
-func (_c *Queue_Chain_Call) RunAndReturn(run func([]queue.Jobs) queue.PendingJob) *Queue_Chain_Call {
+func (_c *Queue_Chain_Call) RunAndReturn(run func([]queue.ChainJob) queue.PendingJob) *Queue_Chain_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Connection provides a mock function with given fields: name
+func (_m *Queue) Connection(name string) (queue.Driver, error) {
+	ret := _m.Called(name)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Connection")
+	}
+
+	var r0 queue.Driver
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (queue.Driver, error)); ok {
+		return rf(name)
+	}
+	if rf, ok := ret.Get(0).(func(string) queue.Driver); ok {
+		r0 = rf(name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(queue.Driver)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(name)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Queue_Connection_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Connection'
+type Queue_Connection_Call struct {
+	*mock.Call
+}
+
+// Connection is a helper method to define mock.On call
+//   - name string
+func (_e *Queue_Expecter) Connection(name interface{}) *Queue_Connection_Call {
+	return &Queue_Connection_Call{Call: _e.mock.On("Connection", name)}
+}
+
+func (_c *Queue_Connection_Call) Run(run func(name string)) *Queue_Connection_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Queue_Connection_Call) Return(_a0 queue.Driver, _a1 error) *Queue_Connection_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Queue_Connection_Call) RunAndReturn(run func(string) (queue.Driver, error)) *Queue_Connection_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Failer provides a mock function with no fields
+func (_m *Queue) Failer() queue.Failer {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Failer")
+	}
+
+	var r0 queue.Failer
+	if rf, ok := ret.Get(0).(func() queue.Failer); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(queue.Failer)
+		}
+	}
+
+	return r0
+}
+
+// Queue_Failer_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Failer'
+type Queue_Failer_Call struct {
+	*mock.Call
+}
+
+// Failer is a helper method to define mock.On call
+func (_e *Queue_Expecter) Failer() *Queue_Failer_Call {
+	return &Queue_Failer_Call{Call: _e.mock.On("Failer")}
+}
+
+func (_c *Queue_Failer_Call) Run(run func()) *Queue_Failer_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Queue_Failer_Call) Return(_a0 queue.Failer) *Queue_Failer_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Queue_Failer_Call) RunAndReturn(run func() queue.Failer) *Queue_Failer_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -232,6 +337,53 @@ func (_c *Queue_Job_Call) Return(_a0 queue.PendingJob) *Queue_Job_Call {
 }
 
 func (_c *Queue_Job_Call) RunAndReturn(run func(queue.Job, ...[]queue.Arg) queue.PendingJob) *Queue_Job_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// JobStorer provides a mock function with no fields
+func (_m *Queue) JobStorer() queue.JobStorer {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for JobStorer")
+	}
+
+	var r0 queue.JobStorer
+	if rf, ok := ret.Get(0).(func() queue.JobStorer); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(queue.JobStorer)
+		}
+	}
+
+	return r0
+}
+
+// Queue_JobStorer_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'JobStorer'
+type Queue_JobStorer_Call struct {
+	*mock.Call
+}
+
+// JobStorer is a helper method to define mock.On call
+func (_e *Queue_Expecter) JobStorer() *Queue_JobStorer_Call {
+	return &Queue_JobStorer_Call{Call: _e.mock.On("JobStorer")}
+}
+
+func (_c *Queue_JobStorer_Call) Run(run func()) *Queue_JobStorer_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Queue_JobStorer_Call) Return(_a0 queue.JobStorer) *Queue_JobStorer_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Queue_JobStorer_Call) RunAndReturn(run func() queue.JobStorer) *Queue_JobStorer_Call {
 	_c.Call.Return(run)
 	return _c
 }

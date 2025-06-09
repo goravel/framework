@@ -6,13 +6,11 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	mocksconfig "github.com/goravel/framework/mocks/config"
-	mocksdb "github.com/goravel/framework/mocks/database/db"
 )
 
 type ConfigTestSuite struct {
 	suite.Suite
 	mockConfig *mocksconfig.Config
-	mockDB     *mocksdb.DB
 	config     *Config
 }
 
@@ -22,32 +20,30 @@ func TestConfigTestSuite(t *testing.T) {
 
 func (s *ConfigTestSuite) SetupTest() {
 	s.mockConfig = mocksconfig.NewConfig(s.T())
-	s.mockDB = mocksdb.NewDB(s.T())
-	s.config = NewConfig(s.mockConfig, s.mockDB)
+	s.mockConfig.EXPECT().GetString("queue.default").Return("redis").Once()
+	s.mockConfig.EXPECT().GetString("queue.connections.redis.queue", "default").Return("default").Once()
+	s.mockConfig.EXPECT().GetInt("queue.connections.redis.concurrent", 1).Return(2).Once()
+	s.mockConfig.EXPECT().GetString("app.name", "goravel").Return("goravel").Once()
+	s.mockConfig.EXPECT().GetBool("app.debug").Return(true).Once()
+	s.mockConfig.EXPECT().GetString("queue.failed.database").Return("mysql").Once()
+	s.mockConfig.EXPECT().GetString("queue.failed.table").Return("failed_jobs").Once()
+
+	s.config = NewConfig(s.mockConfig)
 }
 
 func (s *ConfigTestSuite) TestDebug() {
-	s.mockConfig.EXPECT().GetBool("app.debug").Return(true).Once()
 	s.True(s.config.Debug())
-
-	s.mockConfig.EXPECT().GetBool("app.debug").Return(false).Once()
-	s.False(s.config.Debug())
 }
 
 func (s *ConfigTestSuite) TestDefaultConnection() {
-	s.mockConfig.EXPECT().GetString("queue.default").Return("redis").Once()
 	s.Equal("redis", s.config.DefaultConnection())
 }
 
 func (s *ConfigTestSuite) TestDefaultQueue() {
-	s.mockConfig.EXPECT().GetString("queue.default").Return("redis").Once()
-	s.mockConfig.EXPECT().GetString("queue.connections.redis.queue", "default").Return("default").Once()
 	s.Equal("default", s.config.DefaultQueue())
 }
 
 func (s *ConfigTestSuite) TestDefaultConcurrent() {
-	s.mockConfig.EXPECT().GetString("queue.default").Return("redis").Once()
-	s.mockConfig.EXPECT().GetInt("queue.connections.redis.concurrent", 1).Return(2).Once()
 	s.Equal(2, s.config.DefaultConcurrent())
 }
 
@@ -56,21 +52,12 @@ func (s *ConfigTestSuite) TestDriver() {
 	s.Equal("sync", s.config.Driver("sync"))
 }
 
-func (s *ConfigTestSuite) TestFailedJobsQuery() {
-	mockQuery := mocksdb.NewQuery(s.T())
-
-	s.mockConfig.EXPECT().GetString("queue.failed.database").Return("mysql").Once()
-	s.mockConfig.EXPECT().GetString("queue.failed.table").Return("failed_jobs").Once()
-	s.mockDB.EXPECT().Connection("mysql").Return(s.mockDB).Once()
-	s.mockDB.EXPECT().Table("failed_jobs").Return(mockQuery).Once()
-
-	result := s.config.FailedJobsQuery()
-	s.Equal(mockQuery, result)
+func (s *ConfigTestSuite) TestFailedDatabase() {
+	s.Equal("mysql", s.config.FailedDatabase())
 }
 
-func (s *ConfigTestSuite) TestQueueKey() {
-	s.mockConfig.EXPECT().GetString("app.name").Return("myapp").Once()
-	s.Equal("myapp_queues:redis_custom", s.config.QueueKey("redis", "custom"))
+func (s *ConfigTestSuite) TestFailedTable() {
+	s.Equal("failed_jobs", s.config.FailedTable())
 }
 
 func (s *ConfigTestSuite) TestVia() {

@@ -75,8 +75,15 @@ func (s *ApplicationTestSuite) TestSendMailWithMailable() {
 
 func (s *ApplicationTestSuite) TestQueueMail() {
 	s.mockConfig = mockConfig(465)
+	s.mockConfig.EXPECT().GetString("queue.default").Return("redis").Once()
+	s.mockConfig.EXPECT().GetString("queue.connections.redis.queue", "default").Return("default").Once()
+	s.mockConfig.EXPECT().GetInt("queue.connections.redis.concurrent", 1).Return(2).Once()
+	s.mockConfig.EXPECT().GetString("app.name", "goravel").Return("goravel").Once()
+	s.mockConfig.EXPECT().GetBool("app.debug").Return(true).Once()
+	s.mockConfig.EXPECT().GetString("queue.failed.database").Return("mysql").Once()
+	s.mockConfig.EXPECT().GetString("queue.failed.table").Return("failed_jobs").Once()
 
-	queueFacade := queue.NewApplication(queue.NewConfig(s.mockConfig, nil), queue.NewJobRepository(), json.New(), nil)
+	queueFacade := queue.NewApplication(queue.NewConfig(s.mockConfig), nil, queue.NewJobStorer(), json.New(), nil)
 	queueFacade.Register([]contractsqueue.Job{
 		NewSendMailJob(s.mockConfig),
 	})
@@ -96,8 +103,15 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 
 func (s *ApplicationTestSuite) TestQueueMailWithMailable() {
 	s.mockConfig = mockConfig(465)
+	s.mockConfig.EXPECT().GetString("queue.default").Return("redis").Once()
+	s.mockConfig.EXPECT().GetString("queue.connections.redis.queue", "default").Return("default").Once()
+	s.mockConfig.EXPECT().GetInt("queue.connections.redis.concurrent", 1).Return(2).Once()
+	s.mockConfig.EXPECT().GetString("app.name", "goravel").Return("goravel").Once()
+	s.mockConfig.EXPECT().GetBool("app.debug").Return(true).Once()
+	s.mockConfig.EXPECT().GetString("queue.failed.database").Return("mysql").Once()
+	s.mockConfig.EXPECT().GetString("queue.failed.table").Return("failed_jobs").Once()
 
-	queueFacade := queue.NewApplication(queue.NewConfig(s.mockConfig, nil), queue.NewJobRepository(), json.New(), nil)
+	queueFacade := queue.NewApplication(queue.NewConfig(s.mockConfig), nil, queue.NewJobStorer(), json.New(), nil)
 	queueFacade.Register([]contractsqueue.Job{
 		NewSendMailJob(s.mockConfig),
 	})

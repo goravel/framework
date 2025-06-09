@@ -57,6 +57,23 @@ func (s *UtilsTestSuite) TestExprExists() {
 
 }
 
+func (s *UtilsTestSuite) TestUsesImport() {
+	df, err := decorator.Parse(`package main
+import (
+    "fmt"        
+    mylog "log"
+)
+
+func main() {
+    fmt.Println("hello")
+}`)
+	s.Require().NoError(err)
+	s.Require().NotNil(df)
+
+	s.True(IsUsingImport(df, "fmt"))
+	s.False(IsUsingImport(df, "log", "mylog"))
+}
+
 func (s *UtilsTestSuite) TestKeyExists() {
 	s.NotPanics(func() {
 		s.Run("key exists", func() {

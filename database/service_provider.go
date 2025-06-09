@@ -66,7 +66,14 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, nil
 		}
 
-		return db.BuildDB(context.Background(), config, log, connection)
+		db, err := db.BuildDB(context.Background(), config, log, connection)
+		if err != nil {
+			color.Warningln(errors.OrmInitConnection.Args(connection, err).SetModule(errors.ModuleDB))
+
+			return nil, nil
+		}
+
+		return db, nil
 	})
 
 	app.Singleton(contracts.BindingSchema, func(app foundation.Application) (any, error) {
@@ -124,7 +131,7 @@ func (r *ServiceProvider) registerCommands(app foundation.Application) {
 			consolemigration.NewMigrateRefreshCommand(artisan),
 			consolemigration.NewMigrateFreshCommand(artisan, migrator),
 			consolemigration.NewMigrateStatusCommand(migrator),
-			console.NewModelMakeCommand(),
+			console.NewModelMakeCommand(artisan, schema),
 			console.NewObserverMakeCommand(),
 			console.NewSeedCommand(config, seeder),
 			console.NewSeederMakeCommand(),

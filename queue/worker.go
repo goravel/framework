@@ -1,17 +1,19 @@
 package queue
 
 import (
-	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/RichardKnop/machinery/v2"
 
+	"github.com/goravel/framework/contracts/database/db"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/queue/models"
+	"github.com/goravel/framework/queue/utils"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/console"
@@ -19,7 +21,9 @@ import (
 
 type Worker struct {
 	config queue.Config
-	job    queue.JobRepository
+	db     db.DB
+	driver queue.Driver
+	job    queue.JobStorer
 	json   foundation.Json
 	log    log.Log
 
@@ -29,16 +33,24 @@ type Worker struct {
 	debug      bool
 
 	currentDelay  time.Duration
-	failedJobChan chan FailedJob
+	failedJobChan chan models.FailedJob
 	isShutdown    atomic.Bool
 	maxDelay      time.Duration
 	machinery     *machinery.Worker
 	wg            sync.WaitGroup
 }
 
-func NewWorker(config queue.Config, job queue.JobRepository, json foundation.Json, log log.Log, connection, queue string, concurrent int) *Worker {
+func NewWorker(config queue.Config, db db.DB, job queue.JobStorer, json foundation.Json, log log.Log, connection, queue string, concurrent int) (*Worker, error) {
+	driverCreator := NewDriverCreator(config, db, job, json, log)
+	driver, err := driverCreator.Create(connection)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Worker{
 		config: config,
+		db:     db,
+		driver: driver,
 		job:    job,
 		json:   json,
 		log:    log,
@@ -49,43 +61,36 @@ func NewWorker(config queue.Config, job queue.JobRepository, json foundation.Jso
 		debug:      config.Debug(),
 
 		currentDelay:  1 * time.Second,
-		failedJobChan: make(chan FailedJob, concurrent),
+		failedJobChan: make(chan models.FailedJob, concurrent),
 		maxDelay:      32 * time.Second,
-	}
+	}, nil
 }
 
 func (r *Worker) Run() error {
-	driver, err := NewDriver(r.connection, r.config)
-	if err != nil {
-		return err
-	}
-	if driver.Driver() == queue.DriverSync {
+	if r.driver.Driver() == queue.DriverSync {
 		color.Warningln(errors.QueueDriverSyncNotNeedToRun.Args(r.connection).SetModule(errors.ModuleQueue).Error())
 		return nil
 	}
 
 	r.isShutdown.Store(false)
 
-	if err := r.RunMachinery(); err != nil {
-		return err
+	if r.driver.Driver() == queue.DriverMachinery {
+		return r.RunMachinery()
 	}
 
-	return r.run(driver)
+	return r.run()
 }
 
 // RunMachinery will be removed in v1.17
 func (r *Worker) RunMachinery() error {
-	instance := NewMachinery(r.config.Config(), r.log, r.job.All(), r.connection, r.queue, r.concurrent)
-	if !instance.ExistTasks() {
-		return nil
-	}
+	instance := NewMachinery(r.config, r.log, r.connection)
 
 	var (
 		worker *machinery.Worker
 		err    error
 	)
 
-	worker, err = instance.Run()
+	worker, err = instance.Run(r.job.All(), r.queue, r.concurrent)
 	if err != nil {
 		return err
 	}
@@ -110,20 +115,20 @@ func (r *Worker) call(task queue.Task) error {
 	r.printRunningLog(task)
 
 	if !task.Delay.IsZero() {
-		time.Sleep(time.Until(task.Delay))
+		time.Sleep(carbon.FromStdTime(task.Delay).DiffAbsInDuration())
 	}
 
 	now := carbon.Now()
-	err := r.job.Call(task.Job.Signature(), ConvertArgs(task.Args))
-	duration := carbon.Now().DiffAbsInDuration(now).String()
+	err := r.job.Call(task.Job.Signature(), utils.ConvertArgs(task.Args))
+	duration := now.DiffAbsInDuration().String()
 
 	if err != nil {
-		payload, jsonErr := TaskToJson(task, r.json)
+		payload, jsonErr := utils.TaskToJson(task, r.json)
 		if jsonErr != nil {
 			return errors.QueueFailedToConvertTaskToJson.Args(jsonErr, task)
 		}
 
-		r.failedJobChan <- FailedJob{
+		r.failedJobChan <- models.FailedJob{
 			UUID:       task.UUID,
 			Connection: r.connection,
 			Queue:      r.queue,
@@ -134,7 +139,7 @@ func (r *Worker) call(task queue.Task) error {
 
 		r.printFailedLog(task, duration)
 
-		return nil
+		return errors.QueueFailedToCallJob
 	}
 
 	r.printSuccessLog(task, duration)
@@ -142,79 +147,20 @@ func (r *Worker) call(task queue.Task) error {
 	return nil
 }
 
-func (r *Worker) run(driver queue.Driver) error {
-	if r.debug {
-		color.Infoln(fmt.Sprintf("Processing jobs from [%s] connection and [%s] queue\n", r.connection, r.queue))
+func (r *Worker) logFailedJob(job models.FailedJob) {
+	failedDatabase := r.config.FailedDatabase()
+	failedTable := r.config.FailedTable()
+
+	isDbDisabled := r.db == nil || failedDatabase == "" || failedTable == ""
+	if isDbDisabled {
+		r.log.Error(errors.QueueJobFailed.Args(job))
+		return
 	}
 
-	queueKey := r.config.QueueKey(r.connection, r.queue)
-
-	for i := 0; i < r.concurrent; i++ {
-		r.wg.Add(1)
-		go func() {
-			defer r.wg.Done()
-			for {
-				if r.isShutdown.Load() {
-					return
-				}
-
-				task, err := driver.Pop(queueKey)
-				if err != nil {
-					if !errors.Is(err, errors.QueueDriverNoJobFound) {
-						r.log.Error(errors.QueueDriverFailedToPop.Args(queueKey, err))
-
-						r.currentDelay *= 2
-						if r.currentDelay > r.maxDelay {
-							r.currentDelay = r.maxDelay
-						}
-					}
-
-					time.Sleep(r.currentDelay)
-
-					continue
-				}
-
-				r.currentDelay = 1 * time.Second
-
-				// the main job should be delayed in the driver
-				task.Delay = time.Time{}
-				if err := r.call(task); err != nil {
-					r.log.Error(err)
-					continue
-				}
-
-				if len(task.Chain) > 0 {
-					for i, chain := range task.Chain {
-						chainTask := queue.Task{
-							Jobs:  chain,
-							UUID:  task.UUID,
-							Chain: task.Chain[i+1:],
-						}
-
-						if err := r.call(chainTask); err != nil {
-							r.log.Error(err)
-							continue
-						}
-					}
-				}
-			}
-		}()
+	_, err := r.db.Connection(failedDatabase).Table(failedTable).Insert(&job)
+	if err != nil {
+		r.log.Error(errors.QueueFailedToSaveFailedJob.Args(err, job))
 	}
-
-	r.wg.Add(1)
-
-	go func() {
-		defer r.wg.Done()
-		for job := range r.failedJobChan {
-			if _, err := r.config.FailedJobsQuery().Insert(&job); err != nil {
-				r.log.Error(errors.QueueFailedToSaveFailedJob.Args(err, job))
-			}
-		}
-	}()
-
-	r.wg.Wait()
-
-	return nil
 }
 
 func (r *Worker) printRunningLog(task queue.Task) {
@@ -256,4 +202,87 @@ func (r *Worker) printFailedLog(task queue.Task, duration string) {
 	second := duration + " " + status
 
 	color.Default().Println(console.TwoColumnDetail(first, second))
+}
+
+func (r *Worker) run() error {
+	if r.debug {
+		color.Infoln(errors.QueueProcessingJobs.Args(r.connection, r.queue))
+	}
+
+	for i := 0; i < r.concurrent; i++ {
+		r.wg.Add(1)
+		go func() {
+			defer r.wg.Done()
+			for {
+				if r.isShutdown.Load() {
+					return
+				}
+
+				reservedJob, err := r.driver.Pop(r.queue)
+				if err != nil {
+					if !errors.Is(err, errors.QueueDriverNoJobFound) {
+						r.log.Error(errors.QueueDriverFailedToPop.Args(r.queue, err))
+
+						r.currentDelay *= 2
+						if r.currentDelay > r.maxDelay {
+							r.currentDelay = r.maxDelay
+						}
+					}
+
+					time.Sleep(r.currentDelay)
+
+					continue
+				}
+
+				r.currentDelay = 1 * time.Second
+				task := reservedJob.Task()
+
+				if err := r.call(task); err != nil {
+					if !errors.Is(err, errors.QueueFailedToCallJob) {
+						r.log.Error(err)
+					}
+
+					if err := reservedJob.Delete(); err != nil {
+						r.log.Error(errors.QueueFailedToDeleteReservedJob.Args(reservedJob, err))
+					}
+
+					continue
+				}
+
+				if len(task.Chain) > 0 {
+					for i, chain := range task.Chain {
+						chainTask := queue.Task{
+							ChainJob: chain,
+							UUID:     task.UUID,
+							Chain:    task.Chain[i+1:],
+						}
+
+						if err := r.call(chainTask); err != nil {
+							if !errors.Is(err, errors.QueueFailedToCallJob) {
+								r.log.Error(err)
+							}
+							break
+						}
+					}
+				}
+
+				if err := reservedJob.Delete(); err != nil {
+					r.log.Error(errors.QueueFailedToDeleteReservedJob.Args(reservedJob, err))
+				}
+			}
+		}()
+	}
+
+	r.wg.Add(1)
+
+	go func() {
+		defer r.wg.Done()
+		for job := range r.failedJobChan {
+			r.logFailedJob(job)
+		}
+	}()
+
+	r.wg.Wait()
+
+	return nil
 }

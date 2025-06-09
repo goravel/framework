@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/auth"
@@ -18,7 +17,6 @@ import (
 	"github.com/goravel/framework/crypt"
 	"github.com/goravel/framework/event"
 	"github.com/goravel/framework/filesystem"
-	"github.com/goravel/framework/foundation/json"
 	"github.com/goravel/framework/grpc"
 	"github.com/goravel/framework/hash"
 	"github.com/goravel/framework/http"
@@ -29,6 +27,7 @@ import (
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksdb "github.com/goravel/framework/mocks/database/db"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
+	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	mockslog "github.com/goravel/framework/mocks/log"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
 	mocksroute "github.com/goravel/framework/mocks/route"
@@ -216,7 +215,7 @@ func (s *ApplicationTestSuite) TestMakeCrypt() {
 	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
-	s.app.SetJson(json.New())
+	s.app.SetJson(mocksfoundation.NewJson(s.T()))
 
 	serviceProvider := &crypt.ServiceProvider{}
 	serviceProvider.Register(s.app)
@@ -299,7 +298,7 @@ func (s *ApplicationTestSuite) TestMakeLog() {
 
 	mockConfig.EXPECT().GetString("logging.default").Return("").Once()
 
-	s.app.SetJson(json.New())
+	s.app.SetJson(mocksfoundation.NewJson(s.T()))
 
 	serviceProvider := &frameworklog.ServiceProvider{}
 	serviceProvider.Register(s.app)
@@ -322,8 +321,9 @@ func (s *ApplicationTestSuite) TestMakeMail() {
 }
 
 func (s *ApplicationTestSuite) TestMakeQueue() {
+	mockConfig := mocksconfig.NewConfig(s.T())
 	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
-		return &mocksconfig.Config{}, nil
+		return mockConfig, nil
 	})
 	s.app.Singleton(contracts.BindingDB, func(app foundation.Application) (any, error) {
 		return &mocksdb.DB{}, nil
@@ -334,6 +334,14 @@ func (s *ApplicationTestSuite) TestMakeQueue() {
 
 	serviceProvider := &queue.ServiceProvider{}
 	serviceProvider.Register(s.app)
+
+	mockConfig.EXPECT().GetString("queue.default").Return("redis").Once()
+	mockConfig.EXPECT().GetString("queue.connections.redis.queue", "default").Return("default").Once()
+	mockConfig.EXPECT().GetInt("queue.connections.redis.concurrent", 1).Return(2).Once()
+	mockConfig.EXPECT().GetString("app.name", "goravel").Return("goravel").Once()
+	mockConfig.EXPECT().GetBool("app.debug").Return(true).Once()
+	mockConfig.EXPECT().GetString("queue.failed.database").Return("mysql").Once()
+	mockConfig.EXPECT().GetString("queue.failed.table").Return("failed_jobs").Once()
 
 	s.NotNil(s.app.MakeQueue())
 }
@@ -384,14 +392,17 @@ func (s *ApplicationTestSuite) TestMakeSchedule() {
 
 func (s *ApplicationTestSuite) TestMakeSession() {
 	mockConfig := mocksconfig.NewConfig(s.T())
-	mockConfig.EXPECT().Get("session.drivers", mock.AnythingOfType("map[string]interface {}")).Return(
-		map[string]any{},
-	).Once()
+	mockConfig.EXPECT().GetString("session.driver", "file").Return("file").Once()
+	mockConfig.EXPECT().GetString("session.drivers.file.driver").Return("file").Once()
+	mockConfig.EXPECT().GetInt("session.lifetime", 120).Return(120).Once()
+	mockConfig.EXPECT().GetInt("session.gc_interval", 30).Return(30).Once()
+	mockConfig.EXPECT().GetString("session.files").Return("framework/sessions").Once()
+	mockConfig.EXPECT().GetString("session.cookie").Return("goravel_session").Once()
 
 	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
-	s.app.SetJson(json.New())
+	s.app.SetJson(mocksfoundation.NewJson(s.T()))
 
 	serviceProvider := &frameworksession.ServiceProvider{}
 	// error

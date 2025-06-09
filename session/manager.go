@@ -17,25 +17,45 @@ import (
 var _ contractssession.Manager = (*Manager)(nil)
 
 type Manager struct {
-	config      config.Config
+	config config.Config
+	json   foundation.Json
+
+	cookie        string
+	defaultDriver string
+	files         string
+	gcInterval    int
+	lifetime      int
+
 	drivers     map[string]contractssession.Driver
-	json        foundation.Json
 	sessionPool sync.Pool
 	mu          sync.RWMutex
 }
 
 func NewManager(config config.Config, json foundation.Json) *Manager {
+	cookie := config.GetString("session.cookie")
+	defaultDriver := config.GetString("session.driver", "file")
+	files := config.GetString("session.files")
+	gcInterval := config.GetInt("session.gc_interval", 30)
+	lifetime := config.GetInt("session.lifetime", 120)
+
 	manager := &Manager{
-		config:  config,
+		config: config,
+		json:   json,
+
+		cookie:        cookie,
+		defaultDriver: defaultDriver,
+		files:         files,
+		gcInterval:    gcInterval,
+		lifetime:      lifetime,
+
 		drivers: make(map[string]contractssession.Driver),
-		json:    json,
 		sessionPool: sync.Pool{New: func() any {
 			return NewSession("", nil, json)
 		},
 		},
 	}
 
-	err := manager.registerConfiguredDrivers()
+	err := manager.registerDriver(defaultDriver)
 	if err != nil {
 		color.Errorf(errors.SessionDriverRegisterFailed.Args(err).Error())
 	}
@@ -48,8 +68,7 @@ func (m *Manager) BuildSession(handler contractssession.Driver, sessionID ...str
 	}
 
 	session := m.acquireSession()
-	session.SetDriver(handler).
-		SetName(m.config.GetString("session.cookie"))
+	session.SetDriver(handler).SetName(m.cookie)
 
 	if len(sessionID) > 0 {
 		session.SetID(sessionID[0])
@@ -61,13 +80,9 @@ func (m *Manager) BuildSession(handler contractssession.Driver, sessionID ...str
 }
 
 func (m *Manager) Driver(name ...string) (contractssession.Driver, error) {
-	driverName := m.getDefaultDriver()
-	if len(name) > 0 && name[0] != "" {
+	driverName := m.defaultDriver
+	if len(name) > 0 {
 		driverName = name[0]
-	}
-
-	if driverName == "" {
-		return nil, errors.SessionDriverIsNotSet
 	}
 
 	m.mu.RLock()
@@ -77,26 +92,12 @@ func (m *Manager) Driver(name ...string) (contractssession.Driver, error) {
 		return driverInstance, nil
 	}
 
-	if driverName == "file" {
-		driverInstance = m.file()
-		m.startGcTimer(driverInstance)
-		return driverInstance, nil
+	err := m.registerDriver(driverName)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, errors.SessionDriverNotSupported.Args(driverName)
-}
-
-func (m *Manager) Extend(driver string, handler func() contractssession.Driver) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	if _, exists := m.drivers[driver]; exists {
-		return errors.SessionDriverAlreadyExists.Args(driver)
-	}
-
-	m.drivers[driver] = handler()
-	m.startGcTimer(m.drivers[driver])
-	return nil
+	return m.drivers[driverName], nil
 }
 
 func (m *Manager) ReleaseSession(session contractssession.Session) {
@@ -113,10 +114,11 @@ func (m *Manager) acquireSession() contractssession.Session {
 }
 
 func (m *Manager) custom(driver string) (contractssession.Driver, error) {
-	if custom, ok := m.config.Get(fmt.Sprintf("session.drivers.%s.via", driver)).(contractssession.Driver); ok {
+	via := m.config.Get(fmt.Sprintf("session.drivers.%s.via", driver))
+	if custom, ok := via.(contractssession.Driver); ok {
 		return custom, nil
 	}
-	if custom, ok := m.config.Get(fmt.Sprintf("session.drivers.%s.via", driver)).(func() (contractssession.Driver, error)); ok {
+	if custom, ok := via.(func() (contractssession.Driver, error)); ok {
 		return custom()
 	}
 
@@ -124,57 +126,42 @@ func (m *Manager) custom(driver string) (contractssession.Driver, error) {
 }
 
 func (m *Manager) file() contractssession.Driver {
-	lifetime := m.config.GetInt("session.lifetime")
-	return driver.NewFile(m.config.GetString("session.files"), lifetime)
+	return driver.NewFile(m.files, m.lifetime)
 }
 
-func (m *Manager) getDefaultDriver() string {
-	return m.config.GetString("session.driver")
-}
+func (m *Manager) registerDriver(name string) error {
+	driver := m.config.GetString(fmt.Sprintf("session.drivers.%s.driver", name))
 
-func (m *Manager) registerConfiguredDrivers() error {
-	configuredDrivers := m.config.Get("session.drivers", map[string]any{})
-	driversMap, ok := configuredDrivers.(map[string]any)
-	if !ok {
-		return nil
-	}
-	for name := range driversMap {
-
-		driver := m.config.GetString(fmt.Sprintf("session.drivers.%s.driver", name))
-
-		switch driver {
-		case "file":
-			driverInstance := m.file()
-			m.drivers[name] = driverInstance
-			m.startGcTimer(driverInstance)
-		case "custom":
-			driverInstance, err := m.custom(name)
-			if err != nil {
-				return err
-			}
-			m.drivers[name] = driverInstance
-			m.startGcTimer(driverInstance)
-		default:
-			return errors.CacheDriverNotSupported.Args(driver)
+	switch driver {
+	case "file":
+		driverInstance := m.file()
+		m.drivers[name] = driverInstance
+		m.startGcTimer(driverInstance)
+	case "custom":
+		driverInstance, err := m.custom(name)
+		if err != nil {
+			return err
 		}
+		m.drivers[name] = driverInstance
+		m.startGcTimer(driverInstance)
+	default:
+		return errors.SessionDriverNotSupported.Args(driver)
 	}
 
 	return nil
 }
 
 func (m *Manager) startGcTimer(driverInstance contractssession.Driver) {
-	interval := m.config.GetInt("session.gc_interval")
-	if interval <= 0 {
+	if m.gcInterval <= 0 {
 		// No need to start the timer if the interval is zero or negative
 		return
 	}
 
-	ticker := time.NewTicker(time.Duration(interval) * time.Minute)
+	ticker := time.NewTicker(time.Duration(m.gcInterval) * time.Minute)
 
 	go func() {
 		for range ticker.C {
-			lifetime := ConfigFacade.GetInt("session.lifetime") * 60
-			if err := driverInstance.Gc(lifetime); err != nil {
+			if err := driverInstance.Gc(m.lifetime * 60); err != nil {
 				color.Errorf("Error performing garbage collection: %s\n", err)
 			}
 		}

@@ -102,7 +102,11 @@ func (r *TableCommand) display(ctx console.Context, table driver.Table) {
 		ctx.Error(fmt.Sprintf("Failed to get foreign keys: %s", err.Error()))
 		return
 	}
-	ctx.TwoColumnDetail(fmt.Sprintf("<fg=green;op=bold>%s</>", table.Name), fmt.Sprintf("<fg=gray>%s</>", table.Comment))
+	name := table.Name
+	if len(table.Schema) > 0 {
+		name = table.Schema + "." + table.Name
+	}
+	ctx.TwoColumnDetail(fmt.Sprintf("<fg=green;op=bold>%s</>", name), fmt.Sprintf("<fg=gray>%s</>", table.Comment))
 	ctx.TwoColumnDetail("Columns", fmt.Sprintf("%d", len(columns)))
 	ctx.TwoColumnDetail("Size", fmt.Sprintf("%.3f MB", float64(table.Size)/1024/1024))
 	if len(table.Engine) > 0 {

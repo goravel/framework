@@ -24,6 +24,7 @@ type Schema struct {
 	prefix     string
 	processor  driver.Processor
 	schema     string
+	goTypes    []contractsschema.GoType
 }
 
 func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, driver driver.Driver, migrations []contractsschema.Migration) (*Schema, error) {
@@ -47,6 +48,7 @@ func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, driver d
 		prefix:     prefix,
 		processor:  processor,
 		schema:     schema,
+		goTypes:    defaultGoTypes(),
 	}, nil
 }
 
@@ -166,6 +168,11 @@ func (r *Schema) DropIfExists(table string) error {
 	return nil
 }
 
+func (r *Schema) Extend(extend contractsschema.Extension) contractsschema.Schema {
+	r.extendGoTypes(extend.GoTypes)
+	return r
+}
+
 func (r *Schema) GetColumnListing(table string) []string {
 	columns, err := r.GetColumns(table)
 	if err != nil {
@@ -279,6 +286,10 @@ func (r *Schema) GetViews() ([]driver.View, error) {
 	}
 
 	return views, nil
+}
+
+func (r *Schema) GoTypes() []contractsschema.GoType {
+	return r.goTypes
 }
 
 func (r *Schema) HasColumn(table, column string) bool {
@@ -417,4 +428,202 @@ func (r *Schema) build(blueprint contractsschema.Blueprint) error {
 
 func (r *Schema) createBlueprint(table string) contractsschema.Blueprint {
 	return NewBlueprint(r, r.prefix, table)
+}
+
+// extendGoTypes merges user-provided GoType overrides and additions into the schema's default mappings.
+// New patterns (not present in defaults) are prepended for highest priority. Existing patterns are updated with non-zero override fields.
+func (r *Schema) extendGoTypes(overrides []contractsschema.GoType) {
+	if len(overrides) == 0 {
+		return
+	}
+
+	defaults := r.goTypes
+	defaultPatterns := make(map[string]bool, len(defaults))
+	for _, d := range defaults {
+		defaultPatterns[d.Pattern] = true
+	}
+
+	overrideMap := make(map[string]contractsschema.GoType, len(overrides))
+	var newPatterns []contractsschema.GoType
+	for _, o := range overrides {
+		overrideMap[o.Pattern] = o
+		if !defaultPatterns[o.Pattern] {
+			newPatterns = append(newPatterns, o)
+		}
+	}
+
+	result := make([]contractsschema.GoType, 0, len(defaults)+len(newPatterns))
+	result = append(result, newPatterns...)
+
+	for _, d := range defaults {
+		if o, exists := overrideMap[d.Pattern]; exists {
+			if o.Type != "" {
+				d.Type = o.Type
+			}
+			if o.NullType != "" {
+				d.NullType = o.NullType
+			}
+			if o.Import != "" {
+				d.Import = o.Import
+			}
+			if o.NullImport != "" {
+				d.NullImport = o.NullImport
+			}
+		}
+		result = append(result, d)
+	}
+
+	r.goTypes = result
+}
+
+func defaultGoTypes() []contractsschema.GoType {
+	return []contractsschema.GoType{
+		// Special cases first - these need to be matched before general patterns
+		{Pattern: "(?i)^tinyint\\(1\\)$", Type: "bool", NullType: "*bool"}, // MySQL boolean representation
+
+		// Boolean types
+		{Pattern: "(?i)^bool(ean)?$", Type: "bool", NullType: "*bool"},
+		{Pattern: "(?i)^bit(\\(1\\))?$", Type: "bool", NullType: "*bool"}, // Single bit as boolean
+
+		// Integer types - ordered from most specific to general
+		// Unsigned variants (MySQL)
+		{Pattern: "(?i)^bigint\\s+unsigned(\\(\\d+\\))?$", Type: "uint64", NullType: "*uint64"},
+		{Pattern: "(?i)^int(eger)?\\s+unsigned(\\(\\d+\\))?$", Type: "uint32", NullType: "*uint32"},
+		{Pattern: "(?i)^mediumint\\s+unsigned(\\(\\d+\\))?$", Type: "uint32", NullType: "*uint32"},
+		{Pattern: "(?i)^smallint\\s+unsigned(\\(\\d+\\))?$", Type: "uint16", NullType: "*uint16"},
+		{Pattern: "(?i)^tinyint\\s+unsigned(\\(\\d+\\))?$", Type: "uint8", NullType: "*uint8"},
+
+		// PostgreSQL serials
+		{Pattern: "(?i)^bigserial(\\(\\d+\\))?$", Type: "int64", NullType: "*int64"},
+		{Pattern: "(?i)^serial(\\(\\d+\\))?$", Type: "int", NullType: "*int"},
+		{Pattern: "(?i)^smallserial(\\(\\d+\\))?$", Type: "int16", NullType: "*int16"},
+
+		// Standard integer types
+		{Pattern: "(?i)^bigint(\\(\\d+\\))?$", Type: "int64", NullType: "*int64"},
+		{Pattern: "(?i)^int8(\\(\\d+\\))?$", Type: "int64", NullType: "*int64"},      // PostgreSQL
+		{Pattern: "(?i)^mediumint(\\(\\d+\\))?$", Type: "int32", NullType: "*int32"}, // MySQL
+		{Pattern: "(?i)^int(eger)?(\\(\\d+\\))?$", Type: "int", NullType: "*int"},
+		{Pattern: "(?i)^int4(\\(\\d+\\))?$", Type: "int32", NullType: "*int32"}, // PostgreSQL
+		{Pattern: "(?i)^smallint(\\(\\d+\\))?$", Type: "int16", NullType: "*int16"},
+		{Pattern: "(?i)^int2(\\(\\d+\\))?$", Type: "int16", NullType: "*int16"},  // PostgreSQL
+		{Pattern: "(?i)^tinyint(\\(\\d+\\))?$", Type: "int8", NullType: "*int8"}, // MySQL (when not tinyint(1))
+		{Pattern: "(?i)^year(\\(\\d+\\))?$", Type: "int16", NullType: "*int16"},  // MySQL YEAR type
+
+		// Bit/binary integer types
+		{Pattern: "(?i)^bit(\\(\\d+\\))?$", Type: "[]byte", NullType: "[]byte"}, // Multi-bit
+
+		// Fixed-precision types
+		{Pattern: "(?i)^money(\\(\\d+,?\\d*\\))?$", Type: "float64", NullType: "*float64"}, // PostgreSQL, SQL Server
+		{Pattern: "(?i)^decimal(\\(\\d+,?\\d*\\))?$", Type: "float64", NullType: "*float64"},
+		{Pattern: "(?i)^dec(\\(\\d+,?\\d*\\))?$", Type: "float64", NullType: "*float64"},
+		{Pattern: "(?i)^numeric(\\(\\d+,?\\d*\\))?$", Type: "float64", NullType: "*float64"},
+		{Pattern: "(?i)^fixed(\\(\\d+,?\\d*\\))?$", Type: "float64", NullType: "*float64"}, // MySQL
+
+		// Floating point types
+		{Pattern: "(?i)^double precision(\\(\\d+,?\\d*\\))?$", Type: "float64", NullType: "*float64"},
+		{Pattern: "(?i)^double(\\(\\d+,?\\d*\\))?$", Type: "float64", NullType: "*float64"},
+		{Pattern: "(?i)^float8(\\(\\d+,?\\d*\\))?$", Type: "float64", NullType: "*float64"}, // PostgreSQL
+		{Pattern: "(?i)^float4(\\(\\d+,?\\d*\\))?$", Type: "float32", NullType: "*float32"}, // PostgreSQL
+		{Pattern: "(?i)^float(\\(\\d+,?\\d*\\))?$", Type: "float32", NullType: "*float32"},  // MySQL
+		{Pattern: "(?i)^real(\\(\\d+,?\\d*\\))?$", Type: "float32", NullType: "*float32"},
+
+		// String types - longer/specific types first
+		{Pattern: "(?i)^character\\s+varying(\\(\\d+\\))?$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^varchar(\\(\\d+\\))?$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^character(\\(\\d+\\))?$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^nvarchar(\\(\\d+\\))?$", Type: "string", NullType: "*string"}, // SQL Server
+		{Pattern: "(?i)^nchar(\\(\\d+\\))?$", Type: "string", NullType: "*string"},    // SQL Server
+		{Pattern: "(?i)^national\\s+char(acter)?(\\(\\d+\\))?$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^national\\s+varchar(\\(\\d+\\))?$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^longtext$", Type: "string", NullType: "*string"},   // MySQL
+		{Pattern: "(?i)^mediumtext$", Type: "string", NullType: "*string"}, // MySQL
+		{Pattern: "(?i)^tinytext$", Type: "string", NullType: "*string"},   // MySQL
+		{Pattern: "(?i)^ntext$", Type: "string", NullType: "*string"},      // SQL Server
+		{Pattern: "(?i)^text(\\(\\d+\\))?$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^char(\\(\\d+\\))?$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^varchar2(\\(\\d+\\))?$", Type: "string", NullType: "*string"},  // Oracle
+		{Pattern: "(?i)^nvarchar2(\\(\\d+\\))?$", Type: "string", NullType: "*string"}, // Oracle
+		{Pattern: "(?i)^citext$", Type: "string", NullType: "*string"},                 // PostgreSQL
+
+		// JSON types
+		{Pattern: "(?i)^jsonb$", Type: "string", NullType: "*string"}, // PostgreSQL
+		{Pattern: "(?i)^json$", Type: "string", NullType: "*string"},
+
+		// Date and Time types
+		{Pattern: "(?i)^timestamptz(\\(\\d+\\))?$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},                             // PostgreSQL
+		{Pattern: "(?i)^timestamp(\\(\\d+\\))?\\s+with(out)?\\s+time\\s+zone$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"}, // PostgreSQL
+		{Pattern: "(?i)^timestamp(\\(\\d+\\))?$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},
+		{Pattern: "(?i)^datetime(\\(\\d+\\))?$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},                           // MySQL
+		{Pattern: "(?i)^datetime2(\\(\\d+\\))?$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},                          // SQL Server
+		{Pattern: "(?i)^datetimeoffset(\\(\\d+\\))?$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},                     // SQL Server
+		{Pattern: "(?i)^smalldatetime$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},                                   // SQL Server
+		{Pattern: "(?i)^timetz(\\(\\d+\\))?$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},                             // PostgreSQL
+		{Pattern: "(?i)^time(\\(\\d+\\))?\\s+with(out)?\\s+time\\s+zone$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"}, // PostgreSQL
+		{Pattern: "(?i)^time(\\(\\d+\\))?$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},
+		{Pattern: "(?i)^date$", Type: "carbon.DateTime", NullType: "*carbon.DateTime", Import: "github.com/goravel/framework/support/carbon"},
+		{Pattern: "(?i)^interval$", Type: "string", NullType: "*string"}, // PostgreSQL
+
+		// Range types (PostgreSQL)
+		{Pattern: "(?i)^int4range$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^int8range$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^numrange$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^tsrange$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^tstzrange$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^daterange$", Type: "string", NullType: "*string"},
+
+		// Enum types
+		{Pattern: "(?i)^enum\\([^)]*\\)$", Type: "string", NullType: "*string"}, // MySQL
+		{Pattern: "(?i)^set\\([^)]*\\)$", Type: "string", NullType: "*string"},  // MySQL
+
+		// Binary types - larger types first
+		{Pattern: "(?i)^longblob$", Type: "[]byte", NullType: "[]byte"},               // MySQL
+		{Pattern: "(?i)^mediumblob$", Type: "[]byte", NullType: "[]byte"},             // MySQL
+		{Pattern: "(?i)^tinyblob$", Type: "[]byte", NullType: "[]byte"},               // MySQL
+		{Pattern: "(?i)^blob(\\(\\d+\\))?$", Type: "[]byte", NullType: "[]byte"},      // MySQL
+		{Pattern: "(?i)^image$", Type: "[]byte", NullType: "[]byte"},                  // SQL Server
+		{Pattern: "(?i)^varbinary(\\(\\d+\\))?$", Type: "[]byte", NullType: "[]byte"}, // MySQL/SQL Server
+		{Pattern: "(?i)^binary(\\(\\d+\\))?$", Type: "[]byte", NullType: "[]byte"},    // MySQL/SQL Server
+		{Pattern: "(?i)^bytea$", Type: "[]byte", NullType: "[]byte"},                  // PostgreSQL
+
+		// Network types (PostgreSQL)
+		{Pattern: "(?i)^macaddr8$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^macaddr$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^cidr$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^inet$", Type: "string", NullType: "*string"},
+
+		// Geometric types (PostgreSQL)
+		{Pattern: "(?i)^circle$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^polygon$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^path$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^box$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^lseg$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^line$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^point$", Type: "string", NullType: "*string"},
+
+		// UUID/GUID types
+		{Pattern: "(?i)^uuid$", Type: "string", NullType: "*string"},             // PostgreSQL
+		{Pattern: "(?i)^uniqueidentifier$", Type: "string", NullType: "*string"}, // SQL Server
+
+		// XML and other text types
+		{Pattern: "(?i)^xml$", Type: "string", NullType: "*string"},
+		{Pattern: "(?i)^rowversion$", Type: "[]byte", NullType: "[]byte"}, // SQL Server
+
+		// Spatial/Geometry types
+		{Pattern: "(?i)^geometry$", Type: "string", NullType: "*string"},    // MySQL/PostgreSQL/SQL Server
+		{Pattern: "(?i)^geography$", Type: "string", NullType: "*string"},   // SQL Server
+		{Pattern: "(?i)^st_geometry$", Type: "string", NullType: "*string"}, // PostgreSQL PostGIS
+
+		// Miscellaneous specialized types
+		{Pattern: "(?i)^hstore$", Type: "map[string]string", NullType: "*map[string]string"}, // PostgreSQL
+		{Pattern: "(?i)^hierarchyid$", Type: "string", NullType: "*string"},                  // SQL Server
+
+		// SQLite specific
+		{Pattern: "(?i)^rowid$", Type: "int64", NullType: "*int64"}, // SQLite
+
+		// Array types (PostgreSQL)
+		{Pattern: "(?i)^(.+)\\[\\]$", Type: "string", NullType: "*string"}, // Match any array type like "text[]"
+
+		// Fallback for unknown types
+		{Pattern: ".*", Type: "any", NullType: "any"},
+	}
 }

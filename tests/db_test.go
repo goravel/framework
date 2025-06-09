@@ -7,10 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/spf13/cast"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
-
 	"github.com/goravel/framework/contracts/database/db"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
@@ -18,6 +14,9 @@ import (
 	"github.com/goravel/postgres"
 	"github.com/goravel/sqlite"
 	"github.com/goravel/sqlserver"
+	"github.com/spf13/cast"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
 type DBTestSuite struct {
@@ -151,14 +150,14 @@ func (s *DBTestSuite) TestCursor() {
 			})
 
 			s.Run("Bind Struct", func() {
-				rows, err := query.DB().Table("products").Cursor()
-				s.NoError(err)
+				rows := query.DB().Table("products").Cursor()
 
 				var products []Product
 				for row := range rows {
-					var product Product
-					err = row.Scan(&product)
+					s.NoError(row.Err())
 
+					var product Product
+					err := row.Scan(&product)
 					s.NoError(err)
 					s.True(product.ID > 0)
 
@@ -177,14 +176,14 @@ func (s *DBTestSuite) TestCursor() {
 			})
 
 			s.Run("Bind Map", func() {
-				rows, err := query.DB().Table("products").Cursor()
-				s.NoError(err)
+				rows := query.DB().Table("products").Cursor()
 
 				var products []map[string]any
 				for row := range rows {
-					var product map[string]any
-					err = row.Scan(&product)
+					s.NoError(row.Err())
 
+					var product map[string]any
+					err := row.Scan(&product)
 					s.NoError(err)
 					s.True(cast.ToUint(product["id"]) > 0)
 
@@ -200,6 +199,18 @@ func (s *DBTestSuite) TestCursor() {
 				s.Equal(200, cast.ToInt(products[1]["weight"]))
 				s.Equal(s.now, carbon.NewDateTime(carbon.FromStdTime(cast.ToTime(products[1]["created_at"]))))
 				s.Equal(s.now, carbon.NewDateTime(carbon.FromStdTime(cast.ToTime(products[1]["updated_at"]))))
+			})
+
+			s.Run("Cursor error", func() {
+				for row := range query.DB().Table("not_exist").Cursor() {
+					err1 := row.Err()
+					s.Error(err1)
+
+					err2 := row.Scan(map[string]any{})
+					s.Error(err2)
+
+					s.Equal(err1, err2)
+				}
 			})
 		})
 	}
