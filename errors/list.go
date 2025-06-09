@@ -179,6 +179,7 @@ var (
 	TestingImageBuildFailed   = New("init %s docker error: %v")
 	TestingImageNoContainerId = New("no container id return when creating %s docker")
 	TestingImageStopFailed    = New("stop %s docker error: %v")
+	TestingImageReadyTimeout  = New("image %s is not ready after %s")
 
 	UnknownFileExtension = New("unknown file extension")
 

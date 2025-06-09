@@ -4,13 +4,28 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/spf13/cast"
-
 	"github.com/goravel/framework/contracts/testing/docker"
 	"github.com/goravel/framework/support/process"
 )
 
-func ImageToCommand(image *docker.Image) (command string, exposedPorts map[int]int) {
+func ExposedPort(exposedPorts []string, port string) string {
+	for _, exposedPort := range exposedPorts {
+		splitExposedPort := strings.Split(exposedPort, ":")
+		if len(splitExposedPort) != 2 {
+			continue
+		}
+
+		if splitExposedPort[1] != port && !strings.Contains(splitExposedPort[1], port+"/") {
+			continue
+		}
+
+		return splitExposedPort[0]
+	}
+
+	return ""
+}
+
+func ImageToCommand(image *docker.Image) (command string, exposedPorts []string) {
 	if image == nil {
 		return "", nil
 	}
@@ -21,14 +36,14 @@ func ImageToCommand(image *docker.Image) (command string, exposedPorts map[int]i
 			commands = append(commands, "-e", env)
 		}
 	}
-	ports := make(map[int]int)
+
+	var ports []string
 	if len(image.ExposedPorts) > 0 {
 		for _, port := range image.ExposedPorts {
 			if !strings.Contains(port, ":") {
 				port = fmt.Sprintf("%d:%s", process.ValidPort(), port)
 			}
-			splitPort := strings.Split(port, ":")
-			ports[cast.ToInt(splitPort[1])] = cast.ToInt(splitPort[0])
+			ports = append(ports, port)
 			commands = append(commands, "-p", port)
 		}
 	}
@@ -37,6 +52,10 @@ func ImageToCommand(image *docker.Image) (command string, exposedPorts map[int]i
 
 	if len(image.Args) > 0 {
 		commands = append(commands, image.Args...)
+	}
+
+	if len(image.Cmd) > 0 {
+		commands = append(commands, image.Cmd...)
 	}
 
 	return strings.Join(commands, " "), ports
