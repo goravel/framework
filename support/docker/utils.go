@@ -10,16 +10,16 @@ import (
 
 func ExposedPort(exposedPorts []string, port string) string {
 	for _, exposedPort := range exposedPorts {
-		splitedExposedPort := strings.Split(exposedPort, ":")
-		if len(splitedExposedPort) != 2 {
+		splitExposedPort := strings.Split(exposedPort, ":")
+		if len(splitExposedPort) != 2 {
 			continue
 		}
 
-		if splitedExposedPort[1] != port && !strings.Contains(splitedExposedPort[1], port+"/") {
+		if splitExposedPort[1] != port && !strings.Contains(splitExposedPort[1], port+"/") {
 			continue
 		}
 
-		return splitedExposedPort[0]
+		return splitExposedPort[0]
 	}
 
 	return ""
