@@ -19,6 +19,7 @@ import (
 	mockscache "github.com/goravel/framework/mocks/cache"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
+	mockshttp "github.com/goravel/framework/mocks/http"
 	mockslog "github.com/goravel/framework/mocks/log"
 	"github.com/goravel/framework/support/carbon"
 )
@@ -42,7 +43,7 @@ func TestJwtGuardTestSuite(t *testing.T) {
 func (s *JwtGuardTestSuite) SetupTest() {
 	s.mockCache = mockscache.NewCache(s.T())
 	s.mockConfig = mocksconfig.NewConfig(s.T())
-	s.mockContext = Background()
+	s.mockContext = Background(s.T())
 	s.mockDB = mocksorm.NewQuery(s.T())
 	s.mockLog = mockslog.NewLog(s.T())
 	s.mockUserProvider = mocksauth.NewUserProvider(s.T())
@@ -506,11 +507,14 @@ func (r *Context) Response() http.ContextResponse {
 	return r.response
 }
 
-func Background() http.Context {
+func Background(t interface {
+	mock.TestingT
+	Cleanup(func())
+}) http.Context {
 	return &Context{
 		ctx:      context.Background(),
 		request:  nil,
-		response: nil,
+		response: mockshttp.NewContextRequest(t),
 		values:   make(map[any]any),
 	}
 }

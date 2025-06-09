@@ -32,6 +32,7 @@ func NewAuth(ctx http.Context, config config.Config, log log.Log) (*Auth, error)
 	}
 
 	auth.Extend("jwt", NewJwtGuard)
+	auth.Extend("session", NewSessionGuard)
 	auth.Provider("orm", NewOrmUserProvider)
 
 	defaultGuardName := config.GetString("auth.defaults.guard")
