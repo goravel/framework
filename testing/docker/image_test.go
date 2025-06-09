@@ -44,7 +44,7 @@ func (s *ImageDriverTestSuite) TestBuildConfigShutdown() {
 
 	config := driver.Config()
 	s.NotEmpty(config.ContainerID)
-	s.True(config.ExposedPorts[6379] > 0)
+	s.True(len(config.ExposedPorts) > 0)
 
 	err = driver.Shutdown()
 	s.NoError(err)

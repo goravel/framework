@@ -9,6 +9,11 @@ import (
 	"github.com/goravel/framework/contracts/testing/docker"
 )
 
+func TestExposedPort(t *testing.T) {
+	assert.Equal(t, "1", ExposedPort([]string{"1:2"}, "2"))
+	assert.Equal(t, "1", ExposedPort([]string{"1:2/udp"}, "2"))
+}
+
 func TestImageToCommand(t *testing.T) {
 	command, exposedPorts := ImageToCommand(nil)
 	assert.Equal(t, "", command)
@@ -28,8 +33,8 @@ func TestImageToCommand(t *testing.T) {
 		ExposedPorts: []string{"6379"},
 		Env:          []string{"a=b"},
 	})
-	assert.Equal(t, fmt.Sprintf("docker run --rm -d -e a=b -p %d:6379 redis:latest", exposedPorts[6379]), command)
-	assert.True(t, exposedPorts[6379] > 0)
+	assert.Equal(t, fmt.Sprintf("docker run --rm -d -e a=b -p %s:6379 redis:latest", ExposedPort(exposedPorts, "6379")), command)
+	assert.NotEmpty(t, ExposedPort(exposedPorts, "6379"))
 
 	command, exposedPorts = ImageToCommand(&docker.Image{
 		Repository:   "redis",

@@ -19,5 +19,5 @@ type ImageDriver interface {
 
 type ImageConfig struct {
 	ContainerID  string
-	ExposedPorts map[int]int
+	ExposedPorts []string
 }
