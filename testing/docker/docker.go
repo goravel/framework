@@ -44,3 +44,7 @@ func (r *Docker) Database(connection ...string) (docker.Database, error) {
 		return NewDatabase(r.artisan, r.config, r.orm, connection[0])
 	}
 }
+
+func (r *Docker) Image(image docker.Image) docker.ImageDriver {
+	return NewImageDriver(image)
+}

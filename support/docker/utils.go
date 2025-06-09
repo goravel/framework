@@ -10,21 +10,7 @@ import (
 	"github.com/goravel/framework/support/process"
 )
 
-func ExposedPort(exposedPorts []string, port int) int {
-	for _, exposedPort := range exposedPorts {
-		if !strings.Contains(exposedPort, cast.ToString(port)) {
-			continue
-		}
-
-		ports := strings.Split(exposedPort, ":")
-
-		return cast.ToInt(ports[0])
-	}
-
-	return 0
-}
-
-func ImageToCommand(image *docker.Image) (command string, exposedPorts []string) {
+func ImageToCommand(image *docker.Image) (command string, exposedPorts map[int]int) {
 	if image == nil {
 		return "", nil
 	}
@@ -35,13 +21,14 @@ func ImageToCommand(image *docker.Image) (command string, exposedPorts []string)
 			commands = append(commands, "-e", env)
 		}
 	}
-	var ports []string
+	ports := make(map[int]int)
 	if len(image.ExposedPorts) > 0 {
 		for _, port := range image.ExposedPorts {
 			if !strings.Contains(port, ":") {
 				port = fmt.Sprintf("%d:%s", process.ValidPort(), port)
 			}
-			ports = append(ports, port)
+			splitPort := strings.Split(port, ":")
+			ports[cast.ToInt(splitPort[1])] = cast.ToInt(splitPort[0])
 			commands = append(commands, "-p", port)
 		}
 	}
