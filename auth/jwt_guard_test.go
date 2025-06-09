@@ -19,7 +19,6 @@ import (
 	mockscache "github.com/goravel/framework/mocks/cache"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
-	mockshttp "github.com/goravel/framework/mocks/http"
 	mockslog "github.com/goravel/framework/mocks/log"
 	"github.com/goravel/framework/support/carbon"
 )
@@ -507,14 +506,11 @@ func (r *Context) Response() http.ContextResponse {
 	return r.response
 }
 
-func Background(t interface {
-	mock.TestingT
-	Cleanup(func())
-}) http.Context {
+func Background() http.Context {
 	return &Context{
 		ctx:      context.Background(),
 		request:  nil,
-		response: mockshttp.NewContextRequest(t),
+		response: nil,
 		values:   make(map[any]any),
 	}
 }
