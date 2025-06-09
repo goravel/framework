@@ -1,7 +1,9 @@
 package docker
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	contractsdocker "github.com/goravel/framework/contracts/testing/docker"
 	"github.com/goravel/framework/errors"
@@ -40,6 +42,29 @@ func (r *ImageDriver) Build() error {
 
 func (r *ImageDriver) Config() contractsdocker.ImageConfig {
 	return r.config
+}
+
+func (r *ImageDriver) Ready(fn func() error, durations ...time.Duration) error {
+	duration := 1 * time.Minute
+	if len(durations) > 0 {
+		duration = durations[0]
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), duration)
+	defer cancel()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return errors.TestingImageReadyTimeout.Args(r.image.Repository, duration)
+		default:
+			if err := fn(); err == nil {
+				return nil
+			}
+
+			time.Sleep(2 * time.Second)
+		}
+	}
 }
 
 func (r *ImageDriver) Shutdown() error {

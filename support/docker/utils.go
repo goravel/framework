@@ -54,5 +54,9 @@ func ImageToCommand(image *docker.Image) (command string, exposedPorts []string)
 		commands = append(commands, image.Args...)
 	}
 
+	if len(image.Cmd) > 0 {
+		commands = append(commands, image.Cmd...)
+	}
+
 	return strings.Join(commands, " "), ports
 }

@@ -25,7 +25,7 @@ func TestImageToCommand(t *testing.T) {
 	})
 
 	assert.Equal(t, "docker run --rm -d redis:latest", command)
-	assert.Equal(t, map[int]int{}, exposedPorts)
+	assert.True(t, len(exposedPorts) == 0)
 
 	command, exposedPorts = ImageToCommand(&docker.Image{
 		Repository:   "redis",
@@ -44,5 +44,15 @@ func TestImageToCommand(t *testing.T) {
 		Args:         []string{"--a=b"},
 	})
 	assert.Equal(t, "docker run --rm -d -e a=b -p 1234:6379 redis:latest --a=b", command)
-	assert.Equal(t, map[int]int{6379: 1234}, exposedPorts)
+	assert.Equal(t, []string{"1234:6379"}, exposedPorts)
+
+	command, _ = ImageToCommand(&docker.Image{
+		Repository:   "redis",
+		Tag:          "latest",
+		ExposedPorts: []string{"1234:6379"},
+		Env:          []string{"a=b"},
+		Args:         []string{"--a=b"},
+		Cmd:          []string{"sleep", "1000"},
+	})
+	assert.Equal(t, "docker run --rm -d -e a=b -p 1234:6379 redis:latest --a=b sleep 1000", command)
 }

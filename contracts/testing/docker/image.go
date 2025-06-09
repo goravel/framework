@@ -1,6 +1,9 @@
 package docker
 
+import "time"
+
 type Image struct {
+	Cmd          []string
 	Env          []string
 	ExposedPorts []string
 	Repository   string
@@ -13,6 +16,8 @@ type ImageDriver interface {
 	Build() error
 	// Config gets the image configuration.
 	Config() ImageConfig
+	// Ready checks if the image is ready by the given function until the given duration, default is 1 minute.
+	Ready(func() error, ...time.Duration) error
 	// Shutdown the image.
 	Shutdown() error
 }

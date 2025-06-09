@@ -1,7 +1,9 @@
 package docker
 
 import (
+	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -37,7 +39,7 @@ func (s *ImageDriverTestSuite) TestNewImageDriver() {
 	assert.Equal(s.T(), s.image, driver.image)
 }
 
-func (s *ImageDriverTestSuite) TestBuildConfigShutdown() {
+func (s *ImageDriverTestSuite) TestBuildConfigReadyShutdown() {
 	driver := NewImageDriver(s.image)
 	err := driver.Build()
 	s.NoError(err)
@@ -48,4 +50,18 @@ func (s *ImageDriverTestSuite) TestBuildConfigShutdown() {
 
 	err = driver.Shutdown()
 	s.NoError(err)
+}
+
+func (s *ImageDriverTestSuite) TestReady() {
+	driver := NewImageDriver(s.image)
+
+	err := driver.Ready(func() error {
+		return nil
+	})
+	s.NoError(err)
+
+	err = driver.Ready(func() error {
+		return errors.New("error")
+	}, 3*time.Second)
+	s.Error(err)
 }
