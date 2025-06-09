@@ -10,7 +10,7 @@ require (
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/goravel/framework v1.15.8
 	github.com/goravel/mysql v0.0.0-20250602022220-ce71147dc799
-	github.com/goravel/postgres v0.0.2-0.20250602020044-c77d678d1b56
+	github.com/goravel/postgres v0.0.2-0.20250609004453-d8d25d7f1aa5
 	github.com/goravel/sqlite v0.0.0-20250513044555-d43b50b2f7d5
 	github.com/goravel/sqlserver v0.0.0-20250513034410-09b770f4d4d3
 	github.com/spf13/cast v1.9.1
@@ -25,10 +25,8 @@ require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/Masterminds/semver/v3 v3.3.1 // indirect
 	github.com/Masterminds/squirrel v1.5.4 // indirect
-	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/containerd/console v1.0.4 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/dromara/carbon/v2 v2.6.6 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.9 // indirect
 	github.com/go-sql-driver/mysql v1.9.0 // indirect
@@ -55,7 +53,6 @@ require (
 	github.com/ncruces/julianday v1.0.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/pterm/pterm v0.12.80 // indirect
-	github.com/redis/go-redis/v9 v9.8.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
 	github.com/samber/lo v1.50.0 // indirect
@@ -76,7 +73,7 @@ require (
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/mysql v1.5.7 // indirect
-	gorm.io/driver/postgres v1.5.11 // indirect
+	gorm.io/driver/postgres v1.6.0 // indirect
 	gorm.io/driver/sqlserver v1.5.4 // indirect
 	gorm.io/plugin/dbresolver v1.6.0 // indirect
 )
