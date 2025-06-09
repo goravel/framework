@@ -3,6 +3,8 @@ package auth
 import (
 	"fmt"
 
+	"github.com/spf13/cast"
+
 	contractsauth "github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/contracts/config"
@@ -64,33 +66,43 @@ func (r *SessionGuard) ID() (token string, err error) {
 	userId := r.session.Get(sessionName, nil)
 
 	if userId == nil {
-		return "", errors.New("User not found")
+		return "", errors.AuthInvalidKey
 	}
 
 	if id, ok := userId.(string); ok {
 		return id, nil
 	}
 
-	return "", errors.New("User not found")
+	return "", errors.AuthInvalidKey
 }
 
 // Login implements auth.GuardDriver.
 func (r *SessionGuard) Login(user any) (token string, err error) {
 	id, err := r.provider.GetID(user)
 	if err != nil {
-		return "", errors.New("Unable to retrive user id")
+		return "", err
 	}
 
 	if id, ok := id.(string); ok {
+		sessionName := r.getSessionName()
+		r.session.Put(sessionName, id)
+
 		return id, nil
 	}
 
-	return "", errors.New("Unable to retrive user id")
+	return "", errors.AuthNoPrimaryKeyField
 }
 
 // LoginUsingID implements auth.GuardDriver.
 func (r *SessionGuard) LoginUsingID(id any) (token string, err error) {
 	sessionName := r.getSessionName()
+	key := cast.ToString(id)
+	if key == "" {
+		return "", errors.AuthInvalidKey
+	}
+	if err := r.provider.RetriveByID(new(interface{}), id); err != nil {
+		return "", err
+	}
 	r.session.Put(sessionName, id)
 
 	return "", nil
