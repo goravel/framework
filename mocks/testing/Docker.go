@@ -162,6 +162,54 @@ func (_c *Docker_Database_Call) RunAndReturn(run func(...string) (docker.Databas
 	return _c
 }
 
+// Image provides a mock function with given fields: image
+func (_m *Docker) Image(image docker.Image) docker.ImageDriver {
+	ret := _m.Called(image)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Image")
+	}
+
+	var r0 docker.ImageDriver
+	if rf, ok := ret.Get(0).(func(docker.Image) docker.ImageDriver); ok {
+		r0 = rf(image)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(docker.ImageDriver)
+		}
+	}
+
+	return r0
+}
+
+// Docker_Image_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Image'
+type Docker_Image_Call struct {
+	*mock.Call
+}
+
+// Image is a helper method to define mock.On call
+//   - image docker.Image
+func (_e *Docker_Expecter) Image(image interface{}) *Docker_Image_Call {
+	return &Docker_Image_Call{Call: _e.mock.On("Image", image)}
+}
+
+func (_c *Docker_Image_Call) Run(run func(image docker.Image)) *Docker_Image_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(docker.Image))
+	})
+	return _c
+}
+
+func (_c *Docker_Image_Call) Return(_a0 docker.ImageDriver) *Docker_Image_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Docker_Image_Call) RunAndReturn(run func(docker.Image) docker.ImageDriver) *Docker_Image_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewDocker creates a new instance of Docker. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewDocker(t interface {
