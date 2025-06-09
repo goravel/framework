@@ -20,7 +20,7 @@ func TestImageToCommand(t *testing.T) {
 	})
 
 	assert.Equal(t, "docker run --rm -d redis:latest", command)
-	assert.Nil(t, exposedPorts)
+	assert.Equal(t, map[int]int{}, exposedPorts)
 
 	command, exposedPorts = ImageToCommand(&docker.Image{
 		Repository:   "redis",
