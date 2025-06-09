@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/http"
@@ -28,6 +27,7 @@ type SessionGuardTestSuite struct {
 	mockDB           *mocksorm.Query
 	mockLog          *mockslog.Log
 	mockUserProvider *mocksauth.UserProvider
+	mockSession      *mockssession.Session
 	now              *carbon.Carbon
 }
 
@@ -38,10 +38,15 @@ func TestSessionGuardTestSuite(t *testing.T) {
 func (s *SessionGuardTestSuite) SetupTest() {
 	s.mockCache = mockscache.NewCache(s.T())
 	s.mockConfig = mocksconfig.NewConfig(s.T())
-	s.mockContext = BackgroundWithSession(s.T())
 	s.mockDB = mocksorm.NewQuery(s.T())
 	s.mockLog = mockslog.NewLog(s.T())
 	s.mockUserProvider = mocksauth.NewUserProvider(s.T())
+
+	s.mockSession = mockssession.NewSession(s.T())
+	request := mockshttp.NewContextRequest(s.T())
+
+	request.On("Session").Return(s.mockSession)
+	s.mockContext = BackgroundWithSession(request)
 
 	cacheFacade = s.mockCache
 	configFacade = s.mockConfig
@@ -61,15 +66,29 @@ func (s *SessionGuardTestSuite) TestLoginUsingID_InvalidKey() {
 	s.ErrorIs(err, errors.AuthInvalidKey)
 }
 
-func BackgroundWithSession(t interface {
-	mock.TestingT
-	Cleanup(func())
-}) http.Context {
-	session := mockssession.NewSession(t)
-	request := mockshttp.NewContextRequest(t)
+func (s *SessionGuardTestSuite) TestCheck_LoginUsingID_Logout() {
+	s.mockSession.EXPECT().Get("auth_user_id", nil).Return(nil).Twice()
+	s.False(s.sessionGuard.Check())
+	s.True(s.sessionGuard.Guest())
 
-	request.On("Session").Return(session)
+	var user interface{}
 
+	s.mockUserProvider.EXPECT().RetriveByID(&user, 1).Return(nil).Once()
+	s.mockSession.EXPECT().Put("auth_user_id", 1).Return(nil).Once()
+	s.mockSession.EXPECT().Get("auth_user_id", nil).Return("1").Twice()
+	s.mockSession.EXPECT().Forget("auth_user_id").Return(nil).Once()
+	s.mockSession.EXPECT().Get("auth_user_id", nil).Return(nil).Once()
+	token, err := s.sessionGuard.LoginUsingID(1)
+	s.Nil(err)
+	s.Empty(token)
+
+	s.True(s.sessionGuard.Check())
+	s.False(s.sessionGuard.Guest())
+	s.NoError(s.sessionGuard.Logout())
+	s.True(s.sessionGuard.Guest())
+}
+
+func BackgroundWithSession(request http.ContextRequest) http.Context {
 	return &Context{
 		ctx:      context.Background(),
 		request:  request,

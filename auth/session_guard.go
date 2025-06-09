@@ -138,5 +138,5 @@ func (r *SessionGuard) User(user any) error {
 }
 
 func (r *SessionGuard) getSessionName() string {
-	return fmt.Sprintf("auth_%s_user_id", r.guard)
+	return fmt.Sprintf("auth_%s_id", r.guard)
 }

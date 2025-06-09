@@ -34,7 +34,7 @@ func TestAuthTestSuite(t *testing.T) {
 func (s *AuthTestSuite) SetupTest() {
 	s.mockCache = mockscache.NewCache(s.T())
 	s.mockConfig = mocksconfig.NewConfig(s.T())
-	s.mockContext = Background(s.T())
+	s.mockContext = Background()
 	s.mockOrm = mocksorm.NewOrm(s.T())
 	s.mockDB = mocksorm.NewQuery(s.T())
 	s.mockLog = mockslog.NewLog(s.T())
