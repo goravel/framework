@@ -27,7 +27,8 @@ func ImageToCommand(image *docker.Image) (command string, exposedPorts map[int]i
 			if !strings.Contains(port, ":") {
 				port = fmt.Sprintf("%d:%s", process.ValidPort(), port)
 			}
-			ports[cast.ToInt(strings.Split(port, ":")[1])] = cast.ToInt(strings.Split(port, ":")[0])
+			splitPort := strings.Split(port, ":")
+			ports[cast.ToInt(splitPort[1])] = cast.ToInt(splitPort[0])
 			commands = append(commands, "-p", port)
 		}
 	}
