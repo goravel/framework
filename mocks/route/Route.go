@@ -289,6 +289,52 @@ func (_c *Route_Group_Call) RunAndReturn(run func(route.GroupFunc)) *Route_Group
 	return _c
 }
 
+// Info provides a mock function with given fields: name
+func (_m *Route) Info(name string) route.RouteInfo {
+	ret := _m.Called(name)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Info")
+	}
+
+	var r0 route.RouteInfo
+	if rf, ok := ret.Get(0).(func(string) route.RouteInfo); ok {
+		r0 = rf(name)
+	} else {
+		r0 = ret.Get(0).(route.RouteInfo)
+	}
+
+	return r0
+}
+
+// Route_Info_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Info'
+type Route_Info_Call struct {
+	*mock.Call
+}
+
+// Info is a helper method to define mock.On call
+//   - name string
+func (_e *Route_Expecter) Info(name interface{}) *Route_Info_Call {
+	return &Route_Info_Call{Call: _e.mock.On("Info", name)}
+}
+
+func (_c *Route_Info_Call) Run(run func(name string)) *Route_Info_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Route_Info_Call) Return(_a0 route.RouteInfo) *Route_Info_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Route_Info_Call) RunAndReturn(run func(string) route.RouteInfo) *Route_Info_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Listen provides a mock function with given fields: l
 func (_m *Route) Listen(l net.Listener) error {
 	ret := _m.Called(l)
