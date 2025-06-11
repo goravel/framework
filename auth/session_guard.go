@@ -86,7 +86,7 @@ func (r *SessionGuard) LoginUsingID(id any) (token string, err error) {
 		return "", errors.AuthInvalidKey
 	}
 
-	r.session.Put(sessionName, id)
+	r.session.Put(sessionName, key)
 
 	return "", nil
 }
