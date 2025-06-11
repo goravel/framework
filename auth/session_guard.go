@@ -41,11 +41,7 @@ func NewSessionGuard(ctx http.Context, name string, userProvider contractsauth.U
 func (r *SessionGuard) Check() bool {
 	_, err := r.ID()
 
-	if err == nil {
-		return true
-	}
-
-	return false
+	return err == nil
 }
 
 func (r *SessionGuard) Guest() bool {
@@ -54,13 +50,13 @@ func (r *SessionGuard) Guest() bool {
 
 func (r *SessionGuard) ID() (token string, err error) {
 	sessionName := r.getSessionName()
-	userId := r.session.Get(sessionName, nil)
+	userID := r.session.Get(sessionName, nil)
 
-	if userId == nil {
+	if userID == nil {
 		return "", errors.AuthInvalidKey
 	}
 
-	if id, ok := userId.(string); ok {
+	if id, ok := userID.(string); ok {
 		return id, nil
 	}
 

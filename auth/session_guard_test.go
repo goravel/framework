@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -46,7 +45,9 @@ func (s *SessionGuardTestSuite) SetupTest() {
 	request := mockshttp.NewContextRequest(s.T())
 
 	request.On("Session").Return(s.mockSession)
-	s.mockContext = BackgroundWithSession(request)
+	context := mockshttp.NewContext(s.T())
+	context.EXPECT().Request().Return(request)
+	s.mockContext = context
 
 	cacheFacade = s.mockCache
 	configFacade = s.mockConfig
@@ -71,9 +72,6 @@ func (s *SessionGuardTestSuite) TestCheck_LoginUsingID_Logout() {
 	s.False(s.sessionGuard.Check())
 	s.True(s.sessionGuard.Guest())
 
-	var user interface{}
-
-	s.mockUserProvider.EXPECT().RetriveByID(&user, 1).Return(nil).Once()
 	s.mockSession.EXPECT().Put("auth_user_id", 1).Return(nil).Once()
 	s.mockSession.EXPECT().Get("auth_user_id", nil).Return("1").Twice()
 	s.mockSession.EXPECT().Forget("auth_user_id").Return(nil).Once()
@@ -86,13 +84,4 @@ func (s *SessionGuardTestSuite) TestCheck_LoginUsingID_Logout() {
 	s.False(s.sessionGuard.Guest())
 	s.NoError(s.sessionGuard.Logout())
 	s.True(s.sessionGuard.Guest())
-}
-
-func BackgroundWithSession(request http.ContextRequest) http.Context {
-	return &Context{
-		ctx:      context.Background(),
-		request:  request,
-		response: nil,
-		values:   make(map[any]any),
-	}
 }
