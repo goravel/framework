@@ -35,6 +35,10 @@ func TestSessionGuardTestSuite(t *testing.T) {
 	suite.Run(t, new(SessionGuardTestSuite))
 }
 
+func (s *SessionGuardTestSuite) TearDownSuite() {
+	carbon.ClearTestNow()
+}
+
 func (s *SessionGuardTestSuite) SetupTest() {
 	s.mockCache = mockscache.NewCache(s.T())
 	s.mockConfig = mocksconfig.NewConfig(s.T())
@@ -43,12 +47,14 @@ func (s *SessionGuardTestSuite) SetupTest() {
 	s.mockUserProvider = mocksauth.NewUserProvider(s.T())
 
 	s.mockSession = mockssession.NewSession(s.T())
-	request := mockshttp.NewContextRequest(s.T())
 
-	request.On("Session").Return(s.mockSession)
-	context := mockshttp.NewContext(s.T())
-	context.EXPECT().Request().Return(request)
-	s.mockContext = context
+	mockRequest := mockshttp.NewContextRequest(s.T())
+	mockRequest.EXPECT().Session().Return(s.mockSession)
+
+	mockContext := mockshttp.NewContext(s.T())
+	mockContext.EXPECT().Request().Return(mockRequest)
+
+	s.mockContext = mockContext
 
 	cacheFacade = s.mockCache
 	configFacade = s.mockConfig
@@ -74,16 +80,18 @@ func (s *SessionGuardTestSuite) TestCheck_LoginUsingID_Logout() {
 	s.True(s.sessionGuard.Guest())
 
 	s.mockSession.EXPECT().Put("auth_user_id", 1).Return(nil).Once()
-	s.mockSession.EXPECT().Get("auth_user_id", nil).Return("1").Twice()
-	s.mockSession.EXPECT().Forget("auth_user_id").Return(nil).Once()
-	s.mockSession.EXPECT().Get("auth_user_id", nil).Return(nil).Once()
 	token, err := s.sessionGuard.LoginUsingID(1)
 	s.Nil(err)
 	s.Empty(token)
 
+	s.mockSession.EXPECT().Get("auth_user_id", nil).Return("1").Twice()
 	s.True(s.sessionGuard.Check())
 	s.False(s.sessionGuard.Guest())
+
+	s.mockSession.EXPECT().Forget("auth_user_id").Return(nil).Once()
 	s.NoError(s.sessionGuard.Logout())
+
+	s.mockSession.EXPECT().Get("auth_user_id", nil).Return(nil).Once()
 	s.True(s.sessionGuard.Guest())
 }
 
@@ -98,17 +106,18 @@ func (s *SessionGuardTestSuite) Test_Login() {
 
 	s.mockUserProvider.EXPECT().GetID(&user).Return("2", nil).Once()
 	s.mockSession.EXPECT().Put("auth_user_id", "2").Return(nil).Once()
-	s.mockSession.EXPECT().Get("auth_user_id", nil).Return("2").Twice()
-	s.mockSession.EXPECT().Forget("auth_user_id").Return(nil).Once()
-	s.mockSession.EXPECT().Get("auth_user_id", nil).Return(nil).Once()
-
 	token, err := s.sessionGuard.Login(&user)
 	s.Nil(err)
 	s.Empty(token)
 
+	s.mockSession.EXPECT().Get("auth_user_id", nil).Return("2").Twice()
 	s.True(s.sessionGuard.Check())
 	s.False(s.sessionGuard.Guest())
+
+	s.mockSession.EXPECT().Forget("auth_user_id").Return(nil).Once()
 	s.NoError(s.sessionGuard.Logout())
+
+	s.mockSession.EXPECT().Get("auth_user_id", nil).Return(nil).Once()
 	s.True(s.sessionGuard.Guest())
 }
 
@@ -122,24 +131,25 @@ func (s *SessionGuardTestSuite) Test_LoginFailed() {
 	user.Name = "Goravel"
 
 	s.mockUserProvider.EXPECT().GetID(&user).Return("", assert.AnError).Once()
-	s.mockSession.EXPECT().Get("auth_user_id", nil).Return(nil).Twice()
-	s.mockSession.EXPECT().Forget("auth_user_id").Return(nil).Once()
-	s.mockSession.EXPECT().Get("auth_user_id", nil).Return(nil).Once()
-
 	token, err := s.sessionGuard.Login(&user)
 	s.NotNil(err)
 	s.Empty(token)
 
+	s.mockSession.EXPECT().Get("auth_user_id", nil).Return(nil).Twice()
 	s.False(s.sessionGuard.Check())
 	s.True(s.sessionGuard.Guest())
+
+	s.mockSession.EXPECT().Forget("auth_user_id").Return(nil).Once()
 	s.NoError(s.sessionGuard.Logout())
+
+	s.mockSession.EXPECT().Get("auth_user_id", nil).Return(nil).Once()
 	s.True(s.sessionGuard.Guest())
 }
 
 func (s *SessionGuardTestSuite) Test_User() {
 	var user User
 
-	s.mockUserProvider.EXPECT().RetriveByID(&user, "1").RunAndReturn(func(user interface{}, id interface{}) error {
+	s.mockUserProvider.EXPECT().RetriveByID(&user, "1").RunAndReturn(func(user any, id any) error {
 		user.(*User).ID = 1
 		user.(*User).Name = "Goravel"
 		return nil
