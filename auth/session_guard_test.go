@@ -148,8 +148,11 @@ func (s *SessionGuardTestSuite) Test_User() {
 	s.mockSession.EXPECT().Get("auth_user_id", nil).Return("1").Once()
 
 	err := s.sessionGuard.User(&user)
+
+	var id uint = 1
+
 	s.Nil(err)
-	s.Equal(1, user.ID)
+	s.Equal(id, user.ID)
 	s.Equal("Goravel", user.Name)
 }
 
