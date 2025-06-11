@@ -177,6 +177,11 @@ var (
 	TemplateFailedToParse         = New("failed to parse template: %v")
 	TemplateFailedToFormateGoCode = New("failed to format go code: %v")
 
+	TestingImageBuildFailed   = New("init %s docker error: %v")
+	TestingImageNoContainerId = New("no container id return when creating %s docker")
+	TestingImageStopFailed    = New("stop %s docker error: %v")
+	TestingImageReadyTimeout  = New("image %s is not ready after %s")
+
 	UnknownFileExtension = New("unknown file extension")
 
 	ValidationDataInvalidType      = New("data must be map[string]any or map[string][]string or struct")

@@ -14,4 +14,6 @@ type Docker interface {
 	Cache(store ...string) (docker.CacheDriver, error)
 	// Database gets a database connection instance.
 	Database(connection ...string) (docker.Database, error)
+	// Image gets a image instance.
+	Image(image docker.Image) docker.ImageDriver
 }
