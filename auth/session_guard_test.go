@@ -107,7 +107,7 @@ func (s *SessionGuardTestSuite) TestCheck_LoginUsingID_Logout() {
 	s.False(s.sessionGuard.Check())
 	s.True(s.sessionGuard.Guest())
 
-	s.mockSession.EXPECT().Put("auth_user_id", 1).Return(nil).Once()
+	s.mockSession.EXPECT().Put("auth_user_id", "1").Return(nil).Once()
 	token, err := s.sessionGuard.LoginUsingID(1)
 	s.Nil(err)
 	s.Empty(token)
