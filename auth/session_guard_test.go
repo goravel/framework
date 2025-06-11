@@ -207,3 +207,13 @@ func (s *SessionGuardTestSuite) Test_Refresh() {
 	s.NotNil(err)
 	s.EqualError(err, "The method was not supported for the driver session")
 }
+
+func (s *SessionGuardTestSuite) Test_InvalidKey() {
+	var user User
+	s.mockSession.EXPECT().Get("auth_user_id", nil).Return(user).Once()
+
+	err := s.sessionGuard.User(&user)
+
+	s.NotNil(err)
+	s.ErrorIs(err, errors.AuthInvalidKey)
+}
