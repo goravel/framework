@@ -68,6 +68,34 @@ func (s *SessionGuardTestSuite) SetupTest() {
 	s.sessionGuard = sessionGuard.(*SessionGuard)
 }
 
+func (s *SessionGuardTestSuite) TestNewSessionGuard() {
+	sessionGuard, err := NewSessionGuard(nil, testUserGuard, s.mockUserProvider)
+
+	s.Nil(sessionGuard)
+	s.NotNil(err)
+	s.ErrorIs(err, errors.InvalidHttpContext)
+
+	mockRequest := mockshttp.NewContextRequest(s.T())
+	mockRequest.EXPECT().Session().Return(nil).Once()
+
+	mockContext := mockshttp.NewContext(s.T())
+	mockContext.EXPECT().Request().Return(mockRequest).Once()
+
+	s.mockContext = mockContext
+	sessionGuard, err = NewSessionGuard(s.mockContext, testUserGuard, s.mockUserProvider)
+
+	s.Nil(sessionGuard)
+	s.NotNil(err)
+	s.ErrorIs(err, errors.SessionDriverIsNotSet)
+
+	mockRequest.EXPECT().Session().Return(s.mockSession)
+	mockContext.EXPECT().Request().Return(mockRequest).Once()
+	sessionGuard, err = NewSessionGuard(s.mockContext, testUserGuard, s.mockUserProvider)
+
+	s.Nil(err)
+	s.NotNil(sessionGuard)
+}
+
 func (s *SessionGuardTestSuite) TestLoginUsingID_InvalidKey() {
 	token, err := s.sessionGuard.LoginUsingID("")
 	s.Empty(token)

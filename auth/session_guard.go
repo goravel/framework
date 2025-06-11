@@ -22,9 +22,6 @@ func NewSessionGuard(ctx http.Context, name string, userProvider contractsauth.U
 	if ctx == nil {
 		return nil, errors.InvalidHttpContext.SetModule(errors.ModuleAuth)
 	}
-	if cacheFacade == nil {
-		return nil, errors.CacheFacadeNotSet.SetModule(errors.ModuleAuth)
-	}
 	session := ctx.Request().Session()
 	if session == nil {
 		return nil, errors.SessionDriverIsNotSet.SetModule(errors.ModuleAuth)
