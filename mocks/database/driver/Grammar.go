@@ -1131,6 +1131,212 @@ func (_c *Grammar_CompileIndexes_Call) RunAndReturn(run func(string, string) (st
 	return _c
 }
 
+// CompileJsonContains provides a mock function with given fields: column, value, isNot
+func (_m *Grammar) CompileJsonContains(column string, value interface{}, isNot bool) (string, []interface{}, error) {
+	ret := _m.Called(column, value, isNot)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompileJsonContains")
+	}
+
+	var r0 string
+	var r1 []interface{}
+	var r2 error
+	if rf, ok := ret.Get(0).(func(string, interface{}, bool) (string, []interface{}, error)); ok {
+		return rf(column, value, isNot)
+	}
+	if rf, ok := ret.Get(0).(func(string, interface{}, bool) string); ok {
+		r0 = rf(column, value, isNot)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(string, interface{}, bool) []interface{}); ok {
+		r1 = rf(column, value, isNot)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).([]interface{})
+		}
+	}
+
+	if rf, ok := ret.Get(2).(func(string, interface{}, bool) error); ok {
+		r2 = rf(column, value, isNot)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// Grammar_CompileJsonContains_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompileJsonContains'
+type Grammar_CompileJsonContains_Call struct {
+	*mock.Call
+}
+
+// CompileJsonContains is a helper method to define mock.On call
+//   - column string
+//   - value interface{}
+//   - isNot bool
+func (_e *Grammar_Expecter) CompileJsonContains(column interface{}, value interface{}, isNot interface{}) *Grammar_CompileJsonContains_Call {
+	return &Grammar_CompileJsonContains_Call{Call: _e.mock.On("CompileJsonContains", column, value, isNot)}
+}
+
+func (_c *Grammar_CompileJsonContains_Call) Run(run func(column string, value interface{}, isNot bool)) *Grammar_CompileJsonContains_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(interface{}), args[2].(bool))
+	})
+	return _c
+}
+
+func (_c *Grammar_CompileJsonContains_Call) Return(_a0 string, _a1 []interface{}, _a2 error) *Grammar_CompileJsonContains_Call {
+	_c.Call.Return(_a0, _a1, _a2)
+	return _c
+}
+
+func (_c *Grammar_CompileJsonContains_Call) RunAndReturn(run func(string, interface{}, bool) (string, []interface{}, error)) *Grammar_CompileJsonContains_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// CompileJsonContainsKey provides a mock function with given fields: column, isNot
+func (_m *Grammar) CompileJsonContainsKey(column string, isNot bool) string {
+	ret := _m.Called(column, isNot)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompileJsonContainsKey")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string, bool) string); ok {
+		r0 = rf(column, isNot)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_CompileJsonContainsKey_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompileJsonContainsKey'
+type Grammar_CompileJsonContainsKey_Call struct {
+	*mock.Call
+}
+
+// CompileJsonContainsKey is a helper method to define mock.On call
+//   - column string
+//   - isNot bool
+func (_e *Grammar_Expecter) CompileJsonContainsKey(column interface{}, isNot interface{}) *Grammar_CompileJsonContainsKey_Call {
+	return &Grammar_CompileJsonContainsKey_Call{Call: _e.mock.On("CompileJsonContainsKey", column, isNot)}
+}
+
+func (_c *Grammar_CompileJsonContainsKey_Call) Run(run func(column string, isNot bool)) *Grammar_CompileJsonContainsKey_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(bool))
+	})
+	return _c
+}
+
+func (_c *Grammar_CompileJsonContainsKey_Call) Return(_a0 string) *Grammar_CompileJsonContainsKey_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_CompileJsonContainsKey_Call) RunAndReturn(run func(string, bool) string) *Grammar_CompileJsonContainsKey_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// CompileJsonLength provides a mock function with given fields: column
+func (_m *Grammar) CompileJsonLength(column string) string {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompileJsonLength")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(column)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_CompileJsonLength_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompileJsonLength'
+type Grammar_CompileJsonLength_Call struct {
+	*mock.Call
+}
+
+// CompileJsonLength is a helper method to define mock.On call
+//   - column string
+func (_e *Grammar_Expecter) CompileJsonLength(column interface{}) *Grammar_CompileJsonLength_Call {
+	return &Grammar_CompileJsonLength_Call{Call: _e.mock.On("CompileJsonLength", column)}
+}
+
+func (_c *Grammar_CompileJsonLength_Call) Run(run func(column string)) *Grammar_CompileJsonLength_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Grammar_CompileJsonLength_Call) Return(_a0 string) *Grammar_CompileJsonLength_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_CompileJsonLength_Call) RunAndReturn(run func(string) string) *Grammar_CompileJsonLength_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// CompileJsonSelector provides a mock function with given fields: column
+func (_m *Grammar) CompileJsonSelector(column string) string {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompileJsonSelector")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(column)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_CompileJsonSelector_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompileJsonSelector'
+type Grammar_CompileJsonSelector_Call struct {
+	*mock.Call
+}
+
+// CompileJsonSelector is a helper method to define mock.On call
+//   - column string
+func (_e *Grammar_Expecter) CompileJsonSelector(column interface{}) *Grammar_CompileJsonSelector_Call {
+	return &Grammar_CompileJsonSelector_Call{Call: _e.mock.On("CompileJsonSelector", column)}
+}
+
+func (_c *Grammar_CompileJsonSelector_Call) Run(run func(column string)) *Grammar_CompileJsonSelector_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Grammar_CompileJsonSelector_Call) Return(_a0 string) *Grammar_CompileJsonSelector_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_CompileJsonSelector_Call) RunAndReturn(run func(string) string) *Grammar_CompileJsonSelector_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CompileLockForUpdate provides a mock function with given fields: builder, conditions
 func (_m *Grammar) CompileLockForUpdate(builder squirrel.SelectBuilder, conditions *driver.Conditions) squirrel.SelectBuilder {
 	ret := _m.Called(builder, conditions)

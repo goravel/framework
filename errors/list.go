@@ -117,6 +117,7 @@ var (
 	OrmQuerySelectAndOmitsConflict = New("cannot set Select and Omits at the same time")
 	OrmRecordNotFound              = New("record not found")
 	OrmDeletedAtColumnNotFound     = New("deleted at column not found")
+	OrmJsonContainsInvalidBinding  = New("invalid value for JSON contains: %v")
 
 	PackageConfigKeyExists       = New("config key '%s' already exists,using ReplaceConfig instead if you want to update it").SetModule(ModulePackages)
 	PackageMatchGoNodeFail       = New("%d out of %d matchers did not match").SetModule(ModulePackages)

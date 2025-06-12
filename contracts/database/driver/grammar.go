@@ -9,6 +9,7 @@ type Grammar interface {
 	SchemaGrammar
 	GormGrammar
 	DBGrammar
+	JsonGrammar
 }
 
 type SchemaGrammar interface {
@@ -160,6 +161,17 @@ type CompileOrderByGrammar interface {
 
 type CompileLimitGrammar interface {
 	CompileLimit(builder sq.SelectBuilder, conditions *Conditions) sq.SelectBuilder
+}
+
+type JsonGrammar interface {
+	// CompileJsonContains Compile a "JSON contains" statement into SQL.
+	CompileJsonContains(column string, value any, isNot bool) (string, []any, error)
+	// CompileJsonContainsKey Compile a "JSON contains key" statement into SQL.
+	CompileJsonContainsKey(column string, isNot bool) string
+	// CompileJsonLength Compile a "JSON length" statement into SQL.
+	CompileJsonLength(column string) string
+	// CompileJsonSelector Wrap the given JSON selector.
+	CompileJsonSelector(column string) string
 }
 
 type Blueprint interface {
