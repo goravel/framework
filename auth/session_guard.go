@@ -66,16 +66,7 @@ func (r *SessionGuard) Login(user any) (token string, err error) {
 		return "", err
 	}
 
-	key := cast.ToString(id)
-
-	if key == "" {
-		return "", errors.AuthInvalidKey
-	}
-
-	sessionName := r.getSessionName()
-	r.session.Put(sessionName, key)
-
-	return "", nil
+	return r.LoginUsingID(id)
 }
 
 func (r *SessionGuard) LoginUsingID(id any) (token string, err error) {
