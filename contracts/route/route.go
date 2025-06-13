@@ -15,7 +15,7 @@ type Route interface {
 	// Fallback registers a handler to be executed when no other route was matched.
 	Fallback(handler contractshttp.HandlerFunc)
 	// GetRoutes retrieves all the routes registered with the router.
-	GetRoutes() []RouteInfo
+	GetRoutes() []Info
 	// GlobalMiddleware registers global middleware to be applied to all routes of the router.
 	GlobalMiddleware(middlewares ...contractshttp.Middleware)
 	// Listen starts the HTTP server and listens on the specified listener.
@@ -24,6 +24,8 @@ type Route interface {
 	ListenTLS(l net.Listener) error
 	// ListenTLSWithCert starts the HTTPS server with the provided TLS configuration and listens on the specified listener.
 	ListenTLSWithCert(l net.Listener, certFile, keyFile string) error
+	// Name registers a name for the route.
+	Info(name string) Info
 	// Recover allows you to set a custom recovery when a request panics
 	Recover(recoverFunc func(ctx contractshttp.Context, err any))
 	// Run starts the HTTP server and listens on the specified host.
@@ -44,36 +46,41 @@ type Router interface {
 	// Group creates a new router group with the specified handler.
 	Group(handler GroupFunc)
 	// Prefix adds a common prefix to the routes registered with the router.
-	Prefix(addr string) Router
+	Prefix(path string) Router
 	// Middleware sets the middleware for the router.
 	Middleware(middlewares ...contractshttp.Middleware) Router
 
 	// Any registers a new route responding to all verbs.
-	Any(relativePath string, handler contractshttp.HandlerFunc)
+	Any(path string, handler contractshttp.HandlerFunc) Action
 	// Get registers a new GET route with the router.
-	Get(relativePath string, handler contractshttp.HandlerFunc)
+	Get(path string, handler contractshttp.HandlerFunc) Action
 	// Post registers a new POST route with the router.
-	Post(relativePath string, handler contractshttp.HandlerFunc)
+	Post(path string, handler contractshttp.HandlerFunc) Action
 	// Delete registers a new DELETE route with the router.
-	Delete(relativePath string, handler contractshttp.HandlerFunc)
+	Delete(path string, handler contractshttp.HandlerFunc) Action
 	// Patch registers a new PATCH route with the router.
-	Patch(relativePath string, handler contractshttp.HandlerFunc)
+	Patch(path string, handler contractshttp.HandlerFunc) Action
 	// Put registers a new PUT route with the router.
-	Put(relativePath string, handler contractshttp.HandlerFunc)
+	Put(path string, handler contractshttp.HandlerFunc) Action
 	// Options registers a new OPTIONS route with the router.
-	Options(relativePath string, handler contractshttp.HandlerFunc)
+	Options(path string, handler contractshttp.HandlerFunc) Action
 	// Resource registers RESTful routes for a resource controller.
-	Resource(relativePath string, controller contractshttp.ResourceController)
+	Resource(path string, controller contractshttp.ResourceController) Action
 
 	// Static registers a new route with path prefix to serve static files from the provided root directory.
-	Static(relativePath, root string)
+	Static(path, root string) Action
 	// StaticFile registers a new route with a specific path to serve a static file from the filesystem.
-	StaticFile(relativePath, filepath string)
+	StaticFile(path, filepath string) Action
 	// StaticFS registers a new route with a path prefix to serve static files from the provided file system.
-	StaticFS(relativePath string, fs http.FileSystem)
+	StaticFS(path string, fs http.FileSystem) Action
 }
 
-type RouteInfo struct {
+type Action interface {
+	Name(name string) Action
+}
+
+type Info struct {
 	Method string
+	Name   string
 	Path   string
 }
