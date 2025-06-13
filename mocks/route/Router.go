@@ -24,9 +24,9 @@ func (_m *Router) EXPECT() *Router_Expecter {
 	return &Router_Expecter{mock: &_m.Mock}
 }
 
-// Any provides a mock function with given fields: relativePath, handler
-func (_m *Router) Any(relativePath string, handler http.HandlerFunc) route.Action {
-	ret := _m.Called(relativePath, handler)
+// Any provides a mock function with given fields: path, handler
+func (_m *Router) Any(path string, handler http.HandlerFunc) route.Action {
+	ret := _m.Called(path, handler)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Any")
@@ -34,7 +34,7 @@ func (_m *Router) Any(relativePath string, handler http.HandlerFunc) route.Actio
 
 	var r0 route.Action
 	if rf, ok := ret.Get(0).(func(string, http.HandlerFunc) route.Action); ok {
-		r0 = rf(relativePath, handler)
+		r0 = rf(path, handler)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(route.Action)
@@ -50,13 +50,13 @@ type Router_Any_Call struct {
 }
 
 // Any is a helper method to define mock.On call
-//   - relativePath string
+//   - path string
 //   - handler http.HandlerFunc
-func (_e *Router_Expecter) Any(relativePath interface{}, handler interface{}) *Router_Any_Call {
-	return &Router_Any_Call{Call: _e.mock.On("Any", relativePath, handler)}
+func (_e *Router_Expecter) Any(path interface{}, handler interface{}) *Router_Any_Call {
+	return &Router_Any_Call{Call: _e.mock.On("Any", path, handler)}
 }
 
-func (_c *Router_Any_Call) Run(run func(relativePath string, handler http.HandlerFunc)) *Router_Any_Call {
+func (_c *Router_Any_Call) Run(run func(path string, handler http.HandlerFunc)) *Router_Any_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string), args[1].(http.HandlerFunc))
 	})
@@ -73,9 +73,9 @@ func (_c *Router_Any_Call) RunAndReturn(run func(string, http.HandlerFunc) route
 	return _c
 }
 
-// Delete provides a mock function with given fields: relativePath, handler
-func (_m *Router) Delete(relativePath string, handler http.HandlerFunc) route.Action {
-	ret := _m.Called(relativePath, handler)
+// Delete provides a mock function with given fields: path, handler
+func (_m *Router) Delete(path string, handler http.HandlerFunc) route.Action {
+	ret := _m.Called(path, handler)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Delete")
@@ -83,7 +83,7 @@ func (_m *Router) Delete(relativePath string, handler http.HandlerFunc) route.Ac
 
 	var r0 route.Action
 	if rf, ok := ret.Get(0).(func(string, http.HandlerFunc) route.Action); ok {
-		r0 = rf(relativePath, handler)
+		r0 = rf(path, handler)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(route.Action)
@@ -99,13 +99,13 @@ type Router_Delete_Call struct {
 }
 
 // Delete is a helper method to define mock.On call
-//   - relativePath string
+//   - path string
 //   - handler http.HandlerFunc
-func (_e *Router_Expecter) Delete(relativePath interface{}, handler interface{}) *Router_Delete_Call {
-	return &Router_Delete_Call{Call: _e.mock.On("Delete", relativePath, handler)}
+func (_e *Router_Expecter) Delete(path interface{}, handler interface{}) *Router_Delete_Call {
+	return &Router_Delete_Call{Call: _e.mock.On("Delete", path, handler)}
 }
 
-func (_c *Router_Delete_Call) Run(run func(relativePath string, handler http.HandlerFunc)) *Router_Delete_Call {
+func (_c *Router_Delete_Call) Run(run func(path string, handler http.HandlerFunc)) *Router_Delete_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string), args[1].(http.HandlerFunc))
 	})
@@ -122,9 +122,9 @@ func (_c *Router_Delete_Call) RunAndReturn(run func(string, http.HandlerFunc) ro
 	return _c
 }
 
-// Get provides a mock function with given fields: relativePath, handler
-func (_m *Router) Get(relativePath string, handler http.HandlerFunc) route.Action {
-	ret := _m.Called(relativePath, handler)
+// Get provides a mock function with given fields: path, handler
+func (_m *Router) Get(path string, handler http.HandlerFunc) route.Action {
+	ret := _m.Called(path, handler)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Get")
@@ -132,7 +132,7 @@ func (_m *Router) Get(relativePath string, handler http.HandlerFunc) route.Actio
 
 	var r0 route.Action
 	if rf, ok := ret.Get(0).(func(string, http.HandlerFunc) route.Action); ok {
-		r0 = rf(relativePath, handler)
+		r0 = rf(path, handler)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(route.Action)
@@ -148,13 +148,13 @@ type Router_Get_Call struct {
 }
 
 // Get is a helper method to define mock.On call
-//   - relativePath string
+//   - path string
 //   - handler http.HandlerFunc
-func (_e *Router_Expecter) Get(relativePath interface{}, handler interface{}) *Router_Get_Call {
-	return &Router_Get_Call{Call: _e.mock.On("Get", relativePath, handler)}
+func (_e *Router_Expecter) Get(path interface{}, handler interface{}) *Router_Get_Call {
+	return &Router_Get_Call{Call: _e.mock.On("Get", path, handler)}
 }
 
-func (_c *Router_Get_Call) Run(run func(relativePath string, handler http.HandlerFunc)) *Router_Get_Call {
+func (_c *Router_Get_Call) Run(run func(path string, handler http.HandlerFunc)) *Router_Get_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string), args[1].(http.HandlerFunc))
 	})
@@ -265,9 +265,9 @@ func (_c *Router_Middleware_Call) RunAndReturn(run func(...http.Middleware) rout
 	return _c
 }
 
-// Options provides a mock function with given fields: relativePath, handler
-func (_m *Router) Options(relativePath string, handler http.HandlerFunc) route.Action {
-	ret := _m.Called(relativePath, handler)
+// Options provides a mock function with given fields: path, handler
+func (_m *Router) Options(path string, handler http.HandlerFunc) route.Action {
+	ret := _m.Called(path, handler)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Options")
@@ -275,7 +275,7 @@ func (_m *Router) Options(relativePath string, handler http.HandlerFunc) route.A
 
 	var r0 route.Action
 	if rf, ok := ret.Get(0).(func(string, http.HandlerFunc) route.Action); ok {
-		r0 = rf(relativePath, handler)
+		r0 = rf(path, handler)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(route.Action)
@@ -291,13 +291,13 @@ type Router_Options_Call struct {
 }
 
 // Options is a helper method to define mock.On call
-//   - relativePath string
+//   - path string
 //   - handler http.HandlerFunc
-func (_e *Router_Expecter) Options(relativePath interface{}, handler interface{}) *Router_Options_Call {
-	return &Router_Options_Call{Call: _e.mock.On("Options", relativePath, handler)}
+func (_e *Router_Expecter) Options(path interface{}, handler interface{}) *Router_Options_Call {
+	return &Router_Options_Call{Call: _e.mock.On("Options", path, handler)}
 }
 
-func (_c *Router_Options_Call) Run(run func(relativePath string, handler http.HandlerFunc)) *Router_Options_Call {
+func (_c *Router_Options_Call) Run(run func(path string, handler http.HandlerFunc)) *Router_Options_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string), args[1].(http.HandlerFunc))
 	})
@@ -314,9 +314,9 @@ func (_c *Router_Options_Call) RunAndReturn(run func(string, http.HandlerFunc) r
 	return _c
 }
 
-// Patch provides a mock function with given fields: relativePath, handler
-func (_m *Router) Patch(relativePath string, handler http.HandlerFunc) route.Action {
-	ret := _m.Called(relativePath, handler)
+// Patch provides a mock function with given fields: path, handler
+func (_m *Router) Patch(path string, handler http.HandlerFunc) route.Action {
+	ret := _m.Called(path, handler)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Patch")
@@ -324,7 +324,7 @@ func (_m *Router) Patch(relativePath string, handler http.HandlerFunc) route.Act
 
 	var r0 route.Action
 	if rf, ok := ret.Get(0).(func(string, http.HandlerFunc) route.Action); ok {
-		r0 = rf(relativePath, handler)
+		r0 = rf(path, handler)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(route.Action)
@@ -340,13 +340,13 @@ type Router_Patch_Call struct {
 }
 
 // Patch is a helper method to define mock.On call
-//   - relativePath string
+//   - path string
 //   - handler http.HandlerFunc
-func (_e *Router_Expecter) Patch(relativePath interface{}, handler interface{}) *Router_Patch_Call {
-	return &Router_Patch_Call{Call: _e.mock.On("Patch", relativePath, handler)}
+func (_e *Router_Expecter) Patch(path interface{}, handler interface{}) *Router_Patch_Call {
+	return &Router_Patch_Call{Call: _e.mock.On("Patch", path, handler)}
 }
 
-func (_c *Router_Patch_Call) Run(run func(relativePath string, handler http.HandlerFunc)) *Router_Patch_Call {
+func (_c *Router_Patch_Call) Run(run func(path string, handler http.HandlerFunc)) *Router_Patch_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string), args[1].(http.HandlerFunc))
 	})
@@ -363,9 +363,9 @@ func (_c *Router_Patch_Call) RunAndReturn(run func(string, http.HandlerFunc) rou
 	return _c
 }
 
-// Post provides a mock function with given fields: relativePath, handler
-func (_m *Router) Post(relativePath string, handler http.HandlerFunc) route.Action {
-	ret := _m.Called(relativePath, handler)
+// Post provides a mock function with given fields: path, handler
+func (_m *Router) Post(path string, handler http.HandlerFunc) route.Action {
+	ret := _m.Called(path, handler)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Post")
@@ -373,7 +373,7 @@ func (_m *Router) Post(relativePath string, handler http.HandlerFunc) route.Acti
 
 	var r0 route.Action
 	if rf, ok := ret.Get(0).(func(string, http.HandlerFunc) route.Action); ok {
-		r0 = rf(relativePath, handler)
+		r0 = rf(path, handler)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(route.Action)
@@ -389,13 +389,13 @@ type Router_Post_Call struct {
 }
 
 // Post is a helper method to define mock.On call
-//   - relativePath string
+//   - path string
 //   - handler http.HandlerFunc
-func (_e *Router_Expecter) Post(relativePath interface{}, handler interface{}) *Router_Post_Call {
-	return &Router_Post_Call{Call: _e.mock.On("Post", relativePath, handler)}
+func (_e *Router_Expecter) Post(path interface{}, handler interface{}) *Router_Post_Call {
+	return &Router_Post_Call{Call: _e.mock.On("Post", path, handler)}
 }
 
-func (_c *Router_Post_Call) Run(run func(relativePath string, handler http.HandlerFunc)) *Router_Post_Call {
+func (_c *Router_Post_Call) Run(run func(path string, handler http.HandlerFunc)) *Router_Post_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string), args[1].(http.HandlerFunc))
 	})
@@ -412,9 +412,9 @@ func (_c *Router_Post_Call) RunAndReturn(run func(string, http.HandlerFunc) rout
 	return _c
 }
 
-// Prefix provides a mock function with given fields: addr
-func (_m *Router) Prefix(addr string) route.Router {
-	ret := _m.Called(addr)
+// Prefix provides a mock function with given fields: path
+func (_m *Router) Prefix(path string) route.Router {
+	ret := _m.Called(path)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Prefix")
@@ -422,7 +422,7 @@ func (_m *Router) Prefix(addr string) route.Router {
 
 	var r0 route.Router
 	if rf, ok := ret.Get(0).(func(string) route.Router); ok {
-		r0 = rf(addr)
+		r0 = rf(path)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(route.Router)
@@ -438,12 +438,12 @@ type Router_Prefix_Call struct {
 }
 
 // Prefix is a helper method to define mock.On call
-//   - addr string
-func (_e *Router_Expecter) Prefix(addr interface{}) *Router_Prefix_Call {
-	return &Router_Prefix_Call{Call: _e.mock.On("Prefix", addr)}
+//   - path string
+func (_e *Router_Expecter) Prefix(path interface{}) *Router_Prefix_Call {
+	return &Router_Prefix_Call{Call: _e.mock.On("Prefix", path)}
 }
 
-func (_c *Router_Prefix_Call) Run(run func(addr string)) *Router_Prefix_Call {
+func (_c *Router_Prefix_Call) Run(run func(path string)) *Router_Prefix_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
@@ -460,9 +460,9 @@ func (_c *Router_Prefix_Call) RunAndReturn(run func(string) route.Router) *Route
 	return _c
 }
 
-// Put provides a mock function with given fields: relativePath, handler
-func (_m *Router) Put(relativePath string, handler http.HandlerFunc) route.Action {
-	ret := _m.Called(relativePath, handler)
+// Put provides a mock function with given fields: path, handler
+func (_m *Router) Put(path string, handler http.HandlerFunc) route.Action {
+	ret := _m.Called(path, handler)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Put")
@@ -470,7 +470,7 @@ func (_m *Router) Put(relativePath string, handler http.HandlerFunc) route.Actio
 
 	var r0 route.Action
 	if rf, ok := ret.Get(0).(func(string, http.HandlerFunc) route.Action); ok {
-		r0 = rf(relativePath, handler)
+		r0 = rf(path, handler)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(route.Action)
@@ -486,13 +486,13 @@ type Router_Put_Call struct {
 }
 
 // Put is a helper method to define mock.On call
-//   - relativePath string
+//   - path string
 //   - handler http.HandlerFunc
-func (_e *Router_Expecter) Put(relativePath interface{}, handler interface{}) *Router_Put_Call {
-	return &Router_Put_Call{Call: _e.mock.On("Put", relativePath, handler)}
+func (_e *Router_Expecter) Put(path interface{}, handler interface{}) *Router_Put_Call {
+	return &Router_Put_Call{Call: _e.mock.On("Put", path, handler)}
 }
 
-func (_c *Router_Put_Call) Run(run func(relativePath string, handler http.HandlerFunc)) *Router_Put_Call {
+func (_c *Router_Put_Call) Run(run func(path string, handler http.HandlerFunc)) *Router_Put_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string), args[1].(http.HandlerFunc))
 	})
@@ -509,9 +509,9 @@ func (_c *Router_Put_Call) RunAndReturn(run func(string, http.HandlerFunc) route
 	return _c
 }
 
-// Resource provides a mock function with given fields: relativePath, controller
-func (_m *Router) Resource(relativePath string, controller http.ResourceController) route.Action {
-	ret := _m.Called(relativePath, controller)
+// Resource provides a mock function with given fields: path, controller
+func (_m *Router) Resource(path string, controller http.ResourceController) route.Action {
+	ret := _m.Called(path, controller)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Resource")
@@ -519,7 +519,7 @@ func (_m *Router) Resource(relativePath string, controller http.ResourceControll
 
 	var r0 route.Action
 	if rf, ok := ret.Get(0).(func(string, http.ResourceController) route.Action); ok {
-		r0 = rf(relativePath, controller)
+		r0 = rf(path, controller)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(route.Action)
@@ -535,13 +535,13 @@ type Router_Resource_Call struct {
 }
 
 // Resource is a helper method to define mock.On call
-//   - relativePath string
+//   - path string
 //   - controller http.ResourceController
-func (_e *Router_Expecter) Resource(relativePath interface{}, controller interface{}) *Router_Resource_Call {
-	return &Router_Resource_Call{Call: _e.mock.On("Resource", relativePath, controller)}
+func (_e *Router_Expecter) Resource(path interface{}, controller interface{}) *Router_Resource_Call {
+	return &Router_Resource_Call{Call: _e.mock.On("Resource", path, controller)}
 }
 
-func (_c *Router_Resource_Call) Run(run func(relativePath string, controller http.ResourceController)) *Router_Resource_Call {
+func (_c *Router_Resource_Call) Run(run func(path string, controller http.ResourceController)) *Router_Resource_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string), args[1].(http.ResourceController))
 	})
@@ -558,9 +558,9 @@ func (_c *Router_Resource_Call) RunAndReturn(run func(string, http.ResourceContr
 	return _c
 }
 
-// Static provides a mock function with given fields: relativePath, root
-func (_m *Router) Static(relativePath string, root string) route.Action {
-	ret := _m.Called(relativePath, root)
+// Static provides a mock function with given fields: path, root
+func (_m *Router) Static(path string, root string) route.Action {
+	ret := _m.Called(path, root)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Static")
@@ -568,7 +568,7 @@ func (_m *Router) Static(relativePath string, root string) route.Action {
 
 	var r0 route.Action
 	if rf, ok := ret.Get(0).(func(string, string) route.Action); ok {
-		r0 = rf(relativePath, root)
+		r0 = rf(path, root)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(route.Action)
@@ -584,13 +584,13 @@ type Router_Static_Call struct {
 }
 
 // Static is a helper method to define mock.On call
-//   - relativePath string
+//   - path string
 //   - root string
-func (_e *Router_Expecter) Static(relativePath interface{}, root interface{}) *Router_Static_Call {
-	return &Router_Static_Call{Call: _e.mock.On("Static", relativePath, root)}
+func (_e *Router_Expecter) Static(path interface{}, root interface{}) *Router_Static_Call {
+	return &Router_Static_Call{Call: _e.mock.On("Static", path, root)}
 }
 
-func (_c *Router_Static_Call) Run(run func(relativePath string, root string)) *Router_Static_Call {
+func (_c *Router_Static_Call) Run(run func(path string, root string)) *Router_Static_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string), args[1].(string))
 	})
@@ -607,9 +607,9 @@ func (_c *Router_Static_Call) RunAndReturn(run func(string, string) route.Action
 	return _c
 }
 
-// StaticFS provides a mock function with given fields: relativePath, fs
-func (_m *Router) StaticFS(relativePath string, fs nethttp.FileSystem) route.Action {
-	ret := _m.Called(relativePath, fs)
+// StaticFS provides a mock function with given fields: path, fs
+func (_m *Router) StaticFS(path string, fs nethttp.FileSystem) route.Action {
+	ret := _m.Called(path, fs)
 
 	if len(ret) == 0 {
 		panic("no return value specified for StaticFS")
@@ -617,7 +617,7 @@ func (_m *Router) StaticFS(relativePath string, fs nethttp.FileSystem) route.Act
 
 	var r0 route.Action
 	if rf, ok := ret.Get(0).(func(string, nethttp.FileSystem) route.Action); ok {
-		r0 = rf(relativePath, fs)
+		r0 = rf(path, fs)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(route.Action)
@@ -633,13 +633,13 @@ type Router_StaticFS_Call struct {
 }
 
 // StaticFS is a helper method to define mock.On call
-//   - relativePath string
+//   - path string
 //   - fs nethttp.FileSystem
-func (_e *Router_Expecter) StaticFS(relativePath interface{}, fs interface{}) *Router_StaticFS_Call {
-	return &Router_StaticFS_Call{Call: _e.mock.On("StaticFS", relativePath, fs)}
+func (_e *Router_Expecter) StaticFS(path interface{}, fs interface{}) *Router_StaticFS_Call {
+	return &Router_StaticFS_Call{Call: _e.mock.On("StaticFS", path, fs)}
 }
 
-func (_c *Router_StaticFS_Call) Run(run func(relativePath string, fs nethttp.FileSystem)) *Router_StaticFS_Call {
+func (_c *Router_StaticFS_Call) Run(run func(path string, fs nethttp.FileSystem)) *Router_StaticFS_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string), args[1].(nethttp.FileSystem))
 	})
@@ -656,9 +656,9 @@ func (_c *Router_StaticFS_Call) RunAndReturn(run func(string, nethttp.FileSystem
 	return _c
 }
 
-// StaticFile provides a mock function with given fields: relativePath, filepath
-func (_m *Router) StaticFile(relativePath string, filepath string) route.Action {
-	ret := _m.Called(relativePath, filepath)
+// StaticFile provides a mock function with given fields: path, filepath
+func (_m *Router) StaticFile(path string, filepath string) route.Action {
+	ret := _m.Called(path, filepath)
 
 	if len(ret) == 0 {
 		panic("no return value specified for StaticFile")
@@ -666,7 +666,7 @@ func (_m *Router) StaticFile(relativePath string, filepath string) route.Action 
 
 	var r0 route.Action
 	if rf, ok := ret.Get(0).(func(string, string) route.Action); ok {
-		r0 = rf(relativePath, filepath)
+		r0 = rf(path, filepath)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(route.Action)
@@ -682,13 +682,13 @@ type Router_StaticFile_Call struct {
 }
 
 // StaticFile is a helper method to define mock.On call
-//   - relativePath string
+//   - path string
 //   - filepath string
-func (_e *Router_Expecter) StaticFile(relativePath interface{}, filepath interface{}) *Router_StaticFile_Call {
-	return &Router_StaticFile_Call{Call: _e.mock.On("StaticFile", relativePath, filepath)}
+func (_e *Router_Expecter) StaticFile(path interface{}, filepath interface{}) *Router_StaticFile_Call {
+	return &Router_StaticFile_Call{Call: _e.mock.On("StaticFile", path, filepath)}
 }
 
-func (_c *Router_StaticFile_Call) Run(run func(relativePath string, filepath string)) *Router_StaticFile_Call {
+func (_c *Router_StaticFile_Call) Run(run func(path string, filepath string)) *Router_StaticFile_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string), args[1].(string))
 	})
