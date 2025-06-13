@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"testing"
@@ -10,7 +11,9 @@ import (
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/errors"
+	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/mysql"
 	"github.com/goravel/postgres"
 	"github.com/goravel/sqlite"
@@ -3629,6 +3632,203 @@ func (s *QueryTestSuite) TestWithNesting() {
 			s.Equal("with_nesting_book1", user1.Books[1].Name)
 			s.True(user1.Books[1].Author.ID > 0)
 			s.Equal("with_nesting_author1", user1.Books[1].Author.Name)
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestJsonWhereClauses() {
+	mockApp := mocksfoundation.NewApplication(s.T())
+	mockJson := mocksfoundation.NewJson(s.T())
+	mockJson.EXPECT().Marshal("abc").RunAndReturn(func(i interface{}) ([]byte, error) {
+		return json.Marshal(i)
+	}).Times(4)
+	mockJson.EXPECT().Marshal([]string{"abc", "def"}).RunAndReturn(func(i interface{}) ([]byte, error) {
+		return json.Marshal(i)
+	}).Twice()
+	mockApp.EXPECT().GetJson().Return(mockJson).Times(6)
+
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			if driver == postgres.Name {
+				originApp := postgres.App
+				postgres.App = mockApp
+				s.T().Cleanup(func() {
+					postgres.App = originApp
+				})
+			}
+			if driver == mysql.Name {
+				originApp := mysql.App
+				mysql.App = mockApp
+				s.T().Cleanup(func() {
+					mysql.App = originApp
+				})
+			}
+
+			data := []JsonData{
+				{
+					Data: `{
+	"string": "first",
+	"int": 123,
+	"float": 123.456,
+	"bool": true,
+	"array": [
+		"abc",
+		"def",
+		"ghi"
+	],
+	"nested": {
+		"string": "first",
+		"int": 456
+	},
+	"objects": [
+		{
+			"level": "first",
+			"value": "abc"
+		},
+		{
+			"level": "second",
+			"value": "def"
+		}
+	]
+}`,
+				},
+				{
+					Data: `{
+	"string": "second",
+	"int": 123,
+	"float": 789.123,
+	"bool": false,
+	"array": [
+		"jkl",
+		"def",
+		"abc"
+	]
+}`,
+				},
+			}
+			s.Nil(query.Query().Create(&data))
+
+			tests := []struct {
+				name   string
+				find   func(any, ...any) error
+				assert func([]JsonData)
+			}{
+				{
+					name: "string key",
+					find: query.Query().Where("data->string", "first").Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 1)
+						s.JSONEq(data[0].Data, items[0].Data)
+					},
+				},
+				{
+					name: "int key",
+					find: query.Query().Where("data->int", 123).Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 2)
+						s.JSONEq(data[0].Data, items[0].Data)
+						s.JSONEq(data[1].Data, items[1].Data)
+					},
+				},
+				{
+					name: "float key(multiple values)",
+					find: query.Query().WhereIn("data->float", []any{123.456, 789.123}).Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 2)
+						s.JSONEq(data[0].Data, items[0].Data)
+						s.JSONEq(data[1].Data, items[1].Data)
+					},
+				},
+				{
+					name: "bool key(pointer)",
+					find: query.Query().Where("data->bool", convert.Pointer(false)).Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 1)
+						s.JSONEq(data[1].Data, items[0].Data)
+					},
+				},
+				{
+					name: "nested key",
+					find: query.Query().Where("data->nested->int", 456).Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 1)
+						s.JSONEq(data[0].Data, items[0].Data)
+					},
+				},
+				{
+					name: "nested key with array",
+					find: query.Query().Where("data->objects[0]->level", "first").Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 1)
+						s.JSONEq(data[0].Data, items[0].Data)
+					},
+				},
+				{
+					name: "key exists",
+					find: query.Query().WhereJsonContainsKey("data->nested->string").Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 1)
+						s.JSONEq(data[0].Data, items[0].Data)
+					},
+				},
+				{
+					name: "key does not exist",
+					find: query.Query().WhereJsonDoesntContainKey("data->nested->string").Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 1)
+						s.JSONEq(data[1].Data, items[0].Data)
+					},
+				},
+				{
+					name: "array contains",
+					find: query.Query().WhereJsonContains("data->array", "abc").Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 2)
+						s.JSONEq(data[0].Data, items[0].Data)
+						s.JSONEq(data[1].Data, items[1].Data)
+					},
+				},
+				{
+					name: "array does not contain",
+					find: query.Query().WhereJsonDoesntContain("data->array", "abc").Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 0)
+					},
+				},
+				{
+					name: "array contains multiple values",
+					find: query.Query().WhereJsonContains("data->array", []string{"abc", "def"}).Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 2)
+						s.JSONEq(data[0].Data, items[0].Data)
+						s.JSONEq(data[1].Data, items[1].Data)
+					},
+				},
+				{
+					name: "array length",
+					find: query.Query().WhereJsonLength("data->array", 2).Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 0)
+					},
+				},
+				{
+					name: "array length greater than",
+					find: query.Query().WhereJsonLength("data->array > ?", 2).Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 2)
+						s.JSONEq(data[0].Data, items[0].Data)
+						s.JSONEq(data[1].Data, items[1].Data)
+					},
+				},
+			}
+
+			for _, test := range tests {
+				s.Run(test.name, func() {
+					var items []JsonData
+					s.Nil(test.find(&items))
+					test.assert(items)
+				})
+			}
 		})
 	}
 }
