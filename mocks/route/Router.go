@@ -25,8 +25,23 @@ func (_m *Router) EXPECT() *Router_Expecter {
 }
 
 // Any provides a mock function with given fields: relativePath, handler
-func (_m *Router) Any(relativePath string, handler http.HandlerFunc) {
-	_m.Called(relativePath, handler)
+func (_m *Router) Any(relativePath string, handler http.HandlerFunc) route.Action {
+	ret := _m.Called(relativePath, handler)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Any")
+	}
+
+	var r0 route.Action
+	if rf, ok := ret.Get(0).(func(string, http.HandlerFunc) route.Action); ok {
+		r0 = rf(relativePath, handler)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(route.Action)
+		}
+	}
+
+	return r0
 }
 
 // Router_Any_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Any'
@@ -48,19 +63,34 @@ func (_c *Router_Any_Call) Run(run func(relativePath string, handler http.Handle
 	return _c
 }
 
-func (_c *Router_Any_Call) Return() *Router_Any_Call {
-	_c.Call.Return()
+func (_c *Router_Any_Call) Return(_a0 route.Action) *Router_Any_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Router_Any_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Router_Any_Call {
-	_c.Run(run)
+func (_c *Router_Any_Call) RunAndReturn(run func(string, http.HandlerFunc) route.Action) *Router_Any_Call {
+	_c.Call.Return(run)
 	return _c
 }
 
 // Delete provides a mock function with given fields: relativePath, handler
-func (_m *Router) Delete(relativePath string, handler http.HandlerFunc) {
-	_m.Called(relativePath, handler)
+func (_m *Router) Delete(relativePath string, handler http.HandlerFunc) route.Action {
+	ret := _m.Called(relativePath, handler)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Delete")
+	}
+
+	var r0 route.Action
+	if rf, ok := ret.Get(0).(func(string, http.HandlerFunc) route.Action); ok {
+		r0 = rf(relativePath, handler)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(route.Action)
+		}
+	}
+
+	return r0
 }
 
 // Router_Delete_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Delete'
@@ -82,19 +112,34 @@ func (_c *Router_Delete_Call) Run(run func(relativePath string, handler http.Han
 	return _c
 }
 
-func (_c *Router_Delete_Call) Return() *Router_Delete_Call {
-	_c.Call.Return()
+func (_c *Router_Delete_Call) Return(_a0 route.Action) *Router_Delete_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Router_Delete_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Router_Delete_Call {
-	_c.Run(run)
+func (_c *Router_Delete_Call) RunAndReturn(run func(string, http.HandlerFunc) route.Action) *Router_Delete_Call {
+	_c.Call.Return(run)
 	return _c
 }
 
 // Get provides a mock function with given fields: relativePath, handler
-func (_m *Router) Get(relativePath string, handler http.HandlerFunc) {
-	_m.Called(relativePath, handler)
+func (_m *Router) Get(relativePath string, handler http.HandlerFunc) route.Action {
+	ret := _m.Called(relativePath, handler)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Get")
+	}
+
+	var r0 route.Action
+	if rf, ok := ret.Get(0).(func(string, http.HandlerFunc) route.Action); ok {
+		r0 = rf(relativePath, handler)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(route.Action)
+		}
+	}
+
+	return r0
 }
 
 // Router_Get_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Get'
@@ -116,13 +161,13 @@ func (_c *Router_Get_Call) Run(run func(relativePath string, handler http.Handle
 	return _c
 }
 
-func (_c *Router_Get_Call) Return() *Router_Get_Call {
-	_c.Call.Return()
+func (_c *Router_Get_Call) Return(_a0 route.Action) *Router_Get_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Router_Get_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Router_Get_Call {
-	_c.Run(run)
+func (_c *Router_Get_Call) RunAndReturn(run func(string, http.HandlerFunc) route.Action) *Router_Get_Call {
+	_c.Call.Return(run)
 	return _c
 }
 
@@ -221,8 +266,23 @@ func (_c *Router_Middleware_Call) RunAndReturn(run func(...http.Middleware) rout
 }
 
 // Options provides a mock function with given fields: relativePath, handler
-func (_m *Router) Options(relativePath string, handler http.HandlerFunc) {
-	_m.Called(relativePath, handler)
+func (_m *Router) Options(relativePath string, handler http.HandlerFunc) route.Action {
+	ret := _m.Called(relativePath, handler)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Options")
+	}
+
+	var r0 route.Action
+	if rf, ok := ret.Get(0).(func(string, http.HandlerFunc) route.Action); ok {
+		r0 = rf(relativePath, handler)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(route.Action)
+		}
+	}
+
+	return r0
 }
 
 // Router_Options_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Options'
@@ -244,19 +304,34 @@ func (_c *Router_Options_Call) Run(run func(relativePath string, handler http.Ha
 	return _c
 }
 
-func (_c *Router_Options_Call) Return() *Router_Options_Call {
-	_c.Call.Return()
+func (_c *Router_Options_Call) Return(_a0 route.Action) *Router_Options_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Router_Options_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Router_Options_Call {
-	_c.Run(run)
+func (_c *Router_Options_Call) RunAndReturn(run func(string, http.HandlerFunc) route.Action) *Router_Options_Call {
+	_c.Call.Return(run)
 	return _c
 }
 
 // Patch provides a mock function with given fields: relativePath, handler
-func (_m *Router) Patch(relativePath string, handler http.HandlerFunc) {
-	_m.Called(relativePath, handler)
+func (_m *Router) Patch(relativePath string, handler http.HandlerFunc) route.Action {
+	ret := _m.Called(relativePath, handler)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Patch")
+	}
+
+	var r0 route.Action
+	if rf, ok := ret.Get(0).(func(string, http.HandlerFunc) route.Action); ok {
+		r0 = rf(relativePath, handler)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(route.Action)
+		}
+	}
+
+	return r0
 }
 
 // Router_Patch_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Patch'
@@ -278,19 +353,34 @@ func (_c *Router_Patch_Call) Run(run func(relativePath string, handler http.Hand
 	return _c
 }
 
-func (_c *Router_Patch_Call) Return() *Router_Patch_Call {
-	_c.Call.Return()
+func (_c *Router_Patch_Call) Return(_a0 route.Action) *Router_Patch_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Router_Patch_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Router_Patch_Call {
-	_c.Run(run)
+func (_c *Router_Patch_Call) RunAndReturn(run func(string, http.HandlerFunc) route.Action) *Router_Patch_Call {
+	_c.Call.Return(run)
 	return _c
 }
 
 // Post provides a mock function with given fields: relativePath, handler
-func (_m *Router) Post(relativePath string, handler http.HandlerFunc) {
-	_m.Called(relativePath, handler)
+func (_m *Router) Post(relativePath string, handler http.HandlerFunc) route.Action {
+	ret := _m.Called(relativePath, handler)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Post")
+	}
+
+	var r0 route.Action
+	if rf, ok := ret.Get(0).(func(string, http.HandlerFunc) route.Action); ok {
+		r0 = rf(relativePath, handler)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(route.Action)
+		}
+	}
+
+	return r0
 }
 
 // Router_Post_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Post'
@@ -312,13 +402,13 @@ func (_c *Router_Post_Call) Run(run func(relativePath string, handler http.Handl
 	return _c
 }
 
-func (_c *Router_Post_Call) Return() *Router_Post_Call {
-	_c.Call.Return()
+func (_c *Router_Post_Call) Return(_a0 route.Action) *Router_Post_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Router_Post_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Router_Post_Call {
-	_c.Run(run)
+func (_c *Router_Post_Call) RunAndReturn(run func(string, http.HandlerFunc) route.Action) *Router_Post_Call {
+	_c.Call.Return(run)
 	return _c
 }
 
@@ -371,8 +461,23 @@ func (_c *Router_Prefix_Call) RunAndReturn(run func(string) route.Router) *Route
 }
 
 // Put provides a mock function with given fields: relativePath, handler
-func (_m *Router) Put(relativePath string, handler http.HandlerFunc) {
-	_m.Called(relativePath, handler)
+func (_m *Router) Put(relativePath string, handler http.HandlerFunc) route.Action {
+	ret := _m.Called(relativePath, handler)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Put")
+	}
+
+	var r0 route.Action
+	if rf, ok := ret.Get(0).(func(string, http.HandlerFunc) route.Action); ok {
+		r0 = rf(relativePath, handler)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(route.Action)
+		}
+	}
+
+	return r0
 }
 
 // Router_Put_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Put'
@@ -394,19 +499,34 @@ func (_c *Router_Put_Call) Run(run func(relativePath string, handler http.Handle
 	return _c
 }
 
-func (_c *Router_Put_Call) Return() *Router_Put_Call {
-	_c.Call.Return()
+func (_c *Router_Put_Call) Return(_a0 route.Action) *Router_Put_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Router_Put_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Router_Put_Call {
-	_c.Run(run)
+func (_c *Router_Put_Call) RunAndReturn(run func(string, http.HandlerFunc) route.Action) *Router_Put_Call {
+	_c.Call.Return(run)
 	return _c
 }
 
 // Resource provides a mock function with given fields: relativePath, controller
-func (_m *Router) Resource(relativePath string, controller http.ResourceController) {
-	_m.Called(relativePath, controller)
+func (_m *Router) Resource(relativePath string, controller http.ResourceController) route.Action {
+	ret := _m.Called(relativePath, controller)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Resource")
+	}
+
+	var r0 route.Action
+	if rf, ok := ret.Get(0).(func(string, http.ResourceController) route.Action); ok {
+		r0 = rf(relativePath, controller)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(route.Action)
+		}
+	}
+
+	return r0
 }
 
 // Router_Resource_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Resource'
@@ -428,19 +548,34 @@ func (_c *Router_Resource_Call) Run(run func(relativePath string, controller htt
 	return _c
 }
 
-func (_c *Router_Resource_Call) Return() *Router_Resource_Call {
-	_c.Call.Return()
+func (_c *Router_Resource_Call) Return(_a0 route.Action) *Router_Resource_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Router_Resource_Call) RunAndReturn(run func(string, http.ResourceController)) *Router_Resource_Call {
-	_c.Run(run)
+func (_c *Router_Resource_Call) RunAndReturn(run func(string, http.ResourceController) route.Action) *Router_Resource_Call {
+	_c.Call.Return(run)
 	return _c
 }
 
 // Static provides a mock function with given fields: relativePath, root
-func (_m *Router) Static(relativePath string, root string) {
-	_m.Called(relativePath, root)
+func (_m *Router) Static(relativePath string, root string) route.Action {
+	ret := _m.Called(relativePath, root)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Static")
+	}
+
+	var r0 route.Action
+	if rf, ok := ret.Get(0).(func(string, string) route.Action); ok {
+		r0 = rf(relativePath, root)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(route.Action)
+		}
+	}
+
+	return r0
 }
 
 // Router_Static_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Static'
@@ -462,19 +597,34 @@ func (_c *Router_Static_Call) Run(run func(relativePath string, root string)) *R
 	return _c
 }
 
-func (_c *Router_Static_Call) Return() *Router_Static_Call {
-	_c.Call.Return()
+func (_c *Router_Static_Call) Return(_a0 route.Action) *Router_Static_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Router_Static_Call) RunAndReturn(run func(string, string)) *Router_Static_Call {
-	_c.Run(run)
+func (_c *Router_Static_Call) RunAndReturn(run func(string, string) route.Action) *Router_Static_Call {
+	_c.Call.Return(run)
 	return _c
 }
 
 // StaticFS provides a mock function with given fields: relativePath, fs
-func (_m *Router) StaticFS(relativePath string, fs nethttp.FileSystem) {
-	_m.Called(relativePath, fs)
+func (_m *Router) StaticFS(relativePath string, fs nethttp.FileSystem) route.Action {
+	ret := _m.Called(relativePath, fs)
+
+	if len(ret) == 0 {
+		panic("no return value specified for StaticFS")
+	}
+
+	var r0 route.Action
+	if rf, ok := ret.Get(0).(func(string, nethttp.FileSystem) route.Action); ok {
+		r0 = rf(relativePath, fs)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(route.Action)
+		}
+	}
+
+	return r0
 }
 
 // Router_StaticFS_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'StaticFS'
@@ -496,19 +646,34 @@ func (_c *Router_StaticFS_Call) Run(run func(relativePath string, fs nethttp.Fil
 	return _c
 }
 
-func (_c *Router_StaticFS_Call) Return() *Router_StaticFS_Call {
-	_c.Call.Return()
+func (_c *Router_StaticFS_Call) Return(_a0 route.Action) *Router_StaticFS_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Router_StaticFS_Call) RunAndReturn(run func(string, nethttp.FileSystem)) *Router_StaticFS_Call {
-	_c.Run(run)
+func (_c *Router_StaticFS_Call) RunAndReturn(run func(string, nethttp.FileSystem) route.Action) *Router_StaticFS_Call {
+	_c.Call.Return(run)
 	return _c
 }
 
 // StaticFile provides a mock function with given fields: relativePath, filepath
-func (_m *Router) StaticFile(relativePath string, filepath string) {
-	_m.Called(relativePath, filepath)
+func (_m *Router) StaticFile(relativePath string, filepath string) route.Action {
+	ret := _m.Called(relativePath, filepath)
+
+	if len(ret) == 0 {
+		panic("no return value specified for StaticFile")
+	}
+
+	var r0 route.Action
+	if rf, ok := ret.Get(0).(func(string, string) route.Action); ok {
+		r0 = rf(relativePath, filepath)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(route.Action)
+		}
+	}
+
+	return r0
 }
 
 // Router_StaticFile_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'StaticFile'
@@ -530,13 +695,13 @@ func (_c *Router_StaticFile_Call) Run(run func(relativePath string, filepath str
 	return _c
 }
 
-func (_c *Router_StaticFile_Call) Return() *Router_StaticFile_Call {
-	_c.Call.Return()
+func (_c *Router_StaticFile_Call) Return(_a0 route.Action) *Router_StaticFile_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Router_StaticFile_Call) RunAndReturn(run func(string, string)) *Router_StaticFile_Call {
-	_c.Run(run)
+func (_c *Router_StaticFile_Call) RunAndReturn(run func(string, string) route.Action) *Router_StaticFile_Call {
+	_c.Call.Return(run)
 	return _c
 }
 
