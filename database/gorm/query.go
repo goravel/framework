@@ -641,14 +641,11 @@ func (r *Query) InTransaction() bool {
 }
 
 func (r *Query) OrWhere(query any, args ...any) contractsorm.Query {
-	conditions := r.conditions
-	conditions.where = append(r.conditions.where, Where{
+	return r.addWhere(Where{
 		query: query,
 		args:  args,
 		or:    true,
 	})
-
-	return r.setConditions(conditions)
 }
 
 func (r *Query) Paginate(page, limit int, dest any, total *int64) error {
@@ -933,21 +930,103 @@ func (r *Query) UpdateOrCreate(dest any, attributes any, values any) error {
 }
 
 func (r *Query) Where(query any, args ...any) contractsorm.Query {
-	conditions := r.conditions
-	conditions.where = append(r.conditions.where, Where{
+	return r.addWhere(Where{
 		query: query,
 		args:  args,
 	})
-
-	return r.setConditions(conditions)
 }
 
 func (r *Query) WhereIn(column string, values []any) contractsorm.Query {
 	return r.Where(fmt.Sprintf("%s IN ?", column), values)
 }
 
+func (r *Query) WhereJsonContains(column string, value any) contractsorm.Query {
+	return r.addWhere(Where{
+		ttype: WhereTypeJsonContains,
+		query: column,
+		args:  []any{value},
+	})
+}
+
+func (r *Query) WhereJsonContainsKey(column string) contractsorm.Query {
+	return r.addWhere(Where{
+		ttype: WhereTypeJsonContainsKey,
+		query: column,
+	})
+}
+
+func (r *Query) WhereJsonDoesntContain(column string, value any) contractsorm.Query {
+	return r.addWhere(Where{
+		ttype: WhereTypeJsonContains,
+		query: column,
+		args:  []any{value},
+		isNot: true,
+	})
+}
+
+func (r *Query) WhereJsonDoesntContainKey(column string) contractsorm.Query {
+	return r.addWhere(Where{
+		ttype: WhereTypeJsonContainsKey,
+		query: column,
+		isNot: true,
+	})
+}
+
+func (r *Query) WhereJsonLength(column string, length int) contractsorm.Query {
+	return r.addWhere(Where{
+		ttype: WhereTypeJsonLength,
+		query: column,
+		args:  []any{length},
+	})
+}
+
 func (r *Query) OrWhereIn(column string, values []any) contractsorm.Query {
 	return r.OrWhere(fmt.Sprintf("%s IN ?", column), values)
+}
+
+func (r *Query) OrWhereJsonContains(column string, value any) contractsorm.Query {
+	return r.addWhere(Where{
+		ttype: WhereTypeJsonContains,
+		query: column,
+		args:  []any{value},
+		or:    true,
+	})
+}
+
+func (r *Query) OrWhereJsonContainsKey(column string) contractsorm.Query {
+	return r.addWhere(Where{
+		ttype: WhereTypeJsonContainsKey,
+		query: column,
+		or:    true,
+	})
+}
+
+func (r *Query) OrWhereJsonDoesntContain(column string, value any) contractsorm.Query {
+	return r.addWhere(Where{
+		ttype: WhereTypeJsonContains,
+		query: column,
+		args:  []any{value},
+		isNot: true,
+		or:    true,
+	})
+}
+
+func (r *Query) OrWhereJsonDoesntContainKey(column string) contractsorm.Query {
+	return r.addWhere(Where{
+		ttype: WhereTypeJsonContainsKey,
+		query: column,
+		isNot: true,
+		or:    true,
+	})
+}
+
+func (r *Query) OrWhereJsonLength(column string, length int) contractsorm.Query {
+	return r.addWhere(Where{
+		ttype: WhereTypeJsonLength,
+		query: column,
+		args:  []any{length},
+		or:    true,
+	})
 }
 
 func (r *Query) WhereNotIn(column string, values []any) contractsorm.Query {
@@ -1006,6 +1085,13 @@ func (r *Query) WithoutEvents() contractsorm.Query {
 func (r *Query) WithTrashed() contractsorm.Query {
 	conditions := r.conditions
 	conditions.withTrashed = true
+
+	return r.setConditions(conditions)
+}
+
+func (r *Query) addWhere(where Where) contractsorm.Query {
+	conditions := r.conditions
+	conditions.where = append(conditions.where, where)
 
 	return r.setConditions(conditions)
 }
@@ -1237,9 +1323,39 @@ func (r *Query) buildWhere(db *gormio.DB) *gormio.DB {
 	}
 
 	for _, item := range r.conditions.where {
-		if sub, ok := item.query.(func(contractsorm.Query) contractsorm.Query); ok {
-			item.query = r.buildSubquery(sub)
-			item.args = nil
+		switch item.ttype {
+		case WhereTypeJsonContains:
+			query, value, err := r.grammar.CompileJsonContains(item.query.(string), item.args[0], item.isNot)
+			if err != nil {
+				_ = r.instance.AddError(errors.OrmJsonContainsInvalidBinding.Args(err))
+				continue
+			}
+
+			item.query = query
+			item.args = value
+		case WhereTypeJsonContainsKey:
+			item.query = r.grammar.CompileJsonContainsKey(item.query.(string), item.isNot)
+
+		case WhereTypeJsonLength:
+			segments := strings.SplitN(item.query.(string), " ", 2)
+			segments[0] = r.grammar.CompileJsonLength(segments[0])
+			item.query = r.buildWherePlaceholder(strings.Join(segments, " "), item.args...)
+		default:
+			switch query := item.query.(type) {
+			case func(contractsorm.Query) contractsorm.Query:
+				item.query = r.buildSubquery(query)
+				item.args = nil
+			case string:
+				if strings.Contains(query, "->") {
+					segments := strings.Split(query, " ")
+					for i := range segments {
+						if strings.Contains(segments[i], "->") {
+							segments[i] = r.grammar.CompileJsonSelector(segments[i])
+						}
+					}
+					item.query = r.buildWherePlaceholder(strings.Join(segments, " "), item.args...)
+				}
+			}
 		}
 
 		if item.or {
@@ -1252,6 +1368,19 @@ func (r *Query) buildWhere(db *gormio.DB) *gormio.DB {
 	r.conditions.where = nil
 
 	return db
+}
+
+func (r *Query) buildWherePlaceholder(query string, args ...any) string {
+	// if query does not contain a placeholder,it might be incorrectly quoted or treated as an expression
+	// to avoid errors, append a manual placeholder
+	if !strings.Contains(query, "?") && len(args) == 1 {
+		if val := reflect.ValueOf(args[0]); val.Kind() == reflect.Slice || val.Kind() == reflect.Array {
+			return query + " IN (?)"
+		}
+		return query + " = ?"
+	}
+
+	return query
 }
 
 func (r *Query) buildWith(db *gormio.DB) *gormio.DB {

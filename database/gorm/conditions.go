@@ -4,6 +4,16 @@ import (
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 )
 
+// WhereType type of where condition
+type WhereType int
+
+const (
+	WhereTypeBase WhereType = iota
+	WhereTypeJsonContains
+	WhereTypeJsonContainsKey
+	WhereTypeJsonLength
+)
+
 type Conditions struct {
 	distinct      []any
 	groupBy       []string
@@ -46,9 +56,11 @@ type Table struct {
 }
 
 type Where struct {
+	ttype WhereType
 	query any
 	args  []any
 	or    bool
+	isNot bool
 }
 
 type With struct {
