@@ -433,6 +433,7 @@ func (r *TestQueryBuilder) mix(driver string, writeDatabaseConfig, readDatabaseC
 		Connection: connection,
 		Prefix:     "",
 		Singular:   false,
+		Timezone:   "UTC",
 	})
 
 	ctx := context.WithValue(context.Background(), testContextKey, "goravel")
