@@ -21,6 +21,7 @@ const (
 	TestTableUsers
 	TestTableUser
 	TestTableSchema
+	TestTableJsonData
 )
 
 type testTables struct {
@@ -47,6 +48,7 @@ func (r *testTables) All() map[TestTable]func() ([]string, error) {
 		TestTableUsers:     r.users,
 		TestTableUser:      r.user,
 		TestTableSchema:    r.schema,
+		TestTableJsonData:  r.jsonData,
 	}
 }
 
@@ -325,6 +327,26 @@ func (r *testTables) schema() ([]string, error) {
 	blueprint.Timestamps()
 
 	return blueprint.ToSql(r.grammar)
+}
+
+func (r *testTables) jsonData() ([]string, error) {
+	dropSql, err := r.dropSql("json_data")
+	if err != nil {
+		return nil, err
+	}
+
+	blueprint := schema.NewBlueprint(nil, "", "json_data")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.Json("data")
+	blueprint.Timestamps()
+
+	createSql, err := blueprint.ToSql(r.grammar)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(dropSql, createSql...), nil
 }
 
 func (r *testTables) dropSql(table string) ([]string, error) {
