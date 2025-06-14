@@ -1396,7 +1396,7 @@ func TestDB_Connection(t *testing.T) {
 
 	dbConfig := sqliteTestQuery.Driver().Pool().Writers[0]
 	sqliteConnection := dbConfig.Connection
-	mockDatabaseConfig(postgresTestQuery.MockConfig(), dbConfig, sqliteConnection, "", false)
+	mockDatabaseConfig(postgresTestQuery.MockConfig(), dbConfig)
 
 	result, err := postgresTestQuery.DB().Table("products").Insert(Product{
 		Name: "connection",
@@ -1435,7 +1435,7 @@ func TestDB_Connection(t *testing.T) {
 }
 
 func TestDbReadWriteSeparate(t *testing.T) {
-	dbs := NewTestQueryBuilder().AllOfReadWrite()
+	dbs := NewTestQueryBuilder().AllWithReadWrite()
 
 	for drive, db := range dbs {
 		t.Run(drive, func(t *testing.T) {

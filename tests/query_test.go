@@ -423,7 +423,9 @@ func (s *QueryTestSuite) TestCreate() {
 			{
 				name: "success when refresh connection",
 				setup: func() {
-					mockDatabaseConfig(query.MockConfig(), s.additionalQuery.Driver().Pool().Writers[0], "dummy", "", false)
+					config := s.additionalQuery.Driver().Pool().Writers[0]
+					config.Connection = "dummy"
+					mockDatabaseConfig(query.MockConfig(), config)
 
 					people := People{Body: "create_people"}
 					s.Nil(query.Query().Create(&people))
@@ -713,7 +715,9 @@ func (s *QueryTestSuite) TestDelete() {
 					s.Equal(uint(0), user1.ID)
 
 					// refresh connection
-					mockDatabaseConfig(query.MockConfig(), s.additionalQuery.Driver().Pool().Writers[0], "dummy", "", false)
+					config := s.additionalQuery.Driver().Pool().Writers[0]
+					config.Connection = "dummy"
+					mockDatabaseConfig(query.MockConfig(), config)
 
 					people := People{Body: "delete_people"}
 					s.Nil(query.Query().Create(&people))
@@ -1804,7 +1808,9 @@ func (s *QueryTestSuite) TestFirst() {
 		s.True(user1.ID > 0)
 
 		// refresh connection
-		mockDatabaseConfig(query.MockConfig(), s.additionalQuery.Driver().Pool().Writers[0], "dummy", "", false)
+		config := s.additionalQuery.Driver().Pool().Writers[0]
+		config.Connection = "dummy"
+		mockDatabaseConfig(query.MockConfig(), config)
 
 		people := People{Body: "first_people"}
 		s.Nil(query.Query().Create(&people))
@@ -2060,7 +2066,9 @@ func (s *QueryTestSuite) TestGet() {
 			s.Equal(1, len(user1))
 
 			// refresh connection
-			mockDatabaseConfig(query.MockConfig(), s.additionalQuery.Driver().Pool().Writers[0], "dummy", "", false)
+			config := s.additionalQuery.Driver().Pool().Writers[0]
+			config.Connection = "dummy"
+			mockDatabaseConfig(query.MockConfig(), config)
 
 			people := People{Body: "get_people"}
 			s.Nil(query.Query().Create(&people))
@@ -3650,7 +3658,9 @@ func TestCustomConnection(t *testing.T) {
 	assert.Nil(t, query.Where("body", "create_review").First(&review1))
 	assert.True(t, review1.ID > 0)
 
-	mockDatabaseConfig(postgresTestQuery.MockConfig(), sqliteTestQuery.Driver().Pool().Writers[0], "sqlite", "", false)
+	config := sqliteTestQuery.Driver().Pool().Writers[0]
+	config.Connection = "sqlite"
+	mockDatabaseConfig(postgresTestQuery.MockConfig(), config)
 
 	product := Product{Name: "create_product"}
 	assert.Nil(t, query.Create(&product))
@@ -3664,7 +3674,9 @@ func TestCustomConnection(t *testing.T) {
 	assert.Nil(t, query.Where("name", "create_product1").First(&product2))
 	assert.True(t, product2.ID == 0)
 
-	mockDatabaseConfig(postgresTestQuery.MockConfig(), postgresTestQuery.Driver().Pool().Writers[0], "dummy", "", false)
+	config = postgresTestQuery.Driver().Pool().Writers[0]
+	config.Connection = "dummy"
+	mockDatabaseConfig(postgresTestQuery.MockConfig(), config)
 
 	person := Person{Name: "create_person"}
 	assert.NotNil(t, query.Create(&person))
@@ -3676,7 +3688,7 @@ func TestCustomConnection(t *testing.T) {
 }
 
 func TestOrmReadWriteSeparate(t *testing.T) {
-	dbs := NewTestQueryBuilder().AllOfReadWrite()
+	dbs := NewTestQueryBuilder().AllWithReadWrite()
 
 	for drive, db := range dbs {
 		t.Run(drive, func(t *testing.T) {
@@ -3760,6 +3772,41 @@ func TestSqlserverWithSchema(t *testing.T) {
 	var schema1 Schema
 	assert.Nil(t, sqlserverTestQuery.Query().Where("name", "first_schema").First(&schema1))
 	assert.True(t, schema1.ID > 0)
+}
+
+// https://github.com/goravel/goravel/issues/706
+func TestTimezone(t *testing.T) {
+	queries := NewTestQueryBuilder().AllWithTimezone("Asia/Shanghai")
+
+	defer func() {
+		if queries[sqlite.Name] != nil {
+			docker, err := queries[sqlite.Name].Driver().Docker()
+			assert.NoError(t, err)
+			assert.NoError(t, docker.Shutdown())
+		}
+	}()
+
+	for driver, query := range queries {
+		t.Run(driver, func(t *testing.T) {
+			query.CreateTable()
+
+			user := User{Name: "count_user", Avatar: "count_avatar"}
+			assert.Nil(t, query.Query().Create(&user))
+			assert.True(t, user.ID > 0)
+
+			user1 := User{Name: "count_user", Avatar: "count_avatar1"}
+			assert.Nil(t, query.Query().Create(&user1))
+			assert.True(t, user1.ID > 0)
+
+			count, err := query.Query().Model(&User{}).Where("name = ?", "count_user").Count()
+			assert.Nil(t, err)
+			assert.True(t, count > 0)
+
+			count, err = query.Query().Table("users").Where("name = ?", "count_user").Count()
+			assert.Nil(t, err)
+			assert.True(t, count > 0)
+		})
+	}
 }
 
 func paginator(page string, limit string) func(methods contractsorm.Query) contractsorm.Query {
