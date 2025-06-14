@@ -1354,6 +1354,7 @@ func (r *Query) buildWhere(db *gormio.DB) *gormio.DB {
 						}
 					}
 					item.query = r.buildWherePlaceholder(strings.Join(segments, " "), item.args...)
+					item.args = r.grammar.CompileJsonValues(item.args...)
 				}
 			}
 		}

@@ -9,6 +9,12 @@ import (
 	"github.com/goravel/framework/support/collect"
 )
 
+var (
+	escapeQuoteRegex = regexp.MustCompile(`(\\+)?'`)
+	jsonPathRegex    = regexp.MustCompile(`(\[[^]]+])+$`)
+	jsonKeyRegex     = regexp.MustCompile(`\[([^]]+)]`)
+)
+
 type Wrap struct {
 	prefix    string
 	wrapValue func(string) string
@@ -60,10 +66,10 @@ func (r *Wrap) JsonFieldAndPath(column string) (string, string) {
 }
 
 func (r *Wrap) JsonPath(value string) string {
-	value = regexp.MustCompile(`(\\+)?'`).ReplaceAllString(value, "''")
+	value = escapeQuoteRegex.ReplaceAllString(value, "''")
 	segments := strings.Split(value, "->")
 	for i := range segments {
-		if parts := regexp.MustCompile(`(\[[^]]+])+$`).FindString(segments[i]); parts != "" {
+		if parts := jsonPathRegex.FindString(segments[i]); parts != "" {
 			if key := strings.TrimSuffix(segments[i], parts); len(key) > 0 {
 				segments[i] = fmt.Sprintf(`"%s"%s`, key, parts)
 				continue
@@ -97,11 +103,11 @@ func (r *Wrap) JsonPathAttributes(path []string, quoter ...string) []string {
 
 	var result []string
 	for i := range path {
-		if parts := regexp.MustCompile(`(\[[^]]+])+$`).FindString(path[i]); parts != "" {
+		if parts := jsonPathRegex.FindString(path[i]); parts != "" {
 			key := strings.TrimSuffix(path[i], parts)
 			result = append(result, quote(key))
 
-			matches := regexp.MustCompile(`\[([^]]+)]`).FindAllStringSubmatch(parts, -1)
+			matches := jsonKeyRegex.FindAllStringSubmatch(parts, -1)
 			for j := range matches {
 				if len(matches[j]) > 1 && matches[j][1] != "" {
 					result = append(result, quote(matches[j][1]))
