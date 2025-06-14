@@ -172,6 +172,8 @@ type JsonGrammar interface {
 	CompileJsonLength(column string) string
 	// CompileJsonSelector Wrap the given JSON selector.
 	CompileJsonSelector(column string) string
+	// CompileJsonValues Normalizes and converts values into database-compatible types.
+	CompileJsonValues(args ...any) []any
 }
 
 type Blueprint interface {

@@ -223,6 +223,63 @@ func (_c *JsonGrammar_CompileJsonSelector_Call) RunAndReturn(run func(string) st
 	return _c
 }
 
+// CompileJsonValues provides a mock function with given fields: args
+func (_m *JsonGrammar) CompileJsonValues(args ...interface{}) []interface{} {
+	var _ca []interface{}
+	_ca = append(_ca, args...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompileJsonValues")
+	}
+
+	var r0 []interface{}
+	if rf, ok := ret.Get(0).(func(...interface{}) []interface{}); ok {
+		r0 = rf(args...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]interface{})
+		}
+	}
+
+	return r0
+}
+
+// JsonGrammar_CompileJsonValues_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompileJsonValues'
+type JsonGrammar_CompileJsonValues_Call struct {
+	*mock.Call
+}
+
+// CompileJsonValues is a helper method to define mock.On call
+//   - args ...interface{}
+func (_e *JsonGrammar_Expecter) CompileJsonValues(args ...interface{}) *JsonGrammar_CompileJsonValues_Call {
+	return &JsonGrammar_CompileJsonValues_Call{Call: _e.mock.On("CompileJsonValues",
+		append([]interface{}{}, args...)...)}
+}
+
+func (_c *JsonGrammar_CompileJsonValues_Call) Run(run func(args ...interface{})) *JsonGrammar_CompileJsonValues_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *JsonGrammar_CompileJsonValues_Call) Return(_a0 []interface{}) *JsonGrammar_CompileJsonValues_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *JsonGrammar_CompileJsonValues_Call) RunAndReturn(run func(...interface{}) []interface{}) *JsonGrammar_CompileJsonValues_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewJsonGrammar creates a new instance of JsonGrammar. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewJsonGrammar(t interface {
