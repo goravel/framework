@@ -142,7 +142,21 @@ func (r *TestQueryBuilder) All(prefix string, singular bool) map[string]*TestQue
 	}
 }
 
-func (r *TestQueryBuilder) AllOfReadWrite() map[string]map[string]*TestQuery {
+func (r *TestQueryBuilder) AllWithTimezone(timezone string) map[string]*TestQuery {
+	postgresTestQuery := r.PostgresWithTimezone(timezone)
+	mysqlTestQuery := r.MysqlWithTimezone(timezone)
+	sqlserverTestQuery := r.SqlserverWithTimezone(timezone)
+	sqliteTestQuery := r.SqliteWithTimezone(timezone)
+
+	return map[string]*TestQuery{
+		postgresTestQuery.Driver().Pool().Writers[0].Driver:  postgresTestQuery,
+		mysqlTestQuery.Driver().Pool().Writers[0].Driver:     mysqlTestQuery,
+		sqlserverTestQuery.Driver().Pool().Writers[0].Driver: sqlserverTestQuery,
+		sqliteTestQuery.Driver().Pool().Writers[0].Driver:    sqliteTestQuery,
+	}
+}
+
+func (r *TestQueryBuilder) AllWithReadWrite() map[string]map[string]*TestQuery {
 	return map[string]map[string]*TestQuery{
 		postgres.Name:  r.PostgresWithReadWrite(),
 		mysql.Name:     r.MysqlWithReadWrite(),
@@ -152,7 +166,12 @@ func (r *TestQueryBuilder) AllOfReadWrite() map[string]map[string]*TestQuery {
 }
 
 func (r *TestQueryBuilder) Mysql(prefix string, singular bool) *TestQuery {
-	testQuery, _ := r.single(mysql.Name, prefix, singular)
+	testQuery, _ := r.single(mysql.Name, prefix, "UTC", singular)
+	return testQuery
+}
+
+func (r *TestQueryBuilder) MysqlWithTimezone(timezone string) *TestQuery {
+	testQuery, _ := r.single(mysql.Name, "", timezone, false)
 	return testQuery
 }
 
@@ -161,7 +180,12 @@ func (r *TestQueryBuilder) MysqlWithReadWrite() map[string]*TestQuery {
 }
 
 func (r *TestQueryBuilder) Postgres(prefix string, singular bool) *TestQuery {
-	testQuery, _ := r.single(postgres.Name, prefix, singular)
+	testQuery, _ := r.single(postgres.Name, prefix, "UTC", singular)
+	return testQuery
+}
+
+func (r *TestQueryBuilder) PostgresWithTimezone(timezone string) *TestQuery {
+	testQuery, _ := r.single(postgres.Name, "", timezone, false)
 	return testQuery
 }
 
@@ -179,9 +203,38 @@ func (r *TestQueryBuilder) Sqlite(prefix string, singular bool) *TestQuery {
 	}
 
 	mockDatabaseConfig(mockConfig, database.Config{
-		Driver:   sqlite.Name,
-		Database: docker.Config().Database,
-	}, connection, prefix, singular)
+		Driver:     sqlite.Name,
+		Database:   docker.Config().Database,
+		Connection: connection,
+		Prefix:     prefix,
+		Singular:   singular,
+	})
+
+	ctx := context.WithValue(context.Background(), testContextKey, "goravel")
+	driver := sqlite.NewSqlite(mockConfig, utils.NewTestLog(), connection)
+	testQuery, err := NewTestQuery(ctx, driver, mockConfig)
+	if err != nil {
+		panic(err)
+	}
+
+	return testQuery
+}
+
+func (r *TestQueryBuilder) SqliteWithTimezone(timezone string) *TestQuery {
+	connection := sqlite.Name
+	mockConfig := &mocksconfig.Config{}
+	docker := sqlite.NewDocker(fmt.Sprintf("%s_%s", testDatabase, str.Random(6)))
+	err := docker.Build()
+	if err != nil {
+		panic(err)
+	}
+
+	mockDatabaseConfig(mockConfig, database.Config{
+		Driver:     sqlite.Name,
+		Database:   docker.Config().Database,
+		Connection: connection,
+		Timezone:   timezone,
+	})
 
 	ctx := context.WithValue(context.Background(), testContextKey, "goravel")
 	driver := sqlite.NewSqlite(mockConfig, utils.NewTestLog(), connection)
@@ -209,7 +262,12 @@ func (r *TestQueryBuilder) SqliteWithReadWrite() map[string]*TestQuery {
 }
 
 func (r *TestQueryBuilder) Sqlserver(prefix string, singular bool) *TestQuery {
-	testQuery, _ := r.single(sqlserver.Name, prefix, singular)
+	testQuery, _ := r.single(sqlserver.Name, prefix, "UTC", singular)
+	return testQuery
+}
+
+func (r *TestQueryBuilder) SqlserverWithTimezone(timezone string) *TestQuery {
+	testQuery, _ := r.single(sqlserver.Name, "", timezone, false)
 	return testQuery
 }
 
@@ -217,7 +275,7 @@ func (r *TestQueryBuilder) SqlserverWithReadWrite() map[string]*TestQuery {
 	return r.readWriteMix(sqlserver.Name)
 }
 
-func (r *TestQueryBuilder) single(driver string, prefix string, singular bool) (*TestQuery, contractsdocker.DatabaseDriver) {
+func (r *TestQueryBuilder) single(driver, prefix, timezone string, singular bool) (*TestQuery, contractsdocker.DatabaseDriver) {
 	var (
 		dockerDriver   contractsdocker.DatabaseDriver
 		databaseDriver contractsdriver.Driver
@@ -254,13 +312,17 @@ func (r *TestQueryBuilder) single(driver string, prefix string, singular bool) (
 	}
 
 	mockDatabaseConfigWithoutWriteAndRead(mockConfig, database.Config{
-		Driver:   driver,
-		Host:     containerInstance.Config().Host,
-		Port:     containerInstance.Config().Port,
-		Username: containerInstance.Config().Username,
-		Password: containerInstance.Config().Password,
-		Database: containerInstance.Config().Database,
-	}, connection, prefix, singular)
+		Driver:     driver,
+		Host:       containerInstance.Config().Host,
+		Port:       containerInstance.Config().Port,
+		Username:   containerInstance.Config().Username,
+		Password:   containerInstance.Config().Password,
+		Database:   containerInstance.Config().Database,
+		Connection: connection,
+		Prefix:     prefix,
+		Singular:   singular,
+		Timezone:   timezone,
+	})
 
 	ctx := context.WithValue(context.Background(), testContextKey, "goravel")
 	testQuery, err := NewTestQuery(ctx, databaseDriver, mockConfig)
@@ -272,8 +334,8 @@ func (r *TestQueryBuilder) single(driver string, prefix string, singular bool) (
 }
 
 func (r *TestQueryBuilder) readWriteMix(driver string) map[string]*TestQuery {
-	writeTestQuery, writeDatabaseDriver := r.single(driver, "", false)
-	readTestQuery, readDatabaseDriver := r.single(driver, "", false)
+	writeTestQuery, writeDatabaseDriver := r.single(driver, "", "UTC", false)
+	readTestQuery, readDatabaseDriver := r.single(driver, "", "UTC", false)
 
 	return map[string]*TestQuery{
 		"write": writeTestQuery,
@@ -367,8 +429,11 @@ func (r *TestQueryBuilder) mix(driver string, writeDatabaseConfig, readDatabaseC
 	}
 
 	mockDatabaseConfigWithoutWriteAndRead(mockConfig, database.Config{
-		Driver: driver,
-	}, connection, "", false)
+		Driver:     driver,
+		Connection: connection,
+		Prefix:     "",
+		Singular:   false,
+	})
 
 	ctx := context.WithValue(context.Background(), testContextKey, "goravel")
 	testQuery, err := NewTestQuery(ctx, databaseDriver, mockConfig)
