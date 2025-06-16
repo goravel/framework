@@ -8,8 +8,8 @@ import (
 
 type Carbon = carbon.Carbon
 
-// NewCarbon returns a new Carbon instance.
-func NewCarbon(time stdtime.Time) *Carbon {
+// New returns a new Carbon instance.
+func New(time stdtime.Time) *Carbon {
 	return carbon.NewCarbon(time)
 }
 
