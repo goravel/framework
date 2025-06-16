@@ -98,7 +98,7 @@ func (s *AboutCommandTestSuite) TestHandle() {
 	mockConfig.EXPECT().Get("logging.channels.stack.channels").Return([]string{"test"}).Once()
 	mockConfig.EXPECT().GetString("mail.default", "smtp").Return("test_mail").Once()
 	mockConfig.EXPECT().GetString("queue.default").Return("test_queue").Once()
-	mockConfig.EXPECT().GetString("session.driver").Return("test_session").Once()
+	mockConfig.EXPECT().GetString("session.default").Return("test_session").Once()
 
 	mockContext.EXPECT().NewLine().Return().Times(4)
 	mockContext.EXPECT().Option("only").Return("").Once()

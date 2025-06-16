@@ -28,7 +28,7 @@ func testHttpSessionMiddleware(next nethttp.Handler, mockConfig *configmocks.Con
 }
 
 func mockConfigFacade(mockConfig *configmocks.Config) {
-	mockConfig.On("GetString", "session.driver").Return("file").Once()
+	mockConfig.On("GetString", "session.default").Return("file").Once()
 	mockConfig.On("GetInt", "session.lifetime", 120).Return(120).Once()
 	mockConfig.On("GetString", "session.path").Return("/").Once()
 	mockConfig.On("GetString", "session.domain").Return("").Once()
@@ -40,7 +40,7 @@ func mockConfigFacade(mockConfig *configmocks.Config) {
 func TestStartSession(t *testing.T) {
 	mockConfig := configmocks.NewConfig(t)
 	session.ConfigFacade = mockConfig
-	mockConfig.EXPECT().GetString("session.driver", "file").Return("file").Once()
+	mockConfig.EXPECT().GetString("session.default", "file").Return("file").Once()
 	mockConfig.EXPECT().GetString("session.drivers.file.driver").Return("file").Once()
 	mockConfig.EXPECT().GetInt("session.lifetime", 120).Return(120).Once()
 	mockConfig.EXPECT().GetInt("session.gc_interval", 30).Return(30).Once()
