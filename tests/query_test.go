@@ -3639,13 +3639,16 @@ func (s *QueryTestSuite) TestWithNesting() {
 func (s *QueryTestSuite) TestJsonWhereClauses() {
 	mockApp := mocksfoundation.NewApplication(s.T())
 	mockJson := mocksfoundation.NewJson(s.T())
-	mockJson.EXPECT().Marshal("abc").RunAndReturn(func(i interface{}) ([]byte, error) {
+	mockJson.EXPECT().Marshal("abc").RunAndReturn(func(i any) ([]byte, error) {
 		return json.Marshal(i)
 	}).Times(4)
-	mockJson.EXPECT().Marshal([]string{"abc", "def"}).RunAndReturn(func(i interface{}) ([]byte, error) {
+	mockJson.EXPECT().Marshal("ghi").RunAndReturn(func(i any) ([]byte, error) {
 		return json.Marshal(i)
 	}).Twice()
-	mockApp.EXPECT().GetJson().Return(mockJson).Times(6)
+	mockJson.EXPECT().Marshal([]string{"abc", "def"}).RunAndReturn(func(i any) ([]byte, error) {
+		return json.Marshal(i)
+	}).Twice()
+	mockApp.EXPECT().GetJson().Return(mockJson).Times(8)
 
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
@@ -3814,6 +3817,24 @@ func (s *QueryTestSuite) TestJsonWhereClauses() {
 				{
 					name: "array length greater than",
 					find: query.Query().WhereJsonLength("data->array > ?", 2).Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 2)
+						s.JSONEq(data[0].Data, items[0].Data)
+						s.JSONEq(data[1].Data, items[1].Data)
+					},
+				},
+				{
+					name: "string or float key",
+					find: query.Query().Where("data->string", "first").OrWhere("data->float", 789.123).Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 2)
+						s.JSONEq(data[0].Data, items[0].Data)
+						s.JSONEq(data[1].Data, items[1].Data)
+					},
+				},
+				{
+					name: "contains or key does not exist",
+					find: query.Query().WhereJsonContains("data->array", "ghi").OrWhereJsonDoesntContainKey("data->nested->string").Find,
 					assert: func(items []JsonData) {
 						s.Len(items, 2)
 						s.JSONEq(data[0].Data, items[0].Data)
