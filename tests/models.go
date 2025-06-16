@@ -4,12 +4,11 @@ import (
 	"errors"
 	"fmt"
 
-	"gorm.io/gorm"
-
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/goravel/framework/contracts/database/factory"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/support/carbon"
+	"gorm.io/gorm"
 )
 
 type contextKey int
@@ -502,4 +501,9 @@ type Schema struct {
 
 func (r *Schema) TableName() string {
 	return "goravel.schemas"
+}
+
+type JsonData struct {
+	Model
+	Data string
 }
