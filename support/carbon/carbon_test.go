@@ -4,9 +4,33 @@ import (
 	"testing"
 	stdtime "time"
 
-	"github.com/dromara/carbon/v2"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestNewCarbon(t *testing.T) {
+	loc, _ := stdtime.LoadLocation(PRC)
+
+	t1, _ := stdtime.Parse(DateTimeLayout, "2020-08-05 13:14:15")
+	t2, _ := stdtime.ParseInLocation(DateTimeLayout, "2020-08-05 13:14:15", loc)
+
+	assert.Equal(t, "2020-08-05 13:14:15 +0000 UTC", NewCarbon(t1).ToString())
+	assert.Equal(t, t1.String(), NewCarbon(t1).ToString())
+
+	assert.Equal(t, "2020-08-05 13:14:15 +0800 CST", NewCarbon(t2).ToString())
+	assert.Equal(t, t2.String(), NewCarbon(t2).ToString())
+}
+
+func TestZeroValue(t *testing.T) {
+	assert.Equal(t, "0001-01-01 00:00:00 +0000 UTC", ZeroValue().ToString())
+	assert.Equal(t, "January", ZeroValue().ToMonthString())
+	assert.Equal(t, "一月", ZeroValue().SetLocale("zh-CN").ToMonthString())
+}
+
+func TestEpochValue(t *testing.T) {
+	assert.Equal(t, "1970-01-01 00:00:00 +0000 UTC", EpochValue().ToString())
+	assert.Equal(t, "January", EpochValue().ToMonthString())
+	assert.Equal(t, "一月", EpochValue().SetLocale("zh-CN").ToMonthString())
+}
 
 func TestSetTimezone(t *testing.T) {
 	defer SetTimezone(UTC)
@@ -80,14 +104,14 @@ func TestNow(t *testing.T) {
 }
 
 func TestParse(t *testing.T) {
-	time := Parse("2020-01-01 00:00:00", carbon.UTC)
-	assert.Equal(t, "2020-01-01 00:00:00", time.ToDateTimeString(carbon.UTC))
+	time := Parse("2020-01-01 00:00:00", UTC)
+	assert.Equal(t, "2020-01-01 00:00:00", time.ToDateTimeString(UTC))
 }
 
 func TestParseByLayout(t *testing.T) {
 	t.Run("string type layout", func(t *testing.T) {
-		time := ParseByLayout("2020-01-01 00:00:00", "2006-01-02 15:04:05", carbon.UTC)
-		assert.Equal(t, "2020-01-01 00:00:00", time.ToDateTimeString(carbon.UTC))
+		time := ParseByLayout("2020-01-01 00:00:00", "2006-01-02 15:04:05", UTC)
+		assert.Equal(t, "2020-01-01 00:00:00", time.ToDateTimeString(UTC))
 	})
 
 	t.Run("[]string type layout", func(t *testing.T) {
@@ -99,8 +123,8 @@ func TestParseByLayout(t *testing.T) {
 
 func TestParseByFormat(t *testing.T) {
 	t.Run("string type layout", func(t *testing.T) {
-		time := ParseByFormat("2020-01-01 00:00:00", "Y-m-d H:i:s", carbon.UTC)
-		assert.Equal(t, "2020-01-01 00:00:00", time.ToDateTimeString(carbon.UTC))
+		time := ParseByFormat("2020-01-01 00:00:00", "Y-m-d H:i:s", UTC)
+		assert.Equal(t, "2020-01-01 00:00:00", time.ToDateTimeString(UTC))
 	})
 
 	t.Run("[]string type layout", func(t *testing.T) {
@@ -139,92 +163,92 @@ func TestParseWithFormats(t *testing.T) {
 }
 
 func TestFromTimestamp(t *testing.T) {
-	time := FromTimestamp(1577836800, carbon.UTC)
-	assert.Equal(t, "2020-01-01 00:00:00", time.ToDateTimeString(carbon.UTC))
+	time := FromTimestamp(1577836800, UTC)
+	assert.Equal(t, "2020-01-01 00:00:00", time.ToDateTimeString(UTC))
 }
 
 func TestFromTimestampMilli(t *testing.T) {
-	time := FromTimestampMilli(1577836800000, carbon.UTC)
-	assert.Equal(t, "2020-01-01 00:00:00", time.ToDateTimeString(carbon.UTC))
+	time := FromTimestampMilli(1577836800000, UTC)
+	assert.Equal(t, "2020-01-01 00:00:00", time.ToDateTimeString(UTC))
 }
 
 func TestFromTimestampMicro(t *testing.T) {
-	time := FromTimestampMicro(1577836800000000, carbon.UTC)
-	assert.Equal(t, "2020-01-01 00:00:00", time.ToDateTimeString(carbon.UTC))
+	time := FromTimestampMicro(1577836800000000, UTC)
+	assert.Equal(t, "2020-01-01 00:00:00", time.ToDateTimeString(UTC))
 }
 
 func TestFromTimestampNano(t *testing.T) {
-	time := FromTimestampNano(1577836800000000000, carbon.UTC)
-	assert.Equal(t, "2020-01-01 00:00:00", time.ToDateTimeString(carbon.UTC))
+	time := FromTimestampNano(1577836800000000000, UTC)
+	assert.Equal(t, "2020-01-01 00:00:00", time.ToDateTimeString(UTC))
 }
 
 func TestFromDateTime(t *testing.T) {
-	time := FromDateTime(2020, 1, 1, 0, 0, 0, carbon.UTC)
-	assert.Equal(t, "2020-01-01 00:00:00", time.ToDateTimeString(carbon.UTC))
+	time := FromDateTime(2020, 1, 1, 0, 0, 0, UTC)
+	assert.Equal(t, "2020-01-01 00:00:00", time.ToDateTimeString(UTC))
 }
 
 func TestFromDateTimeMilli(t *testing.T) {
-	time := FromDateTimeMilli(2020, 1, 1, 0, 0, 0, 0, carbon.UTC)
-	assert.Equal(t, "2020-01-01 00:00:00", time.ToDateTimeString(carbon.UTC))
+	time := FromDateTimeMilli(2020, 1, 1, 0, 0, 0, 0, UTC)
+	assert.Equal(t, "2020-01-01 00:00:00", time.ToDateTimeString(UTC))
 }
 
 func TestFromDateTimeMicro(t *testing.T) {
-	time := FromDateTimeMicro(2020, 1, 1, 0, 0, 0, 0, carbon.UTC)
-	assert.Equal(t, "2020-01-01 00:00:00", time.ToDateTimeString(carbon.UTC))
+	time := FromDateTimeMicro(2020, 1, 1, 0, 0, 0, 0, UTC)
+	assert.Equal(t, "2020-01-01 00:00:00", time.ToDateTimeString(UTC))
 }
 
 func TestFromDateTimeNano(t *testing.T) {
-	time := FromDateTimeNano(2020, 1, 1, 0, 0, 0, 0, carbon.UTC)
-	assert.Equal(t, "2020-01-01 00:00:00", time.ToDateTimeString(carbon.UTC))
+	time := FromDateTimeNano(2020, 1, 1, 0, 0, 0, 0, UTC)
+	assert.Equal(t, "2020-01-01 00:00:00", time.ToDateTimeString(UTC))
 }
 
 func TestFromDate(t *testing.T) {
-	time := FromDate(2020, 1, 1, carbon.UTC)
-	assert.Equal(t, "2020-01-01 00:00:00", time.ToDateTimeString(carbon.UTC))
+	time := FromDate(2020, 1, 1, UTC)
+	assert.Equal(t, "2020-01-01 00:00:00", time.ToDateTimeString(UTC))
 }
 
 func TestFromDateMilli(t *testing.T) {
-	time := FromDateMilli(2020, 1, 1, 999, carbon.UTC)
-	assert.Equal(t, "2020-01-01 00:00:00.999", time.ToDateTimeMilliString(carbon.UTC))
+	time := FromDateMilli(2020, 1, 1, 999, UTC)
+	assert.Equal(t, "2020-01-01 00:00:00.999", time.ToDateTimeMilliString(UTC))
 }
 
 func TestFromDateMicro(t *testing.T) {
-	time := FromDateMicro(2020, 1, 1, 999999, carbon.UTC)
-	assert.Equal(t, "2020-01-01 00:00:00.999999", time.ToDateTimeMicroString(carbon.UTC))
+	time := FromDateMicro(2020, 1, 1, 999999, UTC)
+	assert.Equal(t, "2020-01-01 00:00:00.999999", time.ToDateTimeMicroString(UTC))
 }
 
 func TestFromDateNano(t *testing.T) {
-	time := FromDateNano(2020, 1, 1, 999999999, carbon.UTC)
-	assert.Equal(t, "2020-01-01 00:00:00.999999999", time.ToDateTimeNanoString(carbon.UTC))
+	time := FromDateNano(2020, 1, 1, 999999999, UTC)
+	assert.Equal(t, "2020-01-01 00:00:00.999999999", time.ToDateTimeNanoString(UTC))
 }
 
 func TestFromTime(t *testing.T) {
-	date := Now().ToDateString(carbon.UTC)
-	time := FromTime(0, 0, 0, carbon.UTC)
-	assert.Equal(t, date+" 00:00:00", time.ToDateTimeString(carbon.UTC))
+	date := Now().ToDateString(UTC)
+	time := FromTime(0, 0, 0, UTC)
+	assert.Equal(t, date+" 00:00:00", time.ToDateTimeString(UTC))
 }
 
 func TestFromTimeMilli(t *testing.T) {
-	date := Now().ToDateString(carbon.UTC)
-	time := FromTimeMilli(0, 0, 0, 999, carbon.UTC)
-	assert.Equal(t, date+" 00:00:00.999", time.ToDateTimeMilliString(carbon.UTC))
+	date := Now().ToDateString(UTC)
+	time := FromTimeMilli(0, 0, 0, 999, UTC)
+	assert.Equal(t, date+" 00:00:00.999", time.ToDateTimeMilliString(UTC))
 }
 
 func TestFromTimeMicro(t *testing.T) {
-	date := Now().ToDateString(carbon.UTC)
-	time := FromTimeMicro(0, 0, 0, 999999, carbon.UTC)
-	assert.Equal(t, date+" 00:00:00.999999", time.ToDateTimeMicroString(carbon.UTC))
+	date := Now().ToDateString(UTC)
+	time := FromTimeMicro(0, 0, 0, 999999, UTC)
+	assert.Equal(t, date+" 00:00:00.999999", time.ToDateTimeMicroString(UTC))
 }
 
 func TestFromTimeNano(t *testing.T) {
-	date := Now().ToDateString(carbon.UTC)
-	time := FromTimeNano(0, 0, 0, 999999999, carbon.UTC)
-	assert.Equal(t, date+" 00:00:00.999999999", time.ToDateTimeNanoString(carbon.UTC))
+	date := Now().ToDateString(UTC)
+	time := FromTimeNano(0, 0, 0, 999999999, UTC)
+	assert.Equal(t, date+" 00:00:00.999999999", time.ToDateTimeNanoString(UTC))
 }
 
 func TestFromStdTime(t *testing.T) {
 	time := FromStdTime(stdtime.Date(2020, 1, 1, 0, 0, 0, 0, stdtime.UTC))
-	assert.Equal(t, "2020-01-01 00:00:00", time.ToDateTimeString(carbon.UTC))
+	assert.Equal(t, "2020-01-01 00:00:00", time.ToDateTimeString(UTC))
 }
 
 func TestErrorTime(t *testing.T) {
@@ -237,4 +261,24 @@ func TestErrorTime(t *testing.T) {
 	assert.NotNil(t, FromTimestampMilli(timestamp, timezone).Error, "It should catch an exception in CreateFromTimestampMilli()")
 	assert.NotNil(t, FromTimestampMicro(timestamp, timezone).Error, "It should catch an exception in CreateFromTimestampMicro()")
 	assert.NotNil(t, FromTimestampNano(timestamp, timezone).Error, "It should catch an exception in CreateFromTimestampNano()")
+}
+
+func TestFromJulian(t *testing.T) {
+	assert.Equal(t, "2024-01-23 13:14:15 +0000 UTC", FromJulian(2460333.051563).ToString())
+	assert.Equal(t, "2024-01-23 13:14:15 +0000 UTC", FromJulian(60332.551563).ToString())
+
+	assert.Equal(t, "2024-01-23 13:14:18 +0000 UTC", FromJulian(2460333.0516).ToString())
+	assert.Equal(t, "2024-01-23 13:14:18 +0000 UTC", FromJulian(60332.5516).ToString())
+}
+
+func TestFromLunar(t *testing.T) {
+	assert.Equal(t, "2024-01-21 00:00:00 +0800 CST", FromLunar(2023, 12, 11, false).ToString(PRC))
+	assert.Equal(t, "2024-01-18 00:00:00 +0800 CST", FromLunar(2023, 12, 8, false).ToString(PRC))
+	assert.Equal(t, "2024-01-24 00:00:00 +0800 CST", FromLunar(2023, 12, 14, false).ToString(PRC))
+}
+
+func TestFromPersian(t *testing.T) {
+	assert.Equal(t, "1800-01-01 00:00:00", FromPersian(1178, 10, 11).ToDateTimeString())
+	assert.Equal(t, "2024-01-01 00:00:00", FromPersian(1402, 10, 11).ToDateTimeString())
+	assert.Equal(t, "2024-08-05 00:00:00", FromPersian(1403, 5, 15).ToDateTimeString())
 }
