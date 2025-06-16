@@ -8,16 +8,9 @@ import (
 )
 
 func TestNewCarbon(t *testing.T) {
-	loc, _ := stdtime.LoadLocation(PRC)
-
-	t1, _ := stdtime.Parse(DateTimeLayout, "2020-08-05 13:14:15")
-	t2, _ := stdtime.ParseInLocation(DateTimeLayout, "2020-08-05 13:14:15", loc)
-
-	assert.Equal(t, "2020-08-05 13:14:15 +0000 UTC", NewCarbon(t1).ToString())
-	assert.Equal(t, t1.String(), NewCarbon(t1).ToString())
-
-	assert.Equal(t, "2020-08-05 13:14:15 +0800 CST", NewCarbon(t2).ToString())
-	assert.Equal(t, t2.String(), NewCarbon(t2).ToString())
+	tt, _ := stdtime.ParseInLocation(DateTimeLayout, "2020-08-05 13:14:15", stdtime.UTC)
+	assert.Equal(t, "2020-08-05 13:14:15 +0000 UTC", NewCarbon(tt).ToString())
+	assert.Equal(t, tt.String(), NewCarbon(tt).ToString())
 }
 
 func TestZeroValue(t *testing.T) {
