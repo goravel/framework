@@ -66,19 +66,19 @@ func (_c *FailedJob_Connection_Call) RunAndReturn(run func() string) *FailedJob_
 }
 
 // FailedAt provides a mock function with no fields
-func (_m *FailedJob) FailedAt() *carbon.LayoutType[carbon.DateTimeType] {
+func (_m *FailedJob) FailedAt() *carbon.DateTime {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for FailedAt")
 	}
 
-	var r0 *carbon.LayoutType[carbon.DateTimeType]
-	if rf, ok := ret.Get(0).(func() *carbon.LayoutType[carbon.DateTimeType]); ok {
+	var r0 *carbon.DateTime
+	if rf, ok := ret.Get(0).(func() *carbon.DateTime); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*carbon.LayoutType[carbon.DateTimeType])
+			r0 = ret.Get(0).(*carbon.DateTime)
 		}
 	}
 
@@ -102,12 +102,12 @@ func (_c *FailedJob_FailedAt_Call) Run(run func()) *FailedJob_FailedAt_Call {
 	return _c
 }
 
-func (_c *FailedJob_FailedAt_Call) Return(_a0 *carbon.LayoutType[carbon.DateTimeType]) *FailedJob_FailedAt_Call {
+func (_c *FailedJob_FailedAt_Call) Return(_a0 *carbon.DateTime) *FailedJob_FailedAt_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *FailedJob_FailedAt_Call) RunAndReturn(run func() *carbon.LayoutType[carbon.DateTimeType]) *FailedJob_FailedAt_Call {
+func (_c *FailedJob_FailedAt_Call) RunAndReturn(run func() *carbon.DateTime) *FailedJob_FailedAt_Call {
 	_c.Call.Return(run)
 	return _c
 }
