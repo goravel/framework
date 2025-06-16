@@ -33,7 +33,7 @@ type Manager struct {
 
 func NewManager(config config.Config, json foundation.Json) *Manager {
 	cookie := config.GetString("session.cookie")
-	defaultDriver := config.GetString("session.driver", "file")
+	defaultDriver := config.GetString("session.default", "file")
 	files := config.GetString("session.files")
 	gcInterval := config.GetInt("session.gc_interval", 30)
 	lifetime := config.GetInt("session.lifetime", 120)

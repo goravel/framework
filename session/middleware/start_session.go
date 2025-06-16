@@ -12,7 +12,7 @@ func StartSession() http.Middleware {
 		req := ctx.Request()
 
 		// Check if session exists
-		if req.HasSession() || session.ConfigFacade.GetString("session.driver") == "" {
+		if req.HasSession() || session.ConfigFacade.GetString("session.default") == "" {
 			req.Next()
 			return
 		}
