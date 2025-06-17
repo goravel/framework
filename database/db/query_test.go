@@ -21,11 +21,11 @@ import (
 
 // TestUser is a test model
 type TestUser struct {
-	ID    uint   `db:"id"`
-	Phone string `db:"phone"`
-	Email string `db:"email"`
+	ID    uint `db:"id"`
+	Phone string
+	Email string
 	Name  string `db:"-"`
-	Age   int
+	Age   int    `db:"-"`
 }
 
 type QueryTestSuite struct {

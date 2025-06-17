@@ -123,14 +123,18 @@ func convertToMap(data any) (map[string]any, error) {
 
 		// Get field name from db tag or use field name
 		tag := field.Tag.Get("db")
-		if tag == "" || tag == "-" {
+		if tag == "-" {
 			continue
 		}
 		var fieldName string
-		if comma := strings.Index(tag, ","); comma != -1 {
-			fieldName = tag[:comma]
+		if tag != "" {
+			if comma := strings.Index(tag, ","); comma != -1 {
+				fieldName = tag[:comma]
+			} else {
+				fieldName = tag
+			}
 		} else {
-			fieldName = tag
+			fieldName = NameMapper(field.Name)
 		}
 
 		fieldValue := val.Field(i)

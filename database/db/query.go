@@ -537,14 +537,11 @@ func (r *Query) OrderByRaw(raw string) db.Query {
 }
 
 func (r *Query) OrWhere(query any, args ...any) db.Query {
-	q := r.clone()
-	q.conditions.Where = append(q.conditions.Where, contractsdriver.Where{
+	return r.addWhere(contractsdriver.Where{
 		Query: query,
 		Args:  args,
 		Or:    true,
 	})
-
-	return q
 }
 
 func (r *Query) OrWhereBetween(column string, x, y any) db.Query {
@@ -566,6 +563,51 @@ func (r *Query) OrWhereColumn(column1 string, column2 ...string) db.Query {
 
 func (r *Query) OrWhereIn(column string, values []any) db.Query {
 	return r.OrWhere(column, values)
+}
+
+func (r *Query) OrWhereJsonContains(column string, value any) db.Query {
+	return r.addWhere(contractsdriver.Where{
+		Type:  contractsdriver.WhereTypeJsonContains,
+		Query: column,
+		Args:  []any{value},
+		Or:    true,
+	})
+}
+
+func (r *Query) OrWhereJsonContainsKey(column string) db.Query {
+	return r.addWhere(contractsdriver.Where{
+		Type:  contractsdriver.WhereTypeJsonContainsKey,
+		Query: column,
+		Or:    true,
+	})
+}
+
+func (r *Query) OrWhereJsonDoesntContain(column string, value any) db.Query {
+	return r.addWhere(contractsdriver.Where{
+		Type:  contractsdriver.WhereTypeJsonContains,
+		Query: column,
+		Args:  []any{value},
+		IsNot: true,
+		Or:    true,
+	})
+}
+
+func (r *Query) OrWhereJsonDoesntContainKey(column string) db.Query {
+	return r.addWhere(contractsdriver.Where{
+		Type:  contractsdriver.WhereTypeJsonContainsKey,
+		Query: column,
+		IsNot: true,
+		Or:    true,
+	})
+}
+
+func (r *Query) OrWhereJsonLength(column string, length int) db.Query {
+	return r.addWhere(contractsdriver.Where{
+		Type:  contractsdriver.WhereTypeJsonLength,
+		Query: column,
+		Args:  []any{length},
+		Or:    true,
+	})
 }
 
 func (r *Query) OrWhereLike(column string, value string) db.Query {
@@ -769,13 +811,10 @@ func (r *Query) When(condition bool, callback func(query db.Query) db.Query, fal
 }
 
 func (r *Query) Where(query any, args ...any) db.Query {
-	q := r.clone()
-	q.conditions.Where = append(q.conditions.Where, contractsdriver.Where{
+	return r.addWhere(contractsdriver.Where{
 		Query: query,
 		Args:  args,
 	})
-
-	return q
 }
 
 func (r *Query) WhereBetween(column string, x, y any) db.Query {
@@ -810,6 +849,46 @@ func (r *Query) WhereExists(query func() db.Query) db.Query {
 
 func (r *Query) WhereIn(column string, values []any) db.Query {
 	return r.Where(column, values)
+}
+
+func (r *Query) WhereJsonContains(column string, value any) db.Query {
+	return r.addWhere(contractsdriver.Where{
+		Type:  contractsdriver.WhereTypeJsonContains,
+		Query: column,
+		Args:  []any{value},
+	})
+}
+
+func (r *Query) WhereJsonContainsKey(column string) db.Query {
+	return r.addWhere(contractsdriver.Where{
+		Type:  contractsdriver.WhereTypeJsonContainsKey,
+		Query: column,
+	})
+}
+
+func (r *Query) WhereJsonDoesntContain(column string, value any) db.Query {
+	return r.addWhere(contractsdriver.Where{
+		Type:  contractsdriver.WhereTypeJsonContains,
+		Query: column,
+		Args:  []any{value},
+		IsNot: true,
+	})
+}
+
+func (r *Query) WhereJsonDoesntContainKey(column string) db.Query {
+	return r.addWhere(contractsdriver.Where{
+		Type:  contractsdriver.WhereTypeJsonContainsKey,
+		Query: column,
+		IsNot: true,
+	})
+}
+
+func (r *Query) WhereJsonLength(column string, length int) db.Query {
+	return r.addWhere(contractsdriver.Where{
+		Type:  contractsdriver.WhereTypeJsonLength,
+		Query: column,
+		Args:  []any{length},
+	})
 }
 
 func (r *Query) WhereLike(column string, value string) db.Query {
@@ -863,6 +942,13 @@ func (r *Query) WhereNull(column string) db.Query {
 
 func (r *Query) WhereRaw(raw string, args []any) db.Query {
 	return r.Where(sq.Expr(raw, args...))
+}
+
+func (r *Query) addWhere(where contractsdriver.Where) db.Query {
+	q := r.clone()
+	q.conditions.Where = append(q.conditions.Where, where)
+
+	return q
 }
 
 func (r *Query) buildDelete() (sql string, args []any, err error) {
@@ -1043,13 +1129,39 @@ func (r *Query) buildUpdate(data map[string]any) (sql string, args []any, err er
 func (r *Query) buildWhere(where contractsdriver.Where) (any, []any, error) {
 	switch query := where.Query.(type) {
 	case string:
-		if !str.Of(query).Trim().Contains(" ", "?") {
+		switch where.Type {
+		case contractsdriver.WhereTypeJsonContains:
+			var err error
+			query, where.Args, err = r.grammar.CompileJsonContains(query, where.Args[0], where.IsNot)
+			if err != nil {
+				return nil, nil, errors.OrmJsonContainsInvalidBinding.Args(err)
+			}
+		case contractsdriver.WhereTypeJsonContainsKey:
+			query = str.Of(r.grammar.CompileJsonContainsKey(query, where.IsNot)).Replace("?", "??").String()
+		case contractsdriver.WhereTypeJsonLength:
+			segments := strings.SplitN(query, " ", 2)
+			segments[0] = r.grammar.CompileJsonLength(segments[0])
+			query = strings.Join(segments, " ")
+		default:
+			if str.Of(query).Trim().Contains("->") {
+				segments := strings.Split(query, " ")
+				for i := range segments {
+					if strings.Contains(segments[i], "->") {
+						segments[i] = r.grammar.CompileJsonSelector(segments[i])
+					}
+				}
+				query = strings.Join(segments, " ")
+				where.Args = r.grammar.CompileJsonValues(where.Args...)
+			}
+		}
+		if !str.Of(query).Trim().Contains("?") {
 			if len(where.Args) > 1 {
 				return sq.Eq{query: where.Args}, nil, nil
 			} else if len(where.Args) == 1 {
 				return sq.Eq{query: where.Args[0]}, nil, nil
 			}
 		}
+
 		return query, where.Args, nil
 	case map[string]any:
 		return sq.Eq(query), nil, nil

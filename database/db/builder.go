@@ -3,7 +3,17 @@ package db
 import (
 	"github.com/jmoiron/sqlx"
 	"gorm.io/gorm"
+
+	"github.com/goravel/framework/support/str"
 )
+
+var NameMapper = func(s string) string {
+	if s == "ID" {
+		return "id"
+	}
+
+	return str.Of(s).Snake().String()
+}
 
 type Builder struct {
 	*sqlx.DB
@@ -17,6 +27,7 @@ func NewBuilder(gormDB *gorm.DB, driver string) (*Builder, error) {
 	}
 
 	dbx := sqlx.NewDb(db, driver)
+	dbx.MapperFunc(NameMapper)
 
 	return &Builder{
 		DB:     dbx,
@@ -40,6 +51,7 @@ func NewTxBuilder(gormDB *gorm.DB, driver string) (*TxBuilder, error) {
 	}
 
 	dbx := sqlx.NewDb(db, driver)
+	dbx.MapperFunc(NameMapper)
 	tx, err := dbx.Beginx()
 	if err != nil {
 		return nil, err

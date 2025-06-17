@@ -15,9 +15,9 @@ type Body struct {
 	Weight   string  `db:"weight"`
 	Head     *string `db:"head"`
 	Height   int     `db:"-"`
-	Age      uint
-	DateTime carbon.DateTime `db:"date_time"`
-	leg      int             `db:"leg"`
+	Age      uint    `db:"-"`
+	DateTime carbon.DateTime
+	leg      int `db:"leg"`
 }
 
 type User struct {
@@ -65,8 +65,8 @@ func TestConvertToSliceMap(t *testing.T) {
 					TestTimestamps:  TestTimestamps{CreatedAt: dateTime, UpdatedAt: dateTime}},
 			},
 			want: []map[string]any{
-				{"id": 1, "weight": "100kg", "head": &head, "date_time": *dateTime, "created_at": dateTime, "updated_at": dateTime, "deleted_at": deletedAt},
-				{"id": 2, "length": 1, "weight": "90kg", "head": &head, "date_time": *dateTime, "created_at": dateTime, "updated_at": dateTime, "deleted_at": deletedAt},
+				{"id": 1, "email": "john@example.com", "weight": "100kg", "head": &head, "date_time": *dateTime, "created_at": dateTime, "updated_at": dateTime, "deleted_at": deletedAt},
+				{"id": 2, "email": "jane@example.com", "length": 1, "weight": "90kg", "head": &head, "date_time": *dateTime, "created_at": dateTime, "updated_at": dateTime, "deleted_at": deletedAt},
 			},
 		},
 		{
@@ -80,8 +80,8 @@ func TestConvertToSliceMap(t *testing.T) {
 					TestTimestamps:  TestTimestamps{CreatedAt: dateTime, UpdatedAt: dateTime}},
 			},
 			want: []map[string]any{
-				{"id": 1, "weight": "100kg", "head": &head, "date_time": *dateTime, "created_at": dateTime, "updated_at": dateTime, "deleted_at": deletedAt},
-				{"id": 2, "length": 1, "weight": "90kg", "head": &head, "date_time": *dateTime, "created_at": dateTime, "updated_at": dateTime, "deleted_at": deletedAt},
+				{"id": 1, "email": "john@example.com", "weight": "100kg", "head": &head, "date_time": *dateTime, "created_at": dateTime, "updated_at": dateTime, "deleted_at": deletedAt},
+				{"id": 2, "email": "jane@example.com", "length": 1, "weight": "90kg", "head": &head, "date_time": *dateTime, "created_at": dateTime, "updated_at": dateTime, "deleted_at": deletedAt},
 			},
 		},
 		{
@@ -126,9 +126,11 @@ func TestConvertToSliceMap(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		sliceMap, err := convertToSliceMap(test.data)
-		assert.NoError(t, err)
-		assert.Equal(t, test.want, sliceMap)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sliceMap, err := convertToSliceMap(tt.data)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want, sliceMap)
+		})
 	}
 }

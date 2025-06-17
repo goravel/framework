@@ -16,6 +16,7 @@ import (
 	contractsdatabase "github.com/goravel/framework/contracts/database"
 	contractsdb "github.com/goravel/framework/contracts/database/db"
 	"github.com/goravel/framework/contracts/database/driver"
+	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/log"
 	databasedriver "github.com/goravel/framework/database/driver"
@@ -470,9 +471,9 @@ func (r *Query) GroupBy(column ...string) contractsorm.Query {
 
 func (r *Query) Having(query any, args ...any) contractsorm.Query {
 	conditions := r.conditions
-	conditions.having = &Having{
-		query: query,
-		args:  args,
+	conditions.having = &contractsdriver.Having{
+		Query: query,
+		Args:  args,
 	}
 
 	return r.setConditions(conditions)
@@ -480,9 +481,9 @@ func (r *Query) Having(query any, args ...any) contractsorm.Query {
 
 func (r *Query) Join(query string, args ...any) contractsorm.Query {
 	conditions := r.conditions
-	conditions.join = append(conditions.join, Join{
-		query: query,
-		args:  args,
+	conditions.join = append(conditions.join, contractsdriver.Join{
+		Query: query,
+		Args:  args,
 	})
 
 	return r.setConditions(conditions)
@@ -641,10 +642,10 @@ func (r *Query) InTransaction() bool {
 }
 
 func (r *Query) OrWhere(query any, args ...any) contractsorm.Query {
-	return r.addWhere(Where{
-		query: query,
-		args:  args,
-		or:    true,
+	return r.addWhere(contractsdriver.Where{
+		Query: query,
+		Args:  args,
+		Or:    true,
 	})
 }
 
@@ -930,9 +931,9 @@ func (r *Query) UpdateOrCreate(dest any, attributes any, values any) error {
 }
 
 func (r *Query) Where(query any, args ...any) contractsorm.Query {
-	return r.addWhere(Where{
-		query: query,
-		args:  args,
+	return r.addWhere(contractsdriver.Where{
+		Query: query,
+		Args:  args,
 	})
 }
 
@@ -941,42 +942,42 @@ func (r *Query) WhereIn(column string, values []any) contractsorm.Query {
 }
 
 func (r *Query) WhereJsonContains(column string, value any) contractsorm.Query {
-	return r.addWhere(Where{
-		ttype: WhereTypeJsonContains,
-		query: column,
-		args:  []any{value},
+	return r.addWhere(contractsdriver.Where{
+		Type:  contractsdriver.WhereTypeJsonContains,
+		Query: column,
+		Args:  []any{value},
 	})
 }
 
 func (r *Query) WhereJsonContainsKey(column string) contractsorm.Query {
-	return r.addWhere(Where{
-		ttype: WhereTypeJsonContainsKey,
-		query: column,
+	return r.addWhere(contractsdriver.Where{
+		Type:  contractsdriver.WhereTypeJsonContainsKey,
+		Query: column,
 	})
 }
 
 func (r *Query) WhereJsonDoesntContain(column string, value any) contractsorm.Query {
-	return r.addWhere(Where{
-		ttype: WhereTypeJsonContains,
-		query: column,
-		args:  []any{value},
-		isNot: true,
+	return r.addWhere(contractsdriver.Where{
+		Type:  contractsdriver.WhereTypeJsonContains,
+		Query: column,
+		Args:  []any{value},
+		IsNot: true,
 	})
 }
 
 func (r *Query) WhereJsonDoesntContainKey(column string) contractsorm.Query {
-	return r.addWhere(Where{
-		ttype: WhereTypeJsonContainsKey,
-		query: column,
-		isNot: true,
+	return r.addWhere(contractsdriver.Where{
+		Type:  contractsdriver.WhereTypeJsonContainsKey,
+		Query: column,
+		IsNot: true,
 	})
 }
 
 func (r *Query) WhereJsonLength(column string, length int) contractsorm.Query {
-	return r.addWhere(Where{
-		ttype: WhereTypeJsonLength,
-		query: column,
-		args:  []any{length},
+	return r.addWhere(contractsdriver.Where{
+		Type:  contractsdriver.WhereTypeJsonLength,
+		Query: column,
+		Args:  []any{length},
 	})
 }
 
@@ -985,47 +986,47 @@ func (r *Query) OrWhereIn(column string, values []any) contractsorm.Query {
 }
 
 func (r *Query) OrWhereJsonContains(column string, value any) contractsorm.Query {
-	return r.addWhere(Where{
-		ttype: WhereTypeJsonContains,
-		query: column,
-		args:  []any{value},
-		or:    true,
+	return r.addWhere(contractsdriver.Where{
+		Type:  contractsdriver.WhereTypeJsonContains,
+		Query: column,
+		Args:  []any{value},
+		Or:    true,
 	})
 }
 
 func (r *Query) OrWhereJsonContainsKey(column string) contractsorm.Query {
-	return r.addWhere(Where{
-		ttype: WhereTypeJsonContainsKey,
-		query: column,
-		or:    true,
+	return r.addWhere(contractsdriver.Where{
+		Type:  contractsdriver.WhereTypeJsonContainsKey,
+		Query: column,
+		Or:    true,
 	})
 }
 
 func (r *Query) OrWhereJsonDoesntContain(column string, value any) contractsorm.Query {
-	return r.addWhere(Where{
-		ttype: WhereTypeJsonContains,
-		query: column,
-		args:  []any{value},
-		isNot: true,
-		or:    true,
+	return r.addWhere(contractsdriver.Where{
+		Type:  contractsdriver.WhereTypeJsonContains,
+		Query: column,
+		Args:  []any{value},
+		IsNot: true,
+		Or:    true,
 	})
 }
 
 func (r *Query) OrWhereJsonDoesntContainKey(column string) contractsorm.Query {
-	return r.addWhere(Where{
-		ttype: WhereTypeJsonContainsKey,
-		query: column,
-		isNot: true,
-		or:    true,
+	return r.addWhere(contractsdriver.Where{
+		Type:  contractsdriver.WhereTypeJsonContainsKey,
+		Query: column,
+		IsNot: true,
+		Or:    true,
 	})
 }
 
 func (r *Query) OrWhereJsonLength(column string, length int) contractsorm.Query {
-	return r.addWhere(Where{
-		ttype: WhereTypeJsonLength,
-		query: column,
-		args:  []any{length},
-		or:    true,
+	return r.addWhere(contractsdriver.Where{
+		Type:  contractsdriver.WhereTypeJsonLength,
+		Query: column,
+		Args:  []any{length},
+		Or:    true,
 	})
 }
 
@@ -1089,7 +1090,7 @@ func (r *Query) WithTrashed() contractsorm.Query {
 	return r.setConditions(conditions)
 }
 
-func (r *Query) addWhere(where Where) contractsorm.Query {
+func (r *Query) addWhere(where contractsdriver.Where) contractsorm.Query {
 	conditions := r.conditions
 	conditions.where = append(conditions.where, where)
 
@@ -1146,7 +1147,7 @@ func (r *Query) buildHaving(db *gormio.DB) *gormio.DB {
 		return db
 	}
 
-	db = db.Having(r.conditions.having.query, r.conditions.having.args...)
+	db = db.Having(r.conditions.having.Query, r.conditions.having.Args...)
 	r.conditions.having = nil
 
 	return db
@@ -1158,7 +1159,7 @@ func (r *Query) buildJoin(db *gormio.DB) *gormio.DB {
 	}
 
 	for _, item := range r.conditions.join {
-		db = db.Joins(item.query, item.args...)
+		db = db.Joins(item.Query, item.Args...)
 	}
 
 	r.conditions.join = nil
@@ -1323,28 +1324,28 @@ func (r *Query) buildWhere(db *gormio.DB) *gormio.DB {
 	}
 
 	for _, item := range r.conditions.where {
-		switch item.ttype {
-		case WhereTypeJsonContains:
-			query, value, err := r.grammar.CompileJsonContains(item.query.(string), item.args[0], item.isNot)
+		switch item.Type {
+		case contractsdriver.WhereTypeJsonContains:
+			query, value, err := r.grammar.CompileJsonContains(item.Query.(string), item.Args[0], item.IsNot)
 			if err != nil {
 				_ = r.instance.AddError(errors.OrmJsonContainsInvalidBinding.Args(err))
 				continue
 			}
 
-			item.query = query
-			item.args = value
-		case WhereTypeJsonContainsKey:
-			item.query = r.grammar.CompileJsonContainsKey(item.query.(string), item.isNot)
+			item.Query = query
+			item.Args = value
+		case contractsdriver.WhereTypeJsonContainsKey:
+			item.Query = r.grammar.CompileJsonContainsKey(item.Query.(string), item.IsNot)
 
-		case WhereTypeJsonLength:
-			segments := strings.SplitN(item.query.(string), " ", 2)
+		case contractsdriver.WhereTypeJsonLength:
+			segments := strings.SplitN(item.Query.(string), " ", 2)
 			segments[0] = r.grammar.CompileJsonLength(segments[0])
-			item.query = r.buildWherePlaceholder(strings.Join(segments, " "), item.args...)
+			item.Query = r.buildWherePlaceholder(strings.Join(segments, " "), item.Args...)
 		default:
-			switch query := item.query.(type) {
+			switch query := item.Query.(type) {
 			case func(contractsorm.Query) contractsorm.Query:
-				item.query = r.buildSubquery(query)
-				item.args = nil
+				item.Query = r.buildSubquery(query)
+				item.Args = nil
 			case string:
 				if strings.Contains(query, "->") {
 					segments := strings.Split(query, " ")
@@ -1353,16 +1354,16 @@ func (r *Query) buildWhere(db *gormio.DB) *gormio.DB {
 							segments[i] = r.grammar.CompileJsonSelector(segments[i])
 						}
 					}
-					item.query = r.buildWherePlaceholder(strings.Join(segments, " "), item.args...)
-					item.args = r.grammar.CompileJsonValues(item.args...)
+					item.Query = r.buildWherePlaceholder(strings.Join(segments, " "), item.Args...)
+					item.Args = r.grammar.CompileJsonValues(item.Args...)
 				}
 			}
 		}
 
-		if item.or {
-			db = db.Or(item.query, item.args...)
+		if item.Or {
+			db = db.Or(item.Query, item.Args...)
 		} else {
-			db = db.Where(item.query, item.args...)
+			db = db.Where(item.Query, item.Args...)
 		}
 	}
 
