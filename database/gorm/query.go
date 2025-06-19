@@ -129,11 +129,7 @@ func (r *Query) Count() (int64, error) {
 }
 
 func (r *Query) Create(value any) error {
-	query, err := r.refreshConnection(value)
-	if err != nil {
-		return err
-	}
-	query = query.buildConditions()
+	query := r.dest(value).buildConditions()
 
 	if len(query.instance.Statement.Selects) > 0 && len(query.instance.Statement.Omits) > 0 {
 		return errors.OrmQuerySelectAndOmitsConflict
@@ -193,32 +189,29 @@ func (r *Query) DB() (*sql.DB, error) {
 	return r.instance.DB()
 }
 
-func (r *Query) Delete(dest ...any) (*contractsdb.Result, error) {
+func (r *Query) Delete(dests ...any) (*contractsdb.Result, error) {
 	var (
-		realDest any
-		err      error
+		dest  any
+		query *Query
 	)
 
-	query := r.buildConditions()
-
-	if len(dest) > 0 {
-		realDest = dest[0]
-		query, err = query.refreshConnection(realDest)
-		if err != nil {
-			return nil, err
-		}
+	if len(dests) > 0 {
+		dest = dests[0]
+		query = r.dest(dest).buildConditions()
+	} else {
+		query = r.buildConditions()
 	}
 
-	if err := query.deleting(realDest); err != nil {
+	if err := query.deleting(dest); err != nil {
 		return nil, err
 	}
 
-	res := query.instance.Delete(realDest)
+	res := query.instance.Delete(dest)
 	if res.Error != nil {
 		return nil, res.Error
 	}
 
-	if err := query.deleted(realDest); err != nil {
+	if err := query.deleted(dest); err != nil {
 		return nil, err
 	}
 
@@ -260,12 +253,7 @@ func (r *Query) Exists() (bool, error) {
 }
 
 func (r *Query) Find(dest any, conds ...any) error {
-	query, err := r.refreshConnection(dest)
-	if err != nil {
-		return err
-	}
-
-	query = query.buildConditions()
+	query := r.dest(dest).buildConditions()
 
 	if err := filterFindConditions(conds...); err != nil {
 		return err
@@ -278,12 +266,7 @@ func (r *Query) Find(dest any, conds ...any) error {
 }
 
 func (r *Query) FindOrFail(dest any, conds ...any) error {
-	query, err := r.refreshConnection(dest)
-	if err != nil {
-		return err
-	}
-
-	query = query.buildConditions()
+	query := r.dest(dest).buildConditions()
 
 	if err := filterFindConditions(conds...); err != nil {
 		return err
@@ -302,12 +285,7 @@ func (r *Query) FindOrFail(dest any, conds ...any) error {
 }
 
 func (r *Query) First(dest any) error {
-	query, err := r.refreshConnection(dest)
-	if err != nil {
-		return err
-	}
-
-	query = query.buildConditions()
+	query := r.dest(dest).buildConditions()
 
 	res := query.instance.First(dest)
 	if res.Error != nil {
@@ -322,12 +300,7 @@ func (r *Query) First(dest any) error {
 }
 
 func (r *Query) FirstOr(dest any, callback func() error) error {
-	query, err := r.refreshConnection(dest)
-	if err != nil {
-		return err
-	}
-
-	query = query.buildConditions()
+	query := r.dest(dest).buildConditions()
 
 	if err := query.instance.First(dest).Error; err != nil {
 		if errors.Is(err, gormio.ErrRecordNotFound) {
@@ -341,12 +314,7 @@ func (r *Query) FirstOr(dest any, callback func() error) error {
 }
 
 func (r *Query) FirstOrCreate(dest any, conds ...any) error {
-	query, err := r.refreshConnection(dest)
-	if err != nil {
-		return err
-	}
-
-	query = query.buildConditions()
+	query := r.dest(dest).buildConditions()
 
 	if len(conds) == 0 {
 		return errors.OrmQueryConditionRequired
@@ -366,16 +334,11 @@ func (r *Query) FirstOrCreate(dest any, conds ...any) error {
 		return query.retrieved(dest)
 	}
 
-	return query.Create(dest)
+	return r.Create(dest)
 }
 
 func (r *Query) FirstOrFail(dest any) error {
-	query, err := r.refreshConnection(dest)
-	if err != nil {
-		return err
-	}
-
-	query = query.buildConditions()
+	query := r.dest(dest).buildConditions()
 
 	if err := query.instance.First(dest).Error; err != nil {
 		if errors.Is(err, gormio.ErrRecordNotFound) {
@@ -389,12 +352,7 @@ func (r *Query) FirstOrFail(dest any) error {
 }
 
 func (r *Query) FirstOrNew(dest any, attributes any, values ...any) error {
-	query, err := r.refreshConnection(dest)
-	if err != nil {
-		return err
-	}
-
-	query = query.buildConditions()
+	query := r.dest(dest).buildConditions()
 
 	var res *gormio.DB
 	if len(values) > 0 {
@@ -413,33 +371,30 @@ func (r *Query) FirstOrNew(dest any, attributes any, values ...any) error {
 	return nil
 }
 
-func (r *Query) ForceDelete(dest ...any) (*contractsdb.Result, error) {
+func (r *Query) ForceDelete(dests ...any) (*contractsdb.Result, error) {
 	var (
-		realDest any
-		err      error
+		dest  any
+		query *Query
 	)
 
-	query := r.buildConditions()
-
-	if len(dest) > 0 {
-		realDest = dest[0]
-		query, err = query.refreshConnection(realDest)
-		if err != nil {
-			return nil, err
-		}
+	if len(dests) > 0 {
+		dest = dests[0]
+		query = r.dest(dest).buildConditions()
+	} else {
+		query = r.buildConditions()
 	}
 
-	if err := query.forceDeleting(realDest); err != nil {
+	if err := query.forceDeleting(dest); err != nil {
 		return nil, err
 	}
 
-	res := query.instance.Unscoped().Delete(realDest)
+	res := query.instance.Unscoped().Delete(dest)
 	if res.Error != nil {
 		return nil, res.Error
 	}
 
 	if res.RowsAffected > 0 {
-		if err := query.forceDeleted(realDest); err != nil {
+		if err := query.forceDeleted(dest); err != nil {
 			return nil, err
 		}
 	}
@@ -569,6 +524,10 @@ func (r *Query) LockForUpdate() contractsorm.Query {
 }
 
 func (r *Query) Model(value any) contractsorm.Query {
+	if r.conditions.model != nil {
+		return r
+	}
+
 	conditions := r.conditions
 	conditions.model = value
 
@@ -650,12 +609,7 @@ func (r *Query) OrWhere(query any, args ...any) contractsorm.Query {
 }
 
 func (r *Query) Paginate(page, limit int, dest any, total *int64) error {
-	query, err := r.refreshConnection(dest)
-	if err != nil {
-		return err
-	}
-
-	query = query.buildConditions()
+	query := r.dest(dest).buildConditions()
 
 	offset := (page - 1) * limit
 	if total != nil {
@@ -687,20 +641,17 @@ func (r *Query) Raw(sql string, values ...any) contractsorm.Query {
 	return r.new(r.instance.Raw(sql, values...))
 }
 
-func (r *Query) Restore(model ...any) (*contractsdb.Result, error) {
+func (r *Query) Restore(dests ...any) (*contractsdb.Result, error) {
 	var (
-		realModel any
-		err       error
+		dest  any
+		query *Query
 	)
 
-	query := r.buildConditions()
-
-	if len(model) > 0 {
-		realModel = model[0]
-		query, err = query.refreshConnection(realModel)
-		if err != nil {
-			return nil, err
-		}
+	if len(dests) > 0 {
+		dest = dests[0]
+		query = r.dest(dest).buildConditions()
+	} else {
+		query = r.buildConditions()
 	}
 
 	var (
@@ -708,9 +659,9 @@ func (r *Query) Restore(model ...any) (*contractsdb.Result, error) {
 
 		tx = query.instance
 	)
-	if realModel != nil {
-		deletedAtColumnName = getDeletedAtColumn(realModel)
-		tx = query.instance.Model(realModel)
+	if dest != nil {
+		deletedAtColumnName = getDeletedAtColumn(dest)
+		tx = query.instance.Model(dest)
 	} else if query.conditions.model != nil {
 		deletedAtColumnName = getDeletedAtColumn(query.conditions.model)
 	}
@@ -718,7 +669,7 @@ func (r *Query) Restore(model ...any) (*contractsdb.Result, error) {
 		return nil, errors.OrmDeletedAtColumnNotFound
 	}
 
-	if err := r.restoring(realModel); err != nil {
+	if err := r.restoring(dest); err != nil {
 		return nil, err
 	}
 
@@ -727,7 +678,7 @@ func (r *Query) Restore(model ...any) (*contractsdb.Result, error) {
 		return nil, res.Error
 	}
 
-	if err := r.restored(realModel); err != nil {
+	if err := r.restored(dest); err != nil {
 		return nil, err
 	}
 
@@ -740,58 +691,53 @@ func (r *Query) Rollback() error {
 	return r.instance.Rollback().Error
 }
 
-func (r *Query) Save(value any) error {
-	query, err := r.refreshConnection(value)
-	if err != nil {
-		return err
-	}
-
-	query = query.buildConditions()
+func (r *Query) Save(dest any) error {
+	query := r.dest(dest).buildConditions()
 
 	if len(query.instance.Statement.Selects) > 0 && len(query.instance.Statement.Omits) > 0 {
 		return errors.OrmQuerySelectAndOmitsConflict
 	}
 
-	id := database.GetID(value)
+	id := database.GetID(dest)
 	update := id != nil
 
-	if err := query.saving(value); err != nil {
+	if err := query.saving(dest); err != nil {
 		return err
 	}
 	if update {
-		if err := query.updating(value); err != nil {
+		if err := query.updating(dest); err != nil {
 			return err
 		}
 	} else {
-		if err := query.creating(value); err != nil {
+		if err := query.creating(dest); err != nil {
 			return err
 		}
 	}
 
 	if len(query.instance.Statement.Selects) > 0 {
-		if err := query.selectSave(value); err != nil {
+		if err := query.selectSave(dest); err != nil {
 			return err
 		}
 	} else if len(query.instance.Statement.Omits) > 0 {
-		if err := query.omitSave(value); err != nil {
+		if err := query.omitSave(dest); err != nil {
 			return err
 		}
 	} else {
-		if err := query.save(value); err != nil {
+		if err := query.save(dest); err != nil {
 			return err
 		}
 	}
 
 	if update {
-		if err := query.updated(value); err != nil {
+		if err := query.updated(dest); err != nil {
 			return err
 		}
 	} else {
-		if err := query.created(value); err != nil {
+		if err := query.created(dest); err != nil {
 			return err
 		}
 	}
-	if err := query.saved(value); err != nil {
+	if err := query.saved(dest); err != nil {
 		return err
 	}
 
@@ -803,12 +749,7 @@ func (r *Query) SaveQuietly(value any) error {
 }
 
 func (r *Query) Scan(dest any) error {
-	query, err := r.refreshConnection(dest)
-	if err != nil {
-		return err
-	}
-
-	query = query.buildConditions()
+	query := r.dest(dest).buildConditions()
 
 	return query.instance.Scan(dest).Error
 }
@@ -912,22 +853,17 @@ func (r *Query) Update(column any, value ...any) (*contractsdb.Result, error) {
 }
 
 func (r *Query) UpdateOrCreate(dest any, attributes any, values any) error {
-	query, err := r.refreshConnection(dest)
-	if err != nil {
-		return err
-	}
-
-	query = query.buildConditions()
+	query := r.dest(dest).buildConditions()
 
 	res := query.instance.Assign(values).FirstOrInit(dest, attributes)
 	if res.Error != nil {
 		return res.Error
 	}
 	if res.RowsAffected > 0 {
-		return query.Save(dest)
+		return r.Save(dest)
 	}
 
-	return query.Create(dest)
+	return r.Create(dest)
 }
 
 func (r *Query) Where(query any, args ...any) contractsorm.Query {
@@ -1090,6 +1026,24 @@ func (r *Query) WithTrashed() contractsorm.Query {
 	return r.setConditions(conditions)
 }
 
+func (r *Query) addGlobalScopes(model any) *Query {
+	if model == nil {
+		return r
+	}
+
+	modelWithGlobalScopes, ok := model.(contractsorm.ModelWithGlobalScopes)
+	if !ok {
+		return r
+	}
+
+	globalScopes := modelWithGlobalScopes.GlobalScopes()
+	if len(globalScopes) == 0 {
+		return r
+	}
+
+	return r.Scopes(globalScopes...).(*Query)
+}
+
 func (r *Query) addWhere(where contractsdriver.Where) contractsorm.Query {
 	conditions := r.conditions
 	conditions.where = append(conditions.where, where)
@@ -1098,7 +1052,16 @@ func (r *Query) addWhere(where contractsdriver.Where) contractsorm.Query {
 }
 
 func (r *Query) buildConditions() *Query {
-	query := r.buildModel()
+	query := r.addGlobalScopes(r.conditions.model)
+	query, err := query.refreshConnection()
+	if err != nil {
+		query = r.new(r.instance.Session(&gormio.Session{}))
+		_ = query.instance.AddError(err)
+
+		return query
+	}
+
+	query = query.buildModel()
 	db := query.instance
 	db = query.buildDistinct(db)
 	db = query.buildGroup(db)
@@ -1198,15 +1161,7 @@ func (r *Query) buildModel() *Query {
 		return r
 	}
 
-	query, err := r.refreshConnection(r.conditions.model)
-	if err != nil {
-		query = r.new(r.instance.Session(&gormio.Session{}))
-		_ = query.instance.AddError(err)
-
-		return query
-	}
-
-	return query.new(query.instance.Model(r.conditions.model))
+	return r.new(r.instance.Model(r.conditions.model))
 }
 
 func (r *Query) buildOffset(db *gormio.DB) *gormio.DB {
@@ -1458,11 +1413,11 @@ func (r *Query) create(dest any) error {
 }
 
 func (r *Query) created(dest any) error {
-	return r.event(contractsorm.EventCreated, r.instance.Statement.Model, dest)
+	return r.event(contractsorm.EventCreated, r.conditions.model, dest)
 }
 
 func (r *Query) creating(dest any) error {
-	return r.event(contractsorm.EventCreating, r.instance.Statement.Model, dest)
+	return r.event(contractsorm.EventCreating, r.conditions.model, dest)
 }
 
 func (r *Query) event(event contractsorm.EventType, model, dest any) error {
@@ -1472,15 +1427,6 @@ func (r *Query) event(event contractsorm.EventType, model, dest any) error {
 
 	instance := NewEvent(r, model, dest)
 
-	if dest != nil {
-		if dispatchesEvents, exist := dest.(contractsorm.DispatchesEvents); exist {
-			if dispatchesEvent, exists := dispatchesEvents.DispatchesEvents()[event]; exists {
-				return dispatchesEvent(instance)
-			}
-			return nil
-		}
-	}
-
 	if model != nil {
 		if dispatchesEvents, exist := model.(contractsorm.DispatchesEvents); exist {
 			if dispatchesEvent, exists := dispatchesEvents.DispatchesEvents()[event]; exists {
@@ -1489,18 +1435,7 @@ func (r *Query) event(event contractsorm.EventType, model, dest any) error {
 
 			return nil
 		}
-	}
 
-	if dest != nil {
-		if observer := r.getObserver(dest); observer != nil {
-			if observerEvent := getObserverEvent(event, observer); observerEvent != nil {
-				return observerEvent(instance)
-			}
-			return nil
-		}
-	}
-
-	if model != nil {
 		if observer := r.getObserver(model); observer != nil {
 			if observerEvent := getObserverEvent(event, observer); observerEvent != nil {
 				return observerEvent(instance)
@@ -1510,23 +1445,46 @@ func (r *Query) event(event contractsorm.EventType, model, dest any) error {
 		}
 	}
 
+	if dest != nil {
+		if dispatchesEvents, exist := dest.(contractsorm.DispatchesEvents); exist {
+			if dispatchesEvent, exists := dispatchesEvents.DispatchesEvents()[event]; exists {
+				return dispatchesEvent(instance)
+			}
+			return nil
+		}
+
+		if observer := r.getObserver(dest); observer != nil {
+			if observerEvent := getObserverEvent(event, observer); observerEvent != nil {
+				return observerEvent(instance)
+			}
+			return nil
+		}
+	}
+
 	return nil
 }
 
 func (r *Query) deleting(dest any) error {
-	return r.event(contractsorm.EventDeleting, r.instance.Statement.Model, dest)
+	return r.event(contractsorm.EventDeleting, r.conditions.model, dest)
 }
 
 func (r *Query) deleted(dest any) error {
-	return r.event(contractsorm.EventDeleted, r.instance.Statement.Model, dest)
+	return r.event(contractsorm.EventDeleted, r.conditions.model, dest)
+}
+
+func (r *Query) dest(value any) *Query {
+	conditions := r.conditions
+	conditions.dest = value
+
+	return r.setConditions(conditions)
 }
 
 func (r *Query) forceDeleting(dest any) error {
-	return r.event(contractsorm.EventForceDeleting, r.instance.Statement.Model, dest)
+	return r.event(contractsorm.EventForceDeleting, r.conditions.model, dest)
 }
 
 func (r *Query) forceDeleted(dest any) error {
-	return r.event(contractsorm.EventForceDeleted, r.instance.Statement.Model, dest)
+	return r.event(contractsorm.EventForceDeleted, r.conditions.model, dest)
 }
 
 func (r *Query) getObserver(dest any) contractsorm.Observer {
@@ -1602,8 +1560,19 @@ func (r *Query) omitSave(value any) error {
 	return r.instance.Save(value).Error
 }
 
-func (r *Query) refreshConnection(model any) (*Query, error) {
-	connection, err := getModelConnection(model)
+func (r *Query) refreshConnection() (*Query, error) {
+	var (
+		connection string
+		err        error
+	)
+
+	if r.conditions.model != nil {
+		connection, err = getModelConnection(r.conditions.model)
+	} else if r.conditions.dest != nil {
+		connection, err = getModelConnection(r.conditions.dest)
+	} else {
+		return r, nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -1631,15 +1600,15 @@ func (r *Query) refreshConnection(model any) (*Query, error) {
 }
 
 func (r *Query) restored(dest any) error {
-	return r.event(contractsorm.EventRestored, r.instance.Statement.Model, dest)
+	return r.event(contractsorm.EventRestored, r.conditions.model, dest)
 }
 
 func (r *Query) restoring(dest any) error {
-	return r.event(contractsorm.EventRestoring, r.instance.Statement.Model, dest)
+	return r.event(contractsorm.EventRestoring, r.conditions.model, dest)
 }
 
 func (r *Query) retrieved(dest any) error {
-	return r.event(contractsorm.EventRetrieved, nil, dest)
+	return r.event(contractsorm.EventRetrieved, r.conditions.model, dest)
 }
 
 func (r *Query) save(value any) error {
@@ -1647,11 +1616,11 @@ func (r *Query) save(value any) error {
 }
 
 func (r *Query) saved(dest any) error {
-	return r.event(contractsorm.EventSaved, r.instance.Statement.Model, dest)
+	return r.event(contractsorm.EventSaved, r.conditions.model, dest)
 }
 
 func (r *Query) saving(dest any) error {
-	return r.event(contractsorm.EventSaving, r.instance.Statement.Model, dest)
+	return r.event(contractsorm.EventSaving, r.conditions.model, dest)
 }
 
 func (r *Query) selectCreate(value any) error {
@@ -1710,11 +1679,11 @@ func (r *Query) setConditions(conditions Conditions) *Query {
 }
 
 func (r *Query) updating(dest any) error {
-	return r.event(contractsorm.EventUpdating, r.instance.Statement.Model, dest)
+	return r.event(contractsorm.EventUpdating, r.conditions.model, dest)
 }
 
 func (r *Query) updated(dest any) error {
-	return r.event(contractsorm.EventUpdated, r.instance.Statement.Model, dest)
+	return r.event(contractsorm.EventUpdated, r.conditions.model, dest)
 }
 
 func (r *Query) update(values any) (*contractsdb.Result, error) {
@@ -1846,7 +1815,7 @@ func getModelConnection(model any) (string, error) {
 	}
 
 	newModel := reflect.New(modelType)
-	connectionModel, ok := newModel.Interface().(contractsorm.ConnectionModel)
+	connectionModel, ok := newModel.Interface().(contractsorm.ModelWithConnection)
 	if !ok {
 		return "", nil
 	}

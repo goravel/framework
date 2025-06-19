@@ -232,9 +232,13 @@ type Association interface {
 	Count() int64
 }
 
-type ConnectionModel interface {
+type ModelWithConnection interface {
 	// Connection gets the connection name for the model.
 	Connection() string
+}
+
+type ModelWithGlobalScopes interface {
+	GlobalScopes() []func(Query) Query
 }
 
 type ToSql interface {
