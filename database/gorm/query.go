@@ -116,7 +116,7 @@ func (r *Query) Commit() error {
 }
 
 func (r *Query) Count() (int64, error) {
-	query := r.buildConditions()
+	query := r.addGlobalScopes().buildConditions()
 
 	var count int64
 
@@ -148,7 +148,7 @@ func (r *Query) Create(value any) error {
 
 func (r *Query) Cursor() chan contractsdb.Row {
 	with := r.conditions.with
-	query := r.buildConditions()
+	query := r.addGlobalScopes().buildConditions()
 	r.conditions.with = with
 
 	cursorChan := make(chan contractsdb.Row)
@@ -197,9 +197,9 @@ func (r *Query) Delete(dests ...any) (*contractsdb.Result, error) {
 
 	if len(dests) > 0 {
 		dest = dests[0]
-		query = r.dest(dest).buildConditions()
+		query = r.dest(dest).addGlobalScopes().buildConditions()
 	} else {
-		query = r.buildConditions()
+		query = r.addGlobalScopes().buildConditions()
 	}
 
 	if err := query.deleting(dest); err != nil {
@@ -241,7 +241,7 @@ func (r *Query) Exec(sql string, values ...any) (*contractsdb.Result, error) {
 }
 
 func (r *Query) Exists() (bool, error) {
-	query := r.buildConditions()
+	query := r.addGlobalScopes().buildConditions()
 
 	var exists bool
 	err := query.instance.Select("1").Limit(1).Find(&exists).Error
@@ -253,7 +253,7 @@ func (r *Query) Exists() (bool, error) {
 }
 
 func (r *Query) Find(dest any, conds ...any) error {
-	query := r.dest(dest).buildConditions()
+	query := r.dest(dest).addGlobalScopes().buildConditions()
 
 	if err := filterFindConditions(conds...); err != nil {
 		return err
@@ -266,7 +266,7 @@ func (r *Query) Find(dest any, conds ...any) error {
 }
 
 func (r *Query) FindOrFail(dest any, conds ...any) error {
-	query := r.dest(dest).buildConditions()
+	query := r.dest(dest).addGlobalScopes().buildConditions()
 
 	if err := filterFindConditions(conds...); err != nil {
 		return err
@@ -285,7 +285,7 @@ func (r *Query) FindOrFail(dest any, conds ...any) error {
 }
 
 func (r *Query) First(dest any) error {
-	query := r.dest(dest).buildConditions()
+	query := r.dest(dest).addGlobalScopes().buildConditions()
 
 	res := query.instance.First(dest)
 	if res.Error != nil {
@@ -300,7 +300,7 @@ func (r *Query) First(dest any) error {
 }
 
 func (r *Query) FirstOr(dest any, callback func() error) error {
-	query := r.dest(dest).buildConditions()
+	query := r.dest(dest).addGlobalScopes().buildConditions()
 
 	if err := query.instance.First(dest).Error; err != nil {
 		if errors.Is(err, gormio.ErrRecordNotFound) {
@@ -314,7 +314,7 @@ func (r *Query) FirstOr(dest any, callback func() error) error {
 }
 
 func (r *Query) FirstOrCreate(dest any, conds ...any) error {
-	query := r.dest(dest).buildConditions()
+	query := r.dest(dest).addGlobalScopes().buildConditions()
 
 	if len(conds) == 0 {
 		return errors.OrmQueryConditionRequired
@@ -338,7 +338,7 @@ func (r *Query) FirstOrCreate(dest any, conds ...any) error {
 }
 
 func (r *Query) FirstOrFail(dest any) error {
-	query := r.dest(dest).buildConditions()
+	query := r.dest(dest).addGlobalScopes().buildConditions()
 
 	if err := query.instance.First(dest).Error; err != nil {
 		if errors.Is(err, gormio.ErrRecordNotFound) {
@@ -352,7 +352,7 @@ func (r *Query) FirstOrFail(dest any) error {
 }
 
 func (r *Query) FirstOrNew(dest any, attributes any, values ...any) error {
-	query := r.dest(dest).buildConditions()
+	query := r.dest(dest).addGlobalScopes().buildConditions()
 
 	var res *gormio.DB
 	if len(values) > 0 {
@@ -379,9 +379,9 @@ func (r *Query) ForceDelete(dests ...any) (*contractsdb.Result, error) {
 
 	if len(dests) > 0 {
 		dest = dests[0]
-		query = r.dest(dest).buildConditions()
+		query = r.dest(dest).addGlobalScopes().buildConditions()
 	} else {
-		query = r.buildConditions()
+		query = r.addGlobalScopes().buildConditions()
 	}
 
 	if err := query.forceDeleting(dest); err != nil {
@@ -609,7 +609,7 @@ func (r *Query) OrWhere(query any, args ...any) contractsorm.Query {
 }
 
 func (r *Query) Paginate(page, limit int, dest any, total *int64) error {
-	query := r.dest(dest).buildConditions()
+	query := r.dest(dest).addGlobalScopes().buildConditions()
 
 	offset := (page - 1) * limit
 	if total != nil {
@@ -632,7 +632,7 @@ func (r *Query) Paginate(page, limit int, dest any, total *int64) error {
 }
 
 func (r *Query) Pluck(column string, dest any) error {
-	query := r.buildConditions()
+	query := r.addGlobalScopes().buildConditions()
 
 	return query.instance.Pluck(column, dest).Error
 }
@@ -649,9 +649,9 @@ func (r *Query) Restore(dests ...any) (*contractsdb.Result, error) {
 
 	if len(dests) > 0 {
 		dest = dests[0]
-		query = r.dest(dest).buildConditions()
+		query = r.dest(dest).addGlobalScopes().buildConditions()
 	} else {
-		query = r.buildConditions()
+		query = r.addGlobalScopes().buildConditions()
 	}
 
 	var (
@@ -692,14 +692,19 @@ func (r *Query) Rollback() error {
 }
 
 func (r *Query) Save(dest any) error {
-	query := r.dest(dest).buildConditions()
-
-	if len(query.instance.Statement.Selects) > 0 && len(query.instance.Statement.Omits) > 0 {
+	if r.conditions.selectColumns != nil && len(r.conditions.omit) > 0 {
 		return errors.OrmQuerySelectAndOmitsConflict
 	}
 
 	id := database.GetID(dest)
 	update := id != nil
+
+	var query *Query
+	if update {
+		query = r.dest(dest).addGlobalScopes().buildConditions()
+	} else {
+		query = r.dest(dest).buildConditions()
+	}
 
 	if err := query.saving(dest); err != nil {
 		return err
@@ -749,7 +754,7 @@ func (r *Query) SaveQuietly(value any) error {
 }
 
 func (r *Query) Scan(dest any) error {
-	query := r.dest(dest).buildConditions()
+	query := r.dest(dest).addGlobalScopes().buildConditions()
 
 	return query.instance.Scan(dest).Error
 }
@@ -785,7 +790,7 @@ func (r *Query) SharedLock() contractsorm.Query {
 }
 
 func (r *Query) Sum(column string, dest any) error {
-	query := r.buildConditions()
+	query := r.addGlobalScopes().buildConditions()
 
 	return query.instance.Select("SUM(" + column + ")").Row().Scan(dest)
 }
@@ -809,7 +814,7 @@ func (r *Query) ToRawSql() contractsorm.ToSql {
 }
 
 func (r *Query) Update(column any, value ...any) (*contractsdb.Result, error) {
-	query := r.buildConditions()
+	query := r.addGlobalScopes().buildConditions()
 
 	if _, ok := column.(string); !ok && len(value) > 0 {
 		return nil, errors.OrmQueryInvalidParameter
@@ -853,7 +858,7 @@ func (r *Query) Update(column any, value ...any) (*contractsdb.Result, error) {
 }
 
 func (r *Query) UpdateOrCreate(dest any, attributes any, values any) error {
-	query := r.dest(dest).buildConditions()
+	query := r.dest(dest).addGlobalScopes().buildConditions()
 
 	res := query.instance.Assign(values).FirstOrInit(dest, attributes)
 	if res.Error != nil {
@@ -1026,8 +1031,19 @@ func (r *Query) WithTrashed() contractsorm.Query {
 	return r.setConditions(conditions)
 }
 
-func (r *Query) addGlobalScopes(model any) *Query {
-	if model == nil {
+func (r *Query) addGlobalScopes() *Query {
+	var model any
+
+	if r.conditions.model != nil {
+		model = r.conditions.model
+	} else if r.conditions.dest != nil {
+		model = r.conditions.dest
+	} else {
+		return r
+	}
+
+	model, err := modelToStruct(model)
+	if err != nil {
 		return r
 	}
 
@@ -1052,8 +1068,7 @@ func (r *Query) addWhere(where contractsdriver.Where) contractsorm.Query {
 }
 
 func (r *Query) buildConditions() *Query {
-	query := r.addGlobalScopes(r.conditions.model)
-	query, err := query.refreshConnection()
+	query, err := r.refreshConnection()
 	if err != nil {
 		query = r.new(r.instance.Session(&gormio.Session{}))
 		_ = query.instance.AddError(err)
@@ -1487,6 +1502,29 @@ func (r *Query) forceDeleted(dest any) error {
 	return r.event(contractsorm.EventForceDeleted, r.conditions.model, dest)
 }
 
+func (r *Query) getModelConnection() string {
+	var (
+		model any
+		err   error
+	)
+
+	if r.conditions.model != nil {
+		model, err = modelToStruct(r.conditions.model)
+	} else if r.conditions.dest != nil {
+		model, err = modelToStruct(r.conditions.dest)
+	}
+	if err != nil {
+		return ""
+	}
+
+	connectionModel, ok := model.(contractsorm.ModelWithConnection)
+	if !ok {
+		return ""
+	}
+
+	return connectionModel.Connection()
+}
+
 func (r *Query) getObserver(dest any) contractsorm.Observer {
 	destType := reflect.TypeOf(dest)
 	if destType.Kind() == reflect.Pointer {
@@ -1561,21 +1599,7 @@ func (r *Query) omitSave(value any) error {
 }
 
 func (r *Query) refreshConnection() (*Query, error) {
-	var (
-		connection string
-		err        error
-	)
-
-	if r.conditions.model != nil {
-		connection, err = getModelConnection(r.conditions.model)
-	} else if r.conditions.dest != nil {
-		connection, err = getModelConnection(r.conditions.dest)
-	} else {
-		return r, nil
-	}
-	if err != nil {
-		return nil, err
-	}
+	connection := r.getModelConnection()
 	if connection == "" || connection == r.dbConfig.Connection {
 		return r, nil
 	}
@@ -1787,42 +1811,6 @@ func getDeletedAtColumn(model any) string {
 	return ""
 }
 
-func getModelConnection(model any) (string, error) {
-	modelValue := reflect.ValueOf(model)
-	if modelValue.Kind() == reflect.Ptr && modelValue.IsNil() {
-		// If the model is a pointer and is nil, we will create a new instance of the model
-		modelValue = reflect.New(modelValue.Type().Elem())
-	}
-	modelType := reflect.Indirect(modelValue).Type()
-
-	if modelType.Kind() == reflect.Interface {
-		modelType = reflect.Indirect(modelValue).Elem().Type()
-	}
-
-	for modelType.Kind() == reflect.Slice || modelType.Kind() == reflect.Array || modelType.Kind() == reflect.Ptr {
-		modelType = modelType.Elem()
-	}
-
-	if modelType.Kind() == reflect.Map {
-		return "", nil
-	}
-
-	if modelType.Kind() != reflect.Struct {
-		if modelType.PkgPath() == "" {
-			return "", errors.OrmQueryInvalidModel.Args("")
-		}
-		return "", errors.OrmQueryInvalidModel.Args(fmt.Sprintf(": %s.%s", modelType.PkgPath(), modelType.Name()))
-	}
-
-	newModel := reflect.New(modelType)
-	connectionModel, ok := newModel.Interface().(contractsorm.ModelWithConnection)
-	if !ok {
-		return "", nil
-	}
-
-	return connectionModel.Connection(), nil
-}
-
 func getObserverEvent(event contractsorm.EventType, observer contractsorm.Observer) func(contractsorm.Event) error {
 	switch event {
 	case contractsorm.EventCreated:
@@ -1872,4 +1860,42 @@ func getObserverEvent(event contractsorm.EventType, observer contractsorm.Observ
 	}
 
 	return nil
+}
+
+// modelToStruct normalizes a model value for database operations.
+// It handles nil pointers by creating new instances, resolves interface types,
+// unwraps slice/array/pointer types to their underlying struct type,
+// validates that the final type is a struct (rejecting maps and other types),
+// and returns a new instance of the struct type ready for database operations.
+// Returns an error if the model type is invalid (map, primitive, etc.).
+func modelToStruct(model any) (any, error) {
+	modelValue := reflect.ValueOf(model)
+	if modelValue.Kind() == reflect.Ptr && modelValue.IsNil() {
+		// If the model is a pointer and is nil, we will create a new instance of the model
+		modelValue = reflect.New(modelValue.Type().Elem())
+	}
+	modelType := reflect.Indirect(modelValue).Type()
+
+	if modelType.Kind() == reflect.Interface {
+		modelType = reflect.Indirect(modelValue).Elem().Type()
+	}
+
+	for modelType.Kind() == reflect.Slice || modelType.Kind() == reflect.Array || modelType.Kind() == reflect.Ptr {
+		modelType = modelType.Elem()
+	}
+
+	if modelType.Kind() == reflect.Map {
+		return nil, errors.OrmQueryInvalidModel.Args("map")
+	}
+
+	if modelType.Kind() != reflect.Struct {
+		if modelType.PkgPath() == "" {
+			return nil, errors.OrmQueryInvalidModel.Args("")
+		}
+		return nil, errors.OrmQueryInvalidModel.Args(fmt.Sprintf(": %s.%s", modelType.PkgPath(), modelType.Name()))
+	}
+
+	newModel := reflect.New(modelType)
+
+	return newModel.Interface(), nil
 }

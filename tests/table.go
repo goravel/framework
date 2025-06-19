@@ -22,6 +22,7 @@ const (
 	TestTableUser
 	TestTableSchema
 	TestTableJsonData
+	TestTableGlobalScopes
 )
 
 type testTables struct {
@@ -35,20 +36,21 @@ func newTestTables(driver string, grammar driver.Grammar) *testTables {
 
 func (r *testTables) All() map[TestTable]func() ([]string, error) {
 	return map[TestTable]func() ([]string, error){
-		TestTableAddresses: r.addresses,
-		TestTableAuthors:   r.authors,
-		TestTableBooks:     r.books,
-		TestTableHouses:    r.houses,
-		TestTablePeoples:   r.peoples,
-		TestTablePhones:    r.phones,
-		TestTableProducts:  r.products,
-		TestTableReviews:   r.reviews,
-		TestTableRoles:     r.roles,
-		TestTableRoleUser:  r.roleUser,
-		TestTableUsers:     r.users,
-		TestTableUser:      r.user,
-		TestTableSchema:    r.schema,
-		TestTableJsonData:  r.jsonData,
+		TestTableAddresses:    r.addresses,
+		TestTableAuthors:      r.authors,
+		TestTableBooks:        r.books,
+		TestTableHouses:       r.houses,
+		TestTablePeoples:      r.peoples,
+		TestTablePhones:       r.phones,
+		TestTableProducts:     r.products,
+		TestTableReviews:      r.reviews,
+		TestTableRoles:        r.roles,
+		TestTableRoleUser:     r.roleUser,
+		TestTableUsers:        r.users,
+		TestTableUser:         r.user,
+		TestTableSchema:       r.schemas,
+		TestTableJsonData:     r.jsonData,
+		TestTableGlobalScopes: r.globalScopes,
 	}
 }
 
@@ -319,7 +321,7 @@ func (r *testTables) roleUser() ([]string, error) {
 	return append(dropSql, createSql...), nil
 }
 
-func (r *testTables) schema() ([]string, error) {
+func (r *testTables) schemas() ([]string, error) {
 	blueprint := schema.NewBlueprint(nil, "", "goravel.schemas")
 	blueprint.Create()
 	blueprint.BigIncrements("id")
@@ -347,6 +349,16 @@ func (r *testTables) jsonData() ([]string, error) {
 	}
 
 	return append(dropSql, createSql...), nil
+}
+
+func (r *testTables) globalScopes() ([]string, error) {
+	blueprint := schema.NewBlueprint(nil, "", "global_scopes")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.String("name")
+	blueprint.Timestamps()
+
+	return blueprint.ToSql(r.grammar)
 }
 
 func (r *testTables) dropSql(table string) ([]string, error) {

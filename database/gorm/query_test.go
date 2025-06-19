@@ -81,7 +81,6 @@ func TestGetModelConnection(t *testing.T) {
 	tests := []struct {
 		name             string
 		model            any
-		expectErr        string
 		expectConnection string
 	}{
 		{
@@ -90,7 +89,6 @@ func TestGetModelConnection(t *testing.T) {
 				var product string
 				return product
 			}(),
-			expectErr: errors.OrmQueryInvalidModel.Args("").Error(),
 		},
 		{
 			name: "not ConnectionModel",
@@ -132,12 +130,13 @@ func TestGetModelConnection(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			connection, err := getModelConnection(test.model)
-			if test.expectErr != "" {
-				assert.EqualError(t, err, test.expectErr)
-			} else {
-				assert.Nil(t, err)
+			query := &Query{
+				conditions: Conditions{
+					model: test.model,
+				},
 			}
+			connection := query.getModelConnection()
+
 			assert.Equal(t, test.expectConnection, connection)
 		})
 	}

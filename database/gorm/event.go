@@ -296,6 +296,9 @@ func fetchColumnNames(model any) map[string]string {
 		modelType = modelType.Elem()
 		modelValue = modelValue.Elem()
 	}
+	if modelType.Kind() != reflect.Struct {
+		return res
+	}
 
 	for i := 0; i < modelType.NumField(); i++ {
 		if !modelType.Field(i).IsExported() {

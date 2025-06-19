@@ -898,72 +898,72 @@ func (s *QueryTestSuite) TestEvent_Created() {
 			name  string
 			setup func()
 		}{
-			// {
-			// 	name: "trigger when create by struct",
-			// 	setup: func() {
-			// 		user := User{Name: "event_created_name", Avatar: "avatar"}
-			// 		s.Nil(query.Query().Create(&user))
-			// 		s.Equal(fmt.Sprintf("event_created_avatar_%d", user.ID), user.Avatar)
+			{
+				name: "trigger when create by struct",
+				setup: func() {
+					user := User{Name: "event_created_name", Avatar: "avatar"}
+					s.Nil(query.Query().Create(&user))
+					s.Equal(fmt.Sprintf("event_created_avatar_%d", user.ID), user.Avatar)
 
-			// 		var user1 User
-			// 		s.Nil(query.Query().Find(&user1, user.ID))
-			// 		s.Equal("event_created_name", user1.Name)
-			// 		s.Equal("avatar", user1.Avatar)
-			// 	},
-			// },
-			// {
-			// 	name: "trigger when create by map",
-			// 	setup: func() {
-			// 		userMap := map[string]any{
-			// 			"name":       "event_created_by_map_name",
-			// 			"avatar":     "event_created_by_map_avatar",
-			// 			"created_at": carbon.Now(),
-			// 			"updated_at": carbon.Now(),
-			// 		}
-			// 		s.Nil(query.Query().Model(&User{}).Create(userMap))
+					var user1 User
+					s.Nil(query.Query().Find(&user1, user.ID))
+					s.Equal("event_created_name", user1.Name)
+					s.Equal("avatar", user1.Avatar)
+				},
+			},
+			{
+				name: "trigger when create by map",
+				setup: func() {
+					userMap := map[string]any{
+						"name":       "event_created_by_map_name",
+						"avatar":     "event_created_by_map_avatar",
+						"created_at": carbon.Now(),
+						"updated_at": carbon.Now(),
+					}
+					s.Nil(query.Query().Model(&User{}).Create(userMap))
 
-			// 		s.Equal("event_created_by_map_avatar1", userMap["avatar"])
+					s.Equal("event_created_by_map_avatar1", userMap["avatar"])
 
-			// 		var user User
-			// 		s.Nil(query.Query().Where("name", "event_created_by_map_name").Find(&user))
-			// 		s.Equal("event_created_by_map_avatar", user.Avatar)
-			// 	},
-			// },
-			// {
-			// 	name: "trigger when FirstOrCreate",
-			// 	setup: func() {
-			// 		var user User
-			// 		s.Nil(query.Query().FirstOrCreate(&user, User{Name: "event_created_FirstOrCreate_name"}))
-			// 		s.True(user.ID > 0)
-			// 		s.Equal("event_created_FirstOrCreate_name", user.Name)
-			// 		s.Equal(fmt.Sprintf("event_created_FirstOrCreate_avatar_%d", user.ID), user.Avatar)
+					var user User
+					s.Nil(query.Query().Where("name", "event_created_by_map_name").Find(&user))
+					s.Equal("event_created_by_map_avatar", user.Avatar)
+				},
+			},
+			{
+				name: "trigger when FirstOrCreate",
+				setup: func() {
+					var user User
+					s.Nil(query.Query().FirstOrCreate(&user, User{Name: "event_created_FirstOrCreate_name"}))
+					s.True(user.ID > 0)
+					s.Equal("event_created_FirstOrCreate_name", user.Name)
+					s.Equal(fmt.Sprintf("event_created_FirstOrCreate_avatar_%d", user.ID), user.Avatar)
 
-			// 		var user1 User
-			// 		s.Nil(query.Query().Find(&user1, user.ID))
-			// 		s.Equal("event_created_FirstOrCreate_name", user1.Name)
-			// 		s.Empty(user1.Avatar)
-			// 	},
-			// },
-			// {
-			// 	name: "trigger when create with omit",
-			// 	setup: func() {
-			// 		user := User{Name: "event_created_omit_create_name", Address: &Address{}, Books: []*Book{{}, {}}}
-			// 		user.Address.Name = "event_created_omit_create_address"
-			// 		user.Books[0].Name = "event_created_omit_create_book0"
-			// 		user.Books[1].Name = "event_created_omit_create_book1"
-			// 		s.Nil(query.Query().Omit("Address").Create(&user))
-			// 		s.True(user.ID > 0)
-			// 		s.Equal(fmt.Sprintf("event_created_omit_create_avatar_%d", user.ID), user.Avatar)
-			// 		s.True(user.Address.ID == 0)
-			// 		s.True(user.Books[0].ID > 0)
-			// 		s.True(user.Books[1].ID > 0)
+					var user1 User
+					s.Nil(query.Query().Find(&user1, user.ID))
+					s.Equal("event_created_FirstOrCreate_name", user1.Name)
+					s.Empty(user1.Avatar)
+				},
+			},
+			{
+				name: "trigger when create with omit",
+				setup: func() {
+					user := User{Name: "event_created_omit_create_name", Address: &Address{}, Books: []*Book{{}, {}}}
+					user.Address.Name = "event_created_omit_create_address"
+					user.Books[0].Name = "event_created_omit_create_book0"
+					user.Books[1].Name = "event_created_omit_create_book1"
+					s.Nil(query.Query().Omit("Address").Create(&user))
+					s.True(user.ID > 0)
+					s.Equal(fmt.Sprintf("event_created_omit_create_avatar_%d", user.ID), user.Avatar)
+					s.True(user.Address.ID == 0)
+					s.True(user.Books[0].ID > 0)
+					s.True(user.Books[1].ID > 0)
 
-			// 		var user1 User
-			// 		s.Nil(query.Query().Find(&user1, user.ID))
-			// 		s.Equal("event_created_omit_create_name", user1.Name)
-			// 		s.Empty(user1.Avatar)
-			// 	},
-			// },
+					var user1 User
+					s.Nil(query.Query().Find(&user1, user.ID))
+					s.Equal("event_created_omit_create_name", user1.Name)
+					s.Empty(user1.Avatar)
+				},
+			},
 			{
 				name: "trigger when create with select",
 				setup: func() {
@@ -971,7 +971,7 @@ func (s *QueryTestSuite) TestEvent_Created() {
 					user.Address.Name = "event_created_select_create_address"
 					user.Books[0].Name = "event_created_select_create_book0"
 					user.Books[1].Name = "event_created_select_create_book1"
-					s.Nil(query.Query().Select("Name", "Avatar", "Address").Create(&user))
+					s.Nil(query.Query().Select("ID", "Name", "Avatar", "Address").Create(&user))
 					s.True(user.ID > 0)
 					s.Equal(fmt.Sprintf("event_created_select_create_avatar_%d", user.ID), user.Avatar)
 					s.True(user.Address.ID > 0)
@@ -984,20 +984,20 @@ func (s *QueryTestSuite) TestEvent_Created() {
 					s.Empty(user1.Avatar)
 				},
 			},
-			// {
-			// 	name: "trigger when save",
-			// 	setup: func() {
-			// 		user := User{Name: "event_created_save_name"}
-			// 		s.Nil(query.Query().Save(&user))
-			// 		s.True(user.ID > 0)
-			// 		s.Equal(fmt.Sprintf("event_created_save_avatar_%d", user.ID), user.Avatar)
+			{
+				name: "trigger when save",
+				setup: func() {
+					user := User{Name: "event_created_save_name"}
+					s.Nil(query.Query().Save(&user))
+					s.True(user.ID > 0)
+					s.Equal(fmt.Sprintf("event_created_save_avatar_%d", user.ID), user.Avatar)
 
-			// 		var user1 User
-			// 		s.Nil(query.Query().Find(&user1, user.ID))
-			// 		s.Equal("event_created_save_name", user1.Name)
-			// 		s.Empty(user1.Avatar)
-			// 	},
-			// },
+					var user1 User
+					s.Nil(query.Query().Find(&user1, user.ID))
+					s.Equal("event_created_save_name", user1.Name)
+					s.Empty(user1.Avatar)
+				},
+			},
 		}
 		for _, test := range tests {
 			s.Run(test.name, func() {
@@ -2084,6 +2084,26 @@ func (s *QueryTestSuite) TestGet() {
 			var user2 []User
 			s.Nil(query.Query().Where("id in ?", []uint{user.ID}).Get(&user2))
 			s.Equal(1, len(user2))
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestGlobalScopes() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			globalScope := GlobalScope{Name: "global_scope"}
+			s.Nil(query.Query().Create(&globalScope))
+			s.True(globalScope.ID > 0)
+
+			globalScope1 := GlobalScope{Name: "global_scope_1"}
+			s.Nil(query.Query().Create(&globalScope1))
+			s.True(globalScope1.ID > 0)
+
+			var globalScopes []GlobalScope
+			s.Nil(query.Query().Get(&globalScopes))
+			s.Equal(1, len(globalScopes))
+			s.True(globalScopes[0].ID > 0)
+			s.Equal("global_scope", globalScopes[0].Name)
 		})
 	}
 }
@@ -3646,7 +3666,7 @@ func (s *QueryTestSuite) TestWithNesting() {
 
 func (s *QueryTestSuite) TestJsonWhereClauses() {
 	mockApp := mocksfoundation.NewApplication(s.T())
-	mockApp.EXPECT().GetJson().Return(json.New()).Times(8)
+	mockApp.EXPECT().GetJson().Return(json.New())
 
 	for driver, query := range s.queries {
 		s.Run(driver, func() {

@@ -4,6 +4,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/support/database"
 )
 
 type ToSql struct {
@@ -21,78 +22,96 @@ func NewToSql(query *Query, log log.Log, raw bool) *ToSql {
 }
 
 func (r *ToSql) Count() string {
-	query := r.query.buildConditions()
+	query := r.query.addGlobalScopes().buildConditions()
 	var count int64
 
 	return r.sql(query.instance.Session(&gorm.Session{DryRun: true}).Count(&count))
 }
 
 func (r *ToSql) Create(value any) string {
-	query := r.query.buildConditions()
+	query := r.query.dest(value).addGlobalScopes().buildConditions()
 
 	return r.sql(query.instance.Session(&gorm.Session{DryRun: true}).Create(value))
 }
 
-func (r *ToSql) Delete(value ...any) string {
-	query := r.query.buildConditions()
+func (r *ToSql) Delete(dests ...any) string {
+	var (
+		dest  any
+		query *Query
+	)
 
-	var dest any
-	if len(value) > 0 {
-		dest = value[0]
+	if len(dests) > 0 {
+		dest = dests[0]
+		query = r.query.dest(dest).addGlobalScopes().buildConditions()
+	} else {
+		query = r.query.addGlobalScopes().buildConditions()
 	}
 
 	return r.sql(query.instance.Session(&gorm.Session{DryRun: true}).Delete(dest))
 }
 
 func (r *ToSql) Find(dest any, conds ...any) string {
-	query := r.query.buildConditions()
+	query := r.query.dest(dest).addGlobalScopes().buildConditions()
 
 	return r.sql(query.instance.Session(&gorm.Session{DryRun: true}).Find(dest, conds...))
 }
 
 func (r *ToSql) First(dest any) string {
-	query := r.query.buildConditions()
+	query := r.query.dest(dest).addGlobalScopes().buildConditions()
 
 	return r.sql(query.instance.Session(&gorm.Session{DryRun: true}).First(dest))
 }
 
-func (r *ToSql) ForceDelete(value ...any) string {
-	query := r.query.buildConditions()
+func (r *ToSql) ForceDelete(dests ...any) string {
+	var (
+		dest  any
+		query *Query
+	)
 
-	var dest any
-	if len(value) > 0 {
-		dest = value[0]
+	if len(dests) > 0 {
+		dest = dests[0]
+		query = r.query.dest(dest).addGlobalScopes().buildConditions()
+	} else {
+		query = r.query.addGlobalScopes().buildConditions()
 	}
 
 	return r.sql(query.instance.Session(&gorm.Session{DryRun: true}).Unscoped().Delete(dest))
 }
 
 func (r *ToSql) Get(dest any) string {
-	query := r.query.buildConditions()
+	query := r.query.dest(dest).addGlobalScopes().buildConditions()
 
 	return r.sql(query.instance.Session(&gorm.Session{DryRun: true}).Find(dest))
 }
 
 func (r *ToSql) Pluck(column string, dest any) string {
-	query := r.query.buildConditions()
+	query := r.query.addGlobalScopes().buildConditions()
 
 	return r.sql(query.instance.Session(&gorm.Session{DryRun: true}).Pluck(column, dest))
 }
 
-func (r *ToSql) Save(value any) string {
-	query := r.query.buildConditions()
+func (r *ToSql) Save(dest any) string {
+	id := database.GetID(dest)
+	update := id != nil
 
-	return r.sql(query.instance.Session(&gorm.Session{DryRun: true}).Save(value))
+	var query *Query
+	if update {
+		query = r.query.dest(dest).addGlobalScopes().buildConditions()
+	} else {
+		query = r.query.dest(dest).buildConditions()
+	}
+
+	return r.sql(query.instance.Session(&gorm.Session{DryRun: true}).Save(dest))
 }
 
 func (r *ToSql) Sum(column string, dest any) string {
-	query := r.query.buildConditions()
+	query := r.query.addGlobalScopes().buildConditions()
 
 	return r.sql(query.instance.Session(&gorm.Session{DryRun: true}).Select("SUM(" + column + ")").Find(dest))
 }
 
 func (r *ToSql) Update(column any, value ...any) string {
-	query := r.query.buildConditions()
+	query := r.query.addGlobalScopes().buildConditions()
 	if _, ok := column.(string); !ok && len(value) > 0 {
 		return ""
 	}

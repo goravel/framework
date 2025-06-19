@@ -507,3 +507,16 @@ type JsonData struct {
 	Model
 	Data string
 }
+
+type GlobalScope struct {
+	Model
+	Name string
+}
+
+func (r *GlobalScope) GlobalScopes() []func(contractsorm.Query) contractsorm.Query {
+	return []func(contractsorm.Query) contractsorm.Query{
+		func(query contractsorm.Query) contractsorm.Query {
+			return query.Where("name", "global_scope")
+		},
+	}
+}
