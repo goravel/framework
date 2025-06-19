@@ -50,8 +50,8 @@ func (s *JwtGuardTestSuite) SetupTest() {
 	cacheFacade = s.mockCache
 	configFacade = s.mockConfig
 
-	s.mockConfig.EXPECT().GetString("jwt.secret").Return("a").Once()
-	s.mockConfig.EXPECT().GetInt("jwt.refresh_ttl").Return(2).Once()
+	s.mockConfig.EXPECT().GetString("auth.guards.user.secret").Return("a").Once()
+	s.mockConfig.EXPECT().GetInt("auth.guards.user.refresh_ttl").Return(2).Once()
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(2).Once()
 
 	jwtGuard, err := NewJwtGuard(s.mockContext, testUserGuard, s.mockUserProvider)
@@ -335,7 +335,8 @@ func (s *JwtGuardTestSuite) TestUser_Success_MultipleParse() {
 	testAdminGuard := "admin"
 
 	s.mockConfig.EXPECT().Get("auth.guards.admin.ttl").Return(2)
-	s.mockConfig.EXPECT().GetString("jwt.secret").Return("a").Once()
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.secret").Return("a").Once()
+	s.mockConfig.EXPECT().GetInt("auth.guards.admin.refresh_ttl").Return(0).Once()
 	s.mockConfig.EXPECT().GetInt("jwt.refresh_ttl").Return(2).Once()
 
 	adminJwtGuard, err := NewJwtGuard(s.mockContext, testAdminGuard, s.mockUserProvider)
@@ -422,8 +423,9 @@ func (s *JwtGuardTestSuite) TestMakeAuthContext() {
 	testAdminGuard := "admin"
 
 	s.mockConfig.EXPECT().Get("auth.guards.admin.ttl").Return(2)
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.secret").Return("").Once()
 	s.mockConfig.EXPECT().GetString("jwt.secret").Return("a").Once()
-	s.mockConfig.EXPECT().GetInt("jwt.refresh_ttl").Return(2).Once()
+	s.mockConfig.EXPECT().GetInt("auth.guards.admin.refresh_ttl").Return(2).Once()
 
 	adminJwtGuardInterface, err := NewJwtGuard(s.mockContext, testAdminGuard, s.mockUserProvider)
 	s.Require().Nil(err)
