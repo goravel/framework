@@ -54,9 +54,12 @@ func NewJwtGuard(ctx http.Context, name string, userProvider contractsauth.UserP
 	}
 
 	jwtSecret := configFacade.GetString(fmt.Sprintf("auth.guards.%s.secret", name))
+
 	if jwtSecret == "" {
+		// Get the secret from the jwt config if the guard specific was not set
 		jwtSecret = configFacade.GetString("jwt.secret")
 	}
+
 	if jwtSecret == "" {
 		return nil, errors.AuthEmptySecret
 	}
@@ -66,6 +69,7 @@ func NewJwtGuard(ctx http.Context, name string, userProvider contractsauth.UserP
 	refreshTtl := configFacade.GetInt(fmt.Sprintf("auth.guards.%s.refresh_ttl", name))
 
 	if refreshTtl == 0 {
+		// Get the ttl from the jwt config if the guard specific was not set
 		refreshTtl = configFacade.GetInt("jwt.refresh_ttl")
 	}
 
