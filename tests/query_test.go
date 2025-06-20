@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/goravel/framework/contracts/database/orm"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/gorm"
@@ -2089,21 +2090,314 @@ func (s *QueryTestSuite) TestGet() {
 }
 
 func (s *QueryTestSuite) TestGlobalScopes() {
+	prepareData := func(query orm.Query) {
+		globalScope1 := GlobalScope{Name: "global_scope_1"}
+		s.Nil(query.Create(&globalScope1))
+		s.True(globalScope1.ID > 0)
+
+		globalScope := GlobalScope{Name: "global_scope"}
+		s.Nil(query.Create(&globalScope))
+		s.True(globalScope.ID > 0)
+	}
+
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			globalScope := GlobalScope{Name: "global_scope"}
-			s.Nil(query.Query().Create(&globalScope))
-			s.True(globalScope.ID > 0)
+			s.Run("Count", func() {
+				s.SetupTest()
+				prepareData(query.Query())
 
-			globalScope1 := GlobalScope{Name: "global_scope_1"}
-			s.Nil(query.Query().Create(&globalScope1))
-			s.True(globalScope1.ID > 0)
+				count, err := query.Query().Model(&GlobalScope{}).Count()
+				s.Nil(err)
+				s.Equal(int64(1), count)
+			})
 
-			var globalScopes []GlobalScope
-			s.Nil(query.Query().Get(&globalScopes))
-			s.Equal(1, len(globalScopes))
-			s.True(globalScopes[0].ID > 0)
-			s.Equal("global_scope", globalScopes[0].Name)
+			s.Run("Cursor", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				count := 0
+				for cursor := range query.Query().Model(&GlobalScope{}).Cursor() {
+					count++
+					var globalScope GlobalScope
+					s.Nil(cursor.Scan(&globalScope))
+					s.True(globalScope.ID > 0)
+					s.Equal("global_scope", globalScope.Name)
+				}
+				s.Equal(1, count)
+			})
+
+			s.Run("Delete", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				res, err := query.Query().Model(&GlobalScope{}).Delete()
+				s.Nil(err)
+				s.Equal(int64(1), res.RowsAffected)
+
+				var globalScopes []GlobalScope
+				s.Nil(query.Query().Get(&globalScopes))
+				s.Equal(0, len(globalScopes))
+			})
+
+			s.Run("Exec", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				res, err := query.Query().Exec("delete from global_scopes")
+				s.Nil(err)
+				s.Equal(int64(2), res.RowsAffected)
+
+				var globalScopes []GlobalScope
+				s.Nil(query.Query().Get(&globalScopes))
+				s.Equal(0, len(globalScopes))
+			})
+
+			s.Run("Exists", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				exists, err := query.Query().Model(&GlobalScope{}).Exists()
+				s.Nil(err)
+				s.True(exists)
+
+				res, err := query.Query().Model(&GlobalScope{}).Delete()
+				s.Nil(err)
+				s.Equal(int64(1), res.RowsAffected)
+
+				exists, err = query.Query().Model(&GlobalScope{}).Exists()
+				s.Nil(err)
+				s.False(exists)
+			})
+
+			s.Run("Find", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				var globalScope GlobalScope
+				s.Nil(query.Query().Find(&globalScope))
+				s.True(globalScope.ID > 0)
+				s.Equal("global_scope", globalScope.Name)
+			})
+
+			s.Run("FindOrFail", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				var globalScope GlobalScope
+				s.Nil(query.Query().FindOrFail(&globalScope))
+				s.True(globalScope.ID > 0)
+				s.Equal("global_scope", globalScope.Name)
+
+				var globalScope1 GlobalScope
+				s.EqualError(query.Query().Where("name", "global_scope_1").FindOrFail(&globalScope1), errors.OrmRecordNotFound.Error())
+				s.Equal(uint(0), globalScope1.ID)
+			})
+
+			s.Run("First", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				var globalScope GlobalScope
+				s.Nil(query.Query().First(&globalScope))
+				s.True(globalScope.ID > 0)
+				s.Equal("global_scope", globalScope.Name)
+			})
+
+			s.Run("FirstOr", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				var globalScope GlobalScope
+				s.Nil(query.Query().FirstOr(&globalScope, func() error {
+					return errors.OrmRecordNotFound
+				}))
+				s.True(globalScope.ID > 0)
+				s.Equal("global_scope", globalScope.Name)
+			})
+
+			s.Run("FirstOrCreate", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				var globalScope GlobalScope
+				s.Nil(query.Query().FirstOrCreate(&globalScope, User{Name: "global_scope"}))
+				s.True(globalScope.ID > 0)
+				s.Equal("global_scope", globalScope.Name)
+			})
+
+			s.Run("FirstOrFail", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				var globalScope GlobalScope
+				s.Nil(query.Query().FirstOrFail(&globalScope))
+				s.True(globalScope.ID > 0)
+				s.Equal("global_scope", globalScope.Name)
+			})
+
+			s.Run("FirstOrNew", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				var globalScope GlobalScope
+				s.Nil(query.Query().FirstOrNew(&globalScope, User{Name: "global_scope"}))
+				s.True(globalScope.ID > 0)
+				s.Equal("global_scope", globalScope.Name)
+			})
+
+			s.Run("ForceDelete", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				res, err := query.Query().Model(&GlobalScope{}).ForceDelete()
+				s.Nil(err)
+				s.Equal(int64(1), res.RowsAffected)
+
+				var globalScopes []GlobalScope
+				s.Nil(query.Query().Get(&globalScopes))
+				s.Equal(0, len(globalScopes))
+			})
+
+			s.Run("Get", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				var globalScopes []GlobalScope
+				s.Nil(query.Query().Get(&globalScopes))
+				s.Equal(1, len(globalScopes))
+				s.True(globalScopes[0].ID > 0)
+				s.Equal("global_scope", globalScopes[0].Name)
+			})
+
+			s.Run("Paginate", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				var (
+					globalScopes []GlobalScope
+					total        int64
+				)
+				s.Nil(query.Query().Paginate(1, 2, &globalScopes, &total))
+				s.Equal(1, len(globalScopes))
+				s.True(globalScopes[0].ID > 0)
+				s.Equal("global_scope", globalScopes[0].Name)
+				s.Equal(int64(1), total)
+			})
+
+			s.Run("Pluck", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				var names []string
+				s.Nil(query.Query().Model(&GlobalScope{}).Pluck("name", &names))
+				s.Equal(1, len(names))
+				s.Equal("global_scope", names[0])
+			})
+
+			s.Run("Restore", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				res, err := query.Query().Model(&GlobalScope{}).Delete()
+				s.Nil(err)
+				s.Equal(int64(1), res.RowsAffected)
+
+				var globalScopes []GlobalScope
+				s.Nil(query.Query().Get(&globalScopes))
+				s.Equal(0, len(globalScopes))
+
+				res, err = query.Query().Model(&GlobalScope{}).WithTrashed().Restore()
+				s.Nil(err)
+				s.Equal(int64(1), res.RowsAffected)
+
+				s.Nil(query.Query().Get(&globalScopes))
+				s.Equal(1, len(globalScopes))
+				s.True(globalScopes[0].ID > 0)
+				s.Equal("global_scope", globalScopes[0].Name)
+			})
+
+			s.Run("Save", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				globalScope := GlobalScope{Name: "global_scope"}
+				s.Nil(query.Query().Save(&globalScope))
+				s.True(globalScope.ID > 0)
+				s.Equal("global_scope", globalScope.Name)
+
+				var globalScopes []GlobalScope
+				s.Nil(query.Query().Get(&globalScopes))
+				s.Equal(2, len(globalScopes))
+				s.True(globalScopes[0].ID > 0)
+				s.Equal("global_scope", globalScopes[0].Name)
+				s.True(globalScopes[1].ID > 0)
+				s.Equal("global_scope", globalScopes[1].Name)
+
+				globalScope.Name = "global_scope_1"
+				s.Nil(query.Query().Save(&globalScope))
+				s.True(globalScope.ID > 0)
+				s.Equal("global_scope_1", globalScope.Name)
+
+				var globalScopes1 []GlobalScope
+				s.Nil(query.Query().Get(&globalScopes1))
+				s.Equal(1, len(globalScopes1))
+				s.True(globalScopes1[0].ID > 0)
+				s.Equal("global_scope", globalScopes1[0].Name)
+			})
+
+			s.Run("Scan", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				var globalScopes []GlobalScope
+				s.Nil(query.Query().Raw("SELECT id, name, created_at, updated_at, deleted_at FROM global_scopes").Scan(&globalScopes))
+				s.Equal(2, len(globalScopes))
+				s.True(globalScopes[0].ID > 0)
+				s.Equal("global_scope_1", globalScopes[0].Name)
+				s.True(globalScopes[1].ID > 0)
+				s.Equal("global_scope", globalScopes[1].Name)
+			})
+
+			s.Run("Sum", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				var globalScope GlobalScope
+				s.Nil(query.Query().First(&globalScope))
+				s.True(globalScope.ID > 0)
+				s.Equal("global_scope", globalScope.Name)
+
+				var sum uint
+				s.Nil(query.Query().Model(&GlobalScope{}).Sum("id", &sum))
+				s.Equal(globalScope.ID, sum)
+			})
+
+			s.Run("Update", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				res, err := query.Query().Model(&GlobalScope{}).Update("name", "global_scope_1")
+				s.Nil(err)
+				s.Equal(int64(1), res.RowsAffected)
+
+				var globalScopes []GlobalScope
+				s.Nil(query.Query().Get(&globalScopes))
+				s.Equal(0, len(globalScopes))
+			})
+
+			s.Run("UpdateOrCreate", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				var globalScope GlobalScope
+				s.Nil(query.Query().UpdateOrCreate(&globalScope, GlobalScope{Name: "global_scope"}, GlobalScope{Name: "global_scope_1"}))
+				s.True(globalScope.ID > 0)
+				s.Equal("global_scope_1", globalScope.Name)
+
+				var globalScopes []GlobalScope
+				s.Nil(query.Query().Get(&globalScopes))
+				s.Equal(0, len(globalScopes))
+			})
 		})
 	}
 }
@@ -3013,15 +3307,15 @@ func (s *QueryTestSuite) TestRestore() {
 			s.Equal(int64(4), res.RowsAffected)
 			s.NoError(err)
 
-			res, err = query.Query().Where("name = ?", "restore_user1").Restore(&User{})
+			res, err = query.Query().Where("name", "restore_user1").Restore(&User{})
 			s.Equal(int64(0), res.RowsAffected)
 			s.NoError(err)
 
-			res, err = query.Query().WithTrashed().Where("name = ?", "restore_user1").Restore(&User{})
+			res, err = query.Query().WithTrashed().Where("name", "restore_user1").Restore(&User{})
 			s.Equal(int64(1), res.RowsAffected)
 			s.NoError(err)
 
-			res, err = query.Query().Model(&User{}).WithTrashed().Where("name = ?", "restore_user2").Restore()
+			res, err = query.Query().Model(&User{}).WithTrashed().Where("name", "restore_user2").Restore()
 			s.Equal(int64(1), res.RowsAffected)
 			s.NoError(err)
 

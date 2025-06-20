@@ -754,7 +754,7 @@ func (r *Query) SaveQuietly(value any) error {
 }
 
 func (r *Query) Scan(dest any) error {
-	query := r.dest(dest).addGlobalScopes().buildConditions()
+	query := r.dest(dest).buildConditions()
 
 	return query.instance.Scan(dest).Error
 }
@@ -1869,6 +1869,10 @@ func getObserverEvent(event contractsorm.EventType, observer contractsorm.Observ
 // and returns a new instance of the struct type ready for database operations.
 // Returns an error if the model type is invalid (map, primitive, etc.).
 func modelToStruct(model any) (any, error) {
+	if model == nil {
+		return nil, errors.OrmQueryInvalidModel.Args("nil")
+	}
+
 	modelValue := reflect.ValueOf(model)
 	if modelValue.Kind() == reflect.Ptr && modelValue.IsNil() {
 		// If the model is a pointer and is nil, we will create a new instance of the model

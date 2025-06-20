@@ -372,6 +372,7 @@ func (r *testTables) globalScopes() ([]string, error) {
 	blueprint.BigIncrements("id")
 	blueprint.String("name")
 	blueprint.Timestamps()
+	blueprint.SoftDeletes()
 
 	createSql, err := blueprint.ToSql(r.grammar)
 	if err != nil {
