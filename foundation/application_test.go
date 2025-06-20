@@ -392,7 +392,7 @@ func (s *ApplicationTestSuite) TestMakeSchedule() {
 
 func (s *ApplicationTestSuite) TestMakeSession() {
 	mockConfig := mocksconfig.NewConfig(s.T())
-	mockConfig.EXPECT().GetString("session.driver", "file").Return("file").Once()
+	mockConfig.EXPECT().GetString("session.default", "file").Return("file").Once()
 	mockConfig.EXPECT().GetString("session.drivers.file.driver").Return("file").Once()
 	mockConfig.EXPECT().GetInt("session.lifetime", 120).Return(120).Once()
 	mockConfig.EXPECT().GetInt("session.gc_interval", 30).Return(30).Once()

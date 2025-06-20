@@ -96,8 +96,8 @@ github.com/goravel/postgres v0.0.2-0.20250614145557-ab2119aeac96 h1:SYZcopDwFPiI
 github.com/goravel/postgres v0.0.2-0.20250614145557-ab2119aeac96/go.mod h1:pS8c1br3gN2lKh0KQm/75a3RjYtF7QIXWX3OsheQCwQ=
 github.com/goravel/sqlite v0.0.0-20250614082629-1038310944c3 h1:3OwFzNEpf5IthUaUVAJFkcimsoMdmN+bgzWCFM0FD3U=
 github.com/goravel/sqlite v0.0.0-20250614082629-1038310944c3/go.mod h1:sw2F1gwcWtT37QYEEtbIilJeSalAubzoK/EBqgs66Bc=
-github.com/goravel/sqlserver v0.0.0-20250614082609-66b6852361e5 h1:fbg8Kdc0Fo0PgHUh00BcCtjN5smSmSLKl5aekQcmteo=
-github.com/goravel/sqlserver v0.0.0-20250614082609-66b6852361e5/go.mod h1:FX93o9bi8J2D9hwNhaaoEAvQpqD8++bFYqnkBugoOuM=
+github.com/goravel/sqlserver v0.0.0-20250616001330-06666a9494c8 h1:BXhzyef+e3Ii46GZ4W1Iv4H3JBayNrKqKM/jZDJXOaA=
+github.com/goravel/sqlserver v0.0.0-20250616001330-06666a9494c8/go.mod h1:oB6myy5J2lZ6JEvBp3SHph37ZKS3L+U8qh1i99n4y1g=
 github.com/gorilla/securecookie v1.1.1/go.mod h1:ra0sb63/xPlUeL+yeDciTfxMRAA+MP+HVt/4epWDjd4=
 github.com/gorilla/sessions v1.2.1/go.mod h1:dk2InVEVJ0sfLlnXv9EAgkf6ecYs/i80K/zI+bUmuGM=
 github.com/hashicorp/go-uuid v1.0.2/go.mod h1:6SBZvOh/SIDV7/2o3Jml5SYk/TvGqwFJ/bN7x4byOro=
