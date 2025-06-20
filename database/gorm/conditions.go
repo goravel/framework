@@ -1,24 +1,15 @@
 package gorm
 
 import (
+	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
-)
-
-// WhereType type of where condition
-type WhereType int
-
-const (
-	WhereTypeBase WhereType = iota
-	WhereTypeJsonContains
-	WhereTypeJsonContainsKey
-	WhereTypeJsonLength
 )
 
 type Conditions struct {
 	distinct      []any
 	groupBy       []string
-	having        *Having
-	join          []Join
+	having        *contractsdriver.Having
+	join          []contractsdriver.Join
 	limit         *int
 	lockForUpdate bool
 	model         any
@@ -29,20 +20,10 @@ type Conditions struct {
 	selectColumns *Select
 	sharedLock    bool
 	table         *Table
-	where         []Where
+	where         []contractsdriver.Where
 	with          []With
 	withoutEvents bool
 	withTrashed   bool
-}
-
-type Having struct {
-	query any
-	args  []any
-}
-
-type Join struct {
-	query string
-	args  []any
 }
 
 type Select struct {
@@ -53,14 +34,6 @@ type Select struct {
 type Table struct {
 	name string
 	args []any
-}
-
-type Where struct {
-	ttype WhereType
-	query any
-	args  []any
-	or    bool
-	isNot bool
 }
 
 type With struct {
