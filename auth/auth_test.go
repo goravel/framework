@@ -50,8 +50,8 @@ func (s *AuthTestSuite) SetupTest() {
 	s.mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(2).Once()
 	s.mockConfig.EXPECT().GetString("auth.providers.user.driver").Return("orm").Once()
 
-	s.mockConfig.EXPECT().GetString("jwt.secret").Return("a").Once()
-	s.mockConfig.EXPECT().GetInt("jwt.refresh_ttl").Return(2).Once()
+	s.mockConfig.EXPECT().GetString("auth.guards.user.secret").Return("a").Once()
+	s.mockConfig.EXPECT().GetInt("auth.guards.user.refresh_ttl").Return(2).Once()
 
 	auth, err := NewAuth(s.mockContext, s.mockConfig, s.mockLog)
 	s.Require().Nil(err)

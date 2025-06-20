@@ -53,14 +53,26 @@ func NewJwtGuard(ctx http.Context, name string, userProvider contractsauth.UserP
 		return nil, errors.CacheFacadeNotSet.SetModule(errors.ModuleAuth)
 	}
 
-	jwtSecret := configFacade.GetString("jwt.secret")
+	jwtSecret := configFacade.GetString(fmt.Sprintf("auth.guards.%s.secret", name))
+
+	if jwtSecret == "" {
+		// Get the secret from the jwt config if the guard specific was not set
+		jwtSecret = configFacade.GetString("jwt.secret")
+	}
+
 	if jwtSecret == "" {
 		return nil, errors.AuthEmptySecret
 	}
 
 	ttl := getTtl(configFacade, name)
 
-	refreshTtl := configFacade.GetInt("jwt.refresh_ttl")
+	refreshTtl := configFacade.GetInt(fmt.Sprintf("auth.guards.%s.refresh_ttl", name))
+
+	if refreshTtl == 0 {
+		// Get the ttl from the jwt config if the guard specific was not set
+		refreshTtl = configFacade.GetInt("jwt.refresh_ttl")
+	}
+
 	if refreshTtl == 0 {
 		// 100 years
 		refreshTtl = 60 * 24 * 365 * 100
