@@ -443,6 +443,38 @@ func (s *JwtGuardTestSuite) TestMakeAuthContext() {
 	s.Equal(&JwtToken{nil, "2"}, guards[testAdminGuard])
 }
 
+func (s *JwtGuardTestSuite) TestRefressTtl() {
+	testAdminGuard := "admin"
+
+	s.mockConfig.EXPECT().Get("auth.guards.admin.ttl").Return(2)
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.secret").Return("").Once()
+	s.mockConfig.EXPECT().GetString("jwt.secret").Return("a").Once()
+	s.mockConfig.EXPECT().GetInt("auth.guards.admin.refresh_ttl").Return(0).Once()
+	s.mockConfig.EXPECT().GetInt("jwt.refresh_ttl").Return(0).Once()
+
+	_, err := NewJwtGuard(s.mockContext, testAdminGuard, s.mockUserProvider)
+	s.Require().Nil(err)
+}
+
+func (s *JwtGuardTestSuite) TestEmptySecret() {
+	testAdminGuard := "admin"
+
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.secret").Return("").Once()
+	s.mockConfig.EXPECT().GetString("jwt.secret").Return("").Once()
+
+	_, err := NewJwtGuard(s.mockContext, testAdminGuard, s.mockUserProvider)
+	s.Assert().ErrorIs(errors.AuthEmptySecret, err)
+}
+
+func (s *JwtGuardTestSuite) TestCacheFacadeNotSet() {
+	testAdminGuard := "admin"
+
+	cacheFacade = nil
+
+	_, err := NewJwtGuard(s.mockContext, testAdminGuard, s.mockUserProvider)
+	s.Assert().ErrorIs(errors.CacheFacadeNotSet, err)
+}
+
 var testUserGuard = "user"
 
 type User struct {
