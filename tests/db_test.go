@@ -4,12 +4,12 @@ package tests
 
 import (
 	"database/sql"
-	"encoding/json"
 	"testing"
 	"time"
 
 	"github.com/goravel/framework/contracts/database/db"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/foundation/json"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/convert"
@@ -1387,17 +1387,7 @@ func (s *DBTestSuite) TestWhereNot() {
 
 func (s *DBTestSuite) TestJsonWhereClauses() {
 	mockApp := mocksfoundation.NewApplication(s.T())
-	mockJson := mocksfoundation.NewJson(s.T())
-	mockJson.EXPECT().Marshal("abc").RunAndReturn(func(i any) ([]byte, error) {
-		return json.Marshal(i)
-	}).Times(4)
-	mockJson.EXPECT().Marshal("ghi").RunAndReturn(func(i any) ([]byte, error) {
-		return json.Marshal(i)
-	}).Twice()
-	mockJson.EXPECT().Marshal([]string{"abc", "def"}).RunAndReturn(func(i any) ([]byte, error) {
-		return json.Marshal(i)
-	}).Twice()
-	mockApp.EXPECT().GetJson().Return(mockJson).Times(8)
+	mockApp.EXPECT().GetJson().Return(json.New()).Times(8)
 
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
