@@ -322,13 +322,23 @@ func (r *testTables) roleUser() ([]string, error) {
 }
 
 func (r *testTables) schemas() ([]string, error) {
+	dropSql, err := r.dropSql("goravel.schemas")
+	if err != nil {
+		return nil, err
+	}
+
 	blueprint := schema.NewBlueprint(nil, "", "goravel.schemas")
 	blueprint.Create()
 	blueprint.BigIncrements("id")
 	blueprint.String("name")
 	blueprint.Timestamps()
 
-	return blueprint.ToSql(r.grammar)
+	createSql, err := blueprint.ToSql(r.grammar)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(dropSql, createSql...), nil
 }
 
 func (r *testTables) jsonData() ([]string, error) {
@@ -352,13 +362,23 @@ func (r *testTables) jsonData() ([]string, error) {
 }
 
 func (r *testTables) globalScopes() ([]string, error) {
+	dropSql, err := r.dropSql("global_scopes")
+	if err != nil {
+		return nil, err
+	}
+
 	blueprint := schema.NewBlueprint(nil, "", "global_scopes")
 	blueprint.Create()
 	blueprint.BigIncrements("id")
 	blueprint.String("name")
 	blueprint.Timestamps()
 
-	return blueprint.ToSql(r.grammar)
+	createSql, err := blueprint.ToSql(r.grammar)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(dropSql, createSql...), nil
 }
 
 func (r *testTables) dropSql(table string) ([]string, error) {

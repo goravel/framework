@@ -2672,7 +2672,7 @@ func (s *QueryTestSuite) TestModel() {
 
 			// model is invalid
 			user1 := User{Name: "model_user"}
-			s.EqualError(query.Query().Model("users").Create(&user1), errors.OrmQueryInvalidModel.Args("").Error())
+			s.EqualError(query.Query().Model("users").Create(&user1), "unsupported data type: users: Table not set, please set it like: db.Model(&user) or db.Table(\"users\")")
 		})
 	}
 }
