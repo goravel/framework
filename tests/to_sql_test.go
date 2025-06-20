@@ -41,10 +41,10 @@ func (s *ToSqlTestSuite) TestCount() {
 
 	// global scopes
 	toSql = gorm.NewToSql(s.query.Model(&GlobalScope{}).Where("id", 1).(*gorm.Query), s.mockLog, false)
-	s.Equal("SELECT count(*) FROM \"global_scopes\" WHERE \"id\" = $1 AND \"name\" = $2", toSql.Count())
+	s.Equal("SELECT count(*) FROM \"global_scopes\" WHERE \"id\" = $1 AND \"name\" = $2 AND \"global_scopes\".\"deleted_at\" IS NULL", toSql.Count())
 
 	toSql = gorm.NewToSql(s.query.Model(&GlobalScope{}).Where("id", 1).(*gorm.Query), s.mockLog, true)
-	s.Equal("SELECT count(*) FROM \"global_scopes\" WHERE \"id\" = 1 AND \"name\" = 'global_scope'", toSql.Count())
+	s.Equal("SELECT count(*) FROM \"global_scopes\" WHERE \"id\" = 1 AND \"name\" = 'global_scope' AND \"global_scopes\".\"deleted_at\" IS NULL", toSql.Count())
 }
 
 func (s *ToSqlTestSuite) TestCreate() {
@@ -62,12 +62,12 @@ func (s *ToSqlTestSuite) TestCreate() {
 
 	toSql = gorm.NewToSql(s.query.(*gorm.Query), s.mockLog, false)
 	sql := toSql.Create(&globalScope)
-	s.Equal(sql, "INSERT INTO \"global_scopes\" (\"created_at\",\"updated_at\",\"name\") VALUES ($1,$2,$3) RETURNING \"id\"")
+	s.Equal(sql, "INSERT INTO \"global_scopes\" (\"created_at\",\"updated_at\",\"name\",\"deleted_at\") VALUES ($1,$2,$3,$4) RETURNING \"id\"")
 
 	toSql = gorm.NewToSql(s.query.(*gorm.Query), s.mockLog, true)
 	sql = toSql.Create(&globalScope)
-	s.Contains(sql, "INSERT INTO \"global_scopes\" (\"created_at\",\"updated_at\",\"name\") VALUES (")
-	s.Contains(sql, "'to_sql_create')")
+	s.Contains(sql, "INSERT INTO \"global_scopes\" (\"created_at\",\"updated_at\",\"name\",\"deleted_at\") VALUES (")
+	s.Contains(sql, "'to_sql_create',NULL)")
 	s.NotContains(sql, "WHERE")
 }
 
@@ -89,11 +89,12 @@ func (s *ToSqlTestSuite) TestDelete() {
 	// global scopes
 	toSql = gorm.NewToSql(s.query.Model(&GlobalScope{}).Where("id", 1).(*gorm.Query), s.mockLog, false)
 	sql = toSql.Delete(&GlobalScope{})
-	s.Equal(sql, "DELETE FROM \"global_scopes\" WHERE \"id\" = $1 AND \"name\" = $2")
+	s.Equal("UPDATE \"global_scopes\" SET \"deleted_at\"=$1 WHERE \"id\" = $2 AND \"name\" = $3 AND \"global_scopes\".\"deleted_at\" IS NULL", sql)
 
 	toSql = gorm.NewToSql(s.query.Model(&GlobalScope{}).Where("id", 1).(*gorm.Query), s.mockLog, true)
 	sql = toSql.Delete(&GlobalScope{})
-	s.Contains(sql, "DELETE FROM \"global_scopes\" WHERE \"id\" = 1 AND \"name\" = 'global_scope'")
+	s.Contains(sql, "UPDATE \"global_scopes\" SET \"deleted_at\"='")
+	s.Contains(sql, "' WHERE \"id\" = 1 AND \"name\" = 'global_scope' AND \"global_scopes\".\"deleted_at\" IS NULL")
 }
 
 func (s *ToSqlTestSuite) TestFind() {
@@ -111,10 +112,10 @@ func (s *ToSqlTestSuite) TestFind() {
 
 	// global scopes
 	toSql = gorm.NewToSql(s.query.Model(&GlobalScope{}).Where("id", 1).(*gorm.Query), s.mockLog, false)
-	s.Equal("SELECT * FROM \"global_scopes\" WHERE \"id\" = $1 AND \"name\" = $2", toSql.Find(&GlobalScope{}))
+	s.Equal("SELECT * FROM \"global_scopes\" WHERE \"id\" = $1 AND \"name\" = $2 AND \"global_scopes\".\"deleted_at\" IS NULL", toSql.Find(&GlobalScope{}))
 
 	toSql = gorm.NewToSql(s.query.Model(&GlobalScope{}).Where("id", 1).(*gorm.Query), s.mockLog, true)
-	s.Equal("SELECT * FROM \"global_scopes\" WHERE \"id\" = 1 AND \"name\" = 'global_scope'", toSql.Find(&GlobalScope{}))
+	s.Equal("SELECT * FROM \"global_scopes\" WHERE \"id\" = 1 AND \"name\" = 'global_scope' AND \"global_scopes\".\"deleted_at\" IS NULL", toSql.Find(&GlobalScope{}))
 }
 
 func (s *ToSqlTestSuite) TestFirst() {
@@ -126,10 +127,10 @@ func (s *ToSqlTestSuite) TestFirst() {
 
 	// global scopes
 	toSql = gorm.NewToSql(s.query.Model(&GlobalScope{}).Where("id", 1).(*gorm.Query), s.mockLog, false)
-	s.Equal("SELECT * FROM \"global_scopes\" WHERE \"id\" = $1 AND \"name\" = $2 ORDER BY \"global_scopes\".\"id\" LIMIT $3", toSql.First(&GlobalScope{}))
+	s.Equal("SELECT * FROM \"global_scopes\" WHERE \"id\" = $1 AND \"name\" = $2 AND \"global_scopes\".\"deleted_at\" IS NULL ORDER BY \"global_scopes\".\"id\" LIMIT $3", toSql.First(&GlobalScope{}))
 
 	toSql = gorm.NewToSql(s.query.Model(&GlobalScope{}).Where("id", 1).(*gorm.Query), s.mockLog, true)
-	s.Equal("SELECT * FROM \"global_scopes\" WHERE \"id\" = 1 AND \"name\" = 'global_scope' ORDER BY \"global_scopes\".\"id\" LIMIT 1", toSql.First(&GlobalScope{}))
+	s.Equal("SELECT * FROM \"global_scopes\" WHERE \"id\" = 1 AND \"name\" = 'global_scope' AND \"global_scopes\".\"deleted_at\" IS NULL ORDER BY \"global_scopes\".\"id\" LIMIT 1", toSql.First(&GlobalScope{}))
 }
 
 func (s *ToSqlTestSuite) TestForceDelete() {
@@ -162,10 +163,10 @@ func (s *ToSqlTestSuite) TestGet() {
 
 	// global scopes
 	toSql = gorm.NewToSql(s.query.Model(&GlobalScope{}).Where("id", 1).(*gorm.Query), s.mockLog, false)
-	s.Equal("SELECT * FROM \"global_scopes\" WHERE \"id\" = $1 AND \"name\" = $2", toSql.Get([]GlobalScope{}))
+	s.Equal("SELECT * FROM \"global_scopes\" WHERE \"id\" = $1 AND \"name\" = $2 AND \"global_scopes\".\"deleted_at\" IS NULL", toSql.Get([]GlobalScope{}))
 
 	toSql = gorm.NewToSql(s.query.Model(&GlobalScope{}).Where("id", 1).(*gorm.Query), s.mockLog, true)
-	s.Equal("SELECT * FROM \"global_scopes\" WHERE \"id\" = 1 AND \"name\" = 'global_scope'", toSql.Get([]GlobalScope{}))
+	s.Equal("SELECT * FROM \"global_scopes\" WHERE \"id\" = 1 AND \"name\" = 'global_scope' AND \"global_scopes\".\"deleted_at\" IS NULL", toSql.Get([]GlobalScope{}))
 }
 
 func (s *ToSqlTestSuite) TestInvalidModel() {
@@ -186,10 +187,10 @@ func (s *ToSqlTestSuite) TestPluck() {
 
 	// global scopes
 	toSql = gorm.NewToSql(s.query.Model(&GlobalScope{}).Where("id", 1).(*gorm.Query), s.mockLog, false)
-	s.Equal("SELECT \"id\" FROM \"global_scopes\" WHERE \"id\" = $1 AND \"name\" = $2", toSql.Pluck("id", GlobalScope{}))
+	s.Equal("SELECT \"id\" FROM \"global_scopes\" WHERE \"id\" = $1 AND \"name\" = $2 AND \"global_scopes\".\"deleted_at\" IS NULL", toSql.Pluck("id", GlobalScope{}))
 
 	toSql = gorm.NewToSql(s.query.Model(&GlobalScope{}).Where("id", 1).(*gorm.Query), s.mockLog, true)
-	s.Equal("SELECT \"id\" FROM \"global_scopes\" WHERE \"id\" = 1 AND \"name\" = 'global_scope'", toSql.Pluck("id", GlobalScope{}))
+	s.Equal("SELECT \"id\" FROM \"global_scopes\" WHERE \"id\" = 1 AND \"name\" = 'global_scope' AND \"global_scopes\".\"deleted_at\" IS NULL", toSql.Pluck("id", GlobalScope{}))
 }
 
 func (s *ToSqlTestSuite) TestSave() {
@@ -216,22 +217,20 @@ func (s *ToSqlTestSuite) TestSave() {
 
 	// global scopes
 	toSql = gorm.NewToSql(s.query.(*gorm.Query), s.mockLog, false)
-	s.Equal("INSERT INTO \"global_scopes\" (\"created_at\",\"updated_at\",\"name\") VALUES ($1,$2,$3) RETURNING \"id\"", toSql.Save(&GlobalScope{}))
+	s.Equal("INSERT INTO \"global_scopes\" (\"created_at\",\"updated_at\",\"name\",\"deleted_at\") VALUES ($1,$2,$3,$4) RETURNING \"id\"", toSql.Save(&GlobalScope{}))
 
 	toSql = gorm.NewToSql(s.query.(*gorm.Query), s.mockLog, false)
-	s.Equal("UPDATE \"global_scopes\" SET \"created_at\"=$1,\"updated_at\"=$2,\"name\"=$3 WHERE \"name\" = $4 AND \"id\" = $5", toSql.Save(&GlobalScope{Model: Model{ID: 2}}))
+	s.Equal("UPDATE \"global_scopes\" SET \"created_at\"=$1,\"updated_at\"=$2,\"name\"=$3,\"deleted_at\"=$4 WHERE \"name\" = $5 AND \"global_scopes\".\"deleted_at\" IS NULL AND \"id\" = $6", toSql.Save(&GlobalScope{Model: Model{ID: 2}}))
 
 	toSql = gorm.NewToSql(s.query.(*gorm.Query), s.mockLog, true)
 	sql = toSql.Save(&GlobalScope{Name: "to_sql_save"})
-	s.Contains(sql, "INSERT INTO \"global_scopes\" (\"created_at\",\"updated_at\",\"name\") VALUES (")
-	s.Contains(sql, ",'to_sql_save') RETURNING \"id\"")
+	s.Contains(sql, "INSERT INTO \"global_scopes\" (\"created_at\",\"updated_at\",\"name\",\"deleted_at\") VALUES (")
+	s.Contains(sql, ",'to_sql_save',NULL) RETURNING \"id\"")
 
 	toSql = gorm.NewToSql(s.query.(*gorm.Query), s.mockLog, true)
 	sql = toSql.Save(&GlobalScope{Model: Model{ID: 2}, Name: "to_sql_save"})
-	s.Contains(sql, "UPDATE \"global_scopes\" SET \"created_at\"=")
-	s.Contains(sql, ",\"updated_at\"=")
-	s.Contains(sql, ",\"name\"='to_sql_save'")
-	s.Contains(sql, "WHERE \"name\" = 'global_scope' AND \"id\" = 2")
+	s.Contains(sql, "UPDATE \"global_scopes\" SET \"created_at\"=NULL,\"updated_at\"='")
+	s.Contains(sql, "',\"name\"='to_sql_save',\"deleted_at\"=NULL WHERE \"name\" = 'global_scope' AND \"global_scopes\".\"deleted_at\" IS NULL AND \"id\" = 2")
 }
 
 func (s *ToSqlTestSuite) TestSum() {
@@ -243,10 +242,10 @@ func (s *ToSqlTestSuite) TestSum() {
 
 	// global scopes
 	toSql = gorm.NewToSql(s.query.Model(&GlobalScope{}).Where("id", 1).(*gorm.Query), s.mockLog, false)
-	s.Equal("SELECT SUM(id) FROM \"global_scopes\" WHERE \"id\" = $1 AND \"name\" = $2", toSql.Sum("id", GlobalScope{}))
+	s.Equal("SELECT SUM(id) FROM \"global_scopes\" WHERE \"id\" = $1 AND \"name\" = $2 AND \"global_scopes\".\"deleted_at\" IS NULL", toSql.Sum("id", GlobalScope{}))
 
 	toSql = gorm.NewToSql(s.query.Model(&GlobalScope{}).Where("id", 1).(*gorm.Query), s.mockLog, true)
-	s.Equal("SELECT SUM(id) FROM \"global_scopes\" WHERE \"id\" = 1 AND \"name\" = 'global_scope'", toSql.Sum("id", GlobalScope{}))
+	s.Equal("SELECT SUM(id) FROM \"global_scopes\" WHERE \"id\" = 1 AND \"name\" = 'global_scope' AND \"global_scopes\".\"deleted_at\" IS NULL", toSql.Sum("id", GlobalScope{}))
 }
 
 func (s *ToSqlTestSuite) TestUpdate() {
@@ -290,10 +289,10 @@ func (s *ToSqlTestSuite) TestUpdate() {
 
 	// global scopes
 	toSql = gorm.NewToSql(s.query.Model(&GlobalScope{}).Where("id", 1).(*gorm.Query), s.mockLog, false)
-	s.Equal("UPDATE \"global_scopes\" SET \"name\"=$1,\"updated_at\"=$2 WHERE \"id\" = $3 AND \"name\" = $4", toSql.Update("name", "goravel"))
+	s.Equal("UPDATE \"global_scopes\" SET \"name\"=$1,\"updated_at\"=$2 WHERE \"id\" = $3 AND \"name\" = $4 AND \"global_scopes\".\"deleted_at\" IS NULL", toSql.Update("name", "goravel"))
 
 	toSql = gorm.NewToSql(s.query.Model(&GlobalScope{}).Where("id", 1).(*gorm.Query), s.mockLog, true)
 	sql = toSql.Update("name", "goravel")
 	s.Contains(sql, "UPDATE \"global_scopes\" SET \"name\"='goravel',\"updated_at\"='")
-	s.Contains(sql, "' WHERE \"id\" = 1 AND \"name\" = 'global_scope'")
+	s.Contains(sql, "' WHERE \"id\" = 1 AND \"name\" = 'global_scope' AND \"global_scopes\".\"deleted_at\" IS NULL")
 }
