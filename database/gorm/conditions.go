@@ -6,6 +6,7 @@ import (
 )
 
 type Conditions struct {
+	dest          any
 	distinct      []any
 	groupBy       []string
 	having        *contractsdriver.Having

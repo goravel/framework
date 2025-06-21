@@ -22,6 +22,7 @@ const (
 	TestTableUser
 	TestTableSchema
 	TestTableJsonData
+	TestTableGlobalScopes
 )
 
 type testTables struct {
@@ -35,20 +36,21 @@ func newTestTables(driver string, grammar driver.Grammar) *testTables {
 
 func (r *testTables) All() map[TestTable]func() ([]string, error) {
 	return map[TestTable]func() ([]string, error){
-		TestTableAddresses: r.addresses,
-		TestTableAuthors:   r.authors,
-		TestTableBooks:     r.books,
-		TestTableHouses:    r.houses,
-		TestTablePeoples:   r.peoples,
-		TestTablePhones:    r.phones,
-		TestTableProducts:  r.products,
-		TestTableReviews:   r.reviews,
-		TestTableRoles:     r.roles,
-		TestTableRoleUser:  r.roleUser,
-		TestTableUsers:     r.users,
-		TestTableUser:      r.user,
-		TestTableSchema:    r.schema,
-		TestTableJsonData:  r.jsonData,
+		TestTableAddresses:    r.addresses,
+		TestTableAuthors:      r.authors,
+		TestTableBooks:        r.books,
+		TestTableHouses:       r.houses,
+		TestTablePeoples:      r.peoples,
+		TestTablePhones:       r.phones,
+		TestTableProducts:     r.products,
+		TestTableReviews:      r.reviews,
+		TestTableRoles:        r.roles,
+		TestTableRoleUser:     r.roleUser,
+		TestTableUsers:        r.users,
+		TestTableUser:         r.user,
+		TestTableSchema:       r.schemas,
+		TestTableJsonData:     r.jsonData,
+		TestTableGlobalScopes: r.globalScopes,
 	}
 }
 
@@ -319,14 +321,24 @@ func (r *testTables) roleUser() ([]string, error) {
 	return append(dropSql, createSql...), nil
 }
 
-func (r *testTables) schema() ([]string, error) {
+func (r *testTables) schemas() ([]string, error) {
+	dropSql, err := r.dropSql("goravel.schemas")
+	if err != nil {
+		return nil, err
+	}
+
 	blueprint := schema.NewBlueprint(nil, "", "goravel.schemas")
 	blueprint.Create()
 	blueprint.BigIncrements("id")
 	blueprint.String("name")
 	blueprint.Timestamps()
 
-	return blueprint.ToSql(r.grammar)
+	createSql, err := blueprint.ToSql(r.grammar)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(dropSql, createSql...), nil
 }
 
 func (r *testTables) jsonData() ([]string, error) {
@@ -340,6 +352,27 @@ func (r *testTables) jsonData() ([]string, error) {
 	blueprint.BigIncrements("id")
 	blueprint.Json("data")
 	blueprint.Timestamps()
+
+	createSql, err := blueprint.ToSql(r.grammar)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(dropSql, createSql...), nil
+}
+
+func (r *testTables) globalScopes() ([]string, error) {
+	dropSql, err := r.dropSql("global_scopes")
+	if err != nil {
+		return nil, err
+	}
+
+	blueprint := schema.NewBlueprint(nil, "", "global_scopes")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.String("name")
+	blueprint.Timestamps()
+	blueprint.SoftDeletes()
 
 	createSql, err := blueprint.ToSql(r.grammar)
 	if err != nil {
