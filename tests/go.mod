@@ -9,10 +9,10 @@ godebug x509negativeserial=1
 require (
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/goravel/framework v1.15.9
-	github.com/goravel/mysql v0.0.0-20250614145606-b31ab56d1e4c
-	github.com/goravel/postgres v0.0.2-0.20250614145557-ab2119aeac96
-	github.com/goravel/sqlite v0.0.0-20250614082629-1038310944c3
-	github.com/goravel/sqlserver v0.0.0-20250616001330-06666a9494c8
+	github.com/goravel/mysql v0.0.0-20250616074430-75ebdb52b7c2
+	github.com/goravel/postgres v0.0.2-0.20250616074745-2e740e8f4395
+	github.com/goravel/sqlite v0.0.0-20250616074416-801d168cbe44
+	github.com/goravel/sqlserver v0.0.0-20250616080632-ff5ac8c3f222
 	github.com/spf13/cast v1.9.2
 	github.com/stretchr/testify v1.10.0
 	gorm.io/gorm v1.30.0
@@ -70,9 +70,9 @@ require (
 	google.golang.org/grpc v1.73.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	gorm.io/driver/mysql v1.5.7 // indirect
+	gorm.io/driver/mysql v1.6.0 // indirect
 	gorm.io/driver/postgres v1.6.0 // indirect
-	gorm.io/driver/sqlserver v1.5.4 // indirect
+	gorm.io/driver/sqlserver v1.6.0 // indirect
 	gorm.io/plugin/dbresolver v1.6.0 // indirect
 )
 
