@@ -2373,7 +2373,7 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 
 				sum, err := query.Query().Model(&GlobalScope{}).Sum("id")
 				s.Nil(err)
-				s.Equal(globalScope.ID, sum)
+				s.Equal(globalScope.ID, uint(sum))
 			})
 
 			s.Run("Update", func() {
