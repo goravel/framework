@@ -15,7 +15,6 @@ import (
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mockslog "github.com/goravel/framework/mocks/log"
 	"github.com/goravel/framework/support/carbon"
-	"github.com/goravel/framework/support/debug"
 )
 
 func TestNewLogger(t *testing.T) {
@@ -243,15 +242,4 @@ func (s *LoggerTestSuite) TestTrace() {
 			s.logger.Trace(ctx, begin, sql, tt.rows, tt.err)
 		})
 	}
-}
-
-func TestAddToContext(t *testing.T) {
-	ctx := context.Background()
-	ctx = EnableQueryLog(ctx)
-	addQueryLogToContext(ctx, "SELECT * FROM users", 100)
-	addQueryLogToContext(ctx, "SELECT * FROM users", 200)
-
-	value := ctx.Value(queryLogKey{})
-	debug.Dump(value)
-	assert.True(t, false)
 }
