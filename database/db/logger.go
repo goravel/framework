@@ -152,19 +152,6 @@ func (r *Gorm) Trace(ctx context.Context, begin time.Time, fc func() (string, in
 	r.logger.Trace(ctx, carbon.FromStdTime(begin), sql, rowsAffected, err)
 }
 
-func gormLevelToLevel(level gormlogger.LogLevel) logger.Level {
-	switch level {
-	case gormlogger.Silent:
-		return logger.Silent
-	case gormlogger.Error:
-		return logger.Error
-	case gormlogger.Warn:
-		return logger.Warn
-	default:
-		return logger.Info
-	}
-}
-
 func addQueryLogToContext(ctx context.Context, sql string, time float64) {
 	value := ctx.Value(queryLogKey{})
 	if value == nil {
@@ -182,4 +169,17 @@ func addQueryLogToContext(ctx context.Context, sql string, time float64) {
 	})
 
 	_ = context.WithValue(ctx, queryLogKey{}, queryLogValue)
+}
+
+func gormLevelToLevel(level gormlogger.LogLevel) logger.Level {
+	switch level {
+	case gormlogger.Silent:
+		return logger.Silent
+	case gormlogger.Error:
+		return logger.Error
+	case gormlogger.Warn:
+		return logger.Warn
+	default:
+		return logger.Info
+	}
 }
