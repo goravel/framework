@@ -54,7 +54,7 @@ type Query interface {
 	// DoesntExist determines if no rows exist for the current query.
 	DoesntExist() (bool, error)
 	// Distinct forces the query to only return distinct results.
-	Distinct() Query
+	Distinct(columns ...string) Query
 	// Each executes the query and passes each row to the callback.
 	Each(callback func(row Row) error) error
 	// Exists returns true if matching records exist; otherwise, it returns false.
@@ -97,7 +97,7 @@ type Query interface {
 	// Offset specifies the number of records to skip before starting to return the records.
 	Offset(offset uint64) Query
 	// OrderBy specifies the order should be ascending.
-	OrderBy(column string) Query
+	OrderBy(column string, directions ...string) Query
 	// OrderByDesc specifies the order should be descending.
 	OrderByDesc(column string) Query
 	// OrderByRaw specifies the order should be raw.
@@ -127,7 +127,7 @@ type Query interface {
 	// OrWhereNotBetween adds an "or where column not between x and y" clause to the query.
 	OrWhereNotBetween(column string, x, y any) Query
 	// OrWhereNotIn adds an "or where column not in" clause to the query.
-	OrWhereNotIn(column string, args []any) Query
+	OrWhereNotIn(column string, values []any) Query
 	// OrWhereNotLike adds an "or where column not like" clause to the query.
 	OrWhereNotLike(column string, value string) Query
 	// OrWhereNotNull adds an "or where column is not null" clause to the query.

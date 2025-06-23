@@ -792,6 +792,10 @@ func (s *QueryTestSuite) TestDistinct() {
 			var users []User
 			s.Nil(query.Query().Distinct("name").Find(&users, []uint{user.ID, user1.ID}))
 			s.Equal(1, len(users))
+
+			var users1 []User
+			s.Nil(query.Query().Distinct().Select("name").Find(&users1, []uint{user.ID, user1.ID}))
+			s.Equal(1, len(users1))
 		})
 	}
 }
@@ -2367,8 +2371,8 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 				s.True(globalScope.ID > 0)
 				s.Equal("global_scope", globalScope.Name)
 
-				var sum uint
-				s.Nil(query.Query().Model(&GlobalScope{}).Sum("id", &sum))
+				sum, err := query.Query().Model(&GlobalScope{}).Sum("id")
+				s.Nil(err)
 				s.Equal(globalScope.ID, sum)
 			})
 
@@ -3345,10 +3349,9 @@ func (s *QueryTestSuite) TestSum() {
 			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
-			var value float64
-			err := query.Query().Table("users").Sum("id", &value)
+			sum, err := query.Query().Table("users").Sum("id")
 			s.Nil(err)
-			s.True(value > 0)
+			s.True(sum > 0)
 		})
 	}
 }

@@ -200,11 +200,18 @@ func (r *Query) Delete() (*db.Result, error) {
 	}, nil
 }
 
-func (r *Query) Distinct() db.Query {
-	q := r.clone()
-	q.conditions.Distinct = convert.Pointer(true)
+func (r *Query) Distinct(columns ...string) db.Query {
+	var query *Query
 
-	return q
+	if len(columns) > 0 {
+		query = r.Select(columns...).(*Query)
+	} else {
+		query = r.clone()
+	}
+
+	query.conditions.Distinct = convert.Pointer(true)
+
+	return query
 }
 
 func (r *Query) DoesntExist() (bool, error) {
@@ -515,9 +522,14 @@ func (r *Query) Offset(offset uint64) db.Query {
 	return q
 }
 
-func (r *Query) OrderBy(column string) db.Query {
+func (r *Query) OrderBy(column string, directions ...string) db.Query {
+	direction := "ASC"
+	if len(directions) > 0 {
+		direction = directions[0]
+	}
+
 	q := r.clone()
-	q.conditions.OrderBy = append(q.conditions.OrderBy, column+" ASC")
+	q.conditions.OrderBy = append(q.conditions.OrderBy, column+" "+direction)
 
 	return q
 }

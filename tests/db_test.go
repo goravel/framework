@@ -317,6 +317,12 @@ func (s *DBTestSuite) TestDistinct() {
 			s.NoError(err)
 			s.Equal(1, len(products))
 			s.Equal("distinct_product", products[0].Name)
+
+			var products1 []Product
+			err = query.DB().Table("products").Distinct("name").Get(&products1)
+			s.NoError(err)
+			s.Equal(1, len(products))
+			s.Equal("distinct_product", products[0].Name)
 		})
 	}
 }
@@ -689,6 +695,32 @@ func (s *DBTestSuite) TestLockForUpdate() {
 			s.NoError(err)
 			s.Equal("lock_for_update_product1111111111", product.Name)
 			s.True(product.ID > 0)
+		})
+	}
+}
+
+func (s *DBTestSuite) TestOrderBy() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{Name: "value_product"},
+				{Name: "value_product1"},
+			})
+
+			var name string
+			err := query.DB().Table("products").OrderBy("id").Value("name", &name)
+			s.NoError(err)
+			s.Equal("value_product", name)
+
+			var name1 string
+			err = query.DB().Table("products").OrderBy("id", "desc").Value("name", &name1)
+			s.NoError(err)
+			s.Equal("value_product1", name1)
+
+			var name2 string
+			err = query.DB().Table("products").OrderByDesc("id").Value("name", &name2)
+			s.NoError(err)
+			s.Equal("value_product1", name2)
 		})
 	}
 }

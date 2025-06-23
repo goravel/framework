@@ -503,10 +503,14 @@ func (_c *Query_Delete_Call) RunAndReturn(run func(...interface{}) (*db.Result, 
 	return _c
 }
 
-// Distinct provides a mock function with given fields: args
-func (_m *Query) Distinct(args ...interface{}) orm.Query {
+// Distinct provides a mock function with given fields: columns
+func (_m *Query) Distinct(columns ...string) orm.Query {
+	_va := make([]interface{}, len(columns))
+	for _i := range columns {
+		_va[_i] = columns[_i]
+	}
 	var _ca []interface{}
-	_ca = append(_ca, args...)
+	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
@@ -514,8 +518,8 @@ func (_m *Query) Distinct(args ...interface{}) orm.Query {
 	}
 
 	var r0 orm.Query
-	if rf, ok := ret.Get(0).(func(...interface{}) orm.Query); ok {
-		r0 = rf(args...)
+	if rf, ok := ret.Get(0).(func(...string) orm.Query); ok {
+		r0 = rf(columns...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(orm.Query)
@@ -531,18 +535,18 @@ type Query_Distinct_Call struct {
 }
 
 // Distinct is a helper method to define mock.On call
-//   - args ...interface{}
-func (_e *Query_Expecter) Distinct(args ...interface{}) *Query_Distinct_Call {
+//   - columns ...string
+func (_e *Query_Expecter) Distinct(columns ...interface{}) *Query_Distinct_Call {
 	return &Query_Distinct_Call{Call: _e.mock.On("Distinct",
-		append([]interface{}{}, args...)...)}
+		append([]interface{}{}, columns...)...)}
 }
 
-func (_c *Query_Distinct_Call) Run(run func(args ...interface{})) *Query_Distinct_Call {
+func (_c *Query_Distinct_Call) Run(run func(columns ...string)) *Query_Distinct_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-0)
+		variadicArgs := make([]string, len(args)-0)
 		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(string)
 			}
 		}
 		run(variadicArgs...)
@@ -555,7 +559,7 @@ func (_c *Query_Distinct_Call) Return(_a0 orm.Query) *Query_Distinct_Call {
 	return _c
 }
 
-func (_c *Query_Distinct_Call) RunAndReturn(run func(...interface{}) orm.Query) *Query_Distinct_Call {
+func (_c *Query_Distinct_Call) RunAndReturn(run func(...string) orm.Query) *Query_Distinct_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -3118,11 +3122,14 @@ func (_c *Query_Scopes_Call) RunAndReturn(run func(...func(orm.Query) orm.Query)
 	return _c
 }
 
-// Select provides a mock function with given fields: query, args
-func (_m *Query) Select(query interface{}, args ...interface{}) orm.Query {
+// Select provides a mock function with given fields: columns
+func (_m *Query) Select(columns ...string) orm.Query {
+	_va := make([]interface{}, len(columns))
+	for _i := range columns {
+		_va[_i] = columns[_i]
+	}
 	var _ca []interface{}
-	_ca = append(_ca, query)
-	_ca = append(_ca, args...)
+	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
@@ -3130,8 +3137,8 @@ func (_m *Query) Select(query interface{}, args ...interface{}) orm.Query {
 	}
 
 	var r0 orm.Query
-	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) orm.Query); ok {
-		r0 = rf(query, args...)
+	if rf, ok := ret.Get(0).(func(...string) orm.Query); ok {
+		r0 = rf(columns...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(orm.Query)
@@ -3147,22 +3154,21 @@ type Query_Select_Call struct {
 }
 
 // Select is a helper method to define mock.On call
-//   - query interface{}
-//   - args ...interface{}
-func (_e *Query_Expecter) Select(query interface{}, args ...interface{}) *Query_Select_Call {
+//   - columns ...string
+func (_e *Query_Expecter) Select(columns ...interface{}) *Query_Select_Call {
 	return &Query_Select_Call{Call: _e.mock.On("Select",
-		append([]interface{}{query}, args...)...)}
+		append([]interface{}{}, columns...)...)}
 }
 
-func (_c *Query_Select_Call) Run(run func(query interface{}, args ...interface{})) *Query_Select_Call {
+func (_c *Query_Select_Call) Run(run func(columns ...string)) *Query_Select_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-1)
-		for i, a := range args[1:] {
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(string)
 			}
 		}
-		run(args[0].(interface{}), variadicArgs...)
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -3172,7 +3178,7 @@ func (_c *Query_Select_Call) Return(_a0 orm.Query) *Query_Select_Call {
 	return _c
 }
 
-func (_c *Query_Select_Call) RunAndReturn(run func(interface{}, ...interface{}) orm.Query) *Query_Select_Call {
+func (_c *Query_Select_Call) RunAndReturn(run func(...string) orm.Query) *Query_Select_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -3224,22 +3230,32 @@ func (_c *Query_SharedLock_Call) RunAndReturn(run func() orm.Query) *Query_Share
 	return _c
 }
 
-// Sum provides a mock function with given fields: column, dest
-func (_m *Query) Sum(column string, dest interface{}) error {
-	ret := _m.Called(column, dest)
+// Sum provides a mock function with given fields: column
+func (_m *Query) Sum(column string) (int64, error) {
+	ret := _m.Called(column)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Sum")
 	}
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string, interface{}) error); ok {
-		r0 = rf(column, dest)
+	var r0 int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (int64, error)); ok {
+		return rf(column)
+	}
+	if rf, ok := ret.Get(0).(func(string) int64); ok {
+		r0 = rf(column)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(int64)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(column)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Query_Sum_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Sum'
@@ -3249,24 +3265,23 @@ type Query_Sum_Call struct {
 
 // Sum is a helper method to define mock.On call
 //   - column string
-//   - dest interface{}
-func (_e *Query_Expecter) Sum(column interface{}, dest interface{}) *Query_Sum_Call {
-	return &Query_Sum_Call{Call: _e.mock.On("Sum", column, dest)}
+func (_e *Query_Expecter) Sum(column interface{}) *Query_Sum_Call {
+	return &Query_Sum_Call{Call: _e.mock.On("Sum", column)}
 }
 
-func (_c *Query_Sum_Call) Run(run func(column string, dest interface{})) *Query_Sum_Call {
+func (_c *Query_Sum_Call) Run(run func(column string)) *Query_Sum_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(interface{}))
+		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *Query_Sum_Call) Return(_a0 error) *Query_Sum_Call {
-	_c.Call.Return(_a0)
+func (_c *Query_Sum_Call) Return(_a0 int64, _a1 error) *Query_Sum_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Query_Sum_Call) RunAndReturn(run func(string, interface{}) error) *Query_Sum_Call {
+func (_c *Query_Sum_Call) RunAndReturn(run func(string) (int64, error)) *Query_Sum_Call {
 	_c.Call.Return(run)
 	return _c
 }

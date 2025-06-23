@@ -7,7 +7,7 @@ import (
 
 type Conditions struct {
 	dest          any
-	distinct      []any
+	distinct      bool
 	groupBy       []string
 	having        *contractsdriver.Having
 	join          []contractsdriver.Join
@@ -18,18 +18,13 @@ type Conditions struct {
 	omit          []string
 	order         []any
 	scopes        []func(contractsorm.Query) contractsorm.Query
-	selectColumns *Select
+	selectColumns []string
 	sharedLock    bool
 	table         *Table
 	where         []contractsdriver.Where
 	with          []With
 	withoutEvents bool
 	withTrashed   bool
-}
-
-type Select struct {
-	query any
-	args  []any
 }
 
 type Table struct {
