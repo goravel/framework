@@ -4,7 +4,7 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/contracts/database/db"
+	contractsdb "github.com/goravel/framework/contracts/database/db"
 	"github.com/goravel/framework/contracts/foundation"
 	contractsqueue "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
@@ -12,19 +12,22 @@ import (
 )
 
 type QueueRetryCommand struct {
-	db             db.DB
-	failedJobQuery db.Query
+	failedJobQuery contractsdb.Query
 	json           foundation.Json
 	queue          contractsqueue.Queue
 }
 
-func NewQueueRetryCommand(config config.Config, db db.DB, queue contractsqueue.Queue, json foundation.Json) *QueueRetryCommand {
+func NewQueueRetryCommand(config config.Config, db contractsdb.DB, queue contractsqueue.Queue, json foundation.Json) *QueueRetryCommand {
 	failedDatabase := config.GetString("queue.failed.database")
 	failedTable := config.GetString("queue.failed.table")
 
+	var failedJobQuery contractsdb.Query
+	if db != nil {
+		failedJobQuery = db.Connection(failedDatabase).Table(failedTable)
+	}
+
 	return &QueueRetryCommand{
-		db:             db,
-		failedJobQuery: db.Connection(failedDatabase).Table(failedTable),
+		failedJobQuery: failedJobQuery,
 		json:           json,
 		queue:          queue,
 	}
@@ -61,7 +64,7 @@ func (r *QueueRetryCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *QueueRetryCommand) Handle(ctx console.Context) error {
-	if r.db == nil {
+	if r.failedJobQuery == nil {
 		ctx.Error(errors.DBFacadeNotSet.Error())
 		return nil
 	}

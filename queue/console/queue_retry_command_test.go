@@ -103,9 +103,9 @@ func (s *QueueRetryCommandTestSuite) TestHandle() {
 			},
 		},
 		{
-			name: "db is nil",
+			name: "failed job query is nil",
 			setup: func() {
-				s.command.db = nil
+				s.command.failedJobQuery = nil
 
 				mockCtx.EXPECT().Error(errors.DBFacadeNotSet.Error()).Once()
 			},
