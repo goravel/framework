@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"testing"
@@ -37,8 +38,8 @@ func TestQueryTestSuite(t *testing.T) {
 }
 
 func (s *QueryTestSuite) SetupSuite() {
-	s.queries = NewTestQueryBuilder().All("", false)
-	s.additionalQuery = NewTestQueryBuilder().Postgres("", false)
+	s.queries = NewTestQueryBuilder().All(context.Background(), "", false)
+	s.additionalQuery = NewTestQueryBuilder().Postgres(context.Background(), "", false)
 }
 
 func (s *QueryTestSuite) SetupTest() {
@@ -4170,10 +4171,10 @@ func (s *QueryTestSuite) TestJsonWhereClauses() {
 }
 
 func TestCustomConnection(t *testing.T) {
-	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
+	postgresTestQuery := NewTestQueryBuilder().Postgres(context.Background(), "", false)
 	postgresTestQuery.CreateTable(TestTableReviews, TestTableProducts)
 
-	sqliteTestQuery := NewTestQueryBuilder().Sqlite("", false)
+	sqliteTestQuery := NewTestQueryBuilder().Sqlite(context.Background(), "", false)
 	sqliteTestQuery.CreateTable(TestTableReviews, TestTableProducts)
 
 	query := postgresTestQuery.Query()
@@ -4251,7 +4252,7 @@ func TestOrmReadWriteSeparate(t *testing.T) {
 }
 
 func TestTablePrefixAndSingular(t *testing.T) {
-	queries := NewTestQueryBuilder().All("goravel_", true)
+	queries := NewTestQueryBuilder().All(context.Background(), "goravel_", true)
 
 	for drive, query := range queries {
 		t.Run(drive, func(t *testing.T) {
@@ -4275,7 +4276,7 @@ func TestTablePrefixAndSingular(t *testing.T) {
 }
 
 func TestPostgresWithSchema(t *testing.T) {
-	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
+	postgresTestQuery := NewTestQueryBuilder().Postgres(context.Background(), "", false)
 	postgresTestQuery.WithSchema(testSchema)
 	postgresTestQuery.CreateTable(TestTableUsers)
 
@@ -4289,7 +4290,7 @@ func TestPostgresWithSchema(t *testing.T) {
 }
 
 func TestSqlserverWithSchema(t *testing.T) {
-	sqlserverTestQuery := NewTestQueryBuilder().Sqlserver("", false)
+	sqlserverTestQuery := NewTestQueryBuilder().Sqlserver(context.Background(), "", false)
 	sqlserverTestQuery.WithSchema(testSchema)
 	sqlserverTestQuery.CreateTable(TestTableSchema)
 
@@ -4348,7 +4349,7 @@ func paginator(page string, limit string) func(methods contractsorm.Query) contr
 }
 
 func Benchmark_Orm(b *testing.B) {
-	query := NewTestQueryBuilder().Postgres("", false)
+	query := NewTestQueryBuilder().Postgres(context.Background(), "", false)
 	query.CreateTable(TestTableAuthors)
 
 	b.ResetTimer()

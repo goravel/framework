@@ -128,11 +128,11 @@ func NewTestQueryBuilder() *TestQueryBuilder {
 	return &TestQueryBuilder{}
 }
 
-func (r *TestQueryBuilder) All(prefix string, singular bool) map[string]*TestQuery {
-	postgresTestQuery := r.Postgres(prefix, singular)
-	mysqlTestQuery := r.Mysql(prefix, singular)
-	sqlserverTestQuery := r.Sqlserver(prefix, singular)
-	sqliteTestQuery := r.Sqlite(prefix, singular)
+func (r *TestQueryBuilder) All(ctx context.Context, prefix string, singular bool) map[string]*TestQuery {
+	postgresTestQuery := r.Postgres(ctx, prefix, singular)
+	mysqlTestQuery := r.Mysql(ctx, prefix, singular)
+	sqlserverTestQuery := r.Sqlserver(ctx, prefix, singular)
+	sqliteTestQuery := r.Sqlite(ctx, prefix, singular)
 
 	return map[string]*TestQuery{
 		postgresTestQuery.Driver().Pool().Writers[0].Driver:  postgresTestQuery,
@@ -165,13 +165,13 @@ func (r *TestQueryBuilder) AllWithReadWrite() map[string]map[string]*TestQuery {
 	}
 }
 
-func (r *TestQueryBuilder) Mysql(prefix string, singular bool) *TestQuery {
-	testQuery, _ := r.single(mysql.Name, prefix, "UTC", singular)
+func (r *TestQueryBuilder) Mysql(ctx context.Context, prefix string, singular bool) *TestQuery {
+	testQuery, _ := r.single(ctx, mysql.Name, prefix, "UTC", singular)
 	return testQuery
 }
 
 func (r *TestQueryBuilder) MysqlWithTimezone(timezone string) *TestQuery {
-	testQuery, _ := r.single(mysql.Name, "", timezone, false)
+	testQuery, _ := r.single(context.Background(), mysql.Name, "", timezone, false)
 	return testQuery
 }
 
@@ -179,13 +179,13 @@ func (r *TestQueryBuilder) MysqlWithReadWrite() map[string]*TestQuery {
 	return r.readWriteMix(mysql.Name)
 }
 
-func (r *TestQueryBuilder) Postgres(prefix string, singular bool) *TestQuery {
-	testQuery, _ := r.single(postgres.Name, prefix, "UTC", singular)
+func (r *TestQueryBuilder) Postgres(ctx context.Context, prefix string, singular bool) *TestQuery {
+	testQuery, _ := r.single(ctx, postgres.Name, prefix, "UTC", singular)
 	return testQuery
 }
 
 func (r *TestQueryBuilder) PostgresWithTimezone(timezone string) *TestQuery {
-	testQuery, _ := r.single(postgres.Name, "", timezone, false)
+	testQuery, _ := r.single(context.Background(), postgres.Name, "", timezone, false)
 	return testQuery
 }
 
@@ -193,7 +193,7 @@ func (r *TestQueryBuilder) PostgresWithReadWrite() map[string]*TestQuery {
 	return r.readWriteMix(postgres.Name)
 }
 
-func (r *TestQueryBuilder) Sqlite(prefix string, singular bool) *TestQuery {
+func (r *TestQueryBuilder) Sqlite(ctx context.Context, prefix string, singular bool) *TestQuery {
 	connection := sqlite.Name
 	mockConfig := &mocksconfig.Config{}
 	docker := sqlite.NewDocker(fmt.Sprintf("%s_%s", testDatabase, str.Random(6)))
@@ -210,7 +210,7 @@ func (r *TestQueryBuilder) Sqlite(prefix string, singular bool) *TestQuery {
 		Singular:   singular,
 	})
 
-	ctx := context.WithValue(context.Background(), testContextKey, "goravel")
+	ctx = context.WithValue(ctx, testContextKey, "goravel")
 	driver := sqlite.NewSqlite(mockConfig, utils.NewTestLog(), connection)
 	testQuery, err := NewTestQuery(ctx, driver, mockConfig)
 	if err != nil {
@@ -247,8 +247,8 @@ func (r *TestQueryBuilder) SqliteWithTimezone(timezone string) *TestQuery {
 }
 
 func (r *TestQueryBuilder) SqliteWithReadWrite() map[string]*TestQuery {
-	writeTestQuery := r.Sqlite("", false)
-	readTestQuery := r.Sqlite("", false)
+	writeTestQuery := r.Sqlite(context.Background(), "", false)
+	readTestQuery := r.Sqlite(context.Background(), "", false)
 
 	return map[string]*TestQuery{
 		"write": writeTestQuery,
@@ -261,13 +261,13 @@ func (r *TestQueryBuilder) SqliteWithReadWrite() map[string]*TestQuery {
 	}
 }
 
-func (r *TestQueryBuilder) Sqlserver(prefix string, singular bool) *TestQuery {
-	testQuery, _ := r.single(sqlserver.Name, prefix, "UTC", singular)
+func (r *TestQueryBuilder) Sqlserver(ctx context.Context, prefix string, singular bool) *TestQuery {
+	testQuery, _ := r.single(ctx, sqlserver.Name, prefix, "UTC", singular)
 	return testQuery
 }
 
 func (r *TestQueryBuilder) SqlserverWithTimezone(timezone string) *TestQuery {
-	testQuery, _ := r.single(sqlserver.Name, "", timezone, false)
+	testQuery, _ := r.single(context.Background(), sqlserver.Name, "", timezone, false)
 	return testQuery
 }
 
@@ -275,7 +275,7 @@ func (r *TestQueryBuilder) SqlserverWithReadWrite() map[string]*TestQuery {
 	return r.readWriteMix(sqlserver.Name)
 }
 
-func (r *TestQueryBuilder) single(driver, prefix, timezone string, singular bool) (*TestQuery, contractsdocker.DatabaseDriver) {
+func (r *TestQueryBuilder) single(ctx context.Context, driver, prefix, timezone string, singular bool) (*TestQuery, contractsdocker.DatabaseDriver) {
 	var (
 		dockerDriver   contractsdocker.DatabaseDriver
 		databaseDriver contractsdriver.Driver
@@ -324,7 +324,7 @@ func (r *TestQueryBuilder) single(driver, prefix, timezone string, singular bool
 		Timezone:   timezone,
 	})
 
-	ctx := context.WithValue(context.Background(), testContextKey, "goravel")
+	ctx = context.WithValue(ctx, testContextKey, "goravel")
 	testQuery, err := NewTestQuery(ctx, databaseDriver, mockConfig)
 	if err != nil {
 		panic(err)
@@ -334,8 +334,8 @@ func (r *TestQueryBuilder) single(driver, prefix, timezone string, singular bool
 }
 
 func (r *TestQueryBuilder) readWriteMix(driver string) map[string]*TestQuery {
-	writeTestQuery, writeDatabaseDriver := r.single(driver, "", "UTC", false)
-	readTestQuery, readDatabaseDriver := r.single(driver, "", "UTC", false)
+	writeTestQuery, writeDatabaseDriver := r.single(context.Background(), driver, "", "UTC", false)
+	readTestQuery, readDatabaseDriver := r.single(context.Background(), driver, "", "UTC", false)
 
 	return map[string]*TestQuery{
 		"write": writeTestQuery,

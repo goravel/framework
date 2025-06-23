@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -23,7 +24,7 @@ func TestDefaultMigratorWithDBSuite(t *testing.T) {
 }
 
 func (s *DefaultMigratorWithDBSuite) SetupTest() {
-	s.driverToTestQuery = NewTestQueryBuilder().All("goravel_", true)
+	s.driverToTestQuery = NewTestQueryBuilder().All(context.Background(), "goravel_", true)
 }
 
 func (s *DefaultMigratorWithDBSuite) TearDownTest() {
@@ -124,7 +125,7 @@ func (s *DefaultMigratorWithDBSuite) TestStatus() {
 }
 
 func TestDefaultMigratorWithPostgresSchema(t *testing.T) {
-	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
+	postgresTestQuery := NewTestQueryBuilder().Postgres(context.Background(), "", false)
 	postgresTestQuery.WithSchema("goravel")
 	driverName := postgresTestQuery.Driver().Pool().Writers[0].Driver
 
@@ -144,7 +145,7 @@ func TestDefaultMigratorWithPostgresSchema(t *testing.T) {
 }
 
 func TestDefaultMigratorWithSqlserverSchema(t *testing.T) {
-	sqlserverTestQuery := NewTestQueryBuilder().Sqlserver("", false)
+	sqlserverTestQuery := NewTestQueryBuilder().Sqlserver(context.Background(), "", false)
 	sqlserverTestQuery.WithSchema("goravel")
 	driverName := sqlserverTestQuery.Driver().Pool().Writers[0].Driver
 

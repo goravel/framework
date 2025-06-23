@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/mock"
@@ -23,7 +24,7 @@ func TestToSqlTestSuite(t *testing.T) {
 }
 
 func (s *ToSqlTestSuite) SetupSuite() {
-	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
+	postgresTestQuery := NewTestQueryBuilder().Postgres(context.Background(), "", false)
 	postgresTestQuery.CreateTable(TestTableUsers)
 	s.query = postgresTestQuery.Query()
 }
