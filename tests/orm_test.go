@@ -30,7 +30,7 @@ func TestOrmSuite(t *testing.T) {
 
 func (s *OrmSuite) SetupSuite() {
 	s.defaultConnection = postgres.Name
-	s.queries = NewTestQueryBuilder().All(context.Background(), "", false)
+	s.queries = NewTestQueryBuilder().All("", false)
 	for _, query := range s.queries {
 		query.CreateTable(TestTableRoles)
 	}

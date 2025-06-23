@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -21,7 +20,7 @@ func TestFactoryTestSuite(t *testing.T) {
 }
 
 func (s *FactoryTestSuite) SetupSuite() {
-	postgresTestQuery := NewTestQueryBuilder().Postgres(context.Background(), "", false)
+	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
 	postgresTestQuery.CreateTable(TestTableUsers, TestTableAuthors)
 	s.query = postgresTestQuery.Query()
 }

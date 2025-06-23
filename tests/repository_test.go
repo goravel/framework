@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -21,7 +20,7 @@ func TestRepositoryTestSuite(t *testing.T) {
 }
 
 func (s *RepositoryTestSuite) SetupTest() {
-	s.driverToTestQuery = NewTestQueryBuilder().All(context.Background(), "goravel_", true)
+	s.driverToTestQuery = NewTestQueryBuilder().All("goravel_", true)
 }
 
 func (s *RepositoryTestSuite) TearDownTest() {

@@ -39,7 +39,7 @@ func TestDBTestSuite(t *testing.T) {
 
 func (s *DBTestSuite) SetupSuite() {
 	s.now = carbon.NewDateTime(carbon.FromDateTime(2025, 1, 2, 3, 4, 5))
-	s.queries = NewTestQueryBuilder().All(context.Background(), "", false)
+	s.queries = NewTestQueryBuilder().All("", false)
 }
 
 func (s *DBTestSuite) SetupTest() {
@@ -1673,10 +1673,10 @@ func (s *DBTestSuite) TestJsonWhereClauses() {
 
 func TestDB_Connection(t *testing.T) {
 	t.Parallel()
-	postgresTestQuery := NewTestQueryBuilder().Postgres(context.Background(), "", false)
+	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
 	postgresTestQuery.CreateTable(TestTableProducts)
 
-	sqliteTestQuery := NewTestQueryBuilder().Sqlite(context.Background(), "", false)
+	sqliteTestQuery := NewTestQueryBuilder().Sqlite("", false)
 	sqliteTestQuery.CreateTable(TestTableProducts)
 	defer func() {
 		docker, err := sqliteTestQuery.Driver().Docker()
@@ -1761,7 +1761,7 @@ func TestDbReadWriteSeparate(t *testing.T) {
 }
 
 func Benchmark_DB(b *testing.B) {
-	query := NewTestQueryBuilder().Postgres(context.Background(), "", false)
+	query := NewTestQueryBuilder().Postgres("", false)
 	query.CreateTable(TestTableAuthors)
 
 	b.ResetTimer()
