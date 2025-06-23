@@ -1,11 +1,7 @@
-package logger
+package db
 
 import (
 	"context"
-	"regexp"
-	"runtime"
-	"strconv"
-	"strings"
 	"time"
 
 	gormlogger "gorm.io/gorm/logger"
@@ -92,26 +88,29 @@ func (r *Logger) Trace(ctx context.Context, begin *carbon.Carbon, sql string, ro
 		return
 	}
 
-	elapsed := begin.DiffInDuration()
+	duration := begin.DiffInDuration()
+	elapsed := float64(duration.Nanoseconds()) / 1e6
+
+	addQueryLogToContext(ctx, sql, elapsed)
 
 	switch {
 	case err != nil && r.level >= logger.Error:
 		if rowsAffected == -1 {
-			r.Errorf(ctx, traceErrStr, float64(elapsed.Nanoseconds())/1e6, "-", sql, err)
+			r.Errorf(ctx, traceErrStr, elapsed, "-", sql, err)
 		} else {
-			r.Errorf(ctx, traceErrStr, float64(elapsed.Nanoseconds())/1e6, rowsAffected, sql, err)
+			r.Errorf(ctx, traceErrStr, elapsed, rowsAffected, sql, err)
 		}
-	case elapsed > r.slowThreshold && r.slowThreshold != 0 && r.level >= logger.Warn:
+	case duration > r.slowThreshold && r.slowThreshold != 0 && r.level >= logger.Warn:
 		if rowsAffected == -1 {
-			r.Warningf(ctx, traceWarnStr, float64(elapsed.Nanoseconds())/1e6, "-", sql)
+			r.Warningf(ctx, traceWarnStr, elapsed, "-", sql)
 		} else {
-			r.Warningf(ctx, traceWarnStr, float64(elapsed.Nanoseconds())/1e6, rowsAffected, sql)
+			r.Warningf(ctx, traceWarnStr, elapsed, rowsAffected, sql)
 		}
 	case r.level == logger.Info:
 		if rowsAffected == -1 {
-			r.Infof(ctx, traceStr, float64(elapsed.Nanoseconds())/1e6, "-", sql)
+			r.Infof(ctx, traceStr, elapsed, "-", sql)
 		} else {
-			r.Infof(ctx, traceStr, float64(elapsed.Nanoseconds())/1e6, rowsAffected, sql)
+			r.Infof(ctx, traceStr, elapsed, rowsAffected, sql)
 		}
 	}
 }
@@ -131,7 +130,7 @@ func NewGorm(logger logger.Logger) *Gorm {
 }
 
 func (r *Gorm) LogMode(level gormlogger.LogLevel) gormlogger.Interface {
-	_ = r.logger.Level(GormLevelToLevel(level))
+	_ = r.logger.Level(gormLevelToLevel(level))
 
 	return r
 }
@@ -153,24 +152,7 @@ func (r *Gorm) Trace(ctx context.Context, begin time.Time, fc func() (string, in
 	r.logger.Trace(ctx, carbon.FromStdTime(begin), sql, rowsAffected, err)
 }
 
-// FileWithLineNum return the file name and line number of the current file
-func FileWithLineNum() string {
-	_, file, _, _ := runtime.Caller(0)
-	gormSourceDir := regexp.MustCompile(`utils.utils\.go`).ReplaceAllString(file, "")
-	goravelSourceDir := "database/gorm.go"
-
-	// the second caller usually from gorm internal, so set i start from 5
-	for i := 5; i < 15; i++ {
-		_, file, line, ok := runtime.Caller(i)
-		if ok && ((!strings.HasPrefix(file, gormSourceDir) && !strings.Contains(file, goravelSourceDir)) || strings.HasSuffix(file, "_test.go")) {
-			return file + ":" + strconv.FormatInt(int64(line), 10)
-		}
-	}
-
-	return ""
-}
-
-func GormLevelToLevel(level gormlogger.LogLevel) logger.Level {
+func gormLevelToLevel(level gormlogger.LogLevel) logger.Level {
 	switch level {
 	case gormlogger.Silent:
 		return logger.Silent
@@ -181,4 +163,23 @@ func GormLevelToLevel(level gormlogger.LogLevel) logger.Level {
 	default:
 		return logger.Info
 	}
+}
+
+func addQueryLogToContext(ctx context.Context, sql string, time float64) {
+	value := ctx.Value(queryLogKey{})
+	if value == nil {
+		return
+	}
+
+	queryLogValue := value.(*queryLogValue)
+	if !queryLogValue.enabled {
+		return
+	}
+
+	queryLogValue.queryLogs = append(queryLogValue.queryLogs, QueryLog{
+		Query: sql,
+		Time:  time,
+	})
+
+	_ = context.WithValue(ctx, queryLogKey{}, queryLogValue)
 }

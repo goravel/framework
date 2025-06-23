@@ -19,6 +19,7 @@ import (
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/database/db"
 	databasedriver "github.com/goravel/framework/database/driver"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/database"
@@ -79,7 +80,8 @@ func BuildQuery(ctx context.Context, config config.Config, connection string, lo
 	}
 
 	pool := driver.Pool()
-	gorm, err := databasedriver.BuildGorm(config, log, pool)
+	logger := db.NewLogger(config, log)
+	gorm, err := databasedriver.BuildGorm(config, logger.ToGorm(), pool)
 	if err != nil {
 		return nil, pool.Writers[0], err
 	}

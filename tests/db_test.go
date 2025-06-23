@@ -3,11 +3,13 @@
 package tests
 
 import (
+	"context"
 	"database/sql"
 	"testing"
 	"time"
 
 	"github.com/goravel/framework/contracts/database/db"
+	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation/json"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
@@ -912,6 +914,36 @@ func (s *DBTestSuite) TestPluck() {
 			s.Equal([]string{"pluck_product1", "pluck_product2"}, names)
 		})
 	}
+}
+
+func (s *DBTestSuite) TestQueryLog() {
+	query := s.queries[postgres.Name]
+	ctx := context.Background()
+	ctx = databasedb.EnableQueryLog(ctx)
+
+	query.DB().WithContext(ctx).Table("products").Insert([]Product{
+		{Name: "query_log_product"},
+	})
+
+	var product Product
+	err := query.DB().WithContext(ctx).Table("products").Where("name", "query_log_product").First(&product)
+	s.NoError(err)
+	s.True(product.ID > 0)
+
+	queryLogs := databasedb.GetQueryLog(ctx)
+	s.Equal(2, len(queryLogs))
+	s.Equal("INSERT INTO products (name) VALUES ('query_log_product')", queryLogs[0].Query)
+	s.True(queryLogs[0].Time > 0)
+	s.Equal("SELECT * FROM products WHERE name = 'query_log_product'", queryLogs[1].Query)
+	s.True(queryLogs[1].Time > 0)
+
+	ctx = databasedb.DisableQueryLog(ctx)
+	query.DB().WithContext(ctx).Table("products").Insert([]Product{
+		{Name: "query_log_product"},
+	})
+
+	queryLogs = databasedb.GetQueryLog(ctx)
+	s.Equal(0, len(queryLogs))
 }
 
 func (s *DBTestSuite) TestRightJoin() {
