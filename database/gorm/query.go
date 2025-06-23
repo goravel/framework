@@ -220,11 +220,15 @@ func (r *Query) Delete(dests ...any) (*contractsdb.Result, error) {
 	}, nil
 }
 
-func (r *Query) Distinct(args ...any) contractsorm.Query {
-	conditions := r.conditions
-	conditions.distinct = append(conditions.distinct, args...)
+func (r *Query) Distinct(columns ...string) contractsorm.Query {
+	if len(columns) == 0 {
+		columns = []string{"*"}
+	}
 
-	return r.setConditions(conditions)
+	query := r.Select(columns...).(*Query)
+	query.conditions.distinct = true
+
+	return r.setConditions(query.conditions)
 }
 
 func (r *Query) Driver() string {
@@ -692,7 +696,7 @@ func (r *Query) Rollback() error {
 }
 
 func (r *Query) Save(dest any) error {
-	if r.conditions.selectColumns != nil && len(r.conditions.omit) > 0 {
+	if len(r.conditions.selectColumns) > 0 && len(r.conditions.omit) > 0 {
 		return errors.OrmQuerySelectAndOmitsConflict
 	}
 
@@ -766,12 +770,9 @@ func (r *Query) Scopes(funcs ...func(contractsorm.Query) contractsorm.Query) con
 	return r.setConditions(conditions)
 }
 
-func (r *Query) Select(query any, args ...any) contractsorm.Query {
+func (r *Query) Select(columns ...string) contractsorm.Query {
 	conditions := r.conditions
-	conditions.selectColumns = &Select{
-		query: query,
-		args:  args,
-	}
+	conditions.selectColumns = columns
 
 	return r.setConditions(conditions)
 }
@@ -789,10 +790,16 @@ func (r *Query) SharedLock() contractsorm.Query {
 	return r.setConditions(conditions)
 }
 
-func (r *Query) Sum(column string, dest any) error {
+func (r *Query) Sum(column string) (int64, error) {
 	query := r.addGlobalScopes().buildConditions()
 
-	return query.instance.Select("SUM(" + column + ")").Row().Scan(dest)
+	var sum int64
+	err := query.instance.Select("SUM(" + column + ")").Row().Scan(&sum)
+	if err != nil {
+		return 0, err
+	}
+
+	return sum, nil
 }
 
 func (r *Query) Table(name string, args ...any) contractsorm.Query {
@@ -1099,12 +1106,12 @@ func (r *Query) buildConditions() *Query {
 }
 
 func (r *Query) buildDistinct(db *gormio.DB) *gormio.DB {
-	if len(r.conditions.distinct) == 0 {
+	if !r.conditions.distinct {
 		return db
 	}
 
-	db = db.Distinct(r.conditions.distinct...)
-	r.conditions.distinct = nil
+	db = db.Distinct()
+	r.conditions.distinct = false
 
 	return db
 }
@@ -1216,11 +1223,16 @@ func (r *Query) buildOrder(db *gormio.DB) *gormio.DB {
 }
 
 func (r *Query) buildSelectColumns(db *gormio.DB) *gormio.DB {
-	if r.conditions.selectColumns == nil {
+	if len(r.conditions.selectColumns) == 0 {
 		return db
 	}
 
-	db = db.Select(r.conditions.selectColumns.query, r.conditions.selectColumns.args...)
+	var selectColumns []any
+	for _, column := range r.conditions.selectColumns {
+		selectColumns = append(selectColumns, column)
+	}
+
+	db = db.Select(selectColumns[0], selectColumns[1:]...)
 	r.conditions.selectColumns = nil
 
 	return db

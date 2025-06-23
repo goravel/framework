@@ -56,7 +56,7 @@ type Query interface {
 	// Delete deletes records matching given conditions, if the conditions are empty will delete all records.
 	Delete(value ...any) (*db.Result, error)
 	// Distinct specifies distinct fields to query.
-	Distinct(args ...any) Query
+	Distinct(columns ...string) Query
 	// Driver gets the driver for the query.
 	Driver() string
 	// Exec executes raw sql
@@ -161,11 +161,11 @@ type Query interface {
 	// Scopes applies one or more query scopes.
 	Scopes(funcs ...func(Query) Query) Query
 	// Select specifies fields that should be retrieved from the database.
-	Select(query any, args ...any) Query
+	Select(columns ...string) Query
 	// SharedLock locks the selected rows in the table.
 	SharedLock() Query
 	// Sum calculates the sum of a column's values and populates the destination object.
-	Sum(column string, dest any) error
+	Sum(column string) (int64, error)
 	// Table specifies the table for the query.
 	Table(name string, args ...any) Query
 	// ToSql returns the query as a SQL string.

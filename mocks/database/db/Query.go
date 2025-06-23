@@ -346,17 +346,23 @@ func (_c *Query_Delete_Call) RunAndReturn(run func() (*db.Result, error)) *Query
 	return _c
 }
 
-// Distinct provides a mock function with no fields
-func (_m *Query) Distinct() db.Query {
-	ret := _m.Called()
+// Distinct provides a mock function with given fields: columns
+func (_m *Query) Distinct(columns ...string) db.Query {
+	_va := make([]interface{}, len(columns))
+	for _i := range columns {
+		_va[_i] = columns[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Distinct")
 	}
 
 	var r0 db.Query
-	if rf, ok := ret.Get(0).(func() db.Query); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(...string) db.Query); ok {
+		r0 = rf(columns...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(db.Query)
@@ -372,13 +378,21 @@ type Query_Distinct_Call struct {
 }
 
 // Distinct is a helper method to define mock.On call
-func (_e *Query_Expecter) Distinct() *Query_Distinct_Call {
-	return &Query_Distinct_Call{Call: _e.mock.On("Distinct")}
+//   - columns ...string
+func (_e *Query_Expecter) Distinct(columns ...interface{}) *Query_Distinct_Call {
+	return &Query_Distinct_Call{Call: _e.mock.On("Distinct",
+		append([]interface{}{}, columns...)...)}
 }
 
-func (_c *Query_Distinct_Call) Run(run func()) *Query_Distinct_Call {
+func (_c *Query_Distinct_Call) Run(run func(columns ...string)) *Query_Distinct_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -388,7 +402,7 @@ func (_c *Query_Distinct_Call) Return(_a0 db.Query) *Query_Distinct_Call {
 	return _c
 }
 
-func (_c *Query_Distinct_Call) RunAndReturn(run func() db.Query) *Query_Distinct_Call {
+func (_c *Query_Distinct_Call) RunAndReturn(run func(...string) db.Query) *Query_Distinct_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -2134,9 +2148,9 @@ func (_c *Query_OrWhereNotBetween_Call) RunAndReturn(run func(string, interface{
 	return _c
 }
 
-// OrWhereNotIn provides a mock function with given fields: column, args
-func (_m *Query) OrWhereNotIn(column string, args []interface{}) db.Query {
-	ret := _m.Called(column, args)
+// OrWhereNotIn provides a mock function with given fields: column, values
+func (_m *Query) OrWhereNotIn(column string, values []interface{}) db.Query {
+	ret := _m.Called(column, values)
 
 	if len(ret) == 0 {
 		panic("no return value specified for OrWhereNotIn")
@@ -2144,7 +2158,7 @@ func (_m *Query) OrWhereNotIn(column string, args []interface{}) db.Query {
 
 	var r0 db.Query
 	if rf, ok := ret.Get(0).(func(string, []interface{}) db.Query); ok {
-		r0 = rf(column, args)
+		r0 = rf(column, values)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(db.Query)
@@ -2161,12 +2175,12 @@ type Query_OrWhereNotIn_Call struct {
 
 // OrWhereNotIn is a helper method to define mock.On call
 //   - column string
-//   - args []interface{}
-func (_e *Query_Expecter) OrWhereNotIn(column interface{}, args interface{}) *Query_OrWhereNotIn_Call {
-	return &Query_OrWhereNotIn_Call{Call: _e.mock.On("OrWhereNotIn", column, args)}
+//   - values []interface{}
+func (_e *Query_Expecter) OrWhereNotIn(column interface{}, values interface{}) *Query_OrWhereNotIn_Call {
+	return &Query_OrWhereNotIn_Call{Call: _e.mock.On("OrWhereNotIn", column, values)}
 }
 
-func (_c *Query_OrWhereNotIn_Call) Run(run func(column string, args []interface{})) *Query_OrWhereNotIn_Call {
+func (_c *Query_OrWhereNotIn_Call) Run(run func(column string, values []interface{})) *Query_OrWhereNotIn_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string), args[1].([]interface{}))
 	})
@@ -2377,17 +2391,24 @@ func (_c *Query_OrWhereRaw_Call) RunAndReturn(run func(string, []interface{}) db
 	return _c
 }
 
-// OrderBy provides a mock function with given fields: column
-func (_m *Query) OrderBy(column string) db.Query {
-	ret := _m.Called(column)
+// OrderBy provides a mock function with given fields: column, directions
+func (_m *Query) OrderBy(column string, directions ...string) db.Query {
+	_va := make([]interface{}, len(directions))
+	for _i := range directions {
+		_va[_i] = directions[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, column)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for OrderBy")
 	}
 
 	var r0 db.Query
-	if rf, ok := ret.Get(0).(func(string) db.Query); ok {
-		r0 = rf(column)
+	if rf, ok := ret.Get(0).(func(string, ...string) db.Query); ok {
+		r0 = rf(column, directions...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(db.Query)
@@ -2404,13 +2425,21 @@ type Query_OrderBy_Call struct {
 
 // OrderBy is a helper method to define mock.On call
 //   - column string
-func (_e *Query_Expecter) OrderBy(column interface{}) *Query_OrderBy_Call {
-	return &Query_OrderBy_Call{Call: _e.mock.On("OrderBy", column)}
+//   - directions ...string
+func (_e *Query_Expecter) OrderBy(column interface{}, directions ...interface{}) *Query_OrderBy_Call {
+	return &Query_OrderBy_Call{Call: _e.mock.On("OrderBy",
+		append([]interface{}{column}, directions...)...)}
 }
 
-func (_c *Query_OrderBy_Call) Run(run func(column string)) *Query_OrderBy_Call {
+func (_c *Query_OrderBy_Call) Run(run func(column string, directions ...string)) *Query_OrderBy_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		variadicArgs := make([]string, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
 	})
 	return _c
 }
@@ -2420,7 +2449,7 @@ func (_c *Query_OrderBy_Call) Return(_a0 db.Query) *Query_OrderBy_Call {
 	return _c
 }
 
-func (_c *Query_OrderBy_Call) RunAndReturn(run func(string) db.Query) *Query_OrderBy_Call {
+func (_c *Query_OrderBy_Call) RunAndReturn(run func(string, ...string) db.Query) *Query_OrderBy_Call {
 	_c.Call.Return(run)
 	return _c
 }
