@@ -14,7 +14,6 @@ import (
 	databasedb "github.com/goravel/framework/database/db"
 	databasedriver "github.com/goravel/framework/database/driver"
 	databasegorm "github.com/goravel/framework/database/gorm"
-	databaselogger "github.com/goravel/framework/database/logger"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/support/str"
 	"github.com/goravel/framework/testing/utils"
@@ -37,12 +36,13 @@ type TestQuery struct {
 
 func NewTestQuery(ctx context.Context, driver contractsdriver.Driver, config config.Config) (*TestQuery, error) {
 	pool := driver.Pool()
-	gorm, err := databasedriver.BuildGorm(config, utils.NewTestLog(), pool)
+	logger := databasedb.NewLogger(config, utils.NewTestLog())
+	gorm, err := databasedriver.BuildGorm(config, logger.ToGorm(), pool)
 	if err != nil {
 		return nil, err
 	}
 
-	db, err := databasedb.NewDB(ctx, config, driver, databaselogger.NewLogger(config, utils.NewTestLog()), gorm)
+	db, err := databasedb.NewDB(ctx, config, driver, logger, gorm)
 	if err != nil {
 		return nil, err
 	}

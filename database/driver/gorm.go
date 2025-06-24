@@ -4,23 +4,21 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
 	"gorm.io/plugin/dbresolver"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database"
-	"github.com/goravel/framework/contracts/log"
-	"github.com/goravel/framework/database/logger"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 )
 
-func BuildGorm(config config.Config, log log.Log, pool database.Pool) (*gorm.DB, error) {
+func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool) (*gorm.DB, error) {
 	if len(pool.Writers) == 0 {
 		return nil, errors.DatabaseConfigNotFound
 	}
 
-	logger := logger.NewLogger(config, log).ToGorm()
 	gormConfig := &gorm.Config{
 		DisableForeignKeyConstraintWhenMigrating: true,
 		SkipDefaultTransaction:                   true,
