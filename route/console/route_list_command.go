@@ -90,7 +90,7 @@ func (r *RouteListCommand) Handle(ctx console.Context) error {
 	}
 
 	for _, item := range routes {
-		ctx.TwoColumnDetail(fmt.Sprintf("%s %s", r.formatMethod(item.Method), r.formatPath(item.Path)), item.Name)
+		ctx.TwoColumnDetail(fmt.Sprintf("%s %s", r.formatMethod(item.Method), r.formatPath(item.Path)), r.formateNameHandler(item.Name, item.Handler))
 	}
 
 	ctx.NewLine()
@@ -145,6 +145,18 @@ func (r *RouteListCommand) filterRoutes(ctx console.Context, routes []route.Info
 
 		return true
 	})
+}
+
+func (r *RouteListCommand) formateNameHandler(name, handler string) string {
+	if len(name) == 0 && len(handler) == 0 {
+		return ""
+	}
+
+	if len(name) > 0 && len(handler) > 0 {
+		name = name + " › "
+	}
+
+	return fmt.Sprintf("<fg=7472A3>%s%s</>", name, strings.TrimSuffix(handler, "-fm"))
 }
 
 func (r *RouteListCommand) formatMethod(method string) string {

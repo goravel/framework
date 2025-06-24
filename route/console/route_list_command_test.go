@@ -71,7 +71,7 @@ func TestRouteListCommand(t *testing.T) {
 				mockContext.EXPECT().Option("name").Return("").Once()
 				mockContext.EXPECT().Option("path").Return("").Once()
 				mockContext.EXPECT().OptionSlice("except-path").Return(nil).Once()
-				mockContext.EXPECT().TwoColumnDetail("<fg=yellow>POST</>         test2", "test2").
+				mockContext.EXPECT().TwoColumnDetail("<fg=yellow>POST</>         test2", "<fg=7472A3>test2</>").
 					Run(func(first string, second string, filler ...rune) {
 						color.Default().Println(supportconsole.TwoColumnDetail(first, second, filler...))
 					}).Once()
@@ -81,7 +81,8 @@ func TestRouteListCommand(t *testing.T) {
 						color.Default().Println(supportconsole.TwoColumnDetail(first, second, filler...))
 					}).Once()
 			},
-			expected: "\x1b[39m  \x1b[33mPOST\x1b[0m\x1b[39m         test2 \x1b[90m...................................................\x1b[0m\x1b[39m test2  " +
+			expected: "\x1b[39m  \x1b[33mPOST\x1b[0m\x1b[39m         test2 \x1b[90m..................................................." +
+				"\x1b[0m\x1b[39m \x1b[38;2;116;114;163mtest2\x1b[0m\x1b[39m  " +
 				"\x1b[0m\n\x1b[39m\x1b[0m\x1b[39m   \x1b[90m                                                        " +
 				"\x1b[0m\x1b[39m \x1b[34;1mShowing [1] routes\x1b[0m\x1b[39m  \x1b[0m\n\x1b[39m\x1b[0m",
 		},
@@ -90,18 +91,18 @@ func TestRouteListCommand(t *testing.T) {
 			setup: func() {
 				mockContext.EXPECT().NewLine().Return().Once()
 				mockRoute.EXPECT().GetRoutes().Return([]route.Info{
-					{Name: "test", Method: "GET", Path: "/test"},
-					{Name: "test2", Method: "POST", Path: "/test2"},
+					{Name: "test", Method: "GET", Path: "/test", Handler: "goravel/routes.testHandler"},
+					{Method: "POST", Path: "/test2", Handler: "goravel/routes.testHandler2"},
 				}).Once()
 				mockContext.EXPECT().Option("method").Return("").Once()
 				mockContext.EXPECT().Option("name").Return("").Once()
 				mockContext.EXPECT().Option("path").Return("test").Once()
 				mockContext.EXPECT().OptionSlice("except-path").Return(nil).Once()
-				mockContext.EXPECT().TwoColumnDetail("<fg=blue>GET</>          test", "test").
+				mockContext.EXPECT().TwoColumnDetail("<fg=blue>GET</>          test", "<fg=7472A3>test › goravel/routes.testHandler</>").
 					Run(func(first string, second string, filler ...rune) {
 						color.Default().Println(supportconsole.TwoColumnDetail(first, second, filler...))
 					}).Once()
-				mockContext.EXPECT().TwoColumnDetail("<fg=yellow>POST</>         test2", "test2").
+				mockContext.EXPECT().TwoColumnDetail("<fg=yellow>POST</>         test2", "<fg=7472A3>goravel/routes.testHandler2</>").
 					Run(func(first string, second string, filler ...rune) {
 						color.Default().Println(supportconsole.TwoColumnDetail(first, second, filler...))
 					}).Once()
@@ -111,10 +112,12 @@ func TestRouteListCommand(t *testing.T) {
 						color.Default().Println(supportconsole.TwoColumnDetail(first, second, filler...))
 					}).Once()
 			},
-			expected: "\x1b[39m  \x1b[34mGET\x1b[0m\x1b[39m          test \x1b[90m.....................................................\x1b[0m\x1b[39m test  " +
+			expected: "\x1b[39m  \x1b[34mGET\x1b[0m\x1b[39m          test \x1b[90m........................" +
+				"\x1b[0m\x1b[39m \x1b[38;2;116;114;163mtest › goravel/routes.testHandler\x1b[0m\x1b[39m  " +
 				"\x1b[0m\n\x1b[39m\x1b[0m\x1b[39m  \x1b[33mPOST\x1b[0m\x1b[39m         test2 " +
-				"\x1b[90m...................................................\x1b[0m\x1b[39m test2  " +
-				"\x1b[0m\n\x1b[39m\x1b[0m\x1b[39m   \x1b[90m                                                        " +
+				"\x1b[90m.............................\x1b[0m\x1b[39m \x1b[38;2;116;114;163mgoravel/routes.testHandler2" +
+				"\x1b[0m\x1b[39m  \x1b[0m\n\x1b[39m\x1b[0m\x1b[39m   \x1b[90m" +
+				"                                                        " +
 				"\x1b[0m\x1b[39m \x1b[34;1mShowing [2] routes\x1b[0m\x1b[39m  \x1b[0m\n\x1b[39m\x1b[0m",
 		},
 	}
