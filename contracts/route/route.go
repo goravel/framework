@@ -80,7 +80,8 @@ type Action interface {
 }
 
 type Info struct {
-	Method string
-	Name   string
-	Path   string
+	Handler string
+	Method  string
+	Name    string
+	Path    string
 }
