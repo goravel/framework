@@ -1131,6 +1131,64 @@ func (_c *Grammar_CompileIndexes_Call) RunAndReturn(run func(string, string) (st
 	return _c
 }
 
+// CompileJsonColumnsUpdate provides a mock function with given fields: values
+func (_m *Grammar) CompileJsonColumnsUpdate(values map[string]interface{}) (map[string]interface{}, error) {
+	ret := _m.Called(values)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompileJsonColumnsUpdate")
+	}
+
+	var r0 map[string]interface{}
+	var r1 error
+	if rf, ok := ret.Get(0).(func(map[string]interface{}) (map[string]interface{}, error)); ok {
+		return rf(values)
+	}
+	if rf, ok := ret.Get(0).(func(map[string]interface{}) map[string]interface{}); ok {
+		r0 = rf(values)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]interface{})
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(map[string]interface{}) error); ok {
+		r1 = rf(values)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Grammar_CompileJsonColumnsUpdate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompileJsonColumnsUpdate'
+type Grammar_CompileJsonColumnsUpdate_Call struct {
+	*mock.Call
+}
+
+// CompileJsonColumnsUpdate is a helper method to define mock.On call
+//   - values map[string]interface{}
+func (_e *Grammar_Expecter) CompileJsonColumnsUpdate(values interface{}) *Grammar_CompileJsonColumnsUpdate_Call {
+	return &Grammar_CompileJsonColumnsUpdate_Call{Call: _e.mock.On("CompileJsonColumnsUpdate", values)}
+}
+
+func (_c *Grammar_CompileJsonColumnsUpdate_Call) Run(run func(values map[string]interface{})) *Grammar_CompileJsonColumnsUpdate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(map[string]interface{}))
+	})
+	return _c
+}
+
+func (_c *Grammar_CompileJsonColumnsUpdate_Call) Return(_a0 map[string]interface{}, _a1 error) *Grammar_CompileJsonColumnsUpdate_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Grammar_CompileJsonColumnsUpdate_Call) RunAndReturn(run func(map[string]interface{}) (map[string]interface{}, error)) *Grammar_CompileJsonColumnsUpdate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CompileJsonContains provides a mock function with given fields: column, value, isNot
 func (_m *Grammar) CompileJsonContains(column string, value interface{}, isNot bool) (string, []interface{}, error) {
 	ret := _m.Called(column, value, isNot)

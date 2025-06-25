@@ -1729,6 +1729,13 @@ func (r *Query) update(values any) (*contractsdb.Result, error) {
 		return nil, errors.OrmQuerySelectAndOmitsConflict
 	}
 
+	if v, ok := values.(map[string]any); ok {
+		var err error
+		if values, err = r.grammar.CompileJsonColumnsUpdate(v); err != nil {
+			return nil, errors.OrmJsonColumnUpdateInvalid.Args(err)
+		}
+	}
+
 	if len(r.instance.Statement.Selects) > 0 {
 		for _, val := range r.instance.Statement.Selects {
 			if val == Associations {

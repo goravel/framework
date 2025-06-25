@@ -1135,6 +1135,10 @@ func (r *Query) buildUpdate(data map[string]any) (sql string, args []any, err er
 		return "", nil, err
 	}
 
+	if data, err = r.grammar.CompileJsonColumnsUpdate(data); err != nil {
+		return "", nil, errors.OrmJsonColumnUpdateInvalid.Args(err)
+	}
+
 	return builder.Where(sqlizer).SetMap(data).ToSql()
 }
 
