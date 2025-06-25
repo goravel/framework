@@ -14,6 +14,6 @@ func Raw(expr string, args ...any) any {
 	return Expr{gorm.Expr(expr, args...)}
 }
 
-func (r Expr) ToSql() (sql string, args []interface{}, err error) {
+func (r Expr) ToSql() (sql string, args []any, err error) {
 	return squirrel.Expr(r.SQL, r.Vars...).ToSql()
 }
