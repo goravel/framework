@@ -164,6 +164,8 @@ type CompileLimitGrammar interface {
 }
 
 type JsonGrammar interface {
+	// CompileJsonColumnsUpdate Compile the JSON  columns for an update statement.
+	CompileJsonColumnsUpdate(values map[string]any) (map[string]any, error)
 	// CompileJsonContains Compile a "JSON contains" statement into SQL.
 	CompileJsonContains(column string, value any, isNot bool) (string, []any, error)
 	// CompileJsonContainsKey Compile a "JSON contains key" statement into SQL.
