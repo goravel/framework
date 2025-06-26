@@ -34,10 +34,10 @@ type TestQuery struct {
 	query  orm.Query
 }
 
-func NewTestQuery(ctx context.Context, driver contractsdriver.Driver, config config.Config) (*TestQuery, error) {
+func NewTestQuery(ctx context.Context, driver contractsdriver.Driver, config config.Config, connection string) (*TestQuery, error) {
 	pool := driver.Pool()
 	logger := databasedb.NewLogger(config, utils.NewTestLog())
-	gorm, err := databasedriver.BuildGorm(config, logger.ToGorm(), pool)
+	gorm, err := databasedriver.BuildGorm(config, logger.ToGorm(), pool, connection)
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +212,7 @@ func (r *TestQueryBuilder) Sqlite(prefix string, singular bool) *TestQuery {
 
 	ctx := context.WithValue(context.Background(), testContextKey, "goravel")
 	driver := sqlite.NewSqlite(mockConfig, utils.NewTestLog(), connection)
-	testQuery, err := NewTestQuery(ctx, driver, mockConfig)
+	testQuery, err := NewTestQuery(ctx, driver, mockConfig, connection)
 	if err != nil {
 		panic(err)
 	}
@@ -238,7 +238,7 @@ func (r *TestQueryBuilder) SqliteWithTimezone(timezone string) *TestQuery {
 
 	ctx := context.WithValue(context.Background(), testContextKey, "goravel")
 	driver := sqlite.NewSqlite(mockConfig, utils.NewTestLog(), connection)
-	testQuery, err := NewTestQuery(ctx, driver, mockConfig)
+	testQuery, err := NewTestQuery(ctx, driver, mockConfig, connection)
 	if err != nil {
 		panic(err)
 	}
@@ -325,7 +325,7 @@ func (r *TestQueryBuilder) single(driver, prefix, timezone string, singular bool
 	})
 
 	ctx := context.WithValue(context.Background(), testContextKey, "goravel")
-	testQuery, err := NewTestQuery(ctx, databaseDriver, mockConfig)
+	testQuery, err := NewTestQuery(ctx, databaseDriver, mockConfig, connection)
 	if err != nil {
 		panic(err)
 	}
@@ -437,7 +437,7 @@ func (r *TestQueryBuilder) mix(driver string, writeDatabaseConfig, readDatabaseC
 	})
 
 	ctx := context.WithValue(context.Background(), testContextKey, "goravel")
-	testQuery, err := NewTestQuery(ctx, databaseDriver, mockConfig)
+	testQuery, err := NewTestQuery(ctx, databaseDriver, mockConfig, connection)
 	if err != nil {
 		panic(err)
 	}
