@@ -4137,49 +4137,41 @@ func (s *QueryTestSuite) TestJsonColumnsUpdate() {
 			tests := []struct {
 				name   string
 				update map[string]any
-				find   func(any, ...any) error
-				assert func(before []JsonData, after []JsonData)
+				assert func(before JsonData, after JsonData)
 			}{
 				{
 					name:   "update string",
 					update: map[string]any{"data->string": "updated_first"},
-					find:   query.Query().Where("data->string", "first").Find,
-					assert: func(before []JsonData, after []JsonData) {
-						s.Len(before, 1)
-						s.Len(after, 0)
+					assert: func(before JsonData, after JsonData) {
+						s.NotContains(before.Data, "updated_first")
+						s.Contains(after.Data, "updated_first")
 					},
 				},
 				{
 					name:   "update int",
 					update: map[string]any{"data->int": 789},
-					find:   query.Query().Where("data->int", 789).Find,
-					assert: func(before []JsonData, after []JsonData) {
-						s.Len(before, 0)
-						s.Len(after, 1)
-						s.Contains(after[0].Data, "789")
+					assert: func(before JsonData, after JsonData) {
+						s.NotContains(before.Data, "789")
+						s.Contains(after.Data, "789")
 					},
 				},
 				{
 					name:   "update float(pointer)",
 					update: map[string]any{"data->float": convert.Pointer(456.789)},
-					find:   query.Query().Where("data->float", 123.456).Find,
-					assert: func(before []JsonData, after []JsonData) {
-						s.Len(before, 1)
-						s.Len(after, 0)
+					assert: func(before JsonData, after JsonData) {
+						s.NotContains(before.Data, "456.789")
+						s.Contains(after.Data, "456.789")
 					},
 				},
 				{
 					name:   "update array",
 					update: map[string]any{"data->array": []string{"uvw", "xyz"}},
-					find:   query.Query().Where("data->string", "updated_first").Find,
-					assert: func(before []JsonData, after []JsonData) {
-						s.Len(before, 1)
-						s.NotContains(before[0].Data, "uvw")
-						s.NotContains(before[0].Data, "xyz")
+					assert: func(before JsonData, after JsonData) {
+						s.NotContains(before.Data, "uvw")
+						s.Contains(after.Data, "uvw")
 
-						s.Len(after, 1)
-						s.Contains(after[0].Data, "uvw")
-						s.Contains(after[0].Data, "xyz")
+						s.NotContains(before.Data, "xyz")
+						s.Contains(after.Data, "xyz")
 					},
 				},
 				{
@@ -4189,14 +4181,15 @@ func (s *QueryTestSuite) TestJsonColumnsUpdate() {
 						"data->objects[0]->level": "first_changed",
 						"data->nested->string":    "updated_nested_string",
 					},
-					find: query.Query().Where("data->string", "updated_first").Find,
-					assert: func(before []JsonData, after []JsonData) {
-						s.Len(before, 1)
-						s.Len(after, 1)
-						s.NotEqual(before[0].Data, after[0].Data)
-						s.Contains(after[0].Data, "false")
-						s.Contains(after[0].Data, "first_changed")
-						s.Contains(after[0].Data, "updated_nested_string")
+					assert: func(before JsonData, after JsonData) {
+						s.NotContains(before.Data, "false")
+						s.Contains(after.Data, "false")
+
+						s.NotContains(before.Data, "first_changed")
+						s.Contains(after.Data, "first_changed")
+
+						s.NotContains(before.Data, "updated_nested_string")
+						s.Contains(after.Data, "updated_nested_string")
 
 					},
 				},
@@ -4204,12 +4197,13 @@ func (s *QueryTestSuite) TestJsonColumnsUpdate() {
 
 			for _, tt := range tests {
 				s.Run(tt.name, func() {
-					var before, after []JsonData
-					s.NoError(tt.find(&before))
-					res, err := query.Query().Model(&JsonData{}).Where("id", 1).Update(tt.update)
+					var before, after JsonData
+					s.NoError(query.Query().First(&before))
+					res, err := query.Query().Model(&before).Update(tt.update)
 					s.NoError(err)
 					s.Equal(int64(1), res.RowsAffected)
-					s.NoError(tt.find(&after))
+					s.NoError(query.Query().Where("id", before.ID).First(&after))
+					s.NotEqual(before.Data, after.Data)
 					tt.assert(before, after)
 				})
 			}

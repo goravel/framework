@@ -12,7 +12,7 @@ require (
 	github.com/goravel/mysql v0.0.0-20250626031516-19442c544454
 	github.com/goravel/postgres v0.0.2-0.20250626031535-aae7c8a0767e
 	github.com/goravel/sqlite v0.0.0-20250626031454-e195ad35c34e
-	github.com/goravel/sqlserver v0.0.0-20250626034139-7a09dbca28fb
+	github.com/goravel/sqlserver v0.0.0-20250627011359-b501c1567c71
 	github.com/spf13/cast v1.9.2
 	github.com/stretchr/testify v1.10.0
 	gorm.io/gorm v1.30.0
