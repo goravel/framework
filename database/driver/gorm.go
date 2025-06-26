@@ -22,16 +22,16 @@ var (
 
 var (
 	connectionToDB     = make(map[string]*gorm.DB)
-	connectionToDBLock = sync.Mutex{}
+	connectionToDBLock = sync.RWMutex{}
 )
 
 func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool, connection string) (*gorm.DB, error) {
-	connectionToDBLock.Lock()
-	defer connectionToDBLock.Unlock()
-
+	connectionToDBLock.RLock()
 	if db, ok := connectionToDB[connection]; ok {
+		connectionToDBLock.RUnlock()
 		return db, nil
 	}
+	connectionToDBLock.RUnlock()
 
 	if len(pool.Writers) == 0 {
 		return nil, errors.DatabaseConfigNotFound
