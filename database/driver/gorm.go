@@ -49,11 +49,11 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 	if pinger, ok := instance.ConnPool.(interface{ Ping() error }); ok {
 		if err = pinger.Ping(); err != nil {
 			printedPingWarningLock.Lock()
+			defer printedPingWarningLock.Unlock()
 			if !printedPingWarning {
 				color.Warningln(err.Error())
 				printedPingWarning = true
 			}
-			printedPingWarningLock.Unlock()
 		}
 	}
 
