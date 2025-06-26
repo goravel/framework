@@ -59,6 +59,7 @@ func mockDatabaseConfigWithoutWriteAndRead(mockConfig *mocksconfig.Config, confi
 	}
 	if config.Driver == sqlserver.Name {
 		mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.charset", connection)).Return("utf8mb4")
+		mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.timezone", connection)).Return(config.Timezone)
 		mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.via", connection)).Return(func() (driver.Driver, error) {
 			return sqlserver.NewSqlserver(mockConfig, utils.NewTestLog(), connection), nil
 		})

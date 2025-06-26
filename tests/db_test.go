@@ -40,6 +40,13 @@ func TestDBTestSuite(t *testing.T) {
 func (s *DBTestSuite) SetupSuite() {
 	s.now = carbon.NewDateTime(carbon.FromDateTime(2025, 1, 2, 3, 4, 5))
 	s.queries = NewTestQueryBuilder().All("", false)
+
+	mockApp := &mocksfoundation.Application{}
+	mockApp.EXPECT().GetJson().Return(json.New())
+	postgres.App = mockApp
+	mysql.App = mockApp
+	sqlite.App = mockApp
+	sqlserver.App = mockApp
 }
 
 func (s *DBTestSuite) SetupTest() {
@@ -1450,26 +1457,8 @@ func (s *DBTestSuite) TestWhereNot() {
 }
 
 func (s *DBTestSuite) TestJsonWhereClauses() {
-	mockApp := mocksfoundation.NewApplication(s.T())
-	mockApp.EXPECT().GetJson().Return(json.New()).Times(8)
-
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			if driver == postgres.Name {
-				originApp := postgres.App
-				postgres.App = mockApp
-				s.T().Cleanup(func() {
-					postgres.App = originApp
-				})
-			}
-			if driver == mysql.Name {
-				originApp := mysql.App
-				mysql.App = mockApp
-				s.T().Cleanup(func() {
-					mysql.App = originApp
-				})
-			}
-
 			data := []JsonData{
 				{
 					Model: Model{
@@ -1478,31 +1467,7 @@ func (s *DBTestSuite) TestJsonWhereClauses() {
 							UpdatedAt: s.now,
 						},
 					},
-					Data: `{
-	"string": "first",
-	"int": 123,
-	"float": 123.456,
-	"bool": true,
-	"array": [
-		"abc",
-		"def",
-		"ghi"
-	],
-	"nested": {
-		"string": "first",
-		"int": 456
-	},
-	"objects": [
-		{
-			"level": "first",
-			"value": "abc"
-		},
-		{
-			"level": "second",
-			"value": "def"
-		}
-	]
-}`,
+					Data: `{"string":"first","int":123,"float":123.456,"bool":true,"array":["abc","def","ghi"],"nested":{"string":"first","int":456},"objects":[{"level":"first","value":"abc"},{"level":"second","value":"def"}]}`,
 				},
 				{
 					Model: Model{
@@ -1511,17 +1476,7 @@ func (s *DBTestSuite) TestJsonWhereClauses() {
 							UpdatedAt: s.now,
 						},
 					},
-					Data: `{
-	"string": "second",
-	"int": 123,
-	"float": 789.123,
-	"bool": false,
-	"array": [
-		"jkl",
-		"def",
-		"abc"
-	]
-}`,
+					Data: `{"string":"second","int":123,"float":789.123,"bool":false,"array":["jkl","def","abc"]}`,
 				},
 			}
 			result, err := query.DB().Table("json_data").Insert(&data)
@@ -1660,11 +1615,106 @@ func (s *DBTestSuite) TestJsonWhereClauses() {
 				},
 			}
 
-			for _, test := range tests {
-				s.Run(test.name, func() {
+			for _, tt := range tests {
+				s.Run(tt.name, func() {
 					var items []JsonData
-					s.Nil(test.find(&items))
-					test.assert(items)
+					s.Nil(tt.find(&items))
+					tt.assert(items)
+				})
+			}
+		})
+	}
+}
+
+func (s *DBTestSuite) TestJsonColumnsUpdate() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			data := []JsonData{
+				{
+					Data: `{"string":"first","int":123,"float":123.456,"bool":true,"array":["abc","def","ghi"],"nested":{"string":"first","int":456},"objects":[{"level":"first","value":"abc"},{"level":"second","value":"def"}]}`,
+				},
+			}
+			result, err := query.DB().Table("json_data").Insert(&data)
+			s.Equal(int64(1), result.RowsAffected)
+			s.NoError(err)
+
+			tests := []struct {
+				name   string
+				update map[string]any
+				find   func(any, ...any) error
+				assert func(before []JsonData, after []JsonData)
+			}{
+				{
+					name:   "update string",
+					update: map[string]any{"data->string": "updated_first"},
+					find:   query.DB().Table("json_data").Where("data->string", "first").Find,
+					assert: func(before []JsonData, after []JsonData) {
+						s.Len(before, 1)
+						s.Len(after, 0)
+					},
+				},
+				{
+					name:   "update int",
+					update: map[string]any{"data->int": 789},
+					find:   query.DB().Table("json_data").Where("data->int", 789).Find,
+					assert: func(before []JsonData, after []JsonData) {
+						s.Len(before, 0)
+						s.Len(after, 1)
+						s.Contains(after[0].Data, "789")
+					},
+				},
+				{
+					name:   "update float(pointer)",
+					update: map[string]any{"data->float": convert.Pointer(456.789)},
+					find:   query.DB().Table("json_data").Where("data->float", 123.456).Find,
+					assert: func(before []JsonData, after []JsonData) {
+						s.Len(before, 1)
+						s.Len(after, 0)
+					},
+				},
+				{
+					name:   "update array",
+					update: map[string]any{"data->array": []string{"uvw", "xyz"}},
+					find:   query.DB().Table("json_data").Where("data->string", "updated_first").Find,
+					assert: func(before []JsonData, after []JsonData) {
+						s.Len(before, 1)
+						s.NotContains(before[0].Data, "uvw")
+						s.NotContains(before[0].Data, "xyz")
+
+						s.Len(after, 1)
+						s.Contains(after[0].Data, "uvw")
+						s.Contains(after[0].Data, "xyz")
+					},
+				},
+				{
+					name: "update multiple keys",
+					update: map[string]any{
+						"data->bool":              false,
+						"data->objects[0]->level": "first_changed",
+						"data->nested->string":    "updated_nested_string",
+					},
+					find: query.DB().Table("json_data").Where("data->string", "updated_first").Find,
+					assert: func(before []JsonData, after []JsonData) {
+						s.Len(before, 1)
+						s.Len(after, 1)
+						s.NotEqual(before[0].Data, after[0].Data)
+						s.Contains(after[0].Data, "false")
+						s.Contains(after[0].Data, "first_changed")
+						s.Contains(after[0].Data, "updated_nested_string")
+
+					},
+				},
+			}
+
+			for _, tt := range tests {
+				s.Run(tt.name, func() {
+					var before, after []JsonData
+					s.NoError(tt.find(&before))
+					res, err := query.DB().Table("json_data").Where("id", 1).Update(tt.update)
+					s.NoError(err)
+					s.Equal(int64(1), res.RowsAffected)
+					s.NoError(tt.find(&after))
+					tt.assert(before, after)
 				})
 			}
 		})
