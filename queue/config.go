@@ -21,11 +21,7 @@ type Config struct {
 func NewConfig(config contractsconfig.Config) *Config {
 	defaultConnection := config.GetString("queue.default")
 	defaultQueue := config.GetString(fmt.Sprintf("queue.connections.%s.queue", defaultConnection), "default")
-	defaultConcurrent := config.GetInt(fmt.Sprintf("queue.connections.%s.concurrent", defaultConnection), 1)
-
-	if defaultConcurrent < 1 {
-		defaultConcurrent = 1
-	}
+	defaultConcurrent := max(config.GetInt(fmt.Sprintf("queue.connections.%s.concurrent", defaultConnection), 1), 1)
 
 	c := &Config{
 		Config: config,

@@ -920,10 +920,7 @@ func Substr(str string, start int, length ...int) string {
 
 	// If the start index is negative, count backwards from the end of the string.
 	if start < 0 {
-		start = strLen + start
-		if start < 0 {
-			start = 0
-		}
+		start = max(strLen+start, 0)
 	}
 
 	if len(length) > 0 {
