@@ -76,7 +76,7 @@ func (s *RequestTestSuite) TestDoRequest_Success() {
 
 	jsonData, err := resp.Json()
 	s.NoError(err)
-	s.Equal(map[string]interface{}{"message": "success"}, jsonData)
+	s.Equal(map[string]any{"message": "success"}, jsonData)
 }
 
 func (s *RequestTestSuite) TestDoRequest_Bind() {

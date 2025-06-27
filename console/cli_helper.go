@@ -297,7 +297,7 @@ func onUsageError(_ context.Context, _ *cli.Command, err error, _ bool) error {
 	return err
 }
 
-func printHelpCustom(out io.Writer, templ string, data interface{}, _ map[string]interface{}) {
+func printHelpCustom(out io.Writer, templ string, data any, _ map[string]any) {
 	funcMap := template.FuncMap{
 		"capitalize":         capitalize,
 		"colorize":           colorize,

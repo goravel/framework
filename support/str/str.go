@@ -342,13 +342,13 @@ func (s *String) IsAscii() bool {
 
 // IsMap returns true if the string is a valid Map.
 func (s *String) IsMap() bool {
-	var obj map[string]interface{}
+	var obj map[string]any
 	return json.Unmarshal([]byte(s.value), &obj) == nil
 }
 
 // IsSlice returns true if the string is a valid Slice.
 func (s *String) IsSlice() bool {
-	var arr []interface{}
+	var arr []any
 	return json.Unmarshal([]byte(s.value), &arr) == nil
 }
 

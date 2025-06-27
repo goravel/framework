@@ -54,8 +54,8 @@ func (s *VendorPublishCommandTestSuite) TestExtend() {
 
 			testCases := []struct {
 				name     string
-				got      interface{}
-				expected interface{}
+				got      any
+				expected any
 			}{
 				{"Name", flag.Name, "existing"},
 				{"Aliases", flag.Aliases, []string{"e"}},
