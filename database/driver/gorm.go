@@ -17,8 +17,7 @@ import (
 )
 
 var (
-	printedPingWarning     = false
-	printedPingWarningLock = sync.Mutex{}
+	pingWarning sync.Once
 )
 
 func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool) (*gorm.DB, error) {
@@ -48,12 +47,9 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 	}
 	if pinger, ok := instance.ConnPool.(interface{ Ping() error }); ok {
 		if err = pinger.Ping(); err != nil {
-			printedPingWarningLock.Lock()
-			defer printedPingWarningLock.Unlock()
-			if !printedPingWarning {
+			pingWarning.Do(func() {
 				color.Warningln(err.Error())
-				printedPingWarning = true
-			}
+			})
 		}
 	}
 
