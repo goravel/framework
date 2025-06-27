@@ -9,6 +9,7 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database/logger"
 	"github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/str"
 )
@@ -94,7 +95,7 @@ func (r *Logger) Trace(ctx context.Context, begin *carbon.Carbon, sql string, ro
 	addQueryLogToContext(ctx, sql, elapsed)
 
 	switch {
-	case err != nil && r.level >= logger.Error:
+	case err != nil && r.level >= logger.Error && !errors.Is(err, gormlogger.ErrRecordNotFound):
 		if rowsAffected == -1 {
 			r.Errorf(ctx, traceErrStr, elapsed, "-", sql, err)
 		} else {

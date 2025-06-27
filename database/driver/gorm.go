@@ -1,6 +1,7 @@
 package driver
 
 import (
+	"sync"
 	"time"
 
 	"gorm.io/gorm"
@@ -12,6 +13,11 @@ import (
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/color"
+)
+
+var (
+	pingWarning sync.Once
 )
 
 func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool) (*gorm.DB, error) {
@@ -20,6 +26,7 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 	}
 
 	gormConfig := &gorm.Config{
+		DisableAutomaticPing:                     true,
 		DisableForeignKeyConstraintWhenMigrating: true,
 		SkipDefaultTransaction:                   true,
 		Logger:                                   logger,
@@ -37,6 +44,13 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 	instance, err := gorm.Open(pool.Writers[0].Dialector, gormConfig)
 	if err != nil {
 		return nil, err
+	}
+	if pinger, ok := instance.ConnPool.(interface{ Ping() error }); ok {
+		if err = pinger.Ping(); err != nil {
+			pingWarning.Do(func() {
+				color.Warningln(err.Error())
+			})
+		}
 	}
 
 	maxIdleConns := config.GetInt("database.pool.max_idle_conns", 10)
