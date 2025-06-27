@@ -14,8 +14,8 @@ import (
 type SessionGuard struct {
 	session  contractsession.Session
 	ctx      http.Context
-	guard    string
 	provider contractsauth.UserProvider
+	guard    string
 }
 
 func NewSessionGuard(ctx http.Context, name string, userProvider contractsauth.UserProvider) (contractsauth.GuardDriver, error) {

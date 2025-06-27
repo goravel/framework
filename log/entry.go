@@ -8,21 +8,21 @@ import (
 )
 
 type Entry struct {
-	code       string
+	time       time.Time
 	ctx        context.Context
-	data       log.Data
-	domain     string
-	hint       string
-	level      log.Level
-	message    string
 	owner      any
+	user       any
+	data       log.Data
 	request    map[string]any
 	response   map[string]any
 	stacktrace map[string]any
-	tags       []string
-	time       time.Time
-	user       any
 	with       map[string]any
+	code       string
+	domain     string
+	hint       string
+	message    string
+	tags       []string
+	level      log.Level
 }
 
 func (r *Entry) Code() string {

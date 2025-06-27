@@ -20,10 +20,10 @@ import (
 )
 
 type modelDefinition struct {
-	Fields          []string
-	Embeds          []string
 	Imports         map[string]struct{}
 	TableNameMethod string
+	Fields          []string
+	Embeds          []string
 }
 
 type fieldDefinition struct {
@@ -241,12 +241,12 @@ func (r *ModelMakeCommand) buildField(name, goType, tags string) string {
 
 func (r *ModelMakeCommand) populateStub(stub, packageName, structName string, modelInfo modelDefinition) (string, error) {
 	templateData := struct {
+		Imports         map[string]struct{}
 		PackageName     string
 		StructName      string
+		TableNameMethod string
 		Embeds          []string
 		Fields          []string
-		TableNameMethod string
-		Imports         map[string]struct{}
 	}{
 		PackageName:     packageName,
 		StructName:      structName,

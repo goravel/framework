@@ -12,8 +12,8 @@ const Associations = clause.Associations
 // Model is the base model for all models in the application.
 // @Deprecated use BaseModel instead.
 type Model struct {
-	ID uint `gorm:"primaryKey" json:"id"`
 	Timestamps
+	ID uint `gorm:"primaryKey" json:"id"`
 }
 
 // SoftDeletes is used to add soft delete functionality to a model.
@@ -30,8 +30,8 @@ type Timestamps struct {
 }
 
 type BaseModel struct {
-	ID uint `gorm:"primaryKey" json:"id"`
 	NullableTimestamps
+	ID uint `gorm:"primaryKey" json:"id"`
 }
 
 type NullableSoftDeletes struct {

@@ -6,8 +6,8 @@ import (
 )
 
 type Debug struct {
-	debug bool
 	log   log.Log
+	debug bool
 }
 
 func NewDebug(debug bool, log log.Log) *Debug {
@@ -60,8 +60,8 @@ func (r *Debug) Panicln(args ...any) {
 }
 
 type Info struct {
-	debug bool
 	log   log.Log
+	debug bool
 }
 
 func NewInfo(debug bool, log log.Log) *Info {
@@ -114,8 +114,8 @@ func (r *Info) Panicln(args ...any) {
 }
 
 type Warning struct {
-	debug bool
 	log   log.Log
+	debug bool
 }
 
 func NewWarning(debug bool, log log.Log) *Warning {
@@ -162,8 +162,8 @@ func (r *Warning) Panicln(args ...any) {
 }
 
 type Error struct {
-	debug bool
 	log   log.Log
+	debug bool
 }
 
 func NewError(debug bool, log log.Log) *Error {
@@ -210,8 +210,8 @@ func (r *Error) Panicln(args ...any) {
 }
 
 type Fatal struct {
-	debug bool
 	log   log.Log
+	debug bool
 }
 
 func NewFatal(debug bool, log log.Log) *Fatal {

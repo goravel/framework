@@ -10,12 +10,12 @@ type Config struct {
 	contractsconfig.Config
 
 	appName           string
-	debug             bool
 	defaultConnection string
 	defaultQueue      string
-	defaultConcurrent int
 	failedDatabase    string
 	failedTable       string
+	defaultConcurrent int
+	debug             bool
 }
 
 func NewConfig(config contractsconfig.Config) *Config {

@@ -19,16 +19,16 @@ type ShowCommand struct {
 }
 
 type databaseInfo struct {
-	Database        string
-	Host            string
-	Name            string
-	OpenConnections int
-	Port            int
-	Tables          []driver.Table
-	Username        string
+	Database string
+	Host     string
+	Name     string
+	Username string
+	Tables   []driver.Table
 	// TODO: We want to reconstruct the way to get the version of the database, comment it out temporarily.
 	// Version string
-	Views []driver.View
+	Views           []driver.View
+	OpenConnections int
+	Port            int
 }
 
 func NewShowCommand(config config.Config, schema schema.Schema) *ShowCommand {

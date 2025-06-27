@@ -70,10 +70,10 @@ func (r *Failer) modelFailedJobsToFailedJobs(modelFailedJobs []models.FailedJob)
 }
 
 type FailedJob struct {
-	failedJob models.FailedJob
 	query     db.Query
 	queue     contractsqueue.Queue
 	json      foundation.Json
+	failedJob models.FailedJob
 }
 
 func NewFailedJob(failedJob models.FailedJob, query db.Query, queue contractsqueue.Queue, json foundation.Json) *FailedJob {

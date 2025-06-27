@@ -12,10 +12,10 @@ import (
 )
 
 type AssertableJson struct {
-	t       *testing.T
 	json    foundation.Json
-	jsonStr string
+	t       *testing.T
 	decoded map[string]any
+	jsonStr string
 }
 
 func NewAssertableJSON(t *testing.T, json foundation.Json, jsonStr string) (contractshttp.AssertableJSON, error) {

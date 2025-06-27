@@ -23,6 +23,6 @@ type CacheConfig struct {
 	Database    string
 	Host        string
 	Password    string
-	Port        int
 	Username    string
+	Port        int
 }

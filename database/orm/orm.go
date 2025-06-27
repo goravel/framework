@@ -17,14 +17,14 @@ import (
 type Orm struct {
 	ctx             context.Context
 	config          config.Config
-	connection      string
-	dbConfig        database.Config
 	log             log.Log
-	modelToObserver []contractsorm.ModelToObserver
-	mutex           sync.Mutex
 	query           contractsorm.Query
 	queries         map[string]contractsorm.Query
 	fresh           func(key ...any)
+	connection      string
+	modelToObserver []contractsorm.ModelToObserver
+	dbConfig        database.Config
+	mutex           sync.Mutex
 }
 
 func NewOrm(

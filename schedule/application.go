@@ -17,9 +17,9 @@ import (
 type Application struct {
 	artisan console.Artisan
 	cache   cache.Cache
+	log     log.Log
 	cron    *cron.Cron
 	events  []schedule.Event
-	log     log.Log
 	debug   bool
 }
 

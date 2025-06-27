@@ -28,16 +28,16 @@ import (
 const Associations = clause.Associations
 
 type Query struct {
-	conditions      Conditions
 	config          config.Config
 	ctx             context.Context
-	dbConfig        contractsdatabase.Config
-	instance        *gormio.DB
 	grammar         driver.Grammar
 	log             log.Log
-	modelToObserver []contractsorm.ModelToObserver
-	mutex           sync.Mutex
+	instance        *gormio.DB
 	queries         map[string]*Query
+	modelToObserver []contractsorm.ModelToObserver
+	conditions      Conditions
+	dbConfig        contractsdatabase.Config
+	mutex           sync.Mutex
 }
 
 func NewQuery(

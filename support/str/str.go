@@ -22,8 +22,8 @@ type String struct {
 
 // ExcerptOption is the option for Excerpt method
 type ExcerptOption struct {
-	Radius   int
 	Omission string
+	Radius   int
 }
 
 // Of creates a new String instance with the given value.

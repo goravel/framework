@@ -7,8 +7,8 @@ import (
 type queryLogKey struct{}
 
 type queryLogValue struct {
-	enabled   bool
 	queryLogs []QueryLog
+	enabled   bool
 }
 
 type QueryLog struct {

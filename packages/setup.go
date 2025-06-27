@@ -14,10 +14,10 @@ import (
 
 type setup struct {
 	command     string
-	force       bool
 	module      string
 	onInstall   []modify.File
 	onUninstall []modify.File
+	force       bool
 }
 
 var osExit = os.Exit

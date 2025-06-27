@@ -8,11 +8,11 @@ import (
 
 type FuncInfo struct {
 	File      string
-	Line      int
 	Name      string
 	pkgName   string
 	pkgPath   string
 	shortName string
+	Line      int
 }
 
 func (f *FuncInfo) PackageName() string {

@@ -40,7 +40,7 @@ type JobStorer interface {
 type Jobs = ChainJob
 
 type ChainJob struct {
+	Delay time.Time `json:"delay"`
 	Job   Job       `json:"job"`
 	Args  []Arg     `json:"args"`
-	Delay time.Time `json:"delay"`
 }

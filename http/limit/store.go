@@ -10,10 +10,10 @@ import (
 )
 
 type Store struct {
-	tokens   uint64
-	interval time.Duration
 	cache    cache.Cache
 	json     foundation.Json
+	tokens   uint64
+	interval time.Duration
 }
 
 func NewStore(cache cache.Cache, json foundation.Json, tokens uint64, interval time.Duration) *Store {

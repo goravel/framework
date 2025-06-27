@@ -17,8 +17,11 @@ import (
 var _ contractssession.Manager = (*Manager)(nil)
 
 type Manager struct {
-	config config.Config
-	json   foundation.Json
+	sessionPool sync.Pool
+	config      config.Config
+	json        foundation.Json
+
+	drivers map[string]contractssession.Driver
 
 	cookie        string
 	defaultDriver string
@@ -26,9 +29,7 @@ type Manager struct {
 	gcInterval    int
 	lifetime      int
 
-	drivers     map[string]contractssession.Driver
-	sessionPool sync.Pool
-	mu          sync.RWMutex
+	mu sync.RWMutex
 }
 
 func NewManager(config config.Config, json foundation.Json) *Manager {

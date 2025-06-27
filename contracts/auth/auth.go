@@ -42,10 +42,10 @@ type UserProvider interface {
 }
 
 type Payload struct {
-	Guard    string
-	Key      string
 	ExpireAt time.Time
 	IssuedAt time.Time
+	Guard    string
+	Key      string
 }
 
 type GuardFunc func(ctx http.Context, name string, userProvider UserProvider) (GuardDriver, error)

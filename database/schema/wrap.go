@@ -16,8 +16,8 @@ var (
 )
 
 type Wrap struct {
-	prefix    string
 	wrapValue func(string) string
+	prefix    string
 }
 
 func NewWrap(prefix string) *Wrap {

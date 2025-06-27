@@ -27,17 +27,18 @@ type Worker struct {
 	json   foundation.Json
 	log    log.Log
 
+	failedJobChan chan models.FailedJob
+	machinery     *machinery.Worker
+
 	connection string
 	queue      string
+	wg         sync.WaitGroup
 	concurrent int
-	debug      bool
 
-	currentDelay  time.Duration
-	failedJobChan chan models.FailedJob
-	isShutdown    atomic.Bool
-	maxDelay      time.Duration
-	machinery     *machinery.Worker
-	wg            sync.WaitGroup
+	currentDelay time.Duration
+	maxDelay     time.Duration
+	isShutdown   atomic.Bool
+	debug        bool
 }
 
 func NewWorker(config queue.Config, db db.DB, job queue.JobStorer, json foundation.Json, log log.Log, connection, queue string, concurrent int) (*Worker, error) {

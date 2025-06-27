@@ -25,9 +25,9 @@ type Flag interface {
 
 type BoolFlag struct {
 	Name               string
+	Usage              string
 	Aliases            []string
 	DisableDefaultText bool
-	Usage              string
 	Required           bool
 	Value              bool
 }
@@ -38,10 +38,10 @@ func (receiver *BoolFlag) Type() string {
 
 type Float64Flag struct {
 	Name     string
-	Aliases  []string
 	Usage    string
-	Required bool
+	Aliases  []string
 	Value    float64
+	Required bool
 }
 
 func (receiver *Float64Flag) Type() string {
@@ -50,10 +50,10 @@ func (receiver *Float64Flag) Type() string {
 
 type Float64SliceFlag struct {
 	Name     string
-	Aliases  []string
 	Usage    string
-	Required bool
+	Aliases  []string
 	Value    []float64
+	Required bool
 }
 
 func (receiver *Float64SliceFlag) Type() string {
@@ -62,10 +62,10 @@ func (receiver *Float64SliceFlag) Type() string {
 
 type IntFlag struct {
 	Name     string
-	Aliases  []string
 	Usage    string
-	Required bool
+	Aliases  []string
 	Value    int
+	Required bool
 }
 
 func (receiver *IntFlag) Type() string {
@@ -74,10 +74,10 @@ func (receiver *IntFlag) Type() string {
 
 type IntSliceFlag struct {
 	Name     string
-	Aliases  []string
 	Usage    string
-	Required bool
+	Aliases  []string
 	Value    []int
+	Required bool
 }
 
 func (receiver *IntSliceFlag) Type() string {
@@ -86,10 +86,10 @@ func (receiver *IntSliceFlag) Type() string {
 
 type Int64Flag struct {
 	Name     string
-	Aliases  []string
 	Usage    string
-	Required bool
+	Aliases  []string
 	Value    int64
+	Required bool
 }
 
 func (receiver *Int64Flag) Type() string {
@@ -98,10 +98,10 @@ func (receiver *Int64Flag) Type() string {
 
 type Int64SliceFlag struct {
 	Name     string
-	Aliases  []string
 	Usage    string
-	Required bool
+	Aliases  []string
 	Value    []int64
+	Required bool
 }
 
 func (receiver *Int64SliceFlag) Type() string {
@@ -110,10 +110,10 @@ func (receiver *Int64SliceFlag) Type() string {
 
 type StringFlag struct {
 	Name     string
-	Aliases  []string
 	Usage    string
-	Required bool
 	Value    string
+	Aliases  []string
+	Required bool
 }
 
 func (receiver *StringFlag) Type() string {
@@ -122,10 +122,10 @@ func (receiver *StringFlag) Type() string {
 
 type StringSliceFlag struct {
 	Name     string
-	Aliases  []string
 	Usage    string
-	Required bool
+	Aliases  []string
 	Value    []string
+	Required bool
 }
 
 func (receiver *StringSliceFlag) Type() string {

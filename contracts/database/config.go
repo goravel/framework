@@ -8,23 +8,23 @@ type Pool struct {
 }
 
 type Config struct {
+	Dialector    gorm.Dialector
+	NameReplacer Replacer
 	Charset      string
 	Connection   string
 	Dsn          string
 	Database     string
-	Dialector    gorm.Dialector
 	Driver       string
 	Host         string
-	NameReplacer Replacer
-	NoLowerCase  bool
 	Password     string
-	Port         int
 	Prefix       string
 	Schema       string
-	Singular     bool
 	Sslmode      string
 	Timezone     string
 	Username     string
+	Port         int
+	NoLowerCase  bool
+	Singular     bool
 }
 
 // Replacer replacer interface like strings.Replacer

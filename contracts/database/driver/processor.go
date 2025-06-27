@@ -8,19 +8,19 @@ type Processor interface {
 }
 
 type DBColumn struct {
-	Autoincrement bool
 	Collation     string
 	Comment       string
 	Default       string
 	Extra         string
-	Length        int
 	Name          string
 	Nullable      string
-	Places        int
-	Precision     int
-	Primary       bool
 	Type          string
 	TypeName      string
+	Length        int
+	Places        int
+	Precision     int
+	Autoincrement bool
+	Primary       bool
 }
 
 type DBForeignKey struct {
@@ -36,25 +36,25 @@ type DBForeignKey struct {
 type DBIndex struct {
 	Columns string
 	Name    string
-	Primary bool
 	Type    string
+	Primary bool
 	Unique  bool
 }
 
 type ForeignKey struct {
 	Name           string
-	Columns        []string
 	ForeignSchema  string
 	ForeignTable   string
-	ForeignColumns []string
 	OnUpdate       string
 	OnDelete       string
+	Columns        []string
+	ForeignColumns []string
 }
 
 type Index struct {
-	Columns []string
 	Name    string
-	Primary bool
 	Type    string
+	Columns []string
+	Primary bool
 	Unique  bool
 }

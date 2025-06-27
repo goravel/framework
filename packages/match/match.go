@@ -12,8 +12,8 @@ import (
 
 type (
 	GoNode struct {
-		first, last bool
 		match       func(node dst.Node) bool
+		first, last bool
 	}
 	GoNodes []match.GoNode
 )

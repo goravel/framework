@@ -18,14 +18,14 @@ var _ client.Request = (*Request)(nil)
 
 type Request struct {
 	ctx         context.Context
+	bind        any
+	json        foundation.Json
 	client      *http.Client
 	config      *client.Config
-	bind        any
 	headers     http.Header
-	cookies     []*http.Cookie
 	queryParams url.Values
 	urlParams   map[string]string
-	json        foundation.Json
+	cookies     []*http.Cookie
 }
 
 func NewRequest(config *client.Config, json foundation.Json) *Request {

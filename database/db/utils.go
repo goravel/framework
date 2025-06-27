@@ -11,10 +11,10 @@ import (
 
 type TxLog struct {
 	ctx          context.Context
+	err          error
 	begin        *carbon.Carbon
 	sql          string
 	rowsAffected int64
-	err          error
 }
 
 func convertToSliceMap(data any) ([]map[string]any, error) {

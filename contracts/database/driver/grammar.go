@@ -194,22 +194,22 @@ type PlaceholderFormat interface {
 }
 
 type Command struct {
-	Algorithm          string
 	Column             ColumnDefinition
-	Columns            []string
 	Deferrable         *bool
+	InitiallyImmediate *bool
+	Algorithm          string
 	From               string
 	Index              string
-	InitiallyImmediate *bool
 	Language           string
 	Name               string
 	On                 string
 	OnDelete           string
 	OnUpdate           string
-	References         []string
-	ShouldBeSkipped    bool
 	To                 string
 	Value              string
+	Columns            []string
+	References         []string
+	ShouldBeSkipped    bool
 }
 
 type Table struct {
@@ -223,10 +223,10 @@ type Table struct {
 
 type Type struct {
 	Category string
-	Implicit bool
 	Name     string
 	Schema   string
 	Type     string
+	Implicit bool
 }
 
 type View struct {

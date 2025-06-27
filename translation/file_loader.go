@@ -11,8 +11,8 @@ import (
 )
 
 type FileLoader struct {
-	paths []string
 	json  foundation.Json
+	paths []string
 }
 
 func NewFileLoader(paths []string, json foundation.Json) contractstranslation.Loader {

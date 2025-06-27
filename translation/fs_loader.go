@@ -10,9 +10,9 @@ import (
 )
 
 type FSLoader struct {
-	path string
 	fs   fs.FS
 	json foundation.Json
+	path string
 }
 
 func NewFSLoader(path string, fs fs.FS, json foundation.Json) contractstranslation.Loader {

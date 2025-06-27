@@ -14,12 +14,12 @@ import (
 )
 
 type Session struct {
+	driver     sessioncontract.Driver
+	json       foundation.Json
+	attributes map[string]any
 	id         string
 	name       string
-	attributes map[string]any
-	driver     sessioncontract.Driver
 	started    bool
-	json       foundation.Json
 }
 
 func NewSession(name string, driver sessioncontract.Driver, json foundation.Json, id ...string) *Session {

@@ -20,8 +20,8 @@ type Auth struct {
 	contractsauth.GuardDriver
 	config           config.Config
 	ctx              http.Context
-	defaultGuardName string
 	log              log.Log
+	defaultGuardName string
 }
 
 func NewAuth(ctx http.Context, config config.Config, log log.Log) (*Auth, error) {

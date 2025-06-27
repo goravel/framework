@@ -11,17 +11,17 @@ import (
 )
 
 type Application struct {
+	config      config.Config
+	queue       queuecontract.Queue
+	headers     map[string]string
+	from        mail.Address
+	html        string
+	subject     string
 	attachments []string
 	bcc         []string
 	cc          []string
-	clone       int
-	config      config.Config
-	from        mail.Address
-	headers     map[string]string
-	html        string
-	queue       queuecontract.Queue
-	subject     string
 	to          []string
+	clone       int
 }
 
 func NewApplication(config config.Config, queue queuecontract.Queue) *Application {

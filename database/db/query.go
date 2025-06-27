@@ -21,14 +21,14 @@ import (
 )
 
 type Query struct {
-	conditions   contractsdriver.Conditions
 	ctx          context.Context
 	err          error
 	grammar      contractsdriver.Grammar
 	logger       logger.Logger
 	readBuilder  db.CommonBuilder
-	txLogs       *[]TxLog
 	writeBuilder db.CommonBuilder
+	txLogs       *[]TxLog
+	conditions   contractsdriver.Conditions
 }
 
 func NewQuery(ctx context.Context, readBuilder db.CommonBuilder, writeBuilder db.CommonBuilder, grammar contractsdriver.Grammar, logger logger.Logger, table string, txLogs *[]TxLog) *Query {

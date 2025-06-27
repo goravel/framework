@@ -26,19 +26,19 @@ func NewLogrus() *logrus.Logger {
 }
 
 type Writer struct {
-	code         string
-	domain       string
-	hint         string
-	instance     *logrus.Entry
-	message      string
 	owner        any
 	request      http.ContextRequest
 	response     http.ContextResponse
-	stackEnabled bool
-	stacktrace   map[string]any
-	tags         []string
 	user         any
+	instance     *logrus.Entry
+	stacktrace   map[string]any
 	with         map[string]any
+	code         string
+	domain       string
+	hint         string
+	message      string
+	tags         []string
+	stackEnabled bool
 }
 
 func NewWriter(instance *logrus.Entry) log.Writer {
