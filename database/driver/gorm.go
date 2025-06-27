@@ -17,12 +17,9 @@ import (
 )
 
 var (
-	pingWarning sync.Once
-)
-
-var (
 	connectionToDB     = make(map[string]*gorm.DB)
 	connectionToDBLock = sync.RWMutex{}
+	pingWarning        sync.Once
 )
 
 func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool, connection string) (*gorm.DB, error) {
