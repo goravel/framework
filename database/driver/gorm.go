@@ -81,6 +81,9 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 		db.SetConnMaxIdleTime(connMaxIdleTime * time.Second)
 		db.SetConnMaxLifetime(connMaxLifetime * time.Second)
 
+		connectionToDBLock.Lock()
+		defer connectionToDBLock.Unlock()
+
 		connectionToDB[connection] = instance
 
 		return instance, nil
@@ -110,6 +113,9 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 		SetConnMaxIdleTime(connMaxIdleTime * time.Second)); err != nil {
 		return nil, err
 	}
+
+	connectionToDBLock.Lock()
+	defer connectionToDBLock.Unlock()
 
 	connectionToDB[connection] = instance
 
