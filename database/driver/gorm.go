@@ -17,12 +17,25 @@ import (
 )
 
 var (
-	pingWarning sync.Once
+	connectionToDB     = make(map[string]*gorm.DB)
+	connectionToDBLock = sync.Mutex{}
+	pingWarning        sync.Once
 )
 
-func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool) (*gorm.DB, error) {
+func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool, connection string) (*gorm.DB, error) {
+	if db, ok := connectionToDB[connection]; ok {
+		return db, nil
+	}
+
 	if len(pool.Writers) == 0 {
 		return nil, errors.DatabaseConfigNotFound
+	}
+
+	connectionToDBLock.Lock()
+	defer connectionToDBLock.Unlock()
+
+	if db, ok := connectionToDB[connection]; ok {
+		return db, nil
 	}
 
 	gormConfig := &gorm.Config{
@@ -69,6 +82,8 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 		db.SetConnMaxIdleTime(connMaxIdleTime * time.Second)
 		db.SetConnMaxLifetime(connMaxLifetime * time.Second)
 
+		connectionToDB[connection] = instance
+
 		return instance, nil
 	}
 
@@ -96,6 +111,8 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 		SetConnMaxIdleTime(connMaxIdleTime * time.Second)); err != nil {
 		return nil, err
 	}
+
+	connectionToDB[connection] = instance
 
 	return instance, nil
 }

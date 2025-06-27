@@ -11,11 +11,8 @@ import (
 	"github.com/goravel/framework/contracts/database/db"
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/foundation/json"
-	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/convert"
-	"github.com/goravel/mysql"
 	"github.com/goravel/postgres"
 	"github.com/goravel/sqlite"
 	"github.com/goravel/sqlserver"
@@ -40,13 +37,6 @@ func TestDBTestSuite(t *testing.T) {
 func (s *DBTestSuite) SetupSuite() {
 	s.now = carbon.NewDateTime(carbon.FromDateTime(2025, 1, 2, 3, 4, 5))
 	s.queries = NewTestQueryBuilder().All("", false)
-
-	mockApp := &mocksfoundation.Application{}
-	mockApp.EXPECT().GetJson().Return(json.New())
-	postgres.App = mockApp
-	mysql.App = mockApp
-	sqlite.App = mockApp
-	sqlserver.App = mockApp
 }
 
 func (s *DBTestSuite) SetupTest() {
@@ -1770,6 +1760,15 @@ func TestDB_Connection(t *testing.T) {
 
 func TestDbReadWriteSeparate(t *testing.T) {
 	dbs := NewTestQueryBuilder().AllWithReadWrite()
+	defer func() {
+		docker, err := dbs[sqlite.Name]["read"].Driver().Docker()
+		assert.NoError(t, err)
+		assert.NoError(t, docker.Shutdown())
+
+		docker, err = dbs[sqlite.Name]["write"].Driver().Docker()
+		assert.NoError(t, err)
+		assert.NoError(t, docker.Shutdown())
+	}()
 
 	for drive, db := range dbs {
 		t.Run(drive, func(t *testing.T) {
@@ -1794,14 +1793,6 @@ func TestDbReadWriteSeparate(t *testing.T) {
 			assert.True(t, product4.ID > 0)
 		})
 	}
-
-	docker, err := dbs[sqlite.Name]["read"].Driver().Docker()
-	assert.NoError(t, err)
-	assert.NoError(t, docker.Shutdown())
-
-	docker, err = dbs[sqlite.Name]["write"].Driver().Docker()
-	assert.NoError(t, err)
-	assert.NoError(t, docker.Shutdown())
 }
 
 func Benchmark_DB(b *testing.B) {

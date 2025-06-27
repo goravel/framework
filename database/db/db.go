@@ -54,7 +54,7 @@ func BuildDB(ctx context.Context, config config.Config, log log.Log, connection 
 
 	pool := driver.Pool()
 	logger := NewLogger(config, log)
-	gorm, err := databasedriver.BuildGorm(config, logger.ToGorm(), pool)
+	gorm, err := databasedriver.BuildGorm(config, logger.ToGorm(), pool, connection)
 	if err != nil {
 		return nil, err
 	}
