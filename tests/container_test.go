@@ -42,7 +42,7 @@ func (s *ContainerTestSuite) TestAddAndAll() {
 
 	containers, err := s.container.all()
 	s.NoError(err)
-	s.True(len(containers) > 0)
+	s.NotEmpty(containers)
 	s.Equal(docker.DatabaseConfig{
 		ContainerID: "test-container",
 		Port:        5432,
