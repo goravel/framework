@@ -9,10 +9,10 @@ godebug x509negativeserial=1
 require (
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/goravel/framework v1.15.9
-	github.com/goravel/mysql v0.0.0-20250616074430-75ebdb52b7c2
-	github.com/goravel/postgres v0.0.2-0.20250616074745-2e740e8f4395
-	github.com/goravel/sqlite v0.0.0-20250616074416-801d168cbe44
-	github.com/goravel/sqlserver v0.0.0-20250616080632-ff5ac8c3f222
+	github.com/goravel/mysql v0.0.0-20250626031516-19442c544454
+	github.com/goravel/postgres v0.0.2-0.20250626031535-aae7c8a0767e
+	github.com/goravel/sqlite v0.0.0-20250626031454-e195ad35c34e
+	github.com/goravel/sqlserver v0.0.0-20250627011359-b501c1567c71
 	github.com/spf13/cast v1.9.2
 	github.com/stretchr/testify v1.10.0
 	gorm.io/gorm v1.30.0
@@ -46,7 +46,7 @@ require (
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/lithammer/fuzzysearch v1.1.8 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
-	github.com/microsoft/go-mssqldb v1.8.0 // indirect
+	github.com/microsoft/go-mssqldb v1.9.1 // indirect
 	github.com/ncruces/go-sqlite3 v0.25.0 // indirect
 	github.com/ncruces/go-sqlite3/gormlite v0.24.0 // indirect
 	github.com/ncruces/julianday v1.0.0 // indirect
