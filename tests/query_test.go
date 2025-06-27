@@ -4213,10 +4213,10 @@ func (s *QueryTestSuite) TestJsonColumnsUpdate() {
 
 func TestCustomConnection(t *testing.T) {
 	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
-	postgresTestQuery.CreateTable(TestTableReviews, TestTableProducts)
+	postgresTestQuery.CreateTable()
 
 	sqliteTestQuery := NewTestQueryBuilder().Sqlite("", false)
-	sqliteTestQuery.CreateTable(TestTableReviews, TestTableProducts)
+	sqliteTestQuery.CreateTable()
 
 	query := postgresTestQuery.Query()
 

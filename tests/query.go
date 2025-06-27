@@ -111,11 +111,11 @@ func (r *TestQuery) WithSchema(schema string) {
 	}
 
 	r.MockConfig().EXPECT().Add(fmt.Sprintf("database.connections.%s.schema", dbConfig.Connection), schema)
-	r.config.Add(fmt.Sprintf("database.connections.%s.schema", dbConfig.Driver), schema)
+	r.config.Add(fmt.Sprintf("database.connections.%s.schema", dbConfig.Connection), schema)
 
-	query, _, err := databasegorm.BuildQuery(context.Background(), r.config, dbConfig.Driver, utils.NewTestLog(), nil)
+	query, _, err := databasegorm.BuildQuery(context.Background(), r.config, dbConfig.Connection, utils.NewTestLog(), nil)
 	if err != nil {
-		panic(fmt.Sprintf("connect to %s failed: %v", dbConfig.Driver, err))
+		panic(fmt.Sprintf("connect to %s failed: %v", dbConfig.Connection, err))
 	}
 
 	r.query = query
@@ -194,7 +194,7 @@ func (r *TestQueryBuilder) PostgresWithReadWrite() map[string]*TestQuery {
 }
 
 func (r *TestQueryBuilder) Sqlite(prefix string, singular bool) *TestQuery {
-	connection := sqlite.Name
+	connection := sqlite.Name + "_" + str.Random(6)
 	mockConfig := &mocksconfig.Config{}
 	docker := sqlite.NewDocker(fmt.Sprintf("%s_%s", testDatabase, str.Random(6)))
 	err := docker.Build()
@@ -280,7 +280,7 @@ func (r *TestQueryBuilder) single(driver, prefix, timezone string, singular bool
 		dockerDriver   contractsdocker.DatabaseDriver
 		databaseDriver contractsdriver.Driver
 
-		connection = driver
+		connection = driver + "_" + str.Random(6)
 		mockConfig = &mocksconfig.Config{}
 	)
 
@@ -348,7 +348,7 @@ func (r *TestQueryBuilder) mix(driver string, writeDatabaseConfig, readDatabaseC
 	var (
 		databaseDriver contractsdriver.Driver
 
-		connection = postgres.Name
+		connection = driver + "_" + str.Random(6)
 		mockConfig = &mocksconfig.Config{}
 	)
 

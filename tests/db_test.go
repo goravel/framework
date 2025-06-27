@@ -1770,6 +1770,15 @@ func TestDB_Connection(t *testing.T) {
 
 func TestDbReadWriteSeparate(t *testing.T) {
 	dbs := NewTestQueryBuilder().AllWithReadWrite()
+	defer func() {
+		docker, err := dbs[sqlite.Name]["read"].Driver().Docker()
+		assert.NoError(t, err)
+		assert.NoError(t, docker.Shutdown())
+
+		docker, err = dbs[sqlite.Name]["write"].Driver().Docker()
+		assert.NoError(t, err)
+		assert.NoError(t, docker.Shutdown())
+	}()
 
 	for drive, db := range dbs {
 		t.Run(drive, func(t *testing.T) {
@@ -1794,14 +1803,6 @@ func TestDbReadWriteSeparate(t *testing.T) {
 			assert.True(t, product4.ID > 0)
 		})
 	}
-
-	docker, err := dbs[sqlite.Name]["read"].Driver().Docker()
-	assert.NoError(t, err)
-	assert.NoError(t, docker.Shutdown())
-
-	docker, err = dbs[sqlite.Name]["write"].Driver().Docker()
-	assert.NoError(t, err)
-	assert.NoError(t, docker.Shutdown())
 }
 
 func Benchmark_DB(b *testing.B) {
