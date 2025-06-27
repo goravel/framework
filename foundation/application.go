@@ -337,24 +337,21 @@ func getEnvFilePath() string {
 	envFilePath := ".env"
 	args := os.Args
 	for index, arg := range args {
-		if strings.HasPrefix(arg, "--env=") {
-			if path := strings.TrimPrefix(arg, "--env="); path != "" {
-				envFilePath = path
-				break
-			}
+		if path, ok := strings.CutPrefix(arg, "--env="); ok && len(path) > 0 {
+			envFilePath = path
+			break
 		}
-		if strings.HasPrefix(arg, "-env=") {
-			if path := strings.TrimPrefix(arg, "-env="); path != "" {
-				envFilePath = path
-				break
-			}
+
+		if path, ok := strings.CutPrefix(arg, "-env="); ok && len(path) > 0 {
+			envFilePath = path
+			break
 		}
-		if strings.HasPrefix(arg, "-e=") {
-			if path := strings.TrimPrefix(arg, "-e="); path != "" {
-				envFilePath = path
-				break
-			}
+
+		if path, ok := strings.CutPrefix(arg, "-e="); ok && len(path) > 0 {
+			envFilePath = path
+			break
 		}
+
 		if arg == "--env" || arg == "-env" || arg == "-e" {
 			if len(args) >= index+1 && !strings.HasPrefix(args[index+1], "-") {
 				envFilePath = args[index+1]
