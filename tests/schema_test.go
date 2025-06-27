@@ -8,6 +8,8 @@ import (
 
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	databaseschema "github.com/goravel/framework/database/schema"
+	"github.com/goravel/framework/foundation/json"
+	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/mysql"
 	"github.com/goravel/postgres"
@@ -28,6 +30,22 @@ func TestSchemaSuite(t *testing.T) {
 	t.Parallel()
 	suite.Run(t, &SchemaSuite{
 		driverToTestQuery: make(map[string]*TestQuery),
+	})
+}
+
+func (s *SchemaSuite) SetupSuite() {
+	mockApp := &mocksfoundation.Application{}
+	mockApp.EXPECT().GetJson().Return(json.New())
+	postgres.App = mockApp
+	mysql.App = mockApp
+	sqlite.App = mockApp
+	sqlserver.App = mockApp
+
+	s.T().Cleanup(func() {
+		postgres.App = nil
+		mysql.App = nil
+		sqlite.App = nil
+		sqlserver.App = nil
 	})
 }
 

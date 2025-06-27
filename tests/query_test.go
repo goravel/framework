@@ -46,6 +46,13 @@ func (s *QueryTestSuite) SetupSuite() {
 	mysql.App = mockApp
 	sqlite.App = mockApp
 	sqlserver.App = mockApp
+
+	s.T().Cleanup(func() {
+		postgres.App = nil
+		mysql.App = nil
+		sqlite.App = nil
+		sqlserver.App = nil
+	})
 }
 
 func (s *QueryTestSuite) SetupTest() {
