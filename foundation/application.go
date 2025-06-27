@@ -3,6 +3,7 @@ package foundation
 import (
 	"context"
 	"flag"
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -131,9 +132,7 @@ func (r *Application) Publishes(packageName string, paths map[string]string, gro
 	if _, exist := r.publishes[packageName]; !exist {
 		r.publishes[packageName] = make(map[string]string)
 	}
-	for key, value := range paths {
-		r.publishes[packageName][key] = value
-	}
+	maps.Copy(r.publishes[packageName], paths)
 	for _, group := range groups {
 		r.addPublishGroup(group, paths)
 	}
@@ -196,9 +195,7 @@ func (r *Application) addPublishGroup(group string, paths map[string]string) {
 		r.publishGroups[group] = make(map[string]string)
 	}
 
-	for key, value := range paths {
-		r.publishGroups[group][key] = value
-	}
+	maps.Copy(r.publishGroups[group], paths)
 }
 
 // bootArtisan Boot artisan command.

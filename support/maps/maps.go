@@ -1,6 +1,7 @@
 package maps
 
 import (
+	"maps"
 	"reflect"
 )
 
@@ -63,9 +64,7 @@ func FromStruct(data any) map[string]any {
 		if fieldValue.Kind() == reflect.Struct {
 			subStructMap := FromStruct(fieldValue.Interface())
 			if fieldType.Anonymous {
-				for key, value := range subStructMap {
-					res[key] = value
-				}
+				maps.Copy(res, subStructMap)
 			} else {
 				res[fieldType.Name] = subStructMap
 			}

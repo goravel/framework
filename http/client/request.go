@@ -5,13 +5,14 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http/client"
-	"github.com/goravel/framework/support/maps"
+	supportmaps "github.com/goravel/framework/support/maps"
 )
 
 var _ client.Request = (*Request)(nil)
@@ -96,9 +97,7 @@ func (r *Request) Clone() client.Request {
 	}
 
 	clone.urlParams = make(map[string]string)
-	for k, v := range r.urlParams {
-		clone.urlParams[k] = v
-	}
+	maps.Copy(clone.urlParams, r.urlParams)
 
 	return &clone
 }
@@ -188,7 +187,7 @@ func (r *Request) WithoutToken() client.Request {
 }
 
 func (r *Request) WithUrlParameter(key, value string) client.Request {
-	maps.Set(r.urlParams, key, url.PathEscape(value))
+	supportmaps.Set(r.urlParams, key, url.PathEscape(value))
 	return r
 }
 

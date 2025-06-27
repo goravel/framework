@@ -1,6 +1,7 @@
 package factory
 
 import (
+	"maps"
 	"reflect"
 
 	"github.com/go-viper/mapstructure/v2"
@@ -123,9 +124,7 @@ func getRawAttributes(value any, attributes ...map[string]any) (map[string]any, 
 
 	definition := factoryModel.Factory().Definition()
 	if len(attributes) > 0 {
-		for key, value := range attributes[0] {
-			definition[key] = value
-		}
+		maps.Copy(definition, attributes[0])
 	}
 
 	return definition, nil

@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"maps"
 	"reflect"
 	"strings"
 
@@ -114,9 +115,7 @@ func convertToMap(data any) (map[string]any, error) {
 				if err != nil {
 					return nil, err
 				}
-				for k, v := range embedded {
-					result[k] = v
-				}
+				maps.Copy(result, embedded)
 			}
 			continue
 		}

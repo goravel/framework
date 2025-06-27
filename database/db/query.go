@@ -4,6 +4,7 @@ import (
 	"context"
 	databasesql "database/sql"
 	"fmt"
+	"maps"
 	"reflect"
 	"sort"
 	"strings"
@@ -799,9 +800,7 @@ func (r *Query) UpdateOrInsert(attributes any, values any) (*db.Result, error) {
 		return r.Where(mapAttributes).Update(values)
 	}
 
-	for k, v := range mapValues {
-		mapAttributes[k] = v
-	}
+	maps.Copy(mapAttributes, mapValues)
 
 	return r.Insert(mapAttributes)
 }

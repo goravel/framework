@@ -3,6 +3,7 @@ package log
 import (
 	"fmt"
 	"io"
+	"maps"
 	"os"
 
 	"github.com/rotisserie/eris"
@@ -172,9 +173,7 @@ func (r *Writer) User(user any) log.Writer {
 
 // With adds key-value pairs to the context of the log entry
 func (r *Writer) With(data map[string]any) log.Writer {
-	for k, v := range data {
-		r.with[k] = v
-	}
+	maps.Copy(r.with, data)
 
 	return r
 }
