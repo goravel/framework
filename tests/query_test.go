@@ -11,8 +11,6 @@ import (
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/foundation/json"
-	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/mysql"
@@ -39,20 +37,6 @@ func TestQueryTestSuite(t *testing.T) {
 func (s *QueryTestSuite) SetupSuite() {
 	s.queries = NewTestQueryBuilder().All("", false)
 	s.additionalQuery = NewTestQueryBuilder().Postgres("", false)
-
-	mockApp := &mocksfoundation.Application{}
-	mockApp.EXPECT().GetJson().Return(json.New())
-	postgres.App = mockApp
-	mysql.App = mockApp
-	sqlite.App = mockApp
-	sqlserver.App = mockApp
-
-	s.T().Cleanup(func() {
-		postgres.App = nil
-		mysql.App = nil
-		sqlite.App = nil
-		sqlserver.App = nil
-	})
 }
 
 func (s *QueryTestSuite) SetupTest() {

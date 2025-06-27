@@ -11,11 +11,8 @@ import (
 	"github.com/goravel/framework/contracts/database/db"
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/foundation/json"
-	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/convert"
-	"github.com/goravel/mysql"
 	"github.com/goravel/postgres"
 	"github.com/goravel/sqlite"
 	"github.com/goravel/sqlserver"
@@ -40,20 +37,6 @@ func TestDBTestSuite(t *testing.T) {
 func (s *DBTestSuite) SetupSuite() {
 	s.now = carbon.NewDateTime(carbon.FromDateTime(2025, 1, 2, 3, 4, 5))
 	s.queries = NewTestQueryBuilder().All("", false)
-
-	mockApp := &mocksfoundation.Application{}
-	mockApp.EXPECT().GetJson().Return(json.New())
-	postgres.App = mockApp
-	mysql.App = mockApp
-	sqlite.App = mockApp
-	sqlserver.App = mockApp
-
-	s.T().Cleanup(func() {
-		postgres.App = nil
-		mysql.App = nil
-		sqlite.App = nil
-		sqlserver.App = nil
-	})
 }
 
 func (s *DBTestSuite) SetupTest() {
