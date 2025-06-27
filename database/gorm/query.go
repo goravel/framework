@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 	"sync"
 
@@ -1564,10 +1565,8 @@ func (r *Query) new(db *gormio.DB) *Query {
 
 func (r *Query) omitCreate(value any) error {
 	if len(r.instance.Statement.Omits) > 1 {
-		for _, val := range r.instance.Statement.Omits {
-			if val == Associations {
-				return errors.OrmQueryAssociationsConflict
-			}
+		if slices.Contains(r.instance.Statement.Omits, Associations) {
+			return errors.OrmQueryAssociationsConflict
 		}
 	}
 
@@ -1603,10 +1602,8 @@ func (r *Query) omitCreate(value any) error {
 }
 
 func (r *Query) omitSave(value any) error {
-	for _, val := range r.instance.Statement.Omits {
-		if val == Associations {
-			return r.instance.Omit(Associations).Save(value).Error
-		}
+	if slices.Contains(r.instance.Statement.Omits, Associations) {
+		return r.instance.Omit(Associations).Save(value).Error
 	}
 
 	return r.instance.Save(value).Error
@@ -1663,10 +1660,8 @@ func (r *Query) saving(dest any) error {
 
 func (r *Query) selectCreate(value any) error {
 	if len(r.instance.Statement.Selects) > 1 {
-		for _, val := range r.instance.Statement.Selects {
-			if val == Associations {
-				return errors.OrmQueryAssociationsConflict
-			}
+		if slices.Contains(r.instance.Statement.Selects, Associations) {
+			return errors.OrmQueryAssociationsConflict
 		}
 	}
 
@@ -1696,10 +1691,8 @@ func (r *Query) selectCreate(value any) error {
 }
 
 func (r *Query) selectSave(value any) error {
-	for _, val := range r.instance.Statement.Selects {
-		if val == Associations {
-			return r.instance.Session(&gormio.Session{FullSaveAssociations: true}).Save(value).Error
-		}
+	if slices.Contains(r.instance.Statement.Selects, Associations) {
+		return r.instance.Session(&gormio.Session{FullSaveAssociations: true}).Save(value).Error
 	}
 
 	if err := r.instance.Save(value).Error; err != nil {
@@ -1737,13 +1730,11 @@ func (r *Query) update(values any) (*contractsdb.Result, error) {
 	}
 
 	if len(r.instance.Statement.Selects) > 0 {
-		for _, val := range r.instance.Statement.Selects {
-			if val == Associations {
-				result := r.instance.Session(&gormio.Session{FullSaveAssociations: true}).Updates(values)
-				return &contractsdb.Result{
-					RowsAffected: result.RowsAffected,
-				}, result.Error
-			}
+		if slices.Contains(r.instance.Statement.Selects, Associations) {
+			result := r.instance.Session(&gormio.Session{FullSaveAssociations: true}).Updates(values)
+			return &contractsdb.Result{
+				RowsAffected: result.RowsAffected,
+			}, result.Error
 		}
 
 		result := r.instance.Updates(values)
@@ -1754,14 +1745,12 @@ func (r *Query) update(values any) (*contractsdb.Result, error) {
 	}
 
 	if len(r.instance.Statement.Omits) > 0 {
-		for _, val := range r.instance.Statement.Omits {
-			if val == Associations {
-				result := r.instance.Omit(Associations).Updates(values)
+		if slices.Contains(r.instance.Statement.Omits, Associations) {
+			result := r.instance.Omit(Associations).Updates(values)
 
-				return &contractsdb.Result{
-					RowsAffected: result.RowsAffected,
-				}, result.Error
-			}
+			return &contractsdb.Result{
+				RowsAffected: result.RowsAffected,
+			}, result.Error
 		}
 		result := r.instance.Updates(values)
 
