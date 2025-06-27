@@ -112,7 +112,7 @@ func (r *Request) ReplaceHeaders(headers map[string]string) client.Request {
 }
 
 func (r *Request) WithBasicAuth(username, password string) client.Request {
-	encoded := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", username, password)))
+	encoded := base64.StdEncoding.EncodeToString(fmt.Appendf(nil, "%s:%s", username, password))
 	return r.WithToken(encoded, "Basic")
 }
 

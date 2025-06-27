@@ -275,7 +275,7 @@ func (s *RequestTestSuite) TestConcurrentRequests() {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		time.Sleep(5 * time.Millisecond)
-		_, _ = w.Write([]byte(fmt.Sprintf(`{"message":"success-%s"}`, r.URL.Path)))
+		_, _ = w.Write(fmt.Appendf(nil, `{"message":"success-%s"}`, r.URL.Path))
 	}))
 	defer server.Close()
 

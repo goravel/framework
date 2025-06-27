@@ -129,7 +129,7 @@ func (r *TestRequest) WithToken(token string, ttype ...string) contractshttp.Req
 }
 
 func (r *TestRequest) WithBasicAuth(username, password string) contractshttp.Request {
-	encoded := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", username, password)))
+	encoded := base64.StdEncoding.EncodeToString(fmt.Appendf(nil, "%s:%s", username, password))
 	return r.WithToken(encoded, "Basic")
 }
 
