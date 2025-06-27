@@ -309,7 +309,7 @@ func setEnv() {
 			testEnv      = envFilePath
 		)
 
-		for i := 0; i < 50; i++ {
+		for range 50 {
 			if _, err := os.Stat(testEnv); err == nil {
 				envExist = true
 

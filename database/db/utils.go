@@ -47,7 +47,7 @@ func convertToSliceMap(data any) ([]map[string]any, error) {
 		}
 
 		result := make([]map[string]any, length)
-		for i := 0; i < length; i++ {
+		for i := range length {
 			elem := val.Index(i)
 			m, err := convertToMap(elem.Interface())
 			if err != nil {

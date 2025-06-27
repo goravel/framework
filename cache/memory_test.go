@@ -72,7 +72,7 @@ func (s *MemoryTestSuite) TestDecrementWithConcurrent() {
 	s.Nil(err)
 
 	var wg sync.WaitGroup
-	for i := 0; i < 1000; i++ {
+	for range 1000 {
 		wg.Add(1)
 		go func() {
 			_, err = s.memory.Decrement("decrement_concurrent", 1)
@@ -180,7 +180,7 @@ func (s *MemoryTestSuite) TestIncrementWithConcurrent() {
 	s.Nil(err)
 
 	var wg sync.WaitGroup
-	for i := 0; i < 1000; i++ {
+	for range 1000 {
 		wg.Add(1)
 		go func() {
 			_, err = s.memory.Increment("increment_concurrent", 1)
