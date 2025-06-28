@@ -392,23 +392,14 @@ func sortConfiguredServiceProviders(providers []foundation.ServiceProvider) []fo
 		return []string{}
 	}
 
-	// Create a map for quick lookup of providers by their binding names
-	providerMap := make(map[string]foundation.ServiceProvider)
 	bindingToProvider := make(map[string]foundation.ServiceProvider)
-	for _, provider := range providers {
-		for _, binding := range getBindings(provider) {
-			providerMap[binding] = provider
-			bindingToProvider[binding] = provider
-		}
-	}
-
-	// Create adjacency list for dependency graph
 	graph := make(map[string][]string)
 	inDegree := make(map[string]int)
 
-	// Initialize inDegree for all providers
+	// Create a map for quick lookup of providers by their binding names, initialize inDegree for all providers
 	for _, provider := range providers {
 		for _, binding := range getBindings(provider) {
+			bindingToProvider[binding] = provider
 			inDegree[binding] = 0
 		}
 	}
@@ -418,7 +409,7 @@ func sortConfiguredServiceProviders(providers []foundation.ServiceProvider) []fo
 		for _, binding := range getBindings(provider) {
 			// Add dependencies (this provider depends on others)
 			for _, dep := range getDependencies(provider) {
-				if _, exists := providerMap[dep]; exists {
+				if _, exists := bindingToProvider[dep]; exists {
 					graph[dep] = append(graph[dep], binding)
 					inDegree[binding]++
 				}
@@ -426,7 +417,7 @@ func sortConfiguredServiceProviders(providers []foundation.ServiceProvider) []fo
 
 			// Add provide-for relationships (others depend on this provider)
 			for _, provideFor := range getProvideFor(provider) {
-				if _, exists := providerMap[provideFor]; exists {
+				if _, exists := bindingToProvider[provideFor]; exists {
 					graph[binding] = append(graph[binding], provideFor)
 					inDegree[provideFor]++
 				}
@@ -474,7 +465,7 @@ func sortConfiguredServiceProviders(providers []foundation.ServiceProvider) []fo
 	used := make(map[foundation.ServiceProvider]bool)
 
 	for _, binding := range result {
-		provider := providerMap[binding]
+		provider := bindingToProvider[binding]
 		if !used[provider] {
 			sortedProviders = append(sortedProviders, provider)
 			used[provider] = true
