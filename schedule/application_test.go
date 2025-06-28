@@ -2,7 +2,6 @@ package schedule
 
 import (
 	"context"
-	"maps"
 	"testing"
 	"time"
 
@@ -68,8 +67,6 @@ func (s *ApplicationTestSuite) TestCallAndCommand() {
 }
 
 func (s *ApplicationTestSuite) TestOnOneServer() {
-maps.Keys[]()
-
 	mockCache := mockscache.NewCache(s.T())
 	mockLock := mockscache.NewLock(s.T())
 	mockLock.EXPECT().Get().Return(true).Once()
