@@ -3,6 +3,7 @@ package maps
 import (
 	"maps"
 	"reflect"
+	"slices"
 )
 
 // Add an element to a map if it doesn't exist.
@@ -114,11 +115,7 @@ func HasAny[K comparable, V any](mp map[K]V, keys ...K) bool {
 }
 
 func Keys[K comparable, V any](mp map[K]V) []K {
-	keys := make([]K, 0, len(mp))
-	for k := range mp {
-		keys = append(keys, k)
-	}
-	return keys
+	return slices.Collect(maps.Keys(mp))
 }
 
 // Only returns the items in the map with the specified keys.
