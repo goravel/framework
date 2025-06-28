@@ -254,6 +254,80 @@ func TestHasAny(t *testing.T) {
 	assert.True(t, HasAny(iMp, 1, 3))
 }
 
+func TestKeys(t *testing.T) {
+	// Test string keys
+	strMap := map[string]any{
+		"name": "Krishan",
+		"age":  21,
+		"city": "Chandigarh",
+	}
+	keys := Keys(strMap)
+	assert.Len(t, keys, 3)
+	assert.Contains(t, keys, "name")
+	assert.Contains(t, keys, "age")
+	assert.Contains(t, keys, "city")
+
+	// Test int keys
+	intMap := map[int]string{
+		1: "one",
+		2: "two",
+		3: "three",
+	}
+	intKeys := Keys(intMap)
+	assert.Len(t, intKeys, 3)
+	assert.Contains(t, intKeys, 1)
+	assert.Contains(t, intKeys, 2)
+	assert.Contains(t, intKeys, 3)
+
+	// Test empty map
+	emptyMap := map[string]any{}
+	emptyKeys := Keys(emptyMap)
+	assert.Len(t, emptyKeys, 0)
+	assert.Empty(t, emptyKeys)
+
+	// Test map with single key
+	singleMap := map[string]int{
+		"single": 1,
+	}
+	singleKeys := Keys(singleMap)
+	assert.Len(t, singleKeys, 1)
+	assert.Contains(t, singleKeys, "single")
+
+	// Test map with nil values
+	nilMap := map[string]any{
+		"nil1": nil,
+		"nil2": nil,
+		"val":  "value",
+	}
+	nilKeys := Keys(nilMap)
+	assert.Len(t, nilKeys, 3)
+	assert.Contains(t, nilKeys, "nil1")
+	assert.Contains(t, nilKeys, "nil2")
+	assert.Contains(t, nilKeys, "val")
+
+	// Test map with complex values
+	complexMap := map[string]any{
+		"slice": []string{"a", "b", "c"},
+		"map":   map[string]int{"x": 1, "y": 2},
+		"int":   42,
+	}
+	complexKeys := Keys(complexMap)
+	assert.Len(t, complexKeys, 3)
+	assert.Contains(t, complexKeys, "slice")
+	assert.Contains(t, complexKeys, "map")
+	assert.Contains(t, complexKeys, "int")
+
+	// Test map with different key types
+	boolMap := map[bool]string{
+		true:  "true",
+		false: "false",
+	}
+	boolKeys := Keys(boolMap)
+	assert.Len(t, boolKeys, 2)
+	assert.Contains(t, boolKeys, true)
+	assert.Contains(t, boolKeys, false)
+}
+
 func TestOnly(t *testing.T) {
 	mp := map[string]any{
 		"name": "Krishan",

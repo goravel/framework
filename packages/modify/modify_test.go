@@ -12,23 +12,193 @@ import (
 
 	contractsmatch "github.com/goravel/framework/contracts/packages/match"
 	"github.com/goravel/framework/contracts/packages/modify"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/packages/match"
 	supportfile "github.com/goravel/framework/support/file"
 )
+
+type FileTestSuite struct {
+	suite.Suite
+	tempDir string
+}
+
+func TestFileTestSuite(t *testing.T) {
+	suite.Run(t, new(FileTestSuite))
+}
+
+func (s *FileTestSuite) SetupTest() {
+	s.tempDir = s.T().TempDir()
+}
+
+func (s *FileTestSuite) TestOverwrite() {
+	tests := []struct {
+		name        string
+		setup       func() string
+		content     string
+		force       bool
+		expectError bool
+		assert      func(path string, err error)
+	}{
+		{
+			name: "overwrite new file without force",
+			setup: func() string {
+				return filepath.Join(s.tempDir, "new_file.txt")
+			},
+			content:     "new content",
+			force:       false,
+			expectError: false,
+			assert: func(path string, err error) {
+				s.NoError(err)
+				content, readErr := supportfile.GetContent(path)
+				s.NoError(readErr)
+				s.Equal("new content", content)
+			},
+		},
+		{
+			name: "overwrite existing file without force",
+			setup: func() string {
+				path := filepath.Join(s.tempDir, "existing_file.txt")
+				s.NoError(supportfile.PutContent(path, "old content"))
+				return path
+			},
+			content:     "new content",
+			force:       false,
+			expectError: true,
+			assert: func(path string, err error) {
+				s.Equal(errors.FileAlreadyExists.Args(path).Error(), err.Error())
+				// File should not be overwritten
+				content, readErr := supportfile.GetContent(path)
+				s.NoError(readErr)
+				s.Equal("old content", content)
+			},
+		},
+		{
+			name: "overwrite existing file with force",
+			setup: func() string {
+				path := filepath.Join(s.tempDir, "force_file.txt")
+				s.NoError(supportfile.PutContent(path, "old content"))
+				return path
+			},
+			content:     "new content",
+			force:       true,
+			expectError: false,
+			assert: func(path string, err error) {
+				s.NoError(err)
+				content, readErr := supportfile.GetContent(path)
+				s.NoError(readErr)
+				s.Equal("new content", content)
+			},
+		},
+		{
+			name: "overwrite with empty content",
+			setup: func() string {
+				return filepath.Join(s.tempDir, "empty_file.txt")
+			},
+			content:     "",
+			force:       false,
+			expectError: false,
+			assert: func(path string, err error) {
+				s.NoError(err)
+				content, readErr := supportfile.GetContent(path)
+				s.NoError(readErr)
+				s.Empty(content)
+			},
+		},
+		{
+			name: "overwrite with special characters",
+			setup: func() string {
+				return filepath.Join(s.tempDir, "special_file.txt")
+			},
+			content:     "content with\nnewlines\tand\ttabs",
+			force:       false,
+			expectError: false,
+			assert: func(path string, err error) {
+				s.NoError(err)
+				content, readErr := supportfile.GetContent(path)
+				s.NoError(readErr)
+				s.Equal("content with\nnewlines\tand\ttabs", content)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			path := tt.setup()
+			overwriteFile := File(path).Overwrite(tt.content, tt.force)
+
+			err := overwriteFile.Apply()
+
+			tt.assert(path, err)
+		})
+	}
+}
+
+func (s *FileTestSuite) TestRemove() {
+	tests := []struct {
+		name        string
+		setup       func() string
+		expectError bool
+		assert      func(path string, err error)
+	}{
+		{
+			name: "remove existing file",
+			setup: func() string {
+				path := filepath.Join(s.tempDir, "to_remove.txt")
+				s.NoError(supportfile.PutContent(path, "content"))
+				return path
+			},
+			expectError: false,
+			assert: func(path string, err error) {
+				s.NoError(err)
+				s.False(supportfile.Exists(path))
+			},
+		},
+		{
+			name: "remove non-existent file",
+			setup: func() string {
+				return filepath.Join(s.tempDir, "non_existent.txt")
+			},
+			expectError: false, // RemoveFile doesn't return error for non-existent files
+			assert: func(path string, err error) {
+				s.NoError(err)
+				s.False(supportfile.Exists(path))
+			},
+		},
+		{
+			name: "remove empty path",
+			setup: func() string {
+				return ""
+			},
+			expectError: false,
+			assert: func(path string, err error) {
+				s.NoError(err)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			path := tt.setup()
+			removeFile := File(path).Remove()
+
+			err := removeFile.Apply()
+
+			tt.assert(path, err)
+		})
+	}
+}
 
 type ModifyGoFileTestSuite struct {
 	suite.Suite
 	file string
 }
 
-func (s *ModifyGoFileTestSuite) SetupTest() {
-	s.file = filepath.Join(s.T().TempDir(), "test.go")
-}
-
-func (s *ModifyGoFileTestSuite) TearDownTest() {}
-
 func TestModifyGoFileTestSuite(t *testing.T) {
 	suite.Run(t, new(ModifyGoFileTestSuite))
+}
+
+func (s *ModifyGoFileTestSuite) SetupTest() {
+	s.file = filepath.Join(s.T().TempDir(), "test.go")
 }
 
 func (s *ModifyGoFileTestSuite) TestModifyGoFile() {

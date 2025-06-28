@@ -1,0 +1,2 @@
+content with
+newlines	and	tabs
