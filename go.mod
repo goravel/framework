@@ -11,7 +11,7 @@ require (
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/dave/dst v0.27.3
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
-	github.com/dromara/carbon/v2 v2.6.6
+	github.com/dromara/carbon/v2 v2.6.9
 	github.com/gabriel-vasile/mimetype v1.4.9
 	github.com/go-viper/mapstructure/v2 v2.3.0
 	github.com/golang-jwt/jwt/v5 v5.2.2

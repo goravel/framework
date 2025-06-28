@@ -8,6 +8,21 @@ import (
 
 type Carbon = carbon.Carbon
 
+// New returns a new Carbon instance.
+func New(time stdtime.Time) *Carbon {
+	return carbon.NewCarbon(time)
+}
+
+// ZeroValue returns the zero value of Carbon instance.
+func ZeroValue() *Carbon {
+	return carbon.ZeroValue()
+}
+
+// EpochValue returns the unix epoch value of Carbon instance.
+func EpochValue() *Carbon {
+	return carbon.EpochValue()
+}
+
 // SetTimezone sets timezone.
 func SetTimezone(timezone string) {
 	carbon.SetTimezone(timezone)
@@ -169,4 +184,19 @@ func FromTimeNano(hour int, minute int, second int, nanosecond int, timezone ...
 // FromStdTime returns a Carbon object of given time.Time object.
 func FromStdTime(time stdtime.Time, timezone ...string) *Carbon {
 	return carbon.CreateFromStdTime(time, timezone...)
+}
+
+// FromLunar returns a Carbon instance from Lunar date.
+func FromLunar(year, month, day int, isLeapMonth bool) *Carbon {
+	return carbon.CreateFromLunar(year, month, day, isLeapMonth)
+}
+
+// FromJulian returns a Carbon instance from Julian Day or Modified Julian Day.
+func FromJulian(f float64) *Carbon {
+	return carbon.CreateFromJulian(f)
+}
+
+// FromPersian creates a Carbon instance from Persian date.
+func FromPersian(year, month, day int) *Carbon {
+	return carbon.CreateFromPersian(year, month, day)
 }
