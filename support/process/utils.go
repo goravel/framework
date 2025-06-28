@@ -23,7 +23,7 @@ func IsPortUsing(port int) bool {
 }
 
 func ValidPort() int {
-	for i := 0; i < 60; i++ {
+	for range 60 {
 		random := rand.Intn(10000) + 10000
 		if !IsPortUsing(random) {
 			return random

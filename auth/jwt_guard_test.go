@@ -321,7 +321,7 @@ func (s *JwtGuardTestSuite) TestUser_Success() {
 	s.Nil(err)
 
 	var user User
-	s.mockUserProvider.EXPECT().RetriveByID(&user, "1").RunAndReturn(func(user interface{}, id interface{}) error {
+	s.mockUserProvider.EXPECT().RetriveByID(&user, "1").RunAndReturn(func(user any, id any) error {
 		user.(*User).ID = 1
 		return nil
 	}).Once()
@@ -367,7 +367,7 @@ func (s *JwtGuardTestSuite) TestUser_Success_MultipleParse() {
 	s.Equal("2", payload.Key)
 
 	var user1 User
-	s.mockUserProvider.EXPECT().RetriveByID(&user1, "1").RunAndReturn(func(user interface{}, id interface{}) error {
+	s.mockUserProvider.EXPECT().RetriveByID(&user1, "1").RunAndReturn(func(user any, id any) error {
 		user.(*User).ID = 1
 		return nil
 	}).Once()
@@ -377,7 +377,7 @@ func (s *JwtGuardTestSuite) TestUser_Success_MultipleParse() {
 	s.Equal(uint(1), user1.ID)
 
 	var user2 User
-	s.mockUserProvider.EXPECT().RetriveByID(&user2, "2").RunAndReturn(func(user interface{}, id interface{}) error {
+	s.mockUserProvider.EXPECT().RetriveByID(&user2, "2").RunAndReturn(func(user any, id any) error {
 		user.(*User).ID = 2
 		return nil
 	}).Once()
@@ -504,7 +504,7 @@ func (r *Context) Err() error {
 	return r.ctx.Err()
 }
 
-func (r *Context) Value(key interface{}) any {
+func (r *Context) Value(key any) any {
 	if k, ok := key.(string); ok {
 		r.mu.RLock()
 		v, ok := r.values[k]

@@ -2,6 +2,7 @@ package validation
 
 import (
 	"net/url"
+	"slices"
 
 	"github.com/gookit/validate"
 
@@ -77,10 +78,8 @@ func (r *Validation) Make(data any, rules map[string]string, options ...validate
 func (r *Validation) AddFilters(filters []validatecontract.Filter) error {
 	existFilterNames := r.existFilterNames()
 	for _, filter := range filters {
-		for _, existFilterName := range existFilterNames {
-			if existFilterName == filter.Signature() {
-				return errors.ValidationDuplicateFilter.Args(filter.Signature())
-			}
+		if slices.Contains(existFilterNames, filter.Signature()) {
+			return errors.ValidationDuplicateFilter.Args(filter.Signature())
 		}
 	}
 
@@ -91,10 +90,8 @@ func (r *Validation) AddFilters(filters []validatecontract.Filter) error {
 func (r *Validation) AddRules(rules []validatecontract.Rule) error {
 	existRuleNames := r.existRuleNames()
 	for _, rule := range rules {
-		for _, existRuleName := range existRuleNames {
-			if existRuleName == rule.Signature() {
-				return errors.ValidationDuplicateRule.Args(rule.Signature())
-			}
+		if slices.Contains(existRuleNames, rule.Signature()) {
+			return errors.ValidationDuplicateRule.Args(rule.Signature())
 		}
 	}
 

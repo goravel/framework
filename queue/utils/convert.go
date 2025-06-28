@@ -17,9 +17,9 @@ type Task struct {
 }
 
 type Job struct {
+	Delay     *time.Time           `json:"delay"`
 	Signature string               `json:"signature"`
 	Args      []contractsqueue.Arg `json:"args"`
-	Delay     *time.Time           `json:"delay"`
 }
 
 func TaskToJson(task contractsqueue.Task, json foundation.Json) (string, error) {

@@ -119,12 +119,12 @@ func (r *DB) WithContext(ctx context.Context) contractsdb.DB {
 
 type Tx struct {
 	ctx        context.Context
-	driverName string
-	gormDB     *gorm.DB
 	grammar    contractsdriver.Grammar
 	logger     contractslogger.Logger
 	txBuilder  contractsdb.TxBuilder
+	gormDB     *gorm.DB
 	txLogs     *[]TxLog
+	driverName string
 }
 
 func NewTx(

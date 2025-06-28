@@ -3,6 +3,7 @@ package log
 import (
 	"fmt"
 	"io"
+	"maps"
 	"os"
 
 	"github.com/rotisserie/eris"
@@ -26,19 +27,19 @@ func NewLogrus() *logrus.Logger {
 }
 
 type Writer struct {
-	code         string
-	domain       string
-	hint         string
-	instance     *logrus.Entry
-	message      string
 	owner        any
 	request      http.ContextRequest
 	response     http.ContextResponse
-	stackEnabled bool
-	stacktrace   map[string]any
-	tags         []string
 	user         any
+	instance     *logrus.Entry
+	stacktrace   map[string]any
 	with         map[string]any
+	code         string
+	domain       string
+	hint         string
+	message      string
+	tags         []string
+	stackEnabled bool
 }
 
 func NewWriter(instance *logrus.Entry) log.Writer {
@@ -172,9 +173,7 @@ func (r *Writer) User(user any) log.Writer {
 
 // With adds key-value pairs to the context of the log entry
 func (r *Writer) With(data map[string]any) log.Writer {
-	for k, v := range data {
-		r.with[k] = v
-	}
+	maps.Copy(r.with, data)
 
 	return r
 }

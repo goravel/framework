@@ -23,8 +23,8 @@ type Translator interface {
 
 type Option struct {
 	Fallback *bool
-	Locale   string
 	Replace  map[string]string
+	Locale   string
 }
 
 func Bool(value bool) *bool {

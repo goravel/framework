@@ -631,7 +631,7 @@ func (r *TestRequest) FullUrl() string {
 }
 
 func (r *TestRequest) All() map[string]any {
-	return map[string]interface{}{
+	return map[string]any{
 		"key1": "value1",
 		"key2": "value2",
 	}

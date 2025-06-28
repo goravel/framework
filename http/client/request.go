@@ -5,27 +5,28 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http/client"
-	"github.com/goravel/framework/support/maps"
+	supportmaps "github.com/goravel/framework/support/maps"
 )
 
 var _ client.Request = (*Request)(nil)
 
 type Request struct {
 	ctx         context.Context
+	bind        any
+	json        foundation.Json
 	client      *http.Client
 	config      *client.Config
-	bind        any
 	headers     http.Header
-	cookies     []*http.Cookie
 	queryParams url.Values
 	urlParams   map[string]string
-	json        foundation.Json
+	cookies     []*http.Cookie
 }
 
 func NewRequest(config *client.Config, json foundation.Json) *Request {
@@ -96,9 +97,7 @@ func (r *Request) Clone() client.Request {
 	}
 
 	clone.urlParams = make(map[string]string)
-	for k, v := range r.urlParams {
-		clone.urlParams[k] = v
-	}
+	maps.Copy(clone.urlParams, r.urlParams)
 
 	return &clone
 }
@@ -113,7 +112,7 @@ func (r *Request) ReplaceHeaders(headers map[string]string) client.Request {
 }
 
 func (r *Request) WithBasicAuth(username, password string) client.Request {
-	encoded := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", username, password)))
+	encoded := base64.StdEncoding.EncodeToString(fmt.Appendf(nil, "%s:%s", username, password))
 	return r.WithToken(encoded, "Basic")
 }
 
@@ -188,7 +187,7 @@ func (r *Request) WithoutToken() client.Request {
 }
 
 func (r *Request) WithUrlParameter(key, value string) client.Request {
-	maps.Set(r.urlParams, key, url.PathEscape(value))
+	supportmaps.Set(r.urlParams, key, url.PathEscape(value))
 	return r
 }
 

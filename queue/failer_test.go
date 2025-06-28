@@ -73,7 +73,7 @@ func (s *FailerTestSuite) TestAll() {
 			name: "success",
 			setup: func() {
 				var failedJobs []models.FailedJob
-				s.mockQuery.EXPECT().Get(&failedJobs).Run(func(dest interface{}) {
+				s.mockQuery.EXPECT().Get(&failedJobs).Run(func(dest any) {
 					*dest.(*[]models.FailedJob) = modelFailedJobs
 				}).Return(nil).Once()
 			},
@@ -152,7 +152,7 @@ func (s *FailerTestSuite) TestGet() {
 				s.mockQuery.EXPECT().WhereIn("uuid", []any{"test-uuid-1", "test-uuid-2"}).Return(s.mockQuery).Once()
 
 				var failedJobs []models.FailedJob
-				s.mockQuery.EXPECT().Get(&failedJobs).Run(func(dest interface{}) {
+				s.mockQuery.EXPECT().Get(&failedJobs).Run(func(dest any) {
 					*dest.(*[]models.FailedJob) = modelFailedJobs
 				}).Return(nil).Once()
 			},
@@ -168,7 +168,7 @@ func (s *FailerTestSuite) TestGet() {
 			uuids:      []string{},
 			setup: func() {
 				var failedJobs []models.FailedJob
-				s.mockQuery.EXPECT().Get(&failedJobs).Run(func(dest interface{}) {
+				s.mockQuery.EXPECT().Get(&failedJobs).Run(func(dest any) {
 					*dest.(*[]models.FailedJob) = modelFailedJobs
 				}).Return(nil).Once()
 			},
@@ -277,7 +277,7 @@ func (s *FailedJobTestSuite) TestRetry() {
 				}
 
 				var task utils.Task
-				s.mockJson.EXPECT().UnmarshalString(s.modelFailedJob.Payload, &task).Run(func(json string, dest interface{}) {
+				s.mockJson.EXPECT().UnmarshalString(s.modelFailedJob.Payload, &task).Run(func(json string, dest any) {
 					*dest.(*utils.Task) = destTask
 				}).Return(nil).Once()
 
@@ -332,7 +332,7 @@ func (s *FailedJobTestSuite) TestRetry() {
 				}
 
 				var task utils.Task
-				s.mockJson.EXPECT().UnmarshalString(s.modelFailedJob.Payload, &task).Run(func(json string, dest interface{}) {
+				s.mockJson.EXPECT().UnmarshalString(s.modelFailedJob.Payload, &task).Run(func(json string, dest any) {
 					*dest.(*utils.Task) = destTask
 				}).Return(nil).Once()
 
@@ -365,7 +365,7 @@ func (s *FailedJobTestSuite) TestRetry() {
 				}
 
 				var task utils.Task
-				s.mockJson.EXPECT().UnmarshalString(s.modelFailedJob.Payload, &task).Run(func(json string, dest interface{}) {
+				s.mockJson.EXPECT().UnmarshalString(s.modelFailedJob.Payload, &task).Run(func(json string, dest any) {
 					*dest.(*utils.Task) = destTask
 				}).Return(nil).Once()
 
@@ -426,7 +426,7 @@ func (s *FailedJobTestSuite) TestSignature() {
 				}
 
 				var task utils.Task
-				s.mockJson.EXPECT().UnmarshalString(s.modelFailedJob.Payload, &task).Run(func(json string, dest interface{}) {
+				s.mockJson.EXPECT().UnmarshalString(s.modelFailedJob.Payload, &task).Run(func(json string, dest any) {
 					*dest.(*utils.Task) = destTask
 				}).Return(nil).Once()
 			},

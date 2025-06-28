@@ -4,6 +4,7 @@ import (
 	"context"
 	databasesql "database/sql"
 	"fmt"
+	"maps"
 	"reflect"
 	"sort"
 	"strings"
@@ -21,14 +22,14 @@ import (
 )
 
 type Query struct {
-	conditions   contractsdriver.Conditions
 	ctx          context.Context
 	err          error
 	grammar      contractsdriver.Grammar
 	logger       logger.Logger
 	readBuilder  db.CommonBuilder
-	txLogs       *[]TxLog
 	writeBuilder db.CommonBuilder
+	txLogs       *[]TxLog
+	conditions   contractsdriver.Conditions
 }
 
 func NewQuery(ctx context.Context, readBuilder db.CommonBuilder, writeBuilder db.CommonBuilder, grammar contractsdriver.Grammar, logger logger.Logger, table string, txLogs *[]TxLog) *Query {
@@ -799,9 +800,7 @@ func (r *Query) UpdateOrInsert(attributes any, values any) (*db.Result, error) {
 		return r.Where(mapAttributes).Update(values)
 	}
 
-	for k, v := range mapValues {
-		mapAttributes[k] = v
-	}
+	maps.Copy(mapAttributes, mapValues)
 
 	return r.Insert(mapAttributes)
 }

@@ -7,22 +7,22 @@ import (
 
 type Conditions struct {
 	dest          any
-	distinct      bool
-	groupBy       []string
-	having        *contractsdriver.Having
-	join          []contractsdriver.Join
-	limit         *int
-	lockForUpdate bool
 	model         any
+	having        *contractsdriver.Having
+	limit         *int
 	offset        *int
+	table         *Table
+	groupBy       []string
+	join          []contractsdriver.Join
 	omit          []string
 	order         []any
 	scopes        []func(contractsorm.Query) contractsorm.Query
 	selectColumns []string
-	sharedLock    bool
-	table         *Table
 	where         []contractsdriver.Where
 	with          []With
+	distinct      bool
+	lockForUpdate bool
+	sharedLock    bool
 	withoutEvents bool
 	withTrashed   bool
 }

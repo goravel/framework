@@ -19,11 +19,11 @@ import (
 )
 
 type Machinery struct {
-	appName       string
 	log           contractslog.Log
 	queueToServer map[string]*machinery.Server
-	redisDatabase int
+	appName       string
 	redisDSN      string
+	redisDatabase int
 }
 
 func NewMachinery(config config.Config, log contractslog.Log, connection string) *Machinery {

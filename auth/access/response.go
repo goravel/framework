@@ -11,8 +11,8 @@ func NewDenyResponse(message string) access.Response {
 }
 
 type ResponseImpl struct {
-	allowed bool
 	message string
+	allowed bool
 }
 
 func (r *ResponseImpl) Allowed() bool {

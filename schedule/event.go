@@ -13,8 +13,8 @@ type Event struct {
 	callback            func()
 	command             string
 	cron                string
-	delayIfStillRunning bool
 	name                string
+	delayIfStillRunning bool
 	onOneServer         bool
 	skipIfStillRunning  bool
 }

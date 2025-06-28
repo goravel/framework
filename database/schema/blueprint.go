@@ -36,11 +36,11 @@ const (
 )
 
 type Blueprint struct {
+	schema   schema.Schema
+	prefix   string
+	table    string
 	columns  []*ColumnDefinition
 	commands []*driver.Command
-	prefix   string
-	schema   schema.Schema
-	table    string
 }
 
 func NewBlueprint(schema schema.Schema, prefix, table string) *Blueprint {

@@ -40,9 +40,9 @@ type Join struct {
 }
 
 type Where struct {
-	Type  WhereType
 	Query any
 	Args  []any
+	Type  WhereType
 	Or    bool
 	IsNot bool
 }

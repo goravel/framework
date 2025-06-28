@@ -20,13 +20,13 @@ import (
 )
 
 type TestResponseImpl struct {
-	t                 *testing.T
-	mu                sync.Mutex
-	response          *http.Response
-	content           string
 	json              foundation.Json
 	session           contractssession.Manager
+	t                 *testing.T
+	response          *http.Response
 	sessionAttributes map[string]any
+	content           string
+	mu                sync.Mutex
 }
 
 func NewTestResponse(t *testing.T, response *http.Response, json foundation.Json, session contractssession.Manager) contractshttp.Response {

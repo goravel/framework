@@ -3,6 +3,7 @@ package foundation
 import (
 	"context"
 	"flag"
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -131,9 +132,7 @@ func (r *Application) Publishes(packageName string, paths map[string]string, gro
 	if _, exist := r.publishes[packageName]; !exist {
 		r.publishes[packageName] = make(map[string]string)
 	}
-	for key, value := range paths {
-		r.publishes[packageName][key] = value
-	}
+	maps.Copy(r.publishes[packageName], paths)
 	for _, group := range groups {
 		r.addPublishGroup(group, paths)
 	}
@@ -196,9 +195,7 @@ func (r *Application) addPublishGroup(group string, paths map[string]string) {
 		r.publishGroups[group] = make(map[string]string)
 	}
 
-	for key, value := range paths {
-		r.publishGroups[group][key] = value
-	}
+	maps.Copy(r.publishGroups[group], paths)
 }
 
 // bootArtisan Boot artisan command.
@@ -312,7 +309,7 @@ func setEnv() {
 			testEnv      = envFilePath
 		)
 
-		for i := 0; i < 50; i++ {
+		for range 50 {
 			if _, err := os.Stat(testEnv); err == nil {
 				envExist = true
 
@@ -340,24 +337,21 @@ func getEnvFilePath() string {
 	envFilePath := ".env"
 	args := os.Args
 	for index, arg := range args {
-		if strings.HasPrefix(arg, "--env=") {
-			if path := strings.TrimPrefix(arg, "--env="); path != "" {
-				envFilePath = path
-				break
-			}
+		if path, ok := strings.CutPrefix(arg, "--env="); ok && len(path) > 0 {
+			envFilePath = path
+			break
 		}
-		if strings.HasPrefix(arg, "-env=") {
-			if path := strings.TrimPrefix(arg, "-env="); path != "" {
-				envFilePath = path
-				break
-			}
+
+		if path, ok := strings.CutPrefix(arg, "-env="); ok && len(path) > 0 {
+			envFilePath = path
+			break
 		}
-		if strings.HasPrefix(arg, "-e=") {
-			if path := strings.TrimPrefix(arg, "-e="); path != "" {
-				envFilePath = path
-				break
-			}
+
+		if path, ok := strings.CutPrefix(arg, "-e="); ok && len(path) > 0 {
+			envFilePath = path
+			break
 		}
+
 		if arg == "--env" || arg == "-env" || arg == "-e" {
 			if len(args) >= index+1 && !strings.HasPrefix(args[index+1], "-") {
 				envFilePath = args[index+1]

@@ -56,8 +56,8 @@ func (s *AboutCommandTestSuite) TestExtend() {
 
 			testCases := []struct {
 				name     string
-				got      interface{}
-				expected interface{}
+				got      any
+				expected any
 			}{
 				{"Name", flag.Name, "only"},
 				{"Usage", flag.Usage, "The section to display"},

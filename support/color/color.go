@@ -112,19 +112,19 @@ func Magenta() support.Printer {
 
 type Color uint8
 
-func (c Color) Sprint(a ...interface{}) string {
+func (c Color) Sprint(a ...any) string {
 	return pterm.Color(c).Sprint(a...)
 }
 
-func (c Color) Sprintln(a ...interface{}) string {
+func (c Color) Sprintln(a ...any) string {
 	return pterm.Color(c).Sprintln(a...)
 }
 
-func (c Color) Sprintf(format string, a ...interface{}) string {
+func (c Color) Sprintf(format string, a ...any) string {
 	return pterm.Color(c).Sprintf(format, a...)
 }
 
-func (c Color) Sprintfln(format string, a ...interface{}) string {
+func (c Color) Sprintfln(format string, a ...any) string {
 	return pterm.Color(c).Sprintfln(format, a...)
 }
 

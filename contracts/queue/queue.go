@@ -36,6 +36,6 @@ type Args struct {
 }
 
 type Arg struct {
-	Type  string `json:"type"`
 	Value any    `json:"value"`
+	Type  string `json:"type"`
 }

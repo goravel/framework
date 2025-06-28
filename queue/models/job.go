@@ -3,13 +3,13 @@ package models
 import "github.com/goravel/framework/support/carbon"
 
 type Job struct {
-	ID          uint             `db:"id"`
-	Queue       string           `db:"queue"`
-	Payload     string           `db:"payload"`
-	Attempts    int              `db:"attempts"`
 	ReservedAt  *carbon.DateTime `db:"reserved_at"`
 	AvailableAt *carbon.DateTime `db:"available_at"`
 	CreatedAt   *carbon.DateTime `db:"created_at"`
+	Queue       string           `db:"queue"`
+	Payload     string           `db:"payload"`
+	ID          uint             `db:"id"`
+	Attempts    int              `db:"attempts"`
 }
 
 func (r *Job) Increment() int {
@@ -25,11 +25,11 @@ func (r *Job) Touch() *carbon.DateTime {
 }
 
 type FailedJob struct {
-	ID         uint             `db:"id"`
+	FailedAt   *carbon.DateTime `db:"failed_at"`
 	UUID       string           `db:"uuid"`
 	Connection string           `db:"connection"`
 	Queue      string           `db:"queue"`
 	Payload    string           `db:"payload"`
 	Exception  string           `db:"exception"`
-	FailedAt   *carbon.DateTime `db:"failed_at"`
+	ID         uint             `db:"id"`
 }

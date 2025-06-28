@@ -18,10 +18,10 @@ import (
 
 type File struct {
 	config  config.Config
+	storage filesystem.Storage
 	disk    string
 	path    string
 	name    string
-	storage filesystem.Storage
 }
 
 func NewFile(file string) (*File, error) {

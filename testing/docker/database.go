@@ -16,8 +16,8 @@ type Database struct {
 	docker.DatabaseDriver
 	artisan    contractsconsole.Artisan
 	config     contractsconfig.Config
-	connection string
 	orm        contractsorm.Orm
+	connection string
 }
 
 func NewDatabase(artisan contractsconsole.Artisan, config contractsconfig.Config, orm contractsorm.Orm, connection string) (*Database, error) {

@@ -2,6 +2,7 @@ package gorm
 
 import (
 	"context"
+	"maps"
 	"reflect"
 	"strings"
 
@@ -308,9 +309,7 @@ func fetchColumnNames(model any) map[string]string {
 		fieldValue := modelValue.Field(i)
 		if fieldValue.Kind() == reflect.Struct && fieldType.Anonymous {
 			subStructMap := fetchColumnNames(fieldValue.Interface())
-			for key, value := range subStructMap {
-				res[key] = value
-			}
+			maps.Copy(res, subStructMap)
 			continue
 		}
 
@@ -354,9 +353,7 @@ func structToMap(data any) map[string]any {
 
 		if (fieldValue.Kind() == reflect.Struct || fieldValue.Kind() == reflect.Pointer) && fieldType.Anonymous {
 			subStructMap := structToMap(fieldValue.Interface())
-			for key, value := range subStructMap {
-				res[key] = value
-			}
+			maps.Copy(res, subStructMap)
 		} else {
 			res[dbColumn] = fieldValue.Interface()
 		}

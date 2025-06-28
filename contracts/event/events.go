@@ -29,12 +29,12 @@ type Task interface {
 }
 
 type Arg struct {
-	Type  string
 	Value any
+	Type  string
 }
 
 type Queue struct {
-	Enable     bool
 	Connection string
 	Queue      string
+	Enable     bool
 }

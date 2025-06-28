@@ -49,8 +49,8 @@ func (s *PackageMakeCommandTestSuite) TestExtend() {
 
 			testCases := []struct {
 				name     string
-				got      interface{}
-				expected interface{}
+				got      any
+				expected any
 			}{
 				{"Name", flag.Name, "root"},
 				{"Aliases", flag.Aliases, []string{"r"}},

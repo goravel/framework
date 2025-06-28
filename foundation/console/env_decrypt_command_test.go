@@ -60,8 +60,8 @@ func (s *EnvDecryptCommandTestSuite) TestExtend() {
 
 			testCases := []struct {
 				name     string
-				got      interface{}
-				expected interface{}
+				got      any
+				expected any
 			}{
 				{"Name", flag.Name, "key"},
 				{"Aliases", flag.Aliases, []string{"k"}},

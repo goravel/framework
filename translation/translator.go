@@ -20,11 +20,11 @@ type Translator struct {
 	ctx        context.Context
 	fsLoader   translationcontract.Loader
 	fileLoader translationcontract.Loader
+	logger     logcontract.Log
+	selector   *MessageSelector
 	locale     string
 	fallback   string
-	selector   *MessageSelector
 	key        string
-	logger     logcontract.Log
 	mu         sync.Mutex
 }
 
