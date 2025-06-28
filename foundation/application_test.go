@@ -496,8 +496,8 @@ func TestSortConfiguredServiceProviders(t *testing.T) {
 				&MockProviderA{},
 			},
 			expected: []foundation.ServiceProvider{
-				&MockProviderA{},
 				&EmptyBindingsProvider{},
+				&MockProviderA{},
 			},
 		},
 		{
@@ -530,9 +530,9 @@ func TestSortConfiguredServiceProviders(t *testing.T) {
 				&BasicServiceProvider{},
 			},
 			expected: []foundation.ServiceProvider{
+				&AllEmptyProvider{},
 				&MockProviderE{},
 				&BasicServiceProvider{},
-				&AllEmptyProvider{},
 			},
 		},
 		{
@@ -545,19 +545,19 @@ func TestSortConfiguredServiceProviders(t *testing.T) {
 				&MockProviderE{},
 			},
 			expected: []foundation.ServiceProvider{
+				&AllEmptyProvider{},
+				&EmptyBindingsProvider{},
 				&EmptyDependenciesProvider{},
 				&EmptyProvideForProvider{},
 				&MockProviderE{},
-				&EmptyBindingsProvider{},
-				&AllEmptyProvider{},
 			},
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			result := sortConfiguredServiceProviders(tc.providers)
-			assert.Equal(t, tc.expected, result)
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			result := sortConfiguredServiceProviders(tt.providers)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }

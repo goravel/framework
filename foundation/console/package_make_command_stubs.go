@@ -37,14 +37,17 @@ var App foundation.Application
 type ServiceProvider struct {
 }
 
+// Bindings returns what bindings the service provider will register.
 func (r *ServiceProvider) Bindings() []string {
 	return []string{}
 }
 
+// Dependencies returns what dependencies the service provider needs.
 func (r *ServiceProvider) Dependencies() []string {
 	return []string{}
 }
 
+// ProvideFor returns what services the service provider provides.
 func (r *ServiceProvider) ProvideFor() []string {
 	return []string{}
 }

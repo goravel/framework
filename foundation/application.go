@@ -484,7 +484,7 @@ func sortConfiguredServiceProviders(providers []foundation.ServiceProvider) []fo
 	// Add any remaining providers that weren't in the dependency graph
 	for _, provider := range providers {
 		if !used[provider] {
-			sortedProviders = append(sortedProviders, provider)
+			sortedProviders = append([]foundation.ServiceProvider{provider}, sortedProviders...)
 		}
 	}
 

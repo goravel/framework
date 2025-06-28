@@ -24,6 +24,23 @@ var (
 type ServiceProvider struct {
 }
 
+func (r *ServiceProvider) Bindings() []string {
+	return []string{
+		contracts.BindingAuth,
+	}
+}
+
+func (r *ServiceProvider) Dependencies() []string {
+	return []string{
+		contracts.BindingConfig,
+		contracts.BindingLog,
+	}
+}
+
+func (r *ServiceProvider) ProvideFor() []string {
+	return []string{}
+}
+
 func (r *ServiceProvider) Register(app foundation.Application) {
 	app.BindWith(contracts.BindingAuth, func(app foundation.Application, parameters map[string]any) (any, error) {
 		configFacade = app.MakeConfig()
