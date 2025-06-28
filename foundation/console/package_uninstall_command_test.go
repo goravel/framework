@@ -136,7 +136,7 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 					s.NoError(NewPackageUninstallCommand().Handle(mockContext))
 				})
 				if env.IsWindows() {
-					s.Contains(captureOutput, `foundation\\console\\config\\app.go: The system cannot find the path specified`)
+					s.Contains(captureOutput, `foundation\console\config\app.go: The system cannot find the path specified`)
 				} else {
 					s.Contains(captureOutput, `foundation/console/config/app.go: no such file or directory`)
 				}

@@ -150,7 +150,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 					s.NoError(NewPackageInstallCommand().Handle(mockContext))
 				})
 				if env.IsWindows() {
-					s.Contains(captureOutput, `foundation\\console\\config\\app.go: The system cannot find the path specified`)
+					s.Contains(captureOutput, `foundation\console\config\app.go: The system cannot find the path specified`)
 				} else {
 					s.Contains(captureOutput, `foundation/console/config/app.go: no such file or directory`)
 				}
