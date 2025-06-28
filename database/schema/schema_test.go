@@ -8,6 +8,25 @@ import (
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 )
 
+type User struct {
+	ID int64 `gorm:"primaryKey"`
+}
+
+type Address struct {
+	ID int64 `gorm:"primaryKey"`
+}
+
+type Relation struct {
+	UserID    int64 `gorm:"primaryKey"`
+	AddressID int64 `gorm:"primaryKey"`
+}
+
+func defaultModels() []contractsschema.Model {
+	return []contractsschema.Model{
+		{Name: "User", Type: &User{}},
+	}
+}
+
 type SchemaTestSuite struct {
 	suite.Suite
 }
@@ -135,6 +154,75 @@ func (r *SchemaTestSuite) TestExtendGoTypes() {
 		r.Run(test.name, func() {
 			schema := getSchema()
 			schema.extendGoTypes(test.overrides)
+			test.assert(schema)
+		})
+	}
+}
+
+func (r *SchemaTestSuite) TestExtendModels() {
+	defaultLen := len(defaultModels())
+	tests := []struct {
+		name      string
+		overrides []contractsschema.Model
+		assert    func(schema *Schema)
+	}{
+		{
+			name:      "empty_overrides",
+			overrides: nil,
+			assert: func(schema *Schema) {
+				r.Equal(defaultLen, len(schema.models), "models length should remain unchanged with nil overrides")
+			},
+		},
+		{
+			name: "add_single_new_model",
+			overrides: []contractsschema.Model{
+				{Name: "Address", Type: &Address{}},
+			},
+			assert: func(schema *Schema) {
+				r.Equal(defaultLen+1, len(schema.models), "models length should increase by 1")
+
+				addressModel := schema.GetModel("Address")
+				r.NotNil(addressModel, "Address model should not be nil")
+				r.Equal("Address", addressModel.Name, "Model name should match")
+			},
+		},
+		{
+			name: "add_multiple_new_models",
+			overrides: []contractsschema.Model{
+				{Name: "Address", Type: &Address{}},
+				{Name: "Relation", Type: &Relation{}},
+			},
+			assert: func(schema *Schema) {
+				r.Equal(defaultLen+2, len(schema.models), "models length should increase by 2")
+
+				addressModel := schema.GetModel("Address")
+				r.NotNil(addressModel, "Address model should not be nil")
+				r.Equal("Address", addressModel.Name, "Model name should match")
+
+				relationModel := schema.GetModel("Relation")
+				r.NotNil(relationModel, "Relation model should not be nil")
+				r.Equal("Relation", relationModel.Name, "Model name should match")
+			},
+		},
+		{
+			name: "override_existing_model",
+			overrides: []contractsschema.Model{
+				{Name: "User", Type: &User{}},
+			},
+			assert: func(schema *Schema) {
+				r.Equal(defaultLen, len(schema.models), "models length should remain unchanged when overriding")
+
+				userModel := schema.GetModel("User")
+				r.NotNil(userModel, "User model should not be nil")
+				r.Equal("User", userModel.Name, "Model name should match")
+			},
+		},
+	}
+
+	for _, test := range tests {
+		r.Run(test.name, func() {
+			schema := getSchema()
+			schema.extendModels(test.overrides)
 			test.assert(schema)
 		})
 	}
