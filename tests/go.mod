@@ -27,7 +27,7 @@ require (
 	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/containerd/console v1.0.5 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/dromara/carbon/v2 v2.6.6 // indirect
+	github.com/dromara/carbon/v2 v2.6.9 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.9 // indirect
 	github.com/go-sql-driver/mysql v1.9.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
