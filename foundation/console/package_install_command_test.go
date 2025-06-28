@@ -13,6 +13,7 @@ import (
 	"github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/maps"
 )
 
@@ -148,7 +149,11 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 				captureOutput := color.CaptureOutput(func(w io.Writer) {
 					s.NoError(NewPackageInstallCommand().Handle(mockContext))
 				})
-				s.Contains(captureOutput, `foundation/console/config/app.go: no such file or directory`)
+				if env.IsWindows() {
+					s.Contains(captureOutput, `foundation\\console\\config\\app.go: The system cannot find the path specified`)
+				} else {
+					s.Contains(captureOutput, `foundation/console/config/app.go: no such file or directory`)
+				}
 			},
 		},
 		{
