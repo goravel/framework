@@ -1,6 +1,7 @@
 package console
 
 import (
+	"fmt"
 	"os/exec"
 	"strings"
 
@@ -9,13 +10,21 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
+	"github.com/goravel/framework/support/maps"
 )
 
-type PackageInstallCommand struct {
+var facadeToPath = map[string]string{
+	"auth": "github.com/goravel/framework/auth",
 }
 
-func NewPackageInstallCommand() *PackageInstallCommand {
-	return &PackageInstallCommand{}
+type PackageInstallCommand struct {
+	artisan console.Artisan
+}
+
+func NewPackageInstallCommand(artisan console.Artisan) *PackageInstallCommand {
+	return &PackageInstallCommand{
+		artisan: artisan,
+	}
 }
 
 // Signature The name and signature of the console command.
@@ -25,25 +34,30 @@ func (r *PackageInstallCommand) Signature() string {
 
 // Description The console command description.
 func (r *PackageInstallCommand) Description() string {
-	return "Install a package"
+	return "Install a package or a facade"
 }
 
 // Extend The console command extend.
 func (r *PackageInstallCommand) Extend() command.Extend {
 	return command.Extend{
-		ArgsUsage: " <package@version>",
+		ArgsUsage: " <package@version> or <facade>",
 		Category:  "package",
 	}
 }
 
 // Handle Execute the console command.
 func (r *PackageInstallCommand) Handle(ctx console.Context) error {
+	if r.artisan == nil {
+		ctx.Error(errors.ArtisanFacadeNotSet.Error())
+		return nil
+	}
+
 	pkg := ctx.Argument(0)
 	if pkg == "" {
 		var err error
-		pkg, err = ctx.Ask("Enter the package name to install", console.AskOption{
+		pkg, err = ctx.Ask("Enter the package/facade name to install", console.AskOption{
 			Description: "If no version is specified, install the latest",
-			Placeholder: " E.g example.com/pkg or example.com/pkg@v1.0.0",
+			Placeholder: " E.g example.com/pkg or example.com/pkg@v1.0.0 or cache",
 			Prompt:      ">",
 			Validate: func(s string) error {
 				if s == "" {
@@ -59,29 +73,34 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 		}
 	}
 
+	if isPackage(pkg) {
+		return r.installPackage(ctx, pkg)
+	}
+
+	return r.installFacade(ctx, pkg)
+}
+
+func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) error {
 	pkgPath, _, _ := strings.Cut(pkg, "@")
 	setup := pkgPath + "/setup"
 
 	// get package
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "get", pkg)); err != nil {
-		color.Errorln("failed to get package:")
-		color.Red().Println(err.Error())
+		ctx.Error(errors.PackageGetPackageFailed.Args(err.Error()).Error())
 
 		return nil
 	}
 
 	// install package
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install")); err != nil {
-		color.Errorln("failed to install package:")
-		color.Red().Println(err.Error())
+		ctx.Error(errors.PackageInstallPackageFailed.Args(err.Error()).Error())
 
 		return nil
 	}
 
 	// tidy go.mod file
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
-		color.Errorln("failed to tidy go.mod file:")
-		color.Red().Println(err.Error())
+		ctx.Error(errors.PackageTidyGoModFailed.Args(err.Error()).Error())
 
 		return nil
 	}
@@ -89,4 +108,29 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 	color.Successf("Package %s installed successfully\n", pkg)
 
 	return nil
+}
+
+func (r *PackageInstallCommand) installFacade(ctx console.Context, facade string) error {
+	path, exists := facadeToPath[facade]
+	if !exists {
+		ctx.Error(errors.PackageFacadeNotFound.Args(facade).Error())
+		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(maps.Keys(facadeToPath), ", ")))
+		return nil
+	}
+
+	setup := path + "/setup"
+
+	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install")); err != nil {
+		ctx.Error(errors.PackageInstallFacadeFailed.Args(err.Error()).Error())
+
+		return nil
+	}
+
+	color.Successf("Facade %s installed successfully\n", facade)
+
+	return nil
+}
+
+func isPackage(pkg string) bool {
+	return strings.Contains(pkg, "/")
 }

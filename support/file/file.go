@@ -1,6 +1,7 @@
 package file
 
 import (
+	"go/build"
 	"os"
 	"path/filepath"
 	"strings"
@@ -82,6 +83,19 @@ func GetContent(file string) (string, error) {
 	}
 
 	return convert.UnsafeString(data), nil
+}
+
+func GetFrameworkContent(file string) (string, error) {
+	packageName := "github.com/goravel/framework"
+	pkg, err := build.Import(packageName, "", build.FindOnly)
+	if err != nil {
+		return "", err
+	}
+
+	paths := strings.Split(file, "/")
+	paths = append([]string{pkg.Dir}, paths...)
+
+	return GetContent(filepath.Join(paths...))
 }
 
 func LastModified(file, timezone string) (time.Time, error) {

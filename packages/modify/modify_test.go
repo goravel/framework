@@ -13,7 +13,7 @@ import (
 	contractsmatch "github.com/goravel/framework/contracts/packages/match"
 	"github.com/goravel/framework/contracts/packages/modify"
 	"github.com/goravel/framework/packages/match"
-	"github.com/goravel/framework/support/file"
+	supportfile "github.com/goravel/framework/support/file"
 )
 
 type ModifyGoFileTestSuite struct {
@@ -48,7 +48,7 @@ func (s *ModifyGoFileTestSuite) TestModifyGoFile() {
 		{
 			name: "parse file failed",
 			setup: func() {
-				s.NoError(file.PutContent(s.file, "package main \n invalid go code"))
+				s.NoError(supportfile.PutContent(s.file, "package main \n invalid go code"))
 			},
 			assert: func(err error) {
 				s.Error(err)
@@ -63,7 +63,7 @@ func main() {
 	fmt.Println("Hello, test!")
 }
 `
-				s.Require().NoError(file.PutContent(s.file, src))
+				s.Require().NoError(supportfile.PutContent(s.file, src))
 			},
 			matchers: []contractsmatch.GoNode{
 				match.BasicLit("Hello, test!"),
@@ -81,7 +81,7 @@ func main() {
 	fmt.Println("Hello, test!")
 }
 `
-				s.Require().NoError(file.PutContent(s.file, src))
+				s.Require().NoError(supportfile.PutContent(s.file, src))
 			},
 			actions: []modify.Action{func(cursor *dstutil.Cursor) {
 				cursor.Replace(&dst.BasicLit{
@@ -94,7 +94,7 @@ func main() {
 			},
 			assert: func(err error) {
 				s.NoError(err)
-				content, err := file.GetContent(s.file)
+				content, err := supportfile.GetContent(s.file)
 				s.NoError(err)
 				s.Contains(content, `fmt.Println("Hello, test!!!")`)
 			},

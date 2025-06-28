@@ -113,6 +113,14 @@ func HasAny[K comparable, V any](mp map[K]V, keys ...K) bool {
 	return false
 }
 
+func Keys[K comparable, V any](mp map[K]V) []K {
+	keys := make([]K, 0, len(mp))
+	for k := range mp {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
 // Only returns the items in the map with the specified keys.
 func Only[K comparable, V any](mp map[K]V, keys ...K) map[K]V {
 	result := make(map[K]V)

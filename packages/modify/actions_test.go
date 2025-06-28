@@ -10,7 +10,7 @@ import (
 	contractmatch "github.com/goravel/framework/contracts/packages/match"
 	"github.com/goravel/framework/contracts/packages/modify"
 	"github.com/goravel/framework/packages/match"
-	"github.com/goravel/framework/support/file"
+	supportfile "github.com/goravel/framework/support/file"
 )
 
 type ModifyActionsTestSuite struct {
@@ -400,9 +400,9 @@ func (kernel Kernel) Commands() []console.Command {
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
 			sourceFile := filepath.Join(s.T().TempDir(), "test.go")
-			s.Require().NoError(file.PutContent(sourceFile, tt.content))
+			s.Require().NoError(supportfile.PutContent(sourceFile, tt.content))
 			s.Require().NoError(GoFile(sourceFile).Find(tt.matchers).Modify(tt.actions...).Apply())
-			content, err := file.GetContent(sourceFile)
+			content, err := supportfile.GetContent(sourceFile)
 			s.Require().NoError(err)
 			tt.assert(content)
 		})

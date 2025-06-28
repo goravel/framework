@@ -11,8 +11,35 @@ import (
 	"github.com/goravel/framework/contracts/packages/match"
 	"github.com/goravel/framework/contracts/packages/modify"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/support/file"
+	supportfile "github.com/goravel/framework/support/file"
 )
+
+type file struct {
+	path    string
+	content string
+	force   bool
+}
+
+func File(path string) modify.File {
+	return &file{path: path}
+}
+
+func (r *file) Apply() error {
+	if supportfile.Exists(r.path) && !r.force {
+		return errors.FileAlreadyExists.Args(r.path)
+	}
+
+	return supportfile.PutContent(r.path, r.content)
+}
+
+func (r *file) Overwrite(content string, forces ...bool) modify.Apply {
+	r.content = content
+	if len(forces) > 0 {
+		r.force = forces[0]
+	}
+
+	return r
+}
 
 type goFile struct {
 	file      string
@@ -24,7 +51,7 @@ func GoFile(file string) modify.GoFile {
 }
 
 func (r goFile) Apply() error {
-	source, err := file.GetContent(r.file)
+	source, err := supportfile.GetContent(r.file)
 	if err != nil {
 		return err
 	}
@@ -46,13 +73,13 @@ func (r goFile) Apply() error {
 		return err
 	}
 
-	return file.PutContent(r.file, buf.String())
+	return supportfile.PutContent(r.file, buf.String())
 }
 
 func (r goFile) Find(matchers []match.GoNode) modify.GoNode {
 	modifier := &GoNode{
 		matchers: matchers,
-		file:     &r,
+		goFile:   &r,
 	}
 	r.modifiers = append(r.modifiers, modifier)
 	return modifier
@@ -60,7 +87,7 @@ func (r goFile) Find(matchers []match.GoNode) modify.GoNode {
 
 type GoNode struct {
 	actions  []modify.Action
-	file     *goFile
+	goFile   *goFile
 	matchers []match.GoNode
 }
 
@@ -118,5 +145,5 @@ func (r GoNode) Apply(node dst.Node) (err error) {
 func (r *GoNode) Modify(actions ...modify.Action) modify.GoFile {
 	r.actions = actions
 
-	return r.file
+	return r.goFile
 }

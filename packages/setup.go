@@ -15,8 +15,8 @@ import (
 type setup struct {
 	command     string
 	module      string
-	onInstall   []modify.File
-	onUninstall []modify.File
+	onInstall   []modify.Apply
+	onUninstall []modify.Apply
 	force       bool
 }
 
@@ -42,13 +42,13 @@ func Setup(args []string) packages.Setup {
 	return st
 }
 
-func (r *setup) Install(modifiers ...modify.File) packages.Setup {
+func (r *setup) Install(modifiers ...modify.Apply) packages.Setup {
 	r.onInstall = modifiers
 
 	return r
 }
 
-func (r *setup) Uninstall(modifiers ...modify.File) packages.Setup {
+func (r *setup) Uninstall(modifiers ...modify.Apply) packages.Setup {
 	r.onUninstall = modifiers
 
 	return r

@@ -22,16 +22,16 @@ func TestPackageInstallCommandTestSuite(t *testing.T) {
 
 func (s *PackageInstallCommandTestSuite) TestSignature() {
 	expected := "package:install"
-	s.Require().Equal(expected, NewPackageInstallCommand().Signature())
+	s.Require().Equal(expected, NewPackageInstallCommand(nil).Signature())
 }
 
 func (s *PackageInstallCommandTestSuite) TestDescription() {
 	expected := "Install a package"
-	s.Require().Equal(expected, NewPackageInstallCommand().Description())
+	s.Require().Equal(expected, NewPackageInstallCommand(nil).Description())
 }
 
 func (s *PackageInstallCommandTestSuite) TestExtend() {
-	cmd := NewPackageInstallCommand()
+	cmd := NewPackageInstallCommand(nil)
 	got := cmd.Extend()
 
 	s.Run("should return correct category", func() {
@@ -70,7 +70,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 				mockContext.EXPECT().Error("the package name cannot be empty").Once()
 			},
 			assert: func() {
-				s.NoError(NewPackageInstallCommand().Handle(mockContext))
+				s.NoError(NewPackageInstallCommand(nil).Handle(mockContext))
 			},
 		},
 		{
@@ -84,7 +84,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			},
 			assert: func() {
 				captureOutput := color.CaptureOutput(func(w io.Writer) {
-					s.NoError(NewPackageInstallCommand().Handle(mockContext))
+					s.NoError(NewPackageInstallCommand(nil).Handle(mockContext))
 				})
 				s.Contains(captureOutput, "failed to get package:")
 				s.Contains(captureOutput, `go: package@unknown: malformed module path "package": missing dot in first path element`)
@@ -103,7 +103,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			},
 			assert: func() {
 				captureOutput := color.CaptureOutput(func(w io.Writer) {
-					s.NoError(NewPackageInstallCommand().Handle(mockContext))
+					s.NoError(NewPackageInstallCommand(nil).Handle(mockContext))
 				})
 				s.Contains(captureOutput, "failed to install package:")
 				s.Contains(captureOutput, `package package/setup is not in std`)
@@ -124,7 +124,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			},
 			assert: func() {
 				captureOutput := color.CaptureOutput(func(w io.Writer) {
-					s.NoError(NewPackageInstallCommand().Handle(mockContext))
+					s.NoError(NewPackageInstallCommand(nil).Handle(mockContext))
 				})
 				s.Contains(captureOutput, "failed to tidy go.mod file:")
 				s.Contains(captureOutput, `go: modules disabled by GO111MODULE=off`)
@@ -141,7 +141,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			},
 			assert: func() {
 				s.Contains(color.CaptureOutput(func(w io.Writer) {
-					s.NoError(NewPackageInstallCommand().Handle(mockContext))
+					s.NoError(NewPackageInstallCommand(nil).Handle(mockContext))
 				}), "Package package@unknown installed successfully")
 			},
 		},
