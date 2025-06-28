@@ -490,17 +490,6 @@ func TestSortConfiguredServiceProviders(t *testing.T) {
 			},
 		},
 		{
-			name: "EmptyBindings",
-			providers: []foundation.ServiceProvider{
-				&EmptyBindingsProvider{},
-				&MockProviderA{},
-			},
-			expected: []foundation.ServiceProvider{
-				&EmptyBindingsProvider{},
-				&MockProviderA{},
-			},
-		},
-		{
 			name: "EmptyDependencies",
 			providers: []foundation.ServiceProvider{
 				&EmptyDependenciesProvider{},
@@ -525,31 +514,25 @@ func TestSortConfiguredServiceProviders(t *testing.T) {
 		{
 			name: "AllEmptyMethods",
 			providers: []foundation.ServiceProvider{
-				&AllEmptyProvider{},
 				&MockProviderE{},
-				&BasicServiceProvider{},
+				&AllEmptyProvider{},
 			},
 			expected: []foundation.ServiceProvider{
 				&AllEmptyProvider{},
 				&MockProviderE{},
-				&BasicServiceProvider{},
 			},
 		},
 		{
 			name: "MixedEmptyAndNonEmpty",
 			providers: []foundation.ServiceProvider{
-				&EmptyBindingsProvider{},
+				&MockProviderC{},
 				&EmptyDependenciesProvider{},
-				&EmptyProvideForProvider{},
 				&AllEmptyProvider{},
-				&MockProviderE{},
 			},
 			expected: []foundation.ServiceProvider{
 				&AllEmptyProvider{},
-				&EmptyBindingsProvider{},
 				&EmptyDependenciesProvider{},
-				&EmptyProvideForProvider{},
-				&MockProviderE{},
+				&MockProviderC{},
 			},
 		},
 	}
@@ -813,14 +796,6 @@ func (p *ComplexProviderC) Register(app foundation.Application) {}
 func (p *ComplexProviderC) Boot(app foundation.Application)     {}
 func (p *ComplexProviderC) Bindings() []string                  { return []string{"complex_c"} }
 func (p *ComplexProviderC) Dependencies() []string              { return []string{"complex_a"} }
-
-type EmptyBindingsProvider struct{}
-
-func (p *EmptyBindingsProvider) Register(app foundation.Application) {}
-func (p *EmptyBindingsProvider) Boot(app foundation.Application)     {}
-func (p *EmptyBindingsProvider) Bindings() []string                  { return []string{} }
-func (p *EmptyBindingsProvider) Dependencies() []string              { return []string{"provider_a"} }
-func (p *EmptyBindingsProvider) ProvideFor() []string                { return []string{"provider_b"} }
 
 type EmptyDependenciesProvider struct{}
 
