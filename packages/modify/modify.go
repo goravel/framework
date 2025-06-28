@@ -15,16 +15,32 @@ import (
 )
 
 type file struct {
-	path    string
-	content string
-	force   bool
+	path string
 }
 
 func File(path string) modify.File {
 	return &file{path: path}
 }
 
-func (r *file) Apply() error {
+func (r *file) Overwrite(content string, forces ...bool) modify.Apply {
+	return &OverwriteFile{
+		path:    r.path,
+		content: content,
+		force:   len(forces) > 0 && forces[0],
+	}
+}
+
+func (r *file) Remove() modify.Apply {
+	return &RemoveFile{path: r.path}
+}
+
+type OverwriteFile struct {
+	path    string
+	content string
+	force   bool
+}
+
+func (r *OverwriteFile) Apply() error {
 	if supportfile.Exists(r.path) && !r.force {
 		return errors.FileAlreadyExists.Args(r.path)
 	}
@@ -32,13 +48,12 @@ func (r *file) Apply() error {
 	return supportfile.PutContent(r.path, r.content)
 }
 
-func (r *file) Overwrite(content string, forces ...bool) modify.Apply {
-	r.content = content
-	if len(forces) > 0 {
-		r.force = forces[0]
-	}
+type RemoveFile struct {
+	path string
+}
 
-	return r
+func (r *RemoveFile) Apply() error {
+	return supportfile.Remove(r.path)
 }
 
 type goFile struct {

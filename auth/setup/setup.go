@@ -25,8 +25,9 @@ func main() {
 		).
 		Uninstall(
 			modify.GoFile(path.Config("app.go")).
-				Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Unregister("&auth.ServiceProvider{}")),
+				Find(match.Providers()).Modify(modify.Unregister("&auth.ServiceProvider{}")).
+				Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
+			modify.File(path.Config("auth.go")).Remove(),
 		).
 		Execute()
 }

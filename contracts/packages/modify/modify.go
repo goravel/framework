@@ -15,6 +15,7 @@ type Apply interface {
 
 type File interface {
 	Overwrite(content string, forces ...bool) Apply
+	Remove() Apply
 }
 
 type GoFile interface {

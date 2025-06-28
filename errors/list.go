@@ -125,11 +125,6 @@ var (
 
 	PackageConfigKeyExists       = New("config key '%s' already exists,using ReplaceConfig instead if you want to update it")
 	PackageFacadeNotFound        = New("facade %s not found")
-	PackageGetPackageFailed      = New("failed to get package: %v")
-	PackageInstallPackageFailed  = New("failed to install package: %v")
-	PackageInstallFacadeFailed   = New("failed to install facade: %v")
-	PackagePublishFacadeFailed   = New("failed to publish facade: %v")
-	PackageTidyGoModFailed       = New("failed to tidy go.mod file: %v")
 	PackageMatchGoNodeFail       = New("%d out of %d matchers did not match")
 	PackageModifyGoFileFail      = New("modify go file '%s' failed: %v")
 	PackageModuleNameEmpty       = New("package module name is empty, please run command with module name")

@@ -86,21 +86,21 @@ func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) 
 
 	// get package
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "get", pkg)); err != nil {
-		ctx.Error(errors.PackageGetPackageFailed.Args(err.Error()).Error())
+		color.Red().Println(err.Error())
 
 		return nil
 	}
 
 	// install package
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install")); err != nil {
-		ctx.Error(errors.PackageInstallPackageFailed.Args(err.Error()).Error())
+		color.Red().Println(err.Error())
 
 		return nil
 	}
 
 	// tidy go.mod file
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
-		ctx.Error(errors.PackageTidyGoModFailed.Args(err.Error()).Error())
+		color.Red().Println(err.Error())
 
 		return nil
 	}
@@ -113,7 +113,7 @@ func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) 
 func (r *PackageInstallCommand) installFacade(ctx console.Context, facade string) error {
 	path, exists := facadeToPath[facade]
 	if !exists {
-		ctx.Error(errors.PackageFacadeNotFound.Args(facade).Error())
+		ctx.Warning(errors.PackageFacadeNotFound.Args(facade).Error())
 		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(maps.Keys(facadeToPath), ", ")))
 		return nil
 	}
@@ -121,7 +121,7 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, facade string
 	setup := path + "/setup"
 
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install")); err != nil {
-		ctx.Error(errors.PackageInstallFacadeFailed.Args(err.Error()).Error())
+		color.Red().Println(err.Error())
 
 		return nil
 	}

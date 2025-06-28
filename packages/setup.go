@@ -75,7 +75,6 @@ func (r *setup) Execute() {
 
 		color.Successln("package uninstalled successfully")
 	}
-
 }
 
 func (r *setup) reportError(err error) {
