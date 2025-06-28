@@ -63,7 +63,7 @@ func (r *Application) Boot() {
 		console.NewEnvDecryptCommand(),
 		console.NewTestMakeCommand(),
 		console.NewPackageMakeCommand(),
-		console.NewPackageInstallCommand(r.MakeArtisan()),
+		console.NewPackageInstallCommand(),
 		console.NewPackageUninstallCommand(),
 		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
 	})

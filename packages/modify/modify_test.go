@@ -52,6 +52,7 @@ func (s *FileTestSuite) TestOverwrite() {
 				content, readErr := supportfile.GetContent(path)
 				s.NoError(readErr)
 				s.Equal("new content", content)
+				s.NoError(supportfile.Remove(path))
 			},
 		},
 		{
@@ -87,6 +88,7 @@ func (s *FileTestSuite) TestOverwrite() {
 				content, readErr := supportfile.GetContent(path)
 				s.NoError(readErr)
 				s.Equal("new content", content)
+				s.NoError(supportfile.Remove(path))
 			},
 		},
 		{
@@ -102,6 +104,7 @@ func (s *FileTestSuite) TestOverwrite() {
 				content, readErr := supportfile.GetContent(path)
 				s.NoError(readErr)
 				s.Empty(content)
+				s.NoError(supportfile.Remove(path))
 			},
 		},
 		{
@@ -117,6 +120,7 @@ func (s *FileTestSuite) TestOverwrite() {
 				content, readErr := supportfile.GetContent(path)
 				s.NoError(readErr)
 				s.Equal("content with\nnewlines\tand\ttabs", content)
+				s.NoError(supportfile.Remove(path))
 			},
 		},
 	}
@@ -151,6 +155,7 @@ func (s *FileTestSuite) TestRemove() {
 			assert: func(path string, err error) {
 				s.NoError(err)
 				s.False(supportfile.Exists(path))
+				s.NoError(supportfile.Remove(path))
 			},
 		},
 		{

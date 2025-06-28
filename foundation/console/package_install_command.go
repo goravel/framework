@@ -18,13 +18,10 @@ var facadeToPath = map[string]string{
 }
 
 type PackageInstallCommand struct {
-	artisan console.Artisan
 }
 
-func NewPackageInstallCommand(artisan console.Artisan) *PackageInstallCommand {
-	return &PackageInstallCommand{
-		artisan: artisan,
-	}
+func NewPackageInstallCommand() *PackageInstallCommand {
+	return &PackageInstallCommand{}
 }
 
 // Signature The name and signature of the console command.
@@ -47,11 +44,6 @@ func (r *PackageInstallCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *PackageInstallCommand) Handle(ctx console.Context) error {
-	if r.artisan == nil {
-		ctx.Error(errors.ArtisanFacadeNotSet.Error())
-		return nil
-	}
-
 	pkg := ctx.Argument(0)
 	if pkg == "" {
 		var err error
