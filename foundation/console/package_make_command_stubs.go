@@ -37,6 +37,18 @@ var App foundation.Application
 type ServiceProvider struct {
 }
 
+func (r *ServiceProvider) Bindings() []string {
+	return []string{}
+}
+
+func (r *ServiceProvider) Dependencies() []string {
+	return []string{}
+}
+
+func (r *ServiceProvider) ProvideFor() []string {
+	return []string{}
+}
+
 func (r *ServiceProvider) Register(app foundation.Application) {
 	App = app
 

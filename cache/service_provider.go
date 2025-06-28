@@ -11,6 +11,23 @@ import (
 type ServiceProvider struct {
 }
 
+func (r *ServiceProvider) Bindings() []string {
+	return []string{
+		contracts.BindingCache,
+	}
+}
+
+func (r *ServiceProvider) Dependencies() []string {
+	return []string{
+		contracts.BindingConfig,
+		contracts.BindingLog,
+	}
+}
+
+func (r *ServiceProvider) ProvideFor() []string {
+	return []string{}
+}
+
 func (r *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(contracts.BindingCache, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()

@@ -29,7 +29,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 func (r *ServiceProvider) Boot(app foundation.Application) {
 	artisanFacade = app.MakeArtisan()
 	if artisanFacade == nil {
-		color.Errorln(errors.ArtisanFacadeNotSet.SetModule(errors.ModuleTesting))
+		color.Errorln(errors.ConsoleFacadeNotSet.SetModule(errors.ModuleTesting))
 	}
 
 	routeFacade = app.MakeRoute()

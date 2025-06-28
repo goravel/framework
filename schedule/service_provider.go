@@ -20,7 +20,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 
 		artisan := app.MakeArtisan()
 		if artisan == nil {
-			return nil, errors.ArtisanFacadeNotSet.SetModule(errors.ModuleSchedule)
+			return nil, errors.ConsoleFacadeNotSet.SetModule(errors.ModuleSchedule)
 		}
 
 		log := app.MakeLog()

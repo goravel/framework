@@ -22,7 +22,7 @@ type Database struct {
 
 func NewDatabase(artisan contractsconsole.Artisan, config contractsconfig.Config, orm contractsorm.Orm, connection string) (*Database, error) {
 	if artisan == nil {
-		return nil, errors.ArtisanFacadeNotSet
+		return nil, errors.ConsoleFacadeNotSet
 	}
 	if config == nil {
 		return nil, errors.ConfigFacadeNotSet

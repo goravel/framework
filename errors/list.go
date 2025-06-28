@@ -2,9 +2,9 @@ package errors
 
 var (
 	ApplicationNotSet       = New("application instance is not initialized")
-	ArtisanFacadeNotSet     = New("artisan facade is not initialized")
 	CacheFacadeNotSet       = New("cache facade is not initialized")
 	ConfigFacadeNotSet      = New("config facade is not initialized")
+	ConsoleFacadeNotSet     = New("console facade is not initialized, skipping artisan command execution")
 	DBFacadeNotSet          = New("db facade is not initialized")
 	JSONParserNotSet        = New("JSON parser is not initialized")
 	LogFacadeNotSet         = New("log facade is not initialized")
@@ -16,6 +16,7 @@ var (
 	InvalidHttpContext      = New("invalid http context")
 	RouteFacadeNotSet       = New("route facade is not initialized")
 	SessionFacadeNotSet     = New("session facade is not initialized")
+	ServiceProviderCycle    = New("circular dependency detected between providers: %s")
 
 	AuthEmptySecret             = New("authentication secret is missing or required")
 	AuthInvalidClaims           = New("authentication token contains invalid claims")
@@ -35,6 +36,8 @@ var (
 	CacheMemoryDriverNotSupportDocker = New("memory driver doesn't support docker")
 	CacheMemoryInvalidIntValueType    = New("value type of %s is not *atomic.Int64 or *int64 or *atomic.Int32 or *int32")
 	CacheStoreContractNotFulfilled    = New("%s doesn't implement contracts/cache/store")
+
+	ConsoleProvidersNotArray = New("the app.providers configuration is not of type []foundation.ServiceProvider, skipping registering service providers")
 
 	ConsoleCommandRegisterFailed = New("command register failed: %v")
 	ConsoleDropAllTablesFailed   = New("drop all tables failed: %v")

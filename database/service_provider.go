@@ -22,6 +22,26 @@ import (
 type ServiceProvider struct {
 }
 
+func (r *ServiceProvider) Bindings() []string {
+	return []string{
+		contracts.BindingOrm,
+		contracts.BindingDB,
+		contracts.BindingSchema,
+		contracts.BindingSeeder,
+	}
+}
+
+func (r *ServiceProvider) Dependencies() []string {
+	return []string{
+		contracts.BindingConfig,
+		contracts.BindingLog,
+	}
+}
+
+func (r *ServiceProvider) ProvideFor() []string {
+	return []string{}
+}
+
 func (r *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(contracts.BindingOrm, func(app foundation.Application) (any, error) {
 		ctx := context.Background()
