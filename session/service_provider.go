@@ -1,7 +1,7 @@
 package session
 
 import (
-	"github.com/goravel/framework/contracts"
+	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/session"
@@ -16,8 +16,20 @@ var (
 type ServiceProvider struct {
 }
 
+func (r *ServiceProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings: []string{
+			binding.Session,
+		},
+		Dependencies: []string{
+			binding.Config,
+		},
+		ProvideFor: []string{},
+	}
+}
+
 func (r *ServiceProvider) Register(app foundation.Application) {
-	app.Singleton(contracts.BindingSession, func(app foundation.Application) (any, error) {
+	app.Singleton(binding.Session, func(app foundation.Application) (any, error) {
 		c := app.MakeConfig()
 		if c == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleSession)
