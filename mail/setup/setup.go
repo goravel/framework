@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	config, err := supportfile.GetFrameworkContent("mail/config/config.go")
+	config, err := supportfile.GetFrameworkContent("mail/config/mail.go")
 	if err != nil {
 		panic(err)
 	}

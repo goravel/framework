@@ -29,9 +29,9 @@ var (
 func (r *ServiceProvider) Relationship() binding.Relationship {
 	return binding.Relationship{
 		Bindings: []string{
+			binding.Http,
 			binding.RateLimiter,
 			binding.View,
-			binding.Http,
 		},
 		Dependencies: []string{
 			binding.Cache,

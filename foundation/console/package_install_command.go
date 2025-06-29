@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
@@ -12,17 +13,6 @@ import (
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/maps"
 )
-
-var facadeToPath = map[string]string{
-	"Artisan":  "github.com/goravel/framework/console",
-	"Auth":     "github.com/goravel/framework/auth",
-	"Cache":    "github.com/goravel/framework/cache",
-	"Log":      "github.com/goravel/framework/log",
-	"Orm":      "github.com/goravel/framework/orm",
-	"Queue":    "github.com/goravel/framework/queue",
-	"Schedule": "github.com/goravel/framework/schedule",
-	"Session":  "github.com/goravel/framework/session",
-}
 
 type PackageInstallCommand struct {
 }
@@ -110,10 +100,10 @@ func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) 
 }
 
 func (r *PackageInstallCommand) installFacade(ctx console.Context, facade string) error {
-	path, exists := facadeToPath[facade]
+	path, exists := binding.FacadeToPath[facade]
 	if !exists {
 		ctx.Warning(errors.PackageFacadeNotFound.Args(facade).Error())
-		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(maps.Keys(facadeToPath), ", ")))
+		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(maps.Keys(binding.FacadeToPath), ", ")))
 		return nil
 	}
 

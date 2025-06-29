@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
@@ -106,10 +107,10 @@ func (r *PackageUninstallCommand) uninstallPackage(ctx console.Context, pkg stri
 }
 
 func (r *PackageUninstallCommand) uninstallFacade(ctx console.Context, facade string) error {
-	path, exists := facadeToPath[facade]
+	path, exists := binding.FacadeToPath[facade]
 	if !exists {
 		ctx.Warning(errors.PackageFacadeNotFound.Args(facade).Error())
-		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(maps.Keys(facadeToPath), ", ")))
+		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(maps.Keys(binding.FacadeToPath), ", ")))
 		return nil
 	}
 

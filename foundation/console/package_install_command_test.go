@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
@@ -130,7 +131,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 				facade := "unknown"
 				mockContext.EXPECT().Argument(0).Return(facade).Once()
 				mockContext.EXPECT().Warning(errors.PackageFacadeNotFound.Args(facade).Error()).Once()
-				mockContext.EXPECT().Info(fmt.Sprintf("Available facades: %s", strings.Join(maps.Keys(facadeToPath), ", ")))
+				mockContext.EXPECT().Info(fmt.Sprintf("Available facades: %s", strings.Join(maps.Keys(binding.FacadeToPath), ", ")))
 			},
 			assert: func() {
 				s.NoError(NewPackageInstallCommand().Handle(mockContext))
@@ -140,7 +141,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			name: "facades install failed",
 			setup: func() {
 				mockContext.EXPECT().Argument(0).Return(facade).Once()
-				mockContext.EXPECT().Spinner("> @go run "+facadeToPath[facade]+"/setup install", mock.Anything).
+				mockContext.EXPECT().Spinner("> @go run "+binding.FacadeToPath[facade]+"/setup install", mock.Anything).
 					RunAndReturn(func(s string, option console.SpinnerOption) error {
 						return option.Action()
 					}).Once()
@@ -160,7 +161,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			name: "facades install success(simulate)",
 			setup: func() {
 				mockContext.EXPECT().Argument(0).Return(facade).Once()
-				mockContext.EXPECT().Spinner("> @go run "+facadeToPath[facade]+"/setup install", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+binding.FacadeToPath[facade]+"/setup install", mock.Anything).Return(nil).Once()
 			},
 			assert: func() {
 				s.Contains(color.CaptureOutput(func(w io.Writer) {
