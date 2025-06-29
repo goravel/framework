@@ -19,7 +19,7 @@ func (r *TestCase) Http(t *testing.T) contractshttp.Request {
 
 func (r *TestCase) Seed(seeders ...contractsseeder.Seeder) {
 	if artisanFacade == nil {
-		panic(errors.ArtisanFacadeNotSet.SetModule(errors.ModuleTesting))
+		panic(errors.ConsoleFacadeNotSet.SetModule(errors.ModuleTesting))
 	}
 
 	if err := artisanFacade.Call("--no-ansi db:seed" + getCommandOptionOfSeeders(seeders)); err != nil {
@@ -29,7 +29,7 @@ func (r *TestCase) Seed(seeders ...contractsseeder.Seeder) {
 
 func (r *TestCase) RefreshDatabase(seeders ...contractsseeder.Seeder) {
 	if artisanFacade == nil {
-		panic(errors.ArtisanFacadeNotSet.SetModule(errors.ModuleTesting))
+		panic(errors.ConsoleFacadeNotSet.SetModule(errors.ModuleTesting))
 	}
 
 	if err := artisanFacade.Call("--no-ansi migrate:refresh" + getCommandOptionOfSeeders(seeders)); err != nil {

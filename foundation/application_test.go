@@ -435,3 +435,388 @@ func (s *ApplicationTestSuite) TestMakeValidation() {
 
 	s.NotNil(s.app.MakeValidation())
 }
+
+func TestSortConfiguredServiceProviders(t *testing.T) {
+	testCases := []struct {
+		name      string
+		providers []foundation.ServiceProvider
+		expected  []foundation.ServiceProvider
+	}{
+		{
+			name: "BasicSorting",
+			providers: []foundation.ServiceProvider{
+				&BServiceProvider{},
+				&CServiceProvider{},
+				&AServiceProvider{},
+			},
+			expected: []foundation.ServiceProvider{
+				&AServiceProvider{},
+				&BServiceProvider{},
+				&CServiceProvider{},
+			},
+		},
+		{
+			name: "SingleProvider",
+			providers: []foundation.ServiceProvider{
+				&BasicServiceProvider{},
+			},
+			expected: []foundation.ServiceProvider{
+				&BasicServiceProvider{},
+			},
+		},
+		{
+			name:      "EmptyProviders",
+			providers: []foundation.ServiceProvider{},
+			expected:  []foundation.ServiceProvider{},
+		},
+		{
+			name: "ProvideForRelationship",
+			providers: []foundation.ServiceProvider{
+				&ProvideForBServiceProvider{},
+				&ProvideForAServiceProvider{},
+			},
+			expected: []foundation.ServiceProvider{
+				&ProvideForAServiceProvider{},
+				&ProvideForBServiceProvider{},
+			},
+		},
+		{
+			name: "SingleProviderWithMock",
+			providers: []foundation.ServiceProvider{
+				&MockProviderE{},
+			},
+			expected: []foundation.ServiceProvider{
+				&MockProviderE{},
+			},
+		},
+		{
+			name: "EmptyDependencies",
+			providers: []foundation.ServiceProvider{
+				&EmptyDependenciesProvider{},
+				&MockProviderC{},
+			},
+			expected: []foundation.ServiceProvider{
+				&EmptyDependenciesProvider{},
+				&MockProviderC{},
+			},
+		},
+		{
+			name: "EmptyProvideFor",
+			providers: []foundation.ServiceProvider{
+				&EmptyProvideForProvider{},
+				&MockProviderA{},
+			},
+			expected: []foundation.ServiceProvider{
+				&MockProviderA{},
+				&EmptyProvideForProvider{},
+			},
+		},
+		{
+			name: "AllEmptyMethods",
+			providers: []foundation.ServiceProvider{
+				&MockProviderE{},
+				&AllEmptyProvider{},
+			},
+			expected: []foundation.ServiceProvider{
+				&AllEmptyProvider{},
+				&MockProviderE{},
+			},
+		},
+		{
+			name: "MixedEmptyAndNonEmpty",
+			providers: []foundation.ServiceProvider{
+				&MockProviderC{},
+				&EmptyDependenciesProvider{},
+				&AllEmptyProvider{},
+			},
+			expected: []foundation.ServiceProvider{
+				&AllEmptyProvider{},
+				&EmptyDependenciesProvider{},
+				&MockProviderC{},
+			},
+		},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			result := sortConfiguredServiceProviders(tt.providers)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestSortConfiguredServiceProvidersWithCircularDependency(t *testing.T) {
+	providers := []foundation.ServiceProvider{
+		&ComplexProviderA{},
+		&ComplexProviderB{},
+		&ComplexProviderC{},
+	}
+
+	// 捕获 panic 并验证错误消息
+	defer func() {
+		if r := recover(); r != nil {
+			err, ok := r.(error)
+			assert.True(t, ok, "Expected panic to be an error")
+			assert.Contains(t, err.Error(), "circular dependency detected between providers:")
+			assert.Contains(t, err.Error(), "*foundation.ComplexProviderA")
+			assert.Contains(t, err.Error(), "*foundation.ComplexProviderB")
+			assert.Contains(t, err.Error(), "*foundation.ComplexProviderC")
+		} else {
+			t.Error("Expected panic but none occurred")
+		}
+	}()
+
+	sortConfiguredServiceProviders(providers)
+}
+
+func Test_detectCycle(t *testing.T) {
+	testCases := []struct {
+		name              string
+		graph             map[string][]string
+		bindingToProvider map[string]foundation.ServiceProvider
+		expected          []string
+	}{
+		{
+			name: "SimpleCycle",
+			graph: map[string][]string{
+				"A": {"B"},
+				"B": {"A"},
+			},
+			bindingToProvider: map[string]foundation.ServiceProvider{
+				"A": &MockProviderA{},
+				"B": &MockProviderB{},
+			},
+			expected: []string{"*foundation.MockProviderA", "*foundation.MockProviderB", "*foundation.MockProviderA"},
+		},
+		{
+			name: "ComplexCycle",
+			graph: map[string][]string{
+				"A": {"B"},
+				"B": {"C"},
+				"C": {"A"},
+			},
+			bindingToProvider: map[string]foundation.ServiceProvider{
+				"A": &MockProviderA{},
+				"B": &MockProviderB{},
+				"C": &MockProviderC{},
+			},
+			expected: []string{"*foundation.MockProviderA", "*foundation.MockProviderB", "*foundation.MockProviderC", "*foundation.MockProviderA"},
+		},
+		{
+			name:              "SelfLoop",
+			graph:             map[string][]string{"A": {"A"}},
+			bindingToProvider: map[string]foundation.ServiceProvider{"A": &MockProviderA{}},
+			expected:          []string{"*foundation.MockProviderA", "*foundation.MockProviderA"},
+		},
+		{
+			name:              "NoCycle",
+			graph:             map[string][]string{"A": {"B"}, "B": {"C"}, "C": {}},
+			bindingToProvider: map[string]foundation.ServiceProvider{"A": &MockProviderA{}, "B": &MockProviderB{}, "C": &MockProviderC{}},
+			expected:          nil,
+		},
+		{
+			name:              "DisconnectedComponents",
+			graph:             map[string][]string{"A": {"B"}, "B": {"A"}, "C": {"D"}, "D": {}},
+			bindingToProvider: map[string]foundation.ServiceProvider{"A": &MockProviderA{}, "B": &MockProviderB{}, "C": &MockProviderC{}, "D": &MockProviderD{}},
+			expected:          []string{"*foundation.MockProviderA", "*foundation.MockProviderB", "*foundation.MockProviderA"},
+		},
+		{
+			name:              "EmptyGraph",
+			graph:             map[string][]string{},
+			bindingToProvider: map[string]foundation.ServiceProvider{},
+			expected:          nil,
+		},
+		{
+			name:              "SingleNode",
+			graph:             map[string][]string{"A": {}},
+			bindingToProvider: map[string]foundation.ServiceProvider{"A": &MockProviderA{}},
+			expected:          nil,
+		},
+		{
+			name:              "MultipleCycles",
+			graph:             map[string][]string{"A": {"B"}, "B": {"A"}, "C": {"D"}, "D": {"C"}},
+			bindingToProvider: map[string]foundation.ServiceProvider{"A": &MockProviderA{}, "B": &MockProviderB{}, "C": &MockProviderC{}, "D": &MockProviderD{}},
+			expected:          []string{"*foundation.MockProviderA", "*foundation.MockProviderB", "*foundation.MockProviderA"},
+		},
+		{
+			name:              "ComplexPath",
+			graph:             map[string][]string{"A": {"B"}, "B": {"C"}, "C": {"D"}, "D": {"B"}},
+			bindingToProvider: map[string]foundation.ServiceProvider{"A": &MockProviderA{}, "B": &MockProviderB{}, "C": &MockProviderC{}, "D": &MockProviderD{}},
+			expected:          []string{"*foundation.MockProviderB", "*foundation.MockProviderC", "*foundation.MockProviderD", "*foundation.MockProviderB"},
+		},
+		{
+			name:              "IsolatedNodes",
+			graph:             map[string][]string{"A": {"B"}, "B": {"A"}, "C": {}, "D": {}},
+			bindingToProvider: map[string]foundation.ServiceProvider{"A": &MockProviderA{}, "B": &MockProviderB{}, "C": &MockProviderC{}, "D": &MockProviderD{}},
+			expected:          []string{"*foundation.MockProviderA", "*foundation.MockProviderB", "*foundation.MockProviderA"},
+		},
+		{
+			name:              "LongCycle",
+			graph:             map[string][]string{"A": {"B"}, "B": {"C"}, "C": {"D"}, "D": {"E"}, "E": {"A"}},
+			bindingToProvider: map[string]foundation.ServiceProvider{"A": &MockProviderA{}, "B": &MockProviderB{}, "C": &MockProviderC{}, "D": &MockProviderD{}, "E": &MockProviderE{}},
+			expected:          []string{"*foundation.MockProviderA", "*foundation.MockProviderB", "*foundation.MockProviderC", "*foundation.MockProviderD", "*foundation.MockProviderE", "*foundation.MockProviderA"},
+		},
+		{
+			name:              "MissingProviderMapping",
+			graph:             map[string][]string{"A": {"B"}, "B": {"A"}},
+			bindingToProvider: map[string]foundation.ServiceProvider{"A": &MockProviderA{}}, // B missing
+			expected:          []string{"*foundation.MockProviderA"},
+		},
+		{
+			name:              "DuplicateProviderNames",
+			graph:             map[string][]string{"A1": {"B"}, "A2": {"C"}, "B": {"A1"}, "C": {"A2"}},
+			bindingToProvider: map[string]foundation.ServiceProvider{"A1": &MockProviderA{}, "A2": &MockProviderA{}, "B": &MockProviderB{}, "C": &MockProviderC{}},
+			expected:          []string{"*foundation.MockProviderA", "*foundation.MockProviderB", "*foundation.MockProviderA"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := detectCycle(tc.graph, tc.bindingToProvider)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
+}
+
+type AServiceProvider struct{}
+
+func (r *AServiceProvider) Bindings() []string                  { return []string{"A"} }
+func (r *AServiceProvider) Dependencies() []string              { return []string{} }
+func (r *AServiceProvider) ProvideFor() []string                { return []string{} }
+func (r *AServiceProvider) Register(app foundation.Application) {}
+func (r *AServiceProvider) Boot(app foundation.Application)     {}
+
+type BServiceProvider struct{}
+
+func (r *BServiceProvider) Bindings() []string                  { return []string{"B"} }
+func (r *BServiceProvider) Dependencies() []string              { return []string{"A"} }
+func (r *BServiceProvider) ProvideFor() []string                { return []string{"C"} }
+func (r *BServiceProvider) Register(app foundation.Application) {}
+func (r *BServiceProvider) Boot(app foundation.Application)     {}
+
+type CServiceProvider struct{}
+
+func (r *CServiceProvider) Bindings() []string                  { return []string{"C"} }
+func (r *CServiceProvider) Dependencies() []string              { return []string{"A"} }
+func (r *CServiceProvider) ProvideFor() []string                { return []string{} }
+func (r *CServiceProvider) Register(app foundation.Application) {}
+func (r *CServiceProvider) Boot(app foundation.Application)     {}
+
+type CircularAServiceProvider struct{}
+
+func (r *CircularAServiceProvider) Bindings() []string                  { return []string{"CircularA"} }
+func (r *CircularAServiceProvider) Dependencies() []string              { return []string{"CircularB"} }
+func (r *CircularAServiceProvider) ProvideFor() []string                { return []string{} }
+func (r *CircularAServiceProvider) Register(app foundation.Application) {}
+func (r *CircularAServiceProvider) Boot(app foundation.Application)     {}
+
+type CircularBServiceProvider struct{}
+
+func (r *CircularBServiceProvider) Bindings() []string                  { return []string{"CircularB"} }
+func (r *CircularBServiceProvider) Dependencies() []string              { return []string{"CircularA"} }
+func (r *CircularBServiceProvider) ProvideFor() []string                { return []string{} }
+func (r *CircularBServiceProvider) Register(app foundation.Application) {}
+func (r *CircularBServiceProvider) Boot(app foundation.Application)     {}
+
+type BasicServiceProvider struct{}
+
+func (r *BasicServiceProvider) Bindings() []string                  { return []string{"Basic"} }
+func (r *BasicServiceProvider) Dependencies() []string              { return []string{} }
+func (r *BasicServiceProvider) ProvideFor() []string                { return []string{} }
+func (r *BasicServiceProvider) Register(app foundation.Application) {}
+func (r *BasicServiceProvider) Boot(app foundation.Application)     {}
+
+type ProvideForBServiceProvider struct{}
+
+func (r *ProvideForBServiceProvider) Bindings() []string                  { return []string{"ProvideForB"} }
+func (r *ProvideForBServiceProvider) Dependencies() []string              { return []string{"ProvideForA"} }
+func (r *ProvideForBServiceProvider) ProvideFor() []string                { return []string{} }
+func (r *ProvideForBServiceProvider) Register(app foundation.Application) {}
+func (r *ProvideForBServiceProvider) Boot(app foundation.Application)     {}
+
+type ProvideForAServiceProvider struct{}
+
+func (r *ProvideForAServiceProvider) Bindings() []string                  { return []string{"ProvideForA"} }
+func (r *ProvideForAServiceProvider) Dependencies() []string              { return []string{} }
+func (r *ProvideForAServiceProvider) ProvideFor() []string                { return []string{"ProvideForB"} }
+func (r *ProvideForAServiceProvider) Register(app foundation.Application) {}
+func (r *ProvideForAServiceProvider) Boot(app foundation.Application)     {}
+
+type MockProviderA struct{}
+
+func (p *MockProviderA) Register(app foundation.Application) {}
+func (p *MockProviderA) Boot(app foundation.Application)     {}
+func (p *MockProviderA) Bindings() []string                  { return []string{"provider_a"} }
+func (p *MockProviderA) Dependencies() []string              { return []string{"provider_b"} }
+
+type MockProviderB struct{}
+
+func (p *MockProviderB) Register(app foundation.Application) {}
+func (p *MockProviderB) Boot(app foundation.Application)     {}
+func (p *MockProviderB) Bindings() []string                  { return []string{"provider_b"} }
+func (p *MockProviderB) Dependencies() []string              { return []string{"provider_a"} }
+
+type MockProviderC struct{}
+
+func (p *MockProviderC) Register(app foundation.Application) {}
+func (p *MockProviderC) Boot(app foundation.Application)     {}
+func (p *MockProviderC) Bindings() []string                  { return []string{"provider_c"} }
+func (p *MockProviderC) Dependencies() []string              { return []string{"provider_d"} }
+
+type MockProviderD struct{}
+
+func (p *MockProviderD) Register(app foundation.Application) {}
+func (p *MockProviderD) Boot(app foundation.Application)     {}
+func (p *MockProviderD) Bindings() []string                  { return []string{"provider_d"} }
+func (p *MockProviderD) Dependencies() []string              { return []string{"provider_c"} }
+
+type MockProviderE struct{}
+
+func (p *MockProviderE) Register(app foundation.Application) {}
+func (p *MockProviderE) Boot(app foundation.Application)     {}
+func (p *MockProviderE) Bindings() []string                  { return []string{"provider_e"} }
+
+type ComplexProviderA struct{}
+
+func (p *ComplexProviderA) Register(app foundation.Application) {}
+func (p *ComplexProviderA) Boot(app foundation.Application)     {}
+func (p *ComplexProviderA) Bindings() []string                  { return []string{"complex_a"} }
+func (p *ComplexProviderA) Dependencies() []string              { return []string{"complex_b"} }
+
+type ComplexProviderB struct{}
+
+func (p *ComplexProviderB) Register(app foundation.Application) {}
+func (p *ComplexProviderB) Boot(app foundation.Application)     {}
+func (p *ComplexProviderB) Bindings() []string                  { return []string{"complex_b"} }
+func (p *ComplexProviderB) Dependencies() []string              { return []string{"complex_c"} }
+
+type ComplexProviderC struct{}
+
+func (p *ComplexProviderC) Register(app foundation.Application) {}
+func (p *ComplexProviderC) Boot(app foundation.Application)     {}
+func (p *ComplexProviderC) Bindings() []string                  { return []string{"complex_c"} }
+func (p *ComplexProviderC) Dependencies() []string              { return []string{"complex_a"} }
+
+type EmptyDependenciesProvider struct{}
+
+func (p *EmptyDependenciesProvider) Register(app foundation.Application) {}
+func (p *EmptyDependenciesProvider) Boot(app foundation.Application)     {}
+func (p *EmptyDependenciesProvider) Bindings() []string                  { return []string{"empty_deps"} }
+func (p *EmptyDependenciesProvider) Dependencies() []string              { return []string{} }
+func (p *EmptyDependenciesProvider) ProvideFor() []string                { return []string{"provider_c"} }
+
+type EmptyProvideForProvider struct{}
+
+func (p *EmptyProvideForProvider) Register(app foundation.Application) {}
+func (p *EmptyProvideForProvider) Boot(app foundation.Application)     {}
+func (p *EmptyProvideForProvider) Bindings() []string                  { return []string{"empty_provide"} }
+func (p *EmptyProvideForProvider) Dependencies() []string              { return []string{"provider_a"} }
+func (p *EmptyProvideForProvider) ProvideFor() []string                { return []string{} }
+
+type AllEmptyProvider struct{}
+
+func (p *AllEmptyProvider) Register(app foundation.Application) {}
+func (p *AllEmptyProvider) Boot(app foundation.Application)     {}
+func (p *AllEmptyProvider) Bindings() []string                  { return []string{} }
+func (p *AllEmptyProvider) Dependencies() []string              { return []string{} }
+func (p *AllEmptyProvider) ProvideFor() []string                { return []string{} }

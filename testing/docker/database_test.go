@@ -105,7 +105,7 @@ func TestNewDatabase(t *testing.T) {
 		{
 			name:    "error when artisan facade is not set",
 			setup:   func() {},
-			wantErr: errors.ArtisanFacadeNotSet,
+			wantErr: errors.ConsoleFacadeNotSet,
 		},
 		{
 			name:    "error when config facade is not set",
