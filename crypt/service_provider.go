@@ -1,7 +1,7 @@
 package crypt
 
 import (
-	"github.com/goravel/framework/contracts"
+	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
 )
@@ -9,8 +9,20 @@ import (
 type ServiceProvider struct {
 }
 
+func (r *ServiceProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings: []string{
+			binding.Crypt,
+		},
+		Dependencies: []string{
+			binding.Config,
+		},
+		ProvideFor: []string{},
+	}
+}
+
 func (r *ServiceProvider) Register(app foundation.Application) {
-	app.Singleton(contracts.BindingCrypt, func(app foundation.Application) (any, error) {
+	app.Singleton(binding.Crypt, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleCrypt)

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/goravel/framework/contracts"
+	"github.com/goravel/framework/contracts/binding"
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/foundation"
@@ -22,28 +22,25 @@ import (
 type ServiceProvider struct {
 }
 
-func (r *ServiceProvider) Bindings() []string {
-	return []string{
-		contracts.BindingOrm,
-		contracts.BindingDB,
-		contracts.BindingSchema,
-		contracts.BindingSeeder,
+func (r *ServiceProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings: []string{
+			binding.Orm,
+			binding.DB,
+			binding.Schema,
+			binding.Seeder,
+		},
+		Dependencies: []string{
+			binding.Artisan,
+			binding.Config,
+			binding.Log,
+		},
+		ProvideFor: []string{},
 	}
-}
-
-func (r *ServiceProvider) Dependencies() []string {
-	return []string{
-		contracts.BindingConfig,
-		contracts.BindingLog,
-	}
-}
-
-func (r *ServiceProvider) ProvideFor() []string {
-	return []string{}
 }
 
 func (r *ServiceProvider) Register(app foundation.Application) {
-	app.Singleton(contracts.BindingOrm, func(app foundation.Application) (any, error) {
+	app.Singleton(binding.Orm, func(app foundation.Application) (any, error) {
 		ctx := context.Background()
 		config := app.MakeConfig()
 		if config == nil {
@@ -70,7 +67,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		return orm, nil
 	})
 
-	app.Singleton(contracts.BindingDB, func(app foundation.Application) (any, error) {
+	app.Singleton(binding.DB, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleDB)
@@ -96,7 +93,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		return db, nil
 	})
 
-	app.Singleton(contracts.BindingSchema, func(app foundation.Application) (any, error) {
+	app.Singleton(binding.Schema, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleSchema)
@@ -125,7 +122,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 
 		return databaseschema.NewSchema(config, log, orm, driver, nil)
 	})
-	app.Singleton(contracts.BindingSeeder, func(app foundation.Application) (any, error) {
+	app.Singleton(binding.Seeder, func(app foundation.Application) (any, error) {
 		return databaseseeder.NewSeederFacade(), nil
 	})
 }

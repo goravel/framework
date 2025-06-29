@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cast"
 
 	"github.com/goravel/framework/contracts"
+	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/foundation"
 	contractstranslation "github.com/goravel/framework/contracts/translation"
 	"github.com/goravel/framework/errors"
@@ -17,8 +18,21 @@ const Binding = "goravel.translation"
 type ServiceProvider struct {
 }
 
+func (r *ServiceProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings: []string{
+			binding.Lang,
+		},
+		Dependencies: []string{
+			binding.Config,
+			binding.Log,
+		},
+		ProvideFor: []string{},
+	}
+}
+
 func (r *ServiceProvider) Register(app foundation.Application) {
-	app.BindWith(contracts.BindingTranslation, func(app foundation.Application, parameters map[string]any) (any, error) {
+	app.BindWith(contracts.BindingLang, func(app foundation.Application, parameters map[string]any) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleLang)

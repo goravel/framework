@@ -1,16 +1,18 @@
 package contracts
 
 const (
+	BindingArtisan     = "goravel.artisan"
 	BindingAuth        = "goravel.auth"
 	BindingCache       = "goravel.cache"
 	BindingConfig      = "goravel.config"
-	BindingConsole     = "goravel.console"
 	BindingCrypt       = "goravel.crypt"
+	BindingDB          = "goravel.db"
 	BindingEvent       = "goravel.event"
-	BindingFilesystem  = "goravel.filesystem"
 	BindingGate        = "goravel.gate"
 	BindingGrpc        = "goravel.grpc"
 	BindingHash        = "goravel.hash"
+	BindingHttp        = "goravel.http"
+	BindingLang        = "goravel.lang"
 	BindingLog         = "goravel.log"
 	BindingMail        = "goravel.mail"
 	BindingOrm         = "goravel.orm"
@@ -21,10 +23,8 @@ const (
 	BindingSchema      = "goravel.schema"
 	BindingSeeder      = "goravel.seeder"
 	BindingSession     = "goravel.session"
-	BindingDB          = "goravel.db"
+	BindingStorage     = "goravel.storage"
 	BindingTesting     = "goravel.testing"
-	BindingTranslation = "goravel.translation"
 	BindingValidation  = "goravel.validation"
 	BindingView        = "goravel.view"
-	BindingHttp        = "goravel.http"
 )

@@ -82,7 +82,7 @@ func (r *Container) Make(key any) (any, error) {
 }
 
 func (r *Container) MakeArtisan() contractsconsole.Artisan {
-	instance, err := r.Make(contracts.BindingConsole)
+	instance, err := r.Make(contracts.BindingArtisan)
 	if err != nil {
 		color.Errorln(err)
 		return nil
@@ -203,7 +203,7 @@ func (r *Container) MakeHttp() contractshttpclient.Request {
 }
 
 func (r *Container) MakeLang(ctx context.Context) contractstranslation.Translator {
-	instance, err := r.MakeWith(contracts.BindingTranslation, map[string]any{
+	instance, err := r.MakeWith(contracts.BindingLang, map[string]any{
 		"ctx": ctx,
 	})
 	if err != nil {
@@ -311,7 +311,7 @@ func (r *Container) MakeSession() contractsession.Manager {
 }
 
 func (r *Container) MakeStorage() contractsfilesystem.Storage {
-	instance, err := r.Make(contracts.BindingFilesystem)
+	instance, err := r.Make(contracts.BindingStorage)
 	if err != nil {
 		color.Errorln(err)
 		return nil

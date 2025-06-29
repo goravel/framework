@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/goravel/framework/config"
+	"github.com/goravel/framework/contracts/binding"
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
@@ -370,24 +371,24 @@ func sortConfiguredServiceProviders(providers []foundation.ServiceProvider) []fo
 
 	// Helper function to get binding names from a provider
 	getBindings := func(provider foundation.ServiceProvider) []string {
-		if p, ok := provider.(interface{ Bindings() []string }); ok {
-			return p.Bindings()
+		if p, ok := provider.(interface{ Relationship() binding.Relationship }); ok {
+			return p.Relationship().Bindings
 		}
 		return []string{}
 	}
 
 	// Helper function to get dependencies from a provider
 	getDependencies := func(provider foundation.ServiceProvider) []string {
-		if p, ok := provider.(interface{ Dependencies() []string }); ok {
-			return p.Dependencies()
+		if p, ok := provider.(interface{ Relationship() binding.Relationship }); ok {
+			return p.Relationship().Dependencies
 		}
 		return []string{}
 	}
 
 	// Helper function to get provide-for bindings from a provider
 	getProvideFor := func(provider foundation.ServiceProvider) []string {
-		if p, ok := provider.(interface{ ProvideFor() []string }); ok {
-			return p.ProvideFor()
+		if p, ok := provider.(interface{ Relationship() binding.Relationship }); ok {
+			return p.Relationship().ProvideFor
 		}
 		return []string{}
 	}

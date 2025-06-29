@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/goravel/framework/contracts"
+	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/support"
 )
@@ -9,8 +9,18 @@ import (
 type ServiceProvider struct {
 }
 
+func (r *ServiceProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings: []string{
+			binding.Config,
+		},
+		Dependencies: []string{},
+		ProvideFor:   []string{},
+	}
+}
+
 func (r *ServiceProvider) Register(app foundation.Application) {
-	app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
+	app.Singleton(binding.Config, func(app foundation.Application) (any, error) {
 		return NewApplication(support.EnvFilePath), nil
 	})
 }

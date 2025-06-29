@@ -14,7 +14,14 @@ import (
 )
 
 var facadeToPath = map[string]string{
-	"auth": "github.com/goravel/framework/auth",
+	"Artisan":  "github.com/goravel/framework/console",
+	"Auth":     "github.com/goravel/framework/auth",
+	"Cache":    "github.com/goravel/framework/cache",
+	"Log":      "github.com/goravel/framework/log",
+	"Orm":      "github.com/goravel/framework/orm",
+	"Queue":    "github.com/goravel/framework/queue",
+	"Schedule": "github.com/goravel/framework/schedule",
+	"Session":  "github.com/goravel/framework/session",
 }
 
 type PackageInstallCommand struct {
