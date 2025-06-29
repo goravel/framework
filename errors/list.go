@@ -79,6 +79,8 @@ var (
 	FilesystemFileNotExist        = New("file doesn't exist")
 	FilesystemInvalidCustomDriver = New("init %s disk fail: via must be implement filesystem.Driver or func() (filesystem.Driver, error)")
 
+	FileAlreadyExists = New("file %s already exists")
+
 	GrpcEmptyClientHost         = New("client's host can't be empty")
 	GrpcEmptyClientPort         = New("client's port can't be empty")
 	GrpcEmptyServerHost         = New("host can't be empty")
@@ -124,12 +126,13 @@ var (
 	OrmJsonContainsInvalidBinding  = New("invalid value for JSON contains: %v")
 	OrmJsonColumnUpdateInvalid     = New("invalid value for JSON column update: %v")
 
-	PackageConfigKeyExists       = New("config key '%s' already exists,using ReplaceConfig instead if you want to update it").SetModule(ModulePackages)
-	PackageMatchGoNodeFail       = New("%d out of %d matchers did not match").SetModule(ModulePackages)
-	PackageModifyGoFileFail      = New("modify go file '%s' failed: %v").SetModule(ModulePackages)
-	PackageModuleNameEmpty       = New("package module name is empty, please run command with module name").SetModule(ModulePackages)
-	PackageRegistrationDuplicate = New("'%s' had been registered").SetModule(ModulePackages)
-	PackageRegistrationNotFound  = New("'%s' not found, cannot insert before it").SetModule(ModulePackages)
+	PackageConfigKeyExists       = New("config key '%s' already exists,using ReplaceConfig instead if you want to update it")
+	PackageFacadeNotFound        = New("facade %s not found")
+	PackageMatchGoNodeFail       = New("%d out of %d matchers did not match")
+	PackageModifyGoFileFail      = New("modify go file '%s' failed: %v")
+	PackageModuleNameEmpty       = New("package module name is empty, please run command with module name")
+	PackageRegistrationDuplicate = New("'%s' had been registered")
+	PackageRegistrationNotFound  = New("'%s' not found, cannot insert before it")
 
 	QueueDriverFailedToPop           = New("failed to pop job from %s queue: %v")
 	QueueDriverInvalid               = New("%s doesn't implement contracts/queue/driver")

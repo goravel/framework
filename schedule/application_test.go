@@ -2,6 +2,7 @@ package schedule
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -70,12 +71,16 @@ func (s *ApplicationTestSuite) TestOnOneServer() {
 	mockCache := mockscache.NewCache(s.T())
 	mockLock := mockscache.NewLock(s.T())
 	mockLock.EXPECT().Get().Return(true).Once()
-	mockCache.EXPECT().Lock(mock.Anything, 1*time.Hour).Return(mockLock).Once()
+	mockCache.EXPECT().Lock(mock.MatchedBy(func(key string) bool {
+		return strings.HasPrefix(key, "immediately") && len(key) == 17
+	}), 1*time.Hour).Return(mockLock).Once()
 
 	mockCache1 := mockscache.NewCache(s.T())
 	mockLock1 := mockscache.NewLock(s.T())
 	mockLock1.EXPECT().Get().Return(false).Once()
-	mockCache1.EXPECT().Lock(mock.Anything, 1*time.Hour).Return(mockLock1).Once()
+	mockCache1.EXPECT().Lock(mock.MatchedBy(func(key string) bool {
+		return strings.HasPrefix(key, "immediately") && len(key) == 17
+	}), 1*time.Hour).Return(mockLock1).Once()
 
 	immediatelyCall := 0
 
@@ -98,10 +103,9 @@ func (s *ApplicationTestSuite) TestOnOneServer() {
 
 	time.Sleep(2 * time.Second)
 
+	s.Equal(1, immediatelyCall)
 	s.NoError(app.Shutdown())
 	s.NoError(app1.Shutdown())
-
-	s.Equal(1, immediatelyCall)
 }
 
 func (s *ApplicationTestSuite) TestShutdown() {
