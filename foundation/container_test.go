@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/goravel/framework/contracts"
+	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/foundation"
 )
 
@@ -84,10 +84,10 @@ func (s *ContainerTestSuite) TestSingleton_Fresh() {
 	callback := func(app foundation.Application) (any, error) {
 		return 1, nil
 	}
-	s.container.Singleton(contracts.BindingConfig, callback)
+	s.container.Singleton(binding.Config, callback)
 	s.container.Singleton("Singleton", callback)
 
-	res, err := s.container.Make(contracts.BindingConfig)
+	res, err := s.container.Make(binding.Config)
 	s.Nil(err)
 	s.Equal(1, res)
 
@@ -105,7 +105,7 @@ func (s *ContainerTestSuite) TestSingleton_Fresh() {
 	s.False(ok)
 	s.Nil(res)
 
-	res, ok = s.container.instances.Load(contracts.BindingConfig)
+	res, ok = s.container.instances.Load(binding.Config)
 	s.True(ok)
 	s.Equal(1, res)
 
@@ -123,7 +123,7 @@ func (s *ContainerTestSuite) TestSingleton_Fresh() {
 	s.False(ok)
 	s.Nil(res)
 
-	res, ok = s.container.instances.Load(contracts.BindingConfig)
+	res, ok = s.container.instances.Load(binding.Config)
 	s.True(ok)
 	s.Equal(1, res)
 }

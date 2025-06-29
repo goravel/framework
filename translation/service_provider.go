@@ -6,7 +6,6 @@ import (
 
 	"github.com/spf13/cast"
 
-	"github.com/goravel/framework/contracts"
 	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/foundation"
 	contractstranslation "github.com/goravel/framework/contracts/translation"
@@ -32,7 +31,7 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 }
 
 func (r *ServiceProvider) Register(app foundation.Application) {
-	app.BindWith(contracts.BindingLang, func(app foundation.Application, parameters map[string]any) (any, error) {
+	app.BindWith(binding.Lang, func(app foundation.Application, parameters map[string]any) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleLang)
