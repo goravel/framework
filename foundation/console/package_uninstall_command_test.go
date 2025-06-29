@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
@@ -116,7 +117,7 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 				facade := "unknown"
 				mockContext.EXPECT().Argument(0).Return(facade).Once()
 				mockContext.EXPECT().Warning(errors.PackageFacadeNotFound.Args(facade).Error()).Once()
-				mockContext.EXPECT().Info(fmt.Sprintf("Available facades: %s", strings.Join(maps.Keys(facadeToPath), ", ")))
+				mockContext.EXPECT().Info(fmt.Sprintf("Available facades: %s", strings.Join(maps.Keys(binding.FacadeToPath), ", ")))
 			},
 			assert: func() {
 				s.NoError(NewPackageUninstallCommand().Handle(mockContext))
@@ -126,7 +127,7 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 			name: "facades uninstall failed",
 			setup: func() {
 				mockContext.EXPECT().Argument(0).Return(facade).Once()
-				mockContext.EXPECT().Spinner("> @go run "+facadeToPath[facade]+"/setup uninstall", mock.Anything).
+				mockContext.EXPECT().Spinner("> @go run "+binding.FacadeToPath[facade]+"/setup uninstall", mock.Anything).
 					RunAndReturn(func(s string, option console.SpinnerOption) error {
 						return option.Action()
 					}).Once()
@@ -146,7 +147,7 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 			name: "facades uninstall success(simulate)",
 			setup: func() {
 				mockContext.EXPECT().Argument(0).Return(facade).Once()
-				mockContext.EXPECT().Spinner("> @go run "+facadeToPath[facade]+"/setup uninstall", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+binding.FacadeToPath[facade]+"/setup uninstall", mock.Anything).Return(nil).Once()
 			},
 			assert: func() {
 				s.Contains(color.CaptureOutput(func(w io.Writer) {

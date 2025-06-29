@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	config, err := supportfile.GetFrameworkContent("database/config/config.go")
+	config, err := supportfile.GetFrameworkContent("database/config/database.go")
 	if err != nil {
 		panic(err)
 	}

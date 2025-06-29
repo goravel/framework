@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	config, err := supportfile.GetFrameworkContent("queue/config/config.go")
+	config, err := supportfile.GetFrameworkContent("queue/config/queue.go")
 	if err != nil {
 		panic(err)
 	}
