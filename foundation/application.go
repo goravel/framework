@@ -393,22 +393,56 @@ func sortConfiguredServiceProviders(providers []foundation.ServiceProvider) []fo
 	}
 
 	bindingToProvider := make(map[string]foundation.ServiceProvider)
+	providerToVirtualBinding := make(map[foundation.ServiceProvider]string)
 	graph := make(map[string][]string)
 	inDegree := make(map[string]int)
+	virtualBindingCounter := 0
 
-	// Create a map for quick lookup of providers by their binding names, initialize inDegree for all providers
+	// First pass: collect all real bindings and create virtual bindings for providers with empty bindings
 	for _, provider := range providers {
-		for _, binding := range getBindings(provider) {
-			bindingToProvider[binding] = provider
-			inDegree[binding] = 0
+		bindings := getBindings(provider)
+		dependencies := getDependencies(provider)
+		provideFor := getProvideFor(provider)
+
+		if len(bindings) > 0 {
+			// Provider has real bindings
+			for _, binding := range bindings {
+				bindingToProvider[binding] = provider
+				inDegree[binding] = 0
+			}
+		} else if len(dependencies) > 0 || len(provideFor) > 0 {
+			// Provider has no bindings but has dependencies or provide-for relationships
+			// Create a virtual binding to include it in the dependency graph
+			virtualBinding := fmt.Sprintf("__virtual_%d", virtualBindingCounter)
+			virtualBindingCounter++
+			bindingToProvider[virtualBinding] = provider
+			providerToVirtualBinding[provider] = virtualBinding
+			inDegree[virtualBinding] = 0
 		}
 	}
 
-	// Build the dependency graph using both Dependencies and ProvideFor
+	// Second pass: build the dependency graph using both Dependencies and ProvideFor
 	for _, provider := range providers {
-		for _, binding := range getBindings(provider) {
+		bindings := getBindings(provider)
+		dependencies := getDependencies(provider)
+		provideFor := getProvideFor(provider)
+
+		// Get the binding(s) for this provider
+		var providerBindings []string
+		if len(bindings) > 0 {
+			providerBindings = bindings
+		} else if virtualBinding, exists := providerToVirtualBinding[provider]; exists {
+			providerBindings = []string{virtualBinding}
+		}
+
+		// If provider has no bindings and no virtual binding, skip it
+		if len(providerBindings) == 0 {
+			continue
+		}
+
+		for _, binding := range providerBindings {
 			// Add dependencies (this provider depends on others)
-			for _, dep := range getDependencies(provider) {
+			for _, dep := range dependencies {
 				if _, exists := bindingToProvider[dep]; exists {
 					graph[dep] = append(graph[dep], binding)
 					inDegree[binding]++
@@ -416,10 +450,10 @@ func sortConfiguredServiceProviders(providers []foundation.ServiceProvider) []fo
 			}
 
 			// Add provide-for relationships (others depend on this provider)
-			for _, provideFor := range getProvideFor(provider) {
-				if _, exists := bindingToProvider[provideFor]; exists {
-					graph[binding] = append(graph[binding], provideFor)
-					inDegree[provideFor]++
+			for _, provideForBinding := range provideFor {
+				if _, exists := bindingToProvider[provideForBinding]; exists {
+					graph[binding] = append(graph[binding], provideForBinding)
+					inDegree[provideForBinding]++
 				}
 			}
 		}
@@ -475,7 +509,7 @@ func sortConfiguredServiceProviders(providers []foundation.ServiceProvider) []fo
 	// Add any remaining providers that weren't in the dependency graph
 	for _, provider := range providers {
 		if !used[provider] {
-			sortedProviders = append([]foundation.ServiceProvider{provider}, sortedProviders...)
+			sortedProviders = append(sortedProviders, provider)
 		}
 	}
 
