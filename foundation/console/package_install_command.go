@@ -1,7 +1,6 @@
 package console
 
 import (
-	"fmt"
 	"os/exec"
 	"strings"
 
@@ -10,12 +9,7 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
-	"github.com/goravel/framework/support/maps"
 )
-
-var facadeToPath = map[string]string{
-	"auth": "github.com/goravel/framework/auth",
-}
 
 type PackageInstallCommand struct {
 }
@@ -65,11 +59,14 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 		}
 	}
 
-	if isPackage(pkg) {
-		return r.installPackage(ctx, pkg)
-	}
+	return r.installPackage(ctx, pkg)
 
-	return r.installFacade(ctx, pkg)
+	// TODO: Implement this in v1.17 https://github.com/goravel/goravel/issues/719
+	// if isPackage(pkg) {
+	// 	return r.installPackage(ctx, pkg)
+	// }
+
+	// return r.installFacade(ctx, pkg)
 }
 
 func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) error {
@@ -102,27 +99,27 @@ func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) 
 	return nil
 }
 
-func (r *PackageInstallCommand) installFacade(ctx console.Context, facade string) error {
-	path, exists := facadeToPath[facade]
-	if !exists {
-		ctx.Warning(errors.PackageFacadeNotFound.Args(facade).Error())
-		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(maps.Keys(facadeToPath), ", ")))
-		return nil
-	}
+// func (r *PackageInstallCommand) installFacade(ctx console.Context, facade string) error {
+// 	path, exists := binding.FacadeToPath[facade]
+// 	if !exists {
+// 		ctx.Warning(errors.PackageFacadeNotFound.Args(facade).Error())
+// 		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(maps.Keys(binding.FacadeToPath), ", ")))
+// 		return nil
+// 	}
 
-	setup := path + "/setup"
+// 	setup := path + "/setup"
 
-	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install")); err != nil {
-		color.Red().Println(err.Error())
+// 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install")); err != nil {
+// 		color.Red().Println(err.Error())
 
-		return nil
-	}
+// 		return nil
+// 	}
 
-	color.Successf("Facade %s installed successfully\n", facade)
+// 	color.Successf("Facade %s installed successfully\n", facade)
 
-	return nil
-}
+// 	return nil
+// }
 
-func isPackage(pkg string) bool {
-	return strings.Contains(pkg, "/")
-}
+// func isPackage(pkg string) bool {
+// 	return strings.Contains(pkg, "/")
+// }

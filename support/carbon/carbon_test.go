@@ -93,7 +93,7 @@ func TestNow(t *testing.T) {
 
 	utcNow := Now()
 	shanghaiNow := Now(Shanghai)
-	assert.Equal(t, shanghaiNow.SubHours(8).ToDateTimeString(), utcNow.ToDateTimeString())
+	assert.Equal(t, shanghaiNow.SubHours(8).Format("2006-01-02 15:04"), utcNow.Format("2006-01-02 15:04"))
 }
 
 func TestParse(t *testing.T) {

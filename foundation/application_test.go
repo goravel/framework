@@ -12,7 +12,7 @@ import (
 	"github.com/goravel/framework/cache"
 	frameworkconfig "github.com/goravel/framework/config"
 	"github.com/goravel/framework/console"
-	"github.com/goravel/framework/contracts"
+	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/crypt"
 	"github.com/goravel/framework/event"
@@ -90,7 +90,7 @@ func (s *ApplicationTestSuite) TestLangPath() {
 	mockConfig := mocksconfig.NewConfig(s.T())
 	mockConfig.EXPECT().GetString("app.lang_path", "lang").Return("test").Once()
 
-	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
+	s.app.Singleton(binding.Config, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
 
@@ -162,16 +162,16 @@ func (s *ApplicationTestSuite) TestMakeAuth() {
 	mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(100).Once()
 	mockConfig.EXPECT().GetInt("auth.guards.user.refresh_ttl").Return(100).Once()
 
-	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
+	s.app.Singleton(binding.Config, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
-	s.app.Singleton(contracts.BindingCache, func(app foundation.Application) (any, error) {
+	s.app.Singleton(binding.Cache, func(app foundation.Application) (any, error) {
 		return &mockscache.Cache{}, nil
 	})
-	s.app.Singleton(contracts.BindingOrm, func(app foundation.Application) (any, error) {
+	s.app.Singleton(binding.Orm, func(app foundation.Application) (any, error) {
 		return &mocksorm.Orm{}, nil
 	})
-	s.app.Singleton(contracts.BindingLog, func(app foundation.Application) (any, error) {
+	s.app.Singleton(binding.Log, func(app foundation.Application) (any, error) {
 		return &mockslog.Log{}, nil
 	})
 
@@ -188,10 +188,10 @@ func (s *ApplicationTestSuite) TestMakeCache() {
 	mockConfig.EXPECT().GetString("cache.stores.memory.driver").Return("memory").Once()
 	mockConfig.EXPECT().GetString("cache.prefix").Return("goravel").Once()
 
-	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
+	s.app.Singleton(binding.Config, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
-	s.app.Singleton(contracts.BindingLog, func(app foundation.Application) (any, error) {
+	s.app.Singleton(binding.Log, func(app foundation.Application) (any, error) {
 		return &mockslog.Log{}, nil
 	})
 
@@ -212,7 +212,7 @@ func (s *ApplicationTestSuite) TestMakeCrypt() {
 	mockConfig := mocksconfig.NewConfig(s.T())
 	mockConfig.EXPECT().GetString("app.key").Return("12345678901234567890123456789012").Once()
 
-	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
+	s.app.Singleton(binding.Config, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
 	s.app.SetJson(mocksfoundation.NewJson(s.T()))
@@ -224,7 +224,7 @@ func (s *ApplicationTestSuite) TestMakeCrypt() {
 }
 
 func (s *ApplicationTestSuite) TestMakeEvent() {
-	s.app.Singleton(contracts.BindingQueue, func(app foundation.Application) (any, error) {
+	s.app.Singleton(binding.Queue, func(app foundation.Application) (any, error) {
 		return &mocksqueue.Queue{}, nil
 	})
 
@@ -242,7 +242,7 @@ func (s *ApplicationTestSuite) TestMakeGate() {
 }
 
 func (s *ApplicationTestSuite) TestMakeGrpc() {
-	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
+	s.app.Singleton(binding.Config, func(app foundation.Application) (any, error) {
 		return &mocksconfig.Config{}, nil
 	})
 
@@ -259,7 +259,7 @@ func (s *ApplicationTestSuite) TestMakeHash() {
 	mockConfig.EXPECT().GetInt("hashing.argon2id.memory", 65536).Return(65536).Once()
 	mockConfig.EXPECT().GetInt("hashing.argon2id.threads", 1).Return(1).Once()
 
-	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
+	s.app.Singleton(binding.Config, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
 
@@ -276,10 +276,10 @@ func (s *ApplicationTestSuite) TestMakeLang() {
 	mockConfig.EXPECT().GetString("app.lang_path", "lang").Return("lang").Once()
 	mockConfig.EXPECT().Get("app.lang_fs").Return(nil).Once()
 
-	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
+	s.app.Singleton(binding.Config, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
-	s.app.Singleton(contracts.BindingLog, func(app foundation.Application) (any, error) {
+	s.app.Singleton(binding.Log, func(app foundation.Application) (any, error) {
 		return &mockslog.Log{}, nil
 	})
 
@@ -292,7 +292,7 @@ func (s *ApplicationTestSuite) TestMakeLang() {
 
 func (s *ApplicationTestSuite) TestMakeLog() {
 	mockConfig := mocksconfig.NewConfig(s.T())
-	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
+	s.app.Singleton(binding.Config, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
 
@@ -307,10 +307,10 @@ func (s *ApplicationTestSuite) TestMakeLog() {
 }
 
 func (s *ApplicationTestSuite) TestMakeMail() {
-	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
+	s.app.Singleton(binding.Config, func(app foundation.Application) (any, error) {
 		return &mocksconfig.Config{}, nil
 	})
-	s.app.Singleton(contracts.BindingQueue, func(app foundation.Application) (any, error) {
+	s.app.Singleton(binding.Queue, func(app foundation.Application) (any, error) {
 		return &mocksqueue.Queue{}, nil
 	})
 
@@ -322,13 +322,13 @@ func (s *ApplicationTestSuite) TestMakeMail() {
 
 func (s *ApplicationTestSuite) TestMakeQueue() {
 	mockConfig := mocksconfig.NewConfig(s.T())
-	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
+	s.app.Singleton(binding.Config, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
-	s.app.Singleton(contracts.BindingDB, func(app foundation.Application) (any, error) {
+	s.app.Singleton(binding.DB, func(app foundation.Application) (any, error) {
 		return &mocksdb.DB{}, nil
 	})
-	s.app.Singleton(contracts.BindingLog, func(app foundation.Application) (any, error) {
+	s.app.Singleton(binding.Log, func(app foundation.Application) (any, error) {
 		return &mockslog.Log{}, nil
 	})
 
@@ -356,11 +356,11 @@ func (s *ApplicationTestSuite) TestMakeRateLimiter() {
 func (s *ApplicationTestSuite) TestMakeRoute() {
 	mockConfig := mocksconfig.NewConfig(s.T())
 
-	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
+	s.app.Singleton(binding.Config, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
 
-	s.app.Singleton(contracts.BindingRoute, func(app foundation.Application) (any, error) {
+	s.app.Singleton(binding.Route, func(app foundation.Application) (any, error) {
 		return &mocksroute.Route{}, nil
 	})
 
@@ -371,16 +371,16 @@ func (s *ApplicationTestSuite) TestMakeSchedule() {
 	mockConfig := mocksconfig.NewConfig(s.T())
 	mockConfig.EXPECT().GetBool("app.debug").Return(false).Once()
 
-	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
+	s.app.Singleton(binding.Config, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
-	s.app.Singleton(contracts.BindingConsole, func(app foundation.Application) (any, error) {
+	s.app.Singleton(binding.Artisan, func(app foundation.Application) (any, error) {
 		return &mocksconsole.Artisan{}, nil
 	})
-	s.app.Singleton(contracts.BindingLog, func(app foundation.Application) (any, error) {
+	s.app.Singleton(binding.Log, func(app foundation.Application) (any, error) {
 		return &mockslog.Log{}, nil
 	})
-	s.app.Singleton(contracts.BindingCache, func(app foundation.Application) (any, error) {
+	s.app.Singleton(binding.Cache, func(app foundation.Application) (any, error) {
 		return &mockscache.Cache{}, nil
 	})
 
@@ -399,7 +399,7 @@ func (s *ApplicationTestSuite) TestMakeSession() {
 	mockConfig.EXPECT().GetString("session.files").Return("framework/sessions").Once()
 	mockConfig.EXPECT().GetString("session.cookie").Return("goravel_session").Once()
 
-	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
+	s.app.Singleton(binding.Config, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
 	s.app.SetJson(mocksfoundation.NewJson(s.T()))
@@ -419,7 +419,7 @@ func (s *ApplicationTestSuite) TestMakeStorage() {
 	mockConfig.EXPECT().GetString("filesystems.disks.local.root").Return("").Once()
 	mockConfig.EXPECT().GetString("filesystems.disks.local.url").Return("").Once()
 
-	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
+	s.app.Singleton(binding.Config, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
 
@@ -443,6 +443,17 @@ func TestSortConfiguredServiceProviders(t *testing.T) {
 		expected  []foundation.ServiceProvider
 		checkTopo bool
 	}{
+		{
+			name: "not found basic dependency, should be sorted correctly",
+			providers: []foundation.ServiceProvider{
+				&CServiceProvider{},
+				&BServiceProvider{},
+			},
+			expected: []foundation.ServiceProvider{
+				&BServiceProvider{},
+				&CServiceProvider{},
+			},
+		},
 		{
 			name: "BasicSorting",
 			providers: []foundation.ServiceProvider{
@@ -794,15 +805,15 @@ func isTopologicalOrder(providers []foundation.ServiceProvider, sorted []foundat
 	}
 
 	getBindings := func(provider foundation.ServiceProvider) []string {
-		if p, ok := provider.(interface{ Bindings() []string }); ok {
-			return p.Bindings()
+		if p, ok := provider.(interface{ Relationship() binding.Relationship }); ok {
+			return p.Relationship().Bindings
 		}
 		return []string{}
 	}
 
 	getProvideFor := func(provider foundation.ServiceProvider) []string {
-		if p, ok := provider.(interface{ ProvideFor() []string }); ok {
-			return p.ProvideFor()
+		if p, ok := provider.(interface{ Relationship() binding.Relationship }); ok {
+			return p.Relationship().ProvideFor
 		}
 		return []string{}
 	}
@@ -849,65 +860,97 @@ func isTopologicalOrder(providers []foundation.ServiceProvider, sorted []foundat
 
 type AServiceProvider struct{}
 
-func (r *AServiceProvider) Bindings() []string                  { return []string{"A"} }
-func (r *AServiceProvider) Dependencies() []string              { return []string{} }
-func (r *AServiceProvider) ProvideFor() []string                { return []string{} }
+func (r *AServiceProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{"A"},
+		Dependencies: []string{},
+		ProvideFor:   []string{},
+	}
+}
 func (r *AServiceProvider) Register(app foundation.Application) {}
 func (r *AServiceProvider) Boot(app foundation.Application)     {}
 
 type BServiceProvider struct{}
 
-func (r *BServiceProvider) Bindings() []string                  { return []string{"B"} }
-func (r *BServiceProvider) Dependencies() []string              { return []string{"A"} }
-func (r *BServiceProvider) ProvideFor() []string                { return []string{"C"} }
+func (r *BServiceProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{"B"},
+		Dependencies: []string{"A"},
+		ProvideFor:   []string{"C"},
+	}
+}
 func (r *BServiceProvider) Register(app foundation.Application) {}
 func (r *BServiceProvider) Boot(app foundation.Application)     {}
 
 type CServiceProvider struct{}
 
-func (r *CServiceProvider) Bindings() []string                  { return []string{"C"} }
-func (r *CServiceProvider) Dependencies() []string              { return []string{"A"} }
-func (r *CServiceProvider) ProvideFor() []string                { return []string{} }
+func (r *CServiceProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{"C"},
+		Dependencies: []string{"A"},
+		ProvideFor:   []string{},
+	}
+}
 func (r *CServiceProvider) Register(app foundation.Application) {}
 func (r *CServiceProvider) Boot(app foundation.Application)     {}
 
 type CircularAServiceProvider struct{}
 
-func (r *CircularAServiceProvider) Bindings() []string                  { return []string{"CircularA"} }
-func (r *CircularAServiceProvider) Dependencies() []string              { return []string{"CircularB"} }
-func (r *CircularAServiceProvider) ProvideFor() []string                { return []string{} }
+func (r *CircularAServiceProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{"CircularA"},
+		Dependencies: []string{"CircularB"},
+		ProvideFor:   []string{},
+	}
+}
 func (r *CircularAServiceProvider) Register(app foundation.Application) {}
 func (r *CircularAServiceProvider) Boot(app foundation.Application)     {}
 
 type CircularBServiceProvider struct{}
 
-func (r *CircularBServiceProvider) Bindings() []string                  { return []string{"CircularB"} }
-func (r *CircularBServiceProvider) Dependencies() []string              { return []string{"CircularA"} }
-func (r *CircularBServiceProvider) ProvideFor() []string                { return []string{} }
+func (r *CircularBServiceProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{"CircularB"},
+		Dependencies: []string{"CircularA"},
+		ProvideFor:   []string{},
+	}
+}
 func (r *CircularBServiceProvider) Register(app foundation.Application) {}
 func (r *CircularBServiceProvider) Boot(app foundation.Application)     {}
 
 type BasicServiceProvider struct{}
 
-func (r *BasicServiceProvider) Bindings() []string                  { return []string{"Basic"} }
-func (r *BasicServiceProvider) Dependencies() []string              { return []string{} }
-func (r *BasicServiceProvider) ProvideFor() []string                { return []string{} }
+func (r *BasicServiceProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{"Basic"},
+		Dependencies: []string{},
+		ProvideFor:   []string{},
+	}
+}
 func (r *BasicServiceProvider) Register(app foundation.Application) {}
 func (r *BasicServiceProvider) Boot(app foundation.Application)     {}
 
 type ProvideForBServiceProvider struct{}
 
-func (r *ProvideForBServiceProvider) Bindings() []string                  { return []string{"ProvideForB"} }
-func (r *ProvideForBServiceProvider) Dependencies() []string              { return []string{"ProvideForA"} }
-func (r *ProvideForBServiceProvider) ProvideFor() []string                { return []string{} }
+func (r *ProvideForBServiceProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{"ProvideForB"},
+		Dependencies: []string{"ProvideForA"},
+		ProvideFor:   []string{},
+	}
+}
 func (r *ProvideForBServiceProvider) Register(app foundation.Application) {}
 func (r *ProvideForBServiceProvider) Boot(app foundation.Application)     {}
 
 type ProvideForAServiceProvider struct{}
 
-func (r *ProvideForAServiceProvider) Bindings() []string                  { return []string{"ProvideForA"} }
-func (r *ProvideForAServiceProvider) Dependencies() []string              { return []string{} }
-func (r *ProvideForAServiceProvider) ProvideFor() []string                { return []string{"ProvideForB"} }
+func (r *ProvideForAServiceProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{"ProvideForA"},
+		Dependencies: []string{},
+		ProvideFor:   []string{"ProvideForB"},
+	}
+}
 func (r *ProvideForAServiceProvider) Register(app foundation.Application) {}
 func (r *ProvideForAServiceProvider) Boot(app foundation.Application)     {}
 
@@ -915,135 +958,214 @@ type MockProviderA struct{}
 
 func (p *MockProviderA) Register(app foundation.Application) {}
 func (p *MockProviderA) Boot(app foundation.Application)     {}
-func (p *MockProviderA) Bindings() []string                  { return []string{"provider_a"} }
-func (p *MockProviderA) Dependencies() []string              { return []string{"provider_b"} }
+func (p *MockProviderA) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{"provider_a"},
+		Dependencies: []string{"provider_b"},
+		ProvideFor:   []string{},
+	}
+}
 
 type MockProviderB struct{}
 
 func (p *MockProviderB) Register(app foundation.Application) {}
 func (p *MockProviderB) Boot(app foundation.Application)     {}
-func (p *MockProviderB) Bindings() []string                  { return []string{"provider_b"} }
-func (p *MockProviderB) Dependencies() []string              { return []string{"provider_a"} }
+func (p *MockProviderB) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{"provider_b"},
+		Dependencies: []string{"provider_a"},
+		ProvideFor:   []string{},
+	}
+}
 
 type MockProviderC struct{}
 
 func (p *MockProviderC) Register(app foundation.Application) {}
 func (p *MockProviderC) Boot(app foundation.Application)     {}
-func (p *MockProviderC) Bindings() []string                  { return []string{"provider_c"} }
-func (p *MockProviderC) Dependencies() []string              { return []string{"provider_d"} }
+func (p *MockProviderC) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{"provider_c"},
+		Dependencies: []string{"provider_d"},
+		ProvideFor:   []string{},
+	}
+}
 
 type MockProviderD struct{}
 
 func (p *MockProviderD) Register(app foundation.Application) {}
 func (p *MockProviderD) Boot(app foundation.Application)     {}
-func (p *MockProviderD) Bindings() []string                  { return []string{"provider_d"} }
-func (p *MockProviderD) Dependencies() []string              { return []string{"provider_c"} }
+func (p *MockProviderD) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{"provider_d"},
+		Dependencies: []string{"provider_c"},
+		ProvideFor:   []string{},
+	}
+}
 
 type MockProviderE struct{}
 
 func (p *MockProviderE) Register(app foundation.Application) {}
 func (p *MockProviderE) Boot(app foundation.Application)     {}
-func (p *MockProviderE) Bindings() []string                  { return []string{"provider_e"} }
+func (p *MockProviderE) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{"provider_e"},
+		Dependencies: []string{},
+		ProvideFor:   []string{},
+	}
+}
 
 type ComplexProviderA struct{}
 
 func (p *ComplexProviderA) Register(app foundation.Application) {}
 func (p *ComplexProviderA) Boot(app foundation.Application)     {}
-func (p *ComplexProviderA) Bindings() []string                  { return []string{"complex_a"} }
-func (p *ComplexProviderA) Dependencies() []string              { return []string{"complex_b"} }
+func (p *ComplexProviderA) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{"complex_a"},
+		Dependencies: []string{"complex_b"},
+		ProvideFor:   []string{},
+	}
+}
 
 type ComplexProviderB struct{}
 
 func (p *ComplexProviderB) Register(app foundation.Application) {}
 func (p *ComplexProviderB) Boot(app foundation.Application)     {}
-func (p *ComplexProviderB) Bindings() []string                  { return []string{"complex_b"} }
-func (p *ComplexProviderB) Dependencies() []string              { return []string{"complex_c"} }
+func (p *ComplexProviderB) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{"complex_b"},
+		Dependencies: []string{"complex_c"},
+		ProvideFor:   []string{},
+	}
+}
 
 type ComplexProviderC struct{}
 
 func (p *ComplexProviderC) Register(app foundation.Application) {}
 func (p *ComplexProviderC) Boot(app foundation.Application)     {}
-func (p *ComplexProviderC) Bindings() []string                  { return []string{"complex_c"} }
-func (p *ComplexProviderC) Dependencies() []string              { return []string{"complex_a"} }
+func (p *ComplexProviderC) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{"complex_c"},
+		Dependencies: []string{"complex_a"},
+		ProvideFor:   []string{},
+	}
+}
 
 type EmptyDependenciesProvider struct{}
 
 func (p *EmptyDependenciesProvider) Register(app foundation.Application) {}
 func (p *EmptyDependenciesProvider) Boot(app foundation.Application)     {}
-func (p *EmptyDependenciesProvider) Bindings() []string                  { return []string{"empty_deps"} }
-func (p *EmptyDependenciesProvider) Dependencies() []string              { return []string{} }
-func (p *EmptyDependenciesProvider) ProvideFor() []string                { return []string{"provider_c"} }
+func (p *EmptyDependenciesProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{"empty_deps"},
+		Dependencies: []string{},
+		ProvideFor:   []string{"provider_c"},
+	}
+}
 
 type EmptyProvideForProvider struct{}
 
 func (p *EmptyProvideForProvider) Register(app foundation.Application) {}
 func (p *EmptyProvideForProvider) Boot(app foundation.Application)     {}
-func (p *EmptyProvideForProvider) Bindings() []string                  { return []string{"empty_provide"} }
-func (p *EmptyProvideForProvider) Dependencies() []string              { return []string{"provider_a"} }
-func (p *EmptyProvideForProvider) ProvideFor() []string                { return []string{} }
+func (p *EmptyProvideForProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{"empty_provide"},
+		Dependencies: []string{"provider_a"},
+		ProvideFor:   []string{},
+	}
+}
 
 type AllEmptyProvider struct{}
 
 func (p *AllEmptyProvider) Register(app foundation.Application) {}
 func (p *AllEmptyProvider) Boot(app foundation.Application)     {}
-func (p *AllEmptyProvider) Bindings() []string                  { return []string{} }
-func (p *AllEmptyProvider) Dependencies() []string              { return []string{} }
-func (p *AllEmptyProvider) ProvideFor() []string                { return []string{} }
+func (p *AllEmptyProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{},
+		Dependencies: []string{},
+		ProvideFor:   []string{},
+	}
+}
 
 type EmptyBindingsWithDependenciesProvider struct{}
 
 func (p *EmptyBindingsWithDependenciesProvider) Register(app foundation.Application) {}
 func (p *EmptyBindingsWithDependenciesProvider) Boot(app foundation.Application)     {}
-func (p *EmptyBindingsWithDependenciesProvider) Bindings() []string                  { return []string{} }
-func (p *EmptyBindingsWithDependenciesProvider) Dependencies() []string {
-	return []string{"provider_c"}
+func (p *EmptyBindingsWithDependenciesProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{},
+		Dependencies: []string{"provider_c"},
+		ProvideFor:   []string{},
+	}
 }
-func (p *EmptyBindingsWithDependenciesProvider) ProvideFor() []string { return []string{} }
 
 type EmptyBindingsWithProvideForProvider struct{}
 
 func (p *EmptyBindingsWithProvideForProvider) Register(app foundation.Application) {}
 func (p *EmptyBindingsWithProvideForProvider) Boot(app foundation.Application)     {}
-func (p *EmptyBindingsWithProvideForProvider) Bindings() []string                  { return []string{} }
-func (p *EmptyBindingsWithProvideForProvider) Dependencies() []string              { return []string{} }
-func (p *EmptyBindingsWithProvideForProvider) ProvideFor() []string                { return []string{"provider_a"} }
+func (p *EmptyBindingsWithProvideForProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{},
+		Dependencies: []string{},
+		ProvideFor:   []string{"provider_a"},
+	}
+}
 
 type EmptyBindingsWithBothProvider struct{}
 
 func (p *EmptyBindingsWithBothProvider) Register(app foundation.Application) {}
 func (p *EmptyBindingsWithBothProvider) Boot(app foundation.Application)     {}
-func (p *EmptyBindingsWithBothProvider) Bindings() []string                  { return []string{} }
-func (p *EmptyBindingsWithBothProvider) Dependencies() []string              { return []string{"provider_e"} }
-func (p *EmptyBindingsWithBothProvider) ProvideFor() []string                { return []string{"provider_c"} }
+func (p *EmptyBindingsWithBothProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{},
+		Dependencies: []string{"provider_e"},
+		ProvideFor:   []string{"provider_c"},
+	}
+}
 
 type EmptyBindingsCircularAProvider struct{}
 
 func (p *EmptyBindingsCircularAProvider) Register(app foundation.Application) {}
 func (p *EmptyBindingsCircularAProvider) Boot(app foundation.Application)     {}
-func (p *EmptyBindingsCircularAProvider) Bindings() []string                  { return []string{} }
-func (p *EmptyBindingsCircularAProvider) Dependencies() []string              { return []string{"__virtual_1"} }
-func (p *EmptyBindingsCircularAProvider) ProvideFor() []string                { return []string{} }
+func (p *EmptyBindingsCircularAProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{},
+		Dependencies: []string{"__virtual_1"},
+		ProvideFor:   []string{},
+	}
+}
 
 type EmptyBindingsCircularBProvider struct{}
 
 func (p *EmptyBindingsCircularBProvider) Register(app foundation.Application) {}
 func (p *EmptyBindingsCircularBProvider) Boot(app foundation.Application)     {}
-func (p *EmptyBindingsCircularBProvider) Bindings() []string                  { return []string{} }
-func (p *EmptyBindingsCircularBProvider) Dependencies() []string              { return []string{"__virtual_0"} }
-func (p *EmptyBindingsCircularBProvider) ProvideFor() []string                { return []string{} }
+func (p *EmptyBindingsCircularBProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{},
+		Dependencies: []string{"__virtual_0"},
+		ProvideFor:   []string{},
+	}
+}
 
 type CircularBindingAProvider struct{}
 
 func (p *CircularBindingAProvider) Register(app foundation.Application) {}
 func (p *CircularBindingAProvider) Boot(app foundation.Application)     {}
-func (p *CircularBindingAProvider) Bindings() []string                  { return []string{"circular_binding_a"} }
-func (p *CircularBindingAProvider) Dependencies() []string              { return []string{"circular_binding_b"} }
-func (p *CircularBindingAProvider) ProvideFor() []string                { return []string{} }
+func (p *CircularBindingAProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{"circular_binding_a"},
+		Dependencies: []string{"circular_binding_b"},
+		ProvideFor:   []string{},
+	}
+}
 
 type CircularBindingBProvider struct{}
 
 func (p *CircularBindingBProvider) Register(app foundation.Application) {}
 func (p *CircularBindingBProvider) Boot(app foundation.Application)     {}
-func (p *CircularBindingBProvider) Bindings() []string                  { return []string{"circular_binding_b"} }
-func (p *CircularBindingBProvider) Dependencies() []string              { return []string{"circular_binding_a"} }
-func (p *CircularBindingBProvider) ProvideFor() []string                { return []string{} }
+func (p *CircularBindingBProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{"circular_binding_b"},
+		Dependencies: []string{"circular_binding_a"},
+		ProvideFor:   []string{},
+	}
+}

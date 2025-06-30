@@ -2,7 +2,7 @@ package console
 
 import (
 	"github.com/goravel/framework/console/console"
-	"github.com/goravel/framework/contracts"
+	"github.com/goravel/framework/contracts/binding"
 	consolecontract "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/support/color"
@@ -11,8 +11,20 @@ import (
 type ServiceProvider struct {
 }
 
+func (r *ServiceProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings: []string{
+			binding.Artisan,
+		},
+		Dependencies: []string{
+			binding.Config,
+		},
+		ProvideFor: []string{},
+	}
+}
+
 func (r *ServiceProvider) Register(app foundation.Application) {
-	app.Singleton(contracts.BindingConsole, func(app foundation.Application) (any, error) {
+	app.Singleton(binding.Artisan, func(app foundation.Application) (any, error) {
 		name := "artisan"
 		usage := "Goravel Framework"
 		usageText := "artisan [global options] command [options] [arguments...]"
