@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	config, err := supportfile.GetFrameworkContent("grpc/config/grpc.go")
+	config, err := supportfile.GetFrameworkContent("grpc/setup/config/grpc.go")
 	if err != nil {
 		panic(err)
 	}

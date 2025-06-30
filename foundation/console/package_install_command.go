@@ -62,11 +62,14 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 		}
 	}
 
-	if isPackage(pkg) {
-		return r.installPackage(ctx, pkg)
-	}
+	return r.installPackage(ctx, pkg)
 
-	return r.installFacade(ctx, pkg)
+	// TODO: Implement this in v1.17 https://github.com/goravel/goravel/issues/719
+	// if isPackage(pkg) {
+	// 	return r.installPackage(ctx, pkg)
+	// }
+
+	// return r.installFacade(ctx, pkg)
 }
 
 func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) error {
