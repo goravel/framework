@@ -3,7 +3,7 @@ package http
 import (
 	"time"
 
-	"github.com/goravel/framework/contracts"
+	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/contracts/config"
 	contractsconsole "github.com/goravel/framework/contracts/console"
@@ -26,14 +26,30 @@ var (
 	JsonFacade        foundation.Json
 )
 
+func (r *ServiceProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings: []string{
+			binding.Http,
+			binding.RateLimiter,
+			binding.View,
+		},
+		Dependencies: []string{
+			binding.Cache,
+			binding.Config,
+			binding.Log,
+		},
+		ProvideFor: []string{},
+	}
+}
+
 func (r *ServiceProvider) Register(app foundation.Application) {
-	app.Singleton(contracts.BindingRateLimiter, func(app foundation.Application) (any, error) {
+	app.Singleton(binding.RateLimiter, func(app foundation.Application) (any, error) {
 		return NewRateLimiter(), nil
 	})
-	app.Singleton(contracts.BindingView, func(app foundation.Application) (any, error) {
+	app.Singleton(binding.View, func(app foundation.Application) (any, error) {
 		return NewView(), nil
 	})
-	app.Bind(contracts.BindingHttp, func(app foundation.Application) (any, error) {
+	app.Bind(binding.Http, func(app foundation.Application) (any, error) {
 		ConfigFacade = app.MakeConfig()
 		if ConfigFacade == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleHttp)
