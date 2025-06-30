@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	config, err := supportfile.GetFrameworkContent("hash/config/hashing.go")
+	config, err := supportfile.GetFrameworkContent("hash/setup/config/hashing.go")
 	if err != nil {
 		panic(err)
 	}

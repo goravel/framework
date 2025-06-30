@@ -69,11 +69,14 @@ func (r *PackageUninstallCommand) Handle(ctx console.Context) error {
 		}
 	}
 
-	if isPackage(pkg) {
-		return r.uninstallPackage(ctx, pkg)
-	}
+	return r.uninstallPackage(ctx, pkg)
 
-	return r.uninstallFacade(ctx, pkg)
+	// TODO: Implement this in v1.17 https://github.com/goravel/goravel/issues/719
+	// if isPackage(pkg) {
+	// 	return r.uninstallPackage(ctx, pkg)
+	// }
+
+	// return r.uninstallFacade(ctx, pkg)
 }
 
 func (r *PackageUninstallCommand) uninstallPackage(ctx console.Context, pkg string) error {

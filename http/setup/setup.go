@@ -11,17 +11,17 @@ import (
 )
 
 func main() {
-	http, err := supportfile.GetFrameworkContent("http/config/http.go")
+	http, err := supportfile.GetFrameworkContent("http/setup/config/http.go")
 	if err != nil {
 		panic(err)
 	}
 
-	jwt, err := supportfile.GetFrameworkContent("http/config/jwt.go")
+	jwt, err := supportfile.GetFrameworkContent("http/setup/config/jwt.go")
 	if err != nil {
 		panic(err)
 	}
 
-	cors, err := supportfile.GetFrameworkContent("http/config/cors.go")
+	cors, err := supportfile.GetFrameworkContent("http/setup/config/cors.go")
 	if err != nil {
 		panic(err)
 	}
