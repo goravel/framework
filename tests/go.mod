@@ -7,7 +7,7 @@ toolchain go1.24.4
 godebug x509negativeserial=1
 
 require (
-	github.com/brianvoe/gofakeit/v7 v7.2.1
+	github.com/brianvoe/gofakeit/v7 v7.3.0
 	github.com/goravel/framework v1.15.9
 	github.com/goravel/mysql v0.0.0-20250626031516-19442c544454
 	github.com/goravel/postgres v0.0.2-0.20250626031535-aae7c8a0767e
