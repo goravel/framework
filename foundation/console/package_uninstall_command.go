@@ -1,17 +1,14 @@
 package console
 
 import (
-	"fmt"
 	"os/exec"
 	"strings"
 
-	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
-	"github.com/goravel/framework/support/maps"
 )
 
 type PackageUninstallCommand struct {
@@ -109,23 +106,23 @@ func (r *PackageUninstallCommand) uninstallPackage(ctx console.Context, pkg stri
 	return nil
 }
 
-func (r *PackageUninstallCommand) uninstallFacade(ctx console.Context, facade string) error {
-	path, exists := binding.FacadeToPath[facade]
-	if !exists {
-		ctx.Warning(errors.PackageFacadeNotFound.Args(facade).Error())
-		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(maps.Keys(binding.FacadeToPath), ", ")))
-		return nil
-	}
+// func (r *PackageUninstallCommand) uninstallFacade(ctx console.Context, facade string) error {
+// 	path, exists := binding.FacadeToPath[facade]
+// 	if !exists {
+// 		ctx.Warning(errors.PackageFacadeNotFound.Args(facade).Error())
+// 		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(maps.Keys(binding.FacadeToPath), ", ")))
+// 		return nil
+// 	}
 
-	setup := path + "/setup"
+// 	setup := path + "/setup"
 
-	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "uninstall")); err != nil {
-		color.Red().Println(err.Error())
+// 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "uninstall")); err != nil {
+// 		color.Red().Println(err.Error())
 
-		return nil
-	}
+// 		return nil
+// 	}
 
-	color.Successf("Facade %s uninstalled successfully\n", facade)
+// 	color.Successf("Facade %s uninstalled successfully\n", facade)
 
-	return nil
-}
+// 	return nil
+// }
