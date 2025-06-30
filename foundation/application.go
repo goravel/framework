@@ -20,7 +20,6 @@ import (
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/color"
-	"github.com/goravel/framework/support/debug"
 	"github.com/goravel/framework/support/env"
 )
 
@@ -235,8 +234,6 @@ func (r *Application) getConfiguredServiceProviders() []foundation.ServiceProvid
 	}
 
 	r.configuredServiceProviders = sortConfiguredServiceProviders(providers)
-
-	debug.Dump(r.configuredServiceProviders)
 
 	return r.configuredServiceProviders
 }

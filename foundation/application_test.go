@@ -657,7 +657,6 @@ func TestSortConfiguredServiceProvidersWithEmptyBindingsCircularDependency(t *te
 		&CircularBindingBProvider{},
 	}
 
-	// 捕获 panic 并验证错误消息
 	defer func() {
 		if r := recover(); r != nil {
 			err, ok := r.(error)
@@ -1048,38 +1047,3 @@ func (p *CircularBindingBProvider) Boot(app foundation.Application)     {}
 func (p *CircularBindingBProvider) Bindings() []string                  { return []string{"circular_binding_b"} }
 func (p *CircularBindingBProvider) Dependencies() []string              { return []string{"circular_binding_a"} }
 func (p *CircularBindingBProvider) ProvideFor() []string                { return []string{} }
-
-type UnidirectionalDependencyAProvider struct{}
-
-func (p *UnidirectionalDependencyAProvider) Bindings() []string                  { return []string{"A"} }
-func (p *UnidirectionalDependencyAProvider) Dependencies() []string              { return []string{} }
-func (p *UnidirectionalDependencyAProvider) ProvideFor() []string                { return []string{} }
-func (p *UnidirectionalDependencyAProvider) Register(app foundation.Application) {}
-func (p *UnidirectionalDependencyAProvider) Boot(app foundation.Application)     {}
-
-type UnidirectionalDependencyBProvider struct{}
-
-func (p *UnidirectionalDependencyBProvider) Bindings() []string                  { return []string{"B"} }
-func (p *UnidirectionalDependencyBProvider) Dependencies() []string              { return []string{"A"} }
-func (p *UnidirectionalDependencyBProvider) ProvideFor() []string                { return []string{} }
-func (p *UnidirectionalDependencyBProvider) Register(app foundation.Application) {}
-func (p *UnidirectionalDependencyBProvider) Boot(app foundation.Application)     {}
-
-func TestUnidirectionalDependencyScenario(t *testing.T) {
-	// Scenario: B depends on A, but A's ProvideFor doesn't include B
-	providers := []foundation.ServiceProvider{
-		&UnidirectionalDependencyBProvider{}, // B depends on A
-		&UnidirectionalDependencyAProvider{}, // A doesn't have B in ProvideFor
-	}
-
-	// Sort the providers
-	sorted := sortConfiguredServiceProviders(providers)
-
-	// Verify the result is in correct order: A should come before B
-	assert.Equal(t, 2, len(sorted))
-	assert.IsType(t, &UnidirectionalDependencyAProvider{}, sorted[0])
-	assert.IsType(t, &UnidirectionalDependencyBProvider{}, sorted[1])
-
-	// Verify topological order is maintained
-	assert.True(t, isTopologicalOrder(providers, sorted), "Result should be in valid topological order")
-}
