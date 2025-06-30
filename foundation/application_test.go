@@ -441,6 +441,7 @@ func TestSortConfiguredServiceProviders(t *testing.T) {
 		name      string
 		providers []foundation.ServiceProvider
 		expected  []foundation.ServiceProvider
+		checkTopo bool
 	}{
 		{
 			name: "BasicSorting",
@@ -454,6 +455,7 @@ func TestSortConfiguredServiceProviders(t *testing.T) {
 				&BServiceProvider{},
 				&CServiceProvider{},
 			},
+			checkTopo: true,
 		},
 		{
 			name: "SingleProvider",
@@ -463,11 +465,13 @@ func TestSortConfiguredServiceProviders(t *testing.T) {
 			expected: []foundation.ServiceProvider{
 				&BasicServiceProvider{},
 			},
+			checkTopo: true,
 		},
 		{
 			name:      "EmptyProviders",
 			providers: []foundation.ServiceProvider{},
 			expected:  []foundation.ServiceProvider{},
+			checkTopo: true,
 		},
 		{
 			name: "ProvideForRelationship",
@@ -479,6 +483,7 @@ func TestSortConfiguredServiceProviders(t *testing.T) {
 				&ProvideForAServiceProvider{},
 				&ProvideForBServiceProvider{},
 			},
+			checkTopo: true,
 		},
 		{
 			name: "SingleProviderWithMock",
@@ -492,13 +497,14 @@ func TestSortConfiguredServiceProviders(t *testing.T) {
 		{
 			name: "EmptyDependencies",
 			providers: []foundation.ServiceProvider{
-				&EmptyDependenciesProvider{},
 				&MockProviderC{},
+				&EmptyDependenciesProvider{},
 			},
 			expected: []foundation.ServiceProvider{
 				&EmptyDependenciesProvider{},
 				&MockProviderC{},
 			},
+			checkTopo: true,
 		},
 		{
 			name: "EmptyProvideFor",
@@ -510,29 +516,97 @@ func TestSortConfiguredServiceProviders(t *testing.T) {
 				&MockProviderA{},
 				&EmptyProvideForProvider{},
 			},
+			checkTopo: true,
 		},
 		{
 			name: "AllEmptyMethods",
 			providers: []foundation.ServiceProvider{
-				&MockProviderE{},
 				&AllEmptyProvider{},
+				&MockProviderE{},
 			},
 			expected: []foundation.ServiceProvider{
-				&AllEmptyProvider{},
 				&MockProviderE{},
+				&AllEmptyProvider{},
 			},
+			checkTopo: true,
 		},
 		{
 			name: "MixedEmptyAndNonEmpty",
 			providers: []foundation.ServiceProvider{
+				&AllEmptyProvider{},
 				&MockProviderC{},
 				&EmptyDependenciesProvider{},
+			},
+			expected: []foundation.ServiceProvider{
+				&EmptyDependenciesProvider{},
+				&MockProviderC{},
+				&AllEmptyProvider{},
+			},
+			checkTopo: true,
+		},
+		{
+			name: "EmptyBindingsWithDependencies",
+			providers: []foundation.ServiceProvider{
+				&EmptyBindingsWithDependenciesProvider{},
+				&MockProviderC{},
+			},
+			expected: []foundation.ServiceProvider{
+				&MockProviderC{},
+				&EmptyBindingsWithDependenciesProvider{},
+			},
+			checkTopo: true,
+		},
+		{
+			name: "EmptyBindingsWithProvideFor",
+			providers: []foundation.ServiceProvider{
+				&MockProviderA{},
+				&EmptyBindingsWithProvideForProvider{},
+			},
+			expected: []foundation.ServiceProvider{
+				&EmptyBindingsWithProvideForProvider{},
+				&MockProviderA{},
+			},
+			checkTopo: true,
+		},
+		{
+			name: "EmptyBindingsWithBothDependenciesAndProvideFor",
+			providers: []foundation.ServiceProvider{
+				&EmptyBindingsWithBothProvider{},
+				&MockProviderA{},
+			},
+			expected: []foundation.ServiceProvider{
+				&EmptyBindingsWithBothProvider{},
+				&MockProviderA{},
+			},
+		},
+		{
+			name: "MultipleEmptyBindingsProviders",
+			providers: []foundation.ServiceProvider{
+				&EmptyBindingsWithDependenciesProvider{},
+				&EmptyBindingsWithProvideForProvider{},
+				&MockProviderE{},
+			},
+			expected: []foundation.ServiceProvider{
+				&EmptyBindingsWithDependenciesProvider{},
+				&EmptyBindingsWithProvideForProvider{},
+				&MockProviderE{},
+			},
+		},
+		{
+			name: "ComplexEmptyBindingsScenario",
+			providers: []foundation.ServiceProvider{
+				&EmptyBindingsWithDependenciesProvider{},
+				&EmptyBindingsWithProvideForProvider{},
+				&EmptyBindingsWithBothProvider{},
+				&MockProviderE{},
 				&AllEmptyProvider{},
 			},
 			expected: []foundation.ServiceProvider{
 				&AllEmptyProvider{},
-				&EmptyDependenciesProvider{},
-				&MockProviderC{},
+				&EmptyBindingsWithDependenciesProvider{},
+				&EmptyBindingsWithProvideForProvider{},
+				&MockProviderE{},
+				&EmptyBindingsWithBothProvider{},
 			},
 		},
 	}
@@ -540,7 +614,13 @@ func TestSortConfiguredServiceProviders(t *testing.T) {
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 			result := sortConfiguredServiceProviders(tt.providers)
-			assert.Equal(t, tt.expected, result)
+
+			if tt.checkTopo {
+				assert.Equal(t, tt.expected, result)
+				assert.True(t, isTopologicalOrder(tt.providers, result), "Result is not a valid topological order")
+			} else {
+				assert.ElementsMatch(t, tt.expected, result)
+			}
 		})
 	}
 }
@@ -561,6 +641,27 @@ func TestSortConfiguredServiceProvidersWithCircularDependency(t *testing.T) {
 			assert.Contains(t, err.Error(), "*foundation.ComplexProviderA")
 			assert.Contains(t, err.Error(), "*foundation.ComplexProviderB")
 			assert.Contains(t, err.Error(), "*foundation.ComplexProviderC")
+		} else {
+			t.Error("Expected panic but none occurred")
+		}
+	}()
+
+	sortConfiguredServiceProviders(providers)
+}
+
+func TestSortConfiguredServiceProvidersWithEmptyBindingsCircularDependency(t *testing.T) {
+	providers := []foundation.ServiceProvider{
+		&EmptyBindingsCircularAProvider{},
+		&EmptyBindingsCircularBProvider{},
+		&CircularBindingAProvider{},
+		&CircularBindingBProvider{},
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			err, ok := r.(error)
+			assert.True(t, ok, "Expected panic to be an error")
+			assert.Contains(t, err.Error(), "circular dependency detected between providers:")
 		} else {
 			t.Error("Expected panic but none occurred")
 		}
@@ -676,6 +777,74 @@ func Test_detectCycle(t *testing.T) {
 			assert.Equal(t, tc.expected, result)
 		})
 	}
+}
+
+// Helper to check topological order
+func isTopologicalOrder(providers []foundation.ServiceProvider, sorted []foundation.ServiceProvider) bool {
+	providerIndex := make(map[foundation.ServiceProvider]int)
+	for i, p := range sorted {
+		providerIndex[p] = i
+	}
+
+	getDependencies := func(provider foundation.ServiceProvider) []string {
+		if p, ok := provider.(interface{ Dependencies() []string }); ok {
+			return p.Dependencies()
+		}
+		return []string{}
+	}
+
+	getBindings := func(provider foundation.ServiceProvider) []string {
+		if p, ok := provider.(interface{ Bindings() []string }); ok {
+			return p.Bindings()
+		}
+		return []string{}
+	}
+
+	getProvideFor := func(provider foundation.ServiceProvider) []string {
+		if p, ok := provider.(interface{ ProvideFor() []string }); ok {
+			return p.ProvideFor()
+		}
+		return []string{}
+	}
+
+	// Build binding to provider mapping
+	bindingToProvider := make(map[string]foundation.ServiceProvider)
+	for _, p := range providers {
+		for _, b := range getBindings(p) {
+			bindingToProvider[b] = p
+		}
+	}
+
+	// Build provideFor to provider mapping (reverse relationship)
+	provideForToProvider := make(map[string]foundation.ServiceProvider)
+	for _, p := range providers {
+		for _, pf := range getProvideFor(p) {
+			provideForToProvider[pf] = p
+		}
+	}
+
+	// Check all dependency relationships
+	for _, p := range providers {
+		// Check explicit dependencies (this provider depends on others)
+		for _, dep := range getDependencies(p) {
+			if depProvider, ok := bindingToProvider[dep]; ok {
+				if providerIndex[depProvider] > providerIndex[p] {
+					return false
+				}
+			}
+		}
+
+		// Check implicit dependencies through ProvideFor (others depend on this provider)
+		for _, pf := range getProvideFor(p) {
+			if dependentProvider, ok := bindingToProvider[pf]; ok {
+				if providerIndex[p] > providerIndex[dependentProvider] {
+					return false
+				}
+			}
+		}
+	}
+
+	return true
 }
 
 type AServiceProvider struct{}
@@ -820,3 +989,61 @@ func (p *AllEmptyProvider) Boot(app foundation.Application)     {}
 func (p *AllEmptyProvider) Bindings() []string                  { return []string{} }
 func (p *AllEmptyProvider) Dependencies() []string              { return []string{} }
 func (p *AllEmptyProvider) ProvideFor() []string                { return []string{} }
+
+type EmptyBindingsWithDependenciesProvider struct{}
+
+func (p *EmptyBindingsWithDependenciesProvider) Register(app foundation.Application) {}
+func (p *EmptyBindingsWithDependenciesProvider) Boot(app foundation.Application)     {}
+func (p *EmptyBindingsWithDependenciesProvider) Bindings() []string                  { return []string{} }
+func (p *EmptyBindingsWithDependenciesProvider) Dependencies() []string {
+	return []string{"provider_c"}
+}
+func (p *EmptyBindingsWithDependenciesProvider) ProvideFor() []string { return []string{} }
+
+type EmptyBindingsWithProvideForProvider struct{}
+
+func (p *EmptyBindingsWithProvideForProvider) Register(app foundation.Application) {}
+func (p *EmptyBindingsWithProvideForProvider) Boot(app foundation.Application)     {}
+func (p *EmptyBindingsWithProvideForProvider) Bindings() []string                  { return []string{} }
+func (p *EmptyBindingsWithProvideForProvider) Dependencies() []string              { return []string{} }
+func (p *EmptyBindingsWithProvideForProvider) ProvideFor() []string                { return []string{"provider_a"} }
+
+type EmptyBindingsWithBothProvider struct{}
+
+func (p *EmptyBindingsWithBothProvider) Register(app foundation.Application) {}
+func (p *EmptyBindingsWithBothProvider) Boot(app foundation.Application)     {}
+func (p *EmptyBindingsWithBothProvider) Bindings() []string                  { return []string{} }
+func (p *EmptyBindingsWithBothProvider) Dependencies() []string              { return []string{"provider_e"} }
+func (p *EmptyBindingsWithBothProvider) ProvideFor() []string                { return []string{"provider_c"} }
+
+type EmptyBindingsCircularAProvider struct{}
+
+func (p *EmptyBindingsCircularAProvider) Register(app foundation.Application) {}
+func (p *EmptyBindingsCircularAProvider) Boot(app foundation.Application)     {}
+func (p *EmptyBindingsCircularAProvider) Bindings() []string                  { return []string{} }
+func (p *EmptyBindingsCircularAProvider) Dependencies() []string              { return []string{"__virtual_1"} }
+func (p *EmptyBindingsCircularAProvider) ProvideFor() []string                { return []string{} }
+
+type EmptyBindingsCircularBProvider struct{}
+
+func (p *EmptyBindingsCircularBProvider) Register(app foundation.Application) {}
+func (p *EmptyBindingsCircularBProvider) Boot(app foundation.Application)     {}
+func (p *EmptyBindingsCircularBProvider) Bindings() []string                  { return []string{} }
+func (p *EmptyBindingsCircularBProvider) Dependencies() []string              { return []string{"__virtual_0"} }
+func (p *EmptyBindingsCircularBProvider) ProvideFor() []string                { return []string{} }
+
+type CircularBindingAProvider struct{}
+
+func (p *CircularBindingAProvider) Register(app foundation.Application) {}
+func (p *CircularBindingAProvider) Boot(app foundation.Application)     {}
+func (p *CircularBindingAProvider) Bindings() []string                  { return []string{"circular_binding_a"} }
+func (p *CircularBindingAProvider) Dependencies() []string              { return []string{"circular_binding_b"} }
+func (p *CircularBindingAProvider) ProvideFor() []string                { return []string{} }
+
+type CircularBindingBProvider struct{}
+
+func (p *CircularBindingBProvider) Register(app foundation.Application) {}
+func (p *CircularBindingBProvider) Boot(app foundation.Application)     {}
+func (p *CircularBindingBProvider) Bindings() []string                  { return []string{"circular_binding_b"} }
+func (p *CircularBindingBProvider) Dependencies() []string              { return []string{"circular_binding_a"} }
+func (p *CircularBindingBProvider) ProvideFor() []string                { return []string{} }
