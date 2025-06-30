@@ -805,15 +805,15 @@ func isTopologicalOrder(providers []foundation.ServiceProvider, sorted []foundat
 	}
 
 	getBindings := func(provider foundation.ServiceProvider) []string {
-		if p, ok := provider.(interface{ Bindings() []string }); ok {
-			return p.Bindings()
+		if p, ok := provider.(interface{ Relationship() binding.Relationship }); ok {
+			return p.Relationship().Bindings
 		}
 		return []string{}
 	}
 
 	getProvideFor := func(provider foundation.ServiceProvider) []string {
-		if p, ok := provider.(interface{ ProvideFor() []string }); ok {
-			return p.ProvideFor()
+		if p, ok := provider.(interface{ Relationship() binding.Relationship }); ok {
+			return p.Relationship().ProvideFor
 		}
 		return []string{}
 	}
@@ -1090,56 +1090,82 @@ type EmptyBindingsWithDependenciesProvider struct{}
 
 func (p *EmptyBindingsWithDependenciesProvider) Register(app foundation.Application) {}
 func (p *EmptyBindingsWithDependenciesProvider) Boot(app foundation.Application)     {}
-func (p *EmptyBindingsWithDependenciesProvider) Bindings() []string                  { return []string{} }
-func (p *EmptyBindingsWithDependenciesProvider) Dependencies() []string {
-	return []string{"provider_c"}
+func (p *EmptyBindingsWithDependenciesProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{},
+		Dependencies: []string{"provider_c"},
+		ProvideFor:   []string{},
+	}
 }
-func (p *EmptyBindingsWithDependenciesProvider) ProvideFor() []string { return []string{} }
 
 type EmptyBindingsWithProvideForProvider struct{}
 
 func (p *EmptyBindingsWithProvideForProvider) Register(app foundation.Application) {}
 func (p *EmptyBindingsWithProvideForProvider) Boot(app foundation.Application)     {}
-func (p *EmptyBindingsWithProvideForProvider) Bindings() []string                  { return []string{} }
-func (p *EmptyBindingsWithProvideForProvider) Dependencies() []string              { return []string{} }
-func (p *EmptyBindingsWithProvideForProvider) ProvideFor() []string                { return []string{"provider_a"} }
+func (p *EmptyBindingsWithProvideForProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{},
+		Dependencies: []string{},
+		ProvideFor:   []string{"provider_a"},
+	}
+}
 
 type EmptyBindingsWithBothProvider struct{}
 
 func (p *EmptyBindingsWithBothProvider) Register(app foundation.Application) {}
 func (p *EmptyBindingsWithBothProvider) Boot(app foundation.Application)     {}
-func (p *EmptyBindingsWithBothProvider) Bindings() []string                  { return []string{} }
-func (p *EmptyBindingsWithBothProvider) Dependencies() []string              { return []string{"provider_e"} }
-func (p *EmptyBindingsWithBothProvider) ProvideFor() []string                { return []string{"provider_c"} }
+func (p *EmptyBindingsWithBothProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{},
+		Dependencies: []string{"provider_e"},
+		ProvideFor:   []string{"provider_c"},
+	}
+}
 
 type EmptyBindingsCircularAProvider struct{}
 
 func (p *EmptyBindingsCircularAProvider) Register(app foundation.Application) {}
 func (p *EmptyBindingsCircularAProvider) Boot(app foundation.Application)     {}
-func (p *EmptyBindingsCircularAProvider) Bindings() []string                  { return []string{} }
-func (p *EmptyBindingsCircularAProvider) Dependencies() []string              { return []string{"__virtual_1"} }
-func (p *EmptyBindingsCircularAProvider) ProvideFor() []string                { return []string{} }
+func (p *EmptyBindingsCircularAProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{},
+		Dependencies: []string{"__virtual_1"},
+		ProvideFor:   []string{},
+	}
+}
 
 type EmptyBindingsCircularBProvider struct{}
 
 func (p *EmptyBindingsCircularBProvider) Register(app foundation.Application) {}
 func (p *EmptyBindingsCircularBProvider) Boot(app foundation.Application)     {}
-func (p *EmptyBindingsCircularBProvider) Bindings() []string                  { return []string{} }
-func (p *EmptyBindingsCircularBProvider) Dependencies() []string              { return []string{"__virtual_0"} }
-func (p *EmptyBindingsCircularBProvider) ProvideFor() []string                { return []string{} }
+func (p *EmptyBindingsCircularBProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{},
+		Dependencies: []string{"__virtual_0"},
+		ProvideFor:   []string{},
+	}
+}
 
 type CircularBindingAProvider struct{}
 
 func (p *CircularBindingAProvider) Register(app foundation.Application) {}
 func (p *CircularBindingAProvider) Boot(app foundation.Application)     {}
-func (p *CircularBindingAProvider) Bindings() []string                  { return []string{"circular_binding_a"} }
-func (p *CircularBindingAProvider) Dependencies() []string              { return []string{"circular_binding_b"} }
-func (p *CircularBindingAProvider) ProvideFor() []string                { return []string{} }
+func (p *CircularBindingAProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{"circular_binding_a"},
+		Dependencies: []string{"circular_binding_b"},
+		ProvideFor:   []string{},
+	}
+}
 
 type CircularBindingBProvider struct{}
 
 func (p *CircularBindingBProvider) Register(app foundation.Application) {}
 func (p *CircularBindingBProvider) Boot(app foundation.Application)     {}
-func (p *CircularBindingBProvider) Bindings() []string                  { return []string{"circular_binding_b"} }
-func (p *CircularBindingBProvider) Dependencies() []string              { return []string{"circular_binding_a"} }
-func (p *CircularBindingBProvider) ProvideFor() []string                { return []string{} }
+func (p *CircularBindingBProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings:     []string{"circular_binding_b"},
+		Dependencies: []string{"circular_binding_a"},
+		ProvideFor:   []string{},
+	}
+}
