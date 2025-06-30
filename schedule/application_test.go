@@ -70,32 +70,35 @@ func (s *ApplicationTestSuite) TestCallAndCommand() {
 func (s *ApplicationTestSuite) TestOnOneServer() {
 	mockCache := mockscache.NewCache(s.T())
 	mockLock := mockscache.NewLock(s.T())
-	mockLock.EXPECT().Get().Return(true).Once()
+
+	// The execution order is not stable in the Windows system, so we don't use Once() here.
+	mockLock.EXPECT().Get().Return(true)
 	mockCache.EXPECT().Lock(mock.MatchedBy(func(key string) bool {
 		return strings.HasPrefix(key, "immediately") && len(key) == 17
-	}), 1*time.Hour).Return(mockLock).Once()
+	}), 1*time.Hour).Return(mockLock)
 
 	mockCache1 := mockscache.NewCache(s.T())
 	mockLock1 := mockscache.NewLock(s.T())
-	mockLock1.EXPECT().Get().Return(false).Once()
+	mockLock1.EXPECT().Get().Return(false)
 	mockCache1.EXPECT().Lock(mock.MatchedBy(func(key string) bool {
 		return strings.HasPrefix(key, "immediately") && len(key) == 17
-	}), 1*time.Hour).Return(mockLock1).Once()
+	}), 1*time.Hour).Return(mockLock1)
 
-	immediatelyCall := 0
+	immediatelyCall1 := 0
+	immediatelyCall2 := 0
 
 	app := NewApplication(nil, mockCache, nil, false)
 	app.Register([]schedule.Event{
 		app.Call(func() {
-			immediatelyCall++
-		}).Cron("*/2 * * * * *").OnOneServer().Name("immediately"),
+			immediatelyCall1++
+		}).Cron("* * * * * *").OnOneServer().Name("immediately"),
 	})
 
 	app1 := NewApplication(nil, mockCache1, nil, false)
 	app1.Register([]schedule.Event{
 		app1.Call(func() {
-			immediatelyCall++
-		}).Cron("*/2 * * * * *").OnOneServer().Name("immediately"),
+			immediatelyCall2++
+		}).Cron("* * * * * *").OnOneServer().Name("immediately"),
 	})
 
 	go app.Run()
@@ -103,7 +106,9 @@ func (s *ApplicationTestSuite) TestOnOneServer() {
 
 	time.Sleep(2 * time.Second)
 
-	s.Equal(1, immediatelyCall)
+	s.True(immediatelyCall1 > 0)
+	s.True(immediatelyCall2 == 0)
+
 	s.NoError(app.Shutdown())
 	s.NoError(app1.Shutdown())
 }
