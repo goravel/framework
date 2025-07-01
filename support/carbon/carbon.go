@@ -40,7 +40,7 @@ func SetTestNow(c *Carbon) {
 
 // UnsetTestNow unsets the test time.
 //
-// Deprecated: it will be removed in the future, use ClearTestNow instead.
+// Deprecated: it will be removed in the future, use `ClearTestNow` instead.
 func UnsetTestNow() {
 	ClearTestNow()
 }
@@ -89,7 +89,7 @@ func ParseByFormat[T string | []string](value string, format T, timezone ...stri
 
 // ParseWithLayouts returns a Carbon object with multiple fuzzy layouts.
 //
-// Deprecated: it will be removed in the future, use ParseByLayout instead.
+// Deprecated: it will be removed in the future, use `ParseByLayout` instead.
 func ParseWithLayouts(value string, layouts []string, timezone ...string) *Carbon {
 	return carbon.ParseWithLayouts(value, layouts, timezone...)
 }
@@ -186,17 +186,17 @@ func FromStdTime(time stdtime.Time, timezone ...string) *Carbon {
 	return carbon.CreateFromStdTime(time, timezone...)
 }
 
-// FromLunar returns a Carbon instance from Lunar date.
+// FromLunar returns a Carbon object from Lunar date.
 func FromLunar(year, month, day int, isLeapMonth bool) *Carbon {
 	return carbon.CreateFromLunar(year, month, day, isLeapMonth)
 }
 
-// FromJulian returns a Carbon instance from Julian Day or Modified Julian Day.
+// FromJulian returns a Carbon object from Julian Day or Modified Julian Day.
 func FromJulian(f float64) *Carbon {
 	return carbon.CreateFromJulian(f)
 }
 
-// FromPersian creates a Carbon instance from Persian date.
+// FromPersian returns a Carbon object from Persian date.
 func FromPersian(year, month, day int) *Carbon {
 	return carbon.CreateFromPersian(year, month, day)
 }
