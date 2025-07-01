@@ -1640,6 +1640,52 @@ func (_c *Grammar_CompilePrimary_Call) RunAndReturn(run func(driver.Blueprint, *
 	return _c
 }
 
+// CompilePrune provides a mock function with given fields: database
+func (_m *Grammar) CompilePrune(database string) string {
+	ret := _m.Called(database)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompilePrune")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(database)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_CompilePrune_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompilePrune'
+type Grammar_CompilePrune_Call struct {
+	*mock.Call
+}
+
+// CompilePrune is a helper method to define mock.On call
+//   - database string
+func (_e *Grammar_Expecter) CompilePrune(database interface{}) *Grammar_CompilePrune_Call {
+	return &Grammar_CompilePrune_Call{Call: _e.mock.On("CompilePrune", database)}
+}
+
+func (_c *Grammar_CompilePrune_Call) Run(run func(database string)) *Grammar_CompilePrune_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Grammar_CompilePrune_Call) Return(_a0 string) *Grammar_CompilePrune_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_CompilePrune_Call) RunAndReturn(run func(string) string) *Grammar_CompilePrune_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CompileRandomOrderForGorm provides a mock function with no fields
 func (_m *Grammar) CompileRandomOrderForGorm() string {
 	ret := _m.Called()
