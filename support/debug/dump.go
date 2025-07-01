@@ -14,8 +14,8 @@ var (
 	osExit           = os.Exit
 )
 
-// Dd is used to display detailed information about variables and then exit the program
-func Dd(v ...any) {
+// DD is used to display detailed information about variables and then exit the program
+func DD(v ...any) {
 	dumper.Dump(v...)
 	osExit(0)
 }

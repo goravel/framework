@@ -2,9 +2,9 @@ package debug
 
 import (
 	"bytes"
-	"github.com/goforj/godump"
 	"testing"
 
+	"github.com/goforj/godump"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -44,7 +44,7 @@ func TestDd(t *testing.T) {
 	})
 
 	output := captureOutput(func() {
-		Dd(struct{ ID int }{ID: 123})
+		DD(struct{ ID int }{ID: 123})
 	})
 	assert.Equal(t, "\x1b[90m<#dump // dump.go:19"+
 		"\x1b[0m\n\x1b[90m#struct { ID int }\x1b[0m \n  "+
@@ -104,14 +104,14 @@ func TestDump(t *testing.T) {
 }
 
 func TestFDump(t *testing.T) {
-	data := map[string]int{"a": 1, "b": 2}
+	data := map[string]string{"key": "value"}
 
 	t.Run("dump to writer", func(t *testing.T) {
 		var buf bytes.Buffer
 		FDump(&buf, data)
 		assert.Equal(t, "\x1b[90m<#dump // dump.go:41\x1b[0m\n{\n   "+
-			"\x1b[38;5;170ma\x1b[0m => \x1b[38;5;38m1\x1b[0m\n   "+
-			"\x1b[38;5;170mb\x1b[0m => \x1b[38;5;38m2\x1b[0m\n}\n",
+			"\x1b[38;5;170mkey\x1b[0m => \x1b[33m\"\x1b[0m\x1b[38;5;113mvalue"+
+			"\x1b[0m\x1b[33m\"\x1b[0m\n}\n",
 			buf.String())
 
 	})
@@ -120,8 +120,8 @@ func TestFDump(t *testing.T) {
 		var buf bytes.Buffer
 		FDumpHTML(&buf, data)
 		assert.Equal(t, "<body style='background-color:black;'><pre style=\"background-color:black; color:white; padding:5px; border-radius: 5px\">\n"+
-			"<span style=\"color:#999\"><#dump // dump.go:46</span>\n{\n   <span style=\"color:#d087d0\">a</span> => <span style=\"color:#40c0ff\">1</span>\n"+
-			"   <span style=\"color:#d087d0\">b</span> => <span style=\"color:#40c0ff\">2</span>\n}\n</pre></body>\n",
+			"<span style=\"color:#999\"><#dump // dump.go:46</span>\n{\n   <span style=\"color:#d087d0\">key</span> => <span style=\"color:#ffb400\">\"</span>"+
+			"<span style=\"color:#80ff80\">value</span><span style=\"color:#ffb400\">\"</span>\n}\n</pre></body>\n",
 			buf.String())
 
 	})
@@ -129,7 +129,7 @@ func TestFDump(t *testing.T) {
 	t.Run("dump JSON to writer", func(t *testing.T) {
 		var buf bytes.Buffer
 		FDumpJSON(&buf, data)
-		assert.Equal(t, "{\n  \"a\": 1,\n  \"b\": 2\n}\n", buf.String())
+		assert.Equal(t, "{\n  \"key\": \"value\"\n}\n", buf.String())
 	})
 
 }
