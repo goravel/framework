@@ -34,7 +34,10 @@ func GetIDByReflect(t reflect.Type, v reflect.Value) any {
 			return v.Field(i).Interface()
 		}
 		if t.Field(i).Type.Kind() == reflect.Struct && t.Field(i).Anonymous {
-			return GetIDByReflect(t.Field(i).Type, v.Field(i))
+			id := GetIDByReflect(t.Field(i).Type, v.Field(i))
+			if id != nil {
+				return id
+			}
 		}
 	}
 
