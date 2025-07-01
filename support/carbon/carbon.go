@@ -8,17 +8,17 @@ import (
 
 type Carbon = carbon.Carbon
 
-// New returns a new Carbon instance.
+// New returns a new Carbon object.
 func New(time ...stdtime.Time) *Carbon {
 	return carbon.NewCarbon(time...)
 }
 
-// ZeroValue returns the zero value of Carbon instance.
+// ZeroValue returns the zero value of Carbon object.
 func ZeroValue() *Carbon {
 	return carbon.ZeroValue()
 }
 
-// EpochValue returns the unix epoch value of Carbon instance.
+// EpochValue returns the unix epoch value of Carbon object.
 func EpochValue() *Carbon {
 	return carbon.EpochValue()
 }
