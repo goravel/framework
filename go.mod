@@ -10,10 +10,10 @@ require (
 	github.com/charmbracelet/huh/spinner v0.0.0-20250603124601-31a1db2cbc39
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/dave/dst v0.27.3
-	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/dromara/carbon/v2 v2.6.9
 	github.com/gabriel-vasile/mimetype v1.4.9
 	github.com/go-viper/mapstructure/v2 v2.3.0
+	github.com/goforj/godump v1.4.0
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/google/uuid v1.6.0
 	github.com/gookit/validate v1.5.5
@@ -37,6 +37,8 @@ require (
 	gorm.io/gorm v1.30.0
 	gorm.io/plugin/dbresolver v1.6.0
 )
+
+require github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 
 require (
 	atomicgo.dev/cursor v0.2.0 // indirect

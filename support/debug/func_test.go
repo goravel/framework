@@ -22,5 +22,5 @@ func TestFuncInfo(t *testing.T) {
 	assert.Equal(t, "github.com/goravel/framework/support/debug", info.PackagePath())
 	assert.Equal(t, "debug", info.PackageName())
 	assert.Contains(t, info.File, "dump.go")
-	assert.Equal(t, 11, info.Line)
+	assert.Equal(t, 24, info.Line)
 }
