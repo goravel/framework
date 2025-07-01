@@ -9,8 +9,8 @@ import (
 type Carbon = carbon.Carbon
 
 // New returns a new Carbon instance.
-func New(time stdtime.Time) *Carbon {
-	return carbon.NewCarbon(time)
+func New(time ...stdtime.Time) *Carbon {
+	return carbon.NewCarbon(time...)
 }
 
 // ZeroValue returns the zero value of Carbon instance.
