@@ -37,23 +37,13 @@ var App foundation.Application
 type ServiceProvider struct {
 }
 
-// Bindings returns what bindings the service provider will register.
-func (r *ServiceProvider) Bindings() []string {
-	return []string{Binding}
-}
-
-// Dependencies returns what dependencies the service provider needs.
-// For example, the Cache package needs the Log facade.
-// You can get the binding from package service provider files.
-func (r *ServiceProvider) Dependencies() []string {
-	return []string{}
-}
-
-// ProvideFor returns what services the service provider provides for.
-// For example, the Redis package provides services for the Cache facade.
-// You can get the binding from package service provider files.
-func (r *ServiceProvider) ProvideFor() []string {
-	return []string{}
+// Relationship returns the relationship of the service provider.
+func (r *ServiceProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings: []string{},
+		Dependencies: []string{},
+		ProvideFor: []string{},
+	}
 }
 
 // Register registers the service provider.
