@@ -8,6 +8,8 @@ import (
 )
 
 func TestNew(t *testing.T) {
+	assert.Equal(t, "0001-01-01 00:00:00 +0000 UTC", New().ToString())
+
 	tt, _ := stdtime.ParseInLocation(DateTimeLayout, "2020-08-05 13:14:15", stdtime.UTC)
 	assert.Equal(t, "2020-08-05 13:14:15 +0000 UTC", New(tt).ToString())
 	assert.Equal(t, tt.String(), New(tt).ToString())
