@@ -10,10 +10,10 @@ require (
 	github.com/charmbracelet/huh/spinner v0.0.0-20250603124601-31a1db2cbc39
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/dave/dst v0.27.3
-	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/dromara/carbon/v2 v2.6.9
 	github.com/gabriel-vasile/mimetype v1.4.9
 	github.com/go-viper/mapstructure/v2 v2.3.0
+	github.com/goforj/godump v1.4.0
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/google/uuid v1.6.0
 	github.com/gookit/validate v1.5.5
@@ -63,6 +63,7 @@ require (
 	github.com/charmbracelet/x/term v0.2.1 // indirect
 	github.com/chigopher/pathlib v0.19.1 // indirect
 	github.com/containerd/console v1.0.5 // indirect
+	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
