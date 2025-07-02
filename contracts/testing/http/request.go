@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"io"
+	"net/http"
 )
 
 type Request interface {
@@ -18,8 +19,8 @@ type Request interface {
 	FlushHeaders() Request
 	WithBasicAuth(username, password string) Request
 	WithContext(ctx context.Context) Request
-	WithCookies(cookies map[string]string) Request
-	WithCookie(key, value string) Request
+	WithCookies(cookies []*http.Cookie) Request
+	WithCookie(cookie *http.Cookie) Request
 	WithHeader(key, value string) Request
 	WithHeaders(headers map[string]string) Request
 	WithoutHeader(key string) Request
