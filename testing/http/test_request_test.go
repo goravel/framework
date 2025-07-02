@@ -45,21 +45,36 @@ func (s *TestRequestSuite) SetupTest() {
 }
 
 func (s *TestRequestSuite) TestBindAndCall() {
-	s.mockRoute.EXPECT().Test(httptest.NewRequest("GET", "/", nil).WithContext(context.Background())).Return(&http.Response{
-		Body: io.NopCloser(bytes.NewBufferString(`{"name": "John", "age": 30}`)),
-	}, nil).Once()
+	s.Run("succeed to bind and call", func() {
+		s.mockRoute.EXPECT().Test(httptest.NewRequest("GET", "/", nil).WithContext(context.Background())).Return(&http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(bytes.NewBufferString(`{"name": "John", "age": 30}`)),
+		}, nil).Once()
 
-	var user struct {
-		Name string `json:"name"`
-		Age  int    `json:"age"`
-	}
+		var user struct {
+			Name string `json:"name"`
+			Age  int    `json:"age"`
+		}
 
-	response, err := s.testRequest.Bind(&user).Get("/")
+		response, err := s.testRequest.Bind(&user).Get("/")
 
-	s.NoError(err)
-	s.NotNil(response)
-	s.Equal(user.Name, "John")
-	s.Equal(user.Age, 30)
+		s.NoError(err)
+		s.NotNil(response)
+		s.Equal("John", user.Name)
+		s.Equal(30, user.Age)
+	})
+
+	s.Run("should not bind when response is not successful", func() {
+		s.mockRoute.EXPECT().Test(httptest.NewRequest("GET", "/", nil).WithContext(context.Background())).Return(&http.Response{
+			StatusCode: http.StatusInternalServerError,
+		}, nil).Once()
+
+		response, err := s.testRequest.Get("/")
+
+		s.NoError(err)
+		s.NotNil(response)
+		response.AssertInternalServerError()
+	})
 }
 
 func (s *TestRequestSuite) TestWithCookie() {
