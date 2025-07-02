@@ -47,6 +47,7 @@ var (
 	ConsoleEmptyFieldValue       = New("the %s name cannot be empty")
 	ConsoleFileAlreadyExists     = New("the %s already exists. Use the --force or -f flag to overwrite")
 	ConsoleFailedToConfirm       = New("failed to confirm the action: %v")
+	ConsolePruneFailed           = New("prune failed: %v")
 	ConsoleRunInProduction       = New("please use the --force option if you want to run the command in production")
 
 	CryptAppKeyNotSet        = New("APP_KEY is required in artisan environment")

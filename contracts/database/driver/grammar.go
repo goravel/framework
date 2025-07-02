@@ -59,6 +59,8 @@ type SchemaGrammar interface {
 	CompileIndexes(schema, table string) (string, error)
 	// CompilePrimary Compile a primary key command.
 	CompilePrimary(blueprint Blueprint, command *Command) string
+	// CompilePrune Compile the SQL needed to prune or shrink the database.
+	CompilePrune(database string) string
 	// CompileRename Compile a rename table command.
 	CompileRename(blueprint Blueprint, command *Command) string
 	// CompileRenameColumn Compile a rename column command.

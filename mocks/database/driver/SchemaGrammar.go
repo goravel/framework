@@ -1128,6 +1128,52 @@ func (_c *SchemaGrammar_CompilePrimary_Call) RunAndReturn(run func(driver.Bluepr
 	return _c
 }
 
+// CompilePrune provides a mock function with given fields: database
+func (_m *SchemaGrammar) CompilePrune(database string) string {
+	ret := _m.Called(database)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompilePrune")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(database)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// SchemaGrammar_CompilePrune_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompilePrune'
+type SchemaGrammar_CompilePrune_Call struct {
+	*mock.Call
+}
+
+// CompilePrune is a helper method to define mock.On call
+//   - database string
+func (_e *SchemaGrammar_Expecter) CompilePrune(database interface{}) *SchemaGrammar_CompilePrune_Call {
+	return &SchemaGrammar_CompilePrune_Call{Call: _e.mock.On("CompilePrune", database)}
+}
+
+func (_c *SchemaGrammar_CompilePrune_Call) Run(run func(database string)) *SchemaGrammar_CompilePrune_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *SchemaGrammar_CompilePrune_Call) Return(_a0 string) *SchemaGrammar_CompilePrune_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *SchemaGrammar_CompilePrune_Call) RunAndReturn(run func(string) string) *SchemaGrammar_CompilePrune_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CompileRename provides a mock function with given fields: blueprint, command
 func (_m *SchemaGrammar) CompileRename(blueprint driver.Blueprint, command *driver.Command) string {
 	ret := _m.Called(blueprint, command)
