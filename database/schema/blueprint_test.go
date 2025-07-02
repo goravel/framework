@@ -946,6 +946,105 @@ func (s *BlueprintTestSuite) TestNullableMorphsWithUuidKeyType() {
 	})
 }
 
+func (s *BlueprintTestSuite) TestUlid() {
+	name := "ulid_column"
+	s.blueprint.Ulid(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:  &name,
+		ttype: convert.Pointer("ulid"),
+	})
+}
+
+func (s *BlueprintTestSuite) TestUlidMorphs() {
+	name := "morphable"
+	s.blueprint.UlidMorphs(name)
+
+	typeColumn := name + "_type"
+	idColumn := name + "_id"
+
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:   &typeColumn,
+		ttype:  convert.Pointer("string"),
+		length: convert.Pointer(255),
+	})
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:  &idColumn,
+		ttype: convert.Pointer("ulid"),
+	})
+
+	commands := s.blueprint.GetCommands()
+	hasIndexCommand := false
+	for _, cmd := range commands {
+		if cmd.Name == "index" && len(cmd.Columns) == 2 &&
+			cmd.Columns[0] == typeColumn && cmd.Columns[1] == idColumn {
+			hasIndexCommand = true
+			break
+		}
+	}
+	s.True(hasIndexCommand, "Should have index command for ULID morph columns")
+}
+
+func (s *BlueprintTestSuite) TestMorphsWithUlidKeyType() {
+	// Save original state
+	originalKeyType := GetDefaultMorphKeyType()
+	defer func() {
+		SetDefaultMorphKeyType(originalKeyType)
+	}()
+
+	// Set ULID as default
+	MorphUsingUlids()
+	s.Equal(MorphKeyTypeUlid, GetDefaultMorphKeyType())
+
+	// Create new blueprint for clean test
+	blueprint := NewBlueprint(s.mockSchema, "goravel_", "test_table")
+	name := "morphable"
+	blueprint.Morphs(name)
+
+	typeColumn := name + "_type"
+	idColumn := name + "_id"
+
+	s.Contains(blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:   &typeColumn,
+		ttype:  convert.Pointer("string"),
+		length: convert.Pointer(255),
+	})
+	s.Contains(blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:  &idColumn,
+		ttype: convert.Pointer("ulid"),
+	})
+}
+
+func (s *BlueprintTestSuite) TestNullableMorphsWithUlidKeyType() {
+	// Save original state
+	originalKeyType := GetDefaultMorphKeyType()
+	defer func() {
+		SetDefaultMorphKeyType(originalKeyType)
+	}()
+
+	// Set ULID as default
+	MorphUsingUlids()
+
+	// Create new blueprint for clean test
+	blueprint := NewBlueprint(s.mockSchema, "goravel_", "test_table")
+	name := "morphable"
+	blueprint.NullableMorphs(name)
+
+	typeColumn := name + "_type"
+	idColumn := name + "_id"
+
+	s.Contains(blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:     &typeColumn,
+		ttype:    convert.Pointer("string"),
+		length:   convert.Pointer(255),
+		nullable: convert.Pointer(true),
+	})
+	s.Contains(blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:     &idColumn,
+		ttype:    convert.Pointer("ulid"),
+		nullable: convert.Pointer(true),
+	})
+}
+
 func (s *BlueprintTestSuite) TestMorphKeyTypeConfiguration() {
 	// Test initial state
 	s.Equal(MorphKeyTypeInt, GetDefaultMorphKeyType())
@@ -954,6 +1053,11 @@ func (s *BlueprintTestSuite) TestMorphKeyTypeConfiguration() {
 	err := SetDefaultMorphKeyType(MorphKeyTypeUuid)
 	s.NoError(err)
 	s.Equal(MorphKeyTypeUuid, GetDefaultMorphKeyType())
+
+	// Test setting ULID
+	err = SetDefaultMorphKeyType(MorphKeyTypeUlid)
+	s.NoError(err)
+	s.Equal(MorphKeyTypeUlid, GetDefaultMorphKeyType())
 
 	// Test setting back to int
 	err = SetDefaultMorphKeyType(MorphKeyTypeInt)
@@ -967,6 +1071,9 @@ func (s *BlueprintTestSuite) TestMorphKeyTypeConfiguration() {
 	// Test convenience methods
 	MorphUsingUuids()
 	s.Equal(MorphKeyTypeUuid, GetDefaultMorphKeyType())
+
+	MorphUsingUlids()
+	s.Equal(MorphKeyTypeUlid, GetDefaultMorphKeyType())
 
 	MorphUsingInts()
 	s.Equal(MorphKeyTypeInt, GetDefaultMorphKeyType())

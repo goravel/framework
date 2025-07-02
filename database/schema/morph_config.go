@@ -8,14 +8,15 @@ type MorphKeyType string
 const (
 	MorphKeyTypeInt  MorphKeyType = "int"
 	MorphKeyTypeUuid MorphKeyType = "uuid"
+	MorphKeyTypeUlid MorphKeyType = "ulid"
 )
 
 var defaultMorphKeyType MorphKeyType = MorphKeyTypeInt
 
 // SetDefaultMorphKeyType sets the default morph key type
 func SetDefaultMorphKeyType(keyType MorphKeyType) error {
-	if keyType != MorphKeyTypeInt && keyType != MorphKeyTypeUuid {
-		return fmt.Errorf("morph key type must be '%s' or '%s'", MorphKeyTypeInt, MorphKeyTypeUuid)
+	if keyType != MorphKeyTypeInt && keyType != MorphKeyTypeUuid && keyType != MorphKeyTypeUlid {
+		return fmt.Errorf("morph key type must be '%s', '%s', or '%s'", MorphKeyTypeInt, MorphKeyTypeUuid, MorphKeyTypeUlid)
 	}
 	defaultMorphKeyType = keyType
 	return nil
@@ -29,6 +30,11 @@ func GetDefaultMorphKeyType() MorphKeyType {
 // MorphUsingUuids sets the default morph key type to UUID
 func MorphUsingUuids() {
 	defaultMorphKeyType = MorphKeyTypeUuid
+}
+
+// MorphUsingUlids sets the default morph key type to ULID
+func MorphUsingUlids() {
+	defaultMorphKeyType = MorphKeyTypeUlid
 }
 
 // MorphUsingInts sets the default morph key type to int (default)

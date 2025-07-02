@@ -130,6 +130,10 @@ type Blueprint interface {
 	Uuid(column string) driver.ColumnDefinition
 	// UuidMorphs Create UUID morph columns for polymorphic relationships.
 	UuidMorphs(name string, indexName ...string)
+	// Ulid Create a new ULID column on the table.
+	Ulid(column string) driver.ColumnDefinition
+	// UlidMorphs Create ULID morph columns for polymorphic relationships.
+	UlidMorphs(name string, indexName ...string)
 	// String Create a new string column on the table.
 	String(column string, length ...int) driver.ColumnDefinition
 	// Text Create a new text column on the table.

@@ -3811,6 +3811,102 @@ func (_c *Blueprint_Uuid_Call) RunAndReturn(run func(string) driver.ColumnDefini
 	return _c
 }
 
+// Ulid provides a mock function with given fields: column
+func (_m *Blueprint) Ulid(column string) driver.ColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Ulid")
+	}
+
+	var r0 driver.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) driver.ColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(driver.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_Ulid_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Ulid'
+type Blueprint_Ulid_Call struct {
+	*mock.Call
+}
+
+// Ulid is a helper method to define mock.On call
+//   - column string
+func (_e *Blueprint_Expecter) Ulid(column interface{}) *Blueprint_Ulid_Call {
+	return &Blueprint_Ulid_Call{Call: _e.mock.On("Ulid", column)}
+}
+
+func (_c *Blueprint_Ulid_Call) Run(run func(column string)) *Blueprint_Ulid_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_Ulid_Call) Return(_a0 driver.ColumnDefinition) *Blueprint_Ulid_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_Ulid_Call) RunAndReturn(run func(string) driver.ColumnDefinition) *Blueprint_Ulid_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UlidMorphs provides a mock function with given fields: name, indexName
+func (_m *Blueprint) UlidMorphs(name string, indexName ...string) {
+	_va := make([]interface{}, len(indexName))
+	for _i := range indexName {
+		_va[_i] = indexName[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, name)
+	_ca = append(_ca, _va...)
+	_m.Called(_ca...)
+}
+
+// Blueprint_UlidMorphs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UlidMorphs'
+type Blueprint_UlidMorphs_Call struct {
+	*mock.Call
+}
+
+// UlidMorphs is a helper method to define mock.On call
+//   - name string
+//   - indexName ...string
+func (_e *Blueprint_Expecter) UlidMorphs(name interface{}, indexName ...interface{}) *Blueprint_UlidMorphs_Call {
+	return &Blueprint_UlidMorphs_Call{Call: _e.mock.On("UlidMorphs",
+		append([]interface{}{name}, indexName...)...)}
+}
+
+func (_c *Blueprint_UlidMorphs_Call) Run(run func(name string, indexName ...string)) *Blueprint_UlidMorphs_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Blueprint_UlidMorphs_Call) Return() *Blueprint_UlidMorphs_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Blueprint_UlidMorphs_Call) RunAndReturn(run func(string, ...string)) *Blueprint_UlidMorphs_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // UuidMorphs provides a mock function with given fields: name, indexName
 func (_m *Blueprint) UuidMorphs(name string, indexName ...string) {
 	_va := make([]interface{}, len(indexName))
