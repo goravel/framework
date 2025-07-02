@@ -45,7 +45,7 @@ func (r *Failer) Get(connection, queue string, uuids []string) ([]contractsqueue
 	}
 
 	if len(uuids) > 0 {
-		query = query.WhereIn("uuid", convert.ToAnySlice(uuids...))
+		query = query.WhereIn("uuid", convert.ToAnySlice(uuids))
 	}
 
 	var modelFailedJobs []models.FailedJob
