@@ -9,10 +9,10 @@ godebug x509negativeserial=1
 require (
 	github.com/brianvoe/gofakeit/v7 v7.3.0
 	github.com/goravel/framework v1.15.9
-	github.com/goravel/mysql v0.0.0-20250626031516-19442c544454
-	github.com/goravel/postgres v0.0.2-0.20250626031535-aae7c8a0767e
-	github.com/goravel/sqlite v0.0.0-20250626031454-e195ad35c34e
-	github.com/goravel/sqlserver v0.0.0-20250627011359-b501c1567c71
+	github.com/goravel/mysql v0.0.0-20250702013219-02363f0dea53
+	github.com/goravel/postgres v0.0.2-0.20250702013229-88925359fcda
+	github.com/goravel/sqlite v0.0.0-20250702012737-7c2a5ef1517b
+	github.com/goravel/sqlserver v0.0.0-20250702012302-0ca470d0e297
 	github.com/spf13/cast v1.9.2
 	github.com/stretchr/testify v1.10.0
 	gorm.io/gorm v1.30.0
@@ -23,7 +23,7 @@ require (
 	atomicgo.dev/keyboard v0.2.9 // indirect
 	atomicgo.dev/schedule v0.1.0 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
-	github.com/Masterminds/semver/v3 v3.3.1 // indirect
+	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/containerd/console v1.0.5 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
