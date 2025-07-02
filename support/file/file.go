@@ -57,22 +57,25 @@ func Exists(file string) bool {
 
 // Extension Supported types: https://github.com/gabriel-vasile/mimetype/blob/master/supported_mimes.md
 func Extension(file string, originalWhenUnknown ...bool) (string, error) {
+	getOriginal := false
+	if len(originalWhenUnknown) > 0 {
+		getOriginal = originalWhenUnknown[0]
+	}
+
 	mtype, err := mimetype.DetectFile(file)
-	if err != nil {
+	if err != nil && !getOriginal {
 		return "", err
 	}
 
-	if mtype.String() == "" {
-		if len(originalWhenUnknown) > 0 {
-			if originalWhenUnknown[0] {
-				return ClientOriginalExtension(file), nil
-			}
-		}
-
-		return "", errors.UnknownFileExtension
+	if mtype != nil && mtype.Extension() != "" {
+		return strings.TrimPrefix(mtype.Extension(), "."), nil
 	}
 
-	return strings.TrimPrefix(mtype.Extension(), "."), nil
+	if getOriginal {
+		return ClientOriginalExtension(file), nil
+	}
+
+	return "", errors.UnknownFileExtension
 }
 
 func GetContent(file string) (string, error) {
