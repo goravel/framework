@@ -102,6 +102,12 @@ type Blueprint interface {
 	MediumInteger(column string) driver.ColumnDefinition
 	// MediumText Create a new medium text column on the table.
 	MediumText(column string) driver.ColumnDefinition
+	// Morphs Create morph columns for polymorphic relationships.
+	Morphs(name string, indexName ...string)
+	// NullableMorphs Create nullable morph columns for polymorphic relationships.
+	NullableMorphs(name string, indexName ...string)
+	// NumericMorphs Create numeric morph columns for polymorphic relationships.
+	NumericMorphs(name string, indexName ...string)
 	// Primary Specify the primary key(s) for the table.
 	Primary(column ...string)
 	// Rename the table to a given name.
@@ -122,6 +128,8 @@ type Blueprint interface {
 	SoftDeletesTz(column ...string) driver.ColumnDefinition
 	// Uuid Create a new UUID column on the table.
 	Uuid(column string) driver.ColumnDefinition
+	// UuidMorphs Create UUID morph columns for polymorphic relationships.
+	UuidMorphs(name string, indexName ...string)
 	// String Create a new string column on the table.
 	String(column string, length ...int) driver.ColumnDefinition
 	// Text Create a new text column on the table.

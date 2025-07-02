@@ -2263,6 +2263,150 @@ func (_c *Blueprint_MediumText_Call) RunAndReturn(run func(string) driver.Column
 	return _c
 }
 
+// Morphs provides a mock function with given fields: name, indexName
+func (_m *Blueprint) Morphs(name string, indexName ...string) {
+	_va := make([]interface{}, len(indexName))
+	for _i := range indexName {
+		_va[_i] = indexName[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, name)
+	_ca = append(_ca, _va...)
+	_m.Called(_ca...)
+}
+
+// Blueprint_Morphs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Morphs'
+type Blueprint_Morphs_Call struct {
+	*mock.Call
+}
+
+// Morphs is a helper method to define mock.On call
+//   - name string
+//   - indexName ...string
+func (_e *Blueprint_Expecter) Morphs(name interface{}, indexName ...interface{}) *Blueprint_Morphs_Call {
+	return &Blueprint_Morphs_Call{Call: _e.mock.On("Morphs",
+		append([]interface{}{name}, indexName...)...)}
+}
+
+func (_c *Blueprint_Morphs_Call) Run(run func(name string, indexName ...string)) *Blueprint_Morphs_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Blueprint_Morphs_Call) Return() *Blueprint_Morphs_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Blueprint_Morphs_Call) RunAndReturn(run func(string, ...string)) *Blueprint_Morphs_Call {
+	_c.Run(run)
+	return _c
+}
+
+// NullableMorphs provides a mock function with given fields: name, indexName
+func (_m *Blueprint) NullableMorphs(name string, indexName ...string) {
+	_va := make([]interface{}, len(indexName))
+	for _i := range indexName {
+		_va[_i] = indexName[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, name)
+	_ca = append(_ca, _va...)
+	_m.Called(_ca...)
+}
+
+// Blueprint_NullableMorphs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'NullableMorphs'
+type Blueprint_NullableMorphs_Call struct {
+	*mock.Call
+}
+
+// NullableMorphs is a helper method to define mock.On call
+//   - name string
+//   - indexName ...string
+func (_e *Blueprint_Expecter) NullableMorphs(name interface{}, indexName ...interface{}) *Blueprint_NullableMorphs_Call {
+	return &Blueprint_NullableMorphs_Call{Call: _e.mock.On("NullableMorphs",
+		append([]interface{}{name}, indexName...)...)}
+}
+
+func (_c *Blueprint_NullableMorphs_Call) Run(run func(name string, indexName ...string)) *Blueprint_NullableMorphs_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Blueprint_NullableMorphs_Call) Return() *Blueprint_NullableMorphs_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Blueprint_NullableMorphs_Call) RunAndReturn(run func(string, ...string)) *Blueprint_NullableMorphs_Call {
+	_c.Run(run)
+	return _c
+}
+
+// NumericMorphs provides a mock function with given fields: name, indexName
+func (_m *Blueprint) NumericMorphs(name string, indexName ...string) {
+	_va := make([]interface{}, len(indexName))
+	for _i := range indexName {
+		_va[_i] = indexName[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, name)
+	_ca = append(_ca, _va...)
+	_m.Called(_ca...)
+}
+
+// Blueprint_NumericMorphs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'NumericMorphs'
+type Blueprint_NumericMorphs_Call struct {
+	*mock.Call
+}
+
+// NumericMorphs is a helper method to define mock.On call
+//   - name string
+//   - indexName ...string
+func (_e *Blueprint_Expecter) NumericMorphs(name interface{}, indexName ...interface{}) *Blueprint_NumericMorphs_Call {
+	return &Blueprint_NumericMorphs_Call{Call: _e.mock.On("NumericMorphs",
+		append([]interface{}{name}, indexName...)...)}
+}
+
+func (_c *Blueprint_NumericMorphs_Call) Run(run func(name string, indexName ...string)) *Blueprint_NumericMorphs_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Blueprint_NumericMorphs_Call) Return() *Blueprint_NumericMorphs_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Blueprint_NumericMorphs_Call) RunAndReturn(run func(string, ...string)) *Blueprint_NumericMorphs_Call {
+	_c.Run(run)
+	return _c
+}
+
 // Primary provides a mock function with given fields: column
 func (_m *Blueprint) Primary(column ...string) {
 	_va := make([]interface{}, len(column))
@@ -3664,6 +3808,54 @@ func (_c *Blueprint_Uuid_Call) Return(_a0 driver.ColumnDefinition) *Blueprint_Uu
 
 func (_c *Blueprint_Uuid_Call) RunAndReturn(run func(string) driver.ColumnDefinition) *Blueprint_Uuid_Call {
 	_c.Call.Return(run)
+	return _c
+}
+
+// UuidMorphs provides a mock function with given fields: name, indexName
+func (_m *Blueprint) UuidMorphs(name string, indexName ...string) {
+	_va := make([]interface{}, len(indexName))
+	for _i := range indexName {
+		_va[_i] = indexName[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, name)
+	_ca = append(_ca, _va...)
+	_m.Called(_ca...)
+}
+
+// Blueprint_UuidMorphs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UuidMorphs'
+type Blueprint_UuidMorphs_Call struct {
+	*mock.Call
+}
+
+// UuidMorphs is a helper method to define mock.On call
+//   - name string
+//   - indexName ...string
+func (_e *Blueprint_Expecter) UuidMorphs(name interface{}, indexName ...interface{}) *Blueprint_UuidMorphs_Call {
+	return &Blueprint_UuidMorphs_Call{Call: _e.mock.On("UuidMorphs",
+		append([]interface{}{name}, indexName...)...)}
+}
+
+func (_c *Blueprint_UuidMorphs_Call) Run(run func(name string, indexName ...string)) *Blueprint_UuidMorphs_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Blueprint_UuidMorphs_Call) Return() *Blueprint_UuidMorphs_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Blueprint_UuidMorphs_Call) RunAndReturn(run func(string, ...string)) *Blueprint_UuidMorphs_Call {
+	_c.Run(run)
 	return _c
 }
 

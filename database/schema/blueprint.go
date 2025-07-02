@@ -337,6 +337,54 @@ func (r *Blueprint) MediumText(column string) driver.ColumnDefinition {
 	return r.createAndAddColumn("mediumText", column)
 }
 
+func (r *Blueprint) Morphs(name string, indexName ...string) {
+	switch GetDefaultMorphKeyType() {
+	case MorphKeyTypeUuid:
+		r.UuidMorphs(name, indexName...)
+	default:
+		r.NumericMorphs(name, indexName...)
+	}
+}
+
+func (r *Blueprint) NullableMorphs(name string, indexName ...string) {
+	r.String(name + "_type").Nullable()
+	
+	switch GetDefaultMorphKeyType() {
+	case MorphKeyTypeUuid:
+		r.Uuid(name + "_id").Nullable()
+	default:
+		r.UnsignedBigInteger(name + "_id").Nullable()
+	}
+	
+	if len(indexName) > 0 && indexName[0] != "" {
+		r.Index(name+"_type", name+"_id").Name(indexName[0])
+	} else {
+		r.Index(name+"_type", name+"_id")
+	}
+}
+
+func (r *Blueprint) NumericMorphs(name string, indexName ...string) {
+	r.String(name + "_type")
+	r.UnsignedBigInteger(name + "_id")
+	
+	if len(indexName) > 0 && indexName[0] != "" {
+		r.Index(name+"_type", name+"_id").Name(indexName[0])
+	} else {
+		r.Index(name+"_type", name+"_id")
+	}
+}
+
+func (r *Blueprint) UuidMorphs(name string, indexName ...string) {
+	r.String(name + "_type")
+	r.Uuid(name + "_id")
+	
+	if len(indexName) > 0 && indexName[0] != "" {
+		r.Index(name+"_type", name+"_id").Name(indexName[0])
+	} else {
+		r.Index(name+"_type", name+"_id")
+	}
+}
+
 func (r *Blueprint) Primary(column ...string) {
 	r.indexCommand(CommandPrimary, column)
 }
