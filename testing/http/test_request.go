@@ -171,7 +171,7 @@ func (r *TestRequest) call(method string, uri string, body io.Reader) (contracts
 	}
 
 	testResponse := NewTestResponse(r.t, response, r.json, r.session)
-	if r.bind != nil {
+	if r.bind != nil && testResponse.IsSuccessful() {
 		body, err := testResponse.Content()
 		if err != nil {
 			return nil, err
