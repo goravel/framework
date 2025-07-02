@@ -79,6 +79,18 @@ func Transform[T, R any](value T, callback func(T) R) R {
 	return callback(value)
 }
 
+// ToAnySlice converts a slice of any type T to a slice of type []any.
+//
+//	ToAnySlice("foo", "bar") // []any{"foo", "bar"}
+func ToAnySlice[T any](s ...T) []any {
+	res := make([]any, len(s))
+	for i, v := range s {
+		res[i] = v
+	}
+
+	return res
+}
+
 // With calls the given callbacks with the given value then return the value.
 //
 //	With("foo", func(s string) string {
