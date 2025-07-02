@@ -8,6 +8,7 @@ import (
 	"github.com/goravel/framework/queue/models"
 	"github.com/goravel/framework/queue/utils"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/convert"
 )
 
 type Failer struct {
@@ -44,12 +45,7 @@ func (r *Failer) Get(connection, queue string, uuids []string) ([]contractsqueue
 	}
 
 	if len(uuids) > 0 {
-		uuidsAny := make([]any, len(uuids))
-		for i, uuid := range uuids {
-			uuidsAny[i] = uuid
-		}
-
-		query = query.WhereIn("uuid", uuidsAny)
+		query = query.WhereIn("uuid", convert.ToAnySlice(uuids...))
 	}
 
 	var modelFailedJobs []models.FailedJob

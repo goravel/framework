@@ -102,3 +102,15 @@ func ToSliceE[T int8 | int16 | int32 | int64 | uint | uint8 | uint16 | uint32 | 
 		return []T{}, fmt.Errorf("unable to cast %#v of type %T", i, i)
 	}
 }
+
+// ToAnySlice converts a slice of any type T to a slice of type []any.
+//
+//	ToAnySlice("foo", "bar") // []any{"foo", "bar"}
+func ToAnySlice[T any](s ...T) []any {
+	res := make([]any, len(s))
+	for i, v := range s {
+		res[i] = v
+	}
+
+	return res
+}
