@@ -400,4 +400,12 @@ func TestToAnySlice(t *testing.T) {
 	t.Run("float slice", func(t *testing.T) {
 		assert.Equal(t, []any{1.1, 2.2, 3.3}, ToAnySlice(1.1, 2.2, 3.3))
 	})
+
+	t.Run("single value", func(t *testing.T) {
+		assert.Equal(t, []any{1}, ToAnySlice(1))
+	})
+
+	t.Run("single slice", func(t *testing.T) {
+		assert.Equal(t, []any{1, 2, 3}, ToAnySlice([]int{1, 2, 3}))
+	})
 }

@@ -104,9 +104,29 @@ func ToSliceE[T int8 | int16 | int32 | int64 | uint | uint8 | uint16 | uint32 | 
 }
 
 // ToAnySlice converts a slice of any type T to a slice of type []any.
+// It supports both variadic arguments and slice arguments.
 //
 //	ToAnySlice("foo", "bar") // []any{"foo", "bar"}
+//	ToAnySlice([]int{1, 2, 3}) // []any{1, 2, 3}
 func ToAnySlice[T any](s ...T) []any {
+	if len(s) == 0 {
+		return []any{}
+	}
+
+	// Check if the first argument is a slice
+	if len(s) == 1 {
+		v := reflect.ValueOf(s[0])
+		if v.Kind() == reflect.Slice {
+			// Handle slice case
+			result := make([]any, v.Len())
+			for i := 0; i < v.Len(); i++ {
+				result[i] = v.Index(i).Interface()
+			}
+			return result
+		}
+	}
+
+	// Handle variadic arguments case
 	res := make([]any, len(s))
 	for i, v := range s {
 		res[i] = v
