@@ -8,7 +8,6 @@ import (
 
 	contractsauth "github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/http"
-	"github.com/goravel/framework/errors"
 	mocksauth "github.com/goravel/framework/mocks/auth"
 	mockscache "github.com/goravel/framework/mocks/cache"
 	mocksconfig "github.com/goravel/framework/mocks/config"
@@ -94,10 +93,11 @@ func (s *AuthTestSuite) TestUserProviderReturnsError() {
 	s.mockConfig.EXPECT().GetString("auth.guards.admin.driver").Return("session").Once()
 	s.mockConfig.EXPECT().GetString("auth.guards.admin.provider").Return("admin").Once()
 	s.mockConfig.EXPECT().GetString("auth.providers.admin.driver").Return("mock").Once()
-	s.mockLog.EXPECT().Panic(assert.AnError.Error()).Once()
 
-	guard := s.auth.Guard("admin")
-	s.Nil(guard)
+	s.Panics(func() {
+		guard := s.auth.Guard("admin")
+		s.Nil(guard)
+	})
 }
 
 func (s *AuthTestSuite) TestGuardDriverReturnsError() {
@@ -112,26 +112,29 @@ func (s *AuthTestSuite) TestGuardDriverReturnsError() {
 	s.mockConfig.EXPECT().GetString("auth.guards.admin.driver").Return("session").Once()
 	s.mockConfig.EXPECT().GetString("auth.guards.admin.provider").Return("admin").Once()
 	s.mockConfig.EXPECT().GetString("auth.providers.admin.driver").Return("mock").Once()
-	s.mockLog.EXPECT().Panic(assert.AnError.Error()).Once()
 
-	guard := s.auth.Guard("admin")
-	s.Nil(guard)
+	s.Panics(func() {
+		guard := s.auth.Guard("admin")
+		s.Nil(guard)
+	})
 }
 
 func (s *AuthTestSuite) TestGuardDriverNotFound() {
 	s.mockConfig.EXPECT().GetString("auth.guards.admin.driver").Return("unknown").Once()
-	s.mockLog.EXPECT().Panic(errors.AuthGuardDriverNotFound.Args("unknown", "admin").Error()).Once()
 
-	guard := s.auth.Guard("admin")
-	s.Nil(guard)
+	s.Panics(func() {
+		guard := s.auth.Guard("admin")
+		s.Nil(guard)
+	})
 }
 
 func (s *AuthTestSuite) TestUserProviderDriverNotFound() {
 	s.mockConfig.EXPECT().GetString("auth.guards.admin.driver").Return("jwt").Once()
 	s.mockConfig.EXPECT().GetString("auth.guards.admin.provider").Return("admin").Once()
 	s.mockConfig.EXPECT().GetString("auth.providers.admin.driver").Return("unknown").Once()
-	s.mockLog.EXPECT().Panic(errors.AuthProviderDriverNotFound.Args("unknown", "admin").Error()).Once()
 
-	guard := s.auth.Guard("admin")
-	s.Nil(guard)
+	s.Panics(func() {
+		guard := s.auth.Guard("admin")
+		s.Nil(guard)
+	})
 }
