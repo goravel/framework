@@ -69,10 +69,17 @@ func (s *TestRequestSuite) TestBindAndCall() {
 			StatusCode: http.StatusInternalServerError,
 		}, nil).Once()
 
-		response, err := s.testRequest.Get("/")
+		var user struct {
+			Name string `json:"name"`
+			Age  int    `json:"age"`
+		}
+
+		response, err := s.testRequest.Bind(&user).Get("/")
 
 		s.NoError(err)
 		s.NotNil(response)
+		s.Equal(user.Name, "")
+		s.Equal(user.Age, 0)
 		response.AssertInternalServerError()
 	})
 }
