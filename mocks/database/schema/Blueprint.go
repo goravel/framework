@@ -3619,6 +3619,54 @@ func (_c *Blueprint_UnsignedTinyInteger_Call) RunAndReturn(run func(string) driv
 	return _c
 }
 
+// Uuid provides a mock function with given fields: column
+func (_m *Blueprint) Uuid(column string) driver.ColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Uuid")
+	}
+
+	var r0 driver.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) driver.ColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(driver.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_Uuid_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Uuid'
+type Blueprint_Uuid_Call struct {
+	*mock.Call
+}
+
+// Uuid is a helper method to define mock.On call
+//   - column string
+func (_e *Blueprint_Expecter) Uuid(column interface{}) *Blueprint_Uuid_Call {
+	return &Blueprint_Uuid_Call{Call: _e.mock.On("Uuid", column)}
+}
+
+func (_c *Blueprint_Uuid_Call) Run(run func(column string)) *Blueprint_Uuid_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_Uuid_Call) Return(_a0 driver.ColumnDefinition) *Blueprint_Uuid_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_Uuid_Call) RunAndReturn(run func(string) driver.ColumnDefinition) *Blueprint_Uuid_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewBlueprint creates a new instance of Blueprint. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewBlueprint(t interface {

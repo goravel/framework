@@ -120,6 +120,8 @@ type Blueprint interface {
 	SoftDeletes(column ...string) driver.ColumnDefinition
 	// SoftDeletesTz Add a "deleted at" timestampTz for the table.
 	SoftDeletesTz(column ...string) driver.ColumnDefinition
+	// Uuid Create a new UUID column on the table.
+	Uuid(column string) driver.ColumnDefinition
 	// String Create a new string column on the table.
 	String(column string, length ...int) driver.ColumnDefinition
 	// Text Create a new text column on the table.

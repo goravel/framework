@@ -400,6 +400,10 @@ func (r *Blueprint) SoftDeletesTz(column ...string) driver.ColumnDefinition {
 	return r.TimestampTz(newColumn).Nullable()
 }
 
+func (r *Blueprint) Uuid(column string) driver.ColumnDefinition {
+	return r.createAndAddColumn("uuid", column)
+}
+
 func (r *Blueprint) String(column string, length ...int) driver.ColumnDefinition {
 	defaultLength := DefaultStringLength
 	if len(length) > 0 {

@@ -733,6 +733,15 @@ func (s *BlueprintTestSuite) TestUnsignedTinyInteger() {
 	})
 }
 
+func (s *BlueprintTestSuite) TestUuid() {
+	name := "uuid_column"
+	s.blueprint.Uuid(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:  &name,
+		ttype: convert.Pointer("uuid"),
+	})
+}
+
 func (s *BlueprintTestSuite) TestChange() {
 	column := "name"
 	customLength := 100
