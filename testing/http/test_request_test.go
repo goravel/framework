@@ -36,7 +36,7 @@ func (s *TestRequestSuite) SetupTest() {
 		t:                 s.T(),
 		ctx:               context.Background(),
 		defaultHeaders:    make(map[string]string),
-		defaultCookies:    make(map[string]string),
+		defaultCookies:    make([]*http.Cookie, 0),
 		sessionAttributes: make(map[string]any),
 		json:              json.New(),
 		route:             s.mockRoute,
@@ -60,6 +60,25 @@ func (s *TestRequestSuite) TestBindAndCall() {
 	s.NotNil(response)
 	s.Equal(user.Name, "John")
 	s.Equal(user.Age, 30)
+}
+
+func (s *TestRequestSuite) TestWithCookie() {
+	cookie := &http.Cookie{Name: "test", Value: "test"}
+
+	request := s.testRequest.WithCookie(cookie)
+
+	s.Equal(request.(*TestRequest).defaultCookies, []*http.Cookie{cookie})
+}
+
+func (s *TestRequestSuite) TestWithCookies() {
+	cookies := []*http.Cookie{
+		{Name: "test", Value: "test"},
+		{Name: "test2", Value: "test2"},
+	}
+
+	request := s.testRequest.WithCookies(cookies)
+
+	s.Equal(request.(*TestRequest).defaultCookies, cookies)
 }
 
 func (s *TestRequestSuite) TestSetSessionErrors() {

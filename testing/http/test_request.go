@@ -24,7 +24,7 @@ type TestRequest struct {
 	ctx               context.Context
 	bind              any
 	defaultHeaders    map[string]string
-	defaultCookies    map[string]string
+	defaultCookies    []*http.Cookie
 	json              foundation.Json
 	route             route.Route
 	session           session.Manager
@@ -36,7 +36,7 @@ func NewTestRequest(t *testing.T, json foundation.Json, route route.Route, sessi
 		t:                 t,
 		ctx:               context.Background(),
 		defaultHeaders:    make(map[string]string),
-		defaultCookies:    make(map[string]string),
+		defaultCookies:    make([]*http.Cookie, 0),
 		json:              json,
 		route:             route,
 		session:           session,
@@ -105,13 +105,13 @@ func (r *TestRequest) WithoutHeader(key string) contractshttp.Request {
 	return r
 }
 
-func (r *TestRequest) WithCookies(cookies map[string]string) contractshttp.Request {
-	r.defaultCookies = collect.Merge(r.defaultCookies, cookies)
+func (r *TestRequest) WithCookies(cookies []*http.Cookie) contractshttp.Request {
+	r.defaultCookies = append(r.defaultCookies, cookies...)
 	return r
 }
 
-func (r *TestRequest) WithCookie(key, value string) contractshttp.Request {
-	maps.Set(r.defaultCookies, key, value)
+func (r *TestRequest) WithCookie(cookie *http.Cookie) contractshttp.Request {
+	r.defaultCookies = append(r.defaultCookies, cookie)
 	return r
 }
 
@@ -157,9 +157,8 @@ func (r *TestRequest) call(method string, uri string, body io.Reader) (contracts
 		req.Header.Set(key, value)
 	}
 
-	for name, value := range r.defaultCookies {
-		cookie := http.Cookie{Name: name, Value: value}
-		req.AddCookie(&cookie)
+	for _, cookie := range r.defaultCookies {
+		req.AddCookie(cookie)
 	}
 
 	if r.route == nil {
@@ -211,7 +210,7 @@ func (r *TestRequest) setSession() error {
 		session.Put(key, value)
 	}
 
-	r.WithCookie(session.GetName(), session.GetID())
+	r.WithCookie(&http.Cookie{Name: session.GetName(), Value: session.GetID()})
 
 	if err = session.Save(); err != nil {
 		return err
