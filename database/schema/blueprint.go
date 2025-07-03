@@ -360,33 +360,19 @@ func (r *Blueprint) NullableMorphs(name string, indexName ...string) {
 		r.UnsignedBigInteger(name + "_id").Nullable()
 	}
 	
-	if len(indexName) > 0 && indexName[0] != "" {
-		r.Index(name+"_type", name+"_id").Name(indexName[0])
-	} else {
-		r.Index(name+"_type", name+"_id")
-	}
+	r.createMorphIndex(name, indexName...)
 }
 
 func (r *Blueprint) NumericMorphs(name string, indexName ...string) {
 	r.String(name + "_type")
 	r.UnsignedBigInteger(name + "_id")
-	
-	if len(indexName) > 0 && indexName[0] != "" {
-		r.Index(name+"_type", name+"_id").Name(indexName[0])
-	} else {
-		r.Index(name+"_type", name+"_id")
-	}
+	r.createMorphIndex(name, indexName...)
 }
 
 func (r *Blueprint) UuidMorphs(name string, indexName ...string) {
 	r.String(name + "_type")
 	r.Uuid(name + "_id")
-	
-	if len(indexName) > 0 && indexName[0] != "" {
-		r.Index(name+"_type", name+"_id").Name(indexName[0])
-	} else {
-		r.Index(name+"_type", name+"_id")
-	}
+	r.createMorphIndex(name, indexName...)
 }
 
 func (r *Blueprint) Ulid(column string) driver.ColumnDefinition {
@@ -396,7 +382,11 @@ func (r *Blueprint) Ulid(column string) driver.ColumnDefinition {
 func (r *Blueprint) UlidMorphs(name string, indexName ...string) {
 	r.String(name + "_type")
 	r.Ulid(name + "_id")
-	
+	r.createMorphIndex(name, indexName...)
+}
+
+// createMorphIndex creates an index for morph columns with optional custom name
+func (r *Blueprint) createMorphIndex(name string, indexName ...string) {
 	if len(indexName) > 0 && indexName[0] != "" {
 		r.Index(name+"_type", name+"_id").Name(indexName[0])
 	} else {
