@@ -1,8 +1,6 @@
 package console
 
 import (
-	"os"
-
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/foundation"
@@ -36,13 +34,14 @@ func (r *UpCommand) Extend() command.Extend {
 func (r *UpCommand) Handle(ctx console.Context) error {
 	path := r.app.StoragePath("framework/down")
 	if ok := file.Exists(path); ok {
-		os.Remove(path)
-		ctx.Info("Removing the file")
+		file.Remove(path)
+
+		ctx.Info("The application is up and live now")
 
 		return nil
 	}
 
-	ctx.Info("The application is not in maintenance mode")
+	ctx.Error("The application is not in maintenance mode")
 
 	return nil
 }

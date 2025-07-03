@@ -1,8 +1,6 @@
 package console
 
 import (
-	"os"
-
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/foundation"
@@ -19,12 +17,12 @@ func NewDownCommand(app foundation.Application) *DownCommand {
 
 // Signature The name and signature of the console command.
 func (r *DownCommand) Signature() string {
-	return "up"
+	return "down"
 }
 
 // Description The console command description.
 func (r *DownCommand) Description() string {
-	return "Bring the application out of maintenance mode"
+	return "Put the application into maintenance mode"
 }
 
 // Extend The console command extend.
@@ -42,7 +40,7 @@ func (r *DownCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	os.Create(path)
+	file.PutContent(path, "")
 
 	ctx.Info("The application is in maintenance mode now")
 
