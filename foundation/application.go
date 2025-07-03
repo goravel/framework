@@ -70,6 +70,8 @@ func (r *Application) Boot() {
 		console.NewPackageInstallCommand(),
 		console.NewPackageUninstallCommand(),
 		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
+		console.NewUpCommand(r),
+		console.NewDownCommand(r),
 	})
 	r.bootArtisan()
 }
