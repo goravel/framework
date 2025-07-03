@@ -145,6 +145,8 @@ func (r *Application) Build() foundation.Application {
 		console.NewPackageInstallCommand(binding.Bindings, r.MakeProcess(), r.Json()),
 		console.NewPackageUninstallCommand(binding.Bindings, r.MakeProcess(), r.Json()),
 		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
+		console.NewUpCommand(r),
+		console.NewDownCommand(r),
 	})
 	r.configureCallback()
 	r.bootArtisan()
