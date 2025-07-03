@@ -889,7 +889,7 @@ func (s *BlueprintTestSuite) TestMorphsWithUuidKeyType() {
 	// Save original state
 	originalKeyType := GetDefaultMorphKeyType()
 	defer func() {
-		SetDefaultMorphKeyType(originalKeyType)
+		_ = SetDefaultMorphKeyType(originalKeyType)
 	}()
 
 	// Set UUID as default
@@ -919,7 +919,7 @@ func (s *BlueprintTestSuite) TestNullableMorphsWithUuidKeyType() {
 	// Save original state
 	originalKeyType := GetDefaultMorphKeyType()
 	defer func() {
-		SetDefaultMorphKeyType(originalKeyType)
+		_ = SetDefaultMorphKeyType(originalKeyType)
 	}()
 
 	// Set UUID as default
@@ -988,7 +988,7 @@ func (s *BlueprintTestSuite) TestMorphsWithUlidKeyType() {
 	// Save original state
 	originalKeyType := GetDefaultMorphKeyType()
 	defer func() {
-		SetDefaultMorphKeyType(originalKeyType)
+		_ = SetDefaultMorphKeyType(originalKeyType)
 	}()
 
 	// Set ULID as default
@@ -1018,7 +1018,7 @@ func (s *BlueprintTestSuite) TestNullableMorphsWithUlidKeyType() {
 	// Save original state
 	originalKeyType := GetDefaultMorphKeyType()
 	defer func() {
-		SetDefaultMorphKeyType(originalKeyType)
+		_ = SetDefaultMorphKeyType(originalKeyType)
 	}()
 
 	// Set ULID as default
