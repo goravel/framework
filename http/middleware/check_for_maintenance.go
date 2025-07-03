@@ -10,6 +10,7 @@ func CheckForMaintenance(app foundation.Application) http.Middleware {
 	return func(ctx http.Context) {
 		if file.Exists(app.StoragePath("framework/down")) {
 			ctx.Request().AbortWithStatus(http.StatusServiceUnavailable)
+			return
 		}
 
 		ctx.Request().Next()
