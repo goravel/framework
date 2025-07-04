@@ -129,6 +129,10 @@ type SchemaGrammar interface {
 	TypeSmallInteger(column ColumnDefinition) string
 	// TypeString Create the column definition for a string type.
 	TypeString(column ColumnDefinition) string
+	// TypeUuid Create the column definition for a uuid type.
+	TypeUuid(column ColumnDefinition) string
+	// TypeUlid Create the column definition for a ulid type.
+	TypeUlid(column ColumnDefinition) string
 }
 
 type GormGrammar interface {
