@@ -191,8 +191,15 @@ func (t *Translator) load(locale string, group string) error {
 		return nil
 	}
 
-	translations, err := t.fileLoader.Load(locale, group)
-	if err != nil && t.fsLoader != nil {
+	var (
+		translations map[string]any
+		err          error
+	)
+
+	if t.fileLoader != nil {
+		translations, err = t.fileLoader.Load(locale, group)
+	}
+	if (len(translations) == 0 || err != nil) && t.fsLoader != nil {
 		translations, err = t.fsLoader.Load(locale, group)
 	}
 	if err != nil {
