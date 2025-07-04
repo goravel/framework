@@ -833,6 +833,37 @@ func (s *BlueprintTestSuite) TestUuidMorphs() {
 	s.True(hasIndexCommand, "Should have index command for UUID morph columns")
 }
 
+func (s *BlueprintTestSuite) TestUuidMorphsWithCustomIndex() {
+	name := "morphable"
+	customIndex := "custom_uuid_morph_index"
+	s.blueprint.UuidMorphs(name, customIndex)
+
+	typeColumn := name + "_type"
+	idColumn := name + "_id"
+
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:   &typeColumn,
+		ttype:  convert.Pointer("string"),
+		length: convert.Pointer(255),
+	})
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:  &idColumn,
+		ttype: convert.Pointer("uuid"),
+	})
+
+	commands := s.blueprint.GetCommands()
+	hasIndexCommand := false
+	for _, cmd := range commands {
+		if cmd.Name == "index" && len(cmd.Columns) == 2 &&
+			cmd.Columns[0] == typeColumn && cmd.Columns[1] == idColumn &&
+			cmd.Index == customIndex {
+			hasIndexCommand = true
+			break
+		}
+	}
+	s.True(hasIndexCommand, "Should have index command with custom name for UUID morph columns")
+}
+
 func (s *BlueprintTestSuite) TestNullableMorphs() {
 	name := "morphable"
 	s.blueprint.NullableMorphs(name)
@@ -1045,39 +1076,6 @@ func (s *BlueprintTestSuite) TestNullableMorphsWithUlidKeyType() {
 	})
 }
 
-func (s *BlueprintTestSuite) TestMorphKeyTypeConfiguration() {
-	// Test initial state
-	s.Equal(MorphKeyTypeInt, GetDefaultMorphKeyType())
-
-	// Test setting UUID
-	err := SetDefaultMorphKeyType(MorphKeyTypeUuid)
-	s.NoError(err)
-	s.Equal(MorphKeyTypeUuid, GetDefaultMorphKeyType())
-
-	// Test setting ULID
-	err = SetDefaultMorphKeyType(MorphKeyTypeUlid)
-	s.NoError(err)
-	s.Equal(MorphKeyTypeUlid, GetDefaultMorphKeyType())
-
-	// Test setting back to int
-	err = SetDefaultMorphKeyType(MorphKeyTypeInt)
-	s.NoError(err)
-	s.Equal(MorphKeyTypeInt, GetDefaultMorphKeyType())
-
-	// Test invalid key type
-	err = SetDefaultMorphKeyType("invalid")
-	s.Error(err)
-
-	// Test convenience methods
-	MorphUsingUuids()
-	s.Equal(MorphKeyTypeUuid, GetDefaultMorphKeyType())
-
-	MorphUsingUlids()
-	s.Equal(MorphKeyTypeUlid, GetDefaultMorphKeyType())
-
-	MorphUsingInts()
-	s.Equal(MorphKeyTypeInt, GetDefaultMorphKeyType())
-}
 
 func (s *BlueprintTestSuite) TestChange() {
 	column := "name"

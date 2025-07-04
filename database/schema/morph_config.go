@@ -1,7 +1,5 @@
 package schema
 
-import "fmt"
-
 // MorphKeyType represents the type of key used for morph relationships
 type MorphKeyType string
 
@@ -14,12 +12,8 @@ const (
 var defaultMorphKeyType MorphKeyType = MorphKeyTypeInt
 
 // SetDefaultMorphKeyType sets the default morph key type
-func SetDefaultMorphKeyType(keyType MorphKeyType) error {
-	if keyType != MorphKeyTypeInt && keyType != MorphKeyTypeUuid && keyType != MorphKeyTypeUlid {
-		return fmt.Errorf("morph key type must be '%s', '%s', or '%s'", MorphKeyTypeInt, MorphKeyTypeUuid, MorphKeyTypeUlid)
-	}
+func SetDefaultMorphKeyType(keyType MorphKeyType) {
 	defaultMorphKeyType = keyType
-	return nil
 }
 
 // GetDefaultMorphKeyType returns the current default morph key type
