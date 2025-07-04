@@ -25,7 +25,7 @@ func (f *FSLoader) Load(locale string, group string) (map[string]any, error) {
 	var val map[string]any
 	fullPath := path.Join(locale, group+".json")
 	if group == "*" {
-		fullPath = path.Join(locale + ".json")
+		fullPath = locale + ".json"
 	}
 
 	data, err := fs.ReadFile(f.fs, fullPath)

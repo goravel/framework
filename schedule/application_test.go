@@ -61,10 +61,11 @@ func (s *ApplicationTestSuite) TestCallAndCommand() {
 
 	time.Sleep(4 * time.Second)
 
-	s.NoError(app.Shutdown())
 	s.Equal(4, immediatelyCall)
 	s.Equal(4, delayIfStillRunningCall)
 	s.Equal(2, skipIfStillRunningCall)
+
+	s.NoError(app.Shutdown())
 }
 
 func (s *ApplicationTestSuite) TestOnOneServer() {
