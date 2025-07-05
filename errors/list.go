@@ -91,7 +91,8 @@ var (
 	HttpRateLimitFailedToTakeToken     = New("failed to take token")
 	HttpRateLimitFailedToCheckThrottle = New("failed to check throttle: %s")
 
-	LangFileNotExist = New("translation file does not exist")
+	LangFileNotExist      = New("translation file does not exist")
+	LangNoLoaderAvailable = New("no translation loader available")
 
 	LogDriverCircularReference = New("%s driver can't include self channel").SetModule(ModuleLog)
 	LogDriverNotSupported      = New("invalid driver: %s, only support stack, single, daily, custom").SetModule(ModuleLog)

@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
+	contractstranslation "github.com/goravel/framework/contracts/translation"
 	translationcontract "github.com/goravel/framework/contracts/translation"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation/json"
@@ -232,6 +233,11 @@ func (s *TranslatorTestSuite) TestGet() {
 	}, nil)
 	translation = translator.Get("foo/messages.baz.qux")
 	s.Equal("two", translation)
+
+	// Case: No loaders available
+	translator = NewTranslator(s.ctx, nil, nil, "en", "en", s.mockLog)
+	translation = translator.Get("test.key")
+	s.Equal("test.key", translation)
 }
 
 func (s *TranslatorTestSuite) TestGetLocale() {
@@ -329,8 +335,14 @@ func (s *TranslatorTestSuite) TestSetLocale() {
 }
 
 func (s *TranslatorTestSuite) TestLoad() {
+	fsLoader := NewFSLoader(fstest.MapFS{
+		"en/test.json": &fstest.MapFile{Data: []byte(`{"foo": "bar", "baz": {"foo": "bar"}}`)},
+	}, json.New())
+
 	tests := []struct {
 		name        string
+		fsLoader    contractstranslation.Loader
+		fileLoader  contractstranslation.Loader
 		setup       func()
 		locale      string
 		group       string
@@ -338,7 +350,9 @@ func (s *TranslatorTestSuite) TestLoad() {
 		expectError error
 	}{
 		{
-			name: "already loaded",
+			name:       "already loaded",
+			fsLoader:   fsLoader,
+			fileLoader: s.mockLoader,
 			setup: func() {
 				loaded = map[string]map[string]map[string]any{
 					"en": {
@@ -356,7 +370,9 @@ func (s *TranslatorTestSuite) TestLoad() {
 			expectError: nil,
 		},
 		{
-			name: "successful load with file loader",
+			name:       "successful load with file loader",
+			fsLoader:   fsLoader,
+			fileLoader: s.mockLoader,
 			setup: func() {
 				s.mockLoader.EXPECT().Load("en", "test").Return(map[string]any{
 					"foo": "bar",
@@ -376,7 +392,9 @@ func (s *TranslatorTestSuite) TestLoad() {
 			expectError: nil,
 		},
 		{
-			name: "file loader error, fallback to fs loader",
+			name:       "file loader error, fallback to fs loader",
+			fsLoader:   fsLoader,
+			fileLoader: s.mockLoader,
 			setup: func() {
 				s.mockLoader.EXPECT().Load("en", "test").Return(nil, assert.AnError).Once()
 			},
@@ -391,7 +409,9 @@ func (s *TranslatorTestSuite) TestLoad() {
 			expectError: nil,
 		},
 		{
-			name: "both loaders fail",
+			name:       "both loaders fail",
+			fsLoader:   fsLoader,
+			fileLoader: s.mockLoader,
 			setup: func() {
 				s.mockLoader.EXPECT().Load("fr", "nonexistent").Return(nil, assert.AnError).Once()
 			},
@@ -401,7 +421,9 @@ func (s *TranslatorTestSuite) TestLoad() {
 			expectError: errors.LangFileNotExist,
 		},
 		{
-			name: "nested folder structure",
+			name:       "nested folder structure",
+			fsLoader:   fsLoader,
+			fileLoader: s.mockLoader,
 			setup: func() {
 				s.mockLoader.EXPECT().Load("en", "foo/test").Return(map[string]any{
 					"bar": "baz",
@@ -421,7 +443,9 @@ func (s *TranslatorTestSuite) TestLoad() {
 			expectError: nil,
 		},
 		{
-			name: "empty translations from file loader and fs loader",
+			name:       "empty translations from file loader and fs loader",
+			fsLoader:   fsLoader,
+			fileLoader: s.mockLoader,
 			setup: func() {
 				s.mockLoader.EXPECT().Load("en", "empty").Return(map[string]any{}, nil)
 			},
@@ -431,7 +455,9 @@ func (s *TranslatorTestSuite) TestLoad() {
 			expectError: errors.LangFileNotExist,
 		},
 		{
-			name: "file loader returns empty, fs loader succeeds",
+			name:       "file loader returns empty, fs loader succeeds",
+			fsLoader:   fsLoader,
+			fileLoader: s.mockLoader,
 			setup: func() {
 				s.mockLoader.EXPECT().Load("en", "test").Return(map[string]any{}, nil)
 			},
@@ -445,20 +471,24 @@ func (s *TranslatorTestSuite) TestLoad() {
 			},
 			expectError: nil,
 		},
+		{
+			name:        "no loaders available",
+			setup:       func() {},
+			locale:      "en",
+			group:       "test",
+			expected:    nil,
+			expectError: errors.LangNoLoaderAvailable,
+		},
 	}
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			// Reset loaded cache for each test
 			loaded = make(map[string]map[string]map[string]any)
 
-			// Create FS loader for fallback scenarios
-			fsLoader := NewFSLoader(fstest.MapFS{
-				"en/test.json": &fstest.MapFile{Data: []byte(`{"foo": "bar", "baz": {"foo": "bar"}}`)},
-			}, json.New())
-
 			tt.setup()
-			translator := NewTranslator(s.ctx, fsLoader, s.mockLoader, "en", "en", s.mockLog)
+
+			translator := NewTranslator(s.ctx, tt.fsLoader, tt.fileLoader, "en", "en", s.mockLog)
+
 			err := translator.load(tt.locale, tt.group)
 
 			if tt.expectError != nil {

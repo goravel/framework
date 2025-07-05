@@ -161,7 +161,14 @@ func (t *Translator) SetLocale(locale string) context.Context {
 }
 
 func (t *Translator) getLine(locale string, group string, key string, options ...translationcontract.Option) string {
-	if err := t.load(locale, group); err != nil && !errors.Is(err, errors.LangFileNotExist) {
+	err := t.load(locale, group)
+	if err != nil {
+		if errors.Is(err, errors.LangFileNotExist) {
+			return ""
+		}
+		if errors.Is(err, errors.LangNoLoaderAvailable) {
+			return t.key
+		}
 		t.logger.Panic(err)
 		return t.key
 	}
@@ -189,6 +196,11 @@ func (t *Translator) load(locale string, group string) error {
 
 	if t.isLoaded(locale, group) {
 		return nil
+	}
+
+	// Check if no loaders are available
+	if t.fileLoader == nil && t.fsLoader == nil {
+		return errors.LangNoLoaderAvailable
 	}
 
 	var (
