@@ -109,7 +109,7 @@ func TestFDump(t *testing.T) {
 	t.Run("dump to writer", func(t *testing.T) {
 		var buf bytes.Buffer
 		FDump(&buf, data)
-		assert.Equal(t, "\x1b[90m<#dump // dump.go:41\x1b[0m\n{\n   "+
+		assert.Equal(t, "\x1b[90m<#dump // dump_test.go:111\x1b[0m\n{\n   "+
 			"\x1b[38;5;170mkey\x1b[0m => \x1b[33m\"\x1b[0m\x1b[38;5;113mvalue"+
 			"\x1b[0m\x1b[33m\"\x1b[0m\n}\n",
 			buf.String())
@@ -120,7 +120,7 @@ func TestFDump(t *testing.T) {
 		var buf bytes.Buffer
 		FDumpHTML(&buf, data)
 		assert.Equal(t, "<body style='background-color:black;'><pre style=\"background-color:black; color:white; padding:5px; border-radius: 5px\">\n"+
-			"<span style=\"color:#999\"><#dump // dump.go:46</span>\n{\n   <span style=\"color:#d087d0\">key</span> => <span style=\"color:#ffb400\">\"</span>"+
+			"<span style=\"color:#999\"><#dump // dump_test.go:121</span>\n{\n   <span style=\"color:#d087d0\">key</span> => <span style=\"color:#ffb400\">\"</span>"+
 			"<span style=\"color:#80ff80\">value</span><span style=\"color:#ffb400\">\"</span>\n}\n</pre></body>\n",
 			buf.String())
 
