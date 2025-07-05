@@ -33,6 +33,7 @@ const (
 	CommandTableComment = "tableComment"
 	CommandUnique       = "unique"
 	DefaultStringLength = 255
+	DefaultUlidLength   = 26
 )
 
 type Blueprint struct {
@@ -376,12 +377,15 @@ func (r *Blueprint) UuidMorphs(name string, indexName ...string) {
 }
 
 func (r *Blueprint) Ulid(column string, length ...int) driver.ColumnDefinition {
-	defaultLength := 26
+	defaultLength := DefaultUlidLength
 	if len(length) > 0 {
 		defaultLength = length[0]
 	}
 
-	return r.Char(column, defaultLength)
+	columnImpl := r.createAndAddColumn("char", column)
+	columnImpl.length = &defaultLength
+
+	return columnImpl
 }
 
 func (r *Blueprint) UlidMorphs(name string, indexName ...string) {

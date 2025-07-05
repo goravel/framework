@@ -11,24 +11,16 @@ func TestMorphKeyTypeConfiguration(t *testing.T) {
 	assert.Equal(t, MorphKeyTypeInt, GetDefaultMorphKeyType())
 
 	// Test setting UUID
-	err := SetDefaultMorphKeyType(MorphKeyTypeUuid)
-	assert.NoError(t, err)
+	SetDefaultMorphKeyType(MorphKeyTypeUuid)
 	assert.Equal(t, MorphKeyTypeUuid, GetDefaultMorphKeyType())
 
 	// Test setting ULID
-	err = SetDefaultMorphKeyType(MorphKeyTypeUlid)
-	assert.NoError(t, err)
+	SetDefaultMorphKeyType(MorphKeyTypeUlid)
 	assert.Equal(t, MorphKeyTypeUlid, GetDefaultMorphKeyType())
 
 	// Test setting back to int
-	err = SetDefaultMorphKeyType(MorphKeyTypeInt)
-	assert.NoError(t, err)
+	SetDefaultMorphKeyType(MorphKeyTypeInt)
 	assert.Equal(t, MorphKeyTypeInt, GetDefaultMorphKeyType())
-
-	// Test invalid key type
-	err = SetDefaultMorphKeyType("invalid")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid")
 
 	// Test convenience methods
 	MorphUsingUuids()

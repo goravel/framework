@@ -920,7 +920,7 @@ func (s *BlueprintTestSuite) TestMorphsWithUuidKeyType() {
 	// Save original state
 	originalKeyType := GetDefaultMorphKeyType()
 	defer func() {
-		_ = SetDefaultMorphKeyType(originalKeyType)
+		SetDefaultMorphKeyType(originalKeyType)
 	}()
 
 	// Set UUID as default
@@ -950,7 +950,7 @@ func (s *BlueprintTestSuite) TestNullableMorphsWithUuidKeyType() {
 	// Save original state
 	originalKeyType := GetDefaultMorphKeyType()
 	defer func() {
-		_ = SetDefaultMorphKeyType(originalKeyType)
+		SetDefaultMorphKeyType(originalKeyType)
 	}()
 
 	// Set UUID as default
@@ -981,8 +981,9 @@ func (s *BlueprintTestSuite) TestUlid() {
 	name := "ulid_column"
 	s.blueprint.Ulid(name)
 	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
-		name:  &name,
-		ttype: convert.Pointer("ulid"),
+		name:   &name,
+		ttype:  convert.Pointer("char"),
+		length: convert.Pointer(26),
 	})
 }
 
@@ -999,8 +1000,9 @@ func (s *BlueprintTestSuite) TestUlidMorphs() {
 		length: convert.Pointer(255),
 	})
 	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
-		name:  &idColumn,
-		ttype: convert.Pointer("ulid"),
+		name:   &idColumn,
+		ttype:  convert.Pointer("char"),
+		length: convert.Pointer(26),
 	})
 
 	commands := s.blueprint.GetCommands()
@@ -1019,7 +1021,7 @@ func (s *BlueprintTestSuite) TestMorphsWithUlidKeyType() {
 	// Save original state
 	originalKeyType := GetDefaultMorphKeyType()
 	defer func() {
-		_ = SetDefaultMorphKeyType(originalKeyType)
+		SetDefaultMorphKeyType(originalKeyType)
 	}()
 
 	// Set ULID as default
@@ -1040,8 +1042,9 @@ func (s *BlueprintTestSuite) TestMorphsWithUlidKeyType() {
 		length: convert.Pointer(255),
 	})
 	s.Contains(blueprint.GetAddedColumns(), &ColumnDefinition{
-		name:  &idColumn,
-		ttype: convert.Pointer("ulid"),
+		name:   &idColumn,
+		ttype:  convert.Pointer("char"),
+		length: convert.Pointer(26),
 	})
 }
 
@@ -1049,7 +1052,7 @@ func (s *BlueprintTestSuite) TestNullableMorphsWithUlidKeyType() {
 	// Save original state
 	originalKeyType := GetDefaultMorphKeyType()
 	defer func() {
-		_ = SetDefaultMorphKeyType(originalKeyType)
+		SetDefaultMorphKeyType(originalKeyType)
 	}()
 
 	// Set ULID as default
@@ -1071,11 +1074,11 @@ func (s *BlueprintTestSuite) TestNullableMorphsWithUlidKeyType() {
 	})
 	s.Contains(blueprint.GetAddedColumns(), &ColumnDefinition{
 		name:     &idColumn,
-		ttype:    convert.Pointer("ulid"),
+		ttype:    convert.Pointer("char"),
+		length:   convert.Pointer(26),
 		nullable: convert.Pointer(true),
 	})
 }
-
 
 func (s *BlueprintTestSuite) TestChange() {
 	column := "name"
