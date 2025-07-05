@@ -147,7 +147,7 @@ func (s *ApplicationTestSuite) TestShutdownWithContext() {
 
 	go app.Run()
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(3 * time.Second)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
