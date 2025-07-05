@@ -126,7 +126,6 @@ func (r *ModelMakeCommand) generateModelInfo(columns []driver.Column, structName
 	}
 
 	var hasID, hasCreatedAt, hasUpdatedAt, hasDeletedAt bool
-	var isCreatedAtNullable, isUpdatedAtNullable, isDeletedAtNullable bool
 	standardColumns := make(map[string]bool)
 
 	for _, column := range columns {
@@ -136,46 +135,28 @@ func (r *ModelMakeCommand) generateModelInfo(columns []driver.Column, structName
 			standardColumns["id"] = true
 		case "created_at":
 			hasCreatedAt = true
-			isCreatedAtNullable = column.Nullable
 			standardColumns["created_at"] = true
 		case "updated_at":
 			hasUpdatedAt = true
-			isUpdatedAtNullable = column.Nullable
 			standardColumns["updated_at"] = true
 		case "deleted_at":
 			hasDeletedAt = true
-			isDeletedAtNullable = column.Nullable
 			standardColumns["deleted_at"] = true
 		}
 	}
 
 	var modelEmbed, timestampsEmbed, softDeletesEmbed string
 
-	hasNullableTimestamps := (hasCreatedAt && isCreatedAtNullable) && (hasUpdatedAt && isUpdatedAtNullable)
-	hasNullableSoftDeletes := hasDeletedAt && isDeletedAtNullable
-
 	if hasCreatedAt && hasUpdatedAt {
-		if hasNullableTimestamps {
-			if hasID {
-				modelEmbed = "orm.BaseModel"
-			} else {
-				timestampsEmbed = "orm.NullableTimestamps"
-			}
+		if hasID {
+			modelEmbed = "orm.Model"
 		} else {
-			if hasID {
-				modelEmbed = "orm.Model"
-			} else {
-				timestampsEmbed = "orm.Timestamps"
-			}
+			timestampsEmbed = "orm.Timestamps"
 		}
 	}
 
 	if hasDeletedAt {
-		if hasNullableSoftDeletes {
-			softDeletesEmbed = "orm.NullableSoftDeletes"
-		} else {
-			softDeletesEmbed = "orm.SoftDeletes"
-		}
+		softDeletesEmbed = "orm.SoftDeletes"
 	}
 
 	if modelEmbed != "" {
