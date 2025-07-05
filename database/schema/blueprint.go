@@ -350,7 +350,7 @@ func (r *Blueprint) Morphs(name string, indexName ...string) {
 
 func (r *Blueprint) NullableMorphs(name string, indexName ...string) {
 	r.String(name + "_type").Nullable()
-	
+
 	switch GetDefaultMorphKeyType() {
 	case MorphKeyTypeUuid:
 		r.Uuid(name + "_id").Nullable()
@@ -359,7 +359,7 @@ func (r *Blueprint) NullableMorphs(name string, indexName ...string) {
 	default:
 		r.UnsignedBigInteger(name + "_id").Nullable()
 	}
-	
+
 	r.createMorphIndex(name, indexName...)
 }
 
@@ -375,8 +375,13 @@ func (r *Blueprint) UuidMorphs(name string, indexName ...string) {
 	r.createMorphIndex(name, indexName...)
 }
 
-func (r *Blueprint) Ulid(column string) driver.ColumnDefinition {
-	return r.createAndAddColumn("ulid", column)
+func (r *Blueprint) Ulid(column string, length ...int) driver.ColumnDefinition {
+	defaultLength := 26
+	if len(length) > 0 {
+		defaultLength = length[0]
+	}
+
+	return r.Char(column, defaultLength)
 }
 
 func (r *Blueprint) UlidMorphs(name string, indexName ...string) {

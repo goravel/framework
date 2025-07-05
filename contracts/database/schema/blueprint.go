@@ -126,14 +126,6 @@ type Blueprint interface {
 	SoftDeletes(column ...string) driver.ColumnDefinition
 	// SoftDeletesTz Add a "deleted at" timestampTz for the table.
 	SoftDeletesTz(column ...string) driver.ColumnDefinition
-	// Uuid Create a new UUID column on the table.
-	Uuid(column string) driver.ColumnDefinition
-	// UuidMorphs Create UUID morph columns for polymorphic relationships.
-	UuidMorphs(name string, indexName ...string)
-	// Ulid Create a new ULID column on the table.
-	Ulid(column string) driver.ColumnDefinition
-	// UlidMorphs Create ULID morph columns for polymorphic relationships.
-	UlidMorphs(name string, indexName ...string)
 	// String Create a new string column on the table.
 	String(column string, length ...int) driver.ColumnDefinition
 	// Text Create a new text column on the table.
@@ -170,4 +162,12 @@ type Blueprint interface {
 	UnsignedSmallInteger(column string) driver.ColumnDefinition
 	// UnsignedTinyInteger Create a new unsigned tiny integer (1-byte) column on the table.
 	UnsignedTinyInteger(column string) driver.ColumnDefinition
+	// Uuid Create a new UUID column on the table.
+	Uuid(column string) driver.ColumnDefinition
+	// UuidMorphs Create UUID morph columns for polymorphic relationships.
+	UuidMorphs(name string, indexName ...string)
+	// Ulid Create a new ULID column on the table.
+	Ulid(column string) driver.ColumnDefinition
+	// UlidMorphs Create ULID morph columns for polymorphic relationships.
+	UlidMorphs(name string, indexName ...string)
 }

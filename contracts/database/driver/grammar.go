@@ -131,8 +131,6 @@ type SchemaGrammar interface {
 	TypeString(column ColumnDefinition) string
 	// TypeUuid Create the column definition for a uuid type.
 	TypeUuid(column ColumnDefinition) string
-	// TypeUlid Create the column definition for a ulid type.
-	TypeUlid(column ColumnDefinition) string
 }
 
 type GormGrammar interface {
