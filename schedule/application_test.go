@@ -126,10 +126,12 @@ func (s *ApplicationTestSuite) TestShutdown() {
 
 	go app.Run()
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(3 * time.Second)
 
 	s.NoError(app.Shutdown())
-	s.Equal(1, immediatelyCall)
+
+	// Due to the millisecond precision, the immediatelyCall may be 1 or 2.
+	s.True(immediatelyCall >= 1 && immediatelyCall <= 2)
 }
 
 func (s *ApplicationTestSuite) TestShutdownWithContext() {
