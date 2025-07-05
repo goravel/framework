@@ -3462,17 +3462,24 @@ func (_c *Blueprint_ToSql_Call) RunAndReturn(run func(driver.Grammar) ([]string,
 	return _c
 }
 
-// Ulid provides a mock function with given fields: column
-func (_m *Blueprint) Ulid(column string) driver.ColumnDefinition {
-	ret := _m.Called(column)
+// Ulid provides a mock function with given fields: column, length
+func (_m *Blueprint) Ulid(column string, length ...int) driver.ColumnDefinition {
+	_va := make([]interface{}, len(length))
+	for _i := range length {
+		_va[_i] = length[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, column)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Ulid")
 	}
 
 	var r0 driver.ColumnDefinition
-	if rf, ok := ret.Get(0).(func(string) driver.ColumnDefinition); ok {
-		r0 = rf(column)
+	if rf, ok := ret.Get(0).(func(string, ...int) driver.ColumnDefinition); ok {
+		r0 = rf(column, length...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(driver.ColumnDefinition)
@@ -3489,13 +3496,21 @@ type Blueprint_Ulid_Call struct {
 
 // Ulid is a helper method to define mock.On call
 //   - column string
-func (_e *Blueprint_Expecter) Ulid(column interface{}) *Blueprint_Ulid_Call {
-	return &Blueprint_Ulid_Call{Call: _e.mock.On("Ulid", column)}
+//   - length ...int
+func (_e *Blueprint_Expecter) Ulid(column interface{}, length ...interface{}) *Blueprint_Ulid_Call {
+	return &Blueprint_Ulid_Call{Call: _e.mock.On("Ulid",
+		append([]interface{}{column}, length...)...)}
 }
 
-func (_c *Blueprint_Ulid_Call) Run(run func(column string)) *Blueprint_Ulid_Call {
+func (_c *Blueprint_Ulid_Call) Run(run func(column string, length ...int)) *Blueprint_Ulid_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		variadicArgs := make([]int, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(int)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
 	})
 	return _c
 }
@@ -3505,7 +3520,7 @@ func (_c *Blueprint_Ulid_Call) Return(_a0 driver.ColumnDefinition) *Blueprint_Ul
 	return _c
 }
 
-func (_c *Blueprint_Ulid_Call) RunAndReturn(run func(string) driver.ColumnDefinition) *Blueprint_Ulid_Call {
+func (_c *Blueprint_Ulid_Call) RunAndReturn(run func(string, ...int) driver.ColumnDefinition) *Blueprint_Ulid_Call {
 	_c.Call.Return(run)
 	return _c
 }
