@@ -89,8 +89,11 @@ func GetContent(file string) (string, error) {
 }
 
 func GetFrameworkContent(file string) (string, error) {
-	packageName := "github.com/goravel/framework"
-	pkg, err := build.Import(packageName, "", build.FindOnly)
+	return GetPackageContent("github.com/goravel/framework", file)
+}
+
+func GetPackageContent(pkgName, file string) (string, error) {
+	pkg, err := build.Import(pkgName, "", build.FindOnly)
 	if err != nil {
 		return "", err
 	}
