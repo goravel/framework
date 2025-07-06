@@ -75,10 +75,10 @@ func (r *PackageMakeCommand) Handle(ctx console.Context) error {
 		"README.md":           packageMakeCommandStubs.Readme,
 		"service_provider.go": packageMakeCommandStubs.ServiceProvider,
 		packageName + ".go":   packageMakeCommandStubs.Main,
-		filepath.Join("config", packageName+".go"):    packageMakeCommandStubs.Config,
-		filepath.Join("contracts", packageName+".go"): packageMakeCommandStubs.Contracts,
-		filepath.Join("facades", packageName+".go"):   packageMakeCommandStubs.Facades,
-		filepath.Join("setup", "setup.go"):            packageMakeCommandStubs.Setup,
+		filepath.Join("contracts", packageName+".go"):       packageMakeCommandStubs.Contracts,
+		filepath.Join("facades", packageName+".go"):         packageMakeCommandStubs.Facades,
+		filepath.Join("setup", "config", packageName+".go"): packageMakeCommandStubs.Config,
+		filepath.Join("setup", "setup.go"):                  packageMakeCommandStubs.Setup,
 	}
 
 	for path, content := range files {

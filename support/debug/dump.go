@@ -10,7 +10,7 @@ import (
 
 var (
 	writer io.Writer = os.Stdout
-	dumper           = godump.NewDumper(godump.WithWriter(writer))
+	dumper           = godump.NewDumper(godump.WithWriter(writer), godump.WithSkipStackFrames(1))
 	osExit           = os.Exit
 )
 
@@ -38,7 +38,7 @@ func DumpJSON(v ...any) {
 
 // FDump is used to display detailed information about variables to the specified io.Writer
 func FDump(w io.Writer, v ...any) {
-	godump.Fdump(w, v...)
+	godump.NewDumper(godump.WithWriter(w), godump.WithSkipStackFrames(1)).Dump(v...)
 }
 
 // FDumpHTML is used to display detailed information about variables in HTML format to the specified io.Writer

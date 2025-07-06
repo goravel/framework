@@ -159,7 +159,7 @@ func (s *ApplicationTestSuite) TestMakeAuth() {
 	mockConfig.EXPECT().GetString("auth.guards.user.provider").Return("user").Once()
 	mockConfig.EXPECT().GetString("auth.providers.user.driver").Return("orm").Once()
 	mockConfig.EXPECT().GetString("auth.guards.user.secret").Return("secret").Once()
-	mockConfig.EXPECT().Get("auth.guards.user.ttl").Return(100).Once()
+	mockConfig.EXPECT().GetInt("auth.guards.user.ttl").Return(100).Once()
 	mockConfig.EXPECT().GetInt("auth.guards.user.refresh_ttl").Return(100).Once()
 
 	s.app.Singleton(binding.Config, func(app foundation.Application) (any, error) {
