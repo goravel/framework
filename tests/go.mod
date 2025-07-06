@@ -9,10 +9,10 @@ godebug x509negativeserial=1
 require (
 	github.com/brianvoe/gofakeit/v7 v7.3.0
 	github.com/goravel/framework v1.15.9
-	github.com/goravel/mysql v0.0.0-20250702013219-02363f0dea53
-	github.com/goravel/postgres v0.0.2-0.20250702013229-88925359fcda
-	github.com/goravel/sqlite v0.0.0-20250702012737-7c2a5ef1517b
-	github.com/goravel/sqlserver v0.0.0-20250702012302-0ca470d0e297
+	github.com/goravel/mysql v0.0.0-20250705141641-91b14214c9d9
+	github.com/goravel/postgres v0.0.2-0.20250705141303-0e7bf0a3d485
+	github.com/goravel/sqlite v0.0.0-20250706143115-e712c7eaf066
+	github.com/goravel/sqlserver v0.0.0-20250705141333-0a380a08a805
 	github.com/spf13/cast v1.9.2
 	github.com/stretchr/testify v1.10.0
 	gorm.io/gorm v1.30.0
@@ -29,7 +29,7 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dromara/carbon/v2 v2.6.9 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.9 // indirect
-	github.com/go-sql-driver/mysql v1.9.0 // indirect
+	github.com/go-sql-driver/mysql v1.9.3 // indirect
 	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
 	github.com/golang-sql/civil v0.0.0-20220223132316-b832511892a9 // indirect
 	github.com/golang-sql/sqlexp v0.1.0 // indirect
@@ -37,7 +37,7 @@ require (
 	github.com/gookit/color v1.5.4 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
-	github.com/jackc/pgx/v5 v5.7.2 // indirect
+	github.com/jackc/pgx/v5 v5.7.5 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
@@ -46,8 +46,8 @@ require (
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/lithammer/fuzzysearch v1.1.8 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
-	github.com/microsoft/go-mssqldb v1.9.1 // indirect
-	github.com/ncruces/go-sqlite3 v0.25.0 // indirect
+	github.com/microsoft/go-mssqldb v1.9.2 // indirect
+	github.com/ncruces/go-sqlite3 v0.26.3 // indirect
 	github.com/ncruces/go-sqlite3/gormlite v0.24.0 // indirect
 	github.com/ncruces/julianday v1.0.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
@@ -66,7 +66,7 @@ require (
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/term v0.32.0 // indirect
 	golang.org/x/text v0.26.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250528174236-200df99c418a // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250603155806-513f23925822 // indirect
 	google.golang.org/grpc v1.73.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
