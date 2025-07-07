@@ -370,27 +370,6 @@ func (r *Blueprint) NumericMorphs(name string, indexName ...string) {
 	r.createMorphIndex(name, indexName...)
 }
 
-func (r *Blueprint) UuidMorphs(name string, indexName ...string) {
-	r.String(name + "_type")
-	r.Uuid(name + "_id")
-	r.createMorphIndex(name, indexName...)
-}
-
-func (r *Blueprint) Ulid(column string, length ...int) driver.ColumnDefinition {
-	defaultLength := DefaultUlidLength
-	if len(length) > 0 {
-		defaultLength = length[0]
-	}
-
-	return r.Char(column, defaultLength)
-}
-
-func (r *Blueprint) UlidMorphs(name string, indexName ...string) {
-	r.String(name + "_type")
-	r.Ulid(name + "_id")
-	r.createMorphIndex(name, indexName...)
-}
-
 func (r *Blueprint) Primary(column ...string) {
 	r.indexCommand(CommandPrimary, column)
 }
@@ -636,8 +615,29 @@ func (r *Blueprint) UnsignedTinyInteger(column string) driver.ColumnDefinition {
 	return r.TinyInteger(column).Unsigned()
 }
 
+func (r *Blueprint) Ulid(column string, length ...int) driver.ColumnDefinition {
+	defaultLength := DefaultUlidLength
+	if len(length) > 0 {
+		defaultLength = length[0]
+	}
+
+	return r.Char(column, defaultLength)
+}
+
+func (r *Blueprint) UlidMorphs(name string, indexName ...string) {
+	r.String(name + "_type")
+	r.Ulid(name + "_id")
+	r.createMorphIndex(name, indexName...)
+}
+
 func (r *Blueprint) Uuid(column string) driver.ColumnDefinition {
 	return r.createAndAddColumn("uuid", column)
+}
+
+func (r *Blueprint) UuidMorphs(name string, indexName ...string) {
+	r.String(name + "_type")
+	r.Uuid(name + "_id")
+	r.createMorphIndex(name, indexName...)
 }
 
 func (r *Blueprint) addAttributeCommands(grammar driver.Grammar) {
