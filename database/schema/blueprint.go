@@ -382,10 +382,7 @@ func (r *Blueprint) Ulid(column string, length ...int) driver.ColumnDefinition {
 		defaultLength = length[0]
 	}
 
-	columnImpl := r.createAndAddColumn("char", column)
-	columnImpl.length = &defaultLength
-
-	return columnImpl
+	return r.Char(column, defaultLength)
 }
 
 func (r *Blueprint) UlidMorphs(name string, indexName ...string) {
@@ -464,10 +461,6 @@ func (r *Blueprint) SoftDeletesTz(column ...string) driver.ColumnDefinition {
 	}
 
 	return r.TimestampTz(newColumn).Nullable()
-}
-
-func (r *Blueprint) Uuid(column string) driver.ColumnDefinition {
-	return r.createAndAddColumn("uuid", column)
 }
 
 func (r *Blueprint) String(column string, length ...int) driver.ColumnDefinition {
@@ -650,6 +643,10 @@ func (r *Blueprint) UnsignedSmallInteger(column string) driver.ColumnDefinition 
 
 func (r *Blueprint) UnsignedTinyInteger(column string) driver.ColumnDefinition {
 	return r.TinyInteger(column).Unsigned()
+}
+
+func (r *Blueprint) Uuid(column string) driver.ColumnDefinition {
+	return r.createAndAddColumn("uuid", column)
 }
 
 func (r *Blueprint) addAttributeCommands(grammar driver.Grammar) {
