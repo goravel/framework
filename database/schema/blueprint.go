@@ -391,15 +391,6 @@ func (r *Blueprint) UlidMorphs(name string, indexName ...string) {
 	r.createMorphIndex(name, indexName...)
 }
 
-// createMorphIndex creates an index for morph columns with optional custom name
-func (r *Blueprint) createMorphIndex(name string, indexName ...string) {
-	if len(indexName) > 0 && indexName[0] != "" {
-		r.Index(name+"_type", name+"_id").Name(indexName[0])
-	} else {
-		r.Index(name+"_type", name+"_id")
-	}
-}
-
 func (r *Blueprint) Primary(column ...string) {
 	r.indexCommand(CommandPrimary, column)
 }
@@ -710,6 +701,15 @@ func (r *Blueprint) createIndexName(ttype string, columns []string) string {
 	index = strings.ReplaceAll(index, ".", "_")
 
 	return index
+}
+
+// createMorphIndex creates an index for morph columns with optional custom name
+func (r *Blueprint) createMorphIndex(name string, indexName ...string) {
+	if len(indexName) > 0 && indexName[0] != "" {
+		r.Index(name+"_type", name+"_id").Name(indexName[0])
+	} else {
+		r.Index(name+"_type", name+"_id")
+	}
 }
 
 func (r *Blueprint) indexCommand(name string, columns []string, config ...schema.IndexConfig) *driver.Command {
