@@ -3,7 +3,6 @@ package tests
 import (
 	"errors"
 	"fmt"
-
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/goravel/framework/contracts/database/factory"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
@@ -520,4 +519,42 @@ func (r *GlobalScope) GlobalScopes() []func(contractsorm.Query) contractsorm.Que
 			return query.Where("name", "global_scope")
 		},
 	}
+}
+
+// UuidEntity model for testing UUID columns
+type UuidEntity struct {
+	Model
+	Uuid string `json:"uuid"`
+	Name string `json:"name"`
+}
+
+// UlidEntity model for testing ULID columns
+type UlidEntity struct {
+	ID   string `gorm:"primaryKey;type:char(26)" json:"id"`
+	Name string `json:"name"`
+	Timestamps
+}
+
+// MorphableEntity for testing polymorphic relationships
+type MorphableEntity struct {
+	Model
+	Name          string `json:"name"`
+	MorphableID   uint   `json:"morphable_id"`
+	MorphableType string `json:"morphable_type"`
+}
+
+// UuidMorphableEntity for testing UUID morphs
+type UuidMorphableEntity struct {
+	Model
+	Name          string `json:"name"`
+	MorphableID   string `gorm:"type:uuid" json:"morphable_id"`
+	MorphableType string `json:"morphable_type"`
+}
+
+// UlidMorphableEntity for testing ULID morphs
+type UlidMorphableEntity struct {
+	Model
+	Name          string `json:"name"`
+	MorphableID   string `gorm:"type:char(26)" json:"morphable_id"`
+	MorphableType string `json:"morphable_type"`
 }
