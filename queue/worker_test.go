@@ -531,7 +531,7 @@ func (s *WorkerTestSuite) Test_run() {
 
 		// run
 		mockReservedJob.EXPECT().Delete().Return(nil).Once()
-		s.mockDriver.EXPECT().Pop(queue).Return(nil, errors.QueueDriverNoJobFound).Once()
+		s.mockDriver.EXPECT().Pop(queue).Return(nil, errors.QueueDriverNoJobFound)
 
 		// logFailedJob
 		s.mockConfig.EXPECT().FailedDatabase().Return("mysql").Twice()

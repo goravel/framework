@@ -117,6 +117,7 @@ func (r *Worker) Shutdown() error {
 func (r *Worker) call(task queue.Task) error {
 	tries := 1
 reCall:
+
 	r.printRunningLog(task)
 
 	if !task.Delay.IsZero() {
