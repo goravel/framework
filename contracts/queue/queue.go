@@ -33,6 +33,8 @@ type Args struct {
 	Queue string
 	// Concurrent num
 	Concurrent int
+	// Tries maximum attempts
+	Tries int
 }
 
 type Arg struct {

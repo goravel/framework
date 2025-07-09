@@ -65,7 +65,7 @@ func (r *Application) Worker(payloads ...queue.Args) queue.Worker {
 	defaultConcurrent := r.config.DefaultConcurrent()
 
 	if len(payloads) == 0 {
-		worker, err := NewWorker(r.config, r.db, r.jobStorer, r.json, r.log, defaultConnection, defaultQueue, defaultConcurrent)
+		worker, err := NewWorker(r.config, r.db, r.jobStorer, r.json, r.log, defaultConnection, defaultQueue, defaultConcurrent, 1)
 		if err != nil {
 			panic(err)
 		}
@@ -81,7 +81,7 @@ func (r *Application) Worker(payloads ...queue.Args) queue.Worker {
 		payloads[0].Concurrent = r.config.GetInt(fmt.Sprintf("queue.connections.%s.concurrent", payloads[0].Connection), 1)
 	}
 
-	worker, err := NewWorker(r.config, r.db, r.jobStorer, r.json, r.log, payloads[0].Connection, payloads[0].Queue, payloads[0].Concurrent)
+	worker, err := NewWorker(r.config, r.db, r.jobStorer, r.json, r.log, payloads[0].Connection, payloads[0].Queue, payloads[0].Concurrent, payloads[0].Tries)
 	if err != nil {
 		panic(err)
 	}
