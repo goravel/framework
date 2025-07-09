@@ -34,6 +34,7 @@ type Worker struct {
 	queue      string
 	wg         sync.WaitGroup
 	concurrent int
+	tries      int
 
 	currentDelay time.Duration
 	maxDelay     time.Duration
@@ -41,7 +42,7 @@ type Worker struct {
 	debug        bool
 }
 
-func NewWorker(config queue.Config, db db.DB, job queue.JobStorer, json foundation.Json, log log.Log, connection, queue string, concurrent int) (*Worker, error) {
+func NewWorker(config queue.Config, db db.DB, job queue.JobStorer, json foundation.Json, log log.Log, connection, queue string, concurrent, tries int) (*Worker, error) {
 	driverCreator := NewDriverCreator(config, db, job, json, log)
 	driver, err := driverCreator.Create(connection)
 	if err != nil {
@@ -59,6 +60,7 @@ func NewWorker(config queue.Config, db db.DB, job queue.JobStorer, json foundati
 		connection: connection,
 		queue:      queue,
 		concurrent: concurrent,
+		tries:      tries,
 		debug:      config.Debug(),
 
 		currentDelay:  1 * time.Second,
@@ -113,17 +115,40 @@ func (r *Worker) Shutdown() error {
 }
 
 func (r *Worker) call(task queue.Task) error {
+	tries := 1
 	r.printRunningLog(task)
 
-	if !task.Delay.IsZero() {
-		time.Sleep(carbon.FromStdTime(task.Delay).DiffAbsInDuration())
-	}
+	for {
+		if !task.Delay.IsZero() {
+			time.Sleep(carbon.FromStdTime(task.Delay).DiffAbsInDuration())
+		}
 
-	now := carbon.Now()
-	err := r.job.Call(task.Job.Signature(), utils.ConvertArgs(task.Args))
-	duration := now.DiffAbsInDuration().String()
+		now := carbon.Now()
+		err := r.job.Call(task.Job.Signature(), utils.ConvertArgs(task.Args))
+		duration := now.DiffAbsInDuration().String()
 
-	if err != nil {
+		if err == nil {
+			r.printSuccessLog(task, duration)
+			return nil
+		}
+
+		shouldRetry := false
+		var delay time.Duration = 0
+
+		if jobWithShouldRetry, ok := task.Job.(queue.JobWithShouldRetry); ok {
+			shouldRetry, delay = jobWithShouldRetry.ShouldRetry(err, tries)
+		} else {
+			shouldRetry = tries < r.tries /* || r.tries == 0 */ // Currently, we do not support unlimited retries, see https://github.com/goravel/framework/pull/1123#discussion_r2194272829
+		}
+
+		if shouldRetry {
+			if delay > 0 {
+				time.Sleep(delay)
+			}
+			tries++
+			continue
+		}
+
 		payload, jsonErr := utils.TaskToJson(task, r.json)
 		if jsonErr != nil {
 			return errors.QueueFailedToConvertTaskToJson.Args(jsonErr, task)
@@ -142,10 +167,6 @@ func (r *Worker) call(task queue.Task) error {
 
 		return errors.QueueFailedToCallJob
 	}
-
-	r.printSuccessLog(task, duration)
-
-	return nil
 }
 
 func (r *Worker) logFailedJob(job models.FailedJob) {
