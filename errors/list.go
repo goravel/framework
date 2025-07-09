@@ -161,6 +161,7 @@ var (
 	QueueJobFailed                   = New("job failed: %v")
 	QueueProcessingJobs              = New("Processing jobs from [%s] connection and [%s] queue")
 	QueuePushingFailedJob            = New("Pushing failed queue jobs back onto the queue")
+	QueueNoFailedJobsFound           = New("no failed jobs found")
 
 	RouteDefaultDriverNotSet = New("please set default driver")
 	RouteInvalidDriver       = New("init %s route driver fail: route must be implement route.Route or func() (route.Route, error)")
