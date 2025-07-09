@@ -49,9 +49,6 @@ func (r *QueueFailedCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	ctx.Info(errors.QueuePushingFailedJob.Error())
-	ctx.Line("")
-
 	for _, failedJob := range failedJobs {
 		r.printJob(ctx, failedJob.UUID(), failedJob.Connection(), failedJob.Queue())
 	}

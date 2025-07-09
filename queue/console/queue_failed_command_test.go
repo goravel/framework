@@ -51,8 +51,7 @@ func (s *QueueFailedCommandTestSuite) TestHandle() {
 					mockFailedJob,
 				}, nil).Once()
 
-				mockCtx.EXPECT().Info(errors.QueuePushingFailedJob.Error()).Once()
-				mockCtx.EXPECT().Line("").Twice()
+				mockCtx.EXPECT().Line("").Once()
 				mockFailedJob.EXPECT().UUID().Return("test-uuid").Once()
 				mockFailedJob.EXPECT().Connection().Return("test-connection").Once()
 				mockFailedJob.EXPECT().Queue().Return("test-queue").Once()
