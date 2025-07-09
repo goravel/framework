@@ -9,18 +9,14 @@ import (
 	contractsqueue "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
-	mocksdb "github.com/goravel/framework/mocks/database/db"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
 	"github.com/goravel/framework/support/carbon"
 )
 
 type QueueFailedCommandTestSuite struct {
 	suite.Suite
-	mockDB     *mocksdb.DB
 	mockFailer *mocksqueue.Failer
-	mockQuery  *mocksdb.Query
 	mockQueue  *mocksqueue.Queue
-	mockConfig *mocksqueue.Config
 	command    *QueueFailedCommand
 }
 
@@ -29,18 +25,10 @@ func TestQueueFailedCommandTestSuite(t *testing.T) {
 }
 
 func (s *QueueFailedCommandTestSuite) SetupTest() {
-	s.mockDB = mocksdb.NewDB(s.T())
-	s.mockQuery = mocksdb.NewQuery(s.T())
 	s.mockFailer = mocksqueue.NewFailer(s.T())
 	s.mockQueue = mocksqueue.NewQueue(s.T())
-	s.mockConfig = mocksqueue.NewConfig(s.T())
 
-	s.mockConfig.EXPECT().GetString("queue.failed.database").Return("mysql").Once()
-	s.mockConfig.EXPECT().GetString("queue.failed.table").Return("failed_jobs").Once()
-	s.mockDB.EXPECT().Connection("mysql").Return(s.mockDB).Once()
-	s.mockDB.EXPECT().Table("failed_jobs").Return(s.mockQuery).Once()
-
-	s.command = NewQueueFailedCommand(s.mockConfig, s.mockDB, s.mockQueue)
+	s.command = NewQueueFailedCommand(s.mockQueue)
 }
 
 func (s *QueueFailedCommandTestSuite) TestHandle() {
@@ -72,14 +60,6 @@ func (s *QueueFailedCommandTestSuite) TestHandle() {
 				defer carbon.ClearTestNow()
 
 				mockCtx.EXPECT().TwoColumnDetail("\x1b[90m"+carbon.Now().ToDateTimeString()+"\x1b[0m test-uuid", "test-connection@test-queue").Once()
-			},
-		},
-		{
-			name: "failed job query is nil",
-			setup: func() {
-				s.command.failedJobQuery = nil
-
-				mockCtx.EXPECT().Error(errors.DBFacadeNotSet.Error()).Once()
 			},
 		},
 		{

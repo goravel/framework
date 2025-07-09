@@ -1,10 +1,8 @@
 package console
 
 import (
-	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	contractsdb "github.com/goravel/framework/contracts/database/db"
 	contractsqueue "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
@@ -12,22 +10,12 @@ import (
 )
 
 type QueueFailedCommand struct {
-	failedJobQuery contractsdb.Query
-	queue          contractsqueue.Queue
+	queue contractsqueue.Queue
 }
 
-func NewQueueFailedCommand(config config.Config, db contractsdb.DB, queue contractsqueue.Queue) *QueueFailedCommand {
-	failedDatabase := config.GetString("queue.failed.database")
-	failedTable := config.GetString("queue.failed.table")
-
-	var failedJobQuery contractsdb.Query
-	if db != nil {
-		failedJobQuery = db.Connection(failedDatabase).Table(failedTable)
-	}
-
+func NewQueueFailedCommand(queue contractsqueue.Queue) *QueueFailedCommand {
 	return &QueueFailedCommand{
-		failedJobQuery: failedJobQuery,
-		queue:          queue,
+		queue: queue,
 	}
 }
 
@@ -50,11 +38,6 @@ func (r *QueueFailedCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *QueueFailedCommand) Handle(ctx console.Context) error {
-	if r.failedJobQuery == nil {
-		ctx.Error(errors.DBFacadeNotSet.Error())
-		return nil
-	}
-
 	failedJobs, err := r.queue.Failer().All()
 	if err != nil {
 		ctx.Error(err.Error())

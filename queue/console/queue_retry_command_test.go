@@ -9,7 +9,6 @@ import (
 	contractsqueue "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
-	mocksdb "github.com/goravel/framework/mocks/database/db"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
 	"github.com/goravel/framework/support/carbon"
@@ -17,13 +16,9 @@ import (
 
 type QueueRetryCommandTestSuite struct {
 	suite.Suite
-	mockDB     *mocksdb.DB
 	mockFailer *mocksqueue.Failer
-	mockQuery  *mocksdb.Query
 	mockQueue  *mocksqueue.Queue
 	mockJson   *mocksfoundation.Json
-	mockConfig *mocksqueue.Config
-	mockDriver *mocksqueue.Driver
 	command    *QueueRetryCommand
 }
 
@@ -32,20 +27,11 @@ func TestQueueRetryCommandTestSuite(t *testing.T) {
 }
 
 func (s *QueueRetryCommandTestSuite) SetupTest() {
-	s.mockDB = mocksdb.NewDB(s.T())
-	s.mockQuery = mocksdb.NewQuery(s.T())
 	s.mockFailer = mocksqueue.NewFailer(s.T())
 	s.mockQueue = mocksqueue.NewQueue(s.T())
 	s.mockJson = mocksfoundation.NewJson(s.T())
-	s.mockConfig = mocksqueue.NewConfig(s.T())
-	s.mockDriver = mocksqueue.NewDriver(s.T())
 
-	s.mockConfig.EXPECT().GetString("queue.failed.database").Return("mysql").Once()
-	s.mockConfig.EXPECT().GetString("queue.failed.table").Return("failed_jobs").Once()
-	s.mockDB.EXPECT().Connection("mysql").Return(s.mockDB).Once()
-	s.mockDB.EXPECT().Table("failed_jobs").Return(s.mockQuery).Once()
-
-	s.command = NewQueueRetryCommand(s.mockConfig, s.mockDB, s.mockQueue, s.mockJson)
+	s.command = NewQueueRetryCommand(s.mockQueue, s.mockJson)
 }
 
 func (s *QueueRetryCommandTestSuite) TestHandle() {
@@ -100,14 +86,6 @@ func (s *QueueRetryCommandTestSuite) TestHandle() {
 				mockFailedJobTwo.EXPECT().Retry().Return(nil).Once()
 				mockFailedJobTwo.EXPECT().UUID().Return("test-uuid-2").Once()
 				mockCtx.EXPECT().TwoColumnDetail("test-uuid-2", "0s <fg=green;op=bold>DONE</>").Once()
-			},
-		},
-		{
-			name: "failed job query is nil",
-			setup: func() {
-				s.command.failedJobQuery = nil
-
-				mockCtx.EXPECT().Error(errors.DBFacadeNotSet.Error()).Once()
 			},
 		},
 		{
