@@ -521,3 +521,41 @@ func (r *GlobalScope) GlobalScopes() []func(contractsorm.Query) contractsorm.Que
 		},
 	}
 }
+
+// UuidEntity model for testing UUID columns
+type UuidEntity struct {
+	ID   string `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"id"`
+	Name string `json:"name"`
+	Timestamps
+}
+
+// UlidEntity model for testing ULID columns
+type UlidEntity struct {
+	ID   string `gorm:"primaryKey;type:char(26)" json:"id"`
+	Name string `json:"name"`
+	Timestamps
+}
+
+// MorphableEntity for testing polymorphic relationships
+type MorphableEntity struct {
+	Model
+	Name          string `json:"name"`
+	MorphableID   uint   `json:"morphable_id"`
+	MorphableType string `json:"morphable_type"`
+}
+
+// UuidMorphableEntity for testing UUID morphs
+type UuidMorphableEntity struct {
+	Model
+	Name          string `json:"name"`
+	MorphableID   string `gorm:"type:uuid" json:"morphable_id"`
+	MorphableType string `json:"morphable_type"`
+}
+
+// UlidMorphableEntity for testing ULID morphs
+type UlidMorphableEntity struct {
+	Model
+	Name          string `json:"name"`
+	MorphableID   string `gorm:"type:char(26)" json:"morphable_id"`
+	MorphableType string `json:"morphable_type"`
+}
