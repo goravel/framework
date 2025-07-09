@@ -400,8 +400,8 @@ func (r *testTables) uuidEntities() ([]string, error) {
 
 	blueprint := schema.NewBlueprint(nil, "", "uuid_entities")
 	blueprint.Create()
-	blueprint.Uuid("id")
-	blueprint.Primary("id")
+	blueprint.BigIncrements("id")
+	blueprint.Uuid("uuid")
 	blueprint.String("name")
 	blueprint.Timestamps()
 

@@ -8,6 +8,7 @@ godebug x509negativeserial=1
 
 require (
 	github.com/brianvoe/gofakeit/v7 v7.3.0
+	github.com/google/uuid v1.6.0
 	github.com/goravel/framework v1.15.9
 	github.com/goravel/mysql v0.0.0-20250705141641-91b14214c9d9
 	github.com/goravel/postgres v0.0.2-0.20250705141303-0e7bf0a3d485
@@ -33,7 +34,6 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
 	github.com/golang-sql/civil v0.0.0-20220223132316-b832511892a9 // indirect
 	github.com/golang-sql/sqlexp v0.1.0 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/gookit/color v1.5.4 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect

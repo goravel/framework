@@ -3,7 +3,6 @@ package tests
 import (
 	"errors"
 	"fmt"
-
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/goravel/framework/contracts/database/factory"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
@@ -524,9 +523,9 @@ func (r *GlobalScope) GlobalScopes() []func(contractsorm.Query) contractsorm.Que
 
 // UuidEntity model for testing UUID columns
 type UuidEntity struct {
-	ID   string `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"id"`
+	Model
+	Uuid string `json:"uuid"`
 	Name string `json:"name"`
-	Timestamps
 }
 
 // UlidEntity model for testing ULID columns
