@@ -23,7 +23,7 @@ type QueueRetryCommandTestSuite struct {
 	mockQueue  *mocksqueue.Queue
 	mockJson   *mocksfoundation.Json
 	mockConfig *mocksqueue.Config
-	mockdriver *mocksqueue.Driver
+	mockDriver *mocksqueue.Driver
 	command    *QueueRetryCommand
 }
 
@@ -38,7 +38,7 @@ func (s *QueueRetryCommandTestSuite) SetupTest() {
 	s.mockQueue = mocksqueue.NewQueue(s.T())
 	s.mockJson = mocksfoundation.NewJson(s.T())
 	s.mockConfig = mocksqueue.NewConfig(s.T())
-	s.mockdriver = mocksqueue.NewDriver(s.T())
+	s.mockDriver = mocksqueue.NewDriver(s.T())
 
 	s.mockConfig.EXPECT().GetString("queue.failed.database").Return("mysql").Once()
 	s.mockConfig.EXPECT().GetString("queue.failed.table").Return("failed_jobs").Once()
