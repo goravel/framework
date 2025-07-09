@@ -138,7 +138,7 @@ func (r *Worker) call(task queue.Task) error {
 		if jobWithShouldRetry, ok := task.Job.(queue.JobWithShouldRetry); ok {
 			shouldRetry, delay = jobWithShouldRetry.ShouldRetry(err, tries)
 		} else {
-			shouldRetry = tries < r.tries || r.tries == 0
+			shouldRetry = tries < r.tries /* || r.tries == 0 */ // Currently, we do not support unlimited retries, see https://github.com/goravel/framework/pull/1123#discussion_r2194272829
 		}
 
 		if shouldRetry {
