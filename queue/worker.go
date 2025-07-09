@@ -34,6 +34,7 @@ type Worker struct {
 	queue      string
 	wg         sync.WaitGroup
 	concurrent int
+	tries      int
 
 	currentDelay time.Duration
 	maxDelay     time.Duration
@@ -41,7 +42,7 @@ type Worker struct {
 	debug        bool
 }
 
-func NewWorker(config queue.Config, db db.DB, job queue.JobStorer, json foundation.Json, log log.Log, connection, queue string, concurrent int) (*Worker, error) {
+func NewWorker(config queue.Config, db db.DB, job queue.JobStorer, json foundation.Json, log log.Log, connection, queue string, concurrent, tries int) (*Worker, error) {
 	driverCreator := NewDriverCreator(config, db, job, json, log)
 	driver, err := driverCreator.Create(connection)
 	if err != nil {
@@ -59,6 +60,7 @@ func NewWorker(config queue.Config, db db.DB, job queue.JobStorer, json foundati
 		connection: connection,
 		queue:      queue,
 		concurrent: concurrent,
+		tries:      tries,
 		debug:      config.Debug(),
 
 		currentDelay:  1 * time.Second,
@@ -113,6 +115,8 @@ func (r *Worker) Shutdown() error {
 }
 
 func (r *Worker) call(task queue.Task) error {
+	tries := 1
+reCall:
 	r.printRunningLog(task)
 
 	if !task.Delay.IsZero() {
@@ -139,6 +143,12 @@ func (r *Worker) call(task queue.Task) error {
 		}
 
 		r.printFailedLog(task, duration)
+
+		if tries < r.tries || r.tries == 0 { // If tries is 0, it means unlimited retries
+			tries++
+			time.Sleep(time.Second * time.Duration(tries))
+			goto reCall
+		}
 
 		return errors.QueueFailedToCallJob
 	}
