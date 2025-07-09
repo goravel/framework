@@ -116,19 +116,39 @@ func (r *Worker) Shutdown() error {
 
 func (r *Worker) call(task queue.Task) error {
 	tries := 1
-reCall:
-
 	r.printRunningLog(task)
 
-	if !task.Delay.IsZero() {
-		time.Sleep(carbon.FromStdTime(task.Delay).DiffAbsInDuration())
-	}
+	for {
+		if !task.Delay.IsZero() {
+			time.Sleep(carbon.FromStdTime(task.Delay).DiffAbsInDuration())
+		}
 
-	now := carbon.Now()
-	err := r.job.Call(task.Job.Signature(), utils.ConvertArgs(task.Args))
-	duration := now.DiffAbsInDuration().String()
+		now := carbon.Now()
+		err := r.job.Call(task.Job.Signature(), utils.ConvertArgs(task.Args))
+		duration := now.DiffAbsInDuration().String()
 
-	if err != nil {
+		if err == nil {
+			r.printSuccessLog(task, duration)
+			return nil
+		}
+
+		shouldRetry := false
+		var delay time.Duration = 0
+
+		if jobWithShouldRetry, ok := task.Job.(queue.JobWithShouldRetry); ok {
+			shouldRetry, delay = jobWithShouldRetry.ShouldRetry(err, tries)
+		} else {
+			shouldRetry = tries < r.tries || r.tries == 0
+		}
+
+		if shouldRetry {
+			if delay > 0 {
+				time.Sleep(delay)
+			}
+			tries++
+			continue
+		}
+
 		payload, jsonErr := utils.TaskToJson(task, r.json)
 		if jsonErr != nil {
 			return errors.QueueFailedToConvertTaskToJson.Args(jsonErr, task)
@@ -145,18 +165,8 @@ reCall:
 
 		r.printFailedLog(task, duration)
 
-		if tries < r.tries || r.tries == 0 { // If tries is 0, it means unlimited retries
-			tries++
-			time.Sleep(time.Second * time.Duration(tries))
-			goto reCall
-		}
-
 		return errors.QueueFailedToCallJob
 	}
-
-	r.printSuccessLog(task, duration)
-
-	return nil
 }
 
 func (r *Worker) logFailedJob(job models.FailedJob) {

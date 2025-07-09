@@ -218,6 +218,7 @@ func (s *WorkerTestSuite) Test_run() {
 	testJobErr := &TestJobErr{}
 	testJobOne := &TestJobOne{}
 	testJobTwo := &TestJobTwo{}
+	testJobRetry := &TestJobRetry{}
 
 	errorTask := contractsqueue.Task{
 		ChainJob: contractsqueue.ChainJob{
@@ -527,18 +528,18 @@ func (s *WorkerTestSuite) Test_run() {
 				Args:      args,
 			},
 			UUID: "test",
-		}).Return("{\"signature\":\"test_job_err\",\"args\":[{\"type\":\"string\",\"value\":\"test\"}],\"delay\":null,\"uuid\":\"test\",\"chain\":[]}", nil).Twice()
+		}).Return("{\"signature\":\"test_job_err\",\"args\":[{\"type\":\"string\",\"value\":\"test\"}],\"delay\":null,\"uuid\":\"test\",\"chain\":[]}", nil).Once()
 
 		// run
 		mockReservedJob.EXPECT().Delete().Return(nil).Once()
 		s.mockDriver.EXPECT().Pop(queue).Return(nil, errors.QueueDriverNoJobFound)
 
 		// logFailedJob
-		s.mockConfig.EXPECT().FailedDatabase().Return("mysql").Twice()
-		s.mockConfig.EXPECT().FailedTable().Return("failed_jobs").Twice()
-		s.mockDB.EXPECT().Connection("mysql").Return(s.mockDB).Twice()
+		s.mockConfig.EXPECT().FailedDatabase().Return("mysql").Once()
+		s.mockConfig.EXPECT().FailedTable().Return("failed_jobs").Once()
+		s.mockDB.EXPECT().Connection("mysql").Return(s.mockDB).Once()
 		mockQuery := mocksdb.NewQuery(s.T())
-		s.mockDB.EXPECT().Table("failed_jobs").Return(mockQuery).Twice()
+		s.mockDB.EXPECT().Table("failed_jobs").Return(mockQuery).Once()
 		mockQuery.EXPECT().Insert(&models.FailedJob{
 			UUID:       errorTaskWithChain.UUID,
 			Connection: connection,
@@ -546,7 +547,7 @@ func (s *WorkerTestSuite) Test_run() {
 			Payload:    "{\"signature\":\"test_job_err\",\"args\":[{\"type\":\"string\",\"value\":\"test\"}],\"delay\":null,\"uuid\":\"test\",\"chain\":[]}",
 			Exception:  assert.AnError.Error(),
 			FailedAt:   carbon.NewDateTime(carbon.Now()),
-		}).Return(nil, nil).Twice()
+		}).Return(nil, nil).Once()
 
 		go func() {
 			s.worker.tries = 2 // Set tries to 2 for retry
@@ -554,7 +555,59 @@ func (s *WorkerTestSuite) Test_run() {
 			s.NoError(err)
 		}()
 
-		time.Sleep(3000 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
+
+		s.NoError(s.worker.Shutdown())
+		s.worker.tries = 1
+	})
+
+	s.Run("retry job success", func() {
+		s.SetupTest()
+
+		args := []contractsqueue.Arg{
+			{
+				Type:  "string",
+				Value: "test",
+			},
+		}
+		errorTaskWithChain := contractsqueue.Task{
+			ChainJob: contractsqueue.ChainJob{
+				Job: testJobOne,
+			},
+			UUID: "test",
+			Chain: []contractsqueue.ChainJob{
+				{
+					Job: testJobRetry,
+					Args: []contractsqueue.Arg{
+						{
+							Type:  "string",
+							Value: "test",
+						},
+					},
+				},
+			},
+		}
+
+		// run
+		mockReservedJob := mocksqueue.NewReservedJob(s.T())
+		s.mockDriver.EXPECT().Pop(queue).Return(mockReservedJob, nil).Once()
+		mockReservedJob.EXPECT().Task().Return(errorTaskWithChain).Once()
+
+		// call
+		s.mockJob.EXPECT().Call(errorTaskWithChain.Job.Signature(), make([]any, 0)).Return(nil).Once()
+		s.mockJob.EXPECT().Call(errorTaskWithChain.Chain[0].Job.Signature(), utils.ConvertArgs(args)).Return(assert.AnError).Twice().Return(nil).Once()
+
+		// run
+		mockReservedJob.EXPECT().Delete().Return(nil).Once()
+		s.mockDriver.EXPECT().Pop(queue).Return(nil, errors.QueueDriverNoJobFound)
+
+		go func() {
+			s.worker.tries = 3 // Set tries to 3 for retry
+			err := s.worker.run()
+			s.NoError(err)
+		}()
+
+		time.Sleep(500 * time.Millisecond)
 
 		s.NoError(s.worker.Shutdown())
 		s.worker.tries = 1
@@ -574,4 +627,26 @@ func (s *WorkerTestSuite) TestShutdown() {
 	err := s.worker.Shutdown()
 	s.NoError(err)
 	s.True(s.worker.isShutdown.Load())
+}
+
+type TestJobRetry struct {
+	attempt int
+}
+
+// Signature The name and signature of the job.
+func (r *TestJobRetry) Signature() string {
+	return "test_job_retry"
+}
+
+// Handle Execute the job.
+func (r *TestJobRetry) Handle(args ...any) error {
+	if r.attempt > 2 {
+		return nil
+	}
+	return assert.AnError
+}
+
+func (r *TestJobRetry) ShouldRetry(err error, attempt int) (bool, time.Duration) {
+	r.attempt = attempt
+	return true, 0
 }

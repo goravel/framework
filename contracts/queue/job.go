@@ -44,3 +44,8 @@ type ChainJob struct {
 	Job   Job       `json:"job"`
 	Args  []Arg     `json:"args"`
 }
+
+type JobWithShouldRetry interface {
+	// ShouldRetry determines if the job should be retried based on the error.
+	ShouldRetry(err error, attempt int) (retryable bool, delay time.Duration)
+}
