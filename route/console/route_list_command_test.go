@@ -6,14 +6,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/goravel/framework/contracts/route"
+	"github.com/goravel/framework/contracts/http"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksroute "github.com/goravel/framework/mocks/route"
 	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
 )
 
-func TestRouteListCommand(t *testing.T) {
+func Test_RouteListCommand(t *testing.T) {
 	var (
 		mockContext *mocksconsole.Context
 		mockRoute   *mocksroute.Route
@@ -44,7 +44,7 @@ func TestRouteListCommand(t *testing.T) {
 			name: "no routes matching criteria",
 			setup: func() {
 				mockContext.EXPECT().NewLine().Return().Once()
-				mockRoute.EXPECT().GetRoutes().Return([]route.Info{
+				mockRoute.EXPECT().GetRoutes().Return([]http.Info{
 					{Name: "test", Method: "GET", Path: "/test"},
 					{Name: "test2", Method: "POST", Path: "/test2"},
 				}).Once()
@@ -63,7 +63,7 @@ func TestRouteListCommand(t *testing.T) {
 			name: "filter by method",
 			setup: func() {
 				mockContext.EXPECT().NewLine().Return().Once()
-				mockRoute.EXPECT().GetRoutes().Return([]route.Info{
+				mockRoute.EXPECT().GetRoutes().Return([]http.Info{
 					{Name: "test", Method: "GET", Path: "/test"},
 					{Name: "test2", Method: "POST", Path: "/test2"},
 				}).Once()
@@ -90,7 +90,7 @@ func TestRouteListCommand(t *testing.T) {
 			name: "filter by path",
 			setup: func() {
 				mockContext.EXPECT().NewLine().Return().Once()
-				mockRoute.EXPECT().GetRoutes().Return([]route.Info{
+				mockRoute.EXPECT().GetRoutes().Return([]http.Info{
 					{Name: "test", Method: "GET", Path: "/test", Handler: "goravel/routes.testHandler"},
 					{Method: "POST", Path: "/test2", Handler: "goravel/routes.testHandler2"},
 				}).Once()

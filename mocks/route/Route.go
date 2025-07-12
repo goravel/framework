@@ -209,19 +209,19 @@ func (_c *Route_Get_Call) RunAndReturn(run func(string, http.HandlerFunc) route.
 }
 
 // GetRoutes provides a mock function with no fields
-func (_m *Route) GetRoutes() []route.Info {
+func (_m *Route) GetRoutes() []http.Info {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetRoutes")
 	}
 
-	var r0 []route.Info
-	if rf, ok := ret.Get(0).(func() []route.Info); ok {
+	var r0 []http.Info
+	if rf, ok := ret.Get(0).(func() []http.Info); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]route.Info)
+			r0 = ret.Get(0).([]http.Info)
 		}
 	}
 
@@ -245,12 +245,12 @@ func (_c *Route_GetRoutes_Call) Run(run func()) *Route_GetRoutes_Call {
 	return _c
 }
 
-func (_c *Route_GetRoutes_Call) Return(_a0 []route.Info) *Route_GetRoutes_Call {
+func (_c *Route_GetRoutes_Call) Return(_a0 []http.Info) *Route_GetRoutes_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Route_GetRoutes_Call) RunAndReturn(run func() []route.Info) *Route_GetRoutes_Call {
+func (_c *Route_GetRoutes_Call) RunAndReturn(run func() []http.Info) *Route_GetRoutes_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -335,18 +335,18 @@ func (_c *Route_Group_Call) RunAndReturn(run func(route.GroupFunc)) *Route_Group
 }
 
 // Info provides a mock function with given fields: name
-func (_m *Route) Info(name string) route.Info {
+func (_m *Route) Info(name string) http.Info {
 	ret := _m.Called(name)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Info")
 	}
 
-	var r0 route.Info
-	if rf, ok := ret.Get(0).(func(string) route.Info); ok {
+	var r0 http.Info
+	if rf, ok := ret.Get(0).(func(string) http.Info); ok {
 		r0 = rf(name)
 	} else {
-		r0 = ret.Get(0).(route.Info)
+		r0 = ret.Get(0).(http.Info)
 	}
 
 	return r0
@@ -370,12 +370,12 @@ func (_c *Route_Info_Call) Run(run func(name string)) *Route_Info_Call {
 	return _c
 }
 
-func (_c *Route_Info_Call) Return(_a0 route.Info) *Route_Info_Call {
+func (_c *Route_Info_Call) Return(_a0 http.Info) *Route_Info_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Route_Info_Call) RunAndReturn(run func(string) route.Info) *Route_Info_Call {
+func (_c *Route_Info_Call) RunAndReturn(run func(string) http.Info) *Route_Info_Call {
 	_c.Call.Return(run)
 	return _c
 }

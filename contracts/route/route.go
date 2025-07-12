@@ -15,7 +15,7 @@ type Route interface {
 	// Fallback registers a handler to be executed when no other route was matched.
 	Fallback(handler contractshttp.HandlerFunc)
 	// GetRoutes retrieves all the routes registered with the router.
-	GetRoutes() []Info
+	GetRoutes() []contractshttp.Info
 	// GlobalMiddleware registers global middleware to be applied to all routes of the router.
 	GlobalMiddleware(middlewares ...contractshttp.Middleware)
 	// Listen starts the HTTP server and listens on the specified listener.
@@ -25,7 +25,7 @@ type Route interface {
 	// ListenTLSWithCert starts the HTTPS server with the provided TLS configuration and listens on the specified listener.
 	ListenTLSWithCert(l net.Listener, certFile, keyFile string) error
 	// Name registers a name for the route.
-	Info(name string) Info
+	Info(name string) contractshttp.Info
 	// Recover allows you to set a custom recovery when a request panics
 	Recover(recoverFunc func(ctx contractshttp.Context, err any))
 	// Run starts the HTTP server and listens on the specified host.
@@ -77,11 +77,4 @@ type Router interface {
 
 type Action interface {
 	Name(name string) Action
-}
-
-type Info struct {
-	Handler string
-	Method  string
-	Name    string
-	Path    string
 }
