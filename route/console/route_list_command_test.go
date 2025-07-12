@@ -13,7 +13,7 @@ import (
 	supportconsole "github.com/goravel/framework/support/console"
 )
 
-func Test_RouteListCommand(t *testing.T) {
+func TestRouteListCommand(t *testing.T) {
 	var (
 		mockContext *mocksconsole.Context
 		mockRoute   *mocksroute.Route
