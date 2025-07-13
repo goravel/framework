@@ -73,7 +73,7 @@ func (s *GeneralTestSuite) TestFormat() {
 			assert: func() {
 				formatLog, err := general.Format(s.entry)
 				s.Nil(err)
-				s.Contains(string(formatLog), fmt.Sprintf("[%s] test.info: Test Message", s.entry.Time.In(time.UTC).Format(time.DateTime)))
+				s.Contains(string(formatLog), fmt.Sprintf("[%s] test.info: Test Message", s.entry.Time.In(time.UTC).Format("2006-01-02 15:04:05.999")))
 				s.Contains(string(formatLog), "[Code] 200")
 				s.Contains(string(formatLog), "[Domain] example.com")
 				s.Contains(string(formatLog), "[Owner] owner")
