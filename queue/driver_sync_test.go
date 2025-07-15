@@ -9,6 +9,7 @@ import (
 
 	"github.com/goravel/framework/contracts/queue"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
+	"github.com/goravel/framework/queue/utils"
 )
 
 var (
@@ -30,8 +31,8 @@ func (s *SyncTestSuite) SetupSuite() {
 	s.mockConfig = mocksqueue.NewConfig(s.T())
 
 	s.app = &Application{
-		config: s.mockConfig,
-		job:    NewJobRepository(),
+		config:    s.mockConfig,
+		jobStorer: NewJobStorer(),
 	}
 
 	s.app.Register([]queue.Job{&TestJobOne{}, &TestJobTwo{}, &TestJobErr{}})
@@ -43,18 +44,17 @@ func (s *SyncTestSuite) SetupTest() {
 
 	s.mockConfig.EXPECT().DefaultConnection().Return("sync").Once()
 	s.mockConfig.EXPECT().DefaultQueue().Return("default").Once()
-	s.mockConfig.EXPECT().QueueKey("sync", "default").Return("sync_queue").Once()
 	s.mockConfig.EXPECT().Driver("sync").Return(queue.DriverSync).Once()
 }
 
 func (s *SyncTestSuite) TestDelay() {
 	s.Nil(s.app.Job(&TestJobOne{}, testArgs).Delay(time.Now().Add(time.Second)).Dispatch())
-	s.Equal(ConvertArgs(testArgs), testJobOne)
+	s.Equal(utils.ConvertArgs(testArgs), testJobOne)
 }
 
 func (s *SyncTestSuite) TestDispatch() {
 	s.Nil(s.app.Job(&TestJobOne{}, testArgs).Dispatch())
-	s.Equal(ConvertArgs(testArgs), testJobOne)
+	s.Equal(utils.ConvertArgs(testArgs), testJobOne)
 }
 
 func (s *SyncTestSuite) TestChainDispatch() {
@@ -94,7 +94,7 @@ func (s *SyncTestSuite) TestChainDispatch() {
 			Value: []int{4, 5, 6},
 		},
 	}
-	s.Nil(s.app.Chain([]queue.Jobs{
+	s.Nil(s.app.Chain([]queue.ChainJob{
 		{
 			Job:  &TestJobOne{},
 			Args: argsOne,
@@ -147,7 +147,7 @@ func (s *SyncTestSuite) TestChainDispatchWithError() {
 		},
 	}
 
-	s.Equal(assert.AnError, s.app.Chain([]queue.Jobs{
+	s.Equal(assert.AnError, s.app.Chain([]queue.ChainJob{
 		{
 			Job:  &TestJobOne{},
 			Args: argsOne,

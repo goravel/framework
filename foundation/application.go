@@ -3,14 +3,19 @@ package foundation
 import (
 	"context"
 	"flag"
+	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
+	"sort"
 	"strings"
 
 	"github.com/goravel/framework/config"
+	"github.com/goravel/framework/contracts/binding"
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation/console"
 	"github.com/goravel/framework/foundation/json"
 	"github.com/goravel/framework/support"
@@ -42,16 +47,16 @@ func init() {
 
 type Application struct {
 	*Container
-	publishes     map[string]map[string]string
-	publishGroups map[string]map[string]string
-	json          foundation.Json
+	configuredServiceProviders []foundation.ServiceProvider
+	publishes                  map[string]map[string]string
+	publishGroups              map[string]map[string]string
+	json                       foundation.Json
 }
 
 func NewApplication() foundation.Application {
 	return App
 }
 
-// Boot Register and bootstrap configured service providers.
 func (r *Application) Boot() {
 	r.setTimezone()
 	r.registerConfiguredServiceProviders()
@@ -131,9 +136,7 @@ func (r *Application) Publishes(packageName string, paths map[string]string, gro
 	if _, exist := r.publishes[packageName]; !exist {
 		r.publishes[packageName] = make(map[string]string)
 	}
-	for key, value := range paths {
-		r.publishes[packageName][key] = value
-	}
+	maps.Copy(r.publishes[packageName], paths)
 	for _, group := range groups {
 		r.addPublishGroup(group, paths)
 	}
@@ -181,7 +184,6 @@ func (r *Application) IsLocale(ctx context.Context, locale string) bool {
 	return r.CurrentLocale(ctx) == locale
 }
 
-// absPath ensures the returned path is absolute
 func (r *Application) absPath(paths ...string) string {
 	path := filepath.Join(paths...)
 	abs, err := filepath.Abs(path)
@@ -196,73 +198,69 @@ func (r *Application) addPublishGroup(group string, paths map[string]string) {
 		r.publishGroups[group] = make(map[string]string)
 	}
 
-	for key, value := range paths {
-		r.publishGroups[group][key] = value
-	}
+	maps.Copy(r.publishGroups[group], paths)
 }
 
-// bootArtisan Boot artisan command.
 func (r *Application) bootArtisan() {
 	artisanFacade := r.MakeArtisan()
 	if artisanFacade == nil {
-		color.Warningln("Artisan Facade is not initialized. Skipping artisan command execution.")
+		color.Warningln(errors.ConsoleFacadeNotSet.Error())
 		return
 	}
 
 	_ = artisanFacade.Run(os.Args, true)
 }
 
-// getBaseServiceProviders Get base service providers.
 func (r *Application) getBaseServiceProviders() []foundation.ServiceProvider {
 	return []foundation.ServiceProvider{
 		&config.ServiceProvider{},
 	}
 }
 
-// getConfiguredServiceProviders Get configured service providers.
 func (r *Application) getConfiguredServiceProviders() []foundation.ServiceProvider {
+	if len(r.configuredServiceProviders) > 0 {
+		return r.configuredServiceProviders
+	}
+
 	configFacade := r.MakeConfig()
 	if configFacade == nil {
-		color.Warningln("config facade is not initialized. Skipping registering service providers.")
+		color.Warningln(errors.ConfigFacadeNotSet.Error())
 		return []foundation.ServiceProvider{}
 	}
 
 	providers, ok := configFacade.Get("app.providers").([]foundation.ServiceProvider)
 	if !ok {
-		color.Warningln("providers configuration is not of type []foundation.ServiceProvider. Skipping registering service providers.")
+		color.Warningln(errors.ConsoleProvidersNotArray.Error())
 		return []foundation.ServiceProvider{}
 	}
-	return providers
+
+	r.configuredServiceProviders = sortConfiguredServiceProviders(providers)
+
+	return r.configuredServiceProviders
 }
 
-// registerBaseServiceProviders Register base service providers.
 func (r *Application) registerBaseServiceProviders() {
 	r.registerServiceProviders(r.getBaseServiceProviders())
 }
 
-// bootBaseServiceProviders Bootstrap base service providers.
 func (r *Application) bootBaseServiceProviders() {
 	r.bootServiceProviders(r.getBaseServiceProviders())
 }
 
-// registerConfiguredServiceProviders Register configured service providers.
 func (r *Application) registerConfiguredServiceProviders() {
 	r.registerServiceProviders(r.getConfiguredServiceProviders())
 }
 
-// bootConfiguredServiceProviders Bootstrap configured service providers.
 func (r *Application) bootConfiguredServiceProviders() {
 	r.bootServiceProviders(r.getConfiguredServiceProviders())
 }
 
-// registerServiceProviders Register service providers.
 func (r *Application) registerServiceProviders(serviceProviders []foundation.ServiceProvider) {
 	for _, serviceProvider := range serviceProviders {
 		serviceProvider.Register(r)
 	}
 }
 
-// bootServiceProviders Bootstrap service providers.
 func (r *Application) bootServiceProviders(serviceProviders []foundation.ServiceProvider) {
 	for _, serviceProvider := range serviceProviders {
 		serviceProvider.Boot(r)
@@ -272,7 +270,7 @@ func (r *Application) bootServiceProviders(serviceProviders []foundation.Service
 func (r *Application) registerCommands(commands []contractsconsole.Command) {
 	artisanFacade := r.MakeArtisan()
 	if artisanFacade == nil {
-		color.Warningln("Artisan Facade is not initialized. Skipping command registration.")
+		color.Warningln(errors.ConsoleFacadeNotSet.Error())
 		return
 	}
 
@@ -282,7 +280,7 @@ func (r *Application) registerCommands(commands []contractsconsole.Command) {
 func (r *Application) setTimezone() {
 	configFacade := r.MakeConfig()
 	if configFacade == nil {
-		color.Warningln("config facade is not initialized. Using default timezone UTC.")
+		color.Warningln(errors.ConfigFacadeNotSet.Error())
 		carbon.SetTimezone(carbon.UTC)
 		return
 	}
@@ -312,7 +310,7 @@ func setEnv() {
 			testEnv      = envFilePath
 		)
 
-		for i := 0; i < 50; i++ {
+		for range 50 {
 			if _, err := os.Stat(testEnv); err == nil {
 				envExist = true
 
@@ -340,24 +338,21 @@ func getEnvFilePath() string {
 	envFilePath := ".env"
 	args := os.Args
 	for index, arg := range args {
-		if strings.HasPrefix(arg, "--env=") {
-			if path := strings.TrimPrefix(arg, "--env="); path != "" {
-				envFilePath = path
-				break
-			}
+		if path, ok := strings.CutPrefix(arg, "--env="); ok && len(path) > 0 {
+			envFilePath = path
+			break
 		}
-		if strings.HasPrefix(arg, "-env=") {
-			if path := strings.TrimPrefix(arg, "-env="); path != "" {
-				envFilePath = path
-				break
-			}
+
+		if path, ok := strings.CutPrefix(arg, "-env="); ok && len(path) > 0 {
+			envFilePath = path
+			break
 		}
-		if strings.HasPrefix(arg, "-e=") {
-			if path := strings.TrimPrefix(arg, "-e="); path != "" {
-				envFilePath = path
-				break
-			}
+
+		if path, ok := strings.CutPrefix(arg, "-e="); ok && len(path) > 0 {
+			envFilePath = path
+			break
 		}
+
 		if arg == "--env" || arg == "-env" || arg == "-e" {
 			if len(args) >= index+1 && !strings.HasPrefix(args[index+1], "-") {
 				envFilePath = args[index+1]
@@ -367,4 +362,240 @@ func getEnvFilePath() string {
 	}
 
 	return envFilePath
+}
+
+func sortConfiguredServiceProviders(providers []foundation.ServiceProvider) []foundation.ServiceProvider {
+	if len(providers) == 0 {
+		return providers
+	}
+
+	// Helper function to get binding names from a provider
+	getBindings := func(provider foundation.ServiceProvider) []string {
+		if p, ok := provider.(interface{ Relationship() binding.Relationship }); ok {
+			return p.Relationship().Bindings
+		}
+		return []string{}
+	}
+
+	// Helper function to get dependencies from a provider
+	getDependencies := func(provider foundation.ServiceProvider) []string {
+		if p, ok := provider.(interface{ Relationship() binding.Relationship }); ok {
+			return p.Relationship().Dependencies
+		}
+		return []string{}
+	}
+
+	// Helper function to get provide-for bindings from a provider
+	getProvideFor := func(provider foundation.ServiceProvider) []string {
+		if p, ok := provider.(interface{ Relationship() binding.Relationship }); ok {
+			return p.Relationship().ProvideFor
+		}
+		return []string{}
+	}
+
+	bindingToProvider := make(map[string]foundation.ServiceProvider)
+	providerToVirtualBinding := make(map[foundation.ServiceProvider]string)
+	graph := make(map[string][]string)
+	inDegree := make(map[string]int)
+	virtualBindingCounter := 0
+
+	// First pass: collect all real bindings and create virtual bindings for providers with empty bindings
+	for _, provider := range providers {
+		bindings := getBindings(provider)
+		dependencies := getDependencies(provider)
+		provideFor := getProvideFor(provider)
+
+		if len(bindings) > 0 {
+			// Provider has real bindings
+			for _, binding := range bindings {
+				bindingToProvider[binding] = provider
+				inDegree[binding] = 0
+			}
+		} else if len(dependencies) > 0 || len(provideFor) > 0 {
+			// Provider has no bindings but has dependencies or provide-for relationships
+			// Create a virtual binding to include it in the dependency graph
+			virtualBinding := fmt.Sprintf("__virtual_%d", virtualBindingCounter)
+			virtualBindingCounter++
+			bindingToProvider[virtualBinding] = provider
+			providerToVirtualBinding[provider] = virtualBinding
+			inDegree[virtualBinding] = 0
+		}
+	}
+
+	// Second pass: build the dependency graph using both Dependencies and ProvideFor
+	for _, provider := range providers {
+		bindings := getBindings(provider)
+		dependencies := getDependencies(provider)
+		provideFor := getProvideFor(provider)
+
+		// Get the binding(s) for this provider
+		var providerBindings []string
+		if len(bindings) > 0 {
+			providerBindings = bindings
+		} else if virtualBinding, exists := providerToVirtualBinding[provider]; exists {
+			providerBindings = []string{virtualBinding}
+		}
+
+		// If provider has no bindings and no virtual binding, skip it
+		if len(providerBindings) == 0 {
+			continue
+		}
+
+		for _, binding := range providerBindings {
+			// Add dependencies (this provider depends on others)
+			for _, dep := range dependencies {
+				if _, exists := bindingToProvider[dep]; exists {
+					graph[dep] = append(graph[dep], binding)
+					inDegree[binding]++
+				}
+			}
+
+			// Add provide-for relationships (others depend on this provider)
+			for _, provideForBinding := range provideFor {
+				if _, exists := bindingToProvider[provideForBinding]; exists {
+					graph[binding] = append(graph[binding], provideForBinding)
+					inDegree[provideForBinding]++
+				}
+			}
+		}
+	}
+
+	// Topological sort using Kahn's algorithm
+	var queue []string
+	var result []string
+
+	// Add all nodes with in-degree 0 to queue
+	for binding, degree := range inDegree {
+		if degree == 0 {
+			queue = append(queue, binding)
+		}
+	}
+
+	// Process queue
+	for len(queue) > 0 {
+		current := queue[0]
+		queue = queue[1:]
+		result = append(result, current)
+
+		// Reduce in-degree of all neighbors
+		for _, neighbor := range graph[current] {
+			inDegree[neighbor]--
+			if inDegree[neighbor] == 0 {
+				queue = append(queue, neighbor)
+			}
+		}
+	}
+
+	// If we couldn't process all nodes, there's a cycle
+	if len(result) != len(inDegree) {
+		// Detect and report the cycle
+		cycle := detectCycle(graph, bindingToProvider)
+		if len(cycle) > 0 {
+			panic(errors.ServiceProviderCycle.Args(strings.Join(cycle, " -> ")))
+		}
+	}
+
+	// Convert back to service providers in sorted order
+	sortedProviders := make([]foundation.ServiceProvider, 0, len(providers))
+	used := make(map[foundation.ServiceProvider]bool)
+
+	for _, binding := range result {
+		provider := bindingToProvider[binding]
+		if !used[provider] {
+			sortedProviders = append(sortedProviders, provider)
+			used[provider] = true
+		}
+	}
+
+	// Add any remaining providers that weren't in the dependency graph
+	for _, provider := range providers {
+		if !used[provider] {
+			sortedProviders = append(sortedProviders, provider)
+		}
+	}
+
+	return sortedProviders
+}
+
+// detectCycle detects a cycle in the dependency graph and returns a descriptive error message
+func detectCycle(graph map[string][]string, bindingToProvider map[string]foundation.ServiceProvider) []string {
+	visited := make(map[string]bool)
+	recStack := make(map[string]bool)
+	path := make([]string, 0)
+	cycle := make([]string, 0)
+
+	var dfs func(node string) bool
+	dfs = func(node string) bool {
+		visited[node] = true
+		recStack[node] = true
+		path = append(path, node)
+
+		for _, neighbor := range graph[node] {
+			if !visited[neighbor] {
+				if dfs(neighbor) {
+					return true
+				}
+			} else if recStack[neighbor] {
+				// Found a cycle, collect the cycle path
+				cycleStart := -1
+				for i, p := range path {
+					if p == neighbor {
+						cycleStart = i
+						break
+					}
+				}
+				if cycleStart != -1 {
+					cycle = append(cycle, path[cycleStart:]...)
+					cycle = append(cycle, neighbor)
+				}
+				return true
+			}
+		}
+
+		recStack[node] = false
+		path = path[:len(path)-1]
+		return false
+	}
+
+	// Find cycles starting from each unvisited node
+	// Sort nodes to ensure consistent behavior when multiple cycles exist
+	var nodes []string
+	for node := range graph {
+		nodes = append(nodes, node)
+	}
+	sort.Strings(nodes)
+
+	for _, node := range nodes {
+		if !visited[node] {
+			if dfs(node) {
+				break
+			}
+		}
+	}
+
+	// Build error message with provider names
+	if len(cycle) > 0 {
+		var cycleProviders []string
+		providerSet := make(map[string]struct{})
+
+		for _, binding := range cycle {
+			if provider, exists := bindingToProvider[binding]; exists {
+				providerName := fmt.Sprintf("%T", provider)
+				cycleProviders = append(cycleProviders, providerName)
+				providerSet[providerName] = struct{}{}
+			}
+		}
+
+		// If the cycle is a self-loop (A -> A), only show as 'A -> A' if there are two unique providers, otherwise just 'A'
+		if len(cycleProviders) == 2 && cycleProviders[0] == cycleProviders[1] {
+			if len(providerSet) == 1 && len(cycle) > 2 {
+				// This is a missing mapping case, only one provider in the cycle
+				return cycleProviders[0:1]
+			}
+		}
+
+		return cycleProviders
+	}
+
+	return nil
 }

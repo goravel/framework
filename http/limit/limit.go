@@ -32,12 +32,12 @@ func PerDays(decayDays, maxAttempts int) contractshttp.Limit {
 }
 
 type Limit struct {
-	// The rate limit signature key.
-	Key string
 	// The store instance.
 	Store contractshttp.Store
 	// The response generator callback.
 	ResponseCallback func(ctx contractshttp.Context)
+	// The rate limit signature key.
+	Key string
 }
 
 func NewLimit(maxAttempts, decayMinutes int) *Limit {

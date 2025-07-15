@@ -1,24 +1,50 @@
 package docker
 
 import (
-	"github.com/goravel/framework/contracts/foundation"
+	contractscache "github.com/goravel/framework/contracts/cache"
+	contractsconfig "github.com/goravel/framework/contracts/config"
+	contractsconsole "github.com/goravel/framework/contracts/console"
+	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/testing/docker"
+	"github.com/goravel/framework/errors"
 )
 
 type Docker struct {
-	app foundation.Application
+	artisan contractsconsole.Artisan
+	cache   contractscache.Cache
+	config  contractsconfig.Config
+	orm     contractsorm.Orm
 }
 
-func NewDocker(app foundation.Application) *Docker {
+func NewDocker(artisan contractsconsole.Artisan, cache contractscache.Cache, config contractsconfig.Config, orm contractsorm.Orm) *Docker {
 	return &Docker{
-		app: app,
+		artisan: artisan,
+		cache:   cache,
+		config:  config,
+		orm:     orm,
 	}
 }
 
-func (receiver *Docker) Database(connection ...string) (docker.Database, error) {
-	if len(connection) == 0 {
-		return NewDatabase(receiver.app, "")
-	} else {
-		return NewDatabase(receiver.app, connection[0])
+func (r *Docker) Cache(store ...string) (docker.CacheDriver, error) {
+	if r.config == nil {
+		return nil, errors.ConfigFacadeNotSet
 	}
+
+	if len(store) == 0 {
+		store = append(store, r.config.GetString("cache.default"))
+	}
+
+	return r.cache.Store(store[0]).Docker()
+}
+
+func (r *Docker) Database(connection ...string) (docker.Database, error) {
+	if len(connection) == 0 {
+		return NewDatabase(r.artisan, r.config, r.orm, "")
+	} else {
+		return NewDatabase(r.artisan, r.config, r.orm, connection[0])
+	}
+}
+
+func (r *Docker) Image(image docker.Image) docker.ImageDriver {
+	return NewImageDriver(image)
 }

@@ -13,14 +13,23 @@ import (
 )
 
 type Row struct {
+	err error
 	row map[string]any
 }
 
-func NewRow(row map[string]any) *Row {
-	return &Row{row: row}
+func NewRow(row map[string]any, err error) *Row {
+	return &Row{row: row, err: err}
+}
+
+func (r *Row) Err() error {
+	return r.err
 }
 
 func (r *Row) Scan(value any) error {
+	if r.err != nil {
+		return r.err
+	}
+
 	msConfig := &mapstructure.DecoderConfig{
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
 			ToStringHookFunc(), ToTimeHookFunc(), ToCarbonHookFunc(), ToDeletedAtHookFunc(),

@@ -55,7 +55,7 @@ func (s *ManagerTestSuite) SetupTest() {
 	s.mockOtherFactory = MockDriverFactory(s.mockOtherDriver)
 
 	s.mockConfig = mockconfig.NewConfig(s.T())
-	s.mockConfig.EXPECT().GetString("session.driver", "file").Return("file").Once()
+	s.mockConfig.EXPECT().GetString("session.default", "file").Return("file").Once()
 	s.mockConfig.EXPECT().GetString("session.drivers.file.driver").Return("file").Once()
 	s.mockConfig.EXPECT().GetInt("session.lifetime", 120).Return(120).Once()
 	s.mockConfig.EXPECT().GetInt("session.gc_interval", 30).Return(30).Once()
@@ -156,7 +156,7 @@ func BenchmarkSession_ManagerInteraction(b *testing.B) {
 	s.SetT(&testing.T{})
 	s.SetupTest()
 
-	s.mockConfig.On("GetString", "session.driver").Return("file")
+	s.mockConfig.On("GetString", "session.default").Return("file")
 	s.mockConfig.On("GetInt", "session.gc_interval").Return(30)
 	s.mockConfig.On("GetString", "session.cookie").Return("bench_cookie")
 

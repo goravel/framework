@@ -1,6 +1,7 @@
 package file
 
 import (
+	"go/build"
 	"os"
 	"path/filepath"
 	"strings"
@@ -56,22 +57,25 @@ func Exists(file string) bool {
 
 // Extension Supported types: https://github.com/gabriel-vasile/mimetype/blob/master/supported_mimes.md
 func Extension(file string, originalWhenUnknown ...bool) (string, error) {
+	getOriginal := false
+	if len(originalWhenUnknown) > 0 {
+		getOriginal = originalWhenUnknown[0]
+	}
+
 	mtype, err := mimetype.DetectFile(file)
-	if err != nil {
+	if err != nil && !getOriginal {
 		return "", err
 	}
 
-	if mtype.String() == "" {
-		if len(originalWhenUnknown) > 0 {
-			if originalWhenUnknown[0] {
-				return ClientOriginalExtension(file), nil
-			}
-		}
-
-		return "", errors.UnknownFileExtension
+	if mtype != nil && mtype.Extension() != "" {
+		return strings.TrimPrefix(mtype.Extension(), "."), nil
 	}
 
-	return strings.TrimPrefix(mtype.Extension(), "."), nil
+	if getOriginal {
+		return ClientOriginalExtension(file), nil
+	}
+
+	return "", errors.UnknownFileExtension
 }
 
 func GetContent(file string) (string, error) {
@@ -82,6 +86,22 @@ func GetContent(file string) (string, error) {
 	}
 
 	return convert.UnsafeString(data), nil
+}
+
+func GetFrameworkContent(file string) (string, error) {
+	return GetPackageContent("github.com/goravel/framework", file)
+}
+
+func GetPackageContent(pkgName, file string) (string, error) {
+	pkg, err := build.Import(pkgName, "", build.FindOnly)
+	if err != nil {
+		return "", err
+	}
+
+	paths := strings.Split(file, "/")
+	paths = append([]string{pkg.Dir}, paths...)
+
+	return GetContent(filepath.Join(paths...))
 }
 
 func LastModified(file, timezone string) (time.Time, error) {

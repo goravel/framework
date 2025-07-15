@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gookit/goutil/testutil/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 type testContextKey any

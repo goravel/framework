@@ -49,8 +49,8 @@ func (s *PackageMakeCommandTestSuite) TestExtend() {
 
 			testCases := []struct {
 				name     string
-				got      interface{}
-				expected interface{}
+				got      any
+				expected any
 			}{
 				{"Name", flag.Name, "root"},
 				{"Aliases", flag.Aliases, []string{"r"}},
@@ -104,11 +104,11 @@ func (s *PackageMakeCommandTestSuite) TestHandle() {
 				s.True(file.Exists("packages/sms/README.md"))
 				s.True(file.Exists("packages/sms/service_provider.go"))
 				s.True(file.Exists("packages/sms/sms.go"))
-				s.True(file.Exists("packages/sms/config/sms.go"))
 				s.True(file.Exists("packages/sms/contracts/sms.go"))
 				s.True(file.Exists("packages/sms/facades/sms.go"))
 				s.True(file.Contain("packages/sms/facades/sms.go", "goravel/packages/sms"))
 				s.True(file.Contain("packages/sms/facades/sms.go", "goravel/packages/sms/contracts"))
+				s.True(file.Exists("packages/sms/setup/config/sms.go"))
 				s.True(file.Exists("packages/sms/setup/setup.go"))
 				s.NoError(file.Remove("packages"))
 			},
@@ -125,9 +125,9 @@ func (s *PackageMakeCommandTestSuite) TestHandle() {
 				s.True(file.Exists("package/github_com_goravel_sms_aws/README.md"))
 				s.True(file.Exists("package/github_com_goravel_sms_aws/service_provider.go"))
 				s.True(file.Exists("package/github_com_goravel_sms_aws/github_com_goravel_sms_aws.go"))
-				s.True(file.Exists("package/github_com_goravel_sms_aws/config/github_com_goravel_sms_aws.go"))
 				s.True(file.Exists("package/github_com_goravel_sms_aws/contracts/github_com_goravel_sms_aws.go"))
 				s.True(file.Exists("package/github_com_goravel_sms_aws/facades/github_com_goravel_sms_aws.go"))
+				s.True(file.Exists("package/github_com_goravel_sms_aws/setup/config/github_com_goravel_sms_aws.go"))
 				s.True(file.Exists("package/github_com_goravel_sms_aws/setup/setup.go"))
 				s.NoError(file.Remove("package"))
 			},

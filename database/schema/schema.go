@@ -393,6 +393,16 @@ func (r *Schema) Orm() contractsorm.Orm {
 	return r.orm
 }
 
+func (r *Schema) Prune() error {
+	if sql := r.grammar.CompilePrune(r.orm.DatabaseName()); len(sql) > 0 {
+		_, err := r.orm.Query().Exec(sql)
+
+		return err
+	}
+
+	return nil
+}
+
 func (r *Schema) Register(migrations []contractsschema.Migration) {
 	r.migrations = migrations
 }

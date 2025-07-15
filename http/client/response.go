@@ -13,11 +13,11 @@ import (
 var _ client.Response = (*Response)(nil)
 
 type Response struct {
-	mu       sync.Mutex
-	content  string
-	decoded  map[string]any
 	json     foundation.Json
+	decoded  map[string]any
 	response *http.Response
+	content  string
+	mu       sync.Mutex
 }
 
 func NewResponse(response *http.Response, json foundation.Json) *Response {

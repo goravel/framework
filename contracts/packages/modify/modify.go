@@ -9,12 +9,17 @@ import (
 
 type Action func(cursor *dstutil.Cursor)
 
-type File interface {
+type Apply interface {
 	Apply() error
 }
 
+type File interface {
+	Overwrite(content string, forces ...bool) Apply
+	Remove() Apply
+}
+
 type GoFile interface {
-	File
+	Apply
 	Find(matchers []match.GoNode) GoNode
 }
 

@@ -6,19 +6,14 @@ import (
 )
 
 type ColumnDefinition struct {
-	after              string
-	allowed            []any
-	always             bool
-	autoIncrement      *bool
-	change             bool
-	comment            *string
 	def                any
-	first              bool
+	onUpdate           any
+	autoIncrement      *bool
+	comment            *string
 	generatedAs        *string
 	length             *int
 	name               *string
 	nullable           *bool
-	onUpdate           any
 	places             *int
 	precision          *int
 	total              *int
@@ -26,6 +21,11 @@ type ColumnDefinition struct {
 	unsigned           *bool
 	useCurrent         *bool
 	useCurrentOnUpdate *bool
+	after              string
+	allowed            []any
+	always             bool
+	change             bool
+	first              bool
 }
 
 func NewColumnDefinition(name string, ttype string) driver.ColumnDefinition {

@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 )
 
@@ -26,13 +27,7 @@ func IsArm() bool {
 }
 
 func IsArtisan() bool {
-	for _, arg := range os.Args {
-		if arg == "artisan" {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(os.Args, "artisan")
 }
 
 // IsDarwin returns whether the current operating system is Darwin.
@@ -68,13 +63,7 @@ func IsLinux() bool {
 
 // IsNoANSI checks if the application is running with the --no-ansi flag.
 func IsNoANSI() bool {
-	for _, arg := range os.Args {
-		if arg == "--no-ansi" {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(os.Args, "--no-ansi")
 }
 
 // IsTesting checks if the application is running in testing mode.

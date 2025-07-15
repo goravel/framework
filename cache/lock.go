@@ -8,8 +8,8 @@ import (
 
 type Lock struct {
 	store contractscache.Driver
-	key   string
 	time  *time.Duration
+	key   string
 	get   bool
 }
 

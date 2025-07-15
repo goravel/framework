@@ -2,7 +2,7 @@ package cache
 
 import (
 	"github.com/goravel/framework/cache/console"
-	"github.com/goravel/framework/contracts"
+	"github.com/goravel/framework/contracts/binding"
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
@@ -11,8 +11,20 @@ import (
 type ServiceProvider struct {
 }
 
+func (r *ServiceProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings: []string{
+			binding.Cache,
+		},
+		Dependencies: []string{
+			binding.Config,
+			binding.Log,
+		},
+	}
+}
+
 func (r *ServiceProvider) Register(app foundation.Application) {
-	app.Singleton(contracts.BindingCache, func(app foundation.Application) (any, error) {
+	app.Singleton(binding.Cache, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleCache)

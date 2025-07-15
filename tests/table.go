@@ -21,6 +21,13 @@ const (
 	TestTableUsers
 	TestTableUser
 	TestTableSchema
+	TestTableJsonData
+	TestTableGlobalScopes
+	TestTableUuidEntities
+	TestTableUlidEntities
+	TestTableMorphableEntities
+	TestTableUuidMorphableEntities
+	TestTableUlidMorphableEntities
 )
 
 type testTables struct {
@@ -34,19 +41,26 @@ func newTestTables(driver string, grammar driver.Grammar) *testTables {
 
 func (r *testTables) All() map[TestTable]func() ([]string, error) {
 	return map[TestTable]func() ([]string, error){
-		TestTableAddresses: r.addresses,
-		TestTableAuthors:   r.authors,
-		TestTableBooks:     r.books,
-		TestTableHouses:    r.houses,
-		TestTablePeoples:   r.peoples,
-		TestTablePhones:    r.phones,
-		TestTableProducts:  r.products,
-		TestTableReviews:   r.reviews,
-		TestTableRoles:     r.roles,
-		TestTableRoleUser:  r.roleUser,
-		TestTableUsers:     r.users,
-		TestTableUser:      r.user,
-		TestTableSchema:    r.schema,
+		TestTableAddresses:             r.addresses,
+		TestTableAuthors:               r.authors,
+		TestTableBooks:                 r.books,
+		TestTableHouses:                r.houses,
+		TestTablePeoples:               r.peoples,
+		TestTablePhones:                r.phones,
+		TestTableProducts:              r.products,
+		TestTableReviews:               r.reviews,
+		TestTableRoles:                 r.roles,
+		TestTableRoleUser:              r.roleUser,
+		TestTableUsers:                 r.users,
+		TestTableUser:                  r.user,
+		TestTableSchema:                r.schemas,
+		TestTableJsonData:              r.jsonData,
+		TestTableGlobalScopes:          r.globalScopes,
+		TestTableUuidEntities:          r.uuidEntities,
+		TestTableUlidEntities:          r.ulidEntities,
+		TestTableMorphableEntities:     r.morphableEntities,
+		TestTableUuidMorphableEntities: r.uuidMorphableEntities,
+		TestTableUlidMorphableEntities: r.ulidMorphableEntities,
 	}
 }
 
@@ -317,14 +331,170 @@ func (r *testTables) roleUser() ([]string, error) {
 	return append(dropSql, createSql...), nil
 }
 
-func (r *testTables) schema() ([]string, error) {
+func (r *testTables) schemas() ([]string, error) {
+	dropSql, err := r.dropSql("goravel.schemas")
+	if err != nil {
+		return nil, err
+	}
+
 	blueprint := schema.NewBlueprint(nil, "", "goravel.schemas")
 	blueprint.Create()
 	blueprint.BigIncrements("id")
 	blueprint.String("name")
 	blueprint.Timestamps()
 
-	return blueprint.ToSql(r.grammar)
+	createSql, err := blueprint.ToSql(r.grammar)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(dropSql, createSql...), nil
+}
+
+func (r *testTables) jsonData() ([]string, error) {
+	dropSql, err := r.dropSql("json_data")
+	if err != nil {
+		return nil, err
+	}
+
+	blueprint := schema.NewBlueprint(nil, "", "json_data")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.Json("data")
+	blueprint.Timestamps()
+
+	createSql, err := blueprint.ToSql(r.grammar)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(dropSql, createSql...), nil
+}
+
+func (r *testTables) globalScopes() ([]string, error) {
+	dropSql, err := r.dropSql("global_scopes")
+	if err != nil {
+		return nil, err
+	}
+
+	blueprint := schema.NewBlueprint(nil, "", "global_scopes")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.String("name")
+	blueprint.Timestamps()
+	blueprint.SoftDeletes()
+
+	createSql, err := blueprint.ToSql(r.grammar)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(dropSql, createSql...), nil
+}
+
+func (r *testTables) uuidEntities() ([]string, error) {
+	dropSql, err := r.dropSql("uuid_entities")
+	if err != nil {
+		return nil, err
+	}
+
+	blueprint := schema.NewBlueprint(nil, "", "uuid_entities")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.Uuid("uuid")
+	blueprint.String("name")
+	blueprint.Timestamps()
+
+	createSql, err := blueprint.ToSql(r.grammar)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(dropSql, createSql...), nil
+}
+
+func (r *testTables) ulidEntities() ([]string, error) {
+	dropSql, err := r.dropSql("ulid_entities")
+	if err != nil {
+		return nil, err
+	}
+
+	blueprint := schema.NewBlueprint(nil, "", "ulid_entities")
+	blueprint.Create()
+	blueprint.Ulid("id")
+	blueprint.Primary("id")
+	blueprint.String("name")
+	blueprint.Timestamps()
+
+	createSql, err := blueprint.ToSql(r.grammar)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(dropSql, createSql...), nil
+}
+
+func (r *testTables) morphableEntities() ([]string, error) {
+	dropSql, err := r.dropSql("morphable_entities")
+	if err != nil {
+		return nil, err
+	}
+
+	blueprint := schema.NewBlueprint(nil, "", "morphable_entities")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.String("name")
+	blueprint.NumericMorphs("morphable")
+	blueprint.Timestamps()
+
+	createSql, err := blueprint.ToSql(r.grammar)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(dropSql, createSql...), nil
+}
+
+func (r *testTables) uuidMorphableEntities() ([]string, error) {
+	dropSql, err := r.dropSql("uuid_morphable_entities")
+	if err != nil {
+		return nil, err
+	}
+
+	blueprint := schema.NewBlueprint(nil, "", "uuid_morphable_entities")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.String("name")
+	blueprint.UuidMorphs("morphable")
+	blueprint.Timestamps()
+
+	createSql, err := blueprint.ToSql(r.grammar)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(dropSql, createSql...), nil
+}
+
+func (r *testTables) ulidMorphableEntities() ([]string, error) {
+	dropSql, err := r.dropSql("ulid_morphable_entities")
+	if err != nil {
+		return nil, err
+	}
+
+	blueprint := schema.NewBlueprint(nil, "", "ulid_morphable_entities")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.String("name")
+	blueprint.UlidMorphs("morphable")
+	blueprint.Timestamps()
+
+	createSql, err := blueprint.ToSql(r.grammar)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(dropSql, createSql...), nil
 }
 
 func (r *testTables) dropSql(table string) ([]string, error) {

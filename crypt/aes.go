@@ -16,8 +16,8 @@ import (
 )
 
 type AES struct {
-	key  []byte
 	json foundation.Json
+	key  []byte
 }
 
 // NewAES returns a new AES hasher.

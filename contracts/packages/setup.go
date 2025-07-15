@@ -5,7 +5,7 @@ import (
 )
 
 type Setup interface {
-	Install(modifiers ...modify.File) Setup
-	Uninstall(modifiers ...modify.File) Setup
+	Install(modifiers ...modify.Apply) Setup
+	Uninstall(modifiers ...modify.Apply) Setup
 	Execute()
 }

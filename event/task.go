@@ -7,10 +7,10 @@ import (
 )
 
 type Task struct {
-	args      []event.Arg
 	event     event.Event
-	listeners []event.Listener
 	queue     contractsqueue.Queue
+	args      []event.Arg
+	listeners []event.Listener
 }
 
 func NewTask(queue contractsqueue.Queue, args []event.Arg, event event.Event, listeners []event.Listener) *Task {

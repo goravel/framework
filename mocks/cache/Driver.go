@@ -7,6 +7,8 @@ import (
 
 	cache "github.com/goravel/framework/contracts/cache"
 
+	docker "github.com/goravel/framework/contracts/testing/docker"
+
 	mock "github.com/stretchr/testify/mock"
 
 	time "time"
@@ -140,6 +142,63 @@ func (_c *Driver_Decrement_Call) Return(_a0 int64, _a1 error) *Driver_Decrement_
 }
 
 func (_c *Driver_Decrement_Call) RunAndReturn(run func(string, ...int64) (int64, error)) *Driver_Decrement_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Docker provides a mock function with no fields
+func (_m *Driver) Docker() (docker.CacheDriver, error) {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Docker")
+	}
+
+	var r0 docker.CacheDriver
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (docker.CacheDriver, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() docker.CacheDriver); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(docker.CacheDriver)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Driver_Docker_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Docker'
+type Driver_Docker_Call struct {
+	*mock.Call
+}
+
+// Docker is a helper method to define mock.On call
+func (_e *Driver_Expecter) Docker() *Driver_Docker_Call {
+	return &Driver_Docker_Call{Call: _e.mock.On("Docker")}
+}
+
+func (_c *Driver_Docker_Call) Run(run func()) *Driver_Docker_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Driver_Docker_Call) Return(_a0 docker.CacheDriver, _a1 error) *Driver_Docker_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Driver_Docker_Call) RunAndReturn(run func() (docker.CacheDriver, error)) *Driver_Docker_Call {
 	_c.Call.Return(run)
 	return _c
 }

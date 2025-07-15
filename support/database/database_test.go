@@ -11,8 +11,8 @@ import (
 )
 
 type Model struct {
-	ID uint `gorm:"primaryKey" json:"id"`
 	Timestamps
+	ID uint `gorm:"primaryKey" json:"id"`
 }
 
 type Timestamps struct {
@@ -59,7 +59,7 @@ func TestGetID(t *testing.T) {
 			},
 		},
 		{
-			description: "return value with Model",
+			description: "return value when struct has primaryKey in Model",
 			setup: func(description string) {
 				type User struct {
 					Model
@@ -72,7 +72,7 @@ func TestGetID(t *testing.T) {
 			},
 		},
 		{
-			description: "return nil",
+			description: "return nil when struct has no primaryKey",
 			setup: func(description string) {
 				type User struct {
 					Name   string
@@ -83,7 +83,7 @@ func TestGetID(t *testing.T) {
 			},
 		},
 		{
-			description: "return value(struct)",
+			description: "return value when struct has primaryKey directly",
 			setup: func(description string) {
 				type User struct {
 					ID     uint `gorm:"primaryKey"`
@@ -96,37 +96,8 @@ func TestGetID(t *testing.T) {
 			},
 		},
 		{
-			description: "return value with Model",
-			setup: func(description string) {
-				type User struct {
-					Model
-					Name   string
-					Avatar string
-				}
-				user := User{}
-				user.ID = 1
-				assert.Equal(t, uint(1), GetID(user), description)
-			},
-		},
-		{
-			description: "return nil",
-			setup: func(description string) {
-				type User struct {
-					Name   string
-					Avatar string
-				}
-				user := User{}
-				assert.Nil(t, GetID(user), description)
-			},
-		},
-		{
 			description: "return nil when model is nil",
 			setup: func(description string) {
-				type User struct {
-					Name   string
-					Avatar string
-				}
-				assert.Nil(t, GetID(&User{}), description)
 				assert.Nil(t, GetID(nil), description)
 			},
 		},

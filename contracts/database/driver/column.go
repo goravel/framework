@@ -78,13 +78,13 @@ type ColumnDefinition interface {
 }
 
 type Column struct {
-	Autoincrement bool
 	Collation     string
 	Comment       string
 	Default       string
 	Extra         string
 	Name          string
-	Nullable      bool
 	Type          string
 	TypeName      string
+	Autoincrement bool
+	Nullable      bool
 }

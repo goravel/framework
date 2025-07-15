@@ -1,7 +1,9 @@
 package maps
 
 import (
+	"maps"
 	"reflect"
+	"slices"
 )
 
 // Add an element to a map if it doesn't exist.
@@ -63,9 +65,7 @@ func FromStruct(data any) map[string]any {
 		if fieldValue.Kind() == reflect.Struct {
 			subStructMap := FromStruct(fieldValue.Interface())
 			if fieldType.Anonymous {
-				for key, value := range subStructMap {
-					res[key] = value
-				}
+				maps.Copy(res, subStructMap)
 			} else {
 				res[fieldType.Name] = subStructMap
 			}
@@ -112,6 +112,10 @@ func HasAny[K comparable, V any](mp map[K]V, keys ...K) bool {
 	}
 
 	return false
+}
+
+func Keys[K comparable, V any](mp map[K]V) []K {
+	return slices.Collect(maps.Keys(mp))
 }
 
 // Only returns the items in the map with the specified keys.

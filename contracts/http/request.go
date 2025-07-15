@@ -18,12 +18,18 @@ type ContextRequest interface {
 	Headers() http.Header
 	// Method retrieves the HTTP request method (e.g., GET, POST, PUT).
 	Method() string
-	// Path retrieves the current path information for the request.
+	// Name retrieves the name of the route for the request.
+	Name() string
+	// OriginPath retrieves the original path of the request: /users/{id}
+	OriginPath() string
+	// Path retrieves the current path information for the request: /users/1
 	Path() string
 	// Url retrieves the URL (excluding the query string) for the request.
 	Url() string
 	// FullUrl retrieves the full URL, including the query string, for the request.
 	FullUrl() string
+	// Info retrieves the route information for the request.
+	Info() Info
 	// Ip retrieves the client's IP address.
 	Ip() string
 	// Host retrieves the host name.
@@ -120,4 +126,11 @@ type FormRequestWithAttributes interface {
 type FormRequestWithPrepareForValidation interface {
 	// PrepareForValidation prepare the data for validation.
 	PrepareForValidation(ctx Context, data validation.Data) error
+}
+
+type Info struct {
+	Handler string `json:"handler"`
+	Method  string `json:"method"`
+	Name    string `json:"name"`
+	Path    string `json:"path"`
 }

@@ -36,7 +36,7 @@ func (s *TestRequestSuite) SetupTest() {
 		t:                 s.T(),
 		ctx:               context.Background(),
 		defaultHeaders:    make(map[string]string),
-		defaultCookies:    make(map[string]string),
+		defaultCookies:    make([]*http.Cookie, 0),
 		sessionAttributes: make(map[string]any),
 		json:              json.New(),
 		route:             s.mockRoute,
@@ -45,21 +45,62 @@ func (s *TestRequestSuite) SetupTest() {
 }
 
 func (s *TestRequestSuite) TestBindAndCall() {
-	s.mockRoute.EXPECT().Test(httptest.NewRequest("GET", "/", nil).WithContext(context.Background())).Return(&http.Response{
-		Body: io.NopCloser(bytes.NewBufferString(`{"name": "John", "age": 30}`)),
-	}, nil).Once()
+	s.Run("succeed to bind and call", func() {
+		s.mockRoute.EXPECT().Test(httptest.NewRequest("GET", "/", nil).WithContext(context.Background())).Return(&http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(bytes.NewBufferString(`{"name": "John", "age": 30}`)),
+		}, nil).Once()
 
-	var user struct {
-		Name string `json:"name"`
-		Age  int    `json:"age"`
+		var user struct {
+			Name string `json:"name"`
+			Age  int    `json:"age"`
+		}
+
+		response, err := s.testRequest.Bind(&user).Get("/")
+
+		s.NoError(err)
+		s.NotNil(response)
+		s.Equal("John", user.Name)
+		s.Equal(30, user.Age)
+	})
+
+	s.Run("should not bind when response is not successful", func() {
+		s.mockRoute.EXPECT().Test(httptest.NewRequest("GET", "/", nil).WithContext(context.Background())).Return(&http.Response{
+			StatusCode: http.StatusInternalServerError,
+		}, nil).Once()
+
+		var user struct {
+			Name string `json:"name"`
+			Age  int    `json:"age"`
+		}
+
+		response, err := s.testRequest.Bind(&user).Get("/")
+
+		s.NoError(err)
+		s.NotNil(response)
+		s.Equal(user.Name, "")
+		s.Equal(user.Age, 0)
+		response.AssertInternalServerError()
+	})
+}
+
+func (s *TestRequestSuite) TestWithCookie() {
+	cookie := &http.Cookie{Name: "test", Value: "test"}
+
+	request := s.testRequest.WithCookie(cookie)
+
+	s.Equal(request.(*TestRequest).defaultCookies, []*http.Cookie{cookie})
+}
+
+func (s *TestRequestSuite) TestWithCookies() {
+	cookies := []*http.Cookie{
+		{Name: "test", Value: "test"},
+		{Name: "test2", Value: "test2"},
 	}
 
-	response, err := s.testRequest.Bind(&user).Get("/")
+	request := s.testRequest.WithCookies(cookies)
 
-	s.NoError(err)
-	s.NotNil(response)
-	s.Equal(user.Name, "John")
-	s.Equal(user.Age, 30)
+	s.Equal(request.(*TestRequest).defaultCookies, cookies)
 }
 
 func (s *TestRequestSuite) TestSetSessionErrors() {

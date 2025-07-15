@@ -20,8 +20,8 @@ type Auth struct {
 	contractsauth.GuardDriver
 	config           config.Config
 	ctx              http.Context
-	defaultGuardName string
 	log              log.Log
+	defaultGuardName string
 }
 
 func NewAuth(ctx http.Context, config config.Config, log log.Log) (*Auth, error) {
@@ -32,6 +32,7 @@ func NewAuth(ctx http.Context, config config.Config, log log.Log) (*Auth, error)
 	}
 
 	auth.Extend("jwt", NewJwtGuard)
+	auth.Extend("session", NewSessionGuard)
 	auth.Provider("orm", NewOrmUserProvider)
 
 	defaultGuardName := config.GetString("auth.defaults.guard")
@@ -82,21 +83,20 @@ func (r *Auth) guard(name string) contractsauth.GuardDriver {
 	driverName := r.config.GetString(fmt.Sprintf("auth.guards.%s.driver", name))
 	guardFunc, ok := guardFuncs.Load(driverName)
 	if !ok {
-		r.log.Panic(errors.AuthGuardDriverNotFound.Args(driverName, name).Error())
-		return nil
+		// http recover will catch the panic and return the error to the client,
+		// to avoid print repeated log.
+		panic(errors.AuthGuardDriverNotFound.Args(driverName, name))
 	}
 
 	userProviderName := r.config.GetString(fmt.Sprintf("auth.guards.%s.provider", name))
 	userProvider, err := r.createUserProvider(userProviderName)
 	if err != nil {
-		r.log.Panic(err.Error())
-		return nil
+		panic(err)
 	}
 
 	guard, err := guardFunc.(contractsauth.GuardFunc)(r.ctx, name, userProvider)
 	if err != nil {
-		r.log.Panic(err.Error())
-		return nil
+		panic(err)
 	}
 
 	return guard

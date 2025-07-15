@@ -1,6 +1,8 @@
 package queue
 
-import "time"
+import (
+	"time"
+)
 
 type Job interface {
 	// Signature set the unique signature of the job.
@@ -22,15 +24,28 @@ type PendingJob interface {
 	OnQueue(queue string) PendingJob
 }
 
-type JobRepository interface {
+type ReservedJob interface {
+	Delete() error
+	Task() Task
+}
+
+type JobStorer interface {
 	All() []Job
 	Call(signature string, args []any) error
 	Get(signature string) (Job, error)
 	Register(jobs []Job)
 }
 
-type Jobs struct {
+// Deprecated: Use ChainJob instead.
+type Jobs = ChainJob
+
+type ChainJob struct {
+	Delay time.Time `json:"delay"`
 	Job   Job       `json:"job"`
 	Args  []Arg     `json:"args"`
-	Delay time.Time `json:"delay"`
+}
+
+type JobWithShouldRetry interface {
+	// ShouldRetry determines if the job should be retried based on the error.
+	ShouldRetry(err error, attempt int) (retryable bool, delay time.Duration)
 }

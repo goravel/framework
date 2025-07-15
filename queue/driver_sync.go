@@ -4,42 +4,32 @@ import (
 	"time"
 
 	"github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/support/carbon"
 )
 
 var (
-	Name              = "sync"
-	_    queue.Driver = &Sync{}
+	SyncDriverName              = "sync"
+	_              queue.Driver = &Sync{}
 )
 
 type Sync struct {
-	connection string
 }
 
-func NewSync(connection string) *Sync {
-	return &Sync{
-		connection: connection,
-	}
-}
-
-func (r *Sync) Connection() string {
-	return r.connection
+func NewSync() *Sync {
+	return &Sync{}
 }
 
 func (r *Sync) Driver() string {
 	return queue.DriverSync
 }
 
-func (r *Sync) Name() string {
-	return Name
-}
-
-func (r *Sync) Pop(_ string) (queue.Task, error) {
+func (r *Sync) Pop(_ string) (queue.ReservedJob, error) {
 	// sync driver does not support pop
-	return queue.Task{}, nil
+	return nil, nil
 }
 
 func (r *Sync) Push(task queue.Task, _ string) error {
-	if err := push(task.Jobs); err != nil {
+	if err := push(task.ChainJob); err != nil {
 		return err
 	}
 
@@ -54,9 +44,9 @@ func (r *Sync) Push(task queue.Task, _ string) error {
 	return nil
 }
 
-func push(job queue.Jobs) error {
+func push(job queue.ChainJob) error {
 	if !job.Delay.IsZero() {
-		time.Sleep(time.Until(job.Delay))
+		time.Sleep(carbon.FromStdTime(job.Delay).DiffAbsInDuration())
 	}
 
 	var realArgs []any

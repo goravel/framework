@@ -9,6 +9,7 @@ type Grammar interface {
 	SchemaGrammar
 	GormGrammar
 	DBGrammar
+	JsonGrammar
 }
 
 type SchemaGrammar interface {
@@ -58,6 +59,8 @@ type SchemaGrammar interface {
 	CompileIndexes(schema, table string) (string, error)
 	// CompilePrimary Compile a primary key command.
 	CompilePrimary(blueprint Blueprint, command *Command) string
+	// CompilePrune Compile the SQL needed to prune or shrink the database.
+	CompilePrune(database string) string
 	// CompileRename Compile a rename table command.
 	CompileRename(blueprint Blueprint, command *Command) string
 	// CompileRenameColumn Compile a rename column command.
@@ -126,6 +129,8 @@ type SchemaGrammar interface {
 	TypeSmallInteger(column ColumnDefinition) string
 	// TypeString Create the column definition for a string type.
 	TypeString(column ColumnDefinition) string
+	// TypeUuid Create the column definition for a uuid type.
+	TypeUuid(column ColumnDefinition) string
 }
 
 type GormGrammar interface {
@@ -162,6 +167,21 @@ type CompileLimitGrammar interface {
 	CompileLimit(builder sq.SelectBuilder, conditions *Conditions) sq.SelectBuilder
 }
 
+type JsonGrammar interface {
+	// CompileJsonColumnsUpdate Compile the JSON  columns for an update statement.
+	CompileJsonColumnsUpdate(values map[string]any) (map[string]any, error)
+	// CompileJsonContains Compile a "JSON contains" statement into SQL.
+	CompileJsonContains(column string, value any, isNot bool) (string, []any, error)
+	// CompileJsonContainsKey Compile a "JSON contains key" statement into SQL.
+	CompileJsonContainsKey(column string, isNot bool) string
+	// CompileJsonLength Compile a "JSON length" statement into SQL.
+	CompileJsonLength(column string) string
+	// CompileJsonSelector Wrap the given JSON selector.
+	CompileJsonSelector(column string) string
+	// CompileJsonValues Normalizes and converts values into database-compatible types.
+	CompileJsonValues(args ...any) []any
+}
+
 type Blueprint interface {
 	// GetAddedColumns Get the added columns.
 	GetAddedColumns() []ColumnDefinition
@@ -178,22 +198,22 @@ type PlaceholderFormat interface {
 }
 
 type Command struct {
-	Algorithm          string
 	Column             ColumnDefinition
-	Columns            []string
 	Deferrable         *bool
+	InitiallyImmediate *bool
+	Algorithm          string
 	From               string
 	Index              string
-	InitiallyImmediate *bool
 	Language           string
 	Name               string
 	On                 string
 	OnDelete           string
 	OnUpdate           string
-	References         []string
-	ShouldBeSkipped    bool
 	To                 string
 	Value              string
+	Columns            []string
+	References         []string
+	ShouldBeSkipped    bool
 }
 
 type Table struct {
@@ -207,10 +227,10 @@ type Table struct {
 
 type Type struct {
 	Category string
-	Implicit bool
 	Name     string
 	Schema   string
 	Type     string
+	Implicit bool
 }
 
 type View struct {

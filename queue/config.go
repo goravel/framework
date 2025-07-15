@@ -10,22 +10,18 @@ type Config struct {
 	contractsconfig.Config
 
 	appName           string
-	debug             bool
 	defaultConnection string
 	defaultQueue      string
-	defaultConcurrent int
 	failedDatabase    string
 	failedTable       string
+	defaultConcurrent int
+	debug             bool
 }
 
 func NewConfig(config contractsconfig.Config) *Config {
 	defaultConnection := config.GetString("queue.default")
 	defaultQueue := config.GetString(fmt.Sprintf("queue.connections.%s.queue", defaultConnection), "default")
-	defaultConcurrent := config.GetInt(fmt.Sprintf("queue.connections.%s.concurrent", defaultConnection), 1)
-
-	if defaultConcurrent < 1 {
-		defaultConcurrent = 1
-	}
+	defaultConcurrent := max(config.GetInt(fmt.Sprintf("queue.connections.%s.concurrent", defaultConnection), 1), 1)
 
 	c := &Config{
 		Config: config,
@@ -68,10 +64,6 @@ func (r *Config) FailedDatabase() string {
 
 func (r *Config) FailedTable() string {
 	return r.failedTable
-}
-
-func (r *Config) QueueKey(connection, queue string) string {
-	return fmt.Sprintf("%s_queues:%s_%s", r.appName, connection, queue)
 }
 
 func (r *Config) Via(connection string) any {

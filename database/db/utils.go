@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"maps"
 	"reflect"
 	"strings"
 
@@ -11,10 +12,10 @@ import (
 
 type TxLog struct {
 	ctx          context.Context
+	err          error
 	begin        *carbon.Carbon
 	sql          string
 	rowsAffected int64
-	err          error
 }
 
 func convertToSliceMap(data any) ([]map[string]any, error) {
@@ -46,7 +47,7 @@ func convertToSliceMap(data any) ([]map[string]any, error) {
 		}
 
 		result := make([]map[string]any, length)
-		for i := 0; i < length; i++ {
+		for i := range length {
 			elem := val.Index(i)
 			m, err := convertToMap(elem.Interface())
 			if err != nil {
@@ -114,23 +115,25 @@ func convertToMap(data any) (map[string]any, error) {
 				if err != nil {
 					return nil, err
 				}
-				for k, v := range embedded {
-					result[k] = v
-				}
+				maps.Copy(result, embedded)
 			}
 			continue
 		}
 
 		// Get field name from db tag or use field name
 		tag := field.Tag.Get("db")
-		if tag == "" || tag == "-" {
+		if tag == "-" {
 			continue
 		}
 		var fieldName string
-		if comma := strings.Index(tag, ","); comma != -1 {
-			fieldName = tag[:comma]
+		if tag != "" {
+			if comma := strings.Index(tag, ","); comma != -1 {
+				fieldName = tag[:comma]
+			} else {
+				fieldName = tag
+			}
 		} else {
-			fieldName = tag
+			fieldName = NameMapper(field.Name)
 		}
 
 		fieldValue := val.Field(i)

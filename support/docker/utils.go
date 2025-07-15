@@ -4,24 +4,25 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/spf13/cast"
-
 	"github.com/goravel/framework/contracts/testing/docker"
 	"github.com/goravel/framework/support/process"
 )
 
-func ExposedPort(exposedPorts []string, port int) int {
+func ExposedPort(exposedPorts []string, port string) string {
 	for _, exposedPort := range exposedPorts {
-		if !strings.Contains(exposedPort, cast.ToString(port)) {
+		splitExposedPort := strings.Split(exposedPort, ":")
+		if len(splitExposedPort) != 2 {
 			continue
 		}
 
-		ports := strings.Split(exposedPort, ":")
+		if splitExposedPort[1] != port && !strings.Contains(splitExposedPort[1], port+"/") {
+			continue
+		}
 
-		return cast.ToInt(ports[0])
+		return splitExposedPort[0]
 	}
 
-	return 0
+	return ""
 }
 
 func ImageToCommand(image *docker.Image) (command string, exposedPorts []string) {
@@ -35,6 +36,7 @@ func ImageToCommand(image *docker.Image) (command string, exposedPorts []string)
 			commands = append(commands, "-e", env)
 		}
 	}
+
 	var ports []string
 	if len(image.ExposedPorts) > 0 {
 		for _, port := range image.ExposedPorts {
@@ -50,6 +52,10 @@ func ImageToCommand(image *docker.Image) (command string, exposedPorts []string)
 
 	if len(image.Args) > 0 {
 		commands = append(commands, image.Args...)
+	}
+
+	if len(image.Cmd) > 0 {
+		commands = append(commands, image.Cmd...)
 	}
 
 	return strings.Join(commands, " "), ports

@@ -15,7 +15,6 @@ import (
 	contractslogger "github.com/goravel/framework/contracts/database/logger"
 	"github.com/goravel/framework/contracts/log"
 	databasedriver "github.com/goravel/framework/database/driver"
-	databaselogger "github.com/goravel/framework/database/logger"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 )
@@ -54,12 +53,11 @@ func BuildDB(ctx context.Context, config config.Config, log log.Log, connection 
 	}
 
 	pool := driver.Pool()
-	gorm, err := databasedriver.BuildGorm(config, log, pool)
+	logger := NewLogger(config, log)
+	gorm, err := databasedriver.BuildGorm(config, logger.ToGorm(), pool, connection)
 	if err != nil {
 		return nil, err
 	}
-
-	logger := databaselogger.NewLogger(config, log)
 
 	return NewDB(ctx, config, driver, logger, gorm)
 }
@@ -121,12 +119,12 @@ func (r *DB) WithContext(ctx context.Context) contractsdb.DB {
 
 type Tx struct {
 	ctx        context.Context
-	driverName string
-	gormDB     *gorm.DB
 	grammar    contractsdriver.Grammar
 	logger     contractslogger.Logger
 	txBuilder  contractsdb.TxBuilder
+	gormDB     *gorm.DB
 	txLogs     *[]TxLog
+	driverName string
 }
 
 func NewTx(

@@ -35,9 +35,9 @@ type DatabaseDriver interface {
 type DatabaseConfig struct {
 	Driver      string
 	Host        string
-	Port        int
 	Database    string
 	Username    string
 	Password    string
 	ContainerID string
+	Port        int
 }

@@ -3,9 +3,7 @@ package console
 import (
 	"fmt"
 	"path/filepath"
-	"reflect"
 	"regexp"
-	"runtime"
 	"strings"
 	"unicode/utf8"
 
@@ -15,6 +13,7 @@ import (
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/schedule"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/debug"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -102,15 +101,9 @@ func (r *List) getCommand(event schedule.Event) string {
 }
 
 func (r *List) getClosureLocation(closure any) (file string, line int) {
-	v := reflect.ValueOf(closure)
-	if v.Kind() == reflect.Func {
-		ptr := v.Pointer()
-		if fn := runtime.FuncForPC(ptr); fn != nil {
-			file, line = fn.FileLine(ptr)
-		}
-	}
+	info := debug.GetFuncInfo(closure)
 
-	return
+	return info.File, info.Line
 }
 
 func (r *List) getCronExpressionSpacing(events []schedule.Event) []int {

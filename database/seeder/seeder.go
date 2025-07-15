@@ -1,6 +1,8 @@
 package seeder
 
 import (
+	"slices"
+
 	"github.com/goravel/framework/contracts/database/seeder"
 	"github.com/goravel/framework/support/color"
 )
@@ -56,7 +58,7 @@ func (s *SeederFacade) Call(seeders []seeder.Seeder) error {
 			return err
 		}
 
-		if !contains(s.Called, signature) {
+		if !slices.Contains(s.Called, signature) {
 			s.Called = append(s.Called, signature)
 		}
 	}
@@ -68,7 +70,7 @@ func (s *SeederFacade) CallOnce(seeders []seeder.Seeder) error {
 	for _, item := range seeders {
 		signature := item.Signature()
 
-		if contains(s.Called, signature) {
+		if slices.Contains(s.Called, signature) {
 			continue
 		}
 
@@ -77,14 +79,4 @@ func (s *SeederFacade) CallOnce(seeders []seeder.Seeder) error {
 		}
 	}
 	return nil
-}
-
-// contains checks if a string exists in a slice.
-func contains(slice []string, str string) bool {
-	for _, s := range slice {
-		if s == str {
-			return true
-		}
-	}
-	return false
 }

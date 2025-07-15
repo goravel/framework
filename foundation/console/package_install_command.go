@@ -25,13 +25,13 @@ func (r *PackageInstallCommand) Signature() string {
 
 // Description The console command description.
 func (r *PackageInstallCommand) Description() string {
-	return "Install a package"
+	return "Install a package or a facade"
 }
 
 // Extend The console command extend.
 func (r *PackageInstallCommand) Extend() command.Extend {
 	return command.Extend{
-		ArgsUsage: " <package@version>",
+		ArgsUsage: " <package@version> or <facade>",
 		Category:  "package",
 	}
 }
@@ -41,9 +41,9 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 	pkg := ctx.Argument(0)
 	if pkg == "" {
 		var err error
-		pkg, err = ctx.Ask("Enter the package name to install", console.AskOption{
+		pkg, err = ctx.Ask("Enter the package/facade name to install", console.AskOption{
 			Description: "If no version is specified, install the latest",
-			Placeholder: " E.g example.com/pkg or example.com/pkg@v1.0.0",
+			Placeholder: " E.g example.com/pkg or example.com/pkg@v1.0.0 or cache",
 			Prompt:      ">",
 			Validate: func(s string) error {
 				if s == "" {
@@ -59,12 +59,22 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 		}
 	}
 
+	return r.installPackage(ctx, pkg)
+
+	// TODO: Implement this in v1.17 https://github.com/goravel/goravel/issues/719
+	// if isPackage(pkg) {
+	// 	return r.installPackage(ctx, pkg)
+	// }
+
+	// return r.installFacade(ctx, pkg)
+}
+
+func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) error {
 	pkgPath, _, _ := strings.Cut(pkg, "@")
 	setup := pkgPath + "/setup"
 
 	// get package
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "get", pkg)); err != nil {
-		color.Errorln("failed to get package:")
 		color.Red().Println(err.Error())
 
 		return nil
@@ -72,7 +82,6 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 
 	// install package
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install")); err != nil {
-		color.Errorln("failed to install package:")
 		color.Red().Println(err.Error())
 
 		return nil
@@ -80,7 +89,6 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 
 	// tidy go.mod file
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
-		color.Errorln("failed to tidy go.mod file:")
 		color.Red().Println(err.Error())
 
 		return nil
@@ -90,3 +98,28 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 
 	return nil
 }
+
+// func (r *PackageInstallCommand) installFacade(ctx console.Context, facade string) error {
+// 	path, exists := binding.FacadeToPath[facade]
+// 	if !exists {
+// 		ctx.Warning(errors.PackageFacadeNotFound.Args(facade).Error())
+// 		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(maps.Keys(binding.FacadeToPath), ", ")))
+// 		return nil
+// 	}
+
+// 	setup := path + "/setup"
+
+// 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install")); err != nil {
+// 		color.Red().Println(err.Error())
+
+// 		return nil
+// 	}
+
+// 	color.Successf("Facade %s installed successfully\n", facade)
+
+// 	return nil
+// }
+
+// func isPackage(pkg string) bool {
+// 	return strings.Contains(pkg, "/")
+// }

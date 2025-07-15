@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/cache"
+	"github.com/goravel/framework/contracts/testing/docker"
 	configmock "github.com/goravel/framework/mocks/config"
 	logmock "github.com/goravel/framework/mocks/log"
 )
@@ -81,6 +82,10 @@ func (r *Store) Add(key string, value any, seconds time.Duration) bool {
 
 func (r *Store) Decrement(key string, value ...int64) (int64, error) {
 	return 1, nil
+}
+
+func (r *Store) Docker() (docker.CacheDriver, error) {
+	return nil, nil
 }
 
 // Forever Store an item in the cache indefinitely.

@@ -46,7 +46,6 @@ func (r *PackageUninstallCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *PackageUninstallCommand) Handle(ctx console.Context) error {
-
 	pkg := ctx.Argument(0)
 	if pkg == "" {
 		var err error
@@ -67,6 +66,17 @@ func (r *PackageUninstallCommand) Handle(ctx console.Context) error {
 		}
 	}
 
+	return r.uninstallPackage(ctx, pkg)
+
+	// TODO: Implement this in v1.17 https://github.com/goravel/goravel/issues/719
+	// if isPackage(pkg) {
+	// 	return r.uninstallPackage(ctx, pkg)
+	// }
+
+	// return r.uninstallFacade(ctx, pkg)
+}
+
+func (r *PackageUninstallCommand) uninstallPackage(ctx console.Context, pkg string) error {
 	pkgPath, _, _ := strings.Cut(pkg, "@")
 	setup := pkgPath + "/setup"
 
@@ -95,3 +105,24 @@ func (r *PackageUninstallCommand) Handle(ctx console.Context) error {
 
 	return nil
 }
+
+// func (r *PackageUninstallCommand) uninstallFacade(ctx console.Context, facade string) error {
+// 	path, exists := binding.FacadeToPath[facade]
+// 	if !exists {
+// 		ctx.Warning(errors.PackageFacadeNotFound.Args(facade).Error())
+// 		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(maps.Keys(binding.FacadeToPath), ", ")))
+// 		return nil
+// 	}
+
+// 	setup := path + "/setup"
+
+// 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "uninstall")); err != nil {
+// 		color.Red().Println(err.Error())
+
+// 		return nil
+// 	}
+
+// 	color.Successf("Facade %s uninstalled successfully\n", facade)
+
+// 	return nil
+// }

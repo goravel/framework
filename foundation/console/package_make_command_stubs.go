@@ -37,6 +37,16 @@ var App foundation.Application
 type ServiceProvider struct {
 }
 
+// Relationship returns the relationship of the service provider.
+func (r *ServiceProvider) Relationship() binding.Relationship {
+	return binding.Relationship{
+		Bindings: []string{},
+		Dependencies: []string{},
+		ProvideFor: []string{},
+	}
+}
+
+// Register registers the service provider.
 func (r *ServiceProvider) Register(app foundation.Application) {
 	App = app
 
@@ -45,6 +55,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 	})
 }
 
+// Boot boots the service provider, will be called after all service providers are registered.
 func (r *ServiceProvider) Boot(app foundation.Application) {
 
 }

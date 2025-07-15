@@ -23,25 +23,26 @@ import (
 
 func TestBind_Rule(t *testing.T) {
 	type Data struct {
-		A              string                 `form:"a" json:"a"`
-		B              int                    `form:"b" json:"b"`
-		File           *multipart.FileHeader  `form:"file" json:"file"`
-		Ages           []int                  `form:"ages" json:"ages"`
-		Names          []string               `form:"names" json:"names"`
-		Carbon         *carbon.Carbon         `form:"carbon" json:"carbon"`
-		DateTime       *carbon.DateTime       `form:"date_time" json:"date_time"`
-		DateTimeMilli  *carbon.DateTimeMilli  `form:"date_time_milli" json:"date_time_milli"`
-		DateTimeMicro  *carbon.DateTimeMicro  `form:"date_time_micro" json:"date_time_micro"`
-		DateTimeNano   *carbon.DateTimeNano   `form:"date_time_nano" json:"date_time_nano"`
-		Date           *carbon.Date           `form:"date" json:"date"`
-		DateMilli      *carbon.DateMilli      `form:"date_milli" json:"date_milli"`
-		DateMicro      *carbon.DateMicro      `form:"date_micro" json:"date_micro"`
-		DateNano       *carbon.DateNano       `form:"date_nano" json:"date_nano"`
-		Timestamp      *carbon.Timestamp      `form:"timestamp" json:"timestamp"`
-		TimestampMilli *carbon.TimestampMilli `form:"timestamp_milli" json:"timestamp_milli"`
-		TimestampMicro *carbon.TimestampMicro `form:"timestamp_micro" json:"timestamp_micro"`
-		TimestampNano  *carbon.TimestampNano  `form:"timestamp_nano" json:"timestamp_nano"`
-		Time           *time.Time             `form:"time" json:"time"`
+		A              string                  `form:"a" json:"a"`
+		B              int                     `form:"b" json:"b"`
+		File           *multipart.FileHeader   `form:"file" json:"file"`
+		Files          []*multipart.FileHeader `form:"files" json:"files"`
+		Ages           []int                   `form:"ages" json:"ages"`
+		Names          []string                `form:"names" json:"names"`
+		Carbon         *carbon.Carbon          `form:"carbon" json:"carbon"`
+		DateTime       *carbon.DateTime        `form:"date_time" json:"date_time"`
+		DateTimeMilli  *carbon.DateTimeMilli   `form:"date_time_milli" json:"date_time_milli"`
+		DateTimeMicro  *carbon.DateTimeMicro   `form:"date_time_micro" json:"date_time_micro"`
+		DateTimeNano   *carbon.DateTimeNano    `form:"date_time_nano" json:"date_time_nano"`
+		Date           *carbon.Date            `form:"date" json:"date"`
+		DateMilli      *carbon.DateMilli       `form:"date_milli" json:"date_milli"`
+		DateMicro      *carbon.DateMicro       `form:"date_micro" json:"date_micro"`
+		DateNano       *carbon.DateNano        `form:"date_nano" json:"date_nano"`
+		Timestamp      *carbon.Timestamp       `form:"timestamp" json:"timestamp"`
+		TimestampMilli *carbon.TimestampMilli  `form:"timestamp_milli" json:"timestamp_milli"`
+		TimestampMicro *carbon.TimestampMicro  `form:"timestamp_micro" json:"timestamp_micro"`
+		TimestampNano  *carbon.TimestampNano   `form:"timestamp_nano" json:"timestamp_nano"`
+		Time           *time.Time              `form:"time" json:"time"`
 	}
 
 	tests := []struct {
@@ -109,6 +110,21 @@ func TestBind_Rule(t *testing.T) {
 			assert: func(data Data) {
 				assert.Equal(t, "aa", data.A)
 				assert.Equal(t, 1, data.B)
+			},
+		},
+		{
+			name: "data is get request with names",
+			data: func() validate.DataFace {
+				request, err := http.NewRequest(http.MethodGet, "/?names=a&names=b", nil)
+				assert.Nil(t, err)
+				data, err := validate.FromRequest(request)
+				assert.Nil(t, err)
+
+				return data
+			}(),
+			rules: map[string]string{"names": "required|array|len:2"},
+			assert: func(data Data) {
+				assert.Equal(t, []string{"a", "b"}, data.Names)
 			},
 		},
 		{
@@ -596,6 +612,27 @@ func TestBind_Rule(t *testing.T) {
 				assert.Equal(t, "aa", data.A)
 				assert.NotNil(t, data.File)
 				assert.Equal(t, file.Filename, data.File.Filename)
+			},
+		},
+		{
+			name: "data is post request with multiple files",
+			data: func() validate.DataFace {
+				request := buildRequestWithMultipleFiles(t)
+				data, err := validate.FromRequest(request, 1)
+				assert.Nil(t, err)
+
+				return data
+			}(),
+			rules: map[string]string{"a": "required", "files": "file"},
+			assert: func(data Data) {
+				request := buildRequestWithMultipleFiles(t)
+				_, file, err := request.FormFile("files")
+				assert.Nil(t, err)
+
+				assert.Equal(t, "aa", data.A)
+				assert.Len(t, data.Files, 2)
+				assert.Equal(t, file.Filename, data.Files[0].Filename)
+				assert.Equal(t, file.Filename, data.Files[1].Filename)
 			},
 		},
 	}
@@ -1185,6 +1222,42 @@ func buildRequest(t *testing.T) *http.Request {
 
 	_, err = io.Copy(part1, logo)
 	assert.Nil(t, err)
+	assert.Nil(t, writer.Close())
+
+	request, err := http.NewRequest(http.MethodPost, "/", payload)
+	assert.Nil(t, err)
+	request.Header.Set("Content-Type", writer.FormDataContentType())
+
+	return request
+}
+
+func buildRequestWithMultipleFiles(t *testing.T) *http.Request {
+	payload := &bytes.Buffer{}
+	writer := multipart.NewWriter(payload)
+
+	err := writer.WriteField("a", "aa")
+	assert.Nil(t, err)
+
+	logo1, err := os.Open("../logo.png")
+	assert.Nil(t, err)
+
+	defer logo1.Close()
+	part1, err := writer.CreateFormFile("files", filepath.Base("../logo.png"))
+	assert.Nil(t, err)
+
+	_, err = io.Copy(part1, logo1)
+	assert.Nil(t, err)
+
+	logo2, err := os.Open("../logo.png")
+	assert.Nil(t, err)
+
+	defer logo2.Close()
+	part2, err := writer.CreateFormFile("files", filepath.Base("../logo.png"))
+	assert.Nil(t, err)
+
+	_, err = io.Copy(part2, logo2)
+	assert.Nil(t, err)
+
 	assert.Nil(t, writer.Close())
 
 	request, err := http.NewRequest(http.MethodPost, "/", payload)

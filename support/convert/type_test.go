@@ -375,3 +375,52 @@ func TestToSliceDifferentTypes(t *testing.T) {
 		})
 	}
 }
+
+func TestToAnySlice(t *testing.T) {
+	t.Run("empty slice", func(t *testing.T) {
+		var input []int
+		result := ToAnySlice(input...)
+		assert.NotNil(t, result)
+		assert.Empty(t, result)
+	})
+
+	t.Run("string slice", func(t *testing.T) {
+		input := []string{"a", "b", "c"}
+		assert.Equal(t, []any{"a", "b", "c"}, ToAnySlice(input...))
+	})
+
+	t.Run("int slice", func(t *testing.T) {
+		assert.Equal(t, []any{1, 2, 3}, ToAnySlice(1, 2, 3))
+	})
+
+	t.Run("bool slice", func(t *testing.T) {
+		assert.Equal(t, []any{true, false}, ToAnySlice(true, false))
+	})
+
+	t.Run("float slice", func(t *testing.T) {
+		assert.Equal(t, []any{1.1, 2.2, 3.3}, ToAnySlice(1.1, 2.2, 3.3))
+	})
+
+	t.Run("single value", func(t *testing.T) {
+		assert.Equal(t, []any{1}, ToAnySlice(1))
+	})
+
+	// Additional test cases to demonstrate the optimization
+	t.Run("empty variadic", func(t *testing.T) {
+		assert.Equal(t, []any{}, ToAnySlice[int]())
+	})
+
+	t.Run("int of slice", func(t *testing.T) {
+		assert.Equal(t, []any{1, 2, 3}, ToAnySlice([]int{1, 2, 3}))
+	})
+
+	t.Run("slice of strings", func(t *testing.T) {
+		input := []string{"hello", "world"}
+		assert.Equal(t, []any{"hello", "world"}, ToAnySlice(input))
+	})
+
+	t.Run("slice of floats", func(t *testing.T) {
+		input := []float64{1.1, 2.2, 3.3}
+		assert.Equal(t, []any{1.1, 2.2, 3.3}, ToAnySlice(input))
+	})
+}

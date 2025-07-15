@@ -1,5 +1,15 @@
 package driver
 
+// WhereType type of where condition
+type WhereType int
+
+const (
+	WhereTypeBase WhereType = iota
+	WhereTypeJsonContains
+	WhereTypeJsonContainsKey
+	WhereTypeJsonLength
+)
+
 type Conditions struct {
 	CrossJoin     []Join
 	Distinct      *bool
@@ -32,5 +42,7 @@ type Join struct {
 type Where struct {
 	Query any
 	Args  []any
+	Type  WhereType
 	Or    bool
+	IsNot bool
 }

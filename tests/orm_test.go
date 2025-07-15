@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
+	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/postgres"
 	"github.com/goravel/sqlite"
@@ -30,15 +31,13 @@ func TestOrmSuite(t *testing.T) {
 func (s *OrmSuite) SetupSuite() {
 	s.defaultConnection = postgres.Name
 	s.queries = NewTestQueryBuilder().All("", false)
-	for _, query := range s.queries {
-		query.CreateTable(TestTableRoles)
-	}
 }
 
 func (s *OrmSuite) SetupTest() {
 	queries := make(map[string]contractsorm.Query)
 
 	for driver, query := range s.queries {
+		query.CreateTable(TestTableRoles)
 		queries[driver] = query.Query()
 	}
 
@@ -87,6 +86,35 @@ func (s *OrmSuite) TestQuery() {
 	for connection := range s.queries {
 		s.NotNil(s.orm.Connection(connection).Query())
 	}
+}
+
+func (s *OrmSuite) TestQueryLog() {
+	ctx := databasedb.EnableQueryLog(context.Background())
+
+	role := Role{Name: "query_log_product"}
+	s.orm.WithContext(ctx).Query().Create(&role)
+	s.True(role.ID > 0)
+
+	var role1 Role
+	err := s.orm.WithContext(ctx).Query().Where("name", "query_log_product").First(&role1)
+	s.NoError(err)
+	s.True(role1.ID > 0)
+
+	queryLogs := databasedb.GetQueryLog(ctx)
+	s.Equal(2, len(queryLogs))
+	s.Contains(queryLogs[0].Query, "INSERT INTO \"roles\" (\"created_at\",\"updated_at\",\"name\",\"avatar\") VALUES ('")
+	s.Contains(queryLogs[0].Query, "'query_log_product','') RETURNING \"id\"")
+	s.True(queryLogs[0].Time > 0)
+	s.Equal("SELECT * FROM \"roles\" WHERE \"name\" = 'query_log_product' ORDER BY \"roles\".\"id\" LIMIT 1", queryLogs[1].Query)
+	s.True(queryLogs[1].Time > 0)
+
+	ctx = databasedb.DisableQueryLog(ctx)
+
+	role2 := Role{Name: "query_log_product2"}
+	s.orm.WithContext(ctx).Query().Create(&role2)
+
+	queryLogs = databasedb.GetQueryLog(ctx)
+	s.Equal(0, len(queryLogs))
 }
 
 func (s *OrmSuite) TestFactory() {

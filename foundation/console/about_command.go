@@ -103,7 +103,7 @@ func (r *AboutCommand) gatherApplicationInformation() {
 		}()},
 		{Key: "Mail", Value: configFacade.GetString("mail.default", "smtp")},
 		{Key: "Queue", Value: configFacade.GetString("queue.default")},
-		{Key: "Session", Value: configFacade.GetString("session.driver")},
+		{Key: "Session", Value: configFacade.GetString("session.default")},
 	})
 	for i := range customInformationResolvers {
 		customInformationResolvers[i]()

@@ -21,11 +21,11 @@ import (
 
 // TestUser is a test model
 type TestUser struct {
-	ID    uint   `db:"id"`
-	Phone string `db:"phone"`
-	Email string `db:"email"`
+	ID    uint `db:"id"`
+	Phone string
+	Email string
 	Name  string `db:"-"`
-	Age   int
+	Age   int    `db:"-"`
 }
 
 type QueryTestSuite struct {
@@ -87,7 +87,10 @@ func (s *QueryTestSuite) TestDecrement() {
 	mockResult := &MockResult{}
 	mockResult.On("RowsAffected").Return(int64(1), nil)
 
+	update := map[string]any{"age": sq.Expr("age - ?", uint64(1))}
+
 	s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+	s.mockGrammar.EXPECT().CompileJsonColumnsUpdate(update).Return(update, nil).Once()
 	s.mockWriteBuilder.EXPECT().ExecContext(s.ctx, "UPDATE users SET age = age - ? WHERE name = ?", uint64(1), "John").Return(mockResult, nil).Once()
 	s.mockWriteBuilder.EXPECT().Explain("UPDATE users SET age = age - ? WHERE name = ?", uint64(1), "John").Return("UPDATE users SET age = age - 1 WHERE name = \"John\"").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET age = age - 1 WHERE name = \"John\"", int64(1), nil).Return().Once()
@@ -461,10 +464,13 @@ func (s *QueryTestSuite) TestIncrement() {
 	mockResult := &MockResult{}
 	mockResult.On("RowsAffected").Return(int64(1), nil)
 
+	update := map[string]any{"age": sq.Expr("age + ?", uint64(1))}
+
 	s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
 	s.mockWriteBuilder.EXPECT().ExecContext(s.ctx, "UPDATE users SET age = age + ? WHERE name = ?", uint64(1), "John").Return(mockResult, nil).Once()
 	s.mockWriteBuilder.EXPECT().Explain("UPDATE users SET age = age + ? WHERE name = ?", uint64(1), "John").Return("UPDATE users SET age = age + 1 WHERE name = \"John\"").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET age = age + 1 WHERE name = \"John\"", int64(1), nil).Return().Once()
+	s.mockGrammar.EXPECT().CompileJsonColumnsUpdate(update).Return(update, nil).Once()
 
 	err := s.query.Where("name", "John").Increment("age")
 	s.NoError(err)
@@ -1139,14 +1145,19 @@ func (s *QueryTestSuite) TestToSql() {
 	})
 
 	s.Run("Update", func() {
-		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Times(3)
+		update := map[string]any{"name": "Jane"}
 
-		sql := s.query.Where("name", "John").ToSql().Update(map[string]any{"name": "Jane"})
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Times(3)
+		s.mockGrammar.EXPECT().CompileJsonColumnsUpdate(update).Return(update, nil).Twice()
+
+		sql := s.query.Where("name", "John").ToSql().Update(update)
 		s.Equal("UPDATE users SET name = ? WHERE name = ?", sql)
 
 		sql = s.query.Where("name", "John").ToSql().Update("name", "Jane")
 		s.Equal("UPDATE users SET name = ? WHERE name = ?", sql)
 
+		update = map[string]any{"phone": "1234567890"}
+		s.mockGrammar.EXPECT().CompileJsonColumnsUpdate(update).Return(update, nil).Once()
 		sql = s.query.Where("name", "John").ToSql().Update(TestUser{Phone: "1234567890"})
 		s.Equal("UPDATE users SET phone = ? WHERE name = ?", sql)
 	})
@@ -1214,16 +1225,21 @@ func (s *QueryTestSuite) TestToRawSql() {
 	})
 
 	s.Run("Update", func() {
+		update := map[string]any{"name": "Jane"}
+
 		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Times(3)
+		s.mockGrammar.EXPECT().CompileJsonColumnsUpdate(update).Return(update, nil).Twice()
 
 		s.mockWriteBuilder.EXPECT().Explain("UPDATE users SET name = ? WHERE name = ?", "Jane", "John").Return("UPDATE users SET name = \"Jane\" WHERE name = \"John\"").Once()
-		sql := s.query.Where("name", "John").ToRawSql().Update(map[string]any{"name": "Jane"})
+		sql := s.query.Where("name", "John").ToRawSql().Update(update)
 		s.Equal("UPDATE users SET name = \"Jane\" WHERE name = \"John\"", sql)
 
 		s.mockWriteBuilder.EXPECT().Explain("UPDATE users SET name = ? WHERE name = ?", "Jane", "John").Return("UPDATE users SET name = \"Jane\" WHERE name = \"John\"").Once()
 		sql = s.query.Where("name", "John").ToRawSql().Update("name", "Jane")
 		s.Equal("UPDATE users SET name = \"Jane\" WHERE name = \"John\"", sql)
 
+		update = map[string]any{"phone": "1234567890"}
+		s.mockGrammar.EXPECT().CompileJsonColumnsUpdate(update).Return(update, nil).Once()
 		s.mockWriteBuilder.EXPECT().Explain("UPDATE users SET phone = ? WHERE name = ?", "1234567890", "John").Return("UPDATE users SET phone = \"1234567890\" WHERE name = \"John\"").Once()
 		sql = s.query.Where("name", "John").ToRawSql().Update(TestUser{Phone: "1234567890"})
 		s.Equal("UPDATE users SET phone = \"1234567890\" WHERE name = \"John\"", sql)
@@ -1238,6 +1254,9 @@ func (s *QueryTestSuite) TestUpdate() {
 			Age:   25,
 		}
 
+		update, err := convertToMap(user)
+		s.Require().NoError(err)
+
 		mockResult := &MockResult{}
 		mockResult.On("RowsAffected").Return(int64(1), nil)
 
@@ -1245,6 +1264,7 @@ func (s *QueryTestSuite) TestUpdate() {
 		s.mockWriteBuilder.EXPECT().ExecContext(s.ctx, "UPDATE users SET phone = ? WHERE (name = ? AND id = ?)", "1234567890", "John", 1).Return(mockResult, nil).Once()
 		s.mockWriteBuilder.EXPECT().Explain("UPDATE users SET phone = ? WHERE (name = ? AND id = ?)", "1234567890", "John", 1).Return("UPDATE users SET phone = \"1234567890\" WHERE (name = \"John\" AND id = 1)").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET phone = \"1234567890\" WHERE (name = \"John\" AND id = 1)", int64(1), nil).Return().Once()
+		s.mockGrammar.EXPECT().CompileJsonColumnsUpdate(update).Return(update, nil).Once()
 
 		result, err := s.query.Where("name", "John").Where("id", 1).Update(user)
 		s.Nil(err)
@@ -1267,6 +1287,7 @@ func (s *QueryTestSuite) TestUpdate() {
 		s.mockWriteBuilder.EXPECT().ExecContext(s.ctx, "UPDATE users SET age = ?, name = ?, phone = ? WHERE (name = ? AND id = ?)", 25, "John", "1234567890", "John", 1).Return(mockResult, nil).Once()
 		s.mockWriteBuilder.EXPECT().Explain("UPDATE users SET age = ?, name = ?, phone = ? WHERE (name = ? AND id = ?)", 25, "John", "1234567890", "John", 1).Return("UPDATE users SET age = 25, name = \"John\", phone = \"1234567890\" WHERE (name = \"John\" AND id = 1)").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET age = 25, name = \"John\", phone = \"1234567890\" WHERE (name = \"John\" AND id = 1)", int64(1), nil).Return().Once()
+		s.mockGrammar.EXPECT().CompileJsonColumnsUpdate(user).Return(user, nil).Once()
 
 		result, err := s.query.Where("name", "John").Where("id", 1).Update(user)
 		s.Nil(err)
@@ -1283,6 +1304,7 @@ func (s *QueryTestSuite) TestUpdate() {
 		s.mockWriteBuilder.EXPECT().ExecContext(s.ctx, "UPDATE users SET phone = ? WHERE name = ?", "1234567890", "John").Return(mockResult, nil).Once()
 		s.mockWriteBuilder.EXPECT().Explain("UPDATE users SET phone = ? WHERE name = ?", "1234567890", "John").Return("UPDATE users SET phone = \"1234567890\" WHERE name = \"John\"").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET phone = \"1234567890\" WHERE name = \"John\"", int64(1), nil).Return().Once()
+		s.mockGrammar.EXPECT().CompileJsonColumnsUpdate(map[string]any{"phone": "1234567890"}).Return(map[string]any{"phone": "1234567890"}, nil).Once()
 
 		result, err := s.query.Where("name", "John").Update("phone", "1234567890")
 		s.Nil(err)
@@ -1303,10 +1325,14 @@ func (s *QueryTestSuite) TestUpdate() {
 			Age:   25,
 		}
 
+		update, err := convertToMap(user)
+		s.Require().NoError(err)
+
 		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
 		s.mockWriteBuilder.EXPECT().ExecContext(s.ctx, "UPDATE users SET phone = ? WHERE (name = ? AND id = ?)", "1234567890", "John", 1).Return(nil, assert.AnError).Once()
 		s.mockWriteBuilder.EXPECT().Explain("UPDATE users SET phone = ? WHERE (name = ? AND id = ?)", "1234567890", "John", 1).Return("UPDATE users SET phone = \"1234567890\" WHERE (name = \"John\" AND id = 1)").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET phone = \"1234567890\" WHERE (name = \"John\" AND id = 1)", int64(-1), assert.AnError).Return().Once()
+		s.mockGrammar.EXPECT().CompileJsonColumnsUpdate(update).Return(update, nil).Once()
 
 		result, err := s.query.Where("name", "John").Where("id", 1).Update(user)
 		s.Nil(result)
@@ -1320,6 +1346,9 @@ func (s *QueryTestSuite) TestUpdate() {
 			Age:   25,
 		}
 
+		update, err := convertToMap(user)
+		s.Require().NoError(err)
+
 		mockResult := &MockResult{}
 		mockResult.On("RowsAffected").Return(int64(0), assert.AnError).Once()
 
@@ -1327,6 +1356,7 @@ func (s *QueryTestSuite) TestUpdate() {
 		s.mockWriteBuilder.EXPECT().ExecContext(s.ctx, "UPDATE users SET phone = ? WHERE (name = ? AND id = ?)", "1234567890", "John", 1).Return(mockResult, nil).Once()
 		s.mockWriteBuilder.EXPECT().Explain("UPDATE users SET phone = ? WHERE (name = ? AND id = ?)", "1234567890", "John", 1).Return("UPDATE users SET phone = \"1234567890\" WHERE (name = \"John\" AND id = 1)").Once()
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET phone = \"1234567890\" WHERE (name = \"John\" AND id = 1)", int64(-1), assert.AnError).Return().Once()
+		s.mockGrammar.EXPECT().CompileJsonColumnsUpdate(update).Return(update, nil).Once()
 
 		result, err := s.query.Where("name", "John").Where("id", 1).Update(user)
 		s.Nil(result)
@@ -1360,6 +1390,11 @@ func (s *QueryTestSuite) TestUpdateOrInsert() {
 		user := TestUser{
 			Phone: "1234567890",
 		}
+
+		update, err := convertToMap(user)
+		s.Require().NoError(err)
+		s.mockGrammar.EXPECT().CompileJsonColumnsUpdate(update).Return(update, nil).Once()
+
 		result, err := s.query.Where("id", 1).UpdateOrInsert(whereUser, user)
 		s.Nil(err)
 		s.Equal(int64(1), result.RowsAffected)
@@ -1392,6 +1427,11 @@ func (s *QueryTestSuite) TestUpdateOrInsert() {
 		user := map[string]any{
 			"phone": "1234567890",
 		}
+
+		update, err := convertToMap(user)
+		s.Require().NoError(err)
+		s.mockGrammar.EXPECT().CompileJsonColumnsUpdate(update).Return(update, nil).Once()
+
 		result, err := s.query.Where("id", 1).UpdateOrInsert(whereUser, user)
 		s.Nil(err)
 		s.Equal(int64(1), result.RowsAffected)
@@ -1424,6 +1464,11 @@ func (s *QueryTestSuite) TestUpdateOrInsert() {
 		user := TestUser{
 			Phone: "1234567890",
 		}
+
+		update, err := convertToMap(user)
+		s.Require().NoError(err)
+		s.mockGrammar.EXPECT().CompileJsonColumnsUpdate(update).Return(update, nil).Once()
+
 		result, err := s.query.Where("id", 1).UpdateOrInsert(whereUser, user)
 		s.Nil(err)
 		s.Equal(int64(1), result.RowsAffected)
@@ -1456,6 +1501,11 @@ func (s *QueryTestSuite) TestUpdateOrInsert() {
 		user := map[string]any{
 			"phone": "1234567890",
 		}
+
+		update, err := convertToMap(user)
+		s.Require().NoError(err)
+		s.mockGrammar.EXPECT().CompileJsonColumnsUpdate(update).Return(update, nil).Once()
+
 		result, err := s.query.Where("id", 1).UpdateOrInsert(whereUser, user)
 		s.Nil(err)
 		s.Equal(int64(1), result.RowsAffected)

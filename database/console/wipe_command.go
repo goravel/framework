@@ -94,6 +94,11 @@ func (r *WipeCommand) Handle(ctx console.Context) error {
 		ctx.Success("Dropped all types successfully")
 	}
 
+	if err := r.schema.Connection(database).Prune(); err != nil {
+		ctx.Error(errors.ConsolePruneFailed.Args(err).Error())
+		return nil
+	}
+
 	return nil
 }
 

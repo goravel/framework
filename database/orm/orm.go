@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"sync"
 
-	"github.com/goravel/framework/contracts"
+	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
@@ -17,14 +17,14 @@ import (
 type Orm struct {
 	ctx             context.Context
 	config          config.Config
-	connection      string
-	dbConfig        database.Config
 	log             log.Log
-	modelToObserver []contractsorm.ModelToObserver
-	mutex           sync.Mutex
 	query           contractsorm.Query
 	queries         map[string]contractsorm.Query
 	fresh           func(key ...any)
+	connection      string
+	modelToObserver []contractsorm.ModelToObserver
+	dbConfig        database.Config
+	mutex           sync.Mutex
 }
 
 func NewOrm(
@@ -139,7 +139,7 @@ func (r *Orm) SetQuery(query contractsorm.Query) {
 }
 
 func (r *Orm) Fresh() {
-	r.fresh(contracts.BindingOrm)
+	r.fresh(binding.Orm)
 }
 
 func (r *Orm) Transaction(txFunc func(tx contractsorm.Query) error) error {

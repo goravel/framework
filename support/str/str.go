@@ -22,8 +22,8 @@ type String struct {
 
 // ExcerptOption is the option for Excerpt method
 type ExcerptOption struct {
-	Radius   int
 	Omission string
+	Radius   int
 }
 
 // Of creates a new String instance with the given value.
@@ -342,13 +342,13 @@ func (s *String) IsAscii() bool {
 
 // IsMap returns true if the string is a valid Map.
 func (s *String) IsMap() bool {
-	var obj map[string]interface{}
+	var obj map[string]any
 	return json.Unmarshal([]byte(s.value), &obj) == nil
 }
 
 // IsSlice returns true if the string is a valid Slice.
 func (s *String) IsSlice() bool {
-	var arr []interface{}
+	var arr []any
 	return json.Unmarshal([]byte(s.value), &arr) == nil
 }
 
@@ -920,10 +920,7 @@ func Substr(str string, start int, length ...int) string {
 
 	// If the start index is negative, count backwards from the end of the string.
 	if start < 0 {
-		start = strLen + start
-		if start < 0 {
-			start = 0
-		}
+		start = max(strLen+start, 0)
 	}
 
 	if len(length) > 0 {

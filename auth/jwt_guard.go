@@ -53,14 +53,34 @@ func NewJwtGuard(ctx http.Context, name string, userProvider contractsauth.UserP
 		return nil, errors.CacheFacadeNotSet.SetModule(errors.ModuleAuth)
 	}
 
-	jwtSecret := configFacade.GetString("jwt.secret")
+	jwtSecret := configFacade.GetString(fmt.Sprintf("auth.guards.%s.secret", name))
+
+	if jwtSecret == "" {
+		// Get the secret from the jwt config if the guard specific was not set
+		jwtSecret = configFacade.GetString("jwt.secret")
+	}
+
 	if jwtSecret == "" {
 		return nil, errors.AuthEmptySecret
 	}
 
-	ttl := getTtl(configFacade, name)
+	ttl := configFacade.GetInt(fmt.Sprintf("auth.guards.%s.ttl", name))
+	if ttl == 0 {
+		ttl = configFacade.GetInt("jwt.ttl")
+	}
 
-	refreshTtl := configFacade.GetInt("jwt.refresh_ttl")
+	if ttl == 0 {
+		// 100 years
+		ttl = 60 * 24 * 365 * 100
+	}
+
+	refreshTtl := configFacade.GetInt(fmt.Sprintf("auth.guards.%s.refresh_ttl", name))
+
+	if refreshTtl == 0 {
+		// Get the ttl from the jwt config if the guard specific was not set
+		refreshTtl = configFacade.GetInt("jwt.refresh_ttl")
+	}
+
 	if refreshTtl == 0 {
 		// 100 years
 		refreshTtl = 60 * 24 * 365 * 100
@@ -293,21 +313,4 @@ func (r *JwtGuard) tokenIsDisabled(token string) bool {
 
 func getDisabledCacheKey(token string) string {
 	return "jwt:disabled:" + token
-}
-
-func getTtl(config config.Config, guard string) int {
-	var ttl int
-	guardTtl := config.Get(fmt.Sprintf("auth.guards.%s.ttl", guard))
-	if guardTtl == nil {
-		ttl = config.GetInt("jwt.ttl")
-	} else {
-		ttl = cast.ToInt(guardTtl)
-	}
-
-	if ttl == 0 {
-		// 100 years
-		ttl = 60 * 24 * 365 * 100
-	}
-
-	return ttl
 }

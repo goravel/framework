@@ -64,6 +64,8 @@ type Schema interface {
 	Migrations() []Migration
 	// Orm Get the orm instance.
 	Orm() orm.Orm
+	// Prune reclaims space or optimizes underlying storage.
+	Prune() error
 	// Register migrations.
 	Register([]Migration)
 	// Rename a table on the schema.

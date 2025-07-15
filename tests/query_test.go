@@ -5,12 +5,16 @@ import (
 	"strconv"
 	"testing"
 	"time"
+	
+	"github.com/google/uuid"
 
+	"github.com/goravel/framework/contracts/database/orm"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/mysql"
 	"github.com/goravel/postgres"
 	"github.com/goravel/sqlite"
@@ -423,7 +427,9 @@ func (s *QueryTestSuite) TestCreate() {
 			{
 				name: "success when refresh connection",
 				setup: func() {
-					mockDatabaseConfig(query.MockConfig(), s.additionalQuery.Driver().Pool().Writers[0], "dummy", "", false)
+					config := s.additionalQuery.Driver().Pool().Writers[0]
+					config.Connection = "dummy"
+					mockDatabaseConfig(query.MockConfig(), config)
 
 					people := People{Body: "create_people"}
 					s.Nil(query.Query().Create(&people))
@@ -577,12 +583,13 @@ func (s *QueryTestSuite) TestCursor() {
 			s.Nil(err)
 			s.Equal(int64(1), res.RowsAffected)
 
-			users, err := query.Query().Model(&User{}).Where("name = ?", "cursor_user").WithTrashed().With("Address").With("Books").Cursor()
-			s.Nil(err)
+			// success
+			users := query.Query().Model(&User{}).Where("name = ?", "cursor_user").WithTrashed().With("Address").With("Books").Cursor()
 			var size int
 			var addressNum int
 			var bookNum int
 			for row := range users {
+				s.Nil(row.Err())
 				var tempUser User
 				s.Nil(row.Scan(&tempUser))
 				s.True(tempUser.ID > 0)
@@ -600,6 +607,17 @@ func (s *QueryTestSuite) TestCursor() {
 			s.Equal(3, size)
 			s.Equal(1, addressNum)
 			s.Equal(1, bookNum)
+
+			// error
+			for row := range query.Query().Table("not_exist").Cursor() {
+				err1 := row.Err()
+				s.Error(err1)
+
+				err2 := row.Scan(map[string]any{})
+				s.Error(err2)
+
+				s.Equal(err1, err2)
+			}
 		})
 	}
 }
@@ -701,7 +719,9 @@ func (s *QueryTestSuite) TestDelete() {
 					s.Equal(uint(0), user1.ID)
 
 					// refresh connection
-					mockDatabaseConfig(query.MockConfig(), s.additionalQuery.Driver().Pool().Writers[0], "dummy", "", false)
+					config := s.additionalQuery.Driver().Pool().Writers[0]
+					config.Connection = "dummy"
+					mockDatabaseConfig(query.MockConfig(), config)
 
 					people := People{Body: "delete_people"}
 					s.Nil(query.Query().Create(&people))
@@ -772,6 +792,10 @@ func (s *QueryTestSuite) TestDistinct() {
 			var users []User
 			s.Nil(query.Query().Distinct("name").Find(&users, []uint{user.ID, user1.ID}))
 			s.Equal(1, len(users))
+
+			var users1 []User
+			s.Nil(query.Query().Distinct().Select("name").Find(&users1, []uint{user.ID, user1.ID}))
+			s.Equal(1, len(users1))
 		})
 	}
 }
@@ -952,7 +976,7 @@ func (s *QueryTestSuite) TestEvent_Created() {
 					user.Address.Name = "event_created_select_create_address"
 					user.Books[0].Name = "event_created_select_create_book0"
 					user.Books[1].Name = "event_created_select_create_book1"
-					s.Nil(query.Query().Select("Name", "Avatar", "Address").Create(&user))
+					s.Nil(query.Query().Select("ID", "Name", "Avatar", "Address").Create(&user))
 					s.True(user.ID > 0)
 					s.Equal(fmt.Sprintf("event_created_select_create_avatar_%d", user.ID), user.Avatar)
 					s.True(user.Address.ID > 0)
@@ -1792,7 +1816,9 @@ func (s *QueryTestSuite) TestFirst() {
 		s.True(user1.ID > 0)
 
 		// refresh connection
-		mockDatabaseConfig(query.MockConfig(), s.additionalQuery.Driver().Pool().Writers[0], "dummy", "", false)
+		config := s.additionalQuery.Driver().Pool().Writers[0]
+		config.Connection = "dummy"
+		mockDatabaseConfig(query.MockConfig(), config)
 
 		people := People{Body: "first_people"}
 		s.Nil(query.Query().Create(&people))
@@ -2048,7 +2074,9 @@ func (s *QueryTestSuite) TestGet() {
 			s.Equal(1, len(user1))
 
 			// refresh connection
-			mockDatabaseConfig(query.MockConfig(), s.additionalQuery.Driver().Pool().Writers[0], "dummy", "", false)
+			config := s.additionalQuery.Driver().Pool().Writers[0]
+			config.Connection = "dummy"
+			mockDatabaseConfig(query.MockConfig(), config)
 
 			people := People{Body: "get_people"}
 			s.Nil(query.Query().Create(&people))
@@ -2061,6 +2089,319 @@ func (s *QueryTestSuite) TestGet() {
 			var user2 []User
 			s.Nil(query.Query().Where("id in ?", []uint{user.ID}).Get(&user2))
 			s.Equal(1, len(user2))
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestGlobalScopes() {
+	prepareData := func(query orm.Query) {
+		globalScope1 := GlobalScope{Name: "global_scope_1"}
+		s.Nil(query.Create(&globalScope1))
+		s.True(globalScope1.ID > 0)
+
+		globalScope := GlobalScope{Name: "global_scope"}
+		s.Nil(query.Create(&globalScope))
+		s.True(globalScope.ID > 0)
+	}
+
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			s.Run("Count", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				count, err := query.Query().Model(&GlobalScope{}).Count()
+				s.Nil(err)
+				s.Equal(int64(1), count)
+			})
+
+			s.Run("Cursor", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				count := 0
+				for cursor := range query.Query().Model(&GlobalScope{}).Cursor() {
+					count++
+					var globalScope GlobalScope
+					s.Nil(cursor.Scan(&globalScope))
+					s.True(globalScope.ID > 0)
+					s.Equal("global_scope", globalScope.Name)
+				}
+				s.Equal(1, count)
+			})
+
+			s.Run("Delete", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				res, err := query.Query().Model(&GlobalScope{}).Delete()
+				s.Nil(err)
+				s.Equal(int64(1), res.RowsAffected)
+
+				var globalScopes []GlobalScope
+				s.Nil(query.Query().Get(&globalScopes))
+				s.Equal(0, len(globalScopes))
+			})
+
+			s.Run("Exec", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				res, err := query.Query().Exec("delete from global_scopes")
+				s.Nil(err)
+				s.Equal(int64(2), res.RowsAffected)
+
+				var globalScopes []GlobalScope
+				s.Nil(query.Query().Get(&globalScopes))
+				s.Equal(0, len(globalScopes))
+			})
+
+			s.Run("Exists", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				exists, err := query.Query().Model(&GlobalScope{}).Exists()
+				s.Nil(err)
+				s.True(exists)
+
+				res, err := query.Query().Model(&GlobalScope{}).Delete()
+				s.Nil(err)
+				s.Equal(int64(1), res.RowsAffected)
+
+				exists, err = query.Query().Model(&GlobalScope{}).Exists()
+				s.Nil(err)
+				s.False(exists)
+			})
+
+			s.Run("Find", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				var globalScope GlobalScope
+				s.Nil(query.Query().Find(&globalScope))
+				s.True(globalScope.ID > 0)
+				s.Equal("global_scope", globalScope.Name)
+			})
+
+			s.Run("FindOrFail", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				var globalScope GlobalScope
+				s.Nil(query.Query().FindOrFail(&globalScope))
+				s.True(globalScope.ID > 0)
+				s.Equal("global_scope", globalScope.Name)
+
+				var globalScope1 GlobalScope
+				s.EqualError(query.Query().Where("name", "global_scope_1").FindOrFail(&globalScope1), errors.OrmRecordNotFound.Error())
+				s.Equal(uint(0), globalScope1.ID)
+			})
+
+			s.Run("First", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				var globalScope GlobalScope
+				s.Nil(query.Query().First(&globalScope))
+				s.True(globalScope.ID > 0)
+				s.Equal("global_scope", globalScope.Name)
+			})
+
+			s.Run("FirstOr", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				var globalScope GlobalScope
+				s.Nil(query.Query().FirstOr(&globalScope, func() error {
+					return errors.OrmRecordNotFound
+				}))
+				s.True(globalScope.ID > 0)
+				s.Equal("global_scope", globalScope.Name)
+			})
+
+			s.Run("FirstOrCreate", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				var globalScope GlobalScope
+				s.Nil(query.Query().FirstOrCreate(&globalScope, User{Name: "global_scope"}))
+				s.True(globalScope.ID > 0)
+				s.Equal("global_scope", globalScope.Name)
+			})
+
+			s.Run("FirstOrFail", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				var globalScope GlobalScope
+				s.Nil(query.Query().FirstOrFail(&globalScope))
+				s.True(globalScope.ID > 0)
+				s.Equal("global_scope", globalScope.Name)
+			})
+
+			s.Run("FirstOrNew", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				var globalScope GlobalScope
+				s.Nil(query.Query().FirstOrNew(&globalScope, User{Name: "global_scope"}))
+				s.True(globalScope.ID > 0)
+				s.Equal("global_scope", globalScope.Name)
+			})
+
+			s.Run("ForceDelete", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				res, err := query.Query().Model(&GlobalScope{}).ForceDelete()
+				s.Nil(err)
+				s.Equal(int64(1), res.RowsAffected)
+
+				var globalScopes []GlobalScope
+				s.Nil(query.Query().Get(&globalScopes))
+				s.Equal(0, len(globalScopes))
+			})
+
+			s.Run("Get", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				var globalScopes []GlobalScope
+				s.Nil(query.Query().Get(&globalScopes))
+				s.Equal(1, len(globalScopes))
+				s.True(globalScopes[0].ID > 0)
+				s.Equal("global_scope", globalScopes[0].Name)
+			})
+
+			s.Run("Paginate", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				var (
+					globalScopes []GlobalScope
+					total        int64
+				)
+				s.Nil(query.Query().Paginate(1, 2, &globalScopes, &total))
+				s.Equal(1, len(globalScopes))
+				s.True(globalScopes[0].ID > 0)
+				s.Equal("global_scope", globalScopes[0].Name)
+				s.Equal(int64(1), total)
+			})
+
+			s.Run("Pluck", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				var names []string
+				s.Nil(query.Query().Model(&GlobalScope{}).Pluck("name", &names))
+				s.Equal(1, len(names))
+				s.Equal("global_scope", names[0])
+			})
+
+			s.Run("Restore", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				res, err := query.Query().Model(&GlobalScope{}).Delete()
+				s.Nil(err)
+				s.Equal(int64(1), res.RowsAffected)
+
+				var globalScopes []GlobalScope
+				s.Nil(query.Query().Get(&globalScopes))
+				s.Equal(0, len(globalScopes))
+
+				res, err = query.Query().Model(&GlobalScope{}).WithTrashed().Restore()
+				s.Nil(err)
+				s.Equal(int64(1), res.RowsAffected)
+
+				s.Nil(query.Query().Get(&globalScopes))
+				s.Equal(1, len(globalScopes))
+				s.True(globalScopes[0].ID > 0)
+				s.Equal("global_scope", globalScopes[0].Name)
+			})
+
+			s.Run("Save", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				globalScope := GlobalScope{Name: "global_scope"}
+				s.Nil(query.Query().Save(&globalScope))
+				s.True(globalScope.ID > 0)
+				s.Equal("global_scope", globalScope.Name)
+
+				var globalScopes []GlobalScope
+				s.Nil(query.Query().Get(&globalScopes))
+				s.Equal(2, len(globalScopes))
+				s.True(globalScopes[0].ID > 0)
+				s.Equal("global_scope", globalScopes[0].Name)
+				s.True(globalScopes[1].ID > 0)
+				s.Equal("global_scope", globalScopes[1].Name)
+
+				globalScope.Name = "global_scope_1"
+				s.Nil(query.Query().Save(&globalScope))
+				s.True(globalScope.ID > 0)
+				s.Equal("global_scope_1", globalScope.Name)
+
+				var globalScopes1 []GlobalScope
+				s.Nil(query.Query().Get(&globalScopes1))
+				s.Equal(1, len(globalScopes1))
+				s.True(globalScopes1[0].ID > 0)
+				s.Equal("global_scope", globalScopes1[0].Name)
+			})
+
+			s.Run("Scan", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				var globalScopes []GlobalScope
+				s.Nil(query.Query().Raw("SELECT id, name, created_at, updated_at, deleted_at FROM global_scopes").Scan(&globalScopes))
+				s.Equal(2, len(globalScopes))
+				s.True(globalScopes[0].ID > 0)
+				s.Equal("global_scope_1", globalScopes[0].Name)
+				s.True(globalScopes[1].ID > 0)
+				s.Equal("global_scope", globalScopes[1].Name)
+			})
+
+			s.Run("Sum", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				var globalScope GlobalScope
+				s.Nil(query.Query().First(&globalScope))
+				s.True(globalScope.ID > 0)
+				s.Equal("global_scope", globalScope.Name)
+
+				sum, err := query.Query().Model(&GlobalScope{}).Sum("id")
+				s.Nil(err)
+				s.Equal(globalScope.ID, uint(sum))
+			})
+
+			s.Run("Update", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				res, err := query.Query().Model(&GlobalScope{}).Update("name", "global_scope_1")
+				s.Nil(err)
+				s.Equal(int64(1), res.RowsAffected)
+
+				var globalScopes []GlobalScope
+				s.Nil(query.Query().Get(&globalScopes))
+				s.Equal(0, len(globalScopes))
+			})
+
+			s.Run("UpdateOrCreate", func() {
+				s.SetupTest()
+				prepareData(query.Query())
+
+				var globalScope GlobalScope
+				s.Nil(query.Query().UpdateOrCreate(&globalScope, GlobalScope{Name: "global_scope"}, GlobalScope{Name: "global_scope_1"}))
+				s.True(globalScope.ID > 0)
+				s.Equal("global_scope_1", globalScope.Name)
+
+				var globalScopes []GlobalScope
+				s.Nil(query.Query().Get(&globalScopes))
+				s.Equal(0, len(globalScopes))
+			})
 		})
 	}
 }
@@ -2629,7 +2970,7 @@ func (s *QueryTestSuite) TestModel() {
 
 			// model is invalid
 			user1 := User{Name: "model_user"}
-			s.EqualError(query.Query().Model("users").Create(&user1), errors.OrmQueryInvalidModel.Args("").Error())
+			s.EqualError(query.Query().Model("users").Create(&user1), "unsupported data type: users: Table not set, please set it like: db.Model(&user) or db.Table(\"users\")")
 		})
 	}
 }
@@ -2970,15 +3311,15 @@ func (s *QueryTestSuite) TestRestore() {
 			s.Equal(int64(4), res.RowsAffected)
 			s.NoError(err)
 
-			res, err = query.Query().Where("name = ?", "restore_user1").Restore(&User{})
+			res, err = query.Query().Where("name", "restore_user1").Restore(&User{})
 			s.Equal(int64(0), res.RowsAffected)
 			s.NoError(err)
 
-			res, err = query.Query().WithTrashed().Where("name = ?", "restore_user1").Restore(&User{})
+			res, err = query.Query().WithTrashed().Where("name", "restore_user1").Restore(&User{})
 			s.Equal(int64(1), res.RowsAffected)
 			s.NoError(err)
 
-			res, err = query.Query().Model(&User{}).WithTrashed().Where("name = ?", "restore_user2").Restore()
+			res, err = query.Query().Model(&User{}).WithTrashed().Where("name", "restore_user2").Restore()
 			s.Equal(int64(1), res.RowsAffected)
 			s.NoError(err)
 
@@ -3008,10 +3349,9 @@ func (s *QueryTestSuite) TestSum() {
 			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
-			var value float64
-			err := query.Query().Table("users").Sum("id", &value)
+			sum, err := query.Query().Table("users").Sum("id")
 			s.Nil(err)
-			s.True(value > 0)
+			s.True(sum > 0)
 		})
 	}
 }
@@ -3621,12 +3961,255 @@ func (s *QueryTestSuite) TestWithNesting() {
 	}
 }
 
+func (s *QueryTestSuite) TestJsonWhereClauses() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			data := []JsonData{
+				{
+					Data: `{"string":"first","int":123,"float":123.456,"bool":true,"array":["abc","def","ghi"],"nested":{"string":"first","int":456},"objects":[{"level":"first","value":"abc"},{"level":"second","value":"def"}]}`,
+				},
+				{
+					Data: `{"string":"second","int":123,"float":789.123,"bool":false,"array":["jkl","def","abc"]}`,
+				},
+			}
+			s.Nil(query.Query().Create(&data))
+
+			tests := []struct {
+				name   string
+				find   func(any, ...any) error
+				assert func([]JsonData)
+			}{
+				{
+					name: "string key",
+					find: query.Query().Where("data->string", "first").Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 1)
+						s.JSONEq(data[0].Data, items[0].Data)
+					},
+				},
+				{
+					name: "int key",
+					find: query.Query().Where("data->int", 123).Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 2)
+						s.JSONEq(data[0].Data, items[0].Data)
+						s.JSONEq(data[1].Data, items[1].Data)
+					},
+				},
+				{
+					name: "float key(multiple values)",
+					find: query.Query().WhereIn("data->float", []any{123.456, 789.123}).Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 2)
+						s.JSONEq(data[0].Data, items[0].Data)
+						s.JSONEq(data[1].Data, items[1].Data)
+					},
+				},
+				{
+					name: "bool key(pointer)",
+					find: query.Query().Where("data->bool", convert.Pointer(false)).Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 1)
+						s.JSONEq(data[1].Data, items[0].Data)
+					},
+				},
+				{
+					name: "nested key",
+					find: query.Query().Where("data->nested->int", 456).Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 1)
+						s.JSONEq(data[0].Data, items[0].Data)
+					},
+				},
+				{
+					name: "nested key with array",
+					find: query.Query().Where("data->objects[0]->level", "first").Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 1)
+						s.JSONEq(data[0].Data, items[0].Data)
+					},
+				},
+				{
+					name: "key exists",
+					find: query.Query().WhereJsonContainsKey("data->nested->string").Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 1)
+						s.JSONEq(data[0].Data, items[0].Data)
+					},
+				},
+				{
+					name: "key does not exist",
+					find: query.Query().WhereJsonDoesntContainKey("data->nested->string").Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 1)
+						s.JSONEq(data[1].Data, items[0].Data)
+					},
+				},
+				{
+					name: "array contains",
+					find: query.Query().WhereJsonContains("data->array", "abc").Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 2)
+						s.JSONEq(data[0].Data, items[0].Data)
+						s.JSONEq(data[1].Data, items[1].Data)
+					},
+				},
+				{
+					name: "array does not contain",
+					find: query.Query().WhereJsonDoesntContain("data->array", "abc").Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 0)
+					},
+				},
+				{
+					name: "array contains multiple values",
+					find: query.Query().WhereJsonContains("data->array", []string{"abc", "def"}).Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 2)
+						s.JSONEq(data[0].Data, items[0].Data)
+						s.JSONEq(data[1].Data, items[1].Data)
+					},
+				},
+				{
+					name: "array length",
+					find: query.Query().WhereJsonLength("data->array", 2).Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 0)
+					},
+				},
+				{
+					name: "array length greater than",
+					find: query.Query().WhereJsonLength("data->array > ?", 2).Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 2)
+						s.JSONEq(data[0].Data, items[0].Data)
+						s.JSONEq(data[1].Data, items[1].Data)
+					},
+				},
+				{
+					name: "string or float key",
+					find: query.Query().Where("data->string", "first").OrWhere("data->float", 789.123).Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 2)
+						s.JSONEq(data[0].Data, items[0].Data)
+						s.JSONEq(data[1].Data, items[1].Data)
+					},
+				},
+				{
+					name: "contains or key does not exist",
+					find: query.Query().WhereJsonContains("data->array", "ghi").OrWhereJsonDoesntContainKey("data->nested->string").Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 2)
+						s.JSONEq(data[0].Data, items[0].Data)
+						s.JSONEq(data[1].Data, items[1].Data)
+					},
+				},
+			}
+
+			for _, tt := range tests {
+				s.Run(tt.name, func() {
+					var items []JsonData
+					s.NoError(tt.find(&items))
+					tt.assert(items)
+				})
+			}
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestJsonColumnsUpdate() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			data := []JsonData{
+				{
+					Data: `{"string":"first","int":123,"float":123.456,"bool":true,"array":["abc","def","ghi"],"nested":{"string":"first","int":456},"objects":[{"level":"first","value":"abc"},{"level":"second","value":"def"}]}`,
+				},
+			}
+			s.NoError(query.Query().Create(&data))
+
+			tests := []struct {
+				name   string
+				update map[string]any
+				assert func(before JsonData, after JsonData)
+			}{
+				{
+					name:   "update string",
+					update: map[string]any{"data->string": "updated_first"},
+					assert: func(before JsonData, after JsonData) {
+						s.NotContains(before.Data, "updated_first")
+						s.Contains(after.Data, "updated_first")
+					},
+				},
+				{
+					name:   "update int",
+					update: map[string]any{"data->int": 789},
+					assert: func(before JsonData, after JsonData) {
+						s.NotContains(before.Data, "789")
+						s.Contains(after.Data, "789")
+					},
+				},
+				{
+					name:   "update float(pointer)",
+					update: map[string]any{"data->float": convert.Pointer(456.789)},
+					assert: func(before JsonData, after JsonData) {
+						s.NotContains(before.Data, "456.789")
+						s.Contains(after.Data, "456.789")
+					},
+				},
+				{
+					name:   "update array",
+					update: map[string]any{"data->array": []string{"uvw", "xyz"}},
+					assert: func(before JsonData, after JsonData) {
+						s.NotContains(before.Data, "uvw")
+						s.Contains(after.Data, "uvw")
+
+						s.NotContains(before.Data, "xyz")
+						s.Contains(after.Data, "xyz")
+					},
+				},
+				{
+					name: "update multiple keys",
+					update: map[string]any{
+						"data->bool":              false,
+						"data->objects[0]->level": "first_changed",
+						"data->nested->string":    "updated_nested_string",
+					},
+					assert: func(before JsonData, after JsonData) {
+						s.NotContains(before.Data, "false")
+						s.Contains(after.Data, "false")
+
+						s.NotContains(before.Data, "first_changed")
+						s.Contains(after.Data, "first_changed")
+
+						s.NotContains(before.Data, "updated_nested_string")
+						s.Contains(after.Data, "updated_nested_string")
+
+					},
+				},
+			}
+
+			for _, tt := range tests {
+				s.Run(tt.name, func() {
+					var before, after JsonData
+					s.NoError(query.Query().First(&before))
+					res, err := query.Query().Model(&before).Update(tt.update)
+					s.NoError(err)
+					s.Equal(int64(1), res.RowsAffected)
+					s.NoError(query.Query().Where("id", before.ID).First(&after))
+					s.NotEqual(before.Data, after.Data)
+					tt.assert(before, after)
+				})
+			}
+		})
+	}
+}
+
 func TestCustomConnection(t *testing.T) {
 	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
-	postgresTestQuery.CreateTable(TestTableReviews, TestTableProducts)
+	postgresTestQuery.CreateTable()
 
 	sqliteTestQuery := NewTestQueryBuilder().Sqlite("", false)
-	sqliteTestQuery.CreateTable(TestTableReviews, TestTableProducts)
+	sqliteTestQuery.CreateTable()
 
 	query := postgresTestQuery.Query()
 
@@ -3638,7 +4221,9 @@ func TestCustomConnection(t *testing.T) {
 	assert.Nil(t, query.Where("body", "create_review").First(&review1))
 	assert.True(t, review1.ID > 0)
 
-	mockDatabaseConfig(postgresTestQuery.MockConfig(), sqliteTestQuery.Driver().Pool().Writers[0], "sqlite", "", false)
+	config := sqliteTestQuery.Driver().Pool().Writers[0]
+	config.Connection = "sqlite"
+	mockDatabaseConfig(postgresTestQuery.MockConfig(), config)
 
 	product := Product{Name: "create_product"}
 	assert.Nil(t, query.Create(&product))
@@ -3652,7 +4237,9 @@ func TestCustomConnection(t *testing.T) {
 	assert.Nil(t, query.Where("name", "create_product1").First(&product2))
 	assert.True(t, product2.ID == 0)
 
-	mockDatabaseConfig(postgresTestQuery.MockConfig(), postgresTestQuery.Driver().Pool().Writers[0], "dummy", "", false)
+	config = postgresTestQuery.Driver().Pool().Writers[0]
+	config.Connection = "dummy"
+	mockDatabaseConfig(postgresTestQuery.MockConfig(), config)
 
 	person := Person{Name: "create_person"}
 	assert.NotNil(t, query.Create(&person))
@@ -3664,7 +4251,7 @@ func TestCustomConnection(t *testing.T) {
 }
 
 func TestOrmReadWriteSeparate(t *testing.T) {
-	dbs := NewTestQueryBuilder().AllOfReadWrite()
+	dbs := NewTestQueryBuilder().AllWithReadWrite()
 
 	for drive, db := range dbs {
 		t.Run(drive, func(t *testing.T) {
@@ -3750,6 +4337,41 @@ func TestSqlserverWithSchema(t *testing.T) {
 	assert.True(t, schema1.ID > 0)
 }
 
+// https://github.com/goravel/goravel/issues/706
+func TestTimezone(t *testing.T) {
+	queries := NewTestQueryBuilder().AllWithTimezone("Asia/Shanghai")
+
+	defer func() {
+		if queries[sqlite.Name] != nil {
+			docker, err := queries[sqlite.Name].Driver().Docker()
+			assert.NoError(t, err)
+			assert.NoError(t, docker.Shutdown())
+		}
+	}()
+
+	for driver, query := range queries {
+		t.Run(driver, func(t *testing.T) {
+			query.CreateTable()
+
+			user := User{Name: "count_user", Avatar: "count_avatar"}
+			assert.Nil(t, query.Query().Create(&user))
+			assert.True(t, user.ID > 0)
+
+			user1 := User{Name: "count_user", Avatar: "count_avatar1"}
+			assert.Nil(t, query.Query().Create(&user1))
+			assert.True(t, user1.ID > 0)
+
+			count, err := query.Query().Model(&User{}).Where("name = ?", "count_user").Count()
+			assert.Nil(t, err)
+			assert.True(t, count > 0)
+
+			count, err = query.Query().Table("users").Where("name = ?", "count_user").Count()
+			assert.Nil(t, err)
+			assert.True(t, count > 0)
+		})
+	}
+}
+
 func paginator(page string, limit string) func(methods contractsorm.Query) contractsorm.Query {
 	return func(query contractsorm.Query) contractsorm.Query {
 		page, _ := strconv.Atoi(page)
@@ -3757,6 +4379,208 @@ func paginator(page string, limit string) func(methods contractsorm.Query) contr
 		offset := (page - 1) * limit
 
 		return query.Offset(offset).Limit(limit)
+	}
+}
+
+func (s *QueryTestSuite) TestUuidColumn() {
+	for driver, query := range s.queries {
+		s.Run(fmt.Sprintf("TestUuidColumn_%s", driver), func() {
+			id, _ := uuid.NewV7()
+			// Test UUID column creation and operations
+			entity := UuidEntity{
+				Uuid: id.String(),
+				Name: "test_uuid_entity",
+			}
+
+			err := query.Query().Create(&entity)
+			s.NoError(err)
+			s.NotEmpty(entity.Uuid)
+
+			// Test finding by UUID
+			var foundEntity UuidEntity
+			err = query.Query().Where("uuid", entity.Uuid).First(&foundEntity)
+			s.NoError(err)
+			s.Equal("test_uuid_entity", foundEntity.Name)
+
+			// Test UUID format (basic validation)
+			s.Len(entity.Uuid, 36) // Standard UUID length with hyphens
+			s.Contains(entity.Uuid, "-")
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestUlidColumn() {
+	for driver, query := range s.queries {
+		s.Run(fmt.Sprintf("TestUlidColumn_%s", driver), func() {
+			// Test ULID column creation and operations
+			entity := UlidEntity{
+				ID:   "01AN4Z07BY79KA1307SR9X4MV3", // Valid ULID
+				Name: "test_ulid_entity",
+			}
+
+			err := query.Query().Create(&entity)
+			s.NoError(err)
+			s.NotEmpty(entity.ID)
+
+			// Test finding by ULID
+			var foundEntity UlidEntity
+			err = query.Query().Where("id", entity.ID).First(&foundEntity)
+			s.NoError(err)
+			s.Equal("test_ulid_entity", foundEntity.Name)
+			s.Equal(entity.ID, foundEntity.ID)
+
+			// Test ULID format (basic validation)
+			s.Len(entity.ID, 26) // Standard ULID length
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestMorphableRelationships() {
+	for driver, query := range s.queries {
+		s.Run(fmt.Sprintf("TestMorphableRelationships_%s", driver), func() {
+			user := User{
+				Name: "test_user",
+			}
+
+			err := query.Query().Create(&user)
+			s.NoError(err)
+
+			entity := House{
+				Name:          "test_morph_house",
+				HouseableID:   user.ID,
+				HouseableType: "users",
+			}
+
+			err = query.Query().Create(&entity)
+			s.NoError(err)
+
+			// Test finding by morph type
+			var foundEntity House
+			err = query.Query().Where("houseable_type", "users").First(&foundEntity)
+			s.NoError(err)
+			s.Equal("test_morph_house", foundEntity.Name)
+			s.Equal(uint(1), foundEntity.HouseableID)
+			s.Equal("users", foundEntity.HouseableType)
+
+			// Test finding by morph type
+			var userWithHouse User
+			err = query.Query().Where("id", user.ID).With("House").First(&userWithHouse)
+			s.NoError(err)
+
+			s.Equal("test_user", userWithHouse.Name)
+			s.NotNil(userWithHouse.House)
+			s.Equal("test_morph_house", userWithHouse.House.Name)
+			s.Equal(uint(1), userWithHouse.House.HouseableID)
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestUuidMorphableRelationships() {
+	for driver, query := range s.queries {
+		s.Run(fmt.Sprintf("TestUuidMorphableRelationships_%s", driver), func() {
+			// Test UUID morph relationships
+			entity := UuidMorphableEntity{
+				Name:          "test_uuid_morph_entity",
+				MorphableID:   "550e8400-e29b-41d4-a716-446655440000",
+				MorphableType: "User",
+			}
+
+			err := query.Query().Create(&entity)
+			s.NoError(err)
+			s.True(entity.ID > 0)
+
+			// Test finding by UUID morph
+			var foundEntity UuidMorphableEntity
+			err = query.Query().Where("morphable_id", "550e8400-e29b-41d4-a716-446655440000").First(&foundEntity)
+			s.NoError(err)
+			s.Equal("test_uuid_morph_entity", foundEntity.Name)
+			s.Equal("User", foundEntity.MorphableType)
+
+			// SQL Server stores UUIDs as binary data, so we need to handle this differently
+			if driver == "SQL Server" {
+				// For SQL Server, we need to verify the UUID is stored correctly
+				// but the format may be different (binary vs string)
+				s.NotEmpty(foundEntity.MorphableID)
+				// We can't do exact string comparison for SQL Server UUID format
+			} else {
+				// For other databases, we can do string comparison
+				s.Equal("550e8400-e29b-41d4-a716-446655440000", foundEntity.MorphableID)
+
+				// Test UUID format validation
+				s.Len(foundEntity.MorphableID, 36)
+				s.Contains(foundEntity.MorphableID, "-")
+			}
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestUlidMorphableRelationships() {
+	for driver, query := range s.queries {
+		s.Run(fmt.Sprintf("TestUlidMorphableRelationships_%s", driver), func() {
+			// Test ULID morph relationships
+			entity := UlidMorphableEntity{
+				Name:          "test_ulid_morph_entity",
+				MorphableID:   "01AN4Z07BY79KA1307SR9X4MV3",
+				MorphableType: "User",
+			}
+
+			err := query.Query().Create(&entity)
+			s.NoError(err)
+			s.True(entity.ID > 0)
+
+			// Test finding by ULID morph
+			var foundEntity UlidMorphableEntity
+			err = query.Query().Where("morphable_id", "01AN4Z07BY79KA1307SR9X4MV3").First(&foundEntity)
+			s.NoError(err)
+			s.Equal("test_ulid_morph_entity", foundEntity.Name)
+			s.Equal("01AN4Z07BY79KA1307SR9X4MV3", foundEntity.MorphableID)
+			s.Equal("User", foundEntity.MorphableType)
+
+			// Test ULID format validation
+			s.Len(foundEntity.MorphableID, 26)
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestMorphablePolymorphicQueries() {
+	for driver, query := range s.queries {
+		s.Run(fmt.Sprintf("TestMorphablePolymorphicQueries_%s", driver), func() {
+			// Create morph entities for different types
+			entities := []MorphableEntity{
+				{Name: "user_morph_1", MorphableID: 1, MorphableType: "User"},
+				{Name: "user_morph_2", MorphableID: 2, MorphableType: "User"},
+				{Name: "post_morph_1", MorphableID: 1, MorphableType: "Post"},
+				{Name: "post_morph_2", MorphableID: 2, MorphableType: "Post"},
+			}
+
+			for _, entity := range entities {
+				err := query.Query().Create(&entity)
+				s.NoError(err)
+			}
+
+			// Test querying by morph type
+			var userMorphs []MorphableEntity
+			err := query.Query().Where("morphable_type", "User").Find(&userMorphs)
+			s.NoError(err)
+			s.Len(userMorphs, 2)
+
+			var postMorphs []MorphableEntity
+			err = query.Query().Where("morphable_type", "Post").Find(&postMorphs)
+			s.NoError(err)
+			s.Len(postMorphs, 2)
+
+			// Test querying by morph type and ID
+			var specificMorph MorphableEntity
+			err = query.Query().Where("morphable_type", "User").Where("morphable_id", 1).First(&specificMorph)
+			s.NoError(err)
+			s.Equal("user_morph_1", specificMorph.Name)
+
+			// Test combined queries
+			var combinedMorphs []MorphableEntity
+			err = query.Query().Where("morphable_id", 1).Find(&combinedMorphs)
+			s.NoError(err)
+			s.Len(combinedMorphs, 2) // Should find both User and Post with ID 1
+		})
 	}
 }
 

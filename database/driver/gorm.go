@@ -1,27 +1,45 @@
 package driver
 
 import (
+	"sync"
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
 	"gorm.io/plugin/dbresolver"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database"
-	"github.com/goravel/framework/contracts/log"
-	"github.com/goravel/framework/database/logger"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/color"
 )
 
-func BuildGorm(config config.Config, log log.Log, pool database.Pool) (*gorm.DB, error) {
+var (
+	connectionToDB     = make(map[string]*gorm.DB)
+	connectionToDBLock = sync.Mutex{}
+	pingWarning        sync.Once
+)
+
+func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool, connection string) (*gorm.DB, error) {
+	if db, ok := connectionToDB[connection]; ok {
+		return db, nil
+	}
+
 	if len(pool.Writers) == 0 {
 		return nil, errors.DatabaseConfigNotFound
 	}
 
-	logger := logger.NewLogger(config, log).ToGorm()
+	connectionToDBLock.Lock()
+	defer connectionToDBLock.Unlock()
+
+	if db, ok := connectionToDB[connection]; ok {
+		return db, nil
+	}
+
 	gormConfig := &gorm.Config{
+		DisableAutomaticPing:                     true,
 		DisableForeignKeyConstraintWhenMigrating: true,
 		SkipDefaultTransaction:                   true,
 		Logger:                                   logger,
@@ -40,6 +58,13 @@ func BuildGorm(config config.Config, log log.Log, pool database.Pool) (*gorm.DB,
 	if err != nil {
 		return nil, err
 	}
+	if pinger, ok := instance.ConnPool.(interface{ Ping() error }); ok {
+		if err = pinger.Ping(); err != nil {
+			pingWarning.Do(func() {
+				color.Warningln(err.Error())
+			})
+		}
+	}
 
 	maxIdleConns := config.GetInt("database.pool.max_idle_conns", 10)
 	maxOpenConns := config.GetInt("database.pool.max_open_conns", 100)
@@ -56,6 +81,8 @@ func BuildGorm(config config.Config, log log.Log, pool database.Pool) (*gorm.DB,
 		db.SetMaxOpenConns(maxOpenConns)
 		db.SetConnMaxIdleTime(connMaxIdleTime * time.Second)
 		db.SetConnMaxLifetime(connMaxLifetime * time.Second)
+
+		connectionToDB[connection] = instance
 
 		return instance, nil
 	}
@@ -84,6 +111,8 @@ func BuildGorm(config config.Config, log log.Log, pool database.Pool) (*gorm.DB,
 		SetConnMaxIdleTime(connMaxIdleTime * time.Second)); err != nil {
 		return nil, err
 	}
+
+	connectionToDB[connection] = instance
 
 	return instance, nil
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/goravel/framework/contracts/database/driver"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/database/seeder"
-	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/testing/docker"
 	"github.com/goravel/framework/errors"
 )
@@ -17,23 +16,23 @@ type Database struct {
 	docker.DatabaseDriver
 	artisan    contractsconsole.Artisan
 	config     contractsconfig.Config
-	connection string
 	orm        contractsorm.Orm
+	connection string
 }
 
-func NewDatabase(app foundation.Application, connection string) (*Database, error) {
-	config := app.MakeConfig()
+func NewDatabase(artisan contractsconsole.Artisan, config contractsconfig.Config, orm contractsorm.Orm, connection string) (*Database, error) {
+	if artisan == nil {
+		return nil, errors.ConsoleFacadeNotSet
+	}
 	if config == nil {
 		return nil, errors.ConfigFacadeNotSet
+	}
+	if orm == nil {
+		return nil, errors.OrmFacadeNotSet
 	}
 
 	if connection == "" {
 		connection = config.GetString("database.default")
-	}
-
-	artisanFacade := app.MakeArtisan()
-	if artisanFacade == nil {
-		return nil, errors.ArtisanFacadeNotSet
 	}
 
 	databaseDriverCallback, exist := config.Get(fmt.Sprintf("database.connections.%s.via", connection)).(func() (driver.Driver, error))
@@ -52,10 +51,10 @@ func NewDatabase(app foundation.Application, connection string) (*Database, erro
 
 	return &Database{
 		DatabaseDriver: databaseDocker,
-		artisan:        artisanFacade,
+		artisan:        artisan,
 		config:         config,
 		connection:     connection,
-		orm:            app.MakeOrm(),
+		orm:            orm,
 	}, nil
 }
 

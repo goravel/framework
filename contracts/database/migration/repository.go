@@ -1,8 +1,8 @@
 package migration
 
 type File struct {
-	ID        uint
 	Migration string
+	ID        uint
 	Batch     int
 }
 

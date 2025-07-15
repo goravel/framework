@@ -1128,6 +1128,52 @@ func (_c *SchemaGrammar_CompilePrimary_Call) RunAndReturn(run func(driver.Bluepr
 	return _c
 }
 
+// CompilePrune provides a mock function with given fields: database
+func (_m *SchemaGrammar) CompilePrune(database string) string {
+	ret := _m.Called(database)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompilePrune")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(database)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// SchemaGrammar_CompilePrune_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompilePrune'
+type SchemaGrammar_CompilePrune_Call struct {
+	*mock.Call
+}
+
+// CompilePrune is a helper method to define mock.On call
+//   - database string
+func (_e *SchemaGrammar_Expecter) CompilePrune(database interface{}) *SchemaGrammar_CompilePrune_Call {
+	return &SchemaGrammar_CompilePrune_Call{Call: _e.mock.On("CompilePrune", database)}
+}
+
+func (_c *SchemaGrammar_CompilePrune_Call) Run(run func(database string)) *SchemaGrammar_CompilePrune_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *SchemaGrammar_CompilePrune_Call) Return(_a0 string) *SchemaGrammar_CompilePrune_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *SchemaGrammar_CompilePrune_Call) RunAndReturn(run func(string) string) *SchemaGrammar_CompilePrune_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CompileRename provides a mock function with given fields: blueprint, command
 func (_m *SchemaGrammar) CompileRename(blueprint driver.Blueprint, command *driver.Command) string {
 	ret := _m.Called(blueprint, command)
@@ -2707,6 +2753,52 @@ func (_c *SchemaGrammar_TypeTinyText_Call) Return(_a0 string) *SchemaGrammar_Typ
 }
 
 func (_c *SchemaGrammar_TypeTinyText_Call) RunAndReturn(run func(driver.ColumnDefinition) string) *SchemaGrammar_TypeTinyText_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TypeUuid provides a mock function with given fields: column
+func (_m *SchemaGrammar) TypeUuid(column driver.ColumnDefinition) string {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TypeUuid")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(driver.ColumnDefinition) string); ok {
+		r0 = rf(column)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// SchemaGrammar_TypeUuid_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TypeUuid'
+type SchemaGrammar_TypeUuid_Call struct {
+	*mock.Call
+}
+
+// TypeUuid is a helper method to define mock.On call
+//   - column driver.ColumnDefinition
+func (_e *SchemaGrammar_Expecter) TypeUuid(column interface{}) *SchemaGrammar_TypeUuid_Call {
+	return &SchemaGrammar_TypeUuid_Call{Call: _e.mock.On("TypeUuid", column)}
+}
+
+func (_c *SchemaGrammar_TypeUuid_Call) Run(run func(column driver.ColumnDefinition)) *SchemaGrammar_TypeUuid_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(driver.ColumnDefinition))
+	})
+	return _c
+}
+
+func (_c *SchemaGrammar_TypeUuid_Call) Return(_a0 string) *SchemaGrammar_TypeUuid_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *SchemaGrammar_TypeUuid_Call) RunAndReturn(run func(driver.ColumnDefinition) string) *SchemaGrammar_TypeUuid_Call {
 	_c.Call.Return(run)
 	return _c
 }

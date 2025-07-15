@@ -20,11 +20,11 @@ type Translator struct {
 	ctx        context.Context
 	fsLoader   translationcontract.Loader
 	fileLoader translationcontract.Loader
+	logger     logcontract.Log
+	selector   *MessageSelector
 	locale     string
 	fallback   string
-	selector   *MessageSelector
 	key        string
-	logger     logcontract.Log
 	mu         sync.Mutex
 }
 
@@ -161,7 +161,14 @@ func (t *Translator) SetLocale(locale string) context.Context {
 }
 
 func (t *Translator) getLine(locale string, group string, key string, options ...translationcontract.Option) string {
-	if err := t.load(locale, group); err != nil && !errors.Is(err, errors.LangFileNotExist) {
+	err := t.load(locale, group)
+	if err != nil {
+		if errors.Is(err, errors.LangFileNotExist) {
+			return ""
+		}
+		if errors.Is(err, errors.LangNoLoaderAvailable) {
+			return t.key
+		}
 		t.logger.Panic(err)
 		return t.key
 	}
@@ -191,8 +198,20 @@ func (t *Translator) load(locale string, group string) error {
 		return nil
 	}
 
-	translations, err := t.fileLoader.Load(locale, group)
-	if err != nil && t.fsLoader != nil {
+	// Check if no loaders are available
+	if t.fileLoader == nil && t.fsLoader == nil {
+		return errors.LangNoLoaderAvailable
+	}
+
+	var (
+		translations map[string]any
+		err          error
+	)
+
+	if t.fileLoader != nil {
+		translations, err = t.fileLoader.Load(locale, group)
+	}
+	if (len(translations) == 0 || err != nil) && t.fsLoader != nil {
 		translations, err = t.fsLoader.Load(locale, group)
 	}
 	if err != nil {

@@ -3,21 +3,22 @@
 package tests
 
 import (
+	"context"
 	"database/sql"
 	"testing"
 	"time"
 
-	"github.com/spf13/cast"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
-
 	"github.com/goravel/framework/contracts/database/db"
+	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/postgres"
 	"github.com/goravel/sqlite"
 	"github.com/goravel/sqlserver"
+	"github.com/spf13/cast"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
 type DBTestSuite struct {
@@ -41,6 +42,7 @@ func (s *DBTestSuite) SetupSuite() {
 func (s *DBTestSuite) SetupTest() {
 	for _, query := range s.queries {
 		query.CreateTable(TestTableProducts)
+		query.CreateTable(TestTableJsonData)
 	}
 }
 
@@ -151,14 +153,14 @@ func (s *DBTestSuite) TestCursor() {
 			})
 
 			s.Run("Bind Struct", func() {
-				rows, err := query.DB().Table("products").Cursor()
-				s.NoError(err)
+				rows := query.DB().Table("products").Cursor()
 
 				var products []Product
 				for row := range rows {
-					var product Product
-					err = row.Scan(&product)
+					s.NoError(row.Err())
 
+					var product Product
+					err := row.Scan(&product)
 					s.NoError(err)
 					s.True(product.ID > 0)
 
@@ -177,14 +179,14 @@ func (s *DBTestSuite) TestCursor() {
 			})
 
 			s.Run("Bind Map", func() {
-				rows, err := query.DB().Table("products").Cursor()
-				s.NoError(err)
+				rows := query.DB().Table("products").Cursor()
 
 				var products []map[string]any
 				for row := range rows {
-					var product map[string]any
-					err = row.Scan(&product)
+					s.NoError(row.Err())
 
+					var product map[string]any
+					err := row.Scan(&product)
 					s.NoError(err)
 					s.True(cast.ToUint(product["id"]) > 0)
 
@@ -200,6 +202,18 @@ func (s *DBTestSuite) TestCursor() {
 				s.Equal(200, cast.ToInt(products[1]["weight"]))
 				s.Equal(s.now, carbon.NewDateTime(carbon.FromStdTime(cast.ToTime(products[1]["created_at"]))))
 				s.Equal(s.now, carbon.NewDateTime(carbon.FromStdTime(cast.ToTime(products[1]["updated_at"]))))
+			})
+
+			s.Run("Cursor error", func() {
+				for row := range query.DB().Table("not_exist").Cursor() {
+					err1 := row.Err()
+					s.Error(err1)
+
+					err2 := row.Scan(map[string]any{})
+					s.Error(err2)
+
+					s.Equal(err1, err2)
+				}
 			})
 		})
 	}
@@ -299,6 +313,12 @@ func (s *DBTestSuite) TestDistinct() {
 
 			var products []Product
 			err := query.DB().Table("products").Distinct().Select("name").Get(&products)
+			s.NoError(err)
+			s.Equal(1, len(products))
+			s.Equal("distinct_product", products[0].Name)
+
+			var products1 []Product
+			err = query.DB().Table("products").Distinct("name").Get(&products1)
 			s.NoError(err)
 			s.Equal(1, len(products))
 			s.Equal("distinct_product", products[0].Name)
@@ -438,6 +458,7 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 
 				var product Product
 				err = query.DB().Table("products").Where("name", "single struct").Where("deleted_at", nil).First(&product)
+
 				s.NoError(err)
 				s.True(product.ID > 0)
 				s.Equal("single struct", product.Name)
@@ -678,6 +699,32 @@ func (s *DBTestSuite) TestLockForUpdate() {
 	}
 }
 
+func (s *DBTestSuite) TestOrderBy() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{Name: "value_product"},
+				{Name: "value_product1"},
+			})
+
+			var name string
+			err := query.DB().Table("products").OrderBy("id").Value("name", &name)
+			s.NoError(err)
+			s.Equal("value_product", name)
+
+			var name1 string
+			err = query.DB().Table("products").OrderBy("id", "desc").Value("name", &name1)
+			s.NoError(err)
+			s.Equal("value_product1", name1)
+
+			var name2 string
+			err = query.DB().Table("products").OrderByDesc("id").Value("name", &name2)
+			s.NoError(err)
+			s.Equal("value_product1", name2)
+		})
+	}
+}
+
 func (s *DBTestSuite) TestOffset() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
@@ -865,6 +912,36 @@ func (s *DBTestSuite) TestPluck() {
 			s.Equal([]string{"pluck_product1", "pluck_product2"}, names)
 		})
 	}
+}
+
+func (s *DBTestSuite) TestQueryLog() {
+	query := s.queries[postgres.Name]
+	ctx := context.Background()
+	ctx = databasedb.EnableQueryLog(ctx)
+
+	query.DB().WithContext(ctx).Table("products").Insert([]Product{
+		{Name: "query_log_product"},
+	})
+
+	var product Product
+	err := query.DB().WithContext(ctx).Table("products").Where("name", "query_log_product").First(&product)
+	s.NoError(err)
+	s.True(product.ID > 0)
+
+	queryLogs := databasedb.GetQueryLog(ctx)
+	s.Equal(2, len(queryLogs))
+	s.Equal("INSERT INTO products (name) VALUES ('query_log_product')", queryLogs[0].Query)
+	s.True(queryLogs[0].Time > 0)
+	s.Equal("SELECT * FROM products WHERE name = 'query_log_product'", queryLogs[1].Query)
+	s.True(queryLogs[1].Time > 0)
+
+	ctx = databasedb.DisableQueryLog(ctx)
+	query.DB().WithContext(ctx).Table("products").Insert([]Product{
+		{Name: "query_log_product"},
+	})
+
+	queryLogs = databasedb.GetQueryLog(ctx)
+	s.Equal(0, len(queryLogs))
 }
 
 func (s *DBTestSuite) TestRightJoin() {
@@ -1370,6 +1447,265 @@ func (s *DBTestSuite) TestWhereNot() {
 	}
 }
 
+func (s *DBTestSuite) TestJsonWhereClauses() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			data := []JsonData{
+				{
+					Model: Model{
+						Timestamps: Timestamps{
+							CreatedAt: s.now,
+							UpdatedAt: s.now,
+						},
+					},
+					Data: `{"string":"first","int":123,"float":123.456,"bool":true,"array":["abc","def","ghi"],"nested":{"string":"first","int":456},"objects":[{"level":"first","value":"abc"},{"level":"second","value":"def"}]}`,
+				},
+				{
+					Model: Model{
+						Timestamps: Timestamps{
+							CreatedAt: s.now,
+							UpdatedAt: s.now,
+						},
+					},
+					Data: `{"string":"second","int":123,"float":789.123,"bool":false,"array":["jkl","def","abc"]}`,
+				},
+			}
+			result, err := query.DB().Table("json_data").Insert(&data)
+			s.Equal(int64(2), result.RowsAffected)
+			s.NoError(err)
+
+			tests := []struct {
+				name   string
+				find   func(any, ...any) error
+				assert func([]JsonData)
+			}{
+				{
+					name: "string key",
+					find: query.DB().Table("json_data").Where("data->string", "first").Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 1)
+						s.JSONEq(data[0].Data, items[0].Data)
+					},
+				},
+				{
+					name: "int key",
+					find: query.DB().Table("json_data").Where("data->int", 123).Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 2)
+						s.JSONEq(data[0].Data, items[0].Data)
+						s.JSONEq(data[1].Data, items[1].Data)
+					},
+				},
+				{
+					name: "float key(multiple values)",
+					find: query.DB().Table("json_data").WhereIn("data->float", []any{123.456, 789.123}).Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 2)
+						s.JSONEq(data[0].Data, items[0].Data)
+						s.JSONEq(data[1].Data, items[1].Data)
+					},
+				},
+				{
+					name: "bool key(pointer)",
+					find: query.DB().Table("json_data").Where("data->bool", convert.Pointer(false)).Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 1)
+						s.JSONEq(data[1].Data, items[0].Data)
+					},
+				},
+				{
+					name: "nested key",
+					find: query.DB().Table("json_data").Where("data->nested->int", 456).Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 1)
+						s.JSONEq(data[0].Data, items[0].Data)
+					},
+				},
+				{
+					name: "nested key with array",
+					find: query.DB().Table("json_data").Where("data->objects[0]->level", "first").Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 1)
+						s.JSONEq(data[0].Data, items[0].Data)
+					},
+				},
+				{
+					name: "key exists",
+					find: query.DB().Table("json_data").WhereJsonContainsKey("data->nested->string").Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 1)
+						s.JSONEq(data[0].Data, items[0].Data)
+					},
+				},
+				{
+					name: "key does not exist",
+					find: query.DB().Table("json_data").WhereJsonDoesntContainKey("data->nested->string").Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 1)
+						s.JSONEq(data[1].Data, items[0].Data)
+					},
+				},
+				{
+					name: "array contains",
+					find: query.DB().Table("json_data").WhereJsonContains("data->array", "abc").Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 2)
+						s.JSONEq(data[0].Data, items[0].Data)
+						s.JSONEq(data[1].Data, items[1].Data)
+					},
+				},
+				{
+					name: "array does not contain",
+					find: query.DB().Table("json_data").WhereJsonDoesntContain("data->array", "abc").Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 0)
+					},
+				},
+				{
+					name: "array contains multiple values",
+					find: query.DB().Table("json_data").WhereJsonContains("data->array", []string{"abc", "def"}).Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 2)
+						s.JSONEq(data[0].Data, items[0].Data)
+						s.JSONEq(data[1].Data, items[1].Data)
+					},
+				},
+				{
+					name: "array length",
+					find: query.DB().Table("json_data").WhereJsonLength("data->array", 2).Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 0)
+					},
+				},
+				{
+					name: "array length greater than",
+					find: query.DB().Table("json_data").WhereJsonLength("data->array > ?", 2).Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 2)
+						s.JSONEq(data[0].Data, items[0].Data)
+						s.JSONEq(data[1].Data, items[1].Data)
+					},
+				},
+				{
+					name: "string or float key",
+					find: query.DB().Table("json_data").Where("data->string", "first").OrWhere("data->float", 789.123).Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 2)
+						s.JSONEq(data[0].Data, items[0].Data)
+						s.JSONEq(data[1].Data, items[1].Data)
+					},
+				},
+				{
+					name: "contains or key does not exist",
+					find: query.DB().Table("json_data").WhereJsonContains("data->array", "ghi").OrWhereJsonDoesntContainKey("data->nested->string").Find,
+					assert: func(items []JsonData) {
+						s.Len(items, 2)
+						s.JSONEq(data[0].Data, items[0].Data)
+						s.JSONEq(data[1].Data, items[1].Data)
+					},
+				},
+			}
+
+			for _, tt := range tests {
+				s.Run(tt.name, func() {
+					var items []JsonData
+					s.Nil(tt.find(&items))
+					tt.assert(items)
+				})
+			}
+		})
+	}
+}
+
+func (s *DBTestSuite) TestJsonColumnsUpdate() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			data := []JsonData{
+				{
+					Data: `{"string":"first","int":123,"float":123.456,"bool":true,"array":["abc","def","ghi"],"nested":{"string":"first","int":456},"objects":[{"level":"first","value":"abc"},{"level":"second","value":"def"}]}`,
+				},
+			}
+			result, err := query.DB().Table("json_data").Insert(&data)
+			s.Equal(int64(1), result.RowsAffected)
+			s.NoError(err)
+
+			tests := []struct {
+				name   string
+				update map[string]any
+				assert func(before JsonData, after JsonData)
+			}{
+				{
+					name:   "update string",
+					update: map[string]any{"data->string": "updated_first"},
+					assert: func(before JsonData, after JsonData) {
+						s.NotContains(before.Data, "updated_first")
+						s.Contains(after.Data, "updated_first")
+					},
+				},
+				{
+					name:   "update int",
+					update: map[string]any{"data->int": 789},
+					assert: func(before JsonData, after JsonData) {
+						s.NotContains(before.Data, "789")
+						s.Contains(after.Data, "789")
+					},
+				},
+				{
+					name:   "update float(pointer)",
+					update: map[string]any{"data->float": convert.Pointer(456.789)},
+					assert: func(before JsonData, after JsonData) {
+						s.NotContains(before.Data, "456.789")
+						s.Contains(after.Data, "456.789")
+					},
+				},
+				{
+					name:   "update array",
+					update: map[string]any{"data->array": []string{"uvw", "xyz"}},
+					assert: func(before JsonData, after JsonData) {
+						s.NotContains(before.Data, "uvw")
+						s.Contains(after.Data, "uvw")
+
+						s.NotContains(before.Data, "xyz")
+						s.Contains(after.Data, "xyz")
+					},
+				},
+				{
+					name: "update multiple keys",
+					update: map[string]any{
+						"data->bool":              false,
+						"data->objects[0]->level": "first_changed",
+						"data->nested->string":    "updated_nested_string",
+					},
+					assert: func(before JsonData, after JsonData) {
+						s.NotContains(before.Data, "false")
+						s.Contains(after.Data, "false")
+
+						s.NotContains(before.Data, "first_changed")
+						s.Contains(after.Data, "first_changed")
+
+						s.NotContains(before.Data, "updated_nested_string")
+						s.Contains(after.Data, "updated_nested_string")
+
+					},
+				},
+			}
+
+			for _, tt := range tests {
+				s.Run(tt.name, func() {
+					var before, after JsonData
+					s.NoError(query.DB().Table("json_data").First(&before))
+					res, err := query.DB().Table("json_data").Where("id", before.ID).Update(tt.update)
+					s.NoError(err)
+					s.Equal(int64(1), res.RowsAffected)
+					s.NoError(query.DB().Table("json_data").Where("id", before.ID).First(&after))
+					s.NotEqual(before.Data, after.Data)
+					tt.assert(before, after)
+				})
+			}
+		})
+	}
+}
+
 func TestDB_Connection(t *testing.T) {
 	t.Parallel()
 	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
@@ -1385,7 +1721,7 @@ func TestDB_Connection(t *testing.T) {
 
 	dbConfig := sqliteTestQuery.Driver().Pool().Writers[0]
 	sqliteConnection := dbConfig.Connection
-	mockDatabaseConfig(postgresTestQuery.MockConfig(), dbConfig, sqliteConnection, "", false)
+	mockDatabaseConfig(postgresTestQuery.MockConfig(), dbConfig)
 
 	result, err := postgresTestQuery.DB().Table("products").Insert(Product{
 		Name: "connection",
@@ -1424,7 +1760,16 @@ func TestDB_Connection(t *testing.T) {
 }
 
 func TestDbReadWriteSeparate(t *testing.T) {
-	dbs := NewTestQueryBuilder().AllOfReadWrite()
+	dbs := NewTestQueryBuilder().AllWithReadWrite()
+	defer func() {
+		docker, err := dbs[sqlite.Name]["read"].Driver().Docker()
+		assert.NoError(t, err)
+		assert.NoError(t, docker.Shutdown())
+
+		docker, err = dbs[sqlite.Name]["write"].Driver().Docker()
+		assert.NoError(t, err)
+		assert.NoError(t, docker.Shutdown())
+	}()
 
 	for drive, db := range dbs {
 		t.Run(drive, func(t *testing.T) {
@@ -1449,14 +1794,6 @@ func TestDbReadWriteSeparate(t *testing.T) {
 			assert.True(t, product4.ID > 0)
 		})
 	}
-
-	docker, err := dbs[sqlite.Name]["read"].Driver().Docker()
-	assert.NoError(t, err)
-	assert.NoError(t, docker.Shutdown())
-
-	docker, err = dbs[sqlite.Name]["write"].Driver().Docker()
-	assert.NoError(t, err)
-	assert.NoError(t, docker.Shutdown())
 }
 
 func Benchmark_DB(b *testing.B) {
