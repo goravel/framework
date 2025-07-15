@@ -14,7 +14,7 @@ type Status struct {
 type Migrator interface {
 	// Create a new migration file.
 	Create(name string, modelName string) (string, error)
-	// Fresh the migrations.
+	// Fresh migrations.
 	Fresh() error
 	// Reset the migrations.
 	Reset() error
@@ -22,6 +22,6 @@ type Migrator interface {
 	Rollback(step, batch int) error
 	// Run the migrations according to paths.
 	Run() error
-	// Status get the migration's status.
+	// Status gets the migration's status.
 	Status() ([]Status, error)
 }
