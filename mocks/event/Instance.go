@@ -20,132 +20,407 @@ func (_m *Instance) EXPECT() *Instance_Expecter {
 	return &Instance_Expecter{mock: &_m.Mock}
 }
 
-// GetEvents provides a mock function with no fields
-func (_m *Instance) GetEvents() map[event.Event][]event.Listener {
-	ret := _m.Called()
+// Dispatch provides a mock function with given fields: _a0, payload
+func (_m *Instance) Dispatch(_a0 interface{}, payload []event.Arg) []interface{} {
+	ret := _m.Called(_a0, payload)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetEvents")
+		panic("no return value specified for Dispatch")
 	}
 
-	var r0 map[event.Event][]event.Listener
-	if rf, ok := ret.Get(0).(func() map[event.Event][]event.Listener); ok {
-		r0 = rf()
+	var r0 []interface{}
+	if rf, ok := ret.Get(0).(func(interface{}, []event.Arg) []interface{}); ok {
+		r0 = rf(_a0, payload)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[event.Event][]event.Listener)
+			r0 = ret.Get(0).([]interface{})
 		}
 	}
 
 	return r0
 }
 
-// Instance_GetEvents_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetEvents'
-type Instance_GetEvents_Call struct {
+// Instance_Dispatch_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Dispatch'
+type Instance_Dispatch_Call struct {
 	*mock.Call
 }
 
-// GetEvents is a helper method to define mock.On call
-func (_e *Instance_Expecter) GetEvents() *Instance_GetEvents_Call {
-	return &Instance_GetEvents_Call{Call: _e.mock.On("GetEvents")}
+// Dispatch is a helper method to define mock.On call
+//   - _a0 interface{}
+//   - payload []event.Arg
+func (_e *Instance_Expecter) Dispatch(_a0 interface{}, payload interface{}) *Instance_Dispatch_Call {
+	return &Instance_Dispatch_Call{Call: _e.mock.On("Dispatch", _a0, payload)}
 }
 
-func (_c *Instance_GetEvents_Call) Run(run func()) *Instance_GetEvents_Call {
+func (_c *Instance_Dispatch_Call) Run(run func(_a0 interface{}, payload []event.Arg)) *Instance_Dispatch_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(interface{}), args[1].([]event.Arg))
+	})
+	return _c
+}
+
+func (_c *Instance_Dispatch_Call) Return(_a0 []interface{}) *Instance_Dispatch_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Instance_Dispatch_Call) RunAndReturn(run func(interface{}, []event.Arg) []interface{}) *Instance_Dispatch_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Flush provides a mock function with given fields: _a0
+func (_m *Instance) Flush(_a0 interface{}) {
+	_m.Called(_a0)
+}
+
+// Instance_Flush_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Flush'
+type Instance_Flush_Call struct {
+	*mock.Call
+}
+
+// Flush is a helper method to define mock.On call
+//   - _a0 interface{}
+func (_e *Instance_Expecter) Flush(_a0 interface{}) *Instance_Flush_Call {
+	return &Instance_Flush_Call{Call: _e.mock.On("Flush", _a0)}
+}
+
+func (_c *Instance_Flush_Call) Run(run func(_a0 interface{})) *Instance_Flush_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(interface{}))
+	})
+	return _c
+}
+
+func (_c *Instance_Flush_Call) Return() *Instance_Flush_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Instance_Flush_Call) RunAndReturn(run func(interface{})) *Instance_Flush_Call {
+	_c.Run(run)
+	return _c
+}
+
+// Forget provides a mock function with given fields: _a0
+func (_m *Instance) Forget(_a0 interface{}) {
+	_m.Called(_a0)
+}
+
+// Instance_Forget_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Forget'
+type Instance_Forget_Call struct {
+	*mock.Call
+}
+
+// Forget is a helper method to define mock.On call
+//   - _a0 interface{}
+func (_e *Instance_Expecter) Forget(_a0 interface{}) *Instance_Forget_Call {
+	return &Instance_Forget_Call{Call: _e.mock.On("Forget", _a0)}
+}
+
+func (_c *Instance_Forget_Call) Run(run func(_a0 interface{})) *Instance_Forget_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(interface{}))
+	})
+	return _c
+}
+
+func (_c *Instance_Forget_Call) Return() *Instance_Forget_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Instance_Forget_Call) RunAndReturn(run func(interface{})) *Instance_Forget_Call {
+	_c.Run(run)
+	return _c
+}
+
+// ForgetPushed provides a mock function with no fields
+func (_m *Instance) ForgetPushed() {
+	_m.Called()
+}
+
+// Instance_ForgetPushed_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ForgetPushed'
+type Instance_ForgetPushed_Call struct {
+	*mock.Call
+}
+
+// ForgetPushed is a helper method to define mock.On call
+func (_e *Instance_Expecter) ForgetPushed() *Instance_ForgetPushed_Call {
+	return &Instance_ForgetPushed_Call{Call: _e.mock.On("ForgetPushed")}
+}
+
+func (_c *Instance_ForgetPushed_Call) Run(run func()) *Instance_ForgetPushed_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run()
 	})
 	return _c
 }
 
-func (_c *Instance_GetEvents_Call) Return(_a0 map[event.Event][]event.Listener) *Instance_GetEvents_Call {
-	_c.Call.Return(_a0)
+func (_c *Instance_ForgetPushed_Call) Return() *Instance_ForgetPushed_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *Instance_GetEvents_Call) RunAndReturn(run func() map[event.Event][]event.Listener) *Instance_GetEvents_Call {
-	_c.Call.Return(run)
+func (_c *Instance_ForgetPushed_Call) RunAndReturn(run func()) *Instance_ForgetPushed_Call {
+	_c.Run(run)
 	return _c
 }
 
-// Job provides a mock function with given fields: _a0, args
-func (_m *Instance) Job(_a0 event.Event, args []event.Arg) event.Task {
-	ret := _m.Called(_a0, args)
+// GetListeners provides a mock function with given fields: _a0
+func (_m *Instance) GetListeners(_a0 interface{}) []interface{} {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Job")
+		panic("no return value specified for GetListeners")
 	}
 
-	var r0 event.Task
-	if rf, ok := ret.Get(0).(func(event.Event, []event.Arg) event.Task); ok {
-		r0 = rf(_a0, args)
+	var r0 []interface{}
+	if rf, ok := ret.Get(0).(func(interface{}) []interface{}); ok {
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(event.Task)
+			r0 = ret.Get(0).([]interface{})
 		}
 	}
 
 	return r0
 }
 
-// Instance_Job_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Job'
-type Instance_Job_Call struct {
+// Instance_GetListeners_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetListeners'
+type Instance_GetListeners_Call struct {
 	*mock.Call
 }
 
-// Job is a helper method to define mock.On call
-//   - _a0 event.Event
-//   - args []event.Arg
-func (_e *Instance_Expecter) Job(_a0 interface{}, args interface{}) *Instance_Job_Call {
-	return &Instance_Job_Call{Call: _e.mock.On("Job", _a0, args)}
+// GetListeners is a helper method to define mock.On call
+//   - _a0 interface{}
+func (_e *Instance_Expecter) GetListeners(_a0 interface{}) *Instance_GetListeners_Call {
+	return &Instance_GetListeners_Call{Call: _e.mock.On("GetListeners", _a0)}
 }
 
-func (_c *Instance_Job_Call) Run(run func(_a0 event.Event, args []event.Arg)) *Instance_Job_Call {
+func (_c *Instance_GetListeners_Call) Run(run func(_a0 interface{})) *Instance_GetListeners_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(event.Event), args[1].([]event.Arg))
+		run(args[0].(interface{}))
 	})
 	return _c
 }
 
-func (_c *Instance_Job_Call) Return(_a0 event.Task) *Instance_Job_Call {
+func (_c *Instance_GetListeners_Call) Return(_a0 []interface{}) *Instance_GetListeners_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Instance_Job_Call) RunAndReturn(run func(event.Event, []event.Arg) event.Task) *Instance_Job_Call {
+func (_c *Instance_GetListeners_Call) RunAndReturn(run func(interface{}) []interface{}) *Instance_GetListeners_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Register provides a mock function with given fields: _a0
-func (_m *Instance) Register(_a0 map[event.Event][]event.Listener) {
-	_m.Called(_a0)
+// HasListeners provides a mock function with given fields: _a0
+func (_m *Instance) HasListeners(_a0 interface{}) bool {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for HasListeners")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(interface{}) bool); ok {
+		r0 = rf(_a0)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
 }
 
-// Instance_Register_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Register'
-type Instance_Register_Call struct {
+// Instance_HasListeners_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HasListeners'
+type Instance_HasListeners_Call struct {
 	*mock.Call
 }
 
-// Register is a helper method to define mock.On call
-//   - _a0 map[event.Event][]event.Listener
-func (_e *Instance_Expecter) Register(_a0 interface{}) *Instance_Register_Call {
-	return &Instance_Register_Call{Call: _e.mock.On("Register", _a0)}
+// HasListeners is a helper method to define mock.On call
+//   - _a0 interface{}
+func (_e *Instance_Expecter) HasListeners(_a0 interface{}) *Instance_HasListeners_Call {
+	return &Instance_HasListeners_Call{Call: _e.mock.On("HasListeners", _a0)}
 }
 
-func (_c *Instance_Register_Call) Run(run func(_a0 map[event.Event][]event.Listener)) *Instance_Register_Call {
+func (_c *Instance_HasListeners_Call) Run(run func(_a0 interface{})) *Instance_HasListeners_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(map[event.Event][]event.Listener))
+		run(args[0].(interface{}))
 	})
 	return _c
 }
 
-func (_c *Instance_Register_Call) Return() *Instance_Register_Call {
+func (_c *Instance_HasListeners_Call) Return(_a0 bool) *Instance_HasListeners_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Instance_HasListeners_Call) RunAndReturn(run func(interface{}) bool) *Instance_HasListeners_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// HasWildcardListeners provides a mock function with given fields: _a0
+func (_m *Instance) HasWildcardListeners(_a0 interface{}) bool {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for HasWildcardListeners")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(interface{}) bool); ok {
+		r0 = rf(_a0)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// Instance_HasWildcardListeners_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HasWildcardListeners'
+type Instance_HasWildcardListeners_Call struct {
+	*mock.Call
+}
+
+// HasWildcardListeners is a helper method to define mock.On call
+//   - _a0 interface{}
+func (_e *Instance_Expecter) HasWildcardListeners(_a0 interface{}) *Instance_HasWildcardListeners_Call {
+	return &Instance_HasWildcardListeners_Call{Call: _e.mock.On("HasWildcardListeners", _a0)}
+}
+
+func (_c *Instance_HasWildcardListeners_Call) Run(run func(_a0 interface{})) *Instance_HasWildcardListeners_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(interface{}))
+	})
+	return _c
+}
+
+func (_c *Instance_HasWildcardListeners_Call) Return(_a0 bool) *Instance_HasWildcardListeners_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Instance_HasWildcardListeners_Call) RunAndReturn(run func(interface{}) bool) *Instance_HasWildcardListeners_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Listen provides a mock function with given fields: events, listener
+func (_m *Instance) Listen(events interface{}, listener interface{}) {
+	_m.Called(events, listener)
+}
+
+// Instance_Listen_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Listen'
+type Instance_Listen_Call struct {
+	*mock.Call
+}
+
+// Listen is a helper method to define mock.On call
+//   - events interface{}
+//   - listener interface{}
+func (_e *Instance_Expecter) Listen(events interface{}, listener interface{}) *Instance_Listen_Call {
+	return &Instance_Listen_Call{Call: _e.mock.On("Listen", events, listener)}
+}
+
+func (_c *Instance_Listen_Call) Run(run func(events interface{}, listener interface{})) *Instance_Listen_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(interface{}), args[1].(interface{}))
+	})
+	return _c
+}
+
+func (_c *Instance_Listen_Call) Return() *Instance_Listen_Call {
 	_c.Call.Return()
 	return _c
 }
 
-func (_c *Instance_Register_Call) RunAndReturn(run func(map[event.Event][]event.Listener)) *Instance_Register_Call {
+func (_c *Instance_Listen_Call) RunAndReturn(run func(interface{}, interface{})) *Instance_Listen_Call {
 	_c.Run(run)
+	return _c
+}
+
+// Push provides a mock function with given fields: _a0, payload
+func (_m *Instance) Push(_a0 interface{}, payload []event.Arg) {
+	_m.Called(_a0, payload)
+}
+
+// Instance_Push_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Push'
+type Instance_Push_Call struct {
+	*mock.Call
+}
+
+// Push is a helper method to define mock.On call
+//   - _a0 interface{}
+//   - payload []event.Arg
+func (_e *Instance_Expecter) Push(_a0 interface{}, payload interface{}) *Instance_Push_Call {
+	return &Instance_Push_Call{Call: _e.mock.On("Push", _a0, payload)}
+}
+
+func (_c *Instance_Push_Call) Run(run func(_a0 interface{}, payload []event.Arg)) *Instance_Push_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(interface{}), args[1].([]event.Arg))
+	})
+	return _c
+}
+
+func (_c *Instance_Push_Call) Return() *Instance_Push_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Instance_Push_Call) RunAndReturn(run func(interface{}, []event.Arg)) *Instance_Push_Call {
+	_c.Run(run)
+	return _c
+}
+
+// Until provides a mock function with given fields: _a0, payload
+func (_m *Instance) Until(_a0 interface{}, payload []event.Arg) interface{} {
+	ret := _m.Called(_a0, payload)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Until")
+	}
+
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func(interface{}, []event.Arg) interface{}); ok {
+		r0 = rf(_a0, payload)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(interface{})
+		}
+	}
+
+	return r0
+}
+
+// Instance_Until_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Until'
+type Instance_Until_Call struct {
+	*mock.Call
+}
+
+// Until is a helper method to define mock.On call
+//   - _a0 interface{}
+//   - payload []event.Arg
+func (_e *Instance_Expecter) Until(_a0 interface{}, payload interface{}) *Instance_Until_Call {
+	return &Instance_Until_Call{Call: _e.mock.On("Until", _a0, payload)}
+}
+
+func (_c *Instance_Until_Call) Run(run func(_a0 interface{}, payload []event.Arg)) *Instance_Until_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(interface{}), args[1].([]event.Arg))
+	})
+	return _c
+}
+
+func (_c *Instance_Until_Call) Return(_a0 interface{}) *Instance_Until_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Instance_Until_Call) RunAndReturn(run func(interface{}, []event.Arg) interface{}) *Instance_Until_Call {
+	_c.Call.Return(run)
 	return _c
 }
 
