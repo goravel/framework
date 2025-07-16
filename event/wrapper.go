@@ -1,25 +1,25 @@
 package event
 
 import (
-	"github.com/davecgh/go-spew/spew"
 	"github.com/goravel/framework/contracts/event"
 )
 
-// eventQueueWrapper wraps EventQueueListener to implement QueueListener interface
 type eventQueueWrapper struct {
 	listener event.EventQueueListener
 	event    any
 }
 
+// Handle processes the event using the wrapped EventQueueListener.
 func (w *eventQueueWrapper) Handle(args ...any) error {
-	spew.Dump("============", w.event)
 	return w.listener.Handle(w.event, args...)
 }
 
+// ShouldQueue determines if this listener should be queued.
 func (w *eventQueueWrapper) ShouldQueue() bool {
 	return w.listener.ShouldQueue()
 }
 
+// Signature returns the unique identifier for this listener.
 func (w *eventQueueWrapper) Signature() string {
 	return w.listener.Signature()
 }
