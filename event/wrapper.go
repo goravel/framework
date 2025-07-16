@@ -45,9 +45,9 @@ func (w *eventQueueWrapper) Signature() string {
 //
 //	queueListener := eventToQueueListener(myEventListener, "user.created")
 //	queue.Job(queueListener).Dispatch()
-func eventToQueueListener(listener event.EventQueueListener, event any) event.QueueListener {
+func eventToQueueListener(listener event.EventQueueListener, evt any) event.QueueListener {
 	return &eventQueueWrapper{
 		listener: listener,
-		event:    event,
+		event:    evt,
 	}
 }

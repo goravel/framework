@@ -114,9 +114,9 @@ func (app *Application) Dispatch(evt any, payload ...[]event.Arg) []any {
 //
 //	// Process all pushed user.created events at once
 //	app.Flush("user.created")
-func (app *Application) Flush(event any) {
+func (app *Application) Flush(evt any) {
 	app.mu.Lock()
-	eventName := app.getEventName(event)
+	eventName := app.getEventName(evt)
 
 	payloads, exists := app.pushed[eventName]
 	if exists {
@@ -141,11 +141,11 @@ func (app *Application) Flush(event any) {
 //
 //	// Remove all listeners for a wildcard pattern
 //	app.Forget("user.*")
-func (app *Application) Forget(event any) {
+func (app *Application) Forget(evt any) {
 	app.mu.Lock()
 	defer app.mu.Unlock()
 
-	eventName := app.getEventName(event)
+	eventName := app.getEventName(evt)
 
 	if strings.Contains(eventName, "*") {
 		delete(app.wildcards, eventName)
@@ -154,7 +154,7 @@ func (app *Application) Forget(event any) {
 	}
 
 	// Clear related cache entries for performance
-	for key, _ := range app.wildcardsCache {
+	for key := range app.wildcardsCache {
 		if str.Of(app.getEventName(key)).Is(eventName) {
 			delete(app.wildcardsCache, key)
 		}
@@ -187,11 +187,11 @@ func (app *Application) ForgetPushed() {
 //
 //	listeners := app.GetListeners("user.created")
 //	fmt.Printf("Found %d listeners for user.created\n", len(listeners))
-func (app *Application) GetListeners(event any) []any {
+func (app *Application) GetListeners(evt any) []any {
 	app.mu.RLock()
 	defer app.mu.RUnlock()
 
-	return app.prepareListeners(app.getEventName(event))
+	return app.prepareListeners(app.getEventName(evt))
 }
 
 // HasListeners checks if there are any listeners registered for a specific event.
@@ -203,11 +203,11 @@ func (app *Application) GetListeners(event any) []any {
 //	if app.HasListeners("user.created") {
 //		fmt.Println("User creation listeners are registered")
 //	}
-func (app *Application) HasListeners(event any) bool {
+func (app *Application) HasListeners(evt any) bool {
 	app.mu.RLock()
 	defer app.mu.RUnlock()
 
-	eventName := app.getEventName(event)
+	eventName := app.getEventName(evt)
 
 	// Check direct listeners first (fastest)
 	if listeners, exists := app.listeners[eventName]; exists && len(listeners) > 0 {
@@ -235,7 +235,7 @@ func (app *Application) HasWildcardListeners(eventName any) bool {
 	defer app.mu.RUnlock()
 
 	eventNameStr := app.getEventName(eventName)
-	for event, _ := range app.wildcards {
+	for event := range app.wildcards {
 		if str.Of(eventNameStr).Is(app.getEventName(event)) {
 			return true
 		}
@@ -326,11 +326,11 @@ func (app *Application) Listen(events any, listener ...any) error {
 //
 //	// Process all pushed events later
 //	app.Flush("user.created")
-func (app *Application) Push(event any, payload []event.Arg) {
+func (app *Application) Push(evt any, payload []event.Arg) {
 	app.mu.Lock()
 	defer app.mu.Unlock()
 
-	eventName := app.getEventName(event)
+	eventName := app.getEventName(evt)
 
 	app.pushed[eventName] = append(app.pushed[eventName], payload...)
 }
@@ -403,7 +403,7 @@ func (app *Application) isEventType(t reflect.Type) bool {
 	return t.Kind() == reflect.Ptr && t.Elem().Implements(reflect.TypeOf((*event.Event)(nil)).Elem())
 }
 
-func (app *Application) callReflectListener(listener any, event any, payload []any) any {
+func (app *Application) callReflectListener(listener any, evt any, payload []any) any {
 	listenerValue := reflect.ValueOf(listener)
 	listenerType := listenerValue.Type()
 
@@ -416,7 +416,7 @@ func (app *Application) callReflectListener(listener any, event any, payload []a
 	args := make([]reflect.Value, 0, numIn)
 
 	if numIn > 0 && app.isEventType(listenerType.In(0)) {
-		args = append(args, reflect.ValueOf(event))
+		args = append(args, reflect.ValueOf(evt))
 	}
 
 	// Fill arguments from payload
@@ -493,11 +493,11 @@ func (app *Application) getWildcardListeners(eventName any) []any {
 	return wildcardListeners
 }
 
-func (app *Application) invokeListeners(event any, payload []event.Arg, halt bool) []any {
+func (app *Application) invokeListeners(evt any, payload []event.Arg, halt bool) []any {
 	var responses []any
-	listeners := app.prepareListeners(app.getEventName(event))
+	listeners := app.prepareListeners(app.getEventName(evt))
 	for _, listener := range listeners {
-		response := app.callListener(listener, event, payload)
+		response := app.callListener(listener, evt, payload)
 		if response != nil {
 			responses = append(responses, response)
 			if halt {
@@ -528,7 +528,7 @@ func (app *Application) prepareListeners(event string) []any {
 	return allListeners
 }
 
-func (app *Application) queueListener(listener event.QueueListener, event any, payload []event.Arg) any {
+func (app *Application) queueListener(listener event.QueueListener, evt any, payload []event.Arg) any {
 	task := app.queue.Job(listener, eventArgsToQueueArgs(payload))
 
 	// Use reflection to call optional configuration methods
@@ -561,7 +561,7 @@ func (app *Application) queueListener(listener event.QueueListener, event any, p
 		}
 	}
 
-	task.Dispatch()
+	_ = task.Dispatch()
 
 	return nil
 }
