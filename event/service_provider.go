@@ -23,8 +23,11 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 	}
 }
 
+var App foundation.Application
+
 func (r *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(binding.Event, func(app foundation.Application) (any, error) {
+		App = app
 		queueFacade := app.MakeQueue()
 		if queueFacade == nil {
 			return nil, errors.QueueFacadeNotSet.SetModule(errors.ModuleEvent)
