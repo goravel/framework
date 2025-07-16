@@ -4,7 +4,7 @@ type Event interface{}
 
 type Instance interface {
 	// Dispatch fires an event and calls the listeners.
-	Dispatch(event any, payload []Arg) []any
+	Dispatch(event any, payload ...[]Arg) []any
 
 	// Flush flushes all pushed events.
 	Flush(event any)
@@ -27,7 +27,7 @@ type Instance interface {
 	// Listen registers an event listener with the dispatcher.
 	// events can be: string, []string, Event, []Event, or any other type
 	// listener can be: function, class, or any callable
-	Listen(events any, listener any)
+	Listen(events any, listener ...any) error
 
 	// Push pushes an event to be fired at the end of the request.
 	Push(event any, payload []Arg)
