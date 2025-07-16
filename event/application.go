@@ -1,3 +1,30 @@
+// Package event provides a comprehensive event dispatching system for the Goravel framework.
+// It supports synchronous and asynchronous event handling, wildcard event listening,
+// and queued event processing. The event system is thread-safe and optimized for performance.
+//
+// Example usage:
+//
+//	// Create an event dispatcher
+//	app := event.NewApplication(queue)
+//
+//	// Listen to specific events
+//	app.Listen("user.created", func(args ...any) error {
+//		// Handle user creation
+//		return nil
+//	})
+//
+//	// Listen with wildcard patterns
+//	app.Listen("user.*", func(args ...any) error {
+//		// Handle all user events
+//		return nil
+//	})
+//
+//	// Dispatch events
+//	app.Dispatch("user.created", []event.Arg{{Value: user, Type: "User"}})
+//
+//	// Push events for later processing
+//	app.Push("user.created", []event.Arg{{Value: user, Type: "User"}})
+//	app.Flush("user.created") // Process all pushed events
 package event
 
 import (
@@ -12,15 +39,25 @@ import (
 	"github.com/goravel/framework/support/str"
 )
 
+// Application is the main event dispatcher that handles event registration, dispatch, and queuing.
+// It provides thread-safe operations with read-write mutexes and maintains separate storage for
+// direct listeners, wildcard listeners, and deferred events.
 type Application struct {
-	listeners      map[string][]any       // Direct event listeners
-	wildcards      map[string][]any       // Wildcard pattern listeners
-	wildcardsCache map[string][]any       // Cache for wildcard matching performance
+	listeners      map[string][]any       // Direct event listeners mapped by event name
+	wildcards      map[string][]any       // Wildcard pattern listeners (e.g., "user.*")
+	wildcardsCache map[string][]any       // Cache for wildcard matching performance optimization
 	pushed         map[string][]event.Arg // Deferred events for batch processing
-	mu             sync.RWMutex           // Thread-safe operations
+	mu             sync.RWMutex           // Thread-safe operations mutex
 	queue          queue.Queue            // Queue for asynchronous processing
 }
 
+// NewApplication creates a new event dispatcher instance with the provided queue system.
+// The queue is used for asynchronous event processing when listeners implement ShouldQueue.
+//
+// Example:
+//
+//	queue := queue.NewApplication()
+//	eventDispatcher := event.NewApplication(queue)
 func NewApplication(queue queue.Queue) *Application {
 	return &Application{
 		queue:          queue,
@@ -31,6 +68,27 @@ func NewApplication(queue queue.Queue) *Application {
 	}
 }
 
+// Dispatch fires an event and calls all registered listeners for that event.
+// It supports both direct event names and wildcard patterns, and returns all listener responses.
+// This method is thread-safe and can be called concurrently.
+//
+// Parameters:
+//   - evt: Can be a string, event.Event interface, or any other type
+//   - payload: Optional arguments to pass to event listeners
+//
+// Returns: A slice containing all non-nil responses from event listeners
+//
+// Example:
+//
+//	// Dispatch a string event
+//	responses := app.Dispatch("user.created", []event.Arg{{Value: user, Type: "User"}})
+//
+//	// Dispatch a struct event
+//	type UserCreated struct { User User }
+//	responses := app.Dispatch(&UserCreated{User: user})
+//
+//	// Dispatch without payload
+//	responses := app.Dispatch("app.started")
 func (app *Application) Dispatch(evt any, payload ...[]event.Arg) []any {
 	app.mu.RLock()
 	defer app.mu.RUnlock()
@@ -44,22 +102,45 @@ func (app *Application) Dispatch(evt any, payload ...[]event.Arg) []any {
 	return app.invokeListeners(evt, args, false)
 }
 
+// Flush processes all pushed events for a specific event type and then clears them.
+// This is useful for batch processing events that were deferred using Push().
+// The method is thread-safe and dispatches events outside the lock to prevent deadlocks.
+//
+// Example:
+//
+//	// Push multiple events
+//	app.Push("user.created", []event.Arg{{Value: user1, Type: "User"}})
+//	app.Push("user.created", []event.Arg{{Value: user2, Type: "User"}})
+//
+//	// Process all pushed user.created events at once
+//	app.Flush("user.created")
 func (app *Application) Flush(event any) {
 	app.mu.Lock()
-	defer app.mu.Unlock()
-
 	eventName := app.getEventName(event)
 
-	if payloads, exists := app.pushed[eventName]; exists {
+	payloads, exists := app.pushed[eventName]
+	if exists {
 		delete(app.pushed, eventName)
-		app.mu.Unlock()
+	}
+	app.mu.Unlock()
 
+	// Dispatch outside of lock to avoid deadlock
+	if exists {
 		app.Dispatch(eventName, payloads)
-
-		app.mu.Lock()
 	}
 }
 
+// Forget removes all listeners for a specific event or wildcard pattern.
+// This method also clears related cache entries to maintain performance.
+// It distinguishes between direct listeners and wildcard listeners automatically.
+//
+// Example:
+//
+//	// Remove all listeners for a specific event
+//	app.Forget("user.created")
+//
+//	// Remove all listeners for a wildcard pattern
+//	app.Forget("user.*")
 func (app *Application) Forget(event any) {
 	app.mu.Lock()
 	defer app.mu.Unlock()
@@ -80,6 +161,17 @@ func (app *Application) Forget(event any) {
 	}
 }
 
+// ForgetPushed clears all pushed events without processing them.
+// This is useful when you want to discard deferred events without executing them.
+//
+// Example:
+//
+//	// Push some events
+//	app.Push("user.created", []event.Arg{{Value: user, Type: "User"}})
+//	app.Push("order.placed", []event.Arg{{Value: order, Type: "Order"}})
+//
+//	// Discard all pushed events
+//	app.ForgetPushed()
 func (app *Application) ForgetPushed() {
 	app.mu.Lock()
 	defer app.mu.Unlock()
@@ -87,6 +179,14 @@ func (app *Application) ForgetPushed() {
 	app.pushed = make(map[string][]event.Arg)
 }
 
+// GetListeners returns all listeners registered for a specific event.
+// This includes both direct listeners and wildcard listeners that match the event.
+// The method uses caching to optimize wildcard matching performance.
+//
+// Example:
+//
+//	listeners := app.GetListeners("user.created")
+//	fmt.Printf("Found %d listeners for user.created\n", len(listeners))
 func (app *Application) GetListeners(event any) []any {
 	app.mu.RLock()
 	defer app.mu.RUnlock()
@@ -94,6 +194,15 @@ func (app *Application) GetListeners(event any) []any {
 	return app.prepareListeners(app.getEventName(event))
 }
 
+// HasListeners checks if there are any listeners registered for a specific event.
+// It performs an optimized check by first looking at direct listeners (fastest),
+// then wildcard listeners, and finally wildcard pattern matches.
+//
+// Example:
+//
+//	if app.HasListeners("user.created") {
+//		fmt.Println("User creation listeners are registered")
+//	}
 func (app *Application) HasListeners(event any) bool {
 	app.mu.RLock()
 	defer app.mu.RUnlock()
@@ -114,6 +223,13 @@ func (app *Application) HasListeners(event any) bool {
 	return app.HasWildcardListeners(eventName)
 }
 
+// HasWildcardListeners checks if there are any wildcard listeners that match the given event.
+// It iterates through all registered wildcard patterns to find matches.
+//
+// Example:
+//
+//	app.Listen("user.*", listener)
+//	hasListeners := app.HasWildcardListeners("user.created") // Returns true
 func (app *Application) HasWildcardListeners(eventName any) bool {
 	app.mu.RLock()
 	defer app.mu.RUnlock()
@@ -128,6 +244,31 @@ func (app *Application) HasWildcardListeners(eventName any) bool {
 	return false
 }
 
+// Listen registers event listeners for one or more events.
+// It supports various event types and listener formats:
+//   - Events: string, []string, event.Event, []event.Event, or any custom type
+//   - Listeners: functions, structs implementing listener interfaces, or closures
+//
+// The method automatically handles queue registration for listeners that implement ShouldQueue.
+// Wildcard patterns (containing "*") are supported for flexible event matching.
+//
+// Examples:
+//
+//	// Listen to a single string event
+//	app.Listen("user.created", func(args ...any) error {
+//		return nil
+//	})
+//
+//	// Listen to multiple events
+//	app.Listen([]string{"user.created", "user.updated"}, listener)
+//
+//	// Listen to wildcard events
+//	app.Listen("user.*", func(args ...any) error {
+//		return nil
+//	})
+//
+//	// Listen with event structs
+//	app.Listen(UserCreatedEvent{}, &UserCreatedListener{})
 func (app *Application) Listen(events any, listener ...any) error {
 	app.mu.Lock()
 	defer app.mu.Unlock()
@@ -173,6 +314,18 @@ func (app *Application) Listen(events any, listener ...any) error {
 	return nil
 }
 
+// Push adds an event to the deferred events queue without immediately dispatching it.
+// This is useful for batch processing events at a later time using Flush().
+// Events are stored by their name and can accumulate multiple payloads.
+//
+// Example:
+//
+//	// Push events for later processing
+//	app.Push("user.created", []event.Arg{{Value: user1, Type: "User"}})
+//	app.Push("user.created", []event.Arg{{Value: user2, Type: "User"}})
+//
+//	// Process all pushed events later
+//	app.Flush("user.created")
 func (app *Application) Push(event any, payload []event.Arg) {
 	app.mu.Lock()
 	defer app.mu.Unlock()
@@ -182,6 +335,24 @@ func (app *Application) Push(event any, payload []event.Arg) {
 	app.pushed[eventName] = append(app.pushed[eventName], payload...)
 }
 
+// Until fires an event and returns the first non-null response from listeners.
+// This is useful for validation or filtering scenarios where you want to stop
+// at the first listener that returns a meaningful result.
+//
+// Example:
+//
+//	// Register validation listeners
+//	app.Listen("user.validate", func(args ...any) any {
+//		if user.Email == "" {
+//			return "Email is required"
+//		}
+//		return nil // Continue to next listener
+//	})
+//
+//	// Get first validation error
+//	if err := app.Until("user.validate", []event.Arg{{Value: user, Type: "User"}}); err != nil {
+//		fmt.Println("Validation failed:", err)
+//	}
 func (app *Application) Until(eventName any, payload []event.Arg) any {
 	app.mu.RLock()
 	defer app.mu.RUnlock()

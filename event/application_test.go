@@ -298,24 +298,30 @@ func TestApplication_FunctionListener_Variants(t *testing.T) {
 
 	var stringEventCalled, anyEventCalled, varArgsCalled bool
 
-	// Test string event function
-	app.Listen("test.string", func(eventName string, args ...any) any {
+	// Test string event function (func(string, ...any) error pattern)
+	app.Listen("test.string", func(eventName string, args ...any) error {
 		stringEventCalled = true
 		assert.Equal(t, "test.string", eventName)
-		return "string event response"
+		assert.Len(t, args, 1)
+		assert.Equal(t, "test", args[0])
+		return nil
 	})
 
-	// Test any event function
-	app.Listen("test.any", func(event any, args ...any) any {
+	// Test any event function (func(any, ...any) error pattern)
+	app.Listen("test.any", func(event any, args ...any) error {
 		anyEventCalled = true
 		assert.Equal(t, "test.any", event)
-		return "any event response"
+		assert.Len(t, args, 1)
+		assert.Equal(t, "test", args[0])
+		return nil
 	})
 
-	// Test variadic args function
-	app.Listen("test.varargs", func(args ...any) any {
+	// Test variadic args function (func(...any) error pattern)
+	app.Listen("test.varargs", func(args ...any) error {
 		varArgsCalled = true
-		return "varargs response"
+		assert.Len(t, args, 1)
+		assert.Equal(t, "test", args[0])
+		return nil
 	})
 
 	// Dispatch events
@@ -476,4 +482,242 @@ func BenchmarkApplication_Dispatch_WildcardListeners(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		app.Dispatch("benchmark.test", args)
 	}
+}
+
+// =============================================================================
+// ADDITIONAL COVERAGE TESTS
+// =============================================================================
+
+func TestApplication_GetEventName_AllTypes(t *testing.T) {
+	mockQueue := mocksqueue.NewQueue(t)
+	app := NewApplication(mockQueue)
+
+	// Test string event
+	assert.Equal(t, "test.event", app.getEventName("test.event"))
+
+	// Test event with signature
+	sigEvent := &TestSignatureEvent{}
+	assert.Equal(t, "custom.signature", app.getEventName(sigEvent))
+
+	// Test regular event struct
+	testEvent := TestEvent{Name: "test", ID: 1}
+	assert.Equal(t, "TestEvent", app.getEventName(testEvent))
+
+	// Test pointer to event struct
+	assert.Equal(t, "TestEvent", app.getEventName(&testEvent))
+
+	// Test nil event
+	assert.Equal(t, "", app.getEventName(nil))
+}
+
+func TestApplication_EventQueueListener_Integration(t *testing.T) {
+	mockQueue := mocksqueue.NewQueue(t)
+	app := NewApplication(mockQueue)
+
+	eventQueueListener := &TestEventQueueListener{
+		ShouldQueueValue: true,
+		SignatureValue:   "test.event.queue",
+	}
+
+	// Mock queue expectations for registration
+	mockQueue.EXPECT().Register(mock.MatchedBy(func(jobs []queue.Job) bool {
+		return len(jobs) == 1
+	})).Once()
+
+	// Register event queue listener
+	app.Listen("test.event", eventQueueListener)
+
+	// Test that the listener was registered
+	assert.True(t, app.HasListeners("test.event"))
+}
+
+func TestApplication_Listen_ClosureEventListener(t *testing.T) {
+	mockQueue := mocksqueue.NewQueue(t)
+	app := NewApplication(mockQueue)
+
+	var called bool
+	var receivedEvent any
+
+	// Test closure that takes event.Event parameter
+	app.Listen(func(evt *TestEvent) error {
+		called = true
+		receivedEvent = evt
+		return nil
+	})
+
+	testEvent := &TestEvent{Name: "test", ID: 1}
+	app.Dispatch(testEvent)
+
+	assert.True(t, called)
+	assert.Equal(t, testEvent, receivedEvent)
+}
+
+func TestApplication_Listen_InvalidEventType(t *testing.T) {
+	mockQueue := mocksqueue.NewQueue(t)
+	app := NewApplication(mockQueue)
+
+	// Test with nil event (should use reflection and get empty string)
+	err := app.Listen(nil, func(args ...any) error { return nil })
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid event type")
+}
+
+func TestApplication_Listen_NoListener(t *testing.T) {
+	mockQueue := mocksqueue.NewQueue(t)
+	app := NewApplication(mockQueue)
+
+	// Test with no listener provided
+	err := app.Listen("test.event")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "listener is required")
+
+	// Test with closure but no event parameter
+	err = app.Listen(func() error { return nil })
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "listener is required")
+}
+
+func TestApplication_CallListener_AllTypes(t *testing.T) {
+	mockQueue := mocksqueue.NewQueue(t)
+	app := NewApplication(mockQueue)
+
+	args := []event.Arg{{Value: "test", Type: "string"}}
+
+	// Test event.Listener
+	listener := &TestListener{}
+	app.callListener(listener, "test.event", args)
+	assert.True(t, listener.Called)
+
+	// Test event.EventListener
+	eventListener := &TestEventListener{}
+	app.callListener(eventListener, "test.event", args)
+	assert.True(t, eventListener.Called)
+
+	// Test func(any) error
+	var anyEventCalled bool
+	app.callListener(func(evt any) error {
+		anyEventCalled = true
+		assert.Equal(t, "test.event", evt)
+		return nil
+	}, "test.event", args)
+	assert.True(t, anyEventCalled)
+
+	// Test invalid listener type
+	result := app.callListener("invalid", "test.event", args)
+	assert.Nil(t, result)
+}
+
+func TestApplication_CallReflectListener_EdgeCases(t *testing.T) {
+	mockQueue := mocksqueue.NewQueue(t)
+	app := NewApplication(mockQueue)
+
+	// Test non-function listener
+	result := app.callReflectListener("not a function", "test.event", []any{"test"})
+	assert.Nil(t, result)
+
+	// Test function with more parameters than provided
+	var called bool
+	app.callReflectListener(func(a, b, c string) error {
+		called = true
+		assert.Equal(t, "test", a)
+		assert.Equal(t, "", b) // Should be zero value
+		assert.Equal(t, "", c) // Should be zero value
+		return nil
+	}, "test.event", []any{"test"})
+	assert.True(t, called)
+
+	// Test function with return value
+	result = app.callReflectListener(func() string {
+		return "test result"
+	}, "test.event", []any{})
+	assert.Equal(t, "test result", result)
+
+	// Test function with no return value
+	result = app.callReflectListener(func() {}, "test.event", []any{})
+	assert.Nil(t, result)
+}
+
+func TestApplication_HasListeners_DirectOnly(t *testing.T) {
+	mockQueue := mocksqueue.NewQueue(t)
+	app := NewApplication(mockQueue)
+	listener := &TestListener{}
+
+	// Test with only direct listeners
+	app.listeners["test.event"] = []any{listener}
+	assert.True(t, app.HasListeners("test.event"))
+
+	// Test with empty listeners array
+	app.listeners["empty.event"] = []any{}
+	assert.False(t, app.HasListeners("empty.event"))
+}
+
+func TestApplication_Forget_CacheClearing(t *testing.T) {
+	mockQueue := mocksqueue.NewQueue(t)
+	app := NewApplication(mockQueue)
+	listener := &TestListener{}
+
+	// Set up wildcard cache
+	app.wildcardsCache["user.created"] = []any{listener}
+	app.Listen("user.*", listener)
+
+	// Forget should clear related cache
+	app.Forget("user.*")
+	assert.Empty(t, app.wildcardsCache)
+}
+
+// =============================================================================
+// HELPER STRUCTS FOR ADDITIONAL TESTS
+// =============================================================================
+
+type TestSignatureEvent struct{}
+
+func (e *TestSignatureEvent) Signature() string {
+	return "custom.signature"
+}
+
+type TestEventQueueListener struct {
+	Called           bool
+	ReceivedEvent    any
+	ReceivedArgs     []any
+	ShouldQueueValue bool
+	SignatureValue   string
+}
+
+func (l *TestEventQueueListener) Handle(event any, args ...any) error {
+	l.Called = true
+	l.ReceivedEvent = event
+	l.ReceivedArgs = args
+	return nil
+}
+
+func (l *TestEventQueueListener) ShouldQueue() bool {
+	return l.ShouldQueueValue
+}
+
+func (l *TestEventQueueListener) Signature() string {
+	return l.SignatureValue
+}
+
+func TestEventArgsToQueueArgs(t *testing.T) {
+	eventArgs := []event.Arg{
+		{Value: "string_value", Type: "string"},
+		{Value: 42, Type: "int"},
+		{Value: true, Type: "bool"},
+	}
+
+	queueArgs := eventArgsToQueueArgs(eventArgs)
+
+	assert.Len(t, queueArgs, 3)
+	assert.Equal(t, "string_value", queueArgs[0].Value)
+	assert.Equal(t, "string", queueArgs[0].Type)
+	assert.Equal(t, 42, queueArgs[1].Value)
+	assert.Equal(t, "int", queueArgs[1].Type)
+	assert.Equal(t, true, queueArgs[2].Value)
+	assert.Equal(t, "bool", queueArgs[2].Type)
+}
+
+func TestEventArgsToQueueArgs_Empty(t *testing.T) {
+	eventArgs := []event.Arg{}
+	queueArgs := eventArgsToQueueArgs(eventArgs)
+	assert.Empty(t, queueArgs)
 }

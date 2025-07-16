@@ -32,9 +32,6 @@ type Instance interface {
 	// Push pushes an event to be fired at the end of the request.
 	Push(event any, payload []Arg)
 
-	// // Subscribe registers an event subscriber.
-	// Subscribe(subscriber any)
-
 	// Until fires an event until the first non-null response.
 	Until(event any, payload []Arg) any
 }
