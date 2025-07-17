@@ -94,7 +94,8 @@ func TestApplication_Listen_StringEvent(t *testing.T) {
 	app := NewApplication(mockQueue)
 	listener := &TestListener{}
 
-	app.Listen("user.created", listener)
+	err := app.Listen("user.created", listener)
+	assert.NoError(t, err)
 
 	assert.True(t, app.HasListeners("user.created"))
 	listeners := app.GetListeners("user.created")
@@ -107,7 +108,8 @@ func TestApplication_Listen_MultipleStringEvents(t *testing.T) {
 	app := NewApplication(mockQueue)
 	listener := &TestListener{}
 
-	app.Listen([]string{"user.created", "user.updated"}, listener)
+	err := app.Listen([]string{"user.created", "user.updated"}, listener)
+	assert.NoError(t, err)
 
 	assert.True(t, app.HasListeners("user.created"))
 	assert.True(t, app.HasListeners("user.updated"))
@@ -121,7 +123,8 @@ func TestApplication_Listen_StructEvent(t *testing.T) {
 	listener := &TestListener{}
 	event := TestEvent{Name: "test", ID: 1}
 
-	app.Listen(event, listener)
+	err := app.Listen(event, listener)
+	assert.NoError(t, err)
 
 	assert.True(t, app.HasListeners(event))
 	listeners := app.GetListeners(event)
@@ -134,7 +137,8 @@ func TestApplication_Listen_WildcardEvent(t *testing.T) {
 	app := NewApplication(mockQueue)
 	listener := &TestListener{}
 
-	app.Listen("user.*", listener)
+	err := app.Listen("user.*", listener)
+	assert.NoError(t, err)
 
 	assert.True(t, app.HasWildcardListeners("user.created"))
 	assert.True(t, app.HasWildcardListeners("user.updated"))
@@ -146,9 +150,10 @@ func TestApplication_Dispatch_StringEvent(t *testing.T) {
 	mockQueue := mocksqueue.NewQueue(t)
 	app := NewApplication(mockQueue)
 
-	app.Listen("user.created", func(args ...any) any {
+	err := app.Listen("user.created", func(args ...any) any {
 		return "test response"
 	})
+	assert.NoError(t, err)
 
 	responses := app.Dispatch("user.created", []event.Arg{{Value: "test", Type: "string"}})
 
@@ -162,8 +167,10 @@ func TestApplication_Dispatch_WithWildcardListeners(t *testing.T) {
 	directListener := &TestListener{}
 	wildcardListener := &TestListener{}
 
-	app.Listen("user.created", directListener)
-	app.Listen("user.*", wildcardListener)
+	err := app.Listen("user.created", directListener)
+	assert.NoError(t, err)
+	err = app.Listen("user.*", wildcardListener)
+	assert.NoError(t, err)
 
 	app.Dispatch("user.created", []event.Arg{{Value: "test", Type: "string"}})
 
@@ -176,15 +183,18 @@ func TestApplication_Until_ReturnsFirstNonNilResponse(t *testing.T) {
 	mockQueue := mocksqueue.NewQueue(t)
 	app := NewApplication(mockQueue)
 
-	app.Listen("user.validate", func(args ...any) any {
+	err := app.Listen("user.validate", func(args ...any) any {
 		return nil // First listener returns nil
 	})
-	app.Listen("user.validate", func(args ...any) any {
+	assert.NoError(t, err)
+	err = app.Listen("user.validate", func(args ...any) any {
 		return "valid" // Second listener returns non-nil
 	})
-	app.Listen("user.validate", func(args ...any) any {
+	assert.NoError(t, err)
+	err = app.Listen("user.validate", func(args ...any) any {
 		return "should not be called" // Third listener should not be called
 	})
+	assert.NoError(t, err)
 
 	result := app.Until("user.validate", []event.Arg{{Value: "test", Type: "string"}})
 
@@ -196,7 +206,8 @@ func TestApplication_Push_And_Flush(t *testing.T) {
 	app := NewApplication(mockQueue)
 	listener := &TestListener{}
 
-	app.Listen("user.created", listener)
+	err := app.Listen("user.created", listener)
+	assert.NoError(t, err)
 
 	// Push events
 	app.Push("user.created", []event.Arg{{Value: "user1", Type: "string"}})
@@ -217,7 +228,8 @@ func TestApplication_Forget_RemovesListeners(t *testing.T) {
 	app := NewApplication(mockQueue)
 	listener := &TestListener{}
 
-	app.Listen("user.created", listener)
+	err := app.Listen("user.created", listener)
+	assert.NoError(t, err)
 	assert.True(t, app.HasListeners("user.created"))
 
 	app.Forget("user.created")
@@ -229,7 +241,8 @@ func TestApplication_Forget_RemovesWildcardListeners(t *testing.T) {
 	app := NewApplication(mockQueue)
 	listener := &TestListener{}
 
-	app.Listen("user.*", listener)
+	err := app.Listen("user.*", listener)
+	assert.NoError(t, err)
 	assert.True(t, app.HasWildcardListeners("user.created"))
 
 	app.Forget("user.*")
@@ -241,7 +254,8 @@ func TestApplication_ForgetPushed_ClearsPushedEvents(t *testing.T) {
 	app := NewApplication(mockQueue)
 	listener := &TestListener{}
 
-	app.Listen("user.created", listener)
+	err := app.Listen("user.created", listener)
+	assert.NoError(t, err)
 	app.Push("user.created", []event.Arg{{Value: "user1", Type: "string"}})
 
 	app.ForgetPushed()
@@ -264,7 +278,8 @@ func TestApplication_QueueListener_ShouldQueue(t *testing.T) {
 		return len(jobs) == 1 && jobs[0] == queueListener
 	})).Once()
 
-	app.Listen("user.created", queueListener)
+	err := app.Listen("user.created", queueListener)
+	assert.NoError(t, err)
 
 	// Verify listener was registered
 	assert.True(t, app.HasListeners("user.created"))
@@ -283,7 +298,8 @@ func TestApplication_QueueListener_ShouldNotQueue(t *testing.T) {
 		return len(jobs) == 1 && jobs[0] == queueListener
 	})).Once()
 
-	app.Listen("user.created", queueListener)
+	err := app.Listen("user.created", queueListener)
+	assert.NoError(t, err)
 
 	// Dispatch event - should call listener directly
 	app.Dispatch("user.created", []event.Arg{{Value: "test", Type: "string"}})
@@ -299,31 +315,33 @@ func TestApplication_FunctionListener_Variants(t *testing.T) {
 	var stringEventCalled, anyEventCalled, varArgsCalled bool
 
 	// Test string event function (func(string, ...any) error pattern)
-	app.Listen("test.string", func(eventName string, args ...any) error {
+	e := app.Listen("test.string", func(eventName string, args ...any) error {
 		stringEventCalled = true
 		assert.Equal(t, "test.string", eventName)
 		assert.Len(t, args, 1)
 		assert.Equal(t, "test", args[0])
 		return nil
 	})
+	assert.NoError(t, e)
 
 	// Test any event function (func(any, ...any) error pattern)
-	app.Listen("test.any", func(event any, args ...any) error {
+	e = app.Listen("test.any", func(event any, args ...any) error {
 		anyEventCalled = true
 		assert.Equal(t, "test.any", event)
 		assert.Len(t, args, 1)
 		assert.Equal(t, "test", args[0])
 		return nil
 	})
+	assert.NoError(t, e)
 
 	// Test variadic args function (func(...any) error pattern)
-	app.Listen("test.varargs", func(args ...any) error {
+	e = app.Listen("test.varargs", func(args ...any) error {
 		varArgsCalled = true
 		assert.Len(t, args, 1)
 		assert.Equal(t, "test", args[0])
 		return nil
 	})
-
+	assert.NoError(t, e)
 	// Dispatch events
 	app.Dispatch("test.string", []event.Arg{{Value: "test", Type: "string"}})
 	app.Dispatch("test.any", []event.Arg{{Value: "test", Type: "string"}})
@@ -360,13 +378,15 @@ func TestApplication_Until_AllListenersReturnNil(t *testing.T) {
 	mockQueue := mocksqueue.NewQueue(t)
 	app := NewApplication(mockQueue)
 
-	app.Listen("test.event", func(args ...any) any {
+	e := app.Listen("test.event", func(args ...any) any {
 		return nil
 	})
-	app.Listen("test.event", func(args ...any) any {
-		return nil
-	})
+	assert.NoError(t, e)
 
+	e = app.Listen("test.event", func(args ...any) any {
+		return nil
+	})
+	assert.NoError(t, e)
 	result := app.Until("test.event", []event.Arg{{Value: "test", Type: "string"}})
 
 	assert.Nil(t, result)
@@ -378,8 +398,11 @@ func TestApplication_WildcardMatching_EdgeCases(t *testing.T) {
 	listener := &TestListener{}
 
 	// Test multiple asterisks
-	app.Listen("user.*.action.*", listener)
+	err := app.Listen("user.*.action.*", listener)
+	assert.NoError(t, err)
 
+	err = app.Listen("user.*.action.*", listener)
+	assert.NoError(t, err)
 	assert.True(t, app.HasWildcardListeners("user.123.action.create"))
 	assert.True(t, app.HasWildcardListeners("user.456.action.update"))
 	assert.False(t, app.HasWildcardListeners("user.123.create"))
@@ -393,7 +416,8 @@ func TestApplication_ConcurrentAccess(t *testing.T) {
 	// Test concurrent listen and dispatch
 	go func() {
 		for i := 0; i < 100; i++ {
-			app.Listen("concurrent.test", listener)
+			e := app.Listen("concurrent.test", listener)
+			assert.NoError(t, e)
 		}
 	}()
 
@@ -416,7 +440,8 @@ func TestApplication_WildcardCaching(t *testing.T) {
 	app := NewApplication(mockQueue)
 	listener := &TestListener{}
 
-	app.Listen("user.*", listener)
+	err := app.Listen("user.*", listener)
+	assert.NoError(t, err)
 
 	// First call should populate cache
 	listeners1 := app.GetListeners("user.created")
@@ -436,13 +461,15 @@ func TestApplication_CacheClearedOnWildcardRegistration(t *testing.T) {
 	listener1 := &TestListener{}
 	listener2 := &TestListener{}
 
-	app.Listen("user.*", listener1)
+	err := app.Listen("user.*", listener1)
+	assert.NoError(t, err)
 	app.GetListeners("user.created") // Populate cache
 
 	assert.NotEmpty(t, app.wildcardsCache)
 
 	// Adding new wildcard should clear cache
-	app.Listen("order.*", listener2)
+	err = app.Listen("order.*", listener2)
+	assert.NoError(t, err)
 	assert.Empty(t, app.wildcardsCache)
 }
 
@@ -452,9 +479,10 @@ func BenchmarkApplication_Dispatch_DirectListeners(b *testing.B) {
 
 	// Register 100 listeners
 	for i := 0; i < 100; i++ {
-		app.Listen("benchmark.test", func(args ...any) any {
+		e := app.Listen("benchmark.test", func(args ...any) any {
 			return "response"
 		})
+		assert.NoError(b, e)
 	}
 
 	args := []event.Arg{{Value: "test", Type: "string"}}
@@ -471,9 +499,10 @@ func BenchmarkApplication_Dispatch_WildcardListeners(b *testing.B) {
 
 	// Register 100 wildcard listeners
 	for i := 0; i < 100; i++ {
-		app.Listen("benchmark.*", func(args ...any) any {
+		e := app.Listen("benchmark.*", func(args ...any) any {
 			return "response"
 		})
+		assert.NoError(b, e)
 	}
 
 	args := []event.Arg{{Value: "test", Type: "string"}}
@@ -525,7 +554,8 @@ func TestApplication_EventQueueListener_Integration(t *testing.T) {
 	})).Once()
 
 	// Register event queue listener
-	app.Listen("test.event", eventQueueListener)
+	err := app.Listen("test.event", eventQueueListener)
+	assert.NoError(t, err)
 
 	// Test that the listener was registered
 	assert.True(t, app.HasListeners("test.event"))
@@ -539,12 +569,12 @@ func TestApplication_Listen_ClosureEventListener(t *testing.T) {
 	var receivedEvent any
 
 	// Test closure that takes event.Event parameter
-	app.Listen(func(evt *TestEvent) error {
+	e := app.Listen(func(evt *TestEvent) error {
 		called = true
 		receivedEvent = evt
 		return nil
 	})
-
+	assert.NoError(t, e)
 	testEvent := &TestEvent{Name: "test", ID: 1}
 	app.Dispatch(testEvent)
 
@@ -658,7 +688,8 @@ func TestApplication_Forget_CacheClearing(t *testing.T) {
 
 	// Set up wildcard cache
 	app.wildcardsCache["user.created"] = []any{listener}
-	app.Listen("user.*", listener)
+	e := app.Listen("user.*", listener)
+	assert.NoError(t, e)
 
 	// Forget should clear related cache
 	app.Forget("user.*")

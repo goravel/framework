@@ -297,12 +297,12 @@ func (app *Application) Listen(events any, listener ...any) error {
 		for _, eventName := range e {
 			app.setupEvents(eventName, listener[0])
 		}
-	case event.Event:
-		app.setupEvents(e, listener[0])
 	case []event.Event:
 		for _, evt := range e {
 			app.setupEvents(evt, listener[0])
 		}
+	case event.Event:
+		app.setupEvents(e, listener[0])
 	default:
 		if eventName := app.getEventName(events); eventName != "" {
 			app.setupEvents(eventName, listener[0])
