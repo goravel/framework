@@ -1097,14 +1097,6 @@ func TestSubstr(t *testing.T) {
 	assert.Equal(t, "世界！", Substr("你好，世界！", 3, 3))
 }
 
-func TestMaximum(t *testing.T) {
-	assert.Equal(t, 10, maximum(5, 10))
-	assert.Equal(t, 3.14, maximum(3.14, 2.71))
-	assert.Equal(t, "banana", maximum("apple", "banana"))
-	assert.Equal(t, -5, maximum(-5, -10))
-	assert.Equal(t, 42, maximum(42, 42))
-}
-
 func TestRandom(t *testing.T) {
 	assert.Len(t, Random(10), 10)
 	assert.Empty(t, Random(0))

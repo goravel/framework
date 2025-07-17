@@ -11,7 +11,6 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"golang.org/x/exp/constraints"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -216,7 +215,7 @@ func (s *String) Excerpt(phrase string, options ...ExcerptOption) *String {
 		}
 	}
 
-	radius := maximum(0, defaultOptions.Radius)
+	radius := max(0, defaultOptions.Radius)
 	omission := defaultOptions.Omission
 
 	regex := regexp.MustCompile(`(.*?)(` + regexp.QuoteMeta(phrase) + `)(.*)`)
@@ -236,7 +235,7 @@ func (s *String) Excerpt(phrase string, options ...ExcerptOption) *String {
 			return s.Append(omission)
 		}).String()
 
-	s.value = Of(Substr(start, maximum(len(start)-radius, 0), radius)).LTrim("").
+	s.value = Of(Substr(start, max(len(start)-radius, 0), radius)).LTrim("").
 		Unless(func(s *String) bool {
 			return s.Exactly(start)
 		}, func(s *String) *String {
@@ -494,7 +493,7 @@ func (s *String) PadBoth(length int, pad ...string) *String {
 	if len(pad) > 0 {
 		defaultPad = pad[0]
 	}
-	short := maximum(0, length-s.Length())
+	short := max(0, length-s.Length())
 	left := short / 2
 	right := short/2 + short%2
 
@@ -509,7 +508,7 @@ func (s *String) PadLeft(length int, pad ...string) *String {
 	if len(pad) > 0 {
 		defaultPad = pad[0]
 	}
-	short := maximum(0, length-s.Length())
+	short := max(0, length-s.Length())
 
 	s.value = Substr(strings.Repeat(defaultPad, short), 0, short) + s.value
 	return s
@@ -521,7 +520,7 @@ func (s *String) PadRight(length int, pad ...string) *String {
 	if len(pad) > 0 {
 		defaultPad = pad[0]
 	}
-	short := maximum(0, length-s.Length())
+	short := max(0, length-s.Length())
 
 	s.value = s.value + Substr(strings.Repeat(defaultPad, short), 0, short)
 	return s
@@ -1074,12 +1073,4 @@ func fieldsFunc(s string, f func(rune) bool, preserveFunc ...func(rune) bool) []
 	}
 
 	return fields
-}
-
-// maximum returns the largest of x or y.
-func maximum[T constraints.Ordered](x T, y T) T {
-	if x > y {
-		return x
-	}
-	return y
 }
