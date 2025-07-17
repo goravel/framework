@@ -65,6 +65,8 @@ func TestEnglishRegularPatterns(t *testing.T) {
 
 		{"words ending in consonant+y", "city", "cities"},
 		{"words ending in consonant+y", "baby", "babies"},
+		{"words ending in consonant+y", "party", "parties"},
+		{"words ending in consonant+y", "company", "companies"},
 		{"words ending in vowel+y", "toy", "toys"},
 		{"words ending in vowel+y", "boy", "boys"},
 
