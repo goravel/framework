@@ -7,9 +7,19 @@ type Pluralizer interface {
 	Singular(word string) string
 }
 
+type Language string
+
+const (
+	English Language = "en"
+)
+
 var (
 	instance Pluralizer
 	once     sync.Once
+
+	factory = map[Language]func() Pluralizer{
+		English: func() Pluralizer { return newEnglishInflector() },
+	}
 )
 
 func init() {
@@ -19,16 +29,14 @@ func init() {
 }
 
 func New() Pluralizer {
-	return NewForLanguage("en")
+	return NewForLanguage(English)
 }
 
-func NewForLanguage(lang string) Pluralizer {
-	switch lang {
-	case "en":
-		return newEnglishInflector()
-	default:
-		return newEnglishInflector()
+func NewForLanguage(lang Language) Pluralizer {
+	if constructor, ok := factory[lang]; ok {
+		return constructor()
 	}
+	return newEnglishInflector()
 }
 
 func Plural(word string) string {
