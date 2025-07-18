@@ -2,6 +2,7 @@ package str
 
 import (
 	"testing"
+	"unicode"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -102,6 +103,10 @@ func (s *StringTestSuite) TestCamel() {
 	s.Equal("fooBar", Of("foo-Bar").Camel().String())
 	s.Equal("fooBar", Of("foo bar").Camel().String())
 	s.Equal("fooBar", Of("foo.bar").Camel().String())
+
+	s.Equal("xmlHttpRequest", Of("xml_http_request").Camel().String())
+	s.Equal("userId", Of("user_id").Camel().String())
+	s.Equal("html5Parser", Of("html5_parser").Camel().String())
 }
 
 func (s *StringTestSuite) TestCharAt() {
@@ -525,13 +530,21 @@ func (s *StringTestSuite) TestRTrim() {
 }
 
 func (s *StringTestSuite) TestSnake() {
-	s.Equal("goravel_g_o_framework", Of("GoravelGOFramework").Snake().String())
+	s.Equal("goravel_go_framework", Of("GoravelGOFramework").Snake().String())
 	s.Equal("goravel_go_framework", Of("GoravelGoFramework").Snake().String())
 	s.Equal("goravel go framework", Of("GoravelGoFramework").Snake(" ").String())
 	s.Equal("goravel_go_framework", Of("Goravel Go Framework").Snake().String())
 	s.Equal("goravel_go_framework", Of("Goravel    Go      Framework   ").Snake().String())
 	s.Equal("goravel__go__framework", Of("GoravelGoFramework").Snake("__").String())
 	s.Equal("żółta_łódka", Of("ŻółtaŁódka").Snake().String())
+
+	s.Equal("xml_http_request", Of("XMLHttpRequest").Snake().String())
+	s.Equal("user_id", Of("userID").Snake().String())
+	s.Equal("html5_parser", Of("HTML5Parser").Snake().String())
+	s.Equal("get_https_connection_url", Of("getHTTPSConnectionURL").Snake().String())
+	s.Equal("a", Of("A").Snake().String())
+	s.Equal("foo123_bar", Of("foo123Bar").Snake().String())
+	s.Equal("123foo", Of("123foo").Snake().String())
 }
 
 func (s *StringTestSuite) TestSplit() {
@@ -576,6 +589,11 @@ func (s *StringTestSuite) TestStudly() {
 	s.Equal("FooBar", Of("foo-Bar").Studly().String())
 	s.Equal("FooBar", Of("foo bar").Studly().String())
 	s.Equal("FooBar", Of("foo.bar").Studly().String())
+
+	s.Equal("XmlHttpRequest", Of("xml_http_request").Studly().String())
+	s.Equal("123Foo", Of("123foo").Studly().String())
+	s.Equal("Foo123Bar", Of("foo123Bar").Studly().String())
+	s.Equal("A", Of("A").Studly().String())
 }
 
 func (s *StringTestSuite) TestSubstr() {
@@ -1048,23 +1066,24 @@ func (s *StringTestSuite) TestWords() {
 
 func TestFieldsFunc(t *testing.T) {
 	tests := []struct {
+		name           string
 		input          string
 		shouldPreserve []func(rune) bool
 		expected       []string
 	}{
-		// Test case 1: Basic word splitting with space separator.
 		{
+			name:     "basic_space_split",
 			input:    "Hello World",
 			expected: []string{"Hello", "World"},
 		},
-		// Test case 2: Splitting with space and preserving hyphen.
 		{
+			name:           "preserve_hyphen",
 			input:          "Hello-World",
-			shouldPreserve: []func(rune) bool{func(r rune) bool { return r == '-' }},
+			shouldPreserve: []func(r rune) bool{func(r rune) bool { return r == '-' }},
 			expected:       []string{"Hello", "-World"},
 		},
-		// Test case 3: Splitting with space and preserving multiple characters.
 		{
+			name:  "preserve_multiple_chars",
 			input: "Hello-World,This,Is,a,Test",
 			shouldPreserve: []func(rune) bool{
 				func(r rune) bool { return r == '-' },
@@ -1072,15 +1091,57 @@ func TestFieldsFunc(t *testing.T) {
 			},
 			expected: []string{"Hello", "-World", ",This", ",Is", ",a", ",Test"},
 		},
-		// Test case 4: No splitting when no separator is found.
 		{
+			name:     "no_separator_found",
 			input:    "HelloWorld",
 			expected: []string{"HelloWorld"},
+		},
+		{
+			name:           "consecutive_uppercase_grouped",
+			input:          "XMLHttpRequest",
+			shouldPreserve: []func(r rune) bool{func(r rune) bool { return unicode.IsUpper(r) }},
+			expected:       []string{"XML", "Http", "Request"},
+		},
+		{
+			name:           "simple_camelCase",
+			input:          "fooBar",
+			shouldPreserve: []func(r rune) bool{func(r rune) bool { return unicode.IsUpper(r) }},
+			expected:       []string{"foo", "Bar"},
+		},
+		{
+			name:           "acronym_followed_by_word",
+			input:          "PDFParser",
+			shouldPreserve: []func(r rune) bool{func(r rune) bool { return unicode.IsUpper(r) }},
+			expected:       []string{"PDF", "Parser"},
+		},
+		{
+			name:           "uppercase_with_numbers",
+			input:          "HTML5Parser",
+			shouldPreserve: []func(r rune) bool{func(r rune) bool { return unicode.IsUpper(r) }},
+			expected:       []string{"HTML5", "Parser"},
+		},
+		{
+			name:           "long_consecutive_uppercase",
+			input:          "getHTTPSConnectionURL",
+			shouldPreserve: []func(r rune) bool{func(r rune) bool { return unicode.IsUpper(r) }},
+			expected:       []string{"get", "HTTPS", "Connection", "URL"},
+		},
+		{
+			name:           "single_uppercase_suffix",
+			input:          "userID",
+			shouldPreserve: []func(r rune) bool{func(r rune) bool { return unicode.IsUpper(r) }},
+			expected:       []string{"user", "ID"},
+		},
+		{
+			name:           "all_uppercase_word",
+			input:          "LARAVEL",
+			shouldPreserve: []func(r rune) bool{func(r rune) bool { return unicode.IsUpper(r) }},
+			expected:       []string{"LARAVEL"},
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.input, func(t *testing.T) {
+		t.Run(test.name, func(t *testing.T) {
 			result := fieldsFunc(test.input, func(r rune) bool { return r == ' ' }, test.shouldPreserve...)
 			assert.Equal(t, test.expected, result)
 		})

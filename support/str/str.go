@@ -975,14 +975,35 @@ func fieldsFunc(s string, f func(rune) bool, preserveFunc ...func(rune) bool) []
 		return false
 	}
 
-	for _, r := range s {
+	runes := []rune(s)
+	for i, r := range runes {
 		if f(r) {
 			if currentField.Len() > 0 {
 				fields = append(fields, currentField.String())
 				currentField.Reset()
 			}
 		} else if shouldPreserve(r) {
-			if currentField.Len() > 0 {
+			// Smart uppercase handling for consecutive uppercase letters
+			shouldSplit := false
+
+			if i > 0 {
+				prev := runes[i-1]
+				var next rune
+				if i < len(runes)-1 {
+					next = runes[i+1]
+				}
+
+				// Split conditions:
+				// 1. Previous char is not uppercase (covers lowercase, digits, symbols): "foo_B" -> "foo_" + "B"
+				// 2. Current is uppercase, previous is uppercase, next is lowercase: "XMLHttp" -> "XML" + "Http"
+				if !unicode.IsUpper(prev) {
+					shouldSplit = true
+				} else if unicode.IsUpper(prev) && unicode.IsLower(next) {
+					shouldSplit = true
+				}
+			}
+
+			if shouldSplit && currentField.Len() > 0 {
 				fields = append(fields, currentField.String())
 				currentField.Reset()
 			}
