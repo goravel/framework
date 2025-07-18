@@ -122,8 +122,8 @@ func (s *String) ChopEnd(needle string, more ...string) *String {
 	more = append([]string{needle}, more...)
 
 	for _, v := range more {
-		if s.EndsWith(v) {
-			s.value = strings.TrimSuffix(s.value, v)
+		if after, found := strings.CutSuffix(s.value, v); found {
+			s.value = after
 			break
 		}
 	}
@@ -135,8 +135,8 @@ func (s *String) ChopStart(needle string, more ...string) *String {
 	more = append([]string{needle}, more...)
 
 	for _, v := range more {
-		if s.StartsWith(v) {
-			s.value = strings.TrimPrefix(s.value, v)
+		if after, found := strings.CutPrefix(s.value, v); found {
+			s.value = after
 			break
 		}
 	}
