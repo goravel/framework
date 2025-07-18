@@ -123,7 +123,7 @@ func (s *String) ChopEnd(needle string, more ...string) *String {
 
 	for _, v := range more {
 		if s.EndsWith(v) {
-			s.value = strings.TrimRight(s.value, v)
+			s.value = strings.TrimSuffix(s.value, v)
 			break
 		}
 	}
@@ -136,7 +136,7 @@ func (s *String) ChopStart(needle string, more ...string) *String {
 
 	for _, v := range more {
 		if s.StartsWith(v) {
-			s.value = strings.TrimLeft(s.value, v)
+			s.value = strings.TrimPrefix(s.value, v)
 			break
 		}
 	}
