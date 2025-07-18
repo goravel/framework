@@ -67,52 +67,6 @@ func (_c *Ruleset_Irregular_Call) RunAndReturn(run func() pluralizer.Substitutio
 	return _c
 }
 
-// IsUncountable provides a mock function with given fields: word
-func (_m *Ruleset) IsUncountable(word string) bool {
-	ret := _m.Called(word)
-
-	if len(ret) == 0 {
-		panic("no return value specified for IsUncountable")
-	}
-
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(string) bool); ok {
-		r0 = rf(word)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	return r0
-}
-
-// Ruleset_IsUncountable_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsUncountable'
-type Ruleset_IsUncountable_Call struct {
-	*mock.Call
-}
-
-// IsUncountable is a helper method to define mock.On call
-//   - word string
-func (_e *Ruleset_Expecter) IsUncountable(word interface{}) *Ruleset_IsUncountable_Call {
-	return &Ruleset_IsUncountable_Call{Call: _e.mock.On("IsUncountable", word)}
-}
-
-func (_c *Ruleset_IsUncountable_Call) Run(run func(word string)) *Ruleset_IsUncountable_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
-	})
-	return _c
-}
-
-func (_c *Ruleset_IsUncountable_Call) Return(_a0 bool) *Ruleset_IsUncountable_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Ruleset_IsUncountable_Call) RunAndReturn(run func(string) bool) *Ruleset_IsUncountable_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // Regular provides a mock function with no fields
 func (_m *Ruleset) Regular() pluralizer.Transformations {
 	ret := _m.Called()
