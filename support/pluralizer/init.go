@@ -1,12 +1,15 @@
 package pluralizer
 
-import "github.com/goravel/framework/contracts/support/pluralizer"
+import (
+	"github.com/goravel/framework/contracts/support/pluralizer"
+	"github.com/goravel/framework/support/pluralizer/english"
+)
 
 var (
 	instance         pluralizer.Inflector
 	currentLanguage  string
 	inflectorFactory = map[string]pluralizer.Inflector{
-		"english": NewInflector(NewEnglishLanguage()),
+		"english": NewInflector(english.New()),
 	}
 )
 

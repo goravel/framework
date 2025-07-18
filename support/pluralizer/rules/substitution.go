@@ -1,4 +1,4 @@
-package pluralizer
+package rules
 
 import (
 	"github.com/goravel/framework/contracts/support/pluralizer"

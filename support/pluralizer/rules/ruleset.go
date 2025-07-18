@@ -1,4 +1,4 @@
-package pluralizer
+package rules
 
 import "github.com/goravel/framework/contracts/support/pluralizer"
 
@@ -28,13 +28,4 @@ func (r *Ruleset) Uninflected() pluralizer.Patterns {
 
 func (r *Ruleset) Irregular() pluralizer.Substitutions {
 	return r.irregular
-}
-
-func (r *Ruleset) IsUncountable(word string) bool {
-	for _, pattern := range r.uninflected {
-		if pattern.Matches(word) {
-			return true
-		}
-	}
-	return false
 }

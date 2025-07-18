@@ -30,8 +30,10 @@ func (r *Inflector) inflect(word string, ruleset pluralizer.Ruleset) string {
 		return ""
 	}
 
-	if ruleset.IsUncountable(word) {
-		return word
+	for _, pattern := range ruleset.Uninflected() {
+		if pattern.Matches(word) {
+			return word
+		}
 	}
 
 	// Check if word is already in target form (To)

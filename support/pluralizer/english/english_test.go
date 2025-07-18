@@ -1,14 +1,15 @@
-package pluralizer
+package english
 
 import (
 	"testing"
 
+	"github.com/goravel/framework/support/pluralizer"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestEnglishIrregularPlurals(t *testing.T) {
-	lang := NewEnglishLanguage()
-	inflector := NewInflector(lang)
+	lang := New()
+	inflector := pluralizer.NewInflector(lang)
 
 	irregulars := map[string]string{
 		"person":     "people",
@@ -49,8 +50,8 @@ func TestEnglishIrregularPlurals(t *testing.T) {
 }
 
 func TestEnglishRegularPatterns(t *testing.T) {
-	lang := NewEnglishLanguage()
-	inflector := NewInflector(lang)
+	lang := New()
+	inflector := pluralizer.NewInflector(lang)
 
 	tests := []struct {
 		rule     string
@@ -92,8 +93,8 @@ func TestEnglishRegularPatterns(t *testing.T) {
 }
 
 func TestEnglishUncountableWords(t *testing.T) {
-	lang := NewEnglishLanguage()
-	inflector := NewInflector(lang)
+	lang := New()
+	inflector := pluralizer.NewInflector(lang)
 
 	uncountable := []string{
 		"sheep", "deer", "fish", "moose", "swine",
@@ -112,8 +113,8 @@ func TestEnglishUncountableWords(t *testing.T) {
 }
 
 func TestEnglishCompoundWords(t *testing.T) {
-	lang := NewEnglishLanguage()
-	inflector := NewInflector(lang)
+	lang := New()
+	inflector := pluralizer.NewInflector(lang)
 
 	compounds := map[string]string{
 		"son-in-law":      "sons-in-law",
@@ -130,8 +131,8 @@ func TestEnglishCompoundWords(t *testing.T) {
 }
 
 func TestEnglishSpecialCases(t *testing.T) {
-	lang := NewEnglishLanguage()
-	inflector := NewInflector(lang)
+	lang := New()
+	inflector := pluralizer.NewInflector(lang)
 
 	tests := []struct {
 		singular string
@@ -161,7 +162,7 @@ func TestEnglishSpecialCases(t *testing.T) {
 }
 
 func TestEnglishRulesetStructure(t *testing.T) {
-	lang := NewEnglishLanguage()
+	lang := New()
 
 	assert.Equal(t, "english", lang.Name())
 	assert.NotNil(t, lang.PluralRuleset())

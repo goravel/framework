@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/goravel/framework/contracts/support/pluralizer"
+	"github.com/goravel/framework/support/pluralizer/rules"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -61,9 +62,9 @@ func (m *mockLanguage) Name() string {
 }
 
 func (m *mockLanguage) PluralRuleset() pluralizer.Ruleset {
-	return NewRuleset(nil, nil, nil)
+	return rules.NewRuleset(nil, nil, nil)
 }
 
 func (m *mockLanguage) SingularRuleset() pluralizer.Ruleset {
-	return NewRuleset(nil, nil, nil)
+	return rules.NewRuleset(nil, nil, nil)
 }
