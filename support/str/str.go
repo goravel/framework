@@ -555,7 +555,7 @@ func (s *String) Repeat(times int) *String {
 func (s *String) Replace(search string, replace string, caseSensitive ...bool) *String {
 	caseSensitive = append(caseSensitive, true)
 	if len(caseSensitive) > 0 && !caseSensitive[0] {
-		s.value = regexp.MustCompile("(?i)"+search).ReplaceAllString(s.value, replace)
+		s.value = regexp.MustCompile("(?i)"+regexp.QuoteMeta(search)).ReplaceAllString(s.value, replace)
 		return s
 	}
 	s.value = strings.ReplaceAll(s.value, search, replace)

@@ -466,6 +466,9 @@ func (s *StringTestSuite) TestReplace() {
 	s.Equal("foo/foo/foo", Of("x/x/x").Replace("X", "foo", false).String())
 	s.Equal("bar/bar", Of("?/?").Replace("?", "bar").String())
 	s.Equal("?/?/?", Of("? ? ?").Replace(" ", "/").String())
+	s.Equal("a1b2c3", Of("a1b2c3").Replace("\\d", "X", false).String())
+	s.Equal("hello-world", Of("hello.world").Replace(".", "-", false).String())
+	s.Equal("hello(world]", Of("hello[world]").Replace("[", "(", false).String())
 }
 
 func (s *StringTestSuite) TestReplaceEnd() {
