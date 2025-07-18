@@ -71,7 +71,7 @@ func TestEventTestSuite(t *testing.T) {
 
 func (s *EventTestSuite) SetupTest() {
 	s.events = []*Event{
-		NewEvent(testQuery, &testEventModel, map[string]any{"i_d": 1, "created_at": carbon.NewDateTime(carbon.FromStdTime(testNow)), "updated_at": carbon.NewDateTime(carbon.FromStdTime(testNow)), "avatar": "avatar1", "is_admin": false, "manage": 1, "admin_at": time.Now(), "manage_at": testNow}),
+		NewEvent(testQuery, &testEventModel, map[string]any{"id": 1, "created_at": carbon.NewDateTime(carbon.FromStdTime(testNow)), "updated_at": carbon.NewDateTime(carbon.FromStdTime(testNow)), "avatar": "avatar1", "is_admin": false, "manage": 1, "admin_at": time.Now(), "manage_at": testNow}),
 		NewEvent(testQuery, &testEventModel, map[string]any{"ID": 1, "CreatedAt": carbon.NewDateTime(carbon.FromStdTime(testNow)), "UpdatedAt": carbon.NewDateTime(carbon.FromStdTime(testNow)), "Avatar": "avatar1", "IsAdmin": false, "IsManage": 1, "AdminAt": time.Now(), "ManageAt": testNow}),
 		NewEvent(testQuery, &testEventModel, TestEventModel{
 			Model: Model{
@@ -327,8 +327,8 @@ func (s *EventTestSuite) TestToDBColumnName() {
 func (s *EventTestSuite) TestColumnNames() {
 	for _, event := range s.events {
 		s.Equal(map[string]string{
-			"ID":         "i_d",
-			"i_d":        "i_d",
+			"ID":         "id",
+			"id":         "id",
 			"CreatedAt":  "created_at",
 			"created_at": "created_at",
 			"UpdatedAt":  "updated_at",
@@ -377,7 +377,7 @@ func TestStructToMap(t *testing.T) {
 	}
 
 	assert.EqualValues(t, map[string]any{
-		"i_d":        testStruct.ID,
+		"id":         testStruct.ID,
 		"created_at": testStruct.CreatedAt,
 		"updated_at": testStruct.UpdatedAt,
 		"name":       testStruct.Name,
