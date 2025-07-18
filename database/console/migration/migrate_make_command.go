@@ -2,23 +2,25 @@ package migration
 
 import (
 	"fmt"
+	"path/filepath"
 	"runtime/debug"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/contracts/database/migration"
+	contractmigration "github.com/goravel/framework/contracts/database/migration"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
+	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/path"
 	"github.com/goravel/framework/support/str"
 )
 
 type MigrateMakeCommand struct {
-	migrator migration.Migrator
+	migrator contractmigration.Migrator
 }
 
-func NewMigrateMakeCommand(migrator migration.Migrator) *MigrateMakeCommand {
+func NewMigrateMakeCommand(migrator contractmigration.Migrator) *MigrateMakeCommand {
 	return &MigrateMakeCommand{migrator: migrator}
 }
 
@@ -36,39 +38,37 @@ func (r *MigrateMakeCommand) Description() string {
 func (r *MigrateMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
+		Flags: []command.Flag{
+			&command.StringFlag{
+				Name:    "model",
+				Aliases: []string{"m"},
+				Usage:   "The model name to be used in the migration, will create it if it doesn't exist",
+			},
+		},
 	}
 }
 
-// Handle Execute the console command.
+// Handle Executes the console command.
 func (r *MigrateMakeCommand) Handle(ctx console.Context) error {
 	// It's possible for the developer to specify the tables to modify in this
 	// schema operation. The developer may also specify if this table needs
 	// to be freshly created, so we can create the appropriate migrations.
-	name := ctx.Argument(0)
-	if name == "" {
-		var err error
-		name, err = ctx.Ask("Enter the migration name", console.AskOption{
-			Validate: func(s string) error {
-				if s == "" {
-					return errors.MigrationNameIsRequired
-				}
-
-				return nil
-			},
-		})
-		if err != nil {
-			ctx.Error(err.Error())
-			return nil
-		}
+	m, err := supportconsole.NewMake(ctx, "migration", ctx.Argument(0), filepath.Join("database", "migrations"))
+	if err != nil {
+		ctx.Error(err.Error())
+		return nil
 	}
 
-	fileName, err := r.migrator.Create(name)
+	migrationName := m.GetStructName()
+	modelName := ctx.Option("model")
+
+	fileName, err := r.migrator.Create(migrationName, modelName)
 	if err != nil {
 		ctx.Error(errors.MigrationCreateFailed.Args(err).Error())
 		return nil
 	}
 
-	ctx.Success(fmt.Sprintf("Created Migration: %s", name))
+	ctx.Success(fmt.Sprintf("Created Migration: %s", migrationName))
 
 	info, _ := debug.ReadBuildInfo()
 	structName := str.Of(fileName).Prepend("m_").Studly().String()
