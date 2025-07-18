@@ -89,16 +89,16 @@ func ParseByFormat[T string | []string](value string, format T, timezone ...stri
 
 // ParseWithLayouts returns a Carbon object with multiple fuzzy layouts.
 //
-// Deprecated: it will be removed in the future, use `ParseByLayout` instead.
+// Deprecated: it will be removed in the future, use `ParseByLayouts` instead.
 func ParseWithLayouts(value string, layouts []string, timezone ...string) *Carbon {
-	return carbon.ParseWithLayouts(value, layouts, timezone...)
+	return carbon.ParseByLayouts(value, layouts, timezone...)
 }
 
 // ParseWithFormats returns a Carbon object with multiple fuzzy formats.
 //
-// Deprecated: it will be removed in the future, use ParseByFormat instead.
+// Deprecated: it will be removed in the future, use ParseByFormats instead.
 func ParseWithFormats(value string, formats []string, timezone ...string) *Carbon {
-	return carbon.ParseWithFormats(value, formats, timezone...)
+	return carbon.ParseByFormats(value, formats, timezone...)
 }
 
 // FromTimestamp returns a Carbon object of given timestamp.
@@ -199,4 +199,9 @@ func FromJulian(f float64) *Carbon {
 // FromPersian returns a Carbon object from Persian date.
 func FromPersian(year, month, day int) *Carbon {
 	return carbon.CreateFromPersian(year, month, day)
+}
+
+// FromHebrew returns a Carbon object from Hebrew date.
+func FromHebrew(year, month, day int) *Carbon {
+	return carbon.CreateFromHebrew(year, month, day)
 }
