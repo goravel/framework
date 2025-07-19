@@ -1074,6 +1074,58 @@ func (s *StringTestSuite) TestWords() {
 	s.Equal("Perfectly balanced, as all things should be.", Of("Perfectly balanced, as all things should be.").Words(100).String())
 }
 
+func (s *StringTestSuite) TestPlural() {
+	// Basic pluralization
+	s.Equal("books", Of("book").Plural().String())
+	s.Equal("people", Of("person").Plural().String())
+	s.Equal("children", Of("child").Plural().String())
+	s.Equal("geese", Of("goose").Plural().String())
+	s.Equal("mice", Of("mouse").Plural().String())
+	s.Equal("oxen", Of("ox").Plural().String())
+	s.Equal("leaves", Of("leaf").Plural().String())
+	s.Equal("feet", Of("foot").Plural().String())
+	s.Equal("teeth", Of("tooth").Plural().String())
+
+	// With count parameter
+	s.Equal("book", Of("book").Plural(1).String())
+	s.Equal("books", Of("book").Plural(2).String())
+	s.Equal("person", Of("person").Plural(1).String())
+	s.Equal("people", Of("person").Plural(2).String())
+
+	// Uncountable words
+	s.Equal("fish", Of("fish").Plural().String())
+	s.Equal("sheep", Of("sheep").Plural().String())
+	s.Equal("deer", Of("deer").Plural().String())
+	s.Equal("information", Of("information").Plural().String())
+
+	// Case preservation
+	s.Equal("Books", Of("Book").Plural().String())
+	s.Equal("BOOKS", Of("BOOK").Plural().String())
+}
+
+func (s *StringTestSuite) TestSingular() {
+	// Basic singularization
+	s.Equal("book", Of("books").Singular().String())
+	s.Equal("person", Of("people").Singular().String())
+	s.Equal("child", Of("children").Singular().String())
+	s.Equal("goose", Of("geese").Singular().String())
+	s.Equal("mouse", Of("mice").Singular().String())
+	s.Equal("ox", Of("oxen").Singular().String())
+	s.Equal("leaf", Of("leaves").Singular().String())
+	s.Equal("foot", Of("feet").Singular().String())
+	s.Equal("tooth", Of("teeth").Singular().String())
+
+	// Uncountable words
+	s.Equal("fish", Of("fish").Singular().String())
+	s.Equal("sheep", Of("sheep").Singular().String())
+	s.Equal("deer", Of("deer").Singular().String())
+	s.Equal("information", Of("information").Singular().String())
+
+	// Case preservation
+	s.Equal("Book", Of("Books").Singular().String())
+	s.Equal("BOOK", Of("BOOKS").Singular().String())
+}
+
 func TestFieldsFunc(t *testing.T) {
 	tests := []struct {
 		name           string
