@@ -1,6 +1,7 @@
 package event
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -138,10 +139,10 @@ func TestApplication_Dispatch(t *testing.T) {
 
 	// Test dispatching a struct event
 	t.Run("DispatchStructEvent", func(t *testing.T) {
-		evt := &TestEvent{}
+		evt := &TestEventCustom{}
 		app.listeners = map[string][]any{
-			"TestEvent": {
-				func(e *TestEvent) any {
+			"TestEventCustom": {
+				func(e *TestEventCustom) any {
 					assert.Equal(t, evt, e)
 					return "received"
 				},
@@ -206,6 +207,82 @@ func TestApplication_Listen(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "listener is required")
 	})
+	
+	// Test listening with closure - this should fail since closure doesn't match expected pattern
+	t.Run("ListenClosure", func(t *testing.T) {
+		closure := func(evt *TestEventCustom) error {
+			return nil
+		}
+		
+		err := app.Listen(closure)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "closure must accept exactly one event parameter")
+	})
+	
+	// Test listening with invalid closure
+	t.Run("ListenInvalidClosure", func(t *testing.T) {
+		invalidClosure := func(a, b string) error {
+			return nil
+		}
+		
+		err := app.Listen(invalidClosure)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "closure must accept exactly one event parameter")
+	})
+	
+	// Test listening to event interface
+	t.Run("ListenEventInterface", func(t *testing.T) {
+		// Create fresh app for this test
+		mockQueueLocal := mocksqueue.NewQueue(t)
+		appLocal := NewApplication(mockQueueLocal)
+		
+		evt := &TestEventCustom{}
+		handler := func() error { return nil }
+		
+		err := appLocal.Listen(evt, handler)
+		require.NoError(t, err)
+		
+		listeners, exists := appLocal.listeners["TestEventCustom"]
+		require.True(t, exists)
+		require.Len(t, listeners, 1)
+	})
+	
+	// Test listening to slice of events
+	t.Run("ListenEventSlice", func(t *testing.T) {
+		// Create fresh app for this test to avoid interference
+		mockQueueLocal := mocksqueue.NewQueue(t)
+		appLocal := NewApplication(mockQueueLocal)
+		
+		events := []event.Event{&TestEventCustom{}, &TestEvent{}}
+		handler := func() error { return nil }
+		
+		err := appLocal.Listen(events, handler)
+		require.NoError(t, err)
+		
+		// Check both events were registered
+		listeners1, exists1 := appLocal.listeners["TestEventCustom"]
+		require.True(t, exists1)
+		require.Len(t, listeners1, 1)
+		
+		listeners2, exists2 := appLocal.listeners["TestEvent"]
+		require.True(t, exists2)
+		require.Len(t, listeners2, 1)
+	})
+	
+	// Test listening with valid event type that has getEventName 
+	t.Run("ListenValidEventType", func(t *testing.T) {
+		type ValidEvent struct{ Name string }
+		validEvent := ValidEvent{Name: "valid"}
+		handler := func() error { return nil }
+		
+		err := app.Listen(validEvent, handler)
+		require.NoError(t, err)
+		
+		// Should register under the struct name
+		listeners, exists := app.listeners["ValidEvent"]
+		require.True(t, exists)
+		require.Len(t, listeners, 1)
+	})
 }
 
 func TestApplication_Job(t *testing.T) {
@@ -253,5 +330,251 @@ func TestApplication_Job(t *testing.T) {
 		assert.Equal(t, mockQueue, taskImpl.queue)
 		assert.Equal(t, args, taskImpl.args)
 		assert.Empty(t, taskImpl.listeners)
+	})
+}
+
+// Test event with custom signature
+type TestEventCustom struct{}
+
+func (t *TestEventCustom) Signature() string {
+	return "TestEventCustom"
+}
+
+func (t *TestEventCustom) Handle(args []event.Arg) ([]event.Arg, error) {
+	return args, nil
+}
+
+// Test queue listener
+type TestQueueListener struct {
+	HandleFunc      func(args ...any) error
+	ShouldQueueFunc bool
+}
+
+func (l *TestQueueListener) Handle(args ...any) error {
+	if l.HandleFunc != nil {
+		return l.HandleFunc(args...)
+	}
+	return nil
+}
+
+func (l *TestQueueListener) ShouldQueue() bool {
+	return l.ShouldQueueFunc
+}
+
+func (l *TestQueueListener) Signature() string {
+	return "TestQueueListener"
+}
+
+// Test event queue listener
+type TestEventQueueListener struct {
+	HandleFunc      func(evt any, args ...any) error
+	ShouldQueueFunc bool
+}
+
+func (l *TestEventQueueListener) Handle(evt any, args ...any) error {
+	if l.HandleFunc != nil {
+		return l.HandleFunc(evt, args...)
+	}
+	return nil
+}
+
+func (l *TestEventQueueListener) ShouldQueue() bool {
+	return l.ShouldQueueFunc
+}
+
+func (l *TestEventQueueListener) Signature() string {
+	return "TestEventQueueListener"
+}
+
+func TestApplication_callListener(t *testing.T) {
+	mockQueue := mocksqueue.NewQueue(t)
+	app := NewApplication(mockQueue)
+
+	t.Run("FunctionListener", func(t *testing.T) {
+		called := false
+		listener := func(name string) any {
+			called = true
+			assert.Equal(t, "test", name)
+			return "result"
+		}
+		
+		result := app.callListener(listener, "test", nil)
+		assert.True(t, called)
+		assert.Equal(t, "result", result)
+	})
+
+	t.Run("StructWithHandleMethod", func(t *testing.T) {
+		listener := &TestListener{}
+		
+		result := app.callListener(listener, "test", nil)
+		assert.Nil(t, result)
+	})
+
+	t.Run("QueueListenerShouldNotQueue", func(t *testing.T) {
+		listener := &TestQueueListener{
+			ShouldQueueFunc: false,
+		}
+		
+		// Should call the listener directly when not queued
+		result := app.callListener(listener, "test", nil)
+		assert.Nil(t, result)
+	})
+
+	t.Run("EventQueueListenerShouldNotQueue", func(t *testing.T) {
+		listener := &TestEventQueueListener{
+			ShouldQueueFunc: false,
+		}
+		
+		// Should call the listener directly when not queued
+		result := app.callListener(listener, "test", nil)
+		assert.Nil(t, result)
+	})
+
+	t.Run("InvalidListener", func(t *testing.T) {
+		type InvalidListener struct{}
+		listener := &InvalidListener{}
+		
+		result := app.callListener(listener, "test", nil)
+		assert.Nil(t, result)
+	})
+}
+
+func TestApplication_callListenerHandle(t *testing.T) {
+	mockQueue := mocksqueue.NewQueue(t)
+	app := NewApplication(mockQueue)
+
+	t.Run("NoArguments", func(t *testing.T) {
+		called := false
+		fn := reflect.ValueOf(func() any {
+			called = true
+			return "no-args"
+		})
+		
+		result := app.callListenerHandle(fn, "test", nil)
+		assert.True(t, called)
+		assert.Equal(t, "no-args", result)
+	})
+
+	t.Run("EventAsFirstArgument", func(t *testing.T) {
+		called := false
+		fn := reflect.ValueOf(func(name string) any {
+			called = true
+			assert.Equal(t, "test", name)
+			return "with-event"
+		})
+		
+		result := app.callListenerHandle(fn, "test", nil)
+		assert.True(t, called)
+		assert.Equal(t, "with-event", result)
+	})
+
+	t.Run("WithPayloadArgs", func(t *testing.T) {
+		called := false
+		args := []event.Arg{{Value: "payload1", Type: "string"}, {Value: 42, Type: "int"}}
+		fn := reflect.ValueOf(func(name string, payload string, num int) any {
+			called = true
+			assert.Equal(t, "test", name)
+			assert.Equal(t, "payload1", payload)
+			assert.Equal(t, 42, num)
+			return "with-payload"
+		})
+		
+		result := app.callListenerHandle(fn, "test", args)
+		assert.True(t, called)
+		assert.Equal(t, "with-payload", result)
+	})
+
+	t.Run("VariadicSliceArgument", func(t *testing.T) {
+		called := false
+		args := []event.Arg{{Value: "arg1", Type: "string"}, {Value: "arg2", Type: "string"}}
+		fn := reflect.ValueOf(func(name string, remaining []any) any {
+			called = true
+			assert.Equal(t, "test", name)
+			assert.Len(t, remaining, 2)
+			assert.Equal(t, "arg1", remaining[0])
+			assert.Equal(t, "arg2", remaining[1])
+			return "variadic"
+		})
+		
+		result := app.callListenerHandle(fn, "test", args)
+		assert.True(t, called)
+		assert.Equal(t, "variadic", result)
+	})
+}
+
+
+func TestApplication_getWildcardListeners(t *testing.T) {
+	mockQueue := mocksqueue.NewQueue(t)
+	app := NewApplication(mockQueue)
+
+	t.Run("MatchingWildcard", func(t *testing.T) {
+		listener1 := func() {}
+		listener2 := func() {}
+		
+		app.wildcards = map[string][]any{
+			"user.*": {listener1, listener2},
+			"order.*": {func() {}},
+		}
+		app.wildcardsCache = make(map[string][]any)
+		
+		listeners := app.getWildcardListeners("user.created")
+		assert.Len(t, listeners, 2)
+		
+		// Check cache was updated
+		cached, exists := app.wildcardsCache["user.created"]
+		assert.True(t, exists)
+		assert.Len(t, cached, 2)
+	})
+
+	t.Run("NoMatchingWildcard", func(t *testing.T) {
+		app.wildcards = map[string][]any{
+			"order.*": {func() {}},
+		}
+		app.wildcardsCache = make(map[string][]any)
+		
+		listeners := app.getWildcardListeners("user.created")
+		assert.Empty(t, listeners)
+	})
+}
+
+func TestApplication_prepareListeners(t *testing.T) {
+	mockQueue := mocksqueue.NewQueue(t)
+	app := NewApplication(mockQueue)
+
+	t.Run("DirectAndWildcardListeners", func(t *testing.T) {
+		directListener := func() {}
+		wildcardListener := func() {}
+		
+		app.listeners = map[string][]any{
+			"user.created": {directListener},
+		}
+		app.wildcardsCache = map[string][]any{
+			"user.created": {wildcardListener},
+		}
+		
+		listeners := app.prepareListeners("user.created")
+		assert.Len(t, listeners, 2)
+	})
+
+	t.Run("OnlyDirectListeners", func(t *testing.T) {
+		listener := func() {}
+		
+		app.listeners = map[string][]any{
+			"user.created": {listener},
+		}
+		app.wildcardsCache = make(map[string][]any)
+		app.wildcards = make(map[string][]any)
+		
+		listeners := app.prepareListeners("user.created")
+		assert.Len(t, listeners, 1)
+	})
+
+	t.Run("NoListeners", func(t *testing.T) {
+		app.listeners = make(map[string][]any)
+		app.wildcardsCache = make(map[string][]any)
+		app.wildcards = make(map[string][]any)
+		
+		listeners := app.prepareListeners("nonexistent.event")
+		assert.Empty(t, listeners)
 	})
 }
