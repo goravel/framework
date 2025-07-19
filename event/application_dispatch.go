@@ -44,7 +44,7 @@ func (app *Application) Dispatch(evt any, payload ...[]event.Arg) []any {
 
 // call - Safe function call with recovery
 func (app *Application) call(fn reflect.Value, args []reflect.Value) any {
-	defer func() { recover() }()
+	defer func() { _ = recover() }()
 	if results := fn.Call(args); len(results) > 0 {
 		return results[0].Interface()
 	}
