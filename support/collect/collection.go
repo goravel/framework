@@ -797,8 +797,8 @@ func (c *Collection[T]) Random() *T {
 	if len(c.items) == 0 {
 		return nil
 	}
-	rand.Seed(time.Now().UnixNano())
-	return &c.items[rand.Intn(len(c.items))]
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	return &c.items[rng.Intn(len(c.items))]
 }
 
 func Reduce[T, R any](c *Collection[T], fn func(R, T, int) R, initial R) R {
@@ -868,9 +868,9 @@ func (c *Collection[T]) Shuffle() *Collection[T] {
 	shuffled := make([]T, len(c.items))
 	copy(shuffled, c.items)
 
-	rand.Seed(time.Now().UnixNano())
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := len(shuffled) - 1; i > 0; i-- {
-		j := rand.Intn(i + 1)
+		j := rng.Intn(i + 1)
 		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
 	}
 

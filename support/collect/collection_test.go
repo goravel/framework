@@ -763,3 +763,347 @@ func TestMapMethodTypes(t *testing.T) {
 		t.Errorf("Expected empty mapped collection, got %d items", emptyMapped.Count())
 	}
 }
+
+func TestReduceMethod(t *testing.T) {
+	// Test with integers
+	numbers := New(1, 2, 3, 4, 5)
+
+	// Test basic sum reduction
+	sum := numbers.Reduce(func(acc interface{}, item int, index int) interface{} {
+		accValue, _ := acc.(int)
+		return accValue + item
+	}, 0)
+
+	expectedSum := 15
+	if sum != expectedSum {
+		t.Errorf("Expected sum %v, got %v", expectedSum, sum)
+	}
+
+	// Test with string concatenation
+	strings := New("hello", "world", "test")
+	concat := strings.Reduce(func(acc interface{}, item string, index int) interface{} {
+		accValue, _ := acc.(string)
+		if index > 0 {
+			return accValue + "-" + item
+		}
+		return accValue + item
+	}, "")
+
+	expectedConcat := "hello-world-test"
+	if concat != expectedConcat {
+		t.Errorf("Expected concatenation %v, got %v", expectedConcat, concat)
+	}
+
+	// Test with custom accumulator type
+	type Accumulator struct {
+		Sum   int
+		Count int
+	}
+
+	avgAcc := numbers.Reduce(func(acc interface{}, item int, _ int) interface{} {
+		accValue, _ := acc.(Accumulator)
+		return Accumulator{
+			Sum:   accValue.Sum + item,
+			Count: accValue.Count + 1,
+		}
+	}, Accumulator{Sum: 0, Count: 0})
+
+	expectedAcc := Accumulator{Sum: 15, Count: 5}
+	if avgAcc.(Accumulator).Sum != expectedAcc.Sum || avgAcc.(Accumulator).Count != expectedAcc.Count {
+		t.Errorf("Expected accumulator %v, got %v", expectedAcc, avgAcc)
+	}
+
+	// Test with empty collection
+	empty := New[int]()
+	emptyResult := empty.Reduce(func(acc interface{}, item int, _ int) interface{} {
+		accValue, _ := acc.(int)
+		return accValue + item
+	}, 0)
+
+	if emptyResult != 0 {
+		t.Errorf("Expected empty result 0, got %v", emptyResult)
+	}
+
+	// Test using index in reducer
+	indexSum := numbers.Reduce(func(acc interface{}, item int, index int) interface{} {
+		accValue, _ := acc.(int)
+		return accValue + (item * index)
+	}, 0)
+
+	// 0*1 + 1*2 + 2*3 + 3*4 + 4*5 = 40
+	expectedIndexSum := 40
+	if indexSum != expectedIndexSum {
+		t.Errorf("Expected index sum %v, got %v", expectedIndexSum, indexSum)
+	}
+}
+
+func TestMapIntoMethod(t *testing.T) {
+	// Test converting ints to floats (compatible types)
+	numbers := New(1, 2, 3, 4, 5)
+	floatTarget := float64(0) // Target type hint
+
+	floatColl := numbers.MapInto(floatTarget)
+	if floatColl.Count() != numbers.Count() {
+		t.Errorf("Expected same collection size after MapInto, got %d vs %d", floatColl.Count(), numbers.Count())
+	}
+
+	// Verify all items were converted to float64
+	for i, item := range floatColl.All() {
+		val, ok := item.(float64)
+		if !ok {
+			t.Errorf("Item at index %d should be float64, got %T", i, item)
+		}
+		expectedFloat := float64(i + 1)
+		if val != expectedFloat {
+			t.Errorf("Expected float value %v at index %d, got %v", expectedFloat, i, val)
+		}
+	}
+
+	// Test with incompatible types (string to int)
+	strings := New("1", "2", "3", "foo", "bar")
+	intTarget := 0 // Target type hint
+
+	convColl := strings.MapInto(intTarget)
+	if convColl.Count() != strings.Count() {
+		t.Errorf("Expected same collection size after MapInto, got %d vs %d", convColl.Count(), strings.Count())
+	}
+
+	// Verify incompatible items remain as original strings
+	for _, item := range convColl.All() {
+		_, ok := item.(int)
+		if ok {
+			t.Errorf("String should not convert to int, got %T: %v", item, item)
+		}
+		_, isString := item.(string)
+		if !isString {
+			t.Errorf("Item should remain as string, got %T: %v", item, item)
+		}
+	}
+
+	// Test with empty collection
+	empty := New[int]()
+	emptyResult := empty.MapInto(floatTarget)
+
+	if emptyResult.Count() != 0 {
+		t.Errorf("Expected empty result collection, got size %d", emptyResult.Count())
+	}
+
+	// Test with custom struct types
+	type SimpleStruct struct {
+		Value int
+	}
+
+	type ComplexStruct struct {
+		Value int
+		Extra string
+	}
+
+	simple := New(
+		SimpleStruct{Value: 1},
+		SimpleStruct{Value: 2},
+		SimpleStruct{Value: 3},
+	)
+
+	// SimpleStruct is not convertible to ComplexStruct
+	complexTarget := ComplexStruct{}
+	complexColl := simple.MapInto(complexTarget)
+
+	for _, item := range complexColl.All() {
+		_, ok := item.(ComplexStruct)
+		if ok {
+			t.Errorf("SimpleStruct should not be convertible to ComplexStruct")
+		}
+
+		// Items should remain as SimpleStruct
+		_, isSimple := item.(SimpleStruct)
+		if !isSimple {
+			t.Errorf("Item should remain as SimpleStruct, got %T", item)
+		}
+	}
+}
+
+func TestMapCollectFunction(t *testing.T) {
+	// Test MapCollect with simple types
+	numbers := New(1, 2, 3, 4, 5)
+
+	// Map int to int
+	doubled := MapCollect(numbers, func(item int, _ int) int {
+		return item * 2
+	})
+
+	expectedDoubled := []int{2, 4, 6, 8, 10}
+	if !reflect.DeepEqual(doubled.All(), expectedDoubled) {
+		t.Errorf("Expected %v after MapCollect, got %v", expectedDoubled, doubled.All())
+	}
+
+	// Map int to string
+	numberStrings := MapCollect(numbers, func(item int, index int) string {
+		return fmt.Sprintf("item-%d-%d", index, item)
+	})
+
+	expectedStrings := []string{"item-0-1", "item-1-2", "item-2-3", "item-3-4", "item-4-5"}
+	if !reflect.DeepEqual(numberStrings.All(), expectedStrings) {
+		t.Errorf("Expected %v after MapCollect, got %v", expectedStrings, numberStrings.All())
+	}
+
+	// Test with empty collection
+	empty := New[int]()
+	emptyMapped := MapCollect(empty, func(item int, _ int) string {
+		return fmt.Sprintf("%d", item)
+	})
+
+	if emptyMapped.Count() != 0 {
+		t.Errorf("Expected empty collection after MapCollect, got %d items", emptyMapped.Count())
+	}
+
+	// Test with complex types
+	type Person struct {
+		Name string
+		Age  int
+	}
+
+	type PersonSummary struct {
+		DisplayName string
+		IsAdult     bool
+	}
+
+	people := New(
+		Person{Name: "Alice", Age: 25},
+		Person{Name: "Bob", Age: 17},
+		Person{Name: "Charlie", Age: 30},
+	)
+
+	summaries := MapCollect(people, func(p Person, i int) PersonSummary {
+		return PersonSummary{
+			DisplayName: fmt.Sprintf("%d: %s", i+1, p.Name),
+			IsAdult:     p.Age >= 18,
+		}
+	})
+
+	expectedSummaries := []PersonSummary{
+		{DisplayName: "1: Alice", IsAdult: true},
+		{DisplayName: "2: Bob", IsAdult: false},
+		{DisplayName: "3: Charlie", IsAdult: true},
+	}
+
+	if summaries.Count() != 3 {
+		t.Errorf("Expected 3 items after MapCollect, got %d", summaries.Count())
+	}
+
+	// Test struct equality
+	for i, summary := range summaries.All() {
+		expected := expectedSummaries[i]
+		if summary.DisplayName != expected.DisplayName || summary.IsAdult != expected.IsAdult {
+			t.Errorf("Expected summary %v at index %d, got %v", expected, i, summary)
+		}
+	}
+
+	// Test nested mapping and chaining
+	result := MapCollect(numbers, func(n int, _ int) int {
+		return n * 2
+	}).Filter(func(n int, _ int) bool {
+		return n > 5
+	})
+
+	expectedResult := []int{6, 8, 10}
+	if !reflect.DeepEqual(result.All(), expectedResult) {
+		t.Errorf("Expected %v after chained operations, got %v", expectedResult, result.All())
+	}
+}
+
+func TestGenericReduceFunction(t *testing.T) {
+	// Test basic sum reduction with int to int
+	numbers := New(1, 2, 3, 4, 5)
+	sum := Reduce(numbers, func(acc int, item int, _ int) int {
+		return acc + item
+	}, 0)
+
+	expectedSum := 15
+	if sum != expectedSum {
+		t.Errorf("Expected sum %d, got %d", expectedSum, sum)
+	}
+
+	// Test string concatenation with string to string
+	words := New("Hello", "World", "Test")
+	concat := Reduce(words, func(acc string, item string, index int) string {
+		if index == 0 {
+			return item
+		}
+		return acc + " " + item
+	}, "")
+
+	expectedConcat := "Hello World Test"
+	if concat != expectedConcat {
+		t.Errorf("Expected concatenation %q, got %q", expectedConcat, concat)
+	}
+
+	// Test with custom types - calculate average age
+	type Person struct {
+		Name string
+		Age  int
+	}
+
+	type Stats struct {
+		Total int
+		Count int
+	}
+
+	people := New(
+		Person{Name: "Alice", Age: 25},
+		Person{Name: "Bob", Age: 17},
+		Person{Name: "Charlie", Age: 30},
+	)
+
+	ageStats := Reduce(people, func(acc Stats, p Person, _ int) Stats {
+		return Stats{
+			Total: acc.Total + p.Age,
+			Count: acc.Count + 1,
+		}
+	}, Stats{Total: 0, Count: 0})
+
+	expectedStats := Stats{Total: 72, Count: 3} // 25 + 17 + 30 = 72, count = 3
+	if ageStats.Total != expectedStats.Total || ageStats.Count != expectedStats.Count {
+		t.Errorf("Expected stats %v, got %v", expectedStats, ageStats)
+	}
+
+	avgAge := float64(ageStats.Total) / float64(ageStats.Count)
+	expectedAvg := 24.0 // (25 + 17 + 30) / 3 = 24
+	if avgAge != expectedAvg {
+		t.Errorf("Expected average age %.1f, got %.1f", expectedAvg, avgAge)
+	}
+
+	// Test with empty collection
+	empty := New[int]()
+	emptyResult := Reduce(empty, func(acc int, item int, _ int) int {
+		return acc + item
+	}, 100) // Initial value should be returned for empty collections
+
+	if emptyResult != 100 {
+		t.Errorf("Expected initial value 100 for empty collection, got %d", emptyResult)
+	}
+
+	// Test with index usage in reducer
+	indexProduct := Reduce(numbers, func(acc int, item int, index int) int {
+		return acc + (item * index)
+	}, 0)
+
+	// 0*1 + 1*2 + 2*3 + 3*4 + 4*5 = 40
+	expectedIndexProduct := 40
+	if indexProduct != expectedIndexProduct {
+		t.Errorf("Expected index product %d, got %d", expectedIndexProduct, indexProduct)
+	}
+
+	// Test chaining with other collection methods
+	even := numbers.Filter(func(n int, _ int) bool {
+		return n%2 == 0
+	})
+
+	evenSum := Reduce(even, func(acc int, item int, _ int) int {
+		return acc + item
+	}, 0)
+
+	expectedEvenSum := 6 // 2 + 4 = 6
+	if evenSum != expectedEvenSum {
+		t.Errorf("Expected filtered sum %d, got %d", expectedEvenSum, evenSum)
+	}
+}

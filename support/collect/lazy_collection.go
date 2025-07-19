@@ -43,8 +43,6 @@ func (it *lazyIterator[T]) Reset() {
 	it.done = false
 }
 
-// PUBLIC METHODS (Alphabetical Order)
-
 func (lc *LazyCollection[T]) All() []T {
 	var result []T
 	ch := lc.execute()
@@ -851,24 +849,16 @@ func (lc *LazyCollection[T]) Zip(other *LazyCollection[T]) [][]T {
 	ch1 := lc.execute()
 	ch2 := other.execute()
 
-	for {
-		select {
-		case item1, ok1 := <-ch1:
-			if !ok1 {
-				return result
-			}
-			select {
-			case item2, ok2 := <-ch2:
-				if !ok2 {
-					return result
-				}
-				result = append(result, []T{item1, item2})
-			}
+	for item1 := range ch1 {
+		item2, ok2 := <-ch2
+		if !ok2 {
+			break
 		}
+		result = append(result, []T{item1, item2})
 	}
-}
 
-// INTERNAL HELPER FUNCTIONS (Alphabetical Order)
+	return result
+}
 
 func (lc *LazyCollection[T]) execute() <-chan T {
 	ch := lc.generator()

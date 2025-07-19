@@ -920,3 +920,110 @@ func TestLazyMapPerformance(t *testing.T) {
 		t.Logf("Lazy Map evaluation took %v (should be fast)", duration)
 	}
 }
+
+func TestLazyZip(t *testing.T) {
+	// Test zip with equal length collections
+	first := LazyCollect([]int{1, 2, 3})
+	second := LazyCollect([]int{4, 5, 6})
+
+	zipped := first.Zip(second)
+
+	if len(zipped) != 3 {
+		t.Errorf("Expected 3 items, got %d", len(zipped))
+	}
+
+	for i, pair := range zipped {
+		if len(pair) != 2 {
+			t.Errorf("Expected pair to have 2 items, got %d", len(pair))
+		}
+		if pair[0] != i+1 {
+			t.Errorf("Expected first item to be %d, got %v", i+1, pair[0])
+		}
+		if pair[1] != i+4 {
+			t.Errorf("Expected second item to be %d, got %v", i+4, pair[1])
+		}
+	}
+
+	// Test zip with first collection shorter
+	first = LazyCollect([]int{1, 2})
+	second = LazyCollect([]int{4, 5, 6, 7})
+
+	zipped = first.Zip(second)
+
+	if len(zipped) != 2 {
+		t.Errorf("Expected 2 items, got %d", len(zipped))
+	}
+
+	for i, pair := range zipped {
+		if pair[0] != i+1 {
+			t.Errorf("Expected first item to be %d, got %v", i+1, pair[0])
+		}
+		if pair[1] != i+4 {
+			t.Errorf("Expected second item to be %d, got %v", i+4, pair[1])
+		}
+	}
+
+	// Test zip with second collection shorter
+	first = LazyCollect([]int{1, 2, 3, 4})
+	second = LazyCollect([]int{5, 6})
+
+	zipped = first.Zip(second)
+
+	if len(zipped) != 2 {
+		t.Errorf("Expected 2 items, got %d", len(zipped))
+	}
+
+	for i, pair := range zipped {
+		if pair[0] != i+1 {
+			t.Errorf("Expected first item to be %d, got %v", i+1, pair[0])
+		}
+		if pair[1] != i+5 {
+			t.Errorf("Expected second item to be %d, got %v", i+5, pair[1])
+		}
+	}
+
+	// Test with empty first collection
+	first = LazyCollect([]int{})
+	second = LazyCollect([]int{4, 5, 6})
+
+	zipped = first.Zip(second)
+
+	if len(zipped) != 0 {
+		t.Errorf("Expected 0 items, got %d", len(zipped))
+	}
+
+	// Test with empty second collection
+	first = LazyCollect([]int{1, 2, 3})
+	second = LazyCollect([]int{})
+
+	zipped = first.Zip(second)
+
+	if len(zipped) != 0 {
+		t.Errorf("Expected 0 items, got %d", len(zipped))
+	}
+
+	// Test with string type
+	firstStr := LazyCollect([]string{"a", "b", "c"})
+	secondStr := LazyCollect([]string{"x", "y", "z"})
+
+	zippedStr := firstStr.Zip(secondStr)
+
+	if len(zippedStr) != 3 {
+		t.Errorf("Expected 3 items, got %d", len(zippedStr))
+	}
+
+	expectedPairs := [][]string{
+		{"a", "x"},
+		{"b", "y"},
+		{"c", "z"},
+	}
+
+	for i, pair := range zippedStr {
+		if pair[0] != expectedPairs[i][0] {
+			t.Errorf("Expected first item to be %s, got %v", expectedPairs[i][0], pair[0])
+		}
+		if pair[1] != expectedPairs[i][1] {
+			t.Errorf("Expected second item to be %s, got %v", expectedPairs[i][1], pair[1])
+		}
+	}
+}
