@@ -3,9 +3,10 @@ package pluralizer
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/goravel/framework/contracts/support/pluralizer"
 	"github.com/goravel/framework/support/pluralizer/rules"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestDefaultLanguage(t *testing.T) {

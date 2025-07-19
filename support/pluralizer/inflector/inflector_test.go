@@ -1,14 +1,15 @@
-package pluralizer
+package inflector
 
 import (
 	"testing"
 
-	"github.com/goravel/framework/support/pluralizer/english"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/goravel/framework/support/pluralizer/english"
 )
 
 func TestInflectorPlural(t *testing.T) {
-	inflector := NewInflector(english.New())
+	inflector := New(english.New())
 
 	tests := []struct {
 		input    string
@@ -33,7 +34,7 @@ func TestInflectorPlural(t *testing.T) {
 }
 
 func TestInflectorSingular(t *testing.T) {
-	inflector := NewInflector(english.New())
+	inflector := New(english.New())
 
 	tests := []struct {
 		input    string
@@ -58,7 +59,7 @@ func TestInflectorSingular(t *testing.T) {
 }
 
 func TestInflectorCasePreservation(t *testing.T) {
-	inflector := NewInflector(english.New())
+	inflector := New(english.New())
 
 	tests := []struct {
 		input    string
@@ -86,7 +87,7 @@ func TestInflectorCasePreservation(t *testing.T) {
 }
 
 func TestInflectorUncountableWords(t *testing.T) {
-	inflector := NewInflector(english.New())
+	inflector := New(english.New())
 
 	uncountable := []string{
 		"fish", "sheep", "deer", "moose", "swine",
@@ -101,7 +102,7 @@ func TestInflectorUncountableWords(t *testing.T) {
 }
 
 func TestInflectorIrregularWords(t *testing.T) {
-	inflector := NewInflector(english.New())
+	inflector := New(english.New())
 
 	irregulars := map[string]string{
 		"person": "people",

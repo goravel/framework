@@ -1,4 +1,4 @@
-package pluralizer
+package inflector
 
 import (
 	"strings"
@@ -11,7 +11,7 @@ type Inflector struct {
 	language pluralizer.Language
 }
 
-func NewInflector(language pluralizer.Language) pluralizer.Inflector {
+func New(language pluralizer.Language) pluralizer.Inflector {
 	return &Inflector{
 		language: language,
 	}
@@ -51,7 +51,7 @@ func (r *Inflector) inflect(word string, ruleset pluralizer.Ruleset) string {
 	}
 
 	for _, transformation := range ruleset.Regular() {
-		if result := transformation.Apply(word); result != word {
+		if result := transformation.Apply(word); result != "" {
 			return matchCase(result, word)
 		}
 	}

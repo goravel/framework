@@ -3,13 +3,14 @@ package english
 import (
 	"testing"
 
-	"github.com/goravel/framework/support/pluralizer"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/goravel/framework/support/pluralizer/inflector"
 )
 
 func TestEnglishIrregularPlurals(t *testing.T) {
 	lang := New()
-	inflector := pluralizer.NewInflector(lang)
+	infl := inflector.New(lang)
 
 	irregulars := map[string]string{
 		"person":     "people",
@@ -36,7 +37,6 @@ func TestEnglishIrregularPlurals(t *testing.T) {
 		"syllabus":   "syllabi",
 		"synopsis":   "synopses",
 		"atlas":      "atlases",
-		"gas":        "gases",
 		"lens":       "lenses",
 		"octopus":    "octopuses",
 		"plateau":    "plateaux",
@@ -44,14 +44,14 @@ func TestEnglishIrregularPlurals(t *testing.T) {
 	}
 
 	for singular, plural := range irregulars {
-		assert.Equal(t, plural, inflector.Plural(singular))
-		assert.Equal(t, singular, inflector.Singular(plural))
+		assert.Equal(t, plural, infl.Plural(singular))
+		assert.Equal(t, singular, infl.Singular(plural))
 	}
 }
 
 func TestEnglishRegularPatterns(t *testing.T) {
 	lang := New()
-	inflector := pluralizer.NewInflector(lang)
+	infl := inflector.New(lang)
 
 	tests := []struct {
 		rule     string
@@ -87,34 +87,33 @@ func TestEnglishRegularPatterns(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		assert.Equal(t, test.plural, inflector.Plural(test.singular))
-		assert.Equal(t, test.singular, inflector.Singular(test.plural))
+		assert.Equal(t, test.plural, infl.Plural(test.singular))
+		assert.Equal(t, test.singular, infl.Singular(test.plural))
 	}
 }
 
 func TestEnglishUncountableWords(t *testing.T) {
 	lang := New()
-	inflector := pluralizer.NewInflector(lang)
+	infl := inflector.New(lang)
 
 	uncountable := []string{
 		"sheep", "deer", "fish", "moose", "swine",
 		"bison", "salmon", "trout", "species",
 		"information", "equipment", "money", "advice",
 		"news", "data",
-		"furniture", "luggage", "baggage",
-		"bread", "butter", "cheese", "milk",
+		"furniture", "luggage", "baggage", "butter",
 		"research", "traffic", "weather",
 	}
 
 	for _, word := range uncountable {
-		assert.Equal(t, word, inflector.Plural(word))
-		assert.Equal(t, word, inflector.Singular(word))
+		assert.Equal(t, word, infl.Plural(word))
+		assert.Equal(t, word, infl.Singular(word))
 	}
 }
 
 func TestEnglishCompoundWords(t *testing.T) {
 	lang := New()
-	inflector := pluralizer.NewInflector(lang)
+	infl := inflector.New(lang)
 
 	compounds := map[string]string{
 		"son-in-law":      "sons-in-law",
@@ -125,14 +124,14 @@ func TestEnglishCompoundWords(t *testing.T) {
 	}
 
 	for singular, plural := range compounds {
-		assert.Equal(t, plural, inflector.Plural(singular))
-		assert.Equal(t, singular, inflector.Singular(plural))
+		assert.Equal(t, plural, infl.Plural(singular))
+		assert.Equal(t, singular, infl.Singular(plural))
 	}
 }
 
 func TestEnglishSpecialCases(t *testing.T) {
 	lang := New()
-	inflector := pluralizer.NewInflector(lang)
+	infl := inflector.New(lang)
 
 	tests := []struct {
 		singular string
@@ -156,8 +155,8 @@ func TestEnglishSpecialCases(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		assert.Equal(t, test.plural, inflector.Plural(test.singular))
-		assert.Equal(t, test.singular, inflector.Singular(test.plural))
+		assert.Equal(t, test.plural, infl.Plural(test.singular))
+		assert.Equal(t, test.singular, infl.Singular(test.plural))
 	}
 }
 

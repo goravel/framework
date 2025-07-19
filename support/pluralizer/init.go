@@ -3,13 +3,14 @@ package pluralizer
 import (
 	"github.com/goravel/framework/contracts/support/pluralizer"
 	"github.com/goravel/framework/support/pluralizer/english"
+	"github.com/goravel/framework/support/pluralizer/inflector"
 )
 
 var (
 	instance         pluralizer.Inflector
 	currentLanguage  string
 	inflectorFactory = map[string]pluralizer.Inflector{
-		"english": NewInflector(english.New()),
+		"english": inflector.New(english.New()),
 	}
 )
 
@@ -34,7 +35,7 @@ func RegisterLanguage(language pluralizer.Language) {
 		return
 	}
 
-	inflectorFactory[language.Name()] = NewInflector(language)
+	inflectorFactory[language.Name()] = inflector.New(language)
 }
 
 func Plural(word string) string {

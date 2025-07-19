@@ -1,8 +1,9 @@
 package rules
 
 import (
-	"github.com/goravel/framework/contracts/support/pluralizer"
 	"regexp"
+
+	"github.com/goravel/framework/contracts/support/pluralizer"
 )
 
 type Transformation struct {
@@ -20,8 +21,9 @@ func NewTransformation(pattern, replacement string) *Transformation {
 }
 
 func (r *Transformation) Apply(word string) string {
-	if r.pattern.MatchString(word) {
-		return r.pattern.ReplaceAllString(word, r.replacement)
+	if !r.pattern.MatchString(word) {
+		return ""
 	}
-	return word
+
+	return r.pattern.ReplaceAllString(word, r.replacement)
 }
