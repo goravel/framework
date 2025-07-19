@@ -524,6 +524,15 @@ func (c *Collection[T]) Map(fn func(T, int) interface{}) *Collection[interface{}
 	return &Collection[interface{}]{items: mapped}
 }
 
+// MapCollect it will be renamed to Map in next release
+func MapCollect[T, R any](c *Collection[T], fn func(T, int) R) *Collection[R] {
+	mapped := make([]R, len(c.items))
+	for i, item := range c.items {
+		mapped[i] = fn(item, i)
+	}
+	return &Collection[R]{items: mapped}
+}
+
 // Reduce reduces the collection to a single value using the given reducer function
 func (c *Collection[T]) Reduce(fn func(acc interface{}, item T, index int) interface{}, initial interface{}) interface{} {
 	acc := initial
@@ -538,10 +547,10 @@ func (c *Collection[T]) Reduce(fn func(acc interface{}, item T, index int) inter
 func (c *Collection[T]) MapInto(target interface{}) *Collection[interface{}] {
 	targetType := reflect.TypeOf(target)
 	mapped := make([]interface{}, len(c.items))
-	
+
 	for i, item := range c.items {
 		itemValue := reflect.ValueOf(item)
-		
+
 		// Try to convert the item to the target type
 		if itemValue.Type().ConvertibleTo(targetType) {
 			converted := itemValue.Convert(targetType)
@@ -551,7 +560,7 @@ func (c *Collection[T]) MapInto(target interface{}) *Collection[interface{}] {
 			mapped[i] = item
 		}
 	}
-	
+
 	return &Collection[interface{}]{items: mapped}
 }
 
@@ -790,6 +799,14 @@ func (c *Collection[T]) Random() *T {
 	}
 	rand.Seed(time.Now().UnixNano())
 	return &c.items[rand.Intn(len(c.items))]
+}
+
+func Reduce[T, R any](c *Collection[T], fn func(R, T, int) R, initial R) R {
+	result := initial
+	for i, item := range c.items {
+		result = fn(result, item, i)
+	}
+	return result
 }
 
 func (c *Collection[T]) Reject(predicate func(T, int) bool) *Collection[T] {
