@@ -20,6 +20,128 @@ func (_m *Ruleset) EXPECT() *Ruleset_Expecter {
 	return &Ruleset_Expecter{mock: &_m.Mock}
 }
 
+// AddIrregular provides a mock function with given fields: substitutions
+func (_m *Ruleset) AddIrregular(substitutions ...pluralizer.Substitution) pluralizer.Ruleset {
+	_va := make([]interface{}, len(substitutions))
+	for _i := range substitutions {
+		_va[_i] = substitutions[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AddIrregular")
+	}
+
+	var r0 pluralizer.Ruleset
+	if rf, ok := ret.Get(0).(func(...pluralizer.Substitution) pluralizer.Ruleset); ok {
+		r0 = rf(substitutions...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(pluralizer.Ruleset)
+		}
+	}
+
+	return r0
+}
+
+// Ruleset_AddIrregular_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddIrregular'
+type Ruleset_AddIrregular_Call struct {
+	*mock.Call
+}
+
+// AddIrregular is a helper method to define mock.On call
+//   - substitutions ...pluralizer.Substitution
+func (_e *Ruleset_Expecter) AddIrregular(substitutions ...interface{}) *Ruleset_AddIrregular_Call {
+	return &Ruleset_AddIrregular_Call{Call: _e.mock.On("AddIrregular",
+		append([]interface{}{}, substitutions...)...)}
+}
+
+func (_c *Ruleset_AddIrregular_Call) Run(run func(substitutions ...pluralizer.Substitution)) *Ruleset_AddIrregular_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]pluralizer.Substitution, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(pluralizer.Substitution)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Ruleset_AddIrregular_Call) Return(_a0 pluralizer.Ruleset) *Ruleset_AddIrregular_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Ruleset_AddIrregular_Call) RunAndReturn(run func(...pluralizer.Substitution) pluralizer.Ruleset) *Ruleset_AddIrregular_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// AddUninflected provides a mock function with given fields: words
+func (_m *Ruleset) AddUninflected(words ...string) pluralizer.Ruleset {
+	_va := make([]interface{}, len(words))
+	for _i := range words {
+		_va[_i] = words[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AddUninflected")
+	}
+
+	var r0 pluralizer.Ruleset
+	if rf, ok := ret.Get(0).(func(...string) pluralizer.Ruleset); ok {
+		r0 = rf(words...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(pluralizer.Ruleset)
+		}
+	}
+
+	return r0
+}
+
+// Ruleset_AddUninflected_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddUninflected'
+type Ruleset_AddUninflected_Call struct {
+	*mock.Call
+}
+
+// AddUninflected is a helper method to define mock.On call
+//   - words ...string
+func (_e *Ruleset_Expecter) AddUninflected(words ...interface{}) *Ruleset_AddUninflected_Call {
+	return &Ruleset_AddUninflected_Call{Call: _e.mock.On("AddUninflected",
+		append([]interface{}{}, words...)...)}
+}
+
+func (_c *Ruleset_AddUninflected_Call) Run(run func(words ...string)) *Ruleset_AddUninflected_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Ruleset_AddUninflected_Call) Return(_a0 pluralizer.Ruleset) *Ruleset_AddUninflected_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Ruleset_AddUninflected_Call) RunAndReturn(run func(...string) pluralizer.Ruleset) *Ruleset_AddUninflected_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Irregular provides a mock function with no fields
 func (_m *Ruleset) Irregular() pluralizer.Substitutions {
 	ret := _m.Called()
