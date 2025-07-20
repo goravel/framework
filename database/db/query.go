@@ -18,6 +18,7 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/convert"
+	"github.com/goravel/framework/support/deep"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -102,7 +103,7 @@ func (r *Query) Count() (int64, error) {
 
 func (r *Query) CrossJoin(query string, args ...any) db.Query {
 	q := r.clone()
-	q.conditions.CrossJoin = append(q.conditions.CrossJoin, contractsdriver.Join{
+	q.conditions.CrossJoin = deep.Append(q.conditions.CrossJoin, contractsdriver.Join{
 		Query: query,
 		Args:  args,
 	})
@@ -388,7 +389,7 @@ func (r *Query) Having(query any, args ...any) db.Query {
 
 func (r *Query) Join(query string, args ...any) db.Query {
 	q := r.clone()
-	q.conditions.Join = append(q.conditions.Join, contractsdriver.Join{
+	q.conditions.Join = deep.Append(q.conditions.Join, contractsdriver.Join{
 		Query: query,
 		Args:  args,
 	})
@@ -494,7 +495,7 @@ func (r *Query) Latest(column ...string) db.Query {
 
 func (r *Query) LeftJoin(query string, args ...any) db.Query {
 	q := r.clone()
-	q.conditions.LeftJoin = append(q.conditions.LeftJoin, contractsdriver.Join{
+	q.conditions.LeftJoin = deep.Append(q.conditions.LeftJoin, contractsdriver.Join{
 		Query: query,
 		Args:  args,
 	})
@@ -530,21 +531,21 @@ func (r *Query) OrderBy(column string, directions ...string) db.Query {
 	}
 
 	q := r.clone()
-	q.conditions.OrderBy = append(q.conditions.OrderBy, column+" "+direction)
+	q.conditions.OrderBy = deep.Append(q.conditions.OrderBy, column+" "+direction)
 
 	return q
 }
 
 func (r *Query) OrderByDesc(column string) db.Query {
 	q := r.clone()
-	q.conditions.OrderBy = append(q.conditions.OrderBy, column+" DESC")
+	q.conditions.OrderBy = deep.Append(q.conditions.OrderBy, column+" DESC")
 
 	return q
 }
 
 func (r *Query) OrderByRaw(raw string) db.Query {
 	q := r.clone()
-	q.conditions.OrderBy = append(q.conditions.OrderBy, raw)
+	q.conditions.OrderBy = deep.Append(q.conditions.OrderBy, raw)
 
 	return q
 }
@@ -698,7 +699,7 @@ func (r *Query) Pluck(column string, dest any) error {
 
 func (r *Query) RightJoin(query string, args ...any) db.Query {
 	q := r.clone()
-	q.conditions.RightJoin = append(q.conditions.RightJoin, contractsdriver.Join{
+	q.conditions.RightJoin = deep.Append(q.conditions.RightJoin, contractsdriver.Join{
 		Query: query,
 		Args:  args,
 	})
@@ -708,7 +709,7 @@ func (r *Query) RightJoin(query string, args ...any) db.Query {
 
 func (r *Query) Select(columns ...string) db.Query {
 	q := r.clone()
-	q.conditions.Selects = append(q.conditions.Selects, columns...)
+	q.conditions.Selects = deep.Append(q.conditions.Selects, columns...)
 
 	return q
 }
@@ -957,7 +958,7 @@ func (r *Query) WhereRaw(raw string, args []any) db.Query {
 
 func (r *Query) addWhere(where contractsdriver.Where) db.Query {
 	q := r.clone()
-	q.conditions.Where = append(q.conditions.Where, where)
+	q.conditions.Where = deep.Append(q.conditions.Where, where)
 
 	return q
 }
