@@ -25,3 +25,12 @@ func (r *Substitution) From() string {
 func (r *Substitution) To() string {
 	return r.to
 }
+
+func GetFlippedSubstitutions(substitutions ...pluralizer.Substitution) []pluralizer.Substitution {
+	flipped := make([]pluralizer.Substitution, len(substitutions))
+	for i, sub := range substitutions {
+		flipped[i] = NewSubstitution(sub.To(), sub.From())
+	}
+
+	return flipped
+}

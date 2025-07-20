@@ -17,8 +17,18 @@ func New(language pluralizer.Language) pluralizer.Inflector {
 	}
 }
 
+func (r *Inflector) Language() pluralizer.Language {
+	return r.language
+}
+
 func (r *Inflector) Plural(word string) string {
 	return r.inflect(word, r.language.PluralRuleset())
+}
+
+func (r *Inflector) SetLanguage(language pluralizer.Language) pluralizer.Inflector {
+	r.language = language
+
+	return r
 }
 
 func (r *Inflector) Singular(word string) string {

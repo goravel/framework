@@ -18,6 +18,25 @@ func NewRuleset(regular pluralizer.Transformations, uninflected pluralizer.Patte
 	}
 }
 
+func (r *Ruleset) AddIrregular(substitutions ...pluralizer.Substitution) pluralizer.Ruleset {
+	r.irregular = append(substitutions, r.irregular...)
+	return r
+}
+
+func (r *Ruleset) AddUninflected(words ...string) pluralizer.Ruleset {
+	if len(words) == 0 {
+		return r
+	}
+
+	patterns := make([]pluralizer.Pattern, len(words))
+	for i, word := range words {
+		patterns[i] = NewPattern(word)
+	}
+
+	r.uninflected = append(patterns, r.uninflected...)
+	return r
+}
+
 func (r *Ruleset) Regular() pluralizer.Transformations {
 	return r.regular
 }
