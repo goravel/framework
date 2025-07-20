@@ -4007,6 +4007,50 @@ func TestSqlserverSchema(t *testing.T) {
 	assert.True(t, schema1.ID > 0)
 }
 
+// https://github.com/goravel/goravel/issues/732
+func TestFix732(t *testing.T) {
+	query := &Query{}
+	query = query.Where("name", "test").(*Query)
+	query = query.Where("name1", "test1").(*Query)
+	query = query.Where("name2", "test2").(*Query)
+	query1 := query.Where("name3", "test3").(*Query)
+
+	assert.Equal(t, []Where{
+		{query: "name", args: []any{"test"}},
+		{query: "name1", args: []any{"test1"}},
+		{query: "name2", args: []any{"test2"}},
+	}, query.conditions.where)
+
+	assert.Equal(t, []Where{
+		{query: "name", args: []any{"test"}},
+		{query: "name1", args: []any{"test1"}},
+		{query: "name2", args: []any{"test2"}},
+		{query: "name3", args: []any{"test3"}},
+	}, query1.conditions.where)
+
+	query2 := query.Where("name4", "test4").(*Query)
+
+	assert.Equal(t, []Where{
+		{query: "name", args: []any{"test"}},
+		{query: "name1", args: []any{"test1"}},
+		{query: "name2", args: []any{"test2"}},
+		{query: "name4", args: []any{"test4"}},
+	}, query2.conditions.where)
+
+	assert.Equal(t, []Where{
+		{query: "name", args: []any{"test"}},
+		{query: "name1", args: []any{"test1"}},
+		{query: "name2", args: []any{"test2"}},
+	}, query.conditions.where)
+
+	assert.Equal(t, []Where{
+		{query: "name", args: []any{"test"}},
+		{query: "name1", args: []any{"test1"}},
+		{query: "name2", args: []any{"test2"}},
+		{query: "name3", args: []any{"test3"}},
+	}, query1.conditions.where)
+}
+
 func paginator(page string, limit string) func(methods contractsorm.Query) contractsorm.Query {
 	return func(query contractsorm.Query) contractsorm.Query {
 		page, _ := strconv.Atoi(page)
