@@ -55,6 +55,64 @@ func (s *QueryTestSuite) SetupTest() {
 	s.query = NewQuery(s.ctx, s.mockReadBuilder, s.mockWriteBuilder, s.mockGrammar, s.mockLogger, "users", nil)
 }
 
+func (s *QueryTestSuite) TestAddWhere() {
+	query := &Query{}
+	query = query.addWhere(driver.Where{
+		Query: "name",
+		Args:  []any{"test"},
+	}).(*Query)
+	query = query.addWhere(driver.Where{
+		Query: "name1",
+		Args:  []any{"test1"},
+	}).(*Query)
+	query = query.addWhere(driver.Where{
+		Query: "name2",
+		Args:  []any{"test2"},
+	}).(*Query)
+	query1 := query.addWhere(driver.Where{
+		Query: "name3",
+		Args:  []any{"test3"},
+	}).(*Query)
+
+	s.Equal([]driver.Where{
+		{Query: "name", Args: []any{"test"}},
+		{Query: "name1", Args: []any{"test1"}},
+		{Query: "name2", Args: []any{"test2"}},
+	}, query.conditions.Where)
+
+	s.Equal([]driver.Where{
+		{Query: "name", Args: []any{"test"}},
+		{Query: "name1", Args: []any{"test1"}},
+		{Query: "name2", Args: []any{"test2"}},
+		{Query: "name3", Args: []any{"test3"}},
+	}, query1.conditions.Where)
+
+	query2 := query.addWhere(driver.Where{
+		Query: "name4",
+		Args:  []any{"test4"},
+	}).(*Query)
+
+	s.Equal([]driver.Where{
+		{Query: "name", Args: []any{"test"}},
+		{Query: "name1", Args: []any{"test1"}},
+		{Query: "name2", Args: []any{"test2"}},
+		{Query: "name4", Args: []any{"test4"}},
+	}, query2.conditions.Where)
+
+	s.Equal([]driver.Where{
+		{Query: "name", Args: []any{"test"}},
+		{Query: "name1", Args: []any{"test1"}},
+		{Query: "name2", Args: []any{"test2"}},
+	}, query.conditions.Where)
+
+	s.Equal([]driver.Where{
+		{Query: "name", Args: []any{"test"}},
+		{Query: "name1", Args: []any{"test1"}},
+		{Query: "name2", Args: []any{"test2"}},
+		{Query: "name3", Args: []any{"test3"}},
+	}, query1.conditions.Where)
+}
+
 func (s *QueryTestSuite) TestCount() {
 	var count int64
 
