@@ -38,8 +38,6 @@ func (r *DriverCreator) Create(connection string) (contractsqueue.Driver, error)
 		}
 
 		return NewDatabase(r.config, r.db, r.jobStorer, r.json, connection)
-	case contractsqueue.DriverMachinery:
-		return NewMachinery(r.config, r.log, connection), nil
 	case contractsqueue.DriverCustom:
 		custom := r.config.Via(connection)
 		if driver, ok := custom.(contractsqueue.Driver); ok {

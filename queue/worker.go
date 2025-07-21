@@ -5,8 +5,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/RichardKnop/machinery/v2"
-
 	"github.com/goravel/framework/contracts/database/db"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/log"
@@ -28,7 +26,6 @@ type Worker struct {
 	log    log.Log
 
 	failedJobChan chan models.FailedJob
-	machinery     *machinery.Worker
 
 	connection string
 	queue      string
@@ -77,39 +74,12 @@ func (r *Worker) Run() error {
 
 	r.isShutdown.Store(false)
 
-	if r.driver.Driver() == queue.DriverMachinery {
-		return r.RunMachinery()
-	}
-
 	return r.run()
-}
-
-// RunMachinery will be removed in v1.17
-func (r *Worker) RunMachinery() error {
-	instance := NewMachinery(r.config, r.log, r.connection)
-
-	var (
-		worker *machinery.Worker
-		err    error
-	)
-
-	worker, err = instance.Run(r.job.All(), r.queue, r.concurrent)
-	if err != nil {
-		return err
-	}
-
-	r.machinery = worker
-
-	return nil
 }
 
 func (r *Worker) Shutdown() error {
 	r.isShutdown.Store(true)
 	close(r.failedJobChan)
-
-	if r.machinery != nil {
-		r.machinery.Quit()
-	}
 
 	return nil
 }

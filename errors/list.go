@@ -152,7 +152,6 @@ var (
 	QueueFailedToInsertJobToDatabase = New("failed to insert job to database: %+v, err: %v")
 	QueueFailedToReserveJob          = New("failed to reserve job: %+v, err: %v")
 	QueueFailedToRetryJob            = New("failed to retry job: %+v, err: %v")
-	QueueFailedToRunMachinery        = New("failed to run machinery: %v")
 	QueueFailedToSaveFailedJob       = New("failed to save failed job: %v")
 	QueueInvalidDatabaseConnection   = New("invalid database connection: %s")
 	QueueNoRetryableJobsFound        = New("no retryable jobs found")
