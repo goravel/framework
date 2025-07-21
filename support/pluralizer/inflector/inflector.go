@@ -100,6 +100,10 @@ func matchCase(value, comparison string) string {
 	if unicode.IsUpper(compRunes[0]) {
 		vRunes := []rune(value)
 		if len(vRunes) > 0 {
+			if len(vRunes) == 1 {
+				return string(unicode.ToUpper(vRunes[0]))
+			}
+
 			return string(unicode.ToUpper(vRunes[0])) + strings.ToLower(string(vRunes[1:]))
 		}
 	}

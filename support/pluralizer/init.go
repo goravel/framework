@@ -2,6 +2,7 @@ package pluralizer
 
 import (
 	"github.com/goravel/framework/contracts/support/pluralizer"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/pluralizer/english"
 	"github.com/goravel/framework/support/pluralizer/inflector"
 	"github.com/goravel/framework/support/pluralizer/rules"
@@ -9,37 +10,35 @@ import (
 
 var (
 	instance         pluralizer.Inflector
-	currentLanguage  string
+	defaultLanguage  = "english"
 	inflectorFactory = map[string]pluralizer.Inflector{
 		"english": inflector.New(english.New()),
 	}
 )
 
 func init() {
-	currentLanguage = "english"
-	instance = inflectorFactory[currentLanguage]
+	instance = inflectorFactory[defaultLanguage]
 }
 
-func UseLanguage(lang string) bool {
+func UseLanguage(lang string) error {
 	if factory, exists := inflectorFactory[lang]; exists {
-		currentLanguage = lang
 		instance = factory
-		return true
+		return nil
 	}
-	return false
+	return errors.PluralizerLanguageNotFound.Args(lang)
 }
 
-func GetLanguage() string {
-	return currentLanguage
+func GetLanguage() pluralizer.Language {
+	return instance.Language()
 }
 
-func RegisterLanguage(language pluralizer.Language) bool {
+func RegisterLanguage(language pluralizer.Language) error {
 	if language == nil || language.Name() == "" {
-		return false
+		return errors.PluralizerEmptyLanguageName
 	}
 
 	inflectorFactory[language.Name()] = inflector.New(language)
-	return true
+	return nil
 }
 
 func getLanguageInstance(lang string) (pluralizer.Language, pluralizer.Inflector, bool) {
@@ -52,14 +51,14 @@ func getLanguageInstance(lang string) (pluralizer.Language, pluralizer.Inflector
 	return language, factory, true
 }
 
-func RegisterIrregular(lang string, substitutions ...pluralizer.Substitution) bool {
+func RegisterIrregular(lang string, substitutions ...pluralizer.Substitution) error {
 	if len(substitutions) == 0 {
-		return false
+		return errors.PluralizerNoSubstitutionsGiven
 	}
 
 	language, factory, exists := getLanguageInstance(lang)
 	if !exists {
-		return false
+		return errors.PluralizerLanguageNotFound.Args(lang)
 	}
 
 	language.PluralRuleset().AddIrregular(substitutions...)
@@ -68,54 +67,54 @@ func RegisterIrregular(lang string, substitutions ...pluralizer.Substitution) bo
 	language.SingularRuleset().AddIrregular(flipped...)
 
 	factory.SetLanguage(language)
-	return true
+	return nil
 }
 
-func RegisterUninflected(lang string, words ...string) bool {
+func RegisterUninflected(lang string, words ...string) error {
 	if len(words) == 0 {
-		return false
+		return errors.PluralizerNoWordsGiven
 	}
 
 	language, factory, exists := getLanguageInstance(lang)
 	if !exists {
-		return false
+		return errors.PluralizerLanguageNotFound.Args(lang)
 	}
 
 	language.PluralRuleset().AddUninflected(words...)
 	language.SingularRuleset().AddUninflected(words...)
 
 	factory.SetLanguage(language)
-	return true
+	return nil
 }
 
-func RegisterPluralUninflected(lang string, words ...string) bool {
+func RegisterPluralUninflected(lang string, words ...string) error {
 	if len(words) == 0 {
-		return false
+		return errors.PluralizerNoWordsGiven
 	}
 
 	language, factory, exists := getLanguageInstance(lang)
 	if !exists {
-		return false
+		return errors.PluralizerLanguageNotFound.Args(lang)
 	}
 
 	language.PluralRuleset().AddUninflected(words...)
 	factory.SetLanguage(language)
-	return true
+	return nil
 }
 
-func RegisterSingularUninflected(lang string, words ...string) bool {
+func RegisterSingularUninflected(lang string, words ...string) error {
 	if len(words) == 0 {
-		return false
+		return errors.PluralizerNoWordsGiven
 	}
 
 	language, factory, exists := getLanguageInstance(lang)
 	if !exists {
-		return false
+		return errors.PluralizerLanguageNotFound.Args(lang)
 	}
 
 	language.SingularRuleset().AddUninflected(words...)
 	factory.SetLanguage(language)
-	return true
+	return nil
 }
 
 func Plural(word string) string {
