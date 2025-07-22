@@ -10,7 +10,7 @@ import (
 
 var (
 	instance         pluralizer.Inflector
-	defaultLanguage  = "english"
+	defaultLanguage  = LanguageEnglish
 	inflectorFactory = map[string]pluralizer.Inflector{
 		"english": inflector.New(english.New()),
 	}

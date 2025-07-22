@@ -11,7 +11,7 @@ import (
 )
 
 func TestDefaultLanguage(t *testing.T) {
-	assert.Equal(t, "english", GetLanguage().Name())
+	assert.Equal(t, LanguageEnglish, GetLanguage().Name())
 }
 
 func TestUseLanguage(t *testing.T) {
@@ -20,13 +20,13 @@ func TestUseLanguage(t *testing.T) {
 		assert.Nil(t, UseLanguage(originalLang))
 	}()
 
-	err := UseLanguage("english")
+	err := UseLanguage(LanguageEnglish)
 	assert.Nil(t, err)
-	assert.Equal(t, "english", GetLanguage().Name())
+	assert.Equal(t, LanguageEnglish, GetLanguage().Name())
 
 	err = UseLanguage("nonexistent")
 	assert.NotNil(t, err)
-	assert.Equal(t, "english", GetLanguage().Name())
+	assert.Equal(t, LanguageEnglish, GetLanguage().Name())
 	assert.ErrorIs(t, err, errors.PluralizerLanguageNotFound)
 }
 
@@ -58,7 +58,7 @@ func TestRegisterIrregular(t *testing.T) {
 	sub1 := rules.NewSubstitution("test", "tests")
 	sub2 := rules.NewSubstitution("exam", "exams")
 
-	err := RegisterIrregular("english", sub1, sub2)
+	err := RegisterIrregular(LanguageEnglish, sub1, sub2)
 	assert.Nil(t, err)
 
 	assert.Equal(t, "tests", Plural("test"))
@@ -70,13 +70,13 @@ func TestRegisterIrregular(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.ErrorIs(t, err, errors.PluralizerLanguageNotFound)
 
-	err = RegisterIrregular("english")
+	err = RegisterIrregular(LanguageEnglish)
 	assert.NotNil(t, err)
 	assert.ErrorIs(t, err, errors.PluralizerNoSubstitutionsGiven)
 }
 
 func TestRegisterUninflected(t *testing.T) {
-	err := RegisterUninflected("english", "testdata", "metadata")
+	err := RegisterUninflected(LanguageEnglish, "testdata", "metadata")
 	assert.Nil(t, err)
 
 	assert.Equal(t, "testdata", Plural("testdata"))
@@ -88,13 +88,13 @@ func TestRegisterUninflected(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.ErrorIs(t, err, errors.PluralizerLanguageNotFound)
 
-	err = RegisterUninflected("english")
+	err = RegisterUninflected(LanguageEnglish)
 	assert.NotNil(t, err)
 	assert.ErrorIs(t, err, errors.PluralizerNoWordsGiven)
 }
 
 func TestRegisterPluralUninflected(t *testing.T) {
-	err := RegisterPluralUninflected("english", "pluraldata")
+	err := RegisterPluralUninflected(LanguageEnglish, "pluraldata")
 	assert.Nil(t, err)
 
 	assert.Equal(t, "pluraldata", Plural("pluraldata"))
@@ -103,13 +103,13 @@ func TestRegisterPluralUninflected(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.ErrorIs(t, err, errors.PluralizerLanguageNotFound)
 
-	err = RegisterPluralUninflected("english")
+	err = RegisterPluralUninflected(LanguageEnglish)
 	assert.NotNil(t, err)
 	assert.ErrorIs(t, err, errors.PluralizerNoWordsGiven)
 }
 
 func TestRegisterSingularUninflected(t *testing.T) {
-	err := RegisterSingularUninflected("english", "singulardata")
+	err := RegisterSingularUninflected(LanguageEnglish, "singulardata")
 	assert.Nil(t, err)
 	assert.Equal(t, "singulardata", Singular("singulardata"))
 
@@ -117,7 +117,7 @@ func TestRegisterSingularUninflected(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.ErrorIs(t, err, errors.PluralizerLanguageNotFound)
 
-	err = RegisterSingularUninflected("english")
+	err = RegisterSingularUninflected(LanguageEnglish)
 	assert.NotNil(t, err)
 	assert.ErrorIs(t, err, errors.PluralizerNoWordsGiven)
 }
@@ -157,10 +157,10 @@ func TestComplexWorkflow(t *testing.T) {
 	assert.Equal(t, "staticword", Plural("staticword"))
 	assert.Equal(t, "staticword", Singular("staticword"))
 
-	err = UseLanguage("english")
+	err = UseLanguage(LanguageEnglish)
 	assert.Nil(t, err)
 
-	err = RegisterIrregular("english", rules.NewSubstitution("workflowtest", "workflowtests"))
+	err = RegisterIrregular(LanguageEnglish, rules.NewSubstitution("workflowtest", "workflowtests"))
 	assert.Nil(t, err)
 
 	assert.Equal(t, "workflowtests", Plural("workflowtest"))
@@ -182,18 +182,18 @@ func TestEdgeCases(t *testing.T) {
 }
 
 func TestErrorReturns(t *testing.T) {
-	assert.Nil(t, UseLanguage("english"))
+	assert.Nil(t, UseLanguage(LanguageEnglish))
 	assert.Nil(t, RegisterLanguage(newMockLanguage("testreturn")))
-	assert.Nil(t, RegisterIrregular("english", rules.NewSubstitution("a", "as")))
-	assert.Nil(t, RegisterUninflected("english", "testword"))
-	assert.Nil(t, RegisterPluralUninflected("english", "testword2"))
-	assert.Nil(t, RegisterSingularUninflected("english", "testword3"))
+	assert.Nil(t, RegisterIrregular(LanguageEnglish, rules.NewSubstitution("a", "as")))
+	assert.Nil(t, RegisterUninflected(LanguageEnglish, "testword"))
+	assert.Nil(t, RegisterPluralUninflected(LanguageEnglish, "testword2"))
+	assert.Nil(t, RegisterSingularUninflected(LanguageEnglish, "testword3"))
 
 	assert.NotNil(t, UseLanguage("nonexistent"))
 	assert.NotNil(t, RegisterLanguage(nil))
 	assert.NotNil(t, RegisterIrregular("nonexistent", rules.NewSubstitution("a", "as")))
 	assert.NotNil(t, RegisterUninflected("nonexistent", "testword"))
-	assert.NotNil(t, RegisterPluralUninflected("english"))
+	assert.NotNil(t, RegisterPluralUninflected(LanguageEnglish))
 }
 
 type mockLanguage struct {
