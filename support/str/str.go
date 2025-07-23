@@ -11,6 +11,8 @@ import (
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
+
+	"github.com/goravel/framework/support/pluralizer"
 )
 
 type String struct {
@@ -530,6 +532,17 @@ func (s *String) Pipe(callback func(s string) string) *String {
 	return s
 }
 
+// Plural returns the plural form of the string.
+// If count is provided and equals 1, returns the singular form, otherwise returns the plural form.
+func (s *String) Plural(count ...int) *String {
+	if len(count) > 0 && count[0] == 1 {
+		s.value = pluralizer.Singular(s.value)
+	} else {
+		s.value = pluralizer.Plural(s.value)
+	}
+	return s
+}
+
 // Prepend one or more strings to the current string.
 func (s *String) Prepend(values ...string) *String {
 	s.value = strings.Join(values, "") + s.value
@@ -626,6 +639,12 @@ func (s *String) RTrim(characters ...string) *String {
 	}
 
 	s.value = strings.TrimRight(s.value, characters[0])
+	return s
+}
+
+// Singular returns the singular form of the string.
+func (s *String) Singular() *String {
+	s.value = pluralizer.Singular(s.value)
 	return s
 }
 

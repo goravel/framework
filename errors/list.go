@@ -136,6 +136,11 @@ var (
 	PackageRegistrationDuplicate = New("'%s' had been registered")
 	PackageRegistrationNotFound  = New("'%s' not found, cannot insert before it")
 
+	PluralizerLanguageNotFound     = New("language %s not found").SetModule(ModulePluralizer)
+	PluralizerEmptyLanguageName    = New("language name cannot be empty").SetModule(ModulePluralizer)
+	PluralizerNoSubstitutionsGiven = New("no substitutions provided").SetModule(ModulePluralizer)
+	PluralizerNoWordsGiven         = New("no words provided").SetModule(ModulePluralizer)
+
 	QueueDriverFailedToPop           = New("failed to pop job from %s queue: %v")
 	QueueDriverInvalid               = New("%s doesn't implement contracts/queue/driver")
 	QueueDriverNoJobFound            = New("no job found in %s queue")
