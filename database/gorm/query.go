@@ -24,6 +24,7 @@ import (
 	databasedriver "github.com/goravel/framework/database/driver"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/database"
+	"github.com/goravel/framework/support/deep"
 )
 
 const Associations = clause.Associations
@@ -443,7 +444,7 @@ func (r *Query) Having(query any, args ...any) contractsorm.Query {
 
 func (r *Query) Join(query string, args ...any) contractsorm.Query {
 	conditions := r.conditions
-	conditions.join = append(conditions.join, contractsdriver.Join{
+	conditions.join = deep.Append(conditions.join, contractsdriver.Join{
 		Query: query,
 		Args:  args,
 	})
@@ -566,10 +567,7 @@ func (r *Query) Omit(columns ...string) contractsorm.Query {
 
 // DEPRECATED: Use OrderByRaw instead
 func (r *Query) Order(value any) contractsorm.Query {
-	conditions := r.conditions
-	conditions.order = append(r.conditions.order, value)
-
-	return r.setConditions(conditions)
+	return r.OrderByRaw(fmt.Sprintf("%s", value))
 }
 
 func (r *Query) OrderBy(column string, direction ...string) contractsorm.Query {
@@ -587,8 +585,10 @@ func (r *Query) OrderByDesc(column string) contractsorm.Query {
 }
 
 func (r *Query) OrderByRaw(raw string) contractsorm.Query {
+	var rawAny any = raw
+
 	conditions := r.conditions
-	conditions.order = append(r.conditions.order, raw)
+	conditions.order = deep.Append(r.conditions.order, rawAny)
 
 	return r.setConditions(conditions)
 }
@@ -768,7 +768,7 @@ func (r *Query) Scan(dest any) error {
 
 func (r *Query) Scopes(funcs ...func(contractsorm.Query) contractsorm.Query) contractsorm.Query {
 	conditions := r.conditions
-	conditions.scopes = append(r.conditions.scopes, funcs...)
+	conditions.scopes = deep.Append(r.conditions.scopes, funcs...)
 
 	return r.setConditions(conditions)
 }
@@ -1019,7 +1019,7 @@ func (r *Query) WhereNotNull(column string) contractsorm.Query {
 
 func (r *Query) With(query string, args ...any) contractsorm.Query {
 	conditions := r.conditions
-	conditions.with = append(r.conditions.with, With{
+	conditions.with = deep.Append(r.conditions.with, With{
 		query: query,
 		args:  args,
 	})
@@ -1072,7 +1072,7 @@ func (r *Query) addGlobalScopes() *Query {
 
 func (r *Query) addWhere(where contractsdriver.Where) contractsorm.Query {
 	conditions := r.conditions
-	conditions.where = append(conditions.where, where)
+	conditions.where = deep.Append(conditions.where, where)
 
 	return r.setConditions(conditions)
 }
