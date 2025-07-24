@@ -391,7 +391,11 @@ func (r *Schema) Prune() error {
 }
 
 func (r *Schema) Register(migrations []contractsschema.Migration) {
-	r.migrations = migrations
+	if r.migrations == nil {
+		r.migrations = make([]contractsschema.Migration, 0)
+	}
+
+	r.migrations = append(r.migrations, migrations...)
 }
 
 func (r *Schema) Rename(from, to string) error {
