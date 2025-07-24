@@ -38,6 +38,10 @@ func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, driver d
 	grammar := driver.Grammar()
 	processor := driver.Processor()
 
+	if migrations == nil {
+		migrations = make([]contractsschema.Migration, 0)
+	}
+
 	return &Schema{
 		config:     config,
 		driver:     driver,
@@ -391,10 +395,6 @@ func (r *Schema) Prune() error {
 }
 
 func (r *Schema) Register(migrations []contractsschema.Migration) {
-	if r.migrations == nil {
-		r.migrations = make([]contractsschema.Migration, 0)
-	}
-
 	r.migrations = append(r.migrations, migrations...)
 }
 
