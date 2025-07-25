@@ -204,10 +204,10 @@ func SendMail(config config.Config, subject, html, fromAddress, fromName string,
 	}
 
 	e.To = to
-	if len(e.Bcc) > 0 {
+	if len(bcc) > 0 {
 		e.Bcc = bcc
 	}
-	if len(e.Cc) > 0 {
+	if len(cc) > 0 {
 		e.Cc = cc
 	}
 	e.Subject = subject
