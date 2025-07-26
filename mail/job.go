@@ -37,7 +37,7 @@ func (r *SendMailJob) Handle(args ...any) error {
 		return fmt.Errorf("SUBJECT should be of type string")
 	}
 
-	body, ok := args[2].(string)
+	html, ok := args[2].(string)
 	if !ok {
 		return fmt.Errorf("BODY should be of type string")
 	}
@@ -72,5 +72,10 @@ func (r *SendMailJob) Handle(args ...any) error {
 		return fmt.Errorf("HEADERS should be of type []string")
 	}
 
-	return SendMail(r.config, from, subject, body, recipient, cc, bcc, replyTo, attachments, convertSliceHeadersToMap(headers))
+	text, ok := args[9].(string)
+	if !ok {
+		return fmt.Errorf("BODY should be of type string")
+	}
+
+	return SendMail(r.config, from, subject, text, html, recipient, cc, bcc, replyTo, attachments, convertSliceHeadersToMap(headers))
 }

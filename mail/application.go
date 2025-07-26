@@ -13,15 +13,21 @@ import (
 type Application struct {
 	config      config.Config
 	queue       queuecontract.Queue
+	template    mail.Template
 	headers     map[string]string
 	from        mail.Address
 	html        string
+	text        string
 	subject     string
 	attachments []string
 	bcc         []string
 	cc          []string
 	to          []string
 	clone       int
+
+	viewPath string
+	textPath string
+	with     map[string]any
 }
 
 func NewApplication(config config.Config, queue queuecontract.Queue) *Application {
@@ -55,6 +61,9 @@ func (r *Application) Cc(cc []string) mail.Mail {
 func (r *Application) Content(content mail.Content) mail.Mail {
 	instance := r.instance()
 	instance.html = content.Html
+	instance.viewPath = content.View
+	instance.textPath = content.Text
+	instance.with = content.With
 
 	return instance
 }
@@ -76,6 +85,10 @@ func (r *Application) Headers(headers map[string]string) mail.Mail {
 func (r *Application) Queue(mailable ...mail.Mailable) error {
 	if len(mailable) > 0 {
 		r.setUsingMailable(mailable[0])
+	}
+
+	if err := r.renderViewTemplate(); err != nil {
+		return err
 	}
 
 	job := r.queue.Job(NewSendMailJob(r.config), []queuecontract.Arg{
@@ -115,6 +128,10 @@ func (r *Application) Queue(mailable ...mail.Mailable) error {
 			Type:  "[]string",
 			Value: convertMapHeadersToSlice(r.headers),
 		},
+		{
+			Type:  "string",
+			Value: r.text,
+		},
 	})
 
 	if len(mailable) > 0 {
@@ -135,7 +152,12 @@ func (r *Application) Send(mailable ...mail.Mailable) error {
 	if len(mailable) > 0 {
 		r.setUsingMailable(mailable[0])
 	}
-	return SendMail(r.config, r.subject, r.html, r.from.Address, r.from.Name, r.to, r.cc, r.bcc, r.attachments, r.headers)
+
+	if err := r.renderViewTemplate(); err != nil {
+		return err
+	}
+
+	return SendMail(r.config, r.subject, r.text, r.html, r.from.Address, r.from.Name, r.to, r.cc, r.bcc, r.attachments, r.headers)
 }
 
 func (r *Application) Subject(subject string) mail.Mail {
@@ -155,9 +177,10 @@ func (r *Application) To(to []string) mail.Mail {
 func (r *Application) instance() *Application {
 	if r.clone == 0 {
 		return &Application{
-			clone:  1,
-			config: r.config,
-			queue:  r.queue,
+			clone:    1,
+			config:   r.config,
+			queue:    r.queue,
+			template: r.template,
 		}
 	}
 
@@ -165,15 +188,21 @@ func (r *Application) instance() *Application {
 }
 
 func (r *Application) setUsingMailable(mailable mail.Mailable) {
-	if content := mailable.Content(); content != nil && content.Html != "" {
-		r.html = content.Html
-	}
-	if len(mailable.Attachments()) > 0 {
-		r.attachments = mailable.Attachments()
+	if content := mailable.Content(); content != nil {
+		if content.Html != "" {
+			r.html = content.Html
+		}
+		r.viewPath = content.View
+		r.textPath = content.Text
+		r.with = content.With
 	}
 
-	if len(mailable.Headers()) > 0 {
-		r.headers = mailable.Headers()
+	if attachments := mailable.Attachments(); len(attachments) > 0 {
+		r.attachments = attachments
+	}
+
+	if headers := mailable.Headers(); len(headers) > 0 {
+		r.headers = headers
 	}
 
 	if envelope := mailable.Envelope(); envelope != nil {
@@ -195,7 +224,27 @@ func (r *Application) setUsingMailable(mailable mail.Mailable) {
 	}
 }
 
-func SendMail(config config.Config, subject, html, fromAddress, fromName string, to, cc, bcc, attaches []string, headers map[string]string) error {
+func (r *Application) renderViewTemplate() error {
+	if r.viewPath != "" && r.template != nil {
+		renderedHtml, err := r.template.Render(r.viewPath, r.with)
+		if err != nil {
+			return err
+		}
+		r.html = renderedHtml
+	}
+
+	if r.textPath != "" && r.template != nil {
+		renderedText, err := r.template.Render(r.textPath, r.with)
+		if err != nil {
+			return err
+		}
+		r.text = renderedText
+	}
+
+	return nil
+}
+
+func SendMail(config config.Config, subject, text, html, fromAddress, fromName string, to, cc, bcc, attaches []string, headers map[string]string) error {
 	e := NewEmail()
 	if fromAddress == "" {
 		e.From = fmt.Sprintf("%s <%s>", config.GetString("mail.from.name"), config.GetString("mail.from.address"))
@@ -211,7 +260,14 @@ func SendMail(config config.Config, subject, html, fromAddress, fromName string,
 		e.Cc = cc
 	}
 	e.Subject = subject
-	e.HTML = []byte(html)
+
+	if len(html) > 0 {
+		e.HTML = []byte(html)
+	}
+
+	if len(text) > 0 {
+		e.Text = []byte(text)
+	}
 
 	for _, attach := range attaches {
 		if _, err := e.AttachFile(attach); err != nil {
