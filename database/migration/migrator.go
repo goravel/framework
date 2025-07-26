@@ -1,44 +1,86 @@
 package migration
 
 import (
+	"bytes"
 	"fmt"
+	"go/format"
 	"slices"
+	"text/template"
 
 	"github.com/goravel/framework/contracts/console"
 	contractsmigration "github.com/goravel/framework/contracts/database/migration"
 	"github.com/goravel/framework/contracts/database/orm"
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/collect"
 	"github.com/goravel/framework/support/color"
 	supportfile "github.com/goravel/framework/support/file"
+	"github.com/goravel/framework/support/str"
 )
 
 type Migrator struct {
-	artisan    console.Artisan
-	creator    *Creator
+	artisan console.Artisan
+	creator *Creator
+	//modelMapper *ModelMapper
 	repository contractsmigration.Repository
 	schema     contractsschema.Schema
 }
 
 func NewMigrator(artisan console.Artisan, schema contractsschema.Schema, table string) *Migrator {
 	return &Migrator{
-		artisan:    artisan,
-		creator:    NewCreator(),
+		artisan: artisan,
+		creator: NewCreator(),
+		//modelMapper: NewModelMapper(),
 		repository: NewRepository(schema, table),
 		schema:     schema,
 	}
 }
 
-func (r *Migrator) Create(name string) (string, error) {
+func (r *Migrator) Create(name string, modelName string) (string, error) {
 	table, create := TableGuesser{}.Guess(name)
+
+	var schemaFields []string
+	if modelName != "" {
+		if model := r.schema.GetModel(modelName); model.IsValid() {
+			//table, schemaFields, _ = r.modelMapper.MapModelToSchema(model.Type)
+		}
+	}
 
 	stub := r.creator.GetStub(table, create)
 
 	// Prepend timestamp to the file name.
 	fileName := r.creator.GetFileName(name)
 
-	// Create the up.sql file.
-	if err := supportfile.PutContent(r.creator.GetPath(fileName), r.creator.PopulateStub(stub, fileName, table)); err != nil {
+	templateData := struct {
+		Table        string
+		Package      string
+		StructName   string
+		Signature    string
+		SchemaFields []string
+	}{
+		Table:        table,
+		Package:      "migrations",
+		Signature:    fileName,
+		StructName:   str.Of(fileName).Prepend("m_").Studly().String(),
+		SchemaFields: schemaFields,
+	}
+
+	tmpl, err := template.New("migration").Parse(stub)
+	if err != nil {
+		return "", errors.TemplateFailedToParse.Args(err.Error())
+	}
+
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, templateData); err != nil {
+		return "", err
+	}
+
+	formatted, err := format.Source(buf.Bytes())
+	if err != nil {
+		return "", errors.TemplateFailedToFormateGoCode.Args(err.Error())
+	}
+
+	if err := supportfile.PutContent(r.creator.GetPath(fileName), string(formatted)); err != nil {
 		return "", err
 	}
 
