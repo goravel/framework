@@ -13,7 +13,7 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.9
 	github.com/go-viper/mapstructure/v2 v2.4.0
 	github.com/goforj/godump v1.5.0
-	github.com/golang-jwt/jwt/v5 v5.2.3
+	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
 	github.com/gookit/validate v1.5.5
 	github.com/goravel/file-rotatelogs/v2 v2.4.2
@@ -110,6 +110,6 @@ require (
 )
 
 replace (
-	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20250721164621-a45f3dfb1074
-	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20250721164621-a45f3dfb1074
+	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20250728155136-f173205681a0
+	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20250728155136-f173205681a0
 )
