@@ -13,7 +13,7 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.9
 	github.com/go-viper/mapstructure/v2 v2.4.0
 	github.com/goforj/godump v1.5.0
-	github.com/golang-jwt/jwt/v5 v5.2.3
+	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
 	github.com/gookit/validate v1.5.5
 	github.com/goravel/file-rotatelogs/v2 v2.4.2
@@ -31,10 +31,10 @@ require (
 	github.com/vektra/mockery/v2 v2.53.2
 	golang.org/x/crypto v0.40.0
 	golang.org/x/exp v0.0.0-20250718183923-645b1fa84792
-	google.golang.org/grpc v1.73.0
+	google.golang.org/grpc v1.74.2
 	google.golang.org/protobuf v1.36.6
-	gorm.io/gorm v1.30.0
-	gorm.io/plugin/dbresolver v1.6.0
+	gorm.io/gorm v1.30.1
+	gorm.io/plugin/dbresolver v1.6.2
 )
 
 require (
@@ -96,8 +96,6 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/xrash/smetrics v0.0.0-20250705151800-55b8f293f342
-	go.opentelemetry.io/otel v1.36.0 // indirect
-	go.opentelemetry.io/otel/sdk/metric v1.36.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/mod v0.26.0 // indirect
 	golang.org/x/net v0.42.0 // indirect
@@ -112,6 +110,6 @@ require (
 )
 
 replace (
-	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20250715232539-7130f93afb79
-	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20250715232539-7130f93afb79
+	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20250728155136-f173205681a0
+	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20250728155136-f173205681a0
 )
