@@ -30,6 +30,20 @@ type Application struct {
 	with     map[string]any
 }
 
+// Params represents all parameters needed for sending mail
+type Params struct {
+	Subject     string            `json:"subject"`
+	HTML        string            `json:"html"`
+	Text        string            `json:"text"`
+	FromAddress string            `json:"from_address"`
+	FromName    string            `json:"from_name"`
+	To          []string          `json:"to"`
+	CC          []string          `json:"cc"`
+	BCC         []string          `json:"bcc"`
+	Attachments []string          `json:"attachments"`
+	Headers     map[string]string `json:"headers"`
+}
+
 func NewApplication(config config.Config, queue queuecontract.Queue) *Application {
 	return &Application{
 		config: config,
@@ -91,46 +105,23 @@ func (r *Application) Queue(mailable ...mail.Mailable) error {
 		return err
 	}
 
+	params := Params{
+		Subject:     r.subject,
+		HTML:        r.html,
+		Text:        r.text,
+		FromAddress: r.from.Address,
+		FromName:    r.from.Name,
+		To:          r.to,
+		CC:          r.cc,
+		BCC:         r.bcc,
+		Attachments: r.attachments,
+		Headers:     r.headers,
+	}
+
 	job := r.queue.Job(NewSendMailJob(r.config), []queuecontract.Arg{
 		{
-			Type:  "string",
-			Value: r.subject,
-		},
-		{
-			Type:  "string",
-			Value: r.html,
-		},
-		{
-			Type:  "string",
-			Value: r.from.Address,
-		},
-		{
-			Type:  "string",
-			Value: r.from.Name,
-		},
-		{
-			Type:  "[]string",
-			Value: r.to,
-		},
-		{
-			Type:  "[]string",
-			Value: r.cc,
-		},
-		{
-			Type:  "[]string",
-			Value: r.bcc,
-		},
-		{
-			Type:  "[]string",
-			Value: r.attachments,
-		},
-		{
-			Type:  "[]string",
-			Value: convertMapHeadersToSlice(r.headers),
-		},
-		{
-			Type:  "string",
-			Value: r.text,
+			Type:  "mail.Params",
+			Value: params,
 		},
 	})
 
@@ -157,7 +148,20 @@ func (r *Application) Send(mailable ...mail.Mailable) error {
 		return err
 	}
 
-	return SendMail(r.config, r.subject, r.text, r.html, r.from.Address, r.from.Name, r.to, r.cc, r.bcc, r.attachments, r.headers)
+	params := Params{
+		Subject:     r.subject,
+		HTML:        r.html,
+		Text:        r.text,
+		FromAddress: r.from.Address,
+		FromName:    r.from.Name,
+		To:          r.to,
+		CC:          r.cc,
+		BCC:         r.bcc,
+		Attachments: r.attachments,
+		Headers:     r.headers,
+	}
+
+	return SendMail(r.config, params)
 }
 
 func (r *Application) Subject(subject string) mail.Mail {
@@ -244,38 +248,38 @@ func (r *Application) renderViewTemplate() error {
 	return nil
 }
 
-func SendMail(config config.Config, subject, text, html, fromAddress, fromName string, to, cc, bcc, attaches []string, headers map[string]string) error {
+func SendMail(config config.Config, params Params) error {
 	e := NewEmail()
+	fromAddress, fromName := params.FromAddress, params.FromName
 	if fromAddress == "" {
-		e.From = fmt.Sprintf("%s <%s>", config.GetString("mail.from.name"), config.GetString("mail.from.address"))
-	} else {
-		e.From = fmt.Sprintf("%s <%s>", fromName, fromAddress)
+		fromName, fromAddress = config.GetString("mail.from.name"), config.GetString("mail.from.address")
 	}
 
-	e.To = to
-	if len(bcc) > 0 {
-		e.Bcc = bcc
+	e.From = fmt.Sprintf("%s <%s>", fromName, fromAddress)
+	e.To = params.To
+	if len(params.BCC) > 0 {
+		e.Bcc = params.BCC
 	}
-	if len(cc) > 0 {
-		e.Cc = cc
+	if len(params.CC) > 0 {
+		e.Cc = params.CC
 	}
-	e.Subject = subject
+	e.Subject = params.Subject
 
-	if len(html) > 0 {
-		e.HTML = []byte(html)
-	}
-
-	if len(text) > 0 {
-		e.Text = []byte(text)
+	if len(params.HTML) > 0 {
+		e.HTML = []byte(params.HTML)
 	}
 
-	for _, attach := range attaches {
+	if len(params.Text) > 0 {
+		e.Text = []byte(params.Text)
+	}
+
+	for _, attach := range params.Attachments {
 		if _, err := e.AttachFile(attach); err != nil {
 			return err
 		}
 	}
 
-	for key, val := range headers {
+	for key, val := range params.Headers {
 		e.Headers.Add(key, val)
 	}
 

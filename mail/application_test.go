@@ -122,14 +122,14 @@ func (s *ApplicationTestSuite) TestQueueMailWithMailable() {
 }
 
 func mockConfig(mailPort int) *mocksconfig.Config {
-	mockConfig := &mocksconfig.Config{}
-	mockConfig.On("GetString", "app.name").Return("goravel")
-	mockConfig.On("GetString", "queue.default").Return("sync")
-	mockConfig.On("GetString", "queue.connections.sync.queue", "default").Return("default")
-	mockConfig.On("GetString", "queue.connections.sync.driver").Return("sync")
-	mockConfig.On("GetInt", "queue.connections.sync.concurrent", 1).Return(1)
-	mockConfig.On("GetString", "queue.failed.database").Return("database")
-	mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs")
+	config := &mocksconfig.Config{}
+	config.On("GetString", "app.name").Return("goravel")
+	config.On("GetString", "queue.default").Return("sync")
+	config.On("GetString", "queue.connections.sync.queue", "default").Return("default")
+	config.On("GetString", "queue.connections.sync.driver").Return("sync")
+	config.On("GetInt", "queue.connections.sync.concurrent", 1).Return(1)
+	config.On("GetString", "queue.failed.database").Return("database")
+	config.On("GetString", "queue.failed.table").Return("failed_jobs")
 
 	if file.Exists(support.EnvFilePath) {
 		vip := viper.New()
@@ -140,30 +140,30 @@ func mockConfig(mailPort int) *mocksconfig.Config {
 		vip.SetEnvPrefix("goravel")
 		vip.AutomaticEnv()
 
-		mockConfig.On("GetString", "mail.host").Return(vip.Get("MAIL_HOST"))
-		mockConfig.On("GetInt", "mail.port").Return(mailPort)
-		mockConfig.On("GetString", "mail.from.address").Return(vip.Get("MAIL_FROM_ADDRESS"))
-		mockConfig.On("GetString", "mail.from.name").Return(vip.Get("MAIL_FROM_NAME"))
-		mockConfig.On("GetString", "mail.username").Return(vip.Get("MAIL_USERNAME"))
-		mockConfig.On("GetString", "mail.password").Return(vip.Get("MAIL_PASSWORD"))
-		mockConfig.On("GetString", "mail.to").Return(vip.Get("MAIL_TO"))
-		mockConfig.On("GetString", "mail.cc").Return(vip.Get("MAIL_CC"))
-		mockConfig.On("GetString", "mail.bcc").Return(vip.Get("MAIL_BCC"))
+		config.On("GetString", "mail.host").Return(vip.Get("MAIL_HOST"))
+		config.On("GetInt", "mail.port").Return(mailPort)
+		config.On("GetString", "mail.from.address").Return(vip.Get("MAIL_FROM_ADDRESS"))
+		config.On("GetString", "mail.from.name").Return(vip.Get("MAIL_FROM_NAME"))
+		config.On("GetString", "mail.username").Return(vip.Get("MAIL_USERNAME"))
+		config.On("GetString", "mail.password").Return(vip.Get("MAIL_PASSWORD"))
+		config.On("GetString", "mail.to").Return(vip.Get("MAIL_TO"))
+		config.On("GetString", "mail.cc").Return(vip.Get("MAIL_CC"))
+		config.On("GetString", "mail.bcc").Return(vip.Get("MAIL_BCC"))
 
 		testFromAddress = vip.Get("MAIL_FROM_ADDRESS").(string)
 		testFromName = vip.Get("MAIL_FROM_NAME").(string)
 		testTo = vip.Get("MAIL_TO").(string)
 	}
 	if os.Getenv("MAIL_HOST") != "" {
-		mockConfig.On("GetString", "mail.host").Return(os.Getenv("MAIL_HOST"))
-		mockConfig.On("GetInt", "mail.port").Return(mailPort)
-		mockConfig.On("GetString", "mail.from.address").Return(os.Getenv("MAIL_FROM_ADDRESS"))
-		mockConfig.On("GetString", "mail.from.name").Return(os.Getenv("MAIL_FROM_NAME"))
-		mockConfig.On("GetString", "mail.username").Return(os.Getenv("MAIL_USERNAME"))
-		mockConfig.On("GetString", "mail.password").Return(os.Getenv("MAIL_PASSWORD"))
-		mockConfig.On("GetString", "mail.to").Return(os.Getenv("MAIL_TO"))
-		mockConfig.On("GetString", "mail.cc").Return(os.Getenv("MAIL_CC"))
-		mockConfig.On("GetString", "mail.bcc").Return(os.Getenv("MAIL_BCC"))
+		config.On("GetString", "mail.host").Return(os.Getenv("MAIL_HOST"))
+		config.On("GetInt", "mail.port").Return(mailPort)
+		config.On("GetString", "mail.from.address").Return(os.Getenv("MAIL_FROM_ADDRESS"))
+		config.On("GetString", "mail.from.name").Return(os.Getenv("MAIL_FROM_NAME"))
+		config.On("GetString", "mail.username").Return(os.Getenv("MAIL_USERNAME"))
+		config.On("GetString", "mail.password").Return(os.Getenv("MAIL_PASSWORD"))
+		config.On("GetString", "mail.to").Return(os.Getenv("MAIL_TO"))
+		config.On("GetString", "mail.cc").Return(os.Getenv("MAIL_CC"))
+		config.On("GetString", "mail.bcc").Return(os.Getenv("MAIL_BCC"))
 
 		testFromAddress = os.Getenv("MAIL_FROM_ADDRESS")
 		testFromName = os.Getenv("MAIL_FROM_NAME")
@@ -172,7 +172,7 @@ func mockConfig(mailPort int) *mocksconfig.Config {
 		testTo = os.Getenv("MAIL_TO")
 	}
 
-	return mockConfig
+	return config
 }
 
 type TestMailable struct {
