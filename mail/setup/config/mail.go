@@ -5,9 +5,7 @@ import "github.com/goravel/framework/facades"
 func init() {
 	config := facades.Config()
 	config.Add("mail", map[string]any{
-		// --------------------------------------------------------------------------
 		// Template Configuration
-		// --------------------------------------------------------------------------
 		//
 		// This controls template rendering for email views. The default engine uses
 		// Go's html/template which can render both HTML and text templates safely
