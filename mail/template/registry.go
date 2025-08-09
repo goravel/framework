@@ -35,7 +35,7 @@ func Get(config config.Config) (mailcontract.Template, error) {
 func createEngine(config config.Config, driver string) (mailcontract.Template, error) {
 	switch driver {
 	case "default":
-		viewsPath := config.GetString("mail.template.views_path", "resources/views/emails")
+		viewsPath := config.GetString("mail.template.views_path", "resources/views/mail")
 		return NewDefaultEngine(viewsPath), nil
 	default:
 		key := fmt.Sprintf("mail.template.drivers.%s.engine", driver)
