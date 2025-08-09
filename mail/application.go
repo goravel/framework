@@ -8,6 +8,7 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/mail"
 	queuecontract "github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/mail/template"
 )
 
 type Application struct {
@@ -45,9 +46,12 @@ type Params struct {
 }
 
 func NewApplication(config config.Config, queue queuecontract.Queue) *Application {
+	templateEngine, _ := template.Get(config)
+
 	return &Application{
-		config: config,
-		queue:  queue,
+		config:   config,
+		queue:    queue,
+		template: templateEngine,
 	}
 }
 
