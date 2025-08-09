@@ -5,26 +5,6 @@ import "github.com/goravel/framework/facades"
 func init() {
 	config := facades.Config()
 	config.Add("mail", map[string]any{
-		// Template Configuration
-		//
-		// This controls template rendering for email views. The default engine uses
-		// Go's html/template which can render both HTML and text templates safely
-		// with automatic caching for better performance. Each mail application instance
-		// gets its own template engine with thread-safe caching using sync.Map.
-		"template": map[string]any{
-			"driver":     config.Env("MAIL_TEMPLATE_DRIVER", "default"),
-			"views_path": config.Env("MAIL_VIEWS_PATH", "resources/views/emails"),
-			// Custom template engines can be registered here
-			"drivers": map[string]any{
-				// Example custom template engine:
-				// "blade": map[string]any{
-				//     "engine": func() (mail.Template, error) {
-				//         return NewBladeTemplateEngine(), nil
-				//     },
-				// },
-			},
-		},
-
 		// SMTP Host Address
 		//
 		// Here you may provide the host address of the SMTP server used by your
@@ -59,5 +39,25 @@ func init() {
 		"username": config.Env("MAIL_USERNAME"),
 
 		"password": config.Env("MAIL_PASSWORD"),
+
+		// Template Configuration
+		//
+		// This controls template rendering for email views. The default engine uses
+		// Go's html/template which can render both HTML and text templates safely
+		// with automatic caching for better performance. Each mail application instance
+		// gets its own template engine with thread-safe caching using sync.Map.
+		"template": map[string]any{
+			"driver":     config.Env("MAIL_TEMPLATE_DRIVER", "default"),
+			"views_path": config.Env("MAIL_VIEWS_PATH", "resources/views/emails"),
+			// Custom template engines can be registered here
+			"drivers": map[string]any{
+				// Example custom template engine:
+				// "blade": map[string]any{
+				//     "engine": func() (mail.Template, error) {
+				//         return NewBladeTemplateEngine(), nil
+				//     },
+				// },
+			},
+		},
 	})
 }
