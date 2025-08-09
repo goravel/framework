@@ -48,7 +48,7 @@ func init() {
 		// gets its own template engine with thread-safe caching using sync.Map.
 		"template": map[string]any{
 			"driver":     config.Env("MAIL_TEMPLATE_DRIVER", "default"),
-			"views_path": config.Env("MAIL_VIEWS_PATH", "resources/views/emails"),
+			"views_path": config.Env("MAIL_VIEWS_PATH", "resources/views/mail"),
 			// Custom template engines can be registered here
 			"drivers": map[string]any{
 				// Example custom template engine:
