@@ -315,8 +315,10 @@ func (s *ApplicationTestSuite) TestMakeMail() {
 		return &mocksqueue.Queue{}, nil
 	})
 
-	mockConfig.EXPECT().GetString("mail.template.driver", "default").Return("default").Once()
-	mockConfig.EXPECT().GetString("mail.template.views_path", "resources/views/mail").
+	mockConfig.EXPECT().GetString("mail.template.default", "html").Return("html").Once()
+	mockConfig.EXPECT().GetString("mail.template.engines.html.driver", "html").
+		Return("html").Once()
+	mockConfig.EXPECT().GetString("mail.template.engines.html.path", "resources/views/mail").
 		Return("resources/views/mail").Once()
 
 	serviceProvider := &mail.ServiceProvider{}
