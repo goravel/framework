@@ -10,7 +10,7 @@ import (
 	"github.com/goravel/framework/errors"
 )
 
-func TestDefaultEngine_Render(t *testing.T) {
+func TestHtml_Render(t *testing.T) {
 	tempDir := t.TempDir()
 
 	templateContent := `Hello {{.Name}}, welcome to {{.App}}!`
@@ -30,7 +30,7 @@ func TestDefaultEngine_Render(t *testing.T) {
 	assert.Equal(t, "Hello John, welcome to Goravel!", result)
 }
 
-func TestDefaultEngine_RenderTemplateNotFound(t *testing.T) {
+func TestHtml_RenderTemplateNotFound(t *testing.T) {
 	tempDir := t.TempDir()
 	engine := NewHtml(tempDir)
 
@@ -38,7 +38,7 @@ func TestDefaultEngine_RenderTemplateNotFound(t *testing.T) {
 	assert.ErrorIs(t, err, errors.MailTemplateParseFailed)
 }
 
-func TestDefaultEngine_RenderWithCache(t *testing.T) {
+func TestHtml_RenderWithCache(t *testing.T) {
 	tempDir := t.TempDir()
 
 	templateContent := `Hello {{.Name}}!`
@@ -61,16 +61,19 @@ func TestDefaultEngine_RenderWithCache(t *testing.T) {
 	assert.Equal(t, result1, result2)
 }
 
-func TestDefaultEngine_RenderError(t *testing.T) {
+func TestHtml_RenderExecutionError(t *testing.T) {
 	tempDir := t.TempDir()
 
-	templateContent := `Hello {{.Name | invalidFunc}}!`
+	// Create template that parses successfully but fails during execution
+	// This will fail when trying to access a field on nil
+	templateContent := `Hello {{.User.Name}}!`
 	templatePath := filepath.Join(tempDir, "bad.html")
 	err := os.WriteFile(templatePath, []byte(templateContent), 0644)
 	assert.NoError(t, err)
 
 	engine := NewHtml(tempDir)
 
-	_, err = engine.Render("bad.html", map[string]string{"Name": "Test"})
-	assert.ErrorIs(t, err, errors.MailTemplateParseFailed)
+	// Pass data where .User is nil, causing execution error
+	_, err = engine.Render("bad.html", map[string]any{"User": nil})
+	assert.ErrorIs(t, err, errors.MailTemplateExecutionFailed)
 }

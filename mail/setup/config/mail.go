@@ -42,18 +42,19 @@ func init() {
 
 		// Template Configuration
 		//
-		// This controls template rendering for email views. The default engine uses
-		// Go's html/template which can render both HTML and text templates safely
-		// with automatic caching for better performance. Each mail application instance
-		// gets its own template engine with thread-safe caching using sync.Map.
+		// This controls template rendering for email views. Template engines are cached
+		// globally and support both built-in drivers and custom implementations via factories.
 		"template": map[string]any{
-			"driver":     config.Env("MAIL_TEMPLATE_DRIVER", "default"),
-			"views_path": config.Env("MAIL_VIEWS_PATH", "resources/views/mail"),
-			// Custom template engines can be registered here
-			"drivers": map[string]any{
+			"default": config.Env("MAIL_TEMPLATE_ENGINE", "html"),
+			"engines": map[string]any{
+				"html": map[string]any{
+					"driver": "html",
+					"path":   config.Env("MAIL_VIEWS_PATH", "resources/views/mail"),
+				},
 				// Example custom template engine:
 				// "blade": map[string]any{
-				//     "engine": func() (mail.Template, error) {
+				//     "driver": "custom",
+				//     "via": func() (mail.Template, error) {
 				//         return NewBladeTemplateEngine(), nil
 				//     },
 				// },
