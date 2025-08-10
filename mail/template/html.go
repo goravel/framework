@@ -1,11 +1,12 @@
 package template
 
 import (
-	"fmt"
 	"html/template"
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/goravel/framework/errors"
 )
 
 type Html struct {
@@ -28,7 +29,7 @@ func (r *Html) Render(path string, data any) (string, error) {
 
 	var buf strings.Builder
 	if err := tmpl.Execute(&buf, data); err != nil {
-		return "", fmt.Errorf("failed to execute template %s: %w", path, err)
+		return "", errors.MailTemplateExecutionFailed.Args(path, err)
 	}
 
 	return buf.String(), nil
@@ -41,7 +42,7 @@ func (r *Html) getTemplate(templatePath string) (*template.Template, error) {
 
 	tmpl, err := template.ParseFiles(templatePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse template %s: %w", templatePath, err)
+		return nil, errors.MailTemplateParseFailed.Args(templatePath, err)
 	}
 
 	r.cache.LoadOrStore(templatePath, tmpl)

@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/goravel/framework/errors"
 )
 
 func TestDefaultEngine_Render(t *testing.T) {
@@ -33,8 +35,7 @@ func TestDefaultEngine_RenderTemplateNotFound(t *testing.T) {
 	engine := NewHtml(tempDir)
 
 	_, err := engine.Render("nonexistent.html", nil)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to parse template")
+	assert.ErrorIs(t, err, errors.MailTemplateParseFailed)
 }
 
 func TestDefaultEngine_RenderWithCache(t *testing.T) {
@@ -71,6 +72,5 @@ func TestDefaultEngine_RenderError(t *testing.T) {
 	engine := NewHtml(tempDir)
 
 	_, err = engine.Render("bad.html", map[string]string{"Name": "Test"})
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to parse template")
+	assert.ErrorIs(t, err, errors.MailTemplateParseFailed)
 }

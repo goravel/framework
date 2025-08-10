@@ -6,6 +6,7 @@ import (
 
 	"github.com/goravel/framework/contracts/config"
 	contractsmail "github.com/goravel/framework/contracts/mail"
+	"github.com/goravel/framework/errors"
 )
 
 var engines sync.Map
@@ -51,7 +52,7 @@ func createEngine(config config.Config, driver string) (contractsmail.Template, 
 			}
 			return engine, nil
 		default:
-			return nil, fmt.Errorf("unsupported or misconfigured template engine: %s", driver)
+			return nil, errors.MailTemplateEngineNotSupported.Args(driver)
 		}
 	}
 }
