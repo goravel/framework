@@ -149,8 +149,10 @@ func mockConfig(mailPort int) *mocksconfig.Config {
 		config.On("GetString", "mail.to").Return(vip.Get("MAIL_TO"))
 		config.On("GetString", "mail.cc").Return(vip.Get("MAIL_CC"))
 		config.On("GetString", "mail.bcc").Return(vip.Get("MAIL_BCC"))
-		config.On("GetString", "mail.template.driver", "default").Return("default")
-		config.On("GetString", "mail.template.views_path", "resources/views/mail").Return("resources/views/mail")
+		config.EXPECT().GetString("mail.template.default", "html").Return("html").Once()
+		config.EXPECT().GetString("mail.template.engines.html.driver", "html").Return("html").Once()
+		config.EXPECT().GetString("mail.template.engines.html.path", "resources/views/mail").
+			Return("resources/views/mail").Once()
 
 		testFromAddress = vip.Get("MAIL_FROM_ADDRESS").(string)
 		testFromName = vip.Get("MAIL_FROM_NAME").(string)
@@ -166,8 +168,10 @@ func mockConfig(mailPort int) *mocksconfig.Config {
 		config.On("GetString", "mail.to").Return(os.Getenv("MAIL_TO"))
 		config.On("GetString", "mail.cc").Return(os.Getenv("MAIL_CC"))
 		config.On("GetString", "mail.bcc").Return(os.Getenv("MAIL_BCC"))
-		config.On("GetString", "mail.template.driver", "default").Return("default")
-		config.On("GetString", "mail.template.views_path", "resources/views/mail").Return("resources/views/mail")
+		config.EXPECT().GetString("mail.template.default", "html").Return("html").Once()
+		config.EXPECT().GetString("mail.template.engines.html.driver", "html").Return("html").Once()
+		config.EXPECT().GetString("mail.template.engines.html.path", "resources/views/mail").
+			Return("resources/views/mail").Once()
 
 		testFromAddress = os.Getenv("MAIL_FROM_ADDRESS")
 		testFromName = os.Getenv("MAIL_FROM_NAME")
