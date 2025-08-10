@@ -8,18 +8,18 @@ import (
 	"sync"
 )
 
-type DefaultEngine struct {
+type Html struct {
 	viewsPath string
 	cache     sync.Map
 }
 
-func NewDefaultEngine(viewsPath string) *DefaultEngine {
-	return &DefaultEngine{
+func NewHtml(viewsPath string) *Html {
+	return &Html{
 		viewsPath: viewsPath,
 	}
 }
 
-func (r *DefaultEngine) Render(path string, data any) (string, error) {
+func (r *Html) Render(path string, data any) (string, error) {
 	templatePath := filepath.Join(r.viewsPath, path)
 	tmpl, err := r.getTemplate(templatePath)
 	if err != nil {
@@ -34,7 +34,7 @@ func (r *DefaultEngine) Render(path string, data any) (string, error) {
 	return buf.String(), nil
 }
 
-func (r *DefaultEngine) getTemplate(templatePath string) (*template.Template, error) {
+func (r *Html) getTemplate(templatePath string) (*template.Template, error) {
 	if cached, ok := r.cache.Load(templatePath); ok {
 		return cached.(*template.Template), nil
 	}

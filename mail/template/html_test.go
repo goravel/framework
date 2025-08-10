@@ -16,7 +16,7 @@ func TestDefaultEngine_Render(t *testing.T) {
 	err := os.WriteFile(templatePath, []byte(templateContent), 0644)
 	assert.NoError(t, err)
 
-	engine := NewDefaultEngine(tempDir)
+	engine := NewHtml(tempDir)
 
 	data := map[string]string{
 		"Name": "John",
@@ -30,7 +30,7 @@ func TestDefaultEngine_Render(t *testing.T) {
 
 func TestDefaultEngine_RenderTemplateNotFound(t *testing.T) {
 	tempDir := t.TempDir()
-	engine := NewDefaultEngine(tempDir)
+	engine := NewHtml(tempDir)
 
 	_, err := engine.Render("nonexistent.html", nil)
 	assert.Error(t, err)
@@ -45,7 +45,7 @@ func TestDefaultEngine_RenderWithCache(t *testing.T) {
 	err := os.WriteFile(templatePath, []byte(templateContent), 0644)
 	assert.NoError(t, err)
 
-	engine := NewDefaultEngine(tempDir)
+	engine := NewHtml(tempDir)
 	data := map[string]string{"Name": "Test"}
 
 	// First render - should parse and cache
@@ -68,7 +68,7 @@ func TestDefaultEngine_RenderError(t *testing.T) {
 	err := os.WriteFile(templatePath, []byte(templateContent), 0644)
 	assert.NoError(t, err)
 
-	engine := NewDefaultEngine(tempDir)
+	engine := NewHtml(tempDir)
 
 	_, err = engine.Render("bad.html", map[string]string{"Name": "Test"})
 	assert.Error(t, err)
