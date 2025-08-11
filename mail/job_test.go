@@ -73,7 +73,7 @@ func (r *SendMailJobTestSuite) TestHandle_WrongArgumentTypes() {
 				[]string{"to"}, []string{"cc"}, []string{"bcc"},
 				[]string{"attachments"}, []string{"headers"},
 			},
-			errorMsg: "should be string",
+			errorMsg: "should be of type string",
 		},
 		{
 			name: "html not string",
@@ -82,7 +82,7 @@ func (r *SendMailJobTestSuite) TestHandle_WrongArgumentTypes() {
 				[]string{"to"}, []string{"cc"}, []string{"bcc"},
 				[]string{"attachments"}, []string{"headers"},
 			},
-			errorMsg: "should be string",
+			errorMsg: "should be of type string",
 		},
 		{
 			name: "text not string",
@@ -91,7 +91,7 @@ func (r *SendMailJobTestSuite) TestHandle_WrongArgumentTypes() {
 				[]string{"to"}, []string{"cc"}, []string{"bcc"},
 				[]string{"attachments"}, []string{"headers"},
 			},
-			errorMsg: "should be string",
+			errorMsg: "should be of type string",
 		},
 		{
 			name: "fromAddress not string",
@@ -100,7 +100,7 @@ func (r *SendMailJobTestSuite) TestHandle_WrongArgumentTypes() {
 				[]string{"to"}, []string{"cc"}, []string{"bcc"},
 				[]string{"attachments"}, []string{"headers"},
 			},
-			errorMsg: "should be string",
+			errorMsg: "should be of type string",
 		},
 		{
 			name: "fromName not string",
@@ -109,7 +109,7 @@ func (r *SendMailJobTestSuite) TestHandle_WrongArgumentTypes() {
 				[]string{"to"}, []string{"cc"}, []string{"bcc"},
 				[]string{"attachments"}, []string{"headers"},
 			},
-			errorMsg: "should be string",
+			errorMsg: "should be of type string",
 		},
 		{
 			name: "to not []string",
@@ -118,7 +118,7 @@ func (r *SendMailJobTestSuite) TestHandle_WrongArgumentTypes() {
 				"not-a-slice", []string{"cc"}, []string{"bcc"},
 				[]string{"attachments"}, []string{"headers"},
 			},
-			errorMsg: "should be []string",
+			errorMsg: "should be of type []string",
 		},
 		{
 			name: "cc not []string",
@@ -127,7 +127,7 @@ func (r *SendMailJobTestSuite) TestHandle_WrongArgumentTypes() {
 				[]string{"to"}, "not-a-slice", []string{"bcc"},
 				[]string{"attachments"}, []string{"headers"},
 			},
-			errorMsg: "should be []string",
+			errorMsg: "should be of type []string",
 		},
 		{
 			name: "bcc not []string",
@@ -136,7 +136,7 @@ func (r *SendMailJobTestSuite) TestHandle_WrongArgumentTypes() {
 				[]string{"to"}, []string{"cc"}, "not-a-slice",
 				[]string{"attachments"}, []string{"headers"},
 			},
-			errorMsg: "should be []string",
+			errorMsg: "should be of type []string",
 		},
 		{
 			name: "attachments not []string",
@@ -145,7 +145,7 @@ func (r *SendMailJobTestSuite) TestHandle_WrongArgumentTypes() {
 				[]string{"to"}, []string{"cc"}, []string{"bcc"},
 				"not-a-slice", []string{"headers"},
 			},
-			errorMsg: "should be []string",
+			errorMsg: "should be of type []string",
 		},
 		{
 			name: "headers not []string",
@@ -154,7 +154,7 @@ func (r *SendMailJobTestSuite) TestHandle_WrongArgumentTypes() {
 				[]string{"to"}, []string{"cc"}, []string{"bcc"},
 				[]string{"attachments"}, "not-a-slice",
 			},
-			errorMsg: "should be []string",
+			errorMsg: "should be of type []string",
 		},
 	}
 
