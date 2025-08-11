@@ -45,6 +45,6 @@ func (r *Html) getTemplate(templatePath string) (*template.Template, error) {
 		return nil, errors.MailTemplateParseFailed.Args(templatePath, err)
 	}
 
-	r.cache.LoadOrStore(templatePath, tmpl)
-	return tmpl, nil
+	actual, _ := r.cache.LoadOrStore(templatePath, tmpl)
+	return actual.(*template.Template), nil
 }

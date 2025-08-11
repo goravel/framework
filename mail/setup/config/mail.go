@@ -44,6 +44,8 @@ func init() {
 		//
 		// This controls template rendering for email views. Template engines are cached
 		// globally and support both built-in drivers and custom implementations via factories.
+		//
+		// Available Drivers: "html", "custom"
 		"template": map[string]any{
 			"default": config.Env("MAIL_TEMPLATE_ENGINE", "html"),
 			"engines": map[string]any{

@@ -40,7 +40,8 @@ func (s *ApplicationTestSuite) SetupTest() {
 func (s *ApplicationTestSuite) TestSendMail() {
 	s.mockConfig = mockConfig(465)
 
-	app := NewApplication(s.mockConfig, nil)
+	app, err := NewApplication(s.mockConfig, nil)
+	s.Nil(err)
 	s.Nil(app.To([]string{testTo}).
 		Cc([]string{testCc}).
 		Bcc([]string{testBcc}).
@@ -54,7 +55,8 @@ func (s *ApplicationTestSuite) TestSendMail() {
 func (s *ApplicationTestSuite) TestSendMailWithFromBy587Port() {
 	s.mockConfig = mockConfig(587)
 
-	app := NewApplication(s.mockConfig, nil)
+	app, err := NewApplication(s.mockConfig, nil)
+	s.Nil(err)
 	s.Nil(app.From(Address(testFromAddress, testFromName)).
 		To([]string{testTo}).
 		Cc([]string{testCc}).
@@ -69,7 +71,8 @@ func (s *ApplicationTestSuite) TestSendMailWithFromBy587Port() {
 func (s *ApplicationTestSuite) TestSendMailWithMailable() {
 	s.mockConfig = mockConfig(465)
 
-	app := NewApplication(s.mockConfig, nil)
+	app, err := NewApplication(s.mockConfig, nil)
+	s.Nil(err)
 	s.Nil(app.Send(NewTestMailable()))
 }
 
@@ -88,7 +91,8 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 		NewSendMailJob(s.mockConfig),
 	})
 
-	app := NewApplication(s.mockConfig, queueFacade)
+	app, err := NewApplication(s.mockConfig, queueFacade)
+	s.Nil(err)
 
 	s.Nil(app.To([]string{testTo}).
 		Cc([]string{testCc}).
@@ -116,8 +120,8 @@ func (s *ApplicationTestSuite) TestQueueMailWithMailable() {
 		NewSendMailJob(s.mockConfig),
 	})
 
-	app := NewApplication(s.mockConfig, queueFacade)
-
+	app, err := NewApplication(s.mockConfig, queueFacade)
+	s.Nil(err)
 	s.Nil(app.Queue(NewTestMailable()))
 }
 

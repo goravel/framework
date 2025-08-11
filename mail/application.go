@@ -37,14 +37,17 @@ type Application struct {
 	with map[string]any
 }
 
-func NewApplication(config config.Config, queue contractsqueue.Queue) *Application {
-	templateEngine, _ := template.Get(config)
+func NewApplication(config config.Config, queue contractsqueue.Queue) (*Application, error) {
+	templateEngine, err := template.Get(config)
+	if err != nil {
+		return nil, err
+	}
 
 	return &Application{
 		config:   config,
 		queue:    queue,
 		template: templateEngine,
-	}
+	}, nil
 }
 
 func (r *Application) Attach(attachments []string) mail.Mail {
