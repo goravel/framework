@@ -107,8 +107,44 @@ func (r *Application) Queue(mailable ...mail.Mailable) error {
 
 	job := r.queue.Job(NewSendMailJob(r.config), []contractsqueue.Arg{
 		{
-			Type:  "mail.Params",
-			Value: r.params,
+			Type:  "string",
+			Value: r.params.Subject,
+		},
+		{
+			Type:  "string",
+			Value: r.params.HTML,
+		},
+		{
+			Type:  "string",
+			Value: r.params.Text,
+		},
+		{
+			Type:  "string",
+			Value: r.params.FromAddress,
+		},
+		{
+			Type:  "string",
+			Value: r.params.FromName,
+		},
+		{
+			Type:  "[]string",
+			Value: r.params.To,
+		},
+		{
+			Type:  "[]string",
+			Value: r.params.CC,
+		},
+		{
+			Type:  "[]string",
+			Value: r.params.BCC,
+		},
+		{
+			Type:  "[]string",
+			Value: r.params.Attachments,
+		},
+		{
+			Type:  "[]string",
+			Value: convertMapHeadersToSlice(r.params.Headers),
 		},
 	})
 
