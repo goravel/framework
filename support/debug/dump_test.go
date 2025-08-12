@@ -71,11 +71,11 @@ func TestDump(t *testing.T) {
 		})
 		assert.Equal(t, "\x1b[90m<#dump // dump.go:25"+
 			"\x1b[0m\n\x1b[90m#debug.info\x1b[0m {\n  "+
-			"\x1b[33m+\x1b[0mName    => \x1b[33m\"\x1b[0m\x1b[38;5;113mtest"+
+			"\x1b[33m+\x1b[0mName    => \x1b[33m\"\x1b[0m\x1b[1;38;5;113mtest"+
 			"\x1b[0m\x1b[33m\"\x1b[0m\n  \x1b[33m-\x1b[0membed   => \x1b[90m#debug.embed"+
-			"\x1b[0m {\n    \x1b[33m+\x1b[0mFoo   => \x1b[33m\"\x1b[0m\x1b[38;5;113mfoo"+
+			"\x1b[0m {\n    \x1b[33m+\x1b[0mFoo   => \x1b[33m\"\x1b[0m\x1b[1;38;5;113mfoo"+
 			"\x1b[0m\x1b[33m\"\x1b[0m\n    \x1b[33m+\x1b[0mBar   => \x1b[90m#struct { Baz string }"+
-			"\x1b[0m {\n      \x1b[33m+\x1b[0mBaz => \x1b[33m\"\x1b[0m\x1b[38;5;113mbaz"+
+			"\x1b[0m {\n      \x1b[33m+\x1b[0mBaz => \x1b[33m\"\x1b[0m\x1b[1;38;5;113mbaz"+
 			"\x1b[0m\x1b[33m\"\x1b[0m\n    }\n  }\n}\n",
 			output)
 	})
@@ -110,7 +110,7 @@ func TestFDump(t *testing.T) {
 		var buf bytes.Buffer
 		FDump(&buf, data)
 		assert.Equal(t, "\x1b[90m<#dump // dump_test.go:111\x1b[0m\n{\n   "+
-			"\x1b[38;5;170mkey\x1b[0m => \x1b[33m\"\x1b[0m\x1b[38;5;113mvalue"+
+			"\x1b[38;5;170mkey\x1b[0m => \x1b[33m\"\x1b[0m\x1b[1;38;5;113mvalue"+
 			"\x1b[0m\x1b[33m\"\x1b[0m\n}\n",
 			buf.String())
 
@@ -140,9 +140,9 @@ func TestSDump(t *testing.T) {
 	t.Run("dump as string", func(t *testing.T) {
 		output := SDump(data)
 		assert.Equal(t, "\x1b[90m<#dump // dump_test.go:141\x1b[0m\n[\n  "+
-			"\x1b[38;5;38m0\x1b[0m => \x1b[33m\"\x1b[0m\x1b[38;5;113mone"+
+			"\x1b[38;5;38m0\x1b[0m => \x1b[33m\"\x1b[0m\x1b[1;38;5;113mone"+
 			"\x1b[0m\x1b[33m\"\x1b[0m\n  \x1b[38;5;38m1\x1b[0m => \x1b[33m\""+
-			"\x1b[0m\x1b[38;5;113mtwo\x1b[0m\x1b[33m\"\x1b[0m\n]\n",
+			"\x1b[0m\x1b[1;38;5;113mtwo\x1b[0m\x1b[33m\"\x1b[0m\n]\n",
 			output)
 	})
 
