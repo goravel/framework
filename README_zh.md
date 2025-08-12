@@ -25,7 +25,7 @@ Laravel！
 
 ## 文档
 
-在线文档 [https://www.goravel.dev/zh](https://www.goravel.dev/zh_CN)
+在线文档 [https://www.goravel.dev/zh_CN](https://www.goravel.dev/zh_CN)
 
 示例 [https://github.com/goravel/example](https://github.com/goravel/example)
 
