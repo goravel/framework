@@ -307,12 +307,19 @@ func (s *ApplicationTestSuite) TestMakeLog() {
 }
 
 func (s *ApplicationTestSuite) TestMakeMail() {
+	mockConfig := mocksconfig.NewConfig(s.T())
 	s.app.Singleton(binding.Config, func(app foundation.Application) (any, error) {
-		return &mocksconfig.Config{}, nil
+		return mockConfig, nil
 	})
 	s.app.Singleton(binding.Queue, func(app foundation.Application) (any, error) {
 		return &mocksqueue.Queue{}, nil
 	})
+
+	mockConfig.EXPECT().GetString("mail.template.default", "html").Return("html").Once()
+	mockConfig.EXPECT().GetString("mail.template.engines.html.driver", "html").
+		Return("html").Once()
+	mockConfig.EXPECT().GetString("mail.template.engines.html.path", "resources/views/mail").
+		Return("resources/views/mail").Once()
 
 	serviceProvider := &mail.ServiceProvider{}
 	serviceProvider.Register(s.app)

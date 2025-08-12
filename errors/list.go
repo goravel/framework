@@ -98,6 +98,13 @@ var (
 	LogDriverNotSupported      = New("invalid driver: %s, only support stack, single, daily, custom").SetModule(ModuleLog)
 	LogEmptyLogFilePath        = New("empty log file path").SetModule(ModuleLog)
 
+	MailTemplateParseFailed         = New("failed to parse template %s: %w").SetModule(ModuleMail)
+	MailTemplateExecutionFailed     = New("failed to execute template %s: %w").SetModule(ModuleMail)
+	MailTemplateEngineNotSupported  = New("template engine driver not supported: %s").SetModule(ModuleMail)
+	MailTemplateEngineViaRequired   = New("custom template engine '%s' must specify 'via' factory function").SetModule(ModuleMail)
+	MailTemplateEngineViaInvalid    = New("invalid via type for template engine '%s'").SetModule(ModuleMail)
+	MailTemplateEngineFactoryFailed = New("factory for template engine '%s' failed: %w").SetModule(ModuleMail)
+
 	MigrationCreateFailed    = New("create migration failed: %v")
 	MigrationFreshFailed     = New("migration fresh failed: %v")
 	MigrationGetStatusFailed = New("get migration status failed: %v")

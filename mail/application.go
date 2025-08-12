@@ -7,68 +7,91 @@ import (
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/mail"
-	queuecontract "github.com/goravel/framework/contracts/queue"
+	contractsqueue "github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/mail/template"
 )
 
-type Application struct {
-	config      config.Config
-	queue       queuecontract.Queue
-	headers     map[string]string
-	from        mail.Address
-	html        string
-	subject     string
-	attachments []string
-	bcc         []string
-	cc          []string
-	to          []string
-	clone       int
+// Params represents all parameters needed for sending mail
+type Params struct {
+	Subject     string            `json:"subject"`
+	HTML        string            `json:"html"`
+	Text        string            `json:"text"`
+	FromAddress string            `json:"from_address"`
+	FromName    string            `json:"from_name"`
+	To          []string          `json:"to"`
+	CC          []string          `json:"cc"`
+	BCC         []string          `json:"bcc"`
+	Attachments []string          `json:"attachments"`
+	Headers     map[string]string `json:"headers"`
 }
 
-func NewApplication(config config.Config, queue queuecontract.Queue) *Application {
-	return &Application{
-		config: config,
-		queue:  queue,
+type Application struct {
+	config   config.Config
+	queue    contractsqueue.Queue
+	template mail.Template
+	params   Params
+	clone    int
+
+	view string
+	text string
+	with map[string]any
+}
+
+func NewApplication(config config.Config, queue contractsqueue.Queue) (*Application, error) {
+	templateEngine, err := template.Get(config)
+	if err != nil {
+		return nil, err
 	}
+
+	return &Application{
+		config:   config,
+		queue:    queue,
+		template: templateEngine,
+	}, nil
 }
 
 func (r *Application) Attach(attachments []string) mail.Mail {
 	instance := r.instance()
-	instance.attachments = attachments
+	instance.params.Attachments = attachments
 
 	return instance
 }
 
 func (r *Application) Bcc(bcc []string) mail.Mail {
 	instance := r.instance()
-	instance.bcc = bcc
+	instance.params.BCC = bcc
 
 	return instance
 }
 
 func (r *Application) Cc(cc []string) mail.Mail {
 	instance := r.instance()
-	instance.cc = cc
+	instance.params.CC = cc
 
 	return instance
 }
 
 func (r *Application) Content(content mail.Content) mail.Mail {
 	instance := r.instance()
-	instance.html = content.Html
+	instance.params.HTML = content.Html
+	instance.view = content.View
+	instance.text = content.Text
+	instance.with = content.With
 
 	return instance
 }
 
 func (r *Application) From(address mail.Address) mail.Mail {
 	instance := r.instance()
-	instance.from = address
+	instance.params.FromAddress = address.Address
+	instance.params.FromName = address.Name
 
 	return instance
 }
 
 func (r *Application) Headers(headers map[string]string) mail.Mail {
 	instance := r.instance()
-	instance.headers = headers
+	instance.params.Headers = headers
 
 	return instance
 }
@@ -78,42 +101,50 @@ func (r *Application) Queue(mailable ...mail.Mailable) error {
 		r.setUsingMailable(mailable[0])
 	}
 
-	job := r.queue.Job(NewSendMailJob(r.config), []queuecontract.Arg{
+	if err := r.renderViewTemplate(); err != nil {
+		return err
+	}
+
+	job := r.queue.Job(NewSendMailJob(r.config), []contractsqueue.Arg{
 		{
 			Type:  "string",
-			Value: r.subject,
-		},
-		{
-			Type:  "string",
-			Value: r.html,
-		},
-		{
-			Type:  "string",
-			Value: r.from.Address,
+			Value: r.params.Subject,
 		},
 		{
 			Type:  "string",
-			Value: r.from.Name,
+			Value: r.params.HTML,
+		},
+		{
+			Type:  "string",
+			Value: r.params.Text,
+		},
+		{
+			Type:  "string",
+			Value: r.params.FromAddress,
+		},
+		{
+			Type:  "string",
+			Value: r.params.FromName,
 		},
 		{
 			Type:  "[]string",
-			Value: r.to,
+			Value: r.params.To,
 		},
 		{
 			Type:  "[]string",
-			Value: r.cc,
+			Value: r.params.CC,
 		},
 		{
 			Type:  "[]string",
-			Value: r.bcc,
+			Value: r.params.BCC,
 		},
 		{
 			Type:  "[]string",
-			Value: r.attachments,
+			Value: r.params.Attachments,
 		},
 		{
 			Type:  "[]string",
-			Value: convertMapHeadersToSlice(r.headers),
+			Value: convertMapHeadersToSlice(r.params.Headers),
 		},
 	})
 
@@ -135,19 +166,24 @@ func (r *Application) Send(mailable ...mail.Mailable) error {
 	if len(mailable) > 0 {
 		r.setUsingMailable(mailable[0])
 	}
-	return SendMail(r.config, r.subject, r.html, r.from.Address, r.from.Name, r.to, r.cc, r.bcc, r.attachments, r.headers)
+
+	if err := r.renderViewTemplate(); err != nil {
+		return err
+	}
+
+	return SendMail(r.config, r.params)
 }
 
 func (r *Application) Subject(subject string) mail.Mail {
 	instance := r.instance()
-	instance.subject = subject
+	instance.params.Subject = subject
 
 	return instance
 }
 
 func (r *Application) To(to []string) mail.Mail {
 	instance := r.instance()
-	instance.to = to
+	instance.params.To = to
 
 	return instance
 }
@@ -155,9 +191,10 @@ func (r *Application) To(to []string) mail.Mail {
 func (r *Application) instance() *Application {
 	if r.clone == 0 {
 		return &Application{
-			clone:  1,
-			config: r.config,
-			queue:  r.queue,
+			clone:    1,
+			config:   r.config,
+			queue:    r.queue,
+			template: r.template,
 		}
 	}
 
@@ -165,61 +202,95 @@ func (r *Application) instance() *Application {
 }
 
 func (r *Application) setUsingMailable(mailable mail.Mailable) {
-	if content := mailable.Content(); content != nil && content.Html != "" {
-		r.html = content.Html
-	}
-	if len(mailable.Attachments()) > 0 {
-		r.attachments = mailable.Attachments()
+	if content := mailable.Content(); content != nil {
+		if content.Html != "" {
+			r.params.HTML = content.Html
+		}
+		r.view = content.View
+		r.text = content.Text
+		r.with = content.With
 	}
 
-	if len(mailable.Headers()) > 0 {
-		r.headers = mailable.Headers()
+	if attachments := mailable.Attachments(); len(attachments) > 0 {
+		r.params.Attachments = attachments
+	}
+
+	if headers := mailable.Headers(); len(headers) > 0 {
+		r.params.Headers = headers
 	}
 
 	if envelope := mailable.Envelope(); envelope != nil {
 		if envelope.From.Address != "" {
-			r.from = envelope.From
+			r.params.FromAddress = envelope.From.Address
+			r.params.FromName = envelope.From.Name
 		}
 		if len(envelope.To) > 0 {
-			r.to = envelope.To
+			r.params.To = envelope.To
 		}
 		if len(envelope.Cc) > 0 {
-			r.cc = envelope.Cc
+			r.params.CC = envelope.Cc
 		}
 		if len(envelope.Bcc) > 0 {
-			r.bcc = envelope.Bcc
+			r.params.BCC = envelope.Bcc
 		}
 		if envelope.Subject != "" {
-			r.subject = envelope.Subject
+			r.params.Subject = envelope.Subject
 		}
 	}
 }
 
-func SendMail(config config.Config, subject, html, fromAddress, fromName string, to, cc, bcc, attaches []string, headers map[string]string) error {
+func (r *Application) renderViewTemplate() error {
+	if r.view != "" && r.template != nil {
+		html, err := r.template.Render(r.view, r.with)
+		if err != nil {
+			return err
+		}
+		r.params.HTML = html
+	}
+
+	if r.text != "" && r.template != nil {
+		text, err := r.template.Render(r.text, r.with)
+		if err != nil {
+			return err
+		}
+		r.params.Text = text
+	}
+
+	return nil
+}
+
+func SendMail(config config.Config, params Params) error {
 	e := NewEmail()
+	fromAddress, fromName := params.FromAddress, params.FromName
 	if fromAddress == "" {
-		e.From = fmt.Sprintf("%s <%s>", config.GetString("mail.from.name"), config.GetString("mail.from.address"))
-	} else {
-		e.From = fmt.Sprintf("%s <%s>", fromName, fromAddress)
+		fromAddress, fromName = config.GetString("mail.from.address"), config.GetString("mail.from.name")
 	}
 
-	e.To = to
-	if len(bcc) > 0 {
-		e.Bcc = bcc
+	e.From = fmt.Sprintf("%s <%s>", fromName, fromAddress)
+	e.To = params.To
+	if len(params.BCC) > 0 {
+		e.Bcc = params.BCC
 	}
-	if len(cc) > 0 {
-		e.Cc = cc
+	if len(params.CC) > 0 {
+		e.Cc = params.CC
 	}
-	e.Subject = subject
-	e.HTML = []byte(html)
+	e.Subject = params.Subject
 
-	for _, attach := range attaches {
+	if len(params.HTML) > 0 {
+		e.HTML = []byte(params.HTML)
+	}
+
+	if len(params.Text) > 0 {
+		e.Text = []byte(params.Text)
+	}
+
+	for _, attach := range params.Attachments {
 		if _, err := e.AttachFile(attach); err != nil {
 			return err
 		}
 	}
 
-	for key, val := range headers {
+	for key, val := range params.Headers {
 		e.Headers.Add(key, val)
 	}
 
