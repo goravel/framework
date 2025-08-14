@@ -1,6 +1,6 @@
 module github.com/goravel/framework
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/Masterminds/squirrel v1.5.4
@@ -28,7 +28,6 @@ require (
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v3 v3.3.8
-	github.com/vektra/mockery/v2 v2.53.2
 	golang.org/x/crypto v0.41.0
 	golang.org/x/exp v0.0.0-20250808145144-a408d31f581a
 	google.golang.org/grpc v1.74.2
@@ -94,6 +93,7 @@ require (
 	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
+	github.com/vektra/mockery/v2 v2.53.2 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/xrash/smetrics v0.0.0-20250705151800-55b8f293f342
 	go.uber.org/multierr v1.11.0 // indirect
@@ -113,3 +113,5 @@ replace (
 	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20250804133106-a7a43d27e69b
 	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20250804133106-a7a43d27e69b
 )
+
+tool github.com/vektra/mockery/v2

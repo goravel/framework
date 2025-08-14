@@ -58,7 +58,7 @@ func NewManager(config config.Config, json foundation.Json) *Manager {
 
 	err := manager.registerDriver(defaultDriver)
 	if err != nil {
-		color.Errorf(errors.SessionDriverRegisterFailed.Args(err).Error())
+		color.Errorln(errors.SessionDriverRegisterFailed.Args(err).Error())
 	}
 	return manager
 }
