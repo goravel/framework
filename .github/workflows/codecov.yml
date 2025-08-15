@@ -14,6 +14,13 @@ jobs:
           go-version: 'stable'
       - name: Install dependencies
         run: go mod tidy
+      - name: Test pkg info
+        run: |
+          go list -e -compiler=gc -tags=-installsuffix= -f="{{.Dir}}
+          {{.ImportPath}}
+          {{.Root}}
+          {{.Goroot}}
+          {{if .Error}}{{.Error}}{{end}}" -- github.com/goravel/framework
       - name: Run tests with coverage
         run: go test -timeout 1h -coverprofile="coverage.out" $(go list ./... | grep -v /mocks | grep -v /facades | grep -v /contracts | grep -v /testing/mock | grep -v /database)
       - name: Print coverage report
