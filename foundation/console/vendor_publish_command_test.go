@@ -6,9 +6,11 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/console/command"
+	mocksconsole "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -421,4 +423,37 @@ func (s *VendorPublishCommandTestSuite) TestPublishFile() {
 	// Clean up test files
 	s.Nil(os.Remove(sourceFile))
 	s.Nil(os.Remove(targetFile))
+}
+
+func (s *VendorPublishCommandTestSuite) TestHandle() {
+	s.Run("should return error when no vendor found", func() {
+		cmd := NewVendorPublishCommand(map[string]map[string]string{}, map[string]map[string]string{})
+		mockCtx := mocksconsole.NewContext(s.T())
+
+		mockCtx.EXPECT().Option("package").Return("").Once()
+		mockCtx.EXPECT().Option("tag").Return("").Once()
+		mockCtx.EXPECT().Error("no vendor found").Return().Once()
+
+		err := cmd.Handle(mockCtx)
+
+		s.Nil(err)
+	})
+
+	s.Run("should return error when package directory not found", func() {
+		publishes := map[string]map[string]string{
+			"github.com/goravel/sms": {
+				"config.go": "config.go",
+			},
+		}
+		cmd := NewVendorPublishCommand(publishes, map[string]map[string]string{})
+		mockCtx := mocksconsole.NewContext(s.T())
+
+		mockCtx.EXPECT().Option("package").Return("github.com/goravel/sms").Once()
+		mockCtx.EXPECT().Option("tag").Return("").Once()
+		mockCtx.EXPECT().Error(mock.AnythingOfType("string")).Return().Once()
+
+		err := cmd.Handle(mockCtx)
+
+		s.Nil(err)
+	})
 }
