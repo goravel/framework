@@ -161,7 +161,6 @@ func main() {
 		).
 		Execute()
 }
-
 `
 	content = strings.ReplaceAll(content, "DummyName", r.name)
 
