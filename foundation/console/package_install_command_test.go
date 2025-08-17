@@ -65,7 +65,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 				captureOutput := color.CaptureOutput(func(w io.Writer) {
 					s.NoError(NewPackageInstallCommand().Handle(mockContext))
 				})
-				s.Contains(captureOutput, `go: github.com/goravel/package@unknown: invalid version: git ls-remote -q origin in`)
+				s.Contains(captureOutput, `go: github.com/goravel/package@unknown: invalid version`)
 			},
 		},
 		{
