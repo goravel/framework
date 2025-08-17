@@ -1356,10 +1356,18 @@ func (r *Query) create(dest any) error {
 }
 
 func (r *Query) created(dest any) error {
+	if isSlice(dest) {
+		return nil
+	}
+
 	return r.event(contractsorm.EventCreated, r.instance.Statement.Model, dest)
 }
 
 func (r *Query) creating(dest any) error {
+	if isSlice(dest) {
+		return nil
+	}
+
 	return r.event(contractsorm.EventCreating, r.instance.Statement.Model, dest)
 }
 
@@ -1412,18 +1420,34 @@ func (r *Query) event(event contractsorm.EventType, model, dest any) error {
 }
 
 func (r *Query) deleting(dest any) error {
+	if !hasID(dest) {
+		return nil
+	}
+
 	return r.event(contractsorm.EventDeleting, r.instance.Statement.Model, dest)
 }
 
 func (r *Query) deleted(dest any) error {
+	if !hasID(dest) {
+		return nil
+	}
+
 	return r.event(contractsorm.EventDeleted, r.instance.Statement.Model, dest)
 }
 
 func (r *Query) forceDeleting(dest any) error {
+	if !hasID(dest) {
+		return nil
+	}
+
 	return r.event(contractsorm.EventForceDeleting, r.instance.Statement.Model, dest)
 }
 
 func (r *Query) forceDeleted(dest any) error {
+	if !hasID(dest) {
+		return nil
+	}
+
 	return r.event(contractsorm.EventForceDeleted, r.instance.Statement.Model, dest)
 }
 
@@ -1537,6 +1561,10 @@ func (r *Query) restoring(dest any) error {
 }
 
 func (r *Query) retrieved(dest any) error {
+	if isSlice(dest) {
+		return nil
+	}
+
 	return r.event(contractsorm.EventRetrieved, nil, dest)
 }
 
@@ -1545,10 +1573,18 @@ func (r *Query) save(value any) error {
 }
 
 func (r *Query) saved(dest any) error {
+	if isSlice(dest) {
+		return nil
+	}
+
 	return r.event(contractsorm.EventSaved, r.instance.Statement.Model, dest)
 }
 
 func (r *Query) saving(dest any) error {
+	if isSlice(dest) {
+		return nil
+	}
+
 	return r.event(contractsorm.EventSaving, r.instance.Statement.Model, dest)
 }
 
@@ -1608,10 +1644,18 @@ func (r *Query) setConditions(conditions Conditions) *Query {
 }
 
 func (r *Query) updating(dest any) error {
+	if isSlice(dest) {
+		return nil
+	}
+
 	return r.event(contractsorm.EventUpdating, r.instance.Statement.Model, dest)
 }
 
 func (r *Query) updated(dest any) error {
+	if isSlice(dest) {
+		return nil
+	}
+
 	return r.event(contractsorm.EventUpdated, r.instance.Statement.Model, dest)
 }
 
@@ -1801,4 +1845,14 @@ func getObserverEvent(event contractsorm.EventType, observer contractsorm.Observ
 	}
 
 	return nil
+}
+
+func isSlice(dest any) bool {
+	destType := reflect.Indirect(reflect.ValueOf(dest)).Type()
+	return destType.Kind() == reflect.Slice
+}
+
+func hasID(dest any) bool {
+	id := database.GetID(dest)
+	return id != nil
 }

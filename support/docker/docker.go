@@ -17,7 +17,7 @@ const (
 	TestModelNormal
 
 	// Switch this value to control the test model.
-	TestModel = TestModelNormal
+	TestModel = TestModelMinimum
 )
 
 func Mysql() testing.DatabaseDriver {
