@@ -58,7 +58,7 @@ func NewApplication() foundation.Application {
 }
 
 func (r *Application) Boot() {
-	r.configuredServiceProviders = make([]foundation.ServiceProvider, 0)
+	r.configuredServiceProviders = r.configuredServiceProviders[:0]
 	r.publishes = make(map[string]map[string]string)
 	r.publishGroups = make(map[string]map[string]string)
 
