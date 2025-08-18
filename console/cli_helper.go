@@ -72,7 +72,7 @@ func subtract(a, b int) int {
 
 func indent(spaces int, v string) string {
 	pad := strings.Repeat(" ", spaces)
-	return pad + strings.Replace(v, "\n", "\n"+pad, -1)
+	return pad + strings.ReplaceAll(v, "\n", "\n"+pad)
 }
 
 func wrap(input string, offset int) string {
@@ -181,7 +181,7 @@ func capitalize(s string) string {
 // support style tags like <fg=red>text</>
 // more details in https://gookit.github.io/color/#/?id=tag-attributes
 func colorize(text string) string {
-    return color.Default().Sprint(text)
+	return color.Default().Sprint(text)
 
 }
 

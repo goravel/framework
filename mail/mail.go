@@ -173,10 +173,10 @@ func NewEmailFromReader(r io.Reader) (*Email, error) {
 				continue
 			}
 		}
-		switch {
-		case ct == "text/plain":
+		switch ct {
+		case "text/plain":
 			e.Text = p.body
-		case ct == "text/html":
+		case "text/html":
 			e.HTML = p.body
 		}
 	}
@@ -475,7 +475,7 @@ func (e *Email) Bytes() ([]byte, error) {
 				}
 
 				if isMixed || isAlternative {
-					relatedWriter.Close()
+					_ = relatedWriter.Close()
 				}
 			}
 		}
@@ -585,7 +585,9 @@ func (e *Email) SendWithTLS(addr string, a smtp.Auth, t *tls.Config) error {
 	if err != nil {
 		return err
 	}
-	defer c.Close()
+	defer func() {
+		_ = c.Close()
+	}()
 	if err = c.Hello("localhost"); err != nil {
 		return err
 	}
@@ -654,7 +656,9 @@ func (e *Email) SendWithStartTLS(addr string, a smtp.Auth, t *tls.Config) error 
 	if err != nil {
 		return err
 	}
-	defer c.Close()
+	defer func() {
+		_ = c.Close()
+	}()
 	if err = c.Hello("localhost"); err != nil {
 		return err
 	}

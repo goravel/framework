@@ -224,7 +224,9 @@ func (r *Query) Cursor() (chan contractsorm.Cursor, error) {
 		if err != nil {
 			return
 		}
-		defer rows.Close()
+		defer func() {
+			_ = rows.Close()
+		}()
 
 		for rows.Next() {
 			val := make(map[string]any)
@@ -284,7 +286,7 @@ func (r *Query) Distinct(args ...any) contractsorm.Query {
 }
 
 func (r *Query) Driver() contractsdatabase.Driver {
-	return contractsdatabase.Driver(r.instance.Dialector.Name())
+	return contractsdatabase.Driver(r.instance.Name())
 }
 
 func (r *Query) Exec(sql string, values ...any) (*contractsorm.Result, error) {
@@ -1848,8 +1850,9 @@ func getObserverEvent(event contractsorm.EventType, observer contractsorm.Observ
 }
 
 func isSlice(dest any) bool {
-	destType := reflect.Indirect(reflect.ValueOf(dest)).Type()
-	return destType.Kind() == reflect.Slice
+	destKind := reflect.Indirect(reflect.ValueOf(dest)).Type().Kind()
+
+	return destKind == reflect.Slice || destKind == reflect.Array
 }
 
 func hasID(dest any) bool {

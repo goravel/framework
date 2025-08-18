@@ -190,10 +190,7 @@ func (r *ContainerManager) databaseConfigToDatabaseDriver(containerType Containe
 }
 
 func (r *ContainerManager) lock() {
-	for {
-		if !file.Exists(r.lockFile) {
-			break
-		}
+	for file.Exists(r.lockFile) {
 		time.Sleep(1 * time.Second)
 	}
 	if err := file.Create(r.lockFile, ""); err != nil {
