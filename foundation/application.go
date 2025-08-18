@@ -58,6 +58,10 @@ func NewApplication() foundation.Application {
 }
 
 func (r *Application) Boot() {
+	r.configuredServiceProviders = r.configuredServiceProviders[:0]
+	clear(r.publishes)
+	clear(r.publishGroups)
+
 	r.setTimezone()
 	r.registerConfiguredServiceProviders()
 	r.bootConfiguredServiceProviders()
