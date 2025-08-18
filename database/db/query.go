@@ -142,7 +142,9 @@ func (r *Query) Cursor() chan db.Row {
 		if rows, err = r.readBuilder.QueryxContext(r.ctx, sql, args...); err != nil {
 			return
 		}
-		defer rows.Close()
+		defer func() {
+			_ = rows.Close()
+		}()
 
 		for rows.Next() {
 			row := make(map[string]any)
