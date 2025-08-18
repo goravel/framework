@@ -151,7 +151,7 @@ func (r *BodyImpl) addFile(writer *multipart.Writer, fieldName, filePath string)
 	if err != nil {
 		return err
 	}
-	defer errors.Ignore(file.Close())
+	defer errors.Ignore(file.Close)
 
 	part, err := writer.CreateFormFile(fieldName, filepath.Base(file.Name()))
 	if err != nil {

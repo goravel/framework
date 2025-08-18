@@ -26,7 +26,7 @@ func GetLineNum(file string) int {
 		}
 	}
 
-	defer errors.Ignore(f.Close())
+	defer errors.Ignore(f.Close)
 
 	return total
 }

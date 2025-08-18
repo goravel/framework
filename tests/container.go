@@ -113,7 +113,7 @@ func (r *Container) add() error {
 	if err != nil {
 		return err
 	}
-	defer errors.Ignore(f.Close())
+	defer errors.Ignore(f.Close)
 
 	content, err := json.New().MarshalString(databaseConfigs)
 	if err != nil {
@@ -138,7 +138,7 @@ func (r *Container) all() (map[string]docker.DatabaseConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer errors.Ignore(f.Close())
+	defer errors.Ignore(f.Close)
 
 	content, err := io.ReadAll(f)
 	if err != nil {

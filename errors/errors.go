@@ -62,4 +62,6 @@ func Unwrap(err error) error {
 	return errors.Unwrap(err)
 }
 
-func Ignore(_ error) {}
+func Ignore(fn func() error) {
+	_ = fn()
+}
