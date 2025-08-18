@@ -6,7 +6,7 @@ require (
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/brianvoe/gofakeit/v7 v7.3.0
 	github.com/charmbracelet/huh v0.7.0
-	github.com/charmbracelet/huh/spinner v0.0.0-20250714122654-40d2b68703eb
+	github.com/charmbracelet/huh/spinner 95b882db3fb0
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/dave/dst v0.27.3
 	github.com/dromara/carbon/v2 v2.6.11
@@ -27,10 +27,10 @@ require (
 	github.com/spf13/cast v1.9.2
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
-	github.com/urfave/cli/v3 v3.3.8
+	github.com/urfave/cli/v3 v3.4.1
 	github.com/vektra/mockery/v2 v2.53.2
 	golang.org/x/crypto v0.41.0
-	golang.org/x/exp v0.0.0-20250808145144-a408d31f581a
+	golang.org/x/exp 42675adae3e6
 	google.golang.org/grpc v1.74.2
 	google.golang.org/protobuf v1.36.7
 	gorm.io/gorm v1.30.1
@@ -110,6 +110,6 @@ require (
 )
 
 replace (
-	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20250804133106-a7a43d27e69b
-	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20250804133106-a7a43d27e69b
+	google.golang.org/genproto => google.golang.org/genproto 5f3141c8851a
+	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc 5f3141c8851a
 )

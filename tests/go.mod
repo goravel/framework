@@ -2,7 +2,7 @@ module github.com/goravel/framework/tests
 
 go 1.23.0
 
-toolchain go1.24.6
+toolchain go1.25.0
 
 godebug x509negativeserial=1
 
