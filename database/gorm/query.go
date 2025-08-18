@@ -16,7 +16,6 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	contractsdatabase "github.com/goravel/framework/contracts/database"
 	contractsdb "github.com/goravel/framework/contracts/database/db"
-	"github.com/goravel/framework/contracts/database/driver"
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/log"
@@ -32,7 +31,7 @@ const Associations = clause.Associations
 type Query struct {
 	config          config.Config
 	ctx             context.Context
-	grammar         driver.Grammar
+	grammar         contractsdriver.Grammar
 	log             log.Log
 	instance        *gormio.DB
 	queries         map[string]*Query
@@ -47,7 +46,7 @@ func NewQuery(
 	config config.Config,
 	dbConfig contractsdatabase.Config,
 	db *gormio.DB,
-	grammar driver.Grammar,
+	grammar contractsdriver.Grammar,
 	log log.Log,
 	modelToObserver []contractsorm.ModelToObserver,
 	conditions *Conditions,
@@ -71,7 +70,7 @@ func NewQuery(
 }
 
 func BuildQuery(ctx context.Context, config config.Config, connection string, log log.Log, modelToObserver []contractsorm.ModelToObserver) (*Query, contractsdatabase.Config, error) {
-	driverCallback, exist := config.Get(fmt.Sprintf("database.connections.%s.via", connection)).(func() (driver.Driver, error))
+	driverCallback, exist := config.Get(fmt.Sprintf("database.connections.%s.via", connection)).(func() (contractsdriver.Driver, error))
 	if !exist {
 		return nil, contractsdatabase.Config{}, errors.DatabaseConfigNotFound
 	}
@@ -172,7 +171,9 @@ func (r *Query) Cursor() chan contractsdb.Row {
 		if rows, err = query.instance.Rows(); err != nil {
 			return
 		}
-		defer rows.Close()
+		defer func() {
+			_ = rows.Close()
+		}()
 
 		for rows.Next() {
 			val := make(map[string]any)

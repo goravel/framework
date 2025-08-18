@@ -41,7 +41,9 @@ func Create(file string, content string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 
 	if _, err = f.WriteString(content); err != nil {
 		return err
@@ -157,7 +159,9 @@ func PutContent(file string, content string, options ...Option) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 
 	// Write the content
 	if _, err = f.WriteString(content); err != nil {
@@ -185,7 +189,9 @@ func Size(file string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer fileInfo.Close()
+	defer func() {
+		_ = fileInfo.Close()
+	}()
 
 	fi, err := fileInfo.Stat()
 	if err != nil {

@@ -16,7 +16,7 @@ func IsPortUsing(port int) bool {
 
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if l != nil {
-		l.Close()
+		_ = l.Close()
 	}
 
 	return err != nil

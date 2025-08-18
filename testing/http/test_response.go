@@ -415,7 +415,9 @@ func (r *TestResponseImpl) getContent() (string, error) {
 		return r.content, nil
 	}
 
-	defer r.response.Body.Close()
+	defer func() {
+		_ = r.response.Body.Close()
+	}()
 
 	content, err := io.ReadAll(r.response.Body)
 	if err != nil {
