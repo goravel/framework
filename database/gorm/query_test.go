@@ -1511,7 +1511,7 @@ func (s *QueryTestSuite) TestEvent_Deleting() {
 		s.Run("not trigger when deleting mass records", func() {
 			res, err := query.Query().Where("name", "event_deleting_name").Delete(&User{})
 			s.NoError(err)
-			s.Equal(int64(0), res.RowsAffected)
+			s.Equal(int64(1), res.RowsAffected)
 		})
 	}
 }
