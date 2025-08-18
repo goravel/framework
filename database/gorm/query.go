@@ -1850,8 +1850,11 @@ func getObserverEvent(event contractsorm.EventType, observer contractsorm.Observ
 }
 
 func isSlice(dest any) bool {
-	destKind := reflect.Indirect(reflect.ValueOf(dest)).Type().Kind()
+	if dest == nil {
+		return false
+	}
 
+	destKind := reflect.Indirect(reflect.ValueOf(dest)).Type().Kind()
 	return destKind == reflect.Slice || destKind == reflect.Array
 }
 
