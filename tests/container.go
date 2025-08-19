@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/goravel/framework/contracts/testing/docker"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation/json"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/process"
@@ -112,7 +113,7 @@ func (r *Container) add() error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer errors.Ignore(f.Close)
 
 	content, err := json.New().MarshalString(databaseConfigs)
 	if err != nil {
@@ -137,7 +138,7 @@ func (r *Container) all() (map[string]docker.DatabaseConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer errors.Ignore(f.Close)
 
 	content, err := io.ReadAll(f)
 	if err != nil {
@@ -151,10 +152,7 @@ func (r *Container) all() (map[string]docker.DatabaseConfig, error) {
 }
 
 func (r *Container) lock() {
-	for {
-		if !file.Exists(r.lockFile) {
-			break
-		}
+	for file.Exists(r.lockFile) {
 		time.Sleep(1 * time.Second)
 	}
 	if err := file.PutContent(r.lockFile, ""); err != nil {

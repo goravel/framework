@@ -104,9 +104,9 @@ func (r *BuildCommand) Handle(ctx console.Context) error {
 }
 
 func (r *BuildCommand) build(system string, command []string) error {
-	os.Setenv("CGO_ENABLED", "0")
-	os.Setenv("GOOS", system)
-	os.Setenv("GOARCH", "amd64")
+	_ = os.Setenv("CGO_ENABLED", "0")
+	_ = os.Setenv("GOOS", system)
+	_ = os.Setenv("GOARCH", "amd64")
 
 	cmd := exec.Command(command[0], command[1:]...)
 	_, err := cmd.Output()

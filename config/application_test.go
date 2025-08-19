@@ -27,9 +27,11 @@ TIMEOUT=10s
 FLOAT_VALUE=3.14
 `))
 	temp, err := os.CreateTemp("", "goravel.env")
-	assert.Nil(t, err)
-	defer temp.Close()
-	defer os.Remove(temp.Name())
+	assert.NoError(t, err)
+	defer func() {
+		_ = temp.Close()
+		_ = os.Remove(temp.Name())
+	}()
 
 	_, err = temp.Write([]byte(`
 APP_KEY=12345678901234567890123456789012
@@ -38,15 +40,14 @@ DB_PORT=3306
 TIMEOUT=20s
 FLOAT_VALUE=6.28
 `))
-	assert.Nil(t, err)
-	assert.Nil(t, temp.Close())
+	assert.NoError(t, err)
 
 	suite.Run(t, &ApplicationTestSuite{
 		config:       NewApplication(support.EnvFilePath),
 		customConfig: NewApplication(temp.Name()),
 	})
 
-	assert.Nil(t, file.Remove(support.EnvFilePath))
+	assert.NoError(t, file.Remove(support.EnvFilePath))
 }
 
 func (s *ApplicationTestSuite) SetupTest() {

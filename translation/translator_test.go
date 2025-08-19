@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	contractstranslation "github.com/goravel/framework/contracts/translation"
-	translationcontract "github.com/goravel/framework/contracts/translation"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation/json"
 	"github.com/goravel/framework/http"
@@ -59,7 +58,7 @@ func (s *TranslatorTestSuite) TestChoice() {
 	s.mockLoader.On("Load", "fr", "test").Once().Return(map[string]any{
 		"baz": "{0} first|{1}Hello, :foo!",
 	}, nil)
-	translation = translator.Choice("test.baz", 1, translationcontract.Option{
+	translation = translator.Choice("test.baz", 1, contractstranslation.Option{
 		Replace: map[string]string{
 			"foo": "baz:bar",
 			"bar": "abcdef",
@@ -119,7 +118,7 @@ func (s *TranslatorTestSuite) TestGet() {
 	s.mockLoader.On("Load", "en", "greetings").Once().Return(map[string]any{
 		"welcome_message": "Hello, :name! Welcome to :location.",
 	}, nil)
-	translation = translator.Get("greetings.welcome_message", translationcontract.Option{
+	translation = translator.Get("greetings.welcome_message", contractstranslation.Option{
 		Replace: map[string]string{
 			"location": "india",
 			"name":     "krishan",
@@ -133,7 +132,7 @@ func (s *TranslatorTestSuite) TestGet() {
 	s.mockLoader.On("Load", "en", "greet").Once().Return(map[string]any{
 		"hi": "Hello, :who!",
 	}, nil)
-	translation = translator.Get("greet.hi", translationcontract.Option{
+	translation = translator.Get("greet.hi", contractstranslation.Option{
 		Replace: map[string]string{
 			"who": "baz:bar",
 			"bar": "abcdef",
@@ -147,7 +146,7 @@ func (s *TranslatorTestSuite) TestGet() {
 	s.mockLoader.On("Load", "en", "welcome").Once().Return(map[string]any{
 		"message": ":greeting :name",
 	}, nil)
-	translation = translator.Get("welcome.message", translationcontract.Option{
+	translation = translator.Get("welcome.message", contractstranslation.Option{
 		Replace: map[string]string{
 			"name":     "krishan",
 			"greeting": "Hello",
@@ -179,8 +178,8 @@ func (s *TranslatorTestSuite) TestGet() {
 	s.mockLoader.On("Load", "fr", "test3").Once().Return(map[string]any{
 		"nonexistentKey": "French translation",
 	}, nil)
-	translation = translator.Get("test3.nonexistentKey", translationcontract.Option{
-		Fallback: translationcontract.Bool(true),
+	translation = translator.Get("test3.nonexistentKey", contractstranslation.Option{
+		Fallback: contractstranslation.Bool(true),
 		Locale:   "en",
 	})
 	s.Equal("French translation", translation)
@@ -189,8 +188,8 @@ func (s *TranslatorTestSuite) TestGet() {
 	translator = NewTranslator(s.ctx, nil, s.mockLoader, "en", "fr", s.mockLog)
 	s.mockLoader.On("Load", "en", "*").Once().Return(map[string]any{}, errors.LangFileNotExist)
 	s.mockLoader.On("Load", "en", "test4").Once().Return(map[string]any{}, errors.LangFileNotExist)
-	translation = translator.Get("test4.nonexistentKey", translationcontract.Option{
-		Fallback: translationcontract.Bool(false),
+	translation = translator.Get("test4.nonexistentKey", contractstranslation.Option{
+		Fallback: contractstranslation.Bool(false),
 		Locale:   "en",
 	})
 	s.Equal("test4.nonexistentKey", translation)
@@ -212,8 +211,8 @@ func (s *TranslatorTestSuite) TestGet() {
 			"nonexistentKey": "French translation",
 		},
 	}, nil)
-	translation = translator.Get("fallback.nonexistentKey", translationcontract.Option{
-		Fallback: translationcontract.Bool(true),
+	translation = translator.Get("fallback.nonexistentKey", contractstranslation.Option{
+		Fallback: contractstranslation.Bool(true),
 		Locale:   "en",
 	})
 	s.Equal("French translation", translation)
@@ -304,7 +303,7 @@ func (s *TranslatorTestSuite) TestHas() {
 	s.mockLoader.On("Load", "fr", "*").Once().Return(map[string]any{
 		"hello": "world",
 	}, nil)
-	hasKey = translator.Has("hello", translationcontract.Option{
+	hasKey = translator.Has("hello", contractstranslation.Option{
 		Locale: "fr",
 	})
 	s.True(hasKey)

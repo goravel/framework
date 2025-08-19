@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"io"
 	"os"
+
+	"github.com/goravel/framework/errors"
 )
 
 func GetLineNum(file string) int {
@@ -24,7 +26,7 @@ func GetLineNum(file string) int {
 		}
 	}
 
-	defer f.Close()
+	defer errors.Ignore(f.Close)
 
 	return total
 }

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math/rand"
 	"net"
+
+	"github.com/goravel/framework/errors"
 )
 
 // Used by TestContainer, to simulate the port is using.
@@ -16,7 +18,7 @@ func IsPortUsing(port int) bool {
 
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if l != nil {
-		l.Close()
+		errors.Ignore(l.Close)
 	}
 
 	return err != nil
