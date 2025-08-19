@@ -3,6 +3,7 @@ package tests
 import (
 	"errors"
 	"fmt"
+
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/goravel/framework/contracts/database/factory"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
@@ -49,6 +50,10 @@ func (r *User) Factory() factory.Factory {
 func (r *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.Event) error {
 	return map[contractsorm.EventType]func(contractsorm.Event) error{
 		contractsorm.EventCreating: func(event contractsorm.Event) error {
+			if event.Context().Value("event") == "creating event with slice struct" || event.Context().Value("event") == "creating event with slice map" {
+				panic("dest is slice when creating")
+			}
+
 			name := event.GetAttribute("name")
 			if name != nil {
 				if name.(string) == "event_creating_name" {
@@ -86,6 +91,10 @@ func (r *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.E
 			return nil
 		},
 		contractsorm.EventCreated: func(event contractsorm.Event) error {
+			if event.Context().Value("event") == "created event with slice struct" || event.Context().Value("event") == "created event with slice map" {
+				panic("dest is slice when created")
+			}
+
 			name := event.GetAttribute("name")
 			if name != nil {
 				if name.(string) == "event_created_name" {
@@ -116,6 +125,10 @@ func (r *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.E
 			return nil
 		},
 		contractsorm.EventSaving: func(event contractsorm.Event) error {
+			if event.Context().Value("event") == "saving event with slice struct" || event.Context().Value("event") == "saving event with slice map" {
+				panic("dest is slice when saving")
+			}
+
 			name := event.GetAttribute("name")
 			switch name.(type) {
 			case string:
@@ -158,6 +171,10 @@ func (r *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.E
 			return nil
 		},
 		contractsorm.EventSaved: func(event contractsorm.Event) error {
+			if event.Context().Value("event") == "saved event with slice struct" || event.Context().Value("event") == "saved event with slice map" {
+				panic("dest is slice when saved")
+			}
+
 			name := event.GetAttribute("name")
 			switch name.(type) {
 			case string:
@@ -271,6 +288,10 @@ func (r *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.E
 			return nil
 		},
 		contractsorm.EventDeleting: func(event contractsorm.Event) error {
+			if event.Context().Value("event") == "deleting event with mass records" {
+				panic("dest has no id when deleting")
+			}
+
 			name := event.GetAttribute("name")
 			if name != nil && name.(string) == "event_deleting_name" {
 				return errors.New("deleting error")
@@ -279,6 +300,10 @@ func (r *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.E
 			return nil
 		},
 		contractsorm.EventDeleted: func(event contractsorm.Event) error {
+			if event.Context().Value("event") == "deleted event with mass records" {
+				panic("dest has no id when deleted")
+			}
+
 			name := event.GetAttribute("name")
 			if name != nil && name.(string) == "event_deleted_name" {
 				return errors.New("deleted error")
@@ -287,6 +312,10 @@ func (r *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.E
 			return nil
 		},
 		contractsorm.EventForceDeleting: func(event contractsorm.Event) error {
+			if event.Context().Value("event") == "force deleting event with mass records" {
+				panic("dest has no id when force deleting")
+			}
+
 			name := event.GetAttribute("name")
 			if name != nil && name.(string) == "event_force_deleting_name" {
 				return errors.New("force deleting error")
@@ -295,6 +324,10 @@ func (r *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.E
 			return nil
 		},
 		contractsorm.EventForceDeleted: func(event contractsorm.Event) error {
+			if event.Context().Value("event") == "force deleted event with mass records" {
+				panic("dest has no id when force deleted")
+			}
+
 			name := event.GetAttribute("name")
 			if name != nil && name.(string) == "event_force_deleted_name" {
 				return errors.New("force deleted error")
@@ -303,6 +336,10 @@ func (r *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.E
 			return nil
 		},
 		contractsorm.EventRetrieved: func(event contractsorm.Event) error {
+			if event.Context().Value("event") == "retrieved event with slice struct" {
+				panic("dest is slice when retrieved")
+			}
+
 			name := event.GetAttribute("name")
 			if name != nil && name.(string) == "event_retrieved_name" {
 				event.SetAttribute("name", "event_retrieved_name1")

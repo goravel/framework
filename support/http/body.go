@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cast"
 
 	"github.com/goravel/framework/contracts/support/http"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/collect"
 	"github.com/goravel/framework/support/maps"
 )
@@ -150,9 +151,7 @@ func (r *BodyImpl) addFile(writer *multipart.Writer, fieldName, filePath string)
 	if err != nil {
 		return err
 	}
-	defer func() {
-		_ = file.Close()
-	}()
+	defer errors.Ignore(file.Close)
 
 	part, err := writer.CreateFormFile(fieldName, filepath.Base(file.Name()))
 	if err != nil {
