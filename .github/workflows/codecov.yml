@@ -12,6 +12,10 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: 'stable'
+      - name: Set up framework cache
+        run: |
+          go install github.com/${GITHUB_REPOSITORY}@master || true
+          ls -al $(go env GOMODCACHE)/github.com/goravel
       - name: Install dependencies
         run: go mod tidy
       - name: Run tests with coverage
