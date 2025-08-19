@@ -1079,7 +1079,9 @@ func buildRequest(t *testing.T) *http.Request {
 	logo, err := os.Open("../logo.png")
 	assert.Nil(t, err)
 
-	defer logo.Close()
+	defer func() {
+		_ = logo.Close()
+	}()
 	part1, err := writer.CreateFormFile("file", filepath.Base("../logo.png"))
 	assert.Nil(t, err)
 

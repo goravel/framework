@@ -86,16 +86,17 @@ func (r *ServiceProvider) registerCommands(app foundation.Application) {
 		var migrator contractsmigration.Migrator
 
 		driver := config.GetString("database.migrations.driver")
-		if driver == contractsmigration.MigratorDefault {
+		switch driver {
+		case contractsmigration.MigratorDefault:
 			migrator = migration.NewDefaultMigrator(artisan, schema, config.GetString("database.migrations.table"))
-		} else if driver == contractsmigration.MigratorSql {
+		case contractsmigration.MigratorSql:
 			var err error
 			migrator, err = migration.NewSqlMigrator(config)
 			if err != nil {
 				log.Error(errors.MigrationSqlMigratorInit.Args(err).SetModule(errors.ModuleMigration))
 				return
 			}
-		} else {
+		default:
 			log.Error(errors.MigrationUnsupportedDriver.Args(driver).SetModule(errors.ModuleMigration))
 			return
 		}

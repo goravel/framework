@@ -2126,11 +2126,12 @@ func (s *SchemaSuite) TestIndexMethods() {
 				if index.Name == "goravel_indexes_id_name_index" {
 					s.ElementsMatch(index.Columns, []string{"id", "name"})
 					s.False(index.Primary)
-					if driver == database.DriverSqlite {
+					switch driver {
+					case database.DriverSqlite:
 						s.Empty(index.Type)
-					} else if driver == database.DriverSqlserver {
+					case database.DriverSqlserver:
 						s.Equal("nonclustered", index.Type)
-					} else {
+					default:
 						s.Equal("btree", index.Type)
 					}
 					s.False(index.Unique)
@@ -2138,11 +2139,12 @@ func (s *SchemaSuite) TestIndexMethods() {
 				if index.Name == "name_index" {
 					s.ElementsMatch(index.Columns, []string{"name"})
 					s.False(index.Primary)
-					if driver == database.DriverSqlite {
+					switch driver {
+					case database.DriverSqlite:
 						s.Empty(index.Type)
-					} else if driver == database.DriverSqlserver {
+					case database.DriverSqlserver:
 						s.Equal("nonclustered", index.Type)
-					} else {
+					default:
 						s.Equal("btree", index.Type)
 					}
 					s.False(index.Unique)

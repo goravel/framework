@@ -23,24 +23,25 @@ APP_DEBUG=true
 DB_PORT=3306
 `))
 	temp, err := os.CreateTemp("", "goravel.env")
-	assert.Nil(t, err)
-	defer temp.Close()
-	defer os.Remove(temp.Name())
+	assert.NoError(t, err)
+	defer func() {
+		assert.NoError(t, temp.Close())
+		assert.NoError(t, os.Remove(temp.Name()))
+	}()
 
 	_, err = temp.Write([]byte(`
 APP_KEY=12345678901234567890123456789012
 APP_DEBUG=true
 DB_PORT=3306
 `))
-	assert.Nil(t, err)
-	assert.Nil(t, temp.Close())
+	assert.NoError(t, err)
 
 	suite.Run(t, &ApplicationTestSuite{
 		config:       NewApplication(".env"),
 		customConfig: NewApplication(temp.Name()),
 	})
 
-	assert.Nil(t, file.Remove(".env"))
+	assert.NoError(t, file.Remove(".env"))
 }
 
 func (s *ApplicationTestSuite) SetupTest() {

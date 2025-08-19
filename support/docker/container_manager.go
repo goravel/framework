@@ -124,7 +124,9 @@ func (r *ContainerManager) add(containerType ContainerType, databaseDriver testi
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 
 	content, err := json.NewJson().Marshal(containerTypeToDatabaseConfig)
 	if err != nil {
@@ -149,7 +151,9 @@ func (r *ContainerManager) all() (map[ContainerType]testing.DatabaseConfig, erro
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 
 	content, err := io.ReadAll(f)
 	if err != nil {
@@ -190,10 +194,7 @@ func (r *ContainerManager) databaseConfigToDatabaseDriver(containerType Containe
 }
 
 func (r *ContainerManager) lock() {
-	for {
-		if !file.Exists(r.lockFile) {
-			break
-		}
+	for file.Exists(r.lockFile) {
 		time.Sleep(1 * time.Second)
 	}
 	if err := file.Create(r.lockFile, ""); err != nil {

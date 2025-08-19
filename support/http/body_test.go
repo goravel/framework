@@ -74,10 +74,12 @@ func TestBuildFormBody(t *testing.T) {
 func TestBuildMultipartBody(t *testing.T) {
 	file, err := os.CreateTemp("", "example.txt")
 	assert.NoError(t, err)
-	defer os.Remove(file.Name())
+	defer func() {
+		_ = os.Remove(file.Name())
+	}()
 	_, err = file.WriteString("file content")
 	assert.NoError(t, err)
-	file.Close()
+	_ = file.Close()
 
 	body := NewBody().
 		SetField("name", "krishan").
@@ -106,7 +108,9 @@ func TestBuildMultipartBody(t *testing.T) {
 	assert.True(t, ok)
 	fileReader, err := fileHeaders[0].Open()
 	assert.NoError(t, err)
-	defer fileReader.Close()
+	defer func() {
+		_ = fileReader.Close()
+	}()
 	fileContent, err := io.ReadAll(fileReader)
 	assert.NoError(t, err)
 	assert.Equal(t, "file content", string(fileContent))

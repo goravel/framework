@@ -873,6 +873,33 @@ func (s *QueryTestSuite) TestEvent_Creating() {
 					s.Equal("event_creating_save_avatar", user.Avatar)
 				},
 			},
+			{
+				name: "not trigger when creating by slice struct",
+				setup: func() {
+					users := []User{{Name: "event_creating_slice_name"}, {Name: "event_creating_slice_name1"}}
+					s.Nil(query.Query().Model(&User{}).Create(users))
+				},
+			},
+			{
+				name: "not trigger when creating by slice map",
+				setup: func() {
+					users := []map[string]any{
+						{
+							"Name":      "event_creating_slice_name",
+							"Avatar":    "event_creating_slice_avatar",
+							"CreatedAt": carbon.Now(),
+							"UpdatedAt": carbon.Now(),
+						},
+						{
+							"Name":      "event_creating_slice_name1",
+							"Avatar":    "event_creating_slice_avatar1",
+							"CreatedAt": carbon.Now(),
+							"UpdatedAt": carbon.Now(),
+						},
+					}
+					s.Nil(query.Query().Model(&User{}).Create(&users))
+				},
+			},
 		}
 		for _, test := range tests {
 			s.Run(test.name, func() {
@@ -986,6 +1013,33 @@ func (s *QueryTestSuite) TestEvent_Created() {
 					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_created_save_name", user1.Name)
 					s.Empty(user1.Avatar)
+				},
+			},
+			{
+				name: "not trigger when creating by slice struct",
+				setup: func() {
+					users := []User{{Name: "event_creating_slice_name"}, {Name: "event_creating_slice_name1"}}
+					s.Nil(query.Query().Model(&User{}).Create(users))
+				},
+			},
+			{
+				name: "not trigger when creating by slice map",
+				setup: func() {
+					users := []map[string]any{
+						{
+							"Name":      "event_creating_slice_name",
+							"Avatar":    "event_creating_slice_avatar",
+							"CreatedAt": carbon.Now(),
+							"UpdatedAt": carbon.Now(),
+						},
+						{
+							"Name":      "event_creating_slice_name1",
+							"Avatar":    "event_creating_slice_avatar1",
+							"CreatedAt": carbon.Now(),
+							"UpdatedAt": carbon.Now(),
+						},
+					}
+					s.Nil(query.Query().Model(&User{}).Create(&users))
 				},
 			},
 		}
@@ -1107,6 +1161,33 @@ func (s *QueryTestSuite) TestEvent_Saving() {
 					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_saving_single_update_name", user1.Name)
 					s.Equal("event_saving_single_update_avatar1", user1.Avatar)
+				},
+			},
+			{
+				name: "not trigger when creating by slice struct",
+				setup: func() {
+					users := []User{{Name: "event_creating_slice_name"}, {Name: "event_creating_slice_name1"}}
+					s.Nil(query.Query().Model(&User{}).Create(users))
+				},
+			},
+			{
+				name: "not trigger when creating by slice map",
+				setup: func() {
+					users := []map[string]any{
+						{
+							"Name":      "event_creating_slice_name",
+							"Avatar":    "event_creating_slice_avatar",
+							"CreatedAt": carbon.Now(),
+							"UpdatedAt": carbon.Now(),
+						},
+						{
+							"Name":      "event_creating_slice_name1",
+							"Avatar":    "event_creating_slice_avatar1",
+							"CreatedAt": carbon.Now(),
+							"UpdatedAt": carbon.Now(),
+						},
+					}
+					s.Nil(query.Query().Model(&User{}).Create(&users))
 				},
 			},
 		}
@@ -1238,6 +1319,33 @@ func (s *QueryTestSuite) TestEvent_Saved() {
 					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_saved_map_update_name", user1.Name)
 					s.Equal("event_saved_map_update_avatar", user1.Avatar)
+				},
+			},
+			{
+				name: "not trigger when creating by slice struct",
+				setup: func() {
+					users := []User{{Name: "event_creating_slice_name"}, {Name: "event_creating_slice_name1"}}
+					s.Nil(query.Query().Model(&User{}).Create(users))
+				},
+			},
+			{
+				name: "not trigger when creating by slice map",
+				setup: func() {
+					users := []map[string]any{
+						{
+							"Name":      "event_creating_slice_name",
+							"Avatar":    "event_creating_slice_avatar",
+							"CreatedAt": carbon.Now(),
+							"UpdatedAt": carbon.Now(),
+						},
+						{
+							"Name":      "event_creating_slice_name1",
+							"Avatar":    "event_creating_slice_avatar1",
+							"CreatedAt": carbon.Now(),
+							"UpdatedAt": carbon.Now(),
+						},
+					}
+					s.Nil(query.Query().Model(&User{}).Create(&users))
 				},
 			},
 		}
@@ -1387,61 +1495,96 @@ func (s *QueryTestSuite) TestEvent_Updated() {
 
 func (s *QueryTestSuite) TestEvent_Deleting() {
 	for _, query := range s.queries {
-		user := User{Name: "event_deleting_name", Avatar: "event_deleting_avatar"}
-		s.Nil(query.Query().Create(&user))
+		s.Run("trigger", func() {
+			user := User{Name: "event_deleting_name", Avatar: "event_deleting_avatar"}
+			s.Nil(query.Query().Create(&user))
 
-		res, err := query.Query().Delete(&user)
-		s.EqualError(err, "deleting error")
-		s.Nil(res)
+			res, err := query.Query().Delete(&user)
+			s.EqualError(err, "deleting error")
+			s.Nil(res)
 
-		var user1 User
-		s.Nil(query.Query().Find(&user1, user.ID))
-		s.True(user1.ID > 0)
+			var user1 User
+			s.Nil(query.Query().Find(&user1, user.ID))
+			s.True(user1.ID > 0)
+		})
+
+		s.Run("not trigger when deleting mass records", func() {
+			res, err := query.Query().Where("name", "event_deleting_name").Delete(&User{})
+			s.NoError(err)
+			s.Equal(int64(1), res.RowsAffected)
+		})
 	}
 }
 
 func (s *QueryTestSuite) TestEvent_Deleted() {
 	for _, query := range s.queries {
-		user := User{Name: "event_deleted_name", Avatar: "event_deleted_avatar"}
-		s.Nil(query.Query().Create(&user))
+		s.Run("trigger", func() {
+			user := User{Name: "event_deleted_name", Avatar: "event_deleted_avatar"}
+			s.Nil(query.Query().Create(&user))
 
-		res, err := query.Query().Delete(&user)
-		s.EqualError(err, "deleted error")
-		s.Nil(res)
+			res, err := query.Query().Delete(&user)
+			s.EqualError(err, "deleted error")
+			s.Nil(res)
 
-		var user1 User
-		s.Nil(query.Query().Find(&user1, user.ID))
-		s.True(user1.ID == 0)
+			var user1 User
+			s.Nil(query.Query().Find(&user1, user.ID))
+			s.True(user1.ID == 0)
+		})
+
+		s.Run("not trigger when deleting mass records", func() {
+			res, err := query.Query().Where("name", "event_deleted_name").Delete(&User{})
+			s.NoError(err)
+			s.Equal(int64(0), res.RowsAffected)
+		})
 	}
 }
 
 func (s *QueryTestSuite) TestEvent_ForceDeleting() {
 	for _, query := range s.queries {
-		user := User{Name: "event_force_deleting_name", Avatar: "event_force_deleting_avatar"}
-		s.Nil(query.Query().Create(&user))
+		s.Run("trigger", func() {
+			user := User{Name: "event_force_deleting_name", Avatar: "event_force_deleting_avatar"}
+			s.Nil(query.Query().Create(&user))
 
-		res, err := query.Query().ForceDelete(&user)
-		s.EqualError(err, "force deleting error")
-		s.Nil(res)
+			res, err := query.Query().ForceDelete(&user)
+			s.EqualError(err, "force deleting error")
+			s.Nil(res)
 
-		var user1 User
-		s.Nil(query.Query().Find(&user1, user.ID))
-		s.True(user1.ID > 0)
+			var user1 User
+			s.Nil(query.Query().Find(&user1, user.ID))
+			s.True(user1.ID > 0)
+		})
+
+		s.Run("not trigger when force deleting mass records", func() {
+			res, err := query.Query().Where("name", "event_force_deleting_name").ForceDelete(&User{})
+			s.NoError(err)
+			s.Equal(int64(1), res.RowsAffected)
+		})
 	}
 }
 
 func (s *QueryTestSuite) TestEvent_ForceDeleted() {
 	for _, query := range s.queries {
-		user := User{Name: "event_force_deleted_name", Avatar: "event_force_deleted_avatar"}
-		s.Nil(query.Query().Create(&user))
+		s.Run("trigger", func() {
+			user := User{Name: "event_force_deleted_name", Avatar: "event_force_deleted_avatar"}
+			s.Nil(query.Query().Create(&user))
 
-		res, err := query.Query().ForceDelete(&user)
-		s.EqualError(err, "force deleted error")
-		s.Nil(res)
+			res, err := query.Query().ForceDelete(&user)
+			s.EqualError(err, "force deleted error")
+			s.Nil(res)
 
-		var user1 User
-		s.Nil(query.Query().Find(&user1, user.ID))
-		s.True(user1.ID == 0)
+			var user1 User
+			s.Nil(query.Query().Find(&user1, user.ID))
+			s.True(user1.ID == 0)
+		})
+
+		s.Run("not trigger when force deleting mass records", func() {
+			user := User{Name: "event_force_deleted_name", Avatar: "event_force_deleted_avatar"}
+			s.Nil(query.Query().Create(&user))
+
+			res, err := query.Query().Where("name", "event_force_deleted_name").ForceDelete(&User{})
+			s.NoError(err)
+			s.Equal(int64(1), res.RowsAffected)
+		})
 	}
 }
 
@@ -1491,6 +1634,10 @@ func (s *QueryTestSuite) TestEvent_Restoring() {
 
 func (s *QueryTestSuite) TestEvent_Retrieved() {
 	for _, query := range s.queries {
+		user := User{Name: "event_retrieved_name"}
+		s.Nil(query.Query().Create(&user))
+		s.True(user.ID > 0)
+
 		tests := []struct {
 			name  string
 			setup func()
@@ -1502,6 +1649,16 @@ func (s *QueryTestSuite) TestEvent_Retrieved() {
 					s.Nil(query.Query().Where("name", "event_retrieved_name").Find(&user1))
 					s.True(user1.ID > 0)
 					s.Equal("event_retrieved_name1", user1.Name)
+				},
+			},
+			{
+				name: "not trigger when Find by slice struct",
+				setup: func() {
+					var users []User
+					s.Nil(query.Query().Model(&User{}).Where("name", "event_retrieved_name").Find(&users))
+					s.Equal(1, len(users))
+					s.True(users[0].ID > 0)
+					s.Equal("event_retrieved_name", users[0].Name)
 				},
 			},
 			{
@@ -1564,12 +1721,9 @@ func (s *QueryTestSuite) TestEvent_Retrieved() {
 				},
 			},
 		}
+
 		for _, test := range tests {
 			s.Run(test.name, func() {
-				user := User{Name: "event_retrieved_name"}
-				s.Nil(query.Query().Create(&user))
-				s.True(user.ID > 0)
-
 				test.setup()
 			})
 		}

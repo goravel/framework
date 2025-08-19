@@ -24,7 +24,7 @@ func isPortUsing(port int) bool {
 
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if l != nil {
-		l.Close()
+		_ = l.Close()
 	}
 
 	return err != nil
@@ -51,7 +51,9 @@ func getValidPort() int {
 		if err != nil {
 			continue
 		}
-		defer l.Close()
+		defer func() {
+			_ = l.Close()
+		}()
 
 		return random
 	}

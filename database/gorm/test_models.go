@@ -45,6 +45,11 @@ type User struct {
 func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Event) error {
 	return map[ormcontract.EventType]func(ormcontract.Event) error{
 		ormcontract.EventCreating: func(event ormcontract.Event) error {
+			eventImpl := event.(*Event)
+			if isSlice(eventImpl.dest) {
+				panic("dest is slice when creating")
+			}
+
 			name := event.GetAttribute("name")
 			if name != nil {
 				if name.(string) == "event_creating_name" {
@@ -82,6 +87,11 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 			return nil
 		},
 		ormcontract.EventCreated: func(event ormcontract.Event) error {
+			eventImpl := event.(*Event)
+			if isSlice(eventImpl.dest) {
+				panic("dest is slice when created")
+			}
+
 			name := event.GetAttribute("name")
 			if name != nil {
 				if name.(string) == "event_created_name" {
@@ -112,6 +122,11 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 			return nil
 		},
 		ormcontract.EventSaving: func(event ormcontract.Event) error {
+			eventImpl := event.(*Event)
+			if isSlice(eventImpl.dest) {
+				panic("dest is slice when saving")
+			}
+
 			name := event.GetAttribute("name")
 			switch name.(type) {
 			case string:
@@ -154,6 +169,11 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 			return nil
 		},
 		ormcontract.EventSaved: func(event ormcontract.Event) error {
+			eventImpl := event.(*Event)
+			if isSlice(eventImpl.dest) {
+				panic("dest is slice when saved")
+			}
+
 			name := event.GetAttribute("name")
 			switch name.(type) {
 			case string:
@@ -191,6 +211,11 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 			return nil
 		},
 		ormcontract.EventUpdating: func(event ormcontract.Event) error {
+			eventImpl := event.(*Event)
+			if isSlice(eventImpl.dest) {
+				panic("dest is slice when updating")
+			}
+
 			name := event.GetAttribute("name")
 			switch name.(type) {
 			case string:
@@ -243,6 +268,11 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 			return nil
 		},
 		ormcontract.EventUpdated: func(event ormcontract.Event) error {
+			eventImpl := event.(*Event)
+			if isSlice(eventImpl.dest) {
+				panic("dest is slice when updated")
+			}
+
 			name := event.GetAttribute("name")
 			switch name.(type) {
 			case string:
@@ -267,6 +297,11 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 			return nil
 		},
 		ormcontract.EventDeleting: func(event ormcontract.Event) error {
+			eventImpl := event.(*Event)
+			if !hasID(eventImpl.dest) {
+				panic("dest has no id when deleting")
+			}
+
 			name := event.GetAttribute("name")
 			if name != nil && name.(string) == "event_deleting_name" {
 				return errors.New("deleting error")
@@ -275,6 +310,11 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 			return nil
 		},
 		ormcontract.EventDeleted: func(event ormcontract.Event) error {
+			eventImpl := event.(*Event)
+			if !hasID(eventImpl.dest) {
+				panic("dest has no id when deleted")
+			}
+
 			name := event.GetAttribute("name")
 			if name != nil && name.(string) == "event_deleted_name" {
 				return errors.New("deleted error")
@@ -283,6 +323,11 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 			return nil
 		},
 		ormcontract.EventForceDeleting: func(event ormcontract.Event) error {
+			eventImpl := event.(*Event)
+			if !hasID(eventImpl.dest) {
+				panic("dest has no id when force deleting")
+			}
+
 			name := event.GetAttribute("name")
 			if name != nil && name.(string) == "event_force_deleting_name" {
 				return errors.New("force deleting error")
@@ -291,6 +336,11 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 			return nil
 		},
 		ormcontract.EventForceDeleted: func(event ormcontract.Event) error {
+			eventImpl := event.(*Event)
+			if !hasID(eventImpl.dest) {
+				panic("dest has no id when force deleted")
+			}
+
 			name := event.GetAttribute("name")
 			if name != nil && name.(string) == "event_force_deleted_name" {
 				return errors.New("force deleted error")
@@ -299,6 +349,11 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 			return nil
 		},
 		ormcontract.EventRetrieved: func(event ormcontract.Event) error {
+			eventImpl := event.(*Event)
+			if isSlice(eventImpl.dest) {
+				panic("dest is slice when retrieved")
+			}
+
 			name := event.GetAttribute("name")
 			if name != nil && name.(string) == "event_retrieved_name" {
 				event.SetAttribute("name", "event_retrieved_name1")

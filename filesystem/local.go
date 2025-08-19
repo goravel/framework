@@ -192,7 +192,9 @@ func (r *Local) Put(file, content string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 
 	if _, err = f.WriteString(content); err != nil {
 		return err
