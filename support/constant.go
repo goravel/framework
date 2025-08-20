@@ -1,7 +1,7 @@
 package support
 
 const (
-	Version = "v1.16.0"
+	Version = "v1.16.1"
 
 	RuntimeArtisan = "artisan"
 	RuntimeTest    = "test"
