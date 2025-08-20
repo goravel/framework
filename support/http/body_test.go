@@ -10,8 +10,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/goravel/framework/errors"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/goravel/framework/errors"
 )
 
 func TestBodySetFields(t *testing.T) {
