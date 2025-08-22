@@ -30,7 +30,6 @@ require (
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v3 v3.4.1
-	github.com/vektra/mockery/v2 v2.53.2
 	golang.org/x/crypto v0.41.0
 	golang.org/x/exp v0.0.0-20250813145105-42675adae3e6
 	google.golang.org/grpc v1.74.2
@@ -96,6 +95,7 @@ require (
 	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
+	github.com/vektra/mockery/v2 v2.53.2 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/xrash/smetrics v0.0.0-20250705151800-55b8f293f342
 	go.uber.org/multierr v1.11.0 // indirect
@@ -115,3 +115,5 @@ replace (
 	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20250811230008-5f3141c8851a
 	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20250811230008-5f3141c8851a
 )
+
+tool github.com/vektra/mockery/v2
