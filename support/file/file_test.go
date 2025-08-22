@@ -76,6 +76,8 @@ func TestGetContent(t *testing.T) {
 }
 
 func TestGetFrameworkContent(t *testing.T) {
+	assert.True(t, true)
+
 	// Test successful case - reading a known framework file
 	content, err := GetFrameworkContent("support/constant.go")
 	assert.Nil(t, err)
