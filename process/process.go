@@ -3,146 +3,156 @@ package process
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"syscall"
 	"time"
 
-	"github.com/goravel/framework/contracts/process"
+	contractsprocess "github.com/goravel/framework/contracts/process"
 )
 
-type Command struct {
-	cmd *BaseCommand
+var _ contractsprocess.Process = (*Process)(nil)
+
+type Process struct {
+	args        []string
+	env         []string
+	forever     bool
+	idleTimeout time.Duration
+	input       io.Reader
+	name        string
+	path        string
+	quietly     bool
+	onOutput    func(typ contractsprocess.OutputType, line string)
+	timeout     time.Duration
+	tty         bool
 }
 
-func NewCommand(name string, args ...string) *Command {
-	return &Command{
-		cmd: &BaseCommand{
-			name: name,
-			args: args,
-		},
+func New() *Process {
+	return &Process{}
+}
+
+func (r *Process) Command(name string, arg ...string) contractsprocess.Process {
+	r.name = name
+	r.args = append([]string(nil), arg...)
+	return r
+}
+
+func (r *Process) Env(vars map[string]string) contractsprocess.Process {
+	if r.env == nil {
+		r.env = make([]string, 0, len(vars))
 	}
+	for k, v := range vars {
+		r.env = append(r.env, k+"="+v)
+	}
+	return r
 }
 
-func (b *Command) Path(dir string) process.Command {
-	b.cmd.Path(dir)
-	return b
+func (r *Process) Forever() contractsprocess.Process {
+	r.forever = true
+	return r
 }
 
-func (b *Command) Env(env map[string]string) process.Command {
-	b.cmd.Env(env)
-	return b
+func (r *Process) IdleTimeout(timeout time.Duration) contractsprocess.Process {
+	r.idleTimeout = timeout
+	return r
 }
 
-func (b *Command) Input(reader io.Reader) process.Command {
-	b.cmd.Input(reader)
-	return b
+func (r *Process) Input(in io.Reader) contractsprocess.Process {
+	r.input = in
+	return r
 }
 
-func (b *Command) Timeout(duration time.Duration) process.Command {
-	b.cmd.Timeout(duration)
-	return b
+func (r *Process) Path(path string) contractsprocess.Process {
+	r.path = path
+	return r
 }
 
-func (b *Command) IdleTimeout(duration time.Duration) process.Command {
-	b.cmd.IdleTimeout(duration)
-	return b
+func (r *Process) Quietly() contractsprocess.Process {
+	r.quietly = true
+	return r
 }
 
-func (b *Command) Quietly() process.Command {
-	b.cmd.Quietly()
-	return b
+func (r *Process) OnOutput(handler func(typ contractsprocess.OutputType, line string)) contractsprocess.Process {
+	r.onOutput = handler
+	return r
 }
 
-func (b *Command) Tty() process.Command {
-	b.cmd.Tty()
-	return b
+func (r *Process) Run(ctx context.Context) (contractsprocess.Result, error) {
+	return r.run(ctx)
 }
 
-func (b *Command) OnOutput(handler func(typ, line string)) process.Command {
-	b.cmd.OnOutput(handler)
-	return b
+func (r *Process) Start(ctx context.Context) (contractsprocess.Running, error) {
+	return r.start(ctx)
 }
 
-func (b *Command) Run(ctx context.Context) (process.Result, error) {
-	running, err := b.Start(ctx)
+func (r *Process) Timeout(timeout time.Duration) contractsprocess.Process {
+	r.timeout = timeout
+	return r
+}
+
+func (r *Process) TTY() contractsprocess.Process {
+	r.tty = true
+	return r
+}
+
+func (r *Process) run(ctx context.Context) (contractsprocess.Result, error) {
+	running, err := r.start(ctx)
 	if err != nil {
-		return &Result{
-			exitCode: -1,
-			command:  b.cmd.name,
-			stderr:   err.Error(),
-		}, err
+		return nil, err
 	}
 	return running.Wait(), nil
 }
 
-func (b *Command) Start(ctx context.Context) (process.Running, error) {
-	ctx, _ = b.prepareContext(ctx)
-
-	execCmd := exec.CommandContext(ctx, b.cmd.name, b.cmd.args...)
-	b.configureCmd(execCmd)
-
-	stdoutBuffer := &bytes.Buffer{}
-	stderrBuffer := &bytes.Buffer{}
-
-	if b.cmd.stdin != nil {
-		execCmd.Stdin = b.cmd.stdin
-	} else if b.cmd.tty {
-		execCmd.Stdin = os.Stdin
-	}
-
-	stdoutWriters := []io.Writer{stdoutBuffer}
-	stderrWriters := []io.Writer{stderrBuffer}
-	if !b.cmd.quietly {
-		stdoutWriters = append(stdoutWriters, os.Stdout)
-		stderrWriters = append(stderrWriters, os.Stderr)
-	}
-	if b.cmd.outputHandler != nil {
-		stdoutWriters = append(stdoutWriters, &OutputWriter{handler: b.cmd.outputHandler, typ: "stdout"})
-		stderrWriters = append(stderrWriters, &OutputWriter{handler: b.cmd.outputHandler, typ: "stderr"})
-	}
-	execCmd.Stdout = io.MultiWriter(stdoutWriters...)
-	execCmd.Stderr = io.MultiWriter(stderrWriters...)
-
-	if err := execCmd.Start(); err != nil {
-		return nil, err
-	}
-
-	if execCmd.Process != nil {
-		syscall.Setpgid(execCmd.Process.Pid, execCmd.Process.Pid)
-	}
-
-	return NewRunning(execCmd, stdoutBuffer, stderrBuffer), nil
-}
-
-func (b *Command) prepareContext(ctx context.Context) (context.Context, context.CancelFunc) {
+func (r *Process) start(ctx context.Context) (contractsprocess.Running, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
 
-	if b.cmd.timeout > 0 {
-		fmt.Println("timeout")
-		return context.WithTimeout(ctx, b.cmd.timeout)
+	if r.timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, r.timeout)
+		_ = cancel
 	}
-	return context.WithCancel(ctx)
-}
 
-func (b *Command) configureCmd(execCmd *exec.Cmd) {
-	execCmd.Dir = b.cmd.dir
-	if len(b.cmd.env) > 0 {
-		execCmd.Env = append(os.Environ(), b.cmd.env...)
+	cmd := exec.CommandContext(ctx, r.name, r.args...)
+	if r.path != "" {
+		cmd.Dir = r.path
 	}
-	execCmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-}
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
-type OutputWriter struct {
-	typ     string
-	handler func(typ, line string)
-}
+	if len(r.env) > 0 {
+		cmd.Env = append(os.Environ(), r.env...)
+	}
 
-func (w *OutputWriter) Write(p []byte) (n int, err error) {
-	w.handler(w.typ, string(p))
-	return len(p), nil
+	stdoutBuffer := &bytes.Buffer{}
+	stderrBuffer := &bytes.Buffer{}
+
+	if r.input != nil {
+		cmd.Stdin = r.input
+	} else if r.tty {
+		cmd.Stdin = os.Stdin
+	}
+
+	stdoutWriters := []io.Writer{stdoutBuffer}
+	stderrWriters := []io.Writer{stderrBuffer}
+
+	if !r.quietly {
+		stdoutWriters = append(stdoutWriters, os.Stdout)
+		stderrWriters = append(stderrWriters, os.Stderr)
+	}
+
+	if r.onOutput != nil {
+		stdoutWriters = append(stdoutWriters, NewOutputWriter(contractsprocess.OutputTypeStdout, r.onOutput))
+		stderrWriters = append(stderrWriters, NewOutputWriter(contractsprocess.OutputTypeStderr, r.onOutput))
+	}
+
+	cmd.Stdout = io.MultiWriter(stdoutWriters...)
+	cmd.Stderr = io.MultiWriter(stderrWriters...)
+
+	if err := cmd.Start(); err != nil {
+		return nil, err
+	}
+
+	return NewRunning(cmd, stdoutBuffer, stderrBuffer), nil
 }

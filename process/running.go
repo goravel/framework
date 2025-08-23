@@ -9,50 +9,64 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/goravel/framework/contracts/process"
+	contractsprocess "github.com/goravel/framework/contracts/process"
 )
 
+var _ contractsprocess.Running = (*Running)(nil)
+
 type Running struct {
-	execCmd      *exec.Cmd
+	cmd          *exec.Cmd
 	stdoutBuffer *bytes.Buffer
 	stderrBuffer *bytes.Buffer
-	startTime    time.Time
 
-	waitOnce sync.Once
-	result   *Result
+	once     sync.Once
+	result   contractsprocess.Result
+	resultMu sync.RWMutex
 }
 
-func NewRunning(execCmd *exec.Cmd, stdout, stderr *bytes.Buffer) *Running {
+func NewRunning(cmd *exec.Cmd, stdout, stderr *bytes.Buffer) *Running {
 	return &Running{
-		execCmd:      execCmd,
+		cmd:          cmd,
 		stdoutBuffer: stdout,
 		stderrBuffer: stderr,
-		startTime:    time.Now(),
 	}
 }
 
-func (r *Running) Wait() process.Result {
-	r.waitOnce.Do(func() {
-		err := r.execCmd.Wait()
-		r.result = buildResult(r, err)
+func (r *Running) Wait() contractsprocess.Result {
+	r.once.Do(func() {
+		err := r.cmd.Wait()
+		res := buildResult(r, err)
+		r.resultMu.Lock()
+		r.result = res
+		r.resultMu.Unlock()
 	})
+	r.resultMu.RLock()
+	defer r.resultMu.RUnlock()
 	return r.result
 }
 
 func (r *Running) PID() int {
-	if r.execCmd.Process == nil {
+	if r.cmd == nil || r.cmd.Process == nil {
 		return 0
 	}
-	return r.execCmd.Process.Pid
+	return r.cmd.Process.Pid
 }
 
 func (r *Running) Command() string {
-	return r.execCmd.String()
+	if r.cmd == nil {
+		return ""
+	}
+	return r.cmd.String()
 }
 
 func (r *Running) Running() bool {
-	state := r.execCmd.ProcessState
-	return state == nil || !state.Success() || state.Exited()
+	if r.cmd == nil || r.cmd.Process == nil {
+		return false
+	}
+	if r.cmd.ProcessState == nil {
+		return true
+	}
+	return !r.cmd.ProcessState.Exited()
 }
 
 func (r *Running) Kill() error {
@@ -60,40 +74,97 @@ func (r *Running) Kill() error {
 }
 
 func (r *Running) Signal(sig os.Signal) error {
-	if r.execCmd.Process == nil {
+	if r.cmd == nil || r.cmd.Process == nil {
 		return errors.New("process not started")
 	}
-	return r.execCmd.Process.Signal(sig)
-}
-
-func (r *Running) Process() *os.Process {
-	return r.execCmd.Process
+	return r.cmd.Process.Signal(sig)
 }
 
 func (r *Running) Output() string {
+	if r.stdoutBuffer == nil {
+		return ""
+	}
 	return r.stdoutBuffer.String()
 }
 
 func (r *Running) ErrorOutput() string {
+	if r.stderrBuffer == nil {
+		return ""
+	}
 	return r.stderrBuffer.String()
 }
 
-func buildResult(r *Running, waitErr error) *Result {
-	duration := time.Since(r.startTime)
+func (r *Running) LatestOutput() string {
+	return lastN(r.stdoutBuffer, 4096)
+}
 
+func (r *Running) LatestErrorOutput() string {
+	return lastN(r.stderrBuffer, 4096)
+}
+
+func (r *Running) Stop(timeout time.Duration, sig ...os.Signal) error {
+	if r.cmd == nil || r.cmd.Process == nil {
+		return nil
+	}
+
+	signalToSend := syscall.SIGTERM
+	if len(sig) > 0 {
+		signalToSend = sig[0].(syscall.Signal)
+	}
+
+	if err := r.Signal(signalToSend); err != nil {
+		if errors.Is(err, os.ErrProcessDone) {
+			return nil
+		}
+		return err
+	}
+
+	done := make(chan struct{})
+	go func() {
+		r.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-time.After(timeout):
+		return r.Signal(syscall.SIGKILL)
+	case <-done:
+		return nil
+	}
+}
+
+func buildResult(r *Running, waitErr error) *Result {
 	exitCode := 0
-	if r.execCmd.ProcessState != nil {
-		exitCode = r.execCmd.ProcessState.ExitCode()
+	if r.cmd != nil && r.cmd.ProcessState != nil {
+		exitCode = r.cmd.ProcessState.ExitCode()
 	} else if waitErr != nil {
 		exitCode = -1
 	}
 
-	return &Result{
-		exitCode:     exitCode,
-		command:      r.Command(),
-		duration:     duration,
-		processState: r.execCmd.ProcessState,
-		stdout:       r.stdoutBuffer.String(),
-		stderr:       r.stderrBuffer.String(),
+	command := ""
+	if r.cmd != nil {
+		command = r.Command()
 	}
+
+	stdout := ""
+	if r.stdoutBuffer != nil {
+		stdout = r.stdoutBuffer.String()
+	}
+	stderr := ""
+	if r.stderrBuffer != nil {
+		stderr = r.stderrBuffer.String()
+	}
+
+	return NewResult(exitCode, command, stdout, stderr)
+}
+
+func lastN(buf *bytes.Buffer, n int) string {
+	if buf == nil {
+		return ""
+	}
+	s := buf.String()
+	if len(s) <= n {
+		return s
+	}
+	return s[len(s)-n:]
 }
