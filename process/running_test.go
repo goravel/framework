@@ -2,11 +2,11 @@ package process
 
 import (
 	"context"
+	"syscall"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/sys/unix"
 
 	"github.com/goravel/framework/support/env"
 )
@@ -66,7 +66,7 @@ func TestRunning_SignalAndStop(t *testing.T) {
 	run := r.(*Running)
 	assert.True(t, run.Running())
 	// send SIGTERM and wait for graceful stop
-	assert.NoError(t, run.Signal(unix.SIGTERM))
+	assert.NoError(t, run.Signal(syscall.SIGTERM))
 	// Be tolerant of already-finished processes on older Go versions
 	_ = run.Stop(50 * time.Millisecond)
 	res := run.Wait()
