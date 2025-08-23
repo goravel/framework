@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"syscall"
 	"time"
 
 	contractsprocess "github.com/goravel/framework/contracts/process"
@@ -119,7 +118,7 @@ func (r *Process) start(ctx context.Context) (contractsprocess.Running, error) {
 	if r.path != "" {
 		cmd.Dir = r.path
 	}
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	setSysProcAttr(cmd)
 
 	if len(r.env) > 0 {
 		cmd.Env = append(os.Environ(), r.env...)

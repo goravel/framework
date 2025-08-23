@@ -2,7 +2,11 @@
 
 package process
 
-import "os"
+import (
+	"errors"
+	"os"
+	"time"
+)
 
 // Running actively queries the OS to see if the process still exists.
 //
@@ -12,21 +16,21 @@ import "os"
 //
 // Correct Usage Example:
 //
-//	done := make(chan struct{})
-//	result, _ := process.New().Command("timeout", "2").Start(context.Background())
+//		done := make(chan struct{})
+//		result, _ := process.New().Command("timeout", "2").Start(context.Background())
 //
-//	go func() {
-//	    defer close(done)
-//	    // This loop will continue as long as the process object exists.
-//	    for result.Running() {
-//	        fmt.Println("Process is still running...")
-//	        time.Sleep(500 * time.Millisecond)
-//	    }
-//	}()
+//		go func() {
+//	   	defer close(done)
+//	   	// This loop will continue as long as the process object exists.
+//	   	for result.Running() {
+//	   		fmt.Println("Process is still running...")
+//	   		time.Sleep(500 * time.Millisecond)
+//	   	}
+//		}()
 //
-//	// This call is mandatory. It blocks, cleans up the process, and allows the goroutine to exit.
-//	result.Wait()
-//	<-done // Wait for monitoring goroutine to finish.
+//		// This call is mandatory. It blocks, cleans up the process, and allows the goroutine to exit.
+//		result.Wait()
+//		<-done // Wait for monitoring goroutine to finish.
 func (r *Running) Running() bool {
 	if r.cmd == nil || r.cmd.Process == nil {
 		return false
