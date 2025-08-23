@@ -2,12 +2,8 @@ package process
 
 import (
 	"bytes"
-	"errors"
-	"os"
 	"os/exec"
 	"sync"
-	"syscall"
-	"time"
 
 	contractsprocess "github.com/goravel/framework/contracts/process"
 )
@@ -59,27 +55,6 @@ func (r *Running) Command() string {
 	return r.cmd.String()
 }
 
-func (r *Running) Running() bool {
-	if r.cmd == nil || r.cmd.Process == nil {
-		return false
-	}
-	if r.cmd.ProcessState == nil {
-		return true
-	}
-	return !r.cmd.ProcessState.Exited()
-}
-
-func (r *Running) Kill() error {
-	return r.Signal(syscall.SIGKILL)
-}
-
-func (r *Running) Signal(sig os.Signal) error {
-	if r.cmd == nil || r.cmd.Process == nil {
-		return errors.New("process not started")
-	}
-	return r.cmd.Process.Signal(sig)
-}
-
 func (r *Running) Output() string {
 	if r.stdoutBuffer == nil {
 		return ""
@@ -100,37 +75,6 @@ func (r *Running) LatestOutput() string {
 
 func (r *Running) LatestErrorOutput() string {
 	return lastN(r.stderrBuffer, 4096)
-}
-
-func (r *Running) Stop(timeout time.Duration, sig ...os.Signal) error {
-	if r.cmd == nil || r.cmd.Process == nil {
-		return nil
-	}
-
-	signalToSend := syscall.SIGTERM
-	if len(sig) > 0 {
-		signalToSend = sig[0].(syscall.Signal)
-	}
-
-	if err := r.Signal(signalToSend); err != nil {
-		if errors.Is(err, os.ErrProcessDone) {
-			return nil
-		}
-		return err
-	}
-
-	done := make(chan struct{})
-	go func() {
-		r.Wait()
-		close(done)
-	}()
-
-	select {
-	case <-time.After(timeout):
-		return r.Signal(syscall.SIGKILL)
-	case <-done:
-		return nil
-	}
 }
 
 func buildResult(r *Running, waitErr error) *Result {
