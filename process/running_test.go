@@ -61,7 +61,7 @@ func TestRunning_SignalAndStop(t *testing.T) {
 	assert.True(t, run.Running())
 	// send SIGTERM and wait for graceful stop
 	assert.NoError(t, run.Signal(unix.SIGTERM))
-	assert.NoError(t, run.Stop(500*time.Millisecond))
+	assert.NoError(t, run.Stop(50*time.Millisecond))
 	res := run.Wait()
 	assert.False(t, res.Successful())
 }

@@ -2,6 +2,7 @@ package process
 
 import (
 	"bytes"
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -91,29 +92,26 @@ func TestProcess_Run_TableDriven(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		cc := tt
-		t.Run(cc.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			p := New()
-			if len(cc.cmd) == 0 {
+			if len(test.cmd) == 0 {
 				t.Fatal("missing command")
 			}
-			p.Command(cc.cmd[0], cc.cmd[1:]...)
-			if cc.setup != nil {
-				cc.setup(p)
+			p.Command(test.cmd[0], test.cmd[1:]...)
+			if test.setup != nil {
+				test.setup(p)
 			}
-			res, err := p.Run(nil)
-			if cc.expectOK {
+			res, err := p.Run(context.Background())
+			if test.expectOK {
 				assert.NoError(t, err)
-			} else {
-				// Run may still return nil error when process exits with non-zero
 			}
 			assert.NotNil(t, res)
-			if cc.check != nil {
+			if test.check != nil {
 				ttRes, ok := res.(*Result)
 				assert.True(t, ok, "unexpected result type")
 				if ok {
-					cc.check(t, ttRes)
+					test.check(t, ttRes)
 				}
 			}
 		})
@@ -122,7 +120,7 @@ func TestProcess_Run_TableDriven(t *testing.T) {
 
 func TestProcess_Start_ErrorOnMissingCommand(t *testing.T) {
 	p := New().Command("")
-	_, err := p.Start(nil)
+	_, err := p.Start(context.Background())
 	assert.Error(t, err)
 }
 
@@ -136,7 +134,7 @@ func TestProcess_OnOutput_Callbacks(t *testing.T) {
 			errLines = append(errLines, append([]byte(nil), line...))
 		}
 	})
-	res, err := p.Run(nil)
+	res, err := p.Run(context.Background())
 	assert.NoError(t, err)
 	assert.True(t, res.Successful())
 	if assert.NotEmpty(t, outLines) {
