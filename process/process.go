@@ -14,17 +14,15 @@ import (
 var _ contractsprocess.Process = (*Process)(nil)
 
 type Process struct {
-	args        []string
-	env         []string
-	forever     bool
-	idleTimeout time.Duration
-	input       io.Reader
-	name        string
-	path        string
-	quietly     bool
-	onOutput    contractsprocess.OnOutputFunc
-	timeout     time.Duration
-	tty         bool
+	args     []string
+	env      []string
+	input    io.Reader
+	name     string
+	path     string
+	quietly  bool
+	onOutput contractsprocess.OnOutputFunc
+	timeout  time.Duration
+	tty      bool
 }
 
 func New() *Process {
