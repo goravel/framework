@@ -23,7 +23,7 @@ type Process struct {
 	name        string
 	path        string
 	quietly     bool
-	onOutput    func(typ contractsprocess.OutputType, line string)
+	onOutput    contractsprocess.OnOutputFunc
 	timeout     time.Duration
 	tty         bool
 }
@@ -73,7 +73,7 @@ func (r *Process) Quietly() contractsprocess.Process {
 	return r
 }
 
-func (r *Process) OnOutput(handler func(typ contractsprocess.OutputType, line string)) contractsprocess.Process {
+func (r *Process) OnOutput(handler contractsprocess.OnOutputFunc) contractsprocess.Process {
 	r.onOutput = handler
 	return r
 }

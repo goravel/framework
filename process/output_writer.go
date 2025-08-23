@@ -1,8 +1,8 @@
 package process
 
-import "github.com/goravel/framework/contracts/process"
+import contractsprocess "github.com/goravel/framework/contracts/process"
 
-func NewOutputWriter(typ process.OutputType, handler func(typ process.OutputType, line string)) *OutputWriter {
+func NewOutputWriter(typ contractsprocess.OutputType, handler contractsprocess.OnOutputFunc) *OutputWriter {
 	return &OutputWriter{
 		handler: handler,
 		typ:     typ,
@@ -10,11 +10,11 @@ func NewOutputWriter(typ process.OutputType, handler func(typ process.OutputType
 }
 
 type OutputWriter struct {
-	typ     process.OutputType
-	handler func(typ process.OutputType, line string)
+	typ     contractsprocess.OutputType
+	handler contractsprocess.OnOutputFunc
 }
 
 func (w *OutputWriter) Write(p []byte) (n int, err error) {
-	w.handler(w.typ, string(p))
+	w.handler(w.typ, p)
 	return len(p), nil
 }
