@@ -18,8 +18,6 @@ type OnOutputFunc func(typ OutputType, line []byte)
 type Process interface {
 	Command(name string, arg ...string) Process
 	Env(vars map[string]string) Process
-	Forever() Process
-	IdleTimeout(timeout time.Duration) Process
 	Input(in io.Reader) Process
 	Path(path string) Process
 	Quietly() Process

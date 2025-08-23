@@ -47,16 +47,6 @@ func (r *Process) Env(vars map[string]string) contractsprocess.Process {
 	return r
 }
 
-func (r *Process) Forever() contractsprocess.Process {
-	r.forever = true
-	return r
-}
-
-func (r *Process) IdleTimeout(timeout time.Duration) contractsprocess.Process {
-	r.idleTimeout = timeout
-	return r
-}
-
 func (r *Process) Input(in io.Reader) contractsprocess.Process {
 	r.input = in
 	return r
