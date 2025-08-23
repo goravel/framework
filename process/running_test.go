@@ -7,6 +7,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/sys/unix"
+
+	"github.com/goravel/framework/support/env"
 )
 
 func TestRunning_Basics_TableDriven(t *testing.T) {
@@ -55,6 +57,10 @@ func TestRunning_Basics_TableDriven(t *testing.T) {
 }
 
 func TestRunning_SignalAndStop(t *testing.T) {
+	if env.IsWindows() {
+		t.Skip("Skipping process signal stop test on Windows")
+	}
+
 	r, err := New().Command("sh", "-c", "sleep 10").Start(context.Background())
 	assert.NoError(t, err)
 	run := r.(*Running)
