@@ -55,11 +55,11 @@ func (s *ApplicationTestSuite) SetupTest() {
 }
 
 func (s *ApplicationTestSuite) TestOsVariables() {
-	s.Nil(os.Setenv("APP_KEY", "12345678901234567890123456789013"))
-	s.Nil(os.Setenv("OS_APP_NAME", "goravel"))
-	s.Nil(os.Setenv("OS_APP_PORT", "3306"))
-	s.Nil(os.Setenv("OS_APP_DEBUG", "true"))
-	s.Nil(os.Setenv("OS_TIMEOUT", "5s"))
+	s.T().Setenv("APP_KEY", "12345678901234567890123456789013")
+	s.T().Setenv("OS_APP_NAME", "goravel")
+	s.T().Setenv("OS_APP_PORT", "3306")
+	s.T().Setenv("OS_APP_DEBUG", "true")
+	s.T().Setenv("OS_TIMEOUT", "5s")
 
 	s.Equal("12345678901234567890123456789013", s.config.GetString("APP_KEY"))
 	s.Equal("12345678901234567890123456789013", s.customConfig.GetString("APP_KEY"))
@@ -179,10 +179,10 @@ func (s *ApplicationTestSuite) TestGetDuration() {
 }
 
 func TestOsVariables(t *testing.T) {
-	assert.Nil(t, os.Setenv("APP_KEY", "12345678901234567890123456789013"))
-	assert.Nil(t, os.Setenv("APP_NAME", "goravel"))
-	assert.Nil(t, os.Setenv("APP_PORT", "3306"))
-	assert.Nil(t, os.Setenv("APP_DEBUG", "true"))
+	t.Setenv("APP_KEY", "12345678901234567890123456789013")
+	t.Setenv("APP_NAME", "goravel")
+	t.Setenv("APP_PORT", "3306")
+	t.Setenv("APP_DEBUG", "true")
 
 	config := NewApplication(support.EnvFilePath)
 

@@ -2,7 +2,6 @@ package console
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"slices"
 
@@ -104,25 +103,22 @@ func (r *BuildCommand) Handle(ctx console.Context) error {
 }
 
 func (r *BuildCommand) build(system string, command []string) error {
-	_ = os.Setenv("CGO_ENABLED", "0")
-	_ = os.Setenv("GOOS", system)
-	_ = os.Setenv("GOARCH", "amd64")
-
 	cmd := exec.Command(command[0], command[1:]...)
+	cmd.Env = append(cmd.Environ(), "CGO_ENABLED=0", "GOARCH=amd64", "GOOS="+system)
 	_, err := cmd.Output()
 	return err
 }
 
 func generateCommand(name string, static bool) []string {
-	command := []string{"go", "build"}
+	commands := []string{"go", "build"}
 
 	if static {
-		command = append(command, "-ldflags", "-extldflags -static")
+		commands = append(commands, "-ldflags", "-extldflags -static")
 	}
 
 	if name != "" {
-		command = append(command, "-o", name)
+		commands = append(commands, "-o", name)
 	}
 
-	return append(command, ".")
+	return append(commands, ".")
 }
