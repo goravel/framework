@@ -13,7 +13,7 @@ func TestRunning_Wait_And_Output(t *testing.T) {
 	ctx := context.Background()
 	cmd, args := echoBothCommand()
 
-	r, err := Start(ctx, cmd, args...)
+	r, err := NewCommand(cmd, args...).Start(ctx)
 	assert.NoError(t, err)
 	if r.PID() == 0 {
 		t.Fatalf("expected PID > 0")
@@ -32,7 +32,7 @@ func TestRunning_Signal_Kill(t *testing.T) {
 	ctx := context.Background()
 	cmd, args := killableSleepCmd(5)
 
-	r, err := Start(ctx, cmd, args...)
+	r, err := NewCommand(cmd, args...).Start(ctx)
 	assert.NoError(t, err)
 	assert.True(t, r.Running())
 	// Send SIGKILL and ensure process ends quickly
@@ -44,7 +44,7 @@ func TestRunning_Signal_Kill(t *testing.T) {
 
 func killableSleepCmd(seconds int) (string, []string) {
 	if runtime.GOOS == "windows" {
-		return "powershell", []string{"-Command", "Start-Sleep -Seconds " + strconv.Itoa(seconds)}
+		return "powershell", []string{"-BaseCommand", "Start-Sleep -Seconds " + strconv.Itoa(seconds)}
 	}
 	return "sleep", []string{strconv.Itoa(seconds)}
 }

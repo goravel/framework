@@ -1,22 +1,23 @@
 package process
 
 import (
+	"context"
 	"io"
 	"os"
 	"time"
 )
 
-type SingleBuilder interface {
-	Path(dir string) SingleBuilder
-	Env(env map[string]string) SingleBuilder
-	Input(reader io.Reader) SingleBuilder
-	Timeout(duration time.Duration) SingleBuilder
-	IdleTimeout(duration time.Duration) SingleBuilder
-	Quietly() SingleBuilder
-	Tty() SingleBuilder
-	OnOutput(handler func(typ, line string)) SingleBuilder
-	Run() (Result, error)
-	Start() (Running, error)
+type Command interface {
+	Path(dir string) Command
+	Env(env map[string]string) Command
+	Input(reader io.Reader) Command
+	Timeout(duration time.Duration) Command
+	IdleTimeout(duration time.Duration) Command
+	Quietly() Command
+	Tty() Command
+	OnOutput(handler func(typ, line string)) Command
+	Run(ctx context.Context) (Result, error)
+	Start(ctx context.Context) (Running, error)
 }
 
 type Result interface {

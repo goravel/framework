@@ -1,7 +1,6 @@
 package process
 
 import (
-	"context"
 	"io"
 	"strings"
 	"testing"
@@ -11,8 +10,10 @@ import (
 )
 
 func TestCommandBuilderMethods(t *testing.T) {
-	ctx := context.Background()
-	cmd := NewCommand(ctx, "echo", "hello")
+	cmd := &BaseCommand{
+		name: "echo",
+		args: []string{"hello"},
+	}
 
 	t.Run("Path sets working directory", func(t *testing.T) {
 		c := *cmd

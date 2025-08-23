@@ -13,65 +13,61 @@ import (
 	"github.com/goravel/framework/contracts/process"
 )
 
-func Run(ctx context.Context, name string, args ...string) (process.Result, error) {
-	return Build(ctx, name, args...).Run()
+type Command struct {
+	cmd *BaseCommand
 }
 
-func Start(ctx context.Context, name string, args ...string) (process.Running, error) {
-	return Build(ctx, name, args...).Start()
+func NewCommand(name string, args ...string) *Command {
+	return &Command{
+		cmd: &BaseCommand{
+			name: name,
+			args: args,
+		},
+	}
 }
 
-func Build(ctx context.Context, name string, args ...string) process.SingleBuilder {
-	cmd := NewCommand(ctx, name, args...)
-	return &SingleBuilder{cmd: cmd}
-}
-
-type SingleBuilder struct {
-	cmd *Command
-}
-
-func (b *SingleBuilder) Path(dir string) process.SingleBuilder {
+func (b *Command) Path(dir string) process.Command {
 	b.cmd.Path(dir)
 	return b
 }
 
-func (b *SingleBuilder) Env(env map[string]string) process.SingleBuilder {
+func (b *Command) Env(env map[string]string) process.Command {
 	b.cmd.Env(env)
 	return b
 }
 
-func (b *SingleBuilder) Input(reader io.Reader) process.SingleBuilder {
+func (b *Command) Input(reader io.Reader) process.Command {
 	b.cmd.Input(reader)
 	return b
 }
 
-func (b *SingleBuilder) Timeout(duration time.Duration) process.SingleBuilder {
+func (b *Command) Timeout(duration time.Duration) process.Command {
 	b.cmd.Timeout(duration)
 	return b
 }
 
-func (b *SingleBuilder) IdleTimeout(duration time.Duration) process.SingleBuilder {
+func (b *Command) IdleTimeout(duration time.Duration) process.Command {
 	b.cmd.IdleTimeout(duration)
 	return b
 }
 
-func (b *SingleBuilder) Quietly() process.SingleBuilder {
+func (b *Command) Quietly() process.Command {
 	b.cmd.Quietly()
 	return b
 }
 
-func (b *SingleBuilder) Tty() process.SingleBuilder {
+func (b *Command) Tty() process.Command {
 	b.cmd.Tty()
 	return b
 }
 
-func (b *SingleBuilder) OnOutput(handler func(typ, line string)) process.SingleBuilder {
+func (b *Command) OnOutput(handler func(typ, line string)) process.Command {
 	b.cmd.OnOutput(handler)
 	return b
 }
 
-func (b *SingleBuilder) Run() (process.Result, error) {
-	running, err := b.Start()
+func (b *Command) Run(ctx context.Context) (process.Result, error) {
+	running, err := b.Start(ctx)
 	if err != nil {
 		return &Result{
 			exitCode: -1,
@@ -82,8 +78,8 @@ func (b *SingleBuilder) Run() (process.Result, error) {
 	return running.Wait(), nil
 }
 
-func (b *SingleBuilder) Start() (process.Running, error) {
-	ctx, _ := b.prepareContext()
+func (b *Command) Start(ctx context.Context) (process.Running, error) {
+	ctx, _ = b.prepareContext(ctx)
 
 	execCmd := exec.CommandContext(ctx, b.cmd.name, b.cmd.args...)
 	b.configureCmd(execCmd)
@@ -121,8 +117,7 @@ func (b *SingleBuilder) Start() (process.Running, error) {
 	return NewRunning(execCmd, stdoutBuffer, stderrBuffer), nil
 }
 
-func (b *SingleBuilder) prepareContext() (context.Context, context.CancelFunc) {
-	ctx := b.cmd.ctx
+func (b *Command) prepareContext(ctx context.Context) (context.Context, context.CancelFunc) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -134,7 +129,7 @@ func (b *SingleBuilder) prepareContext() (context.Context, context.CancelFunc) {
 	return context.WithCancel(ctx)
 }
 
-func (b *SingleBuilder) configureCmd(execCmd *exec.Cmd) {
+func (b *Command) configureCmd(execCmd *exec.Cmd) {
 	execCmd.Dir = b.cmd.dir
 	if len(b.cmd.env) > 0 {
 		execCmd.Env = append(os.Environ(), b.cmd.env...)
