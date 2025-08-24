@@ -116,10 +116,10 @@ func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) 
 	return nil
 }
 
-func (r *PackageInstallCommand) installFacade(ctx console.Context, facadeName string) error {
-	facadeDependencies, exists := r.facadeDependencies[facadeName]
+func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) error {
+	facadeDependencies, exists := r.facadeDependencies[name]
 	if !exists {
-		ctx.Warning(errors.PackageFacadeNotFound.Args(facadeName).Error())
+		ctx.Warning(errors.PackageFacadeNotFound.Args(name).Error())
 		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(maps.Keys(r.facadeDependencies), ", ")))
 		return nil
 	}
@@ -127,9 +127,9 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, facadeName st
 	filterFacadeDependencies := collect.Filter(facadeDependencies, func(facade string, _ int) bool {
 		return !slices.Contains(r.baseFacades, facade)
 	})
-	ctx.Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facadeName, strings.Join(filterFacadeDependencies, ", ")))
+	ctx.Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", name, strings.Join(filterFacadeDependencies, ", ")))
 
-	allFacades := append(facadeDependencies, facadeName)
+	allFacades := append(facadeDependencies, name)
 
 	for _, facade := range allFacades {
 		if slices.Contains(r.baseFacades, facade) {
