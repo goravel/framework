@@ -78,6 +78,19 @@ func (s *ApplicationTestSuite) TestDatabasePath() {
 	s.Equal(filepath.Join(support.RootPath, "database", "goravel.go"), s.app.DatabasePath("goravel.go"))
 }
 
+func (s *ApplicationTestSuite) TestGetInstalledFacades() {
+	mockConfig := mocksconfig.NewConfig(s.T())
+	mockConfig.EXPECT().Get("app.providers").Return([]foundation.ServiceProvider{
+		&auth.ServiceProvider{},
+	}).Once()
+
+	s.app.Singleton(binding.Config, func(app foundation.Application) (any, error) {
+		return mockConfig, nil
+	})
+
+	s.Equal([]string{"Auth"}, s.app.getInstalledFacades())
+}
+
 func (s *ApplicationTestSuite) TestStoragePath() {
 	s.Equal(filepath.Join(support.RootPath, "storage", "goravel.go"), s.app.StoragePath("goravel.go"))
 }

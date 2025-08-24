@@ -12,6 +12,8 @@ import (
 )
 
 type PackageUninstallCommand struct {
+	facadeDependencies map[string][]string
+	installedFacades   []string
 }
 
 func NewPackageUninstallCommand() *PackageUninstallCommand {
@@ -126,3 +128,28 @@ func (r *PackageUninstallCommand) uninstallPackage(ctx console.Context, pkg stri
 
 // 	return nil
 // }
+
+func (r *PackageUninstallCommand) getDependenciesThatNeedUninstall(facade string) ([]string, error) {
+	dependencies := r.facadeDependencies[facade]
+	if len(dependencies) == 0 {
+		return nil, nil
+	}
+
+	facadeToNumber := make(map[string]int)
+	for _, installedFacade := range r.installedFacades {
+		facadeToNumber[installedFacade]++
+
+		for _, dependency := range r.facadeDependencies[installedFacade] {
+			facadeToNumber[dependency]++
+		}
+	}
+
+	var needUninstallFacades []string
+	for _, dependency := range dependencies {
+		if facadeToNumber[dependency] == 1 {
+			needUninstallFacades = append(needUninstallFacades, dependency)
+		}
+	}
+
+	return needUninstallFacades, nil
+}

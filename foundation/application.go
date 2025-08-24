@@ -7,10 +7,12 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
+	"reflect"
 	"slices"
 	"sort"
 	"strings"
 
+	"github.com/goravel/framework/auth"
 	"github.com/goravel/framework/config"
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
@@ -240,6 +242,43 @@ func (r *Application) getConfiguredServiceProviders() []foundation.ServiceProvid
 	r.configuredServiceProviders = sortConfiguredServiceProviders(providers)
 
 	return r.configuredServiceProviders
+}
+
+func (r *Application) getInstalledFacades() []string {
+	type facadeInfo struct {
+		binding         string
+		serviceProvider foundation.ServiceProvider
+	}
+
+	facades := map[string]facadeInfo{
+		"Auth": {
+			binding:         binding.Auth,
+			serviceProvider: &auth.ServiceProvider{},
+		},
+	}
+
+	serviceProviders := r.getConfiguredServiceProviders()
+
+	var installedFacades []string
+	for _, serviceProvider := range serviceProviders {
+		for facade, info := range facades {
+			infoServiceProviderType := reflect.TypeOf(info.serviceProvider)
+			if infoServiceProviderType.Kind() == reflect.Ptr {
+				infoServiceProviderType = infoServiceProviderType.Elem()
+			}
+
+			serviceProviderType := reflect.TypeOf(serviceProvider)
+			if serviceProviderType.Kind() == reflect.Ptr {
+				serviceProviderType = serviceProviderType.Elem()
+			}
+
+			if infoServiceProviderType == serviceProviderType {
+				installedFacades = append(installedFacades, facade)
+			}
+		}
+	}
+
+	return installedFacades
 }
 
 func (r *Application) registerBaseServiceProviders() {
