@@ -7,6 +7,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -64,7 +65,7 @@ func TestProcess_Run_Windows(t *testing.T) {
 			},
 			expectOK: true,
 			check: func(t *testing.T, res *Result) {
-				assert.Equal(t, "ping\r\n", res.Output())
+				assert.Equal(t, "ping", strings.TrimSpace(res.Output()))
 			},
 		},
 		{

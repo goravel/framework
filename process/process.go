@@ -127,10 +127,10 @@ func (r *Process) start(ctx context.Context) (contractsprocess.Running, error) {
 	if !r.quietly {
 		stdoutWriters = append(stdoutWriters, os.Stdout)
 		stderrWriters = append(stderrWriters, os.Stderr)
-		if r.onOutput != nil {
-			stdoutWriters = append(stdoutWriters, NewOutputWriter(contractsprocess.OutputTypeStdout, r.onOutput))
-			stderrWriters = append(stderrWriters, NewOutputWriter(contractsprocess.OutputTypeStderr, r.onOutput))
-		}
+	}
+	if r.onOutput != nil {
+		stdoutWriters = append(stdoutWriters, NewOutputWriter(contractsprocess.OutputTypeStdout, r.onOutput))
+		stderrWriters = append(stderrWriters, NewOutputWriter(contractsprocess.OutputTypeStderr, r.onOutput))
 	}
 	cmd.Stdout = io.MultiWriter(stdoutWriters...)
 	cmd.Stderr = io.MultiWriter(stderrWriters...)
