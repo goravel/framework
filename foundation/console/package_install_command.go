@@ -45,12 +45,11 @@ func (r *PackageInstallCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *PackageInstallCommand) Handle(ctx console.Context) error {
-	pkg := ctx.Argument(0)
-	if pkg == "" {
-		var err error
-		pkg, err = ctx.Ask("Enter the package/facade name to install", console.AskOption{
+	names := ctx.Arguments()
+	if len(names) == 0 {
+		name, err := ctx.Ask("Enter the package/facade name to install", console.AskOption{
 			Description: "If no version is specified, install the latest",
-			Placeholder: " E.g example.com/pkg or example.com/pkg@v1.0.0 or cache",
+			Placeholder: " E.g example.com/pkg or example.com/pkg@v1.0.0 or Cache",
 			Prompt:      ">",
 			Validate: func(s string) error {
 				if s == "" {
@@ -64,13 +63,23 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 			ctx.Error(err.Error())
 			return nil
 		}
+
+		names = append(names, name)
 	}
 
-	if isPackage(pkg) {
-		return r.installPackage(ctx, pkg)
+	for _, name := range names {
+		if isPackage(name) {
+			if err := r.installPackage(ctx, name); err != nil {
+				return err
+			}
+		} else {
+			if err := r.installFacade(ctx, name); err != nil {
+				return err
+			}
+		}
 	}
 
-	return r.installFacade(ctx, pkg)
+	return nil
 }
 
 func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) error {

@@ -19,6 +19,7 @@ import (
 	"github.com/goravel/framework/log"
 	"github.com/goravel/framework/mail"
 	"github.com/goravel/framework/queue"
+	"github.com/goravel/framework/route"
 	"github.com/goravel/framework/schedule"
 	"github.com/goravel/framework/support/collect"
 	"github.com/goravel/framework/testing"
@@ -102,7 +103,7 @@ var facades = map[string]facadeInfo{
 	},
 	"Route": {
 		binding:         binding.Route,
-		serviceProvider: &http.ServiceProvider{},
+		serviceProvider: &route.ServiceProvider{},
 	},
 	"Schedule": {
 		binding:         binding.Schedule,
@@ -138,36 +139,19 @@ var facades = map[string]facadeInfo{
 	},
 }
 
-func getFacadeDependencies() map[string][]string {
-	dependencies := make(map[string][]string)
+func bindingsToFacades(bindings []string) []string {
+	result := make([]string, 0)
 
-	for facade, info := range facades {
-		dependencyBindings := getDependencyBindings(info.binding)
-		dependencyFacades := bindingsToFacades(dependencyBindings)
-
-		dependencies[facade] = dependencyFacades
+	for _, binding := range bindings {
+		for facade, info := range facades {
+			if info.binding == binding {
+				result = append(result, facade)
+				break
+			}
+		}
 	}
 
-	return dependencies
-}
-
-func getFacadePath(serviceProvider foundation.ServiceProvider) string {
-	t := reflect.TypeOf(serviceProvider)
-	if t.Kind() == reflect.Ptr {
-		t = t.Elem()
-	}
-
-	return t.PkgPath()
-}
-
-func getFacadeToPath() map[string]string {
-	facadeToPath := make(map[string]string)
-
-	for facade, info := range facades {
-		facadeToPath[facade] = getFacadePath(info.serviceProvider)
-	}
-
-	return facadeToPath
+	return result
 }
 
 func getDependencyBindings(binding string) []string {
@@ -198,17 +182,34 @@ func getDependencyBindings(binding string) []string {
 	return nil
 }
 
-func bindingsToFacades(bindings []string) []string {
-	result := make([]string, 0)
+func getFacadeDependencies() map[string][]string {
+	dependencies := make(map[string][]string)
 
-	for _, binding := range bindings {
-		for facade, info := range facades {
-			if info.binding == binding {
-				result = append(result, facade)
-				break
-			}
-		}
+	for facade, info := range facades {
+		dependencyBindings := getDependencyBindings(info.binding)
+		dependencyFacades := bindingsToFacades(dependencyBindings)
+
+		dependencies[facade] = dependencyFacades
 	}
 
-	return result
+	return dependencies
+}
+
+func getFacadePath(serviceProvider foundation.ServiceProvider) string {
+	t := reflect.TypeOf(serviceProvider)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+
+	return t.PkgPath()
+}
+
+func getFacadeToPath() map[string]string {
+	facadeToPath := make(map[string]string)
+
+	for facade, info := range facades {
+		facadeToPath[facade] = getFacadePath(info.serviceProvider)
+	}
+
+	return facadeToPath
 }

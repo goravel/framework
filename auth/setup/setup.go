@@ -10,6 +10,7 @@ import (
 )
 
 func main() {
+	// TODO: optimize this in https://github.com/goravel/goravel/issues/447
 	// config, err := supportfile.GetFrameworkContent("auth/setup/config/auth.go")
 	// if err != nil {
 	// 	panic(err)

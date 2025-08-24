@@ -54,7 +54,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 		{
 			name: "package name is empty",
 			setup: func() {
-				mockContext.EXPECT().Argument(0).Return("").Once()
+				mockContext.EXPECT().Arguments().Return([]string{}).Once()
 				mockContext.EXPECT().Ask("Enter the package/facade name to install", mock.Anything).
 					RunAndReturn(func(_ string, option ...console.AskOption) (string, error) {
 						return "", option[0].Validate("")
@@ -68,7 +68,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 		{
 			name: "go get failed",
 			setup: func() {
-				mockContext.EXPECT().Argument(0).Return(pkgWithVersion).Once()
+				mockContext.EXPECT().Arguments().Return([]string{pkgWithVersion}).Once()
 				mockContext.EXPECT().Spinner("> @go get "+pkgWithVersion, mock.Anything).
 					RunAndReturn(func(s string, option console.SpinnerOption) error {
 						return option.Action()
@@ -84,7 +84,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 		{
 			name: "package install failed",
 			setup: func() {
-				mockContext.EXPECT().Argument(0).Return(pkgWithVersion).Once()
+				mockContext.EXPECT().Arguments().Return([]string{pkgWithVersion}).Once()
 				mockContext.EXPECT().Spinner("> @go get "+pkgWithVersion, mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install", mock.Anything).
 					RunAndReturn(func(s string, option console.SpinnerOption) error {
@@ -102,7 +102,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			name: "tidy go.mod file failed",
 			setup: func() {
 				s.T().Setenv("GO111MODULE", "off")
-				mockContext.EXPECT().Argument(0).Return(pkgWithVersion).Once()
+				mockContext.EXPECT().Arguments().Return([]string{pkgWithVersion}).Once()
 				mockContext.EXPECT().Spinner("> @go get "+pkgWithVersion, mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).
@@ -121,7 +121,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 		{
 			name: "package install success(simulate)",
 			setup: func() {
-				mockContext.EXPECT().Argument(0).Return(pkgWithVersion).Once()
+				mockContext.EXPECT().Arguments().Return([]string{pkgWithVersion}).Once()
 				mockContext.EXPECT().Spinner("> @go get "+pkgWithVersion, mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
@@ -136,7 +136,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			name: "facade is not found",
 			setup: func() {
 				facade := "unknown"
-				mockContext.EXPECT().Argument(0).Return(facade).Once()
+				mockContext.EXPECT().Arguments().Return([]string{facade}).Once()
 				mockContext.EXPECT().Warning(errors.PackageFacadeNotFound.Args(facade).Error()).Once()
 				mockContext.EXPECT().Info(fmt.Sprintf("Available facades: %s", strings.Join(maps.Keys(facadeDependencies), ", ")))
 			},
@@ -147,7 +147,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 		{
 			name: "facades install failed",
 			setup: func() {
-				mockContext.EXPECT().Argument(0).Return(facade).Once()
+				mockContext.EXPECT().Arguments().Return([]string{facade}).Once()
 				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facade, strings.Join(maps.Keys(facadeDependencies), ", "))).Once()
 				mockContext.EXPECT().Spinner("> @go run "+facadeToPath["Config"]+"/setup install", mock.Anything).
 					RunAndReturn(func(s string, option console.SpinnerOption) error {
@@ -167,7 +167,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 		{
 			name: "facades install success(simulate)",
 			setup: func() {
-				mockContext.EXPECT().Argument(0).Return(facade).Once()
+				mockContext.EXPECT().Arguments().Return([]string{facade}).Once()
 				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facade, strings.Join(maps.Keys(facadeDependencies), ", "))).Once()
 				mockContext.EXPECT().Spinner("> @go run "+facadeToPath["Config"]+"/setup install", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go run "+facadeToPath["Auth"]+"/setup install", mock.Anything).Return(nil).Once()
@@ -176,6 +176,28 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 				s.Contains(color.CaptureOutput(func(w io.Writer) {
 					s.NoError(NewPackageInstallCommand(facadeDependencies, facadeToPath).Handle(mockContext))
 				}), "Facade "+facade+" installed successfully")
+			},
+		},
+		{
+			name: "install package and facade simultaneously",
+			setup: func() {
+				mockContext.EXPECT().Arguments().Return([]string{pkg, facade}).Once()
+
+				mockContext.EXPECT().Spinner("> @go get "+pkg, mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
+
+				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facade, strings.Join(maps.Keys(facadeDependencies), ", "))).Once()
+				mockContext.EXPECT().Spinner("> @go run "+facadeToPath["Config"]+"/setup install", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+facadeToPath["Auth"]+"/setup install", mock.Anything).Return(nil).Once()
+			},
+			assert: func() {
+				captureOutput := color.CaptureOutput(func(w io.Writer) {
+					s.NoError(NewPackageInstallCommand(facadeDependencies, facadeToPath).Handle(mockContext))
+				})
+
+				s.Contains(captureOutput, "Package "+pkg+" installed successfully")
+				s.Contains(captureOutput, "Facade "+facade+" installed successfully")
 			},
 		},
 	}
