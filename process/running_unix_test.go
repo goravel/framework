@@ -1,24 +1,24 @@
+//go:build !windows
+
 package process
 
 import (
 	"context"
-	"syscall"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/goravel/framework/support/env"
+	"golang.org/x/sys/unix"
 )
 
-func TestRunning_Basics_TableDriven(t *testing.T) {
+func TestRunning_Basics_Unix(t *testing.T) {
 	tests := []struct {
 		name  string
 		cmd   []string
 		check func(t *testing.T, run *Running)
 	}{
 		{
-			name: "PID and Command non-empty while running",
+			name: "PID Command Running and Wait",
 			cmd:  []string{"sh", "-c", "sleep 0.2"},
 			check: func(t *testing.T, run *Running) {
 				assert.NotEqual(t, 0, run.PID())
@@ -30,7 +30,7 @@ func TestRunning_Basics_TableDriven(t *testing.T) {
 			},
 		},
 		{
-			name: "LatestOutput and LatestErrorOutput limited",
+			name: "LatestOutput sizes",
 			cmd:  []string{"sh", "-c", "yes x | head -c 5000 1>/dev/stdout; yes y | head -c 5000 1>/dev/stderr"},
 			check: func(t *testing.T, run *Running) {
 				res := run.Wait()
@@ -56,18 +56,12 @@ func TestRunning_Basics_TableDriven(t *testing.T) {
 	}
 }
 
-func TestRunning_SignalAndStop(t *testing.T) {
-	if env.IsWindows() {
-		t.Skip("Skipping process signal stop test on Windows")
-	}
-
+func TestRunning_SignalAndStop_Unix(t *testing.T) {
 	r, err := New().Command("sh", "-c", "sleep 10").Start(context.Background())
 	assert.NoError(t, err)
 	run := r.(*Running)
 	assert.True(t, run.Running())
-	// send SIGTERM and wait for graceful stop
-	assert.NoError(t, run.Signal(syscall.SIGTERM))
-	// Be tolerant of already-finished processes on older Go versions
+	assert.NoError(t, run.Signal(unix.SIGTERM))
 	_ = run.Stop(50 * time.Millisecond)
 	res := run.Wait()
 	assert.False(t, res.Successful())
