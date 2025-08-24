@@ -61,9 +61,9 @@ func (r *Running) Stop(timeout time.Duration, sig ...os.Signal) error {
 		return nil
 	}
 
-	signalToSend := unix.SIGTERM
+	var signalToSend os.Signal = unix.SIGTERM
 	if len(sig) > 0 {
-		signalToSend = sig[0].(unix.Signal)
+		signalToSend = sig[0]
 	}
 
 	if err := r.Signal(signalToSend); err != nil {
