@@ -120,7 +120,7 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, facadeName st
 		return nil
 	}
 
-	ctx.Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facadeName, strings.Join(maps.Keys(r.facadeDependencies), ", ")))
+	ctx.Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facadeName, strings.Join(facadeDependencies, ", ")))
 
 	allFacades := append(facadeDependencies, facadeName)
 

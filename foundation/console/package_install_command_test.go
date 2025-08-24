@@ -148,7 +148,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			name: "facades install failed",
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{facade}).Once()
-				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facade, strings.Join(maps.Keys(facadeDependencies), ", "))).Once()
+				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facade, strings.Join(facadeDependencies[facade], ", "))).Once()
 				mockContext.EXPECT().Spinner("> @go run "+facadeToPath["Config"]+"/setup install", mock.Anything).
 					RunAndReturn(func(s string, option console.SpinnerOption) error {
 						return option.Action()
@@ -168,7 +168,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			name: "facades install success(simulate)",
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{facade}).Once()
-				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facade, strings.Join(maps.Keys(facadeDependencies), ", "))).Once()
+				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facade, strings.Join(facadeDependencies[facade], ", "))).Once()
 				mockContext.EXPECT().Spinner("> @go run "+facadeToPath["Config"]+"/setup install", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go run "+facadeToPath["Auth"]+"/setup install", mock.Anything).Return(nil).Once()
 			},
@@ -187,7 +187,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
 
-				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facade, strings.Join(maps.Keys(facadeDependencies), ", "))).Once()
+				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facade, strings.Join(facadeDependencies[facade], ", "))).Once()
 				mockContext.EXPECT().Spinner("> @go run "+facadeToPath["Config"]+"/setup install", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go run "+facadeToPath["Auth"]+"/setup install", mock.Anything).Return(nil).Once()
 			},
