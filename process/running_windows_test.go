@@ -11,26 +11,57 @@ import (
 )
 
 func TestRunning_Basics_Windows(t *testing.T) {
-	r, err := New().Command("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Milliseconds 200").Start(context.Background())
-	assert.NoError(t, err)
-	run := r.(*Running)
-	assert.NotEqual(t, 0, run.PID())
-	assert.Contains(t, run.Command(), "powershell")
-	assert.True(t, run.Running())
-	res := run.Wait()
-	assert.NotNil(t, res)
-}
+	tests := []struct {
+		name  string
+		setup func(p *Process)
+		check func(t *testing.T, run *Running)
+	}{
+		{
+			name: "PID Command Running and Wait",
+			setup: func(p *Process) {
+				p.Command("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Milliseconds 200")
+			},
+			check: func(t *testing.T, run *Running) {
+				assert.NotEqual(t, 0, run.PID())
+				assert.Contains(t, run.Command(), "powershell")
+				assert.True(t, run.Running())
+				res := run.Wait()
+				assert.NotNil(t, res)
+				assert.Equal(t, 0, res.ExitCode())
+			},
+		},
+		{
+			name: "LatestOutput sizes",
+			setup: func(p *Process) {
+				// Generate large stdout/stderr using PowerShell
+				script := "$s='x'*5000; [Console]::Out.Write($s); $e='y'*5000; [Console]::Error.Write($e)"
+				p.Command("powershell", "-NoLogo", "-NoProfile", "-Command", script)
+			},
+			check: func(t *testing.T, run *Running) {
+				_ = run.Wait()
+				// Windows console writes may be buffered differently; assert non-empty
+				assert.Greater(t, len(run.Output()), 0)
+				assert.Greater(t, len(run.ErrorOutput()), 0)
+				assert.LessOrEqual(t, len(run.LatestOutput()), 4096)
+				assert.LessOrEqual(t, len(run.LatestErrorOutput()), 4096)
+			},
+		},
+	}
 
-func TestRunning_LatestOutput_Windows(t *testing.T) {
-	// Generate large stdout/stderr using PowerShell
-	script := "$s='x'*5000; [Console]::Out.Write($s); $e='y'*5000; [Console]::Error.Write($e)"
-	r, err := New().Command("powershell", "-NoLogo", "-NoProfile", "-Command", script).Start(context.Background())
-	assert.NoError(t, err)
-	run := r.(*Running)
-	_ = run.Wait()
-	// Windows console writes may be buffered differently; assert non-empty
-	assert.Greater(t, len(run.Output()), 0)
-	assert.Greater(t, len(run.ErrorOutput()), 0)
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			p := New()
+			tt.setup(p)
+			r, err := p.Start(context.Background())
+			assert.NoError(t, err)
+			run, ok := r.(*Running)
+			assert.True(t, ok, "unexpected running type")
+			if ok {
+				tt.check(t, run)
+			}
+		})
+	}
 }
 
 func TestRunning_Stop_Windows(t *testing.T) {
@@ -39,4 +70,6 @@ func TestRunning_Stop_Windows(t *testing.T) {
 	run := r.(*Running)
 	// On Windows, Stop is alias for Kill
 	assert.NoError(t, run.Stop(100*time.Millisecond))
+	res := run.Wait()
+	assert.False(t, res.Successful())
 }
