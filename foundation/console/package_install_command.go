@@ -3,11 +3,13 @@ package console
 import (
 	"fmt"
 	"os/exec"
+	"slices"
 	"strings"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/collect"
 	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/maps"
@@ -16,12 +18,14 @@ import (
 type PackageInstallCommand struct {
 	facadeDependencies map[string][]string
 	facadeToPath       map[string]string
+	baseFacades        []string
 }
 
-func NewPackageInstallCommand(facadeDependencies map[string][]string, facadeToPath map[string]string) *PackageInstallCommand {
+func NewPackageInstallCommand(facadeDependencies map[string][]string, facadeToPath map[string]string, baseFacades []string) *PackageInstallCommand {
 	return &PackageInstallCommand{
 		facadeDependencies: facadeDependencies,
 		facadeToPath:       facadeToPath,
+		baseFacades:        baseFacades,
 	}
 }
 
@@ -120,11 +124,18 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, facadeName st
 		return nil
 	}
 
-	ctx.Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facadeName, strings.Join(facadeDependencies, ", ")))
+	filterFacadeDependencies := collect.Filter(facadeDependencies, func(facade string, _ int) bool {
+		return !slices.Contains(r.baseFacades, facade)
+	})
+	ctx.Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facadeName, strings.Join(filterFacadeDependencies, ", ")))
 
 	allFacades := append(facadeDependencies, facadeName)
 
 	for _, facade := range allFacades {
+		if slices.Contains(r.baseFacades, facade) {
+			continue
+		}
+
 		setup := r.facadeToPath[facade] + "/setup"
 
 		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install")); err != nil {

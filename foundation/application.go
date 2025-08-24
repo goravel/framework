@@ -70,7 +70,7 @@ func (r *Application) Boot() {
 		console.NewEnvDecryptCommand(),
 		console.NewTestMakeCommand(),
 		console.NewPackageMakeCommand(),
-		console.NewPackageInstallCommand(getFacadeDependencies(), getFacadeToPath()),
+		console.NewPackageInstallCommand(getFacadeDependencies(), getFacadeToPath(), baseFacades),
 		console.NewPackageUninstallCommand(),
 		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
 	})

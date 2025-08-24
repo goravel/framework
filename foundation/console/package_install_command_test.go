@@ -34,12 +34,15 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 		facadeDependencies = map[string][]string{
 			"Auth": {
 				"Config",
+				"Orm",
 			},
 		}
 		facadeToPath = map[string]string{
 			"Auth":   "github.com/goravel/framework/auth",
 			"Config": "github.com/goravel/framework/config",
+			"Orm":    "github.com/goravel/framework/database",
 		}
+		baseFacades = []string{"Config"}
 	)
 
 	beforeEach := func() {
@@ -62,7 +65,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 				mockContext.EXPECT().Error("the package name cannot be empty").Once()
 			},
 			assert: func() {
-				s.NoError(NewPackageInstallCommand(facadeDependencies, facadeToPath).Handle(mockContext))
+				s.NoError(NewPackageInstallCommand(facadeDependencies, facadeToPath, baseFacades).Handle(mockContext))
 			},
 		},
 		{
@@ -76,7 +79,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			},
 			assert: func() {
 				captureOutput := color.CaptureOutput(func(w io.Writer) {
-					s.NoError(NewPackageInstallCommand(facadeDependencies, facadeToPath).Handle(mockContext))
+					s.NoError(NewPackageInstallCommand(facadeDependencies, facadeToPath, baseFacades).Handle(mockContext))
 				})
 				s.Contains(captureOutput, `go: github.com/goravel/package@unknown: invalid version`)
 			},
@@ -93,7 +96,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			},
 			assert: func() {
 				captureOutput := color.CaptureOutput(func(w io.Writer) {
-					s.NoError(NewPackageInstallCommand(facadeDependencies, facadeToPath).Handle(mockContext))
+					s.NoError(NewPackageInstallCommand(facadeDependencies, facadeToPath, baseFacades).Handle(mockContext))
 				})
 				s.Contains(captureOutput, `no required module provides package github.com/goravel/package/setup; to add it`)
 			},
@@ -112,7 +115,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			},
 			assert: func() {
 				captureOutput := color.CaptureOutput(func(w io.Writer) {
-					s.NoError(NewPackageInstallCommand(facadeDependencies, facadeToPath).Handle(mockContext))
+					s.NoError(NewPackageInstallCommand(facadeDependencies, facadeToPath, baseFacades).Handle(mockContext))
 				})
 				s.Contains(captureOutput, `go: modules disabled by GO111MODULE=off`)
 
@@ -128,7 +131,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			},
 			assert: func() {
 				s.Contains(color.CaptureOutput(func(w io.Writer) {
-					s.NoError(NewPackageInstallCommand(facadeDependencies, facadeToPath).Handle(mockContext))
+					s.NoError(NewPackageInstallCommand(facadeDependencies, facadeToPath, baseFacades).Handle(mockContext))
 				}), "Package "+pkgWithVersion+" installed successfully")
 			},
 		},
@@ -141,25 +144,25 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 				mockContext.EXPECT().Info(fmt.Sprintf("Available facades: %s", strings.Join(maps.Keys(facadeDependencies), ", ")))
 			},
 			assert: func() {
-				s.NoError(NewPackageInstallCommand(facadeDependencies, facadeToPath).Handle(mockContext))
+				s.NoError(NewPackageInstallCommand(facadeDependencies, facadeToPath, baseFacades).Handle(mockContext))
 			},
 		},
 		{
 			name: "facades install failed",
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{facade}).Once()
-				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facade, strings.Join(facadeDependencies[facade], ", "))).Once()
-				mockContext.EXPECT().Spinner("> @go run "+facadeToPath["Config"]+"/setup install", mock.Anything).
+				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facade, "Orm")).Once()
+				mockContext.EXPECT().Spinner("> @go run "+facadeToPath["Orm"]+"/setup install", mock.Anything).
 					RunAndReturn(func(s string, option console.SpinnerOption) error {
 						return option.Action()
 					}).Once()
 				mockContext.EXPECT().Error(mock.MatchedBy(func(message string) bool {
-					return s.Equal("Failed to install facade Config, error: no required module provides package github.com/goravel/framework/config/setup; to add it:\n\tgo get github.com/goravel/framework/config/setup", message)
+					return s.Contains(message, "Failed to install facade Orm, error:")
 				})).Once()
 			},
 			assert: func() {
 				captureOutput := color.CaptureOutput(func(w io.Writer) {
-					s.NoError(NewPackageInstallCommand(facadeDependencies, facadeToPath).Handle(mockContext))
+					s.NoError(NewPackageInstallCommand(facadeDependencies, facadeToPath, baseFacades).Handle(mockContext))
 				})
 				s.Empty(captureOutput)
 			},
@@ -168,13 +171,13 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			name: "facades install success(simulate)",
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{facade}).Once()
-				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facade, strings.Join(facadeDependencies[facade], ", "))).Once()
-				mockContext.EXPECT().Spinner("> @go run "+facadeToPath["Config"]+"/setup install", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facade, "Orm")).Once()
+				mockContext.EXPECT().Spinner("> @go run "+facadeToPath["Orm"]+"/setup install", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go run "+facadeToPath["Auth"]+"/setup install", mock.Anything).Return(nil).Once()
 			},
 			assert: func() {
 				s.Contains(color.CaptureOutput(func(w io.Writer) {
-					s.NoError(NewPackageInstallCommand(facadeDependencies, facadeToPath).Handle(mockContext))
+					s.NoError(NewPackageInstallCommand(facadeDependencies, facadeToPath, baseFacades).Handle(mockContext))
 				}), "Facade "+facade+" installed successfully")
 			},
 		},
@@ -187,13 +190,13 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
 
-				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facade, strings.Join(facadeDependencies[facade], ", "))).Once()
-				mockContext.EXPECT().Spinner("> @go run "+facadeToPath["Config"]+"/setup install", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facade, "Orm")).Once()
+				mockContext.EXPECT().Spinner("> @go run "+facadeToPath["Orm"]+"/setup install", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go run "+facadeToPath["Auth"]+"/setup install", mock.Anything).Return(nil).Once()
 			},
 			assert: func() {
 				captureOutput := color.CaptureOutput(func(w io.Writer) {
-					s.NoError(NewPackageInstallCommand(facadeDependencies, facadeToPath).Handle(mockContext))
+					s.NoError(NewPackageInstallCommand(facadeDependencies, facadeToPath, baseFacades).Handle(mockContext))
 				})
 
 				s.Contains(captureOutput, "Package "+pkg+" installed successfully")

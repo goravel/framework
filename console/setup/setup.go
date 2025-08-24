@@ -6,28 +6,20 @@ import (
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
-	supportfile "github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/path"
 )
 
 func main() {
-	config, err := supportfile.GetFrameworkContent("mail/setup/config/mail.go")
-	if err != nil {
-		panic(err)
-	}
-
 	packages.Setup(os.Args).
 		Install(
 			modify.GoFile(path.Config("app.go")).
 				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register("&mail.ServiceProvider{}")),
-			modify.File(path.Config("mail.go")).Overwrite(config),
+				Find(match.Providers()).Modify(modify.Register("&console.ServiceProvider{}")),
 		).
 		Uninstall(
 			modify.GoFile(path.Config("app.go")).
-				Find(match.Providers()).Modify(modify.Unregister("&mail.ServiceProvider{}")).
+				Find(match.Providers()).Modify(modify.Unregister("&console.ServiceProvider{}")).
 				Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
-			modify.File(path.Config("mail.go")).Remove(),
 		).
 		Execute()
 }
