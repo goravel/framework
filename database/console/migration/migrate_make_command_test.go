@@ -106,7 +106,7 @@ func (kernel Kernel) Migrations() []schema.Migration {
 			beforeEach()
 			test.setup()
 
-			migrateMakeCommand := NewMigrateMakeCommand(mockMigrator)
+			migrateMakeCommand := NewMigrateMakeCommand(nil, mockMigrator)
 			err := migrateMakeCommand.Handle(mockContext)
 
 			assert.NoError(t, err)

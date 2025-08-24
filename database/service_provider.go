@@ -141,7 +141,7 @@ func (r *ServiceProvider) registerCommands(app foundation.Application) {
 	if artisan != nil && config != nil && log != nil && schema != nil && seeder != nil {
 		migrator := migration.NewMigrator(artisan, schema, config.GetString("database.migrations.table"))
 		artisan.Register([]contractsconsole.Command{
-			consolemigration.NewMigrateMakeCommand(migrator),
+			consolemigration.NewMigrateMakeCommand(app, migrator),
 			consolemigration.NewMigrateCommand(migrator),
 			consolemigration.NewMigrateRollbackCommand(migrator),
 			consolemigration.NewMigrateResetCommand(migrator),
@@ -151,7 +151,7 @@ func (r *ServiceProvider) registerCommands(app foundation.Application) {
 			console.NewModelMakeCommand(artisan, schema),
 			console.NewObserverMakeCommand(),
 			console.NewSeedCommand(config, seeder),
-			console.NewSeederMakeCommand(),
+			console.NewSeederMakeCommand(app),
 			console.NewFactoryMakeCommand(),
 			console.NewTableCommand(config, schema),
 			console.NewShowCommand(config, schema),

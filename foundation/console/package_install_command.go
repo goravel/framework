@@ -1,6 +1,7 @@
 package console
 
 import (
+	"fmt"
 	"os/exec"
 	"strings"
 
@@ -9,13 +10,19 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
+	"github.com/goravel/framework/support/maps"
 )
 
 type PackageInstallCommand struct {
+	facadeDependencies map[string][]string
+	facadeToPath       map[string]string
 }
 
-func NewPackageInstallCommand() *PackageInstallCommand {
-	return &PackageInstallCommand{}
+func NewPackageInstallCommand(facadeDependencies map[string][]string, facadeToPath map[string]string) *PackageInstallCommand {
+	return &PackageInstallCommand{
+		facadeDependencies: facadeDependencies,
+		facadeToPath:       facadeToPath,
+	}
 }
 
 // Signature The name and signature of the console command.
@@ -59,14 +66,11 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 		}
 	}
 
-	return r.installPackage(ctx, pkg)
+	if isPackage(pkg) {
+		return r.installPackage(ctx, pkg)
+	}
 
-	// TODO: Implement this in v1.17 https://github.com/goravel/goravel/issues/719
-	// if isPackage(pkg) {
-	// 	return r.installPackage(ctx, pkg)
-	// }
-
-	// return r.installFacade(ctx, pkg)
+	return r.installFacade(ctx, pkg)
 }
 
 func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) error {
@@ -99,27 +103,33 @@ func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) 
 	return nil
 }
 
-// func (r *PackageInstallCommand) installFacade(ctx console.Context, facade string) error {
-// 	path, exists := binding.FacadeToPath[facade]
-// 	if !exists {
-// 		ctx.Warning(errors.PackageFacadeNotFound.Args(facade).Error())
-// 		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(maps.Keys(binding.FacadeToPath), ", ")))
-// 		return nil
-// 	}
+func (r *PackageInstallCommand) installFacade(ctx console.Context, facadeName string) error {
+	facadeDependencies, exists := r.facadeDependencies[facadeName]
+	if !exists {
+		ctx.Warning(errors.PackageFacadeNotFound.Args(facadeName).Error())
+		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(maps.Keys(r.facadeDependencies), ", ")))
+		return nil
+	}
 
-// 	setup := path + "/setup"
+	ctx.Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facadeName, strings.Join(maps.Keys(r.facadeDependencies), ", ")))
 
-// 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install")); err != nil {
-// 		color.Red().Println(err.Error())
+	allFacades := append(facadeDependencies, facadeName)
 
-// 		return nil
-// 	}
+	for _, facade := range allFacades {
+		setup := r.facadeToPath[facade] + "/setup"
 
-// 	color.Successf("Facade %s installed successfully\n", facade)
+		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install")); err != nil {
+			ctx.Error(fmt.Sprintf("Failed to install facade %s, error: %s", facade, err.Error()))
 
-// 	return nil
-// }
+			return nil
+		}
 
-// func isPackage(pkg string) bool {
-// 	return strings.Contains(pkg, "/")
-// }
+		color.Successf("Facade %s installed successfully\n", facade)
+	}
+
+	return nil
+}
+
+func isPackage(pkg string) bool {
+	return strings.Contains(pkg, "/")
+}

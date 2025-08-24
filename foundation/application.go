@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/goravel/framework/config"
-	"github.com/goravel/framework/contracts/binding"
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
@@ -71,7 +70,7 @@ func (r *Application) Boot() {
 		console.NewEnvDecryptCommand(),
 		console.NewTestMakeCommand(),
 		console.NewPackageMakeCommand(),
-		console.NewPackageInstallCommand(),
+		console.NewPackageInstallCommand(getFacadeDependencies(), getFacadeToPath()),
 		console.NewPackageUninstallCommand(),
 		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
 	})
@@ -375,7 +374,7 @@ func sortConfiguredServiceProviders(providers []foundation.ServiceProvider) []fo
 
 	// Helper function to get binding names from a provider
 	getBindings := func(provider foundation.ServiceProvider) []string {
-		if p, ok := provider.(interface{ Relationship() binding.Relationship }); ok {
+		if p, ok := provider.(foundation.ServiceProviderWithRelations); ok {
 			return p.Relationship().Bindings
 		}
 		return []string{}
@@ -383,7 +382,7 @@ func sortConfiguredServiceProviders(providers []foundation.ServiceProvider) []fo
 
 	// Helper function to get dependencies from a provider
 	getDependencies := func(provider foundation.ServiceProvider) []string {
-		if p, ok := provider.(interface{ Relationship() binding.Relationship }); ok {
+		if p, ok := provider.(foundation.ServiceProviderWithRelations); ok {
 			return p.Relationship().Dependencies
 		}
 		return []string{}
@@ -391,7 +390,7 @@ func sortConfiguredServiceProviders(providers []foundation.ServiceProvider) []fo
 
 	// Helper function to get provide-for bindings from a provider
 	getProvideFor := func(provider foundation.ServiceProvider) []string {
-		if p, ok := provider.(interface{ Relationship() binding.Relationship }); ok {
+		if p, ok := provider.(foundation.ServiceProviderWithRelations); ok {
 			return p.Relationship().ProvideFor
 		}
 		return []string{}
