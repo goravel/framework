@@ -2,6 +2,7 @@ package console
 
 import (
 	"errors"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -34,6 +35,9 @@ func TestBuildCommand(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("local").Once()
 				mockContext.EXPECT().Option("os").Return("linux").Once()
+				mockContext.EXPECT().Option("arch").Return("amd64").Once()
+				mockContext.EXPECT().Option("name").Return("").Once()
+				mockContext.EXPECT().OptionBool("static").Return(true).Once()
 				mockContext.EXPECT().Spinner("Building...", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Info("Built successfully.").Once()
 			},
@@ -58,16 +62,35 @@ func TestBuildCommand(t *testing.T) {
 					{Key: "Linux", Value: "linux"},
 					{Key: "Windows", Value: "windows"},
 					{Key: "Darwin", Value: "darwin"},
-				}).Return("", errors.New("error")).Once()
+				}, console.ChoiceOption{Default: runtime.GOOS}).Return("", errors.New("error")).Once()
 				mockContext.EXPECT().Error("Select target os error: error").Once()
 			},
 		},
 		{
-			name: "Sad path - os is invalid",
+			name: "Sad path - arch choice error",
+			setup: func() {
+				mockConfig.EXPECT().GetString("app.env").Return("local").Once()
+				mockContext.EXPECT().Option("os").Return("linux").Once()
+				mockContext.EXPECT().Option("arch").Return("").Once()
+				mockContext.EXPECT().Choice("Select target architecture", []console.Choice{
+					{Key: "amd64", Value: "amd64"},
+					{Key: "arm64", Value: "arm64"},
+				}, console.ChoiceOption{Default: runtime.GOARCH}).Return("", errors.New("error")).Once()
+				mockContext.EXPECT().Error("Select target architecture error: error").Once()
+			},
+		},
+		{
+			name: "Sad path - os/arch is invalid",
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("local").Once()
 				mockContext.EXPECT().Option("os").Return("invalid").Once()
-				mockContext.EXPECT().Error("Invalid os 'invalid' specified. Allowed values are: [linux windows darwin]").Once()
+				mockContext.EXPECT().Option("arch").Return("invalid").Once()
+				mockContext.EXPECT().Option("name").Return("").Once()
+				mockContext.EXPECT().OptionBool("static").Return(true).Once()
+				mockContext.EXPECT().Spinner("Building...", mock.Anything).RunAndReturn(func(_ string, option console.SpinnerOption) error {
+					return option.Action()
+				}).Once()
+				mockContext.EXPECT().Error("go: unsupported GOOS/GOARCH pair invalid/invalid").Once()
 			},
 		},
 		{
@@ -75,8 +98,11 @@ func TestBuildCommand(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("local").Once()
 				mockContext.EXPECT().Option("os").Return("linux").Once()
+				mockContext.EXPECT().Option("arch").Return("amd64").Once()
+				mockContext.EXPECT().Option("name").Return("").Once()
+				mockContext.EXPECT().OptionBool("static").Return(true).Once()
 				mockContext.EXPECT().Spinner("Building...", mock.Anything).Return(errors.New("error")).Once()
-				mockContext.EXPECT().Error("Build error: error").Once()
+				mockContext.EXPECT().Error("error").Once()
 			},
 		},
 	}
@@ -108,7 +134,6 @@ func TestGenerateCommand(t *testing.T) {
 		},
 		{
 			description: "Generate command with static without name",
-			name:        "",
 			static:      true,
 			expected:    []string{"go", "build", "-ldflags", "-extldflags -static", "."},
 		},
@@ -120,7 +145,6 @@ func TestGenerateCommand(t *testing.T) {
 		},
 		{
 			description: "Generate command without static and name",
-			name:        "",
 			static:      false,
 			expected:    []string{"go", "build", "."},
 		},
@@ -128,9 +152,9 @@ func TestGenerateCommand(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
-			result := generateCommand(test.name, test.static)
+			result := generateCommand(test.name, runtime.GOOS, runtime.GOARCH, test.static)
 
-			assert.Equal(t, test.expected, result)
+			assert.Equal(t, test.expected, result.Args)
 		})
 	}
 }
