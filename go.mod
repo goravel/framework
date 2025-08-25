@@ -2,13 +2,13 @@ module github.com/goravel/framework
 
 go 1.24.0
 
-toolchain go1.24.6
+toolchain go1.25.0
 
 require (
 	github.com/Masterminds/squirrel v1.5.4
-	github.com/brianvoe/gofakeit/v7 v7.3.0
+	github.com/brianvoe/gofakeit/v7 v7.4.0
 	github.com/charmbracelet/huh v0.7.0
-	github.com/charmbracelet/huh/spinner v0.0.0-20250811123337-95b882db3fb0
+	github.com/charmbracelet/huh/spinner v0.0.0-20250818142555-c41a69ba6443
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/dave/dst v0.27.3
 	github.com/dromara/carbon/v2 v2.6.11
@@ -28,12 +28,12 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cast v1.9.2
 	github.com/spf13/viper v1.20.1
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.0
 	github.com/urfave/cli/v3 v3.4.1
 	golang.org/x/crypto v0.41.0
-	golang.org/x/exp v0.0.0-20250813145105-42675adae3e6
-	google.golang.org/grpc v1.74.2
-	google.golang.org/protobuf v1.36.7
+	golang.org/x/exp v0.0.0-20250819193227-8b4c13bb791b
+	google.golang.org/grpc v1.75.0
+	google.golang.org/protobuf v1.36.8
 	gorm.io/gorm v1.30.1
 	gorm.io/plugin/dbresolver v1.6.2
 )
@@ -112,8 +112,8 @@ require (
 )
 
 replace (
-	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20250811230008-5f3141c8851a
-	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20250811230008-5f3141c8851a
+	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20250818200422-3122310a409c
+	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20250818200422-3122310a409c
 )
 
 tool github.com/vektra/mockery/v2
