@@ -1,21 +1,21 @@
 module github.com/goravel/framework/tests
 
-go 1.23.0
+go 1.24.0
 
 toolchain go1.25.0
 
 godebug x509negativeserial=1
 
 require (
-	github.com/brianvoe/gofakeit/v7 v7.3.0
+	github.com/brianvoe/gofakeit/v7 v7.4.0
 	github.com/google/uuid v1.6.0
-	github.com/goravel/framework v1.16.0
+	github.com/goravel/framework v1.16.1
 	github.com/goravel/mysql v1.4.0
 	github.com/goravel/postgres v1.4.0
 	github.com/goravel/sqlite v1.4.0
 	github.com/goravel/sqlserver v1.4.0
 	github.com/spf13/cast v1.9.2
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.0
 	gorm.io/gorm v1.30.1
 )
 
@@ -59,15 +59,15 @@ require (
 	github.com/tetratelabs/wazero v1.9.0 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	golang.org/x/crypto v0.41.0 // indirect
-	golang.org/x/exp v0.0.0-20250808145144-a408d31f581a // indirect
+	golang.org/x/exp v0.0.0-20250819193227-8b4c13bb791b // indirect
 	golang.org/x/net v0.43.0 // indirect
 	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/term v0.34.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
-	google.golang.org/grpc v1.74.2 // indirect
-	google.golang.org/protobuf v1.36.7 // indirect
+	google.golang.org/grpc v1.75.0 // indirect
+	google.golang.org/protobuf v1.36.8 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/mysql v1.6.0 // indirect
 	gorm.io/driver/postgres v1.6.0 // indirect
