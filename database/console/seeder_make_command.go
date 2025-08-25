@@ -7,19 +7,22 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
-	"github.com/goravel/framework/support/path"
 )
 
 type SeederMakeCommand struct {
+	app foundation.Application
 }
 
-func NewSeederMakeCommand() *SeederMakeCommand {
-	return &SeederMakeCommand{}
+func NewSeederMakeCommand(app foundation.Application) *SeederMakeCommand {
+	return &SeederMakeCommand{
+		app: app,
+	}
 }
 
 // Signature The name and signature of the console command.
@@ -60,7 +63,7 @@ func (r *SeederMakeCommand) Handle(ctx console.Context) error {
 
 	ctx.Success("Seeder created successfully")
 
-	if err = modify.GoFile(path.Database("kernel.go")).
+	if err = modify.GoFile(r.app.DatabasePath("kernel.go")).
 		Find(match.Imports()).Modify(modify.AddImport(m.GetPackageImportPath())).
 		Find(match.Seeders()).Modify(modify.Register(fmt.Sprintf("&%s.%s{}", m.GetPackageName(), m.GetStructName()))).
 		Apply(); err != nil {

@@ -1,21 +1,32 @@
 package console
 
 import (
+	"fmt"
 	"os/exec"
+	"slices"
 	"strings"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/collect"
 	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
+	"github.com/goravel/framework/support/maps"
 )
 
 type PackageInstallCommand struct {
+	facadeDependencies map[string][]string
+	facadeToPath       map[string]string
+	baseFacades        []string
 }
 
-func NewPackageInstallCommand() *PackageInstallCommand {
-	return &PackageInstallCommand{}
+func NewPackageInstallCommand(facadeDependencies map[string][]string, facadeToPath map[string]string, baseFacades []string) *PackageInstallCommand {
+	return &PackageInstallCommand{
+		facadeDependencies: facadeDependencies,
+		facadeToPath:       facadeToPath,
+		baseFacades:        baseFacades,
+	}
 }
 
 // Signature The name and signature of the console command.
@@ -38,12 +49,11 @@ func (r *PackageInstallCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *PackageInstallCommand) Handle(ctx console.Context) error {
-	pkg := ctx.Argument(0)
-	if pkg == "" {
-		var err error
-		pkg, err = ctx.Ask("Enter the package/facade name to install", console.AskOption{
+	names := ctx.Arguments()
+	if len(names) == 0 {
+		name, err := ctx.Ask("Enter the package/facade name to install", console.AskOption{
 			Description: "If no version is specified, install the latest",
-			Placeholder: " E.g example.com/pkg or example.com/pkg@v1.0.0 or cache",
+			Placeholder: " E.g example.com/pkg or example.com/pkg@v1.0.0 or Cache",
 			Prompt:      ">",
 			Validate: func(s string) error {
 				if s == "" {
@@ -57,16 +67,23 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 			ctx.Error(err.Error())
 			return nil
 		}
+
+		names = append(names, name)
 	}
 
-	return r.installPackage(ctx, pkg)
+	for _, name := range names {
+		if isPackage(name) {
+			if err := r.installPackage(ctx, name); err != nil {
+				return err
+			}
+		} else {
+			if err := r.installFacade(ctx, name); err != nil {
+				return err
+			}
+		}
+	}
 
-	// TODO: Implement this in v1.17 https://github.com/goravel/goravel/issues/719
-	// if isPackage(pkg) {
-	// 	return r.installPackage(ctx, pkg)
-	// }
-
-	// return r.installFacade(ctx, pkg)
+	return nil
 }
 
 func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) error {
@@ -99,27 +116,40 @@ func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) 
 	return nil
 }
 
-// func (r *PackageInstallCommand) installFacade(ctx console.Context, facade string) error {
-// 	path, exists := binding.FacadeToPath[facade]
-// 	if !exists {
-// 		ctx.Warning(errors.PackageFacadeNotFound.Args(facade).Error())
-// 		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(maps.Keys(binding.FacadeToPath), ", ")))
-// 		return nil
-// 	}
+func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) error {
+	facadeDependencies, exists := r.facadeDependencies[name]
+	if !exists {
+		ctx.Warning(errors.PackageFacadeNotFound.Args(name).Error())
+		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(maps.Keys(r.facadeDependencies), ", ")))
+		return nil
+	}
 
-// 	setup := path + "/setup"
+	filterFacadeDependencies := collect.Filter(facadeDependencies, func(facade string, _ int) bool {
+		return !slices.Contains(r.baseFacades, facade)
+	})
+	ctx.Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", name, strings.Join(filterFacadeDependencies, ", ")))
 
-// 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install")); err != nil {
-// 		color.Red().Println(err.Error())
+	allFacades := append(facadeDependencies, name)
 
-// 		return nil
-// 	}
+	for _, facade := range allFacades {
+		if slices.Contains(r.baseFacades, facade) {
+			continue
+		}
 
-// 	color.Successf("Facade %s installed successfully\n", facade)
+		setup := r.facadeToPath[facade] + "/setup"
 
-// 	return nil
-// }
+		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install")); err != nil {
+			ctx.Error(fmt.Sprintf("Failed to install facade %s, error: %s", facade, err.Error()))
 
-// func isPackage(pkg string) bool {
-// 	return strings.Contains(pkg, "/")
-// }
+			return nil
+		}
+
+		color.Successf("Facade %s installed successfully\n", facade)
+	}
+
+	return nil
+}
+
+func isPackage(pkg string) bool {
+	return strings.Contains(pkg, "/")
+}
