@@ -12,7 +12,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/goravel/framework/auth"
 	"github.com/goravel/framework/config"
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
@@ -73,7 +72,7 @@ func (r *Application) Boot() {
 		console.NewTestMakeCommand(),
 		console.NewPackageMakeCommand(),
 		console.NewPackageInstallCommand(getFacadeDependencies(), getFacadeToPath(), baseFacades),
-		console.NewPackageUninstallCommand(),
+		console.NewPackageUninstallCommand(getFacadeDependencies(), getFacadeToPath(), baseFacades, r.getInstalledFacades()),
 		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
 	})
 	r.bootArtisan()
@@ -245,18 +244,6 @@ func (r *Application) getConfiguredServiceProviders() []foundation.ServiceProvid
 }
 
 func (r *Application) getInstalledFacades() []string {
-	type facadeInfo struct {
-		binding         string
-		serviceProvider foundation.ServiceProvider
-	}
-
-	facades := map[string]facadeInfo{
-		"Auth": {
-			binding:         binding.Auth,
-			serviceProvider: &auth.ServiceProvider{},
-		},
-	}
-
 	serviceProviders := r.getConfiguredServiceProviders()
 
 	var installedFacades []string

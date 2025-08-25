@@ -1,7 +1,9 @@
 package console
 
 import (
+	"fmt"
 	"os/exec"
+	"slices"
 	"strings"
 
 	"github.com/goravel/framework/contracts/console"
@@ -9,15 +11,28 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
+	"github.com/goravel/framework/support/maps"
 )
 
 type PackageUninstallCommand struct {
+	baseFacades        []string
 	facadeDependencies map[string][]string
+	facadeToPath       map[string]string
 	installedFacades   []string
 }
 
-func NewPackageUninstallCommand() *PackageUninstallCommand {
-	return &PackageUninstallCommand{}
+func NewPackageUninstallCommand(
+	facadeDependencies map[string][]string,
+	facadeToPath map[string]string,
+	baseFacades []string,
+	installedFacades []string,
+) *PackageUninstallCommand {
+	return &PackageUninstallCommand{
+		facadeDependencies: facadeDependencies,
+		facadeToPath:       facadeToPath,
+		baseFacades:        baseFacades,
+		installedFacades:   installedFacades,
+	}
 }
 
 // Signature The name and signature of the console command.
@@ -48,10 +63,10 @@ func (r *PackageUninstallCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *PackageUninstallCommand) Handle(ctx console.Context) error {
-	pkg := ctx.Argument(0)
-	if pkg == "" {
+	names := ctx.Arguments()
+	if len(names) == 0 {
 		var err error
-		pkg, err = ctx.Ask("Enter the package name to uninstall", console.AskOption{
+		name, err := ctx.Ask("Enter the package name to uninstall", console.AskOption{
 			Placeholder: " E.g example.com/pkg",
 			Prompt:      ">",
 			Validate: func(s string) error {
@@ -66,16 +81,23 @@ func (r *PackageUninstallCommand) Handle(ctx console.Context) error {
 			ctx.Error(err.Error())
 			return nil
 		}
+
+		names = append(names, name)
 	}
 
-	return r.uninstallPackage(ctx, pkg)
+	for _, name := range names {
+		if isPackage(name) {
+			if err := r.uninstallPackage(ctx, name); err != nil {
+				return err
+			}
+		} else {
+			if err := r.uninstallFacade(ctx, name); err != nil {
+				return err
+			}
+		}
+	}
 
-	// TODO: Implement this in v1.17 https://github.com/goravel/goravel/issues/719
-	// if isPackage(pkg) {
-	// 	return r.uninstallPackage(ctx, pkg)
-	// }
-
-	// return r.uninstallFacade(ctx, pkg)
+	return nil
 }
 
 func (r *PackageUninstallCommand) uninstallPackage(ctx console.Context, pkg string) error {
@@ -108,31 +130,49 @@ func (r *PackageUninstallCommand) uninstallPackage(ctx console.Context, pkg stri
 	return nil
 }
 
-// func (r *PackageUninstallCommand) uninstallFacade(ctx console.Context, facade string) error {
-// 	path, exists := binding.FacadeToPath[facade]
-// 	if !exists {
-// 		ctx.Warning(errors.PackageFacadeNotFound.Args(facade).Error())
-// 		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(maps.Keys(binding.FacadeToPath), ", ")))
-// 		return nil
-// 	}
+func (r *PackageUninstallCommand) uninstallFacade(ctx console.Context, name string) error {
+	if slices.Contains(r.baseFacades, name) {
+		ctx.Warning(fmt.Sprintf("Facade %s is a base facade and cannot be uninstalled", name))
+		return nil
+	}
 
-// 	setup := path + "/setup"
+	_, exists := r.facadeDependencies[name]
+	if !exists {
+		ctx.Warning(errors.PackageFacadeNotFound.Args(name).Error())
+		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(filterBaseFacades(maps.Keys(r.facadeDependencies), r.baseFacades), ", ")))
+		return nil
+	}
 
-// 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "uninstall")); err != nil {
-// 		color.Red().Println(err.Error())
+	facadesThatNeedUninstall := []string{name}
+	dependenciesThatNeedUninstall := r.getDependenciesThatNeedUninstall(name)
 
-// 		return nil
-// 	}
+	if len(dependenciesThatNeedUninstall) > 0 && ctx.Confirm(fmt.Sprintf("Do you want to remove the dependency facades as well: %s?", strings.Join(dependenciesThatNeedUninstall, ", "))) {
+		facadesThatNeedUninstall = append(facadesThatNeedUninstall, dependenciesThatNeedUninstall...)
+	}
 
-// 	color.Successf("Facade %s uninstalled successfully\n", facade)
+	for _, facade := range facadesThatNeedUninstall {
+		if slices.Contains(r.baseFacades, facade) {
+			continue
+		}
 
-// 	return nil
-// }
+		setup := r.facadeToPath[facade] + "/setup"
 
-func (r *PackageUninstallCommand) getDependenciesThatNeedUninstall(facade string) ([]string, error) {
+		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "uninstall")); err != nil {
+			ctx.Error(fmt.Sprintf("Failed to uninstall facade %s, error: %s", facade, err.Error()))
+
+			return nil
+		}
+
+		color.Successf("Facade %s uninstalled successfully\n", facade)
+	}
+
+	return nil
+}
+
+func (r *PackageUninstallCommand) getDependenciesThatNeedUninstall(facade string) []string {
 	dependencies := r.facadeDependencies[facade]
 	if len(dependencies) == 0 {
-		return nil, nil
+		return nil
 	}
 
 	facadeToNumber := make(map[string]int)
@@ -151,5 +191,5 @@ func (r *PackageUninstallCommand) getDependenciesThatNeedUninstall(facade string
 		}
 	}
 
-	return needUninstallFacades, nil
+	return filterBaseFacades(needUninstallFacades, r.baseFacades)
 }

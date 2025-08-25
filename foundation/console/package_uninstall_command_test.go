@@ -25,8 +25,21 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 		mockContext *mocksconsole.Context
 
 		// facade         = "auth"
-		pkg            = "github.com/goravel/package"
-		pkgWithVersion = "github.com/goravel/package@unknown"
+		pkg                = "github.com/goravel/package"
+		pkgWithVersion     = "github.com/goravel/package@unknown"
+		facadeDependencies = map[string][]string{
+			"Auth": {
+				"Config",
+				"Orm",
+			},
+		}
+		facadeToPath = map[string]string{
+			"Auth":   "github.com/goravel/framework/auth",
+			"Config": "github.com/goravel/framework/config",
+			"Orm":    "github.com/goravel/framework/database",
+		}
+		baseFacades      = []string{"Config"}
+		installedFacades = []string{"Config"}
 	)
 
 	beforeEach := func() {
@@ -49,7 +62,7 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 				mockContext.EXPECT().Error("the package name cannot be empty").Once()
 			},
 			assert: func() {
-				s.NoError(NewPackageUninstallCommand().Handle(mockContext))
+				s.NoError(NewPackageUninstallCommand(facadeDependencies, facadeToPath, baseFacades, installedFacades).Handle(mockContext))
 			},
 		},
 
@@ -65,7 +78,7 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 			},
 			assert: func() {
 				captureOutput := color.CaptureOutput(func(w io.Writer) {
-					s.NoError(NewPackageUninstallCommand().Handle(mockContext))
+					s.NoError(NewPackageUninstallCommand(facadeDependencies, facadeToPath, baseFacades, installedFacades).Handle(mockContext))
 				})
 				s.Contains(captureOutput, `no required module provides package github.com/goravel/package/setup; to add it`)
 
@@ -85,7 +98,7 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 			},
 			assert: func() {
 				captureOutput := color.CaptureOutput(func(w io.Writer) {
-					s.NoError(NewPackageUninstallCommand().Handle(mockContext))
+					s.NoError(NewPackageUninstallCommand(facadeDependencies, facadeToPath, baseFacades, installedFacades).Handle(mockContext))
 				})
 				s.Contains(captureOutput, `go: modules disabled by GO111MODULE=off`)
 
@@ -101,7 +114,7 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 			},
 			assert: func() {
 				s.Contains(color.CaptureOutput(func(w io.Writer) {
-					s.NoError(NewPackageUninstallCommand().Handle(mockContext))
+					s.NoError(NewPackageUninstallCommand(facadeDependencies, facadeToPath, baseFacades, installedFacades).Handle(mockContext))
 				}), "Package "+pkgWithVersion+" uninstalled successfully")
 			},
 		},
@@ -115,7 +128,7 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 		// 		mockContext.EXPECT().Info(fmt.Sprintf("Available facades: %s", strings.Join(maps.Keys(binding.FacadeToPath), ", ")))
 		// 	},
 		// 	assert: func() {
-		// 		s.NoError(NewPackageUninstallCommand().Handle(mockContext))
+		// 		s.NoError(NewPackageUninstallCommand(facadeDependencies, facadeToPath, baseFacades, installedFacades).Handle(mockContext))
 		// 	},
 		// },
 		// {
@@ -129,7 +142,7 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 		// 	},
 		// 	assert: func() {
 		// 		captureOutput := color.CaptureOutput(func(w io.Writer) {
-		// 			s.NoError(NewPackageUninstallCommand().Handle(mockContext))
+		// 			s.NoError(NewPackageUninstallCommand(facadeDependencies, facadeToPath, baseFacades, installedFacades).Handle(mockContext))
 		// 		})
 		// 		if env.IsWindows() {
 		// 			s.Contains(captureOutput, `foundation\console\config\app.go: The system cannot find the path specified`)
@@ -146,7 +159,7 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 		// 	},
 		// 	assert: func() {
 		// 		s.Contains(color.CaptureOutput(func(w io.Writer) {
-		// 			s.NoError(NewPackageUninstallCommand().Handle(mockContext))
+		// 			s.NoError(NewPackageUninstallCommand(facadeDependencies, facadeToPath, baseFacades, installedFacades).Handle(mockContext))
 		// 		}), "Facade "+facade+" uninstalled successfully")
 		// 	},
 		// },

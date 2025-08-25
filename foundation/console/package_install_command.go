@@ -16,9 +16,9 @@ import (
 )
 
 type PackageInstallCommand struct {
+	baseFacades        []string
 	facadeDependencies map[string][]string
 	facadeToPath       map[string]string
-	baseFacades        []string
 }
 
 func NewPackageInstallCommand(facadeDependencies map[string][]string, facadeToPath map[string]string, baseFacades []string) *PackageInstallCommand {
@@ -120,18 +120,16 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 	facadeDependencies, exists := r.facadeDependencies[name]
 	if !exists {
 		ctx.Warning(errors.PackageFacadeNotFound.Args(name).Error())
-		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(maps.Keys(r.facadeDependencies), ", ")))
+		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(filterBaseFacades(maps.Keys(r.facadeDependencies), r.baseFacades), ", ")))
 		return nil
 	}
 
-	filterFacadeDependencies := collect.Filter(facadeDependencies, func(facade string, _ int) bool {
-		return !slices.Contains(r.baseFacades, facade)
-	})
+	filterFacadeDependencies := filterBaseFacades(facadeDependencies, r.baseFacades)
 	ctx.Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", name, strings.Join(filterFacadeDependencies, ", ")))
 
-	allFacades := append(facadeDependencies, name)
+	facadesThatNeedInstall := append(filterFacadeDependencies, name)
 
-	for _, facade := range allFacades {
+	for _, facade := range facadesThatNeedInstall {
 		if slices.Contains(r.baseFacades, facade) {
 			continue
 		}
@@ -148,6 +146,12 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 	}
 
 	return nil
+}
+
+func filterBaseFacades(facades, baseFacades []string) []string {
+	return collect.Filter(facades, func(facade string, _ int) bool {
+		return !slices.Contains(baseFacades, facade)
+	})
 }
 
 func isPackage(pkg string) bool {
