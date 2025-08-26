@@ -40,7 +40,7 @@ func TestProcess_Run_Windows(t *testing.T) {
 				// powershell: write-error writes to stderr and returns non-zero
 				p.Quietly()
 			},
-			expectOK: false,
+			expectOK: true, // Run doesn't error on non-zero exit
 			check: func(t *testing.T, res *Result) {
 				assert.Contains(t, res.ErrorOutput(), "bad")
 				assert.False(t, res.Successful())
@@ -78,7 +78,7 @@ func TestProcess_Run_Windows(t *testing.T) {
 			setup: func(p *Process) {
 				p.Timeout(200 * time.Millisecond).Quietly()
 			},
-			expectOK: false,
+			expectOK: true, // Run doesn't error on timeout
 			check: func(t *testing.T, res *Result) {
 				assert.False(t, res.Successful())
 				assert.NotEqual(t, 0, res.ExitCode())
