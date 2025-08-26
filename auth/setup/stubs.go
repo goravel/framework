@@ -1,4 +1,9 @@
-package config
+package main
+
+type Stubs struct{}
+
+func (s Stubs) Config() string {
+	return `package config
 
 import (
 	"github.com/goravel/framework/facades"
@@ -41,4 +46,6 @@ func init() {
 			},
 		},
 	})
+}
+`
 }

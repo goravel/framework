@@ -147,6 +147,7 @@ func (r *PackageUninstallCommand) uninstallFacade(ctx console.Context, name stri
 		return nil
 	}
 
+	facadesThatNeedUninstall := r.getFacadesThatNeedUninstall(name)
 	dependenciesThatNeedUninstall := collect.Filter(facadesThatNeedUninstall, func(facade string, _ int) bool {
 		return facade != bindingName
 	})
@@ -201,4 +202,15 @@ func (r *PackageUninstallCommand) getFacadesThatNeedUninstall(facade string) []s
 	}
 
 	return needUninstallFacades
+}
+
+func (r *PackageUninstallCommand) getUpperDependeciesThatUsingFacade(facade string) []string {
+	var dependencies []string
+	for _, installedFacade := range r.installedFacades {
+		if slices.Contains(r.facadeDependencies[installedFacade], facade) {
+			dependencies = append(dependencies, installedFacade)
+		}
+	}
+
+	return dependencies
 }
