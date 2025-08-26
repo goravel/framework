@@ -88,7 +88,7 @@ func (s *ApplicationTestSuite) TestGetInstalledFacades() {
 		return mockConfig, nil
 	})
 
-	s.Equal([]string{"Auth"}, s.app.getInstalledFacades())
+	s.ElementsMatch([]string{"Auth", "Gate"}, s.app.getInstalledFacades())
 }
 
 func (s *ApplicationTestSuite) TestStoragePath() {
