@@ -3,7 +3,6 @@
 package process
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -54,7 +53,7 @@ func TestRunning_Basics_Windows(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			p := New()
 			tt.setup(p)
-			r, err := p.Start(context.Background())
+			r, err := p.Start(tt.args[0], tt.args[1:]...)
 			assert.NoError(t, err)
 			run, ok := r.(*Running)
 			assert.True(t, ok, "unexpected running type")
