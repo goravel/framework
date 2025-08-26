@@ -19,7 +19,7 @@ import (
 // Correct Usage Example:
 //
 //	done := make(chan struct{})
-//	result, _ := process.New().Command("sleep", "2").Start(context.Background())
+//	result, _ := process.New().Start("sleep", "2")
 //
 //	go func() {
 //	    defer close(done)
@@ -57,7 +57,7 @@ func (r *Running) Signal(sig os.Signal) error {
 
 // Stop gracefully stops the process by sending SIGTERM and waiting for a timeout.
 func (r *Running) Stop(timeout time.Duration, sig ...os.Signal) error {
-	if r.cmd == nil || r.cmd.Process == nil || !r.Running() {
+	if !r.Running() {
 		return nil
 	}
 

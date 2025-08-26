@@ -3,7 +3,6 @@
 package process
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -45,7 +44,7 @@ func TestRunning_Basics_Unix(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			r, err := New().Command(test.cmd[0], test.cmd[1:]...).Start(context.Background())
+			r, err := New().Quietly().Start(test.cmd[0], test.cmd[1:]...)
 			assert.NoError(t, err)
 			run, ok := r.(*Running)
 			assert.True(t, ok, "unexpected running type")
@@ -57,7 +56,7 @@ func TestRunning_Basics_Unix(t *testing.T) {
 }
 
 func TestRunning_SignalAndStop_Unix(t *testing.T) {
-	r, err := New().Command("sh", "-c", "sleep 10").Start(context.Background())
+	r, err := New().Quietly().Start("sh", "-c", "sleep 10")
 	assert.NoError(t, err)
 	run := r.(*Running)
 	assert.True(t, run.Running())

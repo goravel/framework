@@ -14,10 +14,9 @@ import (
 var _ contractsprocess.Process = (*Process)(nil)
 
 type Process struct {
-	args     []string
+	ctx      context.Context
 	env      []string
 	input    io.Reader
-	name     string
 	path     string
 	quietly  bool
 	onOutput contractsprocess.OnOutputFunc
@@ -26,13 +25,9 @@ type Process struct {
 }
 
 func New() *Process {
-	return &Process{}
-}
-
-func (r *Process) Command(name string, arg ...string) contractsprocess.Process {
-	r.name = name
-	r.args = append([]string(nil), arg...)
-	return r
+	return &Process{
+		ctx: context.Background(),
+	}
 }
 
 func (r *Process) Env(vars map[string]string) contractsprocess.Process {
@@ -65,12 +60,12 @@ func (r *Process) OnOutput(handler contractsprocess.OnOutputFunc) contractsproce
 	return r
 }
 
-func (r *Process) Run(ctx context.Context) (contractsprocess.Result, error) {
-	return r.run(ctx)
+func (r *Process) Run(name string, args ...string) (contractsprocess.Result, error) {
+	return r.run(name, args...)
 }
 
-func (r *Process) Start(ctx context.Context) (contractsprocess.Running, error) {
-	return r.start(ctx)
+func (r *Process) Start(name string, args ...string) (contractsprocess.Running, error) {
+	return r.start(name, args...)
 }
 
 func (r *Process) Timeout(timeout time.Duration) contractsprocess.Process {
@@ -83,26 +78,32 @@ func (r *Process) TTY() contractsprocess.Process {
 	return r
 }
 
-func (r *Process) run(ctx context.Context) (contractsprocess.Result, error) {
-	running, err := r.start(ctx)
+func (r *Process) WithContext(ctx context.Context) contractsprocess.Process {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	r.ctx = ctx
+	return r
+}
+
+func (r *Process) run(name string, args ...string) (contractsprocess.Result, error) {
+	running, err := r.start(name, args...)
 	if err != nil {
 		return nil, err
 	}
 	return running.Wait(), nil
 }
 
-func (r *Process) start(ctx context.Context) (contractsprocess.Running, error) {
-	if ctx == nil {
-		ctx = context.Background()
-	}
-
+func (r *Process) start(name string, args ...string) (contractsprocess.Running, error) {
+	ctx := r.ctx
 	if r.timeout > 0 {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, r.timeout)
 		_ = cancel
 	}
 
-	cmd := exec.CommandContext(ctx, r.name, r.args...)
+	cmd := exec.CommandContext(ctx, name, args...)
 	if r.path != "" {
 		cmd.Dir = r.path
 	}

@@ -17,7 +17,7 @@ import (
 // Correct Usage Example:
 //
 //		done := make(chan struct{})
-//		result, _ := process.New().Command("timeout", "2").Start(context.Background())
+//		result, _ := process.New().Start("timeout", "2")
 //
 //		go func() {
 //	   	defer close(done)

@@ -4,7 +4,6 @@ package process
 
 import (
 	"bytes"
-	"context"
 	"os"
 	"path/filepath"
 	"strings"
@@ -17,14 +16,16 @@ import (
 func TestProcess_Run_Windows(t *testing.T) {
 	tests := []struct {
 		name     string
+		args     []string
 		setup    func(p *Process)
 		expectOK bool
 		check    func(t *testing.T, res *Result)
 	}{
 		{
 			name: "echo via cmd",
+			args: []string{"cmd", "/C", "echo hello"},
 			setup: func(p *Process) {
-				p.Command("cmd", "/C", "echo hello").Quietly()
+				p.Quietly()
 			},
 			expectOK: true,
 			check: func(t *testing.T, res *Result) {
@@ -34,9 +35,10 @@ func TestProcess_Run_Windows(t *testing.T) {
 		},
 		{
 			name: "stderr and non-zero",
+			args: []string{"powershell", "-NoLogo", "-NoProfile", "-Command", "Write-Error 'bad'; exit 2"},
 			setup: func(p *Process) {
 				// powershell: write-error writes to stderr and returns non-zero
-				p.Command("powershell", "-NoLogo", "-NoProfile", "-Command", "Write-Error 'bad'; exit 2").Quietly()
+				p.Quietly()
 			},
 			expectOK: false,
 			check: func(t *testing.T, res *Result) {
@@ -47,11 +49,12 @@ func TestProcess_Run_Windows(t *testing.T) {
 		},
 		{
 			name: "working directory changes",
+			args: []string{"cmd", "/C", "script.bat"},
 			setup: func(p *Process) {
 				dir := t.TempDir()
 				path := filepath.Join(dir, "script.bat")
 				_ = os.WriteFile(path, []byte("@echo off\r\necho ok\r\n"), 0644)
-				p.Path(dir).Quietly().Command("cmd", "/C", "script.bat")
+				p.Path(dir).Quietly()
 			},
 			expectOK: true,
 			check: func(t *testing.T, res *Result) {
@@ -60,8 +63,9 @@ func TestProcess_Run_Windows(t *testing.T) {
 		},
 		{
 			name: "stdin is piped",
+			args: []string{"cmd", "/C", "more"},
 			setup: func(p *Process) {
-				p.Command("cmd", "/C", "more").Input(bytes.NewBufferString("ping\r\n")).Quietly()
+				p.Input(bytes.NewBufferString("ping\r\n")).Quietly()
 			},
 			expectOK: true,
 			check: func(t *testing.T, res *Result) {
@@ -70,8 +74,9 @@ func TestProcess_Run_Windows(t *testing.T) {
 		},
 		{
 			name: "timeout cancels long-running process",
+			args: []string{"powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Seconds 2"},
 			setup: func(p *Process) {
-				p.Command("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Seconds 2").Timeout(200 * time.Millisecond).Quietly()
+				p.Timeout(200 * time.Millisecond).Quietly()
 			},
 			expectOK: false,
 			check: func(t *testing.T, res *Result) {
@@ -84,21 +89,12 @@ func TestProcess_Run_Windows(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := New()
-			if tt.setup != nil {
-				tt.setup(p)
-			}
-			res, err := p.Run(context.Background())
-			if tt.expectOK {
-				assert.NoError(t, err)
-			}
-			assert.NotNil(t, res)
-			if tt.check != nil {
-				r, ok := res.(*Result)
-				assert.True(t, ok, "unexpected result type")
-				if ok {
-					tt.check(t, r)
-				}
-			}
+			tt.setup(p)
+			res, err := p.Run(tt.args[0], tt.args[1:]...)
+			assert.Equal(t, tt.expectOK, err == nil)
+			r, ok := res.(*Result)
+			assert.True(t, ok, "unexpected result type")
+			tt.check(t, r)
 		})
 	}
 }

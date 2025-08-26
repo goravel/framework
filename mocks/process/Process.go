@@ -26,69 +26,6 @@ func (_m *Process) EXPECT() *Process_Expecter {
 	return &Process_Expecter{mock: &_m.Mock}
 }
 
-// Command provides a mock function with given fields: name, arg
-func (_m *Process) Command(name string, arg ...string) process.Process {
-	_va := make([]interface{}, len(arg))
-	for _i := range arg {
-		_va[_i] = arg[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, name)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Command")
-	}
-
-	var r0 process.Process
-	if rf, ok := ret.Get(0).(func(string, ...string) process.Process); ok {
-		r0 = rf(name, arg...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(process.Process)
-		}
-	}
-
-	return r0
-}
-
-// Process_Command_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Command'
-type Process_Command_Call struct {
-	*mock.Call
-}
-
-// Command is a helper method to define mock.On call
-//   - name string
-//   - arg ...string
-func (_e *Process_Expecter) Command(name interface{}, arg ...interface{}) *Process_Command_Call {
-	return &Process_Command_Call{Call: _e.mock.On("Command",
-		append([]interface{}{name}, arg...)...)}
-}
-
-func (_c *Process_Command_Call) Run(run func(name string, arg ...string)) *Process_Command_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]string, len(args)-1)
-		for i, a := range args[1:] {
-			if a != nil {
-				variadicArgs[i] = a.(string)
-			}
-		}
-		run(args[0].(string), variadicArgs...)
-	})
-	return _c
-}
-
-func (_c *Process_Command_Call) Return(_a0 process.Process) *Process_Command_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Process_Command_Call) RunAndReturn(run func(string, ...string) process.Process) *Process_Command_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // Env provides a mock function with given fields: vars
 func (_m *Process) Env(vars map[string]string) process.Process {
 	ret := _m.Called(vars)
@@ -328,9 +265,16 @@ func (_c *Process_Quietly_Call) RunAndReturn(run func() process.Process) *Proces
 	return _c
 }
 
-// Run provides a mock function with given fields: ctx
-func (_m *Process) Run(ctx context.Context) (process.Result, error) {
-	ret := _m.Called(ctx)
+// Run provides a mock function with given fields: name, arg
+func (_m *Process) Run(name string, arg ...string) (process.Result, error) {
+	_va := make([]interface{}, len(arg))
+	for _i := range arg {
+		_va[_i] = arg[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, name)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Run")
@@ -338,19 +282,19 @@ func (_m *Process) Run(ctx context.Context) (process.Result, error) {
 
 	var r0 process.Result
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (process.Result, error)); ok {
-		return rf(ctx)
+	if rf, ok := ret.Get(0).(func(string, ...string) (process.Result, error)); ok {
+		return rf(name, arg...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) process.Result); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(string, ...string) process.Result); ok {
+		r0 = rf(name, arg...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(process.Result)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(string, ...string) error); ok {
+		r1 = rf(name, arg...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -364,14 +308,22 @@ type Process_Run_Call struct {
 }
 
 // Run is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *Process_Expecter) Run(ctx interface{}) *Process_Run_Call {
-	return &Process_Run_Call{Call: _e.mock.On("Run", ctx)}
+//   - name string
+//   - arg ...string
+func (_e *Process_Expecter) Run(name interface{}, arg ...interface{}) *Process_Run_Call {
+	return &Process_Run_Call{Call: _e.mock.On("Run",
+		append([]interface{}{name}, arg...)...)}
 }
 
-func (_c *Process_Run_Call) Run(run func(ctx context.Context)) *Process_Run_Call {
+func (_c *Process_Run_Call) Run(run func(name string, arg ...string)) *Process_Run_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		variadicArgs := make([]string, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
 	})
 	return _c
 }
@@ -381,14 +333,21 @@ func (_c *Process_Run_Call) Return(_a0 process.Result, _a1 error) *Process_Run_C
 	return _c
 }
 
-func (_c *Process_Run_Call) RunAndReturn(run func(context.Context) (process.Result, error)) *Process_Run_Call {
+func (_c *Process_Run_Call) RunAndReturn(run func(string, ...string) (process.Result, error)) *Process_Run_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Start provides a mock function with given fields: ctx
-func (_m *Process) Start(ctx context.Context) (process.Running, error) {
-	ret := _m.Called(ctx)
+// Start provides a mock function with given fields: name, arg
+func (_m *Process) Start(name string, arg ...string) (process.Running, error) {
+	_va := make([]interface{}, len(arg))
+	for _i := range arg {
+		_va[_i] = arg[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, name)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Start")
@@ -396,19 +355,19 @@ func (_m *Process) Start(ctx context.Context) (process.Running, error) {
 
 	var r0 process.Running
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (process.Running, error)); ok {
-		return rf(ctx)
+	if rf, ok := ret.Get(0).(func(string, ...string) (process.Running, error)); ok {
+		return rf(name, arg...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) process.Running); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(string, ...string) process.Running); ok {
+		r0 = rf(name, arg...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(process.Running)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(string, ...string) error); ok {
+		r1 = rf(name, arg...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -422,14 +381,22 @@ type Process_Start_Call struct {
 }
 
 // Start is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *Process_Expecter) Start(ctx interface{}) *Process_Start_Call {
-	return &Process_Start_Call{Call: _e.mock.On("Start", ctx)}
+//   - name string
+//   - arg ...string
+func (_e *Process_Expecter) Start(name interface{}, arg ...interface{}) *Process_Start_Call {
+	return &Process_Start_Call{Call: _e.mock.On("Start",
+		append([]interface{}{name}, arg...)...)}
 }
 
-func (_c *Process_Start_Call) Run(run func(ctx context.Context)) *Process_Start_Call {
+func (_c *Process_Start_Call) Run(run func(name string, arg ...string)) *Process_Start_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		variadicArgs := make([]string, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
 	})
 	return _c
 }
@@ -439,7 +406,7 @@ func (_c *Process_Start_Call) Return(_a0 process.Running, _a1 error) *Process_St
 	return _c
 }
 
-func (_c *Process_Start_Call) RunAndReturn(run func(context.Context) (process.Running, error)) *Process_Start_Call {
+func (_c *Process_Start_Call) RunAndReturn(run func(string, ...string) (process.Running, error)) *Process_Start_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -535,6 +502,54 @@ func (_c *Process_Timeout_Call) Return(_a0 process.Process) *Process_Timeout_Cal
 }
 
 func (_c *Process_Timeout_Call) RunAndReturn(run func(time.Duration) process.Process) *Process_Timeout_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithContext provides a mock function with given fields: ctx
+func (_m *Process) WithContext(ctx context.Context) process.Process {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithContext")
+	}
+
+	var r0 process.Process
+	if rf, ok := ret.Get(0).(func(context.Context) process.Process); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(process.Process)
+		}
+	}
+
+	return r0
+}
+
+// Process_WithContext_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithContext'
+type Process_WithContext_Call struct {
+	*mock.Call
+}
+
+// WithContext is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *Process_Expecter) WithContext(ctx interface{}) *Process_WithContext_Call {
+	return &Process_WithContext_Call{Call: _e.mock.On("WithContext", ctx)}
+}
+
+func (_c *Process_WithContext_Call) Run(run func(ctx context.Context)) *Process_WithContext_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *Process_WithContext_Call) Return(_a0 process.Process) *Process_WithContext_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Process_WithContext_Call) RunAndReturn(run func(context.Context) process.Process) *Process_WithContext_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -13,14 +13,14 @@ import (
 func TestRunning_Basics_Windows(t *testing.T) {
 	tests := []struct {
 		name  string
+		args  []string
 		setup func(p *Process)
 		check func(t *testing.T, run *Running)
 	}{
 		{
-			name: "PID Command Running and Wait",
-			setup: func(p *Process) {
-				p.Command("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Milliseconds 200")
-			},
+			name:  "PID Command Running and Wait",
+			args:  []string{"powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Milliseconds 200"},
+			setup: func(p *Process) {},
 			check: func(t *testing.T, run *Running) {
 				assert.NotEqual(t, 0, run.PID())
 				assert.Contains(t, run.Command(), "powershell")
@@ -32,10 +32,12 @@ func TestRunning_Basics_Windows(t *testing.T) {
 		},
 		{
 			name: "LatestOutput sizes",
+			args: []string{
+				"powershell", "-NoLogo", "-NoProfile", "-Command",
+				"$s='x'*5000; [Console]::Out.Write($s); $e='y'*5000; [Console]::Error.Write($e)",
+			},
 			setup: func(p *Process) {
 				// Generate large stdout/stderr using PowerShell
-				script := "$s='x'*5000; [Console]::Out.Write($s); $e='y'*5000; [Console]::Error.Write($e)"
-				p.Command("powershell", "-NoLogo", "-NoProfile", "-Command", script)
 			},
 			check: func(t *testing.T, run *Running) {
 				_ = run.Wait()
@@ -49,7 +51,6 @@ func TestRunning_Basics_Windows(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			p := New()
 			tt.setup(p)
@@ -57,15 +58,13 @@ func TestRunning_Basics_Windows(t *testing.T) {
 			assert.NoError(t, err)
 			run, ok := r.(*Running)
 			assert.True(t, ok, "unexpected running type")
-			if ok {
-				tt.check(t, run)
-			}
+			tt.check(t, run)
 		})
 	}
 }
 
 func TestRunning_Stop_Windows(t *testing.T) {
-	r, err := New().Command("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Seconds 10").Start(context.Background())
+	r, err := New().Start("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Seconds 10")
 	assert.NoError(t, err)
 	run := r.(*Running)
 	// On Windows, Stop is alias for Kill
