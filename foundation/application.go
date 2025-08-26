@@ -7,6 +7,7 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
+	"reflect"
 	"slices"
 	"sort"
 	"strings"
@@ -71,7 +72,7 @@ func (r *Application) Boot() {
 		console.NewTestMakeCommand(),
 		console.NewPackageMakeCommand(),
 		console.NewPackageInstallCommand(getFacadeDependencies(), getFacadeToPath(), baseFacades),
-		console.NewPackageUninstallCommand(),
+		console.NewPackageUninstallCommand(getFacadeDependencies(), getFacadeToPath(), baseFacades, r.getInstalledFacades()),
 		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
 	})
 	r.bootArtisan()
@@ -240,6 +241,31 @@ func (r *Application) getConfiguredServiceProviders() []foundation.ServiceProvid
 	r.configuredServiceProviders = sortConfiguredServiceProviders(providers)
 
 	return r.configuredServiceProviders
+}
+
+func (r *Application) getInstalledFacades() []string {
+	serviceProviders := r.getConfiguredServiceProviders()
+
+	var installedFacades []string
+	for _, serviceProvider := range serviceProviders {
+		for facade, info := range facades {
+			infoServiceProviderType := reflect.TypeOf(info.serviceProvider)
+			if infoServiceProviderType.Kind() == reflect.Ptr {
+				infoServiceProviderType = infoServiceProviderType.Elem()
+			}
+
+			serviceProviderType := reflect.TypeOf(serviceProvider)
+			if serviceProviderType.Kind() == reflect.Ptr {
+				serviceProviderType = serviceProviderType.Elem()
+			}
+
+			if infoServiceProviderType == serviceProviderType {
+				installedFacades = append(installedFacades, facade)
+			}
+		}
+	}
+
+	return installedFacades
 }
 
 func (r *Application) registerBaseServiceProviders() {
