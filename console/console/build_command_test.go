@@ -67,19 +67,6 @@ func TestBuildCommand(t *testing.T) {
 			},
 		},
 		{
-			name: "Sad path - arch choice error",
-			setup: func() {
-				mockConfig.EXPECT().GetString("app.env").Return("local").Once()
-				mockContext.EXPECT().Option("os").Return("linux").Once()
-				mockContext.EXPECT().Option("arch").Return("").Once()
-				mockContext.EXPECT().Choice("Select target architecture", []console.Choice{
-					{Key: "amd64", Value: "amd64"},
-					{Key: "arm64", Value: "arm64"},
-				}, console.ChoiceOption{Default: runtime.GOARCH}).Return("", errors.New("error")).Once()
-				mockContext.EXPECT().Error("Select target architecture error: error").Once()
-			},
-		},
-		{
 			name: "Sad path - os/arch is invalid",
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("local").Once()

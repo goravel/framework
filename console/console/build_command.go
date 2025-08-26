@@ -39,6 +39,7 @@ func (r *BuildCommand) Extend() command.Extend {
 				Name:    "arch",
 				Aliases: []string{"a"},
 				Usage:   "Target architecture",
+				Value:   "amd64",
 			},
 			&command.StringFlag{
 				Name:    "os",
@@ -87,18 +88,7 @@ func (r *BuildCommand) Handle(ctx console.Context) error {
 		}
 	}
 
-	arch := ctx.Option("arch")
-	if arch == "" {
-		if arch, err = ctx.Choice("Select target architecture", []console.Choice{
-			{Key: "amd64", Value: "amd64"},
-			{Key: "arm64", Value: "arm64"},
-		}, console.ChoiceOption{Default: runtime.GOARCH}); err != nil {
-			ctx.Error(fmt.Sprintf("Select target architecture error: %v", err))
-			return nil
-		}
-	}
-
-	if err = supportconsole.ExecuteCommand(ctx, generateCommand(ctx.Option("name"), os, arch, ctx.OptionBool("static")), "Building..."); err != nil {
+	if err = supportconsole.ExecuteCommand(ctx, generateCommand(ctx.Option("name"), os, ctx.Option("arch"), ctx.OptionBool("static")), "Building..."); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
