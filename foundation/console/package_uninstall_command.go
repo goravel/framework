@@ -144,7 +144,7 @@ func (r *PackageUninstallCommand) uninstallFacade(ctx console.Context, name stri
 	facadesThatNeedUninstall := r.getFacadesThatNeedUninstall(name)
 
 	if !slices.Contains(facadesThatNeedUninstall, name) {
-		ctx.Error(fmt.Sprintf("Facade %s is dependecied by other facades, cannot be uninstalled", name))
+		ctx.Error(fmt.Sprintf("Facade %s is depended on by other facades, cannot be uninstalled", name))
 		return nil
 	}
 
