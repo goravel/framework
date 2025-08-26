@@ -9,7 +9,7 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/support/collect"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/maps"
 )
@@ -42,13 +42,13 @@ func (r *PackageUninstallCommand) Signature() string {
 
 // Description The console command description.
 func (r *PackageUninstallCommand) Description() string {
-	return "Uninstall a package"
+	return "Uninstall a package or a facade"
 }
 
 // Extend The console command extend.
 func (r *PackageUninstallCommand) Extend() command.Extend {
 	return command.Extend{
-		ArgsUsage: " <package>",
+		ArgsUsage: " <package@version> or <facade>",
 		Category:  "package",
 		Flags: []command.Flag{
 			&command.BoolFlag{
@@ -111,28 +111,26 @@ func (r *PackageUninstallCommand) uninstallPackage(ctx console.Context, pkg stri
 	}
 
 	if err := supportconsole.ExecuteCommand(ctx, uninstall); err != nil {
-		color.Errorln("failed to uninstall package:")
-		color.Red().Println(err.Error())
+		ctx.Error(fmt.Sprintf("failed to uninstall package: %s", err))
 
 		return nil
 	}
 
 	// tidy go.mod file
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
-		color.Errorln("failed to tidy go.mod file:")
-		color.Red().Println(err.Error())
+		ctx.Error(fmt.Sprintf("failed to tidy go.mod file: %s", err))
 
 		return nil
 	}
 
-	color.Successf("Package %s uninstalled successfully\n", pkg)
+	ctx.Success(fmt.Sprintf("Package %s uninstalled successfully", pkg))
 
 	return nil
 }
 
 func (r *PackageUninstallCommand) uninstallFacade(ctx console.Context, name string) error {
 	if slices.Contains(r.baseFacades, name) {
-		ctx.Warning(fmt.Sprintf("Facade %s is a base facade and cannot be uninstalled", name))
+		ctx.Warning(fmt.Sprintf("Facade %s is a base facade, cannot be uninstalled", name))
 		return nil
 	}
 
@@ -143,11 +141,19 @@ func (r *PackageUninstallCommand) uninstallFacade(ctx console.Context, name stri
 		return nil
 	}
 
-	facadesThatNeedUninstall := []string{name}
-	dependenciesThatNeedUninstall := r.getDependenciesThatNeedUninstall(name)
+	facadesThatNeedUninstall := r.getFacadesThatNeedUninstall(name)
 
-	if len(dependenciesThatNeedUninstall) > 0 && ctx.Confirm(fmt.Sprintf("Do you want to remove the dependency facades as well: %s?", strings.Join(dependenciesThatNeedUninstall, ", "))) {
-		facadesThatNeedUninstall = append(facadesThatNeedUninstall, dependenciesThatNeedUninstall...)
+	if !slices.Contains(facadesThatNeedUninstall, name) {
+		ctx.Error(fmt.Sprintf("Facade %s is dependecied by other facades, cannot be uninstalled", name))
+		return nil
+	}
+
+	dependenciesThatNeedUninstall := collect.Filter(facadesThatNeedUninstall, func(facade string, _ int) bool {
+		return facade != name
+	})
+
+	if len(dependenciesThatNeedUninstall) > 0 && !ctx.Confirm(fmt.Sprintf("Do you want to remove the dependency facades as well: %s?", strings.Join(dependenciesThatNeedUninstall, ", "))) {
+		facadesThatNeedUninstall = []string{name}
 	}
 
 	for _, facade := range facadesThatNeedUninstall {
@@ -160,16 +166,20 @@ func (r *PackageUninstallCommand) uninstallFacade(ctx console.Context, name stri
 		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "uninstall")); err != nil {
 			ctx.Error(fmt.Sprintf("Failed to uninstall facade %s, error: %s", facade, err.Error()))
 
+			if ctx.OptionBool("force") {
+				continue
+			}
+
 			return nil
 		}
 
-		color.Successf("Facade %s uninstalled successfully\n", facade)
+		ctx.Success(fmt.Sprintf("Facade %s uninstalled successfully", facade))
 	}
 
 	return nil
 }
 
-func (r *PackageUninstallCommand) getDependenciesThatNeedUninstall(facade string) []string {
+func (r *PackageUninstallCommand) getFacadesThatNeedUninstall(facade string) []string {
 	dependencies := r.facadeDependencies[facade]
 	if len(dependencies) == 0 {
 		return nil
@@ -177,8 +187,6 @@ func (r *PackageUninstallCommand) getDependenciesThatNeedUninstall(facade string
 
 	facadeToNumber := make(map[string]int)
 	for _, installedFacade := range r.installedFacades {
-		facadeToNumber[installedFacade]++
-
 		for _, dependency := range r.facadeDependencies[installedFacade] {
 			facadeToNumber[dependency]++
 		}
@@ -189,6 +197,10 @@ func (r *PackageUninstallCommand) getDependenciesThatNeedUninstall(facade string
 		if facadeToNumber[dependency] == 1 {
 			needUninstallFacades = append(needUninstallFacades, dependency)
 		}
+	}
+
+	if facadeToNumber[facade] == 0 {
+		needUninstallFacades = append(needUninstallFacades, facade)
 	}
 
 	return filterBaseFacades(needUninstallFacades, r.baseFacades)

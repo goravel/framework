@@ -10,7 +10,6 @@ import (
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/collect"
-	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/maps"
 )
@@ -92,26 +91,26 @@ func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) 
 
 	// get package
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "get", pkg)); err != nil {
-		color.Red().Println(err.Error())
+		ctx.Error(fmt.Sprintf("failed to get package: %s", err))
 
 		return nil
 	}
 
 	// install package
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install")); err != nil {
-		color.Red().Println(err.Error())
+		ctx.Error(fmt.Sprintf("failed to install package: %s", err))
 
 		return nil
 	}
 
 	// tidy go.mod file
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
-		color.Red().Println(err.Error())
+		ctx.Error(fmt.Sprintf("failed to tidy go.mod file: %s", err))
 
 		return nil
 	}
 
-	color.Successf("Package %s installed successfully\n", pkg)
+	ctx.Success(fmt.Sprintf("Package %s installed successfully", pkg))
 
 	return nil
 }
@@ -142,7 +141,7 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 			return nil
 		}
 
-		color.Successf("Facade %s installed successfully\n", facade)
+		ctx.Success(fmt.Sprintf("Facade %s installed successfully", facade))
 	}
 
 	return nil
