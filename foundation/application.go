@@ -7,7 +7,6 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
-	"reflect"
 	"slices"
 	"sort"
 	"strings"
@@ -71,8 +70,8 @@ func (r *Application) Boot() {
 		console.NewEnvDecryptCommand(),
 		console.NewTestMakeCommand(),
 		console.NewPackageMakeCommand(),
-		console.NewPackageInstallCommand(getFacadeDependencies(), getFacadeToPath(), baseFacades),
-		console.NewPackageUninstallCommand(getFacadeDependencies(), getFacadeToPath(), baseFacades, r.getInstalledFacades()),
+		console.NewPackageInstallCommand(facades, r.getInstalledFacades()),
+		console.NewPackageUninstallCommand(facades, r.getInstalledFacades()),
 		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
 	})
 	r.bootArtisan()
@@ -244,28 +243,25 @@ func (r *Application) getConfiguredServiceProviders() []foundation.ServiceProvid
 }
 
 func (r *Application) getInstalledFacades() []string {
-	serviceProviders := r.getConfiguredServiceProviders()
+	var (
+		bindingSet = make(map[string]struct{})
+		facadesSet = make(map[string]struct{})
+	)
 
-	var installedFacades []string
-	for _, serviceProvider := range serviceProviders {
-		for facade, info := range facades {
-			infoServiceProviderType := reflect.TypeOf(info.serviceProvider)
-			if infoServiceProviderType.Kind() == reflect.Ptr {
-				infoServiceProviderType = infoServiceProviderType.Elem()
-			}
+	r.bindings.Range(func(key, value interface{}) bool {
+		if binding, ok := key.(string); ok {
+			bindingSet[binding] = struct{}{}
+		}
+		return true
+	})
 
-			serviceProviderType := reflect.TypeOf(serviceProvider)
-			if serviceProviderType.Kind() == reflect.Ptr {
-				serviceProviderType = serviceProviderType.Elem()
-			}
-
-			if infoServiceProviderType == serviceProviderType {
-				installedFacades = append(installedFacades, facade)
-			}
+	for facade, info := range facades {
+		if _, exists := bindingSet[info.Binding]; exists {
+			facadesSet[facade] = struct{}{}
 		}
 	}
 
-	return installedFacades
+	return slices.Collect(maps.Keys(facadesSet))
 }
 
 func (r *Application) registerBaseServiceProviders() {
@@ -451,7 +447,7 @@ func sortConfiguredServiceProviders(providers []foundation.ServiceProvider) []fo
 		}
 	}
 
-	// Second pass: build the dependency graph using both Dependencies and ProvideFor
+	// Second pass: build the dependency graph using both dependencies and ProvideFor
 	for _, provider := range providers {
 		bindings := getBindings(provider)
 		dependencies := getDependencies(provider)

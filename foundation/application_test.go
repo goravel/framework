@@ -79,14 +79,8 @@ func (s *ApplicationTestSuite) TestDatabasePath() {
 }
 
 func (s *ApplicationTestSuite) TestGetInstalledFacades() {
-	mockConfig := mocksconfig.NewConfig(s.T())
-	mockConfig.EXPECT().Get("app.providers").Return([]foundation.ServiceProvider{
-		&auth.ServiceProvider{},
-	}).Once()
-
-	s.app.Singleton(binding.Config, func(app foundation.Application) (any, error) {
-		return mockConfig, nil
-	})
+	s.app.bindings.Clear()
+	(&auth.ServiceProvider{}).Register(s.app)
 
 	s.ElementsMatch([]string{"Auth", "Gate"}, s.app.getInstalledFacades())
 }

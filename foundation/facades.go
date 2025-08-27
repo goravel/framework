@@ -1,220 +1,141 @@
 package foundation
 
 import (
-	"reflect"
-
-	"github.com/goravel/framework/auth"
-	"github.com/goravel/framework/cache"
-	"github.com/goravel/framework/config"
-	"github.com/goravel/framework/console"
 	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/foundation"
-	"github.com/goravel/framework/crypt"
-	"github.com/goravel/framework/database"
-	"github.com/goravel/framework/event"
-	"github.com/goravel/framework/filesystem"
-	"github.com/goravel/framework/grpc"
-	"github.com/goravel/framework/hash"
-	"github.com/goravel/framework/http"
-	"github.com/goravel/framework/log"
-	"github.com/goravel/framework/mail"
-	"github.com/goravel/framework/queue"
-	"github.com/goravel/framework/route"
-	"github.com/goravel/framework/schedule"
-	"github.com/goravel/framework/support/collect"
-	"github.com/goravel/framework/testing"
-	"github.com/goravel/framework/translation"
-	"github.com/goravel/framework/validation"
 )
-
-type facadeInfo struct {
-	binding         string
-	serviceProvider foundation.ServiceProvider
-}
 
 var (
-	// base facades that can't be setuped
-	baseFacades = []string{"Config"}
-
-	facades = map[string]facadeInfo{
+	facades = map[string]foundation.FacadeInfo{
 		"Artisan": {
-			binding:         binding.Artisan,
-			serviceProvider: &console.ServiceProvider{},
+			Binding:      binding.Artisan,
+			PkgPath:      "github.com/goravel/framework/console",
+			Dependencies: []string{"Config"},
+			IsBase:       true,
 		},
 		"Auth": {
-			binding:         binding.Auth,
-			serviceProvider: &auth.ServiceProvider{},
+			Binding:      binding.Auth,
+			PkgPath:      "github.com/goravel/framework/auth",
+			Dependencies: []string{"Cache", "Config", "Log", "Orm"},
 		},
 		"Cache": {
-			binding:         binding.Cache,
-			serviceProvider: &cache.ServiceProvider{},
+			Binding:      binding.Cache,
+			PkgPath:      "github.com/goravel/framework/cache",
+			Dependencies: []string{"Config", "Log"},
 		},
 		"Config": {
-			binding:         binding.Config,
-			serviceProvider: &config.ServiceProvider{},
+			Binding: binding.Config,
+			PkgPath: "github.com/goravel/framework/config",
+			IsBase:  true,
 		},
 		"Crypt": {
-			binding:         binding.Crypt,
-			serviceProvider: &crypt.ServiceProvider{},
+			Binding:      binding.Crypt,
+			PkgPath:      "github.com/goravel/framework/crypt",
+			Dependencies: []string{"Config"},
 		},
 		"DB": {
-			binding:         binding.DB,
-			serviceProvider: &database.ServiceProvider{},
+			Binding:      binding.DB,
+			PkgPath:      "github.com/goravel/framework/database",
+			Dependencies: []string{"Artisan", "Config", "Log"},
 		},
 		"Event": {
-			binding:         binding.Event,
-			serviceProvider: &event.ServiceProvider{},
+			Binding:      binding.Event,
+			PkgPath:      "github.com/goravel/framework/event",
+			Dependencies: []string{"Queue"},
 		},
 		"Gate": {
-			binding:         binding.Gate,
-			serviceProvider: &auth.ServiceProvider{},
+			Binding:      binding.Gate,
+			PkgPath:      "github.com/goravel/framework/auth",
+			Dependencies: []string{"Cache", "Config", "Log", "Orm"},
 		},
 		"Grpc": {
-			binding:         binding.Grpc,
-			serviceProvider: &grpc.ServiceProvider{},
+			Binding:      binding.Grpc,
+			PkgPath:      "github.com/goravel/framework/grpc",
+			Dependencies: []string{"Config"},
 		},
 		"Hash": {
-			binding:         binding.Hash,
-			serviceProvider: &hash.ServiceProvider{},
+			Binding:      binding.Hash,
+			PkgPath:      "github.com/goravel/framework/hash",
+			Dependencies: []string{"Config"},
 		},
 		"Http": {
-			binding:         binding.Http,
-			serviceProvider: &http.ServiceProvider{},
+			Binding:      binding.Http,
+			PkgPath:      "github.com/goravel/framework/http",
+			Dependencies: []string{"Cache", "Config", "Log"},
 		},
 		"Lang": {
-			binding:         binding.Lang,
-			serviceProvider: &translation.ServiceProvider{},
+			Binding:      binding.Lang,
+			PkgPath:      "github.com/goravel/framework/translation",
+			Dependencies: []string{"Config", "Log"},
 		},
 		"Log": {
-			binding:         binding.Log,
-			serviceProvider: &log.ServiceProvider{},
+			Binding:      binding.Log,
+			PkgPath:      "github.com/goravel/framework/log",
+			Dependencies: []string{"Config"},
 		},
 		"Mail": {
-			binding:         binding.Mail,
-			serviceProvider: &mail.ServiceProvider{},
+			Binding:      binding.Mail,
+			PkgPath:      "github.com/goravel/framework/mail",
+			Dependencies: []string{"Config", "Queue"},
 		},
 		"Orm": {
-			binding:         binding.Orm,
-			serviceProvider: &database.ServiceProvider{},
+			Binding:      binding.Orm,
+			PkgPath:      "github.com/goravel/framework/database",
+			Dependencies: []string{"Artisan", "Config", "Log"},
 		},
 		"Queue": {
-			binding:         binding.Queue,
-			serviceProvider: &queue.ServiceProvider{},
+			Binding:      binding.Queue,
+			PkgPath:      "github.com/goravel/framework/queue",
+			Dependencies: []string{"Config", "DB", "Log"},
 		},
 		"RateLimiter": {
-			binding:         binding.RateLimiter,
-			serviceProvider: &http.ServiceProvider{},
+			Binding:      binding.RateLimiter,
+			PkgPath:      "github.com/goravel/framework/http",
+			Dependencies: []string{"Cache", "Config", "Log"},
 		},
 		"Route": {
-			binding:         binding.Route,
-			serviceProvider: &route.ServiceProvider{},
+			Binding:      binding.Route,
+			PkgPath:      "github.com/goravel/framework/route",
+			Dependencies: []string{"Config"},
 		},
 		"Schedule": {
-			binding:         binding.Schedule,
-			serviceProvider: &schedule.ServiceProvider{},
+			Binding:      binding.Schedule,
+			PkgPath:      "github.com/goravel/framework/schedule",
+			Dependencies: []string{"Artisan", "Cache", "Config", "Log"},
 		},
 		"Schema": {
-			binding:         binding.Schema,
-			serviceProvider: &database.ServiceProvider{},
+			Binding:      binding.Schema,
+			PkgPath:      "github.com/goravel/framework/database",
+			Dependencies: []string{"Artisan", "Config", "Log"},
 		},
 		"Seeder": {
-			binding:         binding.Seeder,
-			serviceProvider: &database.ServiceProvider{},
+			Binding:      binding.Seeder,
+			PkgPath:      "github.com/goravel/framework/database",
+			Dependencies: []string{"Artisan", "Config", "Log"},
 		},
 		"Session": {
-			binding:         binding.Session,
-			serviceProvider: &http.ServiceProvider{},
+			Binding:      binding.Session,
+			PkgPath:      "github.com/goravel/framework/http",
+			Dependencies: []string{"Cache", "Config", "Log"},
 		},
 		"Storage": {
-			binding:         binding.Storage,
-			serviceProvider: &filesystem.ServiceProvider{},
+			Binding:      binding.Storage,
+			PkgPath:      "github.com/goravel/framework/filesystem",
+			Dependencies: []string{"Config"},
 		},
 		"Testing": {
-			binding:         binding.Testing,
-			serviceProvider: &testing.ServiceProvider{},
+			Binding:      binding.Testing,
+			PkgPath:      "github.com/goravel/framework/testing",
+			Dependencies: []string{"Artisan", "Cache", "Config", "Orm"},
 		},
 		"Validation": {
-			binding:         binding.Validation,
-			serviceProvider: &validation.ServiceProvider{},
+			Binding: binding.Validation,
+			PkgPath: "github.com/goravel/framework/validation",
 		},
 		"View": {
-			binding:         binding.View,
-			serviceProvider: &http.ServiceProvider{},
+			Binding:      binding.View,
+			PkgPath:      "github.com/goravel/framework/http",
+			Dependencies: []string{"Cache", "Config", "Log"},
 		},
 	}
 )
-
-func bindingsToFacades(bindings []string) []string {
-	result := make([]string, 0)
-
-	for _, binding := range bindings {
-		for facade, info := range facades {
-			if info.binding == binding {
-				result = append(result, facade)
-				break
-			}
-		}
-	}
-
-	return result
-}
-
-func getDependencyBindings(binding string) []string {
-	for _, info := range facades {
-		if info.binding == binding {
-			serviceProviderWithRelations, ok := info.serviceProvider.(foundation.ServiceProviderWithRelations)
-			if !ok {
-				continue
-			}
-
-			dependencyBindings := serviceProviderWithRelations.Relationship().Dependencies
-			if len(dependencyBindings) == 0 {
-				return nil
-			}
-
-			allDependencyBindings := make([]string, len(dependencyBindings))
-			copy(allDependencyBindings, dependencyBindings)
-
-			for _, dependencyBinding := range dependencyBindings {
-				subDependencyBindings := getDependencyBindings(dependencyBinding)
-				allDependencyBindings = append(allDependencyBindings, subDependencyBindings...)
-			}
-
-			return collect.Unique(allDependencyBindings)
-		}
-	}
-
-	return nil
-}
-
-func getFacadeDependencies() map[string][]string {
-	dependencies := make(map[string][]string)
-
-	for facade, info := range facades {
-		dependencyBindings := getDependencyBindings(info.binding)
-		dependencyFacades := bindingsToFacades(dependencyBindings)
-
-		dependencies[facade] = dependencyFacades
-	}
-
-	return dependencies
-}
-
-func getFacadePath(serviceProvider foundation.ServiceProvider) string {
-	t := reflect.TypeOf(serviceProvider)
-	if t.Kind() == reflect.Ptr {
-		t = t.Elem()
-	}
-
-	return t.PkgPath()
-}
-
-func getFacadeToPath() map[string]string {
-	facadeToPath := make(map[string]string)
-
-	for facade, info := range facades {
-		facadeToPath[facade] = getFacadePath(info.serviceProvider)
-	}
-
-	return facadeToPath
-}
