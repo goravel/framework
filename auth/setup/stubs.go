@@ -49,3 +49,33 @@ func init() {
 }
 `
 }
+
+func (s Stubs) AuthFacade() string {
+	return `package facade
+
+import (
+	"github.com/goravel/framework/contracts/auth"
+	"github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/facade"
+)
+
+func Auth(ctx ...http.Context) auth.Auth {
+	return facade.App().MakeAuth(ctx...)
+}
+`
+}
+
+func (s Stubs) GateFacade() string {
+	return `package facade
+
+import (
+	"github.com/goravel/framework/contracts/auth/access"
+	"github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/facade"
+)
+
+func Gate(ctx ...http.Context) access.Gate {
+	return facade.App().MakeGate()
+}
+`
+}

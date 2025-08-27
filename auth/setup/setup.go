@@ -18,6 +18,8 @@ func main() {
 				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
 				Find(match.Providers()).Modify(modify.Register("&auth.ServiceProvider{}")),
 			modify.File(path.Config("auth.go")).Overwrite(stubs.Config()),
+			modify.Facade("Auth").File(path.Facades("auth.go")).Overwrite(stubs.AuthFacade()),
+			modify.Facade("Gate").File(path.Facades("gate.go")).Overwrite(stubs.GateFacade()),
 		).
 		Uninstall(
 			modify.GoFile(path.Config("app.go")).

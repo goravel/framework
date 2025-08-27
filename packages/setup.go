@@ -9,6 +9,7 @@ import (
 	"github.com/goravel/framework/contracts/packages"
 	"github.com/goravel/framework/contracts/packages/modify"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/packages/options"
 	"github.com/goravel/framework/support/color"
 )
 
@@ -17,6 +18,7 @@ type setup struct {
 	module      string
 	onInstall   []modify.Apply
 	onUninstall []modify.Apply
+	facade      string
 	force       bool
 }
 
@@ -33,11 +35,22 @@ func GetModulePath() string {
 func Setup(args []string) packages.Setup {
 	st := &setup{}
 
-	if len(args) > 1 && (args[1] == "install" || args[1] == "uninstall") {
-		st.command = args[1]
+	for _, arg := range args {
+		if arg == "install" || arg == "uninstall" {
+			st.command = arg
+		}
+		if arg == "--force" || arg == "-f" {
+			st.force = true
+		}
+		if strings.HasPrefix(arg, "--facade=") {
+			st.facade = strings.TrimPrefix(arg, "--facade=")
+		}
+		if strings.HasPrefix(arg, "-f=") {
+			st.facade = strings.TrimPrefix(arg, "-f=")
+		}
 	}
+
 	st.module = GetModulePath()
-	st.force = len(args) == 3 && (args[2] == "--force" || args[2] == "-f")
 
 	return st
 }
@@ -62,7 +75,7 @@ func (r *setup) Execute() {
 
 	if r.command == "install" {
 		for i := range r.onInstall {
-			r.reportError(r.onInstall[i].Apply())
+			r.reportError(r.onInstall[i].Apply(options.Force(r.force), options.Facade(r.facade)))
 		}
 
 		color.Successln("package installed successfully")
@@ -70,7 +83,7 @@ func (r *setup) Execute() {
 
 	if r.command == "uninstall" {
 		for i := range r.onUninstall {
-			r.reportError(r.onUninstall[i].Apply())
+			r.reportError(r.onUninstall[i].Apply(options.Force(r.force), options.Facade(r.facade)))
 		}
 
 		color.Successln("package uninstalled successfully")

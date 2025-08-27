@@ -20,24 +20,17 @@ func (_m *File) EXPECT() *File_Expecter {
 	return &File_Expecter{mock: &_m.Mock}
 }
 
-// Overwrite provides a mock function with given fields: content, forces
-func (_m *File) Overwrite(content string, forces ...bool) modify.Apply {
-	_va := make([]interface{}, len(forces))
-	for _i := range forces {
-		_va[_i] = forces[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, content)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
+// Overwrite provides a mock function with given fields: content
+func (_m *File) Overwrite(content string) modify.Apply {
+	ret := _m.Called(content)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Overwrite")
 	}
 
 	var r0 modify.Apply
-	if rf, ok := ret.Get(0).(func(string, ...bool) modify.Apply); ok {
-		r0 = rf(content, forces...)
+	if rf, ok := ret.Get(0).(func(string) modify.Apply); ok {
+		r0 = rf(content)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(modify.Apply)
@@ -54,21 +47,13 @@ type File_Overwrite_Call struct {
 
 // Overwrite is a helper method to define mock.On call
 //   - content string
-//   - forces ...bool
-func (_e *File_Expecter) Overwrite(content interface{}, forces ...interface{}) *File_Overwrite_Call {
-	return &File_Overwrite_Call{Call: _e.mock.On("Overwrite",
-		append([]interface{}{content}, forces...)...)}
+func (_e *File_Expecter) Overwrite(content interface{}) *File_Overwrite_Call {
+	return &File_Overwrite_Call{Call: _e.mock.On("Overwrite", content)}
 }
 
-func (_c *File_Overwrite_Call) Run(run func(content string, forces ...bool)) *File_Overwrite_Call {
+func (_c *File_Overwrite_Call) Run(run func(content string)) *File_Overwrite_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]bool, len(args)-1)
-		for i, a := range args[1:] {
-			if a != nil {
-				variadicArgs[i] = a.(bool)
-			}
-		}
-		run(args[0].(string), variadicArgs...)
+		run(args[0].(string))
 	})
 	return _c
 }
@@ -78,7 +63,7 @@ func (_c *File_Overwrite_Call) Return(_a0 modify.Apply) *File_Overwrite_Call {
 	return _c
 }
 
-func (_c *File_Overwrite_Call) RunAndReturn(run func(string, ...bool) modify.Apply) *File_Overwrite_Call {
+func (_c *File_Overwrite_Call) RunAndReturn(run func(string) modify.Apply) *File_Overwrite_Call {
 	_c.Call.Return(run)
 	return _c
 }
