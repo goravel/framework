@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/goravel/framework/config"
+	"github.com/goravel/framework/contracts/binding"
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
@@ -70,8 +71,8 @@ func (r *Application) Boot() {
 		console.NewEnvDecryptCommand(),
 		console.NewTestMakeCommand(),
 		console.NewPackageMakeCommand(),
-		console.NewPackageInstallCommand(facades, r.getInstalledFacades()),
-		console.NewPackageUninstallCommand(facades, r.getInstalledFacades()),
+		console.NewPackageInstallCommand(binding.Facades, r.getInstalledFacades()),
+		console.NewPackageUninstallCommand(binding.Facades, r.getInstalledFacades()),
 		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
 	})
 	r.bootArtisan()
@@ -243,25 +244,15 @@ func (r *Application) getConfiguredServiceProviders() []foundation.ServiceProvid
 }
 
 func (r *Application) getInstalledFacades() []string {
-	var (
-		bindingSet = make(map[string]struct{})
-		facadesSet = make(map[string]struct{})
-	)
-
+	var facades []string
 	r.bindings.Range(func(key, value interface{}) bool {
-		if binding, ok := key.(string); ok {
-			bindingSet[binding] = struct{}{}
+		if bind, ok := key.(string); ok {
+			facades = append(facades, bind)
 		}
 		return true
 	})
 
-	for facade, info := range facades {
-		if _, exists := bindingSet[info.Binding]; exists {
-			facadesSet[facade] = struct{}{}
-		}
-	}
-
-	return slices.Collect(maps.Keys(facadesSet))
+	return facades
 }
 
 func (r *Application) registerBaseServiceProviders() {
@@ -447,7 +438,7 @@ func sortConfiguredServiceProviders(providers []foundation.ServiceProvider) []fo
 		}
 	}
 
-	// Second pass: build the dependency graph using both dependencies and ProvideFor
+	// Second pass: build the dependency graph using both Dependencies and ProvideFor
 	for _, provider := range providers {
 		bindings := getBindings(provider)
 		dependencies := getDependencies(provider)

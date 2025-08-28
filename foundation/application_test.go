@@ -82,7 +82,7 @@ func (s *ApplicationTestSuite) TestGetInstalledFacades() {
 	s.app.bindings.Clear()
 	(&auth.ServiceProvider{}).Register(s.app)
 
-	s.ElementsMatch([]string{"Auth", "Gate"}, s.app.getInstalledFacades())
+	s.ElementsMatch([]string{binding.Auth, binding.Gate}, s.app.getInstalledFacades())
 }
 
 func (s *ApplicationTestSuite) TestStoragePath() {

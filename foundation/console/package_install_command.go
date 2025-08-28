@@ -6,20 +6,21 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/collect"
 	supportconsole "github.com/goravel/framework/support/console"
+	"github.com/goravel/framework/support/str"
 )
 
 type PackageInstallCommand struct {
-	facades          map[string]foundation.FacadeInfo
+	facades          map[string]binding.FacadeInfo
 	installedFacades []string
 }
 
-func NewPackageInstallCommand(facades map[string]foundation.FacadeInfo, installedFacades []string) *PackageInstallCommand {
+func NewPackageInstallCommand(facades map[string]binding.FacadeInfo, installedFacades []string) *PackageInstallCommand {
 	return &PackageInstallCommand{
 		facades:          facades,
 		installedFacades: installedFacades,
@@ -114,27 +115,33 @@ func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) 
 }
 
 func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) error {
-	if _, exists := r.facades[name]; !exists {
+	bindingName := convertFacadeToBinding(name)
+	if _, exists := r.facades[bindingName]; !exists {
 		ctx.Warning(errors.PackageFacadeNotFound.Args(name).Error())
-		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(filterBaseFacades(r.facades), ", ")))
+		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(getAvailableFacades(r.facades), ", ")))
 		return nil
 	}
 
-	dependencies := r.getDependenciesThatNeedInstall(name)
+	dependencies := r.getDependenciesThatNeedInstall(bindingName)
 	if len(dependencies) > 0 {
-		ctx.Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", name, strings.Join(dependencies, ", ")))
+		facadeNames := make([]string, len(dependencies))
+		for i := range dependencies {
+			facadeNames[i] = convertBindingToFacade(dependencies[i])
+		}
+		ctx.Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", name, strings.Join(facadeNames, ", ")))
 	}
 
-	for _, facade := range append(dependencies, name) {
+	dependencies = append(dependencies, bindingName)
+	for _, facade := range dependencies {
 		setup := r.facades[facade].PkgPath + "/setup"
 
 		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install")); err != nil {
-			ctx.Error(fmt.Sprintf("Failed to install facade %s, error: %s", facade, err.Error()))
+			ctx.Error(fmt.Sprintf("Failed to install facade %s, error: %s", convertBindingToFacade(facade), err.Error()))
 
 			return nil
 		}
 
-		ctx.Success(fmt.Sprintf("Facade %s installed successfully", facade))
+		ctx.Success(fmt.Sprintf("Facade %s installed successfully", convertBindingToFacade(facade)))
 	}
 
 	return nil
@@ -150,7 +157,30 @@ func (r *PackageInstallCommand) getDependenciesThatNeedInstall(name string) (nee
 	return
 }
 
-func getFacadeDependencies(name string, facades map[string]foundation.FacadeInfo) []string {
+func convertBindingToFacade(b string) string {
+	return str.Of(b).After("goravel.").Studly().WhenIs("Db", func(s *str.String) *str.String {
+		return s.Upper()
+	}).String()
+}
+
+func convertFacadeToBinding(f string) string {
+	return "goravel." + str.Of(f).Snake().String()
+}
+
+func getAvailableFacades(facades map[string]binding.FacadeInfo) []string {
+	var result []string
+	for name, info := range facades {
+		if !info.IsBase {
+			result = append(result, convertBindingToFacade(name))
+		}
+	}
+
+	slices.Sort(result)
+
+	return result
+}
+
+func getFacadeDependencies(name string, facades map[string]binding.FacadeInfo) []string {
 	var deps []string
 	for _, dep := range facades[name].Dependencies {
 		if info, ok := facades[dep]; ok && !info.IsBase {
@@ -160,19 +190,6 @@ func getFacadeDependencies(name string, facades map[string]foundation.FacadeInfo
 	}
 
 	return collect.Unique(deps)
-}
-
-func filterBaseFacades(facades map[string]foundation.FacadeInfo) []string {
-	var result []string
-	for name, info := range facades {
-		if !info.IsBase {
-			result = append(result, name)
-		}
-	}
-
-	slices.Sort(result)
-
-	return result
 }
 
 func isPackage(pkg string) bool {

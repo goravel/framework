@@ -8,10 +8,6 @@ import (
 )
 
 var NameMapper = func(s string) string {
-	if s == "ID" {
-		return "id"
-	}
-
 	return str.Of(s).Snake().String()
 }
 

@@ -35,13 +35,6 @@ type AboutItem struct {
 	Value string
 }
 
-type FacadeInfo struct {
-	Binding      string
-	PkgPath      string
-	Dependencies []string
-	IsBase       bool
-}
-
 type Application interface {
 	// About add information to the application's about command.
 	About(section string, items []AboutItem)

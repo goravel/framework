@@ -16,6 +16,7 @@ import (
 	databaseschema "github.com/goravel/framework/database/schema"
 	databaseseeder "github.com/goravel/framework/database/seeder"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/collect"
 	"github.com/goravel/framework/support/color"
 )
 
@@ -30,11 +31,12 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 			binding.Schema,
 			binding.Seeder,
 		},
-		Dependencies: []string{
-			binding.Artisan,
-			binding.Config,
-			binding.Log,
-		},
+		Dependencies: collect.Unique(
+			binding.Facades[binding.Orm].Dependencies,
+			binding.Facades[binding.DB].Dependencies,
+			binding.Facades[binding.Schema].Dependencies,
+			binding.Facades[binding.Seeder].Dependencies,
+		),
 		ProvideFor: []string{},
 	}
 }

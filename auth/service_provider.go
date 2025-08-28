@@ -13,6 +13,7 @@ import (
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/collect"
 )
 
 var (
@@ -30,12 +31,10 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 			binding.Auth,
 			binding.Gate,
 		},
-		Dependencies: []string{
-			binding.Cache,
-			binding.Config,
-			binding.Log,
-			binding.Orm,
-		},
+		Dependencies: collect.Unique(
+			binding.Facades[binding.Auth].Dependencies,
+			binding.Facades[binding.Gate].Dependencies,
+		),
 		ProvideFor: []string{},
 	}
 }

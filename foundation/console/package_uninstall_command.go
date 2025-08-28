@@ -6,21 +6,21 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/collect"
 	supportconsole "github.com/goravel/framework/support/console"
 )
 
 type PackageUninstallCommand struct {
-	facades          map[string]foundation.FacadeInfo
+	facades          map[string]binding.FacadeInfo
 	installedFacades []string
 }
 
 func NewPackageUninstallCommand(
-	facades map[string]foundation.FacadeInfo,
+	facades map[string]binding.FacadeInfo,
 	installedFacades []string,
 ) *PackageUninstallCommand {
 	return &PackageUninstallCommand{
@@ -62,7 +62,7 @@ func (r *PackageUninstallCommand) Handle(ctx console.Context) error {
 		var err error
 		name, err := ctx.Ask("Enter the package name to uninstall", console.AskOption{
 			Placeholder: " E.g example.com/pkg",
-			Prompt:      ">",
+			Prompt:      "> ",
 			Validate: func(s string) error {
 				if s == "" {
 					return errors.CommandEmptyPackageName
@@ -123,37 +123,50 @@ func (r *PackageUninstallCommand) uninstallPackage(ctx console.Context, pkg stri
 }
 
 func (r *PackageUninstallCommand) uninstallFacade(ctx console.Context, name string) error {
-	if r.facades[name].IsBase {
+	bindingName := convertFacadeToBinding(name)
+	if r.facades[bindingName].IsBase {
 		ctx.Warning(fmt.Sprintf("Facade %s is a base facade, cannot be uninstalled", name))
 		return nil
 	}
 
-	_, exists := r.facades[name]
+	_, exists := r.facades[bindingName]
 	if !exists {
 		ctx.Warning(errors.PackageFacadeNotFound.Args(name).Error())
-		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(filterBaseFacades(r.facades), ", ")))
+		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(getAvailableFacades(r.facades), ", ")))
 		return nil
 	}
 
-	facadesThatNeedUninstall := r.getFacadesThatNeedUninstall(name)
-	if !slices.Contains(facadesThatNeedUninstall, name) {
+	if !slices.Contains(r.installedFacades, bindingName) {
+		ctx.Warning(fmt.Sprintf("Facade %s is not installed", name))
+		return nil
+	}
+
+	facadesThatNeedUninstall := r.getFacadesThatNeedUninstall(bindingName)
+	if !slices.Contains(facadesThatNeedUninstall, bindingName) {
 		ctx.Error(fmt.Sprintf("Facade %s is depended on by other facades, cannot be uninstalled", name))
 		return nil
 	}
 
 	dependenciesThatNeedUninstall := collect.Filter(facadesThatNeedUninstall, func(facade string, _ int) bool {
-		return facade != name
+		return facade != bindingName
 	})
 
-	if len(dependenciesThatNeedUninstall) > 0 && !ctx.Confirm(fmt.Sprintf("Do you want to remove the dependency facades as well: %s?", strings.Join(dependenciesThatNeedUninstall, ", "))) {
-		facadesThatNeedUninstall = []string{name}
+	if len(dependenciesThatNeedUninstall) > 0 {
+		needUninstallFacadeNames := make([]string, len(dependenciesThatNeedUninstall))
+		for i := range dependenciesThatNeedUninstall {
+			needUninstallFacadeNames[i] = convertBindingToFacade(dependenciesThatNeedUninstall[i])
+		}
+		if !ctx.Confirm(fmt.Sprintf("Do you want to remove the dependency facades as well: %s?", strings.Join(needUninstallFacadeNames, ", "))) {
+			facadesThatNeedUninstall = []string{bindingName}
+		}
+
 	}
 
 	for _, facade := range facadesThatNeedUninstall {
 		setup := r.facades[facade].PkgPath + "/setup"
 
 		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "uninstall")); err != nil {
-			ctx.Error(fmt.Sprintf("Failed to uninstall facade %s, error: %s", facade, err.Error()))
+			ctx.Error(fmt.Sprintf("Failed to uninstall facade %s, error: %s", convertBindingToFacade(facade), err.Error()))
 
 			if ctx.OptionBool("force") {
 				continue
@@ -162,7 +175,7 @@ func (r *PackageUninstallCommand) uninstallFacade(ctx console.Context, name stri
 			return nil
 		}
 
-		ctx.Success(fmt.Sprintf("Facade %s uninstalled successfully", facade))
+		ctx.Success(fmt.Sprintf("Facade %s uninstalled successfully", convertBindingToFacade(facade)))
 	}
 
 	return nil

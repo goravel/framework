@@ -10,8 +10,6 @@ import (
 	"github.com/goravel/framework/support/color"
 )
 
-const Binding = "goravel.mail"
-
 type ServiceProvider struct {
 }
 
@@ -20,11 +18,8 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 		Bindings: []string{
 			binding.Mail,
 		},
-		Dependencies: []string{
-			binding.Config,
-			binding.Queue,
-		},
-		ProvideFor: []string{},
+		Dependencies: binding.Facades[binding.Mail].Dependencies,
+		ProvideFor:   []string{},
 	}
 }
 

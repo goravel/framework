@@ -16,10 +16,7 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 		Bindings: []string{
 			binding.Cache,
 		},
-		Dependencies: []string{
-			binding.Config,
-			binding.Log,
-		},
+		Dependencies: binding.Facades[binding.Cache].Dependencies,
 	}
 }
 

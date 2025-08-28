@@ -10,7 +10,6 @@ import (
 
 	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/console"
-	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 )
@@ -30,24 +29,21 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 		facade         = "Auth"
 		pkg            = "github.com/goravel/package"
 		pkgWithVersion = "github.com/goravel/package@unknown"
-		facades        = map[string]foundation.FacadeInfo{
-			"Auth": {
-				Binding:      binding.Auth,
+		facades        = map[string]binding.FacadeInfo{
+			binding.Auth: {
 				PkgPath:      "github.com/goravel/framework/auth",
-				Dependencies: []string{"Config", "Orm"},
+				Dependencies: []string{binding.Config, binding.Orm},
 			},
-			"Config": {
-				Binding: binding.Config,
+			binding.Config: {
 				PkgPath: "github.com/goravel/framework/config",
 				IsBase:  true,
 			},
-			"Orm": {
-				Binding:      binding.Orm,
+			binding.Orm: {
 				PkgPath:      "github.com/goravel/framework/database",
-				Dependencies: []string{"Config"},
+				Dependencies: []string{binding.Config},
 			},
 		}
-		installedFacades = []string{"Auth", "Config", "Orm"}
+		installedFacades = []string{binding.Auth, binding.Config, binding.Orm}
 	)
 
 	beforeEach := func() {
@@ -112,7 +108,7 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 				facade := "unknown"
 				mockContext.EXPECT().Arguments().Return([]string{facade}).Once()
 				mockContext.EXPECT().Warning(errors.PackageFacadeNotFound.Args(facade).Error()).Once()
-				mockContext.EXPECT().Info(fmt.Sprintf("Available facades: %s", strings.Join(filterBaseFacades(facades), ", ")))
+				mockContext.EXPECT().Info(fmt.Sprintf("Available facades: %s", strings.Join(getAvailableFacades(facades), ", ")))
 			},
 		},
 		{
@@ -120,7 +116,7 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{facade}).Once()
 				mockContext.EXPECT().Confirm("Do you want to remove the dependency facades as well: Orm?").Return(true).Once()
-				mockContext.EXPECT().Spinner("> @go run "+facades["Orm"].PkgPath+"/setup uninstall", mock.Anything).
+				mockContext.EXPECT().Spinner("> @go run "+facades[binding.Orm].PkgPath+"/setup uninstall", mock.Anything).
 					RunAndReturn(func(s string, option console.SpinnerOption) error {
 						return option.Action()
 					}).Once()
@@ -135,7 +131,7 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{facade}).Once()
 				mockContext.EXPECT().Confirm("Do you want to remove the dependency facades as well: Orm?").Return(false).Once()
-				mockContext.EXPECT().Spinner("> @go run "+facades["Auth"].PkgPath+"/setup uninstall", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+facades[binding.Auth].PkgPath+"/setup uninstall", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Facade Auth uninstalled successfully").Once()
 			},
 		},
@@ -144,12 +140,12 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{facade}).Once()
 				mockContext.EXPECT().Confirm("Do you want to remove the dependency facades as well: Orm?").Return(true).Once()
-				mockContext.EXPECT().Spinner("> @go run "+facades["Orm"].PkgPath+"/setup uninstall", mock.Anything).
+				mockContext.EXPECT().Spinner("> @go run "+facades[binding.Orm].PkgPath+"/setup uninstall", mock.Anything).
 					RunAndReturn(func(s string, option console.SpinnerOption) error {
 						return option.Action()
 					}).Once()
 				mockContext.EXPECT().OptionBool("force").Return(true).Once()
-				mockContext.EXPECT().Spinner("> @go run "+facades["Auth"].PkgPath+"/setup uninstall", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+facades[binding.Auth].PkgPath+"/setup uninstall", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Error(mock.MatchedBy(func(message string) bool {
 					return s.Contains(message, "Failed to uninstall facade Orm, error:")
 				})).Once()
@@ -167,9 +163,9 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 				mockContext.EXPECT().Success("Package " + pkg + " uninstalled successfully").Once()
 
 				mockContext.EXPECT().Confirm("Do you want to remove the dependency facades as well: Orm?").Return(true).Once()
-				mockContext.EXPECT().Spinner("> @go run "+facades["Orm"].PkgPath+"/setup uninstall", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+facades[binding.Orm].PkgPath+"/setup uninstall", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Facade Orm uninstalled successfully").Once()
-				mockContext.EXPECT().Spinner("> @go run "+facades["Auth"].PkgPath+"/setup uninstall", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+facades[binding.Auth].PkgPath+"/setup uninstall", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Facade Auth uninstalled successfully").Once()
 			},
 		},
@@ -185,27 +181,24 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 }
 
 func (s *PackageUninstallCommandTestSuite) TestGetFacadesThatNeedUninstall() {
-	facades := map[string]foundation.FacadeInfo{
-		"Auth": {
-			Binding:      binding.Auth,
+	facades := map[string]binding.FacadeInfo{
+		binding.Auth: {
 			PkgPath:      "github.com/goravel/framework/auth",
-			Dependencies: []string{"Config", "Orm"},
+			Dependencies: []string{binding.Config, binding.Orm},
 		},
-		"Config": {
-			Binding: binding.Config,
+		binding.Config: {
 			PkgPath: "github.com/goravel/framework/config",
 			IsBase:  true,
 		},
-		"Orm": {
-			Binding:      binding.Orm,
+		binding.Orm: {
 			PkgPath:      "github.com/goravel/framework/database",
-			Dependencies: []string{"Config"},
+			Dependencies: []string{binding.Config},
 		},
 	}
 
-	installedFacades := []string{"Auth", "Config", "DB", "Orm", "Log"}
+	installedFacades := []string{binding.Auth, binding.Config, binding.DB, binding.Orm, binding.Log}
 
 	packageUninstallCommand := NewPackageUninstallCommand(facades, installedFacades)
 
-	s.ElementsMatch([]string{"Auth", "Orm"}, packageUninstallCommand.getFacadesThatNeedUninstall("Auth"))
+	s.ElementsMatch([]string{binding.Auth, binding.Orm}, packageUninstallCommand.getFacadesThatNeedUninstall(binding.Auth))
 }
