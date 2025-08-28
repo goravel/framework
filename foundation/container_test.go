@@ -138,7 +138,7 @@ func (s *ContainerTestSuite) TestMake() {
 		expectErr  error
 	}{
 		{
-			name:      "not found binding",
+			name:      "not found Binding",
 			key:       "no",
 			setup:     func() {},
 			expectErr: fmt.Errorf("binding not found: %+v", "no"),

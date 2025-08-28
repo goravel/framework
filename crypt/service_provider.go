@@ -14,10 +14,8 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 		Bindings: []string{
 			binding.Crypt,
 		},
-		Dependencies: []string{
-			binding.Config,
-		},
-		ProvideFor: []string{},
+		Dependencies: binding.Facades[binding.Crypt].Dependencies,
+		ProvideFor:   []string{},
 	}
 }
 

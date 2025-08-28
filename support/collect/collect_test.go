@@ -123,7 +123,7 @@ func TestSum(t *testing.T) {
 
 func TestUnique(t *testing.T) {
 	uniqValues1 := Unique([]int{1, 2, 2, 1})
-	uniqValues2 := Unique([]string{"a", "b", "b", "a"})
+	uniqValues2 := Unique([]string{"a", "b"}, []string{"b", "a"})
 	assert.Equal(t, []int{1, 2}, uniqValues1)
 	assert.Equal(t, []string{"a", "b"}, uniqValues2)
 }

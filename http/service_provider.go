@@ -14,6 +14,7 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/http/client"
 	"github.com/goravel/framework/http/console"
+	"github.com/goravel/framework/support/collect"
 )
 
 type ServiceProvider struct{}
@@ -33,11 +34,11 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 			binding.RateLimiter,
 			binding.View,
 		},
-		Dependencies: []string{
-			binding.Cache,
-			binding.Config,
-			binding.Log,
-		},
+		Dependencies: collect.Unique(
+			binding.Facades[binding.Http].Dependencies,
+			binding.Facades[binding.RateLimiter].Dependencies,
+			binding.Facades[binding.View].Dependencies,
+		),
 		ProvideFor: []string{},
 	}
 }
