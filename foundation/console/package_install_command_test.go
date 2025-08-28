@@ -177,3 +177,77 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 		})
 	}
 }
+
+func (s *PackageInstallCommandTestSuite) TestGetDependenciesThatNeedInstall() {
+	facades := map[string]binding.FacadeInfo{
+		binding.Auth: {
+			PkgPath:      "github.com/goravel/framework/auth",
+			Dependencies: []string{binding.Config, binding.Orm},
+		},
+		binding.Config: {
+			PkgPath: "github.com/goravel/framework/config",
+			IsBase:  true,
+		},
+		binding.Orm: {
+			PkgPath:      "github.com/goravel/framework/database",
+			Dependencies: []string{binding.Config},
+		},
+	}
+	installedFacades := []string{binding.Config}
+
+	packageInstallCommand := NewPackageInstallCommand(facades, installedFacades)
+
+	s.ElementsMatch([]string{binding.Orm}, packageInstallCommand.getDependenciesThatNeedInstall(binding.Auth))
+}
+
+func (s *PackageInstallCommandTestSuite) TestFacadeBindingConversion() {
+	s.Equal("Auth", convertBindingToFacade(binding.Auth))
+	s.Equal(binding.Auth, convertFacadeToBinding("Auth"))
+
+	s.Equal("RateLimiter", convertBindingToFacade(binding.RateLimiter))
+	s.Equal(binding.RateLimiter, convertFacadeToBinding("RateLimiter"))
+
+	s.Equal("DB", convertBindingToFacade(binding.DB))
+	s.Equal(binding.DB, convertFacadeToBinding("DB"))
+}
+
+func (s *PackageInstallCommandTestSuite) TestGetAvailableFacades() {
+	facades := map[string]binding.FacadeInfo{
+		binding.Auth: {
+			PkgPath:      "github.com/goravel/framework/auth",
+			Dependencies: []string{binding.Config, binding.Orm},
+		},
+		binding.Config: {
+			PkgPath: "github.com/goravel/framework/config",
+			IsBase:  true,
+		},
+		binding.Orm: {
+			PkgPath:      "github.com/goravel/framework/database",
+			Dependencies: []string{binding.Config},
+		},
+	}
+
+	s.ElementsMatch(
+		[]string{convertBindingToFacade(binding.Auth), convertBindingToFacade(binding.Orm)},
+		getAvailableFacades(facades),
+	)
+}
+
+func (s *PackageInstallCommandTestSuite) TestGFacadeDependencies() {
+	facades := map[string]binding.FacadeInfo{
+		binding.Auth: {
+			PkgPath:      "github.com/goravel/framework/auth",
+			Dependencies: []string{binding.Config, binding.Orm},
+		},
+		binding.Config: {
+			PkgPath: "github.com/goravel/framework/config",
+			IsBase:  true,
+		},
+		binding.Orm: {
+			PkgPath:      "github.com/goravel/framework/database",
+			Dependencies: []string{binding.Config},
+		},
+	}
+
+	s.ElementsMatch([]string{binding.Orm}, getFacadeDependencies(binding.Auth, facades))
+}
