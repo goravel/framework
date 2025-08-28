@@ -233,7 +233,7 @@ func (s *PackageInstallCommandTestSuite) TestGetAvailableFacades() {
 	)
 }
 
-func (s *PackageInstallCommandTestSuite) TestGFacadeDependencies() {
+func (s *PackageInstallCommandTestSuite) TestGetFacadeDependencies() {
 	facades := map[string]binding.FacadeInfo{
 		binding.Auth: {
 			PkgPath:      "github.com/goravel/framework/auth",
