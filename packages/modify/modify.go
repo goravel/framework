@@ -7,52 +7,143 @@ import (
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
 	"github.com/dave/dst/dstutil"
+	"github.com/spf13/cast"
 
 	"github.com/goravel/framework/contracts/packages/match"
 	"github.com/goravel/framework/contracts/packages/modify"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/color"
 	supportfile "github.com/goravel/framework/support/file"
 )
 
-type file struct {
-	path string
+func Facade(name string) modify.Facade {
+	return &facade{name: name}
 }
 
 func File(path string) modify.File {
 	return &file{path: path}
 }
 
-func (r *file) Overwrite(content string, forces ...bool) modify.Apply {
-	return &OverwriteFile{
-		path:    r.path,
+func GoFile(file string) modify.GoFile {
+	return &goFile{file: file}
+}
+
+func WhenBinding(facade string, applies ...modify.Apply) modify.Apply {
+	return nil
+}
+
+func WhenNoBindings(applies ...modify.Apply) modify.Apply {
+	return nil
+}
+
+func generateOptions(options []modify.Option) map[string]any {
+	result := make(map[string]any)
+	for _, option := range options {
+		option(result)
+	}
+	return result
+}
+
+type facade struct {
+	name string
+}
+
+func (r *facade) File(path string) modify.File {
+	return &facadeFile{facade: r.name, path: path}
+}
+
+type facadeFile struct {
+	facade string
+	path   string
+}
+
+func (r *facadeFile) Overwrite(content string) modify.Apply {
+	return &facadeOverwriteFile{
 		content: content,
-		force:   len(forces) > 0 && forces[0],
+		facade:  r.facade,
+		path:    r.path,
 	}
 }
 
-func (r *file) Remove() modify.Apply {
-	return &RemoveFile{path: r.path}
+func (r *facadeFile) Remove() modify.Apply {
+	return &facadeRemoveFile{
+		facade: r.facade,
+		path:   r.path,
+	}
 }
 
-type OverwriteFile struct {
+type facadeOverwriteFile struct {
+	facade  string
 	path    string
 	content string
-	force   bool
 }
 
-func (r *OverwriteFile) Apply() error {
-	if supportfile.Exists(r.path) && !r.force {
-		return errors.FileAlreadyExists.Args(r.path)
+func (r *facadeOverwriteFile) Apply(options ...modify.Option) error {
+	generatedOptions := generateOptions(options)
+
+	if r.facade != generatedOptions["facade"] {
+		return nil
+	}
+
+	if supportfile.Exists(r.path) && !cast.ToBool(generatedOptions["force"]) {
+		color.Warningln(errors.ConsoleFileAlreadyExists.Args(r.path))
+		return nil
 	}
 
 	return supportfile.PutContent(r.path, r.content)
 }
 
-type RemoveFile struct {
+type facadeRemoveFile struct {
+	facade string
+	path   string
+}
+
+func (r *facadeRemoveFile) Apply(options ...modify.Option) error {
+	generatedOptions := generateOptions(options)
+
+	if r.facade != generatedOptions["facade"] {
+		return nil
+	}
+
+	return supportfile.Remove(r.path)
+}
+
+type file struct {
 	path string
 }
 
-func (r *RemoveFile) Apply() error {
+func (r *file) Overwrite(content string) modify.Apply {
+	return &overwriteFile{
+		path:    r.path,
+		content: content,
+	}
+}
+
+func (r *file) Remove() modify.Apply {
+	return &removeFile{path: r.path}
+}
+
+type overwriteFile struct {
+	path    string
+	content string
+}
+
+func (r *overwriteFile) Apply(options ...modify.Option) error {
+	generatedOptions := generateOptions(options)
+
+	if supportfile.Exists(r.path) && !cast.ToBool(generatedOptions["force"]) {
+		color.Warningln(errors.ConsoleFileAlreadyExists.Args(r.path))
+		return nil
+	}
+
+	return supportfile.PutContent(r.path, r.content)
+}
+
+type removeFile struct {
+	path string
+}
+
+func (r *removeFile) Apply(...modify.Option) error {
 	return supportfile.Remove(r.path)
 }
 
@@ -61,11 +152,7 @@ type goFile struct {
 	modifiers []modify.GoNode
 }
 
-func GoFile(file string) modify.GoFile {
-	return &goFile{file: file}
-}
-
-func (r goFile) Apply() error {
+func (r goFile) Apply(...modify.Option) error {
 	source, err := supportfile.GetContent(r.file)
 	if err != nil {
 		return err
@@ -92,7 +179,7 @@ func (r goFile) Apply() error {
 }
 
 func (r goFile) Find(matchers []match.GoNode) modify.GoNode {
-	modifier := &GoNode{
+	modifier := &goNode{
 		matchers: matchers,
 		goFile:   &r,
 	}
@@ -100,13 +187,13 @@ func (r goFile) Find(matchers []match.GoNode) modify.GoNode {
 	return modifier
 }
 
-type GoNode struct {
+type goNode struct {
 	actions  []modify.Action
 	goFile   *goFile
 	matchers []match.GoNode
 }
 
-func (r GoNode) Apply(node dst.Node) (err error) {
+func (r goNode) Apply(node dst.Node) (err error) {
 	var (
 		current      int
 		matched      bool
@@ -157,7 +244,7 @@ func (r GoNode) Apply(node dst.Node) (err error) {
 	return nil
 }
 
-func (r *GoNode) Modify(actions ...modify.Action) modify.GoFile {
+func (r *goNode) Modify(actions ...modify.Action) modify.GoFile {
 	r.actions = actions
 
 	return r.goFile

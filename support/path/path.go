@@ -20,6 +20,14 @@ func Database(paths ...string) string {
 	return facades.App().DatabasePath(paths...)
 }
 
+func Executable(paths ...string) string {
+	return facades.App().ExecutablePath(paths...)
+}
+
+func Facades(paths ...string) string {
+	return facades.App().FacadesPath(paths...)
+}
+
 func Storage(paths ...string) string {
 	return facades.App().StoragePath(paths...)
 }
@@ -34,8 +42,4 @@ func Lang(paths ...string) string {
 
 func Public(paths ...string) string {
 	return facades.App().PublicPath(paths...)
-}
-
-func Executable(paths ...string) string {
-	return facades.App().ExecutablePath(paths...)
 }

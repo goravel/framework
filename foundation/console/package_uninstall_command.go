@@ -165,7 +165,13 @@ func (r *PackageUninstallCommand) uninstallFacade(ctx console.Context, name stri
 	for _, facade := range facadesThatNeedUninstall {
 		setup := r.facades[facade].PkgPath + "/setup"
 
-		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "uninstall")); err != nil {
+		uninstall := exec.Command("go", "run", setup, "uninstall")
+		uninstall.Args = append(uninstall.Args, "--facade="+facade)
+		if ctx.OptionBool("force") {
+			uninstall.Args = append(uninstall.Args, "--force")
+		}
+
+		if err := supportconsole.ExecuteCommand(ctx, uninstall); err != nil {
 			ctx.Error(fmt.Sprintf("Failed to uninstall facade %s, error: %s", convertBindingToFacade(facade), err.Error()))
 
 			if ctx.OptionBool("force") {

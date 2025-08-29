@@ -14,6 +14,7 @@ import (
 	"github.com/goravel/framework/contracts/packages/modify"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/packages/match"
+	"github.com/goravel/framework/packages/options"
 	supportfile "github.com/goravel/framework/support/file"
 )
 
@@ -128,9 +129,9 @@ func (s *FileTestSuite) TestOverwrite() {
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
 			path := tt.setup()
-			overwriteFile := File(path).Overwrite(tt.content, tt.force)
+			overwriteFile := File(path).Overwrite(tt.content)
 
-			err := overwriteFile.Apply()
+			err := overwriteFile.Apply(options.Force(tt.force))
 
 			tt.assert(path, err)
 		})

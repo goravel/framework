@@ -68,6 +68,8 @@ type Application interface {
 	DatabasePath(path ...string) string
 	// ExecutablePath get the path to the executable of the running Goravel application.
 	ExecutablePath(path ...string) string
+	// FacadePath get the path to the facade files.
+	FacadesPath(path ...string) string
 	// LangPath get the path to the language files.
 	LangPath(path ...string) string
 	// Path gets the path respective to "app" directory.

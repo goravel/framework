@@ -101,6 +101,17 @@ func (r *Application) DatabasePath(path ...string) string {
 	return r.absPath(path...)
 }
 
+func (r *Application) ExecutablePath(path ...string) string {
+	path = append([]string{support.RootPath}, path...)
+	return r.absPath(path...)
+}
+
+func (r *Application) FacadesPath(path ...string) string {
+	path = append([]string{"facades"}, path...)
+
+	return r.Path(path...)
+}
+
 func (r *Application) StoragePath(path ...string) string {
 	path = append([]string{support.RelativePath, "storage"}, path...)
 	return r.absPath(path...)
@@ -128,11 +139,6 @@ func (r *Application) LangPath(path ...string) string {
 
 func (r *Application) PublicPath(path ...string) string {
 	path = append([]string{support.RelativePath, "public"}, path...)
-	return r.absPath(path...)
-}
-
-func (r *Application) ExecutablePath(path ...string) string {
-	path = append([]string{support.RootPath}, path...)
 	return r.absPath(path...)
 }
 
