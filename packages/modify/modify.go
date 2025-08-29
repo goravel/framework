@@ -28,6 +28,14 @@ func GoFile(file string) modify.GoFile {
 	return &goFile{file: file}
 }
 
+func WhenBinding(facade string, applies ...modify.Apply) modify.Apply {
+	return nil
+}
+
+func WhenNoBindings(applies ...modify.Apply) modify.Apply {
+	return nil
+}
+
 func generateOptions(options []modify.Option) map[string]any {
 	result := make(map[string]any)
 	for _, option := range options {
