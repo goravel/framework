@@ -169,10 +169,6 @@ func (r *PackageUninstallCommand) uninstallFacade(ctx console.Context, name stri
 		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "uninstall")); err != nil {
 			ctx.Error(fmt.Sprintf("Failed to uninstall facade %s, error: %s", convertBindingToFacade(facade), err.Error()))
 
-			if ctx.OptionBool("force") {
-				continue
-			}
-
 			return nil
 		}
 

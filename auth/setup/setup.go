@@ -26,6 +26,8 @@ func main() {
 				Find(match.Providers()).Modify(modify.Unregister("&auth.ServiceProvider{}")).
 				Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
 			modify.File(path.Config("auth.go")).Remove(),
+			modify.Facade("Auth").File(path.Facades("auth.go")).Remove(),
+			modify.Facade("Gate").File(path.Facades("gate.go")).Remove(),
 		).
 		Execute()
 }

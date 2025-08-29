@@ -41,19 +41,26 @@ type facade struct {
 }
 
 func (r *facade) File(path string) modify.File {
-	return &facadeFile{file: file{path: path}, facade: r.name}
+	return &facadeFile{facade: r.name, path: path}
 }
 
 type facadeFile struct {
-	file
 	facade string
+	path   string
 }
 
 func (r *facadeFile) Overwrite(content string) modify.Apply {
 	return &facadeOverwriteFile{
+		content: content,
 		facade:  r.facade,
 		path:    r.path,
-		content: content,
+	}
+}
+
+func (r *facadeFile) Remove() modify.Apply {
+	return &facadeRemoveFile{
+		facade: r.facade,
+		path:   r.path,
 	}
 }
 
@@ -76,6 +83,21 @@ func (r *facadeOverwriteFile) Apply(options ...modify.Option) error {
 	}
 
 	return supportfile.PutContent(r.path, r.content)
+}
+
+type facadeRemoveFile struct {
+	facade string
+	path   string
+}
+
+func (r *facadeRemoveFile) Apply(options ...modify.Option) error {
+	generatedOptions := generateOptions(options)
+
+	if r.facade != generatedOptions["facade"] {
+		return nil
+	}
+
+	return supportfile.Remove(r.path)
 }
 
 type file struct {

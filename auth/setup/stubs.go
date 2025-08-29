@@ -51,31 +51,31 @@ func init() {
 }
 
 func (s Stubs) AuthFacade() string {
-	return `package facade
+	return `package facades
 
 import (
 	"github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/http"
-	"github.com/goravel/framework/facade"
+	"github.com/goravel/framework/facades"
 )
 
 func Auth(ctx ...http.Context) auth.Auth {
-	return facade.App().MakeAuth(ctx...)
+	return facades.App().MakeAuth(ctx...)
 }
 `
 }
 
 func (s Stubs) GateFacade() string {
-	return `package facade
+	return `package facades
 
 import (
 	"github.com/goravel/framework/contracts/auth/access"
 	"github.com/goravel/framework/contracts/http"
-	"github.com/goravel/framework/facade"
+	"github.com/goravel/framework/facades"
 )
 
 func Gate(ctx ...http.Context) access.Gate {
-	return facade.App().MakeGate()
+	return facades.App().MakeGate()
 }
 `
 }
