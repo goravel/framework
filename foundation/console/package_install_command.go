@@ -135,7 +135,7 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 	for _, facade := range dependencies {
 		setup := r.facades[facade].PkgPath + "/setup"
 
-		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install")); err != nil {
+		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--facade="+facade)); err != nil {
 			ctx.Error(fmt.Sprintf("Failed to install facade %s, error: %s", convertBindingToFacade(facade), err.Error()))
 
 			return nil

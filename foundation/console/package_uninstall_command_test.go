@@ -202,25 +202,3 @@ func (s *PackageUninstallCommandTestSuite) TestGetFacadesThatNeedUninstall() {
 
 	s.ElementsMatch([]string{binding.Auth, binding.Orm}, packageUninstallCommand.getFacadesThatNeedUninstall(binding.Auth))
 }
-
-func (s *PackageUninstallCommandTestSuite) Test_getUpperDependenciesThatUsingFacade() {
-	facadeDependencies := map[string][]string{
-		"Auth": {
-			"Config",
-			"Orm",
-			"Log",
-		},
-		"DB": {
-			"Log",
-		},
-		"Orm": {
-			"Config",
-		},
-	}
-	baseFacades := []string{"Config"}
-	installedFacades := []string{"Auth", "Config", "DB", "Orm", "Log"}
-
-	packageUninstallCommand := NewPackageUninstallCommand(facadeDependencies, nil, baseFacades, installedFacades)
-
-	s.ElementsMatch([]string{"Auth"}, packageUninstallCommand.getUpperDependenciesThatUsingFacade("Orm"))
-}

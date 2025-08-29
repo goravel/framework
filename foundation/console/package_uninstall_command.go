@@ -147,7 +147,6 @@ func (r *PackageUninstallCommand) uninstallFacade(ctx console.Context, name stri
 		return nil
 	}
 
-	facadesThatNeedUninstall := r.getFacadesThatNeedUninstall(name)
 	dependenciesThatNeedUninstall := collect.Filter(facadesThatNeedUninstall, func(facade string, _ int) bool {
 		return facade != bindingName
 	})
@@ -166,8 +165,18 @@ func (r *PackageUninstallCommand) uninstallFacade(ctx console.Context, name stri
 	for _, facade := range facadesThatNeedUninstall {
 		setup := r.facades[facade].PkgPath + "/setup"
 
-		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "uninstall")); err != nil {
+		uninstall := exec.Command("go", "run", setup, "uninstall")
+		uninstall.Args = append(uninstall.Args, "--facade="+facade)
+		if ctx.OptionBool("force") {
+			uninstall.Args = append(uninstall.Args, "--force")
+		}
+
+		if err := supportconsole.ExecuteCommand(ctx, uninstall); err != nil {
 			ctx.Error(fmt.Sprintf("Failed to uninstall facade %s, error: %s", convertBindingToFacade(facade), err.Error()))
+
+			if ctx.OptionBool("force") {
+				continue
+			}
 
 			return nil
 		}
@@ -198,15 +207,4 @@ func (r *PackageUninstallCommand) getFacadesThatNeedUninstall(facade string) []s
 	}
 
 	return needUninstallFacades
-}
-
-func (r *PackageUninstallCommand) getUpperDependenciesThatUsingFacade(facade string) []string {
-	var dependencies []string
-	for _, installedFacade := range r.installedFacades {
-		if slices.Contains(r.facadeDependencies[installedFacade], facade) {
-			dependencies = append(dependencies, installedFacade)
-		}
-	}
-
-	return dependencies
 }
