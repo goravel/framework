@@ -26,6 +26,53 @@ func (_m *Process) EXPECT() *Process_Expecter {
 	return &Process_Expecter{mock: &_m.Mock}
 }
 
+// DisableBuffering provides a mock function with no fields
+func (_m *Process) DisableBuffering() process.Process {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for DisableBuffering")
+	}
+
+	var r0 process.Process
+	if rf, ok := ret.Get(0).(func() process.Process); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(process.Process)
+		}
+	}
+
+	return r0
+}
+
+// Process_DisableBuffering_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DisableBuffering'
+type Process_DisableBuffering_Call struct {
+	*mock.Call
+}
+
+// DisableBuffering is a helper method to define mock.On call
+func (_e *Process_Expecter) DisableBuffering() *Process_DisableBuffering_Call {
+	return &Process_DisableBuffering_Call{Call: _e.mock.On("DisableBuffering")}
+}
+
+func (_c *Process_DisableBuffering_Call) Run(run func()) *Process_DisableBuffering_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Process_DisableBuffering_Call) Return(_a0 process.Process) *Process_DisableBuffering_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Process_DisableBuffering_Call) RunAndReturn(run func() process.Process) *Process_DisableBuffering_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Env provides a mock function with given fields: vars
 func (_m *Process) Env(vars map[string]string) process.Process {
 	ret := _m.Called(vars)

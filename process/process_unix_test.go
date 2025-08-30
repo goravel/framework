@@ -99,6 +99,21 @@ func TestProcess_Run_Unix(t *testing.T) {
 				assert.NotEqual(t, 0, res.ExitCode())
 			},
 		},
+		{
+			name: "disable buffering with OnOutput",
+			args: []string{"sh", "-c", "printf 'to_stdout'; printf 'to_stderr' 1>&2"},
+			setup: func(p *Process) {
+				p.DisableBuffering().Quietly().OnOutput(func(typ contractsprocess.OutputType, line []byte) {
+					// The handler still works, but the Result buffer is what we're testing.
+				})
+			},
+			expectOK: true,
+			check: func(t *testing.T, res *Result) {
+				assert.Equal(t, "", res.Output())
+				assert.Equal(t, "", res.ErrorOutput())
+				assert.True(t, res.Successful())
+			},
+		},
 	}
 
 	for _, tt := range tests {
