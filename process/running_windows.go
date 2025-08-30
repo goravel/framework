@@ -10,6 +10,10 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+// STILL_ACTIVE is a Win32 constant that indicates a process is still running.
+// It is not exported by the Go standard library, so we define it here.
+const STILL_ACTIVE = 259
+
 func running(p *os.Process) bool {
 	if p == nil {
 		return false
@@ -26,7 +30,7 @@ func running(p *os.Process) bool {
 	if err := windows.GetExitCodeProcess(h, &code); err != nil {
 		return false
 	}
-	return code == windows.STILL_ACTIVE
+	return code == STILL_ACTIVE
 }
 
 func kill(p *os.Process) error {
