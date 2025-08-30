@@ -15,11 +15,11 @@ func NewOutputWriterForProcess(typ contractsprocess.OutputType, handler contract
 	})
 }
 
-func NewOutputWriterForPipe(key string, typ contractsprocess.OutputType, h contractsprocess.OnPipeOutputFunc) *OutputWriter {
-	return NewOutputWriter(key, typ, func(k string, t contractsprocess.OutputType, line []byte) {
-		h(k, t, line)
-	})
-}
+//func NewOutputWriterForPipe(key string, typ contractsprocess.OutputType, h contractsprocess.OnPipeOutputFunc) *OutputWriter {
+//	return NewOutputWriter(key, typ, func(k string, t contractsprocess.OutputType, line []byte) {
+//		h(k, t, line)
+//	})
+//}
 
 func NewOutputWriter(key string, typ contractsprocess.OutputType, handler OutputWriterHandler) *OutputWriter {
 	return &OutputWriter{
