@@ -27,6 +27,19 @@ type OnOutputFunc func(typ OutputType, line []byte)
 // Implementations are mutable and should not be reused concurrently.
 // Each method modifies the same underlying process configuration.
 type Process interface {
+	// DisableBuffering prevents the process's stdout and stderr from being buffered
+	// in memory. This is a critical optimization for commands that produce a large
+	// volume of output, especially when that output is already being handled by
+	// an OnOutput streaming callback.
+	//
+	// CONSEQUENCE: As output is not captured, the following methods on the
+	// Running and Result handles will always return an empty string:
+	//   - Running.Output()
+	//   - Running.ErrorOutput()
+	//   - Result.Output()
+	//   - Result.ErrorOutput()
+	DisableBuffering() Process
+
 	// Env adds or overrides environment variables for the process.
 	// Modifies the current process configuration.
 	Env(vars map[string]string) Process

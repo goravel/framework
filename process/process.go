@@ -14,20 +14,26 @@ import (
 var _ contractsprocess.Process = (*Process)(nil)
 
 type Process struct {
-	ctx      context.Context
-	env      []string
-	input    io.Reader
-	path     string
-	quietly  bool
-	onOutput contractsprocess.OnOutputFunc
-	timeout  time.Duration
-	tty      bool
+	ctx               context.Context
+	env               []string
+	input             io.Reader
+	path              string
+	quietly           bool
+	onOutput          contractsprocess.OnOutputFunc
+	timeout           time.Duration
+	tty               bool
+	bufferingDisabled bool
 }
 
 func New() *Process {
 	return &Process{
 		ctx: context.Background(),
 	}
+}
+
+func (r *Process) DisableBuffering() contractsprocess.Process {
+	r.bufferingDisabled = true
+	return r
 }
 
 func (r *Process) Env(vars map[string]string) contractsprocess.Process {
@@ -113,17 +119,22 @@ func (r *Process) start(name string, args ...string) (contractsprocess.Running, 
 		cmd.Env = append(os.Environ(), r.env...)
 	}
 
-	stdoutBuffer := &bytes.Buffer{}
-	stderrBuffer := &bytes.Buffer{}
-
 	if r.input != nil {
 		cmd.Stdin = r.input
 	} else if r.tty {
 		cmd.Stdin = os.Stdin
 	}
 
-	stdoutWriters := []io.Writer{stdoutBuffer}
-	stderrWriters := []io.Writer{stderrBuffer}
+	var stdoutBuffer, stderrBuffer *bytes.Buffer
+	var stdoutWriters []io.Writer
+	var stderrWriters []io.Writer
+
+	if !r.bufferingDisabled {
+		stdoutBuffer = &bytes.Buffer{}
+		stderrBuffer = &bytes.Buffer{}
+		stdoutWriters = append(stdoutWriters, stdoutBuffer)
+		stderrWriters = append(stderrWriters, stderrBuffer)
+	}
 
 	if !r.quietly {
 		stdoutWriters = append(stdoutWriters, os.Stdout)
@@ -133,8 +144,13 @@ func (r *Process) start(name string, args ...string) (contractsprocess.Running, 
 		stdoutWriters = append(stdoutWriters, NewOutputWriter(contractsprocess.OutputTypeStdout, r.onOutput))
 		stderrWriters = append(stderrWriters, NewOutputWriter(contractsprocess.OutputTypeStderr, r.onOutput))
 	}
-	cmd.Stdout = io.MultiWriter(stdoutWriters...)
-	cmd.Stderr = io.MultiWriter(stderrWriters...)
+
+	if len(stdoutWriters) > 0 {
+		cmd.Stdout = io.MultiWriter(stdoutWriters...)
+	}
+	if len(stderrWriters) > 0 {
+		cmd.Stderr = io.MultiWriter(stderrWriters...)
+	}
 
 	if err := cmd.Start(); err != nil {
 		return nil, err

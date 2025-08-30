@@ -14,28 +14,41 @@ type Running struct {
 	cmd          *exec.Cmd
 	stdoutBuffer *bytes.Buffer
 	stderrBuffer *bytes.Buffer
+	doneChan     chan struct{}
 
-	once     sync.Once
 	result   contractsprocess.Result
 	resultMu sync.RWMutex
 }
 
 func NewRunning(cmd *exec.Cmd, stdout, stderr *bytes.Buffer) *Running {
-	return &Running{
+	running := &Running{
 		cmd:          cmd,
 		stdoutBuffer: stdout,
 		stderrBuffer: stderr,
+		doneChan:     make(chan struct{}),
 	}
+
+	go func() {
+		waitErr := running.cmd.Wait()
+
+		res := buildResult(running, waitErr)
+		running.resultMu.Lock()
+		running.result = res
+		running.resultMu.Unlock()
+
+		close(running.doneChan)
+	}()
+
+	return running
+}
+
+func (r *Running) Done() <-chan struct{} {
+	return r.doneChan
 }
 
 func (r *Running) Wait() contractsprocess.Result {
-	r.once.Do(func() {
-		err := r.cmd.Wait()
-		res := buildResult(r, err)
-		r.resultMu.Lock()
-		r.result = res
-		r.resultMu.Unlock()
-	})
+	<-r.doneChan
+
 	r.resultMu.RLock()
 	defer r.resultMu.RUnlock()
 	return r.result

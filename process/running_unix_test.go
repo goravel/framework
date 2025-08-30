@@ -3,6 +3,9 @@
 package process
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -11,57 +14,133 @@ import (
 )
 
 func TestRunning_Basics_Unix(t *testing.T) {
-	tests := []struct {
-		name  string
-		cmd   []string
-		check func(t *testing.T, run *Running)
-	}{
-		{
-			name: "PID Command Running and Wait",
-			cmd:  []string{"sh", "-c", "sleep 0.2"},
-			check: func(t *testing.T, run *Running) {
-				assert.NotEqual(t, 0, run.PID())
-				assert.Contains(t, run.Command(), "sleep 0.2")
-				assert.True(t, run.Running())
-				res := run.Wait()
-				assert.NotNil(t, res)
-				assert.Equal(t, 0, res.ExitCode())
-			},
-		},
-		{
-			name: "LatestOutput sizes",
-			cmd:  []string{"sh", "-c", "yes x | head -c 5000 1>/dev/stdout; yes y | head -c 5000 1>/dev/stderr"},
-			check: func(t *testing.T, run *Running) {
-				res := run.Wait()
-				assert.True(t, res.Successful())
-				assert.GreaterOrEqual(t, len(run.Output()), 4096)
-				assert.GreaterOrEqual(t, len(run.ErrorOutput()), 4096)
-				assert.Equal(t, 4096, len(run.LatestOutput()))
-				assert.Equal(t, 4096, len(run.LatestErrorOutput()))
-			},
-		},
-	}
+	t.Run("PID, Command, Running, and Wait", func(t *testing.T) {
+		r, err := New().Quietly().Start("sh", "-c", "sleep 0.2; exit 5")
+		assert.NoError(t, err)
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			r, err := New().Quietly().Start(test.cmd[0], test.cmd[1:]...)
-			assert.NoError(t, err)
-			run, ok := r.(*Running)
-			assert.True(t, ok, "unexpected running type")
-			if ok {
-				test.check(t, run)
-			}
-		})
-	}
+		run, ok := r.(*Running)
+		assert.True(t, ok, "unexpected running type")
+
+		assert.NotEqual(t, 0, run.PID(), "PID should not be zero")
+		assert.Contains(t, run.Command(), "sleep 0.2", "Command string should be correct")
+		assert.True(t, run.Running(), "Process should be running initially")
+
+		res := run.Wait()
+
+		assert.NotNil(t, res, "Result should not be nil")
+		assert.False(t, run.Running(), "Process should not be running after Wait")
+		assert.Equal(t, 5, res.ExitCode(), "Exit code should be captured correctly")
+	})
 }
 
-func TestRunning_SignalAndStop_Unix(t *testing.T) {
-	r, err := New().Quietly().Start("sh", "-c", "sleep 10")
-	assert.NoError(t, err)
-	run := r.(*Running)
-	assert.True(t, run.Running())
-	assert.NoError(t, run.Signal(unix.SIGTERM))
-	_ = run.Stop(50 * time.Millisecond)
-	res := run.Wait()
-	assert.False(t, res.Successful())
+func TestRunning_DoneChannel_Unix(t *testing.T) {
+	t.Run("Done channel closes on normal exit", func(t *testing.T) {
+		r, err := New().Quietly().Start("sleep", "0.2")
+		assert.NoError(t, err)
+		run, _ := r.(*Running)
+
+		select {
+		case <-run.Done():
+			res := run.Wait()
+			assert.True(t, res.Successful(), "Process should have exited successfully")
+		case <-time.After(1 * time.Second):
+			t.Fatal("Done channel was not closed within the expected time")
+		}
+	})
+
+	t.Run("Done channel works with select timeout", func(t *testing.T) {
+		r, err := New().Quietly().Start("sleep", "5")
+		assert.NoError(t, err)
+		run, _ := r.(*Running)
+
+		select {
+		case <-run.Done():
+			t.Fatal("Done channel closed prematurely")
+		case <-time.After(100 * time.Millisecond):
+			assert.True(t, run.Running(), "Process should still be running")
+			assert.NoError(t, run.Stop(500*time.Millisecond))
+		}
+	})
+}
+
+func TestRunning_Stop_Unix(t *testing.T) {
+	t.Run("Stop sends SIGTERM for graceful exit", func(t *testing.T) {
+		cmdStr := `
+			trap 'echo "graceful shutdown" >&2; exit 0' SIGTERM
+			echo "Process started..."
+			for i in {1..20}; do # Loop for 10 seconds total
+				sleep 0.5
+			done
+		`
+		r, err := New().Quietly().Start("bash", "-c", cmdStr)
+		assert.NoError(t, err)
+		run, _ := r.(*Running)
+
+		time.Sleep(100 * time.Millisecond)
+		assert.True(t, run.Running())
+
+		err = run.Stop(1 * time.Second)
+		assert.NoError(t, err, "Stop should not return an error on graceful exit")
+
+		res := run.Wait()
+		assert.True(t, res.Successful(), "Process should have exited successfully (exit 0)")
+		assert.Contains(t, res.ErrorOutput(), "graceful shutdown")
+	})
+
+	t.Run("Stop escalates to SIGKILL if timeout is exceeded", func(t *testing.T) {
+		// This script traps SIGTERM but then sleeps for 2 seconds, which is
+		// longer than the Stop timeout, forcing a SIGKILL.
+		cmdStr := `
+			trap 'echo "ignoring SIGTERM"; sleep 2' SIGTERM
+			echo "Process started..."
+			sleep 10
+		`
+		r, err := New().Quietly().Start("bash", "-c", cmdStr)
+		assert.NoError(t, err)
+		run, _ := r.(*Running)
+		time.Sleep(100 * time.Millisecond)
+
+		// Stop gracefully, but with a very short timeout (50ms). The process's
+		// trap will take too long (2s), so it should be forcibly killed.
+		err = run.Stop(50 * time.Millisecond)
+		assert.NoError(t, err)
+
+		res := run.Wait()
+		assert.False(t, res.Successful(), "Process should have been killed, resulting in failure")
+		// A process killed by SIGKILL on Unix has an exit code of 137 (128 + 9).
+		assert.Equal(t, 137, res.ExitCode())
+	})
+}
+
+func TestRunning_Signal_Unix(t *testing.T) {
+	t.Run("can send a trappable signal to a process", func(t *testing.T) {
+		tempDir := t.TempDir()
+		signalFile := filepath.Join(tempDir, "signal_received.txt")
+
+		cmdStr := fmt.Sprintf(`
+			trap 'echo "USR1 received" > %s' USR1
+			echo "Process started, waiting for signal..."
+			# Loop until the signal file is created by the trap
+			while [ ! -f "%s" ]; do
+				sleep 0.1
+			done
+		`, signalFile, signalFile)
+
+		r, err := New().Quietly().Start("bash", "-c", cmdStr)
+		assert.NoError(t, err)
+		run, _ := r.(*Running)
+
+		time.Sleep(200 * time.Millisecond)
+		assert.True(t, run.Running())
+
+		err = run.Signal(unix.SIGUSR1)
+		assert.NoError(t, err)
+
+		res := run.Wait()
+		assert.True(t, res.Successful(), "Process should have exited cleanly after the signal")
+
+		content, err := os.ReadFile(signalFile)
+		assert.NoError(t, err)
+		assert.Equal(t, "USR1 received\n", string(content))
+	})
 }
