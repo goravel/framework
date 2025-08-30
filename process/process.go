@@ -141,8 +141,8 @@ func (r *Process) start(name string, args ...string) (contractsprocess.Running, 
 		stderrWriters = append(stderrWriters, os.Stderr)
 	}
 	if r.onOutput != nil {
-		stdoutWriters = append(stdoutWriters, NewOutputWriter(contractsprocess.OutputTypeStdout, r.onOutput))
-		stderrWriters = append(stderrWriters, NewOutputWriter(contractsprocess.OutputTypeStderr, r.onOutput))
+		stdoutWriters = append(stdoutWriters, NewOutputWriterForProcess(contractsprocess.OutputTypeStdout, r.onOutput))
+		stderrWriters = append(stderrWriters, NewOutputWriterForProcess(contractsprocess.OutputTypeStderr, r.onOutput))
 	}
 
 	if len(stdoutWriters) > 0 {
