@@ -2,8 +2,11 @@ package process
 
 import (
 	"bytes"
+	"errors"
+	"os"
 	"os/exec"
 	"sync"
+	"time"
 
 	contractsprocess "github.com/goravel/framework/contracts/process"
 )
@@ -68,6 +71,38 @@ func (r *Running) Command() string {
 	return r.cmd.String()
 }
 
+func (r *Running) Running() bool {
+	if r.cmd == nil {
+		return false
+	}
+
+	return running(r.cmd.Process)
+}
+
+func (r *Running) Kill() error {
+	if r.cmd == nil {
+		return errors.New("process not running")
+	}
+
+	return kill(r.cmd.Process)
+}
+
+func (r *Running) Signal(sig os.Signal) error {
+	if r.cmd == nil {
+		return errors.New("process not running")
+	}
+
+	return signal(r.cmd.Process, sig)
+}
+
+func (r *Running) Stop(timeout time.Duration, sig ...os.Signal) error {
+	if r.cmd == nil {
+		return errors.New("process not running")
+	}
+
+	return stop(r.cmd.Process, r.doneChan, timeout, sig...)
+}
+
 func (r *Running) Output() string {
 	if r.stdoutBuffer == nil {
 		return ""
@@ -92,10 +127,14 @@ func (r *Running) LatestErrorOutput() string {
 
 func buildResult(r *Running, waitErr error) *Result {
 	exitCode := 0
-	if r.cmd != nil && r.cmd.ProcessState != nil {
-		exitCode = r.cmd.ProcessState.ExitCode()
-	} else if waitErr != nil {
+	if waitErr != nil {
 		exitCode = -1
+		var exitErr *exec.ExitError
+		if errors.As(waitErr, &exitErr) {
+			exitCode = exitErr.ExitCode()
+		}
+	} else if r.cmd != nil && r.cmd.ProcessState != nil {
+		exitCode = r.cmd.ProcessState.ExitCode()
 	}
 
 	command := ""

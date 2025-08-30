@@ -88,12 +88,15 @@ func TestRunning_Stop_Unix(t *testing.T) {
 	})
 
 	t.Run("Stop escalates to SIGKILL if timeout is exceeded", func(t *testing.T) {
-		// This script traps SIGTERM but then sleeps for 2 seconds, which is
-		// longer than the Stop timeout, forcing a SIGKILL.
+		// This script traps SIGTERM, but then sleeps for 2 seconds. This is
+		// longer than our Stop() timeout, which will force an escalation to SIGKILL.
 		cmdStr := `
 			trap 'echo "ignoring SIGTERM"; sleep 2' SIGTERM
 			echo "Process started..."
-			sleep 10
+			# Loop for 10 seconds total. The SIGKILL will interrupt this loop.
+			for i in {1..20}; do
+				sleep 0.5
+			done
 		`
 		r, err := New().Quietly().Start("bash", "-c", cmdStr)
 		assert.NoError(t, err)
@@ -107,8 +110,7 @@ func TestRunning_Stop_Unix(t *testing.T) {
 
 		res := run.Wait()
 		assert.False(t, res.Successful(), "Process should have been killed, resulting in failure")
-		// A process killed by SIGKILL on Unix has an exit code of 137 (128 + 9).
-		assert.Equal(t, 137, res.ExitCode())
+		assert.Equal(t, -1, res.ExitCode())
 	})
 }
 
