@@ -13,7 +13,7 @@ func running(p *os.Process) bool {
 		return false
 	}
 
-	_, err := os.FindProcess(r.cmd.Process.Pid)
+	_, err := os.FindProcess(p.Pid)
 	return err == nil
 }
 
