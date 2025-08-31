@@ -126,16 +126,7 @@ func (r *Running) LatestErrorOutput() string {
 }
 
 func buildResult(r *Running, waitErr error) *Result {
-	exitCode := 0
-	if waitErr != nil {
-		exitCode = -1
-		var exitErr *exec.ExitError
-		if errors.As(waitErr, &exitErr) {
-			exitCode = exitErr.ExitCode()
-		}
-	} else if r.cmd != nil && r.cmd.ProcessState != nil {
-		exitCode = r.cmd.ProcessState.ExitCode()
-	}
+	exitCode := getExitCode(r.cmd, waitErr)
 
 	command := ""
 	if r.cmd != nil {
@@ -163,4 +154,21 @@ func lastN(buf *bytes.Buffer, n int) string {
 		return s
 	}
 	return s[len(s)-n:]
+}
+
+func getExitCode(cmd *exec.Cmd, err error) int {
+	exitCode := -1
+	if cmd != nil && cmd.ProcessState != nil {
+		exitCode = cmd.ProcessState.ExitCode()
+	} else if err != nil {
+		var ee *exec.ExitError
+		if errors.As(err, &ee) {
+			exitCode = ee.ExitCode()
+		}
+	} else {
+		// no error and no state -> assume 0
+		exitCode = 0
+	}
+
+	return exitCode
 }
