@@ -15,11 +15,11 @@ import (
 
 type setup struct {
 	command     string
+	facade      string
 	module      string
+	force       bool
 	onInstall   []modify.Apply
 	onUninstall []modify.Apply
-	facade      string
-	force       bool
 }
 
 var osExit = os.Exit

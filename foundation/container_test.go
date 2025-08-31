@@ -45,6 +45,15 @@ func (s *ContainerTestSuite) TestBind() {
 	}
 }
 
+func (s *ContainerTestSuite) TestGetInstalledFacades() {
+	callback := func(app foundation.Application) (any, error) {
+		return 1, nil
+	}
+	s.container.Bind("Bind", callback)
+
+	s.ElementsMatch([]any{"Bind"}, s.container.Bindings())
+}
+
 func (s *ContainerTestSuite) TestBindWith() {
 	callback := func(app foundation.Application, parameters map[string]any) (any, error) {
 		return parameters["name"], nil

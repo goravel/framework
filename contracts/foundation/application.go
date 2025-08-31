@@ -84,6 +84,8 @@ type Application interface {
 	// Container
 	// Bind registers a binding with the container.
 	Bind(key any, callback func(app Application) (any, error))
+	// Bindings returns all bindings registered in the container.
+	Bindings() []any
 	// BindWith registers a binding with the container.
 	BindWith(key any, callback func(app Application, parameters map[string]any) (any, error))
 	// Fresh modules after changing config, will fresh all bindings except for config if no bindings provided.

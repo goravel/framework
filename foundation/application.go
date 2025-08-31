@@ -71,8 +71,8 @@ func (r *Application) Boot() {
 		console.NewEnvDecryptCommand(),
 		console.NewTestMakeCommand(),
 		console.NewPackageMakeCommand(),
-		console.NewPackageInstallCommand(binding.Facades, r.getInstalledFacades()),
-		console.NewPackageUninstallCommand(binding.Facades, r.getInstalledFacades()),
+		console.NewPackageInstallCommand(binding.Bindings, r.Bindings()),
+		console.NewPackageUninstallCommand(binding.Bindings, r.Bindings()),
 		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
 	})
 	r.bootArtisan()
@@ -247,18 +247,6 @@ func (r *Application) getConfiguredServiceProviders() []foundation.ServiceProvid
 	r.configuredServiceProviders = sortConfiguredServiceProviders(providers)
 
 	return r.configuredServiceProviders
-}
-
-func (r *Application) getInstalledFacades() []string {
-	var facades []string
-	r.bindings.Range(func(key, value interface{}) bool {
-		if bind, ok := key.(string); ok {
-			facades = append(facades, bind)
-		}
-		return true
-	})
-
-	return facades
 }
 
 func (r *Application) registerBaseServiceProviders() {
