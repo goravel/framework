@@ -5,6 +5,7 @@ package process
 import (
 	"bytes"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -14,6 +15,11 @@ import (
 
 	contractsprocess "github.com/goravel/framework/contracts/process"
 )
+
+type fakeSig struct{}
+
+func (fakeSig) String() string { return "fake" }
+func (fakeSig) Signal()        {}
 
 func TestProcess_Run_Unix(t *testing.T) {
 	tests := []struct {
@@ -154,4 +160,36 @@ func TestProcess_OnOutput_Callbacks_Unix(t *testing.T) {
 func TestProcess_Start_ErrorOnMissingCommand_Unix(t *testing.T) {
 	_, err := New().Quietly().Start("")
 	assert.Error(t, err)
+}
+
+func TestProcess_Run_ErrorOnMissingCommand_Unix(t *testing.T) {
+	_, err := New().Quietly().Run("")
+	assert.Error(t, err)
+}
+
+func TestProcess_WithContext_And_TTY_Unix(t *testing.T) {
+	res, err := New().WithContext(nil).TTY().Quietly().Run("sh", "-c", "echo hi")
+	assert.NoError(t, err)
+	assert.True(t, res.Successful())
+	assert.Contains(t, res.Output(), "hi")
+}
+
+func TestGetExitCode_Branches_Unix(t *testing.T) {
+	assert.Equal(t, 0, getExitCode(nil, nil))
+
+	cmd := exec.Command("sh", "-c", "exit 7")
+	err := cmd.Run()
+	assert.Error(t, err)
+	assert.Equal(t, 7, getExitCode(nil, err))
+
+	cmd2 := exec.Command("sh", "-c", "exit 0")
+	_ = cmd2.Run()
+	assert.Equal(t, 0, getExitCode(cmd2, nil))
+}
+
+func TestUnixHelpers_DirectCalls_Unix(t *testing.T) {
+	assert.False(t, running(nil))
+	assert.Error(t, kill(nil))
+	assert.Error(t, signal(nil, fakeSig{}))
+	assert.Error(t, stop(nil, make(chan struct{}), 0))
 }

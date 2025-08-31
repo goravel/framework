@@ -146,3 +146,71 @@ func TestRunning_Signal_Unix(t *testing.T) {
 		assert.Equal(t, "USR1 received\n", string(content))
 	})
 }
+
+func TestRunning_Kill_Unix(t *testing.T) {
+	r, err := New().Quietly().Start("sleep", "5")
+	assert.NoError(t, err)
+	run, _ := r.(*Running)
+	time.Sleep(50 * time.Millisecond)
+	assert.NoError(t, run.Kill())
+	res := run.Wait()
+	assert.False(t, res.Successful())
+}
+
+func TestRunning_OutputAndError_Unix(t *testing.T) {
+	r, err := New().Quietly().Start("sh", "-c", "printf out; printf err 1>&2")
+	assert.NoError(t, err)
+	run, _ := r.(*Running)
+	res := run.Wait()
+	assert.True(t, res.Successful())
+	assert.Equal(t, "out", run.Output())
+	assert.Equal(t, "err", run.ErrorOutput())
+}
+
+func TestRunning_Stop_AlreadyExited_Unix(t *testing.T) {
+	r, err := New().Quietly().Start("sh", "-c", "true")
+	assert.NoError(t, err)
+	run, _ := r.(*Running)
+	res := run.Wait()
+	assert.True(t, res.Successful())
+	// Process already exited; Stop should be a no-op
+	assert.NoError(t, run.Stop(50*time.Millisecond))
+}
+
+func TestRunning_LatestOutputAndError_Unix(t *testing.T) {
+	// Produce large outputs to exercise latest tail behavior (4096)
+	script := `
+	for i in $(seq 1 5000); do echo -n a; done
+	for i in $(seq 1 5000); do echo -n b 1>&2; done
+	`
+	r, err := New().Quietly().Start("bash", "-c", script)
+	assert.NoError(t, err)
+	run, _ := r.(*Running)
+	_ = run.Wait()
+	assert.Equal(t, 4096, len(run.LatestOutput()))
+	assert.Equal(t, 4096, len(run.LatestErrorOutput()))
+}
+
+func TestRunning_NilBranches_Unix(t *testing.T) {
+	r := &Running{}
+	assert.Equal(t, 0, r.PID())
+	assert.Equal(t, "", r.Command())
+	assert.False(t, r.Running())
+	assert.Equal(t, "", r.Output())
+	assert.Equal(t, "", r.ErrorOutput())
+	assert.Equal(t, "", r.LatestOutput())
+	assert.Equal(t, "", r.LatestErrorOutput())
+	assert.Error(t, r.Kill())
+	assert.Error(t, r.Signal(unix.SIGTERM))
+	assert.Error(t, r.Stop(0))
+}
+
+func TestRunning_DisableBuffering_OutputEmpty_Unix(t *testing.T) {
+	// When buffering is disabled, Output/ErrorOutput should be empty
+	r, err := New().DisableBuffering().Quietly().Start("sh", "-c", "printf out; printf err 1>&2")
+	assert.NoError(t, err)
+	run, _ := r.(*Running)
+	_ = run.Wait()
+	assert.Equal(t, "", run.Output())
+	assert.Equal(t, "", run.ErrorOutput())
+}
