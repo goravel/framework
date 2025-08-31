@@ -211,7 +211,7 @@ func (r *Pipe) start(configure func(contractsprocess.PipeBuilder)) (contractspro
 		started = i + 1
 	}
 
-	return NewRunningPipe(commands, steps, interWriters, stdoutBuffers, stderrBuffers), nil
+	return NewRunningPipe(commands, steps, interReaders, interWriters, stdoutBuffers, stderrBuffers), nil
 }
 
 type PipeBuilder struct {

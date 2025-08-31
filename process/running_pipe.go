@@ -15,6 +15,7 @@ type RunningPipe struct {
 	commands []*exec.Cmd
 	steps    []*contractsprocess.Step
 
+	interReaders []*io.PipeReader
 	interWriters []*io.PipeWriter
 
 	stdOutputBuffers []*bytes.Buffer
@@ -25,29 +26,52 @@ type RunningPipe struct {
 	resultMu sync.RWMutex
 }
 
-func NewRunningPipe(commands []*exec.Cmd, steps []*contractsprocess.Step, interWriters []*io.PipeWriter, stdout, stderr []*bytes.Buffer) *RunningPipe {
-	run := &RunningPipe{
+func NewRunningPipe(
+	commands []*exec.Cmd,
+	steps []*contractsprocess.Step,
+	interReaders []*io.PipeReader,
+	interWriters []*io.PipeWriter,
+	stdout, stderr []*bytes.Buffer,
+) *RunningPipe {
+	pipeRunner := &RunningPipe{
 		commands:         commands,
 		steps:            steps,
+		interReaders:     interReaders,
 		interWriters:     interWriters,
 		stdOutputBuffers: stdout,
 		stdErrorBuffers:  stderr,
 		doneChan:         make(chan struct{}),
 	}
 
-	go func() {
+	go func(runner *RunningPipe) {
+		defer func() {
+			recover()
+			close(runner.doneChan)
+		}()
+
 		var waitErr error
-		for _, cmd := range run.commands {
+		for i, cmd := range runner.commands {
 			if cmd == nil {
+				// If there's an interWriter for this position, close it so downstream doesn't block
+				if i < len(runner.interWriters) {
+					_ = runner.interWriters[i].Close()
+				}
 				continue
 			}
+
 			waitErr = cmd.Wait()
+
+			// Close the writer that fed the next process's stdin.
+			// Closing here ensures the next process sees EOF when upstream finishes.
+			if i < len(runner.interWriters) {
+				_ = runner.interWriters[i].Close()
+			}
 		}
 
-		lastIdx := len(run.commands) - 1
+		lastIdx := len(runner.commands) - 1
 		var finalCmd *exec.Cmd
 		if lastIdx >= 0 {
-			finalCmd = run.commands[lastIdx]
+			finalCmd = runner.commands[lastIdx]
 		}
 
 		exitCode := getExitCode(finalCmd, waitErr)
@@ -58,27 +82,28 @@ func NewRunningPipe(commands []*exec.Cmd, steps []*contractsprocess.Step, interW
 		}
 
 		stdoutStr, stderrStr := "", ""
-		if lastIdx >= 0 && lastIdx < len(run.stdOutputBuffers) && run.stdOutputBuffers[lastIdx] != nil {
-			stdoutStr = run.stdOutputBuffers[lastIdx].String()
+		if lastIdx >= 0 && lastIdx < len(runner.stdOutputBuffers) && runner.stdOutputBuffers[lastIdx] != nil {
+			stdoutStr = runner.stdOutputBuffers[lastIdx].String()
 		}
-		if lastIdx >= 0 && lastIdx < len(run.stdErrorBuffers) && run.stdErrorBuffers[lastIdx] != nil {
-			stderrStr = run.stdErrorBuffers[lastIdx].String()
+		if lastIdx >= 0 && lastIdx < len(runner.stdErrorBuffers) && runner.stdErrorBuffers[lastIdx] != nil {
+			stderrStr = runner.stdErrorBuffers[lastIdx].String()
 		}
 
 		res := NewResult(exitCode, cmdStr, stdoutStr, stderrStr)
 
-		run.resultMu.Lock()
-		run.result = res
-		run.resultMu.Unlock()
+		runner.resultMu.Lock()
+		runner.result = res
+		runner.resultMu.Unlock()
 
-		for _, w := range run.interWriters {
+		for _, w := range runner.interWriters {
 			_ = w.Close()
 		}
+		for _, r := range runner.interReaders {
+			_ = r.Close()
+		}
+	}(pipeRunner)
 
-		close(run.doneChan)
-	}()
-
-	return run
+	return pipeRunner
 }
 
 func (r *RunningPipe) PIDs() map[string]int {

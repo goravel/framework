@@ -24,25 +24,43 @@ type Running struct {
 }
 
 func NewRunning(cmd *exec.Cmd, stdout, stderr *bytes.Buffer) *Running {
-	running := &Running{
+	runner := &Running{
 		cmd:          cmd,
 		stdoutBuffer: stdout,
 		stderrBuffer: stderr,
 		doneChan:     make(chan struct{}),
 	}
 
-	go func() {
-		waitErr := running.cmd.Wait()
+	go func(runner *Running) {
+		defer func() {
+			recover()
+			close(runner.doneChan)
+		}()
 
-		res := buildResult(running, waitErr)
-		running.resultMu.Lock()
-		running.result = res
-		running.resultMu.Unlock()
+		waitErr := runner.cmd.Wait()
+		exitCode := getExitCode(runner.cmd, waitErr)
 
-		close(running.doneChan)
-	}()
+		cmdStr := ""
+		if runner.cmd != nil {
+			cmdStr = runner.cmd.String()
+		}
 
-	return running
+		stdoutStr, stderrStr := "", ""
+		if runner.stdoutBuffer != nil {
+			stdoutStr = runner.stdoutBuffer.String()
+		}
+		if runner.stderrBuffer != nil {
+			stderrStr = runner.stderrBuffer.String()
+		}
+
+		result := NewResult(exitCode, cmdStr, stdoutStr, stderrStr)
+
+		runner.resultMu.Lock()
+		runner.result = result
+		runner.resultMu.Unlock()
+	}(runner)
+
+	return runner
 }
 
 func (r *Running) Done() <-chan struct{} {
@@ -123,26 +141,6 @@ func (r *Running) LatestOutput() string {
 
 func (r *Running) LatestErrorOutput() string {
 	return lastN(r.stderrBuffer, 4096)
-}
-
-func buildResult(r *Running, waitErr error) *Result {
-	exitCode := getExitCode(r.cmd, waitErr)
-
-	command := ""
-	if r.cmd != nil {
-		command = r.Command()
-	}
-
-	stdout := ""
-	if r.stdoutBuffer != nil {
-		stdout = r.stdoutBuffer.String()
-	}
-	stderr := ""
-	if r.stderrBuffer != nil {
-		stderr = r.stderrBuffer.String()
-	}
-
-	return NewResult(exitCode, command, stdout, stderr)
 }
 
 func lastN(buf *bytes.Buffer, n int) string {
