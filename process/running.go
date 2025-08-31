@@ -2,6 +2,7 @@ package process
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"os"
 	"os/exec"
@@ -14,18 +15,21 @@ import (
 var _ contractsprocess.Running = (*Running)(nil)
 
 type Running struct {
-	cmd          *exec.Cmd
+	cmd    *exec.Cmd
+	cancel context.CancelFunc
+
 	stdoutBuffer *bytes.Buffer
 	stderrBuffer *bytes.Buffer
-	doneChan     chan struct{}
 
+	doneChan chan struct{}
 	result   contractsprocess.Result
 	resultMu sync.RWMutex
 }
 
-func NewRunning(cmd *exec.Cmd, stdout, stderr *bytes.Buffer) *Running {
+func NewRunning(cmd *exec.Cmd, cancel context.CancelFunc, stdout, stderr *bytes.Buffer) *Running {
 	runner := &Running{
 		cmd:          cmd,
+		cancel:       cancel,
 		stdoutBuffer: stdout,
 		stderrBuffer: stderr,
 		doneChan:     make(chan struct{}),
@@ -35,6 +39,9 @@ func NewRunning(cmd *exec.Cmd, stdout, stderr *bytes.Buffer) *Running {
 		defer func() {
 			if err := recover(); err != nil {
 				// TODO: see what should be done here with this error, should we consider it as WaitErr?
+			}
+			if runner.cancel != nil {
+				runner.cancel()
 			}
 			close(runner.doneChan)
 		}()

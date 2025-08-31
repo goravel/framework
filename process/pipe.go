@@ -110,10 +110,9 @@ func (r *Pipe) start(configure func(contractsprocess.PipeBuilder)) (contractspro
 		ctx = context.Background()
 	}
 
+	var cancel context.CancelFunc
 	if r.timeout > 0 {
-		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, r.timeout)
-		_ = cancel
 	}
 
 	commands := make([]*exec.Cmd, len(steps))
@@ -195,6 +194,10 @@ func (r *Pipe) start(configure func(contractsprocess.PipeBuilder)) (contractspro
 	started := 0
 	for i, cmd := range commands {
 		if err := cmd.Start(); err != nil {
+			if cancel != nil {
+				cancel()
+			}
+
 			for j := 0; j < started; j++ {
 				if commands[j].Process != nil {
 					_ = kill(commands[j].Process)
@@ -211,7 +214,7 @@ func (r *Pipe) start(configure func(contractsprocess.PipeBuilder)) (contractspro
 		started = i + 1
 	}
 
-	return NewRunningPipe(commands, steps, interReaders, interWriters, stdoutBuffers, stderrBuffers), nil
+	return NewRunningPipe(commands, steps, cancel, interReaders, interWriters, stdoutBuffers, stderrBuffers), nil
 }
 
 type PipeBuilder struct {

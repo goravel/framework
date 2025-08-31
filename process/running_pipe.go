@@ -2,6 +2,7 @@ package process
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"os"
 	"os/exec"
@@ -14,6 +15,7 @@ import (
 type RunningPipe struct {
 	commands []*exec.Cmd
 	steps    []*contractsprocess.Step
+	cancel   context.CancelFunc
 
 	interReaders []*io.PipeReader
 	interWriters []*io.PipeWriter
@@ -29,6 +31,7 @@ type RunningPipe struct {
 func NewRunningPipe(
 	commands []*exec.Cmd,
 	steps []*contractsprocess.Step,
+	cancel context.CancelFunc,
 	interReaders []*io.PipeReader,
 	interWriters []*io.PipeWriter,
 	stdout, stderr []*bytes.Buffer,
@@ -36,6 +39,7 @@ func NewRunningPipe(
 	pipeRunner := &RunningPipe{
 		commands:         commands,
 		steps:            steps,
+		cancel:           cancel,
 		interReaders:     interReaders,
 		interWriters:     interWriters,
 		stdOutputBuffers: stdout,
@@ -47,6 +51,9 @@ func NewRunningPipe(
 		defer func() {
 			if err := recover(); err != nil {
 				// TODO: see what should be done here with this error, should we consider it as WaitErr?
+			}
+			if runner.cancel != nil {
+				runner.cancel()
 			}
 			close(runner.doneChan)
 		}()

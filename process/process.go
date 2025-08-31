@@ -103,10 +103,10 @@ func (r *Process) run(name string, args ...string) (contractsprocess.Result, err
 
 func (r *Process) start(name string, args ...string) (contractsprocess.Running, error) {
 	ctx := r.ctx
+
+	var cancel context.CancelFunc
 	if r.timeout > 0 {
-		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, r.timeout)
-		_ = cancel
 	}
 
 	cmd := exec.CommandContext(ctx, name, args...)
@@ -153,8 +153,12 @@ func (r *Process) start(name string, args ...string) (contractsprocess.Running, 
 	}
 
 	if err := cmd.Start(); err != nil {
+		if cancel != nil {
+			cancel()
+		}
+
 		return nil, err
 	}
 
-	return NewRunning(cmd, stdoutBuffer, stderrBuffer), nil
+	return NewRunning(cmd, cancel, stdoutBuffer, stderrBuffer), nil
 }
