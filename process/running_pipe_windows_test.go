@@ -1,0 +1,55 @@
+//go:build windows
+
+package process
+
+import (
+	"os"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+
+	contractsprocess "github.com/goravel/framework/contracts/process"
+)
+
+func TestRunningPipe_PIDs_Running_Done_Wait_Windows(t *testing.T) {
+	rp, err := NewPipe().Quietly().Start(func(b contractsprocess.PipeBuilder) {
+		b.Command("cmd", "/C", "(echo start & powershell -NoLogo -NoProfile -Command Start-Sleep -Milliseconds 200 & echo end)").As("first")
+		b.Command("cmd", "/C", "more").As("second")
+	})
+	assert.NoError(t, err)
+
+	pids := rp.PIDs()
+	assert.Len(t, pids, 2)
+	assert.NotEqual(t, 0, pids["first"])
+	assert.NotEqual(t, 0, pids["second"])
+	assert.True(t, rp.Running())
+
+	res := rp.Wait()
+	out := strings.ReplaceAll(res.Output(), "\r", "")
+	assert.True(t, strings.Contains(out, "start"))
+	assert.True(t, strings.Contains(out, "end"))
+	assert.True(t, res.Successful())
+	assert.False(t, rp.Running())
+}
+
+func TestRunningPipe_Stop_Windows(t *testing.T) {
+	rp, err := NewPipe().Quietly().Start(func(b contractsprocess.PipeBuilder) {
+		b.Command("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Seconds 10").As("sleep")
+	})
+	assert.NoError(t, err)
+	time.Sleep(100 * time.Millisecond)
+	assert.NoError(t, rp.Stop(1*time.Second))
+	res := rp.Wait()
+	assert.False(t, res.Successful())
+}
+
+func TestRunningPipe_Signal_Windows_NoOp(t *testing.T) {
+	rp, err := NewPipe().Quietly().Start(func(b contractsprocess.PipeBuilder) {
+		b.Command("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Seconds 1").As("sleep")
+	})
+	assert.NoError(t, err)
+	assert.NoError(t, rp.Signal(os.Interrupt))
+	_ = rp.Wait()
+}

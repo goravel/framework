@@ -4,6 +4,7 @@ package process
 
 import (
 	"bytes"
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
@@ -111,7 +112,7 @@ func TestPipe_Start_ErrorOnStartFailure_Unix(t *testing.T) {
 }
 
 func TestPipe_WithContext_Unix(t *testing.T) {
-	res, err := NewPipe().WithContext(nil).Quietly().Run(func(b contractsprocess.PipeBuilder) {
+	res, err := NewPipe().WithContext(context.TODO()).Quietly().Run(func(b contractsprocess.PipeBuilder) {
 		b.Command("sh", "-c", "printf 'ok'")
 	})
 	assert.NoError(t, err)

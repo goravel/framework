@@ -4,6 +4,7 @@ package process
 
 import (
 	"bytes"
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -157,24 +158,41 @@ func TestProcess_OnOutput_Callbacks_Unix(t *testing.T) {
 	}
 }
 
-func TestProcess_Start_ErrorOnMissingCommand_Unix(t *testing.T) {
+func TestProcess_ErrorOnMissingCommand_Unix(t *testing.T) {
 	_, err := New().Quietly().Start("")
 	assert.Error(t, err)
-}
 
-func TestProcess_Run_ErrorOnMissingCommand_Unix(t *testing.T) {
-	_, err := New().Quietly().Run("")
+	_, err = New().Quietly().Run("")
 	assert.Error(t, err)
 }
 
-func TestProcess_WithContext_And_TTY_Unix(t *testing.T) {
-	res, err := New().WithContext(nil).TTY().Quietly().Run("sh", "-c", "echo hi")
-	assert.NoError(t, err)
-	assert.True(t, res.Successful())
-	assert.Contains(t, res.Output(), "hi")
+func TestProcess_WithContext(t *testing.T) {
+	t.Run("Successful when context is not cancelled", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		res, err := New().WithContext(ctx).Quietly().Run("echo", "hello world")
+
+		assert.NoError(t, err, "Run should not return an error on success")
+		assert.NotNil(t, res, "Result object should not be nil")
+		assert.True(t, res.Successful(), "Process should be successful")
+		assert.Equal(t, 0, res.ExitCode(), "Exit code should be 0 for a successful command")
+		assert.Contains(t, res.Output(), "hello world", "Output should contain the echoed string")
+	})
+
+	t.Run("Terminates process when context times out", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+		defer cancel()
+
+		res, err := New().WithContext(ctx).Quietly().Run("sleep", "2")
+		assert.NoError(t, err, "Run should not return an error, but the result should indicate failure")
+		assert.NotNil(t, res, "Result object should not be nil even on failure")
+		assert.False(t, res.Successful(), "Process should have failed because it was killed")
+		assert.NotEqual(t, 0, res.ExitCode(), "Exit code should be non-zero")
+	})
 }
 
-func TestGetExitCode_Branches_Unix(t *testing.T) {
+func TestGetExitCode_Unix(t *testing.T) {
 	assert.Equal(t, 0, getExitCode(nil, nil))
 
 	cmd := exec.Command("sh", "-c", "exit 7")
