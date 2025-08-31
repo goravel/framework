@@ -45,7 +45,9 @@ func NewRunningPipe(
 
 	go func(runner *RunningPipe) {
 		defer func() {
-			recover()
+			if err := recover(); err != nil {
+				// TODO: see what should be done here with this error, should we consider it as WaitErr?
+			}
 			close(runner.doneChan)
 		}()
 

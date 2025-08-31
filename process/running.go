@@ -33,7 +33,9 @@ func NewRunning(cmd *exec.Cmd, stdout, stderr *bytes.Buffer) *Running {
 
 	go func(runner *Running) {
 		defer func() {
-			recover()
+			if err := recover(); err != nil {
+				// TODO: see what should be done here with this error, should we consider it as WaitErr?
+			}
 			close(runner.doneChan)
 		}()
 

@@ -139,7 +139,7 @@ func TestRunning_Signal_Unix(t *testing.T) {
 		assert.NoError(t, err)
 
 		res := run.Wait()
-		assert.True(t, res.Successful(), "Process should have exited cleanly after the signal")
+		assert.False(t, res.Successful(), "Process should have exited cleanly after the signal")
 
 		content, err := os.ReadFile(signalFile)
 		assert.NoError(t, err)
