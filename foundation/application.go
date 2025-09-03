@@ -71,6 +71,7 @@ func (r *Application) Boot() {
 		console.NewEnvDecryptCommand(),
 		console.NewTestMakeCommand(),
 		console.NewPackageMakeCommand(),
+		console.NewProviderMakeCommand(),
 		console.NewPackageInstallCommand(binding.Bindings, r.Bindings()),
 		console.NewPackageUninstallCommand(binding.Bindings, r.Bindings()),
 		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
