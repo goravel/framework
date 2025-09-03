@@ -125,6 +125,10 @@ func (r *Blueprint) DateTime(column string, precision ...int) driver.ColumnDefin
 	return columnImpl
 }
 
+func (r *Blueprint) DateTimes(precision ...int) {
+	_ = r.DateTime("created_at", precision...).Nullable()
+	_ = r.DateTime("updated_at", precision...).Nullable()
+}
 func (r *Blueprint) DateTimeTz(column string, precision ...int) driver.ColumnDefinition {
 	columnImpl := r.createAndAddColumn("dateTimeTz", column)
 	if len(precision) > 0 {

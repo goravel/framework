@@ -26,6 +26,8 @@ type Blueprint interface {
 	Date(column string) driver.ColumnDefinition
 	// DateTime Create a new date-time column on the table.
 	DateTime(column string, precision ...int) driver.ColumnDefinition
+	// DateTimes Create `created_at` and `updated_at` columns on the table.
+	DateTimes(precision ...int)
 	// DateTimeTz Create a new date-time column (with time zone) on the table.
 	DateTimeTz(column string, precision ...int) driver.ColumnDefinition
 	// Decimal Create a new decimal column on the table.
