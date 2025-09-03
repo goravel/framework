@@ -8,11 +8,14 @@ import (
 
 	"github.com/dave/dst"
 	"github.com/dave/dst/dstutil"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	contractsmatch "github.com/goravel/framework/contracts/packages/match"
 	"github.com/goravel/framework/contracts/packages/modify"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/foundation"
+	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/options"
 	supportfile "github.com/goravel/framework/support/file"
@@ -194,20 +197,20 @@ func (s *FileTestSuite) TestRemove() {
 	}
 }
 
-type ModifyGoFileTestSuite struct {
+type GoFileTestSuite struct {
 	suite.Suite
 	file string
 }
 
-func TestModifyGoFileTestSuite(t *testing.T) {
-	suite.Run(t, new(ModifyGoFileTestSuite))
+func TestGoFileTestSuite(t *testing.T) {
+	suite.Run(t, new(GoFileTestSuite))
 }
 
-func (s *ModifyGoFileTestSuite) SetupTest() {
+func (s *GoFileTestSuite) SetupTest() {
 	s.file = filepath.Join(s.T().TempDir(), "test.go")
 }
 
-func (s *ModifyGoFileTestSuite) TestModifyGoFile() {
+func (s *GoFileTestSuite) TestModifyGoFile() {
 	tests := []struct {
 		name     string
 		setup    func()
@@ -284,4 +287,82 @@ func main() {
 			tt.assert(GoFile(s.file).Find(tt.matchers).Modify(tt.actions...).Apply())
 		})
 	}
+}
+
+func TestWhenFacade(t *testing.T) {
+	t.Run("match", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		modifier := WhenFacade("Auth", apply)
+
+		err := modifier.Apply(options.Facade("Auth"))
+		assert.NoError(t, err)
+		assert.True(t, called)
+	})
+
+	t.Run("no match", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		modifier := WhenFacade("Auth", apply)
+
+		err := modifier.Apply(options.Facade("DB"))
+		assert.NoError(t, err)
+		assert.False(t, called)
+	})
+
+	t.Run("apply error", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called, shouldErr: true}
+		modifier := WhenFacade("Auth", apply)
+
+		err := modifier.Apply(options.Facade("Auth"))
+		assert.Equal(t, assert.AnError, err)
+		assert.True(t, called)
+	})
+}
+
+func TestWhenNoFacades(t *testing.T) {
+	t.Run("no facades exist", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		modifier := WhenNoFacades([]string{"Auth", "DB"}, apply)
+
+		dbFile := filepath.Join(t.TempDir(), "db.go")
+		mockApp := mocksfoundation.NewApplication(t)
+		mockApp.EXPECT().FacadesPath("db.go").Return(dbFile).Once()
+		foundation.App = mockApp
+
+		err := modifier.Apply(options.Facade("Auth"))
+		assert.NoError(t, err)
+		assert.True(t, called)
+	})
+
+	t.Run("facade exists", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		modifier := WhenNoFacades([]string{"Auth", "DB"}, apply)
+
+		dbFile := filepath.Join(t.TempDir(), "db.go")
+		supportfile.PutContent(dbFile, "package facades\n")
+		mockApp := mocksfoundation.NewApplication(t)
+		mockApp.EXPECT().FacadesPath("db.go").Return(dbFile).Once()
+		foundation.App = mockApp
+
+		err := modifier.Apply(options.Facade("Auth"))
+		assert.NoError(t, err)
+		assert.False(t, called)
+	})
+}
+
+type dummyApply struct {
+	called    *bool
+	shouldErr bool
+}
+
+func (d *dummyApply) Apply(...modify.Option) error {
+	*d.called = true
+	if d.shouldErr {
+		return assert.AnError
+	}
+	return nil
 }

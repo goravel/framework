@@ -45,7 +45,7 @@ func (s *ContainerTestSuite) TestBind() {
 	}
 }
 
-func (s *ContainerTestSuite) TestGetInstalledFacades() {
+func (s *ContainerTestSuite) TestBindings() {
 	callback := func(app foundation.Application) (any, error) {
 		return 1, nil
 	}

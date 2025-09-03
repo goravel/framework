@@ -197,9 +197,6 @@ type whenFacadeModifier struct {
 
 func (r whenFacadeModifier) Apply(options ...modify.Option) error {
 	generatedOptions := generateOptions(options)
-	fmt.Println(generatedOptions)
-	fmt.Println(r.facade)
-	fmt.Println("test")
 
 	if r.facade != generatedOptions["facade"] {
 		return nil
