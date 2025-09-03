@@ -96,5 +96,6 @@ func (s *TestMakeCommandTestSuite) TestTestHandle() {
 	s.True(file.Contain("tests/user/user_test.go", "package user"))
 	s.True(file.Contain("tests/user/user_test.go", "type UserTestSuite struct"))
 	s.True(file.Contain("tests/user/user_test.go", "func (s *UserTestSuite) SetupTest() {"))
+	s.True(file.Contain("tests/user/user_test.go", "github.com/goravel/framework/tests"))
 	s.NoError(file.Remove("tests"))
 }
