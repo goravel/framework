@@ -10,8 +10,8 @@ import (
 
 const csrfKey = "X-CSRF-TOKEN"
 
-type Input struct {
-	CSRFToken string
+type BodyPayload struct {
+	CSRFToken string `json:"csrf_token"`
 }
 
 func CSRFToken() httpcontract.Middleware {
@@ -19,13 +19,13 @@ func CSRFToken() httpcontract.Middleware {
 		sessionCSRFTokenInterface := ctx.Request().Session().Get(csrfKey)
 		sessionCSRFToken, ok := sessionCSRFTokenInterface.(string)
 		if !ok || sessionCSRFToken == "" {
-			ctx.Request().Abort(httpcontract.StatusBadRequest)
+			ctx.Request().Abort(httpcontract.StatusUnauthorized)
 			return
 		}
 
 		requestCSRFToken := ctx.Request().Header(csrfKey)
 		if requestCSRFToken == "" {
-			requestCSRFToken = ctx.Request().Origin().FormValue(csrfKey)
+			requestCSRFToken = ctx.Request().Origin().FormValue("csrf_token")
 		}
 
 		if requestCSRFToken == "" {
@@ -38,21 +38,15 @@ func CSRFToken() httpcontract.Middleware {
 				}
 
 				httpReq.Body = io.NopCloser(strings.NewReader(string(rawBody)))
-				var input Input
+				var input BodyPayload
 				if err := json.Unmarshal(rawBody, &input); err == nil && input.CSRFToken != "" {
 					requestCSRFToken = input.CSRFToken
 				}
-
 			}
 		}
 
-		if requestCSRFToken == "" || !strings.EqualFold(requestCSRFToken, sessionCSRFToken) {
-			ctx.Request().Abort(httpcontract.StatusBadRequest)
-			return
-		}
-
-		if requestCSRFToken != sessionCSRFToken {
-			ctx.Request().Abort(httpcontract.StatusTokenMismatch)
+		if requestCSRFToken == "" || requestCSRFToken != sessionCSRFToken {
+			ctx.Request().Abort(httpcontract.StatusUnauthorized)
 			return
 		}
 
