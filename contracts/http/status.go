@@ -73,6 +73,7 @@ const (
 	StatusLoopDetected                  = http.StatusLoopDetected
 	StatusNotExtended                   = http.StatusNotExtended
 	StatusNetworkAuthenticationRequired = http.StatusNetworkAuthenticationRequired
+	StatusTokenMismatch                 = 419
 )
 
 var statusText = map[int]string{
