@@ -2,6 +2,7 @@ package console
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/urfave/cli/v3"
@@ -122,6 +123,297 @@ func TestFlagsToCliFlags(t *testing.T) {
 			assert.Equal(t, stringSliceFlag.Value, cliStringSliceFlag.Value)
 		}
 	}
+}
+
+func TestArgumentsToCliArguments(t *testing.T) {
+	float32Arg := &command.Float32Argument{Name: "float32Arg", Usage: "float32 argument", Value: float32(1.0)}
+	float64Arg := &command.Float64Argument{Name: "float64Arg", Usage: "float64 flag", Value: float64(1.0)}
+	intArg := &command.IntArgument{Name: "intArg", Usage: "int argument", Value: 1}
+	int8Arg := &command.Int8Argument{Name: "int8Arg", Usage: "int8 argument", Value: int8(1)}
+	int16Arg := &command.Int16Argument{Name: "int16Arg", Usage: "int16 argument", Value: int16(1)}
+	int32Arg := &command.Int32Argument{Name: "int32Arg", Usage: "int32 argument", Value: int32(1)}
+	int64Arg := &command.Int64Argument{Name: "int64Arg", Usage: "int64 argument", Value: int64(1)}
+	stringArg := &command.StringArgument{Name: "stringArg", Usage: "string argument", Value: "default"}
+	timestampArg := &command.TimestampArgument{Name: "timestampArg", Usage: "timestamp argument", Value: time.Now()}
+	uintArg := &command.UintArgument{Name: "uintArg", Usage: "uint argument", Value: uint(1)}
+	uint8Arg := &command.Uint8Argument{Name: "uint8Arg", Usage: "uint8 argument", Value: uint8(1)}
+	uint16Arg := &command.Uint16Argument{Name: "uint16Arg", Usage: "uint16 argument", Value: uint16(1)}
+	uint32Arg := &command.Uint32Argument{Name: "uint32Arg", Usage: "uint32 flag", Value: uint32(1)}
+	uint64Arg := &command.Uint64Argument{Name: "uint64Arg", Usage: "uint64 flag", Value: uint64(1)}
+
+	float32SliceArg := &command.Float32SliceArgument{Name: "float32SliceArg", Usage: "float32 slice argument", Value: float32(2.0)}
+	float64SliceArg := &command.Float64SliceArgument{Name: "float64SliceArg", Usage: "float64 slice argument", Value: float64(2.0)}
+	intSliceArg := &command.IntSliceArgument{Name: "intSliceArg", Usage: "int slice argument", Value: int(2)}
+	int8SliceArg := &command.Int8SliceArgument{Name: "int8SliceArg", Usage: "int8 slice argument", Value: int8(2)}
+	int16SliceArg := &command.Int16SliceArgument{Name: "int16SliceArg", Usage: "int16 slice argument", Value: int16(2)}
+	int32SliceArg := &command.Int32SliceArgument{Name: "int32SliceArg", Usage: "int32 slice argument", Value: int32(2)}
+	int64SliceArg := &command.Int64SliceArgument{Name: "int64SliceArg", Usage: "int64 slice argument", Value: int64(2)}
+	stringSliceArg := &command.StringSliceArgument{Name: "stringSliceArg", Usage: "string slice argument", Value: "b"}
+	timestampSliceArg := &command.TimestampSliceArgument{Name: "timestampSliceArg", Usage: "timestamp slice argument", Value: time.Now().Add(time.Hour)}
+	uintSliceArg := &command.UintSliceArgument{Name: "uintSliceArg", Usage: "uint slice argument", Value: uint(2)}
+	uint8SliceArg := &command.Uint8SliceArgument{Name: "uint8SliceArg", Usage: "uint8 slice argument", Value: uint8(2)}
+	uint16SliceArg := &command.Uint16SliceArgument{Name: "uint16SliceArg", Usage: "uint16 slice argument", Value: uint16(2)}
+	uint32SliceArg := &command.Uint32SliceArgument{Name: "uint32SliceArg", Usage: "uint32 slice argument", Value: uint32(2)}
+	uint64SliceArg := &command.Uint64SliceArgument{Name: "uint64SliceArg", Usage: "uint64 slice argument", Value: uint64(2)}
+
+	// Create a slice of command flags
+	arguments := []command.Argument{
+		float32Arg,
+		float64Arg,
+		intArg,
+		int8Arg,
+		int16Arg,
+		int32Arg,
+		int64Arg,
+		stringArg,
+		timestampArg,
+		uintArg,
+		uint8Arg,
+		uint16Arg,
+		uint32Arg,
+		uint64Arg,
+		float32SliceArg,
+		float64SliceArg,
+		intSliceArg,
+		int8SliceArg,
+		int16SliceArg,
+		int32SliceArg,
+		int64SliceArg,
+		stringSliceArg,
+		timestampSliceArg,
+		uintSliceArg,
+		uint8SliceArg,
+		uint16SliceArg,
+		uint32SliceArg,
+		uint64SliceArg,
+	}
+
+	// Convert command flags to CLI arguments
+	cliArguments := argumentsToCliArgs(arguments)
+	assert.NotNil(t, cliArguments)
+
+	// Assert that the number of CLI flags matches the number of command flags
+	assert.Equal(t, len(cliArguments), len(arguments))
+
+	// Assert that each CLI argument has the expected name, aliases, usage, required, and value
+	for i, v := range arguments {
+		switch arg := v.(type) {
+		case *command.Float32Argument:
+			cliArg := cliArguments[i].(*cli.Float32Args)
+			assert.Equal(t, arg.Name, cliArg.Name)
+			assert.Equal(t, arg.Usage, cliArg.UsageText)
+			assert.Equal(t, arg.Value, cliArg.Value)
+			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
+			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+		case *command.Float64Argument:
+			cliArg := cliArguments[i].(*cli.Float64Args)
+			assert.Equal(t, arg.Name, cliArg.Name)
+			assert.Equal(t, arg.Usage, cliArg.UsageText)
+			assert.Equal(t, arg.Value, cliArg.Value)
+			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
+			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+		case *command.IntArgument:
+			cliArg := cliArguments[i].(*cli.IntArgs)
+			assert.Equal(t, arg.Name, cliArg.Name)
+			assert.Equal(t, arg.Usage, cliArg.UsageText)
+			assert.Equal(t, arg.Value, cliArg.Value)
+			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
+			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+		case *command.Int8Argument:
+			cliArg := cliArguments[i].(*cli.Int8Args)
+			assert.Equal(t, arg.Name, cliArg.Name)
+			assert.Equal(t, arg.Usage, cliArg.UsageText)
+			assert.Equal(t, arg.Value, cliArg.Value)
+			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
+			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+		case *command.Int16Argument:
+			cliArg := cliArguments[i].(*cli.Int16Args)
+			assert.Equal(t, arg.Name, cliArg.Name)
+			assert.Equal(t, arg.Usage, cliArg.UsageText)
+			assert.Equal(t, arg.Value, cliArg.Value)
+			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
+			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+		case *command.Int32Argument:
+			cliArg := cliArguments[i].(*cli.Int32Args)
+			assert.Equal(t, arg.Name, cliArg.Name)
+			assert.Equal(t, arg.Usage, cliArg.UsageText)
+			assert.Equal(t, arg.Value, cliArg.Value)
+			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
+			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+		case *command.Int64Argument:
+			cliArg := cliArguments[i].(*cli.Int64Args)
+			assert.Equal(t, arg.Name, cliArg.Name)
+			assert.Equal(t, arg.Usage, cliArg.UsageText)
+			assert.Equal(t, arg.Value, cliArg.Value)
+			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
+			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+		case *command.StringArgument:
+			cliArg := cliArguments[i].(*cli.StringArgs)
+			assert.Equal(t, arg.Name, cliArg.Name)
+			assert.Equal(t, arg.Usage, cliArg.UsageText)
+			assert.Equal(t, arg.Value, cliArg.Value)
+			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
+			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+		case *command.TimestampArgument:
+			cliArg := cliArguments[i].(*cli.TimestampArgs)
+			assert.Equal(t, arg.Name, cliArg.Name)
+			assert.Equal(t, arg.Usage, cliArg.UsageText)
+			assert.Equal(t, arg.Value.Unix(), cliArg.Value.Unix())
+			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
+			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+		case *command.UintArgument:
+			cliArg := cliArguments[i].(*cli.UintArgs)
+			assert.Equal(t, arg.Name, cliArg.Name)
+			assert.Equal(t, arg.Usage, cliArg.UsageText)
+			assert.Equal(t, arg.Value, cliArg.Value)
+			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
+			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+		case *command.Uint8Argument:
+			cliArg := cliArguments[i].(*cli.Uint8Args)
+			assert.Equal(t, arg.Name, cliArg.Name)
+			assert.Equal(t, arg.Usage, cliArg.UsageText)
+			assert.Equal(t, arg.Value, cliArg.Value)
+			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
+			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+		case *command.Uint16Argument:
+			cliArg := cliArguments[i].(*cli.Uint16Args)
+			assert.Equal(t, arg.Name, cliArg.Name)
+			assert.Equal(t, arg.Usage, cliArg.UsageText)
+			assert.Equal(t, arg.Value, cliArg.Value)
+			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
+			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+		case *command.Uint32Argument:
+			cliArg := cliArguments[i].(*cli.Uint32Args)
+			assert.Equal(t, arg.Name, cliArg.Name)
+			assert.Equal(t, arg.Usage, cliArg.UsageText)
+			assert.Equal(t, arg.Value, cliArg.Value)
+			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
+			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+		case *command.Uint64Argument:
+			cliArg := cliArguments[i].(*cli.Uint64Args)
+			assert.Equal(t, arg.Name, cliArg.Name)
+			assert.Equal(t, arg.Usage, cliArg.UsageText)
+			assert.Equal(t, arg.Value, cliArg.Value)
+			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
+			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+		case *command.Float32SliceArgument:
+			cliArg := cliArguments[i].(*cli.Float32Args)
+			assert.Equal(t, arg.Name, cliArg.Name)
+			assert.Equal(t, arg.Usage, cliArg.UsageText)
+			assert.Equal(t, arg.Value, cliArg.Value)
+			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
+			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+		case *command.Float64SliceArgument:
+			cliArg := cliArguments[i].(*cli.Float64Args)
+			assert.Equal(t, arg.Name, cliArg.Name)
+			assert.Equal(t, arg.Usage, cliArg.UsageText)
+			assert.Equal(t, arg.Value, cliArg.Value)
+			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
+			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+		case *command.IntSliceArgument:
+			cliArg := cliArguments[i].(*cli.IntArgs)
+			assert.Equal(t, arg.Name, cliArg.Name)
+			assert.Equal(t, arg.Usage, cliArg.UsageText)
+			assert.Equal(t, arg.Value, cliArg.Value)
+			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
+			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+		case *command.Int8SliceArgument:
+			cliArg := cliArguments[i].(*cli.Int8Args)
+			assert.Equal(t, arg.Name, cliArg.Name)
+			assert.Equal(t, arg.Usage, cliArg.UsageText)
+			assert.Equal(t, arg.Value, cliArg.Value)
+			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
+			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+		case *command.Int16SliceArgument:
+			cliArg := cliArguments[i].(*cli.Int16Args)
+			assert.Equal(t, arg.Name, cliArg.Name)
+			assert.Equal(t, arg.Usage, cliArg.UsageText)
+			assert.Equal(t, arg.Value, cliArg.Value)
+			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
+			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+		case *command.Int32SliceArgument:
+			cliArg := cliArguments[i].(*cli.Int32Args)
+			assert.Equal(t, arg.Name, cliArg.Name)
+			assert.Equal(t, arg.Usage, cliArg.UsageText)
+			assert.Equal(t, arg.Value, cliArg.Value)
+			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
+			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+		case *command.Int64SliceArgument:
+			cliArg := cliArguments[i].(*cli.Int64Args)
+			assert.Equal(t, arg.Name, cliArg.Name)
+			assert.Equal(t, arg.Usage, cliArg.UsageText)
+			assert.Equal(t, arg.Value, cliArg.Value)
+			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
+			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+		case *command.StringSliceArgument:
+			cliArg := cliArguments[i].(*cli.StringArgs)
+			assert.Equal(t, arg.Name, cliArg.Name)
+			assert.Equal(t, arg.Usage, cliArg.UsageText)
+			assert.Equal(t, arg.Value, cliArg.Value)
+			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
+			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+		case *command.TimestampSliceArgument:
+			cliArg := cliArguments[i].(*cli.TimestampArgs)
+			assert.Equal(t, arg.Name, cliArg.Name)
+			assert.Equal(t, arg.Usage, cliArg.UsageText)
+			assert.Equal(t, arg.Value.Unix(), cliArg.Value.Unix())
+			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
+			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+		case *command.UintSliceArgument:
+			cliArg := cliArguments[i].(*cli.UintArgs)
+			assert.Equal(t, arg.Name, cliArg.Name)
+			assert.Equal(t, arg.Usage, cliArg.UsageText)
+			assert.Equal(t, arg.Value, cliArg.Value)
+			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
+			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+		case *command.Uint8SliceArgument:
+			cliArg := cliArguments[i].(*cli.Uint8Args)
+			assert.Equal(t, arg.Name, cliArg.Name)
+			assert.Equal(t, arg.Usage, cliArg.UsageText)
+			assert.Equal(t, arg.Value, cliArg.Value)
+			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
+			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+		case *command.Uint16SliceArgument:
+			cliArg := cliArguments[i].(*cli.Uint16Args)
+			assert.Equal(t, arg.Name, cliArg.Name)
+			assert.Equal(t, arg.Usage, cliArg.UsageText)
+			assert.Equal(t, arg.Value, cliArg.Value)
+			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
+			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+		case *command.Uint32SliceArgument:
+			cliArg := cliArguments[i].(*cli.Uint32Args)
+			assert.Equal(t, arg.Name, cliArg.Name)
+			assert.Equal(t, arg.Usage, cliArg.UsageText)
+			assert.Equal(t, arg.Value, cliArg.Value)
+			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
+			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+		case *command.Uint64SliceArgument:
+			cliArg := cliArguments[i].(*cli.Uint64Args)
+			assert.Equal(t, arg.Name, cliArg.Name)
+			assert.Equal(t, arg.Usage, cliArg.UsageText)
+			assert.Equal(t, arg.Value, cliArg.Value)
+			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
+			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+		default:
+			t.Fatalf("unhandled argument type: %T, value %+v", arg, arg)
+		}
+	}
+
+}
+
+func TestArgumentsToCliArgumentsPanic(t *testing.T) {
+	arguments := []command.Argument{
+		&command.StringArgument{
+			Name: "string_arg",
+		},
+		&command.StringArgument{
+			Name:     "string_arg_required",
+			Required: true,
+		},
+	}
+	assert.Panics(t, func() {
+		argumentsToCliArgs(arguments)
+	})
 }
 
 type TestCommand struct {

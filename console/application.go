@@ -2,9 +2,11 @@ package console
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"slices"
 	"strings"
+	"testing"
 
 	"github.com/urfave/cli/v3"
 
@@ -59,6 +61,7 @@ func (r *Application) Register(commands []console.Command) {
 			Category:     item.Extend().Category,
 			ArgsUsage:    item.Extend().ArgsUsage,
 			Flags:        flagsToCliFlags(item.Extend().Flags),
+			Arguments:    argumentsToCliArgs(item.Extend().Arguments),
 			OnUsageError: onUsageError,
 		}
 		r.instance.Commands = append(r.instance.Commands, &cliCommand)
@@ -228,4 +231,260 @@ func flagsToCliFlags(flags []command.Flag) []cli.Flag {
 	}
 
 	return cliFlags
+}
+
+func argumentsToCliArgs(args []command.Argument) []cli.Argument {
+	len := len(args)
+	if len == 0 {
+		return nil
+	}
+	cliArgs := make([]cli.Argument, 0, len)
+	previousIsRequired := true
+	for _, v := range args {
+		if v.MinOccurrences() != 0 && !previousIsRequired {
+			errString := fmt.Sprintf("Required argument with value '%+v' should be placed before any not-required arguments", v)
+			if testing.Testing() {
+				panic(errString)
+			} else {
+				color.Errorln(errString)
+				os.Exit(2)
+			}
+		}
+		if v.MinOccurrences() != 0 {
+			previousIsRequired = true
+		} else {
+			previousIsRequired = false
+		}
+		switch arg := v.(type) {
+		case *command.Float32Argument:
+			cliArgs = append(cliArgs, &cli.Float32Args{
+				Name:      arg.Name,
+				UsageText: arg.Usage,
+				Value:     arg.Value,
+				Min:       arg.MinOccurrences(),
+				Max:       arg.MaxOccurrences(),
+			})
+		case *command.Float64Argument:
+			cliArgs = append(cliArgs, &cli.Float64Args{
+				Name:      arg.Name,
+				UsageText: arg.Usage,
+				Value:     arg.Value,
+				Min:       arg.MinOccurrences(),
+				Max:       arg.MaxOccurrences(),
+			})
+		case *command.IntArgument:
+			cliArgs = append(cliArgs, &cli.IntArgs{
+				Name:      arg.Name,
+				UsageText: arg.Usage,
+				Value:     arg.Value,
+				Min:       arg.MinOccurrences(),
+				Max:       arg.MaxOccurrences(),
+			})
+		case *command.Int8Argument:
+			cliArgs = append(cliArgs, &cli.Int8Args{
+				Name:      arg.Name,
+				UsageText: arg.Usage,
+				Value:     arg.Value,
+				Min:       arg.MinOccurrences(),
+				Max:       arg.MaxOccurrences(),
+			})
+		case *command.Int16Argument:
+			cliArgs = append(cliArgs, &cli.Int16Args{
+				Name:      arg.Name,
+				UsageText: arg.Usage,
+				Value:     arg.Value,
+				Min:       arg.MinOccurrences(),
+				Max:       arg.MaxOccurrences(),
+			})
+		case *command.Int32Argument:
+			cliArgs = append(cliArgs, &cli.Int32Args{
+				Name:      arg.Name,
+				UsageText: arg.Usage,
+				Value:     arg.Value,
+				Min:       arg.MinOccurrences(),
+				Max:       arg.MaxOccurrences(),
+			})
+		case *command.Int64Argument:
+			cliArgs = append(cliArgs, &cli.Int64Args{
+				Name:      arg.Name,
+				UsageText: arg.Usage,
+				Value:     arg.Value,
+				Min:       arg.MinOccurrences(),
+				Max:       arg.MaxOccurrences(),
+			})
+		case *command.StringArgument:
+			cliArgs = append(cliArgs, &cli.StringArgs{
+				Name:      arg.Name,
+				UsageText: arg.Usage,
+				Value:     arg.Value,
+				Min:       arg.MinOccurrences(),
+				Max:       arg.MaxOccurrences(),
+			})
+		case *command.TimestampArgument:
+			cliArgs = append(cliArgs, &cli.TimestampArgs{
+				Name:      arg.Name,
+				UsageText: arg.Usage,
+				Value:     arg.Value,
+				Min:       arg.MinOccurrences(),
+				Max:       arg.MaxOccurrences(),
+			})
+		case *command.UintArgument:
+			cliArgs = append(cliArgs, &cli.UintArgs{
+				Name:      arg.Name,
+				UsageText: arg.Usage,
+				Value:     arg.Value,
+				Min:       arg.MinOccurrences(),
+				Max:       arg.MaxOccurrences(),
+			})
+		case *command.Uint8Argument:
+			cliArgs = append(cliArgs, &cli.Uint8Args{
+				Name:      arg.Name,
+				UsageText: arg.Usage,
+				Value:     arg.Value,
+				Min:       arg.MinOccurrences(),
+				Max:       arg.MaxOccurrences(),
+			})
+		case *command.Uint16Argument:
+			cliArgs = append(cliArgs, &cli.Uint16Args{
+				Name:      arg.Name,
+				UsageText: arg.Usage,
+				Value:     arg.Value,
+				Min:       arg.MinOccurrences(),
+				Max:       arg.MaxOccurrences(),
+			})
+		case *command.Uint32Argument:
+			cliArgs = append(cliArgs, &cli.Uint32Args{
+				Name:      arg.Name,
+				UsageText: arg.Usage,
+				Value:     arg.Value,
+				Min:       arg.MinOccurrences(),
+				Max:       arg.MaxOccurrences(),
+			})
+		case *command.Uint64Argument:
+			cliArgs = append(cliArgs, &cli.Uint64Args{
+				Name:      arg.Name,
+				UsageText: arg.Usage,
+				Value:     arg.Value,
+				Min:       arg.MinOccurrences(),
+				Max:       arg.MaxOccurrences(),
+			})
+
+		case *command.Float32SliceArgument:
+			cliArgs = append(cliArgs, &cli.Float32Args{
+				Name:      arg.Name,
+				UsageText: arg.Usage,
+				Value:     arg.Value,
+				Min:       arg.MinOccurrences(),
+				Max:       arg.MaxOccurrences(),
+			})
+		case *command.Float64SliceArgument:
+			cliArgs = append(cliArgs, &cli.Float64Args{
+				Name:      arg.Name,
+				UsageText: arg.Usage,
+				Value:     arg.Value,
+				Min:       arg.MinOccurrences(),
+				Max:       arg.MaxOccurrences(),
+			})
+		case *command.IntSliceArgument:
+			cliArgs = append(cliArgs, &cli.IntArgs{
+				Name:      arg.Name,
+				UsageText: arg.Usage,
+				Value:     arg.Value,
+				Min:       arg.MinOccurrences(),
+				Max:       arg.MaxOccurrences(),
+			})
+		case *command.Int8SliceArgument:
+			cliArgs = append(cliArgs, &cli.Int8Args{
+				Name:      arg.Name,
+				UsageText: arg.Usage,
+				Value:     arg.Value,
+				Min:       arg.MinOccurrences(),
+				Max:       arg.MaxOccurrences(),
+			})
+		case *command.Int16SliceArgument:
+			cliArgs = append(cliArgs, &cli.Int16Args{
+				Name:      arg.Name,
+				UsageText: arg.Usage,
+				Value:     arg.Value,
+				Min:       arg.MinOccurrences(),
+				Max:       arg.MaxOccurrences(),
+			})
+		case *command.Int32SliceArgument:
+			cliArgs = append(cliArgs, &cli.Int32Args{
+				Name:      arg.Name,
+				UsageText: arg.Usage,
+				Value:     arg.Value,
+				Min:       arg.MinOccurrences(),
+				Max:       arg.MaxOccurrences(),
+			})
+		case *command.Int64SliceArgument:
+			cliArgs = append(cliArgs, &cli.Int64Args{
+				Name:      arg.Name,
+				UsageText: arg.Usage,
+				Value:     arg.Value,
+				Min:       arg.MinOccurrences(),
+				Max:       arg.MaxOccurrences(),
+			})
+		case *command.StringSliceArgument:
+			cliArgs = append(cliArgs, &cli.StringArgs{
+				Name:      arg.Name,
+				UsageText: arg.Usage,
+				Value:     arg.Value,
+				Min:       arg.MinOccurrences(),
+				Max:       arg.MaxOccurrences(),
+			})
+		case *command.TimestampSliceArgument:
+			cliArgs = append(cliArgs, &cli.TimestampArgs{
+				Name:      arg.Name,
+				UsageText: arg.Usage,
+				Value:     arg.Value,
+				Min:       arg.MinOccurrences(),
+				Max:       arg.MaxOccurrences(),
+			})
+		case *command.UintSliceArgument:
+			cliArgs = append(cliArgs, &cli.UintArgs{
+				Name:      arg.Name,
+				UsageText: arg.Usage,
+				Value:     arg.Value,
+				Min:       arg.MinOccurrences(),
+				Max:       arg.MaxOccurrences(),
+			})
+		case *command.Uint8SliceArgument:
+			cliArgs = append(cliArgs, &cli.Uint8Args{
+				Name:      arg.Name,
+				UsageText: arg.Usage,
+				Value:     arg.Value,
+				Min:       arg.MinOccurrences(),
+				Max:       arg.MaxOccurrences(),
+			})
+		case *command.Uint16SliceArgument:
+			cliArgs = append(cliArgs, &cli.Uint16Args{
+				Name:      arg.Name,
+				UsageText: arg.Usage,
+				Value:     arg.Value,
+				Min:       arg.MinOccurrences(),
+				Max:       arg.MaxOccurrences(),
+			})
+		case *command.Uint32SliceArgument:
+			cliArgs = append(cliArgs, &cli.Uint32Args{
+				Name:      arg.Name,
+				UsageText: arg.Usage,
+				Value:     arg.Value,
+				Min:       arg.MinOccurrences(),
+				Max:       arg.MaxOccurrences(),
+			})
+		case *command.Uint64SliceArgument:
+			cliArgs = append(cliArgs, &cli.Uint64Args{
+				Name:      arg.Name,
+				UsageText: arg.Usage,
+				Value:     arg.Value,
+				Min:       arg.MinOccurrences(),
+				Max:       arg.MaxOccurrences(),
+			})
+		default:
+			color.Errorln(fmt.Sprintf("Unknown type of console command argument %T, with value %+v", arg, arg))
+			os.Exit(2)
+		}
+	}
+	return cliArgs
 }

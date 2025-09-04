@@ -2,6 +2,7 @@ package console
 
 import (
 	"context"
+	"time"
 
 	"github.com/goravel/framework/contracts/console/command"
 )
@@ -60,6 +61,62 @@ type Context interface {
 	OptionInt64(key string) int64
 	// OptionInt64Slice looks up the value of a local Int64SliceFlag, returns nil if not found
 	OptionInt64Slice(key string) []int64
+	// ArgumentString looks up the value of a local StringArgument, returns empty string if not found
+	ArgumentString(key string) string
+	// ArgumentStringSlice looks up the value of a local StringSliceArgument, returns nil if not found
+	ArgumentStringSlice(key string) []string
+	// ArgumentFloat32 looks up the value of a local Float32Argument, returns zero if not found
+	ArgumentFloat32(key string) float32
+	// ArgumentFloat32Slice looks up the value of a local Float32SliceArgument, returns nil if not found
+	ArgumentFloat32Slice(key string) []float32
+	// ArgumentFloat64 looks up the value of a local Float64Argument, returns zero if not found
+	ArgumentFloat64(key string) float64
+	// ArgumentFloat64Slice looks up the value of a local Float64SliceArgument, returns nil if not found
+	ArgumentFloat64Slice(key string) []float64
+	// ArgumentInt looks up the value of a local IntArgument, returns zero if not found
+	ArgumentInt(key string) int
+	// ArgumentIntSlice looks up the value of a local IntSliceArgument, returns nil if not found
+	ArgumentIntSlice(key string) []int
+	// ArgumentInt8 looks up the value of a local Int8Argument, returns zero if not found
+	ArgumentInt8(key string) int8
+	// ArgumentInt8Slice looks up the value of a local Int8SliceArgument, returns nil if not found
+	ArgumentInt8Slice(key string) []int8
+	// ArgumentInt16 looks up the value of a local Int16Argument, returns zero if not found
+	ArgumentInt16(key string) int16
+	// ArgumentInt16Slice looks up the value of a local Int16SliceArgument, returns nil if not found
+	ArgumentInt16Slice(key string) []int16
+	// ArgumentInt32 looks up the value of a local Int32Argument, returns zero if not found
+	ArgumentInt32(key string) int32
+	// ArgumentInt32Slice looks up the value of a local Int32SliceArgument, returns nil if not found
+	ArgumentInt32Slice(key string) []int32
+	// ArgumentInt64 looks up the value of a local Int64Argument, returns zero if not found
+	ArgumentInt64(key string) int64
+	// ArgumentInt64Slice looks up the value of a local Int64SliceArgument, returns nil if not found
+	ArgumentInt64Slice(key string) []int64
+	// ArgumentUint looks up the value of a local UintArgument, returns zero if not found
+	ArgumentUint(key string) uint
+	// ArgumentUint8 looks up the value of a local Uint8Argument, returns zero if not found
+	ArgumentUint8(key string) uint8
+	// ArgumentUint16 looks up the value of a local Uint16Argument, returns zero if not found
+	ArgumentUint16(key string) uint16
+	// ArgumentUint32 looks up the value of a local Uint32Argument, returns zero if not found
+	ArgumentUint32(key string) uint32
+	// ArgumentUint64 looks up the value of a local Uint64Argument, returns zero if not found
+	ArgumentUint64(key string) uint64
+	// ArgumentUintSlice looks up the value of a local UintSliceArgument, returns nil if not found
+	ArgumentUintSlice(key string) []uint
+	// ArgumentUint8Slice looks up the value of a local Uint8SliceArgument, returns nil if not found
+	ArgumentUint8Slice(key string) []uint8
+	// ArgumentUint16Slice looks up the value of a local Uint16SliceArgument, returns nil if not found
+	ArgumentUint16Slice(key string) []uint16
+	// ArgumentUint32Slice looks up the value of a local Uint32SliceArgument, returns nil if not found
+	ArgumentUint32Slice(key string) []uint32
+	// ArgumentUint64Slice looks up the value of a local Uint64SliceArgument, returns nil if not found
+	ArgumentUint64Slice(key string) []uint64
+	// ArgumentTimestamp looks up the value of a local TimestampArgument, returns zero if not found
+	ArgumentTimestamp(key string) time.Time
+	// ArgumentTimestampSlice looks up the value of a local TimestampSliceArgument, returns nil if not found
+	ArgumentTimestampSlice(key string) []time.Time
 	// Secret prompts the user for a password.
 	Secret(question string, option ...SecretOption) (string, error)
 	// Spinner creates a new spinner instance.
