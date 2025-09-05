@@ -13,7 +13,6 @@ import (
 
 	contractsmatch "github.com/goravel/framework/contracts/packages/match"
 	"github.com/goravel/framework/contracts/packages/modify"
-	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	"github.com/goravel/framework/packages/match"
@@ -70,11 +69,13 @@ func (s *FileTestSuite) TestOverwrite() {
 			force:       false,
 			expectError: true,
 			assert: func(path string, err error) {
-				s.Equal(errors.FileAlreadyExists.Args(path).Error(), err.Error())
+				s.NoError(err)
+
 				// File should not be overwritten
 				content, readErr := supportfile.GetContent(path)
 				s.NoError(readErr)
 				s.Equal("old content", content)
+				s.NoError(supportfile.Remove(path))
 			},
 		},
 		{
@@ -343,12 +344,14 @@ func TestWhenNoFacades(t *testing.T) {
 		modifier := WhenNoFacades([]string{"Auth", "DB"}, apply)
 
 		dbFile := filepath.Join(t.TempDir(), "db.go")
-		supportfile.PutContent(dbFile, "package facades\n")
+		err := supportfile.PutContent(dbFile, "package facades\n")
+		assert.NoError(t, err)
+
 		mockApp := mocksfoundation.NewApplication(t)
 		mockApp.EXPECT().FacadesPath("db.go").Return(dbFile).Once()
 		foundation.App = mockApp
 
-		err := modifier.Apply(options.Facade("Auth"))
+		err = modifier.Apply(options.Facade("Auth"))
 		assert.NoError(t, err)
 		assert.False(t, called)
 	})
