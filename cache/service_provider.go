@@ -16,7 +16,7 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 		Bindings: []string{
 			binding.Cache,
 		},
-		Dependencies: binding.Facades[binding.Cache].Dependencies,
+		Dependencies: binding.Bindings[binding.Cache].Dependencies,
 	}
 }
 

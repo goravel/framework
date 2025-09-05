@@ -32,8 +32,8 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 			binding.Gate,
 		},
 		Dependencies: collect.Unique(
-			binding.Facades[binding.Auth].Dependencies,
-			binding.Facades[binding.Gate].Dependencies,
+			binding.Bindings[binding.Auth].Dependencies,
+			binding.Bindings[binding.Gate].Dependencies,
 		),
 		ProvideFor: []string{},
 	}

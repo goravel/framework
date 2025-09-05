@@ -53,6 +53,15 @@ func (r *Container) Bind(key any, callback func(app contractsfoundation.Applicat
 	r.bindings.Store(key, instance{concrete: callback, shared: false})
 }
 
+func (r *Container) Bindings() []any {
+	var bindings []any
+	r.bindings.Range(func(key, value any) bool {
+		bindings = append(bindings, key)
+		return true
+	})
+	return bindings
+}
+
 func (r *Container) BindWith(key any, callback func(app contractsfoundation.Application, parameters map[string]any) (any, error)) {
 	r.bindings.Store(key, instance{concrete: callback, shared: false})
 }

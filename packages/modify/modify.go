@@ -7,52 +7,83 @@ import (
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
 	"github.com/dave/dst/dstutil"
+	"github.com/spf13/cast"
 
 	"github.com/goravel/framework/contracts/packages/match"
 	"github.com/goravel/framework/contracts/packages/modify"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/foundation"
+	"github.com/goravel/framework/support/color"
 	supportfile "github.com/goravel/framework/support/file"
+	"github.com/goravel/framework/support/str"
 )
-
-type file struct {
-	path string
-}
 
 func File(path string) modify.File {
 	return &file{path: path}
 }
 
-func (r *file) Overwrite(content string, forces ...bool) modify.Apply {
-	return &OverwriteFile{
+func GoFile(file string) modify.GoFile {
+	return &goFile{file: file}
+}
+
+func WhenFacade(facade string, applies ...modify.Apply) modify.Apply {
+	return &whenFacadeModifier{
+		facade:  facade,
+		applies: applies,
+	}
+}
+
+func WhenNoFacades(facades []string, applies ...modify.Apply) modify.Apply {
+	return &whenNoFacadesModifier{
+		facades: facades,
+		applies: applies,
+	}
+}
+
+func generateOptions(options []modify.Option) map[string]any {
+	result := make(map[string]any)
+	for _, option := range options {
+		option(result)
+	}
+	return result
+}
+
+type file struct {
+	path string
+}
+
+func (r *file) Overwrite(content string) modify.Apply {
+	return &overwriteFile{
 		path:    r.path,
 		content: content,
-		force:   len(forces) > 0 && forces[0],
 	}
 }
 
 func (r *file) Remove() modify.Apply {
-	return &RemoveFile{path: r.path}
+	return &removeFile{path: r.path}
 }
 
-type OverwriteFile struct {
+type overwriteFile struct {
 	path    string
 	content string
-	force   bool
 }
 
-func (r *OverwriteFile) Apply() error {
-	if supportfile.Exists(r.path) && !r.force {
-		return errors.FileAlreadyExists.Args(r.path)
+func (r *overwriteFile) Apply(options ...modify.Option) error {
+	generatedOptions := generateOptions(options)
+
+	if supportfile.Exists(r.path) && !cast.ToBool(generatedOptions["force"]) {
+		color.Warningln(errors.ConsoleFileAlreadyExists.Args(r.path))
+		return nil
 	}
 
 	return supportfile.PutContent(r.path, r.content)
 }
 
-type RemoveFile struct {
+type removeFile struct {
 	path string
 }
 
-func (r *RemoveFile) Apply() error {
+func (r *removeFile) Apply(...modify.Option) error {
 	return supportfile.Remove(r.path)
 }
 
@@ -61,11 +92,7 @@ type goFile struct {
 	modifiers []modify.GoNode
 }
 
-func GoFile(file string) modify.GoFile {
-	return &goFile{file: file}
-}
-
-func (r goFile) Apply() error {
+func (r goFile) Apply(...modify.Option) error {
 	source, err := supportfile.GetContent(r.file)
 	if err != nil {
 		return err
@@ -92,7 +119,7 @@ func (r goFile) Apply() error {
 }
 
 func (r goFile) Find(matchers []match.GoNode) modify.GoNode {
-	modifier := &GoNode{
+	modifier := &goNode{
 		matchers: matchers,
 		goFile:   &r,
 	}
@@ -100,13 +127,13 @@ func (r goFile) Find(matchers []match.GoNode) modify.GoNode {
 	return modifier
 }
 
-type GoNode struct {
+type goNode struct {
 	actions  []modify.Action
 	goFile   *goFile
 	matchers []match.GoNode
 }
 
-func (r GoNode) Apply(node dst.Node) (err error) {
+func (r goNode) Apply(node dst.Node) (err error) {
 	var (
 		current      int
 		matched      bool
@@ -157,8 +184,64 @@ func (r GoNode) Apply(node dst.Node) (err error) {
 	return nil
 }
 
-func (r *GoNode) Modify(actions ...modify.Action) modify.GoFile {
+func (r *goNode) Modify(actions ...modify.Action) modify.GoFile {
 	r.actions = actions
 
 	return r.goFile
+}
+
+type whenFacadeModifier struct {
+	facade  string
+	applies []modify.Apply
+}
+
+func (r whenFacadeModifier) Apply(options ...modify.Option) error {
+	generatedOptions := generateOptions(options)
+
+	if r.facade != generatedOptions["facade"] {
+		return nil
+	}
+
+	for _, apply := range r.applies {
+		if err := apply.Apply(options...); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+type whenNoFacadesModifier struct {
+	facades []string
+	applies []modify.Apply
+}
+
+func (r whenNoFacadesModifier) Apply(options ...modify.Option) error {
+	var exist bool
+	generatedOptions := generateOptions(options)
+
+	for _, facade := range r.facades {
+		if facade == generatedOptions["facade"] {
+			continue
+		}
+
+		if supportfile.Exists(facadeToFilepath(facade)) {
+			exist = true
+			break
+		}
+	}
+
+	if !exist {
+		for _, apply := range r.applies {
+			if err := apply.Apply(options...); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func facadeToFilepath(facade string) string {
+	return foundation.App.FacadesPath(str.Of(facade).Snake().String() + ".go")
 }
