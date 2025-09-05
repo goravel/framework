@@ -45,9 +45,6 @@ func Setup(args []string) packages.Setup {
 		if strings.HasPrefix(arg, "--facade=") {
 			st.facade = strings.TrimPrefix(arg, "--facade=")
 		}
-		if strings.HasPrefix(arg, "-f=") {
-			st.facade = strings.TrimPrefix(arg, "-f=")
-		}
 	}
 
 	st.module = GetModulePath()
