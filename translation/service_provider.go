@@ -20,7 +20,7 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 		Bindings: []string{
 			binding.Lang,
 		},
-		Dependencies: binding.Facades[binding.Lang].Dependencies,
+		Dependencies: binding.Bindings[binding.Lang].Dependencies,
 		ProvideFor:   []string{},
 	}
 }

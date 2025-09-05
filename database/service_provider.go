@@ -32,10 +32,10 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 			binding.Seeder,
 		},
 		Dependencies: collect.Unique(
-			binding.Facades[binding.Orm].Dependencies,
-			binding.Facades[binding.DB].Dependencies,
-			binding.Facades[binding.Schema].Dependencies,
-			binding.Facades[binding.Seeder].Dependencies,
+			binding.Bindings[binding.Orm].Dependencies,
+			binding.Bindings[binding.DB].Dependencies,
+			binding.Bindings[binding.Schema].Dependencies,
+			binding.Bindings[binding.Seeder].Dependencies,
 		),
 		ProvideFor: []string{},
 	}

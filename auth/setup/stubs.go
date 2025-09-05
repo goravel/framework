@@ -1,4 +1,9 @@
-package config
+package main
+
+type Stubs struct{}
+
+func (s Stubs) Config() string {
+	return `package config
 
 import (
 	"github.com/goravel/framework/facades"
@@ -26,7 +31,7 @@ func init() {
 		// users are actually retrieved out of your database or other storage
 		// mechanisms used by this application to persist your user's data.
 		//
-		// Supported: "jwt"
+		// Supported drivers: "jwt", "session"
 		"guards": map[string]any{
 			"user": map[string]any{
 				"driver":   "jwt",
@@ -41,4 +46,36 @@ func init() {
 			},
 		},
 	})
+}
+`
+}
+
+func (s Stubs) AuthFacade() string {
+	return `package facades
+
+import (
+	"github.com/goravel/framework/contracts/auth"
+	"github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/facades"
+)
+
+func Auth(ctx ...http.Context) auth.Auth {
+	return facades.App().MakeAuth(ctx...)
+}
+`
+}
+
+func (s Stubs) GateFacade() string {
+	return `package facades
+
+import (
+	"github.com/goravel/framework/contracts/auth/access"
+	"github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/facades"
+)
+
+func Gate(ctx ...http.Context) access.Gate {
+	return facades.App().MakeGate()
+}
+`
 }

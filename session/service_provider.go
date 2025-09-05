@@ -21,7 +21,7 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 		Bindings: []string{
 			binding.Session,
 		},
-		Dependencies: binding.Facades[binding.Session].Dependencies,
+		Dependencies: binding.Bindings[binding.Session].Dependencies,
 		ProvideFor:   []string{},
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
@@ -26,10 +27,9 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 	var (
 		mockContext *mocksconsole.Context
 
-		facade         = "Auth"
-		pkg            = "github.com/goravel/package"
-		pkgWithVersion = "github.com/goravel/package@unknown"
-		facades        = map[string]binding.FacadeInfo{
+		facade   = "Auth"
+		pkg      = "github.com/goravel/package"
+		bindings = map[string]binding.Info{
 			binding.Auth: {
 				PkgPath:      "github.com/goravel/framework/auth",
 				Dependencies: []string{binding.Config, binding.Orm},
@@ -43,7 +43,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 				Dependencies: []string{binding.Config},
 			},
 		}
-		installedFacades = []string{binding.Config}
+		installedBindings = []any{binding.Config}
 	)
 
 	beforeEach := func() {
@@ -69,50 +69,39 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 		{
 			name: "go get failed",
 			setup: func() {
-				mockContext.EXPECT().Arguments().Return([]string{pkgWithVersion}).Once()
-				mockContext.EXPECT().Spinner("> @go get "+pkgWithVersion, mock.Anything).
-					RunAndReturn(func(s string, option console.SpinnerOption) error {
-						return option.Action()
-					}).Once()
-				mockContext.EXPECT().Error(mock.MatchedBy(func(err string) bool {
-					return strings.Contains(err, "failed to get package: go: github.com/goravel/package@unknown: invalid version")
-				})).Once()
+				mockContext.EXPECT().Arguments().Return([]string{pkg}).Once()
+				mockContext.EXPECT().Spinner("> @go get "+pkg, mock.Anything).Return(assert.AnError).Once()
+				mockContext.EXPECT().Error(fmt.Sprintf("Failed to get package: %s", assert.AnError)).Once()
 			},
 		},
 		{
 			name: "package install failed",
 			setup: func() {
-				mockContext.EXPECT().Arguments().Return([]string{pkgWithVersion}).Once()
-				mockContext.EXPECT().Spinner("> @go get "+pkgWithVersion, mock.Anything).Return(nil).Once()
-				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install", mock.Anything).
-					RunAndReturn(func(s string, option console.SpinnerOption) error {
-						return option.Action()
-					}).Once()
-				mockContext.EXPECT().Error("failed to install package: no required module provides package github.com/goravel/package/setup; to add it:\n\tgo get github.com/goravel/package/setup").Once()
+				mockContext.EXPECT().Arguments().Return([]string{pkg}).Once()
+				mockContext.EXPECT().Spinner("> @go get "+pkg, mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install", mock.Anything).Return(assert.AnError).Once()
+				mockContext.EXPECT().Error(fmt.Sprintf("Failed to install package: %s", assert.AnError)).Once()
 			},
 		},
 		{
 			name: "tidy go.mod file failed",
 			setup: func() {
 				s.T().Setenv("GO111MODULE", "off")
-				mockContext.EXPECT().Arguments().Return([]string{pkgWithVersion}).Once()
-				mockContext.EXPECT().Spinner("> @go get "+pkgWithVersion, mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Arguments().Return([]string{pkg}).Once()
+				mockContext.EXPECT().Spinner("> @go get "+pkg, mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install", mock.Anything).Return(nil).Once()
-				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).
-					RunAndReturn(func(s string, option console.SpinnerOption) error {
-						return option.Action()
-					}).Once()
-				mockContext.EXPECT().Error("failed to tidy go.mod file: go: modules disabled by GO111MODULE=off; see 'go help modules'").Once()
+				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(assert.AnError).Once()
+				mockContext.EXPECT().Error(fmt.Sprintf("Failed to tidy go.mod file: %s", assert.AnError)).Once()
 			},
 		},
 		{
 			name: "package install success(simulate)",
 			setup: func() {
-				mockContext.EXPECT().Arguments().Return([]string{pkgWithVersion}).Once()
-				mockContext.EXPECT().Spinner("> @go get "+pkgWithVersion, mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Arguments().Return([]string{pkg}).Once()
+				mockContext.EXPECT().Spinner("> @go get "+pkg, mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
-				mockContext.EXPECT().Success("Package " + pkgWithVersion + " installed successfully").Once()
+				mockContext.EXPECT().Success("Package " + pkg + " installed successfully").Once()
 			},
 		},
 		{
@@ -121,31 +110,26 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 				facade := "unknown"
 				mockContext.EXPECT().Arguments().Return([]string{facade}).Once()
 				mockContext.EXPECT().Warning(errors.PackageFacadeNotFound.Args(facade).Error()).Once()
-				mockContext.EXPECT().Info(fmt.Sprintf("Available facades: %s", strings.Join(getAvailableFacades(facades), ", ")))
+				mockContext.EXPECT().Info(fmt.Sprintf("Available facades: %s", strings.Join(getAvailableFacades(bindings), ", ")))
 			},
 		},
 		{
 			name: "facades install failed",
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{facade}).Once()
-				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facade, "Orm")).Once()
-				mockContext.EXPECT().Spinner("> @go run "+facades[binding.Orm].PkgPath+"/setup install", mock.Anything).
-					RunAndReturn(func(s string, option console.SpinnerOption) error {
-						return option.Action()
-					}).Once()
-				mockContext.EXPECT().Error(mock.MatchedBy(func(message string) bool {
-					return s.Contains(message, "Failed to install facade Orm, error:")
-				})).Once()
+				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be implicitly installed", facade, "Orm")).Once()
+				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Orm].PkgPath+"/setup install --facade=Orm", mock.Anything).Return(assert.AnError).Once()
+				mockContext.EXPECT().Error(fmt.Sprintf("Failed to install facade %s: %s", "Orm", assert.AnError)).Once()
 			},
 		},
 		{
 			name: "facades install success(simulate)",
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{facade}).Once()
-				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facade, "Orm")).Once()
-				mockContext.EXPECT().Spinner("> @go run "+facades[binding.Orm].PkgPath+"/setup install", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be implicitly installed", facade, "Orm")).Once()
+				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Orm].PkgPath+"/setup install --facade=Orm", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Facade Orm installed successfully").Once()
-				mockContext.EXPECT().Spinner("> @go run "+facades[binding.Auth].PkgPath+"/setup install", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Auth].PkgPath+"/setup install --facade=Auth", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Facade Auth installed successfully").Once()
 			},
 		},
@@ -159,10 +143,10 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Package " + pkg + " installed successfully").Once()
 
-				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facade, "Orm")).Once()
-				mockContext.EXPECT().Spinner("> @go run "+facades[binding.Orm].PkgPath+"/setup install", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be implicitly installed", facade, "Orm")).Once()
+				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Orm].PkgPath+"/setup install --facade=Orm", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Facade Orm installed successfully").Once()
-				mockContext.EXPECT().Spinner("> @go run "+facades[binding.Auth].PkgPath+"/setup install", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Auth].PkgPath+"/setup install --facade=Auth", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Facade Auth installed successfully").Once()
 			},
 		},
@@ -173,13 +157,13 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			beforeEach()
 			test.setup()
 
-			s.NoError(NewPackageInstallCommand(facades, installedFacades).Handle(mockContext))
+			s.NoError(NewPackageInstallCommand(bindings, installedBindings).Handle(mockContext))
 		})
 	}
 }
 
 func (s *PackageInstallCommandTestSuite) TestGetDependenciesThatNeedInstall() {
-	facades := map[string]binding.FacadeInfo{
+	bindings := map[string]binding.Info{
 		binding.Auth: {
 			PkgPath:      "github.com/goravel/framework/auth",
 			Dependencies: []string{binding.Config, binding.Orm},
@@ -193,26 +177,15 @@ func (s *PackageInstallCommandTestSuite) TestGetDependenciesThatNeedInstall() {
 			Dependencies: []string{binding.Config},
 		},
 	}
-	installedFacades := []string{binding.Config}
+	installedBindings := []any{binding.Config}
 
-	packageInstallCommand := NewPackageInstallCommand(facades, installedFacades)
+	packageInstallCommand := NewPackageInstallCommand(bindings, installedBindings)
 
 	s.ElementsMatch([]string{binding.Orm}, packageInstallCommand.getDependenciesThatNeedInstall(binding.Auth))
 }
 
-func (s *PackageInstallCommandTestSuite) TestFacadeBindingConversion() {
-	s.Equal("Auth", convertBindingToFacade(binding.Auth))
-	s.Equal(binding.Auth, convertFacadeToBinding("Auth"))
-
-	s.Equal("RateLimiter", convertBindingToFacade(binding.RateLimiter))
-	s.Equal(binding.RateLimiter, convertFacadeToBinding("RateLimiter"))
-
-	s.Equal("DB", convertBindingToFacade(binding.DB))
-	s.Equal(binding.DB, convertFacadeToBinding("DB"))
-}
-
-func (s *PackageInstallCommandTestSuite) TestGetAvailableFacades() {
-	facades := map[string]binding.FacadeInfo{
+func TestGetAvailableFacades(t *testing.T) {
+	bindings := map[string]binding.Info{
 		binding.Auth: {
 			PkgPath:      "github.com/goravel/framework/auth",
 			Dependencies: []string{binding.Config, binding.Orm},
@@ -227,14 +200,11 @@ func (s *PackageInstallCommandTestSuite) TestGetAvailableFacades() {
 		},
 	}
 
-	s.ElementsMatch(
-		[]string{convertBindingToFacade(binding.Auth), convertBindingToFacade(binding.Orm)},
-		getAvailableFacades(facades),
-	)
+	assert.ElementsMatch(t, []string{"Auth", "Orm"}, getAvailableFacades(bindings))
 }
 
-func (s *PackageInstallCommandTestSuite) TestGetFacadeDependencies() {
-	facades := map[string]binding.FacadeInfo{
+func TestGetDependencyBindings(t *testing.T) {
+	bindings := map[string]binding.Info{
 		binding.Auth: {
 			PkgPath:      "github.com/goravel/framework/auth",
 			Dependencies: []string{binding.Config, binding.Orm},
@@ -249,5 +219,5 @@ func (s *PackageInstallCommandTestSuite) TestGetFacadeDependencies() {
 		},
 	}
 
-	s.ElementsMatch([]string{binding.Orm}, getFacadeDependencies(binding.Auth, facades))
+	assert.ElementsMatch(t, []string{binding.Orm}, getDependencyBindings(binding.Auth, bindings))
 }
