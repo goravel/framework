@@ -11,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"goravel/tests"
+	"DummyModule/tests"
 )
 
 type DummyTestSuite struct {
