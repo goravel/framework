@@ -162,6 +162,8 @@ type Query interface {
 	Scopes(funcs ...func(Query) Query) Query
 	// Select specifies fields that should be retrieved from the database.
 	Select(columns ...string) Query
+	// SelectRaw specifies a raw SQL query for selecting fields.
+	SelectRaw(query any, args ...any) Query
 	// SharedLock locks the selected rows in the table.
 	SharedLock() Query
 	// Sum calculates the sum of a column's values and populates the destination object.

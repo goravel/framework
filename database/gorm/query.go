@@ -779,6 +779,16 @@ func (r *Query) Select(columns ...string) contractsorm.Query {
 	return r.setConditions(conditions)
 }
 
+func (r *Query) SelectRaw(query any, args ...any) contractsorm.Query {
+	conditions := r.conditions
+	conditions.selectRaw = &Select{
+		query: query,
+		args:  args,
+	}
+
+	return r.setConditions(conditions)
+}
+
 func (r *Query) WithContext(ctx context.Context) contractsorm.Query {
 	instance := r.instance.WithContext(ctx)
 
@@ -1225,17 +1235,23 @@ func (r *Query) buildOrder(db *gormio.DB) *gormio.DB {
 }
 
 func (r *Query) buildSelectColumns(db *gormio.DB) *gormio.DB {
-	if len(r.conditions.selectColumns) == 0 {
+	if len(r.conditions.selectColumns) == 0 && r.conditions.selectRaw == nil {
 		return db
 	}
 
-	var selectColumns []any
-	for _, column := range r.conditions.selectColumns {
-		selectColumns = append(selectColumns, column)
+	if len(r.conditions.selectColumns) > 0 {
+		var selectColumns []any
+		for _, column := range r.conditions.selectColumns {
+			selectColumns = append(selectColumns, column)
+		}
+
+		db = db.Select(selectColumns[0], selectColumns[1:]...)
+	} else if r.conditions.selectRaw != nil {
+		db = db.Select(r.conditions.selectRaw.query, r.conditions.selectRaw.args...)
 	}
 
-	db = db.Select(selectColumns[0], selectColumns[1:]...)
 	r.conditions.selectColumns = nil
+	r.conditions.selectRaw = nil
 
 	return db
 }

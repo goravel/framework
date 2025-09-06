@@ -18,6 +18,7 @@ type Conditions struct {
 	order         []any
 	scopes        []func(contractsorm.Query) contractsorm.Query
 	selectColumns []string
+	selectRaw     *Select
 	where         []contractsdriver.Where
 	with          []With
 	distinct      bool
@@ -25,6 +26,11 @@ type Conditions struct {
 	sharedLock    bool
 	withoutEvents bool
 	withTrashed   bool
+}
+
+type Select struct {
+	query any
+	args  []any
 }
 
 type Table struct {

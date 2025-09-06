@@ -31,7 +31,7 @@ require (
 	github.com/dromara/carbon/v2 v2.6.11 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.9 // indirect
 	github.com/go-sql-driver/mysql v1.9.3 // indirect
-	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
+	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/golang-sql/civil v0.0.0-20220223132316-b832511892a9 // indirect
 	github.com/golang-sql/sqlexp v0.1.0 // indirect
 	github.com/gookit/color v1.5.4 // indirect

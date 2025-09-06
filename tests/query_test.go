@@ -3399,6 +3399,38 @@ func (s *QueryTestSuite) TestSelect() {
 	}
 }
 
+func (s *QueryTestSuite) TestSelectRaw() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			user := User{Name: "select_user", Avatar: "select_avatar"}
+			s.Nil(query.Query().Create(&user))
+			s.True(user.ID > 0)
+
+			user1 := User{Name: "select_user", Avatar: "select_avatar1"}
+			s.Nil(query.Query().Create(&user1))
+			s.True(user1.ID > 0)
+
+			user2 := User{Name: "select_user1", Avatar: "select_avatar1"}
+			s.Nil(query.Query().Create(&user2))
+			s.True(user2.ID > 0)
+
+			type Result struct {
+				Name string
+				Bio  string
+			}
+			var result []Result
+			s.Nil(query.Query().Model(&User{}).SelectRaw("name, COALESCE(bio,?) as bio", "a").Where("id in ?", []uint{user.ID, user1.ID, user2.ID}).Get(&result))
+			s.Equal(3, len(result))
+			s.Equal("select_user", result[0].Name)
+			s.Equal("a", result[0].Bio)
+			s.Equal("select_user", result[1].Name)
+			s.Equal("a", result[1].Bio)
+			s.Equal("select_user1", result[2].Name)
+			s.Equal("a", result[2].Bio)
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestSharedLock() {
 	for driver, query := range s.queries {
 		if driver == sqlite.Name {
