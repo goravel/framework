@@ -115,3 +115,20 @@ func (r *IndexDefinition) Name(name string) schema.IndexDefinition {
 
 	return r
 }
+
+type ForeignIdColumnDefinition struct {
+	*ColumnDefinition
+	blueprint *Blueprint
+}
+
+func (r *ForeignIdColumnDefinition) Constrained(table string, column string) schema.ForeignKeyDefinition {
+	if column == "" {
+		column = "id"
+	}
+
+	return r.References(column).On(table)
+}
+
+func (r *ForeignIdColumnDefinition) References(column string) schema.ForeignKeyDefinition {
+	return r.blueprint.Foreign(r.GetName()).References(column)
+}

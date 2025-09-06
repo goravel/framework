@@ -269,6 +269,34 @@ func (s *BlueprintTestSuite) TestFloat() {
 	})
 }
 
+func (s *BlueprintTestSuite) TestForeignID() {
+	name := "name"
+	s.blueprint.ForeignID(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:     &name,
+		ttype:    convert.Pointer("bigInteger"),
+		unsigned: convert.Pointer(true),
+	})
+}
+
+func (s *BlueprintTestSuite) TestForeignUlid() {
+	name := "name"
+	s.blueprint.ForeignUlid(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:  &name,
+		ttype: convert.Pointer("ulid"),
+	})
+}
+
+func (s *BlueprintTestSuite) TestForeignUuid() {
+	name := "name"
+	s.blueprint.ForeignUuid(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:  &name,
+		ttype: convert.Pointer("uuid"),
+	})
+}
+
 func (s *BlueprintTestSuite) TestGetAddedColumns() {
 	name := "name"
 	addedColumn := &ColumnDefinition{
