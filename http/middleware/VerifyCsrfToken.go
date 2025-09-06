@@ -2,7 +2,9 @@ package middleware
 
 import (
 	"crypto/subtle"
+	"net/url"
 	"path"
+	"strings"
 
 	contractshttp "github.com/goravel/framework/contracts/http"
 )
@@ -10,8 +12,9 @@ import (
 const csrfKey = "X-CSRF-TOKEN"
 
 func VerifyCsrfToken(excepts []string) contractshttp.Middleware {
+	absolutePaths := parseExceptPaths(excepts)
 	return func(ctx contractshttp.Context) {
-		if isReading(ctx.Request().Method()) || inExceptArray(excepts, ctx.Request().FullUrl()) || tokenMatch(ctx) {
+		if isReading(ctx.Request().Method()) || inExceptArray(absolutePaths, ctx.Request().Path()) || tokenMatch(ctx) {
 			ctx.Request().Next()
 			ctx.Request().Session().Put(csrfKey, ctx.Request().Session().Token())
 		} else {
@@ -35,13 +38,10 @@ func tokenMatch(ctx contractshttp.Context) bool {
 	return true
 }
 
-func inExceptArray(excepts []string, url string) bool {
-	for _, except := range excepts {
-		matched, err := path.Match(except, url)
-		if err != nil {
-			continue
-		}
-		if matched {
+func inExceptArray(excepts []string, currentPath string) bool {
+	currentPath = strings.Trim(currentPath, "/")
+	for _, pattern := range excepts {
+		if matched, err := path.Match(pattern, currentPath); err == nil && matched {
 			return true
 		}
 	}
@@ -50,4 +50,16 @@ func inExceptArray(excepts []string, url string) bool {
 
 func isReading(method string) bool {
 	return method == "GET" || method == "HEAD" || method == "OPTIONS"
+}
+
+func parseExceptPaths(rawExcepts []string) []string {
+	var paths []string
+	for _, except := range rawExcepts {
+		if u, err := url.Parse(except); err == nil && u.Path != "" {
+			paths = append(paths, strings.Trim(u.Path, "/"))
+		} else {
+			paths = append(paths, strings.Trim(except, "/"))
+		}
+	}
+	return paths
 }
