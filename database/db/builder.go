@@ -28,7 +28,7 @@ func NewBuilder(gormDB *gorm.DB, driver string) (*Builder, error) {
 
 	dbx := sqlx.NewDb(db, driver)
 
-	// When running a migration to add or remove columns, sqlx will panic if the struct has or no fields that do not map to the database columns.
+	// When running a migration to add columns, sqlx will panic if the struct has no fields that do not map to the database columns.
 	// So we need to enable Unsafe mode to avoid this error.
 	dbx = dbx.Unsafe()
 	dbx.MapperFunc(NameMapper)
