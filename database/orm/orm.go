@@ -3,6 +3,7 @@ package orm
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -134,11 +135,20 @@ func (r *Orm) Refresh() {
 	r.refresh()
 }
 
-func (r *Orm) Transaction(txFunc func(tx contractsorm.Query) error) error {
+func (r *Orm) Transaction(txFunc func(tx contractsorm.Query) error) (err error) {
 	tx, err := r.Query().Begin()
 	if err != nil {
 		return err
 	}
+
+	defer func() {
+		if re := recover(); re != nil {
+			err = fmt.Errorf("panic: %v", re)
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = errors.Join(err, rollbackErr)
+			}
+		}
+	}()
 
 	if err := txFunc(tx); err != nil {
 		if err := tx.Rollback(); err != nil {

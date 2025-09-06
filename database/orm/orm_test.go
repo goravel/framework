@@ -3,6 +3,7 @@ package orm
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -146,6 +147,26 @@ func (s *OrmSuite) TestTransactionError() {
 
 			return errors.New("error")
 		}))
+
+		var users []User
+		s.Nil(s.orm.Connection(driver.String()).Query().Find(&users))
+		s.Equal(0, len(users))
+	}
+}
+
+func (s *OrmSuite) TestTransactionPanic() {
+	for driver := range s.testQueries {
+		err := s.orm.Connection(driver.String()).Transaction(func(tx contractsorm.Query) error {
+			user := User{Name: "transaction_error_user", Avatar: "transaction_error_avatar"}
+			s.Nil(tx.Create(&user))
+
+			user1 := User{Name: "transaction_error_user1", Avatar: "transaction_error_avatar1"}
+			s.Nil(tx.Create(&user1))
+
+			panic(1)
+		})
+
+		s.Equal(fmt.Errorf("panic: %v", 1), err)
 
 		var users []User
 		s.Nil(s.orm.Connection(driver.String()).Query().Find(&users))
