@@ -3,6 +3,7 @@ package orm
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"sync"
 
 	"github.com/goravel/framework/contracts/binding"
@@ -142,11 +143,21 @@ func (r *Orm) Fresh() {
 	r.fresh(binding.Orm)
 }
 
-func (r *Orm) Transaction(txFunc func(tx contractsorm.Query) error) error {
+func (r *Orm) Transaction(txFunc func(tx contractsorm.Query) error) (err error) {
 	tx, err := r.Query().Begin()
 	if err != nil {
 		return err
 	}
+
+	defer func() {
+		if re := recover(); re != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = rollbackErr
+			} else {
+				err = fmt.Errorf("panic: %v", re)
+			}
+		}
+	}()
 
 	if err := txFunc(tx); err != nil {
 		if err := tx.Rollback(); err != nil {

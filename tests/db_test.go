@@ -5,6 +5,7 @@ package tests
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"testing"
 	"time"
 
@@ -1119,6 +1120,22 @@ func (s *DBTestSuite) TestTransaction() {
 				err = query.DB().Table("products").Where("name", "transaction product1 updated").First(&product1)
 				s.NoError(err)
 				s.Equal("transaction product1 updated", product1.Name)
+
+				err = query.DB().Transaction(func(tx db.Tx) error {
+					_, err := tx.Table("products").Where("name", "transaction product1 updated").Delete()
+					if err != nil {
+						return err
+					}
+
+					panic(1)
+				})
+
+				s.Equal(fmt.Errorf("panic: %v", 1), err)
+
+				var product2 Product
+				err = query.DB().Table("products").Where("name", "transaction product1 updated").First(&product2)
+				s.NoError(err)
+				s.Equal("transaction product1 updated", product2.Name)
 			})
 		})
 	}
