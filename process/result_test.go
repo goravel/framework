@@ -6,6 +6,30 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestResult_Methods(t *testing.T) {
+	res := NewResult(0, "cmd arg1", "out", "err")
+	assert.True(t, res.Successful())
+	assert.False(t, res.Failed())
+	assert.Equal(t, 0, res.ExitCode())
+	assert.Equal(t, "out", res.Output())
+	assert.Equal(t, "err", res.ErrorOutput())
+	assert.Equal(t, "cmd arg1", res.Command())
+	assert.True(t, res.SeeInOutput("ou"))
+	assert.True(t, res.SeeInErrorOutput("er"))
+}
+
+func TestResult_NilReceiverSafety(t *testing.T) {
+	var res *Result
+	assert.False(t, res.Successful())
+	assert.True(t, res.Failed())
+	assert.Equal(t, -1, res.ExitCode())
+	assert.Equal(t, "", res.Output())
+	assert.Equal(t, "", res.ErrorOutput())
+	assert.Equal(t, "", res.Command())
+	assert.False(t, res.SeeInOutput("x"))
+	assert.False(t, res.SeeInErrorOutput("y"))
+}
+
 func TestResultMethods_TableDriven(t *testing.T) {
 	tests := []struct {
 		name           string

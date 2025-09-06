@@ -25,6 +25,53 @@ func (_m *Running) EXPECT() *Running_Expecter {
 	return &Running_Expecter{mock: &_m.Mock}
 }
 
+// Done provides a mock function with no fields
+func (_m *Running) Done() <-chan struct{} {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Done")
+	}
+
+	var r0 <-chan struct{}
+	if rf, ok := ret.Get(0).(func() <-chan struct{}); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(<-chan struct{})
+		}
+	}
+
+	return r0
+}
+
+// Running_Done_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Done'
+type Running_Done_Call struct {
+	*mock.Call
+}
+
+// Done is a helper method to define mock.On call
+func (_e *Running_Expecter) Done() *Running_Done_Call {
+	return &Running_Done_Call{Call: _e.mock.On("Done")}
+}
+
+func (_c *Running_Done_Call) Run(run func()) *Running_Done_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Running_Done_Call) Return(_a0 <-chan struct{}) *Running_Done_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Running_Done_Call) RunAndReturn(run func() <-chan struct{}) *Running_Done_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ErrorOutput provides a mock function with no fields
 func (_m *Running) ErrorOutput() string {
 	ret := _m.Called()

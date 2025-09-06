@@ -215,4 +215,9 @@ var (
 	ValidationRuleRegisterFailed   = New("rule register failed: %v")
 
 	CommandEmptyPackageName = New("the package name cannot be empty")
+
+	ProcessNotStarted            = New("process not started").SetModule(ModuleProcess)
+	ProcessUnsupportedSignalType = New("unsupported signal type").SetModule(ModuleProcess)
+	ProcessPipelineEmpty         = New("pipeline must have at least one command").SetModule(ModuleProcess)
+	ProcessPipelineStartFailed   = New("failed to start pipeline: %v").SetModule(ModuleProcess)
 )

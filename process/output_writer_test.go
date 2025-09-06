@@ -10,10 +10,14 @@ import (
 )
 
 func TestOutputWriter_Write_SingleLine(t *testing.T) {
+	testKey := "test"
+
+	var receivedKey string
 	var receivedType contractsprocess.OutputType
 	var receivedLine []byte
 
-	writer := NewOutputWriter(contractsprocess.OutputTypeStdout, func(typ contractsprocess.OutputType, line []byte) {
+	writer := NewOutputWriter(testKey, contractsprocess.OutputTypeStdout, func(key string, typ contractsprocess.OutputType, line []byte) {
+		receivedKey = key
 		receivedType = typ
 		receivedLine = append([]byte{}, line...)
 	})
@@ -21,15 +25,20 @@ func TestOutputWriter_Write_SingleLine(t *testing.T) {
 	n, err := writer.Write([]byte("hello\n"))
 	assert.NoError(t, err)
 	assert.Equal(t, 6, n)
+	assert.Equal(t, testKey, receivedKey)
 	assert.Equal(t, contractsprocess.OutputTypeStdout, receivedType)
 	assert.Equal(t, "hello", string(receivedLine))
 }
 
 func TestOutputWriter_Write_MultipleLines(t *testing.T) {
+	testKey := "test"
+
+	var keys []string
 	var lines []string
 	var types []contractsprocess.OutputType
 
-	writer := NewOutputWriter(contractsprocess.OutputTypeStderr, func(typ contractsprocess.OutputType, line []byte) {
+	writer := NewOutputWriter(testKey, contractsprocess.OutputTypeStderr, func(key string, typ contractsprocess.OutputType, line []byte) {
+		keys = append(keys, key)
 		types = append(types, typ)
 		lines = append(lines, string(line))
 	})
@@ -39,6 +48,7 @@ func TestOutputWriter_Write_MultipleLines(t *testing.T) {
 	assert.Equal(t, 18, n)
 	assert.Equal(t, 3, len(lines))
 	assert.Equal(t, []string{"line1", "line2", "line3"}, lines)
+	assert.Equal(t, []string{testKey, testKey, testKey}, keys)
 	assert.Equal(t, []contractsprocess.OutputType{
 		contractsprocess.OutputTypeStderr,
 		contractsprocess.OutputTypeStderr,
@@ -48,8 +58,7 @@ func TestOutputWriter_Write_MultipleLines(t *testing.T) {
 
 func TestOutputWriter_Write_PartialLines(t *testing.T) {
 	var lines []string
-
-	writer := NewOutputWriter(contractsprocess.OutputTypeStdout, func(typ contractsprocess.OutputType, line []byte) {
+	writer := NewOutputWriter("tests", contractsprocess.OutputTypeStdout, func(_ string, typ contractsprocess.OutputType, line []byte) {
 		lines = append(lines, string(line))
 	})
 
@@ -68,8 +77,8 @@ func TestOutputWriter_Write_PartialLines(t *testing.T) {
 
 func TestOutputWriter_Write_BufferHandling(t *testing.T) {
 	var lines []string
-
-	writer := NewOutputWriter(contractsprocess.OutputTypeStdout, func(typ contractsprocess.OutputType, line []byte) {
+ 
+	writer := NewOutputWriter("test", contractsprocess.OutputTypeStdout, func(_ string, typ contractsprocess.OutputType, line []byte) {
 		lines = append(lines, string(line))
 	})
 
@@ -105,7 +114,7 @@ func TestOutputWriter_Write_BufferHandling(t *testing.T) {
 func TestOutputWriter_Write_EmptyLines(t *testing.T) {
 	var lines []string
 
-	writer := NewOutputWriter(contractsprocess.OutputTypeStdout, func(typ contractsprocess.OutputType, line []byte) {
+	writer := NewOutputWriter("test", contractsprocess.OutputTypeStdout, func(_ string, typ contractsprocess.OutputType, line []byte) {
 		lines = append(lines, string(line))
 	})
 
@@ -119,7 +128,7 @@ func TestOutputWriter_Write_LineModification(t *testing.T) {
 	// Test that modifying the line in the callback doesn't affect future callbacks
 	var allLines []string
 
-	writer := NewOutputWriter(contractsprocess.OutputTypeStdout, func(typ contractsprocess.OutputType, line []byte) {
+	writer := NewOutputWriter("test", contractsprocess.OutputTypeStdout, func(_ string, typ contractsprocess.OutputType, line []byte) {
 		allLines = append(allLines, string(line))
 		// Modify the line - should not affect original buffer
 		if len(line) > 0 {
@@ -136,7 +145,7 @@ func TestOutputWriter_Write_LineModification(t *testing.T) {
 func TestOutputWriter_Write_LargeInput(t *testing.T) {
 	// Test with a large input that spans multiple internal buffer sizes
 	lineCount := 0
-	writer := NewOutputWriter(contractsprocess.OutputTypeStdout, func(typ contractsprocess.OutputType, line []byte) {
+	writer := NewOutputWriter("test", contractsprocess.OutputTypeStdout, func(_ string, typ contractsprocess.OutputType, line []byte) {
 		lineCount++
 	})
 
@@ -152,4 +161,17 @@ func TestOutputWriter_Write_LargeInput(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, buf.Len(), n)
 	assert.Equal(t, 1000, lineCount)
+}
+
+func TestOutputWriter_Write_KeyIsPropagated(t *testing.T) {
+	var receivedKeys []string
+
+	writer := NewOutputWriter("pipe-123", contractsprocess.OutputTypeStdout, func(key string, typ contractsprocess.OutputType, line []byte) {
+		receivedKeys = append(receivedKeys, key)
+	})
+
+	n, err := writer.Write([]byte("first\nsecond\n"))
+	assert.NoError(t, err)
+	assert.Equal(t, 13, n)
+	assert.Equal(t, []string{"pipe-123", "pipe-123"}, receivedKeys)
 }

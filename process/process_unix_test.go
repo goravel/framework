@@ -4,7 +4,9 @@ package process
 
 import (
 	"bytes"
+	"context"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -14,6 +16,11 @@ import (
 
 	contractsprocess "github.com/goravel/framework/contracts/process"
 )
+
+type fakeSig struct{}
+
+func (fakeSig) String() string { return "fake" }
+func (fakeSig) Signal()        {}
 
 func TestProcess_Run_Unix(t *testing.T) {
 	tests := []struct {
@@ -99,6 +106,21 @@ func TestProcess_Run_Unix(t *testing.T) {
 				assert.NotEqual(t, 0, res.ExitCode())
 			},
 		},
+		{
+			name: "disable buffering with OnOutput",
+			args: []string{"sh", "-c", "printf 'to_stdout'; printf 'to_stderr' 1>&2"},
+			setup: func(p *Process) {
+				p.DisableBuffering().Quietly().OnOutput(func(typ contractsprocess.OutputType, line []byte) {
+					// The handler still works, but the Result buffer is what we're testing.
+				})
+			},
+			expectOK: true,
+			check: func(t *testing.T, res *Result) {
+				assert.Equal(t, "", res.Output())
+				assert.Equal(t, "", res.ErrorOutput())
+				assert.True(t, res.Successful())
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -136,7 +158,56 @@ func TestProcess_OnOutput_Callbacks_Unix(t *testing.T) {
 	}
 }
 
-func TestProcess_Start_ErrorOnMissingCommand_Unix(t *testing.T) {
+func TestProcess_ErrorOnMissingCommand_Unix(t *testing.T) {
 	_, err := New().Quietly().Start("")
 	assert.Error(t, err)
+
+	_, err = New().Quietly().Run("")
+	assert.Error(t, err)
+}
+
+func TestProcess_WithContext(t *testing.T) {
+	t.Run("Successful when context is not cancelled", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		res, err := New().WithContext(ctx).Quietly().Run("echo", "hello world")
+
+		assert.NoError(t, err, "Run should not return an error on success")
+		assert.NotNil(t, res, "Result object should not be nil")
+		assert.True(t, res.Successful(), "Process should be successful")
+		assert.Equal(t, 0, res.ExitCode(), "Exit code should be 0 for a successful command")
+		assert.Contains(t, res.Output(), "hello world", "Output should contain the echoed string")
+	})
+
+	t.Run("Terminates process when context times out", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+		defer cancel()
+
+		res, err := New().WithContext(ctx).Quietly().Run("sleep", "2")
+		assert.NoError(t, err, "Run should not return an error, but the result should indicate failure")
+		assert.NotNil(t, res, "Result object should not be nil even on failure")
+		assert.False(t, res.Successful(), "Process should have failed because it was killed")
+		assert.NotEqual(t, 0, res.ExitCode(), "Exit code should be non-zero")
+	})
+}
+
+func TestGetExitCode_Unix(t *testing.T) {
+	assert.Equal(t, 0, getExitCode(nil, nil))
+
+	cmd := exec.Command("sh", "-c", "exit 7")
+	err := cmd.Run()
+	assert.Error(t, err)
+	assert.Equal(t, 7, getExitCode(nil, err))
+
+	cmd2 := exec.Command("sh", "-c", "exit 0")
+	_ = cmd2.Run()
+	assert.Equal(t, 0, getExitCode(cmd2, nil))
+}
+
+func TestUnixHelpers_DirectCalls_Unix(t *testing.T) {
+	assert.False(t, running(nil))
+	assert.Error(t, kill(nil))
+	assert.Error(t, signal(nil, fakeSig{}))
+	assert.Error(t, stop(nil, make(chan struct{}), 0))
 }
