@@ -14,7 +14,7 @@ import (
 )
 
 func TestRunningPipe_PIDs_Running_Done_Wait_Unix(t *testing.T) {
-	rp, err := NewPipe().Quietly().Start(func(b contractsprocess.PipeBuilder) {
+	rp, err := NewPipe().Quietly().Start(func(b contractsprocess.Pipe) {
 		b.Command("sh", "-c", "printf 'start'; sleep 0.2; printf 'end'").As("first")
 		b.Command("cat").As("second")
 	})
@@ -37,7 +37,7 @@ func TestRunningPipe_PIDs_Running_Done_Wait_Unix(t *testing.T) {
 func TestRunningPipe_Signal_Unix(t *testing.T) {
 	// Trap SIGTERM in the first stage but allow it to exit cleanly; ensure pipeline completes
 	script := `trap 'echo term >&2; exit 0' TERM; echo begin; sleep 1`
-	rp, err := NewPipe().Quietly().Start(func(b contractsprocess.PipeBuilder) {
+	rp, err := NewPipe().Quietly().Start(func(b contractsprocess.Pipe) {
 		b.Command("bash", "-c", script).As("first")
 		b.Command("cat").As("second")
 	})
@@ -52,7 +52,7 @@ func TestRunningPipe_Signal_Unix(t *testing.T) {
 
 func TestRunningPipe_Stop_GracefulThenKill_Unix(t *testing.T) {
 	scriptGrace := `trap 'echo bye >&2; exit 0' TERM; echo run; while true; do sleep 0.1; done`
-	rp1, err := NewPipe().Quietly().Start(func(b contractsprocess.PipeBuilder) {
+	rp1, err := NewPipe().Quietly().Start(func(b contractsprocess.Pipe) {
 		b.Command("bash", "-c", scriptGrace).As("first")
 	})
 	assert.NoError(t, err)
@@ -63,7 +63,7 @@ func TestRunningPipe_Stop_GracefulThenKill_Unix(t *testing.T) {
 
 	// Now, force kill after timeout (trap sleeps too long)
 	scriptBlock := `trap 'sleep 2' TERM; echo run; while true; do sleep 0.1; done`
-	rp2, err := NewPipe().Quietly().Start(func(b contractsprocess.PipeBuilder) {
+	rp2, err := NewPipe().Quietly().Start(func(b contractsprocess.Pipe) {
 		b.Command("bash", "-c", scriptBlock).As("first")
 	})
 	assert.NoError(t, err)

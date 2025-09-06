@@ -4,12 +4,13 @@
 package process
 
 import (
-	"errors"
 	"os"
 	"os/exec"
 	"time"
 
 	"golang.org/x/sys/windows"
+
+	"github.com/goravel/framework/errors"
 )
 
 // stillActive is a Win32 constant that indicates a process is still running.
@@ -40,14 +41,14 @@ func running(p *os.Process) bool {
 
 func kill(p *os.Process) error {
 	if p == nil {
-		return errors.New("process not started")
+		return errors.ProcessNotStarted
 	}
 	return p.Kill()
 }
 
 func signal(p *os.Process, sig os.Signal) error {
 	if p == nil {
-		return errors.New("process not started")
+		return errors.ProcessNotStarted
 	}
 	return p.Signal(sig)
 }

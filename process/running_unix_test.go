@@ -191,20 +191,6 @@ func TestRunning_LatestOutputAndError_Unix(t *testing.T) {
 	assert.Equal(t, 4096, len(run.LatestErrorOutput()))
 }
 
-func TestRunning_NilBranches_Unix(t *testing.T) {
-	r := &Running{}
-	assert.Equal(t, 0, r.PID())
-	assert.Equal(t, "", r.Command())
-	assert.False(t, r.Running())
-	assert.Equal(t, "", r.Output())
-	assert.Equal(t, "", r.ErrorOutput())
-	assert.Equal(t, "", r.LatestOutput())
-	assert.Equal(t, "", r.LatestErrorOutput())
-	assert.Error(t, r.Kill())
-	assert.Error(t, r.Signal(unix.SIGTERM))
-	assert.Error(t, r.Stop(0))
-}
-
 func TestRunning_DisableBuffering_OutputEmpty_Unix(t *testing.T) {
 	// When buffering is disabled, Output/ErrorOutput should be empty
 	r, err := New().DisableBuffering().Quietly().Start("sh", "-c", "printf out; printf err 1>&2")

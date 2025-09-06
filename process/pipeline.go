@@ -6,21 +6,22 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strconv"
 	"time"
 
 	contractsprocess "github.com/goravel/framework/contracts/process"
 	"github.com/goravel/framework/errors"
 )
 
-var _ contractsprocess.Pipe = (*Pipe)(nil)
+var _ contractsprocess.Pipeline = (*Pipeline)(nil)
 
-func NewPipe() *Pipe {
-	return &Pipe{
+func NewPipe() *Pipeline {
+	return &Pipeline{
 		ctx: context.Background(),
 	}
 }
 
-type Pipe struct {
+type Pipeline struct {
 	ctx               context.Context
 	input             io.Reader
 	env               []string
@@ -31,55 +32,52 @@ type Pipe struct {
 	bufferingDisabled bool
 }
 
-func (r *Pipe) DisableBuffering() contractsprocess.Pipe {
+func (r *Pipeline) DisableBuffering() contractsprocess.Pipeline {
 	r.bufferingDisabled = true
 	return r
 }
 
-func (r *Pipe) Input(in io.Reader) contractsprocess.Pipe {
+func (r *Pipeline) Input(in io.Reader) contractsprocess.Pipeline {
 	r.input = in
 	return r
 }
 
-func (r *Pipe) Env(vars map[string]string) contractsprocess.Pipe {
-	if r.env == nil {
-		r.env = make([]string, 0, len(vars))
-	}
+func (r *Pipeline) Env(vars map[string]string) contractsprocess.Pipeline {
 	for k, v := range vars {
 		r.env = append(r.env, k+"="+v)
 	}
 	return r
 }
 
-func (r *Pipe) Path(path string) contractsprocess.Pipe {
+func (r *Pipeline) Path(path string) contractsprocess.Pipeline {
 	r.path = path
 	return r
 }
 
-func (r *Pipe) Timeout(timeout time.Duration) contractsprocess.Pipe {
+func (r *Pipeline) Timeout(timeout time.Duration) contractsprocess.Pipeline {
 	r.timeout = timeout
 	return r
 }
 
-func (r *Pipe) Quietly() contractsprocess.Pipe {
+func (r *Pipeline) Quietly() contractsprocess.Pipeline {
 	r.quietly = true
 	return r
 }
 
-func (r *Pipe) OnOutput(onOutput contractsprocess.OnPipeOutputFunc) contractsprocess.Pipe {
+func (r *Pipeline) OnOutput(onOutput contractsprocess.OnPipeOutputFunc) contractsprocess.Pipeline {
 	r.onOutput = onOutput
 	return r
 }
 
-func (r *Pipe) Run(configure func(contractsprocess.PipeBuilder)) (contractsprocess.Result, error) {
+func (r *Pipeline) Run(configure func(contractsprocess.Pipe)) (contractsprocess.Result, error) {
 	return r.run(configure)
 }
 
-func (r *Pipe) Start(builder func(contractsprocess.PipeBuilder)) (contractsprocess.RunningPipe, error) {
+func (r *Pipeline) Start(builder func(contractsprocess.Pipe)) (contractsprocess.RunningPipe, error) {
 	return r.start(builder)
 }
 
-func (r *Pipe) WithContext(ctx context.Context) contractsprocess.Pipe {
+func (r *Pipeline) WithContext(ctx context.Context) contractsprocess.Pipeline {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -88,7 +86,7 @@ func (r *Pipe) WithContext(ctx context.Context) contractsprocess.Pipe {
 	return r
 }
 
-func (r *Pipe) run(configure func(contractsprocess.PipeBuilder)) (contractsprocess.Result, error) {
+func (r *Pipeline) run(configure func(contractsprocess.Pipe)) (contractsprocess.Result, error) {
 	run, err := r.start(configure)
 	if err != nil {
 		return nil, err
@@ -96,13 +94,13 @@ func (r *Pipe) run(configure func(contractsprocess.PipeBuilder)) (contractsproce
 	return run.Wait(), nil
 }
 
-func (r *Pipe) start(configure func(contractsprocess.PipeBuilder)) (contractsprocess.RunningPipe, error) {
-	builder := &PipeBuilder{}
+func (r *Pipeline) start(configure func(contractsprocess.Pipe)) (contractsprocess.RunningPipe, error) {
+	builder := &Pipe{}
 	configure(builder)
 
 	steps := builder.steps
 	if len(steps) == 0 {
-		return nil, errors.New("pipeline must have at least one command")
+		return nil, errors.ProcessPipelineEmpty
 	}
 
 	ctx := r.ctx
@@ -209,7 +207,7 @@ func (r *Pipe) start(configure func(contractsprocess.PipeBuilder)) (contractspro
 			for _, r := range interReaders {
 				_ = r.Close()
 			}
-			return nil, errors.New("failed to start pipeline: " + err.Error())
+			return nil, errors.ProcessPipelineStartFailed.Args(err)
 		}
 		started = i + 1
 	}
@@ -217,13 +215,13 @@ func (r *Pipe) start(configure func(contractsprocess.PipeBuilder)) (contractspro
 	return NewRunningPipe(commands, steps, cancel, interReaders, interWriters, stdoutBuffers, stderrBuffers), nil
 }
 
-type PipeBuilder struct {
+type Pipe struct {
 	steps []*contractsprocess.Step
 }
 
-func (b *PipeBuilder) Command(name string, arg ...string) *contractsprocess.Step {
+func (b *Pipe) Command(name string, arg ...string) *contractsprocess.Step {
 	step := &contractsprocess.Step{
-		Key:  name,
+		Key:  strconv.Itoa(len(b.steps)),
 		Name: name,
 		Args: arg,
 	}

@@ -17,13 +17,13 @@ import (
 )
 
 func TestPipe_ErrorOnNoSteps_Unix(t *testing.T) {
-	_, err := NewPipe().Quietly().Run(func(b contractsprocess.PipeBuilder) {})
+	_, err := NewPipe().Quietly().Run(func(b contractsprocess.Pipe) {})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "pipeline must have at least one command")
 }
 
 func TestPipe_Run_SimplePipeline_Unix(t *testing.T) {
-	res, err := NewPipe().Quietly().Run(func(b contractsprocess.PipeBuilder) {
+	res, err := NewPipe().Quietly().Run(func(b contractsprocess.Pipe) {
 		b.Command("sh", "-c", "printf 'hello'").As("first")
 		b.Command("tr", "a-z", "A-Z").As("second")
 	})
@@ -44,7 +44,7 @@ func TestPipe_Run_Input_Path_Env_Unix(t *testing.T) {
 		Path(dir).
 		Env(map[string]string{"FOO": "BAR"}).
 		Quietly().
-		Run(func(b contractsprocess.PipeBuilder) {
+		Run(func(b contractsprocess.Pipe) {
 			b.Command("sh", "-c", "cat; printf \"$FOO\"").As("combine")
 			b.Command("./upper.sh").As("upper")
 		})
@@ -58,7 +58,7 @@ func TestPipe_OnOutput_ReceivesFromEachStep_Unix(t *testing.T) {
 	var byKey = map[string][]string{}
 	res, err := NewPipe().Quietly().OnOutput(func(key string, typ contractsprocess.OutputType, line []byte) {
 		byKey[key] = append(byKey[key], string(line))
-	}).Run(func(b contractsprocess.PipeBuilder) {
+	}).Run(func(b contractsprocess.Pipe) {
 		b.Command("sh", "-c", "printf 'a\\nb\\n'").As("first")
 		b.Command("cat").As("second")
 	})
@@ -81,7 +81,7 @@ func TestPipe_DisableBuffering_Unix(t *testing.T) {
 		} else {
 			stderrLines++
 		}
-	}).Run(func(b contractsprocess.PipeBuilder) {
+	}).Run(func(b contractsprocess.Pipe) {
 		b.Command("sh", "-c", "printf 'x\\n'; printf 'y\\n' 1>&2").As("only")
 	})
 	assert.NoError(t, err)
@@ -94,7 +94,7 @@ func TestPipe_DisableBuffering_Unix(t *testing.T) {
 }
 
 func TestPipe_Timeout_Unix(t *testing.T) {
-	res, err := NewPipe().Timeout(100 * time.Millisecond).Quietly().Run(func(b contractsprocess.PipeBuilder) {
+	res, err := NewPipe().Timeout(100 * time.Millisecond).Quietly().Run(func(b contractsprocess.Pipe) {
 		b.Command("sleep", "1").As("long")
 	})
 	assert.NoError(t, err)
@@ -103,7 +103,7 @@ func TestPipe_Timeout_Unix(t *testing.T) {
 }
 
 func TestPipe_Start_ErrorOnStartFailure_Unix(t *testing.T) {
-	_, err := NewPipe().Quietly().Start(func(b contractsprocess.PipeBuilder) {
+	_, err := NewPipe().Quietly().Start(func(b contractsprocess.Pipe) {
 		b.Command("sleep", "1").As("ok")
 		b.Command("definitely-not-a-real-binary-xyz").As("bad")
 	})
@@ -112,7 +112,7 @@ func TestPipe_Start_ErrorOnStartFailure_Unix(t *testing.T) {
 }
 
 func TestPipe_WithContext_Unix(t *testing.T) {
-	res, err := NewPipe().WithContext(context.TODO()).Quietly().Run(func(b contractsprocess.PipeBuilder) {
+	res, err := NewPipe().WithContext(context.TODO()).Quietly().Run(func(b contractsprocess.Pipe) {
 		b.Command("sh", "-c", "printf 'ok'")
 	})
 	assert.NoError(t, err)

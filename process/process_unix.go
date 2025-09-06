@@ -3,12 +3,13 @@
 package process
 
 import (
-	"errors"
 	"os"
 	"os/exec"
 	"time"
 
 	"golang.org/x/sys/unix"
+
+	"github.com/goravel/framework/errors"
 )
 
 func setSysProcAttr(cmd *exec.Cmd) {
@@ -26,7 +27,7 @@ func running(p *os.Process) bool {
 
 func kill(p *os.Process) error {
 	if p == nil {
-		return errors.New("process not started")
+		return errors.ProcessNotStarted
 	}
 	// kill the whole process group: negative PID addresses the group.
 	// If we can't send to the group, fall back to direct Kill of pid.
@@ -39,12 +40,12 @@ func kill(p *os.Process) error {
 
 func signal(p *os.Process, sig os.Signal) error {
 	if p == nil {
-		return errors.New("process not started")
+		return errors.ProcessNotStarted
 	}
 
 	s, ok := sig.(unix.Signal)
 	if !ok {
-		return errors.New("unsupported signal type")
+		return errors.ProcessUnsupportedSignalType
 	}
 
 	pid := p.Pid
@@ -58,7 +59,7 @@ func signal(p *os.Process, sig os.Signal) error {
 
 func stop(p *os.Process, done <-chan struct{}, timeout time.Duration, sig ...os.Signal) error {
 	if p == nil {
-		return errors.New("process not started")
+		return errors.ProcessNotStarted
 	}
 	if !running(p) {
 		return nil

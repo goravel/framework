@@ -6,7 +6,6 @@ import (
 	"errors"
 	"os"
 	"os/exec"
-	"sync"
 	"time"
 
 	contractsprocess "github.com/goravel/framework/contracts/process"
@@ -23,7 +22,6 @@ type Running struct {
 
 	doneChan chan struct{}
 	result   contractsprocess.Result
-	resultMu sync.RWMutex
 }
 
 func NewRunning(cmd *exec.Cmd, cancel context.CancelFunc, stdout, stderr *bytes.Buffer) *Running {
@@ -49,10 +47,7 @@ func NewRunning(cmd *exec.Cmd, cancel context.CancelFunc, stdout, stderr *bytes.
 		waitErr := runner.cmd.Wait()
 		exitCode := getExitCode(runner.cmd, waitErr)
 
-		cmdStr := ""
-		if runner.cmd != nil {
-			cmdStr = runner.cmd.String()
-		}
+		cmdStr := runner.cmd.String()
 
 		stdoutStr, stderrStr := "", ""
 		if runner.stdoutBuffer != nil {
@@ -62,11 +57,7 @@ func NewRunning(cmd *exec.Cmd, cancel context.CancelFunc, stdout, stderr *bytes.
 			stderrStr = runner.stderrBuffer.String()
 		}
 
-		result := NewResult(exitCode, cmdStr, stdoutStr, stderrStr)
-
-		runner.resultMu.Lock()
-		runner.result = result
-		runner.resultMu.Unlock()
+		runner.result = NewResult(exitCode, cmdStr, stdoutStr, stderrStr)
 	}(runner)
 
 	return runner
@@ -77,56 +68,34 @@ func (r *Running) Done() <-chan struct{} {
 }
 
 func (r *Running) Wait() contractsprocess.Result {
-	<-r.doneChan
-
-	r.resultMu.RLock()
-	defer r.resultMu.RUnlock()
+	<-r.Done()
 	return r.result
 }
 
 func (r *Running) PID() int {
-	if r.cmd == nil || r.cmd.Process == nil {
+	if r.cmd.Process == nil {
 		return 0
 	}
 	return r.cmd.Process.Pid
 }
 
 func (r *Running) Command() string {
-	if r.cmd == nil {
-		return ""
-	}
 	return r.cmd.String()
 }
 
 func (r *Running) Running() bool {
-	if r.cmd == nil {
-		return false
-	}
-
 	return running(r.cmd.Process)
 }
 
 func (r *Running) Kill() error {
-	if r.cmd == nil {
-		return errors.New("process not running")
-	}
-
 	return kill(r.cmd.Process)
 }
 
 func (r *Running) Signal(sig os.Signal) error {
-	if r.cmd == nil {
-		return errors.New("process not running")
-	}
-
 	return signal(r.cmd.Process, sig)
 }
 
 func (r *Running) Stop(timeout time.Duration, sig ...os.Signal) error {
-	if r.cmd == nil {
-		return errors.New("process not running")
-	}
-
 	return stop(r.cmd.Process, r.doneChan, timeout, sig...)
 }
 
