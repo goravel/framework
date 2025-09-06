@@ -3,6 +3,7 @@
 package process
 
 import (
+	"bytes"
 	"testing"
 	"time"
 
@@ -82,4 +83,12 @@ func TestRunning_Stop_Windows(t *testing.T) {
 		// A process terminated via TerminateProcess on Windows typically has an exit code of 1.
 		assert.Equal(t, 1, res.ExitCode())
 	})
+}
+
+func TestRunning_Panic_AppendsToStderr_Windows(t *testing.T) {
+	stderr := &bytes.Buffer{}
+	// Intentionally pass nil cmd to trigger panic in goroutine
+	r := NewRunning(nil, nil, nil, stderr)
+	<-r.Done()
+	assert.Equal(t, "panic: runtime error: invalid memory address or nil pointer dereference\n", stderr.String())
 }

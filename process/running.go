@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"time"
@@ -36,7 +37,11 @@ func NewRunning(cmd *exec.Cmd, cancel context.CancelFunc, stdout, stderr *bytes.
 	go func(runner *Running) {
 		defer func() {
 			if err := recover(); err != nil {
-				// TODO: see what should be done here with this error, should we consider it as WaitErr?
+				if runner.stderrBuffer != nil {
+					_, _ = runner.stderrBuffer.WriteString("panic: ")
+					_, _ = runner.stderrBuffer.WriteString(fmt.Sprint(err))
+					_, _ = runner.stderrBuffer.WriteString("\n")
+				}
 			}
 			if runner.cancel != nil {
 				runner.cancel()

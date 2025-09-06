@@ -3,6 +3,8 @@
 package process
 
 import (
+	"bytes"
+	"os/exec"
 	"strings"
 	"testing"
 	"time"
@@ -71,4 +73,12 @@ func TestRunningPipe_Stop_GracefulThenKill_Unix(t *testing.T) {
 	assert.NoError(t, rp2.Stop(50*time.Millisecond))
 	res2 := rp2.Wait()
 	assert.False(t, res2.Successful())
+}
+
+func TestRunningPipe_Panic_AppendsToStderr_Unix(t *testing.T) {
+	stderr := &bytes.Buffer{}
+	// Create a RunningPipe with a nil command to force panic in Wait
+	rp := NewRunningPipe([]*exec.Cmd{nil}, []*contractsprocess.Step{{Key: "0"}}, nil, nil, nil, []*bytes.Buffer{nil}, []*bytes.Buffer{stderr})
+	<-rp.Done()
+	assert.Equal(t, "panic: runtime error: invalid memory address or nil pointer dereference\n", stderr.String())
 }

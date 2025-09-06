@@ -118,3 +118,16 @@ func TestPipe_WithContext_Unix(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, res.Successful())
 }
+
+func TestPipe_DefaultStepKeys_Unix(t *testing.T) {
+	rp, err := NewPipe().Quietly().Start(func(b contractsprocess.Pipe) {
+		b.Command("sh", "-c", "printf 'a\\n'")
+		b.Command("cat")
+	})
+	assert.NoError(t, err)
+	pids := rp.PIDs()
+	assert.Greater(t, pids["0"], 0)
+	assert.Greater(t, pids["1"], 0)
+	_ = rp.Stop(1 * time.Second)
+	_ = rp.Wait()
+}

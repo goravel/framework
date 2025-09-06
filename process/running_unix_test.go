@@ -3,6 +3,7 @@
 package process
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -199,4 +200,12 @@ func TestRunning_DisableBuffering_OutputEmpty_Unix(t *testing.T) {
 	_ = run.Wait()
 	assert.Equal(t, "", run.Output())
 	assert.Equal(t, "", run.ErrorOutput())
+}
+
+func TestRunning_Panic_AppendsToStderr_Unix(t *testing.T) {
+	stderr := &bytes.Buffer{}
+	// Intentionally pass nil cmd to trigger panic in goroutine
+	r := NewRunning(nil, nil, nil, stderr)
+	<-r.Done()
+	assert.Equal(t, "panic: runtime error: invalid memory address or nil pointer dereference\n", stderr.String())
 }

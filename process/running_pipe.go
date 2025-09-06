@@ -3,6 +3,7 @@ package process
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -48,7 +49,15 @@ func NewRunningPipe(
 	go func(runner *RunningPipe) {
 		defer func() {
 			if err := recover(); err != nil {
-				// TODO: see what should be done here with this error, should we consider it as WaitErr?
+				// append panic to the last step's stderr buffer if available
+				if len(runner.stdErrorBuffers) > 0 {
+					lastIdx := len(runner.stdErrorBuffers) - 1
+					if runner.stdErrorBuffers[lastIdx] != nil {
+						runner.stdErrorBuffers[lastIdx].WriteString("panic: ")
+						runner.stdErrorBuffers[lastIdx].WriteString(fmt.Sprint(err))
+						runner.stdErrorBuffers[lastIdx].WriteString("\n")
+					}
+				}
 			}
 			if runner.cancel != nil {
 				runner.cancel()
@@ -58,8 +67,6 @@ func NewRunningPipe(
 
 		var waitErr error
 		for i, cmd := range runner.commands {
-			// cmd is always non-nil in our construction
-
 			waitErr = cmd.Wait()
 
 			// Close the writer that fed the next process's stdin.

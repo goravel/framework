@@ -112,3 +112,16 @@ func TestPipe_WithContext_Windows(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "hi\r\n", res.Output())
 }
+
+func TestPipe_DefaultStepKeys_Windows(t *testing.T) {
+	rp, err := NewPipe().Quietly().Start(func(b contractsprocess.Pipe) {
+		b.Command("cmd", "/C", "(echo a & echo b)")
+		b.Command("cmd", "/C", "more")
+	})
+	assert.NoError(t, err)
+	pids := rp.PIDs()
+	assert.Greater(t, pids["0"], 0)
+	assert.Greater(t, pids["1"], 0)
+	_ = rp.Stop(1 * time.Second)
+	_ = rp.Wait()
+}
