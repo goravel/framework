@@ -54,7 +54,7 @@ func NewRunningPipe(
 					lastIdx := len(runner.stdErrorBuffers) - 1
 					if runner.stdErrorBuffers[lastIdx] != nil {
 						runner.stdErrorBuffers[lastIdx].WriteString("panic: ")
-						runner.stdErrorBuffers[lastIdx].WriteString(fmt.Sprint(err))
+						_, _ = fmt.Fprint(runner.stdErrorBuffers[lastIdx], err)
 						runner.stdErrorBuffers[lastIdx].WriteString("\n")
 					}
 				}

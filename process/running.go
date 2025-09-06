@@ -39,7 +39,7 @@ func NewRunning(cmd *exec.Cmd, cancel context.CancelFunc, stdout, stderr *bytes.
 			if err := recover(); err != nil {
 				if runner.stderrBuffer != nil {
 					_, _ = runner.stderrBuffer.WriteString("panic: ")
-					_, _ = runner.stderrBuffer.WriteString(fmt.Sprint(err))
+					_, _ = fmt.Fprint(runner.stderrBuffer, err)
 					_, _ = runner.stderrBuffer.WriteString("\n")
 				}
 			}
