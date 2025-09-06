@@ -219,11 +219,11 @@ type Pipe struct {
 	steps []*contractsprocess.Step
 }
 
-func (b *Pipe) Command(name string, arg ...string) *contractsprocess.Step {
+func (b *Pipe) Command(name string, args ...string) *contractsprocess.Step {
 	step := &contractsprocess.Step{
 		Key:  strconv.Itoa(len(b.steps)),
 		Name: name,
-		Args: arg,
+		Args: args,
 	}
 	b.steps = append(b.steps, step)
 	return step

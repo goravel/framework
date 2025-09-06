@@ -20,6 +20,7 @@ func running(p *os.Process) bool {
 	if p == nil {
 		return false
 	}
+
 	// unix.Kill with signal 0 is the common alive check
 	err := unix.Kill(p.Pid, 0)
 	return err == nil
@@ -29,12 +30,14 @@ func kill(p *os.Process) error {
 	if p == nil {
 		return errors.ProcessNotStarted
 	}
+
 	// kill the whole process group: negative PID addresses the group.
 	// If we can't send to the group, fall back to direct Kill of pid.
 	if err := unix.Kill(-p.Pid, unix.SIGKILL); err != nil {
 		// fallback: try killing the single process
 		return unix.Kill(p.Pid, unix.SIGKILL)
 	}
+
 	return nil
 }
 
@@ -61,6 +64,7 @@ func stop(p *os.Process, done <-chan struct{}, timeout time.Duration, sig ...os.
 	if p == nil {
 		return errors.ProcessNotStarted
 	}
+
 	if !running(p) {
 		return nil
 	}

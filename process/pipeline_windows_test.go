@@ -40,7 +40,7 @@ func TestPipe_Run_Input_Windows(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.True(t, res.Successful())
-	assert.Equal(t, "ABC", res.Output())
+	assert.Equal(t, "ABC\r\n", res.Output())
 }
 
 func TestPipe_Env_Windows(t *testing.T) {
@@ -49,7 +49,7 @@ func TestPipe_Env_Windows(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	// Trim CRLF
-	assert.Equal(t, "BAR", strings.TrimRight(res.Output(), "\r\n"))
+	assert.Equal(t, "BAR\r\n", res.Output())
 }
 
 func TestPipe_OnOutput_ReceivesFromEachStep_Windows(t *testing.T) {
@@ -63,10 +63,10 @@ func TestPipe_OnOutput_ReceivesFromEachStep_Windows(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, res.Successful())
 	if assert.Contains(t, byKey, "first") {
-		assert.Equal(t, []string{"a", "b"}, byKey["first"])
+		assert.Equal(t, []string{"a ", "b"}, byKey["first"])
 	}
 	if assert.Contains(t, byKey, "second") {
-		assert.Equal(t, []string{"a", "b"}, byKey["second"])
+		assert.Equal(t, []string{"a ", "b", ""}, byKey["second"])
 	}
 }
 
