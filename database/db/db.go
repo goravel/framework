@@ -98,10 +98,9 @@ func (r *DB) Transaction(callback func(tx contractsdb.Tx) error) (err error) {
 
 	defer func() {
 		if re := recover(); re != nil {
+			err = fmt.Errorf("panic: %v", re)
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = rollbackErr
-			} else {
-				err = fmt.Errorf("panic: %v", re)
+				err = errors.Join(err, rollbackErr)
 			}
 		}
 	}()
