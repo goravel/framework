@@ -537,6 +537,42 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 	}
 }
 
+func (s *DBTestSuite) TestInsert_First_Get_With_Missing_Columns() {
+	type ProductMissingHeight struct {
+		Model
+		SoftDeletes
+		Name   string `db:"name"`
+		Weight *int   `db:"weight"`
+	}
+
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			result, err := query.DB().Table("products").Insert(ProductMissingHeight{
+				Name: "single struct",
+				Model: Model{
+					Timestamps: Timestamps{
+						CreatedAt: s.now,
+						UpdatedAt: s.now,
+					},
+				},
+			})
+
+			s.NoError(err)
+			s.Equal(int64(1), result.RowsAffected)
+
+			var product ProductMissingHeight
+			err = query.DB().Table("products").Where("name", "single struct").Where("deleted_at", nil).First(&product)
+
+			s.NoError(err)
+			s.True(product.ID > 0)
+			s.Equal("single struct", product.Name)
+			s.Equal(s.now, product.CreatedAt)
+			s.Equal(s.now, product.UpdatedAt)
+			s.False(product.DeletedAt.Valid)
+		})
+	}
+}
+
 func (s *DBTestSuite) TestInsertGetID() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
