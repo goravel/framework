@@ -3183,6 +3183,65 @@ func (_c *Query_Select_Call) RunAndReturn(run func(...string) orm.Query) *Query_
 	return _c
 }
 
+// SelectRaw provides a mock function with given fields: query, args
+func (_m *Query) SelectRaw(query interface{}, args ...interface{}) orm.Query {
+	var _ca []interface{}
+	_ca = append(_ca, query)
+	_ca = append(_ca, args...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SelectRaw")
+	}
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) orm.Query); ok {
+		r0 = rf(query, args...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_SelectRaw_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SelectRaw'
+type Query_SelectRaw_Call struct {
+	*mock.Call
+}
+
+// SelectRaw is a helper method to define mock.On call
+//   - query interface{}
+//   - args ...interface{}
+func (_e *Query_Expecter) SelectRaw(query interface{}, args ...interface{}) *Query_SelectRaw_Call {
+	return &Query_SelectRaw_Call{Call: _e.mock.On("SelectRaw",
+		append([]interface{}{query}, args...)...)}
+}
+
+func (_c *Query_SelectRaw_Call) Run(run func(query interface{}, args ...interface{})) *Query_SelectRaw_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].(interface{}), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Query_SelectRaw_Call) Return(_a0 orm.Query) *Query_SelectRaw_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_SelectRaw_Call) RunAndReturn(run func(interface{}, ...interface{}) orm.Query) *Query_SelectRaw_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // SharedLock provides a mock function with no fields
 func (_m *Query) SharedLock() orm.Query {
 	ret := _m.Called()
