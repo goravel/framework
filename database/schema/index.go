@@ -116,19 +116,19 @@ func (r *IndexDefinition) Name(name string) schema.IndexDefinition {
 	return r
 }
 
-type ForeignIdColumnDefinition struct {
+type ForeignIDColumnDefinition struct {
 	*ColumnDefinition
 	blueprint *Blueprint
 }
 
-func (r *ForeignIdColumnDefinition) Constrained(table string, column string) schema.ForeignKeyDefinition {
-	if column == "" {
-		column = "id"
+func (r *ForeignIDColumnDefinition) Constrained(table string, indexName string) schema.ForeignKeyDefinition {
+	if indexName == "" {
+		indexName = "id"
 	}
 
-	return r.References(column).On(table)
+	return r.References(indexName).On(table)
 }
 
-func (r *ForeignIdColumnDefinition) References(column string) schema.ForeignKeyDefinition {
+func (r *ForeignIDColumnDefinition) References(column string) schema.ForeignKeyDefinition {
 	return r.blueprint.Foreign(r.GetName()).References(column)
 }

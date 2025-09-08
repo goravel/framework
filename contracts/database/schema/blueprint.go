@@ -73,11 +73,11 @@ type Blueprint interface {
 	// Foreign Specify a foreign key for the table.
 	Foreign(column ...string) ForeignKeyDefinition
 	// Foreign Create a new unsigned big integer (8-byte) column on the table.
-	ForeignID(column string) ForeignIdColumnDefinition
+	ForeignID(column string) ForeignIDColumnDefinition
 	// ForeignUlid Create a new ULID column on the table with a foreign key constraint.
-	ForeignUlid(column string, length ...int) ForeignIdColumnDefinition
+	ForeignUlid(column string, length ...int) ForeignIDColumnDefinition
 	// ForeignUuid Create a new UUID column on the table with a foreign key constraint.
-	ForeignUuid(column string) ForeignIdColumnDefinition
+	ForeignUuid(column string) ForeignIDColumnDefinition
 	// FullText Specify a fulltext for the table.
 	FullText(column ...string) IndexDefinition
 	// GetAddedColumns Get the added columns.

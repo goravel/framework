@@ -23,9 +23,9 @@ type IndexDefinition interface {
 	Name(name string) IndexDefinition
 }
 
-type ForeignIdColumnDefinition interface {
+type ForeignIDColumnDefinition interface {
 	driver.ColumnDefinition
-	Constrained(table string, column string) ForeignKeyDefinition
+	Constrained(table string, indexName string) ForeignKeyDefinition
 	References(column string) ForeignKeyDefinition
 }
 

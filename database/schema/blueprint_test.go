@@ -283,8 +283,9 @@ func (s *BlueprintTestSuite) TestForeignUlid() {
 	name := "name"
 	s.blueprint.ForeignUlid(name)
 	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
-		name:  &name,
-		ttype: convert.Pointer("ulid"),
+		name:   &name,
+		ttype:  convert.Pointer("char"),
+		length: convert.Pointer(26),
 	})
 }
 

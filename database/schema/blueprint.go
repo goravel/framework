@@ -259,22 +259,22 @@ func (r *Blueprint) Foreign(column ...string) schema.ForeignKeyDefinition {
 	return NewForeignKeyDefinition(command)
 }
 
-func (r *Blueprint) ForeignID(column string) schema.ForeignIdColumnDefinition {
-	return &ForeignIdColumnDefinition{
+func (r *Blueprint) ForeignID(column string) schema.ForeignIDColumnDefinition {
+	return &ForeignIDColumnDefinition{
 		ColumnDefinition: r.UnsignedBigInteger(column).(*ColumnDefinition),
 		blueprint:        r,
 	}
 }
 
-func (r *Blueprint) ForeignUlid(column string, length ...int) schema.ForeignIdColumnDefinition {
-	return &ForeignIdColumnDefinition{
+func (r *Blueprint) ForeignUlid(column string, length ...int) schema.ForeignIDColumnDefinition {
+	return &ForeignIDColumnDefinition{
 		ColumnDefinition: r.Ulid(column, length...).(*ColumnDefinition),
 		blueprint:        r,
 	}
 }
 
-func (r *Blueprint) ForeignUuid(column string) schema.ForeignIdColumnDefinition {
-	return &ForeignIdColumnDefinition{
+func (r *Blueprint) ForeignUuid(column string) schema.ForeignIDColumnDefinition {
+	return &ForeignIDColumnDefinition{
 		ColumnDefinition: r.Uuid(column).(*ColumnDefinition),
 		blueprint:        r,
 	}
