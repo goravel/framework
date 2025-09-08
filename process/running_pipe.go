@@ -14,7 +14,7 @@ import (
 
 type RunningPipe struct {
 	commands []*exec.Cmd
-	steps    []*contractsprocess.Step
+	steps    []*Step
 	cancel   context.CancelFunc
 
 	interReaders []*io.PipeReader
@@ -29,7 +29,7 @@ type RunningPipe struct {
 
 func NewRunningPipe(
 	commands []*exec.Cmd,
-	steps []*contractsprocess.Step,
+	steps []*Step,
 	cancel context.CancelFunc,
 	interReaders []*io.PipeReader,
 	interWriters []*io.PipeWriter,
@@ -91,7 +91,7 @@ func NewRunningPipe(
 			stderrStr = runner.stdErrorBuffers[lastIdx].String()
 		}
 
-		runner.result = NewResult(exitCode, cmdStr, stdoutStr, stderrStr)
+		runner.result = NewResult(waitErr, exitCode, cmdStr, stdoutStr, stderrStr)
 
 		for _, w := range runner.interWriters {
 			_ = w.Close()
@@ -107,7 +107,7 @@ func NewRunningPipe(
 func (r *RunningPipe) PIDs() map[string]int {
 	m := make(map[string]int, len(r.commands))
 	for i, cmd := range r.commands {
-		key := r.steps[i].Key
+		key := r.steps[i].key
 		pid := 0
 		if cmd.Process != nil {
 			pid = cmd.Process.Pid

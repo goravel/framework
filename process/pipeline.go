@@ -14,6 +14,7 @@ import (
 )
 
 var _ contractsprocess.Pipeline = (*Pipeline)(nil)
+var _ contractsprocess.Pipe = (*Pipe)(nil)
 
 func NewPipe() *Pipeline {
 	return &Pipeline{
@@ -95,10 +96,10 @@ func (r *Pipeline) run(configure func(contractsprocess.Pipe)) (contractsprocess.
 }
 
 func (r *Pipeline) start(configure func(contractsprocess.Pipe)) (contractsprocess.RunningPipe, error) {
-	builder := &Pipe{}
-	configure(builder)
+	pipe := &Pipe{}
+	configure(pipe)
 
-	steps := builder.steps
+	steps := pipe.steps
 	if len(steps) == 0 {
 		return nil, errors.ProcessPipelineEmpty
 	}
@@ -115,7 +116,7 @@ func (r *Pipeline) start(configure func(contractsprocess.Pipe)) (contractsproces
 
 	commands := make([]*exec.Cmd, len(steps))
 	for i, step := range steps {
-		cmd := exec.CommandContext(ctx, step.Name, step.Args...)
+		cmd := exec.CommandContext(ctx, step.name, step.args...)
 		if r.path != "" {
 			cmd.Dir = r.path
 		}
@@ -163,8 +164,8 @@ func (r *Pipeline) start(configure func(contractsprocess.Pipe)) (contractsproces
 		}
 
 		if r.onOutput != nil {
-			stdoutWriters = append(stdoutWriters, NewOutputWriterForPipe(steps[i].Key, contractsprocess.OutputTypeStdout, r.onOutput))
-			stderrWriters = append(stderrWriters, NewOutputWriterForPipe(steps[i].Key, contractsprocess.OutputTypeStderr, r.onOutput))
+			stdoutWriters = append(stdoutWriters, NewOutputWriterForPipe(steps[i].key, contractsprocess.OutputTypeStdout, r.onOutput))
+			stderrWriters = append(stderrWriters, NewOutputWriterForPipe(steps[i].key, contractsprocess.OutputTypeStderr, r.onOutput))
 		}
 
 		// If this is not the last command, create a pipe to the next command and include the pipe writer
@@ -216,15 +217,11 @@ func (r *Pipeline) start(configure func(contractsprocess.Pipe)) (contractsproces
 }
 
 type Pipe struct {
-	steps []*contractsprocess.Step
+	steps []*Step
 }
 
-func (b *Pipe) Command(name string, args ...string) *contractsprocess.Step {
-	step := &contractsprocess.Step{
-		Key:  strconv.Itoa(len(b.steps)),
-		Name: name,
-		Args: args,
-	}
+func (b *Pipe) Command(name string, args ...string) contractsprocess.Step {
+	step := NewStep(strconv.Itoa(len(b.steps)), name, args)
 	b.steps = append(b.steps, step)
 	return step
 }

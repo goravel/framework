@@ -48,16 +48,9 @@ type Pipeline interface {
 }
 
 type Pipe interface {
-	Command(name string, arg ...string) *Step
+	Command(name string, arg ...string) Step
 }
 
-type Step struct {
-	Key  string
-	Name string
-	Args []string
-}
-
-func (s *Step) As(key string) *Step {
-	s.Key = key
-	return s
+type Step interface {
+	As(key string) Step
 }

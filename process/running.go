@@ -62,7 +62,7 @@ func NewRunning(cmd *exec.Cmd, cancel context.CancelFunc, stdout, stderr *bytes.
 			stderrStr = runner.stderrBuffer.String()
 		}
 
-		runner.result = NewResult(exitCode, cmdStr, stdoutStr, stderrStr)
+		runner.result = NewResult(waitErr, exitCode, cmdStr, stdoutStr, stderrStr)
 	}(runner)
 
 	return runner

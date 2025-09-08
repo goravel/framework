@@ -58,7 +58,7 @@ func TestRunningPipe_Signal_Windows_NoOp(t *testing.T) {
 
 func TestRunningPipe_Panic_AppendsToStderr_Windows(t *testing.T) {
 	stderr := &bytes.Buffer{}
-	rp := NewRunningPipe([]*exec.Cmd{nil}, []*contractsprocess.Step{{Key: "0"}}, nil, nil, nil, []*bytes.Buffer{nil}, []*bytes.Buffer{stderr})
+	rp := NewRunningPipe([]*exec.Cmd{nil}, []*Step{{key: "0"}}, nil, nil, nil, []*bytes.Buffer{nil}, []*bytes.Buffer{stderr})
 	<-rp.Done()
 	assert.Equal(t, "panic: runtime error: invalid memory address or nil pointer dereference\n", stderr.String())
 }
