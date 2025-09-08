@@ -2,12 +2,12 @@ module github.com/goravel/framework/tests
 
 go 1.24.0
 
-toolchain go1.25.0
+toolchain go1.25.1
 
 godebug x509negativeserial=1
 
 require (
-	github.com/brianvoe/gofakeit/v7 v7.4.0
+	github.com/brianvoe/gofakeit/v7 v7.5.1
 	github.com/google/uuid v1.6.0
 	github.com/goravel/framework v1.16.1
 	github.com/goravel/mysql v1.4.0
@@ -15,8 +15,8 @@ require (
 	github.com/goravel/sqlite v1.4.0
 	github.com/goravel/sqlserver v1.4.0
 	github.com/spf13/cast v1.9.2
-	github.com/stretchr/testify v1.11.0
-	gorm.io/gorm v1.30.1
+	github.com/stretchr/testify v1.11.1
+	gorm.io/gorm v1.30.3
 )
 
 require (
@@ -29,7 +29,7 @@ require (
 	github.com/containerd/console v1.0.5 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dromara/carbon/v2 v2.6.11 // indirect
-	github.com/gabriel-vasile/mimetype v1.4.9 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.10 // indirect
 	github.com/go-sql-driver/mysql v1.9.3 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/golang-sql/civil v0.0.0-20220223132316-b832511892a9 // indirect
@@ -62,7 +62,7 @@ require (
 	golang.org/x/exp v0.0.0-20250819193227-8b4c13bb791b // indirect
 	golang.org/x/net v0.43.0 // indirect
 	golang.org/x/sync v0.16.0 // indirect
-	golang.org/x/sys v0.35.0 // indirect
+	golang.org/x/sys v0.36.0 // indirect
 	golang.org/x/term v0.34.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
