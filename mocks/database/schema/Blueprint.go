@@ -566,6 +566,52 @@ func (_c *Blueprint_DateTimeTz_Call) RunAndReturn(run func(string, ...int) drive
 	return _c
 }
 
+// DateTimes provides a mock function with given fields: precision
+func (_m *Blueprint) DateTimes(precision ...int) {
+	_va := make([]interface{}, len(precision))
+	for _i := range precision {
+		_va[_i] = precision[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	_m.Called(_ca...)
+}
+
+// Blueprint_DateTimes_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DateTimes'
+type Blueprint_DateTimes_Call struct {
+	*mock.Call
+}
+
+// DateTimes is a helper method to define mock.On call
+//   - precision ...int
+func (_e *Blueprint_Expecter) DateTimes(precision ...interface{}) *Blueprint_DateTimes_Call {
+	return &Blueprint_DateTimes_Call{Call: _e.mock.On("DateTimes",
+		append([]interface{}{}, precision...)...)}
+}
+
+func (_c *Blueprint_DateTimes_Call) Run(run func(precision ...int)) *Blueprint_DateTimes_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]int, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(int)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Blueprint_DateTimes_Call) Return() *Blueprint_DateTimes_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Blueprint_DateTimes_Call) RunAndReturn(run func(...int)) *Blueprint_DateTimes_Call {
+	_c.Run(run)
+	return _c
+}
+
 // Decimal provides a mock function with given fields: column
 func (_m *Blueprint) Decimal(column string) driver.ColumnDefinition {
 	ret := _m.Called(column)

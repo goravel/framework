@@ -50,7 +50,7 @@ func (r *TestMakeCommand) Handle(ctx console.Context) error {
 
 	stub := r.getStub()
 
-	if err := file.PutContent(m.GetFilePath(), r.populateStub(stub, m.GetPackageName(), m.GetStructName())); err != nil {
+	if err := file.PutContent(m.GetFilePath(), r.populateStub(stub, m.GetPackageName(), m.GetStructName(), m.GetModuleName())); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
@@ -65,9 +65,10 @@ func (r *TestMakeCommand) getStub() string {
 }
 
 // populateStub Populate the place-holders in the command stub.
-func (r *TestMakeCommand) populateStub(stub string, packageName, structName string) string {
+func (r *TestMakeCommand) populateStub(stub string, packageName, structName string, moduleName string) string {
 	stub = strings.ReplaceAll(stub, "DummyTest", structName)
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
+	stub = strings.ReplaceAll(stub, "DummyModule", moduleName)
 
 	return stub
 }

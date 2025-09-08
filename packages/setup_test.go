@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/packages"
@@ -55,7 +56,8 @@ func (s *PackagesSetupTestSuite) TestExecute() {
 						command: "install",
 					}
 				)
-				mockModify.EXPECT().Apply().Return(assert.AnError).Once()
+
+				mockModify.EXPECT().Apply(mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option")).Return(assert.AnError).Once()
 				set.Install(mockModify)
 
 				return set
@@ -75,7 +77,7 @@ func (s *PackagesSetupTestSuite) TestExecute() {
 						command: "install",
 					}
 				)
-				mockModify.EXPECT().Apply().Return(nil).Once()
+				mockModify.EXPECT().Apply(mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option")).Return(nil).Once()
 				set.Install(mockModify)
 
 				return set
@@ -94,7 +96,7 @@ func (s *PackagesSetupTestSuite) TestExecute() {
 						command: "uninstall",
 					}
 				)
-				mockModify.EXPECT().Apply().Return(assert.AnError).Once()
+				mockModify.EXPECT().Apply(mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option")).Return(assert.AnError).Once()
 				set.Uninstall(mockModify)
 
 				return set
@@ -115,7 +117,7 @@ func (s *PackagesSetupTestSuite) TestExecute() {
 						force:   true,
 					}
 				)
-				mockModify.EXPECT().Apply().Return(assert.AnError).Once()
+				mockModify.EXPECT().Apply(mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option")).Return(assert.AnError).Once()
 				set.Uninstall(mockModify)
 
 				return set
@@ -135,7 +137,7 @@ func (s *PackagesSetupTestSuite) TestExecute() {
 						command: "uninstall",
 					}
 				)
-				mockModify.EXPECT().Apply().Return(nil).Once()
+				mockModify.EXPECT().Apply(mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option")).Return(nil).Once()
 				set.Uninstall(mockModify)
 
 				return set
@@ -156,4 +158,22 @@ func (s *PackagesSetupTestSuite) TestExecute() {
 			}))
 		})
 	}
+}
+
+func TestSetup(t *testing.T) {
+	s := Setup([]string{"install", "--force", "--facade=test"})
+	assert.Equal(t, &setup{
+		command: "install",
+		facade:  "test",
+		force:   true,
+		module:  "",
+	}, s.(*setup))
+
+	s = Setup([]string{"uninstall", "-f", "--facade=test"})
+	assert.Equal(t, &setup{
+		command: "uninstall",
+		facade:  "test",
+		force:   true,
+		module:  "",
+	}, s.(*setup))
 }

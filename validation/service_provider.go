@@ -15,7 +15,7 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 		Bindings: []string{
 			binding.Validation,
 		},
-		Dependencies: binding.Facades[binding.Validation].Dependencies,
+		Dependencies: binding.Bindings[binding.Validation].Dependencies,
 		ProvideFor:   []string{},
 	}
 }

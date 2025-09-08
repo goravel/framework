@@ -12,18 +12,18 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/collect"
 	supportconsole "github.com/goravel/framework/support/console"
-	"github.com/goravel/framework/support/str"
+	"github.com/goravel/framework/support/convert"
 )
 
 type PackageInstallCommand struct {
-	facades          map[string]binding.FacadeInfo
-	installedFacades []string
+	bindings          map[string]binding.Info
+	installedBindings []any
 }
 
-func NewPackageInstallCommand(facades map[string]binding.FacadeInfo, installedFacades []string) *PackageInstallCommand {
+func NewPackageInstallCommand(bindings map[string]binding.Info, installedBindings []any) *PackageInstallCommand {
 	return &PackageInstallCommand{
-		facades:          facades,
-		installedFacades: installedFacades,
+		bindings:          bindings,
+		installedBindings: installedBindings,
 	}
 }
 
@@ -90,21 +90,21 @@ func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) 
 
 	// get package
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "get", pkg)); err != nil {
-		ctx.Error(fmt.Sprintf("failed to get package: %s", err))
+		ctx.Error(fmt.Sprintf("Failed to get package: %s", err))
 
 		return nil
 	}
 
 	// install package
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install")); err != nil {
-		ctx.Error(fmt.Sprintf("failed to install package: %s", err))
+		ctx.Error(fmt.Sprintf("Failed to install package: %s", err))
 
 		return nil
 	}
 
 	// tidy go.mod file
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
-		ctx.Error(fmt.Sprintf("failed to tidy go.mod file: %s", err))
+		ctx.Error(fmt.Sprintf("Failed to tidy go.mod file: %s", err))
 
 		return nil
 	}
@@ -115,63 +115,55 @@ func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) 
 }
 
 func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) error {
-	bindingName := convertFacadeToBinding(name)
-	if _, exists := r.facades[bindingName]; !exists {
+	binding := convert.FacadeToBinding(name)
+	if _, exists := r.bindings[binding]; !exists {
 		ctx.Warning(errors.PackageFacadeNotFound.Args(name).Error())
-		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(getAvailableFacades(r.facades), ", ")))
+		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(getAvailableFacades(r.bindings), ", ")))
 		return nil
 	}
 
-	dependencies := r.getDependenciesThatNeedInstall(bindingName)
+	dependencies := r.getDependenciesThatNeedInstall(binding)
 	if len(dependencies) > 0 {
-		facadeNames := make([]string, len(dependencies))
+		facades := make([]string, len(dependencies))
 		for i := range dependencies {
-			facadeNames[i] = convertBindingToFacade(dependencies[i])
+			facades[i] = convert.BindingToFacade(dependencies[i])
 		}
-		ctx.Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", name, strings.Join(facadeNames, ", ")))
+		ctx.Info(fmt.Sprintf("%s depends on %s, they will be implicitly installed", name, strings.Join(facades, ", ")))
 	}
 
-	dependencies = append(dependencies, bindingName)
-	for _, facade := range dependencies {
-		setup := r.facades[facade].PkgPath + "/setup"
+	dependencies = append(dependencies, binding)
+	for _, binding := range dependencies {
+		setup := r.bindings[binding].PkgPath + "/setup"
+		facade := convert.BindingToFacade(binding)
 
-		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install")); err != nil {
-			ctx.Error(fmt.Sprintf("Failed to install facade %s, error: %s", convertBindingToFacade(facade), err.Error()))
+		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--facade="+facade)); err != nil {
+			ctx.Error(fmt.Sprintf("Failed to install facade %s: %s", facade, err.Error()))
 
 			return nil
 		}
 
-		ctx.Success(fmt.Sprintf("Facade %s installed successfully", convertBindingToFacade(facade)))
+		ctx.Success(fmt.Sprintf("Facade %s installed successfully", facade))
 	}
 
 	return nil
 }
 
-func (r *PackageInstallCommand) getDependenciesThatNeedInstall(name string) (needInstall []string) {
-	for _, dep := range getFacadeDependencies(name, r.facades) {
-		if !slices.Contains(r.installedFacades, dep) {
-			needInstall = append(needInstall, dep)
+func (r *PackageInstallCommand) getDependenciesThatNeedInstall(binding string) (needInstall []string) {
+	for _, dependencyBinding := range getDependencyBindings(binding, r.bindings) {
+		var binding any = dependencyBinding
+		if !slices.Contains(r.installedBindings, binding) {
+			needInstall = append(needInstall, dependencyBinding)
 		}
 	}
 
 	return
 }
 
-func convertBindingToFacade(b string) string {
-	return str.Of(b).After("goravel.").Studly().WhenIs("Db", func(s *str.String) *str.String {
-		return s.Upper()
-	}).String()
-}
-
-func convertFacadeToBinding(f string) string {
-	return "goravel." + str.Of(f).Snake().String()
-}
-
-func getAvailableFacades(facades map[string]binding.FacadeInfo) []string {
+func getAvailableFacades(bindings map[string]binding.Info) []string {
 	var result []string
-	for name, info := range facades {
+	for binding, info := range bindings {
 		if !info.IsBase {
-			result = append(result, convertBindingToFacade(name))
+			result = append(result, convert.BindingToFacade(binding))
 		}
 	}
 
@@ -180,12 +172,12 @@ func getAvailableFacades(facades map[string]binding.FacadeInfo) []string {
 	return result
 }
 
-func getFacadeDependencies(name string, facades map[string]binding.FacadeInfo) []string {
+func getDependencyBindings(binding string, bindings map[string]binding.Info) []string {
 	var deps []string
-	for _, dep := range facades[name].Dependencies {
-		if info, ok := facades[dep]; ok && !info.IsBase {
+	for _, dep := range bindings[binding].Dependencies {
+		if info, ok := bindings[dep]; ok && !info.IsBase {
 			deps = append(deps, dep)
-			deps = append(deps, getFacadeDependencies(dep, facades)...)
+			deps = append(deps, getDependencyBindings(dep, bindings)...)
 		}
 	}
 

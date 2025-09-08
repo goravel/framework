@@ -10,24 +10,26 @@ import (
 )
 
 func main() {
-	// TODO: optimize this in https://github.com/goravel/goravel/issues/447
-	// config, err := supportfile.GetFrameworkContent("auth/setup/config/auth.go")
-	// if err != nil {
-	// 	panic(err)
-	// }
+	stubs := Stubs{}
 
 	packages.Setup(os.Args).
 		Install(
 			modify.GoFile(path.Config("app.go")).
 				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
 				Find(match.Providers()).Modify(modify.Register("&auth.ServiceProvider{}")),
-			// modify.File(path.Config("auth.go")).Overwrite(config),
+			modify.File(path.Config("auth.go")).Overwrite(stubs.Config()),
+			modify.WhenFacade("Auth", modify.File(path.Facades("auth.go")).Overwrite(stubs.AuthFacade())),
+			modify.WhenFacade("Gate", modify.File(path.Facades("gate.go")).Overwrite(stubs.GateFacade())),
 		).
 		Uninstall(
-			modify.GoFile(path.Config("app.go")).
-				Find(match.Providers()).Modify(modify.Unregister("&auth.ServiceProvider{}")).
-				Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
-			// modify.File(path.Config("auth.go")).Remove(),
+			modify.WhenNoFacades([]string{"Auth", "Gate"},
+				modify.GoFile(path.Config("app.go")).
+					Find(match.Providers()).Modify(modify.Unregister("&auth.ServiceProvider{}")).
+					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
+				modify.File(path.Config("auth.go")).Remove(),
+			),
+			modify.WhenFacade("Auth", modify.File(path.Facades("auth.go")).Remove()),
+			modify.WhenFacade("Gate", modify.File(path.Facades("gate.go")).Remove()),
 		).
 		Execute()
 }
