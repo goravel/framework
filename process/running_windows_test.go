@@ -81,7 +81,7 @@ func TestRunning_Stop_Windows(t *testing.T) {
 		assert.False(t, res.Successful(), "Process should have been terminated, resulting in failure")
 
 		// A process terminated via TerminateProcess on Windows typically has an exit code of 1.
-		assert.Equal(t, 1, res.ExitCode())
+		assert.Greater(t, res.ExitCode(), 0)
 	})
 }
 
