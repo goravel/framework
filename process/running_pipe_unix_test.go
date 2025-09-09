@@ -30,10 +30,9 @@ func TestRunningPipe_PIDs_Running_Done_Wait_Unix(t *testing.T) {
 	assert.True(t, rp.Running())
 
 	res := rp.Wait()
-	assert.True(t, strings.HasPrefix(res.Output(), "start"))
-	assert.True(t, strings.HasSuffix(res.Output(), "end"))
 	assert.True(t, res.Successful())
 	assert.False(t, rp.Running())
+	assert.Equal(t, "startend", res.Output())
 }
 
 func TestRunningPipe_Signal_Unix(t *testing.T) {

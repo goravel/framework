@@ -29,11 +29,9 @@ func TestRunningPipe_PIDs_Running_Done_Wait_Windows(t *testing.T) {
 	assert.True(t, rp.Running())
 
 	res := rp.Wait()
-	out := strings.ReplaceAll(res.Output(), "\r", "")
-	assert.True(t, strings.Contains(out, "start"))
-	assert.True(t, strings.Contains(out, "end"))
 	assert.True(t, res.Successful())
 	assert.False(t, rp.Running())
+	assert.Equal(t, "startend\r", res.Output())
 }
 
 func TestRunningPipe_Stop_Windows(t *testing.T) {
