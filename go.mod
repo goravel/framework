@@ -39,6 +39,20 @@ require (
 )
 
 require (
+	github.com/chigopher/pathlib v0.19.1 // indirect
+	github.com/huandu/xstrings v1.4.0 // indirect
+	github.com/iancoleman/strcase v0.3.0 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/jinzhu/copier v0.4.0 // indirect
+	github.com/mattn/go-colorable v0.1.14 // indirect
+	github.com/mitchellh/go-homedir v1.1.0 // indirect
+	github.com/mitchellh/mapstructure v1.5.0 // indirect
+	github.com/rs/zerolog v1.33.0 // indirect
+	github.com/spf13/cobra v1.8.1 // indirect
+	github.com/vektra/mockery/v2 v2.53.5 // indirect
+)
+
+require (
 	atomicgo.dev/cursor v0.2.0 // indirect
 	atomicgo.dev/keyboard v0.2.9 // indirect
 	atomicgo.dev/schedule v0.1.0 // indirect
@@ -104,3 +118,5 @@ replace (
 	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20250826171959-ef028d996bc1
 	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20250826171959-ef028d996bc1
 )
+
+tool github.com/vektra/mockery/v2
