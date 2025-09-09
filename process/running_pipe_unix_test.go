@@ -5,7 +5,6 @@ package process
 import (
 	"bytes"
 	"os/exec"
-	"strings"
 	"testing"
 	"time"
 
