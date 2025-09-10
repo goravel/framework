@@ -9,16 +9,16 @@ import (
 	contractshttp "github.com/goravel/framework/contracts/http"
 )
 
-const csrfKey = "X-CSRF-TOKEN"
+const HeaderCsrfKey = "X-CSRF-TOKEN"
 
 func VerifyCsrfToken(excepts []string) contractshttp.Middleware {
 	absolutePaths := parseExceptPaths(excepts)
 	return func(ctx contractshttp.Context) {
 		if isReading(ctx.Request().Method()) || inExceptArray(absolutePaths, ctx.Request().Path()) || tokenMatch(ctx) {
 			ctx.Request().Next()
-			ctx.Request().Session().Put(csrfKey, ctx.Request().Session().Token())
+			ctx.Response().Header(HeaderCsrfKey, ctx.Request().Session().Token())
 		} else {
-			ctx.Request().AbortWithStatusJson(contractshttp.StatusTokenMismatch, map[string]string{"message": "CSRF token mismatch."})
+			ctx.Request().AbortWithStatusJson(contractshttp.StatusTokenMismatch, map[string]string{"message": contractshttp.StatusText(contractshttp.StatusTokenMismatch)})
 		}
 	}
 }
@@ -28,7 +28,7 @@ func tokenMatch(ctx contractshttp.Context) bool {
 		return false
 	}
 	sessionCsrfToken := ctx.Request().Session().Token()
-	requestCsrfToken := ctx.Request().Header(csrfKey)
+	requestCsrfToken := ctx.Request().Header(HeaderCsrfKey)
 	if requestCsrfToken == "" {
 		requestCsrfToken = ctx.Request().Input("_token")
 	}
@@ -49,7 +49,7 @@ func inExceptArray(excepts []string, currentPath string) bool {
 }
 
 func isReading(method string) bool {
-	return method == "GET" || method == "HEAD" || method == "OPTIONS"
+	return method == contractshttp.MethodGet || method == contractshttp.MethodHead || method == contractshttp.MethodOptions
 }
 
 func parseExceptPaths(rawExcepts []string) []string {

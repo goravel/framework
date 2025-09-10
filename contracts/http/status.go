@@ -143,6 +143,7 @@ var statusText = map[int]string{
 	StatusLoopDetected:                  http.StatusText(StatusLoopDetected),
 	StatusNotExtended:                   http.StatusText(StatusNotExtended),
 	StatusNetworkAuthenticationRequired: http.StatusText(StatusNetworkAuthenticationRequired),
+	StatusTokenMismatch:                 "CSRF token mismatch",
 }
 
 // StatusText returns a text for the HTTP status code. It returns the empty
