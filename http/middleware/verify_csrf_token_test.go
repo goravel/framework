@@ -11,6 +11,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	contractshttp "github.com/goravel/framework/contracts/http"
 	contractsession "github.com/goravel/framework/contracts/session"
 	foundationJson "github.com/goravel/framework/foundation/json"
@@ -18,8 +21,6 @@ import (
 	"github.com/goravel/framework/session"
 	sessionMiddleware "github.com/goravel/framework/session/middleware"
 	"github.com/goravel/framework/support/path"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func testHttpSessionMiddleware(next nethttp.Handler, mockConfig *configmocks.Config) nethttp.Handler {
@@ -47,13 +48,13 @@ func testHttpSessionMiddleware(next nethttp.Handler, mockConfig *configmocks.Con
 }
 
 func mockConfigFacade(mockConfig *configmocks.Config) {
-	mockConfig.On("GetString", "session.default").Return("file").Once()
-	mockConfig.On("GetInt", "session.lifetime", 120).Return(120).Once()
-	mockConfig.On("GetString", "session.path").Return("/").Once()
-	mockConfig.On("GetString", "session.domain").Return("").Once()
-	mockConfig.On("GetBool", "session.secure").Return(false).Once()
-	mockConfig.On("GetBool", "session.http_only").Return(true).Once()
-	mockConfig.On("GetString", "session.same_site").Return("").Once()
+	mockConfig.EXPECT().GetString("session.default").Return("file").Once()
+	mockConfig.EXPECT().GetInt("session.lifetime", 120).Return(120).Once()
+	mockConfig.EXPECT().GetString("session.path").Return("/").Once()
+	mockConfig.EXPECT().GetString("session.domain").Return("").Once()
+	mockConfig.EXPECT().GetBool("session.secure").Return(false).Once()
+	mockConfig.EXPECT().GetBool("session.http_only").Return(true).Once()
+	mockConfig.EXPECT().GetString("session.same_site").Return("").Once()
 }
 
 func TestVerifyCsrfToken(t *testing.T) {
@@ -203,13 +204,6 @@ func NewTestRequest(ctx *TestContext) *TestRequest {
 	}
 }
 
-func (r *TestRequest) AbortWithStatusJson(code int, jsonObj any) {
-	r.ctx.writer.WriteHeader(code)
-	if err := json.NewEncoder(r.ctx.writer).Encode(jsonObj); err != nil {
-		nethttp.Error(r.ctx.writer, "Failed to encode JSON", nethttp.StatusInternalServerError)
-	}
-}
-
 func (r *TestRequest) Path() string {
 	if r.ctx != nil && r.ctx.request != nil {
 		return r.ctx.request.URL.Path
@@ -258,6 +252,7 @@ func (r *TestRequest) SetSession(session contractsession.Session) contractshttp.
 }
 
 func (r *TestRequest) Abort(code ...int) {
+	r.ctx.writer.WriteHeader(code[0])
 }
 
 func (r *TestRequest) Next() {

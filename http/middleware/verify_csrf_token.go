@@ -18,7 +18,7 @@ func VerifyCsrfToken(excepts []string) contractshttp.Middleware {
 			ctx.Request().Next()
 			ctx.Response().Header(HeaderCsrfKey, ctx.Request().Session().Token())
 		} else {
-			ctx.Request().AbortWithStatusJson(contractshttp.StatusTokenMismatch, map[string]string{"message": contractshttp.StatusText(contractshttp.StatusTokenMismatch)})
+			ctx.Request().Abort(contractshttp.StatusTokenMismatch)
 		}
 	}
 }
