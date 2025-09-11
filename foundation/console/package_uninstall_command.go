@@ -9,22 +9,27 @@ import (
 	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/collect"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/convert"
+	"github.com/goravel/framework/support/file"
 )
 
 type PackageUninstallCommand struct {
+	app               foundation.Application
 	bindings          map[string]binding.Info
 	installedBindings []any
 }
 
 func NewPackageUninstallCommand(
+	app foundation.Application,
 	bindings map[string]binding.Info,
 	installedBindings []any,
 ) *PackageUninstallCommand {
 	return &PackageUninstallCommand{
+		app:               app,
 		bindings:          bindings,
 		installedBindings: installedBindings,
 	}
@@ -145,7 +150,9 @@ func (r *PackageUninstallCommand) uninstallFacade(ctx console.Context, name stri
 
 	bindingsThatNeedUninstall := r.getBindingsThatNeedUninstall(binding)
 	if !slices.Contains(bindingsThatNeedUninstall, binding) {
-		ctx.Error(fmt.Sprintf("Facade %s is depended on by other facades, cannot be uninstalled", name))
+		existingUpperDependencyFacades := r.getExistingUpperDependencyFacades(binding)
+
+		ctx.Error(fmt.Sprintf("Facade %s is depended on %s facades, cannot be uninstalled", name, strings.Join(existingUpperDependencyFacades, ", ")))
 		return nil
 	}
 
@@ -211,4 +218,23 @@ func (r *PackageUninstallCommand) getBindingsThatNeedUninstall(binding string) [
 	}
 
 	return needUninstallBindings
+}
+
+func (r *PackageUninstallCommand) getExistingUpperDependencyFacades(binding string) []string {
+	var facades []string
+	for _, installedBinding := range r.installedBindings {
+		installedBindingStr, ok := installedBinding.(string)
+		if !ok {
+			continue
+		}
+
+		for _, dependency := range getDependencyBindings(installedBindingStr, r.bindings) {
+			facade := convert.BindingToFacade(installedBindingStr)
+
+			if dependency == binding && file.Exists(r.app.FacadesPath(fmt.Sprintf("%s.go", strings.ToLower(facade)))) {
+				facades = append(facades, convert.BindingToFacade(installedBindingStr))
+			}
+		}
+	}
+	return facades
 }

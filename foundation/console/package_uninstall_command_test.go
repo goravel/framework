@@ -151,7 +151,7 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 			beforeEach()
 			test.setup()
 
-			s.NoError(NewPackageUninstallCommand(bindings, installedbindings).Handle(mockContext))
+			s.NoError(NewPackageUninstallCommand(nil, bindings, installedbindings).Handle(mockContext))
 		})
 	}
 }
@@ -174,7 +174,7 @@ func (s *PackageUninstallCommandTestSuite) TestGetBindingsThatNeedUninstall() {
 
 	installedBindings := []any{binding.Auth, binding.Config, binding.DB, binding.Orm, binding.Log}
 
-	packageUninstallCommand := NewPackageUninstallCommand(bindings, installedBindings)
+	packageUninstallCommand := NewPackageUninstallCommand(nil, bindings, installedBindings)
 
 	s.ElementsMatch([]string{binding.Auth, binding.Orm}, packageUninstallCommand.getBindingsThatNeedUninstall(binding.Auth))
 }

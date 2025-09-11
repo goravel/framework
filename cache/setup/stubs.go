@@ -1,4 +1,9 @@
-package config
+package main
+
+type Stubs struct{}
+
+func (s Stubs) Config() string {
+	return `package config
 
 import (
 	"github.com/goravel/framework/facades"
@@ -34,4 +39,20 @@ func init() {
 		// Must: a-zA-Z0-9_-
 		"prefix": config.GetString("APP_NAME", "goravel") + "_cache",
 	})
+}
+`
+}
+
+func (s Stubs) CacheFacade() string {
+	return `package facades
+
+import (
+	"github.com/goravel/framework/contracts/cache"
+	"github.com/goravel/framework/facades"
+)
+
+func Cache() cache.Cache {
+	return facades.App().MakeCache()
+}
+`
 }
