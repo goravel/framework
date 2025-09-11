@@ -267,7 +267,6 @@ func (r *Application) registerServiceProviders(serviceProviders []foundation.Ser
 	for _, serviceProvider := range serviceProviders {
 		providerName := fmt.Sprintf("%T", serviceProvider)
 		if slices.Contains(r.registeredServiceProviders, providerName) {
-			fmt.Println("skip", providerName)
 			continue
 		}
 		r.registeredServiceProviders = append(r.registeredServiceProviders, providerName)

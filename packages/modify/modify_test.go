@@ -320,40 +320,35 @@ func TestWhenFacade(t *testing.T) {
 	})
 }
 
-// func TestWhenNoFacades(t *testing.T) {
-// 	t.Run("no facades exist", func(t *testing.T) {
-// 		called := false
-// 		apply := &dummyApply{called: &called}
-// 		modifier := WhenNoFacades([]string{"Auth", "DB"}, apply)
+func TestWhenNoFacades(t *testing.T) {
+	t.Run("no facades exist", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		modifier := WhenNoFacades([]string{"Auth", "DB"}, apply)
+		err := modifier.Apply(options.Facade("Auth"))
 
-// 		dbFile := filepath.Join(t.TempDir(), "db.go")
-// 		mockApp := mocksfoundation.NewApplication(t)
-// 		mockApp.EXPECT().FacadesPath("db.go").Return(dbFile).Once()
-// 		foundation.App = mockApp
+		assert.NoError(t, err)
+		assert.True(t, called)
+	})
 
-// 		err := modifier.Apply(options.Facade("Auth"))
-// 		assert.NoError(t, err)
-// 		assert.True(t, called)
-// 	})
+	t.Run("facade exists", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		modifier := WhenNoFacades([]string{"Auth", "DB"}, apply)
 
-// 	t.Run("facade exists", func(t *testing.T) {
-// 		called := false
-// 		apply := &dummyApply{called: &called}
-// 		modifier := WhenNoFacades([]string{"Auth", "DB"}, apply)
+		path := facadeToFilepath("DB")
+		err := supportfile.PutContent(path, "package facades\n")
+		assert.NoError(t, err)
 
-// 		dbFile := filepath.Join(t.TempDir(), "db.go")
-// 		err := supportfile.PutContent(dbFile, "package facades\n")
-// 		assert.NoError(t, err)
+		defer func() {
+			assert.NoError(t, supportfile.Remove(path))
+		}()
 
-// 		mockApp := mocksfoundation.NewApplication(t)
-// 		mockApp.EXPECT().FacadesPath("db.go").Return(dbFile).Once()
-// 		foundation.App = mockApp
-
-// 		err = modifier.Apply(options.Facade("Auth"))
-// 		assert.NoError(t, err)
-// 		assert.False(t, called)
-// 	})
-// }
+		err = modifier.Apply(options.Facade("Auth"))
+		assert.NoError(t, err)
+		assert.False(t, called)
+	})
+}
 
 type dummyApply struct {
 	called    *bool
