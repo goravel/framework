@@ -5,8 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"net/http"
-
 	nethttp "net/http"
 	"net/http/httptest"
 	"net/url"
@@ -81,7 +79,7 @@ func TestVerifyCsrfToken(t *testing.T) {
 
 	unProtectedMethods := []string{contractshttp.MethodGet, contractshttp.MethodHead, contractshttp.MethodOptions}
 	for _, method := range unProtectedMethods {
-		req, err := http.NewRequest(method, server.URL+"/unprotected", nil)
+		req, err := nethttp.NewRequest(method, server.URL+"/unprotected", nil)
 		require.NoError(t, err)
 		resp, err := client.Do(req)
 		assert.NoError(t, err)
@@ -90,10 +88,10 @@ func TestVerifyCsrfToken(t *testing.T) {
 	}
 
 	csrfToken := ""
-	sessionCookie := http.Cookie{}
+	sessionCookie := nethttp.Cookie{}
 	unProtectedNestedRoutes := []string{"/unprotected", "/unprotectedNested/nested/", "/unprotectedNested/nested2"}
 	for _, route := range unProtectedNestedRoutes {
-		req, err := http.NewRequest(contractshttp.MethodPost, server.URL+route, nil)
+		req, err := nethttp.NewRequest(contractshttp.MethodPost, server.URL+route, nil)
 		require.NoError(t, err)
 		resp, err := client.Do(req)
 		assert.NoError(t, err)
@@ -105,7 +103,7 @@ func TestVerifyCsrfToken(t *testing.T) {
 
 	protectedPaths := []string{"/protected", "/unprotectedNested/nested/2", "/protectedNested/nested/", "/protectedNested/nested2", "/unprotectedNested"}
 	for _, path := range protectedPaths {
-		req, err := http.NewRequest(contractshttp.MethodPost, server.URL+path, nil)
+		req, err := nethttp.NewRequest(contractshttp.MethodPost, server.URL+path, nil)
 		require.NoError(t, err)
 		resp, err := client.Do(req)
 		assert.NoError(t, err)
@@ -114,7 +112,7 @@ func TestVerifyCsrfToken(t *testing.T) {
 	}
 
 	for _, path := range protectedPaths {
-		req, err := http.NewRequest(contractshttp.MethodPost, server.URL+path, nil)
+		req, err := nethttp.NewRequest(contractshttp.MethodPost, server.URL+path, nil)
 		require.NoError(t, err)
 		req.Header.Add(HeaderCsrfKey, csrfToken)
 		req.Header.Set("Cookie", sessionCookie.String())
@@ -132,7 +130,7 @@ func TestVerifyCsrfToken(t *testing.T) {
 		}
 		bodyData, err := json.Marshal(body)
 		assert.NoError(t, err)
-		req, err := http.NewRequest(contractshttp.MethodPost, server.URL+path, bytes.NewBuffer(bodyData))
+		req, err := nethttp.NewRequest(contractshttp.MethodPost, server.URL+path, bytes.NewBuffer(bodyData))
 		require.NoError(t, err)
 		req.Header.Set("Cookie", sessionCookie.String())
 		resp, err := client.Do(req)
@@ -208,7 +206,7 @@ func NewTestRequest(ctx *TestContext) *TestRequest {
 func (r *TestRequest) AbortWithStatusJson(code int, jsonObj any) {
 	r.ctx.writer.WriteHeader(code)
 	if err := json.NewEncoder(r.ctx.writer).Encode(jsonObj); err != nil {
-		http.Error(r.ctx.writer, "Failed to encode JSON", http.StatusInternalServerError)
+		nethttp.Error(r.ctx.writer, "Failed to encode JSON", nethttp.StatusInternalServerError)
 	}
 }
 
