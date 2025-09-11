@@ -20,6 +20,9 @@ type Result interface {
 	// ErrorOutput returns the full contents written to stderr by the process.
 	ErrorOutput() string
 
+	// Error returns any error encountered during process execution (Go-related error).
+	Error() error
+
 	// Command returns the full command string used to start the process,
 	// including program name and arguments.
 	Command() string

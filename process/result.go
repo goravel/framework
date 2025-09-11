@@ -9,14 +9,16 @@ import (
 var _ contractsprocess.Result = (*Result)(nil)
 
 type Result struct {
+	err      error
 	exitCode int
 	command  string
 	stdout   string
 	stderr   string
 }
 
-func NewResult(exitCode int, command, stdout, stderr string) *Result {
+func NewResult(err error, exitCode int, command, stdout, stderr string) *Result {
 	return &Result{
+		err:      err,
 		exitCode: exitCode,
 		command:  command,
 		stdout:   stdout,
@@ -57,6 +59,14 @@ func (r *Result) ErrorOutput() string {
 		return ""
 	}
 	return r.stderr
+}
+
+func (r *Result) Error() error {
+	if r == nil {
+		return nil
+	}
+
+	return r.err
 }
 
 func (r *Result) Command() string {

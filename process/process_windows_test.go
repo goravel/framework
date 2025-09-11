@@ -84,6 +84,19 @@ func TestProcess_Run_Windows(t *testing.T) {
 				assert.NotEqual(t, 0, res.ExitCode())
 			},
 		},
+		{
+			name: "disable buffering",
+			args: []string{"cmd", "/C", "echo to_stdout & echo to_stderr >&2"},
+			setup: func(p *Process) {
+				p.DisableBuffering().Quietly()
+			},
+			expectOK: true,
+			check: func(t *testing.T, res *Result) {
+				assert.Equal(t, "", res.Output())
+				assert.Equal(t, "", res.ErrorOutput())
+				assert.True(t, res.Successful())
+			},
+		},
 	}
 
 	for _, tt := range tests {
