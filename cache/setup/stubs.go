@@ -48,11 +48,10 @@ func (s Stubs) CacheFacade() string {
 
 import (
 	"github.com/goravel/framework/contracts/cache"
-	"github.com/goravel/framework/facades"
 )
 
 func Cache() cache.Cache {
-	return facades.App().MakeCache()
+	return App().MakeCache()
 }
 `
 }

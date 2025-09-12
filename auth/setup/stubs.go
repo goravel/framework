@@ -56,11 +56,10 @@ func (s Stubs) AuthFacade() string {
 import (
 	"github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/http"
-	"github.com/goravel/framework/facades"
 )
 
 func Auth(ctx ...http.Context) auth.Auth {
-	return facades.App().MakeAuth(ctx...)
+	return App().MakeAuth(ctx...)
 }
 `
 }
@@ -71,11 +70,10 @@ func (s Stubs) GateFacade() string {
 import (
 	"github.com/goravel/framework/contracts/auth/access"
 	"github.com/goravel/framework/contracts/http"
-	"github.com/goravel/framework/facades"
 )
 
 func Gate(ctx ...http.Context) access.Gate {
-	return facades.App().MakeGate()
+	return App().MakeGate()
 }
 `
 }
