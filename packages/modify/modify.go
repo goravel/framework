@@ -12,9 +12,9 @@ import (
 	"github.com/goravel/framework/contracts/packages/match"
 	"github.com/goravel/framework/contracts/packages/modify"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/foundation"
 	"github.com/goravel/framework/support/color"
 	supportfile "github.com/goravel/framework/support/file"
+	"github.com/goravel/framework/support/path/internals"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -243,5 +243,5 @@ func (r whenNoFacadesModifier) Apply(options ...modify.Option) error {
 }
 
 func facadeToFilepath(facade string) string {
-	return foundation.App.FacadesPath(str.Of(facade).Snake().String() + ".go")
+	return internals.FacadesPath(str.Of(facade).Snake().String() + ".go")
 }

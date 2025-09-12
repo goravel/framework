@@ -13,6 +13,8 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
+	mocksfoundation "github.com/goravel/framework/mocks/foundation"
+	"github.com/goravel/framework/support/file"
 )
 
 type PackageUninstallCommandTestSuite struct {
@@ -25,6 +27,7 @@ func TestPackageUninstallCommandTestSuite(t *testing.T) {
 
 func (s *PackageUninstallCommandTestSuite) TestHandle() {
 	var (
+		mockApp     *mocksfoundation.Application
 		mockContext *mocksconsole.Context
 
 		facade   = "Auth"
@@ -43,10 +46,11 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 				Dependencies: []string{binding.Config},
 			},
 		}
-		installedbindings = []any{binding.Auth, binding.Config, binding.Orm}
+		installedBindings = []any{binding.Auth, binding.Config, binding.Orm}
 	)
 
 	beforeEach := func() {
+		mockApp = mocksfoundation.NewApplication(s.T())
 		mockContext = mocksconsole.NewContext(s.T())
 	}
 
@@ -97,12 +101,33 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 			},
 		},
 		{
+			name: "facade is a base facade",
+			setup: func() {
+				facade := "Config"
+				mockContext.EXPECT().Arguments().Return([]string{facade}).Once()
+				mockContext.EXPECT().Warning(fmt.Sprintf("Facade %s is a base facade, cannot be uninstalled", facade)).Once()
+			},
+		},
+		{
 			name: "facade is not found",
 			setup: func() {
 				facade := "unknown"
 				mockContext.EXPECT().Arguments().Return([]string{facade}).Once()
 				mockContext.EXPECT().Warning(errors.PackageFacadeNotFound.Args(facade).Error()).Once()
 				mockContext.EXPECT().Info(fmt.Sprintf("Available facades: %s", strings.Join(getAvailableFacades(bindings), ", ")))
+			},
+		},
+		{
+			name: "facades can't be uninstalled because of existing upper dependencies",
+			setup: func() {
+				facade := "Orm"
+
+				mockContext.EXPECT().Arguments().Return([]string{facade}).Once()
+
+				s.NoError(file.PutContent("test_auth.go", "package facades\n"))
+
+				mockApp.EXPECT().FacadesPath("auth.go").Return("test_auth.go").Once()
+				mockContext.EXPECT().Error(fmt.Sprintf("Facade %s is depended on %s facades, cannot be uninstalled", facade, "Auth")).Once()
 			},
 		},
 		{
@@ -151,7 +176,9 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 			beforeEach()
 			test.setup()
 
-			s.NoError(NewPackageUninstallCommand(bindings, installedbindings).Handle(mockContext))
+			s.NoError(NewPackageUninstallCommand(mockApp, bindings, installedBindings).Handle(mockContext))
+
+			s.NoError(file.Remove("test_auth.go"))
 		})
 	}
 }
@@ -174,7 +201,47 @@ func (s *PackageUninstallCommandTestSuite) TestGetBindingsThatNeedUninstall() {
 
 	installedBindings := []any{binding.Auth, binding.Config, binding.DB, binding.Orm, binding.Log}
 
-	packageUninstallCommand := NewPackageUninstallCommand(bindings, installedBindings)
+	packageUninstallCommand := NewPackageUninstallCommand(nil, bindings, installedBindings)
 
 	s.ElementsMatch([]string{binding.Auth, binding.Orm}, packageUninstallCommand.getBindingsThatNeedUninstall(binding.Auth))
+}
+
+func (s *PackageUninstallCommandTestSuite) TestGetExistingUpperDependencyFacades() {
+	bindings := map[string]binding.Info{
+		binding.Auth: {
+			PkgPath:      "github.com/goravel/framework/auth",
+			Dependencies: []string{binding.Config, binding.Orm},
+		},
+		binding.Config: {
+			PkgPath: "github.com/goravel/framework/config",
+			IsBase:  true,
+		},
+		binding.Orm: {
+			PkgPath:      "github.com/goravel/framework/database",
+			Dependencies: []string{binding.Config},
+		},
+	}
+
+	installedBindings := []any{binding.Auth, binding.Config, binding.DB, binding.Orm, binding.Log}
+
+	s.Run("upper dependencies exist", func() {
+		s.NoError(file.PutContent("test_auth.go", "package facades\n"))
+		defer func() {
+			s.NoError(file.Remove("test_auth.go"))
+		}()
+
+		mockApp := mocksfoundation.NewApplication(s.T())
+		mockApp.EXPECT().FacadesPath("auth.go").Return("test_auth.go").Once()
+		packageUninstallCommand := NewPackageUninstallCommand(mockApp, bindings, installedBindings)
+
+		s.ElementsMatch([]string{"Auth"}, packageUninstallCommand.getExistingUpperDependencyFacades(binding.Orm))
+	})
+
+	s.Run("upper dependencies do not exist", func() {
+		mockApp := mocksfoundation.NewApplication(s.T())
+		mockApp.EXPECT().FacadesPath("auth.go").Return("test_auth.go").Once()
+		packageUninstallCommand := NewPackageUninstallCommand(mockApp, bindings, installedBindings)
+
+		s.Empty(packageUninstallCommand.getExistingUpperDependencyFacades(binding.Orm))
+	})
 }

@@ -13,8 +13,6 @@ import (
 
 	contractsmatch "github.com/goravel/framework/contracts/packages/match"
 	"github.com/goravel/framework/contracts/packages/modify"
-	"github.com/goravel/framework/foundation"
-	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/options"
 	supportfile "github.com/goravel/framework/support/file"
@@ -327,13 +325,8 @@ func TestWhenNoFacades(t *testing.T) {
 		called := false
 		apply := &dummyApply{called: &called}
 		modifier := WhenNoFacades([]string{"Auth", "DB"}, apply)
-
-		dbFile := filepath.Join(t.TempDir(), "db.go")
-		mockApp := mocksfoundation.NewApplication(t)
-		mockApp.EXPECT().FacadesPath("db.go").Return(dbFile).Once()
-		foundation.App = mockApp
-
 		err := modifier.Apply(options.Facade("Auth"))
+
 		assert.NoError(t, err)
 		assert.True(t, called)
 	})
@@ -343,13 +336,13 @@ func TestWhenNoFacades(t *testing.T) {
 		apply := &dummyApply{called: &called}
 		modifier := WhenNoFacades([]string{"Auth", "DB"}, apply)
 
-		dbFile := filepath.Join(t.TempDir(), "db.go")
-		err := supportfile.PutContent(dbFile, "package facades\n")
+		path := facadeToFilepath("DB")
+		err := supportfile.PutContent(path, "package facades\n")
 		assert.NoError(t, err)
 
-		mockApp := mocksfoundation.NewApplication(t)
-		mockApp.EXPECT().FacadesPath("db.go").Return(dbFile).Once()
-		foundation.App = mockApp
+		defer func() {
+			assert.NoError(t, supportfile.Remove(path))
+		}()
 
 		err = modifier.Apply(options.Facade("Auth"))
 		assert.NoError(t, err)
