@@ -1,5 +1,7 @@
 package schema
 
+import "github.com/goravel/framework/contracts/database/driver"
+
 type ForeignKeyDefinition interface {
 	CascadeOnDelete() ForeignKeyDefinition
 	CascadeOnUpdate() ForeignKeyDefinition
@@ -19,6 +21,12 @@ type IndexDefinition interface {
 	InitiallyImmediate() IndexDefinition
 	Language(name string) IndexDefinition
 	Name(name string) IndexDefinition
+}
+
+type ForeignIDColumnDefinition interface {
+	driver.ColumnDefinition
+	Constrained(table, column, indexName string) ForeignKeyDefinition
+	References(column, indexName string) ForeignKeyDefinition
 }
 
 type IndexConfig struct {

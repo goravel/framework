@@ -1,9 +1,12 @@
 package schema
 
 import (
+	"strings"
+
 	"github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/support/convert"
+	"github.com/goravel/framework/support/pluralizer"
 )
 
 type ForeignKeyDefinition struct {
@@ -114,4 +117,29 @@ func (r *IndexDefinition) Name(name string) schema.IndexDefinition {
 	r.command.Index = name
 
 	return r
+}
+
+type ForeignIDColumnDefinition struct {
+	*ColumnDefinition
+	blueprint *Blueprint
+}
+
+func (r *ForeignIDColumnDefinition) Constrained(table, column, indexName string) schema.ForeignKeyDefinition {
+	if column == "" {
+		column = "id"
+	}
+
+	if table == "" {
+		name := r.GetName()
+		if strings.HasSuffix(name, "_"+column) {
+			base := strings.TrimSuffix(name, "_"+column)
+			table = pluralizer.Plural(base)
+		}
+	}
+
+	return r.References(column, indexName).On(table)
+}
+
+func (r *ForeignIDColumnDefinition) References(column, indexName string) schema.ForeignKeyDefinition {
+	return r.blueprint.Foreign(r.GetName()).References(column).Name(indexName)
 }
