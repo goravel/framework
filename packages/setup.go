@@ -24,7 +24,7 @@ type setup struct {
 
 var osExit = os.Exit
 
-// GetModulePath returns the module path of package, it may be a sub-package, eg: github.com/goravel/framewok/auth.
+// GetModulePath returns the module path of package, it may be a sub-package, eg: github.com/goravel/framework/auth.
 func GetModulePath() string {
 	if info, ok := debug.ReadBuildInfo(); ok && strings.HasSuffix(info.Path, "setup") {
 		return path.Dir(info.Path)
