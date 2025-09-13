@@ -143,13 +143,11 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 			return nil
 		}
 
-		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
-			ctx.Error(fmt.Sprintf("Failed to tidy go.mod file: %s", err))
-
-			return nil
-		}
-
 		ctx.Success(fmt.Sprintf("Facade %s installed successfully", facade))
+	}
+
+	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
+		ctx.Error(fmt.Sprintf("Failed to tidy go.mod file: %s", err))
 	}
 
 	return nil

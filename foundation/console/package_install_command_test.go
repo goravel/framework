@@ -118,7 +118,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{facade}).Once()
 				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facade, "Orm")).Once()
-				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Orm].PkgPath+"/setup install --facade=Orm", mock.Anything).Return(assert.AnError).Once()
+				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Orm].PkgPath+"/setup install --facade=Orm --module=github.com/goravel/framework", mock.Anything).Return(assert.AnError).Once()
 				mockContext.EXPECT().Error(fmt.Sprintf("Failed to install facade %s: %s", "Orm", assert.AnError)).Once()
 			},
 		},
@@ -127,9 +127,10 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{facade}).Once()
 				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facade, "Orm")).Once()
-				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Orm].PkgPath+"/setup install --facade=Orm", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Orm].PkgPath+"/setup install --facade=Orm --module=github.com/goravel/framework", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Facade Orm installed successfully").Once()
-				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Auth].PkgPath+"/setup install --facade=Auth", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Auth].PkgPath+"/setup install --facade=Auth --module=github.com/goravel/framework", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Facade Auth installed successfully").Once()
 			},
 		},
@@ -144,10 +145,11 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 				mockContext.EXPECT().Success("Package " + pkg + " installed successfully").Once()
 
 				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facade, "Orm")).Once()
-				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Orm].PkgPath+"/setup install --facade=Orm", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Orm].PkgPath+"/setup install --facade=Orm --module=github.com/goravel/framework", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Facade Orm installed successfully").Once()
-				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Auth].PkgPath+"/setup install --facade=Auth", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Auth].PkgPath+"/setup install --facade=Auth --module=github.com/goravel/framework", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Facade Auth installed successfully").Once()
+				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
 			},
 		},
 	}
