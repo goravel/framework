@@ -1,12 +1,16 @@
 package main
 
+import (
+	"strings"
+)
+
 type Stubs struct{}
 
-func (s Stubs) Config() string {
-	return `package config
+func (s Stubs) Config(module string) string {
+	content := `package config
 
 import (
-	"github.com/goravel/framework/facades"
+	"DummyModule/app/facades"
 )
 
 func init() {
@@ -41,6 +45,8 @@ func init() {
 	})
 }
 `
+
+	return strings.ReplaceAll(content, "DummyModule", module)
 }
 
 func (s Stubs) CacheFacade() string {
@@ -48,11 +54,10 @@ func (s Stubs) CacheFacade() string {
 
 import (
 	"github.com/goravel/framework/contracts/cache"
-	"github.com/goravel/framework/facades"
 )
 
 func Cache() cache.Cache {
-	return facades.App().MakeCache()
+	return App().MakeCache()
 }
 `
 }

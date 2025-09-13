@@ -150,6 +150,7 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 				mockContext.EXPECT().Success("Facade Orm uninstalled successfully").Once()
 				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Auth].PkgPath+"/setup uninstall --facade=Auth --force", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Facade Auth uninstalled successfully").Once()
+				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
 			},
 		},
 		{
@@ -168,6 +169,7 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 				mockContext.EXPECT().Success("Facade Orm uninstalled successfully").Once()
 				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Auth].PkgPath+"/setup uninstall --facade=Auth --force", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Facade Auth uninstalled successfully").Once()
+				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
 			},
 		},
 	}

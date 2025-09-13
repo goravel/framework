@@ -10,6 +10,7 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/support/collect"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/convert"
@@ -128,7 +129,7 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 		for i := range dependencies {
 			facades[i] = convert.BindingToFacade(dependencies[i])
 		}
-		ctx.Info(fmt.Sprintf("%s depends on %s, they will be implicitly installed", name, strings.Join(facades, ", ")))
+		ctx.Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", name, strings.Join(facades, ", ")))
 	}
 
 	dependencies = append(dependencies, binding)
@@ -136,13 +137,17 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 		setup := r.bindings[binding].PkgPath + "/setup"
 		facade := convert.BindingToFacade(binding)
 
-		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--facade="+facade)); err != nil {
+		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--facade="+facade, "--module="+packages.GetModuleName())); err != nil {
 			ctx.Error(fmt.Sprintf("Failed to install facade %s: %s", facade, err.Error()))
 
 			return nil
 		}
 
 		ctx.Success(fmt.Sprintf("Facade %s installed successfully", facade))
+	}
+
+	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
+		ctx.Error(fmt.Sprintf("Failed to tidy go.mod file: %s", err))
 	}
 
 	return nil

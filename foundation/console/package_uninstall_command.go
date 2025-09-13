@@ -190,6 +190,12 @@ func (r *PackageUninstallCommand) uninstallFacade(ctx console.Context, name stri
 		ctx.Success(fmt.Sprintf("Facade %s uninstalled successfully", facade))
 	}
 
+	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
+		ctx.Error(fmt.Sprintf("failed to tidy go.mod file: %s", err))
+
+		return nil
+	}
+
 	return nil
 }
 
