@@ -133,9 +133,6 @@ func (s Stubs) Kernel(module string) string {
 import (
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/contracts/database/seeder"
-
-	"DummyModule/database/migrations"
-	"DummyModule/database/seeders"
 )
 
 type Kernel struct {
