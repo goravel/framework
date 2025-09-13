@@ -6,6 +6,7 @@ import (
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/path"
 )
 
@@ -17,7 +18,7 @@ func main() {
 			modify.GoFile(path.Config("app.go")).
 				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
 				Find(match.Providers()).Modify(modify.Register("&cache.ServiceProvider{}")),
-			modify.File(path.Config("cache.go")).Overwrite(stubs.Config()),
+			modify.File(path.Config("cache.go")).Overwrite(stubs.Config(env.ModuleNameFromArgs(os.Args))),
 			modify.WhenFacade("Cache", modify.File(path.Facades("cache.go")).Overwrite(stubs.CacheFacade())),
 		).
 		Uninstall(
