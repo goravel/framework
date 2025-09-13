@@ -1,14 +1,23 @@
-package config
+package main
 
 import (
-	"github.com/goravel/framework/facades"
+	"strings"
+)
+
+type Stubs struct{}
+
+func (s Stubs) Config(module string) string {
+	content := `package config
+
+import (
+	"DummyModule/app/facades"
 )
 
 func init() {
 	config := facades.Config()
 	config.Add("database", map[string]any{
 		// Default database connection name
-		"default": config.Env("DB_CONNECTION", "postgres"),
+		"default": config.Env("DB_CONNECTION"),
 
 		// Database connections
 		"connections": map[string]any{},
@@ -60,4 +69,83 @@ func init() {
 			"table": "migrations",
 		},
 	})
+}
+`
+
+	return strings.ReplaceAll(content, "DummyModule", module)
+}
+
+func (s Stubs) DBFacade() string {
+	return `package facades
+
+import (
+	"github.com/goravel/framework/contracts/database/db"
+)
+
+func DB() db.DB {
+	return App().MakeDB()
+}
+`
+}
+
+func (s Stubs) OrmFacade() string {
+	return `package facades
+
+import (
+	"github.com/goravel/framework/contracts/database/orm"
+)
+
+func Orm() orm.Orm {
+	return App().MakeOrm()
+}
+`
+}
+
+func (s Stubs) SchemaFacade() string {
+	return `package facades
+
+import (
+	"github.com/goravel/framework/contracts/database/schema"
+)
+
+func Schema() schema.Schema {
+	return App().MakeSchema()
+}
+`
+}
+
+func (s Stubs) SeederFacade() string {
+	return `package facades
+
+import (
+	"github.com/goravel/framework/contracts/database/seeder"
+)
+
+func Seeder() seeder.Facade {
+	return App().MakeSeeder()
+}
+`
+}
+
+func (s Stubs) Kernel(module string) string {
+	content := `package database
+
+import (
+	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/contracts/database/seeder"
+)
+
+type Kernel struct {
+}
+
+func (kernel Kernel) Migrations() []schema.Migration {
+	return []schema.Migration{}
+}
+
+func (kernel Kernel) Seeders() []seeder.Seeder {
+	return []seeder.Seeder{}
+}
+`
+
+	return strings.ReplaceAll(content, "DummyModule", module)
 }
