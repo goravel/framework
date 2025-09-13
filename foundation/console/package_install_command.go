@@ -10,10 +10,10 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/support/collect"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/convert"
-	"github.com/goravel/framework/support/env"
 )
 
 type PackageInstallCommand struct {
@@ -137,7 +137,7 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 		setup := r.bindings[binding].PkgPath + "/setup"
 		facade := convert.BindingToFacade(binding)
 
-		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--facade="+facade, "--module="+env.ModuleName())); err != nil {
+		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--facade="+facade, "--module="+packages.GetModuleName())); err != nil {
 			ctx.Error(fmt.Sprintf("Failed to install facade %s: %s", facade, err.Error()))
 
 			return nil

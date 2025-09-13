@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"runtime/debug"
 	"slices"
 	"strings"
 )
@@ -114,22 +113,4 @@ func CurrentAbsolutePath() string {
 	}
 
 	return res
-}
-
-func ModuleName() string {
-	if info, ok := debug.ReadBuildInfo(); ok {
-		return info.Main.Path
-	}
-
-	return "goravel"
-}
-
-func ModuleNameFromArgs(args []string) string {
-	for _, arg := range args {
-		if strings.HasPrefix(arg, "--module=") {
-			return strings.TrimPrefix(arg, "--module=")
-		}
-	}
-
-	return "goravel"
 }
