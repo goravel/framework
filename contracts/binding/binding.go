@@ -116,6 +116,7 @@ var (
 				Config,
 				Log,
 				Session,
+				Validation,
 			},
 		},
 		Lang: {
