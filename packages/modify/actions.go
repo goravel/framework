@@ -43,6 +43,16 @@ func AddImport(path string, name ...string) modify.Action {
 	return func(cursor *dstutil.Cursor) {
 		node := cursor.Node().(*dst.GenDecl)
 
+		// Check if import already exists
+		for _, spec := range node.Specs {
+			if importSpec, ok := spec.(*dst.ImportSpec); ok {
+				if importSpec.Path.Value == strconv.Quote(path) {
+					// Import already exists, no need to add
+					return
+				}
+			}
+		}
+
 		// import spec
 		im := &dst.ImportSpec{
 			Path: &dst.BasicLit{

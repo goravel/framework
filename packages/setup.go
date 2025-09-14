@@ -9,19 +9,22 @@ import (
 	"github.com/goravel/framework/contracts/packages"
 	"github.com/goravel/framework/contracts/packages/modify"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/packages/options"
 	"github.com/goravel/framework/support/color"
 )
 
 type setup struct {
 	command     string
+	facade      string
 	module      string
+	force       bool
 	onInstall   []modify.Apply
 	onUninstall []modify.Apply
-	force       bool
 }
 
 var osExit = os.Exit
 
+// GetModulePath returns the module path of package, it may be a sub-package, eg: github.com/goravel/framework/auth.
 func GetModulePath() string {
 	if info, ok := debug.ReadBuildInfo(); ok && strings.HasSuffix(info.Path, "setup") {
 		return path.Dir(info.Path)
@@ -30,14 +33,43 @@ func GetModulePath() string {
 	return ""
 }
 
+// GetModuleName returns the module name of application, eg: goravel.
+func GetModuleName() string {
+	if info, ok := debug.ReadBuildInfo(); ok {
+		return info.Main.Path
+	}
+
+	return "goravel"
+}
+
+// GetModuleNameFromArgs returns the module name from command line arguments, default is "goravel".
+// It is used in the package:install command.
+func GetModuleNameFromArgs(args []string) string {
+	for _, arg := range args {
+		if strings.HasPrefix(arg, "--module=") {
+			return strings.TrimPrefix(arg, "--module=")
+		}
+	}
+
+	return "goravel"
+}
+
 func Setup(args []string) packages.Setup {
 	st := &setup{}
 
-	if len(args) > 1 && (args[1] == "install" || args[1] == "uninstall") {
-		st.command = args[1]
+	for _, arg := range args {
+		if arg == "install" || arg == "uninstall" {
+			st.command = arg
+		}
+		if arg == "--force" || arg == "-f" {
+			st.force = true
+		}
+		if strings.HasPrefix(arg, "--facade=") {
+			st.facade = strings.TrimPrefix(arg, "--facade=")
+		}
 	}
+
 	st.module = GetModulePath()
-	st.force = len(args) == 3 && (args[2] == "--force" || args[2] == "-f")
 
 	return st
 }
@@ -62,7 +94,7 @@ func (r *setup) Execute() {
 
 	if r.command == "install" {
 		for i := range r.onInstall {
-			r.reportError(r.onInstall[i].Apply())
+			r.reportError(r.onInstall[i].Apply(options.Force(r.force), options.Facade(r.facade)))
 		}
 
 		color.Successln("package installed successfully")
@@ -70,7 +102,7 @@ func (r *setup) Execute() {
 
 	if r.command == "uninstall" {
 		for i := range r.onUninstall {
-			r.reportError(r.onUninstall[i].Apply())
+			r.reportError(r.onUninstall[i].Apply(options.Force(r.force), options.Facade(r.facade)))
 		}
 
 		color.Successln("package uninstalled successfully")

@@ -16,7 +16,6 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	contractsdatabase "github.com/goravel/framework/contracts/database"
 	contractsdb "github.com/goravel/framework/contracts/database/db"
-	"github.com/goravel/framework/contracts/database/driver"
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/log"
@@ -24,6 +23,7 @@ import (
 	databasedriver "github.com/goravel/framework/database/driver"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/database"
+	"github.com/goravel/framework/support/deep"
 )
 
 const Associations = clause.Associations
@@ -31,7 +31,7 @@ const Associations = clause.Associations
 type Query struct {
 	config          config.Config
 	ctx             context.Context
-	grammar         driver.Grammar
+	grammar         contractsdriver.Grammar
 	log             log.Log
 	instance        *gormio.DB
 	queries         map[string]*Query
@@ -46,7 +46,7 @@ func NewQuery(
 	config config.Config,
 	dbConfig contractsdatabase.Config,
 	db *gormio.DB,
-	grammar driver.Grammar,
+	grammar contractsdriver.Grammar,
 	log log.Log,
 	modelToObserver []contractsorm.ModelToObserver,
 	conditions *Conditions,
@@ -70,7 +70,7 @@ func NewQuery(
 }
 
 func BuildQuery(ctx context.Context, config config.Config, connection string, log log.Log, modelToObserver []contractsorm.ModelToObserver) (*Query, contractsdatabase.Config, error) {
-	driverCallback, exist := config.Get(fmt.Sprintf("database.connections.%s.via", connection)).(func() (driver.Driver, error))
+	driverCallback, exist := config.Get(fmt.Sprintf("database.connections.%s.via", connection)).(func() (contractsdriver.Driver, error))
 	if !exist {
 		return nil, contractsdatabase.Config{}, errors.DatabaseConfigNotFound
 	}
@@ -171,7 +171,7 @@ func (r *Query) Cursor() chan contractsdb.Row {
 		if rows, err = query.instance.Rows(); err != nil {
 			return
 		}
-		defer rows.Close()
+		defer errors.Ignore(rows.Close)
 
 		for rows.Next() {
 			val := make(map[string]any)
@@ -443,7 +443,7 @@ func (r *Query) Having(query any, args ...any) contractsorm.Query {
 
 func (r *Query) Join(query string, args ...any) contractsorm.Query {
 	conditions := r.conditions
-	conditions.join = append(conditions.join, contractsdriver.Join{
+	conditions.join = deep.Append(conditions.join, contractsdriver.Join{
 		Query: query,
 		Args:  args,
 	})
@@ -566,10 +566,7 @@ func (r *Query) Omit(columns ...string) contractsorm.Query {
 
 // DEPRECATED: Use OrderByRaw instead
 func (r *Query) Order(value any) contractsorm.Query {
-	conditions := r.conditions
-	conditions.order = append(r.conditions.order, value)
-
-	return r.setConditions(conditions)
+	return r.OrderByRaw(fmt.Sprintf("%s", value))
 }
 
 func (r *Query) OrderBy(column string, direction ...string) contractsorm.Query {
@@ -587,8 +584,10 @@ func (r *Query) OrderByDesc(column string) contractsorm.Query {
 }
 
 func (r *Query) OrderByRaw(raw string) contractsorm.Query {
+	var rawAny any = raw
+
 	conditions := r.conditions
-	conditions.order = append(r.conditions.order, raw)
+	conditions.order = deep.Append(r.conditions.order, rawAny)
 
 	return r.setConditions(conditions)
 }
@@ -768,7 +767,7 @@ func (r *Query) Scan(dest any) error {
 
 func (r *Query) Scopes(funcs ...func(contractsorm.Query) contractsorm.Query) contractsorm.Query {
 	conditions := r.conditions
-	conditions.scopes = append(r.conditions.scopes, funcs...)
+	conditions.scopes = deep.Append(r.conditions.scopes, funcs...)
 
 	return r.setConditions(conditions)
 }
@@ -1019,7 +1018,7 @@ func (r *Query) WhereNotNull(column string) contractsorm.Query {
 
 func (r *Query) With(query string, args ...any) contractsorm.Query {
 	conditions := r.conditions
-	conditions.with = append(r.conditions.with, With{
+	conditions.with = deep.Append(r.conditions.with, With{
 		query: query,
 		args:  args,
 	})
@@ -1072,7 +1071,7 @@ func (r *Query) addGlobalScopes() *Query {
 
 func (r *Query) addWhere(where contractsdriver.Where) contractsorm.Query {
 	conditions := r.conditions
-	conditions.where = append(conditions.where, where)
+	conditions.where = deep.Append(conditions.where, where)
 
 	return r.setConditions(conditions)
 }
@@ -1443,10 +1442,18 @@ func (r *Query) create(dest any) error {
 }
 
 func (r *Query) created(dest any) error {
+	if isSlice(dest) {
+		return nil
+	}
+
 	return r.event(contractsorm.EventCreated, r.conditions.model, dest)
 }
 
 func (r *Query) creating(dest any) error {
+	if isSlice(dest) {
+		return nil
+	}
+
 	return r.event(contractsorm.EventCreating, r.conditions.model, dest)
 }
 
@@ -1495,10 +1502,18 @@ func (r *Query) event(event contractsorm.EventType, model, dest any) error {
 }
 
 func (r *Query) deleting(dest any) error {
+	if !hasID(dest) {
+		return nil
+	}
+
 	return r.event(contractsorm.EventDeleting, r.conditions.model, dest)
 }
 
 func (r *Query) deleted(dest any) error {
+	if !hasID(dest) {
+		return nil
+	}
+
 	return r.event(contractsorm.EventDeleted, r.conditions.model, dest)
 }
 
@@ -1510,10 +1525,18 @@ func (r *Query) dest(value any) *Query {
 }
 
 func (r *Query) forceDeleting(dest any) error {
+	if !hasID(dest) {
+		return nil
+	}
+
 	return r.event(contractsorm.EventForceDeleting, r.conditions.model, dest)
 }
 
 func (r *Query) forceDeleted(dest any) error {
+	if !hasID(dest) {
+		return nil
+	}
+
 	return r.event(contractsorm.EventForceDeleted, r.conditions.model, dest)
 }
 
@@ -1643,6 +1666,10 @@ func (r *Query) restoring(dest any) error {
 }
 
 func (r *Query) retrieved(dest any) error {
+	if isSlice(dest) {
+		return nil
+	}
+
 	return r.event(contractsorm.EventRetrieved, r.conditions.model, dest)
 }
 
@@ -1651,10 +1678,18 @@ func (r *Query) save(value any) error {
 }
 
 func (r *Query) saved(dest any) error {
+	if isSlice(dest) {
+		return nil
+	}
+
 	return r.event(contractsorm.EventSaved, r.conditions.model, dest)
 }
 
 func (r *Query) saving(dest any) error {
+	if isSlice(dest) {
+		return nil
+	}
+
 	return r.event(contractsorm.EventSaving, r.conditions.model, dest)
 }
 
@@ -1710,10 +1745,18 @@ func (r *Query) setConditions(conditions Conditions) *Query {
 }
 
 func (r *Query) updating(dest any) error {
+	if isSlice(dest) {
+		return nil
+	}
+
 	return r.event(contractsorm.EventUpdating, r.conditions.model, dest)
 }
 
 func (r *Query) updated(dest any) error {
+	if isSlice(dest) {
+		return nil
+	}
+
 	return r.event(contractsorm.EventUpdated, r.conditions.model, dest)
 }
 
@@ -1912,4 +1955,17 @@ func modelToStruct(model any) (any, error) {
 	newModel := reflect.New(modelType)
 
 	return newModel.Interface(), nil
+}
+
+func isSlice(dest any) bool {
+	if dest == nil {
+		return false
+	}
+	destKind := reflect.Indirect(reflect.ValueOf(dest)).Type().Kind()
+
+	return destKind == reflect.Slice || destKind == reflect.Array
+}
+
+func hasID(dest any) bool {
+	return database.GetID(dest) != nil
 }

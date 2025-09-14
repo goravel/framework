@@ -69,7 +69,7 @@ func (s *ManagerTestSuite) SetupTest() {
 func (s *ManagerTestSuite) TearDownSuite() {
 	testPath := "storage/framework"
 	if _, err := os.Stat(testPath); err == nil {
-		os.RemoveAll(testPath)
+		_ = os.RemoveAll(testPath)
 	}
 	s.mockConfig.AssertExpectations(s.T())
 }

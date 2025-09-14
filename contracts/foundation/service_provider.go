@@ -1,5 +1,7 @@
 package foundation
 
+import "github.com/goravel/framework/contracts/binding"
+
 type ServiceProvider interface {
 	// Register any application services.
 	Register(app Application)
@@ -7,9 +9,11 @@ type ServiceProvider interface {
 	Boot(app Application)
 }
 
-// BaseServiceProvider is a default implementation of the Provider interface.
-type BaseServiceProvider struct{}
-
-func (s *BaseServiceProvider) Register(Application) {}
-
-func (s *BaseServiceProvider) Boot(Application) {}
+type ServiceProviderWithRelations interface {
+	// Relationship returns the service provider's relationship.
+	Relationship() binding.Relationship
+	// Register any application services.
+	Register(app Application)
+	// Boot any application services after register.
+	Boot(app Application)
+}

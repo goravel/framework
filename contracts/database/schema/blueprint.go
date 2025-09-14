@@ -26,6 +26,8 @@ type Blueprint interface {
 	Date(column string) driver.ColumnDefinition
 	// DateTime Create a new date-time column on the table.
 	DateTime(column string, precision ...int) driver.ColumnDefinition
+	// DateTimes Create `created_at` and `updated_at` columns on the table.
+	DateTimes(precision ...int)
 	// DateTimeTz Create a new date-time column (with time zone) on the table.
 	DateTimeTz(column string, precision ...int) driver.ColumnDefinition
 	// Decimal Create a new decimal column on the table.
@@ -102,6 +104,12 @@ type Blueprint interface {
 	MediumInteger(column string) driver.ColumnDefinition
 	// MediumText Create a new medium text column on the table.
 	MediumText(column string) driver.ColumnDefinition
+	// Morphs Create morph columns for polymorphic relationships.
+	Morphs(name string, indexName ...string)
+	// NullableMorphs Create nullable morph columns for polymorphic relationships.
+	NullableMorphs(name string, indexName ...string)
+	// NumericMorphs Create numeric morph columns for polymorphic relationships.
+	NumericMorphs(name string, indexName ...string)
 	// Primary Specify the primary key(s) for the table.
 	Primary(column ...string)
 	// Rename the table to a given name.
@@ -156,4 +164,12 @@ type Blueprint interface {
 	UnsignedSmallInteger(column string) driver.ColumnDefinition
 	// UnsignedTinyInteger Create a new unsigned tiny integer (1-byte) column on the table.
 	UnsignedTinyInteger(column string) driver.ColumnDefinition
+	// Uuid Create a new UUID column on the table.
+	Uuid(column string) driver.ColumnDefinition
+	// UuidMorphs Create UUID morph columns for polymorphic relationships.
+	UuidMorphs(name string, indexName ...string)
+	// Ulid Create a new ULID column on the table.
+	Ulid(column string, length ...int) driver.ColumnDefinition
+	// UlidMorphs Create ULID morph columns for polymorphic relationships.
+	UlidMorphs(name string, indexName ...string)
 }

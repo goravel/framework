@@ -98,6 +98,15 @@ func (m *Make) GetPackageName() string {
 	return packageName
 }
 
+func (m *Make) GetModuleName() string {
+	if info, ok := debug.ReadBuildInfo(); ok {
+		return info.Main.Path
+	}
+
+	// fallback to default
+	return "goravel"
+}
+
 func (m *Make) GetFolderPath() string {
 	name := strings.TrimSuffix(m.name, ".go")
 	segments := strings.Split(name, "/")

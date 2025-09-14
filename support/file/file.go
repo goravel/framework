@@ -41,7 +41,7 @@ func Create(file string, content string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer errors.Ignore(f.Close)
 
 	if _, err = f.WriteString(content); err != nil {
 		return err
@@ -89,8 +89,11 @@ func GetContent(file string) (string, error) {
 }
 
 func GetFrameworkContent(file string) (string, error) {
-	packageName := "github.com/goravel/framework"
-	pkg, err := build.Import(packageName, "", build.FindOnly)
+	return GetPackageContent("github.com/goravel/framework", file)
+}
+
+func GetPackageContent(pkgName, file string) (string, error) {
+	pkg, err := build.Import(pkgName, "", build.FindOnly)
 	if err != nil {
 		return "", err
 	}
@@ -154,7 +157,7 @@ func PutContent(file string, content string, options ...Option) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer errors.Ignore(f.Close)
 
 	// Write the content
 	if _, err = f.WriteString(content); err != nil {
@@ -182,7 +185,7 @@ func Size(file string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer fileInfo.Close()
+	defer errors.Ignore(fileInfo.Close)
 
 	fi, err := fileInfo.Stat()
 	if err != nil {

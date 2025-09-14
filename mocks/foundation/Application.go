@@ -233,6 +233,53 @@ func (_c *Application_BindWith_Call) RunAndReturn(run func(interface{}, func(fou
 	return _c
 }
 
+// Bindings provides a mock function with no fields
+func (_m *Application) Bindings() []interface{} {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Bindings")
+	}
+
+	var r0 []interface{}
+	if rf, ok := ret.Get(0).(func() []interface{}); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]interface{})
+		}
+	}
+
+	return r0
+}
+
+// Application_Bindings_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Bindings'
+type Application_Bindings_Call struct {
+	*mock.Call
+}
+
+// Bindings is a helper method to define mock.On call
+func (_e *Application_Expecter) Bindings() *Application_Bindings_Call {
+	return &Application_Bindings_Call{Call: _e.mock.On("Bindings")}
+}
+
+func (_c *Application_Bindings_Call) Run(run func()) *Application_Bindings_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Application_Bindings_Call) Return(_a0 []interface{}) *Application_Bindings_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Application_Bindings_Call) RunAndReturn(run func() []interface{}) *Application_Bindings_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Boot provides a mock function with no fields
 func (_m *Application) Boot() {
 	_m.Called()
@@ -517,6 +564,65 @@ func (_c *Application_ExecutablePath_Call) Return(_a0 string) *Application_Execu
 }
 
 func (_c *Application_ExecutablePath_Call) RunAndReturn(run func(...string) string) *Application_ExecutablePath_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// FacadesPath provides a mock function with given fields: path
+func (_m *Application) FacadesPath(path ...string) string {
+	_va := make([]interface{}, len(path))
+	for _i := range path {
+		_va[_i] = path[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FacadesPath")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(...string) string); ok {
+		r0 = rf(path...)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Application_FacadesPath_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FacadesPath'
+type Application_FacadesPath_Call struct {
+	*mock.Call
+}
+
+// FacadesPath is a helper method to define mock.On call
+//   - path ...string
+func (_e *Application_Expecter) FacadesPath(path ...interface{}) *Application_FacadesPath_Call {
+	return &Application_FacadesPath_Call{Call: _e.mock.On("FacadesPath",
+		append([]interface{}{}, path...)...)}
+}
+
+func (_c *Application_FacadesPath_Call) Run(run func(path ...string)) *Application_FacadesPath_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Application_FacadesPath_Call) Return(_a0 string) *Application_FacadesPath_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Application_FacadesPath_Call) RunAndReturn(run func(...string) string) *Application_FacadesPath_Call {
 	_c.Call.Return(run)
 	return _c
 }

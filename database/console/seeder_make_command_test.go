@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	mocksconsole "github.com/goravel/framework/mocks/console"
+	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -31,8 +32,10 @@ func (kernel Kernel) Seeders() []seeder.Seeder {
 }`
 
 func TestSeederMakeCommand(t *testing.T) {
-	seederMakeCommand := &SeederMakeCommand{}
-	mockContext := &mocksconsole.Context{}
+	mockApp := mocksfoundation.NewApplication(t)
+	seederMakeCommand := &SeederMakeCommand{app: mockApp}
+
+	mockContext := mocksconsole.NewContext(t)
 	mockContext.EXPECT().Argument(0).Return("").Once()
 	mockContext.EXPECT().Ask("Enter the seeder name", mock.Anything).Return("", errors.New("the seeder name cannot be empty")).Once()
 	mockContext.EXPECT().Error("the seeder name cannot be empty").Once()
@@ -40,6 +43,7 @@ func TestSeederMakeCommand(t *testing.T) {
 
 	mockContext.EXPECT().Argument(0).Return("UserSeeder").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
+	mockApp.EXPECT().DatabasePath("kernel.go").Return("database/kernel.go").Once()
 	mockContext.EXPECT().Success("Seeder created successfully").Once()
 	mockContext.EXPECT().Success("Seeder registered successfully").Once()
 	assert.NoError(t, file.PutContent("database/kernel.go", databaseKernel))
@@ -59,6 +63,7 @@ func TestSeederMakeCommand(t *testing.T) {
 	mockContext.EXPECT().Argument(0).Return("subdir/DemoSeeder").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Seeder created successfully").Once()
+	mockApp.EXPECT().DatabasePath("kernel.go").Return("database/kernel.go").Once()
 	mockContext.EXPECT().Warning(mock.MatchedBy(func(msg string) bool {
 		return strings.HasPrefix(msg, "seeder register failed:")
 	})).Once()

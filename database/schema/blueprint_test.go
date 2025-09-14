@@ -733,6 +733,353 @@ func (s *BlueprintTestSuite) TestUnsignedTinyInteger() {
 	})
 }
 
+func (s *BlueprintTestSuite) TestUuid() {
+	name := "uuid_column"
+	s.blueprint.Uuid(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:  &name,
+		ttype: convert.Pointer("uuid"),
+	})
+}
+
+func (s *BlueprintTestSuite) TestMorphs() {
+	name := "morphable"
+	s.blueprint.Morphs(name)
+
+	typeColumn := name + "_type"
+	idColumn := name + "_id"
+
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:   &typeColumn,
+		ttype:  convert.Pointer("string"),
+		length: convert.Pointer(255),
+	})
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:     &idColumn,
+		ttype:    convert.Pointer("bigInteger"),
+		unsigned: convert.Pointer(true),
+	})
+
+	commands := s.blueprint.GetCommands()
+	hasIndexCommand := false
+	for _, cmd := range commands {
+		if cmd.Name == "index" && len(cmd.Columns) == 2 &&
+			cmd.Columns[0] == typeColumn && cmd.Columns[1] == idColumn {
+			hasIndexCommand = true
+			break
+		}
+	}
+	s.True(hasIndexCommand, "Should have index command for morph columns")
+}
+
+func (s *BlueprintTestSuite) TestNumericMorphs() {
+	name := "morphable"
+	customIndex := "custom_morph_index"
+	s.blueprint.NumericMorphs(name, customIndex)
+
+	typeColumn := name + "_type"
+	idColumn := name + "_id"
+
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:   &typeColumn,
+		ttype:  convert.Pointer("string"),
+		length: convert.Pointer(255),
+	})
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:     &idColumn,
+		ttype:    convert.Pointer("bigInteger"),
+		unsigned: convert.Pointer(true),
+	})
+
+	commands := s.blueprint.GetCommands()
+	hasIndexCommand := false
+	for _, cmd := range commands {
+		if cmd.Name == "index" && len(cmd.Columns) == 2 &&
+			cmd.Columns[0] == typeColumn && cmd.Columns[1] == idColumn &&
+			cmd.Index == customIndex {
+			hasIndexCommand = true
+			break
+		}
+	}
+	s.True(hasIndexCommand, "Should have index command with custom name for morph columns")
+}
+
+func (s *BlueprintTestSuite) TestUuidMorphs() {
+	name := "morphable"
+	s.blueprint.UuidMorphs(name)
+
+	typeColumn := name + "_type"
+	idColumn := name + "_id"
+
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:   &typeColumn,
+		ttype:  convert.Pointer("string"),
+		length: convert.Pointer(255),
+	})
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:  &idColumn,
+		ttype: convert.Pointer("uuid"),
+	})
+
+	commands := s.blueprint.GetCommands()
+	hasIndexCommand := false
+	for _, cmd := range commands {
+		if cmd.Name == "index" && len(cmd.Columns) == 2 &&
+			cmd.Columns[0] == typeColumn && cmd.Columns[1] == idColumn {
+			hasIndexCommand = true
+			break
+		}
+	}
+	s.True(hasIndexCommand, "Should have index command for UUID morph columns")
+}
+
+func (s *BlueprintTestSuite) TestUuidMorphsWithCustomIndex() {
+	name := "morphable"
+	customIndex := "custom_uuid_morph_index"
+	s.blueprint.UuidMorphs(name, customIndex)
+
+	typeColumn := name + "_type"
+	idColumn := name + "_id"
+
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:   &typeColumn,
+		ttype:  convert.Pointer("string"),
+		length: convert.Pointer(255),
+	})
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:  &idColumn,
+		ttype: convert.Pointer("uuid"),
+	})
+
+	commands := s.blueprint.GetCommands()
+	hasIndexCommand := false
+	for _, cmd := range commands {
+		if cmd.Name == "index" && len(cmd.Columns) == 2 &&
+			cmd.Columns[0] == typeColumn && cmd.Columns[1] == idColumn &&
+			cmd.Index == customIndex {
+			hasIndexCommand = true
+			break
+		}
+	}
+	s.True(hasIndexCommand, "Should have index command with custom name for UUID morph columns")
+}
+
+func (s *BlueprintTestSuite) TestNullableMorphs() {
+	name := "morphable"
+	s.blueprint.NullableMorphs(name)
+
+	typeColumn := name + "_type"
+	idColumn := name + "_id"
+
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:     &typeColumn,
+		ttype:    convert.Pointer("string"),
+		length:   convert.Pointer(255),
+		nullable: convert.Pointer(true),
+	})
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:     &idColumn,
+		ttype:    convert.Pointer("bigInteger"),
+		unsigned: convert.Pointer(true),
+		nullable: convert.Pointer(true),
+	})
+
+	commands := s.blueprint.GetCommands()
+	hasIndexCommand := false
+	for _, cmd := range commands {
+		if cmd.Name == "index" && len(cmd.Columns) == 2 &&
+			cmd.Columns[0] == typeColumn && cmd.Columns[1] == idColumn {
+			hasIndexCommand = true
+			break
+		}
+	}
+	s.True(hasIndexCommand, "Should have index command for nullable morph columns")
+}
+
+func (s *BlueprintTestSuite) TestMorphsWithDefaultKeyType() {
+	// Test default behavior (int key type)
+	name := "morphable"
+	s.blueprint.Morphs(name)
+
+	typeColumn := name + "_type"
+	idColumn := name + "_id"
+
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:   &typeColumn,
+		ttype:  convert.Pointer("string"),
+		length: convert.Pointer(255),
+	})
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:     &idColumn,
+		ttype:    convert.Pointer("bigInteger"),
+		unsigned: convert.Pointer(true),
+	})
+}
+
+func (s *BlueprintTestSuite) TestMorphsWithUuidKeyType() {
+	// Save original state
+	originalKeyType := GetDefaultMorphKeyType()
+	defer func() {
+		SetDefaultMorphKeyType(originalKeyType)
+	}()
+
+	// Set UUID as default
+	MorphUsingUuids()
+	s.Equal(MorphKeyTypeUuid, GetDefaultMorphKeyType())
+
+	// Create new blueprint for clean test
+	blueprint := NewBlueprint(s.mockSchema, "goravel_", "test_table")
+	name := "morphable"
+	blueprint.Morphs(name)
+
+	typeColumn := name + "_type"
+	idColumn := name + "_id"
+
+	s.Contains(blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:   &typeColumn,
+		ttype:  convert.Pointer("string"),
+		length: convert.Pointer(255),
+	})
+	s.Contains(blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:  &idColumn,
+		ttype: convert.Pointer("uuid"),
+	})
+}
+
+func (s *BlueprintTestSuite) TestNullableMorphsWithUuidKeyType() {
+	// Save original state
+	originalKeyType := GetDefaultMorphKeyType()
+	defer func() {
+		SetDefaultMorphKeyType(originalKeyType)
+	}()
+
+	// Set UUID as default
+	MorphUsingUuids()
+
+	// Create new blueprint for clean test
+	blueprint := NewBlueprint(s.mockSchema, "goravel_", "test_table")
+	name := "morphable"
+	blueprint.NullableMorphs(name)
+
+	typeColumn := name + "_type"
+	idColumn := name + "_id"
+
+	s.Contains(blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:     &typeColumn,
+		ttype:    convert.Pointer("string"),
+		length:   convert.Pointer(255),
+		nullable: convert.Pointer(true),
+	})
+	s.Contains(blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:     &idColumn,
+		ttype:    convert.Pointer("uuid"),
+		nullable: convert.Pointer(true),
+	})
+}
+
+func (s *BlueprintTestSuite) TestUlid() {
+	name := "ulid_column"
+	s.blueprint.Ulid(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:   &name,
+		ttype:  convert.Pointer("char"),
+		length: convert.Pointer(26),
+	})
+}
+
+func (s *BlueprintTestSuite) TestUlidMorphs() {
+	name := "morphable"
+	s.blueprint.UlidMorphs(name)
+
+	typeColumn := name + "_type"
+	idColumn := name + "_id"
+
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:   &typeColumn,
+		ttype:  convert.Pointer("string"),
+		length: convert.Pointer(255),
+	})
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:   &idColumn,
+		ttype:  convert.Pointer("char"),
+		length: convert.Pointer(26),
+	})
+
+	commands := s.blueprint.GetCommands()
+	hasIndexCommand := false
+	for _, cmd := range commands {
+		if cmd.Name == "index" && len(cmd.Columns) == 2 &&
+			cmd.Columns[0] == typeColumn && cmd.Columns[1] == idColumn {
+			hasIndexCommand = true
+			break
+		}
+	}
+	s.True(hasIndexCommand, "Should have index command for ULID morph columns")
+}
+
+func (s *BlueprintTestSuite) TestMorphsWithUlidKeyType() {
+	// Save original state
+	originalKeyType := GetDefaultMorphKeyType()
+	defer func() {
+		SetDefaultMorphKeyType(originalKeyType)
+	}()
+
+	// Set ULID as default
+	MorphUsingUlids()
+	s.Equal(MorphKeyTypeUlid, GetDefaultMorphKeyType())
+
+	// Create new blueprint for clean test
+	blueprint := NewBlueprint(s.mockSchema, "goravel_", "test_table")
+	name := "morphable"
+	blueprint.Morphs(name)
+
+	typeColumn := name + "_type"
+	idColumn := name + "_id"
+
+	s.Contains(blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:   &typeColumn,
+		ttype:  convert.Pointer("string"),
+		length: convert.Pointer(255),
+	})
+	s.Contains(blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:   &idColumn,
+		ttype:  convert.Pointer("char"),
+		length: convert.Pointer(26),
+	})
+}
+
+func (s *BlueprintTestSuite) TestNullableMorphsWithUlidKeyType() {
+	// Save original state
+	originalKeyType := GetDefaultMorphKeyType()
+	defer func() {
+		SetDefaultMorphKeyType(originalKeyType)
+	}()
+
+	// Set ULID as default
+	MorphUsingUlids()
+
+	// Create new blueprint for clean test
+	blueprint := NewBlueprint(s.mockSchema, "goravel_", "test_table")
+	name := "morphable"
+	blueprint.NullableMorphs(name)
+
+	typeColumn := name + "_type"
+	idColumn := name + "_id"
+
+	s.Contains(blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:     &typeColumn,
+		ttype:    convert.Pointer("string"),
+		length:   convert.Pointer(255),
+		nullable: convert.Pointer(true),
+	})
+	s.Contains(blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:     &idColumn,
+		ttype:    convert.Pointer("char"),
+		length:   convert.Pointer(26),
+		nullable: convert.Pointer(true),
+	})
+}
+
 func (s *BlueprintTestSuite) TestChange() {
 	column := "name"
 	customLength := 100

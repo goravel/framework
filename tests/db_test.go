@@ -458,6 +458,7 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 
 				var product Product
 				err = query.DB().Table("products").Where("name", "single struct").Where("deleted_at", nil).First(&product)
+
 				s.NoError(err)
 				s.True(product.ID > 0)
 				s.Equal("single struct", product.Name)

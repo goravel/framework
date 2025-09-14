@@ -30,11 +30,12 @@ func getContextValues(ctx any, values map[any]any) {
 		reflectValue = reflect.NewAt(reflectValue.Type(), unsafe.Pointer(reflectValue.UnsafeAddr())).Elem()
 		reflectField := contextKeys.Field(i)
 
-		if reflectField.Name == "Context" {
+		switch reflectField.Name {
+		case "Context":
 			getContextValues(reflectValue.Interface(), values)
-		} else if reflectField.Name == "key" {
+		case "key":
 			value.Key = reflectValue.Interface()
-		} else if reflectField.Name == "val" {
+		case "val":
 			value.Val = reflectValue.Interface()
 		}
 	}

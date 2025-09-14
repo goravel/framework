@@ -4,7 +4,6 @@ import (
 	"go/build"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
@@ -79,7 +78,6 @@ func (r *VendorPublishCommand) Handle(ctx console.Context) error {
 	}
 
 	for sourcePath, targetValue := range paths {
-		targetValue = strings.TrimPrefix(strings.TrimPrefix(targetValue, "/"), "./")
 		packagePath := filepath.Join(packageDir, sourcePath)
 
 		res, err := r.publish(packagePath, targetValue, ctx.OptionBool("existing"), ctx.OptionBool("force"))

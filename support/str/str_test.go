@@ -2,6 +2,7 @@ package str
 
 import (
 	"testing"
+	"unicode"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -102,6 +103,10 @@ func (s *StringTestSuite) TestCamel() {
 	s.Equal("fooBar", Of("foo-Bar").Camel().String())
 	s.Equal("fooBar", Of("foo bar").Camel().String())
 	s.Equal("fooBar", Of("foo.bar").Camel().String())
+
+	s.Equal("xmlHttpRequest", Of("xml_http_request").Camel().String())
+	s.Equal("userId", Of("user_id").Camel().String())
+	s.Equal("html5Parser", Of("html5_parser").Camel().String())
 }
 
 func (s *StringTestSuite) TestCharAt() {
@@ -118,6 +123,9 @@ func (s *StringTestSuite) TestChopEnd() {
 	s.Equal("https://goravel", Of("https://goravel.dev").ChopEnd(".dev", ".com").String())
 	s.Equal("https://goravel", Of("https://goravel.com").ChopEnd(".dev", ".com").String())
 	s.Equal("go", Of("golaravel").ChopEnd("laravel").String())
+	s.Equal("world", Of("worldld").ChopEnd("ld").String())
+	s.Equal("helloworldld", Of("helloworldld").ChopEnd("rld").String())
+	s.Equal("helloworld", Of("helloworldrld").ChopEnd("rld").String())
 }
 
 func (s *StringTestSuite) TestChopStart() {
@@ -126,6 +134,10 @@ func (s *StringTestSuite) TestChopStart() {
 	s.Equal("goravel.dev", Of("https://goravel.dev").ChopStart("https://", "http://").String())
 	s.Equal("goravel.dev", Of("http://goravel.dev").ChopStart("https://", "http://").String())
 	s.Equal("goravel", "go"+Of("laravel").ChopStart("la").String())
+	s.Equal("he", Of("hehe").ChopStart("he").String())
+	s.Equal("ehello", Of("ehehello").ChopStart("eh").String())
+	s.Equal("helloworldld", Of("helloworldld").ChopStart("rld").String())
+	s.Equal("loworld", Of("helloworld").ChopStart("hel").String())
 }
 
 func (s *StringTestSuite) TestContains() {
@@ -461,6 +473,9 @@ func (s *StringTestSuite) TestReplace() {
 	s.Equal("foo/foo/foo", Of("x/x/x").Replace("X", "foo", false).String())
 	s.Equal("bar/bar", Of("?/?").Replace("?", "bar").String())
 	s.Equal("?/?/?", Of("? ? ?").Replace(" ", "/").String())
+	s.Equal("a1b2c3", Of("a1b2c3").Replace("\\d", "X", false).String())
+	s.Equal("hello-world", Of("hello.world").Replace(".", "-", false).String())
+	s.Equal("hello(world]", Of("hello[world]").Replace("[", "(", false).String())
 }
 
 func (s *StringTestSuite) TestReplaceEnd() {
@@ -525,13 +540,21 @@ func (s *StringTestSuite) TestRTrim() {
 }
 
 func (s *StringTestSuite) TestSnake() {
-	s.Equal("goravel_g_o_framework", Of("GoravelGOFramework").Snake().String())
+	s.Equal("goravel_go_framework", Of("GoravelGOFramework").Snake().String())
 	s.Equal("goravel_go_framework", Of("GoravelGoFramework").Snake().String())
 	s.Equal("goravel go framework", Of("GoravelGoFramework").Snake(" ").String())
 	s.Equal("goravel_go_framework", Of("Goravel Go Framework").Snake().String())
 	s.Equal("goravel_go_framework", Of("Goravel    Go      Framework   ").Snake().String())
 	s.Equal("goravel__go__framework", Of("GoravelGoFramework").Snake("__").String())
 	s.Equal("żółta_łódka", Of("ŻółtaŁódka").Snake().String())
+
+	s.Equal("xml_http_request", Of("XMLHttpRequest").Snake().String())
+	s.Equal("user_id", Of("userID").Snake().String())
+	s.Equal("html5_parser", Of("HTML5Parser").Snake().String())
+	s.Equal("get_https_connection_url", Of("getHTTPSConnectionURL").Snake().String())
+	s.Equal("a", Of("A").Snake().String())
+	s.Equal("foo123_bar", Of("foo123Bar").Snake().String())
+	s.Equal("123foo", Of("123foo").Snake().String())
 }
 
 func (s *StringTestSuite) TestSplit() {
@@ -576,6 +599,11 @@ func (s *StringTestSuite) TestStudly() {
 	s.Equal("FooBar", Of("foo-Bar").Studly().String())
 	s.Equal("FooBar", Of("foo bar").Studly().String())
 	s.Equal("FooBar", Of("foo.bar").Studly().String())
+
+	s.Equal("XmlHttpRequest", Of("xml_http_request").Studly().String())
+	s.Equal("123Foo", Of("123foo").Studly().String())
+	s.Equal("Foo123Bar", Of("foo123Bar").Studly().String())
+	s.Equal("A", Of("A").Studly().String())
 }
 
 func (s *StringTestSuite) TestSubstr() {
@@ -1046,25 +1074,78 @@ func (s *StringTestSuite) TestWords() {
 	s.Equal("Perfectly balanced, as all things should be.", Of("Perfectly balanced, as all things should be.").Words(100).String())
 }
 
+func (s *StringTestSuite) TestPlural() {
+	// Basic pluralization
+	s.Equal("books", Of("book").Plural().String())
+	s.Equal("people", Of("person").Plural().String())
+	s.Equal("children", Of("child").Plural().String())
+	s.Equal("geese", Of("goose").Plural().String())
+	s.Equal("mice", Of("mouse").Plural().String())
+	s.Equal("oxen", Of("ox").Plural().String())
+	s.Equal("leaves", Of("leaf").Plural().String())
+	s.Equal("feet", Of("foot").Plural().String())
+	s.Equal("teeth", Of("tooth").Plural().String())
+
+	// With count parameter
+	s.Equal("book", Of("book").Plural(1).String())
+	s.Equal("books", Of("book").Plural(2).String())
+	s.Equal("person", Of("person").Plural(1).String())
+	s.Equal("people", Of("person").Plural(2).String())
+
+	// Uncountable words
+	s.Equal("fish", Of("fish").Plural().String())
+	s.Equal("sheep", Of("sheep").Plural().String())
+	s.Equal("deer", Of("deer").Plural().String())
+	s.Equal("information", Of("information").Plural().String())
+
+	// Case preservation
+	s.Equal("Books", Of("Book").Plural().String())
+	s.Equal("BOOKS", Of("BOOK").Plural().String())
+}
+
+func (s *StringTestSuite) TestSingular() {
+	// Basic singularization
+	s.Equal("book", Of("books").Singular().String())
+	s.Equal("person", Of("people").Singular().String())
+	s.Equal("child", Of("children").Singular().String())
+	s.Equal("goose", Of("geese").Singular().String())
+	s.Equal("mouse", Of("mice").Singular().String())
+	s.Equal("ox", Of("oxen").Singular().String())
+	s.Equal("leaf", Of("leaves").Singular().String())
+	s.Equal("foot", Of("feet").Singular().String())
+	s.Equal("tooth", Of("teeth").Singular().String())
+
+	// Uncountable words
+	s.Equal("fish", Of("fish").Singular().String())
+	s.Equal("sheep", Of("sheep").Singular().String())
+	s.Equal("deer", Of("deer").Singular().String())
+	s.Equal("information", Of("information").Singular().String())
+
+	// Case preservation
+	s.Equal("Book", Of("Books").Singular().String())
+	s.Equal("BOOK", Of("BOOKS").Singular().String())
+}
+
 func TestFieldsFunc(t *testing.T) {
 	tests := []struct {
+		name           string
 		input          string
 		shouldPreserve []func(rune) bool
 		expected       []string
 	}{
-		// Test case 1: Basic word splitting with space separator.
 		{
+			name:     "basic_space_split",
 			input:    "Hello World",
 			expected: []string{"Hello", "World"},
 		},
-		// Test case 2: Splitting with space and preserving hyphen.
 		{
+			name:           "preserve_hyphen",
 			input:          "Hello-World",
-			shouldPreserve: []func(rune) bool{func(r rune) bool { return r == '-' }},
+			shouldPreserve: []func(r rune) bool{func(r rune) bool { return r == '-' }},
 			expected:       []string{"Hello", "-World"},
 		},
-		// Test case 3: Splitting with space and preserving multiple characters.
 		{
+			name:  "preserve_multiple_chars",
 			input: "Hello-World,This,Is,a,Test",
 			shouldPreserve: []func(rune) bool{
 				func(r rune) bool { return r == '-' },
@@ -1072,15 +1153,57 @@ func TestFieldsFunc(t *testing.T) {
 			},
 			expected: []string{"Hello", "-World", ",This", ",Is", ",a", ",Test"},
 		},
-		// Test case 4: No splitting when no separator is found.
 		{
+			name:     "no_separator_found",
 			input:    "HelloWorld",
 			expected: []string{"HelloWorld"},
+		},
+		{
+			name:           "consecutive_uppercase_grouped",
+			input:          "XMLHttpRequest",
+			shouldPreserve: []func(r rune) bool{func(r rune) bool { return unicode.IsUpper(r) }},
+			expected:       []string{"XML", "Http", "Request"},
+		},
+		{
+			name:           "simple_camelCase",
+			input:          "fooBar",
+			shouldPreserve: []func(r rune) bool{func(r rune) bool { return unicode.IsUpper(r) }},
+			expected:       []string{"foo", "Bar"},
+		},
+		{
+			name:           "acronym_followed_by_word",
+			input:          "PDFParser",
+			shouldPreserve: []func(r rune) bool{func(r rune) bool { return unicode.IsUpper(r) }},
+			expected:       []string{"PDF", "Parser"},
+		},
+		{
+			name:           "uppercase_with_numbers",
+			input:          "HTML5Parser",
+			shouldPreserve: []func(r rune) bool{func(r rune) bool { return unicode.IsUpper(r) }},
+			expected:       []string{"HTML5", "Parser"},
+		},
+		{
+			name:           "long_consecutive_uppercase",
+			input:          "getHTTPSConnectionURL",
+			shouldPreserve: []func(r rune) bool{func(r rune) bool { return unicode.IsUpper(r) }},
+			expected:       []string{"get", "HTTPS", "Connection", "URL"},
+		},
+		{
+			name:           "single_uppercase_suffix",
+			input:          "userID",
+			shouldPreserve: []func(r rune) bool{func(r rune) bool { return unicode.IsUpper(r) }},
+			expected:       []string{"user", "ID"},
+		},
+		{
+			name:           "all_uppercase_word",
+			input:          "LARAVEL",
+			shouldPreserve: []func(r rune) bool{func(r rune) bool { return unicode.IsUpper(r) }},
+			expected:       []string{"LARAVEL"},
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.input, func(t *testing.T) {
+		t.Run(test.name, func(t *testing.T) {
 			result := fieldsFunc(test.input, func(r rune) bool { return r == ' ' }, test.shouldPreserve...)
 			assert.Equal(t, test.expected, result)
 		})
@@ -1097,30 +1220,10 @@ func TestSubstr(t *testing.T) {
 	assert.Equal(t, "世界！", Substr("你好，世界！", 3, 3))
 }
 
-func TestMaximum(t *testing.T) {
-	assert.Equal(t, 10, maximum(5, 10))
-	assert.Equal(t, 3.14, maximum(3.14, 2.71))
-	assert.Equal(t, "banana", maximum("apple", "banana"))
-	assert.Equal(t, -5, maximum(-5, -10))
-	assert.Equal(t, 42, maximum(42, 42))
-}
-
 func TestRandom(t *testing.T) {
 	assert.Len(t, Random(10), 10)
 	assert.Empty(t, Random(0))
 	assert.Panics(t, func() {
 		Random(-1)
 	})
-}
-
-func TestCase2Camel(t *testing.T) {
-	assert.Equal(t, "GoravelFramework", Case2Camel("goravel_framework"))
-	assert.Equal(t, "GoravelFramework1", Case2Camel("goravel_framework1"))
-	assert.Equal(t, "GoravelFramework", Case2Camel("GoravelFramework"))
-}
-
-func TestCamel2Case(t *testing.T) {
-	assert.Equal(t, "goravel_framework", Camel2Case("GoravelFramework"))
-	assert.Equal(t, "goravel_framework1", Camel2Case("GoravelFramework1"))
-	assert.Equal(t, "goravel_framework", Camel2Case("goravel_framework"))
 }

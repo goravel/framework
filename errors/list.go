@@ -91,11 +91,19 @@ var (
 	HttpRateLimitFailedToTakeToken     = New("failed to take token")
 	HttpRateLimitFailedToCheckThrottle = New("failed to check throttle: %s")
 
-	LangFileNotExist = New("translation file does not exist")
+	LangFileNotExist      = New("translation file does not exist")
+	LangNoLoaderAvailable = New("no translation loader available")
 
 	LogDriverCircularReference = New("%s driver can't include self channel").SetModule(ModuleLog)
 	LogDriverNotSupported      = New("invalid driver: %s, only support stack, single, daily, custom").SetModule(ModuleLog)
 	LogEmptyLogFilePath        = New("empty log file path").SetModule(ModuleLog)
+
+	MailTemplateParseFailed         = New("failed to parse template %s: %w").SetModule(ModuleMail)
+	MailTemplateExecutionFailed     = New("failed to execute template %s: %w").SetModule(ModuleMail)
+	MailTemplateEngineNotSupported  = New("template engine driver not supported: %s").SetModule(ModuleMail)
+	MailTemplateEngineViaRequired   = New("custom template engine '%s' must specify 'via' factory function").SetModule(ModuleMail)
+	MailTemplateEngineViaInvalid    = New("invalid via type for template engine '%s'").SetModule(ModuleMail)
+	MailTemplateEngineFactoryFailed = New("factory for template engine '%s' failed: %w").SetModule(ModuleMail)
 
 	MigrationCreateFailed    = New("create migration failed: %v")
 	MigrationFreshFailed     = New("migration fresh failed: %v")
@@ -135,6 +143,11 @@ var (
 	PackageRegistrationDuplicate = New("'%s' had been registered")
 	PackageRegistrationNotFound  = New("'%s' not found, cannot insert before it")
 
+	PluralizerLanguageNotFound     = New("language %s not found").SetModule(ModulePluralizer)
+	PluralizerEmptyLanguageName    = New("language name cannot be empty").SetModule(ModulePluralizer)
+	PluralizerNoSubstitutionsGiven = New("no substitutions provided").SetModule(ModulePluralizer)
+	PluralizerNoWordsGiven         = New("no words provided").SetModule(ModulePluralizer)
+
 	QueueDriverFailedToPop           = New("failed to pop job from %s queue: %v")
 	QueueDriverInvalid               = New("%s doesn't implement contracts/queue/driver")
 	QueueDriverNoJobFound            = New("no job found in %s queue")
@@ -151,7 +164,6 @@ var (
 	QueueFailedToInsertJobToDatabase = New("failed to insert job to database: %+v, err: %v")
 	QueueFailedToReserveJob          = New("failed to reserve job: %+v, err: %v")
 	QueueFailedToRetryJob            = New("failed to retry job: %+v, err: %v")
-	QueueFailedToRunMachinery        = New("failed to run machinery: %v")
 	QueueFailedToSaveFailedJob       = New("failed to save failed job: %v")
 	QueueInvalidDatabaseConnection   = New("invalid database connection: %s")
 	QueueNoRetryableJobsFound        = New("no retryable jobs found")
@@ -160,6 +172,7 @@ var (
 	QueueJobFailed                   = New("job failed: %v")
 	QueueProcessingJobs              = New("Processing jobs from [%s] connection and [%s] queue")
 	QueuePushingFailedJob            = New("Pushing failed queue jobs back onto the queue")
+	QueueNoFailedJobsFound           = New("no failed jobs found")
 
 	RouteDefaultDriverNotSet = New("please set default driver")
 	RouteInvalidDriver       = New("init %s route driver fail: route must be implement route.Route or func() (route.Route, error)")
@@ -202,4 +215,9 @@ var (
 	ValidationRuleRegisterFailed   = New("rule register failed: %v")
 
 	CommandEmptyPackageName = New("the package name cannot be empty")
+
+	ProcessNotStarted            = New("process not started").SetModule(ModuleProcess)
+	ProcessUnsupportedSignalType = New("unsupported signal type").SetModule(ModuleProcess)
+	ProcessPipelineEmpty         = New("pipeline must have at least one command").SetModule(ModuleProcess)
+	ProcessPipelineStartFailed   = New("failed to start pipeline: %v").SetModule(ModuleProcess)
 )

@@ -26,16 +26,16 @@ func (f *FSLoaderTestSuite) SetupTest() {
 	f.json = json.New()
 
 	f.mockFS = fstest.MapFS{
-		"lang/en/test.json":         &fstest.MapFile{Data: []byte(`{"foo": "bar", "baz": {"foo": "bar"}}`)},
-		"lang/en/another/test.json": &fstest.MapFile{Data: []byte(`{"foo": "backagebar", "baz": "backagesplash"}`)},
-		"lang/another/en/test.json": &fstest.MapFile{Data: []byte(`{"foo": "backagebar", "baz": "backagesplash"}`)},
-		"lang/en/invalid/test.json": &fstest.MapFile{Data: []byte(`{"foo": "bar",}`)},
-		"lang/cn.json":              &fstest.MapFile{Data: []byte(`{"foo": "bar", "baz": {"foo": "bar"}}`)},
+		"en/test.json":         &fstest.MapFile{Data: []byte(`{"foo": "bar", "baz": {"foo": "bar"}}`)},
+		"en/another/test.json": &fstest.MapFile{Data: []byte(`{"foo": "backagebar", "baz": "backagesplash"}`)},
+		"another/en/test.json": &fstest.MapFile{Data: []byte(`{"foo": "backagebar", "baz": "backagesplash"}`)},
+		"en/invalid/test.json": &fstest.MapFile{Data: []byte(`{"foo": "bar",}`)},
+		"cn.json":              &fstest.MapFile{Data: []byte(`{"foo": "bar", "baz": {"foo": "bar"}}`)},
 	}
 }
 
 func (f *FSLoaderTestSuite) TestLoad() {
-	loader := NewFSLoader("lang", f.mockFS, f.json)
+	loader := NewFSLoader(f.mockFS, f.json)
 	translations, err := loader.Load("en", "test")
 	f.NoError(err)
 	f.NotNil(translations)
@@ -55,7 +55,7 @@ func (f *FSLoaderTestSuite) TestLoad() {
 }
 
 func (f *FSLoaderTestSuite) TestLoadNonExistentFile() {
-	loader := NewFSLoader("lang", f.mockFS, f.json)
+	loader := NewFSLoader(f.mockFS, f.json)
 	translations, err := loader.Load("hi", "test")
 
 	f.Error(err)
@@ -64,7 +64,7 @@ func (f *FSLoaderTestSuite) TestLoadNonExistentFile() {
 }
 
 func (f *FSLoaderTestSuite) TestLoadInvalidJSON() {
-	loader := NewFSLoader("lang", f.mockFS, f.json)
+	loader := NewFSLoader(f.mockFS, f.json)
 	translations, err := loader.Load("en", "invalid/test")
 
 	f.Error(err)
@@ -78,7 +78,7 @@ func Benchmark_FSLoad(b *testing.B) {
 	b.StartTimer()
 	b.ResetTimer()
 
-	loader := NewFSLoader("lang", s.mockFS, s.json)
+	loader := NewFSLoader(s.mockFS, s.json)
 	for i := 0; i < b.N; i++ {
 		_, err := loader.Load("en", "test")
 		s.NoError(err)

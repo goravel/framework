@@ -66,7 +66,7 @@ func (e *Event) IsDirty(columns ...string) bool {
 
 	if len(columns) == 0 {
 		for destColumn, destValue := range destOfMap {
-			if !(e.validColumn(destColumn) && e.validValue(destColumn, destValue)) {
+			if !e.validColumn(destColumn) || !e.validValue(destColumn, destValue) {
 				continue
 			}
 			if e.dirty(destColumn, destValue) {
@@ -79,7 +79,7 @@ func (e *Event) IsDirty(columns ...string) bool {
 				continue
 			}
 			for destColumn, destValue := range destOfMap {
-				if !(e.validColumn(destColumn) && e.validValue(destColumn, destValue)) {
+				if !e.validColumn(destColumn) || !e.validValue(destColumn, destValue) {
 					continue
 				}
 				if e.equalColumnName(column, destColumn) && e.dirty(destColumn, destValue) {

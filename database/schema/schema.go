@@ -10,6 +10,7 @@ import (
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/color"
 )
 
 var _ contractsschema.Schema = (*Schema)(nil)
@@ -391,7 +392,18 @@ func (r *Schema) Prune() error {
 }
 
 func (r *Schema) Register(migrations []contractsschema.Migration) {
-	r.migrations = migrations
+	existingSignatures := make(map[string]bool)
+
+	for _, migration := range migrations {
+		signature := migration.Signature()
+
+		if existingSignatures[signature] {
+			color.Errorf("Duplicate migration signature: %s in %T\n", signature, migration)
+		} else {
+			existingSignatures[signature] = true
+			r.migrations = append(r.migrations, migration)
+		}
+	}
 }
 
 func (r *Schema) Rename(from, to string) error {

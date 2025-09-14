@@ -1,6 +1,8 @@
 package convert
 
-import "unsafe"
+import (
+	"unsafe"
+)
 
 // Default returns the first non-zero value.
 // If all values are zero, return the zero value.

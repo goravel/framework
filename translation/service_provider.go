@@ -12,8 +12,6 @@ import (
 	"github.com/goravel/framework/errors"
 )
 
-const Binding = "goravel.translation"
-
 type ServiceProvider struct {
 }
 
@@ -22,11 +20,8 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 		Bindings: []string{
 			binding.Lang,
 		},
-		Dependencies: []string{
-			binding.Config,
-			binding.Log,
-		},
-		ProvideFor: []string{},
+		Dependencies: binding.Bindings[binding.Lang].Dependencies,
+		ProvideFor:   []string{},
 	}
 }
 
@@ -46,12 +41,17 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		fallback := config.GetString("app.fallback_locale")
 		path := config.GetString("app.lang_path", "lang")
 
-		var loader contractstranslation.Loader
-		if f, ok := config.Get("app.lang_fs").(fs.FS); ok {
-			loader = NewFSLoader(path, f, app.GetJson())
+		var fileLoader contractstranslation.Loader
+		if path != "" {
+			fileLoader = NewFileLoader([]string{cast.ToString(path)}, app.GetJson())
 		}
 
-		return NewTranslator(parameters["ctx"].(context.Context), loader, NewFileLoader([]string{cast.ToString(path)}, app.GetJson()), locale, fallback, logger), nil
+		var fsLoader contractstranslation.Loader
+		if f, ok := config.Get("app.lang_fs").(fs.FS); ok {
+			fsLoader = NewFSLoader(f, app.GetJson())
+		}
+
+		return NewTranslator(parameters["ctx"].(context.Context), fsLoader, fileLoader, locale, fallback, logger), nil
 	})
 }
 

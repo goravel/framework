@@ -1,19 +1,18 @@
 package str
 
 import (
-	"bytes"
 	"crypto/rand"
 	"encoding/json"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 	"unicode"
 	"unicode/utf8"
 
-	"golang.org/x/exp/constraints"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
+
+	"github.com/goravel/framework/support/pluralizer"
 )
 
 type String struct {
@@ -125,8 +124,8 @@ func (s *String) ChopEnd(needle string, more ...string) *String {
 	more = append([]string{needle}, more...)
 
 	for _, v := range more {
-		if s.EndsWith(v) {
-			s.value = strings.TrimRight(s.value, v)
+		if after, found := strings.CutSuffix(s.value, v); found {
+			s.value = after
 			break
 		}
 	}
@@ -138,8 +137,8 @@ func (s *String) ChopStart(needle string, more ...string) *String {
 	more = append([]string{needle}, more...)
 
 	for _, v := range more {
-		if s.StartsWith(v) {
-			s.value = strings.TrimLeft(s.value, v)
+		if after, found := strings.CutPrefix(s.value, v); found {
+			s.value = after
 			break
 		}
 	}
@@ -216,7 +215,7 @@ func (s *String) Excerpt(phrase string, options ...ExcerptOption) *String {
 		}
 	}
 
-	radius := maximum(0, defaultOptions.Radius)
+	radius := max(0, defaultOptions.Radius)
 	omission := defaultOptions.Omission
 
 	regex := regexp.MustCompile(`(.*?)(` + regexp.QuoteMeta(phrase) + `)(.*)`)
@@ -236,7 +235,7 @@ func (s *String) Excerpt(phrase string, options ...ExcerptOption) *String {
 			return s.Append(omission)
 		}).String()
 
-	s.value = Of(Substr(start, maximum(len(start)-radius, 0), radius)).LTrim("").
+	s.value = Of(Substr(start, max(len(start)-radius, 0), radius)).LTrim("").
 		Unless(func(s *String) bool {
 			return s.Exactly(start)
 		}, func(s *String) *String {
@@ -494,7 +493,7 @@ func (s *String) PadBoth(length int, pad ...string) *String {
 	if len(pad) > 0 {
 		defaultPad = pad[0]
 	}
-	short := maximum(0, length-s.Length())
+	short := max(0, length-s.Length())
 	left := short / 2
 	right := short/2 + short%2
 
@@ -509,7 +508,7 @@ func (s *String) PadLeft(length int, pad ...string) *String {
 	if len(pad) > 0 {
 		defaultPad = pad[0]
 	}
-	short := maximum(0, length-s.Length())
+	short := max(0, length-s.Length())
 
 	s.value = Substr(strings.Repeat(defaultPad, short), 0, short) + s.value
 	return s
@@ -521,7 +520,7 @@ func (s *String) PadRight(length int, pad ...string) *String {
 	if len(pad) > 0 {
 		defaultPad = pad[0]
 	}
-	short := maximum(0, length-s.Length())
+	short := max(0, length-s.Length())
 
 	s.value = s.value + Substr(strings.Repeat(defaultPad, short), 0, short)
 	return s
@@ -530,6 +529,17 @@ func (s *String) PadRight(length int, pad ...string) *String {
 // Pipe passes the string to the given callback and returns the result.
 func (s *String) Pipe(callback func(s string) string) *String {
 	s.value = callback(s.value)
+	return s
+}
+
+// Plural returns the plural form of the string.
+// If count is provided and equals 1, returns the singular form, otherwise returns the plural form.
+func (s *String) Plural(count ...int) *String {
+	if len(count) > 0 && count[0] == 1 {
+		s.value = pluralizer.Singular(s.value)
+	} else {
+		s.value = pluralizer.Plural(s.value)
+	}
 	return s
 }
 
@@ -558,7 +568,7 @@ func (s *String) Repeat(times int) *String {
 func (s *String) Replace(search string, replace string, caseSensitive ...bool) *String {
 	caseSensitive = append(caseSensitive, true)
 	if len(caseSensitive) > 0 && !caseSensitive[0] {
-		s.value = regexp.MustCompile("(?i)"+search).ReplaceAllString(s.value, replace)
+		s.value = regexp.MustCompile("(?i)"+regexp.QuoteMeta(search)).ReplaceAllString(s.value, replace)
 		return s
 	}
 	s.value = strings.ReplaceAll(s.value, search, replace)
@@ -629,6 +639,12 @@ func (s *String) RTrim(characters ...string) *String {
 	}
 
 	s.value = strings.TrimRight(s.value, characters[0])
+	return s
+}
+
+// Singular returns the singular form of the string.
+func (s *String) Singular() *String {
+	s.value = pluralizer.Singular(s.value)
 	return s
 }
 
@@ -963,80 +979,6 @@ func Random(length int) string {
 	return string(b)
 }
 
-// Case2Camel
-// DEPRECATED: Use str.Of(name).Studly().String() instead
-func Case2Camel(name string) string {
-	names := strings.Split(name, "_")
-
-	var newName string
-	for _, item := range names {
-		buffer := NewBuffer()
-		for i, r := range item {
-			if i == 0 {
-				buffer.Append(unicode.ToUpper(r))
-			} else {
-				buffer.Append(r)
-			}
-		}
-
-		newName += buffer.String()
-	}
-
-	return newName
-}
-
-// Camel2Case
-// DEPRECATED: Use str.Of(name).Snake().String() instead
-func Camel2Case(name string) string {
-	buffer := NewBuffer()
-	for i, r := range name {
-		if unicode.IsUpper(r) {
-			if i != 0 {
-				buffer.Append('_')
-			}
-			buffer.Append(unicode.ToLower(r))
-		} else {
-			buffer.Append(r)
-		}
-	}
-
-	return buffer.String()
-}
-
-type Buffer struct {
-	*bytes.Buffer
-}
-
-func NewBuffer() *Buffer {
-	return &Buffer{Buffer: new(bytes.Buffer)}
-}
-
-func (b *Buffer) Append(i any) *Buffer {
-	switch val := i.(type) {
-	case int:
-		b.append(strconv.Itoa(val))
-	case int64:
-		b.append(strconv.FormatInt(val, 10))
-	case uint:
-		b.append(strconv.FormatUint(uint64(val), 10))
-	case uint64:
-		b.append(strconv.FormatUint(val, 10))
-	case string:
-		b.append(val)
-	case []byte:
-		b.Write(val)
-	case rune:
-		b.WriteRune(val)
-	}
-	return b
-}
-
-func (b *Buffer) append(s string) *Buffer {
-	b.WriteString(s)
-
-	return b
-}
-
 // fieldsFunc splits the input string into words with preservation, following the rules defined by
 // the provided functions f and preserveFunc.
 func fieldsFunc(s string, f func(rune) bool, preserveFunc ...func(rune) bool) []string {
@@ -1052,14 +994,35 @@ func fieldsFunc(s string, f func(rune) bool, preserveFunc ...func(rune) bool) []
 		return false
 	}
 
-	for _, r := range s {
+	runes := []rune(s)
+	for i, r := range runes {
 		if f(r) {
 			if currentField.Len() > 0 {
 				fields = append(fields, currentField.String())
 				currentField.Reset()
 			}
 		} else if shouldPreserve(r) {
-			if currentField.Len() > 0 {
+			// Smart uppercase handling for consecutive uppercase letters
+			shouldSplit := false
+
+			if i > 0 {
+				prev := runes[i-1]
+				var next rune
+				if i < len(runes)-1 {
+					next = runes[i+1]
+				}
+
+				// Split conditions:
+				// 1. Previous char is not uppercase (covers lowercase, digits, symbols): "foo_B" -> "foo_" + "B"
+				// 2. Current is uppercase, previous is uppercase, next is lowercase: "XMLHttp" -> "XML" + "Http"
+				if !unicode.IsUpper(prev) {
+					shouldSplit = true
+				} else if unicode.IsUpper(prev) && unicode.IsLower(next) {
+					shouldSplit = true
+				}
+			}
+
+			if shouldSplit && currentField.Len() > 0 {
 				fields = append(fields, currentField.String())
 				currentField.Reset()
 			}
@@ -1074,12 +1037,4 @@ func fieldsFunc(s string, f func(rune) bool, preserveFunc ...func(rune) bool) []
 	}
 
 	return fields
-}
-
-// maximum returns the largest of x or y.
-func maximum[T constraints.Ordered](x T, y T) T {
-	if x > y {
-		return x
-	}
-	return y
 }

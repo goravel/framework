@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/goravel/framework/config"
+	frameworkconsole "github.com/goravel/framework/console"
 	"github.com/goravel/framework/contracts/binding"
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
@@ -22,6 +23,7 @@ import (
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/env"
+	"github.com/goravel/framework/support/path/internals"
 )
 
 var (
@@ -39,10 +41,11 @@ func init() {
 		publishes:     make(map[string]map[string]string),
 		publishGroups: make(map[string]map[string]string),
 	}
+	App = app
+
 	app.registerBaseServiceProviders()
 	app.bootBaseServiceProviders()
 	app.SetJson(json.New())
-	App = app
 }
 
 type Application struct {
@@ -51,6 +54,7 @@ type Application struct {
 	publishes                  map[string]map[string]string
 	publishGroups              map[string]map[string]string
 	json                       foundation.Json
+	registeredServiceProviders []string
 }
 
 func NewApplication() foundation.Application {
@@ -58,6 +62,10 @@ func NewApplication() foundation.Application {
 }
 
 func (r *Application) Boot() {
+	r.configuredServiceProviders = r.configuredServiceProviders[:0]
+	clear(r.publishes)
+	clear(r.publishGroups)
+
 	r.setTimezone()
 	r.registerConfiguredServiceProviders()
 	r.bootConfiguredServiceProviders()
@@ -67,8 +75,9 @@ func (r *Application) Boot() {
 		console.NewEnvDecryptCommand(),
 		console.NewTestMakeCommand(),
 		console.NewPackageMakeCommand(),
-		console.NewPackageInstallCommand(),
-		console.NewPackageUninstallCommand(),
+		console.NewProviderMakeCommand(),
+		console.NewPackageInstallCommand(binding.Bindings, r.Bindings()),
+		console.NewPackageUninstallCommand(r, binding.Bindings, r.Bindings()),
 		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
 		console.NewUpCommand(r),
 		console.NewDownCommand(r),
@@ -81,8 +90,7 @@ func (r *Application) Commands(commands []contractsconsole.Command) {
 }
 
 func (r *Application) Path(path ...string) string {
-	path = append([]string{support.RelativePath, "app"}, path...)
-	return r.absPath(path...)
+	return internals.Path(path...)
 }
 
 func (r *Application) BasePath(path ...string) string {
@@ -97,6 +105,15 @@ func (r *Application) ConfigPath(path ...string) string {
 func (r *Application) DatabasePath(path ...string) string {
 	path = append([]string{support.RelativePath, "database"}, path...)
 	return r.absPath(path...)
+}
+
+func (r *Application) ExecutablePath(path ...string) string {
+	path = append([]string{support.RootPath}, path...)
+	return r.absPath(path...)
+}
+
+func (r *Application) FacadesPath(path ...string) string {
+	return internals.FacadesPath(path...)
 }
 
 func (r *Application) StoragePath(path ...string) string {
@@ -126,11 +143,6 @@ func (r *Application) LangPath(path ...string) string {
 
 func (r *Application) PublicPath(path ...string) string {
 	path = append([]string{support.RelativePath, "public"}, path...)
-	return r.absPath(path...)
-}
-
-func (r *Application) ExecutablePath(path ...string) string {
-	path = append([]string{support.RootPath}, path...)
 	return r.absPath(path...)
 }
 
@@ -187,12 +199,7 @@ func (r *Application) IsLocale(ctx context.Context, locale string) bool {
 }
 
 func (r *Application) absPath(paths ...string) string {
-	path := filepath.Join(paths...)
-	abs, err := filepath.Abs(path)
-	if err != nil {
-		return path
-	}
-	return abs
+	return internals.AbsPath(paths...)
 }
 
 func (r *Application) addPublishGroup(group string, paths map[string]string) {
@@ -216,6 +223,7 @@ func (r *Application) bootArtisan() {
 func (r *Application) getBaseServiceProviders() []foundation.ServiceProvider {
 	return []foundation.ServiceProvider{
 		&config.ServiceProvider{},
+		&frameworkconsole.ServiceProvider{},
 	}
 }
 
@@ -259,6 +267,12 @@ func (r *Application) bootConfiguredServiceProviders() {
 
 func (r *Application) registerServiceProviders(serviceProviders []foundation.ServiceProvider) {
 	for _, serviceProvider := range serviceProviders {
+		providerName := fmt.Sprintf("%T", serviceProvider)
+		if slices.Contains(r.registeredServiceProviders, providerName) {
+			continue
+		}
+		r.registeredServiceProviders = append(r.registeredServiceProviders, providerName)
+
 		serviceProvider.Register(r)
 	}
 }
@@ -373,7 +387,7 @@ func sortConfiguredServiceProviders(providers []foundation.ServiceProvider) []fo
 
 	// Helper function to get binding names from a provider
 	getBindings := func(provider foundation.ServiceProvider) []string {
-		if p, ok := provider.(interface{ Relationship() binding.Relationship }); ok {
+		if p, ok := provider.(foundation.ServiceProviderWithRelations); ok {
 			return p.Relationship().Bindings
 		}
 		return []string{}
@@ -381,7 +395,7 @@ func sortConfiguredServiceProviders(providers []foundation.ServiceProvider) []fo
 
 	// Helper function to get dependencies from a provider
 	getDependencies := func(provider foundation.ServiceProvider) []string {
-		if p, ok := provider.(interface{ Relationship() binding.Relationship }); ok {
+		if p, ok := provider.(foundation.ServiceProviderWithRelations); ok {
 			return p.Relationship().Dependencies
 		}
 		return []string{}
@@ -389,7 +403,7 @@ func sortConfiguredServiceProviders(providers []foundation.ServiceProvider) []fo
 
 	// Helper function to get provide-for bindings from a provider
 	getProvideFor := func(provider foundation.ServiceProvider) []string {
-		if p, ok := provider.(interface{ Relationship() binding.Relationship }); ok {
+		if p, ok := provider.(foundation.ServiceProviderWithRelations); ok {
 			return p.Relationship().ProvideFor
 		}
 		return []string{}

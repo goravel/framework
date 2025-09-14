@@ -100,7 +100,7 @@ func JsonToTask(payload string, jobStorer contractsqueue.JobStorer, json foundat
 		chain = append(chain, jobs)
 	}
 
-	job, err := jobStorer.Get(task.Job.Signature)
+	job, err := jobStorer.Get(task.Signature)
 	if err != nil {
 		return contractsqueue.Task{}, err
 	}

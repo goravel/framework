@@ -7,6 +7,7 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/route"
 	"github.com/goravel/framework/support/collect"
 )
@@ -83,49 +84,49 @@ func (r *RouteListCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	routes = r.filterRoutes(ctx, routes)
-	if len(routes) == 0 {
+	filteredRoutes := filterRoutes(ctx, routes)
+	if len(filteredRoutes) == 0 {
 		ctx.Warning("Your application doesn't have any routes matching the given criteria.")
 		return nil
 	}
 
-	for _, item := range routes {
-		ctx.TwoColumnDetail(fmt.Sprintf("%s %s", r.formatMethod(item.Method), r.formatPath(item.Path)), r.formateNameHandler(item.Name, item.Handler))
+	for _, item := range filteredRoutes {
+		ctx.TwoColumnDetail(fmt.Sprintf("%s %s", formatMethod(item.Method), formatPath(item.Path)), formateNameHandler(item.Name, item.Handler))
 	}
 
 	ctx.NewLine()
-	ctx.TwoColumnDetail("", fmt.Sprintf("<fg=blue;op=bold>Showing [%d] routes</>", len(routes)), ' ')
+	ctx.TwoColumnDetail("", fmt.Sprintf("<fg=blue;op=bold>Showing [%d] routes</>", len(filteredRoutes)), ' ')
 
 	return nil
 }
 
-func (r *RouteListCommand) filterRoutes(ctx console.Context, routes []route.Info) []route.Info {
+func filterRoutes(ctx console.Context, routes []http.Info) []http.Info {
 	var (
-		matcher  []func(route.Info) bool
+		matcher  []func(http.Info) bool
 		contains = func(s, substr string) bool {
 			return strings.Contains(strings.ToLower(s), strings.ToLower(substr))
 		}
 	)
 	if method := ctx.Option("method"); method != "" {
-		matcher = append(matcher, func(route route.Info) bool {
+		matcher = append(matcher, func(route http.Info) bool {
 			return contains(route.Method, method)
 		})
 	}
 
 	if name := ctx.Option("name"); name != "" {
-		matcher = append(matcher, func(route route.Info) bool {
+		matcher = append(matcher, func(route http.Info) bool {
 			return contains(route.Name, name)
 		})
 	}
 
 	if path := ctx.Option("path"); path != "" {
-		matcher = append(matcher, func(route route.Info) bool {
+		matcher = append(matcher, func(route http.Info) bool {
 			return contains(route.Path, path)
 		})
 	}
 
 	if exceptPaths := ctx.OptionSlice("except-path"); len(exceptPaths) > 0 {
-		matcher = append(matcher, func(route route.Info) bool {
+		matcher = append(matcher, func(route http.Info) bool {
 			for _, exceptPath := range exceptPaths {
 				if contains(route.Path, exceptPath) {
 					return false
@@ -136,7 +137,7 @@ func (r *RouteListCommand) filterRoutes(ctx console.Context, routes []route.Info
 		})
 	}
 
-	return collect.Filter(routes, func(route route.Info, _ int) bool {
+	return collect.Filter(routes, func(route http.Info, _ int) bool {
 		for _, match := range matcher {
 			if !match(route) {
 				return false
@@ -147,7 +148,7 @@ func (r *RouteListCommand) filterRoutes(ctx console.Context, routes []route.Info
 	})
 }
 
-func (r *RouteListCommand) formateNameHandler(name, handler string) string {
+func formateNameHandler(name, handler string) string {
 	if len(name) == 0 && len(handler) == 0 {
 		return ""
 	}
@@ -159,7 +160,7 @@ func (r *RouteListCommand) formateNameHandler(name, handler string) string {
 	return fmt.Sprintf("<fg=7472A3>%s%s</>", name, strings.TrimSuffix(handler, "-fm"))
 }
 
-func (r *RouteListCommand) formatMethod(method string) string {
+func formatMethod(method string) string {
 	split := strings.Split(method, "|")
 	for i := range split {
 		if colorized, ok := methodColors[split[i]]; ok {
@@ -175,7 +176,7 @@ func (r *RouteListCommand) formatMethod(method string) string {
 	return result
 }
 
-func (r *RouteListCommand) formatPath(path string) string {
+func formatPath(path string) string {
 	if cleared := strings.TrimPrefix(path, "/"); cleared != "" {
 		path = cleared
 	}

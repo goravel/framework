@@ -18,6 +18,8 @@ var (
 	ModuleMigration  = "migration"
 	ModuleOrm        = "orm"
 	ModulePackages   = "packages"
+	ModulePluralizer = "pluralizer"
+	ModuleProcess    = "process"
 	ModuleQueue      = "queue"
 	ModuleRoute      = "route"
 	ModuleSchema     = "schema"

@@ -1,10 +1,13 @@
 package tests
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/goravel/framework/contracts/database/orm"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
@@ -886,6 +889,35 @@ func (s *QueryTestSuite) TestEvent_Creating() {
 					s.Equal("event_creating_save_avatar", user.Avatar)
 				},
 			},
+			{
+				name: "not trigger when creating by slice struct",
+				setup: func() {
+					ctx := context.WithValue(context.Background(), "event", "creating event with slice struct")
+					users := []User{{Name: "event_creating_slice_name"}, {Name: "event_creating_slice_name1"}}
+					s.Nil(query.Query().(contractsorm.QueryWithContext).WithContext(ctx).Model(&User{}).Create(users))
+				},
+			},
+			{
+				name: "not trigger when creating by slice map",
+				setup: func() {
+					ctx := context.WithValue(context.Background(), "event", "creating event with slice map")
+					users := []map[string]any{
+						{
+							"Name":      "event_creating_slice_name",
+							"Avatar":    "event_creating_slice_avatar",
+							"CreatedAt": carbon.Now(),
+							"UpdatedAt": carbon.Now(),
+						},
+						{
+							"Name":      "event_creating_slice_name1",
+							"Avatar":    "event_creating_slice_avatar1",
+							"CreatedAt": carbon.Now(),
+							"UpdatedAt": carbon.Now(),
+						},
+					}
+					s.Nil(query.Query().(contractsorm.QueryWithContext).WithContext(ctx).Model(&User{}).Create(&users))
+				},
+			},
 		}
 		for _, test := range tests {
 			s.Run(test.name, func() {
@@ -999,6 +1031,35 @@ func (s *QueryTestSuite) TestEvent_Created() {
 					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_created_save_name", user1.Name)
 					s.Empty(user1.Avatar)
+				},
+			},
+			{
+				name: "not trigger when creating by slice struct",
+				setup: func() {
+					ctx := context.WithValue(context.Background(), "event", "created event with slice struct")
+					users := []User{{Name: "event_created_slice_name"}, {Name: "event_created_slice_name1"}}
+					s.Nil(query.Query().(contractsorm.QueryWithContext).WithContext(ctx).Model(&User{}).Create(users))
+				},
+			},
+			{
+				name: "not trigger when creating by slice map",
+				setup: func() {
+					ctx := context.WithValue(context.Background(), "event", "created event with slice map")
+					users := []map[string]any{
+						{
+							"Name":      "event_created_slice_name",
+							"Avatar":    "event_created_slice_avatar",
+							"CreatedAt": carbon.Now(),
+							"UpdatedAt": carbon.Now(),
+						},
+						{
+							"Name":      "event_created_slice_name1",
+							"Avatar":    "event_created_slice_avatar1",
+							"CreatedAt": carbon.Now(),
+							"UpdatedAt": carbon.Now(),
+						},
+					}
+					s.Nil(query.Query().(contractsorm.QueryWithContext).WithContext(ctx).Model(&User{}).Create(&users))
 				},
 			},
 		}
@@ -1120,6 +1181,35 @@ func (s *QueryTestSuite) TestEvent_Saving() {
 					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_saving_single_update_name", user1.Name)
 					s.Equal("event_saving_single_update_avatar1", user1.Avatar)
+				},
+			},
+			{
+				name: "not trigger when creating by slice struct",
+				setup: func() {
+					ctx := context.WithValue(context.Background(), "event", "saving event with slice struct")
+					users := []User{{Name: "event_saving_slice_name"}, {Name: "event_saving_slice_name1"}}
+					s.Nil(query.Query().(contractsorm.QueryWithContext).WithContext(ctx).Model(&User{}).Create(users))
+				},
+			},
+			{
+				name: "not trigger when creating by slice map",
+				setup: func() {
+					ctx := context.WithValue(context.Background(), "event", "saving event with slice map")
+					users := []map[string]any{
+						{
+							"Name":      "event_creating_slice_name",
+							"Avatar":    "event_creating_slice_avatar",
+							"CreatedAt": carbon.Now(),
+							"UpdatedAt": carbon.Now(),
+						},
+						{
+							"Name":      "event_creating_slice_name1",
+							"Avatar":    "event_creating_slice_avatar1",
+							"CreatedAt": carbon.Now(),
+							"UpdatedAt": carbon.Now(),
+						},
+					}
+					s.Nil(query.Query().(contractsorm.QueryWithContext).WithContext(ctx).Model(&User{}).Create(&users))
 				},
 			},
 		}
@@ -1251,6 +1341,35 @@ func (s *QueryTestSuite) TestEvent_Saved() {
 					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_saved_map_update_name", user1.Name)
 					s.Equal("event_saved_map_update_avatar", user1.Avatar)
+				},
+			},
+			{
+				name: "not trigger when creating by slice struct",
+				setup: func() {
+					ctx := context.WithValue(context.Background(), "event", "saved event with slice struct")
+					users := []User{{Name: "event_saved_slice_name"}, {Name: "event_saved_slice_name1"}}
+					s.Nil(query.Query().(contractsorm.QueryWithContext).WithContext(ctx).Model(&User{}).Create(users))
+				},
+			},
+			{
+				name: "not trigger when creating by slice map",
+				setup: func() {
+					ctx := context.WithValue(context.Background(), "event", "saved event with slice map")
+					users := []map[string]any{
+						{
+							"Name":      "event_creating_slice_name",
+							"Avatar":    "event_creating_slice_avatar",
+							"CreatedAt": carbon.Now(),
+							"UpdatedAt": carbon.Now(),
+						},
+						{
+							"Name":      "event_creating_slice_name1",
+							"Avatar":    "event_creating_slice_avatar1",
+							"CreatedAt": carbon.Now(),
+							"UpdatedAt": carbon.Now(),
+						},
+					}
+					s.Nil(query.Query().(contractsorm.QueryWithContext).WithContext(ctx).Model(&User{}).Create(&users))
 				},
 			},
 		}
@@ -1400,61 +1519,101 @@ func (s *QueryTestSuite) TestEvent_Updated() {
 
 func (s *QueryTestSuite) TestEvent_Deleting() {
 	for _, query := range s.queries {
-		user := User{Name: "event_deleting_name", Avatar: "event_deleting_avatar"}
-		s.Nil(query.Query().Create(&user))
+		s.Run("trigger", func() {
+			user := User{Name: "event_deleting_name", Avatar: "event_deleting_avatar"}
+			s.Nil(query.Query().Create(&user))
 
-		res, err := query.Query().Delete(&user)
-		s.EqualError(err, "deleting error")
-		s.Nil(res)
+			res, err := query.Query().Delete(&user)
+			s.EqualError(err, "deleting error")
+			s.Nil(res)
 
-		var user1 User
-		s.Nil(query.Query().Find(&user1, user.ID))
-		s.True(user1.ID > 0)
+			var user1 User
+			s.Nil(query.Query().Find(&user1, user.ID))
+			s.True(user1.ID > 0)
+		})
+
+		s.Run("not trigger when deleting mass records", func() {
+			ctx := context.WithValue(context.Background(), "event", "deleting event with mass records")
+			res, err := query.Query().(contractsorm.QueryWithContext).WithContext(ctx).Where("name", "event_deleting_name").Delete(&User{})
+			s.NoError(err)
+			s.Equal(int64(1), res.RowsAffected)
+		})
 	}
 }
 
 func (s *QueryTestSuite) TestEvent_Deleted() {
 	for _, query := range s.queries {
-		user := User{Name: "event_deleted_name", Avatar: "event_deleted_avatar"}
-		s.Nil(query.Query().Create(&user))
+		s.Run("trigger", func() {
+			user := User{Name: "event_deleted_name", Avatar: "event_deleted_avatar"}
+			s.Nil(query.Query().Create(&user))
 
-		res, err := query.Query().Delete(&user)
-		s.EqualError(err, "deleted error")
-		s.Nil(res)
+			res, err := query.Query().Delete(&user)
+			s.EqualError(err, "deleted error")
+			s.Nil(res)
 
-		var user1 User
-		s.Nil(query.Query().Find(&user1, user.ID))
-		s.True(user1.ID == 0)
+			var user1 User
+			s.Nil(query.Query().Find(&user1, user.ID))
+			s.True(user1.ID == 0)
+		})
+
+		s.Run("not trigger when deleting mass records", func() {
+			ctx := context.WithValue(context.Background(), "event", "deleted event with mass records")
+			res, err := query.Query().(contractsorm.QueryWithContext).WithContext(ctx).Where("name", "event_deleted_name").Delete(&User{})
+			s.NoError(err)
+			s.Equal(int64(0), res.RowsAffected)
+		})
 	}
 }
 
 func (s *QueryTestSuite) TestEvent_ForceDeleting() {
 	for _, query := range s.queries {
-		user := User{Name: "event_force_deleting_name", Avatar: "event_force_deleting_avatar"}
-		s.Nil(query.Query().Create(&user))
+		s.Run("trigger", func() {
+			user := User{Name: "event_force_deleting_name", Avatar: "event_force_deleting_avatar"}
+			s.Nil(query.Query().Create(&user))
 
-		res, err := query.Query().ForceDelete(&user)
-		s.EqualError(err, "force deleting error")
-		s.Nil(res)
+			res, err := query.Query().ForceDelete(&user)
+			s.EqualError(err, "force deleting error")
+			s.Nil(res)
 
-		var user1 User
-		s.Nil(query.Query().Find(&user1, user.ID))
-		s.True(user1.ID > 0)
+			var user1 User
+			s.Nil(query.Query().Find(&user1, user.ID))
+			s.True(user1.ID > 0)
+		})
+
+		s.Run("not trigger when force deleting mass records", func() {
+			ctx := context.WithValue(context.Background(), "event", "force deleting event with mass records")
+			res, err := query.Query().(contractsorm.QueryWithContext).WithContext(ctx).Where("name", "event_force_deleting_name").ForceDelete(&User{})
+			s.NoError(err)
+			s.Equal(int64(1), res.RowsAffected)
+		})
 	}
 }
 
 func (s *QueryTestSuite) TestEvent_ForceDeleted() {
 	for _, query := range s.queries {
-		user := User{Name: "event_force_deleted_name", Avatar: "event_force_deleted_avatar"}
-		s.Nil(query.Query().Create(&user))
+		s.Run("trigger", func() {
+			user := User{Name: "event_force_deleted_name", Avatar: "event_force_deleted_avatar"}
+			s.Nil(query.Query().Create(&user))
 
-		res, err := query.Query().ForceDelete(&user)
-		s.EqualError(err, "force deleted error")
-		s.Nil(res)
+			res, err := query.Query().ForceDelete(&user)
+			s.EqualError(err, "force deleted error")
+			s.Nil(res)
 
-		var user1 User
-		s.Nil(query.Query().Find(&user1, user.ID))
-		s.True(user1.ID == 0)
+			var user1 User
+			s.Nil(query.Query().Find(&user1, user.ID))
+			s.True(user1.ID == 0)
+		})
+
+		s.Run("not trigger when force deleting mass records", func() {
+			ctx := context.WithValue(context.Background(), "event", "force deleted event with mass records")
+
+			user := User{Name: "event_force_deleted_name", Avatar: "event_force_deleted_avatar"}
+			s.Nil(query.Query().Create(&user))
+
+			res, err := query.Query().(contractsorm.QueryWithContext).WithContext(ctx).Where("name", "event_force_deleted_name").ForceDelete(&User{})
+			s.NoError(err)
+			s.Equal(int64(1), res.RowsAffected)
+		})
 	}
 }
 
@@ -1504,6 +1663,10 @@ func (s *QueryTestSuite) TestEvent_Restoring() {
 
 func (s *QueryTestSuite) TestEvent_Retrieved() {
 	for _, query := range s.queries {
+		user := User{Name: "event_retrieved_name"}
+		s.Nil(query.Query().Create(&user))
+		s.True(user.ID > 0)
+
 		tests := []struct {
 			name  string
 			setup func()
@@ -1515,6 +1678,18 @@ func (s *QueryTestSuite) TestEvent_Retrieved() {
 					s.Nil(query.Query().Where("name", "event_retrieved_name").Find(&user1))
 					s.True(user1.ID > 0)
 					s.Equal("event_retrieved_name1", user1.Name)
+				},
+			},
+			{
+				name: "not trigger when Find by slice struct",
+				setup: func() {
+					ctx := context.WithValue(context.Background(), "event", "retrieved event with slice struct")
+
+					var users []User
+					s.Nil(query.Query().(contractsorm.QueryWithContext).WithContext(ctx).Model(&User{}).Where("name", "event_retrieved_name").Find(&users))
+					s.Equal(1, len(users))
+					s.True(users[0].ID > 0)
+					s.Equal("event_retrieved_name", users[0].Name)
 				},
 			},
 			{
@@ -1577,12 +1752,9 @@ func (s *QueryTestSuite) TestEvent_Retrieved() {
 				},
 			},
 		}
+
 		for _, test := range tests {
 			s.Run(test.name, func() {
-				user := User{Name: "event_retrieved_name"}
-				s.Nil(query.Query().Create(&user))
-				s.True(user.ID > 0)
-
 				test.setup()
 			})
 		}
@@ -4377,6 +4549,208 @@ func paginator(page string, limit string) func(methods contractsorm.Query) contr
 		offset := (page - 1) * limit
 
 		return query.Offset(offset).Limit(limit)
+	}
+}
+
+func (s *QueryTestSuite) TestUuidColumn() {
+	for driver, query := range s.queries {
+		s.Run(fmt.Sprintf("TestUuidColumn_%s", driver), func() {
+			id, _ := uuid.NewV7()
+			// Test UUID column creation and operations
+			entity := UuidEntity{
+				Uuid: id.String(),
+				Name: "test_uuid_entity",
+			}
+
+			err := query.Query().Create(&entity)
+			s.NoError(err)
+			s.NotEmpty(entity.Uuid)
+
+			// Test finding by UUID
+			var foundEntity UuidEntity
+			err = query.Query().Where("uuid", entity.Uuid).First(&foundEntity)
+			s.NoError(err)
+			s.Equal("test_uuid_entity", foundEntity.Name)
+
+			// Test UUID format (basic validation)
+			s.Len(entity.Uuid, 36) // Standard UUID length with hyphens
+			s.Contains(entity.Uuid, "-")
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestUlidColumn() {
+	for driver, query := range s.queries {
+		s.Run(fmt.Sprintf("TestUlidColumn_%s", driver), func() {
+			// Test ULID column creation and operations
+			entity := UlidEntity{
+				ID:   "01AN4Z07BY79KA1307SR9X4MV3", // Valid ULID
+				Name: "test_ulid_entity",
+			}
+
+			err := query.Query().Create(&entity)
+			s.NoError(err)
+			s.NotEmpty(entity.ID)
+
+			// Test finding by ULID
+			var foundEntity UlidEntity
+			err = query.Query().Where("id", entity.ID).First(&foundEntity)
+			s.NoError(err)
+			s.Equal("test_ulid_entity", foundEntity.Name)
+			s.Equal(entity.ID, foundEntity.ID)
+
+			// Test ULID format (basic validation)
+			s.Len(entity.ID, 26) // Standard ULID length
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestMorphableRelationships() {
+	for driver, query := range s.queries {
+		s.Run(fmt.Sprintf("TestMorphableRelationships_%s", driver), func() {
+			user := User{
+				Name: "test_user",
+			}
+
+			err := query.Query().Create(&user)
+			s.NoError(err)
+
+			entity := House{
+				Name:          "test_morph_house",
+				HouseableID:   user.ID,
+				HouseableType: "users",
+			}
+
+			err = query.Query().Create(&entity)
+			s.NoError(err)
+
+			// Test finding by morph type
+			var foundEntity House
+			err = query.Query().Where("houseable_type", "users").First(&foundEntity)
+			s.NoError(err)
+			s.Equal("test_morph_house", foundEntity.Name)
+			s.Equal(uint(1), foundEntity.HouseableID)
+			s.Equal("users", foundEntity.HouseableType)
+
+			// Test finding by morph type
+			var userWithHouse User
+			err = query.Query().Where("id", user.ID).With("House").First(&userWithHouse)
+			s.NoError(err)
+
+			s.Equal("test_user", userWithHouse.Name)
+			s.NotNil(userWithHouse.House)
+			s.Equal("test_morph_house", userWithHouse.House.Name)
+			s.Equal(uint(1), userWithHouse.House.HouseableID)
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestUuidMorphableRelationships() {
+	for driver, query := range s.queries {
+		s.Run(fmt.Sprintf("TestUuidMorphableRelationships_%s", driver), func() {
+			// Test UUID morph relationships
+			entity := UuidMorphableEntity{
+				Name:          "test_uuid_morph_entity",
+				MorphableID:   "550e8400-e29b-41d4-a716-446655440000",
+				MorphableType: "User",
+			}
+
+			err := query.Query().Create(&entity)
+			s.NoError(err)
+			s.True(entity.ID > 0)
+
+			// Test finding by UUID morph
+			var foundEntity UuidMorphableEntity
+			err = query.Query().Where("morphable_id", "550e8400-e29b-41d4-a716-446655440000").First(&foundEntity)
+			s.NoError(err)
+			s.Equal("test_uuid_morph_entity", foundEntity.Name)
+			s.Equal("User", foundEntity.MorphableType)
+
+			// SQL Server stores UUIDs as binary data, so we need to handle this differently
+			if driver == "SQL Server" {
+				// For SQL Server, we need to verify the UUID is stored correctly
+				// but the format may be different (binary vs string)
+				s.NotEmpty(foundEntity.MorphableID)
+				// We can't do exact string comparison for SQL Server UUID format
+			} else {
+				// For other databases, we can do string comparison
+				s.Equal("550e8400-e29b-41d4-a716-446655440000", foundEntity.MorphableID)
+
+				// Test UUID format validation
+				s.Len(foundEntity.MorphableID, 36)
+				s.Contains(foundEntity.MorphableID, "-")
+			}
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestUlidMorphableRelationships() {
+	for driver, query := range s.queries {
+		s.Run(fmt.Sprintf("TestUlidMorphableRelationships_%s", driver), func() {
+			// Test ULID morph relationships
+			entity := UlidMorphableEntity{
+				Name:          "test_ulid_morph_entity",
+				MorphableID:   "01AN4Z07BY79KA1307SR9X4MV3",
+				MorphableType: "User",
+			}
+
+			err := query.Query().Create(&entity)
+			s.NoError(err)
+			s.True(entity.ID > 0)
+
+			// Test finding by ULID morph
+			var foundEntity UlidMorphableEntity
+			err = query.Query().Where("morphable_id", "01AN4Z07BY79KA1307SR9X4MV3").First(&foundEntity)
+			s.NoError(err)
+			s.Equal("test_ulid_morph_entity", foundEntity.Name)
+			s.Equal("01AN4Z07BY79KA1307SR9X4MV3", foundEntity.MorphableID)
+			s.Equal("User", foundEntity.MorphableType)
+
+			// Test ULID format validation
+			s.Len(foundEntity.MorphableID, 26)
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestMorphablePolymorphicQueries() {
+	for driver, query := range s.queries {
+		s.Run(fmt.Sprintf("TestMorphablePolymorphicQueries_%s", driver), func() {
+			// Create morph entities for different types
+			entities := []MorphableEntity{
+				{Name: "user_morph_1", MorphableID: 1, MorphableType: "User"},
+				{Name: "user_morph_2", MorphableID: 2, MorphableType: "User"},
+				{Name: "post_morph_1", MorphableID: 1, MorphableType: "Post"},
+				{Name: "post_morph_2", MorphableID: 2, MorphableType: "Post"},
+			}
+
+			for _, entity := range entities {
+				err := query.Query().Create(&entity)
+				s.NoError(err)
+			}
+
+			// Test querying by morph type
+			var userMorphs []MorphableEntity
+			err := query.Query().Where("morphable_type", "User").Find(&userMorphs)
+			s.NoError(err)
+			s.Len(userMorphs, 2)
+
+			var postMorphs []MorphableEntity
+			err = query.Query().Where("morphable_type", "Post").Find(&postMorphs)
+			s.NoError(err)
+			s.Len(postMorphs, 2)
+
+			// Test querying by morph type and ID
+			var specificMorph MorphableEntity
+			err = query.Query().Where("morphable_type", "User").Where("morphable_id", 1).First(&specificMorph)
+			s.NoError(err)
+			s.Equal("user_morph_1", specificMorph.Name)
+
+			// Test combined queries
+			var combinedMorphs []MorphableEntity
+			err = query.Query().Where("morphable_id", 1).Find(&combinedMorphs)
+			s.NoError(err)
+			s.Len(combinedMorphs, 2) // Should find both User and Post with ID 1
+		})
 	}
 }
 

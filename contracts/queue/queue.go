@@ -11,7 +11,7 @@ type Queue interface {
 	GetJob(signature string) (Job, error)
 	// GetJobs gets all jobs
 	GetJobs() []Job
-	// GetJobStorer gets job storer
+	// JobStorer gets job storer
 	JobStorer() JobStorer
 	// Job add a job to queue
 	Job(job Job, args ...[]Arg) PendingJob
@@ -33,6 +33,8 @@ type Args struct {
 	Queue string
 	// Concurrent num
 	Concurrent int
+	// Tries maximum attempts
+	Tries int
 }
 
 type Arg struct {

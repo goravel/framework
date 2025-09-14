@@ -116,8 +116,8 @@ import (
 )
 
 type Product struct {
-	orm.BaseModel
-	orm.NullableSoftDeletes
+	orm.Model
+	orm.SoftDeletes
 	Name  string        ` + "`json:\"name\" db:\"name\"`" + `
 	Price float64       ` + "`json:\"price\" db:\"price\"`" + `
 	Stock sql.NullInt32 ` + "`json:\"stock\" db:\"stock\"`" + `
@@ -179,7 +179,7 @@ func TestGenerateModelInfo(t *testing.T) {
 	assert.Equal(t, "func (r *User) TableName() string {\n\treturn \"users\"\n}", info.TableNameMethod)
 	assert.Equal(t, []string{
 		"orm.Model",
-		"orm.NullableSoftDeletes",
+		"orm.SoftDeletes",
 	}, info.Embeds)
 	assert.Equal(t, map[string]struct{}{
 		"database/sql": {},
@@ -202,7 +202,7 @@ func TestGenerateModelInfo(t *testing.T) {
 	assert.Equal(t, 2, len(info.Embeds))
 	assert.Contains(t, info.Fields[0], "Title")
 	assert.Equal(t, []string{
-		"orm.NullableTimestamps",
+		"orm.Timestamps",
 		"orm.SoftDeletes",
 	}, info.Embeds)
 

@@ -16,12 +16,8 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 		Bindings: []string{
 			binding.Queue,
 		},
-		Dependencies: []string{
-			binding.Config,
-			binding.DB,
-			binding.Log,
-		},
-		ProvideFor: []string{},
+		Dependencies: binding.Bindings[binding.Queue].Dependencies,
+		ProvideFor:   []string{},
 	}
 }
 
@@ -52,6 +48,7 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 func (r *ServiceProvider) registerCommands(app foundation.Application) {
 	app.MakeArtisan().Register([]console.Command{
 		&queueconsole.JobMakeCommand{},
-		queueconsole.NewQueueRetryCommand(app.MakeConfig(), app.MakeDB(), app.MakeQueue(), app.GetJson()),
+		queueconsole.NewQueueRetryCommand(app.MakeQueue(), app.GetJson()),
+		queueconsole.NewQueueFailedCommand(app.MakeQueue()),
 	})
 }

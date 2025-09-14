@@ -16,6 +16,7 @@ import (
 	databaseschema "github.com/goravel/framework/database/schema"
 	databaseseeder "github.com/goravel/framework/database/seeder"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/collect"
 	"github.com/goravel/framework/support/color"
 )
 
@@ -30,11 +31,12 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 			binding.Schema,
 			binding.Seeder,
 		},
-		Dependencies: []string{
-			binding.Artisan,
-			binding.Config,
-			binding.Log,
-		},
+		Dependencies: collect.Unique(
+			binding.Bindings[binding.Orm].Dependencies,
+			binding.Bindings[binding.DB].Dependencies,
+			binding.Bindings[binding.Schema].Dependencies,
+			binding.Bindings[binding.Seeder].Dependencies,
+		),
 		ProvideFor: []string{},
 	}
 }
@@ -141,7 +143,7 @@ func (r *ServiceProvider) registerCommands(app foundation.Application) {
 	if artisan != nil && config != nil && log != nil && schema != nil && seeder != nil {
 		migrator := migration.NewMigrator(artisan, schema, config.GetString("database.migrations.table"))
 		artisan.Register([]contractsconsole.Command{
-			consolemigration.NewMigrateMakeCommand(migrator),
+			consolemigration.NewMigrateMakeCommand(app, migrator),
 			consolemigration.NewMigrateCommand(migrator),
 			consolemigration.NewMigrateRollbackCommand(migrator),
 			consolemigration.NewMigrateResetCommand(migrator),
@@ -151,7 +153,7 @@ func (r *ServiceProvider) registerCommands(app foundation.Application) {
 			console.NewModelMakeCommand(artisan, schema),
 			console.NewObserverMakeCommand(),
 			console.NewSeedCommand(config, seeder),
-			console.NewSeederMakeCommand(),
+			console.NewSeederMakeCommand(app),
 			console.NewFactoryMakeCommand(),
 			console.NewTableCommand(config, schema),
 			console.NewShowCommand(config, schema),

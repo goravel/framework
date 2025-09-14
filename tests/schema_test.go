@@ -2504,6 +2504,30 @@ func (s *SchemaSuite) TestTimestampMethods() {
 				table.DropSoftDeletesTz("delete_at")
 			}))
 			s.False(schema.HasColumns(table, []string{"created_at", "updated_at", "delete_at"}))
+
+		})
+	}
+}
+
+func (s *SchemaSuite) TestDateTimesMethod() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver, func() {
+			schema := newSchema(testQuery, s.driverToTestQuery)
+			table := "datetimes"
+
+			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+				table.DateTimes(3)
+			}))
+
+			s.True(schema.HasColumns(table, []string{"created_at", "updated_at"}))
+
+			datetimeColumns, err := schema.GetColumns(table)
+			s.NoError(err)
+			for _, column := range datetimeColumns {
+				if column.Name == "created_at" || column.Name == "updated_at" {
+					s.True(column.Nullable)
+				}
+			}
 		})
 	}
 }

@@ -7,10 +7,69 @@ import (
 	"github.com/stretchr/testify/assert"
 	gormio "gorm.io/gorm"
 
+	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/convert"
 )
+
+func TestAddWhere(t *testing.T) {
+	query := &Query{}
+	query = query.addWhere(contractsdriver.Where{
+		Query: "name",
+		Args:  []any{"test"},
+	}).(*Query)
+	query = query.addWhere(contractsdriver.Where{
+		Query: "name1",
+		Args:  []any{"test1"},
+	}).(*Query)
+	query = query.addWhere(contractsdriver.Where{
+		Query: "name2",
+		Args:  []any{"test2"},
+	}).(*Query)
+	query1 := query.addWhere(contractsdriver.Where{
+		Query: "name3",
+		Args:  []any{"test3"},
+	}).(*Query)
+
+	assert.Equal(t, []contractsdriver.Where{
+		{Query: "name", Args: []any{"test"}},
+		{Query: "name1", Args: []any{"test1"}},
+		{Query: "name2", Args: []any{"test2"}},
+	}, query.conditions.where)
+
+	assert.Equal(t, []contractsdriver.Where{
+		{Query: "name", Args: []any{"test"}},
+		{Query: "name1", Args: []any{"test1"}},
+		{Query: "name2", Args: []any{"test2"}},
+		{Query: "name3", Args: []any{"test3"}},
+	}, query1.conditions.where)
+
+	query2 := query.addWhere(contractsdriver.Where{
+		Query: "name4",
+		Args:  []any{"test4"},
+	}).(*Query)
+
+	assert.Equal(t, []contractsdriver.Where{
+		{Query: "name", Args: []any{"test"}},
+		{Query: "name1", Args: []any{"test1"}},
+		{Query: "name2", Args: []any{"test2"}},
+		{Query: "name4", Args: []any{"test4"}},
+	}, query2.conditions.where)
+
+	assert.Equal(t, []contractsdriver.Where{
+		{Query: "name", Args: []any{"test"}},
+		{Query: "name1", Args: []any{"test1"}},
+		{Query: "name2", Args: []any{"test2"}},
+	}, query.conditions.where)
+
+	assert.Equal(t, []contractsdriver.Where{
+		{Query: "name", Args: []any{"test"}},
+		{Query: "name1", Args: []any{"test1"}},
+		{Query: "name2", Args: []any{"test2"}},
+		{Query: "name3", Args: []any{"test3"}},
+	}, query1.conditions.where)
+}
 
 func TestGetObserver(t *testing.T) {
 	query := &Query{

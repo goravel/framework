@@ -265,3 +265,9 @@ func TestFromPersian(t *testing.T) {
 	assert.Equal(t, "2024-01-01 00:00:00", FromPersian(1402, 10, 11).ToDateTimeString())
 	assert.Equal(t, "2024-08-05 00:00:00", FromPersian(1403, 5, 15).ToDateTimeString())
 }
+
+func TestFromHebrew(t *testing.T) {
+	assert.Equal(t, "2023-12-17", FromHebrew(5784, 10, 20).ToDateString())
+	assert.Equal(t, "2024-07-21", FromHebrew(5784, 5, 1).ToDateString())
+	assert.Equal(t, "2025-09-18", FromHebrew(5786, 7, 10).ToDateString())
+}

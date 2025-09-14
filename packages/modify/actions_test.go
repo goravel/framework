@@ -20,10 +20,16 @@ type ModifyActionsTestSuite struct {
 	database string
 }
 
+func TestModifyActionsTestSuite(t *testing.T) {
+	suite.Run(t, new(ModifyActionsTestSuite))
+}
+
 func (s *ModifyActionsTestSuite) SetupTest() {
 	s.config = `package config
 
-import (
+import (	
+	"goravel/app/jobs"
+
 	"github.com/goravel/framework/auth"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/crypt"
@@ -88,10 +94,6 @@ func (kernel Kernel) Seeders() []seeder.Seeder {
 }
 
 func (s *ModifyActionsTestSuite) TearDownTest() {}
-
-func TestModifyActionsTestSuite(t *testing.T) {
-	suite.Run(t, new(ModifyActionsTestSuite))
-}
 
 func (s *ModifyActionsTestSuite) TestActions() {
 	tests := []struct {
@@ -218,11 +220,31 @@ func (s *ModifyActionsTestSuite) TestActions() {
 			},
 			assert: func(content string) {
 				s.Contains(content, `import (
+	t "github.com/goravel/test"
+	"goravel/app/jobs"
+
 	"github.com/goravel/framework/auth"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/crypt"
 	"github.com/goravel/framework/facades"
-	t "github.com/goravel/test"
+)`)
+			},
+		},
+		{
+			name:     "add duplicate import",
+			content:  s.config,
+			matchers: match.Imports(),
+			actions: []modify.Action{
+				AddImport("goravel/app/jobs"),
+			},
+			assert: func(content string) {
+				s.Contains(content, `import (
+	"goravel/app/jobs"
+
+	"github.com/goravel/framework/auth"
+	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/crypt"
+	"github.com/goravel/framework/facades"
 )`)
 			},
 		},

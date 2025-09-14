@@ -10,7 +10,7 @@ import (
 
 var (
 	writer io.Writer = os.Stdout
-	dumper           = godump.NewDumper(godump.WithWriter(writer))
+	dumper           = godump.NewDumper(godump.WithWriter(writer), godump.WithSkipStackFrames(1))
 	osExit           = os.Exit
 )
 
@@ -28,7 +28,7 @@ func Dump(v ...any) {
 // DumpHTML is used to display detailed information about variables in HTML format
 func DumpHTML(v ...any) {
 	output := dumper.DumpHTML(v...)
-	fmt.Fprintln(writer, output)
+	_, _ = fmt.Fprintln(writer, output)
 }
 
 // DumpJSON is used to display detailed information about variables in JSON format
@@ -38,19 +38,19 @@ func DumpJSON(v ...any) {
 
 // FDump is used to display detailed information about variables to the specified io.Writer
 func FDump(w io.Writer, v ...any) {
-	godump.Fdump(w, v...)
+	godump.NewDumper(godump.WithWriter(w), godump.WithSkipStackFrames(1)).Dump(v...)
 }
 
 // FDumpHTML is used to display detailed information about variables in HTML format to the specified io.Writer
 func FDumpHTML(w io.Writer, v ...any) {
 	output := dumper.DumpHTML(v...)
-	fmt.Fprintln(w, output)
+	_, _ = fmt.Fprintln(w, output)
 }
 
 // FDumpJSON is used to display detailed information about variables in JSON format to the specified io.Writer
 func FDumpJSON(w io.Writer, v ...any) {
 	output := dumper.DumpJSONStr(v...)
-	fmt.Fprintln(w, output)
+	_, _ = fmt.Fprintln(w, output)
 }
 
 // SDump is used to display detailed information about variables as a string

@@ -19,6 +19,7 @@ func init() {
 		opt.StopOnError = false
 		opt.SkipOnEmpty = true
 		opt.FieldTag = "form"
+		opt.RestoreRequestBody = true
 	})
 }
 

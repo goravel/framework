@@ -61,3 +61,7 @@ func As(err error, target any) bool {
 func Unwrap(err error) error {
 	return errors.Unwrap(err)
 }
+
+func Ignore(fn func() error) {
+	_ = fn()
+}

@@ -7,5 +7,5 @@ import (
 )
 
 func TestGetLineNum(t *testing.T) {
-	assert.Equal(t, 31, GetLineNum("file.go"))
+	assert.Equal(t, 33, GetLineNum("file.go"))
 }

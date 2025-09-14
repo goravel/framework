@@ -16,10 +16,8 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 		Bindings: []string{
 			binding.Route,
 		},
-		Dependencies: []string{
-			binding.Config,
-		},
-		ProvideFor: []string{},
+		Dependencies: binding.Bindings[binding.Route].Dependencies,
+		ProvideFor:   []string{},
 	}
 }
 
