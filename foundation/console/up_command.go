@@ -34,7 +34,9 @@ func (r *UpCommand) Extend() command.Extend {
 func (r *UpCommand) Handle(ctx console.Context) error {
 	path := r.app.StoragePath("framework/down")
 	if ok := file.Exists(path); ok {
-		file.Remove(path)
+		if err := file.Remove(path); err != nil {
+			return err
+		}
 
 		ctx.Info("The application is up and live now")
 

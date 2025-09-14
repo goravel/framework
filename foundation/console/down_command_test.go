@@ -59,16 +59,19 @@ func (s *DownCommandTestSuite) TestHandle() {
 
 func (s *DownCommandTestSuite) TestHandleWhenDownAlready() {
 	app := mocksfoundation.NewApplication(s.T())
-	app.EXPECT().StoragePath("framework/down").Return("/tmp/down")
-	os.Create("/tmp/down")
+	tmpfile := os.TempDir() + "/down"
+	app.EXPECT().StoragePath("framework/down").Return(tmpfile)
+
+	_, err := os.Create(tmpfile)
+	assert.Nil(s.T(), err)
 
 	mockContext := mocksconsole.NewContext(s.T())
 	mockContext.EXPECT().Error("The application is in maintenance mode already!")
 
 	cmd := NewDownCommand(app)
-	err := cmd.Handle(mockContext)
+	err = cmd.Handle(mockContext)
 	assert.Nil(s.T(), err)
 
-	err = os.Remove("/tmp/down")
+	err = os.Remove(tmpfile)
 	assert.Nil(s.T(), err)
 }
