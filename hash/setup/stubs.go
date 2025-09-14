@@ -1,7 +1,16 @@
-package config
+package main
 
 import (
-	"github.com/goravel/framework/facades"
+	"strings"
+)
+
+type Stubs struct{}
+
+func (s Stubs) Config(module string) string {
+	content := `package config
+
+import (
+	"DummyModule/app/facades"
 )
 
 func init() {
@@ -37,4 +46,21 @@ func init() {
 			"threads": 1,
 		},
 	})
+}
+`
+
+	return strings.ReplaceAll(content, "DummyModule", module)
+}
+
+func (s Stubs) HashFacade() string {
+	return `package facades
+
+import (
+	"github.com/goravel/framework/contracts/hash"
+)
+
+func Hash() hash.Hash {
+	return App().MakeHash()
+}
+`
 }
