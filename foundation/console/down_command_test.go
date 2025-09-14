@@ -2,6 +2,7 @@ package console
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -44,7 +45,8 @@ func (s *DownCommandTestSuite) TestExtend() {
 
 func (s *DownCommandTestSuite) TestHandle() {
 	app := mocksfoundation.NewApplication(s.T())
-	app.EXPECT().StoragePath("framework/down").Return("/tmp/down")
+	tmpfile := filepath.Join(os.TempDir(), "/down")
+	app.EXPECT().StoragePath("framework/down").Return(tmpfile)
 
 	mockContext := mocksconsole.NewContext(s.T())
 	mockContext.EXPECT().Info("The application is in maintenance mode now")
@@ -53,13 +55,13 @@ func (s *DownCommandTestSuite) TestHandle() {
 	err := cmd.Handle(mockContext)
 	assert.Nil(s.T(), err)
 
-	err = os.Remove("/tmp/down")
+	err = os.Remove(tmpfile)
 	assert.Nil(s.T(), err)
 }
 
 func (s *DownCommandTestSuite) TestHandleWhenDownAlready() {
 	app := mocksfoundation.NewApplication(s.T())
-	tmpfile := os.TempDir() + "/down"
+	tmpfile := filepath.Join(os.TempDir(), "/down")
 	app.EXPECT().StoragePath("framework/down").Return(tmpfile)
 
 	_, err := os.Create(tmpfile)
