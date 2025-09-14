@@ -48,7 +48,7 @@ func init() {
 	config := facades.Config()
 	config.Add("http", map[string]any{
 		// HTTP Driver
-		"default": "gin",
+		"default": "",
 		// HTTP Drivers
 		"drivers": map[string]any{},
 		// HTTP URL
