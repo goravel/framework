@@ -115,6 +115,7 @@ var (
 				Cache,
 				Config,
 				Log,
+				Session,
 			},
 		},
 		Lang: {
