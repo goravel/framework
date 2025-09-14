@@ -212,6 +212,8 @@ var (
 				Cache,
 				Config,
 				Orm,
+				Route,
+				Session,
 			},
 		},
 		Validation: {
