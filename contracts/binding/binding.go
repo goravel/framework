@@ -165,6 +165,7 @@ var (
 			PkgPath: "github.com/goravel/framework/route",
 			Dependencies: []string{
 				Config,
+				Http,
 			},
 		},
 		Schedule: {
