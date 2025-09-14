@@ -65,5 +65,6 @@ func (s *UpCommandTestSuite) TestHandleWhenNotDown() {
 	mockContext.EXPECT().Error("The application is not in maintenance mode")
 
 	cmd := NewUpCommand(app)
-	cmd.Handle(mockContext)
+	err := cmd.Handle(mockContext)
+	assert.Nil(s.T(), err)
 }
