@@ -2,6 +2,7 @@ package console
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -59,7 +60,7 @@ func (s *UpCommandTestSuite) TestHandle() {
 
 func (s *UpCommandTestSuite) TestHandleWhenNotDown() {
 	app := mocksfoundation.NewApplication(s.T())
-	app.EXPECT().StoragePath("framework/down").Return(os.TempDir() + "/down")
+	app.EXPECT().StoragePath("framework/down").Return(filepath.Join(os.TempDir(), "/down"))
 
 	mockContext := mocksconsole.NewContext(s.T())
 	mockContext.EXPECT().Error("The application is not in maintenance mode")
