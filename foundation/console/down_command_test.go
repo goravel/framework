@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	mocksconsole "github.com/goravel/framework/mocks/console"
@@ -49,8 +50,11 @@ func (s *DownCommandTestSuite) TestHandle() {
 	mockContext.EXPECT().Info("The application is in maintenance mode now")
 
 	cmd := NewDownCommand(app)
-	cmd.Handle(mockContext)
-	os.Remove("/tmp/down")
+	err := cmd.Handle(mockContext)
+	assert.Nil(s.T(), err)
+
+	err = os.Remove("/tmp/down")
+	assert.Nil(s.T(), err)
 }
 
 func (s *DownCommandTestSuite) TestHandleWhenDownAlready() {
@@ -62,6 +66,9 @@ func (s *DownCommandTestSuite) TestHandleWhenDownAlready() {
 	mockContext.EXPECT().Error("The application is in maintenance mode already!")
 
 	cmd := NewDownCommand(app)
-	cmd.Handle(mockContext)
-	os.Remove("/tmp/down")
+	err := cmd.Handle(mockContext)
+	assert.Nil(s.T(), err)
+
+	err = os.Remove("/tmp/down")
+	assert.Nil(s.T(), err)
 }
