@@ -40,7 +40,9 @@ func (r *DownCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	file.PutContent(path, "")
+	if err := file.PutContent(path, ""); err != nil {
+		return err
+	}
 
 	ctx.Info("The application is in maintenance mode now")
 

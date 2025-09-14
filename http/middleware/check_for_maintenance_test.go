@@ -25,12 +25,16 @@ func TestMaintenanceMode(t *testing.T) {
 
 	client := &nethttp.Client{}
 
-	file.Create(path.Storage("framework/down"), "")
+	err := file.Create(path.Storage("framework/down"), "")
+	require.NoError(t, err)
+
 	resp, err := client.Get(server.URL)
 	require.NoError(t, err)
 	assert.Equal(t, resp.StatusCode, 503)
 
-	file.Remove(path.Storage("framework/down"))
+	err = file.Remove(path.Storage("framework/down"))
+	require.NoError(t, err)
+
 	resp, err = client.Get(server.URL)
 	require.NoError(t, err)
 	assert.Equal(t, resp.StatusCode, 200)

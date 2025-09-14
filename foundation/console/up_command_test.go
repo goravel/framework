@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	mocksconsole "github.com/goravel/framework/mocks/console"
@@ -52,12 +53,13 @@ func (s *UpCommandTestSuite) TestHandle() {
 	mockContext.EXPECT().Info("The application is up and live now")
 
 	cmd := NewUpCommand(app)
-	cmd.Handle(mockContext)
+	err = cmd.Handle(mockContext)
+	assert.Nil(s.T(), err)
 }
 
 func (s *UpCommandTestSuite) TestHandleWhenNotDown() {
 	app := mocksfoundation.NewApplication(s.T())
-	app.EXPECT().StoragePath("framework/down").Return("/tmp/down")
+	app.EXPECT().StoragePath("framework/down").Return(os.TempDir() + "/down")
 
 	mockContext := mocksconsole.NewContext(s.T())
 	mockContext.EXPECT().Error("The application is not in maintenance mode")
