@@ -8,8 +8,16 @@ import (
 
 func CheckForMaintenance() http.Middleware {
 	return func(ctx http.Context) {
-		if file.Exists(path.Storage("framework/down")) {
-			ctx.Request().AbortWithStatus(http.StatusServiceUnavailable)
+		filepath := path.Storage("framework/down")
+		if file.Exists(filepath) {
+			content, err := file.GetContent(filepath)
+
+			if err != nil {
+				ctx.Request().Abort(http.StatusServiceUnavailable)
+				return
+			}
+
+			ctx.Response().String(http.StatusServiceUnavailable, content).Abort()
 			return
 		}
 

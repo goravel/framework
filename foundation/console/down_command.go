@@ -27,7 +27,15 @@ func (r *DownCommand) Description() string {
 
 // Extend The console command extend.
 func (r *DownCommand) Extend() command.Extend {
-	return command.Extend{}
+	return command.Extend{
+		Flags: []command.Flag{
+			&command.StringFlag{
+				Name:  "reason",
+				Usage: "The reason for maintenance to show in the response",
+				Value: "The application is under maintenance",
+			},
+		},
+	}
 }
 
 // Handle Execute the console command.
@@ -40,7 +48,7 @@ func (r *DownCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	if err := file.PutContent(path, ""); err != nil {
+	if err := file.PutContent(path, ctx.Option("reason")); err != nil {
 		return err
 	}
 
