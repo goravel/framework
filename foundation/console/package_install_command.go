@@ -43,12 +43,26 @@ func (r *PackageInstallCommand) Extend() command.Extend {
 	return command.Extend{
 		ArgsUsage: " <package@version> or <facade>",
 		Category:  "package",
+		Flags: []command.Flag{
+			&command.BoolFlag{
+				Name:    "all-facades",
+				Usage:   "Install all facades",
+				Aliases: []string{"a"},
+				Value:   false,
+			},
+		},
 	}
 }
 
 // Handle Execute the console command.
 func (r *PackageInstallCommand) Handle(ctx console.Context) error {
-	names := ctx.Arguments()
+	var names []string
+	if ctx.OptionBool("all-facades") {
+		names = getAvailableFacades(r.bindings)
+	} else {
+		names = ctx.Arguments()
+	}
+
 	if len(names) == 0 {
 		name, err := ctx.Ask("Enter the package/facade name to install", console.AskOption{
 			Description: "If no version is specified, install the latest",
