@@ -8,7 +8,7 @@ import (
 
 func CheckForMaintenance() http.Middleware {
 	return func(ctx http.Context) {
-		filepath := path.Storage("framework/down")
+		filepath := path.Storage("framework/maintenance")
 		if file.Exists(filepath) {
 			content, err := file.GetContent(filepath)
 

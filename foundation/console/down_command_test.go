@@ -47,9 +47,9 @@ func (s *DownCommandTestSuite) TestExtend() {
 
 func (s *DownCommandTestSuite) TestHandle() {
 	app := mocksfoundation.NewApplication(s.T())
-	tmpfile := filepath.Join(s.T().TempDir(), "/down")
+	tmpfile := filepath.Join(s.T().TempDir(), "/maintenance")
 
-	app.EXPECT().StoragePath("framework/down").Return(tmpfile)
+	app.EXPECT().StoragePath("framework/maintenance").Return(tmpfile)
 
 	cmd := NewDownCommand(app)
 
@@ -71,9 +71,9 @@ func (s *DownCommandTestSuite) TestHandle() {
 
 func (s *DownCommandTestSuite) TestHandleWithReason() {
 	app := mocksfoundation.NewApplication(s.T())
-	tmpfile := filepath.Join(s.T().TempDir(), "/down")
+	tmpfile := filepath.Join(s.T().TempDir(), "/down_with_reason")
 
-	app.EXPECT().StoragePath("framework/down").Return(tmpfile)
+	app.EXPECT().StoragePath("framework/maintenance").Return(tmpfile)
 
 	mockContext := mocksconsole.NewContext(s.T())
 	mockContext.EXPECT().Option("reason").Return("Under maintenance")
@@ -93,12 +93,12 @@ func (s *DownCommandTestSuite) TestHandleWithReason() {
 
 func (s *DownCommandTestSuite) TestHandleWhenDownAlready() {
 	app := mocksfoundation.NewApplication(s.T())
-	tmpfile := filepath.Join(s.T().TempDir(), "/down")
+	tmpfile := filepath.Join(s.T().TempDir(), "/down_already")
 
 	_, err := os.Create(tmpfile)
 	assert.Nil(s.T(), err)
 
-	app.EXPECT().StoragePath("framework/down").Return(tmpfile)
+	app.EXPECT().StoragePath("framework/maintenance").Return(tmpfile)
 
 	mockContext := mocksconsole.NewContext(s.T())
 	mockContext.EXPECT().Error("The application is in maintenance mode already!")
