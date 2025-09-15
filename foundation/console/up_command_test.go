@@ -10,6 +10,7 @@ import (
 
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
+	"github.com/goravel/framework/support/file"
 )
 
 type UpCommandTestSuite struct {
@@ -45,10 +46,12 @@ func (s *UpCommandTestSuite) TestExtend() {
 
 func (s *UpCommandTestSuite) TestHandle() {
 	app := mocksfoundation.NewApplication(s.T())
-	file, err := os.CreateTemp("", "down")
-	println(file.Name(), err)
+	tmpfile := filepath.Join(s.T().TempDir(), "down")
 
-	app.EXPECT().StoragePath("framework/down").Return(file.Name())
+	_, err := os.Create(tmpfile)
+	assert.Nil(s.T(), err)
+
+	app.EXPECT().StoragePath("framework/down").Return(tmpfile)
 
 	mockContext := mocksconsole.NewContext(s.T())
 	mockContext.EXPECT().Info("The application is up and live now")
@@ -56,11 +59,13 @@ func (s *UpCommandTestSuite) TestHandle() {
 	cmd := NewUpCommand(app)
 	err = cmd.Handle(mockContext)
 	assert.Nil(s.T(), err)
+
+	assert.False(s.T(), file.Exists(tmpfile))
 }
 
 func (s *UpCommandTestSuite) TestHandleWhenNotDown() {
 	app := mocksfoundation.NewApplication(s.T())
-	app.EXPECT().StoragePath("framework/down").Return(filepath.Join(os.TempDir(), "/down"))
+	app.EXPECT().StoragePath("framework/down").Return(filepath.Join(s.T().TempDir(), "/down"))
 
 	mockContext := mocksconsole.NewContext(s.T())
 	mockContext.EXPECT().Error("The application is not in maintenance mode")
