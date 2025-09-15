@@ -40,7 +40,7 @@ func (r *DownCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *DownCommand) Handle(ctx console.Context) error {
-	path := r.app.StoragePath("framework/down")
+	path := r.app.StoragePath("framework/maintenance")
 
 	if ok := file.Exists(path); ok {
 		ctx.Error("The application is in maintenance mode already!")
