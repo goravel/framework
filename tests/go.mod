@@ -9,9 +9,9 @@ godebug x509negativeserial=1
 require (
 	github.com/brianvoe/gofakeit/v7 v7.5.1
 	github.com/google/uuid v1.6.0
-	github.com/goravel/framework v1.16.1
+	github.com/goravel/framework v1.16.3
 	github.com/goravel/mysql v1.4.0
-	github.com/goravel/postgres v1.4.0
+	github.com/goravel/postgres v1.4.1
 	github.com/goravel/sqlite v1.4.0
 	github.com/goravel/sqlserver v1.4.0
 	github.com/spf13/cast v1.9.2
