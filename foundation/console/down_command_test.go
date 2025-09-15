@@ -95,7 +95,10 @@ func (s *DownCommandTestSuite) TestHandleWhenDownAlready() {
 	app := mocksfoundation.NewApplication(s.T())
 	tmpfile := filepath.Join(s.T().TempDir(), "/down_already")
 
-	_, err := os.Create(tmpfile)
+	fd, err := os.Create(tmpfile)
+	assert.Nil(s.T(), err)
+
+	err = fd.Close()
 	assert.Nil(s.T(), err)
 
 	app.EXPECT().StoragePath("framework/maintenance").Return(tmpfile)
