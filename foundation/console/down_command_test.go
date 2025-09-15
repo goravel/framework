@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/contracts/console/command"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	"github.com/goravel/framework/support/file"
@@ -41,7 +42,7 @@ func (s *DownCommandTestSuite) TestExtend() {
 	cmd := NewDownCommand(mocksfoundation.NewApplication(s.T()))
 	got := cmd.Extend()
 
-	s.Empty(got)
+	s.Equal(1, len(got.Flags))
 }
 
 func (s *DownCommandTestSuite) TestHandle() {
@@ -50,10 +51,13 @@ func (s *DownCommandTestSuite) TestHandle() {
 
 	app.EXPECT().StoragePath("framework/down").Return(tmpfile)
 
+	cmd := NewDownCommand(app)
+
 	mockContext := mocksconsole.NewContext(s.T())
+	flag := cmd.Extend().Flags[0].(*command.StringFlag)
+	mockContext.EXPECT().Option("reason").Return(flag.Value)
 	mockContext.EXPECT().Info("The application is in maintenance mode now")
 
-	cmd := NewDownCommand(app)
 	err := cmd.Handle(mockContext)
 
 	assert.Nil(s.T(), err)
@@ -62,7 +66,7 @@ func (s *DownCommandTestSuite) TestHandle() {
 	content, err := file.GetContent(tmpfile)
 
 	assert.Nil(s.T(), err)
-	assert.Equal(s.T(), "The application is under maintenance", content)
+	assert.Equal(s.T(), flag.Value, content)
 }
 
 func (s *DownCommandTestSuite) TestHandleWithReason() {
