@@ -134,20 +134,16 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 			name: "facades uninstall failed",
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{facade}).Once()
-				mockContext.EXPECT().Info("The implicit dependency facades will be uninstalled as well: Orm").Once()
 				mockContext.EXPECT().OptionBool("force").Return(false).Once()
-				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Orm].PkgPath+"/setup uninstall --facade=Orm", mock.Anything).Return(assert.AnError).Once()
-				mockContext.EXPECT().Error(fmt.Sprintf("Failed to uninstall facade %s, error: %s", "Orm", assert.AnError)).Once()
+				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Auth].PkgPath+"/setup uninstall --facade=Auth", mock.Anything).Return(assert.AnError).Once()
+				mockContext.EXPECT().Error(fmt.Sprintf("Failed to uninstall facade %s, error: %s", "Auth", assert.AnError)).Once()
 			},
 		},
 		{
 			name: "facades uninstall success(simulate)",
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{facade}).Once()
-				mockContext.EXPECT().Info("The implicit dependency facades will be uninstalled as well: Orm").Once()
 				mockContext.EXPECT().OptionBool("force").Return(true).Once()
-				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Orm].PkgPath+"/setup uninstall --facade=Orm --force", mock.Anything).Return(nil).Once()
-				mockContext.EXPECT().Success("Facade Orm uninstalled successfully").Once()
 				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Auth].PkgPath+"/setup uninstall --facade=Auth --force", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Facade Auth uninstalled successfully").Once()
 				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
@@ -163,16 +159,14 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Package " + pkg + " uninstalled successfully").Once()
 
-				mockContext.EXPECT().Info("The implicit dependency facades will be uninstalled as well: Orm").Once()
 				mockContext.EXPECT().OptionBool("force").Return(true).Once()
-				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Orm].PkgPath+"/setup uninstall --facade=Orm --force", mock.Anything).Return(nil).Once()
-				mockContext.EXPECT().Success("Facade Orm uninstalled successfully").Once()
 				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Auth].PkgPath+"/setup uninstall --facade=Auth --force", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Facade Auth uninstalled successfully").Once()
 				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
 			},
 		},
 	}
+
 	for _, test := range tests {
 		s.Run(test.name, func() {
 			beforeEach()

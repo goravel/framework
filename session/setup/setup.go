@@ -10,23 +10,24 @@ import (
 )
 
 func main() {
-	// config, err := supportfile.GetFrameworkContent("session/setup/config/session.go")
-	// if err != nil {
-	// 	panic(err)
-	// }
+	stubs := Stubs{}
 
 	packages.Setup(os.Args).
 		Install(
 			modify.GoFile(path.Config("app.go")).
 				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
 				Find(match.Providers()).Modify(modify.Register("&session.ServiceProvider{}")),
-			// modify.File(path.Config("session.go")).Overwrite(config),
+			modify.File(path.Config("session.go")).Overwrite(stubs.Config(packages.GetModuleNameFromArgs(os.Args))),
+			modify.WhenFacade("Session", modify.File(path.Facades("session.go")).Overwrite(stubs.SessionFacade())),
 		).
 		Uninstall(
-			modify.GoFile(path.Config("app.go")).
-				Find(match.Providers()).Modify(modify.Unregister("&session.ServiceProvider{}")).
-				Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
-			// modify.File(path.Config("session.go")).Remove(),
+			modify.WhenNoFacades([]string{"Session"},
+				modify.GoFile(path.Config("app.go")).
+					Find(match.Providers()).Modify(modify.Unregister("&session.ServiceProvider{}")).
+					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
+				modify.File(path.Config("session.go")).Remove(),
+			),
+			modify.WhenFacade("Session", modify.File(path.Facades("session.go")).Remove()),
 		).
 		Execute()
 }

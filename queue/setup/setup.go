@@ -10,23 +10,24 @@ import (
 )
 
 func main() {
-	// config, err := supportfile.GetFrameworkContent("queue/setup/config/queue.go")
-	// if err != nil {
-	// 	panic(err)
-	// }
+	stubs := Stubs{}
 
 	packages.Setup(os.Args).
 		Install(
 			modify.GoFile(path.Config("app.go")).
 				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
 				Find(match.Providers()).Modify(modify.Register("&queue.ServiceProvider{}")),
-			// modify.File(path.Config("queue.go")).Overwrite(config),
+			modify.File(path.Config("queue.go")).Overwrite(stubs.Config(packages.GetModuleNameFromArgs(os.Args))),
+			modify.WhenFacade("Queue", modify.File(path.Facades("queue.go")).Overwrite(stubs.QueueFacade())),
 		).
 		Uninstall(
-			modify.GoFile(path.Config("app.go")).
-				Find(match.Providers()).Modify(modify.Unregister("&queue.ServiceProvider{}")).
-				Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
-			// modify.File(path.Config("queue.go")).Remove(),
+			modify.WhenNoFacades([]string{"Queue"},
+				modify.GoFile(path.Config("app.go")).
+					Find(match.Providers()).Modify(modify.Unregister("&queue.ServiceProvider{}")).
+					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
+				modify.File(path.Config("queue.go")).Remove(),
+			),
+			modify.WhenFacade("Queue", modify.File(path.Facades("queue.go")).Remove()),
 		).
 		Execute()
 }

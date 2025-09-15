@@ -115,6 +115,8 @@ var (
 				Cache,
 				Config,
 				Log,
+				Session,
+				Validation,
 			},
 		},
 		Lang: {
@@ -211,6 +213,8 @@ var (
 				Cache,
 				Config,
 				Orm,
+				Route,
+				Session,
 			},
 		},
 		Validation: {
