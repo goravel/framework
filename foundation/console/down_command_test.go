@@ -55,9 +55,36 @@ func (s *DownCommandTestSuite) TestHandle() {
 
 	cmd := NewDownCommand(app)
 	err := cmd.Handle(mockContext)
-	assert.Nil(s.T(), err)
 
+	assert.Nil(s.T(), err)
 	assert.True(s.T(), file.Exists(tmpfile))
+
+	content, err := file.GetContent(tmpfile)
+
+	assert.Nil(s.T(), err)
+	assert.Equal(s.T(), "The application is under maintenance", content)
+}
+
+func (s *DownCommandTestSuite) TestHandleWithReason() {
+	app := mocksfoundation.NewApplication(s.T())
+	tmpfile := filepath.Join(s.T().TempDir(), "/down")
+
+	app.EXPECT().StoragePath("framework/down").Return(tmpfile)
+
+	mockContext := mocksconsole.NewContext(s.T())
+	mockContext.EXPECT().Option("reason").Return("Under maintenance")
+	mockContext.EXPECT().Info("The application is in maintenance mode now")
+
+	cmd := NewDownCommand(app)
+	err := cmd.Handle(mockContext)
+
+	assert.Nil(s.T(), err)
+	assert.True(s.T(), file.Exists(tmpfile))
+
+	content, err := file.GetContent(tmpfile)
+
+	assert.Nil(s.T(), err)
+	assert.Equal(s.T(), "Under maintenance", content)
 }
 
 func (s *DownCommandTestSuite) TestHandleWhenDownAlready() {
