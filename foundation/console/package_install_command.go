@@ -17,8 +17,9 @@ import (
 )
 
 type PackageInstallCommand struct {
-	bindings          map[string]binding.Info
-	installedBindings []any
+	bindings                            map[string]binding.Info
+	installedBindings                   []any
+	installedFacadesInTheCurrentCommand []string
 }
 
 func NewPackageInstallCommand(bindings map[string]binding.Info, installedBindings []any) *PackageInstallCommand {
@@ -90,6 +91,10 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 				return err
 			}
 		} else {
+			if slices.Contains(r.installedFacadesInTheCurrentCommand, name) {
+				continue
+			}
+
 			if err := r.installFacade(ctx, name); err != nil {
 				return err
 			}
@@ -138,7 +143,7 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 	}
 
 	dependencies := r.getDependenciesThatNeedInstall(binding)
-	if len(dependencies) > 0 {
+	if len(dependencies) > 0 && !ctx.OptionBool("all-facades") {
 		facades := make([]string, len(dependencies))
 		for i := range dependencies {
 			facades[i] = convert.BindingToFacade(dependencies[i])
@@ -151,11 +156,17 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 		setup := r.bindings[binding].PkgPath + "/setup"
 		facade := convert.BindingToFacade(binding)
 
+		if slices.Contains(r.installedFacadesInTheCurrentCommand, facade) {
+			continue
+		}
+
 		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--facade="+facade, "--module="+packages.GetModuleName())); err != nil {
 			ctx.Error(fmt.Sprintf("Failed to install facade %s: %s", facade, err.Error()))
 
 			return nil
 		}
+
+		r.installedFacadesInTheCurrentCommand = append(r.installedFacadesInTheCurrentCommand, facade)
 
 		ctx.Success(fmt.Sprintf("Facade %s installed successfully", facade))
 	}
