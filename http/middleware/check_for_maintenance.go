@@ -17,7 +17,10 @@ func CheckForMaintenance() http.Middleware {
 				return
 			}
 
-			defer ctx.Response().String(http.StatusServiceUnavailable, content).Abort()
+			// Checking err to suppress the linter
+			if err = ctx.Response().String(http.StatusServiceUnavailable, content).Abort(); err != nil {
+				return
+			}
 			return
 		}
 
