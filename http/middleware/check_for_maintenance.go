@@ -17,7 +17,7 @@ func CheckForMaintenance() http.Middleware {
 				return
 			}
 
-			ctx.Response().String(http.StatusServiceUnavailable, content).Abort()
+			defer ctx.Response().String(http.StatusServiceUnavailable, content).Abort()
 			return
 		}
 
