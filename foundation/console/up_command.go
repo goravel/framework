@@ -32,7 +32,7 @@ func (r *UpCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *UpCommand) Handle(ctx console.Context) error {
-	path := r.app.StoragePath("framework/down")
+	path := r.app.StoragePath("framework/maintenance")
 	if ok := file.Exists(path); ok {
 		if err := file.Remove(path); err != nil {
 			return err

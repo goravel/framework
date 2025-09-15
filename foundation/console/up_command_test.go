@@ -51,7 +51,7 @@ func (s *UpCommandTestSuite) TestHandle() {
 	_, err := os.Create(tmpfile)
 	assert.Nil(s.T(), err)
 
-	app.EXPECT().StoragePath("framework/down").Return(tmpfile)
+	app.EXPECT().StoragePath("framework/maintenance").Return(tmpfile)
 
 	mockContext := mocksconsole.NewContext(s.T())
 	mockContext.EXPECT().Info("The application is up and live now")
@@ -65,7 +65,7 @@ func (s *UpCommandTestSuite) TestHandle() {
 
 func (s *UpCommandTestSuite) TestHandleWhenNotDown() {
 	app := mocksfoundation.NewApplication(s.T())
-	app.EXPECT().StoragePath("framework/down").Return(filepath.Join(s.T().TempDir(), "/down"))
+	app.EXPECT().StoragePath("framework/maintenance").Return(filepath.Join(s.T().TempDir(), "/down"))
 
 	mockContext := mocksconsole.NewContext(s.T())
 	mockContext.EXPECT().Error("The application is not in maintenance mode")
