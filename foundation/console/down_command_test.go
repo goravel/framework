@@ -10,6 +10,7 @@ import (
 
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
+	"github.com/goravel/framework/support/file"
 )
 
 type DownCommandTestSuite struct {
@@ -45,7 +46,8 @@ func (s *DownCommandTestSuite) TestExtend() {
 
 func (s *DownCommandTestSuite) TestHandle() {
 	app := mocksfoundation.NewApplication(s.T())
-	tmpfile := filepath.Join(os.TempDir(), "/down")
+	tmpfile := filepath.Join(s.T().TempDir(), "/down")
+
 	app.EXPECT().StoragePath("framework/down").Return(tmpfile)
 
 	mockContext := mocksconsole.NewContext(s.T())
@@ -55,25 +57,22 @@ func (s *DownCommandTestSuite) TestHandle() {
 	err := cmd.Handle(mockContext)
 	assert.Nil(s.T(), err)
 
-	err = os.Remove(tmpfile)
-	assert.Nil(s.T(), err)
+	assert.True(s.T(), file.Exists(tmpfile))
 }
 
 func (s *DownCommandTestSuite) TestHandleWhenDownAlready() {
 	app := mocksfoundation.NewApplication(s.T())
-	tmpfile := filepath.Join(os.TempDir(), "/down")
-	app.EXPECT().StoragePath("framework/down").Return(tmpfile)
+	tmpfile := filepath.Join(s.T().TempDir(), "/down")
 
 	_, err := os.Create(tmpfile)
 	assert.Nil(s.T(), err)
+
+	app.EXPECT().StoragePath("framework/down").Return(tmpfile)
 
 	mockContext := mocksconsole.NewContext(s.T())
 	mockContext.EXPECT().Error("The application is in maintenance mode already!")
 
 	cmd := NewDownCommand(app)
 	err = cmd.Handle(mockContext)
-	assert.Nil(s.T(), err)
-
-	err = os.Remove(tmpfile)
 	assert.Nil(s.T(), err)
 }
