@@ -187,16 +187,16 @@ func (receiver *TestFooCommand) Extend() command.Extend {
 			},
 		},
 		Arguments: []command.Argument{
-			&command.StringArgument{
+			&command.ArgumentString{
 				Name:     "string_arg",
 				Usage:    "string argument",
 				Required: true,
 			},
-			&command.Uint16Argument{
+			&command.ArgumentUint16{
 				Name:  "uint16_arg",
 				Usage: "uint16 argument",
 			},
-			&command.StringSliceArgument{
+			&command.ArgumentStringSlice{
 				Name:  "string_args",
 				Usage: "string arguments",
 				Min:   0,

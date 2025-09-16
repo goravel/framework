@@ -257,7 +257,7 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 			previousIsRequired = false
 		}
 		switch arg := v.(type) {
-		case *command.Float32Argument:
+		case *command.ArgumentFloat32:
 			cliArgs = append(cliArgs, &cli.Float32Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
@@ -265,7 +265,7 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 				Min:       arg.MinOccurrences(),
 				Max:       arg.MaxOccurrences(),
 			})
-		case *command.Float64Argument:
+		case *command.ArgumentFloat64:
 			cliArgs = append(cliArgs, &cli.Float64Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
@@ -273,7 +273,7 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 				Min:       arg.MinOccurrences(),
 				Max:       arg.MaxOccurrences(),
 			})
-		case *command.IntArgument:
+		case *command.ArgumentInt:
 			cliArgs = append(cliArgs, &cli.IntArgs{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
@@ -281,7 +281,7 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 				Min:       arg.MinOccurrences(),
 				Max:       arg.MaxOccurrences(),
 			})
-		case *command.Int8Argument:
+		case *command.ArgumentInt8:
 			cliArgs = append(cliArgs, &cli.Int8Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
@@ -289,7 +289,7 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 				Min:       arg.MinOccurrences(),
 				Max:       arg.MaxOccurrences(),
 			})
-		case *command.Int16Argument:
+		case *command.ArgumentInt16:
 			cliArgs = append(cliArgs, &cli.Int16Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
@@ -297,7 +297,7 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 				Min:       arg.MinOccurrences(),
 				Max:       arg.MaxOccurrences(),
 			})
-		case *command.Int32Argument:
+		case *command.ArgumentInt32:
 			cliArgs = append(cliArgs, &cli.Int32Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
@@ -305,7 +305,7 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 				Min:       arg.MinOccurrences(),
 				Max:       arg.MaxOccurrences(),
 			})
-		case *command.Int64Argument:
+		case *command.ArgumentInt64:
 			cliArgs = append(cliArgs, &cli.Int64Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
@@ -313,7 +313,7 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 				Min:       arg.MinOccurrences(),
 				Max:       arg.MaxOccurrences(),
 			})
-		case *command.StringArgument:
+		case *command.ArgumentString:
 			cliArgs = append(cliArgs, &cli.StringArgs{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
@@ -321,7 +321,7 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 				Min:       arg.MinOccurrences(),
 				Max:       arg.MaxOccurrences(),
 			})
-		case *command.TimestampArgument:
+		case *command.ArgumentTimestamp:
 			cliArgs = append(cliArgs, &cli.TimestampArgs{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
@@ -332,7 +332,7 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 					Layouts: []string{time.RFC3339},
 				},
 			})
-		case *command.UintArgument:
+		case *command.ArgumentUint:
 			cliArgs = append(cliArgs, &cli.UintArgs{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
@@ -340,7 +340,7 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 				Min:       arg.MinOccurrences(),
 				Max:       arg.MaxOccurrences(),
 			})
-		case *command.Uint8Argument:
+		case *command.ArgumentUint8:
 			cliArgs = append(cliArgs, &cli.Uint8Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
@@ -348,7 +348,7 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 				Min:       arg.MinOccurrences(),
 				Max:       arg.MaxOccurrences(),
 			})
-		case *command.Uint16Argument:
+		case *command.ArgumentUint16:
 			cliArgs = append(cliArgs, &cli.Uint16Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
@@ -356,7 +356,7 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 				Min:       arg.MinOccurrences(),
 				Max:       arg.MaxOccurrences(),
 			})
-		case *command.Uint32Argument:
+		case *command.ArgumentUint32:
 			cliArgs = append(cliArgs, &cli.Uint32Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
@@ -364,7 +364,7 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 				Min:       arg.MinOccurrences(),
 				Max:       arg.MaxOccurrences(),
 			})
-		case *command.Uint64Argument:
+		case *command.ArgumentUint64:
 			cliArgs = append(cliArgs, &cli.Uint64Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
@@ -373,7 +373,7 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 				Max:       arg.MaxOccurrences(),
 			})
 
-		case *command.Float32SliceArgument:
+		case *command.ArgumentFloat32Slice:
 			cliArgs = append(cliArgs, &cli.Float32Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
@@ -381,7 +381,7 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 				Min:       arg.MinOccurrences(),
 				Max:       arg.MaxOccurrences(),
 			})
-		case *command.Float64SliceArgument:
+		case *command.ArgumentFloat64Slice:
 			cliArgs = append(cliArgs, &cli.Float64Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
@@ -389,7 +389,7 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 				Min:       arg.MinOccurrences(),
 				Max:       arg.MaxOccurrences(),
 			})
-		case *command.IntSliceArgument:
+		case *command.ArgumentIntSlice:
 			cliArgs = append(cliArgs, &cli.IntArgs{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
@@ -397,7 +397,7 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 				Min:       arg.MinOccurrences(),
 				Max:       arg.MaxOccurrences(),
 			})
-		case *command.Int8SliceArgument:
+		case *command.ArgumentInt8Slice:
 			cliArgs = append(cliArgs, &cli.Int8Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
@@ -405,7 +405,7 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 				Min:       arg.MinOccurrences(),
 				Max:       arg.MaxOccurrences(),
 			})
-		case *command.Int16SliceArgument:
+		case *command.ArgumentInt16Slice:
 			cliArgs = append(cliArgs, &cli.Int16Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
@@ -413,7 +413,7 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 				Min:       arg.MinOccurrences(),
 				Max:       arg.MaxOccurrences(),
 			})
-		case *command.Int32SliceArgument:
+		case *command.ArgumentInt32Slice:
 			cliArgs = append(cliArgs, &cli.Int32Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
@@ -421,7 +421,7 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 				Min:       arg.MinOccurrences(),
 				Max:       arg.MaxOccurrences(),
 			})
-		case *command.Int64SliceArgument:
+		case *command.ArgumentInt64Slice:
 			cliArgs = append(cliArgs, &cli.Int64Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
@@ -429,7 +429,7 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 				Min:       arg.MinOccurrences(),
 				Max:       arg.MaxOccurrences(),
 			})
-		case *command.StringSliceArgument:
+		case *command.ArgumentStringSlice:
 			cliArgs = append(cliArgs, &cli.StringArgs{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
@@ -437,7 +437,7 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 				Min:       arg.MinOccurrences(),
 				Max:       arg.MaxOccurrences(),
 			})
-		case *command.TimestampSliceArgument:
+		case *command.ArgumentTimestampSlice:
 			cliArgs = append(cliArgs, &cli.TimestampArgs{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
@@ -448,7 +448,7 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 					Layouts: []string{time.RFC3339},
 				},
 			})
-		case *command.UintSliceArgument:
+		case *command.ArgumentUintSlice:
 			cliArgs = append(cliArgs, &cli.UintArgs{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
@@ -456,7 +456,7 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 				Min:       arg.MinOccurrences(),
 				Max:       arg.MaxOccurrences(),
 			})
-		case *command.Uint8SliceArgument:
+		case *command.ArgumentUint8Slice:
 			cliArgs = append(cliArgs, &cli.Uint8Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
@@ -464,7 +464,7 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 				Min:       arg.MinOccurrences(),
 				Max:       arg.MaxOccurrences(),
 			})
-		case *command.Uint16SliceArgument:
+		case *command.ArgumentUint16Slice:
 			cliArgs = append(cliArgs, &cli.Uint16Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
@@ -472,7 +472,7 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 				Min:       arg.MinOccurrences(),
 				Max:       arg.MaxOccurrences(),
 			})
-		case *command.Uint32SliceArgument:
+		case *command.ArgumentUint32Slice:
 			cliArgs = append(cliArgs, &cli.Uint32Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
@@ -480,7 +480,7 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 				Min:       arg.MinOccurrences(),
 				Max:       arg.MaxOccurrences(),
 			})
-		case *command.Uint64SliceArgument:
+		case *command.ArgumentUint64Slice:
 			cliArgs = append(cliArgs, &cli.Uint64Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
