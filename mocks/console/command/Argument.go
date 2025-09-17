@@ -17,6 +17,51 @@ func (_m *Argument) EXPECT() *Argument_Expecter {
 	return &Argument_Expecter{mock: &_m.Mock}
 }
 
+// ArgumentName provides a mock function with no fields
+func (_m *Argument) ArgumentName() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for ArgumentName")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Argument_ArgumentName_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ArgumentName'
+type Argument_ArgumentName_Call struct {
+	*mock.Call
+}
+
+// ArgumentName is a helper method to define mock.On call
+func (_e *Argument_Expecter) ArgumentName() *Argument_ArgumentName_Call {
+	return &Argument_ArgumentName_Call{Call: _e.mock.On("ArgumentName")}
+}
+
+func (_c *Argument_ArgumentName_Call) Run(run func()) *Argument_ArgumentName_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Argument_ArgumentName_Call) Return(_a0 string) *Argument_ArgumentName_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Argument_ArgumentName_Call) RunAndReturn(run func() string) *Argument_ArgumentName_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // MaxOccurrences provides a mock function with no fields
 func (_m *Argument) MaxOccurrences() int {
 	ret := _m.Called()
