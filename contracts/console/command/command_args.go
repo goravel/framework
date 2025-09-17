@@ -7,6 +7,8 @@ type Argument interface {
 	MinOccurrences() int
 	// Count of maximum occurrences
 	MaxOccurrences() int
+	// Argument name
+	ArgumentName() string
 }
 
 type ArgumentBase[T any] struct {
@@ -28,6 +30,10 @@ func (a ArgumentBase[T]) MaxOccurrences() int {
 	return 1
 }
 
+func (a ArgumentBase[T]) ArgumentName() string {
+	return a.Name
+}
+
 type ArgumentsBase[T any] struct {
 	Name  string // the name of this argument
 	Value T      // the default value of this argument
@@ -42,6 +48,10 @@ func (a ArgumentsBase[T]) MinOccurrences() int {
 
 func (a ArgumentsBase[T]) MaxOccurrences() int {
 	return a.Max
+}
+
+func (a ArgumentsBase[T]) ArgumentName() string {
+	return a.Name
 }
 
 type (

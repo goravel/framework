@@ -6,7 +6,6 @@ import (
 	"os"
 	"slices"
 	"strings"
-	"testing"
 	"time"
 
 	"github.com/urfave/cli/v3"
@@ -53,6 +52,10 @@ func NewApplication(name, usage, usageText, version string, useArtisan bool) con
 func (r *Application) Register(commands []console.Command) {
 	for _, item := range commands {
 		item := item
+		arguments, err := argumentsToCliArgs(item.Extend().Arguments)
+		if err != nil {
+			color.Errorln(fmt.Sprintf("Registration of command '%s' failed: %s", item.Signature(), err.Error()))
+		}
 		cliCommand := cli.Command{
 			Name:  item.Signature(),
 			Usage: item.Description(),
@@ -62,7 +65,7 @@ func (r *Application) Register(commands []console.Command) {
 			Category:     item.Extend().Category,
 			ArgsUsage:    item.Extend().ArgsUsage,
 			Flags:        flagsToCliFlags(item.Extend().Flags),
-			Arguments:    argumentsToCliArgs(item.Extend().Arguments),
+			Arguments:    arguments,
 			OnUsageError: onUsageError,
 		}
 		r.instance.Commands = append(r.instance.Commands, &cliCommand)
@@ -234,22 +237,16 @@ func flagsToCliFlags(flags []command.Flag) []cli.Flag {
 	return cliFlags
 }
 
-func argumentsToCliArgs(args []command.Argument) []cli.Argument {
+func argumentsToCliArgs(args []command.Argument) ([]cli.Argument, error) {
 	len := len(args)
 	if len == 0 {
-		return nil
+		return nil, nil
 	}
 	cliArgs := make([]cli.Argument, 0, len)
 	previousIsRequired := true
 	for _, v := range args {
 		if v.MinOccurrences() != 0 && !previousIsRequired {
-			errString := fmt.Sprintf("Required argument with value '%+v' should be placed before any not-required arguments", v)
-			if testing.Testing() {
-				panic(errString)
-			} else {
-				color.Errorln(errString)
-				os.Exit(2)
-			}
+			return nil, fmt.Errorf("required argument '%s' should be placed before any not-required arguments", v.ArgumentName())
 		}
 		if v.MinOccurrences() != 0 {
 			previousIsRequired = true
@@ -489,9 +486,8 @@ func argumentsToCliArgs(args []command.Argument) []cli.Argument {
 				Max:       arg.MaxOccurrences(),
 			})
 		default:
-			color.Errorln(fmt.Sprintf("Unknown type of console command argument %T, with value %+v", arg, arg))
-			os.Exit(2)
+			return nil, fmt.Errorf("unknown type of console command argument %T, with value %+v", arg, arg)
 		}
 	}
-	return cliArgs
+	return cliArgs, nil
 }

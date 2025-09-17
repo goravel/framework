@@ -189,7 +189,8 @@ func TestArgumentsToCliArguments(t *testing.T) {
 	}
 
 	// Convert command flags to CLI arguments
-	cliArguments := argumentsToCliArgs(arguments)
+	cliArguments, err := argumentsToCliArgs(arguments)
+	assert.Nil(t, err)
 	assert.NotNil(t, cliArguments)
 
 	// Assert that the number of CLI flags matches the number of command flags
@@ -411,9 +412,8 @@ func TestArgumentsToCliArgumentsPanic(t *testing.T) {
 			Required: true,
 		},
 	}
-	assert.Panics(t, func() {
-		argumentsToCliArgs(arguments)
-	})
+	_, err := argumentsToCliArgs(arguments)
+	assert.ErrorContains(t, err, "required argument 'string_arg_required' should be placed before any not-required arguments")
 }
 
 type TestCommand struct {
