@@ -72,7 +72,7 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 			}
 
 			name, err := ctx.MultiSelect("Select the facades to install", options, console.MultiSelectOption{
-				Description: "If you want to install a package, please run the command with the package name.\nIf you want to install all facades, you can run the command with --all-facades or click ctrl+a to selest all.",
+				Description: "If you want to install a package, please run the command with the package name.\nIf you want to install all facades, you can run the command with --all-facades or click ctrl+a to select all.",
 				Filterable:  true,
 			})
 			if err != nil {
