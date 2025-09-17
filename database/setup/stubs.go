@@ -127,8 +127,8 @@ func Seeder() seeder.Facade {
 `
 }
 
-func (s Stubs) Kernel(module string) string {
-	content := `package database
+func (s Stubs) Kernel() string {
+	return `package database
 
 import (
 	"github.com/goravel/framework/contracts/database/schema"
@@ -146,6 +146,4 @@ func (kernel Kernel) Seeders() []seeder.Seeder {
 	return []seeder.Seeder{}
 }
 `
-
-	return strings.ReplaceAll(content, "DummyModule", module)
 }

@@ -17,8 +17,9 @@ import (
 )
 
 type PackageInstallCommand struct {
-	bindings          map[string]binding.Info
-	installedBindings []any
+	bindings                            map[string]binding.Info
+	installedBindings                   []any
+	installedFacadesInTheCurrentCommand []string
 }
 
 func NewPackageInstallCommand(bindings map[string]binding.Info, installedBindings []any) *PackageInstallCommand {
@@ -43,31 +44,46 @@ func (r *PackageInstallCommand) Extend() command.Extend {
 	return command.Extend{
 		ArgsUsage: " <package@version> or <facade>",
 		Category:  "package",
+		Flags: []command.Flag{
+			&command.BoolFlag{
+				Name:    "all-facades",
+				Usage:   "Install all facades",
+				Aliases: []string{"a"},
+				Value:   false,
+			},
+		},
 	}
 }
 
 // Handle Execute the console command.
 func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 	names := ctx.Arguments()
+
 	if len(names) == 0 {
-		name, err := ctx.Ask("Enter the package/facade name to install", console.AskOption{
-			Description: "If no version is specified, install the latest",
-			Placeholder: " E.g example.com/pkg or example.com/pkg@v1.0.0 or Cache",
-			Prompt:      "> ",
-			Validate: func(s string) error {
-				if s == "" {
-					return errors.CommandEmptyPackageName
-				}
+		if ctx.OptionBool("all-facades") {
+			names = getAvailableFacades(r.bindings)
+		} else {
+			var options []console.Choice
+			for _, facade := range getAvailableFacades(r.bindings) {
+				options = append(options, console.Choice{
+					Key:   facade,
+					Value: facade,
+				})
+			}
 
+			name, err := ctx.MultiSelect("Select the facades to install", options, console.MultiSelectOption{
+				Description: "If you want to install a package, please run the command with the package name.\nIf you want to install all facades, you can run the command with --all-facades or click ctrl+a to select all.",
+				Filterable:  true,
+			})
+			if err != nil {
+				ctx.Error(err.Error())
 				return nil
-			},
-		})
-		if err != nil {
-			ctx.Error(err.Error())
-			return nil
-		}
+			}
 
-		names = append(names, name)
+			if len(name) > 0 {
+				names = append(names, name...)
+			}
+		}
 	}
 
 	for _, name := range names {
@@ -76,6 +92,10 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 				return err
 			}
 		} else {
+			if slices.Contains(r.installedFacadesInTheCurrentCommand, name) {
+				continue
+			}
+
 			if err := r.installFacade(ctx, name); err != nil {
 				return err
 			}
@@ -124,7 +144,7 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 	}
 
 	dependencies := r.getDependenciesThatNeedInstall(binding)
-	if len(dependencies) > 0 {
+	if len(dependencies) > 0 && !ctx.OptionBool("all-facades") {
 		facades := make([]string, len(dependencies))
 		for i := range dependencies {
 			facades[i] = convert.BindingToFacade(dependencies[i])
@@ -137,11 +157,17 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 		setup := r.bindings[binding].PkgPath + "/setup"
 		facade := convert.BindingToFacade(binding)
 
+		if slices.Contains(r.installedFacadesInTheCurrentCommand, facade) {
+			continue
+		}
+
 		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--facade="+facade, "--module="+packages.GetModuleName())); err != nil {
 			ctx.Error(fmt.Sprintf("Failed to install facade %s: %s", facade, err.Error()))
 
 			return nil
 		}
+
+		r.installedFacadesInTheCurrentCommand = append(r.installedFacadesInTheCurrentCommand, facade)
 
 		ctx.Success(fmt.Sprintf("Facade %s installed successfully", facade))
 	}
