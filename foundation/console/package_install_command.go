@@ -57,32 +57,33 @@ func (r *PackageInstallCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *PackageInstallCommand) Handle(ctx console.Context) error {
-	var names []string
-	if ctx.OptionBool("all-facades") {
-		names = getAvailableFacades(r.bindings)
-	} else {
-		names = ctx.Arguments()
-	}
+	names := ctx.Arguments()
 
 	if len(names) == 0 {
-		name, err := ctx.Ask("Enter the package/facade name to install", console.AskOption{
-			Description: "If no version is specified, install the latest",
-			Placeholder: " E.g example.com/pkg or example.com/pkg@v1.0.0 or Cache",
-			Prompt:      "> ",
-			Validate: func(s string) error {
-				if s == "" {
-					return errors.CommandEmptyPackageName
-				}
+		if ctx.OptionBool("all-facades") {
+			names = getAvailableFacades(r.bindings)
+		} else {
+			var options []console.Choice
+			for _, facade := range getAvailableFacades(r.bindings) {
+				options = append(options, console.Choice{
+					Key:   facade,
+					Value: facade,
+				})
+			}
 
+			name, err := ctx.MultiSelect("Select the facades to install", options, console.MultiSelectOption{
+				Description: "If you want to install a package, please run the command with the package name.\nIf you want to install all facades, you can run the command with --all-facades or click ctrl+a to selest all.",
+				Filterable:  true,
+			})
+			if err != nil {
+				ctx.Error(err.Error())
 				return nil
-			},
-		})
-		if err != nil {
-			ctx.Error(err.Error())
-			return nil
-		}
+			}
 
-		names = append(names, name)
+			if len(name) > 0 {
+				names = append(names, name...)
+			}
+		}
 	}
 
 	for _, name := range names {
