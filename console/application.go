@@ -2,7 +2,6 @@ package console
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"slices"
 	"strings"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/env"
 )
@@ -54,7 +54,7 @@ func (r *Application) Register(commands []console.Command) {
 		item := item
 		arguments, err := argumentsToCliArgs(item.Extend().Arguments)
 		if err != nil {
-			color.Errorln(fmt.Sprintf("Registration of command '%s' failed: %s", item.Signature(), err.Error()))
+			color.Errorln(errors.ConsoleCommandRegistrationFailed.Args(item.Signature(), err).Error())
 		}
 		cliCommand := cli.Command{
 			Name:  item.Signature(),
@@ -246,7 +246,7 @@ func argumentsToCliArgs(args []command.Argument) ([]cli.Argument, error) {
 	previousIsRequired := true
 	for _, v := range args {
 		if v.MinOccurrences() != 0 && !previousIsRequired {
-			return nil, fmt.Errorf("required argument '%s' should be placed before any not-required arguments", v.ArgumentName())
+			return nil, errors.ConsoleCommandRequiredArgumentWrongOrder.Args(v.ArgumentName())
 		}
 		if v.MinOccurrences() != 0 {
 			previousIsRequired = true
@@ -486,7 +486,7 @@ func argumentsToCliArgs(args []command.Argument) ([]cli.Argument, error) {
 				Max:       arg.MaxOccurrences(),
 			})
 		default:
-			return nil, fmt.Errorf("unknown type of console command argument %T, with value %+v", arg, arg)
+			return nil, errors.ConsoleCommandArgumentUnknownType.Args(arg, arg)
 		}
 	}
 	return cliArgs, nil
