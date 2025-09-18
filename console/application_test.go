@@ -134,7 +134,7 @@ func TestArgumentsToCliArguments(t *testing.T) {
 	int32Arg := &command.ArgumentInt32{Name: "int32Arg", Usage: "int32 argument", Value: int32(1)}
 	int64Arg := &command.ArgumentInt64{Name: "int64Arg", Usage: "int64 argument", Value: int64(1)}
 	stringArg := &command.ArgumentString{Name: "stringArg", Usage: "string argument", Value: "default"}
-	timestampArg := &command.ArgumentTimestamp{Name: "timestampArg", Usage: "timestamp argument", Value: time.Now()}
+	timestampArg := &command.ArgumentTimestamp{Name: "timestampArg", Usage: "timestamp argument", Value: time.Now(), Layouts: []string{time.RFC3339}}
 	uintArg := &command.ArgumentUint{Name: "uintArg", Usage: "uint argument", Value: uint(1)}
 	uint8Arg := &command.ArgumentUint8{Name: "uint8Arg", Usage: "uint8 argument", Value: uint8(1)}
 	uint16Arg := &command.ArgumentUint16{Name: "uint16Arg", Usage: "uint16 argument", Value: uint16(1)}
@@ -149,7 +149,7 @@ func TestArgumentsToCliArguments(t *testing.T) {
 	int32SliceArg := &command.ArgumentInt32Slice{Name: "int32SliceArg", Usage: "int32 slice argument", Value: int32(2)}
 	int64SliceArg := &command.ArgumentInt64Slice{Name: "int64SliceArg", Usage: "int64 slice argument", Value: int64(2)}
 	stringSliceArg := &command.ArgumentStringSlice{Name: "stringSliceArg", Usage: "string slice argument", Value: "b"}
-	timestampSliceArg := &command.ArgumentTimestampSlice{Name: "timestampSliceArg", Usage: "timestamp slice argument", Value: time.Now().Add(time.Hour)}
+	timestampSliceArg := &command.ArgumentTimestampSlice{Name: "timestampSliceArg", Usage: "timestamp slice argument", Value: time.Now().Add(time.Hour), Layouts: []string{time.RFC3339}}
 	uintSliceArg := &command.ArgumentUintSlice{Name: "uintSliceArg", Usage: "uint slice argument", Value: uint(2)}
 	uint8SliceArg := &command.ArgumentUint8Slice{Name: "uint8SliceArg", Usage: "uint8 slice argument", Value: uint8(2)}
 	uint16SliceArg := &command.ArgumentUint16Slice{Name: "uint16SliceArg", Usage: "uint16 slice argument", Value: uint16(2)}
@@ -262,6 +262,7 @@ func TestArgumentsToCliArguments(t *testing.T) {
 			assert.Equal(t, arg.Value.Unix(), cliArg.Value.Unix())
 			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
 			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+			assert.Equal(t, arg.Layouts, cliArg.Config.Layouts)
 		case *command.ArgumentUint:
 			cliArg := cliArguments[i].(*cli.UintArgs)
 			assert.Equal(t, arg.Name, cliArg.Name)
@@ -360,6 +361,7 @@ func TestArgumentsToCliArguments(t *testing.T) {
 			assert.Equal(t, arg.Value.Unix(), cliArg.Value.Unix())
 			assert.Equal(t, arg.MinOccurrences(), cliArg.Min)
 			assert.Equal(t, arg.MaxOccurrences(), cliArg.Max)
+			assert.Equal(t, arg.Layouts, cliArg.Config.Layouts)
 		case *command.ArgumentUintSlice:
 			cliArg := cliArguments[i].(*cli.UintArgs)
 			assert.Equal(t, arg.Name, cliArg.Name)

@@ -5,7 +5,6 @@ import (
 	"os"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/urfave/cli/v3"
 
@@ -327,7 +326,7 @@ func argumentsToCliArgs(args []command.Argument) ([]cli.Argument, error) {
 				Min:       arg.MinOccurrences(),
 				Max:       arg.MaxOccurrences(),
 				Config: cli.TimestampConfig{
-					Layouts: []string{time.RFC3339},
+					Layouts: arg.Layouts,
 				},
 			})
 		case *command.ArgumentUint:
@@ -443,7 +442,7 @@ func argumentsToCliArgs(args []command.Argument) ([]cli.Argument, error) {
 				Min:       arg.MinOccurrences(),
 				Max:       arg.MaxOccurrences(),
 				Config: cli.TimestampConfig{
-					Layouts: []string{time.RFC3339},
+					Layouts: arg.Layouts,
 				},
 			})
 		case *command.ArgumentUintSlice:
