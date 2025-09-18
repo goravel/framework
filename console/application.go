@@ -55,6 +55,7 @@ func (r *Application) Register(commands []console.Command) {
 		arguments, err := argumentsToCliArgs(item.Extend().Arguments)
 		if err != nil {
 			color.Errorln(errors.ConsoleCommandRegistrationFailed.Args(item.Signature(), err).Error())
+			continue
 		}
 		cliCommand := cli.Command{
 			Name:  item.Signature(),
