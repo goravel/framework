@@ -5,6 +5,7 @@ package tests
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"testing"
 	"time"
 
@@ -532,6 +533,42 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 				s.Equal("multiple map1", products[0].Name)
 				s.Equal("multiple map2", products[1].Name)
 			})
+		})
+	}
+}
+
+func (s *DBTestSuite) TestInsert_First_Get_With_Missing_Columns() {
+	type ProductMissingHeight struct {
+		Model
+		SoftDeletes
+		Name   string `db:"name"`
+		Weight *int   `db:"weight"`
+	}
+
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			result, err := query.DB().Table("products").Insert(ProductMissingHeight{
+				Name: "single struct",
+				Model: Model{
+					Timestamps: Timestamps{
+						CreatedAt: s.now,
+						UpdatedAt: s.now,
+					},
+				},
+			})
+
+			s.NoError(err)
+			s.Equal(int64(1), result.RowsAffected)
+
+			var product ProductMissingHeight
+			err = query.DB().Table("products").Where("name", "single struct").Where("deleted_at", nil).First(&product)
+
+			s.NoError(err)
+			s.True(product.ID > 0)
+			s.Equal("single struct", product.Name)
+			s.Equal(s.now, product.CreatedAt)
+			s.Equal(s.now, product.UpdatedAt)
+			s.False(product.DeletedAt.Valid)
 		})
 	}
 }
@@ -1119,6 +1156,22 @@ func (s *DBTestSuite) TestTransaction() {
 				err = query.DB().Table("products").Where("name", "transaction product1 updated").First(&product1)
 				s.NoError(err)
 				s.Equal("transaction product1 updated", product1.Name)
+
+				err = query.DB().Transaction(func(tx db.Tx) error {
+					_, err := tx.Table("products").Where("name", "transaction product1 updated").Delete()
+					if err != nil {
+						return err
+					}
+
+					panic(1)
+				})
+
+				s.Equal(fmt.Errorf("panic: %v", 1), err)
+
+				var product2 Product
+				err = query.DB().Table("products").Where("name", "transaction product1 updated").First(&product2)
+				s.NoError(err)
+				s.Equal("transaction product1 updated", product2.Name)
 			})
 		})
 	}
