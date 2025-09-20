@@ -53,6 +53,5 @@ func (r *ServiceProvider) registerCommands(app foundation.Application) {
 		console.NewKeyGenerateCommand(configFacade),
 		console.NewMakeCommand(),
 		console.NewBuildCommand(configFacade),
-		console.NewDeployCommand(configFacade),
 	})
 }
