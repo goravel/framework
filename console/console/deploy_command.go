@@ -33,12 +33,15 @@ func (r *DeployCommand) Description() string {
 
 // Extend The console command extend.
 func (r *DeployCommand) Extend() command.Extend {
+	// TODO: add options in a later PR
 	return command.Extend{}
 }
 
 // Handle Execute the console command.
 func (r *DeployCommand) Handle(ctx console.Context) error {
 	var err error
+
+	// TODO: breakout environment variable fetching and prompting into a separate function in a later PR
 
 	// get all environment variables
 	app_name := r.config.Env("APP_NAME")
