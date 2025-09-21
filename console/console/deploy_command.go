@@ -71,20 +71,87 @@ func (r *DeployCommand) Extend() command.Extend {
 	}
 }
 
-func getAllOptions(config config.Config) (appName, ipAddress, sshPort, sshUser, sshKeyPath, targetOS, arch, domain string, zeroDowntime bool, staticEnv bool, reverseProxyEnabled bool, reverseProxyTLSEnabled bool) {
-	appName = config.GetString("appName")
-	ipAddress = config.GetString("DEPLOY_IP_ADDRESS")
-	sshPort = config.GetString("DEPLOY_SSH_PORT")
-	sshUser = config.GetString("DEPLOY_SSH_USER")
-	sshKeyPath = config.GetString("DEPLOY_SSH_KEY_PATH")
-	targetOS = config.GetString("DEPLOY_OS")
-	arch = config.GetString("DEPLOY_ARCH")
-	domain = config.GetString("DEPLOY_DOMAIN")
+func getAllOptions(ctx console.Context, config config.Config) (appName, ipAddress, appPort, sshPort, sshUser, sshKeyPath, targetOS, arch, domain, prodEnvFilePath string, staticEnv bool, reverseProxyEnabled bool, reverseProxyTLSEnabled bool) {
+	appName = config.GetString("app.name")
+	ipAddress = config.Env("DEPLOY_IP_ADDRESS").(string)
+	appPort = config.Env("DEPLOY_APP_PORT").(string)
+	sshPort = config.Env("DEPLOY_SSH_PORT").(string)
+	sshUser = config.Env("DEPLOY_SSH_USER").(string)
+	sshKeyPath = config.Env("DEPLOY_SSH_KEY_PATH").(string)
+	targetOS = config.Env("DEPLOY_OS").(string)
+	arch = config.Env("DEPLOY_ARCH").(string)
+	domain = config.Env("DEPLOY_DOMAIN").(string)
+	prodEnvFilePath = config.Env("DEPLOY_PROD_ENV_FILE_PATH").(string)
 
-	zeroDowntime = config.GetBool("DEPLOY_ZERO_DOWNTIME")
-	staticEnv = config.GetBool("DEPLOY_STATIC")
-	reverseProxyEnabled = config.GetBool("DEPLOY_REVERSE_PROXY_ENABLED")
-	reverseProxyTLSEnabled = config.GetBool("DEPLOY_REVERSE_PROXY_TLS_ENABLED")
+	staticEnv = config.Env("DEPLOY_STATIC").(bool)
+	reverseProxyEnabled = config.Env("DEPLOY_REVERSE_PROXY_ENABLED").(bool)
+	reverseProxyTLSEnabled = config.Env("DEPLOY_REVERSE_PROXY_TLS_ENABLED").(bool)
+
+	// if any of the options is not set, ask the user for the value
+	var err error
+	if appName == "" {
+		appName, err = ctx.Ask("Enter the app name")
+		if err != nil {
+			ctx.Error(err.Error())
+			os.Exit(1)
+		}
+	}
+	if ipAddress == "" {
+		ipAddress, err = ctx.Ask("Enter the ip address")
+		if err != nil {
+			ctx.Error(err.Error())
+			os.Exit(1)
+		}
+	}
+	if appPort == "" {
+		appPort, err = ctx.Ask("Enter the app port")
+		if err != nil {
+			ctx.Error(err.Error())
+			os.Exit(1)
+		}
+	}
+	if sshPort == "" {
+		sshPort, err = ctx.Ask("Enter the ssh port")
+		if err != nil {
+			ctx.Error(err.Error())
+			os.Exit(1)
+		}
+	}
+	if sshUser == "" {
+		sshUser, err = ctx.Ask("Enter the ssh user")
+		if err != nil {
+			ctx.Error(err.Error())
+			os.Exit(1)
+		}
+	}
+	if sshKeyPath == "" {
+		sshKeyPath, err = ctx.Ask("Enter the ssh key path")
+		if err != nil {
+			ctx.Error(err.Error())
+			os.Exit(1)
+		}
+	}
+	if targetOS == "" {
+		targetOS, err = ctx.Ask("Enter the target os")
+		if err != nil {
+			ctx.Error(err.Error())
+			os.Exit(1)
+		}
+	}
+	if arch == "" {
+		arch, err = ctx.Ask("Enter the target arch")
+		if err != nil {
+			ctx.Error(err.Error())
+			os.Exit(1)
+		}
+	}
+	if domain == "" {
+		domain, err = ctx.Ask("Enter the domain")
+		if err != nil {
+			ctx.Error(err.Error())
+			os.Exit(1)
+		}
+	}
 
 	// expand ssh key ~ path if needed
 	if after, ok := strings.CutPrefix(sshKeyPath, "~"); ok {
@@ -93,7 +160,7 @@ func getAllOptions(config config.Config) (appName, ipAddress, sshPort, sshUser, 
 		}
 	}
 
-	return appName, ipAddress, sshPort, sshUser, sshKeyPath, targetOS, arch, domain, zeroDowntime, staticEnv, reverseProxyEnabled, reverseProxyTLSEnabled
+	return appName, ipAddress, appPort, sshPort, sshUser, sshKeyPath, targetOS, arch, domain, prodEnvFilePath, staticEnv, reverseProxyEnabled, reverseProxyTLSEnabled
 }
 
 // Handle Execute the console command.
@@ -101,7 +168,7 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 	var err error
 
 	// get all options
-	appName, ipAddress, sshPort, sshUser, sshKeyPath, targetOS, arch, domain, zeroDowntime, staticEnv, reverseProxyEnabled, reverseProxyTLSEnabled := getAllOptions(r.config)
+	appName, ipAddress, appPort, sshPort, sshUser, sshKeyPath, targetOS, arch, domain, prodEnvFilePath, staticEnv, reverseProxyEnabled, reverseProxyTLSEnabled := getAllOptions(ctx, r.config)
 
 	// Rollback flow
 	if ctx.OptionBool("rollback") {
@@ -124,6 +191,7 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 
 	// Step 3: verify artifacts to determine which to upload
 	hasMain := fileExists(appName)
+	hasProdEnv := fileExists(prodEnvFilePath)
 	hasPublic := dirExists("public")
 	hasStorage := dirExists("storage")
 	hasResources := dirExists("resources")
@@ -138,6 +206,9 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 		}
 		if !include["main"] {
 			hasMain = false
+		}
+		if !include["prod-env"] {
+			hasProdEnv = false
 		}
 		if !include["public"] {
 			hasPublic = false
@@ -154,11 +225,11 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 	if err = supportconsole.ExecuteCommand(ctx, setupServerCommand(
 		fmt.Sprintf("%v", appName),
 		fmt.Sprintf("%v", ipAddress),
+		fmt.Sprintf("%v", appPort),
 		fmt.Sprintf("%v", sshPort),
 		fmt.Sprintf("%v", sshUser),
 		fmt.Sprintf("%v", sshKeyPath),
 		strings.TrimSpace(domain),
-		zeroDowntime,
 		reverseProxyEnabled,
 		reverseProxyTLSEnabled,
 	), "Setting up server (first time only)..."); err != nil {
@@ -173,7 +244,8 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 		fmt.Sprintf("%v", sshPort),
 		fmt.Sprintf("%v", sshUser),
 		fmt.Sprintf("%v", sshKeyPath),
-		hasMain, hasPublic, hasStorage, hasResources,
+		fmt.Sprintf("%v", prodEnvFilePath),
+		hasMain, hasProdEnv, hasPublic, hasStorage, hasResources,
 	), "Uploading files..."); err != nil {
 		ctx.Error(err.Error())
 		return nil
@@ -208,21 +280,16 @@ func dirExists(path string) bool {
 }
 
 // setupServerCommand ensures Caddy and a systemd service are installed; no-op on subsequent runs
-func setupServerCommand(appName, ip, port, user, keyPath, domain string, zeroDowntime, reverseProxyEnabled, reverseProxyTLSEnabled bool) *exec.Cmd {
+func setupServerCommand(appName, ip, appPort, sshPort, sshUser, keyPath, domain string, reverseProxyEnabled, reverseProxyTLSEnabled bool) *exec.Cmd {
 	// Directories and service
 	appDir := fmt.Sprintf("/var/www/%s", appName)
 	binCurrent := fmt.Sprintf("%s/main", appDir)
-
-	// Ports
-	appPort := "9000"
-	httpPort := "80"
-	// httpsPort := "443" // only used when TLS is enabled via Caddy
 
 	// Build systemd unit based on whether reverse proxy is used
 	listenHost := "127.0.0.1"
 	if !reverseProxyEnabled {
 		// App listens on port 80 directly
-		appPort = httpPort
+		appPort = "80"
 		listenHost = "0.0.0.0"
 	}
 
@@ -231,7 +298,6 @@ Description=Goravel App %s
 After=network.target
 
 [Service]
-User=%s
 WorkingDirectory=%s
 ExecStart=%s
 Environment=APP_ENV=production
@@ -244,7 +310,7 @@ SyslogIdentifier=%s
 
 [Install]
 WantedBy=multi-user.target
-`, appName, user, appDir, binCurrent, listenHost, appPort, appName)
+`, appName, appDir, binCurrent, listenHost, appPort, appName)
 
 	// Build Caddyfile if reverse proxy enabled
 	caddyfile := ""
@@ -297,8 +363,8 @@ if [ ! -f /etc/systemd/system/%s.service ]; then
 fi
 %s
 %s'
-`, keyPath, port, user, ip,
-		appDir, appDir, user, user, appDir,
+`, keyPath, sshPort, sshUser, ip,
+		appDir, appDir, sshUser, sshUser, appDir,
 		// caddy install and config
 		func() string {
 			if !reverseProxyEnabled {
@@ -317,12 +383,12 @@ fi
 }
 
 // uploadFilesCommand uploads available artifacts to remote server
-func uploadFilesCommand(appName, ip, port, user, keyPath string, hasMain, hasPublic, hasStorage, hasResources bool) *exec.Cmd {
+func uploadFilesCommand(appName, ip, sshPort, sshUser, keyPath, prodEnvFilePath string, hasMain, hasProdEnv, hasPublic, hasStorage, hasResources bool) *exec.Cmd {
 	appDir := fmt.Sprintf("/var/www/%s", appName)
-	remoteBase := fmt.Sprintf("%s@%s:%s", user, ip, appDir)
+	remoteBase := fmt.Sprintf("%s@%s:%s", sshUser, ip, appDir)
 	// ensure remote base exists and permissions
 	cmds := []string{
-		fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'sudo mkdir -p %s && sudo chown -R %s:%s %s'", keyPath, port, user, ip, appDir, user, user, appDir),
+		fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'sudo mkdir -p %s && sudo chown -R %s:%s %s'", keyPath, sshPort, sshUser, ip, appDir, sshUser, sshUser, appDir),
 	}
 
 	// main binary with previous backup
@@ -333,32 +399,35 @@ func uploadFilesCommand(appName, ip, port, user, keyPath string, hasMain, hasPub
 		}
 		// upload to temp and atomically move, keeping previous as main.prev
 		cmds = append(cmds,
-			fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s %q %s/main.new", keyPath, port, filepath.Clean(localMain), remoteBase),
-			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'if [ -f %s/main ]; then sudo mv %s/main %s/main.prev; fi; sudo mv %s/main.new %s/main && sudo chmod +x %s/main'", keyPath, port, user, ip, appDir, appDir, appDir, appDir, appDir, appDir),
+			fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s %q %s/main.new", keyPath, sshPort, filepath.Clean(localMain), remoteBase),
+			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'if [ -f %s/main ]; then sudo mv %s/main %s/main.prev; fi; sudo mv %s/main.new %s/main && sudo chmod +x %s/main'", keyPath, sshPort, sshUser, ip, appDir, appDir, appDir, appDir, appDir, appDir),
 		)
 	}
 
+	if hasProdEnv {
+		cmds = append(cmds, fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s -r %q %s", keyPath, sshPort, filepath.Clean(prodEnvFilePath), remoteBase))
+	}
 	if hasPublic {
-		cmds = append(cmds, fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s -r %q %s", keyPath, port, filepath.Clean("public"), remoteBase))
+		cmds = append(cmds, fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s -r %q %s", keyPath, sshPort, filepath.Clean("public"), remoteBase))
 	}
 	if hasStorage {
-		cmds = append(cmds, fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s -r %q %s", keyPath, port, filepath.Clean("storage"), remoteBase))
+		cmds = append(cmds, fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s -r %q %s", keyPath, sshPort, filepath.Clean("storage"), remoteBase))
 	}
 	if hasResources {
-		cmds = append(cmds, fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s -r %q %s", keyPath, port, filepath.Clean("resources"), remoteBase))
+		cmds = append(cmds, fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s -r %q %s", keyPath, sshPort, filepath.Clean("resources"), remoteBase))
 	}
 
 	script := strings.Join(cmds, " && ")
 	return exec.Command("bash", "-lc", script)
 }
 
-func restartServiceCommand(appName, ip, port, user, keyPath string) *exec.Cmd {
-	script := fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'sudo systemctl daemon-reload && sudo systemctl restart %s || sudo systemctl start %s'", keyPath, port, user, ip, appName, appName)
+func restartServiceCommand(appName, ip, sshPort, sshUser, keyPath string) *exec.Cmd {
+	script := fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'sudo systemctl daemon-reload && sudo systemctl restart %s || sudo systemctl start %s'", keyPath, sshPort, sshUser, ip, appName, appName)
 	return exec.Command("bash", "-lc", script)
 }
 
 // rollbackCommand swaps main and main.prev if available, then restarts the service
-func rollbackCommand(appName, ip, port, user, keyPath string) *exec.Cmd {
+func rollbackCommand(appName, ip, sshPort, sshUser, keyPath string) *exec.Cmd {
 	appDir := fmt.Sprintf("/var/www/%s", appName)
 	script := fmt.Sprintf(`ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s '
 set -e
@@ -372,7 +441,7 @@ sudo mv %s/main.newcurrent %s/main.prev || true
 sudo chmod +x %s/main
 sudo systemctl daemon-reload
 sudo systemctl restart %s || sudo systemctl start %s
-'`, keyPath, port, user, ip,
+'`, keyPath, sshPort, sshUser, ip,
 		appDir, appDir, appDir, appDir, appDir, appDir, appDir, appDir, appName, appName)
 	return exec.Command("bash", "-lc", script)
 }
