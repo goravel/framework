@@ -14,6 +14,132 @@ import (
 	supportconsole "github.com/goravel/framework/support/console"
 )
 
+/*
+DeployCommand
+===============
+
+Overview
+--------
+This command implements a simple, opinionated deployment pipeline for Goravel applications.
+It builds the application locally, performs a one-time remote server setup, uploads the
+required artifacts to the server, restarts a systemd service, and supports rollback to the
+previous binary. The goal is to provide a pragmatic, single-command deploy for small-to-medium
+workloads.
+
+Architecture assumptions
+------------------------
+Two primary deployment topologies are supported:
+1) Reverse proxy in front of the app (recommended)
+   - reverseProxyEnabled=true
+   - App listens on 127.0.0.1:<DEPLOY_APP_PORT> (e.g. 9000)
+   - Caddy proxies public HTTP(S) traffic to the app
+   - If reverseProxyTLSEnabled=true and a valid domain is configured, Caddy terminates TLS
+     and automatically provisions certificates; otherwise Caddy serves plain HTTP on :80
+
+2) No reverse proxy
+   - reverseProxyEnabled=false
+   - App listens directly on :80 (APP_HOST=0.0.0.0, APP_PORT=80)
+
+Artifacts & layout on server
+----------------------------
+Remote base directory: /var/www/<APP_NAME>
+Files managed by this command on the remote host:
+  - main        : current binary (running)
+  - main.prev   : previous binary (standby for rollback)
+  - .env        : environment file (uploaded from DEPLOY_PROD_ENV_FILE_PATH)
+  - public/     : optional static assets
+  - storage/    : optional storage directory
+  - resources/  : optional resources directory
+
+Idempotency & first-time setup
+------------------------------
+The initial server setup is performed exactly once per server (per app name). The command first
+checks if /etc/systemd/system/<APP_NAME>.service exists over SSH. If it exists, setup is skipped.
+Otherwise, the command:
+  - Installs and configures Caddy (only when reverseProxyEnabled=true)
+  - Creates the app directory and sets ownership
+  - Writes the systemd unit for <APP_NAME>
+  - Enables the service and configures the firewall (ufw)
+
+Subsequent deploys skip the setup entirely for speed and safety (unless --force-setup is used).
+Note: If you change proxy/TLS/domain settings later, pass --force-setup to re-apply provisioning
+changes (e.g., regenerate Caddyfile, adjust firewall rules, rewrite the unit file).
+
+Rollback model
+--------------
+Every deployment that uploads a new binary preserves the previous one as main.prev. A rollback
+simply swaps main and main.prev atomically and restarts the service. Non-binary assets (.env,
+public, storage, resources) are not rolled back by this command.
+
+Build & artifacts (local)
+-------------------------
+The command builds the binary (name: APP_NAME) using the configured target OS/ARCH and static
+linking preference. See Goravel docs for compiling guidance, artifacts, and what to upload:
+https://www.goravel.dev/getting-started/compile.html
+
+Configuration (env)
+-------------------
+Required:
+  - app.name                               : Application name (used in remote paths/service name)
+  - DEPLOY_IP_ADDRESS                      : Target server IP
+  - DEPLOY_APP_PORT                        : Backend app port when reverse proxy is used (e.g. 9000)
+  - DEPLOY_SSH_PORT                        : SSH port (e.g. 22)
+  - DEPLOY_SSH_USER                        : SSH username (user must have sudo privileges)
+  - DEPLOY_SSH_KEY_PATH                    : Path to SSH private key (e.g. ~/.ssh/id_rsa)
+  - DEPLOY_OS                              : Target OS for build (e.g. linux)
+  - DEPLOY_ARCH                            : Target arch for build (e.g. amd64)
+  - DEPLOY_PROD_ENV_FILE_PATH              : Local path to production .env file to upload
+
+Optional / boolean flags (default false if unset):
+  - DEPLOY_STATIC                          : Build statically when true
+  - DEPLOY_REVERSE_PROXY_ENABLED           : Use Caddy reverse proxy when true
+  - DEPLOY_REVERSE_PROXY_TLS_ENABLED       : Enable TLS (requires domain) when true
+  - DEPLOY_DOMAIN                          : Domain name for TLS or HTTP vhost when using Caddy
+                                            (required only if TLS is enabled)
+
+CLI flags
+---------
+  - --only                                : Comma-separated subset to deploy: main,env,public,storage,resources
+  - -r, --rollback                        : Rollback to previous binary
+  - -F, --force-setup                     : Force re-run of provisioning even if already set up
+
+Security & firewall
+-------------------
+The command uses SSH with StrictHostKeyChecking=no for convenience. For production, consider
+manually trusting the host key to avoid MITM risks. Firewall rules are applied via ufw with
+safe ordering: allow OpenSSH and required HTTP(S) ports first, then enable ufw to avoid losing
+SSH connectivity.
+
+Systemd service
+---------------
+The unit runs under DEPLOY_SSH_USER. Environment variables are provided via the unit for host/port,
+and the working directory points to /var/www/<APP_NAME>. Service restarts are used (brief downtime).
+For zero-downtime swaps, a more advanced process manager or socket activation would be required.
+
+High-level deployment flow
+--------------------------
+1) Build: compile the binary for the specified target (OS/ARCH, static optional) with name APP_NAME
+2) Determine artifacts to upload: main, .env, public, storage, resources (filter via --only)
+3) Setup (first deploy only, or when --force-setup):
+   - Create directories and permissions
+   - Install/configure Caddy based on reverse proxy + TLS settings
+   - Write systemd unit and enable service
+   - Configure ufw rules (OpenSSH, 80, and 443 as needed)
+4) Upload:
+   - Binary: upload to main.new, move previous main to main.prev (if exists), atomically move main.new to main
+   - .env:   upload to .env.new, atomically move to .env
+   - public, storage, resources: recursively upload if they exist locally
+5) Restart service: systemctl daemon-reload, then restart (or start) the service
+
+Known limitations
+-----------------
+  - No migrations or database orchestration
+  - Rollback covers only the binary; assets/env are not rolled back
+  - StrictHostKeyChecking is disabled by default for convenience
+  - Changing proxy/TLS/domain requires --force-setup to re-apply provisioning
+  - Assumes Debian/Ubuntu with apt-get and ufw available
+*/
+
 type DeployCommand struct {
 	config config.Config
 }
