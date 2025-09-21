@@ -202,7 +202,7 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 	// Step 2: verify which files to upload (main, env, public, storage, resources)
 	hasMain, hasProdEnv, hasPublic, hasStorage, hasResources := getWhichFilesToUpload(ctx, appName, prodEnvFilePath)
 
-	// Step 3: set up server on first run (idempotent) — skip if already set up
+	// Step 3: set up server on first run —- skip if already set up
 	if !isServerAlreadySetup(appName, ipAddress, sshPort, sshUser, sshKeyPath) {
 		if err = supportconsole.ExecuteCommand(ctx, setupServerCommand(
 			fmt.Sprintf("%v", appName),
