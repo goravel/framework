@@ -49,25 +49,32 @@ func (r *DeployCommand) Extend() command.Extend {
 				Usage:              "Rollback to previous deployment",
 				DisableDefaultText: true,
 			},
+			&command.BoolFlag{
+				Name:               "force-setup",
+				Aliases:            []string{"F"},
+				Value:              false,
+				Usage:              "Force re-run server setup even if already configured",
+				DisableDefaultText: true,
+			},
 		},
 	}
 }
 
-func getAllOptions(ctx console.Context, config config.Config) (appName, ipAddress, appPort, sshPort, sshUser, sshKeyPath, targetOS, arch, domain, prodEnvFilePath string, staticEnv bool, reverseProxyEnabled bool, reverseProxyTLSEnabled bool) {
-	appName = config.GetString("app.name")
-	ipAddress = config.Env("DEPLOY_IP_ADDRESS").(string)
-	appPort = config.Env("DEPLOY_APP_PORT").(string)
-	sshPort = config.Env("DEPLOY_SSH_PORT").(string)
-	sshUser = config.Env("DEPLOY_SSH_USER").(string)
-	sshKeyPath = config.Env("DEPLOY_SSH_KEY_PATH").(string)
-	targetOS = config.Env("DEPLOY_OS").(string)
-	arch = config.Env("DEPLOY_ARCH").(string)
-	domain = config.Env("DEPLOY_DOMAIN").(string)
-	prodEnvFilePath = config.Env("DEPLOY_PROD_ENV_FILE_PATH").(string)
+func getAllOptions(ctx console.Context, cfg config.Config) (appName, ipAddress, appPort, sshPort, sshUser, sshKeyPath, targetOS, arch, domain, prodEnvFilePath string, staticEnv bool, reverseProxyEnabled bool, reverseProxyTLSEnabled bool) {
+	appName = cfg.GetString("app.name")
+	ipAddress = getStringEnv(cfg, "DEPLOY_IP_ADDRESS")
+	appPort = getStringEnv(cfg, "DEPLOY_APP_PORT")
+	sshPort = getStringEnv(cfg, "DEPLOY_SSH_PORT")
+	sshUser = getStringEnv(cfg, "DEPLOY_SSH_USER")
+	sshKeyPath = getStringEnv(cfg, "DEPLOY_SSH_KEY_PATH")
+	targetOS = getStringEnv(cfg, "DEPLOY_OS")
+	arch = getStringEnv(cfg, "DEPLOY_ARCH")
+	domain = getStringEnv(cfg, "DEPLOY_DOMAIN")
+	prodEnvFilePath = getStringEnv(cfg, "DEPLOY_PROD_ENV_FILE_PATH")
 
-	staticEnvRead := config.Env("DEPLOY_STATIC")
-	reverseProxyEnabledRead := config.Env("DEPLOY_REVERSE_PROXY_ENABLED")
-	reverseProxyTLSEnabledRead := config.Env("DEPLOY_REVERSE_PROXY_TLS_ENABLED")
+	staticEnv = getBoolEnv(cfg, "DEPLOY_STATIC")
+	reverseProxyEnabled = getBoolEnv(cfg, "DEPLOY_REVERSE_PROXY_ENABLED")
+	reverseProxyTLSEnabled = getBoolEnv(cfg, "DEPLOY_REVERSE_PROXY_TLS_ENABLED")
 
 	// if any of the options is not set, tell the user to set it and exit
 	if appName == "" {
@@ -103,8 +110,9 @@ func getAllOptions(ctx console.Context, config config.Config) (appName, ipAddres
 		os.Exit(1)
 	}
 
-	if domain == "" {
-		ctx.Error("DEPLOY_DOMAIN environment variable is required. Please set it in the .env file. Deployment cancelled. Exiting...")
+	// domain is only required if reverse proxy TLS is enabled
+	if reverseProxyEnabled && reverseProxyTLSEnabled && domain == "" {
+		ctx.Error("DEPLOY_DOMAIN environment variable is required when reverse proxy TLS is enabled. Please set it in the .env file. Deployment cancelled. Exiting...")
 		os.Exit(1)
 	}
 
@@ -112,22 +120,6 @@ func getAllOptions(ctx console.Context, config config.Config) (appName, ipAddres
 		ctx.Error("DEPLOY_PROD_ENV_FILE_PATH environment variable is required. Please set it in the .env file. Deployment cancelled. Exiting...")
 		os.Exit(1)
 	}
-	if staticEnvRead == "" {
-		ctx.Error("DEPLOY_STATIC environment variable is required. Please set it in the .env file. Deployment cancelled. Exiting...")
-		os.Exit(1)
-	}
-	if reverseProxyEnabledRead == "" {
-		ctx.Error("DEPLOY_REVERSE_PROXY_ENABLED environment variable is required. Please set it in the .env file. Deployment cancelled. Exiting...")
-		os.Exit(1)
-	}
-	if reverseProxyTLSEnabledRead == "" {
-		ctx.Error("DEPLOY_REVERSE_PROXY_TLS_ENABLED environment variable is required. Please set it in the .env file. Deployment cancelled. Exiting...")
-		os.Exit(1)
-	}
-
-	staticEnv = staticEnvRead.(bool)
-	reverseProxyEnabled = reverseProxyEnabledRead.(bool)
-	reverseProxyTLSEnabled = reverseProxyTLSEnabledRead.(bool)
 
 	// expand ssh key ~ path if needed
 	if after, ok := strings.CutPrefix(sshKeyPath, "~"); ok {
@@ -264,6 +256,35 @@ func dirExists(path string) bool {
 	return err == nil && info.IsDir()
 }
 
+// helpers: safe env parsing
+func getStringEnv(cfg config.Config, key string) string {
+	val := cfg.Env(key)
+	if val == nil {
+		return ""
+	}
+	s, ok := val.(string)
+	if ok {
+		return s
+	}
+	return fmt.Sprintf("%v", val)
+}
+
+func getBoolEnv(cfg config.Config, key string) bool {
+	val := cfg.Env(key)
+	if val == nil {
+		return false
+	}
+	switch v := val.(type) {
+	case bool:
+		return v
+	case string:
+		t := strings.ToLower(strings.TrimSpace(v))
+		return t == "1" || t == "true" || t == "t" || t == "yes" || t == "y"
+	default:
+		return false
+	}
+}
+
 // setupServerCommand ensures Caddy and a systemd service are installed; no-op on subsequent runs
 func setupServerCommand(appName, ip, appPort, sshPort, sshUser, keyPath, domain string, reverseProxyEnabled, reverseProxyTLSEnabled bool) *exec.Cmd {
 	// Directories and service
@@ -283,6 +304,7 @@ Description=Goravel App %s
 After=network.target
 
 [Service]
+User=%s
 WorkingDirectory=%s
 ExecStart=%s
 Environment=APP_ENV=production
@@ -295,7 +317,7 @@ SyslogIdentifier=%s
 
 [Install]
 WantedBy=multi-user.target
-`, appName, appDir, binCurrent, listenHost, appPort, appName)
+`, appName, sshUser, appDir, binCurrent, listenHost, appPort, appName)
 
 	// Build Caddyfile if reverse proxy enabled
 	caddyfile := ""
@@ -356,11 +378,15 @@ fi
 				return ""
 			}
 			install := "sudo apt-get update -y && sudo apt-get install -y caddy"
-			writeCfg := fmt.Sprintf("echo %q | base64 -d | sudo tee /etc/caddy/Caddyfile >/dev/null && sudo systemctl enable --now caddy", caddyB64)
+			writeCfg := fmt.Sprintf("echo %q | base64 -d | sudo tee /etc/caddy/Caddyfile >/dev/null && sudo systemctl enable --now caddy && sudo systemctl reload caddy || sudo systemctl restart caddy", caddyB64)
 			return install + " && " + writeCfg
 		}(),
 		appName, unitB64, appName, appName,
-		strings.Join(ufwCmds, " && "),
+		// Firewall: open before enabling to avoid SSH lockout
+		func() string {
+			cmds := append([]string{"sudo ufw allow OpenSSH"}, ufwCmds...)
+			return strings.Join(cmds, " && ")
+		}(),
 		"true",
 	)
 
@@ -386,7 +412,11 @@ func uploadFilesCommand(appName, ip, sshPort, sshUser, keyPath, prodEnvFilePath 
 	}
 
 	if hasProdEnv {
-		cmds = append(cmds, fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s -r %q %s", keyPath, sshPort, filepath.Clean(prodEnvFilePath), remoteBase))
+		// Upload env to a temp path, then atomically place as .env
+		cmds = append(cmds,
+			fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s %q %s/.env.new", keyPath, sshPort, filepath.Clean(prodEnvFilePath), remoteBase),
+			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'sudo mv %s/.env.new %s/.env'", keyPath, sshPort, sshUser, ip, appDir, appDir),
+		)
 	}
 	if hasPublic {
 		cmds = append(cmds, fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s -r %q %s", keyPath, sshPort, filepath.Clean("public"), remoteBase))
