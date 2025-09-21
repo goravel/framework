@@ -26,6 +26,94 @@ required artifacts to the server, restarts a systemd service, and supports rollb
 previous binary. The goal is to provide a pragmatic, single-command deploy for small-to-medium
 workloads.
 
+Usage example (1 - with reverse proxy):
+
+Assuming you have the following .env file stored in the root of your project as .env.production:
+```
+APP_NAME=my-app
+DEPLOY_IP_ADDRESS=127.0.0.1
+DEPLOY_APP_PORT=9000
+DEPLOY_SSH_PORT=22
+DEPLOY_SSH_USER=deploy
+DEPLOY_SSH_KEY_PATH=~/.ssh/id_rsa
+DEPLOY_OS=linux
+DEPLOY_ARCH=amd64
+DEPLOY_PROD_ENV_FILE_PATH=.env.production
+DEPLOY_STATIC=true
+DEPLOY_REVERSE_PROXY_ENABLED=true
+DEPLOY_REVERSE_PROXY_TLS_ENABLED=true
+DEPLOY_DOMAIN=my-app.com
+```
+You can then deploy your application to the server with the following command:
+```
+go run . artisan deploy
+```
+This will:
+1. Build the application
+2. On the remote server: install Caddy as a reverse proxy, support TLS, configure Caddy to proxy traffic to the application on port 9000, and only allow traffic from the domain my-app.com.
+3. On the remote server: install ufw, and set up the firewall to allow traffic to the application.
+4. On the remote server: create the systemd unit file and enable it
+5. Upload the application binary, environment file, public directory, storage directory, and resources directory to the server
+6. Restart the systemd service that manages the application
+
+
+Usage example (2 - without reverse proxy):
+
+You can also deploy without a reverse proxy by setting the DEPLOY_REVERSE_PROXY_ENABLED environment variable to false. For example,
+assuming you have the following .env file stored in the root of your project as .env.production and you want to deploy your application to the server without a reverse proxy:
+```
+APP_NAME=my-app
+DEPLOY_IP_ADDRESS=127.0.0.1
+DEPLOY_APP_PORT=80
+DEPLOY_SSH_PORT=22
+DEPLOY_SSH_USER=deploy
+DEPLOY_SSH_KEY_PATH=~/.ssh/id_rsa
+DEPLOY_OS=linux
+DEPLOY_ARCH=amd64
+DEPLOY_PROD_ENV_FILE_PATH=.env.production
+DEPLOY_STATIC=true
+DEPLOY_REVERSE_PROXY_ENABLED=false
+DEPLOY_REVERSE_PROXY_TLS_ENABLED=false
+DEPLOY_DOMAIN=
+```
+
+You can then deploy your application to the server with the following command:
+```
+go run . artisan deploy
+```
+
+This will:
+1. Build the application
+2. On the remote server: install ufw, and set up the firewall to allow traffic to the application that is listening on port 80 (http).
+3. On the remote server: create the systemd unit file and enable it
+4. Upload the application binary, environment file, public directory, storage directory, and resources directory to the server
+5. Restart the systemd service that manages the application
+```
+
+Usage example (3 - rollback):
+
+You can also rollback a deployment to the previous binary by running the following command:
+```
+go run . artisan deploy --rollback
+```
+
+
+Usage example (4 - force setup):
+
+You can also force the setup of the server by running the following command:
+```
+go run . artisan deploy --force-setup
+```
+
+
+Usage example (5 - only deploy subset of files):
+
+You can also deploy only a subset of the files (such as only the main binary and the environment file) by running the following command:
+```
+go run . artisan deploy --only main,env
+```
+
+
 Architecture assumptions
 ------------------------
 Two primary deployment topologies are supported:
