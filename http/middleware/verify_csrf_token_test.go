@@ -52,7 +52,6 @@ func TestTokenMatch(t *testing.T) {
 			mockRequest := mockhttp.NewContextRequest(t)
 			mockSession := mocksession.NewSession(t)
 
-			mockCtx.EXPECT().Request().Return(mockRequest).Maybe()
 			mockRequest.EXPECT().HasSession().Return(tt.hasSession)
 
 			if tt.hasSession {
@@ -60,10 +59,14 @@ func TestTokenMatch(t *testing.T) {
 				mockSession.EXPECT().Token().Return(tt.sessionToken)
 				mockRequest.EXPECT().Header(HeaderCsrfKey).Return(tt.headerToken)
 				if tt.headerToken == "" {
+					mockCtx.EXPECT().Request().Return(mockRequest).Times(4)
 					mockRequest.EXPECT().Input("_token").Return(tt.formToken)
+				} else {
+					mockCtx.EXPECT().Request().Return(mockRequest).Times(3)
 				}
+			} else {
+				mockCtx.EXPECT().Request().Return(mockRequest).Once()
 			}
-
 			result := tokenMatch(mockCtx)
 			assert.Equal(t, tt.expectedMatch, result)
 		})
