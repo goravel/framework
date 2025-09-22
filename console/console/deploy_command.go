@@ -229,8 +229,6 @@ You can also deploy only a subset of the files (such as only the main binary and
 ```
 go run . artisan deploy --only main,env
 ```
-
-
 */
 
 type DeployCommand struct {
