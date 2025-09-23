@@ -410,6 +410,19 @@ func validLocalHost(ctx console.Context) bool {
 
 // Handle Execute the console command.
 func (r *DeployCommand) Handle(ctx console.Context) error {
+	// Rollback check first: allow rollback without validating local host tools
+	// (tests can short-circuit Spinner; real runs will still use ssh remotely)
+	if ctx.OptionBool("rollback") {
+		appName, ipAddress, _, sshPort, sshUser, sshKeyPath, _, _, _, _, _, _, _ := getAllOptions(ctx, r.config)
+		if err := supportconsole.ExecuteCommand(ctx, rollbackCommand(
+			appName, ipAddress, sshPort, sshUser, sshKeyPath,
+		), "Rolling back..."); err != nil {
+			ctx.Error(err.Error())
+			return nil
+		}
+		ctx.Info("Rollback successful.")
+		return nil
+	}
 
 	// check if the local host is valid, currently only support macos and linux. Also requires scp, ssh, and bash to be installed and in your path.
 	if !validLocalHost(ctx) {
@@ -419,18 +432,8 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 	// get all options
 	appName, ipAddress, appPort, sshPort, sshUser, sshKeyPath, targetOS, arch, domain, prodEnvFilePath, staticEnv, reverseProxyEnabled, reverseProxyTLSEnabled := getAllOptions(ctx, r.config)
 
-	// Rollback if needed, then exit
+	// continue normal deploy flow
 	var err error
-	if ctx.OptionBool("rollback") {
-		if err = supportconsole.ExecuteCommand(ctx, rollbackCommand(
-			appName, ipAddress, sshPort, sshUser, sshKeyPath,
-		), "Rolling back..."); err != nil {
-			ctx.Error(err.Error())
-			return nil
-		}
-		ctx.Info("Rollback successful.")
-		return nil
-	}
 
 	// Step 1: build the application
 	// Build the binary for target OS/arch
