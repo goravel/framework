@@ -190,6 +190,15 @@ func Test_getWhichFilesToUpload_and_onlyFilter(t *testing.T) {
 	require.NoError(t, os.MkdirAll("storage", 0o755))
 	require.NoError(t, os.MkdirAll("resources", 0o755))
 
+	// Cleanup created files/directories at end of test
+	t.Cleanup(func() {
+		_ = os.Remove("myapp")
+		_ = os.Remove(".env.production")
+		_ = os.RemoveAll("public")
+		_ = os.RemoveAll("storage")
+		_ = os.RemoveAll("resources")
+	})
+
 	mc := &mocksconsole.Context{}
 	mc.EXPECT().Option("only").Return("").Once()
 	hasMain, hasEnv, hasPub, hasStor, hasRes := getWhichFilesToUpload(mc, "myapp", ".env.production")
