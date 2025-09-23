@@ -178,10 +178,11 @@ func Test_getWhichFilesToUpload_and_onlyFilter(t *testing.T) {
 	// Prepare temp workspace
 	wd, err := os.Getwd()
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = os.Chdir(wd) })
 
 	dir := t.TempDir()
 	require.NoError(t, os.Chdir(dir))
+	// Important: register chdir-back AFTER TempDir so it runs BEFORE TempDir's RemoveAll on Windows
+	t.Cleanup(func() { _ = os.Chdir(wd) })
 
 	// Create artifacts
 	require.NoError(t, os.WriteFile("myapp", []byte("bin"), 0o755))
