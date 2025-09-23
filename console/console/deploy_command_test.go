@@ -302,6 +302,43 @@ func Test_getAllOptions_ExpandsTildeAndBooleans(t *testing.T) {
 	assert.True(t, reverseProxyTLSEnabled)
 }
 
+func Test_fileExists_and_dirExists(t *testing.T) {
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	dir := t.TempDir()
+	require.NoError(t, os.Chdir(dir))
+	t.Cleanup(func() { _ = os.Chdir(wd) })
+
+	// none exists yet
+	assert.False(t, fileExists("bin"))
+	assert.False(t, dirExists("assets"))
+
+	// create file
+	require.NoError(t, os.WriteFile("bin", []byte("a"), 0o644))
+	assert.True(t, fileExists("bin"))
+	assert.False(t, dirExists("bin"))
+
+	// create dir
+	require.NoError(t, os.MkdirAll("assets", 0o755))
+	assert.True(t, dirExists("assets"))
+	assert.False(t, fileExists("assets"))
+}
+
+func Test_uploadFilesCommand_NoArtifacts(t *testing.T) {
+	cmd := uploadFilesCommand("myapp", "203.0.113.10", "22", "ubuntu", "~/.ssh/id", ".env.production", false, false, false, false, false)
+	require.NotNil(t, cmd)
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping script content assertions on Windows shell")
+	}
+	script := cmd.Args[2]
+	// only mkdir/chown should appear; no scp uploads
+	assert.Contains(t, script, "mkdir -p /var/www/myapp")
+	assert.Contains(t, script, "chown -R ubuntu:ubuntu /var/www/myapp")
+	assert.NotContains(t, script, "scp -o StrictHostKeyChecking=no")
+}
+
+// NOTE: We avoid calling isServerAlreadySetup as it shells to ssh and can be slow on CI.
+
 func Test_Handle_Rollback_ShortCircuit(t *testing.T) {
 	// We only test rollback path to avoid executing remote checks.
 	mc := &mocksconsole.Context{}
