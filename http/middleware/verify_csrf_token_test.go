@@ -52,15 +52,15 @@ func TestTokenMatch(t *testing.T) {
 			mockRequest := mockhttp.NewContextRequest(t)
 			mockSession := mocksession.NewSession(t)
 
-			mockRequest.EXPECT().HasSession().Return(tt.hasSession)
+			mockRequest.EXPECT().HasSession().Return(tt.hasSession).Once()
 
 			if tt.hasSession {
-				mockRequest.EXPECT().Session().Return(mockSession)
-				mockSession.EXPECT().Token().Return(tt.sessionToken)
-				mockRequest.EXPECT().Header(HeaderCsrfKey).Return(tt.headerToken)
+				mockRequest.EXPECT().Session().Return(mockSession).Once()
+				mockSession.EXPECT().Token().Return(tt.sessionToken).Once()
+				mockRequest.EXPECT().Header(HeaderCsrfKey).Return(tt.headerToken).Once()
 				if tt.headerToken == "" {
 					mockCtx.EXPECT().Request().Return(mockRequest).Times(4)
-					mockRequest.EXPECT().Input("_token").Return(tt.formToken)
+					mockRequest.EXPECT().Input("_token").Return(tt.formToken).Once()
 				} else {
 					mockCtx.EXPECT().Request().Return(mockRequest).Times(3)
 				}
