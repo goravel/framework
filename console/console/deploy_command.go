@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/goravel/framework/contracts/config"
@@ -382,14 +383,44 @@ func getWhichFilesToUpload(ctx console.Context, appName, prodEnvFilePath string)
 	return hasMain, hasProdEnv, hasPublic, hasStorage, hasResources
 }
 
+// validLocalHost checks if the local host is valid, currently only support macos and linux. Also requires scp, ssh, and bash to be installed and in your path.
+func validLocalHost(ctx console.Context) bool {
+	if runtime.GOOS != "darwin" && runtime.GOOS != "linux" {
+		ctx.Error("only macos and linux are supported. Please use a macos or linux machine to deploy.")
+		return false
+	}
+
+	if err := exec.Command("scp", "-V").Run(); err != nil {
+		ctx.Error("scp is not installed. Please install it, add it to your path, and try again.")
+		return false
+	}
+
+	if err := exec.Command("ssh", "-V").Run(); err != nil {
+		ctx.Error("ssh is not installed. Please install it, add it to your path, and try again.")
+		return false
+	}
+
+	if err := exec.Command("bash", "-c", "echo $SHELL").Run(); err != nil {
+		ctx.Error("bash is not installed. Please install it, add it to your path, and try again.")
+		return false
+	}
+
+	return true
+}
+
 // Handle Execute the console command.
 func (r *DeployCommand) Handle(ctx console.Context) error {
-	var err error
+
+	// check if the local host is valid, currently only support macos and linux. Also requires scp, ssh, and bash to be installed and in your path.
+	if !validLocalHost(ctx) {
+		return nil
+	}
 
 	// get all options
 	appName, ipAddress, appPort, sshPort, sshUser, sshKeyPath, targetOS, arch, domain, prodEnvFilePath, staticEnv, reverseProxyEnabled, reverseProxyTLSEnabled := getAllOptions(ctx, r.config)
 
 	// Rollback if needed, then exit
+	var err error
 	if ctx.OptionBool("rollback") {
 		if err = supportconsole.ExecuteCommand(ctx, rollbackCommand(
 			appName, ipAddress, sshPort, sshUser, sshKeyPath,
