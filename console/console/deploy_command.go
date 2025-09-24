@@ -390,17 +390,17 @@ func validLocalHost(ctx console.Context) bool {
 		return false
 	}
 
-	if err := exec.Command("scp", "-V").Run(); err != nil {
+	if _, err := exec.LookPath("scp"); err != nil {
 		ctx.Error("scp is not installed. Please install it, add it to your path, and try again.")
 		return false
 	}
 
-	if err := exec.Command("ssh", "-V").Run(); err != nil {
+	if _, err := exec.LookPath("ssh"); err != nil {
 		ctx.Error("ssh is not installed. Please install it, add it to your path, and try again.")
 		return false
 	}
 
-	if err := exec.Command("bash", "-c", "echo $SHELL").Run(); err != nil {
+	if _, err := exec.LookPath("bash"); err != nil {
 		ctx.Error("bash is not installed. Please install it, add it to your path, and try again.")
 		return false
 	}
@@ -663,20 +663,29 @@ func uploadFilesCommand(appName, ip, sshPort, sshUser, keyPath, prodEnvFilePath 
 	}
 
 	if hasProdEnv {
-		// Upload env to a temp path, then atomically place as .env
+		// Upload env to a temp path, then atomically place as .env; backup previous as .env.prev if exists
 		cmds = append(cmds,
 			fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s %q %s/.env.new", keyPath, sshPort, filepath.Clean(prodEnvFilePath), remoteBase),
-			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'sudo mv %s/.env.new %s/.env'", keyPath, sshPort, sshUser, ip, appDir, appDir),
+			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'if [ -f %s/.env ]; then sudo mv %s/.env %s/.env.prev; fi; sudo mv %s/.env.new %s/.env'", keyPath, sshPort, sshUser, ip, appDir, appDir, appDir, appDir, appDir),
 		)
 	}
 	if hasPublic {
-		cmds = append(cmds, fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s -r %q %s", keyPath, sshPort, filepath.Clean("public"), remoteBase))
+		cmds = append(cmds,
+			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'if [ -d %s/public ]; then sudo rm -rf %s/public.prev; sudo mv %s/public %s/public.prev; fi'", keyPath, sshPort, sshUser, ip, appDir, appDir, appDir, appDir),
+			fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s -r %q %s", keyPath, sshPort, filepath.Clean("public"), remoteBase),
+		)
 	}
 	if hasStorage {
-		cmds = append(cmds, fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s -r %q %s", keyPath, sshPort, filepath.Clean("storage"), remoteBase))
+		cmds = append(cmds,
+			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'if [ -d %s/storage ]; then sudo rm -rf %s/storage.prev; sudo mv %s/storage %s/storage.prev; fi'", keyPath, sshPort, sshUser, ip, appDir, appDir, appDir, appDir),
+			fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s -r %q %s", keyPath, sshPort, filepath.Clean("storage"), remoteBase),
+		)
 	}
 	if hasResources {
-		cmds = append(cmds, fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s -r %q %s", keyPath, sshPort, filepath.Clean("resources"), remoteBase))
+		cmds = append(cmds,
+			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'if [ -d %s/resources ]; then sudo rm -rf %s/resources.prev; sudo mv %s/resources %s/resources.prev; fi'", keyPath, sshPort, sshUser, ip, appDir, appDir, appDir, appDir),
+			fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s -r %q %s", keyPath, sshPort, filepath.Clean("resources"), remoteBase),
+		)
 	}
 
 	script := strings.Join(cmds, " && ")
@@ -693,18 +702,39 @@ func rollbackCommand(appName, ip, sshPort, sshUser, keyPath string) *exec.Cmd {
 	appDir := fmt.Sprintf("/var/www/%s", appName)
 	script := fmt.Sprintf(`ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s '
 set -e
-if [ ! -f %s/main.prev ]; then
+APP_DIR=%q
+SERVICE=%q
+if [ ! -f "$APP_DIR/main.prev" ]; then
   echo "No previous deployment to rollback to." >&2
   exit 1
 fi
-sudo mv %s/main %s/main.newcurrent || true
-sudo mv %s/main.prev %s/main
-sudo mv %s/main.newcurrent %s/main.prev || true
-sudo chmod +x %s/main
+sudo mv "$APP_DIR/main" "$APP_DIR/main.newcurrent" || true
+sudo mv "$APP_DIR/main.prev" "$APP_DIR/main"
+sudo mv "$APP_DIR/main.newcurrent" "$APP_DIR/main.prev" || true
+sudo chmod +x "$APP_DIR/main"
+if [ -f "$APP_DIR/.env.prev" ]; then
+  sudo mv "$APP_DIR/.env" "$APP_DIR/.env.newcurrent" || true
+  sudo mv "$APP_DIR/.env.prev" "$APP_DIR/.env"
+  sudo mv "$APP_DIR/.env.newcurrent" "$APP_DIR/.env.prev" || true
+fi
+if [ -d "$APP_DIR/public.prev" ]; then
+  sudo mv "$APP_DIR/public" "$APP_DIR/public.newcurrent" || true
+  sudo mv "$APP_DIR/public.prev" "$APP_DIR/public"
+  sudo mv "$APP_DIR/public.newcurrent" "$APP_DIR/public.prev" || true
+fi
+if [ -d "$APP_DIR/resources.prev" ]; then
+  sudo mv "$APP_DIR/resources" "$APP_DIR/resources.newcurrent" || true
+  sudo mv "$APP_DIR/resources.prev" "$APP_DIR/resources"
+  sudo mv "$APP_DIR/resources.newcurrent" "$APP_DIR/resources.prev" || true
+fi
+if [ -d "$APP_DIR/storage.prev" ]; then
+  sudo mv "$APP_DIR/storage" "$APP_DIR/storage.newcurrent" || true
+  sudo mv "$APP_DIR/storage.prev" "$APP_DIR/storage"
+  sudo mv "$APP_DIR/storage.newcurrent" "$APP_DIR/storage.prev" || true
+fi
 sudo systemctl daemon-reload
-sudo systemctl restart %s || sudo systemctl start %s
-'`, keyPath, sshPort, sshUser, ip,
-		appDir, appDir, appDir, appDir, appDir, appDir, appDir, appDir, appName, appName)
+sudo systemctl restart "$SERVICE" || sudo systemctl start "$SERVICE"
+ '`, keyPath, sshPort, sshUser, ip, appDir, appName)
 	return exec.Command("bash", "-lc", script)
 }
 
