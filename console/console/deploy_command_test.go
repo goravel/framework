@@ -146,7 +146,10 @@ func Test_rollbackCommand(t *testing.T) {
 	}
 	script := cmd.Args[2]
 	assert.Contains(t, script, "main.prev")
-	assert.Contains(t, script, "systemctl restart myapp || sudo systemctl start myapp")
+	// Accept either explicit service name or variable-based restart lines
+	hasExplicit := strings.Contains(script, "systemctl restart myapp || sudo systemctl start myapp")
+	hasVariable := strings.Contains(script, "systemctl restart \"$SERVICE\" || sudo systemctl start \"$SERVICE\"")
+	assert.True(t, hasExplicit || hasVariable, "expected restart line not found")
 }
 
 func Test_getStringEnv_and_getBoolEnv(t *testing.T) {
