@@ -6,13 +6,13 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	supportconsole "github.com/goravel/framework/support/console"
+	"github.com/goravel/framework/support/env"
 )
 
 /*
@@ -103,7 +103,7 @@ CLI flags
 ---------
   - --only                                : Comma-separated subset to deploy: main,env,public,storage,resources
   - -r, --rollback                        : Rollback to previous binary
-  - -F, --force-setup                     : Force re-run of provisioning even if already set up
+  - -f, --force-setup                     : Force re-run of provisioning even if already set up
 
 Security & firewall
 -------------------
@@ -232,6 +232,31 @@ go run . artisan deploy --only main,env
 ```
 */
 
+// deployOptions is a struct that contains all the options for the deploy command
+type deployOptions struct {
+	appName                string
+	ipAddress              string
+	appPort                string
+	sshPort                string
+	sshUser                string
+	sshKeyPath             string
+	targetOS               string
+	arch                   string
+	domain                 string
+	prodEnvFilePath        string
+	staticEnv              bool
+	reverseProxyEnabled    bool
+	reverseProxyTLSEnabled bool
+}
+
+type uploadOptions struct {
+	hasMain      bool
+	hasProdEnv   bool
+	hasPublic    bool
+	hasStorage   bool
+	hasResources bool
+}
+
 type DeployCommand struct {
 	config config.Config
 }
@@ -269,7 +294,7 @@ func (r *DeployCommand) Extend() command.Extend {
 			},
 			&command.BoolFlag{
 				Name:               "force-setup",
-				Aliases:            []string{"F"},
+				Aliases:            []string{"f"},
 				Value:              false,
 				Usage:              "Force re-run server setup even if already configured",
 				DisableDefaultText: true,
@@ -278,83 +303,166 @@ func (r *DeployCommand) Extend() command.Extend {
 	}
 }
 
-func getAllOptions(ctx console.Context, cfg config.Config) (appName, ipAddress, appPort, sshPort, sshUser, sshKeyPath, targetOS, arch, domain, prodEnvFilePath string, staticEnv bool, reverseProxyEnabled bool, reverseProxyTLSEnabled bool) {
-	appName = cfg.GetString("app.name")
-	ipAddress = getStringEnv(cfg, "DEPLOY_IP_ADDRESS")
-	appPort = getStringEnv(cfg, "DEPLOY_APP_PORT")
-	sshPort = getStringEnv(cfg, "DEPLOY_SSH_PORT")
-	sshUser = getStringEnv(cfg, "DEPLOY_SSH_USER")
-	sshKeyPath = getStringEnv(cfg, "DEPLOY_SSH_KEY_PATH")
-	targetOS = getStringEnv(cfg, "DEPLOY_OS")
-	arch = getStringEnv(cfg, "DEPLOY_ARCH")
-	domain = getStringEnv(cfg, "DEPLOY_DOMAIN")
-	prodEnvFilePath = getStringEnv(cfg, "DEPLOY_PROD_ENV_FILE_PATH")
-
-	staticEnv = getBoolEnv(cfg, "DEPLOY_STATIC")
-	reverseProxyEnabled = getBoolEnv(cfg, "DEPLOY_REVERSE_PROXY_ENABLED")
-	reverseProxyTLSEnabled = getBoolEnv(cfg, "DEPLOY_REVERSE_PROXY_TLS_ENABLED")
-
-	// if any of the options is not set, tell the user to set it and exit
-	if appName == "" {
-		ctx.Error("APP_NAME environment variable is required. Please set it in the .env file. Deployment cancelled. Exiting...")
-		os.Exit(1)
-	}
-	if ipAddress == "" {
-		ctx.Error("DEPLOY_IP_ADDRESS environment variable is required. Please set it in the .env file. Deployment cancelled. Exiting...")
-		os.Exit(1)
-	}
-	if appPort == "" {
-		ctx.Error("DEPLOY_APP_PORT environment variable is required. Please set it in the .env file. Deployment cancelled. Exiting...")
-		os.Exit(1)
-	}
-	if sshPort == "" {
-		ctx.Error("DEPLOY_SSH_PORT environment variable is required. Please set it in the .env file. Deployment cancelled. Exiting...")
-		os.Exit(1)
-	}
-	if sshUser == "" {
-		ctx.Error("DEPLOY_SSH_USER environment variable is required. Please set it in the .env file. Deployment cancelled. Exiting...")
-		os.Exit(1)
-	}
-	if sshKeyPath == "" {
-		ctx.Error("DEPLOY_SSH_KEY_PATH environment variable is required. Please set it in the .env file. Deployment cancelled. Exiting...")
-		os.Exit(1)
-	}
-	if targetOS == "" {
-		ctx.Error("DEPLOY_OS environment variable is required. Please set it in the .env file. Deployment cancelled. Exiting...")
-		os.Exit(1)
-	}
-	if arch == "" {
-		ctx.Error("DEPLOY_ARCH environment variable is required. Please set it in the .env file. Deployment cancelled. Exiting...")
-		os.Exit(1)
+// Handle Execute the console command.
+func (r *DeployCommand) Handle(ctx console.Context) error {
+	// Rollback check first: allow rollback without validating local host tools
+	// (tests can short-circuit Spinner; real runs will still use ssh remotely)
+	if ctx.OptionBool("rollback") {
+		opts := r.getAllOptions(ctx)
+		if err := supportconsole.ExecuteCommand(ctx, rollbackCommand(
+			opts.appName, opts.ipAddress, opts.sshPort, opts.sshUser, opts.sshKeyPath,
+		), "Rolling back..."); err != nil {
+			ctx.Error(err.Error())
+			return nil
+		}
+		ctx.Info("Rollback successful.")
+		return nil
 	}
 
+	// check if the local host is valid, currently only support macos and linux. Also requires scp, ssh, and bash to be installed and in your path.
+	if !validLocalHost(ctx) {
+		return nil
+	}
+
+	// get all options
+	opts := r.getAllOptions(ctx)
+
+	// continue normal deploy flow
+	var err error
+
+	// Step 1: build the application
+	// Build the binary for target OS/arch
+	if err = supportconsole.ExecuteCommand(ctx, generateCommand(opts.appName, opts.targetOS, opts.arch, opts.staticEnv), "Building..."); err != nil {
+		ctx.Error(err.Error())
+		return nil
+	}
+
+	// Step 2: verify which files to upload (main, env, public, storage, resources)
+	upload := getWhichFilesToUpload(ctx, opts.appName, opts.prodEnvFilePath)
+
+	// Step 3: set up server on first run —- skip if already set up
+	if !isServerAlreadySetup(opts.appName, opts.ipAddress, opts.sshPort, opts.sshUser, opts.sshKeyPath) {
+		if err = supportconsole.ExecuteCommand(ctx, setupServerCommand(
+			fmt.Sprintf("%v", opts.appName),
+			fmt.Sprintf("%v", opts.ipAddress),
+			fmt.Sprintf("%v", opts.appPort),
+			fmt.Sprintf("%v", opts.sshPort),
+			fmt.Sprintf("%v", opts.sshUser),
+			fmt.Sprintf("%v", opts.sshKeyPath),
+			strings.TrimSpace(opts.domain),
+			opts.reverseProxyEnabled,
+			opts.reverseProxyTLSEnabled,
+		), "Setting up server (first time only)..."); err != nil {
+			ctx.Error(err.Error())
+			return nil
+		}
+	} else {
+		ctx.Info("Server already set up. Skipping setup.")
+	}
+
+	// Step 4: upload files
+	if err = supportconsole.ExecuteCommand(ctx, uploadFilesCommand(
+		fmt.Sprintf("%v", opts.appName),
+		fmt.Sprintf("%v", opts.ipAddress),
+		fmt.Sprintf("%v", opts.sshPort),
+		fmt.Sprintf("%v", opts.sshUser),
+		fmt.Sprintf("%v", opts.sshKeyPath),
+		fmt.Sprintf("%v", opts.prodEnvFilePath),
+		upload.hasMain, upload.hasProdEnv, upload.hasPublic, upload.hasStorage, upload.hasResources,
+	), "Uploading files..."); err != nil {
+		ctx.Error(err.Error())
+		return nil
+	}
+
+	// Step 5: restart service
+	if err = supportconsole.ExecuteCommand(ctx, restartServiceCommand(
+		fmt.Sprintf("%v", opts.appName),
+		fmt.Sprintf("%v", opts.ipAddress),
+		fmt.Sprintf("%v", opts.sshPort),
+		fmt.Sprintf("%v", opts.sshUser),
+		fmt.Sprintf("%v", opts.sshKeyPath),
+	), "Restarting service..."); err != nil {
+		ctx.Error(err.Error())
+		return nil
+	}
+
+	ctx.Info("Deploy successful.")
+
+	return nil
+}
+
+func (r *DeployCommand) getAllOptions(ctx console.Context) deployOptions {
+	opts := deployOptions{}
+	opts.appName = r.config.GetString("app.name")
+	opts.ipAddress = r.config.GetString("DEPLOY_IP_ADDRESS")
+	opts.appPort = r.config.GetString("DEPLOY_APP_PORT")
+	opts.sshPort = r.config.GetString("DEPLOY_SSH_PORT")
+	opts.sshUser = r.config.GetString("DEPLOY_SSH_USER")
+	opts.sshKeyPath = r.config.GetString("DEPLOY_SSH_KEY_PATH")
+	opts.targetOS = r.config.GetString("DEPLOY_OS")
+	opts.arch = r.config.GetString("DEPLOY_ARCH")
+	opts.domain = r.config.GetString("DEPLOY_DOMAIN")
+	opts.prodEnvFilePath = r.config.GetString("DEPLOY_PROD_ENV_FILE_PATH")
+
+	opts.staticEnv = r.config.GetBool("DEPLOY_STATIC")
+	opts.reverseProxyEnabled = r.config.GetBool("DEPLOY_REVERSE_PROXY_ENABLED")
+	opts.reverseProxyTLSEnabled = r.config.GetBool("DEPLOY_REVERSE_PROXY_TLS_ENABLED")
+
+	// Validate required options and report all missing at once
+	var missing []string
+	if opts.appName == "" {
+		missing = append(missing, "APP_NAME")
+	}
+	if opts.ipAddress == "" {
+		missing = append(missing, "DEPLOY_IP_ADDRESS")
+	}
+	if opts.appPort == "" {
+		missing = append(missing, "DEPLOY_APP_PORT")
+	}
+	if opts.sshPort == "" {
+		missing = append(missing, "DEPLOY_SSH_PORT")
+	}
+	if opts.sshUser == "" {
+		missing = append(missing, "DEPLOY_SSH_USER")
+	}
+	if opts.sshKeyPath == "" {
+		missing = append(missing, "DEPLOY_SSH_KEY_PATH")
+	}
+	if opts.targetOS == "" {
+		missing = append(missing, "DEPLOY_OS")
+	}
+	if opts.arch == "" {
+		missing = append(missing, "DEPLOY_ARCH")
+	}
 	// domain is only required if reverse proxy TLS is enabled
-	if reverseProxyEnabled && reverseProxyTLSEnabled && domain == "" {
-		ctx.Error("DEPLOY_DOMAIN environment variable is required when reverse proxy TLS is enabled. Please set it in the .env file. Deployment cancelled. Exiting...")
-		os.Exit(1)
+	if opts.reverseProxyEnabled && opts.reverseProxyTLSEnabled && opts.domain == "" {
+		missing = append(missing, "DEPLOY_DOMAIN")
 	}
-
-	if prodEnvFilePath == "" {
-		ctx.Error("DEPLOY_PROD_ENV_FILE_PATH environment variable is required. Please set it in the .env file. Deployment cancelled. Exiting...")
+	if opts.prodEnvFilePath == "" {
+		missing = append(missing, "DEPLOY_PROD_ENV_FILE_PATH")
+	}
+	if len(missing) > 0 {
+		ctx.Error(fmt.Sprintf("Missing required environment variables: %s. Please set them in the .env file. Deployment cancelled. Exiting...", strings.Join(missing, ", ")))
 		os.Exit(1)
 	}
 
 	// expand ssh key ~ path if needed
-	if after, ok := strings.CutPrefix(sshKeyPath, "~"); ok {
+	if after, ok := strings.CutPrefix(opts.sshKeyPath, "~"); ok {
 		if home, herr := os.UserHomeDir(); herr == nil {
-			sshKeyPath = filepath.Join(home, after)
+			opts.sshKeyPath = filepath.Join(home, after)
 		}
 	}
 
-	return appName, ipAddress, appPort, sshPort, sshUser, sshKeyPath, targetOS, arch, domain, prodEnvFilePath, staticEnv, reverseProxyEnabled, reverseProxyTLSEnabled
+	return opts
 }
 
-func getWhichFilesToUpload(ctx console.Context, appName, prodEnvFilePath string) (hasMain, hasProdEnv, hasPublic, hasStorage, hasResources bool) {
-	hasMain = fileExists(appName)
-	hasProdEnv = fileExists(prodEnvFilePath)
-	hasPublic = dirExists("public")
-	hasStorage = dirExists("storage")
-	hasResources = dirExists("resources")
+func getWhichFilesToUpload(ctx console.Context, appName, prodEnvFilePath string) uploadOptions {
+	res := uploadOptions{}
+	res.hasMain = fileExists(appName)
+	res.hasProdEnv = fileExists(prodEnvFilePath)
+	res.hasPublic = dirExists("public")
+	res.hasStorage = dirExists("storage")
+	res.hasResources = dirExists("resources")
 
 	// Allow subset selection via --only
 	only := strings.TrimSpace(ctx.Option("only"))
@@ -365,27 +473,27 @@ func getWhichFilesToUpload(ctx console.Context, appName, prodEnvFilePath string)
 			include[strings.TrimSpace(strings.ToLower(p))] = true
 		}
 		if !include["main"] {
-			hasMain = false
+			res.hasMain = false
 		}
 		if !include["env"] {
-			hasProdEnv = false
+			res.hasProdEnv = false
 		}
 		if !include["public"] {
-			hasPublic = false
+			res.hasPublic = false
 		}
 		if !include["storage"] {
-			hasStorage = false
+			res.hasStorage = false
 		}
 		if !include["resources"] {
-			hasResources = false
+			res.hasResources = false
 		}
 	}
-	return hasMain, hasProdEnv, hasPublic, hasStorage, hasResources
+	return res
 }
 
 // validLocalHost checks if the local host is valid, currently only support macos and linux. Also requires scp, ssh, and bash to be installed and in your path.
 func validLocalHost(ctx console.Context) bool {
-	if runtime.GOOS != "darwin" && runtime.GOOS != "linux" {
+	if !env.IsDarwin() && !env.IsLinux() {
 		ctx.Error("only macos and linux are supported. Please use a macos or linux machine to deploy.")
 		return false
 	}
@@ -408,94 +516,6 @@ func validLocalHost(ctx console.Context) bool {
 	return true
 }
 
-// Handle Execute the console command.
-func (r *DeployCommand) Handle(ctx console.Context) error {
-	// Rollback check first: allow rollback without validating local host tools
-	// (tests can short-circuit Spinner; real runs will still use ssh remotely)
-	if ctx.OptionBool("rollback") {
-		appName, ipAddress, _, sshPort, sshUser, sshKeyPath, _, _, _, _, _, _, _ := getAllOptions(ctx, r.config)
-		if err := supportconsole.ExecuteCommand(ctx, rollbackCommand(
-			appName, ipAddress, sshPort, sshUser, sshKeyPath,
-		), "Rolling back..."); err != nil {
-			ctx.Error(err.Error())
-			return nil
-		}
-		ctx.Info("Rollback successful.")
-		return nil
-	}
-
-	// check if the local host is valid, currently only support macos and linux. Also requires scp, ssh, and bash to be installed and in your path.
-	if !validLocalHost(ctx) {
-		return nil
-	}
-
-	// get all options
-	appName, ipAddress, appPort, sshPort, sshUser, sshKeyPath, targetOS, arch, domain, prodEnvFilePath, staticEnv, reverseProxyEnabled, reverseProxyTLSEnabled := getAllOptions(ctx, r.config)
-
-	// continue normal deploy flow
-	var err error
-
-	// Step 1: build the application
-	// Build the binary for target OS/arch
-	if err = supportconsole.ExecuteCommand(ctx, generateCommand(appName, targetOS, arch, staticEnv), "Building..."); err != nil {
-		ctx.Error(err.Error())
-		return nil
-	}
-
-	// Step 2: verify which files to upload (main, env, public, storage, resources)
-	hasMain, hasProdEnv, hasPublic, hasStorage, hasResources := getWhichFilesToUpload(ctx, appName, prodEnvFilePath)
-
-	// Step 3: set up server on first run —- skip if already set up
-	if !isServerAlreadySetup(appName, ipAddress, sshPort, sshUser, sshKeyPath) {
-		if err = supportconsole.ExecuteCommand(ctx, setupServerCommand(
-			fmt.Sprintf("%v", appName),
-			fmt.Sprintf("%v", ipAddress),
-			fmt.Sprintf("%v", appPort),
-			fmt.Sprintf("%v", sshPort),
-			fmt.Sprintf("%v", sshUser),
-			fmt.Sprintf("%v", sshKeyPath),
-			strings.TrimSpace(domain),
-			reverseProxyEnabled,
-			reverseProxyTLSEnabled,
-		), "Setting up server (first time only)..."); err != nil {
-			ctx.Error(err.Error())
-			return nil
-		}
-	} else {
-		ctx.Info("Server already set up. Skipping setup.")
-	}
-
-	// Step 4: upload files
-	if err = supportconsole.ExecuteCommand(ctx, uploadFilesCommand(
-		fmt.Sprintf("%v", appName),
-		fmt.Sprintf("%v", ipAddress),
-		fmt.Sprintf("%v", sshPort),
-		fmt.Sprintf("%v", sshUser),
-		fmt.Sprintf("%v", sshKeyPath),
-		fmt.Sprintf("%v", prodEnvFilePath),
-		hasMain, hasProdEnv, hasPublic, hasStorage, hasResources,
-	), "Uploading files..."); err != nil {
-		ctx.Error(err.Error())
-		return nil
-	}
-
-	// Step 5: restart service
-	if err = supportconsole.ExecuteCommand(ctx, restartServiceCommand(
-		fmt.Sprintf("%v", appName),
-		fmt.Sprintf("%v", ipAddress),
-		fmt.Sprintf("%v", sshPort),
-		fmt.Sprintf("%v", sshUser),
-		fmt.Sprintf("%v", sshKeyPath),
-	), "Restarting service..."); err != nil {
-		ctx.Error(err.Error())
-		return nil
-	}
-
-	ctx.Info("Deploy successful.")
-
-	return nil
-}
-
 // helpers
 func fileExists(path string) bool {
 	info, err := os.Stat(path)
@@ -508,6 +528,8 @@ func dirExists(path string) bool {
 }
 
 // helpers: safe env parsing
+//
+//nolint:unused // used by tests in deploy_command_test.go
 func getStringEnv(cfg config.Config, key string) string {
 	val := cfg.Env(key)
 	if val == nil {
@@ -520,6 +542,7 @@ func getStringEnv(cfg config.Config, key string) string {
 	return fmt.Sprintf("%v", val)
 }
 
+//nolint:unused // used by tests in deploy_command_test.go
 func getBoolEnv(cfg config.Config, key string) bool {
 	val := cfg.Env(key)
 	if val == nil {
