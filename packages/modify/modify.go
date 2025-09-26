@@ -124,16 +124,29 @@ func (r goFile) Find(matchers []match.GoNode) modify.GoNode {
 		goFile:   &r,
 	}
 	r.modifiers = append(r.modifiers, modifier)
+
+	return modifier
+}
+
+func (r goFile) FindOrCreate(matchers []match.GoNode, fn func(node dst.Node) error) modify.GoNode {
+	modifier := &goNode{
+		createFunc: fn,
+		matchers:   matchers,
+		goFile:     &r,
+	}
+	r.modifiers = append(r.modifiers, modifier)
+
 	return modifier
 }
 
 type goNode struct {
-	actions  []modify.Action
-	goFile   *goFile
-	matchers []match.GoNode
+	actions    []modify.Action
+	createFunc func(node dst.Node) error
+	goFile     *goFile
+	matchers   []match.GoNode
 }
 
-func (r goNode) Apply(node dst.Node) (err error) {
+func (r *goNode) Apply(node dst.Node) (err error) {
 	var (
 		current      int
 		matched      bool
@@ -177,6 +190,16 @@ func (r goNode) Apply(node dst.Node) (err error) {
 	})
 
 	if !matched {
+		if r.createFunc != nil {
+			if err := r.createFunc(node); err != nil {
+				return err
+			}
+
+			r.createFunc = nil // prevent infinite recursion
+
+			return r.Apply(node) // try to apply again after creation
+		}
+
 		count := len(r.matchers)
 		return errors.PackageMatchGoNodeFail.Args(count-current, count)
 	}

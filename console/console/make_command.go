@@ -41,6 +41,13 @@ func (r *MakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *MakeCommand) Handle(ctx console.Context) error {
+	if err := r.initKernel(); err != nil {
+		ctx.Error(err.Error())
+		return nil
+	}
+
+	return nil
+
 	m, err := supportconsole.NewMake(ctx, "command", ctx.Argument(0), filepath.Join("app", "console", "commands"))
 	if err != nil {
 		ctx.Error(err.Error())
@@ -68,6 +75,28 @@ func (r *MakeCommand) Handle(ctx console.Context) error {
 
 func (r *MakeCommand) getStub() string {
 	return Stubs{}.Command()
+}
+
+func (r *MakeCommand) initKernel() error {
+	kernelPath := filepath.Join("app", "console", "kernel.go")
+	if file.Exists(kernelPath) {
+		if !file.Contain(kernelPath, "func (kernel Kernel) Commands()") {
+			if err := file.PutContent(kernelPath, Stubs{}.KernelCommands(), file.WithAppend()); err != nil {
+				return err
+			}
+
+			if err := modify.GoFile(kernelPath).FindOrCreate(match.Imports(), modify.CreateImport).
+				Modify(modify.AddImport("github.com/goravel/framework/contracts/console")).Apply(); err != nil {
+				return err
+			}
+		}
+	} else {
+		if err := file.PutContent(kernelPath, Stubs{}.Kernel()); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // populateStub Populate the place-holders in the command stub.
