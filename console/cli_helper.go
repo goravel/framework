@@ -292,6 +292,31 @@ func onUsageError(_ context.Context, _ *cli.Command, err error, _ bool) error {
 			return nil
 		}
 	}
+	if errMsg := err.Error(); strings.HasPrefix(errMsg, "invalid value") && strings.Contains(errMsg, "for argument") {
+		var value, argument string
+		if _, parseErr := fmt.Sscanf(errMsg, "invalid value %q for argument %s", &value, &argument); parseErr == nil {
+			var subErrMsg string
+			subErrMsgPos := strings.Index(errMsg, ":")
+			if subErrMsgPos != -1 {
+				subErrMsg = errMsg[subErrMsgPos+2:]
+			}
+			color.Red().Printfln("Invalid value '%s' for argument '%s'. Error: %s", value, strings.TrimSuffix(argument, ":"), subErrMsg)
+			return nil
+		}
+	}
+
+	if errMsg := err.Error(); strings.HasPrefix(errMsg, "sufficient count of arg") && strings.Contains(errMsg, "not provided") {
+		var argument string
+		var given, expected int
+		if _, parseErr := fmt.Sscanf(errMsg, "sufficient count of arg %s not provided, given %d expected %d", &argument, &given, &expected); parseErr == nil {
+			if expected == 1 {
+				color.Red().Printfln("The '%s' argument requires a value.", argument)
+			} else {
+				color.Red().Printfln("The '%s' argument requires at least %d values.", argument, expected)
+			}
+			return nil
+		}
+	}
 
 	return err
 }
