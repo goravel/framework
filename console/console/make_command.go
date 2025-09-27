@@ -97,7 +97,7 @@ func (r *MakeCommand) initKernel() error {
 	return modify.GoFile(appServiceProviderPath).
 		Find(match.Imports()).Modify(modify.AddImport(facadesImport)).
 		Find(match.Imports()).Modify(modify.AddImport(consoleImport)).
-		Find(match.Register()).Modify(modify.Add(registerSchedule)).Apply()
+		Find(match.RegisterFunc()).Modify(modify.Add(registerSchedule)).Apply()
 }
 
 // populateStub Populate the place-holders in the command stub.

@@ -31,7 +31,7 @@ func main() {
 			modify.GoFile(appServiceProviderPath).
 				Find(match.Imports()).Modify(modify.AddImport(facadesImport)).
 				Find(match.Imports()).Modify(modify.AddImport(consoleImport)).
-				Find(match.Register()).Modify(modify.Add(registerSchedule)),
+				Find(match.RegisterFunc()).Modify(modify.Add(registerSchedule)),
 			modify.WhenFacade("Schedule", modify.File(path.Facades("schedule.go")).Overwrite(stubs.ScheduleFacade())),
 		).
 		Uninstall(
@@ -40,7 +40,7 @@ func main() {
 					Find(match.Providers()).Modify(modify.Unregister(scheduleServiceProvider)).
 					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
 				modify.GoFile(appServiceProviderPath).
-					Find(match.Register()).Modify(modify.Remove(registerSchedule)).
+					Find(match.RegisterFunc()).Modify(modify.Remove(registerSchedule)).
 					Find(match.Imports()).Modify(modify.RemoveImport(facadesImport)).
 					Find(match.Imports()).Modify(modify.RemoveImport(consoleImport)),
 			),

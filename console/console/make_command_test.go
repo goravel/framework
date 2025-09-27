@@ -2,6 +2,7 @@ package console
 
 import (
 	"errors"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -31,6 +32,26 @@ func (kernel Kernel) Commands() []console.Command {
 }`
 
 func TestMakeCommand(t *testing.T) {
+	// Setup basic app structure that initKernel expects
+	appServiceProvider := `package providers
+
+import (
+	"github.com/goravel/framework/contracts/foundation"
+)
+
+type AppServiceProvider struct {
+}
+
+func (receiver *AppServiceProvider) Register(app foundation.Application) {
+
+}
+
+func (receiver *AppServiceProvider) Boot(app foundation.Application) {
+
+}
+`
+	assert.NoError(t, file.PutContent("app/providers/app_service_provider.go", appServiceProvider))
+
 	makeCommand := &MakeCommand{}
 	mockContext := mocksconsole.NewContext(t)
 	mockContext.EXPECT().Argument(0).Return("").Once()
@@ -67,4 +88,91 @@ func TestMakeCommand(t *testing.T) {
 	assert.True(t, file.Contain("app/console/kernel.go", "&Goravel.CleanCache{}"))
 
 	assert.Nil(t, file.Remove("app"))
+}
+
+func TestMakeCommand_initKernel(t *testing.T) {
+	makeCommand := &MakeCommand{}
+	kernelPath := filepath.Join("app", "console", "kernel.go")
+	appServiceProviderPath := filepath.Join("app", "providers", "app_service_provider.go")
+
+	tests := []struct {
+		name   string
+		setup  func()
+		assert func(err error)
+	}{
+		{
+			name: "kernel file already exists",
+			setup: func() {
+				// Create the kernel file
+				assert.NoError(t, file.PutContent(kernelPath, consoleKernel))
+			},
+			assert: func(err error) {
+				assert.NoError(t, err)
+			},
+		},
+		{
+			name: "kernel file does not exist - successful creation and modification",
+			setup: func() {
+				// Create app_service_provider.go with basic structure for modification
+				appServiceProvider := `package providers
+
+import (
+	"github.com/goravel/framework/contracts/foundation"
+)
+
+type AppServiceProvider struct {}
+
+func (receiver *AppServiceProvider) Register(app foundation.Application) {}
+
+func (receiver *AppServiceProvider) Boot(app foundation.Application) {}
+`
+				assert.NoError(t, file.PutContent(appServiceProviderPath, appServiceProvider))
+			},
+			assert: func(err error) {
+				assert.NoError(t, err)
+
+				kernel, err := file.GetContent(kernelPath)
+				assert.NoError(t, err)
+				assert.Equal(t, Stubs{}.Kernel(), kernel)
+
+				appServiceProvider, err := file.GetContent(appServiceProviderPath)
+				assert.NoError(t, err)
+				assert.True(t, strings.Contains(appServiceProvider, "github.com/goravel/framework/contracts/foundation"))
+				assert.True(t, strings.Contains(appServiceProvider, "github.com/goravel/framework/app/facades"))
+				assert.True(t, strings.Contains(appServiceProvider, "github.com/goravel/framework/app/console"))
+				assert.True(t, strings.Contains(appServiceProvider, "facades.Artisan().Register(console.Kernel{}.Commands())"))
+			},
+		},
+		{
+			name: "kernel file does not exist - fail to modify app_service_provider.go",
+			setup: func() {
+				// Create app_service_provider.go with basic structure for modification
+				appServiceProvider := `package providers
+
+import (
+	"github.com/goravel/framework/contracts/foundation"
+)
+
+type AppServiceProvider struct {}
+
+func (receiver *AppServiceProvider) Boot(app foundation.Application) {}
+`
+				assert.NoError(t, file.PutContent(appServiceProviderPath, appServiceProvider))
+			},
+			assert: func(err error) {
+				assert.Equal(t, "modify go file 'app/providers/app_service_provider.go' failed: 1 out of 1 matchers did not match", err.Error())
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.setup()
+
+			err := makeCommand.initKernel()
+
+			tt.assert(err)
+			assert.Nil(t, file.Remove("app"))
+		})
+	}
 }

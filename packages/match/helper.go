@@ -130,7 +130,7 @@ func Providers() []match.GoNode {
 	}
 }
 
-func Register() []match.GoNode {
+func RegisterFunc() []match.GoNode {
 	return []match.GoNode{Func(Ident("Register"))}
 }
 
