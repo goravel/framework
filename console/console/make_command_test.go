@@ -13,7 +13,41 @@ import (
 	"github.com/goravel/framework/support/file"
 )
 
-var consoleKernel = `package console
+var (
+	appServiceProvider = `package providers
+
+import (
+	"github.com/goravel/framework/contracts/foundation"
+)
+
+type AppServiceProvider struct {
+}
+
+func (receiver *AppServiceProvider) Register(app foundation.Application) {}
+
+func (receiver *AppServiceProvider) Boot(app foundation.Application) {}
+`
+)
+
+func TestMakeCommand(t *testing.T) {
+	defer func() {
+		assert.Nil(t, file.Remove("app"))
+	}()
+
+	makeCommand := &MakeCommand{}
+
+	t.Run("empty name", func(t *testing.T) {
+		assert.NoError(t, file.PutContent("app/console/kernel.go", Stubs{}.Kernel()))
+
+		mockContext := mocksconsole.NewContext(t)
+		mockContext.EXPECT().Argument(0).Return("").Once()
+		mockContext.EXPECT().Ask("Enter the command name", mock.Anything).Return("", errors.New("the command name cannot be empty")).Once()
+		mockContext.EXPECT().Error("the command name cannot be empty").Once()
+		assert.Nil(t, makeCommand.Handle(mockContext))
+	})
+
+	t.Run("command register failed", func(t *testing.T) {
+		assert.NoError(t, file.PutContent("app/console/kernel.go", `package console
 
 import (
 	"github.com/goravel/framework/contracts/console"
@@ -26,68 +60,45 @@ type Kernel struct {
 func (kernel Kernel) Schedule() []schedule.Event {
 	return []schedule.Event{}
 }
+`))
 
-func (kernel Kernel) Commands() []console.Command {
-	return []console.Command{}
-}`
+		mockContext := mocksconsole.NewContext(t)
+		mockContext.EXPECT().Argument(0).Return("CleanCache").Once()
+		mockContext.EXPECT().OptionBool("force").Return(false).Once()
+		mockContext.EXPECT().Success("Console command created successfully").Once()
+		mockContext.EXPECT().Warning(mock.MatchedBy(func(msg string) bool {
+			return strings.HasPrefix(msg, "command register failed:")
+		})).Once()
+		assert.Nil(t, makeCommand.Handle(mockContext))
+		assert.True(t, file.Exists("app/console/commands/clean_cache.go"))
+		assert.True(t, file.Contain("app/console/commands/clean_cache.go", "app:clean-cache"))
+	})
 
-func TestMakeCommand(t *testing.T) {
-	// Setup basic app structure that initKernel expects
-	appServiceProvider := `package providers
+	t.Run("command already exists", func(t *testing.T) {
+		mockContext := mocksconsole.NewContext(t)
+		mockContext.EXPECT().Argument(0).Return("CleanCache").Once()
+		mockContext.EXPECT().OptionBool("force").Return(false).Once()
+		mockContext.EXPECT().Error("the command already exists. Use the --force or -f flag to overwrite").Once()
+		assert.Nil(t, makeCommand.Handle(mockContext))
+	})
 
-import (
-	"github.com/goravel/framework/contracts/foundation"
-)
+	t.Run("command create and register successfully", func(t *testing.T) {
+		assert.NoError(t, file.PutContent("app/console/kernel.go", Stubs{}.Kernel()))
 
-type AppServiceProvider struct {
-}
+		mockContext := mocksconsole.NewContext(t)
+		mockContext.EXPECT().Argument(0).Return("Goravel/CleanCache").Once()
+		mockContext.EXPECT().OptionBool("force").Return(false).Once()
+		mockContext.EXPECT().Success("Console command created successfully").Once()
+		mockContext.EXPECT().Success("Console command registered successfully").Once()
 
-func (receiver *AppServiceProvider) Register(app foundation.Application) {
-
-}
-
-func (receiver *AppServiceProvider) Boot(app foundation.Application) {
-
-}
-`
-	assert.NoError(t, file.PutContent("app/providers/app_service_provider.go", appServiceProvider))
-
-	makeCommand := &MakeCommand{}
-	mockContext := mocksconsole.NewContext(t)
-	mockContext.EXPECT().Argument(0).Return("").Once()
-	mockContext.EXPECT().Ask("Enter the command name", mock.Anything).Return("", errors.New("the command name cannot be empty")).Once()
-	mockContext.EXPECT().Error("the command name cannot be empty").Once()
-	assert.Nil(t, makeCommand.Handle(mockContext))
-
-	mockContext.EXPECT().Argument(0).Return("CleanCache").Once()
-	mockContext.EXPECT().OptionBool("force").Return(false).Once()
-	mockContext.EXPECT().Success("Console command created successfully").Once()
-	mockContext.EXPECT().Warning(mock.MatchedBy(func(msg string) bool {
-		return strings.HasPrefix(msg, "command register failed:")
-	})).Once()
-	assert.Nil(t, makeCommand.Handle(mockContext))
-	assert.True(t, file.Exists("app/console/commands/clean_cache.go"))
-	assert.True(t, file.Contain("app/console/commands/clean_cache.go", "app:clean-cache"))
-
-	mockContext.EXPECT().Argument(0).Return("CleanCache").Once()
-	mockContext.EXPECT().OptionBool("force").Return(false).Once()
-	mockContext.EXPECT().Error("the command already exists. Use the --force or -f flag to overwrite").Once()
-	assert.Nil(t, makeCommand.Handle(mockContext))
-
-	mockContext.EXPECT().Argument(0).Return("Goravel/CleanCache").Once()
-	mockContext.EXPECT().OptionBool("force").Return(false).Once()
-	mockContext.EXPECT().Success("Console command created successfully").Once()
-	mockContext.EXPECT().Success("Console command registered successfully").Once()
-	assert.NoError(t, file.PutContent("app/console/kernel.go", consoleKernel))
-	assert.Nil(t, makeCommand.Handle(mockContext))
-	assert.True(t, file.Exists("app/console/commands/Goravel/clean_cache.go"))
-	assert.True(t, file.Contain("app/console/commands/Goravel/clean_cache.go", "package Goravel"))
-	assert.True(t, file.Contain("app/console/commands/Goravel/clean_cache.go", "type CleanCache struct"))
-	assert.True(t, file.Contain("app/console/commands/Goravel/clean_cache.go", "app:goravel-clean-cache"))
-	assert.True(t, file.Contain("app/console/kernel.go", "app/console/commands/Goravel"))
-	assert.True(t, file.Contain("app/console/kernel.go", "&Goravel.CleanCache{}"))
-
-	assert.Nil(t, file.Remove("app"))
+		assert.Nil(t, makeCommand.Handle(mockContext))
+		assert.True(t, file.Exists("app/console/commands/Goravel/clean_cache.go"))
+		assert.True(t, file.Contain("app/console/commands/Goravel/clean_cache.go", "package Goravel"))
+		assert.True(t, file.Contain("app/console/commands/Goravel/clean_cache.go", "type CleanCache struct"))
+		assert.True(t, file.Contain("app/console/commands/Goravel/clean_cache.go", "app:goravel-clean-cache"))
+		assert.True(t, file.Contain("app/console/kernel.go", "app/console/commands/Goravel"))
+		assert.True(t, file.Contain("app/console/kernel.go", "&Goravel.CleanCache{}"))
+	})
 }
 
 func TestMakeCommand_initKernel(t *testing.T) {
@@ -104,7 +115,7 @@ func TestMakeCommand_initKernel(t *testing.T) {
 			name: "kernel file already exists",
 			setup: func() {
 				// Create the kernel file
-				assert.NoError(t, file.PutContent(kernelPath, consoleKernel))
+				assert.NoError(t, file.PutContent(kernelPath, Stubs{}.Kernel()))
 			},
 			assert: func(err error) {
 				assert.NoError(t, err)
@@ -114,18 +125,6 @@ func TestMakeCommand_initKernel(t *testing.T) {
 			name: "kernel file does not exist - successful creation and modification",
 			setup: func() {
 				// Create app_service_provider.go with basic structure for modification
-				appServiceProvider := `package providers
-
-import (
-	"github.com/goravel/framework/contracts/foundation"
-)
-
-type AppServiceProvider struct {}
-
-func (receiver *AppServiceProvider) Register(app foundation.Application) {}
-
-func (receiver *AppServiceProvider) Boot(app foundation.Application) {}
-`
 				assert.NoError(t, file.PutContent(appServiceProviderPath, appServiceProvider))
 			},
 			assert: func(err error) {
