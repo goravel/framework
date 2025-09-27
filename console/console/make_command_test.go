@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	mocksconsole "github.com/goravel/framework/mocks/console"
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -159,7 +160,11 @@ func (receiver *AppServiceProvider) Boot(app foundation.Application) {}
 				assert.NoError(t, file.PutContent(appServiceProviderPath, appServiceProvider))
 			},
 			assert: func(err error) {
-				assert.Equal(t, "modify go file 'app/providers/app_service_provider.go' failed: 1 out of 1 matchers did not match", err.Error())
+				if env.IsWindows() {
+					assert.Equal(t, "modify go file 'app\\providers\\app_service_provider.go' failed: 1 out of 1 matchers did not match", err.Error())
+				} else {
+					assert.Equal(t, "modify go file 'app/providers/app_service_provider.go' failed: 1 out of 1 matchers did not match", err.Error())
+				}
 			},
 		},
 	}

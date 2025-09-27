@@ -15,10 +15,9 @@ import (
 
 type ModifyActionsTestSuite struct {
 	suite.Suite
-	config          string
-	console         string
-	database        string
-	serviceProvider string
+	config   string
+	console  string
+	database string
 }
 
 func TestModifyActionsTestSuite(t *testing.T) {
