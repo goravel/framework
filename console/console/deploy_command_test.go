@@ -155,26 +155,26 @@ func Test_rollbackCommand(t *testing.T) {
 func Test_getStringEnv_and_getBoolEnv(t *testing.T) {
 	mc := &mocksconfig.Config{}
 	// String as string
-	mc.EXPECT().Env("STR").Return("value").Once()
-	assert.Equal(t, "value", getStringEnv(mc, "STR"))
+	mc.EXPECT().EnvString("STR").Return("value").Once()
+	assert.Equal(t, "value", mc.EnvString("STR"))
 	// String as non-string type
-	mc.EXPECT().Env("NUM").Return(123).Once()
-	assert.Equal(t, "123", getStringEnv(mc, "NUM"))
+	mc.EXPECT().EnvString("NUM").Return("123").Once()
+	assert.Equal(t, "123", mc.EnvString("NUM"))
 	// Missing
-	mc.EXPECT().Env("MISSING").Return(nil).Once()
-	assert.Equal(t, "", getStringEnv(mc, "MISSING"))
+	mc.EXPECT().EnvString("MISSING").Return("").Once()
+	assert.Equal(t, "", mc.EnvString("MISSING"))
 
 	// Bool parsing
-	mc.EXPECT().Env("BOOL1").Return(true).Once()
-	assert.True(t, getBoolEnv(mc, "BOOL1"))
-	mc.EXPECT().Env("BOOL2").Return("true").Once()
-	assert.True(t, getBoolEnv(mc, "BOOL2"))
-	mc.EXPECT().Env("BOOL3").Return("1").Once()
-	assert.True(t, getBoolEnv(mc, "BOOL3"))
-	mc.EXPECT().Env("BOOL4").Return("no").Once()
-	assert.False(t, getBoolEnv(mc, "BOOL4"))
-	mc.EXPECT().Env("BOOL5").Return(nil).Once()
-	assert.False(t, getBoolEnv(mc, "BOOL5"))
+	mc.EXPECT().EnvBool("BOOL1").Return(true).Once()
+	assert.True(t, mc.EnvBool("BOOL1"))
+	mc.EXPECT().EnvBool("BOOL2").Return(true).Once()
+	assert.True(t, mc.EnvBool("BOOL2"))
+	mc.EXPECT().EnvBool("BOOL3").Return(true).Once()
+	assert.True(t, mc.EnvBool("BOOL3"))
+	mc.EXPECT().EnvBool("BOOL4").Return(false).Once()
+	assert.False(t, mc.EnvBool("BOOL4"))
+	mc.EXPECT().EnvBool("BOOL5").Return(false).Once()
+	assert.False(t, mc.EnvBool("BOOL5"))
 }
 
 func Test_getWhichFilesToUpload_and_onlyFilter(t *testing.T) {

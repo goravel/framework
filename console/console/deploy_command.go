@@ -517,38 +517,6 @@ func validLocalHost(ctx console.Context) bool {
 	return true
 }
 
-// helpers: safe env parsing
-//
-//nolint:unused // used by tests in deploy_command_test.go
-func getStringEnv(cfg config.Config, key string) string {
-	val := cfg.Env(key)
-	if val == nil {
-		return ""
-	}
-	s, ok := val.(string)
-	if ok {
-		return s
-	}
-	return fmt.Sprintf("%v", val)
-}
-
-//nolint:unused // used by tests in deploy_command_test.go
-func getBoolEnv(cfg config.Config, key string) bool {
-	val := cfg.Env(key)
-	if val == nil {
-		return false
-	}
-	switch v := val.(type) {
-	case bool:
-		return v
-	case string:
-		t := strings.ToLower(strings.TrimSpace(v))
-		return t == "1" || t == "true" || t == "t" || t == "yes" || t == "y"
-	default:
-		return false
-	}
-}
-
 // setupServerCommand ensures Caddy and a systemd service are installed; no-op on subsequent runs
 func setupServerCommand(appName, ip, appPort, sshPort, sshUser, keyPath, domain string, reverseProxyEnabled, reverseProxyTLSEnabled bool) *exec.Cmd {
 	// Directories and service
