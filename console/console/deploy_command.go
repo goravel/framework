@@ -13,6 +13,7 @@ import (
 	"github.com/goravel/framework/contracts/console/command"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/env"
+	"github.com/goravel/framework/support/file"
 )
 
 /*
@@ -458,11 +459,11 @@ func (r *DeployCommand) getAllOptions(ctx console.Context) deployOptions {
 
 func getWhichFilesToUpload(ctx console.Context, appName, prodEnvFilePath string) uploadOptions {
 	res := uploadOptions{}
-	res.hasMain = fileExists(appName)
-	res.hasProdEnv = fileExists(prodEnvFilePath)
-	res.hasPublic = dirExists("public")
-	res.hasStorage = dirExists("storage")
-	res.hasResources = dirExists("resources")
+	res.hasMain = file.Exists(appName)
+	res.hasProdEnv = file.Exists(prodEnvFilePath)
+	res.hasPublic = file.Exists("public")
+	res.hasStorage = file.Exists("storage")
+	res.hasResources = file.Exists("resources")
 
 	// Allow subset selection via --only
 	only := strings.TrimSpace(ctx.Option("only"))
@@ -514,17 +515,6 @@ func validLocalHost(ctx console.Context) bool {
 	}
 
 	return true
-}
-
-// helpers
-func fileExists(path string) bool {
-	info, err := os.Stat(path)
-	return err == nil && !info.IsDir()
-}
-
-func dirExists(path string) bool {
-	info, err := os.Stat(path)
-	return err == nil && info.IsDir()
 }
 
 // helpers: safe env parsing
