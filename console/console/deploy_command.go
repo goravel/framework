@@ -494,27 +494,45 @@ func getWhichFilesToUpload(ctx console.Context, appName, prodEnvFilePath string)
 
 // validLocalHost checks if the local host is valid, currently only support macos and linux. Also requires scp, ssh, and bash to be installed and in your path.
 func validLocalHost(ctx console.Context) bool {
-	if !env.IsDarwin() && !env.IsLinux() {
-		ctx.Error("only macos and linux are supported. Please use a macos or linux machine to deploy.")
-		return false
+	var errs []string
+
+	if !env.IsDarwin() && !env.IsLinux() && !env.IsWindows() {
+		errs = append(errs, "only macos, linux, and windows are supported. Please use a supported machine to deploy.")
 	}
 
 	if _, err := exec.LookPath("scp"); err != nil {
-		ctx.Error("scp is not installed. Please install it, add it to your path, and try again.")
-		return false
+		errs = append(errs, "scp is not installed. Please install it, add it to your path, and try again.")
 	}
 
 	if _, err := exec.LookPath("ssh"); err != nil {
-		ctx.Error("ssh is not installed. Please install it, add it to your path, and try again.")
-		return false
+		errs = append(errs, "ssh is not installed. Please install it, add it to your path, and try again.")
 	}
 
-	if _, err := exec.LookPath("bash"); err != nil {
-		ctx.Error("bash is not installed. Please install it, add it to your path, and try again.")
+	// Shell requirements depend on OS
+	if env.IsWindows() {
+		if _, err := exec.LookPath("cmd"); err != nil {
+			errs = append(errs, "cmd is not available. Please ensure Windows command processor is accessible and try again.")
+		}
+	} else {
+		if _, err := exec.LookPath("bash"); err != nil {
+			errs = append(errs, "bash is not installed. Please install it, add it to your path, and try again.")
+		}
+	}
+
+	if len(errs) > 0 {
+		ctx.Error("Environment validation errors:\n - " + strings.Join(errs, "\n - "))
 		return false
 	}
 
 	return true
+}
+
+// makeLocalCommand chooses the appropriate local shell to execute the composed script.
+func makeLocalCommand(script string) *exec.Cmd {
+	if env.IsWindows() {
+		return exec.Command("cmd", "/C", script)
+	}
+	return exec.Command("bash", "-lc", script)
 }
 
 // setupServerCommand ensures Caddy and a systemd service are installed; no-op on subsequent runs
@@ -622,7 +640,7 @@ fi
 		"true",
 	)
 
-	return exec.Command("bash", "-lc", script)
+	return makeLocalCommand(script)
 }
 
 // uploadFilesCommand uploads available artifacts to remote server
@@ -670,12 +688,12 @@ func uploadFilesCommand(appName, ip, sshPort, sshUser, keyPath, prodEnvFilePath 
 	}
 
 	script := strings.Join(cmds, " && ")
-	return exec.Command("bash", "-lc", script)
+	return makeLocalCommand(script)
 }
 
 func restartServiceCommand(appName, ip, sshPort, sshUser, keyPath string) *exec.Cmd {
 	script := fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'sudo systemctl daemon-reload && sudo systemctl restart %s || sudo systemctl start %s'", keyPath, sshPort, sshUser, ip, appName, appName)
-	return exec.Command("bash", "-lc", script)
+	return makeLocalCommand(script)
 }
 
 // rollbackCommand swaps main and main.prev if available, then restarts the service
@@ -722,7 +740,7 @@ sudo systemctl restart "$SERVICE" || sudo systemctl start "$SERVICE"
 // isServerAlreadySetup checks if the systemd unit already exists on remote host
 func isServerAlreadySetup(appName, ip, sshPort, sshUser, keyPath string) bool {
 	checkCmd := fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'test -f /etc/systemd/system/%s.service'", keyPath, sshPort, sshUser, ip, appName)
-	cmd := exec.Command("bash", "-lc", checkCmd)
+	cmd := makeLocalCommand(checkCmd)
 	if err := cmd.Run(); err != nil {
 		return false
 	}
