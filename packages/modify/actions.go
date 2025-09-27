@@ -99,7 +99,11 @@ func CreateImport(node dst.Node) error {
 
 	newDecls := make([]dst.Decl, 0, len(f.Decls)+1)
 	newDecls = append(newDecls, f.Decls[0], importDecl) // package and import
-	newDecls = append(newDecls, f.Decls[1:]...)         // others
+
+	if len(f.Decls) > 1 {
+		newDecls = append(newDecls, f.Decls[1:]...) // others
+	}
+
 	f.Decls = newDecls
 
 	return nil
