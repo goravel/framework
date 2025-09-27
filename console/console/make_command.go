@@ -8,6 +8,7 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
 	supportconsole "github.com/goravel/framework/support/console"
@@ -46,8 +47,6 @@ func (r *MakeCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	return nil
-
 	m, err := supportconsole.NewMake(ctx, "command", ctx.Argument(0), filepath.Join("app", "console", "commands"))
 	if err != nil {
 		ctx.Error(err.Error())
@@ -80,23 +79,25 @@ func (r *MakeCommand) getStub() string {
 func (r *MakeCommand) initKernel() error {
 	kernelPath := filepath.Join("app", "console", "kernel.go")
 	if file.Exists(kernelPath) {
-		if !file.Contain(kernelPath, "func (kernel Kernel) Commands()") {
-			if err := file.PutContent(kernelPath, Stubs{}.KernelCommands(), file.WithAppend()); err != nil {
-				return err
-			}
-
-			if err := modify.GoFile(kernelPath).FindOrCreate(match.Imports(), modify.CreateImport).
-				Modify(modify.AddImport("github.com/goravel/framework/contracts/console")).Apply(); err != nil {
-				return err
-			}
-		}
-	} else {
-		if err := file.PutContent(kernelPath, Stubs{}.Kernel()); err != nil {
-			return err
-		}
+		return nil
 	}
 
-	return nil
+	// Create the console kernel file if it does not exist.
+	if err := file.PutContent(kernelPath, Stubs{}.Kernel()); err != nil {
+		return err
+	}
+
+	// Modify the AppServiceProvider to register the console kernel.
+	appServiceProviderPath := filepath.Join("app", "providers", "app_service_provider.go")
+	registerSchedule := "facades.Artisan().Register(console.Kernel{}.Commands())"
+	moduleName := packages.GetModuleName()
+	facadesImport := fmt.Sprintf("%s/app/facades", moduleName)
+	consoleImport := fmt.Sprintf("%s/app/console", moduleName)
+
+	return modify.GoFile(appServiceProviderPath).
+		Find(match.Imports()).Modify(modify.AddImport(facadesImport)).
+		Find(match.Imports()).Modify(modify.AddImport(consoleImport)).
+		Find(match.Register()).Modify(modify.Add(registerSchedule)).Apply()
 }
 
 // populateStub Populate the place-holders in the command stub.

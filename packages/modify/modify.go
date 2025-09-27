@@ -26,6 +26,13 @@ func GoFile(file string) modify.GoFile {
 	return &goFile{file: file}
 }
 
+func When(fn func() bool, applies ...modify.Apply) modify.Apply {
+	return &whenModifier{
+		fn:      fn,
+		applies: applies,
+	}
+}
+
 func WhenFacade(facade string, applies ...modify.Apply) modify.Apply {
 	return &whenFacadeModifier{
 		facade:  facade,
@@ -54,18 +61,20 @@ type file struct {
 
 func (r *file) Overwrite(content string) modify.Apply {
 	return &overwriteFile{
-		path:    r.path,
 		content: content,
+		path:    r.path,
 	}
 }
 
 func (r *file) Remove() modify.Apply {
-	return &removeFile{path: r.path}
+	return &removeFile{
+		path: r.path,
+	}
 }
 
 type overwriteFile struct {
-	path    string
 	content string
+	path    string
 }
 
 func (r *overwriteFile) Apply(options ...modify.Option) error {
@@ -211,6 +220,25 @@ func (r *goNode) Modify(actions ...modify.Action) modify.GoFile {
 	r.actions = actions
 
 	return r.goFile
+}
+
+type whenModifier struct {
+	fn      func() bool
+	applies []modify.Apply
+}
+
+func (r whenModifier) Apply(options ...modify.Option) error {
+	if !r.fn() {
+		return nil
+	}
+
+	for _, apply := range r.applies {
+		if err := apply.Apply(options...); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 type whenFacadeModifier struct {
