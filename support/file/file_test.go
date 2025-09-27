@@ -90,7 +90,7 @@ func TestPutContent(t *testing.T) {
 	assert.True(t, Contain(filePath, "goravel"))
 	assert.Equal(t, 1, file.GetLineNum(filePath))
 	// append content
-	assert.NoError(t, PutContent(filePath, "\nframework", WithAppend(true)))
+	assert.NoError(t, PutContent(filePath, "\nframework", WithAppend()))
 	assert.True(t, Contain(filePath, "goravel\nframework"))
 	assert.Equal(t, 2, file.GetLineNum(filePath))
 	// overwrite content

@@ -14,6 +14,19 @@ import (
 	"github.com/goravel/framework/support/color"
 )
 
+// Add adds an expression to the matched specified function.
+func Add(expression string) modify.Action {
+	return func(cursor *dstutil.Cursor) {
+		expr := MustParseExpr(expression).(dst.Expr)
+		stmt := &dst.ExprStmt{
+			X: expr,
+		}
+
+		node := cursor.Node().(*dst.FuncDecl)
+		node.Body.List = append(node.Body.List, stmt)
+	}
+}
+
 // AddConfig adds a configuration key with the given expression to the config file.
 func AddConfig(name, expression string) modify.Action {
 	return func(cursor *dstutil.Cursor) {
@@ -77,6 +90,25 @@ func AddImport(path string, name ...string) modify.Action {
 	}
 }
 
+func CreateImport(node dst.Node) error {
+	importDecl := &dst.GenDecl{
+		Tok: token.IMPORT,
+	}
+
+	f := node.(*dst.File)
+
+	newDecls := make([]dst.Decl, 0, len(f.Decls)+1)
+	newDecls = append(newDecls, f.Decls[0], importDecl) // package and import
+
+	if len(f.Decls) > 1 {
+		newDecls = append(newDecls, f.Decls[1:]...) // others
+	}
+
+	f.Decls = newDecls
+
+	return nil
+}
+
 // Register adds a registration to the matched specified array.
 func Register(expression string, before ...string) modify.Action {
 	return func(cursor *dstutil.Cursor) {
@@ -105,6 +137,20 @@ func Register(expression string, before ...string) modify.Action {
 
 		// insert registration at the end
 		node.Elts = append(node.Elts, expr)
+	}
+}
+
+// Remove removes an expression from the matched specified function.
+func Remove(expression string) modify.Action {
+	return func(cursor *dstutil.Cursor) {
+		expr := MustParseExpr(expression).(dst.Expr)
+		stmt := &dst.ExprStmt{
+			X: expr,
+		}
+		node := cursor.Node().(*dst.FuncDecl)
+		node.Body.List = slices.DeleteFunc(node.Body.List, func(ex dst.Stmt) bool {
+			return match.EqualNode(stmt).MatchNode(ex)
+		})
 	}
 }
 

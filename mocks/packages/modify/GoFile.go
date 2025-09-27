@@ -3,6 +3,7 @@
 package modify
 
 import (
+	dst "github.com/dave/dst"
 	match "github.com/goravel/framework/contracts/packages/match"
 	mock "github.com/stretchr/testify/mock"
 
@@ -125,6 +126,55 @@ func (_c *GoFile_Find_Call) Return(_a0 modify.GoNode) *GoFile_Find_Call {
 }
 
 func (_c *GoFile_Find_Call) RunAndReturn(run func([]match.GoNode) modify.GoNode) *GoFile_Find_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// FindOrCreate provides a mock function with given fields: matchers, fn
+func (_m *GoFile) FindOrCreate(matchers []match.GoNode, fn func(dst.Node) error) modify.GoNode {
+	ret := _m.Called(matchers, fn)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FindOrCreate")
+	}
+
+	var r0 modify.GoNode
+	if rf, ok := ret.Get(0).(func([]match.GoNode, func(dst.Node) error) modify.GoNode); ok {
+		r0 = rf(matchers, fn)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(modify.GoNode)
+		}
+	}
+
+	return r0
+}
+
+// GoFile_FindOrCreate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindOrCreate'
+type GoFile_FindOrCreate_Call struct {
+	*mock.Call
+}
+
+// FindOrCreate is a helper method to define mock.On call
+//   - matchers []match.GoNode
+//   - fn func(dst.Node) error
+func (_e *GoFile_Expecter) FindOrCreate(matchers interface{}, fn interface{}) *GoFile_FindOrCreate_Call {
+	return &GoFile_FindOrCreate_Call{Call: _e.mock.On("FindOrCreate", matchers, fn)}
+}
+
+func (_c *GoFile_FindOrCreate_Call) Run(run func(matchers []match.GoNode, fn func(dst.Node) error)) *GoFile_FindOrCreate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].([]match.GoNode), args[1].(func(dst.Node) error))
+	})
+	return _c
+}
+
+func (_c *GoFile_FindOrCreate_Call) Return(_a0 modify.GoNode) *GoFile_FindOrCreate_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *GoFile_FindOrCreate_Call) RunAndReturn(run func([]match.GoNode, func(dst.Node) error) modify.GoNode) *GoFile_FindOrCreate_Call {
 	_c.Call.Return(run)
 	return _c
 }
