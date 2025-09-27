@@ -597,7 +597,7 @@ WantedBy=multi-user.target
 	caddyfile := ""
 	if reverseProxyEnabled {
 		site := ":80"
-		if reverseProxyTLSEnabled && strings.TrimSpace(domain) != "" && domain != "<nil>" {
+		if reverseProxyTLSEnabled && strings.TrimSpace(domain) != "" {
 			site = domain
 		}
 		upstream := fmt.Sprintf("127.0.0.1:%s", appPort)
