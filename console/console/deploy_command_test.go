@@ -233,7 +233,7 @@ func Test_getWhichFilesToUpload_and_onlyFilter(t *testing.T) {
 
 	mc := &mocksconsole.Context{}
 	mc.EXPECT().Option("only").Return("").Once()
-	up := getWhichFilesToUpload(mc, "myapp", ".env.production")
+	up := getUploadOptions(mc, "myapp", ".env.production")
 	assert.True(t, up.hasMain)
 	assert.True(t, up.hasProdEnv)
 	assert.True(t, up.hasPublic)
@@ -243,7 +243,7 @@ func Test_getWhichFilesToUpload_and_onlyFilter(t *testing.T) {
 	// Now test filter: only main and env
 	mc2 := &mocksconsole.Context{}
 	mc2.EXPECT().Option("only").Return("main,env").Once()
-	up = getWhichFilesToUpload(mc2, "myapp", ".env.production")
+	up = getUploadOptions(mc2, "myapp", ".env.production")
 	assert.True(t, up.hasMain)
 	assert.True(t, up.hasProdEnv)
 	assert.False(t, up.hasPublic)

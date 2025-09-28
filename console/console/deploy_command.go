@@ -343,7 +343,7 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 	}
 
 	// Step 2: verify which files to upload (main, env, public, storage, resources)
-	upload := getWhichFilesToUpload(ctx, opts.appName, opts.prodEnvFilePath)
+	upload := getUploadOptions(ctx, opts.appName, opts.prodEnvFilePath)
 
 	// If the production env file is encrypted (per Goravel docs), decrypt it first
 	envPathToUpload := opts.prodEnvFilePath
@@ -479,7 +479,7 @@ func (r *DeployCommand) getDeployOptions(ctx console.Context) deployOptions {
 	return opts
 }
 
-func getWhichFilesToUpload(ctx console.Context, appName, prodEnvFilePath string) uploadOptions {
+func getUploadOptions(ctx console.Context, appName, prodEnvFilePath string) uploadOptions {
 	res := uploadOptions{}
 	res.hasMain = file.Exists(appName)
 	res.hasProdEnv = file.Exists(prodEnvFilePath)
