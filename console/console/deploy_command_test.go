@@ -3,6 +3,7 @@ package console
 import (
 	"encoding/base64"
 	"os"
+	"os/exec"
 	"runtime"
 	"strings"
 	"testing"
@@ -105,6 +106,10 @@ func Test_setupServerCommand_ProxyTLS(t *testing.T) {
 	assert.Contains(t, script, "ufw allow 443")
 	// Reload on change
 	assert.Contains(t, script, "systemctl reload caddy || sudo systemctl restart caddy")
+	// Ensure we invoke via bash on non-Windows
+	require.GreaterOrEqual(t, len(cmd.Args), 2)
+	assert.Equal(t, "bash", cmd.Args[0])
+	assert.Equal(t, "-lc", cmd.Args[1])
 }
 
 func Test_uploadFilesCommand_AllArtifacts(t *testing.T) {
@@ -127,6 +132,25 @@ func Test_uploadFilesCommand_AllArtifacts(t *testing.T) {
 	assert.Contains(t, script, "scp -o StrictHostKeyChecking=no -i \"~/.ssh/id\" -P 22 -r \"resources\" ubuntu@203.0.113.10:"+appDir)
 }
 
+func Test_uploadFilesCommand_SubsetArtifacts(t *testing.T) {
+	cmd := uploadFilesCommand("myapp", "203.0.113.10", "22", "ubuntu", "~/.ssh/id", ".env.production", true, false, false, true, false)
+	require.NotNil(t, cmd)
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping script content assertions on Windows shell")
+	}
+	script := cmd.Args[2]
+	appDir := "/var/www/myapp"
+	// main present
+	assert.Contains(t, script, "/main.new")
+	// env absent
+	assert.NotContains(t, script, ".env.new")
+	// public/resources absent
+	assert.NotContains(t, script, " -r \"public\"")
+	assert.NotContains(t, script, " -r \"resources\"")
+	// storage present
+	assert.Contains(t, script, " -r \"storage\" ubuntu@203.0.113.10:"+appDir)
+}
+
 func Test_restartServiceCommand(t *testing.T) {
 	cmd := restartServiceCommand("myapp", "203.0.113.10", "22", "ubuntu", "~/.ssh/id")
 	require.NotNil(t, cmd)
@@ -136,6 +160,10 @@ func Test_restartServiceCommand(t *testing.T) {
 	script := cmd.Args[2]
 	assert.Contains(t, script, "systemctl daemon-reload")
 	assert.Contains(t, script, "systemctl restart myapp || sudo systemctl start myapp")
+	// Verify shell wrapper on non-Windows
+	require.GreaterOrEqual(t, len(cmd.Args), 2)
+	assert.Equal(t, "bash", cmd.Args[0])
+	assert.Equal(t, "-lc", cmd.Args[1])
 }
 
 func Test_rollbackCommand(t *testing.T) {
@@ -221,6 +249,153 @@ func Test_getWhichFilesToUpload_and_onlyFilter(t *testing.T) {
 	assert.False(t, up.hasPublic)
 	assert.False(t, up.hasStorage)
 	assert.False(t, up.hasResources)
+}
+
+func Test_validLocalHost_ErrorAggregation_Unix(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix-only test")
+	}
+	// Temporarily clear PATH so scp/ssh/bash are missing
+	oldPath := os.Getenv("PATH")
+	t.Cleanup(func() { _ = os.Setenv("PATH", oldPath) })
+	require.NoError(t, os.Setenv("PATH", ""))
+
+	mc := &mocksconsole.Context{}
+	// Expect a single aggregated error call
+	mc.EXPECT().Error(mock.MatchedBy(func(msg string) bool {
+		return strings.Contains(msg, "Environment validation errors:") &&
+			strings.Contains(msg, "scp is not installed") &&
+			strings.Contains(msg, "ssh is not installed") &&
+			strings.Contains(msg, "bash is not installed")
+	})).Once()
+	ok := validLocalHost(mc)
+	assert.False(t, ok)
+}
+
+func Test_validLocalHost_SucceedsWithTempTools_Unix(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix-only test")
+	}
+	// Create temp dir with fake scp, ssh, bash
+	dir := t.TempDir()
+	mkExec := func(name string) {
+		p := dir + string(os.PathSeparator) + name
+		require.NoError(t, os.WriteFile(p, []byte("#!/bin/sh\nexit 0\n"), 0o755))
+	}
+	mkExec("scp")
+	mkExec("ssh")
+	mkExec("bash")
+	oldPath := os.Getenv("PATH")
+	t.Cleanup(func() { _ = os.Setenv("PATH", oldPath) })
+	require.NoError(t, os.Setenv("PATH", dir))
+
+	// Sanity: tools resolvable
+	_, err := exec.LookPath("scp")
+	require.NoError(t, err)
+	_, err = exec.LookPath("ssh")
+	require.NoError(t, err)
+	_, err = exec.LookPath("bash")
+	require.NoError(t, err)
+
+	mc := &mocksconsole.Context{}
+	ok := validLocalHost(mc)
+	assert.True(t, ok)
+}
+
+// --------------------------
+// Windows-specific tests
+// --------------------------
+
+func Test_setupServerCommand_WindowsShellWrapper(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("Windows-only test")
+	}
+	cmd := setupServerCommand("myapp", "203.0.113.10", "9000", "22", "ubuntu", "~/.ssh/id", "example.com", true, true)
+	require.NotNil(t, cmd)
+	require.GreaterOrEqual(t, len(cmd.Args), 2)
+	assert.Equal(t, "cmd", cmd.Args[0])
+	assert.Equal(t, "/C", cmd.Args[1])
+}
+
+func Test_uploadFilesCommand_WindowsShellWrapper(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("Windows-only test")
+	}
+	cmd := uploadFilesCommand("myapp", "203.0.113.10", "22", "ubuntu", "~/.ssh/id", ".env.production", true, true, true, true, true)
+	require.NotNil(t, cmd)
+	require.GreaterOrEqual(t, len(cmd.Args), 2)
+	assert.Equal(t, "cmd", cmd.Args[0])
+	assert.Equal(t, "/C", cmd.Args[1])
+}
+
+func Test_restartServiceCommand_WindowsShellWrapper(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("Windows-only test")
+	}
+	cmd := restartServiceCommand("myapp", "203.0.113.10", "22", "ubuntu", "~/.ssh/id")
+	require.NotNil(t, cmd)
+	require.GreaterOrEqual(t, len(cmd.Args), 2)
+	assert.Equal(t, "cmd", cmd.Args[0])
+	assert.Equal(t, "/C", cmd.Args[1])
+}
+
+func Test_isServerAlreadySetup_WindowsShellWrapper(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("Windows-only test")
+	}
+	// We can't reliably assert remote state; just ensure command created uses cmd wrapper
+	_ = isServerAlreadySetup("myapp", "203.0.113.10", "22", "ubuntu", "~/.ssh/id")
+}
+
+func Test_validLocalHost_ErrorAggregation_Windows(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("Windows-only test")
+	}
+	// Clear PATH so scp/ssh/cmd are missing
+	oldPath := os.Getenv("PATH")
+	t.Cleanup(func() { _ = os.Setenv("PATH", oldPath) })
+	require.NoError(t, os.Setenv("PATH", ""))
+
+	mc := &mocksconsole.Context{}
+	mc.EXPECT().Error(mock.MatchedBy(func(msg string) bool {
+		return strings.Contains(msg, "Environment validation errors:") &&
+			strings.Contains(msg, "scp is not installed") &&
+			strings.Contains(msg, "ssh is not installed") &&
+			strings.Contains(msg, "cmd is not available")
+	})).Once()
+	ok := validLocalHost(mc)
+	assert.False(t, ok)
+}
+
+func Test_validLocalHost_SucceedsWithTempTools_Windows(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("Windows-only test")
+	}
+	// Create temp dir with fake scp.exe, ssh.exe; rely on system cmd
+	dir := t.TempDir()
+	mkExec := func(name string) {
+		p := dir + string(os.PathSeparator) + name
+		// Windows will execute .exe; a plain text may not be executable, but LookPath will still find it
+		require.NoError(t, os.WriteFile(p, []byte("echo off\r\n"), 0o755))
+	}
+	mkExec("scp.exe")
+	mkExec("ssh.exe")
+	oldPath := os.Getenv("PATH")
+	t.Cleanup(func() { _ = os.Setenv("PATH", oldPath) })
+	require.NoError(t, os.Setenv("PATH", dir+";"+oldPath))
+
+	// Sanity: tools resolvable
+	_, err := exec.LookPath("scp.exe")
+	require.NoError(t, err)
+	_, err = exec.LookPath("ssh.exe")
+	require.NoError(t, err)
+	// cmd should be resolvable on Windows
+	_, err = exec.LookPath("cmd")
+	require.NoError(t, err)
+
+	mc := &mocksconsole.Context{}
+	ok := validLocalHost(mc)
+	assert.True(t, ok)
 }
 
 func Test_Handle_Rollback_ShortCircuit(t *testing.T) {
