@@ -248,6 +248,7 @@ type deployOptions struct {
 	staticEnv              bool
 	reverseProxyEnabled    bool
 	reverseProxyTLSEnabled bool
+	deployBaseDir          string
 }
 
 type uploadOptions struct {
@@ -311,7 +312,7 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 	if ctx.OptionBool("rollback") {
 		opts := r.getAllOptions(ctx)
 		if err := supportconsole.ExecuteCommand(ctx, rollbackCommand(
-			opts.appName, opts.ipAddress, opts.sshPort, opts.sshUser, opts.sshKeyPath,
+			opts.appName, opts.ipAddress, opts.sshPort, opts.sshUser, opts.sshKeyPath, opts.deployBaseDir,
 		), "Rolling back..."); err != nil {
 			ctx.Error(err.Error())
 			return nil
@@ -350,6 +351,7 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 			fmt.Sprintf("%v", opts.sshPort),
 			fmt.Sprintf("%v", opts.sshUser),
 			fmt.Sprintf("%v", opts.sshKeyPath),
+			fmt.Sprintf("%v", opts.deployBaseDir),
 			strings.TrimSpace(opts.domain),
 			opts.reverseProxyEnabled,
 			opts.reverseProxyTLSEnabled,
@@ -369,6 +371,7 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 		fmt.Sprintf("%v", opts.sshUser),
 		fmt.Sprintf("%v", opts.sshKeyPath),
 		fmt.Sprintf("%v", opts.prodEnvFilePath),
+		fmt.Sprintf("%v", opts.deployBaseDir),
 		upload.hasMain, upload.hasProdEnv, upload.hasPublic, upload.hasStorage, upload.hasResources,
 	), "Uploading files..."); err != nil {
 		ctx.Error(err.Error())
@@ -404,6 +407,7 @@ func (r *DeployCommand) getAllOptions(ctx console.Context) deployOptions {
 	opts.arch = r.config.GetString("app.arch")
 	opts.domain = r.config.GetString("app.domain")
 	opts.prodEnvFilePath = r.config.GetString("app.prod_env_file_path")
+	opts.deployBaseDir = r.config.GetString("app.deploy_base_dir", "/var/www/")
 
 	opts.staticEnv = r.config.GetBool("app.static")
 	opts.reverseProxyEnabled = r.config.GetBool("app.reverse_proxy_enabled")
@@ -536,9 +540,12 @@ func makeLocalCommand(script string) *exec.Cmd {
 }
 
 // setupServerCommand ensures Caddy and a systemd service are installed; no-op on subsequent runs
-func setupServerCommand(appName, ip, appPort, sshPort, sshUser, keyPath, domain string, reverseProxyEnabled, reverseProxyTLSEnabled bool) *exec.Cmd {
+func setupServerCommand(appName, ip, appPort, sshPort, sshUser, keyPath, baseDir, domain string, reverseProxyEnabled, reverseProxyTLSEnabled bool) *exec.Cmd {
 	// Directories and service
-	appDir := fmt.Sprintf("/var/www/%s", appName)
+	if !strings.HasSuffix(baseDir, "/") {
+		baseDir += "/"
+	}
+	appDir := fmt.Sprintf("%s%s", baseDir, appName)
 	binCurrent := fmt.Sprintf("%s/main", appDir)
 
 	// Build systemd unit based on whether reverse proxy is used
@@ -644,8 +651,11 @@ fi
 }
 
 // uploadFilesCommand uploads available artifacts to remote server
-func uploadFilesCommand(appName, ip, sshPort, sshUser, keyPath, prodEnvFilePath string, hasMain, hasProdEnv, hasPublic, hasStorage, hasResources bool) *exec.Cmd {
-	appDir := fmt.Sprintf("/var/www/%s", appName)
+func uploadFilesCommand(appName, ip, sshPort, sshUser, keyPath, prodEnvFilePath, baseDir string, hasMain, hasProdEnv, hasPublic, hasStorage, hasResources bool) *exec.Cmd {
+	if !strings.HasSuffix(baseDir, "/") {
+		baseDir += "/"
+	}
+	appDir := fmt.Sprintf("%s%s", baseDir, appName)
 	remoteBase := fmt.Sprintf("%s@%s:%s", sshUser, ip, appDir)
 	// ensure remote base exists and permissions
 	cmds := []string{
@@ -697,8 +707,11 @@ func restartServiceCommand(appName, ip, sshPort, sshUser, keyPath string) *exec.
 }
 
 // rollbackCommand swaps main and main.prev if available, then restarts the service
-func rollbackCommand(appName, ip, sshPort, sshUser, keyPath string) *exec.Cmd {
-	appDir := fmt.Sprintf("/var/www/%s", appName)
+func rollbackCommand(appName, ip, sshPort, sshUser, keyPath, baseDir string) *exec.Cmd {
+	if !strings.HasSuffix(baseDir, "/") {
+		baseDir += "/"
+	}
+	appDir := fmt.Sprintf("%s%s", baseDir, appName)
 	script := fmt.Sprintf(`ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s '
 set -e
 APP_DIR=%q

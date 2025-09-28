@@ -42,7 +42,7 @@ func extractBase64(script, teePath string) (string, bool) {
 }
 
 func Test_setupServerCommand_NoProxy(t *testing.T) {
-	cmd := setupServerCommand("myapp", "203.0.113.10", "9000", "22", "ubuntu", "~/.ssh/id", "", false, false)
+	cmd := setupServerCommand("myapp", "203.0.113.10", "9000", "22", "ubuntu", "~/.ssh/id", "/var/www/", "", false, false)
 	require.NotNil(t, cmd)
 	if runtime.GOOS == "windows" {
 		t.Skip("Skipping script content assertions on Windows shell")
@@ -68,7 +68,7 @@ func Test_setupServerCommand_NoProxy(t *testing.T) {
 }
 
 func Test_setupServerCommand_ProxyHTTP(t *testing.T) {
-	cmd := setupServerCommand("myapp", "203.0.113.10", "9000", "22", "ubuntu", "~/.ssh/id", "", true, false)
+	cmd := setupServerCommand("myapp", "203.0.113.10", "9000", "22", "ubuntu", "~/.ssh/id", "/var/www/", "", true, false)
 	require.NotNil(t, cmd)
 	if runtime.GOOS == "windows" {
 		t.Skip("Skipping script content assertions on Windows shell")
@@ -90,7 +90,7 @@ func Test_setupServerCommand_ProxyHTTP(t *testing.T) {
 }
 
 func Test_setupServerCommand_ProxyTLS(t *testing.T) {
-	cmd := setupServerCommand("myapp", "203.0.113.10", "9000", "22", "ubuntu", "~/.ssh/id", "example.com", true, true)
+	cmd := setupServerCommand("myapp", "203.0.113.10", "9000", "22", "ubuntu", "~/.ssh/id", "/var/www/", "example.com", true, true)
 	require.NotNil(t, cmd)
 	if runtime.GOOS == "windows" {
 		t.Skip("Skipping script content assertions on Windows shell")
@@ -113,7 +113,7 @@ func Test_setupServerCommand_ProxyTLS(t *testing.T) {
 }
 
 func Test_uploadFilesCommand_AllArtifacts(t *testing.T) {
-	cmd := uploadFilesCommand("myapp", "203.0.113.10", "22", "ubuntu", "~/.ssh/id", ".env.production", true, true, true, true, true)
+	cmd := uploadFilesCommand("myapp", "203.0.113.10", "22", "ubuntu", "~/.ssh/id", ".env.production", "/var/www/", true, true, true, true, true)
 	require.NotNil(t, cmd)
 	if runtime.GOOS == "windows" {
 		t.Skip("Skipping script content assertions on Windows shell")
@@ -133,7 +133,7 @@ func Test_uploadFilesCommand_AllArtifacts(t *testing.T) {
 }
 
 func Test_uploadFilesCommand_SubsetArtifacts(t *testing.T) {
-	cmd := uploadFilesCommand("myapp", "203.0.113.10", "22", "ubuntu", "~/.ssh/id", ".env.production", true, false, false, true, false)
+	cmd := uploadFilesCommand("myapp", "203.0.113.10", "22", "ubuntu", "~/.ssh/id", ".env.production", "/var/www/", true, false, false, true, false)
 	require.NotNil(t, cmd)
 	if runtime.GOOS == "windows" {
 		t.Skip("Skipping script content assertions on Windows shell")
@@ -167,7 +167,7 @@ func Test_restartServiceCommand(t *testing.T) {
 }
 
 func Test_rollbackCommand(t *testing.T) {
-	cmd := rollbackCommand("myapp", "203.0.113.10", "22", "ubuntu", "~/.ssh/id")
+	cmd := rollbackCommand("myapp", "203.0.113.10", "22", "ubuntu", "~/.ssh/id", "/var/www/")
 	require.NotNil(t, cmd)
 	if runtime.GOOS == "windows" {
 		t.Skip("Skipping script content assertions on Windows shell")
@@ -310,7 +310,7 @@ func Test_setupServerCommand_WindowsShellWrapper(t *testing.T) {
 	if runtime.GOOS != "windows" {
 		t.Skip("Windows-only test")
 	}
-	cmd := setupServerCommand("myapp", "203.0.113.10", "9000", "22", "ubuntu", "~/.ssh/id", "example.com", true, true)
+	cmd := setupServerCommand("myapp", "203.0.113.10", "9000", "22", "ubuntu", "~/.ssh/id", "/var/www/", "example.com", true, true)
 	require.NotNil(t, cmd)
 	require.GreaterOrEqual(t, len(cmd.Args), 2)
 	assert.Equal(t, "cmd", cmd.Args[0])
@@ -321,7 +321,7 @@ func Test_uploadFilesCommand_WindowsShellWrapper(t *testing.T) {
 	if runtime.GOOS != "windows" {
 		t.Skip("Windows-only test")
 	}
-	cmd := uploadFilesCommand("myapp", "203.0.113.10", "22", "ubuntu", "~/.ssh/id", ".env.production", true, true, true, true, true)
+	cmd := uploadFilesCommand("myapp", "203.0.113.10", "22", "ubuntu", "~/.ssh/id", ".env.production", "/var/www/", true, true, true, true, true)
 	require.NotNil(t, cmd)
 	require.GreaterOrEqual(t, len(cmd.Args), 2)
 	assert.Equal(t, "cmd", cmd.Args[0])
@@ -415,6 +415,7 @@ func Test_Handle_Rollback_ShortCircuit(t *testing.T) {
 	cfg.EXPECT().GetString("app.arch").Return("amd64").Once()
 	cfg.EXPECT().GetString("app.domain").Return("").Once()
 	cfg.EXPECT().GetString("app.prod_env_file_path").Return(".env.production").Once()
+	cfg.EXPECT().GetString("app.deploy_base_dir", "/var/www/").Return("/var/www/").Once()
 	cfg.EXPECT().GetBool("app.static").Return(false).Once()
 	cfg.EXPECT().GetBool("app.reverse_proxy_enabled").Return(false).Once()
 	cfg.EXPECT().GetBool("app.reverse_proxy_tls_enabled").Return(false).Once()
