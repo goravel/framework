@@ -181,28 +181,28 @@ func Test_rollbackCommand(t *testing.T) {
 }
 
 func Test_getStringEnv_and_getBoolEnv(t *testing.T) {
-	mc := &mocksconfig.Config{}
+	mockConfig := mocksconfig.NewConfig(t)
 	// String as string
-	mc.EXPECT().EnvString("STR").Return("value").Once()
-	assert.Equal(t, "value", mc.EnvString("STR"))
+	mockConfig.EXPECT().EnvString("STR").Return("value").Once()
+	assert.Equal(t, "value", mockConfig.EnvString("STR"))
 	// String as non-string type
-	mc.EXPECT().EnvString("NUM").Return("123").Once()
-	assert.Equal(t, "123", mc.EnvString("NUM"))
+	mockConfig.EXPECT().EnvString("NUM").Return("123").Once()
+	assert.Equal(t, "123", mockConfig.EnvString("NUM"))
 	// Missing
-	mc.EXPECT().EnvString("MISSING").Return("").Once()
-	assert.Equal(t, "", mc.EnvString("MISSING"))
+	mockConfig.EXPECT().EnvString("MISSING").Return("").Once()
+	assert.Equal(t, "", mockConfig.EnvString("MISSING"))
 
 	// Bool parsing
-	mc.EXPECT().EnvBool("BOOL1").Return(true).Once()
-	assert.True(t, mc.EnvBool("BOOL1"))
-	mc.EXPECT().EnvBool("BOOL2").Return(true).Once()
-	assert.True(t, mc.EnvBool("BOOL2"))
-	mc.EXPECT().EnvBool("BOOL3").Return(true).Once()
-	assert.True(t, mc.EnvBool("BOOL3"))
-	mc.EXPECT().EnvBool("BOOL4").Return(false).Once()
-	assert.False(t, mc.EnvBool("BOOL4"))
-	mc.EXPECT().EnvBool("BOOL5").Return(false).Once()
-	assert.False(t, mc.EnvBool("BOOL5"))
+	mockConfig.EXPECT().EnvBool("BOOL1").Return(true).Once()
+	assert.True(t, mockConfig.EnvBool("BOOL1"))
+	mockConfig.EXPECT().EnvBool("BOOL2").Return(true).Once()
+	assert.True(t, mockConfig.EnvBool("BOOL2"))
+	mockConfig.EXPECT().EnvBool("BOOL3").Return(true).Once()
+	assert.True(t, mockConfig.EnvBool("BOOL3"))
+	mockConfig.EXPECT().EnvBool("BOOL4").Return(false).Once()
+	assert.False(t, mockConfig.EnvBool("BOOL4"))
+	mockConfig.EXPECT().EnvBool("BOOL5").Return(false).Once()
+	assert.False(t, mockConfig.EnvBool("BOOL5"))
 }
 
 func Test_getWhichFilesToUpload_and_onlyFilter(t *testing.T) {
@@ -231,9 +231,9 @@ func Test_getWhichFilesToUpload_and_onlyFilter(t *testing.T) {
 		_ = os.RemoveAll("resources")
 	})
 
-	mc := &mocksconsole.Context{}
-	mc.EXPECT().Option("only").Return("").Once()
-	up := getUploadOptions(mc, "myapp", ".env.production")
+	mockContext := mocksconsole.NewContext(t)
+	mockContext.EXPECT().Option("only").Return("").Once()
+	up := getUploadOptions(mockContext, "myapp", ".env.production")
 	assert.True(t, up.hasMain)
 	assert.True(t, up.hasProdEnv)
 	assert.True(t, up.hasPublic)
@@ -241,9 +241,9 @@ func Test_getWhichFilesToUpload_and_onlyFilter(t *testing.T) {
 	assert.True(t, up.hasResources)
 
 	// Now test filter: only main and env
-	mc2 := &mocksconsole.Context{}
-	mc2.EXPECT().Option("only").Return("main,env").Once()
-	up = getUploadOptions(mc2, "myapp", ".env.production")
+	mockContext2 := mocksconsole.NewContext(t)
+	mockContext2.EXPECT().Option("only").Return("main,env").Once()
+	up = getUploadOptions(mockContext2, "myapp", ".env.production")
 	assert.True(t, up.hasMain)
 	assert.True(t, up.hasProdEnv)
 	assert.False(t, up.hasPublic)
@@ -260,15 +260,15 @@ func Test_validLocalHost_ErrorAggregation_Unix(t *testing.T) {
 	t.Cleanup(func() { _ = os.Setenv("PATH", oldPath) })
 	require.NoError(t, os.Setenv("PATH", ""))
 
-	mc := &mocksconsole.Context{}
+	mockContext := mocksconsole.NewContext(t)
 	// Expect a single aggregated error call
-	mc.EXPECT().Error(mock.MatchedBy(func(msg string) bool {
+	mockContext.EXPECT().Error(mock.MatchedBy(func(msg string) bool {
 		return strings.Contains(msg, "Environment validation errors:") &&
 			strings.Contains(msg, "scp is not installed") &&
 			strings.Contains(msg, "ssh is not installed") &&
 			strings.Contains(msg, "bash is not installed")
 	})).Once()
-	ok := validLocalHost(mc)
+	ok := validLocalHost(mockContext)
 	assert.False(t, ok)
 }
 
@@ -297,8 +297,8 @@ func Test_validLocalHost_SucceedsWithTempTools_Unix(t *testing.T) {
 	_, err = exec.LookPath("bash")
 	require.NoError(t, err)
 
-	mc := &mocksconsole.Context{}
-	ok := validLocalHost(mc)
+	mockContext := mocksconsole.NewContext(t)
+	ok := validLocalHost(mockContext)
 	assert.True(t, ok)
 }
 
@@ -356,14 +356,14 @@ func Test_validLocalHost_ErrorAggregation_Windows(t *testing.T) {
 	t.Cleanup(func() { _ = os.Setenv("PATH", oldPath) })
 	require.NoError(t, os.Setenv("PATH", ""))
 
-	mc := &mocksconsole.Context{}
-	mc.EXPECT().Error(mock.MatchedBy(func(msg string) bool {
+	mockContext := mocksconsole.NewContext(t)
+	mockContext.EXPECT().Error(mock.MatchedBy(func(msg string) bool {
 		return strings.Contains(msg, "Environment validation errors:") &&
 			strings.Contains(msg, "scp is not installed") &&
 			strings.Contains(msg, "ssh is not installed") &&
 			strings.Contains(msg, "cmd is not available")
 	})).Once()
-	ok := validLocalHost(mc)
+	ok := validLocalHost(mockContext)
 	assert.False(t, ok)
 }
 
@@ -393,36 +393,36 @@ func Test_validLocalHost_SucceedsWithTempTools_Windows(t *testing.T) {
 	_, err = exec.LookPath("cmd")
 	require.NoError(t, err)
 
-	mc := &mocksconsole.Context{}
-	ok := validLocalHost(mc)
+	mockContext := mocksconsole.NewContext(t)
+	ok := validLocalHost(mockContext)
 	assert.True(t, ok)
 }
 
 func Test_Handle_Rollback_ShortCircuit(t *testing.T) {
 	// We only test rollback path to avoid executing remote checks.
-	mc := &mocksconsole.Context{}
-	cfg := &mocksconfig.Config{}
-	cmd := NewDeployCommand(cfg)
+	mockContext := mocksconsole.NewContext(t)
+	mockConfig := mocksconfig.NewConfig(t)
+	cmd := NewDeployCommand(mockConfig)
 
 	// Minimal required envs for getDeployOptions (will not be used deeply due to rollback)
-	cfg.EXPECT().GetString("app.name").Return("myapp").Once()
-	cfg.EXPECT().GetString("app.ssh_ip").Return("203.0.113.10").Once()
-	cfg.EXPECT().GetString("app.reverse_proxy_port").Return("9000").Once()
-	cfg.EXPECT().GetString("app.ssh_port").Return("22").Once()
-	cfg.EXPECT().GetString("app.ssh_user").Return("ubuntu").Once()
-	cfg.EXPECT().GetString("app.ssh_key_path").Return("~/.ssh/id").Once()
-	cfg.EXPECT().GetString("app.os").Return("linux").Once()
-	cfg.EXPECT().GetString("app.arch").Return("amd64").Once()
-	cfg.EXPECT().GetString("app.domain").Return("").Once()
-	cfg.EXPECT().GetString("app.prod_env_file_path").Return(".env.production").Once()
-	cfg.EXPECT().GetString("app.deploy_base_dir", "/var/www/").Return("/var/www/").Once()
-	cfg.EXPECT().GetBool("app.static").Return(false).Once()
-	cfg.EXPECT().GetBool("app.reverse_proxy_enabled").Return(false).Once()
-	cfg.EXPECT().GetBool("app.reverse_proxy_tls_enabled").Return(false).Once()
+	mockConfig.EXPECT().GetString("app.name").Return("myapp").Once()
+	mockConfig.EXPECT().GetString("app.ssh_ip").Return("203.0.113.10").Once()
+	mockConfig.EXPECT().GetString("app.reverse_proxy_port").Return("9000").Once()
+	mockConfig.EXPECT().GetString("app.ssh_port").Return("22").Once()
+	mockConfig.EXPECT().GetString("app.ssh_user").Return("ubuntu").Once()
+	mockConfig.EXPECT().GetString("app.ssh_key_path").Return("~/.ssh/id").Once()
+	mockConfig.EXPECT().GetString("app.os").Return("linux").Once()
+	mockConfig.EXPECT().GetString("app.arch").Return("amd64").Once()
+	mockConfig.EXPECT().GetString("app.domain").Return("").Once()
+	mockConfig.EXPECT().GetString("app.prod_env_file_path").Return(".env.production").Once()
+	mockConfig.EXPECT().GetString("app.deploy_base_dir", "/var/www/").Return("/var/www/").Once()
+	mockConfig.EXPECT().GetBool("app.static").Return(false).Once()
+	mockConfig.EXPECT().GetBool("app.reverse_proxy_enabled").Return(false).Once()
+	mockConfig.EXPECT().GetBool("app.reverse_proxy_tls_enabled").Return(false).Once()
 
-	mc.EXPECT().OptionBool("rollback").Return(true).Once()
-	mc.EXPECT().Spinner("Rolling back...", mock.Anything).Return(nil).Once()
-	mc.EXPECT().Info("Rollback successful.").Once()
+	mockContext.EXPECT().OptionBool("rollback").Return(true).Once()
+	mockContext.EXPECT().Spinner("Rolling back...", mock.Anything).Return(nil).Once()
+	mockContext.EXPECT().Info("Rollback successful.").Once()
 
-	assert.Nil(t, cmd.Handle(mc))
+	assert.Nil(t, cmd.Handle(mockContext))
 }
