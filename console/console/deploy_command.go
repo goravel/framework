@@ -332,9 +332,12 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 	// continue normal deploy flow
 	var err error
 
-	// Step 1: build the application
-	// Build the binary for target OS/arch
-	if err = supportconsole.ExecuteCommand(ctx, generateCommand(opts.appName, opts.targetOS, opts.arch, opts.staticEnv), "Building..."); err != nil {
+	// Step 1: build the application by invoking the build command directly
+	buildCmd := fmt.Sprintf("go run . artisan build --os %s --arch %s --name %s", opts.targetOS, opts.arch, opts.appName)
+	if opts.staticEnv {
+		buildCmd += " --static"
+	}
+	if err = supportconsole.ExecuteCommand(ctx, makeLocalCommand(buildCmd), "Building..."); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
