@@ -407,7 +407,7 @@ func Test_Handle_Rollback_ShortCircuit(t *testing.T) {
 	// Minimal required envs for getAllOptions (will not be used deeply due to rollback)
 	cfg.EXPECT().GetString("app.name").Return("myapp").Once()
 	cfg.EXPECT().GetString("DEPLOY_IP_ADDRESS").Return("203.0.113.10").Once()
-	cfg.EXPECT().GetString("DEPLOY_APP_PORT").Return("9000").Once()
+	cfg.EXPECT().GetString("DEPLOY_REVERSE_PROXY_PORT").Return("9000").Once()
 	cfg.EXPECT().GetString("DEPLOY_SSH_PORT").Return("22").Once()
 	cfg.EXPECT().GetString("DEPLOY_SSH_USER").Return("ubuntu").Once()
 	cfg.EXPECT().GetString("DEPLOY_SSH_KEY_PATH").Return("~/.ssh/id").Once()

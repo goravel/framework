@@ -34,7 +34,7 @@ Architecture assumptions
 Two primary deployment topologies are supported:
 1) Reverse proxy in front of the app (recommended)
    - reverseProxyEnabled=true
-   - App listens on 127.0.0.1:<DEPLOY_APP_PORT> (e.g. 9000)
+   - App listens on 127.0.0.1:<DEPLOY_REVERSE_PROXY_PORT> (e.g. 9000)
    - Caddy proxies public HTTP(S) traffic to the app
    - If reverseProxyTLSEnabled=true and a valid domain is configured, Caddy terminates TLS
      and automatically provisions certificates; otherwise Caddy serves plain HTTP on :80
@@ -85,7 +85,7 @@ Configuration (env)
 Required:
   - app.name                               : Application name (used in remote paths/service name)
   - DEPLOY_IP_ADDRESS                      : Target server IP
-  - DEPLOY_APP_PORT                        : Backend app port when reverse proxy is used (e.g. 9000)
+  - DEPLOY_REVERSE_PROXY_PORT                        : Backend app port when reverse proxy is used (e.g. 9000)
   - DEPLOY_SSH_PORT                        : SSH port (e.g. 22)
   - DEPLOY_SSH_USER                        : SSH username (user must have sudo privileges)
   - DEPLOY_SSH_KEY_PATH                    : Path to SSH private key (e.g. ~/.ssh/id_rsa)
@@ -151,7 +151,7 @@ Assuming you have the following .env file stored in the root of your project as 
 ```
 APP_NAME=my-app
 DEPLOY_IP_ADDRESS=127.0.0.1
-DEPLOY_APP_PORT=9000
+DEPLOY_REVERSE_PROXY_PORT=9000
 DEPLOY_SSH_PORT=22
 DEPLOY_SSH_USER=deploy
 DEPLOY_SSH_KEY_PATH=~/.ssh/id_rsa
@@ -183,7 +183,7 @@ assuming you have the following .env file stored in the root of your project as 
 ```
 APP_NAME=my-app
 DEPLOY_IP_ADDRESS=127.0.0.1
-DEPLOY_APP_PORT=80
+DEPLOY_REVERSE_PROXY_PORT=80
 DEPLOY_SSH_PORT=22
 DEPLOY_SSH_USER=deploy
 DEPLOY_SSH_KEY_PATH=~/.ssh/id_rsa
@@ -396,7 +396,7 @@ func (r *DeployCommand) getAllOptions(ctx console.Context) deployOptions {
 	opts := deployOptions{}
 	opts.appName = r.config.GetString("app.name")
 	opts.ipAddress = r.config.GetString("DEPLOY_IP_ADDRESS")
-	opts.appPort = r.config.GetString("DEPLOY_APP_PORT")
+	opts.appPort = r.config.GetString("DEPLOY_REVERSE_PROXY_PORT")
 	opts.sshPort = r.config.GetString("DEPLOY_SSH_PORT")
 	opts.sshUser = r.config.GetString("DEPLOY_SSH_USER")
 	opts.sshKeyPath = r.config.GetString("DEPLOY_SSH_KEY_PATH")
@@ -418,7 +418,7 @@ func (r *DeployCommand) getAllOptions(ctx console.Context) deployOptions {
 		missing = append(missing, "DEPLOY_IP_ADDRESS")
 	}
 	if opts.appPort == "" {
-		missing = append(missing, "DEPLOY_APP_PORT")
+		missing = append(missing, "DEPLOY_REVERSE_PROXY_PORT")
 	}
 	if opts.sshPort == "" {
 		missing = append(missing, "DEPLOY_SSH_PORT")
