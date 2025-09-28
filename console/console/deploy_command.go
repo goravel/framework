@@ -395,19 +395,19 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 func (r *DeployCommand) getAllOptions(ctx console.Context) deployOptions {
 	opts := deployOptions{}
 	opts.appName = r.config.GetString("app.name")
-	opts.ipAddress = r.config.GetString("DEPLOY_SSH_IP")
-	opts.appPort = r.config.GetString("DEPLOY_REVERSE_PROXY_PORT")
-	opts.sshPort = r.config.GetString("DEPLOY_SSH_PORT")
-	opts.sshUser = r.config.GetString("DEPLOY_SSH_USER")
-	opts.sshKeyPath = r.config.GetString("DEPLOY_SSH_KEY_PATH")
-	opts.targetOS = r.config.GetString("DEPLOY_OS")
-	opts.arch = r.config.GetString("DEPLOY_ARCH")
-	opts.domain = r.config.GetString("DEPLOY_DOMAIN")
-	opts.prodEnvFilePath = r.config.GetString("DEPLOY_PROD_ENV_FILE_PATH")
+	opts.ipAddress = r.config.GetString("app.ssh_ip")
+	opts.appPort = r.config.GetString("app.reverse_proxy_port")
+	opts.sshPort = r.config.GetString("app.ssh_port")
+	opts.sshUser = r.config.GetString("app.ssh_user")
+	opts.sshKeyPath = r.config.GetString("app.ssh_key_path")
+	opts.targetOS = r.config.GetString("app.os")
+	opts.arch = r.config.GetString("app.arch")
+	opts.domain = r.config.GetString("app.domain")
+	opts.prodEnvFilePath = r.config.GetString("app.prod_env_file_path")
 
-	opts.staticEnv = r.config.GetBool("DEPLOY_STATIC")
-	opts.reverseProxyEnabled = r.config.GetBool("DEPLOY_REVERSE_PROXY_ENABLED")
-	opts.reverseProxyTLSEnabled = r.config.GetBool("DEPLOY_REVERSE_PROXY_TLS_ENABLED")
+	opts.staticEnv = r.config.GetBool("app.static")
+	opts.reverseProxyEnabled = r.config.GetBool("app.reverse_proxy_enabled")
+	opts.reverseProxyTLSEnabled = r.config.GetBool("app.reverse_proxy_tls_enabled")
 
 	// Validate required options and report all missing at once
 	var missing []string
