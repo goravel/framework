@@ -13,7 +13,6 @@ import (
 )
 
 func main() {
-	stubs := Stubs{}
 	appServiceProviderPath := path.App("providers", "app_service_provider.go")
 	kernelPath := path.App("console", "kernel.go")
 	moduleName := packages.GetModuleNameFromArgs(os.Args)
@@ -32,7 +31,7 @@ func main() {
 				Find(match.Imports()).Modify(modify.AddImport(facadesImport)).
 				Find(match.Imports()).Modify(modify.AddImport(consoleImport)).
 				Find(match.RegisterFunc()).Modify(modify.Add(registerSchedule)),
-			modify.WhenFacade("Schedule", modify.File(path.Facades("schedule.go")).Overwrite(stubs.ScheduleFacade())),
+			modify.WhenFacade("Schedule", modify.File(path.Facades("schedule.go")).Overwrite(Stubs{}.ScheduleFacade())),
 		).
 		Uninstall(
 			modify.WhenNoFacades([]string{"Schedule"},
