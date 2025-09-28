@@ -345,6 +345,21 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 	// Step 2: verify which files to upload (main, env, public, storage, resources)
 	upload := getWhichFilesToUpload(ctx, opts.appName, opts.prodEnvFilePath)
 
+	// If the production env file is encrypted (per Goravel docs), decrypt it first
+	envPathToUpload := opts.prodEnvFilePath
+	if upload.hasProdEnv {
+		lower := strings.ToLower(strings.TrimSpace(opts.prodEnvFilePath))
+		if strings.HasSuffix(lower, ".encrypted") || strings.HasSuffix(lower, ".safe") {
+			decryptCmd := fmt.Sprintf("go run . artisan env:decrypt --name %q", opts.prodEnvFilePath)
+			if err = supportconsole.ExecuteCommand(ctx, makeLocalCommand(decryptCmd), "Decrypting environment file..."); err != nil {
+				ctx.Error(err.Error())
+				return nil
+			}
+			// env:decrypt writes to .env in the working directory
+			envPathToUpload = ".env"
+		}
+	}
+
 	// Step 3: set up server on first run —- skip if already set up
 	if !isServerAlreadySetup(opts.appName, opts.ipAddress, opts.sshPort, opts.sshUser, opts.sshKeyPath) {
 		if err = supportconsole.ExecuteCommand(ctx, setupServerCommand(
@@ -373,7 +388,7 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 		fmt.Sprintf("%v", opts.sshPort),
 		fmt.Sprintf("%v", opts.sshUser),
 		fmt.Sprintf("%v", opts.sshKeyPath),
-		fmt.Sprintf("%v", opts.prodEnvFilePath),
+		fmt.Sprintf("%v", envPathToUpload),
 		fmt.Sprintf("%v", opts.deployBaseDir),
 		upload.hasMain, upload.hasProdEnv, upload.hasPublic, upload.hasStorage, upload.hasResources,
 	), "Uploading files..."); err != nil {
