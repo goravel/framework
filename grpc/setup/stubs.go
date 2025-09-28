@@ -73,3 +73,12 @@ func (kernel Kernel) UnaryClientInterceptorGroups() map[string][]grpc.UnaryClien
 }
 `
 }
+
+func (s Stubs) Routes() string {
+	return `package routes
+
+func Grpc() {
+
+}
+`
+}

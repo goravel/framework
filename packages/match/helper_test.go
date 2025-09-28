@@ -351,13 +351,23 @@ func (s *MatchHelperTestSuite) TestHelper() {
 			},
 		},
 		{
-			name:     "match servicer provider's register function",
+			name:     "match servicer provider's Register function",
 			file:     s.serviceProvider,
 			matchers: RegisterFunc(),
 			assert: func(node dst.Node) {
 				fn, ok := node.(*dst.FuncDecl)
 				s.True(ok)
 				s.True(fn.Name.Name == "Register")
+			},
+		},
+		{
+			name:     "match servicer provider's Boot function",
+			file:     s.serviceProvider,
+			matchers: BootFunc(),
+			assert: func(node dst.Node) {
+				fn, ok := node.(*dst.FuncDecl)
+				s.True(ok)
+				s.True(fn.Name.Name == "Boot")
 			},
 		},
 	}
