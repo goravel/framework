@@ -362,18 +362,7 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 
 	// Step 3: set up server on first run —- skip if already set up
 	if !isServerAlreadySetup(opts.appName, opts.ipAddress, opts.sshPort, opts.sshUser, opts.sshKeyPath) {
-		if err = supportconsole.ExecuteCommand(ctx, setupServerCommand(
-			fmt.Sprintf("%v", opts.appName),
-			fmt.Sprintf("%v", opts.ipAddress),
-			fmt.Sprintf("%v", opts.appPort),
-			fmt.Sprintf("%v", opts.sshPort),
-			fmt.Sprintf("%v", opts.sshUser),
-			fmt.Sprintf("%v", opts.sshKeyPath),
-			fmt.Sprintf("%v", opts.deployBaseDir),
-			strings.TrimSpace(opts.domain),
-			opts.reverseProxyEnabled,
-			opts.reverseProxyTLSEnabled,
-		), "Setting up server (first time only)..."); err != nil {
+		if err = supportconsole.ExecuteCommand(ctx, setupServerCommand(opts), "Setting up server (first time only)..."); err != nil {
 			ctx.Error(err.Error())
 			return nil
 		}
@@ -558,17 +547,19 @@ func makeLocalCommand(script string) *exec.Cmd {
 }
 
 // setupServerCommand ensures Caddy and a systemd service are installed; no-op on subsequent runs
-func setupServerCommand(appName, ip, appPort, sshPort, sshUser, keyPath, baseDir, domain string, reverseProxyEnabled, reverseProxyTLSEnabled bool) *exec.Cmd {
+func setupServerCommand(opts deployOptions) *exec.Cmd {
 	// Directories and service
+	baseDir := opts.deployBaseDir
 	if !strings.HasSuffix(baseDir, "/") {
 		baseDir += "/"
 	}
-	appDir := fmt.Sprintf("%s%s", baseDir, appName)
+	appDir := fmt.Sprintf("%s%s", baseDir, opts.appName)
 	binCurrent := fmt.Sprintf("%s/main", appDir)
 
 	// Build systemd unit based on whether reverse proxy is used
 	listenHost := "127.0.0.1"
-	if !reverseProxyEnabled {
+	appPort := opts.appPort
+	if !opts.reverseProxyEnabled {
 		// App listens on port 80 directly
 		appPort = "80"
 		listenHost = "0.0.0.0"
@@ -592,14 +583,14 @@ SyslogIdentifier=%s
 
 [Install]
 WantedBy=multi-user.target
-`, appName, sshUser, appDir, binCurrent, listenHost, appPort, appName)
+`, opts.appName, opts.sshUser, appDir, binCurrent, listenHost, appPort, opts.appName)
 
 	// Build Caddyfile if reverse proxy enabled
 	caddyfile := ""
-	if reverseProxyEnabled {
+	if opts.reverseProxyEnabled {
 		site := ":80"
-		if reverseProxyTLSEnabled && strings.TrimSpace(domain) != "" {
-			site = domain
+		if opts.reverseProxyTLSEnabled && strings.TrimSpace(opts.domain) != "" {
+			site = opts.domain
 		}
 		upstream := fmt.Sprintf("127.0.0.1:%s", appPort)
 		caddyfile = fmt.Sprintf(`%s {
@@ -620,9 +611,9 @@ WantedBy=multi-user.target
 
 	// Firewall commands based on configuration
 	ufwCmds := []string{"sudo apt-get update -y && sudo apt-get install -y ufw", "sudo ufw --force enable"}
-	if reverseProxyEnabled {
+	if opts.reverseProxyEnabled {
 		ufwCmds = append(ufwCmds, "sudo ufw allow 80")
-		if reverseProxyTLSEnabled {
+		if opts.reverseProxyTLSEnabled {
 			ufwCmds = append(ufwCmds, "sudo ufw allow 443")
 		}
 	} else {
@@ -645,18 +636,18 @@ if [ ! -f /etc/systemd/system/%s.service ]; then
 fi
 %s
 %s'
-`, keyPath, sshPort, sshUser, ip,
-		appDir, appDir, sshUser, sshUser, appDir,
+`, opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.ipAddress,
+		appDir, appDir, opts.sshUser, opts.sshUser, appDir,
 		// caddy install and config
 		func() string {
-			if !reverseProxyEnabled {
+			if !opts.reverseProxyEnabled {
 				return ""
 			}
 			install := "sudo apt-get update -y && sudo apt-get install -y caddy"
 			writeCfg := fmt.Sprintf("echo %q | base64 -d | sudo tee /etc/caddy/Caddyfile >/dev/null && sudo systemctl enable --now caddy && sudo systemctl reload caddy || sudo systemctl restart caddy", caddyB64)
 			return install + " && " + writeCfg
 		}(),
-		appName, unitB64, appName, appName,
+		opts.appName, unitB64, opts.appName, opts.appName,
 		// Firewall: open before enabling to avoid SSH lockout
 		func() string {
 			cmds := append([]string{"sudo ufw allow OpenSSH"}, ufwCmds...)

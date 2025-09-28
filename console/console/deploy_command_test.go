@@ -42,7 +42,7 @@ func extractBase64(script, teePath string) (string, bool) {
 }
 
 func Test_setupServerCommand_NoProxy(t *testing.T) {
-	cmd := setupServerCommand("myapp", "203.0.113.10", "9000", "22", "ubuntu", "~/.ssh/id", "/var/www/", "", false, false)
+	cmd := setupServerCommand(deployOptions{appName: "myapp", ipAddress: "203.0.113.10", appPort: "9000", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id", deployBaseDir: "/var/www/", domain: "", reverseProxyEnabled: false, reverseProxyTLSEnabled: false})
 	require.NotNil(t, cmd)
 	if runtime.GOOS == "windows" {
 		t.Skip("Skipping script content assertions on Windows shell")
@@ -68,7 +68,7 @@ func Test_setupServerCommand_NoProxy(t *testing.T) {
 }
 
 func Test_setupServerCommand_ProxyHTTP(t *testing.T) {
-	cmd := setupServerCommand("myapp", "203.0.113.10", "9000", "22", "ubuntu", "~/.ssh/id", "/var/www/", "", true, false)
+	cmd := setupServerCommand(deployOptions{appName: "myapp", ipAddress: "203.0.113.10", appPort: "9000", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id", deployBaseDir: "/var/www/", domain: "", reverseProxyEnabled: true, reverseProxyTLSEnabled: false})
 	require.NotNil(t, cmd)
 	if runtime.GOOS == "windows" {
 		t.Skip("Skipping script content assertions on Windows shell")
@@ -90,7 +90,7 @@ func Test_setupServerCommand_ProxyHTTP(t *testing.T) {
 }
 
 func Test_setupServerCommand_ProxyTLS(t *testing.T) {
-	cmd := setupServerCommand("myapp", "203.0.113.10", "9000", "22", "ubuntu", "~/.ssh/id", "/var/www/", "example.com", true, true)
+	cmd := setupServerCommand(deployOptions{appName: "myapp", ipAddress: "203.0.113.10", appPort: "9000", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id", deployBaseDir: "/var/www/", domain: "example.com", reverseProxyEnabled: true, reverseProxyTLSEnabled: true})
 	require.NotNil(t, cmd)
 	if runtime.GOOS == "windows" {
 		t.Skip("Skipping script content assertions on Windows shell")
@@ -310,7 +310,7 @@ func Test_setupServerCommand_WindowsShellWrapper(t *testing.T) {
 	if runtime.GOOS != "windows" {
 		t.Skip("Windows-only test")
 	}
-	cmd := setupServerCommand("myapp", "203.0.113.10", "9000", "22", "ubuntu", "~/.ssh/id", "/var/www/", "example.com", true, true)
+	cmd := setupServerCommand(deployOptions{appName: "myapp", ipAddress: "203.0.113.10", appPort: "9000", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id", deployBaseDir: "/var/www/", domain: "example.com", reverseProxyEnabled: true, reverseProxyTLSEnabled: true})
 	require.NotNil(t, cmd)
 	require.GreaterOrEqual(t, len(cmd.Args), 2)
 	assert.Equal(t, "cmd", cmd.Args[0])
