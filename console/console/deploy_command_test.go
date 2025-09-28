@@ -2,6 +2,7 @@ package console
 
 import (
 	"encoding/base64"
+	"fmt"
 	"os"
 	"os/exec"
 	"runtime"
@@ -423,6 +424,80 @@ func Test_Handle_Rollback_ShortCircuit(t *testing.T) {
 	mockContext.EXPECT().OptionBool("rollback").Return(true).Once()
 	mockContext.EXPECT().Spinner("Rolling back...", mock.Anything).Return(nil).Once()
 	mockContext.EXPECT().Info("Rollback successful.").Once()
+
+	assert.Nil(t, cmd.Handle(mockContext))
+}
+
+func Test_Handle_Deploy_Success(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		// Skip due to shell content assertions; Spinner wraps execution
+	}
+	mockContext := mocksconsole.NewContext(t)
+	mockConfig := mocksconfig.NewConfig(t)
+	cmd := NewDeployCommand(mockConfig)
+
+	// Config expectations
+	mockConfig.EXPECT().GetString("app.name").Return("myapp").Once()
+	// Use fast-fail SSH settings to avoid any network delay
+	mockConfig.EXPECT().GetString("app.ssh_ip").Return("127.0.0.1").Once()
+	mockConfig.EXPECT().GetString("app.reverse_proxy_port").Return("9000").Once()
+	mockConfig.EXPECT().GetString("app.ssh_port").Return("0").Once()
+	mockConfig.EXPECT().GetString("app.ssh_user").Return("ubuntu").Once()
+	mockConfig.EXPECT().GetString("app.ssh_key_path").Return("~/.ssh/id").Once()
+	mockConfig.EXPECT().GetString("app.os").Return("linux").Once()
+	mockConfig.EXPECT().GetString("app.arch").Return("amd64").Once()
+	mockConfig.EXPECT().GetString("app.domain").Return("").Once()
+	mockConfig.EXPECT().GetString("app.prod_env_file_path").Return(".env.production").Once()
+	mockConfig.EXPECT().GetString("app.deploy_base_dir", "/var/www/").Return("/var/www/").Once()
+	mockConfig.EXPECT().GetBool("app.static").Return(false).Once()
+	mockConfig.EXPECT().GetBool("app.reverse_proxy_enabled").Return(false).Once()
+	mockConfig.EXPECT().GetBool("app.reverse_proxy_tls_enabled").Return(false).Once()
+
+	// Context expectations
+	mockContext.EXPECT().OptionBool("rollback").Return(false).Once()
+	mockContext.EXPECT().Option("only").Return("").Once()
+
+	// Ensure artifacts exist for getUploadOptions
+	wd, _ := os.Getwd()
+	dir := t.TempDir()
+	require.NoError(t, os.Chdir(dir))
+	t.Cleanup(func() { _ = os.Chdir(wd) })
+	require.NoError(t, os.WriteFile("myapp", []byte("bin"), 0o755))
+	require.NoError(t, os.WriteFile(".env.production", []byte("APP_ENV=prod"), 0o644))
+
+	// Force all Spinner-wrapped commands (build/upload/restart/setup) to return immediately
+	mockContext.EXPECT().Spinner(mock.Anything, mock.Anything).Return(nil).Maybe()
+	mockContext.EXPECT().Info("Server already set up. Skipping setup.").Maybe()
+	mockContext.EXPECT().Info("Deploy successful.").Once()
+
+	assert.Nil(t, cmd.Handle(mockContext))
+}
+
+func Test_Handle_Deploy_FailureOnBuild(t *testing.T) {
+	mockContext := mocksconsole.NewContext(t)
+	mockConfig := mocksconfig.NewConfig(t)
+	cmd := NewDeployCommand(mockConfig)
+
+	// Minimal config
+	mockConfig.EXPECT().GetString("app.name").Return("myapp").Once()
+	mockConfig.EXPECT().GetString("app.ssh_ip").Return("203.0.113.10").Once()
+	mockConfig.EXPECT().GetString("app.reverse_proxy_port").Return("9000").Once()
+	mockConfig.EXPECT().GetString("app.ssh_port").Return("22").Once()
+	mockConfig.EXPECT().GetString("app.ssh_user").Return("ubuntu").Once()
+	mockConfig.EXPECT().GetString("app.ssh_key_path").Return("~/.ssh/id").Once()
+	mockConfig.EXPECT().GetString("app.os").Return("linux").Once()
+	mockConfig.EXPECT().GetString("app.arch").Return("amd64").Once()
+	mockConfig.EXPECT().GetString("app.domain").Return("").Once()
+	mockConfig.EXPECT().GetString("app.prod_env_file_path").Return(".env.production").Once()
+	mockConfig.EXPECT().GetString("app.deploy_base_dir", "/var/www/").Return("/var/www/").Once()
+	mockConfig.EXPECT().GetBool("app.static").Return(false).Once()
+	mockConfig.EXPECT().GetBool("app.reverse_proxy_enabled").Return(false).Once()
+	mockConfig.EXPECT().GetBool("app.reverse_proxy_tls_enabled").Return(false).Once()
+
+	mockContext.EXPECT().OptionBool("rollback").Return(false).Once()
+	// Only stage we hit is build; simulate failure via Spinner return
+	mockContext.EXPECT().Spinner(mock.MatchedBy(func(msg string) bool { return strings.Contains(msg, "Building") }), mock.Anything).Return(fmt.Errorf("build error")).Once()
+	mockContext.EXPECT().Error("build error").Once()
 
 	assert.Nil(t, cmd.Handle(mockContext))
 }
