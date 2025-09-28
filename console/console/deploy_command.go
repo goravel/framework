@@ -84,7 +84,7 @@ Configuration (env)
 -------------------
 Required:
   - app.name                               : Application name (used in remote paths/service name)
-  - DEPLOY_IP_ADDRESS                      : Target server IP
+  - DEPLOY_SSH_IP                      : Target server IP
   - DEPLOY_REVERSE_PROXY_PORT                        : Backend app port when reverse proxy is used (e.g. 9000)
   - DEPLOY_SSH_PORT                        : SSH port (e.g. 22)
   - DEPLOY_SSH_USER                        : SSH username (user must have sudo privileges)
@@ -150,7 +150,7 @@ Usage example (1 - with reverse proxy):
 Assuming you have the following .env file stored in the root of your project as .env.production:
 ```
 APP_NAME=my-app
-DEPLOY_IP_ADDRESS=127.0.0.1
+DEPLOY_SSH_IP=127.0.0.1
 DEPLOY_REVERSE_PROXY_PORT=9000
 DEPLOY_SSH_PORT=22
 DEPLOY_SSH_USER=deploy
@@ -182,7 +182,7 @@ You can also deploy without a reverse proxy by setting the DEPLOY_REVERSE_PROXY_
 assuming you have the following .env file stored in the root of your project as .env.production and you want to deploy your application to the server without a reverse proxy:
 ```
 APP_NAME=my-app
-DEPLOY_IP_ADDRESS=127.0.0.1
+DEPLOY_SSH_IP=127.0.0.1
 DEPLOY_REVERSE_PROXY_PORT=80
 DEPLOY_SSH_PORT=22
 DEPLOY_SSH_USER=deploy
@@ -395,7 +395,7 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 func (r *DeployCommand) getAllOptions(ctx console.Context) deployOptions {
 	opts := deployOptions{}
 	opts.appName = r.config.GetString("app.name")
-	opts.ipAddress = r.config.GetString("DEPLOY_IP_ADDRESS")
+	opts.ipAddress = r.config.GetString("DEPLOY_SSH_IP")
 	opts.appPort = r.config.GetString("DEPLOY_REVERSE_PROXY_PORT")
 	opts.sshPort = r.config.GetString("DEPLOY_SSH_PORT")
 	opts.sshUser = r.config.GetString("DEPLOY_SSH_USER")
@@ -415,7 +415,7 @@ func (r *DeployCommand) getAllOptions(ctx console.Context) deployOptions {
 		missing = append(missing, "APP_NAME")
 	}
 	if opts.ipAddress == "" {
-		missing = append(missing, "DEPLOY_IP_ADDRESS")
+		missing = append(missing, "DEPLOY_SSH_IP")
 	}
 	if opts.appPort == "" {
 		missing = append(missing, "DEPLOY_REVERSE_PROXY_PORT")
