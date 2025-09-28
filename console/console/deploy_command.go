@@ -371,28 +371,13 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 	}
 
 	// Step 4: upload files
-	if err = supportconsole.ExecuteCommand(ctx, uploadFilesCommand(
-		fmt.Sprintf("%v", opts.appName),
-		fmt.Sprintf("%v", opts.ipAddress),
-		fmt.Sprintf("%v", opts.sshPort),
-		fmt.Sprintf("%v", opts.sshUser),
-		fmt.Sprintf("%v", opts.sshKeyPath),
-		fmt.Sprintf("%v", envPathToUpload),
-		fmt.Sprintf("%v", opts.deployBaseDir),
-		upload.hasMain, upload.hasProdEnv, upload.hasPublic, upload.hasStorage, upload.hasResources,
-	), "Uploading files..."); err != nil {
+	if err = supportconsole.ExecuteCommand(ctx, uploadFilesCommand(opts, upload, envPathToUpload), "Uploading files..."); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
 
 	// Step 5: restart service
-	if err = supportconsole.ExecuteCommand(ctx, restartServiceCommand(
-		fmt.Sprintf("%v", opts.appName),
-		fmt.Sprintf("%v", opts.ipAddress),
-		fmt.Sprintf("%v", opts.sshPort),
-		fmt.Sprintf("%v", opts.sshUser),
-		fmt.Sprintf("%v", opts.sshKeyPath),
-	), "Restarting service..."); err != nil {
+	if err = supportconsole.ExecuteCommand(ctx, restartServiceCommand(opts), "Restarting service..."); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
@@ -660,49 +645,50 @@ fi
 }
 
 // uploadFilesCommand uploads available artifacts to remote server
-func uploadFilesCommand(appName, ip, sshPort, sshUser, keyPath, prodEnvFilePath, baseDir string, hasMain, hasProdEnv, hasPublic, hasStorage, hasResources bool) *exec.Cmd {
+func uploadFilesCommand(opts deployOptions, up uploadOptions, envPathToUpload string) *exec.Cmd {
+	baseDir := opts.deployBaseDir
 	if !strings.HasSuffix(baseDir, "/") {
 		baseDir += "/"
 	}
-	appDir := fmt.Sprintf("%s%s", baseDir, appName)
-	remoteBase := fmt.Sprintf("%s@%s:%s", sshUser, ip, appDir)
+	appDir := fmt.Sprintf("%s%s", baseDir, opts.appName)
+	remoteBase := fmt.Sprintf("%s@%s:%s", opts.sshUser, opts.ipAddress, appDir)
 	// ensure remote base exists and permissions
 	cmds := []string{
-		fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'sudo mkdir -p %s && sudo chown -R %s:%s %s'", keyPath, sshPort, sshUser, ip, appDir, sshUser, sshUser, appDir),
+		fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'sudo mkdir -p %s && sudo chown -R %s:%s %s'", opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.ipAddress, appDir, opts.sshUser, opts.sshUser, appDir),
 	}
 
 	// main binary with previous backup
-	if hasMain {
+	if up.hasMain {
 		// upload to temp and atomically move, keeping previous as main.prev
 		cmds = append(cmds,
-			fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s %q %s/main.new", keyPath, sshPort, filepath.Clean(appName), remoteBase),
-			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'if [ -f %s/main ]; then sudo mv %s/main %s/main.prev; fi; sudo mv %s/main.new %s/main && sudo chmod +x %s/main'", keyPath, sshPort, sshUser, ip, appDir, appDir, appDir, appDir, appDir, appDir),
+			fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s %q %s/main.new", opts.sshKeyPath, opts.sshPort, filepath.Clean(opts.appName), remoteBase),
+			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'if [ -f %s/main ]; then sudo mv %s/main %s/main.prev; fi; sudo mv %s/main.new %s/main && sudo chmod +x %s/main'", opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.ipAddress, appDir, appDir, appDir, appDir, appDir, appDir),
 		)
 	}
 
-	if hasProdEnv {
+	if up.hasProdEnv {
 		// Upload env to a temp path, then atomically place as .env; backup previous as .env.prev if exists
 		cmds = append(cmds,
-			fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s %q %s/.env.new", keyPath, sshPort, filepath.Clean(prodEnvFilePath), remoteBase),
-			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'if [ -f %s/.env ]; then sudo mv %s/.env %s/.env.prev; fi; sudo mv %s/.env.new %s/.env'", keyPath, sshPort, sshUser, ip, appDir, appDir, appDir, appDir, appDir),
+			fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s %q %s/.env.new", opts.sshKeyPath, opts.sshPort, filepath.Clean(envPathToUpload), remoteBase),
+			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'if [ -f %s/.env ]; then sudo mv %s/.env %s/.env.prev; fi; sudo mv %s/.env.new %s/.env'", opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.ipAddress, appDir, appDir, appDir, appDir, appDir),
 		)
 	}
-	if hasPublic {
+	if up.hasPublic {
 		cmds = append(cmds,
-			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'if [ -d %s/public ]; then sudo rm -rf %s/public.prev; sudo mv %s/public %s/public.prev; fi'", keyPath, sshPort, sshUser, ip, appDir, appDir, appDir, appDir),
-			fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s -r %q %s", keyPath, sshPort, filepath.Clean("public"), remoteBase),
+			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'if [ -d %s/public ]; then sudo rm -rf %s/public.prev; sudo mv %s/public %s/public.prev; fi'", opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.ipAddress, appDir, appDir, appDir, appDir),
+			fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s -r %q %s", opts.sshKeyPath, opts.sshPort, filepath.Clean("public"), remoteBase),
 		)
 	}
-	if hasStorage {
+	if up.hasStorage {
 		cmds = append(cmds,
-			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'if [ -d %s/storage ]; then sudo rm -rf %s/storage.prev; sudo mv %s/storage %s/storage.prev; fi'", keyPath, sshPort, sshUser, ip, appDir, appDir, appDir, appDir),
-			fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s -r %q %s", keyPath, sshPort, filepath.Clean("storage"), remoteBase),
+			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'if [ -d %s/storage ]; then sudo rm -rf %s/storage.prev; sudo mv %s/storage %s/storage.prev; fi'", opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.ipAddress, appDir, appDir, appDir, appDir),
+			fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s -r %q %s", opts.sshKeyPath, opts.sshPort, filepath.Clean("storage"), remoteBase),
 		)
 	}
-	if hasResources {
+	if up.hasResources {
 		cmds = append(cmds,
-			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'if [ -d %s/resources ]; then sudo rm -rf %s/resources.prev; sudo mv %s/resources %s/resources.prev; fi'", keyPath, sshPort, sshUser, ip, appDir, appDir, appDir, appDir),
-			fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s -r %q %s", keyPath, sshPort, filepath.Clean("resources"), remoteBase),
+			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'if [ -d %s/resources ]; then sudo rm -rf %s/resources.prev; sudo mv %s/resources %s/resources.prev; fi'", opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.ipAddress, appDir, appDir, appDir, appDir),
+			fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s -r %q %s", opts.sshKeyPath, opts.sshPort, filepath.Clean("resources"), remoteBase),
 		)
 	}
 
@@ -710,8 +696,8 @@ func uploadFilesCommand(appName, ip, sshPort, sshUser, keyPath, prodEnvFilePath,
 	return makeLocalCommand(script)
 }
 
-func restartServiceCommand(appName, ip, sshPort, sshUser, keyPath string) *exec.Cmd {
-	script := fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'sudo systemctl daemon-reload && sudo systemctl restart %s || sudo systemctl start %s'", keyPath, sshPort, sshUser, ip, appName, appName)
+func restartServiceCommand(opts deployOptions) *exec.Cmd {
+	script := fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'sudo systemctl daemon-reload && sudo systemctl restart %s || sudo systemctl start %s'", opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.ipAddress, opts.appName, opts.appName)
 	return makeLocalCommand(script)
 }
 
