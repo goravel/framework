@@ -404,7 +404,7 @@ func Test_Handle_Rollback_ShortCircuit(t *testing.T) {
 	cfg := &mocksconfig.Config{}
 	cmd := NewDeployCommand(cfg)
 
-	// Minimal required envs for getAllOptions (will not be used deeply due to rollback)
+	// Minimal required envs for getDeployOptions (will not be used deeply due to rollback)
 	cfg.EXPECT().GetString("app.name").Return("myapp").Once()
 	cfg.EXPECT().GetString("app.ssh_ip").Return("203.0.113.10").Once()
 	cfg.EXPECT().GetString("app.reverse_proxy_port").Return("9000").Once()

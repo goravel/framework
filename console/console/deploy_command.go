@@ -310,7 +310,7 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 	// Rollback check first: allow rollback without validating local host tools
 	// (tests can short-circuit Spinner; real runs will still use ssh remotely)
 	if ctx.OptionBool("rollback") {
-		opts := r.getAllOptions(ctx)
+		opts := r.getDeployOptions(ctx)
 		if err := supportconsole.ExecuteCommand(ctx, rollbackCommand(
 			opts.appName, opts.ipAddress, opts.sshPort, opts.sshUser, opts.sshKeyPath, opts.deployBaseDir,
 		), "Rolling back..."); err != nil {
@@ -327,7 +327,7 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 	}
 
 	// get all options
-	opts := r.getAllOptions(ctx)
+	opts := r.getDeployOptions(ctx)
 
 	// continue normal deploy flow
 	var err error
@@ -413,7 +413,7 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func (r *DeployCommand) getAllOptions(ctx console.Context) deployOptions {
+func (r *DeployCommand) getDeployOptions(ctx console.Context) deployOptions {
 	opts := deployOptions{}
 	opts.appName = r.config.GetString("app.name")
 	opts.ipAddress = r.config.GetString("app.ssh_ip")
