@@ -7,7 +7,7 @@ toolchain go1.25.1
 godebug x509negativeserial=1
 
 require (
-	github.com/brianvoe/gofakeit/v7 v7.7.1
+	github.com/brianvoe/gofakeit/v7 v7.7.3
 	github.com/google/uuid v1.6.0
 	github.com/goravel/framework v1.16.3
 	github.com/goravel/mysql v1.4.0
@@ -45,7 +45,7 @@ require (
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/lithammer/fuzzysearch v1.1.8 // indirect
-	github.com/mattn/go-runewidth v0.0.16 // indirect
+	github.com/mattn/go-runewidth v0.0.17 // indirect
 	github.com/microsoft/go-mssqldb v1.9.2 // indirect
 	github.com/ncruces/go-sqlite3 v0.26.3 // indirect
 	github.com/ncruces/go-sqlite3/gormlite v0.24.0 // indirect
