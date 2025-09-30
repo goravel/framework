@@ -154,7 +154,8 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 
 	dependencies = append(dependencies, binding)
 	for _, binding := range dependencies {
-		setup := r.bindings[binding].PkgPath + "/setup"
+		bindingInfo := r.bindings[binding]
+		setup := bindingInfo.PkgPath + "/setup"
 		facade := convert.BindingToFacade(binding)
 
 		if slices.Contains(r.installedFacadesInTheCurrentCommand, facade) {
@@ -170,6 +171,10 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 		r.installedFacadesInTheCurrentCommand = append(r.installedFacadesInTheCurrentCommand, facade)
 
 		ctx.Success(fmt.Sprintf("Facade %s installed successfully", facade))
+
+		if err := r.installDriver(ctx, facade, bindingInfo); err != nil {
+			return err
+		}
 	}
 
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
@@ -177,6 +182,45 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 	}
 
 	return nil
+}
+
+func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string, bindingInfo binding.Info) error {
+	if len(bindingInfo.Drivers) == 0 {
+		return nil
+	}
+
+	var options []console.Choice
+	for _, driver := range bindingInfo.Drivers {
+		options = append(options, console.Choice{
+			Key:   driver,
+			Value: driver,
+		})
+	}
+
+	options = append(options, console.Choice{
+		Key:   "Custom",
+		Value: "Custom",
+	})
+
+	driver, err := ctx.Choice(fmt.Sprintf("Select the %s driver to install", facade), options, console.ChoiceOption{
+		Description: fmt.Sprintf("A driver is required for %s, please select one to install.", facade),
+	})
+	if err != nil {
+		return err
+	}
+
+	if driver == "Custom" {
+		driver, err = ctx.Ask(fmt.Sprintf("Please enter the %s driver package", facade))
+		if err != nil {
+			return err
+		}
+	}
+
+	if driver == "" {
+		return r.installDriver(ctx, facade, bindingInfo)
+	} else {
+		return r.installPackage(ctx, driver)
+	}
 }
 
 func (r *PackageInstallCommand) getDependenciesThatNeedInstall(binding string) (needInstall []string) {

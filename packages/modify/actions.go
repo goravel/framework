@@ -1,6 +1,7 @@
 package modify
 
 import (
+	"fmt"
 	"go/token"
 	"slices"
 	"strconv"
@@ -38,16 +39,19 @@ func AddConfig(name, expression string) modify.Action {
 			value = node.Args[1].(*dst.CompositeLit)
 		}
 		key := WrapNewline(&dst.BasicLit{Kind: token.STRING, Value: strconv.Quote(name)})
-		if KeyExists(value.Elts, key) {
-			color.Warningln(errors.PackageConfigKeyExists.Args(name))
-			return
-		}
 
-		// add config
-		value.Elts = append(value.Elts, WrapNewline(&dst.KeyValueExpr{
+		newExpr := WrapNewline(&dst.KeyValueExpr{
 			Key:   key,
 			Value: WrapNewline(MustParseExpr(expression)).(dst.Expr),
-		}))
+		})
+		existExprIndex := KeyIndex(value.Elts, key)
+		fmt.Println("existExprIndex", existExprIndex)
+		if existExprIndex >= 0 {
+			value.Elts[existExprIndex] = newExpr
+		} else {
+			// add config
+			value.Elts = append(value.Elts, newExpr)
+		}
 	}
 }
 
