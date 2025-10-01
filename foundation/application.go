@@ -504,8 +504,6 @@ func sortConfiguredServiceProviders(providers []foundation.ServiceProvider) []fo
 	if len(result) != len(inDegree) {
 		// Detect and report the cycle
 		cycle := detectCycle(graph, bindingToProvider)
-		fmt.Printf("Dependency graph: %+v\n", graph)
-		fmt.Printf("bindingToProvider: %+v\n", bindingToProvider)
 		if len(cycle) > 0 {
 			panic(errors.ServiceProviderCycle.Args(strings.Join(cycle, " -> ")))
 		}
