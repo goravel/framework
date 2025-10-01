@@ -20,6 +20,7 @@ func main() {
 	routesImport := fmt.Sprintf("%s/routes", moduleName)
 	routesWeb := "routes.Web()"
 	routesPath := path.Base("routes", "web.go")
+	welcomeTmplPath := path.Base("resources", "views", "welcome.tmpl")
 
 	packages.Setup(os.Args).
 		Install(
@@ -28,8 +29,9 @@ func main() {
 				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
 				Find(match.Providers()).Modify(modify.Register("&route.ServiceProvider{}")),
 
-			// Create routes/web.go
-			modify.File(routesPath).Overwrite(stubs.Routes()),
+			// Create resources/views/welcome.tmpl and routes/web.go
+			modify.File(welcomeTmplPath).Overwrite(stubs.WelcomeTmpl()),
+			modify.File(routesPath).Overwrite(stubs.Routes(moduleName)),
 
 			// Modify app/providers/app_service_provider.go to register the HTTP global middleware
 			modify.GoFile(appServiceProviderPath).
@@ -52,8 +54,9 @@ func main() {
 					Find(match.Imports()).Modify(modify.RemoveImport(httpImport)).
 					Find(match.Imports()).Modify(modify.RemoveImport(routesImport)),
 
-				// Remove routes/web.go
+				// Remove resources/views/welcome.tmpl and routes/web.go
 				modify.File(routesPath).Remove(),
+				modify.File(welcomeTmplPath).Remove(),
 
 				// Remove the route service provider from the providers array in config/app.go
 				modify.GoFile(path.Config("app.go")).

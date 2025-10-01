@@ -143,17 +143,17 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 		return nil
 	}
 
-	dependencies := r.getDependenciesThatNeedInstall(binding)
-	if len(dependencies) > 0 && !ctx.OptionBool("all-facades") {
-		facades := make([]string, len(dependencies))
-		for i := range dependencies {
-			facades[i] = convert.BindingToFacade(dependencies[i])
+	bindingsToInstall := r.getBindingsToInstall(binding)
+	if len(bindingsToInstall) > 0 && !ctx.OptionBool("all-facades") {
+		facades := make([]string, len(bindingsToInstall))
+		for i := range bindingsToInstall {
+			facades[i] = convert.BindingToFacade(bindingsToInstall[i])
 		}
 		ctx.Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", name, strings.Join(facades, ", ")))
 	}
 
-	dependencies = append(dependencies, binding)
-	for _, binding := range dependencies {
+	bindingsToInstall = append(bindingsToInstall, binding)
+	for _, binding := range bindingsToInstall {
 		bindingInfo := r.bindings[binding]
 		setup := bindingInfo.PkgPath + "/setup"
 		facade := convert.BindingToFacade(binding)
@@ -223,11 +223,19 @@ func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string
 	}
 }
 
-func (r *PackageInstallCommand) getDependenciesThatNeedInstall(binding string) (needInstall []string) {
+func (r *PackageInstallCommand) getBindingsToInstall(binding string) (bindingsToInstall []string) {
 	for _, dependencyBinding := range getDependencyBindings(binding, r.bindings) {
 		var binding any = dependencyBinding
 		if !slices.Contains(r.installedBindings, binding) {
-			needInstall = append(needInstall, dependencyBinding)
+			bindingsToInstall = append(bindingsToInstall, dependencyBinding)
+		}
+	}
+
+	InstallTogether := r.bindings[binding].InstallTogether
+	for _, installTogetherBinding := range InstallTogether {
+		var binding any = installTogetherBinding
+		if !slices.Contains(r.installedBindings, binding) && !slices.Contains(bindingsToInstall, installTogetherBinding) {
+			bindingsToInstall = append(bindingsToInstall, installTogetherBinding)
 		}
 	}
 

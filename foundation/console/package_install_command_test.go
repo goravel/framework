@@ -347,7 +347,7 @@ func (s *PackageInstallCommandTestSuite) TestGetDependenciesThatNeedInstall() {
 
 	packageInstallCommand := NewPackageInstallCommand(bindings, installedBindings)
 
-	s.ElementsMatch([]string{binding.Orm}, packageInstallCommand.getDependenciesThatNeedInstall(binding.Auth))
+	s.ElementsMatch([]string{binding.Orm}, packageInstallCommand.getBindingsToInstall(binding.Auth))
 }
 
 func TestGetAvailableFacades(t *testing.T) {

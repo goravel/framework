@@ -36,21 +36,32 @@ type Relationship struct {
 }
 
 type Info struct {
-	PkgPath      string
+	// The package path of the binding's service provider.
+	PkgPath string
+	// The dependencies required by the binding.
 	Dependencies []string
-	Drivers      []string
-	IsBase       bool
+	// The drivers supported for the binding, some bindings cannot be used without specific drivers.
+	// Eg: The Route facade needs goravel/gin or goravel/fiber driver.
+	Drivers []string
+	// Other bindings that should be installed together with this binding.
+	// They do not have to be dependencies of this binding, but we want to install them together for better developer experience.
+	// Eg: The Schema facade can be installed together with the Orm facade.
+	InstallTogether []string
+	// Indicates whether the binding is a base binding that should be registered by default.
+	IsBase bool
 }
 
 var (
 	Bindings = map[string]Info{
 		Artisan: {
 			PkgPath: "github.com/goravel/framework/console",
-			Dependencies: []string{
-				Config,
-			},
-			IsBase: true,
+			IsBase:  true,
 		},
+		Config: {
+			PkgPath: "github.com/goravel/framework/config",
+			IsBase:  true,
+		},
+
 		Auth: {
 			PkgPath: "github.com/goravel/framework/auth",
 			Dependencies: []string{
@@ -67,10 +78,6 @@ var (
 				Log,
 			},
 		},
-		Config: {
-			PkgPath: "github.com/goravel/framework/config",
-			IsBase:  true,
-		},
 		Crypt: {
 			PkgPath: "github.com/goravel/framework/crypt",
 			Dependencies: []string{
@@ -80,9 +87,11 @@ var (
 		DB: {
 			PkgPath: "github.com/goravel/framework/database",
 			Dependencies: []string{
-				Artisan,
 				Config,
 				Log,
+			},
+			InstallTogether: []string{
+				Schema,
 			},
 		},
 		Event: {
@@ -143,9 +152,11 @@ var (
 		Orm: {
 			PkgPath: "github.com/goravel/framework/database",
 			Dependencies: []string{
-				Artisan,
 				Config,
 				Log,
+			},
+			InstallTogether: []string{
+				Schema,
 			},
 		},
 		Queue: {
@@ -160,8 +171,6 @@ var (
 			PkgPath: "github.com/goravel/framework/http",
 			Dependencies: []string{
 				Cache,
-				Config,
-				Log,
 			},
 		},
 		Route: {
@@ -189,15 +198,11 @@ var (
 			Dependencies: []string{
 				Config,
 				Log,
+				Orm,
 			},
 		},
 		Seeder: {
 			PkgPath: "github.com/goravel/framework/database",
-			Dependencies: []string{
-				Artisan,
-				Config,
-				Log,
-			},
 		},
 		Session: {
 			PkgPath: "github.com/goravel/framework/session",
@@ -227,11 +232,6 @@ var (
 		},
 		View: {
 			PkgPath: "github.com/goravel/framework/http",
-			Dependencies: []string{
-				Cache,
-				Config,
-				Log,
-			},
 		},
 	}
 )

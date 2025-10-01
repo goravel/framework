@@ -13,8 +13,11 @@ import (
 )
 
 func main() {
+	scheduleFacade := "Schedule"
 	appServiceProviderPath := path.App("providers", "app_service_provider.go")
+	appConfigPath := path.Config("app.go")
 	kernelPath := path.App("console", "kernel.go")
+	scheduleFacadePath := path.Facades("schedule.go")
 	moduleName := packages.GetModuleNameFromArgs(os.Args)
 	scheduleServiceProvider := "&schedule.ServiceProvider{}"
 	registerSchedule := "facades.Schedule().Register(console.Kernel{}.Schedule())"
@@ -23,28 +26,44 @@ func main() {
 
 	packages.Setup(os.Args).
 		Install(
-			modify.GoFile(path.Config("app.go")).
+			// Create the console kernel file if it does not exist.
+			modify.When(func() bool {
+				return !file.Exists(kernelPath)
+			}, modify.File(kernelPath).Overwrite(stub.ConsoleKernel())),
+
+			// Create the schedule facade file.
+			modify.WhenFacade(scheduleFacade, modify.File(scheduleFacadePath).Overwrite(Stubs{}.ScheduleFacade())),
+
+			// Add the Schedule service provider to the config/app.go file.
+			modify.GoFile(appConfigPath).
 				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
 				Find(match.Providers()).Modify(modify.Register(scheduleServiceProvider)),
-			modify.File(kernelPath).Overwrite(stub.ConsoleKernel()),
+
+			// Add the schedule registration to the AppServiceProvider.
 			modify.GoFile(appServiceProviderPath).
 				Find(match.Imports()).Modify(modify.AddImport(facadesImport)).
 				Find(match.Imports()).Modify(modify.AddImport(consoleImport)).
 				Find(match.RegisterFunc()).Modify(modify.Add(registerSchedule)),
-			modify.WhenFacade("Schedule", modify.File(path.Facades("schedule.go")).Overwrite(Stubs{}.ScheduleFacade())),
 		).
 		Uninstall(
-			modify.WhenNoFacades([]string{"Schedule"},
-				modify.GoFile(path.Config("app.go")).
-					Find(match.Providers()).Modify(modify.Unregister(scheduleServiceProvider)).
-					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
+			modify.WhenNoFacades([]string{scheduleFacade},
+				// Remove the schedule registration from the AppServiceProvider.
 				modify.GoFile(appServiceProviderPath).
 					Find(match.RegisterFunc()).Modify(modify.Remove(registerSchedule)).
 					Find(match.Imports()).Modify(modify.RemoveImport(facadesImport)).
 					Find(match.Imports()).Modify(modify.RemoveImport(consoleImport)),
+
+				// Remove the Schedule service provider from the config/app.go file.
+				modify.GoFile(appConfigPath).
+					Find(match.Providers()).Modify(modify.Unregister(scheduleServiceProvider)).
+					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
+
+				// Remove the console kernel file if it was not modified.
+				modify.When(isKernelNotModified, modify.File(kernelPath).Remove()),
 			),
-			modify.When(isKernelNotModified, modify.File(kernelPath).Remove()),
-			modify.WhenFacade("Schedule", modify.File(path.Facades("schedule.go")).Remove()),
+
+			// Remove the schedule facade file.
+			modify.WhenFacade(scheduleFacade, modify.File(scheduleFacadePath).Remove()),
 		).
 		Execute()
 }
