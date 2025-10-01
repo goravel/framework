@@ -53,7 +53,7 @@ func NewDriver(config config.Config, driver string) (route.Route, error) {
 	return nil, errors.RouteInvalidDriver.Args(driver).SetModule(errors.ModuleRoute)
 }
 
-// GlobalMiddleware registers global middleware for the route.
-// It's an empty function to avoid panic when installing a http driver and the http.default configuration is empty,
-// Given it is called in the AppServiceProvider boot method.
+// GlobalMiddleware is a no-op method used during installation when no HTTP driver is configured.
+// It is called in the AppServiceProvider boot method to register global middleware.
+// When the underlying Route is nil (e.g., when http.default is not set), this method does nothing to avoid panic.
 func (r *Route) GlobalMiddleware(middlewares ...http.Middleware) {}
