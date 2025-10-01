@@ -38,6 +38,7 @@ type Relationship struct {
 type Info struct {
 	PkgPath      string
 	Dependencies []string
+	Drivers      []string
 	IsBase       bool
 }
 
@@ -168,6 +169,10 @@ var (
 			Dependencies: []string{
 				Config,
 				Http,
+			},
+			Drivers: []string{
+				"github.com/goravel/gin",
+				"github.com/goravel/fiber",
 			},
 		},
 		Schedule: {

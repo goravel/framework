@@ -14,3 +14,12 @@ func Route() route.Route {
 }
 `
 }
+
+func (s Stubs) Routes() string {
+	return `package routes
+
+func Web() {
+
+}
+`
+}

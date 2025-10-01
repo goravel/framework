@@ -10,33 +10,57 @@ import (
 )
 
 func main() {
-	module := packages.GetModuleNameFromArgs(os.Args)
 	stubs := Stubs{}
+	httpFacade := "Http"
+	rateLimiterFacade := "RateLimiter"
+	viewFacade := "View"
+	appConfigPath := path.Config("app.go")
+	httpConfigPath := path.Config("http.go")
+	jwtConfigPath := path.Config("jwt.go")
+	corsConfigPath := path.Config("cors.go")
+	httpFacadePath := path.Facades("http.go")
+	rateLimiterFacadePath := path.Facades("rate_limiter.go")
+	viewFacadePath := path.Facades("view.go")
+	kernelPath := path.App("http", "kernel.go")
+	moduleName := packages.GetModuleNameFromArgs(os.Args)
+	httpServiceProvider := "&http.ServiceProvider{}"
 
 	packages.Setup(os.Args).
 		Install(
-			modify.GoFile(path.Config("app.go")).
+			// Add the HTTP service provider to the providers array in config/app.go
+			modify.GoFile(appConfigPath).
 				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register("&http.ServiceProvider{}")),
-			modify.File(path.Config("http.go")).Overwrite(stubs.HttpConfig(module)),
-			modify.File(path.Config("jwt.go")).Overwrite(stubs.JwtConfig(module)),
-			modify.File(path.Config("cors.go")).Overwrite(stubs.CorsConfig(module)),
-			modify.WhenFacade("Http", modify.File(path.Facades("http.go")).Overwrite(stubs.HttpFacade())),
-			modify.WhenFacade("RateLimiter", modify.File(path.Facades("rate_limiter.go")).Overwrite(stubs.RateLimiterFacade())),
-			modify.WhenFacade("View", modify.File(path.Facades("view.go")).Overwrite(stubs.ViewFacade())),
+				Find(match.Providers()).Modify(modify.Register(httpServiceProvider)),
+
+			// Create config/http.go, config/jwt.go, config/cors.go, app/http/kernel.go
+			modify.File(httpConfigPath).Overwrite(stubs.HttpConfig(moduleName)),
+			modify.File(jwtConfigPath).Overwrite(stubs.JwtConfig(moduleName)),
+			modify.File(corsConfigPath).Overwrite(stubs.CorsConfig(moduleName)),
+			modify.File(kernelPath).Overwrite(stubs.Kernel()),
+
+			// Register the Http, RateLimiter, View facades
+			modify.WhenFacade(httpFacade, modify.File(httpFacadePath).Overwrite(stubs.HttpFacade())),
+			modify.WhenFacade(rateLimiterFacade, modify.File(rateLimiterFacadePath).Overwrite(stubs.RateLimiterFacade())),
+			modify.WhenFacade(viewFacade, modify.File(viewFacadePath).Overwrite(stubs.ViewFacade())),
 		).
 		Uninstall(
-			modify.WhenNoFacades([]string{"Http", "RateLimiter", "View"},
-				modify.GoFile(path.Config("app.go")).
-					Find(match.Providers()).Modify(modify.Unregister("&http.ServiceProvider{}")).
+			modify.WhenNoFacades([]string{httpFacade, rateLimiterFacade, viewFacade},
+				// Remove the HTTP service provider from the providers array in config/app.go
+				modify.GoFile(appConfigPath).
+					Find(match.Providers()).Modify(modify.Unregister(httpServiceProvider)).
 					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
-				modify.File(path.Config("http.go")).Remove(),
-				modify.File(path.Config("jwt.go")).Remove(),
-				modify.File(path.Config("cors.go")).Remove(),
+
+				// Remove config/http.go, config/jwt.go, config/cors.go, app/http/kernel.go
+				modify.File(httpConfigPath).Remove(),
+				modify.File(jwtConfigPath).Remove(),
+				modify.File(corsConfigPath).Remove(),
+				modify.File(kernelPath).Remove(),
 			),
-			modify.WhenFacade("Http", modify.File(path.Facades("http.go")).Remove()),
-			modify.WhenFacade("RateLimiter", modify.File(path.Facades("rate_limiter.go")).Remove()),
-			modify.WhenFacade("View", modify.File(path.Facades("view.go")).Remove()),
+
+			// Remove the Http, RateLimiter, View facades
+			modify.WhenFacade(httpFacade, modify.File(httpFacadePath).Remove()),
+			modify.WhenFacade(rateLimiterFacade, modify.File(rateLimiterFacadePath).Remove()),
+			modify.WhenFacade(viewFacade, modify.File(viewFacadePath).Remove()),
 		).
 		Execute()
 }
