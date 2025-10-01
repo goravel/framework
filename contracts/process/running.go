@@ -40,16 +40,6 @@ type Running interface {
 	// configuration to stream the data instead.
 	ErrorOutput() string
 
-	// LatestOutput returns the most recent chunk of stdout produced by the process.
-	// TODO: Remove in a subsequent PR. The OnOutput callback is the superior, idiomatic
-	// pattern for handling live-streaming output, making this method redundant.
-	LatestOutput() string
-
-	// LatestErrorOutput returns the most recent chunk of stderr produced by the process.
-	// TODO: Remove in a subsequent PR. The OnOutput callback is the superior, idiomatic
-	// pattern for handling live-streaming error output, making this method redundant.
-	LatestErrorOutput() string
-
 	// Wait blocks until the process exits and returns its final Result.
 	// This call is required to reap the process and release all system resources.
 	Wait() Result
