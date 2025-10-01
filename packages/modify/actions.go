@@ -1,7 +1,6 @@
 package modify
 
 import (
-	"fmt"
 	"go/token"
 	"slices"
 	"strconv"
@@ -38,14 +37,14 @@ func AddConfig(name, expression string) modify.Action {
 		case *dst.CallExpr:
 			value = node.Args[1].(*dst.CompositeLit)
 		}
-		key := WrapNewline(&dst.BasicLit{Kind: token.STRING, Value: strconv.Quote(name)})
 
+		key := WrapNewline(&dst.BasicLit{Kind: token.STRING, Value: strconv.Quote(name)})
 		newExpr := WrapNewline(&dst.KeyValueExpr{
 			Key:   key,
 			Value: WrapNewline(MustParseExpr(expression)).(dst.Expr),
 		})
 		existExprIndex := KeyIndex(value.Elts, key)
-		fmt.Println("existExprIndex", existExprIndex)
+
 		if existExprIndex >= 0 {
 			value.Elts[existExprIndex] = newExpr
 		} else {

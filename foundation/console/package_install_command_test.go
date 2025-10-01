@@ -59,7 +59,6 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 		name                                string
 		installedFacadesInTheCurrentCommand []string
 		setup                               func()
-		assert                              func()
 	}{
 		{
 			name: "go get failed",
@@ -196,6 +195,135 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			packageInstallCommand.installedFacadesInTheCurrentCommand = test.installedFacadesInTheCurrentCommand
 
 			s.NoError(packageInstallCommand.Handle(mockContext))
+		})
+	}
+}
+
+func (s *PackageInstallCommandTestSuite) Test_installDriver() {
+	var (
+		mockContext *mocksconsole.Context
+
+		facade      = "Route"
+		bindingInfo = binding.Info{
+			PkgPath:      "github.com/goravel/framework/route",
+			Dependencies: []string{binding.Config},
+			Drivers:      []string{"github.com/goravel/gin", "github.com/goravel/fiber"},
+		}
+		bindings = map[string]binding.Info{
+			binding.Route: bindingInfo,
+			binding.Config: {
+				PkgPath: "github.com/goravel/framework/config",
+				IsBase:  true,
+			},
+		}
+		installedBindings = []any{binding.Config}
+	)
+
+	tests := []struct {
+		name        string
+		bindingInfo binding.Info
+		setup       func()
+		expectError error
+	}{
+		{
+			name:  "driver is empty",
+			setup: func() {},
+		},
+		{
+			name:        "select driver returns error",
+			bindingInfo: bindingInfo,
+			setup: func() {
+				mockContext.EXPECT().Choice(fmt.Sprintf("Select the %s driver to install", facade), []console.Choice{
+					{Key: "github.com/goravel/gin", Value: "github.com/goravel/gin"},
+					{Key: "github.com/goravel/fiber", Value: "github.com/goravel/fiber"},
+					{Key: "Custom", Value: "Custom"},
+				}, console.ChoiceOption{
+					Description: fmt.Sprintf("A driver is required for %s, please select one to install.", facade),
+				}).Return("", assert.AnError).Once()
+			},
+			expectError: assert.AnError,
+		},
+		{
+			name:        "select custom driver, but ask returns error",
+			bindingInfo: bindingInfo,
+			setup: func() {
+				mockContext.EXPECT().Choice(fmt.Sprintf("Select the %s driver to install", facade), []console.Choice{
+					{Key: "github.com/goravel/gin", Value: "github.com/goravel/gin"},
+					{Key: "github.com/goravel/fiber", Value: "github.com/goravel/fiber"},
+					{Key: "Custom", Value: "Custom"},
+				}, console.ChoiceOption{
+					Description: fmt.Sprintf("A driver is required for %s, please select one to install.", facade),
+				}).Return("Custom", nil).Once()
+				mockContext.EXPECT().Ask(fmt.Sprintf("Please enter the %s driver package", facade)).Return("", assert.AnError).Once()
+			},
+			expectError: assert.AnError,
+		},
+		{
+			name:        "select custom driver, but input empty",
+			bindingInfo: bindingInfo,
+			setup: func() {
+				mockContext.EXPECT().Choice(fmt.Sprintf("Select the %s driver to install", facade), []console.Choice{
+					{Key: "github.com/goravel/gin", Value: "github.com/goravel/gin"},
+					{Key: "github.com/goravel/fiber", Value: "github.com/goravel/fiber"},
+					{Key: "Custom", Value: "Custom"},
+				}, console.ChoiceOption{
+					Description: fmt.Sprintf("A driver is required for %s, please select one to install.", facade),
+				}).Return("Custom", nil).Once()
+				mockContext.EXPECT().Ask(fmt.Sprintf("Please enter the %s driver package", facade)).Return("", nil).Once()
+				mockContext.EXPECT().Choice(fmt.Sprintf("Select the %s driver to install", facade), []console.Choice{
+					{Key: "github.com/goravel/gin", Value: "github.com/goravel/gin"},
+					{Key: "github.com/goravel/fiber", Value: "github.com/goravel/fiber"},
+					{Key: "Custom", Value: "Custom"},
+				}, console.ChoiceOption{
+					Description: fmt.Sprintf("A driver is required for %s, please select one to install.", facade),
+				}).Return("", assert.AnError).Once()
+			},
+			expectError: assert.AnError,
+		},
+		{
+			name:        "failed to install driver",
+			bindingInfo: bindingInfo,
+			setup: func() {
+				mockContext.EXPECT().Choice(fmt.Sprintf("Select the %s driver to install", facade), []console.Choice{
+					{Key: "github.com/goravel/gin", Value: "github.com/goravel/gin"},
+					{Key: "github.com/goravel/fiber", Value: "github.com/goravel/fiber"},
+					{Key: "Custom", Value: "Custom"},
+				}, console.ChoiceOption{
+					Description: fmt.Sprintf("A driver is required for %s, please select one to install.", facade),
+				}).Return("github.com/goravel/gin", nil).Once()
+				mockContext.EXPECT().Spinner("> @go get github.com/goravel/gin", mock.Anything).Return(assert.AnError).Once()
+				mockContext.EXPECT().Error(fmt.Sprintf("Failed to get package: %s", assert.AnError)).Once()
+			},
+		},
+		{
+			name:        "successful to install driver",
+			bindingInfo: bindingInfo,
+			setup: func() {
+				pkg := "github.com/goravel/gin"
+				mockContext.EXPECT().Choice(fmt.Sprintf("Select the %s driver to install", facade), []console.Choice{
+					{Key: "github.com/goravel/gin", Value: "github.com/goravel/gin"},
+					{Key: "github.com/goravel/fiber", Value: "github.com/goravel/fiber"},
+					{Key: "Custom", Value: "Custom"},
+				}, console.ChoiceOption{
+					Description: fmt.Sprintf("A driver is required for %s, please select one to install.", facade),
+				}).Return(pkg, nil).Once()
+				mockContext.EXPECT().Spinner("> @go get "+pkg, mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Success("Package " + pkg + " installed successfully").Once()
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			mockContext = mocksconsole.NewContext(s.T())
+
+			tt.setup()
+
+			packageInstallCommand := NewPackageInstallCommand(bindings, installedBindings)
+
+			s.Equal(tt.expectError, packageInstallCommand.installDriver(mockContext, facade, tt.bindingInfo))
 		})
 	}
 }

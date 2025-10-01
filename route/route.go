@@ -20,6 +20,10 @@ func NewRoute(config config.Config) (*Route, error) {
 
 	defaultDriver := config.GetString("http.default")
 	if defaultDriver == "" {
+		// We want to initialize the Route even if the default driver is not set,
+		// to avoid panic when installing a http driver and the http.default configuration is empty.
+		// So we just print a warning message here.
+		// The Route will not work until the default driver is set.
 		color.Warningln(errors.RouteDefaultDriverNotSet.SetModule(errors.ModuleRoute).Error())
 	} else {
 		var err error

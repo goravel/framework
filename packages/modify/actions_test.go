@@ -212,7 +212,7 @@ func (provider *ServiceProvider) Boot(app foundation.Application) {}
 				AddConfig("name", `"Goravel"`),
 			},
 			assert: func(content string) {
-				s.NotContains(content, `"name": "Goravel"`)
+				s.Contains(content, `"name":  "Goravel"`)
 			},
 		},
 		{
