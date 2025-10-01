@@ -32,7 +32,7 @@ func (s *ExampleTestSuite) TearDownTest() {
 
 func (s *ExampleTestSuite) TestIndex() {
 	s.True(true)
-}	
+}
 `
 }
 
