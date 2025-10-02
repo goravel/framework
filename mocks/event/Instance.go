@@ -20,6 +20,69 @@ func (_m *Instance) EXPECT() *Instance_Expecter {
 	return &Instance_Expecter{mock: &_m.Mock}
 }
 
+// Dispatch provides a mock function with given fields: _a0, payload
+func (_m *Instance) Dispatch(_a0 interface{}, payload ...[]event.Arg) []interface{} {
+	_va := make([]interface{}, len(payload))
+	for _i := range payload {
+		_va[_i] = payload[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _a0)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Dispatch")
+	}
+
+	var r0 []interface{}
+	if rf, ok := ret.Get(0).(func(interface{}, ...[]event.Arg) []interface{}); ok {
+		r0 = rf(_a0, payload...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]interface{})
+		}
+	}
+
+	return r0
+}
+
+// Instance_Dispatch_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Dispatch'
+type Instance_Dispatch_Call struct {
+	*mock.Call
+}
+
+// Dispatch is a helper method to define mock.On call
+//   - _a0 interface{}
+//   - payload ...[]event.Arg
+func (_e *Instance_Expecter) Dispatch(_a0 interface{}, payload ...interface{}) *Instance_Dispatch_Call {
+	return &Instance_Dispatch_Call{Call: _e.mock.On("Dispatch",
+		append([]interface{}{_a0}, payload...)...)}
+}
+
+func (_c *Instance_Dispatch_Call) Run(run func(_a0 interface{}, payload ...[]event.Arg)) *Instance_Dispatch_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([][]event.Arg, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.([]event.Arg)
+			}
+		}
+		run(args[0].(interface{}), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Instance_Dispatch_Call) Return(_a0 []interface{}) *Instance_Dispatch_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Instance_Dispatch_Call) RunAndReturn(run func(interface{}, ...[]event.Arg) []interface{}) *Instance_Dispatch_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetEvents provides a mock function with no fields
 func (_m *Instance) GetEvents() map[event.Event][]event.Listener {
 	ret := _m.Called()
@@ -112,6 +175,63 @@ func (_c *Instance_Job_Call) Return(_a0 event.Task) *Instance_Job_Call {
 }
 
 func (_c *Instance_Job_Call) RunAndReturn(run func(event.Event, []event.Arg) event.Task) *Instance_Job_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Listen provides a mock function with given fields: events, listener
+func (_m *Instance) Listen(events interface{}, listener ...interface{}) error {
+	var _ca []interface{}
+	_ca = append(_ca, events)
+	_ca = append(_ca, listener...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Listen")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) error); ok {
+		r0 = rf(events, listener...)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Instance_Listen_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Listen'
+type Instance_Listen_Call struct {
+	*mock.Call
+}
+
+// Listen is a helper method to define mock.On call
+//   - events interface{}
+//   - listener ...interface{}
+func (_e *Instance_Expecter) Listen(events interface{}, listener ...interface{}) *Instance_Listen_Call {
+	return &Instance_Listen_Call{Call: _e.mock.On("Listen",
+		append([]interface{}{events}, listener...)...)}
+}
+
+func (_c *Instance_Listen_Call) Run(run func(events interface{}, listener ...interface{})) *Instance_Listen_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].(interface{}), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Instance_Listen_Call) Return(_a0 error) *Instance_Listen_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Instance_Listen_Call) RunAndReturn(run func(interface{}, ...interface{}) error) *Instance_Listen_Call {
 	_c.Call.Return(run)
 	return _c
 }
