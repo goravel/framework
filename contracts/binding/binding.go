@@ -90,6 +90,12 @@ var (
 				Config,
 				Log,
 			},
+			Drivers: []string{
+				"github.com/goravel/postgres",
+				"github.com/goravel/mysql",
+				"github.com/goravel/sqlserver",
+				"github.com/goravel/sqlite",
+			},
 			InstallTogether: []string{
 				Schema,
 			},
@@ -154,6 +160,12 @@ var (
 			Dependencies: []string{
 				Config,
 				Log,
+			},
+			Drivers: []string{
+				"github.com/goravel/postgres",
+				"github.com/goravel/mysql",
+				"github.com/goravel/sqlserver",
+				"github.com/goravel/sqlite",
 			},
 			InstallTogether: []string{
 				Schema,
