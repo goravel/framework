@@ -29,37 +29,209 @@ const (
 	View        = "goravel.view"
 )
 
-var FacadeToPath = map[string]string{
-	"Artisan":     "github.com/goravel/framework/console",
-	"Auth":        "github.com/goravel/framework/auth",
-	"Cache":       "github.com/goravel/framework/cache",
-	"Config":      "github.com/goravel/framework/config",
-	"Crypt":       "github.com/goravel/framework/crypt",
-	"DB":          "github.com/goravel/framework/database",
-	"Event":       "github.com/goravel/framework/event",
-	"Gate":        "github.com/goravel/framework/auth",
-	"Grpc":        "github.com/goravel/framework/grpc",
-	"Hash":        "github.com/goravel/framework/hash",
-	"Http":        "github.com/goravel/framework/http",
-	"Lang":        "github.com/goravel/framework/translation",
-	"Log":         "github.com/goravel/framework/log",
-	"Mail":        "github.com/goravel/framework/mail",
-	"Orm":         "github.com/goravel/framework/database",
-	"Queue":       "github.com/goravel/framework/queue",
-	"RateLimiter": "github.com/goravel/framework/http",
-	"Route":       "github.com/goravel/framework/route",
-	"Schedule":    "github.com/goravel/framework/schedule",
-	"Schema":      "github.com/goravel/framework/database",
-	"Seeder":      "github.com/goravel/framework/database",
-	"Session":     "github.com/goravel/framework/session",
-	"Storage":     "github.com/goravel/framework/filesystem",
-	"Testing":     "github.com/goravel/framework/testing",
-	"Validation":  "github.com/goravel/framework/validation",
-	"View":        "github.com/goravel/framework/http",
-}
-
 type Relationship struct {
 	Bindings     []string
 	Dependencies []string
 	ProvideFor   []string
 }
+
+type Info struct {
+	// The package path of the binding's service provider.
+	PkgPath string
+	// The dependencies required by the binding.
+	Dependencies []string
+	// The drivers supported for the binding, some bindings cannot be used without specific drivers.
+	// Eg: The Route facade needs goravel/gin or goravel/fiber driver.
+	Drivers []string
+	// Other bindings that should be installed together with this binding.
+	// They do not have to be dependencies of this binding, but we want to install them together for better developer experience.
+	// Eg: The Schema facade can be installed together with the Orm facade.
+	InstallTogether []string
+	// Indicates whether the binding is a base binding that should be registered by default.
+	IsBase bool
+}
+
+var (
+	Bindings = map[string]Info{
+		Artisan: {
+			PkgPath: "github.com/goravel/framework/console",
+			IsBase:  true,
+		},
+		Config: {
+			PkgPath: "github.com/goravel/framework/config",
+			IsBase:  true,
+		},
+
+		Auth: {
+			PkgPath: "github.com/goravel/framework/auth",
+			Dependencies: []string{
+				Cache,
+				Config,
+				Log,
+				Orm,
+			},
+		},
+		Cache: {
+			PkgPath: "github.com/goravel/framework/cache",
+			Dependencies: []string{
+				Config,
+				Log,
+			},
+		},
+		Crypt: {
+			PkgPath: "github.com/goravel/framework/crypt",
+			Dependencies: []string{
+				Config,
+			},
+		},
+		DB: {
+			PkgPath: "github.com/goravel/framework/database",
+			Dependencies: []string{
+				Config,
+				Log,
+			},
+			InstallTogether: []string{
+				Schema,
+			},
+		},
+		Event: {
+			PkgPath: "github.com/goravel/framework/event",
+			Dependencies: []string{
+				Queue,
+			},
+		},
+		Gate: {
+			PkgPath: "github.com/goravel/framework/auth",
+			Dependencies: []string{
+				Cache,
+				Orm,
+			},
+		},
+		Grpc: {
+			PkgPath: "github.com/goravel/framework/grpc",
+			Dependencies: []string{
+				Config,
+			},
+		},
+		Hash: {
+			PkgPath: "github.com/goravel/framework/hash",
+			Dependencies: []string{
+				Config,
+			},
+		},
+		Http: {
+			PkgPath: "github.com/goravel/framework/http",
+			Dependencies: []string{
+				Cache,
+				Config,
+				Log,
+				Session,
+				Validation,
+			},
+		},
+		Lang: {
+			PkgPath: "github.com/goravel/framework/translation",
+			Dependencies: []string{
+				Config,
+				Log,
+			},
+		},
+		Log: {
+			PkgPath: "github.com/goravel/framework/log",
+			Dependencies: []string{
+				Config,
+			},
+		},
+		Mail: {
+			PkgPath: "github.com/goravel/framework/mail",
+			Dependencies: []string{
+				Config,
+				Queue,
+			},
+		},
+		Orm: {
+			PkgPath: "github.com/goravel/framework/database",
+			Dependencies: []string{
+				Config,
+				Log,
+			},
+			InstallTogether: []string{
+				Schema,
+			},
+		},
+		Queue: {
+			PkgPath: "github.com/goravel/framework/queue",
+			Dependencies: []string{
+				Config,
+				DB,
+				Log,
+			},
+		},
+		RateLimiter: {
+			PkgPath: "github.com/goravel/framework/http",
+			Dependencies: []string{
+				Cache,
+			},
+		},
+		Route: {
+			PkgPath: "github.com/goravel/framework/route",
+			Dependencies: []string{
+				Config,
+				Http,
+			},
+			Drivers: []string{
+				"github.com/goravel/gin",
+				"github.com/goravel/fiber",
+			},
+		},
+		Schedule: {
+			PkgPath: "github.com/goravel/framework/schedule",
+			Dependencies: []string{
+				Artisan,
+				Cache,
+				Config,
+				Log,
+			},
+		},
+		Schema: {
+			PkgPath: "github.com/goravel/framework/database",
+			Dependencies: []string{
+				Config,
+				Log,
+				Orm,
+			},
+		},
+		Seeder: {
+			PkgPath: "github.com/goravel/framework/database",
+		},
+		Session: {
+			PkgPath: "github.com/goravel/framework/session",
+			Dependencies: []string{
+				Config,
+			},
+		},
+		Storage: {
+			PkgPath: "github.com/goravel/framework/filesystem",
+			Dependencies: []string{
+				Config,
+			},
+		},
+		Testing: {
+			PkgPath: "github.com/goravel/framework/testing",
+			Dependencies: []string{
+				Artisan,
+				Cache,
+				Config,
+				Orm,
+				Route,
+				Session,
+			},
+		},
+		Validation: {
+			PkgPath: "github.com/goravel/framework/validation",
+		},
+		View: {
+			PkgPath: "github.com/goravel/framework/http",
+		},
+	}
+)

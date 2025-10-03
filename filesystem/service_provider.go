@@ -21,10 +21,8 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 		Bindings: []string{
 			binding.Storage,
 		},
-		Dependencies: []string{
-			binding.Config,
-		},
-		ProvideFor: []string{},
+		Dependencies: binding.Bindings[binding.Storage].Dependencies,
+		ProvideFor:   []string{},
 	}
 }
 

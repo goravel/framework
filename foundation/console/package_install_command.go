@@ -1,21 +1,32 @@
 package console
 
 import (
+	"fmt"
 	"os/exec"
+	"slices"
 	"strings"
 
+	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/packages"
+	"github.com/goravel/framework/support/collect"
 	supportconsole "github.com/goravel/framework/support/console"
+	"github.com/goravel/framework/support/convert"
 )
 
 type PackageInstallCommand struct {
+	bindings                            map[string]binding.Info
+	installedBindings                   []any
+	installedFacadesInTheCurrentCommand []string
 }
 
-func NewPackageInstallCommand() *PackageInstallCommand {
-	return &PackageInstallCommand{}
+func NewPackageInstallCommand(bindings map[string]binding.Info, installedBindings []any) *PackageInstallCommand {
+	return &PackageInstallCommand{
+		bindings:          bindings,
+		installedBindings: installedBindings,
+	}
 }
 
 // Signature The name and signature of the console command.
@@ -33,40 +44,65 @@ func (r *PackageInstallCommand) Extend() command.Extend {
 	return command.Extend{
 		ArgsUsage: " <package@version> or <facade>",
 		Category:  "package",
+		Flags: []command.Flag{
+			&command.BoolFlag{
+				Name:    "all-facades",
+				Usage:   "Install all facades",
+				Aliases: []string{"a"},
+				Value:   false,
+			},
+		},
 	}
 }
 
 // Handle Execute the console command.
 func (r *PackageInstallCommand) Handle(ctx console.Context) error {
-	pkg := ctx.Argument(0)
-	if pkg == "" {
-		var err error
-		pkg, err = ctx.Ask("Enter the package/facade name to install", console.AskOption{
-			Description: "If no version is specified, install the latest",
-			Placeholder: " E.g example.com/pkg or example.com/pkg@v1.0.0 or cache",
-			Prompt:      ">",
-			Validate: func(s string) error {
-				if s == "" {
-					return errors.CommandEmptyPackageName
-				}
+	names := ctx.Arguments()
 
+	if len(names) == 0 {
+		if ctx.OptionBool("all-facades") {
+			names = getAvailableFacades(r.bindings)
+		} else {
+			var options []console.Choice
+			for _, facade := range getAvailableFacades(r.bindings) {
+				options = append(options, console.Choice{
+					Key:   facade,
+					Value: facade,
+				})
+			}
+
+			name, err := ctx.MultiSelect("Select the facades to install", options, console.MultiSelectOption{
+				Description: "If you want to install a package, please run the command with the package name.\nIf you want to install all facades, you can run the command with --all-facades or click ctrl+a to select all.",
+				Filterable:  true,
+			})
+			if err != nil {
+				ctx.Error(err.Error())
 				return nil
-			},
-		})
-		if err != nil {
-			ctx.Error(err.Error())
-			return nil
+			}
+
+			if len(name) > 0 {
+				names = append(names, name...)
+			}
 		}
 	}
 
-	return r.installPackage(ctx, pkg)
+	for _, name := range names {
+		if isPackage(name) {
+			if err := r.installPackage(ctx, name); err != nil {
+				return err
+			}
+		} else {
+			if slices.Contains(r.installedFacadesInTheCurrentCommand, name) {
+				continue
+			}
 
-	// TODO: Implement this in v1.17 https://github.com/goravel/goravel/issues/719
-	// if isPackage(pkg) {
-	// 	return r.installPackage(ctx, pkg)
-	// }
+			if err := r.installFacade(ctx, name); err != nil {
+				return err
+			}
+		}
+	}
 
-	// return r.installFacade(ctx, pkg)
+	return nil
 }
 
 func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) error {
@@ -75,51 +111,162 @@ func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) 
 
 	// get package
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "get", pkg)); err != nil {
-		color.Red().Println(err.Error())
+		ctx.Error(fmt.Sprintf("Failed to get package: %s", err))
 
 		return nil
 	}
 
 	// install package
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install")); err != nil {
-		color.Red().Println(err.Error())
+		ctx.Error(fmt.Sprintf("Failed to install package: %s", err))
 
 		return nil
 	}
 
 	// tidy go.mod file
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
-		color.Red().Println(err.Error())
+		ctx.Error(fmt.Sprintf("Failed to tidy go.mod file: %s", err))
 
 		return nil
 	}
 
-	color.Successf("Package %s installed successfully\n", pkg)
+	ctx.Success(fmt.Sprintf("Package %s installed successfully", pkg))
 
 	return nil
 }
 
-// func (r *PackageInstallCommand) installFacade(ctx console.Context, facade string) error {
-// 	path, exists := binding.FacadeToPath[facade]
-// 	if !exists {
-// 		ctx.Warning(errors.PackageFacadeNotFound.Args(facade).Error())
-// 		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(maps.Keys(binding.FacadeToPath), ", ")))
-// 		return nil
-// 	}
+func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) error {
+	binding := convert.FacadeToBinding(name)
+	if _, exists := r.bindings[binding]; !exists {
+		ctx.Warning(errors.PackageFacadeNotFound.Args(name).Error())
+		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(getAvailableFacades(r.bindings), ", ")))
+		return nil
+	}
 
-// 	setup := path + "/setup"
+	bindingsToInstall := r.getBindingsToInstall(binding)
+	if len(bindingsToInstall) > 0 && !ctx.OptionBool("all-facades") {
+		facades := make([]string, len(bindingsToInstall))
+		for i := range bindingsToInstall {
+			facades[i] = convert.BindingToFacade(bindingsToInstall[i])
+		}
+		ctx.Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", name, strings.Join(facades, ", ")))
+	}
 
-// 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install")); err != nil {
-// 		color.Red().Println(err.Error())
+	bindingsToInstall = append(bindingsToInstall, binding)
+	for _, binding := range bindingsToInstall {
+		bindingInfo := r.bindings[binding]
+		setup := bindingInfo.PkgPath + "/setup"
+		facade := convert.BindingToFacade(binding)
 
-// 		return nil
-// 	}
+		if slices.Contains(r.installedFacadesInTheCurrentCommand, facade) {
+			continue
+		}
 
-// 	color.Successf("Facade %s installed successfully\n", facade)
+		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--facade="+facade, "--module="+packages.GetModuleName())); err != nil {
+			ctx.Error(fmt.Sprintf("Failed to install facade %s: %s", facade, err.Error()))
 
-// 	return nil
-// }
+			return nil
+		}
 
-// func isPackage(pkg string) bool {
-// 	return strings.Contains(pkg, "/")
-// }
+		r.installedFacadesInTheCurrentCommand = append(r.installedFacadesInTheCurrentCommand, facade)
+
+		ctx.Success(fmt.Sprintf("Facade %s installed successfully", facade))
+
+		if err := r.installDriver(ctx, facade, bindingInfo); err != nil {
+			return err
+		}
+	}
+
+	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
+		ctx.Error(fmt.Sprintf("Failed to tidy go.mod file: %s", err))
+	}
+
+	return nil
+}
+
+func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string, bindingInfo binding.Info) error {
+	if len(bindingInfo.Drivers) == 0 {
+		return nil
+	}
+
+	var options []console.Choice
+	for _, driver := range bindingInfo.Drivers {
+		options = append(options, console.Choice{
+			Key:   driver,
+			Value: driver,
+		})
+	}
+
+	options = append(options, console.Choice{
+		Key:   "Custom",
+		Value: "Custom",
+	})
+
+	driver, err := ctx.Choice(fmt.Sprintf("Select the %s driver to install", facade), options, console.ChoiceOption{
+		Description: fmt.Sprintf("A driver is required for %s, please select one to install.", facade),
+	})
+	if err != nil {
+		return err
+	}
+
+	if driver == "Custom" {
+		driver, err = ctx.Ask(fmt.Sprintf("Please enter the %s driver package", facade))
+		if err != nil {
+			return err
+		}
+	}
+
+	if driver == "" {
+		return r.installDriver(ctx, facade, bindingInfo)
+	} else {
+		return r.installPackage(ctx, driver)
+	}
+}
+
+func (r *PackageInstallCommand) getBindingsToInstall(binding string) (bindingsToInstall []string) {
+	for _, dependencyBinding := range getDependencyBindings(binding, r.bindings) {
+		var binding any = dependencyBinding
+		if !slices.Contains(r.installedBindings, binding) {
+			bindingsToInstall = append(bindingsToInstall, dependencyBinding)
+		}
+	}
+
+	InstallTogether := r.bindings[binding].InstallTogether
+	for _, installTogetherBinding := range InstallTogether {
+		var binding any = installTogetherBinding
+		if !slices.Contains(r.installedBindings, binding) && !slices.Contains(bindingsToInstall, installTogetherBinding) {
+			bindingsToInstall = append(bindingsToInstall, installTogetherBinding)
+		}
+	}
+
+	return
+}
+
+func getAvailableFacades(bindings map[string]binding.Info) []string {
+	var result []string
+	for binding, info := range bindings {
+		if !info.IsBase {
+			result = append(result, convert.BindingToFacade(binding))
+		}
+	}
+
+	slices.Sort(result)
+
+	return result
+}
+
+func getDependencyBindings(binding string, bindings map[string]binding.Info) []string {
+	var deps []string
+	for _, dep := range bindings[binding].Dependencies {
+		if info, ok := bindings[dep]; ok && !info.IsBase {
+			deps = append(deps, dep)
+			deps = append(deps, getDependencyBindings(dep, bindings)...)
+		}
+	}
+
+	return collect.Unique(deps)
+}
+
+func isPackage(pkg string) bool {
+	return strings.Contains(pkg, "/")
+}

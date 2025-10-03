@@ -27,6 +27,7 @@ func (r PackageMakeCommandStubs) ServiceProvider() string {
 	content := `package DummyName
 
 import (
+	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/foundation"
 )
 
@@ -149,18 +150,17 @@ import (
 func main() {
 	packages.Setup(os.Args).
 		Install(
-			modify.File(path.Config("app.go")).
+			modify.GoFile(path.Config("app.go")).
 				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.AddProvider("&DummyName.ServiceProvider{}")),
+				Find(match.Providers()).Modify(modify.Register("&DummyName.ServiceProvider{}")),
 		).
 		Uninstall(
-			modify.File(path.Config("app.go")).
-				Find(match.Providers()).Modify(modify.RemoveProvider("&DummyName.ServiceProvider{}")).
+			modify.GoFile(path.Config("app.go")).
+				Find(match.Providers()).Modify(modify.Unregister("&DummyName.ServiceProvider{}")).
 				Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
 		).
 		Execute()
 }
-
 `
 	content = strings.ReplaceAll(content, "DummyName", r.name)
 

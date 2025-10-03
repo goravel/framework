@@ -16,13 +16,8 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 		Bindings: []string{
 			binding.Schedule,
 		},
-		Dependencies: []string{
-			binding.Artisan,
-			binding.Cache,
-			binding.Config,
-			binding.Log,
-		},
-		ProvideFor: []string{},
+		Dependencies: binding.Bindings[binding.Schedule].Dependencies,
+		ProvideFor:   []string{},
 	}
 }
 

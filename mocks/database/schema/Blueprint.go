@@ -566,6 +566,52 @@ func (_c *Blueprint_DateTimeTz_Call) RunAndReturn(run func(string, ...int) drive
 	return _c
 }
 
+// DateTimes provides a mock function with given fields: precision
+func (_m *Blueprint) DateTimes(precision ...int) {
+	_va := make([]interface{}, len(precision))
+	for _i := range precision {
+		_va[_i] = precision[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	_m.Called(_ca...)
+}
+
+// Blueprint_DateTimes_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DateTimes'
+type Blueprint_DateTimes_Call struct {
+	*mock.Call
+}
+
+// DateTimes is a helper method to define mock.On call
+//   - precision ...int
+func (_e *Blueprint_Expecter) DateTimes(precision ...interface{}) *Blueprint_DateTimes_Call {
+	return &Blueprint_DateTimes_Call{Call: _e.mock.On("DateTimes",
+		append([]interface{}{}, precision...)...)}
+}
+
+func (_c *Blueprint_DateTimes_Call) Run(run func(precision ...int)) *Blueprint_DateTimes_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]int, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(int)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Blueprint_DateTimes_Call) Return() *Blueprint_DateTimes_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Blueprint_DateTimes_Call) RunAndReturn(run func(...int)) *Blueprint_DateTimes_Call {
+	_c.Run(run)
+	return _c
+}
+
 // Decimal provides a mock function with given fields: column
 func (_m *Blueprint) Decimal(column string) driver.ColumnDefinition {
 	ret := _m.Called(column)
@@ -1459,6 +1505,165 @@ func (_c *Blueprint_Foreign_Call) Return(_a0 schema.ForeignKeyDefinition) *Bluep
 }
 
 func (_c *Blueprint_Foreign_Call) RunAndReturn(run func(...string) schema.ForeignKeyDefinition) *Blueprint_Foreign_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ForeignID provides a mock function with given fields: column
+func (_m *Blueprint) ForeignID(column string) schema.ForeignIDColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ForeignID")
+	}
+
+	var r0 schema.ForeignIDColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ForeignIDColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ForeignIDColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_ForeignID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ForeignID'
+type Blueprint_ForeignID_Call struct {
+	*mock.Call
+}
+
+// ForeignID is a helper method to define mock.On call
+//   - column string
+func (_e *Blueprint_Expecter) ForeignID(column interface{}) *Blueprint_ForeignID_Call {
+	return &Blueprint_ForeignID_Call{Call: _e.mock.On("ForeignID", column)}
+}
+
+func (_c *Blueprint_ForeignID_Call) Run(run func(column string)) *Blueprint_ForeignID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_ForeignID_Call) Return(_a0 schema.ForeignIDColumnDefinition) *Blueprint_ForeignID_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_ForeignID_Call) RunAndReturn(run func(string) schema.ForeignIDColumnDefinition) *Blueprint_ForeignID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ForeignUlid provides a mock function with given fields: column, length
+func (_m *Blueprint) ForeignUlid(column string, length ...int) schema.ForeignIDColumnDefinition {
+	_va := make([]interface{}, len(length))
+	for _i := range length {
+		_va[_i] = length[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, column)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ForeignUlid")
+	}
+
+	var r0 schema.ForeignIDColumnDefinition
+	if rf, ok := ret.Get(0).(func(string, ...int) schema.ForeignIDColumnDefinition); ok {
+		r0 = rf(column, length...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ForeignIDColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_ForeignUlid_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ForeignUlid'
+type Blueprint_ForeignUlid_Call struct {
+	*mock.Call
+}
+
+// ForeignUlid is a helper method to define mock.On call
+//   - column string
+//   - length ...int
+func (_e *Blueprint_Expecter) ForeignUlid(column interface{}, length ...interface{}) *Blueprint_ForeignUlid_Call {
+	return &Blueprint_ForeignUlid_Call{Call: _e.mock.On("ForeignUlid",
+		append([]interface{}{column}, length...)...)}
+}
+
+func (_c *Blueprint_ForeignUlid_Call) Run(run func(column string, length ...int)) *Blueprint_ForeignUlid_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]int, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(int)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Blueprint_ForeignUlid_Call) Return(_a0 schema.ForeignIDColumnDefinition) *Blueprint_ForeignUlid_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_ForeignUlid_Call) RunAndReturn(run func(string, ...int) schema.ForeignIDColumnDefinition) *Blueprint_ForeignUlid_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ForeignUuid provides a mock function with given fields: column
+func (_m *Blueprint) ForeignUuid(column string) schema.ForeignIDColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ForeignUuid")
+	}
+
+	var r0 schema.ForeignIDColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ForeignIDColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ForeignIDColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_ForeignUuid_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ForeignUuid'
+type Blueprint_ForeignUuid_Call struct {
+	*mock.Call
+}
+
+// ForeignUuid is a helper method to define mock.On call
+//   - column string
+func (_e *Blueprint_Expecter) ForeignUuid(column interface{}) *Blueprint_ForeignUuid_Call {
+	return &Blueprint_ForeignUuid_Call{Call: _e.mock.On("ForeignUuid", column)}
+}
+
+func (_c *Blueprint_ForeignUuid_Call) Run(run func(column string)) *Blueprint_ForeignUuid_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_ForeignUuid_Call) Return(_a0 schema.ForeignIDColumnDefinition) *Blueprint_ForeignUuid_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_ForeignUuid_Call) RunAndReturn(run func(string) schema.ForeignIDColumnDefinition) *Blueprint_ForeignUuid_Call {
 	_c.Call.Return(run)
 	return _c
 }

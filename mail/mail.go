@@ -173,10 +173,10 @@ func NewEmailFromReader(r io.Reader) (*Email, error) {
 				continue
 			}
 		}
-		switch {
-		case ct == "text/plain":
+		switch ct {
+		case "text/plain":
 			e.Text = p.body
-		case ct == "text/html":
+		case "text/html":
 			e.HTML = p.body
 		}
 	}
@@ -284,7 +284,9 @@ func (e *Email) AttachFile(filename string) (a *Attachment, err error) {
 	if err != nil {
 		return
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 
 	ct := mime.TypeByExtension(filepath.Ext(filename))
 	basename := filepath.Base(filename)
@@ -475,7 +477,7 @@ func (e *Email) Bytes() ([]byte, error) {
 				}
 
 				if isMixed || isAlternative {
-					relatedWriter.Close()
+					_ = relatedWriter.Close()
 				}
 			}
 		}
@@ -585,7 +587,9 @@ func (e *Email) SendWithTLS(addr string, a smtp.Auth, t *tls.Config) error {
 	if err != nil {
 		return err
 	}
-	defer c.Close()
+	defer func() {
+		_ = c.Close()
+	}()
 	if err = c.Hello("localhost"); err != nil {
 		return err
 	}
@@ -654,7 +658,9 @@ func (e *Email) SendWithStartTLS(addr string, a smtp.Auth, t *tls.Config) error 
 	if err != nil {
 		return err
 	}
-	defer c.Close()
+	defer func() {
+		_ = c.Close()
+	}()
 	if err = c.Hello("localhost"); err != nil {
 		return err
 	}
@@ -759,10 +765,10 @@ func headerToBytes(buff io.Writer, header textproto.MIMEHeader) {
 			_, _ = io.WriteString(buff, field)
 			_, _ = io.WriteString(buff, ": ")
 			// Write the encoded header if needed
-			switch {
-			case field == "Content-Type" || field == "Content-Disposition":
+			switch field {
+			case "Content-Type", "Content-Disposition":
 				_, _ = buff.Write([]byte(subval))
-			case field == "From" || field == "To" || field == "Cc" || field == "Bcc":
+			case "From", "To", "Cc", "Bcc":
 				participants := strings.Split(subval, ",")
 				for i, v := range participants {
 					addr, err := mail.ParseAddress(v)

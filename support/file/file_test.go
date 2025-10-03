@@ -75,36 +75,6 @@ func TestGetContent(t *testing.T) {
 	assert.Contains(t, content, "Version")
 }
 
-func TestGetFrameworkContent(t *testing.T) {
-	// Test successful case - reading a known framework file
-	content, err := GetFrameworkContent("support/constant.go")
-	assert.Nil(t, err)
-	assert.NotEmpty(t, content)
-	assert.Contains(t, content, "Version")
-
-	// Test successful case - reading another framework file
-	content, err = GetFrameworkContent("support/file/file.go")
-	assert.Nil(t, err)
-	assert.NotEmpty(t, content)
-	assert.Contains(t, content, "package file")
-
-	// Test case with non-existent file
-	content, err = GetFrameworkContent("non/existent/file.go")
-	assert.NotNil(t, err)
-	assert.Empty(t, content)
-
-	// Test case with empty file path
-	content, err = GetFrameworkContent("")
-	assert.NotNil(t, err)
-	assert.Empty(t, content)
-
-	// Test case with file path that contains expected framework content
-	content, err = GetFrameworkContent("go.mod")
-	assert.Nil(t, err)
-	assert.NotEmpty(t, content)
-	assert.Contains(t, content, "module github.com/goravel/framework")
-}
-
 func TestPutContent(t *testing.T) {
 	if !env.IsWindows() {
 		// directory creation failure
@@ -120,7 +90,7 @@ func TestPutContent(t *testing.T) {
 	assert.True(t, Contain(filePath, "goravel"))
 	assert.Equal(t, 1, file.GetLineNum(filePath))
 	// append content
-	assert.NoError(t, PutContent(filePath, "\nframework", WithAppend(true)))
+	assert.NoError(t, PutContent(filePath, "\nframework", WithAppend()))
 	assert.True(t, Contain(filePath, "goravel\nframework"))
 	assert.Equal(t, 2, file.GetLineNum(filePath))
 	// overwrite content

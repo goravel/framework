@@ -10,16 +10,19 @@ import (
 	"github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksmigration "github.com/goravel/framework/mocks/database/migration"
+	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	"github.com/goravel/framework/support/file"
 )
 
 func TestMigrateMakeCommand(t *testing.T) {
 	var (
+		mockApp      *mocksfoundation.Application
 		mockContext  *mocksconsole.Context
 		mockMigrator *mocksmigration.Migrator
 	)
 
 	beforeEach := func() {
+		mockApp = mocksfoundation.NewApplication(t)
 		mockContext = mocksconsole.NewContext(t)
 		mockMigrator = mocksmigration.NewMigrator(t)
 	}
@@ -35,6 +38,7 @@ func TestMigrateMakeCommand(t *testing.T) {
 				mockContext.EXPECT().Ask("Enter the migration name", mock.Anything).Return("create_users_table", nil).Once()
 				mockMigrator.EXPECT().Create("create_users_table").Return("", nil).Once()
 				mockContext.EXPECT().Success("Created Migration: create_users_table").Once()
+				mockApp.EXPECT().DatabasePath("kernel.go").Return("database/kernel.go").Once()
 				mockContext.EXPECT().Warning(mock.MatchedBy(func(msg string) bool {
 					return strings.HasPrefix(msg, "migration register failed:")
 				})).Once()
@@ -46,6 +50,7 @@ func TestMigrateMakeCommand(t *testing.T) {
 				mockContext.EXPECT().Argument(0).Return("create_users_table").Once()
 				mockMigrator.EXPECT().Create("create_users_table").Return("", nil).Once()
 				mockContext.EXPECT().Success("Created Migration: create_users_table").Once()
+				mockApp.EXPECT().DatabasePath("kernel.go").Return("database/kernel.go").Once()
 				mockContext.EXPECT().Warning(mock.MatchedBy(func(msg string) bool {
 					return strings.HasPrefix(msg, "migration register failed:")
 				})).Once()
@@ -73,6 +78,7 @@ func TestMigrateMakeCommand(t *testing.T) {
 				mockContext.EXPECT().Argument(0).Return("create_users_table").Once()
 				mockMigrator.EXPECT().Create("create_users_table").Return("20240915060148_create_users_table", nil).Once()
 				mockContext.EXPECT().Success("Created Migration: create_users_table").Once()
+				mockApp.EXPECT().DatabasePath("kernel.go").Return("database/kernel.go").Once()
 				mockContext.EXPECT().Success("Migration registered successfully").Once()
 				assert.NoError(t, file.PutContent("database/kernel.go", `package database
 
@@ -106,7 +112,7 @@ func (kernel Kernel) Migrations() []schema.Migration {
 			beforeEach()
 			test.setup()
 
-			migrateMakeCommand := NewMigrateMakeCommand(mockMigrator)
+			migrateMakeCommand := NewMigrateMakeCommand(mockApp, mockMigrator)
 			err := migrateMakeCommand.Handle(mockContext)
 
 			assert.NoError(t, err)

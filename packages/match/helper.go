@@ -130,6 +130,14 @@ func Providers() []match.GoNode {
 	}
 }
 
+func RegisterFunc() []match.GoNode {
+	return []match.GoNode{Func(Ident("Register"))}
+}
+
+func BootFunc() []match.GoNode {
+	return []match.GoNode{Func(Ident("Boot"))}
+}
+
 func Seeders() []match.GoNode {
 	return []match.GoNode{
 		Func(Ident("Seeders")),

@@ -15,12 +15,13 @@ import (
 
 type MatchHelperTestSuite struct {
 	suite.Suite
-	configChained  *dst.File
-	configVariable *dst.File
-	console        *dst.File
-	database       *dst.File
-	validation     *dst.File
-	jobs           *dst.File
+	configChained   *dst.File
+	configVariable  *dst.File
+	console         *dst.File
+	database        *dst.File
+	jobs            *dst.File
+	serviceProvider *dst.File
+	validation      *dst.File
 }
 
 func (s *MatchHelperTestSuite) SetupTest() {
@@ -184,6 +185,25 @@ func (receiver *QueueServiceProvider) Jobs() []queue.Job {
 }
 `)
 	s.Require().NoError(err)
+
+	s.serviceProvider, err = decorator.Parse(`package providers
+
+import (
+	"github.com/goravel/framework/contracts/foundation"
+)
+
+type AppServiceProvider struct {
+}
+
+func (receiver *AppServiceProvider) Register(app foundation.Application) {
+
+}
+
+func (receiver *AppServiceProvider) Boot(app foundation.Application) {
+
+}
+`)
+	s.Require().NoError(err)
 }
 
 func (s *MatchHelperTestSuite) TearDownTest() {}
@@ -328,6 +348,26 @@ func (s *MatchHelperTestSuite) TestHelper() {
 					},
 				})).MatchNode(node))
 				s.Len(node.(*dst.CompositeLit).Elts, 1)
+			},
+		},
+		{
+			name:     "match servicer provider's Register function",
+			file:     s.serviceProvider,
+			matchers: RegisterFunc(),
+			assert: func(node dst.Node) {
+				fn, ok := node.(*dst.FuncDecl)
+				s.True(ok)
+				s.True(fn.Name.Name == "Register")
+			},
+		},
+		{
+			name:     "match servicer provider's Boot function",
+			file:     s.serviceProvider,
+			matchers: BootFunc(),
+			assert: func(node dst.Node) {
+				fn, ok := node.(*dst.FuncDecl)
+				s.True(ok)
+				s.True(fn.Name.Name == "Boot")
 			},
 		},
 	}

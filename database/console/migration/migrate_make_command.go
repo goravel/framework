@@ -7,21 +7,21 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	contractmigration "github.com/goravel/framework/contracts/database/migration"
+	"github.com/goravel/framework/contracts/database/migration"
+	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
-	supportconsole "github.com/goravel/framework/support/console"
-	"github.com/goravel/framework/support/path"
 	"github.com/goravel/framework/support/str"
 )
 
 type MigrateMakeCommand struct {
-	migrator contractmigration.Migrator
+	app      foundation.Application
+	migrator migration.Migrator
 }
 
-func NewMigrateMakeCommand(migrator contractmigration.Migrator) *MigrateMakeCommand {
-	return &MigrateMakeCommand{migrator: migrator}
+func NewMigrateMakeCommand(app foundation.Application, migrator migration.Migrator) *MigrateMakeCommand {
+	return &MigrateMakeCommand{app: app, migrator: migrator}
 }
 
 // Signature The name and signature of the console command.
@@ -72,7 +72,7 @@ func (r *MigrateMakeCommand) Handle(ctx console.Context) error {
 
 	info, _ := debug.ReadBuildInfo()
 	structName := str.Of(fileName).Prepend("m_").Studly().String()
-	if err = modify.GoFile(path.Database("kernel.go")).
+	if err = modify.GoFile(r.app.DatabasePath("kernel.go")).
 		Find(match.Imports()).Modify(modify.AddImport(fmt.Sprintf("%s/database/migrations", info.Main.Path))).
 		Find(match.Migrations()).Modify(modify.Register(fmt.Sprintf("&migrations.%s{}", structName))).
 		Apply(); err != nil {

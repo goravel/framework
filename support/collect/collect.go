@@ -1,6 +1,8 @@
 package collect
 
 import (
+	"slices"
+
 	"github.com/samber/lo"
 	"github.com/samber/lo/mutable"
 	"golang.org/x/exp/constraints"
@@ -14,6 +16,13 @@ func Count[T comparable](collection []T) (count int) {
 // CountBy counts the number of elements in the collection for which predicate is true.
 func CountBy[T any](collection []T, predicate func(item T) bool) (count int) {
 	return lo.CountBy(collection, predicate)
+}
+
+// Diff creates a slice of slice values not included in the other given slice.
+func Diff[T comparable](list1, list2 []T) []T {
+	diff, _ := lo.Difference(list1, list2)
+
+	return diff
 }
 
 // Each iterates over elements of collection and invokes iteratee for each element.
@@ -79,8 +88,8 @@ func Sum[T constraints.Float | constraints.Integer | constraints.Complex](collec
 }
 
 // Unique returns a duplicate-free version of an array, in which only the first occurrence of each element is kept.
-func Unique[T comparable](collection []T) []T {
-	return lo.Uniq(collection)
+func Unique[T comparable](collections ...[]T) []T {
+	return lo.Uniq(slices.Concat(collections...))
 }
 
 // Values creates an array of the map values.

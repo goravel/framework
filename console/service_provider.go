@@ -16,10 +16,8 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 		Bindings: []string{
 			binding.Artisan,
 		},
-		Dependencies: []string{
-			binding.Config,
-		},
-		ProvideFor: []string{},
+		Dependencies: binding.Bindings[binding.Artisan].Dependencies,
+		ProvideFor:   []string{},
 	}
 }
 
@@ -28,6 +26,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		name := "artisan"
 		usage := "Goravel Framework"
 		usageText := "artisan [global options] command [options] [arguments...]"
+
 		return NewApplication(name, usage, usageText, app.Version(), true), nil
 	})
 }

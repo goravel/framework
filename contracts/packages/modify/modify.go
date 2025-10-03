@@ -9,18 +9,25 @@ import (
 
 type Action func(cursor *dstutil.Cursor)
 
+type Option func(map[string]any)
+
 type Apply interface {
-	Apply() error
+	Apply(...Option) error
+}
+
+type Facade interface {
+	File(path string) File
 }
 
 type File interface {
-	Overwrite(content string, forces ...bool) Apply
+	Overwrite(content string) Apply
 	Remove() Apply
 }
 
 type GoFile interface {
 	Apply
 	Find(matchers []match.GoNode) GoNode
+	FindOrCreate(matchers []match.GoNode, fn func(node dst.Node) error) GoNode
 }
 
 type GoNode interface {

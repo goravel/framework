@@ -1,6 +1,8 @@
 package console
 
 import (
+	"time"
+
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/huh/spinner"
 	"github.com/charmbracelet/lipgloss"
@@ -212,6 +214,187 @@ func (r *CliContext) OptionInt64(key string) int64 {
 
 func (r *CliContext) OptionInt64Slice(key string) []int64 {
 	return r.instance.Int64Slice(key)
+}
+
+func (r *CliContext) ArgumentString(key string) string {
+	ret := r.instance.StringArgs(key)
+	if len(ret) > 0 {
+		return ret[0]
+	}
+	var zero string
+	return zero
+}
+
+func (r *CliContext) ArgumentStringSlice(key string) []string {
+	return r.instance.StringArgs(key)
+}
+
+func (r *CliContext) ArgumentFloat32(key string) float32 {
+	ret := r.instance.Float32Args(key)
+	if len(ret) > 0 {
+		return ret[0]
+	}
+	var zero float32
+	return zero
+}
+
+func (r *CliContext) ArgumentFloat32Slice(key string) []float32 {
+	return r.instance.Float32Args(key)
+}
+
+func (r *CliContext) ArgumentFloat64(key string) float64 {
+	ret := r.instance.Float64Args(key)
+	if len(ret) > 0 {
+		return ret[0]
+	}
+	var zero float64
+	return zero
+}
+
+func (r *CliContext) ArgumentFloat64Slice(key string) []float64 {
+	return r.instance.Float64Args(key)
+}
+
+func (r *CliContext) ArgumentInt(key string) int {
+	ret := r.instance.IntArgs(key)
+	if len(ret) > 0 {
+		return ret[0]
+	}
+	var zero int
+	return zero
+}
+
+func (r *CliContext) ArgumentIntSlice(key string) []int {
+	return r.instance.IntArgs(key)
+}
+
+func (r *CliContext) ArgumentInt8(key string) int8 {
+	ret := r.instance.Int8Args(key)
+	if len(ret) > 0 {
+		return ret[0]
+	}
+	var zero int8
+	return zero
+}
+
+func (r *CliContext) ArgumentInt8Slice(key string) []int8 {
+	return r.instance.Int8Args(key)
+}
+
+func (r *CliContext) ArgumentInt16(key string) int16 {
+	ret := r.instance.Int16Args(key)
+	if len(ret) > 0 {
+		return ret[0]
+	}
+	var zero int16
+	return zero
+}
+
+func (r *CliContext) ArgumentInt16Slice(key string) []int16 {
+	return r.instance.Int16Args(key)
+}
+
+func (r *CliContext) ArgumentInt32(key string) int32 {
+	ret := r.instance.Int32Args(key)
+	if len(ret) > 0 {
+		return ret[0]
+	}
+	var zero int32
+	return zero
+}
+
+func (r *CliContext) ArgumentInt32Slice(key string) []int32 {
+	return r.instance.Int32Args(key)
+}
+
+func (r *CliContext) ArgumentInt64(key string) int64 {
+	ret := r.instance.Int64Args(key)
+	if len(ret) > 0 {
+		return ret[0]
+	}
+	var zero int64
+	return zero
+}
+
+func (r *CliContext) ArgumentInt64Slice(key string) []int64 {
+	return r.instance.Int64Args(key)
+}
+
+func (r *CliContext) ArgumentUint(key string) uint {
+	ret := r.instance.UintArgs(key)
+	if len(ret) > 0 {
+		return ret[0]
+	}
+	var zero uint
+	return zero
+}
+
+func (r *CliContext) ArgumentUintSlice(key string) []uint {
+	return r.instance.UintArgs(key)
+}
+
+func (r *CliContext) ArgumentUint8(key string) uint8 {
+	ret := r.instance.Uint8Args(key)
+	if len(ret) > 0 {
+		return ret[0]
+	}
+	var zero uint8
+	return zero
+}
+
+func (r *CliContext) ArgumentUint8Slice(key string) []uint8 {
+	return r.instance.Uint8Args(key)
+}
+
+func (r *CliContext) ArgumentUint16(key string) uint16 {
+	ret := r.instance.Uint16Args(key)
+	if len(ret) > 0 {
+		return ret[0]
+	}
+	var zero uint16
+	return zero
+}
+
+func (r *CliContext) ArgumentUint16Slice(key string) []uint16 {
+	return r.instance.Uint16Args(key)
+}
+
+func (r *CliContext) ArgumentUint32(key string) uint32 {
+	ret := r.instance.Uint32Args(key)
+	if len(ret) > 0 {
+		return ret[0]
+	}
+	var zero uint32
+	return zero
+}
+
+func (r *CliContext) ArgumentUint32Slice(key string) []uint32 {
+	return r.instance.Uint32Args(key)
+}
+
+func (r *CliContext) ArgumentUint64(key string) uint64 {
+	ret := r.instance.Uint64Args(key)
+	if len(ret) > 0 {
+		return ret[0]
+	}
+	var zero uint64
+	return zero
+}
+
+func (r *CliContext) ArgumentUint64Slice(key string) []uint64 {
+	return r.instance.Uint64Args(key)
+}
+
+func (r *CliContext) ArgumentTimestamp(key string) time.Time {
+	ret := r.instance.TimestampArgs(key)
+	if len(ret) > 0 {
+		return ret[0]
+	}
+	return time.Time{}
+}
+
+func (r *CliContext) ArgumentTimestampSlice(key string) []time.Time {
+	return r.instance.TimestampArgs(key)
 }
 
 func (r *CliContext) Secret(question string, option ...console.SecretOption) (string, error) {

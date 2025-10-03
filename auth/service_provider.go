@@ -5,7 +5,7 @@ import (
 
 	"github.com/goravel/framework/auth/access"
 	"github.com/goravel/framework/auth/console"
-	"github.com/goravel/framework/contracts/binding"
+	contractsbinding "github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/contracts/config"
 	contractconsole "github.com/goravel/framework/contracts/console"
@@ -13,6 +13,7 @@ import (
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/binding"
 )
 
 var (
@@ -24,24 +25,21 @@ var (
 type ServiceProvider struct {
 }
 
-func (r *ServiceProvider) Relationship() binding.Relationship {
-	return binding.Relationship{
-		Bindings: []string{
-			binding.Auth,
-			binding.Gate,
-		},
-		Dependencies: []string{
-			binding.Cache,
-			binding.Config,
-			binding.Log,
-			binding.Orm,
-		},
-		ProvideFor: []string{},
+func (r *ServiceProvider) Relationship() contractsbinding.Relationship {
+	bindings := []string{
+		contractsbinding.Auth,
+		contractsbinding.Gate,
+	}
+
+	return contractsbinding.Relationship{
+		Bindings:     bindings,
+		Dependencies: binding.Dependencies(bindings...),
+		ProvideFor:   []string{},
 	}
 }
 
 func (r *ServiceProvider) Register(app foundation.Application) {
-	app.BindWith(binding.Auth, func(app foundation.Application, parameters map[string]any) (any, error) {
+	app.BindWith(contractsbinding.Auth, func(app foundation.Application, parameters map[string]any) (any, error) {
 		configFacade = app.MakeConfig()
 		if configFacade == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleAuth)
@@ -60,7 +58,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		// ctx is optional when calling facades.Auth().Extend()
 		return NewAuth(nil, configFacade, log)
 	})
-	app.Singleton(binding.Gate, func(app foundation.Application) (any, error) {
+	app.Singleton(contractsbinding.Gate, func(app foundation.Application) (any, error) {
 		return access.NewGate(context.Background()), nil
 	})
 }

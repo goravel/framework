@@ -8,12 +8,13 @@ import (
 
 	"github.com/dave/dst"
 	"github.com/dave/dst/dstutil"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	contractsmatch "github.com/goravel/framework/contracts/packages/match"
 	"github.com/goravel/framework/contracts/packages/modify"
-	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/packages/match"
+	"github.com/goravel/framework/packages/options"
 	supportfile "github.com/goravel/framework/support/file"
 )
 
@@ -66,11 +67,13 @@ func (s *FileTestSuite) TestOverwrite() {
 			force:       false,
 			expectError: true,
 			assert: func(path string, err error) {
-				s.Equal(errors.FileAlreadyExists.Args(path).Error(), err.Error())
+				s.NoError(err)
+
 				// File should not be overwritten
 				content, readErr := supportfile.GetContent(path)
 				s.NoError(readErr)
 				s.Equal("old content", content)
+				s.NoError(supportfile.Remove(path))
 			},
 		},
 		{
@@ -128,9 +131,9 @@ func (s *FileTestSuite) TestOverwrite() {
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
 			path := tt.setup()
-			overwriteFile := File(path).Overwrite(tt.content, tt.force)
+			overwriteFile := File(path).Overwrite(tt.content)
 
-			err := overwriteFile.Apply()
+			err := overwriteFile.Apply(options.Force(tt.force))
 
 			tt.assert(path, err)
 		})
@@ -193,20 +196,20 @@ func (s *FileTestSuite) TestRemove() {
 	}
 }
 
-type ModifyGoFileTestSuite struct {
+type GoFileTestSuite struct {
 	suite.Suite
 	file string
 }
 
-func TestModifyGoFileTestSuite(t *testing.T) {
-	suite.Run(t, new(ModifyGoFileTestSuite))
+func TestGoFileTestSuite(t *testing.T) {
+	suite.Run(t, new(GoFileTestSuite))
 }
 
-func (s *ModifyGoFileTestSuite) SetupTest() {
+func (s *GoFileTestSuite) SetupTest() {
 	s.file = filepath.Join(s.T().TempDir(), "test.go")
 }
 
-func (s *ModifyGoFileTestSuite) TestModifyGoFile() {
+func (s *GoFileTestSuite) TestModifyGoFile() {
 	tests := []struct {
 		name     string
 		setup    func()
@@ -283,4 +286,148 @@ func main() {
 			tt.assert(GoFile(s.file).Find(tt.matchers).Modify(tt.actions...).Apply())
 		})
 	}
+}
+
+func (s *GoFileTestSuite) TestFindOrCreate() {
+	s.Run("create import when not exists", func() {
+		src := `package main
+func main() {}
+`
+		s.Require().NoError(supportfile.PutContent(s.file, src))
+
+		s.NoError(GoFile(s.file).FindOrCreate(match.Imports(), CreateImport).Modify(AddImport("fmt")).Apply())
+
+		content, err := supportfile.GetContent(s.file)
+		s.NoError(err)
+		s.Contains(content, `import "fmt"`)
+	})
+
+	s.Run("import already exists", func() {
+		src := `package main
+import "fmt"
+func main() {
+	fmt.Println("Hello, test!")
+}
+`
+		s.Require().NoError(supportfile.PutContent(s.file, src))
+
+		s.NoError(GoFile(s.file).FindOrCreate(match.Imports(), CreateImport).Modify(AddImport("fmt")).Apply())
+
+		content, err := supportfile.GetContent(s.file)
+		s.NoError(err)
+		s.Contains(content, `import "fmt"`)
+	})
+}
+
+func TestWhen(t *testing.T) {
+	t.Run("match", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		modifier := When(func() bool {
+			return true
+		}, apply)
+
+		err := modifier.Apply(options.Facade("Auth"))
+		assert.NoError(t, err)
+		assert.True(t, called)
+	})
+
+	t.Run("no match", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		modifier := When(func() bool {
+			return false
+		}, apply)
+
+		err := modifier.Apply(options.Facade("DB"))
+		assert.NoError(t, err)
+		assert.False(t, called)
+	})
+
+	t.Run("apply error", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called, shouldErr: true}
+		modifier := When(func() bool {
+			return true
+		}, apply)
+
+		err := modifier.Apply(options.Facade("Auth"))
+		assert.Equal(t, assert.AnError, err)
+		assert.True(t, called)
+	})
+}
+
+func TestWhenFacade(t *testing.T) {
+	t.Run("match", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		modifier := WhenFacade("Auth", apply)
+
+		err := modifier.Apply(options.Facade("Auth"))
+		assert.NoError(t, err)
+		assert.True(t, called)
+	})
+
+	t.Run("no match", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		modifier := WhenFacade("Auth", apply)
+
+		err := modifier.Apply(options.Facade("DB"))
+		assert.NoError(t, err)
+		assert.False(t, called)
+	})
+
+	t.Run("apply error", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called, shouldErr: true}
+		modifier := WhenFacade("Auth", apply)
+
+		err := modifier.Apply(options.Facade("Auth"))
+		assert.Equal(t, assert.AnError, err)
+		assert.True(t, called)
+	})
+}
+
+func TestWhenNoFacades(t *testing.T) {
+	t.Run("no facades exist", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		modifier := WhenNoFacades([]string{"Auth", "DB"}, apply)
+		err := modifier.Apply(options.Facade("Auth"))
+
+		assert.NoError(t, err)
+		assert.True(t, called)
+	})
+
+	t.Run("facade exists", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		modifier := WhenNoFacades([]string{"Auth", "DB"}, apply)
+
+		path := facadeToFilepath("DB")
+		err := supportfile.PutContent(path, "package facades\n")
+		assert.NoError(t, err)
+
+		defer func() {
+			assert.NoError(t, supportfile.Remove(path))
+		}()
+
+		err = modifier.Apply(options.Facade("Auth"))
+		assert.NoError(t, err)
+		assert.False(t, called)
+	})
+}
+
+type dummyApply struct {
+	called    *bool
+	shouldErr bool
+}
+
+func (d *dummyApply) Apply(...modify.Option) error {
+	*d.called = true
+	if d.shouldErr {
+		return assert.AnError
+	}
+	return nil
 }

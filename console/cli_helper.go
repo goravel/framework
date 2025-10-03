@@ -57,7 +57,9 @@ var (
   {{$s := join .Names ", "}}{{green $s}}{{ $sp := subtract $cv (offset $s 3) }}{{ indent $sp ""}}{{wrap (colorize .Usage) $cv}}{{end}}{{end}}`
 	flagTemplate = `{{ $cv := offsetFlags . 5}}{{range  .}}
    {{$s := getFlagName .}}{{green $s}}{{ $sp := subtract $cv (offset $s 1) }}{{ indent $sp ""}}{{$us := (capitalize .Usage)}}{{wrap (colorize $us) $cv}}{{$df := getFlagDefaultText . }}{{if $df}} {{yellow $df}}{{end}}{{end}}`
-	usageTemplate = `{{if .UsageText}}{{wrap (colorize .UsageText) 3}}{{else}}{{(helpName .FullName)}}{{if .VisibleFlags}} [options]{{end}}{{if .ArgsUsage}}{{.ArgsUsage}}{{else}}{{if .Args}} [arguments...]{{end}}{{end}}{{end}}`
+	usageTemplate = `{{if .UsageText}}{{wrap (colorize .UsageText) 3}}{{else}}{{(helpName .FullName)}}{{if .VisibleFlags}} [options]{{end}}{{if .ArgsUsage}}{{.ArgsUsage}}{{else}}{{if .Arguments}}{{template "argsTemplate" .}}{{end}}{{end}}{{end}}`
+	argsTemplate  = `{{if .Arguments}}{{range .Arguments}}{{template "argTemplate" .}}{{end}}{{end}}`
+	argTemplate   = ` {{if .Min}}<{{else}}[{{end}}{{.Name}}{{if (or (gt .Max 1) (eq .Max -1))}}...{{end}}{{if .Min}}>{{else}}]{{end}}`
 )
 
 // colorsFuncMap is a map of functions for coloring text.
@@ -224,7 +226,7 @@ func helpName(fullName string) string {
 
 func indent(spaces int, v string) string {
 	pad := strings.Repeat(" ", spaces)
-	return pad + strings.Replace(v, "\n", "\n"+pad, -1)
+	return pad + strings.ReplaceAll(v, "\n", "\n"+pad)
 }
 
 // lexicographicLess compares strings alphabetically considering case.
@@ -319,6 +321,8 @@ func printHelpCustom(out io.Writer, templ string, data any, _ map[string]any) {
 		"usageTemplate":   usageTemplate,
 		"commandTemplate": commandTemplate,
 		"flagTemplate":    flagTemplate,
+		"argsTemplate":    argsTemplate,
+		"argTemplate":     argTemplate,
 	}
 	for name, value := range templates {
 		if _, err := t.New(name).Parse(value); err != nil {
@@ -340,7 +344,7 @@ func printHelpCustom(out io.Writer, templ string, data any, _ map[string]any) {
 
 func printTemplateError(err error) {
 	if os.Getenv("CLI_TEMPLATE_ERROR_DEBUG") != "" {
-		_, _ = fmt.Fprintf(cli.ErrWriter, "CLI TEMPLATE ERROR: %#v\n", err)
+		_, _ = fmt.Fprintf(cli.ErrWriter, "CLI TEMPLATE ERROR: %+v\n", err)
 	}
 }
 

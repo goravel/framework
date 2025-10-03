@@ -26,6 +26,8 @@ type Blueprint interface {
 	Date(column string) driver.ColumnDefinition
 	// DateTime Create a new date-time column on the table.
 	DateTime(column string, precision ...int) driver.ColumnDefinition
+	// DateTimes Create `created_at` and `updated_at` columns on the table.
+	DateTimes(precision ...int)
 	// DateTimeTz Create a new date-time column (with time zone) on the table.
 	DateTimeTz(column string, precision ...int) driver.ColumnDefinition
 	// Decimal Create a new decimal column on the table.
@@ -70,6 +72,12 @@ type Blueprint interface {
 	Float(column string, precision ...int) driver.ColumnDefinition
 	// Foreign Specify a foreign key for the table.
 	Foreign(column ...string) ForeignKeyDefinition
+	// Foreign Create a new unsigned big integer (8-byte) column on the table.
+	ForeignID(column string) ForeignIDColumnDefinition
+	// ForeignUlid Create a new ULID column on the table with a foreign key constraint.
+	ForeignUlid(column string, length ...int) ForeignIDColumnDefinition
+	// ForeignUuid Create a new UUID column on the table with a foreign key constraint.
+	ForeignUuid(column string) ForeignIDColumnDefinition
 	// FullText Specify a fulltext for the table.
 	FullText(column ...string) IndexDefinition
 	// GetAddedColumns Get the added columns.

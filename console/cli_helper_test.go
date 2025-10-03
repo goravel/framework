@@ -59,7 +59,7 @@ func TestShowCommandHelp_HelpPrinterCustom(t *testing.T) {
    Test command
 
 Usage:
-   test [global options] test:foo [options]
+   test [global options] test:foo [options] <string_arg> [uint16_arg] [string_args...]
 
 Global options:
    -h, --help       Show help
@@ -184,6 +184,23 @@ func (receiver *TestFooCommand) Extend() command.Extend {
 				Name:    "int",
 				Aliases: []string{"i"},
 				Usage:   "<fg=blue>int</> flag",
+			},
+		},
+		Arguments: []command.Argument{
+			&command.ArgumentString{
+				Name:     "string_arg",
+				Usage:    "string argument",
+				Required: true,
+			},
+			&command.ArgumentUint16{
+				Name:  "uint16_arg",
+				Usage: "uint16 argument",
+			},
+			&command.ArgumentStringSlice{
+				Name:  "string_args",
+				Usage: "string arguments",
+				Min:   0,
+				Max:   -1,
 			},
 		},
 	}

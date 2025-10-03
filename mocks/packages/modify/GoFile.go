@@ -3,6 +3,7 @@
 package modify
 
 import (
+	dst "github.com/dave/dst"
 	match "github.com/goravel/framework/contracts/packages/match"
 	mock "github.com/stretchr/testify/mock"
 
@@ -22,17 +23,23 @@ func (_m *GoFile) EXPECT() *GoFile_Expecter {
 	return &GoFile_Expecter{mock: &_m.Mock}
 }
 
-// Apply provides a mock function with no fields
-func (_m *GoFile) Apply() error {
-	ret := _m.Called()
+// Apply provides a mock function with given fields: _a0
+func (_m *GoFile) Apply(_a0 ...modify.Option) error {
+	_va := make([]interface{}, len(_a0))
+	for _i := range _a0 {
+		_va[_i] = _a0[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Apply")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func() error); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(...modify.Option) error); ok {
+		r0 = rf(_a0...)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -46,13 +53,21 @@ type GoFile_Apply_Call struct {
 }
 
 // Apply is a helper method to define mock.On call
-func (_e *GoFile_Expecter) Apply() *GoFile_Apply_Call {
-	return &GoFile_Apply_Call{Call: _e.mock.On("Apply")}
+//   - _a0 ...modify.Option
+func (_e *GoFile_Expecter) Apply(_a0 ...interface{}) *GoFile_Apply_Call {
+	return &GoFile_Apply_Call{Call: _e.mock.On("Apply",
+		append([]interface{}{}, _a0...)...)}
 }
 
-func (_c *GoFile_Apply_Call) Run(run func()) *GoFile_Apply_Call {
+func (_c *GoFile_Apply_Call) Run(run func(_a0 ...modify.Option)) *GoFile_Apply_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		variadicArgs := make([]modify.Option, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(modify.Option)
+			}
+		}
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -62,7 +77,7 @@ func (_c *GoFile_Apply_Call) Return(_a0 error) *GoFile_Apply_Call {
 	return _c
 }
 
-func (_c *GoFile_Apply_Call) RunAndReturn(run func() error) *GoFile_Apply_Call {
+func (_c *GoFile_Apply_Call) RunAndReturn(run func(...modify.Option) error) *GoFile_Apply_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -111,6 +126,55 @@ func (_c *GoFile_Find_Call) Return(_a0 modify.GoNode) *GoFile_Find_Call {
 }
 
 func (_c *GoFile_Find_Call) RunAndReturn(run func([]match.GoNode) modify.GoNode) *GoFile_Find_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// FindOrCreate provides a mock function with given fields: matchers, fn
+func (_m *GoFile) FindOrCreate(matchers []match.GoNode, fn func(dst.Node) error) modify.GoNode {
+	ret := _m.Called(matchers, fn)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FindOrCreate")
+	}
+
+	var r0 modify.GoNode
+	if rf, ok := ret.Get(0).(func([]match.GoNode, func(dst.Node) error) modify.GoNode); ok {
+		r0 = rf(matchers, fn)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(modify.GoNode)
+		}
+	}
+
+	return r0
+}
+
+// GoFile_FindOrCreate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindOrCreate'
+type GoFile_FindOrCreate_Call struct {
+	*mock.Call
+}
+
+// FindOrCreate is a helper method to define mock.On call
+//   - matchers []match.GoNode
+//   - fn func(dst.Node) error
+func (_e *GoFile_Expecter) FindOrCreate(matchers interface{}, fn interface{}) *GoFile_FindOrCreate_Call {
+	return &GoFile_FindOrCreate_Call{Call: _e.mock.On("FindOrCreate", matchers, fn)}
+}
+
+func (_c *GoFile_FindOrCreate_Call) Run(run func(matchers []match.GoNode, fn func(dst.Node) error)) *GoFile_FindOrCreate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].([]match.GoNode), args[1].(func(dst.Node) error))
+	})
+	return _c
+}
+
+func (_c *GoFile_FindOrCreate_Call) Return(_a0 modify.GoNode) *GoFile_FindOrCreate_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *GoFile_FindOrCreate_Call) RunAndReturn(run func([]match.GoNode, func(dst.Node) error) modify.GoNode) *GoFile_FindOrCreate_Call {
 	_c.Call.Return(run)
 	return _c
 }

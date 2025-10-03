@@ -39,16 +39,19 @@ var (
 
 	ConsoleProvidersNotArray = New("the app.providers configuration is not of type []foundation.ServiceProvider, skipping registering service providers")
 
-	ConsoleCommandRegisterFailed = New("command register failed: %v")
-	ConsoleDropAllTablesFailed   = New("drop all tables failed: %v")
-	ConsoleDropAllTypesFailed    = New("drop all types failed: %v")
-	ConsoleDropAllViewsFailed    = New("drop all views failed: %v")
-	ConsoleEmptyDatabaseConfig   = New("please fill database config first")
-	ConsoleEmptyFieldValue       = New("the %s name cannot be empty")
-	ConsoleFileAlreadyExists     = New("the %s already exists. Use the --force or -f flag to overwrite")
-	ConsoleFailedToConfirm       = New("failed to confirm the action: %v")
-	ConsolePruneFailed           = New("prune failed: %v")
-	ConsoleRunInProduction       = New("please use the --force option if you want to run the command in production")
+	ConsoleCommandRegistrationFailed         = New("Registration of command '%s' failed: %v")
+	ConsoleCommandRequiredArgumentWrongOrder = New("required argument '%s' should be placed before any not-required arguments")
+	ConsoleCommandArgumentUnknownType        = New("unknown type of console command argument %T, with value %+v")
+	ConsoleCommandRegisterFailed             = New("command register failed: %v")
+	ConsoleDropAllTablesFailed               = New("drop all tables failed: %v")
+	ConsoleDropAllTypesFailed                = New("drop all types failed: %v")
+	ConsoleDropAllViewsFailed                = New("drop all views failed: %v")
+	ConsoleEmptyDatabaseConfig               = New("please fill database config first")
+	ConsoleEmptyFieldValue                   = New("the %s name cannot be empty")
+	ConsoleFileAlreadyExists                 = New("the %s already exists. Use the --force or -f flag to overwrite")
+	ConsoleFailedToConfirm                   = New("failed to confirm the action: %v")
+	ConsolePruneFailed                       = New("prune failed: %v")
+	ConsoleRunInProduction                   = New("please use the --force option if you want to run the command in production")
 
 	CryptAppKeyNotSet        = New("APP_KEY is required in artisan environment")
 	CryptInvalidAppKeyLength = New("invalid APP_KEY length: %d bytes")
@@ -97,6 +100,13 @@ var (
 	LogDriverCircularReference = New("%s driver can't include self channel").SetModule(ModuleLog)
 	LogDriverNotSupported      = New("invalid driver: %s, only support stack, single, daily, custom").SetModule(ModuleLog)
 	LogEmptyLogFilePath        = New("empty log file path").SetModule(ModuleLog)
+
+	MailTemplateParseFailed         = New("failed to parse template %s: %w").SetModule(ModuleMail)
+	MailTemplateExecutionFailed     = New("failed to execute template %s: %w").SetModule(ModuleMail)
+	MailTemplateEngineNotSupported  = New("template engine driver not supported: %s").SetModule(ModuleMail)
+	MailTemplateEngineViaRequired   = New("custom template engine '%s' must specify 'via' factory function").SetModule(ModuleMail)
+	MailTemplateEngineViaInvalid    = New("invalid via type for template engine '%s'").SetModule(ModuleMail)
+	MailTemplateEngineFactoryFailed = New("factory for template engine '%s' failed: %w").SetModule(ModuleMail)
 
 	MigrationCreateFailed    = New("create migration failed: %v")
 	MigrationFreshFailed     = New("migration fresh failed: %v")
@@ -208,4 +218,9 @@ var (
 	ValidationRuleRegisterFailed   = New("rule register failed: %v")
 
 	CommandEmptyPackageName = New("the package name cannot be empty")
+
+	ProcessNotStarted            = New("process not started").SetModule(ModuleProcess)
+	ProcessUnsupportedSignalType = New("unsupported signal type").SetModule(ModuleProcess)
+	ProcessPipelineEmpty         = New("pipeline must have at least one command").SetModule(ModuleProcess)
+	ProcessPipelineStartFailed   = New("failed to start pipeline: %v").SetModule(ModuleProcess)
 )

@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation/json"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/convert"
@@ -1216,7 +1217,7 @@ func buildRequest(t *testing.T) *http.Request {
 	logo, err := os.Open("../logo.png")
 	assert.Nil(t, err)
 
-	defer logo.Close()
+	defer errors.Ignore(logo.Close)
 	part1, err := writer.CreateFormFile("file", filepath.Base("../logo.png"))
 	assert.Nil(t, err)
 
@@ -1241,7 +1242,7 @@ func buildRequestWithMultipleFiles(t *testing.T) *http.Request {
 	logo1, err := os.Open("../logo.png")
 	assert.Nil(t, err)
 
-	defer logo1.Close()
+	defer errors.Ignore(logo1.Close)
 	part1, err := writer.CreateFormFile("files", filepath.Base("../logo.png"))
 	assert.Nil(t, err)
 
@@ -1251,7 +1252,7 @@ func buildRequestWithMultipleFiles(t *testing.T) *http.Request {
 	logo2, err := os.Open("../logo.png")
 	assert.Nil(t, err)
 
-	defer logo2.Close()
+	defer errors.Ignore(logo2.Close)
 	part2, err := writer.CreateFormFile("files", filepath.Base("../logo.png"))
 	assert.Nil(t, err)
 

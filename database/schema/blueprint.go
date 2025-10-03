@@ -125,6 +125,10 @@ func (r *Blueprint) DateTime(column string, precision ...int) driver.ColumnDefin
 	return columnImpl
 }
 
+func (r *Blueprint) DateTimes(precision ...int) {
+	_ = r.DateTime("created_at", precision...).Nullable()
+	_ = r.DateTime("updated_at", precision...).Nullable()
+}
 func (r *Blueprint) DateTimeTz(column string, precision ...int) driver.ColumnDefinition {
 	columnImpl := r.createAndAddColumn("dateTimeTz", column)
 	if len(precision) > 0 {
@@ -253,6 +257,27 @@ func (r *Blueprint) Foreign(column ...string) schema.ForeignKeyDefinition {
 	command := r.indexCommand(CommandForeign, column)
 
 	return NewForeignKeyDefinition(command)
+}
+
+func (r *Blueprint) ForeignID(column string) schema.ForeignIDColumnDefinition {
+	return &ForeignIDColumnDefinition{
+		ColumnDefinition: r.UnsignedBigInteger(column).(*ColumnDefinition),
+		blueprint:        r,
+	}
+}
+
+func (r *Blueprint) ForeignUlid(column string, length ...int) schema.ForeignIDColumnDefinition {
+	return &ForeignIDColumnDefinition{
+		ColumnDefinition: r.Ulid(column, length...).(*ColumnDefinition),
+		blueprint:        r,
+	}
+}
+
+func (r *Blueprint) ForeignUuid(column string) schema.ForeignIDColumnDefinition {
+	return &ForeignIDColumnDefinition{
+		ColumnDefinition: r.Uuid(column).(*ColumnDefinition),
+		blueprint:        r,
+	}
 }
 
 func (r *Blueprint) FullText(column ...string) schema.IndexDefinition {

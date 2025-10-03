@@ -12,8 +12,6 @@ import (
 	"github.com/goravel/framework/errors"
 )
 
-const Binding = "goravel.translation"
-
 type ServiceProvider struct {
 }
 
@@ -22,11 +20,8 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 		Bindings: []string{
 			binding.Lang,
 		},
-		Dependencies: []string{
-			binding.Config,
-			binding.Log,
-		},
-		ProvideFor: []string{},
+		Dependencies: binding.Bindings[binding.Lang].Dependencies,
+		ProvideFor:   []string{},
 	}
 }
 
