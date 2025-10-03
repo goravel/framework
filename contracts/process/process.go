@@ -17,6 +17,10 @@ const (
 	OutputTypeStderr
 )
 
+func (OutputType) String() string {
+	return ""
+}
+
 // OnOutputFunc is a callback function invoked when the process produces output.
 // The typ parameter indicates whether the data came from stdout or stderr,
 // and line contains the raw output bytes (typically a line of text).
