@@ -328,11 +328,12 @@ func (s *PackageInstallCommandTestSuite) Test_installDriver() {
 	}
 }
 
-func (s *PackageInstallCommandTestSuite) TestGetDependenciesThatNeedInstall() {
+func (s *PackageInstallCommandTestSuite) Test_getBindingsToInstall() {
 	bindings := map[string]binding.Info{
 		binding.Auth: {
-			PkgPath:      "github.com/goravel/framework/auth",
-			Dependencies: []string{binding.Config, binding.Orm},
+			PkgPath:         "github.com/goravel/framework/auth",
+			Dependencies:    []string{binding.Config, binding.Orm},
+			InstallTogether: []string{binding.Gate},
 		},
 		binding.Config: {
 			PkgPath: "github.com/goravel/framework/config",
@@ -347,7 +348,7 @@ func (s *PackageInstallCommandTestSuite) TestGetDependenciesThatNeedInstall() {
 
 	packageInstallCommand := NewPackageInstallCommand(bindings, installedBindings)
 
-	s.ElementsMatch([]string{binding.Orm}, packageInstallCommand.getDependenciesThatNeedInstall(binding.Auth))
+	s.ElementsMatch([]string{binding.Orm, binding.Gate}, packageInstallCommand.getBindingsToInstall(binding.Auth))
 }
 
 func TestGetAvailableFacades(t *testing.T) {
