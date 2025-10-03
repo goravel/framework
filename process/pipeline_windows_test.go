@@ -114,7 +114,7 @@ func TestPipe_WithContext_Windows(t *testing.T) {
 }
 
 func TestPipe_DefaultStepKeys_Windows(t *testing.T) {
-	rp, err := NewPipe().Quietly().Start(func(b contractsprocess.Pipe) {
+	rp, err := NewPipe().WithQuiet().Start(func(b contractsprocess.Pipe) {
 		b.Command("cmd", "/C", "(echo a & echo b)")
 		b.Command("cmd", "/C", "more")
 	})
