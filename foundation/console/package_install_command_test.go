@@ -328,7 +328,7 @@ func (s *PackageInstallCommandTestSuite) Test_installDriver() {
 	}
 }
 
-func (s *PackageInstallCommandTestSuite) TestGetDependenciesThatNeedInstall() {
+func (s *PackageInstallCommandTestSuite) Test_getBindingsToInstall() {
 	bindings := map[string]binding.Info{
 		binding.Auth: {
 			PkgPath:         "github.com/goravel/framework/auth",

@@ -1,5 +1,7 @@
 package main
 
+import "strings"
+
 type Stubs struct{}
 
 func (s Stubs) RouteFacade() string {
@@ -16,7 +18,7 @@ func Route() route.Route {
 }
 
 func (s Stubs) Routes(module string) string {
-	return `package routes
+	content := `package routes
 
 import (
 	"github.com/goravel/framework/contracts/http"
@@ -33,6 +35,8 @@ func Web() {
 	})
 }
 `
+
+	return strings.ReplaceAll(content, "DummyModule", module)
 }
 
 func (s Stubs) WelcomeTmpl() string {
