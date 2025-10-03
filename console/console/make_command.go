@@ -87,8 +87,8 @@ func (r *MakeCommand) initKernel() error {
 
 	// Modify the AppServiceProvider to register the console kernel.
 	appServiceProviderPath := filepath.Join("app", "providers", "app_service_provider.go")
-	registerSchedule := "facades.Artisan().Register(console.Kernel{}.Commands())"
-	if !file.Contain(appServiceProviderPath, registerSchedule) {
+	registerCommands := "facades.Artisan().Register(console.Kernel{}.Commands())"
+	if !file.Contain(appServiceProviderPath, registerCommands) {
 		moduleName := packages.GetModuleName()
 		facadesImport := fmt.Sprintf("%s/app/facades", moduleName)
 		consoleImport := fmt.Sprintf("%s/app/console", moduleName)
@@ -96,7 +96,7 @@ func (r *MakeCommand) initKernel() error {
 		return modify.GoFile(appServiceProviderPath).
 			Find(match.Imports()).Modify(modify.AddImport(facadesImport)).
 			Find(match.Imports()).Modify(modify.AddImport(consoleImport)).
-			Find(match.RegisterFunc()).Modify(modify.Add(registerSchedule)).Apply()
+			Find(match.RegisterFunc()).Modify(modify.Add(registerCommands)).Apply()
 	}
 
 	return nil
