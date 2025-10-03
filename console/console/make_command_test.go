@@ -35,10 +35,13 @@ func TestMakeCommand(t *testing.T) {
 		assert.Nil(t, file.Remove("app"))
 	}()
 
+	kernelPath := filepath.Join("app", "console", "kernel.go")
+	appServiceProviderPath := filepath.Join("app", "providers", "app_service_provider.go")
 	makeCommand := &MakeCommand{}
 
 	t.Run("empty name", func(t *testing.T) {
-		assert.NoError(t, file.PutContent("app/console/kernel.go", Stubs{}.Kernel()))
+		assert.NoError(t, file.PutContent(kernelPath, Stubs{}.Kernel()))
+		assert.NoError(t, file.PutContent(appServiceProviderPath, appServiceProvider))
 
 		mockContext := mocksconsole.NewContext(t)
 		mockContext.EXPECT().Argument(0).Return("").Once()
@@ -48,7 +51,7 @@ func TestMakeCommand(t *testing.T) {
 	})
 
 	t.Run("command register failed", func(t *testing.T) {
-		assert.NoError(t, file.PutContent("app/console/kernel.go", `package console
+		assert.NoError(t, file.PutContent(kernelPath, `package console
 
 import (
 	"github.com/goravel/framework/contracts/console"
@@ -71,8 +74,10 @@ func (kernel Kernel) Schedule() []schedule.Event {
 			return strings.HasPrefix(msg, "command register failed:")
 		})).Once()
 		assert.Nil(t, makeCommand.Handle(mockContext))
-		assert.True(t, file.Exists("app/console/commands/clean_cache.go"))
-		assert.True(t, file.Contain("app/console/commands/clean_cache.go", "app:clean-cache"))
+
+		cleanCachePath := filepath.Join("app", "console", "commands", "clean_cache.go")
+		assert.True(t, file.Exists(cleanCachePath))
+		assert.True(t, file.Contain(cleanCachePath, "app:clean-cache"))
 	})
 
 	t.Run("command already exists", func(t *testing.T) {
@@ -84,7 +89,7 @@ func (kernel Kernel) Schedule() []schedule.Event {
 	})
 
 	t.Run("command create and register successfully", func(t *testing.T) {
-		assert.NoError(t, file.PutContent("app/console/kernel.go", Stubs{}.Kernel()))
+		assert.NoError(t, file.PutContent(kernelPath, Stubs{}.Kernel()))
 
 		mockContext := mocksconsole.NewContext(t)
 		mockContext.EXPECT().Argument(0).Return("Goravel/CleanCache").Once()
@@ -93,12 +98,14 @@ func (kernel Kernel) Schedule() []schedule.Event {
 		mockContext.EXPECT().Success("Console command registered successfully").Once()
 
 		assert.Nil(t, makeCommand.Handle(mockContext))
-		assert.True(t, file.Exists("app/console/commands/Goravel/clean_cache.go"))
-		assert.True(t, file.Contain("app/console/commands/Goravel/clean_cache.go", "package Goravel"))
-		assert.True(t, file.Contain("app/console/commands/Goravel/clean_cache.go", "type CleanCache struct"))
-		assert.True(t, file.Contain("app/console/commands/Goravel/clean_cache.go", "app:goravel-clean-cache"))
-		assert.True(t, file.Contain("app/console/kernel.go", "app/console/commands/Goravel"))
-		assert.True(t, file.Contain("app/console/kernel.go", "&Goravel.CleanCache{}"))
+
+		cleanCachePath := filepath.Join("app", "console", "commands", "Goravel", "clean_cache.go")
+		assert.True(t, file.Exists(cleanCachePath))
+		assert.True(t, file.Contain(cleanCachePath, "package Goravel"))
+		assert.True(t, file.Contain(cleanCachePath, "type CleanCache struct"))
+		assert.True(t, file.Contain(cleanCachePath, "app:goravel-clean-cache"))
+		assert.True(t, file.Contain(kernelPath, "app/console/commands/Goravel"))
+		assert.True(t, file.Contain(kernelPath, "&Goravel.CleanCache{}"))
 	})
 }
 
