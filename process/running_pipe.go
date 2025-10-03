@@ -14,7 +14,7 @@ import (
 
 type RunningPipe struct {
 	commands []*exec.Cmd
-	steps    []*Step
+	steps    []*PipeCommand
 	cancel   context.CancelFunc
 
 	interReaders []*io.PipeReader
@@ -29,7 +29,7 @@ type RunningPipe struct {
 
 func NewRunningPipe(
 	commands []*exec.Cmd,
-	steps []*Step,
+	steps []*PipeCommand,
 	cancel context.CancelFunc,
 	interReaders []*io.PipeReader,
 	interWriters []*io.PipeWriter,

@@ -17,10 +17,6 @@ const (
 	OutputTypeStderr
 )
 
-func (OutputType) String() string {
-	return ""
-}
-
 // OnOutputFunc is a callback function invoked when the process produces output.
 // The typ parameter indicates whether the data came from stdout or stderr,
 // and line contains the raw output bytes (typically a line of text).
@@ -31,7 +27,7 @@ type OnOutputFunc func(typ OutputType, line []byte)
 // Implementations are mutable and should not be reused concurrently.
 // Each method modifies the same underlying process configuration.
 type Process interface {
-	// DisableBuffering prevents the process's stdout and stderr from being buffered
+	// WithDisabledBuffering prevents the process's stdout and stderr from being buffered
 	// in memory. This is a critical optimization for commands that produce a large
 	// volume of output, especially when that output is already being handled by
 	// an OnOutput streaming callback.
@@ -42,26 +38,39 @@ type Process interface {
 	//   - Running.ErrorOutput()
 	//   - Result.Output()
 	//   - Result.ErrorOutput()
-	DisableBuffering() Process
+	WithDisabledBuffering() Process
 
-	// Env adds or overrides environment variables for the process.
-	// Modifies the current process configuration.
-	Env(vars map[string]string) Process
+	// WithEnv adds or overrides environment variables for the process.
+	WithEnv(vars map[string]string) Process
 
-	// Input sets the stdin source for the process.
+	// WithInput sets the stdin source for the process.
 	// By default, processes run without stdin input.
-	Input(in io.Reader) Process
+	WithInput(in io.Reader) Process
 
-	// Path sets the working directory where the process will be executed.
-	Path(path string) Process
+	// WithPath sets the working directory where the process will be executed.
+	WithPath(path string) Process
 
-	// Quietly suppresses all process output, discarding both stdout and stderr.
-	Quietly() Process
+	// WithQuiet suppresses all process output, discarding both stdout and stderr.
+	WithQuiet() Process
 
-	// OnOutput registers a handler to receive stdout and stderr output
-	// while the process runs. Multiple handlers may be chained depending
-	// on the implementation.
-	OnOutput(handler OnOutputFunc) Process
+	// WithOutputHandler registers a handler to receive stdout and stderr output
+	// while the process runs.
+	WithOutputHandler(handler OnOutputFunc) Process
+
+	// WithTimeout sets a maximum execution duration for the process.
+	// If the timeout is exceeded, the process will be terminated.
+	// A zero duration disables the timeout.
+	WithTimeout(timeout time.Duration) Process
+
+	// WithTTY attaches the process to a pseudo-terminal, enabling interactive
+	// behavior (such as programs that require a TTY for input/output).
+	WithTTY() Process
+
+	// WithContext binds the process lifecycle to the provided context.
+	// If the context is canceled or reaches its deadline, the process
+	// will be terminated. When combined with Timeout, the earlier of
+	// the two deadlines takes effect.
+	WithContext(ctx context.Context) Process
 
 	// Run starts the process, waits for it to complete, and returns the result.
 	// It returns an error if the process cannot be started or if execution fails.
@@ -71,19 +80,4 @@ type Process interface {
 	// handle to monitor and control its execution. The caller must later
 	// wait or terminate the process explicitly.
 	Start(name string, arg ...string) (Running, error)
-
-	// Timeout sets a maximum execution duration for the process.
-	// If the timeout is exceeded, the process will be terminated.
-	// A zero duration disables the timeout.
-	Timeout(timeout time.Duration) Process
-
-	// TTY attaches the process to a pseudo-terminal, enabling interactive
-	// behavior (such as programs that require a TTY for input/output).
-	TTY() Process
-
-	// WithContext binds the process lifecycle to the provided context.
-	// If the context is canceled or reaches its deadline, the process
-	// will be terminated. When combined with Timeout, the earlier of
-	// the two deadlines takes effect.
-	WithContext(ctx context.Context) Process
 }

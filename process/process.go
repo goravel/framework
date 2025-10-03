@@ -28,40 +28,38 @@ type Process struct {
 func New() *Process {
 	return &Process{
 		ctx: context.Background(),
+		env: make([]string, 0),
 	}
 }
 
-func (r *Process) DisableBuffering() contractsprocess.Process {
+func (r *Process) WithDisabledBuffering() contractsprocess.Process {
 	r.bufferingDisabled = true
 	return r
 }
 
-func (r *Process) Env(vars map[string]string) contractsprocess.Process {
-	if r.env == nil {
-		r.env = make([]string, 0, len(vars))
-	}
+func (r *Process) WithEnv(vars map[string]string) contractsprocess.Process {
 	for k, v := range vars {
 		r.env = append(r.env, k+"="+v)
 	}
 	return r
 }
 
-func (r *Process) Input(in io.Reader) contractsprocess.Process {
+func (r *Process) WithInput(in io.Reader) contractsprocess.Process {
 	r.input = in
 	return r
 }
 
-func (r *Process) Path(path string) contractsprocess.Process {
+func (r *Process) WithPath(path string) contractsprocess.Process {
 	r.path = path
 	return r
 }
 
-func (r *Process) Quietly() contractsprocess.Process {
+func (r *Process) WithQuiet() contractsprocess.Process {
 	r.quietly = true
 	return r
 }
 
-func (r *Process) OnOutput(handler contractsprocess.OnOutputFunc) contractsprocess.Process {
+func (r *Process) WithOutputHandler(handler contractsprocess.OnOutputFunc) contractsprocess.Process {
 	r.onOutput = handler
 	return r
 }
@@ -74,12 +72,12 @@ func (r *Process) Start(name string, args ...string) (contractsprocess.Running, 
 	return r.start(name, args...)
 }
 
-func (r *Process) Timeout(timeout time.Duration) contractsprocess.Process {
+func (r *Process) WithTimeout(timeout time.Duration) contractsprocess.Process {
 	r.timeout = timeout
 	return r
 }
 
-func (r *Process) TTY() contractsprocess.Process {
+func (r *Process) WithTTY() contractsprocess.Process {
 	r.tty = true
 	return r
 }

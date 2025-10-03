@@ -12,7 +12,7 @@ import (
 
 func TestRunning_Basics_Windows(t *testing.T) {
 	t.Run("PID, Command, Running, and Wait", func(t *testing.T) {
-		r, err := New().Quietly().Start("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Milliseconds 200; exit 7")
+		r, err := New().WithQuiet().Start("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Milliseconds 200; exit 7")
 		assert.NoError(t, err)
 
 		run, ok := r.(*Running)
@@ -33,7 +33,7 @@ func TestRunning_Basics_Windows(t *testing.T) {
 
 func TestRunning_DoneChannel_Windows(t *testing.T) {
 	t.Run("Done channel closes on normal exit", func(t *testing.T) {
-		r, err := New().Quietly().Start("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Milliseconds 200")
+		r, err := New().WithQuiet().Start("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Milliseconds 200")
 		assert.NoError(t, err)
 		run, _ := r.(*Running)
 
@@ -47,7 +47,7 @@ func TestRunning_DoneChannel_Windows(t *testing.T) {
 	})
 
 	t.Run("Done channel works with select timeout", func(t *testing.T) {
-		r, err := New().Quietly().Start("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Seconds 5")
+		r, err := New().WithQuiet().Start("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Seconds 5")
 		assert.NoError(t, err)
 		run, _ := r.(*Running)
 
@@ -63,7 +63,7 @@ func TestRunning_DoneChannel_Windows(t *testing.T) {
 
 func TestRunning_Stop_Windows(t *testing.T) {
 	t.Run("Stop terminates a running process", func(t *testing.T) {
-		r, err := New().Quietly().Start("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Seconds 10")
+		r, err := New().WithQuiet().Start("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Seconds 10")
 		assert.NoError(t, err)
 		run, _ := r.(*Running)
 

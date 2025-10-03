@@ -21,7 +21,7 @@ func (_m *Pipe) EXPECT() *Pipe_Expecter {
 }
 
 // Command provides a mock function with given fields: name, arg
-func (_m *Pipe) Command(name string, arg ...string) process.Step {
+func (_m *Pipe) Command(name string, arg ...string) process.PipeCommand {
 	_va := make([]interface{}, len(arg))
 	for _i := range arg {
 		_va[_i] = arg[_i]
@@ -35,12 +35,12 @@ func (_m *Pipe) Command(name string, arg ...string) process.Step {
 		panic("no return value specified for Command")
 	}
 
-	var r0 process.Step
-	if rf, ok := ret.Get(0).(func(string, ...string) process.Step); ok {
+	var r0 process.PipeCommand
+	if rf, ok := ret.Get(0).(func(string, ...string) process.PipeCommand); ok {
 		r0 = rf(name, arg...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(process.Step)
+			r0 = ret.Get(0).(process.PipeCommand)
 		}
 	}
 
@@ -73,12 +73,12 @@ func (_c *Pipe_Command_Call) Run(run func(name string, arg ...string)) *Pipe_Com
 	return _c
 }
 
-func (_c *Pipe_Command_Call) Return(_a0 process.Step) *Pipe_Command_Call {
+func (_c *Pipe_Command_Call) Return(_a0 process.PipeCommand) *Pipe_Command_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Pipe_Command_Call) RunAndReturn(run func(string, ...string) process.Step) *Pipe_Command_Call {
+func (_c *Pipe_Command_Call) RunAndReturn(run func(string, ...string) process.PipeCommand) *Pipe_Command_Call {
 	_c.Call.Return(run)
 	return _c
 }

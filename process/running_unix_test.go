@@ -16,7 +16,7 @@ import (
 
 func TestRunning_Basics_Unix(t *testing.T) {
 	t.Run("PID, Command, Running, and Wait", func(t *testing.T) {
-		r, err := New().Quietly().Start("sh", "-c", "sleep 0.2; exit 5")
+		r, err := New().WithQuiet().Start("sh", "-c", "sleep 0.2; exit 5")
 		assert.NoError(t, err)
 
 		run, ok := r.(*Running)
@@ -36,7 +36,7 @@ func TestRunning_Basics_Unix(t *testing.T) {
 
 func TestRunning_DoneChannel_Unix(t *testing.T) {
 	t.Run("Done channel closes on normal exit", func(t *testing.T) {
-		r, err := New().Quietly().Start("sleep", "0.2")
+		r, err := New().WithQuiet().Start("sleep", "0.2")
 		assert.NoError(t, err)
 		run, _ := r.(*Running)
 
@@ -50,7 +50,7 @@ func TestRunning_DoneChannel_Unix(t *testing.T) {
 	})
 
 	t.Run("Done channel works with select timeout", func(t *testing.T) {
-		r, err := New().Quietly().Start("sleep", "5")
+		r, err := New().WithQuiet().Start("sleep", "5")
 		assert.NoError(t, err)
 		run, _ := r.(*Running)
 
@@ -73,7 +73,7 @@ func TestRunning_Stop_Unix(t *testing.T) {
 				sleep 0.5
 			done
 		`
-		r, err := New().Quietly().Start("bash", "-c", cmdStr)
+		r, err := New().WithQuiet().Start("bash", "-c", cmdStr)
 		assert.NoError(t, err)
 		run, _ := r.(*Running)
 
@@ -99,7 +99,7 @@ func TestRunning_Stop_Unix(t *testing.T) {
 				sleep 0.5
 			done
 		`
-		r, err := New().Quietly().Start("bash", "-c", cmdStr)
+		r, err := New().WithQuiet().Start("bash", "-c", cmdStr)
 		assert.NoError(t, err)
 		run, _ := r.(*Running)
 		time.Sleep(100 * time.Millisecond)
@@ -129,7 +129,7 @@ func TestRunning_Signal_Unix(t *testing.T) {
 			done
 		`, signalFile, signalFile)
 
-		r, err := New().Quietly().Start("bash", "-c", cmdStr)
+		r, err := New().WithQuiet().Start("bash", "-c", cmdStr)
 		assert.NoError(t, err)
 		run, _ := r.(*Running)
 
@@ -149,7 +149,7 @@ func TestRunning_Signal_Unix(t *testing.T) {
 }
 
 func TestRunning_Kill_Unix(t *testing.T) {
-	r, err := New().Quietly().Start("sleep", "5")
+	r, err := New().WithQuiet().Start("sleep", "5")
 	assert.NoError(t, err)
 	run, _ := r.(*Running)
 	time.Sleep(50 * time.Millisecond)
@@ -159,7 +159,7 @@ func TestRunning_Kill_Unix(t *testing.T) {
 }
 
 func TestRunning_OutputAndError_Unix(t *testing.T) {
-	r, err := New().Quietly().Start("sh", "-c", "printf out; printf err 1>&2")
+	r, err := New().WithQuiet().Start("sh", "-c", "printf out; printf err 1>&2")
 	assert.NoError(t, err)
 	run, _ := r.(*Running)
 	res := run.Wait()
@@ -169,7 +169,7 @@ func TestRunning_OutputAndError_Unix(t *testing.T) {
 }
 
 func TestRunning_Stop_AlreadyExited_Unix(t *testing.T) {
-	r, err := New().Quietly().Start("sh", "-c", "true")
+	r, err := New().WithQuiet().Start("sh", "-c", "true")
 	assert.NoError(t, err)
 	run, _ := r.(*Running)
 	res := run.Wait()
@@ -184,7 +184,7 @@ func TestRunning_LatestOutputAndError_Unix(t *testing.T) {
 	for i in $(seq 1 5000); do echo -n a; done
 	for i in $(seq 1 5000); do echo -n b 1>&2; done
 	`
-	r, err := New().Quietly().Start("bash", "-c", script)
+	r, err := New().WithQuiet().Start("bash", "-c", script)
 	assert.NoError(t, err)
 	run, _ := r.(*Running)
 	_ = run.Wait()
@@ -194,7 +194,7 @@ func TestRunning_LatestOutputAndError_Unix(t *testing.T) {
 
 func TestRunning_DisableBuffering_OutputEmpty_Unix(t *testing.T) {
 	// When buffering is disabled, Output/ErrorOutput should be empty
-	r, err := New().DisableBuffering().Quietly().Start("sh", "-c", "printf out; printf err 1>&2")
+	r, err := New().WithDisabledBuffering().WithQuiet().Start("sh", "-c", "printf out; printf err 1>&2")
 	assert.NoError(t, err)
 	run, _ := r.(*Running)
 	_ = run.Wait()

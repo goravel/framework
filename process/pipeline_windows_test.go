@@ -14,17 +14,17 @@ import (
 )
 
 func TestPipe_ErrorOnNoSteps_Windows(t *testing.T) {
-	_, err := NewPipe().Quietly().Run(func(b contractsprocess.Pipe) {})
+	_, err := NewPipe().WithQuiet().Run(func(b contractsprocess.Pipe) {})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "pipeline must have at least one command")
 }
 
 func TestPipe_Run_SimplePipeline_Windows(t *testing.T) {
 	// Step1: emit "hello" without newline; Step2: uppercase via PowerShell reading from STDIN
-	res, err := NewPipe().Quietly().Run(func(b contractsprocess.Pipe) {
-		b.Command("cmd", "/C", "set", "/p=hello<nul").As("first")
+	res, err := NewPipe().WithQuiet().Run(func(b contractsprocess.Pipe) {
+		b.Command("cmd", "/C", "set", "/p=hello<nul").WithKey("first")
 		b.Command("powershell", "-NoLogo", "-NoProfile", "-Command",
-			"$t=[Console]::In.ReadToEnd(); [Console]::Out.Write($t.ToUpper())").As("upper")
+			"$t=[Console]::In.ReadToEnd(); [Console]::Out.Write($t.ToUpper())").WithKey("upper")
 	})
 	assert.NoError(t, err)
 	assert.True(t, res.Successful())
@@ -33,10 +33,10 @@ func TestPipe_Run_SimplePipeline_Windows(t *testing.T) {
 
 func TestPipe_Run_Input_Windows(t *testing.T) {
 	// Provide input -> pass through cmd more -> uppercase
-	res, err := NewPipe().Input(bytes.NewBufferString("abc")).Quietly().Run(func(b contractsprocess.Pipe) {
-		b.Command("cmd", "/C", "more").As("pass")
+	res, err := NewPipe().WithInput(bytes.NewBufferString("abc")).WithQuiet().Run(func(b contractsprocess.Pipe) {
+		b.Command("cmd", "/C", "more").WithKey("pass")
 		b.Command("powershell", "-NoLogo", "-NoProfile", "-Command",
-			"$t=[Console]::In.ReadToEnd(); [Console]::Out.Write($t.ToUpper())").As("upper")
+			"$t=[Console]::In.ReadToEnd(); [Console]::Out.Write($t.ToUpper())").WithKey("upper")
 	})
 	assert.NoError(t, err)
 	assert.True(t, res.Successful())
@@ -44,8 +44,8 @@ func TestPipe_Run_Input_Windows(t *testing.T) {
 }
 
 func TestPipe_Env_Windows(t *testing.T) {
-	res, err := NewPipe().Env(map[string]string{"FOO": "BAR"}).Quietly().Run(func(b contractsprocess.Pipe) {
-		b.Command("cmd", "/C", "echo %FOO%").As("env")
+	res, err := NewPipe().WithEnv(map[string]string{"FOO": "BAR"}).WithQuiet().Run(func(b contractsprocess.Pipe) {
+		b.Command("cmd", "/C", "echo %FOO%").WithKey("env")
 	})
 	assert.NoError(t, err)
 	// Trim CRLF
@@ -54,11 +54,11 @@ func TestPipe_Env_Windows(t *testing.T) {
 
 func TestPipe_OnOutput_ReceivesFromEachStep_Windows(t *testing.T) {
 	var byKey = map[string][]string{}
-	res, err := NewPipe().Quietly().OnOutput(func(key string, typ contractsprocess.OutputType, line []byte) {
+	res, err := NewPipe().WithQuiet().WithOutputHandler(func(key string, typ contractsprocess.OutputType, line []byte) {
 		byKey[key] = append(byKey[key], strings.TrimRight(string(line), "\r"))
 	}).Run(func(b contractsprocess.Pipe) {
-		b.Command("cmd", "/C", "(echo a & echo b)").As("first")
-		b.Command("cmd", "/C", "more").As("second")
+		b.Command("cmd", "/C", "(echo a & echo b)").WithKey("first")
+		b.Command("cmd", "/C", "more").WithKey("second")
 	})
 	assert.NoError(t, err)
 	assert.True(t, res.Successful())
@@ -72,14 +72,14 @@ func TestPipe_OnOutput_ReceivesFromEachStep_Windows(t *testing.T) {
 
 func TestPipe_DisableBuffering_Windows(t *testing.T) {
 	var stdoutLines, stderrLines int
-	res, err := NewPipe().DisableBuffering().Quietly().OnOutput(func(key string, typ contractsprocess.OutputType, line []byte) {
+	res, err := NewPipe().WithDisabledBuffering().WithQuiet().WithOutputHandler(func(key string, typ contractsprocess.OutputType, line []byte) {
 		if typ == contractsprocess.OutputTypeStdout {
 			stdoutLines++
 		} else {
 			stderrLines++
 		}
 	}).Run(func(b contractsprocess.Pipe) {
-		b.Command("cmd", "/C", "(echo x & echo y 1>&2)").As("only")
+		b.Command("cmd", "/C", "(echo x & echo y 1>&2)").WithKey("only")
 	})
 	assert.NoError(t, err)
 	assert.True(t, res.Successful())
@@ -90,24 +90,24 @@ func TestPipe_DisableBuffering_Windows(t *testing.T) {
 }
 
 func TestPipe_Timeout_Windows(t *testing.T) {
-	res, err := NewPipe().Timeout(200 * time.Millisecond).Quietly().Run(func(b contractsprocess.Pipe) {
-		b.Command("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Seconds 2").As("sleep")
+	res, err := NewPipe().WithTimeout(200 * time.Millisecond).WithQuiet().Run(func(b contractsprocess.Pipe) {
+		b.Command("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Seconds 2").WithKey("sleep")
 	})
 	assert.NoError(t, err)
 	assert.True(t, res.Failed())
 }
 
 func TestPipe_Start_ErrorOnStartFailure_Windows(t *testing.T) {
-	_, err := NewPipe().Quietly().Start(func(b contractsprocess.Pipe) {
-		b.Command("cmd", "/C", "echo ok").As("ok")
-		b.Command("definitely-not-a-real-binary-xyz").As("bad")
+	_, err := NewPipe().WithQuiet().Start(func(b contractsprocess.Pipe) {
+		b.Command("cmd", "/C", "echo ok").WithKey("ok")
+		b.Command("definitely-not-a-real-binary-xyz").WithKey("bad")
 	})
 	assert.Error(t, err)
 }
 
 func TestPipe_WithContext_Windows(t *testing.T) {
-	res, err := NewPipe().WithContext(nil).Quietly().Run(func(b contractsprocess.Pipe) {
-		b.Command("cmd", "/C", "echo hi").As("echo")
+	res, err := NewPipe().WithContext(nil).WithQuiet().Run(func(b contractsprocess.Pipe) {
+		b.Command("cmd", "/C", "echo hi").WithKey("echo")
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, "hi\r\n", res.Output())
