@@ -113,17 +113,7 @@ func TestMakeCommand_initKernel(t *testing.T) {
 		assert func(err error)
 	}{
 		{
-			name: "kernel file already exists",
-			setup: func() {
-				// Create the kernel file
-				assert.NoError(t, file.PutContent(kernelPath, Stubs{}.Kernel()))
-			},
-			assert: func(err error) {
-				assert.NoError(t, err)
-			},
-		},
-		{
-			name: "kernel file does not exist - successful creation and modification",
+			name: "happy path",
 			setup: func() {
 				// Create app_service_provider.go with basic structure for modification
 				assert.NoError(t, file.PutContent(appServiceProviderPath, appServiceProvider))
@@ -144,7 +134,27 @@ func TestMakeCommand_initKernel(t *testing.T) {
 			},
 		},
 		{
-			name: "kernel file does not exist - fail to modify app_service_provider.go",
+			name: "kernel file already exists, modify app_service_provider.go successfully",
+			setup: func() {
+				// Create the kernel file
+				assert.NoError(t, file.PutContent(kernelPath, Stubs{}.Kernel()))
+
+				// Create app_service_provider.go with basic structure for modification
+				assert.NoError(t, file.PutContent(appServiceProviderPath, appServiceProvider))
+			},
+			assert: func(err error) {
+				assert.NoError(t, err)
+
+				appServiceProvider, err := file.GetContent(appServiceProviderPath)
+				assert.NoError(t, err)
+				assert.True(t, strings.Contains(appServiceProvider, "github.com/goravel/framework/contracts/foundation"))
+				assert.True(t, strings.Contains(appServiceProvider, "github.com/goravel/framework/app/facades"))
+				assert.True(t, strings.Contains(appServiceProvider, "github.com/goravel/framework/app/console"))
+				assert.True(t, strings.Contains(appServiceProvider, "facades.Artisan().Register(console.Kernel{}.Commands())"))
+			},
+		},
+		{
+			name: "fail to modify app_service_provider.go",
 			setup: func() {
 				// Create app_service_provider.go with basic structure for modification
 				appServiceProvider := `package providers

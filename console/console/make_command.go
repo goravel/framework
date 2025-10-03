@@ -78,26 +78,28 @@ func (r *MakeCommand) getStub() string {
 
 func (r *MakeCommand) initKernel() error {
 	kernelPath := filepath.Join("app", "console", "kernel.go")
-	if file.Exists(kernelPath) {
-		return nil
-	}
-
-	// Create the console kernel file if it does not exist.
-	if err := file.PutContent(kernelPath, Stubs{}.Kernel()); err != nil {
-		return err
+	if !file.Exists(kernelPath) {
+		// Create the console kernel file if it does not exist.
+		if err := file.PutContent(kernelPath, Stubs{}.Kernel()); err != nil {
+			return err
+		}
 	}
 
 	// Modify the AppServiceProvider to register the console kernel.
 	appServiceProviderPath := filepath.Join("app", "providers", "app_service_provider.go")
 	registerSchedule := "facades.Artisan().Register(console.Kernel{}.Commands())"
-	moduleName := packages.GetModuleName()
-	facadesImport := fmt.Sprintf("%s/app/facades", moduleName)
-	consoleImport := fmt.Sprintf("%s/app/console", moduleName)
+	if !file.Contain(appServiceProviderPath, registerSchedule) {
+		moduleName := packages.GetModuleName()
+		facadesImport := fmt.Sprintf("%s/app/facades", moduleName)
+		consoleImport := fmt.Sprintf("%s/app/console", moduleName)
 
-	return modify.GoFile(appServiceProviderPath).
-		Find(match.Imports()).Modify(modify.AddImport(facadesImport)).
-		Find(match.Imports()).Modify(modify.AddImport(consoleImport)).
-		Find(match.RegisterFunc()).Modify(modify.Add(registerSchedule)).Apply()
+		return modify.GoFile(appServiceProviderPath).
+			Find(match.Imports()).Modify(modify.AddImport(facadesImport)).
+			Find(match.Imports()).Modify(modify.AddImport(consoleImport)).
+			Find(match.RegisterFunc()).Modify(modify.Add(registerSchedule)).Apply()
+	}
+
+	return nil
 }
 
 // populateStub Populate the place-holders in the command stub.
