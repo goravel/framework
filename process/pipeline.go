@@ -80,10 +80,11 @@ func (r *Pipeline) Start(builder func(contractsprocess.Pipe)) (contractsprocess.
 }
 
 func (r *Pipeline) WithContext(ctx context.Context) contractsprocess.Pipeline {
-	if ctx != nil {
-		r.ctx = ctx
+	if ctx == nil {
+		ctx = context.Background()
 	}
 
+	r.ctx = ctx
 	return r
 }
 

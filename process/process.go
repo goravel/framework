@@ -28,7 +28,6 @@ type Process struct {
 func New() *Process {
 	return &Process{
 		ctx: context.Background(),
-		env: make([]string, 0),
 	}
 }
 
