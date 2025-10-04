@@ -17,7 +17,7 @@ func init() {
 	config := facades.Config()
 	config.Add("database", map[string]any{
 		// Default database connection name
-		"default": config.Env("DB_CONNECTION"),
+		"default": "",
 
 		// Database connections
 		"connections": map[string]any{},
