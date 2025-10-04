@@ -2,9 +2,13 @@ package console
 
 import (
 	"context"
+	"io"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/goravel/framework/support/color"
+	"github.com/pterm/pterm"
 	"github.com/stretchr/testify/assert"
 	"github.com/urfave/cli/v3"
 )
@@ -424,6 +428,148 @@ func TestCliContextArguments(t *testing.T) {
 
 			err := cmd.Run(context.Background(), tc.args)
 			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestDivider(t *testing.T) {
+	testCases := []struct {
+		name           string
+		testFunc       func(ctx *CliContext)
+		expectedOutput string
+	}{
+		{
+			name: "test Divider default",
+			testFunc: func(ctx *CliContext) {
+				ctx.Divider()
+			},
+			expectedOutput: color.Default().Sprintln(strings.Repeat("-", pterm.GetTerminalWidth())),
+		},
+		{
+			name: "test Divider empty",
+			testFunc: func(ctx *CliContext) {
+				ctx.Divider("")
+			},
+			expectedOutput: color.Default().Sprintln(strings.Repeat("-", pterm.GetTerminalWidth())),
+		},
+		{
+			name: "test Divider char",
+			testFunc: func(ctx *CliContext) {
+				ctx.Divider("=")
+			},
+			expectedOutput: color.Default().Sprintln(strings.Repeat("=", pterm.GetTerminalWidth())),
+		},
+		{
+			name: "test Divider multiple",
+			testFunc: func(ctx *CliContext) {
+				ctx.Divider("=->")
+			},
+			expectedOutput: color.Default().Sprintln(
+				strings.Repeat("=->", pterm.GetTerminalWidth()/3) + "=->"[0:pterm.GetTerminalWidth()%3],
+			),
+		},
+		{
+			name: "test Divider multibyte",
+			testFunc: func(ctx *CliContext) {
+				ctx.Divider("♠")
+			},
+			expectedOutput: color.Default().Sprintln(strings.Repeat("♠", pterm.GetTerminalWidth())),
+		},
+		{
+			name: "test Divider multibyte multiple",
+			testFunc: func(ctx *CliContext) {
+				ctx.Divider("♠♣♥♦")
+			},
+			expectedOutput: color.Default().Sprintln(
+				strings.Repeat("♠♣♥♦", pterm.GetTerminalWidth()/4) + "♠♣♥♦"[0:pterm.GetTerminalWidth()%4],
+			),
+		},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := CliContext{}
+			got := color.CaptureOutput(func(io.Writer) {
+				tt.testFunc(&ctx)
+			})
+
+			assert.Equal(t, got, tt.expectedOutput)
+		})
+	}
+}
+
+func TestColors(t *testing.T) {
+	testCases := []struct {
+		name           string
+		testFunc       func(ctx *CliContext)
+		expectedOutput string
+	}{
+		{
+			name: "test Green",
+			testFunc: func(ctx *CliContext) {
+				ctx.Green("Green text")
+			},
+			expectedOutput: color.Green().Sprint("Green text"),
+		},
+		{
+			name: "test Greenln",
+			testFunc: func(ctx *CliContext) {
+				ctx.Greenln("Green line")
+			},
+			expectedOutput: color.Green().Sprintln("Green line"),
+		},
+		{
+			name: "test Red",
+			testFunc: func(ctx *CliContext) {
+				ctx.Red("Red text")
+			},
+			expectedOutput: color.Red().Sprint("Red text"),
+		},
+		{
+			name: "test Redln",
+			testFunc: func(ctx *CliContext) {
+				ctx.Redln("Red line")
+			},
+			expectedOutput: color.Red().Sprintln("Red line"),
+		},
+		{
+			name: "test Yellow",
+			testFunc: func(ctx *CliContext) {
+				ctx.Yellow("Yellow text")
+			},
+			expectedOutput: color.Yellow().Sprint("Yellow text"),
+		},
+		{
+			name: "test Yellowln",
+			testFunc: func(ctx *CliContext) {
+				ctx.Yellowln("Yellow line")
+			},
+			expectedOutput: color.Yellow().Sprintln("Yellow line"),
+		},
+		{
+			name: "test Black",
+			testFunc: func(ctx *CliContext) {
+				ctx.Black("Black text")
+			},
+			expectedOutput: color.Black().Sprint("Black text"),
+		},
+		{
+			name: "test Blackln",
+			testFunc: func(ctx *CliContext) {
+				ctx.Blackln("Black line")
+			},
+			expectedOutput: color.Black().Sprintln("Black line"),
+		},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := CliContext{}
+			got := color.CaptureOutput(func(io.Writer) {
+				tt.testFunc(&ctx)
+			})
+
+			assert.Equal(t, got, tt.expectedOutput)
 		})
 	}
 }
