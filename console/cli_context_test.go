@@ -478,10 +478,10 @@ func TestDivider(t *testing.T) {
 		{
 			name: "test Divider multibyte multiple",
 			testFunc: func(ctx *CliContext) {
-				ctx.Divider("♠♣♥♦")
+				ctx.Divider("♠♣♥")
 			},
 			expectedOutput: color.Default().Sprintln(
-				strings.Repeat("♠♣♥♦", pterm.GetTerminalWidth()/4) + "♠♣♥♦"[0:pterm.GetTerminalWidth()%4],
+				strings.Repeat("♠♣♥", pterm.GetTerminalWidth()/3) + string([]rune("♠♣♥")[0:pterm.GetTerminalWidth()%3]),
 			),
 		},
 	}
