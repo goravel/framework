@@ -1,11 +1,13 @@
 package console
 
 import (
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/huh/spinner"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/pterm/pterm"
 	"github.com/urfave/cli/v3"
 
 	"github.com/goravel/framework/contracts/console"
@@ -468,4 +470,52 @@ func (r *CliContext) WithProgressBar(items []any, callback func(any) error) ([]a
 
 func (r *CliContext) TwoColumnDetail(first, second string, filler ...rune) {
 	r.Line(supportconsole.TwoColumnDetail(first, second, filler...))
+}
+
+func (r *CliContext) Divider(filler ...string) {
+	var chars []rune
+	if len(filler) == 0 || len(filler[0]) == 0 {
+		chars = []rune{'-'}
+	} else {
+		chars = []rune(filler[0])
+	}
+
+	width := pterm.GetTerminalWidth()
+	charsLen := len(chars)
+
+	repeat, reminder := width/charsLen, width%charsLen
+
+	r.Line(strings.Repeat(string(chars), repeat) + string(chars[0:reminder]))
+}
+
+func (r *CliContext) Green(message string) {
+	color.Green().Print(message)
+}
+
+func (r *CliContext) Greenln(message string) {
+	color.Green().Println(message)
+}
+
+func (r *CliContext) Red(message string) {
+	color.Red().Print(message)
+}
+
+func (r *CliContext) Redln(message string) {
+	color.Red().Println(message)
+}
+
+func (r *CliContext) Yellow(message string) {
+	color.Yellow().Print(message)
+}
+
+func (r *CliContext) Yellowln(message string) {
+	color.Yellow().Println(message)
+}
+
+func (r *CliContext) Black(message string) {
+	color.Black().Print(message)
+}
+
+func (r *CliContext) Blackln(message string) {
+	color.Black().Println(message)
 }

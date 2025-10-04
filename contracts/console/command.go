@@ -129,6 +129,24 @@ type Context interface {
 	WithProgressBar(items []any, callback func(any) error) ([]any, error)
 	// TwoColumnDetail writes a two column detail to the console.
 	TwoColumnDetail(first, second string, filler ...rune)
+	// Divider shows a terminal-width divider filled with given sting
+	Divider(filler ...string)
+	// Green writes green text to console
+	Green(message string)
+	// Greenln writes green line to console
+	Greenln(message string)
+	// Red writes red text to console
+	Red(message string)
+	// Redln writes red line to console
+	Redln(message string)
+	// Yellow writes yellow text to console
+	Yellow(message string)
+	// Yellowln writes yellow line to console
+	Yellowln(message string)
+	// Black writes black text to console
+	Black(message string)
+	// Blackln writes black line to console
+	Blackln(message string)
 }
 
 type Progress interface {
