@@ -25,7 +25,6 @@ func TestProcess_Run_Windows(t *testing.T) {
 			name: "echo via cmd",
 			args: []string{"cmd", "/C", "echo hello"},
 			setup: func(p *Process) {
-				p.Quietly()
 			},
 			expectOK: true,
 			check: func(t *testing.T, res *Result) {
@@ -38,7 +37,6 @@ func TestProcess_Run_Windows(t *testing.T) {
 			args: []string{"powershell", "-NoLogo", "-NoProfile", "-Command", "Write-Error 'bad'; exit 2"},
 			setup: func(p *Process) {
 				// powershell: write-error writes to stderr and returns non-zero
-				p.Quietly()
 			},
 			expectOK: true, // Run doesn't error on non-zero exit
 			check: func(t *testing.T, res *Result) {
@@ -54,7 +52,7 @@ func TestProcess_Run_Windows(t *testing.T) {
 				dir := t.TempDir()
 				path := filepath.Join(dir, "script.bat")
 				_ = os.WriteFile(path, []byte("@echo off\r\necho ok\r\n"), 0644)
-				p.Path(dir).Quietly()
+				p.WithPath(dir)
 			},
 			expectOK: true,
 			check: func(t *testing.T, res *Result) {
@@ -65,7 +63,7 @@ func TestProcess_Run_Windows(t *testing.T) {
 			name: "stdin is piped",
 			args: []string{"cmd", "/C", "more"},
 			setup: func(p *Process) {
-				p.Input(bytes.NewBufferString("ping\r\n")).Quietly()
+				p.WithInput(bytes.NewBufferString("ping\r\n"))
 			},
 			expectOK: true,
 			check: func(t *testing.T, res *Result) {
@@ -76,7 +74,7 @@ func TestProcess_Run_Windows(t *testing.T) {
 			name: "timeout cancels long-running process",
 			args: []string{"powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Seconds 2"},
 			setup: func(p *Process) {
-				p.Timeout(200 * time.Millisecond).Quietly()
+				p.WithTimeout(200 * time.Millisecond)
 			},
 			expectOK: true, // Run doesn't error on timeout
 			check: func(t *testing.T, res *Result) {
@@ -88,7 +86,7 @@ func TestProcess_Run_Windows(t *testing.T) {
 			name: "disable buffering",
 			args: []string{"cmd", "/C", "echo to_stdout & echo to_stderr >&2"},
 			setup: func(p *Process) {
-				p.DisableBuffering().Quietly()
+				p.WithDisabledBuffering()
 			},
 			expectOK: true,
 			check: func(t *testing.T, res *Result) {
@@ -102,6 +100,7 @@ func TestProcess_Run_Windows(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := New()
+			p.WithQuiet()
 			tt.setup(p)
 			res, err := p.Run(tt.args[0], tt.args[1:]...)
 			assert.Equal(t, tt.expectOK, err == nil)

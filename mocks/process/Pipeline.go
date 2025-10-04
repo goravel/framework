@@ -26,295 +26,9 @@ func (_m *Pipeline) EXPECT() *Pipeline_Expecter {
 	return &Pipeline_Expecter{mock: &_m.Mock}
 }
 
-// DisableBuffering provides a mock function with no fields
-func (_m *Pipeline) DisableBuffering() process.Pipeline {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for DisableBuffering")
-	}
-
-	var r0 process.Pipeline
-	if rf, ok := ret.Get(0).(func() process.Pipeline); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(process.Pipeline)
-		}
-	}
-
-	return r0
-}
-
-// Pipeline_DisableBuffering_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DisableBuffering'
-type Pipeline_DisableBuffering_Call struct {
-	*mock.Call
-}
-
-// DisableBuffering is a helper method to define mock.On call
-func (_e *Pipeline_Expecter) DisableBuffering() *Pipeline_DisableBuffering_Call {
-	return &Pipeline_DisableBuffering_Call{Call: _e.mock.On("DisableBuffering")}
-}
-
-func (_c *Pipeline_DisableBuffering_Call) Run(run func()) *Pipeline_DisableBuffering_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Pipeline_DisableBuffering_Call) Return(_a0 process.Pipeline) *Pipeline_DisableBuffering_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Pipeline_DisableBuffering_Call) RunAndReturn(run func() process.Pipeline) *Pipeline_DisableBuffering_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// Env provides a mock function with given fields: vars
-func (_m *Pipeline) Env(vars map[string]string) process.Pipeline {
-	ret := _m.Called(vars)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Env")
-	}
-
-	var r0 process.Pipeline
-	if rf, ok := ret.Get(0).(func(map[string]string) process.Pipeline); ok {
-		r0 = rf(vars)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(process.Pipeline)
-		}
-	}
-
-	return r0
-}
-
-// Pipeline_Env_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Env'
-type Pipeline_Env_Call struct {
-	*mock.Call
-}
-
-// Env is a helper method to define mock.On call
-//   - vars map[string]string
-func (_e *Pipeline_Expecter) Env(vars interface{}) *Pipeline_Env_Call {
-	return &Pipeline_Env_Call{Call: _e.mock.On("Env", vars)}
-}
-
-func (_c *Pipeline_Env_Call) Run(run func(vars map[string]string)) *Pipeline_Env_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(map[string]string))
-	})
-	return _c
-}
-
-func (_c *Pipeline_Env_Call) Return(_a0 process.Pipeline) *Pipeline_Env_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Pipeline_Env_Call) RunAndReturn(run func(map[string]string) process.Pipeline) *Pipeline_Env_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// Input provides a mock function with given fields: in
-func (_m *Pipeline) Input(in io.Reader) process.Pipeline {
-	ret := _m.Called(in)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Input")
-	}
-
-	var r0 process.Pipeline
-	if rf, ok := ret.Get(0).(func(io.Reader) process.Pipeline); ok {
-		r0 = rf(in)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(process.Pipeline)
-		}
-	}
-
-	return r0
-}
-
-// Pipeline_Input_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Input'
-type Pipeline_Input_Call struct {
-	*mock.Call
-}
-
-// Input is a helper method to define mock.On call
-//   - in io.Reader
-func (_e *Pipeline_Expecter) Input(in interface{}) *Pipeline_Input_Call {
-	return &Pipeline_Input_Call{Call: _e.mock.On("Input", in)}
-}
-
-func (_c *Pipeline_Input_Call) Run(run func(in io.Reader)) *Pipeline_Input_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(io.Reader))
-	})
-	return _c
-}
-
-func (_c *Pipeline_Input_Call) Return(_a0 process.Pipeline) *Pipeline_Input_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Pipeline_Input_Call) RunAndReturn(run func(io.Reader) process.Pipeline) *Pipeline_Input_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// OnOutput provides a mock function with given fields: handler
-func (_m *Pipeline) OnOutput(handler process.OnPipeOutputFunc) process.Pipeline {
-	ret := _m.Called(handler)
-
-	if len(ret) == 0 {
-		panic("no return value specified for OnOutput")
-	}
-
-	var r0 process.Pipeline
-	if rf, ok := ret.Get(0).(func(process.OnPipeOutputFunc) process.Pipeline); ok {
-		r0 = rf(handler)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(process.Pipeline)
-		}
-	}
-
-	return r0
-}
-
-// Pipeline_OnOutput_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OnOutput'
-type Pipeline_OnOutput_Call struct {
-	*mock.Call
-}
-
-// OnOutput is a helper method to define mock.On call
-//   - handler process.OnPipeOutputFunc
-func (_e *Pipeline_Expecter) OnOutput(handler interface{}) *Pipeline_OnOutput_Call {
-	return &Pipeline_OnOutput_Call{Call: _e.mock.On("OnOutput", handler)}
-}
-
-func (_c *Pipeline_OnOutput_Call) Run(run func(handler process.OnPipeOutputFunc)) *Pipeline_OnOutput_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(process.OnPipeOutputFunc))
-	})
-	return _c
-}
-
-func (_c *Pipeline_OnOutput_Call) Return(_a0 process.Pipeline) *Pipeline_OnOutput_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Pipeline_OnOutput_Call) RunAndReturn(run func(process.OnPipeOutputFunc) process.Pipeline) *Pipeline_OnOutput_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// Path provides a mock function with given fields: path
-func (_m *Pipeline) Path(path string) process.Pipeline {
-	ret := _m.Called(path)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Path")
-	}
-
-	var r0 process.Pipeline
-	if rf, ok := ret.Get(0).(func(string) process.Pipeline); ok {
-		r0 = rf(path)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(process.Pipeline)
-		}
-	}
-
-	return r0
-}
-
-// Pipeline_Path_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Path'
-type Pipeline_Path_Call struct {
-	*mock.Call
-}
-
-// Path is a helper method to define mock.On call
-//   - path string
-func (_e *Pipeline_Expecter) Path(path interface{}) *Pipeline_Path_Call {
-	return &Pipeline_Path_Call{Call: _e.mock.On("Path", path)}
-}
-
-func (_c *Pipeline_Path_Call) Run(run func(path string)) *Pipeline_Path_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
-	})
-	return _c
-}
-
-func (_c *Pipeline_Path_Call) Return(_a0 process.Pipeline) *Pipeline_Path_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Pipeline_Path_Call) RunAndReturn(run func(string) process.Pipeline) *Pipeline_Path_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// Quietly provides a mock function with no fields
-func (_m *Pipeline) Quietly() process.Pipeline {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for Quietly")
-	}
-
-	var r0 process.Pipeline
-	if rf, ok := ret.Get(0).(func() process.Pipeline); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(process.Pipeline)
-		}
-	}
-
-	return r0
-}
-
-// Pipeline_Quietly_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Quietly'
-type Pipeline_Quietly_Call struct {
-	*mock.Call
-}
-
-// Quietly is a helper method to define mock.On call
-func (_e *Pipeline_Expecter) Quietly() *Pipeline_Quietly_Call {
-	return &Pipeline_Quietly_Call{Call: _e.mock.On("Quietly")}
-}
-
-func (_c *Pipeline_Quietly_Call) Run(run func()) *Pipeline_Quietly_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Pipeline_Quietly_Call) Return(_a0 process.Pipeline) *Pipeline_Quietly_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Pipeline_Quietly_Call) RunAndReturn(run func() process.Pipeline) *Pipeline_Quietly_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// Run provides a mock function with given fields: _a0
-func (_m *Pipeline) Run(_a0 func(process.Pipe)) (process.Result, error) {
-	ret := _m.Called(_a0)
+// Run provides a mock function with given fields: builder
+func (_m *Pipeline) Run(builder func(process.Pipe)) (process.Result, error) {
+	ret := _m.Called(builder)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Run")
@@ -323,10 +37,10 @@ func (_m *Pipeline) Run(_a0 func(process.Pipe)) (process.Result, error) {
 	var r0 process.Result
 	var r1 error
 	if rf, ok := ret.Get(0).(func(func(process.Pipe)) (process.Result, error)); ok {
-		return rf(_a0)
+		return rf(builder)
 	}
 	if rf, ok := ret.Get(0).(func(func(process.Pipe)) process.Result); ok {
-		r0 = rf(_a0)
+		r0 = rf(builder)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(process.Result)
@@ -334,7 +48,7 @@ func (_m *Pipeline) Run(_a0 func(process.Pipe)) (process.Result, error) {
 	}
 
 	if rf, ok := ret.Get(1).(func(func(process.Pipe)) error); ok {
-		r1 = rf(_a0)
+		r1 = rf(builder)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -348,12 +62,12 @@ type Pipeline_Run_Call struct {
 }
 
 // Run is a helper method to define mock.On call
-//   - _a0 func(process.Pipe)
-func (_e *Pipeline_Expecter) Run(_a0 interface{}) *Pipeline_Run_Call {
-	return &Pipeline_Run_Call{Call: _e.mock.On("Run", _a0)}
+//   - builder func(process.Pipe)
+func (_e *Pipeline_Expecter) Run(builder interface{}) *Pipeline_Run_Call {
+	return &Pipeline_Run_Call{Call: _e.mock.On("Run", builder)}
 }
 
-func (_c *Pipeline_Run_Call) Run(run func(_a0 func(process.Pipe))) *Pipeline_Run_Call {
+func (_c *Pipeline_Run_Call) Run(run func(builder func(process.Pipe))) *Pipeline_Run_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(func(process.Pipe)))
 	})
@@ -370,9 +84,9 @@ func (_c *Pipeline_Run_Call) RunAndReturn(run func(func(process.Pipe)) (process.
 	return _c
 }
 
-// Start provides a mock function with given fields: _a0
-func (_m *Pipeline) Start(_a0 func(process.Pipe)) (process.RunningPipe, error) {
-	ret := _m.Called(_a0)
+// Start provides a mock function with given fields: builder
+func (_m *Pipeline) Start(builder func(process.Pipe)) (process.RunningPipe, error) {
+	ret := _m.Called(builder)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Start")
@@ -381,10 +95,10 @@ func (_m *Pipeline) Start(_a0 func(process.Pipe)) (process.RunningPipe, error) {
 	var r0 process.RunningPipe
 	var r1 error
 	if rf, ok := ret.Get(0).(func(func(process.Pipe)) (process.RunningPipe, error)); ok {
-		return rf(_a0)
+		return rf(builder)
 	}
 	if rf, ok := ret.Get(0).(func(func(process.Pipe)) process.RunningPipe); ok {
-		r0 = rf(_a0)
+		r0 = rf(builder)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(process.RunningPipe)
@@ -392,7 +106,7 @@ func (_m *Pipeline) Start(_a0 func(process.Pipe)) (process.RunningPipe, error) {
 	}
 
 	if rf, ok := ret.Get(1).(func(func(process.Pipe)) error); ok {
-		r1 = rf(_a0)
+		r1 = rf(builder)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -406,12 +120,12 @@ type Pipeline_Start_Call struct {
 }
 
 // Start is a helper method to define mock.On call
-//   - _a0 func(process.Pipe)
-func (_e *Pipeline_Expecter) Start(_a0 interface{}) *Pipeline_Start_Call {
-	return &Pipeline_Start_Call{Call: _e.mock.On("Start", _a0)}
+//   - builder func(process.Pipe)
+func (_e *Pipeline_Expecter) Start(builder interface{}) *Pipeline_Start_Call {
+	return &Pipeline_Start_Call{Call: _e.mock.On("Start", builder)}
 }
 
-func (_c *Pipeline_Start_Call) Run(run func(_a0 func(process.Pipe))) *Pipeline_Start_Call {
+func (_c *Pipeline_Start_Call) Run(run func(builder func(process.Pipe))) *Pipeline_Start_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(func(process.Pipe)))
 	})
@@ -424,54 +138,6 @@ func (_c *Pipeline_Start_Call) Return(_a0 process.RunningPipe, _a1 error) *Pipel
 }
 
 func (_c *Pipeline_Start_Call) RunAndReturn(run func(func(process.Pipe)) (process.RunningPipe, error)) *Pipeline_Start_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// Timeout provides a mock function with given fields: timeout
-func (_m *Pipeline) Timeout(timeout time.Duration) process.Pipeline {
-	ret := _m.Called(timeout)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Timeout")
-	}
-
-	var r0 process.Pipeline
-	if rf, ok := ret.Get(0).(func(time.Duration) process.Pipeline); ok {
-		r0 = rf(timeout)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(process.Pipeline)
-		}
-	}
-
-	return r0
-}
-
-// Pipeline_Timeout_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Timeout'
-type Pipeline_Timeout_Call struct {
-	*mock.Call
-}
-
-// Timeout is a helper method to define mock.On call
-//   - timeout time.Duration
-func (_e *Pipeline_Expecter) Timeout(timeout interface{}) *Pipeline_Timeout_Call {
-	return &Pipeline_Timeout_Call{Call: _e.mock.On("Timeout", timeout)}
-}
-
-func (_c *Pipeline_Timeout_Call) Run(run func(timeout time.Duration)) *Pipeline_Timeout_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(time.Duration))
-	})
-	return _c
-}
-
-func (_c *Pipeline_Timeout_Call) Return(_a0 process.Pipeline) *Pipeline_Timeout_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Pipeline_Timeout_Call) RunAndReturn(run func(time.Duration) process.Pipeline) *Pipeline_Timeout_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -520,6 +186,340 @@ func (_c *Pipeline_WithContext_Call) Return(_a0 process.Pipeline) *Pipeline_With
 }
 
 func (_c *Pipeline_WithContext_Call) RunAndReturn(run func(context.Context) process.Pipeline) *Pipeline_WithContext_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithDisabledBuffering provides a mock function with no fields
+func (_m *Pipeline) WithDisabledBuffering() process.Pipeline {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithDisabledBuffering")
+	}
+
+	var r0 process.Pipeline
+	if rf, ok := ret.Get(0).(func() process.Pipeline); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(process.Pipeline)
+		}
+	}
+
+	return r0
+}
+
+// Pipeline_WithDisabledBuffering_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithDisabledBuffering'
+type Pipeline_WithDisabledBuffering_Call struct {
+	*mock.Call
+}
+
+// WithDisabledBuffering is a helper method to define mock.On call
+func (_e *Pipeline_Expecter) WithDisabledBuffering() *Pipeline_WithDisabledBuffering_Call {
+	return &Pipeline_WithDisabledBuffering_Call{Call: _e.mock.On("WithDisabledBuffering")}
+}
+
+func (_c *Pipeline_WithDisabledBuffering_Call) Run(run func()) *Pipeline_WithDisabledBuffering_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Pipeline_WithDisabledBuffering_Call) Return(_a0 process.Pipeline) *Pipeline_WithDisabledBuffering_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Pipeline_WithDisabledBuffering_Call) RunAndReturn(run func() process.Pipeline) *Pipeline_WithDisabledBuffering_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithEnv provides a mock function with given fields: vars
+func (_m *Pipeline) WithEnv(vars map[string]string) process.Pipeline {
+	ret := _m.Called(vars)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithEnv")
+	}
+
+	var r0 process.Pipeline
+	if rf, ok := ret.Get(0).(func(map[string]string) process.Pipeline); ok {
+		r0 = rf(vars)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(process.Pipeline)
+		}
+	}
+
+	return r0
+}
+
+// Pipeline_WithEnv_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithEnv'
+type Pipeline_WithEnv_Call struct {
+	*mock.Call
+}
+
+// WithEnv is a helper method to define mock.On call
+//   - vars map[string]string
+func (_e *Pipeline_Expecter) WithEnv(vars interface{}) *Pipeline_WithEnv_Call {
+	return &Pipeline_WithEnv_Call{Call: _e.mock.On("WithEnv", vars)}
+}
+
+func (_c *Pipeline_WithEnv_Call) Run(run func(vars map[string]string)) *Pipeline_WithEnv_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(map[string]string))
+	})
+	return _c
+}
+
+func (_c *Pipeline_WithEnv_Call) Return(_a0 process.Pipeline) *Pipeline_WithEnv_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Pipeline_WithEnv_Call) RunAndReturn(run func(map[string]string) process.Pipeline) *Pipeline_WithEnv_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithInput provides a mock function with given fields: in
+func (_m *Pipeline) WithInput(in io.Reader) process.Pipeline {
+	ret := _m.Called(in)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithInput")
+	}
+
+	var r0 process.Pipeline
+	if rf, ok := ret.Get(0).(func(io.Reader) process.Pipeline); ok {
+		r0 = rf(in)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(process.Pipeline)
+		}
+	}
+
+	return r0
+}
+
+// Pipeline_WithInput_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithInput'
+type Pipeline_WithInput_Call struct {
+	*mock.Call
+}
+
+// WithInput is a helper method to define mock.On call
+//   - in io.Reader
+func (_e *Pipeline_Expecter) WithInput(in interface{}) *Pipeline_WithInput_Call {
+	return &Pipeline_WithInput_Call{Call: _e.mock.On("WithInput", in)}
+}
+
+func (_c *Pipeline_WithInput_Call) Run(run func(in io.Reader)) *Pipeline_WithInput_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(io.Reader))
+	})
+	return _c
+}
+
+func (_c *Pipeline_WithInput_Call) Return(_a0 process.Pipeline) *Pipeline_WithInput_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Pipeline_WithInput_Call) RunAndReturn(run func(io.Reader) process.Pipeline) *Pipeline_WithInput_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithOutputHandler provides a mock function with given fields: handler
+func (_m *Pipeline) WithOutputHandler(handler process.OnPipeOutputFunc) process.Pipeline {
+	ret := _m.Called(handler)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithOutputHandler")
+	}
+
+	var r0 process.Pipeline
+	if rf, ok := ret.Get(0).(func(process.OnPipeOutputFunc) process.Pipeline); ok {
+		r0 = rf(handler)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(process.Pipeline)
+		}
+	}
+
+	return r0
+}
+
+// Pipeline_WithOutputHandler_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithOutputHandler'
+type Pipeline_WithOutputHandler_Call struct {
+	*mock.Call
+}
+
+// WithOutputHandler is a helper method to define mock.On call
+//   - handler process.OnPipeOutputFunc
+func (_e *Pipeline_Expecter) WithOutputHandler(handler interface{}) *Pipeline_WithOutputHandler_Call {
+	return &Pipeline_WithOutputHandler_Call{Call: _e.mock.On("WithOutputHandler", handler)}
+}
+
+func (_c *Pipeline_WithOutputHandler_Call) Run(run func(handler process.OnPipeOutputFunc)) *Pipeline_WithOutputHandler_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(process.OnPipeOutputFunc))
+	})
+	return _c
+}
+
+func (_c *Pipeline_WithOutputHandler_Call) Return(_a0 process.Pipeline) *Pipeline_WithOutputHandler_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Pipeline_WithOutputHandler_Call) RunAndReturn(run func(process.OnPipeOutputFunc) process.Pipeline) *Pipeline_WithOutputHandler_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithPath provides a mock function with given fields: path
+func (_m *Pipeline) WithPath(path string) process.Pipeline {
+	ret := _m.Called(path)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithPath")
+	}
+
+	var r0 process.Pipeline
+	if rf, ok := ret.Get(0).(func(string) process.Pipeline); ok {
+		r0 = rf(path)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(process.Pipeline)
+		}
+	}
+
+	return r0
+}
+
+// Pipeline_WithPath_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithPath'
+type Pipeline_WithPath_Call struct {
+	*mock.Call
+}
+
+// WithPath is a helper method to define mock.On call
+//   - path string
+func (_e *Pipeline_Expecter) WithPath(path interface{}) *Pipeline_WithPath_Call {
+	return &Pipeline_WithPath_Call{Call: _e.mock.On("WithPath", path)}
+}
+
+func (_c *Pipeline_WithPath_Call) Run(run func(path string)) *Pipeline_WithPath_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Pipeline_WithPath_Call) Return(_a0 process.Pipeline) *Pipeline_WithPath_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Pipeline_WithPath_Call) RunAndReturn(run func(string) process.Pipeline) *Pipeline_WithPath_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithQuiet provides a mock function with no fields
+func (_m *Pipeline) WithQuiet() process.Pipeline {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithQuiet")
+	}
+
+	var r0 process.Pipeline
+	if rf, ok := ret.Get(0).(func() process.Pipeline); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(process.Pipeline)
+		}
+	}
+
+	return r0
+}
+
+// Pipeline_WithQuiet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithQuiet'
+type Pipeline_WithQuiet_Call struct {
+	*mock.Call
+}
+
+// WithQuiet is a helper method to define mock.On call
+func (_e *Pipeline_Expecter) WithQuiet() *Pipeline_WithQuiet_Call {
+	return &Pipeline_WithQuiet_Call{Call: _e.mock.On("WithQuiet")}
+}
+
+func (_c *Pipeline_WithQuiet_Call) Run(run func()) *Pipeline_WithQuiet_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Pipeline_WithQuiet_Call) Return(_a0 process.Pipeline) *Pipeline_WithQuiet_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Pipeline_WithQuiet_Call) RunAndReturn(run func() process.Pipeline) *Pipeline_WithQuiet_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithTimeout provides a mock function with given fields: timeout
+func (_m *Pipeline) WithTimeout(timeout time.Duration) process.Pipeline {
+	ret := _m.Called(timeout)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithTimeout")
+	}
+
+	var r0 process.Pipeline
+	if rf, ok := ret.Get(0).(func(time.Duration) process.Pipeline); ok {
+		r0 = rf(timeout)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(process.Pipeline)
+		}
+	}
+
+	return r0
+}
+
+// Pipeline_WithTimeout_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithTimeout'
+type Pipeline_WithTimeout_Call struct {
+	*mock.Call
+}
+
+// WithTimeout is a helper method to define mock.On call
+//   - timeout time.Duration
+func (_e *Pipeline_Expecter) WithTimeout(timeout interface{}) *Pipeline_WithTimeout_Call {
+	return &Pipeline_WithTimeout_Call{Call: _e.mock.On("WithTimeout", timeout)}
+}
+
+func (_c *Pipeline_WithTimeout_Call) Run(run func(timeout time.Duration)) *Pipeline_WithTimeout_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(time.Duration))
+	})
+	return _c
+}
+
+func (_c *Pipeline_WithTimeout_Call) Return(_a0 process.Pipeline) *Pipeline_WithTimeout_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Pipeline_WithTimeout_Call) RunAndReturn(run func(time.Duration) process.Pipeline) *Pipeline_WithTimeout_Call {
 	_c.Call.Return(run)
 	return _c
 }

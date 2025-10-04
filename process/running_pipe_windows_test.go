@@ -15,9 +15,9 @@ import (
 )
 
 func TestRunningPipe_PIDs_Running_Done_Wait_Windows(t *testing.T) {
-	rp, err := NewPipe().Quietly().Start(func(b contractsprocess.Pipe) {
-		b.Command("cmd", "/C", "(echo start & powershell -NoLogo -NoProfile -Command Start-Sleep -Milliseconds 200 & echo end)").As("first")
-		b.Command("cmd", "/C", "more").As("second")
+	rp, err := NewPipe().WithQuiet().Start(func(b contractsprocess.Pipe) {
+		b.Command("cmd", "/C", "(echo start & powershell -NoLogo -NoProfile -Command Start-Sleep -Milliseconds 200 & echo end)").WithKey("first")
+		b.Command("cmd", "/C", "more").WithKey("second")
 	})
 	assert.NoError(t, err)
 
@@ -34,8 +34,8 @@ func TestRunningPipe_PIDs_Running_Done_Wait_Windows(t *testing.T) {
 }
 
 func TestRunningPipe_Stop_Windows(t *testing.T) {
-	rp, err := NewPipe().Quietly().Start(func(b contractsprocess.Pipe) {
-		b.Command("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Seconds 10").As("sleep")
+	rp, err := NewPipe().WithQuiet().Start(func(b contractsprocess.Pipe) {
+		b.Command("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Seconds 10").WithKey("sleep")
 	})
 	assert.NoError(t, err)
 	time.Sleep(100 * time.Millisecond)
@@ -45,8 +45,8 @@ func TestRunningPipe_Stop_Windows(t *testing.T) {
 }
 
 func TestRunningPipe_Signal_Windows_NoOp(t *testing.T) {
-	rp, err := NewPipe().Quietly().Start(func(b contractsprocess.Pipe) {
-		b.Command("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Seconds 1").As("sleep")
+	rp, err := NewPipe().WithQuiet().Start(func(b contractsprocess.Pipe) {
+		b.Command("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Seconds 1").WithKey("sleep")
 	})
 	assert.NoError(t, err)
 	assert.NoError(t, rp.Signal(os.Interrupt))
@@ -55,7 +55,7 @@ func TestRunningPipe_Signal_Windows_NoOp(t *testing.T) {
 
 func TestRunningPipe_Panic_AppendsToStderr_Windows(t *testing.T) {
 	stderr := &bytes.Buffer{}
-	rp := NewRunningPipe([]*exec.Cmd{nil}, []*Step{{key: "0"}}, nil, nil, nil, []*bytes.Buffer{nil}, []*bytes.Buffer{stderr})
+	rp := NewRunningPipe([]*exec.Cmd{nil}, []*PipeCommand{{key: "0"}}, nil, nil, nil, []*bytes.Buffer{nil}, []*bytes.Buffer{stderr})
 	<-rp.Done()
 	assert.Equal(t, "panic: runtime error: invalid memory address or nil pointer dereference\n", stderr.String())
 }

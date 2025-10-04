@@ -9,48 +9,55 @@ import (
 type OnPipeOutputFunc func(key string, typ OutputType, line []byte)
 
 // Pipeline defines a builder-style API for constructing and running a sequence
-// of commands connected via OS pipes. Implementations are mutable and should
-// not be used concurrently. Each configuration method returns the same
-// Pipeline instance to allow fluent chaining. The Run/Start methods spawn the
-// processes according to the provided builder.
+// of commands connected via OS pipes.
+//
+// Implementations are mutable and should not be used concurrently. Each
+// configuration method returns the same Pipeline instance to allow fluent chaining.
 type Pipeline interface {
-	// DisableBuffering prevents capture of stdout/stderr into memory buffers.
-	// When disabled, Result.Output and Result.ErrorOutput will be empty strings.
-	DisableBuffering() Pipeline
+	// WithDisabledBuffering prevents capture of the final command's stdout/stderr
+	// into memory buffers. When disabled, Result.Output and Result.ErrorOutput
+	// will be empty strings.
+	WithDisabledBuffering() Pipeline
 
-	// Env adds or overrides environment variables for all steps.
-	Env(vars map[string]string) Pipeline
+	// WithEnv adds or overrides environment variables for all steps in the pipeline.
+	// These can be overridden on a per-step basis via PipeCommand.
+	WithEnv(vars map[string]string) Pipeline
 
-	// Input sets the stdin source for the first step in the pipeline.
-	Input(in io.Reader) Pipeline
+	// WithInput sets the stdin source for the first step in the pipeline.
+	WithInput(in io.Reader) Pipeline
 
-	// Path sets the working directory for all steps.
-	Path(path string) Pipeline
+	// WithPath sets the working directory for all steps in the pipeline.
+	// This can be overridden on a per-step basis via PipeCommand.
+	WithPath(path string) Pipeline
 
-	// Quietly discards live stdout/stderr instead of mirroring to os.Stdout/err.
-	Quietly() Pipeline
+	// WithQuiet discards the live stdout/stderr of the final command instead
+	// of mirroring it to the parent process's os.Stdout/err.
+	WithQuiet() Pipeline
 
-	// OnOutput registers a handler that receives line-delimited output produced
-	// by each step while the pipeline runs.
-	OnOutput(handler OnPipeOutputFunc) Pipeline
+	// WithOutputHandler registers a handler that receives line-delimited output
+	// produced by the final command while the pipeline runs.
+	WithOutputHandler(handler OnPipeOutputFunc) Pipeline
 
-	// Run builds, executes, waits for completion, and returns the final Result.
-	Run(func(builder Pipe)) (Result, error)
+	// WithTimeout sets a maximum duration for the entire pipeline execution.
+	// If the timeout is exceeded, all processes in the pipeline will be terminated.
+	WithTimeout(timeout time.Duration) Pipeline
 
-	// Start builds and starts execution asynchronously, returning a RunningPipe.
-	Start(func(builder Pipe)) (RunningPipe, error)
-
-	// Timeout sets a maximum duration for the entire pipeline execution.
-	Timeout(timeout time.Duration) Pipeline
-
-	// WithContext binds pipeline execution to the provided context.
+	// WithContext binds the entire pipeline's lifecycle to the provided context.
+	// If the context is canceled, all processes will be terminated.
 	WithContext(ctx context.Context) Pipeline
+
+	// Run builds, executes the pipeline, waits for completion, and returns the final Result.
+	// The result is determined by the status of the final command in the pipe.
+	Run(builder func(pipe Pipe)) (Result, error)
+
+	// Start builds and starts the pipeline asynchronously, returning a RunningPipe handle.
+	Start(builder func(pipe Pipe)) (RunningPipe, error)
 }
 
 type Pipe interface {
-	Command(name string, arg ...string) Step
+	Command(name string, arg ...string) PipeCommand
 }
 
-type Step interface {
-	As(key string) Step
+type PipeCommand interface {
+	WithKey(key string) PipeCommand
 }

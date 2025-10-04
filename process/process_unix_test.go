@@ -34,7 +34,6 @@ func TestProcess_Run_Unix(t *testing.T) {
 			name: "echo to stdout",
 			args: []string{"sh", "-c", "printf 'hello'"},
 			setup: func(p *Process) {
-				p.Quietly()
 			},
 			expectOK: true,
 			check: func(t *testing.T, res *Result) {
@@ -47,7 +46,6 @@ func TestProcess_Run_Unix(t *testing.T) {
 			name: "stderr and non-zero exit",
 			args: []string{"sh", "-c", "printf 'bad' 1>&2; exit 2"},
 			setup: func(p *Process) {
-				p.Quietly()
 			},
 			expectOK: true, // Run doesn't error on non-zero exit
 			check: func(t *testing.T, res *Result) {
@@ -61,7 +59,7 @@ func TestProcess_Run_Unix(t *testing.T) {
 			name: "env vars passed to process",
 			args: []string{"sh", "-c", "printf \"$FOO\""},
 			setup: func(p *Process) {
-				p.Env(map[string]string{"FOO": "BAR"}).Quietly()
+				p.WithEnv(map[string]string{"FOO": "BAR"})
 			},
 			expectOK: true,
 			check: func(t *testing.T, res *Result) {
@@ -76,7 +74,7 @@ func TestProcess_Run_Unix(t *testing.T) {
 				path := filepath.Join(dir, "script.sh")
 				_ = os.WriteFile(path, []byte("#!/bin/sh\nprintf 'ok'\n"), 0o755)
 				_ = os.Chmod(path, 0o755)
-				p.Path(dir).Quietly()
+				p.WithPath(dir)
 			},
 			expectOK: true,
 			check: func(t *testing.T, res *Result) {
@@ -87,7 +85,7 @@ func TestProcess_Run_Unix(t *testing.T) {
 			name: "stdin is piped",
 			args: []string{"sh", "-c", "cat"},
 			setup: func(p *Process) {
-				p.Input(bytes.NewBufferString("ping")).Quietly()
+				p.WithInput(bytes.NewBufferString("ping"))
 			},
 			expectOK: true,
 			check: func(t *testing.T, res *Result) {
@@ -98,7 +96,7 @@ func TestProcess_Run_Unix(t *testing.T) {
 			name: "timeout cancels long-running process",
 			args: []string{"sh", "-c", "sleep 1"},
 			setup: func(p *Process) {
-				p.Timeout(100 * time.Millisecond).Quietly()
+				p.WithTimeout(100 * time.Millisecond)
 			},
 			expectOK: true, // Run doesn't error on timeout
 			check: func(t *testing.T, res *Result) {
@@ -110,7 +108,7 @@ func TestProcess_Run_Unix(t *testing.T) {
 			name: "disable buffering with OnOutput",
 			args: []string{"sh", "-c", "printf 'to_stdout'; printf 'to_stderr' 1>&2"},
 			setup: func(p *Process) {
-				p.DisableBuffering().Quietly().OnOutput(func(typ contractsprocess.OutputType, line []byte) {
+				p.WithDisabledBuffering().WithOutputHandler(func(typ contractsprocess.OutputType, line []byte) {
 					// The handler still works, but the Result buffer is what we're testing.
 				})
 			},
@@ -126,6 +124,7 @@ func TestProcess_Run_Unix(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := New()
+			p.WithQuiet()
 			tt.setup(p)
 			res, err := p.Run(tt.args[0], tt.args[1:]...)
 			assert.Equal(t, tt.expectOK, err == nil)
@@ -140,13 +139,13 @@ func TestProcess_Run_Unix(t *testing.T) {
 func TestProcess_OnOutput_Callbacks_Unix(t *testing.T) {
 	var outLines, errLines [][]byte
 	p := New()
-	p.OnOutput(func(typ contractsprocess.OutputType, line []byte) {
+	p.WithOutputHandler(func(typ contractsprocess.OutputType, line []byte) {
 		if typ == contractsprocess.OutputTypeStdout {
 			outLines = append(outLines, append([]byte(nil), line...))
 		} else {
 			errLines = append(errLines, append([]byte(nil), line...))
 		}
-	}).Quietly()
+	}).WithQuiet()
 	res, err := p.Run("sh", "-c", "printf 'a\n'; printf 'b\n' 1>&2")
 	assert.NoError(t, err)
 	assert.True(t, res.Successful())
@@ -159,10 +158,10 @@ func TestProcess_OnOutput_Callbacks_Unix(t *testing.T) {
 }
 
 func TestProcess_ErrorOnMissingCommand_Unix(t *testing.T) {
-	_, err := New().Quietly().Start("")
+	_, err := New().WithQuiet().Start("")
 	assert.Error(t, err)
 
-	_, err = New().Quietly().Run("")
+	_, err = New().WithQuiet().Run("")
 	assert.Error(t, err)
 }
 
@@ -171,7 +170,7 @@ func TestProcess_WithContext(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		res, err := New().WithContext(ctx).Quietly().Run("echo", "hello world")
+		res, err := New().WithContext(ctx).WithQuiet().Run("echo", "hello world")
 
 		assert.NoError(t, err, "Run should not return an error on success")
 		assert.NotNil(t, res, "Result object should not be nil")
@@ -184,7 +183,7 @@ func TestProcess_WithContext(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 		defer cancel()
 
-		res, err := New().WithContext(ctx).Quietly().Run("sleep", "2")
+		res, err := New().WithContext(ctx).WithQuiet().Run("sleep", "2")
 		assert.NoError(t, err, "Run should not return an error, but the result should indicate failure")
 		assert.NotNil(t, res, "Result object should not be nil even on failure")
 		assert.False(t, res.Successful(), "Process should have failed because it was killed")
