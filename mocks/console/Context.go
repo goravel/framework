@@ -1783,7 +1783,7 @@ func (_c *Context_CreateProgressBar_Call) RunAndReturn(run func(int) console.Pro
 }
 
 // Divider provides a mock function with given fields: filler
-func (_m *Context) Divider(filler ...rune) {
+func (_m *Context) Divider(filler ...string) {
 	_va := make([]interface{}, len(filler))
 	for _i := range filler {
 		_va[_i] = filler[_i]
@@ -1799,18 +1799,18 @@ type Context_Divider_Call struct {
 }
 
 // Divider is a helper method to define mock.On call
-//   - filler ...rune
+//   - filler ...string
 func (_e *Context_Expecter) Divider(filler ...interface{}) *Context_Divider_Call {
 	return &Context_Divider_Call{Call: _e.mock.On("Divider",
 		append([]interface{}{}, filler...)...)}
 }
 
-func (_c *Context_Divider_Call) Run(run func(filler ...rune)) *Context_Divider_Call {
+func (_c *Context_Divider_Call) Run(run func(filler ...string)) *Context_Divider_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]rune, len(args)-0)
+		variadicArgs := make([]string, len(args)-0)
 		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(rune)
+				variadicArgs[i] = a.(string)
 			}
 		}
 		run(variadicArgs...)
@@ -1823,7 +1823,7 @@ func (_c *Context_Divider_Call) Return() *Context_Divider_Call {
 	return _c
 }
 
-func (_c *Context_Divider_Call) RunAndReturn(run func(...rune)) *Context_Divider_Call {
+func (_c *Context_Divider_Call) RunAndReturn(run func(...string)) *Context_Divider_Call {
 	_c.Run(run)
 	return _c
 }

@@ -472,11 +472,20 @@ func (r *CliContext) TwoColumnDetail(first, second string, filler ...rune) {
 	r.Line(supportconsole.TwoColumnDetail(first, second, filler...))
 }
 
-func (r *CliContext) Divider(filler ...rune) {
-	width := pterm.GetTerminalWidth()
-	char := string(append(filler, '-')[0])
+func (r *CliContext) Divider(filler ...string) {
+	var chars []rune
+	if len(filler) == 0 || len(filler[0]) == 0 {
+		chars = []rune{'-'}
+	} else {
+		chars = []rune(filler[0])
+	}
 
-	r.Line(strings.Repeat(char, width))
+	width := pterm.GetTerminalWidth()
+	charsLen := len(chars)
+
+	repeat, reminder := width/charsLen, width%charsLen
+
+	r.Line(strings.Repeat(string(chars), repeat) + string(chars[0:reminder]))
 }
 
 func (r *CliContext) Green(message string) {
