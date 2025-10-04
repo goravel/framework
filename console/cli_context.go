@@ -483,7 +483,7 @@ func (r *CliContext) Green(message string) {
 	color.Green().Print(message)
 }
 
-func (r *CliContext) GreenLn(message string) {
+func (r *CliContext) Greenln(message string) {
 	color.Green().Println(message)
 }
 
@@ -491,7 +491,7 @@ func (r *CliContext) Red(message string) {
 	color.Red().Print(message)
 }
 
-func (r *CliContext) RedLn(message string) {
+func (r *CliContext) Redln(message string) {
 	color.Red().Println(message)
 }
 
@@ -499,7 +499,7 @@ func (r *CliContext) Yellow(message string) {
 	color.Yellow().Print(message)
 }
 
-func (r *CliContext) YellowLn(message string) {
+func (r *CliContext) Yellowln(message string) {
 	color.Yellow().Println(message)
 }
 
@@ -507,6 +507,6 @@ func (r *CliContext) Black(message string) {
 	color.Black().Print(message)
 }
 
-func (r *CliContext) BlackLn(message string) {
+func (r *CliContext) Blackln(message string) {
 	color.Black().Println(message)
 }

@@ -133,20 +133,20 @@ type Context interface {
 	Divider(filler ...rune)
 	// Green writes green text to console
 	Green(message string)
-	// GreenLn writes green line to console
-	GreenLn(message string)
+	// Greenln writes green line to console
+	Greenln(message string)
 	// Red writes red text to console
 	Red(message string)
-	// RedLn writes red line to console
-	RedLn(message string)
+	// Redln writes red line to console
+	Redln(message string)
 	// Yellow writes yellow text to console
 	Yellow(message string)
-	// YellowLn writes yellow line to console
-	YellowLn(message string)
+	// Yellowln writes yellow line to console
+	Yellowln(message string)
 	// Black writes black text to console
 	Black(message string)
-	// BlackLn writes black line to console
-	BlackLn(message string)
+	// Blackln writes black line to console
+	Blackln(message string)
 }
 
 type Progress interface {
