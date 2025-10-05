@@ -494,7 +494,7 @@ func TestDivider(t *testing.T) {
 				tt.testFunc(&ctx)
 			})
 
-			assert.Equal(t, got, tt.expectedOutput)
+			assert.Equal(t, tt.expectedOutput, got)
 		})
 	}
 }
@@ -570,7 +570,7 @@ func TestColors(t *testing.T) {
 				tt.testFunc(&ctx)
 			})
 
-			assert.Equal(t, got, tt.expectedOutput)
+			assert.Equal(t, tt.expectedOutput, got)
 		})
 	}
 }
