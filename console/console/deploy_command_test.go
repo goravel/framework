@@ -519,3 +519,94 @@ func Test_Handle_Deploy_FailureOnBuild(t *testing.T) {
 
 	assert.Nil(t, cmd.Handle(mockContext))
 }
+
+func Test_getDeployOptions_Success(t *testing.T) {
+	mockContext := mocksconsole.NewContext(t)
+	mockConfig := mocksconfig.NewConfig(t)
+	mockArtisan := mocksconsole.NewArtisan(t)
+	cmd := NewDeployCommand(mockConfig, mockArtisan)
+
+	// Config expectations (all present)
+	mockConfig.EXPECT().GetString("app.name").Return("myapp").Once()
+	mockConfig.EXPECT().GetString("app.deploy.ssh_ip").Return("203.0.113.10").Once()
+	mockConfig.EXPECT().GetString("app.deploy.reverse_proxy_port").Return("9000").Once()
+	mockConfig.EXPECT().GetString("app.deploy.ssh_port").Return("22").Once()
+	mockConfig.EXPECT().GetString("app.deploy.ssh_user").Return("ubuntu").Once()
+	mockConfig.EXPECT().GetString("app.deploy.ssh_key_path").Return("~/.ssh/id").Once()
+	mockConfig.EXPECT().GetString("app.build.os").Return("linux").Once()
+	mockConfig.EXPECT().GetString("app.build.arch").Return("amd64").Once()
+	mockConfig.EXPECT().GetString("app.deploy.domain").Return("").Once()
+	mockConfig.EXPECT().GetString("app.deploy.prod_env_file_path").Return(".env.production").Once()
+	mockConfig.EXPECT().GetString("app.deploy.base_dir", "/var/www/").Return("/var/www/").Once()
+
+	mockConfig.EXPECT().GetBool("app.build.static").Return(true).Once()
+	mockConfig.EXPECT().GetBool("app.deploy.reverse_proxy_enabled").Return(true).Once()
+	mockConfig.EXPECT().GetBool("app.deploy.reverse_proxy_tls_enabled").Return(false).Once()
+
+	opts := cmd.getDeployOptions(mockContext)
+
+	assert.Equal(t, "myapp", opts.appName)
+	assert.Equal(t, "203.0.113.10", opts.sshIp)
+	assert.Equal(t, "9000", opts.reverseProxyPort)
+	assert.Equal(t, "22", opts.sshPort)
+	assert.Equal(t, "ubuntu", opts.sshUser)
+	// ssh key path should expand '~' to the home directory
+	home, _ := os.UserHomeDir()
+	assert.Equal(t, home+"/.ssh/id", opts.sshKeyPath)
+	assert.Equal(t, "linux", opts.targetOS)
+	assert.Equal(t, "amd64", opts.arch)
+	assert.Equal(t, ".env.production", opts.prodEnvFilePath)
+	assert.Equal(t, "/var/www/", opts.deployBaseDir)
+	assert.True(t, opts.staticEnv)
+	assert.True(t, opts.reverseProxyEnabled)
+	assert.False(t, opts.reverseProxyTLSEnabled)
+}
+
+// helper used by subprocess to trigger os.Exit via getDeployOptions missing validation
+func TestHelper_GetDeployOptions_Missing(t *testing.T) {
+	if os.Getenv("EXPECT_GETDEPLOYOPTIONS_EXIT") != "1" {
+		return
+	}
+	mockContext := mocksconsole.NewContext(t)
+	mockConfig := mocksconfig.NewConfig(t)
+	mockArtisan := mocksconsole.NewArtisan(t)
+	cmd := NewDeployCommand(mockConfig, mockArtisan)
+
+	// Return empty for required strings
+	mockConfig.EXPECT().GetString("app.name").Return("").Once()
+	mockConfig.EXPECT().GetString("app.deploy.ssh_ip").Return("").Once()
+	mockConfig.EXPECT().GetString("app.deploy.reverse_proxy_port").Return("").Once()
+	mockConfig.EXPECT().GetString("app.deploy.ssh_port").Return("").Once()
+	mockConfig.EXPECT().GetString("app.deploy.ssh_user").Return("").Once()
+	mockConfig.EXPECT().GetString("app.deploy.ssh_key_path").Return("").Once()
+	mockConfig.EXPECT().GetString("app.build.os").Return("").Once()
+	mockConfig.EXPECT().GetString("app.build.arch").Return("").Once()
+	mockConfig.EXPECT().GetString("app.deploy.domain").Return("").Once()
+	mockConfig.EXPECT().GetString("app.deploy.prod_env_file_path").Return("").Once()
+	mockConfig.EXPECT().GetString("app.deploy.base_dir", "/var/www/").Return("/var/www/").Once()
+
+	mockConfig.EXPECT().GetBool("app.build.static").Return(false).Once()
+	mockConfig.EXPECT().GetBool("app.deploy.reverse_proxy_enabled").Return(false).Once()
+	mockConfig.EXPECT().GetBool("app.deploy.reverse_proxy_tls_enabled").Return(false).Once()
+
+	// Expect an error message before exit
+	mockContext.EXPECT().Error(mock.MatchedBy(func(msg string) bool {
+		return strings.Contains(msg, "Missing required environment variables:")
+	})).Once()
+
+	// This will call os.Exit(1)
+	_ = cmd.getDeployOptions(mockContext)
+	t.Fatalf("expected os.Exit to be called")
+}
+
+func Test_getDeployOptions_Missing_Exits(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		// Subprocess exit code detection differs; still okay but keep consistent behavior
+	}
+	cmd := exec.Command(os.Args[0], "-test.run", "TestHelper_GetDeployOptions_Missing")
+	cmd.Env = append(os.Environ(), "EXPECT_GETDEPLOYOPTIONS_EXIT=1")
+	err := cmd.Run()
+	if err == nil {
+		t.Fatalf("expected subprocess to exit with error due to os.Exit(1)")
+	}
+}
