@@ -636,9 +636,6 @@ func TestHelper_GetDeployOptions_Missing(t *testing.T) {
 }
 
 func Test_getDeployOptions_Missing_Exits(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		// Subprocess exit code detection differs; still okay but keep consistent behavior
-	}
 	cmd := exec.Command(os.Args[0], "-test.run", "TestHelper_GetDeployOptions_Missing")
 	cmd.Env = append(os.Environ(), "EXPECT_GETDEPLOYOPTIONS_EXIT=1")
 	err := cmd.Run()
