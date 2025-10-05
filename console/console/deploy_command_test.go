@@ -121,9 +121,12 @@ func Test_uploadFilesCommand_AllArtifacts(t *testing.T) {
 	}
 	script := cmd.Args[2]
 	appDir := "/var/www/myapp"
-	// Binary upload and backup
+	// Binary upload and backup (now uses zip backups + atomic replace without .prev)
 	assert.Contains(t, script, "scp -o StrictHostKeyChecking=no -i \"~/.ssh/id\" -P 22 \"myapp\" ubuntu@203.0.113.10:"+appDir+"/main.new")
-	assert.Contains(t, script, "if [ -f "+appDir+"/main ]; then sudo mv "+appDir+"/main "+appDir+"/main.prev; fi; sudo mv "+appDir+"/main.new "+appDir+"/main && sudo chmod +x "+appDir+"/main")
+	assert.Contains(t, script, "sudo mv "+appDir+"/main.new "+appDir+"/main && sudo chmod +x "+appDir+"/main")
+	// Ensure backup zip is created
+	assert.Contains(t, script, "backups")
+	assert.Contains(t, script, "zip -r")
 	// .env atomic rename
 	assert.Contains(t, script, ".env.new")
 	assert.Contains(t, script, "/.env'")
@@ -174,7 +177,9 @@ func Test_rollbackCommand(t *testing.T) {
 		t.Skip("Skipping script content assertions on Windows shell")
 	}
 	script := cmd.Args[2]
-	assert.Contains(t, script, "main.prev")
+	// Ensure rollback uses backup zip restore
+	assert.Contains(t, script, "backups")
+	assert.Contains(t, script, "unzip -o")
 	// Accept either explicit service name or variable-based restart lines
 	hasExplicit := strings.Contains(script, "systemctl restart myapp || sudo systemctl start myapp")
 	hasVariable := strings.Contains(script, "systemctl restart \"$SERVICE\" || sudo systemctl start \"$SERVICE\"")

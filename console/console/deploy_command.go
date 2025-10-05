@@ -657,37 +657,42 @@ func uploadFilesCommand(opts deployOptions, up uploadOptions, envPathToUpload st
 		fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'sudo mkdir -p %s && sudo chown -R %s:%s %s'", opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.ipAddress, appDir, opts.sshUser, opts.sshUser, appDir),
 	}
 
-	// main binary with previous backup
+	// Create a timestamped backup zip of existing deploy artifacts before replacing any of them
+	// Backup includes: main, .env, public, storage, resources (if present)
+	backupCmd := fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'set -e; APP_DIR=%q; BACKUP_DIR=\"$APP_DIR/backups\"; TS=\"$(date +%%Y%%m%%d%%H%%M%%S)\"; sudo mkdir -p \"$BACKUP_DIR\"; if ! command -v zip >/dev/null 2>&1; then sudo apt-get update -y && sudo apt-get install -y zip; fi; cd \"$APP_DIR\"; INCLUDE=\"\"; [ -f main ] && INCLUDE=\"$INCLUDE main\"; [ -f .env ] && INCLUDE=\"$INCLUDE .env\"; [ -d public ] && INCLUDE=\"$INCLUDE public\"; [ -d storage ] && INCLUDE=\"$INCLUDE storage\"; [ -d resources ] && INCLUDE=\"$INCLUDE resources\"; if [ -n \"$INCLUDE\" ]; then zip -r \"$BACKUP_DIR/$TS.zip\" $INCLUDE >/dev/null; fi'", opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.ipAddress, appDir)
+	cmds = append(cmds, backupCmd)
+
+	// main binary
 	if up.hasMain {
-		// upload to temp and atomically move, keeping previous as main.prev
+		// upload to temp and atomically move
 		cmds = append(cmds,
 			fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s %q %s/main.new", opts.sshKeyPath, opts.sshPort, filepath.Clean(opts.appName), remoteBase),
-			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'if [ -f %s/main ]; then sudo mv %s/main %s/main.prev; fi; sudo mv %s/main.new %s/main && sudo chmod +x %s/main'", opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.ipAddress, appDir, appDir, appDir, appDir, appDir, appDir),
+			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'sudo mv %s/main.new %s/main && sudo chmod +x %s/main'", opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.ipAddress, appDir, appDir, appDir),
 		)
 	}
 
 	if up.hasProdEnv {
-		// Upload env to a temp path, then atomically place as .env; backup previous as .env.prev if exists
+		// Upload env to a temp path, then atomically place as .env
 		cmds = append(cmds,
 			fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s %q %s/.env.new", opts.sshKeyPath, opts.sshPort, filepath.Clean(envPathToUpload), remoteBase),
-			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'if [ -f %s/.env ]; then sudo mv %s/.env %s/.env.prev; fi; sudo mv %s/.env.new %s/.env'", opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.ipAddress, appDir, appDir, appDir, appDir, appDir),
+			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'sudo mv %s/.env.new %s/.env'", opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.ipAddress, appDir, appDir),
 		)
 	}
 	if up.hasPublic {
 		cmds = append(cmds,
-			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'if [ -d %s/public ]; then sudo rm -rf %s/public.prev; sudo mv %s/public %s/public.prev; fi'", opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.ipAddress, appDir, appDir, appDir, appDir),
+			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'if [ -d %s/public ]; then sudo rm -rf %s/public; fi'", opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.ipAddress, appDir, appDir),
 			fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s -r %q %s", opts.sshKeyPath, opts.sshPort, filepath.Clean("public"), remoteBase),
 		)
 	}
 	if up.hasStorage {
 		cmds = append(cmds,
-			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'if [ -d %s/storage ]; then sudo rm -rf %s/storage.prev; sudo mv %s/storage %s/storage.prev; fi'", opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.ipAddress, appDir, appDir, appDir, appDir),
+			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'if [ -d %s/storage ]; then sudo rm -rf %s/storage; fi'", opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.ipAddress, appDir, appDir),
 			fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s -r %q %s", opts.sshKeyPath, opts.sshPort, filepath.Clean("storage"), remoteBase),
 		)
 	}
 	if up.hasResources {
 		cmds = append(cmds,
-			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'if [ -d %s/resources ]; then sudo rm -rf %s/resources.prev; sudo mv %s/resources %s/resources.prev; fi'", opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.ipAddress, appDir, appDir, appDir, appDir),
+			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'if [ -d %s/resources ]; then sudo rm -rf %s/resources; fi'", opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.ipAddress, appDir, appDir),
 			fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s -r %q %s", opts.sshKeyPath, opts.sshPort, filepath.Clean("resources"), remoteBase),
 		)
 	}
@@ -711,34 +716,35 @@ func rollbackCommand(appName, ip, sshPort, sshUser, keyPath, baseDir string) *ex
 set -e
 APP_DIR=%q
 SERVICE=%q
-if [ ! -f "$APP_DIR/main.prev" ]; then
-  echo "No previous deployment to rollback to." >&2
+BACKUP_DIR="$APP_DIR/backups"
+
+# Ensure we have at least one backup to roll back to
+TARGET_ZIP="$(ls -1t "$BACKUP_DIR"/*.zip 2>/dev/null | head -n1)"
+if [ -z "$TARGET_ZIP" ]; then
+  echo "No previous deployment backup to rollback to." >&2
   exit 1
 fi
-sudo mv "$APP_DIR/main" "$APP_DIR/main.newcurrent" || true
-sudo mv "$APP_DIR/main.prev" "$APP_DIR/main"
-sudo mv "$APP_DIR/main.newcurrent" "$APP_DIR/main.prev" || true
-sudo chmod +x "$APP_DIR/main"
-if [ -f "$APP_DIR/.env.prev" ]; then
-  sudo mv "$APP_DIR/.env" "$APP_DIR/.env.newcurrent" || true
-  sudo mv "$APP_DIR/.env.prev" "$APP_DIR/.env"
-  sudo mv "$APP_DIR/.env.newcurrent" "$APP_DIR/.env.prev" || true
-fi
-if [ -d "$APP_DIR/public.prev" ]; then
-  sudo mv "$APP_DIR/public" "$APP_DIR/public.newcurrent" || true
-  sudo mv "$APP_DIR/public.prev" "$APP_DIR/public"
-  sudo mv "$APP_DIR/public.newcurrent" "$APP_DIR/public.prev" || true
-fi
-if [ -d "$APP_DIR/resources.prev" ]; then
-  sudo mv "$APP_DIR/resources" "$APP_DIR/resources.newcurrent" || true
-  sudo mv "$APP_DIR/resources.prev" "$APP_DIR/resources"
-  sudo mv "$APP_DIR/resources.newcurrent" "$APP_DIR/resources.prev" || true
-fi
-if [ -d "$APP_DIR/storage.prev" ]; then
-  sudo mv "$APP_DIR/storage" "$APP_DIR/storage.newcurrent" || true
-  sudo mv "$APP_DIR/storage.prev" "$APP_DIR/storage"
-  sudo mv "$APP_DIR/storage.newcurrent" "$APP_DIR/storage.prev" || true
-fi
+
+# Backup current state before rollback (so we can roll forward if needed)
+TS="$(date +%%Y%%m%%d%%H%%M%%S)"
+mkdir -p "$BACKUP_DIR"
+if ! command -v zip >/dev/null 2>&1; then sudo apt-get update -y && sudo apt-get install -y zip; fi
+cd "$APP_DIR"
+INCLUDE=""
+[ -f main ] && INCLUDE="$INCLUDE main"
+[ -f .env ] && INCLUDE="$INCLUDE .env"
+[ -d public ] && INCLUDE="$INCLUDE public"
+[ -d storage ] && INCLUDE="$INCLUDE storage"
+[ -d resources ] && INCLUDE="$INCLUDE resources"
+if [ -n "$INCLUDE" ]; then zip -r "$BACKUP_DIR/rollback-$TS.zip" $INCLUDE >/dev/null; fi
+
+# Restore from latest backup
+if ! command -v unzip >/dev/null 2>&1; then sudo apt-get update -y && sudo apt-get install -y unzip; fi
+unzip -o "$TARGET_ZIP" -d "$APP_DIR" >/dev/null
+
+# Cleanup any *.newcurrent artifacts from previous failed operations (move this to the end as suggested)
+find "$APP_DIR" -maxdepth 1 -name "*.newcurrent" -type f -exec sudo rm -f {} + || true
+
 sudo systemctl daemon-reload
 sudo systemctl restart "$SERVICE" || sudo systemctl start "$SERVICE"
  '`, keyPath, sshPort, sshUser, ip, appDir, appName)
