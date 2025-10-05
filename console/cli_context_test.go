@@ -3,7 +3,6 @@ package console
 import (
 	"context"
 	"io"
-	"strings"
 	"testing"
 	"time"
 
@@ -437,6 +436,7 @@ func TestDivider(t *testing.T) {
 	testCases := []struct {
 		name           string
 		testFunc       func(ctx *CliContext)
+		termWidth      int
 		expectedOutput string
 	}{
 		{
@@ -444,46 +444,48 @@ func TestDivider(t *testing.T) {
 			testFunc: func(ctx *CliContext) {
 				ctx.Divider()
 			},
-			expectedOutput: color.Default().Sprintln(strings.Repeat("-", pterm.GetTerminalWidth())),
+			termWidth:      20,
+			expectedOutput: color.Default().Sprintln("--------------------"),
 		},
 		{
 			name: "test Divider empty",
 			testFunc: func(ctx *CliContext) {
 				ctx.Divider("")
 			},
-			expectedOutput: color.Default().Sprintln(strings.Repeat("-", pterm.GetTerminalWidth())),
+			termWidth:      20,
+			expectedOutput: color.Default().Sprintln("--------------------"),
 		},
 		{
 			name: "test Divider char",
 			testFunc: func(ctx *CliContext) {
 				ctx.Divider("=")
 			},
-			expectedOutput: color.Default().Sprintln(strings.Repeat("=", pterm.GetTerminalWidth())),
+			termWidth:      20,
+			expectedOutput: color.Default().Sprintln("===================="),
 		},
 		{
 			name: "test Divider multiple",
 			testFunc: func(ctx *CliContext) {
 				ctx.Divider("=->")
 			},
-			expectedOutput: color.Default().Sprintln(
-				strings.Repeat("=->", pterm.GetTerminalWidth()/3) + "=->"[0:pterm.GetTerminalWidth()%3],
-			),
+			termWidth:      20,
+			expectedOutput: color.Default().Sprintln("=->=->=->=->=->=->=-"),
 		},
 		{
 			name: "test Divider multibyte",
 			testFunc: func(ctx *CliContext) {
 				ctx.Divider("♠")
 			},
-			expectedOutput: color.Default().Sprintln(strings.Repeat("♠", pterm.GetTerminalWidth())),
+			termWidth:      20,
+			expectedOutput: color.Default().Sprintln("♠♠♠♠♠♠♠♠♠♠♠♠♠♠♠♠♠♠♠♠"),
 		},
 		{
 			name: "test Divider multibyte multiple",
 			testFunc: func(ctx *CliContext) {
 				ctx.Divider("♠♣♥")
 			},
-			expectedOutput: color.Default().Sprintln(
-				strings.Repeat("♠♣♥", pterm.GetTerminalWidth()/3) + string([]rune("♠♣♥")[0:pterm.GetTerminalWidth()%3]),
-			),
+			termWidth:      20,
+			expectedOutput: color.Default().Sprintln("♠♣♥♠♣♥♠♣♥♠♣♥♠♣♥♠♣♥♠♣"),
 		},
 	}
 
@@ -491,6 +493,7 @@ func TestDivider(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := CliContext{}
 			got := color.CaptureOutput(func(io.Writer) {
+				pterm.SetForcedTerminalSize(tt.termWidth, 10)
 				tt.testFunc(&ctx)
 			})
 
