@@ -34,7 +34,7 @@ Architecture assumptions
 Two primary deployment topologies are supported:
 1) Reverse proxy in front of the app (recommended)
    - reverseProxyEnabled=true
-   - App listens on 127.0.0.1:<DEPLOY_REVERSE_PROXY_PORT> (e.g. 9000)
+   - App listens on 127.0.0.1:<app.deploy.reverse_proxy_port> (e.g. 9000)
    - Caddy proxies public HTTP(S) traffic to the app
    - If reverseProxyTLSEnabled=true and a valid domain is configured, Caddy terminates TLS
      and automatically provisions certificates; otherwise Caddy serves plain HTTP on :80
@@ -48,10 +48,10 @@ Artifacts & layout on server
 Remote base directory: /var/www/<APP_NAME>
 Files managed by this command on the remote host:
   - main        : current binary (running)
-  - main.prev   : previous binary (standby for rollback)
-  - .env        : environment file (uploaded from DEPLOY_PROD_ENV_FILE_PATH)
+  - backups/    : timestamped zip archives of previous states (used for rollback)
+  - .env        : environment file (uploaded from app.deploy.prod_env_file_path)
   - public/     : optional static assets
-  - storage/    : optional storage directory
+  - storage/    : optional storage directory (uploaded only during setup)
   - resources/  : optional resources directory
 
 Idempotency & first-time setup
@@ -70,9 +70,8 @@ changes (e.g., regenerate Caddyfile, adjust firewall rules, rewrite the unit fil
 
 Rollback model
 --------------
-Every deployment that uploads a new binary preserves the previous one as main.prev. A rollback
-simply swaps main and main.prev atomically and restarts the service. Non-binary assets (.env,
-public, storage, resources) are not rolled back by this command.
+Every deployment creates a timestamped zip archive of the current state under backups/.
+Rollback restores from the latest archive and restarts the service.
 
 Build & artifacts (local)
 -------------------------
@@ -80,25 +79,26 @@ The command builds the binary (name: APP_NAME) using the configured target OS/AR
 linking preference. See Goravel docs for compiling guidance, artifacts, and what to upload:
 https://www.goravel.dev/getting-started/compile.html
 
-Configuration (env)
--------------------
+Configuration (app.config)
+--------------------------
+This command reads from application configuration (see app/config/app.go), not directly from .env.
 Required:
-  - app.name                               : Application name (used in remote paths/service name)
-  - DEPLOY_SSH_IP                      : Target server IP
-  - DEPLOY_REVERSE_PROXY_PORT                        : Backend app port when reverse proxy is used (e.g. 9000)
-  - DEPLOY_SSH_PORT                        : SSH port (e.g. 22)
-  - DEPLOY_SSH_USER                        : SSH username (user must have sudo privileges)
-  - DEPLOY_SSH_KEY_PATH                    : Path to SSH private key (e.g. ~/.ssh/id_rsa)
-  - DEPLOY_OS                              : Target OS for build (e.g. linux)
-  - DEPLOY_ARCH                            : Target arch for build (e.g. amd64)
-  - DEPLOY_PROD_ENV_FILE_PATH              : Local path to production .env file to upload
+  - app.name                             : Application name (used in remote paths/service name)
+  - app.deploy.ssh_ip                    : Target server IP
+  - app.deploy.reverse_proxy_port        : Backend app port when reverse proxy is used (e.g. 9000)
+  - app.deploy.ssh_port                  : SSH port (e.g. 22)
+  - app.deploy.ssh_user                  : SSH username (user must have sudo privileges)
+  - app.deploy.ssh_key_path              : Path to SSH private key (e.g. ~/.ssh/id_rsa)
+  - app.build.os                         : Target OS for build (e.g. linux)
+  - app.build.arch                       : Target arch for build (e.g. amd64)
+  - app.deploy.prod_env_file_path        : Local path to production .env file to upload
 
 Optional / boolean flags (default false if unset):
-  - DEPLOY_STATIC                          : Build statically when true
-  - DEPLOY_REVERSE_PROXY_ENABLED           : Use Caddy reverse proxy when true
-  - DEPLOY_REVERSE_PROXY_TLS_ENABLED       : Enable TLS (requires domain) when true
-  - DEPLOY_DOMAIN                          : Domain name for TLS or HTTP vhost when using Caddy
-                                            (required only if TLS is enabled)
+  - app.build.static                     : Build statically when true
+  - app.deploy.reverse_proxy_enabled     : Use Caddy reverse proxy when true
+  - app.deploy.reverse_proxy_tls_enabled : Enable TLS (requires domain) when true
+  - app.deploy.domain                    : Domain name for TLS or HTTP vhost when using Caddy
+                                           (required only if TLS is enabled)
 
 CLI flags
 ---------
@@ -115,21 +115,21 @@ SSH connectivity.
 
 Systemd service
 ---------------
-The unit runs under DEPLOY_SSH_USER. Environment variables are provided via the unit for host/port,
+The unit runs under app.deploy.ssh_user. Environment variables are provided via the unit for host/port,
 and the working directory points to /var/www/<APP_NAME>. Service restarts are used (brief downtime).
 For zero-downtime swaps, a more advanced process manager or socket activation would be required.
 
 High-level deployment flow
 --------------------------
 1) Build: compile the binary for the specified target (OS/ARCH, static optional) with name APP_NAME
-2) Determine artifacts to upload: main, .env, public, storage, resources (filter via --only)
+2) Determine artifacts to upload: main, .env, public, storage (setup only), resources (filter via --only)
 3) Setup (first deploy only, or when --force-setup):
    - Create directories and permissions
    - Install/configure Caddy based on reverse proxy + TLS settings
    - Write systemd unit and enable service
    - Configure ufw rules (OpenSSH, 80, and 443 as needed)
 4) Upload:
-   - Binary: upload to main.new, move previous main to main.prev (if exists), atomically move main.new to main
+   - Binary: upload to main.new, atomically move main.new to main
    - .env:   upload to .env.new, atomically move to .env
    - public, storage, resources: recursively upload if they exist locally
 5) Restart service: systemctl daemon-reload, then restart (or start) the service
