@@ -1,6 +1,7 @@
 package console
 
 import (
+	"crypto/aes"
 	"encoding/base64"
 	"fmt"
 	"os"
@@ -348,14 +349,16 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 	// If the production env file is encrypted (per Goravel docs), decrypt it first
 	envPathToUpload := opts.prodEnvFilePath
 	if upload.hasProdEnv {
-		lower := strings.ToLower(strings.TrimSpace(opts.prodEnvFilePath))
-		if strings.HasSuffix(lower, ".encrypted") || strings.HasSuffix(lower, ".safe") {
-			if err = r.artisan.Call(fmt.Sprintf("env:decrypt --name %q", opts.prodEnvFilePath)); err != nil {
-				ctx.Error(err.Error())
-				return nil
+		// Detect encrypted env by content (base64 + AES block structure with IV)
+		if data, readErr := os.ReadFile(opts.prodEnvFilePath); readErr == nil {
+			if isEncryptedEnvContent(data) {
+				if err = r.artisan.Call(fmt.Sprintf("env:decrypt --name %q", opts.prodEnvFilePath)); err != nil {
+					ctx.Error(err.Error())
+					return nil
+				}
+				// env:decrypt writes to .env in the working directory
+				envPathToUpload = ".env"
 			}
-			// env:decrypt writes to .env in the working directory
-			envPathToUpload = ".env"
 		}
 	}
 
@@ -457,6 +460,26 @@ func (r *DeployCommand) getDeployOptions(ctx console.Context) deployOptions {
 	}
 
 	return opts
+}
+
+// isEncryptedEnvContent determines whether the provided bytes likely represent an encrypted env
+// according to Goravel's env:encrypt format (base64 of IV||ciphertext using AES with 16-byte IV).
+// Heuristic:
+//   - Base64-decodable
+//   - Decoded length >= aes.BlockSize*2 (IV + at least one block)
+//   - Decoded length % aes.BlockSize == 0
+func isEncryptedEnvContent(raw []byte) bool {
+	decoded, err := base64.StdEncoding.DecodeString(string(raw))
+	if err != nil {
+		return false
+	}
+	if len(decoded) < aes.BlockSize*2 {
+		return false
+	}
+	if len(decoded)%aes.BlockSize != 0 {
+		return false
+	}
+	return true
 }
 
 func getUploadOptions(ctx console.Context, appName, prodEnvFilePath string) uploadOptions {
