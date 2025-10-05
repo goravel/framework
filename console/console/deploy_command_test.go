@@ -439,9 +439,6 @@ func Test_Handle_Rollback_ShortCircuit(t *testing.T) {
 }
 
 func Test_Handle_Deploy_Success(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		// Skip due to shell content assertions; Spinner wraps execution
-	}
 	mockContext := mocksconsole.NewContext(t)
 	mockConfig := mocksconfig.NewConfig(t)
 	mockArtisan := mocksconsole.NewArtisan(t)
