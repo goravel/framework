@@ -485,7 +485,7 @@ func (r *CliContext) Divider(filler ...string) {
 
 	repeat, reminder := width/charsLen, width%charsLen
 
-	r.Line(strings.Repeat(string(chars), repeat) + string(chars[0:reminder]))
+	r.Line(strings.Repeat(string(chars), repeat) + string(chars[:reminder]))
 }
 
 func (r *CliContext) Green(message string) {
