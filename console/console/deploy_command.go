@@ -311,9 +311,7 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 	// (tests can short-circuit Spinner; real runs will still use ssh remotely)
 	if ctx.OptionBool("rollback") {
 		opts := r.getDeployOptions(ctx)
-		if err := supportconsole.ExecuteCommand(ctx, rollbackCommand(
-			opts.appName, opts.sshIp, opts.sshPort, opts.sshUser, opts.sshKeyPath, opts.deployBaseDir,
-		), "Rolling back..."); err != nil {
+		if err := supportconsole.ExecuteCommand(ctx, rollbackCommand(opts), "Rolling back..."); err != nil {
 			ctx.Error(err.Error())
 			return nil
 		}
@@ -714,11 +712,12 @@ func restartServiceCommand(opts deployOptions) *exec.Cmd {
 }
 
 // rollbackCommand swaps main and main.prev if available, then restarts the service
-func rollbackCommand(appName, sshIp, sshPort, sshUser, keyPath, baseDir string) *exec.Cmd {
+func rollbackCommand(opts deployOptions) *exec.Cmd {
+	baseDir := opts.deployBaseDir
 	if !strings.HasSuffix(baseDir, "/") {
 		baseDir += "/"
 	}
-	appDir := fmt.Sprintf("%s%s", baseDir, appName)
+	appDir := fmt.Sprintf("%s%s", baseDir, opts.appName)
 	script := fmt.Sprintf(`ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s '
 set -e
 APP_DIR=%q
@@ -754,7 +753,7 @@ find "$APP_DIR" -maxdepth 1 -name "*.newcurrent" -type f -exec sudo rm -f {} + |
 
 sudo systemctl daemon-reload
 sudo systemctl restart "$SERVICE" || sudo systemctl start "$SERVICE"
- '`, keyPath, sshPort, sshUser, sshIp, appDir, appName)
+ '`, opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.sshIp, appDir, opts.appName)
 	return exec.Command("bash", "-lc", script)
 }
 

@@ -171,7 +171,7 @@ func Test_restartServiceCommand(t *testing.T) {
 }
 
 func Test_rollbackCommand(t *testing.T) {
-	cmd := rollbackCommand("myapp", "203.0.113.10", "22", "ubuntu", "~/.ssh/id", "/var/www/")
+	cmd := rollbackCommand(deployOptions{appName: "myapp", sshIp: "203.0.113.10", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id", deployBaseDir: "/var/www/"})
 	require.NotNil(t, cmd)
 	if runtime.GOOS == "windows" {
 		t.Skip("Skipping script content assertions on Windows shell")
