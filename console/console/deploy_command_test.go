@@ -460,6 +460,7 @@ func Test_Handle_Deploy_Success(t *testing.T) {
 
 	// Context expectations
 	mockContext.EXPECT().OptionBool("rollback").Return(false).Once()
+	mockContext.EXPECT().OptionBool("force-setup").Return(false).Once()
 	mockContext.EXPECT().Option("only").Return("").Once()
 
 	// Ensure artifacts exist for getUploadOptions

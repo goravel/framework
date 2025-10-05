@@ -360,14 +360,21 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 		}
 	}
 
-	// Step 3: set up server on first run —- skip if already set up
-	if !isServerAlreadySetup(opts.appName, opts.ipAddress, opts.sshPort, opts.sshUser, opts.sshKeyPath) {
+	// Step 3: set up server on first run —- skip if already set up unless --force-setup is used
+	forceSetup := ctx.OptionBool("force-setup")
+	setupNeeded := forceSetup || !isServerAlreadySetup(opts.appName, opts.ipAddress, opts.sshPort, opts.sshUser, opts.sshKeyPath)
+	if setupNeeded {
 		if err = supportconsole.ExecuteCommand(ctx, setupServerCommand(opts), "Setting up server (first time only)..."); err != nil {
 			ctx.Error(err.Error())
 			return nil
 		}
 	} else {
 		ctx.Info("Server already set up. Skipping setup.")
+	}
+
+	// Enforce: storage can only be uploaded during setup stage
+	if !setupNeeded {
+		upload.hasStorage = false
 	}
 
 	// Step 4: upload files
