@@ -7,10 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/goravel/framework/support/color"
 	"github.com/pterm/pterm"
 	"github.com/stretchr/testify/assert"
 	"github.com/urfave/cli/v3"
+
+	"github.com/goravel/framework/support/color"
 )
 
 func TestAsk(_ *testing.T) {
