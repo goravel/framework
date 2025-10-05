@@ -483,9 +483,9 @@ func (r *CliContext) Divider(filler ...string) {
 	width := pterm.GetTerminalWidth()
 	charsLen := len(chars)
 
-	repeat, reminder := width/charsLen, width%charsLen
+	repeat, remainder := width/charsLen, width%charsLen
 
-	r.Line(strings.Repeat(string(chars), repeat) + string(chars[:reminder]))
+	r.Line(strings.Repeat(string(chars), repeat) + string(chars[:remainder]))
 }
 
 func (r *CliContext) Green(message string) {
