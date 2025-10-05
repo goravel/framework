@@ -43,7 +43,7 @@ func extractBase64(script, teePath string) (string, bool) {
 }
 
 func Test_setupServerCommand_NoProxy(t *testing.T) {
-	cmd := setupServerCommand(deployOptions{appName: "myapp", ipAddress: "203.0.113.10", appPort: "9000", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id", deployBaseDir: "/var/www/", domain: "", reverseProxyEnabled: false, reverseProxyTLSEnabled: false})
+	cmd := setupServerCommand(deployOptions{appName: "myapp", sshIp: "203.0.113.10", reverseProxyPort: "9000", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id", deployBaseDir: "/var/www/", domain: "", reverseProxyEnabled: false, reverseProxyTLSEnabled: false})
 	require.NotNil(t, cmd)
 	if runtime.GOOS == "windows" {
 		t.Skip("Skipping script content assertions on Windows shell")
@@ -69,7 +69,7 @@ func Test_setupServerCommand_NoProxy(t *testing.T) {
 }
 
 func Test_setupServerCommand_ProxyHTTP(t *testing.T) {
-	cmd := setupServerCommand(deployOptions{appName: "myapp", ipAddress: "203.0.113.10", appPort: "9000", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id", deployBaseDir: "/var/www/", domain: "", reverseProxyEnabled: true, reverseProxyTLSEnabled: false})
+	cmd := setupServerCommand(deployOptions{appName: "myapp", sshIp: "203.0.113.10", reverseProxyPort: "9000", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id", deployBaseDir: "/var/www/", domain: "", reverseProxyEnabled: true, reverseProxyTLSEnabled: false})
 	require.NotNil(t, cmd)
 	if runtime.GOOS == "windows" {
 		t.Skip("Skipping script content assertions on Windows shell")
@@ -91,7 +91,7 @@ func Test_setupServerCommand_ProxyHTTP(t *testing.T) {
 }
 
 func Test_setupServerCommand_ProxyTLS(t *testing.T) {
-	cmd := setupServerCommand(deployOptions{appName: "myapp", ipAddress: "203.0.113.10", appPort: "9000", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id", deployBaseDir: "/var/www/", domain: "example.com", reverseProxyEnabled: true, reverseProxyTLSEnabled: true})
+	cmd := setupServerCommand(deployOptions{appName: "myapp", sshIp: "203.0.113.10", reverseProxyPort: "9000", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id", deployBaseDir: "/var/www/", domain: "example.com", reverseProxyEnabled: true, reverseProxyTLSEnabled: true})
 	require.NotNil(t, cmd)
 	if runtime.GOOS == "windows" {
 		t.Skip("Skipping script content assertions on Windows shell")
@@ -114,7 +114,7 @@ func Test_setupServerCommand_ProxyTLS(t *testing.T) {
 }
 
 func Test_uploadFilesCommand_AllArtifacts(t *testing.T) {
-	cmd := uploadFilesCommand(deployOptions{appName: "myapp", ipAddress: "203.0.113.10", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id", deployBaseDir: "/var/www/"}, uploadOptions{hasMain: true, hasProdEnv: true, hasPublic: true, hasStorage: true, hasResources: true}, ".env.production")
+	cmd := uploadFilesCommand(deployOptions{appName: "myapp", sshIp: "203.0.113.10", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id", deployBaseDir: "/var/www/"}, uploadOptions{hasMain: true, hasProdEnv: true, hasPublic: true, hasStorage: true, hasResources: true}, ".env.production")
 	require.NotNil(t, cmd)
 	if runtime.GOOS == "windows" {
 		t.Skip("Skipping script content assertions on Windows shell")
@@ -137,7 +137,7 @@ func Test_uploadFilesCommand_AllArtifacts(t *testing.T) {
 }
 
 func Test_uploadFilesCommand_SubsetArtifacts(t *testing.T) {
-	cmd := uploadFilesCommand(deployOptions{appName: "myapp", ipAddress: "203.0.113.10", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id", deployBaseDir: "/var/www/"}, uploadOptions{hasMain: true, hasProdEnv: false, hasPublic: false, hasStorage: true, hasResources: false}, ".env.production")
+	cmd := uploadFilesCommand(deployOptions{appName: "myapp", sshIp: "203.0.113.10", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id", deployBaseDir: "/var/www/"}, uploadOptions{hasMain: true, hasProdEnv: false, hasPublic: false, hasStorage: true, hasResources: false}, ".env.production")
 	require.NotNil(t, cmd)
 	if runtime.GOOS == "windows" {
 		t.Skip("Skipping script content assertions on Windows shell")
@@ -156,7 +156,7 @@ func Test_uploadFilesCommand_SubsetArtifacts(t *testing.T) {
 }
 
 func Test_restartServiceCommand(t *testing.T) {
-	cmd := restartServiceCommand(deployOptions{appName: "myapp", ipAddress: "203.0.113.10", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id"})
+	cmd := restartServiceCommand(deployOptions{appName: "myapp", sshIp: "203.0.113.10", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id"})
 	require.NotNil(t, cmd)
 	if runtime.GOOS == "windows" {
 		t.Skip("Skipping script content assertions on Windows shell")
@@ -316,7 +316,7 @@ func Test_setupServerCommand_WindowsShellWrapper(t *testing.T) {
 	if runtime.GOOS != "windows" {
 		t.Skip("Windows-only test")
 	}
-	cmd := setupServerCommand(deployOptions{appName: "myapp", ipAddress: "203.0.113.10", appPort: "9000", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id", deployBaseDir: "/var/www/", domain: "example.com", reverseProxyEnabled: true, reverseProxyTLSEnabled: true})
+	cmd := setupServerCommand(deployOptions{appName: "myapp", sshIp: "203.0.113.10", reverseProxyPort: "9000", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id", deployBaseDir: "/var/www/", domain: "example.com", reverseProxyEnabled: true, reverseProxyTLSEnabled: true})
 	require.NotNil(t, cmd)
 	require.GreaterOrEqual(t, len(cmd.Args), 2)
 	assert.Equal(t, "cmd", cmd.Args[0])
@@ -327,7 +327,7 @@ func Test_uploadFilesCommand_WindowsShellWrapper(t *testing.T) {
 	if runtime.GOOS != "windows" {
 		t.Skip("Windows-only test")
 	}
-	cmd := uploadFilesCommand(deployOptions{appName: "myapp", ipAddress: "203.0.113.10", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id", deployBaseDir: "/var/www/"}, uploadOptions{hasMain: true, hasProdEnv: true, hasPublic: true, hasStorage: true, hasResources: true}, ".env.production")
+	cmd := uploadFilesCommand(deployOptions{appName: "myapp", sshIp: "203.0.113.10", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id", deployBaseDir: "/var/www/"}, uploadOptions{hasMain: true, hasProdEnv: true, hasPublic: true, hasStorage: true, hasResources: true}, ".env.production")
 	require.NotNil(t, cmd)
 	require.GreaterOrEqual(t, len(cmd.Args), 2)
 	assert.Equal(t, "cmd", cmd.Args[0])
@@ -338,7 +338,7 @@ func Test_restartServiceCommand_WindowsShellWrapper(t *testing.T) {
 	if runtime.GOOS != "windows" {
 		t.Skip("Windows-only test")
 	}
-	cmd := restartServiceCommand(deployOptions{appName: "myapp", ipAddress: "203.0.113.10", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id"})
+	cmd := restartServiceCommand(deployOptions{appName: "myapp", sshIp: "203.0.113.10", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id"})
 	require.NotNil(t, cmd)
 	require.GreaterOrEqual(t, len(cmd.Args), 2)
 	assert.Equal(t, "cmd", cmd.Args[0])
