@@ -3,6 +3,7 @@ package console
 import (
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/huh/spinner"
@@ -473,19 +474,25 @@ func (r *CliContext) TwoColumnDetail(first, second string, filler ...rune) {
 }
 
 func (r *CliContext) Divider(filler ...string) {
-	var chars []rune
+	var str string
 	if len(filler) == 0 || len(filler[0]) == 0 {
-		chars = []rune{'-'}
+		str = "-"
 	} else {
-		chars = []rune(filler[0])
+		str = filler[0]
 	}
 
 	width := pterm.GetTerminalWidth()
-	charsLen := len(chars)
+	strLen := utf8.RuneCountInString(str)
 
-	repeat, remainder := width/charsLen, width%charsLen
+	repeat, remainder := width/strLen, width%strLen
 
-	r.Line(strings.Repeat(string(chars), repeat) + string(chars[:remainder]))
+	message := strings.Repeat(str, repeat)
+
+	if remainder > 0 {
+		message += string([]rune(str)[:remainder])
+	}
+
+	r.Line(message)
 }
 
 func (r *CliContext) Green(message string) {
