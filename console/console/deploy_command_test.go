@@ -408,7 +408,8 @@ func Test_Handle_Rollback_ShortCircuit(t *testing.T) {
 	// We only test rollback path to avoid executing remote checks.
 	mockContext := mocksconsole.NewContext(t)
 	mockConfig := mocksconfig.NewConfig(t)
-	cmd := NewDeployCommand(mockConfig)
+	mockArtisan := mocksconsole.NewArtisan(t)
+	cmd := NewDeployCommand(mockConfig, mockArtisan)
 
 	// Minimal required envs for getDeployOptions (will not be used deeply due to rollback)
 	mockConfig.EXPECT().GetString("app.name").Return("myapp").Once()
@@ -439,7 +440,8 @@ func Test_Handle_Deploy_Success(t *testing.T) {
 	}
 	mockContext := mocksconsole.NewContext(t)
 	mockConfig := mocksconfig.NewConfig(t)
-	cmd := NewDeployCommand(mockConfig)
+	mockArtisan := mocksconsole.NewArtisan(t)
+	cmd := NewDeployCommand(mockConfig, mockArtisan)
 
 	// Config expectations
 	mockConfig.EXPECT().GetString("app.name").Return("myapp").Once()
@@ -471,6 +473,9 @@ func Test_Handle_Deploy_Success(t *testing.T) {
 	require.NoError(t, os.WriteFile("myapp", []byte("bin"), 0o755))
 	require.NoError(t, os.WriteFile(".env.production", []byte("APP_ENV=prod"), 0o644))
 
+	// Expect artisan build call
+	mockArtisan.EXPECT().Call("build --os linux --arch amd64 --name myapp").Return(nil).Once()
+
 	// Force all Spinner-wrapped commands (build/upload/restart/setup) to return immediately
 	mockContext.EXPECT().Spinner(mock.Anything, mock.Anything).Return(nil).Maybe()
 	mockContext.EXPECT().Info("Server already set up. Skipping setup.").Maybe()
@@ -482,7 +487,8 @@ func Test_Handle_Deploy_Success(t *testing.T) {
 func Test_Handle_Deploy_FailureOnBuild(t *testing.T) {
 	mockContext := mocksconsole.NewContext(t)
 	mockConfig := mocksconfig.NewConfig(t)
-	cmd := NewDeployCommand(mockConfig)
+	mockArtisan := mocksconsole.NewArtisan(t)
+	cmd := NewDeployCommand(mockConfig, mockArtisan)
 
 	// Minimal config
 	mockConfig.EXPECT().GetString("app.name").Return("myapp").Once()
@@ -501,8 +507,10 @@ func Test_Handle_Deploy_FailureOnBuild(t *testing.T) {
 	mockConfig.EXPECT().GetBool("app.deploy.reverse_proxy_tls_enabled").Return(false).Once()
 
 	mockContext.EXPECT().OptionBool("rollback").Return(false).Once()
-	// Only stage we hit is build; simulate failure via Spinner return
-	mockContext.EXPECT().Spinner(mock.MatchedBy(func(msg string) bool { return strings.Contains(msg, "Building") }), mock.Anything).Return(fmt.Errorf("build error")).Once()
+	// Build fails via artisan
+	mockArtisan.EXPECT().Call("build --os linux --arch amd64 --name myapp").Return(fmt.Errorf("build error")).Once()
+	// Spinner used for messaging but not the cause of failure now
+	mockContext.EXPECT().Spinner(mock.MatchedBy(func(msg string) bool { return strings.Contains(msg, "Building") }), mock.Anything).Return(nil).Maybe()
 	mockContext.EXPECT().Error("build error").Once()
 
 	assert.Nil(t, cmd.Handle(mockContext))

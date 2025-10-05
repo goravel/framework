@@ -260,12 +260,14 @@ type uploadOptions struct {
 }
 
 type DeployCommand struct {
-	config config.Config
+	config  config.Config
+	artisan console.Artisan
 }
 
-func NewDeployCommand(config config.Config) *DeployCommand {
+func NewDeployCommand(config config.Config, artisan console.Artisan) *DeployCommand {
 	return &DeployCommand{
-		config: config,
+		config:  config,
+		artisan: artisan,
 	}
 }
 
@@ -330,12 +332,12 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 	// continue normal deploy flow
 	var err error
 
-	// Step 1: build the application by invoking the build command directly
-	buildCmd := fmt.Sprintf("go run . artisan build --os %s --arch %s --name %s", opts.targetOS, opts.arch, opts.appName)
+	// Step 1: build the application by invoking the build command via Artisan (no shell exec)
+	buildCmd := fmt.Sprintf("build --os %s --arch %s --name %s", opts.targetOS, opts.arch, opts.appName)
 	if opts.staticEnv {
 		buildCmd += " --static"
 	}
-	if err = supportconsole.ExecuteCommand(ctx, makeLocalCommand(buildCmd), "Building..."); err != nil {
+	if err = r.artisan.Call(buildCmd); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
@@ -348,8 +350,7 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 	if upload.hasProdEnv {
 		lower := strings.ToLower(strings.TrimSpace(opts.prodEnvFilePath))
 		if strings.HasSuffix(lower, ".encrypted") || strings.HasSuffix(lower, ".safe") {
-			decryptCmd := fmt.Sprintf("go run . artisan env:decrypt --name %q", opts.prodEnvFilePath)
-			if err = supportconsole.ExecuteCommand(ctx, makeLocalCommand(decryptCmd), "Decrypting environment file..."); err != nil {
+			if err = r.artisan.Call(fmt.Sprintf("env:decrypt --name %q", opts.prodEnvFilePath)); err != nil {
 				ctx.Error(err.Error())
 				return nil
 			}
