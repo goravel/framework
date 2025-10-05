@@ -350,7 +350,7 @@ func Test_isServerAlreadySetup_WindowsShellWrapper(t *testing.T) {
 		t.Skip("Windows-only test")
 	}
 	// We can't reliably assert remote state; just ensure command created uses cmd wrapper
-	_ = isServerAlreadySetup("myapp", "203.0.113.10", "22", "ubuntu", "~/.ssh/id")
+	_ = isServerAlreadySetup(deployOptions{appName: "myapp", sshIp: "203.0.113.10", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id"})
 }
 
 func Test_validLocalHost_ErrorAggregation_Windows(t *testing.T) {

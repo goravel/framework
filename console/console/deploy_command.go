@@ -364,7 +364,7 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 
 	// Step 3: set up server on first run —- skip if already set up unless --force-setup is used
 	forceSetup := ctx.OptionBool("force-setup")
-	setupNeeded := forceSetup || !isServerAlreadySetup(opts.appName, opts.sshIp, opts.sshPort, opts.sshUser, opts.sshKeyPath)
+	setupNeeded := forceSetup || !isServerAlreadySetup(opts)
 	if setupNeeded {
 		if err = supportconsole.ExecuteCommand(ctx, setupServerCommand(opts), "Setting up server (first time only)..."); err != nil {
 			ctx.Error(err.Error())
@@ -782,8 +782,8 @@ sudo systemctl restart "$SERVICE" || sudo systemctl start "$SERVICE"
 }
 
 // isServerAlreadySetup checks if the systemd unit already exists on remote host
-func isServerAlreadySetup(appName, sshIp, sshPort, sshUser, keyPath string) bool {
-	checkCmd := fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'test -f /etc/systemd/system/%s.service'", keyPath, sshPort, sshUser, sshIp, appName)
+func isServerAlreadySetup(opts deployOptions) bool {
+	checkCmd := fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'test -f /etc/systemd/system/%s.service'", opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.sshIp, opts.appName)
 	cmd := makeLocalCommand(checkCmd)
 	if err := cmd.Run(); err != nil {
 		return false
