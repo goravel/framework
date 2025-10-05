@@ -257,6 +257,42 @@ func Test_getWhichFilesToUpload_and_onlyFilter(t *testing.T) {
 	assert.False(t, up.hasResources)
 }
 
+func Test_getUploadOptions_MissingMainOrEnv(t *testing.T) {
+	// Prepare isolated workspace with no artifacts
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	dir := t.TempDir()
+	require.NoError(t, os.Chdir(dir))
+	t.Cleanup(func() { _ = os.Chdir(wd) })
+
+	// Case 1: No artifacts present
+	mockContext := mocksconsole.NewContext(t)
+	mockContext.EXPECT().Option("only").Return("").Once()
+	up := getUploadOptions(mockContext, "myapp", ".env.production")
+	assert.False(t, up.hasMain)
+	assert.False(t, up.hasProdEnv)
+	assert.False(t, up.hasPublic)
+	assert.False(t, up.hasStorage)
+	assert.False(t, up.hasResources)
+
+	// Case 2: Only main present
+	require.NoError(t, os.WriteFile("myapp", []byte("bin"), 0o755))
+	mockContext2 := mocksconsole.NewContext(t)
+	mockContext2.EXPECT().Option("only").Return("").Once()
+	up = getUploadOptions(mockContext2, "myapp", ".env.production")
+	assert.True(t, up.hasMain)
+	assert.False(t, up.hasProdEnv)
+
+	// Case 3: Only env present
+	require.NoError(t, os.Remove("myapp"))
+	require.NoError(t, os.WriteFile(".env.production", []byte("APP_ENV=prod"), 0o644))
+	mockContext3 := mocksconsole.NewContext(t)
+	mockContext3.EXPECT().Option("only").Return("").Once()
+	up = getUploadOptions(mockContext3, "myapp", ".env.production")
+	assert.False(t, up.hasMain)
+	assert.True(t, up.hasProdEnv)
+}
+
 func Test_validLocalHost_ErrorAggregation_Unix(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("Unix-only test")
