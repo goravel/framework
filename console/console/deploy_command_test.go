@@ -270,9 +270,11 @@ func Test_validLocalHost_ErrorAggregation_Unix(t *testing.T) {
 	// Expect a single aggregated error call
 	mockContext.EXPECT().Error(mock.MatchedBy(func(msg string) bool {
 		return strings.Contains(msg, "Environment validation errors:") &&
-			strings.Contains(msg, "scp is not installed") &&
-			strings.Contains(msg, "ssh is not installed") &&
-			strings.Contains(msg, "bash is not installed")
+			strings.Contains(msg, "the following binaries were not found on your path:") &&
+			strings.Contains(msg, "scp") &&
+			strings.Contains(msg, "ssh") &&
+			strings.Contains(msg, "bash") &&
+			strings.Contains(msg, "Please install them, add them to your path, and try again.")
 	})).Once()
 	ok := validLocalHost(mockContext)
 	assert.False(t, ok)
@@ -365,9 +367,11 @@ func Test_validLocalHost_ErrorAggregation_Windows(t *testing.T) {
 	mockContext := mocksconsole.NewContext(t)
 	mockContext.EXPECT().Error(mock.MatchedBy(func(msg string) bool {
 		return strings.Contains(msg, "Environment validation errors:") &&
-			strings.Contains(msg, "scp is not installed") &&
-			strings.Contains(msg, "ssh is not installed") &&
-			strings.Contains(msg, "cmd is not available")
+			strings.Contains(msg, "the following binaries were not found on your path:") &&
+			strings.Contains(msg, "scp") &&
+			strings.Contains(msg, "ssh") &&
+			strings.Contains(msg, "cmd") &&
+			strings.Contains(msg, "Please install them, add them to your path, and try again.")
 	})).Once()
 	ok := validLocalHost(mockContext)
 	assert.False(t, ok)

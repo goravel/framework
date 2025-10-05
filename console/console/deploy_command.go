@@ -519,29 +519,28 @@ func getUploadOptions(ctx console.Context, appName, prodEnvFilePath string) uplo
 
 // validLocalHost checks if the local host is valid, currently only support macos and linux. Also requires scp, ssh, and bash to be installed and in your path.
 func validLocalHost(ctx console.Context) bool {
-	var errs []string
 
+	missingBins := []string{}
 	if _, err := exec.LookPath("scp"); err != nil {
-		errs = append(errs, "scp is not installed. Please install it, add it to your path, and try again.")
+		missingBins = append(missingBins, "scp")
 	}
-
 	if _, err := exec.LookPath("ssh"); err != nil {
-		errs = append(errs, "ssh is not installed. Please install it, add it to your path, and try again.")
+		missingBins = append(missingBins, "ssh")
 	}
-
 	// Shell requirements depend on OS
 	if env.IsWindows() {
 		if _, err := exec.LookPath("cmd"); err != nil {
-			errs = append(errs, "cmd is not available. Please ensure Windows command processor is accessible and try again.")
+			missingBins = append(missingBins, "cmd")
 		}
 	} else {
 		if _, err := exec.LookPath("bash"); err != nil {
-			errs = append(errs, "bash is not installed. Please install it, add it to your path, and try again.")
+			missingBins = append(missingBins, "bash")
 		}
 	}
 
-	if len(errs) > 0 {
-		ctx.Error("Environment validation errors:\n - " + strings.Join(errs, "\n - "))
+	if len(missingBins) > 0 {
+		msg := fmt.Sprintf("Environment validation errors:\n - the following binaries were not found on your path: %s\n - Please install them, add them to your path, and try again.", strings.Join(missingBins, ", "))
+		ctx.Error(msg)
 		return false
 	}
 
