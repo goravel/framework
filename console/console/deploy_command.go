@@ -521,10 +521,6 @@ func getUploadOptions(ctx console.Context, appName, prodEnvFilePath string) uplo
 func validLocalHost(ctx console.Context) bool {
 	var errs []string
 
-	if !env.IsDarwin() && !env.IsLinux() && !env.IsWindows() {
-		errs = append(errs, "only macos, linux, and windows are supported. Please use a supported machine to deploy.")
-	}
-
 	if _, err := exec.LookPath("scp"); err != nil {
 		errs = append(errs, "scp is not installed. Please install it, add it to your path, and try again.")
 	}
