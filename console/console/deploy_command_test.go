@@ -480,9 +480,10 @@ func Test_Handle_Deploy_Success(t *testing.T) {
 	// Expect artisan build call
 	mockArtisan.EXPECT().Call("build --os linux --arch amd64 --name myapp").Return(nil).Once()
 
-	// Force all Spinner-wrapped commands (build/upload/restart/setup) to return immediately
-	mockContext.EXPECT().Spinner(mock.Anything, mock.Anything).Return(nil).Maybe()
-	mockContext.EXPECT().Info("Server already set up. Skipping setup.").Maybe()
+	// Spinner-wrapped commands (explicit messages)
+	mockContext.EXPECT().Spinner("Setting up server (first time only)...", mock.Anything).Return(nil).Once()
+	mockContext.EXPECT().Spinner("Uploading files...", mock.Anything).Return(nil).Once()
+	mockContext.EXPECT().Spinner("Restarting service...", mock.Anything).Return(nil).Once()
 	mockContext.EXPECT().Info("Deploy successful.").Once()
 
 	assert.Nil(t, cmd.Handle(mockContext))
@@ -513,8 +514,10 @@ func Test_Handle_Deploy_FailureOnBuild(t *testing.T) {
 	mockContext.EXPECT().OptionBool("rollback").Return(false).Once()
 	// Build fails via artisan
 	mockArtisan.EXPECT().Call("build --os linux --arch amd64 --name myapp").Return(fmt.Errorf("build error")).Once()
-	// Spinner used for messaging but not the cause of failure now
-	mockContext.EXPECT().Spinner(mock.MatchedBy(func(msg string) bool { return strings.Contains(msg, "Building") }), mock.Anything).Return(nil).Maybe()
+	// Spinner messages that may appear later if build passed (not expected here)
+	mockContext.EXPECT().Spinner("Setting up server (first time only)...", mock.Anything).Return(nil).Maybe()
+	mockContext.EXPECT().Spinner("Uploading files...", mock.Anything).Return(nil).Maybe()
+	mockContext.EXPECT().Spinner("Restarting service...", mock.Anything).Return(nil).Maybe()
 	mockContext.EXPECT().Error("build error").Once()
 
 	assert.Nil(t, cmd.Handle(mockContext))
