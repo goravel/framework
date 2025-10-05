@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
@@ -588,7 +589,8 @@ func Test_getDeployOptions_Success(t *testing.T) {
 	assert.Equal(t, "ubuntu", opts.sshUser)
 	// ssh key path should expand '~' to the home directory
 	home, _ := os.UserHomeDir()
-	assert.Equal(t, home+"/.ssh/id", opts.sshKeyPath)
+	expectedKey := filepath.Join(home, ".ssh", "id")
+	assert.Equal(t, filepath.Clean(expectedKey), filepath.Clean(opts.sshKeyPath))
 	assert.Equal(t, "linux", opts.targetOS)
 	assert.Equal(t, "amd64", opts.arch)
 	assert.Equal(t, ".env.production", opts.prodEnvFilePath)
