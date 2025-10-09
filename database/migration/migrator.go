@@ -19,18 +19,16 @@ import (
 )
 
 type Migrator struct {
-	artisan console.Artisan
-	creator *Creator
-	//modelMapper *ModelMapper
+	artisan    console.Artisan
+	creator    *Creator
 	repository contractsmigration.Repository
 	schema     contractsschema.Schema
 }
 
 func NewMigrator(artisan console.Artisan, schema contractsschema.Schema, table string) *Migrator {
 	return &Migrator{
-		artisan: artisan,
-		creator: NewCreator(),
-		//modelMapper: NewModelMapper(),
+		artisan:    artisan,
+		creator:    NewCreator(),
 		repository: NewRepository(schema, table),
 		schema:     schema,
 	}
@@ -42,7 +40,7 @@ func (r *Migrator) Create(name string, modelName string) (string, error) {
 	var schemaFields []string
 	if modelName != "" {
 		if model := r.schema.GetModel(modelName); model.IsValid() {
-			//table, schemaFields, _ = r.modelMapper.MapModelToSchema(model.Type)
+			table, schemaFields, _ = Generate(model.Type)
 		}
 	}
 

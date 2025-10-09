@@ -153,12 +153,13 @@ func parseFields(t reflect.Type, depth int, basePath []int) []FieldMetadata {
 		indexPath := append(append([]int(nil), basePath...), i)
 
 		meta := FieldMetadata{
-			Name:      f.Name,
-			Type:      f.Type.String(),
-			Kind:      f.Type.Kind(),
-			Anonymous: f.Anonymous,
-			Tag:       NewTagMetadata(f.Tag),
-			IndexPath: indexPath,
+			Name:        f.Name,
+			Type:        f.Type.String(),
+			Kind:        f.Type.Kind(),
+			ReflectType: f.Type,
+			Anonymous:   f.Anonymous,
+			Tag:         NewTagMetadata(f.Tag),
+			IndexPath:   indexPath,
 		}
 		fields = append(fields, meta)
 

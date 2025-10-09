@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"reflect"
 	"slices"
 	"strings"
 
@@ -517,12 +518,30 @@ func (r *Schema) extendModels(models []contractsschema.Model) {
 	}
 
 	for _, model := range models {
+		if model.Name == "" && model.Type != nil {
+			model.Name = extractModelName(model.Type)
+		}
+
 		if !slices.ContainsFunc(r.models, func(m contractsschema.Model) bool {
 			return m.Name == model.Name
 		}) {
 			r.models = append(r.models, model)
 		}
 	}
+}
+
+func extractModelName(model any) string {
+	if model == nil {
+		return ""
+	}
+
+	t := reflect.TypeOf(model)
+
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+
+	return t.Name()
 }
 
 func defaultGoTypes() []contractsschema.GoType {

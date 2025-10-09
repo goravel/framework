@@ -6,12 +6,13 @@ import (
 )
 
 type FieldMetadata struct {
-	Name      string
-	Type      string
-	Kind      reflect.Kind
-	Anonymous bool
-	Tag       *TagMetadata
-	IndexPath []int
+	Name        string
+	Type        string
+	Kind        reflect.Kind
+	ReflectType reflect.Type
+	Anonymous   bool
+	Tag         *TagMetadata
+	IndexPath   []int
 }
 
 type MethodMetadata struct {
