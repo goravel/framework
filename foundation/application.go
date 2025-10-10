@@ -79,6 +79,8 @@ func (r *Application) Boot() {
 		console.NewPackageInstallCommand(binding.Bindings, r.Bindings()),
 		console.NewPackageUninstallCommand(r, binding.Bindings, r.Bindings()),
 		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
+		console.NewUpCommand(r),
+		console.NewDownCommand(r),
 	})
 	r.bootArtisan()
 }
