@@ -42,6 +42,8 @@ type Application interface {
 	Boot()
 	// Commands register the given commands with the console application.
 	Commands([]console.Command)
+	// Context gets the application context.
+	Context() context.Context
 	// GetJson get the JSON implementation.
 	GetJson() Json
 	// IsLocale get the current application locale.
@@ -50,6 +52,8 @@ type Application interface {
 	Publishes(packageName string, paths map[string]string, groups ...string)
 	// Refresh all modules after changing config, will call the Boot method simultaneously.
 	Refresh()
+	// Run runs modules.
+	Run()
 	// SetJson set the JSON implementation.
 	SetJson(json Json)
 	// SetLocale set the current application locale.

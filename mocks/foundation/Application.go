@@ -2468,6 +2468,38 @@ func (_c *Application_ResourcePath_Call) RunAndReturn(run func(...string) string
 	return _c
 }
 
+// Run provides a mock function with no fields
+func (_m *Application) Run() {
+	_m.Called()
+}
+
+// Application_Run_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Run'
+type Application_Run_Call struct {
+	*mock.Call
+}
+
+// Run is a helper method to define mock.On call
+func (_e *Application_Expecter) Run() *Application_Run_Call {
+	return &Application_Run_Call{Call: _e.mock.On("Run")}
+}
+
+func (_c *Application_Run_Call) Run(run func()) *Application_Run_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Application_Run_Call) Return() *Application_Run_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Application_Run_Call) RunAndReturn(run func()) *Application_Run_Call {
+	_c.Run(run)
+	return _c
+}
+
 // SetJson provides a mock function with given fields: json
 func (_m *Application) SetJson(json foundation.Json) {
 	_m.Called(json)

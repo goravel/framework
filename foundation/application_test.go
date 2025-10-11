@@ -3,7 +3,9 @@ package foundation
 import (
 	"os"
 	"path/filepath"
+	"syscall"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -11,8 +13,12 @@ import (
 	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/foundation"
 	mocksconfig "github.com/goravel/framework/mocks/config"
+	mocksgrpc "github.com/goravel/framework/mocks/grpc"
+	mockslog "github.com/goravel/framework/mocks/log"
+	mocksqueue "github.com/goravel/framework/mocks/queue"
+	mocksroute "github.com/goravel/framework/mocks/route"
+	mocksschedule "github.com/goravel/framework/mocks/schedule"
 	"github.com/goravel/framework/support"
-	"github.com/goravel/framework/support/file"
 )
 
 type ApplicationTestSuite struct {
@@ -21,11 +27,7 @@ type ApplicationTestSuite struct {
 }
 
 func TestApplicationTestSuite(t *testing.T) {
-	assert.Nil(t, file.PutContent(support.EnvFilePath, "APP_KEY=12345678901234567890123456789012"))
-
 	suite.Run(t, new(ApplicationTestSuite))
-
-	assert.Nil(t, file.Remove(support.EnvFilePath))
 }
 
 func (s *ApplicationTestSuite) SetupTest() {
@@ -86,6 +88,50 @@ func (s *ApplicationTestSuite) TestExecutablePath() {
 	s.Equal(filepath.Join(path, "test"), executable2)
 	executable3 := s.app.ExecutablePath("test", "test2/test3")
 	s.Equal(filepath.Join(path, "test", "test2/test3"), executable3)
+}
+
+func (s *ApplicationTestSuite) TestRun() {
+	mockRoute := mocksroute.NewRoute(s.T())
+	mockRoute.EXPECT().Run().Return(nil).Once()
+	mockRoute.EXPECT().Shutdown().Return(nil).Once()
+	s.app.Singleton(binding.Route, func(app foundation.Application) (any, error) {
+		return mockRoute, nil
+	})
+
+	mockGrpc := mocksgrpc.NewGrpc(s.T())
+	mockGrpc.EXPECT().Run().Return(nil).Once()
+	mockGrpc.EXPECT().Shutdown().Return(nil).Once()
+	s.app.Singleton(binding.Grpc, func(app foundation.Application) (any, error) {
+		return mockGrpc, nil
+	})
+
+	mockQueue := mocksqueue.NewQueue(s.T())
+	mockWorker := mocksqueue.NewWorker(s.T())
+	mockQueue.EXPECT().Worker().Return(mockWorker).Twice()
+	mockWorker.EXPECT().Run().Return(nil).Once()
+	mockWorker.EXPECT().Shutdown().Return(nil).Once()
+	s.app.Singleton(binding.Queue, func(app foundation.Application) (any, error) {
+		return mockQueue, nil
+	})
+
+	mockSchedule := mocksschedule.NewSchedule(s.T())
+	mockSchedule.EXPECT().Run().Once()
+	mockSchedule.EXPECT().Shutdown().Return(nil).Once()
+	s.app.Singleton(binding.Schedule, func(app foundation.Application) (any, error) {
+		return mockSchedule, nil
+	})
+
+	mockLog := mockslog.NewLog(s.T())
+	s.app.Singleton(binding.Log, func(app foundation.Application) (any, error) {
+		return mockLog, nil
+	})
+
+	s.app.Run()
+	time.Sleep(100 * time.Millisecond) // Wait for goroutines to start
+
+	s.app.quit <- syscall.SIGINT
+
+	time.Sleep(100 * time.Millisecond) // Wait for goroutines to end
 }
 
 func (s *ApplicationTestSuite) TestPublishes() {
