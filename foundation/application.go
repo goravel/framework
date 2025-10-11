@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"maps"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"slices"
 	"sort"
 	"strings"
+	"syscall"
 
 	"github.com/goravel/framework/config"
 	frameworkconsole "github.com/goravel/framework/console"
@@ -36,8 +38,15 @@ func init() {
 	setEnv()
 	setRootPath()
 
+	ctx, cancel := context.WithCancel(context.Background())
+
 	app := &Application{
-		Container:     NewContainer(),
+		Container: NewContainer(),
+
+		ctx:    ctx,
+		cancel: cancel,
+		quit:   make(chan os.Signal, 1),
+
 		publishes:     make(map[string]map[string]string),
 		publishGroups: make(map[string]map[string]string),
 	}
@@ -50,6 +59,11 @@ func init() {
 
 type Application struct {
 	*Container
+
+	ctx    context.Context
+	cancel context.CancelFunc
+	quit   chan os.Signal
+
 	configuredServiceProviders []foundation.ServiceProvider
 	publishes                  map[string]map[string]string
 	publishGroups              map[string]map[string]string
@@ -59,6 +73,10 @@ type Application struct {
 
 func NewApplication() foundation.Application {
 	return App
+}
+
+func (r *Application) About(section string, items []foundation.AboutItem) {
+	console.AddAboutInformation(section, items...)
 }
 
 func (r *Application) Boot() {
@@ -87,8 +105,118 @@ func (r *Application) Commands(commands []contractsconsole.Command) {
 	r.registerCommands(commands)
 }
 
-func (r *Application) Path(path ...string) string {
-	return internals.Path(path...)
+func (r *Application) Context() context.Context {
+	return r.ctx
+}
+
+func (r *Application) GetJson() foundation.Json {
+	return r.json
+}
+
+func (r *Application) IsLocale(ctx context.Context, locale string) bool {
+	return r.CurrentLocale(ctx) == locale
+}
+
+func (r *Application) Publishes(packageName string, paths map[string]string, groups ...string) {
+	if _, exist := r.publishes[packageName]; !exist {
+		r.publishes[packageName] = make(map[string]string)
+	}
+	maps.Copy(r.publishes[packageName], paths)
+	for _, group := range groups {
+		r.addPublishGroup(group, paths)
+	}
+}
+
+func (r *Application) Refresh() {
+	r.Fresh()
+	r.Boot()
+}
+
+func (r *Application) Run() {
+	signal.Notify(r.quit, syscall.SIGINT, syscall.SIGTERM)
+
+	log := r.MakeLog()
+	route := r.MakeRoute()
+	grpc := r.MakeGrpc()
+	queue := r.MakeQueue()
+	schedule := r.MakeSchedule()
+
+	go func() {
+		<-r.quit
+		r.cancel()
+	}()
+
+	go func() {
+		if route != nil {
+			if err := route.Run(); err != nil {
+				log.Errorf("Route Run error: %v", err)
+			}
+		}
+
+		if grpc != nil {
+			if err := grpc.Run(); err != nil {
+				log.Errorf("Grpc Run error: %v", err)
+			}
+		}
+
+		if queue != nil {
+			if err := queue.Worker().Run(); err != nil {
+				log.Errorf("Queue run error: %v", err)
+			}
+		}
+
+		if schedule != nil {
+			go schedule.Run()
+		}
+	}()
+
+	go func() {
+		<-r.ctx.Done()
+
+		if route != nil {
+			if err := route.Shutdown(); err != nil {
+				log.Errorf("Route Shutdown error: %v", err)
+			}
+		}
+
+		if grpc != nil {
+			if err := grpc.Shutdown(); err != nil {
+				log.Errorf("Grpc Shutdown error: %v", err)
+			}
+		}
+
+		if queue != nil {
+			if err := queue.Worker().Shutdown(); err != nil {
+				log.Errorf("Queue Shutdown error: %v", err)
+			}
+		}
+
+		if schedule != nil {
+			if err := schedule.Shutdown(); err != nil {
+				log.Errorf("Schedule Shutdown error: %v", err)
+			}
+		}
+	}()
+}
+
+func (r *Application) SetJson(j foundation.Json) {
+	if j != nil {
+		r.json = j
+	}
+}
+
+func (r *Application) SetLocale(ctx context.Context, locale string) context.Context {
+	lang := r.MakeLang(ctx)
+	if lang == nil {
+		color.Errorln("Lang facade not initialized.")
+		return ctx
+	}
+
+	return lang.SetLocale(locale)
+}
+
+func (r *Application) Version() string {
+	return support.Version
 }
 
 func (r *Application) BasePath(path ...string) string {
@@ -105,6 +233,16 @@ func (r *Application) DatabasePath(path ...string) string {
 	return r.absPath(path...)
 }
 
+func (r *Application) CurrentLocale(ctx context.Context) string {
+	lang := r.MakeLang(ctx)
+	if lang == nil {
+		color.Errorln("Lang facade not initialized.")
+		return ""
+	}
+
+	return lang.CurrentLocale()
+}
+
 func (r *Application) ExecutablePath(path ...string) string {
 	path = append([]string{support.RootPath}, path...)
 	return r.absPath(path...)
@@ -112,21 +250,6 @@ func (r *Application) ExecutablePath(path ...string) string {
 
 func (r *Application) FacadesPath(path ...string) string {
 	return internals.FacadesPath(path...)
-}
-
-func (r *Application) StoragePath(path ...string) string {
-	path = append([]string{support.RelativePath, "storage"}, path...)
-	return r.absPath(path...)
-}
-
-func (r *Application) Refresh() {
-	r.Fresh()
-	r.Boot()
-}
-
-func (r *Application) ResourcePath(path ...string) string {
-	path = append([]string{support.RelativePath, "resources"}, path...)
-	return r.absPath(path...)
 }
 
 func (r *Application) LangPath(path ...string) string {
@@ -139,61 +262,23 @@ func (r *Application) LangPath(path ...string) string {
 	return r.absPath(path...)
 }
 
+func (r *Application) Path(path ...string) string {
+	return internals.Path(path...)
+}
+
 func (r *Application) PublicPath(path ...string) string {
 	path = append([]string{support.RelativePath, "public"}, path...)
 	return r.absPath(path...)
 }
 
-func (r *Application) Publishes(packageName string, paths map[string]string, groups ...string) {
-	if _, exist := r.publishes[packageName]; !exist {
-		r.publishes[packageName] = make(map[string]string)
-	}
-	maps.Copy(r.publishes[packageName], paths)
-	for _, group := range groups {
-		r.addPublishGroup(group, paths)
-	}
+func (r *Application) ResourcePath(path ...string) string {
+	path = append([]string{support.RelativePath, "resources"}, path...)
+	return r.absPath(path...)
 }
 
-func (r *Application) Version() string {
-	return support.Version
-}
-
-func (r *Application) CurrentLocale(ctx context.Context) string {
-	lang := r.MakeLang(ctx)
-	if lang == nil {
-		color.Errorln("Lang facade not initialized.")
-		return ""
-	}
-
-	return lang.CurrentLocale()
-}
-
-func (r *Application) SetLocale(ctx context.Context, locale string) context.Context {
-	lang := r.MakeLang(ctx)
-	if lang == nil {
-		color.Errorln("Lang facade not initialized.")
-		return ctx
-	}
-
-	return lang.SetLocale(locale)
-}
-
-func (r *Application) SetJson(j foundation.Json) {
-	if j != nil {
-		r.json = j
-	}
-}
-
-func (r *Application) GetJson() foundation.Json {
-	return r.json
-}
-
-func (r *Application) About(section string, items []foundation.AboutItem) {
-	console.AddAboutInformation(section, items...)
-}
-
-func (r *Application) IsLocale(ctx context.Context, locale string) bool {
-	return r.CurrentLocale(ctx) == locale
+func (r *Application) StoragePath(path ...string) string {
+	path = append([]string{support.RelativePath, "storage"}, path...)
+	return r.absPath(path...)
 }
 
 func (r *Application) absPath(paths ...string) string {
