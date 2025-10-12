@@ -404,6 +404,53 @@ func (_c *Application_ConfigPath_Call) RunAndReturn(run func(...string) string) 
 	return _c
 }
 
+// Context provides a mock function with no fields
+func (_m *Application) Context() context.Context {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Context")
+	}
+
+	var r0 context.Context
+	if rf, ok := ret.Get(0).(func() context.Context); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(context.Context)
+		}
+	}
+
+	return r0
+}
+
+// Application_Context_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Context'
+type Application_Context_Call struct {
+	*mock.Call
+}
+
+// Context is a helper method to define mock.On call
+func (_e *Application_Expecter) Context() *Application_Context_Call {
+	return &Application_Context_Call{Call: _e.mock.On("Context")}
+}
+
+func (_c *Application_Context_Call) Run(run func()) *Application_Context_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Application_Context_Call) Return(_a0 context.Context) *Application_Context_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Application_Context_Call) RunAndReturn(run func() context.Context) *Application_Context_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CurrentLocale provides a mock function with given fields: ctx
 func (_m *Application) CurrentLocale(ctx context.Context) string {
 	ret := _m.Called(ctx)
@@ -2468,9 +2515,15 @@ func (_c *Application_ResourcePath_Call) RunAndReturn(run func(...string) string
 	return _c
 }
 
-// Run provides a mock function with no fields
-func (_m *Application) Run() {
-	_m.Called()
+// Run provides a mock function with given fields: modules
+func (_m *Application) Run(modules ...foundation.Module) {
+	_va := make([]interface{}, len(modules))
+	for _i := range modules {
+		_va[_i] = modules[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	_m.Called(_ca...)
 }
 
 // Application_Run_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Run'
@@ -2479,13 +2532,21 @@ type Application_Run_Call struct {
 }
 
 // Run is a helper method to define mock.On call
-func (_e *Application_Expecter) Run() *Application_Run_Call {
-	return &Application_Run_Call{Call: _e.mock.On("Run")}
+//   - modules ...foundation.Module
+func (_e *Application_Expecter) Run(modules ...interface{}) *Application_Run_Call {
+	return &Application_Run_Call{Call: _e.mock.On("Run",
+		append([]interface{}{}, modules...)...)}
 }
 
-func (_c *Application_Run_Call) Run(run func()) *Application_Run_Call {
+func (_c *Application_Run_Call) Run(run func(modules ...foundation.Module)) *Application_Run_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		variadicArgs := make([]foundation.Module, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(foundation.Module)
+			}
+		}
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -2495,7 +2556,7 @@ func (_c *Application_Run_Call) Return() *Application_Run_Call {
 	return _c
 }
 
-func (_c *Application_Run_Call) RunAndReturn(run func()) *Application_Run_Call {
+func (_c *Application_Run_Call) RunAndReturn(run func(...foundation.Module)) *Application_Run_Call {
 	_c.Run(run)
 	return _c
 }

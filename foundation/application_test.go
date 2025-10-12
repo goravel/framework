@@ -1,6 +1,7 @@
 package foundation
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"syscall"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/contracts/schedule"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksgrpc "github.com/goravel/framework/mocks/grpc"
 	mockslog "github.com/goravel/framework/mocks/log"
@@ -31,8 +33,15 @@ func TestApplicationTestSuite(t *testing.T) {
 }
 
 func (s *ApplicationTestSuite) SetupTest() {
+	ctx, cancel := context.WithCancel(context.Background())
+
 	s.app = &Application{
-		Container:     NewContainer(),
+		Container: NewContainer(),
+
+		ctx:    ctx,
+		cancel: cancel,
+		quit:   make(chan os.Signal, 1),
+
 		publishes:     make(map[string]map[string]string),
 		publishGroups: make(map[string]map[string]string),
 	}
@@ -91,6 +100,15 @@ func (s *ApplicationTestSuite) TestExecutablePath() {
 }
 
 func (s *ApplicationTestSuite) TestRun() {
+	mockConfig := mocksconfig.NewConfig(s.T())
+	mockConfig.EXPECT().GetString("http.default").Return("gin").Once()
+	mockConfig.EXPECT().GetString("grpc.host").Return("127.0.0.1").Once()
+	mockConfig.EXPECT().GetString("queue.default").Return("sync").Once()
+
+	s.app.Singleton(binding.Config, func(app foundation.Application) (any, error) {
+		return mockConfig, nil
+	})
+
 	mockRoute := mocksroute.NewRoute(s.T())
 	mockRoute.EXPECT().Run().Return(nil).Once()
 	mockRoute.EXPECT().Shutdown().Return(nil).Once()
@@ -115,6 +133,8 @@ func (s *ApplicationTestSuite) TestRun() {
 	})
 
 	mockSchedule := mocksschedule.NewSchedule(s.T())
+	mockEvent := mocksschedule.NewEvent(s.T())
+	mockSchedule.EXPECT().Events().Return([]schedule.Event{mockEvent}).Once()
 	mockSchedule.EXPECT().Run().Once()
 	mockSchedule.EXPECT().Shutdown().Return(nil).Once()
 	s.app.Singleton(binding.Schedule, func(app foundation.Application) (any, error) {
