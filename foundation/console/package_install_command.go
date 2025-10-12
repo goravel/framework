@@ -12,6 +12,7 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/support/collect"
+	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/convert"
 )
@@ -65,8 +66,13 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 		} else {
 			var options []console.Choice
 			for _, facade := range getAvailableFacades(r.bindings) {
+				key := facade
+				description := getFacadeDescription(facade, r.bindings)
+				if description != "" {
+					key = fmt.Sprintf("%-11s", facade) + color.Gray().Sprintf(" - %s", description)
+				}
 				options = append(options, console.Choice{
-					Key:   facade,
+					Key:   key,
 					Value: facade,
 				})
 			}
@@ -191,9 +197,14 @@ func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string
 
 	var options []console.Choice
 	for _, driver := range bindingInfo.Drivers {
+		key := driver.Name
+		if driver.Description != "" {
+			key += color.Gray().Sprintf(" - %s", driver.Description)
+		}
+
 		options = append(options, console.Choice{
-			Key:   driver,
-			Value: driver,
+			Key:   key,
+			Value: driver.Package,
 		})
 	}
 
@@ -265,6 +276,15 @@ func getDependencyBindings(binding string, bindings map[string]binding.Info) []s
 	}
 
 	return collect.Unique(deps)
+}
+
+func getFacadeDescription(facade string, bindings map[string]binding.Info) string {
+	binding := convert.FacadeToBinding(facade)
+	if info, exists := bindings[binding]; exists {
+		return info.Description
+	}
+
+	return ""
 }
 
 func isPackage(pkg string) bool {
