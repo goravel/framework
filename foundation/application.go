@@ -45,15 +45,11 @@ func init() {
 	setEnv()
 	setRootPath()
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, _ := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 
 	app := &Application{
-		Container: NewContainer(),
-
-		ctx:    ctx,
-		cancel: cancel,
-		quit:   make(chan os.Signal, 1),
-
+		Container:     NewContainer(),
+		ctx:           ctx,
 		publishes:     make(map[string]map[string]string),
 		publishGroups: make(map[string]map[string]string),
 	}
@@ -66,11 +62,7 @@ func init() {
 
 type Application struct {
 	*Container
-
-	ctx    context.Context
-	cancel context.CancelFunc
-	quit   chan os.Signal
-
+	ctx                        context.Context
 	configuredServiceProviders []foundation.ServiceProvider
 	publishes                  map[string]map[string]string
 	publishGroups              map[string]map[string]string
@@ -140,13 +132,6 @@ func (r *Application) Refresh() {
 }
 
 func (r *Application) Run(modules ...foundation.Module) {
-	signal.Notify(r.quit, syscall.SIGINT, syscall.SIGTERM)
-
-	go func() {
-		<-r.quit
-		r.cancel()
-	}()
-
 	if len(modules) == 0 {
 		config := r.MakeConfig()
 		if config.GetString("http.default") != "" {

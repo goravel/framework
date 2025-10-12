@@ -3,6 +3,7 @@ package foundation
 import (
 	"context"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"syscall"
 	"testing"
@@ -25,7 +26,8 @@ import (
 
 type ApplicationTestSuite struct {
 	suite.Suite
-	app *Application
+	app    *Application
+	cancel context.CancelFunc
 }
 
 func TestApplicationTestSuite(t *testing.T) {
@@ -33,18 +35,16 @@ func TestApplicationTestSuite(t *testing.T) {
 }
 
 func (s *ApplicationTestSuite) SetupTest() {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 
 	s.app = &Application{
-		Container: NewContainer(),
-
-		ctx:    ctx,
-		cancel: cancel,
-		quit:   make(chan os.Signal, 1),
-
+		Container:     NewContainer(),
+		ctx:           ctx,
 		publishes:     make(map[string]map[string]string),
 		publishGroups: make(map[string]map[string]string),
 	}
+	s.cancel = cancel
+
 	App = s.app
 }
 
@@ -149,7 +149,7 @@ func (s *ApplicationTestSuite) TestRun() {
 	s.app.Run()
 	time.Sleep(100 * time.Millisecond) // Wait for goroutines to start
 
-	s.app.quit <- syscall.SIGINT
+	s.cancel()
 
 	time.Sleep(100 * time.Millisecond) // Wait for goroutines to end
 }
