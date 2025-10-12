@@ -7,6 +7,7 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -35,7 +36,7 @@ func (r *PackageMakeCommand) Extend() command.Extend {
 				Name:    "root",
 				Aliases: []string{"r"},
 				Usage:   "The root path of package, default: packages",
-				Value:   "packages",
+				Value:   support.Config.Paths.Package,
 			},
 		},
 	}

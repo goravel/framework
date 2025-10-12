@@ -1,11 +1,11 @@
 package console
 
 import (
-	"path/filepath"
 	"strings"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 )
@@ -43,7 +43,7 @@ func (r *MailMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *MailMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "mail", ctx.Argument(0), filepath.Join("app", "mails"))
+	m, err := supportconsole.NewMake(ctx, "mail", ctx.Argument(0), support.Config.Paths.Mail)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
