@@ -35,11 +35,12 @@ func init() {
 	setEnv()
 	setRootPath()
 
-	ctx, _ := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 
 	app := &Application{
 		Container:     NewContainer(),
 		ctx:           ctx,
+		cancel:        cancel,
 		publishes:     make(map[string]map[string]string),
 		publishGroups: make(map[string]map[string]string),
 	}
@@ -53,6 +54,7 @@ func init() {
 type Application struct {
 	*Container
 	ctx                        context.Context
+	cancel                     context.CancelFunc
 	configuredServiceProviders []foundation.ServiceProvider
 	publishes                  map[string]map[string]string
 	publishGroups              map[string]map[string]string
@@ -178,6 +180,10 @@ func (r *Application) SetLocale(ctx context.Context, locale string) context.Cont
 	}
 
 	return lang.SetLocale(locale)
+}
+
+func (r *Application) Shutdown() {
+	r.cancel()
 }
 
 func (r *Application) Version() string {

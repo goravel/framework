@@ -2643,6 +2643,38 @@ func (_c *Application_SetLocale_Call) RunAndReturn(run func(context.Context, str
 	return _c
 }
 
+// Shutdown provides a mock function with no fields
+func (_m *Application) Shutdown() {
+	_m.Called()
+}
+
+// Application_Shutdown_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Shutdown'
+type Application_Shutdown_Call struct {
+	*mock.Call
+}
+
+// Shutdown is a helper method to define mock.On call
+func (_e *Application_Expecter) Shutdown() *Application_Shutdown_Call {
+	return &Application_Shutdown_Call{Call: _e.mock.On("Shutdown")}
+}
+
+func (_c *Application_Shutdown_Call) Run(run func()) *Application_Shutdown_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Application_Shutdown_Call) Return() *Application_Shutdown_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Application_Shutdown_Call) RunAndReturn(run func()) *Application_Shutdown_Call {
+	_c.Run(run)
+	return _c
+}
+
 // Singleton provides a mock function with given fields: key, callback
 func (_m *Application) Singleton(key interface{}, callback func(foundation.Application) (interface{}, error)) {
 	_m.Called(key, callback)
