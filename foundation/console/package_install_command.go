@@ -89,7 +89,7 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 			if choice == "third" {
 				var name string
 				name, err = r.inputThirdPackage(ctx)
-				if name != "" {
+				if err == nil && name != "" {
 					names = []string{name}
 				}
 			}
