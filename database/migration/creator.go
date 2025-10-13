@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/str"
 )
@@ -43,7 +44,7 @@ func (r *Creator) PopulateStub(stub, signature, table string) string {
 func (r *Creator) GetPath(name string) string {
 	pwd, _ := os.Getwd()
 
-	return filepath.Join(pwd, "database", "migrations", name+".go")
+	return filepath.Join(pwd, support.Config.Paths.Migration, name+".go")
 }
 
 // GetFileName Get the full path to the migration.

@@ -1,11 +1,11 @@
 package console
 
 import (
-	"path/filepath"
 	"strings"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
@@ -40,7 +40,7 @@ func (r *ListenerMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *ListenerMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "listener", ctx.Argument(0), filepath.Join("app", "listeners"))
+	m, err := supportconsole.NewMake(ctx, "listener", ctx.Argument(0), support.Config.Paths.Listener)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
