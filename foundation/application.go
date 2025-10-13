@@ -28,17 +28,7 @@ import (
 	"github.com/goravel/framework/support/path/internals"
 )
 
-const (
-	Route foundation.Module = iota
-	Grpc
-	Queue
-	Schedule
-)
-
-var (
-	App foundation.Application
-)
-
+var App foundation.Application
 var _ = flag.String("env", support.EnvFilePath, "custom .env path")
 
 func init() {
@@ -131,36 +121,46 @@ func (r *Application) Refresh() {
 	r.Boot()
 }
 
-func (r *Application) Run(modules ...foundation.Module) {
-	if len(modules) == 0 {
+func (r *Application) Run(runners ...foundation.Runner) {
+	if len(runners) == 0 {
 		config := r.MakeConfig()
-		if config.GetString("http.default") != "" {
-			modules = append(modules, Route)
-		}
-		if config.GetString("grpc.host") != "" {
-			modules = append(modules, Grpc)
-		}
-		if config.GetString("queue.default") != "" {
-			modules = append(modules, Queue)
-		}
-
+		route := r.MakeRoute()
+		grpc := r.MakeGrpc()
+		queue := r.MakeQueue()
 		schedule := r.MakeSchedule()
+
+		if route != nil && config.GetString("http.default") != "" {
+			runners = append(runners, NewRouteRunner(route))
+		}
+		if grpc != nil && config.GetString("grpc.host") != "" {
+			runners = append(runners, NewGrpcRunner(grpc))
+		}
+		if queue != nil && config.GetString("queue.default") != "" {
+			runners = append(runners, NewQueueRunner(queue))
+		}
 		if schedule != nil && len(schedule.Events()) > 0 {
-			modules = append(modules, Schedule)
+			runners = append(runners, NewScheduleRunner(schedule))
 		}
 	}
 
-	for _, module := range modules {
-		switch module {
-		case Route:
-			r.runRoute()
-		case Grpc:
-			r.runGrpc()
-		case Queue:
-			r.runQueue()
-		case Schedule:
-			r.runSchedule()
-		}
+	run := func(runner foundation.Runner) {
+		go func() {
+			if err := runner.Run(); err != nil {
+				color.Errorf("%s Run error: %v", runner.Name(), err)
+			}
+		}()
+
+		go func() {
+			<-r.ctx.Done()
+
+			if err := runner.Shutdown(); err != nil {
+				color.Errorf("%s Shutdown error: %v", runner.Name(), err)
+			}
+		}()
+	}
+
+	for _, runner := range runners {
+		run(runner)
 	}
 }
 
@@ -339,94 +339,6 @@ func (r *Application) registerCommands(commands []contractsconsole.Command) {
 	}
 
 	artisanFacade.Register(commands)
-}
-
-func (r *Application) runRoute() {
-	log := r.MakeLog()
-	route := r.MakeRoute()
-
-	if route == nil {
-		return
-	}
-
-	go func() {
-		if err := route.Run(); err != nil {
-			log.Errorf("Route Run error: %v", err)
-		}
-	}()
-
-	go func() {
-		<-r.ctx.Done()
-
-		if err := route.Shutdown(); err != nil {
-			log.Errorf("Route Shutdown error: %v", err)
-		}
-	}()
-}
-
-func (r *Application) runGrpc() {
-	log := r.MakeLog()
-	grpc := r.MakeGrpc()
-
-	if grpc == nil {
-		return
-	}
-
-	go func() {
-		if err := grpc.Run(); err != nil {
-			log.Errorf("Grpc Run error: %v", err)
-		}
-	}()
-
-	go func() {
-		<-r.ctx.Done()
-
-		if err := grpc.Shutdown(); err != nil {
-			log.Errorf("Grpc Shutdown error: %v", err)
-		}
-	}()
-}
-
-func (r *Application) runQueue() {
-	log := r.MakeLog()
-	queue := r.MakeQueue()
-
-	if queue == nil {
-		return
-	}
-
-	go func() {
-		if err := queue.Worker().Run(); err != nil {
-			log.Errorf("Queue run error: %v", err)
-		}
-	}()
-
-	go func() {
-		<-r.ctx.Done()
-
-		if err := queue.Worker().Shutdown(); err != nil {
-			log.Errorf("Queue Shutdown error: %v", err)
-		}
-	}()
-}
-
-func (r *Application) runSchedule() {
-	log := r.MakeLog()
-	schedule := r.MakeSchedule()
-
-	if schedule == nil {
-		return
-	}
-
-	go schedule.Run()
-
-	go func() {
-		<-r.ctx.Done()
-
-		if err := schedule.Shutdown(); err != nil {
-			log.Errorf("Schedule Shutdown error: %v", err)
-		}
-	}()
 }
 
 func (r *Application) setTimezone() {

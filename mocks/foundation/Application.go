@@ -2515,11 +2515,11 @@ func (_c *Application_ResourcePath_Call) RunAndReturn(run func(...string) string
 	return _c
 }
 
-// Run provides a mock function with given fields: modules
-func (_m *Application) Run(modules ...foundation.Module) {
-	_va := make([]interface{}, len(modules))
-	for _i := range modules {
-		_va[_i] = modules[_i]
+// Run provides a mock function with given fields: runners
+func (_m *Application) Run(runners ...foundation.Runner) {
+	_va := make([]interface{}, len(runners))
+	for _i := range runners {
+		_va[_i] = runners[_i]
 	}
 	var _ca []interface{}
 	_ca = append(_ca, _va...)
@@ -2532,18 +2532,18 @@ type Application_Run_Call struct {
 }
 
 // Run is a helper method to define mock.On call
-//   - modules ...foundation.Module
-func (_e *Application_Expecter) Run(modules ...interface{}) *Application_Run_Call {
+//   - runners ...foundation.Runner
+func (_e *Application_Expecter) Run(runners ...interface{}) *Application_Run_Call {
 	return &Application_Run_Call{Call: _e.mock.On("Run",
-		append([]interface{}{}, modules...)...)}
+		append([]interface{}{}, runners...)...)}
 }
 
-func (_c *Application_Run_Call) Run(run func(modules ...foundation.Module)) *Application_Run_Call {
+func (_c *Application_Run_Call) Run(run func(runners ...foundation.Runner)) *Application_Run_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]foundation.Module, len(args)-0)
+		variadicArgs := make([]foundation.Runner, len(args)-0)
 		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(foundation.Module)
+				variadicArgs[i] = a.(foundation.Runner)
 			}
 		}
 		run(variadicArgs...)
@@ -2556,7 +2556,7 @@ func (_c *Application_Run_Call) Return() *Application_Run_Call {
 	return _c
 }
 
-func (_c *Application_Run_Call) RunAndReturn(run func(...foundation.Module)) *Application_Run_Call {
+func (_c *Application_Run_Call) RunAndReturn(run func(...foundation.Runner)) *Application_Run_Call {
 	_c.Run(run)
 	return _c
 }

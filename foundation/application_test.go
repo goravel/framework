@@ -125,7 +125,7 @@ func (s *ApplicationTestSuite) TestRun() {
 
 	mockQueue := mocksqueue.NewQueue(s.T())
 	mockWorker := mocksqueue.NewWorker(s.T())
-	mockQueue.EXPECT().Worker().Return(mockWorker).Twice()
+	mockQueue.EXPECT().Worker().Return(mockWorker).Once()
 	mockWorker.EXPECT().Run().Return(nil).Once()
 	mockWorker.EXPECT().Shutdown().Return(nil).Once()
 	s.app.Singleton(binding.Queue, func(app foundation.Application) (any, error) {

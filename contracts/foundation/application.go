@@ -30,7 +30,11 @@ import (
 	"github.com/goravel/framework/contracts/validation"
 )
 
-type Module int
+type Runner interface {
+	Name() string
+	Run() error
+	Shutdown() error
+}
 
 type AboutItem struct {
 	Key   string
@@ -55,7 +59,7 @@ type Application interface {
 	// Refresh all modules after changing config, will call the Boot method simultaneously.
 	Refresh()
 	// Run runs modules.
-	Run(modules ...Module)
+	Run(runners ...Runner)
 	// SetJson set the JSON implementation.
 	SetJson(json Json)
 	// SetLocale set the current application locale.
