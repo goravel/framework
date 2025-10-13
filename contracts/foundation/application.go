@@ -31,7 +31,7 @@ import (
 )
 
 type Runner interface {
-	Name() string
+	ShouldRun() bool
 	Run() error
 	Shutdown() error
 }
