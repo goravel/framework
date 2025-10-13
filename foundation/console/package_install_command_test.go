@@ -110,7 +110,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{}).Once()
 				mockContext.EXPECT().OptionBool("all-facades").Return(false).Once()
-				mockContext.EXPECT().Choice("What do you want to install?", options).
+				mockContext.EXPECT().Choice("Which facades or package do you want to install?", options).
 					Return("", assert.AnError).Once()
 				mockContext.EXPECT().Error(assert.AnError.Error()).Once()
 			},
@@ -120,7 +120,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{}).Once()
 				mockContext.EXPECT().OptionBool("all-facades").Return(false).Once()
-				mockContext.EXPECT().Choice("What do you want to install?", options).
+				mockContext.EXPECT().Choice("Which facades or package do you want to install?", options).
 					Return("select", nil).Once()
 				mockContext.EXPECT().MultiSelect("Select the facades to install", facadeOptions, mock.Anything).
 					Return(nil, assert.AnError).Once()
@@ -132,7 +132,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{}).Once()
 				mockContext.EXPECT().OptionBool("all-facades").Return(false).Once()
-				mockContext.EXPECT().Choice("What do you want to install?", options).
+				mockContext.EXPECT().Choice("Which facades or package do you want to install?", options).
 					Return("third", nil).Once()
 				mockContext.EXPECT().Ask("Enter the package", console.AskOption{
 					Description: "E.g.: github.com/goravel/framework or github.com/goravel/framework@master",
@@ -146,7 +146,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 				facade := "unknown"
 				mockContext.EXPECT().Arguments().Return([]string{}).Once()
 				mockContext.EXPECT().OptionBool("all-facades").Return(false).Once()
-				mockContext.EXPECT().Choice("What do you want to install?", options).
+				mockContext.EXPECT().Choice("Which facades or package do you want to install?", options).
 					Return("select", nil).Once()
 				mockContext.EXPECT().MultiSelect("Select the facades to install", facadeOptions, mock.Anything).
 					Return([]string{facade}, nil).Once()

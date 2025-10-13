@@ -72,7 +72,7 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 				{Key: "Third package", Value: "third"},
 			}
 
-			choice, err := ctx.Choice("What do you want to install?", options)
+			choice, err := ctx.Choice("Which facades or package do you want to install?", options)
 			if err != nil {
 				ctx.Error(err.Error())
 				return nil
