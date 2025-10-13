@@ -145,25 +145,23 @@ func (r *Application) Run(runners ...foundation.Runner) {
 		}
 	}
 
-	run := func(runner foundation.Runner) {
+	for _, runner := range runners {
 		go func() {
 			if err := runner.Run(); err != nil {
 				color.Errorf("%s Run error: %v", runner.Name(), err)
 			}
 		}()
+	}
 
-		go func() {
-			<-r.ctx.Done()
+	go func() {
+		<-r.ctx.Done()
 
+		for _, runner := range runners {
 			if err := runner.Shutdown(); err != nil {
 				color.Errorf("%s Shutdown error: %v", runner.Name(), err)
 			}
-		}()
-	}
-
-	for _, runner := range runners {
-		run(runner)
-	}
+		}
+	}()
 }
 
 func (r *Application) SetJson(j foundation.Json) {
