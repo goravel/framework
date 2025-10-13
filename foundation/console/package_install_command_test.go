@@ -32,6 +32,11 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 		facade  = "Auth"
 		pkg     = "github.com/goravel/package"
 		options = []console.Choice{
+			{Key: "All facades", Value: "all"},
+			{Key: "Select facades", Value: "select"},
+			{Key: "Third-party package", Value: "third"},
+		}
+		facadeOptions = []console.Choice{
 			{Key: fmt.Sprintf("%-11s", "Auth") + color.Gray().Sprintf(" - %s", "Description"), Value: "Auth"},
 			{Key: "Orm", Value: "Orm"},
 		}
@@ -101,12 +106,37 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			},
 		},
 		{
-			name: "facade name is empty, MultiSelect returns error",
+			name: "facade name is empty, failed to choice what to install",
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{}).Once()
 				mockContext.EXPECT().OptionBool("all-facades").Return(false).Once()
-				mockContext.EXPECT().MultiSelect("Select the facades to install", options, mock.Anything).
+				mockContext.EXPECT().Choice("Which facades or package do you want to install?", options).
+					Return("", assert.AnError).Once()
+				mockContext.EXPECT().Error(assert.AnError.Error()).Once()
+			},
+		},
+		{
+			name: "facade name is empty, failed to select facades",
+			setup: func() {
+				mockContext.EXPECT().Arguments().Return([]string{}).Once()
+				mockContext.EXPECT().OptionBool("all-facades").Return(false).Once()
+				mockContext.EXPECT().Choice("Which facades or package do you want to install?", options).
+					Return("select", nil).Once()
+				mockContext.EXPECT().MultiSelect("Select the facades to install", facadeOptions, mock.Anything).
 					Return(nil, assert.AnError).Once()
+				mockContext.EXPECT().Error(assert.AnError.Error()).Once()
+			},
+		},
+		{
+			name: "facade name is empty, failed to input third package",
+			setup: func() {
+				mockContext.EXPECT().Arguments().Return([]string{}).Once()
+				mockContext.EXPECT().OptionBool("all-facades").Return(false).Once()
+				mockContext.EXPECT().Choice("Which facades or package do you want to install?", options).
+					Return("third", nil).Once()
+				mockContext.EXPECT().Ask("Enter the package", console.AskOption{
+					Description: "E.g.: github.com/goravel/framework or github.com/goravel/framework@master",
+				}).Return("", assert.AnError).Once()
 				mockContext.EXPECT().Error(assert.AnError.Error()).Once()
 			},
 		},
@@ -116,7 +146,9 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 				facade := "unknown"
 				mockContext.EXPECT().Arguments().Return([]string{}).Once()
 				mockContext.EXPECT().OptionBool("all-facades").Return(false).Once()
-				mockContext.EXPECT().MultiSelect("Select the facades to install", options, mock.Anything).
+				mockContext.EXPECT().Choice("Which facades or package do you want to install?", options).
+					Return("select", nil).Once()
+				mockContext.EXPECT().MultiSelect("Select the facades to install", facadeOptions, mock.Anything).
 					Return([]string{facade}, nil).Once()
 				mockContext.EXPECT().Warning(errors.PackageFacadeNotFound.Args(facade).Error()).Once()
 				mockContext.EXPECT().Info(fmt.Sprintf("Available facades: %s", strings.Join(getAvailableFacades(bindings), ", ")))

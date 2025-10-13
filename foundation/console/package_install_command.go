@@ -64,30 +64,39 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 		if ctx.OptionBool("all-facades") {
 			names = getAvailableFacades(r.bindings)
 		} else {
-			var options []console.Choice
-			for _, facade := range getAvailableFacades(r.bindings) {
-				key := facade
-				description := getFacadeDescription(facade, r.bindings)
-				if description != "" {
-					key = fmt.Sprintf("%-11s", facade) + color.Gray().Sprintf(" - %s", description)
-				}
-				options = append(options, console.Choice{
-					Key:   key,
-					Value: facade,
-				})
+			var err error
+
+			options := []console.Choice{
+				{Key: "All facades", Value: "all"},
+				{Key: "Select facades", Value: "select"},
+				{Key: "Third-party package", Value: "third"},
 			}
 
-			name, err := ctx.MultiSelect("Select the facades to install", options, console.MultiSelectOption{
-				Description: "If you want to install a package, please run the command with the package name.\nIf you want to install all facades, you can run the command with --all-facades or click ctrl+a to select all.",
-				Filterable:  true,
-			})
+			choice, err := ctx.Choice("Which facades or package do you want to install?", options)
 			if err != nil {
 				ctx.Error(err.Error())
 				return nil
 			}
 
-			if len(name) > 0 {
-				names = append(names, name...)
+			if choice == "all" {
+				names = getAvailableFacades(r.bindings)
+			}
+
+			if choice == "select" {
+				names, err = r.selectFacades(ctx)
+			}
+
+			if choice == "third" {
+				var name string
+				name, err = r.inputThirdPackage(ctx)
+				if err == nil && name != "" {
+					names = []string{name}
+				}
+			}
+
+			if err != nil {
+				ctx.Error(err.Error())
+				return nil
 			}
 		}
 	}
@@ -109,6 +118,31 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 	}
 
 	return nil
+}
+
+func (r *PackageInstallCommand) selectFacades(ctx console.Context) ([]string, error) {
+	var facadeOptions []console.Choice
+	for _, facade := range getAvailableFacades(r.bindings) {
+		key := facade
+		description := getFacadeDescription(facade, r.bindings)
+		if description != "" {
+			key = fmt.Sprintf("%-11s", facade) + color.Gray().Sprintf(" - %s", description)
+		}
+		facadeOptions = append(facadeOptions, console.Choice{
+			Key:   key,
+			Value: facade,
+		})
+	}
+
+	return ctx.MultiSelect("Select the facades to install", facadeOptions, console.MultiSelectOption{
+		Filterable: true,
+	})
+}
+
+func (r *PackageInstallCommand) inputThirdPackage(ctx console.Context) (string, error) {
+	return ctx.Ask("Enter the package", console.AskOption{
+		Description: "E.g.: github.com/goravel/framework or github.com/goravel/framework@master",
+	})
 }
 
 func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) error {
