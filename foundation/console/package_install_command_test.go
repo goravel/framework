@@ -13,6 +13,7 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
+	"github.com/goravel/framework/support/color"
 )
 
 type PackageInstallCommandTestSuite struct {
@@ -31,7 +32,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 		facade  = "Auth"
 		pkg     = "github.com/goravel/package"
 		options = []console.Choice{
-			{Key: "Auth", Value: "Auth"},
+			{Key: fmt.Sprintf("%-11s", "Auth") + color.Gray().Sprintf(" - %s", "Description"), Value: "Auth"},
 			{Key: "Orm", Value: "Orm"},
 		}
 		installedBindings = []any{binding.Config}
@@ -41,6 +42,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 		mockContext = mocksconsole.NewContext(s.T())
 		bindings = map[string]binding.Info{
 			binding.Auth: {
+				Description:  "Description",
 				PkgPath:      "github.com/goravel/framework/auth",
 				Dependencies: []string{binding.Config, binding.Orm},
 			},
@@ -207,7 +209,17 @@ func (s *PackageInstallCommandTestSuite) Test_installDriver() {
 		bindingInfo = binding.Info{
 			PkgPath:      "github.com/goravel/framework/route",
 			Dependencies: []string{binding.Config},
-			Drivers:      []string{"github.com/goravel/gin", "github.com/goravel/fiber"},
+			Drivers: []binding.Driver{
+				{
+					Name:        "Gin",
+					Description: "Description",
+					Package:     "github.com/goravel/gin",
+				},
+				{
+					Name:    "Fiber",
+					Package: "github.com/goravel/fiber",
+				},
+			},
 		}
 		bindings = map[string]binding.Info{
 			binding.Route: bindingInfo,
@@ -234,8 +246,8 @@ func (s *PackageInstallCommandTestSuite) Test_installDriver() {
 			bindingInfo: bindingInfo,
 			setup: func() {
 				mockContext.EXPECT().Choice(fmt.Sprintf("Select the %s driver to install", facade), []console.Choice{
-					{Key: "github.com/goravel/gin", Value: "github.com/goravel/gin"},
-					{Key: "github.com/goravel/fiber", Value: "github.com/goravel/fiber"},
+					{Key: "Gin" + color.Gray().Sprintf(" - %s", "Description"), Value: "github.com/goravel/gin"},
+					{Key: "Fiber", Value: "github.com/goravel/fiber"},
 					{Key: "Custom", Value: "Custom"},
 				}, console.ChoiceOption{
 					Description: fmt.Sprintf("A driver is required for %s, please select one to install.", facade),
@@ -248,8 +260,8 @@ func (s *PackageInstallCommandTestSuite) Test_installDriver() {
 			bindingInfo: bindingInfo,
 			setup: func() {
 				mockContext.EXPECT().Choice(fmt.Sprintf("Select the %s driver to install", facade), []console.Choice{
-					{Key: "github.com/goravel/gin", Value: "github.com/goravel/gin"},
-					{Key: "github.com/goravel/fiber", Value: "github.com/goravel/fiber"},
+					{Key: "Gin" + color.Gray().Sprintf(" - %s", "Description"), Value: "github.com/goravel/gin"},
+					{Key: "Fiber", Value: "github.com/goravel/fiber"},
 					{Key: "Custom", Value: "Custom"},
 				}, console.ChoiceOption{
 					Description: fmt.Sprintf("A driver is required for %s, please select one to install.", facade),
@@ -263,16 +275,16 @@ func (s *PackageInstallCommandTestSuite) Test_installDriver() {
 			bindingInfo: bindingInfo,
 			setup: func() {
 				mockContext.EXPECT().Choice(fmt.Sprintf("Select the %s driver to install", facade), []console.Choice{
-					{Key: "github.com/goravel/gin", Value: "github.com/goravel/gin"},
-					{Key: "github.com/goravel/fiber", Value: "github.com/goravel/fiber"},
+					{Key: "Gin" + color.Gray().Sprintf(" - %s", "Description"), Value: "github.com/goravel/gin"},
+					{Key: "Fiber", Value: "github.com/goravel/fiber"},
 					{Key: "Custom", Value: "Custom"},
 				}, console.ChoiceOption{
 					Description: fmt.Sprintf("A driver is required for %s, please select one to install.", facade),
 				}).Return("Custom", nil).Once()
 				mockContext.EXPECT().Ask(fmt.Sprintf("Please enter the %s driver package", facade)).Return("", nil).Once()
 				mockContext.EXPECT().Choice(fmt.Sprintf("Select the %s driver to install", facade), []console.Choice{
-					{Key: "github.com/goravel/gin", Value: "github.com/goravel/gin"},
-					{Key: "github.com/goravel/fiber", Value: "github.com/goravel/fiber"},
+					{Key: "Gin" + color.Gray().Sprintf(" - %s", "Description"), Value: "github.com/goravel/gin"},
+					{Key: "Fiber", Value: "github.com/goravel/fiber"},
 					{Key: "Custom", Value: "Custom"},
 				}, console.ChoiceOption{
 					Description: fmt.Sprintf("A driver is required for %s, please select one to install.", facade),
@@ -285,8 +297,8 @@ func (s *PackageInstallCommandTestSuite) Test_installDriver() {
 			bindingInfo: bindingInfo,
 			setup: func() {
 				mockContext.EXPECT().Choice(fmt.Sprintf("Select the %s driver to install", facade), []console.Choice{
-					{Key: "github.com/goravel/gin", Value: "github.com/goravel/gin"},
-					{Key: "github.com/goravel/fiber", Value: "github.com/goravel/fiber"},
+					{Key: "Gin" + color.Gray().Sprintf(" - %s", "Description"), Value: "github.com/goravel/gin"},
+					{Key: "Fiber", Value: "github.com/goravel/fiber"},
 					{Key: "Custom", Value: "Custom"},
 				}, console.ChoiceOption{
 					Description: fmt.Sprintf("A driver is required for %s, please select one to install.", facade),
@@ -301,8 +313,8 @@ func (s *PackageInstallCommandTestSuite) Test_installDriver() {
 			setup: func() {
 				pkg := "github.com/goravel/gin"
 				mockContext.EXPECT().Choice(fmt.Sprintf("Select the %s driver to install", facade), []console.Choice{
-					{Key: "github.com/goravel/gin", Value: "github.com/goravel/gin"},
-					{Key: "github.com/goravel/fiber", Value: "github.com/goravel/fiber"},
+					{Key: "Gin" + color.Gray().Sprintf(" - %s", "Description"), Value: "github.com/goravel/gin"},
+					{Key: "Fiber", Value: "github.com/goravel/fiber"},
 					{Key: "Custom", Value: "Custom"},
 				}, console.ChoiceOption{
 					Description: fmt.Sprintf("A driver is required for %s, please select one to install.", facade),
@@ -351,7 +363,7 @@ func (s *PackageInstallCommandTestSuite) Test_getBindingsToInstall() {
 	s.ElementsMatch([]string{binding.Orm, binding.Gate}, packageInstallCommand.getBindingsToInstall(binding.Auth))
 }
 
-func TestGetAvailableFacades(t *testing.T) {
+func Test_getAvailableFacades(t *testing.T) {
 	bindings := map[string]binding.Info{
 		binding.Auth: {
 			PkgPath:      "github.com/goravel/framework/auth",
@@ -368,6 +380,27 @@ func TestGetAvailableFacades(t *testing.T) {
 	}
 
 	assert.ElementsMatch(t, []string{"Auth", "Orm"}, getAvailableFacades(bindings))
+}
+
+func Test_getFacadeDescription(t *testing.T) {
+	bindings := map[string]binding.Info{
+		binding.Auth: {
+			Description:  "Description",
+			PkgPath:      "github.com/goravel/framework/auth",
+			Dependencies: []string{binding.Config, binding.Orm},
+		},
+		binding.Config: {
+			PkgPath: "github.com/goravel/framework/config",
+			IsBase:  true,
+		},
+		binding.Orm: {
+			PkgPath:      "github.com/goravel/framework/database",
+			Dependencies: []string{binding.Config},
+		},
+	}
+
+	assert.Equal(t, "Description", getFacadeDescription("Auth", bindings))
+	assert.Empty(t, getFacadeDescription("Orm", bindings))
 }
 
 func TestGetDependencyBindings(t *testing.T) {
