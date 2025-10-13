@@ -38,6 +38,6 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 	})
 }
 
-func (r *ServiceProvider) Runners() []foundation.Runner {
-
+func (r *ServiceProvider) Runners(app foundation.Application) []foundation.Runner {
+	return []foundation.Runner{NewRouteRunner(app.MakeConfig(), app.MakeRoute())}
 }

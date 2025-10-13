@@ -14,13 +14,8 @@ import (
 
 	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/foundation"
-	"github.com/goravel/framework/contracts/schedule"
 	mocksconfig "github.com/goravel/framework/mocks/config"
-	mocksgrpc "github.com/goravel/framework/mocks/grpc"
-	mockslog "github.com/goravel/framework/mocks/log"
-	mocksqueue "github.com/goravel/framework/mocks/queue"
-	mocksroute "github.com/goravel/framework/mocks/route"
-	mocksschedule "github.com/goravel/framework/mocks/schedule"
+	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	"github.com/goravel/framework/support"
 )
 
@@ -100,53 +95,28 @@ func (s *ApplicationTestSuite) TestExecutablePath() {
 }
 
 func (s *ApplicationTestSuite) TestRun() {
-	mockConfig := mocksconfig.NewConfig(s.T())
-	mockConfig.EXPECT().GetString("http.default").Return("gin").Once()
-	mockConfig.EXPECT().GetString("grpc.host").Return("127.0.0.1").Once()
-	mockConfig.EXPECT().GetString("queue.default").Return("sync").Once()
+	oneServiceProvider := mocksfoundation.NewServiceProviderWithRunners(s.T())
+	oneRunner := mocksfoundation.NewRunner(s.T())
+	oneRunner.EXPECT().Run().Return(nil).Once()
+	oneRunner.EXPECT().Shutdown().Return(nil).Once()
+	oneServiceProvider.EXPECT().Runners(s.app).Return([]foundation.Runner{oneRunner}).Once()
 
-	s.app.Singleton(binding.Config, func(app foundation.Application) (any, error) {
-		return mockConfig, nil
-	})
+	secondServiceProvider := mocksfoundation.NewServiceProviderWithRunners(s.T())
+	secondRunner := mocksfoundation.NewRunner(s.T())
+	secondRunner.EXPECT().Run().Return(nil).Once()
+	secondRunner.EXPECT().Shutdown().Return(nil).Once()
+	secondServiceProvider.EXPECT().Runners(s.app).Return([]foundation.Runner{secondRunner}).Once()
 
-	mockRoute := mocksroute.NewRoute(s.T())
-	mockRoute.EXPECT().Run().Return(nil).Once()
-	mockRoute.EXPECT().Shutdown().Return(nil).Once()
-	s.app.Singleton(binding.Route, func(app foundation.Application) (any, error) {
-		return mockRoute, nil
-	})
+	thirdRunner := mocksfoundation.NewRunner(s.T())
+	thirdRunner.EXPECT().Run().Return(nil).Once()
+	thirdRunner.EXPECT().Shutdown().Return(nil).Once()
 
-	mockGrpc := mocksgrpc.NewGrpc(s.T())
-	mockGrpc.EXPECT().Run().Return(nil).Once()
-	mockGrpc.EXPECT().Shutdown().Return(nil).Once()
-	s.app.Singleton(binding.Grpc, func(app foundation.Application) (any, error) {
-		return mockGrpc, nil
-	})
+	s.app.configuredServiceProviders = []foundation.ServiceProvider{
+		oneServiceProvider,
+		secondServiceProvider,
+	}
 
-	mockQueue := mocksqueue.NewQueue(s.T())
-	mockWorker := mocksqueue.NewWorker(s.T())
-	mockQueue.EXPECT().Worker().Return(mockWorker).Once()
-	mockWorker.EXPECT().Run().Return(nil).Once()
-	mockWorker.EXPECT().Shutdown().Return(nil).Once()
-	s.app.Singleton(binding.Queue, func(app foundation.Application) (any, error) {
-		return mockQueue, nil
-	})
-
-	mockSchedule := mocksschedule.NewSchedule(s.T())
-	mockEvent := mocksschedule.NewEvent(s.T())
-	mockSchedule.EXPECT().Events().Return([]schedule.Event{mockEvent}).Once()
-	mockSchedule.EXPECT().Run().Once()
-	mockSchedule.EXPECT().Shutdown().Return(nil).Once()
-	s.app.Singleton(binding.Schedule, func(app foundation.Application) (any, error) {
-		return mockSchedule, nil
-	})
-
-	mockLog := mockslog.NewLog(s.T())
-	s.app.Singleton(binding.Log, func(app foundation.Application) (any, error) {
-		return mockLog, nil
-	})
-
-	s.app.Run()
+	s.app.Run(thirdRunner)
 	time.Sleep(100 * time.Millisecond) // Wait for goroutines to start
 
 	s.cancel()

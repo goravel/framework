@@ -124,31 +124,21 @@ func (r *Application) Refresh() {
 }
 
 func (r *Application) Run(runners ...foundation.Runner) {
-	if len(runners) == 0 {
-		config := r.MakeConfig()
-		route := r.MakeRoute()
-		grpc := r.MakeGrpc()
-		queue := r.MakeQueue()
-		schedule := r.MakeSchedule()
+	var allRunners []foundation.Runner
 
-		if route != nil && config.GetString("http.default") != "" {
-			runners = append(runners, NewRouteRunner(route))
-		}
-		if grpc != nil && config.GetString("grpc.host") != "" {
-			runners = append(runners, NewGrpcRunner(grpc))
-		}
-		if queue != nil && config.GetString("queue.default") != "" {
-			runners = append(runners, NewQueueRunner(queue))
-		}
-		if schedule != nil && len(schedule.Events()) > 0 {
-			runners = append(runners, NewScheduleRunner(schedule))
+	for _, serviceProvider := range r.getConfiguredServiceProviders() {
+		if serviceProviderWithRunners, ok := serviceProvider.(foundation.ServiceProviderWithRunners); ok {
+			allRunners = append(allRunners, serviceProviderWithRunners.Runners(r)...)
 		}
 	}
 
-	for _, runner := range runners {
+	allRunners = append(allRunners, runners...)
+
+	for _, runner := range allRunners {
 		go func() {
 			if err := runner.Run(); err != nil {
-				color.Errorf("%s Run error: %v", runner.Name(), err)
+				runnerName := fmt.Sprintf("%T", runner)
+				color.Errorf("Failed to run %s: %v", runnerName, err)
 			}
 		}()
 	}
@@ -156,9 +146,10 @@ func (r *Application) Run(runners ...foundation.Runner) {
 	go func() {
 		<-r.ctx.Done()
 
-		for _, runner := range runners {
+		for _, runner := range allRunners {
 			if err := runner.Shutdown(); err != nil {
-				color.Errorf("%s Shutdown error: %v", runner.Name(), err)
+				runnerName := fmt.Sprintf("%T", runner)
+				color.Errorf("Failed to shutdown %s: %v", runnerName, err)
 			}
 		}
 	}()

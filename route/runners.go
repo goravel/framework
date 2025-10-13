@@ -1,17 +1,24 @@
-pakcage route
+package route
+
+import (
+	"github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/contracts/route"
+)
 
 type RouteRunner struct {
-	route route.Route
+	config config.Config
+	route  route.Route
 }
 
-func NewRouteRunner(route route.Route) *RouteRunner {
+func NewRouteRunner(config config.Config, route route.Route) *RouteRunner {
 	return &RouteRunner{
-		route: route,
+		config: config,
+		route:  route,
 	}
 }
 
 func (r *RouteRunner) ShouldRun() bool {
-	return "Route"
+	return r.route != nil && r.config.GetString("http.default") != ""
 }
 
 func (r *RouteRunner) Run() error {
