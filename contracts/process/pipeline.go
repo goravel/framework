@@ -48,9 +48,9 @@ type Pipeline interface {
 }
 
 type Pipe interface {
-	Command(name string, arg ...string) Step
+	Command(name string, arg ...string) PipeCommand
 }
 
-type Step interface {
-	As(key string) Step
+type PipeCommand interface {
+	As(key string) PipeCommand
 }

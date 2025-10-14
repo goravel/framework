@@ -11,7 +11,7 @@ import (
 // should be safe for read-only use from multiple goroutines.
 type RunningPipe interface {
 	// PIDs returns a mapping of step keys to their process IDs. Keys are the
-	// identifiers assigned to each step (via Step.As or default numeric index).
+	// identifiers assigned to each step (via PipeCommand.As or default numeric index).
 	PIDs() map[string]int
 	// Running reports whether any process in the pipeline is still running.
 	Running() bool

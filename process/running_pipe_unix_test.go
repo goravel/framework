@@ -76,7 +76,7 @@ func TestRunningPipe_Stop_GracefulThenKill_Unix(t *testing.T) {
 func TestRunningPipe_Panic_AppendsToStderr_Unix(t *testing.T) {
 	stderr := &bytes.Buffer{}
 	// Create a RunningPipe with a nil command to force panic in Wait
-	rp := NewRunningPipe([]*exec.Cmd{nil}, []*Step{{key: "0"}}, nil, nil, nil, []*bytes.Buffer{nil}, []*bytes.Buffer{stderr})
+	rp := NewRunningPipe([]*exec.Cmd{nil}, []*PipeCommand{{key: "0"}}, nil, nil, nil, []*bytes.Buffer{nil}, []*bytes.Buffer{stderr})
 	<-rp.Done()
 	assert.Equal(t, "panic: runtime error: invalid memory address or nil pointer dereference\n", stderr.String())
 }

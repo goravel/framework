@@ -16,41 +16,22 @@ var _ contractsprocess.Pool = (*Pool)(nil)
 var _ contractsprocess.PoolCommand = (*PoolCommand)(nil)
 
 type PoolBuilder struct {
-	ctx         context.Context
-	timeout     time.Duration
 	concurrency int
+	ctx         context.Context
 	onOutput    contractsprocess.OnPoolOutputFunc
-	strategy    contractsprocess.Strategy
+	timeout     time.Duration
 }
 
 func NewPool() *PoolBuilder {
 	return &PoolBuilder{ctx: context.Background()}
 }
 
-func (r *PoolBuilder) WithConcurrency(n int) contractsprocess.PoolBuilder {
+func (r *PoolBuilder) Concurrency(n int) contractsprocess.PoolBuilder {
 	r.concurrency = n
 	return r
 }
 
-func (r *PoolBuilder) WithTimeout(timeout time.Duration) contractsprocess.PoolBuilder {
-	r.timeout = timeout
-	return r
-}
-
-func (r *PoolBuilder) WithContext(ctx context.Context) contractsprocess.PoolBuilder {
-	if ctx == nil {
-		ctx = context.Background()
-	}
-	r.ctx = ctx
-	return r
-}
-
-func (r *PoolBuilder) WithStrategy(strategy contractsprocess.Strategy) contractsprocess.PoolBuilder {
-	r.strategy = strategy
-	return r
-}
-
-func (r *PoolBuilder) WithOutputHandler(handler contractsprocess.OnPoolOutputFunc) contractsprocess.PoolBuilder {
+func (r *PoolBuilder) OnOutput(handler contractsprocess.OnPoolOutputFunc) contractsprocess.PoolBuilder {
 	r.onOutput = handler
 	return r
 }
@@ -61,6 +42,19 @@ func (r *PoolBuilder) Run(configure func(contractsprocess.Pool)) (map[string]con
 
 func (r *PoolBuilder) Start(configure func(contractsprocess.Pool)) (contractsprocess.RunningPool, error) {
 	return r.start(configure)
+}
+
+func (r *PoolBuilder) Timeout(timeout time.Duration) contractsprocess.PoolBuilder {
+	r.timeout = timeout
+	return r
+}
+
+func (r *PoolBuilder) WithContext(ctx context.Context) contractsprocess.PoolBuilder {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	r.ctx = ctx
+	return r
 }
 
 func (r *PoolBuilder) run(configure func(pool contractsprocess.Pool)) (map[string]contractsprocess.Result, error) {
@@ -75,19 +69,9 @@ func (r *PoolBuilder) start(configure func(contractsprocess.Pool)) (contractspro
 	pool := &Pool{}
 	configure(pool)
 
-	originalSteps := pool.steps
-	if len(originalSteps) == 0 {
+	steps := pool.steps
+	if len(steps) == 0 {
 		return nil, errors.ProcessPipelineEmpty
-	}
-
-	schedules := make([]contractsprocess.Schedulable, len(originalSteps))
-	for i, cmd := range originalSteps {
-		schedules[i] = cmd
-	}
-	scheduledSteps := r.strategy.Schedule(schedules)
-	steps := make([]*PoolCommand, len(scheduledSteps))
-	for i, s := range scheduledSteps {
-		steps[i] = s.(*PoolCommand)
 	}
 
 	ctx := r.ctx
@@ -139,15 +123,15 @@ func (r *PoolBuilder) start(configure func(contractsprocess.Pool)) (contractspro
 			defer workersWg.Done()
 			for currentJob := range jobCh {
 				step := currentJob.step
-				proc := New().WithContext(ctx).WithPath(step.path).WithEnv(step.env).WithInput(step.input)
+				proc := New().WithContext(ctx).Path(step.path).Env(step.env).Input(step.input)
 				if step.quietly {
-					proc = proc.WithQuiet()
+					proc = proc.Quietly()
 				}
 				if step.timeout > 0 {
-					proc = proc.WithTimeout(step.timeout)
+					proc = proc.Timeout(step.timeout)
 				}
 				if r.onOutput != nil {
-					proc = proc.WithOutputHandler(func(typ contractsprocess.OutputType, line []byte) {
+					proc = proc.OnOutput(func(typ contractsprocess.OutputType, line []byte) {
 						r.onOutput(step.key, typ, line)
 					})
 				}
@@ -199,83 +183,65 @@ func (r *Pool) Command(name string, args ...string) contractsprocess.PoolCommand
 }
 
 type PoolCommand struct {
-	key              string
-	name             string
-	args             []string
-	ctx              context.Context
-	timeout          time.Duration
-	path             string
-	env              map[string]string
-	input            io.Reader
-	quietly          bool
-	disableBuffering bool
-	priority         contractsprocess.Priority
+	args      []string
+	buffering bool
+	ctx       context.Context
+	env       map[string]string
+	input     io.Reader
+	key       string
+	name      string
+	path      string
+	quietly   bool
+	timeout   time.Duration
 }
 
 func NewPoolCommand(key, name string, args []string) *PoolCommand {
 	return &PoolCommand{
-		key:      key,
-		name:     name,
-		args:     args,
-		priority: contractsprocess.PriorityNormal,
+		key:       key,
+		name:      name,
+		args:      args,
+		buffering: true,
 	}
 }
 
-func (r *PoolCommand) GetKey() string {
-	return r.key
-}
-
-func (r *PoolCommand) GetTimeout() time.Duration {
-	return r.timeout
-}
-
-func (r *PoolCommand) GetPriority() contractsprocess.Priority {
-	return r.priority
-}
-
-func (r *PoolCommand) WithPriority(priority contractsprocess.Priority) contractsprocess.PoolCommand {
-	r.priority = priority
-	return r
-}
-
-func (r *PoolCommand) WithKey(key string) contractsprocess.PoolCommand {
+func (r *PoolCommand) As(key string) contractsprocess.PoolCommand {
 	r.key = key
 	return r
 }
 
-func (r *PoolCommand) WithContext(ctx context.Context) contractsprocess.PoolCommand {
-	r.ctx = ctx
+func (r *PoolCommand) DisableBuffering() contractsprocess.PoolCommand {
+	r.buffering = false
 	return r
 }
 
-func (r *PoolCommand) WithTimeout(timeout time.Duration) contractsprocess.PoolCommand {
-	r.timeout = timeout
-	return r
-}
-
-func (r *PoolCommand) WithPath(path string) contractsprocess.PoolCommand {
-	r.path = path
-	return r
-}
-
-func (r *PoolCommand) WithEnv(vars map[string]string) contractsprocess.PoolCommand {
+func (r *PoolCommand) Env(vars map[string]string) contractsprocess.PoolCommand {
 	for k, v := range vars {
 		r.env[k] = v
 	}
 	return r
 }
 
-func (r *PoolCommand) WithQuiet() contractsprocess.PoolCommand {
+func (r *PoolCommand) Input(in io.Reader) contractsprocess.PoolCommand {
+	r.input = in
+	return r
+}
+
+func (r *PoolCommand) Path(path string) contractsprocess.PoolCommand {
+	r.path = path
+	return r
+}
+
+func (r *PoolCommand) Quietly() contractsprocess.PoolCommand {
 	r.quietly = true
 	return r
 }
 
-func (r *PoolCommand) WithDisabledBuffering() contractsprocess.PoolCommand {
-	r.disableBuffering = true
+func (r *PoolCommand) Timeout(timeout time.Duration) contractsprocess.PoolCommand {
+	r.timeout = timeout
 	return r
 }
 
-func (r *PoolCommand) WithInput(in io.Reader) contractsprocess.PoolCommand {
-	r.input = in
+func (r *PoolCommand) WithContext(ctx context.Context) contractsprocess.PoolCommand {
+	r.ctx = ctx
 	return r
 }

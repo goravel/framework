@@ -15,26 +15,28 @@ import (
 
 var _ contractsprocess.Pipeline = (*Pipeline)(nil)
 var _ contractsprocess.Pipe = (*Pipe)(nil)
+var _ contractsprocess.PipeCommand = (*PipeCommand)(nil)
 
 func NewPipe() *Pipeline {
 	return &Pipeline{
-		ctx: context.Background(),
+		ctx:       context.Background(),
+		buffering: true,
 	}
 }
 
 type Pipeline struct {
-	ctx               context.Context
-	input             io.Reader
-	env               []string
-	timeout           time.Duration
-	onOutput          contractsprocess.OnPipeOutputFunc
-	quietly           bool
-	path              string
-	bufferingDisabled bool
+	ctx       context.Context
+	input     io.Reader
+	env       []string
+	timeout   time.Duration
+	onOutput  contractsprocess.OnPipeOutputFunc
+	quietly   bool
+	path      string
+	buffering bool
 }
 
 func (r *Pipeline) DisableBuffering() contractsprocess.Pipeline {
-	r.bufferingDisabled = true
+	r.buffering = false
 	return r
 }
 
@@ -74,8 +76,8 @@ func (r *Pipeline) Run(configure func(contractsprocess.Pipe)) (contractsprocess.
 	return r.run(configure)
 }
 
-func (r *Pipeline) Start(builder func(contractsprocess.Pipe)) (contractsprocess.RunningPipe, error) {
-	return r.start(builder)
+func (r *Pipeline) Start(configure func(contractsprocess.Pipe)) (contractsprocess.RunningPipe, error) {
+	return r.start(configure)
 }
 
 func (r *Pipeline) WithContext(ctx context.Context) contractsprocess.Pipeline {
@@ -149,7 +151,7 @@ func (r *Pipeline) start(configure func(contractsprocess.Pipe)) (contractsproces
 		var stdoutWriters []io.Writer
 		var stderrWriters []io.Writer
 
-		if !r.bufferingDisabled {
+		if r.buffering {
 			stdoutBuffer = &bytes.Buffer{}
 			stderrBuffer = &bytes.Buffer{}
 			stdoutWriters = append(stdoutWriters, stdoutBuffer)
@@ -217,11 +219,30 @@ func (r *Pipeline) start(configure func(contractsprocess.Pipe)) (contractsproces
 }
 
 type Pipe struct {
-	steps []*Step
+	steps []*PipeCommand
 }
 
-func (b *Pipe) Command(name string, args ...string) contractsprocess.Step {
-	step := NewStep(strconv.Itoa(len(b.steps)), name, args)
-	b.steps = append(b.steps, step)
+func (r *Pipe) Command(name string, args ...string) contractsprocess.PipeCommand {
+	step := NewPipeCommand(strconv.Itoa(len(r.steps)), name, args)
+	r.steps = append(r.steps, step)
 	return step
+}
+
+type PipeCommand struct {
+	key  string
+	name string
+	args []string
+}
+
+func NewPipeCommand(key, name string, args []string) *PipeCommand {
+	return &PipeCommand{
+		key:  key,
+		name: name,
+		args: args,
+	}
+}
+
+func (r *PipeCommand) As(key string) contractsprocess.PipeCommand {
+	r.key = key
+	return r
 }

@@ -6,10 +6,10 @@ import (
 )
 
 type RunningPool interface {
+	Done() <-chan struct{}
 	PIDs() map[string]int
 	Running() bool
-	Done() <-chan struct{}
-	Wait() map[string]Result
-	Stop(timeout time.Duration, sig ...os.Signal) error
 	Signal(sig os.Signal) error
+	Stop(timeout time.Duration, sig ...os.Signal) error
+	Wait() map[string]Result
 }
