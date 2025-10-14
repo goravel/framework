@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/goravel/framework/packages"
@@ -10,23 +11,71 @@ import (
 )
 
 func main() {
-	// config, err := supportfile.GetFrameworkContent("grpc/setup/config/grpc.go")
-	// if err != nil {
-	// 	panic(err)
-	// }
+	stubs := Stubs{}
+	grpcFacade := "Grpc"
+	appServiceProviderPath := path.App("providers", "app_service_provider.go")
+	appConfigPath := path.Config("app.go")
+	configPath := path.Config("grpc.go")
+	facadePath := path.Facades("grpc.go")
+	kernelPath := path.App("grpc", "kernel.go")
+	routesPath := path.Base("routes", "grpc.go")
+	moduleName := packages.GetModuleNameFromArgs(os.Args)
+	grpcServiceProvider := "&grpc.ServiceProvider{}"
+	unaryServerInterceptors := "facades.Grpc().UnaryServerInterceptors(grpc.Kernel{}.UnaryServerInterceptors())"
+	unaryClientInterceptorGroups := "facades.Grpc().UnaryClientInterceptorGroups(grpc.Kernel{}.UnaryClientInterceptorGroups())"
+	routesGrpc := "routes.Grpc()"
+	facadesImport := fmt.Sprintf("%s/app/facades", moduleName)
+	grpcImport := fmt.Sprintf("%s/app/grpc", moduleName)
+	routesImport := fmt.Sprintf("%s/routes", moduleName)
 
 	packages.Setup(os.Args).
 		Install(
-			modify.GoFile(path.Config("app.go")).
+			// Add the gRPC service provider to the providers array in config/app.go
+			modify.GoFile(appConfigPath).
 				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register("&grpc.ServiceProvider{}")),
-			// modify.File(path.Config("grpc.go")).Overwrite(config),
+				Find(match.Providers()).Modify(modify.Register(grpcServiceProvider)),
+
+			// Create config/grpc.go, app/grpc/kernel.go, routes/grpc.go
+			modify.File(configPath).Overwrite(stubs.Config(packages.GetModuleNameFromArgs(os.Args))),
+			modify.File(routesPath).Overwrite(stubs.Routes()),
+			modify.File(kernelPath).Overwrite(stubs.Kernel()),
+
+			// Modify app/providers/app_service_provider.go to register the gRPC interceptors and routes
+			modify.GoFile(appServiceProviderPath).
+				Find(match.Imports()).Modify(modify.AddImport(facadesImport)).
+				Find(match.Imports()).Modify(modify.AddImport(grpcImport)).
+				Find(match.Imports()).Modify(modify.AddImport(routesImport)).
+				Find(match.RegisterFunc()).Modify(modify.Add(unaryServerInterceptors)).
+				Find(match.RegisterFunc()).Modify(modify.Add(unaryClientInterceptorGroups)).
+				Find(match.BootFunc()).Modify(modify.Add(routesGrpc)),
+
+			// Register the Grpc facade
+			modify.WhenFacade(grpcFacade, modify.File(facadePath).Overwrite(stubs.GrpcFacade())),
 		).
 		Uninstall(
-			modify.GoFile(path.Config("app.go")).
-				Find(match.Providers()).Modify(modify.Unregister("&grpc.ServiceProvider{}")).
-				Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
-			// modify.File(path.Config("grpc.go")).Remove(),
+			modify.WhenNoFacades([]string{grpcFacade},
+				// Remove the gRPC service provider from the providers array in config/app.go
+				modify.GoFile(appConfigPath).
+					Find(match.Providers()).Modify(modify.Unregister(grpcServiceProvider)).
+					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
+
+				// Modify app/providers/app_service_provider.go to unregister the gRPC interceptors and routes
+				modify.GoFile(appServiceProviderPath).
+					Find(match.RegisterFunc()).Modify(modify.Remove(unaryServerInterceptors)).
+					Find(match.RegisterFunc()).Modify(modify.Remove(unaryClientInterceptorGroups)).
+					Find(match.BootFunc()).Modify(modify.Remove(routesGrpc)).
+					Find(match.Imports()).Modify(modify.RemoveImport(facadesImport)).
+					Find(match.Imports()).Modify(modify.RemoveImport(grpcImport)).
+					Find(match.Imports()).Modify(modify.RemoveImport(routesImport)),
+
+				// Remove config/grpc.go, app/grpc/kernel.go, routes/grpc.go
+				modify.File(configPath).Remove(),
+				modify.File(kernelPath).Remove(),
+				modify.File(routesPath).Remove(),
+			),
+
+			// Remove the Grpc facade
+			modify.WhenFacade(grpcFacade, modify.File(facadePath).Remove()),
 		).
 		Execute()
 }

@@ -1,6 +1,17 @@
-package config
+package main
 
-import "github.com/goravel/framework/facades"
+import (
+	"strings"
+)
+
+type Stubs struct{}
+
+func (s Stubs) Config(module string) string {
+	content := `package config
+
+import (
+	"DummyModule/app/facades"
+)
 
 func init() {
 	config := facades.Config()
@@ -63,4 +74,21 @@ func init() {
 			},
 		},
 	})
+}
+`
+
+	return strings.ReplaceAll(content, "DummyModule", module)
+}
+
+func (s Stubs) MailFacade() string {
+	return `package facades
+
+import (
+	"github.com/goravel/framework/contracts/mail"
+)
+
+func Mail() mail.Mail {
+	return App().MakeMail()
+}
+`
 }

@@ -15,11 +15,15 @@ func main() {
 			modify.GoFile(path.Config("app.go")).
 				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
 				Find(match.Providers()).Modify(modify.Register("&translation.ServiceProvider{}")),
+			modify.WhenFacade("Lang", modify.File(path.Facades("lang.go")).Overwrite(Stubs{}.LangFacade())),
 		).
 		Uninstall(
-			modify.GoFile(path.Config("app.go")).
-				Find(match.Providers()).Modify(modify.Unregister("&translation.ServiceProvider{}")).
-				Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
+			modify.WhenNoFacades([]string{"Lang"},
+				modify.GoFile(path.Config("app.go")).
+					Find(match.Providers()).Modify(modify.Unregister("&translation.ServiceProvider{}")).
+					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
+			),
+			modify.WhenFacade("Lang", modify.File(path.Facades("lang.go")).Remove()),
 		).
 		Execute()
 }

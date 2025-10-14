@@ -9,22 +9,26 @@ import (
 	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/support/collect"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/convert"
+	"github.com/goravel/framework/support/file"
 )
 
 type PackageUninstallCommand struct {
+	app               foundation.Application
 	bindings          map[string]binding.Info
 	installedBindings []any
 }
 
 func NewPackageUninstallCommand(
+	app foundation.Application,
 	bindings map[string]binding.Info,
 	installedBindings []any,
 ) *PackageUninstallCommand {
 	return &PackageUninstallCommand{
+		app:               app,
 		bindings:          bindings,
 		installedBindings: installedBindings,
 	}
@@ -130,7 +134,7 @@ func (r *PackageUninstallCommand) uninstallFacade(ctx console.Context, name stri
 		return nil
 	}
 
-	_, exists := r.bindings[binding]
+	bindingInfo, exists := r.bindings[binding]
 	if !exists {
 		ctx.Warning(errors.PackageFacadeNotFound.Args(name).Error())
 		ctx.Info(fmt.Sprintf("Available facades: %s", strings.Join(getAvailableFacades(r.bindings), ", ")))
@@ -143,44 +147,36 @@ func (r *PackageUninstallCommand) uninstallFacade(ctx console.Context, name stri
 		return nil
 	}
 
-	bindingsThatNeedUninstall := r.getBindingsThatNeedUninstall(binding)
-	if !slices.Contains(bindingsThatNeedUninstall, binding) {
-		ctx.Error(fmt.Sprintf("Facade %s is depended on by other facades, cannot be uninstalled", name))
+	existingUpperDependencyFacades := r.getExistingUpperDependencyFacades(binding)
+
+	if len(existingUpperDependencyFacades) > 0 {
+		ctx.Error(fmt.Sprintf("Facade %s is depended on %s facades, cannot be uninstalled", name, strings.Join(existingUpperDependencyFacades, ", ")))
 		return nil
 	}
 
-	dependencyBindingsThatNeedUninstall := collect.Filter(bindingsThatNeedUninstall, func(bindingThatNeedUninstall string, _ int) bool {
-		return bindingThatNeedUninstall != binding
-	})
+	force := ctx.OptionBool("force")
+	setup := bindingInfo.PkgPath + "/setup"
+	facade := convert.BindingToFacade(binding)
 
-	if len(dependencyBindingsThatNeedUninstall) > 0 {
-		facadesThatNeedUninstall := make([]string, len(dependencyBindingsThatNeedUninstall))
-		for i := range dependencyBindingsThatNeedUninstall {
-			facadesThatNeedUninstall[i] = convert.BindingToFacade(dependencyBindingsThatNeedUninstall[i])
-		}
+	uninstall := exec.Command("go", "run", setup, "uninstall")
+	uninstall.Args = append(uninstall.Args, "--facade="+facade)
 
-		ctx.Info("The implicit dependency facades will be uninstalled as well: " + strings.Join(facadesThatNeedUninstall, ", "))
+	if force {
+		uninstall.Args = append(uninstall.Args, "--force")
 	}
 
-	force := ctx.OptionBool("force")
-	for _, bindingThatNeedUninstall := range bindingsThatNeedUninstall {
-		setup := r.bindings[bindingThatNeedUninstall].PkgPath + "/setup"
-		facade := convert.BindingToFacade(bindingThatNeedUninstall)
+	if err := supportconsole.ExecuteCommand(ctx, uninstall); err != nil {
+		ctx.Error(fmt.Sprintf("Failed to uninstall facade %s, error: %s", facade, err.Error()))
 
-		uninstall := exec.Command("go", "run", setup, "uninstall")
-		uninstall.Args = append(uninstall.Args, "--facade="+facade)
+		return nil
+	}
 
-		if force {
-			uninstall.Args = append(uninstall.Args, "--force")
-		}
+	ctx.Success(fmt.Sprintf("Facade %s uninstalled successfully", facade))
 
-		if err := supportconsole.ExecuteCommand(ctx, uninstall); err != nil {
-			ctx.Error(fmt.Sprintf("Failed to uninstall facade %s, error: %s", facade, err.Error()))
+	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
+		ctx.Error(fmt.Sprintf("failed to tidy go.mod file: %s", err))
 
-			return nil
-		}
-
-		ctx.Success(fmt.Sprintf("Facade %s uninstalled successfully", facade))
+		return nil
 	}
 
 	return nil
@@ -211,4 +207,23 @@ func (r *PackageUninstallCommand) getBindingsThatNeedUninstall(binding string) [
 	}
 
 	return needUninstallBindings
+}
+
+func (r *PackageUninstallCommand) getExistingUpperDependencyFacades(binding string) []string {
+	var facades []string
+	for _, installedBinding := range r.installedBindings {
+		installedBindingStr, ok := installedBinding.(string)
+		if !ok {
+			continue
+		}
+
+		for _, dependency := range getDependencyBindings(installedBindingStr, r.bindings) {
+			facade := convert.BindingToFacade(installedBindingStr)
+
+			if dependency == binding && file.Exists(r.app.FacadesPath(fmt.Sprintf("%s.go", strings.ToLower(facade)))) {
+				facades = append(facades, convert.BindingToFacade(installedBindingStr))
+			}
+		}
+	}
+	return facades
 }

@@ -1,7 +1,16 @@
-package config
+package main
 
 import (
-	"github.com/goravel/framework/facades"
+	"strings"
+)
+
+type Stubs struct{}
+
+func (s Stubs) Config(module string) string {
+	content := `package config
+
+import (
+	"DummyModule/app/facades"
 )
 
 func init() {
@@ -34,4 +43,21 @@ func init() {
 		// Must: a-zA-Z0-9_-
 		"prefix": config.GetString("APP_NAME", "goravel") + "_cache",
 	})
+}
+`
+
+	return strings.ReplaceAll(content, "DummyModule", module)
+}
+
+func (s Stubs) CacheFacade() string {
+	return `package facades
+
+import (
+	"github.com/goravel/framework/contracts/cache"
+)
+
+func Cache() cache.Cache {
+	return App().MakeCache()
+}
+`
 }

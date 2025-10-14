@@ -13,8 +13,6 @@ import (
 
 	contractsmatch "github.com/goravel/framework/contracts/packages/match"
 	"github.com/goravel/framework/contracts/packages/modify"
-	"github.com/goravel/framework/foundation"
-	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/options"
 	supportfile "github.com/goravel/framework/support/file"
@@ -290,6 +288,75 @@ func main() {
 	}
 }
 
+func (s *GoFileTestSuite) TestFindOrCreate() {
+	s.Run("create import when not exists", func() {
+		src := `package main
+func main() {}
+`
+		s.Require().NoError(supportfile.PutContent(s.file, src))
+
+		s.NoError(GoFile(s.file).FindOrCreate(match.Imports(), CreateImport).Modify(AddImport("fmt")).Apply())
+
+		content, err := supportfile.GetContent(s.file)
+		s.NoError(err)
+		s.Contains(content, `import "fmt"`)
+	})
+
+	s.Run("import already exists", func() {
+		src := `package main
+import "fmt"
+func main() {
+	fmt.Println("Hello, test!")
+}
+`
+		s.Require().NoError(supportfile.PutContent(s.file, src))
+
+		s.NoError(GoFile(s.file).FindOrCreate(match.Imports(), CreateImport).Modify(AddImport("fmt")).Apply())
+
+		content, err := supportfile.GetContent(s.file)
+		s.NoError(err)
+		s.Contains(content, `import "fmt"`)
+	})
+}
+
+func TestWhen(t *testing.T) {
+	t.Run("match", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		modifier := When(func() bool {
+			return true
+		}, apply)
+
+		err := modifier.Apply(options.Facade("Auth"))
+		assert.NoError(t, err)
+		assert.True(t, called)
+	})
+
+	t.Run("no match", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		modifier := When(func() bool {
+			return false
+		}, apply)
+
+		err := modifier.Apply(options.Facade("DB"))
+		assert.NoError(t, err)
+		assert.False(t, called)
+	})
+
+	t.Run("apply error", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called, shouldErr: true}
+		modifier := When(func() bool {
+			return true
+		}, apply)
+
+		err := modifier.Apply(options.Facade("Auth"))
+		assert.Equal(t, assert.AnError, err)
+		assert.True(t, called)
+	})
+}
+
 func TestWhenFacade(t *testing.T) {
 	t.Run("match", func(t *testing.T) {
 		called := false
@@ -327,13 +394,8 @@ func TestWhenNoFacades(t *testing.T) {
 		called := false
 		apply := &dummyApply{called: &called}
 		modifier := WhenNoFacades([]string{"Auth", "DB"}, apply)
-
-		dbFile := filepath.Join(t.TempDir(), "db.go")
-		mockApp := mocksfoundation.NewApplication(t)
-		mockApp.EXPECT().FacadesPath("db.go").Return(dbFile).Once()
-		foundation.App = mockApp
-
 		err := modifier.Apply(options.Facade("Auth"))
+
 		assert.NoError(t, err)
 		assert.True(t, called)
 	})
@@ -343,13 +405,13 @@ func TestWhenNoFacades(t *testing.T) {
 		apply := &dummyApply{called: &called}
 		modifier := WhenNoFacades([]string{"Auth", "DB"}, apply)
 
-		dbFile := filepath.Join(t.TempDir(), "db.go")
-		err := supportfile.PutContent(dbFile, "package facades\n")
+		path := facadeToFilepath("DB")
+		err := supportfile.PutContent(path, "package facades\n")
 		assert.NoError(t, err)
 
-		mockApp := mocksfoundation.NewApplication(t)
-		mockApp.EXPECT().FacadesPath("db.go").Return(dbFile).Once()
-		foundation.App = mockApp
+		defer func() {
+			assert.NoError(t, supportfile.Remove(path))
+		}()
 
 		err = modifier.Apply(options.Facade("Auth"))
 		assert.NoError(t, err)

@@ -12,9 +12,9 @@ import (
 	"github.com/goravel/framework/contracts/packages/match"
 	"github.com/goravel/framework/contracts/packages/modify"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/foundation"
 	"github.com/goravel/framework/support/color"
 	supportfile "github.com/goravel/framework/support/file"
+	"github.com/goravel/framework/support/path/internals"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -24,6 +24,13 @@ func File(path string) modify.File {
 
 func GoFile(file string) modify.GoFile {
 	return &goFile{file: file}
+}
+
+func When(fn func() bool, applies ...modify.Apply) modify.Apply {
+	return &whenModifier{
+		fn:      fn,
+		applies: applies,
+	}
 }
 
 func WhenFacade(facade string, applies ...modify.Apply) modify.Apply {
@@ -54,18 +61,20 @@ type file struct {
 
 func (r *file) Overwrite(content string) modify.Apply {
 	return &overwriteFile{
-		path:    r.path,
 		content: content,
+		path:    r.path,
 	}
 }
 
 func (r *file) Remove() modify.Apply {
-	return &removeFile{path: r.path}
+	return &removeFile{
+		path: r.path,
+	}
 }
 
 type overwriteFile struct {
-	path    string
 	content string
+	path    string
 }
 
 func (r *overwriteFile) Apply(options ...modify.Option) error {
@@ -124,16 +133,29 @@ func (r goFile) Find(matchers []match.GoNode) modify.GoNode {
 		goFile:   &r,
 	}
 	r.modifiers = append(r.modifiers, modifier)
+
+	return modifier
+}
+
+func (r goFile) FindOrCreate(matchers []match.GoNode, fn func(node dst.Node) error) modify.GoNode {
+	modifier := &goNode{
+		createFunc: fn,
+		matchers:   matchers,
+		goFile:     &r,
+	}
+	r.modifiers = append(r.modifiers, modifier)
+
 	return modifier
 }
 
 type goNode struct {
-	actions  []modify.Action
-	goFile   *goFile
-	matchers []match.GoNode
+	actions    []modify.Action
+	createFunc func(node dst.Node) error
+	goFile     *goFile
+	matchers   []match.GoNode
 }
 
-func (r goNode) Apply(node dst.Node) (err error) {
+func (r *goNode) Apply(node dst.Node) (err error) {
 	var (
 		current      int
 		matched      bool
@@ -177,6 +199,16 @@ func (r goNode) Apply(node dst.Node) (err error) {
 	})
 
 	if !matched {
+		if r.createFunc != nil {
+			if err := r.createFunc(node); err != nil {
+				return err
+			}
+
+			r.createFunc = nil // prevent infinite recursion
+
+			return r.Apply(node) // try to apply again after creation
+		}
+
 		count := len(r.matchers)
 		return errors.PackageMatchGoNodeFail.Args(count-current, count)
 	}
@@ -188,6 +220,25 @@ func (r *goNode) Modify(actions ...modify.Action) modify.GoFile {
 	r.actions = actions
 
 	return r.goFile
+}
+
+type whenModifier struct {
+	fn      func() bool
+	applies []modify.Apply
+}
+
+func (r whenModifier) Apply(options ...modify.Option) error {
+	if !r.fn() {
+		return nil
+	}
+
+	for _, apply := range r.applies {
+		if err := apply.Apply(options...); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 type whenFacadeModifier struct {
@@ -243,5 +294,5 @@ func (r whenNoFacadesModifier) Apply(options ...modify.Option) error {
 }
 
 func facadeToFilepath(facade string) string {
-	return foundation.App.FacadesPath(str.Of(facade).Snake().String() + ".go")
+	return internals.FacadesPath(str.Of(facade).Snake().String() + ".go")
 }

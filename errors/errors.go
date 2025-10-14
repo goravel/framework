@@ -65,3 +65,7 @@ func Unwrap(err error) error {
 func Ignore(fn func() error) {
 	_ = fn()
 }
+
+func Join(errs ...error) error {
+	return errors.Join(errs...)
+}

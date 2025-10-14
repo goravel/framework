@@ -1,7 +1,16 @@
-package config
+package main
 
 import (
-	"github.com/goravel/framework/facades"
+	"strings"
+)
+
+type Stubs struct{}
+
+func (s Stubs) Config(module string) string {
+	content := `package config
+
+import (
+	"DummyModule/app/facades"
 	"github.com/goravel/framework/support/path"
 )
 
@@ -34,4 +43,21 @@ func init() {
 			},
 		},
 	})
+}
+`
+
+	return strings.ReplaceAll(content, "DummyModule", module)
+}
+
+func (s Stubs) StorageFacade() string {
+	return `package facades
+
+import (
+	"github.com/goravel/framework/contracts/filesystem"
+)
+
+func Storage() filesystem.Storage {
+	return App().MakeStorage()
+}
+`
 }

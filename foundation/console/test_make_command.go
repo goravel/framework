@@ -5,6 +5,8 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/packages"
+	"github.com/goravel/framework/support"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 )
@@ -42,7 +44,7 @@ func (r *TestMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *TestMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "test", ctx.Argument(0), "tests")
+	m, err := supportconsole.NewMake(ctx, "test", ctx.Argument(0), support.Config.Paths.Test)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
@@ -50,7 +52,7 @@ func (r *TestMakeCommand) Handle(ctx console.Context) error {
 
 	stub := r.getStub()
 
-	if err := file.PutContent(m.GetFilePath(), r.populateStub(stub, m.GetPackageName(), m.GetStructName(), m.GetModuleName())); err != nil {
+	if err := file.PutContent(m.GetFilePath(), r.populateStub(stub, m.GetPackageName(), m.GetStructName(), packages.GetModuleName())); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}

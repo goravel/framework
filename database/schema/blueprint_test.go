@@ -269,6 +269,165 @@ func (s *BlueprintTestSuite) TestFloat() {
 	})
 }
 
+func (s *BlueprintTestSuite) TestForeignID() {
+	name := "name"
+	s.blueprint.ForeignID(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:     &name,
+		ttype:    convert.Pointer("bigInteger"),
+		unsigned: convert.Pointer(true),
+	})
+}
+
+func (s *BlueprintTestSuite) TestForeignIDConstrained() {
+	name := "user_id"
+	s.blueprint.ForeignID(name).Constrained("users", "id", "fk_user_id")
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:     &name,
+		ttype:    convert.Pointer("bigInteger"),
+		unsigned: convert.Pointer(true),
+	})
+
+	var fkCmd *driver.Command
+	for _, c := range s.blueprint.commands {
+		if c.Name == "foreign" {
+			fkCmd = c
+			break
+		}
+	}
+
+	s.NotNil(fkCmd)
+	s.Equal([]string{"user_id"}, fkCmd.Columns)
+	s.Equal("fk_user_id", fkCmd.Index)
+}
+
+func (s *BlueprintTestSuite) TestForeignIDReferences() {
+	name := "user_id"
+	s.blueprint.ForeignID(name).References("id", "fk_user_id")
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:     &name,
+		ttype:    convert.Pointer("bigInteger"),
+		unsigned: convert.Pointer(true),
+	})
+
+	var fkCmd *driver.Command
+	for _, c := range s.blueprint.commands {
+		if c.Name == "foreign" {
+			fkCmd = c
+			break
+		}
+	}
+
+	s.NotNil(fkCmd, "foreign key command should be created")
+	s.Equal([]string{"user_id"}, fkCmd.Columns)
+	s.Equal("fk_user_id", fkCmd.Index)
+}
+
+func (s *BlueprintTestSuite) TestForeignUlid() {
+	name := "user_id"
+	s.blueprint.ForeignUlid(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:   &name,
+		ttype:  convert.Pointer("char"),
+		length: convert.Pointer(26),
+	})
+}
+
+func (s *BlueprintTestSuite) TestForeignUlidConstrained() {
+	name := "user_id"
+	s.blueprint.ForeignUlid(name).Constrained("users", "id", "fk_user_id")
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:   &name,
+		ttype:  convert.Pointer("char"),
+		length: convert.Pointer(26),
+	})
+
+	var fkCmd *driver.Command
+	for _, c := range s.blueprint.commands {
+		if c.Name == "foreign" {
+			fkCmd = c
+			break
+		}
+	}
+
+	s.NotNil(fkCmd)
+	s.Equal([]string{"user_id"}, fkCmd.Columns)
+	s.Equal("fk_user_id", fkCmd.Index)
+}
+
+func (s *BlueprintTestSuite) TestForeignUlidReferences() {
+	name := "user_id"
+	s.blueprint.ForeignUlid(name).References("id", "fk_user_id")
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:   &name,
+		ttype:  convert.Pointer("char"),
+		length: convert.Pointer(26),
+	})
+
+	var fkCmd *driver.Command
+	for _, c := range s.blueprint.commands {
+		if c.Name == "foreign" {
+			fkCmd = c
+			break
+		}
+	}
+
+	s.NotNil(fkCmd, "foreign key command should be created")
+	s.Equal([]string{"user_id"}, fkCmd.Columns)
+	s.Equal("fk_user_id", fkCmd.Index)
+}
+
+func (s *BlueprintTestSuite) TestForeignUuid() {
+	name := "name"
+	s.blueprint.ForeignUuid(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:  &name,
+		ttype: convert.Pointer("uuid"),
+	})
+}
+
+func (s *BlueprintTestSuite) TestForeignUuidConstrained() {
+	name := "user_id"
+	s.blueprint.ForeignUuid(name).Constrained("users", "id", "fk_user_id")
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:  &name,
+		ttype: convert.Pointer("uuid"),
+	})
+
+	var fkCmd *driver.Command
+	for _, c := range s.blueprint.commands {
+		if c.Name == "foreign" {
+			fkCmd = c
+			break
+		}
+	}
+
+	s.NotNil(fkCmd)
+	s.Equal([]string{"user_id"}, fkCmd.Columns)
+	s.Equal("fk_user_id", fkCmd.Index)
+}
+
+func (s *BlueprintTestSuite) TestForeignUuidReferences() {
+	name := "user_id"
+	s.blueprint.ForeignUuid(name).References("id", "fk_user_id")
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:  &name,
+		ttype: convert.Pointer("uuid"),
+	})
+
+	var fkCmd *driver.Command
+	for _, c := range s.blueprint.commands {
+		if c.Name == "foreign" {
+			fkCmd = c
+			break
+		}
+	}
+
+	s.NotNil(fkCmd, "foreign key command should be created")
+	s.Equal([]string{"user_id"}, fkCmd.Columns)
+	s.Equal("fk_user_id", fkCmd.Index)
+}
+
 func (s *BlueprintTestSuite) TestGetAddedColumns() {
 	name := "name"
 	addedColumn := &ColumnDefinition{

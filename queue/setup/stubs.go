@@ -1,7 +1,16 @@
-package config
+package main
 
 import (
-	"github.com/goravel/framework/facades"
+	"strings"
+)
+
+type Stubs struct{}
+
+func (s Stubs) Config(module string) string {
+	content := `package config
+
+import (
+	"DummyModule/app/facades"
 )
 
 func init() {
@@ -35,4 +44,21 @@ func init() {
 			"table":    "failed_jobs",
 		},
 	})
+}
+`
+
+	return strings.ReplaceAll(content, "DummyModule", module)
+}
+
+func (s Stubs) QueueFacade() string {
+	return `package facades
+
+import (
+	"github.com/goravel/framework/contracts/queue"
+)
+
+func Queue() queue.Queue {
+	return App().MakeQueue()
+}
+`
 }

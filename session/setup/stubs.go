@@ -1,9 +1,19 @@
-package config
+package main
 
 import (
-	"github.com/goravel/framework/facades"
+	"strings"
+)
+
+type Stubs struct{}
+
+func (s Stubs) Config(module string) string {
+	content := `package config
+
+import (
 	"github.com/goravel/framework/support/path"
 	"github.com/goravel/framework/support/str"
+
+	"DummyModule/app/facades"
 )
 
 func init() {
@@ -89,4 +99,21 @@ func init() {
 		// will set this value to "lax" since this is a secure default value.
 		"same_site": config.Env("SESSION_SAME_SITE", "lax"),
 	})
+}
+`
+
+	return strings.ReplaceAll(content, "DummyModule", module)
+}
+
+func (s Stubs) SessionFacade() string {
+	return `package facades
+
+import (
+	"github.com/goravel/framework/contracts/session"
+)
+
+func Session() session.Manager {
+	return App().MakeSession()
+}
+`
 }
