@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/goravel/framework/contracts/binding"
+	contractsbinding "github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
@@ -18,12 +18,13 @@ import (
 )
 
 type PackageInstallCommand struct {
-	bindings                            map[string]binding.Info
+	bindings                            map[string]contractsbinding.Info
 	installedBindings                   []any
 	installedFacadesInTheCurrentCommand []string
+	choosenDrivers                      [][]contractsbinding.Driver
 }
 
-func NewPackageInstallCommand(bindings map[string]binding.Info, installedBindings []any) *PackageInstallCommand {
+func NewPackageInstallCommand(bindings map[string]contractsbinding.Info, installedBindings []any) *PackageInstallCommand {
 	return &PackageInstallCommand{
 		bindings:          bindings,
 		installedBindings: installedBindings,
@@ -215,6 +216,10 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 		if err := r.installDriver(ctx, facade, bindingInfo); err != nil {
 			return err
 		}
+
+		if len(bindingInfo.Drivers) > 0 {
+			r.choosenDrivers = append(r.choosenDrivers, bindingInfo.Drivers)
+		}
 	}
 
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
@@ -224,9 +229,15 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 	return nil
 }
 
-func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string, bindingInfo binding.Info) error {
+func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string, bindingInfo contractsbinding.Info) error {
 	if len(bindingInfo.Drivers) == 0 {
 		return nil
+	}
+
+	for _, chooseDriver := range r.choosenDrivers {
+		if slices.Equal(chooseDriver, bindingInfo.Drivers) {
+			return nil
+		}
 	}
 
 	var options []console.Choice
@@ -287,7 +298,7 @@ func (r *PackageInstallCommand) getBindingsToInstall(binding string) (bindingsTo
 	return
 }
 
-func getAvailableFacades(bindings map[string]binding.Info) []string {
+func getAvailableFacades(bindings map[string]contractsbinding.Info) []string {
 	var result []string
 	for binding, info := range bindings {
 		if !info.IsBase {
@@ -300,7 +311,7 @@ func getAvailableFacades(bindings map[string]binding.Info) []string {
 	return result
 }
 
-func getDependencyBindings(binding string, bindings map[string]binding.Info) []string {
+func getDependencyBindings(binding string, bindings map[string]contractsbinding.Info) []string {
 	var deps []string
 	for _, dep := range bindings[binding].Dependencies {
 		if info, ok := bindings[dep]; ok && !info.IsBase {
@@ -312,7 +323,7 @@ func getDependencyBindings(binding string, bindings map[string]binding.Info) []s
 	return collect.Unique(deps)
 }
 
-func getFacadeDescription(facade string, bindings map[string]binding.Info) string {
+func getFacadeDescription(facade string, bindings map[string]contractsbinding.Info) string {
 	binding := convert.FacadeToBinding(facade)
 	if info, exists := bindings[binding]; exists {
 		return info.Description
