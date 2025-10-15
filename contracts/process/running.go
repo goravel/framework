@@ -2,12 +2,16 @@ package process
 
 import (
 	"os"
+	"os/exec"
 	"time"
 )
 
 // Running represents a handle to a single, active process.
 // Its primary role is to manage the lifecycle and inspect the state of the process.
 type Running interface {
+	// Cmd returns the underlying exec.Cmd instance.
+	Cmd() *exec.Cmd
+
 	// PID returns the operating system process ID.
 	PID() int
 
