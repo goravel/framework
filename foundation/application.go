@@ -124,35 +124,51 @@ func (r *Application) Refresh() {
 }
 
 func (r *Application) Run(runners ...foundation.Runner) {
-	var allRunners []foundation.Runner
+	type RunnerWithInfo struct {
+		name    string
+		runner  foundation.Runner
+		running bool
+	}
+
+	var allRunners []*RunnerWithInfo
 
 	for _, serviceProvider := range r.getConfiguredServiceProviders() {
 		if serviceProviderWithRunners, ok := serviceProvider.(foundation.ServiceProviderWithRunners); ok {
-			allRunners = append(allRunners, serviceProviderWithRunners.Runners(r)...)
+			for _, runner := range serviceProviderWithRunners.Runners(r) {
+				allRunners = append(allRunners, &RunnerWithInfo{name: fmt.Sprintf("%T", runner), runner: runner, running: false})
+			}
 		}
 	}
 
-	allRunners = append(allRunners, runners...)
+	for _, runner := range runners {
+		allRunners = append(allRunners, &RunnerWithInfo{name: fmt.Sprintf("%T", runner), runner: runner, running: false})
+	}
 
-	for _, runner := range allRunners {
+	run := func(runner *RunnerWithInfo) {
 		go func() {
-			if err := runner.Run(); err != nil {
-				runnerName := fmt.Sprintf("%T", runner)
-				color.Errorf("Failed to run %s: %v", runnerName, err)
+			if err := runner.runner.Run(); err != nil {
+				color.Errorf("%s Run error: %v", runner.name, err)
+			} else {
+				runner.running = true
+			}
+		}()
+
+		go func() {
+			<-r.ctx.Done()
+
+			if !runner.running {
+				return
+			}
+
+			if err := runner.runner.Shutdown(); err != nil {
+				color.Errorf("%s Shutdown error: %v", runner.name, err)
 			}
 		}()
 	}
 
-	go func() {
-		<-r.ctx.Done()
-
-		for _, runner := range allRunners {
-			if err := runner.Shutdown(); err != nil {
-				runnerName := fmt.Sprintf("%T", runner)
-				color.Errorf("Failed to shutdown %s: %v", runnerName, err)
-			}
-		}
-	}()
+	for _, runner := range allRunners {
+		run(runner)
+	}
 }
 
 func (r *Application) SetJson(j foundation.Json) {

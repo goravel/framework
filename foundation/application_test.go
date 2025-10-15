@@ -103,8 +103,7 @@ func (s *ApplicationTestSuite) TestRun() {
 
 	secondServiceProvider := mocksfoundation.NewServiceProviderWithRunners(s.T())
 	secondRunner := mocksfoundation.NewRunner(s.T())
-	secondRunner.EXPECT().Run().Return(nil).Once()
-	secondRunner.EXPECT().Shutdown().Return(nil).Once()
+	secondRunner.EXPECT().Run().Return(assert.AnError).Once()
 	secondServiceProvider.EXPECT().Runners(s.app).Return([]foundation.Runner{secondRunner}).Once()
 
 	thirdRunner := mocksfoundation.NewRunner(s.T())
