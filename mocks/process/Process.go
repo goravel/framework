@@ -4,6 +4,8 @@ package process
 
 import (
 	context "context"
+	exec "os/exec"
+
 	io "io"
 
 	mock "github.com/stretchr/testify/mock"
@@ -501,6 +503,54 @@ func (_c *Process_TTY_Call) Return(_a0 process.Process) *Process_TTY_Call {
 }
 
 func (_c *Process_TTY_Call) RunAndReturn(run func() process.Process) *Process_TTY_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TapCmd provides a mock function with given fields: _a0
+func (_m *Process) TapCmd(_a0 func(*exec.Cmd)) process.Process {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TapCmd")
+	}
+
+	var r0 process.Process
+	if rf, ok := ret.Get(0).(func(func(*exec.Cmd)) process.Process); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(process.Process)
+		}
+	}
+
+	return r0
+}
+
+// Process_TapCmd_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TapCmd'
+type Process_TapCmd_Call struct {
+	*mock.Call
+}
+
+// TapCmd is a helper method to define mock.On call
+//   - _a0 func(*exec.Cmd)
+func (_e *Process_Expecter) TapCmd(_a0 interface{}) *Process_TapCmd_Call {
+	return &Process_TapCmd_Call{Call: _e.mock.On("TapCmd", _a0)}
+}
+
+func (_c *Process_TapCmd_Call) Run(run func(_a0 func(*exec.Cmd))) *Process_TapCmd_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func(*exec.Cmd)))
+	})
+	return _c
+}
+
+func (_c *Process_TapCmd_Call) Return(_a0 process.Process) *Process_TapCmd_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Process_TapCmd_Call) RunAndReturn(run func(func(*exec.Cmd)) process.Process) *Process_TapCmd_Call {
 	_c.Call.Return(run)
 	return _c
 }
