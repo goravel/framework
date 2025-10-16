@@ -3,6 +3,7 @@ package process
 import (
 	"context"
 	"io"
+	"maps"
 	"strconv"
 	"sync"
 	"time"
@@ -123,9 +124,17 @@ func (r *PoolBuilder) start(configure func(contractsprocess.Pool)) (contractspro
 			defer workersWg.Done()
 			for currentJob := range jobCh {
 				step := currentJob.step
-				proc := New().WithContext(ctx).Path(step.path).Env(step.env).Input(step.input)
+				cmdCtx := step.ctx
+				if cmdCtx == nil {
+					cmdCtx = ctx
+				}
+
+				proc := New().WithContext(cmdCtx).Path(step.path).Env(step.env).Input(step.input)
 				if step.quietly {
 					proc = proc.Quietly()
+				}
+				if !step.buffering {
+					proc = proc.DisableBuffering()
 				}
 				if step.timeout > 0 {
 					proc = proc.Timeout(step.timeout)
@@ -201,6 +210,7 @@ func NewPoolCommand(key, name string, args []string) *PoolCommand {
 		name:      name,
 		args:      args,
 		buffering: true,
+		env:       make(map[string]string),
 	}
 }
 
@@ -215,9 +225,7 @@ func (r *PoolCommand) DisableBuffering() contractsprocess.PoolCommand {
 }
 
 func (r *PoolCommand) Env(vars map[string]string) contractsprocess.PoolCommand {
-	for k, v := range vars {
-		r.env[k] = v
-	}
+	maps.Copy(r.env, vars)
 	return r
 }
 
