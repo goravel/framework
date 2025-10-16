@@ -449,8 +449,10 @@ func TestPool_Cleanup_Windows(t *testing.T) {
 		// Create a temp file to write to
 		tmpFile, err := os.CreateTemp("", "pool-test")
 		assert.NoError(t, err)
-		tmpFile.Close()
-		defer os.Remove(tmpFile.Name())
+		assert.NoError(t, tmpFile.Close())
+		defer func(name string) {
+			assert.NoError(t, os.Remove(name))
+		}(tmpFile.Name())
 
 		builder := NewPool()
 		results, err := builder.Run(func(p contractsprocess.Pool) {
