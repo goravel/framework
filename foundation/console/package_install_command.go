@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/goravel/framework/contracts/binding"
+	contractsbinding "github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
@@ -18,12 +18,13 @@ import (
 )
 
 type PackageInstallCommand struct {
-	bindings                            map[string]binding.Info
+	bindings                            map[string]contractsbinding.Info
 	installedBindings                   []any
 	installedFacadesInTheCurrentCommand []string
+	chosenDrivers                       [][]contractsbinding.Driver
 }
 
-func NewPackageInstallCommand(bindings map[string]binding.Info, installedBindings []any) *PackageInstallCommand {
+func NewPackageInstallCommand(bindings map[string]contractsbinding.Info, installedBindings []any) *PackageInstallCommand {
 	return &PackageInstallCommand{
 		bindings:          bindings,
 		installedBindings: installedBindings,
@@ -215,6 +216,10 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 		if err := r.installDriver(ctx, facade, bindingInfo); err != nil {
 			return err
 		}
+
+		if len(bindingInfo.Drivers) > 0 {
+			r.chosenDrivers = append(r.chosenDrivers, bindingInfo.Drivers)
+		}
 	}
 
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
@@ -224,9 +229,23 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 	return nil
 }
 
-func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string, bindingInfo binding.Info) error {
+func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string, bindingInfo contractsbinding.Info) error {
 	if len(bindingInfo.Drivers) == 0 {
 		return nil
+	}
+
+	for _, chooseDriver := range r.chosenDrivers {
+		sortedChooseDriver := slices.Clone(chooseDriver)
+		slices.SortFunc(sortedChooseDriver, func(a, b contractsbinding.Driver) int {
+			return strings.Compare(a.Name, b.Name)
+		})
+		sortedDrivers := slices.Clone(bindingInfo.Drivers)
+		slices.SortFunc(sortedDrivers, func(a, b contractsbinding.Driver) int {
+			return strings.Compare(a.Name, b.Name)
+		})
+		if slices.Equal(sortedChooseDriver, sortedDrivers) {
+			return nil
+		}
 	}
 
 	var options []console.Choice
@@ -287,7 +306,7 @@ func (r *PackageInstallCommand) getBindingsToInstall(binding string) (bindingsTo
 	return
 }
 
-func getAvailableFacades(bindings map[string]binding.Info) []string {
+func getAvailableFacades(bindings map[string]contractsbinding.Info) []string {
 	var result []string
 	for binding, info := range bindings {
 		if !info.IsBase {
@@ -300,7 +319,7 @@ func getAvailableFacades(bindings map[string]binding.Info) []string {
 	return result
 }
 
-func getDependencyBindings(binding string, bindings map[string]binding.Info) []string {
+func getDependencyBindings(binding string, bindings map[string]contractsbinding.Info) []string {
 	var deps []string
 	for _, dep := range bindings[binding].Dependencies {
 		if info, ok := bindings[dep]; ok && !info.IsBase {
@@ -312,7 +331,7 @@ func getDependencyBindings(binding string, bindings map[string]binding.Info) []s
 	return collect.Unique(deps)
 }
 
-func getFacadeDescription(facade string, bindings map[string]binding.Info) string {
+func getFacadeDescription(facade string, bindings map[string]contractsbinding.Info) string {
 	binding := convert.FacadeToBinding(facade)
 	if info, exists := bindings[binding]; exists {
 		return info.Description

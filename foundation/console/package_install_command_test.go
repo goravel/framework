@@ -233,6 +233,62 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 	}
 }
 
+func (s *PackageInstallCommandTestSuite) Test_installFacade_TwoFacadesHaveTheSameDrivers_ShouldOnlyInstallOnce() {
+	var (
+		mockContext = mocksconsole.NewContext(s.T())
+		pkg         = "github.com/goravel/postgres"
+		drivers     = []binding.Driver{
+			{
+				Name:    "Postgres",
+				Package: pkg,
+			},
+			{
+				Name:    "MySQL",
+				Package: "github.com/goravel/mysql",
+			},
+		}
+		bindings = map[string]binding.Info{
+			binding.DB: {
+				PkgPath: "github.com/goravel/framework/database",
+				Drivers: drivers,
+			},
+			binding.Orm: {
+				PkgPath: "github.com/goravel/framework/database",
+				Drivers: drivers,
+			},
+		}
+		dbFacade          = "DB"
+		ormFacade         = "orm"
+		installedBindings = []any{}
+	)
+
+	packageInstallCommand := NewPackageInstallCommand(bindings, installedBindings)
+
+	// Install DB facade
+	mockContext.EXPECT().Spinner("> @go run "+bindings[binding.DB].PkgPath+"/setup install --facade=DB --module=github.com/goravel/framework", mock.Anything).Return(nil).Once()
+	mockContext.EXPECT().Choice(fmt.Sprintf("Select the %s driver to install", dbFacade), []console.Choice{
+		{Key: "Postgres", Value: pkg},
+		{Key: "MySQL", Value: "github.com/goravel/mysql"},
+		{Key: "Custom", Value: "Custom"},
+	}, console.ChoiceOption{
+		Description: fmt.Sprintf("A driver is required for %s, please select one to install.", dbFacade),
+	}).Return(pkg, nil).Once()
+	mockContext.EXPECT().Spinner("> @go get "+pkg, mock.Anything).Return(nil).Once()
+	mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install", mock.Anything).Return(nil).Once()
+	mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Twice()
+	mockContext.EXPECT().Success("Package " + pkg + " installed successfully").Once()
+	mockContext.EXPECT().Success("Facade DB installed successfully").Once()
+
+	s.NoError(packageInstallCommand.installFacade(mockContext, dbFacade))
+
+	// Install Orm facade, should not install the driver again
+	mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Orm].PkgPath+"/setup install --facade=Orm --module=github.com/goravel/framework", mock.Anything).Return(nil).Once()
+	mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
+	mockContext.EXPECT().Success("Facade Orm installed successfully").Once()
+
+	s.NoError(packageInstallCommand.installFacade(mockContext, ormFacade))
+}
+
 func (s *PackageInstallCommandTestSuite) Test_installDriver() {
 	var (
 		mockContext *mocksconsole.Context
