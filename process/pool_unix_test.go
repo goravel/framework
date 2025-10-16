@@ -141,7 +141,7 @@ func TestPool_WithContext_Unix(t *testing.T) {
 
 	t.Run("handles nil context", func(t *testing.T) {
 		// Passing nil should use background context
-		builder := NewPool().WithContext(nil)
+		builder := NewPool().WithContext(context.TODO())
 
 		rp, err := builder.Start(func(p contractsprocess.Pool) {
 			p.Command("echo", "test").As("test")
