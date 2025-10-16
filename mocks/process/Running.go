@@ -4,7 +4,6 @@ package process
 
 import (
 	os "os"
-	exec "os/exec"
 
 	mock "github.com/stretchr/testify/mock"
 
@@ -24,53 +23,6 @@ type Running_Expecter struct {
 
 func (_m *Running) EXPECT() *Running_Expecter {
 	return &Running_Expecter{mock: &_m.Mock}
-}
-
-// Cmd provides a mock function with no fields
-func (_m *Running) Cmd() *exec.Cmd {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for Cmd")
-	}
-
-	var r0 *exec.Cmd
-	if rf, ok := ret.Get(0).(func() *exec.Cmd); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*exec.Cmd)
-		}
-	}
-
-	return r0
-}
-
-// Running_Cmd_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Cmd'
-type Running_Cmd_Call struct {
-	*mock.Call
-}
-
-// Cmd is a helper method to define mock.On call
-func (_e *Running_Expecter) Cmd() *Running_Cmd_Call {
-	return &Running_Cmd_Call{Call: _e.mock.On("Cmd")}
-}
-
-func (_c *Running_Cmd_Call) Run(run func()) *Running_Cmd_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Running_Cmd_Call) Return(_a0 *exec.Cmd) *Running_Cmd_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Running_Cmd_Call) RunAndReturn(run func() *exec.Cmd) *Running_Cmd_Call {
-	_c.Call.Return(run)
-	return _c
 }
 
 // Done provides a mock function with no fields

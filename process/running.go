@@ -68,10 +68,6 @@ func NewRunning(cmd *exec.Cmd, cancel context.CancelFunc, stdout, stderr *bytes.
 	return runner
 }
 
-func (r *Running) Cmd() *exec.Cmd {
-	return r.cmd
-}
-
 func (r *Running) Done() <-chan struct{} {
 	return r.doneChan
 }
