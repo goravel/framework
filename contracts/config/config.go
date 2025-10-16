@@ -5,6 +5,10 @@ import "time"
 type Config interface {
 	// Env get config from env.
 	Env(envName string, defaultValue ...any) any
+	// EnvString get string value from env with optional default.
+	EnvString(envName string, defaultValue ...string) string
+	// EnvBool get bool value from env with optional default.
+	EnvBool(envName string, defaultValue ...bool) bool
 	// Add config to application.
 	Add(name string, configuration any)
 	// Get config from application.
