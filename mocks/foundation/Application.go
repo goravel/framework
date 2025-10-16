@@ -404,6 +404,53 @@ func (_c *Application_ConfigPath_Call) RunAndReturn(run func(...string) string) 
 	return _c
 }
 
+// Context provides a mock function with no fields
+func (_m *Application) Context() context.Context {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Context")
+	}
+
+	var r0 context.Context
+	if rf, ok := ret.Get(0).(func() context.Context); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(context.Context)
+		}
+	}
+
+	return r0
+}
+
+// Application_Context_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Context'
+type Application_Context_Call struct {
+	*mock.Call
+}
+
+// Context is a helper method to define mock.On call
+func (_e *Application_Expecter) Context() *Application_Context_Call {
+	return &Application_Context_Call{Call: _e.mock.On("Context")}
+}
+
+func (_c *Application_Context_Call) Run(run func()) *Application_Context_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Application_Context_Call) Return(_a0 context.Context) *Application_Context_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Application_Context_Call) RunAndReturn(run func() context.Context) *Application_Context_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CurrentLocale provides a mock function with given fields: ctx
 func (_m *Application) CurrentLocale(ctx context.Context) string {
 	ret := _m.Called(ctx)
@@ -2468,6 +2515,52 @@ func (_c *Application_ResourcePath_Call) RunAndReturn(run func(...string) string
 	return _c
 }
 
+// Run provides a mock function with given fields: runners
+func (_m *Application) Run(runners ...foundation.Runner) {
+	_va := make([]interface{}, len(runners))
+	for _i := range runners {
+		_va[_i] = runners[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	_m.Called(_ca...)
+}
+
+// Application_Run_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Run'
+type Application_Run_Call struct {
+	*mock.Call
+}
+
+// Run is a helper method to define mock.On call
+//   - runners ...foundation.Runner
+func (_e *Application_Expecter) Run(runners ...interface{}) *Application_Run_Call {
+	return &Application_Run_Call{Call: _e.mock.On("Run",
+		append([]interface{}{}, runners...)...)}
+}
+
+func (_c *Application_Run_Call) Run(run func(runners ...foundation.Runner)) *Application_Run_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]foundation.Runner, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(foundation.Runner)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Application_Run_Call) Return() *Application_Run_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Application_Run_Call) RunAndReturn(run func(...foundation.Runner)) *Application_Run_Call {
+	_c.Run(run)
+	return _c
+}
+
 // SetJson provides a mock function with given fields: json
 func (_m *Application) SetJson(json foundation.Json) {
 	_m.Called(json)
@@ -2547,6 +2640,38 @@ func (_c *Application_SetLocale_Call) Return(_a0 context.Context) *Application_S
 
 func (_c *Application_SetLocale_Call) RunAndReturn(run func(context.Context, string) context.Context) *Application_SetLocale_Call {
 	_c.Call.Return(run)
+	return _c
+}
+
+// Shutdown provides a mock function with no fields
+func (_m *Application) Shutdown() {
+	_m.Called()
+}
+
+// Application_Shutdown_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Shutdown'
+type Application_Shutdown_Call struct {
+	*mock.Call
+}
+
+// Shutdown is a helper method to define mock.On call
+func (_e *Application_Expecter) Shutdown() *Application_Shutdown_Call {
+	return &Application_Shutdown_Call{Call: _e.mock.On("Shutdown")}
+}
+
+func (_c *Application_Shutdown_Call) Run(run func()) *Application_Shutdown_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Application_Shutdown_Call) Return() *Application_Shutdown_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Application_Shutdown_Call) RunAndReturn(run func()) *Application_Shutdown_Call {
+	_c.Run(run)
 	return _c
 }
 

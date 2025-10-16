@@ -30,5 +30,8 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 	})
 }
 
-func (r *ServiceProvider) Boot(app foundation.Application) {
+func (r *ServiceProvider) Boot(app foundation.Application) {}
+
+func (r *ServiceProvider) Runners(app foundation.Application) []foundation.Runner {
+	return []foundation.Runner{NewGrpcRunner(app.MakeConfig(), app.MakeGrpc())}
 }
