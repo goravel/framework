@@ -10,10 +10,15 @@ type ServiceProvider interface {
 }
 
 type ServiceProviderWithRelations interface {
+	ServiceProvider
+
 	// Relationship returns the service provider's relationship.
 	Relationship() binding.Relationship
-	// Register any application services.
-	Register(app Application)
-	// Boot any application services after register.
-	Boot(app Application)
+}
+
+type ServiceProviderWithRunners interface {
+	ServiceProvider
+
+	// Runners returns the service provider's runners.
+	Runners(app Application) []Runner
 }

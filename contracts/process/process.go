@@ -3,6 +3,7 @@ package process
 import (
 	"context"
 	"io"
+	"os/exec"
 	"time"
 )
 
@@ -67,6 +68,11 @@ type Process interface {
 	// handle to monitor and control its execution. The caller must later
 	// wait or terminate the process explicitly.
 	Start(name string, arg ...string) (Running, error)
+
+	// TapCmd provides direct access to the underlying exec.Cmd before
+	// the process is started. This allows for advanced customization of
+	// the command, such as setting additional fields or modifying existing ones.
+	TapCmd(func(*exec.Cmd)) Process
 
 	// Timeout sets a maximum execution duration for the process.
 	// If the timeout is exceeded, the process will be terminated.

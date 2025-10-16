@@ -1,9 +1,13 @@
 package foundation
 
 import (
+	"context"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -11,29 +15,31 @@ import (
 	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/foundation"
 	mocksconfig "github.com/goravel/framework/mocks/config"
+	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	"github.com/goravel/framework/support"
-	"github.com/goravel/framework/support/file"
 )
 
 type ApplicationTestSuite struct {
 	suite.Suite
-	app *Application
+	app    *Application
+	cancel context.CancelFunc
 }
 
 func TestApplicationTestSuite(t *testing.T) {
-	assert.Nil(t, file.PutContent(support.EnvFilePath, "APP_KEY=12345678901234567890123456789012"))
-
 	suite.Run(t, new(ApplicationTestSuite))
-
-	assert.Nil(t, file.Remove(support.EnvFilePath))
 }
 
 func (s *ApplicationTestSuite) SetupTest() {
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+
 	s.app = &Application{
 		Container:     NewContainer(),
+		ctx:           ctx,
 		publishes:     make(map[string]map[string]string),
 		publishGroups: make(map[string]map[string]string),
 	}
+	s.cancel = cancel
+
 	App = s.app
 }
 
@@ -86,6 +92,35 @@ func (s *ApplicationTestSuite) TestExecutablePath() {
 	s.Equal(filepath.Join(path, "test"), executable2)
 	executable3 := s.app.ExecutablePath("test", "test2/test3")
 	s.Equal(filepath.Join(path, "test", "test2/test3"), executable3)
+}
+
+func (s *ApplicationTestSuite) TestRun() {
+	oneServiceProvider := mocksfoundation.NewServiceProviderWithRunners(s.T())
+	oneRunner := mocksfoundation.NewRunner(s.T())
+	oneRunner.EXPECT().Run().Return(nil).Once()
+	oneRunner.EXPECT().Shutdown().Return(nil).Once()
+	oneServiceProvider.EXPECT().Runners(s.app).Return([]foundation.Runner{oneRunner}).Once()
+
+	secondServiceProvider := mocksfoundation.NewServiceProviderWithRunners(s.T())
+	secondRunner := mocksfoundation.NewRunner(s.T())
+	secondRunner.EXPECT().Run().Return(assert.AnError).Once()
+	secondServiceProvider.EXPECT().Runners(s.app).Return([]foundation.Runner{secondRunner}).Once()
+
+	thirdRunner := mocksfoundation.NewRunner(s.T())
+	thirdRunner.EXPECT().Run().Return(nil).Once()
+	thirdRunner.EXPECT().Shutdown().Return(nil).Once()
+
+	s.app.configuredServiceProviders = []foundation.ServiceProvider{
+		oneServiceProvider,
+		secondServiceProvider,
+	}
+
+	s.app.Run(thirdRunner)
+	time.Sleep(100 * time.Millisecond) // Wait for goroutines to start
+
+	s.cancel()
+
+	time.Sleep(100 * time.Millisecond) // Wait for goroutines to end
 }
 
 func (s *ApplicationTestSuite) TestPublishes() {

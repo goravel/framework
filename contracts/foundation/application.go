@@ -30,6 +30,12 @@ import (
 	"github.com/goravel/framework/contracts/validation"
 )
 
+type Runner interface {
+	ShouldRun() bool
+	Run() error
+	Shutdown() error
+}
+
 type AboutItem struct {
 	Key   string
 	Value string
@@ -42,6 +48,8 @@ type Application interface {
 	Boot()
 	// Commands register the given commands with the console application.
 	Commands([]console.Command)
+	// Context gets the application context.
+	Context() context.Context
 	// GetJson get the JSON implementation.
 	GetJson() Json
 	// IsLocale get the current application locale.
@@ -50,10 +58,14 @@ type Application interface {
 	Publishes(packageName string, paths map[string]string, groups ...string)
 	// Refresh all modules after changing config, will call the Boot method simultaneously.
 	Refresh()
+	// Run runs modules.
+	Run(runners ...Runner)
 	// SetJson set the JSON implementation.
 	SetJson(json Json)
 	// SetLocale set the current application locale.
 	SetLocale(ctx context.Context, locale string) context.Context
+	// Shutdown the application and all its runners.
+	Shutdown()
 	// Version gets the version number of the application.
 	Version() string
 

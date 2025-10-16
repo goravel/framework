@@ -21,6 +21,7 @@ type Process struct {
 	onOutput  contractsprocess.OnOutputFunc
 	path      string
 	quietly   bool
+  tapCmd            func(*exec.Cmd)
 	timeout   time.Duration
 	tty       bool
 }
@@ -73,6 +74,12 @@ func (r *Process) Run(name string, args ...string) (contractsprocess.Result, err
 
 func (r *Process) Start(name string, args ...string) (contractsprocess.Running, error) {
 	return r.start(name, args...)
+}
+
+func (r *Process) TapCmd(f func(*exec.Cmd)) contractsprocess.Process {
+	r.tapCmd = f
+
+	return r
 }
 
 func (r *Process) Timeout(timeout time.Duration) contractsprocess.Process {
@@ -151,6 +158,10 @@ func (r *Process) start(name string, args ...string) (contractsprocess.Running, 
 	}
 	if len(stderrWriters) > 0 {
 		cmd.Stderr = io.MultiWriter(stderrWriters...)
+	}
+
+	if r.tapCmd != nil {
+		r.tapCmd(cmd)
 	}
 
 	if err := cmd.Start(); err != nil {
