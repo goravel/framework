@@ -41,6 +41,15 @@ type AboutItem struct {
 	Value string
 }
 
+type ApplicationBuilder interface {
+	// Create a new application instance after configuring.
+	Create() Application
+	// Run the application.
+	Run()
+	// WithConfig sets a callback function to configure the application.
+	WithConfig(func()) ApplicationBuilder
+}
+
 type Application interface {
 	// About add information to the application's about command.
 	About(section string, items []AboutItem)
