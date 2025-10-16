@@ -21,7 +21,7 @@ type PackageInstallCommand struct {
 	bindings                            map[string]contractsbinding.Info
 	installedBindings                   []any
 	installedFacadesInTheCurrentCommand []string
-	choosenDrivers                      [][]contractsbinding.Driver
+	chosenDrivers                       [][]contractsbinding.Driver
 }
 
 func NewPackageInstallCommand(bindings map[string]contractsbinding.Info, installedBindings []any) *PackageInstallCommand {
@@ -218,7 +218,7 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 		}
 
 		if len(bindingInfo.Drivers) > 0 {
-			r.choosenDrivers = append(r.choosenDrivers, bindingInfo.Drivers)
+			r.chosenDrivers = append(r.chosenDrivers, bindingInfo.Drivers)
 		}
 	}
 
@@ -234,8 +234,16 @@ func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string
 		return nil
 	}
 
-	for _, chooseDriver := range r.choosenDrivers {
-		if slices.Equal(chooseDriver, bindingInfo.Drivers) {
+	for _, chooseDriver := range r.chosenDrivers {
+		sortedChooseDriver := slices.Clone(chooseDriver)
+		slices.SortFunc(sortedChooseDriver, func(a, b contractsbinding.Driver) int {
+			return strings.Compare(a.Name, b.Name)
+		})
+		sortedDrivers := slices.Clone(bindingInfo.Drivers)
+		slices.SortFunc(sortedDrivers, func(a, b contractsbinding.Driver) int {
+			return strings.Compare(a.Name, b.Name)
+		})
+		if slices.Equal(sortedChooseDriver, sortedDrivers) {
 			return nil
 		}
 	}
