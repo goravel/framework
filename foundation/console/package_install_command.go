@@ -15,6 +15,7 @@ import (
 	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/convert"
+	"github.com/goravel/framework/support/str"
 )
 
 type PackageInstallCommand struct {
@@ -255,14 +256,9 @@ func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string
 			key += color.Gray().Sprintf(" - %s", driver.Description)
 		}
 
-		value := driver.Package
-		if driver.IsDefault {
-			value = "Default"
-		}
-
 		options = append(options, console.Choice{
 			Key:   key,
-			Value: value,
+			Value: driver.Package,
 		})
 	}
 
@@ -284,9 +280,16 @@ func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string
 			return err
 		}
 	}
-	if driver == "Default" {
-		return nil
+
+	if isInternalDriver(driver) {
+		setup := bindingInfo.PkgPath + "/setup"
+		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--driver="+driver, "--module="+packages.GetModuleName())); err != nil {
+			ctx.Error(fmt.Sprintf("Failed to install driver %s: %s", driver, err.Error()))
+
+			return nil
+		}
 	}
+
 	if driver == "" {
 		return r.installDriver(ctx, facade, bindingInfo)
 	}
@@ -349,4 +352,8 @@ func getFacadeDescription(facade string, bindings map[string]contractsbinding.In
 
 func isPackage(pkg string) bool {
 	return strings.Contains(pkg, "/")
+}
+
+func isInternalDriver(name string) bool {
+	return !str.Of(name).Contains(".", "/")
 }
