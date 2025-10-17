@@ -166,8 +166,8 @@ func (r *Pipeline) start(configure func(contractsprocess.Pipe)) (contractsproces
 		}
 
 		if r.onOutput != nil {
-			stdoutWriters = append(stdoutWriters, NewOutputWriterForPipe(pipeCommands[i].key, contractsprocess.OutputTypeStdout, r.onOutput))
-			stderrWriters = append(stderrWriters, NewOutputWriterForPipe(pipeCommands[i].key, contractsprocess.OutputTypeStderr, r.onOutput))
+			stdoutWriters = append(stdoutWriters, NewOutputWriterForPipe(contractsprocess.OutputTypeStdout, pipeCommands[i].key, r.onOutput))
+			stderrWriters = append(stderrWriters, NewOutputWriterForPipe(contractsprocess.OutputTypeStderr, pipeCommands[i].key, r.onOutput))
 		}
 
 		// If this is not the last command, create a pipe to the next command and include the pipe writer

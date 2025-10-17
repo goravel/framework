@@ -247,7 +247,7 @@ func TestRunningPool_Timeout_Windows(t *testing.T) {
 func TestRunningPool_OnOutput_Windows(t *testing.T) {
 	t.Run("captures output via callback", func(t *testing.T) {
 		outputs := make(map[string][]string)
-		builder := NewPool().OnOutput(func(key string, typ contractsprocess.OutputType, line []byte) {
+		builder := NewPool().OnOutput(func(typ contractsprocess.OutputType, key string, line []byte) {
 			outputs[key] = append(outputs[key], string(line))
 		})
 

@@ -228,7 +228,7 @@ func TestPool_Concurrency_Unix(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var buf bytes.Buffer
-			builder := NewPool().Concurrency(tt.concurrency).OnOutput(func(key string, typ contractsprocess.OutputType, line []byte) {
+			builder := NewPool().Concurrency(tt.concurrency).OnOutput(func(typ contractsprocess.OutputType, key string, line []byte) {
 				buf.WriteString(key + ":" + time.Now().Format(time.RFC3339Nano) + "\n")
 			})
 
@@ -260,7 +260,7 @@ func TestPool_Concurrency_Unix(t *testing.T) {
 func TestPool_OnOutput_Unix(t *testing.T) {
 	t.Run("captures output via callback", func(t *testing.T) {
 		outputs := make(map[string][]string)
-		builder := NewPool().OnOutput(func(key string, typ contractsprocess.OutputType, line []byte) {
+		builder := NewPool().OnOutput(func(typ contractsprocess.OutputType, key string, line []byte) {
 			outputs[key] = append(outputs[key], string(line))
 		})
 
@@ -285,7 +285,7 @@ func TestPool_OnOutput_Unix(t *testing.T) {
 		stdoutLines := make(map[string][]string)
 		stderrLines := make(map[string][]string)
 
-		builder := NewPool().OnOutput(func(key string, typ contractsprocess.OutputType, line []byte) {
+		builder := NewPool().OnOutput(func(typ contractsprocess.OutputType, key string, line []byte) {
 			if typ == contractsprocess.OutputTypeStdout {
 				stdoutLines[key] = append(stdoutLines[key], string(line))
 			} else {

@@ -139,32 +139,32 @@ func (r *PoolBuilder) start(configure func(contractsprocess.Pool)) (contractspro
 		go func() {
 			defer workersWg.Done()
 			for currentJob := range jobCh {
-				step := currentJob.command
-				cmdCtx := step.ctx
+				command := currentJob.command
+				cmdCtx := command.ctx
 				if cmdCtx == nil {
 					cmdCtx = ctx
 				}
 
-				proc := New().WithContext(cmdCtx).Path(step.path).Env(step.env).Input(step.input)
-				if step.quietly {
+				proc := New().WithContext(cmdCtx).Path(command.path).Env(command.env).Input(command.input)
+				if command.quietly {
 					proc = proc.Quietly()
 				}
-				if !step.buffering {
+				if !command.buffering {
 					proc = proc.DisableBuffering()
 				}
-				if step.timeout > 0 {
-					proc = proc.Timeout(step.timeout)
+				if command.timeout > 0 {
+					proc = proc.Timeout(command.timeout)
 				}
 				if r.onOutput != nil {
 					proc = proc.OnOutput(func(typ contractsprocess.OutputType, line []byte) {
-						r.onOutput(step.key, typ, line)
+						r.onOutput(typ, command.key, line)
 					})
 				}
 
-				run, err := proc.Start(step.name, step.args...)
+				run, err := proc.Start(command.name, command.args...)
 
 				if err != nil {
-					resultCh <- result{key: step.key, res: NewResult(err, -1, step.name, "", "")}
+					resultCh <- result{key: command.key, res: NewResult(err, -1, command.name, "", "")}
 				} else {
 					mu.Lock()
 					runningProcesses[currentJob.id] = run
@@ -176,7 +176,7 @@ func (r *PoolBuilder) start(configure func(contractsprocess.Pool)) (contractspro
 					go func(p contractsprocess.Running, k string) {
 						res := p.Wait()
 						resultCh <- result{key: k, res: res}
-					}(run, step.key)
+					}(run, command.key)
 				}
 			}
 		}()

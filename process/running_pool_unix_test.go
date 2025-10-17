@@ -187,7 +187,7 @@ func TestRunningPool_Stop_Unix(t *testing.T) {
 			action: func(t *testing.T, rp contractsprocess.RunningPool) {
 				time.Sleep(100 * time.Millisecond)
 				// Use very short timeout to force SIGKILL after SIGTERM fails
-				err := rp.Stop(1 * time.Millisecond)
+				err := rp.Stop(2 * time.Millisecond)
 				assert.NoError(t, err, "Stopping with SIGKILL should not return an error on Unix")
 			},
 			validate: func(t *testing.T, results map[string]contractsprocess.Result) {
@@ -229,7 +229,7 @@ func TestRunningPool_Timeout_Unix(t *testing.T) {
 func TestRunningPool_OnOutput_Unix(t *testing.T) {
 	t.Run("captures output via callback", func(t *testing.T) {
 		outputs := make(map[string][]string)
-		builder := NewPool().OnOutput(func(key string, typ contractsprocess.OutputType, line []byte) {
+		builder := NewPool().OnOutput(func(typ contractsprocess.OutputType, key string, line []byte) {
 			outputs[key] = append(outputs[key], string(line))
 		})
 
