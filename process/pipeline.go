@@ -101,7 +101,7 @@ func (r *Pipeline) start(configure func(contractsprocess.Pipe)) (contractsproces
 	pipe := &Pipe{}
 	configure(pipe)
 
-	steps := pipe.steps
+	steps := pipe.commands
 	if len(steps) == 0 {
 		return nil, errors.ProcessPipelineEmpty
 	}
@@ -219,13 +219,13 @@ func (r *Pipeline) start(configure func(contractsprocess.Pipe)) (contractsproces
 }
 
 type Pipe struct {
-	steps []*PipeCommand
+	commands []*PipeCommand
 }
 
 func (r *Pipe) Command(name string, args ...string) contractsprocess.PipeCommand {
-	step := NewPipeCommand(strconv.Itoa(len(r.steps)), name, args)
-	r.steps = append(r.steps, step)
-	return step
+	command := NewPipeCommand(strconv.Itoa(len(r.commands)), name, args)
+	r.commands = append(r.commands, command)
+	return command
 }
 
 type PipeCommand struct {

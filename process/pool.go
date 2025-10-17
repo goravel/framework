@@ -70,7 +70,7 @@ func (r *PoolBuilder) start(configure func(contractsprocess.Pool)) (contractspro
 	pool := &Pool{}
 	configure(pool)
 
-	steps := pool.steps
+	steps := pool.commands
 	if len(steps) == 0 {
 		return nil, errors.ProcessPipelineEmpty
 	}
@@ -182,13 +182,13 @@ func (r *PoolBuilder) start(configure func(contractsprocess.Pool)) (contractspro
 }
 
 type Pool struct {
-	steps []*PoolCommand
+	commands []*PoolCommand
 }
 
 func (r *Pool) Command(name string, args ...string) contractsprocess.PoolCommand {
-	step := NewPoolCommand(strconv.Itoa(len(r.steps)), name, args)
-	r.steps = append(r.steps, step)
-	return step
+	command := NewPoolCommand(strconv.Itoa(len(r.commands)), name, args)
+	r.commands = append(r.commands, command)
+	return command
 }
 
 type PoolCommand struct {
