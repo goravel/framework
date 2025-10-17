@@ -66,12 +66,34 @@ func (r *PoolBuilder) run(configure func(pool contractsprocess.Pool)) (map[strin
 	return run.Wait(), nil
 }
 
+type job struct {
+	id      int
+	command *PoolCommand
+}
+
+type result struct {
+	key string
+	res contractsprocess.Result
+}
+
+// start initiates the execution of all configured commands concurrently but does not wait for them to complete.
+// It orchestrates a pool of worker goroutines to process commands up to the specified concurrency limit.
+//
+// This method is non-blocking. It returns a RunningPool instance immediately, which can be used to
+// wait for the completion of all processes and retrieve their results.
+//
+// The core concurrency pattern is as follows:
+//  1. A job channel (`jobCh`) distributes commands to a pool of worker goroutines.
+//  2. A result channel (`resultCh`) collects the outcome of each command from a dedicated waiter goroutine.
+//  3. A separate "collector" goroutine safely populates the final results map from the result channel.
+//  4. WaitGroups synchronize the completion of all workers and the collection of all results
+//     before the entire operation is marked as "done".
 func (r *PoolBuilder) start(configure func(contractsprocess.Pool)) (contractsprocess.RunningPool, error) {
 	pool := &Pool{}
 	configure(pool)
 
-	steps := pool.commands
-	if len(steps) == 0 {
+	commands := pool.commands
+	if len(commands) == 0 {
 		return nil, errors.ProcessPipelineEmpty
 	}
 
@@ -82,34 +104,28 @@ func (r *PoolBuilder) start(configure func(contractsprocess.Pool)) (contractspro
 	}
 
 	concurrency := r.concurrency
-	if concurrency <= 0 || concurrency > len(steps) {
-		concurrency = len(steps)
+	if concurrency <= 0 || concurrency > len(commands) {
+		concurrency = len(commands)
 	}
 
-	type job struct {
-		id   int
-		step *PoolCommand
-	}
-	type result struct {
-		key string
-		res contractsprocess.Result
-	}
-
-	jobCh := make(chan job, len(steps))
-	resultCh := make(chan result, len(steps))
+	jobCh := make(chan job, len(commands))
+	resultCh := make(chan result, len(commands))
 	done := make(chan struct{})
 
-	results := make(map[string]contractsprocess.Result, len(steps))
-	runningProcesses := make([]contractsprocess.Running, len(steps))
-	keys := make([]string, len(steps))
+	results := make(map[string]contractsprocess.Result, len(commands))
+	runningProcesses := make([]contractsprocess.Running, len(commands))
+	keys := make([]string, len(commands))
 
 	var resultsWg sync.WaitGroup
 	var workersWg sync.WaitGroup
 	var mu sync.Mutex
 
-	resultsWg.Add(len(steps))
+	// The results collector goroutine centralizes writing to the results map
+	// to avoid race conditions, as map writes are not concurrent-safe.
+	// It waits for all expected results before exiting.
+	resultsWg.Add(len(commands))
 	go func() {
-		for i := 0; i < len(steps); i++ {
+		for i := 0; i < len(commands); i++ {
 			rc := <-resultCh
 			mu.Lock()
 			results[rc.key] = rc.res
@@ -123,7 +139,7 @@ func (r *PoolBuilder) start(configure func(contractsprocess.Pool)) (contractspro
 		go func() {
 			defer workersWg.Done()
 			for currentJob := range jobCh {
-				step := currentJob.step
+				step := currentJob.command
 				cmdCtx := step.ctx
 				if cmdCtx == nil {
 					cmdCtx = ctx
@@ -154,6 +170,9 @@ func (r *PoolBuilder) start(configure func(contractsprocess.Pool)) (contractspro
 					runningProcesses[currentJob.id] = run
 					mu.Unlock()
 
+					// Launch a dedicated goroutine to wait for the process to finish.
+					// This prevents the worker from being blocked by a long-running process
+					// and allows it to immediately pick up the next job from jobCh.
 					go func(p contractsprocess.Running, k string) {
 						res := p.Wait()
 						resultCh <- result{key: k, res: res}
@@ -163,12 +182,16 @@ func (r *PoolBuilder) start(configure func(contractsprocess.Pool)) (contractspro
 		}()
 	}
 
-	for i, step := range steps {
-		keys[i] = step.key
-		jobCh <- job{id: i, step: step}
+	for i, command := range commands {
+		keys[i] = command.key
+		jobCh <- job{id: i, command: command}
 	}
 	close(jobCh)
 
+	// This goroutine orchestrates the clean shutdown. It waits for all workers
+	// to finish processing jobs, then waits for all results to be collected.
+	// Finally, it cancels the context (if a timeout was set) and signals
+	// completion by closing the `done` channel.
 	go func() {
 		workersWg.Wait()
 		resultsWg.Wait()
