@@ -157,7 +157,7 @@ func (r *PoolBuilder) start(configure func(contractsprocess.Pool)) (contractspro
 				}
 				if r.onOutput != nil {
 					proc = proc.OnOutput(func(typ contractsprocess.OutputType, line []byte) {
-						r.onOutput(typ, command.key, line)
+						r.onOutput(typ, line, command.key)
 					})
 				}
 

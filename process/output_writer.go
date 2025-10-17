@@ -7,17 +7,17 @@ import (
 	contractsprocess "github.com/goravel/framework/contracts/process"
 )
 
-type OutputWriterHandler func(typ contractsprocess.OutputType, key string, line []byte)
+type OutputWriterHandler func(typ contractsprocess.OutputType, line []byte, key string)
 
 func NewOutputWriterForProcess(typ contractsprocess.OutputType, handler contractsprocess.OnOutputFunc) *OutputWriter {
-	return NewOutputWriter(typ, "", func(t contractsprocess.OutputType, _ string, line []byte) {
+	return NewOutputWriter(typ, "", func(t contractsprocess.OutputType, line []byte, _ string) {
 		handler(t, line)
 	})
 }
 
 func NewOutputWriterForPipe(typ contractsprocess.OutputType, key string, h contractsprocess.OnPipeOutputFunc) *OutputWriter {
-	return NewOutputWriter(typ, key, func(t contractsprocess.OutputType, k string, line []byte) {
-		h(t, k, line)
+	return NewOutputWriter(typ, key, func(t contractsprocess.OutputType, line []byte, k string) {
+		h(t, line, k)
 	})
 }
 
@@ -65,6 +65,6 @@ func (w *OutputWriter) Write(p []byte) (n int, err error) {
 		lineCopy := make([]byte, len(line))
 		copy(lineCopy, line)
 
-		w.handler(w.typ, w.key, lineCopy)
+		w.handler(w.typ, lineCopy, w.key)
 	}
 }

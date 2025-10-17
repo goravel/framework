@@ -20,9 +20,9 @@ func (_m *OnPoolOutputFunc) EXPECT() *OnPoolOutputFunc_Expecter {
 	return &OnPoolOutputFunc_Expecter{mock: &_m.Mock}
 }
 
-// Execute provides a mock function with given fields: typ, key, line
-func (_m *OnPoolOutputFunc) Execute(typ process.OutputType, key string, line []byte) {
-	_m.Called(typ, key, line)
+// Execute provides a mock function with given fields: typ, line, key
+func (_m *OnPoolOutputFunc) Execute(typ process.OutputType, line []byte, key string) {
+	_m.Called(typ, line, key)
 }
 
 // OnPoolOutputFunc_Execute_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Execute'
@@ -32,15 +32,15 @@ type OnPoolOutputFunc_Execute_Call struct {
 
 // Execute is a helper method to define mock.On call
 //   - typ process.OutputType
-//   - key string
 //   - line []byte
-func (_e *OnPoolOutputFunc_Expecter) Execute(typ interface{}, key interface{}, line interface{}) *OnPoolOutputFunc_Execute_Call {
-	return &OnPoolOutputFunc_Execute_Call{Call: _e.mock.On("Execute", typ, key, line)}
+//   - key string
+func (_e *OnPoolOutputFunc_Expecter) Execute(typ interface{}, line interface{}, key interface{}) *OnPoolOutputFunc_Execute_Call {
+	return &OnPoolOutputFunc_Execute_Call{Call: _e.mock.On("Execute", typ, line, key)}
 }
 
-func (_c *OnPoolOutputFunc_Execute_Call) Run(run func(typ process.OutputType, key string, line []byte)) *OnPoolOutputFunc_Execute_Call {
+func (_c *OnPoolOutputFunc_Execute_Call) Run(run func(typ process.OutputType, line []byte, key string)) *OnPoolOutputFunc_Execute_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(process.OutputType), args[1].(string), args[2].([]byte))
+		run(args[0].(process.OutputType), args[1].([]byte), args[2].(string))
 	})
 	return _c
 }
@@ -50,7 +50,7 @@ func (_c *OnPoolOutputFunc_Execute_Call) Return() *OnPoolOutputFunc_Execute_Call
 	return _c
 }
 
-func (_c *OnPoolOutputFunc_Execute_Call) RunAndReturn(run func(process.OutputType, string, []byte)) *OnPoolOutputFunc_Execute_Call {
+func (_c *OnPoolOutputFunc_Execute_Call) RunAndReturn(run func(process.OutputType, []byte, string)) *OnPoolOutputFunc_Execute_Call {
 	_c.Run(run)
 	return _c
 }

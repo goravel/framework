@@ -16,7 +16,7 @@ func TestOutputWriter_Write_SingleLine(t *testing.T) {
 	var receivedType contractsprocess.OutputType
 	var receivedLine []byte
 
-	writer := NewOutputWriter(contractsprocess.OutputTypeStdout, testKey, func(typ contractsprocess.OutputType, key string, line []byte) {
+	writer := NewOutputWriter(contractsprocess.OutputTypeStdout, testKey, func(typ contractsprocess.OutputType, line []byte, key string) {
 		receivedKey = key
 		receivedType = typ
 		receivedLine = append([]byte{}, line...)
@@ -37,7 +37,7 @@ func TestOutputWriter_Write_MultipleLines(t *testing.T) {
 	var lines []string
 	var types []contractsprocess.OutputType
 
-	writer := NewOutputWriter(contractsprocess.OutputTypeStderr, testKey, func(typ contractsprocess.OutputType, key string, line []byte) {
+	writer := NewOutputWriter(contractsprocess.OutputTypeStderr, testKey, func(typ contractsprocess.OutputType, line []byte, key string) {
 		keys = append(keys, key)
 		types = append(types, typ)
 		lines = append(lines, string(line))
@@ -58,7 +58,7 @@ func TestOutputWriter_Write_MultipleLines(t *testing.T) {
 
 func TestOutputWriter_Write_PartialLines(t *testing.T) {
 	var lines []string
-	writer := NewOutputWriter(contractsprocess.OutputTypeStdout, "tests", func(typ contractsprocess.OutputType, _ string, line []byte) {
+	writer := NewOutputWriter(contractsprocess.OutputTypeStdout, "tests", func(typ contractsprocess.OutputType, line []byte, _ string) {
 		lines = append(lines, string(line))
 	})
 
@@ -78,7 +78,7 @@ func TestOutputWriter_Write_PartialLines(t *testing.T) {
 func TestOutputWriter_Write_BufferHandling(t *testing.T) {
 	var lines []string
 
-	writer := NewOutputWriter(contractsprocess.OutputTypeStdout, "test", func(typ contractsprocess.OutputType, _ string, line []byte) {
+	writer := NewOutputWriter(contractsprocess.OutputTypeStdout, "test", func(typ contractsprocess.OutputType, line []byte, _ string) {
 		lines = append(lines, string(line))
 	})
 
@@ -114,7 +114,7 @@ func TestOutputWriter_Write_BufferHandling(t *testing.T) {
 func TestOutputWriter_Write_EmptyLines(t *testing.T) {
 	var lines []string
 
-	writer := NewOutputWriter(contractsprocess.OutputTypeStdout, "test", func(typ contractsprocess.OutputType, _ string, line []byte) {
+	writer := NewOutputWriter(contractsprocess.OutputTypeStdout, "test", func(typ contractsprocess.OutputType, line []byte, _ string) {
 		lines = append(lines, string(line))
 	})
 
@@ -128,7 +128,7 @@ func TestOutputWriter_Write_LineModification(t *testing.T) {
 	// Test that modifying the line in the callback doesn't affect future callbacks
 	var allLines []string
 
-	writer := NewOutputWriter(contractsprocess.OutputTypeStdout, "test", func(typ contractsprocess.OutputType, _ string, line []byte) {
+	writer := NewOutputWriter(contractsprocess.OutputTypeStdout, "test", func(typ contractsprocess.OutputType, line []byte, _ string) {
 		allLines = append(allLines, string(line))
 		// Modify the line - should not affect original buffer
 		if len(line) > 0 {
@@ -145,7 +145,7 @@ func TestOutputWriter_Write_LineModification(t *testing.T) {
 func TestOutputWriter_Write_LargeInput(t *testing.T) {
 	// Test with a large input that spans multiple internal buffer sizes
 	lineCount := 0
-	writer := NewOutputWriter(contractsprocess.OutputTypeStdout, "test", func(typ contractsprocess.OutputType, _ string, line []byte) {
+	writer := NewOutputWriter(contractsprocess.OutputTypeStdout, "test", func(typ contractsprocess.OutputType, line []byte, _ string) {
 		lineCount++
 	})
 
@@ -166,7 +166,7 @@ func TestOutputWriter_Write_LargeInput(t *testing.T) {
 func TestOutputWriter_Write_KeyIsPropagated(t *testing.T) {
 	var receivedKeys []string
 
-	writer := NewOutputWriter(contractsprocess.OutputTypeStdout, "pipe-123", func(typ contractsprocess.OutputType, key string, line []byte) {
+	writer := NewOutputWriter(contractsprocess.OutputTypeStdout, "pipe-123", func(typ contractsprocess.OutputType, line []byte, key string) {
 		receivedKeys = append(receivedKeys, key)
 	})
 

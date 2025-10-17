@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-type OnPoolOutputFunc func(typ OutputType, key string, line []byte)
+type OnPoolOutputFunc func(typ OutputType, line []byte, key string)
 
 // PoolBuilder defines the interface for configuring and launching a pool of concurrent processes.
 type PoolBuilder interface {

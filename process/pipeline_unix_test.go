@@ -56,7 +56,7 @@ func TestPipe_Run_Input_Path_Env_Unix(t *testing.T) {
 
 func TestPipe_OnOutput_ReceivesFromEachStep_Unix(t *testing.T) {
 	var byKey = map[string][]string{}
-	res, err := NewPipe().Quietly().OnOutput(func(typ contractsprocess.OutputType, key string, line []byte) {
+	res, err := NewPipe().Quietly().OnOutput(func(typ contractsprocess.OutputType, line []byte, key string) {
 		byKey[key] = append(byKey[key], string(line))
 	}).Run(func(b contractsprocess.Pipe) {
 		b.Command("sh", "-c", "printf 'a\\nb\\n'").As("first")
@@ -75,7 +75,7 @@ func TestPipe_OnOutput_ReceivesFromEachStep_Unix(t *testing.T) {
 
 func TestPipe_DisableBuffering_Unix(t *testing.T) {
 	var stdoutLines, stderrLines int
-	res, err := NewPipe().DisableBuffering().Quietly().OnOutput(func(typ contractsprocess.OutputType, key string, line []byte) {
+	res, err := NewPipe().DisableBuffering().Quietly().OnOutput(func(typ contractsprocess.OutputType, line []byte, key string) {
 		if typ == contractsprocess.OutputTypeStdout {
 			stdoutLines++
 		} else {

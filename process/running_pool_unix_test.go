@@ -229,7 +229,7 @@ func TestRunningPool_Timeout_Unix(t *testing.T) {
 func TestRunningPool_OnOutput_Unix(t *testing.T) {
 	t.Run("captures output via callback", func(t *testing.T) {
 		outputs := make(map[string][]string)
-		builder := NewPool().OnOutput(func(typ contractsprocess.OutputType, key string, line []byte) {
+		builder := NewPool().OnOutput(func(typ contractsprocess.OutputType, line []byte, key string) {
 			outputs[key] = append(outputs[key], string(line))
 		})
 
