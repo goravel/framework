@@ -101,8 +101,8 @@ func (r *Pipeline) start(configure func(contractsprocess.Pipe)) (contractsproces
 	pipe := &Pipe{}
 	configure(pipe)
 
-	steps := pipe.commands
-	if len(steps) == 0 {
+	pipeCommands := pipe.commands
+	if len(pipeCommands) == 0 {
 		return nil, errors.ProcessPipelineEmpty
 	}
 
@@ -116,8 +116,8 @@ func (r *Pipeline) start(configure func(contractsprocess.Pipe)) (contractsproces
 		ctx, cancel = context.WithTimeout(ctx, r.timeout)
 	}
 
-	commands := make([]*exec.Cmd, len(steps))
-	for i, step := range steps {
+	commands := make([]*exec.Cmd, len(pipeCommands))
+	for i, step := range pipeCommands {
 		cmd := exec.CommandContext(ctx, step.name, step.args...)
 		if r.path != "" {
 			cmd.Dir = r.path
@@ -166,8 +166,8 @@ func (r *Pipeline) start(configure func(contractsprocess.Pipe)) (contractsproces
 		}
 
 		if r.onOutput != nil {
-			stdoutWriters = append(stdoutWriters, NewOutputWriterForPipe(steps[i].key, contractsprocess.OutputTypeStdout, r.onOutput))
-			stderrWriters = append(stderrWriters, NewOutputWriterForPipe(steps[i].key, contractsprocess.OutputTypeStderr, r.onOutput))
+			stdoutWriters = append(stdoutWriters, NewOutputWriterForPipe(pipeCommands[i].key, contractsprocess.OutputTypeStdout, r.onOutput))
+			stderrWriters = append(stderrWriters, NewOutputWriterForPipe(pipeCommands[i].key, contractsprocess.OutputTypeStderr, r.onOutput))
 		}
 
 		// If this is not the last command, create a pipe to the next command and include the pipe writer
@@ -215,7 +215,7 @@ func (r *Pipeline) start(configure func(contractsprocess.Pipe)) (contractsproces
 		started = i + 1
 	}
 
-	return NewRunningPipe(commands, steps, cancel, interReaders, interWriters, stdoutBuffers, stderrBuffers), nil
+	return NewRunningPipe(commands, pipeCommands, cancel, interReaders, interWriters, stdoutBuffers, stderrBuffers), nil
 }
 
 type Pipe struct {
