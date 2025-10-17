@@ -44,7 +44,8 @@ type Driver struct {
 	// A brief description of the driver.
 	Description string
 	// The package address of the driver.
-	Package string
+	Package   string
+	IsDefault bool
 }
 
 type Info struct {
@@ -94,6 +95,17 @@ var (
 			Dependencies: []string{
 				Config,
 				Log,
+			},
+			Drivers: []Driver{
+				{
+					Name:        "Memory",
+					Description: "default",
+					IsDefault:   true,
+				},
+				{
+					Name:    "Redis",
+					Package: "github.com/goravel/redis",
+				},
 			},
 		},
 		Crypt: {

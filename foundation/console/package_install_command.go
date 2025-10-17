@@ -255,9 +255,14 @@ func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string
 			key += color.Gray().Sprintf(" - %s", driver.Description)
 		}
 
+		value := driver.Package
+		if driver.IsDefault {
+			value = "Default"
+		}
+
 		options = append(options, console.Choice{
 			Key:   key,
-			Value: driver.Package,
+			Value: value,
 		})
 	}
 
@@ -279,12 +284,14 @@ func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string
 			return err
 		}
 	}
-
+	if driver == "Default" {
+		return nil
+	}
 	if driver == "" {
 		return r.installDriver(ctx, facade, bindingInfo)
-	} else {
-		return r.installPackage(ctx, driver)
 	}
+
+	return r.installPackage(ctx, driver)
 }
 
 func (r *PackageInstallCommand) getBindingsToInstall(binding string) (bindingsToInstall []string) {
