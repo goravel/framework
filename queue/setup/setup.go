@@ -13,6 +13,7 @@ import (
 func main() {
 	stubs := Stubs{}
 	queueFacade := "Queue"
+	databaseDriver := "database"
 	moduleName := packages.GetModuleNameFromArgs(os.Args)
 	appServiceProviderPath := path.App("providers", "app_service_provider.go")
 	registerJobs := "facades.Queue().Register([]queue.Job{})"
@@ -25,22 +26,27 @@ func main() {
 
 	packages.Setup(os.Args).
 		Install(
-			// Add the queue service provider to the application service provider
-			modify.GoFile(appConfigPath).
-				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register(queueServiceProvider)),
+			modify.WhenFacade(queueFacade,
+				// Add the queue service provider to the application service provider
+				modify.GoFile(appConfigPath).
+					Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
+					Find(match.Providers()).Modify(modify.Register(queueServiceProvider)),
 
-			// Add the queue configuration file
-			modify.File(queueConfigPath).Overwrite(stubs.Config(moduleName)),
+				// Add the queue configuration file
+				modify.File(queueConfigPath).Overwrite(stubs.Config(moduleName)),
 
-			// Add the Register method to the AppServiceProvider to register the queue jobs.
-			modify.GoFile(appServiceProviderPath).
-				Find(match.Imports()).Modify(modify.AddImport(queueImport)).
-				Find(match.Imports()).Modify(modify.AddImport(facadesImport)).
-				Find(match.RegisterFunc()).Modify(modify.Add(registerJobs)),
+				// Add the Register method to the AppServiceProvider to register the queue jobs.
+				modify.GoFile(appServiceProviderPath).
+					Find(match.Imports()).Modify(modify.AddImport(queueImport)).
+					Find(match.Imports()).Modify(modify.AddImport(facadesImport)).
+					Find(match.RegisterFunc()).Modify(modify.Add(registerJobs)),
 
-			// Add the queue facade to the facades file
-			modify.WhenFacade(queueFacade, modify.File(queueFacadePath).Overwrite(stubs.QueueFacade())),
+				// Add the queue facade to the facades file
+				modify.File(queueFacadePath).Overwrite(stubs.QueueFacade()),
+			),
+
+			// Add the database driver
+			modify.WhenDriver(databaseDriver, modify.GoFile(queueConfigPath).Find(match.Config("queue")).Modify(modify.AddConfig("default", `"database"`))),
 		).
 		Uninstall(
 			// Remove the queue facade

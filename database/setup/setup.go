@@ -35,6 +35,14 @@ func main() {
 
 	packages.Setup(os.Args).
 		Install(
+			// Create config/database.go and database/kernel.go
+			modify.File(databaseConfigPath).Overwrite(stubs.Config(moduleName)),
+
+			// Add the database service provider to the providers array in config/app.go
+			modify.GoFile(appConfigPath).
+				Find(match.Imports()).Modify(modify.AddImport(modulePath)).
+				Find(match.Providers()).Modify(modify.Register(databaseServiceProvider)),
+
 			// Register the DB, Orm, Schema and Seeder facades
 			modify.WhenFacade(dbFacade, modify.File(dbFacadePath).Overwrite(stubs.DBFacade())),
 			modify.WhenFacade(ormFacade, modify.File(ormFacadePath).Overwrite(stubs.OrmFacade())),
@@ -68,14 +76,6 @@ func main() {
 					Find(match.Imports()).Modify(modify.AddImport(facadesImport)).
 					Find(match.RegisterFunc()).Modify(modify.Add(registerSeeder)),
 			),
-
-			// Create config/database.go and database/kernel.go
-			modify.File(databaseConfigPath).Overwrite(stubs.Config(moduleName)),
-
-			// Add the database service provider to the providers array in config/app.go
-			modify.GoFile(appConfigPath).
-				Find(match.Imports()).Modify(modify.AddImport(modulePath)).
-				Find(match.Providers()).Modify(modify.Register(databaseServiceProvider)),
 		).
 		Uninstall(
 			modify.WhenNoFacades([]string{dbFacade, ormFacade, schemaFacade, seederFacade},

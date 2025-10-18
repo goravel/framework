@@ -357,6 +357,38 @@ func TestWhen(t *testing.T) {
 	})
 }
 
+func TestWhenDriver(t *testing.T) {
+	t.Run("match", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		modifier := WhenDriver("database", apply)
+
+		err := modifier.Apply(options.Driver("database"))
+		assert.NoError(t, err)
+		assert.True(t, called)
+	})
+
+	t.Run("no match", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		modifier := WhenDriver("database", apply)
+
+		err := modifier.Apply(options.Driver("sync"))
+		assert.NoError(t, err)
+		assert.False(t, called)
+	})
+
+	t.Run("apply error", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called, shouldErr: true}
+		modifier := WhenDriver("database", apply)
+
+		err := modifier.Apply(options.Driver("database"))
+		assert.Equal(t, assert.AnError, err)
+		assert.True(t, called)
+	})
+}
+
 func TestWhenFacade(t *testing.T) {
 	t.Run("match", func(t *testing.T) {
 		called := false

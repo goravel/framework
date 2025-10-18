@@ -95,6 +95,17 @@ var (
 				Config,
 				Log,
 			},
+			Drivers: []Driver{
+				{
+					Name:        "Memory",
+					Description: "default",
+					Package:     "memory",
+				},
+				{
+					Name:    "Redis",
+					Package: "github.com/goravel/redis",
+				},
+			},
 		},
 		Crypt: {
 			Description: "Provides encryption and decryption services.",
@@ -232,6 +243,21 @@ var (
 				DB,
 				Log,
 			},
+			Drivers: []Driver{
+				{
+					Name:        "Sync",
+					Description: "default",
+					Package:     "sync",
+				},
+				{
+					Name:    "Database",
+					Package: "database",
+				},
+				{
+					Name:    "Redis",
+					Package: "github.com/goravel/redis",
+				},
+			},
 		},
 		RateLimiter: {
 			Description: "Provides a simple and efficient way to limit the rate of incoming requests.",
@@ -289,12 +315,50 @@ var (
 			Dependencies: []string{
 				Config,
 			},
+			Drivers: []Driver{
+				{
+					Name:        "File",
+					Description: "default",
+					Package:     "file",
+				},
+				{
+					Name:    "Redis",
+					Package: "github.com/goravel/redis",
+				},
+			},
 		},
 		Storage: {
 			Description: "Provides a unified API for interacting with various file storage systems.",
 			PkgPath:     "github.com/goravel/framework/filesystem",
 			Dependencies: []string{
 				Config,
+			},
+			Drivers: []Driver{
+				{
+					Name:        "Local",
+					Description: "default",
+					Package:     "local",
+				},
+				{
+					Name:        "S3",
+					Description: "power by Amazon",
+					Package:     "github.com/goravel/s3",
+				},
+				{
+					Name:        "OSS",
+					Description: "power by Alibaba Cloud",
+					Package:     "github.com/goravel/oss",
+				},
+				{
+					Name:        "cos",
+					Description: "power by Tencent Cloud",
+					Package:     "github.com/goravel/cos",
+				},
+				{
+					Name:        "MinIO",
+					Description: "a high-performance, S3-compatible object storage solution",
+					Package:     "github.com/goravel/minio",
+				},
 			},
 		},
 		Testing: {

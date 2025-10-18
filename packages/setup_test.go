@@ -57,7 +57,7 @@ func (s *PackagesSetupTestSuite) TestExecute() {
 					}
 				)
 
-				mockModify.EXPECT().Apply(mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option")).Return(assert.AnError).Once()
+				mockModify.EXPECT().Apply(mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option")).Return(assert.AnError).Once()
 				set.Install(mockModify)
 
 				return set
@@ -77,7 +77,7 @@ func (s *PackagesSetupTestSuite) TestExecute() {
 						command: "install",
 					}
 				)
-				mockModify.EXPECT().Apply(mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option")).Return(nil).Once()
+				mockModify.EXPECT().Apply(mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option")).Return(nil).Once()
 				set.Install(mockModify)
 
 				return set
@@ -96,7 +96,7 @@ func (s *PackagesSetupTestSuite) TestExecute() {
 						command: "uninstall",
 					}
 				)
-				mockModify.EXPECT().Apply(mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option")).Return(assert.AnError).Once()
+				mockModify.EXPECT().Apply(mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option")).Return(assert.AnError).Once()
 				set.Uninstall(mockModify)
 
 				return set
@@ -117,7 +117,7 @@ func (s *PackagesSetupTestSuite) TestExecute() {
 						force:   true,
 					}
 				)
-				mockModify.EXPECT().Apply(mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option")).Return(assert.AnError).Once()
+				mockModify.EXPECT().Apply(mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option")).Return(assert.AnError).Once()
 				set.Uninstall(mockModify)
 
 				return set
@@ -137,7 +137,7 @@ func (s *PackagesSetupTestSuite) TestExecute() {
 						command: "uninstall",
 					}
 				)
-				mockModify.EXPECT().Apply(mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option")).Return(nil).Once()
+				mockModify.EXPECT().Apply(mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option")).Return(nil).Once()
 				set.Uninstall(mockModify)
 
 				return set
@@ -161,17 +161,19 @@ func (s *PackagesSetupTestSuite) TestExecute() {
 }
 
 func TestSetup(t *testing.T) {
-	s := Setup([]string{"install", "--force", "--facade=test"})
+	s := Setup([]string{"install", "--force", "--facade=test", "--driver=database"})
 	assert.Equal(t, &setup{
 		command: "install",
+		driver:  "database",
 		facade:  "test",
 		force:   true,
 		module:  "",
 	}, s.(*setup))
 
-	s = Setup([]string{"uninstall", "-f", "--facade=test"})
+	s = Setup([]string{"uninstall", "-f", "--facade=test", "--driver=database"})
 	assert.Equal(t, &setup{
 		command: "uninstall",
+		driver:  "database",
 		facade:  "test",
 		force:   true,
 		module:  "",
