@@ -258,7 +258,7 @@ func (s *PackageInstallCommandTestSuite) Test_installFacade_TwoFacadesHaveTheSam
 			},
 		}
 		dbFacade          = "DB"
-		ormFacade         = "orm"
+		ormFacade         = "Orm"
 		installedBindings = []any{}
 	)
 
