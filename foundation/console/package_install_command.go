@@ -285,7 +285,7 @@ func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string
 			return fmt.Errorf("failed to install driver %s: %s", driver, err.Error())
 		}
 
-		ctx.Success(fmt.Sprintf("Driver %s installed successfully", facade))
+		ctx.Success(fmt.Sprintf("Driver %s installed successfully", driver))
 
 		return nil
 	}
