@@ -5,6 +5,8 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/contracts/event"
+	mocksevent "github.com/goravel/framework/mocks/event"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 )
 
@@ -27,12 +29,18 @@ func (s *ApplicationBuilderTestSuite) SetupTest() {
 
 func (s *ApplicationBuilderTestSuite) TestCreate() {
 	s.mockApp.EXPECT().Boot().Return().Once()
+	mockEvent := mocksevent.NewInstance(s.T())
+	mockEvent.EXPECT().Register(map[event.Event][]event.Listener{}).Return().Once()
+	s.mockApp.EXPECT().MakeEvent().Return(mockEvent).Once()
 
 	calledConfig := false
 
-	app := s.builder.WithConfig(func() {
-		calledConfig = true
-	}).Create()
+	app := s.builder.
+		WithConfig(func() {
+			calledConfig = true
+		}).
+		WithEvents(map[event.Event][]event.Listener{}).
+		Create()
 
 	s.NotNil(app)
 	s.True(calledConfig)

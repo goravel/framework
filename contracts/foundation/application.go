@@ -48,6 +48,8 @@ type ApplicationBuilder interface {
 	Run()
 	// WithConfig sets a callback function to configure the application.
 	WithConfig(func()) ApplicationBuilder
+	// WithEvents sets event listeners for the application.
+	WithEvents(map[event.Event][]event.Listener) ApplicationBuilder
 }
 
 type Application interface {
