@@ -155,17 +155,17 @@ func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) 
 
 	// get package
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "get", pkg)); err != nil {
-		return fmt.Errorf("Failed to get package: %s", err)
+		return fmt.Errorf("failed to get package: %s", err)
 	}
 
 	// install package
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install")); err != nil {
-		return fmt.Errorf("Failed to install package: %s", err)
+		return fmt.Errorf("failed to install package: %s", err)
 	}
 
 	// tidy go.mod file
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
-		return fmt.Errorf("Failed to tidy go.mod file: %s", err)
+		return fmt.Errorf("failed to tidy go.mod file: %s", err)
 	}
 
 	ctx.Success(fmt.Sprintf("Package %s installed successfully", pkg))
@@ -201,7 +201,7 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 		}
 
 		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--facade="+facade, "--module="+packages.GetModuleName())); err != nil {
-			return fmt.Errorf("Failed to install facade %s: %s", facade, err.Error())
+			return fmt.Errorf("failed to install facade %s: %s", facade, err.Error())
 		}
 
 		r.installedFacadesInTheCurrentCommand = append(r.installedFacadesInTheCurrentCommand, facade)
@@ -218,7 +218,7 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 	}
 
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
-		return fmt.Errorf("Failed to tidy go.mod file: %s", err)
+		return fmt.Errorf("failed to tidy go.mod file: %s", err)
 	}
 
 	return nil
@@ -275,17 +275,19 @@ func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string
 		}
 	}
 
+	if driver == "" {
+		return r.installDriver(ctx, facade, bindingInfo)
+	}
+
 	if isInternalDriver(driver) {
 		setup := bindingInfo.PkgPath + "/setup"
 		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--driver="+driver, "--module="+packages.GetModuleName())); err != nil {
-			return fmt.Errorf("Failed to install driver %s: %s", driver, err.Error())
+			return fmt.Errorf("failed to install driver %s: %s", driver, err.Error())
 		}
 
-		return nil
-	}
+		ctx.Success(fmt.Sprintf("Driver %s installed successfully", facade))
 
-	if driver == "" {
-		return r.installDriver(ctx, facade, bindingInfo)
+		return nil
 	}
 
 	return r.installPackage(ctx, driver)
@@ -349,5 +351,5 @@ func isPackage(pkg string) bool {
 }
 
 func isInternalDriver(name string) bool {
-	return !str.Of(name).Contains(".", "/")
+	return name != "" && !str.Of(name).Contains(".", "/")
 }
