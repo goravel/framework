@@ -54,7 +54,7 @@ func TestPipe_Env_Windows(t *testing.T) {
 
 func TestPipe_OnOutput_ReceivesFromEachStep_Windows(t *testing.T) {
 	var byKey = map[string][]string{}
-	res, err := NewPipe().Quietly().OnOutput(func(key string, typ contractsprocess.OutputType, line []byte) {
+	res, err := NewPipe().Quietly().OnOutput(func(typ contractsprocess.OutputType, line []byte, key string) {
 		byKey[key] = append(byKey[key], strings.TrimRight(string(line), "\r"))
 	}).Run(func(b contractsprocess.Pipe) {
 		b.Command("cmd", "/C", "(echo a & echo b)").As("first")
@@ -72,7 +72,7 @@ func TestPipe_OnOutput_ReceivesFromEachStep_Windows(t *testing.T) {
 
 func TestPipe_DisableBuffering_Windows(t *testing.T) {
 	var stdoutLines, stderrLines int
-	res, err := NewPipe().DisableBuffering().Quietly().OnOutput(func(key string, typ contractsprocess.OutputType, line []byte) {
+	res, err := NewPipe().DisableBuffering().Quietly().OnOutput(func(typ contractsprocess.OutputType, line []byte, key string) {
 		if typ == contractsprocess.OutputTypeStdout {
 			stdoutLines++
 		} else {

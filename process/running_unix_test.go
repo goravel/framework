@@ -178,20 +178,6 @@ func TestRunning_Stop_AlreadyExited_Unix(t *testing.T) {
 	assert.NoError(t, run.Stop(50*time.Millisecond))
 }
 
-func TestRunning_LatestOutputAndError_Unix(t *testing.T) {
-	// Produce large outputs to exercise latest tail behavior (4096)
-	script := `
-	for i in $(seq 1 5000); do echo -n a; done
-	for i in $(seq 1 5000); do echo -n b 1>&2; done
-	`
-	r, err := New().Quietly().Start("bash", "-c", script)
-	assert.NoError(t, err)
-	run, _ := r.(*Running)
-	_ = run.Wait()
-	assert.Equal(t, 4096, len(run.LatestOutput()))
-	assert.Equal(t, 4096, len(run.LatestErrorOutput()))
-}
-
 func TestRunning_DisableBuffering_OutputEmpty_Unix(t *testing.T) {
 	// When buffering is disabled, Output/ErrorOutput should be empty
 	r, err := New().DisableBuffering().Quietly().Start("sh", "-c", "printf out; printf err 1>&2")

@@ -14,26 +14,27 @@ import (
 var _ contractsprocess.Process = (*Process)(nil)
 
 type Process struct {
-	ctx               context.Context
-	env               []string
-	input             io.Reader
-	path              string
-	quietly           bool
-	onOutput          contractsprocess.OnOutputFunc
-	tapCmd            func(*exec.Cmd)
-	timeout           time.Duration
-	tty               bool
-	bufferingDisabled bool
+	buffering bool
+	ctx       context.Context
+	env       []string
+	input     io.Reader
+	onOutput  contractsprocess.OnOutputFunc
+	path      string
+	quietly   bool
+  tapCmd            func(*exec.Cmd)
+	timeout   time.Duration
+	tty       bool
 }
 
 func New() *Process {
 	return &Process{
-		ctx: context.Background(),
+		ctx:       context.Background(),
+		buffering: true,
 	}
 }
 
 func (r *Process) DisableBuffering() contractsprocess.Process {
-	r.bufferingDisabled = true
+	r.buffering = false
 	return r
 }
 
@@ -52,6 +53,11 @@ func (r *Process) Input(in io.Reader) contractsprocess.Process {
 	return r
 }
 
+func (r *Process) OnOutput(handler contractsprocess.OnOutputFunc) contractsprocess.Process {
+	r.onOutput = handler
+	return r
+}
+
 func (r *Process) Path(path string) contractsprocess.Process {
 	r.path = path
 	return r
@@ -59,11 +65,6 @@ func (r *Process) Path(path string) contractsprocess.Process {
 
 func (r *Process) Quietly() contractsprocess.Process {
 	r.quietly = true
-	return r
-}
-
-func (r *Process) OnOutput(handler contractsprocess.OnOutputFunc) contractsprocess.Process {
-	r.onOutput = handler
 	return r
 }
 
@@ -101,11 +102,11 @@ func (r *Process) WithContext(ctx context.Context) contractsprocess.Process {
 }
 
 func (r *Process) run(name string, args ...string) (contractsprocess.Result, error) {
-	running, err := r.start(name, args...)
+	run, err := r.start(name, args...)
 	if err != nil {
 		return nil, err
 	}
-	return running.Wait(), nil
+	return run.Wait(), nil
 }
 
 func (r *Process) start(name string, args ...string) (contractsprocess.Running, error) {
@@ -136,7 +137,7 @@ func (r *Process) start(name string, args ...string) (contractsprocess.Running, 
 	var stdoutWriters []io.Writer
 	var stderrWriters []io.Writer
 
-	if !r.bufferingDisabled {
+	if r.buffering {
 		stdoutBuffer = &bytes.Buffer{}
 		stderrBuffer = &bytes.Buffer{}
 		stdoutWriters = append(stdoutWriters, stdoutBuffer)

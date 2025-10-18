@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-type OnPipeOutputFunc func(key string, typ OutputType, line []byte)
+type OnPipeOutputFunc func(typ OutputType, line []byte, key string)
 
 // Pipeline defines a builder-style API for constructing and running a sequence
 // of commands connected via OS pipes. Implementations are mutable and should
@@ -48,9 +48,9 @@ type Pipeline interface {
 }
 
 type Pipe interface {
-	Command(name string, arg ...string) Step
+	Command(name string, arg ...string) PipeCommand
 }
 
-type Step interface {
-	As(key string) Step
+type PipeCommand interface {
+	As(key string) PipeCommand
 }
