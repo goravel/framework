@@ -16,6 +16,7 @@ const (
 	Log         = "goravel.log"
 	Mail        = "goravel.mail"
 	Orm         = "goravel.orm"
+	Process     = "goravel.process"
 	Queue       = "goravel.queue"
 	RateLimiter = "goravel.rate_limiter"
 	Route       = "goravel.route"
@@ -77,7 +78,6 @@ var (
 			PkgPath:     "github.com/goravel/framework/config",
 			IsBase:      true,
 		},
-
 		Auth: {
 			Description: "Provides support for JWT and Session drivers.",
 			PkgPath:     "github.com/goravel/framework/auth",
@@ -223,6 +223,11 @@ var (
 			InstallTogether: []string{
 				Schema,
 			},
+		},
+		Process: {
+			Description: "Executes and manages external processes with concurrency support.",
+			PkgPath:     "github.com/goravel/framework/process",
+			IsBase:      true,
 		},
 		Queue: {
 			Description: "A solution by allowing you to create queued jobs that can run in the background.",
