@@ -106,7 +106,8 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 	for _, name := range names {
 		if isPackage(name) {
 			if err := r.installPackage(ctx, name); err != nil {
-				return err
+				ctx.Error(err.Error())
+				return nil
 			}
 		} else {
 			if slices.Contains(r.installedFacadesInTheCurrentCommand, name) {
@@ -114,7 +115,8 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 			}
 
 			if err := r.installFacade(ctx, name); err != nil {
-				return err
+				ctx.Error(err.Error())
+				return nil
 			}
 		}
 	}
@@ -153,23 +155,17 @@ func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) 
 
 	// get package
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "get", pkg)); err != nil {
-		ctx.Error(fmt.Sprintf("Failed to get package: %s", err))
-
-		return nil
+		return fmt.Errorf("Failed to get package: %s", err)
 	}
 
 	// install package
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install")); err != nil {
-		ctx.Error(fmt.Sprintf("Failed to install package: %s", err))
-
-		return nil
+		return fmt.Errorf("Failed to install package: %s", err)
 	}
 
 	// tidy go.mod file
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
-		ctx.Error(fmt.Sprintf("Failed to tidy go.mod file: %s", err))
-
-		return nil
+		return fmt.Errorf("Failed to tidy go.mod file: %s", err)
 	}
 
 	ctx.Success(fmt.Sprintf("Package %s installed successfully", pkg))
@@ -205,9 +201,7 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 		}
 
 		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--facade="+facade, "--module="+packages.GetModuleName())); err != nil {
-			ctx.Error(fmt.Sprintf("Failed to install facade %s: %s", facade, err.Error()))
-
-			return nil
+			return fmt.Errorf("Failed to install facade %s: %s", facade, err.Error())
 		}
 
 		r.installedFacadesInTheCurrentCommand = append(r.installedFacadesInTheCurrentCommand, facade)
@@ -224,7 +218,7 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 	}
 
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
-		ctx.Error(fmt.Sprintf("Failed to tidy go.mod file: %s", err))
+		return fmt.Errorf("Failed to tidy go.mod file: %s", err)
 	}
 
 	return nil
@@ -284,10 +278,10 @@ func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string
 	if isInternalDriver(driver) {
 		setup := bindingInfo.PkgPath + "/setup"
 		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--driver="+driver, "--module="+packages.GetModuleName())); err != nil {
-			ctx.Error(fmt.Sprintf("Failed to install driver %s: %s", driver, err.Error()))
-
-			return nil
+			return fmt.Errorf("Failed to install driver %s: %s", driver, err.Error())
 		}
+
+		return nil
 	}
 
 	if driver == "" {

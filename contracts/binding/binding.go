@@ -382,33 +382,4 @@ var (
 			PkgPath:     "github.com/goravel/framework/http",
 		},
 	}
-
-	BindingToFacade = map[string]string{
-		Artisan:     "Artisan",
-		Auth:        "Auth",
-		Cache:       "Cache",
-		Config:      "Config",
-		Crypt:       "Crypt",
-		DB:          "DB",
-		Event:       "Event",
-		Gate:        "Gate",
-		Grpc:        "Grpc",
-		Hash:        "Hash",
-		Http:        "Http",
-		Lang:        "Lang",
-		Log:         "Log",
-		Mail:        "Mail",
-		Orm:         "Orm",
-		Queue:       "Queue",
-		RateLimiter: "RateLimiter",
-		Route:       "Route",
-		Schedule:    "Schedule",
-		Schema:      "Schema",
-		Seeder:      "Seeder",
-		Session:     "Session",
-		Storage:     "Storage",
-		Testing:     "Testing",
-		Validation:  "Validation",
-		View:        "View",
-	}
 )
