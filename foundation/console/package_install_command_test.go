@@ -454,7 +454,7 @@ func (s *PackageInstallCommandTestSuite) Test_installDriver() {
 				}).Return("route", nil).Once()
 				mockContext.EXPECT().Spinner("> @go run github.com/goravel/framework/route/setup install --driver=route --module=github.com/goravel/framework", mock.Anything).
 					Return(nil).Once()
-				mockContext.EXPECT().Success("Driver Route installed successfully").Once()
+				mockContext.EXPECT().Success("Driver route installed successfully").Once()
 			},
 		},
 	}
