@@ -3,6 +3,7 @@ package foundation
 import (
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/support/color"
 )
 
 func Configure() foundation.ApplicationBuilder {
@@ -28,8 +29,13 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 		r.config()
 	}
 
-	if r.eventToListeners != nil {
-		r.app.MakeEvent().Register(r.eventToListeners)
+	if len(r.eventToListeners) > 0 {
+		event := r.app.MakeEvent()
+		if event == nil {
+			color.Errorln("Event facade not found, please install it first: ./artisan package:install Event")
+		} else {
+			event.Register(r.eventToListeners)
+		}
 	}
 
 	return r.app
