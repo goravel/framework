@@ -62,7 +62,7 @@ func main() {
 		}
 
 		for _, config := range stubs.Config() {
-			// Skip if the configuration not exists
+			// Skip if the configuration does not exist
 			if !strings.Contains(content, fmt.Sprintf(`%q`, config.Key)) {
 				continue
 			}
