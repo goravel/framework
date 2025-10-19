@@ -69,7 +69,7 @@ func TestPool_Run_Unix(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			builder := NewPool()
-			results, err := builder.Run(tt.setup)
+			results, err := builder.Pool(tt.setup).Run()
 			tt.validate(t, results, err)
 		})
 	}
@@ -112,7 +112,7 @@ func TestPool_Start_Unix(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			builder := NewPool()
-			rp, err := builder.Start(tt.setup)
+			rp, err := builder.Pool(tt.setup).Start()
 			tt.validate(t, rp, err)
 		})
 	}
@@ -123,9 +123,9 @@ func TestPool_WithContext_Unix(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		builder := NewPool().WithContext(ctx)
 
-		rp, err := builder.Start(func(p contractsprocess.Pool) {
+		rp, err := builder.Pool(func(p contractsprocess.Pool) {
 			p.Command("sleep", "10").As("long")
-		})
+		}).Start()
 		assert.NoError(t, err)
 
 		// Give process time to start
@@ -143,9 +143,9 @@ func TestPool_WithContext_Unix(t *testing.T) {
 		// Passing nil should use background context
 		builder := NewPool().WithContext(context.TODO())
 
-		rp, err := builder.Start(func(p contractsprocess.Pool) {
+		rp, err := builder.Pool(func(p contractsprocess.Pool) {
 			p.Command("echo", "test").As("test")
-		})
+		}).Start()
 		assert.NoError(t, err)
 
 		results := rp.Wait()
@@ -157,9 +157,9 @@ func TestPool_Timeout_Unix(t *testing.T) {
 	t.Run("terminates processes after timeout", func(t *testing.T) {
 		builder := NewPool().Timeout(200 * time.Millisecond)
 
-		rp, err := builder.Start(func(p contractsprocess.Pool) {
+		rp, err := builder.Pool(func(p contractsprocess.Pool) {
 			p.Command("sleep", "10").As("long")
-		})
+		}).Start()
 		assert.NoError(t, err)
 
 		results := rp.Wait()
@@ -233,11 +233,11 @@ func TestPool_Concurrency_Unix(t *testing.T) {
 			})
 
 			start := time.Now()
-			rp, err := builder.Start(func(p contractsprocess.Pool) {
+			rp, err := builder.Pool(func(p contractsprocess.Pool) {
 				for _, cmd := range tt.commands {
 					p.Command(cmd.cmd, cmd.args...).As(cmd.name)
 				}
-			})
+			}).Start()
 			assert.NoError(t, err)
 
 			results := rp.Wait()
@@ -264,10 +264,10 @@ func TestPool_OnOutput_Unix(t *testing.T) {
 			outputs[key] = append(outputs[key], string(line))
 		})
 
-		rp, err := builder.Start(func(p contractsprocess.Pool) {
+		rp, err := builder.Pool(func(p contractsprocess.Pool) {
 			p.Command("echo", "test1").As("cmd1")
 			p.Command("echo", "test2").As("cmd2")
-		})
+		}).Start()
 		assert.NoError(t, err)
 
 		rp.Wait()
@@ -293,9 +293,9 @@ func TestPool_OnOutput_Unix(t *testing.T) {
 			}
 		})
 
-		rp, err := builder.Start(func(p contractsprocess.Pool) {
+		rp, err := builder.Pool(func(p contractsprocess.Pool) {
 			p.Command("sh", "-c", "echo stdout; echo stderr >&2").As("mixed")
-		})
+		}).Start()
 		assert.NoError(t, err)
 
 		rp.Wait()
@@ -389,7 +389,7 @@ func TestPoolCommand_Unix(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			builder := NewPool()
-			results, err := builder.Run(tt.setup)
+			results, err := builder.Pool(tt.setup).Run()
 			tt.validate(t, results, err)
 		})
 	}
@@ -399,9 +399,9 @@ func TestPoolCommand_Unix(t *testing.T) {
 		defer cancel()
 
 		builder := NewPool()
-		results, err := builder.Run(func(p contractsprocess.Pool) {
+		results, err := builder.Pool(func(p contractsprocess.Pool) {
 			p.Command("sleep", "10").WithContext(ctx).As("ctx")
-		})
+		}).Run()
 
 		assert.NoError(t, err)
 
@@ -413,9 +413,9 @@ func TestPoolCommand_Unix(t *testing.T) {
 func TestPool_SignalHandling_Unix(t *testing.T) {
 	t.Run("forwards signals to child processes", func(t *testing.T) {
 		builder := NewPool()
-		rp, err := builder.Start(func(p contractsprocess.Pool) {
+		rp, err := builder.Pool(func(p contractsprocess.Pool) {
 			p.Command("sh", "-c", "trap 'echo caught; exit 0' TERM; sleep 5").As("trap")
-		})
+		}).Start()
 		assert.NoError(t, err)
 
 		time.Sleep(100 * time.Millisecond)
@@ -430,10 +430,10 @@ func TestPool_SignalHandling_Unix(t *testing.T) {
 func TestPool_ErrorHandling_Unix(t *testing.T) {
 	t.Run("handles start failures", func(t *testing.T) {
 		builder := NewPool()
-		results, err := builder.Run(func(p contractsprocess.Pool) {
+		results, err := builder.Pool(func(p contractsprocess.Pool) {
 			p.Command("command-that-does-not-exist").As("missing")
 			p.Command("echo", "test").As("valid")
-		})
+		}).Run()
 
 		assert.NoError(t, err) // The pool itself doesn't error
 		assert.Len(t, results, 2)
@@ -453,9 +453,9 @@ func TestPool_Cleanup_Unix(t *testing.T) {
 		}(tmpFile.Name())
 
 		builder := NewPool()
-		results, err := builder.Run(func(p contractsprocess.Pool) {
+		results, err := builder.Pool(func(p contractsprocess.Pool) {
 			p.Command("sh", "-c", "echo test > "+tmpFile.Name()).As("write")
-		})
+		}).Run()
 
 		assert.NoError(t, err)
 		assert.True(t, results["write"].Successful())

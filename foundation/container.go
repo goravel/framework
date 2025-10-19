@@ -26,6 +26,7 @@ import (
 	contractshttpclient "github.com/goravel/framework/contracts/http/client"
 	contractslog "github.com/goravel/framework/contracts/log"
 	contractsmail "github.com/goravel/framework/contracts/mail"
+	contractsprocess "github.com/goravel/framework/contracts/process"
 	contractsqueue "github.com/goravel/framework/contracts/queue"
 	contractsroute "github.com/goravel/framework/contracts/route"
 	contractsschedule "github.com/goravel/framework/contracts/schedule"
@@ -255,6 +256,19 @@ func (r *Container) MakeOrm() contractsorm.Orm {
 	}
 
 	return instance.(contractsorm.Orm)
+}
+
+func (r *Container) MakeProcess() contractsprocess.Process {
+	instance, err := r.Make(facades.FacadeToBinding[facades.Process])
+	if err != nil {
+		color.Errorln(err)
+		return nil
+	}
+	if instance == nil {
+		return nil
+	}
+
+	return instance.(contractsprocess.Process)
 }
 
 func (r *Container) MakeQueue() contractsqueue.Queue {

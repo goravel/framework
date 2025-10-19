@@ -21,6 +21,8 @@ type PoolBuilder struct {
 	ctx         context.Context
 	onOutput    contractsprocess.OnPoolOutputFunc
 	timeout     time.Duration
+
+	poolConfigurer func(pool contractsprocess.Pool)
 }
 
 func NewPool() *PoolBuilder {
@@ -37,12 +39,17 @@ func (r *PoolBuilder) OnOutput(handler contractsprocess.OnPoolOutputFunc) contra
 	return r
 }
 
-func (r *PoolBuilder) Run(configure func(contractsprocess.Pool)) (map[string]contractsprocess.Result, error) {
-	return r.run(configure)
+func (r *PoolBuilder) Pool(configurer func(pool contractsprocess.Pool)) contractsprocess.PoolBuilder {
+	r.poolConfigurer = configurer
+	return r
 }
 
-func (r *PoolBuilder) Start(configure func(contractsprocess.Pool)) (contractsprocess.RunningPool, error) {
-	return r.start(configure)
+func (r *PoolBuilder) Run() (map[string]contractsprocess.Result, error) {
+	return r.run(r.poolConfigurer)
+}
+
+func (r *PoolBuilder) Start() (contractsprocess.RunningPool, error) {
+	return r.start(r.poolConfigurer)
 }
 
 func (r *PoolBuilder) Timeout(timeout time.Duration) contractsprocess.PoolBuilder {
@@ -58,8 +65,8 @@ func (r *PoolBuilder) WithContext(ctx context.Context) contractsprocess.PoolBuil
 	return r
 }
 
-func (r *PoolBuilder) run(configure func(pool contractsprocess.Pool)) (map[string]contractsprocess.Result, error) {
-	run, err := r.start(configure)
+func (r *PoolBuilder) run(configurer func(pool contractsprocess.Pool)) (map[string]contractsprocess.Result, error) {
+	run, err := r.start(configurer)
 	if err != nil {
 		return nil, err
 	}
@@ -88,9 +95,13 @@ type result struct {
 //  3. A separate "collector" goroutine safely populates the final results map from the result channel.
 //  4. WaitGroups synchronize the completion of all workers and the collection of all results
 //     before the entire operation is marked as "done".
-func (r *PoolBuilder) start(configure func(contractsprocess.Pool)) (contractsprocess.RunningPool, error) {
+func (r *PoolBuilder) start(configurer func(contractsprocess.Pool)) (contractsprocess.RunningPool, error) {
+	if configurer == nil {
+		return nil, errors.ProcessPoolNilConfigurer
+	}
+
 	pool := &Pool{}
-	configure(pool)
+	configurer(pool)
 
 	commands := pool.commands
 	if len(commands) == 0 {

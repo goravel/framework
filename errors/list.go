@@ -223,4 +223,6 @@ var (
 	ProcessUnsupportedSignalType = New("unsupported signal type").SetModule(ModuleProcess)
 	ProcessPipelineEmpty         = New("pipeline must have at least one command").SetModule(ModuleProcess)
 	ProcessPipelineStartFailed   = New("failed to start pipeline: %v").SetModule(ModuleProcess)
+	ProcessPipeNilConfigurer     = New("pipe configurer cannot be nil").SetModule(ModuleProcess)
+	ProcessPoolNilConfigurer     = New("pool configurer cannot be nil").SetModule(ModuleProcess)
 )

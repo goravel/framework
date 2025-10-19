@@ -21,7 +21,6 @@ type Process struct {
 	onOutput  contractsprocess.OnOutputFunc
 	path      string
 	quietly   bool
-  tapCmd            func(*exec.Cmd)
 	timeout   time.Duration
 	tty       bool
 }
@@ -63,6 +62,14 @@ func (r *Process) Path(path string) contractsprocess.Process {
 	return r
 }
 
+func (r *Process) Pipe(configurer func(pipe contractsprocess.Pipe)) contractsprocess.Pipeline {
+	return NewPipe().Pipe(configurer)
+}
+
+func (r *Process) Pool(configurer func(pool contractsprocess.Pool)) contractsprocess.PoolBuilder {
+	return NewPool().Pool(configurer)
+}
+
 func (r *Process) Quietly() contractsprocess.Process {
 	r.quietly = true
 	return r
@@ -74,12 +81,6 @@ func (r *Process) Run(name string, args ...string) (contractsprocess.Result, err
 
 func (r *Process) Start(name string, args ...string) (contractsprocess.Running, error) {
 	return r.start(name, args...)
-}
-
-func (r *Process) TapCmd(f func(*exec.Cmd)) contractsprocess.Process {
-	r.tapCmd = f
-
-	return r
 }
 
 func (r *Process) Timeout(timeout time.Duration) contractsprocess.Process {
@@ -121,7 +122,6 @@ func (r *Process) start(name string, args ...string) (contractsprocess.Running, 
 	if r.path != "" {
 		cmd.Dir = r.path
 	}
-	setSysProcAttr(cmd)
 
 	if len(r.env) > 0 {
 		cmd.Env = append(os.Environ(), r.env...)
@@ -129,39 +129,42 @@ func (r *Process) start(name string, args ...string) (contractsprocess.Running, 
 
 	if r.input != nil {
 		cmd.Stdin = r.input
-	} else if r.tty {
-		cmd.Stdin = os.Stdin
 	}
 
 	var stdoutBuffer, stderrBuffer *bytes.Buffer
-	var stdoutWriters []io.Writer
-	var stderrWriters []io.Writer
 
-	if r.buffering {
-		stdoutBuffer = &bytes.Buffer{}
-		stderrBuffer = &bytes.Buffer{}
-		stdoutWriters = append(stdoutWriters, stdoutBuffer)
-		stderrWriters = append(stderrWriters, stderrBuffer)
-	}
+	if r.tty {
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	} else {
+		setSysProcAttr(cmd)
 
-	if !r.quietly {
-		stdoutWriters = append(stdoutWriters, os.Stdout)
-		stderrWriters = append(stderrWriters, os.Stderr)
-	}
-	if r.onOutput != nil {
-		stdoutWriters = append(stdoutWriters, NewOutputWriterForProcess(contractsprocess.OutputTypeStdout, r.onOutput))
-		stderrWriters = append(stderrWriters, NewOutputWriterForProcess(contractsprocess.OutputTypeStderr, r.onOutput))
-	}
+		var stdoutWriters []io.Writer
+		var stderrWriters []io.Writer
 
-	if len(stdoutWriters) > 0 {
-		cmd.Stdout = io.MultiWriter(stdoutWriters...)
-	}
-	if len(stderrWriters) > 0 {
-		cmd.Stderr = io.MultiWriter(stderrWriters...)
-	}
+		if r.buffering {
+			stdoutBuffer = &bytes.Buffer{}
+			stderrBuffer = &bytes.Buffer{}
+			stdoutWriters = append(stdoutWriters, stdoutBuffer)
+			stderrWriters = append(stderrWriters, stderrBuffer)
+		}
 
-	if r.tapCmd != nil {
-		r.tapCmd(cmd)
+		if !r.quietly {
+			stdoutWriters = append(stdoutWriters, os.Stdout)
+			stderrWriters = append(stderrWriters, os.Stderr)
+		}
+		if r.onOutput != nil {
+			stdoutWriters = append(stdoutWriters, NewOutputWriterForProcess(contractsprocess.OutputTypeStdout, r.onOutput))
+			stderrWriters = append(stderrWriters, NewOutputWriterForProcess(contractsprocess.OutputTypeStderr, r.onOutput))
+		}
+
+		if len(stdoutWriters) > 0 {
+			cmd.Stdout = io.MultiWriter(stdoutWriters...)
+		}
+		if len(stderrWriters) > 0 {
+			cmd.Stderr = io.MultiWriter(stderrWriters...)
+		}
 	}
 
 	if err := cmd.Start(); err != nil {

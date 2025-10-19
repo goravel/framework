@@ -15,10 +15,10 @@ import (
 )
 
 func TestRunningPipe_PIDs_Running_Done_Wait_Windows(t *testing.T) {
-	rp, err := NewPipe().Quietly().Start(func(b contractsprocess.Pipe) {
+	rp, err := NewPipe().Quietly().Pipe(func(b contractsprocess.Pipe) {
 		b.Command("cmd", "/C", "(echo start & powershell -NoLogo -NoProfile -Command Start-Sleep -Milliseconds 200 & echo end)").As("first")
 		b.Command("cmd", "/C", "more").As("second")
-	})
+	}).Start()
 	assert.NoError(t, err)
 
 	pids := rp.PIDs()
@@ -34,9 +34,9 @@ func TestRunningPipe_PIDs_Running_Done_Wait_Windows(t *testing.T) {
 }
 
 func TestRunningPipe_Stop_Windows(t *testing.T) {
-	rp, err := NewPipe().Quietly().Start(func(b contractsprocess.Pipe) {
+	rp, err := NewPipe().Quietly().Pipe(func(b contractsprocess.Pipe) {
 		b.Command("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Seconds 10").As("sleep")
-	})
+	}).Start()
 	assert.NoError(t, err)
 	time.Sleep(100 * time.Millisecond)
 	assert.NoError(t, rp.Stop(1*time.Second))
@@ -45,9 +45,9 @@ func TestRunningPipe_Stop_Windows(t *testing.T) {
 }
 
 func TestRunningPipe_Signal_Windows_NoOp(t *testing.T) {
-	rp, err := NewPipe().Quietly().Start(func(b contractsprocess.Pipe) {
+	rp, err := NewPipe().Quietly().Pipe(func(b contractsprocess.Pipe) {
 		b.Command("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Seconds 1").As("sleep")
-	})
+	}).Start()
 	assert.NoError(t, err)
 	assert.NoError(t, rp.Signal(os.Interrupt))
 	_ = rp.Wait()

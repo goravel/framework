@@ -6,6 +6,10 @@ import (
 	"time"
 )
 
+// OnPipeOutputFunc is a callback function invoked when any command in the pipeline produces output.
+// typ(OutputType) indicates whether the data came from stdout or stderr,
+// line contains the raw output bytes,
+// and key identifies which command in the pipeline produced the output.
 type OnPipeOutputFunc func(typ OutputType, line []byte, key string)
 
 // Pipeline defines a builder-style API for constructing and running a sequence
@@ -27,6 +31,10 @@ type Pipeline interface {
 	// Path sets the working directory for all steps.
 	Path(path string) Pipeline
 
+	// Pipe adds commands to the pipeline using the provided configurer function.
+	// This method allows for fluent chaining of pipeline configuration methods.
+	Pipe(configurer func(Pipe)) Pipeline
+
 	// Quietly discards live stdout/stderr instead of mirroring to os.Stdout/err.
 	Quietly() Pipeline
 
@@ -34,11 +42,11 @@ type Pipeline interface {
 	// by each step while the pipeline runs.
 	OnOutput(handler OnPipeOutputFunc) Pipeline
 
-	// Run builds, executes, waits for completion, and returns the final Result.
-	Run(func(builder Pipe)) (Result, error)
+	// Run executes, waits for completion, and returns the final Result.
+	Run() (Result, error)
 
-	// Start builds and starts execution asynchronously, returning a RunningPipe.
-	Start(func(builder Pipe)) (RunningPipe, error)
+	// Start starts execution asynchronously, returning a RunningPipe.
+	Start() (RunningPipe, error)
 
 	// Timeout sets a maximum duration for the entire pipeline execution.
 	Timeout(timeout time.Duration) Pipeline
@@ -47,10 +55,16 @@ type Pipeline interface {
 	WithContext(ctx context.Context) Pipeline
 }
 
+// Pipe defines an interface for adding commands to a pipeline.
 type Pipe interface {
+	// Command creates a new command to be added to the pipeline.
+	// The command's stdout will be connected to the stdin of the next command in the pipeline.
 	Command(name string, arg ...string) PipeCommand
 }
 
+// PipeCommand defines an interface for configuring a command within a pipeline.
 type PipeCommand interface {
+	// As assigns a unique string key to the command.
+	// This key is used to identify the command in the output handler.
 	As(key string) PipeCommand
 }
