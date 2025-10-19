@@ -21,10 +21,8 @@ type Process struct {
 	onOutput  contractsprocess.OnOutputFunc
 	path      string
 	quietly   bool
-	// TODO: remove this
-	tapCmd  func(*exec.Cmd)
-	timeout time.Duration
-	tty     bool
+	timeout   time.Duration
+	tty       bool
 }
 
 func New() *Process {
