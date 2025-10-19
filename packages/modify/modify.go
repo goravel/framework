@@ -33,6 +33,13 @@ func When(fn func() bool, applies ...modify.Apply) modify.Apply {
 	}
 }
 
+func WhenDriver(driver string, applies ...modify.Apply) modify.Apply {
+	return &whenDriverModifier{
+		driver:  driver,
+		applies: applies,
+	}
+}
+
 func WhenFacade(facade string, applies ...modify.Apply) modify.Apply {
 	return &whenFacadeModifier{
 		facade:  facade,
@@ -229,6 +236,27 @@ type whenModifier struct {
 
 func (r whenModifier) Apply(options ...modify.Option) error {
 	if !r.fn() {
+		return nil
+	}
+
+	for _, apply := range r.applies {
+		if err := apply.Apply(options...); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+type whenDriverModifier struct {
+	driver  string
+	applies []modify.Apply
+}
+
+func (r whenDriverModifier) Apply(options ...modify.Option) error {
+	generatedOptions := generateOptions(options)
+
+	if r.driver != generatedOptions["driver"] {
 		return nil
 	}
 
