@@ -14,7 +14,7 @@ import (
 )
 
 func TestPipe_ErrorOnNoSteps_Windows(t *testing.T) {
-	_, err := NewPipe().Quietly().Run(func(b contractsprocess.Pipe) {})
+	_, err := NewPipe().Quietly().Pipe(func(b contractsprocess.Pipe) {}).Run()
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "pipeline must have at least one command")
 }
