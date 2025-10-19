@@ -20,6 +20,62 @@ func (_m *Query) EXPECT() *Query_Expecter {
 	return &Query_Expecter{mock: &_m.Mock}
 }
 
+// Avg provides a mock function with given fields: column
+func (_m *Query) Avg(column string) (float64, error) {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Avg")
+	}
+
+	var r0 float64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (float64, error)); ok {
+		return rf(column)
+	}
+	if rf, ok := ret.Get(0).(func(string) float64); ok {
+		r0 = rf(column)
+	} else {
+		r0 = ret.Get(0).(float64)
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(column)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Query_Avg_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Avg'
+type Query_Avg_Call struct {
+	*mock.Call
+}
+
+// Avg is a helper method to define mock.On call
+//   - column string
+func (_e *Query_Expecter) Avg(column interface{}) *Query_Avg_Call {
+	return &Query_Avg_Call{Call: _e.mock.On("Avg", column)}
+}
+
+func (_c *Query_Avg_Call) Run(run func(column string)) *Query_Avg_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Query_Avg_Call) Return(_a0 float64, _a1 error) *Query_Avg_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Query_Avg_Call) RunAndReturn(run func(string) (float64, error)) *Query_Avg_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Chunk provides a mock function with given fields: size, callback
 func (_m *Query) Chunk(size uint64, callback func([]db.Row) error) error {
 	ret := _m.Called(size, callback)
@@ -1474,6 +1530,118 @@ func (_c *Query_LockForUpdate_Call) Return(_a0 db.Query) *Query_LockForUpdate_Ca
 }
 
 func (_c *Query_LockForUpdate_Call) RunAndReturn(run func() db.Query) *Query_LockForUpdate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Max provides a mock function with given fields: column
+func (_m *Query) Max(column string) (int64, error) {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Max")
+	}
+
+	var r0 int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (int64, error)); ok {
+		return rf(column)
+	}
+	if rf, ok := ret.Get(0).(func(string) int64); ok {
+		r0 = rf(column)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(column)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Query_Max_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Max'
+type Query_Max_Call struct {
+	*mock.Call
+}
+
+// Max is a helper method to define mock.On call
+//   - column string
+func (_e *Query_Expecter) Max(column interface{}) *Query_Max_Call {
+	return &Query_Max_Call{Call: _e.mock.On("Max", column)}
+}
+
+func (_c *Query_Max_Call) Run(run func(column string)) *Query_Max_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Query_Max_Call) Return(_a0 int64, _a1 error) *Query_Max_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Query_Max_Call) RunAndReturn(run func(string) (int64, error)) *Query_Max_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Min provides a mock function with given fields: column
+func (_m *Query) Min(column string) (int64, error) {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Min")
+	}
+
+	var r0 int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (int64, error)); ok {
+		return rf(column)
+	}
+	if rf, ok := ret.Get(0).(func(string) int64); ok {
+		r0 = rf(column)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(column)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Query_Min_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Min'
+type Query_Min_Call struct {
+	*mock.Call
+}
+
+// Min is a helper method to define mock.On call
+//   - column string
+func (_e *Query_Expecter) Min(column interface{}) *Query_Min_Call {
+	return &Query_Min_Call{Call: _e.mock.On("Min", column)}
+}
+
+func (_c *Query_Min_Call) Run(run func(column string)) *Query_Min_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Query_Min_Call) Return(_a0 int64, _a1 error) *Query_Min_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Query_Min_Call) RunAndReturn(run func(string) (int64, error)) *Query_Min_Call {
 	_c.Call.Return(run)
 	return _c
 }
