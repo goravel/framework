@@ -147,6 +147,54 @@ func (_c *ApplicationBuilder_WithConfig_Call) RunAndReturn(run func(func()) foun
 	return _c
 }
 
+// WithProviders provides a mock function with given fields: providers
+func (_m *ApplicationBuilder) WithProviders(providers []foundation.ServiceProvider) foundation.ApplicationBuilder {
+	ret := _m.Called(providers)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithProviders")
+	}
+
+	var r0 foundation.ApplicationBuilder
+	if rf, ok := ret.Get(0).(func([]foundation.ServiceProvider) foundation.ApplicationBuilder); ok {
+		r0 = rf(providers)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(foundation.ApplicationBuilder)
+		}
+	}
+
+	return r0
+}
+
+// ApplicationBuilder_WithProviders_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithProviders'
+type ApplicationBuilder_WithProviders_Call struct {
+	*mock.Call
+}
+
+// WithProviders is a helper method to define mock.On call
+//   - providers []foundation.ServiceProvider
+func (_e *ApplicationBuilder_Expecter) WithProviders(providers interface{}) *ApplicationBuilder_WithProviders_Call {
+	return &ApplicationBuilder_WithProviders_Call{Call: _e.mock.On("WithProviders", providers)}
+}
+
+func (_c *ApplicationBuilder_WithProviders_Call) Run(run func(providers []foundation.ServiceProvider)) *ApplicationBuilder_WithProviders_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].([]foundation.ServiceProvider))
+	})
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithProviders_Call) Return(_a0 foundation.ApplicationBuilder) *ApplicationBuilder_WithProviders_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithProviders_Call) RunAndReturn(run func([]foundation.ServiceProvider) foundation.ApplicationBuilder) *ApplicationBuilder_WithProviders_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewApplicationBuilder creates a new instance of ApplicationBuilder. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewApplicationBuilder(t interface {
