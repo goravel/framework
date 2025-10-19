@@ -35,6 +35,7 @@ func main() {
 	configActionsFunc := func() []contractsmodify.Action {
 		var actions []contractsmodify.Action
 		for _, config := range stubs.Config("") {
+			// Skip if the configuration already exists
 			if file.Contains(databaseConfigPath, fmt.Sprintf(`%q`, config.Key)) {
 				continue
 			}
