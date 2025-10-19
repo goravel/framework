@@ -34,7 +34,7 @@ func main() {
 	databaseImport := fmt.Sprintf("%s/database", moduleName)
 	facadesImport := fmt.Sprintf("%s/app/facades", moduleName)
 
-	configActionsFunc := func() []contractsmodify.Action {
+	installConfigActionsFunc := func() []contractsmodify.Action {
 		var actions []contractsmodify.Action
 		content, err := file.GetContent(databaseConfigPath)
 		if err != nil {
@@ -53,13 +53,32 @@ func main() {
 		return actions
 	}
 
+	uninstallConfigActionsFunc := func() []contractsmodify.Action {
+		var actions []contractsmodify.Action
+		content, err := file.GetContent(databaseConfigPath)
+		if err != nil {
+			color.Errorln("failed to get database configuration content")
+			return actions
+		}
+
+		for _, config := range stubs.Config() {
+			// Skip if the configuration not exists
+			if !strings.Contains(content, fmt.Sprintf(`%q`, config.Key)) {
+				continue
+			}
+			actions = append(actions, modify.RemoveConfig(config.Key))
+		}
+
+		return actions
+	}
+
 	packages.Setup(os.Args).
 		Install(
 			// Create config/database.go
 			modify.WhenFileNotExists(databaseConfigPath, modify.File(databaseConfigPath).Overwrite(supportstubs.DatabaseConfig(moduleName))),
 
 			// Add database configuration to config/database.go
-			modify.GoFile(databaseConfigPath).Find(match.Config("database")).Modify(configActionsFunc()...),
+			modify.GoFile(databaseConfigPath).Find(match.Config("database")).Modify(installConfigActionsFunc()...),
 
 			// Add the database service provider to the providers array in config/app.go
 			modify.GoFile(appConfigPath).
@@ -105,8 +124,17 @@ func main() {
 					Find(match.Providers()).Modify(modify.Unregister(databaseServiceProvider)).
 					Find(match.Imports()).Modify(modify.RemoveImport(modulePath)),
 
+				// Remove database configuration from config/database.go
+				modify.GoFile(databaseConfigPath).Find(match.Config("database")).Modify(uninstallConfigActionsFunc()...),
+
 				// Remove config/database.go
-				modify.File(databaseConfigPath).Remove(),
+				modify.When(func(_ map[string]any) bool {
+					content, err := file.GetContent(databaseConfigPath)
+					if err != nil {
+						return false
+					}
+					return content == supportstubs.DatabaseConfig(moduleName)
+				}, modify.File(databaseConfigPath).Remove()),
 			),
 
 			// Remove the DB, Orm, Schema and Seeder facades
