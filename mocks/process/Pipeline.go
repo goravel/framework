@@ -360,15 +360,9 @@ func (_c *Pipeline_Quietly_Call) RunAndReturn(run func() process.Pipeline) *Pipe
 	return _c
 }
 
-// Run provides a mock function with given fields: configurer
-func (_m *Pipeline) Run(configurer ...func(process.Pipe)) (process.Result, error) {
-	_va := make([]interface{}, len(configurer))
-	for _i := range configurer {
-		_va[_i] = configurer[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
+// Run provides a mock function with no fields
+func (_m *Pipeline) Run() (process.Result, error) {
+	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Run")
@@ -376,19 +370,19 @@ func (_m *Pipeline) Run(configurer ...func(process.Pipe)) (process.Result, error
 
 	var r0 process.Result
 	var r1 error
-	if rf, ok := ret.Get(0).(func(...func(process.Pipe)) (process.Result, error)); ok {
-		return rf(configurer...)
+	if rf, ok := ret.Get(0).(func() (process.Result, error)); ok {
+		return rf()
 	}
-	if rf, ok := ret.Get(0).(func(...func(process.Pipe)) process.Result); ok {
-		r0 = rf(configurer...)
+	if rf, ok := ret.Get(0).(func() process.Result); ok {
+		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(process.Result)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(...func(process.Pipe)) error); ok {
-		r1 = rf(configurer...)
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -402,21 +396,13 @@ type Pipeline_Run_Call struct {
 }
 
 // Run is a helper method to define mock.On call
-//   - configurer ...func(process.Pipe)
-func (_e *Pipeline_Expecter) Run(configurer ...interface{}) *Pipeline_Run_Call {
-	return &Pipeline_Run_Call{Call: _e.mock.On("Run",
-		append([]interface{}{}, configurer...)...)}
+func (_e *Pipeline_Expecter) Run() *Pipeline_Run_Call {
+	return &Pipeline_Run_Call{Call: _e.mock.On("Run")}
 }
 
-func (_c *Pipeline_Run_Call) Run(run func(configurer ...func(process.Pipe))) *Pipeline_Run_Call {
+func (_c *Pipeline_Run_Call) Run(run func()) *Pipeline_Run_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]func(process.Pipe), len(args)-0)
-		for i, a := range args[0:] {
-			if a != nil {
-				variadicArgs[i] = a.(func(process.Pipe))
-			}
-		}
-		run(variadicArgs...)
+		run()
 	})
 	return _c
 }
@@ -426,20 +412,14 @@ func (_c *Pipeline_Run_Call) Return(_a0 process.Result, _a1 error) *Pipeline_Run
 	return _c
 }
 
-func (_c *Pipeline_Run_Call) RunAndReturn(run func(...func(process.Pipe)) (process.Result, error)) *Pipeline_Run_Call {
+func (_c *Pipeline_Run_Call) RunAndReturn(run func() (process.Result, error)) *Pipeline_Run_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Start provides a mock function with given fields: configurer
-func (_m *Pipeline) Start(configurer ...func(process.Pipe)) (process.RunningPipe, error) {
-	_va := make([]interface{}, len(configurer))
-	for _i := range configurer {
-		_va[_i] = configurer[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
+// Start provides a mock function with no fields
+func (_m *Pipeline) Start() (process.RunningPipe, error) {
+	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Start")
@@ -447,19 +427,19 @@ func (_m *Pipeline) Start(configurer ...func(process.Pipe)) (process.RunningPipe
 
 	var r0 process.RunningPipe
 	var r1 error
-	if rf, ok := ret.Get(0).(func(...func(process.Pipe)) (process.RunningPipe, error)); ok {
-		return rf(configurer...)
+	if rf, ok := ret.Get(0).(func() (process.RunningPipe, error)); ok {
+		return rf()
 	}
-	if rf, ok := ret.Get(0).(func(...func(process.Pipe)) process.RunningPipe); ok {
-		r0 = rf(configurer...)
+	if rf, ok := ret.Get(0).(func() process.RunningPipe); ok {
+		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(process.RunningPipe)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(...func(process.Pipe)) error); ok {
-		r1 = rf(configurer...)
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -473,21 +453,13 @@ type Pipeline_Start_Call struct {
 }
 
 // Start is a helper method to define mock.On call
-//   - configurer ...func(process.Pipe)
-func (_e *Pipeline_Expecter) Start(configurer ...interface{}) *Pipeline_Start_Call {
-	return &Pipeline_Start_Call{Call: _e.mock.On("Start",
-		append([]interface{}{}, configurer...)...)}
+func (_e *Pipeline_Expecter) Start() *Pipeline_Start_Call {
+	return &Pipeline_Start_Call{Call: _e.mock.On("Start")}
 }
 
-func (_c *Pipeline_Start_Call) Run(run func(configurer ...func(process.Pipe))) *Pipeline_Start_Call {
+func (_c *Pipeline_Start_Call) Run(run func()) *Pipeline_Start_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]func(process.Pipe), len(args)-0)
-		for i, a := range args[0:] {
-			if a != nil {
-				variadicArgs[i] = a.(func(process.Pipe))
-			}
-		}
-		run(variadicArgs...)
+		run()
 	})
 	return _c
 }
@@ -497,7 +469,7 @@ func (_c *Pipeline_Start_Call) Return(_a0 process.RunningPipe, _a1 error) *Pipel
 	return _c
 }
 
-func (_c *Pipeline_Start_Call) RunAndReturn(run func(...func(process.Pipe)) (process.RunningPipe, error)) *Pipeline_Start_Call {
+func (_c *Pipeline_Start_Call) RunAndReturn(run func() (process.RunningPipe, error)) *Pipeline_Start_Call {
 	_c.Call.Return(run)
 	return _c
 }

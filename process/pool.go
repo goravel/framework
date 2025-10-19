@@ -44,21 +44,12 @@ func (r *PoolBuilder) Pool(configurer func(pool contractsprocess.Pool)) contract
 	return r
 }
 
-func (r *PoolBuilder) Run(configurer ...func(contractsprocess.Pool)) (map[string]contractsprocess.Result, error) {
-	poolConfigurer := r.poolConfigurer
-	if len(configurer) > 0 {
-		poolConfigurer = configurer[0]
-	}
-
-	return r.run(poolConfigurer)
+func (r *PoolBuilder) Run() (map[string]contractsprocess.Result, error) {
+	return r.run(r.poolConfigurer)
 }
 
-func (r *PoolBuilder) Start(configurer ...func(contractsprocess.Pool)) (contractsprocess.RunningPool, error) {
-	poolConfigurer := r.poolConfigurer
-	if len(configurer) > 0 {
-		poolConfigurer = configurer[0]
-	}
-	return r.start(poolConfigurer)
+func (r *PoolBuilder) Start() (contractsprocess.RunningPool, error) {
+	return r.start(r.poolConfigurer)
 }
 
 func (r *PoolBuilder) Timeout(timeout time.Duration) contractsprocess.PoolBuilder {

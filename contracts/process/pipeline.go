@@ -42,11 +42,11 @@ type Pipeline interface {
 	// by each step while the pipeline runs.
 	OnOutput(handler OnPipeOutputFunc) Pipeline
 
-	// Run builds, executes, waits for completion, and returns the final Result.
-	Run(configurer ...func(Pipe)) (Result, error)
+	// Run executes, waits for completion, and returns the final Result.
+	Run() (Result, error)
 
-	// Start builds and starts execution asynchronously, returning a RunningPipe.
-	Start(configurer ...func(Pipe)) (RunningPipe, error)
+	// Start starts execution asynchronously, returning a RunningPipe.
+	Start() (RunningPipe, error)
 
 	// Timeout sets a maximum duration for the entire pipeline execution.
 	Timeout(timeout time.Duration) Pipeline

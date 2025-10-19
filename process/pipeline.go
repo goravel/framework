@@ -79,20 +79,12 @@ func (r *Pipeline) OnOutput(onOutput contractsprocess.OnPipeOutputFunc) contract
 	return r
 }
 
-func (r *Pipeline) Run(configurer ...func(contractsprocess.Pipe)) (contractsprocess.Result, error) {
-	pipeConfigurer := r.pipeConfigurer
-	if len(configurer) > 0 {
-		pipeConfigurer = configurer[0]
-	}
-	return r.run(pipeConfigurer)
+func (r *Pipeline) Run() (contractsprocess.Result, error) {
+	return r.run(r.pipeConfigurer)
 }
 
-func (r *Pipeline) Start(configurer ...func(contractsprocess.Pipe)) (contractsprocess.RunningPipe, error) {
-	pipeConfigurer := r.pipeConfigurer
-	if len(configurer) > 0 {
-		pipeConfigurer = configurer[0]
-	}
-	return r.start(pipeConfigurer)
+func (r *Pipeline) Start() (contractsprocess.RunningPipe, error) {
+	return r.start(r.pipeConfigurer)
 }
 
 func (r *Pipeline) WithContext(ctx context.Context) contractsprocess.Pipeline {

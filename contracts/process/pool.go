@@ -27,11 +27,11 @@ type PoolBuilder interface {
 
 	// Run starts the pool, waits for all processes to complete, and returns a
 	// map of the results, keyed by the process keys.
-	Run(configurer ...func(Pool)) (map[string]Result, error)
+	Run() (map[string]Result, error)
 
 	// Start launches the pool asynchronously and returns a handle to the running
 	// pool, allowing for interaction with the live processes.
-	Start(configurer ...func(Pool)) (RunningPool, error)
+	Start() (RunningPool, error)
 
 	// Timeout sets a total time limit for the entire pool operation. If the
 	// timeout is exceeded, all running processes will be terminated.
