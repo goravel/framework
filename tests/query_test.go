@@ -3558,6 +3558,60 @@ func (s *QueryTestSuite) TestSum() {
 	}
 }
 
+func (s *QueryTestSuite) TestAvg() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			user := User{Name: "avg_user", Avatar: "avg_avatar"}
+			s.Nil(query.Query().Create(&user))
+			s.True(user.ID > 0)
+
+			user1 := User{Name: "avg_user", Avatar: "avg_avatar1"}
+			s.Nil(query.Query().Create(&user1))
+			s.True(user1.ID > 0)
+
+			avg, err := query.Query().Table("users").Avg("id")
+			s.Nil(err)
+			s.True(avg > 0)
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestMin() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			user := User{Name: "min_user", Avatar: "min_avatar"}
+			s.Nil(query.Query().Create(&user))
+			s.True(user.ID > 0)
+
+			user1 := User{Name: "min_user", Avatar: "min_avatar1"}
+			s.Nil(query.Query().Create(&user1))
+			s.True(user1.ID > 0)
+
+			min, err := query.Query().Table("users").Min("id")
+			s.Nil(err)
+			s.True(min > 0)
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestMax() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			user := User{Name: "max_user", Avatar: "max_avatar"}
+			s.Nil(query.Query().Create(&user))
+			s.True(user.ID > 0)
+
+			user1 := User{Name: "max_user", Avatar: "max_avatar1"}
+			s.Nil(query.Query().Create(&user1))
+			s.True(user1.ID > 0)
+
+			max, err := query.Query().Table("users").Max("id")
+			s.Nil(err)
+			s.True(max > 0)
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestToSql() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
