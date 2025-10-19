@@ -33,6 +33,8 @@ type Pipeline struct {
 	quietly   bool
 	path      string
 	buffering bool
+
+	pipeConfigurer func(pipe contractsprocess.Pipe)
 }
 
 func (r *Pipeline) DisableBuffering() contractsprocess.Pipeline {
@@ -57,6 +59,11 @@ func (r *Pipeline) Path(path string) contractsprocess.Pipeline {
 	return r
 }
 
+func (r *Pipeline) Pipe(configurer func(pipe contractsprocess.Pipe)) contractsprocess.Pipeline {
+	r.pipeConfigurer = configurer
+	return r
+}
+
 func (r *Pipeline) Timeout(timeout time.Duration) contractsprocess.Pipeline {
 	r.timeout = timeout
 	return r
@@ -72,12 +79,20 @@ func (r *Pipeline) OnOutput(onOutput contractsprocess.OnPipeOutputFunc) contract
 	return r
 }
 
-func (r *Pipeline) Run(configure func(contractsprocess.Pipe)) (contractsprocess.Result, error) {
-	return r.run(configure)
+func (r *Pipeline) Run(configurer ...func(contractsprocess.Pipe)) (contractsprocess.Result, error) {
+	pipeConfigurer := r.pipeConfigurer
+	if len(configurer) > 0 {
+		pipeConfigurer = configurer[0]
+	}
+	return r.run(pipeConfigurer)
 }
 
-func (r *Pipeline) Start(configure func(contractsprocess.Pipe)) (contractsprocess.RunningPipe, error) {
-	return r.start(configure)
+func (r *Pipeline) Start(configurer ...func(contractsprocess.Pipe)) (contractsprocess.RunningPipe, error) {
+	pipeConfigurer := r.pipeConfigurer
+	if len(configurer) > 0 {
+		pipeConfigurer = configurer[0]
+	}
+	return r.start(pipeConfigurer)
 }
 
 func (r *Pipeline) WithContext(ctx context.Context) contractsprocess.Pipeline {
@@ -89,17 +104,21 @@ func (r *Pipeline) WithContext(ctx context.Context) contractsprocess.Pipeline {
 	return r
 }
 
-func (r *Pipeline) run(configure func(contractsprocess.Pipe)) (contractsprocess.Result, error) {
-	run, err := r.start(configure)
+func (r *Pipeline) run(configurer func(contractsprocess.Pipe)) (contractsprocess.Result, error) {
+	run, err := r.start(configurer)
 	if err != nil {
 		return nil, err
 	}
 	return run.Wait(), nil
 }
 
-func (r *Pipeline) start(configure func(contractsprocess.Pipe)) (contractsprocess.RunningPipe, error) {
+func (r *Pipeline) start(configurer func(contractsprocess.Pipe)) (contractsprocess.RunningPipe, error) {
+	//if configurer == nil {
+	//
+	//}
+
 	pipe := &Pipe{}
-	configure(pipe)
+	configurer(pipe)
 
 	pipeCommands := pipe.commands
 	if len(pipeCommands) == 0 {

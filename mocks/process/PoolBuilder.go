@@ -120,9 +120,63 @@ func (_c *PoolBuilder_OnOutput_Call) RunAndReturn(run func(process.OnPoolOutputF
 	return _c
 }
 
-// Run provides a mock function with given fields: builder
-func (_m *PoolBuilder) Run(builder func(process.Pool)) (map[string]process.Result, error) {
-	ret := _m.Called(builder)
+// Pool provides a mock function with given fields: configurer
+func (_m *PoolBuilder) Pool(configurer func(process.Pool)) process.PoolBuilder {
+	ret := _m.Called(configurer)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Pool")
+	}
+
+	var r0 process.PoolBuilder
+	if rf, ok := ret.Get(0).(func(func(process.Pool)) process.PoolBuilder); ok {
+		r0 = rf(configurer)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(process.PoolBuilder)
+		}
+	}
+
+	return r0
+}
+
+// PoolBuilder_Pool_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Pool'
+type PoolBuilder_Pool_Call struct {
+	*mock.Call
+}
+
+// Pool is a helper method to define mock.On call
+//   - configurer func(process.Pool)
+func (_e *PoolBuilder_Expecter) Pool(configurer interface{}) *PoolBuilder_Pool_Call {
+	return &PoolBuilder_Pool_Call{Call: _e.mock.On("Pool", configurer)}
+}
+
+func (_c *PoolBuilder_Pool_Call) Run(run func(configurer func(process.Pool))) *PoolBuilder_Pool_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func(process.Pool)))
+	})
+	return _c
+}
+
+func (_c *PoolBuilder_Pool_Call) Return(_a0 process.PoolBuilder) *PoolBuilder_Pool_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *PoolBuilder_Pool_Call) RunAndReturn(run func(func(process.Pool)) process.PoolBuilder) *PoolBuilder_Pool_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Run provides a mock function with given fields: configurer
+func (_m *PoolBuilder) Run(configurer ...func(process.Pool)) (map[string]process.Result, error) {
+	_va := make([]interface{}, len(configurer))
+	for _i := range configurer {
+		_va[_i] = configurer[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Run")
@@ -130,19 +184,19 @@ func (_m *PoolBuilder) Run(builder func(process.Pool)) (map[string]process.Resul
 
 	var r0 map[string]process.Result
 	var r1 error
-	if rf, ok := ret.Get(0).(func(func(process.Pool)) (map[string]process.Result, error)); ok {
-		return rf(builder)
+	if rf, ok := ret.Get(0).(func(...func(process.Pool)) (map[string]process.Result, error)); ok {
+		return rf(configurer...)
 	}
-	if rf, ok := ret.Get(0).(func(func(process.Pool)) map[string]process.Result); ok {
-		r0 = rf(builder)
+	if rf, ok := ret.Get(0).(func(...func(process.Pool)) map[string]process.Result); ok {
+		r0 = rf(configurer...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(map[string]process.Result)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(func(process.Pool)) error); ok {
-		r1 = rf(builder)
+	if rf, ok := ret.Get(1).(func(...func(process.Pool)) error); ok {
+		r1 = rf(configurer...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -156,14 +210,21 @@ type PoolBuilder_Run_Call struct {
 }
 
 // Run is a helper method to define mock.On call
-//   - builder func(process.Pool)
-func (_e *PoolBuilder_Expecter) Run(builder interface{}) *PoolBuilder_Run_Call {
-	return &PoolBuilder_Run_Call{Call: _e.mock.On("Run", builder)}
+//   - configurer ...func(process.Pool)
+func (_e *PoolBuilder_Expecter) Run(configurer ...interface{}) *PoolBuilder_Run_Call {
+	return &PoolBuilder_Run_Call{Call: _e.mock.On("Run",
+		append([]interface{}{}, configurer...)...)}
 }
 
-func (_c *PoolBuilder_Run_Call) Run(run func(builder func(process.Pool))) *PoolBuilder_Run_Call {
+func (_c *PoolBuilder_Run_Call) Run(run func(configurer ...func(process.Pool))) *PoolBuilder_Run_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(func(process.Pool)))
+		variadicArgs := make([]func(process.Pool), len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(func(process.Pool))
+			}
+		}
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -173,14 +234,20 @@ func (_c *PoolBuilder_Run_Call) Return(_a0 map[string]process.Result, _a1 error)
 	return _c
 }
 
-func (_c *PoolBuilder_Run_Call) RunAndReturn(run func(func(process.Pool)) (map[string]process.Result, error)) *PoolBuilder_Run_Call {
+func (_c *PoolBuilder_Run_Call) RunAndReturn(run func(...func(process.Pool)) (map[string]process.Result, error)) *PoolBuilder_Run_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Start provides a mock function with given fields: builder
-func (_m *PoolBuilder) Start(builder func(process.Pool)) (process.RunningPool, error) {
-	ret := _m.Called(builder)
+// Start provides a mock function with given fields: configurer
+func (_m *PoolBuilder) Start(configurer ...func(process.Pool)) (process.RunningPool, error) {
+	_va := make([]interface{}, len(configurer))
+	for _i := range configurer {
+		_va[_i] = configurer[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Start")
@@ -188,19 +255,19 @@ func (_m *PoolBuilder) Start(builder func(process.Pool)) (process.RunningPool, e
 
 	var r0 process.RunningPool
 	var r1 error
-	if rf, ok := ret.Get(0).(func(func(process.Pool)) (process.RunningPool, error)); ok {
-		return rf(builder)
+	if rf, ok := ret.Get(0).(func(...func(process.Pool)) (process.RunningPool, error)); ok {
+		return rf(configurer...)
 	}
-	if rf, ok := ret.Get(0).(func(func(process.Pool)) process.RunningPool); ok {
-		r0 = rf(builder)
+	if rf, ok := ret.Get(0).(func(...func(process.Pool)) process.RunningPool); ok {
+		r0 = rf(configurer...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(process.RunningPool)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(func(process.Pool)) error); ok {
-		r1 = rf(builder)
+	if rf, ok := ret.Get(1).(func(...func(process.Pool)) error); ok {
+		r1 = rf(configurer...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -214,14 +281,21 @@ type PoolBuilder_Start_Call struct {
 }
 
 // Start is a helper method to define mock.On call
-//   - builder func(process.Pool)
-func (_e *PoolBuilder_Expecter) Start(builder interface{}) *PoolBuilder_Start_Call {
-	return &PoolBuilder_Start_Call{Call: _e.mock.On("Start", builder)}
+//   - configurer ...func(process.Pool)
+func (_e *PoolBuilder_Expecter) Start(configurer ...interface{}) *PoolBuilder_Start_Call {
+	return &PoolBuilder_Start_Call{Call: _e.mock.On("Start",
+		append([]interface{}{}, configurer...)...)}
 }
 
-func (_c *PoolBuilder_Start_Call) Run(run func(builder func(process.Pool))) *PoolBuilder_Start_Call {
+func (_c *PoolBuilder_Start_Call) Run(run func(configurer ...func(process.Pool))) *PoolBuilder_Start_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(func(process.Pool)))
+		variadicArgs := make([]func(process.Pool), len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(func(process.Pool))
+			}
+		}
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -231,7 +305,7 @@ func (_c *PoolBuilder_Start_Call) Return(_a0 process.RunningPool, _a1 error) *Po
 	return _c
 }
 
-func (_c *PoolBuilder_Start_Call) RunAndReturn(run func(func(process.Pool)) (process.RunningPool, error)) *PoolBuilder_Start_Call {
+func (_c *PoolBuilder_Start_Call) RunAndReturn(run func(...func(process.Pool)) (process.RunningPool, error)) *PoolBuilder_Start_Call {
 	_c.Call.Return(run)
 	return _c
 }

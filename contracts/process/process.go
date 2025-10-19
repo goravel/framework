@@ -19,7 +19,7 @@ const (
 )
 
 // OnOutputFunc is a callback function invoked when the process produces output.
-// The typ parameter indicates whether the data came from stdout or stderr,
+// The typ(OutputType) parameter indicates whether the data came from stdout or stderr,
 // and line contains the raw output bytes (typically a line of text).
 type OnOutputFunc func(typ OutputType, line []byte)
 
@@ -51,6 +51,20 @@ type Process interface {
 
 	// Path sets the working directory where the process will be executed.
 	Path(path string) Process
+
+	// Pipe creates a pipeline of commands where the output of each command is connected to the input of the next command.
+	// The configurer function is used to define the sequence of commands in the pipeline.
+	//
+	// Note: Process configurations (timeout, context, etc.) are NOT inherited by the pipeline.
+	// You must configure these settings directly on the returned Pipeline instance.
+	Pipe(configurer func(Pipe)) Pipeline
+
+	// Pool creates a pool of concurrent processes that can be executed and managed together.
+	// The configurer function is used to define the commands to be executed in the pool.
+	//
+	// Note: Process configurations (timeout, context, etc.) are NOT inherited by the pool.
+	// You must configure these settings directly on the returned PoolBuilder instance.
+	Pool(configurer func(Pool)) PoolBuilder
 
 	// Quietly suppresses all process output, discarding both stdout and stderr.
 	Quietly() Process

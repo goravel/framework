@@ -21,9 +21,10 @@ type Process struct {
 	onOutput  contractsprocess.OnOutputFunc
 	path      string
 	quietly   bool
-  tapCmd            func(*exec.Cmd)
-	timeout   time.Duration
-	tty       bool
+	// TODO: remove this
+	tapCmd  func(*exec.Cmd)
+	timeout time.Duration
+	tty     bool
 }
 
 func New() *Process {
@@ -61,6 +62,14 @@ func (r *Process) OnOutput(handler contractsprocess.OnOutputFunc) contractsproce
 func (r *Process) Path(path string) contractsprocess.Process {
 	r.path = path
 	return r
+}
+
+func (r *Process) Pipe(configurer func(pipe contractsprocess.Pipe)) contractsprocess.Pipeline {
+	return NewPipe().Pipe(configurer)
+}
+
+func (r *Process) Pool(configurer func(pool contractsprocess.Pool)) contractsprocess.PoolBuilder {
+	return NewPool().Pool(configurer)
 }
 
 func (r *Process) Quietly() contractsprocess.Process {

@@ -6,6 +6,9 @@ import (
 	"time"
 )
 
+// OnPoolOutputFunc is a callback function invoked when any process in the pool produces output.
+// The typ(OutputType) parameter indicates whether the data came from stdout or stderr,
+// line contains the raw output bytes, and key identifies which process in the pool produced the output.
 type OnPoolOutputFunc func(typ OutputType, line []byte, key string)
 
 // PoolBuilder defines the interface for configuring and launching a pool of concurrent processes.
@@ -18,13 +21,17 @@ type PoolBuilder interface {
 	// processes in the pool.
 	OnOutput(handler OnPoolOutputFunc) PoolBuilder
 
+	// Pool adds commands to the process pool using the provided configurer function.
+	// This method allows for fluent chaining of pool configuration methods.
+	Pool(configurer func(Pool)) PoolBuilder
+
 	// Run starts the pool, waits for all processes to complete, and returns a
 	// map of the results, keyed by the process keys.
-	Run(builder func(Pool)) (map[string]Result, error)
+	Run(configurer ...func(Pool)) (map[string]Result, error)
 
 	// Start launches the pool asynchronously and returns a handle to the running
 	// pool, allowing for interaction with the live processes.
-	Start(builder func(Pool)) (RunningPool, error)
+	Start(configurer ...func(Pool)) (RunningPool, error)
 
 	// Timeout sets a total time limit for the entire pool operation. If the
 	// timeout is exceeded, all running processes will be terminated.
