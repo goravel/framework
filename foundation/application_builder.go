@@ -36,3 +36,11 @@ func (r *ApplicationBuilder) WithConfig(fn func()) foundation.ApplicationBuilder
 
 	return r
 }
+
+func (r *ApplicationBuilder) WithProviders(providers []foundation.ServiceProvider) foundation.ApplicationBuilder {
+	for _, provider := range providers {
+		_ = provider
+	}
+
+	return r
+}
