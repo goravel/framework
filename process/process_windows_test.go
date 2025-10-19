@@ -11,6 +11,9 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
+	contractsprocess "github.com/goravel/framework/contracts/process"
+	"github.com/goravel/framework/errors"
 )
 
 func TestProcess_Run_Windows(t *testing.T) {
@@ -129,7 +132,7 @@ func TestProcess_Pool_Windows(t *testing.T) {
 	t.Run("returns error with nil configurer", func(t *testing.T) {
 		p := New()
 		_, err := p.Pool(nil).Run()
-		assert.Error(t, err)
+		assert.ErrorIs(t, err, errors.ProcessPoolNilConfigurer)
 	})
 }
 
@@ -148,6 +151,6 @@ func TestProcess_Pipe_Windows(t *testing.T) {
 	t.Run("returns error with nil configurer", func(t *testing.T) {
 		p := New()
 		_, err := p.Pipe(nil).Run()
-		assert.Error(t, err)
+		assert.ErrorIs(t, err, errors.ProcessPipeNilConfigurer)
 	})
 }
