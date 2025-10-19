@@ -26,7 +26,7 @@ func GoFile(file string) modify.GoFile {
 	return &goFile{file: file}
 }
 
-func When(fn func() bool, applies ...modify.Apply) modify.Apply {
+func When(fn func(options map[string]any) bool, applies ...modify.Apply) modify.Apply {
 	return &whenModifier{
 		fn:      fn,
 		applies: applies,
@@ -34,24 +34,45 @@ func When(fn func() bool, applies ...modify.Apply) modify.Apply {
 }
 
 func WhenDriver(driver string, applies ...modify.Apply) modify.Apply {
-	return &whenDriverModifier{
-		driver:  driver,
-		applies: applies,
-	}
+	return When(func(options map[string]any) bool {
+		return driver == options["driver"]
+	}, applies...)
 }
 
 func WhenFacade(facade string, applies ...modify.Apply) modify.Apply {
-	return &whenFacadeModifier{
-		facade:  facade,
-		applies: applies,
-	}
+	return When(func(options map[string]any) bool {
+		return facade == options["facade"]
+	}, applies...)
+}
+
+func WhenFileExists(file string, applies ...modify.Apply) modify.Apply {
+	return When(func(options map[string]any) bool {
+		return supportfile.Exists(file)
+	}, applies...)
+}
+
+func WhenFileNotExists(file string, applies ...modify.Apply) modify.Apply {
+	return When(func(options map[string]any) bool {
+		return !supportfile.Exists(file)
+	}, applies...)
 }
 
 func WhenNoFacades(facades []string, applies ...modify.Apply) modify.Apply {
-	return &whenNoFacadesModifier{
-		facades: facades,
-		applies: applies,
-	}
+	return When(func(options map[string]any) bool {
+		var exist bool
+		for _, facade := range facades {
+			if facade == options["facade"] {
+				continue
+			}
+
+			if supportfile.Exists(facadeToFilepath(facade)) {
+				exist = true
+				break
+			}
+		}
+
+		return !exist
+	}, applies...)
 }
 
 func generateOptions(options []modify.Option) map[string]any {
@@ -230,91 +251,18 @@ func (r *goNode) Modify(actions ...modify.Action) modify.GoFile {
 }
 
 type whenModifier struct {
-	fn      func() bool
+	fn      func(options map[string]any) bool
 	applies []modify.Apply
 }
 
 func (r whenModifier) Apply(options ...modify.Option) error {
-	if !r.fn() {
+	if !r.fn(generateOptions(options)) {
 		return nil
 	}
 
 	for _, apply := range r.applies {
 		if err := apply.Apply(options...); err != nil {
 			return err
-		}
-	}
-
-	return nil
-}
-
-type whenDriverModifier struct {
-	driver  string
-	applies []modify.Apply
-}
-
-func (r whenDriverModifier) Apply(options ...modify.Option) error {
-	generatedOptions := generateOptions(options)
-
-	if r.driver != generatedOptions["driver"] {
-		return nil
-	}
-
-	for _, apply := range r.applies {
-		if err := apply.Apply(options...); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-type whenFacadeModifier struct {
-	facade  string
-	applies []modify.Apply
-}
-
-func (r whenFacadeModifier) Apply(options ...modify.Option) error {
-	generatedOptions := generateOptions(options)
-
-	if r.facade != generatedOptions["facade"] {
-		return nil
-	}
-
-	for _, apply := range r.applies {
-		if err := apply.Apply(options...); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-type whenNoFacadesModifier struct {
-	facades []string
-	applies []modify.Apply
-}
-
-func (r whenNoFacadesModifier) Apply(options ...modify.Option) error {
-	var exist bool
-	generatedOptions := generateOptions(options)
-
-	for _, facade := range r.facades {
-		if facade == generatedOptions["facade"] {
-			continue
-		}
-
-		if supportfile.Exists(facadeToFilepath(facade)) {
-			exist = true
-			break
-		}
-	}
-
-	if !exist {
-		for _, apply := range r.applies {
-			if err := apply.Apply(options...); err != nil {
-				return err
-			}
 		}
 	}
 

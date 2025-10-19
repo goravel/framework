@@ -323,7 +323,7 @@ func TestWhen(t *testing.T) {
 	t.Run("match", func(t *testing.T) {
 		called := false
 		apply := &dummyApply{called: &called}
-		modifier := When(func() bool {
+		modifier := When(func(options map[string]any) bool {
 			return true
 		}, apply)
 
@@ -335,7 +335,7 @@ func TestWhen(t *testing.T) {
 	t.Run("no match", func(t *testing.T) {
 		called := false
 		apply := &dummyApply{called: &called}
-		modifier := When(func() bool {
+		modifier := When(func(options map[string]any) bool {
 			return false
 		}, apply)
 
@@ -347,7 +347,7 @@ func TestWhen(t *testing.T) {
 	t.Run("apply error", func(t *testing.T) {
 		called := false
 		apply := &dummyApply{called: &called, shouldErr: true}
-		modifier := When(func() bool {
+		modifier := When(func(options map[string]any) bool {
 			return true
 		}, apply)
 
