@@ -323,7 +323,7 @@ func TestWhen(t *testing.T) {
 	t.Run("match", func(t *testing.T) {
 		called := false
 		apply := &dummyApply{called: &called}
-		modifier := When(func() bool {
+		modifier := When(func(options map[string]any) bool {
 			return true
 		}, apply)
 
@@ -335,7 +335,7 @@ func TestWhen(t *testing.T) {
 	t.Run("no match", func(t *testing.T) {
 		called := false
 		apply := &dummyApply{called: &called}
-		modifier := When(func() bool {
+		modifier := When(func(options map[string]any) bool {
 			return false
 		}, apply)
 
@@ -347,7 +347,7 @@ func TestWhen(t *testing.T) {
 	t.Run("apply error", func(t *testing.T) {
 		called := false
 		apply := &dummyApply{called: &called, shouldErr: true}
-		modifier := When(func() bool {
+		modifier := When(func(options map[string]any) bool {
 			return true
 		}, apply)
 
@@ -416,6 +416,70 @@ func TestWhenFacade(t *testing.T) {
 		modifier := WhenFacade("Auth", apply)
 
 		err := modifier.Apply(options.Facade("Auth"))
+		assert.Equal(t, assert.AnError, err)
+		assert.True(t, called)
+	})
+}
+
+func TestWhenFileExists(t *testing.T) {
+	t.Run("match", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		modifier := WhenFileExists("modify.go", apply)
+
+		err := modifier.Apply()
+		assert.NoError(t, err)
+		assert.True(t, called)
+	})
+
+	t.Run("no match", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		modifier := WhenFileExists("modify1.go", apply)
+
+		err := modifier.Apply()
+		assert.NoError(t, err)
+		assert.False(t, called)
+	})
+
+	t.Run("apply error", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called, shouldErr: true}
+		modifier := WhenFileExists("modify.go", apply)
+
+		err := modifier.Apply()
+		assert.Equal(t, assert.AnError, err)
+		assert.True(t, called)
+	})
+}
+
+func TestWhenFileNotExists(t *testing.T) {
+	t.Run("match", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		modifier := WhenFileNotExists("modify1.go", apply)
+
+		err := modifier.Apply()
+		assert.NoError(t, err)
+		assert.True(t, called)
+	})
+
+	t.Run("no match", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		modifier := WhenFileNotExists("modify.go", apply)
+
+		err := modifier.Apply()
+		assert.NoError(t, err)
+		assert.False(t, called)
+	})
+
+	t.Run("apply error", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called, shouldErr: true}
+		modifier := WhenFileNotExists("modify1.go", apply)
+
+		err := modifier.Apply()
 		assert.Equal(t, assert.AnError, err)
 		assert.True(t, called)
 	})
