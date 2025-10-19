@@ -21,6 +21,7 @@ import (
 	"github.com/goravel/framework/contracts/http/client"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/mail"
+	"github.com/goravel/framework/contracts/process"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/contracts/route"
 	"github.com/goravel/framework/contracts/schedule"
@@ -138,6 +139,8 @@ type Application interface {
 	MakeMail() mail.Mail
 	// MakeOrm resolves the orm instance.
 	MakeOrm() orm.Orm
+	// MakeProcess resolves the process instance.
+	MakeProcess() process.Process
 	// MakeQueue resolves the queue instance.
 	MakeQueue() queue.Queue
 	// MakeRateLimiter resolves the rate limiter instance.

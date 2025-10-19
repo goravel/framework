@@ -40,6 +40,8 @@ import (
 
 	orm "github.com/goravel/framework/contracts/database/orm"
 
+	process "github.com/goravel/framework/contracts/process"
+
 	queue "github.com/goravel/framework/contracts/queue"
 
 	route "github.com/goravel/framework/contracts/route"
@@ -1677,6 +1679,53 @@ func (_c *Application_MakeOrm_Call) Return(_a0 orm.Orm) *Application_MakeOrm_Cal
 }
 
 func (_c *Application_MakeOrm_Call) RunAndReturn(run func() orm.Orm) *Application_MakeOrm_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// MakeProcess provides a mock function with no fields
+func (_m *Application) MakeProcess() process.Process {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for MakeProcess")
+	}
+
+	var r0 process.Process
+	if rf, ok := ret.Get(0).(func() process.Process); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(process.Process)
+		}
+	}
+
+	return r0
+}
+
+// Application_MakeProcess_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MakeProcess'
+type Application_MakeProcess_Call struct {
+	*mock.Call
+}
+
+// MakeProcess is a helper method to define mock.On call
+func (_e *Application_Expecter) MakeProcess() *Application_MakeProcess_Call {
+	return &Application_MakeProcess_Call{Call: _e.mock.On("MakeProcess")}
+}
+
+func (_c *Application_MakeProcess_Call) Run(run func()) *Application_MakeProcess_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Application_MakeProcess_Call) Return(_a0 process.Process) *Application_MakeProcess_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Application_MakeProcess_Call) RunAndReturn(run func() process.Process) *Application_MakeProcess_Call {
 	_c.Call.Return(run)
 	return _c
 }

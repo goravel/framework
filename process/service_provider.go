@@ -20,7 +20,7 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 
 func (r *ServiceProvider) Register(app foundation.Application) {
 	app.Bind(binding.Process, func(app foundation.Application) (any, error) {
-		return nil, nil
+		return New(), nil
 	})
 }
 
