@@ -80,7 +80,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{pkg}).Once()
 				mockContext.EXPECT().Spinner("> @go get "+pkg, mock.Anything).Return(nil).Once()
-				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install", mock.Anything).Return(assert.AnError).Once()
+				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install --module=github.com/goravel/framework", mock.Anything).Return(assert.AnError).Once()
 				mockContext.EXPECT().Error(fmt.Sprintf("failed to install package: %s", assert.AnError)).Once()
 			},
 		},
@@ -90,7 +90,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 				s.T().Setenv("GO111MODULE", "off")
 				mockContext.EXPECT().Arguments().Return([]string{pkg}).Once()
 				mockContext.EXPECT().Spinner("> @go get "+pkg, mock.Anything).Return(nil).Once()
-				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install --module=github.com/goravel/framework", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(assert.AnError).Once()
 				mockContext.EXPECT().Error(fmt.Sprintf("failed to tidy go.mod file: %s", assert.AnError)).Once()
 			},
@@ -100,7 +100,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{pkg}).Once()
 				mockContext.EXPECT().Spinner("> @go get "+pkg, mock.Anything).Return(nil).Once()
-				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install --module=github.com/goravel/framework", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Package " + pkg + " installed successfully").Once()
 			},
@@ -205,7 +205,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 				mockContext.EXPECT().Arguments().Return([]string{pkg, facade}).Once()
 
 				mockContext.EXPECT().Spinner("> @go get "+pkg, mock.Anything).Return(nil).Once()
-				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install --module=github.com/goravel/framework", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Package " + pkg + " installed successfully").Once()
 
@@ -274,7 +274,7 @@ func (s *PackageInstallCommandTestSuite) Test_installFacade_TwoFacadesHaveTheSam
 		Description: fmt.Sprintf("A driver is required for %s, please select one to install.", dbFacade),
 	}).Return(pkg, nil).Once()
 	mockContext.EXPECT().Spinner("> @go get "+pkg, mock.Anything).Return(nil).Once()
-	mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install", mock.Anything).Return(nil).Once()
+	mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install --module=github.com/goravel/framework", mock.Anything).Return(nil).Once()
 	mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Twice()
 	mockContext.EXPECT().Success("Package " + pkg + " installed successfully").Once()
 	mockContext.EXPECT().Success("Facade DB installed successfully").Once()
@@ -418,7 +418,7 @@ func (s *PackageInstallCommandTestSuite) Test_installDriver() {
 					Description: fmt.Sprintf("A driver is required for %s, please select one to install.", facade),
 				}).Return(pkg, nil).Once()
 				mockContext.EXPECT().Spinner("> @go get "+pkg, mock.Anything).Return(nil).Once()
-				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install --module=github.com/goravel/framework", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Package " + pkg + " installed successfully").Once()
 			},
