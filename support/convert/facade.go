@@ -1,13 +1,19 @@
 package convert
 
-import "github.com/goravel/framework/support/str"
+import (
+	"github.com/goravel/framework/contracts/facades"
+)
 
 func BindingToFacade(binding string) string {
-	return str.Of(binding).After("goravel.").Studly().WhenIs("Db", func(s *str.String) *str.String {
-		return s.Upper()
-	}).String()
+	for facade, b := range facades.FacadeToBinding {
+		if b == binding {
+			return facade
+		}
+	}
+
+	return ""
 }
 
 func FacadeToBinding(facade string) string {
-	return "goravel." + str.Of(facade).Snake().String()
+	return facades.FacadeToBinding[facade]
 }

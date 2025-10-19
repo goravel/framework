@@ -1,4 +1,6 @@
-package stub
+package stubs
+
+import "strings"
 
 func ConsoleKernel() string {
 	return `package console
@@ -19,4 +21,20 @@ func (kernel Kernel) Schedule() []schedule.Event {
 	return []schedule.Event{}
 }
 `
+}
+
+func DatabaseConfig(module string) string {
+	content := `package config
+
+import (
+	"DummyModule/app/facades"
+)
+
+func init() {
+	config := facades.Config()
+	config.Add("database", map[string]any{})
+}
+`
+
+	return strings.ReplaceAll(content, "DummyModule", module)
 }
