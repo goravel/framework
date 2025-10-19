@@ -113,9 +113,9 @@ func (r *Pipeline) run(configurer func(contractsprocess.Pipe)) (contractsprocess
 }
 
 func (r *Pipeline) start(configurer func(contractsprocess.Pipe)) (contractsprocess.RunningPipe, error) {
-	//if configurer == nil {
-	//
-	//}
+	if configurer == nil {
+		return nil, errors.ProcessPipeNilConfigurer
+	}
 
 	pipe := &Pipe{}
 	configurer(pipe)

@@ -187,14 +187,13 @@ func TestRunningPool_Stop_Unix(t *testing.T) {
 			},
 			action: func(t *testing.T, rp contractsprocess.RunningPool) {
 				time.Sleep(100 * time.Millisecond)
-				// Use very short timeout to force SIGKILL after SIGTERM fails
-
-				// TODO: the assertion is not passed currently, need to investigate why.
-				// err := rp.Stop(2 * time.Millisecond)
-				// assert.NoError(t, err, "Stopping with SIGKILL should not return an error on Unix")
+				// Use longer timeout to ensure SIGKILL has time to work
+				err := rp.Stop(50 * time.Millisecond)
+				assert.NoError(t, err, "Stopping with SIGKILL should not return an error on Unix")
 			},
 			validate: func(t *testing.T, results map[string]contractsprocess.Result) {
 				assert.Len(t, results, 1)
+				assert.True(t, results["unstoppable"].Failed(), "Process should be killed")
 			},
 		},
 	}

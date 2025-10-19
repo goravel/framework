@@ -105,6 +105,10 @@ type result struct {
 //  4. WaitGroups synchronize the completion of all workers and the collection of all results
 //     before the entire operation is marked as "done".
 func (r *PoolBuilder) start(configurer func(contractsprocess.Pool)) (contractsprocess.RunningPool, error) {
+	if configurer == nil {
+		return nil, errors.ProcessPoolNilConfigurer
+	}
+
 	pool := &Pool{}
 	configurer(pool)
 
