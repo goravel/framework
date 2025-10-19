@@ -159,7 +159,7 @@ func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) 
 	}
 
 	// install package
-	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install")); err != nil {
+	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--module="+packages.GetModuleName())); err != nil {
 		return fmt.Errorf("failed to install package: %s", err)
 	}
 
