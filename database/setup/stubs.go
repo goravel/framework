@@ -8,7 +8,7 @@ type Config struct {
 
 type Stubs struct{}
 
-func (s Stubs) Config(module string) []Config {
+func (s Stubs) Config() []Config {
 	return []Config{
 		// // Default database connection name
 		// "default": "",
