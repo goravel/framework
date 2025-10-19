@@ -83,12 +83,6 @@ func (r *Process) Start(name string, args ...string) (contractsprocess.Running, 
 	return r.start(name, args...)
 }
 
-func (r *Process) TapCmd(f func(*exec.Cmd)) contractsprocess.Process {
-	r.tapCmd = f
-
-	return r
-}
-
 func (r *Process) Timeout(timeout time.Duration) contractsprocess.Process {
 	r.timeout = timeout
 	return r
