@@ -238,7 +238,6 @@ var (
 		Process: {
 			Description: "Executes and manages external processes with concurrency support.",
 			PkgPath:     "github.com/goravel/framework/process",
-			IsBase:      true,
 		},
 		Queue: {
 			Description: "A solution by allowing you to create queued jobs that can run in the background.",

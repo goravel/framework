@@ -17,6 +17,7 @@ const (
 	Lang        = "Lang"
 	Log         = "Log"
 	Mail        = "Mail"
+	Process     = "Process"
 	Orm         = "Orm"
 	Queue       = "Queue"
 	RateLimiter = "RateLimiter"
@@ -47,6 +48,7 @@ var FacadeToBinding = map[string]string{
 	Log:         binding.Log,
 	Mail:        binding.Mail,
 	Orm:         binding.Orm,
+	Process:     binding.Process,
 	Queue:       binding.Queue,
 	RateLimiter: binding.RateLimiter,
 	Route:       binding.Route,
