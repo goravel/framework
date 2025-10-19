@@ -259,7 +259,7 @@ func (r *Container) MakeOrm() contractsorm.Orm {
 }
 
 func (r *Container) MakeProcess() contractsprocess.Process {
-	instance, err := r.Make(binding.Process)
+	instance, err := r.Make(facades.FacadeToBinding[facades.Process])
 	if err != nil {
 		color.Errorln(err)
 		return nil

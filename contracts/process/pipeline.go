@@ -7,9 +7,9 @@ import (
 )
 
 // OnPipeOutputFunc is a callback function invoked when any command in the pipeline produces output.
-// The key parameter identifies which command in the pipeline produced the output,
 // typ(OutputType) indicates whether the data came from stdout or stderr,
-// and line contains the raw output bytes.
+// line contains the raw output bytes,
+// and key identifies which command in the pipeline produced the output.
 type OnPipeOutputFunc func(typ OutputType, line []byte, key string)
 
 // Pipeline defines a builder-style API for constructing and running a sequence
