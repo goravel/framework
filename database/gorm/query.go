@@ -814,6 +814,42 @@ func (r *Query) Sum(column string) (int64, error) {
 	return sum, nil
 }
 
+func (r *Query) Avg(column string) (float64, error) {
+	query := r.addGlobalScopes().buildConditions()
+
+	var avg float64
+	err := query.instance.Select("AVG(" + column + ")").Row().Scan(&avg)
+	if err != nil {
+		return 0, err
+	}
+
+	return avg, nil
+}
+
+func (r *Query) Min(column string) (int64, error) {
+	query := r.addGlobalScopes().buildConditions()
+
+	var min int64
+	err := query.instance.Select("MIN(" + column + ")").Row().Scan(&min)
+	if err != nil {
+		return 0, err
+	}
+
+	return min, nil
+}
+
+func (r *Query) Max(column string) (int64, error) {
+	query := r.addGlobalScopes().buildConditions()
+
+	var max int64
+	err := query.instance.Select("MAX(" + column + ")").Row().Scan(&max)
+	if err != nil {
+		return 0, err
+	}
+
+	return max, nil
+}
+
 func (r *Query) Table(name string, args ...any) contractsorm.Query {
 	conditions := r.conditions
 	conditions.table = &Table{

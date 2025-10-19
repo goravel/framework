@@ -168,6 +168,12 @@ type Query interface {
 	SharedLock() Query
 	// Sum calculates the sum of a column's values and populates the destination object.
 	Sum(column string) (int64, error)
+	// Avg calculates the average of a column's values.
+	Avg(column string) (float64, error)
+	// Min calculates the minimum value of a column.
+	Min(column string) (int64, error)
+	// Max calculates the maximum value of a column.
+	Max(column string) (int64, error)
 	// Table specifies the table for the query.
 	Table(name string, args ...any) Query
 	// ToSql returns the query as a SQL string.

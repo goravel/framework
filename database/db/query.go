@@ -731,6 +731,36 @@ func (r *Query) Sum(column string) (int64, error) {
 	return sum, nil
 }
 
+func (r *Query) Avg(column string) (float64, error) {
+	var avg float64
+	err := r.Select(fmt.Sprintf("AVG(%s)", column)).First(&avg)
+	if err != nil {
+		return 0, err
+	}
+
+	return avg, nil
+}
+
+func (r *Query) Min(column string) (int64, error) {
+	var min int64
+	err := r.Select(fmt.Sprintf("MIN(%s)", column)).First(&min)
+	if err != nil {
+		return 0, err
+	}
+
+	return min, nil
+}
+
+func (r *Query) Max(column string) (int64, error) {
+	var max int64
+	err := r.Select(fmt.Sprintf("MAX(%s)", column)).First(&max)
+	if err != nil {
+		return 0, err
+	}
+
+	return max, nil
+}
+
 func (r *Query) ToSql() db.ToSql {
 	q := r.clone()
 	return NewToSql(q, false)
