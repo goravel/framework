@@ -3,12 +3,14 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/goravel/framework/contracts/facades"
 	contractsmodify "github.com/goravel/framework/contracts/packages/modify"
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
+	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/path"
 	supportstubs "github.com/goravel/framework/support/stubs"
@@ -34,9 +36,15 @@ func main() {
 
 	configActionsFunc := func() []contractsmodify.Action {
 		var actions []contractsmodify.Action
-		for _, config := range stubs.Config("") {
+		content, err := file.GetContent(databaseConfigPath)
+		if err != nil {
+			color.Errorln("failed to get database configuration content")
+			return actions
+		}
+
+		for _, config := range stubs.Config() {
 			// Skip if the configuration already exists
-			if file.Contains(databaseConfigPath, fmt.Sprintf(`%q`, config.Key)) {
+			if strings.Contains(content, fmt.Sprintf(`%q`, config.Key)) {
 				continue
 			}
 			actions = append(actions, modify.AddConfig(config.Key, config.Value, config.Annotations...))
