@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/goravel/framework/contracts/facades"
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
@@ -12,6 +13,8 @@ import (
 
 func main() {
 	stubs := Stubs{}
+	appConfigPath := path.Config("app.go")
+	routeFacadePath := path.Facades("route.go")
 	appServiceProviderPath := path.App("providers", "app_service_provider.go")
 	moduleName := packages.GetModuleNameFromArgs(os.Args)
 	globalMiddleware := "facades.Route().GlobalMiddleware(http.Kernel{}.Middleware()...)"
@@ -21,13 +24,22 @@ func main() {
 	routesWeb := "routes.Web()"
 	routesPath := path.Base("routes", "web.go")
 	welcomeTmplPath := path.Base("resources", "views", "welcome.tmpl")
+	routeServiceProvider := "&route.ServiceProvider{}"
+	envPath := path.Base(".env")
+	envExamplePath := path.Base(".env.example")
+	env := `
+APP_URL=http://localhost
+APP_HOST=127.0.0.1
+APP_PORT=3000
+JWT_SECRET=
+`
 
 	packages.Setup(os.Args).
 		Install(
 			// Add the route service provider to the providers array in config/app.go
-			modify.GoFile(path.Config("app.go")).
+			modify.GoFile(appConfigPath).
 				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register("&route.ServiceProvider{}")),
+				Find(match.Providers()).Modify(modify.Register(routeServiceProvider)),
 
 			// Create resources/views/welcome.tmpl and routes/web.go
 			modify.File(welcomeTmplPath).Overwrite(stubs.WelcomeTmpl()),
@@ -42,10 +54,14 @@ func main() {
 				Find(match.BootFunc()).Modify(modify.Add(routesWeb)),
 
 			// Register the Route facade
-			modify.WhenFacade("Route", modify.File(path.Facades("route.go")).Overwrite(stubs.RouteFacade())),
+			modify.WhenFacade(facades.Route, modify.File(routeFacadePath).Overwrite(stubs.RouteFacade())),
+
+			// Add configurations to the .env and .env.example files
+			modify.WhenFileNotContains(envPath, "APP_URL", modify.File(envPath).Append(env)),
+			modify.WhenFileNotContains(envExamplePath, "APP_URL", modify.File(envExamplePath).Append(env)),
 		).
 		Uninstall(
-			modify.WhenNoFacades([]string{"Route"},
+			modify.WhenNoFacades([]string{facades.Route},
 				// Modify app/providers/app_service_provider.go to unregister the HTTP global middleware
 				modify.GoFile(appServiceProviderPath).
 					Find(match.BootFunc()).Modify(modify.Remove(globalMiddleware)).
@@ -59,13 +75,13 @@ func main() {
 				modify.File(welcomeTmplPath).Remove(),
 
 				// Remove the route service provider from the providers array in config/app.go
-				modify.GoFile(path.Config("app.go")).
-					Find(match.Providers()).Modify(modify.Unregister("&route.ServiceProvider{}")).
+				modify.GoFile(appConfigPath).
+					Find(match.Providers()).Modify(modify.Unregister(routeServiceProvider)).
 					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
 			),
 
 			// Remove the Route facade
-			modify.WhenFacade("Route", modify.File(path.Facades("route.go")).Remove()),
+			modify.WhenFacade(facades.Route, modify.File(routeFacadePath).Remove()),
 		).
 		Execute()
 }

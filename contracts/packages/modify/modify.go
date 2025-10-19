@@ -20,6 +20,7 @@ type Facade interface {
 }
 
 type File interface {
+	Append(content string) Apply
 	Overwrite(content string) Apply
 	Remove() Apply
 }

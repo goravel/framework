@@ -421,6 +421,38 @@ func TestWhenFacade(t *testing.T) {
 	})
 }
 
+func TestWhenFileContains(t *testing.T) {
+	t.Run("match", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		modifier := WhenFileContains("modify.go", "package modify", apply)
+
+		err := modifier.Apply()
+		assert.NoError(t, err)
+		assert.True(t, called)
+	})
+
+	t.Run("no match", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		modifier := WhenFileContains("modify.go", "package none", apply)
+
+		err := modifier.Apply()
+		assert.NoError(t, err)
+		assert.False(t, called)
+	})
+
+	t.Run("apply error", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called, shouldErr: true}
+		modifier := WhenFileContains("modify.go", "package modify", apply)
+
+		err := modifier.Apply()
+		assert.Equal(t, assert.AnError, err)
+		assert.True(t, called)
+	})
+}
+
 func TestWhenFileExists(t *testing.T) {
 	t.Run("match", func(t *testing.T) {
 		called := false
@@ -446,6 +478,38 @@ func TestWhenFileExists(t *testing.T) {
 		called := false
 		apply := &dummyApply{called: &called, shouldErr: true}
 		modifier := WhenFileExists("modify.go", apply)
+
+		err := modifier.Apply()
+		assert.Equal(t, assert.AnError, err)
+		assert.True(t, called)
+	})
+}
+
+func TestWhenFileNotContains(t *testing.T) {
+	t.Run("match", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		modifier := WhenFileNotContains("modify.go", "package none", apply)
+
+		err := modifier.Apply()
+		assert.NoError(t, err)
+		assert.True(t, called)
+	})
+
+	t.Run("no match", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		modifier := WhenFileNotContains("modify.go", "package modify", apply)
+
+		err := modifier.Apply()
+		assert.NoError(t, err)
+		assert.False(t, called)
+	})
+
+	t.Run("apply error", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called, shouldErr: true}
+		modifier := WhenFileNotContains("modify.go", "package none", apply)
 
 		err := modifier.Apply()
 		assert.Equal(t, assert.AnError, err)
