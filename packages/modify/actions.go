@@ -55,7 +55,7 @@ func AddConfig(name, expression string, annotations ...string) modify.Action {
 				}
 				comments = append(comments, annotation)
 			}
-			newExpr.Decs.NodeDecs.Start = comments
+			newExpr.Decs.Start = comments
 		}
 
 		existExprIndex := KeyIndex(value.Elts, key)
