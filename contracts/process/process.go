@@ -3,7 +3,6 @@ package process
 import (
 	"context"
 	"io"
-	"os/exec"
 	"time"
 )
 
@@ -83,18 +82,22 @@ type Process interface {
 	// wait or terminate the process explicitly.
 	Start(name string, arg ...string) (Running, error)
 
-	// TapCmd provides direct access to the underlying exec.Cmd before
-	// the process is started. This allows for advanced customization of
-	// the command, such as setting additional fields or modifying existing ones.
-	TapCmd(func(*exec.Cmd)) Process
-
 	// Timeout sets a maximum execution duration for the process.
 	// If the timeout is exceeded, the process will be terminated.
 	// A zero duration disables the timeout.
 	Timeout(timeout time.Duration) Process
 
-	// TTY attaches the process to a pseudo-terminal, enabling interactive
-	// behavior (such as programs that require a TTY for input/output).
+	// TTY runs the command in an interactive TTY mode.
+	//
+	// This is the method you need when you're running a command that asks for
+	// input, requires a password, or shows a TUI menu (like `artisan make:controller`).
+	// It essentially "borrows" your terminal and gives it to the subprocess.
+	//
+	// Be aware of two major side effects:
+	//  1. Output is NOT captured. It goes straight to your terminal. The
+	//     Result object won't contain any output from the command.
+	//  2. The `.Input()` method is ignored. Your live keyboard becomes the
+	//     command's standard input.
 	TTY() Process
 
 	// WithContext binds the process lifecycle to the provided context.

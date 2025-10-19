@@ -130,7 +130,6 @@ func (r *Process) start(name string, args ...string) (contractsprocess.Running, 
 	if r.path != "" {
 		cmd.Dir = r.path
 	}
-	setSysProcAttr(cmd)
 
 	if len(r.env) > 0 {
 		cmd.Env = append(os.Environ(), r.env...)
@@ -138,39 +137,42 @@ func (r *Process) start(name string, args ...string) (contractsprocess.Running, 
 
 	if r.input != nil {
 		cmd.Stdin = r.input
-	} else if r.tty {
-		cmd.Stdin = os.Stdin
 	}
 
 	var stdoutBuffer, stderrBuffer *bytes.Buffer
-	var stdoutWriters []io.Writer
-	var stderrWriters []io.Writer
 
-	if r.buffering {
-		stdoutBuffer = &bytes.Buffer{}
-		stderrBuffer = &bytes.Buffer{}
-		stdoutWriters = append(stdoutWriters, stdoutBuffer)
-		stderrWriters = append(stderrWriters, stderrBuffer)
-	}
+	if r.tty {
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	} else {
+		setSysProcAttr(cmd)
 
-	if !r.quietly {
-		stdoutWriters = append(stdoutWriters, os.Stdout)
-		stderrWriters = append(stderrWriters, os.Stderr)
-	}
-	if r.onOutput != nil {
-		stdoutWriters = append(stdoutWriters, NewOutputWriterForProcess(contractsprocess.OutputTypeStdout, r.onOutput))
-		stderrWriters = append(stderrWriters, NewOutputWriterForProcess(contractsprocess.OutputTypeStderr, r.onOutput))
-	}
+		var stdoutWriters []io.Writer
+		var stderrWriters []io.Writer
 
-	if len(stdoutWriters) > 0 {
-		cmd.Stdout = io.MultiWriter(stdoutWriters...)
-	}
-	if len(stderrWriters) > 0 {
-		cmd.Stderr = io.MultiWriter(stderrWriters...)
-	}
+		if r.buffering {
+			stdoutBuffer = &bytes.Buffer{}
+			stderrBuffer = &bytes.Buffer{}
+			stdoutWriters = append(stdoutWriters, stdoutBuffer)
+			stderrWriters = append(stderrWriters, stderrBuffer)
+		}
 
-	if r.tapCmd != nil {
-		r.tapCmd(cmd)
+		if !r.quietly {
+			stdoutWriters = append(stdoutWriters, os.Stdout)
+			stderrWriters = append(stderrWriters, os.Stderr)
+		}
+		if r.onOutput != nil {
+			stdoutWriters = append(stdoutWriters, NewOutputWriterForProcess(contractsprocess.OutputTypeStdout, r.onOutput))
+			stderrWriters = append(stderrWriters, NewOutputWriterForProcess(contractsprocess.OutputTypeStderr, r.onOutput))
+		}
+
+		if len(stdoutWriters) > 0 {
+			cmd.Stdout = io.MultiWriter(stdoutWriters...)
+		}
+		if len(stderrWriters) > 0 {
+			cmd.Stderr = io.MultiWriter(stderrWriters...)
+		}
 	}
 
 	if err := cmd.Start(); err != nil {
