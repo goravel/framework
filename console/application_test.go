@@ -1,6 +1,7 @@
 package console
 
 import (
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -33,15 +34,17 @@ func TestConcurrentRun(t *testing.T) {
 		&TestCommand2{},
 	})
 
+	var wg sync.WaitGroup
 	for i := 0; i < 100; i++ {
+		wg.Add(1)
 		go func() {
 			_ = cliApp.Call("test1")
 			_ = cliApp.Call("test2")
+			wg.Done()
 		}()
 	}
 
-	// Wait for goroutines to finish
-	time.Sleep(1 * time.Second)
+	wg.Wait()
 
 	assert.Equal(t, int64(100), testCommand1.Load())
 	assert.Equal(t, int64(100), testCommand2.Load())
