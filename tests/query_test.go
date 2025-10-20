@@ -3556,6 +3556,9 @@ func (s *QueryTestSuite) TestSum() {
 			err := query.Query().Table("users").Sum("id", &sum)
 			s.Nil(err)
 			s.Equal(int64(3), sum)
+
+			err = query.Query().Table("users").Sum("id", nil)
+			s.Error(err)
 		})
 	}
 }
@@ -3575,6 +3578,9 @@ func (s *QueryTestSuite) TestAvg() {
 			err := query.Query().Table("users").Avg("ratio", &avg)
 			s.Nil(err)
 			s.Equal(float64(15), avg)
+
+			err = query.Query().Table("users").Where("id", user.ID).Avg("ratio", nil)
+			s.Error(err)
 		})
 	}
 }
@@ -3598,6 +3604,9 @@ func (s *QueryTestSuite) TestMin() {
 			err := query.Query().Table("users").Min("ratio", &min)
 			s.Nil(err)
 			s.Equal(int64(9), min)
+
+			err = query.Query().Table("users").Min("ratio", nil)
+			s.Error(err)
 		})
 	}
 }
@@ -3621,6 +3630,9 @@ func (s *QueryTestSuite) TestMax() {
 			err := query.Query().Table("users").Max("ratio", &max)
 			s.Nil(err)
 			s.Equal(int64(30), max)
+
+			err = query.Query().Table("users").Max("ratio", nil)
+			s.Error(err)
 		})
 	}
 }

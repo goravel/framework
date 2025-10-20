@@ -1148,6 +1148,9 @@ func (s *QueryTestSuite) TestSum() {
 	err := s.query.Where("age", 25).Sum("age", &sum)
 	s.Nil(err)
 	s.Equal(int64(25), sum)
+
+	err = s.query.Where("age", 25).Sum("age", nil)
+	s.Error(err)
 }
 
 func (s *QueryTestSuite) TestAvg() {
@@ -1164,6 +1167,9 @@ func (s *QueryTestSuite) TestAvg() {
 	err := s.query.Where("age", 25).Avg("age", &avg)
 	s.Nil(err)
 	s.Equal(float64(25.5), avg)
+
+	err = s.query.Where("age", 25).Avg("age", nil)
+	s.Error(err)
 }
 
 func (s *QueryTestSuite) TestMin() {
@@ -1180,6 +1186,9 @@ func (s *QueryTestSuite) TestMin() {
 	err := s.query.Where("age", 25).Min("age", &min)
 	s.Nil(err)
 	s.Equal(int64(20), min)
+
+	err = s.query.Where("age", 25).Min("age", nil)
+	s.Error(err)
 }
 
 func (s *QueryTestSuite) TestMax() {
@@ -1196,6 +1205,9 @@ func (s *QueryTestSuite) TestMax() {
 	err := s.query.Where("age", 25).Max("age", &max)
 	s.Nil(err)
 	s.Equal(int64(30), max)
+
+	err = s.query.Where("age", 25).Max("age", nil)
+	s.Error(err)
 }
 
 func (s *QueryTestSuite) TestToSql() {

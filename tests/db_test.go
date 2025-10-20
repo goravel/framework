@@ -1078,6 +1078,66 @@ func (s *DBTestSuite) TestSum() {
 			err := query.DB().Table("products").Sum("weight", &sum)
 			s.NoError(err)
 			s.Equal(int64(300), sum)
+
+			err = query.DB().Table("products").Sum("weight", nil)
+			s.Error(err)
+		})
+	}
+}
+
+func (s *DBTestSuite) TestAvg() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{Name: "sum_product1", Weight: convert.Pointer(100)},
+				{Name: "sum_product2", Weight: convert.Pointer(200)},
+			})
+
+			var avg float64
+			err := query.DB().Table("products").Avg("weight", &avg)
+			s.NoError(err)
+			s.Equal(float64(150), avg)
+
+			err = query.DB().Table("products").Avg("weight", nil)
+			s.Error(err)
+		})
+	}
+}
+
+func (s *DBTestSuite) TestMin() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{Name: "sum_product1", Weight: convert.Pointer(100)},
+				{Name: "sum_product2", Weight: convert.Pointer(200)},
+			})
+
+			var min int64
+			err := query.DB().Table("products").Min("weight", &min)
+			s.NoError(err)
+			s.Equal(int64(100), min)
+
+			err = query.DB().Table("products").Min("weight", nil)
+			s.Error(err)
+		})
+	}
+}
+
+func (s *DBTestSuite) TestMax() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{Name: "sum_product1", Weight: convert.Pointer(100)},
+				{Name: "sum_product2", Weight: convert.Pointer(200)},
+			})
+
+			var max int64
+			err := query.DB().Table("products").Max("weight", &max)
+			s.NoError(err)
+			s.Equal(int64(200), max)
+
+			err = query.DB().Table("products").Max("weight", nil)
+			s.Error(err)
 		})
 	}
 }
