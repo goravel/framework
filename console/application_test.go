@@ -1,6 +1,7 @@
 package console
 
 import (
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -12,8 +13,8 @@ import (
 )
 
 var testCommand = 0
-var testCommand1 = 0
-var testCommand2 = 0
+var testCommand1 atomic.Int64
+var testCommand2 atomic.Int64
 
 func TestRun(t *testing.T) {
 	cliApp := NewApplication("test", "test", "test", "test", true)
@@ -33,15 +34,17 @@ func TestConcurrentRun(t *testing.T) {
 	})
 
 	for i := 0; i < 100; i++ {
-		go cliApp.Call("test1")
-		go cliApp.Call("test2")
+		go func() {
+			_ = cliApp.Call("test1")
+			_ = cliApp.Call("test2")
+		}()
 	}
 
 	// Wait for goroutines to finish
 	time.Sleep(1 * time.Second)
 
-	assert.Equal(t, 100, testCommand1)
-	assert.Equal(t, 100, testCommand2)
+	assert.Equal(t, int64(100), testCommand1.Load())
+	assert.Equal(t, int64(100), testCommand2.Load())
 }
 
 func TestFlagsToCliFlags(t *testing.T) {
@@ -476,7 +479,7 @@ func (receiver *TestCommand1) Extend() command.Extend {
 }
 
 func (receiver *TestCommand1) Handle(ctx console.Context) error {
-	testCommand1++
+	testCommand1.Add(1)
 
 	return nil
 }
@@ -497,7 +500,7 @@ func (receiver *TestCommand2) Extend() command.Extend {
 }
 
 func (receiver *TestCommand2) Handle(ctx console.Context) error {
-	testCommand2++
+	testCommand2.Add(1)
 
 	return nil
 }

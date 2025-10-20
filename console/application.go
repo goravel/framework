@@ -45,7 +45,6 @@ func NewApplication(name, usage, usageText, version string, useArtisan bool) con
 	instance.Flags = []cli.Flag{noANSIFlag}
 
 	return &Application{
-		mu:         sync.Mutex{},
 		instance:   instance,
 		useArtisan: useArtisan,
 	}
