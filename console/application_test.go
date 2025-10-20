@@ -25,7 +25,7 @@ func TestRun(t *testing.T) {
 	})
 
 	assert.NoError(t, cliApp.Call("test"))
-	assert.Equal(t, 1, testCommand)
+	assert.Equal(t, int64(1), testCommand)
 }
 
 func TestRun_Concurrent(t *testing.T) {
