@@ -802,52 +802,60 @@ func (r *Query) SharedLock() contractsorm.Query {
 	return r.setConditions(conditions)
 }
 
-func (r *Query) Sum(column string) (int64, error) {
-	query := r.addGlobalScopes().buildConditions()
-
-	var sum int64
-	err := query.instance.Select("SUM(" + column + ")").Row().Scan(&sum)
-	if err != nil {
-		return 0, err
+func (r *Query) Sum(column string, dest any) error {
+	if dest == nil {
+		return errors.DatabaseUnsupportedType.Args("nil", "pointer")
 	}
 
-	return sum, nil
+	destValue := reflect.ValueOf(dest)
+	if destValue.Kind() != reflect.Ptr {
+		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
+	}
+
+	query := r.addGlobalScopes().buildConditions()
+	return query.instance.Select("SUM(" + column + ")").Row().Scan(dest)
 }
 
-func (r *Query) Avg(column string) (float64, error) {
-	query := r.addGlobalScopes().buildConditions()
-
-	var avg float64
-	err := query.instance.Select("AVG(" + column + ")").Row().Scan(&avg)
-	if err != nil {
-		return 0, err
+func (r *Query) Avg(column string, dest any) error {
+	if dest == nil {
+		return errors.DatabaseUnsupportedType.Args("nil", "pointer")
 	}
 
-	return avg, nil
+	destValue := reflect.ValueOf(dest)
+	if destValue.Kind() != reflect.Ptr {
+		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
+	}
+
+	query := r.addGlobalScopes().buildConditions()
+	return query.instance.Select("AVG(" + column + ")").Row().Scan(dest)
 }
 
-func (r *Query) Min(column string) (int64, error) {
-	query := r.addGlobalScopes().buildConditions()
-
-	var min int64
-	err := query.instance.Select("MIN(" + column + ")").Row().Scan(&min)
-	if err != nil {
-		return 0, err
+func (r *Query) Min(column string, dest any) error {
+	if dest == nil {
+		return errors.DatabaseUnsupportedType.Args("nil", "pointer")
 	}
 
-	return min, nil
+	destValue := reflect.ValueOf(dest)
+	if destValue.Kind() != reflect.Ptr {
+		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
+	}
+
+	query := r.addGlobalScopes().buildConditions()
+	return query.instance.Select("MIN(" + column + ")").Row().Scan(dest)
 }
 
-func (r *Query) Max(column string) (int64, error) {
-	query := r.addGlobalScopes().buildConditions()
-
-	var max int64
-	err := query.instance.Select("MAX(" + column + ")").Row().Scan(&max)
-	if err != nil {
-		return 0, err
+func (r *Query) Max(column string, dest any) error {
+	if dest == nil {
+		return errors.DatabaseUnsupportedType.Args("nil", "pointer")
 	}
 
-	return max, nil
+	destValue := reflect.ValueOf(dest)
+	if destValue.Kind() != reflect.Ptr {
+		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
+	}
+
+	query := r.addGlobalScopes().buildConditions()
+	return query.instance.Select("MAX(" + column + ")").Row().Scan(dest)
 }
 
 func (r *Query) Table(name string, args ...any) contractsorm.Query {

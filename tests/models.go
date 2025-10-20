@@ -40,6 +40,7 @@ type User struct {
 	House   *House   `gorm:"polymorphic:Houseable"`
 	Phones  []*Phone `gorm:"polymorphic:Phoneable"`
 	Roles   []*Role  `gorm:"many2many:role_user"`
+	Ratio   float64
 	age     int
 }
 
