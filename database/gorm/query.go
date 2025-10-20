@@ -803,10 +803,6 @@ func (r *Query) SharedLock() contractsorm.Query {
 }
 
 func (r *Query) Sum(column string, dest any) error {
-	if dest == nil {
-		return errors.DatabaseUnsupportedType.Args("nil", "pointer")
-	}
-
 	destValue := reflect.ValueOf(dest)
 	if destValue.Kind() != reflect.Ptr {
 		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
@@ -817,10 +813,6 @@ func (r *Query) Sum(column string, dest any) error {
 }
 
 func (r *Query) Avg(column string, dest any) error {
-	if dest == nil {
-		return errors.DatabaseUnsupportedType.Args("nil", "pointer")
-	}
-
 	destValue := reflect.ValueOf(dest)
 	if destValue.Kind() != reflect.Ptr {
 		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
@@ -831,10 +823,6 @@ func (r *Query) Avg(column string, dest any) error {
 }
 
 func (r *Query) Min(column string, dest any) error {
-	if dest == nil {
-		return errors.DatabaseUnsupportedType.Args("nil", "pointer")
-	}
-
 	destValue := reflect.ValueOf(dest)
 	if destValue.Kind() != reflect.Ptr {
 		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
@@ -845,10 +833,6 @@ func (r *Query) Min(column string, dest any) error {
 }
 
 func (r *Query) Max(column string, dest any) error {
-	if dest == nil {
-		return errors.DatabaseUnsupportedType.Args("nil", "pointer")
-	}
-
 	destValue := reflect.ValueOf(dest)
 	if destValue.Kind() != reflect.Ptr {
 		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
