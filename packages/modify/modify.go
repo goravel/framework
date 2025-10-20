@@ -164,9 +164,7 @@ type goFile struct {
 
 func (r goFile) Apply(...modify.Option) error {
 	source, err := supportfile.GetContent(r.file)
-	fmt.Println("source", r.file, source)
 	if err != nil {
-		fmt.Println("apply")
 		return err
 	}
 
