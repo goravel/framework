@@ -2541,7 +2541,8 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 				s.True(globalScope.ID > 0)
 				s.Equal("global_scope", globalScope.Name)
 
-				sum, err := query.Query().Model(&GlobalScope{}).Sum("id")
+				var sum int64
+				err := query.Query().Model(&GlobalScope{}).Sum("id", &sum)
 				s.Nil(err)
 				s.Equal(globalScope.ID, uint(sum))
 			})
@@ -3551,9 +3552,10 @@ func (s *QueryTestSuite) TestSum() {
 			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
-			sum, err := query.Query().Table("users").Sum("id")
+			var sum int64
+			err := query.Query().Table("users").Sum("id", &sum)
 			s.Nil(err)
-			s.True(sum > 0)
+			s.Equal(int64(3), sum)
 		})
 	}
 }
@@ -3561,17 +3563,18 @@ func (s *QueryTestSuite) TestSum() {
 func (s *QueryTestSuite) TestAvg() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			user := User{Name: "avg_user", Avatar: "avg_avatar"}
+			user := User{Name: "avg_user", Avatar: "avg_avatar", Ratio: 10}
 			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
-			user1 := User{Name: "avg_user", Avatar: "avg_avatar1"}
+			user1 := User{Name: "avg_user", Avatar: "avg_avatar1", Ratio: 20}
 			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
-			avg, err := query.Query().Table("users").Avg("id")
+			var avg float64
+			err := query.Query().Table("users").Avg("ratio", &avg)
 			s.Nil(err)
-			s.True(avg > 0)
+			s.Equal(float64(15), avg)
 		})
 	}
 }
@@ -3579,17 +3582,22 @@ func (s *QueryTestSuite) TestAvg() {
 func (s *QueryTestSuite) TestMin() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			user := User{Name: "min_user", Avatar: "min_avatar"}
+			user := User{Name: "min_user", Avatar: "min_avatar", Ratio: 11}
 			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
-			user1 := User{Name: "min_user", Avatar: "min_avatar1"}
+			user1 := User{Name: "min_user", Avatar: "min_avatar1", Ratio: 9}
 			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
-			min, err := query.Query().Table("users").Min("id")
+			user2 := User{Name: "min_user", Avatar: "min_avatar2", Ratio: 10}
+			s.Nil(query.Query().Create(&user2))
+			s.True(user2.ID > 0)
+
+			var min int64
+			err := query.Query().Table("users").Min("ratio", &min)
 			s.Nil(err)
-			s.True(min > 0)
+			s.Equal(int64(9), min)
 		})
 	}
 }
@@ -3597,17 +3605,22 @@ func (s *QueryTestSuite) TestMin() {
 func (s *QueryTestSuite) TestMax() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			user := User{Name: "max_user", Avatar: "max_avatar"}
+			user := User{Name: "max_user", Avatar: "max_avatar", Ratio: 10}
 			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
-			user1 := User{Name: "max_user", Avatar: "max_avatar1"}
+			user1 := User{Name: "max_user", Avatar: "max_avatar1", Ratio: 20}
 			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
-			max, err := query.Query().Table("users").Max("id")
+			user2 := User{Name: "max_user", Avatar: "max_avatar2", Ratio: 30}
+			s.Nil(query.Query().Create(&user2))
+			s.True(user2.ID > 0)
+
+			var max int64
+			err := query.Query().Table("users").Max("ratio", &max)
 			s.Nil(err)
-			s.True(max > 0)
+			s.Equal(int64(30), max)
 		})
 	}
 }
