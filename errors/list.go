@@ -84,6 +84,7 @@ var (
 	FilesystemInvalidCustomDriver = New("init %s disk fail: via must be implement filesystem.Driver or func() (filesystem.Driver, error)")
 
 	FileAlreadyExists = New("file %s already exists")
+	FileNotExist      = New("file %s does not exist")
 
 	GrpcEmptyClientHost         = New("client's host can't be empty")
 	GrpcEmptyClientPort         = New("client's port can't be empty")

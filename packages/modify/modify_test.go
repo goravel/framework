@@ -31,6 +31,63 @@ func (s *FileTestSuite) SetupTest() {
 	s.tempDir = s.T().TempDir()
 }
 
+func (s *FileTestSuite) TestAppend() {
+	tests := []struct {
+		name        string
+		setup       func() string
+		content     string
+		expectError bool
+		assert      func(path string, err error)
+	}{
+		{
+			name: "append new file",
+			setup: func() string {
+				return filepath.Join(s.tempDir, "new_file.txt")
+			},
+			content:     "new content",
+			expectError: false,
+			assert: func(path string, err error) {
+				s.NoError(err)
+				content, readErr := supportfile.GetContent(path)
+				s.NoError(readErr)
+				s.Equal("new content", content)
+				s.NoError(supportfile.Remove(path))
+			},
+		},
+		{
+			name: "append existing file",
+			setup: func() string {
+				file := filepath.Join(s.tempDir, "empty_file.txt")
+				s.NoError(supportfile.PutContent(file, "existing content"))
+
+				return file
+			},
+			content: `
+new content`,
+			expectError: false,
+			assert: func(path string, err error) {
+				s.NoError(err)
+				content, readErr := supportfile.GetContent(path)
+				s.NoError(readErr)
+				s.Equal(`existing content
+new content`, content)
+				s.NoError(supportfile.Remove(path))
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			path := tt.setup()
+			appendFile := File(path).Append(tt.content)
+
+			err := appendFile.Apply()
+
+			tt.assert(path, err)
+		})
+	}
+}
+
 func (s *FileTestSuite) TestOverwrite() {
 	tests := []struct {
 		name        string
@@ -421,6 +478,38 @@ func TestWhenFacade(t *testing.T) {
 	})
 }
 
+func TestWhenFileContains(t *testing.T) {
+	t.Run("match", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		modifier := WhenFileContains("modify.go", "package modify", apply)
+
+		err := modifier.Apply()
+		assert.NoError(t, err)
+		assert.True(t, called)
+	})
+
+	t.Run("no match", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		modifier := WhenFileContains("modify.go", "package none", apply)
+
+		err := modifier.Apply()
+		assert.NoError(t, err)
+		assert.False(t, called)
+	})
+
+	t.Run("apply error", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called, shouldErr: true}
+		modifier := WhenFileContains("modify.go", "package modify", apply)
+
+		err := modifier.Apply()
+		assert.Equal(t, assert.AnError, err)
+		assert.True(t, called)
+	})
+}
+
 func TestWhenFileExists(t *testing.T) {
 	t.Run("match", func(t *testing.T) {
 		called := false
@@ -446,6 +535,38 @@ func TestWhenFileExists(t *testing.T) {
 		called := false
 		apply := &dummyApply{called: &called, shouldErr: true}
 		modifier := WhenFileExists("modify.go", apply)
+
+		err := modifier.Apply()
+		assert.Equal(t, assert.AnError, err)
+		assert.True(t, called)
+	})
+}
+
+func TestWhenFileNotContains(t *testing.T) {
+	t.Run("match", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		modifier := WhenFileNotContains("modify.go", "package none", apply)
+
+		err := modifier.Apply()
+		assert.NoError(t, err)
+		assert.True(t, called)
+	})
+
+	t.Run("no match", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		modifier := WhenFileNotContains("modify.go", "package modify", apply)
+
+		err := modifier.Apply()
+		assert.NoError(t, err)
+		assert.False(t, called)
+	})
+
+	t.Run("apply error", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called, shouldErr: true}
+		modifier := WhenFileNotContains("modify.go", "package none", apply)
 
 		err := modifier.Apply()
 		assert.Equal(t, assert.AnError, err)

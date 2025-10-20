@@ -10,7 +10,6 @@ import (
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
-	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/path"
 	supportstubs "github.com/goravel/framework/support/stubs"
@@ -33,18 +32,26 @@ func main() {
 	registerSeeder := "facades.Seeder().Register(database.Kernel{}.Seeders())"
 	databaseImport := fmt.Sprintf("%s/database", moduleName)
 	facadesImport := fmt.Sprintf("%s/app/facades", moduleName)
+	env := `
+DB_HOST=
+DB_PORT=5432
+DB_DATABASE=goravel
+DB_USERNAME=goravel
+DB_PASSWORD=Frameworkair
+`
+
+	databaseConfigContent, err := file.GetContent(databaseConfigPath)
+	if err != nil {
+		// If the file does not exist, use the default content
+		databaseConfigContent = supportstubs.DatabaseConfig(moduleName)
+	}
 
 	installConfigActionsFunc := func() []contractsmodify.Action {
 		var actions []contractsmodify.Action
-		content, err := file.GetContent(databaseConfigPath)
-		if err != nil {
-			color.Errorln("failed to get database configuration content")
-			return actions
-		}
 
 		for _, config := range stubs.Config() {
 			// Skip if the configuration already exists
-			if strings.Contains(content, fmt.Sprintf(`%q`, config.Key)) {
+			if strings.Contains(databaseConfigContent, fmt.Sprintf(`%q`, config.Key)) {
 				continue
 			}
 			actions = append(actions, modify.AddConfig(config.Key, config.Value, config.Annotations...))
@@ -55,15 +62,10 @@ func main() {
 
 	uninstallConfigActionsFunc := func() []contractsmodify.Action {
 		var actions []contractsmodify.Action
-		content, err := file.GetContent(databaseConfigPath)
-		if err != nil {
-			color.Errorln("failed to get database configuration content")
-			return actions
-		}
 
 		for _, config := range stubs.Config() {
 			// Skip if the configuration does not exist
-			if !strings.Contains(content, fmt.Sprintf(`%q`, config.Key)) {
+			if !strings.Contains(databaseConfigContent, fmt.Sprintf(`%q`, config.Key)) {
 				continue
 			}
 			actions = append(actions, modify.RemoveConfig(config.Key))
@@ -114,6 +116,10 @@ func main() {
 					Find(match.Imports()).Modify(modify.AddImport(facadesImport)).
 					Find(match.RegisterFunc()).Modify(modify.Add(registerSeeder)),
 			),
+
+			// Add configurations to the .env and .env.example files
+			modify.WhenFileNotContains(path.Base(".env"), "DB_HOST", modify.File(path.Base(".env")).Append(env)),
+			modify.WhenFileNotContains(path.Base(".env.example"), "DB_HOST", modify.File(path.Base(".env.example")).Append(env)),
 		).
 		Uninstall(
 			modify.WhenNoFacades([]string{facades.DB, facades.Orm, facades.Schema, facades.Seeder},

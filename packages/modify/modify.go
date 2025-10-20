@@ -45,14 +45,26 @@ func WhenFacade(facade string, applies ...modify.Apply) modify.Apply {
 	}, applies...)
 }
 
+func WhenFileContains(file, content string, applies ...modify.Apply) modify.Apply {
+	return When(func(_ map[string]any) bool {
+		return supportfile.Contains(file, content)
+	}, applies...)
+}
+
 func WhenFileExists(file string, applies ...modify.Apply) modify.Apply {
-	return When(func(options map[string]any) bool {
+	return When(func(_ map[string]any) bool {
 		return supportfile.Exists(file)
 	}, applies...)
 }
 
+func WhenFileNotContains(file, content string, applies ...modify.Apply) modify.Apply {
+	return When(func(_ map[string]any) bool {
+		return !supportfile.Contains(file, content)
+	}, applies...)
+}
+
 func WhenFileNotExists(file string, applies ...modify.Apply) modify.Apply {
-	return When(func(options map[string]any) bool {
+	return When(func(_ map[string]any) bool {
 		return !supportfile.Exists(file)
 	}, applies...)
 }
@@ -87,6 +99,13 @@ type file struct {
 	path string
 }
 
+func (r *file) Append(content string) modify.Apply {
+	return &appendFile{
+		content: content,
+		path:    r.path,
+	}
+}
+
 func (r *file) Overwrite(content string) modify.Apply {
 	return &overwriteFile{
 		content: content,
@@ -98,6 +117,15 @@ func (r *file) Remove() modify.Apply {
 	return &removeFile{
 		path: r.path,
 	}
+}
+
+type appendFile struct {
+	content string
+	path    string
+}
+
+func (r *appendFile) Apply(options ...modify.Option) error {
+	return supportfile.PutContent(r.path, r.content, supportfile.WithAppend())
 }
 
 type overwriteFile struct {

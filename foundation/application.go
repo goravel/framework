@@ -147,7 +147,7 @@ func (r *Application) Run(runners ...foundation.Runner) {
 	run := func(runner *RunnerWithInfo) {
 		go func() {
 			if err := runner.runner.Run(); err != nil {
-				color.Errorf("%s Run error: %v", runner.name, err)
+				color.Errorf("%s Run error: %v\n", runner.name, err)
 			} else {
 				runner.running = true
 			}
@@ -161,7 +161,7 @@ func (r *Application) Run(runners ...foundation.Runner) {
 			}
 
 			if err := runner.runner.Shutdown(); err != nil {
-				color.Errorf("%s Shutdown error: %v", runner.name, err)
+				color.Errorf("%s Shutdown error: %v\n", runner.name, err)
 			}
 		}()
 	}
