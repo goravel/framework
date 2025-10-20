@@ -31,6 +31,7 @@ func main() {
 APP_URL=http://localhost
 APP_HOST=127.0.0.1
 APP_PORT=3000
+
 JWT_SECRET=
 `
 
