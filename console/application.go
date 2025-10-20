@@ -5,6 +5,7 @@ import (
 	"os"
 	"slices"
 	"strings"
+	"sync"
 
 	"github.com/urfave/cli/v3"
 
@@ -26,6 +27,7 @@ var (
 )
 
 type Application struct {
+	mu         sync.Mutex
 	instance   *cli.Command
 	useArtisan bool
 }
@@ -43,6 +45,7 @@ func NewApplication(name, usage, usageText, version string, useArtisan bool) con
 	instance.Flags = []cli.Flag{noANSIFlag}
 
 	return &Application{
+		mu:         sync.Mutex{},
 		instance:   instance,
 		useArtisan: useArtisan,
 	}
@@ -104,6 +107,9 @@ func (r *Application) CallAndExit(command string) {
 
 // Run a command. Args come from os.Args.
 func (r *Application) Run(args []string, exitIfArtisan bool) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	if noANSI || env.IsNoANSI() || slices.Contains(args, "--no-ansi") {
 		color.Disable()
 	} else {

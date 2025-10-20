@@ -12,6 +12,8 @@ import (
 )
 
 var testCommand = 0
+var testCommand1 = 0
+var testCommand2 = 0
 
 func TestRun(t *testing.T) {
 	cliApp := NewApplication("test", "test", "test", "test", true)
@@ -21,6 +23,25 @@ func TestRun(t *testing.T) {
 
 	assert.NoError(t, cliApp.Call("test"))
 	assert.Equal(t, 1, testCommand)
+}
+
+func TestConcurrentRun(t *testing.T) {
+	cliApp := NewApplication("test", "test", "test", "test", true)
+	cliApp.Register([]console.Command{
+		&TestCommand1{},
+		&TestCommand2{},
+	})
+
+	for i := 0; i < 100; i++ {
+		go cliApp.Call("test1")
+		go cliApp.Call("test2")
+	}
+
+	// Wait for goroutines to finish
+	time.Sleep(1 * time.Second)
+
+	assert.Equal(t, 100, testCommand1)
+	assert.Equal(t, 100, testCommand2)
 }
 
 func TestFlagsToCliFlags(t *testing.T) {
@@ -435,6 +456,48 @@ func (receiver *TestCommand) Extend() command.Extend {
 
 func (receiver *TestCommand) Handle(ctx console.Context) error {
 	testCommand++
+
+	return nil
+}
+
+type TestCommand1 struct {
+}
+
+func (receiver *TestCommand1) Signature() string {
+	return "test1"
+}
+
+func (receiver *TestCommand1) Description() string {
+	return "Test command1"
+}
+
+func (receiver *TestCommand1) Extend() command.Extend {
+	return command.Extend{}
+}
+
+func (receiver *TestCommand1) Handle(ctx console.Context) error {
+	testCommand1++
+
+	return nil
+}
+
+type TestCommand2 struct {
+}
+
+func (receiver *TestCommand2) Signature() string {
+	return "test2"
+}
+
+func (receiver *TestCommand2) Description() string {
+	return "Test command2"
+}
+
+func (receiver *TestCommand2) Extend() command.Extend {
+	return command.Extend{}
+}
+
+func (receiver *TestCommand2) Handle(ctx console.Context) error {
+	testCommand2++
 
 	return nil
 }
