@@ -54,76 +54,26 @@ func (s *FileTestSuite) TestAppend() {
 				s.NoError(supportfile.Remove(path))
 			},
 		},
-		// {
-		// 	name: "overwrite existing file without force",
-		// 	setup: func() string {
-		// 		path := filepath.Join(s.tempDir, "existing_file.txt")
-		// 		s.NoError(supportfile.PutContent(path, "old content"))
-		// 		return path
-		// 	},
-		// 	content:     "new content",
-		// 	force:       false,
-		// 	expectError: true,
-		// 	assert: func(path string, err error) {
-		// 		s.NoError(err)
+		{
+			name: "append existing file",
+			setup: func() string {
+				file := filepath.Join(s.tempDir, "empty_file.txt")
+				s.NoError(supportfile.PutContent(file, "existing content"))
 
-		// 		// File should not be overwritten
-		// 		content, readErr := supportfile.GetContent(path)
-		// 		s.NoError(readErr)
-		// 		s.Equal("old content", content)
-		// 		s.NoError(supportfile.Remove(path))
-		// 	},
-		// },
-		// {
-		// 	name: "overwrite existing file with force",
-		// 	setup: func() string {
-		// 		path := filepath.Join(s.tempDir, "force_file.txt")
-		// 		s.NoError(supportfile.PutContent(path, "old content"))
-		// 		return path
-		// 	},
-		// 	content:     "new content",
-		// 	force:       true,
-		// 	expectError: false,
-		// 	assert: func(path string, err error) {
-		// 		s.NoError(err)
-		// 		content, readErr := supportfile.GetContent(path)
-		// 		s.NoError(readErr)
-		// 		s.Equal("new content", content)
-		// 		s.NoError(supportfile.Remove(path))
-		// 	},
-		// },
-		// {
-		// 	name: "overwrite with empty content",
-		// 	setup: func() string {
-		// 		return filepath.Join(s.tempDir, "empty_file.txt")
-		// 	},
-		// 	content:     "",
-		// 	force:       false,
-		// 	expectError: false,
-		// 	assert: func(path string, err error) {
-		// 		s.NoError(err)
-		// 		content, readErr := supportfile.GetContent(path)
-		// 		s.NoError(readErr)
-		// 		s.Empty(content)
-		// 		s.NoError(supportfile.Remove(path))
-		// 	},
-		// },
-		// {
-		// 	name: "overwrite with special characters",
-		// 	setup: func() string {
-		// 		return filepath.Join(s.tempDir, "special_file.txt")
-		// 	},
-		// 	content:     "content with\nnewlines\tand\ttabs",
-		// 	force:       false,
-		// 	expectError: false,
-		// 	assert: func(path string, err error) {
-		// 		s.NoError(err)
-		// 		content, readErr := supportfile.GetContent(path)
-		// 		s.NoError(readErr)
-		// 		s.Equal("content with\nnewlines\tand\ttabs", content)
-		// 		s.NoError(supportfile.Remove(path))
-		// 	},
-		// },
+				return file
+			},
+			content: `
+new content`,
+			expectError: false,
+			assert: func(path string, err error) {
+				s.NoError(err)
+				content, readErr := supportfile.GetContent(path)
+				s.NoError(readErr)
+				s.Equal(`existing content
+new content`, content)
+				s.NoError(supportfile.Remove(path))
+			},
+		},
 	}
 
 	for _, tt := range tests {

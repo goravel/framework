@@ -125,11 +125,6 @@ type appendFile struct {
 }
 
 func (r *appendFile) Apply(options ...modify.Option) error {
-	if !supportfile.Exists(r.path) {
-		color.Warningln(errors.FileNotExist.Args(r.path))
-		return nil
-	}
-
 	return supportfile.PutContent(r.path, r.content, supportfile.WithAppend())
 }
 
