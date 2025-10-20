@@ -51,11 +51,11 @@ func (s *ToSqlTestSuite) TestCreate() {
 	user := User{Name: "to_sql_create"}
 
 	toSql := gorm.NewToSql(s.query.(*gorm.Query), s.mockLog, false)
-	s.Equal("INSERT INTO \"users\" (\"created_at\",\"updated_at\",\"deleted_at\",\"name\",\"bio\",\"avatar\") VALUES ($1,$2,$3,$4,$5,$6) RETURNING \"id\"", toSql.Create(&user))
+	s.Equal("INSERT INTO \"users\" (\"created_at\",\"updated_at\",\"deleted_at\",\"name\",\"bio\",\"avatar\",\"ratio\") VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING \"id\"", toSql.Create(&user))
 
 	toSql = gorm.NewToSql(s.query.Model(&User{}).Where("id", 1).(*gorm.Query), s.mockLog, true)
-	s.Contains(toSql.Create(&user), "INSERT INTO \"users\" (\"created_at\",\"updated_at\",\"deleted_at\",\"name\",\"bio\",\"avatar\") VALUES (")
-	s.Contains(toSql.Create(&user), ",NULL,'to_sql_create',NULL,'')")
+	s.Contains(toSql.Create(&user), "INSERT INTO \"users\" (\"created_at\",\"updated_at\",\"deleted_at\",\"name\",\"bio\",\"avatar\",\"ratio\") VALUES (")
+	s.Contains(toSql.Create(&user), ",NULL,'to_sql_create',NULL,'',0)")
 
 	// global scopes
 	globalScope := GlobalScope{Name: "to_sql_create"}
@@ -195,15 +195,15 @@ func (s *ToSqlTestSuite) TestPluck() {
 
 func (s *ToSqlTestSuite) TestSave() {
 	toSql := gorm.NewToSql(s.query.(*gorm.Query), s.mockLog, false)
-	s.Equal("INSERT INTO \"users\" (\"created_at\",\"updated_at\",\"deleted_at\",\"name\",\"bio\",\"avatar\") VALUES ($1,$2,$3,$4,$5,$6) RETURNING \"id\"", toSql.Save(&User{}))
+	s.Equal("INSERT INTO \"users\" (\"created_at\",\"updated_at\",\"deleted_at\",\"name\",\"bio\",\"avatar\",\"ratio\") VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING \"id\"", toSql.Save(&User{}))
 
 	toSql = gorm.NewToSql(s.query.(*gorm.Query), s.mockLog, false)
-	s.Equal("UPDATE \"users\" SET \"created_at\"=$1,\"updated_at\"=$2,\"deleted_at\"=$3,\"name\"=$4,\"bio\"=$5,\"avatar\"=$6 WHERE \"users\".\"deleted_at\" IS NULL AND \"id\" = $7", toSql.Save(&User{Model: Model{ID: 2}}))
+	s.Equal("UPDATE \"users\" SET \"created_at\"=$1,\"updated_at\"=$2,\"deleted_at\"=$3,\"name\"=$4,\"bio\"=$5,\"avatar\"=$6,\"ratio\"=$7 WHERE \"users\".\"deleted_at\" IS NULL AND \"id\" = $8", toSql.Save(&User{Model: Model{ID: 2}}))
 
 	toSql = gorm.NewToSql(s.query.Where("id", 1).(*gorm.Query), s.mockLog, true)
 	sql := toSql.Save(&User{Name: "to_sql_save"})
-	s.Contains(sql, "INSERT INTO \"users\" (\"created_at\",\"updated_at\",\"deleted_at\",\"name\",\"bio\",\"avatar\") VALUES (")
-	s.Contains(sql, ",NULL,'to_sql_save',NULL,'')")
+	s.Contains(sql, "INSERT INTO \"users\" (\"created_at\",\"updated_at\",\"deleted_at\",\"name\",\"bio\",\"avatar\",\"ratio\") VALUES (")
+	s.Contains(sql, ",NULL,'to_sql_save',NULL,'',0)")
 
 	toSql = gorm.NewToSql(s.query.(*gorm.Query), s.mockLog, true)
 	sql = toSql.Save(&User{Model: Model{ID: 2}, Name: "to_sql_save"})
