@@ -16,6 +16,7 @@ const (
 	Log         = "goravel.log"
 	Mail        = "goravel.mail"
 	Orm         = "goravel.orm"
+	Process     = "goravel.process"
 	Queue       = "goravel.queue"
 	RateLimiter = "goravel.rate_limiter"
 	Route       = "goravel.route"
@@ -77,7 +78,6 @@ var (
 			PkgPath:     "github.com/goravel/framework/config",
 			IsBase:      true,
 		},
-
 		Auth: {
 			Description: "Provides support for JWT and Session drivers.",
 			PkgPath:     "github.com/goravel/framework/auth",
@@ -94,6 +94,17 @@ var (
 			Dependencies: []string{
 				Config,
 				Log,
+			},
+			Drivers: []Driver{
+				{
+					Name:        "Memory",
+					Description: "default",
+					Package:     "memory",
+				},
+				{
+					Name:    "Redis",
+					Package: "github.com/goravel/redis",
+				},
 			},
 		},
 		Crypt: {
@@ -224,6 +235,10 @@ var (
 				Schema,
 			},
 		},
+		Process: {
+			Description: "Executes and manages external processes with concurrency support.",
+			PkgPath:     "github.com/goravel/framework/process",
+		},
 		Queue: {
 			Description: "A solution by allowing you to create queued jobs that can run in the background.",
 			PkgPath:     "github.com/goravel/framework/queue",
@@ -231,6 +246,21 @@ var (
 				Config,
 				DB,
 				Log,
+			},
+			Drivers: []Driver{
+				{
+					Name:        "Sync",
+					Description: "default",
+					Package:     "sync",
+				},
+				{
+					Name:    "Database",
+					Package: "database",
+				},
+				{
+					Name:    "Redis",
+					Package: "github.com/goravel/redis",
+				},
 			},
 		},
 		RateLimiter: {
@@ -289,12 +319,50 @@ var (
 			Dependencies: []string{
 				Config,
 			},
+			Drivers: []Driver{
+				{
+					Name:        "File",
+					Description: "default",
+					Package:     "file",
+				},
+				{
+					Name:    "Redis",
+					Package: "github.com/goravel/redis",
+				},
+			},
 		},
 		Storage: {
 			Description: "Provides a unified API for interacting with various file storage systems.",
 			PkgPath:     "github.com/goravel/framework/filesystem",
 			Dependencies: []string{
 				Config,
+			},
+			Drivers: []Driver{
+				{
+					Name:        "Local",
+					Description: "default",
+					Package:     "local",
+				},
+				{
+					Name:        "S3",
+					Description: "power by Amazon",
+					Package:     "github.com/goravel/s3",
+				},
+				{
+					Name:        "OSS",
+					Description: "power by Alibaba Cloud",
+					Package:     "github.com/goravel/oss",
+				},
+				{
+					Name:        "cos",
+					Description: "power by Tencent Cloud",
+					Package:     "github.com/goravel/cos",
+				},
+				{
+					Name:        "MinIO",
+					Description: "a high-performance, S3-compatible object storage solution",
+					Package:     "github.com/goravel/minio",
+				},
 			},
 		},
 		Testing: {

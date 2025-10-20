@@ -187,7 +187,7 @@ func (provider *ServiceProvider) Boot(app foundation.Application) {}
 			content:  s.config,
 			matchers: match.Config("app"),
 			actions: []modify.Action{
-				AddConfig("key", `"value"`),
+				AddConfig("key", `"value"`, "annotation 1", "annotation 2"),
 			},
 			assert: func(content string) {
 				s.Contains(content, `func init() {
@@ -199,6 +199,8 @@ func (provider *ServiceProvider) Boot(app foundation.Application) {}
 			&auth.AuthServiceProvider{},
 			&crypt.ServiceProvider{},
 		},
+		// annotation 1
+		// annotation 2
 		"key": "value",
 	})
 }`)

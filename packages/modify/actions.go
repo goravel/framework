@@ -4,6 +4,7 @@ import (
 	"go/token"
 	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/dave/dst"
 	"github.com/dave/dst/dstutil"
@@ -28,7 +29,7 @@ func Add(expression string) modify.Action {
 }
 
 // AddConfig adds a configuration key with the given expression to the config file.
-func AddConfig(name, expression string) modify.Action {
+func AddConfig(name, expression string, annotations ...string) modify.Action {
 	return func(cursor *dstutil.Cursor) {
 		var value *dst.CompositeLit
 		switch node := cursor.Node().(type) {
@@ -43,6 +44,20 @@ func AddConfig(name, expression string) modify.Action {
 			Key:   key,
 			Value: WrapNewline(MustParseExpr(expression)).(dst.Expr),
 		})
+
+		// Add annotations as comments if provided
+		if len(annotations) > 0 {
+			var comments dst.Decorations
+			for _, annotation := range annotations {
+				// Ensure the annotation starts with "//" for proper comment formatting
+				if !strings.HasPrefix(annotation, "//") {
+					annotation = "// " + annotation
+				}
+				comments = append(comments, annotation)
+			}
+			newExpr.Decs.Start = comments
+		}
+
 		existExprIndex := KeyIndex(value.Elts, key)
 
 		if existExprIndex >= 0 {

@@ -4,8 +4,6 @@ package process
 
 import (
 	context "context"
-	exec "os/exec"
-
 	io "io"
 
 	mock "github.com/stretchr/testify/mock"
@@ -267,6 +265,102 @@ func (_c *Process_Path_Call) RunAndReturn(run func(string) process.Process) *Pro
 	return _c
 }
 
+// Pipe provides a mock function with given fields: configurer
+func (_m *Process) Pipe(configurer func(process.Pipe)) process.Pipeline {
+	ret := _m.Called(configurer)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Pipe")
+	}
+
+	var r0 process.Pipeline
+	if rf, ok := ret.Get(0).(func(func(process.Pipe)) process.Pipeline); ok {
+		r0 = rf(configurer)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(process.Pipeline)
+		}
+	}
+
+	return r0
+}
+
+// Process_Pipe_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Pipe'
+type Process_Pipe_Call struct {
+	*mock.Call
+}
+
+// Pipe is a helper method to define mock.On call
+//   - configurer func(process.Pipe)
+func (_e *Process_Expecter) Pipe(configurer interface{}) *Process_Pipe_Call {
+	return &Process_Pipe_Call{Call: _e.mock.On("Pipe", configurer)}
+}
+
+func (_c *Process_Pipe_Call) Run(run func(configurer func(process.Pipe))) *Process_Pipe_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func(process.Pipe)))
+	})
+	return _c
+}
+
+func (_c *Process_Pipe_Call) Return(_a0 process.Pipeline) *Process_Pipe_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Process_Pipe_Call) RunAndReturn(run func(func(process.Pipe)) process.Pipeline) *Process_Pipe_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Pool provides a mock function with given fields: configurer
+func (_m *Process) Pool(configurer func(process.Pool)) process.PoolBuilder {
+	ret := _m.Called(configurer)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Pool")
+	}
+
+	var r0 process.PoolBuilder
+	if rf, ok := ret.Get(0).(func(func(process.Pool)) process.PoolBuilder); ok {
+		r0 = rf(configurer)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(process.PoolBuilder)
+		}
+	}
+
+	return r0
+}
+
+// Process_Pool_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Pool'
+type Process_Pool_Call struct {
+	*mock.Call
+}
+
+// Pool is a helper method to define mock.On call
+//   - configurer func(process.Pool)
+func (_e *Process_Expecter) Pool(configurer interface{}) *Process_Pool_Call {
+	return &Process_Pool_Call{Call: _e.mock.On("Pool", configurer)}
+}
+
+func (_c *Process_Pool_Call) Run(run func(configurer func(process.Pool))) *Process_Pool_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func(process.Pool)))
+	})
+	return _c
+}
+
+func (_c *Process_Pool_Call) Return(_a0 process.PoolBuilder) *Process_Pool_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Process_Pool_Call) RunAndReturn(run func(func(process.Pool)) process.PoolBuilder) *Process_Pool_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Quietly provides a mock function with no fields
 func (_m *Process) Quietly() process.Process {
 	ret := _m.Called()
@@ -503,54 +597,6 @@ func (_c *Process_TTY_Call) Return(_a0 process.Process) *Process_TTY_Call {
 }
 
 func (_c *Process_TTY_Call) RunAndReturn(run func() process.Process) *Process_TTY_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// TapCmd provides a mock function with given fields: _a0
-func (_m *Process) TapCmd(_a0 func(*exec.Cmd)) process.Process {
-	ret := _m.Called(_a0)
-
-	if len(ret) == 0 {
-		panic("no return value specified for TapCmd")
-	}
-
-	var r0 process.Process
-	if rf, ok := ret.Get(0).(func(func(*exec.Cmd)) process.Process); ok {
-		r0 = rf(_a0)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(process.Process)
-		}
-	}
-
-	return r0
-}
-
-// Process_TapCmd_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TapCmd'
-type Process_TapCmd_Call struct {
-	*mock.Call
-}
-
-// TapCmd is a helper method to define mock.On call
-//   - _a0 func(*exec.Cmd)
-func (_e *Process_Expecter) TapCmd(_a0 interface{}) *Process_TapCmd_Call {
-	return &Process_TapCmd_Call{Call: _e.mock.On("TapCmd", _a0)}
-}
-
-func (_c *Process_TapCmd_Call) Run(run func(_a0 func(*exec.Cmd))) *Process_TapCmd_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(func(*exec.Cmd)))
-	})
-	return _c
-}
-
-func (_c *Process_TapCmd_Call) Return(_a0 process.Process) *Process_TapCmd_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Process_TapCmd_Call) RunAndReturn(run func(func(*exec.Cmd)) process.Process) *Process_TapCmd_Call {
 	_c.Call.Return(run)
 	return _c
 }

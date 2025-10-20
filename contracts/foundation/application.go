@@ -21,6 +21,7 @@ import (
 	"github.com/goravel/framework/contracts/http/client"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/mail"
+	"github.com/goravel/framework/contracts/process"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/contracts/route"
 	"github.com/goravel/framework/contracts/schedule"
@@ -39,6 +40,17 @@ type Runner interface {
 type AboutItem struct {
 	Key   string
 	Value string
+}
+
+type ApplicationBuilder interface {
+	// Create a new application instance after configuring.
+	Create() Application
+	// Run the application.
+	Run()
+	// WithConfig sets a callback function to configure the application.
+	WithConfig(func()) ApplicationBuilder
+	// WithEvents sets event listeners for the application.
+	WithEvents(map[event.Event][]event.Listener) ApplicationBuilder
 }
 
 type Application interface {
@@ -138,6 +150,8 @@ type Application interface {
 	MakeMail() mail.Mail
 	// MakeOrm resolves the orm instance.
 	MakeOrm() orm.Orm
+	// MakeProcess resolves the process instance.
+	MakeProcess() process.Process
 	// MakeQueue resolves the queue instance.
 	MakeQueue() queue.Queue
 	// MakeRateLimiter resolves the rate limiter instance.

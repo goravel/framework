@@ -99,7 +99,7 @@ func TestRunningPool_BasicFunctions_Windows(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			builder := NewPool()
-			rp, err := builder.Start(tt.setup)
+			rp, err := builder.Pool(tt.setup).Start()
 			assert.NoError(t, err)
 			tt.validate(t, rp)
 		})
@@ -157,7 +157,7 @@ func TestRunningPool_Signal_Windows(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			builder := NewPool()
-			rp, err := builder.Start(tt.setup)
+			rp, err := builder.Pool(tt.setup).Start()
 			assert.NoError(t, err)
 
 			tt.action(t, rp)
@@ -218,7 +218,7 @@ func TestRunningPool_Stop_Windows(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			builder := NewPool()
-			rp, err := builder.Start(tt.setup)
+			rp, err := builder.Pool(tt.setup).Start()
 			assert.NoError(t, err)
 
 			tt.action(t, rp)
@@ -231,10 +231,10 @@ func TestRunningPool_Stop_Windows(t *testing.T) {
 func TestRunningPool_Timeout_Windows(t *testing.T) {
 	t.Run("timeout kills all processes", func(t *testing.T) {
 		builder := NewPool().Timeout(200 * time.Millisecond)
-		rp, err := builder.Start(func(p contractsprocess.Pool) {
+		rp, err := builder.Pool(func(p contractsprocess.Pool) {
 			p.Command("powershell", "-Command", "Start-Sleep -Seconds 10").As("slow1")
 			p.Command("powershell", "-Command", "Start-Sleep -Seconds 10").As("slow2")
-		})
+		}).Start()
 		assert.NoError(t, err)
 
 		results := rp.Wait()
@@ -251,10 +251,10 @@ func TestRunningPool_OnOutput_Windows(t *testing.T) {
 			outputs[key] = append(outputs[key], string(line))
 		})
 
-		rp, err := builder.Start(func(p contractsprocess.Pool) {
+		rp, err := builder.Pool(func(p contractsprocess.Pool) {
 			p.Command("powershell", "-Command", "Write-Output test1").As("cmd1")
 			p.Command("powershell", "-Command", "Write-Output test2").As("cmd2")
-		})
+		}).Start()
 		assert.NoError(t, err)
 
 		rp.Wait()
@@ -271,9 +271,9 @@ func TestRunningPool_OnOutput_Windows(t *testing.T) {
 
 func TestRunningPool_EmptyPool_Windows(t *testing.T) {
 	builder := NewPool()
-	_, err := builder.Start(func(p contractsprocess.Pool) {
+	_, err := builder.Pool(func(p contractsprocess.Pool) {
 		// Empty pool
-	})
+	}).Start()
 	assert.Error(t, err)
 }
 
@@ -286,9 +286,9 @@ func TestRunningPool_DoneChannel_Windows(t *testing.T) {
 			name: "done channel closes after completion",
 			setup: func(t *testing.T) {
 				builder := NewPool()
-				rp, err := builder.Start(func(p contractsprocess.Pool) {
+				rp, err := builder.Pool(func(p contractsprocess.Pool) {
 					p.Command("powershell", "-Command", "Write-Output done").As("test")
-				})
+				}).Start()
 				assert.NoError(t, err)
 
 				select {
@@ -304,9 +304,9 @@ func TestRunningPool_DoneChannel_Windows(t *testing.T) {
 			name: "done channel works with select timeout",
 			setup: func(t *testing.T) {
 				builder := NewPool()
-				rp, err := builder.Start(func(p contractsprocess.Pool) {
+				rp, err := builder.Pool(func(p contractsprocess.Pool) {
 					p.Command("powershell", "-Command", "Start-Sleep -Seconds 10").As("long")
-				})
+				}).Start()
 				assert.NoError(t, err)
 
 				select {

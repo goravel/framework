@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/goravel/framework/contracts/facades"
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
@@ -11,23 +12,50 @@ import (
 
 func main() {
 	stubs := Stubs{}
+	appConfigPath := path.Config("app.go")
+	mailConfigPath := path.Config("mail.go")
+	mailFacadePath := path.Facades("mail.go")
+	moduleName := packages.GetModuleNameFromArgs(os.Args)
+	mailServiceProvider := "&mail.ServiceProvider{}"
+	env := `
+MAIL_HOST=
+MAIL_PORT=
+MAIL_USERNAME=
+MAIL_PASSWORD=
+MAIL_FROM_ADDRESS=
+MAIL_FROM_NAME=
+`
 
 	packages.Setup(os.Args).
 		Install(
-			modify.GoFile(path.Config("app.go")).
+			// Add the mail service provider to the providers array in config/app.go
+			modify.GoFile(appConfigPath).
 				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register("&mail.ServiceProvider{}")),
-			modify.File(path.Config("mail.go")).Overwrite(stubs.Config(packages.GetModuleNameFromArgs(os.Args))),
-			modify.WhenFacade("Mail", modify.File(path.Facades("mail.go")).Overwrite(stubs.MailFacade())),
+				Find(match.Providers()).Modify(modify.Register(mailServiceProvider)),
+
+			// Create config/mail.go and the Mail facade
+			modify.File(mailConfigPath).Overwrite(stubs.Config(moduleName)),
+
+			// Add the Mail facade
+			modify.WhenFacade(facades.Mail, modify.File(mailFacadePath).Overwrite(stubs.MailFacade())),
+
+			// Add configurations to the .env and .env.example files
+			modify.WhenFileNotContains(path.Base(".env"), "MAIL_HOST", modify.File(path.Base(".env")).Append(env)),
+			modify.WhenFileNotContains(path.Base(".env.example"), "MAIL_HOST", modify.File(path.Base(".env.example")).Append(env)),
 		).
 		Uninstall(
-			modify.WhenNoFacades([]string{"Mail"},
-				modify.GoFile(path.Config("app.go")).
-					Find(match.Providers()).Modify(modify.Unregister("&mail.ServiceProvider{}")).
+			modify.WhenNoFacades([]string{facades.Mail},
+				// Remove the mail service provider from the providers array in config/app.go
+				modify.GoFile(appConfigPath).
+					Find(match.Providers()).Modify(modify.Unregister(mailServiceProvider)).
 					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
-				modify.File(path.Config("mail.go")).Remove(),
+
+				// Remove config/mail.go
+				modify.File(mailConfigPath).Remove(),
 			),
-			modify.WhenFacade("Mail", modify.File(path.Facades("mail.go")).Remove()),
+
+			// Remove the Mail facade
+			modify.WhenFacade(facades.Mail, modify.File(mailFacadePath).Remove()),
 		).
 		Execute()
 }

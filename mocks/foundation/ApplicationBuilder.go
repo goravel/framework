@@ -3,7 +3,9 @@
 package foundation
 
 import (
+	event "github.com/goravel/framework/contracts/event"
 	foundation "github.com/goravel/framework/contracts/foundation"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -147,17 +149,17 @@ func (_c *ApplicationBuilder_WithConfig_Call) RunAndReturn(run func(func()) foun
 	return _c
 }
 
-// WithProviders provides a mock function with given fields: providers
-func (_m *ApplicationBuilder) WithProviders(providers []foundation.ServiceProvider) foundation.ApplicationBuilder {
-	ret := _m.Called(providers)
+// WithEvents provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithEvents(_a0 map[event.Event][]event.Listener) foundation.ApplicationBuilder {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
-		panic("no return value specified for WithProviders")
+		panic("no return value specified for WithEvents")
 	}
 
 	var r0 foundation.ApplicationBuilder
-	if rf, ok := ret.Get(0).(func([]foundation.ServiceProvider) foundation.ApplicationBuilder); ok {
-		r0 = rf(providers)
+	if rf, ok := ret.Get(0).(func(map[event.Event][]event.Listener) foundation.ApplicationBuilder); ok {
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(foundation.ApplicationBuilder)
@@ -167,30 +169,30 @@ func (_m *ApplicationBuilder) WithProviders(providers []foundation.ServiceProvid
 	return r0
 }
 
-// ApplicationBuilder_WithProviders_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithProviders'
-type ApplicationBuilder_WithProviders_Call struct {
+// ApplicationBuilder_WithEvents_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithEvents'
+type ApplicationBuilder_WithEvents_Call struct {
 	*mock.Call
 }
 
-// WithProviders is a helper method to define mock.On call
-//   - providers []foundation.ServiceProvider
-func (_e *ApplicationBuilder_Expecter) WithProviders(providers interface{}) *ApplicationBuilder_WithProviders_Call {
-	return &ApplicationBuilder_WithProviders_Call{Call: _e.mock.On("WithProviders", providers)}
+// WithEvents is a helper method to define mock.On call
+//   - _a0 map[event.Event][]event.Listener
+func (_e *ApplicationBuilder_Expecter) WithEvents(_a0 interface{}) *ApplicationBuilder_WithEvents_Call {
+	return &ApplicationBuilder_WithEvents_Call{Call: _e.mock.On("WithEvents", _a0)}
 }
 
-func (_c *ApplicationBuilder_WithProviders_Call) Run(run func(providers []foundation.ServiceProvider)) *ApplicationBuilder_WithProviders_Call {
+func (_c *ApplicationBuilder_WithEvents_Call) Run(run func(_a0 map[event.Event][]event.Listener)) *ApplicationBuilder_WithEvents_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]foundation.ServiceProvider))
+		run(args[0].(map[event.Event][]event.Listener))
 	})
 	return _c
 }
 
-func (_c *ApplicationBuilder_WithProviders_Call) Return(_a0 foundation.ApplicationBuilder) *ApplicationBuilder_WithProviders_Call {
+func (_c *ApplicationBuilder_WithEvents_Call) Return(_a0 foundation.ApplicationBuilder) *ApplicationBuilder_WithEvents_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ApplicationBuilder_WithProviders_Call) RunAndReturn(run func([]foundation.ServiceProvider) foundation.ApplicationBuilder) *ApplicationBuilder_WithProviders_Call {
+func (_c *ApplicationBuilder_WithEvents_Call) RunAndReturn(run func(map[event.Event][]event.Listener) foundation.ApplicationBuilder) *ApplicationBuilder_WithEvents_Call {
 	_c.Call.Return(run)
 	return _c
 }

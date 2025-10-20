@@ -1,6 +1,6 @@
 package console
 
-import "github.com/goravel/framework/support/stub"
+import "github.com/goravel/framework/support/stubs"
 
 type Stubs struct {
 }
@@ -40,5 +40,5 @@ func (r *DummyCommand) Handle(ctx console.Context) error {
 }
 
 func (r Stubs) Kernel() string {
-	return stub.ConsoleKernel()
+	return stubs.ConsoleKernel()
 }
