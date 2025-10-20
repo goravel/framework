@@ -2,6 +2,7 @@ package console
 
 import (
 	"context"
+	"io"
 	"os"
 	"slices"
 	"strings"
@@ -25,31 +26,31 @@ var (
 )
 
 type Application struct {
-	instance   *cli.Command
+	commands   []*cli.Command
+	name       string
+	usage      string
+	usageText  string
 	useArtisan bool
+	version    string
+
+	// For test
+	writer io.Writer
 }
 
 // NewApplication Create a new Artisan application.
 // Will add artisan flag to the command if useArtisan is true.
 func NewApplication(name, usage, usageText, version string, useArtisan bool) console.Artisan {
-	instance := &cli.Command{}
-	instance.Name = name
-	instance.Usage = usage
-	instance.UsageText = usageText
-	instance.Version = version
-	instance.CommandNotFound = commandNotFound
-	instance.OnUsageError = onUsageError
-	instance.Flags = []cli.Flag{noANSIFlag}
-
 	return &Application{
-		instance:   instance,
+		name:       name,
+		usage:      usage,
+		usageText:  usageText,
 		useArtisan: useArtisan,
+		version:    version,
 	}
 }
 
 func (r *Application) Register(commands []console.Command) {
 	for _, item := range commands {
-		item := item
 		cliCommand := cli.Command{
 			Name:  item.Signature(),
 			Usage: item.Description(),
@@ -61,7 +62,8 @@ func (r *Application) Register(commands []console.Command) {
 			Flags:        flagsToCliFlags(item.Extend().Flags),
 			OnUsageError: onUsageError,
 		}
-		r.instance.Commands = append(r.instance.Commands, &cliCommand)
+
+		r.commands = append(r.commands, &cliCommand)
 	}
 }
 
@@ -122,7 +124,7 @@ func (r *Application) Run(args []string, exitIfArtisan bool) error {
 		}
 
 		cliArgs := append([]string{args[0]}, args[artisanIndex+1:]...)
-		if err := r.instance.Run(context.Background(), cliArgs); err != nil {
+		if err := r.instance().Run(context.Background(), cliArgs); err != nil {
 			if exitIfArtisan {
 				panic(err.Error())
 			}
@@ -136,6 +138,21 @@ func (r *Application) Run(args []string, exitIfArtisan bool) error {
 	}
 
 	return nil
+}
+
+func (r *Application) instance() *cli.Command {
+	command := &cli.Command{}
+	command.CommandNotFound = commandNotFound
+	command.Commands = r.commands
+	command.Flags = []cli.Flag{noANSIFlag}
+	command.Name = r.name
+	command.OnUsageError = onUsageError
+	command.Usage = r.usage
+	command.UsageText = r.usageText
+	command.Version = r.version
+	command.Writer = r.writer
+
+	return command
 }
 
 func flagsToCliFlags(flags []command.Flag) []cli.Flag {

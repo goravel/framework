@@ -13,11 +13,6 @@ import (
 )
 
 func TestShowCommandHelp_HelpPrinterCustom(t *testing.T) {
-	cliApp := NewApplication("test", "test", "test", "test", true)
-	cliApp.Register([]console.Command{
-		&TestFooCommand{},
-		&TestBarCommand{},
-	})
 	tests := []struct {
 		name           string
 		call           string
@@ -142,7 +137,19 @@ Global options:
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			output := &bytes.Buffer{}
-			cliApp.(*Application).instance.Writer = output
+			cliApp := &Application{
+				name:       "test",
+				usage:      "test",
+				usageText:  "test",
+				useArtisan: true,
+				version:    "test",
+				writer:     output,
+			}
+			cliApp.Register([]console.Command{
+				&TestFooCommand{},
+				&TestBarCommand{},
+			})
+
 			got := color.CaptureOutput(func(io.Writer) {
 				assert.NoError(t, cliApp.Call(tt.call))
 			})
