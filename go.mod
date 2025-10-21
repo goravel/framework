@@ -29,7 +29,7 @@ require (
 	github.com/spf13/cast v1.10.0
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
-	github.com/urfave/cli/v3 v3.4.1
+	github.com/urfave/cli/v3 v3.5.0
 	golang.org/x/crypto v0.43.0
 	golang.org/x/exp v0.0.0-20251017212417-90e834f514db
 	google.golang.org/grpc v1.76.0

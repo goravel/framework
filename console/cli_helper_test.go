@@ -67,8 +67,8 @@ Global options:
    -v, --version    Print the version
 
 Options:
-   -b, --bool    Bool flag [default: false]
-   -i, --int     int flag [default: 0]
+   -b, --bool    Bool flag
+   -i, --int     int flag
    -h, --help    Show help`,
 			},
 		},
