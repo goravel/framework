@@ -59,7 +59,7 @@ func TestShowCommandHelp_HelpPrinterCustom(t *testing.T) {
    Test command
 
 Usage:
-   test [global options] test:foo [options] <string_arg> [uint16_arg] [string_args...]
+   test [global options] test:foo [options] <string_arg> <two_string_args...> [uint16_arg] [any_count_string_args...]
 
 Global options:
    -h, --help       Show help
@@ -67,8 +67,8 @@ Global options:
    -v, --version    Print the version
 
 Options:
-   -b, --bool    Bool flag [default: false]
-   -i, --int     int flag [default: 0]
+   -b, --bool    Bool flag
+   -i, --int     int flag
    -h, --help    Show help`,
 			},
 		},
@@ -122,6 +122,27 @@ Options:
 			call: "test:foo --int not-a-number",
 			containsOutput: []string{
 				color.Red().Sprint("Invalid value 'not-a-number' for option 'int'."),
+			},
+		},
+		{
+			name: "argument need a value",
+			call: "test:foo --int 0",
+			containsOutput: []string{
+				color.Red().Sprint("The 'string_arg' argument requires a value."),
+			},
+		},
+		{
+			name: "argument need a few values",
+			call: "test:foo --int 0 string_arg",
+			containsOutput: []string{
+				color.Red().Sprint("The 'two_string_args' argument requires at least 2 values."),
+			},
+		},
+		{
+			name: "argument value is not valid",
+			call: "test:foo --int 0 string_arg string_args1 string_args2 not-a-number",
+			containsOutput: []string{
+				color.Red().Sprint("Invalid value 'not-a-number' for argument 'uint16_arg'. Error: strconv.ParseUint: parsing \"not-a-number\": invalid syntax"),
 			},
 		},
 		{
@@ -192,12 +213,18 @@ func (receiver *TestFooCommand) Extend() command.Extend {
 				Usage:    "string argument",
 				Required: true,
 			},
+			&command.ArgumentStringSlice{
+				Name:  "two_string_args",
+				Usage: "string arguments",
+				Min:   2,
+				Max:   2,
+			},
 			&command.ArgumentUint16{
 				Name:  "uint16_arg",
 				Usage: "uint16 argument",
 			},
 			&command.ArgumentStringSlice{
-				Name:  "string_args",
+				Name:  "any_count_string_args",
 				Usage: "string arguments",
 				Min:   0,
 				Max:   -1,
