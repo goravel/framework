@@ -1,6 +1,7 @@
 package console
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -57,10 +58,12 @@ func TestViewMakeCommand_CreateSuccess(t *testing.T) {
 
 	mockContext.EXPECT().Argument(0).Return("welcome.tmpl").Once()
 	mockContext.EXPECT().Option("path").Return("resources/views").Once()
-	mockContext.EXPECT().Success("View created successfully: resources/views/welcome.tmpl").Once()
+
+	expectedPath := filepath.Join("resources", "views", "welcome.tmpl")
+	mockContext.EXPECT().Success("View created successfully: " + expectedPath).Once()
 
 	assert.Nil(t, viewMakeCommand.Handle(mockContext))
-	assert.True(t, file.Exists("resources/views/welcome.tmpl"))
+	assert.True(t, file.Exists(expectedPath))
 	file.Remove("resources")
 }
 
