@@ -32,6 +32,8 @@ import (
 
 	http "github.com/goravel/framework/contracts/http"
 
+	view "github.com/goravel/framework/contracts/view"
+
 	log "github.com/goravel/framework/contracts/log"
 
 	mail "github.com/goravel/framework/contracts/mail"
@@ -2201,19 +2203,19 @@ func (_c *Application_MakeValidation_Call) RunAndReturn(run func() validation.Va
 }
 
 // MakeView provides a mock function with no fields
-func (_m *Application) MakeView() http.View {
+func (_m *Application) MakeView() view.View {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for MakeView")
 	}
 
-	var r0 http.View
-	if rf, ok := ret.Get(0).(func() http.View); ok {
+	var r0 view.View
+	if rf, ok := ret.Get(0).(func() view.View); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.View)
+			r0 = ret.Get(0).(view.View)
 		}
 	}
 
@@ -2237,12 +2239,12 @@ func (_c *Application_MakeView_Call) Run(run func()) *Application_MakeView_Call 
 	return _c
 }
 
-func (_c *Application_MakeView_Call) Return(_a0 http.View) *Application_MakeView_Call {
+func (_c *Application_MakeView_Call) Return(_a0 view.View) *Application_MakeView_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Application_MakeView_Call) RunAndReturn(run func() http.View) *Application_MakeView_Call {
+func (_c *Application_MakeView_Call) RunAndReturn(run func() view.View) *Application_MakeView_Call {
 	_c.Call.Return(run)
 	return _c
 }

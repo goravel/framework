@@ -30,6 +30,7 @@ import (
 	"github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/contracts/translation"
 	"github.com/goravel/framework/contracts/validation"
+	"github.com/goravel/framework/contracts/view"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation"
 )
@@ -146,6 +147,6 @@ func Validation() validation.Validation {
 	return App().MakeValidation()
 }
 
-func View() http.View {
+func View() view.View {
 	return App().MakeView()
 }
