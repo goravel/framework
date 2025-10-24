@@ -26,7 +26,7 @@ var (
 )
 
 type Application struct {
-	commands   []*cli.Command
+	commands   []cli.Command
 	name       string
 	usage      string
 	usageText  string
@@ -63,7 +63,7 @@ func (r *Application) Register(commands []console.Command) {
 			OnUsageError: onUsageError,
 		}
 
-		r.commands = append(r.commands, &cliCommand)
+		r.commands = append(r.commands, cliCommand)
 	}
 }
 
@@ -165,7 +165,8 @@ func (r *Application) copyCommands() []*cli.Command {
 
 	copied := make([]*cli.Command, len(r.commands))
 	for i, cmd := range r.commands {
-		copied[i] = r.copyCommand(cmd)
+		// copied[i] = r.copyCommand(cmd)
+		copied[i] = &cmd
 	}
 	return copied
 }
