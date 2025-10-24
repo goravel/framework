@@ -19,6 +19,7 @@ var (
 )
 
 func TestRun(t *testing.T) {
+	testCommand = 0
 	cliApp := NewApplication("test", "test", "test", "test", true)
 	cliApp.Register([]console.Command{
 		&TestCommand{},
@@ -29,6 +30,9 @@ func TestRun(t *testing.T) {
 }
 
 func TestRun_Concurrent(t *testing.T) {
+	testCommand1.Store(0)
+	testCommand2.Store(0)
+
 	cliApp := NewApplication("test", "test", "test", "test", true)
 	cliApp.Register([]console.Command{
 		&TestCommand1{},

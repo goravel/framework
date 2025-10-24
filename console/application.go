@@ -143,13 +143,11 @@ func (r *Application) Run(args []string, exitIfArtisan bool) error {
 func (r *Application) instance() *cli.Command {
 	commands := make([]*cli.Command, len(r.commands))
 	for i, cmd := range r.commands {
-		// copied[i] = r.copyCommand(cmd)
 		commands[i] = &cmd
 	}
 
 	command := &cli.Command{}
 	command.CommandNotFound = commandNotFound
-	// Create a copy of commands to avoid concurrent access issues
 	command.Commands = commands
 	command.Flags = []cli.Flag{noANSIFlag}
 	command.Name = r.name
@@ -158,6 +156,8 @@ func (r *Application) instance() *cli.Command {
 	command.UsageText = r.usageText
 	command.Version = r.version
 	command.Writer = r.writer
+
+	// There is a concurrency issue with urfave/cli v3 when help is not hidden.
 	command.HideHelp = true
 
 	return command
