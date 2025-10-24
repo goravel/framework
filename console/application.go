@@ -143,7 +143,8 @@ func (r *Application) Run(args []string, exitIfArtisan bool) error {
 func (r *Application) instance() *cli.Command {
 	command := &cli.Command{}
 	command.CommandNotFound = commandNotFound
-	command.Commands = r.commands
+	// Create a copy of commands to avoid concurrent access issues
+	command.Commands = r.copyCommands()
 	command.Flags = []cli.Flag{noANSIFlag}
 	command.Name = r.name
 	command.OnUsageError = onUsageError
@@ -151,8 +152,88 @@ func (r *Application) instance() *cli.Command {
 	command.UsageText = r.usageText
 	command.Version = r.version
 	command.Writer = r.writer
+	command.HideHelp = true
 
 	return command
+}
+
+// copyCommands creates a deep copy of the commands slice to prevent concurrent access issues
+func (r *Application) copyCommands() []*cli.Command {
+	if r.commands == nil {
+		return nil
+	}
+
+	copied := make([]*cli.Command, len(r.commands))
+	for i, cmd := range r.commands {
+		copied[i] = r.copyCommand(cmd)
+	}
+	return copied
+}
+
+// copyCommand creates a deep copy of a single CLI command
+func (r *Application) copyCommand(original *cli.Command) *cli.Command {
+	if original == nil {
+		return nil
+	}
+
+	cmd := &cli.Command{
+		Name:                   original.Name,
+		Aliases:                append([]string(nil), original.Aliases...),
+		Usage:                  original.Usage,
+		UsageText:              original.UsageText,
+		ArgsUsage:              original.ArgsUsage,
+		Version:                original.Version,
+		Description:            original.Description,
+		Category:               original.Category,
+		Hidden:                 original.Hidden,
+		UseShortOptionHandling: original.UseShortOptionHandling,
+		Action:                 original.Action,
+		Before:                 original.Before,
+		After:                  original.After,
+		OnUsageError:           original.OnUsageError,
+		Writer:                 original.Writer,
+		ErrWriter:              original.ErrWriter,
+		HideHelp:               original.HideHelp,
+		HideHelpCommand:        original.HideHelpCommand,
+		HideVersion:            original.HideVersion,
+		CommandNotFound:        original.CommandNotFound,
+		SkipFlagParsing:        original.SkipFlagParsing,
+		AllowExtFlags:          original.AllowExtFlags,
+	}
+
+	// Copy flags
+	if original.Flags != nil {
+		cmd.Flags = make([]cli.Flag, len(original.Flags))
+		copy(cmd.Flags, original.Flags)
+	}
+
+	// Copy subcommands recursively
+	if original.Commands != nil {
+		cmd.Commands = make([]*cli.Command, len(original.Commands))
+		for i, subcmd := range original.Commands {
+			cmd.Commands[i] = r.copyCommand(subcmd)
+		}
+	}
+
+	// Copy mutually exclusive flags
+	if original.MutuallyExclusiveFlags != nil {
+		cmd.MutuallyExclusiveFlags = make([]cli.MutuallyExclusiveFlags, len(original.MutuallyExclusiveFlags))
+		for i, mef := range original.MutuallyExclusiveFlags {
+			cmd.MutuallyExclusiveFlags[i] = cli.MutuallyExclusiveFlags{
+				Required: mef.Required,
+				Category: mef.Category,
+			}
+			if mef.Flags != nil {
+				cmd.MutuallyExclusiveFlags[i].Flags = make([][]cli.Flag, len(mef.Flags))
+				for j, flagGroup := range mef.Flags {
+					cmd.MutuallyExclusiveFlags[i].Flags[j] = make([]cli.Flag, len(flagGroup))
+					copy(cmd.MutuallyExclusiveFlags[i].Flags[j], flagGroup)
+				}
+			}
+		}
+	}
+
+	return cmd
 }
 
 func flagsToCliFlags(flags []command.Flag) []cli.Flag {
