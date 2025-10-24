@@ -2610,6 +2610,39 @@ func (_c *Application_Run_Call) RunAndReturn(run func(...foundation.Runner)) *Ap
 	return _c
 }
 
+// SetConfiguredProviders provides a mock function with given fields: providers
+func (_m *Application) SetConfiguredProviders(providers []foundation.ServiceProvider) {
+	_m.Called(providers)
+}
+
+// Application_SetConfiguredProviders_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetConfiguredProviders'
+type Application_SetConfiguredProviders_Call struct {
+	*mock.Call
+}
+
+// SetConfiguredProviders is a helper method to define mock.On call
+//   - providers []foundation.ServiceProvider
+func (_e *Application_Expecter) SetConfiguredProviders(providers interface{}) *Application_SetConfiguredProviders_Call {
+	return &Application_SetConfiguredProviders_Call{Call: _e.mock.On("SetConfiguredProviders", providers)}
+}
+
+func (_c *Application_SetConfiguredProviders_Call) Run(run func(providers []foundation.ServiceProvider)) *Application_SetConfiguredProviders_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].([]foundation.ServiceProvider))
+	})
+	return _c
+}
+
+func (_c *Application_SetConfiguredProviders_Call) Return() *Application_SetConfiguredProviders_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Application_SetConfiguredProviders_Call) RunAndReturn(run func([]foundation.ServiceProvider)) *Application_SetConfiguredProviders_Call {
+	_c.Run(run)
+	return _c
+}
+
 // SetJson provides a mock function with given fields: json
 func (_m *Application) SetJson(json foundation.Json) {
 	_m.Called(json)

@@ -9,7 +9,6 @@ import (
 	"os/signal"
 	"path/filepath"
 	"slices"
-	"sort"
 	"strings"
 	"syscall"
 
@@ -44,26 +43,33 @@ func init() {
 		publishes:     make(map[string]map[string]string),
 		publishGroups: make(map[string]map[string]string),
 	}
+
+	app.providerRepository = NewProviderRepository()
 	App = app
 
-	app.registerBaseServiceProviders()
-	app.bootBaseServiceProviders()
+	baseProviders := app.getBaseServiceProviders()
+	sortedBase := app.providerRepository.Register(app, baseProviders)
+	app.providerRepository.Boot(app, sortedBase)
+
 	app.SetJson(json.New())
 }
 
 type Application struct {
 	*Container
-	ctx                        context.Context
-	cancel                     context.CancelFunc
-	configuredServiceProviders []foundation.ServiceProvider
-	publishes                  map[string]map[string]string
-	publishGroups              map[string]map[string]string
-	json                       foundation.Json
-	registeredServiceProviders []string
+	ctx                context.Context
+	cancel             context.CancelFunc
+	providerRepository foundation.ProviderRepository
+	publishes          map[string]map[string]string
+	publishGroups      map[string]map[string]string
+	json               foundation.Json
 }
 
 func NewApplication() foundation.Application {
 	return App
+}
+
+func (r *Application) SetConfiguredProviders(providers []foundation.ServiceProvider) {
+	r.providerRepository.SetConfigured(providers)
 }
 
 func (r *Application) About(section string, items []foundation.AboutItem) {
@@ -71,13 +77,16 @@ func (r *Application) About(section string, items []foundation.AboutItem) {
 }
 
 func (r *Application) Boot() {
-	r.configuredServiceProviders = r.configuredServiceProviders[:0]
+	r.providerRepository.ResetConfiguredCache()
 	clear(r.publishes)
 	clear(r.publishGroups)
 
 	r.setTimezone()
-	r.registerConfiguredServiceProviders()
-	r.bootConfiguredServiceProviders()
+
+	configuredProviders := r.providerRepository.LoadConfigured(r)
+	sortedConfigured := r.providerRepository.Register(r, configuredProviders)
+	r.providerRepository.Boot(r, sortedConfigured)
+
 	r.registerCommands([]contractsconsole.Command{
 		console.NewAboutCommand(r),
 		console.NewEnvEncryptCommand(),
@@ -132,7 +141,7 @@ func (r *Application) Run(runners ...foundation.Runner) {
 
 	var allRunners []*RunnerWithInfo
 
-	for _, serviceProvider := range r.getConfiguredServiceProviders() {
+	for _, serviceProvider := range r.providerRepository.GetBooted() {
 		if serviceProviderWithRunners, ok := serviceProvider.(foundation.ServiceProviderWithRunners); ok {
 			for _, runner := range serviceProviderWithRunners.Runners(r) {
 				allRunners = append(allRunners, &RunnerWithInfo{name: fmt.Sprintf("%T", runner), runner: runner, running: false})
@@ -196,17 +205,17 @@ func (r *Application) Version() string {
 }
 
 func (r *Application) BasePath(path ...string) string {
-	return r.absPath(path...)
+	return internals.AbsPath(path...)
 }
 
 func (r *Application) ConfigPath(path ...string) string {
 	path = append([]string{support.RelativePath, "config"}, path...)
-	return r.absPath(path...)
+	return internals.AbsPath(path...)
 }
 
 func (r *Application) DatabasePath(path ...string) string {
 	path = append([]string{support.RelativePath, "database"}, path...)
-	return r.absPath(path...)
+	return internals.AbsPath(path...)
 }
 
 func (r *Application) CurrentLocale(ctx context.Context) string {
@@ -221,7 +230,7 @@ func (r *Application) CurrentLocale(ctx context.Context) string {
 
 func (r *Application) ExecutablePath(path ...string) string {
 	path = append([]string{support.RootPath}, path...)
-	return r.absPath(path...)
+	return internals.AbsPath(path...)
 }
 
 func (r *Application) FacadesPath(path ...string) string {
@@ -235,7 +244,7 @@ func (r *Application) LangPath(path ...string) string {
 	}
 
 	path = append([]string{support.RelativePath, defaultPath}, path...)
-	return r.absPath(path...)
+	return internals.AbsPath(path...)
 }
 
 func (r *Application) Path(path ...string) string {
@@ -244,21 +253,17 @@ func (r *Application) Path(path ...string) string {
 
 func (r *Application) PublicPath(path ...string) string {
 	path = append([]string{support.RelativePath, "public"}, path...)
-	return r.absPath(path...)
+	return internals.AbsPath(path...)
 }
 
 func (r *Application) ResourcePath(path ...string) string {
 	path = append([]string{support.RelativePath, "resources"}, path...)
-	return r.absPath(path...)
+	return internals.AbsPath(path...)
 }
 
 func (r *Application) StoragePath(path ...string) string {
 	path = append([]string{support.RelativePath, "storage"}, path...)
-	return r.absPath(path...)
-}
-
-func (r *Application) absPath(paths ...string) string {
-	return internals.AbsPath(paths...)
+	return internals.AbsPath(path...)
 }
 
 func (r *Application) addPublishGroup(group string, paths map[string]string) {
@@ -283,62 +288,6 @@ func (r *Application) getBaseServiceProviders() []foundation.ServiceProvider {
 	return []foundation.ServiceProvider{
 		&config.ServiceProvider{},
 		&frameworkconsole.ServiceProvider{},
-	}
-}
-
-func (r *Application) getConfiguredServiceProviders() []foundation.ServiceProvider {
-	if len(r.configuredServiceProviders) > 0 {
-		return r.configuredServiceProviders
-	}
-
-	configFacade := r.MakeConfig()
-	if configFacade == nil {
-		color.Warningln(errors.ConfigFacadeNotSet.Error())
-		return []foundation.ServiceProvider{}
-	}
-
-	providers, ok := configFacade.Get("app.providers").([]foundation.ServiceProvider)
-	if !ok {
-		color.Warningln(errors.ConsoleProvidersNotArray.Error())
-		return []foundation.ServiceProvider{}
-	}
-
-	r.configuredServiceProviders = sortConfiguredServiceProviders(providers)
-
-	return r.configuredServiceProviders
-}
-
-func (r *Application) registerBaseServiceProviders() {
-	r.registerServiceProviders(r.getBaseServiceProviders())
-}
-
-func (r *Application) bootBaseServiceProviders() {
-	r.bootServiceProviders(r.getBaseServiceProviders())
-}
-
-func (r *Application) registerConfiguredServiceProviders() {
-	r.registerServiceProviders(r.getConfiguredServiceProviders())
-}
-
-func (r *Application) bootConfiguredServiceProviders() {
-	r.bootServiceProviders(r.getConfiguredServiceProviders())
-}
-
-func (r *Application) registerServiceProviders(serviceProviders []foundation.ServiceProvider) {
-	for _, serviceProvider := range serviceProviders {
-		providerName := fmt.Sprintf("%T", serviceProvider)
-		if slices.Contains(r.registeredServiceProviders, providerName) {
-			continue
-		}
-		r.registeredServiceProviders = append(r.registeredServiceProviders, providerName)
-
-		serviceProvider.Register(r)
-	}
-}
-
-func (r *Application) bootServiceProviders(serviceProviders []foundation.ServiceProvider) {
-	for _, serviceProvider := range serviceProviders {
-		serviceProvider.Boot(r)
 	}
 }
 
@@ -437,240 +386,4 @@ func getEnvFilePath() string {
 	}
 
 	return envFilePath
-}
-
-func sortConfiguredServiceProviders(providers []foundation.ServiceProvider) []foundation.ServiceProvider {
-	if len(providers) == 0 {
-		return providers
-	}
-
-	// Helper function to get binding names from a provider
-	getBindings := func(provider foundation.ServiceProvider) []string {
-		if p, ok := provider.(foundation.ServiceProviderWithRelations); ok {
-			return p.Relationship().Bindings
-		}
-		return []string{}
-	}
-
-	// Helper function to get dependencies from a provider
-	getDependencies := func(provider foundation.ServiceProvider) []string {
-		if p, ok := provider.(foundation.ServiceProviderWithRelations); ok {
-			return p.Relationship().Dependencies
-		}
-		return []string{}
-	}
-
-	// Helper function to get provide-for bindings from a provider
-	getProvideFor := func(provider foundation.ServiceProvider) []string {
-		if p, ok := provider.(foundation.ServiceProviderWithRelations); ok {
-			return p.Relationship().ProvideFor
-		}
-		return []string{}
-	}
-
-	bindingToProvider := make(map[string]foundation.ServiceProvider)
-	providerToVirtualBinding := make(map[foundation.ServiceProvider]string)
-	graph := make(map[string][]string)
-	inDegree := make(map[string]int)
-	virtualBindingCounter := 0
-
-	// First pass: collect all real bindings and create virtual bindings for providers with empty bindings
-	for _, provider := range providers {
-		bindings := getBindings(provider)
-		dependencies := getDependencies(provider)
-		provideFor := getProvideFor(provider)
-
-		if len(bindings) > 0 {
-			// Provider has real bindings
-			for _, binding := range bindings {
-				bindingToProvider[binding] = provider
-				inDegree[binding] = 0
-			}
-		} else if len(dependencies) > 0 || len(provideFor) > 0 {
-			// Provider has no bindings but has dependencies or provide-for relationships
-			// Create a virtual binding to include it in the dependency graph
-			virtualBinding := fmt.Sprintf("__virtual_%d", virtualBindingCounter)
-			virtualBindingCounter++
-			bindingToProvider[virtualBinding] = provider
-			providerToVirtualBinding[provider] = virtualBinding
-			inDegree[virtualBinding] = 0
-		}
-	}
-
-	// Second pass: build the dependency graph using both Dependencies and ProvideFor
-	for _, provider := range providers {
-		bindings := getBindings(provider)
-		dependencies := getDependencies(provider)
-		provideFor := getProvideFor(provider)
-
-		// Get the binding(s) for this provider
-		var providerBindings []string
-		if len(bindings) > 0 {
-			providerBindings = bindings
-		} else if virtualBinding, exists := providerToVirtualBinding[provider]; exists {
-			providerBindings = []string{virtualBinding}
-		}
-
-		// If provider has no bindings and no virtual binding, skip it
-		if len(providerBindings) == 0 {
-			continue
-		}
-
-		for _, binding := range providerBindings {
-			// Add dependencies (this provider depends on others)
-			for _, dep := range dependencies {
-				if _, exists := bindingToProvider[dep]; exists {
-					graph[dep] = append(graph[dep], binding)
-					inDegree[binding]++
-				}
-			}
-
-			// Add provide-for relationships (others depend on this provider)
-			for _, provideForBinding := range provideFor {
-				if _, exists := bindingToProvider[provideForBinding]; exists {
-					graph[binding] = append(graph[binding], provideForBinding)
-					inDegree[provideForBinding]++
-				}
-			}
-		}
-	}
-
-	// Topological sort using Kahn's algorithm
-	var queue []string
-	var result []string
-
-	// Add all nodes with in-degree 0 to queue
-	for binding, degree := range inDegree {
-		if degree == 0 {
-			queue = append(queue, binding)
-		}
-	}
-
-	// Process queue
-	for len(queue) > 0 {
-		current := queue[0]
-		queue = queue[1:]
-		result = append(result, current)
-
-		// Reduce in-degree of all neighbors
-		for _, neighbor := range graph[current] {
-			inDegree[neighbor]--
-			if inDegree[neighbor] == 0 {
-				queue = append(queue, neighbor)
-			}
-		}
-	}
-
-	// If we couldn't process all nodes, there's a cycle
-	if len(result) != len(inDegree) {
-		// Detect and report the cycle
-		cycle := detectCycle(graph, bindingToProvider)
-		if len(cycle) > 0 {
-			panic(errors.ServiceProviderCycle.Args(strings.Join(cycle, " -> ")))
-		}
-	}
-
-	// Convert back to service providers in sorted order
-	sortedProviders := make([]foundation.ServiceProvider, 0, len(providers))
-	used := make(map[foundation.ServiceProvider]bool)
-
-	for _, binding := range result {
-		provider := bindingToProvider[binding]
-		if !used[provider] {
-			sortedProviders = append(sortedProviders, provider)
-			used[provider] = true
-		}
-	}
-
-	// Add any remaining providers that weren't in the dependency graph
-	for _, provider := range providers {
-		if !used[provider] {
-			sortedProviders = append(sortedProviders, provider)
-		}
-	}
-
-	return sortedProviders
-}
-
-// detectCycle detects a cycle in the dependency graph and returns a descriptive error message
-func detectCycle(graph map[string][]string, bindingToProvider map[string]foundation.ServiceProvider) []string {
-	visited := make(map[string]bool)
-	recStack := make(map[string]bool)
-	path := make([]string, 0)
-	cycle := make([]string, 0)
-
-	var dfs func(node string) bool
-	dfs = func(node string) bool {
-		visited[node] = true
-		recStack[node] = true
-		path = append(path, node)
-
-		for _, neighbor := range graph[node] {
-			if !visited[neighbor] {
-				if dfs(neighbor) {
-					return true
-				}
-			} else if recStack[neighbor] {
-				// Found a cycle, collect the cycle path
-				cycleStart := -1
-				for i, p := range path {
-					if p == neighbor {
-						cycleStart = i
-						break
-					}
-				}
-				if cycleStart != -1 {
-					cycle = append(cycle, path[cycleStart:]...)
-					cycle = append(cycle, neighbor)
-				}
-				return true
-			}
-		}
-
-		recStack[node] = false
-		path = path[:len(path)-1]
-		return false
-	}
-
-	// Find cycles starting from each unvisited node
-	// Sort nodes to ensure consistent behavior when multiple cycles exist
-	var nodes []string
-	for node := range graph {
-		nodes = append(nodes, node)
-	}
-	sort.Strings(nodes)
-
-	for _, node := range nodes {
-		if !visited[node] {
-			if dfs(node) {
-				break
-			}
-		}
-	}
-
-	// Build error message with provider names
-	if len(cycle) > 0 {
-		var cycleProviders []string
-		providerSet := make(map[string]struct{})
-
-		for _, binding := range cycle {
-			if provider, exists := bindingToProvider[binding]; exists {
-				providerName := fmt.Sprintf("%T", provider)
-				cycleProviders = append(cycleProviders, providerName)
-				providerSet[providerName] = struct{}{}
-			}
-		}
-
-		// If the cycle is a self-loop (A -> A), only show as 'A -> A' if there are two unique providers, otherwise just 'A'
-		if len(cycleProviders) == 2 && cycleProviders[0] == cycleProviders[1] {
-			if len(providerSet) == 1 && len(cycle) > 2 {
-				// This is a missing mapping case, only one provider in the cycle
-				return cycleProviders[0:1]
-			}
-		}
-
-		return cycleProviders
-	}
-
-	return nil
 }

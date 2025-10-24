@@ -42,17 +42,6 @@ type AboutItem struct {
 	Value string
 }
 
-type ApplicationBuilder interface {
-	// Create a new application instance after configuring.
-	Create() Application
-	// Run the application.
-	Run()
-	// WithConfig sets a callback function to configure the application.
-	WithConfig(func()) ApplicationBuilder
-	// WithEvents sets event listeners for the application.
-	WithEvents(map[event.Event][]event.Listener) ApplicationBuilder
-}
-
 type Application interface {
 	// About add information to the application's about command.
 	About(section string, items []AboutItem)
@@ -76,12 +65,15 @@ type Application interface {
 	SetJson(json Json)
 	// SetLocale set the current application locale.
 	SetLocale(ctx context.Context, locale string) context.Context
+	// SetConfiguredProviders manually sets the list of configured providers, bypassing config loading.
+	SetConfiguredProviders(providers []ServiceProvider)
 	// Shutdown the application and all its runners.
 	Shutdown()
 	// Version gets the version number of the application.
 	Version() string
 
 	// Paths
+
 	// BasePath get the base path of the Goravel installation.
 	BasePath(path ...string) string
 	// ConfigPath get the path to the configuration files.
@@ -92,7 +84,7 @@ type Application interface {
 	DatabasePath(path ...string) string
 	// ExecutablePath get the path to the executable of the running Goravel application.
 	ExecutablePath(path ...string) string
-	// FacadePath get the path to the facade files.
+	// FacadesPath get the path to the facade files.
 	FacadesPath(path ...string) string
 	// LangPath get the path to the language files.
 	LangPath(path ...string) string
@@ -106,6 +98,7 @@ type Application interface {
 	StoragePath(path ...string) string
 
 	// Container
+
 	// Bind registers a binding with the container.
 	Bind(key any, callback func(app Application) (any, error))
 	// Bindings returns all bindings registered in the container.

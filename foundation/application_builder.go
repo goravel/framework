@@ -11,9 +11,10 @@ func Configure() foundation.ApplicationBuilder {
 }
 
 type ApplicationBuilder struct {
-	app              foundation.Application
-	config           func()
-	eventToListeners map[event.Event][]event.Listener
+	app                        foundation.Application
+	config                     func()
+	eventToListeners           map[event.Event][]event.Listener
+	configuredServiceProviders []foundation.ServiceProvider
 }
 
 func NewApplicationBuilder(app foundation.Application) *ApplicationBuilder {
@@ -23,6 +24,10 @@ func NewApplicationBuilder(app foundation.Application) *ApplicationBuilder {
 }
 
 func (r *ApplicationBuilder) Create() foundation.Application {
+	if len(r.configuredServiceProviders) > 0 {
+		r.app.SetConfiguredProviders(r.configuredServiceProviders)
+	}
+
 	r.app.Boot()
 
 	if r.config != nil {
@@ -30,11 +35,11 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 	}
 
 	if len(r.eventToListeners) > 0 {
-		event := r.app.MakeEvent()
-		if event == nil {
+		evt := r.app.MakeEvent()
+		if evt == nil {
 			color.Errorln("Event facade not found, please install it first: ./artisan package:install Event")
 		} else {
-			event.Register(r.eventToListeners)
+			evt.Register(r.eventToListeners)
 		}
 	}
 
@@ -52,9 +57,9 @@ func (r *ApplicationBuilder) WithConfig(fn func()) foundation.ApplicationBuilder
 }
 
 func (r *ApplicationBuilder) WithProviders(providers []foundation.ServiceProvider) foundation.ApplicationBuilder {
-	for _, provider := range providers {
-		_ = provider
-	}
+	r.configuredServiceProviders = append(r.configuredServiceProviders, providers...)
+
+	return r
 }
 
 func (r *ApplicationBuilder) WithEvents(eventToListeners map[event.Event][]event.Listener) foundation.ApplicationBuilder {
