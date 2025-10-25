@@ -129,7 +129,7 @@ func (r *ProviderRepository) Register(app foundation.Application) []foundation.S
 func (r *ProviderRepository) Reset() {
 	r.providers = make([]foundation.ServiceProvider, 0)
 	r.states = make(map[string]*ProviderState)
-	r.sorted = nil
+	r.sorted = make([]foundation.ServiceProvider, 0)
 	r.sortedValid = false
 	r.loaded = false
 }
