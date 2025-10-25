@@ -18,7 +18,7 @@ func TestShowCommandHelp_HelpPrinterCustom(t *testing.T) {
 	cliApp := &Application{
 		name:       "artisan",
 		usage:      "Goravel Framework",
-		usageText:  "artisan command [global options] [options] [arguments...]",
+		usageText:  "artisan command [options] [arguments...]",
 		useArtisan: true,
 		version:    "v1.16.0",
 		writer:     output,
@@ -53,13 +53,11 @@ func TestShowCommandHelp_HelpPrinterCustom(t *testing.T) {
 				color.Yellow().Sprint("Description:"),
 				color.Yellow().Sprint("Usage:"),
 				color.Yellow().Sprint("Global options:"),
-				color.Green().Sprint("-h, --help"),
-				color.Green().Sprint("    --no-ansi"),
-				color.Green().Sprint("-v, --version"),
 				color.Yellow().Sprint("Options:"),
 				color.Green().Sprint("-b, --bool"),
 				color.Green().Sprint("-i, --int"),
 				color.Blue().Sprint("int"),
+				color.Green().Sprint("    --no-ansi"),
 				color.Green().Sprint("-h, --help"),
 			},
 		},
@@ -71,16 +69,13 @@ func TestShowCommandHelp_HelpPrinterCustom(t *testing.T) {
    Test command
 
 Usage:
-   artisan test:foo [global options] [options] [arguments...]
-
-Global options:
-   -h, --help       Show help
-       --no-ansi    Force disable ANSI output
-   -v, --version    Print the version
+   artisan test:foo [options] [arguments...]
 
 Options:
-   -b, --bool    Bool flag [default: false]
-   -i, --int     int flag [default: 0]`,
+   -b, --bool       Bool flag [default: false]
+   -h, --help       Show help
+   -i, --int        int flag [default: 0]
+       --no-ansi    Force disable ANSI output`,
 			},
 		},
 		{
@@ -142,10 +137,9 @@ Options:
 				`Goravel Framework v1.16.0
 
 Usage:
-   artisan command [global options] [options] [arguments...]
+   artisan command [options] [arguments...]
 
 Global options:
-   -h, --help       Show help
        --no-ansi    Force disable ANSI output
    -v, --version    Print the version
 

@@ -27,7 +27,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(binding.Artisan, func(app foundation.Application) (any, error) {
 		name := "artisan"
 		usage := "Goravel Framework"
-		usageText := "artisan command [global options] [options] [arguments...]"
+		usageText := "artisan command [options] [arguments...]"
 		return NewApplication(name, usage, usageText, app.Version(), true), nil
 	})
 }

@@ -272,8 +272,9 @@ func flagsToCliFlags(flags []command.Flag) []cli.Flag {
 
 	if !existHelp {
 		helpFlag := &cli.BoolFlag{
-			Name:  "help",
-			Usage: "Show help",
+			Name:        "help",
+			Usage:       "Show help",
+			HideDefault: true,
 		}
 		if !existH {
 			helpFlag.Aliases = []string{"h"}
