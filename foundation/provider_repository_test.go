@@ -193,7 +193,7 @@ func (s *ProviderRepositoryTestSuite) TestReset() {
 
 	s.Empty(s.repository.providers)
 	s.Empty(s.repository.states)
-	s.Nil(s.repository.sorted)
+	s.Empty(s.repository.sorted)
 	s.False(s.repository.sortedValid)
 	s.False(s.repository.loaded)
 }
