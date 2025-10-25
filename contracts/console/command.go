@@ -3,6 +3,8 @@ package console
 import (
 	"context"
 
+	"github.com/urfave/cli/v3"
+
 	"github.com/goravel/framework/contracts/console/command"
 )
 
@@ -34,6 +36,8 @@ type Context interface {
 	Arguments() []string
 	// Info writes an information message to the console.
 	Info(message string)
+	// Instance gets the underlying cli.Command instance.
+	Instance() *cli.Command
 	// Error writes an error message to the console.
 	Error(message string)
 	// Line writes a string to the console.

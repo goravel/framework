@@ -27,7 +27,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(binding.Artisan, func(app foundation.Application) (any, error) {
 		name := "artisan"
 		usage := "Goravel Framework"
-		usageText := "artisan [global options] command [options] [arguments...]"
+		usageText := "artisan command [options] [arguments...]"
 		return NewApplication(name, usage, usageText, app.Version(), true), nil
 	})
 }
@@ -54,5 +54,6 @@ func (r *ServiceProvider) registerCommands(app foundation.Application) {
 		console.NewKeyGenerateCommand(configFacade),
 		console.NewMakeCommand(),
 		console.NewBuildCommand(configFacade),
+		console.NewHelpCommand(),
 	})
 }

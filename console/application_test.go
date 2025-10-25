@@ -1,6 +1,8 @@
 package console
 
 import (
+	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -10,16 +12,47 @@ import (
 	"github.com/goravel/framework/contracts/console/command"
 )
 
-var testCommand = 0
+var (
+	testCommand  int64
+	testCommand1 atomic.Int64
+	testCommand2 atomic.Int64
+)
 
 func TestRun(t *testing.T) {
+	testCommand = 0
 	cliApp := NewApplication("test", "test", "test", "test", true)
 	cliApp.Register([]console.Command{
 		&TestCommand{},
 	})
 
 	assert.NoError(t, cliApp.Call("test"))
-	assert.Equal(t, 1, testCommand)
+	assert.Equal(t, int64(1), testCommand)
+}
+
+func TestRun_Concurrent(t *testing.T) {
+	testCommand1.Store(0)
+	testCommand2.Store(0)
+
+	cliApp := NewApplication("test", "test", "test", "test", true)
+	cliApp.Register([]console.Command{
+		&TestCommand1{},
+		&TestCommand2{},
+	})
+
+	var wg sync.WaitGroup
+	for i := 0; i < 100; i++ {
+		wg.Add(1)
+		go func() {
+			_ = cliApp.Call("test1")
+			_ = cliApp.Call("test2")
+			wg.Done()
+		}()
+	}
+
+	wg.Wait()
+
+	assert.Equal(t, int64(100), testCommand1.Load())
+	assert.Equal(t, int64(100), testCommand2.Load())
 }
 
 func TestFlagsToCliFlags(t *testing.T) {
@@ -42,7 +75,7 @@ func TestFlagsToCliFlags(t *testing.T) {
 	assert.NotNil(t, cliFlags)
 
 	// Assert that the number of CLI flags matches the number of command flags
-	assert.Equal(t, len(cliFlags), len(flags))
+	assert.Equal(t, len(cliFlags), len(flags)+2) // +2 for noANSIFlag and helpFlag
 
 	// Assert that each CLI flag has the expected name, aliases, usage, required, and value
 	for i, flag := range flags {
@@ -141,6 +174,48 @@ func (receiver *TestCommand) Extend() command.Extend {
 
 func (receiver *TestCommand) Handle(ctx console.Context) error {
 	testCommand++
+
+	return nil
+}
+
+type TestCommand1 struct {
+}
+
+func (receiver *TestCommand1) Signature() string {
+	return "test1"
+}
+
+func (receiver *TestCommand1) Description() string {
+	return "Test command1"
+}
+
+func (receiver *TestCommand1) Extend() command.Extend {
+	return command.Extend{}
+}
+
+func (receiver *TestCommand1) Handle(ctx console.Context) error {
+	testCommand1.Add(1)
+
+	return nil
+}
+
+type TestCommand2 struct {
+}
+
+func (receiver *TestCommand2) Signature() string {
+	return "test2"
+}
+
+func (receiver *TestCommand2) Description() string {
+	return "Test command2"
+}
+
+func (receiver *TestCommand2) Extend() command.Extend {
+	return command.Extend{}
+}
+
+func (receiver *TestCommand2) Handle(ctx console.Context) error {
+	testCommand2.Add(1)
 
 	return nil
 }
