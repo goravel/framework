@@ -108,6 +108,39 @@ func (_c *Application_About_Call) RunAndReturn(run func(string, []foundation.Abo
 	return _c
 }
 
+// AddServiceProviders provides a mock function with given fields: providers
+func (_m *Application) AddServiceProviders(providers []foundation.ServiceProvider) {
+	_m.Called(providers)
+}
+
+// Application_AddServiceProviders_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddServiceProviders'
+type Application_AddServiceProviders_Call struct {
+	*mock.Call
+}
+
+// AddServiceProviders is a helper method to define mock.On call
+//   - providers []foundation.ServiceProvider
+func (_e *Application_Expecter) AddServiceProviders(providers interface{}) *Application_AddServiceProviders_Call {
+	return &Application_AddServiceProviders_Call{Call: _e.mock.On("AddServiceProviders", providers)}
+}
+
+func (_c *Application_AddServiceProviders_Call) Run(run func(providers []foundation.ServiceProvider)) *Application_AddServiceProviders_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].([]foundation.ServiceProvider))
+	})
+	return _c
+}
+
+func (_c *Application_AddServiceProviders_Call) Return() *Application_AddServiceProviders_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Application_AddServiceProviders_Call) RunAndReturn(run func([]foundation.ServiceProvider)) *Application_AddServiceProviders_Call {
+	_c.Run(run)
+	return _c
+}
+
 // BasePath provides a mock function with given fields: path
 func (_m *Application) BasePath(path ...string) string {
 	_va := make([]interface{}, len(path))
