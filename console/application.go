@@ -23,12 +23,6 @@ var (
 		HideDefault: true,
 		Usage:       "Force disable ANSI output",
 	}
-	helpFlag = &cli.BoolFlag{
-		Name:        "help",
-		Aliases:     []string{"h"},
-		HideDefault: true,
-		Usage:       "Show help",
-	}
 )
 
 type Application struct {
@@ -159,7 +153,7 @@ func (r *Application) command() *cli.Command {
 	command := &cli.Command{}
 	command.CommandNotFound = commandNotFound
 	command.Commands = commands
-	command.Flags = []cli.Flag{noANSIFlag, helpFlag}
+	command.Flags = []cli.Flag{noANSIFlag}
 	command.Name = r.name
 	command.OnUsageError = onUsageError
 	command.Usage = r.usage
@@ -262,30 +256,32 @@ func flagsToCliFlags(flags []command.Flag) []cli.Flag {
 		}
 	}
 
-	// var (
-	// 	existHelp bool
-	// 	existH    bool
-	// )
-	// for _, flag := range cliFlags {
-	// 	names := flag.Names()
-	// 	if slices.Contains(names, "help") {
-	// 		existHelp = true
-	// 	}
-	// 	if slices.Contains(names, "h") {
-	// 		existH = true
-	// 	}
-	// }
+	var (
+		existHelp bool
+		existH    bool
+	)
+	for _, flag := range cliFlags {
+		names := flag.Names()
+		if slices.Contains(names, "help") {
+			existHelp = true
+		}
+		if slices.Contains(names, "h") {
+			existH = true
+		}
+	}
 
-	// if !existHelp {
-	// 	helpFlag := &cli.BoolFlag{
-	// 		Name:  "help",
-	// 		Usage: "Show help",
-	// 	}
-	// 	if !existH {
-	// 		helpFlag.Aliases = []string{"h"}
-	// 	}
-	// 	cliFlags = append(cliFlags, helpFlag)
-	// }
+	if !existHelp {
+		helpFlag := &cli.BoolFlag{
+			Name:  "help",
+			Usage: "Show help",
+		}
+		if !existH {
+			helpFlag.Aliases = []string{"h"}
+		}
+		cliFlags = append(cliFlags, helpFlag)
+	}
+
+	cliFlags = append(cliFlags, noANSIFlag)
 
 	return cliFlags
 }
