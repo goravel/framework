@@ -25,7 +25,7 @@ func init() {
 	cli.CommandHelpTemplate = commandHelpTemplate
 	cli.SubcommandHelpTemplate = commandHelpTemplate
 	cli.VersionPrinter = printVersion
-	huh.ErrUserAborted = cli.Exit(color.Red().Sprint("Cancelled."), 0)
+	huh.ErrUserAborted = cli.Exit(color.Red().Sprint("Cancelled"), 0)
 }
 
 const maxLineLength = 10000
@@ -210,7 +210,7 @@ func helpName(fullName string) string {
 	var namePath []string
 	for i, name := range strings.Split(fullName, " ") {
 		namePath = append(namePath, name)
-		if i == 0 {
+		if i == 1 {
 			namePath = append(namePath, "[global options]")
 		}
 	}

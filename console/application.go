@@ -23,6 +23,12 @@ var (
 		HideDefault: true,
 		Usage:       "Force disable ANSI output",
 	}
+	helpFlag = &cli.BoolFlag{
+		Name:        "help",
+		Aliases:     []string{"h"},
+		HideDefault: true,
+		Usage:       "Show help",
+	}
 )
 
 type Application struct {
@@ -32,9 +38,7 @@ type Application struct {
 	usageText  string
 	useArtisan bool
 	version    string
-
-	// For test
-	writer io.Writer
+	writer     io.Writer
 }
 
 // NewApplication Create a new Artisan application.
@@ -46,6 +50,7 @@ func NewApplication(name, usage, usageText, version string, useArtisan bool) con
 		usageText:  usageText,
 		useArtisan: useArtisan,
 		version:    version,
+		writer:     os.Stdout,
 	}
 }
 
@@ -54,8 +59,13 @@ func (r *Application) Register(commands []console.Command) {
 		cliCommand := cli.Command{
 			Name:  item.Signature(),
 			Usage: item.Description(),
-			Action: func(_ context.Context, cmd *cli.Command) error {
-				return item.Handle(NewCliContext(cmd))
+			Action: func(ctx context.Context, cmd *cli.Command) error {
+				cliCtx := NewCliContext(cmd)
+				if cliCtx.OptionBool("help") {
+					return cli.ShowCommandHelp(ctx, cmd, cmd.Name)
+				}
+
+				return item.Handle(cliCtx)
 			},
 			Category:     item.Extend().Category,
 			ArgsUsage:    item.Extend().ArgsUsage,
@@ -118,13 +128,13 @@ func (r *Application) Run(args []string, exitIfArtisan bool) error {
 	}
 
 	if artisanIndex != -1 {
-		// Add --help if no command argument is provided.
+		command := r.command()
 		if artisanIndex+1 == len(args) {
-			args = append(args, "--help")
+			args = append(args, "help")
 		}
 
 		cliArgs := append([]string{args[0]}, args[artisanIndex+1:]...)
-		if err := r.instance().Run(context.Background(), cliArgs); err != nil {
+		if err := command.Run(context.Background(), cliArgs); err != nil {
 			if exitIfArtisan {
 				panic(err.Error())
 			}
@@ -140,7 +150,7 @@ func (r *Application) Run(args []string, exitIfArtisan bool) error {
 	return nil
 }
 
-func (r *Application) instance() *cli.Command {
+func (r *Application) command() *cli.Command {
 	commands := make([]*cli.Command, len(r.commands))
 	for i, cmd := range r.commands {
 		commands[i] = &cmd
@@ -149,7 +159,7 @@ func (r *Application) instance() *cli.Command {
 	command := &cli.Command{}
 	command.CommandNotFound = commandNotFound
 	command.Commands = commands
-	command.Flags = []cli.Flag{noANSIFlag}
+	command.Flags = []cli.Flag{noANSIFlag, helpFlag}
 	command.Name = r.name
 	command.OnUsageError = onUsageError
 	command.Usage = r.usage
@@ -251,6 +261,31 @@ func flagsToCliFlags(flags []command.Flag) []cli.Flag {
 			})
 		}
 	}
+
+	// var (
+	// 	existHelp bool
+	// 	existH    bool
+	// )
+	// for _, flag := range cliFlags {
+	// 	names := flag.Names()
+	// 	if slices.Contains(names, "help") {
+	// 		existHelp = true
+	// 	}
+	// 	if slices.Contains(names, "h") {
+	// 		existH = true
+	// 	}
+	// }
+
+	// if !existHelp {
+	// 	helpFlag := &cli.BoolFlag{
+	// 		Name:  "help",
+	// 		Usage: "Show help",
+	// 	}
+	// 	if !existH {
+	// 		helpFlag.Aliases = []string{"h"}
+	// 	}
+	// 	cliFlags = append(cliFlags, helpFlag)
+	// }
 
 	return cliFlags
 }
