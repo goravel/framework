@@ -33,29 +33,25 @@ func NewProviderRepository() *ProviderRepository {
 	}
 }
 
-func (r *ProviderRepository) Register(app foundation.Application) []foundation.ServiceProvider {
-	providers := r.getProviders()
-	processed := make([]foundation.ServiceProvider, 0, len(providers))
+func (r *ProviderRepository) Add(providers []foundation.ServiceProvider) {
+	if len(providers) == 0 {
+		return
+	}
 
 	for _, provider := range providers {
 		key := r.getProviderName(provider)
-		state, exists := r.states[key]
-		if !exists {
-			state = &ProviderState{provider: provider}
-			r.states[key] = state
-		}
 
-		if state.registered {
-			processed = append(processed, provider)
+		if _, exists := r.states[key]; exists {
 			continue
 		}
 
-		provider.Register(app)
-		state.registered = true
-		processed = append(processed, provider)
+		state := &ProviderState{provider: provider}
+		r.states[key] = state
+		r.providers = append(r.providers, provider)
 	}
 
-	return processed
+	r.sortedValid = false
+	r.sorted = nil
 }
 
 func (r *ProviderRepository) Boot(app foundation.Application) {
@@ -84,27 +80,6 @@ func (r *ProviderRepository) GetBooted() []foundation.ServiceProvider {
 	return booted
 }
 
-func (r *ProviderRepository) AddProviders(providers []foundation.ServiceProvider) {
-	if len(providers) == 0 {
-		return
-	}
-
-	for _, provider := range providers {
-		key := r.getProviderName(provider)
-
-		if _, exists := r.states[key]; exists {
-			continue
-		}
-
-		state := &ProviderState{provider: provider}
-		r.states[key] = state
-		r.providers = append(r.providers, provider)
-	}
-
-	r.sortedValid = false
-	r.sorted = nil
-}
-
 func (r *ProviderRepository) LoadFromConfig(app foundation.Application) []foundation.ServiceProvider {
 	if r.loaded {
 		return r.providers
@@ -121,9 +96,34 @@ func (r *ProviderRepository) LoadFromConfig(app foundation.Application) []founda
 		return r.providers
 	}
 
-	r.AddProviders(providers)
+	r.Add(providers)
 	r.loaded = true
 	return r.providers
+}
+
+func (r *ProviderRepository) Register(app foundation.Application) []foundation.ServiceProvider {
+	providers := r.getProviders()
+	processed := make([]foundation.ServiceProvider, 0, len(providers))
+
+	for _, provider := range providers {
+		key := r.getProviderName(provider)
+		state, exists := r.states[key]
+		if !exists {
+			state = &ProviderState{provider: provider}
+			r.states[key] = state
+		}
+
+		if state.registered {
+			processed = append(processed, provider)
+			continue
+		}
+
+		provider.Register(app)
+		state.registered = true
+		processed = append(processed, provider)
+	}
+
+	return processed
 }
 
 func (r *ProviderRepository) Reset() {

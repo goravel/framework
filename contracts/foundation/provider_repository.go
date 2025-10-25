@@ -1,6 +1,10 @@
 package foundation
 
 type ProviderRepository interface {
+	// Add appends new providers to the repository.
+	// It skips any providers that have already been added.
+	Add(providers []ServiceProvider)
+
 	// Boot boots all registered service providers in dependency order.
 	Boot(app Application)
 
@@ -12,10 +16,6 @@ type ProviderRepository interface {
 
 	// Register sorts and registers all configured providers in dependency order.
 	Register(app Application) []ServiceProvider
-
-	// AddProviders appends new providers to the repository.
-	// It skips any providers that have already been added.
-	AddProviders(providers []ServiceProvider)
 
 	// Reset clears all configured providers and cached state.
 	Reset()

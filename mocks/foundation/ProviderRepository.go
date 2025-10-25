@@ -20,35 +20,35 @@ func (_m *ProviderRepository) EXPECT() *ProviderRepository_Expecter {
 	return &ProviderRepository_Expecter{mock: &_m.Mock}
 }
 
-// AddProviders provides a mock function with given fields: providers
-func (_m *ProviderRepository) AddProviders(providers []foundation.ServiceProvider) {
+// Add provides a mock function with given fields: providers
+func (_m *ProviderRepository) Add(providers []foundation.ServiceProvider) {
 	_m.Called(providers)
 }
 
-// ProviderRepository_AddProviders_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddProviders'
-type ProviderRepository_AddProviders_Call struct {
+// ProviderRepository_Add_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Add'
+type ProviderRepository_Add_Call struct {
 	*mock.Call
 }
 
-// AddProviders is a helper method to define mock.On call
+// Add is a helper method to define mock.On call
 //   - providers []foundation.ServiceProvider
-func (_e *ProviderRepository_Expecter) AddProviders(providers interface{}) *ProviderRepository_AddProviders_Call {
-	return &ProviderRepository_AddProviders_Call{Call: _e.mock.On("AddProviders", providers)}
+func (_e *ProviderRepository_Expecter) Add(providers interface{}) *ProviderRepository_Add_Call {
+	return &ProviderRepository_Add_Call{Call: _e.mock.On("Add", providers)}
 }
 
-func (_c *ProviderRepository_AddProviders_Call) Run(run func(providers []foundation.ServiceProvider)) *ProviderRepository_AddProviders_Call {
+func (_c *ProviderRepository_Add_Call) Run(run func(providers []foundation.ServiceProvider)) *ProviderRepository_Add_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].([]foundation.ServiceProvider))
 	})
 	return _c
 }
 
-func (_c *ProviderRepository_AddProviders_Call) Return() *ProviderRepository_AddProviders_Call {
+func (_c *ProviderRepository_Add_Call) Return() *ProviderRepository_Add_Call {
 	_c.Call.Return()
 	return _c
 }
 
-func (_c *ProviderRepository_AddProviders_Call) RunAndReturn(run func([]foundation.ServiceProvider)) *ProviderRepository_AddProviders_Call {
+func (_c *ProviderRepository_Add_Call) RunAndReturn(run func([]foundation.ServiceProvider)) *ProviderRepository_Add_Call {
 	_c.Run(run)
 	return _c
 }

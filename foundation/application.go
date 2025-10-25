@@ -48,7 +48,7 @@ func init() {
 	App = app
 
 	baseProviders := app.getBaseServiceProviders()
-	app.providerRepository.AddProviders(baseProviders)
+	app.providerRepository.Add(baseProviders)
 	app.providerRepository.Register(app)
 	app.providerRepository.Boot(app)
 
@@ -70,7 +70,7 @@ func NewApplication() foundation.Application {
 }
 
 func (r *Application) AddServiceProviders(providers []foundation.ServiceProvider) {
-	r.providerRepository.AddProviders(providers)
+	r.providerRepository.Add(providers)
 }
 
 func (r *Application) About(section string, items []foundation.AboutItem) {

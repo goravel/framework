@@ -45,6 +45,8 @@ type AboutItem struct {
 type Application interface {
 	// About add information to the application's about command.
 	About(section string, items []AboutItem)
+	// AddServiceProviders manually sets the list of configured providers.
+	AddServiceProviders(providers []ServiceProvider)
 	// Boot register and bootstrap configured service providers.
 	Boot()
 	// Commands register the given commands with the console application.
@@ -65,8 +67,6 @@ type Application interface {
 	SetJson(json Json)
 	// SetLocale set the current application locale.
 	SetLocale(ctx context.Context, locale string) context.Context
-	// AddServiceProviders manually sets the list of configured providers.
-	AddServiceProviders(providers []ServiceProvider)
 	// Shutdown the application and all its runners.
 	Shutdown()
 	// Version gets the version number of the application.

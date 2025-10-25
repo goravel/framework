@@ -26,9 +26,33 @@ func (s *ProviderRepositoryTestSuite) SetupTest() {
 	s.repository = NewProviderRepository()
 }
 
+func (s *ProviderRepositoryTestSuite) TestAdd() {
+	providerA := &AServiceProvider{}
+	providerB := &BServiceProvider{}
+	providers := []foundation.ServiceProvider{providerA, providerB}
+
+	s.repository.Add(providers)
+
+	s.Equal(providers, s.repository.providers)
+	s.Len(s.repository.states, 2)
+	s.Contains(s.repository.states, s.repository.getProviderName(providerA))
+	s.Contains(s.repository.states, s.repository.getProviderName(providerB))
+	s.False(s.repository.sortedValid)
+}
+
+func (s *ProviderRepositoryTestSuite) TestAdd_Duplicates() {
+	providerA := &AServiceProvider{}
+
+	s.repository.Add([]foundation.ServiceProvider{providerA})
+	s.repository.Add([]foundation.ServiceProvider{providerA})
+
+	s.Len(s.repository.providers, 1, "Provider should not be added twice")
+	s.Len(s.repository.states, 1, "State should not be added twice")
+}
+
 func (s *ProviderRepositoryTestSuite) TestBoot() {
 	mockProvider := mocksfoundation.NewServiceProvider(s.T())
-	s.repository.AddProviders([]foundation.ServiceProvider{mockProvider})
+	s.repository.Add([]foundation.ServiceProvider{mockProvider})
 
 	s.repository.Boot(s.mockApp)
 	mockProvider.AssertNotCalled(s.T(), "Boot", s.mockApp)
@@ -44,7 +68,7 @@ func (s *ProviderRepositoryTestSuite) TestBoot() {
 
 func (s *ProviderRepositoryTestSuite) TestBoot_Idempotency() {
 	mockProvider := mocksfoundation.NewServiceProvider(s.T())
-	s.repository.AddProviders([]foundation.ServiceProvider{mockProvider})
+	s.repository.Add([]foundation.ServiceProvider{mockProvider})
 
 	mockProvider.EXPECT().Register(s.mockApp).Return().Once()
 	s.repository.Register(s.mockApp)
@@ -62,7 +86,7 @@ func (s *ProviderRepositoryTestSuite) TestGetBooted() {
 	providerA := &AServiceProvider{}
 	providerB := &BServiceProvider{}
 
-	s.repository.AddProviders([]foundation.ServiceProvider{providerA, providerB})
+	s.repository.Add([]foundation.ServiceProvider{providerA, providerB})
 
 	keyA := s.repository.getProviderName(providerA)
 	keyB := s.repository.getProviderName(providerB)
@@ -134,7 +158,7 @@ func (s *ProviderRepositoryTestSuite) TestLoadFromConfig_BadConfigType() {
 
 func (s *ProviderRepositoryTestSuite) TestRegister() {
 	mockProvider := mocksfoundation.NewServiceProvider(s.T())
-	s.repository.AddProviders([]foundation.ServiceProvider{mockProvider})
+	s.repository.Add([]foundation.ServiceProvider{mockProvider})
 
 	mockProvider.EXPECT().Register(s.mockApp).Return().Once()
 
@@ -147,7 +171,7 @@ func (s *ProviderRepositoryTestSuite) TestRegister() {
 
 func (s *ProviderRepositoryTestSuite) TestRegister_Idempotency() {
 	mockProvider := mocksfoundation.NewServiceProvider(s.T())
-	s.repository.AddProviders([]foundation.ServiceProvider{mockProvider})
+	s.repository.Add([]foundation.ServiceProvider{mockProvider})
 
 	mockProvider.EXPECT().Register(s.mockApp).Return().Once()
 
@@ -174,37 +198,13 @@ func (s *ProviderRepositoryTestSuite) TestReset() {
 	s.False(s.repository.loaded)
 }
 
-func (s *ProviderRepositoryTestSuite) TestAddProviders() {
-	providerA := &AServiceProvider{}
-	providerB := &BServiceProvider{}
-	providers := []foundation.ServiceProvider{providerA, providerB}
-
-	s.repository.AddProviders(providers)
-
-	s.Equal(providers, s.repository.providers)
-	s.Len(s.repository.states, 2)
-	s.Contains(s.repository.states, s.repository.getProviderName(providerA))
-	s.Contains(s.repository.states, s.repository.getProviderName(providerB))
-	s.False(s.repository.sortedValid)
-}
-
-func (s *ProviderRepositoryTestSuite) TestAddProviders_Duplicates() {
-	providerA := &AServiceProvider{}
-
-	s.repository.AddProviders([]foundation.ServiceProvider{providerA})
-	s.repository.AddProviders([]foundation.ServiceProvider{providerA})
-
-	s.Len(s.repository.providers, 1, "Provider should not be added twice")
-	s.Len(s.repository.states, 1, "State should not be added twice")
-}
-
 func (s *ProviderRepositoryTestSuite) TestGetProviders_SortingAndCaching() {
 	providerA := &AServiceProvider{}
 	providerB := &BServiceProvider{}
 	providers := []foundation.ServiceProvider{providerB, providerA}
 	expectedSorted := []foundation.ServiceProvider{providerA, providerB}
 
-	s.repository.AddProviders(providers)
+	s.repository.Add(providers)
 	s.False(s.repository.sortedValid, "Cache should be invalid initially")
 
 	sorted1 := s.repository.getProviders()
