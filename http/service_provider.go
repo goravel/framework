@@ -45,9 +45,6 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(contractsbinding.RateLimiter, func(app foundation.Application) (any, error) {
 		return NewRateLimiter(), nil
 	})
-	app.Singleton(contractsbinding.View, func(app foundation.Application) (any, error) {
-		return NewView(), nil
-	})
 	app.Bind(contractsbinding.Http, func(app foundation.Application) (any, error) {
 		ConfigFacade = app.MakeConfig()
 		if ConfigFacade == nil {

@@ -1,4 +1,4 @@
-package http
+package view
 
 import (
 	"path/filepath"
