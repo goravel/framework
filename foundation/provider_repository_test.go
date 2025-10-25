@@ -3,7 +3,6 @@ package foundation
 import (
 	"testing"
 
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/binding"
@@ -29,174 +28,193 @@ func (s *ProviderRepositoryTestSuite) SetupTest() {
 
 func (s *ProviderRepositoryTestSuite) TestBoot() {
 	mockProvider := mocksfoundation.NewServiceProvider(s.T())
-	providers := []foundation.ServiceProvider{mockProvider}
+	s.repository.AddProviders([]foundation.ServiceProvider{mockProvider})
 
-	// Boot should not be called if not registered
-	s.repository.Boot(s.mockApp, providers)
+	s.repository.Boot(s.mockApp)
 	mockProvider.AssertNotCalled(s.T(), "Boot", s.mockApp)
 
 	mockProvider.EXPECT().Register(s.mockApp).Return().Once()
-	s.repository.Register(s.mockApp, providers)
+	s.repository.Register(s.mockApp)
 
 	mockProvider.EXPECT().Boot(s.mockApp).Return().Once()
-	s.repository.Boot(s.mockApp, providers)
+	s.repository.Boot(s.mockApp)
 
-	s.True(s.repository.allProviders[s.repository.getProviderName(mockProvider)].booted)
+	s.True(s.repository.states[s.repository.getProviderName(mockProvider)].booted)
 }
 
 func (s *ProviderRepositoryTestSuite) TestBoot_Idempotency() {
 	mockProvider := mocksfoundation.NewServiceProvider(s.T())
-	providers := []foundation.ServiceProvider{mockProvider}
+	s.repository.AddProviders([]foundation.ServiceProvider{mockProvider})
 
 	mockProvider.EXPECT().Register(s.mockApp).Return().Once()
-	s.repository.Register(s.mockApp, providers)
+	s.repository.Register(s.mockApp)
 
 	mockProvider.EXPECT().Boot(s.mockApp).Return().Once()
 
-	s.repository.Boot(s.mockApp, providers)
-	s.repository.Boot(s.mockApp, providers)
+	s.repository.Boot(s.mockApp)
+	s.repository.Boot(s.mockApp)
 
-	s.True(s.repository.allProviders[s.repository.getProviderName(mockProvider)].booted)
+	s.True(s.repository.states[s.repository.getProviderName(mockProvider)].booted)
+	mockProvider.AssertExpectations(s.T())
 }
 
 func (s *ProviderRepositoryTestSuite) TestGetBooted() {
 	providerA := &AServiceProvider{}
 	providerB := &BServiceProvider{}
-	providers := []foundation.ServiceProvider{providerA, providerB}
 
-	s.repository.Register(s.mockApp, providers)
+	s.repository.AddProviders([]foundation.ServiceProvider{providerA, providerB})
 
-	// Boot only A.
-	s.repository.Boot(s.mockApp, []foundation.ServiceProvider{providerA})
+	keyA := s.repository.getProviderName(providerA)
+	keyB := s.repository.getProviderName(providerB)
 
-	// GetBooted should only return A
+	s.NotEqual(keyA, keyB)
+
+	s.repository.states[keyA].registered = true
+	s.repository.states[keyB].registered = false
+
+	s.repository.Boot(s.mockApp)
+
 	booted := s.repository.GetBooted()
+
 	s.Len(booted, 1, "Expected only one booted provider")
 	s.Equal(providerA, booted[0], "The booted provider should be providerA")
+	s.NotContains(booted, providerB, "Booted list should not contain providerB")
+
+	s.True(s.repository.states[keyA].booted)
+	s.False(s.repository.states[keyB].booted)
 }
 
-func (s *ProviderRepositoryTestSuite) TestLoadConfigured() {
+func (s *ProviderRepositoryTestSuite) TestLoadFromConfig_Success() {
 	providers := []foundation.ServiceProvider{&BServiceProvider{}, &AServiceProvider{}}
-	expectedSorted := []foundation.ServiceProvider{&AServiceProvider{}, &BServiceProvider{}}
-
 	mockConfig := mocksconfig.NewConfig(s.T())
 
-	testCases := []struct {
-		name              string
-		setup             func()
-		expectedProviders []foundation.ServiceProvider
-		expectEmpty       bool
-	}{
-		{
-			name: "Success: Load from config",
-			setup: func() {
-				s.repository.ResetConfiguredCache()
+	s.mockApp.EXPECT().MakeConfig().Return(mockConfig).Once()
+	mockConfig.EXPECT().Get("app.providers").Return(providers).Once()
 
-				s.mockApp.EXPECT().MakeConfig().Return(mockConfig).Once()
-				mockConfig.EXPECT().Get("app.providers").Return(providers).Once()
-			},
-			expectedProviders: expectedSorted,
-		},
-		{
-			name: "Success: Load from manual set",
-			setup: func() {
-				s.repository.SetConfigured(providers)
-			},
-			expectedProviders: expectedSorted,
-		},
-		{
-			name: "Success: Load from cache",
-			setup: func() {
-				// Pre-populate the cache (e.g., from a previous call)
-				s.repository.configuredProviders = expectedSorted
-				s.repository.configuredSet = false // Ensure it's not a manual set
-			},
-			expectedProviders: expectedSorted,
-		},
-		{
-			name: "Failure: Config facade is nil",
-			setup: func() {
-				s.repository.ResetConfiguredCache()
-				s.mockApp.EXPECT().MakeConfig().Return(nil).Once()
-			},
-			expectEmpty: true,
-		},
-		{
-			name: "Failure: Config Get fails",
-			setup: func() {
-				s.repository.ResetConfiguredCache()
-				s.mockApp.EXPECT().MakeConfig().Return(mockConfig).Once()
-				mockConfig.EXPECT().Get("app.providers").Return("not a slice").Once()
-			},
-			expectEmpty: true,
-		},
-	}
+	result := s.repository.LoadFromConfig(s.mockApp)
 
-	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			s.mockApp.Mock = mock.Mock{}
-			mockConfig.Mock = mock.Mock{}
+	s.Equal(providers, result)
+	s.Equal(providers, s.repository.providers)
+	s.True(s.repository.loaded)
+	s.False(s.repository.sortedValid)
+}
 
-			tc.setup()
+func (s *ProviderRepositoryTestSuite) TestLoadFromConfig_AlreadyLoaded() {
+	providers := []foundation.ServiceProvider{&AServiceProvider{}}
+	s.repository.loaded = true
+	s.repository.providers = providers
 
-			result := s.repository.LoadConfigured(s.mockApp)
+	result := s.repository.LoadFromConfig(s.mockApp)
 
-			if tc.expectEmpty {
-				s.Empty(result)
-				s.NotNil(result, "Should return empty slice, not nil")
-			} else {
-				s.Equal(tc.expectedProviders, result)
-			}
+	s.Equal(providers, result)
+	s.mockApp.AssertNotCalled(s.T(), "MakeConfig")
+}
 
-			s.mockApp.AssertExpectations(s.T())
-			mockConfig.AssertExpectations(s.T())
-		})
-	}
+func (s *ProviderRepositoryTestSuite) TestLoadFromConfig_NilConfig() {
+	s.mockApp.EXPECT().MakeConfig().Return(nil).Once()
+
+	result := s.repository.LoadFromConfig(s.mockApp)
+
+	s.Empty(result)
+	s.NotNil(result, "Should return empty slice, not nil")
+	s.False(s.repository.loaded)
+}
+
+func (s *ProviderRepositoryTestSuite) TestLoadFromConfig_BadConfigType() {
+	mockConfig := mocksconfig.NewConfig(s.T())
+	s.mockApp.EXPECT().MakeConfig().Return(mockConfig).Once()
+	mockConfig.EXPECT().Get("app.providers").Return("not a slice").Once()
+
+	result := s.repository.LoadFromConfig(s.mockApp)
+
+	s.Empty(result)
+	s.NotNil(result, "Should return empty slice, not nil")
+	s.False(s.repository.loaded)
 }
 
 func (s *ProviderRepositoryTestSuite) TestRegister() {
 	mockProvider := mocksfoundation.NewServiceProvider(s.T())
-	providers := []foundation.ServiceProvider{mockProvider}
+	s.repository.AddProviders([]foundation.ServiceProvider{mockProvider})
 
 	mockProvider.EXPECT().Register(s.mockApp).Return().Once()
 
-	sorted := s.repository.Register(s.mockApp, providers)
+	processed := s.repository.Register(s.mockApp)
 
-	s.Equal(providers, sorted) // Only one provider, so sorted == original
-	s.True(s.repository.allProviders[s.repository.getProviderName(mockProvider)].registered)
-	s.False(s.repository.allProviders[s.repository.getProviderName(mockProvider)].booted)
+	s.Equal([]foundation.ServiceProvider{mockProvider}, processed)
+	s.True(s.repository.states[s.repository.getProviderName(mockProvider)].registered)
+	s.False(s.repository.states[s.repository.getProviderName(mockProvider)].booted)
 }
 
 func (s *ProviderRepositoryTestSuite) TestRegister_Idempotency() {
 	mockProvider := mocksfoundation.NewServiceProvider(s.T())
-	providers := []foundation.ServiceProvider{mockProvider}
+	s.repository.AddProviders([]foundation.ServiceProvider{mockProvider})
 
 	mockProvider.EXPECT().Register(s.mockApp).Return().Once()
 
-	s.repository.Register(s.mockApp, providers)
-	s.repository.Register(s.mockApp, providers)
+	s.repository.Register(s.mockApp)
+	s.repository.Register(s.mockApp)
 
-	s.True(s.repository.allProviders[s.repository.getProviderName(mockProvider)].registered)
+	s.True(s.repository.states[s.repository.getProviderName(mockProvider)].registered)
+	mockProvider.AssertExpectations(s.T())
 }
 
-func (s *ProviderRepositoryTestSuite) TestResetConfiguredCache() {
-	s.repository.configuredProviders = []foundation.ServiceProvider{}
-	s.repository.configuredSet = true
+func (s *ProviderRepositoryTestSuite) TestReset() {
+	s.repository.providers = []foundation.ServiceProvider{&AServiceProvider{}}
+	s.repository.states["foo"] = &ProviderState{}
+	s.repository.sorted = []foundation.ServiceProvider{}
+	s.repository.sortedValid = true
+	s.repository.loaded = true
 
-	s.repository.ResetConfiguredCache()
+	s.repository.Reset()
 
-	s.False(s.repository.configuredSet)
-	s.Nil(s.repository.configuredProviders)
+	s.Empty(s.repository.providers)
+	s.Empty(s.repository.states)
+	s.Nil(s.repository.sorted)
+	s.False(s.repository.sortedValid)
+	s.False(s.repository.loaded)
 }
 
-func (s *ProviderRepositoryTestSuite) TestSetConfigured() {
-	providers := []foundation.ServiceProvider{&BServiceProvider{}, &AServiceProvider{}}
-	expectedSorted := []foundation.ServiceProvider{&AServiceProvider{}, &BServiceProvider{}}
+func (s *ProviderRepositoryTestSuite) TestAddProviders() {
+	providerA := &AServiceProvider{}
+	providerB := &BServiceProvider{}
+	providers := []foundation.ServiceProvider{providerA, providerB}
 
-	s.repository.SetConfigured(providers)
+	s.repository.AddProviders(providers)
 
-	s.True(s.repository.configuredSet)
-	s.Equal(expectedSorted, s.repository.configuredProviders)
+	s.Equal(providers, s.repository.providers)
+	s.Len(s.repository.states, 2)
+	s.Contains(s.repository.states, s.repository.getProviderName(providerA))
+	s.Contains(s.repository.states, s.repository.getProviderName(providerB))
+	s.False(s.repository.sortedValid)
+}
+
+func (s *ProviderRepositoryTestSuite) TestAddProviders_Duplicates() {
+	providerA := &AServiceProvider{}
+
+	s.repository.AddProviders([]foundation.ServiceProvider{providerA})
+	s.repository.AddProviders([]foundation.ServiceProvider{providerA})
+
+	s.Len(s.repository.providers, 1, "Provider should not be added twice")
+	s.Len(s.repository.states, 1, "State should not be added twice")
+}
+
+func (s *ProviderRepositoryTestSuite) TestGetProviders_SortingAndCaching() {
+	providerA := &AServiceProvider{}
+	providerB := &BServiceProvider{}
+	providers := []foundation.ServiceProvider{providerB, providerA}
+	expectedSorted := []foundation.ServiceProvider{providerA, providerB}
+
+	s.repository.AddProviders(providers)
+	s.False(s.repository.sortedValid, "Cache should be invalid initially")
+
+	sorted1 := s.repository.getProviders()
+	s.Equal(expectedSorted, sorted1)
+	s.True(s.repository.sortedValid, "Cache should be valid after first call")
+	s.Same(&s.repository.sorted[0], &sorted1[0], "Internal cache should be set")
+
+	sorted2 := s.repository.getProviders()
+	s.Equal(expectedSorted, sorted2)
+	s.Same(&sorted1[0], &sorted2[0], "Should return exact same slice from cache")
 }
 
 func (s *ProviderRepositoryTestSuite) TestSort() {

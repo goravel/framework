@@ -1,22 +1,22 @@
 package foundation
 
 type ProviderRepository interface {
-	// Boot boots a list of registered providers, passing the app context.
-	Boot(app Application, providers []ServiceProvider)
+	// Boot boots all registered service providers in dependency order.
+	Boot(app Application)
 
 	// GetBooted returns a slice of all providers that have been booted.
 	GetBooted() []ServiceProvider
 
-	// LoadConfigured lazy-loads providers from the config file, using the app
-	// context to access the Config facade.
-	LoadConfigured(app Application) []ServiceProvider
+	// LoadFromConfig lazy-loads providers from the "app.providers" config.
+	LoadFromConfig(app Application) []ServiceProvider
 
-	// Register sorts and registers a list of providers, passing the app context.
-	Register(app Application, providers []ServiceProvider) []ServiceProvider
+	// Register sorts and registers all configured providers in dependency order.
+	Register(app Application) []ServiceProvider
 
-	// ResetConfiguredCache clears the in-memory cache of configured providers.
-	ResetConfiguredCache()
+	// AddProviders appends new providers to the repository.
+	// It skips any providers that have already been added.
+	AddProviders(providers []ServiceProvider)
 
-	// SetConfigured manually sets the list of configured providers, bypassing config.
-	SetConfigured(providers []ServiceProvider)
+	// Reset clears all configured providers and cached state.
+	Reset()
 }

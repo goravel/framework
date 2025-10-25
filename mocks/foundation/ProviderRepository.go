@@ -20,9 +20,42 @@ func (_m *ProviderRepository) EXPECT() *ProviderRepository_Expecter {
 	return &ProviderRepository_Expecter{mock: &_m.Mock}
 }
 
-// Boot provides a mock function with given fields: app, providers
-func (_m *ProviderRepository) Boot(app foundation.Application, providers []foundation.ServiceProvider) {
-	_m.Called(app, providers)
+// AddProviders provides a mock function with given fields: providers
+func (_m *ProviderRepository) AddProviders(providers []foundation.ServiceProvider) {
+	_m.Called(providers)
+}
+
+// ProviderRepository_AddProviders_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddProviders'
+type ProviderRepository_AddProviders_Call struct {
+	*mock.Call
+}
+
+// AddProviders is a helper method to define mock.On call
+//   - providers []foundation.ServiceProvider
+func (_e *ProviderRepository_Expecter) AddProviders(providers interface{}) *ProviderRepository_AddProviders_Call {
+	return &ProviderRepository_AddProviders_Call{Call: _e.mock.On("AddProviders", providers)}
+}
+
+func (_c *ProviderRepository_AddProviders_Call) Run(run func(providers []foundation.ServiceProvider)) *ProviderRepository_AddProviders_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].([]foundation.ServiceProvider))
+	})
+	return _c
+}
+
+func (_c *ProviderRepository_AddProviders_Call) Return() *ProviderRepository_AddProviders_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *ProviderRepository_AddProviders_Call) RunAndReturn(run func([]foundation.ServiceProvider)) *ProviderRepository_AddProviders_Call {
+	_c.Run(run)
+	return _c
+}
+
+// Boot provides a mock function with given fields: app
+func (_m *ProviderRepository) Boot(app foundation.Application) {
+	_m.Called(app)
 }
 
 // ProviderRepository_Boot_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Boot'
@@ -32,14 +65,13 @@ type ProviderRepository_Boot_Call struct {
 
 // Boot is a helper method to define mock.On call
 //   - app foundation.Application
-//   - providers []foundation.ServiceProvider
-func (_e *ProviderRepository_Expecter) Boot(app interface{}, providers interface{}) *ProviderRepository_Boot_Call {
-	return &ProviderRepository_Boot_Call{Call: _e.mock.On("Boot", app, providers)}
+func (_e *ProviderRepository_Expecter) Boot(app interface{}) *ProviderRepository_Boot_Call {
+	return &ProviderRepository_Boot_Call{Call: _e.mock.On("Boot", app)}
 }
 
-func (_c *ProviderRepository_Boot_Call) Run(run func(app foundation.Application, providers []foundation.ServiceProvider)) *ProviderRepository_Boot_Call {
+func (_c *ProviderRepository_Boot_Call) Run(run func(app foundation.Application)) *ProviderRepository_Boot_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(foundation.Application), args[1].([]foundation.ServiceProvider))
+		run(args[0].(foundation.Application))
 	})
 	return _c
 }
@@ -49,7 +81,7 @@ func (_c *ProviderRepository_Boot_Call) Return() *ProviderRepository_Boot_Call {
 	return _c
 }
 
-func (_c *ProviderRepository_Boot_Call) RunAndReturn(run func(foundation.Application, []foundation.ServiceProvider)) *ProviderRepository_Boot_Call {
+func (_c *ProviderRepository_Boot_Call) RunAndReturn(run func(foundation.Application)) *ProviderRepository_Boot_Call {
 	_c.Run(run)
 	return _c
 }
@@ -101,12 +133,12 @@ func (_c *ProviderRepository_GetBooted_Call) RunAndReturn(run func() []foundatio
 	return _c
 }
 
-// LoadConfigured provides a mock function with given fields: app
-func (_m *ProviderRepository) LoadConfigured(app foundation.Application) []foundation.ServiceProvider {
+// LoadFromConfig provides a mock function with given fields: app
+func (_m *ProviderRepository) LoadFromConfig(app foundation.Application) []foundation.ServiceProvider {
 	ret := _m.Called(app)
 
 	if len(ret) == 0 {
-		panic("no return value specified for LoadConfigured")
+		panic("no return value specified for LoadFromConfig")
 	}
 
 	var r0 []foundation.ServiceProvider
@@ -121,45 +153,45 @@ func (_m *ProviderRepository) LoadConfigured(app foundation.Application) []found
 	return r0
 }
 
-// ProviderRepository_LoadConfigured_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LoadConfigured'
-type ProviderRepository_LoadConfigured_Call struct {
+// ProviderRepository_LoadFromConfig_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LoadFromConfig'
+type ProviderRepository_LoadFromConfig_Call struct {
 	*mock.Call
 }
 
-// LoadConfigured is a helper method to define mock.On call
+// LoadFromConfig is a helper method to define mock.On call
 //   - app foundation.Application
-func (_e *ProviderRepository_Expecter) LoadConfigured(app interface{}) *ProviderRepository_LoadConfigured_Call {
-	return &ProviderRepository_LoadConfigured_Call{Call: _e.mock.On("LoadConfigured", app)}
+func (_e *ProviderRepository_Expecter) LoadFromConfig(app interface{}) *ProviderRepository_LoadFromConfig_Call {
+	return &ProviderRepository_LoadFromConfig_Call{Call: _e.mock.On("LoadFromConfig", app)}
 }
 
-func (_c *ProviderRepository_LoadConfigured_Call) Run(run func(app foundation.Application)) *ProviderRepository_LoadConfigured_Call {
+func (_c *ProviderRepository_LoadFromConfig_Call) Run(run func(app foundation.Application)) *ProviderRepository_LoadFromConfig_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(foundation.Application))
 	})
 	return _c
 }
 
-func (_c *ProviderRepository_LoadConfigured_Call) Return(_a0 []foundation.ServiceProvider) *ProviderRepository_LoadConfigured_Call {
+func (_c *ProviderRepository_LoadFromConfig_Call) Return(_a0 []foundation.ServiceProvider) *ProviderRepository_LoadFromConfig_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ProviderRepository_LoadConfigured_Call) RunAndReturn(run func(foundation.Application) []foundation.ServiceProvider) *ProviderRepository_LoadConfigured_Call {
+func (_c *ProviderRepository_LoadFromConfig_Call) RunAndReturn(run func(foundation.Application) []foundation.ServiceProvider) *ProviderRepository_LoadFromConfig_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Register provides a mock function with given fields: app, providers
-func (_m *ProviderRepository) Register(app foundation.Application, providers []foundation.ServiceProvider) []foundation.ServiceProvider {
-	ret := _m.Called(app, providers)
+// Register provides a mock function with given fields: app
+func (_m *ProviderRepository) Register(app foundation.Application) []foundation.ServiceProvider {
+	ret := _m.Called(app)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Register")
 	}
 
 	var r0 []foundation.ServiceProvider
-	if rf, ok := ret.Get(0).(func(foundation.Application, []foundation.ServiceProvider) []foundation.ServiceProvider); ok {
-		r0 = rf(app, providers)
+	if rf, ok := ret.Get(0).(func(foundation.Application) []foundation.ServiceProvider); ok {
+		r0 = rf(app)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]foundation.ServiceProvider)
@@ -176,14 +208,13 @@ type ProviderRepository_Register_Call struct {
 
 // Register is a helper method to define mock.On call
 //   - app foundation.Application
-//   - providers []foundation.ServiceProvider
-func (_e *ProviderRepository_Expecter) Register(app interface{}, providers interface{}) *ProviderRepository_Register_Call {
-	return &ProviderRepository_Register_Call{Call: _e.mock.On("Register", app, providers)}
+func (_e *ProviderRepository_Expecter) Register(app interface{}) *ProviderRepository_Register_Call {
+	return &ProviderRepository_Register_Call{Call: _e.mock.On("Register", app)}
 }
 
-func (_c *ProviderRepository_Register_Call) Run(run func(app foundation.Application, providers []foundation.ServiceProvider)) *ProviderRepository_Register_Call {
+func (_c *ProviderRepository_Register_Call) Run(run func(app foundation.Application)) *ProviderRepository_Register_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(foundation.Application), args[1].([]foundation.ServiceProvider))
+		run(args[0].(foundation.Application))
 	})
 	return _c
 }
@@ -193,72 +224,39 @@ func (_c *ProviderRepository_Register_Call) Return(_a0 []foundation.ServiceProvi
 	return _c
 }
 
-func (_c *ProviderRepository_Register_Call) RunAndReturn(run func(foundation.Application, []foundation.ServiceProvider) []foundation.ServiceProvider) *ProviderRepository_Register_Call {
+func (_c *ProviderRepository_Register_Call) RunAndReturn(run func(foundation.Application) []foundation.ServiceProvider) *ProviderRepository_Register_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// ResetConfiguredCache provides a mock function with no fields
-func (_m *ProviderRepository) ResetConfiguredCache() {
+// Reset provides a mock function with no fields
+func (_m *ProviderRepository) Reset() {
 	_m.Called()
 }
 
-// ProviderRepository_ResetConfiguredCache_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ResetConfiguredCache'
-type ProviderRepository_ResetConfiguredCache_Call struct {
+// ProviderRepository_Reset_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Reset'
+type ProviderRepository_Reset_Call struct {
 	*mock.Call
 }
 
-// ResetConfiguredCache is a helper method to define mock.On call
-func (_e *ProviderRepository_Expecter) ResetConfiguredCache() *ProviderRepository_ResetConfiguredCache_Call {
-	return &ProviderRepository_ResetConfiguredCache_Call{Call: _e.mock.On("ResetConfiguredCache")}
+// Reset is a helper method to define mock.On call
+func (_e *ProviderRepository_Expecter) Reset() *ProviderRepository_Reset_Call {
+	return &ProviderRepository_Reset_Call{Call: _e.mock.On("Reset")}
 }
 
-func (_c *ProviderRepository_ResetConfiguredCache_Call) Run(run func()) *ProviderRepository_ResetConfiguredCache_Call {
+func (_c *ProviderRepository_Reset_Call) Run(run func()) *ProviderRepository_Reset_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run()
 	})
 	return _c
 }
 
-func (_c *ProviderRepository_ResetConfiguredCache_Call) Return() *ProviderRepository_ResetConfiguredCache_Call {
+func (_c *ProviderRepository_Reset_Call) Return() *ProviderRepository_Reset_Call {
 	_c.Call.Return()
 	return _c
 }
 
-func (_c *ProviderRepository_ResetConfiguredCache_Call) RunAndReturn(run func()) *ProviderRepository_ResetConfiguredCache_Call {
-	_c.Run(run)
-	return _c
-}
-
-// SetConfigured provides a mock function with given fields: providers
-func (_m *ProviderRepository) SetConfigured(providers []foundation.ServiceProvider) {
-	_m.Called(providers)
-}
-
-// ProviderRepository_SetConfigured_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetConfigured'
-type ProviderRepository_SetConfigured_Call struct {
-	*mock.Call
-}
-
-// SetConfigured is a helper method to define mock.On call
-//   - providers []foundation.ServiceProvider
-func (_e *ProviderRepository_Expecter) SetConfigured(providers interface{}) *ProviderRepository_SetConfigured_Call {
-	return &ProviderRepository_SetConfigured_Call{Call: _e.mock.On("SetConfigured", providers)}
-}
-
-func (_c *ProviderRepository_SetConfigured_Call) Run(run func(providers []foundation.ServiceProvider)) *ProviderRepository_SetConfigured_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]foundation.ServiceProvider))
-	})
-	return _c
-}
-
-func (_c *ProviderRepository_SetConfigured_Call) Return() *ProviderRepository_SetConfigured_Call {
-	_c.Call.Return()
-	return _c
-}
-
-func (_c *ProviderRepository_SetConfigured_Call) RunAndReturn(run func([]foundation.ServiceProvider)) *ProviderRepository_SetConfigured_Call {
+func (_c *ProviderRepository_Reset_Call) RunAndReturn(run func()) *ProviderRepository_Reset_Call {
 	_c.Run(run)
 	return _c
 }

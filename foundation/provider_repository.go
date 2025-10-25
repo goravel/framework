@@ -8,11 +8,10 @@ import (
 	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/support/color"
 )
 
 type ProviderState struct {
-	instance   foundation.ServiceProvider
+	provider   foundation.ServiceProvider
 	registered bool
 	booted     bool
 }
@@ -20,95 +19,129 @@ type ProviderState struct {
 var _ foundation.ProviderRepository = (*ProviderRepository)(nil)
 
 type ProviderRepository struct {
-	allProviders        map[string]*ProviderState
-	configuredProviders []foundation.ServiceProvider
-	configuredSet       bool
+	states      map[string]*ProviderState
+	providers   []foundation.ServiceProvider
+	sorted      []foundation.ServiceProvider
+	sortedValid bool
+	loaded      bool
 }
 
 func NewProviderRepository() *ProviderRepository {
 	return &ProviderRepository{
-		allProviders: make(map[string]*ProviderState),
+		states:    make(map[string]*ProviderState),
+		providers: make([]foundation.ServiceProvider, 0),
 	}
 }
 
-func (r *ProviderRepository) Boot(app foundation.Application, providers []foundation.ServiceProvider) {
-	for _, provider := range providers {
-		name := r.getProviderName(provider)
-		state, exists := r.allProviders[name]
+func (r *ProviderRepository) Register(app foundation.Application) []foundation.ServiceProvider {
+	providers := r.getProviders()
+	processed := make([]foundation.ServiceProvider, 0, len(providers))
 
-		if exists && state.registered && !state.booted {
-			state.instance.Boot(app)
-			state.booted = true
+	for _, provider := range providers {
+		key := r.getProviderName(provider)
+		state, exists := r.states[key]
+		if !exists {
+			state = &ProviderState{provider: provider}
+			r.states[key] = state
 		}
+
+		if state.registered {
+			processed = append(processed, provider)
+			continue
+		}
+
+		provider.Register(app)
+		state.registered = true
+		processed = append(processed, provider)
+	}
+
+	return processed
+}
+
+func (r *ProviderRepository) Boot(app foundation.Application) {
+	providers := r.getProviders()
+
+	for _, provider := range providers {
+		key := r.getProviderName(provider)
+		state, exists := r.states[key]
+
+		if !exists || !state.registered || state.booted {
+			continue
+		}
+
+		state.provider.Boot(app)
+		state.booted = true
 	}
 }
 
 func (r *ProviderRepository) GetBooted() []foundation.ServiceProvider {
-	booted := make([]foundation.ServiceProvider, 0, len(r.allProviders))
-	for _, state := range r.allProviders {
+	booted := make([]foundation.ServiceProvider, 0, len(r.states))
+	for _, state := range r.states {
 		if state.booted {
-			booted = append(booted, state.instance)
+			booted = append(booted, state.provider)
 		}
 	}
 	return booted
 }
 
-func (r *ProviderRepository) LoadConfigured(app foundation.Application) []foundation.ServiceProvider {
-	if r.configuredSet {
-		return r.configuredProviders
-	}
-	if r.configuredProviders != nil {
-		return r.configuredProviders
+func (r *ProviderRepository) AddProviders(providers []foundation.ServiceProvider) {
+	if len(providers) == 0 {
+		return
 	}
 
-	configFacade := app.MakeConfig()
-	if configFacade == nil {
-		color.Warningln(errors.ConfigFacadeNotSet.Error())
-		r.configuredProviders = []foundation.ServiceProvider{}
-		return r.configuredProviders
+	for _, provider := range providers {
+		key := r.getProviderName(provider)
+
+		if _, exists := r.states[key]; exists {
+			continue
+		}
+
+		state := &ProviderState{provider: provider}
+		r.states[key] = state
+		r.providers = append(r.providers, provider)
 	}
 
-	providers, ok := configFacade.Get("app.providers").([]foundation.ServiceProvider)
+	r.sortedValid = false
+	r.sorted = nil
+}
+
+func (r *ProviderRepository) LoadFromConfig(app foundation.Application) []foundation.ServiceProvider {
+	if r.loaded {
+		return r.providers
+	}
+
+	config := app.MakeConfig()
+	if config == nil {
+		return r.providers
+	}
+
+	raw := config.Get("app.providers")
+	providers, ok := raw.([]foundation.ServiceProvider)
 	if !ok {
-		color.Warningln(errors.ConsoleProvidersNotArray.Error())
-		r.configuredProviders = []foundation.ServiceProvider{}
-		return r.configuredProviders
+		return r.providers
 	}
 
-	r.configuredProviders = r.sort(providers)
-
-	return r.configuredProviders
+	r.AddProviders(providers)
+	r.loaded = true
+	return r.providers
 }
 
-func (r *ProviderRepository) Register(app foundation.Application, providers []foundation.ServiceProvider) []foundation.ServiceProvider {
-	sortedProviders := r.sort(providers)
+func (r *ProviderRepository) Reset() {
+	r.providers = make([]foundation.ServiceProvider, 0)
+	r.states = make(map[string]*ProviderState)
+	r.sorted = nil
+	r.sortedValid = false
+	r.loaded = false
+}
 
-	for _, provider := range sortedProviders {
-		name := r.getProviderName(provider)
-		state, exists := r.allProviders[name]
-
-		if !exists {
-			state = &ProviderState{instance: provider}
-			r.allProviders[name] = state
-		}
-
-		if !state.registered {
-			state.instance.Register(app)
-			state.registered = true
-		}
+func (r *ProviderRepository) getProviders() []foundation.ServiceProvider {
+	if r.sortedValid {
+		return r.sorted
 	}
 
-	return sortedProviders
-}
-
-func (r *ProviderRepository) ResetConfiguredCache() {
-	r.configuredProviders = nil
-	r.configuredSet = false
-}
-
-func (r *ProviderRepository) SetConfigured(providers []foundation.ServiceProvider) {
-	r.configuredProviders = r.sort(providers)
-	r.configuredSet = true
+	r.sorted = r.sort(r.providers)
+	r.sortedValid = true
+	return r.sorted
 }
 
 func (r *ProviderRepository) getRelationship(provider foundation.ServiceProvider) binding.Relationship {

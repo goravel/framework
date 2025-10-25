@@ -48,8 +48,9 @@ func init() {
 	App = app
 
 	baseProviders := app.getBaseServiceProviders()
-	sortedBase := app.providerRepository.Register(app, baseProviders)
-	app.providerRepository.Boot(app, sortedBase)
+	app.providerRepository.AddProviders(baseProviders)
+	app.providerRepository.Register(app)
+	app.providerRepository.Boot(app)
 
 	app.SetJson(json.New())
 }
@@ -68,8 +69,8 @@ func NewApplication() foundation.Application {
 	return App
 }
 
-func (r *Application) SetConfiguredProviders(providers []foundation.ServiceProvider) {
-	r.providerRepository.SetConfigured(providers)
+func (r *Application) AddServiceProviders(providers []foundation.ServiceProvider) {
+	r.providerRepository.AddProviders(providers)
 }
 
 func (r *Application) About(section string, items []foundation.AboutItem) {
@@ -77,15 +78,14 @@ func (r *Application) About(section string, items []foundation.AboutItem) {
 }
 
 func (r *Application) Boot() {
-	r.providerRepository.ResetConfiguredCache()
+	r.providerRepository.LoadFromConfig(r)
 	clear(r.publishes)
 	clear(r.publishGroups)
 
 	r.setTimezone()
 
-	configuredProviders := r.providerRepository.LoadConfigured(r)
-	sortedConfigured := r.providerRepository.Register(r, configuredProviders)
-	r.providerRepository.Boot(r, sortedConfigured)
+	r.providerRepository.Register(r)
+	r.providerRepository.Boot(r)
 
 	r.registerCommands([]contractsconsole.Command{
 		console.NewAboutCommand(r),
@@ -129,6 +129,7 @@ func (r *Application) Publishes(packageName string, paths map[string]string, gro
 
 func (r *Application) Refresh() {
 	r.Fresh()
+	r.providerRepository.Reset()
 	r.Boot()
 }
 

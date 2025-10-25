@@ -65,8 +65,8 @@ type Application interface {
 	SetJson(json Json)
 	// SetLocale set the current application locale.
 	SetLocale(ctx context.Context, locale string) context.Context
-	// SetConfiguredProviders manually sets the list of configured providers, bypassing config loading.
-	SetConfiguredProviders(providers []ServiceProvider)
+	// AddServiceProviders manually sets the list of configured providers.
+	AddServiceProviders(providers []ServiceProvider)
 	// Shutdown the application and all its runners.
 	Shutdown()
 	// Version gets the version number of the application.

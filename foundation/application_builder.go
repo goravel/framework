@@ -25,7 +25,7 @@ func NewApplicationBuilder(app foundation.Application) *ApplicationBuilder {
 
 func (r *ApplicationBuilder) Create() foundation.Application {
 	if len(r.configuredServiceProviders) > 0 {
-		r.app.SetConfiguredProviders(r.configuredServiceProviders)
+		r.app.AddServiceProviders(r.configuredServiceProviders)
 	}
 
 	r.app.Boot()
