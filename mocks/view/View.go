@@ -17,9 +17,9 @@ func (_m *View) EXPECT() *View_Expecter {
 	return &View_Expecter{mock: &_m.Mock}
 }
 
-// Exists provides a mock function with given fields: view
-func (_m *View) Exists(view string) bool {
-	ret := _m.Called(view)
+// Exists provides a mock function with given fields: _a0
+func (_m *View) Exists(_a0 string) bool {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Exists")
@@ -27,7 +27,7 @@ func (_m *View) Exists(view string) bool {
 
 	var r0 bool
 	if rf, ok := ret.Get(0).(func(string) bool); ok {
-		r0 = rf(view)
+		r0 = rf(_a0)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
@@ -41,12 +41,12 @@ type View_Exists_Call struct {
 }
 
 // Exists is a helper method to define mock.On call
-//   - view string
-func (_e *View_Expecter) Exists(view interface{}) *View_Exists_Call {
-	return &View_Exists_Call{Call: _e.mock.On("Exists", view)}
+//   - _a0 string
+func (_e *View_Expecter) Exists(_a0 interface{}) *View_Exists_Call {
+	return &View_Exists_Call{Call: _e.mock.On("Exists", _a0)}
 }
 
-func (_c *View_Exists_Call) Run(run func(view string)) *View_Exists_Call {
+func (_c *View_Exists_Call) Run(run func(_a0 string)) *View_Exists_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})

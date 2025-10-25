@@ -34,6 +34,6 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 
 func (r *ServiceProvider) registerCommands(app foundation.Application) {
 	app.Commands([]contractsconsole.Command{
-		&console.ViewMakeCommand{},
+		console.NewViewMakeCommand(app.MakeConfig()),
 	})
 }

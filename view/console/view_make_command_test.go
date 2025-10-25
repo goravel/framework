@@ -48,7 +48,7 @@ func TestViewMakeCommand_EmptyName(t *testing.T) {
 	mockContext := mocksconsole.NewContext(t)
 
 	mockContext.EXPECT().Argument(0).Return("").Once()
-	mockContext.EXPECT().Error("View name is required").Once()
+	mockContext.EXPECT().Error("the view name name cannot be empty").Once()
 	assert.Nil(t, viewMakeCommand.Handle(mockContext))
 }
 
