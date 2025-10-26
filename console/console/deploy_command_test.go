@@ -451,6 +451,7 @@ func Test_Handle_Rollback_ShortCircuit(t *testing.T) {
 	// Minimal required envs for getDeployOptions (will not be used deeply due to rollback)
 	mockConfig.EXPECT().GetString("app.name").Return("myapp").Once()
 	mockConfig.EXPECT().GetString("app.deploy.ssh_ip").Return("203.0.113.10").Once()
+	mockConfig.EXPECT().GetString("http.port").Return("").Once()
 	mockConfig.EXPECT().GetString("app.deploy.reverse_proxy_port").Return("9000").Once()
 	mockConfig.EXPECT().GetString("app.deploy.ssh_port").Return("22").Once()
 	mockConfig.EXPECT().GetString("app.deploy.ssh_user").Return("ubuntu").Once()
@@ -483,6 +484,7 @@ func Test_Handle_Deploy_Success(t *testing.T) {
 	mockConfig.EXPECT().GetString("app.name").Return("myapp").Once()
 	// Use fast-fail SSH settings to avoid any network delay
 	mockConfig.EXPECT().GetString("app.deploy.ssh_ip").Return("127.0.0.1").Once()
+	mockConfig.EXPECT().GetString("http.port").Return("").Once()
 	mockConfig.EXPECT().GetString("app.deploy.reverse_proxy_port").Return("9000").Once()
 	mockConfig.EXPECT().GetString("app.deploy.ssh_port").Return("0").Once()
 	mockConfig.EXPECT().GetString("app.deploy.ssh_user").Return("ubuntu").Once()
@@ -532,6 +534,7 @@ func Test_Handle_Deploy_FailureOnBuild(t *testing.T) {
 	// Minimal config
 	mockConfig.EXPECT().GetString("app.name").Return("myapp").Once()
 	mockConfig.EXPECT().GetString("app.deploy.ssh_ip").Return("203.0.113.10").Once()
+	mockConfig.EXPECT().GetString("http.port").Return("").Once()
 	mockConfig.EXPECT().GetString("app.deploy.reverse_proxy_port").Return("9000").Once()
 	mockConfig.EXPECT().GetString("app.deploy.ssh_port").Return("22").Once()
 	mockConfig.EXPECT().GetString("app.deploy.ssh_user").Return("ubuntu").Once()
@@ -568,6 +571,7 @@ func Test_getDeployOptions_Success(t *testing.T) {
 	// Config expectations (all present)
 	mockConfig.EXPECT().GetString("app.name").Return("myapp").Once()
 	mockConfig.EXPECT().GetString("app.deploy.ssh_ip").Return("203.0.113.10").Once()
+	mockConfig.EXPECT().GetString("http.port").Return("").Once()
 	mockConfig.EXPECT().GetString("app.deploy.reverse_proxy_port").Return("9000").Once()
 	mockConfig.EXPECT().GetString("app.deploy.ssh_port").Return("22").Once()
 	mockConfig.EXPECT().GetString("app.deploy.ssh_user").Return("ubuntu").Once()

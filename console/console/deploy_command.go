@@ -240,8 +240,9 @@ type deployOptions struct {
 	arch                   string
 	deployBaseDir          string
 	domain                 string
-	prodEnvFilePath        string
 	envDecryptKey          string
+	httpPort               string
+	prodEnvFilePath        string
 	reverseProxyEnabled    bool
 	reverseProxyPort       string
 	reverseProxyTLSEnabled bool
@@ -440,6 +441,9 @@ func (r *DeployCommand) getDeployOptions(ctx console.Context) (deployOptions, er
 	opts := deployOptions{}
 	opts.appName = r.config.GetString("app.name")
 	opts.sshIp = r.config.GetString("app.deploy.ssh_ip")
+	// Preferred: use HTTP server port (APP_PORT via http.port)
+	opts.httpPort = r.config.GetString("http.port")
+	// Back-compat: allow explicit reverse proxy backend port if provided, else fall back to http.port
 	opts.reverseProxyPort = r.config.GetString("app.deploy.reverse_proxy_port")
 	opts.sshPort = r.config.GetString("app.deploy.ssh_port")
 	opts.sshUser = r.config.GetString("app.deploy.ssh_user")
@@ -606,7 +610,11 @@ func setupServerCommand(opts deployOptions) *exec.Cmd {
 
 	// Build systemd unit based on whether reverse proxy is used
 	listenHost := "127.0.0.1"
-	appPort := opts.reverseProxyPort
+	// If reverse proxy is enabled, app should listen on http.port (APP_PORT). If not set, fallback to reverseProxyPort for BC.
+	appPort := opts.httpPort
+	if strings.TrimSpace(appPort) == "" {
+		appPort = opts.reverseProxyPort
+	}
 	if !opts.reverseProxyEnabled {
 		// App listens on port 80 directly
 		appPort = "80"
