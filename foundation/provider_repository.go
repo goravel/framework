@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/goravel/framework/contracts/binding"
+	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
 )
@@ -80,12 +81,11 @@ func (r *ProviderRepository) GetBooted() []foundation.ServiceProvider {
 	return booted
 }
 
-func (r *ProviderRepository) LoadFromConfig(app foundation.Application) []foundation.ServiceProvider {
+func (r *ProviderRepository) LoadFromConfig(config config.Config) []foundation.ServiceProvider {
 	if r.loaded {
 		return r.providers
 	}
 
-	config := app.MakeConfig()
 	if config == nil {
 		return r.providers
 	}

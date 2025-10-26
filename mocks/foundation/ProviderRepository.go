@@ -3,7 +3,9 @@
 package foundation
 
 import (
+	config "github.com/goravel/framework/contracts/config"
 	foundation "github.com/goravel/framework/contracts/foundation"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -133,17 +135,17 @@ func (_c *ProviderRepository_GetBooted_Call) RunAndReturn(run func() []foundatio
 	return _c
 }
 
-// LoadFromConfig provides a mock function with given fields: app
-func (_m *ProviderRepository) LoadFromConfig(app foundation.Application) []foundation.ServiceProvider {
-	ret := _m.Called(app)
+// LoadFromConfig provides a mock function with given fields: _a0
+func (_m *ProviderRepository) LoadFromConfig(_a0 config.Config) []foundation.ServiceProvider {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for LoadFromConfig")
 	}
 
 	var r0 []foundation.ServiceProvider
-	if rf, ok := ret.Get(0).(func(foundation.Application) []foundation.ServiceProvider); ok {
-		r0 = rf(app)
+	if rf, ok := ret.Get(0).(func(config.Config) []foundation.ServiceProvider); ok {
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]foundation.ServiceProvider)
@@ -159,14 +161,14 @@ type ProviderRepository_LoadFromConfig_Call struct {
 }
 
 // LoadFromConfig is a helper method to define mock.On call
-//   - app foundation.Application
-func (_e *ProviderRepository_Expecter) LoadFromConfig(app interface{}) *ProviderRepository_LoadFromConfig_Call {
-	return &ProviderRepository_LoadFromConfig_Call{Call: _e.mock.On("LoadFromConfig", app)}
+//   - _a0 config.Config
+func (_e *ProviderRepository_Expecter) LoadFromConfig(_a0 interface{}) *ProviderRepository_LoadFromConfig_Call {
+	return &ProviderRepository_LoadFromConfig_Call{Call: _e.mock.On("LoadFromConfig", _a0)}
 }
 
-func (_c *ProviderRepository_LoadFromConfig_Call) Run(run func(app foundation.Application)) *ProviderRepository_LoadFromConfig_Call {
+func (_c *ProviderRepository_LoadFromConfig_Call) Run(run func(_a0 config.Config)) *ProviderRepository_LoadFromConfig_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(foundation.Application))
+		run(args[0].(config.Config))
 	})
 	return _c
 }
@@ -176,7 +178,7 @@ func (_c *ProviderRepository_LoadFromConfig_Call) Return(_a0 []foundation.Servic
 	return _c
 }
 
-func (_c *ProviderRepository_LoadFromConfig_Call) RunAndReturn(run func(foundation.Application) []foundation.ServiceProvider) *ProviderRepository_LoadFromConfig_Call {
+func (_c *ProviderRepository_LoadFromConfig_Call) RunAndReturn(run func(config.Config) []foundation.ServiceProvider) *ProviderRepository_LoadFromConfig_Call {
 	_c.Call.Return(run)
 	return _c
 }

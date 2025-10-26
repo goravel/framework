@@ -1,5 +1,7 @@
 package foundation
 
+import "github.com/goravel/framework/contracts/config"
+
 type ProviderRepository interface {
 	// Add appends new providers to the repository.
 	// It skips any providers that have already been added.
@@ -12,7 +14,7 @@ type ProviderRepository interface {
 	GetBooted() []ServiceProvider
 
 	// LoadFromConfig lazy-loads providers from the "app.providers" config.
-	LoadFromConfig(app Application) []ServiceProvider
+	LoadFromConfig(config config.Config) []ServiceProvider
 
 	// Register sorts and registers all configured providers in dependency order.
 	Register(app Application) []ServiceProvider

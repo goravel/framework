@@ -78,7 +78,7 @@ func (r *Application) About(section string, items []foundation.AboutItem) {
 }
 
 func (r *Application) Boot() {
-	r.providerRepository.LoadFromConfig(r)
+	r.providerRepository.LoadFromConfig(r.MakeConfig())
 	clear(r.publishes)
 	clear(r.publishGroups)
 

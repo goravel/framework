@@ -112,10 +112,9 @@ func (s *ProviderRepositoryTestSuite) TestLoadFromConfig_Success() {
 	providers := []foundation.ServiceProvider{&BServiceProvider{}, &AServiceProvider{}}
 	mockConfig := mocksconfig.NewConfig(s.T())
 
-	s.mockApp.EXPECT().MakeConfig().Return(mockConfig).Once()
 	mockConfig.EXPECT().Get("app.providers").Return(providers).Once()
 
-	result := s.repository.LoadFromConfig(s.mockApp)
+	result := s.repository.LoadFromConfig(mockConfig)
 
 	s.Equal(providers, result)
 	s.Equal(providers, s.repository.providers)
@@ -125,19 +124,18 @@ func (s *ProviderRepositoryTestSuite) TestLoadFromConfig_Success() {
 
 func (s *ProviderRepositoryTestSuite) TestLoadFromConfig_AlreadyLoaded() {
 	providers := []foundation.ServiceProvider{&AServiceProvider{}}
+	mockConfig := mocksconfig.NewConfig(s.T())
 	s.repository.loaded = true
 	s.repository.providers = providers
 
-	result := s.repository.LoadFromConfig(s.mockApp)
+	result := s.repository.LoadFromConfig(mockConfig)
 
 	s.Equal(providers, result)
-	s.mockApp.AssertNotCalled(s.T(), "MakeConfig")
+	mockConfig.AssertNotCalled(s.T(), "Get")
 }
 
 func (s *ProviderRepositoryTestSuite) TestLoadFromConfig_NilConfig() {
-	s.mockApp.EXPECT().MakeConfig().Return(nil).Once()
-
-	result := s.repository.LoadFromConfig(s.mockApp)
+	result := s.repository.LoadFromConfig(nil)
 
 	s.Empty(result)
 	s.NotNil(result, "Should return empty slice, not nil")
@@ -146,10 +144,9 @@ func (s *ProviderRepositoryTestSuite) TestLoadFromConfig_NilConfig() {
 
 func (s *ProviderRepositoryTestSuite) TestLoadFromConfig_BadConfigType() {
 	mockConfig := mocksconfig.NewConfig(s.T())
-	s.mockApp.EXPECT().MakeConfig().Return(mockConfig).Once()
 	mockConfig.EXPECT().Get("app.providers").Return("not a slice").Once()
 
-	result := s.repository.LoadFromConfig(s.mockApp)
+	result := s.repository.LoadFromConfig(mockConfig)
 
 	s.Empty(result)
 	s.NotNil(result, "Should return empty slice, not nil")
