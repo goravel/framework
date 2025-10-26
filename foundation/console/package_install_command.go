@@ -6,23 +6,26 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/goravel/framework/contracts/binding"
+	contractsbinding "github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/support/collect"
+	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/convert"
+	"github.com/goravel/framework/support/str"
 )
 
 type PackageInstallCommand struct {
-	bindings                            map[string]binding.Info
+	bindings                            map[string]contractsbinding.Info
 	installedBindings                   []any
 	installedFacadesInTheCurrentCommand []string
+	chosenDrivers                       [][]contractsbinding.Driver
 }
 
-func NewPackageInstallCommand(bindings map[string]binding.Info, installedBindings []any) *PackageInstallCommand {
+func NewPackageInstallCommand(bindings map[string]contractsbinding.Info, installedBindings []any) *PackageInstallCommand {
 	return &PackageInstallCommand{
 		bindings:          bindings,
 		installedBindings: installedBindings,
@@ -63,25 +66,39 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 		if ctx.OptionBool("all-facades") {
 			names = getAvailableFacades(r.bindings)
 		} else {
-			var options []console.Choice
-			for _, facade := range getAvailableFacades(r.bindings) {
-				options = append(options, console.Choice{
-					Key:   facade,
-					Value: facade,
-				})
+			var err error
+
+			options := []console.Choice{
+				{Key: "All facades", Value: "all"},
+				{Key: "Select facades", Value: "select"},
+				{Key: "Third-party package", Value: "third"},
 			}
 
-			name, err := ctx.MultiSelect("Select the facades to install", options, console.MultiSelectOption{
-				Description: "If you want to install a package, please run the command with the package name.\nIf you want to install all facades, you can run the command with --all-facades or click ctrl+a to select all.",
-				Filterable:  true,
-			})
+			choice, err := ctx.Choice("Which facades or package do you want to install?", options)
 			if err != nil {
 				ctx.Error(err.Error())
 				return nil
 			}
 
-			if len(name) > 0 {
-				names = append(names, name...)
+			if choice == "all" {
+				names = getAvailableFacades(r.bindings)
+			}
+
+			if choice == "select" {
+				names, err = r.selectFacades(ctx)
+			}
+
+			if choice == "third" {
+				var name string
+				name, err = r.inputThirdPackage(ctx)
+				if err == nil && name != "" {
+					names = []string{name}
+				}
+			}
+
+			if err != nil {
+				ctx.Error(err.Error())
+				return nil
 			}
 		}
 	}
@@ -89,7 +106,8 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 	for _, name := range names {
 		if isPackage(name) {
 			if err := r.installPackage(ctx, name); err != nil {
-				return err
+				ctx.Error(err.Error())
+				return nil
 			}
 		} else {
 			if slices.Contains(r.installedFacadesInTheCurrentCommand, name) {
@@ -97,12 +115,38 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 			}
 
 			if err := r.installFacade(ctx, name); err != nil {
-				return err
+				ctx.Error(err.Error())
+				return nil
 			}
 		}
 	}
 
 	return nil
+}
+
+func (r *PackageInstallCommand) selectFacades(ctx console.Context) ([]string, error) {
+	var facadeOptions []console.Choice
+	for _, facade := range getAvailableFacades(r.bindings) {
+		key := facade
+		description := getFacadeDescription(facade, r.bindings)
+		if description != "" {
+			key = fmt.Sprintf("%-11s", facade) + color.Gray().Sprintf(" - %s", description)
+		}
+		facadeOptions = append(facadeOptions, console.Choice{
+			Key:   key,
+			Value: facade,
+		})
+	}
+
+	return ctx.MultiSelect("Select the facades to install", facadeOptions, console.MultiSelectOption{
+		Filterable: true,
+	})
+}
+
+func (r *PackageInstallCommand) inputThirdPackage(ctx console.Context) (string, error) {
+	return ctx.Ask("Enter the package", console.AskOption{
+		Description: "E.g.: github.com/goravel/framework or github.com/goravel/framework@master",
+	})
 }
 
 func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) error {
@@ -111,23 +155,17 @@ func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) 
 
 	// get package
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "get", pkg)); err != nil {
-		ctx.Error(fmt.Sprintf("Failed to get package: %s", err))
-
-		return nil
+		return fmt.Errorf("failed to get package: %s", err)
 	}
 
 	// install package
-	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install")); err != nil {
-		ctx.Error(fmt.Sprintf("Failed to install package: %s", err))
-
-		return nil
+	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--module="+packages.GetModuleName())); err != nil {
+		return fmt.Errorf("failed to install package: %s", err)
 	}
 
 	// tidy go.mod file
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
-		ctx.Error(fmt.Sprintf("Failed to tidy go.mod file: %s", err))
-
-		return nil
+		return fmt.Errorf("failed to tidy go.mod file: %s", err)
 	}
 
 	ctx.Success(fmt.Sprintf("Package %s installed successfully", pkg))
@@ -163,9 +201,7 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 		}
 
 		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--facade="+facade, "--module="+packages.GetModuleName())); err != nil {
-			ctx.Error(fmt.Sprintf("Failed to install facade %s: %s", facade, err.Error()))
-
-			return nil
+			return fmt.Errorf("failed to install facade %s: %s", facade, err.Error())
 		}
 
 		r.installedFacadesInTheCurrentCommand = append(r.installedFacadesInTheCurrentCommand, facade)
@@ -175,25 +211,48 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 		if err := r.installDriver(ctx, facade, bindingInfo); err != nil {
 			return err
 		}
+
+		if len(bindingInfo.Drivers) > 0 {
+			r.chosenDrivers = append(r.chosenDrivers, bindingInfo.Drivers)
+		}
 	}
 
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
-		ctx.Error(fmt.Sprintf("Failed to tidy go.mod file: %s", err))
+		return fmt.Errorf("failed to tidy go.mod file: %s", err)
 	}
 
 	return nil
 }
 
-func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string, bindingInfo binding.Info) error {
+func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string, bindingInfo contractsbinding.Info) error {
 	if len(bindingInfo.Drivers) == 0 {
 		return nil
 	}
 
+	for _, chooseDriver := range r.chosenDrivers {
+		sortedChooseDriver := slices.Clone(chooseDriver)
+		slices.SortFunc(sortedChooseDriver, func(a, b contractsbinding.Driver) int {
+			return strings.Compare(a.Name, b.Name)
+		})
+		sortedDrivers := slices.Clone(bindingInfo.Drivers)
+		slices.SortFunc(sortedDrivers, func(a, b contractsbinding.Driver) int {
+			return strings.Compare(a.Name, b.Name)
+		})
+		if slices.Equal(sortedChooseDriver, sortedDrivers) {
+			return nil
+		}
+	}
+
 	var options []console.Choice
 	for _, driver := range bindingInfo.Drivers {
+		key := driver.Name
+		if driver.Description != "" {
+			key += color.Gray().Sprintf(" - %s", driver.Description)
+		}
+
 		options = append(options, console.Choice{
-			Key:   driver,
-			Value: driver,
+			Key:   key,
+			Value: driver.Package,
 		})
 	}
 
@@ -218,9 +277,20 @@ func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string
 
 	if driver == "" {
 		return r.installDriver(ctx, facade, bindingInfo)
-	} else {
-		return r.installPackage(ctx, driver)
 	}
+
+	if isInternalDriver(driver) {
+		setup := bindingInfo.PkgPath + "/setup"
+		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--driver="+driver, "--module="+packages.GetModuleName())); err != nil {
+			return fmt.Errorf("failed to install driver %s: %s", driver, err.Error())
+		}
+
+		ctx.Success(fmt.Sprintf("Driver %s installed successfully", driver))
+
+		return nil
+	}
+
+	return r.installPackage(ctx, driver)
 }
 
 func (r *PackageInstallCommand) getBindingsToInstall(binding string) (bindingsToInstall []string) {
@@ -242,7 +312,7 @@ func (r *PackageInstallCommand) getBindingsToInstall(binding string) (bindingsTo
 	return
 }
 
-func getAvailableFacades(bindings map[string]binding.Info) []string {
+func getAvailableFacades(bindings map[string]contractsbinding.Info) []string {
 	var result []string
 	for binding, info := range bindings {
 		if !info.IsBase {
@@ -255,7 +325,7 @@ func getAvailableFacades(bindings map[string]binding.Info) []string {
 	return result
 }
 
-func getDependencyBindings(binding string, bindings map[string]binding.Info) []string {
+func getDependencyBindings(binding string, bindings map[string]contractsbinding.Info) []string {
 	var deps []string
 	for _, dep := range bindings[binding].Dependencies {
 		if info, ok := bindings[dep]; ok && !info.IsBase {
@@ -267,6 +337,19 @@ func getDependencyBindings(binding string, bindings map[string]binding.Info) []s
 	return collect.Unique(deps)
 }
 
+func getFacadeDescription(facade string, bindings map[string]contractsbinding.Info) string {
+	binding := convert.FacadeToBinding(facade)
+	if info, exists := bindings[binding]; exists {
+		return info.Description
+	}
+
+	return ""
+}
+
 func isPackage(pkg string) bool {
 	return strings.Contains(pkg, "/")
+}
+
+func isInternalDriver(name string) bool {
+	return name != "" && !str.Of(name).Contains(".", "/")
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	contractsprocess "github.com/goravel/framework/contracts/process"
+	"github.com/goravel/framework/errors"
 )
 
 type fakeSig struct{}
@@ -210,4 +211,45 @@ func TestUnixHelpers_DirectCalls_Unix(t *testing.T) {
 	assert.Error(t, kill(nil))
 	assert.Error(t, signal(nil, fakeSig{}))
 	assert.Error(t, stop(nil, make(chan struct{}), 0))
+}
+
+func TestProcess_Pool_Unix(t *testing.T) {
+	t.Run("creates pool builder and executes commands", func(t *testing.T) {
+		p := New()
+		results, err := p.Pool(func(pool contractsprocess.Pool) {
+			pool.Command("echo", "hello").As("hello")
+			pool.Command("echo", "world").As("world")
+		}).Run()
+
+		assert.NoError(t, err)
+		assert.Len(t, results, 2)
+		assert.Contains(t, results["hello"].Output(), "hello")
+		assert.Contains(t, results["world"].Output(), "world")
+	})
+
+	t.Run("returns error with nil configurer", func(t *testing.T) {
+		p := New()
+		_, err := p.Pool(nil).Run()
+		assert.ErrorIs(t, err, errors.ProcessPoolNilConfigurer)
+	})
+}
+
+func TestProcess_Pipe_Unix(t *testing.T) {
+	t.Run("creates pipeline and executes commands", func(t *testing.T) {
+		p := New()
+		result, err := p.Pipe(func(pipe contractsprocess.Pipe) {
+			pipe.Command("echo", "hello")
+			pipe.Command("cat")
+			pipe.Command("tr", "a-z", "A-Z")
+		}).Run()
+
+		assert.NoError(t, err)
+		assert.Contains(t, result.Output(), "HELLO")
+	})
+
+	t.Run("returns error with nil configurer", func(t *testing.T) {
+		p := New()
+		_, err := p.Pipe(nil).Run()
+		assert.ErrorIs(t, err, errors.ProcessPipeNilConfigurer)
+	})
 }

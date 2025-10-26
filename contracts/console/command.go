@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/urfave/cli/v3"
+
 	"github.com/goravel/framework/contracts/console/command"
 )
 
@@ -35,6 +37,8 @@ type Context interface {
 	Arguments() []string
 	// Info writes an information message to the console.
 	Info(message string)
+	// Instance gets the underlying cli.Command instance.
+	Instance() *cli.Command
 	// Error writes an error message to the console.
 	Error(message string)
 	// Line writes a string to the console.
@@ -129,6 +133,24 @@ type Context interface {
 	WithProgressBar(items []any, callback func(any) error) ([]any, error)
 	// TwoColumnDetail writes a two column detail to the console.
 	TwoColumnDetail(first, second string, filler ...rune)
+	// Divider shows a terminal-width divider filled with given sting
+	Divider(filler ...string)
+	// Green writes green text to console
+	Green(message string)
+	// Greenln writes green line to console
+	Greenln(message string)
+	// Red writes red text to console
+	Red(message string)
+	// Redln writes red line to console
+	Redln(message string)
+	// Yellow writes yellow text to console
+	Yellow(message string)
+	// Yellowln writes yellow line to console
+	Yellowln(message string)
+	// Black writes black text to console
+	Black(message string)
+	// Blackln writes black line to console
+	Blackln(message string)
 }
 
 type Progress interface {

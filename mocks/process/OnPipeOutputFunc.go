@@ -20,9 +20,9 @@ func (_m *OnPipeOutputFunc) EXPECT() *OnPipeOutputFunc_Expecter {
 	return &OnPipeOutputFunc_Expecter{mock: &_m.Mock}
 }
 
-// Execute provides a mock function with given fields: key, typ, line
-func (_m *OnPipeOutputFunc) Execute(key string, typ process.OutputType, line []byte) {
-	_m.Called(key, typ, line)
+// Execute provides a mock function with given fields: typ, line, key
+func (_m *OnPipeOutputFunc) Execute(typ process.OutputType, line []byte, key string) {
+	_m.Called(typ, line, key)
 }
 
 // OnPipeOutputFunc_Execute_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Execute'
@@ -31,16 +31,16 @@ type OnPipeOutputFunc_Execute_Call struct {
 }
 
 // Execute is a helper method to define mock.On call
-//   - key string
 //   - typ process.OutputType
 //   - line []byte
-func (_e *OnPipeOutputFunc_Expecter) Execute(key interface{}, typ interface{}, line interface{}) *OnPipeOutputFunc_Execute_Call {
-	return &OnPipeOutputFunc_Execute_Call{Call: _e.mock.On("Execute", key, typ, line)}
+//   - key string
+func (_e *OnPipeOutputFunc_Expecter) Execute(typ interface{}, line interface{}, key interface{}) *OnPipeOutputFunc_Execute_Call {
+	return &OnPipeOutputFunc_Execute_Call{Call: _e.mock.On("Execute", typ, line, key)}
 }
 
-func (_c *OnPipeOutputFunc_Execute_Call) Run(run func(key string, typ process.OutputType, line []byte)) *OnPipeOutputFunc_Execute_Call {
+func (_c *OnPipeOutputFunc_Execute_Call) Run(run func(typ process.OutputType, line []byte, key string)) *OnPipeOutputFunc_Execute_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(process.OutputType), args[2].([]byte))
+		run(args[0].(process.OutputType), args[1].([]byte), args[2].(string))
 	})
 	return _c
 }
@@ -50,7 +50,7 @@ func (_c *OnPipeOutputFunc_Execute_Call) Return() *OnPipeOutputFunc_Execute_Call
 	return _c
 }
 
-func (_c *OnPipeOutputFunc_Execute_Call) RunAndReturn(run func(string, process.OutputType, []byte)) *OnPipeOutputFunc_Execute_Call {
+func (_c *OnPipeOutputFunc_Execute_Call) RunAndReturn(run func(process.OutputType, []byte, string)) *OnPipeOutputFunc_Execute_Call {
 	_c.Run(run)
 	return _c
 }

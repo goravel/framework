@@ -9,7 +9,7 @@ import (
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/path"
-	"github.com/goravel/framework/support/stub"
+	"github.com/goravel/framework/support/stubs"
 )
 
 func main() {
@@ -27,9 +27,7 @@ func main() {
 	packages.Setup(os.Args).
 		Install(
 			// Create the console kernel file if it does not exist.
-			modify.When(func() bool {
-				return !file.Exists(kernelPath)
-			}, modify.File(kernelPath).Overwrite(stub.ConsoleKernel())),
+			modify.WhenFileNotExists(kernelPath, modify.File(kernelPath).Overwrite(stubs.ConsoleKernel())),
 
 			// Create the schedule facade file.
 			modify.WhenFacade(scheduleFacade, modify.File(scheduleFacadePath).Overwrite(Stubs{}.ScheduleFacade())),
@@ -68,11 +66,11 @@ func main() {
 		Execute()
 }
 
-func isKernelNotModified() bool {
+func isKernelNotModified(_ map[string]any) bool {
 	content, err := file.GetContent(path.App("console", "kernel.go"))
 	if err != nil {
 		return false
 	}
 
-	return content == stub.ConsoleKernel()
+	return content == stubs.ConsoleKernel()
 }

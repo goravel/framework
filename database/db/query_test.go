@@ -1145,9 +1145,69 @@ func (s *QueryTestSuite) TestSum() {
 	s.mockReadBuilder.EXPECT().Explain("SELECT SUM(age) FROM users WHERE age = ?", 25).Return("SELECT SUM(age) FROM users WHERE age = 25").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT SUM(age) FROM users WHERE age = 25", int64(1), nil).Return().Once()
 
-	sum, err := s.query.Where("age", 25).Sum("age")
+	err := s.query.Where("age", 25).Sum("age", &sum)
 	s.Nil(err)
 	s.Equal(int64(25), sum)
+
+	err = s.query.Where("age", 25).Sum("age", nil)
+	s.Error(err)
+}
+
+func (s *QueryTestSuite) TestAvg() {
+	var avg float64
+
+	s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+	s.mockReadBuilder.EXPECT().GetContext(s.ctx, &avg, "SELECT AVG(age) FROM users WHERE age = ?", 25).Run(func(ctx context.Context, dest any, query string, args ...any) {
+		destAvg := dest.(*float64)
+		*destAvg = 25.5
+	}).Return(nil).Once()
+	s.mockReadBuilder.EXPECT().Explain("SELECT AVG(age) FROM users WHERE age = ?", 25).Return("SELECT AVG(age) FROM users WHERE age = 25").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT AVG(age) FROM users WHERE age = 25", int64(1), nil).Return().Once()
+
+	err := s.query.Where("age", 25).Avg("age", &avg)
+	s.Nil(err)
+	s.Equal(float64(25.5), avg)
+
+	err = s.query.Where("age", 25).Avg("age", nil)
+	s.Error(err)
+}
+
+func (s *QueryTestSuite) TestMin() {
+	var min int64
+
+	s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+	s.mockReadBuilder.EXPECT().GetContext(s.ctx, &min, "SELECT MIN(age) FROM users WHERE age = ?", 25).Run(func(ctx context.Context, dest any, query string, args ...any) {
+		destMin := dest.(*int64)
+		*destMin = 20
+	}).Return(nil).Once()
+	s.mockReadBuilder.EXPECT().Explain("SELECT MIN(age) FROM users WHERE age = ?", 25).Return("SELECT MIN(age) FROM users WHERE age = 25").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT MIN(age) FROM users WHERE age = 25", int64(1), nil).Return().Once()
+
+	err := s.query.Where("age", 25).Min("age", &min)
+	s.Nil(err)
+	s.Equal(int64(20), min)
+
+	err = s.query.Where("age", 25).Min("age", nil)
+	s.Error(err)
+}
+
+func (s *QueryTestSuite) TestMax() {
+	var max int64
+
+	s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+	s.mockReadBuilder.EXPECT().GetContext(s.ctx, &max, "SELECT MAX(age) FROM users WHERE age = ?", 25).Run(func(ctx context.Context, dest any, query string, args ...any) {
+		destMax := dest.(*int64)
+		*destMax = 30
+	}).Return(nil).Once()
+	s.mockReadBuilder.EXPECT().Explain("SELECT MAX(age) FROM users WHERE age = ?", 25).Return("SELECT MAX(age) FROM users WHERE age = 25").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT MAX(age) FROM users WHERE age = 25", int64(1), nil).Return().Once()
+
+	err := s.query.Where("age", 25).Max("age", &max)
+	s.Nil(err)
+	s.Equal(int64(30), max)
+
+	err = s.query.Where("age", 25).Max("age", nil)
+	s.Error(err)
 }
 
 func (s *QueryTestSuite) TestToSql() {

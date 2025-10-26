@@ -11,6 +11,7 @@ import (
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
+	"github.com/goravel/framework/support"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
@@ -47,7 +48,7 @@ func (r *MakeCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	m, err := supportconsole.NewMake(ctx, "command", ctx.Argument(0), filepath.Join("app", "console", "commands"))
+	m, err := supportconsole.NewMake(ctx, "command", ctx.Argument(0), support.Config.Paths.Command)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil

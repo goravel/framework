@@ -802,16 +802,44 @@ func (r *Query) SharedLock() contractsorm.Query {
 	return r.setConditions(conditions)
 }
 
-func (r *Query) Sum(column string) (int64, error) {
-	query := r.addGlobalScopes().buildConditions()
-
-	var sum int64
-	err := query.instance.Select("SUM(" + column + ")").Row().Scan(&sum)
-	if err != nil {
-		return 0, err
+func (r *Query) Sum(column string, dest any) error {
+	destValue := reflect.ValueOf(dest)
+	if destValue.Kind() != reflect.Ptr {
+		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
 	}
 
-	return sum, nil
+	query := r.addGlobalScopes().buildConditions()
+	return query.instance.Select("SUM(" + column + ")").Row().Scan(dest)
+}
+
+func (r *Query) Avg(column string, dest any) error {
+	destValue := reflect.ValueOf(dest)
+	if destValue.Kind() != reflect.Ptr {
+		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
+	}
+
+	query := r.addGlobalScopes().buildConditions()
+	return query.instance.Select("AVG(" + column + ")").Row().Scan(dest)
+}
+
+func (r *Query) Min(column string, dest any) error {
+	destValue := reflect.ValueOf(dest)
+	if destValue.Kind() != reflect.Ptr {
+		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
+	}
+
+	query := r.addGlobalScopes().buildConditions()
+	return query.instance.Select("MIN(" + column + ")").Row().Scan(dest)
+}
+
+func (r *Query) Max(column string, dest any) error {
+	destValue := reflect.ValueOf(dest)
+	if destValue.Kind() != reflect.Ptr {
+		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
+	}
+
+	query := r.addGlobalScopes().buildConditions()
+	return query.instance.Select("MAX(" + column + ")").Row().Scan(dest)
 }
 
 func (r *Query) Table(name string, args ...any) contractsorm.Query {

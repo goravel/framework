@@ -1,11 +1,11 @@
 package console
 
 import (
-	"path/filepath"
 	"strings"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 )
@@ -43,7 +43,7 @@ func (r *FactoryMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *FactoryMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "factory", ctx.Argument(0), filepath.Join("database", "factories"))
+	m, err := supportconsole.NewMake(ctx, "factory", ctx.Argument(0), support.Config.Paths.Factory)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil

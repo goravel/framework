@@ -22,6 +22,7 @@ import (
 	"github.com/goravel/framework/contracts/http/client"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/mail"
+	"github.com/goravel/framework/contracts/process"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/contracts/route"
 	"github.com/goravel/framework/contracts/schedule"
@@ -99,6 +100,10 @@ func Mail() mail.Mail {
 
 func Orm() orm.Orm {
 	return App().MakeOrm()
+}
+
+func Process() process.Process {
+	return App().MakeProcess()
 }
 
 func Queue() queue.Queue {

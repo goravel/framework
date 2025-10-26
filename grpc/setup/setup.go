@@ -27,6 +27,10 @@ func main() {
 	facadesImport := fmt.Sprintf("%s/app/facades", moduleName)
 	grpcImport := fmt.Sprintf("%s/app/grpc", moduleName)
 	routesImport := fmt.Sprintf("%s/routes", moduleName)
+	env := `
+GRPC_HOST=
+GRPC_PORT=
+`
 
 	packages.Setup(os.Args).
 		Install(
@@ -51,6 +55,10 @@ func main() {
 
 			// Register the Grpc facade
 			modify.WhenFacade(grpcFacade, modify.File(facadePath).Overwrite(stubs.GrpcFacade())),
+
+			// Add configurations to the .env and .env.example files
+			modify.WhenFileNotContains(path.Base(".env"), "GRPC_HOST", modify.File(path.Base(".env")).Append(env)),
+			modify.WhenFileNotContains(path.Base(".env.example"), "GRPC_HOST", modify.File(path.Base(".env.example")).Append(env)),
 		).
 		Uninstall(
 			modify.WhenNoFacades([]string{grpcFacade},

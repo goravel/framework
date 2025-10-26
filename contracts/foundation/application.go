@@ -21,6 +21,7 @@ import (
 	"github.com/goravel/framework/contracts/http/client"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/mail"
+	"github.com/goravel/framework/contracts/process"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/contracts/route"
 	"github.com/goravel/framework/contracts/schedule"
@@ -30,6 +31,12 @@ import (
 	"github.com/goravel/framework/contracts/validation"
 )
 
+type Runner interface {
+	ShouldRun() bool
+	Run() error
+	Shutdown() error
+}
+
 type AboutItem struct {
 	Key   string
 	Value string
@@ -38,10 +45,14 @@ type AboutItem struct {
 type Application interface {
 	// About add information to the application's about command.
 	About(section string, items []AboutItem)
+	// AddServiceProviders manually sets the list of configured providers.
+	AddServiceProviders(providers []ServiceProvider)
 	// Boot register and bootstrap configured service providers.
 	Boot()
 	// Commands register the given commands with the console application.
 	Commands([]console.Command)
+	// Context gets the application context.
+	Context() context.Context
 	// GetJson get the JSON implementation.
 	GetJson() Json
 	// IsLocale get the current application locale.
@@ -50,14 +61,19 @@ type Application interface {
 	Publishes(packageName string, paths map[string]string, groups ...string)
 	// Refresh all modules after changing config, will call the Boot method simultaneously.
 	Refresh()
+	// Run runs modules.
+	Run(runners ...Runner)
 	// SetJson set the JSON implementation.
 	SetJson(json Json)
 	// SetLocale set the current application locale.
 	SetLocale(ctx context.Context, locale string) context.Context
+	// Shutdown the application and all its runners.
+	Shutdown()
 	// Version gets the version number of the application.
 	Version() string
 
 	// Paths
+
 	// BasePath get the base path of the Goravel installation.
 	BasePath(path ...string) string
 	// ConfigPath get the path to the configuration files.
@@ -68,7 +84,7 @@ type Application interface {
 	DatabasePath(path ...string) string
 	// ExecutablePath get the path to the executable of the running Goravel application.
 	ExecutablePath(path ...string) string
-	// FacadePath get the path to the facade files.
+	// FacadesPath get the path to the facade files.
 	FacadesPath(path ...string) string
 	// LangPath get the path to the language files.
 	LangPath(path ...string) string
@@ -82,6 +98,7 @@ type Application interface {
 	StoragePath(path ...string) string
 
 	// Container
+
 	// Bind registers a binding with the container.
 	Bind(key any, callback func(app Application) (any, error))
 	// Bindings returns all bindings registered in the container.
@@ -126,6 +143,8 @@ type Application interface {
 	MakeMail() mail.Mail
 	// MakeOrm resolves the orm instance.
 	MakeOrm() orm.Orm
+	// MakeProcess resolves the process instance.
+	MakeProcess() process.Process
 	// MakeQueue resolves the queue instance.
 	MakeQueue() queue.Queue
 	// MakeRateLimiter resolves the rate limiter instance.

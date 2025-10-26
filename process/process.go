@@ -14,25 +14,26 @@ import (
 var _ contractsprocess.Process = (*Process)(nil)
 
 type Process struct {
-	ctx               context.Context
-	env               []string
-	input             io.Reader
-	path              string
-	quietly           bool
-	onOutput          contractsprocess.OnOutputFunc
-	timeout           time.Duration
-	tty               bool
-	bufferingDisabled bool
+	buffering bool
+	ctx       context.Context
+	env       []string
+	input     io.Reader
+	onOutput  contractsprocess.OnOutputFunc
+	path      string
+	quietly   bool
+	timeout   time.Duration
+	tty       bool
 }
 
 func New() *Process {
 	return &Process{
-		ctx: context.Background(),
+		ctx:       context.Background(),
+		buffering: true,
 	}
 }
 
 func (r *Process) DisableBuffering() contractsprocess.Process {
-	r.bufferingDisabled = true
+	r.buffering = false
 	return r
 }
 
@@ -51,18 +52,26 @@ func (r *Process) Input(in io.Reader) contractsprocess.Process {
 	return r
 }
 
+func (r *Process) OnOutput(handler contractsprocess.OnOutputFunc) contractsprocess.Process {
+	r.onOutput = handler
+	return r
+}
+
 func (r *Process) Path(path string) contractsprocess.Process {
 	r.path = path
 	return r
 }
 
-func (r *Process) Quietly() contractsprocess.Process {
-	r.quietly = true
-	return r
+func (r *Process) Pipe(configurer func(pipe contractsprocess.Pipe)) contractsprocess.Pipeline {
+	return NewPipe().Pipe(configurer)
 }
 
-func (r *Process) OnOutput(handler contractsprocess.OnOutputFunc) contractsprocess.Process {
-	r.onOutput = handler
+func (r *Process) Pool(configurer func(pool contractsprocess.Pool)) contractsprocess.PoolBuilder {
+	return NewPool().Pool(configurer)
+}
+
+func (r *Process) Quietly() contractsprocess.Process {
+	r.quietly = true
 	return r
 }
 
@@ -94,11 +103,11 @@ func (r *Process) WithContext(ctx context.Context) contractsprocess.Process {
 }
 
 func (r *Process) run(name string, args ...string) (contractsprocess.Result, error) {
-	running, err := r.start(name, args...)
+	run, err := r.start(name, args...)
 	if err != nil {
 		return nil, err
 	}
-	return running.Wait(), nil
+	return run.Wait(), nil
 }
 
 func (r *Process) start(name string, args ...string) (contractsprocess.Running, error) {
@@ -113,7 +122,6 @@ func (r *Process) start(name string, args ...string) (contractsprocess.Running, 
 	if r.path != "" {
 		cmd.Dir = r.path
 	}
-	setSysProcAttr(cmd)
 
 	if len(r.env) > 0 {
 		cmd.Env = append(os.Environ(), r.env...)
@@ -121,35 +129,42 @@ func (r *Process) start(name string, args ...string) (contractsprocess.Running, 
 
 	if r.input != nil {
 		cmd.Stdin = r.input
-	} else if r.tty {
-		cmd.Stdin = os.Stdin
 	}
 
 	var stdoutBuffer, stderrBuffer *bytes.Buffer
-	var stdoutWriters []io.Writer
-	var stderrWriters []io.Writer
 
-	if !r.bufferingDisabled {
-		stdoutBuffer = &bytes.Buffer{}
-		stderrBuffer = &bytes.Buffer{}
-		stdoutWriters = append(stdoutWriters, stdoutBuffer)
-		stderrWriters = append(stderrWriters, stderrBuffer)
-	}
+	if r.tty {
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	} else {
+		setSysProcAttr(cmd)
 
-	if !r.quietly {
-		stdoutWriters = append(stdoutWriters, os.Stdout)
-		stderrWriters = append(stderrWriters, os.Stderr)
-	}
-	if r.onOutput != nil {
-		stdoutWriters = append(stdoutWriters, NewOutputWriterForProcess(contractsprocess.OutputTypeStdout, r.onOutput))
-		stderrWriters = append(stderrWriters, NewOutputWriterForProcess(contractsprocess.OutputTypeStderr, r.onOutput))
-	}
+		var stdoutWriters []io.Writer
+		var stderrWriters []io.Writer
 
-	if len(stdoutWriters) > 0 {
-		cmd.Stdout = io.MultiWriter(stdoutWriters...)
-	}
-	if len(stderrWriters) > 0 {
-		cmd.Stderr = io.MultiWriter(stderrWriters...)
+		if r.buffering {
+			stdoutBuffer = &bytes.Buffer{}
+			stderrBuffer = &bytes.Buffer{}
+			stdoutWriters = append(stdoutWriters, stdoutBuffer)
+			stderrWriters = append(stderrWriters, stderrBuffer)
+		}
+
+		if !r.quietly {
+			stdoutWriters = append(stdoutWriters, os.Stdout)
+			stderrWriters = append(stderrWriters, os.Stderr)
+		}
+		if r.onOutput != nil {
+			stdoutWriters = append(stdoutWriters, NewOutputWriterForProcess(contractsprocess.OutputTypeStdout, r.onOutput))
+			stderrWriters = append(stderrWriters, NewOutputWriterForProcess(contractsprocess.OutputTypeStderr, r.onOutput))
+		}
+
+		if len(stdoutWriters) > 0 {
+			cmd.Stdout = io.MultiWriter(stdoutWriters...)
+		}
+		if len(stderrWriters) > 0 {
+			cmd.Stderr = io.MultiWriter(stderrWriters...)
+		}
 	}
 
 	if err := cmd.Start(); err != nil {
