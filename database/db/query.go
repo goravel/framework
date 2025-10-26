@@ -987,7 +987,7 @@ func (r *Query) WhereAny(columns []string, op string, val any) db.Query {
 		query := sq.Expr(fmt.Sprintf("%s %s ?", column, op), val)
 		where := contractsdriver.Where{
 			Query: query,
-			Or:    i > 0, // First condition is regular WHERE, subsequent are OR
+			Or:    i > 0,
 		}
 		r.conditions.Where = deep.Append(r.conditions.Where, where)
 	}
@@ -1011,7 +1011,6 @@ func (r *Query) WhereNone(columns []string, op string, val any) db.Query {
 		if op == "=" {
 			query = sq.NotEq{column: val}
 		} else {
-			// For other operators, use NOT with the expression
 			query = sq.Expr(fmt.Sprintf("NOT (%s %s ?)", column, op), val)
 		}
 		where := contractsdriver.Where{
