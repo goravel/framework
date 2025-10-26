@@ -575,7 +575,8 @@ func Test_getDeployOptions_Success(t *testing.T) {
 	mockConfig.EXPECT().GetBool("app.deploy.reverse_proxy_enabled").Return(true).Once()
 	mockConfig.EXPECT().GetBool("app.deploy.reverse_proxy_tls_enabled").Return(false).Once()
 
-	opts := cmd.getDeployOptions(mockContext)
+	opts, err := cmd.getDeployOptions(mockContext)
+	require.NoError(t, err)
 
 	assert.Equal(t, "myapp", opts.appName)
 	assert.Equal(t, "203.0.113.10", opts.sshIp)
@@ -622,21 +623,12 @@ func TestHelper_GetDeployOptions_Missing(t *testing.T) {
 	mockConfig.EXPECT().GetBool("app.deploy.reverse_proxy_enabled").Return(false).Once()
 	mockConfig.EXPECT().GetBool("app.deploy.reverse_proxy_tls_enabled").Return(false).Once()
 
-	// Expect an error message before exit
-	mockContext.EXPECT().Error(mock.MatchedBy(func(msg string) bool {
-		return strings.Contains(msg, "Missing required environment variables:")
-	})).Once()
-
-	// This will call os.Exit(1)
-	_ = cmd.getDeployOptions(mockContext)
-	t.Fatalf("expected os.Exit to be called")
+	// Now expecting an error to be returned
+	_, err := cmd.getDeployOptions(mockContext)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "missing required environment variables:")
 }
 
-func Test_getDeployOptions_Missing_Exits(t *testing.T) {
-	cmd := exec.Command(os.Args[0], "-test.run", "TestHelper_GetDeployOptions_Missing")
-	cmd.Env = append(os.Environ(), "EXPECT_GETDEPLOYOPTIONS_EXIT=1")
-	err := cmd.Run()
-	if err == nil {
-		t.Fatalf("expected subprocess to exit with error due to os.Exit(1)")
-	}
+func Test_getDeployOptions_Missing_ReturnsError(t *testing.T) {
+	TestHelper_GetDeployOptions_Missing(t)
 }

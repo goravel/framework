@@ -313,7 +313,11 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 	// Rollback check first: allow rollback without validating local host tools
 	// (tests can short-circuit Spinner; real runs will still use ssh remotely)
 	if ctx.OptionBool("rollback") {
-		opts := r.getDeployOptions(ctx)
+		opts, err := r.getDeployOptions(ctx)
+		if err != nil {
+			ctx.Error(err.Error())
+			return nil
+		}
 		if err := supportconsole.ExecuteCommand(ctx, rollbackCommand(opts), "Rolling back..."); err != nil {
 			ctx.Error(err.Error())
 			return nil
@@ -329,10 +333,13 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 	}
 
 	// get all options
-	opts := r.getDeployOptions(ctx)
+	opts, err := r.getDeployOptions(ctx)
+	if err != nil {
+		ctx.Error(err.Error())
+		return nil
+	}
 
 	// continue normal deploy flow
-	var err error
 
 	// Step 1: build the application by invoking the build command via Artisan (no shell exec)
 	buildCmd := fmt.Sprintf("build --os %s --arch %s --name %s", opts.targetOS, opts.arch, opts.appName)
@@ -397,7 +404,7 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func (r *DeployCommand) getDeployOptions(ctx console.Context) deployOptions {
+func (r *DeployCommand) getDeployOptions(ctx console.Context) (deployOptions, error) {
 	opts := deployOptions{}
 	opts.appName = r.config.GetString("app.name")
 	opts.sshIp = r.config.GetString("app.deploy.ssh_ip")
@@ -449,8 +456,7 @@ func (r *DeployCommand) getDeployOptions(ctx console.Context) deployOptions {
 		missing = append(missing, "DEPLOY_PROD_ENV_FILE_PATH")
 	}
 	if len(missing) > 0 {
-		ctx.Error(fmt.Sprintf("Missing required environment variables: %s. Please set them in the .env file. Deployment cancelled. Exiting...", strings.Join(missing, ", ")))
-		os.Exit(1)
+		return deployOptions{}, fmt.Errorf("missing required environment variables: %s. Please set them in the .env file. Deployment cancelled", strings.Join(missing, ", "))
 	}
 
 	// expand ssh key ~ path if needed
@@ -460,7 +466,7 @@ func (r *DeployCommand) getDeployOptions(ctx console.Context) deployOptions {
 		}
 	}
 
-	return opts
+	return opts, nil
 }
 
 // isEncryptedEnvContent determines whether the provided bytes likely represent an encrypted env
