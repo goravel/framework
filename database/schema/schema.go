@@ -522,6 +522,7 @@ func (r *Schema) extendModels(models []contractsschema.Model) {
 			model.Name = extractModelName(model.Type)
 		}
 
+		// Use the updated model.Name for the uniqueness check and append
 		if !slices.ContainsFunc(r.models, func(m contractsschema.Model) bool {
 			return m.Name == model.Name
 		}) {

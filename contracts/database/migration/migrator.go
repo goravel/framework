@@ -14,7 +14,7 @@ type Status struct {
 type Migrator interface {
 	// Create a new migration file.
 	Create(name string, modelName string) (string, error)
-	// Fresh migrations.
+	// Fresh drops all tables and re-runs all migrations from scratch.
 	Fresh() error
 	// Reset the migrations.
 	Reset() error

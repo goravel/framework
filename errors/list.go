@@ -200,8 +200,8 @@ var (
 	SessionDriverRegisterFailed       = New("failed to register session drivers: %v")
 	SessionDriverContractNotFulfilled = New("%s doesn't implement contracts/session/driver")
 
-	TemplateFailedToParse         = New("failed to parse template: %v")
-	TemplateFailedToFormateGoCode = New("failed to format go code: %v")
+	TemplateFailedToParse        = New("failed to parse template: %v")
+	TemplateFailedToFormatGoCode = New("failed to format go code: %v")
 
 	TestingImageBuildFailed   = New("init %s docker error: %v")
 	TestingImageNoContainerId = New("no container id return when creating %s docker")

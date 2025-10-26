@@ -75,7 +75,7 @@ func (r *Migrator) Create(name string, modelName string) (string, error) {
 
 	formatted, err := format.Source(buf.Bytes())
 	if err != nil {
-		return "", errors.TemplateFailedToFormateGoCode.Args(err.Error())
+		return "", errors.TemplateFailedToFormatGoCode.Args(err.Error())
 	}
 
 	if err := supportfile.PutContent(r.creator.GetPath(fileName), string(formatted)); err != nil {
