@@ -322,7 +322,7 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	// check if the local host is valid, currently only support macos and linux. Also requires scp, ssh, and bash to be installed and in your path.
+	// check if the local host is valid, requires scp, ssh, and bash to be installed and in your path.
 	if !validLocalHost(ctx) {
 		return nil
 	}
