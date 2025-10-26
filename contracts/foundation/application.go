@@ -77,7 +77,7 @@ type Application interface {
 
 	// BasePath get the base path of the Goravel installation.
 	BasePath(path ...string) string
-	// BootstrapPath he
+	// BootstrapPath gets the path to the bootstrap directory.
 	BootstrapPath(path ...string) string
 	// ConfigPath get the path to the configuration files.
 	ConfigPath(path ...string) string

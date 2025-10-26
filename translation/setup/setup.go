@@ -21,7 +21,7 @@ func main() {
 			modify.GoFile(providersBootstrapPath).
 				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
 				Find(match.Providers()).Modify(modify.Register(langServiceProvider)),
-			modify.WhenFacade(facades.Lang, modify.File(path.Facades(langFacadePath)).Overwrite(stubs.LangFacade())),
+			modify.WhenFacade(facades.Lang, modify.File(langFacadePath).Overwrite(stubs.LangFacade())),
 		).
 		Uninstall(
 			modify.WhenNoFacades([]string{facades.Lang},
@@ -29,7 +29,7 @@ func main() {
 					Find(match.Providers()).Modify(modify.Unregister(langServiceProvider)).
 					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
 			),
-			modify.WhenFacade(facades.Lang, modify.File(path.Facades(langFacadePath)).Remove()),
+			modify.WhenFacade(facades.Lang, modify.File(langFacadePath).Remove()),
 		).
 		Execute()
 }
