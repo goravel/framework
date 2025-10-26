@@ -323,7 +323,8 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 	}
 
 	// check if the local host is valid, requires scp, ssh, and bash to be installed and in your path.
-	if !validLocalHost(ctx) {
+	if err := validLocalHost(ctx); err != nil {
+		ctx.Error(err.Error())
 		return nil
 	}
 
@@ -517,8 +518,8 @@ func getUploadOptions(ctx console.Context, appName, prodEnvFilePath string) uplo
 	return res
 }
 
-// validLocalHost checks if the local host is valid, currently only support macos and linux. Also requires scp, ssh, and bash to be installed and in your path.
-func validLocalHost(ctx console.Context) bool {
+// validLocalHost checks if the local host is valid, requires scp, ssh, and bash to be installed and in your path.
+func validLocalHost(ctx console.Context) error {
 
 	missingBins := []string{}
 	if _, err := exec.LookPath("scp"); err != nil {
@@ -539,12 +540,10 @@ func validLocalHost(ctx console.Context) bool {
 	}
 
 	if len(missingBins) > 0 {
-		msg := fmt.Sprintf("Environment validation errors:\n - the following binaries were not found on your path: %s\n - Please install them, add them to your path, and try again.", strings.Join(missingBins, ", "))
-		ctx.Error(msg)
-		return false
+		return fmt.Errorf("environment validation errors:\n - the following binaries were not found on your path: %s\n - Please install them, add them to your path, and try again", strings.Join(missingBins, ", "))
 	}
 
-	return true
+	return nil
 }
 
 // makeLocalCommand chooses the appropriate local shell to execute the composed script.

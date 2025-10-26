@@ -304,17 +304,15 @@ func Test_validLocalHost_ErrorAggregation_Unix(t *testing.T) {
 	require.NoError(t, os.Setenv("PATH", ""))
 
 	mockContext := mocksconsole.NewContext(t)
-	// Expect a single aggregated error call
-	mockContext.EXPECT().Error(mock.MatchedBy(func(msg string) bool {
-		return strings.Contains(msg, "Environment validation errors:") &&
-			strings.Contains(msg, "the following binaries were not found on your path:") &&
-			strings.Contains(msg, "scp") &&
-			strings.Contains(msg, "ssh") &&
-			strings.Contains(msg, "bash") &&
-			strings.Contains(msg, "Please install them, add them to your path, and try again.")
-	})).Once()
-	ok := validLocalHost(mockContext)
-	assert.False(t, ok)
+	err2 := validLocalHost(mockContext)
+	require.Error(t, err2)
+	msg := err2.Error()
+	assert.Contains(t, msg, "environment validation errors:")
+	assert.Contains(t, msg, "the following binaries were not found on your path:")
+	assert.Contains(t, msg, "scp")
+	assert.Contains(t, msg, "ssh")
+	assert.Contains(t, msg, "bash")
+	assert.Contains(t, msg, "Please install them, add them to your path, and try again")
 }
 
 func Test_validLocalHost_SucceedsWithTempTools_Unix(t *testing.T) {
@@ -343,8 +341,9 @@ func Test_validLocalHost_SucceedsWithTempTools_Unix(t *testing.T) {
 	require.NoError(t, err)
 
 	mockContext := mocksconsole.NewContext(t)
-	ok := validLocalHost(mockContext)
-	assert.True(t, ok)
+	if err2 := validLocalHost(mockContext); err2 != nil {
+		t.Fatalf("expected no error, got %v", err2)
+	}
 }
 
 // --------------------------
@@ -402,16 +401,15 @@ func Test_validLocalHost_ErrorAggregation_Windows(t *testing.T) {
 	require.NoError(t, os.Setenv("PATH", ""))
 
 	mockContext := mocksconsole.NewContext(t)
-	mockContext.EXPECT().Error(mock.MatchedBy(func(msg string) bool {
-		return strings.Contains(msg, "Environment validation errors:") &&
-			strings.Contains(msg, "the following binaries were not found on your path:") &&
-			strings.Contains(msg, "scp") &&
-			strings.Contains(msg, "ssh") &&
-			strings.Contains(msg, "cmd") &&
-			strings.Contains(msg, "Please install them, add them to your path, and try again.")
-	})).Once()
-	ok := validLocalHost(mockContext)
-	assert.False(t, ok)
+	err2 := validLocalHost(mockContext)
+	require.Error(t, err2)
+	msg := err2.Error()
+	assert.Contains(t, msg, "environment validation errors:")
+	assert.Contains(t, msg, "the following binaries were not found on your path:")
+	assert.Contains(t, msg, "scp")
+	assert.Contains(t, msg, "ssh")
+	assert.Contains(t, msg, "cmd")
+	assert.Contains(t, msg, "Please install them, add them to your path, and try again")
 }
 
 func Test_validLocalHost_SucceedsWithTempTools_Windows(t *testing.T) {
@@ -441,8 +439,9 @@ func Test_validLocalHost_SucceedsWithTempTools_Windows(t *testing.T) {
 	require.NoError(t, err)
 
 	mockContext := mocksconsole.NewContext(t)
-	ok := validLocalHost(mockContext)
-	assert.True(t, ok)
+	if err2 := validLocalHost(mockContext); err2 != nil {
+		t.Fatalf("expected no error, got %v", err2)
+	}
 }
 
 func Test_Handle_Rollback_ShortCircuit(t *testing.T) {
