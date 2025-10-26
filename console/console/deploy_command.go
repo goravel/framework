@@ -237,19 +237,19 @@ go run . artisan deploy --only main,env
 // deployOptions is a struct that contains all the options for the deploy command
 type deployOptions struct {
 	appName                string
-	sshIp                  string
-	reverseProxyPort       string
-	sshPort                string
-	sshUser                string
-	sshKeyPath             string
-	targetOS               string
 	arch                   string
+	deployBaseDir          string
 	domain                 string
 	prodEnvFilePath        string
-	staticEnv              bool
 	reverseProxyEnabled    bool
+	reverseProxyPort       string
 	reverseProxyTLSEnabled bool
-	deployBaseDir          string
+	sshIp                  string
+	sshKeyPath             string
+	sshPort                string
+	sshUser                string
+	staticEnv              bool
+	targetOS               string
 }
 
 type uploadOptions struct {
