@@ -1237,20 +1237,10 @@ func (r *Query) buildWhere(where contractsdriver.Where) (any, []any, error) {
 		}
 		if !str.Of(query).Trim().Contains("?") {
 			if len(where.Args) > 1 {
-				if where.IsNot {
-					return sq.NotEq{query: where.Args}, nil, nil
-				}
 				return sq.Eq{query: where.Args}, nil, nil
 			} else if len(where.Args) == 1 {
-				if where.IsNot {
-					return sq.NotEq{query: where.Args[0]}, nil, nil
-				}
 				return sq.Eq{query: where.Args[0]}, nil, nil
 			}
-		}
-
-		if where.IsNot {
-			query = "NOT (" + query + ")"
 		}
 
 		return query, where.Args, nil
