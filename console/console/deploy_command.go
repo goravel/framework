@@ -301,7 +301,7 @@ func (r *DeployCommand) Extend() command.Extend {
 			},
 			&command.BoolFlag{
 				Name:               "force-setup",
-				Aliases:            []string{"f"},
+				Aliases:            []string{"force"},
 				Value:              false,
 				Usage:              "Force re-run server setup even if already configured",
 				DisableDefaultText: true,
