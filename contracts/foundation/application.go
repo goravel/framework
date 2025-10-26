@@ -77,6 +77,8 @@ type Application interface {
 
 	// BasePath get the base path of the Goravel installation.
 	BasePath(path ...string) string
+	// BootstrapPath he
+	BootstrapPath(path ...string) string
 	// ConfigPath get the path to the configuration files.
 	ConfigPath(path ...string) string
 	// CurrentLocale get the current application locale.

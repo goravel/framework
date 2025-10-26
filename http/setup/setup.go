@@ -14,7 +14,7 @@ func main() {
 	httpFacade := "Http"
 	rateLimiterFacade := "RateLimiter"
 	viewFacade := "View"
-	appConfigPath := path.Config("app.go")
+	providersBootstrapPath := path.Bootstrap("providers.go")
 	httpConfigPath := path.Config("http.go")
 	jwtConfigPath := path.Config("jwt.go")
 	corsConfigPath := path.Config("cors.go")
@@ -28,7 +28,7 @@ func main() {
 	packages.Setup(os.Args).
 		Install(
 			// Add the HTTP service provider to the providers array in config/app.go
-			modify.GoFile(appConfigPath).
+			modify.GoFile(providersBootstrapPath).
 				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
 				Find(match.Providers()).Modify(modify.Register(httpServiceProvider)),
 
@@ -46,7 +46,7 @@ func main() {
 		Uninstall(
 			modify.WhenNoFacades([]string{httpFacade, rateLimiterFacade, viewFacade},
 				// Remove the HTTP service provider from the providers array in config/app.go
-				modify.GoFile(appConfigPath).
+				modify.GoFile(providersBootstrapPath).
 					Find(match.Providers()).Modify(modify.Unregister(httpServiceProvider)).
 					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
 

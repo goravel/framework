@@ -213,6 +213,11 @@ func (r *Application) BasePath(path ...string) string {
 	return internals.Abs(path...)
 }
 
+func (r *Application) BootstrapPath(path ...string) string {
+	path = append([]string{support.RelativePath, "bootstrap"}, path...)
+	return internals.AbsPath(path...)
+}
+
 func (r *Application) ConfigPath(path ...string) string {
 	path = append([]string{support.RelativePath, "config"}, path...)
 	return internals.Abs(path...)

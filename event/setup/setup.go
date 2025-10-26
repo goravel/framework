@@ -18,14 +18,14 @@ func main() {
 	registerSeeders := "facades.Event().Register(map[event.Event][]event.Listener{})"
 	eventImport := "github.com/goravel/framework/contracts/event"
 	facadesImport := fmt.Sprintf("%s/app/facades", moduleName)
-	appConfigPath := path.Config("app.go")
+	providersBootstrapPath := path.Bootstrap("providers.go")
 	eventFacadePath := path.Facades("event.go")
 	eventServiceProvider := "&event.ServiceProvider{}"
 
 	packages.Setup(os.Args).
 		Install(
 			// Add the Event facade and service provider.
-			modify.GoFile(appConfigPath).
+			modify.GoFile(providersBootstrapPath).
 				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
 				Find(match.Providers()).Modify(modify.Register(eventServiceProvider)),
 
@@ -50,7 +50,7 @@ func main() {
 					Find(match.Imports()).Modify(modify.RemoveImport(facadesImport)),
 
 				// Remove the Event service provider from the app config.
-				modify.GoFile(appConfigPath).
+				modify.GoFile(providersBootstrapPath).
 					Find(match.Providers()).Modify(modify.Unregister(eventServiceProvider)).
 					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
 			),

@@ -12,7 +12,7 @@ import (
 
 func main() {
 	stubs := Stubs{}
-	appConfigPath := path.Config("app.go")
+	providersBootstrapPath := path.Bootstrap("providers.go")
 	mailConfigPath := path.Config("mail.go")
 	mailFacadePath := path.Facades("mail.go")
 	moduleName := packages.GetModuleNameFromArgs(os.Args)
@@ -29,7 +29,7 @@ MAIL_FROM_NAME=
 	packages.Setup(os.Args).
 		Install(
 			// Add the mail service provider to the providers array in config/app.go
-			modify.GoFile(appConfigPath).
+			modify.GoFile(providersBootstrapPath).
 				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
 				Find(match.Providers()).Modify(modify.Register(mailServiceProvider)),
 
@@ -46,7 +46,7 @@ MAIL_FROM_NAME=
 		Uninstall(
 			modify.WhenNoFacades([]string{facades.Mail},
 				// Remove the mail service provider from the providers array in config/app.go
-				modify.GoFile(appConfigPath).
+				modify.GoFile(providersBootstrapPath).
 					Find(match.Providers()).Modify(modify.Unregister(mailServiceProvider)).
 					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
 

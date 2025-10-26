@@ -12,21 +12,21 @@ import (
 
 func main() {
 	stubs := Stubs{}
-	appConfigPath := path.Config("app.go")
+	providersBootstrapPath := path.Bootstrap("providers.go")
 	processFacadePath := path.Facades("process.go")
 	modulePath := packages.GetModulePath()
 	processServiceProvider := "&process.ServiceProvider{}"
 
 	packages.Setup(os.Args).
 		Install(
-			modify.GoFile(appConfigPath).
+			modify.GoFile(providersBootstrapPath).
 				Find(match.Imports()).Modify(modify.AddImport(modulePath)).
 				Find(match.Providers()).Modify(modify.Register(processServiceProvider)),
 			modify.WhenFacade(facades.Process, modify.File(processFacadePath).Overwrite(stubs.ProcessFacade())),
 		).
 		Uninstall(
 			modify.WhenNoFacades([]string{facades.Process},
-				modify.GoFile(appConfigPath).
+				modify.GoFile(providersBootstrapPath).
 					Find(match.Providers()).Modify(modify.Unregister(processServiceProvider)).
 					Find(match.Imports()).Modify(modify.RemoveImport(modulePath)),
 			),

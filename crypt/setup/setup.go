@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/goravel/framework/contracts/facades"
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
@@ -11,21 +12,24 @@ import (
 
 func main() {
 	stubs := Stubs{}
+	providersBootstrapPath := path.Bootstrap("providers.go")
+	cryptFacadePath := path.Facades("crypt.go")
+	cryptServiceProvider := "&crypt.ServiceProvider{}"
 
 	packages.Setup(os.Args).
 		Install(
-			modify.GoFile(path.Config("app.go")).
+			modify.GoFile(providersBootstrapPath).
 				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register("&crypt.ServiceProvider{}")),
-			modify.WhenFacade("Crypt", modify.File(path.Facades("crypt.go")).Overwrite(stubs.CryptFacade())),
+				Find(match.Providers()).Modify(modify.Register(cryptServiceProvider)),
+			modify.WhenFacade(facades.Crypt, modify.File(cryptFacadePath).Overwrite(stubs.CryptFacade())),
 		).
 		Uninstall(
-			modify.WhenNoFacades([]string{"Crypt"},
-				modify.GoFile(path.Config("app.go")).
-					Find(match.Providers()).Modify(modify.Unregister("&crypt.ServiceProvider{}")).
+			modify.WhenNoFacades([]string{facades.Crypt},
+				modify.GoFile(providersBootstrapPath).
+					Find(match.Providers()).Modify(modify.Unregister(cryptServiceProvider)).
 					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
 			),
-			modify.WhenFacade("Crypt", modify.File(path.Facades("crypt.go")).Remove()),
+			modify.WhenFacade(facades.Crypt, modify.File(cryptFacadePath).Remove()),
 		).
 		Execute()
 }

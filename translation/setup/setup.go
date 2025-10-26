@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/goravel/framework/contracts/facades"
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
@@ -10,20 +11,25 @@ import (
 )
 
 func main() {
+	stubs := Stubs{}
+	providersBootstrapPath := path.Bootstrap("providers.go")
+	langFacadePath := path.Facades("lang.go")
+	langServiceProvider := "&translation.ServiceProvider{}"
+
 	packages.Setup(os.Args).
 		Install(
-			modify.GoFile(path.Config("app.go")).
+			modify.GoFile(providersBootstrapPath).
 				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register("&translation.ServiceProvider{}")),
-			modify.WhenFacade("Lang", modify.File(path.Facades("lang.go")).Overwrite(Stubs{}.LangFacade())),
+				Find(match.Providers()).Modify(modify.Register(langServiceProvider)),
+			modify.WhenFacade(facades.Lang, modify.File(path.Facades(langFacadePath)).Overwrite(stubs.LangFacade())),
 		).
 		Uninstall(
-			modify.WhenNoFacades([]string{"Lang"},
-				modify.GoFile(path.Config("app.go")).
-					Find(match.Providers()).Modify(modify.Unregister("&translation.ServiceProvider{}")).
+			modify.WhenNoFacades([]string{facades.Lang},
+				modify.GoFile(providersBootstrapPath).
+					Find(match.Providers()).Modify(modify.Unregister(langServiceProvider)).
 					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
 			),
-			modify.WhenFacade("Lang", modify.File(path.Facades("lang.go")).Remove()),
+			modify.WhenFacade(facades.Lang, modify.File(path.Facades(langFacadePath)).Remove()),
 		).
 		Execute()
 }

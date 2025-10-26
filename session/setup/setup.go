@@ -12,7 +12,7 @@ import (
 
 func main() {
 	stubs := Stubs{}
-	appConfigPath := path.Config("app.go")
+	providersBootstrapPath := path.Bootstrap("providers.go")
 	sessionConfigPath := path.Config("session.go")
 	sessionFacadePath := path.Facades("session.go")
 	moduleName := packages.GetModuleNameFromArgs(os.Args)
@@ -27,7 +27,7 @@ SESSION_LIFETIME=120
 	packages.Setup(os.Args).
 		Install(
 			// Add the session service provider to the providers array in config/app.go
-			modify.GoFile(appConfigPath).
+			modify.GoFile(providersBootstrapPath).
 				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
 				Find(match.Providers()).Modify(modify.Register(sessionServiceProvider)),
 
@@ -44,7 +44,7 @@ SESSION_LIFETIME=120
 		Uninstall(
 			modify.WhenNoFacades([]string{facades.Session},
 				// Remove the session service provider from the providers array in config/app.go
-				modify.GoFile(appConfigPath).
+				modify.GoFile(providersBootstrapPath).
 					Find(match.Providers()).Modify(modify.Unregister(sessionServiceProvider)).
 					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
 

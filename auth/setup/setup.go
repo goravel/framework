@@ -12,17 +12,17 @@ import (
 
 func main() {
 	stubs := Stubs{}
-	appConfigPath := path.Config("app.go")
+	providersBootstrapPath := path.Bootstrap("providers.go")
 	authConfigPath := path.Config("auth.go")
 	authFacadePath := path.Facades("auth.go")
 	gateFacadePath := path.Facades("gate.go")
-	modulepath := packages.GetModulePath()
+	modulePath := packages.GetModulePath()
 	authServiceProvider := "&auth.ServiceProvider{}"
 
 	packages.Setup(os.Args).
 		Install(
-			modify.GoFile(appConfigPath).
-				Find(match.Imports()).Modify(modify.AddImport(modulepath)).
+			modify.GoFile(providersBootstrapPath).
+				Find(match.Imports()).Modify(modify.AddImport(modulePath)).
 				Find(match.Providers()).Modify(modify.Register(authServiceProvider)),
 			modify.File(authConfigPath).Overwrite(stubs.Config(packages.GetModuleNameFromArgs(os.Args))),
 			modify.WhenFacade(facades.Auth, modify.File(authFacadePath).Overwrite(stubs.AuthFacade())),
@@ -30,9 +30,9 @@ func main() {
 		).
 		Uninstall(
 			modify.WhenNoFacades([]string{facades.Auth, facades.Gate},
-				modify.GoFile(appConfigPath).
+				modify.GoFile(providersBootstrapPath).
 					Find(match.Providers()).Modify(modify.Unregister(authServiceProvider)).
-					Find(match.Imports()).Modify(modify.RemoveImport(modulepath)),
+					Find(match.Imports()).Modify(modify.RemoveImport(modulePath)),
 				modify.File(authConfigPath).Remove(),
 			),
 			modify.WhenFacade(facades.Auth, modify.File(authFacadePath).Remove()),

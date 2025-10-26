@@ -12,7 +12,7 @@ import (
 func main() {
 	stubs := Stubs{}
 	testingFacade := "Testing"
-	appConfigPath := path.Config("app.go")
+	providersBootstrapPath := path.Bootstrap("providers.go")
 	testingServiceProvider := "&testing.ServiceProvider{}"
 	testCasePath := path.Base("tests", "test_case.go")
 	exampleTestPath := path.Base("tests", "feature", "example_test.go")
@@ -20,7 +20,7 @@ func main() {
 
 	packages.Setup(os.Args).
 		Install(
-			modify.GoFile(appConfigPath).
+			modify.GoFile(providersBootstrapPath).
 				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
 				Find(match.Providers()).Modify(modify.Register(testingServiceProvider)),
 			modify.File(testCasePath).Overwrite(stubs.TestCase()),
@@ -31,7 +31,7 @@ func main() {
 			modify.File(exampleTestPath).Remove(),
 			modify.File(testCasePath).Remove(),
 			modify.WhenNoFacades([]string{testingFacade},
-				modify.GoFile(appConfigPath).
+				modify.GoFile(providersBootstrapPath).
 					Find(match.Providers()).Modify(modify.Unregister(testingServiceProvider)).
 					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
 			),

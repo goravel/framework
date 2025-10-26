@@ -13,8 +13,8 @@ import (
 
 func main() {
 	stubs := Stubs{}
-	appConfigPath := path.Config("app.go")
 	routeFacadePath := path.Facades("route.go")
+	providersBootstrapPath := path.Bootstrap("providers.go")
 	appServiceProviderPath := path.App("providers", "app_service_provider.go")
 	moduleName := packages.GetModuleNameFromArgs(os.Args)
 	globalMiddleware := "facades.Route().GlobalMiddleware(http.Kernel{}.Middleware()...)"
@@ -38,7 +38,7 @@ JWT_SECRET=
 	packages.Setup(os.Args).
 		Install(
 			// Add the route service provider to the providers array in config/app.go
-			modify.GoFile(appConfigPath).
+			modify.GoFile(providersBootstrapPath).
 				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
 				Find(match.Providers()).Modify(modify.Register(routeServiceProvider)),
 
@@ -76,7 +76,7 @@ JWT_SECRET=
 				modify.File(welcomeTmplPath).Remove(),
 
 				// Remove the route service provider from the providers array in config/app.go
-				modify.GoFile(appConfigPath).
+				modify.GoFile(providersBootstrapPath).
 					Find(match.Providers()).Modify(modify.Unregister(routeServiceProvider)).
 					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
 			),

@@ -14,8 +14,8 @@ import (
 
 func main() {
 	scheduleFacade := "Schedule"
+	providersBootstrapPath := path.Bootstrap("providers.go")
 	appServiceProviderPath := path.App("providers", "app_service_provider.go")
-	appConfigPath := path.Config("app.go")
 	kernelPath := path.App("console", "kernel.go")
 	scheduleFacadePath := path.Facades("schedule.go")
 	moduleName := packages.GetModuleNameFromArgs(os.Args)
@@ -33,7 +33,7 @@ func main() {
 			modify.WhenFacade(scheduleFacade, modify.File(scheduleFacadePath).Overwrite(Stubs{}.ScheduleFacade())),
 
 			// Add the Schedule service provider to the config/app.go file.
-			modify.GoFile(appConfigPath).
+			modify.GoFile(providersBootstrapPath).
 				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
 				Find(match.Providers()).Modify(modify.Register(scheduleServiceProvider)),
 
@@ -52,7 +52,7 @@ func main() {
 					Find(match.Imports()).Modify(modify.RemoveImport(consoleImport)),
 
 				// Remove the Schedule service provider from the config/app.go file.
-				modify.GoFile(appConfigPath).
+				modify.GoFile(providersBootstrapPath).
 					Find(match.Providers()).Modify(modify.Unregister(scheduleServiceProvider)).
 					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
 
