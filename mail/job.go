@@ -48,7 +48,6 @@ func (r *SendMailJob) Handle(args ...any) error {
 	}
 
 	fromName, ok := args[4].(string)
-
 	if !ok {
 		return fmt.Errorf("FROM NAME should be of type string")
 	}
