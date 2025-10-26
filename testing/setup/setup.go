@@ -11,21 +11,31 @@ import (
 
 func main() {
 	stubs := Stubs{}
+	testingFacade := "Testing"
+	appConfigPath := path.Config("app.go")
+	testingServiceProvider := "&testing.ServiceProvider{}"
+	testCasePath := path.Base("tests", "test_case.go")
+	exampleTestPath := path.Base("tests", "feature", "example_test.go")
+	testingFacadePath := path.Facades("testing.go")
 
 	packages.Setup(os.Args).
 		Install(
-			modify.GoFile(path.Config("app.go")).
+			modify.GoFile(appConfigPath).
 				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register("&testing.ServiceProvider{}")),
-			modify.WhenFacade("Testing", modify.File(path.Facades("testing.go")).Overwrite(stubs.TestingFacade())),
+				Find(match.Providers()).Modify(modify.Register(testingServiceProvider)),
+			modify.File(testCasePath).Overwrite(stubs.TestCase()),
+			modify.File(exampleTestPath).Overwrite(stubs.ExampleTest()),
+			modify.WhenFacade(testingFacade, modify.File(testingFacadePath).Overwrite(stubs.TestingFacade())),
 		).
 		Uninstall(
-			modify.WhenNoFacades([]string{"Testing"},
-				modify.GoFile(path.Config("app.go")).
-					Find(match.Providers()).Modify(modify.Unregister("&testing.ServiceProvider{}")).
+			modify.File(exampleTestPath).Remove(),
+			modify.File(testCasePath).Remove(),
+			modify.WhenNoFacades([]string{testingFacade},
+				modify.GoFile(appConfigPath).
+					Find(match.Providers()).Modify(modify.Unregister(testingServiceProvider)).
 					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
 			),
-			modify.WhenFacade("Testing", modify.File(path.Facades("testing.go")).Remove()),
+			modify.WhenFacade(testingFacade, modify.File(testingFacadePath).Remove()),
 		).
 		Execute()
 }

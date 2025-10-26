@@ -3,7 +3,7 @@ package http
 import (
 	"time"
 
-	"github.com/goravel/framework/contracts/binding"
+	contractsbinding "github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/contracts/config"
 	contractsconsole "github.com/goravel/framework/contracts/console"
@@ -14,7 +14,7 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/http/client"
 	"github.com/goravel/framework/http/console"
-	"github.com/goravel/framework/support/collect"
+	"github.com/goravel/framework/support/binding"
 )
 
 type ServiceProvider struct{}
@@ -27,30 +27,28 @@ var (
 	JsonFacade        foundation.Json
 )
 
-func (r *ServiceProvider) Relationship() binding.Relationship {
-	return binding.Relationship{
-		Bindings: []string{
-			binding.Http,
-			binding.RateLimiter,
-			binding.View,
-		},
-		Dependencies: collect.Unique(
-			binding.Bindings[binding.Http].Dependencies,
-			binding.Bindings[binding.RateLimiter].Dependencies,
-			binding.Bindings[binding.View].Dependencies,
-		),
-		ProvideFor: []string{},
+func (r *ServiceProvider) Relationship() contractsbinding.Relationship {
+	bindings := []string{
+		contractsbinding.Http,
+		contractsbinding.RateLimiter,
+		contractsbinding.View,
+	}
+
+	return contractsbinding.Relationship{
+		Bindings:     bindings,
+		Dependencies: binding.Dependencies(bindings...),
+		ProvideFor:   []string{},
 	}
 }
 
 func (r *ServiceProvider) Register(app foundation.Application) {
-	app.Singleton(binding.RateLimiter, func(app foundation.Application) (any, error) {
+	app.Singleton(contractsbinding.RateLimiter, func(app foundation.Application) (any, error) {
 		return NewRateLimiter(), nil
 	})
-	app.Singleton(binding.View, func(app foundation.Application) (any, error) {
+	app.Singleton(contractsbinding.View, func(app foundation.Application) (any, error) {
 		return NewView(), nil
 	})
-	app.Bind(binding.Http, func(app foundation.Application) (any, error) {
+	app.Bind(contractsbinding.Http, func(app foundation.Application) (any, error) {
 		ConfigFacade = app.MakeConfig()
 		if ConfigFacade == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleHttp)

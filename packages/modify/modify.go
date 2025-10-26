@@ -26,18 +26,65 @@ func GoFile(file string) modify.GoFile {
 	return &goFile{file: file}
 }
 
-func WhenFacade(facade string, applies ...modify.Apply) modify.Apply {
-	return &whenFacadeModifier{
-		facade:  facade,
+func When(fn func(options map[string]any) bool, applies ...modify.Apply) modify.Apply {
+	return &whenModifier{
+		fn:      fn,
 		applies: applies,
 	}
 }
 
+func WhenDriver(driver string, applies ...modify.Apply) modify.Apply {
+	return When(func(options map[string]any) bool {
+		return driver == options["driver"]
+	}, applies...)
+}
+
+func WhenFacade(facade string, applies ...modify.Apply) modify.Apply {
+	return When(func(options map[string]any) bool {
+		return facade == options["facade"]
+	}, applies...)
+}
+
+func WhenFileContains(file, content string, applies ...modify.Apply) modify.Apply {
+	return When(func(_ map[string]any) bool {
+		return supportfile.Contains(file, content)
+	}, applies...)
+}
+
+func WhenFileExists(file string, applies ...modify.Apply) modify.Apply {
+	return When(func(_ map[string]any) bool {
+		return supportfile.Exists(file)
+	}, applies...)
+}
+
+func WhenFileNotContains(file, content string, applies ...modify.Apply) modify.Apply {
+	return When(func(_ map[string]any) bool {
+		return !supportfile.Contains(file, content)
+	}, applies...)
+}
+
+func WhenFileNotExists(file string, applies ...modify.Apply) modify.Apply {
+	return When(func(_ map[string]any) bool {
+		return !supportfile.Exists(file)
+	}, applies...)
+}
+
 func WhenNoFacades(facades []string, applies ...modify.Apply) modify.Apply {
-	return &whenNoFacadesModifier{
-		facades: facades,
-		applies: applies,
-	}
+	return When(func(options map[string]any) bool {
+		var exist bool
+		for _, facade := range facades {
+			if facade == options["facade"] {
+				continue
+			}
+
+			if supportfile.Exists(facadeToFilepath(facade)) {
+				exist = true
+				break
+			}
+		}
+
+		return !exist
+	}, applies...)
 }
 
 func generateOptions(options []modify.Option) map[string]any {
@@ -52,20 +99,38 @@ type file struct {
 	path string
 }
 
+func (r *file) Append(content string) modify.Apply {
+	return &appendFile{
+		content: content,
+		path:    r.path,
+	}
+}
+
 func (r *file) Overwrite(content string) modify.Apply {
 	return &overwriteFile{
-		path:    r.path,
 		content: content,
+		path:    r.path,
 	}
 }
 
 func (r *file) Remove() modify.Apply {
-	return &removeFile{path: r.path}
+	return &removeFile{
+		path: r.path,
+	}
+}
+
+type appendFile struct {
+	content string
+	path    string
+}
+
+func (r *appendFile) Apply(options ...modify.Option) error {
+	return supportfile.PutContent(r.path, r.content, supportfile.WithAppend())
 }
 
 type overwriteFile struct {
-	path    string
 	content string
+	path    string
 }
 
 func (r *overwriteFile) Apply(options ...modify.Option) error {
@@ -124,16 +189,29 @@ func (r goFile) Find(matchers []match.GoNode) modify.GoNode {
 		goFile:   &r,
 	}
 	r.modifiers = append(r.modifiers, modifier)
+
+	return modifier
+}
+
+func (r goFile) FindOrCreate(matchers []match.GoNode, fn func(node dst.Node) error) modify.GoNode {
+	modifier := &goNode{
+		createFunc: fn,
+		matchers:   matchers,
+		goFile:     &r,
+	}
+	r.modifiers = append(r.modifiers, modifier)
+
 	return modifier
 }
 
 type goNode struct {
-	actions  []modify.Action
-	goFile   *goFile
-	matchers []match.GoNode
+	actions    []modify.Action
+	createFunc func(node dst.Node) error
+	goFile     *goFile
+	matchers   []match.GoNode
 }
 
-func (r goNode) Apply(node dst.Node) (err error) {
+func (r *goNode) Apply(node dst.Node) (err error) {
 	var (
 		current      int
 		matched      bool
@@ -177,6 +255,16 @@ func (r goNode) Apply(node dst.Node) (err error) {
 	})
 
 	if !matched {
+		if r.createFunc != nil {
+			if err := r.createFunc(node); err != nil {
+				return err
+			}
+
+			r.createFunc = nil // prevent infinite recursion
+
+			return r.Apply(node) // try to apply again after creation
+		}
+
 		count := len(r.matchers)
 		return errors.PackageMatchGoNodeFail.Args(count-current, count)
 	}
@@ -190,52 +278,19 @@ func (r *goNode) Modify(actions ...modify.Action) modify.GoFile {
 	return r.goFile
 }
 
-type whenFacadeModifier struct {
-	facade  string
+type whenModifier struct {
+	fn      func(options map[string]any) bool
 	applies []modify.Apply
 }
 
-func (r whenFacadeModifier) Apply(options ...modify.Option) error {
-	generatedOptions := generateOptions(options)
-
-	if r.facade != generatedOptions["facade"] {
+func (r whenModifier) Apply(options ...modify.Option) error {
+	if !r.fn(generateOptions(options)) {
 		return nil
 	}
 
 	for _, apply := range r.applies {
 		if err := apply.Apply(options...); err != nil {
 			return err
-		}
-	}
-
-	return nil
-}
-
-type whenNoFacadesModifier struct {
-	facades []string
-	applies []modify.Apply
-}
-
-func (r whenNoFacadesModifier) Apply(options ...modify.Option) error {
-	var exist bool
-	generatedOptions := generateOptions(options)
-
-	for _, facade := range r.facades {
-		if facade == generatedOptions["facade"] {
-			continue
-		}
-
-		if supportfile.Exists(facadeToFilepath(facade)) {
-			exist = true
-			break
-		}
-	}
-
-	if !exist {
-		for _, apply := range r.applies {
-			if err := apply.Apply(options...); err != nil {
-				return err
-			}
 		}
 	}
 

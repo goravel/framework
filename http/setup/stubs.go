@@ -89,6 +89,19 @@ func init() {
 	return strings.ReplaceAll(content, "DummyModule", module)
 }
 
+func (s Stubs) HttpFacade() string {
+	return `package facades
+
+import (
+	"github.com/goravel/framework/contracts/http/client"
+)
+
+func Http() client.Request {
+	return App().MakeHttp()
+}
+`
+}
+
 func (s Stubs) JwtConfig(module string) string {
 	content := `package config
 
@@ -136,15 +149,20 @@ func init() {
 	return strings.ReplaceAll(content, "DummyModule", module)
 }
 
-func (s Stubs) HttpFacade() string {
-	return `package facades
+func (s Stubs) Kernel() string {
+	return `package http
 
 import (
-	"github.com/goravel/framework/contracts/http/client"
+	"github.com/goravel/framework/contracts/http"
 )
 
-func Http() client.Request {
-	return App().MakeHttp()
+type Kernel struct {
+}
+
+// The application's global HTTP middleware stack.
+// These middleware are run during every request to your application.
+func (kernel Kernel) Middleware() []http.Middleware {
+	return []http.Middleware{}
 }
 `
 }

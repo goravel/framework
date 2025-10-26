@@ -10,6 +10,7 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
+	"github.com/goravel/framework/support"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
@@ -44,7 +45,7 @@ func (r *FilterMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *FilterMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "filter", ctx.Argument(0), filepath.Join("app", "filters"))
+	m, err := supportconsole.NewMake(ctx, "filter", ctx.Argument(0), support.Config.Paths.Filter)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil

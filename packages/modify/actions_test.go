@@ -90,7 +90,8 @@ func (kernel Kernel) Seeders() []seeder.Seeder {
 	return []seeder.Seeder{
 		&seeders.DatabaseSeeder{},
 	}
-}`
+}
+`
 }
 
 func (s *ModifyActionsTestSuite) TearDownTest() {}
@@ -104,11 +105,89 @@ func (s *ModifyActionsTestSuite) TestActions() {
 		assert   func(filename string)
 	}{
 		{
+			name: "add code to function when function's body is empty",
+			content: `package provider
+import (
+	"github.com/goravel/framework/contracts/foundation"
+)
+	
+type ServiceProvider struct {
+}
+
+func (provider *ServiceProvider) Register(app foundation.Application) {}
+
+func (provider *ServiceProvider) Boot(app foundation.Application) {}
+`,
+			matchers: match.RegisterFunc(),
+			actions: []modify.Action{
+				Add("facades.Schedule().Register(kernel.Schedule())"),
+			},
+			assert: func(content string) {
+				s.Contains(content, `func (provider *ServiceProvider) Register(app foundation.Application) {
+	facades.Schedule().Register(kernel.Schedule())
+}`)
+			},
+		},
+		{
+			name: "add code to function",
+			content: `package provider
+import (
+	"github.com/goravel/framework/contracts/foundation"
+)
+	
+type ServiceProvider struct {
+}
+
+func (provider *ServiceProvider) Register(app foundation.Application) {
+	facades.Artisan().Register(kernel.Commands())
+}
+
+func (provider *ServiceProvider) Boot(app foundation.Application) {}
+`,
+			matchers: match.RegisterFunc(),
+			actions: []modify.Action{
+				Add("facades.Schedule().Register(kernel.Schedule())"),
+			},
+			assert: func(content string) {
+				s.Contains(content, `func (provider *ServiceProvider) Register(app foundation.Application) {
+	facades.Artisan().Register(kernel.Commands())
+	facades.Schedule().Register(kernel.Schedule())
+}`)
+			},
+		},
+		{
+			name: "remove code from function",
+			content: `package provider
+import (
+	"github.com/goravel/framework/contracts/foundation"
+)
+	
+type ServiceProvider struct {
+}
+
+func (provider *ServiceProvider) Register(app foundation.Application) {
+	facades.Artisan().Register(kernel.Commands())
+	facades.Schedule().Register(kernel.Schedule())
+}
+
+func (provider *ServiceProvider) Boot(app foundation.Application) {}
+`,
+			matchers: match.RegisterFunc(),
+			actions: []modify.Action{
+				Remove("facades.Schedule().Register(kernel.Schedule())"),
+			},
+			assert: func(content string) {
+				s.Contains(content, `func (provider *ServiceProvider) Register(app foundation.Application) {
+	facades.Artisan().Register(kernel.Commands())
+}`)
+			},
+		},
+		{
 			name:     "add config (not exist)",
 			content:  s.config,
 			matchers: match.Config("app"),
 			actions: []modify.Action{
-				AddConfig("key", `"value"`),
+				AddConfig("key", `"value"`, "annotation 1", "annotation 2"),
 			},
 			assert: func(content string) {
 				s.Contains(content, `func init() {
@@ -120,6 +199,8 @@ func (s *ModifyActionsTestSuite) TestActions() {
 			&auth.AuthServiceProvider{},
 			&crypt.ServiceProvider{},
 		},
+		// annotation 1
+		// annotation 2
 		"key": "value",
 	})
 }`)
@@ -133,7 +214,7 @@ func (s *ModifyActionsTestSuite) TestActions() {
 				AddConfig("name", `"Goravel"`),
 			},
 			assert: func(content string) {
-				s.NotContains(content, `"name": "Goravel"`)
+				s.Contains(content, `"name":  "Goravel"`)
 			},
 		},
 		{

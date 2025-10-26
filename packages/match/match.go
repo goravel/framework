@@ -247,7 +247,9 @@ func dstNodeEq(x, y dst.Node) bool {
 	case *dst.ImportSpec:
 		y, ok := y.(*dst.ImportSpec)
 		return ok && dstImportSpecEq(x, y)
-
+	case *dst.ExprStmt:
+		y, ok := y.(*dst.ExprStmt)
+		return ok && dstExprStmtEq(x, y)
 	default:
 		panic("unhandled node type, please add it to dstNodeEq")
 	}
@@ -283,7 +285,9 @@ func dstExprEq(x, y dst.Expr) bool {
 	case *dst.UnaryExpr:
 		y, ok := y.(*dst.UnaryExpr)
 		return ok && dstUnaryExprEq(x, y)
-
+	case *dst.CallExpr:
+		y, ok := y.(*dst.CallExpr)
+		return ok && dstExprEq(x.Fun, y.Fun) && dstExprSliceEq(x.Args, y.Args) && x.Ellipsis == y.Ellipsis
 	default:
 		panic("unhandled node type, please add it to dstExprEq")
 	}
@@ -365,6 +369,14 @@ func dstSelectorExprEq(x, y *dst.SelectorExpr) bool {
 	}
 
 	return dstExprEq(x.X, y.X) && dstIdentEq(x.Sel, y.Sel)
+}
+
+func dstExprStmtEq(x, y *dst.ExprStmt) bool {
+	if x == nil || y == nil {
+		return x == y
+	}
+
+	return dstExprEq(x.X, y.X)
 }
 
 func dstUnaryExprEq(x, y *dst.UnaryExpr) bool {

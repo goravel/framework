@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"go/format"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"text/template"
@@ -14,6 +13,7 @@ import (
 	"github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
@@ -72,7 +72,7 @@ func (r *ModelMakeCommand) Extend() command.Extend {
 }
 
 func (r *ModelMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "model", ctx.Argument(0), filepath.Join("app", "models"))
+	m, err := supportconsole.NewMake(ctx, "model", ctx.Argument(0), support.Config.Paths.Model)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil

@@ -1,11 +1,11 @@
 package console
 
 import (
-	"path/filepath"
 	"strings"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 )
@@ -39,7 +39,7 @@ func (r *EventMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *EventMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "event", ctx.Argument(0), filepath.Join("app", "events"))
+	m, err := supportconsole.NewMake(ctx, "event", ctx.Argument(0), support.Config.Paths.Event)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil

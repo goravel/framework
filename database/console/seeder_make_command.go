@@ -2,7 +2,6 @@ package console
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"github.com/goravel/framework/contracts/console"
@@ -11,6 +10,7 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
+	"github.com/goravel/framework/support"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 )
@@ -51,7 +51,7 @@ func (r *SeederMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *SeederMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "seeder", ctx.Argument(0), filepath.Join("database", "seeders"))
+	m, err := supportconsole.NewMake(ctx, "seeder", ctx.Argument(0), support.Config.Paths.Seeder)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil

@@ -721,14 +721,40 @@ func (r *Query) SharedLock() db.Query {
 	return q
 }
 
-func (r *Query) Sum(column string) (int64, error) {
-	var sum int64
-	err := r.Select(fmt.Sprintf("SUM(%s)", column)).First(&sum)
-	if err != nil {
-		return 0, err
+func (r *Query) Sum(column string, dest any) error {
+	destValue := reflect.ValueOf(dest)
+	if destValue.Kind() != reflect.Ptr {
+		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
 	}
 
-	return sum, nil
+	return r.Select(fmt.Sprintf("SUM(%s)", column)).First(dest)
+}
+
+func (r *Query) Avg(column string, dest any) error {
+	destValue := reflect.ValueOf(dest)
+	if destValue.Kind() != reflect.Ptr {
+		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
+	}
+
+	return r.Select(fmt.Sprintf("AVG(%s)", column)).First(dest)
+}
+
+func (r *Query) Min(column string, dest any) error {
+	destValue := reflect.ValueOf(dest)
+	if destValue.Kind() != reflect.Ptr {
+		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
+	}
+
+	return r.Select(fmt.Sprintf("MIN(%s)", column)).First(dest)
+}
+
+func (r *Query) Max(column string, dest any) error {
+	destValue := reflect.ValueOf(dest)
+	if destValue.Kind() != reflect.Ptr {
+		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
+	}
+
+	return r.Select(fmt.Sprintf("MAX(%s)", column)).First(dest)
 }
 
 func (r *Query) ToSql() db.ToSql {

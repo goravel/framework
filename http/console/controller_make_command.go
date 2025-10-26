@@ -1,11 +1,11 @@
 package console
 
 import (
-	"path/filepath"
 	"strings"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 )
@@ -44,7 +44,7 @@ func (r *ControllerMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *ControllerMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "controller", ctx.Argument(0), filepath.Join("app", "http", "controllers"))
+	m, err := supportconsole.NewMake(ctx, "controller", ctx.Argument(0), support.Config.Paths.Controller)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil

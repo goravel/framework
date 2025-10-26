@@ -5,6 +5,7 @@ package console
 import (
 	console "github.com/goravel/framework/contracts/console"
 	mock "github.com/stretchr/testify/mock"
+	cli "github.com/urfave/cli/v3"
 
 	time "time"
 )
@@ -1502,6 +1503,72 @@ func (_c *Context_Ask_Call) RunAndReturn(run func(string, ...console.AskOption) 
 	return _c
 }
 
+// Black provides a mock function with given fields: message
+func (_m *Context) Black(message string) {
+	_m.Called(message)
+}
+
+// Context_Black_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Black'
+type Context_Black_Call struct {
+	*mock.Call
+}
+
+// Black is a helper method to define mock.On call
+//   - message string
+func (_e *Context_Expecter) Black(message interface{}) *Context_Black_Call {
+	return &Context_Black_Call{Call: _e.mock.On("Black", message)}
+}
+
+func (_c *Context_Black_Call) Run(run func(message string)) *Context_Black_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Context_Black_Call) Return() *Context_Black_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Context_Black_Call) RunAndReturn(run func(string)) *Context_Black_Call {
+	_c.Run(run)
+	return _c
+}
+
+// Blackln provides a mock function with given fields: message
+func (_m *Context) Blackln(message string) {
+	_m.Called(message)
+}
+
+// Context_Blackln_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Blackln'
+type Context_Blackln_Call struct {
+	*mock.Call
+}
+
+// Blackln is a helper method to define mock.On call
+//   - message string
+func (_e *Context_Expecter) Blackln(message interface{}) *Context_Blackln_Call {
+	return &Context_Blackln_Call{Call: _e.mock.On("Blackln", message)}
+}
+
+func (_c *Context_Blackln_Call) Run(run func(message string)) *Context_Blackln_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Context_Blackln_Call) Return() *Context_Blackln_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Context_Blackln_Call) RunAndReturn(run func(string)) *Context_Blackln_Call {
+	_c.Run(run)
+	return _c
+}
+
 // Choice provides a mock function with given fields: question, options, option
 func (_m *Context) Choice(question string, options []console.Choice, option ...console.ChoiceOption) (string, error) {
 	_va := make([]interface{}, len(option))
@@ -1716,6 +1783,52 @@ func (_c *Context_CreateProgressBar_Call) RunAndReturn(run func(int) console.Pro
 	return _c
 }
 
+// Divider provides a mock function with given fields: filler
+func (_m *Context) Divider(filler ...string) {
+	_va := make([]interface{}, len(filler))
+	for _i := range filler {
+		_va[_i] = filler[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	_m.Called(_ca...)
+}
+
+// Context_Divider_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Divider'
+type Context_Divider_Call struct {
+	*mock.Call
+}
+
+// Divider is a helper method to define mock.On call
+//   - filler ...string
+func (_e *Context_Expecter) Divider(filler ...interface{}) *Context_Divider_Call {
+	return &Context_Divider_Call{Call: _e.mock.On("Divider",
+		append([]interface{}{}, filler...)...)}
+}
+
+func (_c *Context_Divider_Call) Run(run func(filler ...string)) *Context_Divider_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Context_Divider_Call) Return() *Context_Divider_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Context_Divider_Call) RunAndReturn(run func(...string)) *Context_Divider_Call {
+	_c.Run(run)
+	return _c
+}
+
 // Error provides a mock function with given fields: message
 func (_m *Context) Error(message string) {
 	_m.Called(message)
@@ -1745,6 +1858,72 @@ func (_c *Context_Error_Call) Return() *Context_Error_Call {
 }
 
 func (_c *Context_Error_Call) RunAndReturn(run func(string)) *Context_Error_Call {
+	_c.Run(run)
+	return _c
+}
+
+// Green provides a mock function with given fields: message
+func (_m *Context) Green(message string) {
+	_m.Called(message)
+}
+
+// Context_Green_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Green'
+type Context_Green_Call struct {
+	*mock.Call
+}
+
+// Green is a helper method to define mock.On call
+//   - message string
+func (_e *Context_Expecter) Green(message interface{}) *Context_Green_Call {
+	return &Context_Green_Call{Call: _e.mock.On("Green", message)}
+}
+
+func (_c *Context_Green_Call) Run(run func(message string)) *Context_Green_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Context_Green_Call) Return() *Context_Green_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Context_Green_Call) RunAndReturn(run func(string)) *Context_Green_Call {
+	_c.Run(run)
+	return _c
+}
+
+// Greenln provides a mock function with given fields: message
+func (_m *Context) Greenln(message string) {
+	_m.Called(message)
+}
+
+// Context_Greenln_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Greenln'
+type Context_Greenln_Call struct {
+	*mock.Call
+}
+
+// Greenln is a helper method to define mock.On call
+//   - message string
+func (_e *Context_Expecter) Greenln(message interface{}) *Context_Greenln_Call {
+	return &Context_Greenln_Call{Call: _e.mock.On("Greenln", message)}
+}
+
+func (_c *Context_Greenln_Call) Run(run func(message string)) *Context_Greenln_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Context_Greenln_Call) Return() *Context_Greenln_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Context_Greenln_Call) RunAndReturn(run func(string)) *Context_Greenln_Call {
 	_c.Run(run)
 	return _c
 }
@@ -1779,6 +1958,53 @@ func (_c *Context_Info_Call) Return() *Context_Info_Call {
 
 func (_c *Context_Info_Call) RunAndReturn(run func(string)) *Context_Info_Call {
 	_c.Run(run)
+	return _c
+}
+
+// Instance provides a mock function with no fields
+func (_m *Context) Instance() *cli.Command {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Instance")
+	}
+
+	var r0 *cli.Command
+	if rf, ok := ret.Get(0).(func() *cli.Command); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*cli.Command)
+		}
+	}
+
+	return r0
+}
+
+// Context_Instance_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Instance'
+type Context_Instance_Call struct {
+	*mock.Call
+}
+
+// Instance is a helper method to define mock.On call
+func (_e *Context_Expecter) Instance() *Context_Instance_Call {
+	return &Context_Instance_Call{Call: _e.mock.On("Instance")}
+}
+
+func (_c *Context_Instance_Call) Run(run func()) *Context_Instance_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Context_Instance_Call) Return(_a0 *cli.Command) *Context_Instance_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Context_Instance_Call) RunAndReturn(run func() *cli.Command) *Context_Instance_Call {
+	_c.Call.Return(run)
 	return _c
 }
 
@@ -2357,6 +2583,72 @@ func (_c *Context_OptionSlice_Call) RunAndReturn(run func(string) []string) *Con
 	return _c
 }
 
+// Red provides a mock function with given fields: message
+func (_m *Context) Red(message string) {
+	_m.Called(message)
+}
+
+// Context_Red_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Red'
+type Context_Red_Call struct {
+	*mock.Call
+}
+
+// Red is a helper method to define mock.On call
+//   - message string
+func (_e *Context_Expecter) Red(message interface{}) *Context_Red_Call {
+	return &Context_Red_Call{Call: _e.mock.On("Red", message)}
+}
+
+func (_c *Context_Red_Call) Run(run func(message string)) *Context_Red_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Context_Red_Call) Return() *Context_Red_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Context_Red_Call) RunAndReturn(run func(string)) *Context_Red_Call {
+	_c.Run(run)
+	return _c
+}
+
+// Redln provides a mock function with given fields: message
+func (_m *Context) Redln(message string) {
+	_m.Called(message)
+}
+
+// Context_Redln_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Redln'
+type Context_Redln_Call struct {
+	*mock.Call
+}
+
+// Redln is a helper method to define mock.On call
+//   - message string
+func (_e *Context_Expecter) Redln(message interface{}) *Context_Redln_Call {
+	return &Context_Redln_Call{Call: _e.mock.On("Redln", message)}
+}
+
+func (_c *Context_Redln_Call) Run(run func(message string)) *Context_Redln_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Context_Redln_Call) Return() *Context_Redln_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Context_Redln_Call) RunAndReturn(run func(string)) *Context_Redln_Call {
+	_c.Run(run)
+	return _c
+}
+
 // Secret provides a mock function with given fields: question, option
 func (_m *Context) Secret(question string, option ...console.SecretOption) (string, error) {
 	_va := make([]interface{}, len(option))
@@ -2646,6 +2938,72 @@ func (_c *Context_WithProgressBar_Call) Return(_a0 []interface{}, _a1 error) *Co
 
 func (_c *Context_WithProgressBar_Call) RunAndReturn(run func([]interface{}, func(interface{}) error) ([]interface{}, error)) *Context_WithProgressBar_Call {
 	_c.Call.Return(run)
+	return _c
+}
+
+// Yellow provides a mock function with given fields: message
+func (_m *Context) Yellow(message string) {
+	_m.Called(message)
+}
+
+// Context_Yellow_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Yellow'
+type Context_Yellow_Call struct {
+	*mock.Call
+}
+
+// Yellow is a helper method to define mock.On call
+//   - message string
+func (_e *Context_Expecter) Yellow(message interface{}) *Context_Yellow_Call {
+	return &Context_Yellow_Call{Call: _e.mock.On("Yellow", message)}
+}
+
+func (_c *Context_Yellow_Call) Run(run func(message string)) *Context_Yellow_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Context_Yellow_Call) Return() *Context_Yellow_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Context_Yellow_Call) RunAndReturn(run func(string)) *Context_Yellow_Call {
+	_c.Run(run)
+	return _c
+}
+
+// Yellowln provides a mock function with given fields: message
+func (_m *Context) Yellowln(message string) {
+	_m.Called(message)
+}
+
+// Context_Yellowln_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Yellowln'
+type Context_Yellowln_Call struct {
+	*mock.Call
+}
+
+// Yellowln is a helper method to define mock.On call
+//   - message string
+func (_e *Context_Expecter) Yellowln(message interface{}) *Context_Yellowln_Call {
+	return &Context_Yellowln_Call{Call: _e.mock.On("Yellowln", message)}
+}
+
+func (_c *Context_Yellowln_Call) Run(run func(message string)) *Context_Yellowln_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Context_Yellowln_Call) Return() *Context_Yellowln_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Context_Yellowln_Call) RunAndReturn(run func(string)) *Context_Yellowln_Call {
+	_c.Run(run)
 	return _c
 }
 

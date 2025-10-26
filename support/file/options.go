@@ -11,9 +11,9 @@ type option struct {
 }
 
 // WithAppend sets the append mode for FilePutContents
-func WithAppend(append bool) Option {
+func WithAppend() Option {
 	return func(opts *option) {
-		opts.append = append
+		opts.append = true
 	}
 }
 

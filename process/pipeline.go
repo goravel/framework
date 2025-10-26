@@ -15,26 +15,30 @@ import (
 
 var _ contractsprocess.Pipeline = (*Pipeline)(nil)
 var _ contractsprocess.Pipe = (*Pipe)(nil)
+var _ contractsprocess.PipeCommand = (*PipeCommand)(nil)
 
 func NewPipe() *Pipeline {
 	return &Pipeline{
-		ctx: context.Background(),
+		ctx:       context.Background(),
+		buffering: true,
 	}
 }
 
 type Pipeline struct {
-	ctx               context.Context
-	input             io.Reader
-	env               []string
-	timeout           time.Duration
-	onOutput          contractsprocess.OnPipeOutputFunc
-	quietly           bool
-	path              string
-	bufferingDisabled bool
+	ctx       context.Context
+	input     io.Reader
+	env       []string
+	timeout   time.Duration
+	onOutput  contractsprocess.OnPipeOutputFunc
+	quietly   bool
+	path      string
+	buffering bool
+
+	pipeConfigurer func(pipe contractsprocess.Pipe)
 }
 
 func (r *Pipeline) DisableBuffering() contractsprocess.Pipeline {
-	r.bufferingDisabled = true
+	r.buffering = false
 	return r
 }
 
@@ -55,6 +59,11 @@ func (r *Pipeline) Path(path string) contractsprocess.Pipeline {
 	return r
 }
 
+func (r *Pipeline) Pipe(configurer func(pipe contractsprocess.Pipe)) contractsprocess.Pipeline {
+	r.pipeConfigurer = configurer
+	return r
+}
+
 func (r *Pipeline) Timeout(timeout time.Duration) contractsprocess.Pipeline {
 	r.timeout = timeout
 	return r
@@ -70,12 +79,12 @@ func (r *Pipeline) OnOutput(onOutput contractsprocess.OnPipeOutputFunc) contract
 	return r
 }
 
-func (r *Pipeline) Run(configure func(contractsprocess.Pipe)) (contractsprocess.Result, error) {
-	return r.run(configure)
+func (r *Pipeline) Run() (contractsprocess.Result, error) {
+	return r.run(r.pipeConfigurer)
 }
 
-func (r *Pipeline) Start(builder func(contractsprocess.Pipe)) (contractsprocess.RunningPipe, error) {
-	return r.start(builder)
+func (r *Pipeline) Start() (contractsprocess.RunningPipe, error) {
+	return r.start(r.pipeConfigurer)
 }
 
 func (r *Pipeline) WithContext(ctx context.Context) contractsprocess.Pipeline {
@@ -87,20 +96,24 @@ func (r *Pipeline) WithContext(ctx context.Context) contractsprocess.Pipeline {
 	return r
 }
 
-func (r *Pipeline) run(configure func(contractsprocess.Pipe)) (contractsprocess.Result, error) {
-	run, err := r.start(configure)
+func (r *Pipeline) run(configurer func(contractsprocess.Pipe)) (contractsprocess.Result, error) {
+	run, err := r.start(configurer)
 	if err != nil {
 		return nil, err
 	}
 	return run.Wait(), nil
 }
 
-func (r *Pipeline) start(configure func(contractsprocess.Pipe)) (contractsprocess.RunningPipe, error) {
-	pipe := &Pipe{}
-	configure(pipe)
+func (r *Pipeline) start(configurer func(contractsprocess.Pipe)) (contractsprocess.RunningPipe, error) {
+	if configurer == nil {
+		return nil, errors.ProcessPipeNilConfigurer
+	}
 
-	steps := pipe.steps
-	if len(steps) == 0 {
+	pipe := &Pipe{}
+	configurer(pipe)
+
+	pipeCommands := pipe.commands
+	if len(pipeCommands) == 0 {
 		return nil, errors.ProcessPipelineEmpty
 	}
 
@@ -114,8 +127,8 @@ func (r *Pipeline) start(configure func(contractsprocess.Pipe)) (contractsproces
 		ctx, cancel = context.WithTimeout(ctx, r.timeout)
 	}
 
-	commands := make([]*exec.Cmd, len(steps))
-	for i, step := range steps {
+	commands := make([]*exec.Cmd, len(pipeCommands))
+	for i, step := range pipeCommands {
 		cmd := exec.CommandContext(ctx, step.name, step.args...)
 		if r.path != "" {
 			cmd.Dir = r.path
@@ -149,7 +162,7 @@ func (r *Pipeline) start(configure func(contractsprocess.Pipe)) (contractsproces
 		var stdoutWriters []io.Writer
 		var stderrWriters []io.Writer
 
-		if !r.bufferingDisabled {
+		if r.buffering {
 			stdoutBuffer = &bytes.Buffer{}
 			stderrBuffer = &bytes.Buffer{}
 			stdoutWriters = append(stdoutWriters, stdoutBuffer)
@@ -164,8 +177,8 @@ func (r *Pipeline) start(configure func(contractsprocess.Pipe)) (contractsproces
 		}
 
 		if r.onOutput != nil {
-			stdoutWriters = append(stdoutWriters, NewOutputWriterForPipe(steps[i].key, contractsprocess.OutputTypeStdout, r.onOutput))
-			stderrWriters = append(stderrWriters, NewOutputWriterForPipe(steps[i].key, contractsprocess.OutputTypeStderr, r.onOutput))
+			stdoutWriters = append(stdoutWriters, NewOutputWriterForPipe(contractsprocess.OutputTypeStdout, pipeCommands[i].key, r.onOutput))
+			stderrWriters = append(stderrWriters, NewOutputWriterForPipe(contractsprocess.OutputTypeStderr, pipeCommands[i].key, r.onOutput))
 		}
 
 		// If this is not the last command, create a pipe to the next command and include the pipe writer
@@ -213,15 +226,34 @@ func (r *Pipeline) start(configure func(contractsprocess.Pipe)) (contractsproces
 		started = i + 1
 	}
 
-	return NewRunningPipe(commands, steps, cancel, interReaders, interWriters, stdoutBuffers, stderrBuffers), nil
+	return NewRunningPipe(commands, pipeCommands, cancel, interReaders, interWriters, stdoutBuffers, stderrBuffers), nil
 }
 
 type Pipe struct {
-	steps []*Step
+	commands []*PipeCommand
 }
 
-func (b *Pipe) Command(name string, args ...string) contractsprocess.Step {
-	step := NewStep(strconv.Itoa(len(b.steps)), name, args)
-	b.steps = append(b.steps, step)
-	return step
+func (r *Pipe) Command(name string, args ...string) contractsprocess.PipeCommand {
+	command := NewPipeCommand(strconv.Itoa(len(r.commands)), name, args)
+	r.commands = append(r.commands, command)
+	return command
+}
+
+type PipeCommand struct {
+	key  string
+	name string
+	args []string
+}
+
+func NewPipeCommand(key, name string, args []string) *PipeCommand {
+	return &PipeCommand{
+		key:  key,
+		name: name,
+		args: args,
+	}
+}
+
+func (r *PipeCommand) As(key string) contractsprocess.PipeCommand {
+	r.key = key
+	return r
 }

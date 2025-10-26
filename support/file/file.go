@@ -17,7 +17,12 @@ func ClientOriginalExtension(file string) string {
 	return strings.ReplaceAll(filepath.Ext(file), ".", "")
 }
 
+// DEPRECATED: Use Contains instead
 func Contain(file string, search string) bool {
+	return Contains(file, search)
+}
+
+func Contains(file string, search string) bool {
 	if Exists(file) {
 		data, err := GetContent(file)
 		if err != nil {

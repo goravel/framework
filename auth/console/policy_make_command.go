@@ -1,11 +1,11 @@
 package console
 
 import (
-	"path/filepath"
 	"strings"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 )
@@ -43,7 +43,7 @@ func (r *PolicyMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *PolicyMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "policy", ctx.Argument(0), filepath.Join("app", "policies"))
+	m, err := supportconsole.NewMake(ctx, "policy", ctx.Argument(0), support.Config.Paths.Policy)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
