@@ -1055,42 +1055,40 @@ func (r *Query) WhereNotNull(column string) contractsorm.Query {
 }
 
 func (r *Query) WhereAny(columns []string, op string, val any) contractsorm.Query {
-	var values []any
-
-	for _ = range columns {
-		values = append(values, val)
+	for i, column := range columns {
+		r = r.addWhere(contractsdriver.Where{
+			Query: fmt.Sprintf("%s %s ?", column, op),
+			Args:  []any{val},
+			Or:    i > 0,
+		}).(*Query)
 	}
-
-	return r.addWhere(contractsdriver.Where{
-		Query: fmt.Sprintf("%s", buildMultiColumnCondition(columns, op, val, "OR")),
-		Args:  values,
-	})
+	return r
 }
 
 func (r *Query) WhereAll(columns []string, op string, val any) contractsorm.Query {
-	var values []any
-
-	for _ = range columns {
-		values = append(values, val)
+	for _, column := range columns {
+		r = r.addWhere(contractsdriver.Where{
+			Query: fmt.Sprintf("%s %s ?", column, op),
+			Args:  []any{val},
+		}).(*Query)
 	}
-
-	return r.addWhere(contractsdriver.Where{
-		Query: fmt.Sprintf("%s", buildMultiColumnCondition(columns, op, val, "AND")),
-		Args:  values,
-	})
+	return r
 }
 
 func (r *Query) WhereNone(columns []string, op string, val any) contractsorm.Query {
-	var values []any
-
-	for _ = range columns {
-		values = append(values, val)
+	for _, column := range columns {
+		var query string
+		if op == "=" {
+			query = fmt.Sprintf("%s <> ?", column)
+		} else {
+			query = fmt.Sprintf("NOT (%s %s ?)", column, op)
+		}
+		r = r.addWhere(contractsdriver.Where{
+			Query: query,
+			Args:  []any{val},
+		}).(*Query)
 	}
-
-	return r.addWhere(contractsdriver.Where{
-		Query: fmt.Sprintf("%s", buildMultiColumnCondition(columns, buildNegationOp(op), val, "AND")),
-		Args:  values,
-	})
+	return r
 }
 
 func (r *Query) With(query string, args ...any) contractsorm.Query {
@@ -2051,41 +2049,4 @@ func isSlice(dest any) bool {
 
 func hasID(dest any) bool {
 	return database.GetID(dest) != nil
-}
-
-func buildMultiColumnCondition(columns []string, op string, val any, joinOp string) string {
-	var conditions []string
-	for _, column := range columns {
-		conditions = append(conditions, fmt.Sprintf("%s %s ?", column, op))
-	}
-	return strings.Join(conditions, fmt.Sprintf(" %s ", joinOp))
-}
-
-func buildNegationOp(op string) string {
-	switch op {
-	case "=":
-		return "<>"
-	case "<>":
-		return "="
-	case ">":
-		return "<="
-	case "<":
-		return ">="
-	case ">=":
-		return "<"
-	case "<=":
-		return ">"
-	case "LIKE":
-		return "NOT LIKE"
-	case "NOT LIKE":
-		return "LIKE"
-	case "IN":
-		return "NOT IN"
-	case "NOT IN":
-		return "IN"
-	case "IS":
-		return "IS NOT"
-	default:
-		return op
-	}
 }
