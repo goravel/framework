@@ -1054,6 +1054,45 @@ func (r *Query) WhereNotNull(column string) contractsorm.Query {
 	return r.Where(fmt.Sprintf("%s IS NOT NULL", column))
 }
 
+func (r *Query) WhereAny(columns []string, op string, val any) contractsorm.Query {
+	var values []any
+
+	for _ = range columns {
+		values = append(values, val)
+	}
+
+	return r.addWhere(contractsdriver.Where{
+		Query: fmt.Sprintf("%s", buildMultiColumnCondition(columns, op, val, "OR")),
+		Args:  values,
+	})
+}
+
+func (r *Query) WhereAll(columns []string, op string, val any) contractsorm.Query {
+	var values []any
+
+	for _ = range columns {
+		values = append(values, val)
+	}
+
+	return r.addWhere(contractsdriver.Where{
+		Query: fmt.Sprintf("%s", buildMultiColumnCondition(columns, op, val, "AND")),
+		Args:  values,
+	})
+}
+
+func (r *Query) WhereNone(columns []string, op string, val any) contractsorm.Query {
+	var values []any
+
+	for _ = range columns {
+		values = append(values, val)
+	}
+
+	return r.addWhere(contractsdriver.Where{
+		Query: fmt.Sprintf("%s", buildMultiColumnCondition(columns, buildNegationOp(op), val, "AND")),
+		Args:  values,
+	})
+}
+
 func (r *Query) With(query string, args ...any) contractsorm.Query {
 	conditions := r.conditions
 	conditions.with = deep.Append(r.conditions.with, With{
@@ -2012,4 +2051,41 @@ func isSlice(dest any) bool {
 
 func hasID(dest any) bool {
 	return database.GetID(dest) != nil
+}
+
+func buildMultiColumnCondition(columns []string, op string, val any, joinOp string) string {
+	var conditions []string
+	for _, column := range columns {
+		conditions = append(conditions, fmt.Sprintf("%s %s ?", column, op))
+	}
+	return strings.Join(conditions, fmt.Sprintf(" %s ", joinOp))
+}
+
+func buildNegationOp(op string) string {
+	switch op {
+	case "=":
+		return "<>"
+	case "<>":
+		return "="
+	case ">":
+		return "<="
+	case "<":
+		return ">="
+	case ">=":
+		return "<"
+	case "<=":
+		return ">"
+	case "LIKE":
+		return "NOT LIKE"
+	case "NOT LIKE":
+		return "LIKE"
+	case "IN":
+		return "NOT IN"
+	case "NOT IN":
+		return "IN"
+	case "IS":
+		return "IS NOT"
+	default:
+		return op
+	}
 }
