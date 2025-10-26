@@ -145,6 +145,7 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 }
 
 func (s *ApplicationBuilderTestSuite) TestRun() {
+	s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
 	s.mockApp.EXPECT().Boot().Return().Once()
 	s.mockApp.EXPECT().Run().Return().Once()
 
