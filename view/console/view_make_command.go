@@ -106,7 +106,7 @@ func (r *ViewMakeCommand) Handle(ctx console.Context) error {
 
 func (r *ViewMakeCommand) getViewPath() string {
 	if r.config != nil {
-		customViewPath := r.config.GetString("http.view.view_path", DefaultViewPath)
+		customViewPath := r.config.GetString("http.view.path", DefaultViewPath)
 		if customViewPath != "" {
 			return customViewPath
 		}

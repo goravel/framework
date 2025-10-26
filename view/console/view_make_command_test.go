@@ -64,7 +64,7 @@ func TestViewMakeCommand_CreateSuccess(t *testing.T) {
 
 	assert.Nil(t, viewMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists(expectedPath))
-	file.Remove("resources")
+	assert.Nil(t, file.Remove("resources"))
 }
 
 func TestViewMakeCommandGetStub(t *testing.T) {
