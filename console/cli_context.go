@@ -141,6 +141,10 @@ func (r *CliContext) Info(message string) {
 	color.Infoln(message)
 }
 
+func (r *CliContext) Instance() *cli.Command {
+	return r.instance
+}
+
 func (r *CliContext) Line(message string) {
 	color.Default().Println(message)
 }

@@ -25,7 +25,7 @@ func init() {
 	cli.CommandHelpTemplate = commandHelpTemplate
 	cli.SubcommandHelpTemplate = commandHelpTemplate
 	cli.VersionPrinter = printVersion
-	huh.ErrUserAborted = cli.Exit(color.Red().Sprint("Cancelled."), 0)
+	huh.ErrUserAborted = cli.Exit(color.Red().Sprint("Cancelled"), 0)
 }
 
 const maxLineLength = 10000
@@ -46,9 +46,7 @@ var (
    {{ (colorize .Usage) }}
 
 {{ yellow "Usage:" }}
-   {{template "usageTemplate" .}}{{with $root := .Root}}
-
-{{ yellow "Global options:" }}{{template "flagTemplate"  (sortVisibleFlags $root)}}{{end}}{{if .VisibleFlags}}
+   {{template "usageTemplate" .}}{{with $root := .Root}}{{end}}{{if .VisibleFlags}}
 
 {{ yellow "Options:" }}{{template "flagTemplate" (sortVisibleFlags .)}}{{end}}
 `
@@ -209,18 +207,6 @@ func handleNoANSI() {
 }
 
 func helpName(fullName string) string {
-	var namePath []string
-	for i, name := range strings.Split(fullName, " ") {
-		namePath = append(namePath, name)
-		if i == 0 {
-			namePath = append(namePath, "[global options]")
-		}
-	}
-
-	if len(namePath) > 1 {
-		fullName = strings.Join(namePath, " ")
-	}
-
 	return fullName
 }
 
