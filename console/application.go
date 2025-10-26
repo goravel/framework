@@ -2,6 +2,7 @@ package console
 
 import (
 	"context"
+	"io"
 	"os"
 	"slices"
 	"strings"
@@ -26,25 +27,25 @@ var (
 )
 
 type Application struct {
-	instance   *cli.Command
+	commands   []cli.Command
+	name       string
+	usage      string
+	usageText  string
 	useArtisan bool
+	version    string
+	writer     io.Writer
 }
 
 // NewApplication Create a new Artisan application.
 // Will add artisan flag to the command if useArtisan is true.
 func NewApplication(name, usage, usageText, version string, useArtisan bool) console.Artisan {
-	instance := &cli.Command{}
-	instance.Name = name
-	instance.Usage = usage
-	instance.UsageText = usageText
-	instance.Version = version
-	instance.CommandNotFound = commandNotFound
-	instance.OnUsageError = onUsageError
-	instance.Flags = []cli.Flag{noANSIFlag}
-
 	return &Application{
-		instance:   instance,
+		name:       name,
+		usage:      usage,
+		usageText:  usageText,
 		useArtisan: useArtisan,
+		version:    version,
+		writer:     os.Stdout,
 	}
 }
 
@@ -59,8 +60,13 @@ func (r *Application) Register(commands []console.Command) {
 		cliCommand := cli.Command{
 			Name:  item.Signature(),
 			Usage: item.Description(),
-			Action: func(_ context.Context, cmd *cli.Command) error {
-				return item.Handle(NewCliContext(cmd))
+			Action: func(ctx context.Context, cmd *cli.Command) error {
+				cliCtx := NewCliContext(cmd)
+				if cliCtx.OptionBool("help") {
+					return cli.ShowCommandHelp(ctx, cmd, cmd.Name)
+				}
+
+				return item.Handle(cliCtx)
 			},
 			Category:     item.Extend().Category,
 			ArgsUsage:    item.Extend().ArgsUsage,
@@ -68,7 +74,8 @@ func (r *Application) Register(commands []console.Command) {
 			Arguments:    arguments,
 			OnUsageError: onUsageError,
 		}
-		r.instance.Commands = append(r.instance.Commands, &cliCommand)
+
+		r.commands = append(r.commands, cliCommand)
 	}
 }
 
@@ -123,13 +130,13 @@ func (r *Application) Run(args []string, exitIfArtisan bool) error {
 	}
 
 	if artisanIndex != -1 {
-		// Add --help if no command argument is provided.
+		command := r.command()
 		if artisanIndex+1 == len(args) {
-			args = append(args, "--help")
+			args = append(args, "help")
 		}
 
 		cliArgs := append([]string{args[0]}, args[artisanIndex+1:]...)
-		if err := r.instance.Run(context.Background(), cliArgs); err != nil {
+		if err := command.Run(context.Background(), cliArgs); err != nil {
 			if exitIfArtisan {
 				panic(err.Error())
 			}
@@ -143,6 +150,29 @@ func (r *Application) Run(args []string, exitIfArtisan bool) error {
 	}
 
 	return nil
+}
+
+func (r *Application) command() *cli.Command {
+	commands := make([]*cli.Command, len(r.commands))
+	for i, cmd := range r.commands {
+		commands[i] = &cmd
+	}
+
+	command := &cli.Command{}
+	command.CommandNotFound = commandNotFound
+	command.Commands = commands
+	command.Flags = []cli.Flag{noANSIFlag}
+	command.Name = r.name
+	command.OnUsageError = onUsageError
+	command.Usage = r.usage
+	command.UsageText = r.usageText
+	command.Version = r.version
+	command.Writer = r.writer
+
+	// There is a concurrency issue with urfave/cli v3 when help is not hidden.
+	command.HideHelp = true
+
+	return command
 }
 
 func flagsToCliFlags(flags []command.Flag) []cli.Flag {
@@ -233,6 +263,34 @@ func flagsToCliFlags(flags []command.Flag) []cli.Flag {
 			})
 		}
 	}
+
+	var (
+		existHelp bool
+		existH    bool
+	)
+	for _, flag := range cliFlags {
+		names := flag.Names()
+		if slices.Contains(names, "help") {
+			existHelp = true
+		}
+		if slices.Contains(names, "h") {
+			existH = true
+		}
+	}
+
+	if !existHelp {
+		helpFlag := &cli.BoolFlag{
+			Name:        "help",
+			Usage:       "Show help",
+			HideDefault: true,
+		}
+		if !existH {
+			helpFlag.Aliases = []string{"h"}
+		}
+		cliFlags = append(cliFlags, helpFlag)
+	}
+
+	cliFlags = append(cliFlags, noANSIFlag)
 
 	return cliFlags
 }

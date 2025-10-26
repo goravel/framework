@@ -7,17 +7,28 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/console/console"
+	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/support/color"
 )
 
 func TestShowCommandHelp_HelpPrinterCustom(t *testing.T) {
-	cliApp := NewApplication("test", "test", "test", "test", true)
-	cliApp.Register([]console.Command{
+	output := &bytes.Buffer{}
+	cliApp := &Application{
+		name:       "artisan",
+		usage:      "Goravel Framework",
+		usageText:  "artisan command [options] [arguments...]",
+		useArtisan: true,
+		version:    "v1.16.0",
+		writer:     output,
+	}
+	cliApp.Register([]contractsconsole.Command{
 		&TestFooCommand{},
 		&TestBarCommand{},
+		console.NewHelpCommand(),
 	})
+
 	tests := []struct {
 		name           string
 		call           string
@@ -25,6 +36,7 @@ func TestShowCommandHelp_HelpPrinterCustom(t *testing.T) {
 	}{
 		{
 			name: "print app help",
+			call: "help",
 			containsOutput: []string{
 				color.Yellow().Sprint("Usage:"),
 				color.Yellow().Sprint("Global options:"),
@@ -36,47 +48,41 @@ func TestShowCommandHelp_HelpPrinterCustom(t *testing.T) {
 		},
 		{
 			name: "print command help",
-			call: "help test:foo",
+			call: "test:foo --help",
 			containsOutput: []string{
 				color.Yellow().Sprint("Description:"),
 				color.Yellow().Sprint("Usage:"),
 				color.Yellow().Sprint("Global options:"),
-				color.Green().Sprint("-h, --help"),
-				color.Green().Sprint("    --no-ansi"),
-				color.Green().Sprint("-v, --version"),
 				color.Yellow().Sprint("Options:"),
 				color.Green().Sprint("-b, --bool"),
 				color.Green().Sprint("-i, --int"),
 				color.Blue().Sprint("int"),
+				color.Green().Sprint("    --no-ansi"),
 				color.Green().Sprint("-h, --help"),
 			},
 		},
 		{
 			name: "print command help(check flag sorted)",
-			call: "help --no-ansi test:foo",
+			call: "test:foo --help --no-ansi",
 			containsOutput: []string{
 				`Description:
    Test command
 
 Usage:
-   test [global options] test:foo [options] <string_arg> <two_string_args...> [uint16_arg] [any_count_string_args...]
-
-Global options:
-   -h, --help       Show help
-       --no-ansi    Force disable ANSI output
-   -v, --version    Print the version
+   artisan test:foo [options] <string_arg> <two_string_args...> [uint16_arg] [any_count_string_args...]
 
 Options:
-   -b, --bool    Bool flag
-   -i, --int     int flag
-   -h, --help    Show help`,
+   -b, --bool       Bool flag
+   -h, --help       Show help
+   -i, --int        int flag
+       --no-ansi    Force disable ANSI output`,
 			},
 		},
 		{
 			name: "print version",
 			call: "--version",
 			containsOutput: []string{
-				"test " + color.Green().Sprint("test"),
+				"Goravel Framework " + color.Green().Sprint("v1.16.0"),
 			},
 		},
 		{
@@ -149,21 +155,25 @@ Options:
 			name: "no ansi color",
 			call: "--no-ansi",
 			containsOutput: []string{
-				"test test",
-				`Usage:
-   test
+				`Goravel Framework v1.16.0
+
+Usage:
+   artisan command [options] [arguments...]
 
 Global options:
-   -h, --help       Show help
        --no-ansi    Force disable ANSI output
-   -v, --version    Print the version`,
+   -v, --version    Print the version
+
+Available commands:
+  help      Shows a list of commands
+ test:
+  test:bar  Test command
+  test:foo  Test command`,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			output := &bytes.Buffer{}
-			cliApp.(*Application).instance.Writer = output
 			got := color.CaptureOutput(func(io.Writer) {
 				assert.NoError(t, cliApp.Call(tt.call))
 			})
@@ -233,8 +243,7 @@ func (receiver *TestFooCommand) Extend() command.Extend {
 	}
 }
 
-func (receiver *TestFooCommand) Handle(_ console.Context) error {
-
+func (receiver *TestFooCommand) Handle(_ contractsconsole.Context) error {
 	return nil
 }
 
