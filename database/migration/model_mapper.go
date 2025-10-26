@@ -80,7 +80,7 @@ func buildSchema(meta structmeta.StructMetadata) *tableSchema {
 	s := &tableSchema{
 		table:   tableName(meta),
 		indexes: make(map[string]index),
-		columns: make([]column, len(meta.Fields)),
+		columns: make([]column, 0, len(meta.Fields)),
 	}
 
 	// Scan for embedded fields like gorm.Model
@@ -169,8 +169,7 @@ func buildColumn(field *structmeta.FieldMetadata) *column {
 
 // renderLines converts tableSchema to migration code lines.
 func renderLines(s *tableSchema) []string {
-	// Preallocate exact size to avoid growth
-	capacity := len(s.columns) + len(s.indexes) + 3 // +3 for ID, Timestamps, SoftDeletes
+	capacity := len(s.columns) + len(s.indexes) + 3
 	if len(s.indexes) > 0 {
 		capacity++
 	}
@@ -188,7 +187,7 @@ func renderLines(s *tableSchema) []string {
 		lines = append(lines, "table.Timestamps()")
 	}
 
-	if s.softDelete && !s.timestamps {
+	if s.softDelete {
 		lines = append(lines, "table.SoftDeletes()")
 	}
 
@@ -236,9 +235,11 @@ func renderColumn(col *column) string {
 		b.WriteString(m.name)
 		b.WriteByte('(')
 		if m.arg != "" {
-			b.WriteByte('"')
-			writeEscaped(&b, m.arg)
-			b.WriteByte('"')
+			if m.name == "Total" || m.name == "Places" {
+				b.WriteString(m.arg)
+			} else {
+				b.WriteString(strconv.Quote(m.arg))
+			}
 		}
 		b.WriteByte(')')
 	}
@@ -251,7 +252,7 @@ func writeValue(b *strings.Builder, v any) {
 	case int:
 		b.WriteString(strconv.Itoa(val))
 	case string:
-		b.WriteString(val)
+		b.WriteString(strconv.Quote(val))
 	case int64:
 		buf := strconv.AppendInt(nil, val, 10)
 		b.Write(buf)
@@ -280,21 +281,7 @@ func writeValue(b *strings.Builder, v any) {
 			b.WriteString("false")
 		}
 	default:
-		b.WriteString("0")
-	}
-}
-
-func writeEscaped(b *strings.Builder, s string) {
-	if strings.IndexByte(s, '"') == -1 {
-		b.WriteString(s)
-		return
-	}
-
-	for i := 0; i < len(s); i++ {
-		if s[i] == '"' {
-			b.WriteByte('\\')
-		}
-		b.WriteByte(s[i])
+		b.WriteString("nil")
 	}
 }
 
@@ -382,12 +369,8 @@ func parseKeyValue(t *tag, key, val string) {
 		t.column = val
 	case "type":
 		t.dbType = val
-		// Inline decimal parsing for efficiency
-		if len(val) > 7 && val[0] == 'd' || val[0] == 'D' {
-			lower := strings.ToLower(val[:7])
-			if lower == "decimal" {
-				parseDecimal(t, val)
-			}
+		if strings.HasPrefix(strings.ToLower(val), "decimal") {
+			parseDecimal(t, val)
 		}
 	case "size":
 		t.size, _ = strconv.Atoi(val)
@@ -433,7 +416,6 @@ func parseDecimal(t *tag, typeStr string) {
 	comma := strings.IndexByte(params, ',')
 
 	if comma == -1 {
-		// Only precision
 		if p, err := strconv.Atoi(strings.TrimSpace(params)); err == nil {
 			t.precision = p
 		}
@@ -459,9 +441,12 @@ func parseEnum(t *tag, val string) {
 			continue
 		}
 
-		if num, err := strconv.ParseFloat(trimmed, 64); err == nil {
+		if num, err := strconv.ParseInt(trimmed, 10, 64); err == nil {
+			t.enumValues = append(t.enumValues, num)
+		} else if num, err := strconv.ParseFloat(trimmed, 64); err == nil {
 			t.enumValues = append(t.enumValues, num)
 		} else {
+			trimmed = strings.Trim(trimmed, `"'`)
 			t.enumValues = append(t.enumValues, trimmed)
 		}
 	}
@@ -535,69 +520,52 @@ func mapType(field *structmeta.FieldMetadata, t *tag) (method string, args []any
 
 func mapDBType(dbType string, size int) (method string, args []any) {
 	s := strings.ToLower(dbType)
-
-	if len(s) >= 3 {
-		switch s[:3] {
-		case "var": // varchar
-			if size == 0 {
-				size = extractSize(s)
-			}
-			if size > 0 {
-				return "String", []any{size}
-			}
-			return "String", nil
-		case "cha": // char
-			if size == 0 {
-				size = extractSize(s)
-			}
-			if size > 0 {
-				return "String", []any{size}
-			}
-			return "String", nil
-		case "dec": // decimal
-			return "Decimal", nil
-		case "enu": // enum
-			return "Enum", nil
-		case "tex": // text
-			return "Text", nil
-		case "uui": // uuid
-			return "Uuid", nil
-		case "uli": // ulid
-			return "Ulid", nil
-		case "big": // bigint
-			return "BigInteger", nil
-		case "int": // int, integer
-			return "Integer", nil
-		case "jso": // json, jsonb
-			return "Json", nil
-		case "boo": // bool, boolean
-			return "Boolean", nil
-		case "tim", "dat": // time, date, datetime, timestamp
-			return "DateTimeTz", nil
-		}
+	if size == 0 {
+		size = extractSize(s)
 	}
 
-	// Fallback: contains checks for compound types
-	if strings.Contains(s, "int") {
-		if strings.Contains(s, "big") {
-			return "BigInteger", nil
+	if strings.HasPrefix(s, "varchar") || strings.HasPrefix(s, "char") {
+		if size > 0 {
+			return "String", []any{size}
 		}
-		return "Integer", nil
+		return "String", nil
 	}
-	if strings.Contains(s, "text") {
+	if strings.HasPrefix(s, "decimal") {
+		return "Decimal", nil
+	}
+	if strings.HasPrefix(s, "enum") {
+		return "Enum", nil
+	}
+	if strings.HasPrefix(s, "text") || strings.Contains(s, "text") { // tinytext, mediumtext
 		return "Text", nil
 	}
-	if strings.Contains(s, "json") {
+	if strings.HasPrefix(s, "uuid") {
+		return "Uuid", nil
+	}
+	if strings.HasPrefix(s, "ulid") {
+		return "Ulid", nil
+	}
+	if strings.HasPrefix(s, "bigint") {
+		return "BigInteger", nil
+	}
+	if strings.HasPrefix(s, "int") { // int, integer, smallint, tinyint
+		return "Integer", nil
+	}
+	if strings.HasPrefix(s, "json") { // json, jsonb
 		return "Json", nil
 	}
-	if strings.Contains(s, "bool") {
+	if strings.HasPrefix(s, "bool") {
 		return "Boolean", nil
 	}
-	if strings.Contains(s, "time") || strings.Contains(s, "date") {
+	if strings.HasPrefix(s, "time") || strings.HasPrefix(s, "date") { // time, date, datetime, timestamp
 		return "DateTimeTz", nil
 	}
+	if strings.HasPrefix(s, "binary") || strings.HasPrefix(s, "blob") {
+		return "Binary", nil
+	}
 
-	return "Column", []any{`"` + dbType + `"`}
+	// Fallback: quote the dbType as it's a string literal
+	return "Column", []any{strconv.Quote(dbType)}
 }
 
 func extractSize(typeStr string) int {
@@ -652,7 +620,10 @@ func isRelation(field *structmeta.FieldMetadata) bool {
 	kind := field.Kind
 	if kind == reflect.Ptr || kind == reflect.Slice || kind == reflect.Array {
 		if field.ReflectType != nil {
-			kind = field.ReflectType.Elem().Kind()
+			elem := field.ReflectType.Elem()
+			if elem != nil {
+				kind = elem.Kind()
+			}
 		}
 	}
 
@@ -668,11 +639,22 @@ func scanEmbedded(meta structmeta.StructMetadata) map[string]bool {
 		}
 
 		t := field.Type
-		if t == "gorm.Model" || t == "*gorm.Model" {
+		if t == "gorm.Model" || t == "*gorm.Model" || t == "orm.Model" || t == "*orm.Model" {
 			embedded["ID"] = true
 			embedded["CreatedAt"] = true
 			embedded["UpdatedAt"] = true
 			embedded["DeletedAt"] = true
+			continue
+		}
+
+		if t == "orm.SoftDeletes" || t == "*orm.SoftDeletes" {
+			embedded["DeletedAt"] = true
+			continue
+		}
+
+		if t == "orm.Timestamps" || t == "*orm.Timestamps" {
+			embedded["CreatedAt"] = true
+			embedded["UpdatedAt"] = true
 		}
 	}
 
