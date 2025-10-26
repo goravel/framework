@@ -8,9 +8,11 @@ type ApplicationBuilder interface {
 	// Run the application.
 	Run()
 	// WithConfig sets a callback function to configure the application.
-	WithConfig(func()) ApplicationBuilder
+	WithConfig(config func()) ApplicationBuilder
 	// WithEvents sets event listeners for the application.
-	WithEvents(map[event.Event][]event.Listener) ApplicationBuilder
+	WithEvents(eventToListeners map[event.Event][]event.Listener) ApplicationBuilder
 	// WithProviders registers and boots custom service providers.
 	WithProviders(providers []ServiceProvider) ApplicationBuilder
+	// WithRouting registers the application's routes.
+	WithRouting(routes ...func()) ApplicationBuilder
 }
