@@ -389,6 +389,12 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 	forceSetup := ctx.OptionBool("force-setup")
 	setupNeeded := forceSetup || !isServerAlreadySetup(opts)
 	if setupNeeded {
+		if forceSetup {
+			if err = supportconsole.ExecuteCommand(ctx, teardownServerCommand(opts), "Removing previous server configuration..."); err != nil {
+				ctx.Error(err.Error())
+				return nil
+			}
+		}
 		if err = supportconsole.ExecuteCommand(ctx, setupServerCommand(opts), "Setting up server (first time only)..."); err != nil {
 			ctx.Error(err.Error())
 			return nil
@@ -711,6 +717,35 @@ fi
 		"true",
 	)
 
+	return makeLocalCommand(script)
+}
+
+// teardownServerCommand removes prior Caddy and systemd service configuration to allow re-provisioning
+func teardownServerCommand(opts deployOptions) *exec.Cmd {
+	baseDir := opts.deployBaseDir
+	if !strings.HasSuffix(baseDir, "/") {
+		baseDir += "/"
+	}
+	appDir := fmt.Sprintf("%s%s", baseDir, opts.appName)
+	// Remove Caddyfile and disable/stop Caddy if present; remove service unit and disable/stop service
+	script := fmt.Sprintf(`ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s '
+set -e
+# Remove Caddy config if exists
+if [ -f /etc/caddy/Caddyfile ]; then
+  sudo rm -f /etc/caddy/Caddyfile || true
+  sudo systemctl reload caddy || sudo systemctl restart caddy || true
+fi
+# Remove systemd unit if exists
+if [ -f /etc/systemd/system/%s.service ]; then
+  sudo systemctl stop %s || true
+  sudo systemctl disable %s || true
+  sudo rm -f /etc/systemd/system/%s.service || true
+  sudo systemctl daemon-reload
+fi
+# Ensure app directory exists and permissions are consistent
+sudo mkdir -p %s
+sudo chown -R %s:%s %s
+'`, opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.sshIp, opts.appName, opts.appName, opts.appName, opts.appName, appDir, opts.sshUser, opts.sshUser, appDir)
 	return makeLocalCommand(script)
 }
 
