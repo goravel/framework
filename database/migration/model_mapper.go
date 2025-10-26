@@ -45,7 +45,11 @@ func Generate(model any) (tableName string, lines []string, err error) {
 		return "", nil, errInvalidModel
 	}
 
-	s := buildSchema(meta)
+	s, err := buildSchema(meta)
+	if err != nil {
+		return "", nil, err
+	}
+
 	return s.table, renderLines(s), nil
 }
 
@@ -76,7 +80,7 @@ type modifier struct {
 	arg  string
 }
 
-func buildSchema(meta structmeta.StructMetadata) *tableSchema {
+func buildSchema(meta structmeta.StructMetadata) (*tableSchema, error) {
 	s := &tableSchema{
 		table:   tableName(meta),
 		indexes: make(map[string]index),
@@ -108,7 +112,11 @@ func buildSchema(meta structmeta.StructMetadata) *tableSchema {
 		collectIndexes(&field, col.name, s.indexes)
 	}
 
-	return s
+	if !s.hasID && len(s.columns) == 0 && !s.timestamps && !s.softDelete {
+		return nil, errInvalidModel
+	}
+
+	return s, nil
 }
 
 func buildColumn(field *structmeta.FieldMetadata) *column {
@@ -369,15 +377,25 @@ func parseKeyValue(t *tag, key, val string) {
 		t.column = val
 	case "type":
 		t.dbType = val
-		if strings.HasPrefix(strings.ToLower(val), "decimal") {
+		lowerVal := strings.ToLower(val)
+
+		if strings.HasPrefix(lowerVal, "decimal") {
 			parseDecimal(t, val)
+		}
+
+		if strings.HasPrefix(lowerVal, "enum") {
+			start := strings.IndexByte(val, '(')
+			end := strings.LastIndexByte(val, ')')
+			if start != -1 && end != -1 && end > start {
+				parseEnum(t, val[start+1:end])
+			}
 		}
 	case "size":
 		t.size, _ = strconv.Atoi(val)
 	case "default":
-		t.defaultVal = val
+		t.defaultVal = strings.Trim(val, `"'`)
 	case "comment":
-		t.comment = val
+		t.comment = strings.Trim(val, `"'`)
 	case "unique":
 		t.unique = true
 	case "index":
@@ -441,12 +459,13 @@ func parseEnum(t *tag, val string) {
 			continue
 		}
 
+		trimmed = strings.Trim(trimmed, `"'`)
+
 		if num, err := strconv.ParseInt(trimmed, 10, 64); err == nil {
 			t.enumValues = append(t.enumValues, num)
 		} else if num, err := strconv.ParseFloat(trimmed, 64); err == nil {
 			t.enumValues = append(t.enumValues, num)
 		} else {
-			trimmed = strings.Trim(trimmed, `"'`)
 			t.enumValues = append(t.enumValues, trimmed)
 		}
 	}
