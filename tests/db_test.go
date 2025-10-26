@@ -1437,6 +1437,58 @@ func (s *DBTestSuite) TestWhere() {
 	}
 }
 
+func (s *DBTestSuite) TestWhereAny() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{Name: "where any product1", Weight: convert.Pointer(100)},
+				{Name: "where any product2", Weight: convert.Pointer(200)},
+				{Name: "where any product3", Weight: convert.Pointer(300)},
+			})
+
+			var products []Product
+			err := query.DB().Table("products").WhereAny([]string{"weight", "height"}, "=", 100).Get(&products)
+			s.NoError(err)
+			s.Equal(1, len(products))
+			s.Equal("where any product1", products[0].Name)
+		})
+	}
+}
+
+func (s *DBTestSuite) TestWhereAll() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{Name: "where all product1", Weight: convert.Pointer(100), Height: convert.Pointer(100)},
+				{Name: "where all product2", Weight: convert.Pointer(200), Height: convert.Pointer(200)},
+			})
+
+			var products []Product
+			err := query.DB().Table("products").WhereAll([]string{"weight", "height"}, "=", 100).Get(&products)
+			s.NoError(err)
+			s.Equal(1, len(products))
+			s.Equal("where all product1", products[0].Name)
+		})
+	}
+}
+
+func (s *DBTestSuite) TestWhereNone() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{Name: "where none product1", Weight: convert.Pointer(100)},
+				{Name: "where none product2", Weight: convert.Pointer(200)},
+			})
+
+			var products []Product
+			err := query.DB().Table("products").WhereNone([]string{"weight"}, "=", 100).Get(&products)
+			s.NoError(err)
+			s.Equal(1, len(products))
+			s.Equal("where none product2", products[0].Name)
+		})
+	}
+}
+
 func (s *DBTestSuite) TestWhereColumn() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {

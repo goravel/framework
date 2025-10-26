@@ -1961,6 +1961,42 @@ func (s *QueryTestSuite) TestWhereRaw() {
 	s.Nil(err)
 }
 
+func (s *QueryTestSuite) TestWhereAny() {
+	var users []TestUser
+
+	s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+	s.mockReadBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (name = ? OR email = ?)", "John", "John").Return(nil).Once()
+	s.mockReadBuilder.EXPECT().Explain("SELECT * FROM users WHERE (name = ? OR email = ?)", "John", "John").Return("SELECT * FROM users WHERE (name = \"John\" OR email = \"John\")").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" OR email = \"John\")", int64(0), nil).Return().Once()
+
+	err := s.query.WhereAny([]string{"name", "email"}, "=", "John").Get(&users)
+	s.Nil(err)
+}
+
+func (s *QueryTestSuite) TestWhereAll() {
+	var users []TestUser
+
+	s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+	s.mockReadBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (name = ? AND email = ?)", "John", "John").Return(nil).Once()
+	s.mockReadBuilder.EXPECT().Explain("SELECT * FROM users WHERE (name = ? AND email = ?)", "John", "John").Return("SELECT * FROM users WHERE (name = \"John\" AND email = \"John\")").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" AND email = \"John\")", int64(0), nil).Return().Once()
+
+	err := s.query.WhereAll([]string{"name", "email"}, "=", "John").Get(&users)
+	s.Nil(err)
+}
+
+func (s *QueryTestSuite) TestWhereNone() {
+	var users []TestUser
+
+	s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+	s.mockReadBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (name <> ? AND email <> ?)", "John", "John").Return(nil).Once()
+	s.mockReadBuilder.EXPECT().Explain("SELECT * FROM users WHERE (name <> ? AND email <> ?)", "John", "John").Return("SELECT * FROM users WHERE (name <> \"John\" AND email <> \"John\")").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name <> \"John\" AND email <> \"John\")", int64(0), nil).Return().Once()
+
+	err := s.query.WhereNone([]string{"name", "email"}, "=", "John").Get(&users)
+	s.Nil(err)
+}
+
 // MockResult implements sql.Result interface for testing
 type MockResult struct {
 	mock.Mock
