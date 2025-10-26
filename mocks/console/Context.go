@@ -5,6 +5,7 @@ package console
 import (
 	console "github.com/goravel/framework/contracts/console"
 	mock "github.com/stretchr/testify/mock"
+	cli "github.com/urfave/cli/v3"
 
 	time "time"
 )
@@ -1957,6 +1958,53 @@ func (_c *Context_Info_Call) Return() *Context_Info_Call {
 
 func (_c *Context_Info_Call) RunAndReturn(run func(string)) *Context_Info_Call {
 	_c.Run(run)
+	return _c
+}
+
+// Instance provides a mock function with no fields
+func (_m *Context) Instance() *cli.Command {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Instance")
+	}
+
+	var r0 *cli.Command
+	if rf, ok := ret.Get(0).(func() *cli.Command); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*cli.Command)
+		}
+	}
+
+	return r0
+}
+
+// Context_Instance_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Instance'
+type Context_Instance_Call struct {
+	*mock.Call
+}
+
+// Instance is a helper method to define mock.On call
+func (_e *Context_Expecter) Instance() *Context_Instance_Call {
+	return &Context_Instance_Call{Call: _e.mock.On("Instance")}
+}
+
+func (_c *Context_Instance_Call) Run(run func()) *Context_Instance_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Context_Instance_Call) Return(_a0 *cli.Command) *Context_Instance_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Context_Instance_Call) RunAndReturn(run func() *cli.Command) *Context_Instance_Call {
+	_c.Call.Return(run)
 	return _c
 }
 
