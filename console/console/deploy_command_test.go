@@ -116,7 +116,7 @@ func Test_setupServerCommand_ProxyTLS(t *testing.T) {
 }
 
 func Test_uploadFilesCommand_AllArtifacts(t *testing.T) {
-	cmd := uploadFilesCommand(deployOptions{appName: "myapp", sshIp: "203.0.113.10", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id", deployBaseDir: "/var/www/"}, uploadOptions{hasMain: true, hasProdEnv: true, hasPublic: true, hasStorage: true, hasResources: true}, ".env.production")
+	cmd := uploadFilesCommand(deployOptions{appName: "myapp", sshIp: "203.0.113.10", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id", deployBaseDir: "/var/www/"}, uploadOptions{hasMain: true, hasProdEnv: true, hasPublic: true, hasStorage: true, hasResources: true}, ".env.production", false, "")
 	require.NotNil(t, cmd)
 	if runtime.GOOS == "windows" {
 		t.Skip("Skipping script content assertions on Windows shell")
@@ -139,7 +139,7 @@ func Test_uploadFilesCommand_AllArtifacts(t *testing.T) {
 }
 
 func Test_uploadFilesCommand_SubsetArtifacts(t *testing.T) {
-	cmd := uploadFilesCommand(deployOptions{appName: "myapp", sshIp: "203.0.113.10", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id", deployBaseDir: "/var/www/"}, uploadOptions{hasMain: true, hasProdEnv: false, hasPublic: false, hasStorage: true, hasResources: false}, ".env.production")
+	cmd := uploadFilesCommand(deployOptions{appName: "myapp", sshIp: "203.0.113.10", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id", deployBaseDir: "/var/www/"}, uploadOptions{hasMain: true, hasProdEnv: false, hasPublic: false, hasStorage: true, hasResources: false}, ".env.production", false, "")
 	require.NotNil(t, cmd)
 	if runtime.GOOS == "windows" {
 		t.Skip("Skipping script content assertions on Windows shell")
@@ -364,7 +364,7 @@ func Test_uploadFilesCommand_WindowsShellWrapper(t *testing.T) {
 	if runtime.GOOS != "windows" {
 		t.Skip("Windows-only test")
 	}
-	cmd := uploadFilesCommand(deployOptions{appName: "myapp", sshIp: "203.0.113.10", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id", deployBaseDir: "/var/www/"}, uploadOptions{hasMain: true, hasProdEnv: true, hasPublic: true, hasStorage: true, hasResources: true}, ".env.production")
+	cmd := uploadFilesCommand(deployOptions{appName: "myapp", sshIp: "203.0.113.10", sshPort: "22", sshUser: "ubuntu", sshKeyPath: "~/.ssh/id", deployBaseDir: "/var/www/"}, uploadOptions{hasMain: true, hasProdEnv: true, hasPublic: true, hasStorage: true, hasResources: true}, ".env.production", false, "")
 	require.NotNil(t, cmd)
 	require.GreaterOrEqual(t, len(cmd.Args), 2)
 	assert.Equal(t, "cmd", cmd.Args[0])
@@ -463,6 +463,8 @@ func Test_Handle_Rollback_ShortCircuit(t *testing.T) {
 	mockConfig.EXPECT().GetBool("app.build.static").Return(false).Once()
 	mockConfig.EXPECT().GetBool("app.deploy.reverse_proxy_enabled").Return(false).Once()
 	mockConfig.EXPECT().GetBool("app.deploy.reverse_proxy_tls_enabled").Return(false).Once()
+	mockConfig.EXPECT().GetString("app.deploy.env_decrypt_key").Return("").Once()
+	mockConfig.EXPECT().GetBool("app.deploy.remote_env_decrypt").Return(false).Once()
 
 	mockContext.EXPECT().OptionBool("rollback").Return(true).Once()
 	mockContext.EXPECT().Spinner("Rolling back...", mock.Anything).Return(nil).Once()
@@ -493,6 +495,8 @@ func Test_Handle_Deploy_Success(t *testing.T) {
 	mockConfig.EXPECT().GetBool("app.build.static").Return(false).Once()
 	mockConfig.EXPECT().GetBool("app.deploy.reverse_proxy_enabled").Return(false).Once()
 	mockConfig.EXPECT().GetBool("app.deploy.reverse_proxy_tls_enabled").Return(false).Once()
+	mockConfig.EXPECT().GetString("app.deploy.env_decrypt_key").Return("").Once()
+	mockConfig.EXPECT().GetBool("app.deploy.remote_env_decrypt").Return(false).Once()
 
 	// Context expectations
 	mockContext.EXPECT().OptionBool("rollback").Return(false).Once()
@@ -540,6 +544,8 @@ func Test_Handle_Deploy_FailureOnBuild(t *testing.T) {
 	mockConfig.EXPECT().GetBool("app.build.static").Return(false).Once()
 	mockConfig.EXPECT().GetBool("app.deploy.reverse_proxy_enabled").Return(false).Once()
 	mockConfig.EXPECT().GetBool("app.deploy.reverse_proxy_tls_enabled").Return(false).Once()
+	mockConfig.EXPECT().GetString("app.deploy.env_decrypt_key").Return("").Once()
+	mockConfig.EXPECT().GetBool("app.deploy.remote_env_decrypt").Return(false).Once()
 
 	mockContext.EXPECT().OptionBool("rollback").Return(false).Once()
 	// Build fails via artisan
@@ -575,6 +581,8 @@ func Test_getDeployOptions_Success(t *testing.T) {
 	mockConfig.EXPECT().GetBool("app.build.static").Return(true).Once()
 	mockConfig.EXPECT().GetBool("app.deploy.reverse_proxy_enabled").Return(true).Once()
 	mockConfig.EXPECT().GetBool("app.deploy.reverse_proxy_tls_enabled").Return(false).Once()
+	mockConfig.EXPECT().GetString("app.deploy.env_decrypt_key").Return("").Once()
+	mockConfig.EXPECT().GetBool("app.deploy.remote_env_decrypt").Return(false).Once()
 
 	opts, err := cmd.getDeployOptions(mockContext)
 	require.NoError(t, err)
@@ -623,6 +631,8 @@ func TestHelper_GetDeployOptions_Missing(t *testing.T) {
 	mockConfig.EXPECT().GetBool("app.build.static").Return(false).Once()
 	mockConfig.EXPECT().GetBool("app.deploy.reverse_proxy_enabled").Return(false).Once()
 	mockConfig.EXPECT().GetBool("app.deploy.reverse_proxy_tls_enabled").Return(false).Once()
+	mockConfig.EXPECT().GetString("app.deploy.env_decrypt_key").Return("").Once()
+	mockConfig.EXPECT().GetBool("app.deploy.remote_env_decrypt").Return(false).Once()
 
 	// Now expecting an error to be returned
 	_, err := cmd.getDeployOptions(mockContext)

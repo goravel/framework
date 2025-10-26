@@ -241,9 +241,11 @@ type deployOptions struct {
 	deployBaseDir          string
 	domain                 string
 	prodEnvFilePath        string
+	envDecryptKey          string
 	reverseProxyEnabled    bool
 	reverseProxyPort       string
 	reverseProxyTLSEnabled bool
+	remoteEnvDecrypt       bool
 	sshIp                  string
 	sshKeyPath             string
 	sshPort                string
@@ -354,18 +356,30 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 	// Step 2: verify which files to upload (main, env, public, storage, resources)
 	upload := getUploadOptions(ctx, opts.appName, opts.prodEnvFilePath)
 
-	// If the production env file is encrypted (per Goravel docs), decrypt it first
+	// If the production env file is encrypted (per Goravel docs), decrypt it first (locally or remotely)
 	envPathToUpload := opts.prodEnvFilePath
+	remoteDecrypt := false
+	remoteEncName := ""
 	if upload.hasProdEnv {
 		// Detect encrypted env by content (base64 + AES block structure with IV)
 		if data, readErr := os.ReadFile(opts.prodEnvFilePath); readErr == nil {
 			if isEncryptedEnvContent(data) {
-				if err = r.artisan.Call(fmt.Sprintf("env:decrypt --name %q", opts.prodEnvFilePath)); err != nil {
-					ctx.Error(err.Error())
-					return nil
+				if opts.remoteEnvDecrypt {
+					remoteDecrypt = true
+					remoteEncName = filepath.Base(opts.prodEnvFilePath)
+					envPathToUpload = opts.prodEnvFilePath
+				} else {
+					cmd := fmt.Sprintf("env:decrypt --name %q", opts.prodEnvFilePath)
+					if strings.TrimSpace(opts.envDecryptKey) != "" {
+						cmd += fmt.Sprintf(" --key %q", opts.envDecryptKey)
+					}
+					if err = r.artisan.Call(cmd); err != nil {
+						ctx.Error(err.Error())
+						return nil
+					}
+					// env:decrypt writes to .env in the working directory
+					envPathToUpload = ".env"
 				}
-				// env:decrypt writes to .env in the working directory
-				envPathToUpload = ".env"
 			}
 		}
 	}
@@ -388,9 +402,27 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 	}
 
 	// Step 4: upload files
-	if err = supportconsole.ExecuteCommand(ctx, uploadFilesCommand(opts, upload, envPathToUpload), "Uploading files..."); err != nil {
+	if err = supportconsole.ExecuteCommand(ctx, uploadFilesCommand(opts, upload, envPathToUpload, remoteDecrypt, remoteEncName), "Uploading files..."); err != nil {
 		ctx.Error(err.Error())
 		return nil
+	}
+
+	// Optional: decrypt env remotely after upload
+	if remoteDecrypt && upload.hasProdEnv {
+		baseDir := opts.deployBaseDir
+		if !strings.HasSuffix(baseDir, "/") {
+			baseDir += "/"
+		}
+		appDir := fmt.Sprintf("%s%s", baseDir, opts.appName)
+		decryptCmd := fmt.Sprintf("cd %s && ./main artisan env:decrypt --name %q", appDir, remoteEncName)
+		if strings.TrimSpace(opts.envDecryptKey) != "" {
+			decryptCmd += fmt.Sprintf(" --key %q", opts.envDecryptKey)
+		}
+		script := fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s '%s'", opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.sshIp, decryptCmd)
+		if err = supportconsole.ExecuteCommand(ctx, makeLocalCommand(script), "Decrypting environment on remote..."); err != nil {
+			ctx.Error(err.Error())
+			return nil
+		}
 	}
 
 	// Step 5: restart service
@@ -417,10 +449,12 @@ func (r *DeployCommand) getDeployOptions(ctx console.Context) (deployOptions, er
 	opts.domain = r.config.GetString("app.deploy.domain")
 	opts.prodEnvFilePath = r.config.GetString("app.deploy.prod_env_file_path")
 	opts.deployBaseDir = r.config.GetString("app.deploy.base_dir", "/var/www/")
+	opts.envDecryptKey = r.config.GetString("app.deploy.env_decrypt_key")
 
 	opts.staticEnv = r.config.GetBool("app.build.static")
 	opts.reverseProxyEnabled = r.config.GetBool("app.deploy.reverse_proxy_enabled")
 	opts.reverseProxyTLSEnabled = r.config.GetBool("app.deploy.reverse_proxy_tls_enabled")
+	opts.remoteEnvDecrypt = r.config.GetBool("app.deploy.remote_env_decrypt")
 
 	// Validate required options and report all missing at once
 	var missing []string
@@ -674,7 +708,7 @@ fi
 }
 
 // uploadFilesCommand uploads available artifacts to remote server
-func uploadFilesCommand(opts deployOptions, up uploadOptions, envPathToUpload string) *exec.Cmd {
+func uploadFilesCommand(opts deployOptions, up uploadOptions, envPathToUpload string, remoteDecrypt bool, remoteEncName string) *exec.Cmd {
 	baseDir := opts.deployBaseDir
 	if !strings.HasSuffix(baseDir, "/") {
 		baseDir += "/"
@@ -702,10 +736,18 @@ func uploadFilesCommand(opts deployOptions, up uploadOptions, envPathToUpload st
 
 	if up.hasProdEnv {
 		// Upload env to a temp path, then atomically place as .env
-		cmds = append(cmds,
-			fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s %q %s/.env.new", opts.sshKeyPath, opts.sshPort, filepath.Clean(envPathToUpload), remoteBase),
-			fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'sudo mv %s/.env.new %s/.env'", opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.sshIp, appDir, appDir),
-		)
+		if remoteDecrypt {
+			// upload encrypted file as provided path name
+			destName := filepath.Base(envPathToUpload)
+			cmds = append(cmds,
+				fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s %q %s/%s", opts.sshKeyPath, opts.sshPort, filepath.Clean(envPathToUpload), remoteBase, destName),
+			)
+		} else {
+			cmds = append(cmds,
+				fmt.Sprintf("scp -o StrictHostKeyChecking=no -i %q -P %s %q %s/.env.new", opts.sshKeyPath, opts.sshPort, filepath.Clean(envPathToUpload), remoteBase),
+				fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'sudo mv %s/.env.new %s/.env'", opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.sshIp, appDir, appDir),
+			)
+		}
 	}
 	if up.hasPublic {
 		cmds = append(cmds,
