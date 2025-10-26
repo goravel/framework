@@ -1,6 +1,8 @@
 package queue
 
 import (
+	"fmt"
+
 	"github.com/goravel/framework/contracts/config"
 	contractsqueue "github.com/goravel/framework/contracts/queue"
 )
@@ -23,7 +25,9 @@ func NewQueueRunner(config config.Config, queue contractsqueue.Queue) *QueueRunn
 }
 
 func (r *QueueRunner) ShouldRun() bool {
-	return r.worker != nil && r.config.GetString("queue.default") != ""
+	connection := r.config.GetString("queue.default")
+
+	return r.worker != nil && connection != "" && r.config.GetString(fmt.Sprintf("queue.connections.%s.driver", connection)) != SyncDriverName
 }
 
 func (r *QueueRunner) Run() error {

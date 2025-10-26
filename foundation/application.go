@@ -145,13 +145,17 @@ func (r *Application) Run(runners ...foundation.Runner) {
 	for _, serviceProvider := range r.providerRepository.GetBooted() {
 		if serviceProviderWithRunners, ok := serviceProvider.(foundation.ServiceProviderWithRunners); ok {
 			for _, runner := range serviceProviderWithRunners.Runners(r) {
-				allRunners = append(allRunners, &RunnerWithInfo{name: fmt.Sprintf("%T", runner), runner: runner, running: false})
+				if runner.ShouldRun() {
+					allRunners = append(allRunners, &RunnerWithInfo{name: fmt.Sprintf("%T", runner), runner: runner, running: false})
+				}
 			}
 		}
 	}
 
 	for _, runner := range runners {
-		allRunners = append(allRunners, &RunnerWithInfo{name: fmt.Sprintf("%T", runner), runner: runner, running: false})
+		if runner.ShouldRun() {
+			allRunners = append(allRunners, &RunnerWithInfo{name: fmt.Sprintf("%T", runner), runner: runner, running: false})
+		}
 	}
 
 	run := func(runner *RunnerWithInfo) {

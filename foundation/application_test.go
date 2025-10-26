@@ -97,18 +97,29 @@ func (s *ApplicationTestSuite) TestExecutablePath() {
 func (s *ApplicationTestSuite) TestRun() {
 	oneServiceProvider := mocksfoundation.NewServiceProviderWithRunners(s.T())
 	oneRunner := mocksfoundation.NewRunner(s.T())
+	oneRunner.EXPECT().ShouldRun().Return(true).Once()
 	oneRunner.EXPECT().Run().Return(nil).Once()
 	oneRunner.EXPECT().Shutdown().Return(nil).Once()
 	oneServiceProvider.EXPECT().Runners(s.app).Return([]foundation.Runner{oneRunner}).Once()
 
 	secondServiceProvider := mocksfoundation.NewServiceProviderWithRunners(s.T())
 	secondRunner := mocksfoundation.NewRunner(s.T())
+	secondRunner.EXPECT().ShouldRun().Return(true).Once()
 	secondRunner.EXPECT().Run().Return(assert.AnError).Once()
 	secondServiceProvider.EXPECT().Runners(s.app).Return([]foundation.Runner{secondRunner}).Once()
 
 	thirdRunner := mocksfoundation.NewRunner(s.T())
+	thirdRunner.EXPECT().ShouldRun().Return(true).Once()
 	thirdRunner.EXPECT().Run().Return(nil).Once()
 	thirdRunner.EXPECT().Shutdown().Return(nil).Once()
+
+	fourthRunner := mocksfoundation.NewRunner(s.T())
+	fourthRunner.EXPECT().ShouldRun().Return(false).Once()
+
+	fifthServiceProvider := mocksfoundation.NewServiceProviderWithRunners(s.T())
+	fifthRunner := mocksfoundation.NewRunner(s.T())
+	fifthRunner.EXPECT().ShouldRun().Return(false).Once()
+	fifthServiceProvider.EXPECT().Runners(s.app).Return([]foundation.Runner{fifthRunner}).Once()
 
 	mockRepo := mocksfoundation.NewProviderRepository(s.T())
 	s.app.providerRepository = mockRepo
@@ -116,9 +127,11 @@ func (s *ApplicationTestSuite) TestRun() {
 	mockRepo.EXPECT().GetBooted().Return([]foundation.ServiceProvider{
 		oneServiceProvider,
 		secondServiceProvider,
+		fifthServiceProvider,
 	}).Once()
 
-	s.app.Run(thirdRunner)
+	s.app.Run(thirdRunner, fourthRunner)
+
 	time.Sleep(100 * time.Millisecond) // Wait for goroutines to start
 
 	s.cancel()
