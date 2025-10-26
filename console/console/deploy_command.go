@@ -323,7 +323,7 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 	}
 
 	// check if the local host is valid, requires scp, ssh, and bash to be installed and in your path.
-	if err := validLocalHost(ctx); err != nil {
+	if err := validLocalHost(); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
@@ -519,7 +519,7 @@ func getUploadOptions(ctx console.Context, appName, prodEnvFilePath string) uplo
 }
 
 // validLocalHost checks if the local host is valid, requires scp, ssh, and bash to be installed and in your path.
-func validLocalHost(ctx console.Context) error {
+func validLocalHost() error {
 
 	missingBins := []string{}
 	if _, err := exec.LookPath("scp"); err != nil {

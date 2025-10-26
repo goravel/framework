@@ -303,8 +303,7 @@ func Test_validLocalHost_ErrorAggregation_Unix(t *testing.T) {
 	t.Cleanup(func() { _ = os.Setenv("PATH", oldPath) })
 	require.NoError(t, os.Setenv("PATH", ""))
 
-	mockContext := mocksconsole.NewContext(t)
-	err2 := validLocalHost(mockContext)
+	err2 := validLocalHost()
 	require.Error(t, err2)
 	msg := err2.Error()
 	assert.Contains(t, msg, "environment validation errors:")
@@ -340,8 +339,7 @@ func Test_validLocalHost_SucceedsWithTempTools_Unix(t *testing.T) {
 	_, err = exec.LookPath("bash")
 	require.NoError(t, err)
 
-	mockContext := mocksconsole.NewContext(t)
-	if err2 := validLocalHost(mockContext); err2 != nil {
+	if err2 := validLocalHost(); err2 != nil {
 		t.Fatalf("expected no error, got %v", err2)
 	}
 }
@@ -400,8 +398,7 @@ func Test_validLocalHost_ErrorAggregation_Windows(t *testing.T) {
 	t.Cleanup(func() { _ = os.Setenv("PATH", oldPath) })
 	require.NoError(t, os.Setenv("PATH", ""))
 
-	mockContext := mocksconsole.NewContext(t)
-	err2 := validLocalHost(mockContext)
+	err2 := validLocalHost()
 	require.Error(t, err2)
 	msg := err2.Error()
 	assert.Contains(t, msg, "environment validation errors:")
@@ -438,8 +435,7 @@ func Test_validLocalHost_SucceedsWithTempTools_Windows(t *testing.T) {
 	_, err = exec.LookPath("cmd")
 	require.NoError(t, err)
 
-	mockContext := mocksconsole.NewContext(t)
-	if err2 := validLocalHost(mockContext); err2 != nil {
+	if err2 := validLocalHost(); err2 != nil {
 		t.Fatalf("expected no error, got %v", err2)
 	}
 }
