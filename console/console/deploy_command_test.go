@@ -1,6 +1,7 @@
 package console
 
 import (
+	"crypto/aes"
 	"encoding/base64"
 	"fmt"
 	"os"
@@ -631,4 +632,29 @@ func TestHelper_GetDeployOptions_Missing(t *testing.T) {
 
 func Test_getDeployOptions_Missing_ReturnsError(t *testing.T) {
 	TestHelper_GetDeployOptions_Missing(t)
+}
+
+func Test_isEncryptedEnvContent(t *testing.T) {
+	// Not base64-decoded (plain text env) -> false
+	assert.False(t, isEncryptedEnvContent([]byte("APP_ENV=prod")))
+
+	// Base64 but decoded length < 2*aes.BlockSize (16) -> false
+	short := make([]byte, aes.BlockSize)
+	shortB64 := base64.StdEncoding.EncodeToString(short)
+	assert.False(t, isEncryptedEnvContent([]byte(shortB64)))
+
+	// Base64 but decoded length not multiple of aes.BlockSize -> false
+	notMultiple := make([]byte, aes.BlockSize+1)
+	notMultipleB64 := base64.StdEncoding.EncodeToString(notMultiple)
+	assert.False(t, isEncryptedEnvContent([]byte(notMultipleB64)))
+
+	// Decoded length == 2*aes.BlockSize and multiple -> true
+	valid := make([]byte, aes.BlockSize*2)
+	validB64 := base64.StdEncoding.EncodeToString(valid)
+	assert.True(t, isEncryptedEnvContent([]byte(validB64)))
+
+	// Decoded length == 3*aes.BlockSize and multiple -> true
+	valid3 := make([]byte, aes.BlockSize*3)
+	valid3B64 := base64.StdEncoding.EncodeToString(valid3)
+	assert.True(t, isEncryptedEnvContent([]byte(valid3B64)))
 }
