@@ -650,18 +650,22 @@ WantedBy=multi-user.target
 	caddyfile := ""
 	if opts.reverseProxyEnabled {
 		site := ":80"
-		if opts.reverseProxyTLSEnabled && strings.TrimSpace(opts.domain) != "" {
+		if strings.TrimSpace(opts.domain) != "" {
 			site = opts.domain
 		}
 		upstream := fmt.Sprintf("127.0.0.1:%s", appPort)
+		tlsLine := ""
+		if !opts.reverseProxyTLSEnabled {
+			tlsLine = "    tls off\n"
+		}
 		caddyfile = fmt.Sprintf(`%s {
     reverse_proxy %s {
         lb_try_duration 30s
         lb_try_interval 250ms
     }
     encode gzip
-}
-`, site, upstream)
+%s}
+`, site, upstream, tlsLine)
 	}
 
 	unitB64 := base64.StdEncoding.EncodeToString([]byte(unit))
