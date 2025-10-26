@@ -621,7 +621,6 @@ After=network.target
 User=%s
 WorkingDirectory=%s
 ExecStart=%s
-Environment=APP_ENV=production
 Environment=APP_HOST=%s
 Environment=APP_PORT=%s
 Restart=always
