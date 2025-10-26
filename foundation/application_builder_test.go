@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/event"
+	"github.com/goravel/framework/contracts/foundation"
 	mocksevent "github.com/goravel/framework/mocks/event"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 )
@@ -95,6 +96,18 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 
 		s.NotNil(app)
 	})
+	s.Run("WithProviders", func() {
+		s.SetupTest()
+		mockProvider := mocksfoundation.NewServiceProvider(s.T())
+		providers := []foundation.ServiceProvider{mockProvider}
+
+		s.mockApp.EXPECT().AddServiceProviders(providers).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+
+		app := s.builder.WithProviders(providers).Create()
+
+		s.NotNil(app)
+	})
 }
 
 func (s *ApplicationBuilderTestSuite) TestRun() {
@@ -111,4 +124,20 @@ func (s *ApplicationBuilderTestSuite) TestWithConfig() {
 
 	s.NotNil(builder)
 	s.NotNil(s.builder.config)
+}
+
+func (s *ApplicationBuilderTestSuite) TestWithProviders() {
+	mockProvider1 := mocksfoundation.NewServiceProvider(s.T())
+	mockProvider2 := mocksfoundation.NewServiceProvider(s.T())
+	providers1 := []foundation.ServiceProvider{mockProvider1}
+	providers2 := []foundation.ServiceProvider{mockProvider2}
+
+	builder := s.builder.WithProviders(providers1)
+
+	s.NotNil(builder)
+	s.Equal(providers1, s.builder.configuredServiceProviders)
+
+	builder.WithProviders(providers2)
+	expectedProviders := []foundation.ServiceProvider{mockProvider1, mockProvider2}
+	s.Equal(expectedProviders, s.builder.configuredServiceProviders)
 }
