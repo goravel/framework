@@ -72,9 +72,9 @@ Usage:
    artisan test:foo [options] <string_arg> <two_string_args...> [uint16_arg] [any_count_string_args...]
 
 Options:
-   -b, --bool       Bool flag [default: false]
+   -b, --bool       Bool flag
    -h, --help       Show help
-   -i, --int        int flag [default: 0]
+   -i, --int        int flag
        --no-ansi    Force disable ANSI output`,
 			},
 		},
