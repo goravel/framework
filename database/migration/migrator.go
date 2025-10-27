@@ -39,8 +39,16 @@ func (r *Migrator) Create(name string, modelName string) (string, error) {
 
 	var schemaFields []string
 	if modelName != "" {
-		if model := r.schema.GetModel(modelName); model.IsValid() {
-			table, schemaFields, _ = Generate(model.Type)
+		model := r.schema.GetModel(modelName)
+		if !model.IsValid() {
+			// FIXME: return a proper error here
+			return "", nil
+		}
+
+		var err error
+		table, schemaFields, err = Generate(model.Type)
+		if err != nil {
+			return "", err
 		}
 	}
 
