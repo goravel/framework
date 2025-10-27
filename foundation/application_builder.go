@@ -3,6 +3,7 @@ package foundation
 import (
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/support/color"
 )
 
@@ -15,6 +16,7 @@ type ApplicationBuilder struct {
 	config                     func()
 	configuredServiceProviders []foundation.ServiceProvider
 	eventToListeners           map[event.Event][]event.Listener
+	middleware                 []http.Middleware
 	routes                     []func()
 }
 
@@ -37,6 +39,11 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 	// Register routes
 	for _, route := range r.routes {
 		route()
+	}
+
+	// Register http middleware
+	if len(r.middleware) > 0 {
+
 	}
 
 	// Register event listeners
@@ -68,13 +75,19 @@ func (r *ApplicationBuilder) WithEvents(eventToListeners map[event.Event][]event
 	return r
 }
 
+func (r *ApplicationBuilder) WithMiddleware(middleware []http.Middleware) foundation.ApplicationBuilder {
+	r.middleware = append(r.middleware, middleware...)
+
+	return r
+}
+
 func (r *ApplicationBuilder) WithProviders(providers []foundation.ServiceProvider) foundation.ApplicationBuilder {
 	r.configuredServiceProviders = append(r.configuredServiceProviders, providers...)
 
 	return r
 }
 
-func (r *ApplicationBuilder) WithRouting(routes ...func()) foundation.ApplicationBuilder {
+func (r *ApplicationBuilder) WithRouting(routes []func()) foundation.ApplicationBuilder {
 	r.routes = append(r.routes, routes...)
 
 	return r
