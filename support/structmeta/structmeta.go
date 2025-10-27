@@ -21,7 +21,7 @@ const maxEmbeddedParseDepth = 2
 //     non-addressable struct literal or an interface holding a struct, it will make
 //     a temporary *T copy so pointer-receivers still work.
 //   - If v is a nil pointer, pointer-receiver bindings will remain invalid.
-func WalkStruct(v interface{}) StructMetadata {
+func WalkStruct(v any) StructMetadata {
 	if v == nil {
 		return StructMetadata{}
 	}
@@ -46,93 +46,7 @@ func WalkStruct(v interface{}) StructMetadata {
 
 	structName := typT.String()
 	fields := parseFields(typT, 0, nil)
-
-	var methods []MethodMetadata
-
-	bindMethod := func(methodName string, wantPtrReceiver bool) reflect.Value {
-		if wantPtrReceiver && valV.Kind() == reflect.Ptr {
-			if m := valV.MethodByName(methodName); m.IsValid() {
-				return m
-			}
-		}
-		if !wantPtrReceiver {
-			if m := valV.MethodByName(methodName); m.IsValid() {
-				return m
-			}
-		}
-		if wantPtrReceiver && valV.Kind() == reflect.Struct && valV.CanAddr() {
-			addrV := valV.Addr()
-			if m := addrV.MethodByName(methodName); m.IsValid() {
-				return m
-			}
-		}
-		if wantPtrReceiver && valV.Kind() == reflect.Struct && !valV.CanAddr() {
-			tmpPtr := reflect.New(valV.Type())
-			tmpPtr.Elem().Set(valV)
-			if m := tmpPtr.MethodByName(methodName); m.IsValid() {
-				return m
-			}
-		}
-		return reflect.Value{}
-	}
-
-	for i := 0; i < typT.NumMethod(); i++ {
-		mDef := typT.Method(i)
-		mType := mDef.Type
-		var params []string
-		for j := 1; j < mType.NumIn(); j++ {
-			params = append(params, mType.In(j).String())
-		}
-		var returns []string
-		for j := 0; j < mType.NumOut(); j++ {
-			returns = append(returns, mType.Out(j).String())
-		}
-
-		bound := bindMethod(mDef.Name, false /*value receiver*/)
-		methods = append(methods, MethodMetadata{
-			Name:         mDef.Name,
-			Receiver:     mType.In(0).String(),
-			Parameters:   params,
-			Returns:      returns,
-			ReflectValue: bound,
-		})
-	}
-
-	ptrType := reflect.PointerTo(typT)
-	for i := 0; i < ptrType.NumMethod(); i++ {
-		mDef := ptrType.Method(i)
-		mType := mDef.Type
-
-		name := mDef.Name
-		already := false
-		for _, prev := range methods {
-			if prev.Name == name {
-				already = true
-				break
-			}
-		}
-		if already {
-			continue
-		}
-
-		var params []string
-		for j := 1; j < mType.NumIn(); j++ {
-			params = append(params, mType.In(j).String())
-		}
-		var returns []string
-		for j := 0; j < mType.NumOut(); j++ {
-			returns = append(returns, mType.Out(j).String())
-		}
-
-		bound := bindMethod(mDef.Name, true /*pointer receiver*/)
-		methods = append(methods, MethodMetadata{
-			Name:         mDef.Name,
-			Receiver:     mType.In(0).String(),
-			Parameters:   params,
-			Returns:      returns,
-			ReflectValue: bound,
-		})
-	}
+	methods := parseMethods(typT, valV)
 
 	return StructMetadata{
 		Name:         structName,
@@ -175,4 +89,98 @@ func parseFields(t reflect.Type, depth int, basePath []int) []FieldMetadata {
 		}
 	}
 	return fields
+}
+
+func parseMethods(t reflect.Type, v reflect.Value) []MethodMetadata {
+	var methods []MethodMetadata
+
+	bindMethod := func(methodName string, wantPtrReceiver bool) reflect.Value {
+		if v.Kind() == reflect.Ptr && v.IsNil() {
+			return reflect.Value{}
+		}
+		if wantPtrReceiver && v.Kind() == reflect.Ptr {
+			if m := v.MethodByName(methodName); m.IsValid() {
+				return m
+			}
+		}
+		if !wantPtrReceiver {
+			if m := v.MethodByName(methodName); m.IsValid() {
+				return m
+			}
+		}
+		if wantPtrReceiver && v.Kind() == reflect.Struct && v.CanAddr() {
+			addrV := v.Addr()
+			if m := addrV.MethodByName(methodName); m.IsValid() {
+				return m
+			}
+		}
+		if wantPtrReceiver && v.Kind() == reflect.Struct && !v.CanAddr() {
+			tmpPtr := reflect.New(v.Type())
+			tmpPtr.Elem().Set(v)
+			if m := tmpPtr.MethodByName(methodName); m.IsValid() {
+				return m
+			}
+		}
+		return reflect.Value{}
+	}
+
+	for i := 0; i < t.NumMethod(); i++ {
+		mDef := t.Method(i)
+		mType := mDef.Type
+		var params []string
+		for j := 1; j < mType.NumIn(); j++ {
+			params = append(params, mType.In(j).String())
+		}
+		var returns []string
+		for j := 0; j < mType.NumOut(); j++ {
+			returns = append(returns, mType.Out(j).String())
+		}
+
+		bound := bindMethod(mDef.Name, false /*value receiver*/)
+		methods = append(methods, MethodMetadata{
+			Name:         mDef.Name,
+			Receiver:     mType.In(0).String(),
+			Parameters:   params,
+			Returns:      returns,
+			ReflectValue: bound,
+		})
+	}
+
+	ptrType := reflect.PointerTo(t)
+	for i := 0; i < ptrType.NumMethod(); i++ {
+		mDef := ptrType.Method(i)
+		mType := mDef.Type
+
+		name := mDef.Name
+		already := false
+		for _, prev := range methods {
+			if prev.Name == name {
+				already = true
+				break
+			}
+		}
+		if already {
+			continue
+		}
+
+		var params []string
+		for j := 1; j < mType.NumIn(); j++ {
+			params = append(params, mType.In(j).String())
+		}
+		var returns []string
+		for j := 0; j < mType.NumOut(); j++ {
+			returns = append(returns, mType.Out(j).String())
+		}
+
+		bound := bindMethod(mDef.Name, true /*pointer receiver*/)
+		methods = append(methods, MethodMetadata{
+			Name:         mDef.Name,
+			Receiver:     mType.In(0).String(),
+			Parameters:   params,
+			Returns:      returns,
+			ReflectValue: bound,
+		})
+	}
+
+	return methods
 }
