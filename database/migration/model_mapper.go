@@ -18,38 +18,39 @@ const (
 	avgColNameLen = 10
 )
 
+// TODO: Generic types are mess as of now, might need to handle time in a better way
 var goTypeToMethod = map[string]string{
-	"uint":                "UnsignedInteger",
-	"int":                 "Integer",
-	"int32":               "Integer",
-	"int64":               "BigInteger",
-	"uint64":              "UnsignedBigInteger",
-	"bool":                "Boolean",
-	"time.Time":           "DateTimeTz",
-	"carbon.DateTime":     "DateTimeTz",
-	"carbon.Carbon":       "DateTimeTz",
-	"float64":             "Double",
-	"float32":             "Float",
-	"int16":               "SmallInteger",
-	"int8":                "TinyInteger",
-	"uint32":              "UnsignedInteger",
-	"uint16":              "UnsignedSmallInteger",
-	"uint8":               "UnsignedTinyInteger",
-	"[]byte":              "Binary",
-	"[]uint8":             "Binary",
-	"gorm.DeletedAt":      "SoftDeletesTz",
-	"datatypes.JSON":      "Json",
-	"datatypes.JSONMap":   "Json",
-	"datatypes.JSONArray": "Json",
-	"datatypes.Date":      "Date",
-	"datatypes.Time":      "Time",
-	"sql.NullString":      "Text",
-	"sql.NullInt64":       "BigInteger",
-	"sql.NullInt32":       "Integer",
-	"sql.NullInt16":       "SmallInteger",
-	"sql.NullBool":        "Boolean",
-	"sql.NullFloat64":     "Double",
-	"sql.NullTime":        "DateTimeTz",
+	"uint":      "UnsignedInteger",
+	"int":       "Integer",
+	"int32":     "Integer",
+	"int64":     "BigInteger",
+	"uint64":    "UnsignedBigInteger",
+	"bool":      "Boolean",
+	"time.Time": "DateTimeTz",
+	"github.com/goravel/framework/support/carbon.DateTime": "DateTimeTz",
+	"github.com/goravel/framework/support/carbon.Carbon":   "DateTimeTz",
+	"float64":                     "Double",
+	"float32":                     "Float",
+	"int16":                       "SmallInteger",
+	"int8":                        "TinyInteger",
+	"uint32":                      "UnsignedInteger",
+	"uint16":                      "UnsignedSmallInteger",
+	"uint8":                       "UnsignedTinyInteger",
+	"[]byte":                      "Binary",
+	"[]uint8":                     "Binary",
+	"gorm.io/gorm.DeletedAt":      "SoftDeletesTz",
+	"gorm.io/datatypes.JSON":      "Json",
+	"gorm.io/datatypes.JSONMap":   "Json",
+	"gorm.io/datatypes.JSONArray": "Json",
+	"gorm.io/datatypes.Date":      "Date",
+	"gorm.io/datatypes.Time":      "Time",
+	"sql.NullString":              "Text",
+	"sql.NullInt64":               "BigInteger",
+	"sql.NullInt32":               "Integer",
+	"sql.NullInt16":               "SmallInteger",
+	"sql.NullBool":                "Boolean",
+	"sql.NullFloat64":             "Double",
+	"sql.NullTime":                "DateTimeTz",
 }
 
 var goNullableTypes = map[string]bool{
@@ -63,22 +64,25 @@ var goNullableTypes = map[string]bool{
 }
 
 var nonRelationTypes = map[string]bool{
-	"time.Time":           true,
-	"gorm.DeletedAt":      true,
-	"carbon.DateTime":     true,
+	"time.Time":              true,
+	"gorm.io/gorm.DeletedAt": true,
+	"github.com/goravel/framework/support/carbon.DateTime": true,
 	"carbon.Carbon":       true,
-	"datatypes.JSON":      true,
-	"datatypes.JSONMap":   true,
-	"datatypes.JSONArray": true,
-	"datatypes.Date":      true,
-	"datatypes.Time":      true,
-	"sql.NullString":      true,
-	"sql.NullInt64":       true,
-	"sql.NullInt32":       true,
-	"sql.NullInt16":       true,
-	"sql.NullBool":        true,
-	"sql.NullFloat64":     true,
-	"sql.NullTime":        true,
+	"carbon.DateTime":     true,
+	"carbon.DateTimeType": true,
+	"github.com/goravel/framework/support/carbon.Carbon": true,
+	"gorm.io/datatypes.JSON":                             true,
+	"gorm.io/datatypes.JSONMap":                          true,
+	"gorm.io/datatypes.JSONArray":                        true,
+	"gorm.io/datatypes.Date":                             true,
+	"gorm.io/datatypes.Time":                             true,
+	"sql.NullString":                                     true,
+	"sql.NullInt64":                                      true,
+	"sql.NullInt32":                                      true,
+	"sql.NullInt16":                                      true,
+	"sql.NullBool":                                       true,
+	"sql.NullFloat64":                                    true,
+	"sql.NullTime":                                       true,
 }
 
 var dbTypeToMethod = map[string]string{
@@ -108,8 +112,8 @@ var dbTypeToMethod = map[string]string{
 	"timestamp":   "DateTimeTz",
 	"timestamptz": "DateTimeTz",
 	"datetime":    "DateTimeTz",
-	"date":        "Date", // Changed from DateTimeTz to Date
-	"time":        "Time", // Changed from DateTimeTz to Time
+	"date":        "Date",
+	"time":        "Time",
 	"blob":        "Binary",
 	"tinyblob":    "Binary",
 	"mediumblob":  "Binary",
@@ -306,6 +310,7 @@ func renderLines(s *tableSchema) []string {
 		for name := range s.indexes {
 			names = append(names, name)
 		}
+
 		sort.Strings(names)
 
 		if len(names) > 1 {
@@ -354,6 +359,10 @@ func renderColumn(col *column) string {
 
 	b.WriteByte(')')
 
+	sort.SliceStable(col.modifiers, func(i, j int) bool {
+		return col.modifiers[i].name < col.modifiers[j].name
+	})
+
 	for _, m := range col.modifiers {
 		b.WriteByte('.')
 		b.WriteString(m.name)
@@ -377,6 +386,12 @@ func writeValue(b *strings.Builder, v any) {
 		b.WriteString(strconv.Itoa(val))
 	case string:
 		b.WriteString(strconv.Quote(val))
+	case *string:
+		if val == nil {
+			b.WriteString("nil")
+		} else {
+			b.WriteString(strconv.Quote(*val))
+		}
 	case int64:
 		b.Write(strconv.AppendInt(nil, val, 10))
 	case uint:
@@ -394,6 +409,10 @@ func writeValue(b *strings.Builder, v any) {
 	case bool:
 		b.WriteString(strconv.FormatBool(val))
 	default:
+		if v == nil {
+			b.WriteString("nil")
+			return
+		}
 		b.WriteString("nil")
 	}
 }
@@ -411,6 +430,8 @@ func renderIndex(idx index) string {
 	} else {
 		b.WriteString("Index(")
 	}
+
+	sort.Strings(idx.columns)
 
 	for i := range idx.columns {
 		if i > 0 {
@@ -649,7 +670,7 @@ func mapType(field *structmeta.FieldMetadata, t *tag) (method string, args []any
 func mapDBType(dbType string, size int) (method string, args []any) {
 	s := strings.ToLower(dbType)
 	method = "Column"
-	args = []any{strconv.Quote(dbType)}
+	args = []any{dbType}
 
 	if m, ok := dbTypeToMethod[s]; ok {
 		method = m
@@ -729,21 +750,44 @@ func shouldInclude(field *structmeta.FieldMetadata) bool {
 
 func isRelation(field *structmeta.FieldMetadata) bool {
 	t := field.Type
-	if field.Kind == reflect.Ptr {
+	kind := field.Kind
+	rType := field.ReflectType
+
+	if kind == reflect.Ptr {
 		t = strings.TrimPrefix(t, "*")
+		if rType != nil {
+			rType = rType.Elem()
+			if rType != nil {
+				kind = rType.Kind()
+			}
+		}
+	}
+
+	if kind == reflect.Slice || kind == reflect.Array {
+		if rType != nil {
+			elemType := rType.Elem()
+			if elemType != nil {
+				kind = elemType.Kind()
+				if kind == reflect.Ptr {
+					elemType = elemType.Elem()
+					if elemType != nil {
+						kind = elemType.Kind()
+					}
+				}
+				if elemType != nil {
+					t = elemType.String()
+				}
+			}
+		}
 	}
 
 	if nonRelationTypes[t] {
 		return false
 	}
 
-	kind := field.Kind
-	if kind == reflect.Ptr || kind == reflect.Slice || kind == reflect.Array {
-		if field.ReflectType != nil {
-			elem := field.ReflectType.Elem()
-			if elem != nil {
-				kind = elem.Kind()
-			}
+	for typeSuffix := range nonRelationTypes {
+		if strings.HasSuffix(t, typeSuffix) {
+			return false
 		}
 	}
 
