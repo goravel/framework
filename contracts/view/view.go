@@ -1,4 +1,4 @@
-package http
+package view
 
 type View interface {
 	// Exists checks if a view with the specified name exists.

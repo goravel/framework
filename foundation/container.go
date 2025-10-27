@@ -34,6 +34,7 @@ import (
 	contractstesting "github.com/goravel/framework/contracts/testing"
 	contractstranslation "github.com/goravel/framework/contracts/translation"
 	contractsvalidation "github.com/goravel/framework/contracts/validation"
+	contractsview "github.com/goravel/framework/contracts/view"
 	"github.com/goravel/framework/support/color"
 )
 
@@ -375,14 +376,14 @@ func (r *Container) MakeValidation() contractsvalidation.Validation {
 	return instance.(contractsvalidation.Validation)
 }
 
-func (r *Container) MakeView() contractshttp.View {
+func (r *Container) MakeView() contractsview.View {
 	instance, err := r.Make(facades.FacadeToBinding[facades.View])
 	if err != nil {
 		color.Errorln(err)
 		return nil
 	}
 
-	return instance.(contractshttp.View)
+	return instance.(contractsview.View)
 }
 
 func (r *Container) MakeWith(key any, parameters map[string]any) (any, error) {
