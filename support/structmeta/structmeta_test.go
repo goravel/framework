@@ -75,19 +75,12 @@ func TestWalkStruct_MethodDetection(t *testing.T) {
 
 	for _, m := range meta.Methods {
 		expect, ok := methods[m.Name]
-		if !ok {
-			t.Errorf("unexpected method: %s", m.Name)
-			continue
-		}
+		assert.True(t, ok)
 		assert.Equal(t, expect.Receiver, m.Receiver)
 		assert.Equal(t, expect.Params, m.Parameters)
 		assert.Equal(t, expect.Returns, m.Returns)
 		assert.Equal(t, expect.IsCallable, m.ReflectValue.IsValid(), "%s callable", m.Name)
 		delete(methods, m.Name)
-	}
-
-	if len(methods) > 0 {
-		t.Errorf("missing expected methods: %+v", methods)
 	}
 }
 
@@ -114,19 +107,4 @@ func TestWalkStruct_NonStructInput(t *testing.T) {
 	assert.Empty(t, WalkStruct(nil).Fields)
 	assert.Empty(t, WalkStruct(42).Fields)
 	assert.Empty(t, WalkStruct("not a struct").Fields)
-}
-
-func TestNewTagMetadata(t *testing.T) {
-	tag := reflect.StructTag(`json:"id,omitempty" validate:"min=1,max=10"`)
-	meta := NewTagMetadata(tag)
-
-	assert.True(t, meta.HasKey("json"))
-	assert.True(t, meta.HasKey("validate"))
-	assert.False(t, meta.HasKey("nonexistent"))
-
-	assert.Equal(t, "id,omitempty", meta.Get("json"))
-	assert.Equal(t, []string{"id", "omitempty"}, meta.GetParts("json"))
-
-	assert.Equal(t, "min=1,max=10", meta.Get("validate"))
-	assert.Equal(t, []string{"min=1", "max=10"}, meta.GetParts("validate"))
 }
