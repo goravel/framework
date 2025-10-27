@@ -181,6 +181,8 @@ type Query interface {
 	UpdateOrCreate(dest any, attributes any, values any) error
 	// Where add a "where" clause to the query.
 	Where(query any, args ...any) Query
+	// WhereHas add a relationship count / exists condition to the query with where clauses.
+	WhereHas(relation string, callback func(query Query) Query, args ...any) Query
 	// WhereBetween adds a "where column between x and y" clause to the query.
 	WhereBetween(column string, x, y any) Query
 	// WhereIn adds a "where column in" clause to the query.
