@@ -6,7 +6,7 @@ toolchain go1.25.3
 
 require (
 	github.com/Masterminds/squirrel v1.5.4
-	github.com/brianvoe/gofakeit/v7 v7.8.0
+	github.com/brianvoe/gofakeit/v7 v7.8.1
 	github.com/charmbracelet/huh v0.8.0
 	github.com/charmbracelet/huh/spinner v0.0.0-20251005153135-a01a1e304532
 	github.com/charmbracelet/lipgloss v1.1.0
@@ -31,7 +31,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/urfave/cli/v3 v3.5.0
 	golang.org/x/crypto v0.43.0
-	golang.org/x/exp v0.0.0-20251017212417-90e834f514db
+	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546
 	google.golang.org/grpc v1.76.0
 	google.golang.org/protobuf v1.36.10
 	gorm.io/gorm v1.31.0
@@ -116,8 +116,8 @@ require (
 )
 
 replace (
-	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20251014184007-4626949a642f
-	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20251014184007-4626949a642f
+	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20251022142026-3a174f9686a8
+	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20251022142026-3a174f9686a8
 )
 
 tool github.com/vektra/mockery/v2
