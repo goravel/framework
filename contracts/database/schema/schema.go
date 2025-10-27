@@ -36,6 +36,8 @@ type Schema interface {
 	GetIndexListing(table string) []string
 	// GetIndexes Get the indexes for a given table.
 	GetIndexes(table string) ([]driver.Index, error)
+	// GetModel Get the model from the registered models by name.
+	GetModel(name string) Model
 	// GetTableListing Get the table listing for the database.
 	GetTableListing() []string
 	// GetTables Get the tables that belong to the database.
@@ -46,8 +48,6 @@ type Schema interface {
 	GetViews() ([]driver.View, error)
 	// GoTypes returns the mapping of schema types to Go types.
 	GoTypes() []GoType
-	// GetModel Get the model from the registered models by name.
-	GetModel(name string) Model
 	// HasColumn Determine if the given table has a given column.
 	HasColumn(table, column string) bool
 	// HasColumns Determine if the given table has given columns.

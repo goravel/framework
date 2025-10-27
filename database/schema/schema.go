@@ -251,6 +251,16 @@ func (r *Schema) GetIndexes(table string) ([]driver.Index, error) {
 	return r.processor.ProcessIndexes(dbIndexes), nil
 }
 
+func (r *Schema) GetModel(name string) contractsschema.Model {
+	for _, model := range r.models {
+		if model.Name == name {
+			return model
+		}
+	}
+
+	return contractsschema.Model{}
+}
+
 func (r *Schema) GetTableListing() []string {
 	tables, err := r.GetTables()
 	if err != nil {
@@ -295,16 +305,6 @@ func (r *Schema) GetViews() ([]driver.View, error) {
 
 func (r *Schema) GoTypes() []contractsschema.GoType {
 	return r.goTypes
-}
-
-func (r *Schema) GetModel(name string) contractsschema.Model {
-	for _, model := range r.models {
-		if model.Name == name {
-			return model
-		}
-	}
-
-	return contractsschema.Model{}
 }
 
 func (r *Schema) HasColumn(table, column string) bool {
