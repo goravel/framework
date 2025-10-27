@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/goravel/framework/database/orm"
+	"github.com/goravel/framework/errors"
 )
 
 type User struct {
@@ -151,28 +152,28 @@ func TestGenerate(t *testing.T) {
 			model:     nil,
 			wantTable: "",
 			wantLines: nil,
-			wantErr:   errInvalidModel,
+			wantErr:   errors.SchemaInvalidModel,
 		},
 		{
 			name:      "Error - Non-struct model (int)",
 			model:     123,
 			wantTable: "",
 			wantLines: nil,
-			wantErr:   errInvalidModel,
+			wantErr:   errors.SchemaInvalidModel,
 		},
 		{
 			name:      "Error - Non-struct model (string)",
 			model:     "hello",
 			wantTable: "",
 			wantLines: nil,
-			wantErr:   errInvalidModel,
+			wantErr:   errors.SchemaInvalidModel,
 		},
 		{
 			name:      "Error - Empty struct model",
 			model:     struct{}{},
 			wantTable: "",
 			wantLines: nil,
-			wantErr:   errInvalidModel,
+			wantErr:   errors.SchemaInvalidModel,
 		},
 	}
 

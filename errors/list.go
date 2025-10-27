@@ -37,6 +37,8 @@ var (
 	CacheMemoryInvalidIntValueType    = New("value type of %s is not *atomic.Int64 or *int64 or *atomic.Int32 or *int32")
 	CacheStoreContractNotFulfilled    = New("%s doesn't implement contracts/cache/store")
 
+	CommandEmptyPackageName = New("the package name cannot be empty")
+
 	ConsoleProvidersNotArray = New("the app.providers configuration is not of type []foundation.ServiceProvider, skipping registering service providers")
 
 	ConsoleCommandRegistrationFailed         = New("Registration of command '%s' failed: %v")
@@ -152,6 +154,13 @@ var (
 	PluralizerNoSubstitutionsGiven = New("no substitutions provided").SetModule(ModulePluralizer)
 	PluralizerNoWordsGiven         = New("no words provided").SetModule(ModulePluralizer)
 
+	ProcessNotStarted            = New("process not started").SetModule(ModuleProcess)
+	ProcessUnsupportedSignalType = New("unsupported signal type").SetModule(ModuleProcess)
+	ProcessPipelineEmpty         = New("pipeline must have at least one command").SetModule(ModuleProcess)
+	ProcessPipelineStartFailed   = New("failed to start pipeline: %v").SetModule(ModuleProcess)
+	ProcessPipeNilConfigurer     = New("pipe configurer cannot be nil").SetModule(ModuleProcess)
+	ProcessPoolNilConfigurer     = New("pool configurer cannot be nil").SetModule(ModuleProcess)
+
 	QueueDriverFailedToPop           = New("failed to pop job from %s queue: %v")
 	QueueDriverInvalid               = New("%s doesn't implement contracts/queue/driver")
 	QueueDriverNoJobFound            = New("no job found in %s queue")
@@ -181,16 +190,17 @@ var (
 	RouteDefaultDriverNotSet = New("please set default driver")
 	RouteInvalidDriver       = New("init %s route driver fail: route must be implement route.Route or func() (route.Route, error)")
 
+	SchemaConnectionNotFound   = New("connection %s not found")
 	SchemaDriverNotSupported   = New("driver %s is not supported")
+	SchemaEmptyReferenceString = New("reference string can't be empty")
+	SchemaErrorReferenceFormat = New("invalid format: too many dots in reference")
 	SchemaFailedToCreateTable  = New("failed to create %s table: %v")
 	SchemaFailedToChangeTable  = New("failed to change %s table: %v")
 	SchemaFailedToDropTable    = New("failed to drop %s table: %v")
 	SchemaFailedToDropColumns  = New("failed to drop %s table columns: %v")
 	SchemaFailedToGetTables    = New("failed to get %s tables: %v")
 	SchemaFailedToRenameTable  = New("failed to rename %s table: %v")
-	SchemaEmptyReferenceString = New("reference string can't be empty")
-	SchemaErrorReferenceFormat = New("invalid format: too many dots in reference")
-	SchemaConnectionNotFound   = New("connection %s not found")
+	SchemaInvalidModel         = New("model must be a struct or pointer to struct")
 	SchemaTableNotFound        = New("table %s not found")
 
 	SessionDriverAlreadyExists        = New("session driver [%s] already exists")
@@ -217,13 +227,4 @@ var (
 	ValidationEmptyRules           = New("rules can't be empty")
 	ValidationFilterRegisterFailed = New("filter register failed: %v")
 	ValidationRuleRegisterFailed   = New("rule register failed: %v")
-
-	CommandEmptyPackageName = New("the package name cannot be empty")
-
-	ProcessNotStarted            = New("process not started").SetModule(ModuleProcess)
-	ProcessUnsupportedSignalType = New("unsupported signal type").SetModule(ModuleProcess)
-	ProcessPipelineEmpty         = New("pipeline must have at least one command").SetModule(ModuleProcess)
-	ProcessPipelineStartFailed   = New("failed to start pipeline: %v").SetModule(ModuleProcess)
-	ProcessPipeNilConfigurer     = New("pipe configurer cannot be nil").SetModule(ModuleProcess)
-	ProcessPoolNilConfigurer     = New("pool configurer cannot be nil").SetModule(ModuleProcess)
 )

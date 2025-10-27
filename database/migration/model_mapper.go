@@ -1,18 +1,14 @@
 package migration
 
 import (
-	"errors"
 	"reflect"
 	"strconv"
 	"strings"
 	"unicode"
 
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/str"
 	"github.com/goravel/framework/support/structmeta"
-)
-
-var (
-	errInvalidModel = errors.New("model must be a struct or pointer to struct")
 )
 
 const (
@@ -42,7 +38,7 @@ const (
 func Generate(model any) (tableName string, lines []string, err error) {
 	meta := structmeta.WalkStruct(model)
 	if meta.Name == "" {
-		return "", nil, errInvalidModel
+		return "", nil, errors.SchemaInvalidModel
 	}
 
 	s, err := buildSchema(meta)
@@ -113,7 +109,7 @@ func buildSchema(meta structmeta.StructMetadata) (*tableSchema, error) {
 	}
 
 	if !s.hasID && len(s.columns) == 0 && !s.timestamps && !s.softDelete {
-		return nil, errInvalidModel
+		return nil, errors.SchemaInvalidModel
 	}
 
 	return s, nil
