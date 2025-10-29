@@ -249,7 +249,7 @@ func (r *ModelMakeCommand) populateStub(stub, packageName, structName string, mo
 
 	formatted, err := formatGoCode(buf.Bytes())
 	if err != nil {
-		return "", errors.TemplateFailedToFormateGoCode.Args(err.Error())
+		return "", errors.TemplateFailedToFormatGoCode.Args(err.Error())
 	}
 
 	return formatted, nil
