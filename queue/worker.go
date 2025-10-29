@@ -105,8 +105,12 @@ func (r *Worker) RunMachinery() error {
 
 func (r *Worker) Shutdown() error {
 	r.isShutdown.Store(true)
+
+	// Close the failed job channel to allow the failed job processor goroutine to exit
 	close(r.failedJobChan)
 
+	// Wait for all worker goroutines to finish processing current tasks
+	r.wg.Wait()
 	if r.machinery != nil {
 		r.machinery.Quit()
 	}
@@ -190,7 +194,7 @@ func (r *Worker) printRunningLog(task queue.Task) {
 		return
 	}
 
-	datetime := color.Gray().Sprint(carbon.Now().ToDateTimeString())
+	datetime := color.Gray().Sprint(carbon.Now().ToDateTimeMilliString())
 	status := "<fg=yellow;op=bold>RUNNING</>"
 	first := datetime + " " + task.Job.Signature()
 	second := status
@@ -203,7 +207,7 @@ func (r *Worker) printSuccessLog(task queue.Task, duration string) {
 		return
 	}
 
-	datetime := color.Gray().Sprint(carbon.Now().ToDateTimeString())
+	datetime := color.Gray().Sprint(carbon.Now().ToDateTimeMilliString())
 	status := "<fg=green;op=bold>DONE</>"
 	duration = color.Gray().Sprint(duration)
 	first := datetime + " " + task.Job.Signature()
@@ -217,7 +221,7 @@ func (r *Worker) printFailedLog(task queue.Task, duration string) {
 		return
 	}
 
-	datetime := color.Gray().Sprint(carbon.Now().ToDateTimeString())
+	datetime := color.Gray().Sprint(carbon.Now().ToDateTimeMilliString())
 	status := "<fg=red;op=bold>FAIL</>"
 	duration = color.Gray().Sprint(duration)
 	first := datetime + " " + task.Job.Signature()
