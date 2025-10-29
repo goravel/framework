@@ -740,6 +740,55 @@ func (s *WorkerTestSuite) TestShutdown() {
 		s.NoError(err)
 	})
 
+	s.Run("shutdown when a task is running but fails finally", func() {
+		s.SetupTest()
+
+		errorTask := contractsqueue.Task{
+			ChainJob: contractsqueue.ChainJob{
+				Job: &TestJobErr{},
+			},
+			UUID: "test-error",
+		}
+
+		mockReservedJob := mocksqueue.NewReservedJob(s.T())
+		s.mockDriver.EXPECT().Pop(s.worker.queue).Return(mockReservedJob, nil).Once()
+		mockReservedJob.EXPECT().Task().Return(errorTask).Once()
+
+		s.mockJob.EXPECT().Call(errorTask.Job.Signature(), make([]any, 0)).RunAndReturn(func(s string, i []any) error {
+			time.Sleep(500 * time.Millisecond)
+
+			return assert.AnError
+		}).Once()
+		s.mockJson.EXPECT().MarshalString(utils.Task{
+			Job: utils.Job{
+				Signature: errorTask.Job.Signature(),
+			},
+			UUID: "test-error",
+		}).Return("{\"signature\":\"test_job_err\",\"args\":null,\"delay\":null,\"uuid\":\"test-error\",\"chain\":[]}", nil).Once()
+
+		mockReservedJob.EXPECT().Delete().Return(nil).Once()
+
+		// Mock failed job logging
+		s.mockConfig.EXPECT().FailedDatabase().Return("mysql").Once()
+		s.mockConfig.EXPECT().FailedTable().Return("failed_jobs").Once()
+		s.mockDB.EXPECT().Connection("mysql").Return(s.mockDB).Once()
+		mockQuery := mocksdb.NewQuery(s.T())
+		s.mockDB.EXPECT().Table("failed_jobs").Return(mockQuery).Once()
+		mockQuery.EXPECT().Insert(matchFailedJob("test-error")).Return(nil, nil).Once()
+
+		// Start the worker
+		go func() {
+			s.NoError(s.worker.run())
+		}()
+
+		// Give worker time to process the failed job
+		time.Sleep(200 * time.Millisecond)
+
+		// Shutdown should wait for failed job logger goroutine
+		err := s.worker.Shutdown()
+		s.NoError(err)
+	})
+
 	s.Run("shutdown with multiple jobs", func() {
 		s.SetupTest()
 		s.worker.concurrent = 2
