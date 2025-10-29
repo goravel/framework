@@ -178,6 +178,42 @@ func (s *ApplicationTestSuite) TestGetDuration() {
 	s.Equal(time.Duration(0), s.config.GetDuration("INVALID_DURATION", time.Second))
 }
 
+func (s *ApplicationTestSuite) TestEnvStringFunction() {
+	// existing value
+	s.T().Setenv("ENVSTRING_VAR", "hello")
+	s.Equal("hello", s.config.EnvString("ENVSTRING_VAR"))
+	s.Equal("hello", s.customConfig.EnvString("ENVSTRING_VAR"))
+
+	// default used when not set
+	s.Equal("fallback", s.config.EnvString("ENVSTRING_NOT_SET", "fallback"))
+
+	// empty string -> use provided default, otherwise empty string
+	s.T().Setenv("ENVSTRING_EMPTY", "")
+	s.Equal("fallback", s.config.EnvString("ENVSTRING_EMPTY", "fallback"))
+	s.Equal("", s.config.EnvString("ENVSTRING_EMPTY"))
+}
+
+func (s *ApplicationTestSuite) TestEnvBoolFunction() {
+	// true/false values
+	s.T().Setenv("ENVBOOL_TRUE", "true")
+	s.True(s.config.EnvBool("ENVBOOL_TRUE"))
+	s.T().Setenv("ENVBOOL_FALSE", "false")
+	s.False(s.config.EnvBool("ENVBOOL_FALSE"))
+
+	// not set -> default respected
+	s.True(s.config.EnvBool("ENVBOOL_NOT_SET", true))
+	s.False(s.config.EnvBool("ENVBOOL_NOT_SET2", false))
+
+	// empty string -> use default if provided; otherwise cast to false
+	s.T().Setenv("ENVBOOL_EMPTY", "")
+	s.True(s.config.EnvBool("ENVBOOL_EMPTY", true))
+	s.False(s.config.EnvBool("ENVBOOL_EMPTY"))
+
+	// invalid -> false
+	s.T().Setenv("ENVBOOL_INVALID", "invalid")
+	s.False(s.config.EnvBool("ENVBOOL_INVALID"))
+}
+
 func TestOsVariables(t *testing.T) {
 	t.Setenv("APP_KEY", "12345678901234567890123456789013")
 	t.Setenv("APP_NAME", "goravel")

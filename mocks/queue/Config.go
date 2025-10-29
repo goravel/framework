@@ -340,6 +340,128 @@ func (_c *Config_Env_Call) RunAndReturn(run func(string, ...interface{}) interfa
 	return _c
 }
 
+// EnvBool provides a mock function with given fields: envName, defaultValue
+func (_m *Config) EnvBool(envName string, defaultValue ...bool) bool {
+	_va := make([]interface{}, len(defaultValue))
+	for _i := range defaultValue {
+		_va[_i] = defaultValue[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, envName)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for EnvBool")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(string, ...bool) bool); ok {
+		r0 = rf(envName, defaultValue...)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// Config_EnvBool_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EnvBool'
+type Config_EnvBool_Call struct {
+	*mock.Call
+}
+
+// EnvBool is a helper method to define mock.On call
+//   - envName string
+//   - defaultValue ...bool
+func (_e *Config_Expecter) EnvBool(envName interface{}, defaultValue ...interface{}) *Config_EnvBool_Call {
+	return &Config_EnvBool_Call{Call: _e.mock.On("EnvBool",
+		append([]interface{}{envName}, defaultValue...)...)}
+}
+
+func (_c *Config_EnvBool_Call) Run(run func(envName string, defaultValue ...bool)) *Config_EnvBool_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]bool, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(bool)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Config_EnvBool_Call) Return(_a0 bool) *Config_EnvBool_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Config_EnvBool_Call) RunAndReturn(run func(string, ...bool) bool) *Config_EnvBool_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// EnvString provides a mock function with given fields: envName, defaultValue
+func (_m *Config) EnvString(envName string, defaultValue ...string) string {
+	_va := make([]interface{}, len(defaultValue))
+	for _i := range defaultValue {
+		_va[_i] = defaultValue[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, envName)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for EnvString")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string, ...string) string); ok {
+		r0 = rf(envName, defaultValue...)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Config_EnvString_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EnvString'
+type Config_EnvString_Call struct {
+	*mock.Call
+}
+
+// EnvString is a helper method to define mock.On call
+//   - envName string
+//   - defaultValue ...string
+func (_e *Config_Expecter) EnvString(envName interface{}, defaultValue ...interface{}) *Config_EnvString_Call {
+	return &Config_EnvString_Call{Call: _e.mock.On("EnvString",
+		append([]interface{}{envName}, defaultValue...)...)}
+}
+
+func (_c *Config_EnvString_Call) Run(run func(envName string, defaultValue ...string)) *Config_EnvString_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Config_EnvString_Call) Return(_a0 string) *Config_EnvString_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Config_EnvString_Call) RunAndReturn(run func(string, ...string) string) *Config_EnvString_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // FailedDatabase provides a mock function with no fields
 func (_m *Config) FailedDatabase() string {
 	ret := _m.Called()
