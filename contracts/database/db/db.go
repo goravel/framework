@@ -203,6 +203,12 @@ type Query interface {
 	WhereNull(column string) Query
 	// WhereRaw adds a raw where clause to the query.
 	WhereRaw(raw string, args []any) Query
+	// WhereAny adds a "where any of columns match" clause to the query.
+	WhereAny(columns []string, op string, val any) Query
+	// WhereAll adds a "where all columns match" clause to the query.
+	WhereAll(columns []string, op string, val any) Query
+	// WhereNone adds a "where none of columns match" clause to the query.
+	WhereNone(columns []string, op string, val any) Query
 }
 
 type Result struct {

@@ -209,6 +209,12 @@ type Query interface {
 	WhereNotNull(column string) Query
 	// WhereNull adds a "where column is null" clause to the query.
 	WhereNull(column string) Query
+	// WhereAny adds a "where any of columns match" clause to the query.
+	WhereAny(columns []string, op string, val any) Query
+	// WhereAll adds a "where all columns match" clause to the query.
+	WhereAll(columns []string, op string, val any) Query
+	// WhereNone adds a "where none of columns match" clause to the query.
+	WhereNone(columns []string, op string, val any) Query
 	// WithoutEvents disables event firing for the query.
 	WithoutEvents() Query
 	// WithTrashed allows soft deleted models to be included in the results.

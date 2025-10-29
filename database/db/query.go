@@ -982,6 +982,45 @@ func (r *Query) WhereRaw(raw string, args []any) db.Query {
 	return r.Where(sq.Expr(raw, args...))
 }
 
+func (r *Query) WhereAny(columns []string, op string, val any) db.Query {
+	for i, column := range columns {
+		query := sq.Expr(fmt.Sprintf("%s %s ?", column, op), val)
+		where := contractsdriver.Where{
+			Query: query,
+			Or:    i > 0,
+		}
+		r.conditions.Where = deep.Append(r.conditions.Where, where)
+	}
+	return r
+}
+
+func (r *Query) WhereAll(columns []string, op string, val any) db.Query {
+	for _, column := range columns {
+		query := sq.Expr(fmt.Sprintf("%s %s ?", column, op), val)
+		where := contractsdriver.Where{
+			Query: query,
+		}
+		r.conditions.Where = deep.Append(r.conditions.Where, where)
+	}
+	return r
+}
+
+func (r *Query) WhereNone(columns []string, op string, val any) db.Query {
+	for _, column := range columns {
+		var query any
+		if op == "=" {
+			query = sq.NotEq{column: val}
+		} else {
+			query = sq.Expr(fmt.Sprintf("NOT (%s %s ?)", column, op), val)
+		}
+		where := contractsdriver.Where{
+			Query: query,
+		}
+		r.conditions.Where = deep.Append(r.conditions.Where, where)
+	}
+	return r
+}
+
 func (r *Query) addWhere(where contractsdriver.Where) db.Query {
 	q := r.clone()
 	q.conditions.Where = deep.Append(q.conditions.Where, where)

@@ -3393,6 +3393,106 @@ func (_c *Query_Where_Call) RunAndReturn(run func(interface{}, ...interface{}) d
 	return _c
 }
 
+// WhereAll provides a mock function with given fields: columns, op, val
+func (_m *Query) WhereAll(columns []string, op string, val interface{}) db.Query {
+	ret := _m.Called(columns, op, val)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WhereAll")
+	}
+
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func([]string, string, interface{}) db.Query); ok {
+		r0 = rf(columns, op, val)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_WhereAll_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WhereAll'
+type Query_WhereAll_Call struct {
+	*mock.Call
+}
+
+// WhereAll is a helper method to define mock.On call
+//   - columns []string
+//   - op string
+//   - val interface{}
+func (_e *Query_Expecter) WhereAll(columns interface{}, op interface{}, val interface{}) *Query_WhereAll_Call {
+	return &Query_WhereAll_Call{Call: _e.mock.On("WhereAll", columns, op, val)}
+}
+
+func (_c *Query_WhereAll_Call) Run(run func(columns []string, op string, val interface{})) *Query_WhereAll_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].([]string), args[1].(string), args[2].(interface{}))
+	})
+	return _c
+}
+
+func (_c *Query_WhereAll_Call) Return(_a0 db.Query) *Query_WhereAll_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_WhereAll_Call) RunAndReturn(run func([]string, string, interface{}) db.Query) *Query_WhereAll_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WhereAny provides a mock function with given fields: columns, op, val
+func (_m *Query) WhereAny(columns []string, op string, val interface{}) db.Query {
+	ret := _m.Called(columns, op, val)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WhereAny")
+	}
+
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func([]string, string, interface{}) db.Query); ok {
+		r0 = rf(columns, op, val)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_WhereAny_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WhereAny'
+type Query_WhereAny_Call struct {
+	*mock.Call
+}
+
+// WhereAny is a helper method to define mock.On call
+//   - columns []string
+//   - op string
+//   - val interface{}
+func (_e *Query_Expecter) WhereAny(columns interface{}, op interface{}, val interface{}) *Query_WhereAny_Call {
+	return &Query_WhereAny_Call{Call: _e.mock.On("WhereAny", columns, op, val)}
+}
+
+func (_c *Query_WhereAny_Call) Run(run func(columns []string, op string, val interface{})) *Query_WhereAny_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].([]string), args[1].(string), args[2].(interface{}))
+	})
+	return _c
+}
+
+func (_c *Query_WhereAny_Call) Return(_a0 db.Query) *Query_WhereAny_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_WhereAny_Call) RunAndReturn(run func([]string, string, interface{}) db.Query) *Query_WhereAny_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // WhereBetween provides a mock function with given fields: column, x, y
 func (_m *Query) WhereBetween(column string, x interface{}, y interface{}) db.Query {
 	ret := _m.Called(column, x, y)
@@ -3891,6 +3991,56 @@ func (_c *Query_WhereLike_Call) Return(_a0 db.Query) *Query_WhereLike_Call {
 }
 
 func (_c *Query_WhereLike_Call) RunAndReturn(run func(string, string) db.Query) *Query_WhereLike_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WhereNone provides a mock function with given fields: columns, op, val
+func (_m *Query) WhereNone(columns []string, op string, val interface{}) db.Query {
+	ret := _m.Called(columns, op, val)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WhereNone")
+	}
+
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func([]string, string, interface{}) db.Query); ok {
+		r0 = rf(columns, op, val)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_WhereNone_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WhereNone'
+type Query_WhereNone_Call struct {
+	*mock.Call
+}
+
+// WhereNone is a helper method to define mock.On call
+//   - columns []string
+//   - op string
+//   - val interface{}
+func (_e *Query_Expecter) WhereNone(columns interface{}, op interface{}, val interface{}) *Query_WhereNone_Call {
+	return &Query_WhereNone_Call{Call: _e.mock.On("WhereNone", columns, op, val)}
+}
+
+func (_c *Query_WhereNone_Call) Run(run func(columns []string, op string, val interface{})) *Query_WhereNone_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].([]string), args[1].(string), args[2].(interface{}))
+	})
+	return _c
+}
+
+func (_c *Query_WhereNone_Call) Return(_a0 db.Query) *Query_WhereNone_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_WhereNone_Call) RunAndReturn(run func([]string, string, interface{}) db.Query) *Query_WhereNone_Call {
 	_c.Call.Return(run)
 	return _c
 }
