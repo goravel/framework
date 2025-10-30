@@ -30,11 +30,12 @@ type Worker struct {
 	failedJobChan chan models.FailedJob
 	machinery     *machinery.Worker
 
-	connection string
-	queue      string
-	wg         sync.WaitGroup
-	concurrent int
-	tries      int
+	connection  string
+	queue       string
+	jobWg       sync.WaitGroup
+	failedJobWg sync.WaitGroup
+	concurrent  int
+	tries       int
 
 	currentDelay time.Duration
 	maxDelay     time.Duration
@@ -105,7 +106,15 @@ func (r *Worker) RunMachinery() error {
 
 func (r *Worker) Shutdown() error {
 	r.isShutdown.Store(true)
+
+	// Wait for all worker goroutines to finish processing current tasks
+	r.jobWg.Wait()
+
+	// Close the failed job channel to allow the failed job processor goroutine to exit
 	close(r.failedJobChan)
+
+	// Wait for the failed job processor goroutine to finish
+	r.failedJobWg.Wait()
 
 	if r.machinery != nil {
 		r.machinery.Quit()
@@ -190,7 +199,7 @@ func (r *Worker) printRunningLog(task queue.Task) {
 		return
 	}
 
-	datetime := color.Gray().Sprint(carbon.Now().ToDateTimeString())
+	datetime := color.Gray().Sprint(carbon.Now().ToDateTimeMilliString())
 	status := "<fg=yellow;op=bold>RUNNING</>"
 	first := datetime + " " + task.Job.Signature()
 	second := status
@@ -203,7 +212,7 @@ func (r *Worker) printSuccessLog(task queue.Task, duration string) {
 		return
 	}
 
-	datetime := color.Gray().Sprint(carbon.Now().ToDateTimeString())
+	datetime := color.Gray().Sprint(carbon.Now().ToDateTimeMilliString())
 	status := "<fg=green;op=bold>DONE</>"
 	duration = color.Gray().Sprint(duration)
 	first := datetime + " " + task.Job.Signature()
@@ -217,7 +226,7 @@ func (r *Worker) printFailedLog(task queue.Task, duration string) {
 		return
 	}
 
-	datetime := color.Gray().Sprint(carbon.Now().ToDateTimeString())
+	datetime := color.Gray().Sprint(carbon.Now().ToDateTimeMilliString())
 	status := "<fg=red;op=bold>FAIL</>"
 	duration = color.Gray().Sprint(duration)
 	first := datetime + " " + task.Job.Signature()
@@ -232,9 +241,9 @@ func (r *Worker) run() error {
 	}
 
 	for i := 0; i < r.concurrent; i++ {
-		r.wg.Add(1)
+		r.jobWg.Add(1)
 		go func() {
-			defer r.wg.Done()
+			defer r.jobWg.Done()
 			for {
 				if r.isShutdown.Load() {
 					return
@@ -295,16 +304,15 @@ func (r *Worker) run() error {
 		}()
 	}
 
-	r.wg.Add(1)
-
+	r.failedJobWg.Add(1)
 	go func() {
-		defer r.wg.Done()
+		defer r.failedJobWg.Done()
 		for job := range r.failedJobChan {
 			r.logFailedJob(job)
 		}
 	}()
 
-	r.wg.Wait()
+	r.jobWg.Wait()
 
 	return nil
 }
