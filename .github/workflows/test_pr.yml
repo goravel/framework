@@ -3,5 +3,5 @@ on:
   pull_request:
 jobs:
   test:
-    uses: goravel/.github/.github/workflows/test.yml@master
+    uses: goravel/.github/.github/workflows/test.yml@v1.16.x
     secrets: inherit
