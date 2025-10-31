@@ -1,6 +1,11 @@
 package gorm
 
-import "reflect"
+import (
+	"reflect"
+
+	gormio "gorm.io/gorm"
+	"gorm.io/gorm/schema"
+)
 
 func copyStruct(dest any) reflect.Value {
 	t := reflect.TypeOf(dest)
@@ -17,4 +22,20 @@ func copyStruct(dest any) reflect.Value {
 	copyDestStruct := reflect.StructOf(destFields)
 
 	return v.Convert(copyDestStruct)
+}
+
+func getZeroValueFromReflectType(t reflect.Type) any {
+	if t.Kind() == reflect.Pointer {
+		return reflect.New(t.Elem()).Interface()
+	}
+	return reflect.New(t.Elem()).Interface()
+}
+
+func getModelSchema(model any, db *gormio.DB) (*schema.Schema, error) {
+	stmt := gormio.Statement{DB: db}
+	err := stmt.Parse(model)
+	if err != nil {
+		return nil, err
+	}
+	return stmt.Schema, nil
 }
