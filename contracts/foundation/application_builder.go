@@ -2,7 +2,7 @@ package foundation
 
 import (
 	"github.com/goravel/framework/contracts/event"
-	"github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/contracts/foundation/configuration"
 )
 
 type ApplicationBuilder interface {
@@ -15,7 +15,7 @@ type ApplicationBuilder interface {
 	// WithEvents sets event listeners for the application.
 	WithEvents(eventToListeners map[event.Event][]event.Listener) ApplicationBuilder
 	// WithMiddleware registers the http's middleware.
-	WithMiddleware(middleware []http.Middleware) ApplicationBuilder
+	WithMiddleware(fn func(middleware configuration.Middleware)) ApplicationBuilder
 	// WithProviders registers and boots custom service providers.
 	WithProviders(providers []ServiceProvider) ApplicationBuilder
 	// WithRouting registers the application's routes.

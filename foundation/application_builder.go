@@ -3,7 +3,8 @@ package foundation
 import (
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/foundation"
-	"github.com/goravel/framework/contracts/http"
+	contractsconfiguration "github.com/goravel/framework/contracts/foundation/configuration"
+	"github.com/goravel/framework/foundation/configuration"
 	"github.com/goravel/framework/support/color"
 )
 
@@ -16,7 +17,7 @@ type ApplicationBuilder struct {
 	config                     func()
 	configuredServiceProviders []foundation.ServiceProvider
 	eventToListeners           map[event.Event][]event.Listener
-	middleware                 []http.Middleware
+	middleware                 func(middleware contractsconfiguration.Middleware)
 	routes                     []func()
 }
 
@@ -42,17 +43,25 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 	}
 
 	// Register http middleware
-	if len(r.middleware) > 0 {
-
+	if r.middleware != nil {
+		routeFacade := r.app.MakeRoute()
+		if routeFacade == nil {
+			color.Errorln("Route facade not found, please install it first: ./artisan package:install Route")
+		} else {
+			defaultGlobalMiddleware := routeFacade.GetGlobalMiddleware()
+			middleware := configuration.NewMiddleware(defaultGlobalMiddleware)
+			r.middleware(middleware)
+			routeFacade.SetGlobalMiddleware(middleware.GetGlobalMiddleware())
+		}
 	}
 
 	// Register event listeners
 	if len(r.eventToListeners) > 0 {
-		evt := r.app.MakeEvent()
-		if evt == nil {
+		eventFacade := r.app.MakeEvent()
+		if eventFacade == nil {
 			color.Errorln("Event facade not found, please install it first: ./artisan package:install Event")
 		} else {
-			evt.Register(r.eventToListeners)
+			eventFacade.Register(r.eventToListeners)
 		}
 	}
 
@@ -75,8 +84,8 @@ func (r *ApplicationBuilder) WithEvents(eventToListeners map[event.Event][]event
 	return r
 }
 
-func (r *ApplicationBuilder) WithMiddleware(middleware []http.Middleware) foundation.ApplicationBuilder {
-	r.middleware = append(r.middleware, middleware...)
+func (r *ApplicationBuilder) WithMiddleware(fn func(middleware contractsconfiguration.Middleware)) foundation.ApplicationBuilder {
+	r.middleware = fn
 
 	return r
 }

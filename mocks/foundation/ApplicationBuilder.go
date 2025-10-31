@@ -4,6 +4,7 @@ package foundation
 
 import (
 	event "github.com/goravel/framework/contracts/event"
+
 	foundation "github.com/goravel/framework/contracts/foundation"
 
 	http "github.com/goravel/framework/contracts/http"
