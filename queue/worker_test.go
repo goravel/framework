@@ -654,7 +654,7 @@ func (s *WorkerTestSuite) TestShutdown() {
 		s.NoError(err)
 		s.True(s.worker.isShutdown.Load())
 		// Shutdown should have waited for goroutines (at least a little time)
-		s.Greater(duration, 0*time.Millisecond)
+		s.Greater(duration, 0)
 	})
 
 	s.Run("shutdown waits for job to complete", func() {
