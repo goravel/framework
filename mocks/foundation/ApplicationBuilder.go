@@ -4,10 +4,9 @@ package foundation
 
 import (
 	event "github.com/goravel/framework/contracts/event"
+	configuration "github.com/goravel/framework/contracts/foundation/configuration"
 
 	foundation "github.com/goravel/framework/contracts/foundation"
-
-	http "github.com/goravel/framework/contracts/http"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -200,17 +199,17 @@ func (_c *ApplicationBuilder_WithEvents_Call) RunAndReturn(run func(map[event.Ev
 	return _c
 }
 
-// WithMiddleware provides a mock function with given fields: middleware
-func (_m *ApplicationBuilder) WithMiddleware(middleware []http.Middleware) foundation.ApplicationBuilder {
-	ret := _m.Called(middleware)
+// WithMiddleware provides a mock function with given fields: fn
+func (_m *ApplicationBuilder) WithMiddleware(fn func(configuration.Middleware)) foundation.ApplicationBuilder {
+	ret := _m.Called(fn)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WithMiddleware")
 	}
 
 	var r0 foundation.ApplicationBuilder
-	if rf, ok := ret.Get(0).(func([]http.Middleware) foundation.ApplicationBuilder); ok {
-		r0 = rf(middleware)
+	if rf, ok := ret.Get(0).(func(func(configuration.Middleware)) foundation.ApplicationBuilder); ok {
+		r0 = rf(fn)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(foundation.ApplicationBuilder)
@@ -226,14 +225,14 @@ type ApplicationBuilder_WithMiddleware_Call struct {
 }
 
 // WithMiddleware is a helper method to define mock.On call
-//   - middleware []http.Middleware
-func (_e *ApplicationBuilder_Expecter) WithMiddleware(middleware interface{}) *ApplicationBuilder_WithMiddleware_Call {
-	return &ApplicationBuilder_WithMiddleware_Call{Call: _e.mock.On("WithMiddleware", middleware)}
+//   - fn func(configuration.Middleware)
+func (_e *ApplicationBuilder_Expecter) WithMiddleware(fn interface{}) *ApplicationBuilder_WithMiddleware_Call {
+	return &ApplicationBuilder_WithMiddleware_Call{Call: _e.mock.On("WithMiddleware", fn)}
 }
 
-func (_c *ApplicationBuilder_WithMiddleware_Call) Run(run func(middleware []http.Middleware)) *ApplicationBuilder_WithMiddleware_Call {
+func (_c *ApplicationBuilder_WithMiddleware_Call) Run(run func(fn func(configuration.Middleware))) *ApplicationBuilder_WithMiddleware_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]http.Middleware))
+		run(args[0].(func(configuration.Middleware)))
 	})
 	return _c
 }
@@ -243,7 +242,7 @@ func (_c *ApplicationBuilder_WithMiddleware_Call) Return(_a0 foundation.Applicat
 	return _c
 }
 
-func (_c *ApplicationBuilder_WithMiddleware_Call) RunAndReturn(run func([]http.Middleware) foundation.ApplicationBuilder) *ApplicationBuilder_WithMiddleware_Call {
+func (_c *ApplicationBuilder_WithMiddleware_Call) RunAndReturn(run func(func(configuration.Middleware)) foundation.ApplicationBuilder) *ApplicationBuilder_WithMiddleware_Call {
 	_c.Call.Return(run)
 	return _c
 }
