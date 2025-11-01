@@ -130,6 +130,53 @@ func (_c *Middleware_GetGlobalMiddleware_Call) RunAndReturn(run func() []http.Mi
 	return _c
 }
 
+// GetRecover provides a mock function with no fields
+func (_m *Middleware) GetRecover() func(http.Context, interface{}) {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetRecover")
+	}
+
+	var r0 func(http.Context, interface{})
+	if rf, ok := ret.Get(0).(func() func(http.Context, interface{})); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(func(http.Context, interface{}))
+		}
+	}
+
+	return r0
+}
+
+// Middleware_GetRecover_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetRecover'
+type Middleware_GetRecover_Call struct {
+	*mock.Call
+}
+
+// GetRecover is a helper method to define mock.On call
+func (_e *Middleware_Expecter) GetRecover() *Middleware_GetRecover_Call {
+	return &Middleware_GetRecover_Call{Call: _e.mock.On("GetRecover")}
+}
+
+func (_c *Middleware_GetRecover_Call) Run(run func()) *Middleware_GetRecover_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Middleware_GetRecover_Call) Return(_a0 func(http.Context, interface{})) *Middleware_GetRecover_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Middleware_GetRecover_Call) RunAndReturn(run func() func(http.Context, interface{})) *Middleware_GetRecover_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Prepend provides a mock function with given fields: middleware
 func (_m *Middleware) Prepend(middleware ...http.Middleware) configuration.Middleware {
 	_va := make([]interface{}, len(middleware))
@@ -187,6 +234,54 @@ func (_c *Middleware_Prepend_Call) Return(_a0 configuration.Middleware) *Middlew
 }
 
 func (_c *Middleware_Prepend_Call) RunAndReturn(run func(...http.Middleware) configuration.Middleware) *Middleware_Prepend_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Recover provides a mock function with given fields: fn
+func (_m *Middleware) Recover(fn func(http.Context, interface{})) configuration.Middleware {
+	ret := _m.Called(fn)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Recover")
+	}
+
+	var r0 configuration.Middleware
+	if rf, ok := ret.Get(0).(func(func(http.Context, interface{})) configuration.Middleware); ok {
+		r0 = rf(fn)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(configuration.Middleware)
+		}
+	}
+
+	return r0
+}
+
+// Middleware_Recover_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Recover'
+type Middleware_Recover_Call struct {
+	*mock.Call
+}
+
+// Recover is a helper method to define mock.On call
+//   - fn func(http.Context , interface{})
+func (_e *Middleware_Expecter) Recover(fn interface{}) *Middleware_Recover_Call {
+	return &Middleware_Recover_Call{Call: _e.mock.On("Recover", fn)}
+}
+
+func (_c *Middleware_Recover_Call) Run(run func(fn func(http.Context, interface{}))) *Middleware_Recover_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func(http.Context, interface{})))
+	})
+	return _c
+}
+
+func (_c *Middleware_Recover_Call) Return(_a0 configuration.Middleware) *Middleware_Recover_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Middleware_Recover_Call) RunAndReturn(run func(func(http.Context, interface{})) configuration.Middleware) *Middleware_Recover_Call {
 	_c.Call.Return(run)
 	return _c
 }
