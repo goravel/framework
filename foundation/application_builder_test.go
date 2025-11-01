@@ -134,8 +134,10 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.mockApp.EXPECT().Boot().Return().Once()
 
 		app := s.builder.
-			WithRouting(func() {
-				calledRouting = true
+			WithRouting([]func(){
+				func() {
+					calledRouting = true
+				},
 			}).
 			Create()
 
@@ -180,7 +182,7 @@ func (s *ApplicationBuilderTestSuite) TestWithProviders() {
 func (s *ApplicationBuilderTestSuite) TestWithRouting() {
 	fn := func() {}
 
-	builder := s.builder.WithRouting(fn)
+	builder := s.builder.WithRouting([]func(){fn})
 
 	s.NotNil(builder)
 	s.NotNil(s.builder.routes)
