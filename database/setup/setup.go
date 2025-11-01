@@ -19,7 +19,7 @@ func main() {
 	stubs := Stubs{}
 	modulePath := packages.GetModulePath()
 	moduleName := packages.GetModuleNameFromArgs(os.Args)
-	appConfigPath := path.Config("app.go")
+	providersBootstrapPath := path.Bootstrap("providers.go")
 	databaseConfigPath := path.Config("database.go")
 	kernelPath := path.Database("kernel.go")
 	dbFacadePath := path.Facades("db.go")
@@ -83,7 +83,7 @@ DB_PASSWORD=Frameworkair
 			modify.GoFile(databaseConfigPath).Find(match.Config("database")).Modify(installConfigActionsFunc()...),
 
 			// Add the database service provider to the providers array in config/app.go
-			modify.GoFile(appConfigPath).
+			modify.GoFile(providersBootstrapPath).
 				Find(match.Imports()).Modify(modify.AddImport(modulePath)).
 				Find(match.Providers()).Modify(modify.Register(databaseServiceProvider)),
 
@@ -126,7 +126,7 @@ DB_PASSWORD=Frameworkair
 				modify.File(kernelPath).Remove(),
 
 				// Remove the database service provider from the providers array in config/app.go
-				modify.GoFile(appConfigPath).
+				modify.GoFile(providersBootstrapPath).
 					Find(match.Providers()).Modify(modify.Unregister(databaseServiceProvider)).
 					Find(match.Imports()).Modify(modify.RemoveImport(modulePath)),
 

@@ -19,7 +19,7 @@ func main() {
 	registerJobs := "facades.Queue().Register([]queue.Job{})"
 	queueImport := "github.com/goravel/framework/contracts/queue"
 	facadesImport := fmt.Sprintf("%s/app/facades", moduleName)
-	appConfigPath := path.Config("app.go")
+	providersBootstrapPath := path.Bootstrap("providers.go")
 	queueFacadePath := path.Facades("queue.go")
 	queueConfigPath := path.Config("queue.go")
 	queueServiceProvider := "&queue.ServiceProvider{}"
@@ -28,7 +28,7 @@ func main() {
 		Install(
 			modify.WhenFacade(queueFacade,
 				// Add the queue service provider to the application service provider
-				modify.GoFile(appConfigPath).
+				modify.GoFile(providersBootstrapPath).
 					Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
 					Find(match.Providers()).Modify(modify.Register(queueServiceProvider)),
 
@@ -60,7 +60,7 @@ func main() {
 
 			modify.WhenNoFacades([]string{queueFacade},
 				// Remove the queue service provider from the application service provider
-				modify.GoFile(appConfigPath).
+				modify.GoFile(providersBootstrapPath).
 					Find(match.Providers()).Modify(modify.Unregister(queueServiceProvider)).
 					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
 
