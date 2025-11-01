@@ -48,10 +48,17 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 		if routeFacade == nil {
 			color.Errorln("Route facade not found, please install it first: ./artisan package:install Route")
 		} else {
+			// Set up global middleware
 			defaultGlobalMiddleware := routeFacade.GetGlobalMiddleware()
 			middleware := configuration.NewMiddleware(defaultGlobalMiddleware)
 			r.middleware(middleware)
 			routeFacade.SetGlobalMiddleware(middleware.GetGlobalMiddleware())
+			routeFacade.GlobalMiddleware()
+
+			// Set up custom recover function
+			if recover := middleware.GetRecover(); recover != nil {
+				routeFacade.Recover(recover)
+			}
 		}
 	}
 
