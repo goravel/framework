@@ -37,11 +37,6 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 		r.config()
 	}
 
-	// Register routes
-	for _, route := range r.routes {
-		route()
-	}
-
 	// Register http middleware
 	if r.middleware != nil {
 		routeFacade := r.app.MakeRoute()
@@ -52,13 +47,18 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 			defaultGlobalMiddleware := routeFacade.GetGlobalMiddleware()
 			middleware := configuration.NewMiddleware(defaultGlobalMiddleware)
 			r.middleware(middleware)
-			routeFacade.GlobalMiddleware(middleware.GetGlobalMiddleware()...)
+			routeFacade.SetGlobalMiddleware(middleware.GetGlobalMiddleware())
 
 			// Set up custom recover function
 			if recover := middleware.GetRecover(); recover != nil {
 				routeFacade.Recover(recover)
 			}
 		}
+	}
+
+	// Register routes
+	for _, route := range r.routes {
+		route()
 	}
 
 	// Register event listeners
