@@ -1,14 +1,19 @@
 package foundation
 
 import (
+	"io"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/foundation"
+	contractsconfiguration "github.com/goravel/framework/contracts/foundation/configuration"
+	contractshttp "github.com/goravel/framework/contracts/http"
 	mocksevent "github.com/goravel/framework/mocks/event"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
+	mocksroute "github.com/goravel/framework/mocks/route"
+	"github.com/goravel/framework/support/color"
 )
 
 type ApplicationBuilderTestSuite struct {
@@ -64,13 +69,17 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.mockApp.EXPECT().Boot().Return().Once()
 		s.mockApp.EXPECT().MakeEvent().Return(nil).Once()
 
-		app := s.builder.
-			WithEvents(map[event.Event][]event.Listener{
-				mocksevent.NewEvent(s.T()): {mocksevent.NewListener(s.T())},
-			}).
-			Create()
+		got := color.CaptureOutput(func(io.Writer) {
+			app := s.builder.
+				WithEvents(map[event.Event][]event.Listener{
+					mocksevent.NewEvent(s.T()): {mocksevent.NewListener(s.T())},
+				}).
+				Create()
 
-		s.NotNil(app)
+			s.NotNil(app)
+		})
+
+		s.Contains(got, "Event facade not found, please install it first: ./artisan package:install Event")
 	})
 
 	s.Run("WithEvents but Events is empty", func() {
@@ -110,6 +119,50 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 			Create()
 
 		s.NotNil(app)
+	})
+
+	s.Run("WithMiddleware but Route facade is nil", func() {
+		s.SetupTest()
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().MakeRoute().Return(nil).Once()
+
+		calledMiddleware := false
+		fn := func(middleware contractsconfiguration.Middleware) {
+			calledMiddleware = true
+		}
+
+		got := color.CaptureOutput(func(io.Writer) {
+			app := s.builder.WithMiddleware(fn).Create()
+
+			s.NotNil(app)
+		})
+
+		s.Contains(got, "Route facade not found, please install it first: ./artisan package:install Route")
+		s.False(calledMiddleware)
+	})
+
+	s.Run("WithMiddleware", func() {
+		s.SetupTest()
+
+		mockRoute := mocksroute.NewRoute(s.T())
+		mockRoute.EXPECT().GetGlobalMiddleware().Return(nil).Once()
+		mockRoute.EXPECT().SetGlobalMiddleware([]contractshttp.Middleware(nil)).Return().Once()
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().MakeRoute().Return(mockRoute).Once()
+
+		calledMiddleware := false
+		fn := func(middleware contractsconfiguration.Middleware) {
+			calledMiddleware = true
+		}
+
+		app := s.builder.WithMiddleware(fn).Create()
+
+		s.NotNil(app)
+		s.True(calledMiddleware)
 	})
 
 	s.Run("WithProviders", func() {
@@ -161,6 +214,15 @@ func (s *ApplicationBuilderTestSuite) TestWithConfig() {
 
 	s.NotNil(builder)
 	s.NotNil(s.builder.config)
+}
+
+func (s *ApplicationBuilderTestSuite) TestWithMiddleware() {
+	fn := func(middleware contractsconfiguration.Middleware) {}
+
+	builder := s.builder.WithMiddleware(fn)
+
+	s.NotNil(builder)
+	s.NotNil(s.builder.middleware)
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithProviders() {
