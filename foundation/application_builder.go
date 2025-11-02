@@ -52,8 +52,7 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 			defaultGlobalMiddleware := routeFacade.GetGlobalMiddleware()
 			middleware := configuration.NewMiddleware(defaultGlobalMiddleware)
 			r.middleware(middleware)
-			routeFacade.SetGlobalMiddleware(middleware.GetGlobalMiddleware())
-			routeFacade.GlobalMiddleware()
+			routeFacade.GlobalMiddleware(middleware.GetGlobalMiddleware()...)
 
 			// Set up custom recover function
 			if recover := middleware.GetRecover(); recover != nil {
