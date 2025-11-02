@@ -5,8 +5,9 @@ import (
 	"reflect"
 	"testing"
 
-	contractshttp "github.com/goravel/framework/contracts/http"
 	"github.com/stretchr/testify/suite"
+
+	contractshttp "github.com/goravel/framework/contracts/http"
 )
 
 // makeMiddleware returns a middleware function annotated with an id via closure.
