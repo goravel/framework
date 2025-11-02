@@ -1154,6 +1154,39 @@ func (_c *Route_ServeHTTP_Call) RunAndReturn(run func(nethttp.ResponseWriter, *n
 	return _c
 }
 
+// SetGlobalMiddleware provides a mock function with given fields: middlewares
+func (_m *Route) SetGlobalMiddleware(middlewares []http.Middleware) {
+	_m.Called(middlewares)
+}
+
+// Route_SetGlobalMiddleware_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetGlobalMiddleware'
+type Route_SetGlobalMiddleware_Call struct {
+	*mock.Call
+}
+
+// SetGlobalMiddleware is a helper method to define mock.On call
+//   - middlewares []http.Middleware
+func (_e *Route_Expecter) SetGlobalMiddleware(middlewares interface{}) *Route_SetGlobalMiddleware_Call {
+	return &Route_SetGlobalMiddleware_Call{Call: _e.mock.On("SetGlobalMiddleware", middlewares)}
+}
+
+func (_c *Route_SetGlobalMiddleware_Call) Run(run func(middlewares []http.Middleware)) *Route_SetGlobalMiddleware_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].([]http.Middleware))
+	})
+	return _c
+}
+
+func (_c *Route_SetGlobalMiddleware_Call) Return() *Route_SetGlobalMiddleware_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Route_SetGlobalMiddleware_Call) RunAndReturn(run func([]http.Middleware)) *Route_SetGlobalMiddleware_Call {
+	_c.Run(run)
+	return _c
+}
+
 // Shutdown provides a mock function with given fields: ctx
 func (_m *Route) Shutdown(ctx ...context.Context) error {
 	_va := make([]interface{}, len(ctx))
