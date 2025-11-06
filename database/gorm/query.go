@@ -925,6 +925,44 @@ func (r *Query) Where(query any, args ...any) contractsorm.Query {
 	})
 }
 
+func (r *Query) WhereAll(columns []string, args ...any) contractsorm.Query {
+	op, value := prepareWhereOperatorAndValue(args...)
+
+	var conditions []string
+	var conditionArgs []any
+	for _, column := range columns {
+		conditions = append(conditions, fmt.Sprintf("%s %v ?", column, op))
+		conditionArgs = append(conditionArgs, value)
+	}
+
+	query := strings.Join(conditions, " AND ")
+	r = r.addWhere(contractsdriver.Where{
+		Query: query,
+		Args:  conditionArgs,
+	}).(*Query)
+
+	return r
+}
+
+func (r *Query) WhereAny(columns []string, args ...any) contractsorm.Query {
+	op, value := prepareWhereOperatorAndValue(args...)
+
+	var conditions []string
+	var conditionArgs []any
+	for _, column := range columns {
+		conditions = append(conditions, fmt.Sprintf("%s %v ?", column, op))
+		conditionArgs = append(conditionArgs, value)
+	}
+
+	query := fmt.Sprintf("(%s)", strings.Join(conditions, " OR "))
+	r = r.addWhere(contractsdriver.Where{
+		Query: query,
+		Args:  conditionArgs,
+	}).(*Query)
+
+	return r
+}
+
 func (r *Query) WhereIn(column string, values []any) contractsorm.Query {
 	return r.Where(fmt.Sprintf("%s IN ?", column), values)
 }
@@ -1046,49 +1084,35 @@ func (r *Query) OrWhereNull(column string) contractsorm.Query {
 	return r.OrWhere(fmt.Sprintf("%s IS NULL", column))
 }
 
-func (r *Query) WhereNull(column string) contractsorm.Query {
-	return r.Where(fmt.Sprintf("%s IS NULL", column))
+func (r *Query) WhereNone(columns []string, args ...any) contractsorm.Query {
+	op, value := prepareWhereOperatorAndValue(args...)
+
+	var conditions []string
+	var conditionArgs []any
+	for _, column := range columns {
+		if op == "=" {
+			conditions = append(conditions, fmt.Sprintf("%s <> ?", column))
+		} else {
+			conditions = append(conditions, fmt.Sprintf("NOT (%s %v ?)", column, op))
+		}
+		conditionArgs = append(conditionArgs, value)
+	}
+
+	query := strings.Join(conditions, " AND ")
+	r = r.addWhere(contractsdriver.Where{
+		Query: query,
+		Args:  conditionArgs,
+	}).(*Query)
+
+	return r
 }
 
 func (r *Query) WhereNotNull(column string) contractsorm.Query {
 	return r.Where(fmt.Sprintf("%s IS NOT NULL", column))
 }
 
-func (r *Query) WhereAny(columns []string, op string, val any) contractsorm.Query {
-	for i, column := range columns {
-		r = r.addWhere(contractsdriver.Where{
-			Query: fmt.Sprintf("%s %s ?", column, op),
-			Args:  []any{val},
-			Or:    i > 0,
-		}).(*Query)
-	}
-	return r
-}
-
-func (r *Query) WhereAll(columns []string, op string, val any) contractsorm.Query {
-	for _, column := range columns {
-		r = r.addWhere(contractsdriver.Where{
-			Query: fmt.Sprintf("%s %s ?", column, op),
-			Args:  []any{val},
-		}).(*Query)
-	}
-	return r
-}
-
-func (r *Query) WhereNone(columns []string, op string, val any) contractsorm.Query {
-	for _, column := range columns {
-		var query string
-		if op == "=" {
-			query = fmt.Sprintf("%s <> ?", column)
-		} else {
-			query = fmt.Sprintf("NOT (%s %s ?)", column, op)
-		}
-		r = r.addWhere(contractsdriver.Where{
-			Query: query,
-			Args:  []any{val},
-		}).(*Query)
-	}
-	return r
+func (r *Query) WhereNull(column string) contractsorm.Query {
+	return r.Where(fmt.Sprintf("%s IS NULL", column))
 }
 
 func (r *Query) With(query string, args ...any) contractsorm.Query {
@@ -2049,4 +2073,20 @@ func isSlice(dest any) bool {
 
 func hasID(dest any) bool {
 	return database.GetID(dest) != nil
+}
+
+func prepareWhereOperatorAndValue(args ...any) (op any, value any) {
+	if len(args) == 0 {
+		panic(errors.DatabaseInvalidArgumentNumber.Args(len(args), "1 or 2"))
+	}
+
+	if len(args) == 1 {
+		op = "="
+		value = args[0]
+	} else {
+		op = args[0]
+		value = args[1]
+	}
+
+	return
 }

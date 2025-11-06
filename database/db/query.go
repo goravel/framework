@@ -855,6 +855,41 @@ func (r *Query) Where(query any, args ...any) db.Query {
 	})
 }
 
+func (r *Query) WhereAll(columns []string, args ...any) db.Query {
+	op, value := prepareWhereOperatorAndValue(args...)
+
+	var conditions []string
+	var conditionArgs []any
+	for _, column := range columns {
+		conditions = append(conditions, fmt.Sprintf("%s %v ?", column, op))
+		conditionArgs = append(conditionArgs, value)
+	}
+
+	query := strings.Join(conditions, " AND ")
+	where := contractsdriver.Where{
+		Query: sq.Expr(query, conditionArgs...),
+	}
+	r.conditions.Where = deep.Append(r.conditions.Where, where)
+
+	return r
+}
+
+func (r *Query) WhereAny(columns []string, args ...any) db.Query {
+	op, value := prepareWhereOperatorAndValue(args...)
+
+	var orConditions []sq.Sqlizer
+	for _, column := range columns {
+		orConditions = append(orConditions, sq.Expr(fmt.Sprintf("%s %v ?", column, op), value))
+	}
+
+	where := contractsdriver.Where{
+		Query: sq.Or(orConditions),
+	}
+	r.conditions.Where = deep.Append(r.conditions.Where, where)
+
+	return r
+}
+
 func (r *Query) WhereBetween(column string, x, y any) db.Query {
 	return r.Where(sq.Expr(fmt.Sprintf("%s BETWEEN ? AND ?", column), x, y))
 }
@@ -933,6 +968,29 @@ func (r *Query) WhereLike(column string, value string) db.Query {
 	return r.Where(sq.Like{column: value})
 }
 
+func (r *Query) WhereNone(columns []string, args ...any) db.Query {
+	op, value := prepareWhereOperatorAndValue(args...)
+
+	var conditions []string
+	var conditionArgs []any
+	for _, column := range columns {
+		if op == "=" {
+			conditions = append(conditions, fmt.Sprintf("%s <> ?", column))
+		} else {
+			conditions = append(conditions, fmt.Sprintf("NOT (%s %v ?)", column, op))
+		}
+		conditionArgs = append(conditionArgs, value)
+	}
+
+	query := strings.Join(conditions, " AND ")
+	where := contractsdriver.Where{
+		Query: sq.Expr(query, conditionArgs...),
+	}
+	r.conditions.Where = deep.Append(r.conditions.Where, where)
+
+	return r
+}
+
 func (r *Query) WhereNot(query any, args ...any) db.Query {
 	query, args, err := r.buildWhere(contractsdriver.Where{
 		Query: query,
@@ -980,45 +1038,6 @@ func (r *Query) WhereNull(column string) db.Query {
 
 func (r *Query) WhereRaw(raw string, args []any) db.Query {
 	return r.Where(sq.Expr(raw, args...))
-}
-
-func (r *Query) WhereAny(columns []string, op string, val any) db.Query {
-	for i, column := range columns {
-		query := sq.Expr(fmt.Sprintf("%s %s ?", column, op), val)
-		where := contractsdriver.Where{
-			Query: query,
-			Or:    i > 0,
-		}
-		r.conditions.Where = deep.Append(r.conditions.Where, where)
-	}
-	return r
-}
-
-func (r *Query) WhereAll(columns []string, op string, val any) db.Query {
-	for _, column := range columns {
-		query := sq.Expr(fmt.Sprintf("%s %s ?", column, op), val)
-		where := contractsdriver.Where{
-			Query: query,
-		}
-		r.conditions.Where = deep.Append(r.conditions.Where, where)
-	}
-	return r
-}
-
-func (r *Query) WhereNone(columns []string, op string, val any) db.Query {
-	for _, column := range columns {
-		var query any
-		if op == "=" {
-			query = sq.NotEq{column: val}
-		} else {
-			query = sq.Expr(fmt.Sprintf("NOT (%s %s ?)", column, op), val)
-		}
-		where := contractsdriver.Where{
-			Query: query,
-		}
-		r.conditions.Where = deep.Append(r.conditions.Where, where)
-	}
-	return r
 }
 
 func (r *Query) addWhere(where contractsdriver.Where) db.Query {
@@ -1359,4 +1378,20 @@ func (r *Query) trace(builder db.CommonBuilder, sql string, args []any, now *car
 	} else {
 		r.logger.Trace(r.ctx, now, builder.Explain(sql, args...), rowsAffected, err)
 	}
+}
+
+func prepareWhereOperatorAndValue(args ...any) (op any, value any) {
+	if len(args) == 0 {
+		panic(errors.DatabaseInvalidArgumentNumber.Args(len(args), "1 or 2"))
+	}
+
+	if len(args) == 1 {
+		op = "="
+		value = args[0]
+	} else {
+		op = args[0]
+		value = args[1]
+	}
+
+	return
 }
