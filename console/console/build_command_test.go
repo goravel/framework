@@ -35,8 +35,10 @@ func TestBuildCommand(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("local").Once()
 				mockContext.EXPECT().Option("os").Return("linux").Once()
-				mockContext.EXPECT().Option("arch").Return("amd64").Once()
+				mockContext.EXPECT().Option("tags").Return("").Once()
+				mockContext.EXPECT().OptionBool("production").Return(false).Once()
 				mockContext.EXPECT().Option("name").Return("").Once()
+				mockContext.EXPECT().Option("arch").Return("amd64").Once()
 				mockContext.EXPECT().OptionBool("static").Return(true).Once()
 				mockContext.EXPECT().Spinner("Building...", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Info("Built successfully.").Once()
@@ -71,8 +73,10 @@ func TestBuildCommand(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("local").Once()
 				mockContext.EXPECT().Option("os").Return("invalid").Once()
-				mockContext.EXPECT().Option("arch").Return("invalid").Once()
+				mockContext.EXPECT().Option("tags").Return("").Once()
+				mockContext.EXPECT().OptionBool("production").Return(false).Once()
 				mockContext.EXPECT().Option("name").Return("").Once()
+				mockContext.EXPECT().Option("arch").Return("invalid").Once()
 				mockContext.EXPECT().OptionBool("static").Return(true).Once()
 				mockContext.EXPECT().Spinner("Building...", mock.Anything).RunAndReturn(func(_ string, option console.SpinnerOption) error {
 					return option.Action()
@@ -85,8 +89,10 @@ func TestBuildCommand(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("local").Once()
 				mockContext.EXPECT().Option("os").Return("linux").Once()
-				mockContext.EXPECT().Option("arch").Return("amd64").Once()
+				mockContext.EXPECT().Option("tags").Return("").Once()
+				mockContext.EXPECT().OptionBool("production").Return(false).Once()
 				mockContext.EXPECT().Option("name").Return("").Once()
+				mockContext.EXPECT().Option("arch").Return("amd64").Once()
 				mockContext.EXPECT().OptionBool("static").Return(true).Once()
 				mockContext.EXPECT().Spinner("Building...", mock.Anything).Return(errors.New("error")).Once()
 				mockContext.EXPECT().Error("error").Once()
@@ -111,6 +117,7 @@ func TestGenerateCommand(t *testing.T) {
 		description string
 		name        string
 		static      bool
+		tags        string
 		expected    []string
 	}{
 		{
@@ -135,11 +142,18 @@ func TestGenerateCommand(t *testing.T) {
 			static:      false,
 			expected:    []string{"go", "build", "."},
 		},
+		{
+			description: "Generate command with tags",
+			name:        "test",
+			static:      false,
+			tags:        "production",
+			expected:    []string{"go", "build", "-tags", "production", "-o", "test", "."},
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
-			result := generateCommand(test.name, runtime.GOOS, runtime.GOARCH, test.static)
+			result := generateCommand(test.name, runtime.GOOS, runtime.GOARCH, test.static, test.tags)
 
 			assert.Equal(t, test.expected, result.Args)
 		})

@@ -58,6 +58,19 @@ func (r *BuildCommand) Extend() command.Extend {
 				Aliases: []string{"n"},
 				Usage:   "Output binary name",
 			},
+			&command.StringFlag{
+				Name:    "tags",
+				Aliases: []string{"t"},
+				Usage:   "Build tags (e.g., production)",
+				Value:   "",
+			},
+			&command.BoolFlag{
+				Name:               "production",
+				Aliases:            []string{"p"},
+				Value:              true,
+				Usage:              "Build with production tag",
+				DisableDefaultText: true,
+			},
 		},
 	}
 }
@@ -88,7 +101,16 @@ func (r *BuildCommand) Handle(ctx console.Context) error {
 		}
 	}
 
-	if err = supportconsole.ExecuteCommand(ctx, generateCommand(ctx.Option("name"), os, ctx.Option("arch"), ctx.OptionBool("static")), "Building..."); err != nil {
+	tags := ctx.Option("tags")
+	if ctx.OptionBool("production") {
+		if tags != "" {
+			tags = tags + ",production"
+		} else {
+			tags = "production"
+		}
+	}
+
+	if err = supportconsole.ExecuteCommand(ctx, generateCommand(ctx.Option("name"), os, ctx.Option("arch"), ctx.OptionBool("static"), tags), "Building..."); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
@@ -98,11 +120,15 @@ func (r *BuildCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func generateCommand(name, os, arch string, static bool) *exec.Cmd {
+func generateCommand(name, os, arch string, static bool, tags string) *exec.Cmd {
 	args := []string{"build"}
 
 	if static {
 		args = append(args, "-ldflags", "-extldflags -static")
+	}
+
+	if tags != "" {
+		args = append(args, "-tags", tags)
 	}
 
 	if name != "" {

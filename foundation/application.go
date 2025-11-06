@@ -14,7 +14,6 @@ import (
 
 	"github.com/goravel/framework/config"
 	frameworkconsole "github.com/goravel/framework/console"
-	"github.com/goravel/framework/contracts/binding"
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
@@ -87,17 +86,7 @@ func (r *Application) Boot() {
 	r.providerRepository.Register(r)
 	r.providerRepository.Boot(r)
 
-	r.registerCommands([]contractsconsole.Command{
-		console.NewAboutCommand(r),
-		console.NewEnvEncryptCommand(),
-		console.NewEnvDecryptCommand(),
-		console.NewTestMakeCommand(),
-		console.NewPackageMakeCommand(),
-		console.NewProviderMakeCommand(),
-		console.NewPackageInstallCommand(binding.Bindings, r.Bindings()),
-		console.NewPackageUninstallCommand(r, binding.Bindings, r.Bindings()),
-		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
-	})
+	r.registerCommands(getRegisteredCommands(r))
 	r.bootArtisan()
 }
 
