@@ -3393,17 +3393,20 @@ func (_c *Query_Where_Call) RunAndReturn(run func(interface{}, ...interface{}) d
 	return _c
 }
 
-// WhereAll provides a mock function with given fields: columns, op, val
-func (_m *Query) WhereAll(columns []string, op string, val interface{}) db.Query {
-	ret := _m.Called(columns, op, val)
+// WhereAll provides a mock function with given fields: columns, args
+func (_m *Query) WhereAll(columns []string, args ...interface{}) db.Query {
+	var _ca []interface{}
+	_ca = append(_ca, columns)
+	_ca = append(_ca, args...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WhereAll")
 	}
 
 	var r0 db.Query
-	if rf, ok := ret.Get(0).(func([]string, string, interface{}) db.Query); ok {
-		r0 = rf(columns, op, val)
+	if rf, ok := ret.Get(0).(func([]string, ...interface{}) db.Query); ok {
+		r0 = rf(columns, args...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(db.Query)
@@ -3420,15 +3423,21 @@ type Query_WhereAll_Call struct {
 
 // WhereAll is a helper method to define mock.On call
 //   - columns []string
-//   - op string
-//   - val interface{}
-func (_e *Query_Expecter) WhereAll(columns interface{}, op interface{}, val interface{}) *Query_WhereAll_Call {
-	return &Query_WhereAll_Call{Call: _e.mock.On("WhereAll", columns, op, val)}
+//   - args ...interface{}
+func (_e *Query_Expecter) WhereAll(columns interface{}, args ...interface{}) *Query_WhereAll_Call {
+	return &Query_WhereAll_Call{Call: _e.mock.On("WhereAll",
+		append([]interface{}{columns}, args...)...)}
 }
 
-func (_c *Query_WhereAll_Call) Run(run func(columns []string, op string, val interface{})) *Query_WhereAll_Call {
+func (_c *Query_WhereAll_Call) Run(run func(columns []string, args ...interface{})) *Query_WhereAll_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]string), args[1].(string), args[2].(interface{}))
+		variadicArgs := make([]interface{}, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].([]string), variadicArgs...)
 	})
 	return _c
 }
@@ -3438,22 +3447,25 @@ func (_c *Query_WhereAll_Call) Return(_a0 db.Query) *Query_WhereAll_Call {
 	return _c
 }
 
-func (_c *Query_WhereAll_Call) RunAndReturn(run func([]string, string, interface{}) db.Query) *Query_WhereAll_Call {
+func (_c *Query_WhereAll_Call) RunAndReturn(run func([]string, ...interface{}) db.Query) *Query_WhereAll_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// WhereAny provides a mock function with given fields: columns, op, val
-func (_m *Query) WhereAny(columns []string, op string, val interface{}) db.Query {
-	ret := _m.Called(columns, op, val)
+// WhereAny provides a mock function with given fields: columns, args
+func (_m *Query) WhereAny(columns []string, args ...interface{}) db.Query {
+	var _ca []interface{}
+	_ca = append(_ca, columns)
+	_ca = append(_ca, args...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WhereAny")
 	}
 
 	var r0 db.Query
-	if rf, ok := ret.Get(0).(func([]string, string, interface{}) db.Query); ok {
-		r0 = rf(columns, op, val)
+	if rf, ok := ret.Get(0).(func([]string, ...interface{}) db.Query); ok {
+		r0 = rf(columns, args...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(db.Query)
@@ -3470,15 +3482,21 @@ type Query_WhereAny_Call struct {
 
 // WhereAny is a helper method to define mock.On call
 //   - columns []string
-//   - op string
-//   - val interface{}
-func (_e *Query_Expecter) WhereAny(columns interface{}, op interface{}, val interface{}) *Query_WhereAny_Call {
-	return &Query_WhereAny_Call{Call: _e.mock.On("WhereAny", columns, op, val)}
+//   - args ...interface{}
+func (_e *Query_Expecter) WhereAny(columns interface{}, args ...interface{}) *Query_WhereAny_Call {
+	return &Query_WhereAny_Call{Call: _e.mock.On("WhereAny",
+		append([]interface{}{columns}, args...)...)}
 }
 
-func (_c *Query_WhereAny_Call) Run(run func(columns []string, op string, val interface{})) *Query_WhereAny_Call {
+func (_c *Query_WhereAny_Call) Run(run func(columns []string, args ...interface{})) *Query_WhereAny_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]string), args[1].(string), args[2].(interface{}))
+		variadicArgs := make([]interface{}, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].([]string), variadicArgs...)
 	})
 	return _c
 }
@@ -3488,7 +3506,7 @@ func (_c *Query_WhereAny_Call) Return(_a0 db.Query) *Query_WhereAny_Call {
 	return _c
 }
 
-func (_c *Query_WhereAny_Call) RunAndReturn(run func([]string, string, interface{}) db.Query) *Query_WhereAny_Call {
+func (_c *Query_WhereAny_Call) RunAndReturn(run func([]string, ...interface{}) db.Query) *Query_WhereAny_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -3995,17 +4013,20 @@ func (_c *Query_WhereLike_Call) RunAndReturn(run func(string, string) db.Query) 
 	return _c
 }
 
-// WhereNone provides a mock function with given fields: columns, op, val
-func (_m *Query) WhereNone(columns []string, op string, val interface{}) db.Query {
-	ret := _m.Called(columns, op, val)
+// WhereNone provides a mock function with given fields: columns, args
+func (_m *Query) WhereNone(columns []string, args ...interface{}) db.Query {
+	var _ca []interface{}
+	_ca = append(_ca, columns)
+	_ca = append(_ca, args...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WhereNone")
 	}
 
 	var r0 db.Query
-	if rf, ok := ret.Get(0).(func([]string, string, interface{}) db.Query); ok {
-		r0 = rf(columns, op, val)
+	if rf, ok := ret.Get(0).(func([]string, ...interface{}) db.Query); ok {
+		r0 = rf(columns, args...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(db.Query)
@@ -4022,15 +4043,21 @@ type Query_WhereNone_Call struct {
 
 // WhereNone is a helper method to define mock.On call
 //   - columns []string
-//   - op string
-//   - val interface{}
-func (_e *Query_Expecter) WhereNone(columns interface{}, op interface{}, val interface{}) *Query_WhereNone_Call {
-	return &Query_WhereNone_Call{Call: _e.mock.On("WhereNone", columns, op, val)}
+//   - args ...interface{}
+func (_e *Query_Expecter) WhereNone(columns interface{}, args ...interface{}) *Query_WhereNone_Call {
+	return &Query_WhereNone_Call{Call: _e.mock.On("WhereNone",
+		append([]interface{}{columns}, args...)...)}
 }
 
-func (_c *Query_WhereNone_Call) Run(run func(columns []string, op string, val interface{})) *Query_WhereNone_Call {
+func (_c *Query_WhereNone_Call) Run(run func(columns []string, args ...interface{})) *Query_WhereNone_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]string), args[1].(string), args[2].(interface{}))
+		variadicArgs := make([]interface{}, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].([]string), variadicArgs...)
 	})
 	return _c
 }
@@ -4040,7 +4067,7 @@ func (_c *Query_WhereNone_Call) Return(_a0 db.Query) *Query_WhereNone_Call {
 	return _c
 }
 
-func (_c *Query_WhereNone_Call) RunAndReturn(run func([]string, string, interface{}) db.Query) *Query_WhereNone_Call {
+func (_c *Query_WhereNone_Call) RunAndReturn(run func([]string, ...interface{}) db.Query) *Query_WhereNone_Call {
 	_c.Call.Return(run)
 	return _c
 }
