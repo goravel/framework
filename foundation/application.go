@@ -319,15 +319,20 @@ func (r *Application) setTimezone() {
 
 func setEnv() {
 	args := os.Args
-	if strings.HasSuffix(os.Args[0], ".test") || strings.HasSuffix(os.Args[0], ".test.exe") {
+
+	if strings.HasSuffix(args[0], ".test") ||
+		strings.HasSuffix(args[0], ".test.exe") ||
+		strings.Contains(args[0], "__debug") {
 		support.RuntimeMode = support.RuntimeTest
-	}
-	if len(args) >= 2 {
-		for _, arg := range args[1:] {
-			if arg == "artisan" {
-				support.RuntimeMode = support.RuntimeArtisan
+		support.DontVerifyEnvFileExists = true
+	} else {
+		if len(args) >= 2 {
+			for _, arg := range args[1:] {
+				if arg == "artisan" {
+					support.RuntimeMode = support.RuntimeArtisan
+				}
+				support.DontVerifyEnvFileExists = slices.Contains(support.DontVerifyEnvFileWhitelist, arg)
 			}
-			support.DontVerifyEnvFileExists = slices.Contains(support.DontVerifyEnvFileWhitelist, arg)
 		}
 	}
 

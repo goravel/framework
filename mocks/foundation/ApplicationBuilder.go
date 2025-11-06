@@ -4,6 +4,8 @@ package foundation
 
 import (
 	event "github.com/goravel/framework/contracts/event"
+	configuration "github.com/goravel/framework/contracts/foundation/configuration"
+
 	foundation "github.com/goravel/framework/contracts/foundation"
 
 	mock "github.com/stretchr/testify/mock"
@@ -197,6 +199,54 @@ func (_c *ApplicationBuilder_WithEvents_Call) RunAndReturn(run func(map[event.Ev
 	return _c
 }
 
+// WithMiddleware provides a mock function with given fields: fn
+func (_m *ApplicationBuilder) WithMiddleware(fn func(configuration.Middleware)) foundation.ApplicationBuilder {
+	ret := _m.Called(fn)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithMiddleware")
+	}
+
+	var r0 foundation.ApplicationBuilder
+	if rf, ok := ret.Get(0).(func(func(configuration.Middleware)) foundation.ApplicationBuilder); ok {
+		r0 = rf(fn)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(foundation.ApplicationBuilder)
+		}
+	}
+
+	return r0
+}
+
+// ApplicationBuilder_WithMiddleware_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithMiddleware'
+type ApplicationBuilder_WithMiddleware_Call struct {
+	*mock.Call
+}
+
+// WithMiddleware is a helper method to define mock.On call
+//   - fn func(configuration.Middleware)
+func (_e *ApplicationBuilder_Expecter) WithMiddleware(fn interface{}) *ApplicationBuilder_WithMiddleware_Call {
+	return &ApplicationBuilder_WithMiddleware_Call{Call: _e.mock.On("WithMiddleware", fn)}
+}
+
+func (_c *ApplicationBuilder_WithMiddleware_Call) Run(run func(fn func(configuration.Middleware))) *ApplicationBuilder_WithMiddleware_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func(configuration.Middleware)))
+	})
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithMiddleware_Call) Return(_a0 foundation.ApplicationBuilder) *ApplicationBuilder_WithMiddleware_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithMiddleware_Call) RunAndReturn(run func(func(configuration.Middleware)) foundation.ApplicationBuilder) *ApplicationBuilder_WithMiddleware_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // WithProviders provides a mock function with given fields: providers
 func (_m *ApplicationBuilder) WithProviders(providers []foundation.ServiceProvider) foundation.ApplicationBuilder {
 	ret := _m.Called(providers)
@@ -246,22 +296,16 @@ func (_c *ApplicationBuilder_WithProviders_Call) RunAndReturn(run func([]foundat
 }
 
 // WithRouting provides a mock function with given fields: routes
-func (_m *ApplicationBuilder) WithRouting(routes ...func()) foundation.ApplicationBuilder {
-	_va := make([]interface{}, len(routes))
-	for _i := range routes {
-		_va[_i] = routes[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
+func (_m *ApplicationBuilder) WithRouting(routes []func()) foundation.ApplicationBuilder {
+	ret := _m.Called(routes)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WithRouting")
 	}
 
 	var r0 foundation.ApplicationBuilder
-	if rf, ok := ret.Get(0).(func(...func()) foundation.ApplicationBuilder); ok {
-		r0 = rf(routes...)
+	if rf, ok := ret.Get(0).(func([]func()) foundation.ApplicationBuilder); ok {
+		r0 = rf(routes)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(foundation.ApplicationBuilder)
@@ -277,21 +321,14 @@ type ApplicationBuilder_WithRouting_Call struct {
 }
 
 // WithRouting is a helper method to define mock.On call
-//   - routes ...func()
-func (_e *ApplicationBuilder_Expecter) WithRouting(routes ...interface{}) *ApplicationBuilder_WithRouting_Call {
-	return &ApplicationBuilder_WithRouting_Call{Call: _e.mock.On("WithRouting",
-		append([]interface{}{}, routes...)...)}
+//   - routes []func()
+func (_e *ApplicationBuilder_Expecter) WithRouting(routes interface{}) *ApplicationBuilder_WithRouting_Call {
+	return &ApplicationBuilder_WithRouting_Call{Call: _e.mock.On("WithRouting", routes)}
 }
 
-func (_c *ApplicationBuilder_WithRouting_Call) Run(run func(routes ...func())) *ApplicationBuilder_WithRouting_Call {
+func (_c *ApplicationBuilder_WithRouting_Call) Run(run func(routes []func())) *ApplicationBuilder_WithRouting_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]func(), len(args)-0)
-		for i, a := range args[0:] {
-			if a != nil {
-				variadicArgs[i] = a.(func())
-			}
-		}
-		run(variadicArgs...)
+		run(args[0].([]func()))
 	})
 	return _c
 }
@@ -301,7 +338,7 @@ func (_c *ApplicationBuilder_WithRouting_Call) Return(_a0 foundation.Application
 	return _c
 }
 
-func (_c *ApplicationBuilder_WithRouting_Call) RunAndReturn(run func(...func()) foundation.ApplicationBuilder) *ApplicationBuilder_WithRouting_Call {
+func (_c *ApplicationBuilder_WithRouting_Call) RunAndReturn(run func([]func()) foundation.ApplicationBuilder) *ApplicationBuilder_WithRouting_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -208,6 +208,53 @@ func (_c *Route_Get_Call) RunAndReturn(run func(string, http.HandlerFunc) route.
 	return _c
 }
 
+// GetGlobalMiddleware provides a mock function with no fields
+func (_m *Route) GetGlobalMiddleware() []http.Middleware {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetGlobalMiddleware")
+	}
+
+	var r0 []http.Middleware
+	if rf, ok := ret.Get(0).(func() []http.Middleware); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]http.Middleware)
+		}
+	}
+
+	return r0
+}
+
+// Route_GetGlobalMiddleware_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetGlobalMiddleware'
+type Route_GetGlobalMiddleware_Call struct {
+	*mock.Call
+}
+
+// GetGlobalMiddleware is a helper method to define mock.On call
+func (_e *Route_Expecter) GetGlobalMiddleware() *Route_GetGlobalMiddleware_Call {
+	return &Route_GetGlobalMiddleware_Call{Call: _e.mock.On("GetGlobalMiddleware")}
+}
+
+func (_c *Route_GetGlobalMiddleware_Call) Run(run func()) *Route_GetGlobalMiddleware_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Route_GetGlobalMiddleware_Call) Return(_a0 []http.Middleware) *Route_GetGlobalMiddleware_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Route_GetGlobalMiddleware_Call) RunAndReturn(run func() []http.Middleware) *Route_GetGlobalMiddleware_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetRoutes provides a mock function with no fields
 func (_m *Route) GetRoutes() []http.Info {
 	ret := _m.Called()
@@ -1103,6 +1150,39 @@ func (_c *Route_ServeHTTP_Call) Return() *Route_ServeHTTP_Call {
 }
 
 func (_c *Route_ServeHTTP_Call) RunAndReturn(run func(nethttp.ResponseWriter, *nethttp.Request)) *Route_ServeHTTP_Call {
+	_c.Run(run)
+	return _c
+}
+
+// SetGlobalMiddleware provides a mock function with given fields: middlewares
+func (_m *Route) SetGlobalMiddleware(middlewares []http.Middleware) {
+	_m.Called(middlewares)
+}
+
+// Route_SetGlobalMiddleware_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetGlobalMiddleware'
+type Route_SetGlobalMiddleware_Call struct {
+	*mock.Call
+}
+
+// SetGlobalMiddleware is a helper method to define mock.On call
+//   - middlewares []http.Middleware
+func (_e *Route_Expecter) SetGlobalMiddleware(middlewares interface{}) *Route_SetGlobalMiddleware_Call {
+	return &Route_SetGlobalMiddleware_Call{Call: _e.mock.On("SetGlobalMiddleware", middlewares)}
+}
+
+func (_c *Route_SetGlobalMiddleware_Call) Run(run func(middlewares []http.Middleware)) *Route_SetGlobalMiddleware_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].([]http.Middleware))
+	})
+	return _c
+}
+
+func (_c *Route_SetGlobalMiddleware_Call) Return() *Route_SetGlobalMiddleware_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Route_SetGlobalMiddleware_Call) RunAndReturn(run func([]http.Middleware)) *Route_SetGlobalMiddleware_Call {
 	_c.Run(run)
 	return _c
 }

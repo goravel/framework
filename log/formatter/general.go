@@ -45,7 +45,7 @@ func (general *General) Format(entry *logrus.Entry) ([]byte, error) {
 		b = &bytes.Buffer{}
 	}
 
-	timestamp := carbon.FromStdTime(entry.Time).ToDateTimeMilliString()
+	timestamp := carbon.FromStdTime(entry.Time, carbon.DefaultTimezone()).ToDateTimeMilliString()
 	fmt.Fprintf(b, "[%s] %s.%s: %s\n", timestamp, general.config.GetString("app.env"), entry.Level, entry.Message)
 	data := entry.Data
 	if len(data) > 0 {

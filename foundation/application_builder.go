@@ -3,6 +3,8 @@ package foundation
 import (
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/foundation"
+	contractsconfiguration "github.com/goravel/framework/contracts/foundation/configuration"
+	"github.com/goravel/framework/foundation/configuration"
 	"github.com/goravel/framework/support/color"
 )
 
@@ -15,6 +17,7 @@ type ApplicationBuilder struct {
 	config                     func()
 	configuredServiceProviders []foundation.ServiceProvider
 	eventToListeners           map[event.Event][]event.Listener
+	middleware                 func(middleware contractsconfiguration.Middleware)
 	routes                     []func()
 }
 
@@ -34,6 +37,25 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 		r.config()
 	}
 
+	// Register http middleware
+	if r.middleware != nil {
+		routeFacade := r.app.MakeRoute()
+		if routeFacade == nil {
+			color.Errorln("Route facade not found, please install it first: ./artisan package:install Route")
+		} else {
+			// Set up global middleware
+			defaultGlobalMiddleware := routeFacade.GetGlobalMiddleware()
+			middleware := configuration.NewMiddleware(defaultGlobalMiddleware)
+			r.middleware(middleware)
+			routeFacade.SetGlobalMiddleware(middleware.GetGlobalMiddleware())
+
+			// Set up custom recover function
+			if recover := middleware.GetRecover(); recover != nil {
+				routeFacade.Recover(recover)
+			}
+		}
+	}
+
 	// Register routes
 	for _, route := range r.routes {
 		route()
@@ -41,11 +63,11 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 
 	// Register event listeners
 	if len(r.eventToListeners) > 0 {
-		evt := r.app.MakeEvent()
-		if evt == nil {
+		eventFacade := r.app.MakeEvent()
+		if eventFacade == nil {
 			color.Errorln("Event facade not found, please install it first: ./artisan package:install Event")
 		} else {
-			evt.Register(r.eventToListeners)
+			eventFacade.Register(r.eventToListeners)
 		}
 	}
 
@@ -68,13 +90,19 @@ func (r *ApplicationBuilder) WithEvents(eventToListeners map[event.Event][]event
 	return r
 }
 
+func (r *ApplicationBuilder) WithMiddleware(fn func(middleware contractsconfiguration.Middleware)) foundation.ApplicationBuilder {
+	r.middleware = fn
+
+	return r
+}
+
 func (r *ApplicationBuilder) WithProviders(providers []foundation.ServiceProvider) foundation.ApplicationBuilder {
 	r.configuredServiceProviders = append(r.configuredServiceProviders, providers...)
 
 	return r
 }
 
-func (r *ApplicationBuilder) WithRouting(routes ...func()) foundation.ApplicationBuilder {
+func (r *ApplicationBuilder) WithRouting(routes []func()) foundation.ApplicationBuilder {
 	r.routes = append(r.routes, routes...)
 
 	return r
