@@ -4865,6 +4865,72 @@ func (s *QueryTestSuite) TestMorphablePolymorphicQueries() {
 	}
 }
 
+func (s *QueryTestSuite) TestWhereAny() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			user := User{Name: "where_any_user", Avatar: "where_any_avatar"}
+			s.Nil(query.Query().Create(&user))
+			s.True(user.ID > 0)
+
+			user1 := User{Name: "where_any_user", Avatar: "where_any_avatar1"}
+			s.Nil(query.Query().Create(&user1))
+			s.True(user1.ID > 0)
+
+			user2 := User{Name: "where_any_user2", Avatar: "where_any_avatar"}
+			s.Nil(query.Query().Create(&user2))
+			s.True(user2.ID > 0)
+
+			var users []User
+			err := query.Query().WhereAny([]string{"name", "avatar"}, "=", "where_any_user").Find(&users)
+			s.NoError(err)
+			s.Len(users, 2)
+			s.Contains([]string{users[0].Name, users[1].Name}, "where_any_user")
+			s.Contains([]string{users[0].Avatar, users[1].Avatar}, "where_any_avatar1")
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestWhereAll() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			user := User{Name: "where_all_user", Avatar: "where_all_user"}
+			s.Nil(query.Query().Create(&user))
+			s.True(user.ID > 0)
+
+			user1 := User{Name: "where_all_user", Avatar: "where_all_avatar1"}
+			s.Nil(query.Query().Create(&user1))
+			s.True(user1.ID > 0)
+
+			var users []User
+			err := query.Query().WhereAll([]string{"name", "avatar"}, "=", "where_all_user").Find(&users)
+			s.NoError(err)
+			s.Len(users, 1)
+			s.Equal("where_all_user", users[0].Name)
+			s.Equal("where_all_user", users[0].Avatar)
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestWhereNone() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			user := User{Name: "where_none_user", Avatar: "where_none_avatar"}
+			s.Nil(query.Query().Create(&user))
+			s.True(user.ID > 0)
+
+			user1 := User{Name: "where_none_user1", Avatar: "where_none_avatar1"}
+			s.Nil(query.Query().Create(&user1))
+			s.True(user1.ID > 0)
+
+			var users []User
+			err := query.Query().WhereNone([]string{"name"}, "=", "where_none_user").Find(&users)
+			s.NoError(err)
+			s.Len(users, 1)
+			s.Equal("where_none_user1", users[0].Name)
+		})
+	}
+}
+
 func Benchmark_Orm(b *testing.B) {
 	query := NewTestQueryBuilder().Postgres("", false)
 	query.CreateTable(TestTableAuthors)

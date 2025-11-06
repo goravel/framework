@@ -187,6 +187,10 @@ type Query interface {
 	UpdateOrCreate(dest any, attributes any, values any) error
 	// Where add a "where" clause to the query.
 	Where(query any, args ...any) Query
+	// WhereAll adds a "where all columns match" clause to the query.
+	WhereAll(columns []string, args ...any) Query
+	// WhereAny adds a "where any of columns match" clause to the query.
+	WhereAny(columns []string, args ...any) Query
 	// WhereBetween adds a "where column between x and y" clause to the query.
 	WhereBetween(column string, x, y any) Query
 	// WhereIn adds a "where column in" clause to the query.
@@ -201,6 +205,8 @@ type Query interface {
 	WhereJsonDoesntContainKey(column string) Query
 	// WhereJsonLength add a "where JSON length" clause to the query.
 	WhereJsonLength(column string, length int) Query
+	// WhereNone adds a "where none of columns match" clause to the query.
+	WhereNone(columns []string, args ...any) Query
 	// WhereNotBetween adds a "where column not between x and y" clause to the query.
 	WhereNotBetween(column string, x, y any) Query
 	// WhereNotIn adds a "where column not in" clause to the query.
