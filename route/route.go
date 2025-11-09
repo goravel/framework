@@ -2,7 +2,6 @@ package route
 
 import (
 	"github.com/goravel/framework/contracts/config"
-	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/route"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/color"
@@ -52,8 +51,3 @@ func NewDriver(config config.Config, driver string) (route.Route, error) {
 
 	return nil, errors.RouteInvalidDriver.Args(driver).SetModule(errors.ModuleRoute)
 }
-
-// GlobalMiddleware is a no-op method used during installation when no HTTP driver is configured.
-// It is called in the AppServiceProvider boot method to register global middleware.
-// When the underlying Route is nil (e.g., when http.default is not set), this method does nothing to avoid panic.
-func (r *Route) GlobalMiddleware(middlewares ...http.Middleware) {}
