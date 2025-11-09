@@ -276,6 +276,7 @@ var (
 			Dependencies: []string{
 				Config,
 				Http,
+				View,
 			},
 			Drivers: []Driver{
 				{
