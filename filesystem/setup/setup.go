@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/goravel/framework/contracts/facades"
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
@@ -11,23 +12,27 @@ import (
 
 func main() {
 	stubs := Stubs{}
+	providersBootstrapPath := path.Bootstrap("providers.go")
+	storageConfigPath := path.Config("filesystems.go")
+	storageFacadePath := path.Facades("storage.go")
+	storageServiceProvider := "&filesystem.ServiceProvider{}"
 
 	packages.Setup(os.Args).
 		Install(
-			modify.GoFile(path.Config("app.go")).
+			modify.GoFile(providersBootstrapPath).
 				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register("&filesystem.ServiceProvider{}")),
-			modify.File(path.Config("filesystems.go")).Overwrite(stubs.Config(packages.GetModuleNameFromArgs(os.Args))),
-			modify.WhenFacade("Storage", modify.File(path.Facades("storage.go")).Overwrite(stubs.StorageFacade())),
+				Find(match.Providers()).Modify(modify.Register(storageServiceProvider)),
+			modify.File(storageConfigPath).Overwrite(stubs.Config(packages.GetModuleNameFromArgs(os.Args))),
+			modify.WhenFacade(facades.Storage, modify.File(storageFacadePath).Overwrite(stubs.StorageFacade())),
 		).
 		Uninstall(
-			modify.WhenNoFacades([]string{"Storage"},
-				modify.GoFile(path.Config("app.go")).
-					Find(match.Providers()).Modify(modify.Unregister("&filesystem.ServiceProvider{}")).
+			modify.WhenNoFacades([]string{facades.Storage},
+				modify.GoFile(providersBootstrapPath).
+					Find(match.Providers()).Modify(modify.Unregister(storageServiceProvider)).
 					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
-				modify.File(path.Config("filesystems.go")).Remove(),
+				modify.File(storageConfigPath).Remove(),
 			),
-			modify.WhenFacade("Storage", modify.File(path.Facades("storage.go")).Remove()),
+			modify.WhenFacade(facades.Storage, modify.File(storageFacadePath).Remove()),
 		).
 		Execute()
 }

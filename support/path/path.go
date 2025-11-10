@@ -12,6 +12,10 @@ func Base(paths ...string) string {
 	return facades.App().BasePath(paths...)
 }
 
+func Bootstrap(paths ...string) string {
+	return facades.App().BootstrapPath(paths...)
+}
+
 func Config(paths ...string) string {
 	return facades.App().ConfigPath(paths...)
 }

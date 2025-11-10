@@ -106,6 +106,34 @@ func Migrations() []match.GoNode {
 
 func Providers() []match.GoNode {
 	return []match.GoNode{
+		Func(
+			Ident("Providers"),
+		),
+		CompositeLit(
+			ArrayType(
+				SelectorExpr(
+					Ident("foundation"),
+					Ident("ServiceProvider"),
+				),
+				AnyNode(),
+			),
+		),
+	}
+}
+
+// Deprecated: ProvidersFallback represents the old logic of registering
+// service providers inside the `config/app.go` file.
+//
+// This pattern is deprecated and will be removed in future versions.
+// Please migrate to the new Providers() function-based registration approach.
+// NOTE: in the current internal setup files, ProvidersFallback is only used for
+// uninstall (not for install). It will continue to serve as an uninstall-only
+// fallback for the next few releases — during which both Providers() and
+// ProvidersFallback matchers will be supported to ensure backward compatibility
+// with older versions. After that deprecation period, ProvidersFallback will
+// be removed entirely.
+func ProvidersFallback() []match.GoNode {
+	return []match.GoNode{
 		Func(Ident("init")),
 		CallExpr(
 			SelectorExpr(

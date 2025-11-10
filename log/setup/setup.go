@@ -12,7 +12,7 @@ import (
 
 func main() {
 	stubs := Stubs{}
-	appConfigPath := path.Config("app.go")
+	providersBootstrapPath := path.Bootstrap("providers.go")
 	logFacadePath := path.Facades("log.go")
 	loggingConfigPath := path.Config("logging.go")
 	moduleName := packages.GetModuleNameFromArgs(os.Args)
@@ -27,7 +27,7 @@ LOG_LEVEL=debug
 	packages.Setup(os.Args).
 		Install(
 			// Add the log service provider to the providers array in config/app.go
-			modify.GoFile(appConfigPath).
+			modify.GoFile(providersBootstrapPath).
 				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
 				Find(match.Providers()).Modify(modify.Register(logServiceProvider)),
 
@@ -44,7 +44,7 @@ LOG_LEVEL=debug
 		Uninstall(
 			modify.WhenNoFacades([]string{facades.Log},
 				// Remove the log service provider from the providers array in config/app.go
-				modify.GoFile(appConfigPath).
+				modify.GoFile(providersBootstrapPath).
 					Find(match.Providers()).Modify(modify.Unregister(logServiceProvider)).
 					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
 

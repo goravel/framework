@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/goravel/framework/contracts/facades"
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
@@ -11,21 +12,24 @@ import (
 
 func main() {
 	stubs := Stubs{}
+	providersBootstrapPath := path.Bootstrap("providers.go")
+	validationFacadePath := path.Facades("validation.go")
+	validationServiceProvider := "&validation.ServiceProvider{}"
 
 	packages.Setup(os.Args).
 		Install(
-			modify.GoFile(path.Config("app.go")).
+			modify.GoFile(providersBootstrapPath).
 				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register("&validation.ServiceProvider{}")),
-			modify.WhenFacade("Validation", modify.File(path.Facades("validation.go")).Overwrite(stubs.ValidationFacade())),
+				Find(match.Providers()).Modify(modify.Register(validationServiceProvider)),
+			modify.WhenFacade(facades.Validation, modify.File(validationFacadePath).Overwrite(stubs.ValidationFacade())),
 		).
 		Uninstall(
-			modify.WhenNoFacades([]string{"Validation"},
-				modify.GoFile(path.Config("app.go")).
-					Find(match.Providers()).Modify(modify.Unregister("&validation.ServiceProvider{}")).
+			modify.WhenNoFacades([]string{facades.Validation},
+				modify.GoFile(providersBootstrapPath).
+					Find(match.Providers()).Modify(modify.Unregister(validationServiceProvider)).
 					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
 			),
-			modify.WhenFacade("Validation", modify.File(path.Facades("validation.go")).Remove()),
+			modify.WhenFacade(facades.Validation, modify.File(validationFacadePath).Remove()),
 		).
 		Execute()
 }

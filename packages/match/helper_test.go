@@ -15,25 +15,19 @@ import (
 
 type MatchHelperTestSuite struct {
 	suite.Suite
-	configChained   *dst.File
-	configVariable  *dst.File
-	console         *dst.File
-	database        *dst.File
-	jobs            *dst.File
-	serviceProvider *dst.File
-	validation      *dst.File
+	configChained    *dst.File
+	configVariable   *dst.File
+	providerVariable *dst.File
+	console          *dst.File
+	database         *dst.File
+	jobs             *dst.File
+	serviceProvider  *dst.File
+	validation       *dst.File
 }
 
 func (s *MatchHelperTestSuite) SetupTest() {
 	var err error
 	s.configChained, err = decorator.Parse(`package config
-
-import (
-	"github.com/goravel/framework/auth"
-	"github.com/goravel/framework/contracts/foundation"
-	"github.com/goravel/framework/crypt"
-	"github.com/goravel/framework/facades"
-)
 
 func Boot() {}
 
@@ -41,21 +35,10 @@ func init() {
 	facades.Config().Add("app", map[string]any{
 		"name":  config.Env("APP_NAME", "Goravel"),
 		"key": "value",
-		"providers": []foundation.ServiceProvider{
-			&auth.AuthServiceProvider{},
-			&crypt.ServiceProvider{},
-		},
 	})
 }`)
 	s.Require().NoError(err)
 	s.configVariable, err = decorator.Parse(`package config
-
-import (
-	"github.com/goravel/framework/auth"
-	"github.com/goravel/framework/contracts/foundation"
-	"github.com/goravel/framework/crypt"
-	"github.com/goravel/framework/facades"
-)
 
 func Boot() {}
 
@@ -64,10 +47,6 @@ func init() {
 	config.Add("app", map[string]any{
 		"name":  config.Env("APP_NAME", "Goravel"),
 		"key": "value",
-		"providers": []foundation.ServiceProvider{
-			&auth.AuthServiceProvider{},
-			&crypt.ServiceProvider{},
-		},
 	})
 }`)
 	s.Require().NoError(err)
@@ -204,6 +183,22 @@ func (receiver *AppServiceProvider) Boot(app foundation.Application) {
 }
 `)
 	s.Require().NoError(err)
+
+	s.providerVariable, err = decorator.Parse(`package bootstrap
+
+import (
+	"github.com/goravel/framework/auth"
+	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/crypt"
+)
+
+func Providers() []foundation.ServiceProvider {
+	return []foundation.ServiceProvider{
+		&auth.ServiceProvider{},
+		&crypt.ServiceProvider{},
+	}
+}`)
+	s.Require().NoError(err)
 }
 
 func (s *MatchHelperTestSuite) TearDownTest() {}
@@ -243,18 +238,18 @@ func (s *MatchHelperTestSuite) TestHelper() {
 		},
 		{
 			name:     "match imports",
-			file:     s.configVariable,
+			file:     s.console,
 			matchers: Imports(),
 			assert: func(node dst.Node) {
 				n, ok := node.(*dst.GenDecl)
 				s.True(ok)
 				s.Equal(token.IMPORT, n.Tok)
-				s.Len(n.Specs, 4)
+				s.Len(n.Specs, 3)
 			},
 		},
 		{
 			name:     "match providers",
-			file:     s.configVariable,
+			file:     s.providerVariable,
 			matchers: Providers(),
 			assert: func(node dst.Node) {
 				s.True(CompositeLit(EqualNode(&dst.ArrayType{
