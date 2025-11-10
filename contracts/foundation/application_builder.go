@@ -1,6 +1,7 @@
 package foundation
 
 import (
+	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/foundation/configuration"
 )
@@ -10,6 +11,8 @@ type ApplicationBuilder interface {
 	Create() Application
 	// Run the application.
 	Run()
+	// WithCommands sets the application's commands.
+	WithCommands(commands []console.Command) ApplicationBuilder
 	// WithConfig sets a callback function to configure the application.
 	WithConfig(config func()) ApplicationBuilder
 	// WithEvents sets event listeners for the application.

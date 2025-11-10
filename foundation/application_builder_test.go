@@ -6,10 +6,12 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/foundation"
 	contractsconfiguration "github.com/goravel/framework/contracts/foundation/configuration"
 	contractshttp "github.com/goravel/framework/contracts/http"
+	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksevent "github.com/goravel/framework/mocks/event"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	mocksroute "github.com/goravel/framework/mocks/route"
@@ -196,6 +198,36 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 
 		s.NotNil(app)
 		s.True(calledRouting)
+	})
+
+	s.Run("WithCommands but Artisan facade is nil", func() {
+		s.SetupTest()
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().MakeArtisan().Return(nil).Once()
+
+		mockCommand := mocksconsole.NewCommand(s.T())
+		got := color.CaptureOutput(func(io.Writer) {
+			app := s.builder.WithCommands([]console.Command{mockCommand}).Create()
+
+			s.NotNil(app)
+		})
+
+		s.Contains(got, "Artisan facade not found, please install it first: ./artisan package:install Artisan")
+	})
+
+	s.Run("WithMiddleware", func() {
+		s.SetupTest()
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().MakeArtisan().Return(nil).Once()
+
+		mockCommand := mocksconsole.NewCommand(s.T())
+		app := s.builder.WithCommands([]console.Command{mockCommand}).Create()
+
+		s.NotNil(app)
 	})
 }
 

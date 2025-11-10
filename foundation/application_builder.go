@@ -1,6 +1,7 @@
 package foundation
 
 import (
+	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/foundation"
 	contractsconfiguration "github.com/goravel/framework/contracts/foundation/configuration"
@@ -14,6 +15,7 @@ func Configure() foundation.ApplicationBuilder {
 
 type ApplicationBuilder struct {
 	app                        foundation.Application
+	commands                   []console.Command
 	config                     func()
 	configuredServiceProviders []foundation.ServiceProvider
 	eventToListeners           map[event.Event][]event.Listener
@@ -71,11 +73,27 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 		}
 	}
 
+	// Register commands
+	if len(r.commands) > 0 {
+		artisanFacade := r.app.MakeArtisan()
+		if artisanFacade == nil {
+			color.Errorln("Artisan facade not found, please install it first: ./artisan package:install Artisan")
+		} else {
+			artisanFacade.Register(r.commands)
+		}
+	}
+
 	return r.app
 }
 
 func (r *ApplicationBuilder) Run() {
 	r.Create().Run()
+}
+
+func (r *ApplicationBuilder) WithCommands(commands []console.Command) foundation.ApplicationBuilder {
+	r.commands = commands
+
+	return r
 }
 
 func (r *ApplicationBuilder) WithConfig(config func()) foundation.ApplicationBuilder {
