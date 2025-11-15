@@ -56,7 +56,7 @@ func (r *MiddlewareMakeCommand) Handle(ctx console.Context) error {
 	ctx.Success("Middleware created successfully")
 
 	if env.IsBootstrapSetup() {
-		err = modify.AddMiddleware(make.GetPackageImportPath(), fmt.Sprintf("&%s.%s{}", make.GetPackageName(), make.GetStructName()))
+		err = modify.AddMiddleware(make.GetPackageImportPath(), fmt.Sprintf("%s.%s()", make.GetPackageName(), make.GetStructName()))
 	}
 
 	if err != nil {

@@ -108,7 +108,7 @@ func (r *ApplicationBuilder) WithEvents(eventToListeners map[event.Event][]event
 	return r
 }
 
-func (r *ApplicationBuilder) WithMiddleware(fn func(middleware contractsconfiguration.Middleware)) foundation.ApplicationBuilder {
+func (r *ApplicationBuilder) WithMiddleware(fn func(handler contractsconfiguration.Middleware)) foundation.ApplicationBuilder {
 	r.middleware = fn
 
 	return r

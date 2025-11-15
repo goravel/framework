@@ -549,11 +549,12 @@ import (
 )
 
 func Boot() {
-	foundation.Setup().WithMiddleware(func(middleware configuration.Middleware) {
-		middleware.Append(
-			&middleware.Auth{},
-		)
-	}).WithConfig(config.Boot).Run()
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+			handler.Append(
+				&middleware.Auth{},
+			)
+		}).WithConfig(config.Boot).Run()
 }
 `,
 		},
@@ -569,9 +570,10 @@ import (
 )
 
 func Boot() {
-	foundation.Setup().WithMiddleware(func(middleware configuration.Middleware) {
-		middleware.Append(&middleware.Existing{})
-	}).WithConfig(config.Boot).Run()
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+			handler.Append(&middleware.Existing{})
+		}).WithConfig(config.Boot).Run()
 }
 `,
 			pkg: "github.com/goravel/framework/http/middleware",
@@ -586,11 +588,12 @@ import (
 )
 
 func Boot() {
-	foundation.Setup().WithMiddleware(func(middleware configuration.Middleware) {
-		middleware.Append(&middleware.Existing{},
-			&middleware.Auth{},
-		)
-	}).WithConfig(config.Boot).Run()
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+			handler.Append(&middleware.Existing{},
+				&middleware.Auth{},
+			)
+		}).WithConfig(config.Boot).Run()
 }
 `,
 		},
@@ -619,11 +622,12 @@ import (
 )
 
 func Boot() {
-	foundation.Setup().WithMiddleware(func(middleware configuration.Middleware) {
-		middleware.Append(
-			&middleware.Cors{},
-		)
-	}).WithConfig(config.Boot).WithRoute(route.Boot).Run()
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+			handler.Append(
+				&middleware.Cors{},
+			)
+		}).WithConfig(config.Boot).WithRoute(route.Boot).Run()
 }
 `,
 		},
@@ -639,8 +643,9 @@ import (
 )
 
 func Boot() {
-	foundation.Setup().WithMiddleware(func(middleware configuration.Middleware) {
-	}).WithConfig(config.Boot).Run()
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+		}).WithConfig(config.Boot).Run()
 }
 `,
 			pkg: "github.com/goravel/framework/http/middleware",
@@ -655,11 +660,12 @@ import (
 )
 
 func Boot() {
-	foundation.Setup().WithMiddleware(func(middleware configuration.Middleware) {
-		middleware.Append(
-			&middleware.Auth{},
-		)
-	}).WithConfig(config.Boot).Run()
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+			handler.Append(
+				&middleware.Auth{},
+			)
+		}).WithConfig(config.Boot).Run()
 }
 `,
 		},
@@ -691,11 +697,12 @@ import (
 
 func Boot() {
 	app := foundation.NewApplication()
-	foundation.Setup().WithMiddleware(func(middleware configuration.Middleware) {
-		middleware.Append(
-			&middleware.Throttle{},
-		)
-	}).WithConfig(config.Boot).Run()
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+			handler.Append(
+				&middleware.Throttle{},
+			)
+		}).WithConfig(config.Boot).Run()
 	app.Start()
 }
 `,
@@ -746,9 +753,10 @@ import (
 )
 
 func Boot() {
-	foundation.Setup().WithMiddleware(func(middleware configuration.Middleware) {
-		middleware.Append(&middleware.Auth{})
-	}).Run()
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+			handler.Append(&middleware.Auth{})
+		}).Run()
 }`,
 			middlewareToAdd:   "&middleware.Cors{}",
 			expectedArgsCount: 2,
@@ -764,8 +772,9 @@ import (
 )
 
 func Boot() {
-	foundation.Setup().WithMiddleware(func(middleware configuration.Middleware) {
-	}).Run()
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+		}).Run()
 }`,
 			middlewareToAdd:   "&middleware.Auth{}",
 			expectedArgsCount: 1,
@@ -828,8 +837,9 @@ import (
 )
 
 func Boot() {
-	foundation.Setup().WithMiddleware(func(middleware configuration.Middleware) {
-	}).Run()
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+		}).Run()
 }`,
 			middlewareToAdd: "&middleware.Auth{}",
 		},
@@ -844,8 +854,8 @@ import (
 )
 
 func Boot() {
-	foundation.Setup().WithMiddleware(func(middleware configuration.Middleware) {
-		middleware.Register(&middleware.Other{})
+	foundation.Setup().WithMiddleware(func(handler configuration.Middleware) {
+		handler.Register(&middleware.Other{})
 	}).Run()
 }`,
 			middlewareToAdd: "&middleware.Cors{}",
@@ -1011,8 +1021,8 @@ func Boot() {
 }
 `,
 			middlewareToAdd: "&middleware.Auth{}",
-			expectedContent: `WithMiddleware(func(middleware configuration.Middleware) {
-		middleware.Append(
+			expectedContent: `WithMiddleware(func(handler configuration.Middleware) {
+		handler.Append(
 			&middleware.Auth{},
 		)
 	}).WithConfig(config.Boot)`,
@@ -1031,8 +1041,8 @@ func Boot() {
 }
 `,
 			middlewareToAdd: "&middleware.Cors{}",
-			expectedContent: `WithMiddleware(func(middleware configuration.Middleware) {
-		middleware.Append(
+			expectedContent: `WithMiddleware(func(handler configuration.Middleware) {
+		handler.Append(
 			&middleware.Cors{},
 		)
 	}).WithConfig(config.Boot)`,
@@ -1173,9 +1183,10 @@ import (
 )
 
 func Boot() {
-	foundation.Setup().WithMiddleware(func(middleware configuration.Middleware) {
-		middleware.Append(&middleware.Auth{})
-	}).WithConfig(config.Boot).Run()
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+			handler.Append(&middleware.Auth{})
+		}).WithConfig(config.Boot).Run()
 }
 `,
 			expectSetup:             true,
@@ -1275,8 +1286,8 @@ import (
 )
 
 func Boot() {
-	foundation.Setup().WithMiddleware(func(middleware configuration.Middleware) {
-		middleware.Append(&middleware.Auth{})
+	foundation.Setup().WithMiddleware(func(handler configuration.Middleware) {
+		handler.Append(&middleware.Auth{})
 	}).Run()
 }`,
 			expectFound:  true,
@@ -1293,9 +1304,10 @@ import (
 )
 
 func Boot() {
-	foundation.Setup().WithMiddleware(func(middleware configuration.Middleware) {
-		middleware.Append(&middleware.Auth{}, &middleware.Cors{})
-	}).Run()
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+			handler.Append(&middleware.Auth{}, &middleware.Cors{})
+		}).Run()
 }`,
 			expectFound:  true,
 			expectedArgs: 2,
@@ -1311,8 +1323,9 @@ import (
 )
 
 func Boot() {
-	foundation.Setup().WithMiddleware(func(middleware configuration.Middleware) {
-	}).Run()
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+		}).Run()
 }`,
 			expectFound: false,
 		},
@@ -1327,9 +1340,10 @@ import (
 )
 
 func Boot() {
-	foundation.Setup().WithMiddleware(func(middleware configuration.Middleware) {
-		middleware.Register(&middleware.Auth{})
-	}).Run()
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+			handler.Register(&middleware.Auth{})
+		}).Run()
 }`,
 			expectFound: false,
 		},
@@ -1399,11 +1413,12 @@ import (
 )
 
 func Boot() {
-	foundation.Setup().WithMiddleware(func(middleware configuration.Middleware) {
-		middleware.Append(
-			&middleware.Auth{},
-		)
-	}).WithConfig(config.Boot).Run()
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+			handler.Append(
+				&middleware.Auth{},
+			)
+		}).WithConfig(config.Boot).Run()
 }
 `,
 		},
@@ -1419,9 +1434,10 @@ import (
 )
 
 func Boot() {
-	foundation.Setup().WithMiddleware(func(middleware configuration.Middleware) {
-		middleware.Append(&middleware.Existing{})
-	}).WithConfig(config.Boot).Run()
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+			handler.Append(&middleware.Existing{})
+		}).WithConfig(config.Boot).Run()
 }
 `,
 			middlewareToAdd: "&middleware.Auth{}",
@@ -1435,11 +1451,12 @@ import (
 )
 
 func Boot() {
-	foundation.Setup().WithMiddleware(func(middleware configuration.Middleware) {
-		middleware.Append(&middleware.Existing{},
-			&middleware.Auth{},
-		)
-	}).WithConfig(config.Boot).Run()
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+			handler.Append(&middleware.Existing{},
+				&middleware.Auth{},
+			)
+		}).WithConfig(config.Boot).Run()
 }
 `,
 		},

@@ -115,7 +115,7 @@ func AddConfig(name, expression string, annotations ...string) modify.Action {
 }
 
 // AddMiddleware adds middleware to the foundation.Setup() chain in the Boot function.
-// If WithMiddleware doesn't exist, it creates one. If it exists, it appends to it using middleware.Append().
+// If WithMiddleware doesn't exist, it creates one. If it exists, it appends to it using handler.Append().
 // This function also ensures the configuration package and middleware package are imported when creating WithMiddleware.
 //
 // Parameters:
@@ -132,20 +132,20 @@ func AddConfig(name, expression string, annotations ...string) modify.Action {
 //
 // Into:
 //
-//	foundation.Setup().WithMiddleware(func(middleware configuration.Middleware) {
-//	    middleware.Append(&middleware.Auth{})
+//	foundation.Setup().WithMiddleware(func(handler configuration.Middleware) {
+//	    handler.Append(&middleware.Auth{})
 //	}).WithConfig(config.Boot).Run()
 //
 // If WithMiddleware already exists:
 //
-//	foundation.Setup().WithMiddleware(func(middleware configuration.Middleware) {
-//	    middleware.Append(&middleware.Existing{})
+//	foundation.Setup().WithMiddleware(func(handler configuration.Middleware) {
+//	    handler.Append(&middleware.Existing{})
 //	}).Run()
 //
 // It appends the new middleware:
 //
-//	foundation.Setup().WithMiddleware(func(middleware configuration.Middleware) {
-//	    middleware.Append(&middleware.Existing{}, &middleware.Auth{})
+//	foundation.Setup().WithMiddleware(func(handler configuration.Middleware) {
+//	    handler.Append(&middleware.Existing{}, &middleware.Auth{})
 //	}).Run()
 func AddMiddleware(pkg, middleware string) error {
 	appFilePath := support.Config.Paths.App
@@ -341,15 +341,25 @@ func addCommandImports(appFilePath, pkg string) error {
 	return GoFile(appFilePath).Find(importMatchers).Modify(AddImport(consoleImportPath)).Apply()
 }
 
-// addMiddlewareAppendCall adds a new middleware.Append() call to the function literal.
+// addMiddlewareAppendCall adds a new handler.Append() call to the function literal.
 func addMiddlewareAppendCall(funcLit *dst.FuncLit, middlewareArg dst.Expr) {
+	// Add newline decorations to middleware argument for proper formatting
+	middlewareArg.Decorations().Before = dst.NewLine
+	middlewareArg.Decorations().After = dst.NewLine
+
 	appendStmt := &dst.ExprStmt{
 		X: &dst.CallExpr{
 			Fun: &dst.SelectorExpr{
-				X:   &dst.Ident{Name: "middleware"},
+				X:   &dst.Ident{Name: "handler"},
 				Sel: &dst.Ident{Name: "Append"},
 			},
 			Args: []dst.Expr{middlewareArg},
+			Decs: dst.CallExprDecorations{
+				NodeDecs: dst.NodeDecs{
+					Before: dst.NewLine,
+					After:  dst.NewLine,
+				},
+			},
 		},
 	}
 	funcLit.Body.List = append(funcLit.Body.List, appendStmt)
@@ -394,6 +404,15 @@ func appendToExistingMiddleware(withMiddlewareCall *dst.CallExpr, middlewareExpr
 
 	appendCall := findMiddlewareAppendCall(funcLit)
 	if appendCall != nil {
+		// Ensure the first existing argument doesn't have a newline before it
+		if len(appendCall.Args) > 0 {
+			appendCall.Args[0].Decorations().Before = dst.None
+		}
+
+		// Add newline decorations to the new middleware for proper formatting
+		middlewareExpr.Decorations().Before = dst.NewLine
+		middlewareExpr.Decorations().After = dst.NewLine
+
 		appendCall.Args = append(appendCall.Args, middlewareExpr)
 	} else {
 		addMiddlewareAppendCall(funcLit, middlewareExpr)
@@ -433,8 +452,15 @@ func createWithCommand(setupCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr,
 
 	newWithCommandCall := &dst.CallExpr{
 		Fun: &dst.SelectorExpr{
-			X:   setupCall,
-			Sel: &dst.Ident{Name: "WithCommands"},
+			X: setupCall,
+			Sel: &dst.Ident{
+				Name: "WithCommands",
+				Decs: dst.IdentDecorations{
+					NodeDecs: dst.NodeDecs{
+						Before: dst.NewLine,
+					},
+				},
+			},
 		},
 		Args: []dst.Expr{compositeLit},
 	}
@@ -445,12 +471,16 @@ func createWithCommand(setupCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr,
 
 // createWithMiddleware creates a new WithMiddleware call and inserts it into the chain.
 func createWithMiddleware(setupCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr, middlewareExpr dst.Expr) {
+	// Add newline decorations to middleware argument for proper formatting
+	middlewareExpr.Decorations().Before = dst.NewLine
+	middlewareExpr.Decorations().After = dst.NewLine
+
 	funcLit := &dst.FuncLit{
 		Type: &dst.FuncType{
 			Params: &dst.FieldList{
 				List: []*dst.Field{
 					{
-						Names: []*dst.Ident{{Name: "middleware"}},
+						Names: []*dst.Ident{{Name: "handler"}},
 						Type: &dst.SelectorExpr{
 							X:   &dst.Ident{Name: "configuration"},
 							Sel: &dst.Ident{Name: "Middleware"},
@@ -464,10 +494,16 @@ func createWithMiddleware(setupCall *dst.CallExpr, parentOfSetup *dst.SelectorEx
 				&dst.ExprStmt{
 					X: &dst.CallExpr{
 						Fun: &dst.SelectorExpr{
-							X:   &dst.Ident{Name: "middleware"},
+							X:   &dst.Ident{Name: "handler"},
 							Sel: &dst.Ident{Name: "Append"},
 						},
 						Args: []dst.Expr{middlewareExpr},
+						Decs: dst.CallExprDecorations{
+							NodeDecs: dst.NodeDecs{
+								Before: dst.NewLine,
+								After:  dst.NewLine,
+							},
+						},
 					},
 				},
 			},
@@ -476,8 +512,15 @@ func createWithMiddleware(setupCall *dst.CallExpr, parentOfSetup *dst.SelectorEx
 
 	newWithMiddlewareCall := &dst.CallExpr{
 		Fun: &dst.SelectorExpr{
-			X:   setupCall,
-			Sel: &dst.Ident{Name: "WithMiddleware"},
+			X: setupCall,
+			Sel: &dst.Ident{
+				Name: "WithMiddleware",
+				Decs: dst.IdentDecorations{
+					NodeDecs: dst.NodeDecs{
+						Before: dst.NewLine,
+					},
+				},
+			},
 		},
 		Args: []dst.Expr{funcLit},
 	}
@@ -544,7 +587,7 @@ func findFoundationSetupCallsForMiddleware(callExpr *dst.CallExpr) (setupCall, w
 	return
 }
 
-// findMiddlewareAppendCall finds the middleware.Append() call in the function literal.
+// findMiddlewareAppendCall finds the handler.Append() call in the function literal.
 func findMiddlewareAppendCall(funcLit *dst.FuncLit) *dst.CallExpr {
 	for _, stmt := range funcLit.Body.List {
 		if exprStmt, ok := stmt.(*dst.ExprStmt); ok {
