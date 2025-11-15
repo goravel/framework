@@ -9,7 +9,7 @@ import (
 	"github.com/goravel/framework/support/color"
 )
 
-func Configure() foundation.ApplicationBuilder {
+func Setup() foundation.ApplicationBuilder {
 	return NewApplicationBuilder(App)
 }
 

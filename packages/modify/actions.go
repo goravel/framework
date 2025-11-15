@@ -12,6 +12,7 @@ import (
 	"github.com/goravel/framework/contracts/packages/modify"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/packages/match"
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/color"
 )
 
@@ -26,6 +27,50 @@ func Add(expression string) modify.Action {
 		node := cursor.Node().(*dst.FuncDecl)
 		node.Body.List = append(node.Body.List, stmt)
 	}
+}
+
+// AddCommand adds command to the foundation.Setup() chain in the Boot function.
+// If WithCommand doesn't exist, it creates one. If it exists, it appends to the command to []console.Command.
+// This function also ensures the configuration package and command package are imported when creating WithCommand.
+//
+// Parameters:
+//   - pkg: Package path of the command (e.g., "goravel/app/console/commands")
+//   - command: Command expression to add (e.g., "&commands.ExampleCommand{}")
+//
+// Example usage:
+//
+//	AddCommand("goravel/app/console/commands", "&commands.ExampleCommand{}")
+//
+// This transforms:
+//
+//	foundation.Setup().WithConfig(config.Boot).Run()
+//
+// Into:
+//
+//	foundation.Setup().WithCommand(commands []console.Command{
+//	  &commands.ExampleCommand{},
+//	}).WithConfig(config.Boot).Run()
+//
+// If WithCommand already exists:
+//
+//	foundation.Setup().WithCommand(commands []console.Command{
+//	  &commands.ExistingCommand{},
+//	}).Run()
+//
+// It appends the new middleware:
+//
+//	foundation.Setup().WithCommand(commands []console.Command{
+//	  &commands.ExistingCommand{},
+//	  &commands.ExampleCommand{},
+//	}).Run()
+func AddCommand(pkg, command string) error {
+	appFilePath := support.Config.Paths.App
+
+	if err := addCommandImports(appFilePath, pkg); err != nil {
+		return err
+	}
+
+	return GoFile(appFilePath).Find(match.FoundationSetup()).Modify(foundationSetupCommand(command)).Apply()
 }
 
 // AddConfig adds a configuration key with the given expression to the config file.
@@ -67,6 +112,49 @@ func AddConfig(name, expression string, annotations ...string) modify.Action {
 			value.Elts = append(value.Elts, newExpr)
 		}
 	}
+}
+
+// AddMiddleware adds middleware to the foundation.Setup() chain in the Boot function.
+// If WithMiddleware doesn't exist, it creates one. If it exists, it appends to it using middleware.Append().
+// This function also ensures the configuration package and middleware package are imported when creating WithMiddleware.
+//
+// Parameters:
+//   - pkg: Package path of the middleware (e.g., "goravel/app/http/middleware")
+//   - middleware: Middleware expression to add (e.g., "&Auth{}")
+//
+// Example usage:
+//
+//	AddMiddleware("goravel/app/http/middleware", "&Auth{}")
+//
+// This transforms:
+//
+//	foundation.Setup().WithConfig(config.Boot).Run()
+//
+// Into:
+//
+//	foundation.Setup().WithMiddleware(func(middleware configuration.Middleware) {
+//	    middleware.Append(&middleware.Auth{})
+//	}).WithConfig(config.Boot).Run()
+//
+// If WithMiddleware already exists:
+//
+//	foundation.Setup().WithMiddleware(func(middleware configuration.Middleware) {
+//	    middleware.Append(&middleware.Existing{})
+//	}).Run()
+//
+// It appends the new middleware:
+//
+//	foundation.Setup().WithMiddleware(func(middleware configuration.Middleware) {
+//	    middleware.Append(&middleware.Existing{}, &middleware.Auth{})
+//	}).Run()
+func AddMiddleware(pkg, middleware string) error {
+	appFilePath := support.Config.Paths.App
+
+	if err := addMiddlewareImports(appFilePath, pkg); err != nil {
+		return err
+	}
+
+	return GoFile(appFilePath).Find(match.FoundationSetup()).Modify(foundationSetupMiddleware(middleware)).Apply()
 }
 
 // AddImport adds an import statement to the file.
@@ -239,5 +327,293 @@ func Unregister(expression string) modify.Action {
 		node.Elts = slices.DeleteFunc(node.Elts, func(ex dst.Expr) bool {
 			return match.EqualNode(expr).MatchNode(ex)
 		})
+	}
+}
+
+// addCommandImports adds the required imports for command package and console package.
+func addCommandImports(appFilePath, pkg string) error {
+	importMatchers := match.Imports()
+	if err := GoFile(appFilePath).FindOrCreate(importMatchers, CreateImport).Modify(AddImport(pkg)).Apply(); err != nil {
+		return err
+	}
+
+	consoleImportPath := "github.com/goravel/framework/contracts/console"
+	return GoFile(appFilePath).Find(importMatchers).Modify(AddImport(consoleImportPath)).Apply()
+}
+
+// addMiddlewareAppendCall adds a new middleware.Append() call to the function literal.
+func addMiddlewareAppendCall(funcLit *dst.FuncLit, middlewareArg dst.Expr) {
+	appendStmt := &dst.ExprStmt{
+		X: &dst.CallExpr{
+			Fun: &dst.SelectorExpr{
+				X:   &dst.Ident{Name: "middleware"},
+				Sel: &dst.Ident{Name: "Append"},
+			},
+			Args: []dst.Expr{middlewareArg},
+		},
+	}
+	funcLit.Body.List = append(funcLit.Body.List, appendStmt)
+}
+
+// addMiddlewareImports adds the required imports for middleware and configuration packages.
+func addMiddlewareImports(appFilePath, pkg string) error {
+	importMatchers := match.Imports()
+	if err := GoFile(appFilePath).FindOrCreate(importMatchers, CreateImport).Modify(AddImport(pkg)).Apply(); err != nil {
+		return err
+	}
+
+	configImportPath := "github.com/goravel/framework/contracts/foundation/configuration"
+	return GoFile(appFilePath).Find(importMatchers).Modify(AddImport(configImportPath)).Apply()
+}
+
+// appendToExistingCommand appends command to an existing WithCommand call.
+func appendToExistingCommand(withCommandCall *dst.CallExpr, commandExpr dst.Expr) {
+	if len(withCommandCall.Args) == 0 {
+		return
+	}
+
+	compositeLit, ok := withCommandCall.Args[0].(*dst.CompositeLit)
+	if !ok {
+		return
+	}
+
+	// Append the command to the composite literal
+	compositeLit.Elts = append(compositeLit.Elts, commandExpr)
+}
+
+// appendToExistingMiddleware appends middleware to an existing WithMiddleware call.
+func appendToExistingMiddleware(withMiddlewareCall *dst.CallExpr, middlewareExpr dst.Expr) {
+	if len(withMiddlewareCall.Args) == 0 {
+		return
+	}
+
+	funcLit, ok := withMiddlewareCall.Args[0].(*dst.FuncLit)
+	if !ok {
+		return
+	}
+
+	appendCall := findMiddlewareAppendCall(funcLit)
+	if appendCall != nil {
+		appendCall.Args = append(appendCall.Args, middlewareExpr)
+	} else {
+		addMiddlewareAppendCall(funcLit, middlewareExpr)
+	}
+}
+
+// containsFoundationSetup checks if the statement contains a foundation.Setup() call.
+func containsFoundationSetup(stmt *dst.ExprStmt) bool {
+	var foundSetup bool
+	dst.Inspect(stmt, func(n dst.Node) bool {
+		if call, ok := n.(*dst.CallExpr); ok {
+			if sel, ok := call.Fun.(*dst.SelectorExpr); ok {
+				if ident, ok := sel.X.(*dst.Ident); ok {
+					if ident.Name == "foundation" && sel.Sel.Name == "Setup" {
+						foundSetup = true
+						return false
+					}
+				}
+			}
+		}
+		return true
+	})
+	return foundSetup
+}
+
+// createWithCommand creates a new WithCommand call and inserts it into the chain.
+func createWithCommand(setupCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr, commandExpr dst.Expr) {
+	compositeLit := &dst.CompositeLit{
+		Type: &dst.ArrayType{
+			Elt: &dst.SelectorExpr{
+				X:   &dst.Ident{Name: "console"},
+				Sel: &dst.Ident{Name: "Command"},
+			},
+		},
+		Elts: []dst.Expr{commandExpr},
+	}
+
+	newWithCommandCall := &dst.CallExpr{
+		Fun: &dst.SelectorExpr{
+			X:   setupCall,
+			Sel: &dst.Ident{Name: "WithCommands"},
+		},
+		Args: []dst.Expr{compositeLit},
+	}
+
+	// Insert WithCommand into the chain
+	parentOfSetup.X = newWithCommandCall
+}
+
+// createWithMiddleware creates a new WithMiddleware call and inserts it into the chain.
+func createWithMiddleware(setupCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr, middlewareExpr dst.Expr) {
+	funcLit := &dst.FuncLit{
+		Type: &dst.FuncType{
+			Params: &dst.FieldList{
+				List: []*dst.Field{
+					{
+						Names: []*dst.Ident{{Name: "middleware"}},
+						Type: &dst.SelectorExpr{
+							X:   &dst.Ident{Name: "configuration"},
+							Sel: &dst.Ident{Name: "Middleware"},
+						},
+					},
+				},
+			},
+		},
+		Body: &dst.BlockStmt{
+			List: []dst.Stmt{
+				&dst.ExprStmt{
+					X: &dst.CallExpr{
+						Fun: &dst.SelectorExpr{
+							X:   &dst.Ident{Name: "middleware"},
+							Sel: &dst.Ident{Name: "Append"},
+						},
+						Args: []dst.Expr{middlewareExpr},
+					},
+				},
+			},
+		},
+	}
+
+	newWithMiddlewareCall := &dst.CallExpr{
+		Fun: &dst.SelectorExpr{
+			X:   setupCall,
+			Sel: &dst.Ident{Name: "WithMiddleware"},
+		},
+		Args: []dst.Expr{funcLit},
+	}
+
+	// Insert WithMiddleware into the chain
+	parentOfSetup.X = newWithMiddlewareCall
+}
+
+// findFoundationSetupCallsForCommand walks the chain to find Setup() and WithCommand() calls.
+func findFoundationSetupCallsForCommand(callExpr *dst.CallExpr) (setupCall, withCommandCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr) {
+	current := callExpr
+	for current != nil {
+		if sel, ok := current.Fun.(*dst.SelectorExpr); ok {
+			if innerCall, ok := sel.X.(*dst.CallExpr); ok {
+				if innerSel, ok := innerCall.Fun.(*dst.SelectorExpr); ok {
+					// Check if this is the Setup() call
+					if innerSel.Sel.Name == "Setup" {
+						if ident, ok := innerSel.X.(*dst.Ident); ok && ident.Name == "foundation" {
+							setupCall = innerCall
+							parentOfSetup = sel
+							break
+						}
+					}
+					// Check if this is WithCommand
+					if innerSel.Sel.Name == "WithCommands" {
+						withCommandCall = innerCall
+					}
+				}
+				current = innerCall
+				continue
+			}
+		}
+		break
+	}
+	return
+}
+
+// findFoundationSetupCallsForMiddleware walks the chain to find Setup() and WithMiddleware() calls.
+func findFoundationSetupCallsForMiddleware(callExpr *dst.CallExpr) (setupCall, withMiddlewareCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr) {
+	current := callExpr
+	for current != nil {
+		if sel, ok := current.Fun.(*dst.SelectorExpr); ok {
+			if innerCall, ok := sel.X.(*dst.CallExpr); ok {
+				if innerSel, ok := innerCall.Fun.(*dst.SelectorExpr); ok {
+					// Check if this is the Setup() call
+					if innerSel.Sel.Name == "Setup" {
+						if ident, ok := innerSel.X.(*dst.Ident); ok && ident.Name == "foundation" {
+							setupCall = innerCall
+							parentOfSetup = sel
+							break
+						}
+					}
+					// Check if this is WithMiddleware
+					if innerSel.Sel.Name == "WithMiddleware" {
+						withMiddlewareCall = innerCall
+					}
+				}
+				current = innerCall
+				continue
+			}
+		}
+		break
+	}
+	return
+}
+
+// findMiddlewareAppendCall finds the middleware.Append() call in the function literal.
+func findMiddlewareAppendCall(funcLit *dst.FuncLit) *dst.CallExpr {
+	for _, stmt := range funcLit.Body.List {
+		if exprStmt, ok := stmt.(*dst.ExprStmt); ok {
+			if call, ok := exprStmt.X.(*dst.CallExpr); ok {
+				if sel, ok := call.Fun.(*dst.SelectorExpr); ok {
+					if sel.Sel.Name == "Append" {
+						return call
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// foundationSetupMiddleware returns an action that modifies the foundation.Setup() chain.
+func foundationSetupMiddleware(middleware string) modify.Action {
+	return func(cursor *dstutil.Cursor) {
+		stmt := cursor.Node().(*dst.ExprStmt)
+
+		if !containsFoundationSetup(stmt) {
+			return
+		}
+
+		callExpr, ok := stmt.X.(*dst.CallExpr)
+		if !ok {
+			return
+		}
+
+		setupCall, withMiddlewareCall, parentOfSetup := findFoundationSetupCallsForMiddleware(callExpr)
+		if setupCall == nil || parentOfSetup == nil {
+			return
+		}
+
+		middlewareExpr := MustParseExpr(middleware).(dst.Expr)
+
+		if withMiddlewareCall != nil {
+			appendToExistingMiddleware(withMiddlewareCall, middlewareExpr)
+		} else {
+			createWithMiddleware(setupCall, parentOfSetup, middlewareExpr)
+		}
+	}
+}
+
+// foundationSetupCommand returns an action that modifies the foundation.Setup() chain for commands.
+func foundationSetupCommand(command string) modify.Action {
+	return func(cursor *dstutil.Cursor) {
+		stmt := cursor.Node().(*dst.ExprStmt)
+
+		if !containsFoundationSetup(stmt) {
+			return
+		}
+
+		callExpr, ok := stmt.X.(*dst.CallExpr)
+		if !ok {
+			return
+		}
+
+		setupCall, withCommandCall, parentOfSetup := findFoundationSetupCallsForCommand(callExpr)
+		if setupCall == nil || parentOfSetup == nil {
+			return
+		}
+
+		commandExpr := MustParseExpr(command).(dst.Expr)
+
+		if withCommandCall != nil {
+			appendToExistingCommand(withCommandCall, commandExpr)
+		} else {
+			createWithCommand(setupCall, parentOfSetup, commandExpr)
+		}
 	}
 }

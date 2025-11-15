@@ -13,6 +13,7 @@ import (
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support"
 	supportconsole "github.com/goravel/framework/support/console"
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )
@@ -43,28 +44,26 @@ func (r *MakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *MakeCommand) Handle(ctx console.Context) error {
-	if err := r.initKernel(); err != nil {
-		ctx.Error(err.Error())
-		return nil
-	}
-
-	m, err := supportconsole.NewMake(ctx, "command", ctx.Argument(0), support.Config.Paths.Command)
+	make, err := supportconsole.NewMake(ctx, "command", ctx.Argument(0), support.Config.Paths.Command)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
 
-	if err := file.PutContent(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName(), m.GetSignature())); err != nil {
+	if err := file.PutContent(make.GetFilePath(), r.populateStub(r.getStub(), make.GetPackageName(), make.GetStructName(), make.GetSignature())); err != nil {
 		return err
 	}
 
 	ctx.Success("Console command created successfully")
 
-	if err = modify.GoFile(filepath.Join("app", "console", "kernel.go")).
-		Find(match.Imports()).Modify(modify.AddImport(m.GetPackageImportPath())).
-		Find(match.Commands()).Modify(modify.Register(fmt.Sprintf("&%s.%s{}", m.GetPackageName(), m.GetStructName()))).
-		Apply(); err != nil {
-		ctx.Warning(errors.ConsoleCommandRegisterFailed.Args(err).Error())
+	if env.IsBootstrapSetup() {
+		err = modify.AddCommand(make.GetPackageImportPath(), fmt.Sprintf("&%s.%s{}", make.GetPackageName(), make.GetStructName()))
+	} else {
+		err = r.registerInKernel(make)
+	}
+
+	if err != nil {
+		ctx.Error(err.Error())
 		return nil
 	}
 
@@ -110,4 +109,20 @@ func (r *MakeCommand) populateStub(stub string, packageName, structName, signatu
 	stub = strings.ReplaceAll(stub, "DummySignature", str.Of(signature).Kebab().Prepend("app:").String())
 
 	return stub
+}
+
+func (r *MakeCommand) registerInKernel(make *supportconsole.Make) error {
+	if err := r.initKernel(); err != nil {
+		return err
+	}
+
+	if err := modify.GoFile(filepath.Join("app", "console", "kernel.go")).
+		Find(match.Imports()).Modify(modify.AddImport(make.GetPackageImportPath())).
+		Find(match.Commands()).Modify(modify.Register(fmt.Sprintf("&%s.%s{}", make.GetPackageName(), make.GetStructName()))).
+		Apply(); err != nil {
+
+		return errors.ConsoleCommandRegisterFailed.Args(err)
+	}
+
+	return nil
 }
