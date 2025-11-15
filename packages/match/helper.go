@@ -185,3 +185,22 @@ func ValidationFilters() []match.GoNode {
 		),
 	}
 }
+
+// FoundationSetup matches the Boot function containing foundation.Setup() chain calls.
+// It matches both patterns:
+//   - foundation.Setup().WithConfig(...).Run()
+//   - foundation.Setup().WithMiddleware(...).WithConfig(...).Run()
+//   - foundation.Setup().WithCommand(...).Run()
+//
+// Example usage:
+//
+//	GoFile("bootstrap/app.go").
+//	    Find(match.FoundationSetup()).
+//	    Modify(foundationSetupMiddleware(middleware)).
+//	    Apply()
+func FoundationSetup() []match.GoNode {
+	return []match.GoNode{
+		Func(Ident("Boot")),
+		TypeOf(&dst.ExprStmt{}),
+	}
+}

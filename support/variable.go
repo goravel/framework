@@ -3,6 +3,7 @@ package support
 import "path/filepath"
 
 type Paths struct {
+	App        string
 	Command    string
 	Controller string
 	Event      string
@@ -43,6 +44,7 @@ var (
 
 	Config = Configuration{
 		Paths: Paths{
+			App:        filepath.Join("bootstrap", "app.go"),
 			Command:    filepath.Join("app", "console", "commands"),
 			Controller: filepath.Join("app", "http", "controllers"),
 			Event:      filepath.Join("app", "events"),

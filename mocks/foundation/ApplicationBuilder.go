@@ -3,8 +3,10 @@
 package foundation
 
 import (
-	event "github.com/goravel/framework/contracts/event"
+	console "github.com/goravel/framework/contracts/console"
 	configuration "github.com/goravel/framework/contracts/foundation/configuration"
+
+	event "github.com/goravel/framework/contracts/event"
 
 	foundation "github.com/goravel/framework/contracts/foundation"
 
@@ -100,6 +102,54 @@ func (_c *ApplicationBuilder_Run_Call) Return() *ApplicationBuilder_Run_Call {
 
 func (_c *ApplicationBuilder_Run_Call) RunAndReturn(run func()) *ApplicationBuilder_Run_Call {
 	_c.Run(run)
+	return _c
+}
+
+// WithCommands provides a mock function with given fields: commands
+func (_m *ApplicationBuilder) WithCommands(commands []console.Command) foundation.ApplicationBuilder {
+	ret := _m.Called(commands)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithCommands")
+	}
+
+	var r0 foundation.ApplicationBuilder
+	if rf, ok := ret.Get(0).(func([]console.Command) foundation.ApplicationBuilder); ok {
+		r0 = rf(commands)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(foundation.ApplicationBuilder)
+		}
+	}
+
+	return r0
+}
+
+// ApplicationBuilder_WithCommands_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithCommands'
+type ApplicationBuilder_WithCommands_Call struct {
+	*mock.Call
+}
+
+// WithCommands is a helper method to define mock.On call
+//   - commands []console.Command
+func (_e *ApplicationBuilder_Expecter) WithCommands(commands interface{}) *ApplicationBuilder_WithCommands_Call {
+	return &ApplicationBuilder_WithCommands_Call{Call: _e.mock.On("WithCommands", commands)}
+}
+
+func (_c *ApplicationBuilder_WithCommands_Call) Run(run func(commands []console.Command)) *ApplicationBuilder_WithCommands_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].([]console.Command))
+	})
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithCommands_Call) Return(_a0 foundation.ApplicationBuilder) *ApplicationBuilder_WithCommands_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithCommands_Call) RunAndReturn(run func([]console.Command) foundation.ApplicationBuilder) *ApplicationBuilder_WithCommands_Call {
+	_c.Call.Return(run)
 	return _c
 }
 

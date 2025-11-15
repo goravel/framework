@@ -5,11 +5,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/dave/dst"
+	"github.com/dave/dst/decorator"
 	"github.com/stretchr/testify/suite"
 
 	contractmatch "github.com/goravel/framework/contracts/packages/match"
 	"github.com/goravel/framework/contracts/packages/modify"
 	"github.com/goravel/framework/packages/match"
+	"github.com/goravel/framework/support"
 	supportfile "github.com/goravel/framework/support/file"
 )
 
@@ -508,6 +511,1005 @@ func (kernel Kernel) Commands() []console.Command {
 			content, err := supportfile.GetContent(sourceFile)
 			s.Require().NoError(err)
 			tt.assert(content)
+		})
+	}
+}
+
+func (s *ModifyActionsTestSuite) TestAddMiddleware() {
+	tests := []struct {
+		name     string
+		content  string
+		pkg      string
+		mw       string
+		expected string
+		wantErr  bool
+	}{
+		{
+			name: "add middleware when WithMiddleware doesn't exist",
+			content: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().WithConfig(config.Boot).Run()
+}
+`,
+			pkg: "github.com/goravel/framework/http/middleware",
+			mw:  "&middleware.Auth{}",
+			expected: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/foundation/configuration"
+	"github.com/goravel/framework/foundation"
+	"github.com/goravel/framework/http/middleware"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+			handler.Append(
+				&middleware.Auth{},
+			)
+		}).WithConfig(config.Boot).Run()
+}
+`,
+		},
+		{
+			name: "add middleware when WithMiddleware already exists",
+			content: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/foundation/configuration"
+	"github.com/goravel/framework/foundation"
+	"github.com/goravel/framework/http/middleware"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+			handler.Append(&middleware.Existing{})
+		}).WithConfig(config.Boot).Run()
+}
+`,
+			pkg: "github.com/goravel/framework/http/middleware",
+			mw:  "&middleware.Auth{}",
+			expected: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/foundation/configuration"
+	"github.com/goravel/framework/foundation"
+	"github.com/goravel/framework/http/middleware"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+			handler.Append(&middleware.Existing{},
+				&middleware.Auth{},
+			)
+		}).WithConfig(config.Boot).Run()
+}
+`,
+		},
+		{
+			name: "add middleware with complex chain",
+			content: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().WithConfig(config.Boot).WithRoute(route.Boot).Run()
+}
+`,
+			pkg: "github.com/goravel/framework/http/middleware",
+			mw:  "&middleware.Cors{}",
+			expected: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/foundation/configuration"
+	"github.com/goravel/framework/foundation"
+	"github.com/goravel/framework/http/middleware"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+			handler.Append(
+				&middleware.Cors{},
+			)
+		}).WithConfig(config.Boot).WithRoute(route.Boot).Run()
+}
+`,
+		},
+		{
+			name: "add middleware when WithMiddleware exists but no Append call",
+			content: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/foundation/configuration"
+	"github.com/goravel/framework/foundation"
+	"github.com/goravel/framework/http/middleware"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+		}).WithConfig(config.Boot).Run()
+}
+`,
+			pkg: "github.com/goravel/framework/http/middleware",
+			mw:  "&middleware.Auth{}",
+			expected: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/foundation/configuration"
+	"github.com/goravel/framework/foundation"
+	"github.com/goravel/framework/http/middleware"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+			handler.Append(
+				&middleware.Auth{},
+			)
+		}).WithConfig(config.Boot).Run()
+}
+`,
+		},
+		{
+			name: "add middleware to Boot function with multiple statements",
+			content: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	app := foundation.NewApplication()
+	foundation.Setup().WithConfig(config.Boot).Run()
+	app.Start()
+}
+`,
+			pkg: "github.com/goravel/framework/http/middleware",
+			mw:  "&middleware.Throttle{}",
+			expected: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/foundation/configuration"
+	"github.com/goravel/framework/foundation"
+	"github.com/goravel/framework/http/middleware"
+	"goravel/config"
+)
+
+func Boot() {
+	app := foundation.NewApplication()
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+			handler.Append(
+				&middleware.Throttle{},
+			)
+		}).WithConfig(config.Boot).Run()
+	app.Start()
+}
+`,
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			sourceFile := filepath.Join(s.T().TempDir(), "app.go")
+			s.Require().NoError(supportfile.PutContent(sourceFile, tt.content))
+
+			// Override the Config.Paths.App for testing
+			originalAppPath := support.Config.Paths.App
+			support.Config.Paths.App = sourceFile
+			defer func() {
+				support.Config.Paths.App = originalAppPath
+			}()
+
+			err := AddMiddleware(tt.pkg, tt.mw)
+			if tt.wantErr {
+				s.Error(err)
+				return
+			}
+			s.NoError(err)
+
+			content, err := supportfile.GetContent(sourceFile)
+			s.Require().NoError(err)
+			s.Equal(tt.expected, content)
+		})
+	}
+}
+
+func (s *ModifyActionsTestSuite) Test_appendToExistingMiddleware() {
+	tests := []struct {
+		name              string
+		initialContent    string
+		middlewareToAdd   string
+		expectedArgsCount int
+	}{
+		{
+			name: "append to existing Append call",
+			initialContent: `package test
+
+import (
+	"github.com/goravel/framework/contracts/foundation/configuration"
+	"github.com/goravel/framework/foundation"
+	"github.com/goravel/framework/http/middleware"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+			handler.Append(&middleware.Auth{})
+		}).Run()
+}`,
+			middlewareToAdd:   "&middleware.Cors{}",
+			expectedArgsCount: 2,
+		},
+		{
+			name: "append to empty function",
+			initialContent: `package test
+
+import (
+	"github.com/goravel/framework/contracts/foundation/configuration"
+	"github.com/goravel/framework/foundation"
+	"github.com/goravel/framework/http/middleware"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+		}).Run()
+}`,
+			middlewareToAdd:   "&middleware.Auth{}",
+			expectedArgsCount: 1,
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			sourceFile := filepath.Join(s.T().TempDir(), "test.go")
+			s.Require().NoError(supportfile.PutContent(sourceFile, tt.initialContent))
+
+			content, err := supportfile.GetContent(sourceFile)
+			s.Require().NoError(err)
+
+			file, err := decorator.Parse(content)
+			s.Require().NoError(err)
+
+			// Find the WithMiddleware call
+			var withMiddlewareCall *dst.CallExpr
+			dst.Inspect(file, func(n dst.Node) bool {
+				if call, ok := n.(*dst.CallExpr); ok {
+					if sel, ok := call.Fun.(*dst.SelectorExpr); ok {
+						if sel.Sel.Name == "WithMiddleware" {
+							withMiddlewareCall = call
+							return false
+						}
+					}
+				}
+				return true
+			})
+
+			s.NotNil(withMiddlewareCall, "Expected to find WithMiddleware call")
+
+			middlewareExpr := MustParseExpr(tt.middlewareToAdd).(dst.Expr)
+			appendToExistingMiddleware(withMiddlewareCall, middlewareExpr)
+
+			funcLit := withMiddlewareCall.Args[0].(*dst.FuncLit)
+			appendCall := findMiddlewareAppendCall(funcLit)
+
+			s.NotNil(appendCall, "Expected Append call to exist after modification")
+			s.Equal(tt.expectedArgsCount, len(appendCall.Args), "Expected %d arguments in Append call", tt.expectedArgsCount)
+		})
+	}
+}
+
+func (s *ModifyActionsTestSuite) Test_addMiddlewareAppendCall() {
+	tests := []struct {
+		name            string
+		initialContent  string
+		middlewareToAdd string
+	}{
+		{
+			name: "add Append to empty function",
+			initialContent: `package test
+
+import (
+	"github.com/goravel/framework/contracts/foundation/configuration"
+	"github.com/goravel/framework/foundation"
+	"github.com/goravel/framework/http/middleware"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+		}).Run()
+}`,
+			middlewareToAdd: "&middleware.Auth{}",
+		},
+		{
+			name: "add Append to function with other statements",
+			initialContent: `package test
+
+import (
+	"github.com/goravel/framework/contracts/foundation/configuration"
+	"github.com/goravel/framework/foundation"
+	"github.com/goravel/framework/http/middleware"
+)
+
+func Boot() {
+	foundation.Setup().WithMiddleware(func(handler configuration.Middleware) {
+		handler.Register(&middleware.Other{})
+	}).Run()
+}`,
+			middlewareToAdd: "&middleware.Cors{}",
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			sourceFile := filepath.Join(s.T().TempDir(), "test.go")
+			s.Require().NoError(supportfile.PutContent(sourceFile, tt.initialContent))
+
+			content, err := supportfile.GetContent(sourceFile)
+			s.Require().NoError(err)
+
+			file, err := decorator.Parse(content)
+			s.Require().NoError(err)
+
+			// Find the function literal
+			var funcLit *dst.FuncLit
+			dst.Inspect(file, func(n dst.Node) bool {
+				if fl, ok := n.(*dst.FuncLit); ok {
+					funcLit = fl
+					return false
+				}
+				return true
+			})
+
+			s.NotNil(funcLit, "Expected to find function literal")
+
+			originalStmtCount := len(funcLit.Body.List)
+			middlewareExpr := MustParseExpr(tt.middlewareToAdd).(dst.Expr)
+
+			addMiddlewareAppendCall(funcLit, middlewareExpr)
+
+			s.Equal(originalStmtCount+1, len(funcLit.Body.List), "Expected one more statement")
+
+			appendCall := findMiddlewareAppendCall(funcLit)
+			s.NotNil(appendCall, "Expected to find newly added Append call")
+			s.Equal(1, len(appendCall.Args), "Expected exactly 1 argument in Append call")
+		})
+	}
+}
+
+func (s *ModifyActionsTestSuite) Test_addMiddlewareImports() {
+	tests := []struct {
+		name             string
+		initialContent   string
+		pkg              string
+		expectError      bool
+		expectedImports  []string
+		unexpectedImport string
+	}{
+		{
+			name: "add middleware imports to file with existing imports",
+			initialContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().WithConfig(config.Boot).Run()
+}
+`,
+			pkg:         "github.com/goravel/framework/http/middleware",
+			expectError: false,
+			expectedImports: []string{
+				"github.com/goravel/framework/http/middleware",
+				"github.com/goravel/framework/contracts/foundation/configuration",
+			},
+		},
+		{
+			name: "add middleware imports when configuration import already exists",
+			initialContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/foundation/configuration"
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().WithConfig(config.Boot).Run()
+}
+`,
+			pkg:         "github.com/goravel/framework/http/middleware",
+			expectError: false,
+			expectedImports: []string{
+				"github.com/goravel/framework/http/middleware",
+				"github.com/goravel/framework/contracts/foundation/configuration",
+			},
+		},
+		{
+			name: "add middleware imports when middleware package already exists",
+			initialContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"github.com/goravel/framework/http/middleware"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().WithConfig(config.Boot).Run()
+}
+`,
+			pkg:         "github.com/goravel/framework/http/middleware",
+			expectError: false,
+			expectedImports: []string{
+				"github.com/goravel/framework/http/middleware",
+				"github.com/goravel/framework/contracts/foundation/configuration",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			sourceFile := filepath.Join(s.T().TempDir(), "test.go")
+			s.Require().NoError(supportfile.PutContent(sourceFile, tt.initialContent))
+
+			err := addMiddlewareImports(sourceFile, tt.pkg)
+
+			if tt.expectError {
+				s.Error(err)
+				return
+			}
+
+			s.NoError(err)
+
+			content, err := supportfile.GetContent(sourceFile)
+			s.Require().NoError(err)
+
+			for _, expectedImport := range tt.expectedImports {
+				s.Contains(content, expectedImport, "Expected import %s to be present", expectedImport)
+			}
+
+			if tt.unexpectedImport != "" {
+				s.NotContains(content, tt.unexpectedImport)
+			}
+		})
+	}
+}
+
+func (s *ModifyActionsTestSuite) Test_createWithMiddleware() {
+	tests := []struct {
+		name            string
+		initialContent  string
+		middlewareToAdd string
+		expectedContent string
+	}{
+		{
+			name: "create WithMiddleware and insert into chain",
+			initialContent: `package test
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().WithConfig(config.Boot).Run()
+}
+`,
+			middlewareToAdd: "&middleware.Auth{}",
+			expectedContent: `WithMiddleware(func(handler configuration.Middleware) {
+		handler.Append(
+			&middleware.Auth{},
+		)
+	}).WithConfig(config.Boot)`,
+		},
+		{
+			name: "create WithMiddleware when multiple chain calls exist",
+			initialContent: `package test
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().WithConfig(config.Boot).WithRoute(route.Boot).Run()
+}
+`,
+			middlewareToAdd: "&middleware.Cors{}",
+			expectedContent: `WithMiddleware(func(handler configuration.Middleware) {
+		handler.Append(
+			&middleware.Cors{},
+		)
+	}).WithConfig(config.Boot)`,
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			sourceFile := filepath.Join(s.T().TempDir(), "test.go")
+			s.Require().NoError(supportfile.PutContent(sourceFile, tt.initialContent))
+
+			content, err := supportfile.GetContent(sourceFile)
+			s.Require().NoError(err)
+
+			file, err := decorator.Parse(content)
+			s.Require().NoError(err)
+
+			// Find the foundation.Setup() call and the chain
+			var setupCall *dst.CallExpr
+			var parentOfSetup *dst.SelectorExpr
+			dst.Inspect(file, func(n dst.Node) bool {
+				if call, ok := n.(*dst.CallExpr); ok {
+					if sel, ok := call.Fun.(*dst.SelectorExpr); ok {
+						if innerCall, ok := sel.X.(*dst.CallExpr); ok {
+							if innerSel, ok := innerCall.Fun.(*dst.SelectorExpr); ok {
+								if innerSel.Sel.Name == "Setup" {
+									setupCall = innerCall
+									parentOfSetup = sel
+									return false
+								}
+							}
+						}
+					}
+				}
+				return true
+			})
+
+			s.NotNil(setupCall, "Expected to find Setup call")
+			s.NotNil(parentOfSetup, "Expected to find parent of Setup")
+
+			middlewareExpr := MustParseExpr(tt.middlewareToAdd).(dst.Expr)
+			createWithMiddleware(setupCall, parentOfSetup, middlewareExpr)
+
+			// Verify the structure was created
+			s.NotNil(parentOfSetup.X, "Expected parentOfSetup.X to be updated")
+			withMiddlewareCall, ok := parentOfSetup.X.(*dst.CallExpr)
+			s.True(ok, "Expected parentOfSetup.X to be a CallExpr")
+
+			sel, ok := withMiddlewareCall.Fun.(*dst.SelectorExpr)
+			s.True(ok, "Expected WithMiddleware fun to be a SelectorExpr")
+			s.Equal("WithMiddleware", sel.Sel.Name)
+
+			s.Require().Len(withMiddlewareCall.Args, 1)
+			funcLit, ok := withMiddlewareCall.Args[0].(*dst.FuncLit)
+			s.True(ok, "Expected first argument to be a function literal")
+
+			appendCall := findMiddlewareAppendCall(funcLit)
+			s.NotNil(appendCall, "Expected Append call to exist")
+			s.Equal(1, len(appendCall.Args), "Expected exactly 1 argument in Append call")
+		})
+	}
+}
+
+func (s *ModifyActionsTestSuite) Test_containsFoundationSetup() {
+	tests := []struct {
+		name     string
+		stmt     string
+		expected bool
+	}{
+		{
+			name:     "contains foundation.Setup()",
+			stmt:     `foundation.Setup().Run()`,
+			expected: true,
+		},
+		{
+			name:     "contains foundation.Setup() in chain",
+			stmt:     `foundation.Setup().WithConfig(config.Boot).Run()`,
+			expected: true,
+		},
+		{
+			name:     "does not contain foundation.Setup()",
+			stmt:     `app.Run()`,
+			expected: false,
+		},
+		{
+			name:     "contains Setup() but not from foundation",
+			stmt:     `something.Setup().Run()`,
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			expr := MustParseExpr(tt.stmt).(dst.Expr)
+			stmt := &dst.ExprStmt{X: expr}
+
+			result := containsFoundationSetup(stmt)
+			s.Equal(tt.expected, result)
+		})
+	}
+}
+
+func (s *ModifyActionsTestSuite) Test_findFoundationSetupCallsForMiddleware() {
+	tests := []struct {
+		name                    string
+		initialContent          string
+		expectSetup             bool
+		expectWithMiddleware    bool
+		expectParentOfSetup     bool
+		withMiddlewareArgsCount int
+	}{
+		{
+			name: "find Setup without WithMiddleware",
+			initialContent: `package test
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().WithConfig(config.Boot).Run()
+}
+`,
+			expectSetup:          true,
+			expectWithMiddleware: false,
+			expectParentOfSetup:  true,
+		},
+		{
+			name: "find Setup with WithMiddleware",
+			initialContent: `package test
+
+import (
+	"github.com/goravel/framework/contracts/foundation/configuration"
+	"github.com/goravel/framework/foundation"
+	"github.com/goravel/framework/http/middleware"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+			handler.Append(&middleware.Auth{})
+		}).WithConfig(config.Boot).Run()
+}
+`,
+			expectSetup:             true,
+			expectWithMiddleware:    true,
+			expectParentOfSetup:     true,
+			withMiddlewareArgsCount: 1,
+		},
+		{
+			name: "find Setup with complex chain",
+			initialContent: `package test
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().WithConfig(config.Boot).WithRoute(route.Boot).WithSchedule(schedule.Boot).Run()
+}
+`,
+			expectSetup:          true,
+			expectWithMiddleware: false,
+			expectParentOfSetup:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			sourceFile := filepath.Join(s.T().TempDir(), "test.go")
+			s.Require().NoError(supportfile.PutContent(sourceFile, tt.initialContent))
+
+			content, err := supportfile.GetContent(sourceFile)
+			s.Require().NoError(err)
+
+			file, err := decorator.Parse(content)
+			s.Require().NoError(err)
+
+			// Find the main call expression
+			var mainCallExpr *dst.CallExpr
+			dst.Inspect(file, func(n dst.Node) bool {
+				if stmt, ok := n.(*dst.ExprStmt); ok {
+					if call, ok := stmt.X.(*dst.CallExpr); ok {
+						mainCallExpr = call
+						return false
+					}
+				}
+				return true
+			})
+
+			s.NotNil(mainCallExpr, "Expected to find main call expression")
+
+			setupCall, withMiddlewareCall, parentOfSetup := findFoundationSetupCallsForMiddleware(mainCallExpr)
+
+			if tt.expectSetup {
+				s.NotNil(setupCall, "Expected to find Setup call")
+				sel, ok := setupCall.Fun.(*dst.SelectorExpr)
+				s.True(ok)
+				s.Equal("Setup", sel.Sel.Name)
+			} else {
+				s.Nil(setupCall, "Expected not to find Setup call")
+			}
+
+			if tt.expectWithMiddleware {
+				s.NotNil(withMiddlewareCall, "Expected to find WithMiddleware call")
+				sel, ok := withMiddlewareCall.Fun.(*dst.SelectorExpr)
+				s.True(ok)
+				s.Equal("WithMiddleware", sel.Sel.Name)
+				s.Equal(tt.withMiddlewareArgsCount, len(withMiddlewareCall.Args))
+			} else {
+				s.Nil(withMiddlewareCall, "Expected not to find WithMiddleware call")
+			}
+
+			if tt.expectParentOfSetup {
+				s.NotNil(parentOfSetup, "Expected to find parent of Setup")
+			} else {
+				s.Nil(parentOfSetup, "Expected not to find parent of Setup")
+			}
+		})
+	}
+}
+
+func (s *ModifyActionsTestSuite) Test_findMiddlewareAppendCall() {
+	tests := []struct {
+		name           string
+		initialContent string
+		expectFound    bool
+		expectedArgs   int
+	}{
+		{
+			name: "find Append call with single argument",
+			initialContent: `package test
+
+import (
+	"github.com/goravel/framework/contracts/foundation/configuration"
+	"github.com/goravel/framework/foundation"
+	"github.com/goravel/framework/http/middleware"
+)
+
+func Boot() {
+	foundation.Setup().WithMiddleware(func(handler configuration.Middleware) {
+		handler.Append(&middleware.Auth{})
+	}).Run()
+}`,
+			expectFound:  true,
+			expectedArgs: 1,
+		},
+		{
+			name: "find Append call with multiple arguments",
+			initialContent: `package test
+
+import (
+	"github.com/goravel/framework/contracts/foundation/configuration"
+	"github.com/goravel/framework/foundation"
+	"github.com/goravel/framework/http/middleware"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+			handler.Append(&middleware.Auth{}, &middleware.Cors{})
+		}).Run()
+}`,
+			expectFound:  true,
+			expectedArgs: 2,
+		},
+		{
+			name: "return nil when no Append call exists",
+			initialContent: `package test
+
+import (
+	"github.com/goravel/framework/contracts/foundation/configuration"
+	"github.com/goravel/framework/foundation"
+	"github.com/goravel/framework/http/middleware"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+		}).Run()
+}`,
+			expectFound: false,
+		},
+		{
+			name: "return nil when function has other calls but not Append",
+			initialContent: `package test
+
+import (
+	"github.com/goravel/framework/contracts/foundation/configuration"
+	"github.com/goravel/framework/foundation"
+	"github.com/goravel/framework/http/middleware"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+			handler.Register(&middleware.Auth{})
+		}).Run()
+}`,
+			expectFound: false,
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			sourceFile := filepath.Join(s.T().TempDir(), "test.go")
+			s.Require().NoError(supportfile.PutContent(sourceFile, tt.initialContent))
+
+			content, err := supportfile.GetContent(sourceFile)
+			s.Require().NoError(err)
+
+			file, err := decorator.Parse(content)
+			s.Require().NoError(err)
+
+			// Find the function literal
+			var funcLit *dst.FuncLit
+			dst.Inspect(file, func(n dst.Node) bool {
+				if fl, ok := n.(*dst.FuncLit); ok {
+					funcLit = fl
+					return false
+				}
+				return true
+			})
+
+			s.NotNil(funcLit, "Expected to find function literal")
+
+			appendCall := findMiddlewareAppendCall(funcLit)
+
+			if tt.expectFound {
+				s.NotNil(appendCall, "Expected to find Append call")
+				s.Equal(tt.expectedArgs, len(appendCall.Args), "Expected %d arguments in Append call", tt.expectedArgs)
+			} else {
+				s.Nil(appendCall, "Expected not to find Append call")
+			}
+		})
+	}
+}
+
+func (s *ModifyActionsTestSuite) Test_foundationSetupMiddleware() {
+	tests := []struct {
+		name            string
+		initialContent  string
+		middlewareToAdd string
+		expectedResult  string
+	}{
+		{
+			name: "modify chain without WithMiddleware",
+			initialContent: `package test
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().WithConfig(config.Boot).Run()
+}
+`,
+			middlewareToAdd: "&middleware.Auth{}",
+			expectedResult: `package test
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+			handler.Append(
+				&middleware.Auth{},
+			)
+		}).WithConfig(config.Boot).Run()
+}
+`,
+		},
+		{
+			name: "modify chain with existing WithMiddleware",
+			initialContent: `package test
+
+import (
+	"github.com/goravel/framework/contracts/foundation/configuration"
+	"github.com/goravel/framework/foundation"
+	"github.com/goravel/framework/http/middleware"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+			handler.Append(&middleware.Existing{})
+		}).WithConfig(config.Boot).Run()
+}
+`,
+			middlewareToAdd: "&middleware.Auth{}",
+			expectedResult: `package test
+
+import (
+	"github.com/goravel/framework/contracts/foundation/configuration"
+	"github.com/goravel/framework/foundation"
+	"github.com/goravel/framework/http/middleware"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithMiddleware(func(handler configuration.Middleware) {
+			handler.Append(&middleware.Existing{},
+				&middleware.Auth{},
+			)
+		}).WithConfig(config.Boot).Run()
+}
+`,
+		},
+		{
+			name: "skip non-foundation.Setup() statements",
+			initialContent: `package test
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	app := foundation.NewApplication()
+	app.Run()
+}
+`,
+			middlewareToAdd: "&middleware.Auth{}",
+			expectedResult: `package test
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	app := foundation.NewApplication()
+	app.Run()
+}
+`,
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			sourceFile := filepath.Join(s.T().TempDir(), "test.go")
+			s.Require().NoError(supportfile.PutContent(sourceFile, tt.initialContent))
+
+			content, err := supportfile.GetContent(sourceFile)
+			s.Require().NoError(err)
+
+			_, err = decorator.Parse(content)
+			s.Require().NoError(err)
+
+			// Apply the action
+			err = GoFile(sourceFile).Find(match.FoundationSetup()).Modify(foundationSetupMiddleware(tt.middlewareToAdd)).Apply()
+			s.NoError(err)
+
+			// Read the result
+			resultContent, err := supportfile.GetContent(sourceFile)
+			s.Require().NoError(err)
+
+			s.Equal(tt.expectedResult, resultContent)
 		})
 	}
 }

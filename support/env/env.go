@@ -7,6 +7,8 @@ import (
 	"runtime"
 	"slices"
 	"strings"
+
+	"github.com/goravel/framework/support/convert"
 )
 
 // IsAir checks if the application is running using Air.
@@ -28,6 +30,15 @@ func IsArm() bool {
 
 func IsArtisan() bool {
 	return slices.Contains(os.Args, "artisan")
+}
+
+func IsBootstrapSetup() bool {
+	data, err := os.ReadFile(filepath.Join("bootstrap", "app.go"))
+	if err != nil {
+		return false
+	}
+
+	return strings.Contains(convert.UnsafeString(data), "foundation.Setup().")
 }
 
 // IsDarwin returns whether the current operating system is Darwin.

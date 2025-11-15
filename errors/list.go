@@ -39,10 +39,9 @@ var (
 
 	ConsoleProvidersNotArray = New("the app.providers configuration is not of type []foundation.ServiceProvider, skipping registering service providers")
 
-	ConsoleCommandRegistrationFailed         = New("Registration of command '%s' failed: %v")
+	ConsoleCommandRegisterFailed             = New("failed to register command '%s': %v")
 	ConsoleCommandRequiredArgumentWrongOrder = New("required argument '%s' should be placed before any not-required arguments")
 	ConsoleCommandArgumentUnknownType        = New("unknown type of console command argument %T, with value %+v")
-	ConsoleCommandRegisterFailed             = New("command register failed: %v")
 	ConsoleDropAllTablesFailed               = New("drop all tables failed: %v")
 	ConsoleDropAllTypesFailed                = New("drop all types failed: %v")
 	ConsoleDropAllViewsFailed                = New("drop all views failed: %v")
@@ -108,6 +107,8 @@ var (
 	MailTemplateEngineViaRequired   = New("custom template engine '%s' must specify 'via' factory function").SetModule(ModuleMail)
 	MailTemplateEngineViaInvalid    = New("invalid via type for template engine '%s'").SetModule(ModuleMail)
 	MailTemplateEngineFactoryFailed = New("factory for template engine '%s' failed: %w").SetModule(ModuleMail)
+
+	MiddlewareRegisterFailed = New("failed to register middleware '%s': %v")
 
 	MigrationCreateFailed    = New("create migration failed: %v")
 	MigrationFreshFailed     = New("migration fresh failed: %v")
