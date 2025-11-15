@@ -5,6 +5,7 @@ import (
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/foundation"
 	contractsconfiguration "github.com/goravel/framework/contracts/foundation/configuration"
+	"github.com/goravel/framework/contracts/schedule"
 	"github.com/goravel/framework/foundation/configuration"
 	"github.com/goravel/framework/support/color"
 )
@@ -21,6 +22,7 @@ type ApplicationBuilder struct {
 	eventToListeners           map[event.Event][]event.Listener
 	middleware                 func(middleware contractsconfiguration.Middleware)
 	routes                     []func()
+	scheduledEvents            []schedule.Event
 }
 
 func NewApplicationBuilder(app foundation.Application) *ApplicationBuilder {
@@ -83,6 +85,16 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 		}
 	}
 
+	// Register scheduled events
+	if len(r.scheduledEvents) > 0 {
+		scheduleFacade := r.app.MakeSchedule()
+		if scheduleFacade == nil {
+			color.Errorln("Schedule facade not found, please install it first: ./artisan package:install Schedule")
+		} else {
+			scheduleFacade.Register(r.scheduledEvents)
+		}
+	}
+
 	return r.app
 }
 
@@ -122,6 +134,12 @@ func (r *ApplicationBuilder) WithProviders(providers []foundation.ServiceProvide
 
 func (r *ApplicationBuilder) WithRouting(routes []func()) foundation.ApplicationBuilder {
 	r.routes = append(r.routes, routes...)
+
+	return r
+}
+
+func (r *ApplicationBuilder) WithSchedule(events []schedule.Event) foundation.ApplicationBuilder {
+	r.scheduledEvents = events
 
 	return r
 }
