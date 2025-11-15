@@ -2,6 +2,7 @@ package foundation
 
 import (
 	"github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/foundation"
 	contractsconfiguration "github.com/goravel/framework/contracts/foundation/configuration"
@@ -21,6 +22,7 @@ type ApplicationBuilder struct {
 	configuredServiceProviders []foundation.ServiceProvider
 	eventToListeners           map[event.Event][]event.Listener
 	middleware                 func(middleware contractsconfiguration.Middleware)
+	migrations                 []schema.Migration
 	routes                     []func()
 	scheduledEvents            []schedule.Event
 }
@@ -95,6 +97,16 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 		}
 	}
 
+	// Register database migrations
+	if len(r.migrations) > 0 {
+		schemaFacade := r.app.MakeSchema()
+		if schemaFacade == nil {
+			color.Errorln("Schema facade not found, please install it first: ./artisan package:install Schema")
+		} else {
+			schemaFacade.Register(r.migrations)
+		}
+	}
+
 	return r.app
 }
 
@@ -122,6 +134,12 @@ func (r *ApplicationBuilder) WithEvents(eventToListeners map[event.Event][]event
 
 func (r *ApplicationBuilder) WithMiddleware(fn func(handler contractsconfiguration.Middleware)) foundation.ApplicationBuilder {
 	r.middleware = fn
+
+	return r
+}
+
+func (r *ApplicationBuilder) WithMigrations(migrations []schema.Migration) foundation.ApplicationBuilder {
+	r.migrations = migrations
 
 	return r
 }

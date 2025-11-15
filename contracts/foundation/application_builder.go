@@ -2,6 +2,7 @@ package foundation
 
 import (
 	"github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/foundation/configuration"
 	"github.com/goravel/framework/contracts/schedule"
@@ -20,6 +21,8 @@ type ApplicationBuilder interface {
 	WithEvents(eventToListeners map[event.Event][]event.Listener) ApplicationBuilder
 	// WithMiddleware registers the http's middleware.
 	WithMiddleware(fn func(handler configuration.Middleware)) ApplicationBuilder
+	// WithMigrations registers the database migrations.
+	WithMigrations(migrations []schema.Migration) ApplicationBuilder
 	// WithProviders registers and boots custom service providers.
 	WithProviders(providers []ServiceProvider) ApplicationBuilder
 	// WithRouting registers the application's routes.

@@ -7,12 +7,14 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/foundation"
 	contractsconfiguration "github.com/goravel/framework/contracts/foundation/configuration"
 	contractshttp "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/schedule"
 	mocksconsole "github.com/goravel/framework/mocks/console"
+	mocksschema "github.com/goravel/framework/mocks/database/schema"
 	mocksevent "github.com/goravel/framework/mocks/event"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	mocksroute "github.com/goravel/framework/mocks/route"
@@ -267,6 +269,38 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 
 		s.NotNil(app)
 	})
+
+	s.Run("WithMigrations but Schema facade is nil", func() {
+		s.SetupTest()
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().MakeSchema().Return(nil).Once()
+
+		mockMigration := mocksschema.NewMigration(s.T())
+		got := color.CaptureOutput(func(io.Writer) {
+			app := s.builder.WithMigrations([]schema.Migration{mockMigration}).Create()
+			s.NotNil(app)
+		})
+
+		s.Contains(got, "Schema facade not found, please install it first: ./artisan package:install Schema")
+	})
+
+	s.Run("WithMigrations", func() {
+		s.SetupTest()
+
+		mockSchema := mocksschema.NewSchema(s.T())
+		mockMigration := mocksschema.NewMigration(s.T())
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().MakeSchema().Return(mockSchema).Once()
+		mockSchema.EXPECT().Register([]schema.Migration{mockMigration}).Return().Once()
+
+		app := s.builder.WithMigrations([]schema.Migration{mockMigration}).Create()
+
+		s.NotNil(app)
+	})
 }
 
 func (s *ApplicationBuilderTestSuite) TestRun() {
@@ -293,6 +327,15 @@ func (s *ApplicationBuilderTestSuite) TestWithMiddleware() {
 
 	s.NotNil(builder)
 	s.NotNil(s.builder.middleware)
+}
+
+func (s *ApplicationBuilderTestSuite) TestWithMigrations() {
+	mockMigration := mocksschema.NewMigration(s.T())
+
+	builder := s.builder.WithMigrations([]schema.Migration{mockMigration})
+
+	s.NotNil(builder)
+	s.Len(s.builder.migrations, 1)
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithProviders() {
