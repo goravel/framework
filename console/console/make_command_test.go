@@ -149,6 +149,8 @@ func Boot() {
 	assert.True(t, file.Exists(cleanCachePath))
 	assert.True(t, file.Contain(cleanCachePath, "app:clean-cache"))
 
+	defer assert.NoError(t, file.Remove(cleanCachePath))
+
 	// Verify bootstrap/app.go was modified with AddCommand
 	bootstrapContent, readErr := file.GetContent(bootstrapPath)
 	assert.NoError(t, readErr)
@@ -161,9 +163,10 @@ import (
 )
 
 func Boot() {
-	foundation.Setup().WithCommands([]console.Command{
-		&commands.CleanCache{},
-	}).Run()
+	foundation.Setup().
+		WithCommands([]console.Command{
+			&commands.CleanCache{},
+		}).Run()
 }
 `
 	assert.Equal(t, expectedContent, bootstrapContent)

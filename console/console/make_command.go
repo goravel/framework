@@ -63,7 +63,7 @@ func (r *MakeCommand) Handle(ctx console.Context) error {
 	}
 
 	if err != nil {
-		ctx.Error(err.Error())
+		ctx.Error(errors.ConsoleCommandRegisterFailed.Args(make.GetSignature(), err).Error())
 		return nil
 	}
 
@@ -121,7 +121,7 @@ func (r *MakeCommand) registerInKernel(make *supportconsole.Make) error {
 		Find(match.Commands()).Modify(modify.Register(fmt.Sprintf("&%s.%s{}", make.GetPackageName(), make.GetStructName()))).
 		Apply(); err != nil {
 
-		return errors.ConsoleCommandRegisterFailed.Args(err)
+		return err
 	}
 
 	return nil
