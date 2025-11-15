@@ -11,10 +11,12 @@ import (
 	"github.com/goravel/framework/contracts/foundation"
 	contractsconfiguration "github.com/goravel/framework/contracts/foundation/configuration"
 	contractshttp "github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/contracts/schedule"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksevent "github.com/goravel/framework/mocks/event"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	mocksroute "github.com/goravel/framework/mocks/route"
+	mocksschedule "github.com/goravel/framework/mocks/schedule"
 	"github.com/goravel/framework/support/color"
 )
 
@@ -217,15 +219,51 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.Contains(got, "Artisan facade not found, please install it first: ./artisan package:install Artisan")
 	})
 
-	s.Run("WithMiddleware", func() {
+	s.Run("WithCommands", func() {
+		s.SetupTest()
+
+		mockArtisan := mocksconsole.NewArtisan(s.T())
+		mockCommand := mocksconsole.NewCommand(s.T())
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().MakeArtisan().Return(mockArtisan).Once()
+		mockArtisan.EXPECT().Register([]console.Command{mockCommand}).Return().Once()
+
+		app := s.builder.WithCommands([]console.Command{mockCommand}).Create()
+
+		s.NotNil(app)
+	})
+
+	s.Run("WithSchedule but Schedule facade is nil", func() {
 		s.SetupTest()
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
 		s.mockApp.EXPECT().Boot().Return().Once()
-		s.mockApp.EXPECT().MakeArtisan().Return(nil).Once()
+		s.mockApp.EXPECT().MakeSchedule().Return(nil).Once()
 
-		mockCommand := mocksconsole.NewCommand(s.T())
-		app := s.builder.WithCommands([]console.Command{mockCommand}).Create()
+		mockEvent := mocksschedule.NewEvent(s.T())
+		got := color.CaptureOutput(func(io.Writer) {
+			app := s.builder.WithSchedule([]schedule.Event{mockEvent}).Create()
+
+			s.NotNil(app)
+		})
+
+		s.Contains(got, "Schedule facade not found, please install it first: ./artisan package:install Schedule")
+	})
+
+	s.Run("WithSchedule", func() {
+		s.SetupTest()
+
+		mockSchedule := mocksschedule.NewSchedule(s.T())
+		mockEvent := mocksschedule.NewEvent(s.T())
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().MakeSchedule().Return(mockSchedule).Once()
+		mockSchedule.EXPECT().Register([]schedule.Event{mockEvent}).Return().Once()
+
+		app := s.builder.WithSchedule([]schedule.Event{mockEvent}).Create()
 
 		s.NotNil(app)
 	})
@@ -280,4 +318,13 @@ func (s *ApplicationBuilderTestSuite) TestWithRouting() {
 
 	s.NotNil(builder)
 	s.NotNil(s.builder.routes)
+}
+
+func (s *ApplicationBuilderTestSuite) TestWithSchedule() {
+	mockEvent := mocksschedule.NewEvent(s.T())
+
+	builder := s.builder.WithSchedule([]schedule.Event{mockEvent})
+
+	s.NotNil(builder)
+	s.Len(s.builder.scheduledEvents, 1)
 }

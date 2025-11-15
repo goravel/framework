@@ -4,6 +4,7 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/foundation/configuration"
+	"github.com/goravel/framework/contracts/schedule"
 )
 
 type ApplicationBuilder interface {
@@ -23,4 +24,6 @@ type ApplicationBuilder interface {
 	WithProviders(providers []ServiceProvider) ApplicationBuilder
 	// WithRouting registers the application's routes.
 	WithRouting(routes []func()) ApplicationBuilder
+	// WithSchedule sets scheduled events for the application.
+	WithSchedule(events []schedule.Event) ApplicationBuilder
 }
