@@ -112,6 +112,7 @@ func (kernel Kernel) Schedule() []schedule.Event {
 func TestMakeCommand_AddCommandToBootstrapSetup(t *testing.T) {
 	makeCommand := &MakeCommand{}
 	bootstrapPath := filepath.Join("bootstrap", "app.go")
+	commandsPath := filepath.Join("bootstrap", "commands.go")
 
 	// Ensure clean state before test
 	defer func() {
@@ -154,22 +155,37 @@ func Boot() {
 	// Verify bootstrap/app.go was modified with AddCommand
 	bootstrapContent, readErr := file.GetContent(bootstrapPath)
 	assert.NoError(t, readErr)
-	expectedContent := `package bootstrap
+	expectedAppContent := `package bootstrap
 
 import (
-	"github.com/goravel/framework/app/console/commands"
-	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/foundation"
+	"goravel/bootstrap"
 )
 
 func Boot() {
 	foundation.Setup().
-		WithCommands([]console.Command{
-			&commands.CleanCache{},
-		}).Run()
+		WithCommands(Commands()).Run()
 }
 `
-	assert.Equal(t, expectedContent, bootstrapContent)
+	assert.Equal(t, expectedAppContent, bootstrapContent)
+
+	// Verify bootstrap/commands.go was created
+	commandsContent, readErr := file.GetContent(commandsPath)
+	assert.NoError(t, readErr)
+	expectedCommandsContent := `package bootstrap
+
+import (
+	"github.com/goravel/framework/app/console/commands"
+	"github.com/goravel/framework/contracts/console"
+)
+
+func Commands() []console.Command {
+	return []console.Command{
+		&commands.CleanCache{},
+	}
+}
+`
+	assert.Equal(t, expectedCommandsContent, commandsContent)
 }
 
 func TestMakeCommand_initKernel(t *testing.T) {

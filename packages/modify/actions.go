@@ -2,6 +2,7 @@ package modify
 
 import (
 	"go/token"
+	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/color"
+	supportfile "github.com/goravel/framework/support/file"
 )
 
 // Add adds an expression to the matched specified function.
@@ -30,8 +32,14 @@ func Add(expression string) modify.Action {
 }
 
 // AddCommand adds command to the foundation.Setup() chain in the Boot function.
-// If WithCommand doesn't exist, it creates one. If it exists, it appends to the command to []console.Command.
-// This function also ensures the configuration package and command package are imported when creating WithCommand.
+// If WithCommands doesn't exist, it creates a new commands.go file in the bootstrap directory based on the stubs.go:commands template,
+// then add WithCommands(Commands()) to foundation.Setup(), add the command to Commands().
+// If WithCommands exists, it appends the command to []console.Command if the commands.go file doesn't exist,
+// or appends to the Commands() function if the commands.go file exists.
+// This function also ensures the configuration package and command package are imported when creating WithCommands.
+//
+// Returns an error if commands.go exists but WithCommands is not registered in foundation.Setup(), as the commands.go file
+// should only be created when adding WithCommands to Setup().
 //
 // Parameters:
 //   - pkg: Package path of the command (e.g., "goravel/app/console/commands")
@@ -41,36 +49,85 @@ func Add(expression string) modify.Action {
 //
 //	AddCommand("goravel/app/console/commands", "&commands.ExampleCommand{}")
 //
-// This transforms:
+// This transforms (when commands.go doesn't exist and WithCommands doesn't exist):
 //
 //	foundation.Setup().WithConfig(config.Boot).Run()
 //
 // Into:
 //
-//	foundation.Setup().WithCommand(commands []console.Command{
-//	  &commands.ExampleCommand{},
-//	}).WithConfig(config.Boot).Run()
+//	foundation.Setup().WithCommands(Commands()).WithConfig(config.Boot).Run()
 //
-// If WithCommand already exists:
+// And creates bootstrap/commands.go:
 //
-//	foundation.Setup().WithCommand(commands []console.Command{
+//	package bootstrap
+//	import "github.com/goravel/framework/contracts/console"
+//	func Commands() []console.Command {
+//	  return []console.Command{&commands.ExampleCommand{}}
+//	}
+//
+// If WithCommands already exists but commands.go doesn't:
+//
+//	foundation.Setup().WithCommands([]console.Command{
 //	  &commands.ExistingCommand{},
 //	}).Run()
 //
-// It appends the new middleware:
+// It appends the new command:
 //
-//	foundation.Setup().WithCommand(commands []console.Command{
+//	foundation.Setup().WithCommands([]console.Command{
 //	  &commands.ExistingCommand{},
 //	  &commands.ExampleCommand{},
 //	}).Run()
+//
+// If WithCommands exists with Commands() call and commands.go exists, it appends to Commands() function.
 func AddCommand(pkg, command string) error {
 	appFilePath := support.Config.Paths.App
+	bootstrapDir := filepath.Dir(appFilePath)
+	commandsFilePath := filepath.Join(bootstrapDir, "commands.go")
 
+	// Check if commands.go exists
+	commandsFileExists := supportfile.Exists(commandsFilePath)
+
+	// Check if WithCommands exists in app.go
+	withCommandsExists, err := checkWithCommandsExists(appFilePath)
+	if err != nil {
+		return err
+	}
+
+	if !withCommandsExists {
+		// Case 1: WithCommands doesn't exist
+		// Error if commands.go already exists - it should only be created when adding WithCommands
+		if commandsFileExists {
+			return errors.PackageCommandsFileExists
+		}
+
+		// Create commands.go and add WithCommands(Commands())
+		if err := createCommandsFile(commandsFilePath); err != nil {
+			return err
+		}
+
+		// Add the command to the newly created file
+		if err := addCommandToCommandsFile(commandsFilePath, pkg, command); err != nil {
+			return err
+		}
+
+		// Add WithCommands(Commands()) to foundation.Setup()
+		return GoFile(appFilePath).Find(match.FoundationSetup()).Modify(foundationSetupCommandWithFunction()).Apply()
+	}
+
+	if commandsFileExists {
+		// Case 2: WithCommands exists and commands.go exists - append to Commands() function
+		if err := addCommandToCommandsFile(commandsFilePath, pkg, command); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	// Case 3: WithCommands exists but commands.go doesn't - append to inline array
 	if err := addCommandImports(appFilePath, pkg); err != nil {
 		return err
 	}
 
-	return GoFile(appFilePath).Find(match.FoundationSetup()).Modify(foundationSetupCommand(command)).Apply()
+	return GoFile(appFilePath).Find(match.FoundationSetup()).Modify(foundationSetupCommandInline(command)).Apply()
 }
 
 // AddConfig adds a configuration key with the given expression to the config file.
@@ -115,7 +172,7 @@ func AddConfig(name, expression string, annotations ...string) modify.Action {
 }
 
 // AddMiddleware adds middleware to the foundation.Setup() chain in the Boot function.
-// If WithMiddleware doesn't exist, it creates one. If it exists, it appends to it using handler.Append().
+// If WithMiddleware doesn't exist, it creates one. If it exists, it appends the middleware using handler.Append().
 // This function also ensures the configuration package and middleware package are imported when creating WithMiddleware.
 //
 // Parameters:
@@ -429,6 +486,34 @@ func addCommandImports(appFilePath, pkg string) error {
 	return GoFile(appFilePath).Find(importMatchers).Modify(AddImport(consoleImportPath)).Apply()
 }
 
+// addCommandToCommandsFile adds a command to the existing Commands() function in commands.go.
+func addCommandToCommandsFile(commandsFilePath, pkg, command string) error {
+	// Add the command package import
+	importMatchers := match.Imports()
+	if err := GoFile(commandsFilePath).FindOrCreate(importMatchers, CreateImport).Modify(AddImport(pkg)).Apply(); err != nil {
+		return err
+	}
+
+	// Add the command to the Commands() function
+	return GoFile(commandsFilePath).Find(match.Commands()).Modify(Register(command)).Apply()
+}
+
+// checkWithCommandsExists checks if WithCommands exists in the foundation.Setup() chain.
+func checkWithCommandsExists(appFilePath string) (bool, error) {
+	content, err := supportfile.GetContent(appFilePath)
+	if err != nil {
+		return false, err
+	}
+
+	// Simple string check - if WithCommands appears in the chain, it exists
+	return strings.Contains(string(content), "WithCommands("), nil
+}
+
+// createCommandsFile creates a new commands.go file with the Commands() function.
+func createCommandsFile(commandsFilePath string) error {
+	return supportfile.PutContent(commandsFilePath, commands())
+}
+
 // addMiddlewareAppendCall adds a new handler.Append() call to the function literal.
 func addMiddlewareAppendCall(funcLit *dst.FuncLit, middlewareArg dst.Expr) {
 	// Add newline decorations to middleware argument for proper formatting
@@ -526,8 +611,8 @@ func containsFoundationSetup(stmt *dst.ExprStmt) bool {
 	return foundSetup
 }
 
-// createWithCommand creates a new WithCommand call and inserts it into the chain.
-func createWithCommand(setupCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr, commandExpr dst.Expr) {
+// createWithCommands creates a new WithCommand call and inserts it into the chain.
+func createWithCommands(setupCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr, commandExpr dst.Expr) {
 	compositeLit := &dst.CompositeLit{
 		Type: &dst.ArrayType{
 			Elt: &dst.SelectorExpr{
@@ -720,8 +805,8 @@ func foundationSetupMiddleware(middleware string) modify.Action {
 	}
 }
 
-// foundationSetupCommand returns an action that modifies the foundation.Setup() chain for commands.
-func foundationSetupCommand(command string) modify.Action {
+// foundationSetupCommandInline returns an action that modifies the foundation.Setup() chain for commands (inline array).
+func foundationSetupCommandInline(command string) modify.Action {
 	return func(cursor *dstutil.Cursor) {
 		stmt := cursor.Node().(*dst.ExprStmt)
 
@@ -744,8 +829,52 @@ func foundationSetupCommand(command string) modify.Action {
 		if withCommandCall != nil {
 			appendToExistingCommand(withCommandCall, commandExpr)
 		} else {
-			createWithCommand(setupCall, parentOfSetup, commandExpr)
+			createWithCommands(setupCall, parentOfSetup, commandExpr)
 		}
+	}
+}
+
+// foundationSetupCommandWithFunction returns an action that adds WithCommands(Commands()) to the foundation.Setup() chain.
+func foundationSetupCommandWithFunction() modify.Action {
+	return func(cursor *dstutil.Cursor) {
+		stmt := cursor.Node().(*dst.ExprStmt)
+
+		if !containsFoundationSetup(stmt) {
+			return
+		}
+
+		callExpr, ok := stmt.X.(*dst.CallExpr)
+		if !ok {
+			return
+		}
+
+		setupCall, _, parentOfSetup := findFoundationSetupCallsForCommand(callExpr)
+		if setupCall == nil || parentOfSetup == nil {
+			return
+		}
+
+		// Create WithCommands(Commands()) call
+		newWithCommandsCall := &dst.CallExpr{
+			Fun: &dst.SelectorExpr{
+				X: setupCall,
+				Sel: &dst.Ident{
+					Name: "WithCommands",
+					Decs: dst.IdentDecorations{
+						NodeDecs: dst.NodeDecs{
+							Before: dst.NewLine,
+						},
+					},
+				},
+			},
+			Args: []dst.Expr{
+				&dst.CallExpr{
+					Fun: &dst.Ident{Name: "Commands"},
+				},
+			},
+		}
+
+		// Insert WithCommands into the chain
+		parentOfSetup.X = newWithCommandsCall
 	}
 }
 

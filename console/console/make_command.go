@@ -39,6 +39,15 @@ func (r *MakeCommand) Description() string {
 func (r *MakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
+		Flags: []command.Flag{
+			&command.BoolFlag{
+				Name:               "force",
+				Aliases:            []string{"f"},
+				Value:              false,
+				Usage:              "Create the command even if it already exists",
+				DisableDefaultText: true,
+			},
+		},
 	}
 }
 
