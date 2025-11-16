@@ -561,7 +561,7 @@ func checkWithCommandsExists(appFilePath string) (bool, error) {
 	}
 
 	// Simple string check - if WithCommands appears in the chain, it exists
-	return strings.Contains(string(content), "WithCommands("), nil
+	return strings.Contains(content, "WithCommands("), nil
 }
 
 // createCommandsFile creates a new commands.go file with the Commands() function.
@@ -1037,7 +1037,7 @@ func checkWithMigrationsExists(appFilePath string) (bool, error) {
 	}
 
 	// Simple string check - if WithMigrations appears in the chain, it exists
-	return strings.Contains(string(content), "WithMigrations("), nil
+	return strings.Contains(content, "WithMigrations("), nil
 }
 
 // createMigrationsFile creates a new migrations.go file with the Migrations() function.
