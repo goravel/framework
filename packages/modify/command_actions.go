@@ -183,11 +183,11 @@ func createWithCommands(setupCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr
 		Args: []dst.Expr{compositeLit},
 	}
 
-	// Insert WithCommand into the chain
+	// Insert WithCommands into the chain
 	parentOfSetup.X = newWithCommandCall
 }
 
-// findFoundationSetupCallsForCommand walks the chain to find Setup() and WithCommand() calls.
+// findFoundationSetupCallsForCommand walks the chain to find Setup() and WithCommands() calls.
 func findFoundationSetupCallsForCommand(callExpr *dst.CallExpr) (setupCall, withCommandCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr) {
 	current := callExpr
 	for current != nil {
