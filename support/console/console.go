@@ -51,6 +51,10 @@ func NewMake(ctx console.Context, ttype, name, root string) (*Make, error) {
 	return m, nil
 }
 
+func (m *Make) GetName() string {
+	return m.name
+}
+
 func (m *Make) GetFilePath() string {
 	pwd, _ := os.Getwd()
 

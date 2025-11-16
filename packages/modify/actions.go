@@ -157,6 +157,50 @@ func AddMiddleware(pkg, middleware string) error {
 	return GoFile(appFilePath).Find(match.FoundationSetup()).Modify(foundationSetupMiddleware(middleware)).Apply()
 }
 
+// AddMigration adds migration to the foundation.Setup() chain in the Boot function.
+// If WithMigrations doesn't exist, it creates one. If it exists, it appends the migration to []schema.Migration.
+// This function also ensures the configuration package and migration package are imported when creating WithMigrations.
+//
+// Parameters:
+//   - pkg: Package path of the migration (e.g., "goravel/database/migrations")
+//   - migration: Migration expression to add (e.g., "&migrations.ExampleMigration{}")
+//
+// Example usage:
+//
+//	AddMigration("goravel/database/migrations", "&migrations.ExampleMigration{}")
+//
+// This transforms:
+//
+//	foundation.Setup().WithConfig(config.Boot).Run()
+//
+// Into:
+//
+//	foundation.Setup().WithMigrations([]schema.Migration{
+//	  &migrations.ExampleMigration{},
+//	}).WithConfig(config.Boot).Run()
+//
+// If WithMigrations already exists:
+//
+//	foundation.Setup().WithMigrations([]schema.Migration{
+//	  &migrations.ExistingMigration{},
+//	}).Run()
+//
+// It appends the new migration:
+//
+//	foundation.Setup().WithMigrations([]schema.Migration{
+//	  &migrations.ExistingMigration{},
+//	  &migrations.ExampleMigration{},
+//	}).Run()
+func AddMigration(pkg, migration string) error {
+	appFilePath := support.Config.Paths.App
+
+	if err := addMigrationImports(appFilePath, pkg); err != nil {
+		return err
+	}
+
+	return GoFile(appFilePath).Find(match.FoundationSetup()).Modify(foundationSetupMigration(migration)).Apply()
+}
+
 // AddImport adds an import statement to the file.
 func AddImport(path string, name ...string) modify.Action {
 	return func(cursor *dstutil.Cursor) {
@@ -659,4 +703,119 @@ func foundationSetupCommand(command string) modify.Action {
 			createWithCommand(setupCall, parentOfSetup, commandExpr)
 		}
 	}
+}
+
+// foundationSetupMigration returns an action that modifies the foundation.Setup() chain for migrations.
+func foundationSetupMigration(migration string) modify.Action {
+	return func(cursor *dstutil.Cursor) {
+		stmt := cursor.Node().(*dst.ExprStmt)
+
+		if !containsFoundationSetup(stmt) {
+			return
+		}
+
+		callExpr, ok := stmt.X.(*dst.CallExpr)
+		if !ok {
+			return
+		}
+
+		setupCall, withMigrationsCall, parentOfSetup := findFoundationSetupCallsForMigration(callExpr)
+		if setupCall == nil || parentOfSetup == nil {
+			return
+		}
+
+		migrationExpr := MustParseExpr(migration).(dst.Expr)
+
+		if withMigrationsCall != nil {
+			appendToExistingMigration(withMigrationsCall, migrationExpr)
+		} else {
+			createWithMigrations(setupCall, parentOfSetup, migrationExpr)
+		}
+	}
+}
+
+// addMigrationImports adds the required imports for migration package and schema package.
+func addMigrationImports(appFilePath, pkg string) error {
+	importMatchers := match.Imports()
+	if err := GoFile(appFilePath).FindOrCreate(importMatchers, CreateImport).Modify(AddImport(pkg)).Apply(); err != nil {
+		return err
+	}
+
+	schemaImportPath := "github.com/goravel/framework/contracts/database/schema"
+	return GoFile(appFilePath).Find(importMatchers).Modify(AddImport(schemaImportPath)).Apply()
+}
+
+// appendToExistingMigration appends migration to an existing WithMigrations call.
+func appendToExistingMigration(withMigrationsCall *dst.CallExpr, migrationExpr dst.Expr) {
+	if len(withMigrationsCall.Args) == 0 {
+		return
+	}
+
+	compositeLit, ok := withMigrationsCall.Args[0].(*dst.CompositeLit)
+	if !ok {
+		return
+	}
+
+	// Append the migration to the composite literal
+	compositeLit.Elts = append(compositeLit.Elts, migrationExpr)
+}
+
+// createWithMigrations creates a new WithMigrations call and inserts it into the chain.
+func createWithMigrations(setupCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr, migrationExpr dst.Expr) {
+	compositeLit := &dst.CompositeLit{
+		Type: &dst.ArrayType{
+			Elt: &dst.SelectorExpr{
+				X:   &dst.Ident{Name: "schema"},
+				Sel: &dst.Ident{Name: "Migration"},
+			},
+		},
+		Elts: []dst.Expr{migrationExpr},
+	}
+
+	newWithMigrationsCall := &dst.CallExpr{
+		Fun: &dst.SelectorExpr{
+			X: setupCall,
+			Sel: &dst.Ident{
+				Name: "WithMigrations",
+				Decs: dst.IdentDecorations{
+					NodeDecs: dst.NodeDecs{
+						Before: dst.NewLine,
+					},
+				},
+			},
+		},
+		Args: []dst.Expr{compositeLit},
+	}
+
+	// Insert WithMigrations into the chain
+	parentOfSetup.X = newWithMigrationsCall
+}
+
+// findFoundationSetupCallsForMigration walks the chain to find Setup() and WithMigrations() calls.
+func findFoundationSetupCallsForMigration(callExpr *dst.CallExpr) (setupCall, withMigrationsCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr) {
+	current := callExpr
+	for current != nil {
+		if sel, ok := current.Fun.(*dst.SelectorExpr); ok {
+			if innerCall, ok := sel.X.(*dst.CallExpr); ok {
+				if innerSel, ok := innerCall.Fun.(*dst.SelectorExpr); ok {
+					// Check if this is the Setup() call
+					if innerSel.Sel.Name == "Setup" {
+						if ident, ok := innerSel.X.(*dst.Ident); ok && ident.Name == "foundation" {
+							setupCall = innerCall
+							parentOfSetup = sel
+							break
+						}
+					}
+					// Check if this is WithMigrations
+					if innerSel.Sel.Name == "WithMigrations" {
+						withMigrationsCall = innerCall
+					}
+				}
+				current = innerCall
+				continue
+			}
+		}
+		break
+	}
+	return
 }
