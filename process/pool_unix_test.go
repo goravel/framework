@@ -7,6 +7,7 @@ import (
 	"context"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -259,9 +260,12 @@ func TestPool_Concurrency_Unix(t *testing.T) {
 
 func TestPool_OnOutput_Unix(t *testing.T) {
 	t.Run("captures output via callback", func(t *testing.T) {
+		mx := sync.Mutex{}
 		outputs := make(map[string][]string)
 		builder := NewPool().OnOutput(func(typ contractsprocess.OutputType, line []byte, key string) {
+			mx.Lock()
 			outputs[key] = append(outputs[key], string(line))
+			mx.Unlock()
 		})
 
 		rp, err := builder.Pool(func(p contractsprocess.Pool) {
