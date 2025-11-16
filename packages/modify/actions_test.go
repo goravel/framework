@@ -1516,16 +1516,19 @@ func Boot() {
 
 func (s *ModifyActionsTestSuite) TestAddMigration() {
 	tests := []struct {
-		name     string
-		content  string
-		pkg      string
-		mig      string
-		expected string
-		wantErr  bool
+		name               string
+		appContent         string
+		migrationsContent  string // empty if file doesn't exist
+		pkg                string
+		migration          string
+		expectedApp        string
+		expectedMigrations string // empty if file shouldn't be created
+		wantErr            bool
+		expectedErrString  string
 	}{
 		{
-			name: "add migration when WithMigrations doesn't exist",
-			content: `package bootstrap
+			name: "add migration when WithMigrations doesn't exist and migrations.go doesn't exist",
+			appContent: `package bootstrap
 
 import (
 	"github.com/goravel/framework/foundation"
@@ -1536,28 +1539,98 @@ func Boot() {
 	foundation.Setup().WithConfig(config.Boot).Run()
 }
 `,
-			pkg: "goravel/database/migrations",
-			mig: "&migrations.CreateUsersTable{}",
-			expected: `package bootstrap
+			pkg:       "goravel/database/migrations",
+			migration: "&migrations.CreateUsersTable{}",
+			expectedApp: `package bootstrap
 
 import (
-	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
-	"goravel/database/migrations"
 )
 
 func Boot() {
 	foundation.Setup().
-		WithMigrations([]schema.Migration{
-			&migrations.CreateUsersTable{},
-		}).WithConfig(config.Boot).Run()
+		WithMigrations(Migrations()).WithConfig(config.Boot).Run()
+}
+`,
+			expectedMigrations: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/database/schema"
+
+	"goravel/database/migrations"
+)
+
+func Migrations() []schema.Migration {
+	return []schema.Migration{
+		&migrations.CreateUsersTable{},
+	}
 }
 `,
 		},
 		{
-			name: "add migration when WithMigrations already exists",
-			content: `package bootstrap
+			name: "add migration when WithMigrations exists with Migrations() and migrations.go exists",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/bootstrap"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithMigrations(Migrations()).WithConfig(config.Boot).Run()
+}
+`,
+			migrationsContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/database/schema"
+
+	"goravel/database/migrations"
+)
+
+func Migrations() []schema.Migration {
+	return []schema.Migration{
+		&migrations.ExistingMigration{},
+	}
+}
+`,
+			pkg:       "goravel/database/migrations",
+			migration: "&migrations.CreateUsersTable{}",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/bootstrap"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithMigrations(Migrations()).WithConfig(config.Boot).Run()
+}
+`,
+			expectedMigrations: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/database/schema"
+
+	"goravel/database/migrations"
+)
+
+func Migrations() []schema.Migration {
+	return []schema.Migration{
+		&migrations.ExistingMigration{},
+		&migrations.CreateUsersTable{},
+	}
+}
+`,
+		},
+		{
+			name: "add migration when WithMigrations exists with inline array",
+			appContent: `package bootstrap
 
 import (
 	"github.com/goravel/framework/contracts/database/schema"
@@ -1573,9 +1646,9 @@ func Boot() {
 		}).WithConfig(config.Boot).Run()
 }
 `,
-			pkg: "goravel/database/migrations",
-			mig: "&migrations.CreateUsersTable{}",
-			expected: `package bootstrap
+			pkg:       "goravel/database/migrations",
+			migration: "&migrations.CreateUsersTable{}",
+			expectedApp: `package bootstrap
 
 import (
 	"github.com/goravel/framework/contracts/database/schema"
@@ -1594,8 +1667,8 @@ func Boot() {
 `,
 		},
 		{
-			name: "add migration with complex chain",
-			content: `package bootstrap
+			name: "error when migrations.go exists but WithMigrations doesn't exist",
+			appContent: `package bootstrap
 
 import (
 	"github.com/goravel/framework/foundation"
@@ -1603,61 +1676,64 @@ import (
 )
 
 func Boot() {
-	foundation.Setup().WithConfig(config.Boot).WithRoute(route.Boot).Run()
+	foundation.Setup().WithConfig(config.Boot).Run()
 }
 `,
-			pkg: "goravel/database/migrations",
-			mig: "&migrations.CreatePostsTable{}",
-			expected: `package bootstrap
+			migrationsContent: `package bootstrap
 
 import (
 	"github.com/goravel/framework/contracts/database/schema"
-	"github.com/goravel/framework/foundation"
-	"goravel/config"
+
 	"goravel/database/migrations"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithMigrations([]schema.Migration{
-			&migrations.CreatePostsTable{},
-		}).WithConfig(config.Boot).WithRoute(route.Boot).Run()
+func Migrations() []schema.Migration {
+	return []schema.Migration{
+		&migrations.ExistingMigration{},
+	}
 }
 `,
+			pkg:       "goravel/database/migrations",
+			migration: "&migrations.CreateUsersTable{}",
+			wantErr:   true,
 		},
 		{
-			name: "add migration to Boot function with multiple statements",
-			content: `package bootstrap
+			name: "add migration when WithMigrations doesn't exist at the beginning of chain",
+			appContent: `package bootstrap
 
 import (
 	"github.com/goravel/framework/foundation"
-	"goravel/config"
 )
 
 func Boot() {
-	app := foundation.NewApplication()
-	foundation.Setup().WithConfig(config.Boot).Run()
-	app.Start()
+	foundation.Setup().Run()
 }
 `,
-			pkg: "goravel/database/migrations",
-			mig: "&migrations.CreateCommentsTable{}",
-			expected: `package bootstrap
+			pkg:       "goravel/database/migrations",
+			migration: "&migrations.CreatePostsTable{}",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithMigrations(Migrations()).Run()
+}
+`,
+			expectedMigrations: `package bootstrap
 
 import (
 	"github.com/goravel/framework/contracts/database/schema"
-	"github.com/goravel/framework/foundation"
-	"goravel/config"
+
 	"goravel/database/migrations"
 )
 
-func Boot() {
-	app := foundation.NewApplication()
-	foundation.Setup().
-		WithMigrations([]schema.Migration{
-			&migrations.CreateCommentsTable{},
-		}).WithConfig(config.Boot).Run()
-	app.Start()
+func Migrations() []schema.Migration {
+	return []schema.Migration{
+		&migrations.CreatePostsTable{},
+	}
 }
 `,
 		},
@@ -1665,26 +1741,48 @@ func Boot() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			sourceFile := filepath.Join(s.T().TempDir(), "app.go")
-			s.Require().NoError(supportfile.PutContent(sourceFile, tt.content))
+			tempDir := s.T().TempDir()
+			bootstrapDir := filepath.Join(tempDir, "bootstrap")
 
-			// Override the Config.Paths.App for testing
+			appFile := filepath.Join(bootstrapDir, "app.go")
+			migrationsFile := filepath.Join(bootstrapDir, "migrations.go")
+
+			s.Require().NoError(supportfile.PutContent(appFile, tt.appContent))
+
+			if tt.migrationsContent != "" {
+				s.Require().NoError(supportfile.PutContent(migrationsFile, tt.migrationsContent))
+			}
+
+			// Override Config.Paths.App for testing
 			originalAppPath := support.Config.Paths.App
-			support.Config.Paths.App = sourceFile
+			support.Config.Paths.App = appFile
 			defer func() {
 				support.Config.Paths.App = originalAppPath
 			}()
 
-			err := AddMigration(tt.pkg, tt.mig)
+			err := AddMigration(tt.pkg, tt.migration)
+
 			if tt.wantErr {
-				s.Error(err)
+				s.Require().Error(err)
+				if tt.expectedErrString != "" {
+					s.Contains(err.Error(), tt.expectedErrString)
+				}
 				return
 			}
-			s.NoError(err)
 
-			content, err := supportfile.GetContent(sourceFile)
 			s.Require().NoError(err)
-			s.Equal(tt.expected, content)
+
+			// Verify app.go content
+			appContent, err := supportfile.GetContent(appFile)
+			s.Require().NoError(err)
+			s.Equal(tt.expectedApp, appContent)
+
+			// Verify migrations.go content if expected
+			if tt.expectedMigrations != "" {
+				migrationsContent, err := supportfile.GetContent(migrationsFile)
+				s.Require().NoError(err)
+				s.Equal(tt.expectedMigrations, migrationsContent)
+			}
 		})
 	}
 }
@@ -1990,6 +2088,316 @@ func Boot() {
 
 			// Apply the action
 			err = GoFile(sourceFile).Find(match.FoundationSetup()).Modify(foundationSetupMigration(tt.migrationToAdd)).Apply()
+			s.NoError(err)
+
+			// Read the result
+			resultContent, err := supportfile.GetContent(sourceFile)
+			s.Require().NoError(err)
+
+			s.Equal(tt.expectedResult, resultContent)
+		})
+	}
+}
+
+func (s *ModifyActionsTestSuite) Test_checkWithMigrationsExists() {
+	tests := []struct {
+		name     string
+		content  string
+		expected bool
+		wantErr  bool
+	}{
+		{
+			name: "WithMigrations exists in chain",
+			content: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/bootstrap"
+)
+
+func Boot() {
+	foundation.Setup().WithMigrations(Migrations()).Run()
+}
+`,
+			expected: true,
+		},
+		{
+			name: "WithMigrations exists with inline array",
+			content: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/foundation"
+)
+
+func Boot() {
+	foundation.Setup().WithMigrations([]schema.Migration{}).Run()
+}
+`,
+			expected: true,
+		},
+		{
+			name: "WithMigrations doesn't exist",
+			content: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+)
+
+func Boot() {
+	foundation.Setup().Run()
+}
+`,
+			expected: false,
+		},
+		{
+			name: "WithMigrations doesn't exist in complex chain",
+			content: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+)
+
+func Boot() {
+	foundation.Setup().WithConfig(config.Boot).WithRoute(route.Boot).Run()
+}
+`,
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			tempFile := filepath.Join(s.T().TempDir(), "app.go")
+			s.Require().NoError(supportfile.PutContent(tempFile, tt.content))
+
+			result, err := checkWithMigrationsExists(tempFile)
+
+			if tt.wantErr {
+				s.Error(err)
+				return
+			}
+
+			s.NoError(err)
+			s.Equal(tt.expected, result)
+		})
+	}
+}
+
+func (s *ModifyActionsTestSuite) Test_createMigrationsFile() {
+	tests := []struct {
+		name            string
+		expectedContent string
+	}{
+		{
+			name: "create migrations.go file with correct structure",
+			expectedContent: `package bootstrap
+
+import "github.com/goravel/framework/contracts/database/schema"
+
+func Migrations() []schema.Migration {
+	return []schema.Migration{}
+}
+`,
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			tempFile := filepath.Join(s.T().TempDir(), "migrations.go")
+
+			err := createMigrationsFile(tempFile)
+			s.NoError(err)
+
+			content, err := supportfile.GetContent(tempFile)
+			s.Require().NoError(err)
+			s.Equal(tt.expectedContent, content)
+		})
+	}
+}
+
+func (s *ModifyActionsTestSuite) Test_addMigrationToMigrationsFile() {
+	tests := []struct {
+		name            string
+		initialContent  string
+		pkg             string
+		migration       string
+		expectedContent string
+	}{
+		{
+			name: "add migration to empty Migrations() function",
+			initialContent: `package bootstrap
+
+import "github.com/goravel/framework/contracts/database/schema"
+
+func Migrations() []schema.Migration {
+	return []schema.Migration{}
+}
+`,
+			pkg:       "goravel/database/migrations",
+			migration: "&migrations.CreateUsersTable{}",
+			expectedContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/database/schema"
+
+	"goravel/database/migrations"
+)
+
+func Migrations() []schema.Migration {
+	return []schema.Migration{
+		&migrations.CreateUsersTable{},
+	}
+}
+`,
+		},
+		{
+			name: "add migration to existing Migrations() function",
+			initialContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/database/schema"
+
+	"goravel/database/migrations"
+)
+
+func Migrations() []schema.Migration {
+	return []schema.Migration{
+		&migrations.ExistingMigration{},
+	}
+}
+`,
+			pkg:       "goravel/database/migrations",
+			migration: "&migrations.CreatePostsTable{}",
+			expectedContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/database/schema"
+
+	"goravel/database/migrations"
+)
+
+func Migrations() []schema.Migration {
+	return []schema.Migration{
+		&migrations.ExistingMigration{},
+		&migrations.CreatePostsTable{},
+	}
+}
+`,
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			tempFile := filepath.Join(s.T().TempDir(), "migrations.go")
+			s.Require().NoError(supportfile.PutContent(tempFile, tt.initialContent))
+
+			err := addMigrationToMigrationsFile(tempFile, tt.pkg, tt.migration)
+			s.NoError(err)
+
+			content, err := supportfile.GetContent(tempFile)
+			s.Require().NoError(err)
+			s.Equal(tt.expectedContent, content)
+		})
+	}
+}
+
+func (s *ModifyActionsTestSuite) Test_foundationSetupMigrationWithFunction() {
+	tests := []struct {
+		name           string
+		initialContent string
+		expectedResult string
+	}{
+		{
+			name: "add WithMigrations(Migrations()) when it doesn't exist",
+			initialContent: `package test
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().WithConfig(config.Boot).Run()
+}
+`,
+			expectedResult: `package test
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithMigrations(Migrations()).WithConfig(config.Boot).Run()
+}
+`,
+		},
+		{
+			name: "add WithMigrations(Migrations()) at the beginning of chain",
+			initialContent: `package test
+
+import (
+	"github.com/goravel/framework/foundation"
+)
+
+func Boot() {
+	foundation.Setup().Run()
+}
+`,
+			expectedResult: `package test
+
+import (
+	"github.com/goravel/framework/foundation"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithMigrations(Migrations()).Run()
+}
+`,
+		},
+		{
+			name: "skip non-foundation.Setup() statements",
+			initialContent: `package test
+
+import (
+	"github.com/goravel/framework/foundation"
+)
+
+func Boot() {
+	app := foundation.NewApplication()
+	app.Run()
+}
+`,
+			expectedResult: `package test
+
+import (
+	"github.com/goravel/framework/foundation"
+)
+
+func Boot() {
+	app := foundation.NewApplication()
+	app.Run()
+}
+`,
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			sourceFile := filepath.Join(s.T().TempDir(), "test.go")
+			s.Require().NoError(supportfile.PutContent(sourceFile, tt.initialContent))
+
+			content, err := supportfile.GetContent(sourceFile)
+			s.Require().NoError(err)
+
+			_, err = decorator.Parse(content)
+			s.Require().NoError(err)
+
+			// Apply the action
+			err = GoFile(sourceFile).Find(match.FoundationSetup()).Modify(foundationSetupMigrationWithFunction()).Apply()
 			s.NoError(err)
 
 			// Read the result

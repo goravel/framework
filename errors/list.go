@@ -148,6 +148,7 @@ var (
 	PackageRegistrationDuplicate = New("'%s' had been registered")
 	PackageRegistrationNotFound  = New("'%s' not found, cannot insert before it")
 	PackageCommandsFileExists    = New("commands.go already exists but WithCommands is not registered in foundation.Setup(). The commands.go file should only be created when adding WithCommands to Setup()")
+	PackageMigrationsFileExists  = New("migrations.go already exists but WithMigrations is not registered in foundation.Setup(). The migrations.go file should only be created when adding WithMigrations to Setup()")
 
 	PluralizerLanguageNotFound     = New("language %s not found").SetModule(ModulePluralizer)
 	PluralizerEmptyLanguageName    = New("language name cannot be empty").SetModule(ModulePluralizer)
