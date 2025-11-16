@@ -175,19 +175,19 @@ func AddMiddleware(pkg, middleware string) error {
 //
 // Into:
 //
-//	foundation.Setup().WithMigrations(migrations []schema.Migration{
+//	foundation.Setup().WithMigrations([]schema.Migration{
 //	  &migrations.ExampleMigration{},
 //	}).WithConfig(config.Boot).Run()
 //
 // If WithMigrations already exists:
 //
-//	foundation.Setup().WithMigrations(migrations []schema.Migration{
+//	foundation.Setup().WithMigrations([]schema.Migration{
 //	  &migrations.ExistingMigration{},
 //	}).Run()
 //
 // It appends the new migration:
 //
-//	foundation.Setup().WithMigrations(migrations []schema.Migration{
+//	foundation.Setup().WithMigrations([]schema.Migration{
 //	  &migrations.ExistingMigration{},
 //	  &migrations.ExampleMigration{},
 //	}).Run()
