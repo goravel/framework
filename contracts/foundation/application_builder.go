@@ -3,6 +3,7 @@ package foundation
 import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/contracts/database/seeder"
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/foundation/configuration"
 	"github.com/goravel/framework/contracts/schedule"
@@ -29,4 +30,6 @@ type ApplicationBuilder interface {
 	WithRouting(routes []func()) ApplicationBuilder
 	// WithSchedule sets scheduled events for the application.
 	WithSchedule(events []schedule.Event) ApplicationBuilder
+	// WithSeeders registers the database seeders.
+	WithSeeders(seeders []seeder.Seeder) ApplicationBuilder
 }

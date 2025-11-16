@@ -240,6 +240,50 @@ func AddImport(path string, name ...string) modify.Action {
 	}
 }
 
+// AddSeeder adds seeder to the foundation.Setup() chain in the Boot function.
+// If WithSeeders doesn't exist, it creates one. If it exists, it appends the seeder to []seeder.Seeder.
+// This function also ensures the configuration package and seeder package are imported when creating WithSeeders.
+//
+// Parameters:
+//   - pkg: Package path of the seeder (e.g., "goravel/database/seeders")
+//   - seeder: Seeder expression to add (e.g., "&seeders.ExampleSeeder{}")
+//
+// Example usage:
+//
+//	AddSeeder("goravel/database/seeders", "&seeders.ExampleSeeder{}")
+//
+// This transforms:
+//
+//	foundation.Setup().WithConfig(config.Boot).Run()
+//
+// Into:
+//
+//	foundation.Setup().WithSeeders([]seeder.Seeder{
+//	  &seeders.ExampleMigration{},
+//	}).WithConfig(config.Boot).Run()
+//
+// If WithSeeders already exists:
+//
+//	foundation.Setup().WithSeeders([]seeder.Seeder{
+//	  &seeders.ExistingSeeder{},
+//	}).Run()
+//
+// It appends the new seeder:
+//
+//	foundation.Setup().WithSeeders([]seeder.Seeder{
+//	  &seeders.ExistingMigration{},
+//	  &seeders.ExampleMigration{},
+//	}).Run()
+func AddSeeder(pkg, seeder string) error {
+	appFilePath := support.Config.Paths.App
+
+	if err := addSeederImports(appFilePath, pkg); err != nil {
+		return err
+	}
+
+	return GoFile(appFilePath).Find(match.FoundationSetup()).Modify(foundationSetupSeeder(seeder)).Apply()
+}
+
 func CreateImport(node dst.Node) error {
 	importDecl := &dst.GenDecl{
 		Tok: token.IMPORT,
@@ -745,6 +789,17 @@ func addMigrationImports(appFilePath, pkg string) error {
 	return GoFile(appFilePath).Find(importMatchers).Modify(AddImport(schemaImportPath)).Apply()
 }
 
+// addSeederImports adds the required imports for seeder package and seeder.Seeder interface.
+func addSeederImports(appFilePath, pkg string) error {
+	importMatchers := match.Imports()
+	if err := GoFile(appFilePath).FindOrCreate(importMatchers, CreateImport).Modify(AddImport(pkg)).Apply(); err != nil {
+		return err
+	}
+
+	seederImportPath := "github.com/goravel/framework/contracts/database/seeder"
+	return GoFile(appFilePath).Find(importMatchers).Modify(AddImport(seederImportPath)).Apply()
+}
+
 // appendToExistingMigration appends migration to an existing WithMigrations call.
 func appendToExistingMigration(withMigrationsCall *dst.CallExpr, migrationExpr dst.Expr) {
 	if len(withMigrationsCall.Args) == 0 {
@@ -809,6 +864,110 @@ func findFoundationSetupCallsForMigration(callExpr *dst.CallExpr) (setupCall, wi
 					// Check if this is WithMigrations
 					if innerSel.Sel.Name == "WithMigrations" {
 						withMigrationsCall = innerCall
+					}
+				}
+				current = innerCall
+				continue
+			}
+		}
+		break
+	}
+	return
+}
+
+// foundationSetupSeeder returns an action that modifies the foundation.Setup() chain for seeders.
+func foundationSetupSeeder(seeder string) modify.Action {
+	return func(cursor *dstutil.Cursor) {
+		stmt := cursor.Node().(*dst.ExprStmt)
+
+		if !containsFoundationSetup(stmt) {
+			return
+		}
+
+		callExpr, ok := stmt.X.(*dst.CallExpr)
+		if !ok {
+			return
+		}
+
+		setupCall, withSeedersCall, parentOfSetup := findFoundationSetupCallsForSeeder(callExpr)
+		if setupCall == nil || parentOfSetup == nil {
+			return
+		}
+
+		seederExpr := MustParseExpr(seeder).(dst.Expr)
+
+		if withSeedersCall != nil {
+			appendToExistingSeeder(withSeedersCall, seederExpr)
+		} else {
+			createWithSeeders(setupCall, parentOfSetup, seederExpr)
+		}
+	}
+}
+
+// appendToExistingSeeder appends seeder to an existing WithSeeders call.
+func appendToExistingSeeder(withSeedersCall *dst.CallExpr, seederExpr dst.Expr) {
+	if len(withSeedersCall.Args) == 0 {
+		return
+	}
+
+	compositeLit, ok := withSeedersCall.Args[0].(*dst.CompositeLit)
+	if !ok {
+		return
+	}
+
+	// Append the seeder to the composite literal
+	compositeLit.Elts = append(compositeLit.Elts, seederExpr)
+}
+
+// createWithSeeders creates a new WithSeeders call and inserts it into the chain.
+func createWithSeeders(setupCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr, seederExpr dst.Expr) {
+	compositeLit := &dst.CompositeLit{
+		Type: &dst.ArrayType{
+			Elt: &dst.SelectorExpr{
+				X:   &dst.Ident{Name: "seeder"},
+				Sel: &dst.Ident{Name: "Seeder"},
+			},
+		},
+		Elts: []dst.Expr{seederExpr},
+	}
+
+	newWithSeedersCall := &dst.CallExpr{
+		Fun: &dst.SelectorExpr{
+			X: setupCall,
+			Sel: &dst.Ident{
+				Name: "WithSeeders",
+				Decs: dst.IdentDecorations{
+					NodeDecs: dst.NodeDecs{
+						Before: dst.NewLine,
+					},
+				},
+			},
+		},
+		Args: []dst.Expr{compositeLit},
+	}
+
+	// Insert WithSeeders into the chain
+	parentOfSetup.X = newWithSeedersCall
+}
+
+// findFoundationSetupCallsForSeeder walks the chain to find Setup() and WithSeeders() calls.
+func findFoundationSetupCallsForSeeder(callExpr *dst.CallExpr) (setupCall, withSeedersCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr) {
+	current := callExpr
+	for current != nil {
+		if sel, ok := current.Fun.(*dst.SelectorExpr); ok {
+			if innerCall, ok := sel.X.(*dst.CallExpr); ok {
+				if innerSel, ok := innerCall.Fun.(*dst.SelectorExpr); ok {
+					// Check if this is the Setup() call
+					if innerSel.Sel.Name == "Setup" {
+						if ident, ok := innerSel.X.(*dst.Ident); ok && ident.Name == "foundation" {
+							setupCall = innerCall
+							parentOfSetup = sel
+							break
+						}
+					}
+					// Check if this is WithSeeders
+					if innerSel.Sel.Name == "WithSeeders" {
+						withSeedersCall = innerCall
 					}
 				}
 				current = innerCall

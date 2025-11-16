@@ -3,6 +3,7 @@ package foundation
 import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/contracts/database/seeder"
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/foundation"
 	contractsconfiguration "github.com/goravel/framework/contracts/foundation/configuration"
@@ -25,6 +26,7 @@ type ApplicationBuilder struct {
 	migrations                 []schema.Migration
 	routes                     []func()
 	scheduledEvents            []schedule.Event
+	seeders                    []seeder.Seeder
 }
 
 func NewApplicationBuilder(app foundation.Application) *ApplicationBuilder {
@@ -107,6 +109,16 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 		}
 	}
 
+	// Register database seeders
+	if len(r.seeders) > 0 {
+		seederFacade := r.app.MakeSeeder()
+		if seederFacade == nil {
+			color.Errorln("Seeder facade not found, please install it first: ./artisan package:install Seeder")
+		} else {
+			seederFacade.Register(r.seeders)
+		}
+	}
+
 	return r.app
 }
 
@@ -158,6 +170,12 @@ func (r *ApplicationBuilder) WithRouting(routes []func()) foundation.Application
 
 func (r *ApplicationBuilder) WithSchedule(events []schedule.Event) foundation.ApplicationBuilder {
 	r.scheduledEvents = events
+
+	return r
+}
+
+func (r *ApplicationBuilder) WithSeeders(seeders []seeder.Seeder) foundation.ApplicationBuilder {
+	r.seeders = seeders
 
 	return r
 }
