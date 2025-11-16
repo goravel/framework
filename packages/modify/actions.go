@@ -158,7 +158,7 @@ func AddMiddleware(pkg, middleware string) error {
 }
 
 // AddMigration adds migration to the foundation.Setup() chain in the Boot function.
-// If WithMigrations doesn't exist, it creates one. If it exists, it appends to the migration to []schema.Migration.
+// If WithMigrations doesn't exist, it creates one. If it exists, it appends the migration to []schema.Migration.
 // This function also ensures the configuration package and migration package are imported when creating WithMigrations.
 //
 // Parameters:
