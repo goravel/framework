@@ -44,7 +44,7 @@ func (r *MigrateMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *MigrateMakeCommand) Handle(ctx console.Context) error {
-	make, err := supportconsole.NewMake(ctx, "command", ctx.Argument(0), support.Config.Paths.Migration)
+	make, err := supportconsole.NewMake(ctx, "migration", ctx.Argument(0), support.Config.Paths.Migration)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
@@ -75,6 +75,7 @@ func (r *MigrateMakeCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
+// DEPRECATED: The kernel file will be removed in future versions.
 func (r *MigrateMakeCommand) registerInKernel(pkg, structName string) error {
 	return modify.GoFile(r.app.DatabasePath("kernel.go")).
 		Find(match.Imports()).Modify(modify.AddImport(pkg)).
