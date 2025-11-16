@@ -215,8 +215,14 @@ func AddMiddleware(pkg, middleware string) error {
 }
 
 // AddMigration adds migration to the foundation.Setup() chain in the Boot function.
-// If WithMigrations doesn't exist, it creates one. If it exists, it appends the migration to []schema.Migration.
+// If WithMigrations doesn't exist, it creates a new migrations.go file in the bootstrap directory based on the stubs.go:migrations template,
+// then add WithMigrations(Migrations()) to foundation.Setup(), add the migration to Migrations().
+// If WithMigrations exists, it appends the migration to []schema.Migration if the migrations.go file doesn't exist,
+// or appends to the Migrations() function if the migrations.go file exists.
 // This function also ensures the configuration package and migration package are imported when creating WithMigrations.
+//
+// Returns an error if migrations.go exists but WithMigrations is not registered in foundation.Setup(), as the migrations.go file
+// should only be created when adding WithMigrations to Setup().
 //
 // Parameters:
 //   - pkg: Package path of the migration (e.g., "goravel/database/migrations")
@@ -226,17 +232,23 @@ func AddMiddleware(pkg, middleware string) error {
 //
 //	AddMigration("goravel/database/migrations", "&migrations.ExampleMigration{}")
 //
-// This transforms:
+// This transforms (when migrations.go doesn't exist and WithMigrations doesn't exist):
 //
 //	foundation.Setup().WithConfig(config.Boot).Run()
 //
 // Into:
 //
-//	foundation.Setup().WithMigrations([]schema.Migration{
-//	  &migrations.ExampleMigration{},
-//	}).WithConfig(config.Boot).Run()
+//	foundation.Setup().WithMigrations(Migrations()).WithConfig(config.Boot).Run()
 //
-// If WithMigrations already exists:
+// And creates bootstrap/migrations.go:
+//
+//	package bootstrap
+//	import "github.com/goravel/framework/contracts/database/schema"
+//	func Migrations() []schema.Migration {
+//	  return []schema.Migration{&migrations.ExampleMigration{}}
+//	}
+//
+// If WithMigrations already exists but migrations.go doesn't:
 //
 //	foundation.Setup().WithMigrations([]schema.Migration{
 //	  &migrations.ExistingMigration{},
@@ -248,9 +260,52 @@ func AddMiddleware(pkg, middleware string) error {
 //	  &migrations.ExistingMigration{},
 //	  &migrations.ExampleMigration{},
 //	}).Run()
+//
+// If WithMigrations exists with Migrations() call and migrations.go exists, it appends to Migrations() function.
 func AddMigration(pkg, migration string) error {
 	appFilePath := support.Config.Paths.App
+	bootstrapDir := filepath.Dir(appFilePath)
+	migrationsFilePath := filepath.Join(bootstrapDir, "migrations.go")
 
+	// Check if migrations.go exists
+	migrationsFileExists := supportfile.Exists(migrationsFilePath)
+
+	// Check if WithMigrations exists in app.go
+	withMigrationsExists, err := checkWithMigrationsExists(appFilePath)
+	if err != nil {
+		return err
+	}
+
+	if !withMigrationsExists {
+		// Case 1: WithMigrations doesn't exist
+		// Error if migrations.go already exists - it should only be created when adding WithMigrations
+		if migrationsFileExists {
+			return errors.PackageMigrationsFileExists
+		}
+
+		// Create migrations.go and add WithMigrations(Migrations())
+		if err := createMigrationsFile(migrationsFilePath); err != nil {
+			return err
+		}
+
+		// Add the migration to the newly created file
+		if err := addMigrationToMigrationsFile(migrationsFilePath, pkg, migration); err != nil {
+			return err
+		}
+
+		// Add WithMigrations(Migrations()) to foundation.Setup()
+		return GoFile(appFilePath).Find(match.FoundationSetup()).Modify(foundationSetupMigrationWithFunction()).Apply()
+	}
+
+	if migrationsFileExists {
+		// Case 2: WithMigrations exists and migrations.go exists - append to Migrations() function
+		if err := addMigrationToMigrationsFile(migrationsFilePath, pkg, migration); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	// Case 3: WithMigrations exists but migrations.go doesn't - append to inline array
 	if err := addMigrationImports(appFilePath, pkg); err != nil {
 		return err
 	}
@@ -506,7 +561,7 @@ func checkWithCommandsExists(appFilePath string) (bool, error) {
 	}
 
 	// Simple string check - if WithCommands appears in the chain, it exists
-	return strings.Contains(string(content), "WithCommands("), nil
+	return strings.Contains(content, "WithCommands("), nil
 }
 
 // createCommandsFile creates a new commands.go file with the Commands() function.
@@ -907,6 +962,50 @@ func foundationSetupMigration(migration string) modify.Action {
 	}
 }
 
+// foundationSetupMigrationWithFunction returns an action that adds WithMigrations(Migrations()) to the foundation.Setup() chain.
+func foundationSetupMigrationWithFunction() modify.Action {
+	return func(cursor *dstutil.Cursor) {
+		stmt := cursor.Node().(*dst.ExprStmt)
+
+		if !containsFoundationSetup(stmt) {
+			return
+		}
+
+		callExpr, ok := stmt.X.(*dst.CallExpr)
+		if !ok {
+			return
+		}
+
+		setupCall, _, parentOfSetup := findFoundationSetupCallsForMigration(callExpr)
+		if setupCall == nil || parentOfSetup == nil {
+			return
+		}
+
+		// Create WithMigrations(Migrations()) call
+		newWithMigrationsCall := &dst.CallExpr{
+			Fun: &dst.SelectorExpr{
+				X: setupCall,
+				Sel: &dst.Ident{
+					Name: "WithMigrations",
+					Decs: dst.IdentDecorations{
+						NodeDecs: dst.NodeDecs{
+							Before: dst.NewLine,
+						},
+					},
+				},
+			},
+			Args: []dst.Expr{
+				&dst.CallExpr{
+					Fun: &dst.Ident{Name: "Migrations"},
+				},
+			},
+		}
+
+		// Insert WithMigrations into the chain
+		parentOfSetup.X = newWithMigrationsCall
+	}
+}
+
 // addMigrationImports adds the required imports for migration package and schema package.
 func addMigrationImports(appFilePath, pkg string) error {
 	importMatchers := match.Imports()
@@ -916,6 +1015,34 @@ func addMigrationImports(appFilePath, pkg string) error {
 
 	schemaImportPath := "github.com/goravel/framework/contracts/database/schema"
 	return GoFile(appFilePath).Find(importMatchers).Modify(AddImport(schemaImportPath)).Apply()
+}
+
+// addMigrationToMigrationsFile adds a migration to the existing Migrations() function in migrations.go.
+func addMigrationToMigrationsFile(migrationsFilePath, pkg, migration string) error {
+	// Add the migration package import
+	importMatchers := match.Imports()
+	if err := GoFile(migrationsFilePath).FindOrCreate(importMatchers, CreateImport).Modify(AddImport(pkg)).Apply(); err != nil {
+		return err
+	}
+
+	// Add the migration to the Migrations() function
+	return GoFile(migrationsFilePath).Find(match.Migrations()).Modify(Register(migration)).Apply()
+}
+
+// checkWithMigrationsExists checks if WithMigrations exists in the foundation.Setup() chain.
+func checkWithMigrationsExists(appFilePath string) (bool, error) {
+	content, err := supportfile.GetContent(appFilePath)
+	if err != nil {
+		return false, err
+	}
+
+	// Simple string check - if WithMigrations appears in the chain, it exists
+	return strings.Contains(content, "WithMigrations("), nil
+}
+
+// createMigrationsFile creates a new migrations.go file with the Migrations() function.
+func createMigrationsFile(migrationsFilePath string) error {
+	return supportfile.PutContent(migrationsFilePath, migrations())
 }
 
 // addSeederImports adds the required imports for seeder package and seeder.Seeder interface.
