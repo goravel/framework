@@ -218,6 +218,11 @@ func (r *Application) ConfigPath(path ...string) string {
 	return internals.AbsPath(path...)
 }
 
+func (r *Application) ModelPath(path ...string) string {
+	path = append([]string{support.RelativePath, "app", "models"}, path...)
+	return internals.AbsPath(path...)
+}
+
 func (r *Application) DatabasePath(path ...string) string {
 	path = append([]string{support.RelativePath, "database"}, path...)
 	return internals.AbsPath(path...)
