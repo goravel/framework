@@ -259,7 +259,7 @@ func AddImport(path string, name ...string) modify.Action {
 // Into:
 //
 //	foundation.Setup().WithSeeders([]seeder.Seeder{
-//	  &seeders.ExampleMigration{},
+//	  &seeders.ExampleSeeder{},
 //	}).WithConfig(config.Boot).Run()
 //
 // If WithSeeders already exists:
@@ -271,8 +271,8 @@ func AddImport(path string, name ...string) modify.Action {
 // It appends the new seeder:
 //
 //	foundation.Setup().WithSeeders([]seeder.Seeder{
-//	  &seeders.ExistingMigration{},
-//	  &seeders.ExampleMigration{},
+//	  &seeders.ExistingSeeder{},
+//	  &seeders.ExampleSeeder{},
 //	}).Run()
 func AddSeeder(pkg, seeder string) error {
 	appFilePath := support.Config.Paths.App
