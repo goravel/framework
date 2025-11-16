@@ -202,7 +202,7 @@ func findFoundationSetupCallsForCommand(callExpr *dst.CallExpr) (setupCall, with
 							break
 						}
 					}
-					// Check if this is WithCommand
+					// Check if this is WithCommands
 					if innerSel.Sel.Name == "WithCommands" {
 						withCommandCall = innerCall
 					}
