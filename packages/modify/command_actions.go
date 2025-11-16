@@ -141,7 +141,7 @@ func createCommandsFile(commandsFilePath string) error {
 	return supportfile.PutContent(commandsFilePath, commands())
 }
 
-// appendToExistingCommand appends command to an existing WithCommand call.
+// appendToExistingCommand appends command to an existing WithCommands call.
 func appendToExistingCommand(withCommandCall *dst.CallExpr, commandExpr dst.Expr) {
 	if len(withCommandCall.Args) == 0 {
 		return
