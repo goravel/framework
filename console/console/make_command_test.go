@@ -159,7 +159,6 @@ func Boot() {
 
 import (
 	"github.com/goravel/framework/foundation"
-	"goravel/bootstrap"
 )
 
 func Boot() {

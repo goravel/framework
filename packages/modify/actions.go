@@ -611,7 +611,7 @@ func containsFoundationSetup(stmt *dst.ExprStmt) bool {
 	return foundSetup
 }
 
-// createWithCommands creates a new WithCommand call and inserts it into the chain.
+// createWithCommands creates a new WithCommands call and inserts it into the chain.
 func createWithCommands(setupCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr, commandExpr dst.Expr) {
 	compositeLit := &dst.CompositeLit{
 		Type: &dst.ArrayType{
