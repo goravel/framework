@@ -220,7 +220,7 @@ func (r *Application) ConfigPath(path ...string) string {
 
 func (r *Application) ModelPath(path ...string) string {
 	path = append([]string{support.RelativePath, "app", "models"}, path...)
-	return internals.AbsPath(path...)
+	return r.Path(path...)
 }
 
 func (r *Application) DatabasePath(path ...string) string {

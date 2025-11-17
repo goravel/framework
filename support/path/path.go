@@ -16,6 +16,10 @@ func Config(paths ...string) string {
 	return facades.App().ConfigPath(paths...)
 }
 
+func Model(paths ...string) string {
+	return facades.App().ModelPath(paths...)
+}
+
 func Database(paths ...string) string {
 	return facades.App().DatabasePath(paths...)
 }
