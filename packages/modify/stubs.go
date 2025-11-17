@@ -21,3 +21,14 @@ func Migrations() []schema.Migration {
 }
 `
 }
+
+func seeders() string {
+	return `package bootstrap
+
+import "github.com/goravel/framework/contracts/database/seeder"
+
+func Seeders() []seeder.Seeder {
+	return []seeder.Seeder{}
+}
+`
+}
