@@ -4868,24 +4868,74 @@ func (s *QueryTestSuite) TestMorphablePolymorphicQueries() {
 func (s *QueryTestSuite) TestWhereAny() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			user := User{Name: "where_any_user", Avatar: "where_any_avatar"}
-			s.Nil(query.Query().Create(&user))
-			s.True(user.ID > 0)
+			users := []User{
+				{Name: "where_any_user1", Avatar: "where_any_avatar1", Bio: convert.Pointer("bio1")},
+				{Name: "where_any_user2", Avatar: "where_any_avatar2", Bio: convert.Pointer("bio2")},
+				{Name: "where_any_user3", Avatar: "where_any_avatar3", Bio: convert.Pointer("bio3")},
+				{Name: "where_any_user4", Avatar: "where_any_avatar4", Bio: convert.Pointer("bio4")},
+			}
+			s.Nil(query.Query().Create(&users))
 
-			user1 := User{Name: "where_any_user", Avatar: "where_any_avatar1"}
-			s.Nil(query.Query().Create(&user1))
-			s.True(user1.ID > 0)
+			tests := []struct {
+				name   string
+				find   func(any, ...any) error
+				assert func([]User)
+			}{
+				{
+					name: "equals operator with single match",
+					find: query.Query().WhereAny([]string{"name", "avatar"}, "=", "where_any_user1").Find,
+					assert: func(items []User) {
+						s.Len(items, 1)
+						s.Equal("where_any_user1", items[0].Name)
+					},
+				},
+				{
+					name: "equals operator with multiple matches",
+					find: query.Query().WhereAny([]string{"name", "avatar"}, "=", "where_any_avatar2").Find,
+					assert: func(items []User) {
+						s.Len(items, 1)
+						s.Equal("where_any_user2", items[0].Name)
+					},
+				},
+				{
+					name: "combined with Where clause - simple",
+					find: query.Query().Where("name", "where_any_user2").WhereAny([]string{"avatar"}, "=", "where_any_avatar2").Find,
+					assert: func(items []User) {
+						s.Len(items, 1)
+						s.Equal("where_any_user2", items[0].Name)
+					},
+				},
+				{
+					name: "Where before and after WhereAny",
+					find: query.Query().Where("name LIKE ?", "where_any%").WhereAny([]string{"avatar"}, "=", "where_any_avatar1").Where("bio IS NOT NULL").Find,
+					assert: func(items []User) {
+						s.Len(items, 1)
+						s.Equal("where_any_user1", items[0].Name)
+					},
+				},
+				{
+					name: "no matches",
+					find: query.Query().WhereAny([]string{"name", "avatar"}, "=", "nonexistent").Find,
+					assert: func(items []User) {
+						s.Len(items, 0)
+					},
+				},
+				{
+					name: "multiple WhereAny calls",
+					find: query.Query().WhereAny([]string{"name"}, "IN", []string{"where_any_user1", "where_any_user2"}).WhereAny([]string{"avatar"}, "IN", []string{"where_any_avatar1", "where_any_avatar2"}).Find,
+					assert: func(items []User) {
+						s.Len(items, 2)
+					},
+				},
+			}
 
-			user2 := User{Name: "where_any_user2", Avatar: "where_any_avatar"}
-			s.Nil(query.Query().Create(&user2))
-			s.True(user2.ID > 0)
-
-			var users []User
-			err := query.Query().WhereAny([]string{"name", "avatar"}, "=", "where_any_user").Find(&users)
-			s.NoError(err)
-			s.Len(users, 2)
-			s.Contains([]string{users[0].Name, users[1].Name}, "where_any_user")
-			s.Contains([]string{users[0].Avatar, users[1].Avatar}, "where_any_avatar1")
+			for _, tt := range tests {
+				s.Run(tt.name, func() {
+					var items []User
+					s.Nil(tt.find(&items))
+					tt.assert(items)
+				})
+			}
 		})
 	}
 }
@@ -4893,20 +4943,76 @@ func (s *QueryTestSuite) TestWhereAny() {
 func (s *QueryTestSuite) TestWhereAll() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			user := User{Name: "where_all_user", Avatar: "where_all_user"}
-			s.Nil(query.Query().Create(&user))
-			s.True(user.ID > 0)
+			users := []User{
+				{Name: "where_all_user1", Avatar: "where_all_avatar1", Bio: convert.Pointer("bio1")},
+				{Name: "where_all_user1", Avatar: "where_all_avatar2", Bio: convert.Pointer("bio2")},
+				{Name: "where_all_user2", Avatar: "where_all_avatar1", Bio: convert.Pointer("bio3")},
+				{Name: "where_all_user2", Avatar: "where_all_avatar2", Bio: convert.Pointer("bio4")},
+			}
+			s.Nil(query.Query().Create(&users))
 
-			user1 := User{Name: "where_all_user", Avatar: "where_all_avatar1"}
-			s.Nil(query.Query().Create(&user1))
-			s.True(user1.ID > 0)
+			tests := []struct {
+				name   string
+				find   func(any, ...any) error
+				assert func([]User)
+			}{
+				{
+					name: "equals operator - all columns match",
+					find: query.Query().WhereAll([]string{"name", "avatar"}, "=", "where_all_user1").Find,
+					assert: func(items []User) {
+						s.Len(items, 0)
+					},
+				},
+				{
+					name: "single column match",
+					find: query.Query().WhereAll([]string{"name"}, "=", "where_all_user1").Find,
+					assert: func(items []User) {
+						s.Len(items, 2)
+						s.Equal("where_all_user1", items[0].Name)
+						s.Equal("where_all_user1", items[1].Name)
+					},
+				},
+				{
+					name: "combined with Where clause - simple",
+					find: query.Query().Where("name", "where_all_user2").WhereAll([]string{"avatar"}, "=", "where_all_avatar1").Find,
+					assert: func(items []User) {
+						s.Len(items, 1)
+						s.Equal("where_all_user2", items[0].Name)
+						s.Equal("where_all_avatar1", items[0].Avatar)
+					},
+				},
+				{
+					name: "Where before and after WhereAll",
+					find: query.Query().Where("name LIKE ?", "where_all%").WhereAll([]string{"avatar"}, "=", "where_all_avatar1").Where("bio IS NOT NULL").Find,
+					assert: func(items []User) {
+						s.Len(items, 2)
+					},
+				},
+				{
+					name: "no matches",
+					find: query.Query().WhereAll([]string{"name", "avatar"}, "=", "nonexistent").Find,
+					assert: func(items []User) {
+						s.Len(items, 0)
+					},
+				},
+				{
+					name: "multiple WhereAll calls",
+					find: query.Query().WhereAll([]string{"name"}, "=", "where_all_user1").WhereAll([]string{"avatar"}, "=", "where_all_avatar1").Find,
+					assert: func(items []User) {
+						s.Len(items, 1)
+						s.Equal("where_all_user1", items[0].Name)
+						s.Equal("where_all_avatar1", items[0].Avatar)
+					},
+				},
+			}
 
-			var users []User
-			err := query.Query().WhereAll([]string{"name", "avatar"}, "=", "where_all_user").Find(&users)
-			s.NoError(err)
-			s.Len(users, 1)
-			s.Equal("where_all_user", users[0].Name)
-			s.Equal("where_all_user", users[0].Avatar)
+			for _, tt := range tests {
+				s.Run(tt.name, func() {
+					var items []User
+					s.Nil(tt.find(&items))
+					tt.assert(items)
+				})
+			}
 		})
 	}
 }
@@ -4914,19 +5020,85 @@ func (s *QueryTestSuite) TestWhereAll() {
 func (s *QueryTestSuite) TestWhereNone() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			user := User{Name: "where_none_user", Avatar: "where_none_avatar"}
-			s.Nil(query.Query().Create(&user))
-			s.True(user.ID > 0)
+			users := []User{
+				{Name: "where_none_user1", Avatar: "where_none_avatar1", Bio: convert.Pointer("bio1")},
+				{Name: "where_none_user2", Avatar: "where_none_avatar2", Bio: convert.Pointer("bio2")},
+				{Name: "where_none_user3", Avatar: "where_none_avatar3", Bio: convert.Pointer("bio3")},
+				{Name: "where_none_user4", Avatar: "where_none_avatar4", Bio: convert.Pointer("bio4")},
+			}
+			s.Nil(query.Query().Create(&users))
 
-			user1 := User{Name: "where_none_user1", Avatar: "where_none_avatar1"}
-			s.Nil(query.Query().Create(&user1))
-			s.True(user1.ID > 0)
+			tests := []struct {
+				name   string
+				find   func(any, ...any) error
+				assert func([]User)
+			}{
+				{
+					name: "equals operator - exclude single value",
+					find: query.Query().WhereNone([]string{"name"}, "=", "where_none_user1").Find,
+					assert: func(items []User) {
+						s.Len(items, 3)
+						s.Equal("where_none_user2", items[0].Name)
+						s.Equal("where_none_user3", items[1].Name)
+						s.Equal("where_none_user4", items[2].Name)
+					},
+				},
+				{
+					name: "equals operator - exclude from multiple columns",
+					find: query.Query().WhereNone([]string{"name", "avatar"}, "=", "where_none_user1").Find,
+					assert: func(items []User) {
+						s.Len(items, 3)
+					},
+				},
+				{
+					name: "combined with Where clause - simple",
+					find: query.Query().Where("name LIKE ?", "where_none%").WhereNone([]string{"avatar"}, "=", "where_none_avatar1").Find,
+					assert: func(items []User) {
+						s.Len(items, 3)
+						s.Equal("where_none_user2", items[0].Name)
+						s.Equal("where_none_user3", items[1].Name)
+						s.Equal("where_none_user4", items[2].Name)
+					},
+				},
+				{
+					name: "Where before and after WhereNone",
+					find: query.Query().Where("name LIKE ?", "where_none%").WhereNone([]string{"avatar"}, "=", "where_none_avatar1").Where("bio IS NOT NULL").Find,
+					assert: func(items []User) {
+						s.Len(items, 3)
+					},
+				},
+				{
+					name: "no matches - all excluded",
+					find: query.Query().WhereNone([]string{"name"}, "LIKE", "where_none%").Find,
+					assert: func(items []User) {
+						s.Len(items, 0)
+					},
+				},
+				{
+					name: "all records match when excluding non-existent value",
+					find: query.Query().WhereNone([]string{"name", "avatar"}, "=", "nonexistent").Find,
+					assert: func(items []User) {
+						s.Len(items, 4)
+					},
+				},
+				{
+					name: "multiple WhereNone calls",
+					find: query.Query().WhereNone([]string{"name"}, "=", "where_none_user1").WhereNone([]string{"avatar"}, "=", "where_none_avatar4").Find,
+					assert: func(items []User) {
+						s.Len(items, 2)
+						s.Equal("where_none_user2", items[0].Name)
+						s.Equal("where_none_user3", items[1].Name)
+					},
+				},
+			}
 
-			var users []User
-			err := query.Query().WhereNone([]string{"name"}, "=", "where_none_user").Find(&users)
-			s.NoError(err)
-			s.Len(users, 1)
-			s.Equal("where_none_user1", users[0].Name)
+			for _, tt := range tests {
+				s.Run(tt.name, func() {
+					var items []User
+					s.Nil(tt.find(&items))
+					tt.assert(items)
+				})
+			}
 		})
 	}
 }
