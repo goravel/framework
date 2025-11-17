@@ -1393,20 +1393,13 @@ func (r *Query) buildWhere(db *gormio.DB) *gormio.DB {
 }
 
 func (r *Query) buildWhereRelation(item contractsdriver.Where) (any, []any) {
-	const (
-		gt  = ">"
-		gte = ">="
-		lte = ">="
-		lt  = "<"
-	)
-
 	var (
-		op    string
+		op    Operator
 		count int64
 	)
 
 	if argsLen := len(item.Args); argsLen > 0 && argsLen != 1 {
-		o, ok := item.Args[0].(string)
+		o, ok := isAnyOperator(item.Args[0])
 		if !ok {
 			return r.instance.AddError(errors.New("the first argument should be string, it uses as operator")), []any{}
 		}
@@ -1425,7 +1418,7 @@ func (r *Query) buildWhereRelation(item contractsdriver.Where) (any, []any) {
 		return r.instance.AddError(err), []any{}
 	}
 
-	needCountQuery := !((count == 0 && slices.Contains([]string{lt, lte, gt, gte}, op)) || op == "")
+	needCountQuery := !((count == 0 && slices.Contains([]Operator{lt, lte, gt, gte}, op)) || op == "")
 
 	if !needCountQuery {
 		fmt.Println("exists")

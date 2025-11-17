@@ -71,6 +71,69 @@ func TestAddWhere(t *testing.T) {
 	}, query1.conditions.where)
 }
 
+func TestAddWhereHas(t *testing.T) {
+	type Organization struct {
+		Model
+		Name string
+	}
+	type Post struct {
+		Model
+		Title string
+	}
+	type Role struct {
+		Model
+		Title string
+	}
+	type User struct {
+		Model
+		Name         string
+		Posts        []*Post
+		Organization *Organization
+		Roles        []*Role `gorm:"many2many:role_user"`
+	}
+
+	query := (&Query{}).
+		Model(&User{}).
+		WhereHas("Posts", nil).
+		WhereHas("Organization", func(q contractsorm.Query) contractsorm.Query { return q.Where("name", "John") }).
+		WhereHas("Roles", nil, ">=", 10)
+
+	assert.Equal(t, &Query{
+		conditions: Conditions{
+			where: []contractsdriver.Where{
+				contractsdriver.Where{
+					Query:    &Query{queries: make(map[string]*Query)},
+					Args:     nil,
+					Relation: "Posts",
+					Type:     contractsdriver.WhereRelation,
+				},
+				contractsdriver.Where{
+					Query: &Query{
+						queries: make(map[string]*Query),
+						conditions: Conditions{
+							where: []contractsdriver.Where{contractsdriver.Where{
+								Query: "name",
+								Args:  []any{"John"},
+							}},
+						},
+					},
+					Args:     nil,
+					Relation: "Organization",
+					Type:     contractsdriver.WhereRelation,
+				},
+				contractsdriver.Where{
+					Query:    &Query{queries: make(map[string]*Query)},
+					Args:     []any{">=", 10},
+					Relation: "Roles",
+					Type:     contractsdriver.WhereRelation,
+				},
+			},
+			model: &User{},
+		},
+		queries: make(map[string]*Query),
+	}, query)
+}
+
 func TestGetObserver(t *testing.T) {
 	query := &Query{
 		modelToObserver: []contractsorm.ModelToObserver{
