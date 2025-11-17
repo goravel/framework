@@ -10,6 +10,8 @@ import (
 
 	foundation "github.com/goravel/framework/contracts/foundation"
 
+	grpc "google.golang.org/grpc"
+
 	mock "github.com/stretchr/testify/mock"
 
 	schedule "github.com/goravel/framework/contracts/schedule"
@@ -251,6 +253,102 @@ func (_c *ApplicationBuilder_WithEvents_Call) Return(_a0 foundation.ApplicationB
 }
 
 func (_c *ApplicationBuilder_WithEvents_Call) RunAndReturn(run func(map[event.Event][]event.Listener) foundation.ApplicationBuilder) *ApplicationBuilder_WithEvents_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithGrpcClientInterceptors provides a mock function with given fields: groupToInterceptors
+func (_m *ApplicationBuilder) WithGrpcClientInterceptors(groupToInterceptors map[string][]grpc.UnaryClientInterceptor) foundation.ApplicationBuilder {
+	ret := _m.Called(groupToInterceptors)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithGrpcClientInterceptors")
+	}
+
+	var r0 foundation.ApplicationBuilder
+	if rf, ok := ret.Get(0).(func(map[string][]grpc.UnaryClientInterceptor) foundation.ApplicationBuilder); ok {
+		r0 = rf(groupToInterceptors)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(foundation.ApplicationBuilder)
+		}
+	}
+
+	return r0
+}
+
+// ApplicationBuilder_WithGrpcClientInterceptors_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithGrpcClientInterceptors'
+type ApplicationBuilder_WithGrpcClientInterceptors_Call struct {
+	*mock.Call
+}
+
+// WithGrpcClientInterceptors is a helper method to define mock.On call
+//   - groupToInterceptors map[string][]grpc.UnaryClientInterceptor
+func (_e *ApplicationBuilder_Expecter) WithGrpcClientInterceptors(groupToInterceptors interface{}) *ApplicationBuilder_WithGrpcClientInterceptors_Call {
+	return &ApplicationBuilder_WithGrpcClientInterceptors_Call{Call: _e.mock.On("WithGrpcClientInterceptors", groupToInterceptors)}
+}
+
+func (_c *ApplicationBuilder_WithGrpcClientInterceptors_Call) Run(run func(groupToInterceptors map[string][]grpc.UnaryClientInterceptor)) *ApplicationBuilder_WithGrpcClientInterceptors_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(map[string][]grpc.UnaryClientInterceptor))
+	})
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithGrpcClientInterceptors_Call) Return(_a0 foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcClientInterceptors_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithGrpcClientInterceptors_Call) RunAndReturn(run func(map[string][]grpc.UnaryClientInterceptor) foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcClientInterceptors_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithGrpcServerInterceptors provides a mock function with given fields: interceptors
+func (_m *ApplicationBuilder) WithGrpcServerInterceptors(interceptors []grpc.UnaryServerInterceptor) foundation.ApplicationBuilder {
+	ret := _m.Called(interceptors)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithGrpcServerInterceptors")
+	}
+
+	var r0 foundation.ApplicationBuilder
+	if rf, ok := ret.Get(0).(func([]grpc.UnaryServerInterceptor) foundation.ApplicationBuilder); ok {
+		r0 = rf(interceptors)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(foundation.ApplicationBuilder)
+		}
+	}
+
+	return r0
+}
+
+// ApplicationBuilder_WithGrpcServerInterceptors_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithGrpcServerInterceptors'
+type ApplicationBuilder_WithGrpcServerInterceptors_Call struct {
+	*mock.Call
+}
+
+// WithGrpcServerInterceptors is a helper method to define mock.On call
+//   - interceptors []grpc.UnaryServerInterceptor
+func (_e *ApplicationBuilder_Expecter) WithGrpcServerInterceptors(interceptors interface{}) *ApplicationBuilder_WithGrpcServerInterceptors_Call {
+	return &ApplicationBuilder_WithGrpcServerInterceptors_Call{Call: _e.mock.On("WithGrpcServerInterceptors", interceptors)}
+}
+
+func (_c *ApplicationBuilder_WithGrpcServerInterceptors_Call) Run(run func(interceptors []grpc.UnaryServerInterceptor)) *ApplicationBuilder_WithGrpcServerInterceptors_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].([]grpc.UnaryServerInterceptor))
+	})
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithGrpcServerInterceptors_Call) Return(_a0 foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcServerInterceptors_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithGrpcServerInterceptors_Call) RunAndReturn(run func([]grpc.UnaryServerInterceptor) foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcServerInterceptors_Call {
 	_c.Call.Return(run)
 	return _c
 }

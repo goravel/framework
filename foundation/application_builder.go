@@ -10,6 +10,7 @@ import (
 	"github.com/goravel/framework/contracts/schedule"
 	"github.com/goravel/framework/foundation/configuration"
 	"github.com/goravel/framework/support/color"
+	"google.golang.org/grpc"
 )
 
 func Setup() foundation.ApplicationBuilder {
@@ -22,6 +23,8 @@ type ApplicationBuilder struct {
 	config                     func()
 	configuredServiceProviders []foundation.ServiceProvider
 	eventToListeners           map[event.Event][]event.Listener
+	grpcClientInterceptors     map[string][]grpc.UnaryClientInterceptor
+	grpcServerInterceptors     []grpc.UnaryServerInterceptor
 	middleware                 func(middleware contractsconfiguration.Middleware)
 	migrations                 []schema.Migration
 	routes                     []func()
@@ -119,6 +122,21 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 		}
 	}
 
+	// Register gRPC interceptors
+	if len(r.grpcClientInterceptors) > 0 || len(r.grpcServerInterceptors) > 0 {
+		grpcFacade := r.app.MakeGrpc()
+		if grpcFacade == nil {
+			color.Errorln("gRPC facade not found, please install it first: ./artisan package:install Grpc")
+		} else {
+			if len(r.grpcClientInterceptors) > 0 {
+				grpcFacade.UnaryClientInterceptorGroups(r.grpcClientInterceptors)
+			}
+			if len(r.grpcServerInterceptors) > 0 {
+				grpcFacade.UnaryServerInterceptors(r.grpcServerInterceptors)
+			}
+		}
+	}
+
 	return r.app
 }
 
@@ -140,6 +158,18 @@ func (r *ApplicationBuilder) WithConfig(config func()) foundation.ApplicationBui
 
 func (r *ApplicationBuilder) WithEvents(eventToListeners map[event.Event][]event.Listener) foundation.ApplicationBuilder {
 	r.eventToListeners = eventToListeners
+
+	return r
+}
+
+func (r *ApplicationBuilder) WithGrpcClientInterceptors(groupToInterceptors map[string][]grpc.UnaryClientInterceptor) foundation.ApplicationBuilder {
+	r.grpcClientInterceptors = groupToInterceptors
+
+	return r
+}
+
+func (r *ApplicationBuilder) WithGrpcServerInterceptors(interceptors []grpc.UnaryServerInterceptor) foundation.ApplicationBuilder {
+	r.grpcServerInterceptors = interceptors
 
 	return r
 }
