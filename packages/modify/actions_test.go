@@ -2061,16 +2061,19 @@ func Boot() {
 
 func (s *ModifyActionsTestSuite) TestAddSeeder() {
 	tests := []struct {
-		name     string
-		content  string
-		pkg      string
-		seeder   string
-		expected string
-		wantErr  bool
+		name              string
+		appContent        string
+		seedersContent    string // empty if file doesn't exist
+		pkg               string
+		seeder            string
+		expectedApp       string
+		expectedSeeders   string // empty if file shouldn't be created
+		wantErr           bool
+		expectedErrString string
 	}{
 		{
-			name: "add seeder when WithSeeders doesn't exist",
-			content: `package bootstrap
+			name: "add seeder when WithSeeders doesn't exist and seeders.go doesn't exist",
+			appContent: `package bootstrap
 
 import (
 	"github.com/goravel/framework/foundation"
@@ -2083,26 +2086,96 @@ func Boot() {
 `,
 			pkg:    "goravel/database/seeders",
 			seeder: "&seeders.DatabaseSeeder{}",
-			expected: `package bootstrap
+			expectedApp: `package bootstrap
 
 import (
-	"github.com/goravel/framework/contracts/database/seeder"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
-	"goravel/database/seeders"
 )
 
 func Boot() {
 	foundation.Setup().
-		WithSeeders([]seeder.Seeder{
-			&seeders.DatabaseSeeder{},
-		}).WithConfig(config.Boot).Run()
+		WithSeeders(Seeders()).WithConfig(config.Boot).Run()
+}
+`,
+			expectedSeeders: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/database/seeder"
+
+	"goravel/database/seeders"
+)
+
+func Seeders() []seeder.Seeder {
+	return []seeder.Seeder{
+		&seeders.DatabaseSeeder{},
+	}
 }
 `,
 		},
 		{
-			name: "add seeder when WithSeeders already exists",
-			content: `package bootstrap
+			name: "add seeder when WithSeeders exists with Seeders() and seeders.go exists",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/bootstrap"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithSeeders(Seeders()).WithConfig(config.Boot).Run()
+}
+`,
+			seedersContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/database/seeder"
+
+	"goravel/database/seeders"
+)
+
+func Seeders() []seeder.Seeder {
+	return []seeder.Seeder{
+		&seeders.ExistingSeeder{},
+	}
+}
+`,
+			pkg:    "goravel/database/seeders",
+			seeder: "&seeders.NewSeeder{}",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/bootstrap"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithSeeders(Seeders()).WithConfig(config.Boot).Run()
+}
+`,
+			expectedSeeders: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/database/seeder"
+
+	"goravel/database/seeders"
+)
+
+func Seeders() []seeder.Seeder {
+	return []seeder.Seeder{
+		&seeders.ExistingSeeder{},
+		&seeders.NewSeeder{},
+	}
+}
+`,
+		},
+		{
+			name: "add seeder when WithSeeders exists with inline array",
+			appContent: `package bootstrap
 
 import (
 	"github.com/goravel/framework/contracts/database/seeder"
@@ -2119,8 +2192,8 @@ func Boot() {
 }
 `,
 			pkg:    "goravel/database/seeders",
-			seeder: "&seeders.DatabaseSeeder{}",
-			expected: `package bootstrap
+			seeder: "&seeders.NewSeeder{}",
+			expectedApp: `package bootstrap
 
 import (
 	"github.com/goravel/framework/contracts/database/seeder"
@@ -2133,14 +2206,14 @@ func Boot() {
 	foundation.Setup().
 		WithSeeders([]seeder.Seeder{
 			&seeders.ExistingSeeder{},
-			&seeders.DatabaseSeeder{},
+			&seeders.NewSeeder{},
 		}).WithConfig(config.Boot).Run()
 }
 `,
 		},
 		{
-			name: "add seeder with complex chain",
-			content: `package bootstrap
+			name: "error when seeders.go exists but WithSeeders doesn't exist",
+			appContent: `package bootstrap
 
 import (
 	"github.com/goravel/framework/foundation"
@@ -2148,61 +2221,64 @@ import (
 )
 
 func Boot() {
-	foundation.Setup().WithConfig(config.Boot).WithRoute(route.Boot).Run()
-}
-`,
-			pkg:    "goravel/database/seeders",
-			seeder: "&seeders.UserSeeder{}",
-			expected: `package bootstrap
-
-import (
-	"github.com/goravel/framework/contracts/database/seeder"
-	"github.com/goravel/framework/foundation"
-	"goravel/config"
-	"goravel/database/seeders"
-)
-
-func Boot() {
-	foundation.Setup().
-		WithSeeders([]seeder.Seeder{
-			&seeders.UserSeeder{},
-		}).WithConfig(config.Boot).WithRoute(route.Boot).Run()
-}
-`,
-		},
-		{
-			name: "add seeder to Boot function with multiple statements",
-			content: `package bootstrap
-
-import (
-	"github.com/goravel/framework/foundation"
-	"goravel/config"
-)
-
-func Boot() {
-	app := foundation.NewApplication()
 	foundation.Setup().WithConfig(config.Boot).Run()
-	app.Start()
 }
 `,
-			pkg:    "goravel/database/seeders",
-			seeder: "&seeders.ProductSeeder{}",
-			expected: `package bootstrap
+			seedersContent: `package bootstrap
 
 import (
 	"github.com/goravel/framework/contracts/database/seeder"
-	"github.com/goravel/framework/foundation"
-	"goravel/config"
+
 	"goravel/database/seeders"
 )
 
+func Seeders() []seeder.Seeder {
+	return []seeder.Seeder{
+		&seeders.ExistingSeeder{},
+	}
+}
+`,
+			pkg:     "goravel/database/seeders",
+			seeder:  "&seeders.NewSeeder{}",
+			wantErr: true,
+		},
+		{
+			name: "add seeder when WithSeeders doesn't exist at the beginning of chain",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+)
+
 func Boot() {
-	app := foundation.NewApplication()
+	foundation.Setup().Run()
+}
+`,
+			pkg:    "goravel/database/seeders",
+			seeder: "&seeders.FirstSeeder{}",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+)
+
+func Boot() {
 	foundation.Setup().
-		WithSeeders([]seeder.Seeder{
-			&seeders.ProductSeeder{},
-		}).WithConfig(config.Boot).Run()
-	app.Start()
+		WithSeeders(Seeders()).Run()
+}
+`,
+			expectedSeeders: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/database/seeder"
+
+	"goravel/database/seeders"
+)
+
+func Seeders() []seeder.Seeder {
+	return []seeder.Seeder{
+		&seeders.FirstSeeder{},
+	}
 }
 `,
 		},
@@ -2210,338 +2286,48 @@ func Boot() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			sourceFile := filepath.Join(s.T().TempDir(), "app.go")
-			s.Require().NoError(supportfile.PutContent(sourceFile, tt.content))
+			tempDir := s.T().TempDir()
+			bootstrapDir := filepath.Join(tempDir, "bootstrap")
 
-			// Override the Config.Paths.App for testing
+			appFile := filepath.Join(bootstrapDir, "app.go")
+			seedersFile := filepath.Join(bootstrapDir, "seeders.go")
+
+			s.Require().NoError(supportfile.PutContent(appFile, tt.appContent))
+
+			if tt.seedersContent != "" {
+				s.Require().NoError(supportfile.PutContent(seedersFile, tt.seedersContent))
+			}
+
+			// Override Config.Paths.App for testing
 			originalAppPath := support.Config.Paths.App
-			support.Config.Paths.App = sourceFile
+			support.Config.Paths.App = appFile
 			defer func() {
 				support.Config.Paths.App = originalAppPath
 			}()
 
 			err := AddSeeder(tt.pkg, tt.seeder)
+
 			if tt.wantErr {
-				s.Error(err)
-				return
-			}
-			s.NoError(err)
-
-			content, err := supportfile.GetContent(sourceFile)
-			s.Require().NoError(err)
-			s.Equal(tt.expected, content)
-		})
-	}
-}
-
-func (s *ModifyActionsTestSuite) Test_appendToExistingSeeder() {
-	tests := []struct {
-		name              string
-		initialContent    string
-		seederToAdd       string
-		expectedArgsCount int
-	}{
-		{
-			name: "append to existing WithSeeders call",
-			initialContent: `package test
-
-import (
-	"github.com/goravel/framework/contracts/database/seeder"
-	"github.com/goravel/framework/foundation"
-	"goravel/database/seeders"
-)
-
-func Boot() {
-	foundation.Setup().
-		WithSeeders([]seeder.Seeder{
-			&seeders.ExistingSeeder{},
-		}).Run()
-}`,
-			seederToAdd:       "&seeders.DatabaseSeeder{}",
-			expectedArgsCount: 2,
-		},
-		{
-			name: "append to empty seeder array",
-			initialContent: `package test
-
-import (
-	"github.com/goravel/framework/contracts/database/seeder"
-	"github.com/goravel/framework/foundation"
-	"goravel/database/seeders"
-)
-
-func Boot() {
-	foundation.Setup().
-		WithSeeders([]seeder.Seeder{}).Run()
-}`,
-			seederToAdd:       "&seeders.DatabaseSeeder{}",
-			expectedArgsCount: 1,
-		},
-	}
-
-	for _, tt := range tests {
-		s.Run(tt.name, func() {
-			sourceFile := filepath.Join(s.T().TempDir(), "test.go")
-			s.Require().NoError(supportfile.PutContent(sourceFile, tt.initialContent))
-
-			content, err := supportfile.GetContent(sourceFile)
-			s.Require().NoError(err)
-
-			file, err := decorator.Parse(content)
-			s.Require().NoError(err)
-
-			// Find the WithSeeders call
-			var withSeedersCall *dst.CallExpr
-			dst.Inspect(file, func(n dst.Node) bool {
-				if call, ok := n.(*dst.CallExpr); ok {
-					if sel, ok := call.Fun.(*dst.SelectorExpr); ok {
-						if sel.Sel.Name == "WithSeeders" {
-							withSeedersCall = call
-							return false
-						}
-					}
+				s.Require().Error(err)
+				if tt.expectedErrString != "" {
+					s.Contains(err.Error(), tt.expectedErrString)
 				}
-				return true
-			})
-
-			s.Require().NotNil(withSeedersCall, "WithSeeders call not found")
-
-			seederExpr := MustParseExpr(tt.seederToAdd).(dst.Expr)
-			appendToExistingSeeder(withSeedersCall, seederExpr)
-
-			// Verify the seeder was appended
-			s.Require().Len(withSeedersCall.Args, 1)
-			compositeLit, ok := withSeedersCall.Args[0].(*dst.CompositeLit)
-			s.Require().True(ok)
-			s.Equal(tt.expectedArgsCount, len(compositeLit.Elts))
-		})
-	}
-}
-
-func (s *ModifyActionsTestSuite) Test_addSeederImports() {
-	tests := []struct {
-		name             string
-		initialContent   string
-		pkg              string
-		expectError      bool
-		expectedImports  []string
-		unexpectedImport string
-	}{
-		{
-			name: "add seeder imports to file with existing imports",
-			initialContent: `package bootstrap
-
-import (
-	"github.com/goravel/framework/foundation"
-	"goravel/config"
-)
-
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
-}
-`,
-			pkg:         "goravel/database/seeders",
-			expectError: false,
-			expectedImports: []string{
-				"goravel/database/seeders",
-				"github.com/goravel/framework/contracts/database/seeder",
-			},
-		},
-		{
-			name: "add seeder imports when seeder import already exists",
-			initialContent: `package bootstrap
-
-import (
-	"github.com/goravel/framework/contracts/database/seeder"
-	"github.com/goravel/framework/foundation"
-	"goravel/config"
-)
-
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
-}
-`,
-			pkg:         "goravel/database/seeders",
-			expectError: false,
-			expectedImports: []string{
-				"goravel/database/seeders",
-				"github.com/goravel/framework/contracts/database/seeder",
-			},
-		},
-		{
-			name: "add seeder imports when seeder package already exists",
-			initialContent: `package bootstrap
-
-import (
-	"github.com/goravel/framework/foundation"
-	"goravel/database/seeders"
-	"goravel/config"
-)
-
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
-}
-`,
-			pkg:         "goravel/database/seeders",
-			expectError: false,
-			expectedImports: []string{
-				"goravel/database/seeders",
-				"github.com/goravel/framework/contracts/database/seeder",
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		s.Run(tt.name, func() {
-			sourceFile := filepath.Join(s.T().TempDir(), "app.go")
-			s.Require().NoError(supportfile.PutContent(sourceFile, tt.initialContent))
-
-			err := addSeederImports(sourceFile, tt.pkg)
-
-			if tt.expectError {
-				s.Error(err)
 				return
 			}
 
-			s.NoError(err)
-
-			content, err := supportfile.GetContent(sourceFile)
 			s.Require().NoError(err)
 
-			for _, expectedImport := range tt.expectedImports {
-				s.Contains(content, expectedImport, "Expected import %s to be present", expectedImport)
+			// Verify app.go content
+			appContent, err := supportfile.GetContent(appFile)
+			s.Require().NoError(err)
+			s.Equal(tt.expectedApp, appContent)
+
+			// Verify seeders.go content if expected
+			if tt.expectedSeeders != "" {
+				seedersContent, err := supportfile.GetContent(seedersFile)
+				s.Require().NoError(err)
+				s.Equal(tt.expectedSeeders, seedersContent)
 			}
-
-			if tt.unexpectedImport != "" {
-				s.NotContains(content, tt.unexpectedImport)
-			}
-		})
-	}
-}
-
-func (s *ModifyActionsTestSuite) Test_foundationSetupSeeder() {
-	tests := []struct {
-		name           string
-		initialContent string
-		seederToAdd    string
-		expectedResult string
-	}{
-		{
-			name: "create WithSeeders when it doesn't exist",
-			initialContent: `package test
-
-import (
-	"github.com/goravel/framework/foundation"
-	"goravel/config"
-)
-
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
-}
-`,
-			seederToAdd: "&seeders.DatabaseSeeder{}",
-			expectedResult: `package test
-
-import (
-	"github.com/goravel/framework/foundation"
-	"goravel/config"
-)
-
-func Boot() {
-	foundation.Setup().
-		WithSeeders([]seeder.Seeder{
-			&seeders.DatabaseSeeder{},
-		}).WithConfig(config.Boot).Run()
-}
-`,
-		},
-		{
-			name: "append to existing WithSeeders",
-			initialContent: `package test
-
-import (
-	"github.com/goravel/framework/contracts/database/seeder"
-	"github.com/goravel/framework/foundation"
-	"goravel/config"
-	"goravel/database/seeders"
-)
-
-func Boot() {
-	foundation.Setup().
-		WithSeeders([]seeder.Seeder{
-			&seeders.ExistingSeeder{},
-		}).WithConfig(config.Boot).Run()
-}
-`,
-			seederToAdd: "&seeders.DatabaseSeeder{}",
-			expectedResult: `package test
-
-import (
-	"github.com/goravel/framework/contracts/database/seeder"
-	"github.com/goravel/framework/foundation"
-	"goravel/config"
-	"goravel/database/seeders"
-)
-
-func Boot() {
-	foundation.Setup().
-		WithSeeders([]seeder.Seeder{
-			&seeders.ExistingSeeder{},
-			&seeders.DatabaseSeeder{},
-		}).WithConfig(config.Boot).Run()
-}
-`,
-		},
-		{
-			name: "skip non-foundation.Setup() statements",
-			initialContent: `package test
-
-import (
-	"github.com/goravel/framework/foundation"
-	"goravel/config"
-)
-
-func Boot() {
-	app := foundation.NewApplication()
-	app.Run()
-}
-`,
-			seederToAdd: "&seeders.DatabaseSeeder{}",
-			expectedResult: `package test
-
-import (
-	"github.com/goravel/framework/foundation"
-	"goravel/config"
-)
-
-func Boot() {
-	app := foundation.NewApplication()
-	app.Run()
-}
-`,
-		},
-	}
-
-	for _, tt := range tests {
-		s.Run(tt.name, func() {
-			sourceFile := filepath.Join(s.T().TempDir(), "test.go")
-			s.Require().NoError(supportfile.PutContent(sourceFile, tt.initialContent))
-
-			content, err := supportfile.GetContent(sourceFile)
-			s.Require().NoError(err)
-
-			_, err = decorator.Parse(content)
-			s.Require().NoError(err)
-
-			// Apply the action
-			err = GoFile(sourceFile).Find(match.FoundationSetup()).Modify(foundationSetupSeeder(tt.seederToAdd)).Apply()
-			s.NoError(err)
-
-			// Read the result
-			resultContent, err := supportfile.GetContent(sourceFile)
-			s.Require().NoError(err)
-
-			s.Equal(tt.expectedResult, resultContent)
 		})
 	}
 }
