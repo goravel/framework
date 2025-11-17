@@ -9,7 +9,7 @@ import (
 
 	"github.com/goravel/framework/contracts/packages/match"
 	"github.com/goravel/framework/contracts/packages/modify"
-	pacakgesmatch "github.com/goravel/framework/packages/match"
+	packagesmatch "github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/support"
 	supportfile "github.com/goravel/framework/support/file"
 )
@@ -78,7 +78,7 @@ func (r *withSliceHandler) AddItem(pkg, item string) error {
 			return err
 		}
 
-		return GoFile(r.appFilePath).Find(pacakgesmatch.FoundationSetup()).Modify(r.setupWithFunction()).Apply()
+		return GoFile(r.appFilePath).Find(packagesmatch.FoundationSetup()).Modify(r.setupWithFunction()).Apply()
 	}
 
 	if r.fileExists {
@@ -92,7 +92,7 @@ func (r *withSliceHandler) AddItem(pkg, item string) error {
 		return err
 	}
 
-	return GoFile(r.appFilePath).Find(pacakgesmatch.FoundationSetup()).Modify(r.setupInline(item)).Apply()
+	return GoFile(r.appFilePath).Find(packagesmatch.FoundationSetup()).Modify(r.setupInline(item)).Apply()
 }
 
 // checkWithMethodExists checks if the WithMethod exists in the foundation.Setup() chain.
@@ -133,7 +133,7 @@ func (r *withSliceHandler) createFile() error {
 //	    "github.com/goravel/framework/contracts/console"
 //	)
 func (r *withSliceHandler) addImports(pkg string) error {
-	importMatchers := pacakgesmatch.Imports()
+	importMatchers := packagesmatch.Imports()
 	if err := GoFile(r.appFilePath).FindOrCreate(importMatchers, CreateImport).Modify(AddImport(pkg)).Apply(); err != nil {
 		return err
 	}
@@ -162,7 +162,7 @@ func (r *withSliceHandler) addImports(pkg string) error {
 //	}
 func (r *withSliceHandler) addItemToFile(pkg, item string) error {
 	// Add the item package import
-	importMatchers := pacakgesmatch.Imports()
+	importMatchers := packagesmatch.Imports()
 	if err := GoFile(r.filePath).FindOrCreate(importMatchers, CreateImport).Modify(AddImport(pkg)).Apply(); err != nil {
 		return err
 	}
