@@ -2,6 +2,7 @@ package foundation
 
 import (
 	"context"
+	"github.com/goravel/framework/contracts/notification"
 
 	"github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/auth/access"
@@ -166,6 +167,8 @@ type Application interface {
 	MakeValidation() validation.Validation
 	// MakeView resolves the view instance.
 	MakeView() view.View
+	// MakeNotification resolves the notification instance.
+	MakeNotification() notification.Notification
 	// MakeSeeder resolves the seeder instance.
 	MakeSeeder() seeder.Facade
 	// MakeWith resolves the given type with the given parameters from the container.

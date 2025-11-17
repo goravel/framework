@@ -26,6 +26,7 @@ import (
 	contractshttpclient "github.com/goravel/framework/contracts/http/client"
 	contractslog "github.com/goravel/framework/contracts/log"
 	contractsmail "github.com/goravel/framework/contracts/mail"
+	contractsotification "github.com/goravel/framework/contracts/notification"
 	contractsprocess "github.com/goravel/framework/contracts/process"
 	contractsqueue "github.com/goravel/framework/contracts/queue"
 	contractsroute "github.com/goravel/framework/contracts/route"
@@ -35,6 +36,7 @@ import (
 	contractstranslation "github.com/goravel/framework/contracts/translation"
 	contractsvalidation "github.com/goravel/framework/contracts/validation"
 	contractsview "github.com/goravel/framework/contracts/view"
+
 	"github.com/goravel/framework/support/color"
 )
 
@@ -384,6 +386,16 @@ func (r *Container) MakeView() contractsview.View {
 	}
 
 	return instance.(contractsview.View)
+}
+
+func (r *Container) MakeNotification() contractsotification.Notification {
+	instance, err := r.Make(facades.FacadeToBinding[facades.Notification])
+	if err != nil {
+		color.Errorln(err)
+		return nil
+	}
+
+	return instance.(contractsotification.Notification)
 }
 
 func (r *Container) MakeWith(key any, parameters map[string]any) (any, error) {
