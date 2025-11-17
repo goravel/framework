@@ -1,6 +1,8 @@
 package foundation
 
 import (
+	"google.golang.org/grpc"
+
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/contracts/database/seeder"
@@ -20,6 +22,10 @@ type ApplicationBuilder interface {
 	WithConfig(config func()) ApplicationBuilder
 	// WithEvents sets event listeners for the application.
 	WithEvents(eventToListeners map[event.Event][]event.Listener) ApplicationBuilder
+	// WithGrpcClientInterceptors sets gRPC client interceptors for the application.
+	WithGrpcClientInterceptors(groupToInterceptors map[string][]grpc.UnaryClientInterceptor) ApplicationBuilder
+	// WithGrpcServerInterceptors sets gRPC server interceptors for the application.
+	WithGrpcServerInterceptors(interceptors []grpc.UnaryServerInterceptor) ApplicationBuilder
 	// WithMiddleware registers the http's middleware.
 	WithMiddleware(fn func(handler configuration.Middleware)) ApplicationBuilder
 	// WithMigrations registers the database migrations.

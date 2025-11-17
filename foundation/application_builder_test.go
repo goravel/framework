@@ -1,10 +1,12 @@
 package foundation
 
 import (
+	"context"
 	"io"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/grpc"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/database/schema"
@@ -17,6 +19,7 @@ import (
 	mocksschema "github.com/goravel/framework/mocks/database/schema"
 	mocksevent "github.com/goravel/framework/mocks/event"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
+	mocksgrpc "github.com/goravel/framework/mocks/grpc"
 	mocksroute "github.com/goravel/framework/mocks/route"
 	mocksschedule "github.com/goravel/framework/mocks/schedule"
 	"github.com/goravel/framework/support/color"
@@ -301,6 +304,113 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 
 		s.NotNil(app)
 	})
+
+	s.Run("WithGrpcClientInterceptors but Grpc facade is nil", func() {
+		s.SetupTest()
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().MakeGrpc().Return(nil).Once()
+
+		interceptor := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+			return nil
+		}
+		got := color.CaptureOutput(func(io.Writer) {
+			app := s.builder.WithGrpcClientInterceptors(map[string][]grpc.UnaryClientInterceptor{
+				"test": {interceptor},
+			}).Create()
+			s.NotNil(app)
+		})
+
+		s.Contains(got, "gRPC facade not found, please install it first: ./artisan package:install Grpc")
+	})
+
+	s.Run("WithGrpcClientInterceptors", func() {
+		s.SetupTest()
+
+		mockGrpc := mocksgrpc.NewGrpc(s.T())
+		interceptor := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+			return nil
+		}
+		interceptors := map[string][]grpc.UnaryClientInterceptor{
+			"test": {interceptor},
+		}
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().MakeGrpc().Return(mockGrpc).Once()
+		mockGrpc.EXPECT().UnaryClientInterceptorGroups(interceptors).Return().Once()
+
+		app := s.builder.WithGrpcClientInterceptors(interceptors).Create()
+
+		s.NotNil(app)
+	})
+
+	s.Run("WithGrpcServerInterceptors but Grpc facade is nil", func() {
+		s.SetupTest()
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().MakeGrpc().Return(nil).Once()
+
+		interceptor := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+			return nil, nil
+		}
+		got := color.CaptureOutput(func(io.Writer) {
+			app := s.builder.WithGrpcServerInterceptors([]grpc.UnaryServerInterceptor{interceptor}).Create()
+			s.NotNil(app)
+		})
+
+		s.Contains(got, "gRPC facade not found, please install it first: ./artisan package:install Grpc")
+	})
+
+	s.Run("WithGrpcServerInterceptors", func() {
+		s.SetupTest()
+
+		mockGrpc := mocksgrpc.NewGrpc(s.T())
+		interceptor := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+			return nil, nil
+		}
+		interceptors := []grpc.UnaryServerInterceptor{interceptor}
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().MakeGrpc().Return(mockGrpc).Once()
+		mockGrpc.EXPECT().UnaryServerInterceptors(interceptors).Return().Once()
+
+		app := s.builder.WithGrpcServerInterceptors(interceptors).Create()
+
+		s.NotNil(app)
+	})
+
+	s.Run("WithGrpcClientInterceptors and WithGrpcServerInterceptors", func() {
+		s.SetupTest()
+
+		mockGrpc := mocksgrpc.NewGrpc(s.T())
+		clientInterceptor := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+			return nil
+		}
+		serverInterceptor := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+			return nil, nil
+		}
+		clientInterceptors := map[string][]grpc.UnaryClientInterceptor{
+			"test": {clientInterceptor},
+		}
+		serverInterceptors := []grpc.UnaryServerInterceptor{serverInterceptor}
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().MakeGrpc().Return(mockGrpc).Once()
+		mockGrpc.EXPECT().UnaryClientInterceptorGroups(clientInterceptors).Return().Once()
+		mockGrpc.EXPECT().UnaryServerInterceptors(serverInterceptors).Return().Once()
+
+		app := s.builder.
+			WithGrpcClientInterceptors(clientInterceptors).
+			WithGrpcServerInterceptors(serverInterceptors).
+			Create()
+
+		s.NotNil(app)
+	})
 }
 
 func (s *ApplicationBuilderTestSuite) TestRun() {
@@ -370,4 +480,30 @@ func (s *ApplicationBuilderTestSuite) TestWithSchedule() {
 
 	s.NotNil(builder)
 	s.Len(s.builder.scheduledEvents, 1)
+}
+
+func (s *ApplicationBuilderTestSuite) TestWithGrpcClientInterceptors() {
+	interceptor := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		return nil
+	}
+	interceptors := map[string][]grpc.UnaryClientInterceptor{
+		"test": {interceptor},
+	}
+
+	builder := s.builder.WithGrpcClientInterceptors(interceptors)
+
+	s.NotNil(builder)
+	s.Equal(interceptors, s.builder.grpcClientInterceptors)
+}
+
+func (s *ApplicationBuilderTestSuite) TestWithGrpcServerInterceptors() {
+	interceptor := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		return nil, nil
+	}
+	interceptors := []grpc.UnaryServerInterceptor{interceptor}
+
+	builder := s.builder.WithGrpcServerInterceptors(interceptors)
+
+	s.NotNil(builder)
+	s.Len(s.builder.grpcServerInterceptors, 1)
 }
