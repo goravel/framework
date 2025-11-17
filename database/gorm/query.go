@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cast"
 	gormio "gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"gorm.io/gorm/schema"
 
 	"github.com/goravel/framework/contracts/config"
 	contractsdatabase "github.com/goravel/framework/contracts/database"
@@ -40,6 +41,8 @@ type Query struct {
 	dbConfig        contractsdatabase.Config
 	mutex           sync.Mutex
 }
+
+type subqueryCallback = func(contractsorm.Query) contractsorm.Query
 
 func NewQuery(
 	ctx context.Context,
@@ -765,7 +768,7 @@ func (r *Query) Scan(dest any) error {
 	return query.instance.Scan(dest).Error
 }
 
-func (r *Query) Scopes(funcs ...func(contractsorm.Query) contractsorm.Query) contractsorm.Query {
+func (r *Query) Scopes(funcs ...subqueryCallback) contractsorm.Query {
 	conditions := r.conditions
 	conditions.scopes = deep.Append(r.conditions.scopes, funcs...)
 
@@ -1054,6 +1057,21 @@ func (r *Query) WhereNotNull(column string) contractsorm.Query {
 	return r.Where(fmt.Sprintf("%s IS NOT NULL", column))
 }
 
+func (r *Query) WhereHas(relation string, callback subqueryCallback, args ...any) contractsorm.Query {
+	subquery := NewQuery(r.ctx, r.config, r.dbConfig, r.instance, r.grammar, r.log, r.modelToObserver, nil)
+
+	if callback != nil {
+		subquery = callback(subquery).(*Query)
+	}
+
+	return r.addWhere(contractsdriver.Where{
+		Query:    subquery,
+		Args:     args,
+		Relation: relation,
+		Type:     contractsdriver.WhereRelation,
+	})
+}
+
 func (r *Query) With(query string, args ...any) contractsorm.Query {
 	conditions := r.conditions
 	conditions.with = deep.Append(r.conditions.with, With{
@@ -1323,7 +1341,7 @@ func (r *Query) buildSharedLock(db *gormio.DB) *gormio.DB {
 	return db
 }
 
-func (r *Query) buildSubquery(sub func(contractsorm.Query) contractsorm.Query) *gormio.DB {
+func (r *Query) buildSubquery(sub subqueryCallback) *gormio.DB {
 	db := r.instance.Session(&gormio.Session{NewDB: true, Initialized: true})
 	queryImpl := NewQuery(r.ctx, r.config, r.dbConfig, db, r.grammar, r.log, r.modelToObserver, nil)
 	query := sub(queryImpl)
@@ -1369,9 +1387,11 @@ func (r *Query) buildWhere(db *gormio.DB) *gormio.DB {
 			segments := strings.SplitN(item.Query.(string), " ", 2)
 			segments[0] = r.grammar.CompileJsonLength(segments[0])
 			item.Query = r.buildWherePlaceholder(strings.Join(segments, " "), item.Args...)
+		case contractsdriver.WhereRelation:
+			item.Query, item.Args = r.buildWhereRelation(item)
 		default:
 			switch query := item.Query.(type) {
-			case func(contractsorm.Query) contractsorm.Query:
+			case subqueryCallback:
 				item.Query = r.buildSubquery(query)
 				item.Args = nil
 			case string:
@@ -1400,6 +1420,86 @@ func (r *Query) buildWhere(db *gormio.DB) *gormio.DB {
 	return db
 }
 
+func (r *Query) buildWhereRelation(item contractsdriver.Where) (any, []any) {
+	var (
+		op    Operator
+		count int64
+	)
+
+	if argsLen := len(item.Args); argsLen > 0 && argsLen != 1 {
+		o, ok := isAnyOperator(item.Args[0])
+		if !ok {
+			return r.instance.AddError(errors.New("the first argument should be string, it uses as operator")), []any{}
+		}
+
+		c, err := cast.ToInt64E(item.Args[1])
+		if err != nil {
+			return r.instance.AddError(errors.New("the second argument should be int64, it uses as count")), []any{}
+		}
+
+		op = o
+		count = c
+	}
+
+	subquery, err := r.relationSubquery(item.Relation, item.Query.(*Query))
+	if err != nil {
+		return r.instance.AddError(err), []any{}
+	}
+
+	needCountQuery := !((count == 0 && slices.Contains([]Operator{lt, lte, gt, gte}, op)) || op == "")
+
+	if !needCountQuery {
+		fmt.Println("exists")
+		modifiedQueryImpl := subquery.(*Query).buildConditions().instance
+		return "EXISTS (?)", []any{modifiedQueryImpl}
+	}
+
+	modifiedQueryImpl := subquery.Select("count(*)").(*Query)
+	return "(?) " + op + " ?", []any{modifiedQueryImpl.buildConditions().instance, count}
+}
+
+func (r *Query) relationSubquery(relation string, subquery contractsorm.Query) (contractsorm.Query, error) {
+	mSchema, err := getModelSchema(r.conditions.model, r.instance)
+	if err != nil {
+		return nil, fmt.Errorf("faild to get model schema, the model should be set before using this method. %w", err)
+	}
+
+	fmt.Println(relation)
+	rel, ok := mSchema.Relationships.Relations[relation]
+	if !ok {
+		return nil, fmt.Errorf("relation not found. %s", relation)
+	}
+	relModel := getZeroValueFromReflectType(rel.Field.FieldType)
+
+	subquery = subquery.Model(relModel)
+
+	fmt.Printf("%+v\n", subquery)
+
+	fk := rel.References[0].ForeignKey.DBName
+	ft := rel.FieldSchema.Table
+	table := mSchema.Table
+
+	switch rel.Type {
+	case schema.BelongsTo:
+		pk := rel.FieldSchema.PrioritizedPrimaryField.DBName
+		subquery = subquery.Where(database.QuoteConcat(ft, pk) + " = " + database.QuoteConcat(table, fk))
+	case schema.HasOne, schema.HasMany:
+		pk := mSchema.PrioritizedPrimaryField.DBName
+		subquery = subquery.Where(database.QuoteConcat(ft, fk) + " = " + database.QuoteConcat(table, pk))
+	case schema.Many2Many:
+		joinTable := rel.JoinTable.Table
+		pk := mSchema.PrioritizedPrimaryField.DBName
+		subquery = subquery.
+			Join("inner join " +
+				database.Quote(joinTable) +
+				" on " +
+				database.QuoteConcat(mSchema.Table, pk) +
+				" = " + database.QuoteConcat(joinTable, fk))
+	}
+
+	return subquery, nil
+}
+
 func (r *Query) buildWherePlaceholder(query string, args ...any) string {
 	// if query does not contain a placeholder,it might be incorrectly quoted or treated as an expression
 	// to avoid errors, append a manual placeholder
@@ -1421,7 +1521,7 @@ func (r *Query) buildWith(db *gormio.DB) *gormio.DB {
 	for _, item := range r.conditions.with {
 		isSet := false
 		if len(item.args) == 1 {
-			if arg, ok := item.args[0].(func(contractsorm.Query) contractsorm.Query); ok {
+			if arg, ok := item.args[0].(subqueryCallback); ok {
 				newArgs := []any{
 					func(tx *gormio.DB) *gormio.DB {
 						queryImpl := NewQuery(r.ctx, r.config, r.dbConfig, tx, r.grammar, r.log, r.modelToObserver, nil)

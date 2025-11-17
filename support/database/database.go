@@ -43,3 +43,11 @@ func GetIDByReflect(t reflect.Type, v reflect.Value) any {
 
 	return nil
 }
+
+func Quote(name string) string {
+	return "`" + name + "`"
+}
+
+func QuoteConcat(table string, col string) string {
+	return Quote(table) + "." + Quote(col)
+}

@@ -189,6 +189,8 @@ type Query interface {
 	Where(query any, args ...any) Query
 	// WhereBetween adds a "where column between x and y" clause to the query.
 	WhereBetween(column string, x, y any) Query
+	// WhereHas add a relationship count / exists condition to the query with where clauses.
+	WhereHas(relation string, callback func(query Query) Query, args ...any) Query
 	// WhereIn adds a "where column in" clause to the query.
 	WhereIn(column string, values []any) Query
 	// WhereJsonContains add a "where JSON contains" clause to the query.

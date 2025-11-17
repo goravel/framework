@@ -8,6 +8,8 @@ const (
 	WhereTypeJsonContains
 	WhereTypeJsonContainsKey
 	WhereTypeJsonLength
+	// WhereRelation used for where cause with relation subqueries, like WhereHas, OrWhereHas etc.
+	WhereRelation
 )
 
 type Conditions struct {
@@ -40,9 +42,10 @@ type Join struct {
 }
 
 type Where struct {
-	Query any
-	Args  []any
-	Type  WhereType
-	Or    bool
-	IsNot bool
+	Query    any
+	Args     []any
+	Type     WhereType
+	Relation string
+	Or       bool
+	IsNot    bool
 }
