@@ -284,7 +284,7 @@ func AddImport(path string, name ...string) modify.Action {
 
 // AddSeeder adds seeder to the foundation.Setup() chain in the Boot function.
 // If WithSeeders doesn't exist, it creates a new seeders.go file in the bootstrap directory based on the stubs.go:seeders template,
-// then add WithSeeders(Seeders()) to foundation.Setup(), add the seeder to Seeders().
+// then adds WithSeeders(Seeders()) to foundation.Setup(), and adds the seeder to Seeders().
 // If WithSeeders exists, it appends the seeder to []seeder.Seeder if the seeders.go file doesn't exist,
 // or appends to the Seeders() function if the seeders.go file exists.
 // This function also ensures the configuration package and seeder package are imported when creating WithSeeders.

@@ -574,7 +574,6 @@ func Commands() []console.Command {
 
 import (
 	"github.com/goravel/framework/foundation"
-	"goravel/bootstrap"
 	"goravel/config"
 )
 
@@ -603,7 +602,6 @@ func Commands() []console.Command {
 
 import (
 	"github.com/goravel/framework/foundation"
-	"goravel/bootstrap"
 	"goravel/config"
 )
 
@@ -1067,7 +1065,6 @@ func Migrations() []schema.Migration {
 
 import (
 	"github.com/goravel/framework/foundation"
-	"goravel/bootstrap"
 	"goravel/config"
 )
 
@@ -1096,7 +1093,6 @@ func Migrations() []schema.Migration {
 
 import (
 	"github.com/goravel/framework/foundation"
-	"goravel/bootstrap"
 	"goravel/config"
 )
 
@@ -2119,7 +2115,6 @@ func Seeders() []seeder.Seeder {
 
 import (
 	"github.com/goravel/framework/foundation"
-	"goravel/bootstrap"
 	"goravel/config"
 )
 
@@ -2148,7 +2143,6 @@ func Seeders() []seeder.Seeder {
 
 import (
 	"github.com/goravel/framework/foundation"
-	"goravel/bootstrap"
 	"goravel/config"
 )
 
@@ -2238,9 +2232,10 @@ func Seeders() []seeder.Seeder {
 	}
 }
 `,
-			pkg:     "goravel/database/seeders",
-			seeder:  "&seeders.NewSeeder{}",
-			wantErr: true,
+			pkg:               "goravel/database/seeders",
+			seeder:            "&seeders.NewSeeder{}",
+			wantErr:           true,
+			expectedErrString: "seeders.go already exists but WithSeeders is not registered in foundation.Setup()",
 		},
 		{
 			name: "add seeder when WithSeeders doesn't exist at the beginning of chain",
