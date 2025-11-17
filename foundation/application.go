@@ -219,7 +219,7 @@ func (r *Application) ConfigPath(path ...string) string {
 }
 
 func (r *Application) ModelPath(path ...string) string {
-	path = append([]string{support.RelativePath, "app", "models"}, path...)
+	path = append([]string{support.RelativePath, "models"}, path...)
 	return r.Path(path...)
 }
 
