@@ -21,6 +21,7 @@ import (
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/database/db"
 	databasedriver "github.com/goravel/framework/database/driver"
+	"github.com/goravel/framework/database/utils"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/database"
 	"github.com/goravel/framework/support/deep"
@@ -926,7 +927,12 @@ func (r *Query) Where(query any, args ...any) contractsorm.Query {
 }
 
 func (r *Query) WhereAll(columns []string, args ...any) contractsorm.Query {
-	op, value := prepareWhereOperatorAndValue(args...)
+	op, value, err := utils.PrepareWhereOperatorAndValue(args...)
+	if err != nil {
+		query := r.new(r.instance.Session(&gormio.Session{}))
+		_ = query.instance.AddError(err)
+		return query
+	}
 
 	var conditions []string
 	var conditionArgs []any
@@ -945,7 +951,12 @@ func (r *Query) WhereAll(columns []string, args ...any) contractsorm.Query {
 }
 
 func (r *Query) WhereAny(columns []string, args ...any) contractsorm.Query {
-	op, value := prepareWhereOperatorAndValue(args...)
+	op, value, err := utils.PrepareWhereOperatorAndValue(args...)
+	if err != nil {
+		query := r.new(r.instance.Session(&gormio.Session{}))
+		_ = query.instance.AddError(err)
+		return query
+	}
 
 	var conditions []string
 	var conditionArgs []any
@@ -1085,7 +1096,12 @@ func (r *Query) OrWhereNull(column string) contractsorm.Query {
 }
 
 func (r *Query) WhereNone(columns []string, args ...any) contractsorm.Query {
-	op, value := prepareWhereOperatorAndValue(args...)
+	op, value, err := utils.PrepareWhereOperatorAndValue(args...)
+	if err != nil {
+		query := r.new(r.instance.Session(&gormio.Session{}))
+		_ = query.instance.AddError(err)
+		return query
+	}
 
 	var conditions []string
 	var conditionArgs []any
@@ -2073,20 +2089,4 @@ func isSlice(dest any) bool {
 
 func hasID(dest any) bool {
 	return database.GetID(dest) != nil
-}
-
-func prepareWhereOperatorAndValue(args ...any) (op any, value any) {
-	if len(args) == 0 {
-		panic(errors.DatabaseInvalidArgumentNumber.Args(len(args), "1 or 2"))
-	}
-
-	if len(args) == 1 {
-		op = "="
-		value = args[0]
-	} else {
-		op = args[0]
-		value = args[1]
-	}
-
-	return
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/goravel/framework/contracts/database/db"
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/logger"
+	"github.com/goravel/framework/database/utils"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/convert"
@@ -856,7 +857,11 @@ func (r *Query) Where(query any, args ...any) db.Query {
 }
 
 func (r *Query) WhereAll(columns []string, args ...any) db.Query {
-	op, value := prepareWhereOperatorAndValue(args...)
+	op, value, err := utils.PrepareWhereOperatorAndValue(args...)
+	if err != nil {
+		r.err = err
+		return r
+	}
 
 	var conditions []string
 	var conditionArgs []any
@@ -875,7 +880,11 @@ func (r *Query) WhereAll(columns []string, args ...any) db.Query {
 }
 
 func (r *Query) WhereAny(columns []string, args ...any) db.Query {
-	op, value := prepareWhereOperatorAndValue(args...)
+	op, value, err := utils.PrepareWhereOperatorAndValue(args...)
+	if err != nil {
+		r.err = err
+		return r
+	}
 
 	var orConditions []sq.Sqlizer
 	for _, column := range columns {
@@ -969,7 +978,11 @@ func (r *Query) WhereLike(column string, value string) db.Query {
 }
 
 func (r *Query) WhereNone(columns []string, args ...any) db.Query {
-	op, value := prepareWhereOperatorAndValue(args...)
+	op, value, err := utils.PrepareWhereOperatorAndValue(args...)
+	if err != nil {
+		r.err = err
+		return r
+	}
 
 	var conditions []string
 	var conditionArgs []any
@@ -1378,20 +1391,4 @@ func (r *Query) trace(builder db.CommonBuilder, sql string, args []any, now *car
 	} else {
 		r.logger.Trace(r.ctx, now, builder.Explain(sql, args...), rowsAffected, err)
 	}
-}
-
-func prepareWhereOperatorAndValue(args ...any) (op any, value any) {
-	if len(args) == 0 {
-		panic(errors.DatabaseInvalidArgumentNumber.Args(len(args), "1 or 2"))
-	}
-
-	if len(args) == 1 {
-		op = "="
-		value = args[0]
-	} else {
-		op = args[0]
-		value = args[1]
-	}
-
-	return
 }
