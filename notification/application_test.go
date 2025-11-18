@@ -1,18 +1,21 @@
 package notification
 
 import (
+	"fmt"
+	"github.com/google/uuid"
 	"github.com/goravel/framework/contracts/notification"
 	contractsqueue "github.com/goravel/framework/contracts/queue"
-
 	"github.com/goravel/framework/foundation/json"
 	"github.com/goravel/framework/mail"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksdb "github.com/goravel/framework/mocks/database/db"
 	"github.com/goravel/framework/notification/channels"
+	"github.com/goravel/framework/notification/models"
 	"github.com/goravel/framework/queue"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
+	"github.com/goravel/framework/support/str"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/suite"
 	"os"
@@ -20,7 +23,7 @@ import (
 )
 
 type User struct {
-	ID    int    `json:"id"`
+	ID    string `json:"id"`
 	Email string `json:"email"`
 	Name  string `json:"name"`
 	Phone string `json:"phone"`
@@ -31,6 +34,8 @@ func (u User) RouteNotificationFor(channel string) any {
 	case "mail":
 		return u.Email
 	case "database":
+		return u.ID
+	case "id":
 		return u.ID
 	default:
 		return ""
@@ -96,7 +101,7 @@ func (s *ApplicationTestSuite) TestMailNotification() {
 	s.Nil(err)
 
 	var user = User{
-		ID:    1,
+		ID:    "1",
 		Email: "657873584@qq.com",
 		Name:  "test",
 	}
@@ -110,23 +115,31 @@ func (s *ApplicationTestSuite) TestMailNotification() {
 }
 
 func (s *ApplicationTestSuite) TestDatabaseNotification() {
+	var user = User{
+		ID:    "1",
+		Email: "657873584@qq.com",
+		Name:  "test",
+	}
+	var loginSuccessNotification = LoginSuccessNotification{}
+
 	s.mockConfig = mockConfig(465)
 
 	mockDB := mocksdb.NewDB(s.T())
 	s.mockConfig.EXPECT().GetString("DB_CONNECTION").Return("mysql").Once()
-	mockDB.EXPECT().Connection("mysql").Return(mockDB).Once()
-	mockDB.EXPECT().Table("notifications").Return(nil).Once()
+	mockQuery := mocksdb.NewQuery(s.T())
+	mockDB.EXPECT().Table("notifications").Return(mockQuery).Once()
+
+	var notificationModel models.Notification
+	notificationModel.ID = uuid.New().String()
+	notificationModel.Data = "{\"content\":\"Congratulations, your login is successful!\",\"title\":\"Login success\"}"
+	notificationModel.NotifiableId = user.ID
+	notificationModel.NotifiableType = str.Of(fmt.Sprintf("%T", user)).Replace("*", "").String()
+	notificationModel.Type = fmt.Sprintf("%T", loginSuccessNotification)
+
+	mockQuery.EXPECT().Insert(&notificationModel).Return(nil, nil).Once()
 
 	app, err := NewApplication(s.mockConfig, nil, mockDB, nil)
 	s.Nil(err)
-
-	var user = User{
-		ID:    1,
-		Email: "657873584@qq.com",
-		Name:  "test",
-	}
-
-	var loginSuccessNotification = LoginSuccessNotification{}
 
 	RegisterChannel("database", &channels.DatabaseChannel{})
 
