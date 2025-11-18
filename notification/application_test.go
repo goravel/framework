@@ -1,8 +1,6 @@
 package notification
 
 import (
-	"fmt"
-	contractsqueuedb "github.com/goravel/framework/contracts/database/db"
 	"github.com/goravel/framework/contracts/notification"
 	contractsqueue "github.com/goravel/framework/contracts/queue"
 
@@ -114,12 +112,10 @@ func (s *ApplicationTestSuite) TestMailNotification() {
 func (s *ApplicationTestSuite) TestDatabaseNotification() {
 	s.mockConfig = mockConfig(465)
 
-	var mockDB contractsqueuedb.DB
-	dbFacade := mocksdb.NewDB(s.T())
-	dbFacade.EXPECT().Connection("mysql").Return(mockDB).Once()
-	dbFacade.EXPECT().Table("notifications").Return(nil).Once()
-
-	fmt.Println(mockDB)
+	mockDB := mocksdb.NewDB(s.T())
+	s.mockConfig.EXPECT().GetString("DB_CONNECTION").Return("mysql").Once()
+	mockDB.EXPECT().Connection("mysql").Return(mockDB).Once()
+	mockDB.EXPECT().Table("notifications").Return(nil).Once()
 
 	app, err := NewApplication(s.mockConfig, nil, mockDB, nil)
 	s.Nil(err)
@@ -137,6 +133,18 @@ func (s *ApplicationTestSuite) TestDatabaseNotification() {
 	err = app.Send(user, loginSuccessNotification)
 	s.Nil(err)
 }
+
+//func mockDBFacade(mockConfig *mocksconfig.Config) contractsdb.DB {
+//	logger := db.NewLogger(mockConfig, utils.NewTestLog())
+//	gorm, err := databasedriver.BuildGorm(mockConfig, logger.ToGorm(), pool, "mysql")
+//	if err != nil {
+//		return nil
+//	}
+//
+//	driver := sqlite.NewSqlite(mockConfig, utils.NewTestLog(), connection)
+//
+//	return db.NewDB(context.Background(), mocksconfig, nil, logger, gorm)
+//}
 
 func mockQueueFacade(mockConfig *mocksconfig.Config) contractsqueue.Queue {
 	mockConfig.EXPECT().GetString("queue.default").Return("redis").Once()
@@ -203,6 +211,14 @@ func mockConfig(mailPort int) *mocksconfig.Config {
 		config.EXPECT().GetString("mail.template.engines.html.path", "resources/views/mail").
 			Return("resources/views/mail").Once()
 	}
+
+	//DB_CONNECTION
+	config.On("GetString", "database.default").Return(os.Getenv("DB_CONNECTION")).Once()
+	config.On("GetString", "database.connections.mysql.host").Return(os.Getenv("DB_HOST")).Once()
+	config.On("GetString", "database.connections.mysql.port").Return(os.Getenv("DB_PORT")).Once()
+	config.On("GetString", "database.connections.mysql.database").Return(os.Getenv("DB_DATABASE")).Once()
+	config.On("GetString", "database.connections.mysql.username").Return(os.Getenv("DB_USERNAME")).Once()
+	config.On("GetString", "database.connections.mysql.password").Return(os.Getenv("DB_PASSWORD")).Once()
 
 	return config
 }
