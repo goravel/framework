@@ -17,6 +17,7 @@ import (
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 	"github.com/spf13/viper"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"os"
 	"testing"
@@ -110,7 +111,34 @@ func (s *ApplicationTestSuite) TestMailNotification() {
 
 	RegisterChannel("mail", &channels.MailChannel{})
 
-	err = app.Send(user, registerSuccessNotification)
+	users := []notification.Notifiable{user}
+	err = app.SendNow(users, registerSuccessNotification)
+	s.Nil(err)
+}
+
+func (s *ApplicationTestSuite) TestMailNotificationOnQueue() {
+	s.mockConfig = mockConfig(465)
+
+	queueFacade := mockQueueFacade(s.mockConfig)
+
+	mailFacade, err := mail.NewApplication(s.mockConfig, nil)
+	s.Nil(err)
+
+	app, err := NewApplication(s.mockConfig, queueFacade, nil, mailFacade)
+	s.Nil(err)
+
+	var user = User{
+		ID:    "1",
+		Email: "657873584@qq.com",
+		Name:  "test",
+	}
+
+	var registerSuccessNotification = RegisterSuccessNotification{}
+
+	RegisterChannel("mail", &channels.MailChannel{})
+
+	users := []notification.Notifiable{user}
+	err = app.Send(users, registerSuccessNotification)
 	s.Nil(err)
 }
 
@@ -136,28 +164,22 @@ func (s *ApplicationTestSuite) TestDatabaseNotification() {
 	notificationModel.NotifiableType = str.Of(fmt.Sprintf("%T", user)).Replace("*", "").String()
 	notificationModel.Type = fmt.Sprintf("%T", loginSuccessNotification)
 
-	mockQuery.EXPECT().Insert(&notificationModel).Return(nil, nil).Once()
+	mockQuery.EXPECT().Insert(mock.MatchedBy(func(model *models.Notification) bool {
+		return model.Data == "{\"content\":\"Congratulations, your login is successful!\",\"title\":\"Login success\"}" &&
+			model.NotifiableId == user.ID &&
+			model.NotifiableType == str.Of(fmt.Sprintf("%T", user)).Replace("*", "").String() &&
+			model.Type == fmt.Sprintf("%T", loginSuccessNotification)
+	})).Return(nil, nil).Once()
 
 	app, err := NewApplication(s.mockConfig, nil, mockDB, nil)
 	s.Nil(err)
 
 	RegisterChannel("database", &channels.DatabaseChannel{})
 
-	err = app.Send(user, loginSuccessNotification)
+	users := []notification.Notifiable{user}
+	err = app.SendNow(users, loginSuccessNotification)
 	s.Nil(err)
 }
-
-//func mockDBFacade(mockConfig *mocksconfig.Config) contractsdb.DB {
-//	logger := db.NewLogger(mockConfig, utils.NewTestLog())
-//	gorm, err := databasedriver.BuildGorm(mockConfig, logger.ToGorm(), pool, "mysql")
-//	if err != nil {
-//		return nil
-//	}
-//
-//	driver := sqlite.NewSqlite(mockConfig, utils.NewTestLog(), connection)
-//
-//	return db.NewDB(context.Background(), mocksconfig, nil, logger, gorm)
-//}
 
 func mockQueueFacade(mockConfig *mocksconfig.Config) contractsqueue.Queue {
 	mockConfig.EXPECT().GetString("queue.default").Return("redis").Once()
@@ -224,14 +246,6 @@ func mockConfig(mailPort int) *mocksconfig.Config {
 		config.EXPECT().GetString("mail.template.engines.html.path", "resources/views/mail").
 			Return("resources/views/mail").Once()
 	}
-
-	//DB_CONNECTION
-	config.On("GetString", "database.default").Return(os.Getenv("DB_CONNECTION")).Once()
-	config.On("GetString", "database.connections.mysql.host").Return(os.Getenv("DB_HOST")).Once()
-	config.On("GetString", "database.connections.mysql.port").Return(os.Getenv("DB_PORT")).Once()
-	config.On("GetString", "database.connections.mysql.database").Return(os.Getenv("DB_DATABASE")).Once()
-	config.On("GetString", "database.connections.mysql.username").Return(os.Getenv("DB_USERNAME")).Once()
-	config.On("GetString", "database.connections.mysql.password").Return(os.Getenv("DB_PASSWORD")).Once()
 
 	return config
 }

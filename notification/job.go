@@ -1,6 +1,7 @@
 package notification
 
 import (
+	"fmt"
 	"github.com/goravel/framework/contracts/config"
 )
 
@@ -21,6 +22,7 @@ func (r *SendNotificationJob) Signature() string {
 
 // Handle Execute the job.
 func (r *SendNotificationJob) Handle(args ...any) error {
-
+	fmt.Println(args[0], args[1])
+	
 	return nil
 }
