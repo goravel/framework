@@ -1437,6 +1437,476 @@ func (s *DBTestSuite) TestWhere() {
 	}
 }
 
+func (s *DBTestSuite) TestWhereAny() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			data := []Product{
+				{Name: "where any product1", Weight: convert.Pointer(100), Height: convert.Pointer(50)},
+				{Name: "where any product2", Weight: convert.Pointer(200), Height: convert.Pointer(100)},
+				{Name: "where any product3", Weight: convert.Pointer(300), Height: convert.Pointer(150)},
+				{Name: "where any product4", Weight: convert.Pointer(400), Height: convert.Pointer(200)},
+			}
+			result, err := query.DB().Table("products").Insert(&data)
+			s.Equal(int64(4), result.RowsAffected)
+			s.NoError(err)
+
+			tests := []struct {
+				name   string
+				find   func(any, ...any) error
+				assert func([]Product)
+			}{
+				{
+					name: "equals operator with single match",
+					find: query.DB().Table("products").WhereAny([]string{"weight", "height"}, "=", 100).Find,
+					assert: func(items []Product) {
+						s.Len(items, 2)
+						s.Equal("where any product1", items[0].Name)
+						s.Equal("where any product2", items[1].Name)
+					},
+				},
+				{
+					name: "greater than operator",
+					find: query.DB().Table("products").WhereAny([]string{"weight", "height"}, ">", 150).Find,
+					assert: func(items []Product) {
+						s.Len(items, 3)
+						s.Equal("where any product2", items[0].Name)
+						s.Equal("where any product3", items[1].Name)
+						s.Equal("where any product4", items[2].Name)
+					},
+				},
+				{
+					name: "less than operator",
+					find: query.DB().Table("products").WhereAny([]string{"weight", "height"}, "<", 100).Find,
+					assert: func(items []Product) {
+						s.Len(items, 1)
+						s.Equal("where any product1", items[0].Name)
+					},
+				},
+				{
+					name: "greater than or equal operator",
+					find: query.DB().Table("products").WhereAny([]string{"weight", "height"}, ">=", 200).Find,
+					assert: func(items []Product) {
+						s.Len(items, 3)
+						s.Equal("where any product2", items[0].Name)
+						s.Equal("where any product3", items[1].Name)
+						s.Equal("where any product4", items[2].Name)
+					},
+				},
+				{
+					name: "less than or equal operator",
+					find: query.DB().Table("products").WhereAny([]string{"weight", "height"}, "<=", 100).Find,
+					assert: func(items []Product) {
+						s.Len(items, 2)
+						s.Equal("where any product1", items[0].Name)
+						s.Equal("where any product2", items[1].Name)
+					},
+				},
+				{
+					name: "combined with Where clause - simple",
+					find: query.DB().Table("products").Where("name", "where any product2").WhereAny([]string{"weight"}, "=", 200).Find,
+					assert: func(items []Product) {
+						s.Len(items, 1)
+						s.Equal("where any product2", items[0].Name)
+					},
+				},
+				{
+					name: "combined with Where clause - using expression",
+					find: query.DB().Table("products").Where("weight > ?", 150).WhereAny([]string{"height"}, ">=", 100).Find,
+					assert: func(items []Product) {
+						s.Len(items, 3)
+						s.Equal("where any product2", items[0].Name)
+						s.Equal("where any product3", items[1].Name)
+						s.Equal("where any product4", items[2].Name)
+					},
+				},
+				{
+					name: "Where before and after WhereAny",
+					find: query.DB().Table("products").Where("weight >= ?", 100).WhereAny([]string{"height"}, "<=", 100).Where("weight <= ?", 300).Find,
+					assert: func(items []Product) {
+						s.Len(items, 2)
+						s.Equal("where any product1", items[0].Name)
+						s.Equal("where any product2", items[1].Name)
+					},
+				},
+				{
+					name: "LIKE operator - pattern matching",
+					find: query.DB().Table("products").WhereAny([]string{"name"}, "LIKE", "%product2%").Find,
+					assert: func(items []Product) {
+						s.Len(items, 1)
+						s.Equal("where any product2", items[0].Name)
+					},
+				},
+				{
+					name: "LIKE operator - multiple patterns",
+					find: query.DB().Table("products").WhereAny([]string{"name"}, "LIKE", "%product%").Find,
+					assert: func(items []Product) {
+						s.Len(items, 4)
+					},
+				},
+				{
+					name: "NOT LIKE operator - exclude pattern",
+					find: query.DB().Table("products").WhereAny([]string{"name"}, "NOT LIKE", "%product1%").Find,
+					assert: func(items []Product) {
+						s.Len(items, 3)
+						s.Equal("where any product2", items[0].Name)
+						s.Equal("where any product3", items[1].Name)
+						s.Equal("where any product4", items[2].Name)
+					},
+				},
+				{
+					name: "no matches",
+					find: query.DB().Table("products").WhereAny([]string{"weight", "height"}, "=", 999).Find,
+					assert: func(items []Product) {
+						s.Len(items, 0)
+					},
+				},
+				{
+					name: "multiple WhereAny calls",
+					find: query.DB().Table("products").WhereAny([]string{"weight"}, ">=", 200).WhereAny([]string{"height"}, "<=", 150).Find,
+					assert: func(items []Product) {
+						s.Len(items, 2)
+						s.Equal("where any product2", items[0].Name)
+						s.Equal("where any product3", items[1].Name)
+					},
+				},
+			}
+
+			for _, tt := range tests {
+				s.Run(tt.name, func() {
+					var items []Product
+					s.Nil(tt.find(&items))
+					tt.assert(items)
+				})
+			}
+		})
+	}
+}
+
+func (s *DBTestSuite) TestWhereAll() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			data := []Product{
+				{Name: "where all product1", Weight: convert.Pointer(100), Height: convert.Pointer(100)},
+				{Name: "where all product2", Weight: convert.Pointer(200), Height: convert.Pointer(200)},
+				{Name: "where all product3", Weight: convert.Pointer(150), Height: convert.Pointer(200)},
+				{Name: "where all product4", Weight: convert.Pointer(200), Height: convert.Pointer(150)},
+			}
+			result, err := query.DB().Table("products").Insert(&data)
+			s.Equal(int64(4), result.RowsAffected)
+			s.NoError(err)
+
+			tests := []struct {
+				name   string
+				find   func(any, ...any) error
+				assert func([]Product)
+			}{
+				{
+					name: "equals operator - all columns match",
+					find: query.DB().Table("products").WhereAll([]string{"weight", "height"}, "=", 100).Find,
+					assert: func(items []Product) {
+						s.Len(items, 1)
+						s.Equal("where all product1", items[0].Name)
+					},
+				},
+				{
+					name: "equals operator - both columns equal 200",
+					find: query.DB().Table("products").WhereAll([]string{"weight", "height"}, "=", 200).Find,
+					assert: func(items []Product) {
+						s.Len(items, 1)
+						s.Equal("where all product2", items[0].Name)
+					},
+				},
+				{
+					name: "greater than or equal operator",
+					find: query.DB().Table("products").WhereAll([]string{"weight", "height"}, ">=", 150).Find,
+					assert: func(items []Product) {
+						s.Len(items, 3)
+						s.Equal("where all product2", items[0].Name)
+						s.Equal("where all product3", items[1].Name)
+						s.Equal("where all product4", items[2].Name)
+					},
+				},
+				{
+					name: "less than or equal operator",
+					find: query.DB().Table("products").WhereAll([]string{"weight", "height"}, "<=", 150).Find,
+					assert: func(items []Product) {
+						s.Len(items, 1)
+						s.Equal("where all product1", items[0].Name)
+					},
+				},
+				{
+					name: "greater than operator",
+					find: query.DB().Table("products").WhereAll([]string{"weight", "height"}, ">", 100).Find,
+					assert: func(items []Product) {
+						s.Len(items, 3)
+						s.Equal("where all product2", items[0].Name)
+						s.Equal("where all product3", items[1].Name)
+						s.Equal("where all product4", items[2].Name)
+					},
+				},
+				{
+					name: "less than operator",
+					find: query.DB().Table("products").WhereAll([]string{"weight", "height"}, "<", 200).Find,
+					assert: func(items []Product) {
+						s.Len(items, 1)
+						s.Equal("where all product1", items[0].Name)
+					},
+				},
+				{
+					name: "combined with Where clause - simple",
+					find: query.DB().Table("products").Where("name", "where all product2").WhereAll([]string{"weight", "height"}, "=", 200).Find,
+					assert: func(items []Product) {
+						s.Len(items, 1)
+						s.Equal("where all product2", items[0].Name)
+					},
+				},
+				{
+					name: "combined with Where clause - using expression",
+					find: query.DB().Table("products").Where("weight >= ?", 150).WhereAll([]string{"weight", "height"}, ">", 100).Find,
+					assert: func(items []Product) {
+						s.Len(items, 3)
+						s.Equal("where all product2", items[0].Name)
+						s.Equal("where all product3", items[1].Name)
+						s.Equal("where all product4", items[2].Name)
+					},
+				},
+				{
+					name: "Where before and after WhereAll",
+					find: query.DB().Table("products").Where("weight >= ?", 100).WhereAll([]string{"weight", "height"}, ">=", 100).Where("height <= ?", 200).Find,
+					assert: func(items []Product) {
+						s.Len(items, 4)
+						s.Equal("where all product1", items[0].Name)
+						s.Equal("where all product2", items[1].Name)
+						s.Equal("where all product3", items[2].Name)
+						s.Equal("where all product4", items[3].Name)
+					},
+				},
+				{
+					name: "LIKE operator - pattern matching single column",
+					find: query.DB().Table("products").WhereAll([]string{"name"}, "LIKE", "%product2%").Find,
+					assert: func(items []Product) {
+						s.Len(items, 1)
+						s.Equal("where all product2", items[0].Name)
+					},
+				},
+				{
+					name: "LIKE operator - all must match pattern",
+					find: query.DB().Table("products").WhereAll([]string{"name"}, "LIKE", "%where all%").Find,
+					assert: func(items []Product) {
+						s.Len(items, 4)
+						s.Equal("where all product1", items[0].Name)
+						s.Equal("where all product2", items[1].Name)
+						s.Equal("where all product3", items[2].Name)
+						s.Equal("where all product4", items[3].Name)
+					},
+				},
+				{
+					name: "NOT LIKE operator - exclude pattern",
+					find: query.DB().Table("products").WhereAll([]string{"name"}, "NOT LIKE", "%product1%").Find,
+					assert: func(items []Product) {
+						s.Len(items, 3)
+						s.Equal("where all product2", items[0].Name)
+						s.Equal("where all product3", items[1].Name)
+						s.Equal("where all product4", items[2].Name)
+					},
+				},
+				{
+					name: "no matches",
+					find: query.DB().Table("products").WhereAll([]string{"weight", "height"}, "=", 999).Find,
+					assert: func(items []Product) {
+						s.Len(items, 0)
+					},
+				},
+				{
+					name: "multiple WhereAll calls",
+					find: query.DB().Table("products").WhereAll([]string{"weight"}, ">=", 150).WhereAll([]string{"height"}, ">=", 150).Find,
+					assert: func(items []Product) {
+						s.Len(items, 3)
+						s.Equal("where all product2", items[0].Name)
+						s.Equal("where all product3", items[1].Name)
+						s.Equal("where all product4", items[2].Name)
+					},
+				},
+			}
+
+			for _, tt := range tests {
+				s.Run(tt.name, func() {
+					var items []Product
+					s.Nil(tt.find(&items))
+					tt.assert(items)
+				})
+			}
+		})
+	}
+}
+
+func (s *DBTestSuite) TestWhereNone() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			data := []Product{
+				{Name: "where none product1", Weight: convert.Pointer(100), Height: convert.Pointer(50)},
+				{Name: "where none product2", Weight: convert.Pointer(200), Height: convert.Pointer(100)},
+				{Name: "where none product3", Weight: convert.Pointer(300), Height: convert.Pointer(150)},
+				{Name: "where none product4", Weight: convert.Pointer(400), Height: convert.Pointer(200)},
+			}
+			result, err := query.DB().Table("products").Insert(&data)
+			s.Equal(int64(4), result.RowsAffected)
+			s.NoError(err)
+
+			tests := []struct {
+				name   string
+				find   func(any, ...any) error
+				assert func([]Product)
+			}{
+				{
+					name: "equals operator - exclude single value",
+					find: query.DB().Table("products").WhereNone([]string{"weight"}, "=", 100).Find,
+					assert: func(items []Product) {
+						s.Len(items, 3)
+						s.Equal("where none product2", items[0].Name)
+						s.Equal("where none product3", items[1].Name)
+						s.Equal("where none product4", items[2].Name)
+					},
+				},
+				{
+					name: "equals operator - exclude from multiple columns",
+					find: query.DB().Table("products").WhereNone([]string{"weight", "height"}, "=", 100).Find,
+					assert: func(items []Product) {
+						s.Len(items, 2)
+						s.Equal("where none product3", items[0].Name)
+						s.Equal("where none product4", items[1].Name)
+					},
+				},
+				{
+					name: "greater than operator",
+					find: query.DB().Table("products").WhereNone([]string{"weight", "height"}, ">", 150).Find,
+					assert: func(items []Product) {
+						s.Len(items, 1)
+						s.Equal("where none product1", items[0].Name)
+					},
+				},
+				{
+					name: "less than operator",
+					find: query.DB().Table("products").WhereNone([]string{"weight", "height"}, "<", 100).Find,
+					assert: func(items []Product) {
+						s.Len(items, 3)
+						s.Equal("where none product2", items[0].Name)
+						s.Equal("where none product3", items[1].Name)
+						s.Equal("where none product4", items[2].Name)
+					},
+				},
+				{
+					name: "greater than or equal operator",
+					find: query.DB().Table("products").WhereNone([]string{"weight", "height"}, ">=", 200).Find,
+					assert: func(items []Product) {
+						s.Len(items, 1)
+						s.Equal("where none product1", items[0].Name)
+					},
+				},
+				{
+					name: "less than or equal operator",
+					find: query.DB().Table("products").WhereNone([]string{"weight", "height"}, "<=", 100).Find,
+					assert: func(items []Product) {
+						s.Len(items, 2)
+						s.Equal("where none product3", items[0].Name)
+						s.Equal("where none product4", items[1].Name)
+					},
+				},
+				{
+					name: "combined with Where clause - simple",
+					find: query.DB().Table("products").Where("name", "where none product2").WhereNone([]string{"height"}, "=", 200).Find,
+					assert: func(items []Product) {
+						s.Len(items, 1)
+						s.Equal("where none product2", items[0].Name)
+					},
+				},
+				{
+					name: "combined with Where clause - using expression",
+					find: query.DB().Table("products").Where("weight > ?", 100).WhereNone([]string{"height"}, "=", 200).Find,
+					assert: func(items []Product) {
+						s.Len(items, 2)
+						s.Equal("where none product2", items[0].Name)
+						s.Equal("where none product3", items[1].Name)
+					},
+				},
+				{
+					name: "Where before and after WhereNone",
+					find: query.DB().Table("products").Where("weight >= ?", 100).WhereNone([]string{"height"}, ">", 150).Where("weight <= ?", 300).Find,
+					assert: func(items []Product) {
+						s.Len(items, 3)
+						s.Equal("where none product1", items[0].Name)
+						s.Equal("where none product2", items[1].Name)
+						s.Equal("where none product3", items[2].Name)
+					},
+				},
+				{
+					name: "LIKE operator - exclude pattern matches",
+					find: query.DB().Table("products").WhereNone([]string{"name"}, "LIKE", "%product1%").Find,
+					assert: func(items []Product) {
+						s.Len(items, 3)
+						s.Equal("where none product2", items[0].Name)
+						s.Equal("where none product3", items[1].Name)
+						s.Equal("where none product4", items[2].Name)
+					},
+				},
+				{
+					name: "LIKE operator - exclude multiple patterns",
+					find: query.DB().Table("products").WhereNone([]string{"name"}, "LIKE", "%product2%").Find,
+					assert: func(items []Product) {
+						s.Len(items, 3)
+						s.Equal("where none product1", items[0].Name)
+						s.Equal("where none product3", items[1].Name)
+						s.Equal("where none product4", items[2].Name)
+					},
+				},
+				{
+					name: "NOT LIKE operator - double negation includes",
+					find: query.DB().Table("products").WhereNone([]string{"name"}, "NOT LIKE", "%product1%").Find,
+					assert: func(items []Product) {
+						s.Len(items, 1)
+						s.Equal("where none product1", items[0].Name)
+					},
+				},
+				{
+					name: "no matches - all excluded",
+					find: query.DB().Table("products").WhereNone([]string{"weight", "height"}, ">", 0).Find,
+					assert: func(items []Product) {
+						s.Len(items, 0)
+					},
+				},
+				{
+					name: "multiple WhereNone calls",
+					find: query.DB().Table("products").WhereNone([]string{"weight"}, "=", 100).WhereNone([]string{"height"}, "=", 200).Find,
+					assert: func(items []Product) {
+						s.Len(items, 2)
+						s.Equal("where none product2", items[0].Name)
+						s.Equal("where none product3", items[1].Name)
+					},
+				},
+				{
+					name: "all records match when excluding non-existent value",
+					find: query.DB().Table("products").WhereNone([]string{"weight", "height"}, "=", 999).Find,
+					assert: func(items []Product) {
+						s.Len(items, 4)
+						s.Equal("where none product1", items[0].Name)
+						s.Equal("where none product2", items[1].Name)
+						s.Equal("where none product3", items[2].Name)
+						s.Equal("where none product4", items[3].Name)
+					},
+				},
+			}
+
+			for _, tt := range tests {
+				s.Run(tt.name, func() {
+					var items []Product
+					s.Nil(tt.find(&items))
+					tt.assert(items)
+				})
+			}
+		})
+	}
+}
+
 func (s *DBTestSuite) TestWhereColumn() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {

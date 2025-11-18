@@ -21,6 +21,7 @@ import (
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/database/db"
 	databasedriver "github.com/goravel/framework/database/driver"
+	"github.com/goravel/framework/database/utils"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/database"
 	"github.com/goravel/framework/support/deep"
@@ -925,6 +926,54 @@ func (r *Query) Where(query any, args ...any) contractsorm.Query {
 	})
 }
 
+func (r *Query) WhereAll(columns []string, args ...any) contractsorm.Query {
+	op, value, err := utils.PrepareWhereOperatorAndValue(args...)
+	if err != nil {
+		query := r.new(r.instance.Session(&gormio.Session{}))
+		_ = query.instance.AddError(err)
+		return query
+	}
+
+	var conditions []string
+	var conditionArgs []any
+	for _, column := range columns {
+		conditions = append(conditions, fmt.Sprintf("%s %v ?", column, op))
+		conditionArgs = append(conditionArgs, value)
+	}
+
+	query := strings.Join(conditions, " AND ")
+	r = r.addWhere(contractsdriver.Where{
+		Query: query,
+		Args:  conditionArgs,
+	}).(*Query)
+
+	return r
+}
+
+func (r *Query) WhereAny(columns []string, args ...any) contractsorm.Query {
+	op, value, err := utils.PrepareWhereOperatorAndValue(args...)
+	if err != nil {
+		query := r.new(r.instance.Session(&gormio.Session{}))
+		_ = query.instance.AddError(err)
+		return query
+	}
+
+	var conditions []string
+	var conditionArgs []any
+	for _, column := range columns {
+		conditions = append(conditions, fmt.Sprintf("%s %v ?", column, op))
+		conditionArgs = append(conditionArgs, value)
+	}
+
+	query := fmt.Sprintf("(%s)", strings.Join(conditions, " OR "))
+	r = r.addWhere(contractsdriver.Where{
+		Query: query,
+		Args:  conditionArgs,
+	}).(*Query)
+
+	return r
+}
+
 func (r *Query) WhereIn(column string, values []any) contractsorm.Query {
 	return r.Where(fmt.Sprintf("%s IN ?", column), values)
 }
@@ -1046,12 +1095,40 @@ func (r *Query) OrWhereNull(column string) contractsorm.Query {
 	return r.OrWhere(fmt.Sprintf("%s IS NULL", column))
 }
 
-func (r *Query) WhereNull(column string) contractsorm.Query {
-	return r.Where(fmt.Sprintf("%s IS NULL", column))
+func (r *Query) WhereNone(columns []string, args ...any) contractsorm.Query {
+	op, value, err := utils.PrepareWhereOperatorAndValue(args...)
+	if err != nil {
+		query := r.new(r.instance.Session(&gormio.Session{}))
+		_ = query.instance.AddError(err)
+		return query
+	}
+
+	var conditions []string
+	var conditionArgs []any
+	for _, column := range columns {
+		if op == "=" {
+			conditions = append(conditions, fmt.Sprintf("%s <> ?", column))
+		} else {
+			conditions = append(conditions, fmt.Sprintf("NOT (%s %v ?)", column, op))
+		}
+		conditionArgs = append(conditionArgs, value)
+	}
+
+	query := strings.Join(conditions, " AND ")
+	r = r.addWhere(contractsdriver.Where{
+		Query: query,
+		Args:  conditionArgs,
+	}).(*Query)
+
+	return r
 }
 
 func (r *Query) WhereNotNull(column string) contractsorm.Query {
 	return r.Where(fmt.Sprintf("%s IS NOT NULL", column))
+}
+
+func (r *Query) WhereNull(column string) contractsorm.Query {
+	return r.Where(fmt.Sprintf("%s IS NULL", column))
 }
 
 func (r *Query) With(query string, args ...any) contractsorm.Query {
