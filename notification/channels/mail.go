@@ -19,7 +19,7 @@ func (c *MailChannel) Send(notifiable notification.Notifiable, notif interface{}
 		return fmt.Errorf("[MailChannel] %s", err.Error())
 	}
 
-	email := notifiable.RouteNotificationFor("mail").(string)
+	email := notifiable.NotificationParams()["mail"].(string)
 	if email == "" {
 		return fmt.Errorf("[MailChannel] notifiable has no mail")
 	}

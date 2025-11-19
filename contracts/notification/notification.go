@@ -15,11 +15,11 @@ type Channel interface {
 }
 
 type Notifiable interface {
-    // RouteNotificationFor returns the route notification for the given channel.
-    RouteNotificationFor(channel string) any
+	// NotificationParams returns the parameters for the given key.
+	NotificationParams() map[string]interface{}
 }
 
 type PayloadProvider interface {
-    // PayloadFor returns prepared payload data for specific channel.
-    PayloadFor(channel string, notifiable Notifiable) (map[string]interface{}, error)
+	// PayloadFor returns prepared payload data for specific channel.
+	PayloadFor(channel string, notifiable Notifiable) (map[string]interface{}, error)
 }

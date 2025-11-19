@@ -1,6 +1,8 @@
 package notification
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	contractsqueuedb "github.com/goravel/framework/contracts/database/db"
 	contractsmail "github.com/goravel/framework/contracts/mail"
@@ -67,32 +69,14 @@ func (s *NotificationSender) SendNow(notifiables []notification.Notifiable, noti
 
 // queueNotification
 func (s *NotificationSender) queueNotification(notifiables []notification.Notifiable, notif notification.Notif) error {
+	// 创建数据缓冲区
+	var buf bytes.Buffer
+
+	// 创建编码器
+	encoder := gob.NewEncoder(&buf)
 	for _, notifiable := range notifiables {
-		vias := notif.Via(notifiable)
-		payloads := map[string]map[string]any{}
-		for _, chName := range vias {
-			method := "To" + strings.Title(chName)
-			data, err := utils.CallToMethod(notif, method, notifiable)
-			if err != nil {
-				// allow empty payloads for channels that don't require data
-				data = map[string]any{}
-			}
-			payloads[chName] = data
-		}
 
-		payloadsJSON, _ := json.MarshalString(payloads)
-
-		routes := map[string]any{}
-		for _, chName := range vias {
-			routes[chName] = notifiable.RouteNotificationFor(chName)
-		}
-		// commonly used
-		routes["id"] = notifiable.RouteNotificationFor("id")
-		routes["_notifiable_type"] = str.Of(fmt.Sprintf("%T", notifiable)).Replace("*", "").String()
-		routes["_notif_type"] = str.Of(fmt.Sprintf("%T", notif)).Replace("*", "").String()
-		routesJSON, _ := json.MarshalString(routes)
-
-		println(routesJSON)
+		notifiableSerialize := utils.Serialize(notifiable)
 
 		pendingJob := s.queue.Job(NewSendNotificationJob(nil, s.db, s.mail), []contractsqueue.Arg{
 			{Type: "[]string", Value: vias},

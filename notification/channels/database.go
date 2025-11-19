@@ -24,7 +24,7 @@ func (c *DatabaseChannel) Send(notifiable notification.Notifiable, notif interfa
 
 	var notificationModel models.Notification
 	notificationModel.ID = uuid.New().String()
-	notificationModel.NotifiableId = notifiable.RouteNotificationFor("id").(string)
+	notificationModel.NotifiableId = notifiable.NotificationParams()["id"].(string)
 
 	notificationModel.NotifiableType = str.Of(fmt.Sprintf("%T", notifiable)).Replace("*", "").String()
 	notificationModel.Type = str.Of(fmt.Sprintf("%T", notif)).Replace("*", "").String()

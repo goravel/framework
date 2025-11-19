@@ -1,6 +1,8 @@
 package notification
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/goravel/framework/contracts/notification"
@@ -30,20 +32,24 @@ type User struct {
 	Phone string `json:"phone"`
 }
 
-func (u User) RouteNotificationFor(channel string) any {
-	switch channel {
-	case "mail":
-		return u.Email
-	case "database":
-		return u.ID
-	case "id":
-		return u.ID
-	default:
-		return ""
+func (u User) NotificationParams() map[string]interface{} {
+	return map[string]interface{}{
+		"id":    u.ID,
+		"email": u.Email,
 	}
 }
 
 type RegisterSuccessNotification struct {
+	Title   string
+	Content string
+}
+
+// New
+func NewRegisterSuccessNotification(title, content string) *RegisterSuccessNotification {
+	return &RegisterSuccessNotification{
+		Title:   title,
+		Content: content,
+	}
 }
 
 func (n RegisterSuccessNotification) Via(notifiable notification.Notifiable) []string {
@@ -53,12 +59,21 @@ func (n RegisterSuccessNotification) Via(notifiable notification.Notifiable) []s
 }
 func (n RegisterSuccessNotification) ToMail(notifiable notification.Notifiable) map[string]string {
 	return map[string]string{
-		"subject": "【sign】Register success",
-		"content": "Congratulations, your registration is successful!",
+		"subject": n.Title,
+		"content": n.Content,
 	}
 }
 
 type LoginSuccessNotification struct {
+	Title   string
+	Content string
+}
+
+func NewLoginSuccessNotification(title, content string) *LoginSuccessNotification {
+	return &LoginSuccessNotification{
+		Title:   title,
+		Content: content,
+	}
 }
 
 func (n LoginSuccessNotification) Via(notifiable notification.Notifiable) []string {
@@ -68,8 +83,8 @@ func (n LoginSuccessNotification) Via(notifiable notification.Notifiable) []stri
 }
 func (n LoginSuccessNotification) ToDatabase(notifiable notification.Notifiable) map[string]string {
 	return map[string]string{
-		"title":   "Login success",
-		"content": "Congratulations, your login is successful!",
+		"title":   n.Title,
+		"content": n.Content,
 	}
 }
 
@@ -107,7 +122,7 @@ func (s *ApplicationTestSuite) TestMailNotification() {
 		Name:  "test",
 	}
 
-	var registerSuccessNotification = RegisterSuccessNotification{}
+	var registerSuccessNotification = NewRegisterSuccessNotification("Registration successful!", "Congratulations, your registration is successful!")
 
 	RegisterChannel("mail", &channels.MailChannel{})
 
@@ -133,7 +148,7 @@ func (s *ApplicationTestSuite) TestMailNotificationOnQueue() {
 		Name:  "test",
 	}
 
-	var registerSuccessNotification = RegisterSuccessNotification{}
+	var registerSuccessNotification = NewRegisterSuccessNotification("Registration successful!", "Congratulations, your registration is successful!")
 
 	RegisterChannel("mail", &channels.MailChannel{})
 
@@ -148,7 +163,7 @@ func (s *ApplicationTestSuite) TestDatabaseNotification() {
 		Email: "657873584@qq.com",
 		Name:  "test",
 	}
-	var loginSuccessNotification = LoginSuccessNotification{}
+	var loginSuccessNotification = NewLoginSuccessNotification("Login success", "Congratulations, your login is successful!")
 
 	s.mockConfig = mockConfig(465)
 
@@ -197,7 +212,7 @@ func (s *ApplicationTestSuite) TestDatabaseNotificationOnQueue() {
 		return user
 	})
 
-	var loginSuccessNotification = LoginSuccessNotification{}
+	var loginSuccessNotification = NewLoginSuccessNotification("Login success", "Congratulations, your login is successful!")
 
 	s.mockConfig = mockConfig(465)
 	queueFacade := mockQueueFacade(s.mockConfig)
@@ -229,6 +244,22 @@ func (s *ApplicationTestSuite) TestDatabaseNotificationOnQueue() {
 	users := []notification.Notifiable{user}
 	err = app.Send(users, loginSuccessNotification)
 	s.Nil(err)
+}
+
+func (s *ApplicationTestSuite) TestNotifiableSerialize() {
+	var loginSuccessNotification = NewLoginSuccessNotification("Login success", "Congratulations, your login is successful!")
+	// 创建数据缓冲区
+	var buf bytes.Buffer
+	// 创建编码器
+	encoder := gob.NewEncoder(&buf)
+	err := encoder.Encode(loginSuccessNotification)
+	s.Nil(err)
+	var loginSuccessNotification2 LoginSuccessNotification
+	decoder := gob.NewDecoder(&buf)
+	err = decoder.Decode(&loginSuccessNotification2)
+	s.Nil(err)
+	s.Equal(loginSuccessNotification.Title, loginSuccessNotification2.Title)
+	s.Equal(loginSuccessNotification.Content, loginSuccessNotification2.Content)
 }
 
 func mockQueueFacade(mockConfig *mocksconfig.Config) contractsqueue.Queue {
