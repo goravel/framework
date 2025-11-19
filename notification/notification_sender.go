@@ -1,19 +1,15 @@
 package notification
 
 import (
-	"bytes"
-	"encoding/gob"
-	"fmt"
-	contractsqueuedb "github.com/goravel/framework/contracts/database/db"
-	contractsmail "github.com/goravel/framework/contracts/mail"
-	"github.com/goravel/framework/contracts/notification"
-	contractsqueue "github.com/goravel/framework/contracts/queue"
-	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/notification/channels"
-	"github.com/goravel/framework/notification/utils"
-	"github.com/goravel/framework/support/json"
-	"github.com/goravel/framework/support/str"
-	"strings"
+    "bytes"
+    "encoding/gob"
+    "fmt"
+    contractsqueuedb "github.com/goravel/framework/contracts/database/db"
+    contractsmail "github.com/goravel/framework/contracts/mail"
+    "github.com/goravel/framework/contracts/notification"
+    contractsqueue "github.com/goravel/framework/contracts/queue"
+    "github.com/goravel/framework/errors"
+    "github.com/goravel/framework/notification/channels"
 )
 
 type NotificationSender struct {
@@ -69,23 +65,30 @@ func (s *NotificationSender) SendNow(notifiables []notification.Notifiable, noti
 
 // queueNotification
 func (s *NotificationSender) queueNotification(notifiables []notification.Notifiable, notif notification.Notif) error {
-	// 创建数据缓冲区
-	var buf bytes.Buffer
+    for _, notifiable := range notifiables {
+        vias := notif.Via(notifiable)
+        if len(vias) == 0 {
+            return errors.New("no channels defined for notification")
+        }
 
-	// 创建编码器
-	encoder := gob.NewEncoder(&buf)
-	for _, notifiable := range notifiables {
+        gob.Register(notifiable)
+        gob.Register(notif)
+        var buf bytes.Buffer
+        enc := gob.NewEncoder(&buf)
+        if err := enc.Encode(GobEnvelope{Notifiable: notifiable, Notif: notif}); err != nil {
+            return err
+        }
 
-		notifiableSerialize := utils.Serialize(notifiable)
+        args := []contractsqueue.Arg{
+            {Type: "[]uint8", Value: buf.Bytes()},
+            {Type: "[]uint8", Value: []byte{}},
+            {Type: "[]string", Value: vias},
+        }
 
-		pendingJob := s.queue.Job(NewSendNotificationJob(nil, s.db, s.mail), []contractsqueue.Arg{
-			{Type: "[]string", Value: vias},
-			{Type: "string", Value: routesJSON},
-			{Type: "string", Value: payloadsJSON},
-		})
-		if err := pendingJob.Dispatch(); err != nil {
-			return err
-		}
-	}
-	return nil
+        pendingJob := s.queue.Job(NewSendNotificationJob(nil, s.db, s.mail), args)
+        if err := pendingJob.Dispatch(); err != nil {
+            return err
+        }
+    }
+    return nil
 }

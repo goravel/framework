@@ -19,10 +19,10 @@ func TestSendNotificationJobTestSuite(t *testing.T) {
 }
 
 func (r *SendNotificationJobTestSuite) SetupTest() {
-    r.mockConfig = mocksconfig.NewConfig(r.T())
-    r.job = NewSendNotificationJob(r.mockConfig, nil, nil)
-    r.NotNil(r.job)
-    r.Equal(r.mockConfig, r.job.config)
+	r.mockConfig = mocksconfig.NewConfig(r.T())
+	r.job = NewSendNotificationJob(r.mockConfig, nil, nil)
+	r.NotNil(r.job)
+	r.Equal(r.mockConfig, r.job.config)
 }
 
 func (r *SendNotificationJobTestSuite) TestSignature() {
@@ -42,8 +42,12 @@ func (r *SendNotificationJobTestSuite) TestHandle_WrongArgumentCount() {
 
 	for _, test := range tests {
 		r.Run(test.name, func() {
-            err := r.job.Handle(test.args...)
-            r.Contains(err.Error(), "expected 3 arguments")
-        })
-    }
+			err := r.job.Handle(test.args...)
+			r.Contains(err.Error(), "expected 3 arguments")
+		})
+	}
+}
+
+func (r *SendNotificationJobTestSuite) TestHandle_WrongArgumentTypes() {
+
 }

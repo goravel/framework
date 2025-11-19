@@ -183,7 +183,7 @@ func (s *ApplicationTestSuite) TestDatabaseNotification() {
 		return model.Data == "{\"content\":\"Congratulations, your login is successful!\",\"title\":\"Login success\"}" &&
 			model.NotifiableId == user.ID &&
 			model.NotifiableType == str.Of(fmt.Sprintf("%T", user)).Replace("*", "").String() &&
-			model.Type == fmt.Sprintf("%T", loginSuccessNotification)
+			model.Type == str.Of(fmt.Sprintf("%T", loginSuccessNotification)).Replace("*", "").String()
 	})).Return(nil, nil).Once()
 
 	app, err := NewApplication(s.mockConfig, nil, mockDB, nil)
@@ -202,15 +202,6 @@ func (s *ApplicationTestSuite) TestDatabaseNotificationOnQueue() {
 		Email: "657873584@qq.com",
 		Name:  "test",
 	}
-	RegisterNotificationType("notification.LoginSuccessNotification", func() notification.Notif {
-		return &LoginSuccessNotification{}
-	})
-	RegisterNotifiableType("notification.User", func(routes map[string]interface{}) notification.Notifiable {
-		user := &User{
-			ID: routes["id"].(string),
-		}
-		return user
-	})
 
 	var loginSuccessNotification = NewLoginSuccessNotification("Login success", "Congratulations, your login is successful!")
 
@@ -233,7 +224,7 @@ func (s *ApplicationTestSuite) TestDatabaseNotificationOnQueue() {
 		return model.Data == "{\"content\":\"Congratulations, your login is successful!\",\"title\":\"Login success\"}" &&
 			model.NotifiableId == user.ID &&
 			model.NotifiableType == str.Of(fmt.Sprintf("%T", user)).Replace("*", "").String() &&
-			model.Type == fmt.Sprintf("%T", loginSuccessNotification)
+			model.Type == str.Of(fmt.Sprintf("%T", loginSuccessNotification)).Replace("*", "").String()
 	})).Return(nil, nil).Once()
 
 	app, err := NewApplication(s.mockConfig, queueFacade, mockDB, nil)
