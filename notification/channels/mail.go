@@ -21,25 +21,24 @@ func (c *MailChannel) Send(notifiable notification.Notifiable, notif interface{}
         return fmt.Errorf("[MailChannel] %s", err.Error())
     }
     params := notifiable.NotificationParams()
-    var email string
-    if v, ok := params["mail"]; ok {
-        if s, ok := v.(string); ok {
-            email = s
-        }
-    }
-    if email == "" {
-        if v, ok := params["email"]; ok {
-            if s, ok := v.(string); ok {
-                email = s
-            }
-        }
-    }
+    email := getEmail(params)
     if email == "" {
         return fmt.Errorf("[MailChannel] notifiable has no mail")
     }
 
-    content := data["content"].(string)
-    subject := data["subject"].(string)
+    contentVal, ok := data["content"]
+    if !ok {
+        return fmt.Errorf("[MailChannel] content not provided")
+    }
+    subjectVal, ok := data["subject"]
+    if !ok {
+        return fmt.Errorf("[MailChannel] subject not provided")
+    }
+    content, _ := contentVal.(string)
+    subject, _ := subjectVal.(string)
+    if content == "" || subject == "" {
+        return fmt.Errorf("[MailChannel] invalid content or subject")
+    }
 
 	if err := c.mail.To([]string{email}).
 		Content(mail.Html(content)).
@@ -53,4 +52,18 @@ func (c *MailChannel) Send(notifiable notification.Notifiable, notif interface{}
 // SetMail injects the mail facade into the channel.
 func (c *MailChannel) SetMail(mail contractsmail.Mail) {
     c.mail = mail
+}
+
+func getEmail(params map[string]interface{}) string {
+    if v, ok := params["mail"]; ok {
+        if s, ok := v.(string); ok && s != "" {
+            return s
+        }
+    }
+    if v, ok := params["email"]; ok {
+        if s, ok := v.(string); ok && s != "" {
+            return s
+        }
+    }
+    return ""
 }

@@ -50,7 +50,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 
 // Boot initializes built-in channels and registers jobs once all providers are registered.
 func (r *ServiceProvider) Boot(app foundation.Application) {
-    RegisterDefaultChannels(app)
+    RegisterDefaultChannels()
     r.registerJobs(app)
 }
 

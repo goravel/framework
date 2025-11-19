@@ -92,14 +92,11 @@ func (r *SendNotificationJob) Handle(args ...any) error {
         if !ok {
             return fmt.Errorf("channel not registered: %s", chName)
         }
-        if chName == "database" {
-            if databaseChannel, ok := ch.(*channels.DatabaseChannel); ok {
-                databaseChannel.SetDB(r.db)
-            }
-        } else if chName == "mail" {
-            if mailChannel, ok := ch.(*channels.MailChannel); ok {
-                mailChannel.SetMail(r.mail)
-            }
+        switch chTyped := ch.(type) {
+        case *channels.DatabaseChannel:
+            chTyped.SetDB(r.db)
+        case *channels.MailChannel:
+            chTyped.SetMail(r.mail)
         }
         if err := ch.Send(nbl, nf); err != nil {
             return fmt.Errorf("channel %s send error: %w", chName, err)

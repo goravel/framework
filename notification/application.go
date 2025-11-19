@@ -29,16 +29,10 @@ func NewApplication(config config.Config, queue contractsqueue.Queue, db contrac
 
 // Send enqueues a notification to be processed asynchronously.
 func (r *Application) Send(notifiables []notification.Notifiable, notif notification.Notif) error {
-	if err := (NewNotificationSender(r.db, r.mail, r.queue)).Send(notifiables, notif); err != nil {
-		return err
-	}
-	return nil
+    return (NewNotificationSender(r.db, r.mail, r.queue)).Send(notifiables, notif)
 }
 
 // SendNow sends a notification immediately without queueing.
 func (r *Application) SendNow(notifiables []notification.Notifiable, notif notification.Notif) error {
-	if err := (NewNotificationSender(r.db, r.mail, nil)).SendNow(notifiables, notif); err != nil {
-		return err
-	}
-	return nil
+    return (NewNotificationSender(r.db, r.mail, nil)).SendNow(notifiables, notif)
 }

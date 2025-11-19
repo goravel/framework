@@ -24,9 +24,16 @@ func (c *DatabaseChannel) Send(notifiable notification.Notifiable, notif interfa
         return fmt.Errorf("[DatabaseChannel] %s", err.Error())
     }
 
-	var notificationModel models.Notification
-	notificationModel.ID = uuid.New().String()
-	notificationModel.NotifiableId = notifiable.NotificationParams()["id"].(string)
+    var notificationModel models.Notification
+    notificationModel.ID = uuid.New().String()
+    if v, ok := notifiable.NotificationParams()["id"]; ok {
+        if s, ok := v.(string); ok {
+            notificationModel.NotifiableId = s
+        }
+    }
+    if notificationModel.NotifiableId == "" {
+        return fmt.Errorf("[DatabaseChannel] notifiable has no id")
+    }
 
 	notificationModel.NotifiableType = str.Of(fmt.Sprintf("%T", notifiable)).Replace("*", "").String()
 	notificationModel.Type = str.Of(fmt.Sprintf("%T", notif)).Replace("*", "").String()

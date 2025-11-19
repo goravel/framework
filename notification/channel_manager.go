@@ -1,7 +1,6 @@
 package notification
 
 import (
-    "github.com/goravel/framework/contracts/foundation"
     "github.com/goravel/framework/contracts/notification"
     "github.com/goravel/framework/notification/channels"
     "strings"
@@ -35,7 +34,7 @@ func GetChannel(name string) (notification.Channel, bool) {
 }
 
 // RegisterDefaultChannels registers built-in default channels: mail and database.
-func RegisterDefaultChannels(app foundation.Application) {
+func RegisterDefaultChannels() {
     RegisterChannel("mail", &channels.MailChannel{})
     RegisterChannel("database", &channels.DatabaseChannel{})
 }
