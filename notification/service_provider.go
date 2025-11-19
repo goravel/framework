@@ -10,24 +10,24 @@ import (
 type ServiceProvider struct {
 }
 
-// Relationship returns the relationship of the service provider.
+// Relationship declares bindings and dependencies for the notification service provider.
 func (r *ServiceProvider) Relationship() binding.Relationship {
-	return binding.Relationship{
-		Bindings: []string{
-			binding.Notification,
-		},
-		Dependencies: binding.Bindings[binding.Notification].Dependencies,
-		ProvideFor:   []string{},
-	}
+    return binding.Relationship{
+        Bindings: []string{
+            binding.Notification,
+        },
+        Dependencies: binding.Bindings[binding.Notification].Dependencies,
+        ProvideFor:   []string{},
+    }
 }
 
-// Register registers the service provider.
+// Register binds the notification Application into the container using required facades.
 func (r *ServiceProvider) Register(app foundation.Application) {
-	app.Bind(binding.Notification, func(app foundation.Application) (any, error) {
-		config := app.MakeConfig()
-		if config == nil {
-			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleMail)
-		}
+    app.Bind(binding.Notification, func(app foundation.Application) (any, error) {
+        config := app.MakeConfig()
+        if config == nil {
+            return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleMail)
+        }
 
 		queue := app.MakeQueue()
 		if queue == nil {
@@ -44,16 +44,17 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, errors.DBFacadeNotSet.SetModule(errors.ModuleDB)
 		}
 
-		return NewApplication(config, queue, db, mail)
-	})
+        return NewApplication(config, queue, db, mail)
+    })
 }
 
-// Boot boots the service provider, will be called after all service providers are registered.
+// Boot initializes built-in channels and registers jobs once all providers are registered.
 func (r *ServiceProvider) Boot(app foundation.Application) {
     RegisterDefaultChannels(app)
     r.registerJobs(app)
 }
 
+// registerJobs registers the SendNotificationJob with the queue facade if available.
 func (r *ServiceProvider) registerJobs(app foundation.Application) {
     queueFacade := app.MakeQueue()
     if queueFacade == nil {

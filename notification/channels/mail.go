@@ -1,18 +1,20 @@
 package channels
 
 import (
-	"fmt"
-	contractsmail "github.com/goravel/framework/contracts/mail"
-	"github.com/goravel/framework/contracts/notification"
-	"github.com/goravel/framework/mail"
-	"github.com/goravel/framework/notification/utils"
+    "fmt"
+    contractsmail "github.com/goravel/framework/contracts/mail"
+    "github.com/goravel/framework/contracts/notification"
+    "github.com/goravel/framework/mail"
+    "github.com/goravel/framework/notification/utils"
 )
 
-// MailChannel 默认邮件通道
+// MailChannel is the default mail delivery channel.
 type MailChannel struct {
-	mail contractsmail.Mail
+    mail contractsmail.Mail
 }
 
+// Send delivers a notification via email using the notifiable's params.
+// It expects the notification to implement a ToMail(notifiable) method or PayloadProvider.
 func (c *MailChannel) Send(notifiable notification.Notifiable, notif interface{}) error {
     data, err := utils.CallToMethod(notif, "ToMail", notifiable)
     if err != nil {
@@ -36,8 +38,8 @@ func (c *MailChannel) Send(notifiable notification.Notifiable, notif interface{}
         return fmt.Errorf("[MailChannel] notifiable has no mail")
     }
 
-	content := data["content"].(string)
-	subject := data["subject"].(string)
+    content := data["content"].(string)
+    subject := data["subject"].(string)
 
 	if err := c.mail.To([]string{email}).
 		Content(mail.Html(content)).
@@ -45,9 +47,10 @@ func (c *MailChannel) Send(notifiable notification.Notifiable, notif interface{}
 		return err
 	}
 
-	return nil
+    return nil
 }
 
+// SetMail injects the mail facade into the channel.
 func (c *MailChannel) SetMail(mail contractsmail.Mail) {
-	c.mail = mail
+    c.mail = mail
 }

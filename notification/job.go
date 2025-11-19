@@ -1,45 +1,53 @@
 package notification
 
 import (
-	"bytes"
-	"encoding/gob"
-	"fmt"
-	"github.com/goravel/framework/contracts/config"
-	contractsqueuedb "github.com/goravel/framework/contracts/database/db"
-	contractsmail "github.com/goravel/framework/contracts/mail"
-	contractsnotification "github.com/goravel/framework/contracts/notification"
-	"github.com/goravel/framework/notification/channels"
+    "bytes"
+    "encoding/gob"
+    "fmt"
+    "github.com/goravel/framework/contracts/config"
+    contractsqueuedb "github.com/goravel/framework/contracts/database/db"
+    contractsmail "github.com/goravel/framework/contracts/mail"
+    contractsnotification "github.com/goravel/framework/contracts/notification"
+    "github.com/goravel/framework/notification/channels"
 )
 
+// SendNotificationJob is the queue job that delivers notifications to channels.
+// It decodes the serialized payload and invokes the appropriate channel senders.
 type SendNotificationJob struct {
-	config config.Config
-	db     contractsqueuedb.DB
-	mail   contractsmail.Mail
+    config config.Config
+    db     contractsqueuedb.DB
+    mail   contractsmail.Mail
 }
 
+// GobEnvelope wraps both notifiable and notification for simplified serialization.
 type GobEnvelope struct {
-	Notifiable any
-	Notif      any
+    Notifiable any
+    Notif      any
 }
 
+// NewSendNotificationJob constructs a SendNotificationJob with required facades.
 func NewSendNotificationJob(config config.Config, db contractsqueuedb.DB, mail contractsmail.Mail) *SendNotificationJob {
-	return &SendNotificationJob{
-		config: config,
-		db:     db,
-		mail:   mail,
-	}
+    return &SendNotificationJob{
+        config: config,
+        db:     db,
+        mail:   mail,
+    }
 }
 
-// Signature The name and signature of the job.
+// Signature returns the unique name of the job.
 func (r *SendNotificationJob) Signature() string {
-	return "goravel_send_notification_job"
+    return "goravel_send_notification_job"
 }
 
-// Handle Execute the job.
+// Handle executes the job, decoding arguments and forwarding to registered channels.
+// Expected arguments:
+// 0: notifiable bytes (GobEnvelope when notif bytes empty)
+// 1: notification bytes
+// 2: []string of channel names
 func (r *SendNotificationJob) Handle(args ...any) error {
-	if len(args) != 3 {
-		return fmt.Errorf("expected 3 arguments, got %d", len(args))
-	}
+    if len(args) != 3 {
+        return fmt.Errorf("expected 3 arguments, got %d", len(args))
+    }
 
 	notifiableBytes, _ := args[0].([]uint8)
 	notifBytes, _ := args[1].([]uint8)
@@ -79,24 +87,24 @@ func (r *SendNotificationJob) Handle(args ...any) error {
 		return fmt.Errorf("decoded notif does not implement Notif: %T", notif)
 	}
 
-	for _, chName := range vias {
-		ch, ok := GetChannel(chName)
-		if !ok {
-			return fmt.Errorf("channel not registered: %s", chName)
-		}
-		if chName == "database" {
-			if databaseChannel, ok := ch.(*channels.DatabaseChannel); ok {
-				databaseChannel.SetDB(r.db)
-			}
-		} else if chName == "mail" {
-			if mailChannel, ok := ch.(*channels.MailChannel); ok {
-				mailChannel.SetMail(r.mail)
-			}
-		}
-		if err := ch.Send(nbl, nf); err != nil {
-			return fmt.Errorf("channel %s send error: %w", chName, err)
-		}
-	}
+    for _, chName := range vias {
+        ch, ok := GetChannel(chName)
+        if !ok {
+            return fmt.Errorf("channel not registered: %s", chName)
+        }
+        if chName == "database" {
+            if databaseChannel, ok := ch.(*channels.DatabaseChannel); ok {
+                databaseChannel.SetDB(r.db)
+            }
+        } else if chName == "mail" {
+            if mailChannel, ok := ch.(*channels.MailChannel); ok {
+                mailChannel.SetMail(r.mail)
+            }
+        }
+        if err := ch.Send(nbl, nf); err != nil {
+            return fmt.Errorf("channel %s send error: %w", chName, err)
+        }
+    }
 
-	return nil
+    return nil
 }
