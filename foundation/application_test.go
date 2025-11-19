@@ -55,6 +55,10 @@ func (s *ApplicationTestSuite) TestConfigPath() {
 	s.Equal(filepath.Join(support.RootPath, "config", "goravel.go"), s.app.ConfigPath("goravel.go"))
 }
 
+func (s *ApplicationTestSuite) TestModelPath() {
+	s.Equal(filepath.Join(support.RootPath, "app", "models", "goravel.go"), s.app.ModelPath("goravel.go"))
+}
+
 func (s *ApplicationTestSuite) TestDatabasePath() {
 	s.Equal(filepath.Join(support.RootPath, "database", "goravel.go"), s.app.DatabasePath("goravel.go"))
 }

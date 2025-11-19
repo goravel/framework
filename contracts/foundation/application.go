@@ -81,6 +81,8 @@ type Application interface {
 	ConfigPath(path ...string) string
 	// CurrentLocale get the current application locale.
 	CurrentLocale(ctx context.Context) string
+	// ModelPath get the path to the models directory.
+	ModelPath(path ...string) string
 	// DatabasePath get the path to the database directory.
 	DatabasePath(path ...string) string
 	// ExecutablePath get the path to the executable of the running Goravel application.
