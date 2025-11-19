@@ -15,6 +15,11 @@ type Channel interface {
 }
 
 type Notifiable interface {
-	// RouteNotificationFor returns the route notification for the given channel.
-	RouteNotificationFor(channel string) any
+    // RouteNotificationFor returns the route notification for the given channel.
+    RouteNotificationFor(channel string) any
+}
+
+type PayloadProvider interface {
+    // PayloadFor returns prepared payload data for specific channel.
+    PayloadFor(channel string, notifiable Notifiable) (map[string]interface{}, error)
 }

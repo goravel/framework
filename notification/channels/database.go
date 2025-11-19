@@ -22,14 +22,15 @@ func (c *DatabaseChannel) Send(notifiable notification.Notifiable, notif interfa
 		return fmt.Errorf("[DatabaseChannel] %s", err.Error())
 	}
 
-	jsonData, _ := json.MarshalString(data)
-
 	var notificationModel models.Notification
 	notificationModel.ID = uuid.New().String()
-	notificationModel.Data = jsonData
 	notificationModel.NotifiableId = notifiable.RouteNotificationFor("id").(string)
+
 	notificationModel.NotifiableType = str.Of(fmt.Sprintf("%T", notifiable)).Replace("*", "").String()
-	notificationModel.Type = fmt.Sprintf("%T", notif)
+	notificationModel.Type = str.Of(fmt.Sprintf("%T", notif)).Replace("*", "").String()
+
+	jsonData, _ := json.MarshalString(data)
+	notificationModel.Data = jsonData
 
 	if _, err = c.db.Table("notifications").Insert(&notificationModel); err != nil {
 		return err

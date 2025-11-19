@@ -1,25 +1,31 @@
 package utils
 
 import (
-	"fmt"
-	"github.com/goravel/framework/contracts/notification"
-	"reflect"
+    "fmt"
+    contractsnotification "github.com/goravel/framework/contracts/notification"
+    "reflect"
+    "strings"
 )
 
-func CallToMethod(notification interface{}, methodName string, notifiable notification.Notifiable) (map[string]interface{}, error) {
-	v := reflect.ValueOf(notification)
-	if !v.IsValid() {
-		return nil, fmt.Errorf("invalid notification value")
-	}
+func CallToMethod(notification interface{}, methodName string, notifiable contractsnotification.Notifiable) (map[string]interface{}, error) {
+    v := reflect.ValueOf(notification)
+    if !v.IsValid() {
+        return nil, fmt.Errorf("invalid notification value")
+    }
 
 	// 查找方法（优先指针接收者）
 	method := v.MethodByName(methodName)
 	if !method.IsValid() && v.CanAddr() {
 		method = v.Addr().MethodByName(methodName)
 	}
-	if !method.IsValid() {
-		return nil, fmt.Errorf("method %s not found", methodName)
-	}
+    if !method.IsValid() {
+        // fallback: support PayloadProvider
+        if provider, ok := v.Interface().(contractsnotification.PayloadProvider); ok {
+            channel := strings.ToLower(strings.TrimPrefix(methodName, "To"))
+            return provider.PayloadFor(channel, notifiable)
+        }
+        return nil, fmt.Errorf("method %s not found", methodName)
+    }
 
 	// 调用方法
 	results := method.Call([]reflect.Value{reflect.ValueOf(notifiable)})

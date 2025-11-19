@@ -8,7 +8,10 @@ import (
 	contractsqueue "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/notification/channels"
+	"github.com/goravel/framework/notification/utils"
 	"github.com/goravel/framework/support/json"
+	"github.com/goravel/framework/support/str"
+	"strings"
 )
 
 type NotificationSender struct {
@@ -64,24 +67,41 @@ func (s *NotificationSender) SendNow(notifiables []notification.Notifiable, noti
 
 // queueNotification
 func (s *NotificationSender) queueNotification(notifiables []notification.Notifiable, notif notification.Notif) error {
-	var err error
-	var notifiablesJson string
-	if notifiablesJson, err = json.MarshalString(notifiables); err != nil {
-		return err
+	for _, notifiable := range notifiables {
+		vias := notif.Via(notifiable)
+		payloads := map[string]map[string]any{}
+		for _, chName := range vias {
+			method := "To" + strings.Title(chName)
+			data, err := utils.CallToMethod(notif, method, notifiable)
+			if err != nil {
+				// allow empty payloads for channels that don't require data
+				data = map[string]any{}
+			}
+			payloads[chName] = data
+		}
+
+		payloadsJSON, _ := json.MarshalString(payloads)
+
+		routes := map[string]any{}
+		for _, chName := range vias {
+			routes[chName] = notifiable.RouteNotificationFor(chName)
+		}
+		// commonly used
+		routes["id"] = notifiable.RouteNotificationFor("id")
+		routes["_notifiable_type"] = str.Of(fmt.Sprintf("%T", notifiable)).Replace("*", "").String()
+		routes["_notif_type"] = str.Of(fmt.Sprintf("%T", notif)).Replace("*", "").String()
+		routesJSON, _ := json.MarshalString(routes)
+
+		println(routesJSON)
+
+		pendingJob := s.queue.Job(NewSendNotificationJob(nil, s.db, s.mail), []contractsqueue.Arg{
+			{Type: "[]string", Value: vias},
+			{Type: "string", Value: routesJSON},
+			{Type: "string", Value: payloadsJSON},
+		})
+		if err := pendingJob.Dispatch(); err != nil {
+			return err
+		}
 	}
-	var notifJson string
-	if notifJson, err = json.MarshalString(notif); err != nil {
-		return err
-	}
-	pendingJob := s.queue.Job(&SendNotificationJob{}, []contractsqueue.Arg{
-		{
-			Type:  "string",
-			Value: notifiablesJson,
-		},
-		{
-			Type:  "string",
-			Value: notifJson,
-		},
-	})
-	return pendingJob.Dispatch()
+	return nil
 }

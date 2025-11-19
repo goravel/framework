@@ -181,6 +181,56 @@ func (s *ApplicationTestSuite) TestDatabaseNotification() {
 	s.Nil(err)
 }
 
+func (s *ApplicationTestSuite) TestDatabaseNotificationOnQueue() {
+	var user = User{
+		ID:    "1",
+		Email: "657873584@qq.com",
+		Name:  "test",
+	}
+	RegisterNotificationType("notification.LoginSuccessNotification", func() notification.Notif {
+		return &LoginSuccessNotification{}
+	})
+	RegisterNotifiableType("notification.User", func(routes map[string]interface{}) notification.Notifiable {
+		user := &User{
+			ID: routes["id"].(string),
+		}
+		return user
+	})
+
+	var loginSuccessNotification = LoginSuccessNotification{}
+
+	s.mockConfig = mockConfig(465)
+	queueFacade := mockQueueFacade(s.mockConfig)
+
+	mockDB := mocksdb.NewDB(s.T())
+	s.mockConfig.EXPECT().GetString("DB_CONNECTION").Return("mysql").Once()
+	mockQuery := mocksdb.NewQuery(s.T())
+	mockDB.EXPECT().Table("notifications").Return(mockQuery).Once()
+
+	var notificationModel models.Notification
+	notificationModel.ID = uuid.New().String()
+	notificationModel.Data = "{\"content\":\"Congratulations, your login is successful!\",\"title\":\"Login success\"}"
+	notificationModel.NotifiableId = user.ID
+	notificationModel.NotifiableType = str.Of(fmt.Sprintf("%T", user)).Replace("*", "").String()
+	notificationModel.Type = fmt.Sprintf("%T", loginSuccessNotification)
+
+	mockQuery.EXPECT().Insert(mock.MatchedBy(func(model *models.Notification) bool {
+		return model.Data == "{\"content\":\"Congratulations, your login is successful!\",\"title\":\"Login success\"}" &&
+			model.NotifiableId == user.ID &&
+			model.NotifiableType == str.Of(fmt.Sprintf("%T", user)).Replace("*", "").String() &&
+			model.Type == fmt.Sprintf("%T", loginSuccessNotification)
+	})).Return(nil, nil).Once()
+
+	app, err := NewApplication(s.mockConfig, queueFacade, mockDB, nil)
+	s.Nil(err)
+
+	RegisterChannel("database", &channels.DatabaseChannel{})
+
+	users := []notification.Notifiable{user}
+	err = app.Send(users, loginSuccessNotification)
+	s.Nil(err)
+}
+
 func mockQueueFacade(mockConfig *mocksconfig.Config) contractsqueue.Queue {
 	mockConfig.EXPECT().GetString("queue.default").Return("redis").Once()
 	mockConfig.EXPECT().GetString("queue.connections.redis.queue", "default").Return("default").Once()
@@ -192,7 +242,7 @@ func mockQueueFacade(mockConfig *mocksconfig.Config) contractsqueue.Queue {
 
 	queueFacade := queue.NewApplication(queue.NewConfig(mockConfig), nil, queue.NewJobStorer(), json.New(), nil)
 	queueFacade.Register([]contractsqueue.Job{
-		NewSendNotificationJob(mockConfig),
+		NewSendNotificationJob(mockConfig, nil, nil),
 	})
 	return queueFacade
 }

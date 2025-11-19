@@ -1,9 +1,10 @@
 package notification
 
 import (
-	"github.com/goravel/framework/contracts/binding"
-	"github.com/goravel/framework/contracts/foundation"
-	"github.com/goravel/framework/errors"
+    "github.com/goravel/framework/contracts/binding"
+    "github.com/goravel/framework/contracts/foundation"
+    contractsqueue "github.com/goravel/framework/contracts/queue"
+    "github.com/goravel/framework/errors"
 )
 
 type ServiceProvider struct {
@@ -49,5 +50,32 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 
 // Boot boots the service provider, will be called after all service providers are registered.
 func (r *ServiceProvider) Boot(app foundation.Application) {
-	RegisterDefaultChannels(app)
+    RegisterDefaultChannels(app)
+    r.registerJobs(app)
+}
+
+func (r *ServiceProvider) registerJobs(app foundation.Application) {
+    queueFacade := app.MakeQueue()
+    if queueFacade == nil {
+        return
+    }
+
+    configFacade := app.MakeConfig()
+    if configFacade == nil {
+        return
+    }
+
+    mailFacade := app.MakeMail()
+    if mailFacade == nil {
+        return
+    }
+
+    dbFacade := app.MakeDB()
+    if dbFacade == nil {
+        return
+    }
+
+    queueFacade.Register([]contractsqueue.Job{
+        NewSendNotificationJob(configFacade, dbFacade, mailFacade),
+    })
 }
