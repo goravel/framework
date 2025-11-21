@@ -449,6 +449,54 @@ func (_c *ApplicationBuilder_WithMigrations_Call) RunAndReturn(run func([]schema
 	return _c
 }
 
+// WithPaths provides a mock function with given fields: fn
+func (_m *ApplicationBuilder) WithPaths(fn func(configuration.Paths)) foundation.ApplicationBuilder {
+	ret := _m.Called(fn)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithPaths")
+	}
+
+	var r0 foundation.ApplicationBuilder
+	if rf, ok := ret.Get(0).(func(func(configuration.Paths)) foundation.ApplicationBuilder); ok {
+		r0 = rf(fn)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(foundation.ApplicationBuilder)
+		}
+	}
+
+	return r0
+}
+
+// ApplicationBuilder_WithPaths_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithPaths'
+type ApplicationBuilder_WithPaths_Call struct {
+	*mock.Call
+}
+
+// WithPaths is a helper method to define mock.On call
+//   - fn func(configuration.Paths)
+func (_e *ApplicationBuilder_Expecter) WithPaths(fn interface{}) *ApplicationBuilder_WithPaths_Call {
+	return &ApplicationBuilder_WithPaths_Call{Call: _e.mock.On("WithPaths", fn)}
+}
+
+func (_c *ApplicationBuilder_WithPaths_Call) Run(run func(fn func(configuration.Paths))) *ApplicationBuilder_WithPaths_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func(configuration.Paths)))
+	})
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithPaths_Call) Return(_a0 foundation.ApplicationBuilder) *ApplicationBuilder_WithPaths_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithPaths_Call) RunAndReturn(run func(func(configuration.Paths)) foundation.ApplicationBuilder) *ApplicationBuilder_WithPaths_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // WithProviders provides a mock function with given fields: providers
 func (_m *ApplicationBuilder) WithProviders(providers []foundation.ServiceProvider) foundation.ApplicationBuilder {
 	ret := _m.Called(providers)
