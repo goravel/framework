@@ -739,24 +739,18 @@ func Commands() []console.Command {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			tempDir := s.T().TempDir()
-			bootstrapDir := filepath.Join(tempDir, "bootstrap")
-
+			bootstrapDir := support.Config.Paths.Bootstrap
 			appFile := filepath.Join(bootstrapDir, "app.go")
 			commandsFile := filepath.Join(bootstrapDir, "commands.go")
 
 			s.Require().NoError(supportfile.PutContent(appFile, tt.appContent))
+			defer func() {
+				s.NoError(supportfile.Remove(bootstrapDir))
+			}()
 
 			if tt.commandsContent != "" {
 				s.Require().NoError(supportfile.PutContent(commandsFile, tt.commandsContent))
 			}
-
-			// Override Config.Paths.App for testing
-			originalAppPath := support.Config.Paths.App
-			support.Config.Paths.App = appFile
-			defer func() {
-				support.Config.Paths.App = originalAppPath
-			}()
 
 			err := AddCommand(tt.pkg, tt.command)
 
@@ -981,14 +975,12 @@ func Boot() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			sourceFile := filepath.Join(s.T().TempDir(), "app.go")
-			s.Require().NoError(supportfile.PutContent(sourceFile, tt.content))
+			bootstrapDir := support.Config.Paths.Bootstrap
+			sourceFile := filepath.Join(bootstrapDir, "app.go")
 
-			// Override the Config.Paths.App for testing
-			originalAppPath := support.Config.Paths.App
-			support.Config.Paths.App = sourceFile
+			s.Require().NoError(supportfile.PutContent(sourceFile, tt.content))
 			defer func() {
-				support.Config.Paths.App = originalAppPath
+				supportfile.Remove(bootstrapDir)
 			}()
 
 			err := AddMiddleware(tt.pkg, tt.mw)
@@ -1230,24 +1222,18 @@ func Migrations() []schema.Migration {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			tempDir := s.T().TempDir()
-			bootstrapDir := filepath.Join(tempDir, "bootstrap")
-
+			bootstrapDir := support.Config.Paths.Bootstrap
 			appFile := filepath.Join(bootstrapDir, "app.go")
 			migrationsFile := filepath.Join(bootstrapDir, "migrations.go")
 
 			s.Require().NoError(supportfile.PutContent(appFile, tt.appContent))
+			defer func() {
+				s.NoError(supportfile.Remove(bootstrapDir))
+			}()
 
 			if tt.migrationsContent != "" {
 				s.Require().NoError(supportfile.PutContent(migrationsFile, tt.migrationsContent))
 			}
-
-			// Override Config.Paths.App for testing
-			originalAppPath := support.Config.Paths.App
-			support.Config.Paths.App = appFile
-			defer func() {
-				support.Config.Paths.App = originalAppPath
-			}()
 
 			err := AddMigration(tt.pkg, tt.migration)
 
@@ -2281,24 +2267,18 @@ func Seeders() []seeder.Seeder {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			tempDir := s.T().TempDir()
-			bootstrapDir := filepath.Join(tempDir, "bootstrap")
-
+			bootstrapDir := support.Config.Paths.Bootstrap
 			appFile := filepath.Join(bootstrapDir, "app.go")
 			seedersFile := filepath.Join(bootstrapDir, "seeders.go")
 
 			s.Require().NoError(supportfile.PutContent(appFile, tt.appContent))
+			defer func() {
+				s.NoError(supportfile.Remove(bootstrapDir))
+			}()
 
 			if tt.seedersContent != "" {
 				s.Require().NoError(supportfile.PutContent(seedersFile, tt.seedersContent))
 			}
-
-			// Override Config.Paths.App for testing
-			originalAppPath := support.Config.Paths.App
-			support.Config.Paths.App = appFile
-			defer func() {
-				support.Config.Paths.App = originalAppPath
-			}()
 
 			err := AddSeeder(tt.pkg, tt.seeder)
 

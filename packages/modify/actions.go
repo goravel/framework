@@ -12,8 +12,8 @@ import (
 	"github.com/goravel/framework/contracts/packages/modify"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/packages/match"
-	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/support/path/internals"
 )
 
 // Add adds an expression to the matched specified function.
@@ -169,7 +169,7 @@ func AddConfig(name, expression string, annotations ...string) modify.Action {
 //	    handler.Append(&middleware.Existing{}, &middleware.Auth{})
 //	}).Run()
 func AddMiddleware(pkg, middleware string) error {
-	appFilePath := support.Config.Paths.App
+	appFilePath := internals.BootstrapApp()
 
 	if err := addMiddlewareImports(appFilePath, pkg); err != nil {
 		return err

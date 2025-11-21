@@ -10,15 +10,15 @@ import (
 func TestPath(t *testing.T) {
 	support.RelativePath = "."
 	result := Path("foo", "bar.txt")
-	expected := AbsPath(".", "app", "foo", "bar.txt")
+	expected := Abs(".", "app", "foo", "bar.txt")
 
 	assert.Equal(t, expected, result)
 }
 
 func TestFacadesPath(t *testing.T) {
 	support.RelativePath = "." // Set to current dir for test
-	result := FacadesPath("foo.txt")
-	expected := AbsPath(".", "app", "facades", "foo.txt")
+	result := Facades("foo.txt")
+	expected := Abs(".", "app", "facades", "foo.txt")
 
 	assert.Equal(t, expected, result)
 }
