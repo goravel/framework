@@ -38,6 +38,8 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
+	notification "github.com/goravel/framework/contracts/notification"
+
 	orm "github.com/goravel/framework/contracts/database/orm"
 
 	process "github.com/goravel/framework/contracts/process"
@@ -1667,6 +1669,53 @@ func (_c *Application_MakeMail_Call) Return(_a0 mail.Mail) *Application_MakeMail
 }
 
 func (_c *Application_MakeMail_Call) RunAndReturn(run func() mail.Mail) *Application_MakeMail_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// MakeNotification provides a mock function with no fields
+func (_m *Application) MakeNotification() notification.Notification {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for MakeNotification")
+	}
+
+	var r0 notification.Notification
+	if rf, ok := ret.Get(0).(func() notification.Notification); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(notification.Notification)
+		}
+	}
+
+	return r0
+}
+
+// Application_MakeNotification_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MakeNotification'
+type Application_MakeNotification_Call struct {
+	*mock.Call
+}
+
+// MakeNotification is a helper method to define mock.On call
+func (_e *Application_Expecter) MakeNotification() *Application_MakeNotification_Call {
+	return &Application_MakeNotification_Call{Call: _e.mock.On("MakeNotification")}
+}
+
+func (_c *Application_MakeNotification_Call) Run(run func()) *Application_MakeNotification_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Application_MakeNotification_Call) Return(_a0 notification.Notification) *Application_MakeNotification_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Application_MakeNotification_Call) RunAndReturn(run func() notification.Notification) *Application_MakeNotification_Call {
 	_c.Call.Return(run)
 	return _c
 }
