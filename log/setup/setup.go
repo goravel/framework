@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/goravel/framework/contracts/facades"
+	contractsmodify "github.com/goravel/framework/contracts/packages/modify"
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
@@ -27,9 +28,9 @@ LOG_LEVEL=debug
 	packages.Setup(os.Args).
 		Install(
 			// Add the log service provider to the providers array in config/app.go
-			modify.GoFile(providersBootstrapPath).
-				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register(logServiceProvider)),
+			modify.Call(func(_ []contractsmodify.Option) error {
+				return modify.AddProvider(packages.GetModulePath(), logServiceProvider)
+			}),
 
 			// Create config/logging.go
 			modify.File(loggingConfigPath).Overwrite(stubs.Config(moduleName)),

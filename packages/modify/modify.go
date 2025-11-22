@@ -18,6 +18,12 @@ import (
 	"github.com/goravel/framework/support/str"
 )
 
+func Call(fn func(options []modify.Option) error) modify.Apply {
+	return &callModifier{
+		fn: fn,
+	}
+}
+
 func File(path string) modify.File {
 	return &file{path: path}
 }
@@ -93,6 +99,14 @@ func generateOptions(options []modify.Option) map[string]any {
 		option(result)
 	}
 	return result
+}
+
+type callModifier struct {
+	fn func(options []modify.Option) error
+}
+
+func (r *callModifier) Apply(options ...modify.Option) error {
+	return r.fn(options)
 }
 
 type file struct {
