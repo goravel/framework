@@ -22,7 +22,7 @@ func main() {
 			// Add the testing service provider to the providers array in bootstrap/providers.go
 			modify.AddProviderApply(modulePath, testingServiceProvider),
 
-			// Create tests/test_case.go and tests/feature/example_test.go
+			// Create tests/test_case.go
 			modify.File(testCasePath).Overwrite(stubs.TestCase()),
 
 			// Create tests/feature/example_test.go
@@ -32,7 +32,7 @@ func main() {
 			modify.WhenFacade(testingFacade, modify.File(testingFacadePath).Overwrite(stubs.TestingFacade())),
 		).
 		Uninstall(
-			// Remove tests/feature/example_test.go and tests/test_case.go
+			// Remove tests/feature/example_test.go
 			modify.File(exampleTestPath).Remove(),
 
 			// Remove tests/test_case.go
