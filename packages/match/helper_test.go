@@ -15,14 +15,15 @@ import (
 
 type MatchHelperTestSuite struct {
 	suite.Suite
-	configChained    *dst.File
-	configVariable   *dst.File
-	providerVariable *dst.File
-	console          *dst.File
-	database         *dst.File
-	jobs             *dst.File
-	serviceProvider  *dst.File
-	validation       *dst.File
+	configChained       *dst.File
+	configVariable      *dst.File
+	providerVariable    *dst.File
+	providerInConfig    *dst.File
+	console             *dst.File
+	database            *dst.File
+	jobs                *dst.File
+	serviceProvider     *dst.File
+	validation          *dst.File
 }
 
 func (s *MatchHelperTestSuite) SetupTest() {
@@ -199,6 +200,25 @@ func Providers() []foundation.ServiceProvider {
 	}
 }`)
 	s.Require().NoError(err)
+
+	s.providerInConfig, err = decorator.Parse(`package config
+
+import (
+	"github.com/goravel/framework/auth"
+	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/crypt"
+)
+
+func init() {
+	config.Add("app", map[string]any{
+		"name": "Goravel",
+		"providers": []foundation.ServiceProvider{
+			&auth.ServiceProvider{},
+			&crypt.ServiceProvider{},
+		},
+	})
+}`)
+	s.Require().NoError(err)
 }
 
 func (s *MatchHelperTestSuite) TearDownTest() {}
@@ -251,6 +271,20 @@ func (s *MatchHelperTestSuite) TestHelper() {
 			name:     "match providers",
 			file:     s.providerVariable,
 			matchers: Providers(),
+			assert: func(node dst.Node) {
+				s.True(CompositeLit(EqualNode(&dst.ArrayType{
+					Elt: &dst.SelectorExpr{
+						X:   &dst.Ident{Name: "foundation"},
+						Sel: &dst.Ident{Name: "ServiceProvider"},
+					},
+				})).MatchNode(node))
+				s.Len(node.(*dst.CompositeLit).Elts, 2)
+			},
+		},
+		{
+			name:     "match providers in config (deprecated pattern)",
+			file:     s.providerInConfig,
+			matchers: ProvidersInConfig(),
 			assert: func(node dst.Node) {
 				s.True(CompositeLit(EqualNode(&dst.ArrayType{
 					Elt: &dst.SelectorExpr{
