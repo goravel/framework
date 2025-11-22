@@ -69,6 +69,71 @@ func AddConfig(name, expression string, annotations ...string) modify.Action {
 	}
 }
 
+// AddProvider adds service provider to the foundation.Setup() chain in the Boot function.
+// If WithProviders doesn't exist, it creates a new providers.go file in the bootstrap directory based on the stubs.go:providers template,
+// then add WithProviders(Providers()) to foundation.Setup(), add the provider to Providers().
+// If WithProviders exists, it appends the provider to []foundation.ServiceProvider if the providers.go file doesn't exist,
+// or appends to the Providers() function if the providers.go file exists.
+// This function also ensures the configuration package and provider package are imported when creating WithProviders.
+//
+// Returns an error if providers.go exists but WithProviders is not registered in foundation.Setup(), as the providers.go file
+// should only be created when adding WithProviders to Setup().
+//
+// Parameters:
+//   - pkg: Package path of the provider (e.g., "goravel/app/providers")
+//   - provider: Provider expression to add (e.g., "&providers.AppServiceProvider{}")
+//
+// Example usage:
+//
+//	AddProvider("goravel/app/providers", "&providers.AppServiceProvider{}")
+//
+// This transforms (when providers.go doesn't exist and WithProviders doesn't exist):
+//
+//	foundation.Setup().WithConfig(config.Boot).Run()
+//
+// Into:
+//
+//	foundation.Setup().WithProviders(Providers()).WithConfig(config.Boot).Run()
+//
+// And creates bootstrap/providers.go:
+//
+//	package bootstrap
+//	import "github.com/goravel/framework/contracts/foundation"
+//	func Providers() []foundation.ServiceProvider {
+//	  return []foundation.ServiceProvider{&providers.AppServiceProvider{}}
+//	}
+//
+// If WithProviders already exists but providers.go doesn't:
+//
+//	foundation.Setup().WithProviders([]foundation.ServiceProvider{
+//	  &providers.ExistingProvider{},
+//	}).Run()
+//
+// It appends the new provider:
+//
+//	foundation.Setup().WithProviders([]foundation.ServiceProvider{
+//	  &providers.ExistingProvider{},
+//	  &providers.AppServiceProvider{},
+//	}).Run()
+//
+// If WithProviders exists with Providers() call and providers.go exists, it appends to Providers() function.
+func AddProvider(pkg, provider string) error {
+	config := withSliceConfig{
+		fileName:        "providers.go",
+		withMethodName:  "WithProviders",
+		helperFuncName:  "Providers",
+		typePackage:     "foundation",
+		typeName:        "ServiceProvider",
+		typeImportPath:  "github.com/goravel/framework/contracts/foundation",
+		fileExistsError: errors.PackageProvidersFileExists,
+		stubTemplate:    providers,
+		matcherFunc:     match.Providers,
+	}
+
+	handler := newWithSliceHandler(config)
+	return handler.AddItem(pkg, provider)
+}
+
 // AddImport adds an import statement to the file.
 func AddImport(path string, name ...string) modify.Action {
 	return func(cursor *dstutil.Cursor) {
