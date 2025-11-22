@@ -980,7 +980,7 @@ func Boot() {
 
 			s.Require().NoError(supportfile.PutContent(sourceFile, tt.content))
 			defer func() {
-				supportfile.Remove(bootstrapDir)
+				s.NoError(supportfile.Remove(bootstrapDir))
 			}()
 
 			err := AddMiddleware(tt.pkg, tt.mw)
