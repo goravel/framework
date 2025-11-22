@@ -37,7 +37,7 @@ func TestMigrateMakeCommand(t *testing.T) {
 				mockContext.EXPECT().Argument(0).Return("").Once()
 				mockContext.EXPECT().Ask("Enter the migration name", mock.Anything).Return("create_users_table", nil).Once()
 				mockContext.EXPECT().OptionBool("force").Return(false).Once()
-				mockMigrator.EXPECT().Create("create_users_table").Return("", nil).Once()
+				mockMigrator.EXPECT().Create("create_users_table", "").Return("", nil).Once()
 				mockContext.EXPECT().Success("Created Migration: create_users_table").Once()
 				mockApp.EXPECT().DatabasePath("kernel.go").Return("database/kernel.go").Once()
 				mockContext.EXPECT().Error(mock.MatchedBy(func(msg string) bool {
@@ -50,7 +50,7 @@ func TestMigrateMakeCommand(t *testing.T) {
 			setup: func() {
 				mockContext.EXPECT().Argument(0).Return("create_users_table").Once()
 				mockContext.EXPECT().OptionBool("force").Return(false).Once()
-				mockMigrator.EXPECT().Create("create_users_table").Return("", nil).Once()
+				mockMigrator.EXPECT().Create("create_users_table", "").Return("", nil).Once()
 				mockContext.EXPECT().Success("Created Migration: create_users_table").Once()
 				mockApp.EXPECT().DatabasePath("kernel.go").Return("database/kernel.go").Once()
 				mockContext.EXPECT().Error(mock.MatchedBy(func(msg string) bool {
@@ -71,7 +71,7 @@ func TestMigrateMakeCommand(t *testing.T) {
 			setup: func() {
 				mockContext.EXPECT().Argument(0).Return("create_users_table").Once()
 				mockContext.EXPECT().OptionBool("force").Return(false).Once()
-				mockMigrator.EXPECT().Create("create_users_table").Return("", assert.AnError).Once()
+				mockMigrator.EXPECT().Create("create_users_table", "").Return("", assert.AnError).Once()
 				mockContext.EXPECT().Error(errors.MigrationCreateFailed.Args(assert.AnError).Error()).Once()
 			},
 		},
@@ -80,7 +80,7 @@ func TestMigrateMakeCommand(t *testing.T) {
 			setup: func() {
 				mockContext.EXPECT().Argument(0).Return("create_users_table").Once()
 				mockContext.EXPECT().OptionBool("force").Return(false).Once()
-				mockMigrator.EXPECT().Create("create_users_table").Return("20240915060148_create_users_table", nil).Once()
+				mockMigrator.EXPECT().Create("create_users_table", "").Return("20240915060148_create_users_table", nil).Once()
 				mockContext.EXPECT().Success("Created Migration: create_users_table").Once()
 				mockApp.EXPECT().DatabasePath("kernel.go").Return("database/kernel.go").Once()
 				mockContext.EXPECT().Success("Migration registered successfully").Once()
@@ -157,7 +157,7 @@ func Boot() {
 
 		mockContext.EXPECT().Argument(0).Return("create_posts_table").Once()
 		mockContext.EXPECT().OptionBool("force").Return(false).Once()
-		mockMigrator.EXPECT().Create("create_posts_table").Return("20240915060148_create_posts_table", nil).Once()
+		mockMigrator.EXPECT().Create("create_posts_table", "").Return("20240915060148_create_posts_table", nil).Once()
 		mockContext.EXPECT().Success("Created Migration: create_posts_table").Once()
 		mockContext.EXPECT().Success("Migration registered successfully").Once()
 
@@ -192,7 +192,7 @@ func Boot() {
 
 		mockContext.EXPECT().Argument(0).Return("create_comments_table").Once()
 		mockContext.EXPECT().OptionBool("force").Return(false).Once()
-		mockMigrator.EXPECT().Create("create_comments_table").Return("20240915060149_create_comments_table", nil).Once()
+		mockMigrator.EXPECT().Create("create_comments_table", "").Return("20240915060149_create_comments_table", nil).Once()
 		mockContext.EXPECT().Success("Created Migration: create_comments_table").Once()
 		mockContext.EXPECT().Error(mock.MatchedBy(func(msg string) bool {
 			return strings.Contains(msg, errors.MigrationRegisterFailed.Error())
