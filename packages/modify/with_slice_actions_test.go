@@ -12,7 +12,6 @@ import (
 
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/packages/match"
-	packagesmatch "github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/support"
 	supportfile "github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/path/internals"
@@ -47,7 +46,7 @@ func (s *WithSliceHandlerTestSuite) TestNewWithSliceHandler() {
 		typeImportPath:  "github.com/goravel/framework/contracts/console",
 		fileExistsError: errors.PackageCommandsFileExists,
 		stubTemplate:    commands,
-		matcherFunc:     packagesmatch.Commands,
+		matcherFunc:     match.Commands,
 	}
 
 	// Create app.go file
@@ -87,7 +86,7 @@ func (s *WithSliceHandlerTestSuite) TestNewWithSliceHandler_FileExists() {
 		typeImportPath:  "github.com/goravel/framework/contracts/console",
 		fileExistsError: errors.PackageCommandsFileExists,
 		stubTemplate:    commands,
-		matcherFunc:     packagesmatch.Commands,
+		matcherFunc:     match.Commands,
 	}
 
 	// Create both app.go and commands.go
@@ -126,7 +125,7 @@ func (s *WithSliceHandlerTestSuite) TestAddItem_NoWithMethod_NoFile() {
 		typeImportPath:  "github.com/goravel/framework/contracts/console",
 		fileExistsError: errors.PackageCommandsFileExists,
 		stubTemplate:    commands,
-		matcherFunc:     packagesmatch.Commands,
+		matcherFunc:     match.Commands,
 	}
 
 	appContent := `package bootstrap
@@ -171,7 +170,7 @@ func (s *WithSliceHandlerTestSuite) TestAddItem_NoWithMethod_FileExists() {
 		typeImportPath:  "github.com/goravel/framework/contracts/console",
 		fileExistsError: errors.PackageCommandsFileExists,
 		stubTemplate:    commands,
-		matcherFunc:     packagesmatch.Commands,
+		matcherFunc:     match.Commands,
 	}
 
 	appContent := `package bootstrap
@@ -215,7 +214,7 @@ func (s *WithSliceHandlerTestSuite) TestAddItem_WithMethodExists_FileExists() {
 		typeImportPath:  "github.com/goravel/framework/contracts/console",
 		fileExistsError: errors.PackageCommandsFileExists,
 		stubTemplate:    commands,
-		matcherFunc:     packagesmatch.Commands,
+		matcherFunc:     match.Commands,
 	}
 
 	appContent := `package bootstrap
@@ -270,7 +269,7 @@ func (s *WithSliceHandlerTestSuite) TestAddItem_WithMethodExists_NoFile_InlineAr
 		typeImportPath:  "github.com/goravel/framework/contracts/console",
 		fileExistsError: errors.PackageCommandsFileExists,
 		stubTemplate:    commands,
-		matcherFunc:     packagesmatch.Commands,
+		matcherFunc:     match.Commands,
 	}
 
 	appContent := `package bootstrap
@@ -395,7 +394,7 @@ func Boot() {
 func (s *WithSliceHandlerTestSuite) TestAddItemToFile() {
 	config := withSliceConfig{
 		fileName:    "commands.go",
-		matcherFunc: packagesmatch.Commands,
+		matcherFunc: match.Commands,
 	}
 
 	s.Require().NoError(supportfile.PutContent(s.appFile, `package bootstrap`))
@@ -631,7 +630,7 @@ func Boot() {
 	handler := newWithSliceHandler(config)
 	action := handler.setupInline("&commands.NewCommand{}")
 
-	err := GoFile(s.appFile).Find(packagesmatch.FoundationSetup()).Modify(action).Apply()
+	err := GoFile(s.appFile).Find(match.FoundationSetup()).Modify(action).Apply()
 	s.NoError(err)
 
 	result, err := supportfile.GetContent(s.appFile)
@@ -664,7 +663,7 @@ func Boot() {
 	handler := newWithSliceHandler(config)
 	action := handler.setupInline("&commands.NewCommand{}")
 
-	err := GoFile(s.appFile).Find(packagesmatch.FoundationSetup()).Modify(action).Apply()
+	err := GoFile(s.appFile).Find(match.FoundationSetup()).Modify(action).Apply()
 	s.NoError(err)
 
 	result, err := supportfile.GetContent(s.appFile)
@@ -695,7 +694,7 @@ func Boot() {
 	handler := newWithSliceHandler(config)
 	action := handler.setupWithFunction()
 
-	err := GoFile(s.appFile).Find(packagesmatch.FoundationSetup()).Modify(action).Apply()
+	err := GoFile(s.appFile).Find(match.FoundationSetup()).Modify(action).Apply()
 	s.NoError(err)
 
 	result, err := supportfile.GetContent(s.appFile)
@@ -713,7 +712,7 @@ func (s *WithSliceHandlerTestSuite) TestAddItem_WithMigrations() {
 		typeImportPath:  "github.com/goravel/framework/contracts/database/schema",
 		fileExistsError: errors.PackageMigrationsFileExists,
 		stubTemplate:    migrations,
-		matcherFunc:     packagesmatch.Migrations,
+		matcherFunc:     match.Migrations,
 	}
 
 	appContent := `package bootstrap
