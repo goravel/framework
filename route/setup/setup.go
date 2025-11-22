@@ -13,7 +13,6 @@ import (
 
 func main() {
 	stubs := Stubs{}
-	appConfigPath := path.Config("app.go")
 	routeFacadePath := path.Facades("route.go")
 	appServiceProviderPath := path.App("providers", "app_service_provider.go")
 	moduleName := packages.GetModuleNameFromArgs(os.Args)
@@ -25,6 +24,7 @@ func main() {
 	routesPath := path.Base("routes", "web.go")
 	welcomeTmplPath := path.Base("resources", "views", "welcome.tmpl")
 	routeServiceProvider := "&route.ServiceProvider{}"
+	modulePath := packages.GetModulePath()
 	envPath := path.Base(".env")
 	envExamplePath := path.Base(".env.example")
 	env := `
@@ -37,10 +37,8 @@ JWT_SECRET=
 
 	packages.Setup(os.Args).
 		Install(
-			// Add the route service provider to the providers array in config/app.go
-			modify.GoFile(appConfigPath).
-				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register(routeServiceProvider)),
+			// Add the route service provider to the providers array in bootstrap/providers.go
+			modify.AddProviderApply(modulePath, routeServiceProvider),
 
 			// Create resources/views/welcome.tmpl and routes/web.go
 			modify.File(welcomeTmplPath).Overwrite(stubs.WelcomeTmpl()),
@@ -75,10 +73,8 @@ JWT_SECRET=
 				modify.File(routesPath).Remove(),
 				modify.File(welcomeTmplPath).Remove(),
 
-				// Remove the route service provider from the providers array in config/app.go
-				modify.GoFile(appConfigPath).
-					Find(match.Providers()).Modify(modify.Unregister(routeServiceProvider)).
-					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
+				// Remove the route service provider from the providers array in bootstrap/providers.go
+				modify.RemoveProviderApply(modulePath, routeServiceProvider),
 			),
 
 			// Remove the Route facade

@@ -3,6 +3,7 @@ package modify
 import (
 	"go/token"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/dave/dst"
@@ -96,6 +97,38 @@ func (r *withSliceHandler) AddItem(pkg, item string) error {
 	return GoFile(r.appFilePath).Find(match.FoundationSetup()).Modify(r.setupInline(item)).Apply()
 }
 
+// RemoveItem removes an item from the slice in foundation.Setup() chain.
+// If the helper file exists (e.g., providers.go), it removes the item from that file.
+// If the helper file doesn't exist, it removes the item from the inline array in app.go.
+// This method also cleans up unused imports after removing the item.
+func (r *withSliceHandler) RemoveItem(pkg, item string) error {
+	withMethodExists, err := r.checkWithMethodExists()
+	if err != nil {
+		return err
+	}
+
+	if !withMethodExists {
+		// If WithMethod doesn't exist, there's nothing to remove
+		return nil
+	}
+
+	if r.fileExists {
+		// Remove from helper file
+		if err := r.removeItemFromFile(pkg, item); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	// Remove from inline array in app.go
+	if err := GoFile(r.appFilePath).Find(match.FoundationSetup()).Modify(r.removeInline(item)).Apply(); err != nil {
+		return err
+	}
+
+	// Clean up imports
+	return r.removeImports(pkg)
+}
+
 // checkWithMethodExists checks if the WithMethod exists in the foundation.Setup() chain.
 //
 // Example: For a config with withMethodName="WithCommands", it searches for:
@@ -170,6 +203,48 @@ func (r *withSliceHandler) addItemToFile(pkg, item string) error {
 
 	// Add the item to the helper function using the provided matcher function
 	return GoFile(r.filePath).Find(r.config.matcherFunc()).Modify(Register(item)).Apply()
+}
+
+// removeImports removes the item package import if it's no longer used.
+// It checks both app.go and the helper file (if it exists) to determine if the import is still in use.
+func (r *withSliceHandler) removeImports(pkg string) error {
+	importMatchers := match.Imports()
+	return GoFile(r.appFilePath).Find(importMatchers).Modify(RemoveImport(pkg)).Apply()
+}
+
+// removeItemFromFile removes an item from the existing helper function in the file.
+//
+// Example: For pkg="github.com/user/app/commands" and item="&commands.MyCommand{}":
+//
+// Before:
+//
+//	import "github.com/user/app/commands"
+//
+//	func Commands() []console.Command {
+//	    return []console.Command{
+//	        &commands.MyCommand{},
+//	        &commands.OtherCommand{},
+//	    }
+//	}
+//
+// After:
+//
+//	import "github.com/user/app/commands"
+//
+//	func Commands() []console.Command {
+//	    return []console.Command{
+//	        &commands.OtherCommand{},
+//	    }
+//	}
+func (r *withSliceHandler) removeItemFromFile(pkg, item string) error {
+	// Remove the item from the helper function using the provided matcher function
+	if err := GoFile(r.filePath).Find(r.config.matcherFunc()).Modify(Unregister(item)).Apply(); err != nil {
+		return err
+	}
+
+	// Clean up the import if it's no longer used
+	importMatchers := match.Imports()
+	return GoFile(r.filePath).Find(importMatchers).Modify(RemoveImport(pkg)).Apply()
 }
 
 // appendToExisting appends an item to an existing WithMethod call.
@@ -406,6 +481,84 @@ func (r *withSliceHandler) setupWithFunction() modify.Action {
 		// Insert WithMethod into the chain
 		parentOfSetup.X = newWithCall
 	}
+}
+
+// removeInline returns an action that removes an item from the inline array in the foundation.Setup() chain.
+//
+// This is used when the helper file doesn't exist and items are stored directly in app.go.
+// It removes the specified item from the inline array.
+//
+// Example: For item="&commands.MyCommand{}" with existing WithCommands:
+//
+// Before:
+//
+//	foundation.Setup().
+//	    WithCommands([]console.Command{
+//	        &commands.ExistingCmd{},
+//	        &commands.MyCommand{},
+//	    }).
+//	    Boot()
+//
+// After:
+//
+//	foundation.Setup().
+//	    WithCommands([]console.Command{
+//	        &commands.ExistingCmd{},
+//	    }).
+//	    Boot()
+func (r *withSliceHandler) removeInline(item string) modify.Action {
+	return func(cursor *dstutil.Cursor) {
+		stmt := cursor.Node().(*dst.ExprStmt)
+
+		if !containsFoundationSetup(stmt) {
+			return
+		}
+
+		callExpr, ok := stmt.X.(*dst.CallExpr)
+		if !ok {
+			return
+		}
+
+		_, withCall, _ := r.findFoundationSetupCalls(callExpr)
+		if withCall == nil {
+			return
+		}
+
+		itemExpr := MustParseExpr(item).(dst.Expr)
+		r.removeFromExisting(withCall, itemExpr)
+	}
+}
+
+// removeFromExisting removes an item from an existing WithMethod call.
+//
+// Example: For withCall representing ".WithCommands([]console.Command{&commands.Cmd1{}, &commands.Cmd2{}})" and itemExpr="&commands.Cmd1{}":
+//
+// Before:
+//
+//	.WithCommands([]console.Command{
+//	    &commands.Cmd1{},
+//	    &commands.Cmd2{},
+//	})
+//
+// After:
+//
+//	.WithCommands([]console.Command{
+//	    &commands.Cmd2{},
+//	})
+func (r *withSliceHandler) removeFromExisting(withCall *dst.CallExpr, itemExpr dst.Expr) {
+	if len(withCall.Args) == 0 {
+		return
+	}
+
+	compositeLit, ok := withCall.Args[0].(*dst.CompositeLit)
+	if !ok {
+		return
+	}
+
+	// Use slices.DeleteFunc to remove the matching item
+	compositeLit.Elts = slices.DeleteFunc(compositeLit.Elts, func(ex dst.Expr) bool {
+		return match.EqualNode(itemExpr).MatchNode(ex)
+	})
 }
 
 // addMiddlewareAppendCall adds a new handler.Append() call to the function literal.

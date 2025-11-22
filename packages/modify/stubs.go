@@ -22,6 +22,17 @@ func Migrations() []schema.Migration {
 `
 }
 
+func providers() string {
+	return `package bootstrap
+
+import "github.com/goravel/framework/contracts/foundation"
+
+func Providers() []foundation.ServiceProvider {
+	return []foundation.ServiceProvider{}
+}
+`
+}
+
 func seeders() string {
 	return `package bootstrap
 

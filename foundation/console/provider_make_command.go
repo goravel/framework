@@ -1,12 +1,16 @@
 package console
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support"
 	supportconsole "github.com/goravel/framework/support/console"
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -43,7 +47,7 @@ func (r *ProviderMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *ProviderMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "provider", ctx.Argument(0), support.Config.Paths.Provider)
+	make, err := supportconsole.NewMake(ctx, "provider", ctx.Argument(0), support.Config.Paths.Provider)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
@@ -51,12 +55,21 @@ func (r *ProviderMakeCommand) Handle(ctx console.Context) error {
 
 	stub := r.getStub()
 
-	if err := file.PutContent(m.GetFilePath(), r.populateStub(stub, m.GetPackageName(), m.GetStructName())); err != nil {
+	if err := file.PutContent(make.GetFilePath(), r.populateStub(stub, make.GetPackageName(), make.GetStructName())); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
 
 	ctx.Success("Provider created successfully")
+
+	if env.IsBootstrapSetup() {
+		if err := modify.AddProvider(make.GetPackageImportPath(), fmt.Sprintf("&%s.%s{}", make.GetPackageName(), make.GetStructName())); err != nil {
+			ctx.Error(errors.ProviderRegisterFailed.Args(make.GetStructName(), err).Error())
+			return nil
+		}
+
+		ctx.Success("Provider registered successfully")
+	}
 
 	return nil
 }

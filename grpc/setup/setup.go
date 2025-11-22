@@ -14,7 +14,6 @@ func main() {
 	stubs := Stubs{}
 	grpcFacade := "Grpc"
 	appServiceProviderPath := path.App("providers", "app_service_provider.go")
-	appConfigPath := path.Config("app.go")
 	configPath := path.Config("grpc.go")
 	facadePath := path.Facades("grpc.go")
 	kernelPath := path.App("grpc", "kernel.go")
@@ -24,6 +23,7 @@ func main() {
 	unaryServerInterceptors := "facades.Grpc().UnaryServerInterceptors(grpc.Kernel{}.UnaryServerInterceptors())"
 	unaryClientInterceptorGroups := "facades.Grpc().UnaryClientInterceptorGroups(grpc.Kernel{}.UnaryClientInterceptorGroups())"
 	routesGrpc := "routes.Grpc()"
+	modulePath := packages.GetModulePath()
 	facadesImport := fmt.Sprintf("%s/app/facades", moduleName)
 	grpcImport := fmt.Sprintf("%s/app/grpc", moduleName)
 	routesImport := fmt.Sprintf("%s/routes", moduleName)
@@ -34,10 +34,8 @@ GRPC_PORT=
 
 	packages.Setup(os.Args).
 		Install(
-			// Add the gRPC service provider to the providers array in config/app.go
-			modify.GoFile(appConfigPath).
-				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register(grpcServiceProvider)),
+			// Add the grpc service provider to the providers array in bootstrap/providers.go
+			modify.AddProviderApply(modulePath, grpcServiceProvider),
 
 			// Create config/grpc.go, app/grpc/kernel.go, routes/grpc.go
 			modify.File(configPath).Overwrite(stubs.Config(packages.GetModuleNameFromArgs(os.Args))),
@@ -62,10 +60,8 @@ GRPC_PORT=
 		).
 		Uninstall(
 			modify.WhenNoFacades([]string{grpcFacade},
-				// Remove the gRPC service provider from the providers array in config/app.go
-				modify.GoFile(appConfigPath).
-					Find(match.Providers()).Modify(modify.Unregister(grpcServiceProvider)).
-					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
+				// Remove the gRPC service provider from the providers array in bootstrap/providers.go
+				modify.RemoveProviderApply(modulePath, grpcServiceProvider),
 
 				// Modify app/providers/app_service_provider.go to unregister the gRPC interceptors and routes
 				modify.GoFile(appServiceProviderPath).

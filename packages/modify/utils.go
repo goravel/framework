@@ -185,6 +185,71 @@ func AddMigration(pkg, migration string) error {
 	return handler.AddItem(pkg, migration)
 }
 
+// AddProvider adds service provider to the foundation.Setup() chain in the Boot function.
+// If WithProviders doesn't exist, it creates a new providers.go file in the bootstrap directory based on the stubs.go:providers template,
+// then add WithProviders(Providers()) to foundation.Setup(), add the provider to Providers().
+// If WithProviders exists, it appends the provider to []foundation.ServiceProvider if the providers.go file doesn't exist,
+// or appends to the Providers() function if the providers.go file exists.
+// This function also ensures the configuration package and provider package are imported when creating WithProviders.
+//
+// Returns an error if providers.go exists but WithProviders is not registered in foundation.Setup(), as the providers.go file
+// should only be created when adding WithProviders to Setup().
+//
+// Parameters:
+//   - pkg: Package path of the provider (e.g., "goravel/app/providers")
+//   - provider: Provider expression to add (e.g., "&providers.AppServiceProvider{}")
+//
+// Example usage:
+//
+//	AddProvider("goravel/app/providers", "&providers.AppServiceProvider{}")
+//
+// This transforms (when providers.go doesn't exist and WithProviders doesn't exist):
+//
+//	foundation.Setup().WithConfig(config.Boot).Run()
+//
+// Into:
+//
+//	foundation.Setup().WithProviders(Providers()).WithConfig(config.Boot).Run()
+//
+// And creates bootstrap/providers.go:
+//
+//	package bootstrap
+//	import "github.com/goravel/framework/contracts/foundation"
+//	func Providers() []foundation.ServiceProvider {
+//	  return []foundation.ServiceProvider{&providers.AppServiceProvider{}}
+//	}
+//
+// If WithProviders already exists but providers.go doesn't:
+//
+//	foundation.Setup().WithProviders([]foundation.ServiceProvider{
+//	  &providers.ExistingProvider{},
+//	}).Run()
+//
+// It appends the new provider:
+//
+//	foundation.Setup().WithProviders([]foundation.ServiceProvider{
+//	  &providers.ExistingProvider{},
+//	  &providers.AppServiceProvider{},
+//	}).Run()
+//
+// If WithProviders exists with Providers() call and providers.go exists, it appends to Providers() function.
+func AddProvider(pkg, provider string) error {
+	config := withSliceConfig{
+		fileName:        "providers.go",
+		withMethodName:  "WithProviders",
+		helperFuncName:  "Providers",
+		typePackage:     "foundation",
+		typeName:        "ServiceProvider",
+		typeImportPath:  "github.com/goravel/framework/contracts/foundation",
+		fileExistsError: errors.PackageProvidersFileExists,
+		stubTemplate:    providers,
+		matcherFunc:     match.Providers,
+	}
+
+	handler := newWithSliceHandler(config)
+	return handler.AddItem(pkg, provider)
+}
+
 // AddSeeder adds seeder to the foundation.Setup() chain in the Boot function.
 // If WithSeeders doesn't exist, it creates a new seeders.go file in the bootstrap directory based on the stubs.go:seeders template,
 // then adds WithSeeders(Seeders()) to foundation.Setup(), and adds the seeder to Seeders().
@@ -250,16 +315,74 @@ func AddSeeder(pkg, seeder string) error {
 	return handler.AddItem(pkg, seeder)
 }
 
+// ExprExists checks if an expression exists in a slice of expressions.
+// It uses structural equality comparison via ExprIndex.
+//
+// Parameters:
+//   - x: Slice of expressions to search in
+//   - y: Expression to search for
+//
+// Returns true if the expression exists in the slice, false otherwise.
+//
+// Example:
+//
+//	exprs := []dst.Expr{
+//		&dst.Ident{Name: "foo"},
+//		&dst.Ident{Name: "bar"},
+//	}
+//	target := &dst.Ident{Name: "foo"}
+//	if ExprExists(exprs, target) {
+//		fmt.Println("Expression found")
+//	}
 func ExprExists(x []dst.Expr, y dst.Expr) bool {
 	return ExprIndex(x, y) >= 0
 }
 
+// ExprIndex returns the index of the first occurrence of an expression in a slice.
+// It uses structural equality comparison to match expressions.
+//
+// Parameters:
+//   - x: Slice of expressions to search in
+//   - y: Expression to search for
+//
+// Returns the index of the first occurrence, or -1 if not found.
+//
+// Example:
+//
+//	exprs := []dst.Expr{
+//		&dst.Ident{Name: "foo"},
+//		&dst.Ident{Name: "bar"},
+//		&dst.Ident{Name: "baz"},
+//	}
+//	target := &dst.Ident{Name: "bar"}
+//	index := ExprIndex(exprs, target) // returns 1
 func ExprIndex(x []dst.Expr, y dst.Expr) int {
 	return slices.IndexFunc(x, func(expr dst.Expr) bool {
 		return match.EqualNode(y).MatchNode(expr)
 	})
 }
 
+// IsUsingImport checks if an imported package is actually used in the file.
+// It inspects the AST for selector expressions that reference the package.
+//
+// Parameters:
+//   - df: The parsed Go file to inspect
+//   - path: Import path of the package (e.g., "github.com/goravel/framework/contracts/console")
+//   - name: Optional package name. If not provided, uses the last segment of the path
+//
+// Returns true if the package is used anywhere in the file, false otherwise.
+//
+// Example:
+//
+//	file, _ := decorator.Parse(src)
+//	// Check if "console" package from "github.com/goravel/framework/contracts/console" is used
+//	if IsUsingImport(file, "github.com/goravel/framework/contracts/console") {
+//		fmt.Println("console package is being used")
+//	}
+//	// Or specify a custom name
+//	if IsUsingImport(file, "github.com/goravel/framework/contracts/console", "customName") {
+//		fmt.Println("Package with alias 'customName' is being used")
+//	}
 func IsUsingImport(df *dst.File, path string, name ...string) bool {
 	if len(name) == 0 {
 		split := strings.Split(path, "/")
@@ -280,10 +403,58 @@ func IsUsingImport(df *dst.File, path string, name ...string) bool {
 	return used
 }
 
+// KeyExists checks if a key exists in a slice of key-value expressions.
+// It uses structural equality comparison via KeyIndex.
+//
+// Parameters:
+//   - kvs: Slice of expressions (expected to contain KeyValueExpr)
+//   - key: Key expression to search for
+//
+// Returns true if the key exists in any KeyValueExpr, false otherwise.
+//
+// Example:
+//
+//	kvExprs := []dst.Expr{
+//		&dst.KeyValueExpr{
+//			Key:   &dst.Ident{Name: "name"},
+//			Value: &dst.BasicLit{Value: `"John"`},
+//		},
+//		&dst.KeyValueExpr{
+//			Key:   &dst.Ident{Name: "age"},
+//			Value: &dst.BasicLit{Value: "30"},
+//		},
+//	}
+//	targetKey := &dst.Ident{Name: "name"}
+//	if KeyExists(kvExprs, targetKey) {
+//		fmt.Println("Key found")
+//	}
 func KeyExists(kvs []dst.Expr, key dst.Expr) bool {
 	return KeyIndex(kvs, key) >= 0
 }
 
+// KeyIndex returns the index of a key in a slice of key-value expressions.
+// It searches for KeyValueExpr nodes and compares their keys using structural equality.
+//
+// Parameters:
+//   - kvs: Slice of expressions (expected to contain KeyValueExpr)
+//   - key: Key expression to search for
+//
+// Returns the index of the first KeyValueExpr with matching key, or -1 if not found.
+//
+// Example:
+//
+//	kvExprs := []dst.Expr{
+//		&dst.KeyValueExpr{
+//			Key:   &dst.Ident{Name: "name"},
+//			Value: &dst.BasicLit{Value: `"John"`},
+//		},
+//		&dst.KeyValueExpr{
+//			Key:   &dst.Ident{Name: "age"},
+//			Value: &dst.BasicLit{Value: "30"},
+//		},
+//	}
+//	targetKey := &dst.Ident{Name: "age"}
+//	index := KeyIndex(kvExprs, targetKey) // returns 1
 func KeyIndex(kvs []dst.Expr, key dst.Expr) int {
 	return slices.IndexFunc(kvs, func(expr dst.Expr) bool {
 		if kv, ok := expr.(*dst.KeyValueExpr); ok {
@@ -293,6 +464,29 @@ func KeyIndex(kvs []dst.Expr, key dst.Expr) int {
 	})
 }
 
+// MustParseExpr parses a Go expression from a string and returns its AST node.
+// It wraps the expression in a minimal valid Go program to parse it, then extracts
+// and returns the expression node with proper decorations and newlines.
+//
+// Parameters:
+//   - x: String representation of a Go expression
+//
+// Returns the parsed expression as a dst.Node, with decorations preserved.
+// Panics if the expression cannot be parsed.
+//
+// Example:
+//
+//	// Parse a simple expression
+//	node := MustParseExpr("&commands.ExampleCommand{}")
+//	// Returns a UnaryExpr node representing the address-of operation
+//
+//	// Parse a composite literal
+//	node := MustParseExpr(`map[string]interface{}{"key": "value"}`)
+//	// Returns a CompositeLit node
+//
+//	// Parse a function call
+//	node := MustParseExpr("fmt.Println(\"hello\")")
+//	// Returns a CallExpr node
 func MustParseExpr(x string) (node dst.Node) {
 	src := "package p\nvar _ = " + x
 	file, err := decorator.Parse(src)
@@ -310,6 +504,86 @@ func MustParseExpr(x string) (node dst.Node) {
 	return WrapNewline(expr)
 }
 
+// RemoveProvider removes a service provider from the foundation.Setup() chain in the Boot function.
+// If providers.go exists, it removes the provider from the Providers() function in that file.
+// If providers.go doesn't exist, it removes the provider from the inline array in app.go.
+// This function also cleans up unused imports after removing the provider.
+//
+// Parameters:
+//   - pkg: Package path of the provider (e.g., "goravel/app/providers")
+//   - provider: Provider expression to remove (e.g., "&providers.AppServiceProvider{}")
+//
+// Example usage:
+//
+//	RemoveProvider("goravel/app/providers", "&providers.AppServiceProvider{}")
+//
+// If providers.go exists with:
+//
+//	func Providers() []foundation.ServiceProvider {
+//	  return []foundation.ServiceProvider{
+//	    &providers.AppServiceProvider{},
+//	    &providers.OtherProvider{},
+//	  }
+//	}
+//
+// After removal:
+//
+//	func Providers() []foundation.ServiceProvider {
+//	  return []foundation.ServiceProvider{
+//	    &providers.OtherProvider{},
+//	  }
+//	}
+//
+// If providers.go doesn't exist and app.go has:
+//
+//	foundation.Setup().WithProviders([]foundation.ServiceProvider{
+//	  &providers.AppServiceProvider{},
+//	  &providers.OtherProvider{},
+//	}).Run()
+//
+// After removal:
+//
+//	foundation.Setup().WithProviders([]foundation.ServiceProvider{
+//	  &providers.OtherProvider{},
+//	}).Run()
+func RemoveProvider(pkg, provider string) error {
+	config := withSliceConfig{
+		fileName:       "providers.go",
+		withMethodName: "WithProviders",
+		helperFuncName: "Providers",
+		typePackage:    "foundation",
+		typeName:       "ServiceProvider",
+		typeImportPath: "github.com/goravel/framework/contracts/foundation",
+		matcherFunc:    match.Providers,
+	}
+
+	handler := newWithSliceHandler(config)
+	return handler.RemoveItem(pkg, provider)
+}
+
+// WrapNewline adds newline decorations to specific AST nodes for better formatting.
+// It traverses the AST and adds Before/After newlines to KeyValueExpr, UnaryExpr,
+// and FuncType result nodes to improve code readability.
+//
+// Parameters:
+//   - node: Any dst.Node to process
+//
+// Returns the same node with newline decorations applied.
+//
+// Example:
+//
+//	// Parse and wrap an expression
+//	expr := MustParseExpr("&commands.ExampleCommand{}")
+//	// The UnaryExpr will have newlines before and after
+//
+//	// For a composite literal with key-value pairs:
+//	node := MustParseExpr(`map[string]int{"a": 1, "b": 2}`)
+//	wrapped := WrapNewline(node)
+//	// Each KeyValueExpr will have newlines for better formatting:
+//	// map[string]int{
+//	//     "a": 1,
+//	//     "b": 2,
+//	// }
 func WrapNewline[T dst.Node](node T) T {
 	dst.Inspect(node, func(n dst.Node) bool {
 		switch v := n.(type) {
@@ -327,13 +601,49 @@ func WrapNewline[T dst.Node](node T) T {
 	return node
 }
 
+// isThirdParty determines if an import path refers to a third-party package.
+// Third-party packages typically contain a domain (e.g., ".com", ".org") in their path.
+// This heuristic is taken from golang.org/x/tools/imports package.
+//
+// Parameters:
+//   - importPath: The import path to check
+//
+// Returns true if the import path appears to be a third-party package, false for standard library.
+//
+// Example:
+//
+//	isThirdParty("fmt") // false - standard library
+//	isThirdParty("encoding/json") // false - standard library
+//	isThirdParty("github.com/goravel/framework") // true - third party
+//	isThirdParty("example.com/package") // true - third party
 func isThirdParty(importPath string) bool {
 	// Third party package import path usually contains "." (".com", ".org", ...)
 	// This logic is taken from golang.org/x/tools/imports package.
 	return strings.Contains(importPath, ".")
 }
 
-// isTopName returns true if n is a top-level unresolved identifier with the given name.
+// isTopName checks if an expression is a top-level unresolved identifier with the given name.
+// An identifier is considered "top-level" and "unresolved" when it has no associated object,
+// meaning it refers to a package name or other non-local identifier.
+//
+// Parameters:
+//   - n: Expression to check
+//   - name: Expected identifier name
+//
+// Returns true if n is an Ident with the given name and no associated object, false otherwise.
+//
+// Example:
+//
+//	// In the expression "fmt.Println", "fmt" is a top-level identifier
+//	selectorExpr := &dst.SelectorExpr{
+//		X:   &dst.Ident{Name: "fmt", Obj: nil},
+//		Sel: &dst.Ident{Name: "Println"},
+//	}
+//	isTopName(selectorExpr.X, "fmt") // true
+//
+//	// A local variable has an associated Obj, so it's not a top-level name
+//	localVar := &dst.Ident{Name: "x", Obj: &dst.Object{}}
+//	isTopName(localVar, "x") // false
 func isTopName(n dst.Expr, name string) bool {
 	id, ok := n.(*dst.Ident)
 	return ok && id.Name == name && id.Obj == nil

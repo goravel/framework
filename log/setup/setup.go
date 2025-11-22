@@ -5,14 +5,12 @@ import (
 
 	"github.com/goravel/framework/contracts/facades"
 	"github.com/goravel/framework/packages"
-	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support/path"
 )
 
 func main() {
 	stubs := Stubs{}
-	appConfigPath := path.Config("app.go")
 	logFacadePath := path.Facades("log.go")
 	loggingConfigPath := path.Config("logging.go")
 	moduleName := packages.GetModuleNameFromArgs(os.Args)
@@ -26,10 +24,8 @@ LOG_LEVEL=debug
 
 	packages.Setup(os.Args).
 		Install(
-			// Add the log service provider to the providers array in config/app.go
-			modify.GoFile(appConfigPath).
-				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register(logServiceProvider)),
+			// Add the log service provider to the providers array in bootstrap/providers.go
+			modify.AddProviderApply(packages.GetModulePath(), logServiceProvider),
 
 			// Create config/logging.go
 			modify.File(loggingConfigPath).Overwrite(stubs.Config(moduleName)),
@@ -43,13 +39,11 @@ LOG_LEVEL=debug
 		).
 		Uninstall(
 			modify.WhenNoFacades([]string{facades.Log},
-				// Remove the log service provider from the providers array in config/app.go
-				modify.GoFile(appConfigPath).
-					Find(match.Providers()).Modify(modify.Unregister(logServiceProvider)).
-					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
-
 				// Remove config/logging.go
 				modify.File(loggingConfigPath).Remove(),
+
+				// Remove the log service provider from the providers array in bootstrap/providers.go
+				modify.RemoveProviderApply(packages.GetModulePath(), logServiceProvider),
 			),
 
 			// Remove the Log facade

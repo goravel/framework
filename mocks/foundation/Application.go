@@ -349,6 +349,65 @@ func (_c *Application_Boot_Call) RunAndReturn(run func()) *Application_Boot_Call
 	return _c
 }
 
+// BootstrapPath provides a mock function with given fields: path
+func (_m *Application) BootstrapPath(path ...string) string {
+	_va := make([]interface{}, len(path))
+	for _i := range path {
+		_va[_i] = path[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for BootstrapPath")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(...string) string); ok {
+		r0 = rf(path...)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Application_BootstrapPath_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BootstrapPath'
+type Application_BootstrapPath_Call struct {
+	*mock.Call
+}
+
+// BootstrapPath is a helper method to define mock.On call
+//   - path ...string
+func (_e *Application_Expecter) BootstrapPath(path ...interface{}) *Application_BootstrapPath_Call {
+	return &Application_BootstrapPath_Call{Call: _e.mock.On("BootstrapPath",
+		append([]interface{}{}, path...)...)}
+}
+
+func (_c *Application_BootstrapPath_Call) Run(run func(path ...string)) *Application_BootstrapPath_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Application_BootstrapPath_Call) Return(_a0 string) *Application_BootstrapPath_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Application_BootstrapPath_Call) RunAndReturn(run func(...string) string) *Application_BootstrapPath_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Commands provides a mock function with given fields: _a0
 func (_m *Application) Commands(_a0 []console.Command) {
 	_m.Called(_a0)
