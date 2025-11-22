@@ -352,7 +352,7 @@ func main() {}
 `
 		s.Require().NoError(supportfile.PutContent(s.file, src))
 
-		s.NoError(GoFile(s.file).FindOrCreate(match.Imports(), CreateImport).Modify(AddImport("fmt")).Apply())
+		s.NoError(GoFile(s.file).FindOrCreate(match.Imports(), createImport).Modify(AddImport("fmt")).Apply())
 
 		content, err := supportfile.GetContent(s.file)
 		s.NoError(err)
@@ -368,7 +368,7 @@ func main() {
 `
 		s.Require().NoError(supportfile.PutContent(s.file, src))
 
-		s.NoError(GoFile(s.file).FindOrCreate(match.Imports(), CreateImport).Modify(AddImport("fmt")).Apply())
+		s.NoError(GoFile(s.file).FindOrCreate(match.Imports(), createImport).Modify(AddImport("fmt")).Apply())
 
 		content, err := supportfile.GetContent(s.file)
 		s.NoError(err)
