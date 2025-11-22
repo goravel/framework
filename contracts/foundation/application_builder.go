@@ -30,6 +30,8 @@ type ApplicationBuilder interface {
 	WithMiddleware(fn func(handler configuration.Middleware)) ApplicationBuilder
 	// WithMigrations registers the database migrations.
 	WithMigrations(migrations []schema.Migration) ApplicationBuilder
+	// WithPaths sets custom paths for the application.
+	WithPaths(fn func(paths configuration.Paths)) ApplicationBuilder
 	// WithProviders registers and boots custom service providers.
 	WithProviders(providers []ServiceProvider) ApplicationBuilder
 	// WithRouting registers the application's routes.

@@ -210,12 +210,12 @@ func (r *Application) Version() string {
 }
 
 func (r *Application) BasePath(path ...string) string {
-	return internals.AbsPath(path...)
+	return internals.Abs(path...)
 }
 
 func (r *Application) ConfigPath(path ...string) string {
 	path = append([]string{support.RelativePath, "config"}, path...)
-	return internals.AbsPath(path...)
+	return internals.Abs(path...)
 }
 
 func (r *Application) ModelPath(path ...string) string {
@@ -225,7 +225,7 @@ func (r *Application) ModelPath(path ...string) string {
 
 func (r *Application) DatabasePath(path ...string) string {
 	path = append([]string{support.RelativePath, "database"}, path...)
-	return internals.AbsPath(path...)
+	return internals.Abs(path...)
 }
 
 func (r *Application) CurrentLocale(ctx context.Context) string {
@@ -240,11 +240,11 @@ func (r *Application) CurrentLocale(ctx context.Context) string {
 
 func (r *Application) ExecutablePath(path ...string) string {
 	path = append([]string{support.RootPath}, path...)
-	return internals.AbsPath(path...)
+	return internals.Abs(path...)
 }
 
 func (r *Application) FacadesPath(path ...string) string {
-	return internals.FacadesPath(path...)
+	return internals.Facades(path...)
 }
 
 func (r *Application) LangPath(path ...string) string {
@@ -254,7 +254,7 @@ func (r *Application) LangPath(path ...string) string {
 	}
 
 	path = append([]string{support.RelativePath, defaultPath}, path...)
-	return internals.AbsPath(path...)
+	return internals.Abs(path...)
 }
 
 func (r *Application) Path(path ...string) string {
@@ -263,17 +263,17 @@ func (r *Application) Path(path ...string) string {
 
 func (r *Application) PublicPath(path ...string) string {
 	path = append([]string{support.RelativePath, "public"}, path...)
-	return internals.AbsPath(path...)
+	return internals.Abs(path...)
 }
 
 func (r *Application) ResourcePath(path ...string) string {
 	path = append([]string{support.RelativePath, "resources"}, path...)
-	return internals.AbsPath(path...)
+	return internals.Abs(path...)
 }
 
 func (r *Application) StoragePath(path ...string) string {
 	path = append([]string{support.RelativePath, "storage"}, path...)
-	return internals.AbsPath(path...)
+	return internals.Abs(path...)
 }
 
 func (r *Application) addPublishGroup(group string, paths map[string]string) {

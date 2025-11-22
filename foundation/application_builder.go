@@ -27,6 +27,7 @@ type ApplicationBuilder struct {
 	grpcServerInterceptors     []grpc.UnaryServerInterceptor
 	middleware                 func(middleware contractsconfiguration.Middleware)
 	migrations                 []schema.Migration
+	paths                      func(paths contractsconfiguration.Paths)
 	routes                     []func()
 	scheduledEvents            []schedule.Event
 	seeders                    []seeder.Seeder
@@ -39,6 +40,12 @@ func NewApplicationBuilder(app foundation.Application) *ApplicationBuilder {
 }
 
 func (r *ApplicationBuilder) Create() foundation.Application {
+	// Set custom paths
+	if r.paths != nil {
+		paths := configuration.NewPaths()
+		r.paths(paths)
+	}
+
 	// Register and boot custom service providers
 	r.app.AddServiceProviders(r.configuredServiceProviders)
 	r.app.Boot()
@@ -182,6 +189,12 @@ func (r *ApplicationBuilder) WithMiddleware(fn func(handler contractsconfigurati
 
 func (r *ApplicationBuilder) WithMigrations(migrations []schema.Migration) foundation.ApplicationBuilder {
 	r.migrations = migrations
+
+	return r
+}
+
+func (r *ApplicationBuilder) WithPaths(fn func(paths contractsconfiguration.Paths)) foundation.ApplicationBuilder {
+	r.paths = fn
 
 	return r
 }

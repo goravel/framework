@@ -71,6 +71,25 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.True(calledConfig)
 	})
 
+	s.Run("WithPaths", func() {
+		s.SetupTest()
+		calledPaths := false
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+
+		app := s.builder.
+			WithPaths(func(paths contractsconfiguration.Paths) {
+				calledPaths = true
+				paths.Model("custom/models")
+				paths.Controller("custom/controllers")
+			}).
+			Create()
+
+		s.NotNil(app)
+		s.True(calledPaths)
+	})
+
 	s.Run("WithEvents but Event facade is nil", func() {
 		s.SetupTest()
 
@@ -437,6 +456,15 @@ func (s *ApplicationBuilderTestSuite) TestWithMiddleware() {
 
 	s.NotNil(builder)
 	s.NotNil(s.builder.middleware)
+}
+
+func (s *ApplicationBuilderTestSuite) TestWithPaths() {
+	fn := func(paths contractsconfiguration.Paths) {}
+
+	builder := s.builder.WithPaths(fn)
+
+	s.NotNil(builder)
+	s.NotNil(s.builder.paths)
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithMigrations() {

@@ -8,7 +8,7 @@ import (
 	"github.com/goravel/framework/support"
 )
 
-func AbsPath(paths ...string) string {
+func Abs(paths ...string) string {
 	path := filepath.Join(paths...)
 	abs, err := filepath.Abs(path)
 	if err != nil {
@@ -17,7 +17,11 @@ func AbsPath(paths ...string) string {
 	return abs
 }
 
-func FacadesPath(path ...string) string {
+func BootstrapApp() string {
+	return Abs(support.RelativePath, support.Config.Paths.Bootstrap, "app.go")
+}
+
+func Facades(path ...string) string {
 	path = append([]string{"facades"}, path...)
 
 	return Path(path...)
@@ -25,5 +29,6 @@ func FacadesPath(path ...string) string {
 
 func Path(path ...string) string {
 	path = append([]string{support.RelativePath, "app"}, path...)
-	return AbsPath(path...)
+
+	return Abs(path...)
 }

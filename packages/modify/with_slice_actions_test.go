@@ -11,14 +11,13 @@ import (
 	packagesmatch "github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/support"
 	supportfile "github.com/goravel/framework/support/file"
+	"github.com/goravel/framework/support/path/internals"
 )
 
 type WithSliceHandlerTestSuite struct {
 	suite.Suite
-	tempDir      string
 	bootstrapDir string
 	appFile      string
-	originalPath string
 }
 
 func TestWithSliceHandlerTestSuite(t *testing.T) {
@@ -26,18 +25,12 @@ func TestWithSliceHandlerTestSuite(t *testing.T) {
 }
 
 func (s *WithSliceHandlerTestSuite) SetupTest() {
-	s.tempDir = s.T().TempDir()
-	s.bootstrapDir = filepath.Join(s.tempDir, "bootstrap")
-	s.appFile = filepath.Join(s.bootstrapDir, "app.go")
-
-	// Save original config path
-	s.originalPath = support.Config.Paths.App
-	support.Config.Paths.App = s.appFile
+	s.bootstrapDir = support.Config.Paths.Bootstrap
+	s.appFile = internals.BootstrapApp()
 }
 
 func (s *WithSliceHandlerTestSuite) TearDownTest() {
-	// Restore original config path
-	support.Config.Paths.App = s.originalPath
+	s.NoError(supportfile.Remove(s.bootstrapDir))
 }
 
 func (s *WithSliceHandlerTestSuite) TestNewWithSliceHandler() {
@@ -76,7 +69,7 @@ func Boot() {
 	s.NotNil(handler.config.stubTemplate)
 	s.NotNil(handler.config.matcherFunc)
 	s.Equal(s.appFile, handler.appFilePath)
-	s.Equal(filepath.Join(s.bootstrapDir, "commands.go"), handler.filePath)
+	s.Contains(handler.filePath, filepath.Join(s.bootstrapDir, "commands.go"))
 	s.False(handler.fileExists)
 }
 
