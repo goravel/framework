@@ -276,6 +276,7 @@ var (
 			Dependencies: []string{
 				Config,
 				Http,
+				View,
 			},
 			Drivers: []Driver{
 				{
@@ -383,7 +384,7 @@ var (
 		},
 		View: {
 			Description: "Provides a simple yet powerful templating engine.",
-			PkgPath:     "github.com/goravel/framework/http",
+			PkgPath:     "github.com/goravel/framework/view",
 		},
 	}
 )

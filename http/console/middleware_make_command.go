@@ -1,12 +1,16 @@
 package console
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support"
 	supportconsole "github.com/goravel/framework/support/console"
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -39,18 +43,27 @@ func (r *MiddlewareMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *MiddlewareMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "middleware", ctx.Argument(0), support.Config.Paths.Middleware)
+	make, err := supportconsole.NewMake(ctx, "middleware", ctx.Argument(0), support.Config.Paths.Middleware)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
 
-	if err := file.PutContent(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
+	if err := file.PutContent(make.GetFilePath(), r.populateStub(r.getStub(), make.GetPackageName(), make.GetStructName())); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
 
 	ctx.Success("Middleware created successfully")
+
+	if env.IsBootstrapSetup() {
+		if err := modify.AddMiddleware(make.GetPackageImportPath(), fmt.Sprintf("%s.%s()", make.GetPackageName(), make.GetStructName())); err != nil {
+			ctx.Error(errors.MiddlewareRegisterFailed.Args(make.GetStructName(), err).Error())
+			return nil
+		}
+
+		ctx.Success("Middleware registered successfully")
+	}
 
 	return nil
 }

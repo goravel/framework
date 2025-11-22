@@ -108,25 +108,6 @@ func AddImport(path string, name ...string) modify.Action {
 	}
 }
 
-func CreateImport(node dst.Node) error {
-	importDecl := &dst.GenDecl{
-		Tok: token.IMPORT,
-	}
-
-	f := node.(*dst.File)
-
-	newDecls := make([]dst.Decl, 0, len(f.Decls)+1)
-	newDecls = append(newDecls, f.Decls[0], importDecl) // package and import
-
-	if len(f.Decls) > 1 {
-		newDecls = append(newDecls, f.Decls[1:]...) // others
-	}
-
-	f.Decls = newDecls
-
-	return nil
-}
-
 // Register adds a registration to the matched specified array.
 func Register(expression string, before ...string) modify.Action {
 	return func(cursor *dstutil.Cursor) {
@@ -153,7 +134,6 @@ func Register(expression string, before ...string) modify.Action {
 			color.Warningln(errors.PackageRegistrationNotFound.Args(before[0]))
 		}
 
-		// insert registration at the end
 		node.Elts = append(node.Elts, expr)
 	}
 }

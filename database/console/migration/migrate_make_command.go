@@ -12,7 +12,9 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
+	"github.com/goravel/framework/support"
 	supportconsole "github.com/goravel/framework/support/console"
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -51,37 +53,41 @@ func (r *MigrateMakeCommand) Extend() command.Extend {
 
 // Handle Executes the console command.
 func (r *MigrateMakeCommand) Handle(ctx console.Context) error {
-	// It's possible for the developer to specify the tables to modify in this
-	// schema operation. The developer may also specify if this table needs
-	// to be freshly created, so we can create the appropriate migrations.
-	m, err := supportconsole.NewMake(ctx, "migration", ctx.Argument(0), filepath.Join("database", "migrations"))
+	make, err := supportconsole.NewMake(ctx, "migration", ctx.Argument(0), support.Config.Paths.Migration)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
 
-	migrationName := m.GetStructName()
-	modelName := ctx.Option("model")
-
-	fileName, err := r.migrator.Create(migrationName, modelName)
+	fileName, err := r.migrator.Create(make.GetName())
 	if err != nil {
 		ctx.Error(errors.MigrationCreateFailed.Args(err).Error())
 		return nil
 	}
 
-	ctx.Success(fmt.Sprintf("Created Migration: %s", migrationName))
+	ctx.Success(fmt.Sprintf("Created Migration: %s", make.GetName()))
 
-	info, _ := debug.ReadBuildInfo()
 	structName := str.Of(fileName).Prepend("m_").Studly().String()
-	if err = modify.GoFile(r.app.DatabasePath("kernel.go")).
-		Find(match.Imports()).Modify(modify.AddImport(fmt.Sprintf("%s/database/migrations", info.Main.Path))).
-		Find(match.Migrations()).Modify(modify.Register(fmt.Sprintf("&migrations.%s{}", structName))).
-		Apply(); err != nil {
-		ctx.Warning(errors.MigrationRegisterFailed.Args(err).Error())
+	if env.IsBootstrapSetup() {
+		err = modify.AddMigration(make.GetPackageImportPath(), fmt.Sprintf("&%s.%s{}", make.GetPackageName(), structName))
+	} else {
+		err = r.registerInKernel(make.GetPackageImportPath(), structName)
+	}
+
+	if err != nil {
+		ctx.Error(errors.MigrationRegisterFailed.Args(err).Error())
 		return nil
 	}
 
 	ctx.Success("Migration registered successfully")
 
 	return nil
+}
+
+// DEPRECATED: The kernel file will be removed in future versions.
+func (r *MigrateMakeCommand) registerInKernel(pkg, structName string) error {
+	return modify.GoFile(r.app.DatabasePath("kernel.go")).
+		Find(match.Imports()).Modify(modify.AddImport(pkg)).
+		Find(match.Migrations()).Modify(modify.Register(fmt.Sprintf("&migrations.%s{}", structName))).
+		Apply()
 }

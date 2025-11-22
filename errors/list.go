@@ -41,10 +41,9 @@ var (
 
 	ConsoleProvidersNotArray = New("the app.providers configuration is not of type []foundation.ServiceProvider, skipping registering service providers")
 
-	ConsoleCommandRegistrationFailed         = New("Registration of command '%s' failed: %v")
+	ConsoleCommandRegisterFailed             = New("failed to register command '%s': %v")
 	ConsoleCommandRequiredArgumentWrongOrder = New("required argument '%s' should be placed before any not-required arguments")
 	ConsoleCommandArgumentUnknownType        = New("unknown type of console command argument %T, with value %+v")
-	ConsoleCommandRegisterFailed             = New("command register failed: %v")
 	ConsoleDropAllTablesFailed               = New("drop all tables failed: %v")
 	ConsoleDropAllTypesFailed                = New("drop all types failed: %v")
 	ConsoleDropAllViewsFailed                = New("drop all views failed: %v")
@@ -111,6 +110,8 @@ var (
 	MailTemplateEngineViaInvalid    = New("invalid via type for template engine '%s'").SetModule(ModuleMail)
 	MailTemplateEngineFactoryFailed = New("factory for template engine '%s' failed: %w").SetModule(ModuleMail)
 
+	MiddlewareRegisterFailed = New("failed to register middleware '%s': %v")
+
 	MigrationCreateFailed    = New("create migration failed: %v")
 	MigrationFreshFailed     = New("migration fresh failed: %v")
 	MigrationGetStatusFailed = New("get migration status failed: %v")
@@ -148,6 +149,9 @@ var (
 	PackageModuleNameEmpty       = New("package module name is empty, please run command with module name")
 	PackageRegistrationDuplicate = New("'%s' had been registered")
 	PackageRegistrationNotFound  = New("'%s' not found, cannot insert before it")
+	PackageCommandsFileExists    = New("commands.go already exists but WithCommands is not registered in foundation.Setup(). The commands.go file should only be created when adding WithCommands to Setup()")
+	PackageMigrationsFileExists  = New("migrations.go already exists but WithMigrations is not registered in foundation.Setup(). The migrations.go file should only be created when adding WithMigrations to Setup()")
+	PackageSeedersFileExists     = New("seeders.go already exists but WithSeeders is not registered in foundation.Setup(). The seeders.go file should only be created when adding WithSeeders to Setup()")
 
 	PluralizerLanguageNotFound     = New("language %s not found").SetModule(ModulePluralizer)
 	PluralizerEmptyLanguageName    = New("language name cannot be empty").SetModule(ModulePluralizer)

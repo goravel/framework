@@ -298,5 +298,5 @@ func (r whenModifier) Apply(options ...modify.Option) error {
 }
 
 func facadeToFilepath(facade string) string {
-	return internals.FacadesPath(str.Of(facade).Snake().String() + ".go")
+	return internals.Facades(str.Of(facade).Snake().String() + ".go")
 }

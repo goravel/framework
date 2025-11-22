@@ -15,6 +15,7 @@ import (
 	"github.com/goravel/framework/contracts/database/db"
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/logger"
+	"github.com/goravel/framework/database/utils"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/convert"
@@ -855,6 +856,49 @@ func (r *Query) Where(query any, args ...any) db.Query {
 	})
 }
 
+func (r *Query) WhereAll(columns []string, args ...any) db.Query {
+	op, value, err := utils.PrepareWhereOperatorAndValue(args...)
+	if err != nil {
+		r.err = err
+		return r
+	}
+
+	var conditions []string
+	var conditionArgs []any
+	for _, column := range columns {
+		conditions = append(conditions, fmt.Sprintf("%s %v ?", column, op))
+		conditionArgs = append(conditionArgs, value)
+	}
+
+	query := strings.Join(conditions, " AND ")
+	where := contractsdriver.Where{
+		Query: sq.Expr(query, conditionArgs...),
+	}
+	r.conditions.Where = deep.Append(r.conditions.Where, where)
+
+	return r
+}
+
+func (r *Query) WhereAny(columns []string, args ...any) db.Query {
+	op, value, err := utils.PrepareWhereOperatorAndValue(args...)
+	if err != nil {
+		r.err = err
+		return r
+	}
+
+	var orConditions []sq.Sqlizer
+	for _, column := range columns {
+		orConditions = append(orConditions, sq.Expr(fmt.Sprintf("%s %v ?", column, op), value))
+	}
+
+	where := contractsdriver.Where{
+		Query: sq.Or(orConditions),
+	}
+	r.conditions.Where = deep.Append(r.conditions.Where, where)
+
+	return r
+}
+
 func (r *Query) WhereBetween(column string, x, y any) db.Query {
 	return r.Where(sq.Expr(fmt.Sprintf("%s BETWEEN ? AND ?", column), x, y))
 }
@@ -931,6 +975,33 @@ func (r *Query) WhereJsonLength(column string, length int) db.Query {
 
 func (r *Query) WhereLike(column string, value string) db.Query {
 	return r.Where(sq.Like{column: value})
+}
+
+func (r *Query) WhereNone(columns []string, args ...any) db.Query {
+	op, value, err := utils.PrepareWhereOperatorAndValue(args...)
+	if err != nil {
+		r.err = err
+		return r
+	}
+
+	var conditions []string
+	var conditionArgs []any
+	for _, column := range columns {
+		if op == "=" {
+			conditions = append(conditions, fmt.Sprintf("%s <> ?", column))
+		} else {
+			conditions = append(conditions, fmt.Sprintf("NOT (%s %v ?)", column, op))
+		}
+		conditionArgs = append(conditionArgs, value)
+	}
+
+	query := strings.Join(conditions, " AND ")
+	where := contractsdriver.Where{
+		Query: sq.Expr(query, conditionArgs...),
+	}
+	r.conditions.Where = deep.Append(r.conditions.Where, where)
+
+	return r
 }
 
 func (r *Query) WhereNot(query any, args ...any) db.Query {

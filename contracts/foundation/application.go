@@ -29,6 +29,7 @@ import (
 	"github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/contracts/translation"
 	"github.com/goravel/framework/contracts/validation"
+	"github.com/goravel/framework/contracts/view"
 )
 
 type Runner interface {
@@ -80,6 +81,8 @@ type Application interface {
 	ConfigPath(path ...string) string
 	// CurrentLocale get the current application locale.
 	CurrentLocale(ctx context.Context) string
+	// ModelPath get the path to the models directory.
+	ModelPath(path ...string) string
 	// DatabasePath get the path to the database directory.
 	DatabasePath(path ...string) string
 	// ExecutablePath get the path to the executable of the running Goravel application.
@@ -164,7 +167,7 @@ type Application interface {
 	// MakeValidation resolves the validation instance.
 	MakeValidation() validation.Validation
 	// MakeView resolves the view instance.
-	MakeView() http.View
+	MakeView() view.View
 	// MakeSeeder resolves the seeder instance.
 	MakeSeeder() seeder.Facade
 	// MakeWith resolves the given type with the given parameters from the container.

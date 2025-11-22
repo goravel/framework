@@ -23,6 +23,7 @@ import (
 	mocksqueue "github.com/goravel/framework/mocks/queue"
 	mockstranslation "github.com/goravel/framework/mocks/translation"
 	mocksvalidate "github.com/goravel/framework/mocks/validation"
+	mocksview "github.com/goravel/framework/mocks/view"
 	"github.com/goravel/framework/testing/utils"
 )
 
@@ -238,8 +239,8 @@ func (r *factory) ValidationErrors() *mocksvalidate.Errors {
 	return &mocksvalidate.Errors{}
 }
 
-func (r *factory) View() *mockshttp.View {
-	mockView := &mockshttp.View{}
+func (r *factory) View() *mocksview.View {
+	mockView := &mocksview.View{}
 	r.app.On("MakeView").Return(mockView)
 
 	return mockView

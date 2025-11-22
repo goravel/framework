@@ -51,10 +51,9 @@ func NewApplication(name, usage, usageText, version string, useArtisan bool) con
 
 func (r *Application) Register(commands []console.Command) {
 	for _, item := range commands {
-		item := item
 		arguments, err := argumentsToCliArgs(item.Extend().Arguments)
 		if err != nil {
-			color.Errorln(errors.ConsoleCommandRegistrationFailed.Args(item.Signature(), err).Error())
+			color.Errorln(errors.ConsoleCommandRegisterFailed.Args(item.Signature(), err).Error())
 			continue
 		}
 		cliCommand := cli.Command{

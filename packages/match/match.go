@@ -11,13 +11,17 @@ import (
 )
 
 type (
+	// GoNode represents a matcher for Go AST nodes with optional position constraints
 	GoNode struct {
 		match       func(node dst.Node) bool
 		first, last bool
 	}
+	// GoNodes is a collection of GoNode matchers
 	GoNodes []match.GoNode
 )
 
+// MatchCursor checks if the cursor's current node matches this GoNode matcher.
+// If first or last flags are set, it also verifies the node's position in its parent slice.
 func (r GoNode) MatchCursor(cursor *dstutil.Cursor) bool {
 	if r.first || r.last {
 		if r.MatchNode(cursor.Node()) {
@@ -39,10 +43,13 @@ func (r GoNode) MatchCursor(cursor *dstutil.Cursor) bool {
 	return r.MatchNode(cursor.Node())
 }
 
+// MatchNode checks if the given node matches this GoNode matcher.
 func (r GoNode) MatchNode(node dst.Node) bool {
 	return r.match(node)
 }
 
+// MatchNodes checks if all nodes in the slice match their corresponding matchers.
+// Returns true if the GoNodes collection is empty or all nodes match.
 func (r GoNodes) MatchNodes(nodes []dst.Node) bool {
 	if len(r) == 0 {
 		return true
@@ -63,6 +70,8 @@ func (r GoNodes) MatchNodes(nodes []dst.Node) bool {
 	return true
 }
 
+// AnyOf creates a matcher that succeeds if any of the provided matchers match.
+// For example, AnyOf(Ident("foo"), Ident("bar")) matches either an identifier named "foo" or "bar".
 func AnyOf(matchers ...match.GoNode) match.GoNode {
 	return GoNode{
 		match: func(node dst.Node) bool {
@@ -77,6 +86,8 @@ func AnyOf(matchers ...match.GoNode) match.GoNode {
 	}
 }
 
+// AnyNode creates a matcher that matches any node.
+// For example, CallExpr(Ident("print"), GoNodes{AnyNode()}) matches print(x) where x can be any expression.
 func AnyNode() match.GoNode {
 	return &GoNode{
 		match: func(node dst.Node) bool {
@@ -85,10 +96,14 @@ func AnyNode() match.GoNode {
 	}
 }
 
+// AnyNodes creates an empty GoNodes collection that matches any sequence of nodes.
+// For example, CallExpr(Ident("print"), AnyNodes()) matches print() with any number of arguments.
 func AnyNodes() GoNodes {
 	return GoNodes{}
 }
 
+// ArrayType creates a matcher for array type expressions with element and length matchers.
+// For example, ArrayType(Ident("int"), BasicLit("5")) matches [5]int.
 func ArrayType(elt, l match.GoNode) match.GoNode {
 	return GoNode{
 		match: func(n dst.Node) bool {
@@ -101,6 +116,8 @@ func ArrayType(elt, l match.GoNode) match.GoNode {
 	}
 }
 
+// BasicLit creates a matcher for basic literal expressions with a specific value.
+// For example, BasicLit("\"hello\"") matches the string literal "hello".
 func BasicLit(value string) match.GoNode {
 	return GoNode{
 		match: func(n dst.Node) bool {
@@ -113,6 +130,8 @@ func BasicLit(value string) match.GoNode {
 	}
 }
 
+// CallExpr creates a matcher for function call expressions with specific function and argument matchers.
+// For example, CallExpr(Ident("fmt.Println"), GoNodes{BasicLit("\"test\"")}) matches fmt.Println("test").
 func CallExpr(fun match.GoNode, args GoNodes) match.GoNode {
 	return GoNode{
 		match: func(n dst.Node) bool {
@@ -130,6 +149,8 @@ func CallExpr(fun match.GoNode, args GoNodes) match.GoNode {
 	}
 }
 
+// CompositeLit creates a matcher for composite literal expressions with a type matcher.
+// For example, CompositeLit(Ident("Person")) matches Person{} or Person{Name: "John"}.
 func CompositeLit(t match.GoNode) match.GoNode {
 	return GoNode{
 		match: func(n dst.Node) bool {
@@ -142,6 +163,8 @@ func CompositeLit(t match.GoNode) match.GoNode {
 	}
 }
 
+// EqualNode creates a matcher that checks if a node is equal to the provided node.
+// For example, if target is &dst.Ident{Name: "x"}, then EqualNode(target) matches only identifier nodes with the exact name "x".
 func EqualNode(n dst.Node) match.GoNode {
 	return GoNode{
 		match: func(node dst.Node) bool {
@@ -150,6 +173,8 @@ func EqualNode(n dst.Node) match.GoNode {
 	}
 }
 
+// FirstOf creates a matcher that only matches the first element in a parent slice.
+// For example, FirstOf(TypeOf(&dst.ImportSpec{})) matches only the first import statement in the import declarations.
 func FirstOf(n match.GoNode) match.GoNode {
 	return GoNode{
 		first: true,
@@ -157,6 +182,8 @@ func FirstOf(n match.GoNode) match.GoNode {
 	}
 }
 
+// Func creates a matcher for function declarations with a specific name matcher.
+// For example, Func(Ident("main")) matches func main() { ... }.
 func Func(name match.GoNode) match.GoNode {
 	return GoNode{
 		match: func(n dst.Node) bool {
@@ -169,6 +196,8 @@ func Func(name match.GoNode) match.GoNode {
 	}
 }
 
+// Ident creates a matcher for identifier nodes with a specific name.
+// For example, Ident("x") matches the identifier x in expressions like x = 1 or return x.
 func Ident(name string) match.GoNode {
 	return GoNode{
 		match: func(n dst.Node) bool {
@@ -181,6 +210,8 @@ func Ident(name string) match.GoNode {
 	}
 }
 
+// Import creates a matcher for import specifications with a specific path and optional name.
+// For example, Import("fmt") matches import "fmt", and Import("fmt", "f") matches import f "fmt".
 func Import(path string, name ...string) match.GoNode {
 	return GoNode{
 		match: func(n dst.Node) bool {
@@ -199,6 +230,8 @@ func Import(path string, name ...string) match.GoNode {
 	}
 }
 
+// KeyValueExpr creates a matcher for key-value expressions with specific key and value matchers.
+// For example, KeyValueExpr(Ident("Name"), BasicLit("\"John\"")) matches Name: "John" in struct literals.
 func KeyValueExpr(key, value match.GoNode) match.GoNode {
 	return GoNode{
 		match: func(n dst.Node) bool {
@@ -211,6 +244,8 @@ func KeyValueExpr(key, value match.GoNode) match.GoNode {
 	}
 }
 
+// LastOf creates a matcher that only matches the last element in a parent slice.
+// For example, LastOf(Ident("return")) matches return only if it's the last statement in a block.
 func LastOf(n match.GoNode) match.GoNode {
 	return GoNode{
 		last:  true,
@@ -218,6 +253,8 @@ func LastOf(n match.GoNode) match.GoNode {
 	}
 }
 
+// SelectorExpr creates a matcher for selector expressions (e.g., x.sel) with specific matchers.
+// For example, SelectorExpr(Ident("fmt"), Ident("Println")) matches fmt.Println.
 func SelectorExpr(x, sel match.GoNode) match.GoNode {
 	return GoNode{
 		match: func(n dst.Node) bool {
@@ -230,6 +267,8 @@ func SelectorExpr(x, sel match.GoNode) match.GoNode {
 	}
 }
 
+// TypeOf creates a matcher that checks if a node is of a specific type T.
+// For example, TypeOf(&dst.CallExpr{}) matches any function call like foo(), bar(x), or fmt.Println("hello").
 func TypeOf[T any](_ T) match.GoNode {
 	return GoNode{
 		match: func(node dst.Node) bool {
@@ -239,6 +278,7 @@ func TypeOf[T any](_ T) match.GoNode {
 	}
 }
 
+// dstNodeEq compares two dst.Node instances for equality.
 func dstNodeEq(x, y dst.Node) bool {
 	switch x := x.(type) {
 	case dst.Expr:
@@ -255,6 +295,7 @@ func dstNodeEq(x, y dst.Node) bool {
 	}
 }
 
+// dstExprEq compares two dst.Expr instances for equality.
 func dstExprEq(x, y dst.Expr) bool {
 	if x == nil || y == nil {
 		return x == y
@@ -293,6 +334,7 @@ func dstExprEq(x, y dst.Expr) bool {
 	}
 }
 
+// dstArrayTypeEq compares two dst.ArrayType instances for equality.
 func dstArrayTypeEq(x, y *dst.ArrayType) bool {
 	if x == nil || y == nil {
 		return x == y
@@ -301,6 +343,7 @@ func dstArrayTypeEq(x, y *dst.ArrayType) bool {
 	return dstExprEq(x.Elt, y.Elt) && dstExprEq(x.Len, y.Len)
 }
 
+// dstBasicLitEq compares two dst.BasicLit instances for equality.
 func dstBasicLitEq(x, y *dst.BasicLit) bool {
 	if x == nil || y == nil {
 		return x == y
@@ -309,6 +352,7 @@ func dstBasicLitEq(x, y *dst.BasicLit) bool {
 	return x.Kind == y.Kind && x.Value == y.Value
 }
 
+// dstCompositeLitEq compares two dst.CompositeLit instances for equality.
 func dstCompositeLitEq(x, y *dst.CompositeLit) bool {
 	if x == nil || y == nil {
 		return x == y
@@ -317,6 +361,7 @@ func dstCompositeLitEq(x, y *dst.CompositeLit) bool {
 	return dstExprEq(x.Type, y.Type) && dstExprSliceEq(x.Elts, y.Elts)
 }
 
+// dstExprSliceEq compares two slices of dst.Expr for equality.
 func dstExprSliceEq(xs, ys []dst.Expr) bool {
 	if len(xs) != len(ys) {
 		return false
@@ -331,6 +376,7 @@ func dstExprSliceEq(xs, ys []dst.Expr) bool {
 	return true
 }
 
+// dstIdentEq compares two dst.Ident instances for equality.
 func dstIdentEq(x, y *dst.Ident) bool {
 	if x == nil || y == nil {
 		return x == y
@@ -339,6 +385,7 @@ func dstIdentEq(x, y *dst.Ident) bool {
 	return x.Name == y.Name
 }
 
+// dstImportSpecEq compares two dst.ImportSpec instances for equality.
 func dstImportSpecEq(x, y *dst.ImportSpec) bool {
 	if x == nil || y == nil {
 		return x == y
@@ -347,6 +394,7 @@ func dstImportSpecEq(x, y *dst.ImportSpec) bool {
 	return x.Path.Value == y.Path.Value && dstIdentEq(x.Name, y.Name)
 }
 
+// dstKeyValueExprEq compares two dst.KeyValueExpr instances for equality.
 func dstKeyValueExprEq(x, y *dst.KeyValueExpr) bool {
 	if x == nil || y == nil {
 		return x == y
@@ -355,6 +403,7 @@ func dstKeyValueExprEq(x, y *dst.KeyValueExpr) bool {
 	return dstExprEq(x.Key, y.Key) && dstExprEq(x.Value, y.Value)
 }
 
+// dstMapTypeEq compares two dst.MapType instances for equality.
 func dstMapTypeEq(x, y *dst.MapType) bool {
 	if x == nil || y == nil {
 		return x == y
@@ -363,6 +412,7 @@ func dstMapTypeEq(x, y *dst.MapType) bool {
 	return dstExprEq(x.Key, y.Key) && dstExprEq(x.Value, y.Value)
 }
 
+// dstSelectorExprEq compares two dst.SelectorExpr instances for equality.
 func dstSelectorExprEq(x, y *dst.SelectorExpr) bool {
 	if x == nil || y == nil {
 		return x == y
@@ -371,6 +421,7 @@ func dstSelectorExprEq(x, y *dst.SelectorExpr) bool {
 	return dstExprEq(x.X, y.X) && dstIdentEq(x.Sel, y.Sel)
 }
 
+// dstExprStmtEq compares two dst.ExprStmt instances for equality.
 func dstExprStmtEq(x, y *dst.ExprStmt) bool {
 	if x == nil || y == nil {
 		return x == y
@@ -379,6 +430,7 @@ func dstExprStmtEq(x, y *dst.ExprStmt) bool {
 	return dstExprEq(x.X, y.X)
 }
 
+// dstUnaryExprEq compares two dst.UnaryExpr instances for equality.
 func dstUnaryExprEq(x, y *dst.UnaryExpr) bool {
 	if x == nil || y == nil {
 		return x == y
