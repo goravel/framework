@@ -42,7 +42,8 @@ func NewApplicationBuilder(app foundation.Application) *ApplicationBuilder {
 func (r *ApplicationBuilder) Create() foundation.Application {
 	// Set custom paths
 	if r.paths != nil {
-
+		paths := configuration.NewPaths()
+		r.paths(paths)
 	}
 
 	// Register and boot custom service providers
