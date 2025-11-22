@@ -19,7 +19,6 @@ func main() {
 	stubs := Stubs{}
 	modulePath := packages.GetModulePath()
 	moduleName := packages.GetModuleNameFromArgs(os.Args)
-	providersBootstrapPath := path.Bootstrap("providers.go")
 	databaseConfigPath := path.Config("database.go")
 	kernelPath := path.Database("kernel.go")
 	dbFacadePath := path.Facades("db.go")
@@ -82,10 +81,8 @@ DB_PASSWORD=Frameworkair
 			// Add database configuration to config/database.go
 			modify.GoFile(databaseConfigPath).Find(match.Config("database")).Modify(installConfigActionsFunc()...),
 
-			// Add the database service provider to the providers array in config/app.go
-			modify.GoFile(providersBootstrapPath).
-				Find(match.Imports()).Modify(modify.AddImport(modulePath)).
-				Find(match.Providers()).Modify(modify.Register(databaseServiceProvider)),
+			// Add the database service provider to the providers array in bootstrap/providers.go
+			modify.AddProviderApply(modulePath, databaseServiceProvider),
 
 			// Register the DB, Orm, Schema and Seeder facades
 			modify.WhenFacade(facades.DB, modify.File(dbFacadePath).Overwrite(stubs.DBFacade())),
@@ -125,10 +122,8 @@ DB_PASSWORD=Frameworkair
 			modify.WhenNoFacades([]string{facades.DB, facades.Orm, facades.Schema, facades.Seeder},
 				modify.File(kernelPath).Remove(),
 
-				// Remove the database service provider from the providers array in config/app.go
-				modify.GoFile(providersBootstrapPath).
-					Find(match.Providers()).Modify(modify.Unregister(databaseServiceProvider)).
-					Find(match.Imports()).Modify(modify.RemoveImport(modulePath)),
+				// Remove the database service provider from the providers array in bootstrap/providers.go
+				modify.RemoveProviderApply(modulePath, databaseServiceProvider),
 
 				// Remove database configuration from config/database.go
 				modify.GoFile(databaseConfigPath).Find(match.Config("database")).Modify(uninstallConfigActionsFunc()...),

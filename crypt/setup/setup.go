@@ -5,30 +5,31 @@ import (
 
 	"github.com/goravel/framework/contracts/facades"
 	"github.com/goravel/framework/packages"
-	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support/path"
 )
 
 func main() {
 	stubs := Stubs{}
-	providersBootstrapPath := path.Bootstrap("providers.go")
 	cryptFacadePath := path.Facades("crypt.go")
 	cryptServiceProvider := "&crypt.ServiceProvider{}"
+	modulePath := packages.GetModulePath()
 
 	packages.Setup(os.Args).
 		Install(
-			modify.GoFile(providersBootstrapPath).
-				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register(cryptServiceProvider)),
+			// Add the crypt service provider to the providers array in bootstrap/providers.go
+			modify.AddProviderApply(modulePath, cryptServiceProvider),
+
+			// Add the Crypt facade
 			modify.WhenFacade(facades.Crypt, modify.File(cryptFacadePath).Overwrite(stubs.CryptFacade())),
 		).
 		Uninstall(
 			modify.WhenNoFacades([]string{facades.Crypt},
-				modify.GoFile(providersBootstrapPath).
-					Find(match.Providers()).Modify(modify.Unregister(cryptServiceProvider)).
-					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
+				// Remove the crypt service provider from the providers array in bootstrap/providers.go
+				modify.RemoveProviderApply(modulePath, cryptServiceProvider),
 			),
+
+			// Remove the Crypt facade
 			modify.WhenFacade(facades.Crypt, modify.File(cryptFacadePath).Remove()),
 		).
 		Execute()

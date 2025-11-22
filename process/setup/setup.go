@@ -5,31 +5,31 @@ import (
 
 	"github.com/goravel/framework/contracts/facades"
 	"github.com/goravel/framework/packages"
-	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support/path"
 )
 
 func main() {
 	stubs := Stubs{}
-	providersBootstrapPath := path.Bootstrap("providers.go")
 	processFacadePath := path.Facades("process.go")
 	modulePath := packages.GetModulePath()
 	processServiceProvider := "&process.ServiceProvider{}"
 
 	packages.Setup(os.Args).
 		Install(
-			modify.GoFile(providersBootstrapPath).
-				Find(match.Imports()).Modify(modify.AddImport(modulePath)).
-				Find(match.Providers()).Modify(modify.Register(processServiceProvider)),
+			// Add the process service provider to the providers array in bootstrap/providers.go
+			modify.AddProviderApply(modulePath, processServiceProvider),
+
+			// Add the Process facade
 			modify.WhenFacade(facades.Process, modify.File(processFacadePath).Overwrite(stubs.ProcessFacade())),
 		).
 		Uninstall(
 			modify.WhenNoFacades([]string{facades.Process},
-				modify.GoFile(providersBootstrapPath).
-					Find(match.Providers()).Modify(modify.Unregister(processServiceProvider)).
-					Find(match.Imports()).Modify(modify.RemoveImport(modulePath)),
+				// Remove the process service provider from the providers array in bootstrap/providers.go
+				modify.RemoveProviderApply(modulePath, processServiceProvider),
 			),
+
+			// Remove the Process facade
 			modify.WhenFacade(facades.Process, modify.File(processFacadePath).Remove()),
 		).
 		Execute()

@@ -18,6 +18,12 @@ import (
 	"github.com/goravel/framework/support/str"
 )
 
+func AddProviderApply(pkg, provider string) modify.Apply {
+	return Call(func(_ []modify.Option) error {
+		return AddProvider(pkg, provider)
+	})
+}
+
 func Call(fn func(options []modify.Option) error) modify.Apply {
 	return &callModifier{
 		fn: fn,
@@ -30,6 +36,12 @@ func File(path string) modify.File {
 
 func GoFile(file string) modify.GoFile {
 	return &goFile{file: file}
+}
+
+func RemoveProviderApply(pkg, provider string) modify.Apply {
+	return Call(func(_ []modify.Option) error {
+		return RemoveProvider(pkg, provider)
+	})
 }
 
 func When(fn func(options map[string]any) bool, applies ...modify.Apply) modify.Apply {

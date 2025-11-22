@@ -5,30 +5,31 @@ import (
 
 	"github.com/goravel/framework/contracts/facades"
 	"github.com/goravel/framework/packages"
-	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support/path"
 )
 
 func main() {
 	stubs := Stubs{}
-	providersBootstrapPath := path.Bootstrap("providers.go")
 	langFacadePath := path.Facades("lang.go")
-	langServiceProvider := "&translation.ServiceProvider{}"
+	translationServiceProvider := "&translation.ServiceProvider{}"
+	modulePath := packages.GetModulePath()
 
 	packages.Setup(os.Args).
 		Install(
-			modify.GoFile(providersBootstrapPath).
-				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register(langServiceProvider)),
+			// Add the translation service provider to the providers array in bootstrap/providers.go
+			modify.AddProviderApply(modulePath, translationServiceProvider),
+
+			// Add the Lang facade
 			modify.WhenFacade(facades.Lang, modify.File(langFacadePath).Overwrite(stubs.LangFacade())),
 		).
 		Uninstall(
 			modify.WhenNoFacades([]string{facades.Lang},
-				modify.GoFile(providersBootstrapPath).
-					Find(match.Providers()).Modify(modify.Unregister(langServiceProvider)).
-					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
+				// Remove the translation service provider from the providers array in bootstrap/providers.go
+				modify.RemoveProviderApply(modulePath, translationServiceProvider),
 			),
+
+			// Remove the Lang facade
 			modify.WhenFacade(facades.Lang, modify.File(langFacadePath).Remove()),
 		).
 		Execute()

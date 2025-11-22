@@ -14,7 +14,6 @@ import (
 
 func main() {
 	scheduleFacade := "Schedule"
-	providersBootstrapPath := path.Bootstrap("providers.go")
 	appServiceProviderPath := path.App("providers", "app_service_provider.go")
 	kernelPath := path.App("console", "kernel.go")
 	scheduleFacadePath := path.Facades("schedule.go")
@@ -23,6 +22,7 @@ func main() {
 	registerSchedule := "facades.Schedule().Register(console.Kernel{}.Schedule())"
 	facadesImport := fmt.Sprintf("%s/app/facades", moduleName)
 	consoleImport := fmt.Sprintf("%s/app/console", moduleName)
+	modulePath := packages.GetModulePath()
 
 	packages.Setup(os.Args).
 		Install(
@@ -32,10 +32,8 @@ func main() {
 			// Create the schedule facade file.
 			modify.WhenFacade(scheduleFacade, modify.File(scheduleFacadePath).Overwrite(Stubs{}.ScheduleFacade())),
 
-			// Add the Schedule service provider to the config/app.go file.
-			modify.GoFile(providersBootstrapPath).
-				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register(scheduleServiceProvider)),
+			// Add the schedule service provider to the providers array in bootstrap/providers.go
+			modify.AddProviderApply(modulePath, scheduleServiceProvider),
 
 			// Add the schedule registration to the AppServiceProvider.
 			modify.GoFile(appServiceProviderPath).
@@ -51,10 +49,8 @@ func main() {
 					Find(match.Imports()).Modify(modify.RemoveImport(facadesImport)).
 					Find(match.Imports()).Modify(modify.RemoveImport(consoleImport)),
 
-				// Remove the Schedule service provider from the config/app.go file.
-				modify.GoFile(providersBootstrapPath).
-					Find(match.Providers()).Modify(modify.Unregister(scheduleServiceProvider)).
-					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
+				// Remove the schedule service provider from the providers array in bootstrap/providers.go
+				modify.RemoveProviderApply(modulePath, scheduleServiceProvider),
 
 				// Remove the console kernel file if it was not modified.
 				modify.When(isKernelNotModified, modify.File(kernelPath).Remove()),

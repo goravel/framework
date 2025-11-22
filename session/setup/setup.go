@@ -5,18 +5,17 @@ import (
 
 	"github.com/goravel/framework/contracts/facades"
 	"github.com/goravel/framework/packages"
-	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support/path"
 )
 
 func main() {
 	stubs := Stubs{}
-	providersBootstrapPath := path.Bootstrap("providers.go")
 	sessionConfigPath := path.Config("session.go")
 	sessionFacadePath := path.Facades("session.go")
 	moduleName := packages.GetModuleNameFromArgs(os.Args)
 	sessionServiceProvider := "&session.ServiceProvider{}"
+	modulePath := packages.GetModulePath()
 	envPath := path.Base(".env")
 	envExamplePath := path.Base(".env.example")
 	env := `
@@ -26,10 +25,8 @@ SESSION_LIFETIME=120
 
 	packages.Setup(os.Args).
 		Install(
-			// Add the session service provider to the providers array in config/app.go
-			modify.GoFile(providersBootstrapPath).
-				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register(sessionServiceProvider)),
+			// Add the session service provider to the providers array in bootstrap/providers.go
+			modify.AddProviderApply(modulePath, sessionServiceProvider),
 
 			// Create config/session.go and the Session facade
 			modify.File(sessionConfigPath).Overwrite(stubs.Config(moduleName)),
@@ -43,13 +40,11 @@ SESSION_LIFETIME=120
 		).
 		Uninstall(
 			modify.WhenNoFacades([]string{facades.Session},
-				// Remove the session service provider from the providers array in config/app.go
-				modify.GoFile(providersBootstrapPath).
-					Find(match.Providers()).Modify(modify.Unregister(sessionServiceProvider)).
-					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
-
 				// Remove config/session.go
 				modify.File(sessionConfigPath).Remove(),
+
+				// Remove the session service provider from the providers array in bootstrap/providers.go
+				modify.RemoveProviderApply(modulePath, sessionServiceProvider),
 			),
 
 			// Remove the Session facade

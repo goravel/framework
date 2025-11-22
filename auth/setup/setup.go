@@ -4,16 +4,13 @@ import (
 	"os"
 
 	"github.com/goravel/framework/contracts/facades"
-	contractsmodify "github.com/goravel/framework/contracts/packages/modify"
 	"github.com/goravel/framework/packages"
-	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support/path"
 )
 
 func main() {
 	stubs := Stubs{}
-	providersBootstrapPath := path.Bootstrap("providers.go")
 	authConfigPath := path.Config("auth.go")
 	authFacadePath := path.Facades("auth.go")
 	gateFacadePath := path.Facades("gate.go")
@@ -22,20 +19,26 @@ func main() {
 
 	packages.Setup(os.Args).
 		Install(
-			modify.Call(func(_ []contractsmodify.Option) error {
-				return modify.AddProvider(modulePath, authServiceProvider)
-			}),
+			// Add the auth service provider to the providers array in bootstrap/providers.go
+			modify.AddProviderApply(modulePath, authServiceProvider),
+
+			// Create config/auth.go
 			modify.File(authConfigPath).Overwrite(stubs.Config(packages.GetModuleNameFromArgs(os.Args))),
+
+			// Add the Auth and Gate facades
 			modify.WhenFacade(facades.Auth, modify.File(authFacadePath).Overwrite(stubs.AuthFacade())),
 			modify.WhenFacade(facades.Gate, modify.File(gateFacadePath).Overwrite(stubs.GateFacade())),
 		).
 		Uninstall(
 			modify.WhenNoFacades([]string{facades.Auth, facades.Gate},
-				modify.GoFile(providersBootstrapPath).
-					Find(match.Providers()).Modify(modify.Unregister(authServiceProvider)).
-					Find(match.Imports()).Modify(modify.RemoveImport(modulePath)),
+				// Remove config/auth.go
 				modify.File(authConfigPath).Remove(),
+
+				// Remove the auth service provider from the providers array in bootstrap/providers.go
+				modify.RemoveProviderApply(modulePath, authServiceProvider),
 			),
+
+			// Remove the Auth and Gate facades
 			modify.WhenFacade(facades.Auth, modify.File(authFacadePath).Remove()),
 			modify.WhenFacade(facades.Gate, modify.File(gateFacadePath).Remove()),
 		).
