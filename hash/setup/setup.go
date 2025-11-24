@@ -4,30 +4,40 @@ import (
 	"os"
 
 	"github.com/goravel/framework/packages"
-	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support/path"
 )
 
 func main() {
 	stubs := Stubs{}
+	modulePath := packages.GetModulePath()
+	hashServiceProvider := "&hash.ServiceProvider{}"
+	configPath := path.Config("hashing.go")
+	hashFacade := "Hash"
+	hashFacadePath := path.Facades("hash.go")
 
 	packages.Setup(os.Args).
 		Install(
-			modify.GoFile(path.Config("app.go")).
-				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register("&hash.ServiceProvider{}")),
-			modify.File(path.Config("hashing.go")).Overwrite(stubs.Config(packages.GetModuleNameFromArgs(os.Args))),
-			modify.WhenFacade("Hash", modify.File(path.Facades("hash.go")).Overwrite(stubs.HashFacade())),
+			// Add the hash service provider to the providers array in bootstrap/providers.go
+			modify.AddProviderApply(modulePath, hashServiceProvider),
+
+			// Create config/hashing.go
+			modify.File(configPath).Overwrite(stubs.Config(packages.GetModuleNameFromArgs(os.Args))),
+
+			// Add the Hash facade
+			modify.WhenFacade(hashFacade, modify.File(hashFacadePath).Overwrite(stubs.HashFacade())),
 		).
 		Uninstall(
-			modify.WhenNoFacades([]string{"Hash"},
-				modify.GoFile(path.Config("app.go")).
-					Find(match.Providers()).Modify(modify.Unregister("&hash.ServiceProvider{}")).
-					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
-				modify.File(path.Config("hashing.go")).Remove(),
+			modify.WhenNoFacades([]string{hashFacade},
+				// Remove config/hashing.go
+				modify.File(configPath).Remove(),
+
+				// Remove the hash service provider from the providers array in bootstrap/providers.go
+				modify.RemoveProviderApply(modulePath, hashServiceProvider),
 			),
-			modify.WhenFacade("Hash", modify.File(path.Facades("hash.go")).Remove()),
+
+			// Remove the Hash facade
+			modify.WhenFacade(hashFacade, modify.File(hashFacadePath).Remove()),
 		).
 		Execute()
 }

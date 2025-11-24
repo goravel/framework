@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/goravel/framework/packages"
-	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support/path"
 )
@@ -14,7 +13,6 @@ func main() {
 	httpFacade := "Http"
 	rateLimiterFacade := "RateLimiter"
 	viewFacade := "View"
-	appConfigPath := path.Config("app.go")
 	httpConfigPath := path.Config("http.go")
 	jwtConfigPath := path.Config("jwt.go")
 	corsConfigPath := path.Config("cors.go")
@@ -24,13 +22,12 @@ func main() {
 	kernelPath := path.App("http", "kernel.go")
 	moduleName := packages.GetModuleNameFromArgs(os.Args)
 	httpServiceProvider := "&http.ServiceProvider{}"
+	modulePath := packages.GetModulePath()
 
 	packages.Setup(os.Args).
 		Install(
-			// Add the HTTP service provider to the providers array in config/app.go
-			modify.GoFile(appConfigPath).
-				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register(httpServiceProvider)),
+			// Add the http service provider to the providers array in bootstrap/providers.go
+			modify.AddProviderApply(modulePath, httpServiceProvider),
 
 			// Create config/http.go, config/jwt.go, config/cors.go, app/http/kernel.go
 			modify.File(httpConfigPath).Overwrite(stubs.HttpConfig(moduleName)),
@@ -45,16 +42,14 @@ func main() {
 		).
 		Uninstall(
 			modify.WhenNoFacades([]string{httpFacade, rateLimiterFacade, viewFacade},
-				// Remove the HTTP service provider from the providers array in config/app.go
-				modify.GoFile(appConfigPath).
-					Find(match.Providers()).Modify(modify.Unregister(httpServiceProvider)).
-					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
-
 				// Remove config/http.go, config/jwt.go, config/cors.go, app/http/kernel.go
 				modify.File(httpConfigPath).Remove(),
 				modify.File(jwtConfigPath).Remove(),
 				modify.File(corsConfigPath).Remove(),
 				modify.File(kernelPath).Remove(),
+
+				// Remove the http service provider from the providers array in bootstrap/providers.go
+				modify.RemoveProviderApply(modulePath, httpServiceProvider),
 			),
 
 			// Remove the Http, RateLimiter, View facades
