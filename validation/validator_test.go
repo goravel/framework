@@ -23,6 +23,9 @@ import (
 )
 
 func TestBind_Rule(t *testing.T) {
+	type Embed struct {
+		C string `form:"c" json:"c"`
+	}
 	type Data struct {
 		A              string                  `form:"a" json:"a"`
 		B              int                     `form:"b" json:"b"`
@@ -44,6 +47,7 @@ func TestBind_Rule(t *testing.T) {
 		TimestampMicro *carbon.TimestampMicro  `form:"timestamp_micro" json:"timestamp_micro"`
 		TimestampNano  *carbon.TimestampNano   `form:"timestamp_nano" json:"timestamp_nano"`
 		Time           *time.Time              `form:"time" json:"time"`
+		Embed
 	}
 
 	tests := []struct {
@@ -634,6 +638,14 @@ func TestBind_Rule(t *testing.T) {
 				assert.Len(t, data.Files, 2)
 				assert.Equal(t, file.Filename, data.Files[0].Filename)
 				assert.Equal(t, file.Filename, data.Files[1].Filename)
+			},
+		},
+		{
+			name:  "data has embed struct field",
+			data:  validate.FromMap(map[string]any{"c": "cc"}),
+			rules: map[string]string{"c": "required"},
+			assert: func(data Data) {
+				assert.Equal(t, "cc", data.C)
 			},
 		},
 	}
