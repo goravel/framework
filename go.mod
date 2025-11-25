@@ -1,14 +1,14 @@
 module github.com/goravel/framework
 
-go 1.24.0
+go 1.25
 
 toolchain go1.25.4
 
 require (
 	github.com/Masterminds/squirrel v1.5.4
-	github.com/brianvoe/gofakeit/v7 v7.9.0
+	github.com/brianvoe/gofakeit/v7 v7.11.0
 	github.com/charmbracelet/huh v0.8.0
-	github.com/charmbracelet/huh/spinner v0.0.0-20251110114415-25888d17260b
+	github.com/charmbracelet/huh/spinner v0.0.0-20251124111010-6575a6e28cb3
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/dave/dst v0.27.3
 	github.com/dromara/carbon/v2 v2.6.11
@@ -30,9 +30,9 @@ require (
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
 	github.com/urfave/cli/v3 v3.6.1
-	golang.org/x/crypto v0.44.0
-	golang.org/x/exp v0.0.0-20251113190631-e25ba8c21ef6
-	google.golang.org/grpc v1.76.0
+	golang.org/x/crypto v0.45.0
+	golang.org/x/exp v0.0.0-20251125195548-87e1e737ad39
+	google.golang.org/grpc v1.77.0
 	google.golang.org/protobuf v1.36.10
 	gorm.io/gorm v1.31.1
 	gorm.io/plugin/dbresolver v1.6.2
@@ -110,14 +110,14 @@ require (
 	golang.org/x/term v0.37.0 // indirect
 	golang.org/x/text v0.31.0
 	golang.org/x/tools v0.39.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250804133106-a7a43d27e69b // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20251022142026-3a174f9686a8 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 replace (
-	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20251111163417-95abcf5c77ba
-	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20251111163417-95abcf5c77ba
+	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20251124214823-79d6a2a48846
+	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20251124214823-79d6a2a48846
 )
 
 tool github.com/vektra/mockery/v2
