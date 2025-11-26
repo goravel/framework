@@ -1,13 +1,13 @@
 module github.com/goravel/framework/tests
 
-go 1.25
+go 1.24.0
 
 toolchain go1.25.4
 
 godebug x509negativeserial=1
 
 require (
-	github.com/brianvoe/gofakeit/v7 v7.11.0
+	github.com/brianvoe/gofakeit/v7 v7.9.0
 	github.com/google/uuid v1.6.0
 	github.com/goravel/framework v1.16.5
 	github.com/goravel/mysql v1.4.0
