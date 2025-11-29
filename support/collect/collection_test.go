@@ -322,7 +322,7 @@ func TestCollectMerge(t *testing.T) {
 	}
 }
 
-func TestDiff(t *testing.T) {
+func TestCollectionDiff(t *testing.T) {
 	c1 := New(1, 2, 3, 4, 5)
 	c2 := New(3, 4, 5, 6, 7)
 	diff := c1.Diff(c2)
