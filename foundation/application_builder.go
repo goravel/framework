@@ -7,6 +7,7 @@ import (
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/foundation"
 	contractsconfiguration "github.com/goravel/framework/contracts/foundation/configuration"
+	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/contracts/schedule"
 	"github.com/goravel/framework/foundation/configuration"
 	"github.com/goravel/framework/support/color"
@@ -25,6 +26,7 @@ type ApplicationBuilder struct {
 	eventToListeners           map[event.Event][]event.Listener
 	grpcClientInterceptors     map[string][]grpc.UnaryClientInterceptor
 	grpcServerInterceptors     []grpc.UnaryServerInterceptor
+	jobs                       []queue.Job
 	middleware                 func(middleware contractsconfiguration.Middleware)
 	migrations                 []schema.Migration
 	paths                      func(paths contractsconfiguration.Paths)
@@ -144,6 +146,16 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 		}
 	}
 
+	// Register jobs
+	if len(r.jobs) > 0 {
+		queueFacade := r.app.MakeQueue()
+		if queueFacade == nil {
+			color.Errorln("Queue facade not found, please install it first: ./artisan package:install Queue")
+		} else {
+			queueFacade.Register(r.jobs)
+		}
+	}
+
 	return r.app
 }
 
@@ -177,6 +189,12 @@ func (r *ApplicationBuilder) WithGrpcClientInterceptors(groupToInterceptors map[
 
 func (r *ApplicationBuilder) WithGrpcServerInterceptors(interceptors []grpc.UnaryServerInterceptor) foundation.ApplicationBuilder {
 	r.grpcServerInterceptors = interceptors
+
+	return r
+}
+
+func (r *ApplicationBuilder) WithJobs(jobs []queue.Job) foundation.ApplicationBuilder {
+	r.jobs = jobs
 
 	return r
 }

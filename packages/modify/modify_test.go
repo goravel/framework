@@ -627,7 +627,7 @@ func TestWhenNoFacades(t *testing.T) {
 		assert.NoError(t, err)
 
 		defer func() {
-			assert.NoError(t, supportfile.Remove(path))
+			assert.NoError(t, supportfile.Remove("app"))
 		}()
 
 		err = modifier.Apply(options.Facade("Auth"))

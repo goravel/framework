@@ -33,6 +33,17 @@ func Providers() []foundation.ServiceProvider {
 `
 }
 
+func jobs() string {
+	return `package bootstrap
+
+import "github.com/goravel/framework/contracts/queue"
+
+func Jobs() []queue.Job {
+	return []queue.Job{}
+}
+`
+}
+
 func seeders() string {
 	return `package bootstrap
 

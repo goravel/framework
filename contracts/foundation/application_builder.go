@@ -8,6 +8,7 @@ import (
 	"github.com/goravel/framework/contracts/database/seeder"
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/foundation/configuration"
+	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/contracts/schedule"
 )
 
@@ -26,6 +27,8 @@ type ApplicationBuilder interface {
 	WithGrpcClientInterceptors(groupToInterceptors map[string][]grpc.UnaryClientInterceptor) ApplicationBuilder
 	// WithGrpcServerInterceptors sets gRPC server interceptors for the application.
 	WithGrpcServerInterceptors(interceptors []grpc.UnaryServerInterceptor) ApplicationBuilder
+	// WithJobs registers the application's jobs.
+	WithJobs(jobs []queue.Job) ApplicationBuilder
 	// WithMiddleware registers the http's middleware.
 	WithMiddleware(fn func(handler configuration.Middleware)) ApplicationBuilder
 	// WithMigrations registers the database migrations.

@@ -77,6 +77,71 @@ func AddCommand(pkg, command string) error {
 	return handler.AddItem(pkg, command)
 }
 
+// AddJob adds job to the foundation.Setup() chain in the Boot function.
+// If WithJobs doesn't exist, it creates a new jobs.go file in the bootstrap directory based on the stubs.go:jobs template,
+// then adds WithJobs(Jobs()) to foundation.Setup(), add the job to Jobs().
+// If WithJobs exists, it appends the job to []queue.Job if the jobs.go file doesn't exist,
+// or appends to the Jobs() function if the jobs.go file exists.
+// This function also ensures the configuration package and job package are imported when creating WithJobs.
+//
+// Returns an error if jobs.go exists but WithJobs is not registered in foundation.Setup(), as the jobs.go file
+// should only be created when adding WithJobs to Setup().
+//
+// Parameters:
+//   - pkg: Package path of the job (e.g., "goravel/app/jobs")
+//   - job: Job expression to add (e.g., "&jobs.ExampleJob{}")
+//
+// Example usage:
+//
+//	AddJob("goravel/app/jobs", "&jobs.ExampleJob{}")
+//
+// This transforms (when jobs.go doesn't exist and WithJobs doesn't exist):
+//
+//	foundation.Setup().WithConfig(config.Boot).Run()
+//
+// Into:
+//
+//	foundation.Setup().WithJobs(Jobs()).WithConfig(config.Boot).Run()
+//
+// And creates bootstrap/jobs.go:
+//
+//	package bootstrap
+//	import "github.com/goravel/framework/contracts/queue"
+//	func Jobs() []queue.Job {
+//	  return []queue.Job{&jobs.ExampleJob{}}
+//	}
+//
+// If WithJobs already exists but jobs.go doesn't:
+//
+//	foundation.Setup().WithJobs([]queue.Job{
+//	  &jobs.ExistingJob{},
+//	}).Run()
+//
+// It appends the new job:
+//
+//	foundation.Setup().WithJobs([]queue.Job{
+//	  &jobs.ExistingJob{},
+//	  &jobs.ExampleJob{},
+//	}).Run()
+//
+// If WithJobs exists with Jobs() call and jobs.go exists, it appends to Jobs() function.
+func AddJob(pkg, job string) error {
+	config := withSliceConfig{
+		fileName:        "jobs.go",
+		withMethodName:  "WithJobs",
+		helperFuncName:  "Jobs",
+		typePackage:     "queue",
+		typeName:        "Job",
+		typeImportPath:  "github.com/goravel/framework/contracts/queue",
+		fileExistsError: errors.PackageJobsFileExists,
+		stubTemplate:    jobs,
+		matcherFunc:     match.Jobs,
+	}
+
+	handler := newWithSliceHandler(config)
+	return handler.AddItem(pkg, job)
+}
+
 // AddMiddleware adds middleware to the foundation.Setup() chain in the Boot function.
 // If WithMiddleware doesn't exist, it creates one. If it exists, it appends the middleware using handler.Append().
 // This function also ensures the configuration package and middleware package are imported when creating WithMiddleware.

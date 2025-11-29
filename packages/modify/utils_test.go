@@ -281,6 +281,370 @@ func Commands() []console.Command {
 	}
 }
 
+func TestAddJob(t *testing.T) {
+	tests := []struct {
+		name              string
+		appContent        string
+		jobsContent       string // empty if file doesn't exist
+		pkg               string
+		job               string
+		expectedApp       string
+		expectedJobs      string // empty if file shouldn't be created
+		wantErr           bool
+		expectedErrString string
+	}{
+		{
+			name: "add job when WithJobs doesn't exist and jobs.go doesn't exist",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().WithConfig(config.Boot).Run()
+}
+`,
+			pkg: "goravel/app/jobs",
+			job: "&jobs.ExampleJob{}",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithJobs(Jobs()).WithConfig(config.Boot).Run()
+}
+`,
+			expectedJobs: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/queue"
+
+	"goravel/app/jobs"
+)
+
+func Jobs() []queue.Job {
+	return []queue.Job{
+		&jobs.ExampleJob{},
+	}
+}
+`,
+		},
+		{
+			name: "add job when WithJobs exists with Jobs() and jobs.go exists",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithJobs(Jobs()).WithConfig(config.Boot).Run()
+}
+`,
+			jobsContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/queue"
+
+	"goravel/app/jobs"
+)
+
+func Jobs() []queue.Job {
+	return []queue.Job{
+		&jobs.ExistingJob{},
+	}
+}
+`,
+			pkg: "goravel/app/jobs",
+			job: "&jobs.NewJob{}",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithJobs(Jobs()).WithConfig(config.Boot).Run()
+}
+`,
+			expectedJobs: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/queue"
+
+	"goravel/app/jobs"
+)
+
+func Jobs() []queue.Job {
+	return []queue.Job{
+		&jobs.ExistingJob{},
+		&jobs.NewJob{},
+	}
+}
+`,
+		},
+		{
+			name: "add job when WithJobs exists with inline array",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/foundation"
+	"goravel/app/jobs"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithJobs([]queue.Job{
+			&jobs.ExistingJob{},
+		}).WithConfig(config.Boot).Run()
+}
+`,
+			pkg: "goravel/app/jobs",
+			job: "&jobs.NewJob{}",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/foundation"
+	"goravel/app/jobs"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithJobs([]queue.Job{
+			&jobs.ExistingJob{},
+			&jobs.NewJob{},
+		}).WithConfig(config.Boot).Run()
+}
+`,
+		},
+		{
+			name: "error when jobs.go exists but WithJobs doesn't exist",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().WithConfig(config.Boot).Run()
+}
+`,
+			jobsContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/queue"
+
+	"goravel/app/jobs"
+)
+
+func Jobs() []queue.Job {
+	return []queue.Job{
+		&jobs.ExistingJob{},
+	}
+}
+`,
+			pkg:     "goravel/app/jobs",
+			job:     "&jobs.NewJob{}",
+			wantErr: true,
+		},
+		{
+			name: "add job when WithJobs doesn't exist at the beginning of chain",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+)
+
+func Boot() {
+	foundation.Setup().Run()
+}
+`,
+			pkg: "goravel/app/jobs",
+			job: "&jobs.FirstJob{}",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithJobs(Jobs()).Run()
+}
+`,
+			expectedJobs: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/queue"
+
+	"goravel/app/jobs"
+)
+
+func Jobs() []queue.Job {
+	return []queue.Job{
+		&jobs.FirstJob{},
+	}
+}
+`,
+		},
+		{
+			name: "add job from different package",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().WithConfig(config.Boot).Run()
+}
+`,
+			pkg: "github.com/mycompany/customjobs",
+			job: "&customjobs.SpecialJob{}",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithJobs(Jobs()).WithConfig(config.Boot).Run()
+}
+`,
+			expectedJobs: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/queue"
+	"github.com/mycompany/customjobs"
+)
+
+func Jobs() []queue.Job {
+	return []queue.Job{
+		&customjobs.SpecialJob{},
+	}
+}
+`,
+		},
+		{
+			name: "add multiple jobs sequentially",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithJobs(Jobs()).WithConfig(config.Boot).Run()
+}
+`,
+			jobsContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/queue"
+
+	"goravel/app/jobs"
+)
+
+func Jobs() []queue.Job {
+	return []queue.Job{
+		&jobs.SendEmailJob{},
+	}
+}
+`,
+			pkg: "goravel/app/jobs",
+			job: "&jobs.ProcessImageJob{}",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithJobs(Jobs()).WithConfig(config.Boot).Run()
+}
+`,
+			expectedJobs: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/queue"
+
+	"goravel/app/jobs"
+)
+
+func Jobs() []queue.Job {
+	return []queue.Job{
+		&jobs.SendEmailJob{},
+		&jobs.ProcessImageJob{},
+	}
+}
+`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			bootstrapDir := support.Config.Paths.Bootstrap
+			appFile := filepath.Join(bootstrapDir, "app.go")
+			jobsFile := filepath.Join(bootstrapDir, "jobs.go")
+
+			assert.NoError(t, supportfile.PutContent(appFile, tt.appContent))
+			defer func() {
+				assert.NoError(t, supportfile.Remove(bootstrapDir))
+			}()
+
+			if tt.jobsContent != "" {
+				assert.NoError(t, supportfile.PutContent(jobsFile, tt.jobsContent))
+			}
+
+			err := AddJob(tt.pkg, tt.job)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.expectedErrString != "" {
+					assert.Contains(t, err.Error(), tt.expectedErrString)
+				}
+				return
+			}
+
+			assert.NoError(t, err)
+
+			// Verify app.go content
+			appContent, err := supportfile.GetContent(appFile)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedApp, appContent)
+
+			// Verify jobs.go content if expected
+			if tt.expectedJobs != "" {
+				jobsContent, err := supportfile.GetContent(jobsFile)
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedJobs, jobsContent)
+			}
+		})
+	}
+}
+
 func TestAddMiddleware(t *testing.T) {
 	tests := []struct {
 		name     string
