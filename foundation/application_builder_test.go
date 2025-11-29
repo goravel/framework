@@ -10,16 +10,20 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/contracts/database/seeder"
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/foundation"
 	contractsconfiguration "github.com/goravel/framework/contracts/foundation/configuration"
 	contractshttp "github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/contracts/schedule"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksschema "github.com/goravel/framework/mocks/database/schema"
+	mocksseeder "github.com/goravel/framework/mocks/database/seeder"
 	mocksevent "github.com/goravel/framework/mocks/event"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	mocksgrpc "github.com/goravel/framework/mocks/grpc"
+	mocksqueue "github.com/goravel/framework/mocks/queue"
 	mocksroute "github.com/goravel/framework/mocks/route"
 	mocksschedule "github.com/goravel/framework/mocks/schedule"
 	"github.com/goravel/framework/support/color"
@@ -430,6 +434,70 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 
 		s.NotNil(app)
 	})
+
+	s.Run("WithJobs but Queue facade is nil", func() {
+		s.SetupTest()
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().MakeQueue().Return(nil).Once()
+
+		mockJob := mocksqueue.NewJob(s.T())
+		got := color.CaptureOutput(func(io.Writer) {
+			app := s.builder.WithJobs([]queue.Job{mockJob}).Create()
+			s.NotNil(app)
+		})
+
+		s.Contains(got, "Queue facade not found, please install it first: ./artisan package:install Queue")
+	})
+
+	s.Run("WithJobs", func() {
+		s.SetupTest()
+
+		mockQueue := mocksqueue.NewQueue(s.T())
+		mockJob := mocksqueue.NewJob(s.T())
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().MakeQueue().Return(mockQueue).Once()
+		mockQueue.EXPECT().Register([]queue.Job{mockJob}).Return().Once()
+
+		app := s.builder.WithJobs([]queue.Job{mockJob}).Create()
+
+		s.NotNil(app)
+	})
+
+	s.Run("WithSeeders but Seeder facade is nil", func() {
+		s.SetupTest()
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().MakeSeeder().Return(nil).Once()
+
+		mockSeeder := mocksseeder.NewSeeder(s.T())
+		got := color.CaptureOutput(func(io.Writer) {
+			app := s.builder.WithSeeders([]seeder.Seeder{mockSeeder}).Create()
+			s.NotNil(app)
+		})
+
+		s.Contains(got, "Seeder facade not found, please install it first: ./artisan package:install Seeder")
+	})
+
+	s.Run("WithSeeders", func() {
+		s.SetupTest()
+
+		mockSeederFacade := mocksseeder.NewFacade(s.T())
+		mockSeeder := mocksseeder.NewSeeder(s.T())
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().MakeSeeder().Return(mockSeederFacade).Once()
+		mockSeederFacade.EXPECT().Register([]seeder.Seeder{mockSeeder}).Return().Once()
+
+		app := s.builder.WithSeeders([]seeder.Seeder{mockSeeder}).Create()
+
+		s.NotNil(app)
+	})
 }
 
 func (s *ApplicationBuilderTestSuite) TestRun() {
@@ -534,4 +602,22 @@ func (s *ApplicationBuilderTestSuite) TestWithGrpcServerInterceptors() {
 
 	s.NotNil(builder)
 	s.Len(s.builder.grpcServerInterceptors, 1)
+}
+
+func (s *ApplicationBuilderTestSuite) TestWithJobs() {
+	mockJob := mocksqueue.NewJob(s.T())
+
+	builder := s.builder.WithJobs([]queue.Job{mockJob})
+
+	s.NotNil(builder)
+	s.Len(s.builder.jobs, 1)
+}
+
+func (s *ApplicationBuilderTestSuite) TestWithSeeders() {
+	mockSeeder := mocksseeder.NewSeeder(s.T())
+
+	builder := s.builder.WithSeeders([]seeder.Seeder{mockSeeder})
+
+	s.NotNil(builder)
+	s.Len(s.builder.seeders, 1)
 }

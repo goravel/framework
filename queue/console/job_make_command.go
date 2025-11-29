@@ -12,6 +12,7 @@ import (
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support"
 	supportconsole "github.com/goravel/framework/support/console"
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )
@@ -45,24 +46,27 @@ func (r *JobMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *JobMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "job", ctx.Argument(0), support.Config.Paths.Job)
+	make, err := supportconsole.NewMake(ctx, "job", ctx.Argument(0), support.Config.Paths.Job)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
 
-	if err := file.PutContent(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName(), m.GetSignature())); err != nil {
+	if err := file.PutContent(make.GetFilePath(), r.populateStub(r.getStub(), make.GetPackageName(), make.GetStructName(), make.GetSignature())); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
 
 	ctx.Success("Job created successfully")
 
-	if err = modify.GoFile(filepath.Join("app", "providers", "queue_service_provider.go")).
-		Find(match.Imports()).Modify(modify.AddImport(m.GetPackageImportPath())).
-		Find(match.Jobs()).Modify(modify.Register(fmt.Sprintf("&%s.%s{}", m.GetPackageName(), m.GetStructName()))).
-		Apply(); err != nil {
-		ctx.Warning(errors.QueueJobRegisterFailed.Args(err).Error())
+	if env.IsBootstrapSetup() {
+		err = modify.AddJob(make.GetPackageImportPath(), fmt.Sprintf("&%s.%s{}", make.GetPackageName(), make.GetStructName()))
+	} else {
+		err = r.registerInKernel(make)
+	}
+
+	if err != nil {
+		ctx.Error(errors.QueueJobRegisterFailed.Args(err).Error())
 		return nil
 	}
 
@@ -82,4 +86,11 @@ func (r *JobMakeCommand) populateStub(stub string, packageName, structName, sign
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 
 	return stub
+}
+
+func (r *JobMakeCommand) registerInKernel(make *supportconsole.Make) error {
+	return modify.GoFile(filepath.Join("app", "providers", "queue_service_provider.go")).
+		Find(match.Imports()).Modify(modify.AddImport(make.GetPackageImportPath())).
+		Find(match.Jobs()).Modify(modify.Register(fmt.Sprintf("&%s.%s{}", make.GetPackageName(), make.GetStructName()))).
+		Apply()
 }
