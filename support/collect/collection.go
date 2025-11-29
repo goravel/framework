@@ -112,7 +112,7 @@ func (c *Collection[T]) Collapse() *Collection[T] {
 	return &Collection[T]{items: flattened}
 }
 
-func Collect[T any](items []T) *Collection[T] {
+func Of[T any](items []T) *Collection[T] {
 	return &Collection[T]{items: items}
 }
 
