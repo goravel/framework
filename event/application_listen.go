@@ -94,6 +94,8 @@ func (app *Application) setupEvents(e any, listener any) {
 
 	// Register queued listeners with the queue system
 	if l, ok := listener.(event.EventQueueListener); ok {
+		// Capture event in local scope to avoid closure variable capture bug
+		eventCopy := e
 		app.queue.Register([]queue.Job{
 			&dynamicQueueJob{
 				signature: l.Signature(),
@@ -101,7 +103,7 @@ func (app *Application) setupEvents(e any, listener any) {
 					// Convert queue args back to event args format
 					eventArgs := make([]any, len(queueArgs))
 					copy(eventArgs, queueArgs)
-					return l.Handle(e, eventArgs...)
+					return l.Handle(eventCopy, eventArgs...)
 				},
 				shouldQueue: l.ShouldQueue(),
 				queueConfig: l,
@@ -122,5 +124,8 @@ func (app *Application) setupEvents(e any, listener any) {
 func (app *Application) setupWildcardListen(eventName string, listener any) {
 	app.wildcards[eventName] = append(app.wildcards[eventName], listener)
 	// Clear cache to ensure fresh wildcard matching
-	app.wildcardsCache = make(map[string][]any)
+	app.wildcardsCache.Range(func(key, value any) bool {
+		app.wildcardsCache.Delete(key)
+		return true
+	})
 }

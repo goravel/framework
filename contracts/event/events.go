@@ -11,12 +11,14 @@ type Event interface {
 }
 
 type EventListener interface {
+	// Handle the event.
 	Handle(event any, args ...any) error
 }
 
 type EventQueueListener interface {
 	// Queue configure the event queue options.
 	Queue(args ...any) Queue
+
 	EventListener
 	Signature
 	ShouldQueue
@@ -28,6 +30,7 @@ type Instance interface {
 	// GetEvents gets all registered events.
 	GetEvents() map[Event][]Listener
 	// Job create a new event task.
+	// Deprecated: Use Dispatch instead. Job will be removed in a future version.
 	Job(event Event, args []Arg) Task
 	// Listen registers an event listener with the dispatcher.
 	// events can be: string, []string, Event, []Event, or any other type

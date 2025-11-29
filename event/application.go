@@ -12,7 +12,7 @@ type Application struct {
 	listeners      map[string][]any
 	mu             sync.RWMutex
 	wildcards      map[string][]any
-	wildcardsCache map[string][]any
+	wildcardsCache sync.Map
 	events         map[event.Event][]event.Listener
 	queue          queue.Queue
 }
@@ -22,7 +22,7 @@ func NewApplication(queue queue.Queue) *Application {
 		listeners:      make(map[string][]any),
 		mu:             sync.RWMutex{},
 		wildcards:      make(map[string][]any),
-		wildcardsCache: make(map[string][]any),
+		wildcardsCache: sync.Map{},
 		queue:          queue,
 	}
 }
@@ -33,6 +33,17 @@ func (app *Application) GetEvents() map[event.Event][]event.Listener {
 }
 
 // Job returns a new Task for the given event and arguments.
+// Deprecated: Use Dispatch instead. Job will be removed in a future version.
+// The new Dispatch method fires events immediately and returns listener responses.
+//
+// Migration example:
+//
+//	// Old way
+//	task := app.Job(event, args)
+//	task.Dispatch()
+//
+//	// New way
+//	responses := app.Dispatch(event, args)
 func (app *Application) Job(e event.Event, args []event.Arg) event.Task {
 	listeners, ok := app.events[e]
 	if !ok {
