@@ -1111,213 +1111,70 @@ func TestGenericReduceFunction(t *testing.T) {
 // ===== PHASE 1: NAVIGATION & INDEXING =====
 
 func TestAfter(t *testing.T) {
-	// Happy path: element in middle
 	c := New(1, 2, 3, 4, 5)
-	result := c.After(3)
-	if result == nil {
-		t.Error("Expected to find element after 3")
-	} else if *result != 4 {
-		t.Errorf("Expected element after 3 to be 4, got %d", *result)
-	}
 
-	// Boundary: after last element
-	result = c.After(5)
-	if result != nil {
-		t.Errorf("Expected nil for element after last item, got %v", *result)
+	// Happy path and boundaries
+	if result := c.After(3); result == nil || *result != 4 {
+		t.Errorf("Expected 4 after 3, got %v", result)
 	}
-
-	// Element doesn't exist
-	result = c.After(99)
-	if result != nil {
-		t.Errorf("Expected nil for non-existent element, got %v", *result)
+	if c.After(5) != nil {
+		t.Error("Expected nil after last element")
 	}
-
-	// Empty collection
-	empty := New[int]()
-	result = empty.After(1)
-	if result != nil {
-		t.Errorf("Expected nil for empty collection, got %v", *result)
+	if c.After(99) != nil {
+		t.Error("Expected nil for non-existent element")
 	}
-
-	// Type variation: structs with DeepEqual
-	type User struct {
-		ID   int
-		Name string
-	}
-	users := New(
-		User{ID: 1, Name: "Alice"},
-		User{ID: 2, Name: "Bob"},
-		User{ID: 3, Name: "Charlie"},
-	)
-	userResult := users.After(User{ID: 2, Name: "Bob"})
-	if userResult == nil {
-		t.Error("Expected to find user after Bob")
-	} else if userResult.Name != "Charlie" {
-		t.Errorf("Expected Charlie after Bob, got %s", userResult.Name)
-	}
-
-	// Multiple occurrences - returns first match
-	duplicates := New(1, 2, 2, 3)
-	result = duplicates.After(2)
-	if result == nil || *result != 2 {
-		t.Errorf("Expected element after first occurrence of 2 to be 2")
+	if New[int]().After(1) != nil {
+		t.Error("Expected nil for empty collection")
 	}
 }
 
 func TestBefore(t *testing.T) {
-	// Happy path: element in middle
 	c := New(1, 2, 3, 4, 5)
-	result := c.Before(3)
-	if result == nil {
-		t.Error("Expected to find element before 3")
-	} else if *result != 2 {
-		t.Errorf("Expected element before 3 to be 2, got %d", *result)
-	}
 
-	// Boundary: before first element
-	result = c.Before(1)
-	if result != nil {
-		t.Errorf("Expected nil for element before first item, got %v", *result)
+	if result := c.Before(3); result == nil || *result != 2 {
+		t.Errorf("Expected 2 before 3, got %v", result)
 	}
-
-	// Element doesn't exist
-	result = c.Before(99)
-	if result != nil {
-		t.Errorf("Expected nil for non-existent element, got %v", *result)
+	if c.Before(1) != nil {
+		t.Error("Expected nil before first element")
 	}
-
-	// Empty collection
-	empty := New[int]()
-	result = empty.Before(1)
-	if result != nil {
-		t.Errorf("Expected nil for empty collection, got %v", *result)
-	}
-
-	// Type variation: structs
-	type User struct {
-		ID   int
-		Name string
-	}
-	users := New(
-		User{ID: 1, Name: "Alice"},
-		User{ID: 2, Name: "Bob"},
-		User{ID: 3, Name: "Charlie"},
-	)
-	userResult := users.Before(User{ID: 3, Name: "Charlie"})
-	if userResult == nil {
-		t.Error("Expected to find user before Charlie")
-	} else if userResult.Name != "Bob" {
-		t.Errorf("Expected Bob before Charlie, got %s", userResult.Name)
+	if c.Before(99) != nil || New[int]().Before(1) != nil {
+		t.Error("Expected nil for non-existent or empty")
 	}
 }
 
 func TestGet(t *testing.T) {
 	c := New(10, 20, 30, 40, 50)
 
-	// Valid index
-	result := c.Get(2)
-	if result == nil {
-		t.Error("Expected to get element at index 2")
-	} else if *result != 30 {
-		t.Errorf("Expected 30 at index 2, got %d", *result)
+	if result := c.Get(2); result == nil || *result != 30 {
+		t.Errorf("Expected 30 at index 2, got %v", result)
 	}
-
-	// First element
-	result = c.Get(0)
-	if result == nil || *result != 10 {
-		t.Error("Expected to get first element")
+	if result := c.Get(0); result == nil || *result != 10 {
+		t.Error("Expected first element")
 	}
-
-	// Last element
-	result = c.Get(4)
-	if result == nil || *result != 50 {
-		t.Error("Expected to get last element")
-	}
-
-	// Out of bounds - negative
-	result = c.Get(-1)
-	if result != nil {
-		t.Errorf("Expected nil for negative index, got %v", *result)
-	}
-
-	// Out of bounds - too large
-	result = c.Get(10)
-	if result != nil {
-		t.Errorf("Expected nil for index >= length, got %v", *result)
-	}
-
-	// Empty collection
-	empty := New[int]()
-	result = empty.Get(0)
-	if result != nil {
-		t.Errorf("Expected nil for empty collection, got %v", *result)
+	if c.Get(-1) != nil || c.Get(10) != nil || New[int]().Get(0) != nil {
+		t.Error("Expected nil for invalid indices")
 	}
 }
 
 func TestHas(t *testing.T) {
 	c := New(1, 2, 3, 4, 5)
 
-	// Valid indices
-	if !c.Has(0) {
-		t.Error("Expected to have index 0")
+	if !c.Has(0) || !c.Has(2) || !c.Has(4) {
+		t.Error("Expected to have valid indices")
 	}
-	if !c.Has(2) {
-		t.Error("Expected to have index 2")
-	}
-	if !c.Has(4) {
-		t.Error("Expected to have index 4 (last)")
-	}
-
-	// Invalid indices
-	if c.Has(-1) {
-		t.Error("Expected not to have negative index")
-	}
-	if c.Has(5) {
-		t.Error("Expected not to have index >= length")
-	}
-	if c.Has(100) {
-		t.Error("Expected not to have index 100")
-	}
-
-	// Empty collection
-	empty := New[int]()
-	if empty.Has(0) {
-		t.Error("Expected empty collection not to have any index")
+	if c.Has(-1) || c.Has(5) || New[int]().Has(0) {
+		t.Error("Expected not to have invalid indices or empty")
 	}
 }
 
 func TestHasAny(t *testing.T) {
 	c := New(1, 2, 3, 4, 5)
 
-	// Has at least one valid index
-	if !c.HasAny(2, 10, 20) {
-		t.Error("Expected to have at least one of the indices")
+	if !c.HasAny(2, 10, 20) || !c.HasAny(0, 1, 2) {
+		t.Error("Expected to have at least one valid index")
 	}
-
-	// All valid indices
-	if !c.HasAny(0, 1, 2) {
-		t.Error("Expected to have all indices")
-	}
-
-	// No valid indices
-	if c.HasAny(10, 20, 30) {
-		t.Error("Expected not to have any of the indices")
-	}
-
-	// Mix of valid and invalid
-	if !c.HasAny(-1, 0, 100) {
-		t.Error("Expected to have at least index 0")
-	}
-
-	// Empty list of indices
-	if c.HasAny() {
-		t.Error("Expected false for empty indices list")
-	}
-
-	// Empty collection
-	empty := New[int]()
-	if empty.HasAny(0, 1, 2) {
-		t.Error("Expected empty collection not to have any indices")
+	if c.HasAny(10, 20, 30) || c.HasAny() || New[int]().HasAny(0, 1, 2) {
+		t.Error("Expected false for invalid/empty cases")
 	}
 }
 
@@ -1325,269 +1182,95 @@ func TestHasAny(t *testing.T) {
 
 func TestContainsStrict(t *testing.T) {
 	c := New(1, 2, 3)
-
-	// Exact type match
-	if !c.ContainsStrict(2) {
-		t.Error("Expected to contain 2 (int)")
+	if !c.ContainsStrict(2) || !c.ContainsStrict(1) || c.ContainsStrict(99) || New[int]().ContainsStrict(1) {
+		t.Error("Expected correct strict containment checks")
 	}
 
-	// Type mismatch (this should still work with same underlying type in Go)
-	// Note: In Go, int and int are the same type, so we can't easily test type strictness
-	// This test verifies the method works correctly
-	if !c.ContainsStrict(1) {
-		t.Error("Expected to contain 1")
-	}
-
-	// Value doesn't exist
-	if c.ContainsStrict(99) {
-		t.Error("Expected not to contain 99")
-	}
-
-	// Empty collection
-	empty := New[int]()
-	if empty.ContainsStrict(1) {
-		t.Error("Expected empty collection not to contain any value")
-	}
-
-	// With structs - tests DeepEqual
 	type Product struct {
 		ID    int
 		Name  string
 		Price float64
 	}
-	products := New(
-		Product{ID: 1, Name: "Book", Price: 10.99},
-		Product{ID: 2, Name: "Pen", Price: 2.99},
-	)
-	if !products.ContainsStrict(Product{ID: 1, Name: "Book", Price: 10.99}) {
-		t.Error("Expected to contain exact product match")
-	}
-	if products.ContainsStrict(Product{ID: 1, Name: "Book", Price: 11.99}) {
-		t.Error("Expected not to contain product with different price")
+	products := New(Product{ID: 1, Name: "Book", Price: 10.99}, Product{ID: 2, Name: "Pen", Price: 2.99})
+	if !products.ContainsStrict(Product{ID: 1, Name: "Book", Price: 10.99}) || products.ContainsStrict(Product{ID: 1, Name: "Book", Price: 11.99}) {
+		t.Error("Expected correct struct strict containment")
 	}
 }
 
 func TestDoesnt(t *testing.T) {
 	c := New(1, 2, 3, 4, 5)
-
-	// Value exists
-	if c.Doesnt(3) {
-		t.Error("Expected Doesnt to return false for existing value")
+	if c.Doesnt(3) || !c.Doesnt(99) || !New[int]().Doesnt(1) {
+		t.Error("Expected correct Doesnt behavior")
 	}
 
-	// Value doesn't exist
-	if !c.Doesnt(99) {
-		t.Error("Expected Doesnt to return true for non-existing value")
-	}
-
-	// Empty collection
-	empty := New[int]()
-	if !empty.Doesnt(1) {
-		t.Error("Expected empty collection Doesnt to return true for any value")
-	}
-
-	// With strings
 	words := New("apple", "banana", "cherry")
-	if !words.Doesnt("orange") {
-		t.Error("Expected Doesnt to return true for non-existing string")
-	}
-	if words.Doesnt("banana") {
-		t.Error("Expected Doesnt to return false for existing string")
+	if !words.Doesnt("orange") || words.Doesnt("banana") {
+		t.Error("Expected correct Doesnt for strings")
 	}
 }
 
 func TestDuplicates(t *testing.T) {
-	// Collection with duplicates
 	c := New(1, 2, 2, 3, 3, 3, 4)
-	duplicates := c.Duplicates()
-	expected := []int{2, 3, 3}
-	if !reflect.DeepEqual(duplicates.All(), expected) {
-		t.Errorf("Expected duplicates %v, got %v", expected, duplicates.All())
+	if !reflect.DeepEqual(c.Duplicates().All(), []int{2, 3, 3}) {
+		t.Error("Expected correct duplicates")
 	}
-
-	// No duplicates
-	unique := New(1, 2, 3, 4, 5)
-	duplicates = unique.Duplicates()
-	if duplicates.Count() != 0 {
-		t.Errorf("Expected no duplicates, got %v", duplicates.All())
+	if New(1, 2, 3, 4, 5).Duplicates().Count() != 0 || New(5, 5, 5, 5).Duplicates().Count() != 3 || New[int]().Duplicates().Count() != 0 {
+		t.Error("Expected correct duplicate counts")
 	}
-
-	// All duplicates
-	allDups := New(5, 5, 5, 5)
-	duplicates = allDups.Duplicates()
-	if duplicates.Count() != 3 { // First occurrence is not a duplicate
-		t.Errorf("Expected 3 duplicates, got %d", duplicates.Count())
-	}
-
-	// Empty collection
-	empty := New[int]()
-	duplicates = empty.Duplicates()
-	if duplicates.Count() != 0 {
-		t.Errorf("Expected no duplicates for empty collection, got %d", duplicates.Count())
-	}
-
-	// With strings
-	words := New("apple", "banana", "apple", "cherry", "banana", "apple")
-	wordDups := words.Duplicates()
-	// Should get: apple (2nd), banana (2nd), apple (3rd)
-	if wordDups.Count() != 3 {
-		t.Errorf("Expected 3 duplicate strings, got %d", wordDups.Count())
+	if New("apple", "banana", "apple", "cherry", "banana", "apple").Duplicates().Count() != 3 {
+		t.Error("Expected 3 duplicate strings")
 	}
 }
 
 func TestReject(t *testing.T) {
 	c := New(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-
-	// Reject even numbers
-	odds := c.Reject(func(n int, _ int) bool {
-		return n%2 == 0
-	})
-	expected := []int{1, 3, 5, 7, 9}
-	if !reflect.DeepEqual(odds.All(), expected) {
-		t.Errorf("Expected %v, got %v", expected, odds.All())
+	if !reflect.DeepEqual(c.Reject(func(n int, _ int) bool { return n%2 == 0 }).All(), []int{1, 3, 5, 7, 9}) {
+		t.Error("Expected correct rejection of even numbers")
+	}
+	if c.Reject(func(n int, _ int) bool { return true }).Count() != 0 || !reflect.DeepEqual(c.Reject(func(n int, _ int) bool { return false }).All(), c.All()) {
+		t.Error("Expected correct reject all/none")
 	}
 
-	// Reject all
-	none := c.Reject(func(n int, _ int) bool {
-		return true
-	})
-	if none.Count() != 0 {
-		t.Errorf("Expected empty collection when rejecting all, got %d items", none.Count())
-	}
-
-	// Reject none
-	all := c.Reject(func(n int, _ int) bool {
-		return false
-	})
-	if !reflect.DeepEqual(all.All(), c.All()) {
-		t.Error("Expected all items when rejecting none")
-	}
-
-	// Use index in predicate
-	type Item struct {
-		Value int
-	}
-	items := New(Item{1}, Item{2}, Item{3}, Item{4})
-	rejectByIndex := items.Reject(func(item Item, index int) bool {
-		return index%2 == 0 // Reject items at even indices
-	})
-	if rejectByIndex.Count() != 2 {
-		t.Errorf("Expected 2 items after rejecting even indices, got %d", rejectByIndex.Count())
-	}
-
-	// Empty collection
-	empty := New[int]()
-	result := empty.Reject(func(n int, _ int) bool {
-		return n > 5
-	})
-	if result.Count() != 0 {
-		t.Errorf("Expected empty result for empty collection, got %d", result.Count())
+	type Item struct{ Value int }
+	if New(Item{1}, Item{2}, Item{3}, Item{4}).Reject(func(_ Item, i int) bool { return i%2 == 0 }).Count() != 2 || New[int]().Reject(func(n int, _ int) bool { return n > 5 }).Count() != 0 {
+		t.Error("Expected correct rejection by index and empty")
 	}
 }
 
 // ===== PHASE 1: CONVERSIONS =====
 
 func TestCombine(t *testing.T) {
-	// Equal length arrays
-	values := New(10, 20, 30)
-	keys := []string{"a", "b", "c"}
-	result := values.Combine(keys)
-
-	if result["a"] != 10 {
-		t.Errorf("Expected a=10, got %v", result["a"])
-	}
-	if result["b"] != 20 {
-		t.Errorf("Expected b=20, got %v", result["b"])
-	}
-	if result["c"] != 30 {
-		t.Errorf("Expected c=30, got %v", result["c"])
+	result := New(10, 20, 30).Combine([]string{"a", "b", "c"})
+	if result["a"] != 10 || result["b"] != 20 || result["c"] != 30 {
+		t.Error("Expected correct key-value combinations")
 	}
 
-	// More keys than values
-	values2 := New(100, 200)
-	keys2 := []string{"x", "y", "z"}
-	result2 := values2.Combine(keys2)
-
+	result2 := New(100, 200).Combine([]string{"x", "y", "z"})
 	if len(result2) != 2 {
-		t.Errorf("Expected 2 entries, got %d", len(result2))
+		t.Error("Expected 2 entries when fewer values than keys")
 	}
-	if _, exists := result2["z"]; exists {
-		t.Error("Expected key 'z' not to exist when more keys than values")
-	}
-
-	// More values than keys
-	values3 := New(1, 2, 3, 4)
-	keys3 := []string{"a", "b"}
-	result3 := values3.Combine(keys3)
-
-	if len(result3) != 2 {
-		t.Errorf("Expected 2 entries, got %d", len(result3))
-	}
-
-	// Empty keys
-	values4 := New(1, 2, 3)
-	result4 := values4.Combine([]string{})
-
-	if len(result4) != 0 {
-		t.Errorf("Expected empty result for empty keys, got %d entries", len(result4))
+	if len(New(1, 2, 3, 4).Combine([]string{"a", "b"})) != 2 || len(New(1, 2, 3).Combine([]string{})) != 0 {
+		t.Error("Expected correct lengths for mismatched/empty combines")
 	}
 }
 
 func TestDot(t *testing.T) {
-	c := New("apple", "banana", "cherry")
-	result := c.Dot()
-
-	if result["0"] != "apple" {
-		t.Errorf("Expected index 0 to be 'apple', got %v", result["0"])
+	result := New("apple", "banana", "cherry").Dot()
+	if result["0"] != "apple" || result["1"] != "banana" || result["2"] != "cherry" {
+		t.Error("Expected correct dot notation mapping")
 	}
-	if result["1"] != "banana" {
-		t.Errorf("Expected index 1 to be 'banana', got %v", result["1"])
-	}
-	if result["2"] != "cherry" {
-		t.Errorf("Expected index 2 to be 'cherry', got %v", result["2"])
-	}
-
-	// Empty collection
-	empty := New[string]()
-	emptyResult := empty.Dot()
-	if len(emptyResult) != 0 {
-		t.Errorf("Expected empty result for empty collection, got %d entries", len(emptyResult))
-	}
-
-	// Single element
-	single := New(42)
-	singleResult := single.Dot()
-	if singleResult["0"] != 42 {
-		t.Errorf("Expected single element at index '0', got %v", singleResult["0"])
+	if len(New[string]().Dot()) != 0 || New(42).Dot()["0"] != 42 {
+		t.Error("Expected correct empty/single element dot")
 	}
 }
 
 func TestFlip(t *testing.T) {
-	c := New("apple", "banana", "cherry")
-	result := c.Flip()
-
-	if result["apple"] != "0" {
-		t.Errorf("Expected 'apple' to map to '0', got %v", result["apple"])
+	result := New("apple", "banana", "cherry").Flip()
+	if result["apple"] != "0" || result["banana"] != "1" || result["cherry"] != "2" {
+		t.Error("Expected correct flipped mapping")
 	}
-	if result["banana"] != "1" {
-		t.Errorf("Expected 'banana' to map to '1', got %v", result["banana"])
-	}
-	if result["cherry"] != "2" {
-		t.Errorf("Expected 'cherry' to map to '2', got %v", result["cherry"])
-	}
-
-	// With duplicates - last one wins
-	dups := New("a", "b", "a")
-	dupResult := dups.Flip()
-	if dupResult["a"] != "2" { // Last index
-		t.Errorf("Expected 'a' to map to '2' (last occurrence), got %v", dupResult["a"])
-	}
-
-	// Empty collection
-	empty := New[string]()
-	emptyResult := empty.Flip()
-	if len(emptyResult) != 0 {
-		t.Errorf("Expected empty result for empty collection, got %d entries", len(emptyResult))
+	if New("a", "b", "a").Flip()["a"] != "2" || len(New[string]().Flip()) != 0 {
+		t.Error("Expected correct duplicate/empty flip")
 	}
 }
 
@@ -1597,42 +1280,14 @@ func TestKeyBy(t *testing.T) {
 		Name string
 	}
 
-	products := New(
-		Product{ID: 1, Name: "Book"},
-		Product{ID: 2, Name: "Pen"},
-		Product{ID: 3, Name: "Pencil"},
-	)
-
-	result := products.KeyBy(func(p Product) string {
-		return p.Name
-	})
-
-	if result["Book"].ID != 1 {
-		t.Errorf("Expected Book to have ID 1, got %d", result["Book"].ID)
-	}
-	if result["Pen"].ID != 2 {
-		t.Errorf("Expected Pen to have ID 2, got %d", result["Pen"].ID)
+	result := New(Product{ID: 1, Name: "Book"}, Product{ID: 2, Name: "Pen"}, Product{ID: 3, Name: "Pencil"}).KeyBy(func(p Product) string { return p.Name })
+	if result["Book"].ID != 1 || result["Pen"].ID != 2 {
+		t.Error("Expected correct key-by mapping")
 	}
 
-	// Duplicate keys - last wins
-	dups := New(
-		Product{ID: 1, Name: "Item"},
-		Product{ID: 2, Name: "Item"},
-	)
-	dupResult := dups.KeyBy(func(p Product) string {
-		return p.Name
-	})
-	if dupResult["Item"].ID != 2 {
-		t.Errorf("Expected last Item with ID 2, got %d", dupResult["Item"].ID)
-	}
-
-	// Empty collection
-	empty := New[Product]()
-	emptyResult := empty.KeyBy(func(p Product) string {
-		return p.Name
-	})
-	if len(emptyResult) != 0 {
-		t.Errorf("Expected empty result for empty collection, got %d entries", len(emptyResult))
+	dupResult := New(Product{ID: 1, Name: "Item"}, Product{ID: 2, Name: "Item"}).KeyBy(func(p Product) string { return p.Name })
+	if dupResult["Item"].ID != 2 || len(New[Product]().KeyBy(func(p Product) string { return p.Name })) != 0 {
+		t.Error("Expected last item wins for duplicates and empty for empty collection")
 	}
 }
 
@@ -1640,87 +1295,27 @@ func TestKeyBy(t *testing.T) {
 
 func TestOnly(t *testing.T) {
 	c := New(10, 20, 30, 40, 50)
-
-	// Select specific indices
-	result := c.Only(1, 3)
-	expected := []int{20, 40}
-	if !reflect.DeepEqual(result.All(), expected) {
-		t.Errorf("Expected %v, got %v", expected, result.All())
+	if !reflect.DeepEqual(c.Only(1, 3).All(), []int{20, 40}) || !reflect.DeepEqual(c.Only(0, 10, 2).All(), []int{10, 30}) {
+		t.Error("Expected correct Only selections")
 	}
-
-	// Out of bounds indices ignored
-	result2 := c.Only(0, 10, 2)
-	expected2 := []int{10, 30}
-	if !reflect.DeepEqual(result2.All(), expected2) {
-		t.Errorf("Expected %v, got %v", expected2, result2.All())
-	}
-
-	// No indices
-	result3 := c.Only()
-	if result3.Count() != 0 {
-		t.Errorf("Expected empty collection for no indices, got %d items", result3.Count())
-	}
-
-	// Duplicate indices
-	result4 := c.Only(1, 1, 3)
-	if result4.Count() != 3 { // Duplicates preserved in order given
-		t.Errorf("Expected 3 items, got %d", result4.Count())
-	}
-
-	// Empty collection
-	empty := New[int]()
-	emptyResult := empty.Only(0, 1, 2)
-	if emptyResult.Count() != 0 {
-		t.Errorf("Expected empty result for empty collection, got %d", emptyResult.Count())
+	if c.Only().Count() != 0 || c.Only(1, 1, 3).Count() != 3 || New[int]().Only(0, 1, 2).Count() != 0 {
+		t.Error("Expected correct Only edge cases")
 	}
 }
 
 func TestExcept(t *testing.T) {
 	c := New(10, 20, 30, 40, 50)
-
-	// Exclude specific indices
-	result := c.Except(1, 3)
-	expected := []int{10, 30, 50}
-	if !reflect.DeepEqual(result.All(), expected) {
-		t.Errorf("Expected %v, got %v", expected, result.All())
+	if !reflect.DeepEqual(c.Except(1, 3).All(), []int{10, 30, 50}) || !reflect.DeepEqual(c.Except(0, 10, 2).All(), []int{20, 40, 50}) {
+		t.Error("Expected correct Except exclusions")
 	}
-
-	// Out of bounds indices ignored
-	result2 := c.Except(0, 10, 2)
-	expected2 := []int{20, 40, 50}
-	if !reflect.DeepEqual(result2.All(), expected2) {
-		t.Errorf("Expected %v, got %v", expected2, result2.All())
-	}
-
-	// No indices - returns all
-	result3 := c.Except()
-	if !reflect.DeepEqual(result3.All(), c.All()) {
-		t.Error("Expected all items when excluding no indices")
-	}
-
-	// Duplicate indices
-	result4 := c.Except(1, 1, 3)
-	expected4 := []int{10, 30, 50}
-	if !reflect.DeepEqual(result4.All(), expected4) {
-		t.Errorf("Expected %v, got %v", expected4, result4.All())
-	}
-
-	// Empty collection
-	empty := New[int]()
-	emptyResult := empty.Except(0, 1, 2)
-	if emptyResult.Count() != 0 {
-		t.Errorf("Expected empty result for empty collection, got %d", emptyResult.Count())
+	if !reflect.DeepEqual(c.Except().All(), c.All()) || !reflect.DeepEqual(c.Except(1, 1, 3).All(), []int{10, 30, 50}) || New[int]().Except(0, 1, 2).Count() != 0 {
+		t.Error("Expected correct Except edge cases")
 	}
 }
 
 func TestForget(t *testing.T) {
-	// Forget is an alias for Except, so basic verification is enough
-	c := New(10, 20, 30, 40, 50)
-
-	result := c.Forget(1, 3)
-	expected := []int{10, 30, 50}
-	if !reflect.DeepEqual(result.All(), expected) {
-		t.Errorf("Expected %v, got %v", expected, result.All())
+	if !reflect.DeepEqual(New(10, 20, 30, 40, 50).Forget(1, 3).All(), []int{10, 30, 50}) {
+		t.Error("Expected correct Forget (alias for Except)")
 	}
 }
 
@@ -1728,50 +1323,24 @@ func TestForget(t *testing.T) {
 
 func TestMake(t *testing.T) {
 	c := New(1, 2, 3)
-
-	// Make creates a new collection with given items
-	result := c.Make(10, 20, 30)
-	expected := []int{10, 20, 30}
-	if !reflect.DeepEqual(result.All(), expected) {
-		t.Errorf("Expected %v, got %v", expected, result.All())
-	}
-
-	// Make with no items
-	empty := c.Make()
-	if empty.Count() != 0 {
-		t.Errorf("Expected empty collection, got %d items", empty.Count())
+	if !reflect.DeepEqual(c.Make(10, 20, 30).All(), []int{10, 20, 30}) || c.Make().Count() != 0 {
+		t.Error("Expected correct Make behavior")
 	}
 }
 
 func TestToArray(t *testing.T) {
 	c := New(1, 2, 3, 4, 5)
-
 	result := c.ToArray()
-	expected := []int{1, 2, 3, 4, 5}
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
-	}
-
-	// Verify it returns the same reference (not a copy)
-	if &c.All()[0] != &result[0] {
-		t.Error("Expected ToArray to return same underlying array")
+	if !reflect.DeepEqual(result, []int{1, 2, 3, 4, 5}) || &c.All()[0] != &result[0] {
+		t.Error("Expected correct ToArray with same reference")
 	}
 }
 
 func TestWrap(t *testing.T) {
 	c := New(1, 2, 3)
-
 	wrapper := "test"
-	result := c.Wrap(wrapper)
-
-	if result != wrapper {
-		t.Errorf("Expected wrapper to be returned, got %v", result)
-	}
-
-	// Wrap with nil
-	nilResult := c.Wrap(nil)
-	if nilResult != nil {
-		t.Errorf("Expected nil, got %v", nilResult)
+	if c.Wrap(wrapper) != wrapper || c.Wrap(nil) != nil {
+		t.Error("Expected correct Wrap behavior")
 	}
 }
 
@@ -1779,85 +1348,40 @@ func TestWrap(t *testing.T) {
 
 func TestPrepend(t *testing.T) {
 	c := New(3, 4, 5)
-
-	// Prepend modifies the collection
 	result := c.Prepend(1, 2)
-	expected := []int{1, 2, 3, 4, 5}
-	if !reflect.DeepEqual(c.All(), expected) {
-		t.Errorf("Expected collection to be %v, got %v", expected, c.All())
+	if !reflect.DeepEqual(c.All(), []int{1, 2, 3, 4, 5}) || result != c {
+		t.Error("Expected correct Prepend mutation and chaining")
 	}
 
-	// Returns the same collection (chainable)
-	if result != c {
-		t.Error("Expected Prepend to return same collection")
-	}
-
-	// Prepend to empty collection
 	empty := New[int]()
 	empty.Prepend(10)
 	if empty.Count() != 1 || *empty.First() != 10 {
-		t.Error("Expected single element after prepending to empty collection")
+		t.Error("Expected single element after prepending to empty")
 	}
 }
 
 func TestPull(t *testing.T) {
 	c := New(10, 20, 30, 40, 50)
-
-	// Pull element at index
 	pulled := c.Pull(2)
-	if pulled == nil || *pulled != 30 {
-		t.Errorf("Expected to pull 30, got %v", pulled)
+	if pulled == nil || *pulled != 30 || !reflect.DeepEqual(c.All(), []int{10, 20, 40, 50}) {
+		t.Error("Expected correct Pull and removal")
 	}
-
-	// Verify element removed
-	expected := []int{10, 20, 40, 50}
-	if !reflect.DeepEqual(c.All(), expected) {
-		t.Errorf("Expected %v after pull, got %v", expected, c.All())
-	}
-
-	// Pull out of bounds
-	pulled2 := c.Pull(10)
-	if pulled2 != nil {
-		t.Errorf("Expected nil for out of bounds pull, got %v", *pulled2)
-	}
-
-	// Pull negative index
-	pulled3 := c.Pull(-1)
-	if pulled3 != nil {
-		t.Errorf("Expected nil for negative index pull, got %v", *pulled3)
-	}
-
-	// Collection should be unchanged after failed pulls
-	if !reflect.DeepEqual(c.All(), expected) {
-		t.Error("Expected collection unchanged after failed pulls")
+	if c.Pull(10) != nil || c.Pull(-1) != nil {
+		t.Error("Expected nil for invalid Pull indices")
 	}
 }
 
 func TestPut(t *testing.T) {
 	c := New(10, 20, 30, 40, 50)
-
-	// Put at valid index
 	result := c.Put(2, 99)
 	expected := []int{10, 20, 99, 40, 50}
-	if !reflect.DeepEqual(c.All(), expected) {
-		t.Errorf("Expected %v, got %v", expected, c.All())
+	if !reflect.DeepEqual(c.All(), expected) || result != c {
+		t.Error("Expected correct Put mutation and chaining")
 	}
-
-	// Returns same collection (chainable)
-	if result != c {
-		t.Error("Expected Put to return same collection")
-	}
-
-	// Put at out of bounds index - should not change collection
 	c.Put(10, 100)
-	if !reflect.DeepEqual(c.All(), expected) {
-		t.Error("Expected collection unchanged when putting at invalid index")
-	}
-
-	// Put at negative index
 	c.Put(-1, 200)
 	if !reflect.DeepEqual(c.All(), expected) {
-		t.Error("Expected collection unchanged when putting at negative index")
+		t.Error("Expected collection unchanged for invalid Put")
 	}
 }
 
@@ -1865,139 +1389,65 @@ func TestPut(t *testing.T) {
 
 func TestFirstOrFail(t *testing.T) {
 	c := New(1, 2, 3)
-
-	// Happy path
 	first, err := c.FirstOrFail()
-	if err != nil {
-		t.Errorf("Expected no error, got %v", err)
-	}
-	if first == nil || *first != 1 {
-		t.Errorf("Expected first element to be 1, got %v", first)
+	if err != nil || first == nil || *first != 1 {
+		t.Error("Expected first element with no error")
 	}
 
-	// Empty collection
-	empty := New[int]()
-	emptyFirst, err := empty.FirstOrFail()
-	if err == nil {
-		t.Error("Expected error for empty collection")
-	}
-	if emptyFirst != nil {
-		t.Errorf("Expected nil result for empty collection, got %v", emptyFirst)
+	emptyFirst, err := New[int]().FirstOrFail()
+	if err == nil || emptyFirst != nil {
+		t.Error("Expected error and nil for empty collection")
 	}
 }
 
 func TestLastOrFail(t *testing.T) {
 	c := New(1, 2, 3)
-
-	// Happy path
 	last, err := c.LastOrFail()
-	if err != nil {
-		t.Errorf("Expected no error, got %v", err)
-	}
-	if last == nil || *last != 3 {
-		t.Errorf("Expected last element to be 3, got %v", last)
+	if err != nil || last == nil || *last != 3 {
+		t.Error("Expected last element with no error")
 	}
 
-	// Empty collection
-	empty := New[int]()
-	emptyLast, err := empty.LastOrFail()
-	if err == nil {
-		t.Error("Expected error for empty collection")
-	}
-	if emptyLast != nil {
-		t.Errorf("Expected nil result for empty collection, got %v", emptyLast)
+	emptyLast, err := New[int]().LastOrFail()
+	if err == nil || emptyLast != nil {
+		t.Error("Expected error and nil for empty collection")
 	}
 }
 
 func TestFirstWhere(t *testing.T) {
 	c := New(1, 2, 3, 4, 5)
-
-	// Find first even number
-	result := c.FirstWhere(func(n int) bool {
-		return n%2 == 0
-	})
+	result := c.FirstWhere(func(n int) bool { return n%2 == 0 })
 	if result == nil || *result != 2 {
-		t.Errorf("Expected first even number to be 2, got %v", result)
+		t.Error("Expected first even number to be 2")
+	}
+	if c.FirstWhere(func(n int) bool { return n > 10 }) != nil || New[int]().FirstWhere(func(n int) bool { return true }) != nil {
+		t.Error("Expected nil for no match and empty")
 	}
 
-	// No match
-	result2 := c.FirstWhere(func(n int) bool {
-		return n > 10
-	})
-	if result2 != nil {
-		t.Errorf("Expected nil when no match, got %v", *result2)
-	}
-
-	// Empty collection
-	empty := New[int]()
-	emptyResult := empty.FirstWhere(func(n int) bool {
-		return true
-	})
-	if emptyResult != nil {
-		t.Errorf("Expected nil for empty collection, got %v", *emptyResult)
-	}
-
-	// With structs
 	type User struct {
 		Name string
 		Age  int
 	}
-	users := New(
-		User{Name: "Alice", Age: 25},
-		User{Name: "Bob", Age: 30},
-		User{Name: "Charlie", Age: 35},
-	)
-	oldUser := users.FirstWhere(func(u User) bool {
-		return u.Age >= 30
-	})
+	oldUser := New(User{Name: "Alice", Age: 25}, User{Name: "Bob", Age: 30}, User{Name: "Charlie", Age: 35}).FirstWhere(func(u User) bool { return u.Age >= 30 })
 	if oldUser == nil || oldUser.Name != "Bob" {
-		t.Error("Expected to find Bob as first user aged >= 30")
+		t.Error("Expected to find Bob")
 	}
 }
 
 func TestSearchBy(t *testing.T) {
 	c := New(1, 2, 3, 4, 5)
-
-	// Find first even number index
-	index := c.SearchBy(func(n int) bool {
-		return n%2 == 0
-	})
-	if index != 1 {
-		t.Errorf("Expected index 1 for first even number, got %d", index)
+	if c.SearchBy(func(n int) bool { return n%2 == 0 }) != 1 {
+		t.Error("Expected index 1 for first even number")
+	}
+	if c.SearchBy(func(n int) bool { return n > 10 }) != -1 || New[int]().SearchBy(func(n int) bool { return true }) != -1 {
+		t.Error("Expected -1 for no match and empty")
 	}
 
-	// No match
-	index2 := c.SearchBy(func(n int) bool {
-		return n > 10
-	})
-	if index2 != -1 {
-		t.Errorf("Expected -1 when no match, got %d", index2)
-	}
-
-	// Empty collection
-	empty := New[int]()
-	emptyIndex := empty.SearchBy(func(n int) bool {
-		return true
-	})
-	if emptyIndex != -1 {
-		t.Errorf("Expected -1 for empty collection, got %d", emptyIndex)
-	}
-
-	// Find by complex condition
 	type Product struct {
 		Name  string
 		Price float64
 	}
-	products := New(
-		Product{Name: "Book", Price: 10.99},
-		Product{Name: "Pen", Price: 2.99},
-		Product{Name: "Notebook", Price: 5.99},
-	)
-	expensiveIndex := products.SearchBy(func(p Product) bool {
-		return p.Price > 5.00
-	})
-	if expensiveIndex != 0 {
-		t.Errorf("Expected index 0 for first product > $5, got %d", expensiveIndex)
+	if New(Product{Name: "Book", Price: 10.99}, Product{Name: "Pen", Price: 2.99}, Product{Name: "Notebook", Price: 5.99}).SearchBy(func(p Product) bool { return p.Price > 5.00 }) != 0 {
+		t.Error("Expected index 0 for first expensive product")
 	}
 }
 
@@ -2009,38 +1459,13 @@ func TestSortByDesc(t *testing.T) {
 		Age  int
 	}
 
-	users := New(
-		User{Name: "Alice", Age: 25},
-		User{Name: "Bob", Age: 35},
-		User{Name: "Charlie", Age: 30},
-	)
+	users := New(User{Name: "Alice", Age: 25}, User{Name: "Bob", Age: 35}, User{Name: "Charlie", Age: 30})
+	sorted := users.SortByDesc(func(u User) string { return fmt.Sprintf("%02d", u.Age) })
 
-	sorted := users.SortByDesc(func(u User) string {
-		return fmt.Sprintf("%02d", u.Age) // Format for string comparison
-	})
-
-	// Should be sorted by age descending: Bob(35), Charlie(30), Alice(25)
-	if sorted.All()[0].Name != "Bob" {
-		t.Errorf("Expected first to be Bob, got %s", sorted.All()[0].Name)
+	if sorted.All()[0].Name != "Bob" || sorted.All()[1].Name != "Charlie" || sorted.All()[2].Name != "Alice" {
+		t.Error("Expected descending sort: Bob, Charlie, Alice")
 	}
-	if sorted.All()[1].Name != "Charlie" {
-		t.Errorf("Expected second to be Charlie, got %s", sorted.All()[1].Name)
-	}
-	if sorted.All()[2].Name != "Alice" {
-		t.Errorf("Expected third to be Alice, got %s", sorted.All()[2].Name)
-	}
-
-	// Verify original unchanged
-	if users.All()[0].Name != "Alice" {
-		t.Error("Expected original collection to be unchanged")
-	}
-
-	// Empty collection
-	empty := New[User]()
-	emptySorted := empty.SortByDesc(func(u User) string {
-		return u.Name
-	})
-	if emptySorted.Count() != 0 {
-		t.Errorf("Expected empty sorted collection, got %d items", emptySorted.Count())
+	if users.All()[0].Name != "Alice" || New[User]().SortByDesc(func(u User) string { return u.Name }).Count() != 0 {
+		t.Error("Expected original unchanged and empty sort")
 	}
 }
