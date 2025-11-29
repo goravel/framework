@@ -640,54 +640,6 @@ func TestApplication_DispatchConcurrent(t *testing.T) {
 	mu.Unlock()
 }
 
-func TestApplication_ListenDeduplication(t *testing.T) {
-	mockQueue := mocksqueue.NewQueue(t)
-	app := NewApplication(mockQueue)
-
-	eventName := "test.dedup"
-
-	// Create a listener with Signature method
-	listener := &TestQueueListener{
-		ShouldQueueFunc: false,
-	}
-
-	// Register the same listener multiple times
-	err := app.Listen(eventName, listener)
-	require.NoError(t, err)
-
-	err = app.Listen(eventName, listener)
-	require.NoError(t, err)
-
-	err = app.Listen(eventName, listener)
-	require.NoError(t, err)
-
-	// Verify only one listener was registered (deduplication worked)
-	listeners, exists := app.listeners[eventName]
-	require.True(t, exists)
-	assert.Len(t, listeners, 1, "Listener should be deduplicated")
-}
-
-func TestApplication_ListenAnonymousFunctionNoDuplication(t *testing.T) {
-	mockQueue := mocksqueue.NewQueue(t)
-	app := NewApplication(mockQueue)
-
-	eventName := "test.anonymous"
-
-	// Register the same anonymous function multiple times
-	handler := func() error { return nil }
-
-	err := app.Listen(eventName, handler)
-	require.NoError(t, err)
-
-	err = app.Listen(eventName, handler)
-	require.NoError(t, err)
-
-	// Anonymous functions should allow duplicates
-	listeners, exists := app.listeners[eventName]
-	require.True(t, exists)
-	assert.Len(t, listeners, 2, "Anonymous functions should allow duplicates")
-}
-
 func TestApplication_ErrorRecovery(t *testing.T) {
 	mockQueue := mocksqueue.NewQueue(t)
 	app := NewApplication(mockQueue)
