@@ -1469,3 +1469,354 @@ func TestSortByDesc(t *testing.T) {
 		t.Error("Expected original unchanged and empty sort")
 	}
 }
+
+// ===== PHASE 2: ADDITIONAL METHODS =====
+
+func TestChunkWhile(t *testing.T) {
+	c := New(1, 2, 2, 3, 3, 3, 4)
+	chunks := c.ChunkWhile(func(item int, _ int, chunk []int) bool { return len(chunk) == 0 || item == chunk[0] })
+	if len(chunks) != 4 || len(chunks[0]) != 1 || len(chunks[1]) != 2 || len(chunks[2]) != 3 {
+		t.Error("Expected chunks grouped by same values")
+	}
+	if len(New[int]().ChunkWhile(func(int, int, []int) bool { return true })) != 0 {
+		t.Error("Expected empty result for empty collection")
+	}
+}
+
+func TestCollectionCountBy(t *testing.T) {
+	type Product struct{ Type string }
+	products := New(Product{"fruit"}, Product{"veg"}, Product{"fruit"}, Product{"meat"})
+	counts := products.CountBy(func(p Product) string { return p.Type })
+	if counts["fruit"] != 2 || counts["veg"] != 1 || counts["meat"] != 1 {
+		t.Error("Expected correct category counts")
+	}
+	if len(New[Product]().CountBy(func(p Product) string { return p.Type })) != 0 {
+		t.Error("Expected empty map for empty collection")
+	}
+}
+
+func TestCrossJoin(t *testing.T) {
+	c1 := New(1, 2)
+	c2 := New(3, 4)
+	result := c1.CrossJoin(c2)
+	if len(result) != 4 || !reflect.DeepEqual(result[0], []int{1, 3}) || !reflect.DeepEqual(result[3], []int{2, 4}) {
+		t.Error("Expected correct cross join")
+	}
+	if len(New[int]().CrossJoin(c2)) != 0 || len(c1.CrossJoin(New[int]())) != 0 {
+		t.Error("Expected empty for empty collections")
+	}
+}
+
+func TestDiffAssoc(t *testing.T) {
+	c1 := New(1, 2, 3, 4)
+	c2 := New(1, 2, 5, 6)
+	diff := c1.DiffAssoc(c2)
+	if !reflect.DeepEqual(diff.All(), []int{3, 4}) {
+		t.Errorf("Expected [3, 4], got %v", diff.All())
+	}
+	if New[int]().DiffAssoc(c2).Count() != 0 || c1.DiffAssoc(New[int]()).Count() != 4 {
+		t.Error("Expected correct diff for empty collections")
+	}
+}
+
+func TestDropUntil(t *testing.T) {
+	c := New(1, 2, 3, 4, 5)
+	result := c.DropUntil(func(n int) bool { return n >= 3 })
+	if !reflect.DeepEqual(result.All(), []int{3, 4, 5}) {
+		t.Error("Expected [3, 4, 5]")
+	}
+	if c.DropUntil(func(n int) bool { return n > 10 }).Count() != 0 || New[int]().DropUntil(func(int) bool { return true }).Count() != 0 {
+		t.Error("Expected empty for no match and empty collection")
+	}
+}
+
+func TestDropWhile(t *testing.T) {
+	c := New(1, 2, 3, 4, 5)
+	result := c.DropWhile(func(n int) bool { return n < 3 })
+	if !reflect.DeepEqual(result.All(), []int{3, 4, 5}) {
+		t.Error("Expected [3, 4, 5]")
+	}
+	if c.DropWhile(func(n int) bool { return n < 10 }).Count() != 0 || New[int]().DropWhile(func(int) bool { return false }).Count() != 0 {
+		t.Error("Expected empty for all dropped and empty collection")
+	}
+}
+
+func TestDump(t *testing.T) {
+	c := New(1, 2, 3)
+	result := c.Dump()
+	if result != c || result.Count() != 3 {
+		t.Error("Expected Dump to return same collection unchanged")
+	}
+}
+
+func TestEachSpread(t *testing.T) {
+	count := 0
+	c := New(1, 2, 3)
+	c.EachSpread(func(items ...int) {
+		count += len(items)
+	})
+	if count != 3 {
+		t.Errorf("Expected count of 3, got %d", count)
+	}
+}
+
+func TestFlatMap(t *testing.T) {
+	c := New(1, 2, 3)
+	result := c.FlatMap(func(n int) []int { return []int{n, n * 2} })
+	if !reflect.DeepEqual(result.All(), []int{1, 2, 2, 4, 3, 6}) {
+		t.Error("Expected [1, 2, 2, 4, 3, 6]")
+	}
+	if New[int]().FlatMap(func(n int) []int { return []int{n} }).Count() != 0 {
+		t.Error("Expected empty for empty collection")
+	}
+}
+
+func TestForPage(t *testing.T) {
+	c := New(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+	if !reflect.DeepEqual(c.ForPage(1, 3).All(), []int{1, 2, 3}) || !reflect.DeepEqual(c.ForPage(2, 3).All(), []int{4, 5, 6}) {
+		t.Error("Expected correct pagination")
+	}
+	if c.ForPage(10, 3).Count() != 0 || New[int]().ForPage(1, 3).Count() != 0 {
+		t.Error("Expected empty for out of bounds and empty collection")
+	}
+}
+
+func TestIntersectByKeys(t *testing.T) {
+	c1 := New(10, 20, 30, 40, 50)
+	c2 := New(1, 2, 3)
+	result := c1.IntersectByKeys(c2)
+	if !reflect.DeepEqual(result.All(), []int{10, 20, 30}) {
+		t.Error("Expected first 3 elements")
+	}
+	if New[int]().IntersectByKeys(c2).Count() != 0 || c1.IntersectByKeys(New[int]()).Count() != 0 {
+		t.Error("Expected empty for empty collections")
+	}
+}
+
+func TestCollectionKeys(t *testing.T) {
+	c := New(10, 20, 30)
+	keys := c.Keys()
+	if !reflect.DeepEqual(keys, []int{0, 1, 2}) {
+		t.Error("Expected [0, 1, 2]")
+	}
+	if len(New[int]().Keys()) != 0 {
+		t.Error("Expected empty keys for empty collection")
+	}
+}
+
+func TestMapSpread(t *testing.T) {
+	c := New(1, 2, 3)
+	result := c.MapSpread(func(items ...int) int {
+		sum := 0
+		for _, v := range items {
+			sum += v
+		}
+		return sum
+	})
+	if result.Count() != 3 || result.All()[0] != 1 || result.All()[1] != 2 || result.All()[2] != 3 {
+		t.Error("Expected correct MapSpread results")
+	}
+}
+
+func TestMapToDictionary(t *testing.T) {
+	type Product struct {
+		Name string
+		Type string
+	}
+	products := New(Product{"Apple", "fruit"}, Product{"Carrot", "veg"}, Product{"Banana", "fruit"})
+	dict := products.MapToDictionary(func(p Product) string { return p.Type })
+	if len(dict["fruit"]) != 2 || len(dict["veg"]) != 1 {
+		t.Error("Expected correct grouping by type")
+	}
+	if len(New[Product]().MapToDictionary(func(p Product) string { return p.Type })) != 0 {
+		t.Error("Expected empty dictionary for empty collection")
+	}
+}
+
+func TestMedian(t *testing.T) {
+	c := New(1, 2, 3, 4, 5)
+	if c.Median(func(n int) float64 { return float64(n) }) != 3.0 {
+		t.Error("Expected median of 3")
+	}
+	c2 := New(1, 2, 3, 4)
+	if c2.Median(func(n int) float64 { return float64(n) }) != 2.5 {
+		t.Error("Expected median of 2.5 for even count")
+	}
+	if New[int]().Median(func(n int) float64 { return float64(n) }) != 0 {
+		t.Error("Expected 0 for empty collection")
+	}
+}
+
+func TestMergeRecursive(t *testing.T) {
+	c1 := New(1, 2, 3)
+	c2 := New(4, 5, 6)
+	result := c1.MergeRecursive(c2)
+	if !reflect.DeepEqual(result.All(), []int{1, 2, 3, 4, 5, 6}) {
+		t.Error("Expected merged collection")
+	}
+	if New[int]().MergeRecursive(c2).Count() != 3 {
+		t.Error("Expected correct merge with empty")
+	}
+}
+
+func TestMode(t *testing.T) {
+	type Item struct{ Category string }
+	items := New(Item{"A"}, Item{"B"}, Item{"A"}, Item{"C"}, Item{"A"})
+	modes := items.Mode(func(i Item) string { return i.Category })
+	if len(modes) != 1 || modes[0] != "A" {
+		t.Error("Expected mode to be [A]")
+	}
+	if len(New[Item]().Mode(func(i Item) string { return i.Category })) != 0 {
+		t.Error("Expected empty modes for empty collection")
+	}
+}
+
+func TestNth(t *testing.T) {
+	c := New(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+	if !reflect.DeepEqual(c.Nth(2).All(), []int{1, 3, 5, 7, 9}) {
+		t.Error("Expected every 2nd element starting from 0")
+	}
+	if c.Nth(0).Count() != 0 || c.Nth(-1).Count() != 0 || New[int]().Nth(2).Count() != 0 {
+		t.Error("Expected empty for invalid n and empty collection")
+	}
+}
+
+func TestPad(t *testing.T) {
+	c := New(1, 2, 3)
+	result := c.Pad(5, 0)
+	if !reflect.DeepEqual(result.All(), []int{1, 2, 3, 0, 0}) {
+		t.Error("Expected padded with zeros")
+	}
+	if c.Pad(2, 0).Count() != 3 {
+		t.Error("Expected original size when pad size is smaller")
+	}
+}
+
+func TestReplace(t *testing.T) {
+	c := New(1, 2, 3, 4, 5)
+	result := c.Replace(map[int]int{0: 10, 2: 30, 10: 100})
+	if !reflect.DeepEqual(result.All(), []int{10, 2, 30, 4, 5}) {
+		t.Error("Expected replaced values at indices 0 and 2")
+	}
+	if !reflect.DeepEqual(c.All(), []int{1, 2, 3, 4, 5}) {
+		t.Error("Expected original collection unchanged")
+	}
+}
+
+func TestCollectionShuffle(t *testing.T) {
+	c := New(1, 2, 3, 4, 5)
+	result := c.Shuffle()
+	if result.Count() != 5 || !reflect.DeepEqual(c.All(), []int{1, 2, 3, 4, 5}) {
+		t.Error("Expected same count and original unchanged")
+	}
+	if New[int]().Shuffle().Count() != 0 {
+		t.Error("Expected empty shuffle for empty collection")
+	}
+}
+
+func TestSkipUntil(t *testing.T) {
+	c := New(1, 2, 3, 4, 5)
+	result := c.SkipUntil(func(n int) bool { return n >= 3 })
+	if !reflect.DeepEqual(result.All(), []int{3, 4, 5}) {
+		t.Error("Expected [3, 4, 5]")
+	}
+	if c.SkipUntil(func(n int) bool { return n > 10 }).Count() != 0 {
+		t.Error("Expected empty when condition never met")
+	}
+}
+
+func TestSkipWhile(t *testing.T) {
+	c := New(1, 2, 3, 4, 5)
+	result := c.SkipWhile(func(n int) bool { return n < 3 })
+	if !reflect.DeepEqual(result.All(), []int{3, 4, 5}) {
+		t.Error("Expected [3, 4, 5]")
+	}
+	if c.SkipWhile(func(n int) bool { return n < 10 }).Count() != 0 {
+		t.Error("Expected empty when all skipped")
+	}
+}
+
+func TestSortDesc(t *testing.T) {
+	c := New(3, 1, 4, 1, 5, 9, 2, 6)
+	result := c.SortDesc(func(a, b int) bool { return a < b })
+	if !reflect.DeepEqual(result.All(), []int{9, 6, 5, 4, 3, 2, 1, 1}) {
+		t.Error("Expected descending sort")
+	}
+	if !reflect.DeepEqual(c.All(), []int{3, 1, 4, 1, 5, 9, 2, 6}) {
+		t.Error("Expected original unchanged")
+	}
+}
+
+func TestSortKeys(t *testing.T) {
+	c := New(3, 1, 4)
+	result := c.SortKeys()
+	if !reflect.DeepEqual(result.All(), []int{3, 1, 4}) {
+		t.Error("Expected clone of original (SortKeys has no effect on slices)")
+	}
+}
+
+func TestSortKeysDesc(t *testing.T) {
+	c := New(3, 1, 4)
+	result := c.SortKeysDesc()
+	if !reflect.DeepEqual(result.All(), []int{3, 1, 4}) {
+		t.Error("Expected clone of original (SortKeysDesc has no effect on slices)")
+	}
+}
+
+func TestSplice(t *testing.T) {
+	c := New(1, 2, 3, 4, 5)
+	result := c.Splice(1, 2, 10, 20)
+	if !reflect.DeepEqual(result.All(), []int{1, 10, 20, 4, 5}) {
+		t.Error("Expected [1, 10, 20, 4, 5]")
+	}
+	if !reflect.DeepEqual(c.All(), []int{1, 2, 3, 4, 5}) {
+		t.Error("Expected original unchanged")
+	}
+	if c.Splice(-2, 1, 99).All()[3] != 99 {
+		t.Error("Expected negative index to work")
+	}
+}
+
+func TestCollectionSplit(t *testing.T) {
+	c := New(1, 2, 3, 4, 5, 6, 7)
+	groups := c.Split(3)
+	if len(groups) != 3 || len(groups[0]) != 3 || len(groups[2]) != 1 {
+		t.Error("Expected 3 groups with sizes [3, 3, 1]")
+	}
+	if len(New[int]().Split(3)) != 0 || len(c.Split(0)) != 0 {
+		t.Error("Expected empty for empty collection and invalid groups")
+	}
+}
+
+func TestTakeUntil(t *testing.T) {
+	c := New(1, 2, 3, 4, 5)
+	result := c.TakeUntil(func(n int) bool { return n >= 3 })
+	if !reflect.DeepEqual(result.All(), []int{1, 2}) {
+		t.Error("Expected [1, 2]")
+	}
+	if c.TakeUntil(func(n int) bool { return n > 10 }).Count() != 5 {
+		t.Error("Expected all items when condition never met")
+	}
+}
+
+func TestTakeWhile(t *testing.T) {
+	c := New(1, 2, 3, 4, 5)
+	result := c.TakeWhile(func(n int) bool { return n < 3 })
+	if !reflect.DeepEqual(result.All(), []int{1, 2}) {
+		t.Error("Expected [1, 2]")
+	}
+	if c.TakeWhile(func(n int) bool { return n > 10 }).Count() != 0 {
+		t.Error("Expected empty when no items match")
+	}
+}
+
+func TestTransform(t *testing.T) {
+	c := New(1, 2, 3, 4, 5)
+	result := c.Transform(func(n int, _ int) int { return n * 2 })
+	if !reflect.DeepEqual(result.All(), []int{2, 4, 6, 8, 10}) {
+		t.Error("Expected [2, 4, 6, 8, 10]")
+	}
+	if result != c {
+		t.Error("Expected Transform to mutate original collection")
+	}
+}
