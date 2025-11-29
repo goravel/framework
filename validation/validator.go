@@ -93,6 +93,7 @@ func (v *Validator) Bind(ptr any) error {
 		TagName:    "form",
 		Result:     &ptr,
 		DecodeHook: v.castValue(),
+		Squash:     true,
 	})
 	if err != nil {
 		return err

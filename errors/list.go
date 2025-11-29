@@ -151,6 +151,7 @@ var (
 	PackageRegistrationNotFound  = New("'%s' not found, cannot insert before it")
 	PackageCommandsFileExists    = New("commands.go already exists but WithCommands is not registered in foundation.Setup(). The commands.go file should only be created when adding WithCommands to Setup()")
 	PackageMigrationsFileExists  = New("migrations.go already exists but WithMigrations is not registered in foundation.Setup(). The migrations.go file should only be created when adding WithMigrations to Setup()")
+	PackageProvidersFileExists   = New("providers.go already exists but WithProviders is not registered in foundation.Setup(). The providers.go file should only be created when adding WithProviders to Setup()")
 	PackageSeedersFileExists     = New("seeders.go already exists but WithSeeders is not registered in foundation.Setup(). The seeders.go file should only be created when adding WithSeeders to Setup()")
 
 	PluralizerLanguageNotFound     = New("language %s not found").SetModule(ModulePluralizer)
@@ -164,6 +165,7 @@ var (
 	ProcessPipelineStartFailed   = New("failed to start pipeline: %v").SetModule(ModuleProcess)
 	ProcessPipeNilConfigurer     = New("pipe configurer cannot be nil").SetModule(ModuleProcess)
 	ProcessPoolNilConfigurer     = New("pool configurer cannot be nil").SetModule(ModuleProcess)
+	ProviderRegisterFailed = New("failed to register provider '%s': %v")
 
 	QueueDriverFailedToPop           = New("failed to pop job from %s queue: %v")
 	QueueDriverInvalid               = New("%s doesn't implement contracts/queue/driver")
