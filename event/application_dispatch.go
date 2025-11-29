@@ -53,10 +53,9 @@ func (app *Application) Dispatch(evt any, payload ...[]event.Arg) []any {
 // Returns: The first return value from the function, or nil if function panics or returns nothing
 func (app *Application) call(fn reflect.Value, args []reflect.Value) any {
 	defer func() {
-		if r := recover(); r != nil {
-			// Panic occurred but we recover silently to prevent one bad listener
-			// from breaking the entire event dispatch chain
-		}
+		// Recover from panics to prevent one bad listener from breaking
+		// the entire event dispatch chain
+		_ = recover()
 	}()
 	if results := fn.Call(args); len(results) > 0 {
 		return results[0].Interface()
