@@ -195,12 +195,8 @@ func renderField(f *schema.Field) string {
 	if !f.NotNull && !f.PrimaryKey {
 		b.WriteMethod(methodNullable)
 	}
-	if f.HasDefaultValue {
-		if f.DefaultValueInterface != nil {
-			b.WriteMethod(methodDefault, f.DefaultValueInterface)
-		} else if f.DefaultValue != "" {
-			b.WriteMethod(methodDefault, trimQuotes(f.DefaultValue))
-		}
+	if f.HasDefaultValue && f.DefaultValueInterface != nil {
+		b.WriteMethod(methodDefault, f.DefaultValueInterface)
 	}
 	if f.Comment != "" {
 		b.WriteMethod(methodComment, trimQuotes(f.Comment))
