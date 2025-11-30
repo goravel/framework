@@ -24,6 +24,8 @@ type ApplicationBuilder interface {
 	WithConfig(config func()) ApplicationBuilder
 	// WithEvents sets event listeners for the application.
 	WithEvents(eventToListeners map[event.Event][]event.Listener) ApplicationBuilder
+	// WithFilters sets the application's validation filters.
+	WithFilters(filters []validation.Filter) ApplicationBuilder
 	// WithGrpcClientInterceptors sets gRPC client interceptors for the application.
 	WithGrpcClientInterceptors(groupToInterceptors map[string][]grpc.UnaryClientInterceptor) ApplicationBuilder
 	// WithGrpcServerInterceptors sets gRPC server interceptors for the application.
