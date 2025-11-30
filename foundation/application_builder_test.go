@@ -2,6 +2,7 @@ package foundation
 
 import (
 	"context"
+	"errors"
 	"io"
 	"testing"
 
@@ -17,6 +18,7 @@ import (
 	contractshttp "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/contracts/schedule"
+	"github.com/goravel/framework/contracts/validation"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksschema "github.com/goravel/framework/mocks/database/schema"
 	mocksseeder "github.com/goravel/framework/mocks/database/seeder"
@@ -26,6 +28,7 @@ import (
 	mocksqueue "github.com/goravel/framework/mocks/queue"
 	mocksroute "github.com/goravel/framework/mocks/route"
 	mocksschedule "github.com/goravel/framework/mocks/schedule"
+	mocksvalidation "github.com/goravel/framework/mocks/validation"
 	"github.com/goravel/framework/support/color"
 )
 
@@ -498,6 +501,57 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 
 		s.NotNil(app)
 	})
+
+	s.Run("WithRules but Validation facade is nil", func() {
+		s.SetupTest()
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().MakeValidation().Return(nil).Once()
+
+		mockRule := mocksvalidation.NewRule(s.T())
+		got := color.CaptureOutput(func(io.Writer) {
+			app := s.builder.WithRules([]validation.Rule{mockRule}).Create()
+			s.NotNil(app)
+		})
+
+		s.Contains(got, "Validation facade not found, please install it first: ./artisan package:install Validation")
+	})
+
+	s.Run("WithRules but AddRules returns error", func() {
+		s.SetupTest()
+
+		mockValidation := mocksvalidation.NewValidation(s.T())
+		mockRule := mocksvalidation.NewRule(s.T())
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().MakeValidation().Return(mockValidation).Once()
+		mockValidation.EXPECT().AddRules([]validation.Rule{mockRule}).Return(errors.New("validation error")).Once()
+
+		got := color.CaptureOutput(func(io.Writer) {
+			app := s.builder.WithRules([]validation.Rule{mockRule}).Create()
+			s.NotNil(app)
+		})
+
+		s.Contains(got, "add validation rules error:")
+	})
+
+	s.Run("WithRules", func() {
+		s.SetupTest()
+
+		mockValidation := mocksvalidation.NewValidation(s.T())
+		mockRule := mocksvalidation.NewRule(s.T())
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().MakeValidation().Return(mockValidation).Once()
+		mockValidation.EXPECT().AddRules([]validation.Rule{mockRule}).Return(nil).Once()
+
+		app := s.builder.WithRules([]validation.Rule{mockRule}).Create()
+
+		s.NotNil(app)
+	})
 }
 
 func (s *ApplicationBuilderTestSuite) TestRun() {
@@ -620,4 +674,13 @@ func (s *ApplicationBuilderTestSuite) TestWithSeeders() {
 
 	s.NotNil(builder)
 	s.Len(s.builder.seeders, 1)
+}
+
+func (s *ApplicationBuilderTestSuite) TestWithRules() {
+	mockRule := mocksvalidation.NewRule(s.T())
+
+	builder := s.builder.WithRules([]validation.Rule{mockRule})
+
+	s.NotNil(builder)
+	s.Len(s.builder.rules, 1)
 }

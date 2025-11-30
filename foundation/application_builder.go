@@ -9,6 +9,7 @@ import (
 	contractsconfiguration "github.com/goravel/framework/contracts/foundation/configuration"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/contracts/schedule"
+	"github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/foundation/configuration"
 	"github.com/goravel/framework/support/color"
 	"google.golang.org/grpc"
@@ -31,6 +32,7 @@ type ApplicationBuilder struct {
 	migrations                 []schema.Migration
 	paths                      func(paths contractsconfiguration.Paths)
 	routes                     []func()
+	rules                      []validation.Rule
 	scheduledEvents            []schedule.Event
 	seeders                    []seeder.Seeder
 }
@@ -156,6 +158,18 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 		}
 	}
 
+	// Register validation rules
+	if len(r.rules) > 0 {
+		validationFacade := r.app.MakeValidation()
+		if validationFacade == nil {
+			color.Errorln("Validation facade not found, please install it first: ./artisan package:install Validation")
+		} else {
+			if err := validationFacade.AddRules(r.rules); err != nil {
+				color.Errorf("add validation rules error: %+v", err)
+			}
+		}
+	}
+
 	return r.app
 }
 
@@ -225,6 +239,12 @@ func (r *ApplicationBuilder) WithProviders(providers []foundation.ServiceProvide
 
 func (r *ApplicationBuilder) WithRouting(routes []func()) foundation.ApplicationBuilder {
 	r.routes = append(r.routes, routes...)
+
+	return r
+}
+
+func (r *ApplicationBuilder) WithRules(rules []validation.Rule) foundation.ApplicationBuilder {
+	r.rules = rules
 
 	return r
 }

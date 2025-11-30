@@ -12,8 +12,10 @@ import (
 
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support"
 	supportfile "github.com/goravel/framework/support/file"
+	"github.com/goravel/framework/support/path/internals"
 )
 
 func TestAddCommand(t *testing.T) {
@@ -1884,6 +1886,506 @@ func Providers() []foundation.ServiceProvider {
 				require.NoError(t, err)
 				assert.Equal(t, tt.expectedProviders, providersContent)
 			}
+		})
+	}
+}
+
+func TestAddRule(t *testing.T) {
+	tests := []struct {
+		name              string
+		appContent        string
+		rulesContent      string // empty if file doesn't exist
+		pkg               string
+		rule              string
+		expectedApp       string
+		expectedRules     string // empty if file shouldn't be created
+		wantErr           bool
+		expectedErrString string
+	}{
+		{
+			name: "add rule when WithRules doesn't exist and rules.go doesn't exist",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().WithConfig(config.Boot).Run()
+}
+`,
+			pkg:  "goravel/app/rules",
+			rule: "&rules.Uppercase{}",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRules(Rules()).WithConfig(config.Boot).Run()
+}
+`,
+			expectedRules: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/validation"
+
+	"goravel/app/rules"
+)
+
+func Rules() []validation.Rule {
+	return []validation.Rule{
+		&rules.Uppercase{},
+	}
+}
+`,
+		},
+		{
+			name: "add rule when WithRules exists with Rules() and rules.go exists",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRules(Rules()).WithConfig(config.Boot).Run()
+}
+`,
+			rulesContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/validation"
+
+	"goravel/app/rules"
+)
+
+func Rules() []validation.Rule {
+	return []validation.Rule{
+		&rules.ExistingRule{},
+	}
+}
+`,
+			pkg:  "goravel/app/rules",
+			rule: "&rules.NewRule{}",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRules(Rules()).WithConfig(config.Boot).Run()
+}
+`,
+			expectedRules: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/validation"
+
+	"goravel/app/rules"
+)
+
+func Rules() []validation.Rule {
+	return []validation.Rule{
+		&rules.ExistingRule{},
+		&rules.NewRule{},
+	}
+}
+`,
+		},
+		{
+			name: "add rule when WithRules exists with inline array",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/validation"
+	"github.com/goravel/framework/foundation"
+	"goravel/app/rules"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRules([]validation.Rule{
+			&rules.ExistingRule{},
+		}).WithConfig(config.Boot).Run()
+}
+`,
+			pkg:  "goravel/app/rules",
+			rule: "&rules.NewRule{}",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/validation"
+	"github.com/goravel/framework/foundation"
+	"goravel/app/rules"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRules([]validation.Rule{
+			&rules.ExistingRule{},
+			&rules.NewRule{},
+		}).WithConfig(config.Boot).Run()
+}
+`,
+		},
+		{
+			name: "error when rules.go exists but WithRules doesn't exist",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().WithConfig(config.Boot).Run()
+}
+`,
+			rulesContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/validation"
+
+	"goravel/app/rules"
+)
+
+func Rules() []validation.Rule {
+	return []validation.Rule{
+		&rules.ExistingRule{},
+	}
+}
+`,
+			pkg:     "goravel/app/rules",
+			rule:    "&rules.NewRule{}",
+			wantErr: true,
+		},
+		{
+			name: "add rule when WithRules doesn't exist at the beginning of chain",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+)
+
+func Boot() {
+	foundation.Setup().Run()
+}
+`,
+			pkg:  "goravel/app/rules",
+			rule: "&rules.FirstRule{}",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRules(Rules()).Run()
+}
+`,
+			expectedRules: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/validation"
+
+	"goravel/app/rules"
+)
+
+func Rules() []validation.Rule {
+	return []validation.Rule{
+		&rules.FirstRule{},
+	}
+}
+`,
+		},
+		{
+			name: "add rule from different package",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().WithConfig(config.Boot).Run()
+}
+`,
+			pkg:  "github.com/mycompany/customrules",
+			rule: "&customrules.SpecialRule{}",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRules(Rules()).WithConfig(config.Boot).Run()
+}
+`,
+			expectedRules: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/validation"
+	"github.com/mycompany/customrules"
+)
+
+func Rules() []validation.Rule {
+	return []validation.Rule{
+		&customrules.SpecialRule{},
+	}
+}
+`,
+		},
+		{
+			name: "add multiple rules sequentially",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().WithConfig(config.Boot).Run()
+}
+`,
+			pkg:  "goravel/app/rules",
+			rule: "&rules.FirstRule{}",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRules(Rules()).WithConfig(config.Boot).Run()
+}
+`,
+			expectedRules: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/validation"
+
+	"goravel/app/rules"
+)
+
+func Rules() []validation.Rule {
+	return []validation.Rule{
+		&rules.FirstRule{},
+	}
+}
+`,
+		},
+		{
+			name: "skip duplicate rule",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRules(Rules()).WithConfig(config.Boot).Run()
+}
+`,
+			rulesContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/validation"
+
+	"goravel/app/rules"
+)
+
+func Rules() []validation.Rule {
+	return []validation.Rule{
+		&rules.ExistingRule{},
+	}
+}
+`,
+			pkg:  "goravel/app/rules",
+			rule: "&rules.ExistingRule{}",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRules(Rules()).WithConfig(config.Boot).Run()
+}
+`,
+			expectedRules: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/validation"
+
+	"goravel/app/rules"
+)
+
+func Rules() []validation.Rule {
+	return []validation.Rule{
+		&rules.ExistingRule{},
+	}
+}
+`,
+		},
+		{
+			name: "add rule with WithConfig at start",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().WithConfig(config.Boot).Run()
+}
+`,
+			pkg:  "goravel/app/rules",
+			rule: "&rules.CustomRule{}",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRules(Rules()).WithConfig(config.Boot).Run()
+}
+`,
+			expectedRules: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/validation"
+
+	"goravel/app/rules"
+)
+
+func Rules() []validation.Rule {
+	return []validation.Rule{
+		&rules.CustomRule{},
+	}
+}
+`,
+		},
+		{
+			name: "add rule when other With methods exist",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithCommands(Commands()).
+		WithConfig(config.Boot).Run()
+}
+`,
+			pkg:  "goravel/app/rules",
+			rule: "&rules.ExtraRule{}",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRules(Rules()).
+		WithCommands(Commands()).
+		WithConfig(config.Boot).Run()
+}
+`,
+			expectedRules: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/validation"
+
+	"goravel/app/rules"
+)
+
+func Rules() []validation.Rule {
+	return []validation.Rule{
+		&rules.ExtraRule{},
+	}
+}
+`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup
+			bootstrapDir := support.Config.Paths.Bootstrap
+			appFile := internals.BootstrapApp()
+			rulesFile := filepath.Join(bootstrapDir, "rules.go")
+
+			// Ensure clean state
+			require.NoError(t, supportfile.Remove(bootstrapDir))
+			require.NoError(t, supportfile.PutContent(appFile, tt.appContent))
+
+			if tt.rulesContent != "" {
+				require.NoError(t, supportfile.PutContent(rulesFile, tt.rulesContent))
+			}
+
+			// Execute
+			err := AddRule(tt.pkg, tt.rule)
+
+			// Assert error
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.expectedErrString != "" {
+					assert.Contains(t, err.Error(), tt.expectedErrString)
+				} else {
+					assert.ErrorIs(t, err, errors.PackageRulesFileExists)
+				}
+				return
+			}
+
+			require.NoError(t, err)
+
+			// Assert app.go content
+			actualApp, err := supportfile.GetContent(appFile)
+			require.NoError(t, err)
+			assert.Equal(t, tt.expectedApp, actualApp)
+
+			// Assert rules.go content
+			if tt.expectedRules != "" {
+				actualRules, err := supportfile.GetContent(rulesFile)
+				require.NoError(t, err)
+				assert.Equal(t, tt.expectedRules, actualRules)
+			}
+
+			// Cleanup
+			require.NoError(t, supportfile.Remove(bootstrapDir))
 		})
 	}
 }

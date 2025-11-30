@@ -12,6 +12,7 @@ import (
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support"
 	supportconsole "github.com/goravel/framework/support/console"
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )
@@ -45,24 +46,27 @@ func (r *RuleMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *RuleMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "rule", ctx.Argument(0), support.Config.Paths.Rule)
+	make, err := supportconsole.NewMake(ctx, "rule", ctx.Argument(0), support.Config.Paths.Rule)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
 
-	if err := file.PutContent(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName(), m.GetSignature())); err != nil {
+	if err := file.PutContent(make.GetFilePath(), r.populateStub(r.getStub(), make.GetPackageName(), make.GetStructName(), make.GetSignature())); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
 
 	ctx.Success("Rule created successfully")
 
-	if err = modify.GoFile(filepath.Join("app", "providers", "validation_service_provider.go")).
-		Find(match.Imports()).Modify(modify.AddImport(m.GetPackageImportPath())).
-		Find(match.ValidationRules()).Modify(modify.Register(fmt.Sprintf("&%s.%s{}", m.GetPackageName(), m.GetStructName()))).
-		Apply(); err != nil {
-		ctx.Warning(errors.ValidationRuleRegisterFailed.Args(err).Error())
+	if env.IsBootstrapSetup() {
+		err = modify.AddRule(make.GetPackageImportPath(), fmt.Sprintf("&%s.%s{}", make.GetPackageName(), make.GetStructName()))
+	} else {
+		err = r.registerInKernel(make)
+	}
+
+	if err != nil {
+		ctx.Error(errors.ValidationRuleRegisterFailed.Args(err).Error())
 		return nil
 	}
 
@@ -82,4 +86,11 @@ func (r *RuleMakeCommand) populateStub(stub string, packageName, structName, sig
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 
 	return stub
+}
+
+func (r *RuleMakeCommand) registerInKernel(make *supportconsole.Make) error {
+	return modify.GoFile(filepath.Join("app", "providers", "validation_service_provider.go")).
+		Find(match.Imports()).Modify(modify.AddImport(make.GetPackageImportPath())).
+		Find(match.ValidationRules()).Modify(modify.Register(fmt.Sprintf("&%s.%s{}", make.GetPackageName(), make.GetStructName()))).
+		Apply()
 }
