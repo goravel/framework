@@ -3,10 +3,28 @@ package schema
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 )
+
+type User struct {
+	ID int64 `gorm:"primaryKey"`
+}
+
+type Address struct {
+	ID int64 `gorm:"primaryKey"`
+}
+
+type Relation struct {
+	UserID    int64 `gorm:"primaryKey"`
+	AddressID int64 `gorm:"primaryKey"`
+}
+
+func defaultModels() []any {
+	return []any{&User{}}
+}
 
 type SchemaTestSuite struct {
 	suite.Suite
@@ -140,9 +158,105 @@ func (r *SchemaTestSuite) TestExtendGoTypes() {
 	}
 }
 
+func (r *SchemaTestSuite) TestExtendModels() {
+	defaultLen := len(defaultModels())
+	tests := []struct {
+		name      string
+		overrides []any
+		assert    func(schema *Schema)
+	}{
+		{
+			name:      "empty_overrides",
+			overrides: nil,
+			assert: func(schema *Schema) {
+				r.Equal(defaultLen, len(schema.models), "models length should remain unchanged with nil overrides")
+			},
+		},
+		{
+			name:      "add_single_new_model",
+			overrides: []any{&Address{}},
+			assert: func(schema *Schema) {
+				r.Equal(defaultLen+1, len(schema.models), "models length should increase by 1")
+
+				addressModel := schema.GetModel("Address")
+				r.NotNil(addressModel, "Address model should not be nil")
+			},
+		},
+		{
+			name:      "add_multiple_new_models",
+			overrides: []any{&Address{}, &Relation{}},
+			assert: func(schema *Schema) {
+				r.Equal(defaultLen+2, len(schema.models), "models length should increase by 2")
+
+				addressModel := schema.GetModel("Address")
+				r.NotNil(addressModel, "Address model should not be nil")
+
+				relationModel := schema.GetModel("Relation")
+				r.NotNil(relationModel, "Relation model should not be nil")
+			},
+		},
+		{
+			name:      "duplicate_model_ignored",
+			overrides: []any{&User{}},
+			assert: func(schema *Schema) {
+				r.Equal(defaultLen, len(schema.models), "models length should remain unchanged for duplicates")
+
+				userModel := schema.GetModel("User")
+				r.NotNil(userModel, "User model should not be nil")
+			},
+		},
+	}
+
+	for _, test := range tests {
+		r.Run(test.name, func() {
+			schema := getSchema()
+			schema.extendModels(test.overrides)
+			test.assert(schema)
+		})
+	}
+}
+
 func getSchema() *Schema {
 	return &Schema{
 		goTypes: defaultGoTypes(),
+		models:  defaultModels(),
+	}
+}
+
+func TestGetModelFullName(t *testing.T) {
+	tests := []struct {
+		name  string
+		model any
+		want  string
+	}{
+		{"Simple struct", &User{}, "schema.User"},
+		{"Nil", nil, ""},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := getModelFullName(tc.model)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestGetModelName(t *testing.T) {
+	tests := []struct {
+		name  string
+		model any
+		want  string
+	}{
+		{"Pointer to struct", &User{}, "User"},
+		{"Value struct", User{}, "User"},
+		{"Nil", nil, ""},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := getModelName(tc.model)
+			assert.Equal(t, tc.want, got)
+		})
 	}
 }
 
