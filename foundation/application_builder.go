@@ -164,7 +164,9 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 		if validationFacade == nil {
 			color.Errorln("Validation facade not found, please install it first: ./artisan package:install Validation")
 		} else {
-			validationFacade.AddRules(r.rules)
+			if err := validationFacade.AddRules(r.rules); err != nil {
+				color.Errorf("add validation rules error: %+v", err)
+			}
 		}
 	}
 
