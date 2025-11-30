@@ -176,9 +176,12 @@ func renderField(f *schema.Field) string {
 	// Chain: table.Method("name", args...).Nullable()...
 	b.WriteMethod(method, append([]any{f.DBName}, args...)...)
 
+	// Check for unsigned modifier
 	rawType := strings.ToLower(string(f.DataType))
-	if strings.Contains(rawType, "unsigned") && !strings.Contains(method, "Unsigned") {
-		b.WriteMethod(methodUnsigned)
+	if !strings.Contains(method, "Unsigned") {
+		if strings.Contains(rawType, "unsigned") || f.TagSettings["UNSIGNED"] != "" {
+			b.WriteMethod(methodUnsigned)
+		}
 	}
 
 	if method == methodDecimal {
@@ -192,8 +195,12 @@ func renderField(f *schema.Field) string {
 	if !f.NotNull && !f.PrimaryKey {
 		b.WriteMethod(methodNullable)
 	}
-	if f.HasDefaultValue && f.DefaultValue != "" {
-		b.WriteMethod(methodDefault, trimQuotes(f.DefaultValue))
+	if f.HasDefaultValue {
+		if f.DefaultValueInterface != nil {
+			b.WriteMethod(methodDefault, f.DefaultValueInterface)
+		} else if f.DefaultValue != "" {
+			b.WriteMethod(methodDefault, trimQuotes(f.DefaultValue))
+		}
 	}
 	if f.Comment != "" {
 		b.WriteMethod(methodComment, trimQuotes(f.Comment))

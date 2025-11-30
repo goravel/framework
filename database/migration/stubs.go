@@ -44,14 +44,14 @@ func (r *{{.StructName}}) Signature() string {
 func (r *{{.StructName}}) Up() error {
 	if !facades.Schema().HasTable("{{.Table}}") {
 		return facades.Schema().Create("{{.Table}}", func(table schema.Blueprint) {
-{{- if .SchemaFields}}
+			{{- if .SchemaFields}}
 {{- range .SchemaFields}}
 			{{.}}
-{{- end}}
-{{- else}}
+			{{- end}}
+			{{- else}}
 			table.ID()
 			table.TimestampsTz()
-{{- end}}
+			{{- end}}
 		})
 	}
 
@@ -83,10 +83,10 @@ func (r *{{.StructName}}) Signature() string {
 // Up Run the migrations.
 func (r *{{.StructName}}) Up() error {
 	return facades.Schema().Table("{{.Table}}", func(table schema.Blueprint) {
-{{- if .SchemaFields}}
+		{{- if .SchemaFields}}
 {{- range .SchemaFields}}
 		{{.}}
-{{- end}}
+		{{- end}}
 {{else}}
 
 {{end}}	})
