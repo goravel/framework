@@ -121,6 +121,22 @@ func Providers() []match.GoNode {
 	}
 }
 
+func Rules() []match.GoNode {
+	return []match.GoNode{
+		Func(Ident("Rules")),
+		TypeOf(&dst.ReturnStmt{}),
+		CompositeLit(
+			ArrayType(
+				SelectorExpr(
+					Ident("validation"),
+					Ident("Rule"),
+				),
+				AnyNode(),
+			),
+		),
+	}
+}
+
 // Deprecated: ProvidersInConfig represents the old logic of registering
 // service providers inside the `config/app.go` file.
 //

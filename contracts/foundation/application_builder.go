@@ -10,6 +10,7 @@ import (
 	"github.com/goravel/framework/contracts/foundation/configuration"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/contracts/schedule"
+	"github.com/goravel/framework/contracts/validation"
 )
 
 type ApplicationBuilder interface {
@@ -39,6 +40,8 @@ type ApplicationBuilder interface {
 	WithProviders(providers []ServiceProvider) ApplicationBuilder
 	// WithRouting registers the application's routes.
 	WithRouting(routes []func()) ApplicationBuilder
+	// WithRules registers the custom validation rules.
+	WithRules(rules []validation.Rule) ApplicationBuilder
 	// WithSchedule sets scheduled events for the application.
 	WithSchedule(events []schedule.Event) ApplicationBuilder
 	// WithSeeders registers the database seeders.
