@@ -315,6 +315,71 @@ func AddProvider(pkg, provider string) error {
 	return handler.AddItem(pkg, provider)
 }
 
+// AddRule adds validation rule to the foundation.Setup() chain in the Boot function.
+// If WithRules doesn't exist, it creates a new rules.go file in the bootstrap directory based on the stubs.go:rules template,
+// then add WithRules(Rules()) to foundation.Setup(), add the rule to Rules().
+// If WithRules exists, it appends the rule to []validation.Rule if the rules.go file doesn't exist,
+// or appends to the Rules() function if the rules.go file exists.
+// This function also ensures the configuration package and rule package are imported when creating WithRules.
+//
+// Returns an error if rules.go exists but WithRules is not registered in foundation.Setup(), as the rules.go file
+// should only be created when adding WithRules to Setup().
+//
+// Parameters:
+//   - pkg: Package path of the rule (e.g., "goravel/app/rules")
+//   - rule: Rule expression to add (e.g., "&rules.Uppercase{}")
+//
+// Example usage:
+//
+//	AddRule("goravel/app/rules", "&rules.Uppercase{}")
+//
+// This transforms (when rules.go doesn't exist and WithRules doesn't exist):
+//
+//	foundation.Setup().WithConfig(config.Boot).Run()
+//
+// Into:
+//
+//	foundation.Setup().WithRules(Rules()).WithConfig(config.Boot).Run()
+//
+// And creates bootstrap/rules.go:
+//
+//	package bootstrap
+//	import "github.com/goravel/framework/contracts/validation"
+//	func Rules() []validation.Rule {
+//	  return []validation.Rule{&rules.Uppercase{}}
+//	}
+//
+// If WithRules already exists but rules.go doesn't:
+//
+//	foundation.Setup().WithRules([]validation.Rule{
+//	  &rules.ExistingRule{},
+//	}).Run()
+//
+// It appends the new rule:
+//
+//	foundation.Setup().WithRules([]validation.Rule{
+//	  &rules.ExistingRule{},
+//	  &rules.Uppercase{},
+//	}).Run()
+//
+// If WithRules exists with Rules() call and rules.go exists, it appends to Rules() function.
+func AddRule(pkg, rule string) error {
+	config := withSliceConfig{
+		fileName:        "rules.go",
+		withMethodName:  "WithRules",
+		helperFuncName:  "Rules",
+		typePackage:     "validation",
+		typeName:        "Rule",
+		typeImportPath:  "github.com/goravel/framework/contracts/validation",
+		fileExistsError: errors.PackageRulesFileExists,
+		stubTemplate:    rules,
+		matcherFunc:     match.Rules,
+	}
+
+	handler := newWithSliceHandler(config)
+	return handler.AddItem(pkg, rule)
+}
+
 // AddSeeder adds seeder to the foundation.Setup() chain in the Boot function.
 // If WithSeeders doesn't exist, it creates a new seeders.go file in the bootstrap directory based on the stubs.go:seeders template,
 // then adds WithSeeders(Seeders()) to foundation.Setup(), and adds the seeder to Seeders().

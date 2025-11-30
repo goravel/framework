@@ -54,3 +54,14 @@ func Seeders() []seeder.Seeder {
 }
 `
 }
+
+func rules() string {
+	return `package bootstrap
+
+import "github.com/goravel/framework/contracts/validation"
+
+func Rules() []validation.Rule {
+	return []validation.Rule{}
+}
+`
+}
