@@ -292,8 +292,8 @@ func renderIndexes(sch *schema.Schema, fields []*schema.Field) []string {
 
 		cols := make([]string, 0, len(idx.Fields))
 		for _, f := range idx.Fields {
-			if f.Field != nil && f.Field.DBName != "" {
-				cols = append(cols, f.Field.DBName)
+			if f.DBName != "" {
+				cols = append(cols, f.DBName)
 			}
 		}
 		if len(cols) == 0 {
