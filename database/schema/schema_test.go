@@ -247,7 +247,8 @@ func TestGetModelName(t *testing.T) {
 		model any
 		want  string
 	}{
-		{"Simple struct", &User{}, "User"},
+		{"Pointer to struct", &User{}, "User"},
+		{"Value struct", User{}, "User"},
 		{"Nil", nil, ""},
 	}
 
