@@ -165,7 +165,7 @@ var (
 	ProcessPipelineStartFailed   = New("failed to start pipeline: %v").SetModule(ModuleProcess)
 	ProcessPipeNilConfigurer     = New("pipe configurer cannot be nil").SetModule(ModuleProcess)
 	ProcessPoolNilConfigurer     = New("pool configurer cannot be nil").SetModule(ModuleProcess)
-	ProviderRegisterFailed = New("failed to register provider '%s': %v")
+	ProviderRegisterFailed       = New("failed to register provider '%s': %v")
 
 	QueueDriverFailedToPop           = New("failed to pop job from %s queue: %v")
 	QueueDriverInvalid               = New("%s doesn't implement contracts/queue/driver")
@@ -207,6 +207,7 @@ var (
 	SchemaFailedToGetTables    = New("failed to get %s tables: %v")
 	SchemaFailedToRenameTable  = New("failed to rename %s table: %v")
 	SchemaInvalidModel         = New("model must be a struct or pointer to struct")
+	SchemaModelNotFound        = New("model %s not found in registered models")
 	SchemaTableNotFound        = New("table %s not found")
 
 	SessionDriverAlreadyExists        = New("session driver [%s] already exists")

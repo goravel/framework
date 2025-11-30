@@ -757,18 +757,20 @@ func (_c *Schema_GetIndexes_Call) RunAndReturn(run func(string) ([]driver.Index,
 }
 
 // GetModel provides a mock function with given fields: name
-func (_m *Schema) GetModel(name string) schema.Model {
+func (_m *Schema) GetModel(name string) interface{} {
 	ret := _m.Called(name)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetModel")
 	}
 
-	var r0 schema.Model
-	if rf, ok := ret.Get(0).(func(string) schema.Model); ok {
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func(string) interface{}); ok {
 		r0 = rf(name)
 	} else {
-		r0 = ret.Get(0).(schema.Model)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(interface{})
+		}
 	}
 
 	return r0
@@ -792,12 +794,12 @@ func (_c *Schema_GetModel_Call) Run(run func(name string)) *Schema_GetModel_Call
 	return _c
 }
 
-func (_c *Schema_GetModel_Call) Return(_a0 schema.Model) *Schema_GetModel_Call {
+func (_c *Schema_GetModel_Call) Return(_a0 interface{}) *Schema_GetModel_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Schema_GetModel_Call) RunAndReturn(run func(string) schema.Model) *Schema_GetModel_Call {
+func (_c *Schema_GetModel_Call) RunAndReturn(run func(string) interface{}) *Schema_GetModel_Call {
 	_c.Call.Return(run)
 	return _c
 }

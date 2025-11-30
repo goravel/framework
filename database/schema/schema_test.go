@@ -3,6 +3,7 @@ package schema
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
@@ -21,10 +22,8 @@ type Relation struct {
 	AddressID int64 `gorm:"primaryKey"`
 }
 
-func defaultModels() []contractsschema.Model {
-	return []contractsschema.Model{
-		{Name: "User", Type: &User{}},
-	}
+func defaultModels() []any {
+	return []any{&User{}}
 }
 
 type SchemaTestSuite struct {
@@ -163,7 +162,7 @@ func (r *SchemaTestSuite) TestExtendModels() {
 	defaultLen := len(defaultModels())
 	tests := []struct {
 		name      string
-		overrides []contractsschema.Model
+		overrides []any
 		assert    func(schema *Schema)
 	}{
 		{
@@ -174,47 +173,36 @@ func (r *SchemaTestSuite) TestExtendModels() {
 			},
 		},
 		{
-			name: "add_single_new_model",
-			overrides: []contractsschema.Model{
-				{Name: "Address", Type: &Address{}},
-			},
+			name:      "add_single_new_model",
+			overrides: []any{&Address{}},
 			assert: func(schema *Schema) {
 				r.Equal(defaultLen+1, len(schema.models), "models length should increase by 1")
 
 				addressModel := schema.GetModel("Address")
 				r.NotNil(addressModel, "Address model should not be nil")
-				r.Equal("Address", addressModel.Name, "Model name should match")
 			},
 		},
 		{
-			name: "add_multiple_new_models",
-			overrides: []contractsschema.Model{
-				{Name: "Address", Type: &Address{}},
-				{Name: "Relation", Type: &Relation{}},
-			},
+			name:      "add_multiple_new_models",
+			overrides: []any{&Address{}, &Relation{}},
 			assert: func(schema *Schema) {
 				r.Equal(defaultLen+2, len(schema.models), "models length should increase by 2")
 
 				addressModel := schema.GetModel("Address")
 				r.NotNil(addressModel, "Address model should not be nil")
-				r.Equal("Address", addressModel.Name, "Model name should match")
 
 				relationModel := schema.GetModel("Relation")
 				r.NotNil(relationModel, "Relation model should not be nil")
-				r.Equal("Relation", relationModel.Name, "Model name should match")
 			},
 		},
 		{
-			name: "override_existing_model",
-			overrides: []contractsschema.Model{
-				{Name: "User", Type: &User{}},
-			},
+			name:      "duplicate_model_ignored",
+			overrides: []any{&User{}},
 			assert: func(schema *Schema) {
-				r.Equal(defaultLen, len(schema.models), "models length should remain unchanged when overriding")
+				r.Equal(defaultLen, len(schema.models), "models length should remain unchanged for duplicates")
 
 				userModel := schema.GetModel("User")
 				r.NotNil(userModel, "User model should not be nil")
-				r.Equal("User", userModel.Name, "Model name should match")
 			},
 		},
 	}
@@ -232,6 +220,42 @@ func getSchema() *Schema {
 	return &Schema{
 		goTypes: defaultGoTypes(),
 		models:  defaultModels(),
+	}
+}
+
+func TestGetModelFullName(t *testing.T) {
+	tests := []struct {
+		name  string
+		model any
+		want  string
+	}{
+		{"Simple struct", &User{}, "schema.User"},
+		{"Nil", nil, ""},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := getModelFullName(tc.model)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestGetModelName(t *testing.T) {
+	tests := []struct {
+		name  string
+		model any
+		want  string
+	}{
+		{"Simple struct", &User{}, "User"},
+		{"Nil", nil, ""},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := getModelName(tc.model)
+			assert.Equal(t, tc.want, got)
+		})
 	}
 }
 

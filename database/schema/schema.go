@@ -27,7 +27,7 @@ type Schema struct {
 	processor  driver.Processor
 	schema     string
 	goTypes    []contractsschema.GoType
-	models     []contractsschema.Model
+	models     []any
 }
 
 func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, driver driver.Driver, migrations []contractsschema.Migration) (*Schema, error) {
@@ -52,7 +52,7 @@ func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, driver d
 		processor:  processor,
 		schema:     schema,
 		goTypes:    defaultGoTypes(),
-		models:     make([]contractsschema.Model, 0),
+		models:     make([]any, 0),
 	}, nil
 }
 
@@ -251,14 +251,22 @@ func (r *Schema) GetIndexes(table string) ([]driver.Index, error) {
 	return r.processor.ProcessIndexes(dbIndexes), nil
 }
 
-func (r *Schema) GetModel(name string) contractsschema.Model {
-	for _, model := range r.models {
-		if model.Name == name {
-			return model
+func (r *Schema) GetModel(name string) any {
+	// First pass: exact match on full path (e.g., "models.User")
+	for _, m := range r.models {
+		if getModelFullName(m) == name {
+			return m
 		}
 	}
 
-	return contractsschema.Model{}
+	// Second pass: match on simple type name (e.g., "User")
+	for _, m := range r.models {
+		if getModelName(m) == name {
+			return m
+		}
+	}
+
+	return nil
 }
 
 func (r *Schema) GetTableListing() []string {
@@ -512,36 +520,52 @@ func (r *Schema) extendGoTypes(overrides []contractsschema.GoType) {
 	r.goTypes = result
 }
 
-func (r *Schema) extendModels(models []contractsschema.Model) {
-	if len(models) == 0 {
-		return
+func (r *Schema) extendModels(models []any) {
+	seen := make(map[string]bool, len(r.models))
+	for _, m := range r.models {
+		seen[getModelName(m)] = true
 	}
 
-	for _, model := range models {
-		if model.Name == "" && model.Type != nil {
-			model.Name = extractModelName(model.Type)
-		}
-
-		// Use the updated model.Name for the uniqueness check and append
-		if !slices.ContainsFunc(r.models, func(m contractsschema.Model) bool {
-			return m.Name == model.Name
-		}) {
-			r.models = append(r.models, model)
+	for _, m := range models {
+		if name := getModelName(m); name != "" && !seen[name] {
+			seen[name] = true
+			r.models = append(r.models, m)
 		}
 	}
 }
 
-func extractModelName(model any) string {
-	if model == nil {
+// modelType returns the reflect.Type for a model, dereferencing pointers.
+func modelType(m any) reflect.Type {
+	if m == nil {
+		return nil
+	}
+	t := reflect.TypeOf(m)
+	if t.Kind() == reflect.Ptr {
+		return t.Elem()
+	}
+	return t
+}
+
+// getModelName returns the simple type name (e.g., "User").
+func getModelName(m any) string {
+	if t := modelType(m); t != nil {
+		return t.Name()
+	}
+	return ""
+}
+
+// getModelFullName returns package.TypeName (e.g., "models.User").
+func getModelFullName(m any) string {
+	t := modelType(m)
+	if t == nil {
 		return ""
 	}
-
-	t := reflect.TypeOf(model)
-
-	if t.Kind() == reflect.Ptr {
-		t = t.Elem()
+	if pkg := t.PkgPath(); pkg != "" {
+		if i := strings.LastIndexByte(pkg, '/'); i >= 0 {
+			pkg = pkg[i+1:]
+		}
+		return pkg + "." + t.Name()
 	}
-
 	return t.Name()
 }
 
