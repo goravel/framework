@@ -231,6 +231,7 @@ func (r *SchemaTestSuite) TestExtendModels() {
 func getSchema() *Schema {
 	return &Schema{
 		goTypes: defaultGoTypes(),
+		models:  defaultModels(),
 	}
 }
 
