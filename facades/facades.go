@@ -2,6 +2,7 @@ package facades
 
 import (
 	"context"
+	"github.com/goravel/framework/contracts/notification"
 
 	"github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/auth/access"
@@ -149,4 +150,8 @@ func Validation() validation.Validation {
 
 func View() view.View {
 	return App().MakeView()
+}
+
+func Notification() notification.Notification {
+	return App().MakeNotification()
 }
