@@ -502,6 +502,57 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.NotNil(app)
 	})
 
+	s.Run("WithFilters but Validation facade is nil", func() {
+		s.SetupTest()
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().MakeValidation().Return(nil).Once()
+
+		mockFilter := mocksvalidation.NewFilter(s.T())
+		got := color.CaptureOutput(func(io.Writer) {
+			app := s.builder.WithFilters([]validation.Filter{mockFilter}).Create()
+			s.NotNil(app)
+		})
+
+		s.Contains(got, "Validation facade not found, please install it first: ./artisan package:install Validation")
+	})
+
+	s.Run("WithFilters but AddFilters returns error", func() {
+		s.SetupTest()
+
+		mockValidation := mocksvalidation.NewValidation(s.T())
+		mockFilter := mocksvalidation.NewFilter(s.T())
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().MakeValidation().Return(mockValidation).Once()
+		mockValidation.EXPECT().AddFilters([]validation.Filter{mockFilter}).Return(errors.New("validation error")).Once()
+
+		got := color.CaptureOutput(func(io.Writer) {
+			app := s.builder.WithFilters([]validation.Filter{mockFilter}).Create()
+			s.NotNil(app)
+		})
+
+		s.Contains(got, "add validation filters error:")
+	})
+
+	s.Run("WithFilters", func() {
+		s.SetupTest()
+
+		mockValidation := mocksvalidation.NewValidation(s.T())
+		mockFilter := mocksvalidation.NewFilter(s.T())
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().MakeValidation().Return(mockValidation).Once()
+		mockValidation.EXPECT().AddFilters([]validation.Filter{mockFilter}).Return(nil).Once()
+
+		app := s.builder.WithFilters([]validation.Filter{mockFilter}).Create()
+
+		s.NotNil(app)
+	})
+
 	s.Run("WithRules but Validation facade is nil", func() {
 		s.SetupTest()
 
@@ -674,6 +725,15 @@ func (s *ApplicationBuilderTestSuite) TestWithSeeders() {
 
 	s.NotNil(builder)
 	s.Len(s.builder.seeders, 1)
+}
+
+func (s *ApplicationBuilderTestSuite) TestWithFilters() {
+	mockFilter := mocksvalidation.NewFilter(s.T())
+
+	builder := s.builder.WithFilters([]validation.Filter{mockFilter})
+
+	s.NotNil(builder)
+	s.Len(s.builder.filters, 1)
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithRules() {

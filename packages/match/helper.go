@@ -58,6 +58,22 @@ func Commands() []match.GoNode {
 	}
 }
 
+func Filters() []match.GoNode {
+	return []match.GoNode{
+		Func(Ident("Filters")),
+		TypeOf(&dst.ReturnStmt{}),
+		CompositeLit(
+			ArrayType(
+				SelectorExpr(
+					Ident("validation"),
+					Ident("Filter"),
+				),
+				AnyNode(),
+			),
+		),
+	}
+}
+
 func Imports() []match.GoNode {
 	return []match.GoNode{
 		GoNode{

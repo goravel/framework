@@ -11,6 +11,17 @@ func Commands() []console.Command {
 `
 }
 
+func filters() string {
+	return `package bootstrap
+
+import "github.com/goravel/framework/contracts/validation"
+
+func Filters() []validation.Filter {
+	return []validation.Filter{}
+}
+`
+}
+
 func migrations() string {
 	return `package bootstrap
 

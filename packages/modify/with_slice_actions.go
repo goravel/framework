@@ -60,7 +60,58 @@ func newWithSliceHandler(config withSliceConfig) *withSliceHandler {
 	}
 }
 
-// AddItem adds an item to the slice in foundation.Setup() chain.
+// AddItem adds an item to a slice in the foundation.Setup() chain.
+//
+// Behavior depends on the current state:
+//
+// 1. If WithMethod doesn't exist:
+//   - If helper file exists: Returns an error (file should only exist when WithMethod is registered)
+//   - If helper file doesn't exist: Creates the helper file with the item, adds WithMethod(HelperFunc()) to Setup()
+//
+// 2. If WithMethod exists:
+//   - If helper file exists: Appends the item to the helper function
+//   - If helper file doesn't exist: Appends the item to the inline array in app.go
+//
+// Parameters:
+//   - pkg: Package path of the item (e.g., "github.com/goravel/app/rules")
+//   - item: Item expression to add (e.g., "&rules.Uppercase{}")
+//
+// Example 1 - Creating WithMethod with helper file:
+//
+// Before (app.go):
+//
+//	foundation.Setup().WithConfig(config.Boot).Boot()
+//
+// After (app.go):
+//
+//	foundation.Setup().WithRules(Rules()).WithConfig(config.Boot).Boot()
+//
+// And creates helper file (e.g., bootstrap/rules.go):
+//
+//	package bootstrap
+//	import "github.com/goravel/framework/contracts/validation"
+//	func Rules() []validation.Rule {
+//	  return []validation.Rule{&rules.Uppercase{}}
+//	}
+//
+// Example 2 - Appending to inline array:
+//
+// Before (app.go):
+//
+//	foundation.Setup().WithRules([]validation.Rule{
+//	  &rules.ExistingRule{},
+//	}).Boot()
+//
+// After (app.go):
+//
+//	foundation.Setup().WithRules([]validation.Rule{
+//	  &rules.ExistingRule{},
+//	  &rules.Uppercase{},
+//	}).Boot()
+//
+// Example 3 - Appending to helper function:
+//
+// If helper file exists with Rules() function, appends to that function instead.
 func (r *withSliceHandler) AddItem(pkg, item string) error {
 	withMethodExists, err := r.checkWithMethodExists()
 	if err != nil {

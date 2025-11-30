@@ -25,6 +25,7 @@ type ApplicationBuilder struct {
 	config                     func()
 	configuredServiceProviders []foundation.ServiceProvider
 	eventToListeners           map[event.Event][]event.Listener
+	filters                    []validation.Filter
 	grpcClientInterceptors     map[string][]grpc.UnaryClientInterceptor
 	grpcServerInterceptors     []grpc.UnaryServerInterceptor
 	jobs                       []queue.Job
@@ -159,13 +160,20 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 	}
 
 	// Register validation rules
-	if len(r.rules) > 0 {
+	if len(r.rules) > 0 || len(r.filters) > 0 {
 		validationFacade := r.app.MakeValidation()
 		if validationFacade == nil {
 			color.Errorln("Validation facade not found, please install it first: ./artisan package:install Validation")
 		} else {
-			if err := validationFacade.AddRules(r.rules); err != nil {
-				color.Errorf("add validation rules error: %+v", err)
+			if len(r.rules) > 0 {
+				if err := validationFacade.AddRules(r.rules); err != nil {
+					color.Errorf("add validation rules error: %+v", err)
+				}
+			}
+			if len(r.filters) > 0 {
+				if err := validationFacade.AddFilters(r.filters); err != nil {
+					color.Errorf("add validation filters error: %+v", err)
+				}
 			}
 		}
 	}
@@ -191,6 +199,12 @@ func (r *ApplicationBuilder) WithConfig(config func()) foundation.ApplicationBui
 
 func (r *ApplicationBuilder) WithEvents(eventToListeners map[event.Event][]event.Listener) foundation.ApplicationBuilder {
 	r.eventToListeners = eventToListeners
+
+	return r
+}
+
+func (r *ApplicationBuilder) WithFilters(filters []validation.Filter) foundation.ApplicationBuilder {
+	r.filters = filters
 
 	return r
 }
