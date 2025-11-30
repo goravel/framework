@@ -61,6 +61,8 @@ func (receiver *Task) Dispatch() error {
 	return nil
 }
 
+// eventArgsToQueueArgs converts event arguments to queue arguments.
+// This is a simple type conversion that maintains the Type and Value fields.
 func eventArgsToQueueArgs(args []event.Arg) []contractsqueue.Arg {
 	var queueArgs []contractsqueue.Arg
 	for _, arg := range args {
