@@ -137,13 +137,30 @@ func renderSchema(sch *schema.Schema) []string {
 }
 
 func shouldSkipField(field *schema.Field) bool {
-	if field.IgnoreMigration || field.EmbeddedSchema != nil {
+	// Skip ignored or embedded fields
+	if field.IgnoreMigration || field.EmbeddedSchema != nil || field.DBName == "" {
 		return true
 	}
-	field.Schema.Relationships.Mux.RLock()
-	_, isRel := field.Schema.Relationships.Relations[field.Name]
-	field.Schema.Relationships.Mux.RUnlock()
-	return isRel
+
+	// Skip relation fields
+	rels := &field.Schema.Relationships
+	rels.Mux.RLock()
+	_, isRel := rels.Relations[field.Name]
+	rels.Mux.RUnlock()
+	if isRel {
+		return true
+	}
+
+	// Skip foreign key fields (belong to a relation)
+	for _, rel := range field.Schema.Relationships.Relations {
+		for _, ref := range rel.References {
+			if ref.ForeignKey != nil && ref.ForeignKey.DBName == field.DBName {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 func renderField(f *schema.Field) string {
@@ -176,10 +193,10 @@ func renderField(f *schema.Field) string {
 		b.WriteMethod(methodNullable)
 	}
 	if f.HasDefaultValue && f.DefaultValue != "" {
-		b.WriteMethod(methodDefault, f.DefaultValue)
+		b.WriteMethod(methodDefault, trimQuotes(f.DefaultValue))
 	}
 	if f.Comment != "" {
-		b.WriteMethod(methodComment, f.Comment)
+		b.WriteMethod(methodComment, trimQuotes(f.Comment))
 	}
 
 	return b.String()
@@ -407,6 +424,13 @@ func parseVal(s string) any {
 		if f, err := strconv.ParseFloat(s, 64); err == nil {
 			return f
 		}
+	}
+	return s
+}
+
+func trimQuotes(s string) string {
+	if len(s) >= 2 && (s[0] == '\'' || s[0] == '"') && s[0] == s[len(s)-1] {
+		return s[1 : len(s)-1]
 	}
 	return s
 }
