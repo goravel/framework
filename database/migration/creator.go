@@ -1,10 +1,11 @@
 package migration
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
+	"text/template"
 
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/carbon"
@@ -31,13 +32,34 @@ func (r *Creator) GetStub(table string, create bool) string {
 	return Stubs{}.Update()
 }
 
+type StubData struct {
+	Package      string
+	StructName   string
+	Signature    string
+	Table        string
+	SchemaFields []string
+}
+
 // PopulateStub Populate the place-holders in the migration stub.
 func (r *Creator) PopulateStub(stub, signature, table string) string {
-	stub = strings.ReplaceAll(stub, "DummyMigration", str.Of(signature).Prepend("m_").Studly().String())
-	stub = strings.ReplaceAll(stub, "DummySignature", signature)
-	stub = strings.ReplaceAll(stub, "DummyTable", table)
+	data := StubData{
+		Package:    "migrations",
+		StructName: str.Of(signature).Prepend("m_").Studly().String(),
+		Signature:  signature,
+		Table:      table,
+	}
 
-	return stub
+	tmpl, err := template.New("stub").Parse(stub)
+	if err != nil {
+		return stub
+	}
+
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return stub
+	}
+
+	return buf.String()
 }
 
 // GetPath Get the full path to the migration.

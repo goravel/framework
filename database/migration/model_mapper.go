@@ -286,9 +286,7 @@ func renderIndexes(sch *schema.Schema, fields []*schema.Field) []string {
 	sort.Slice(indexes, func(i, j int) bool { return indexes[i].Name < indexes[j].Name })
 
 	for _, idx := range indexes {
-		// Filter invalid or deleted_at indexes
-		// && idx.Fields[0].Field.DBName == "deleted_at"
-		if len(idx.Fields) == 0 || (len(idx.Fields) == 1) {
+		if len(idx.Fields) == 0 {
 			continue
 		}
 
