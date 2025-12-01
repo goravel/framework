@@ -10,64 +10,8 @@ import (
 
 	"gorm.io/gorm/schema"
 
+	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/errors"
-)
-
-// Blueprint method names for column definitions.
-const (
-	methodBigIncrements        = "BigIncrements"
-	methodIncrements           = "Increments"
-	methodBoolean              = "Boolean"
-	methodTinyInteger          = "TinyInteger"
-	methodSmallInteger         = "SmallInteger"
-	methodInteger              = "Integer"
-	methodBigInteger           = "BigInteger"
-	methodUnsignedTinyInteger  = "UnsignedTinyInteger"
-	methodUnsignedSmallInteger = "UnsignedSmallInteger"
-	methodUnsignedInteger      = "UnsignedInteger"
-	methodUnsignedBigInteger   = "UnsignedBigInteger"
-	methodFloat                = "Float"
-	methodDouble               = "Double"
-	methodDecimal              = "Decimal"
-	methodString               = "String"
-	methodText                 = "Text"
-	methodBinary               = "Binary"
-	methodJson                 = "Json"
-	methodJsonb                = "Jsonb"
-	methodEnum                 = "Enum"
-	methodUuid                 = "Uuid"
-	methodUlid                 = "Ulid"
-	methodDate                 = "Date"
-	methodTime                 = "Time"
-	methodTimestamp            = "Timestamp"
-	methodTimestampTz          = "TimestampTz"
-)
-
-// Blueprint method names for index definitions.
-const (
-	methodPrimary  = "Primary"
-	methodUnique   = "Unique"
-	methodIndex    = "Index"
-	methodFullText = "FullText"
-)
-
-// Blueprint method names for modifiers.
-const (
-	methodUnsigned  = "Unsigned"
-	methodNullable  = "Nullable"
-	methodDefault   = "Default"
-	methodComment   = "Comment"
-	methodPlaces    = "Places"
-	methodTotal     = "Total"
-	methodName      = "Name"
-	methodAlgorithm = "Algorithm"
-)
-
-// Index class constants matching GORM's index classification.
-const (
-	classUnique   = "UNIQUE"
-	classPrimary  = "PRIMARY"
-	classFullText = "FULLTEXT"
 )
 
 const tablePrefix = "table."
@@ -75,18 +19,18 @@ const tablePrefix = "table."
 // dataTypeMapping maps GORM DataType strings to blueprint method names.
 // Used for custom TYPE tags that aren't standard GORM DataTypes.
 var dataTypeMapping = map[string]string{
-	"jsonb":     methodJsonb,
-	"json":      methodJson,
-	"text":      methodText,
-	"binary":    methodBinary,
-	"varbinary": methodBinary,
-	"blob":      methodBinary,
-	"decimal":   methodDecimal,
-	"numeric":   methodDecimal,
-	"uuid":      methodUuid,
-	"ulid":      methodUlid,
-	"date":      methodDate,
-	"time":      methodTime,
+	"jsonb":     contractsschema.MethodJsonb,
+	"json":      contractsschema.MethodJson,
+	"text":      contractsschema.MethodText,
+	"binary":    contractsschema.MethodBinary,
+	"varbinary": contractsschema.MethodBinary,
+	"blob":      contractsschema.MethodBinary,
+	"decimal":   contractsschema.MethodDecimal,
+	"numeric":   contractsschema.MethodDecimal,
+	"uuid":      contractsschema.MethodUuid,
+	"ulid":      contractsschema.MethodUlid,
+	"date":      contractsschema.MethodDate,
+	"time":      contractsschema.MethodTime,
 }
 
 // stringTypePrefixes contains SQL string type prefixes for type detection.
@@ -167,12 +111,12 @@ func renderField(f *schema.Field) string {
 	b.WriteMethod(method, append([]any{f.DBName}, args...)...)
 
 	// Type-specific modifiers first
-	if method == methodDecimal {
+	if method == contractsschema.MethodDecimal {
 		if f.Scale > 0 {
-			b.WriteMethod(methodPlaces, f.Scale)
+			b.WriteMethod(contractsschema.MethodPlaces, f.Scale)
 		}
 		if f.Precision > 0 {
-			b.WriteMethod(methodTotal, f.Precision)
+			b.WriteMethod(contractsschema.MethodTotal, f.Precision)
 		}
 	}
 
@@ -180,7 +124,7 @@ func renderField(f *schema.Field) string {
 	rawType := strings.ToLower(string(f.DataType))
 	if !strings.Contains(method, "Unsigned") {
 		if strings.Contains(rawType, "unsigned") || f.TagSettings["UNSIGNED"] != "" {
-			b.WriteMethod(methodUnsigned)
+			b.WriteMethod(contractsschema.MethodUnsigned)
 		}
 	}
 
@@ -190,13 +134,13 @@ func renderField(f *schema.Field) string {
 	// And not explicitly NOT NULL or primary key
 	isNullable := f.FieldType.Kind() == reflect.Ptr || isSQLNullType(f.FieldType)
 	if isNullable && !f.NotNull && !f.PrimaryKey {
-		b.WriteMethod(methodNullable)
+		b.WriteMethod(contractsschema.MethodNullable)
 	}
 	if f.HasDefaultValue && f.DefaultValueInterface != nil {
-		b.WriteMethod(methodDefault, f.DefaultValueInterface)
+		b.WriteMethod(contractsschema.MethodDefault, f.DefaultValueInterface)
 	}
 	if f.Comment != "" {
-		b.WriteMethod(methodComment, trimQuotes(f.Comment))
+		b.WriteMethod(contractsschema.MethodComment, trimQuotes(f.Comment))
 	}
 
 	return b.String()
@@ -205,59 +149,59 @@ func renderField(f *schema.Field) string {
 func fieldToMethod(f *schema.Field) (string, []any) {
 	if f.PrimaryKey && f.AutoIncrement {
 		if f.Size <= 32 {
-			return methodIncrements, nil
+			return contractsschema.MethodIncrements, nil
 		}
-		return methodBigIncrements, nil
+		return contractsschema.MethodBigIncrements, nil
 	}
 
 	switch f.DataType {
 	case schema.Bool:
-		return methodBoolean, nil
+		return contractsschema.MethodBoolean, nil
 	case schema.Int:
 		return intMethod(f.Size, false), nil
 	case schema.Uint:
 		return intMethod(f.Size, true), nil
 	case schema.Float:
 		if f.Size <= 32 {
-			return methodFloat, nil
+			return contractsschema.MethodFloat, nil
 		}
-		return methodDouble, nil
+		return contractsschema.MethodDouble, nil
 	case schema.String:
 		if f.Size > 0 {
-			return methodString, []any{f.Size}
+			return contractsschema.MethodString, []any{f.Size}
 		}
-		return methodString, nil
+		return contractsschema.MethodString, nil
 	case schema.Time:
 		if f.Precision > 0 {
-			return methodTimestampTz, []any{f.Precision}
+			return contractsschema.MethodTimestampTz, []any{f.Precision}
 		}
-		return methodTimestampTz, nil
+		return contractsschema.MethodTimestampTz, nil
 	case schema.Bytes:
-		return methodBinary, nil
+		return contractsschema.MethodBinary, nil
 	}
 
 	// String-based Type Inference (Enums, Custom types)
 	sType := strings.ToLower(string(f.DataType))
 
 	if strings.HasPrefix(sType, "enum") {
-		return methodEnum, []any{parseEnum(string(f.DataType))}
+		return contractsschema.MethodEnum, []any{parseEnum(string(f.DataType))}
 	}
 
 	// Helper to check prefixes fast
 	for _, p := range stringTypePrefixes {
 		if strings.HasPrefix(sType, p) {
 			if size := parseTypeSize(sType); size > 0 {
-				return methodString, []any{size}
+				return contractsschema.MethodString, []any{size}
 			}
-			return methodString, nil
+			return contractsschema.MethodString, nil
 		}
 	}
 
 	if strings.HasPrefix(sType, "timestamp") || strings.HasPrefix(sType, "datetime") {
 		if strings.Contains(sType, "tz") {
-			return methodTimestampTz, nil
+			return contractsschema.MethodTimestampTz, nil
 		}
-		return methodTimestamp, nil
+		return contractsschema.MethodTimestamp, nil
 	}
 
 	// Map lookup for fixed types (json, uuid, etc)
@@ -270,16 +214,16 @@ func fieldToMethod(f *schema.Field) (string, []any) {
 	// Fallback to Go type name
 	goType := strings.ToLower(f.FieldType.String())
 	if strings.Contains(goType, "json") {
-		return methodJson, nil
+		return contractsschema.MethodJson, nil
 	}
 	if strings.Contains(goType, "uuid") {
-		return methodUuid, nil
+		return contractsschema.MethodUuid, nil
 	}
 	if strings.Contains(goType, "ulid") {
-		return methodUlid, nil
+		return contractsschema.MethodUlid, nil
 	}
 
-	return methodText, nil
+	return contractsschema.MethodText, nil
 }
 
 func renderIndexes(sch *schema.Schema, fields []*schema.Field) []string {
@@ -296,7 +240,7 @@ func renderIndexes(sch *schema.Schema, fields []*schema.Field) []string {
 	// Composite Primary Keys (if > 1 PK field)
 	if len(sch.PrimaryFields) > 1 {
 		cols := getColNames(sch.PrimaryFields)
-		add("PK:"+strings.Join(cols, ","), formatIndex(methodPrimary, cols, nil))
+		add("PK:"+strings.Join(cols, ","), formatIndex(contractsschema.IndexMethodPrimary, cols, nil))
 	}
 
 	indexes := sch.ParseIndexes()
@@ -317,14 +261,14 @@ func renderIndexes(sch *schema.Schema, fields []*schema.Field) []string {
 			continue
 		}
 
-		method := methodIndex
+		method := contractsschema.IndexMethodIndex
 		switch idx.Class {
-		case classUnique:
-			method = methodUnique
-		case classFullText:
-			method = methodFullText
-		case classPrimary:
-			method = methodPrimary
+		case contractsschema.IndexClassUnique:
+			method = contractsschema.IndexMethodUnique
+		case contractsschema.IndexClassFullText:
+			method = contractsschema.IndexMethodFullText
+		case contractsschema.IndexClassPrimary:
+			method = contractsschema.IndexMethodPrimary
 		}
 
 		add(idx.Class+":"+strings.Join(cols, ","), formatIndex(method, cols, idx))
@@ -333,7 +277,7 @@ func renderIndexes(sch *schema.Schema, fields []*schema.Field) []string {
 	// Field Unique Constraints
 	for _, f := range fields {
 		if f.Unique && f.DBName != "" {
-			add("UQ:"+f.DBName, formatIndex(methodUnique, []string{f.DBName}, nil))
+			add("UQ:"+f.DBName, formatIndex(contractsschema.IndexMethodUnique, []string{f.DBName}, nil))
 		}
 	}
 
@@ -344,24 +288,24 @@ func intMethod(size int, unsigned bool) string {
 	switch {
 	case size <= 8:
 		if unsigned {
-			return methodUnsignedTinyInteger
+			return contractsschema.MethodUnsignedTinyInteger
 		}
-		return methodTinyInteger
+		return contractsschema.MethodTinyInteger
 	case size <= 16:
 		if unsigned {
-			return methodUnsignedSmallInteger
+			return contractsschema.MethodUnsignedSmallInteger
 		}
-		return methodSmallInteger
+		return contractsschema.MethodSmallInteger
 	case size <= 32:
 		if unsigned {
-			return methodUnsignedInteger
+			return contractsschema.MethodUnsignedInteger
 		}
-		return methodInteger
+		return contractsschema.MethodInteger
 	default:
 		if unsigned {
-			return methodUnsignedBigInteger
+			return contractsschema.MethodUnsignedBigInteger
 		}
-		return methodBigInteger
+		return contractsschema.MethodBigInteger
 	}
 }
 
@@ -377,10 +321,10 @@ func formatIndex(method string, cols []string, idx *schema.Index) string {
 
 	if idx != nil {
 		if idx.Type != "" {
-			b.WriteMethod(methodAlgorithm, idx.Type)
+			b.WriteMethod(contractsschema.IndexMethodAlgorithm, idx.Type)
 		}
 		if idx.Name != "" {
-			b.WriteMethod(methodName, idx.Name)
+			b.WriteMethod(contractsschema.IndexMethodName, idx.Name)
 		}
 	}
 	return b.String()

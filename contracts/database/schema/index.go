@@ -2,6 +2,22 @@ package schema
 
 import "github.com/goravel/framework/contracts/database/driver"
 
+const (
+	IndexMethodAlgorithm = "Algorithm"
+	IndexMethodFullText  = "FullText"
+	IndexMethodIndex     = "Index"
+	IndexMethodName      = "Name"
+	IndexMethodPrimary   = "Primary"
+	IndexMethodUnique    = "Unique"
+)
+
+// Index class constants matching GORM's index classification.
+const (
+	IndexClassFullText = "FULLTEXT"
+	IndexClassPrimary  = "PRIMARY"
+	IndexClassUnique   = "UNIQUE"
+)
+
 type ForeignKeyDefinition interface {
 	CascadeOnDelete() ForeignKeyDefinition
 	CascadeOnUpdate() ForeignKeyDefinition

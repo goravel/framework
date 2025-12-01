@@ -2,6 +2,7 @@ package migration
 
 import (
 	"database/sql"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -210,6 +211,188 @@ func TestWriteValue(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			b := &atom{Builder: strings.Builder{}}
 			b.writeValue(tc.value)
+			assert.Equal(t, tc.want, b.String())
+		})
+	}
+}
+
+func TestIntMethod(t *testing.T) {
+	tests := []struct {
+		name     string
+		size     int
+		unsigned bool
+		want     string
+	}{
+		{"TinyInt signed", 8, false, "TinyInteger"},
+		{"TinyInt unsigned", 8, true, "UnsignedTinyInteger"},
+		{"SmallInt signed", 16, false, "SmallInteger"},
+		{"SmallInt unsigned", 16, true, "UnsignedSmallInteger"},
+		{"Int signed", 32, false, "Integer"},
+		{"Int unsigned", 32, true, "UnsignedInteger"},
+		{"BigInt signed", 64, false, "BigInteger"},
+		{"BigInt unsigned", 64, true, "UnsignedBigInteger"},
+		{"Size 0 falls into TinyInt", 0, false, "TinyInteger"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := intMethod(tc.size, tc.unsigned)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestParseEnum(t *testing.T) {
+	tests := []struct {
+		name string
+		def  string
+		want []any
+	}{
+		{"Simple strings", "enum('on','off')", []any{"on", "off"}},
+		{"With spaces", "enum('active', 'inactive', 'pending')", []any{"active", "inactive", "pending"}},
+		{"Integers", "enum(1, 2, 3)", []any{int64(1), int64(2), int64(3)}},
+		{"Mixed types", "enum('a', 1, 2.5)", []any{"a", int64(1), 2.5}},
+		{"Empty", "enum()", nil},
+		{"No parentheses", "enum", nil},
+		{"Single value", "enum('only')", []any{"only"}},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := parseEnum(tc.def)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestParseVal(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  any
+	}{
+		{"Integer", "123", int64(123)},
+		{"Negative integer", "-456", int64(-456)},
+		{"Float", "12.34", 12.34},
+		{"Negative float", "-98.76", -98.76},
+		{"String", "hello", "hello"},
+		{"String with spaces", "  hello  ", "hello"},
+		{"Zero", "0", int64(0)},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := parseVal(tc.input)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestTrimQuotes(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{"Single quotes", "'hello'", "hello"},
+		{"Double quotes", `"world"`, "world"},
+		{"No quotes", "plain", "plain"},
+		{"Mismatched quotes", "'mixed\"", "'mixed\""},
+		{"Empty string", "", ""},
+		{"Single char", "a", "a"},
+		{"Only quotes", "''", ""},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := trimQuotes(tc.input)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestParseTypeSize(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  int
+	}{
+		{"varchar(255)", "varchar(255)", 255},
+		{"char(50)", "char(50)", 50},
+		{"decimal(10,2)", "decimal(10,2)", 10},
+		{"No size", "varchar", 0},
+		{"Empty parens", "varchar()", 0},
+		{"Invalid number", "varchar(abc)", 0},
+		{"Spaces", "varchar( 100 )", 100},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := parseTypeSize(tc.input)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestIsSQLNullType(t *testing.T) {
+	tests := []struct {
+		name  string
+		value any
+		want  bool
+	}{
+		{"sql.NullString", sql.NullString{}, true},
+		{"sql.NullInt64", sql.NullInt64{}, true},
+		{"sql.NullBool", sql.NullBool{}, true},
+		{"sql.NullFloat64", sql.NullFloat64{}, true},
+		{"Regular string", "", false},
+		{"Pointer", (*string)(nil), false},
+		{"Struct", struct{ Name string }{}, false},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := isSQLNullType(reflect.TypeOf(tc.value))
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestWriteMethod(t *testing.T) {
+	tests := []struct {
+		name string
+		call func(b *atom)
+		want string
+	}{
+		{
+			name: "Method with no args",
+			call: func(b *atom) { b.WriteMethod("Nullable") },
+			want: "Nullable()",
+		},
+		{
+			name: "Method with string arg",
+			call: func(b *atom) { b.WriteMethod("String", "name") },
+			want: `String("name")`,
+		},
+		{
+			name: "Method with multiple args",
+			call: func(b *atom) { b.WriteMethod("Decimal", "price", 10, 2) },
+			want: `Decimal("price", 10, 2)`,
+		},
+		{
+			name: "Chained methods",
+			call: func(b *atom) {
+				b.WriteString("table.")
+				b.WriteMethod("String", "name")
+				b.WriteMethod("Nullable")
+			},
+			want: `table.String("name").Nullable()`,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			b := &atom{Builder: strings.Builder{}}
+			tc.call(b)
 			assert.Equal(t, tc.want, b.String())
 		})
 	}
