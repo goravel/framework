@@ -3,13 +3,13 @@ package migration
 import (
 	"bytes"
 	"fmt"
+	"go/format"
 	"os"
 	"path/filepath"
 	"text/template"
 
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/carbon"
-	"github.com/goravel/framework/support/str"
 )
 
 type Creator struct {
@@ -41,25 +41,23 @@ type StubData struct {
 }
 
 // PopulateStub Populate the place-holders in the migration stub.
-func (r *Creator) PopulateStub(stub, signature, table string) string {
-	data := StubData{
-		Package:    "migrations",
-		StructName: str.Of(signature).Prepend("m_").Studly().String(),
-		Signature:  signature,
-		Table:      table,
-	}
-
+func (r *Creator) PopulateStub(stub string, data StubData) string {
 	tmpl, err := template.New("stub").Parse(stub)
 	if err != nil {
 		return stub
 	}
 
 	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, data); err != nil {
+	if err = tmpl.Execute(&buf, data); err != nil {
 		return stub
 	}
 
-	return buf.String()
+	formatted, err := format.Source(buf.Bytes())
+	if err != nil {
+		return stub
+	}
+
+	return string(formatted)
 }
 
 // GetPath Get the full path to the migration.

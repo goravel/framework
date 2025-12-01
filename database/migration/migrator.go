@@ -1,11 +1,8 @@
 package migration
 
 import (
-	"bytes"
 	"fmt"
-	"go/format"
 	"slices"
-	"text/template"
 
 	"github.com/goravel/framework/contracts/console"
 	contractsmigration "github.com/goravel/framework/contracts/database/migration"
@@ -56,13 +53,7 @@ func (r *Migrator) Create(name string, modelName string) (string, error) {
 	// Prepend timestamp to the file name.
 	fileName := r.creator.GetFileName(name)
 
-	templateData := struct {
-		Table        string
-		Package      string
-		StructName   string
-		Signature    string
-		SchemaFields []string
-	}{
+	templateData := StubData{
 		Table:        table,
 		Package:      "migrations",
 		Signature:    fileName,
@@ -70,22 +61,7 @@ func (r *Migrator) Create(name string, modelName string) (string, error) {
 		SchemaFields: schemaFields,
 	}
 
-	tmpl, err := template.New("migration").Parse(stub)
-	if err != nil {
-		return "", errors.TemplateFailedToParse.Args(err.Error())
-	}
-
-	var buf bytes.Buffer
-	if err = tmpl.Execute(&buf, templateData); err != nil {
-		return "", errors.TemplateFailedToExecute.Args(err.Error())
-	}
-
-	formatted, err := format.Source(buf.Bytes())
-	if err != nil {
-		return "", errors.TemplateFailedToFormatGoCode.Args(err.Error())
-	}
-
-	if err := supportfile.PutContent(r.creator.GetPath(fileName), string(formatted)); err != nil {
+	if err := supportfile.PutContent(r.creator.GetPath(fileName), r.creator.PopulateStub(stub, templateData)); err != nil {
 		return "", err
 	}
 
