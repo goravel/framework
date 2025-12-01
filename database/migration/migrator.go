@@ -76,8 +76,8 @@ func (r *Migrator) Create(name string, modelName string) (string, error) {
 	}
 
 	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, templateData); err != nil {
-		return "", err
+	if err = tmpl.Execute(&buf, templateData); err != nil {
+		return "", errors.TemplateFailedToExecute.Args(err.Error())
 	}
 
 	formatted, err := format.Source(buf.Bytes())
