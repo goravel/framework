@@ -43,6 +43,12 @@ type Query interface {
 	Begin() (Query, error)
 	// BeginTransaction begins a new transaction
 	BeginTransaction() (Query, error)
+	// Chunk processes a given number of records in batches.
+	Chunk(count int, callback func([]any) error) error
+	// Chunk the results of a query by comparing numeric IDs.
+	ChunkByID(count int, callback func([]any) error) error
+	// ChunkByIDDesc processes a given number of records in batches, ordered by ID in descending order.
+	ChunkByIDDesc(count int, callback func([]any) error) error
 	// Commit commits the changes in a transaction.
 	Commit() error
 	// Count retrieve the "count" result of the query.
@@ -120,6 +126,8 @@ type Query interface {
 	OrderByDesc(column string) Query
 	// OrderByRaw specifies the order should be raw.
 	OrderByRaw(raw string) Query
+	// OrderedChunkByID processes a given number of records in batches, ordered by ID.
+	OrderedChunkByID(count int, callback func([]any) error, descending bool) error
 	// OrWhere add an "or where" clause to the query.
 	OrWhere(query any, args ...any) Query
 	// OrWhereBetween adds an "or where column between x and y" clause to the query.
