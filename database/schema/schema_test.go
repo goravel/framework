@@ -235,7 +235,7 @@ func TestGetModelFullName(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got := getModelFullName(tc.model)
+			got := getModelName(tc.model)
 			assert.Equal(t, tc.want, got)
 		})
 	}
