@@ -84,12 +84,12 @@ func (r *{{.StructName}}) Signature() string {
 func (r *{{.StructName}}) Up() error {
 	return facades.Schema().Table("{{.Table}}", func(table schema.Blueprint) {
 		{{- if .SchemaFields}}
-{{- range .SchemaFields}}
+		{{- range .SchemaFields}}
 		{{.}}
 		{{- end}}
-{{else}}
-
-{{end}}	})
+		{{- else}}
+		{{- end}}
+	})
 }
 
 // Down Reverse the migrations.

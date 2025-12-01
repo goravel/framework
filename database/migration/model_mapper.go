@@ -384,8 +384,7 @@ func formatIndex(method string, cols []string, idx *schema.Index) string {
 		if idx.Type != "" {
 			b.WriteMethod(methodAlgorithm, idx.Type)
 		}
-		// Only write name if not auto-generated (idx_table_col)
-		if idx.Name != "" && !strings.HasSuffix(idx.Name, "_"+cols[0]) {
+		if idx.Name != "" {
 			b.WriteMethod(methodName, idx.Name)
 		}
 	}
