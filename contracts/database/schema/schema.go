@@ -95,7 +95,8 @@ type Connection interface {
 // Extension represents an extension for the schema
 type Extension struct {
 	GoTypes []GoType
-	Models  []any
+	// Models is a list of model instances to register for runtime discovery and migration generation.
+	Models []any
 }
 
 // GoType represents a database column type to Go type mapping.

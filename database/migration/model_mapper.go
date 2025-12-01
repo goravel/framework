@@ -142,17 +142,16 @@ func shouldSkipField(field *schema.Field) bool {
 		return true
 	}
 
-	// Skip relation fields
-	rels := &field.Schema.Relationships
-	rels.Mux.RLock()
-	_, isRel := rels.Relations[field.Name]
-	rels.Mux.RUnlock()
-	if isRel {
+	// Skip relation fields and foreign key fields (belong to a relation)
+	relationships := &field.Schema.Relationships
+	relationships.Mux.RLock()
+	defer relationships.Mux.RUnlock()
+
+	if _, isRel := relationships.Relations[field.Name]; isRel {
 		return true
 	}
 
-	// Skip foreign key fields (belong to a relation)
-	for _, rel := range field.Schema.Relationships.Relations {
+	for _, rel := range relationships.Relations {
 		for _, ref := range rel.References {
 			if ref.ForeignKey != nil && ref.ForeignKey.DBName == field.DBName {
 				return true
@@ -176,14 +175,7 @@ func renderField(f *schema.Field) string {
 	// Chain: table.Method("name", args...).Nullable()...
 	b.WriteMethod(method, append([]any{f.DBName}, args...)...)
 
-	// Check for unsigned modifier
-	rawType := strings.ToLower(string(f.DataType))
-	if !strings.Contains(method, "Unsigned") {
-		if strings.Contains(rawType, "unsigned") || f.TagSettings["UNSIGNED"] != "" {
-			b.WriteMethod(methodUnsigned)
-		}
-	}
-
+	// Type-specific modifiers first
 	if method == methodDecimal {
 		if f.Scale > 0 {
 			b.WriteMethod(methodPlaces, f.Scale)
@@ -192,6 +184,16 @@ func renderField(f *schema.Field) string {
 			b.WriteMethod(methodTotal, f.Precision)
 		}
 	}
+
+	// Check for unsigned modifier
+	rawType := strings.ToLower(string(f.DataType))
+	if !strings.Contains(method, "Unsigned") {
+		if strings.Contains(rawType, "unsigned") || f.TagSettings["UNSIGNED"] != "" {
+			b.WriteMethod(methodUnsigned)
+		}
+	}
+
+	// General modifiers
 	if !f.NotNull && !f.PrimaryKey {
 		b.WriteMethod(methodNullable)
 	}
