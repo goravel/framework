@@ -69,7 +69,7 @@ func TestGenerate(t *testing.T) {
 				`table.TimestampTz("created_at").Nullable()`,
 				`table.TimestampTz("updated_at").Nullable()`,
 				`table.BigIncrements("id")`,
-				`table.String("name").Nullable()`,
+				`table.String("name")`,
 			},
 			wantIndexes: []string{},
 		},
@@ -79,8 +79,8 @@ func TestGenerate(t *testing.T) {
 			wantTable: "products",
 			wantColumns: []string{
 				`table.BigIncrements("id")`,
-				`table.String("code").Nullable()`,
-				`table.Double("price").Nullable()`,
+				`table.String("code")`,
+				`table.Double("price")`,
 			},
 			wantIndexes: []string{
 				`table.Unique("code").Name("idx_products_code")`,
@@ -93,7 +93,7 @@ func TestGenerate(t *testing.T) {
 			wantColumns: []string{
 				`table.UnsignedBigInteger("order_id")`,
 				`table.UnsignedBigInteger("product_id")`,
-				`table.String("note").Nullable()`,
+				`table.String("note")`,
 			},
 			wantIndexes: []string{
 				`table.Primary("order_id", "product_id")`,
@@ -113,8 +113,8 @@ func TestGenerate(t *testing.T) {
 			wantTable: "custom_types",
 			wantColumns: []string{
 				`table.BigIncrements("id")`,
-				`table.Enum("status", []any{"on", "off"}).Nullable()`,
-				`table.Json("settings").Nullable()`,
+				`table.Enum("status", []any{"on", "off"})`,
+				`table.Json("settings")`,
 			},
 		},
 		{

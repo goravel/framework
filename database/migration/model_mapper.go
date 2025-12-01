@@ -2,6 +2,7 @@ package migration
 
 import (
 	"fmt"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -183,8 +184,12 @@ func renderField(f *schema.Field) string {
 		}
 	}
 
-	// General modifiers
-	if !f.NotNull && !f.PrimaryKey {
+	// Nullable if:
+	// - Pointer type (can be nil in Go), OR
+	// - sql.Null* types (designed for nullable columns)
+	// And not explicitly NOT NULL or primary key
+	isNullable := f.FieldType.Kind() == reflect.Ptr || isSQLNullType(f.FieldType)
+	if isNullable && !f.NotNull && !f.PrimaryKey {
 		b.WriteMethod(methodNullable)
 	}
 	if f.HasDefaultValue && f.DefaultValueInterface != nil {
@@ -449,6 +454,14 @@ func getColNames(fields []*schema.Field) []string {
 		}
 	}
 	return names
+}
+
+// isSQLNullType checks if the type is a sql.Null* type (e.g., sql.NullString, sql.NullInt64)
+func isSQLNullType(t reflect.Type) bool {
+	if t.Kind() != reflect.Struct {
+		return false
+	}
+	return t.PkgPath() == "database/sql" && strings.HasPrefix(t.Name(), "Null")
 }
 
 type atom struct {
