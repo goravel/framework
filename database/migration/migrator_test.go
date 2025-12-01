@@ -51,24 +51,52 @@ func (s *MigratorSuite) SetupTest() {
 func (s *MigratorSuite) TestCreate() {
 	now := carbon.FromDateTime(2024, 8, 17, 21, 45, 1)
 	carbon.SetTestNow(now)
+	defer carbon.ClearTestNow()
 
 	pwd, err := os.Getwd()
 	s.NoError(err)
-
 	path := filepath.Join(pwd, "database", "migrations")
-	name := "create_users_table"
-
-	fileName, err := s.migrator.Create(name, "")
-	s.NoError(err)
-	s.Equal("20240817214501_"+name, fileName)
-
-	migrationFile := filepath.Join(path, "20240817214501_"+name+".go")
-	s.True(file.Exists(migrationFile))
-
 	defer func() {
-		carbon.ClearTestNow()
 		s.NoError(file.Remove("database"))
 	}()
+
+	s.Run("without model", func() {
+		name := "create_users_table"
+		fileName, err := s.migrator.Create(name, "")
+		s.NoError(err)
+		s.Equal("20240817214501_"+name, fileName)
+		s.True(file.Exists(filepath.Join(path, "20240817214501_"+name+".go")))
+	})
+
+	s.Run("model not found", func() {
+		s.mockSchema.EXPECT().GetModel("NonExistentModel").Return(nil).Once()
+
+		_, err := s.migrator.Create("create_test_table", "NonExistentModel")
+		s.Error(err)
+		s.Contains(err.Error(), "NonExistentModel")
+	})
+
+	s.Run("with valid model", func() {
+		type TestModel struct {
+			ID   uint   `gorm:"primaryKey"`
+			Name string `gorm:"size:100"`
+		}
+		model := &TestModel{}
+
+		s.mockSchema.EXPECT().GetModel("TestModel").Return(model).Once()
+
+		fileName, err := s.migrator.Create("create_test_models_table", "TestModel")
+		s.NoError(err)
+		s.Contains(fileName, "create_test_models_table")
+
+		migrationFile := filepath.Join(path, fileName+".go")
+		s.True(file.Exists(migrationFile))
+
+		content, err := os.ReadFile(migrationFile)
+		s.NoError(err)
+		s.Contains(string(content), "test_models")
+		s.Contains(string(content), "BigIncrements")
+	})
 }
 
 func (s *MigratorSuite) TestFresh() {
