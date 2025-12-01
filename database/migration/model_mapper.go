@@ -142,24 +142,14 @@ func shouldSkipField(field *schema.Field) bool {
 		return true
 	}
 
-	// Skip relation fields and foreign key fields (belong to a relation)
+	// Skip relation fields (e.g., User in "User `gorm:foreignKey:UserID`")
+	// But DO NOT skip foreign key columns (e.g., UserID) they need to exist in the table
 	relationships := &field.Schema.Relationships
 	relationships.Mux.RLock()
-	defer relationships.Mux.RUnlock()
+	_, isRel := relationships.Relations[field.Name]
+	relationships.Mux.RUnlock()
 
-	if _, isRel := relationships.Relations[field.Name]; isRel {
-		return true
-	}
-
-	for _, rel := range relationships.Relations {
-		for _, ref := range rel.References {
-			if ref.ForeignKey != nil && ref.ForeignKey.DBName == field.DBName {
-				return true
-			}
-		}
-	}
-
-	return false
+	return isRel
 }
 
 func renderField(f *schema.Field) string {
