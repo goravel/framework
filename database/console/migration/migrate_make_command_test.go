@@ -61,6 +61,20 @@ func TestMigrateMakeCommand(t *testing.T) {
 			},
 		},
 		{
+			name: "Happy path - with model option",
+			setup: func() {
+				mockContext.EXPECT().Argument(0).Return("create_products_table").Once()
+				mockContext.EXPECT().OptionBool("force").Return(false).Once()
+				mockContext.EXPECT().Option("model").Return("Product").Once()
+				mockMigrator.EXPECT().Create("create_products_table", "Product").Return("", nil).Once()
+				mockContext.EXPECT().Success("Created Migration: create_products_table").Once()
+				mockApp.EXPECT().DatabasePath("kernel.go").Return("database/kernel.go").Once()
+				mockContext.EXPECT().Error(mock.MatchedBy(func(msg string) bool {
+					return strings.Contains(msg, errors.MigrationRegisterFailed.Error())
+				})).Once()
+			},
+		},
+		{
 			name: "Sad path - failed to ask",
 			setup: func() {
 				mockContext.EXPECT().Argument(0).Return("").Once()
@@ -76,6 +90,16 @@ func TestMigrateMakeCommand(t *testing.T) {
 				mockContext.EXPECT().Option("model").Return("").Once()
 				mockMigrator.EXPECT().Create("create_users_table", "").Return("", assert.AnError).Once()
 				mockContext.EXPECT().Error(errors.MigrationCreateFailed.Args(assert.AnError).Error()).Once()
+			},
+		},
+		{
+			name: "Sad path - model not found",
+			setup: func() {
+				mockContext.EXPECT().Argument(0).Return("create_products_table").Once()
+				mockContext.EXPECT().OptionBool("force").Return(false).Once()
+				mockContext.EXPECT().Option("model").Return("NonExistentModel").Once()
+				mockMigrator.EXPECT().Create("create_products_table", "NonExistentModel").Return("", errors.SchemaModelNotFound.Args("NonExistentModel")).Once()
+				mockContext.EXPECT().Error(errors.MigrationCreateFailed.Args(errors.SchemaModelNotFound.Args("NonExistentModel")).Error()).Once()
 			},
 		},
 		{
