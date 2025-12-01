@@ -178,7 +178,7 @@ func (r *SchemaTestSuite) TestExtendModels() {
 			assert: func(schema *Schema) {
 				r.Equal(defaultLen+1, len(schema.models), "models length should increase by 1")
 
-				addressModel := schema.GetModel("Address")
+				addressModel := schema.GetModel("schema.Address")
 				r.NotNil(addressModel, "Address model should not be nil")
 			},
 		},
@@ -188,10 +188,10 @@ func (r *SchemaTestSuite) TestExtendModels() {
 			assert: func(schema *Schema) {
 				r.Equal(defaultLen+2, len(schema.models), "models length should increase by 2")
 
-				addressModel := schema.GetModel("Address")
+				addressModel := schema.GetModel("schema.Address")
 				r.NotNil(addressModel, "Address model should not be nil")
 
-				relationModel := schema.GetModel("Relation")
+				relationModel := schema.GetModel("schema.Relation")
 				r.NotNil(relationModel, "Relation model should not be nil")
 			},
 		},
@@ -201,7 +201,7 @@ func (r *SchemaTestSuite) TestExtendModels() {
 			assert: func(schema *Schema) {
 				r.Equal(defaultLen, len(schema.models), "models length should remain unchanged for duplicates")
 
-				userModel := schema.GetModel("User")
+				userModel := schema.GetModel("schema.User")
 				r.NotNil(userModel, "User model should not be nil")
 			},
 		},
@@ -217,28 +217,14 @@ func (r *SchemaTestSuite) TestExtendModels() {
 }
 
 func getSchema() *Schema {
-	return &Schema{
-		goTypes: defaultGoTypes(),
-		models:  defaultModels(),
+	schema := &Schema{
+		goTypes:          defaultGoTypes(),
+		modelsByFullName: make(map[string]any),
 	}
-}
-
-func TestGetModelFullName(t *testing.T) {
-	tests := []struct {
-		name  string
-		model any
-		want  string
-	}{
-		{"Simple struct", &User{}, "schema.User"},
-		{"Nil", nil, ""},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			got := getModelName(tc.model)
-			assert.Equal(t, tc.want, got)
-		})
-	}
+	schema.Extend(contractsschema.Extension{
+		Models: defaultModels(),
+	})
+	return schema
 }
 
 func TestGetModelName(t *testing.T) {
@@ -247,8 +233,8 @@ func TestGetModelName(t *testing.T) {
 		model any
 		want  string
 	}{
-		{"Pointer to struct", &User{}, "User"},
-		{"Value struct", User{}, "User"},
+		{"Pointer to struct", &User{}, "schema.User"},
+		{"Value struct", User{}, "schema.User"},
 		{"Nil", nil, ""},
 	}
 
