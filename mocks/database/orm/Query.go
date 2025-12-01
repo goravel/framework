@@ -234,7 +234,7 @@ func (_c *Query_BeginTransaction_Call) RunAndReturn(run func() (orm.Query, error
 }
 
 // Chunk provides a mock function with given fields: count, callback
-func (_m *Query) Chunk(count int, callback func([]any) error) error {
+func (_m *Query) Chunk(count int, callback func([]interface{}) error) error {
 	ret := _m.Called(count, callback)
 
 	if len(ret) == 0 {
@@ -242,7 +242,7 @@ func (_m *Query) Chunk(count int, callback func([]any) error) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, func([]any) error) error); ok {
+	if rf, ok := ret.Get(0).(func(int, func([]interface{}) error) error); ok {
 		r0 = rf(count, callback)
 	} else {
 		r0 = ret.Error(0)
@@ -258,14 +258,14 @@ type Query_Chunk_Call struct {
 
 // Chunk is a helper method to define mock.On call
 //   - count int
-//   - callback func([]any) error
+//   - callback func([]interface{}) error
 func (_e *Query_Expecter) Chunk(count interface{}, callback interface{}) *Query_Chunk_Call {
 	return &Query_Chunk_Call{Call: _e.mock.On("Chunk", count, callback)}
 }
 
-func (_c *Query_Chunk_Call) Run(run func(count int, callback func([]any) error)) *Query_Chunk_Call {
+func (_c *Query_Chunk_Call) Run(run func(count int, callback func([]interface{}) error)) *Query_Chunk_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(int), args[1].(func([]any) error))
+		run(args[0].(int), args[1].(func([]interface{}) error))
 	})
 	return _c
 }
@@ -275,13 +275,13 @@ func (_c *Query_Chunk_Call) Return(_a0 error) *Query_Chunk_Call {
 	return _c
 }
 
-func (_c *Query_Chunk_Call) RunAndReturn(run func(int, func([]any) error) error) *Query_Chunk_Call {
+func (_c *Query_Chunk_Call) RunAndReturn(run func(int, func([]interface{}) error) error) *Query_Chunk_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // ChunkByID provides a mock function with given fields: count, callback
-func (_m *Query) ChunkByID(count int, callback func([]any) error) error {
+func (_m *Query) ChunkByID(count int, callback func([]interface{}) error) error {
 	ret := _m.Called(count, callback)
 
 	if len(ret) == 0 {
@@ -289,7 +289,7 @@ func (_m *Query) ChunkByID(count int, callback func([]any) error) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, func([]any) error) error); ok {
+	if rf, ok := ret.Get(0).(func(int, func([]interface{}) error) error); ok {
 		r0 = rf(count, callback)
 	} else {
 		r0 = ret.Error(0)
@@ -305,14 +305,14 @@ type Query_ChunkByID_Call struct {
 
 // ChunkByID is a helper method to define mock.On call
 //   - count int
-//   - callback func([]any) error
+//   - callback func([]interface{}) error
 func (_e *Query_Expecter) ChunkByID(count interface{}, callback interface{}) *Query_ChunkByID_Call {
 	return &Query_ChunkByID_Call{Call: _e.mock.On("ChunkByID", count, callback)}
 }
 
-func (_c *Query_ChunkByID_Call) Run(run func(count int, callback func([]any) error)) *Query_ChunkByID_Call {
+func (_c *Query_ChunkByID_Call) Run(run func(count int, callback func([]interface{}) error)) *Query_ChunkByID_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(int), args[1].(func([]any) error))
+		run(args[0].(int), args[1].(func([]interface{}) error))
 	})
 	return _c
 }
@@ -322,13 +322,13 @@ func (_c *Query_ChunkByID_Call) Return(_a0 error) *Query_ChunkByID_Call {
 	return _c
 }
 
-func (_c *Query_ChunkByID_Call) RunAndReturn(run func(int, func([]any) error) error) *Query_ChunkByID_Call {
+func (_c *Query_ChunkByID_Call) RunAndReturn(run func(int, func([]interface{}) error) error) *Query_ChunkByID_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // ChunkByIDDesc provides a mock function with given fields: count, callback
-func (_m *Query) ChunkByIDDesc(count int, callback func([]any) error) error {
+func (_m *Query) ChunkByIDDesc(count int, callback func([]interface{}) error) error {
 	ret := _m.Called(count, callback)
 
 	if len(ret) == 0 {
@@ -336,7 +336,7 @@ func (_m *Query) ChunkByIDDesc(count int, callback func([]any) error) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, func([]any) error) error); ok {
+	if rf, ok := ret.Get(0).(func(int, func([]interface{}) error) error); ok {
 		r0 = rf(count, callback)
 	} else {
 		r0 = ret.Error(0)
@@ -352,14 +352,14 @@ type Query_ChunkByIDDesc_Call struct {
 
 // ChunkByIDDesc is a helper method to define mock.On call
 //   - count int
-//   - callback func([]any) error
+//   - callback func([]interface{}) error
 func (_e *Query_Expecter) ChunkByIDDesc(count interface{}, callback interface{}) *Query_ChunkByIDDesc_Call {
 	return &Query_ChunkByIDDesc_Call{Call: _e.mock.On("ChunkByIDDesc", count, callback)}
 }
 
-func (_c *Query_ChunkByIDDesc_Call) Run(run func(count int, callback func([]any) error)) *Query_ChunkByIDDesc_Call {
+func (_c *Query_ChunkByIDDesc_Call) Run(run func(count int, callback func([]interface{}) error)) *Query_ChunkByIDDesc_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(int), args[1].(func([]any) error))
+		run(args[0].(int), args[1].(func([]interface{}) error))
 	})
 	return _c
 }
@@ -369,7 +369,7 @@ func (_c *Query_ChunkByIDDesc_Call) Return(_a0 error) *Query_ChunkByIDDesc_Call 
 	return _c
 }
 
-func (_c *Query_ChunkByIDDesc_Call) RunAndReturn(run func(int, func([]any) error) error) *Query_ChunkByIDDesc_Call {
+func (_c *Query_ChunkByIDDesc_Call) RunAndReturn(run func(int, func([]interface{}) error) error) *Query_ChunkByIDDesc_Call {
 	_c.Call.Return(run)
 	return _c
 }
