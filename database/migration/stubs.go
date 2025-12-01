@@ -88,6 +88,7 @@ func (r *{{.StructName}}) Up() error {
 		{{.}}
 		{{- end}}
 		{{- else}}
+
 		{{- end}}
 	})
 }

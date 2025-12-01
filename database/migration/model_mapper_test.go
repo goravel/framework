@@ -83,7 +83,7 @@ func TestGenerate(t *testing.T) {
 				`table.Double("price").Nullable()`,
 			},
 			wantIndexes: []string{
-				`table.Unique("code")`,
+				`table.Unique("code").Name("idx_products_code")`,
 			},
 		},
 		{

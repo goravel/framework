@@ -17,17 +17,18 @@ import (
 var _ contractsschema.Schema = (*Schema)(nil)
 
 type Schema struct {
-	config     config.Config
-	driver     driver.Driver
-	grammar    driver.Grammar
-	log        log.Log
-	migrations []contractsschema.Migration
-	orm        contractsorm.Orm
-	prefix     string
-	processor  driver.Processor
-	schema     string
-	goTypes    []contractsschema.GoType
-	models     []any
+	config           config.Config
+	driver           driver.Driver
+	grammar          driver.Grammar
+	log              log.Log
+	migrations       []contractsschema.Migration
+	orm              contractsorm.Orm
+	prefix           string
+	processor        driver.Processor
+	schema           string
+	goTypes          []contractsschema.GoType
+	models           []any
+	modelsByFullName map[string]any
 }
 
 func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, driver driver.Driver, migrations []contractsschema.Migration) (*Schema, error) {
@@ -42,17 +43,18 @@ func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, driver d
 	processor := driver.Processor()
 
 	return &Schema{
-		config:     config,
-		driver:     driver,
-		grammar:    grammar,
-		log:        log,
-		migrations: migrations,
-		orm:        orm,
-		prefix:     prefix,
-		processor:  processor,
-		schema:     schema,
-		goTypes:    defaultGoTypes(),
-		models:     make([]any, 0),
+		config:           config,
+		driver:           driver,
+		grammar:          grammar,
+		log:              log,
+		migrations:       migrations,
+		orm:              orm,
+		prefix:           prefix,
+		processor:        processor,
+		schema:           schema,
+		goTypes:          defaultGoTypes(),
+		models:           make([]any, 0),
+		modelsByFullName: make(map[string]any),
 	}, nil
 }
 
@@ -252,21 +254,12 @@ func (r *Schema) GetIndexes(table string) ([]driver.Index, error) {
 }
 
 func (r *Schema) GetModel(name string) any {
-	// First pass: exact match on full path (e.g., "models.User")
-	for _, m := range r.models {
-		if getModelFullName(m) == name {
-			return m
-		}
+	// If no dot, assume "models" package
+	if !strings.Contains(name, ".") {
+		name = "models." + name
 	}
 
-	// Second pass: match on simple type name (e.g., "User")
-	for _, m := range r.models {
-		if getModelName(m) == name {
-			return m
-		}
-	}
-
-	return nil
+	return r.modelsByFullName[name]
 }
 
 func (r *Schema) GetTableListing() []string {
@@ -521,16 +514,19 @@ func (r *Schema) extendGoTypes(overrides []contractsschema.GoType) {
 }
 
 func (r *Schema) extendModels(models []any) {
-	seen := make(map[string]bool, len(r.models))
-	for _, m := range r.models {
-		seen[getModelName(m)] = true
-	}
-
 	for _, m := range models {
-		if name := getModelName(m); name != "" && !seen[name] {
-			seen[name] = true
-			r.models = append(r.models, m)
+		fullName := getModelName(m)
+		if fullName == "" {
+			continue
 		}
+
+		// Use full name for duplicate detection
+		if _, exists := r.modelsByFullName[fullName]; exists {
+			continue
+		}
+
+		r.models = append(r.models, m)
+		r.modelsByFullName[fullName] = m
 	}
 }
 
@@ -546,16 +542,8 @@ func modelType(m any) reflect.Type {
 	return t
 }
 
-// getModelName returns the simple type name (e.g., "User").
+// getModelName returns package.TypeName (e.g., "models.User").
 func getModelName(m any) string {
-	if t := modelType(m); t != nil {
-		return t.Name()
-	}
-	return ""
-}
-
-// getModelFullName returns package.TypeName (e.g., "models.User").
-func getModelFullName(m any) string {
 	t := modelType(m)
 	if t == nil {
 		return ""
