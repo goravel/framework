@@ -42,7 +42,7 @@ func (r *MigrateMakeCommand) Extend() command.Extend {
 			&command.StringFlag{
 				Name:    "model",
 				Aliases: []string{"m"},
-				Usage:   "The model name to be used in the migration, will create it if it doesn't exist",
+				Usage:   "The model name to use for generating the migration schema",
 			},
 		},
 	}

@@ -41,6 +41,9 @@ var (
 	defaultNamingStrategy = schema.NamingStrategy{}
 )
 
+// Generate creates migration schema lines from a model struct.
+// It parses the model using GORM's schema parser and generates Blueprint method calls.
+// Returns the table name, a slice of schema field lines, and an error if the model is invalid.
 func Generate(model any) (string, []string, error) {
 	sch, err := schema.Parse(model, schemaCache, defaultNamingStrategy)
 	if err != nil {

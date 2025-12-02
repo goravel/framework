@@ -253,6 +253,9 @@ func (r *Schema) GetIndexes(table string) ([]driver.Index, error) {
 	return r.processor.ProcessIndexes(dbIndexes), nil
 }
 
+// GetModel retrieves a registered model by name. If the name doesn't contain a package
+// (no dot), it automatically prepends "models." to the name. Returns nil if the model
+// is not found in the registry.
 func (r *Schema) GetModel(name string) any {
 	// If no dot, assume "models" package
 	if !strings.Contains(name, ".") {
