@@ -54,6 +54,13 @@ type NullableFields struct {
 	NullInt sql.NullInt64
 }
 
+type MigrationTagFields struct {
+	ID       uint
+	Data     string `gorm:"migration:Json"`      // StudlyCase
+	Content  string `gorm:"migration:long_text"` // snake_case
+	UniqueID string `gorm:"migration:uuid"`      // lowercase
+}
+
 func TestGenerate(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -139,6 +146,17 @@ func TestGenerate(t *testing.T) {
 				`table.BigIncrements("id")`,
 				`table.String("null_str").Nullable()`,
 				`table.BigInteger("null_int").Nullable()`,
+			},
+		},
+		{
+			name:      "Migration Tag (direct method)",
+			model:     &MigrationTagFields{},
+			wantTable: "migration_tag_fields",
+			wantColumns: []string{
+				`table.BigIncrements("id")`,
+				`table.Json("data")`,
+				`table.LongText("content")`,
+				`table.Uuid("unique_id")`,
 			},
 		},
 		{

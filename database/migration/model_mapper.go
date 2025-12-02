@@ -12,6 +12,7 @@ import (
 
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/str"
 )
 
 const tablePrefix = "table."
@@ -158,7 +159,18 @@ func renderField(f *schema.Field) string {
 // fieldToMethod maps a GORM field to the appropriate Blueprint method name and arguments.
 // It analyzes the field's data type, size, and attributes to determine the correct
 // schema method (e.g., String, Integer, Boolean, TimestampTz) and any required parameters.
+//
+// Priority order:
+//  1. migration tag (e.g., `gorm:"migration:Json"`) - highest priority, direct method name
+//  2. Primary key with auto increment
+//  3. DataType and type inference
 func fieldToMethod(f *schema.Field) (string, []any) {
+	// Highest priority: explicit migration tag (e.g., `gorm:"migration:Json"` or `gorm:"migration:long_text"`)
+	// Allows direct Blueprint method specification. Normalizes to StudlyCase.
+	if method, ok := f.TagSettings["MIGRATION"]; ok && method != "" {
+		return str.Of(method).Studly().String(), nil
+	}
+
 	if f.PrimaryKey && f.AutoIncrement {
 		if f.Size <= 32 {
 			return contractsschema.MethodIncrements, nil
