@@ -2938,54 +2938,6 @@ func (_c *Query_OrderByRaw_Call) RunAndReturn(run func(string) orm.Query) *Query
 	return _c
 }
 
-// OrderedChunkByID provides a mock function with given fields: count, callback, descending
-func (_m *Query) OrderedChunkByID(count int, callback func([]interface{}) error, descending bool) error {
-	ret := _m.Called(count, callback, descending)
-
-	if len(ret) == 0 {
-		panic("no return value specified for OrderedChunkByID")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(int, func([]interface{}) error, bool) error); ok {
-		r0 = rf(count, callback, descending)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// Query_OrderedChunkByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OrderedChunkByID'
-type Query_OrderedChunkByID_Call struct {
-	*mock.Call
-}
-
-// OrderedChunkByID is a helper method to define mock.On call
-//   - count int
-//   - callback func([]interface{}) error
-//   - descending bool
-func (_e *Query_Expecter) OrderedChunkByID(count interface{}, callback interface{}, descending interface{}) *Query_OrderedChunkByID_Call {
-	return &Query_OrderedChunkByID_Call{Call: _e.mock.On("OrderedChunkByID", count, callback, descending)}
-}
-
-func (_c *Query_OrderedChunkByID_Call) Run(run func(count int, callback func([]interface{}) error, descending bool)) *Query_OrderedChunkByID_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(int), args[1].(func([]interface{}) error), args[2].(bool))
-	})
-	return _c
-}
-
-func (_c *Query_OrderedChunkByID_Call) Return(_a0 error) *Query_OrderedChunkByID_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Query_OrderedChunkByID_Call) RunAndReturn(run func(int, func([]interface{}) error, bool) error) *Query_OrderedChunkByID_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // Paginate provides a mock function with given fields: page, limit, dest, total
 func (_m *Query) Paginate(page int, limit int, dest interface{}, total *int64) error {
 	ret := _m.Called(page, limit, dest, total)

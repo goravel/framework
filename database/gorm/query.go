@@ -194,6 +194,14 @@ func (r *Query) Chunk(count int, callback func([]any) error) error {
 		return errors.OrmQueryChunkZeroOrLess
 	}
 
+	if r.conditions.model == nil {
+		return errors.OrmQueryInvalidModel.Args("nil")
+	}
+
+	initialOffset := 0
+	if r.conditions.offset != nil {
+		initialOffset = *r.conditions.offset
+	}
 	var remaining *int
 	if r.conditions.limit != nil {
 		limit := *r.conditions.limit
@@ -204,7 +212,7 @@ func (r *Query) Chunk(count int, callback func([]any) error) error {
 
 	destType := reflect.TypeOf(r.conditions.model)
 	sliceType := reflect.SliceOf(reflect.PointerTo(destType))
-	offset := 0
+	offset := initialOffset
 
 	for remaining == nil || *remaining > 0 {
 		chunkLimit := count
@@ -250,16 +258,20 @@ func (r *Query) Chunk(count int, callback func([]any) error) error {
 }
 
 func (r *Query) ChunkByID(count int, callback func([]any) error) error {
-	return r.OrderedChunkByID(count, callback, false)
+	return r.orderedChunkByID(count, callback, false)
 }
 
 func (r *Query) ChunkByIDDesc(count int, callback func([]any) error) error {
-	return r.OrderedChunkByID(count, callback, true)
+	return r.orderedChunkByID(count, callback, true)
 }
 
-func (r *Query) OrderedChunkByID(count int, callback func([]any) error, descending bool) error {
+func (r *Query) orderedChunkByID(count int, callback func([]any) error, descending bool) error {
 	if count <= 0 {
 		return errors.OrmQueryChunkZeroOrLess
+	}
+
+	if r.conditions.model == nil {
+		return errors.OrmQueryInvalidModel.Args("nil")
 	}
 
 	column := "id"
