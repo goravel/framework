@@ -415,12 +415,28 @@ func getColNames(fields []*schema.Field) []string {
 	return names
 }
 
-// isSQLNullType checks if the type is a sql.Null* type (e.g., sql.NullString, sql.NullInt64)
+// isSQLNullType checks if the type is a known nullable database type.
+// Supported types:
+//   - database/sql.Null* (e.g., sql.NullString, sql.NullInt64, sql.NullTime)
+//   - gorm.DeletedAt
+//
+// For other types, use pointer types or GORM tags to define nullability.
 func isSQLNullType(t reflect.Type) bool {
 	if t.Kind() != reflect.Struct {
 		return false
 	}
-	return t.PkgPath() == "database/sql" && strings.HasPrefix(t.Name(), "Null")
+
+	// Check for database/sql.Null* types
+	if t.PkgPath() == "database/sql" && strings.HasPrefix(t.Name(), "Null") {
+		return true
+	}
+
+	// Check for gorm.DeletedAt
+	if strings.HasSuffix(t.PkgPath(), "gorm.io/gorm") && t.Name() == "DeletedAt" {
+		return true
+	}
+
+	return false
 }
 
 // atom is a string builder wrapper for generating Blueprint method chains.
