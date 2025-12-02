@@ -58,6 +58,9 @@ func Generate(model any) (string, []string, error) {
 	return sch.Table, lines, nil
 }
 
+// renderSchema converts a GORM schema into Blueprint method call strings.
+// It processes all fields and indexes from the schema, generating the corresponding
+// table column definitions and index/constraint definitions for use in migrations.
 func renderSchema(sch *schema.Schema) []string {
 	var lines []string
 	seen := make(map[string]bool)
@@ -100,6 +103,9 @@ func shouldSkipField(field *schema.Field) bool {
 	return isRel
 }
 
+// renderField generates a single column definition with modifiers for a GORM field.
+// It builds a Blueprint method chain including the column type, nullability, default value,
+// unsigned modifier, and comments based on the field's properties and tags.
 func renderField(f *schema.Field) string {
 	method, args := fieldToMethod(f)
 	if method == "" {
@@ -149,6 +155,9 @@ func renderField(f *schema.Field) string {
 	return b.String()
 }
 
+// fieldToMethod maps a GORM field to the appropriate Blueprint method name and arguments.
+// It analyzes the field's data type, size, and attributes to determine the correct
+// schema method (e.g., String, Integer, Boolean, TimestampTz) and any required parameters.
 func fieldToMethod(f *schema.Field) (string, []any) {
 	if f.PrimaryKey && f.AutoIncrement {
 		if f.Size <= 32 {
@@ -229,6 +238,9 @@ func fieldToMethod(f *schema.Field) (string, []any) {
 	return contractsschema.MethodText, nil
 }
 
+// renderIndexes generates index and constraint definitions for a schema.
+// It processes composite primary keys, unique indexes, regular indexes, and fulltext indexes,
+// returning Blueprint method call strings for each index definition.
 func renderIndexes(sch *schema.Schema, fields []*schema.Field) []string {
 	var lines []string
 	seen := make(map[string]bool)
