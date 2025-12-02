@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"text/template"
 
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/carbon"
 )
@@ -41,23 +42,23 @@ type StubData struct {
 }
 
 // PopulateStub Populate the place-holders in the migration stub.
-func (r *Creator) PopulateStub(stub string, data StubData) string {
+func (r *Creator) PopulateStub(stub string, data StubData) (string, error) {
 	tmpl, err := template.New("stub").Parse(stub)
 	if err != nil {
-		return stub
+		return "", errors.TemplateFailedToParse.Args(err)
 	}
 
 	var buf bytes.Buffer
 	if err = tmpl.Execute(&buf, data); err != nil {
-		return stub
+		return "", errors.TemplateFailedToExecute.Args(err)
 	}
 
 	formatted, err := format.Source(buf.Bytes())
 	if err != nil {
-		return stub
+		return "", errors.TemplateFailedToFormatGoCode.Args(err)
 	}
 
-	return string(formatted)
+	return string(formatted), nil
 }
 
 // GetPath Get the full path to the migration.

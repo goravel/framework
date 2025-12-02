@@ -210,7 +210,7 @@ func TestWriteValue(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			b := &atom{Builder: strings.Builder{}}
-			b.writeValue(tc.value)
+			b.WriteValue(tc.value)
 			assert.Equal(t, tc.want, b.String())
 		})
 	}

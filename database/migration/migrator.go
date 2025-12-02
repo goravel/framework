@@ -61,7 +61,12 @@ func (r *Migrator) Create(name string, modelName string) (string, error) {
 		SchemaFields: schemaFields,
 	}
 
-	if err := supportfile.PutContent(r.creator.GetPath(fileName), r.creator.PopulateStub(stub, templateData)); err != nil {
+	content, err := r.creator.PopulateStub(stub, templateData)
+	if err != nil {
+		return "", err
+	}
+
+	if err := supportfile.PutContent(r.creator.GetPath(fileName), content); err != nil {
 		return "", err
 	}
 

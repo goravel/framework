@@ -30,10 +30,11 @@ func (s *DefaultCreatorSuite) TestPopulateStub() {
 	}
 
 	tests := []struct {
-		name     string
-		stub     string
-		data     StubData
-		expected string
+		name        string
+		stub        string
+		data        StubData
+		expected    string
+		expectError bool
 	}{
 		{
 			name: "Empty stub",
@@ -170,17 +171,22 @@ func (r *M202410131203CreateUsersTable) Down() error {
 `,
 		},
 		{
-			name:     "Invalid template returns original stub",
-			stub:     `{{.InvalidSyntax`,
-			data:     data,
-			expected: `{{.InvalidSyntax`,
+			name:        "Invalid template returns error",
+			stub:        `{{.InvalidSyntax`,
+			data:        data,
+			expectError: true,
 		},
 	}
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
-			actual := s.defaultCreator.PopulateStub(tc.stub, tc.data)
-			s.Equal(tc.expected, actual)
+			actual, err := s.defaultCreator.PopulateStub(tc.stub, tc.data)
+			if tc.expectError {
+				s.Error(err)
+			} else {
+				s.NoError(err)
+				s.Equal(tc.expected, actual)
+			}
 		})
 	}
 }

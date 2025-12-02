@@ -411,10 +411,13 @@ func isSQLNullType(t reflect.Type) bool {
 	return t.PkgPath() == "database/sql" && strings.HasPrefix(t.Name(), "Null")
 }
 
+// atom is a string builder wrapper for generating Blueprint method chains.
 type atom struct {
 	strings.Builder
 }
 
+// WriteMethod appends a method call with arguments to the builder.
+// Automatically adds a dot prefix if needed for method chaining.
 func (r *atom) WriteMethod(name string, args ...any) {
 	if r.Len() > 0 && r.String()[r.Len()-1] != '.' {
 		r.WriteByte('.')
@@ -425,12 +428,14 @@ func (r *atom) WriteMethod(name string, args ...any) {
 		if i > 0 {
 			r.WriteString(", ")
 		}
-		r.writeValue(arg)
+		r.WriteValue(arg)
 	}
 	r.WriteByte(')')
 }
 
-func (r *atom) writeValue(v any) {
+// WriteValue formats and writes a single value to the builder.
+// Handles strings, integers, floats, booleans, nil, and slices.
+func (r *atom) WriteValue(v any) {
 	switch val := v.(type) {
 	case nil:
 		r.WriteString("nil")
@@ -450,7 +455,7 @@ func (r *atom) writeValue(v any) {
 			if i > 0 {
 				r.WriteString(", ")
 			}
-			r.writeValue(item)
+			r.WriteValue(item)
 		}
 		r.WriteByte('}')
 	default:
