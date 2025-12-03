@@ -8,9 +8,11 @@ import (
 	contractsmigration "github.com/goravel/framework/contracts/database/migration"
 	"github.com/goravel/framework/contracts/database/orm"
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/collect"
 	"github.com/goravel/framework/support/color"
 	supportfile "github.com/goravel/framework/support/file"
+	"github.com/goravel/framework/support/str"
 )
 
 type Migrator struct {
@@ -29,16 +31,42 @@ func NewMigrator(artisan console.Artisan, schema contractsschema.Schema, table s
 	}
 }
 
-func (r *Migrator) Create(name string) (string, error) {
+func (r *Migrator) Create(name string, modelName string) (string, error) {
 	table, create := TableGuesser{}.Guess(name)
+
+	var schemaFields []string
+	if modelName != "" {
+		model := r.schema.GetModel(modelName)
+		if model == nil {
+			return "", errors.SchemaModelNotFound.Args(modelName)
+		}
+
+		var err error
+		table, schemaFields, err = Generate(model)
+		if err != nil {
+			return "", err
+		}
+	}
 
 	stub := r.creator.GetStub(table, create)
 
 	// Prepend timestamp to the file name.
 	fileName := r.creator.GetFileName(name)
 
-	// Create the up.sql file.
-	if err := supportfile.PutContent(r.creator.GetPath(fileName), r.creator.PopulateStub(stub, fileName, table)); err != nil {
+	templateData := StubData{
+		Table:        table,
+		Package:      "migrations",
+		Signature:    fileName,
+		StructName:   str.Of(fileName).Prepend("m_").Studly().String(),
+		SchemaFields: schemaFields,
+	}
+
+	content, err := r.creator.PopulateStub(stub, templateData)
+	if err != nil {
+		return "", err
+	}
+
+	if err := supportfile.PutContent(r.creator.GetPath(fileName), content); err != nil {
 		return "", err
 	}
 

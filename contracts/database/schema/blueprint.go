@@ -5,6 +5,42 @@ import (
 	"github.com/goravel/framework/contracts/database/orm"
 )
 
+const (
+	MethodBigIncrements = "BigIncrements"
+	MethodBigInteger    = "BigInteger"
+	MethodBinary        = "Binary"
+	MethodBoolean       = "Boolean"
+	MethodComment       = "Comment"
+	MethodDate          = "Date"
+	MethodDecimal       = "Decimal"
+	MethodDefault       = "Default"
+	MethodDouble        = "Double"
+	MethodEnum          = "Enum"
+	MethodFloat         = "Float"
+	MethodIncrements    = "Increments"
+	MethodInteger       = "Integer"
+	MethodJson          = "Json"
+	MethodJsonb         = "Jsonb"
+	MethodNullable      = "Nullable"
+	MethodPlaces        = "Places"
+	MethodSmallInteger  = "SmallInteger"
+	MethodString        = "String"
+	MethodText          = "Text"
+	MethodTime          = "Time"
+	MethodTimestamp     = "Timestamp"
+	MethodTimestampTz   = "TimestampTz"
+	MethodTinyInteger   = "TinyInteger"
+	MethodTotal         = "Total"
+	MethodUlid          = "Ulid"
+	MethodUnsigned      = "Unsigned"
+	MethodUuid          = "Uuid"
+
+	MethodUnsignedBigInteger   = "UnsignedBigInteger"
+	MethodUnsignedInteger      = "UnsignedInteger"
+	MethodUnsignedSmallInteger = "UnsignedSmallInteger"
+	MethodUnsignedTinyInteger  = "UnsignedTinyInteger"
+)
+
 type Blueprint interface {
 	// BigIncrements Create a new auto-incrementing big integer (8-byte) column on the table.
 	BigIncrements(column string) driver.ColumnDefinition

@@ -2,7 +2,6 @@ package migration
 
 import (
 	"fmt"
-
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/database/migration"
@@ -39,30 +38,38 @@ func (r *MigrateMakeCommand) Description() string {
 func (r *MigrateMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
+		Flags: []command.Flag{
+			&command.StringFlag{
+				Name:    "model",
+				Aliases: []string{"m"},
+				Usage:   "The model name to use for generating the migration schema",
+			},
+		},
 	}
 }
 
-// Handle Execute the console command.
+// Handle Executes the console command.
 func (r *MigrateMakeCommand) Handle(ctx console.Context) error {
-	make, err := supportconsole.NewMake(ctx, "migration", ctx.Argument(0), support.Config.Paths.Migration)
+	makeMigration, err := supportconsole.NewMake(ctx, "migration", ctx.Argument(0), support.Config.Paths.Migration)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
+	modelName := ctx.Option("model")
 
-	fileName, err := r.migrator.Create(make.GetName())
+	fileName, err := r.migrator.Create(makeMigration.GetName(), modelName)
 	if err != nil {
 		ctx.Error(errors.MigrationCreateFailed.Args(err).Error())
 		return nil
 	}
 
-	ctx.Success(fmt.Sprintf("Created Migration: %s", make.GetName()))
+	ctx.Success(fmt.Sprintf("Created Migration: %s", makeMigration.GetName()))
 
 	structName := str.Of(fileName).Prepend("m_").Studly().String()
 	if env.IsBootstrapSetup() {
-		err = modify.AddMigration(make.GetPackageImportPath(), fmt.Sprintf("&%s.%s{}", make.GetPackageName(), structName))
+		err = modify.AddMigration(makeMigration.GetPackageImportPath(), fmt.Sprintf("&%s.%s{}", makeMigration.GetPackageName(), structName))
 	} else {
-		err = r.registerInKernel(make.GetPackageImportPath(), structName)
+		err = r.registerInKernel(makeMigration.GetPackageImportPath(), structName)
 	}
 
 	if err != nil {
