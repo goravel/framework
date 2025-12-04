@@ -8,7 +8,6 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support"
@@ -85,32 +84,6 @@ func (r *MakeCommand) getStub() string {
 	return Stubs{}.Command()
 }
 
-func (r *MakeCommand) initKernel() error {
-	kernelPath := filepath.Join("app", "console", "kernel.go")
-	if !file.Exists(kernelPath) {
-		// Create the console kernel file if it does not exist.
-		if err := file.PutContent(kernelPath, Stubs{}.Kernel()); err != nil {
-			return err
-		}
-	}
-
-	// Modify the AppServiceProvider to register the console kernel.
-	appServiceProviderPath := filepath.Join("app", "providers", "app_service_provider.go")
-	registerCommands := "facades.Artisan().Register(console.Kernel{}.Commands())"
-	if !file.Contain(appServiceProviderPath, registerCommands) {
-		moduleName := packages.GetModuleName()
-		facadesImport := fmt.Sprintf("%s/app/facades", moduleName)
-		consoleImport := fmt.Sprintf("%s/app/console", moduleName)
-
-		return modify.GoFile(appServiceProviderPath).
-			Find(match.Imports()).Modify(modify.AddImport(facadesImport)).
-			Find(match.Imports()).Modify(modify.AddImport(consoleImport)).
-			Find(match.RegisterFunc()).Modify(modify.Add(registerCommands)).Apply()
-	}
-
-	return nil
-}
-
 // populateStub Populate the place-holders in the command stub.
 func (r *MakeCommand) populateStub(stub string, packageName, structName, signature string) string {
 	stub = strings.ReplaceAll(stub, "DummyCommand", structName)
@@ -121,10 +94,6 @@ func (r *MakeCommand) populateStub(stub string, packageName, structName, signatu
 }
 
 func (r *MakeCommand) registerInKernel(make *supportconsole.Make) error {
-	if err := r.initKernel(); err != nil {
-		return err
-	}
-
 	if err := modify.GoFile(filepath.Join("app", "console", "kernel.go")).
 		Find(match.Imports()).Modify(modify.AddImport(make.GetPackageImportPath())).
 		Find(match.Commands()).Modify(modify.Register(fmt.Sprintf("&%s.%s{}", make.GetPackageName(), make.GetStructName()))).

@@ -1,11 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/goravel/framework/packages"
-	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support/path"
 )
@@ -13,20 +11,12 @@ import (
 func main() {
 	stubs := Stubs{}
 	grpcFacade := "Grpc"
-	appServiceProviderPath := path.App("providers", "app_service_provider.go")
 	configPath := path.Config("grpc.go")
 	facadePath := path.Facades("grpc.go")
 	kernelPath := path.App("grpc", "kernel.go")
 	routesPath := path.Base("routes", "grpc.go")
-	moduleName := packages.GetModuleNameFromArgs(os.Args)
 	grpcServiceProvider := "&grpc.ServiceProvider{}"
-	unaryServerInterceptors := "facades.Grpc().UnaryServerInterceptors(grpc.Kernel{}.UnaryServerInterceptors())"
-	unaryClientInterceptorGroups := "facades.Grpc().UnaryClientInterceptorGroups(grpc.Kernel{}.UnaryClientInterceptorGroups())"
-	routesGrpc := "routes.Grpc()"
 	modulePath := packages.GetModulePath()
-	facadesImport := fmt.Sprintf("%s/app/facades", moduleName)
-	grpcImport := fmt.Sprintf("%s/app/grpc", moduleName)
-	routesImport := fmt.Sprintf("%s/routes", moduleName)
 	env := `
 GRPC_HOST=
 GRPC_PORT=
@@ -42,15 +32,6 @@ GRPC_PORT=
 			modify.File(routesPath).Overwrite(stubs.Routes()),
 			modify.File(kernelPath).Overwrite(stubs.Kernel()),
 
-			// Modify app/providers/app_service_provider.go to register the gRPC interceptors and routes
-			modify.GoFile(appServiceProviderPath).
-				Find(match.Imports()).Modify(modify.AddImport(facadesImport)).
-				Find(match.Imports()).Modify(modify.AddImport(grpcImport)).
-				Find(match.Imports()).Modify(modify.AddImport(routesImport)).
-				Find(match.RegisterFunc()).Modify(modify.Add(unaryServerInterceptors)).
-				Find(match.RegisterFunc()).Modify(modify.Add(unaryClientInterceptorGroups)).
-				Find(match.BootFunc()).Modify(modify.Add(routesGrpc)),
-
 			// Register the Grpc facade
 			modify.WhenFacade(grpcFacade, modify.File(facadePath).Overwrite(stubs.GrpcFacade())),
 
@@ -62,15 +43,6 @@ GRPC_PORT=
 			modify.WhenNoFacades([]string{grpcFacade},
 				// Remove the gRPC service provider from the providers array in bootstrap/providers.go
 				modify.RemoveProviderApply(modulePath, grpcServiceProvider),
-
-				// Modify app/providers/app_service_provider.go to unregister the gRPC interceptors and routes
-				modify.GoFile(appServiceProviderPath).
-					Find(match.RegisterFunc()).Modify(modify.Remove(unaryServerInterceptors)).
-					Find(match.RegisterFunc()).Modify(modify.Remove(unaryClientInterceptorGroups)).
-					Find(match.BootFunc()).Modify(modify.Remove(routesGrpc)).
-					Find(match.Imports()).Modify(modify.RemoveImport(facadesImport)).
-					Find(match.Imports()).Modify(modify.RemoveImport(grpcImport)).
-					Find(match.Imports()).Modify(modify.RemoveImport(routesImport)),
 
 				// Remove config/grpc.go, app/grpc/kernel.go, routes/grpc.go
 				modify.File(configPath).Remove(),
