@@ -261,6 +261,54 @@ func (_c *ApplicationBuilder_WithEvents_Call) RunAndReturn(run func(map[event.Ev
 	return _c
 }
 
+// WithFilters provides a mock function with given fields: filters
+func (_m *ApplicationBuilder) WithFilters(filters []validation.Filter) foundation.ApplicationBuilder {
+	ret := _m.Called(filters)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithFilters")
+	}
+
+	var r0 foundation.ApplicationBuilder
+	if rf, ok := ret.Get(0).(func([]validation.Filter) foundation.ApplicationBuilder); ok {
+		r0 = rf(filters)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(foundation.ApplicationBuilder)
+		}
+	}
+
+	return r0
+}
+
+// ApplicationBuilder_WithFilters_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithFilters'
+type ApplicationBuilder_WithFilters_Call struct {
+	*mock.Call
+}
+
+// WithFilters is a helper method to define mock.On call
+//   - filters []validation.Filter
+func (_e *ApplicationBuilder_Expecter) WithFilters(filters interface{}) *ApplicationBuilder_WithFilters_Call {
+	return &ApplicationBuilder_WithFilters_Call{Call: _e.mock.On("WithFilters", filters)}
+}
+
+func (_c *ApplicationBuilder_WithFilters_Call) Run(run func(filters []validation.Filter)) *ApplicationBuilder_WithFilters_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].([]validation.Filter))
+	})
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithFilters_Call) Return(_a0 foundation.ApplicationBuilder) *ApplicationBuilder_WithFilters_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithFilters_Call) RunAndReturn(run func([]validation.Filter) foundation.ApplicationBuilder) *ApplicationBuilder_WithFilters_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // WithGrpcClientInterceptors provides a mock function with given fields: groupToInterceptors
 func (_m *ApplicationBuilder) WithGrpcClientInterceptors(groupToInterceptors map[string][]grpc.UnaryClientInterceptor) foundation.ApplicationBuilder {
 	ret := _m.Called(groupToInterceptors)

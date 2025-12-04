@@ -12,6 +12,7 @@ import (
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support"
 	supportconsole "github.com/goravel/framework/support/console"
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )
@@ -58,11 +59,14 @@ func (r *FilterMakeCommand) Handle(ctx console.Context) error {
 
 	ctx.Success("Filter created successfully")
 
-	if err = modify.GoFile(filepath.Join("app", "providers", "validation_service_provider.go")).
-		Find(match.Imports()).Modify(modify.AddImport(m.GetPackageImportPath())).
-		Find(match.ValidationFilters()).Modify(modify.Register(fmt.Sprintf("&%s.%s{}", m.GetPackageName(), m.GetStructName()))).
-		Apply(); err != nil {
-		ctx.Warning(errors.ValidationFilterRegisterFailed.Args(err).Error())
+	if env.IsBootstrapSetup() {
+		err = modify.AddFilter(m.GetPackageImportPath(), fmt.Sprintf("&%s.%s{}", m.GetPackageName(), m.GetStructName()))
+	} else {
+		err = r.registerInKernel(m)
+	}
+
+	if err != nil {
+		ctx.Error(errors.ValidationFilterRegisterFailed.Args(err).Error())
 		return nil
 	}
 
@@ -82,4 +86,11 @@ func (r *FilterMakeCommand) populateStub(stub string, packageName, structName, s
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 
 	return stub
+}
+
+func (r *FilterMakeCommand) registerInKernel(m *supportconsole.Make) error {
+	return modify.GoFile(filepath.Join("app", "providers", "validation_service_provider.go")).
+		Find(match.Imports()).Modify(modify.AddImport(m.GetPackageImportPath())).
+		Find(match.ValidationFilters()).Modify(modify.Register(fmt.Sprintf("&%s.%s{}", m.GetPackageName(), m.GetStructName()))).
+		Apply()
 }
