@@ -13,7 +13,6 @@ func main() {
 	grpcFacade := "Grpc"
 	configPath := path.Config("grpc.go")
 	facadePath := path.Facades("grpc.go")
-	kernelPath := path.App("grpc", "kernel.go")
 	routesPath := path.Base("routes", "grpc.go")
 	grpcServiceProvider := "&grpc.ServiceProvider{}"
 	modulePath := packages.GetModulePath()
@@ -27,10 +26,9 @@ GRPC_PORT=
 			// Add the grpc service provider to the providers array in bootstrap/providers.go
 			modify.AddProviderApply(modulePath, grpcServiceProvider),
 
-			// Create config/grpc.go, app/grpc/kernel.go, routes/grpc.go
+			// Create config/grpc.go, routes/grpc.go
 			modify.File(configPath).Overwrite(stubs.Config(packages.GetModuleNameFromArgs(os.Args))),
 			modify.File(routesPath).Overwrite(stubs.Routes()),
-			modify.File(kernelPath).Overwrite(stubs.Kernel()),
 
 			// Register the Grpc facade
 			modify.WhenFacade(grpcFacade, modify.File(facadePath).Overwrite(stubs.GrpcFacade())),
@@ -44,9 +42,8 @@ GRPC_PORT=
 				// Remove the gRPC service provider from the providers array in bootstrap/providers.go
 				modify.RemoveProviderApply(modulePath, grpcServiceProvider),
 
-				// Remove config/grpc.go, app/grpc/kernel.go, routes/grpc.go
+				// Remove config/grpc.go, routes/grpc.go
 				modify.File(configPath).Remove(),
-				modify.File(kernelPath).Remove(),
 				modify.File(routesPath).Remove(),
 			),
 
