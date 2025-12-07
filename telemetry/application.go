@@ -11,6 +11,7 @@ import (
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/telemetry"
+	"github.com/goravel/framework/errors"
 )
 
 var _ telemetry.Telemetry = (*Application)(nil)
@@ -122,7 +123,7 @@ func (r *Application) createExporter(ctx context.Context, exporterName string) (
 	case exporterConsole:
 		return newConsoleTraceExporter(consoleExporterConfig{prettyPrint: true})
 	default:
-		return nil, nil
+		return nil, errors.TelemetryUnsupportedDriver.Args(driver)
 	}
 }
 

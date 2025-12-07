@@ -99,7 +99,7 @@ func TestNewApplication(t *testing.T) {
 			expectTracer: true,
 		},
 		{
-			name: "unknown exporter returns app without tracer provider",
+			name: "unknown exporter returns error",
 			setupMock: func(cfg *configmocks.Config) {
 				cfg.EXPECT().GetString(configPropagators.String()).Return("")
 				cfg.EXPECT().GetString(configTracesExporter.String()).Return("unknown")
@@ -108,13 +108,9 @@ func TestNewApplication(t *testing.T) {
 				cfg.EXPECT().GetString(configServiceVersion.String()).Return("")
 				cfg.EXPECT().GetString(configEnvironment.String()).Return("")
 
-				cfg.EXPECT().Get(configTracesSamplerRatio.String(), defaultRatio).Return(defaultRatio)
-				cfg.EXPECT().GetString(configTracesSamplerType.String(), "always_on").Return("always_on")
-				cfg.EXPECT().GetBool(configTracesSamplerParent.String(), true).Return(true)
-
 				cfg.EXPECT().GetString(configExporterDriver.With("unknown"), "unknown").Return("unknown")
 			},
-			expectTracer: false,
+			expectError: true,
 		},
 	}
 
@@ -389,12 +385,12 @@ func TestApplication_createExporter(t *testing.T) {
 			expectNil: false,
 		},
 		{
-			name:         "returns nil for unknown exporter",
+			name:         "returns error for unknown exporter",
 			exporterName: "unknown",
 			setupMock: func(cfg *configmocks.Config) {
 				cfg.EXPECT().GetString(configExporterDriver.With("unknown"), "unknown").Return("unknown")
 			},
-			expectNil: true,
+			expectError: true,
 		},
 		{
 			name:         "uses custom driver from config",

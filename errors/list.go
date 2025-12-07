@@ -212,6 +212,8 @@ var (
 	TemplateFailedToParse         = New("failed to parse template: %v")
 	TemplateFailedToFormateGoCode = New("failed to format go code: %v")
 
+	TelemetryUnsupportedDriver = New("unsupported telemetry exporter driver: %s").SetModule(ModuleTelemetry)
+
 	TestingImageBuildFailed   = New("init %s docker error: %v")
 	TestingImageNoContainerId = New("no container id return when creating %s docker")
 	TestingImageStopFailed    = New("stop %s docker error: %v")
