@@ -25,5 +25,6 @@ var (
 	ModuleSchema     = "schema"
 	ModuleSchedule   = "schedule"
 	ModuleSession    = "session"
+	ModuleTelemetry  = "telemetry"
 	ModuleTesting    = "testing"
 )

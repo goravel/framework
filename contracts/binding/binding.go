@@ -25,6 +25,7 @@ const (
 	Seeder      = "goravel.seeder"
 	Session     = "goravel.session"
 	Storage     = "goravel.storage"
+	Telemetry   = "goravel.telemetry"
 	Testing     = "goravel.testing"
 	Validation  = "goravel.validation"
 	View        = "goravel.view"
@@ -364,6 +365,13 @@ var (
 					Description: "a high-performance, S3-compatible object storage solution",
 					Package:     "github.com/goravel/minio",
 				},
+			},
+		},
+		Telemetry: {
+			Description: "Provides distributed tracing with OpenTelemetry.",
+			PkgPath:     "github.com/goravel/framework/telemetry",
+			Dependencies: []string{
+				Config,
 			},
 		},
 		Testing: {
