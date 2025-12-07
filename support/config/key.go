@@ -8,8 +8,8 @@ import "fmt"
 // Example:
 //
 //	const (
-//	    ConfigServiceName configKey = "app.name"                    // no placeholder
-//	    ConfigExporter    configKey = "telemetry.exporters.%s.driver" // with placeholder
+//	    ConfigServiceName Key = "app.name"                    // no placeholder
+//	    ConfigExporter    Key = "telemetry.exporters.%s.driver" // with placeholder
 //	)
 //
 //	cfg.GetString(ConfigServiceName.String())

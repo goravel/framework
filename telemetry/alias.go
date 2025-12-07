@@ -1,6 +1,8 @@
 package telemetry
 
 import (
+	"net/http"
+
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/propagation"
@@ -49,7 +51,7 @@ var (
 
 // Propagation carriers for context propagation.
 var (
-	PropagationHeaderCarrier = func(h map[string][]string) propagation.HeaderCarrier {
+	PropagationHeaderCarrier = func(h http.Header) propagation.HeaderCarrier {
 		return propagation.HeaderCarrier(h)
 	}
 	PropagationMapCarrier = func(m map[string]string) propagation.MapCarrier {
