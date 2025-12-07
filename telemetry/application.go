@@ -30,17 +30,6 @@ func NewApplication(cfg config.Config) (*Application, error) {
 	return r, nil
 }
 
-func (r *Application) Tracer(name string, opts ...trace.TracerOption) trace.Tracer {
-	return r.TracerProvider().Tracer(name, opts...)
-}
-
-func (r *Application) TracerProvider() trace.TracerProvider {
-	if r.tracerProvider == nil {
-		return tracenoop.NewTracerProvider()
-	}
-	return r.tracerProvider
-}
-
 func (r *Application) Propagator() propagation.TextMapPropagator {
 	if r.propagator == nil {
 		return defaultCompositePropagator
@@ -53,6 +42,17 @@ func (r *Application) Shutdown(ctx context.Context) error {
 		return tp.Shutdown(ctx)
 	}
 	return nil
+}
+
+func (r *Application) Tracer(name string, opts ...trace.TracerOption) trace.Tracer {
+	return r.TracerProvider().Tracer(name, opts...)
+}
+
+func (r *Application) TracerProvider() trace.TracerProvider {
+	if r.tracerProvider == nil {
+		return tracenoop.NewTracerProvider()
+	}
+	return r.tracerProvider
 }
 
 func (r *Application) init() error {

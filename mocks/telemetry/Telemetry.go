@@ -6,6 +6,7 @@ import (
 	context "context"
 
 	mock "github.com/stretchr/testify/mock"
+	propagation "go.opentelemetry.io/otel/propagation"
 
 	trace "go.opentelemetry.io/otel/trace"
 )
@@ -21,6 +22,53 @@ type Telemetry_Expecter struct {
 
 func (_m *Telemetry) EXPECT() *Telemetry_Expecter {
 	return &Telemetry_Expecter{mock: &_m.Mock}
+}
+
+// Propagator provides a mock function with no fields
+func (_m *Telemetry) Propagator() propagation.TextMapPropagator {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Propagator")
+	}
+
+	var r0 propagation.TextMapPropagator
+	if rf, ok := ret.Get(0).(func() propagation.TextMapPropagator); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(propagation.TextMapPropagator)
+		}
+	}
+
+	return r0
+}
+
+// Telemetry_Propagator_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Propagator'
+type Telemetry_Propagator_Call struct {
+	*mock.Call
+}
+
+// Propagator is a helper method to define mock.On call
+func (_e *Telemetry_Expecter) Propagator() *Telemetry_Propagator_Call {
+	return &Telemetry_Propagator_Call{Call: _e.mock.On("Propagator")}
+}
+
+func (_c *Telemetry_Propagator_Call) Run(run func()) *Telemetry_Propagator_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Telemetry_Propagator_Call) Return(_a0 propagation.TextMapPropagator) *Telemetry_Propagator_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Telemetry_Propagator_Call) RunAndReturn(run func() propagation.TextMapPropagator) *Telemetry_Propagator_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // Shutdown provides a mock function with given fields: ctx
