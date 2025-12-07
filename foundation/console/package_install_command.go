@@ -323,7 +323,7 @@ func getAvailableFacades(bindings map[string]contractsbinding.Info) []string {
 
 	slices.Sort(availableFacades)
 
-	// Make sure "Route" facade is listed first, let the enviroment variables in .env.example be set up before other facades.
+	// Make sure "Route" facade is listed first, let the environment variables in .env.example be set up before other facades.
 	targetIndex := -1
 	for i, v := range availableFacades {
 		if v == facades.Route {
