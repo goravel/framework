@@ -354,6 +354,21 @@ func MustParseExpr(x string) (node dst.Node) {
 	return WrapNewline(expr)
 }
 
+func RemoveMigration(pkg, migration string) error {
+	config := withSliceConfig{
+		fileName:       "migrations.go",
+		withMethodName: "WithMigrations",
+		helperFuncName: "Migrations",
+		typePackage:    "schema",
+		typeName:       "Migration",
+		typeImportPath: "github.com/goravel/framework/contracts/database/schema",
+		matcherFunc:    match.Migrations,
+	}
+
+	handler := newWithSliceHandler(config)
+	return handler.RemoveItem(pkg, migration)
+}
+
 // RemoveProvider removes a service provider from the foundation.Setup() chain in the Boot function.
 func RemoveProvider(pkg, provider string) error {
 	config := withSliceConfig{
