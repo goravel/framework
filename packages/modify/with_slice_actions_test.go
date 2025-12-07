@@ -106,6 +106,46 @@ func Commands() []console.Command {
 	})
 }
 
+func (s *WithSliceHandlerTestSuite) TestAddItem_NoFoundationSetup() {
+	config := withSliceConfig{
+		fileName:        "commands.go",
+		withMethodName:  "WithCommands",
+		helperFuncName:  "Commands",
+		typePackage:     "console",
+		typeName:        "Command",
+		typeImportPath:  "github.com/goravel/framework/contracts/console",
+		fileExistsError: errors.PackageCommandsFileExists,
+		stubTemplate:    commands,
+		matcherFunc:     match.Commands,
+	}
+
+	// Create app.go file WITHOUT foundation.Setup()
+	s.Require().NoError(supportfile.PutContent(s.appFile, `package bootstrap
+
+import "goravel/config"
+
+func Boot() {
+	config.Boot()
+}
+`))
+
+	handler := newWithSliceHandler(config)
+	err := handler.AddItem("goravel/app/console/commands", "&commands.ExampleCommand{}")
+
+	// Should return nil (no-op) when foundation.Setup() doesn't exist
+	s.NoError(err)
+
+	// Verify app.go was NOT modified
+	appResult, err := supportfile.GetContent(s.appFile)
+	s.NoError(err)
+	s.NotContains(appResult, "WithCommands")
+	s.NotContains(appResult, "Commands()")
+
+	// Verify commands.go was NOT created
+	commandsFile := filepath.Join(s.bootstrapDir, "commands.go")
+	s.False(supportfile.Exists(commandsFile))
+}
+
 func (s *WithSliceHandlerTestSuite) TestAddItem_NoWithMethod_NoFile() {
 	config := withSliceConfig{
 		fileName:        "commands.go",
@@ -925,6 +965,34 @@ func Boot() {
 		s.NoError(err)
 		s.NotContains(appResult, "&commands.OnlyCommand{}")
 		s.NotContains(appResult, `"goravel/app/console/commands"`)
+	})
+
+	s.Run("NoFoundationSetup", func() {
+		defer func() {
+			s.NoError(supportfile.Remove(s.bootstrapDir))
+		}()
+
+		// Create app.go file WITHOUT foundation.Setup()
+		appContent := `package bootstrap
+
+import "goravel/config"
+
+func Boot() {
+	config.Boot()
+}
+`
+		s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
+
+		handler := newWithSliceHandler(config)
+		err := handler.RemoveItem("goravel/app/console/commands", "&commands.ExampleCommand{}")
+
+		// Should return nil (no-op) when foundation.Setup() doesn't exist
+		s.NoError(err)
+
+		// Verify app.go was NOT modified
+		appResult, err := supportfile.GetContent(s.appFile)
+		s.NoError(err)
+		s.Equal(appContent, appResult)
 	})
 }
 
@@ -1989,6 +2057,37 @@ func Boot() {
 	}
 }
 
+func (s *WithSliceHandlerTestSuite) TestAddItem_AlwaysInline_NoFoundationSetup() {
+	config := withSliceConfig{
+		withMethodName: "WithRouting",
+		alwaysInline:   true,
+		isFuncSlice:    true,
+	}
+
+	// Create app.go file WITHOUT foundation.Setup()
+	appContent := `package bootstrap
+
+import "goravel/config"
+
+func Boot() {
+	config.Boot()
+}
+`
+	s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
+
+	handler := newWithSliceHandler(config)
+	err := handler.AddItem("goravel/routes", "routes.Web")
+
+	// Should return nil (no-op) when foundation.Setup() doesn't exist
+	s.NoError(err)
+
+	// Verify app.go was NOT modified
+	appResult, err := supportfile.GetContent(s.appFile)
+	s.NoError(err)
+	s.NotContains(appResult, "WithRouting")
+	s.NotContains(appResult, "routes.Web")
+}
+
 func (s *WithSliceHandlerTestSuite) TestAddItem_AlwaysInline_NoWithMethod() {
 	config := withSliceConfig{
 		withMethodName: "WithRouting",
@@ -2234,6 +2333,34 @@ func Boot() {
 
 		// Should return nil when WithMethod doesn't exist
 		s.NoError(err)
+	})
+
+	s.Run("NoFoundationSetup", func() {
+		defer func() {
+			s.NoError(supportfile.Remove(s.bootstrapDir))
+		}()
+
+		// Create app.go file WITHOUT foundation.Setup()
+		appContent := `package bootstrap
+
+import "goravel/config"
+
+func Boot() {
+	config.Boot()
+}
+`
+		s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
+
+		handler := newWithSliceHandler(config)
+		err := handler.RemoveItem("goravel/routes", "routes.Web")
+
+		// Should return nil (no-op) when foundation.Setup() doesn't exist
+		s.NoError(err)
+
+		// Verify app.go was NOT modified
+		appResult, err := supportfile.GetContent(s.appFile)
+		s.NoError(err)
+		s.Equal(appContent, appResult)
 	})
 }
 

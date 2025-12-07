@@ -134,41 +134,44 @@ func newWithSliceHandler(config withSliceConfig) *withSliceHandler {
 //
 // If helper file exists with Rules() function, appends to that function instead.
 func (r *withSliceHandler) AddItem(pkg, item string) error {
-	// Always inline mode (like routing) - never use helper files
-	if r.config.alwaysInline {
-		if err := r.addImports(pkg); err != nil {
-			return err
-		}
-		return GoFile(r.appFilePath).Find(match.FoundationSetup()).Modify(r.setupInline(item)).Apply()
-	}
-
-	// Helper file mode (like commands/migrations)
-	withMethodExists, err := r.checkWithMethodExists()
+	// Check if foundation.Setup() exists in app.go before performing any actions
+	hasFoundationSetup, err := r.containsFoundationSetupInAppFile()
 	if err != nil {
 		return err
 	}
-
-	if !withMethodExists {
-		if r.fileExists {
-			return r.config.fileExistsError
-		}
-
-		if err := r.createFile(); err != nil {
-			return err
-		}
-
-		if err := r.addItemToFile(pkg, item); err != nil {
-			return err
-		}
-
-		return GoFile(r.appFilePath).Find(match.FoundationSetup()).Modify(r.setupWithFunction()).Apply()
+	if !hasFoundationSetup {
+		return nil
 	}
 
-	if r.fileExists {
-		if err := r.addItemToFile(pkg, item); err != nil {
+	if !r.config.alwaysInline {
+		// Helper file mode (like commands/migrations)
+		withMethodExists, err := r.checkWithMethodExists()
+		if err != nil {
 			return err
 		}
-		return nil
+
+		if !withMethodExists {
+			if r.fileExists {
+				return r.config.fileExistsError
+			}
+
+			if err := r.createFile(); err != nil {
+				return err
+			}
+
+			if err := r.addItemToFile(pkg, item); err != nil {
+				return err
+			}
+
+			return GoFile(r.appFilePath).Find(match.FoundationSetup()).Modify(r.setupWithFunction()).Apply()
+		}
+
+		if r.fileExists {
+			if err := r.addItemToFile(pkg, item); err != nil {
+				return err
+			}
+			return nil
+		}
 	}
 
 	if err := r.addImports(pkg); err != nil {
@@ -186,6 +189,15 @@ func (r *withSliceHandler) AddItem(pkg, item string) error {
 //   - If the helper file doesn't exist, it removes the item from the inline array in app.go
 //   - Cleans up unused imports after removing the item
 func (r *withSliceHandler) RemoveItem(pkg, item string) error {
+	// Check if foundation.Setup() exists in app.go before performing any actions
+	hasFoundationSetup, err := r.containsFoundationSetupInAppFile()
+	if err != nil {
+		return err
+	}
+	if !hasFoundationSetup {
+		return nil
+	}
+
 	withMethodExists, err := r.checkWithMethodExists()
 	if err != nil {
 		return err
@@ -228,6 +240,21 @@ func (r *withSliceHandler) checkWithMethodExists() (bool, error) {
 	}
 
 	return strings.Contains(content, r.config.withMethodName), nil
+}
+
+// containsFoundationSetupInAppFile checks if foundation.Setup() exists in the app file.
+//
+// This check is performed at the start of AddItem to ensure no actions are taken
+// if the foundation.Setup() call doesn't exist in the file.
+//
+// Returns true if "foundation.Setup()" is found in the app file content.
+func (r *withSliceHandler) containsFoundationSetupInAppFile() (bool, error) {
+	content, err := supportfile.GetContent(r.appFilePath)
+	if err != nil {
+		return false, err
+	}
+
+	return strings.Contains(content, "foundation.Setup()"), nil
 }
 
 // createFile creates the file with the helper function.
