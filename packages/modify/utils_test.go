@@ -2254,6 +2254,223 @@ func Providers() []foundation.ServiceProvider {
 	}
 }
 
+func TestAddRoute(t *testing.T) {
+	tests := []struct {
+		name              string
+		appContent        string
+		pkg               string
+		route             string
+		expectedApp       string
+		wantErr           bool
+		expectedErrString string
+	}{
+		{
+			name: "add route when WithRouting doesn't exist",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().WithConfig(config.Boot).Run()
+}
+`,
+			pkg:   "goravel/routes",
+			route: "routes.Web",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+	"goravel/routes"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRouting([]func(){
+			routes.Web,
+		}).WithConfig(config.Boot).Run()
+}
+`,
+		},
+		{
+			name: "add route when WithRouting exists with empty slice",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+	"goravel/routes"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRouting([]func(){}).WithConfig(config.Boot).Run()
+}
+`,
+			pkg:   "goravel/routes",
+			route: "routes.Web",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+	"goravel/routes"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRouting([]func(){
+			routes.Web,
+		}).WithConfig(config.Boot).Run()
+}
+`,
+		},
+		{
+			name: "add route when WithRouting exists with existing routes",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+	"goravel/routes"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRouting([]func(){
+			routes.Web,
+		}).WithConfig(config.Boot).Run()
+}
+`,
+			pkg:   "goravel/routes",
+			route: "routes.Api",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+	"goravel/routes"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRouting([]func(){
+			routes.Web,
+			routes.Api,
+		}).WithConfig(config.Boot).Run()
+}
+`,
+		},
+		{
+			name: "add route with different package",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+	"goravel/routes"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRouting([]func(){
+			routes.Web,
+		}).WithConfig(config.Boot).Run()
+}
+`,
+			pkg:   "goravel/app/routes",
+			route: "routes.Admin",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/app/routes"
+	"goravel/config"
+	"goravel/routes"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRouting([]func(){
+			routes.Web,
+			routes.Admin,
+		}).WithConfig(config.Boot).Run()
+}
+`,
+		},
+		{
+			name: "add route to chain with multiple methods",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithCommands(Commands()).
+		WithConfig(config.Boot).Run()
+}
+`,
+			pkg:   "goravel/routes",
+			route: "routes.Web",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+	"goravel/routes"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRouting([]func(){
+			routes.Web,
+		}).
+		WithCommands(Commands()).
+		WithConfig(config.Boot).Run()
+}
+`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			bootstrapDir := support.Config.Paths.Bootstrap
+			appFile := filepath.Join(bootstrapDir, "app.go")
+
+			require.NoError(t, supportfile.PutContent(appFile, tt.appContent))
+			defer func() {
+				require.NoError(t, supportfile.Remove(bootstrapDir))
+			}()
+
+			err := AddRoute(tt.pkg, tt.route)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.expectedErrString != "" {
+					assert.Contains(t, err.Error(), tt.expectedErrString)
+				}
+			} else {
+				require.NoError(t, err)
+
+				// Verify app.go content
+				appContent, err := supportfile.GetContent(appFile)
+				require.NoError(t, err)
+				assert.Equal(t, tt.expectedApp, appContent)
+
+				// Verify no helper file was created (always inline)
+				routingFile := filepath.Join(bootstrapDir, "routing.go")
+				assert.False(t, supportfile.Exists(routingFile), "routing.go should never be created for routes")
+			}
+		})
+	}
+}
+
 func TestAddRule(t *testing.T) {
 	tests := []struct {
 		name              string

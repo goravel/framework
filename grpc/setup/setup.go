@@ -5,17 +5,20 @@ import (
 
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/packages/modify"
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/path"
 )
 
 func main() {
 	stubs := Stubs{}
-	grpcFacade := "Grpc"
+	routesPath := support.Config.Paths.Routes
+	grpcFunc := routesPath + ".Grpc"
 	configPath := path.Config("grpc.go")
 	facadePath := path.Facades("grpc.go")
-	kernelPath := path.App("grpc", "kernel.go")
-	routesPath := path.Base("routes", "grpc.go")
+	grpcRoutePath := path.Base(routesPath, "grpc.go")
 	grpcServiceProvider := "&grpc.ServiceProvider{}"
+	moduleName := packages.GetModuleNameFromArgs(os.Args)
+	routesPackage := moduleName + "/" + routesPath
 	modulePath := packages.GetModulePath()
 	env := `
 GRPC_HOST=
@@ -27,31 +30,33 @@ GRPC_PORT=
 			// Add the grpc service provider to the providers array in bootstrap/providers.go
 			modify.AddProviderApply(modulePath, grpcServiceProvider),
 
-			// Create config/grpc.go, app/grpc/kernel.go, routes/grpc.go
+			// Create config/grpc.go, routes/grpc.go
 			modify.File(configPath).Overwrite(stubs.Config(packages.GetModuleNameFromArgs(os.Args))),
-			modify.File(routesPath).Overwrite(stubs.Routes()),
-			modify.File(kernelPath).Overwrite(stubs.Kernel()),
+			modify.File(grpcRoutePath).Overwrite(stubs.Routes()),
+
+			// Add the Grpc function to WithRouting
+			modify.AddRouteApply(routesPackage, grpcFunc),
 
 			// Register the Grpc facade
-			modify.WhenFacade(grpcFacade, modify.File(facadePath).Overwrite(stubs.GrpcFacade())),
+			modify.File(facadePath).Overwrite(stubs.GrpcFacade()),
 
 			// Add configurations to the .env and .env.example files
 			modify.WhenFileNotContains(path.Base(".env"), "GRPC_HOST", modify.File(path.Base(".env")).Append(env)),
 			modify.WhenFileNotContains(path.Base(".env.example"), "GRPC_HOST", modify.File(path.Base(".env.example")).Append(env)),
 		).
 		Uninstall(
-			modify.WhenNoFacades([]string{grpcFacade},
-				// Remove the gRPC service provider from the providers array in bootstrap/providers.go
-				modify.RemoveProviderApply(modulePath, grpcServiceProvider),
-
-				// Remove config/grpc.go, app/grpc/kernel.go, routes/grpc.go
-				modify.File(configPath).Remove(),
-				modify.File(kernelPath).Remove(),
-				modify.File(routesPath).Remove(),
-			),
-
 			// Remove the Grpc facade
-			modify.WhenFacade(grpcFacade, modify.File(facadePath).Remove()),
+			modify.File(facadePath).Remove(),
+
+			// Remove the Grpc function from WithRouting
+			modify.RemoveRouteApply(routesPackage, grpcFunc),
+
+			// Remove config/grpc.go, routes/grpc.go
+			modify.File(configPath).Remove(),
+			modify.File(grpcRoutePath).Remove(),
+
+			// Remove the gRPC service provider from the providers array in bootstrap/providers.go
+			modify.RemoveProviderApply(modulePath, grpcServiceProvider),
 		).
 		Execute()
 }

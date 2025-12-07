@@ -3,17 +3,20 @@ package main
 import (
 	"os"
 
-	"github.com/goravel/framework/contracts/facades"
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/packages/modify"
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/path"
 )
 
 func main() {
 	stubs := Stubs{}
+	routesPath := support.Config.Paths.Routes
 	routeFacadePath := path.Facades("route.go")
 	moduleName := packages.GetModuleNameFromArgs(os.Args)
-	routesPath := path.Base("routes", "web.go")
+	routesPackage := moduleName + "/" + routesPath
+	webFunc := routesPath + ".Web"
+	webRoutePath := path.Base(routesPath, "web.go")
 	welcomeTmplPath := path.Base("resources", "views", "welcome.tmpl")
 	routeServiceProvider := "&route.ServiceProvider{}"
 	modulePath := packages.GetModulePath()
@@ -34,27 +37,31 @@ JWT_SECRET=
 
 			// Create resources/views/welcome.tmpl and routes/web.go
 			modify.File(welcomeTmplPath).Overwrite(stubs.WelcomeTmpl()),
-			modify.File(routesPath).Overwrite(stubs.Routes(moduleName)),
+			modify.File(webRoutePath).Overwrite(stubs.Routes(moduleName)),
+
+			// Add the Web function to WithRouting
+			modify.AddRouteApply(routesPackage, webFunc),
 
 			// Register the Route facade
-			modify.WhenFacade(facades.Route, modify.File(routeFacadePath).Overwrite(stubs.RouteFacade())),
+			modify.File(routeFacadePath).Overwrite(stubs.RouteFacade()),
 
 			// Add configurations to the .env and .env.example files
 			modify.WhenFileNotContains(envPath, "APP_URL", modify.File(envPath).Append(env)),
 			modify.WhenFileNotContains(envExamplePath, "APP_URL", modify.File(envExamplePath).Append(env)),
 		).
 		Uninstall(
-			modify.WhenNoFacades([]string{facades.Route},
-				// Remove resources/views/welcome.tmpl and routes/web.go
-				modify.File(routesPath).Remove(),
-				modify.File(welcomeTmplPath).Remove(),
-
-				// Remove the route service provider from the providers array in bootstrap/providers.go
-				modify.RemoveProviderApply(modulePath, routeServiceProvider),
-			),
-
 			// Remove the Route facade
-			modify.WhenFacade(facades.Route, modify.File(routeFacadePath).Remove()),
+			modify.File(routeFacadePath).Remove(),
+
+			// Remove the Web function from WithRouting
+			modify.RemoveRouteApply(routesPackage, webFunc),
+
+			// Remove resources/views/welcome.tmpl and routes/web.go
+			modify.File(webRoutePath).Remove(),
+			modify.File(welcomeTmplPath).Remove(),
+
+			// Remove the route service provider from the providers array in bootstrap/providers.go
+			modify.RemoveProviderApply(modulePath, routeServiceProvider),
 		).
 		Execute()
 }
