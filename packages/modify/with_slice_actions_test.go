@@ -1988,3 +1988,331 @@ func Boot() {
 		})
 	}
 }
+
+func (s *WithSliceHandlerTestSuite) TestAddItem_AlwaysInline_NoWithMethod() {
+	config := withSliceConfig{
+		withMethodName: "WithRouting",
+		alwaysInline:   true,
+		isFuncSlice:    true,
+	}
+
+	appContent := `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().WithConfig(config.Boot).Run()
+}
+`
+	s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
+
+	handler := newWithSliceHandler(config)
+	err := handler.AddItem("goravel/routes", "routes.Web")
+
+	s.NoError(err)
+
+	// Verify app.go was updated with inline addition
+	appResult, err := supportfile.GetContent(s.appFile)
+	s.NoError(err)
+	s.Contains(appResult, "WithRouting([]func(){")
+	s.Contains(appResult, "routes.Web")
+	s.Contains(appResult, `"goravel/routes"`)
+
+	// Verify no helper file was created
+	routingFile := filepath.Join(s.bootstrapDir, "routing.go")
+	s.False(supportfile.Exists(routingFile))
+}
+
+func (s *WithSliceHandlerTestSuite) TestAddItem_AlwaysInline_WithMethodExists() {
+	config := withSliceConfig{
+		withMethodName: "WithRouting",
+		alwaysInline:   true,
+		isFuncSlice:    true,
+	}
+
+	appContent := `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+	"goravel/routes"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRouting([]func(){
+			routes.Web,
+		}).WithConfig(config.Boot).Run()
+}
+`
+	s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
+
+	handler := newWithSliceHandler(config)
+	err := handler.AddItem("goravel/routes", "routes.Api")
+
+	s.NoError(err)
+
+	// Verify app.go was updated with inline addition
+	appResult, err := supportfile.GetContent(s.appFile)
+	s.NoError(err)
+	s.Contains(appResult, "routes.Web")
+	s.Contains(appResult, "routes.Api")
+
+	// Verify no helper file was created
+	routingFile := filepath.Join(s.bootstrapDir, "routing.go")
+	s.False(supportfile.Exists(routingFile))
+}
+
+func (s *WithSliceHandlerTestSuite) TestCreateWithMethod_FuncSlice() {
+	config := withSliceConfig{
+		withMethodName: "WithRouting",
+		isFuncSlice:    true,
+	}
+
+	handler := newWithSliceHandler(config)
+
+	setupCall := &dst.CallExpr{
+		Fun: &dst.SelectorExpr{
+			X:   &dst.Ident{Name: "foundation"},
+			Sel: &dst.Ident{Name: "Setup"},
+		},
+	}
+
+	parentOfSetup := &dst.SelectorExpr{
+		X:   setupCall,
+		Sel: &dst.Ident{Name: "Run"},
+	}
+
+	itemExpr := &dst.SelectorExpr{
+		X:   &dst.Ident{Name: "routes"},
+		Sel: &dst.Ident{Name: "Web"},
+	}
+
+	handler.createWithMethod(setupCall, parentOfSetup, itemExpr)
+
+	// Verify the chain was modified
+	newWithCall, ok := parentOfSetup.X.(*dst.CallExpr)
+	s.True(ok)
+	s.NotNil(newWithCall)
+
+	withSel, ok := newWithCall.Fun.(*dst.SelectorExpr)
+	s.True(ok)
+	s.Equal("WithRouting", withSel.Sel.Name)
+
+	// Verify the composite literal has []func() type
+	s.Len(newWithCall.Args, 1)
+	compositeLit, ok := newWithCall.Args[0].(*dst.CompositeLit)
+	s.True(ok)
+
+	arrayType, ok := compositeLit.Type.(*dst.ArrayType)
+	s.True(ok)
+
+	funcType, ok := arrayType.Elt.(*dst.FuncType)
+	s.True(ok)
+	s.True(funcType.Func)
+	s.NotNil(funcType.Params)
+
+	s.Len(compositeLit.Elts, 1)
+}
+
+func (s *WithSliceHandlerTestSuite) TestCreateWithMethod_TypedSlice() {
+	config := withSliceConfig{
+		withMethodName: "WithCommands",
+		typePackage:    "console",
+		typeName:       "Command",
+		isFuncSlice:    false,
+	}
+
+	handler := newWithSliceHandler(config)
+
+	setupCall := &dst.CallExpr{
+		Fun: &dst.SelectorExpr{
+			X:   &dst.Ident{Name: "foundation"},
+			Sel: &dst.Ident{Name: "Setup"},
+		},
+	}
+
+	parentOfSetup := &dst.SelectorExpr{
+		X:   setupCall,
+		Sel: &dst.Ident{Name: "Run"},
+	}
+
+	itemExpr := &dst.Ident{Name: "&commands.Command{}"}
+
+	handler.createWithMethod(setupCall, parentOfSetup, itemExpr)
+
+	// Verify the chain was modified
+	newWithCall, ok := parentOfSetup.X.(*dst.CallExpr)
+	s.True(ok)
+	s.NotNil(newWithCall)
+
+	withSel, ok := newWithCall.Fun.(*dst.SelectorExpr)
+	s.True(ok)
+	s.Equal("WithCommands", withSel.Sel.Name)
+
+	// Verify the composite literal has []console.Command type
+	s.Len(newWithCall.Args, 1)
+	compositeLit, ok := newWithCall.Args[0].(*dst.CompositeLit)
+	s.True(ok)
+
+	arrayType, ok := compositeLit.Type.(*dst.ArrayType)
+	s.True(ok)
+
+	selectorExpr, ok := arrayType.Elt.(*dst.SelectorExpr)
+	s.True(ok)
+	s.Equal("console", selectorExpr.X.(*dst.Ident).Name)
+	s.Equal("Command", selectorExpr.Sel.Name)
+
+	s.Len(compositeLit.Elts, 1)
+}
+
+func (s *WithSliceHandlerTestSuite) TestRemoveItem_AlwaysInline() {
+	config := withSliceConfig{
+		withMethodName: "WithRouting",
+		alwaysInline:   true,
+		isFuncSlice:    true,
+	}
+
+	s.Run("RemoveFromExistingRouting", func() {
+		defer func() {
+			s.NoError(supportfile.Remove(s.bootstrapDir))
+		}()
+
+		appContent := `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+	"goravel/routes"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRouting([]func(){
+			routes.Web,
+			routes.Api,
+		}).WithConfig(config.Boot).Run()
+}
+`
+		s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
+
+		handler := newWithSliceHandler(config)
+		err := handler.RemoveItem("goravel/routes", "routes.Web")
+
+		s.NoError(err)
+
+		// Verify app.go was updated
+		appResult, err := supportfile.GetContent(s.appFile)
+		s.NoError(err)
+		s.NotContains(appResult, "routes.Web")
+		s.Contains(appResult, "routes.Api")
+	})
+
+	s.Run("NoWithMethod", func() {
+		defer func() {
+			s.NoError(supportfile.Remove(s.bootstrapDir))
+		}()
+
+		appContent := `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().WithConfig(config.Boot).Run()
+}
+`
+		s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
+
+		handler := newWithSliceHandler(config)
+		err := handler.RemoveItem("goravel/routes", "routes.Web")
+
+		// Should return nil when WithMethod doesn't exist
+		s.NoError(err)
+	})
+}
+
+func (s *WithSliceHandlerTestSuite) TestAddImports_FuncSlice() {
+	config := withSliceConfig{
+		withMethodName: "WithRouting",
+		alwaysInline:   true,
+		isFuncSlice:    true,
+		typeImportPath: "", // No type import for func slices
+	}
+
+	appContent := `package bootstrap
+
+import "github.com/goravel/framework/foundation"
+
+func Boot() {
+	foundation.Setup().Run()
+}
+`
+	s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
+
+	handler := newWithSliceHandler(config)
+	err := handler.addImports("goravel/routes")
+
+	s.NoError(err)
+
+	content, err := supportfile.GetContent(s.appFile)
+	s.NoError(err)
+	s.Contains(content, `"goravel/routes"`)
+	// Should not add any type import since typeImportPath is empty
+	s.NotContains(content, "contracts")
+}
+
+func (s *WithSliceHandlerTestSuite) TestAddItem_AlwaysInline_NeverCreatesHelperFile() {
+	config := withSliceConfig{
+		fileName:       "routing.go", // This should never be created
+		withMethodName: "WithRouting",
+		helperFuncName: "Routing",
+		alwaysInline:   true,
+		isFuncSlice:    true,
+		stubTemplate: func() string {
+			return "THIS SHOULD NEVER BE CREATED"
+		},
+	}
+
+	appContent := `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().WithConfig(config.Boot).Run()
+}
+`
+	s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
+
+	handler := newWithSliceHandler(config)
+
+	// Add first item
+	err := handler.AddItem("goravel/routes", "routes.Web")
+	s.NoError(err)
+
+	// Verify no helper file was created
+	routingFile := filepath.Join(s.bootstrapDir, "routing.go")
+	s.False(supportfile.Exists(routingFile))
+
+	// Add second item
+	err = handler.AddItem("goravel/routes", "routes.Api")
+	s.NoError(err)
+
+	// Verify still no helper file was created
+	s.False(supportfile.Exists(routingFile))
+
+	// Verify both items are in app.go
+	appResult, err := supportfile.GetContent(s.appFile)
+	s.NoError(err)
+	s.Contains(appResult, "routes.Web")
+	s.Contains(appResult, "routes.Api")
+	s.Contains(appResult, "WithRouting([]func(){")
+}

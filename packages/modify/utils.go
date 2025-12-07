@@ -113,6 +113,22 @@ func AddProvider(pkg, provider string) error {
 	return handler.AddItem(pkg, provider)
 }
 
+// AddRoute adds route to the foundation.Setup() chain in the Boot function.
+// Add WithRouting([]func(){}) to foundation.Setup() if not exists.
+// Add pkg to this file imports, and add route to the slice in WithRouting.
+// the pkg is the package path of the route file, e.g., "goravel/routes"
+// the route will be like "routes.Web"
+func AddRoute(pkg, route string) error {
+	config := withSliceConfig{
+		withMethodName: "WithRouting",
+		alwaysInline:   true,
+		isFuncSlice:    true,
+	}
+
+	handler := newWithSliceHandler(config)
+	return handler.AddItem(pkg, route)
+}
+
 // AddRule adds rule to the foundation.Setup() chain in the Boot function.
 func AddRule(pkg, rule string) error {
 	config := withSliceConfig{
@@ -339,47 +355,6 @@ func MustParseExpr(x string) (node dst.Node) {
 }
 
 // RemoveProvider removes a service provider from the foundation.Setup() chain in the Boot function.
-// If providers.go exists, it removes the provider from the Providers() function in that file.
-// If providers.go doesn't exist, it removes the provider from the inline array in app.go.
-// This function also cleans up unused imports after removing the provider.
-//
-// Parameters:
-//   - pkg: Package path of the provider (e.g., "goravel/app/providers")
-//   - provider: Provider expression to remove (e.g., "&providers.AppServiceProvider{}")
-//
-// Example usage:
-//
-//	RemoveProvider("goravel/app/providers", "&providers.AppServiceProvider{}")
-//
-// If providers.go exists with:
-//
-//	func Providers() []foundation.ServiceProvider {
-//	  return []foundation.ServiceProvider{
-//	    &providers.AppServiceProvider{},
-//	    &providers.OtherProvider{},
-//	  }
-//	}
-//
-// After removal:
-//
-//	func Providers() []foundation.ServiceProvider {
-//	  return []foundation.ServiceProvider{
-//	    &providers.OtherProvider{},
-//	  }
-//	}
-//
-// If providers.go doesn't exist and app.go has:
-//
-//	foundation.Setup().WithProviders([]foundation.ServiceProvider{
-//	  &providers.AppServiceProvider{},
-//	  &providers.OtherProvider{},
-//	}).Run()
-//
-// After removal:
-//
-//	foundation.Setup().WithProviders([]foundation.ServiceProvider{
-//	  &providers.OtherProvider{},
-//	}).Run()
 func RemoveProvider(pkg, provider string) error {
 	config := withSliceConfig{
 		fileName:       "providers.go",
@@ -393,6 +368,18 @@ func RemoveProvider(pkg, provider string) error {
 
 	handler := newWithSliceHandler(config)
 	return handler.RemoveItem(pkg, provider)
+}
+
+// RemoveRoute removes a route from the foundation.Setup() chain in the Boot function.
+func RemoveRoute(pkg, route string) error {
+	config := withSliceConfig{
+		withMethodName: "WithRouting",
+		alwaysInline:   true,
+		isFuncSlice:    true,
+	}
+
+	handler := newWithSliceHandler(config)
+	return handler.RemoveItem(pkg, route)
 }
 
 // WrapNewline adds newline decorations to specific AST nodes for better formatting.

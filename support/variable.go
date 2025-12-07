@@ -20,6 +20,7 @@ type Paths struct {
 	Policy     string
 	Provider   string
 	Request    string
+	Routes     string
 	Rule       string
 	Seeder     string
 	Test       string
@@ -61,6 +62,7 @@ var (
 			Policy:     filepath.Join("app", "policies"),
 			Provider:   filepath.Join("app", "providers"),
 			Request:    filepath.Join("app", "http", "requests"),
+			Routes:     "routes",
 			Rule:       filepath.Join("app", "rules"),
 			Seeder:     filepath.Join("database", "seeders"),
 			Test:       "tests",

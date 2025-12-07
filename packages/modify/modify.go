@@ -24,6 +24,12 @@ func AddProviderApply(pkg, provider string) modify.Apply {
 	})
 }
 
+func AddRouteApply(pkg, route string) modify.Apply {
+	return Call(func(_ []modify.Option) error {
+		return AddRoute(pkg, route)
+	})
+}
+
 func Call(fn func(options []modify.Option) error) modify.Apply {
 	return &callModifier{
 		fn: fn,
@@ -41,6 +47,12 @@ func GoFile(file string) modify.GoFile {
 func RemoveProviderApply(pkg, provider string) modify.Apply {
 	return Call(func(_ []modify.Option) error {
 		return RemoveProvider(pkg, provider)
+	})
+}
+
+func RemoveRouteApply(pkg, route string) modify.Apply {
+	return Call(func(_ []modify.Option) error {
+		return RemoveRoute(pkg, route)
 	})
 }
 
