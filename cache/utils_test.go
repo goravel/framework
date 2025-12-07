@@ -3,8 +3,9 @@ package cache
 import (
 	"testing"
 
-	mocksconfig "github.com/goravel/framework/mocks/config"
 	"github.com/stretchr/testify/assert"
+
+	mocksconfig "github.com/goravel/framework/mocks/config"
 )
 
 func TestPrefix(t *testing.T) {
