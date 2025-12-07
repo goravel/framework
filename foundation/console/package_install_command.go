@@ -9,6 +9,7 @@ import (
 	contractsbinding "github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/contracts/facades"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/support/collect"
@@ -313,16 +314,31 @@ func (r *PackageInstallCommand) getBindingsToInstall(binding string) (bindingsTo
 }
 
 func getAvailableFacades(bindings map[string]contractsbinding.Info) []string {
-	var result []string
+	var availableFacades []string
 	for binding, info := range bindings {
 		if !info.IsBase {
-			result = append(result, convert.BindingToFacade(binding))
+			availableFacades = append(availableFacades, convert.BindingToFacade(binding))
 		}
 	}
 
-	slices.Sort(result)
+	slices.Sort(availableFacades)
 
-	return result
+	// Make sure "Route" facade is listed first, let the environment variables in .env.example be set up before other facades.
+	targetIndex := -1
+	for i, v := range availableFacades {
+		if v == facades.Route {
+			targetIndex = i
+			break
+		}
+	}
+
+	if targetIndex != -1 {
+		value := availableFacades[targetIndex]
+		availableFacades = append(availableFacades[:targetIndex], availableFacades[targetIndex+1:]...)
+		availableFacades = append([]string{value}, availableFacades...)
+	}
+
+	return availableFacades
 }
 
 func getDependencyBindings(binding string, bindings map[string]contractsbinding.Info) []string {
