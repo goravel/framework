@@ -12,7 +12,6 @@ import (
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/exporters/zipkin"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 const (
@@ -69,7 +68,7 @@ func newOTLPGRPCTraceExporter(ctx context.Context, cfg otlpExporterConfig) (sdkt
 	}
 
 	if cfg.insecure {
-		opts = append(opts, otlptracegrpc.WithTLSCredentials(insecure.NewCredentials()))
+		opts = append(opts, otlptracegrpc.WithInsecure())
 	}
 
 	timeout := cfg.timeout
