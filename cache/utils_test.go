@@ -4,20 +4,21 @@ import (
 	"testing"
 
 	mocksconfig "github.com/goravel/framework/mocks/config"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestPrefixWithValue(t *testing.T) {
-	cfg := mocksconfig.NewConfig(t)
-	cfg.EXPECT().GetString("cache.prefix").Return("myprefix").Once()
-	if got := prefix(cfg); got != "myprefix:" {
-		t.Fatalf("prefix returned %q, want %q", got, "myprefix:")
-	}
-}
+func TestPrefix(t *testing.T) {
+	t.Run("with value", func(t *testing.T) {
+		mockConfig := mocksconfig.NewConfig(t)
+		mockConfig.EXPECT().GetString("cache.prefix").Return("myprefix").Once()
+		got := prefix(mockConfig)
+		assert.Equal(t, "myprefix:", got)
+	})
 
-func TestPrefixEmpty(t *testing.T) {
-	cfg := mocksconfig.NewConfig(t)
-	cfg.EXPECT().GetString("cache.prefix").Return("").Once()
-	if got := prefix(cfg); got != ":" {
-		t.Fatalf("prefix returned %q, want %q", got, ":")
-	}
+	t.Run("empty", func(t *testing.T) {
+		mockConfig := mocksconfig.NewConfig(t)
+		mockConfig.EXPECT().GetString("cache.prefix").Return("").Once()
+		got := prefix(mockConfig)
+		assert.Equal(t, ":", got)
+	})
 }
