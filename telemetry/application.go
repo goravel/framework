@@ -75,9 +75,6 @@ func (r *Application) init() error {
 	if err != nil {
 		return err
 	}
-	if exp == nil {
-		return nil
-	}
 
 	tp := sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(exp),
