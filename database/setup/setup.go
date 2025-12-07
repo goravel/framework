@@ -27,10 +27,10 @@ func main() {
 	databaseServiceProvider := "&database.ServiceProvider{}"
 	env := `
 DB_HOST=
-DB_PORT=5432
-DB_DATABASE=goravel
-DB_USERNAME=goravel
-DB_PASSWORD=Frameworkair
+DB_PORT=
+DB_DATABASE=
+DB_USERNAME=
+DB_PASSWORD=
 `
 
 	databaseConfigContent, err := file.GetContent(databaseConfigPath)
