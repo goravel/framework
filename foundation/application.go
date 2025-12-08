@@ -226,7 +226,7 @@ func (r *Application) ConfigPath(path ...string) string {
 }
 
 func (r *Application) ModelPath(path ...string) string {
-	path = append(support.PathToSlice(support.Config.Paths.Models), path...)
+	path = append(support.PathToSlice(support.Config.Paths.Model), path...)
 
 	return r.BasePath(path...)
 }

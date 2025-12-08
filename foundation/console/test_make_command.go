@@ -44,7 +44,7 @@ func (r *TestMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *TestMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "test", ctx.Argument(0), support.Config.Paths.Tests)
+	m, err := supportconsole.NewMake(ctx, "test", ctx.Argument(0), support.Config.Paths.Test)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil

@@ -72,7 +72,7 @@ func (r *ModelMakeCommand) Extend() command.Extend {
 }
 
 func (r *ModelMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "model", ctx.Argument(0), support.Config.Paths.Models)
+	m, err := supportconsole.NewMake(ctx, "model", ctx.Argument(0), support.Config.Paths.Model)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil

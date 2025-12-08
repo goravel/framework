@@ -51,7 +51,7 @@ func (r *MigrateMakeCommand) Extend() command.Extend {
 
 // Handle Executes the console command.
 func (r *MigrateMakeCommand) Handle(ctx console.Context) error {
-	makeMigration, err := supportconsole.NewMake(ctx, "migration", ctx.Argument(0), support.Config.Paths.Migrations)
+	makeMigration, err := supportconsole.NewMake(ctx, "migration", ctx.Argument(0), support.Config.Paths.Migration)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil

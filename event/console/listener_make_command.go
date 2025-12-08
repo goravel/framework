@@ -40,7 +40,7 @@ func (r *ListenerMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *ListenerMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "listener", ctx.Argument(0), support.Config.Paths.Listeners)
+	m, err := supportconsole.NewMake(ctx, "listener", ctx.Argument(0), support.Config.Paths.Listener)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil

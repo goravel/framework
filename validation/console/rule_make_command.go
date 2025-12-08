@@ -46,7 +46,7 @@ func (r *RuleMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *RuleMakeCommand) Handle(ctx console.Context) error {
-	make, err := supportconsole.NewMake(ctx, "rule", ctx.Argument(0), support.Config.Paths.Rules)
+	make, err := supportconsole.NewMake(ctx, "rule", ctx.Argument(0), support.Config.Paths.Rule)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil

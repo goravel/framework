@@ -25,7 +25,7 @@ func (r *Paths) Bootstrap(path string) configuration.Paths {
 }
 
 func (r *Paths) Commands(path string) configuration.Paths {
-	support.Config.Paths.Commands = path
+	support.Config.Paths.Command = path
 
 	return r
 }
@@ -37,7 +37,7 @@ func (r *Paths) Config(path string) configuration.Paths {
 }
 
 func (r *Paths) Controllers(path string) configuration.Paths {
-	support.Config.Paths.Controllers = path
+	support.Config.Paths.Controller = path
 
 	return r
 }
@@ -49,7 +49,7 @@ func (r *Paths) Database(path string) configuration.Paths {
 }
 
 func (r *Paths) Events(path string) configuration.Paths {
-	support.Config.Paths.Events = path
+	support.Config.Paths.Event = path
 
 	return r
 }
@@ -61,19 +61,19 @@ func (r *Paths) Facades(path string) configuration.Paths {
 }
 
 func (r *Paths) Factories(path string) configuration.Paths {
-	support.Config.Paths.Factories = path
+	support.Config.Paths.Factory = path
 
 	return r
 }
 
 func (r *Paths) Filters(path string) configuration.Paths {
-	support.Config.Paths.Filters = path
+	support.Config.Paths.Filter = path
 
 	return r
 }
 
 func (r *Paths) Jobs(path string) configuration.Paths {
-	support.Config.Paths.Jobs = path
+	support.Config.Paths.Job = path
 
 	return r
 }
@@ -85,13 +85,13 @@ func (r *Paths) Lang(path string) configuration.Paths {
 }
 
 func (r *Paths) Listeners(path string) configuration.Paths {
-	support.Config.Paths.Listeners = path
+	support.Config.Paths.Listener = path
 
 	return r
 }
 
 func (r *Paths) Mails(path string) configuration.Paths {
-	support.Config.Paths.Mails = path
+	support.Config.Paths.Mail = path
 
 	return r
 }
@@ -103,37 +103,37 @@ func (r *Paths) Middleware(path string) configuration.Paths {
 }
 
 func (r *Paths) Migrations(path string) configuration.Paths {
-	support.Config.Paths.Migrations = path
+	support.Config.Paths.Migration = path
 
 	return r
 }
 
 func (r *Paths) Models(path string) configuration.Paths {
-	support.Config.Paths.Models = path
+	support.Config.Paths.Model = path
 
 	return r
 }
 
 func (r *Paths) Observers(path string) configuration.Paths {
-	support.Config.Paths.Observers = path
+	support.Config.Paths.Observer = path
 
 	return r
 }
 
 func (r *Paths) Packages(path string) configuration.Paths {
-	support.Config.Paths.Packages = path
+	support.Config.Paths.Package = path
 
 	return r
 }
 
 func (r *Paths) Policies(path string) configuration.Paths {
-	support.Config.Paths.Policies = path
+	support.Config.Paths.Policy = path
 
 	return r
 }
 
 func (r *Paths) Providers(path string) configuration.Paths {
-	support.Config.Paths.Providers = path
+	support.Config.Paths.Provider = path
 
 	return r
 }
@@ -145,7 +145,7 @@ func (r *Paths) Public(path string) configuration.Paths {
 }
 
 func (r *Paths) Requests(path string) configuration.Paths {
-	support.Config.Paths.Requests = path
+	support.Config.Paths.Request = path
 
 	return r
 }
@@ -157,13 +157,13 @@ func (r *Paths) Resources(path string) configuration.Paths {
 }
 
 func (r *Paths) Rules(path string) configuration.Paths {
-	support.Config.Paths.Rules = path
+	support.Config.Paths.Rule = path
 
 	return r
 }
 
 func (r *Paths) Seeders(path string) configuration.Paths {
-	support.Config.Paths.Seeders = path
+	support.Config.Paths.Seeder = path
 
 	return r
 }
@@ -175,7 +175,7 @@ func (r *Paths) Storage(path string) configuration.Paths {
 }
 
 func (r *Paths) Tests(path string) configuration.Paths {
-	support.Config.Paths.Tests = path
+	support.Config.Paths.Test = path
 
 	return r
 }

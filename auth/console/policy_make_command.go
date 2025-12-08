@@ -43,7 +43,7 @@ func (r *PolicyMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *PolicyMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "policy", ctx.Argument(0), support.Config.Paths.Policies)
+	m, err := supportconsole.NewMake(ctx, "policy", ctx.Argument(0), support.Config.Paths.Policy)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil

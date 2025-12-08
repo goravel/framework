@@ -47,7 +47,7 @@ func (r *ProviderMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *ProviderMakeCommand) Handle(ctx console.Context) error {
-	make, err := supportconsole.NewMake(ctx, "provider", ctx.Argument(0), support.Config.Paths.Providers)
+	make, err := supportconsole.NewMake(ctx, "provider", ctx.Argument(0), support.Config.Paths.Provider)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil

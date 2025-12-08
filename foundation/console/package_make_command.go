@@ -36,7 +36,7 @@ func (r *PackageMakeCommand) Extend() command.Extend {
 				Name:    "root",
 				Aliases: []string{"r"},
 				Usage:   "The root path of package, default: packages",
-				Value:   support.Config.Paths.Packages,
+				Value:   support.Config.Paths.Package,
 			},
 		},
 	}

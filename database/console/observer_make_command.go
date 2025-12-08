@@ -43,7 +43,7 @@ func (r *ObserverMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *ObserverMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "observer", ctx.Argument(0), support.Config.Paths.Observers)
+	m, err := supportconsole.NewMake(ctx, "observer", ctx.Argument(0), support.Config.Paths.Observer)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil

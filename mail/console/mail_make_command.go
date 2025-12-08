@@ -43,7 +43,7 @@ func (r *MailMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *MailMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "mail", ctx.Argument(0), support.Config.Paths.Mails)
+	m, err := supportconsole.NewMake(ctx, "mail", ctx.Argument(0), support.Config.Paths.Mail)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil

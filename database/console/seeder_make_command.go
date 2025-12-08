@@ -52,7 +52,7 @@ func (r *SeederMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *SeederMakeCommand) Handle(ctx console.Context) error {
-	make, err := supportconsole.NewMake(ctx, "seeder", ctx.Argument(0), support.Config.Paths.Seeders)
+	make, err := supportconsole.NewMake(ctx, "seeder", ctx.Argument(0), support.Config.Paths.Seeder)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil

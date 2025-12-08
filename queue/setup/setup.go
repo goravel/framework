@@ -20,7 +20,7 @@ func main() {
 	queueConfigPath := path.Config("queue.go")
 	queueServiceProvider := "&queue.ServiceProvider{}"
 	modulePath := packages.GetModulePath()
-	migrationPath := support.Config.Paths.Migrations
+	migrationPath := support.Config.Paths.Migration
 	migrationPkg := filepath.Base(migrationPath)
 	migrationPkgPath := fmt.Sprintf("%s/%s", moduleName, migrationPath)
 	jobMigrationFileName, jobMigrationStruct, jobMigrationContent := stubs.JobMigration(migrationPkg, moduleName)
