@@ -214,6 +214,75 @@ func (s *ApplicationTestSuite) TestEnvBoolFunction() {
 	s.False(s.config.EnvBool("ENVBOOL_INVALID"))
 }
 
+func (s *ApplicationTestSuite) TestUnmarshalKey() {
+	s.config.Add("database", map[string]any{
+		"default": "mysql",
+		"connections": map[string]any{
+			"mysql": map[string]any{
+				"host":     "127.0.0.1",
+				"port":     3306,
+				"database": "goravel",
+				"username": "root",
+				"password": "secret",
+			},
+		},
+	})
+
+	type DatabaseConfig struct {
+		Default     string         `mapstructure:"default"`
+		Connections map[string]any `mapstructure:"connections"`
+	}
+
+	var dbConfig DatabaseConfig
+	err := s.config.UnmarshalKey("database", &dbConfig)
+	s.NoError(err)
+	s.Equal("mysql", dbConfig.Default)
+	s.NotNil(dbConfig.Connections["mysql"])
+
+	type MySQLConnection struct {
+		Host     string
+		Port     int
+		Database string
+		Username string
+		Password string
+	}
+
+	var mysqlConfig MySQLConnection
+	err = s.config.UnmarshalKey("database.connections.mysql", &mysqlConfig)
+	s.NoError(err)
+	s.Equal("127.0.0.1", mysqlConfig.Host)
+	s.Equal(3306, mysqlConfig.Port)
+	s.Equal("goravel", mysqlConfig.Database)
+	s.Equal("root", mysqlConfig.Username)
+	s.Equal("secret", mysqlConfig.Password)
+
+	var emptyConfig MySQLConnection
+	err = s.config.UnmarshalKey("non_existent_key", &emptyConfig)
+	s.NoError(err)
+	s.Equal("", emptyConfig.Host)
+	s.Equal(0, emptyConfig.Port)
+
+	// Test with custom config for customConfig instance
+	s.customConfig.Add("app", map[string]any{
+		"name":  "Goravel",
+		"debug": true,
+		"port":  8080,
+	})
+
+	type AppConfig struct {
+		Name  string `mapstructure:"name"`
+		Debug bool   `mapstructure:"debug"`
+		Port  int    `mapstructure:"port"`
+	}
+
+	var appConfig AppConfig
+	err = s.customConfig.UnmarshalKey("app", &appConfig)
+	s.NoError(err)
+	s.Equal("Goravel", appConfig.Name)
+	s.True(appConfig.Debug)
+	s.Equal(8080, appConfig.Port)
+}
+
 func TestOsVariables(t *testing.T) {
 	t.Setenv("APP_KEY", "12345678901234567890123456789013")
 	t.Setenv("APP_NAME", "goravel")
