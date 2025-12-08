@@ -10,7 +10,8 @@ import (
 
 type PathsTestSuite struct {
 	suite.Suite
-	paths *Paths
+	paths         *Paths
+	originalPaths support.Paths
 }
 
 func TestPathsTestSuite(t *testing.T) {
@@ -19,6 +20,13 @@ func TestPathsTestSuite(t *testing.T) {
 
 func (s *PathsTestSuite) SetupTest() {
 	s.paths = NewPaths()
+	// Save original paths before each test
+	s.originalPaths = support.Config.Paths
+}
+
+func (s *PathsTestSuite) TearDownTest() {
+	// Restore original paths after each test
+	support.Config.Paths = s.originalPaths
 }
 
 func (s *PathsTestSuite) TestNewPaths() {
