@@ -36,7 +36,7 @@ func init() {
 		// Configure distributed tracing for your application.
 		"traces": map[string]any{
 			// The exporter determines where traces are sent.
-			// Supported: "otlp", "zipkin", "console", "none"
+			// Supported: "otlp", "zipkin", "console"
 			"exporter": config.Env("OTEL_TRACES_EXPORTER", "otlp"),
 
 			// Sampler Configuration
