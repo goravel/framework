@@ -29,13 +29,15 @@ import (
 	mocksroute "github.com/goravel/framework/mocks/route"
 	mocksschedule "github.com/goravel/framework/mocks/schedule"
 	mocksvalidation "github.com/goravel/framework/mocks/validation"
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/color"
 )
 
 type ApplicationBuilderTestSuite struct {
 	suite.Suite
-	builder *ApplicationBuilder
-	mockApp *mocksfoundation.Application
+	builder       *ApplicationBuilder
+	mockApp       *mocksfoundation.Application
+	originalPaths support.Paths
 }
 
 func TestApplicationBuilderTestSuite(t *testing.T) {
@@ -43,10 +45,15 @@ func TestApplicationBuilderTestSuite(t *testing.T) {
 }
 
 func (s *ApplicationBuilderTestSuite) SetupTest() {
+	s.originalPaths = support.Config.Paths
 	s.mockApp = mocksfoundation.NewApplication(s.T())
 	s.builder = &ApplicationBuilder{
 		app: s.mockApp,
 	}
+}
+
+func (s *ApplicationBuilderTestSuite) TearDownTest() {
+	support.Config.Paths = s.originalPaths
 }
 
 func (s *ApplicationBuilderTestSuite) TestCreate() {
