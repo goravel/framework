@@ -88,8 +88,8 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		app := s.builder.
 			WithPaths(func(paths contractsconfiguration.Paths) {
 				calledPaths = true
-				paths.Model("custom/models")
-				paths.Controller("custom/controllers")
+				paths.Models("custom/models")
+				paths.Controllers("custom/controllers")
 			}).
 			Create()
 

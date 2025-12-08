@@ -52,7 +52,6 @@ func (s *PackagesSetupTestSuite) TestExecute() {
 				var (
 					mockModify = mockmodify.NewGoFile(s.T())
 					set        = &setup{
-						module:  "test",
 						command: "install",
 					}
 				)
@@ -73,7 +72,6 @@ func (s *PackagesSetupTestSuite) TestExecute() {
 				var (
 					mockModify = mockmodify.NewGoFile(s.T())
 					set        = &setup{
-						module:  "test",
 						command: "install",
 					}
 				)
@@ -92,7 +90,6 @@ func (s *PackagesSetupTestSuite) TestExecute() {
 				var (
 					mockModify = mockmodify.NewGoFile(s.T())
 					set        = &setup{
-						module:  "test",
 						command: "uninstall",
 					}
 				)
@@ -112,7 +109,6 @@ func (s *PackagesSetupTestSuite) TestExecute() {
 				var (
 					mockModify = mockmodify.NewGoFile(s.T())
 					set        = &setup{
-						module:  "test",
 						command: "uninstall",
 						force:   true,
 					}
@@ -133,7 +129,6 @@ func (s *PackagesSetupTestSuite) TestExecute() {
 				var (
 					mockModify = mockmodify.NewGoFile(s.T())
 					set        = &setup{
-						module:  "test",
 						command: "uninstall",
 					}
 				)
@@ -167,7 +162,6 @@ func TestSetup(t *testing.T) {
 		driver:  "database",
 		facade:  "test",
 		force:   true,
-		module:  "",
 	}, s.(*setup))
 
 	s = Setup([]string{"uninstall", "-f", "--facade=test", "--driver=database"})
@@ -176,12 +170,11 @@ func TestSetup(t *testing.T) {
 		driver:  "database",
 		facade:  "test",
 		force:   true,
-		module:  "",
 	}, s.(*setup))
 }
 
 func TestModuleName(t *testing.T) {
-	assert.Equal(t, "github.com/goravel/framework", GetModuleName())
+	assert.Equal(t, "github.com/goravel/framework", GetPackageName())
 }
 
 func TestModuleNameFromArgs(t *testing.T) {

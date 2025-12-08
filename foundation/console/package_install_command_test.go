@@ -12,6 +12,7 @@ import (
 	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/foundation/json"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/color"
 )
@@ -225,7 +226,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			beforeEach()
 			test.setup()
 
-			packageInstallCommand := NewPackageInstallCommand(bindings, installedBindings)
+			packageInstallCommand := NewPackageInstallCommand(bindings, installedBindings, json.New())
 			packageInstallCommand.installedFacadesInTheCurrentCommand = test.installedFacadesInTheCurrentCommand
 
 			s.NoError(packageInstallCommand.Handle(mockContext))
@@ -262,7 +263,7 @@ func (s *PackageInstallCommandTestSuite) Test_installFacade_TwoFacadesHaveTheSam
 		installedBindings = []any{}
 	)
 
-	packageInstallCommand := NewPackageInstallCommand(bindings, installedBindings)
+	packageInstallCommand := NewPackageInstallCommand(bindings, installedBindings, json.New())
 
 	// Install DB facade
 	mockContext.EXPECT().Spinner("> @go run "+bindings[binding.DB].PkgPath+"/setup install --facade=DB --module=github.com/goravel/framework", mock.Anything).Return(nil).Once()
@@ -465,7 +466,7 @@ func (s *PackageInstallCommandTestSuite) Test_installDriver() {
 
 			tt.setup()
 
-			packageInstallCommand := NewPackageInstallCommand(bindings, installedBindings)
+			packageInstallCommand := NewPackageInstallCommand(bindings, installedBindings, json.New())
 
 			s.Equal(tt.expectError, packageInstallCommand.installDriver(mockContext, facade, tt.bindingInfo))
 		})
@@ -490,7 +491,7 @@ func (s *PackageInstallCommandTestSuite) Test_getBindingsToInstall() {
 	}
 	installedBindings := []any{binding.Config}
 
-	packageInstallCommand := NewPackageInstallCommand(bindings, installedBindings)
+	packageInstallCommand := NewPackageInstallCommand(bindings, installedBindings, json.New())
 
 	s.ElementsMatch([]string{binding.Orm, binding.Gate}, packageInstallCommand.getBindingsToInstall(binding.Auth))
 }

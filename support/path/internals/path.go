@@ -9,6 +9,7 @@ import (
 )
 
 func Abs(paths ...string) string {
+	paths = append([]string{support.RelativePath}, paths...)
 	path := filepath.Join(paths...)
 	abs, err := filepath.Abs(path)
 	if err != nil {
@@ -18,17 +19,22 @@ func Abs(paths ...string) string {
 }
 
 func BootstrapApp() string {
-	return Abs(support.RelativePath, support.Config.Paths.Bootstrap, "app.go")
+	bootstrap := support.PathToSlice(support.Config.Paths.Bootstrap)
+	bootstrap = append(bootstrap, "app.go")
+
+	return Abs(bootstrap...)
 }
 
 func Facades(path ...string) string {
-	path = append([]string{"facades"}, path...)
+	facades := support.PathToSlice(support.Config.Paths.Facades)
+	path = append(facades, path...)
 
-	return Path(path...)
+	return Abs(path...)
 }
 
 func Path(path ...string) string {
-	path = append([]string{support.RelativePath, "app"}, path...)
+	app := support.PathToSlice(support.Config.Paths.App)
+	path = append(app, path...)
 
 	return Abs(path...)
 }
