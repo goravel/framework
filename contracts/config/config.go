@@ -21,6 +21,6 @@ type Config interface {
 	GetBool(path string, defaultValue ...bool) bool
 	// GetDuration get duration type config from application
 	GetDuration(path string, defaultValue ...time.Duration) time.Duration
-	// UnmarshalKey unmarshal a specific key from the config into a struct.
+	// UnmarshalKey unmarshal a specific key from config into a struct.
 	UnmarshalKey(key string, rawVal any) error
 }

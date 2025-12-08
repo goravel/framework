@@ -128,7 +128,7 @@ func (app *Application) GetDuration(path string, defaultValue ...time.Duration) 
 	return app.vip.GetDuration(path)
 }
 
-// UnmarshalKey unmarshal a specific key from the config into a struct.
+// UnmarshalKey unmarshal a specific key from config into a struct.
 func (app *Application) UnmarshalKey(key string, rawVal any) error {
 	return app.vip.UnmarshalKey(key, rawVal)
 }
