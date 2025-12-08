@@ -15,10 +15,10 @@ import (
 
 func TestNewApplication(t *testing.T) {
 	tests := []struct {
-		name         string
-		setupMock    func(*configmocks.Config)
-		expectError  error
-		expectTracer bool
+		name            string
+		setupMock       func(*configmocks.Config)
+		expectError     error
+		expectSDKTracer bool
 	}{
 		{
 			name: "empty propagator returns error",
@@ -35,23 +35,15 @@ func TestNewApplication(t *testing.T) {
 			expectError: errors.TelemetryUnsupportedPropagator.Args("invalid"),
 		},
 		{
-			name: "no exporter returns app without tracer provider",
+			name: "empty exporter returns app with noop tracer provider",
 			setupMock: func(cfg *configmocks.Config) {
 				cfg.EXPECT().GetString(configPropagators.String()).Return("tracecontext")
 				cfg.EXPECT().GetString(configTracesExporter.String()).Return("")
 			},
-			expectTracer: false,
+			expectSDKTracer: false,
 		},
 		{
-			name: "none exporter returns app without tracer provider",
-			setupMock: func(cfg *configmocks.Config) {
-				cfg.EXPECT().GetString(configPropagators.String()).Return("tracecontext,baggage")
-				cfg.EXPECT().GetString(configTracesExporter.String()).Return("none")
-			},
-			expectTracer: false,
-		},
-		{
-			name: "console exporter initializes tracer provider",
+			name: "console exporter initializes SDK tracer provider",
 			setupMock: func(cfg *configmocks.Config) {
 				cfg.EXPECT().GetString(configPropagators.String()).Return("tracecontext,baggage")
 				cfg.EXPECT().GetString(configTracesExporter.String()).Return("console")
@@ -66,10 +58,10 @@ func TestNewApplication(t *testing.T) {
 
 				cfg.EXPECT().GetString(configExporterDriver.With("console"), "console").Return("console")
 			},
-			expectTracer: true,
+			expectSDKTracer: true,
 		},
 		{
-			name: "otlp exporter initializes tracer provider",
+			name: "otlp exporter initializes SDK tracer provider",
 			setupMock: func(cfg *configmocks.Config) {
 				cfg.EXPECT().GetString(configPropagators.String()).Return("tracecontext")
 				cfg.EXPECT().GetString(configTracesExporter.String()).Return("otlp")
@@ -91,10 +83,10 @@ func TestNewApplication(t *testing.T) {
 				cfg.EXPECT().GetString(configExporterEndpoint.With("otlp")).Return("localhost:4318")
 				cfg.EXPECT().GetBool(configExporterInsecure.With("otlp")).Return(true)
 			},
-			expectTracer: true,
+			expectSDKTracer: true,
 		},
 		{
-			name: "zipkin exporter initializes tracer provider",
+			name: "zipkin exporter initializes SDK tracer provider",
 			setupMock: func(cfg *configmocks.Config) {
 				cfg.EXPECT().GetString(configPropagators.String()).Return("b3")
 				cfg.EXPECT().GetString(configTracesExporter.String()).Return("zipkin")
@@ -110,7 +102,7 @@ func TestNewApplication(t *testing.T) {
 				cfg.EXPECT().GetString(configExporterDriver.With("zipkin"), "zipkin").Return("zipkin")
 				cfg.EXPECT().GetString(configExporterEndpoint.With("zipkin")).Return("http://localhost:9411/api/v2/spans")
 			},
-			expectTracer: true,
+			expectSDKTracer: true,
 		},
 		{
 			name: "unknown exporter returns error",
@@ -142,27 +134,31 @@ func TestNewApplication(t *testing.T) {
 
 			assert.NoError(t, err)
 			assert.NotNil(t, app)
+			assert.NotNil(t, app.tracerProvider)
 
-			if tt.expectTracer {
+			if tt.expectSDKTracer {
 				_, ok := app.tracerProvider.(*sdktrace.TracerProvider)
 				assert.True(t, ok, "expected SDK tracer provider")
 			} else {
-				assert.Nil(t, app.tracerProvider)
+				_, ok := app.tracerProvider.(tracenoop.TracerProvider)
+				assert.True(t, ok, "expected noop tracer provider")
 			}
 		})
 	}
 }
 
 func TestApplication_Tracer(t *testing.T) {
-	t.Run("returns tracer from noop provider when no tracer provider set", func(t *testing.T) {
-		app := &Application{}
+	t.Run("returns tracer from noop provider", func(t *testing.T) {
+		app := &Application{
+			tracerProvider: tracenoop.NewTracerProvider(),
+		}
 
 		tracer := app.Tracer("test-tracer")
 
 		assert.NotNil(t, tracer)
 	})
 
-	t.Run("returns tracer from provider when tracer provider is set", func(t *testing.T) {
+	t.Run("returns tracer from SDK provider", func(t *testing.T) {
 		tp := sdktrace.NewTracerProvider()
 		app := &Application{
 			tracerProvider: tp,
@@ -175,17 +171,18 @@ func TestApplication_Tracer(t *testing.T) {
 }
 
 func TestApplication_TracerProvider(t *testing.T) {
-	t.Run("returns noop provider when no tracer provider set", func(t *testing.T) {
-		app := &Application{}
+	t.Run("returns noop provider", func(t *testing.T) {
+		noopTP := tracenoop.NewTracerProvider()
+		app := &Application{
+			tracerProvider: noopTP,
+		}
 
 		provider := app.TracerProvider()
 
-		assert.NotNil(t, provider)
-		_, ok := provider.(tracenoop.TracerProvider)
-		assert.True(t, ok, "expected noop tracer provider")
+		assert.Equal(t, noopTP, provider)
 	})
 
-	t.Run("returns set tracer provider", func(t *testing.T) {
+	t.Run("returns SDK provider", func(t *testing.T) {
 		tp := sdktrace.NewTracerProvider()
 		app := &Application{
 			tracerProvider: tp,
@@ -221,15 +218,7 @@ func TestApplication_Propagator(t *testing.T) {
 }
 
 func TestApplication_Shutdown(t *testing.T) {
-	t.Run("returns nil when tracer provider is nil", func(t *testing.T) {
-		app := &Application{}
-
-		err := app.Shutdown(context.Background())
-
-		assert.NoError(t, err)
-	})
-
-	t.Run("returns nil when tracer provider is not SDK provider", func(t *testing.T) {
+	t.Run("returns nil when tracer provider is noop", func(t *testing.T) {
 		app := &Application{
 			tracerProvider: tracenoop.NewTracerProvider(),
 		}
@@ -251,7 +240,7 @@ func TestApplication_Shutdown(t *testing.T) {
 	})
 }
 
-func TestApplication_resourceConfig(t *testing.T) {
+func TestGetResourceConfig(t *testing.T) {
 	tests := []struct {
 		name          string
 		setupMock     func(*configmocks.Config)
@@ -286,8 +275,7 @@ func TestApplication_resourceConfig(t *testing.T) {
 			mockConfig := configmocks.NewConfig(t)
 			tt.setupMock(mockConfig)
 
-			app := &Application{config: mockConfig}
-			cfg := app.resourceConfig()
+			cfg := getResourceConfig(mockConfig)
 
 			assert.Equal(t, tt.expectService, cfg.serviceName)
 			assert.Equal(t, tt.expectVersion, cfg.serviceVersion)
@@ -296,7 +284,7 @@ func TestApplication_resourceConfig(t *testing.T) {
 	}
 }
 
-func TestApplication_samplerConfig(t *testing.T) {
+func TestGetSamplerConfig(t *testing.T) {
 	tests := []struct {
 		name         string
 		setupMock    func(*configmocks.Config)
@@ -344,8 +332,7 @@ func TestApplication_samplerConfig(t *testing.T) {
 			mockConfig := configmocks.NewConfig(t)
 			tt.setupMock(mockConfig)
 
-			app := &Application{config: mockConfig}
-			cfg := app.samplerConfig()
+			cfg := getSamplerConfig(mockConfig)
 
 			assert.Equal(t, tt.expectType, cfg.samplerType)
 			assert.Equal(t, tt.expectParent, cfg.parentBased)
@@ -354,7 +341,7 @@ func TestApplication_samplerConfig(t *testing.T) {
 	}
 }
 
-func TestApplication_createExporter(t *testing.T) {
+func TestCreateExporter(t *testing.T) {
 	tests := []struct {
 		name         string
 		exporterName string
@@ -412,10 +399,9 @@ func TestApplication_createExporter(t *testing.T) {
 			mockConfig := configmocks.NewConfig(t)
 			tt.setupMock(mockConfig)
 
-			app := &Application{config: mockConfig}
 			ctx := context.Background()
 
-			exp, err := app.createExporter(ctx, tt.exporterName)
+			exp, err := createExporter(ctx, mockConfig, tt.exporterName)
 
 			if tt.expectError != nil {
 				assert.Equal(t, tt.expectError, err)
@@ -428,7 +414,7 @@ func TestApplication_createExporter(t *testing.T) {
 	}
 }
 
-func TestApplication_otlpConfig(t *testing.T) {
+func TestGetOTLPConfig(t *testing.T) {
 	tests := []struct {
 		name           string
 		exporterName   string
@@ -481,8 +467,7 @@ func TestApplication_otlpConfig(t *testing.T) {
 			mockConfig := configmocks.NewConfig(t)
 			tt.setupMock(mockConfig)
 
-			app := &Application{config: mockConfig}
-			cfg := app.otlpConfig(tt.exporterName)
+			cfg := getOTLPConfig(mockConfig, tt.exporterName)
 
 			assert.Equal(t, tt.expectEndpoint, cfg.endpoint)
 			assert.Equal(t, tt.expectProtocol, cfg.protocol)
@@ -493,7 +478,7 @@ func TestApplication_otlpConfig(t *testing.T) {
 	}
 }
 
-func TestApplication_zipkinConfig(t *testing.T) {
+func TestGetZipkinConfig(t *testing.T) {
 	tests := []struct {
 		name           string
 		exporterName   string
@@ -523,8 +508,7 @@ func TestApplication_zipkinConfig(t *testing.T) {
 			mockConfig := configmocks.NewConfig(t)
 			tt.setupMock(mockConfig)
 
-			app := &Application{config: mockConfig}
-			cfg := app.zipkinConfig(tt.exporterName)
+			cfg := getZipkinConfig(mockConfig, tt.exporterName)
 
 			assert.Equal(t, tt.expectEndpoint, cfg.endpoint)
 		})
