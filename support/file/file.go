@@ -29,6 +29,10 @@ func Contains(file string, search string) bool {
 			return false
 		}
 
+		// Normalize line endings to handle Windows (CRLF) vs Unix (LF) differences
+		data = strings.ReplaceAll(data, "\r\n", "\n")
+		search = strings.ReplaceAll(search, "\r\n", "\n")
+
 		return strings.Contains(data, search)
 	}
 
