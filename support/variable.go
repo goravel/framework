@@ -117,6 +117,9 @@ var (
 	}
 )
 
+// PathToSlice converts a file path string into a slice of its components,
+// handling both forward slashes and backslashes, and trimming leading/trailing slashes.
+// For example, "app/http/controllers" becomes []string{"app", "http", "controllers"}.
 func PathToSlice(path string) []string {
 	path = strings.ReplaceAll(path, "\\", "/")
 	path = strings.Trim(path, "/")
@@ -127,6 +130,9 @@ func PathToSlice(path string) []string {
 	return strings.Split(path, "/")
 }
 
+// PathPackage extracts the last component of a file path string.
+// If the path is empty or only contains slashes, it returns the provided default value.
+// For example, "app/http/controllers" returns "controllers".
 func PathPackage(pkg, def string) string {
 	s := PathToSlice(pkg)
 
