@@ -158,18 +158,27 @@ func (s *PackagesSetupTestSuite) TestExecute() {
 func TestSetup(t *testing.T) {
 	s := Setup([]string{"install", "--force", "--facade=test", "--driver=database"})
 	assert.Equal(t, &setup{
-		command: "install",
-		driver:  "database",
-		facade:  "test",
-		force:   true,
+		command:     "install",
+		driver:      "database",
+		facade:      "test",
+		force:       true,
+		packageName: "goravel",
 	}, s.(*setup))
 
 	s = Setup([]string{"uninstall", "-f", "--facade=test", "--driver=database"})
 	assert.Equal(t, &setup{
-		command: "uninstall",
-		driver:  "database",
-		facade:  "test",
-		force:   true,
+		command:     "uninstall",
+		driver:      "database",
+		facade:      "test",
+		force:       true,
+		packageName: "goravel",
+	}, s.(*setup))
+
+	s = Setup([]string{"install", "--package-name=custom-package", "--facade=test"})
+	assert.Equal(t, &setup{
+		command:     "install",
+		facade:      "test",
+		packageName: "custom-package",
 	}, s.(*setup))
 }
 

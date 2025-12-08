@@ -58,16 +58,6 @@ func GetModuleNameFromArgs(args []string) string {
 	return "goravel"
 }
 
-func setPathsFromArgs(args []string) {
-	for _, arg := range args {
-		if strings.HasPrefix(arg, "--paths=") {
-			if err := json.Unmarshal([]byte(strings.TrimPrefix(arg, "--paths=")), &support.Config.Paths); err != nil {
-				panic(fmt.Sprintf("failed to unmarshal paths: %s", err))
-			}
-		}
-	}
-}
-
 func Setup(args []string) packages.Setup {
 	st := &setup{}
 	var packageName string
@@ -88,6 +78,11 @@ func Setup(args []string) packages.Setup {
 		if strings.HasPrefix(arg, "--package-name=") {
 			packageName = strings.TrimPrefix(arg, "--package-name=")
 		}
+		if strings.HasPrefix(arg, "--paths=") {
+			if err := json.Unmarshal([]byte(strings.TrimPrefix(arg, "--paths=")), &support.Config.Paths); err != nil {
+				panic(fmt.Sprintf("failed to unmarshal paths: %s", err))
+			}
+		}
 	}
 
 	if packageName == "" {
@@ -95,7 +90,6 @@ func Setup(args []string) packages.Setup {
 	}
 
 	st.packageName = packageName
-	setPathsFromArgs(args)
 
 	return st
 }
