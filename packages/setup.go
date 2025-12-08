@@ -27,37 +27,6 @@ type setup struct {
 
 var osExit = os.Exit
 
-// GetModulePath returns the module path of package, it may be a sub-package, eg: github.com/goravel/framework/auth.
-func GetModulePath() string {
-	if info, ok := debug.ReadBuildInfo(); ok && strings.HasSuffix(info.Path, "setup") {
-		return path.Dir(info.Path)
-	}
-
-	return ""
-}
-
-// GetPackageName returns the package name of application, eg: goravel.
-func GetPackageName() string {
-	if info, ok := debug.ReadBuildInfo(); ok {
-		return info.Main.Path
-	}
-
-	return "goravel"
-}
-
-// GetModuleNameFromArgs returns the module name from command line arguments, default is "goravel".
-// It is used in the package:install command.
-// DEPERECATED
-func GetModuleNameFromArgs(args []string) string {
-	for _, arg := range args {
-		if strings.HasPrefix(arg, "--module=") {
-			return strings.TrimPrefix(arg, "--module=")
-		}
-	}
-
-	return "goravel"
-}
-
 func Setup(args []string) packages.Setup {
 	st := &setup{}
 	var packageName string
@@ -110,6 +79,15 @@ func (r *setup) Execute() {
 
 		color.Successln("package uninstalled successfully")
 	}
+}
+
+// ModulePath returns the module path of package, it may be a sub-package, eg: github.com/goravel/framework/auth.
+func (r *setup) ModulePath() string {
+	if info, ok := debug.ReadBuildInfo(); ok && strings.HasSuffix(info.Path, "setup") {
+		return path.Dir(info.Path)
+	}
+
+	return ""
 }
 
 func (r *setup) PackageName() string {

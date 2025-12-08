@@ -9,27 +9,22 @@ import (
 )
 
 func main() {
-	scheduleFacade := "Schedule"
+	setup := packages.Setup(os.Args)
 	scheduleFacadePath := path.Facades("schedule.go")
 	scheduleServiceProvider := "&schedule.ServiceProvider{}"
-	modulePath := packages.GetModulePath()
+	modulePath := setup.ModulePath()
 
-	packages.Setup(os.Args).
-		Install(
-			// Create the schedule facade file.
-			modify.WhenFacade(scheduleFacade, modify.File(scheduleFacadePath).Overwrite(Stubs{}.ScheduleFacade())),
+	setup.Install(
+		// Create the schedule facade file.
+		modify.File(scheduleFacadePath).Overwrite(Stubs{}.ScheduleFacade()),
 
-			// Add the schedule service provider to the providers array in bootstrap/providers.go
-			modify.AddProviderApply(modulePath, scheduleServiceProvider),
-		).
-		Uninstall(
-			modify.WhenNoFacades([]string{scheduleFacade},
-				// Remove the schedule service provider from the providers array in bootstrap/providers.go
-				modify.RemoveProviderApply(modulePath, scheduleServiceProvider),
-			),
+		// Add the schedule service provider to the providers array in bootstrap/providers.go
+		modify.AddProviderApply(modulePath, scheduleServiceProvider),
+	).Uninstall(
+		// Remove the schedule service provider from the providers array in bootstrap/providers.go
+		modify.RemoveProviderApply(modulePath, scheduleServiceProvider),
 
-			// Remove the schedule facade file.
-			modify.WhenFacade(scheduleFacade, modify.File(scheduleFacadePath).Remove()),
-		).
-		Execute()
+		// Remove the schedule facade file.
+		modify.File(scheduleFacadePath).Remove(),
+	).Execute()
 }

@@ -47,7 +47,7 @@ func (s *PathsTestSuite) TestBootstrap() {
 
 func (s *PathsTestSuite) TestCommands() {
 	result := s.paths.Commands("custom/commands")
-	s.Equal("custom/commands", support.Config.Paths.Command)
+	s.Equal("custom/commands", support.Config.Paths.Commands)
 	s.Equal(s.paths, result)
 }
 
@@ -59,7 +59,7 @@ func (s *PathsTestSuite) TestConfig() {
 
 func (s *PathsTestSuite) TestControllers() {
 	result := s.paths.Controllers("custom/controllers")
-	s.Equal("custom/controllers", support.Config.Paths.Controller)
+	s.Equal("custom/controllers", support.Config.Paths.Controllers)
 	s.Equal(s.paths, result)
 }
 
@@ -71,7 +71,7 @@ func (s *PathsTestSuite) TestDatabase() {
 
 func (s *PathsTestSuite) TestEvents() {
 	result := s.paths.Events("custom/events")
-	s.Equal("custom/events", support.Config.Paths.Event)
+	s.Equal("custom/events", support.Config.Paths.Events)
 	s.Equal(s.paths, result)
 }
 
@@ -83,19 +83,19 @@ func (s *PathsTestSuite) TestFacades() {
 
 func (s *PathsTestSuite) TestFactories() {
 	result := s.paths.Factories("custom/factories")
-	s.Equal("custom/factories", support.Config.Paths.Factory)
+	s.Equal("custom/factories", support.Config.Paths.Factories)
 	s.Equal(s.paths, result)
 }
 
 func (s *PathsTestSuite) TestFilters() {
 	result := s.paths.Filters("custom/filters")
-	s.Equal("custom/filters", support.Config.Paths.Filter)
+	s.Equal("custom/filters", support.Config.Paths.Filters)
 	s.Equal(s.paths, result)
 }
 
 func (s *PathsTestSuite) TestJobs() {
 	result := s.paths.Jobs("custom/jobs")
-	s.Equal("custom/jobs", support.Config.Paths.Job)
+	s.Equal("custom/jobs", support.Config.Paths.Jobs)
 	s.Equal(s.paths, result)
 }
 
@@ -107,13 +107,13 @@ func (s *PathsTestSuite) TestLang() {
 
 func (s *PathsTestSuite) TestListeners() {
 	result := s.paths.Listeners("custom/listeners")
-	s.Equal("custom/listeners", support.Config.Paths.Listener)
+	s.Equal("custom/listeners", support.Config.Paths.Listeners)
 	s.Equal(s.paths, result)
 }
 
 func (s *PathsTestSuite) TestMails() {
 	result := s.paths.Mails("custom/mails")
-	s.Equal("custom/mails", support.Config.Paths.Mail)
+	s.Equal("custom/mails", support.Config.Paths.Mails)
 	s.Equal(s.paths, result)
 }
 
@@ -125,37 +125,37 @@ func (s *PathsTestSuite) TestMiddleware() {
 
 func (s *PathsTestSuite) TestMigrations() {
 	result := s.paths.Migrations("custom/migrations")
-	s.Equal("custom/migrations", support.Config.Paths.Migration)
+	s.Equal("custom/migrations", support.Config.Paths.Migrations)
 	s.Equal(s.paths, result)
 }
 
 func (s *PathsTestSuite) TestModels() {
 	result := s.paths.Models("custom/models")
-	s.Equal("custom/models", support.Config.Paths.Model)
+	s.Equal("custom/models", support.Config.Paths.Models)
 	s.Equal(s.paths, result)
 }
 
 func (s *PathsTestSuite) TestObservers() {
 	result := s.paths.Observers("custom/observers")
-	s.Equal("custom/observers", support.Config.Paths.Observer)
+	s.Equal("custom/observers", support.Config.Paths.Observers)
 	s.Equal(s.paths, result)
 }
 
 func (s *PathsTestSuite) TestPackages() {
 	result := s.paths.Packages("custom/packages")
-	s.Equal("custom/packages", support.Config.Paths.Package)
+	s.Equal("custom/packages", support.Config.Paths.Packages)
 	s.Equal(s.paths, result)
 }
 
 func (s *PathsTestSuite) TestPolicies() {
 	result := s.paths.Policies("custom/policies")
-	s.Equal("custom/policies", support.Config.Paths.Policy)
+	s.Equal("custom/policies", support.Config.Paths.Policies)
 	s.Equal(s.paths, result)
 }
 
 func (s *PathsTestSuite) TestProviders() {
 	result := s.paths.Providers("custom/providers")
-	s.Equal("custom/providers", support.Config.Paths.Provider)
+	s.Equal("custom/providers", support.Config.Paths.Providers)
 	s.Equal(s.paths, result)
 }
 
@@ -167,7 +167,7 @@ func (s *PathsTestSuite) TestPublic() {
 
 func (s *PathsTestSuite) TestRequests() {
 	result := s.paths.Requests("custom/requests")
-	s.Equal("custom/requests", support.Config.Paths.Request)
+	s.Equal("custom/requests", support.Config.Paths.Requests)
 	s.Equal(s.paths, result)
 }
 
@@ -179,13 +179,13 @@ func (s *PathsTestSuite) TestResources() {
 
 func (s *PathsTestSuite) TestRules() {
 	result := s.paths.Rules("custom/rules")
-	s.Equal("custom/rules", support.Config.Paths.Rule)
+	s.Equal("custom/rules", support.Config.Paths.Rules)
 	s.Equal(s.paths, result)
 }
 
 func (s *PathsTestSuite) TestSeeders() {
 	result := s.paths.Seeders("custom/seeders")
-	s.Equal("custom/seeders", support.Config.Paths.Seeder)
+	s.Equal("custom/seeders", support.Config.Paths.Seeders)
 	s.Equal(s.paths, result)
 }
 
@@ -197,7 +197,7 @@ func (s *PathsTestSuite) TestStorage() {
 
 func (s *PathsTestSuite) TestTests() {
 	result := s.paths.Tests("custom/tests")
-	s.Equal("custom/tests", support.Config.Paths.Test)
+	s.Equal("custom/tests", support.Config.Paths.Tests)
 	s.Equal(s.paths, result)
 }
 
@@ -210,7 +210,7 @@ func (s *PathsTestSuite) TestChaining() {
 
 	s.Equal("app", support.Config.Paths.App)
 	s.Equal("config", support.Config.Paths.Config)
-	s.Equal("controllers", support.Config.Paths.Controller)
-	s.Equal("models", support.Config.Paths.Model)
+	s.Equal("controllers", support.Config.Paths.Controllers)
+	s.Equal("models", support.Config.Paths.Models)
 	s.Equal(s.paths, result)
 }

@@ -46,7 +46,7 @@ func (r *JobMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *JobMakeCommand) Handle(ctx console.Context) error {
-	make, err := supportconsole.NewMake(ctx, "job", ctx.Argument(0), support.Config.Paths.Job)
+	make, err := supportconsole.NewMake(ctx, "job", ctx.Argument(0), support.Config.Paths.Jobs)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil

@@ -12,12 +12,12 @@ import (
 	"github.com/goravel/framework/contracts/facades"
 	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/collect"
 	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/convert"
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -169,7 +169,7 @@ func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) 
 	}
 
 	// install package
-	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--package-name="+packages.GetPackageName(), "--paths="+r.paths)); err != nil {
+	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--package-name="+env.PackageName(), "--paths="+r.paths)); err != nil {
 		return fmt.Errorf("failed to install package: %s", err)
 	}
 
@@ -210,7 +210,7 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 			continue
 		}
 
-		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--facade="+facade, "--package-name="+packages.GetPackageName(), "--paths="+r.paths)); err != nil {
+		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--facade="+facade, "--package-name="+env.PackageName(), "--paths="+r.paths)); err != nil {
 			return fmt.Errorf("failed to install facade %s: %s", facade, err.Error())
 		}
 
@@ -291,7 +291,7 @@ func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string
 
 	if isInternalDriver(driver) {
 		setup := bindingInfo.PkgPath + "/setup"
-		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--driver="+driver, "--package-name="+packages.GetPackageName(), "--paths="+r.paths)); err != nil {
+		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--driver="+driver, "--package-name="+env.PackageName(), "--paths="+r.paths)); err != nil {
 			return fmt.Errorf("failed to install driver %s: %s", driver, err.Error())
 		}
 
