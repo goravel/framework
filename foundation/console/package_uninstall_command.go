@@ -11,6 +11,8 @@ import (
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/packages"
+	"github.com/goravel/framework/support"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/framework/support/file"
@@ -20,17 +22,25 @@ type PackageUninstallCommand struct {
 	app               foundation.Application
 	bindings          map[string]binding.Info
 	installedBindings []any
+	paths             string
 }
 
 func NewPackageUninstallCommand(
 	app foundation.Application,
 	bindings map[string]binding.Info,
 	installedBindings []any,
+	json foundation.Json,
 ) *PackageUninstallCommand {
+	paths, err := json.MarshalString(support.Config.Paths)
+	if err != nil {
+		panic(fmt.Sprintf("failed to marshal paths: %s", err))
+	}
+
 	return &PackageUninstallCommand{
 		app:               app,
 		bindings:          bindings,
 		installedBindings: installedBindings,
+		paths:             paths,
 	}
 }
 
@@ -104,7 +114,7 @@ func (r *PackageUninstallCommand) uninstallPackage(ctx console.Context, pkg stri
 	setup := pkgPath + "/setup"
 
 	// uninstall package
-	uninstall := exec.Command("go", "run", setup, "uninstall")
+	uninstall := exec.Command("go", "run", setup, "uninstall", "--package-name="+packages.GetPackageName(), "--paths="+r.paths)
 	if ctx.OptionBool("force") {
 		uninstall.Args = append(uninstall.Args, "--force")
 	}
@@ -157,9 +167,7 @@ func (r *PackageUninstallCommand) uninstallFacade(ctx console.Context, name stri
 	force := ctx.OptionBool("force")
 	setup := bindingInfo.PkgPath + "/setup"
 	facade := convert.BindingToFacade(binding)
-
-	uninstall := exec.Command("go", "run", setup, "uninstall")
-	uninstall.Args = append(uninstall.Args, "--facade="+facade)
+	uninstall := exec.Command("go", "run", setup, "uninstall", "--facade="+facade, "--package-name="+packages.GetPackageName(), "--paths="+r.paths)
 
 	if force {
 		uninstall.Args = append(uninstall.Args, "--force")

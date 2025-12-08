@@ -1,29 +1,68 @@
 package support
 
-import "path/filepath"
+import (
+	"strings"
+)
 
 type Paths struct {
-	Bootstrap  string
-	Command    string
+	// The base directory path, default is "app".
+	App string
+	// The bootstrap directory path, default is "bootstrap".
+	Bootstrap string
+	// The command directory path, default is "app/console/commands".
+	Command string
+	// The config directory path, default is "config".
+	Config string
+	// The controller directory path, default is "app/http/controllers".
 	Controller string
-	Event      string
-	Factory    string
-	Filter     string
-	Job        string
-	Listener   string
-	Mail       string
+	// The database directory path, default is "database".
+	Database string
+	// The event directory path, default is "app/events".
+	Event string
+	// The facades directory path, default is "app/facades".
+	Facades string
+	// The factory directory path, default is "database/factories".
+	Factory string
+	// The filter directory path, default is "app/filters".
+	Filter string
+	// The job directory path, default is "app/jobs".
+	Job string
+	// The language files directory path, default is "lang".
+	Lang string
+	// The listener directory path, default is "app/listeners".
+	Listener string
+	// The mail directory path, default is "app/mails".
+	Mail string
+	// The middleware directory path, default is "app/http/middleware".
 	Middleware string
-	Migration  string
-	Model      string
-	Observer   string
-	Package    string
-	Policy     string
-	Provider   string
-	Request    string
-	Routes     string
-	Rule       string
-	Seeder     string
-	Test       string
+	// The migration directory path, default is "database/migrations".
+	Migration string
+	// The model directory path, default is "app/models".
+	Model string
+	// The observer directory path, default is "app/observers".
+	Observer string
+	// The package directory path, default is "packages".
+	Package string
+	// The policy directory path, default is "app/policies".
+	Policy string
+	// The provider directory path, default is "app/providers".
+	Provider string
+	// The public directory path, default is "public".
+	Public string
+	// The request directory path, default is "app/http/requests".
+	Request string
+	// The resources directory path, default is "resources".
+	Resources string
+	// The routes directory path, default is "routes".
+	Routes string
+	// The rule directory path, default is "app/rules".
+	Rule string
+	// The seeder directory path, default is "database/seeders".
+	Seeder string
+	// The storage directory path, default is "storage".
+	Storage string
+	// The test directory path, default is "tests".
+	Test string
 }
 
 type Configuration struct {
@@ -45,27 +84,61 @@ var (
 
 	Config = Configuration{
 		Paths: Paths{
+			App:        "app",
 			Bootstrap:  "bootstrap",
-			Command:    filepath.Join("app", "console", "commands"),
-			Controller: filepath.Join("app", "http", "controllers"),
-			Event:      filepath.Join("app", "events"),
-			Factory:    filepath.Join("database", "factories"),
-			Filter:     filepath.Join("app", "filters"),
-			Job:        filepath.Join("app", "jobs"),
-			Listener:   filepath.Join("app", "listeners"),
-			Mail:       filepath.Join("app", "mails"),
-			Middleware: filepath.Join("app", "http", "middleware"),
-			Migration:  filepath.Join("database", "migrations"),
-			Model:      filepath.Join("app", "models"),
-			Observer:   filepath.Join("app", "observers"),
+			Command:    "app/console/commands",
+			Config:     "config",
+			Controller: "app/http/controllers",
+			Database:   "database",
+			Event:      "app/events",
+			Facades:    "app/facades",
+			Factory:    "database/factories",
+			Filter:     "app/filters",
+			Job:        "app/jobs",
+			Lang:       "lang",
+			Listener:   "app/listeners",
+			Mail:       "app/mails",
+			Middleware: "app/http/middleware",
+			Migration:  "database/migrations",
+			Model:      "app/models",
+			Observer:   "app/observers",
 			Package:    "packages",
-			Policy:     filepath.Join("app", "policies"),
-			Provider:   filepath.Join("app", "providers"),
-			Request:    filepath.Join("app", "http", "requests"),
+			Policy:     "app/policies",
+			Provider:   "app/providers",
+			Public:     "public",
+			Request:    "app/http/requests",
+			Resources:  "resources",
 			Routes:     "routes",
-			Rule:       filepath.Join("app", "rules"),
-			Seeder:     filepath.Join("database", "seeders"),
+			Rule:       "app/rules",
+			Seeder:     "database/seeders",
+			Storage:    "storage",
 			Test:       "tests",
 		},
 	}
 )
+
+// PathToSlice converts a file path string into a slice of its components,
+// handling both forward slashes and backslashes, and trimming leading/trailing slashes.
+// For example, "app/http/controllers" becomes []string{"app", "http", "controllers"}.
+func PathToSlice(path string) []string {
+	path = strings.ReplaceAll(path, "\\", "/")
+	path = strings.Trim(path, "/")
+	if path == "" {
+		return nil
+	}
+
+	return strings.Split(path, "/")
+}
+
+// PathPackage extracts the last component of a file path string.
+// If the path is empty or only contains slashes, it returns the provided default value.
+// For example, "app/http/controllers" returns "controllers".
+func PathPackage(pkg, def string) string {
+	s := PathToSlice(pkg)
+
+	if len(s) == 0 {
+		return def
+	}
+
+	return s[len(s)-1]
+}

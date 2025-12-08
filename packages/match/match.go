@@ -22,6 +22,7 @@ type (
 
 // MatchCursor checks if the cursor's current node matches this GoNode matcher.
 // If first or last flags are set, it also verifies the node's position in its parent slice.
+// For example, FirstOf(Ident("x")).MatchCursor(cursor) returns true only if cursor points to the first identifier "x" in its parent slice.
 func (r GoNode) MatchCursor(cursor *dstutil.Cursor) bool {
 	if r.first || r.last {
 		if r.MatchNode(cursor.Node()) {
@@ -44,12 +45,14 @@ func (r GoNode) MatchCursor(cursor *dstutil.Cursor) bool {
 }
 
 // MatchNode checks if the given node matches this GoNode matcher.
+// For example, Ident("x").MatchNode(node) returns true if node is an identifier with the name "x".
 func (r GoNode) MatchNode(node dst.Node) bool {
 	return r.match(node)
 }
 
 // MatchNodes checks if all nodes in the slice match their corresponding matchers.
 // Returns true if the GoNodes collection is empty or all nodes match.
+// For example, GoNodes{Ident("x"), Ident("y")}.MatchNodes(nodes) returns true if nodes contains exactly two identifiers "x" and "y" in that order.
 func (r GoNodes) MatchNodes(nodes []dst.Node) bool {
 	if len(r) == 0 {
 		return true
@@ -328,7 +331,10 @@ func dstExprEq(x, y dst.Expr) bool {
 		return ok && dstUnaryExprEq(x, y)
 	case *dst.CallExpr:
 		y, ok := y.(*dst.CallExpr)
-		return ok && dstExprEq(x.Fun, y.Fun) && dstExprSliceEq(x.Args, y.Args) && x.Ellipsis == y.Ellipsis
+		return ok && dstCallExprEq(x, y)
+	case *dst.FuncType:
+		y, ok := y.(*dst.FuncType)
+		return ok && dstFuncTypeEq(x, y)
 	default:
 		panic("unhandled node type, please add it to dstExprEq")
 	}
@@ -359,6 +365,16 @@ func dstCompositeLitEq(x, y *dst.CompositeLit) bool {
 	}
 
 	return dstExprEq(x.Type, y.Type) && dstExprSliceEq(x.Elts, y.Elts)
+}
+
+// dstCallExprEq compares two dst.CallExpr instances for equality.
+// For example, dstCallExprEq(&dst.CallExpr{Fun: &dst.Ident{Name: "print"}}, &dst.CallExpr{Fun: &dst.Ident{Name: "print"}}) returns true.
+func dstCallExprEq(x, y *dst.CallExpr) bool {
+	if x == nil || y == nil {
+		return x == y
+	}
+
+	return dstExprEq(x.Fun, y.Fun) && dstExprSliceEq(x.Args, y.Args) && x.Ellipsis == y.Ellipsis
 }
 
 // dstExprSliceEq compares two slices of dst.Expr for equality.
@@ -428,6 +444,54 @@ func dstExprStmtEq(x, y *dst.ExprStmt) bool {
 	}
 
 	return dstExprEq(x.X, y.X)
+}
+
+// dstFuncTypeEq compares two dst.FuncType instances for equality.
+func dstFuncTypeEq(x, y *dst.FuncType) bool {
+	if x == nil || y == nil {
+		return x == y
+	}
+
+	return dstFieldListEq(x.Params, y.Params) && dstFieldListEq(x.Results, y.Results)
+}
+
+// dstFieldListEq compares two dst.FieldList instances for equality.
+func dstFieldListEq(x, y *dst.FieldList) bool {
+	if x == nil || y == nil {
+		return x == y
+	}
+
+	if len(x.List) != len(y.List) {
+		return false
+	}
+
+	for i := range x.List {
+		if !dstFieldEq(x.List[i], y.List[i]) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// dstFieldEq compares two dst.Field instances for equality.
+func dstFieldEq(x, y *dst.Field) bool {
+	if x == nil || y == nil {
+		return x == y
+	}
+
+	// Compare names
+	if len(x.Names) != len(y.Names) {
+		return false
+	}
+	for i := range x.Names {
+		if !dstIdentEq(x.Names[i], y.Names[i]) {
+			return false
+		}
+	}
+
+	// Compare type
+	return dstExprEq(x.Type, y.Type)
 }
 
 // dstUnaryExprEq compares two dst.UnaryExpr instances for equality.

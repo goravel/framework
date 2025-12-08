@@ -20,6 +20,54 @@ func (_m *Paths) EXPECT() *Paths_Expecter {
 	return &Paths_Expecter{mock: &_m.Mock}
 }
 
+// App provides a mock function with given fields: path
+func (_m *Paths) App(path string) configuration.Paths {
+	ret := _m.Called(path)
+
+	if len(ret) == 0 {
+		panic("no return value specified for App")
+	}
+
+	var r0 configuration.Paths
+	if rf, ok := ret.Get(0).(func(string) configuration.Paths); ok {
+		r0 = rf(path)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(configuration.Paths)
+		}
+	}
+
+	return r0
+}
+
+// Paths_App_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'App'
+type Paths_App_Call struct {
+	*mock.Call
+}
+
+// App is a helper method to define mock.On call
+//   - path string
+func (_e *Paths_Expecter) App(path interface{}) *Paths_App_Call {
+	return &Paths_App_Call{Call: _e.mock.On("App", path)}
+}
+
+func (_c *Paths_App_Call) Run(run func(path string)) *Paths_App_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Paths_App_Call) Return(_a0 configuration.Paths) *Paths_App_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Paths_App_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_App_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Bootstrap provides a mock function with given fields: path
 func (_m *Paths) Bootstrap(path string) configuration.Paths {
 	ret := _m.Called(path)
@@ -68,12 +116,12 @@ func (_c *Paths_Bootstrap_Call) RunAndReturn(run func(string) configuration.Path
 	return _c
 }
 
-// Command provides a mock function with given fields: path
-func (_m *Paths) Command(path string) configuration.Paths {
+// Commands provides a mock function with given fields: path
+func (_m *Paths) Commands(path string) configuration.Paths {
 	ret := _m.Called(path)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Command")
+		panic("no return value specified for Commands")
 	}
 
 	var r0 configuration.Paths
@@ -88,40 +136,40 @@ func (_m *Paths) Command(path string) configuration.Paths {
 	return r0
 }
 
-// Paths_Command_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Command'
-type Paths_Command_Call struct {
+// Paths_Commands_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Commands'
+type Paths_Commands_Call struct {
 	*mock.Call
 }
 
-// Command is a helper method to define mock.On call
+// Commands is a helper method to define mock.On call
 //   - path string
-func (_e *Paths_Expecter) Command(path interface{}) *Paths_Command_Call {
-	return &Paths_Command_Call{Call: _e.mock.On("Command", path)}
+func (_e *Paths_Expecter) Commands(path interface{}) *Paths_Commands_Call {
+	return &Paths_Commands_Call{Call: _e.mock.On("Commands", path)}
 }
 
-func (_c *Paths_Command_Call) Run(run func(path string)) *Paths_Command_Call {
+func (_c *Paths_Commands_Call) Run(run func(path string)) *Paths_Commands_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *Paths_Command_Call) Return(_a0 configuration.Paths) *Paths_Command_Call {
+func (_c *Paths_Commands_Call) Return(_a0 configuration.Paths) *Paths_Commands_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Paths_Command_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Command_Call {
+func (_c *Paths_Commands_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Commands_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Controller provides a mock function with given fields: path
-func (_m *Paths) Controller(path string) configuration.Paths {
+// Config provides a mock function with given fields: path
+func (_m *Paths) Config(path string) configuration.Paths {
 	ret := _m.Called(path)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Controller")
+		panic("no return value specified for Config")
 	}
 
 	var r0 configuration.Paths
@@ -136,40 +184,40 @@ func (_m *Paths) Controller(path string) configuration.Paths {
 	return r0
 }
 
-// Paths_Controller_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Controller'
-type Paths_Controller_Call struct {
+// Paths_Config_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Config'
+type Paths_Config_Call struct {
 	*mock.Call
 }
 
-// Controller is a helper method to define mock.On call
+// Config is a helper method to define mock.On call
 //   - path string
-func (_e *Paths_Expecter) Controller(path interface{}) *Paths_Controller_Call {
-	return &Paths_Controller_Call{Call: _e.mock.On("Controller", path)}
+func (_e *Paths_Expecter) Config(path interface{}) *Paths_Config_Call {
+	return &Paths_Config_Call{Call: _e.mock.On("Config", path)}
 }
 
-func (_c *Paths_Controller_Call) Run(run func(path string)) *Paths_Controller_Call {
+func (_c *Paths_Config_Call) Run(run func(path string)) *Paths_Config_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *Paths_Controller_Call) Return(_a0 configuration.Paths) *Paths_Controller_Call {
+func (_c *Paths_Config_Call) Return(_a0 configuration.Paths) *Paths_Config_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Paths_Controller_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Controller_Call {
+func (_c *Paths_Config_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Config_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Event provides a mock function with given fields: path
-func (_m *Paths) Event(path string) configuration.Paths {
+// Controllers provides a mock function with given fields: path
+func (_m *Paths) Controllers(path string) configuration.Paths {
 	ret := _m.Called(path)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Event")
+		panic("no return value specified for Controllers")
 	}
 
 	var r0 configuration.Paths
@@ -184,40 +232,40 @@ func (_m *Paths) Event(path string) configuration.Paths {
 	return r0
 }
 
-// Paths_Event_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Event'
-type Paths_Event_Call struct {
+// Paths_Controllers_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Controllers'
+type Paths_Controllers_Call struct {
 	*mock.Call
 }
 
-// Event is a helper method to define mock.On call
+// Controllers is a helper method to define mock.On call
 //   - path string
-func (_e *Paths_Expecter) Event(path interface{}) *Paths_Event_Call {
-	return &Paths_Event_Call{Call: _e.mock.On("Event", path)}
+func (_e *Paths_Expecter) Controllers(path interface{}) *Paths_Controllers_Call {
+	return &Paths_Controllers_Call{Call: _e.mock.On("Controllers", path)}
 }
 
-func (_c *Paths_Event_Call) Run(run func(path string)) *Paths_Event_Call {
+func (_c *Paths_Controllers_Call) Run(run func(path string)) *Paths_Controllers_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *Paths_Event_Call) Return(_a0 configuration.Paths) *Paths_Event_Call {
+func (_c *Paths_Controllers_Call) Return(_a0 configuration.Paths) *Paths_Controllers_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Paths_Event_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Event_Call {
+func (_c *Paths_Controllers_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Controllers_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Factory provides a mock function with given fields: path
-func (_m *Paths) Factory(path string) configuration.Paths {
+// Database provides a mock function with given fields: path
+func (_m *Paths) Database(path string) configuration.Paths {
 	ret := _m.Called(path)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Factory")
+		panic("no return value specified for Database")
 	}
 
 	var r0 configuration.Paths
@@ -232,40 +280,40 @@ func (_m *Paths) Factory(path string) configuration.Paths {
 	return r0
 }
 
-// Paths_Factory_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Factory'
-type Paths_Factory_Call struct {
+// Paths_Database_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Database'
+type Paths_Database_Call struct {
 	*mock.Call
 }
 
-// Factory is a helper method to define mock.On call
+// Database is a helper method to define mock.On call
 //   - path string
-func (_e *Paths_Expecter) Factory(path interface{}) *Paths_Factory_Call {
-	return &Paths_Factory_Call{Call: _e.mock.On("Factory", path)}
+func (_e *Paths_Expecter) Database(path interface{}) *Paths_Database_Call {
+	return &Paths_Database_Call{Call: _e.mock.On("Database", path)}
 }
 
-func (_c *Paths_Factory_Call) Run(run func(path string)) *Paths_Factory_Call {
+func (_c *Paths_Database_Call) Run(run func(path string)) *Paths_Database_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *Paths_Factory_Call) Return(_a0 configuration.Paths) *Paths_Factory_Call {
+func (_c *Paths_Database_Call) Return(_a0 configuration.Paths) *Paths_Database_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Paths_Factory_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Factory_Call {
+func (_c *Paths_Database_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Database_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Filter provides a mock function with given fields: path
-func (_m *Paths) Filter(path string) configuration.Paths {
+// Events provides a mock function with given fields: path
+func (_m *Paths) Events(path string) configuration.Paths {
 	ret := _m.Called(path)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Filter")
+		panic("no return value specified for Events")
 	}
 
 	var r0 configuration.Paths
@@ -280,40 +328,40 @@ func (_m *Paths) Filter(path string) configuration.Paths {
 	return r0
 }
 
-// Paths_Filter_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Filter'
-type Paths_Filter_Call struct {
+// Paths_Events_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Events'
+type Paths_Events_Call struct {
 	*mock.Call
 }
 
-// Filter is a helper method to define mock.On call
+// Events is a helper method to define mock.On call
 //   - path string
-func (_e *Paths_Expecter) Filter(path interface{}) *Paths_Filter_Call {
-	return &Paths_Filter_Call{Call: _e.mock.On("Filter", path)}
+func (_e *Paths_Expecter) Events(path interface{}) *Paths_Events_Call {
+	return &Paths_Events_Call{Call: _e.mock.On("Events", path)}
 }
 
-func (_c *Paths_Filter_Call) Run(run func(path string)) *Paths_Filter_Call {
+func (_c *Paths_Events_Call) Run(run func(path string)) *Paths_Events_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *Paths_Filter_Call) Return(_a0 configuration.Paths) *Paths_Filter_Call {
+func (_c *Paths_Events_Call) Return(_a0 configuration.Paths) *Paths_Events_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Paths_Filter_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Filter_Call {
+func (_c *Paths_Events_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Events_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Job provides a mock function with given fields: path
-func (_m *Paths) Job(path string) configuration.Paths {
+// Facades provides a mock function with given fields: path
+func (_m *Paths) Facades(path string) configuration.Paths {
 	ret := _m.Called(path)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Job")
+		panic("no return value specified for Facades")
 	}
 
 	var r0 configuration.Paths
@@ -328,40 +376,40 @@ func (_m *Paths) Job(path string) configuration.Paths {
 	return r0
 }
 
-// Paths_Job_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Job'
-type Paths_Job_Call struct {
+// Paths_Facades_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Facades'
+type Paths_Facades_Call struct {
 	*mock.Call
 }
 
-// Job is a helper method to define mock.On call
+// Facades is a helper method to define mock.On call
 //   - path string
-func (_e *Paths_Expecter) Job(path interface{}) *Paths_Job_Call {
-	return &Paths_Job_Call{Call: _e.mock.On("Job", path)}
+func (_e *Paths_Expecter) Facades(path interface{}) *Paths_Facades_Call {
+	return &Paths_Facades_Call{Call: _e.mock.On("Facades", path)}
 }
 
-func (_c *Paths_Job_Call) Run(run func(path string)) *Paths_Job_Call {
+func (_c *Paths_Facades_Call) Run(run func(path string)) *Paths_Facades_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *Paths_Job_Call) Return(_a0 configuration.Paths) *Paths_Job_Call {
+func (_c *Paths_Facades_Call) Return(_a0 configuration.Paths) *Paths_Facades_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Paths_Job_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Job_Call {
+func (_c *Paths_Facades_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Facades_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Listener provides a mock function with given fields: path
-func (_m *Paths) Listener(path string) configuration.Paths {
+// Factories provides a mock function with given fields: path
+func (_m *Paths) Factories(path string) configuration.Paths {
 	ret := _m.Called(path)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Listener")
+		panic("no return value specified for Factories")
 	}
 
 	var r0 configuration.Paths
@@ -376,40 +424,40 @@ func (_m *Paths) Listener(path string) configuration.Paths {
 	return r0
 }
 
-// Paths_Listener_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Listener'
-type Paths_Listener_Call struct {
+// Paths_Factories_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Factories'
+type Paths_Factories_Call struct {
 	*mock.Call
 }
 
-// Listener is a helper method to define mock.On call
+// Factories is a helper method to define mock.On call
 //   - path string
-func (_e *Paths_Expecter) Listener(path interface{}) *Paths_Listener_Call {
-	return &Paths_Listener_Call{Call: _e.mock.On("Listener", path)}
+func (_e *Paths_Expecter) Factories(path interface{}) *Paths_Factories_Call {
+	return &Paths_Factories_Call{Call: _e.mock.On("Factories", path)}
 }
 
-func (_c *Paths_Listener_Call) Run(run func(path string)) *Paths_Listener_Call {
+func (_c *Paths_Factories_Call) Run(run func(path string)) *Paths_Factories_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *Paths_Listener_Call) Return(_a0 configuration.Paths) *Paths_Listener_Call {
+func (_c *Paths_Factories_Call) Return(_a0 configuration.Paths) *Paths_Factories_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Paths_Listener_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Listener_Call {
+func (_c *Paths_Factories_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Factories_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Mail provides a mock function with given fields: path
-func (_m *Paths) Mail(path string) configuration.Paths {
+// Filters provides a mock function with given fields: path
+func (_m *Paths) Filters(path string) configuration.Paths {
 	ret := _m.Called(path)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Mail")
+		panic("no return value specified for Filters")
 	}
 
 	var r0 configuration.Paths
@@ -424,30 +472,222 @@ func (_m *Paths) Mail(path string) configuration.Paths {
 	return r0
 }
 
-// Paths_Mail_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Mail'
-type Paths_Mail_Call struct {
+// Paths_Filters_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Filters'
+type Paths_Filters_Call struct {
 	*mock.Call
 }
 
-// Mail is a helper method to define mock.On call
+// Filters is a helper method to define mock.On call
 //   - path string
-func (_e *Paths_Expecter) Mail(path interface{}) *Paths_Mail_Call {
-	return &Paths_Mail_Call{Call: _e.mock.On("Mail", path)}
+func (_e *Paths_Expecter) Filters(path interface{}) *Paths_Filters_Call {
+	return &Paths_Filters_Call{Call: _e.mock.On("Filters", path)}
 }
 
-func (_c *Paths_Mail_Call) Run(run func(path string)) *Paths_Mail_Call {
+func (_c *Paths_Filters_Call) Run(run func(path string)) *Paths_Filters_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *Paths_Mail_Call) Return(_a0 configuration.Paths) *Paths_Mail_Call {
+func (_c *Paths_Filters_Call) Return(_a0 configuration.Paths) *Paths_Filters_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Paths_Mail_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Mail_Call {
+func (_c *Paths_Filters_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Filters_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Jobs provides a mock function with given fields: path
+func (_m *Paths) Jobs(path string) configuration.Paths {
+	ret := _m.Called(path)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Jobs")
+	}
+
+	var r0 configuration.Paths
+	if rf, ok := ret.Get(0).(func(string) configuration.Paths); ok {
+		r0 = rf(path)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(configuration.Paths)
+		}
+	}
+
+	return r0
+}
+
+// Paths_Jobs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Jobs'
+type Paths_Jobs_Call struct {
+	*mock.Call
+}
+
+// Jobs is a helper method to define mock.On call
+//   - path string
+func (_e *Paths_Expecter) Jobs(path interface{}) *Paths_Jobs_Call {
+	return &Paths_Jobs_Call{Call: _e.mock.On("Jobs", path)}
+}
+
+func (_c *Paths_Jobs_Call) Run(run func(path string)) *Paths_Jobs_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Paths_Jobs_Call) Return(_a0 configuration.Paths) *Paths_Jobs_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Paths_Jobs_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Jobs_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Lang provides a mock function with given fields: path
+func (_m *Paths) Lang(path string) configuration.Paths {
+	ret := _m.Called(path)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Lang")
+	}
+
+	var r0 configuration.Paths
+	if rf, ok := ret.Get(0).(func(string) configuration.Paths); ok {
+		r0 = rf(path)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(configuration.Paths)
+		}
+	}
+
+	return r0
+}
+
+// Paths_Lang_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Lang'
+type Paths_Lang_Call struct {
+	*mock.Call
+}
+
+// Lang is a helper method to define mock.On call
+//   - path string
+func (_e *Paths_Expecter) Lang(path interface{}) *Paths_Lang_Call {
+	return &Paths_Lang_Call{Call: _e.mock.On("Lang", path)}
+}
+
+func (_c *Paths_Lang_Call) Run(run func(path string)) *Paths_Lang_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Paths_Lang_Call) Return(_a0 configuration.Paths) *Paths_Lang_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Paths_Lang_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Lang_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Listeners provides a mock function with given fields: path
+func (_m *Paths) Listeners(path string) configuration.Paths {
+	ret := _m.Called(path)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Listeners")
+	}
+
+	var r0 configuration.Paths
+	if rf, ok := ret.Get(0).(func(string) configuration.Paths); ok {
+		r0 = rf(path)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(configuration.Paths)
+		}
+	}
+
+	return r0
+}
+
+// Paths_Listeners_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Listeners'
+type Paths_Listeners_Call struct {
+	*mock.Call
+}
+
+// Listeners is a helper method to define mock.On call
+//   - path string
+func (_e *Paths_Expecter) Listeners(path interface{}) *Paths_Listeners_Call {
+	return &Paths_Listeners_Call{Call: _e.mock.On("Listeners", path)}
+}
+
+func (_c *Paths_Listeners_Call) Run(run func(path string)) *Paths_Listeners_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Paths_Listeners_Call) Return(_a0 configuration.Paths) *Paths_Listeners_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Paths_Listeners_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Listeners_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Mails provides a mock function with given fields: path
+func (_m *Paths) Mails(path string) configuration.Paths {
+	ret := _m.Called(path)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Mails")
+	}
+
+	var r0 configuration.Paths
+	if rf, ok := ret.Get(0).(func(string) configuration.Paths); ok {
+		r0 = rf(path)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(configuration.Paths)
+		}
+	}
+
+	return r0
+}
+
+// Paths_Mails_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Mails'
+type Paths_Mails_Call struct {
+	*mock.Call
+}
+
+// Mails is a helper method to define mock.On call
+//   - path string
+func (_e *Paths_Expecter) Mails(path interface{}) *Paths_Mails_Call {
+	return &Paths_Mails_Call{Call: _e.mock.On("Mails", path)}
+}
+
+func (_c *Paths_Mails_Call) Run(run func(path string)) *Paths_Mails_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Paths_Mails_Call) Return(_a0 configuration.Paths) *Paths_Mails_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Paths_Mails_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Mails_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -500,12 +740,12 @@ func (_c *Paths_Middleware_Call) RunAndReturn(run func(string) configuration.Pat
 	return _c
 }
 
-// Migration provides a mock function with given fields: path
-func (_m *Paths) Migration(path string) configuration.Paths {
+// Migrations provides a mock function with given fields: path
+func (_m *Paths) Migrations(path string) configuration.Paths {
 	ret := _m.Called(path)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Migration")
+		panic("no return value specified for Migrations")
 	}
 
 	var r0 configuration.Paths
@@ -520,40 +760,40 @@ func (_m *Paths) Migration(path string) configuration.Paths {
 	return r0
 }
 
-// Paths_Migration_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Migration'
-type Paths_Migration_Call struct {
+// Paths_Migrations_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Migrations'
+type Paths_Migrations_Call struct {
 	*mock.Call
 }
 
-// Migration is a helper method to define mock.On call
+// Migrations is a helper method to define mock.On call
 //   - path string
-func (_e *Paths_Expecter) Migration(path interface{}) *Paths_Migration_Call {
-	return &Paths_Migration_Call{Call: _e.mock.On("Migration", path)}
+func (_e *Paths_Expecter) Migrations(path interface{}) *Paths_Migrations_Call {
+	return &Paths_Migrations_Call{Call: _e.mock.On("Migrations", path)}
 }
 
-func (_c *Paths_Migration_Call) Run(run func(path string)) *Paths_Migration_Call {
+func (_c *Paths_Migrations_Call) Run(run func(path string)) *Paths_Migrations_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *Paths_Migration_Call) Return(_a0 configuration.Paths) *Paths_Migration_Call {
+func (_c *Paths_Migrations_Call) Return(_a0 configuration.Paths) *Paths_Migrations_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Paths_Migration_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Migration_Call {
+func (_c *Paths_Migrations_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Migrations_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Model provides a mock function with given fields: path
-func (_m *Paths) Model(path string) configuration.Paths {
+// Models provides a mock function with given fields: path
+func (_m *Paths) Models(path string) configuration.Paths {
 	ret := _m.Called(path)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Model")
+		panic("no return value specified for Models")
 	}
 
 	var r0 configuration.Paths
@@ -568,40 +808,40 @@ func (_m *Paths) Model(path string) configuration.Paths {
 	return r0
 }
 
-// Paths_Model_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Model'
-type Paths_Model_Call struct {
+// Paths_Models_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Models'
+type Paths_Models_Call struct {
 	*mock.Call
 }
 
-// Model is a helper method to define mock.On call
+// Models is a helper method to define mock.On call
 //   - path string
-func (_e *Paths_Expecter) Model(path interface{}) *Paths_Model_Call {
-	return &Paths_Model_Call{Call: _e.mock.On("Model", path)}
+func (_e *Paths_Expecter) Models(path interface{}) *Paths_Models_Call {
+	return &Paths_Models_Call{Call: _e.mock.On("Models", path)}
 }
 
-func (_c *Paths_Model_Call) Run(run func(path string)) *Paths_Model_Call {
+func (_c *Paths_Models_Call) Run(run func(path string)) *Paths_Models_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *Paths_Model_Call) Return(_a0 configuration.Paths) *Paths_Model_Call {
+func (_c *Paths_Models_Call) Return(_a0 configuration.Paths) *Paths_Models_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Paths_Model_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Model_Call {
+func (_c *Paths_Models_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Models_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Observer provides a mock function with given fields: path
-func (_m *Paths) Observer(path string) configuration.Paths {
+// Observers provides a mock function with given fields: path
+func (_m *Paths) Observers(path string) configuration.Paths {
 	ret := _m.Called(path)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Observer")
+		panic("no return value specified for Observers")
 	}
 
 	var r0 configuration.Paths
@@ -616,40 +856,40 @@ func (_m *Paths) Observer(path string) configuration.Paths {
 	return r0
 }
 
-// Paths_Observer_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Observer'
-type Paths_Observer_Call struct {
+// Paths_Observers_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Observers'
+type Paths_Observers_Call struct {
 	*mock.Call
 }
 
-// Observer is a helper method to define mock.On call
+// Observers is a helper method to define mock.On call
 //   - path string
-func (_e *Paths_Expecter) Observer(path interface{}) *Paths_Observer_Call {
-	return &Paths_Observer_Call{Call: _e.mock.On("Observer", path)}
+func (_e *Paths_Expecter) Observers(path interface{}) *Paths_Observers_Call {
+	return &Paths_Observers_Call{Call: _e.mock.On("Observers", path)}
 }
 
-func (_c *Paths_Observer_Call) Run(run func(path string)) *Paths_Observer_Call {
+func (_c *Paths_Observers_Call) Run(run func(path string)) *Paths_Observers_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *Paths_Observer_Call) Return(_a0 configuration.Paths) *Paths_Observer_Call {
+func (_c *Paths_Observers_Call) Return(_a0 configuration.Paths) *Paths_Observers_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Paths_Observer_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Observer_Call {
+func (_c *Paths_Observers_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Observers_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Package provides a mock function with given fields: path
-func (_m *Paths) Package(path string) configuration.Paths {
+// Packages provides a mock function with given fields: path
+func (_m *Paths) Packages(path string) configuration.Paths {
 	ret := _m.Called(path)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Package")
+		panic("no return value specified for Packages")
 	}
 
 	var r0 configuration.Paths
@@ -664,40 +904,40 @@ func (_m *Paths) Package(path string) configuration.Paths {
 	return r0
 }
 
-// Paths_Package_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Package'
-type Paths_Package_Call struct {
+// Paths_Packages_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Packages'
+type Paths_Packages_Call struct {
 	*mock.Call
 }
 
-// Package is a helper method to define mock.On call
+// Packages is a helper method to define mock.On call
 //   - path string
-func (_e *Paths_Expecter) Package(path interface{}) *Paths_Package_Call {
-	return &Paths_Package_Call{Call: _e.mock.On("Package", path)}
+func (_e *Paths_Expecter) Packages(path interface{}) *Paths_Packages_Call {
+	return &Paths_Packages_Call{Call: _e.mock.On("Packages", path)}
 }
 
-func (_c *Paths_Package_Call) Run(run func(path string)) *Paths_Package_Call {
+func (_c *Paths_Packages_Call) Run(run func(path string)) *Paths_Packages_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *Paths_Package_Call) Return(_a0 configuration.Paths) *Paths_Package_Call {
+func (_c *Paths_Packages_Call) Return(_a0 configuration.Paths) *Paths_Packages_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Paths_Package_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Package_Call {
+func (_c *Paths_Packages_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Packages_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Policy provides a mock function with given fields: path
-func (_m *Paths) Policy(path string) configuration.Paths {
+// Policies provides a mock function with given fields: path
+func (_m *Paths) Policies(path string) configuration.Paths {
 	ret := _m.Called(path)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Policy")
+		panic("no return value specified for Policies")
 	}
 
 	var r0 configuration.Paths
@@ -712,40 +952,40 @@ func (_m *Paths) Policy(path string) configuration.Paths {
 	return r0
 }
 
-// Paths_Policy_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Policy'
-type Paths_Policy_Call struct {
+// Paths_Policies_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Policies'
+type Paths_Policies_Call struct {
 	*mock.Call
 }
 
-// Policy is a helper method to define mock.On call
+// Policies is a helper method to define mock.On call
 //   - path string
-func (_e *Paths_Expecter) Policy(path interface{}) *Paths_Policy_Call {
-	return &Paths_Policy_Call{Call: _e.mock.On("Policy", path)}
+func (_e *Paths_Expecter) Policies(path interface{}) *Paths_Policies_Call {
+	return &Paths_Policies_Call{Call: _e.mock.On("Policies", path)}
 }
 
-func (_c *Paths_Policy_Call) Run(run func(path string)) *Paths_Policy_Call {
+func (_c *Paths_Policies_Call) Run(run func(path string)) *Paths_Policies_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *Paths_Policy_Call) Return(_a0 configuration.Paths) *Paths_Policy_Call {
+func (_c *Paths_Policies_Call) Return(_a0 configuration.Paths) *Paths_Policies_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Paths_Policy_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Policy_Call {
+func (_c *Paths_Policies_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Policies_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Provider provides a mock function with given fields: path
-func (_m *Paths) Provider(path string) configuration.Paths {
+// Providers provides a mock function with given fields: path
+func (_m *Paths) Providers(path string) configuration.Paths {
 	ret := _m.Called(path)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Provider")
+		panic("no return value specified for Providers")
 	}
 
 	var r0 configuration.Paths
@@ -760,40 +1000,40 @@ func (_m *Paths) Provider(path string) configuration.Paths {
 	return r0
 }
 
-// Paths_Provider_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Provider'
-type Paths_Provider_Call struct {
+// Paths_Providers_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Providers'
+type Paths_Providers_Call struct {
 	*mock.Call
 }
 
-// Provider is a helper method to define mock.On call
+// Providers is a helper method to define mock.On call
 //   - path string
-func (_e *Paths_Expecter) Provider(path interface{}) *Paths_Provider_Call {
-	return &Paths_Provider_Call{Call: _e.mock.On("Provider", path)}
+func (_e *Paths_Expecter) Providers(path interface{}) *Paths_Providers_Call {
+	return &Paths_Providers_Call{Call: _e.mock.On("Providers", path)}
 }
 
-func (_c *Paths_Provider_Call) Run(run func(path string)) *Paths_Provider_Call {
+func (_c *Paths_Providers_Call) Run(run func(path string)) *Paths_Providers_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *Paths_Provider_Call) Return(_a0 configuration.Paths) *Paths_Provider_Call {
+func (_c *Paths_Providers_Call) Return(_a0 configuration.Paths) *Paths_Providers_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Paths_Provider_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Provider_Call {
+func (_c *Paths_Providers_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Providers_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Request provides a mock function with given fields: path
-func (_m *Paths) Request(path string) configuration.Paths {
+// Public provides a mock function with given fields: path
+func (_m *Paths) Public(path string) configuration.Paths {
 	ret := _m.Called(path)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Request")
+		panic("no return value specified for Public")
 	}
 
 	var r0 configuration.Paths
@@ -808,40 +1048,40 @@ func (_m *Paths) Request(path string) configuration.Paths {
 	return r0
 }
 
-// Paths_Request_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Request'
-type Paths_Request_Call struct {
+// Paths_Public_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Public'
+type Paths_Public_Call struct {
 	*mock.Call
 }
 
-// Request is a helper method to define mock.On call
+// Public is a helper method to define mock.On call
 //   - path string
-func (_e *Paths_Expecter) Request(path interface{}) *Paths_Request_Call {
-	return &Paths_Request_Call{Call: _e.mock.On("Request", path)}
+func (_e *Paths_Expecter) Public(path interface{}) *Paths_Public_Call {
+	return &Paths_Public_Call{Call: _e.mock.On("Public", path)}
 }
 
-func (_c *Paths_Request_Call) Run(run func(path string)) *Paths_Request_Call {
+func (_c *Paths_Public_Call) Run(run func(path string)) *Paths_Public_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *Paths_Request_Call) Return(_a0 configuration.Paths) *Paths_Request_Call {
+func (_c *Paths_Public_Call) Return(_a0 configuration.Paths) *Paths_Public_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Paths_Request_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Request_Call {
+func (_c *Paths_Public_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Public_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Rule provides a mock function with given fields: path
-func (_m *Paths) Rule(path string) configuration.Paths {
+// Requests provides a mock function with given fields: path
+func (_m *Paths) Requests(path string) configuration.Paths {
 	ret := _m.Called(path)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Rule")
+		panic("no return value specified for Requests")
 	}
 
 	var r0 configuration.Paths
@@ -856,40 +1096,40 @@ func (_m *Paths) Rule(path string) configuration.Paths {
 	return r0
 }
 
-// Paths_Rule_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Rule'
-type Paths_Rule_Call struct {
+// Paths_Requests_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Requests'
+type Paths_Requests_Call struct {
 	*mock.Call
 }
 
-// Rule is a helper method to define mock.On call
+// Requests is a helper method to define mock.On call
 //   - path string
-func (_e *Paths_Expecter) Rule(path interface{}) *Paths_Rule_Call {
-	return &Paths_Rule_Call{Call: _e.mock.On("Rule", path)}
+func (_e *Paths_Expecter) Requests(path interface{}) *Paths_Requests_Call {
+	return &Paths_Requests_Call{Call: _e.mock.On("Requests", path)}
 }
 
-func (_c *Paths_Rule_Call) Run(run func(path string)) *Paths_Rule_Call {
+func (_c *Paths_Requests_Call) Run(run func(path string)) *Paths_Requests_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *Paths_Rule_Call) Return(_a0 configuration.Paths) *Paths_Rule_Call {
+func (_c *Paths_Requests_Call) Return(_a0 configuration.Paths) *Paths_Requests_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Paths_Rule_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Rule_Call {
+func (_c *Paths_Requests_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Requests_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Seeder provides a mock function with given fields: path
-func (_m *Paths) Seeder(path string) configuration.Paths {
+// Resources provides a mock function with given fields: path
+func (_m *Paths) Resources(path string) configuration.Paths {
 	ret := _m.Called(path)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Seeder")
+		panic("no return value specified for Resources")
 	}
 
 	var r0 configuration.Paths
@@ -904,40 +1144,40 @@ func (_m *Paths) Seeder(path string) configuration.Paths {
 	return r0
 }
 
-// Paths_Seeder_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Seeder'
-type Paths_Seeder_Call struct {
+// Paths_Resources_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Resources'
+type Paths_Resources_Call struct {
 	*mock.Call
 }
 
-// Seeder is a helper method to define mock.On call
+// Resources is a helper method to define mock.On call
 //   - path string
-func (_e *Paths_Expecter) Seeder(path interface{}) *Paths_Seeder_Call {
-	return &Paths_Seeder_Call{Call: _e.mock.On("Seeder", path)}
+func (_e *Paths_Expecter) Resources(path interface{}) *Paths_Resources_Call {
+	return &Paths_Resources_Call{Call: _e.mock.On("Resources", path)}
 }
 
-func (_c *Paths_Seeder_Call) Run(run func(path string)) *Paths_Seeder_Call {
+func (_c *Paths_Resources_Call) Run(run func(path string)) *Paths_Resources_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *Paths_Seeder_Call) Return(_a0 configuration.Paths) *Paths_Seeder_Call {
+func (_c *Paths_Resources_Call) Return(_a0 configuration.Paths) *Paths_Resources_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Paths_Seeder_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Seeder_Call {
+func (_c *Paths_Resources_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Resources_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Test provides a mock function with given fields: path
-func (_m *Paths) Test(path string) configuration.Paths {
+// Rules provides a mock function with given fields: path
+func (_m *Paths) Rules(path string) configuration.Paths {
 	ret := _m.Called(path)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Test")
+		panic("no return value specified for Rules")
 	}
 
 	var r0 configuration.Paths
@@ -952,30 +1192,174 @@ func (_m *Paths) Test(path string) configuration.Paths {
 	return r0
 }
 
-// Paths_Test_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Test'
-type Paths_Test_Call struct {
+// Paths_Rules_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Rules'
+type Paths_Rules_Call struct {
 	*mock.Call
 }
 
-// Test is a helper method to define mock.On call
+// Rules is a helper method to define mock.On call
 //   - path string
-func (_e *Paths_Expecter) Test(path interface{}) *Paths_Test_Call {
-	return &Paths_Test_Call{Call: _e.mock.On("Test", path)}
+func (_e *Paths_Expecter) Rules(path interface{}) *Paths_Rules_Call {
+	return &Paths_Rules_Call{Call: _e.mock.On("Rules", path)}
 }
 
-func (_c *Paths_Test_Call) Run(run func(path string)) *Paths_Test_Call {
+func (_c *Paths_Rules_Call) Run(run func(path string)) *Paths_Rules_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *Paths_Test_Call) Return(_a0 configuration.Paths) *Paths_Test_Call {
+func (_c *Paths_Rules_Call) Return(_a0 configuration.Paths) *Paths_Rules_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Paths_Test_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Test_Call {
+func (_c *Paths_Rules_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Rules_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Seeders provides a mock function with given fields: path
+func (_m *Paths) Seeders(path string) configuration.Paths {
+	ret := _m.Called(path)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Seeders")
+	}
+
+	var r0 configuration.Paths
+	if rf, ok := ret.Get(0).(func(string) configuration.Paths); ok {
+		r0 = rf(path)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(configuration.Paths)
+		}
+	}
+
+	return r0
+}
+
+// Paths_Seeders_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Seeders'
+type Paths_Seeders_Call struct {
+	*mock.Call
+}
+
+// Seeders is a helper method to define mock.On call
+//   - path string
+func (_e *Paths_Expecter) Seeders(path interface{}) *Paths_Seeders_Call {
+	return &Paths_Seeders_Call{Call: _e.mock.On("Seeders", path)}
+}
+
+func (_c *Paths_Seeders_Call) Run(run func(path string)) *Paths_Seeders_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Paths_Seeders_Call) Return(_a0 configuration.Paths) *Paths_Seeders_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Paths_Seeders_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Seeders_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Storage provides a mock function with given fields: path
+func (_m *Paths) Storage(path string) configuration.Paths {
+	ret := _m.Called(path)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Storage")
+	}
+
+	var r0 configuration.Paths
+	if rf, ok := ret.Get(0).(func(string) configuration.Paths); ok {
+		r0 = rf(path)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(configuration.Paths)
+		}
+	}
+
+	return r0
+}
+
+// Paths_Storage_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Storage'
+type Paths_Storage_Call struct {
+	*mock.Call
+}
+
+// Storage is a helper method to define mock.On call
+//   - path string
+func (_e *Paths_Expecter) Storage(path interface{}) *Paths_Storage_Call {
+	return &Paths_Storage_Call{Call: _e.mock.On("Storage", path)}
+}
+
+func (_c *Paths_Storage_Call) Run(run func(path string)) *Paths_Storage_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Paths_Storage_Call) Return(_a0 configuration.Paths) *Paths_Storage_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Paths_Storage_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Storage_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Tests provides a mock function with given fields: path
+func (_m *Paths) Tests(path string) configuration.Paths {
+	ret := _m.Called(path)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Tests")
+	}
+
+	var r0 configuration.Paths
+	if rf, ok := ret.Get(0).(func(string) configuration.Paths); ok {
+		r0 = rf(path)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(configuration.Paths)
+		}
+	}
+
+	return r0
+}
+
+// Paths_Tests_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Tests'
+type Paths_Tests_Call struct {
+	*mock.Call
+}
+
+// Tests is a helper method to define mock.On call
+//   - path string
+func (_e *Paths_Expecter) Tests(path interface{}) *Paths_Tests_Call {
+	return &Paths_Tests_Call{Call: _e.mock.On("Tests", path)}
+}
+
+func (_c *Paths_Tests_Call) Run(run func(path string)) *Paths_Tests_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Paths_Tests_Call) Return(_a0 configuration.Paths) *Paths_Tests_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Paths_Tests_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Tests_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -32,130 +32,88 @@ func (s *PackagesSetupTestSuite) TearDownTest() {
 
 func (s *PackagesSetupTestSuite) TestExecute() {
 	tests := []struct {
-		name   string
-		setup  func() packages.Setup
-		assert func(output string)
+		name    string
+		command string
+		force   bool
+		setup   func(st packages.Setup) packages.Setup
+		err     error
+		output  string
 	}{
 		{
-			name: "module name is empty",
-			setup: func() packages.Setup {
-				return Setup([]string{"uninstall", "--force"})
-			},
-			assert: func(output string) {
-				s.Contains(output, "package module name is empty")
-				s.Contains(output, "please run command with module name")
-			},
-		},
-		{
-			name: "install failed",
-			setup: func() packages.Setup {
-				var (
-					mockModify = mockmodify.NewGoFile(s.T())
-					set        = &setup{
-						module:  "test",
-						command: "install",
-					}
-				)
-
+			name:    "install failed",
+			command: "install",
+			setup: func(st packages.Setup) packages.Setup {
+				mockModify := mockmodify.NewGoFile(s.T())
 				mockModify.EXPECT().Apply(mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option")).Return(assert.AnError).Once()
-				set.Install(mockModify)
-
-				return set
+				return st.Install(mockModify)
 			},
-			assert: func(output string) {
-				s.Contains(output, "ERROR")
-				s.Contains(output, "assert.AnError general error for testing")
-			},
+			err:    assert.AnError,
+			output: "ERROR",
 		},
 		{
-			name: "install success",
-			setup: func() packages.Setup {
-				var (
-					mockModify = mockmodify.NewGoFile(s.T())
-					set        = &setup{
-						module:  "test",
-						command: "install",
-					}
-				)
+			name:    "install success",
+			command: "install",
+			setup: func(st packages.Setup) packages.Setup {
+				mockModify := mockmodify.NewGoFile(s.T())
 				mockModify.EXPECT().Apply(mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option")).Return(nil).Once()
-				set.Install(mockModify)
-
-				return set
+				return st.Install(mockModify)
 			},
-			assert: func(output string) {
-				s.Contains(output, "package installed successfully")
-			},
+			output: "package installed successfully",
 		},
 		{
-			name: "uninstall failed",
-			setup: func() packages.Setup {
-				var (
-					mockModify = mockmodify.NewGoFile(s.T())
-					set        = &setup{
-						module:  "test",
-						command: "uninstall",
-					}
-				)
+			name:    "uninstall failed",
+			command: "uninstall",
+			setup: func(st packages.Setup) packages.Setup {
+				mockModify := mockmodify.NewGoFile(s.T())
 				mockModify.EXPECT().Apply(mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option")).Return(assert.AnError).Once()
-				set.Uninstall(mockModify)
-
-				return set
+				return st.Uninstall(mockModify)
 			},
-			assert: func(output string) {
-				s.Contains(output, "ERROR")
-				s.Contains(output, "assert.AnError general error for testing")
-			},
+			err:    assert.AnError,
+			output: "ERROR",
 		},
 		{
-			name: "uninstall failed with force",
-			setup: func() packages.Setup {
-				var (
-					mockModify = mockmodify.NewGoFile(s.T())
-					set        = &setup{
-						module:  "test",
-						command: "uninstall",
-						force:   true,
-					}
-				)
+			name:    "uninstall failed with force",
+			command: "uninstall",
+			force:   true,
+			setup: func(st packages.Setup) packages.Setup {
+				mockModify := mockmodify.NewGoFile(s.T())
 				mockModify.EXPECT().Apply(mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option")).Return(assert.AnError).Once()
-				set.Uninstall(mockModify)
-
-				return set
+				return st.Uninstall(mockModify)
 			},
-			assert: func(output string) {
-				s.Contains(output, "WARNING")
-				s.Contains(output, "assert.AnError general error for testing")
-			},
+			err:    assert.AnError,
+			output: "WARNING",
 		},
 		{
-			name: "uninstall success",
-			setup: func() packages.Setup {
-				var (
-					mockModify = mockmodify.NewGoFile(s.T())
-					set        = &setup{
-						module:  "test",
-						command: "uninstall",
-					}
-				)
+			name:    "uninstall success",
+			command: "uninstall",
+			setup: func(st packages.Setup) packages.Setup {
+				mockModify := mockmodify.NewGoFile(s.T())
 				mockModify.EXPECT().Apply(mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option")).Return(nil).Once()
-				set.Uninstall(mockModify)
-
-				return set
+				return st.Uninstall(mockModify)
 			},
-			assert: func(output string) {
-				s.Contains(output, "package uninstalled successfully")
-			},
+			output: "package uninstalled successfully",
 		},
 	}
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			tt.assert(color.CaptureOutput(func(w io.Writer) {
+			args := []string{tt.command}
+			if tt.force {
+				args = append(args, "--force")
+			}
+
+			output := color.CaptureOutput(func(w io.Writer) {
 				func() {
 					defer func() { _ = recover() }()
-					tt.setup().Execute()
+					st := Setup(args)
+					tt.setup(st).Execute()
 				}()
-			}))
+			})
+
+			s.Contains(output, tt.output)
+			if tt.err != nil {
+				s.Contains(output, tt.err.Error())
+			}
 		})
 	}
 }
@@ -163,25 +121,32 @@ func (s *PackagesSetupTestSuite) TestExecute() {
 func TestSetup(t *testing.T) {
 	s := Setup([]string{"install", "--force", "--facade=test", "--driver=database"})
 	assert.Equal(t, &setup{
-		command: "install",
-		driver:  "database",
-		facade:  "test",
-		force:   true,
-		module:  "",
+		command:     "install",
+		driver:      "database",
+		facade:      "test",
+		force:       true,
+		packageName: "goravel",
 	}, s.(*setup))
 
 	s = Setup([]string{"uninstall", "-f", "--facade=test", "--driver=database"})
 	assert.Equal(t, &setup{
-		command: "uninstall",
-		driver:  "database",
-		facade:  "test",
-		force:   true,
-		module:  "",
+		command:     "uninstall",
+		driver:      "database",
+		facade:      "test",
+		force:       true,
+		packageName: "goravel",
+	}, s.(*setup))
+
+	s = Setup([]string{"install", "--package-name=custom-package", "--facade=test"})
+	assert.Equal(t, &setup{
+		command:     "install",
+		facade:      "test",
+		packageName: "custom-package",
 	}, s.(*setup))
 }
 
 func TestModuleName(t *testing.T) {
-	assert.Equal(t, "github.com/goravel/framework", GetModuleName())
+	assert.Equal(t, "github.com/goravel/framework", GetPackageName())
 }
 
 func TestModuleNameFromArgs(t *testing.T) {

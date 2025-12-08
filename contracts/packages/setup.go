@@ -5,7 +5,8 @@ import (
 )
 
 type Setup interface {
+	Execute()
+	PackageName() string
 	Install(modifiers ...modify.Apply) Setup
 	Uninstall(modifiers ...modify.Apply) Setup
-	Execute()
 }

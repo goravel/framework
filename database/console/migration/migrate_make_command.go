@@ -2,6 +2,7 @@ package migration
 
 import (
 	"fmt"
+
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/database/migration"

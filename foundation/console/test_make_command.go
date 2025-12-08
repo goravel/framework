@@ -52,7 +52,7 @@ func (r *TestMakeCommand) Handle(ctx console.Context) error {
 
 	stub := r.getStub()
 
-	if err := file.PutContent(m.GetFilePath(), r.populateStub(stub, m.GetPackageName(), m.GetStructName(), packages.GetModuleName())); err != nil {
+	if err := file.PutContent(m.GetFilePath(), r.populateStub(stub, m.GetPackageName(), m.GetStructName(), packages.GetPackageName())); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
