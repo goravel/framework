@@ -257,6 +257,7 @@ func TestPool_Concurrency_Windows(t *testing.T) {
 }
 
 func TestPool_OnOutput_Windows(t *testing.T) {
+	// TODO: fix sync issue when writing concurrently
 	t.Run("captures output via callback", func(t *testing.T) {
 		outputs := make(map[string][]string)
 		builder := NewPool().OnOutput(func(typ contractsprocess.OutputType, line []byte, key string) {

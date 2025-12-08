@@ -17,8 +17,9 @@ type PoolBuilder interface {
 	// If n is zero or less, a default value (e.g., the number of tasks) will be used.
 	Concurrency(n int) PoolBuilder
 
-	// OnOutput sets a handler to receive real-time output from all
-	// processes in the pool.
+	// OnOutput sets a callback that is invoked for each line of output.
+	// WARNING: This callback may be called concurrently from multiple goroutines.
+	// Callers must ensure thread-safety when accessing shared state.
 	OnOutput(handler OnPoolOutputFunc) PoolBuilder
 
 	// Pool adds commands to the process pool using the provided configurer function.

@@ -36,9 +36,17 @@ type withSliceConfig struct {
 	stubTemplate func() string
 	// matcherFunc is the function that returns the matcher to find the target location (e.g., matchPkg.Commands, matchPkg.Migrations)
 	matcherFunc func() []contractsmatch.GoNode
+	// alwaysInline determines whether items are always added inline in app.go (true for routing)
+	// or can use helper files (false for commands/migrations/etc)
+	alwaysInline bool
+	// isFuncSlice indicates if the slice type is []func() instead of a typed slice
+	isFuncSlice bool
 }
 
 // withSliceHandler handles adding items to a slice in foundation.Setup() chain.
+// It supports two modes:
+//  1. Helper file mode (alwaysInline=false): Items can be managed in separate helper files (e.g., commands.go, migrations.go)
+//  2. Always inline mode (alwaysInline=true): Items are always added directly to app.go (e.g., routing)
 type withSliceHandler struct {
 	config      withSliceConfig
 	appFilePath string
@@ -50,44 +58,120 @@ type withSliceHandler struct {
 func newWithSliceHandler(config withSliceConfig) *withSliceHandler {
 	appFilePath := internals.BootstrapApp()
 	bootstrapDir := filepath.Dir(appFilePath)
-	filePath := filepath.Join(bootstrapDir, config.fileName)
+
+	var filePath string
+	var fileExists bool
+
+	// Only construct file path and check existence for helper file mode
+	if !config.alwaysInline && config.fileName != "" {
+		filePath = filepath.Join(bootstrapDir, config.fileName)
+		fileExists = supportfile.Exists(filePath)
+	}
 
 	return &withSliceHandler{
 		config:      config,
 		appFilePath: appFilePath,
 		filePath:    filePath,
-		fileExists:  supportfile.Exists(filePath),
+		fileExists:  fileExists,
 	}
 }
 
-// AddItem adds an item to the slice in foundation.Setup() chain.
+// AddItem adds an item to a slice in the foundation.Setup() chain.
+//
+// Behavior depends on the configuration mode:
+//
+// Always-inline mode (alwaysInline=true):
+//   - Always adds items directly to the inline array in app.go
+//   - Never creates helper files
+//   - Used for routing ([]func{} slices)
+//
+// Helper file mode (alwaysInline=false):
+//  1. If WithMethod doesn't exist:
+//     - If helper file exists: Returns an error (file should only exist when WithMethod is registered)
+//     - If helper file doesn't exist: Creates the helper file with the item, adds WithMethod(HelperFunc()) to Setup()
+//  2. If WithMethod exists:
+//     - If helper file exists: Appends the item to the helper function
+//     - If helper file doesn't exist: Appends the item to the inline array in app.go
+//
+// Parameters:
+//   - pkg: Package path of the item (e.g., "github.com/goravel/app/rules" or "goravel/routes")
+//   - item: Item expression to add (e.g., "&rules.Uppercase{}" or "routes.Web")
+//
+// Example 1 - Creating WithMethod with helper file:
+//
+// Before (app.go):
+//
+//	foundation.Setup().WithConfig(config.Boot).Boot()
+//
+// After (app.go):
+//
+//	foundation.Setup().WithRules(Rules()).WithConfig(config.Boot).Boot()
+//
+// And creates helper file (e.g., bootstrap/rules.go):
+//
+//	package bootstrap
+//	import "github.com/goravel/framework/contracts/validation"
+//	func Rules() []validation.Rule {
+//	  return []validation.Rule{&rules.Uppercase{}}
+//	}
+//
+// Example 2 - Appending to inline array:
+//
+// Before (app.go):
+//
+//	foundation.Setup().WithRules([]validation.Rule{
+//	  &rules.ExistingRule{},
+//	}).Boot()
+//
+// After (app.go):
+//
+//	foundation.Setup().WithRules([]validation.Rule{
+//	  &rules.ExistingRule{},
+//	  &rules.Uppercase{},
+//	}).Boot()
+//
+// Example 3 - Appending to helper function:
+//
+// If helper file exists with Rules() function, appends to that function instead.
 func (r *withSliceHandler) AddItem(pkg, item string) error {
-	withMethodExists, err := r.checkWithMethodExists()
+	// Check if foundation.Setup() exists in app.go before performing any actions
+	hasFoundationSetup, err := r.containsFoundationSetupInAppFile()
 	if err != nil {
 		return err
 	}
-
-	if !withMethodExists {
-		if r.fileExists {
-			return r.config.fileExistsError
-		}
-
-		if err := r.createFile(); err != nil {
-			return err
-		}
-
-		if err := r.addItemToFile(pkg, item); err != nil {
-			return err
-		}
-
-		return GoFile(r.appFilePath).Find(match.FoundationSetup()).Modify(r.setupWithFunction()).Apply()
+	if !hasFoundationSetup {
+		return nil
 	}
 
-	if r.fileExists {
-		if err := r.addItemToFile(pkg, item); err != nil {
+	if !r.config.alwaysInline {
+		// Helper file mode (like commands/migrations)
+		withMethodExists, err := r.checkWithMethodExists()
+		if err != nil {
 			return err
 		}
-		return nil
+
+		if !withMethodExists {
+			if r.fileExists {
+				return r.config.fileExistsError
+			}
+
+			if err := r.createFile(); err != nil {
+				return err
+			}
+
+			if err := r.addItemToFile(pkg, item); err != nil {
+				return err
+			}
+
+			return GoFile(r.appFilePath).Find(match.FoundationSetup()).Modify(r.setupWithFunction()).Apply()
+		}
+
+		if r.fileExists {
+			if err := r.addItemToFile(pkg, item); err != nil {
+				return err
+			}
+			return nil
+		}
 	}
 
 	if err := r.addImports(pkg); err != nil {
@@ -98,10 +182,22 @@ func (r *withSliceHandler) AddItem(pkg, item string) error {
 }
 
 // RemoveItem removes an item from the slice in foundation.Setup() chain.
-// If the helper file exists (e.g., providers.go), it removes the item from that file.
-// If the helper file doesn't exist, it removes the item from the inline array in app.go.
-// This method also cleans up unused imports after removing the item.
+//
+// In always-inline mode: Removes the item from the inline array in app.go and cleans up imports.
+// In helper file mode:
+//   - If the helper file exists (e.g., providers.go), it removes the item from that file
+//   - If the helper file doesn't exist, it removes the item from the inline array in app.go
+//   - Cleans up unused imports after removing the item
 func (r *withSliceHandler) RemoveItem(pkg, item string) error {
+	// Check if foundation.Setup() exists in app.go before performing any actions
+	hasFoundationSetup, err := r.containsFoundationSetupInAppFile()
+	if err != nil {
+		return err
+	}
+	if !hasFoundationSetup {
+		return nil
+	}
+
 	withMethodExists, err := r.checkWithMethodExists()
 	if err != nil {
 		return err
@@ -112,6 +208,7 @@ func (r *withSliceHandler) RemoveItem(pkg, item string) error {
 		return nil
 	}
 
+	// Helper file mode (like commands/migrations)
 	if r.fileExists {
 		// Remove from helper file
 		if err := r.removeItemFromFile(pkg, item); err != nil {
@@ -145,6 +242,21 @@ func (r *withSliceHandler) checkWithMethodExists() (bool, error) {
 	return strings.Contains(content, r.config.withMethodName), nil
 }
 
+// containsFoundationSetupInAppFile checks if foundation.Setup() exists in the app file.
+//
+// This check is performed at the start of AddItem to ensure no actions are taken
+// if the foundation.Setup() call doesn't exist in the file.
+//
+// Returns true if "foundation.Setup()" is found in the app file content.
+func (r *withSliceHandler) containsFoundationSetupInAppFile() (bool, error) {
+	content, err := supportfile.GetContent(r.appFilePath)
+	if err != nil {
+		return false, err
+	}
+
+	return strings.Contains(content, "foundation.Setup()"), nil
+}
+
 // createFile creates the file with the helper function.
 //
 // Example: Creates a new file like "bootstrap/commands.go" with content:
@@ -172,7 +284,12 @@ func (r *withSliceHandler) addImports(pkg string) error {
 		return err
 	}
 
-	return GoFile(r.appFilePath).Find(importMatchers).Modify(AddImport(r.config.typeImportPath)).Apply()
+	// Skip adding type import for function slices (like routing)
+	if r.config.typeImportPath != "" {
+		return GoFile(r.appFilePath).Find(importMatchers).Modify(AddImport(r.config.typeImportPath)).Apply()
+	}
+
+	return nil
 }
 
 // addItemToFile adds an item to the existing helper function in the file.
@@ -273,12 +390,23 @@ func (r *withSliceHandler) appendToExisting(withCall *dst.CallExpr, itemExpr dst
 		return
 	}
 
+	// Add proper formatting for multi-line arrays
+	// For the first element, ensure it has proper newline formatting
+	if len(compositeLit.Elts) > 0 {
+		compositeLit.Elts[0].Decorations().Before = dst.NewLine
+	}
+
+	// Add newline before new item and after (for closing brace)
+	itemExpr.Decorations().Before = dst.NewLine
+	itemExpr.Decorations().After = dst.NewLine
+
 	compositeLit.Elts = append(compositeLit.Elts, itemExpr)
 }
 
 // createWithMethod creates a new WithMethod call and inserts it into the chain.
+// Supports both typed slices ([]console.Command) and function slices ([]func()) based on isFuncSlice config.
 //
-// Example: For setupCall="foundation.Setup()", withMethodName="WithCommands", and itemExpr="&commands.MyCommand{}":
+// Example 1 - Typed slice (commands):
 //
 // Before:
 //
@@ -291,13 +419,43 @@ func (r *withSliceHandler) appendToExisting(withCall *dst.CallExpr, itemExpr dst
 //	        &commands.MyCommand{},
 //	    }).
 //	    Boot()
+//
+// Example 2 - Function slice (routing):
+//
+// Before:
+//
+//	foundation.Setup().Boot()
+//
+// After:
+//
+//	foundation.Setup().
+//	    WithRouting([]func(){
+//	        routes.Web,
+//	    }).
+//	    Boot()
 func (r *withSliceHandler) createWithMethod(setupCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr, itemExpr dst.Expr) {
+	var arrayType dst.Expr
+	if r.config.isFuncSlice {
+		// For []func() type (routing)
+		arrayType = &dst.FuncType{
+			Func:   true,
+			Params: &dst.FieldList{},
+		}
+	} else {
+		// For typed slices (commands, migrations, etc.)
+		arrayType = &dst.SelectorExpr{
+			X:   &dst.Ident{Name: r.config.typePackage},
+			Sel: &dst.Ident{Name: r.config.typeName},
+		}
+	}
+
+	// Add proper formatting for multi-line array
+	itemExpr.Decorations().Before = dst.NewLine
+	itemExpr.Decorations().After = dst.NewLine
+
 	compositeLit := &dst.CompositeLit{
 		Type: &dst.ArrayType{
-			Elt: &dst.SelectorExpr{
-				X:   &dst.Ident{Name: r.config.typePackage},
-				Sel: &dst.Ident{Name: r.config.typeName},
-			},
+			Elt: arrayType,
 		},
 		Elts: []dst.Expr{itemExpr},
 	}
@@ -360,10 +518,13 @@ func (r *withSliceHandler) findFoundationSetupCalls(callExpr *dst.CallExpr) (set
 
 // setupInline returns an action that modifies the foundation.Setup() chain (inline array).
 //
-// This is used when WithMethod already exists in app.go but the helper file doesn't exist.
-// It adds items directly into the inline array instead of using a helper function.
+// This is used in two scenarios:
+//  1. Always-inline mode: Always adds items directly to the inline array (e.g., routing)
+//  2. Helper file mode: When WithMethod exists in app.go but the helper file doesn't exist
 //
-// Example: For item="&commands.MyCommand{}" with existing WithCommands:
+// Supports both typed slices ([]console.Command) and function slices ([]func{}).
+//
+// Example 1 - Typed slice (commands) with existing WithCommands:
 //
 // Before:
 //
@@ -393,6 +554,20 @@ func (r *withSliceHandler) findFoundationSetupCalls(callExpr *dst.CallExpr) (set
 //	foundation.Setup().
 //	    WithCommands([]console.Command{
 //	        &commands.MyCommand{},
+//	    }).
+//	    Boot()
+//
+// Example 2 - Function slice (routing):
+//
+// Before:
+//
+//	foundation.Setup().Boot()
+//
+// After:
+//
+//	foundation.Setup().
+//	    WithRouting([]func(){
+//	        routes.Web,
 //	    }).
 //	    Boot()
 func (r *withSliceHandler) setupInline(item string) modify.Action {

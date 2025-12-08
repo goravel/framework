@@ -247,6 +247,7 @@ var (
 				Config,
 				DB,
 				Log,
+				Schema,
 			},
 			Drivers: []Driver{
 				{

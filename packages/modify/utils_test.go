@@ -283,6 +283,370 @@ func Commands() []console.Command {
 	}
 }
 
+func TestAddFilter(t *testing.T) {
+	tests := []struct {
+		name              string
+		appContent        string
+		filtersContent    string // empty if file doesn't exist
+		pkg               string
+		filter            string
+		expectedApp       string
+		expectedFilters   string // empty if file shouldn't be created
+		wantErr           bool
+		expectedErrString string
+	}{
+		{
+			name: "add filter when WithFilters doesn't exist and filters.go doesn't exist",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().WithConfig(config.Boot).Run()
+}
+`,
+			pkg:    "goravel/app/validators",
+			filter: "&validators.ExampleFilter{}",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithFilters(Filters()).WithConfig(config.Boot).Run()
+}
+`,
+			expectedFilters: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/validation"
+
+	"goravel/app/validators"
+)
+
+func Filters() []validation.Filter {
+	return []validation.Filter{
+		&validators.ExampleFilter{},
+	}
+}
+`,
+		},
+		{
+			name: "add filter when WithFilters exists with Filters() and filters.go exists",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithFilters(Filters()).WithConfig(config.Boot).Run()
+}
+`,
+			filtersContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/validation"
+
+	"goravel/app/validators"
+)
+
+func Filters() []validation.Filter {
+	return []validation.Filter{
+		&validators.ExistingFilter{},
+	}
+}
+`,
+			pkg:    "goravel/app/validators",
+			filter: "&validators.NewFilter{}",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithFilters(Filters()).WithConfig(config.Boot).Run()
+}
+`,
+			expectedFilters: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/validation"
+
+	"goravel/app/validators"
+)
+
+func Filters() []validation.Filter {
+	return []validation.Filter{
+		&validators.ExistingFilter{},
+		&validators.NewFilter{},
+	}
+}
+`,
+		},
+		{
+			name: "add filter when WithFilters exists with inline array",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/validation"
+	"github.com/goravel/framework/foundation"
+	"goravel/app/validators"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithFilters([]validation.Filter{
+			&validators.ExistingFilter{},
+		}).WithConfig(config.Boot).Run()
+}
+`,
+			pkg:    "goravel/app/validators",
+			filter: "&validators.NewFilter{}",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/validation"
+	"github.com/goravel/framework/foundation"
+	"goravel/app/validators"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithFilters([]validation.Filter{
+			&validators.ExistingFilter{},
+			&validators.NewFilter{},
+		}).WithConfig(config.Boot).Run()
+}
+`,
+		},
+		{
+			name: "error when filters.go exists but WithFilters doesn't exist",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().WithConfig(config.Boot).Run()
+}
+`,
+			filtersContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/validation"
+
+	"goravel/app/validators"
+)
+
+func Filters() []validation.Filter {
+	return []validation.Filter{
+		&validators.ExistingFilter{},
+	}
+}
+`,
+			pkg:     "goravel/app/validators",
+			filter:  "&validators.NewFilter{}",
+			wantErr: true,
+		},
+		{
+			name: "add filter when WithFilters doesn't exist at the beginning of chain",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+)
+
+func Boot() {
+	foundation.Setup().Run()
+}
+`,
+			pkg:    "goravel/app/validators",
+			filter: "&validators.FirstFilter{}",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithFilters(Filters()).Run()
+}
+`,
+			expectedFilters: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/validation"
+
+	"goravel/app/validators"
+)
+
+func Filters() []validation.Filter {
+	return []validation.Filter{
+		&validators.FirstFilter{},
+	}
+}
+`,
+		},
+		{
+			name: "add filter from different package",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().WithConfig(config.Boot).Run()
+}
+`,
+			pkg:    "github.com/mycompany/customfilters",
+			filter: "&customfilters.SpecialFilter{}",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithFilters(Filters()).WithConfig(config.Boot).Run()
+}
+`,
+			expectedFilters: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/validation"
+	"github.com/mycompany/customfilters"
+)
+
+func Filters() []validation.Filter {
+	return []validation.Filter{
+		&customfilters.SpecialFilter{},
+	}
+}
+`,
+		},
+		{
+			name: "add multiple filters sequentially",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithFilters(Filters()).WithConfig(config.Boot).Run()
+}
+`,
+			filtersContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/validation"
+
+	"goravel/app/validators"
+)
+
+func Filters() []validation.Filter {
+	return []validation.Filter{
+		&validators.EmailFilter{},
+	}
+}
+`,
+			pkg:    "goravel/app/validators",
+			filter: "&validators.PhoneFilter{}",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithFilters(Filters()).WithConfig(config.Boot).Run()
+}
+`,
+			expectedFilters: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/validation"
+
+	"goravel/app/validators"
+)
+
+func Filters() []validation.Filter {
+	return []validation.Filter{
+		&validators.EmailFilter{},
+		&validators.PhoneFilter{},
+	}
+}
+`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			bootstrapDir := support.Config.Paths.Bootstrap
+			appFile := filepath.Join(bootstrapDir, "app.go")
+			filtersFile := filepath.Join(bootstrapDir, "filters.go")
+
+			assert.NoError(t, supportfile.PutContent(appFile, tt.appContent))
+			defer func() {
+				assert.NoError(t, supportfile.Remove(bootstrapDir))
+			}()
+
+			if tt.filtersContent != "" {
+				assert.NoError(t, supportfile.PutContent(filtersFile, tt.filtersContent))
+			}
+
+			err := AddFilter(tt.pkg, tt.filter)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.expectedErrString != "" {
+					assert.Contains(t, err.Error(), tt.expectedErrString)
+				}
+				return
+			}
+
+			assert.NoError(t, err)
+
+			// Verify app.go content
+			appContent, err := supportfile.GetContent(appFile)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedApp, appContent)
+
+			// Verify filters.go content if expected
+			if tt.expectedFilters != "" {
+				filtersContent, err := supportfile.GetContent(filtersFile)
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedFilters, filtersContent)
+			}
+		})
+	}
+}
+
 func TestAddJob(t *testing.T) {
 	tests := []struct {
 		name              string
@@ -1885,6 +2249,223 @@ func Providers() []foundation.ServiceProvider {
 				providersContent, err := supportfile.GetContent(providersFile)
 				require.NoError(t, err)
 				assert.Equal(t, tt.expectedProviders, providersContent)
+			}
+		})
+	}
+}
+
+func TestAddRoute(t *testing.T) {
+	tests := []struct {
+		name              string
+		appContent        string
+		pkg               string
+		route             string
+		expectedApp       string
+		wantErr           bool
+		expectedErrString string
+	}{
+		{
+			name: "add route when WithRouting doesn't exist",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().WithConfig(config.Boot).Run()
+}
+`,
+			pkg:   "goravel/routes",
+			route: "routes.Web",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+	"goravel/routes"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRouting([]func(){
+			routes.Web,
+		}).WithConfig(config.Boot).Run()
+}
+`,
+		},
+		{
+			name: "add route when WithRouting exists with empty slice",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+	"goravel/routes"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRouting([]func(){}).WithConfig(config.Boot).Run()
+}
+`,
+			pkg:   "goravel/routes",
+			route: "routes.Web",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+	"goravel/routes"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRouting([]func(){
+			routes.Web,
+		}).WithConfig(config.Boot).Run()
+}
+`,
+		},
+		{
+			name: "add route when WithRouting exists with existing routes",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+	"goravel/routes"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRouting([]func(){
+			routes.Web,
+		}).WithConfig(config.Boot).Run()
+}
+`,
+			pkg:   "goravel/routes",
+			route: "routes.Api",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+	"goravel/routes"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRouting([]func(){
+			routes.Web,
+			routes.Api,
+		}).WithConfig(config.Boot).Run()
+}
+`,
+		},
+		{
+			name: "add route with different package",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+	"goravel/routes"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRouting([]func(){
+			routes.Web,
+		}).WithConfig(config.Boot).Run()
+}
+`,
+			pkg:   "goravel/app/routes",
+			route: "routes.Admin",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/app/routes"
+	"goravel/config"
+	"goravel/routes"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRouting([]func(){
+			routes.Web,
+			routes.Admin,
+		}).WithConfig(config.Boot).Run()
+}
+`,
+		},
+		{
+			name: "add route to chain with multiple methods",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithCommands(Commands()).
+		WithConfig(config.Boot).Run()
+}
+`,
+			pkg:   "goravel/routes",
+			route: "routes.Web",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+	"goravel/routes"
+)
+
+func Boot() {
+	foundation.Setup().
+		WithRouting([]func(){
+			routes.Web,
+		}).
+		WithCommands(Commands()).
+		WithConfig(config.Boot).Run()
+}
+`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			bootstrapDir := support.Config.Paths.Bootstrap
+			appFile := filepath.Join(bootstrapDir, "app.go")
+
+			require.NoError(t, supportfile.PutContent(appFile, tt.appContent))
+			defer func() {
+				require.NoError(t, supportfile.Remove(bootstrapDir))
+			}()
+
+			err := AddRoute(tt.pkg, tt.route)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.expectedErrString != "" {
+					assert.Contains(t, err.Error(), tt.expectedErrString)
+				}
+			} else {
+				require.NoError(t, err)
+
+				// Verify app.go content
+				appContent, err := supportfile.GetContent(appFile)
+				require.NoError(t, err)
+				assert.Equal(t, tt.expectedApp, appContent)
+
+				// Verify no helper file was created (always inline)
+				routingFile := filepath.Join(bootstrapDir, "routing.go")
+				assert.False(t, supportfile.Exists(routingFile), "routing.go should never be created for routes")
 			}
 		})
 	}

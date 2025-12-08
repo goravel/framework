@@ -37,6 +37,8 @@ var (
 	CacheMemoryInvalidIntValueType    = New("value type of %s is not *atomic.Int64 or *int64 or *atomic.Int32 or *int32")
 	CacheStoreContractNotFulfilled    = New("%s doesn't implement contracts/cache/store")
 
+	CommandEmptyPackageName = New("the package name cannot be empty")
+
 	ConsoleProvidersNotArray = New("the app.providers configuration is not of type []foundation.ServiceProvider, skipping registering service providers")
 
 	ConsoleCommandRegisterFailed             = New("failed to register command '%s': %v")
@@ -148,6 +150,7 @@ var (
 	PackageRegistrationDuplicate = New("'%s' had been registered")
 	PackageRegistrationNotFound  = New("'%s' not found, cannot insert before it")
 	PackageCommandsFileExists    = New("commands.go already exists but WithCommands is not registered in foundation.Setup(). The commands.go file should only be created when adding WithCommands to Setup()")
+	PackageFiltersFileExists     = New("filters.go already exists but WithFilters is not registered in foundation.Setup(). The filters.go file should only be created when adding WithFilters to Setup()")
 	PackageJobsFileExists        = New("jobs.go already exists but WithJobs is not registered in foundation.Setup(). The jobs.go file should only be created when adding WithJobs to Setup()")
 	PackageMigrationsFileExists  = New("migrations.go already exists but WithMigrations is not registered in foundation.Setup(). The migrations.go file should only be created when adding WithMigrations to Setup()")
 	PackageProvidersFileExists   = New("providers.go already exists but WithProviders is not registered in foundation.Setup(). The providers.go file should only be created when adding WithProviders to Setup()")
@@ -159,7 +162,13 @@ var (
 	PluralizerNoSubstitutionsGiven = New("no substitutions provided").SetModule(ModulePluralizer)
 	PluralizerNoWordsGiven         = New("no words provided").SetModule(ModulePluralizer)
 
-	ProviderRegisterFailed = New("failed to register provider '%s': %v")
+	ProcessNotStarted            = New("process not started").SetModule(ModuleProcess)
+	ProcessUnsupportedSignalType = New("unsupported signal type").SetModule(ModuleProcess)
+	ProcessPipelineEmpty         = New("pipeline must have at least one command").SetModule(ModuleProcess)
+	ProcessPipelineStartFailed   = New("failed to start pipeline: %v").SetModule(ModuleProcess)
+	ProcessPipeNilConfigurer     = New("pipe configurer cannot be nil").SetModule(ModuleProcess)
+	ProcessPoolNilConfigurer     = New("pool configurer cannot be nil").SetModule(ModuleProcess)
+	ProviderRegisterFailed       = New("failed to register provider '%s': %v")
 
 	QueueDriverFailedToPop           = New("failed to pop job from %s queue: %v")
 	QueueDriverInvalid               = New("%s doesn't implement contracts/queue/driver")
@@ -190,16 +199,18 @@ var (
 	RouteDefaultDriverNotSet = New("please set default driver")
 	RouteInvalidDriver       = New("init %s route driver fail: route must be implement route.Route or func() (route.Route, error)")
 
+	SchemaConnectionNotFound   = New("connection %s not found")
 	SchemaDriverNotSupported   = New("driver %s is not supported")
+	SchemaEmptyReferenceString = New("reference string can't be empty")
+	SchemaErrorReferenceFormat = New("invalid format: too many dots in reference")
 	SchemaFailedToCreateTable  = New("failed to create %s table: %v")
 	SchemaFailedToChangeTable  = New("failed to change %s table: %v")
 	SchemaFailedToDropTable    = New("failed to drop %s table: %v")
 	SchemaFailedToDropColumns  = New("failed to drop %s table columns: %v")
 	SchemaFailedToGetTables    = New("failed to get %s tables: %v")
 	SchemaFailedToRenameTable  = New("failed to rename %s table: %v")
-	SchemaEmptyReferenceString = New("reference string can't be empty")
-	SchemaErrorReferenceFormat = New("invalid format: too many dots in reference")
-	SchemaConnectionNotFound   = New("connection %s not found")
+	SchemaInvalidModel         = New("model must be a struct or pointer to struct")
+	SchemaModelNotFound        = New("model %s not found in registered models")
 	SchemaTableNotFound        = New("table %s not found")
 
 	SessionDriverAlreadyExists        = New("session driver [%s] already exists")
@@ -209,8 +220,9 @@ var (
 	SessionDriverRegisterFailed       = New("failed to register session drivers: %v")
 	SessionDriverContractNotFulfilled = New("%s doesn't implement contracts/session/driver")
 
-	TemplateFailedToParse         = New("failed to parse template: %v")
-	TemplateFailedToFormateGoCode = New("failed to format go code: %v")
+	TemplateFailedToExecute      = New("failed to execute template: %v")
+	TemplateFailedToFormatGoCode = New("failed to format go code: %v")
+	TemplateFailedToParse        = New("failed to parse template: %v")
 
 	TelemetryPropagatorRequired    = New("telemetry propagator is required").SetModule(ModuleTelemetry)
 	TelemetryUnsupportedDriver     = New("unsupported telemetry exporter driver: %s").SetModule(ModuleTelemetry)
@@ -230,13 +242,4 @@ var (
 	ValidationEmptyRules           = New("rules can't be empty")
 	ValidationFilterRegisterFailed = New("filter register failed: %v")
 	ValidationRuleRegisterFailed   = New("rule register failed: %v")
-
-	CommandEmptyPackageName = New("the package name cannot be empty")
-
-	ProcessNotStarted            = New("process not started").SetModule(ModuleProcess)
-	ProcessUnsupportedSignalType = New("unsupported signal type").SetModule(ModuleProcess)
-	ProcessPipelineEmpty         = New("pipeline must have at least one command").SetModule(ModuleProcess)
-	ProcessPipelineStartFailed   = New("failed to start pipeline: %v").SetModule(ModuleProcess)
-	ProcessPipeNilConfigurer     = New("pipe configurer cannot be nil").SetModule(ModuleProcess)
-	ProcessPoolNilConfigurer     = New("pool configurer cannot be nil").SetModule(ModuleProcess)
 )

@@ -18,9 +18,21 @@ import (
 	"github.com/goravel/framework/support/str"
 )
 
+func AddMigrationApply(pkg, migration string) modify.Apply {
+	return Call(func(_ []modify.Option) error {
+		return AddMigration(pkg, migration)
+	})
+}
+
 func AddProviderApply(pkg, provider string) modify.Apply {
 	return Call(func(_ []modify.Option) error {
 		return AddProvider(pkg, provider)
+	})
+}
+
+func AddRouteApply(pkg, route string) modify.Apply {
+	return Call(func(_ []modify.Option) error {
+		return AddRoute(pkg, route)
 	})
 }
 
@@ -38,9 +50,21 @@ func GoFile(file string) modify.GoFile {
 	return &goFile{file: file}
 }
 
+func RemoveMigrationApply(pkg, migration string) modify.Apply {
+	return Call(func(_ []modify.Option) error {
+		return RemoveMigration(pkg, migration)
+	})
+}
+
 func RemoveProviderApply(pkg, provider string) modify.Apply {
 	return Call(func(_ []modify.Option) error {
 		return RemoveProvider(pkg, provider)
+	})
+}
+
+func RemoveRouteApply(pkg, route string) modify.Apply {
+	return Call(func(_ []modify.Option) error {
+		return RemoveRoute(pkg, route)
 	})
 }
 

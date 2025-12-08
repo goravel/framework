@@ -1,27 +1,22 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
-	"github.com/goravel/framework/contracts/facades"
 	"github.com/goravel/framework/packages"
-	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/path"
 )
 
 func main() {
 	stubs := Stubs{}
+	routesPath := support.Config.Paths.Routes
 	routeFacadePath := path.Facades("route.go")
-	appServiceProviderPath := path.App("providers", "app_service_provider.go")
 	moduleName := packages.GetModuleNameFromArgs(os.Args)
-	globalMiddleware := "facades.Route().GlobalMiddleware(http.Kernel{}.Middleware()...)"
-	facadesImport := fmt.Sprintf("%s/app/facades", moduleName)
-	httpImport := fmt.Sprintf("%s/app/http", moduleName)
-	routesImport := fmt.Sprintf("%s/routes", moduleName)
-	routesWeb := "routes.Web()"
-	routesPath := path.Base("routes", "web.go")
+	routesPackage := moduleName + "/" + routesPath
+	webFunc := routesPath + ".Web"
+	webRoutePath := path.Base(routesPath, "web.go")
 	welcomeTmplPath := path.Base("resources", "views", "welcome.tmpl")
 	routeServiceProvider := "&route.ServiceProvider{}"
 	modulePath := packages.GetModulePath()
@@ -42,43 +37,31 @@ JWT_SECRET=
 
 			// Create resources/views/welcome.tmpl and routes/web.go
 			modify.File(welcomeTmplPath).Overwrite(stubs.WelcomeTmpl()),
-			modify.File(routesPath).Overwrite(stubs.Routes(moduleName)),
+			modify.File(webRoutePath).Overwrite(stubs.Routes(moduleName)),
 
-			// Modify app/providers/app_service_provider.go to register the HTTP global middleware
-			modify.GoFile(appServiceProviderPath).
-				Find(match.Imports()).Modify(modify.AddImport(facadesImport)).
-				Find(match.Imports()).Modify(modify.AddImport(httpImport)).
-				Find(match.Imports()).Modify(modify.AddImport(routesImport)).
-				Find(match.BootFunc()).Modify(modify.Add(globalMiddleware)).
-				Find(match.BootFunc()).Modify(modify.Add(routesWeb)),
+			// Add the Web function to WithRouting
+			modify.AddRouteApply(routesPackage, webFunc),
 
 			// Register the Route facade
-			modify.WhenFacade(facades.Route, modify.File(routeFacadePath).Overwrite(stubs.RouteFacade())),
+			modify.File(routeFacadePath).Overwrite(stubs.RouteFacade()),
 
 			// Add configurations to the .env and .env.example files
 			modify.WhenFileNotContains(envPath, "APP_URL", modify.File(envPath).Append(env)),
 			modify.WhenFileNotContains(envExamplePath, "APP_URL", modify.File(envExamplePath).Append(env)),
 		).
 		Uninstall(
-			modify.WhenNoFacades([]string{facades.Route},
-				// Modify app/providers/app_service_provider.go to unregister the HTTP global middleware
-				modify.GoFile(appServiceProviderPath).
-					Find(match.BootFunc()).Modify(modify.Remove(globalMiddleware)).
-					Find(match.BootFunc()).Modify(modify.Remove(routesWeb)).
-					Find(match.Imports()).Modify(modify.RemoveImport(facadesImport)).
-					Find(match.Imports()).Modify(modify.RemoveImport(httpImport)).
-					Find(match.Imports()).Modify(modify.RemoveImport(routesImport)),
-
-				// Remove resources/views/welcome.tmpl and routes/web.go
-				modify.File(routesPath).Remove(),
-				modify.File(welcomeTmplPath).Remove(),
-
-				// Remove the route service provider from the providers array in bootstrap/providers.go
-				modify.RemoveProviderApply(modulePath, routeServiceProvider),
-			),
-
 			// Remove the Route facade
-			modify.WhenFacade(facades.Route, modify.File(routeFacadePath).Remove()),
+			modify.File(routeFacadePath).Remove(),
+
+			// Remove the Web function from WithRouting
+			modify.RemoveRouteApply(routesPackage, webFunc),
+
+			// Remove resources/views/welcome.tmpl and routes/web.go
+			modify.File(webRoutePath).Remove(),
+			modify.File(welcomeTmplPath).Remove(),
+
+			// Remove the route service provider from the providers array in bootstrap/providers.go
+			modify.RemoveProviderApply(modulePath, routeServiceProvider),
 		).
 		Execute()
 }
