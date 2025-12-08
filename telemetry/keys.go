@@ -19,7 +19,7 @@ const (
 	configTracesExporter      config.Key = "telemetry.traces.exporter"
 	configTracesSamplerType   config.Key = "telemetry.traces.sampler.type"
 	configTracesSamplerParent config.Key = "telemetry.traces.sampler.parent"
-	configTracesSamplerRatio  config.Key = "telemetry.traces.sampler.args.ratio"
+	configTracesSamplerRatio  config.Key = "telemetry.traces.sampler.ratio"
 )
 
 // Exporter keys with placeholder for exporter name

@@ -20,16 +20,16 @@ func init() {
 		//
 		// These values identify your service in distributed traces.
 		"service": map[string]any{
-			"name":        config.Env("OTEL_SERVICE_NAME", "goravel"),
-			"version":     config.Env("OTEL_SERVICE_VERSION", ""),
-			"environment": config.Env("OTEL_SERVICE_ENVIRONMENT", ""),
+			"name":        config.Env("APP_NAME", "goravel"),
+			"version":     config.Env("APP_VERSION", ""),
+			"environment": config.Env("APP_ENV", ""),
 		},
 
 		// Propagators
 		//
 		// Propagators define how trace context is passed between services.
-		// Supported: "tracecontext", "baggage", "b3", "b3multi", "none"
-		"propagators": config.Env("OTEL_PROPAGATORS", "tracecontext,baggage"),
+		// Supported: "tracecontext", "baggage", "b3", "b3multi"
+		"propagators": config.Env("OTEL_PROPAGATORS", "tracecontext"),
 
 		// Traces Configuration
 		//
@@ -46,10 +46,8 @@ func init() {
 				"parent": config.Env("OTEL_TRACES_SAMPLER_PARENT", true),
 				// Supported: "always_on", "always_off", "traceidratio"
 				"type": config.Env("OTEL_TRACES_SAMPLER_TYPE", "always_on"),
-				"args": map[string]any{
-					// Sampling ratio for "traceidratio" (0.0 to 1.0)
-					"ratio": config.Env("OTEL_TRACES_SAMPLER_RATIO", 0.05),
-				},
+				// Sampling ratio for "traceidratio" (0.0 to 1.0)
+				"ratio": config.Env("OTEL_TRACES_SAMPLER_RATIO", 0.05),
 			},
 		},
 

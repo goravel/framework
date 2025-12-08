@@ -31,9 +31,6 @@ func NewApplication(cfg config.Config) (*Application, error) {
 }
 
 func (r *Application) Propagator() propagation.TextMapPropagator {
-	if r.propagator == nil {
-		return defaultCompositePropagator
-	}
 	return r.propagator
 }
 
@@ -56,7 +53,12 @@ func (r *Application) TracerProvider() trace.TracerProvider {
 }
 
 func (r *Application) init() error {
-	r.propagator = newCompositeTextMapPropagator(r.config.GetString(configPropagators.String()))
+	propagator, err := newCompositeTextMapPropagator(r.config.GetString(configPropagators.String()))
+	if err != nil {
+		return err
+	}
+
+	r.propagator = propagator
 	otel.SetTextMapPropagator(r.propagator)
 
 	exporterName := r.config.GetString(configTracesExporter.String())

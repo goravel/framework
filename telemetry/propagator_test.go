@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/goravel/framework/errors"
 )
 
 func TestNewCompositeTextMapPropagator(t *testing.T) {
@@ -11,17 +13,12 @@ func TestNewCompositeTextMapPropagator(t *testing.T) {
 		name           string
 		input          string
 		expectedFields []string
-		expectEmpty    bool
+		expectError    error
 	}{
 		{
-			name:           "empty returns default (tracecontext + baggage)",
-			input:          "",
-			expectedFields: []string{"traceparent", "tracestate", "baggage"},
-		},
-		{
-			name:        "none returns empty propagator",
-			input:       "none",
-			expectEmpty: true,
+			name:        "empty returns error",
+			input:       "",
+			expectError: errors.TelemetryPropagatorRequired,
 		},
 		{
 			name:           "tracecontext",
@@ -54,22 +51,31 @@ func TestNewCompositeTextMapPropagator(t *testing.T) {
 			expectedFields: []string{"traceparent", "baggage"},
 		},
 		{
-			name:           "unknown propagator falls back to default",
-			input:          "invalid",
-			expectedFields: []string{"traceparent", "tracestate", "baggage"},
+			name:        "unknown propagator returns error",
+			input:       "invalid",
+			expectError: errors.TelemetryUnsupportedPropagator.Args("invalid"),
+		},
+		{
+			name:        "mixed valid and invalid returns error",
+			input:       "tracecontext,invalid",
+			expectError: errors.TelemetryUnsupportedPropagator.Args("invalid"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			propagator := newCompositeTextMapPropagator(tt.input)
-			fields := propagator.Fields()
+			propagator, err := newCompositeTextMapPropagator(tt.input)
 
-			if tt.expectEmpty {
-				assert.Empty(t, fields)
+			if tt.expectError != nil {
+				assert.Equal(t, tt.expectError, err)
+				assert.Nil(t, propagator)
 				return
 			}
 
+			assert.NoError(t, err)
+			assert.NotNil(t, propagator)
+
+			fields := propagator.Fields()
 			for _, expected := range tt.expectedFields {
 				assert.Contains(t, fields, expected)
 			}

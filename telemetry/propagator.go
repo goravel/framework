@@ -5,6 +5,8 @@ import (
 
 	"go.opentelemetry.io/contrib/propagators/b3"
 	"go.opentelemetry.io/otel/propagation"
+
+	"github.com/goravel/framework/errors"
 )
 
 const (
@@ -12,29 +14,23 @@ const (
 	propagatorBaggage      = "baggage"
 	propagatorB3           = "b3"
 	propagatorB3Multi      = "b3multi"
-	propagatorNone         = "none"
 )
 
-var (
-	defaultCompositePropagator = propagation.NewCompositeTextMapPropagator(
-		propagation.TraceContext{},
-		propagation.Baggage{},
-	)
-	nonePropagator = propagation.NewCompositeTextMapPropagator()
-)
-
-func newCompositeTextMapPropagator(nameStr string) propagation.TextMapPropagator {
+func newCompositeTextMapPropagator(nameStr string) (propagation.TextMapPropagator, error) {
+	nameStr = strings.TrimSpace(nameStr)
 	if nameStr == "" {
-		return defaultCompositePropagator
-	}
-
-	if nameStr == propagatorNone {
-		return nonePropagator
+		return nil, errors.TelemetryPropagatorRequired
 	}
 
 	var propagators []propagation.TextMapPropagator
+
 	for _, name := range strings.Split(nameStr, ",") {
-		switch strings.TrimSpace(name) {
+		name = strings.TrimSpace(name)
+		if name == "" {
+			continue
+		}
+
+		switch name {
 		case propagatorTraceContext:
 			propagators = append(propagators, propagation.TraceContext{})
 		case propagatorBaggage:
@@ -43,12 +39,10 @@ func newCompositeTextMapPropagator(nameStr string) propagation.TextMapPropagator
 			propagators = append(propagators, b3.New(b3.WithInjectEncoding(b3.B3SingleHeader)))
 		case propagatorB3Multi:
 			propagators = append(propagators, b3.New(b3.WithInjectEncoding(b3.B3MultipleHeader)))
+		default:
+			return nil, errors.TelemetryUnsupportedPropagator.Args(name)
 		}
 	}
 
-	if len(propagators) == 0 {
-		return defaultCompositePropagator
-	}
-
-	return propagation.NewCompositeTextMapPropagator(propagators...)
+	return propagation.NewCompositeTextMapPropagator(propagators...), nil
 }

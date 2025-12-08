@@ -9,6 +9,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	tracenoop "go.opentelemetry.io/otel/trace/noop"
 
+	"github.com/goravel/framework/errors"
 	configmocks "github.com/goravel/framework/mocks/config"
 )
 
@@ -16,14 +17,27 @@ func TestNewApplication(t *testing.T) {
 	tests := []struct {
 		name         string
 		setupMock    func(*configmocks.Config)
-		expectError  bool
-		expectNilApp bool
+		expectError  error
 		expectTracer bool
 	}{
 		{
-			name: "no exporter returns app without tracer provider",
+			name: "empty propagator returns error",
 			setupMock: func(cfg *configmocks.Config) {
 				cfg.EXPECT().GetString(configPropagators.String()).Return("")
+			},
+			expectError: errors.TelemetryPropagatorRequired,
+		},
+		{
+			name: "invalid propagator returns error",
+			setupMock: func(cfg *configmocks.Config) {
+				cfg.EXPECT().GetString(configPropagators.String()).Return("invalid")
+			},
+			expectError: errors.TelemetryUnsupportedPropagator.Args("invalid"),
+		},
+		{
+			name: "no exporter returns app without tracer provider",
+			setupMock: func(cfg *configmocks.Config) {
+				cfg.EXPECT().GetString(configPropagators.String()).Return("tracecontext")
 				cfg.EXPECT().GetString(configTracesExporter.String()).Return("")
 			},
 			expectTracer: false,
@@ -31,7 +45,7 @@ func TestNewApplication(t *testing.T) {
 		{
 			name: "none exporter returns app without tracer provider",
 			setupMock: func(cfg *configmocks.Config) {
-				cfg.EXPECT().GetString(configPropagators.String()).Return("")
+				cfg.EXPECT().GetString(configPropagators.String()).Return("tracecontext,baggage")
 				cfg.EXPECT().GetString(configTracesExporter.String()).Return("none")
 			},
 			expectTracer: false,
@@ -39,7 +53,7 @@ func TestNewApplication(t *testing.T) {
 		{
 			name: "console exporter initializes tracer provider",
 			setupMock: func(cfg *configmocks.Config) {
-				cfg.EXPECT().GetString(configPropagators.String()).Return("")
+				cfg.EXPECT().GetString(configPropagators.String()).Return("tracecontext,baggage")
 				cfg.EXPECT().GetString(configTracesExporter.String()).Return("console")
 
 				cfg.EXPECT().GetString(configServiceName.String(), "goravel").Return("test-service")
@@ -82,7 +96,7 @@ func TestNewApplication(t *testing.T) {
 		{
 			name: "zipkin exporter initializes tracer provider",
 			setupMock: func(cfg *configmocks.Config) {
-				cfg.EXPECT().GetString(configPropagators.String()).Return("")
+				cfg.EXPECT().GetString(configPropagators.String()).Return("b3")
 				cfg.EXPECT().GetString(configTracesExporter.String()).Return("zipkin")
 
 				cfg.EXPECT().GetString(configServiceName.String(), "goravel").Return("goravel")
@@ -101,7 +115,7 @@ func TestNewApplication(t *testing.T) {
 		{
 			name: "unknown exporter returns error",
 			setupMock: func(cfg *configmocks.Config) {
-				cfg.EXPECT().GetString(configPropagators.String()).Return("")
+				cfg.EXPECT().GetString(configPropagators.String()).Return("tracecontext")
 				cfg.EXPECT().GetString(configTracesExporter.String()).Return("unknown")
 
 				cfg.EXPECT().GetString(configServiceName.String(), "goravel").Return("goravel")
@@ -110,7 +124,7 @@ func TestNewApplication(t *testing.T) {
 
 				cfg.EXPECT().GetString(configExporterDriver.With("unknown"), "unknown").Return("unknown")
 			},
-			expectError: true,
+			expectError: errors.TelemetryUnsupportedDriver.Args("unknown"),
 		},
 	}
 
@@ -121,17 +135,12 @@ func TestNewApplication(t *testing.T) {
 
 			app, err := NewApplication(mockConfig)
 
-			if tt.expectError {
-				assert.Error(t, err)
+			if tt.expectError != nil {
+				assert.Equal(t, tt.expectError, err)
 				return
 			}
 
 			assert.NoError(t, err)
-			if tt.expectNilApp {
-				assert.Nil(t, app)
-				return
-			}
-
 			assert.NotNil(t, app)
 
 			if tt.expectTracer {
@@ -189,17 +198,18 @@ func TestApplication_TracerProvider(t *testing.T) {
 }
 
 func TestApplication_Propagator(t *testing.T) {
-	t.Run("returns default composite propagator when not set", func(t *testing.T) {
+	t.Run("returns nil when not set", func(t *testing.T) {
 		app := &Application{}
 
 		propagator := app.Propagator()
 
-		assert.NotNil(t, propagator)
-		assert.Equal(t, defaultCompositePropagator, propagator)
+		assert.Nil(t, propagator)
 	})
 
 	t.Run("returns set propagator", func(t *testing.T) {
-		customPropagator := newCompositeTextMapPropagator("b3")
+		customPropagator, err := newCompositeTextMapPropagator("b3")
+		assert.NoError(t, err)
+
 		app := &Application{
 			propagator: customPropagator,
 		}
@@ -349,8 +359,7 @@ func TestApplication_createExporter(t *testing.T) {
 		name         string
 		exporterName string
 		setupMock    func(*configmocks.Config)
-		expectNil    bool
-		expectError  bool
+		expectError  error
 	}{
 		{
 			name:         "creates console exporter",
@@ -358,7 +367,6 @@ func TestApplication_createExporter(t *testing.T) {
 			setupMock: func(cfg *configmocks.Config) {
 				cfg.EXPECT().GetString(configExporterDriver.With("console"), "console").Return("console")
 			},
-			expectNil: false,
 		},
 		{
 			name:         "creates otlp exporter",
@@ -373,7 +381,6 @@ func TestApplication_createExporter(t *testing.T) {
 				cfg.EXPECT().GetString(configExporterEndpoint.With("otlp")).Return("localhost:4318")
 				cfg.EXPECT().GetBool(configExporterInsecure.With("otlp")).Return(true)
 			},
-			expectNil: false,
 		},
 		{
 			name:         "creates zipkin exporter",
@@ -382,7 +389,6 @@ func TestApplication_createExporter(t *testing.T) {
 				cfg.EXPECT().GetString(configExporterDriver.With("zipkin"), "zipkin").Return("zipkin")
 				cfg.EXPECT().GetString(configExporterEndpoint.With("zipkin")).Return("http://localhost:9411/api/v2/spans")
 			},
-			expectNil: false,
 		},
 		{
 			name:         "returns error for unknown exporter",
@@ -390,7 +396,7 @@ func TestApplication_createExporter(t *testing.T) {
 			setupMock: func(cfg *configmocks.Config) {
 				cfg.EXPECT().GetString(configExporterDriver.With("unknown"), "unknown").Return("unknown")
 			},
-			expectError: true,
+			expectError: errors.TelemetryUnsupportedDriver.Args("unknown"),
 		},
 		{
 			name:         "uses custom driver from config",
@@ -398,7 +404,6 @@ func TestApplication_createExporter(t *testing.T) {
 			setupMock: func(cfg *configmocks.Config) {
 				cfg.EXPECT().GetString(configExporterDriver.With("custom"), "custom").Return("console")
 			},
-			expectNil: false,
 		},
 	}
 
@@ -412,17 +417,13 @@ func TestApplication_createExporter(t *testing.T) {
 
 			exp, err := app.createExporter(ctx, tt.exporterName)
 
-			if tt.expectError {
-				assert.Error(t, err)
+			if tt.expectError != nil {
+				assert.Equal(t, tt.expectError, err)
 				return
 			}
 
 			assert.NoError(t, err)
-			if tt.expectNil {
-				assert.Nil(t, exp)
-			} else {
-				assert.NotNil(t, exp)
-			}
+			assert.NotNil(t, exp)
 		})
 	}
 }
