@@ -329,6 +329,9 @@ func dstExprEq(x, y dst.Expr) bool {
 	case *dst.CallExpr:
 		y, ok := y.(*dst.CallExpr)
 		return ok && dstExprEq(x.Fun, y.Fun) && dstExprSliceEq(x.Args, y.Args) && x.Ellipsis == y.Ellipsis
+	case *dst.FuncType:
+		y, ok := y.(*dst.FuncType)
+		return ok && dstFuncTypeEq(x, y)
 	default:
 		panic("unhandled node type, please add it to dstExprEq")
 	}
@@ -428,6 +431,54 @@ func dstExprStmtEq(x, y *dst.ExprStmt) bool {
 	}
 
 	return dstExprEq(x.X, y.X)
+}
+
+// dstFuncTypeEq compares two dst.FuncType instances for equality.
+func dstFuncTypeEq(x, y *dst.FuncType) bool {
+	if x == nil || y == nil {
+		return x == y
+	}
+
+	return dstFieldListEq(x.Params, y.Params) && dstFieldListEq(x.Results, y.Results)
+}
+
+// dstFieldListEq compares two dst.FieldList instances for equality.
+func dstFieldListEq(x, y *dst.FieldList) bool {
+	if x == nil || y == nil {
+		return x == y
+	}
+
+	if len(x.List) != len(y.List) {
+		return false
+	}
+
+	for i := range x.List {
+		if !dstFieldEq(x.List[i], y.List[i]) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// dstFieldEq compares two dst.Field instances for equality.
+func dstFieldEq(x, y *dst.Field) bool {
+	if x == nil || y == nil {
+		return x == y
+	}
+
+	// Compare names
+	if len(x.Names) != len(y.Names) {
+		return false
+	}
+	for i := range x.Names {
+		if !dstIdentEq(x.Names[i], y.Names[i]) {
+			return false
+		}
+	}
+
+	// Compare type
+	return dstExprEq(x.Type, y.Type)
 }
 
 // dstUnaryExprEq compares two dst.UnaryExpr instances for equality.

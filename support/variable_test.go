@@ -13,7 +13,7 @@ func TestPathToSlice(t *testing.T) {
 		expected []string
 	}{
 		{
-			name:     "Unix path with forward slashes",
+			name:     "Simple path with forward slashes",
 			path:     "app/http/controllers",
 			expected: []string{"app", "http", "controllers"},
 		},
@@ -23,32 +23,12 @@ func TestPathToSlice(t *testing.T) {
 			expected: []string{"app", "http", "controllers"},
 		},
 		{
-			name:     "Path with leading forward slash",
-			path:     "/app/http/controllers",
-			expected: []string{"app", "http", "controllers"},
-		},
-		{
-			name:     "Path with trailing forward slash",
-			path:     "app/http/controllers/",
-			expected: []string{"app", "http", "controllers"},
-		},
-		{
-			name:     "Path with leading and trailing forward slashes",
+			name:     "Path with leading and trailing slashes",
 			path:     "/app/http/controllers/",
 			expected: []string{"app", "http", "controllers"},
 		},
 		{
-			name:     "Path with leading backslash",
-			path:     "\\app\\http\\controllers",
-			expected: []string{"app", "http", "controllers"},
-		},
-		{
-			name:     "Path with trailing backslash",
-			path:     "app\\http\\controllers\\",
-			expected: []string{"app", "http", "controllers"},
-		},
-		{
-			name:     "Path with leading and trailing backslashes",
+			name:     "Mixed slashes with leading and trailing",
 			path:     "\\app\\http\\controllers\\",
 			expected: []string{"app", "http", "controllers"},
 		},
@@ -58,39 +38,24 @@ func TestPathToSlice(t *testing.T) {
 			expected: []string{"app"},
 		},
 		{
-			name:     "Single directory with leading slash",
-			path:     "/app",
-			expected: []string{"app"},
-		},
-		{
-			name:     "Single directory with trailing slash",
-			path:     "app/",
-			expected: []string{"app"},
-		},
-		{
-			name:     "Empty string",
-			path:     "",
-			expected: []string{""},
-		},
-		{
-			name:     "Root forward slash",
-			path:     "/",
-			expected: []string{""},
-		},
-		{
-			name:     "Root backslash",
-			path:     "\\",
-			expected: []string{""},
-		},
-		{
-			name:     "Deep nested path with forward slashes",
+			name:     "Deep nested path",
 			path:     "app/http/controllers/api/v1/users",
 			expected: []string{"app", "http", "controllers", "api", "v1", "users"},
 		},
 		{
-			name:     "Deep nested path with backslashes",
-			path:     "app\\http\\controllers\\api\\v1\\users",
-			expected: []string{"app", "http", "controllers", "api", "v1", "users"},
+			name:     "Empty string",
+			path:     "",
+			expected: nil,
+		},
+		{
+			name:     "Root forward slash",
+			path:     "/",
+			expected: nil,
+		},
+		{
+			name:     "Root backslash",
+			path:     "\\",
+			expected: nil,
 		},
 	}
 

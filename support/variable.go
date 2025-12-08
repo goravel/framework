@@ -118,17 +118,13 @@ var (
 )
 
 func PathToSlice(path string) []string {
+	path = strings.ReplaceAll(path, "\\", "/")
 	path = strings.Trim(path, "/")
-	path = strings.Trim(path, "\\")
-
-	var s []string
-	if strings.Contains(path, "/") {
-		s = strings.Split(path, "/")
-	} else {
-		s = strings.Split(path, "\\")
+	if path == "" {
+		return nil
 	}
 
-	return s
+	return strings.Split(path, "/")
 }
 
 func PathPackage(pkg, def string) string {
