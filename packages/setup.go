@@ -47,7 +47,7 @@ func GetPackageName() string {
 
 // GetModuleNameFromArgs returns the module name from command line arguments, default is "goravel".
 // It is used in the package:install command.
-// DEPRECATED
+// DEPERECATED
 func GetModuleNameFromArgs(args []string) string {
 	for _, arg := range args {
 		if strings.HasPrefix(arg, "--module=") {

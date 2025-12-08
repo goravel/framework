@@ -22,6 +22,7 @@ type (
 
 // MatchCursor checks if the cursor's current node matches this GoNode matcher.
 // If first or last flags are set, it also verifies the node's position in its parent slice.
+// For example, FirstOf(Ident("x")).MatchCursor(cursor) returns true only if cursor points to the first identifier "x" in its parent slice.
 func (r GoNode) MatchCursor(cursor *dstutil.Cursor) bool {
 	if r.first || r.last {
 		if r.MatchNode(cursor.Node()) {
@@ -44,12 +45,14 @@ func (r GoNode) MatchCursor(cursor *dstutil.Cursor) bool {
 }
 
 // MatchNode checks if the given node matches this GoNode matcher.
+// For example, Ident("x").MatchNode(node) returns true if node is an identifier with the name "x".
 func (r GoNode) MatchNode(node dst.Node) bool {
 	return r.match(node)
 }
 
 // MatchNodes checks if all nodes in the slice match their corresponding matchers.
 // Returns true if the GoNodes collection is empty or all nodes match.
+// For example, GoNodes{Ident("x"), Ident("y")}.MatchNodes(nodes) returns true if nodes contains exactly two identifiers "x" and "y" in that order.
 func (r GoNodes) MatchNodes(nodes []dst.Node) bool {
 	if len(r) == 0 {
 		return true
@@ -279,6 +282,7 @@ func TypeOf[T any](_ T) match.GoNode {
 }
 
 // dstNodeEq compares two dst.Node instances for equality.
+// For example, dstNodeEq(&dst.Ident{Name: "x"}, &dst.Ident{Name: "x"}) returns true.
 func dstNodeEq(x, y dst.Node) bool {
 	switch x := x.(type) {
 	case dst.Expr:
@@ -296,6 +300,7 @@ func dstNodeEq(x, y dst.Node) bool {
 }
 
 // dstExprEq compares two dst.Expr instances for equality.
+// For example, dstExprEq(&dst.Ident{Name: "foo"}, &dst.Ident{Name: "foo"}) returns true.
 func dstExprEq(x, y dst.Expr) bool {
 	if x == nil || y == nil {
 		return x == y
@@ -328,7 +333,7 @@ func dstExprEq(x, y dst.Expr) bool {
 		return ok && dstUnaryExprEq(x, y)
 	case *dst.CallExpr:
 		y, ok := y.(*dst.CallExpr)
-		return ok && dstExprEq(x.Fun, y.Fun) && dstExprSliceEq(x.Args, y.Args) && x.Ellipsis == y.Ellipsis
+		return ok && dstCallExprEq(x, y)
 	case *dst.FuncType:
 		y, ok := y.(*dst.FuncType)
 		return ok && dstFuncTypeEq(x, y)
@@ -338,6 +343,7 @@ func dstExprEq(x, y dst.Expr) bool {
 }
 
 // dstArrayTypeEq compares two dst.ArrayType instances for equality.
+// For example, dstArrayTypeEq(&dst.ArrayType{Elt: &dst.Ident{Name: "int"}}, &dst.ArrayType{Elt: &dst.Ident{Name: "int"}}) returns true.
 func dstArrayTypeEq(x, y *dst.ArrayType) bool {
 	if x == nil || y == nil {
 		return x == y
@@ -347,6 +353,7 @@ func dstArrayTypeEq(x, y *dst.ArrayType) bool {
 }
 
 // dstBasicLitEq compares two dst.BasicLit instances for equality.
+// For example, dstBasicLitEq(&dst.BasicLit{Value: "42"}, &dst.BasicLit{Value: "42"}) returns true.
 func dstBasicLitEq(x, y *dst.BasicLit) bool {
 	if x == nil || y == nil {
 		return x == y
@@ -356,6 +363,7 @@ func dstBasicLitEq(x, y *dst.BasicLit) bool {
 }
 
 // dstCompositeLitEq compares two dst.CompositeLit instances for equality.
+// For example, dstCompositeLitEq(&dst.CompositeLit{Type: &dst.Ident{Name: "Person"}}, &dst.CompositeLit{Type: &dst.Ident{Name: "Person"}}) returns true.
 func dstCompositeLitEq(x, y *dst.CompositeLit) bool {
 	if x == nil || y == nil {
 		return x == y
@@ -364,7 +372,18 @@ func dstCompositeLitEq(x, y *dst.CompositeLit) bool {
 	return dstExprEq(x.Type, y.Type) && dstExprSliceEq(x.Elts, y.Elts)
 }
 
+// dstCallExprEq compares two dst.CallExpr instances for equality.
+// For example, dstCallExprEq(&dst.CallExpr{Fun: &dst.Ident{Name: "print"}}, &dst.CallExpr{Fun: &dst.Ident{Name: "print"}}) returns true.
+func dstCallExprEq(x, y *dst.CallExpr) bool {
+	if x == nil || y == nil {
+		return x == y
+	}
+
+	return dstExprEq(x.Fun, y.Fun) && dstExprSliceEq(x.Args, y.Args) && x.Ellipsis == y.Ellipsis
+}
+
 // dstExprSliceEq compares two slices of dst.Expr for equality.
+// For example, dstExprSliceEq([]dst.Expr{&dst.Ident{Name: "x"}}, []dst.Expr{&dst.Ident{Name: "x"}}) returns true.
 func dstExprSliceEq(xs, ys []dst.Expr) bool {
 	if len(xs) != len(ys) {
 		return false
@@ -380,6 +399,7 @@ func dstExprSliceEq(xs, ys []dst.Expr) bool {
 }
 
 // dstIdentEq compares two dst.Ident instances for equality.
+// For example, dstIdentEq(&dst.Ident{Name: "variable"}, &dst.Ident{Name: "variable"}) returns true.
 func dstIdentEq(x, y *dst.Ident) bool {
 	if x == nil || y == nil {
 		return x == y
@@ -389,6 +409,7 @@ func dstIdentEq(x, y *dst.Ident) bool {
 }
 
 // dstImportSpecEq compares two dst.ImportSpec instances for equality.
+// For example, dstImportSpecEq(&dst.ImportSpec{Path: &dst.BasicLit{Value: "\"fmt\""}}, &dst.ImportSpec{Path: &dst.BasicLit{Value: "\"fmt\""}}) returns true.
 func dstImportSpecEq(x, y *dst.ImportSpec) bool {
 	if x == nil || y == nil {
 		return x == y
@@ -398,6 +419,7 @@ func dstImportSpecEq(x, y *dst.ImportSpec) bool {
 }
 
 // dstKeyValueExprEq compares two dst.KeyValueExpr instances for equality.
+// For example, dstKeyValueExprEq(&dst.KeyValueExpr{Key: &dst.Ident{Name: "name"}}, &dst.KeyValueExpr{Key: &dst.Ident{Name: "name"}}) returns true.
 func dstKeyValueExprEq(x, y *dst.KeyValueExpr) bool {
 	if x == nil || y == nil {
 		return x == y
@@ -407,6 +429,7 @@ func dstKeyValueExprEq(x, y *dst.KeyValueExpr) bool {
 }
 
 // dstMapTypeEq compares two dst.MapType instances for equality.
+// For example, dstMapTypeEq(&dst.MapType{Key: &dst.Ident{Name: "string"}}, &dst.MapType{Key: &dst.Ident{Name: "string"}}) returns true.
 func dstMapTypeEq(x, y *dst.MapType) bool {
 	if x == nil || y == nil {
 		return x == y
@@ -416,6 +439,7 @@ func dstMapTypeEq(x, y *dst.MapType) bool {
 }
 
 // dstSelectorExprEq compares two dst.SelectorExpr instances for equality.
+// For example, dstSelectorExprEq(&dst.SelectorExpr{X: &dst.Ident{Name: "fmt"}}, &dst.SelectorExpr{X: &dst.Ident{Name: "fmt"}}) returns true.
 func dstSelectorExprEq(x, y *dst.SelectorExpr) bool {
 	if x == nil || y == nil {
 		return x == y
@@ -425,6 +449,7 @@ func dstSelectorExprEq(x, y *dst.SelectorExpr) bool {
 }
 
 // dstExprStmtEq compares two dst.ExprStmt instances for equality.
+// For example, dstExprStmtEq(&dst.ExprStmt{X: &dst.Ident{Name: "x"}}, &dst.ExprStmt{X: &dst.Ident{Name: "x"}}) returns true.
 func dstExprStmtEq(x, y *dst.ExprStmt) bool {
 	if x == nil || y == nil {
 		return x == y
@@ -434,6 +459,7 @@ func dstExprStmtEq(x, y *dst.ExprStmt) bool {
 }
 
 // dstFuncTypeEq compares two dst.FuncType instances for equality.
+// For example, dstFuncTypeEq(&dst.FuncType{Params: &dst.FieldList{}}, &dst.FuncType{Params: &dst.FieldList{}}) returns true.
 func dstFuncTypeEq(x, y *dst.FuncType) bool {
 	if x == nil || y == nil {
 		return x == y
@@ -443,6 +469,7 @@ func dstFuncTypeEq(x, y *dst.FuncType) bool {
 }
 
 // dstFieldListEq compares two dst.FieldList instances for equality.
+// For example, dstFieldListEq(&dst.FieldList{List: []*dst.Field{}}, &dst.FieldList{List: []*dst.Field{}}) returns true.
 func dstFieldListEq(x, y *dst.FieldList) bool {
 	if x == nil || y == nil {
 		return x == y
@@ -462,6 +489,7 @@ func dstFieldListEq(x, y *dst.FieldList) bool {
 }
 
 // dstFieldEq compares two dst.Field instances for equality.
+// For example, dstFieldEq(&dst.Field{Type: &dst.Ident{Name: "int"}}, &dst.Field{Type: &dst.Ident{Name: "int"}}) returns true.
 func dstFieldEq(x, y *dst.Field) bool {
 	if x == nil || y == nil {
 		return x == y
@@ -482,6 +510,7 @@ func dstFieldEq(x, y *dst.Field) bool {
 }
 
 // dstUnaryExprEq compares two dst.UnaryExpr instances for equality.
+// For example, dstUnaryExprEq(&dst.UnaryExpr{Op: token.AND, X: &dst.Ident{Name: "x"}}, &dst.UnaryExpr{Op: token.AND, X: &dst.Ident{Name: "x"}}) returns true.
 func dstUnaryExprEq(x, y *dst.UnaryExpr) bool {
 	if x == nil || y == nil {
 		return x == y
