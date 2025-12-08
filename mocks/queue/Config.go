@@ -855,6 +855,53 @@ func (_c *Config_GetString_Call) RunAndReturn(run func(string, ...string) string
 	return _c
 }
 
+// UnmarshalKey provides a mock function with given fields: key, rawVal
+func (_m *Config) UnmarshalKey(key string, rawVal interface{}) error {
+	ret := _m.Called(key, rawVal)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UnmarshalKey")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, interface{}) error); ok {
+		r0 = rf(key, rawVal)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Config_UnmarshalKey_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UnmarshalKey'
+type Config_UnmarshalKey_Call struct {
+	*mock.Call
+}
+
+// UnmarshalKey is a helper method to define mock.On call
+//   - key string
+//   - rawVal interface{}
+func (_e *Config_Expecter) UnmarshalKey(key interface{}, rawVal interface{}) *Config_UnmarshalKey_Call {
+	return &Config_UnmarshalKey_Call{Call: _e.mock.On("UnmarshalKey", key, rawVal)}
+}
+
+func (_c *Config_UnmarshalKey_Call) Run(run func(key string, rawVal interface{})) *Config_UnmarshalKey_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(interface{}))
+	})
+	return _c
+}
+
+func (_c *Config_UnmarshalKey_Call) Return(_a0 error) *Config_UnmarshalKey_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Config_UnmarshalKey_Call) RunAndReturn(run func(string, interface{}) error) *Config_UnmarshalKey_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Via provides a mock function with given fields: connection
 func (_m *Config) Via(connection string) interface{} {
 	ret := _m.Called(connection)
