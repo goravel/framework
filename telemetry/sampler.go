@@ -6,36 +6,21 @@ const (
 	samplerAlwaysOn     = "always_on"
 	samplerAlwaysOff    = "always_off"
 	samplerTraceIDRatio = "traceidratio"
-
-	defaultRatio = 0.05
 )
 
-var (
-	defaultTraceSampler = sdktrace.ParentBased(sdktrace.AlwaysSample())
-)
-
-type samplerConfig struct {
-	samplerType string
-	parentBased bool
-	ratio       float64
-}
-
-func newTraceSampler(cfg samplerConfig) sdktrace.Sampler {
-	if cfg.samplerType == "" {
-		return defaultTraceSampler
-	}
-
+func newTraceSampler(cfg SamplerConfig) sdktrace.Sampler {
 	var sampler sdktrace.Sampler
-	switch cfg.samplerType {
+
+	switch cfg.Type {
 	case samplerAlwaysOff:
 		sampler = sdktrace.NeverSample()
 	case samplerTraceIDRatio:
-		sampler = sdktrace.TraceIDRatioBased(cfg.ratio)
+		sampler = sdktrace.TraceIDRatioBased(cfg.Ratio)
 	default:
 		sampler = sdktrace.AlwaysSample()
 	}
 
-	if cfg.parentBased {
+	if cfg.Parent {
 		return sdktrace.ParentBased(sampler)
 	}
 

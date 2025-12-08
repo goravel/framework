@@ -26,7 +26,12 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleTelemetry)
 		}
 
-		return NewApplication(config)
+		var telemetryCfg Config
+		if err := config.UnmarshalKey("telemetry", &telemetryCfg); err != nil {
+			return nil, err
+		}
+
+		return NewApplication(telemetryCfg)
 	})
 }
 

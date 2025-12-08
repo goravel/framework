@@ -5,127 +5,95 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	tracenoop "go.opentelemetry.io/otel/trace/noop"
 
 	"github.com/goravel/framework/errors"
-	configmocks "github.com/goravel/framework/mocks/config"
 )
 
 func TestNewApplication(t *testing.T) {
 	tests := []struct {
 		name            string
-		setupMock       func(*configmocks.Config)
+		config          Config
 		expectError     error
 		expectSDKTracer bool
 	}{
 		{
-			name: "empty propagator returns error",
-			setupMock: func(cfg *configmocks.Config) {
-				cfg.EXPECT().GetString(configPropagators.String()).Return("")
-			},
+			name:        "empty propagator returns error",
+			config:      Config{Propagators: ""},
 			expectError: errors.TelemetryPropagatorRequired,
 		},
 		{
-			name: "invalid propagator returns error",
-			setupMock: func(cfg *configmocks.Config) {
-				cfg.EXPECT().GetString(configPropagators.String()).Return("invalid")
-			},
+			name:        "invalid propagator returns error",
+			config:      Config{Propagators: "invalid"},
 			expectError: errors.TelemetryUnsupportedPropagator.Args("invalid"),
 		},
 		{
-			name: "empty exporter returns app with noop tracer provider",
-			setupMock: func(cfg *configmocks.Config) {
-				cfg.EXPECT().GetString(configPropagators.String()).Return("tracecontext")
-				cfg.EXPECT().GetString(configTracesExporter.String()).Return("")
-			},
+			name:            "empty exporter returns app with noop tracer provider",
+			config:          Config{Propagators: "tracecontext"},
 			expectSDKTracer: false,
 		},
 		{
 			name: "console exporter initializes SDK tracer provider",
-			setupMock: func(cfg *configmocks.Config) {
-				cfg.EXPECT().GetString(configPropagators.String()).Return("tracecontext,baggage")
-				cfg.EXPECT().GetString(configTracesExporter.String()).Return("console")
-
-				cfg.EXPECT().GetString(configServiceName.String(), "goravel").Return("test-service")
-				cfg.EXPECT().GetString(configServiceVersion.String()).Return("1.0.0")
-				cfg.EXPECT().GetString(configEnvironment.String()).Return("test")
-
-				cfg.EXPECT().Get(configTracesSamplerRatio.String(), defaultRatio).Return(1.0)
-				cfg.EXPECT().GetString(configTracesSamplerType.String(), "always_on").Return("always_on")
-				cfg.EXPECT().GetBool(configTracesSamplerParent.String(), true).Return(true)
-
-				cfg.EXPECT().GetString(configExporterDriver.With("console"), "console").Return("console")
+			config: Config{
+				Service:     ServiceConfig{Name: "test-service"},
+				Propagators: "tracecontext,baggage",
+				Traces:      TracesConfig{Exporter: "console"},
+				Exporters: map[string]ExporterEntry{
+					"console": {Driver: ExporterDriverConsole},
+				},
 			},
 			expectSDKTracer: true,
 		},
 		{
 			name: "otlp exporter initializes SDK tracer provider",
-			setupMock: func(cfg *configmocks.Config) {
-				cfg.EXPECT().GetString(configPropagators.String()).Return("tracecontext")
-				cfg.EXPECT().GetString(configTracesExporter.String()).Return("otlp")
-
-				cfg.EXPECT().GetString(configServiceName.String(), "goravel").Return("test-service")
-				cfg.EXPECT().GetString(configServiceVersion.String()).Return("1.0.0")
-				cfg.EXPECT().GetString(configEnvironment.String()).Return("test")
-
-				cfg.EXPECT().Get(configTracesSamplerRatio.String(), defaultRatio).Return(0.5)
-				cfg.EXPECT().GetString(configTracesSamplerType.String(), "always_on").Return("traceidratio")
-				cfg.EXPECT().GetBool(configTracesSamplerParent.String(), true).Return(true)
-
-				cfg.EXPECT().GetString(configExporterDriver.With("otlp"), "otlp").Return("otlp")
-				cfg.EXPECT().GetString(configExporterTracesProtocol.With("otlp"), "").Return("")
-				cfg.EXPECT().GetString(configExporterProtocol.With("otlp"), protocolHTTPProtobuf).Return(protocolHTTPProtobuf)
-				cfg.EXPECT().GetInt(configExporterTracesTimeout.With("otlp"), mock.AnythingOfType("int")).Return(5000)
-				cfg.EXPECT().GetInt(configExporterTimeout.With("otlp"), defaultTimeout).Return(10000)
-				cfg.EXPECT().GetString(configExporterTracesHeaders.With("otlp")).Return("")
-				cfg.EXPECT().GetString(configExporterEndpoint.With("otlp")).Return("localhost:4318")
-				cfg.EXPECT().GetBool(configExporterInsecure.With("otlp")).Return(true)
+			config: Config{
+				Service:     ServiceConfig{Name: "test-service", Version: "1.0.0", Environment: "test"},
+				Propagators: "tracecontext",
+				Traces: TracesConfig{
+					Exporter: "otlp",
+					Sampler:  SamplerConfig{Type: "traceidratio", Ratio: 0.5, Parent: true},
+				},
+				Exporters: map[string]ExporterEntry{
+					"otlp": {
+						Driver:   ExporterDriverOTLP,
+						Endpoint: "localhost:4318",
+						Protocol: ProtocolHTTPProtobuf,
+						Insecure: true,
+						Timeout:  5000,
+					},
+				},
 			},
 			expectSDKTracer: true,
 		},
 		{
 			name: "zipkin exporter initializes SDK tracer provider",
-			setupMock: func(cfg *configmocks.Config) {
-				cfg.EXPECT().GetString(configPropagators.String()).Return("b3")
-				cfg.EXPECT().GetString(configTracesExporter.String()).Return("zipkin")
-
-				cfg.EXPECT().GetString(configServiceName.String(), "goravel").Return("goravel")
-				cfg.EXPECT().GetString(configServiceVersion.String()).Return("")
-				cfg.EXPECT().GetString(configEnvironment.String()).Return("")
-
-				cfg.EXPECT().Get(configTracesSamplerRatio.String(), defaultRatio).Return(defaultRatio)
-				cfg.EXPECT().GetString(configTracesSamplerType.String(), "always_on").Return("always_on")
-				cfg.EXPECT().GetBool(configTracesSamplerParent.String(), true).Return(true)
-
-				cfg.EXPECT().GetString(configExporterDriver.With("zipkin"), "zipkin").Return("zipkin")
-				cfg.EXPECT().GetString(configExporterEndpoint.With("zipkin")).Return("http://localhost:9411/api/v2/spans")
+			config: Config{
+				Propagators: "b3",
+				Traces:      TracesConfig{Exporter: "zipkin"},
+				Exporters: map[string]ExporterEntry{
+					"zipkin": {
+						Driver:   ExporterDriverZipkin,
+						Endpoint: "http://localhost:9411/api/v2/spans",
+					},
+				},
 			},
 			expectSDKTracer: true,
 		},
 		{
 			name: "unknown exporter returns error",
-			setupMock: func(cfg *configmocks.Config) {
-				cfg.EXPECT().GetString(configPropagators.String()).Return("tracecontext")
-				cfg.EXPECT().GetString(configTracesExporter.String()).Return("unknown")
-
-				cfg.EXPECT().GetString(configServiceName.String(), "goravel").Return("goravel")
-				cfg.EXPECT().GetString(configServiceVersion.String()).Return("")
-				cfg.EXPECT().GetString(configEnvironment.String()).Return("")
-
-				cfg.EXPECT().GetString(configExporterDriver.With("unknown"), "unknown").Return("unknown")
+			config: Config{
+				Propagators: "tracecontext",
+				Traces:      TracesConfig{Exporter: "unknown"},
+				Exporters:   map[string]ExporterEntry{},
 			},
-			expectError: errors.TelemetryUnsupportedDriver.Args("unknown"),
+			expectError: errors.TelemetryExporterNotFound,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockConfig := configmocks.NewConfig(t)
-			tt.setupMock(mockConfig)
-
-			app, err := NewApplication(mockConfig)
+			app, err := NewApplication(tt.config)
 
 			if tt.expectError != nil {
 				assert.Equal(t, tt.expectError, err)
@@ -240,168 +208,83 @@ func TestApplication_Shutdown(t *testing.T) {
 	})
 }
 
-func TestGetResourceConfig(t *testing.T) {
-	tests := []struct {
-		name          string
-		setupMock     func(*configmocks.Config)
-		expectService string
-		expectVersion string
-		expectEnv     string
-	}{
-		{
-			name: "returns default service name",
-			setupMock: func(cfg *configmocks.Config) {
-				cfg.EXPECT().GetString(configServiceName.String(), "goravel").Return("goravel")
-				cfg.EXPECT().GetString(configServiceVersion.String()).Return("")
-				cfg.EXPECT().GetString(configEnvironment.String()).Return("")
-			},
-			expectService: "goravel",
-		},
-		{
-			name: "returns custom service name and version",
-			setupMock: func(cfg *configmocks.Config) {
-				cfg.EXPECT().GetString(configServiceName.String(), "goravel").Return("my-service")
-				cfg.EXPECT().GetString(configServiceVersion.String()).Return("2.0.0")
-				cfg.EXPECT().GetString(configEnvironment.String()).Return("production")
-			},
-			expectService: "my-service",
-			expectVersion: "2.0.0",
-			expectEnv:     "production",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockConfig := configmocks.NewConfig(t)
-			tt.setupMock(mockConfig)
-
-			cfg := getResourceConfig(mockConfig)
-
-			assert.Equal(t, tt.expectService, cfg.serviceName)
-			assert.Equal(t, tt.expectVersion, cfg.serviceVersion)
-			assert.Equal(t, tt.expectEnv, cfg.environment)
-		})
-	}
-}
-
-func TestGetSamplerConfig(t *testing.T) {
-	tests := []struct {
-		name         string
-		setupMock    func(*configmocks.Config)
-		expectType   string
-		expectParent bool
-		expectRatio  float64
-	}{
-		{
-			name: "returns default sampler config",
-			setupMock: func(cfg *configmocks.Config) {
-				cfg.EXPECT().Get(configTracesSamplerRatio.String(), defaultRatio).Return(defaultRatio)
-				cfg.EXPECT().GetString(configTracesSamplerType.String(), "always_on").Return("always_on")
-				cfg.EXPECT().GetBool(configTracesSamplerParent.String(), true).Return(true)
-			},
-			expectType:   "always_on",
-			expectParent: true,
-			expectRatio:  defaultRatio,
-		},
-		{
-			name: "returns custom sampler config",
-			setupMock: func(cfg *configmocks.Config) {
-				cfg.EXPECT().Get(configTracesSamplerRatio.String(), defaultRatio).Return(0.75)
-				cfg.EXPECT().GetString(configTracesSamplerType.String(), "always_on").Return("traceidratio")
-				cfg.EXPECT().GetBool(configTracesSamplerParent.String(), true).Return(false)
-			},
-			expectType:   "traceidratio",
-			expectParent: false,
-			expectRatio:  0.75,
-		},
-		{
-			name: "handles non-float64 ratio value",
-			setupMock: func(cfg *configmocks.Config) {
-				cfg.EXPECT().Get(configTracesSamplerRatio.String(), defaultRatio).Return("invalid")
-				cfg.EXPECT().GetString(configTracesSamplerType.String(), "always_on").Return("always_off")
-				cfg.EXPECT().GetBool(configTracesSamplerParent.String(), true).Return(true)
-			},
-			expectType:   "always_off",
-			expectParent: true,
-			expectRatio:  defaultRatio,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockConfig := configmocks.NewConfig(t)
-			tt.setupMock(mockConfig)
-
-			cfg := getSamplerConfig(mockConfig)
-
-			assert.Equal(t, tt.expectType, cfg.samplerType)
-			assert.Equal(t, tt.expectParent, cfg.parentBased)
-			assert.Equal(t, tt.expectRatio, cfg.ratio)
-		})
-	}
-}
-
 func TestCreateExporter(t *testing.T) {
 	tests := []struct {
 		name         string
+		config       Config
 		exporterName string
-		setupMock    func(*configmocks.Config)
 		expectError  error
 	}{
 		{
-			name:         "creates console exporter",
-			exporterName: "console",
-			setupMock: func(cfg *configmocks.Config) {
-				cfg.EXPECT().GetString(configExporterDriver.With("console"), "console").Return("console")
+			name: "creates console exporter",
+			config: Config{
+				Traces: TracesConfig{
+					Exporter: "console",
+				},
+				Exporters: map[string]ExporterEntry{
+					"console": {Driver: ExporterDriverConsole},
+				},
 			},
 		},
 		{
-			name:         "creates otlp exporter",
-			exporterName: "otlp",
-			setupMock: func(cfg *configmocks.Config) {
-				cfg.EXPECT().GetString(configExporterDriver.With("otlp"), "otlp").Return("otlp")
-				cfg.EXPECT().GetString(configExporterTracesProtocol.With("otlp"), "").Return("")
-				cfg.EXPECT().GetString(configExporterProtocol.With("otlp"), protocolHTTPProtobuf).Return(protocolHTTPProtobuf)
-				cfg.EXPECT().GetInt(configExporterTracesTimeout.With("otlp"), mock.AnythingOfType("int")).Return(5000)
-				cfg.EXPECT().GetInt(configExporterTimeout.With("otlp"), defaultTimeout).Return(10000)
-				cfg.EXPECT().GetString(configExporterTracesHeaders.With("otlp")).Return("X-Api-Key=test")
-				cfg.EXPECT().GetString(configExporterEndpoint.With("otlp")).Return("localhost:4318")
-				cfg.EXPECT().GetBool(configExporterInsecure.With("otlp")).Return(true)
+			name: "creates otlp exporter",
+			config: Config{
+				Traces: TracesConfig{
+					Exporter: "otlp",
+				},
+				Exporters: map[string]ExporterEntry{
+					"otlp": {
+						Driver:   ExporterDriverOTLP,
+						Endpoint: "localhost:4318",
+						Protocol: ProtocolHTTPProtobuf,
+						Insecure: true,
+						Timeout:  5000,
+					},
+				},
 			},
 		},
 		{
-			name:         "creates zipkin exporter",
-			exporterName: "zipkin",
-			setupMock: func(cfg *configmocks.Config) {
-				cfg.EXPECT().GetString(configExporterDriver.With("zipkin"), "zipkin").Return("zipkin")
-				cfg.EXPECT().GetString(configExporterEndpoint.With("zipkin")).Return("http://localhost:9411/api/v2/spans")
+			name: "creates zipkin exporter",
+			config: Config{
+				Traces: TracesConfig{
+					Exporter: "zipkin",
+				},
+				Exporters: map[string]ExporterEntry{
+					"zipkin": {
+						Driver:   ExporterDriverZipkin,
+						Endpoint: "http://localhost:9411/api/v2/spans",
+					},
+				},
 			},
 		},
 		{
-			name:         "returns error for unknown exporter",
-			exporterName: "unknown",
-			setupMock: func(cfg *configmocks.Config) {
-				cfg.EXPECT().GetString(configExporterDriver.With("unknown"), "unknown").Return("unknown")
+			name: "returns error for unknown exporter",
+			config: Config{
+				Traces: TracesConfig{
+					Exporter: "unknown",
+				},
+				Exporters: map[string]ExporterEntry{},
 			},
-			expectError: errors.TelemetryUnsupportedDriver.Args("unknown"),
+			expectError: errors.TelemetryExporterNotFound,
 		},
 		{
-			name:         "uses custom driver from config",
-			exporterName: "custom",
-			setupMock: func(cfg *configmocks.Config) {
-				cfg.EXPECT().GetString(configExporterDriver.With("custom"), "custom").Return("console")
+			name: "uses custom driver from config",
+			config: Config{
+				Traces: TracesConfig{
+					Exporter: "custom",
+				},
+				Exporters: map[string]ExporterEntry{
+					"custom": {Driver: ExporterDriverConsole},
+				},
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockConfig := configmocks.NewConfig(t)
-			tt.setupMock(mockConfig)
-
 			ctx := context.Background()
 
-			exp, err := createExporter(ctx, mockConfig, tt.exporterName)
+			exp, err := createTraceExporter(ctx, tt.config)
 
 			if tt.expectError != nil {
 				assert.Equal(t, tt.expectError, err)
@@ -414,103 +297,41 @@ func TestCreateExporter(t *testing.T) {
 	}
 }
 
-func TestGetOTLPConfig(t *testing.T) {
+func TestConfig_GetExporter(t *testing.T) {
 	tests := []struct {
-		name           string
-		exporterName   string
-		setupMock      func(*configmocks.Config)
-		expectEndpoint string
-		expectProtocol string
-		expectInsecure bool
-		expectTimeout  int
-		expectHeaders  map[string]string
+		name         string
+		config       Config
+		exporterName string
+		expectDriver ExporterDriver
+		expectFound  bool
 	}{
 		{
-			name:         "returns default otlp config",
+			name: "returns existing exporter",
+			config: Config{
+				Exporters: map[string]ExporterEntry{
+					"otlp": {Driver: ExporterDriverOTLP, Endpoint: "localhost:4318"},
+				},
+			},
 			exporterName: "otlp",
-			setupMock: func(cfg *configmocks.Config) {
-				cfg.EXPECT().GetString(configExporterTracesProtocol.With("otlp"), "").Return("")
-				cfg.EXPECT().GetString(configExporterProtocol.With("otlp"), protocolHTTPProtobuf).Return(protocolHTTPProtobuf)
-				cfg.EXPECT().GetInt(configExporterTracesTimeout.With("otlp"), mock.AnythingOfType("int")).Return(10000)
-				cfg.EXPECT().GetInt(configExporterTimeout.With("otlp"), defaultTimeout).Return(10000)
-				cfg.EXPECT().GetString(configExporterTracesHeaders.With("otlp")).Return("")
-				cfg.EXPECT().GetString(configExporterEndpoint.With("otlp")).Return("localhost:4318")
-				cfg.EXPECT().GetBool(configExporterInsecure.With("otlp")).Return(false)
-			},
-			expectEndpoint: "localhost:4318",
-			expectProtocol: protocolHTTPProtobuf,
-			expectInsecure: false,
-			expectTimeout:  10000,
-			expectHeaders:  map[string]string{},
+			expectDriver: ExporterDriverOTLP,
+			expectFound:  true,
 		},
 		{
-			name:         "returns custom otlp config with grpc protocol",
-			exporterName: "custom-otlp",
-			setupMock: func(cfg *configmocks.Config) {
-				cfg.EXPECT().GetString(configExporterTracesProtocol.With("custom-otlp"), "").Return(protocolGRPC)
-				cfg.EXPECT().GetInt(configExporterTracesTimeout.With("custom-otlp"), mock.AnythingOfType("int")).Return(5000)
-				cfg.EXPECT().GetInt(configExporterTimeout.With("custom-otlp"), defaultTimeout).Return(10000)
-				cfg.EXPECT().GetString(configExporterTracesHeaders.With("custom-otlp")).Return("Authorization=Bearer token,X-Tenant=tenant1")
-				cfg.EXPECT().GetString(configExporterEndpoint.With("custom-otlp")).Return("otel-collector:4317")
-				cfg.EXPECT().GetBool(configExporterInsecure.With("custom-otlp")).Return(true)
+			name: "returns default for non-existent exporter",
+			config: Config{
+				Exporters: map[string]ExporterEntry{},
 			},
-			expectEndpoint: "otel-collector:4317",
-			expectProtocol: protocolGRPC,
-			expectInsecure: true,
-			expectTimeout:  5000,
-			expectHeaders:  map[string]string{"Authorization": "Bearer token", "X-Tenant": "tenant1"},
+			exporterName: "unknown",
+			expectDriver: "unknown",
+			expectFound:  false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockConfig := configmocks.NewConfig(t)
-			tt.setupMock(mockConfig)
-
-			cfg := getOTLPConfig(mockConfig, tt.exporterName)
-
-			assert.Equal(t, tt.expectEndpoint, cfg.endpoint)
-			assert.Equal(t, tt.expectProtocol, cfg.protocol)
-			assert.Equal(t, tt.expectInsecure, cfg.insecure)
-			assert.Equal(t, tt.expectTimeout, cfg.timeout)
-			assert.Equal(t, tt.expectHeaders, cfg.headers)
-		})
-	}
-}
-
-func TestGetZipkinConfig(t *testing.T) {
-	tests := []struct {
-		name           string
-		exporterName   string
-		setupMock      func(*configmocks.Config)
-		expectEndpoint string
-	}{
-		{
-			name:         "returns zipkin config with custom endpoint",
-			exporterName: "zipkin",
-			setupMock: func(cfg *configmocks.Config) {
-				cfg.EXPECT().GetString(configExporterEndpoint.With("zipkin")).Return("http://zipkin:9411/api/v2/spans")
-			},
-			expectEndpoint: "http://zipkin:9411/api/v2/spans",
-		},
-		{
-			name:         "returns zipkin config with empty endpoint",
-			exporterName: "custom-zipkin",
-			setupMock: func(cfg *configmocks.Config) {
-				cfg.EXPECT().GetString(configExporterEndpoint.With("custom-zipkin")).Return("")
-			},
-			expectEndpoint: "",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockConfig := configmocks.NewConfig(t)
-			tt.setupMock(mockConfig)
-
-			cfg := getZipkinConfig(mockConfig, tt.exporterName)
-
-			assert.Equal(t, tt.expectEndpoint, cfg.endpoint)
+			exp, found := tt.config.GetExporter(tt.exporterName)
+			assert.Equal(t, tt.expectFound, found)
+			assert.Equal(t, tt.expectDriver, exp.Driver)
 		})
 	}
 }

@@ -9,7 +9,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	tracenoop "go.opentelemetry.io/otel/trace/noop"
 
-	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/telemetry"
 	"github.com/goravel/framework/errors"
 )
@@ -21,15 +20,15 @@ type Application struct {
 	propagator     propagation.TextMapPropagator
 }
 
-func NewApplication(cfg config.Config) (*Application, error) {
-	propagator, err := newCompositeTextMapPropagator(cfg.GetString(configPropagators.String()))
+func NewApplication(cfg Config) (*Application, error) {
+	propagator, err := newCompositeTextMapPropagator(cfg.Propagators)
 	if err != nil {
 		return nil, err
 	}
 
 	otel.SetTextMapPropagator(propagator)
 
-	exporterName := cfg.GetString(configTracesExporter.String())
+	exporterName := cfg.Traces.Exporter
 	if exporterName == "" {
 		return &Application{
 			tracerProvider: tracenoop.NewTracerProvider(),
@@ -39,12 +38,12 @@ func NewApplication(cfg config.Config) (*Application, error) {
 
 	ctx := context.Background()
 
-	res, err := newResource(ctx, getResourceConfig(cfg))
+	res, err := newResource(ctx, cfg.Service)
 	if err != nil {
 		return nil, err
 	}
 
-	exp, err := createExporter(ctx, cfg, exporterName)
+	exp, err := createTraceExporter(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +51,7 @@ func NewApplication(cfg config.Config) (*Application, error) {
 	tp := sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(exp),
 		sdktrace.WithResource(res),
-		sdktrace.WithSampler(newTraceSampler(getSamplerConfig(cfg))),
+		sdktrace.WithSampler(newTraceSampler(cfg.Traces.Sampler)),
 	)
 
 	otel.SetTracerProvider(tp)
@@ -82,65 +81,21 @@ func (r *Application) TracerProvider() trace.TracerProvider {
 	return r.tracerProvider
 }
 
-func getResourceConfig(cfg config.Config) resourceConfig {
-	return resourceConfig{
-		serviceName:    cfg.GetString(configServiceName.String(), "goravel"),
-		serviceVersion: cfg.GetString(configServiceVersion.String()),
-		environment:    cfg.GetString(configEnvironment.String()),
-	}
-}
-
-func getSamplerConfig(cfg config.Config) samplerConfig {
-	ratio := defaultRatio
-	if v, ok := cfg.Get(configTracesSamplerRatio.String(), defaultRatio).(float64); ok {
-		ratio = v
+func createTraceExporter(ctx context.Context, cfg Config) (sdktrace.SpanExporter, error) {
+	exporterName := cfg.Traces.Exporter
+	exporterCfg, ok := cfg.GetExporter(exporterName)
+	if !ok {
+		return nil, errors.TelemetryExporterNotFound
 	}
 
-	return samplerConfig{
-		samplerType: cfg.GetString(configTracesSamplerType.String(), "always_on"),
-		parentBased: cfg.GetBool(configTracesSamplerParent.String(), true),
-		ratio:       ratio,
-	}
-}
-
-func createExporter(ctx context.Context, cfg config.Config, exporterName string) (sdktrace.SpanExporter, error) {
-	driver := cfg.GetString(configExporterDriver.With(exporterName), exporterName)
-
-	switch driver {
-	case exporterOTLP:
-		return newOTLPTraceExporter(ctx, getOTLPConfig(cfg, exporterName))
-	case exporterZipkin:
-		return newZipkinTraceExporter(getZipkinConfig(cfg, exporterName))
-	case exporterConsole:
-		return newConsoleTraceExporter(consoleExporterConfig{prettyPrint: true})
+	switch exporterCfg.Driver {
+	case ExporterDriverOTLP:
+		return newOTLPTraceExporter(ctx, exporterCfg)
+	case ExporterDriverZipkin:
+		return newZipkinTraceExporter(exporterCfg)
+	case ExporterDriverConsole:
+		return newConsoleTraceExporter()
 	default:
-		return nil, errors.TelemetryUnsupportedDriver.Args(driver)
-	}
-}
-
-func getOTLPConfig(cfg config.Config, exporterName string) otlpExporterConfig {
-	protocol := cfg.GetString(configExporterTracesProtocol.With(exporterName), "")
-	if protocol == "" {
-		protocol = cfg.GetString(configExporterProtocol.With(exporterName), protocolHTTPProtobuf)
-	}
-
-	timeout := cfg.GetInt(
-		configExporterTracesTimeout.With(exporterName),
-		cfg.GetInt(configExporterTimeout.With(exporterName), defaultTimeout),
-	)
-	headers := parseHeaders(cfg.GetString(configExporterTracesHeaders.With(exporterName)))
-
-	return otlpExporterConfig{
-		endpoint: cfg.GetString(configExporterEndpoint.With(exporterName)),
-		protocol: protocol,
-		insecure: cfg.GetBool(configExporterInsecure.With(exporterName)),
-		timeout:  timeout,
-		headers:  headers,
-	}
-}
-
-func getZipkinConfig(cfg config.Config, exporterName string) zipkinExporterConfig {
-	return zipkinExporterConfig{
-		endpoint: cfg.GetString(configExporterEndpoint.With(exporterName)),
+		return nil, errors.TelemetryUnsupportedDriver.Args(string(exporterCfg.Driver))
 	}
 }

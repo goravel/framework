@@ -3,45 +3,36 @@ package telemetry
 import (
 	"context"
 
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
 )
 
-type resourceConfig struct {
-	serviceName    string
-	serviceVersion string
-	environment    string
-	attributes     []attribute.KeyValue
-}
-
-func newResource(ctx context.Context, cfg resourceConfig) (*resource.Resource, error) {
-	serviceName := cfg.serviceName
+func newResource(ctx context.Context, cfg ServiceConfig) (*resource.Resource, error) {
+	serviceName := cfg.Name
 	if serviceName == "" {
 		serviceName = "goravel"
 	}
 
-	attrs := []attribute.KeyValue{
-		semconv.ServiceName(serviceName),
+	attrs := []resource.Option{
+		resource.WithAttributes(semconv.ServiceName(serviceName)),
 	}
 
-	if cfg.serviceVersion != "" {
-		attrs = append(attrs, semconv.ServiceVersion(cfg.serviceVersion))
+	if cfg.Version != "" {
+		attrs = append(attrs, resource.WithAttributes(semconv.ServiceVersion(cfg.Version)))
 	}
 
-	if cfg.environment != "" {
-		attrs = append(attrs, semconv.DeploymentEnvironmentName(cfg.environment))
+	if cfg.Environment != "" {
+		attrs = append(attrs, resource.WithAttributes(semconv.DeploymentEnvironmentName(cfg.Environment)))
 	}
 
-	attrs = append(attrs, cfg.attributes...)
-
-	detected, err := resource.New(ctx,
-		resource.WithAttributes(attrs...),
+	attrs = append(attrs,
 		resource.WithOS(),
 		resource.WithProcess(),
 		resource.WithContainer(),
 		resource.WithHost(),
 	)
+
+	detected, err := resource.New(ctx, attrs...)
 	if err != nil {
 		return nil, err
 	}

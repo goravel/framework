@@ -5,49 +5,36 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 func TestNewResource(t *testing.T) {
 	tests := []struct {
 		name          string
-		cfg           resourceConfig
+		cfg           ServiceConfig
 		expectService string
 		expectVersion bool
 		expectEnv     bool
 	}{
 		{
 			name:          "default service name when empty",
-			cfg:           resourceConfig{},
+			cfg:           ServiceConfig{},
 			expectService: "goravel",
 		},
 		{
-			name: "custom service name",
-			cfg: resourceConfig{
-				serviceName: "my-service",
-			},
+			name:          "custom service name",
+			cfg:           ServiceConfig{Name: "my-service"},
 			expectService: "my-service",
 		},
 		{
 			name: "with version and environment",
-			cfg: resourceConfig{
-				serviceName:    "my-service",
-				serviceVersion: "1.0.0",
-				environment:    "production",
+			cfg: ServiceConfig{
+				Name:        "my-service",
+				Version:     "1.0.0",
+				Environment: "production",
 			},
 			expectService: "my-service",
 			expectVersion: true,
 			expectEnv:     true,
-		},
-		{
-			name: "with custom attributes",
-			cfg: resourceConfig{
-				serviceName: "my-service",
-				attributes: []attribute.KeyValue{
-					attribute.String("custom.key", "custom.value"),
-				},
-			},
-			expectService: "my-service",
 		},
 	}
 

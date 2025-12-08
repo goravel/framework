@@ -2,7 +2,6 @@ package telemetry
 
 import (
 	"context"
-	"io"
 	"os"
 	"strings"
 	"time"
@@ -14,129 +13,116 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
+type ExporterDriver string
+
 const (
-	exporterOTLP    = "otlp"
-	exporterZipkin  = "zipkin"
-	exporterConsole = "console"
+	ExporterDriverOTLP    ExporterDriver = "otlp"
+	ExporterDriverZipkin  ExporterDriver = "zipkin"
+	ExporterDriverConsole ExporterDriver = "console"
+)
 
-	protocolGRPC         = "grpc"
-	protocolHTTPProtobuf = "http/protobuf"
-	protocolHTTPJSON     = "http/json"
+type Protocol string
 
+const (
+	ProtocolGRPC         Protocol = "grpc"
+	ProtocolHTTPProtobuf Protocol = "http/protobuf"
+	ProtocolHTTPJSON     Protocol = "http/json"
+)
+
+const (
 	defaultTimeout = 10000 // milliseconds
 )
 
-type otlpExporterConfig struct {
-	endpoint string
-	protocol string
-	insecure bool
-	timeout  int // milliseconds
-	headers  map[string]string
-}
-
-type zipkinExporterConfig struct {
-	endpoint string
-}
-
-type consoleExporterConfig struct {
-	writer      io.Writer
-	prettyPrint bool
-}
-
-func newOTLPTraceExporter(ctx context.Context, cfg otlpExporterConfig) (sdktrace.SpanExporter, error) {
-	protocol := cfg.protocol
+func newOTLPTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.SpanExporter, error) {
+	protocol := cfg.TracesProtocol
 	if protocol == "" {
-		protocol = protocolHTTPProtobuf
+		protocol = cfg.Protocol
+	}
+	if protocol == "" {
+		protocol = ProtocolHTTPProtobuf
 	}
 
 	switch protocol {
-	case protocolGRPC:
+	case ProtocolGRPC:
 		return newOTLPGRPCTraceExporter(ctx, cfg)
 	default:
 		return newOTLPHTTPTraceExporter(ctx, cfg)
 	}
 }
 
-func newOTLPGRPCTraceExporter(ctx context.Context, cfg otlpExporterConfig) (sdktrace.SpanExporter, error) {
+func newOTLPGRPCTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.SpanExporter, error) {
 	var opts []otlptracegrpc.Option
 
-	endpoint := cfg.endpoint
-	if endpoint != "" {
-		endpoint = strings.TrimPrefix(endpoint, "http://")
+	if cfg.Endpoint != "" {
+		endpoint := strings.TrimPrefix(cfg.Endpoint, "http://")
 		endpoint = strings.TrimPrefix(endpoint, "https://")
 		opts = append(opts, otlptracegrpc.WithEndpoint(endpoint))
 	}
 
-	if cfg.insecure {
+	if cfg.Insecure {
 		opts = append(opts, otlptracegrpc.WithInsecure())
 	}
 
-	timeout := cfg.timeout
-	if timeout <= 0 {
+	timeout := cfg.TracesTimeout
+	if timeout == 0 {
+		timeout = cfg.Timeout
+	}
+	if timeout == 0 {
 		timeout = defaultTimeout
 	}
 	opts = append(opts, otlptracegrpc.WithTimeout(time.Duration(timeout)*time.Millisecond))
 
-	if len(cfg.headers) > 0 {
-		opts = append(opts, otlptracegrpc.WithHeaders(cfg.headers))
+	if headers := parseHeaders(cfg.TracesHeaders); len(headers) > 0 {
+		opts = append(opts, otlptracegrpc.WithHeaders(headers))
 	}
 
 	return otlptracegrpc.New(ctx, opts...)
 }
 
-func newOTLPHTTPTraceExporter(ctx context.Context, cfg otlpExporterConfig) (sdktrace.SpanExporter, error) {
+func newOTLPHTTPTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.SpanExporter, error) {
 	var opts []otlptracehttp.Option
 
-	endpoint := cfg.endpoint
-	if endpoint != "" {
-		endpoint = strings.TrimPrefix(endpoint, "http://")
+	if cfg.Endpoint != "" {
+		endpoint := strings.TrimPrefix(cfg.Endpoint, "http://")
 		endpoint = strings.TrimPrefix(endpoint, "https://")
 		opts = append(opts, otlptracehttp.WithEndpoint(endpoint))
 	}
 
-	if cfg.insecure {
+	if cfg.Insecure {
 		opts = append(opts, otlptracehttp.WithInsecure())
 	}
 
-	timeout := cfg.timeout
-	if timeout <= 0 {
+	timeout := cfg.TracesTimeout
+	if timeout == 0 {
+		timeout = cfg.Timeout
+	}
+	if timeout == 0 {
 		timeout = defaultTimeout
 	}
 	opts = append(opts, otlptracehttp.WithTimeout(time.Duration(timeout)*time.Millisecond))
 
-	if len(cfg.headers) > 0 {
-		opts = append(opts, otlptracehttp.WithHeaders(cfg.headers))
+	if headers := parseHeaders(cfg.TracesHeaders); len(headers) > 0 {
+		opts = append(opts, otlptracehttp.WithHeaders(headers))
 	}
 
 	return otlptracehttp.New(ctx, opts...)
 }
 
-func newZipkinTraceExporter(cfg zipkinExporterConfig) (sdktrace.SpanExporter, error) {
-	endpoint := cfg.endpoint
+func newZipkinTraceExporter(cfg ExporterEntry) (sdktrace.SpanExporter, error) {
+	endpoint := cfg.Endpoint
 	if endpoint == "" {
 		endpoint = "http://localhost:9411/api/v2/spans"
 	}
 	return zipkin.New(endpoint)
 }
 
-func newConsoleTraceExporter(cfg consoleExporterConfig) (sdktrace.SpanExporter, error) {
-	var opts []stdouttrace.Option
-
-	writer := cfg.writer
-	if writer == nil {
-		writer = os.Stdout
-	}
-	opts = append(opts, stdouttrace.WithWriter(writer))
-
-	if cfg.prettyPrint {
-		opts = append(opts, stdouttrace.WithPrettyPrint())
-	}
-
-	return stdouttrace.New(opts...)
+func newConsoleTraceExporter() (sdktrace.SpanExporter, error) {
+	return stdouttrace.New(
+		stdouttrace.WithWriter(os.Stdout),
+		stdouttrace.WithPrettyPrint(),
+	)
 }
 
-// parseHeaders parses a comma-separated string of key=value pairs into a map.
-// Format: "key1=value1,key2=value2"
 func parseHeaders(headerStr string) map[string]string {
 	headers := make(map[string]string)
 	if headerStr == "" {

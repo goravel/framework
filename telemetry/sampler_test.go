@@ -9,49 +9,48 @@ import (
 func TestNewTraceSampler(t *testing.T) {
 	tests := []struct {
 		name               string
-		cfg                samplerConfig
+		cfg                SamplerConfig
 		expectParentBased  bool
 		expectAlwaysOn     bool
 		expectAlwaysOff    bool
 		expectTraceIDRatio bool
 	}{
 		{
-			name:              "empty type returns default (parent-based always on)",
-			cfg:               samplerConfig{},
-			expectParentBased: true,
-			expectAlwaysOn:    true,
+			name:           "empty type defaults to always_on",
+			cfg:            SamplerConfig{},
+			expectAlwaysOn: true,
 		},
 		{
 			name:              "always_on with parent based",
-			cfg:               samplerConfig{samplerType: "always_on", parentBased: true},
+			cfg:               SamplerConfig{Type: "always_on", Parent: true},
 			expectParentBased: true,
 			expectAlwaysOn:    true,
 		},
 		{
 			name:           "always_on without parent based",
-			cfg:            samplerConfig{samplerType: "always_on", parentBased: false},
+			cfg:            SamplerConfig{Type: "always_on", Parent: false},
 			expectAlwaysOn: true,
 		},
 		{
 			name:              "always_off with parent based",
-			cfg:               samplerConfig{samplerType: "always_off", parentBased: true},
+			cfg:               SamplerConfig{Type: "always_off", Parent: true},
 			expectParentBased: true,
 			expectAlwaysOff:   true,
 		},
 		{
 			name:            "always_off without parent based",
-			cfg:             samplerConfig{samplerType: "always_off", parentBased: false},
+			cfg:             SamplerConfig{Type: "always_off", Parent: false},
 			expectAlwaysOff: true,
 		},
 		{
 			name:               "traceidratio with 50% ratio",
-			cfg:                samplerConfig{samplerType: "traceidratio", parentBased: true, ratio: 0.5},
+			cfg:                SamplerConfig{Type: "traceidratio", Parent: true, Ratio: 0.5},
 			expectParentBased:  true,
 			expectTraceIDRatio: true,
 		},
 		{
 			name:           "unknown type defaults to always_on",
-			cfg:            samplerConfig{samplerType: "invalid", parentBased: false},
+			cfg:            SamplerConfig{Type: "invalid", Parent: false},
 			expectAlwaysOn: true,
 		},
 	}

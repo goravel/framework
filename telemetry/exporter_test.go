@@ -1,7 +1,6 @@
 package telemetry
 
 import (
-	"bytes"
 	"context"
 	"testing"
 
@@ -9,47 +8,24 @@ import (
 )
 
 func TestNewConsoleTraceExporter(t *testing.T) {
-	tests := []struct {
-		name string
-		cfg  consoleExporterConfig
-	}{
-		{
-			name: "default writer",
-			cfg:  consoleExporterConfig{},
-		},
-		{
-			name: "custom writer with pretty print",
-			cfg: consoleExporterConfig{
-				writer:      &bytes.Buffer{},
-				prettyPrint: true,
-			},
-		},
-	}
+	exp, err := newConsoleTraceExporter()
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			exp, err := newConsoleTraceExporter(tt.cfg)
-
-			assert.NoError(t, err)
-			assert.NotNil(t, exp)
-		})
-	}
+	assert.NoError(t, err)
+	assert.NotNil(t, exp)
 }
 
 func TestNewZipkinTraceExporter(t *testing.T) {
 	tests := []struct {
 		name string
-		cfg  zipkinExporterConfig
+		cfg  ExporterEntry
 	}{
 		{
 			name: "default endpoint",
-			cfg:  zipkinExporterConfig{},
+			cfg:  ExporterEntry{},
 		},
 		{
 			name: "custom endpoint",
-			cfg: zipkinExporterConfig{
-				endpoint: "http://zipkin:9411/api/v2/spans",
-			},
+			cfg:  ExporterEntry{Endpoint: "http://zipkin:9411/api/v2/spans"},
 		},
 	}
 
@@ -66,28 +42,28 @@ func TestNewZipkinTraceExporter(t *testing.T) {
 func TestNewOTLPTraceExporter(t *testing.T) {
 	tests := []struct {
 		name string
-		cfg  otlpExporterConfig
+		cfg  ExporterEntry
 	}{
 		{
 			name: "default protocol (http/protobuf)",
-			cfg:  otlpExporterConfig{endpoint: "localhost:4318", insecure: true},
+			cfg:  ExporterEntry{Endpoint: "localhost:4318", Insecure: true},
 		},
 		{
 			name: "grpc protocol",
-			cfg: otlpExporterConfig{
-				endpoint: "localhost:4317",
-				protocol: protocolGRPC,
-				insecure: true,
+			cfg: ExporterEntry{
+				Endpoint: "localhost:4317",
+				Protocol: ProtocolGRPC,
+				Insecure: true,
 			},
 		},
 		{
 			name: "with headers and timeout",
-			cfg: otlpExporterConfig{
-				endpoint: "localhost:4318",
-				protocol: protocolHTTPProtobuf,
-				insecure: true,
-				timeout:  5000,
-				headers:  map[string]string{"Authorization": "Bearer token"},
+			cfg: ExporterEntry{
+				Endpoint:      "localhost:4318",
+				Protocol:      ProtocolHTTPProtobuf,
+				Insecure:      true,
+				Timeout:       5000,
+				TracesHeaders: "Authorization=Bearer token",
 			},
 		},
 	}
