@@ -87,6 +87,7 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 
 	s.Run("WithPaths", func() {
 		s.SetupTest()
+		defer s.TearDownTest()
 		calledPaths := false
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
