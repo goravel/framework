@@ -240,11 +240,11 @@ func (s *ApplicationTestSuite) TestUnmarshalKey() {
 	s.NotNil(dbConfig.Connections["mysql"])
 
 	type MySQLConnection struct {
-		Host     string `mapstructure:"host"`
-		Port     int    `mapstructure:"port"`
-		Database string `mapstructure:"database"`
-		Username string `mapstructure:"username"`
-		Password string `mapstructure:"password"`
+		Host     string
+		Port     int
+		Database string
+		Username string
+		Password string
 	}
 
 	var mysqlConfig MySQLConnection
