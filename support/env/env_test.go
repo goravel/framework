@@ -6,6 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestModuleName(t *testing.T) {
+func TestPackageName(t *testing.T) {
 	assert.Equal(t, "github.com/goravel/framework", PackageName())
 }
