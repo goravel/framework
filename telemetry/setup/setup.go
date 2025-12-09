@@ -9,16 +9,18 @@ import (
 )
 
 func main() {
+	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
 	telemetryConfigPath := path.Config("telemetry.go")
 	telemetryFacadePath := path.Facades("telemetry.go")
+	packageName := setup.PackageName()
+	modulePath := setup.ModulePath()
 	telemetryServiceProvider := "&telemetry.ServiceProvider{}"
-	modulePath := packages.GetModulePath()
 
 	packages.Setup(os.Args).
 		Install(
 			modify.AddProviderApply(modulePath, telemetryServiceProvider),
-			modify.File(telemetryConfigPath).Overwrite(stubs.Config(packages.GetModuleNameFromArgs(os.Args))),
+			modify.File(telemetryConfigPath).Overwrite(stubs.Config(packageName)),
 			modify.File(telemetryFacadePath).Overwrite(stubs.TelemetryFacade()),
 		).
 		Uninstall(
