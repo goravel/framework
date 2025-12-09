@@ -37,7 +37,7 @@ func init() {
 		"traces": map[string]any{
 			// The exporter determines where traces are sent.
 			// Supported: "otlp", "zipkin", "console"
-			"exporter": config.Env("OTEL_TRACES_EXPORTER", "otlp"),
+			"exporter": config.Env("OTEL_TRACES_EXPORTER", "otlp_trace"),
 
 			// Sampler Configuration
 			//
@@ -56,15 +56,13 @@ func init() {
 		// Configure exporters for sending telemetry data.
 		// Supported drivers: "otlp", "zipkin", "console"
 		"exporters": map[string]any{
-			"otlp": map[string]any{
+			"otlp_trace": map[string]any{
 				"driver":          "otlp",
-				"endpoint":        config.Env("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318"),
-				"protocol":        config.Env("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf"),
-				"insecure":        config.Env("OTEL_EXPORTER_OTLP_INSECURE", true),
-				"timeout":         config.Env("OTEL_EXPORTER_OTLP_TIMEOUT", 10000),
-				"traces_timeout":  config.Env("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT", ""),
-				"traces_headers":  config.Env("OTEL_EXPORTER_OTLP_TRACES_HEADERS", config.Env("OTEL_EXPORTER_OTLP_HEADERS", "")),
-				"traces_protocol": config.Env("OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", ""),
+				"endpoint":        config.Env("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "http://localhost:4318"),
+				"protocol":        config.Env("OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "http/protobuf"),
+				"insecure":        config.Env("OTEL_EXPORTER_OTLP_TRACES_INSECURE", true),
+				"timeout":         config.Env("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT", 10000),
+				"headers":         config.Env("OTEL_EXPORTER_OTLP_TRACES_HEADERS", ""),
 			},
 			"zipkin": map[string]any{
 				"driver":   "zipkin",

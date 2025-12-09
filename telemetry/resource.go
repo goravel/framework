@@ -25,6 +25,10 @@ func newResource(ctx context.Context, cfg ServiceConfig) (*resource.Resource, er
 		attrs = append(attrs, resource.WithAttributes(semconv.DeploymentEnvironmentName(cfg.Environment)))
 	}
 
+	if cfg.InstanceID != "" {
+		attrs = append(attrs, resource.WithAttributes(semconv.ServiceInstanceID(cfg.InstanceID)))
+	}
+
 	attrs = append(attrs,
 		resource.WithOS(),
 		resource.WithProcess(),

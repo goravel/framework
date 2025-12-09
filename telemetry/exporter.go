@@ -16,9 +16,11 @@ import (
 type ExporterDriver string
 
 const (
-	ExporterDriverOTLP    ExporterDriver = "otlp"
-	ExporterDriverZipkin  ExporterDriver = "zipkin"
-	ExporterDriverConsole ExporterDriver = "console"
+	ExporterTraceDriverOTLP      ExporterDriver = "otlp"
+	ExporterTraceDriverZipkin    ExporterDriver = "zipkin"
+	ExporterTraceDriverConsole   ExporterDriver = "console"
+	ExporterMetricsDriverOTLP    ExporterDriver = "otlp"
+	ExporterMetricsDriverConsole ExporterDriver = "console"
 )
 
 type Protocol string
@@ -34,10 +36,7 @@ const (
 )
 
 func newOTLPTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.SpanExporter, error) {
-	protocol := cfg.TracesProtocol
-	if protocol == "" {
-		protocol = cfg.Protocol
-	}
+	protocol := cfg.Protocol
 	if protocol == "" {
 		protocol = ProtocolHTTPProtobuf
 	}
@@ -63,16 +62,13 @@ func newOTLPGRPCTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.
 		opts = append(opts, otlptracegrpc.WithInsecure())
 	}
 
-	timeout := cfg.TracesTimeout
-	if timeout == 0 {
-		timeout = cfg.Timeout
-	}
+	timeout := cfg.Timeout
 	if timeout == 0 {
 		timeout = defaultTimeout
 	}
 	opts = append(opts, otlptracegrpc.WithTimeout(time.Duration(timeout)*time.Millisecond))
 
-	if headers := parseHeaders(cfg.TracesHeaders); len(headers) > 0 {
+	if headers := parseHeaders(cfg.Headers); len(headers) > 0 {
 		opts = append(opts, otlptracegrpc.WithHeaders(headers))
 	}
 
@@ -92,16 +88,13 @@ func newOTLPHTTPTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.
 		opts = append(opts, otlptracehttp.WithInsecure())
 	}
 
-	timeout := cfg.TracesTimeout
-	if timeout == 0 {
-		timeout = cfg.Timeout
-	}
+	timeout := cfg.Timeout
 	if timeout == 0 {
 		timeout = defaultTimeout
 	}
 	opts = append(opts, otlptracehttp.WithTimeout(time.Duration(timeout)*time.Millisecond))
 
-	if headers := parseHeaders(cfg.TracesHeaders); len(headers) > 0 {
+	if headers := parseHeaders(cfg.Headers); len(headers) > 0 {
 		opts = append(opts, otlptracehttp.WithHeaders(headers))
 	}
 

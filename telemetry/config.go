@@ -3,6 +3,7 @@ package telemetry
 type Config struct {
 	Service     ServiceConfig
 	Propagators string
+	Metrics     MetricsConfig
 	Traces      TracesConfig
 	Exporters   map[string]ExporterEntry
 }
@@ -11,11 +12,16 @@ type ServiceConfig struct {
 	Name        string
 	Version     string
 	Environment string
+	InstanceID  string
 }
 
 type TracesConfig struct {
 	Exporter string
 	Sampler  SamplerConfig
+}
+
+type MetricsConfig struct {
+	Exporter string
 }
 
 type SamplerConfig struct {
@@ -31,10 +37,8 @@ type ExporterEntry struct {
 	Timeout  int
 
 	// OTLP-specific
-	Protocol       Protocol
-	TracesTimeout  int      `mapstructure:"traces_timeout"`
-	TracesHeaders  string   `mapstructure:"traces_headers"`
-	TracesProtocol Protocol `mapstructure:"traces_protocol"`
+	Protocol Protocol
+	Headers  string
 }
 
 func (c Config) GetExporter(name string) (ExporterEntry, bool) {

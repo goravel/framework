@@ -40,7 +40,7 @@ func TestNewApplication(t *testing.T) {
 				Propagators: "tracecontext,baggage",
 				Traces:      TracesConfig{Exporter: "console"},
 				Exporters: map[string]ExporterEntry{
-					"console": {Driver: ExporterDriverConsole},
+					"console": {Driver: ExporterTraceDriverConsole},
 				},
 			},
 			expectSDKTracer: true,
@@ -56,7 +56,7 @@ func TestNewApplication(t *testing.T) {
 				},
 				Exporters: map[string]ExporterEntry{
 					"otlp": {
-						Driver:   ExporterDriverOTLP,
+						Driver:   ExporterTraceDriverOTLP,
 						Endpoint: "localhost:4318",
 						Protocol: ProtocolHTTPProtobuf,
 						Insecure: true,
@@ -73,7 +73,7 @@ func TestNewApplication(t *testing.T) {
 				Traces:      TracesConfig{Exporter: "zipkin"},
 				Exporters: map[string]ExporterEntry{
 					"zipkin": {
-						Driver:   ExporterDriverZipkin,
+						Driver:   ExporterTraceDriverZipkin,
 						Endpoint: "http://localhost:9411/api/v2/spans",
 					},
 				},
@@ -222,7 +222,7 @@ func TestCreateExporter(t *testing.T) {
 					Exporter: "console",
 				},
 				Exporters: map[string]ExporterEntry{
-					"console": {Driver: ExporterDriverConsole},
+					"console": {Driver: ExporterTraceDriverConsole},
 				},
 			},
 		},
@@ -234,7 +234,7 @@ func TestCreateExporter(t *testing.T) {
 				},
 				Exporters: map[string]ExporterEntry{
 					"otlp": {
-						Driver:   ExporterDriverOTLP,
+						Driver:   ExporterTraceDriverOTLP,
 						Endpoint: "localhost:4318",
 						Protocol: ProtocolHTTPProtobuf,
 						Insecure: true,
@@ -251,7 +251,7 @@ func TestCreateExporter(t *testing.T) {
 				},
 				Exporters: map[string]ExporterEntry{
 					"zipkin": {
-						Driver:   ExporterDriverZipkin,
+						Driver:   ExporterTraceDriverZipkin,
 						Endpoint: "http://localhost:9411/api/v2/spans",
 					},
 				},
@@ -274,7 +274,7 @@ func TestCreateExporter(t *testing.T) {
 					Exporter: "custom",
 				},
 				Exporters: map[string]ExporterEntry{
-					"custom": {Driver: ExporterDriverConsole},
+					"custom": {Driver: ExporterTraceDriverConsole},
 				},
 			},
 		},
@@ -284,7 +284,7 @@ func TestCreateExporter(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
 
-			exp, err := createTraceExporter(ctx, tt.config)
+			exp, err := createTraceProvider(ctx, tt.config)
 
 			if tt.expectError != nil {
 				assert.Equal(t, tt.expectError, err)
@@ -309,11 +309,11 @@ func TestConfig_GetExporter(t *testing.T) {
 			name: "returns existing exporter",
 			config: Config{
 				Exporters: map[string]ExporterEntry{
-					"otlp": {Driver: ExporterDriverOTLP, Endpoint: "localhost:4318"},
+					"otlp": {Driver: ExporterTraceDriverOTLP, Endpoint: "localhost:4318"},
 				},
 			},
 			exporterName: "otlp",
-			expectDriver: ExporterDriverOTLP,
+			expectDriver: ExporterTraceDriverOTLP,
 			expectFound:  true,
 		},
 		{

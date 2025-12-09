@@ -59,11 +59,11 @@ func TestNewOTLPTraceExporter(t *testing.T) {
 		{
 			name: "with headers and timeout",
 			cfg: ExporterEntry{
-				Endpoint:      "localhost:4318",
-				Protocol:      ProtocolHTTPProtobuf,
-				Insecure:      true,
-				Timeout:       5000,
-				TracesHeaders: "Authorization=Bearer token",
+				Endpoint: "localhost:4318",
+				Protocol: ProtocolHTTPProtobuf,
+				Insecure: true,
+				Timeout:  5000,
+				Headers:  "Authorization=Bearer token",
 			},
 		},
 	}
