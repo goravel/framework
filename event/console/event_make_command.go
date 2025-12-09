@@ -39,7 +39,7 @@ func (r *EventMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *EventMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "event", ctx.Argument(0), support.Config.Paths.Event)
+	m, err := supportconsole.NewMake(ctx, "event", ctx.Argument(0), support.Config.Paths.Events)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil

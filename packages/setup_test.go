@@ -144,12 +144,3 @@ func TestSetup(t *testing.T) {
 		packageName: "custom-package",
 	}, s.(*setup))
 }
-
-func TestModuleName(t *testing.T) {
-	assert.Equal(t, "github.com/goravel/framework", GetPackageName())
-}
-
-func TestModuleNameFromArgs(t *testing.T) {
-	assert.Equal(t, "test", GetModuleNameFromArgs([]string{"go", "run", ".", "--module=test"}))
-	assert.Equal(t, "goravel", GetModuleNameFromArgs([]string{"go", "run", "."}))
-}

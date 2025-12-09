@@ -65,7 +65,7 @@ func (r *Creator) PopulateStub(stub string, data StubData) (string, error) {
 func (r *Creator) GetPath(name string) string {
 	pwd, _ := os.Getwd()
 
-	return filepath.Join(pwd, support.Config.Paths.Migration, name+".go")
+	return filepath.Join(pwd, support.Config.Paths.Migrations, name+".go")
 }
 
 // GetFileName Get the full path to the migration.

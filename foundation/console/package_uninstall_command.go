@@ -11,10 +11,10 @@ import (
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/support"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/convert"
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -114,7 +114,7 @@ func (r *PackageUninstallCommand) uninstallPackage(ctx console.Context, pkg stri
 	setup := pkgPath + "/setup"
 
 	// uninstall package
-	uninstall := exec.Command("go", "run", setup, "uninstall", "--package-name="+packages.GetPackageName(), "--paths="+r.paths)
+	uninstall := exec.Command("go", "run", setup, "uninstall", "--package-name="+env.PackageName(), "--paths="+r.paths)
 	if ctx.OptionBool("force") {
 		uninstall.Args = append(uninstall.Args, "--force")
 	}
@@ -167,7 +167,7 @@ func (r *PackageUninstallCommand) uninstallFacade(ctx console.Context, name stri
 	force := ctx.OptionBool("force")
 	setup := bindingInfo.PkgPath + "/setup"
 	facade := convert.BindingToFacade(binding)
-	uninstall := exec.Command("go", "run", setup, "uninstall", "--facade="+facade, "--package-name="+packages.GetPackageName(), "--paths="+r.paths)
+	uninstall := exec.Command("go", "run", setup, "uninstall", "--facade="+facade, "--package-name="+env.PackageName(), "--paths="+r.paths)
 
 	if force {
 		uninstall.Args = append(uninstall.Args, "--force")

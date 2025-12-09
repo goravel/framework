@@ -114,6 +114,51 @@ func (_c *Setup_Install_Call) RunAndReturn(run func(...modify.Apply) packages.Se
 	return _c
 }
 
+// ModulePath provides a mock function with no fields
+func (_m *Setup) ModulePath() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for ModulePath")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Setup_ModulePath_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ModulePath'
+type Setup_ModulePath_Call struct {
+	*mock.Call
+}
+
+// ModulePath is a helper method to define mock.On call
+func (_e *Setup_Expecter) ModulePath() *Setup_ModulePath_Call {
+	return &Setup_ModulePath_Call{Call: _e.mock.On("ModulePath")}
+}
+
+func (_c *Setup_ModulePath_Call) Run(run func()) *Setup_ModulePath_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Setup_ModulePath_Call) Return(_a0 string) *Setup_ModulePath_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Setup_ModulePath_Call) RunAndReturn(run func() string) *Setup_ModulePath_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // PackageName provides a mock function with no fields
 func (_m *Setup) PackageName() string {
 	ret := _m.Called()

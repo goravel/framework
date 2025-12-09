@@ -15,7 +15,7 @@ func main() {
 	cacheConfigPath := path.Config("cache.go")
 	cacheFacadePath := path.Facades("cache.go")
 	cacheServiceProvider := "&cache.ServiceProvider{}"
-	modulePath := packages.GetModulePath()
+	modulePath := setup.ModulePath()
 	configPackage := support.PathPackage(support.Config.Paths.Config, setup.PackageName())
 	facadePackage := support.PathPackage(support.Config.Paths.Facades, setup.PackageName())
 

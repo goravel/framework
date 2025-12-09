@@ -10,12 +10,13 @@ import (
 )
 
 func main() {
+	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
 	sessionConfigPath := path.Config("session.go")
 	sessionFacadePath := path.Facades("session.go")
-	moduleName := packages.GetModuleNameFromArgs(os.Args)
+	packageName := setup.PackageName()
 	sessionServiceProvider := "&session.ServiceProvider{}"
-	modulePath := packages.GetModulePath()
+	modulePath := setup.ModulePath()
 	envPath := path.Base(".env")
 	envExamplePath := path.Base(".env.example")
 	env := `
@@ -23,32 +24,29 @@ SESSION_DRIVER=file
 SESSION_LIFETIME=120
 `
 
-	packages.Setup(os.Args).
-		Install(
-			// Add the session service provider to the providers array in bootstrap/providers.go
-			modify.AddProviderApply(modulePath, sessionServiceProvider),
+	setup.Install(
+		// Add the session service provider to the providers array in bootstrap/providers.go
+		modify.AddProviderApply(modulePath, sessionServiceProvider),
 
-			// Create config/session.go and the Session facade
-			modify.File(sessionConfigPath).Overwrite(stubs.Config(moduleName)),
+		// Create config/session.go and the Session facade
+		modify.File(sessionConfigPath).Overwrite(stubs.Config(packageName)),
 
-			// Add the Session facade
-			modify.WhenFacade(facades.Session, modify.File(sessionFacadePath).Overwrite(stubs.SessionFacade())),
+		// Add the Session facade
+		modify.WhenFacade(facades.Session, modify.File(sessionFacadePath).Overwrite(stubs.SessionFacade())),
 
-			// Add configurations to the .env and .env.example files
-			modify.WhenFileNotContains(envPath, "SESSION_DRIVER", modify.File(envPath).Append(env)),
-			modify.WhenFileNotContains(envExamplePath, "SESSION_DRIVER", modify.File(envExamplePath).Append(env)),
-		).
-		Uninstall(
-			modify.WhenNoFacades([]string{facades.Session},
-				// Remove config/session.go
-				modify.File(sessionConfigPath).Remove(),
+		// Add configurations to the .env and .env.example files
+		modify.WhenFileNotContains(envPath, "SESSION_DRIVER", modify.File(envPath).Append(env)),
+		modify.WhenFileNotContains(envExamplePath, "SESSION_DRIVER", modify.File(envExamplePath).Append(env)),
+	).Uninstall(
+		modify.WhenNoFacades([]string{facades.Session},
+			// Remove config/session.go
+			modify.File(sessionConfigPath).Remove(),
 
-				// Remove the session service provider from the providers array in bootstrap/providers.go
-				modify.RemoveProviderApply(modulePath, sessionServiceProvider),
-			),
+			// Remove the session service provider from the providers array in bootstrap/providers.go
+			modify.RemoveProviderApply(modulePath, sessionServiceProvider),
+		),
 
-			// Remove the Session facade
-			modify.WhenFacade(facades.Session, modify.File(sessionFacadePath).Remove()),
-		).
-		Execute()
+		// Remove the Session facade
+		modify.WhenFacade(facades.Session, modify.File(sessionFacadePath).Remove()),
+	).Execute()
 }

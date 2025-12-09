@@ -10,27 +10,25 @@ import (
 )
 
 func main() {
+	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
 	validationFacadePath := path.Facades("validation.go")
 	validationServiceProvider := "&validation.ServiceProvider{}"
-	modulePath := packages.GetModulePath()
+	modulePath := setup.ModulePath()
 
-	packages.Setup(os.Args).
-		Install(
-			// Add the validation service provider to the providers array in bootstrap/providers.go
-			modify.AddProviderApply(modulePath, validationServiceProvider),
+	setup.Install(
+		// Add the validation service provider to the providers array in bootstrap/providers.go
+		modify.AddProviderApply(modulePath, validationServiceProvider),
 
-			// Add the Validation facade
-			modify.WhenFacade(facades.Validation, modify.File(validationFacadePath).Overwrite(stubs.ValidationFacade())),
-		).
-		Uninstall(
-			modify.WhenNoFacades([]string{facades.Validation},
-				// Remove the validation service provider from the providers array in bootstrap/providers.go
-				modify.RemoveProviderApply(modulePath, validationServiceProvider),
-			),
+		// Add the Validation facade
+		modify.File(validationFacadePath).Overwrite(stubs.ValidationFacade()),
+	).Uninstall(
+		modify.WhenNoFacades([]string{facades.Validation},
+			// Remove the validation service provider from the providers array in bootstrap/providers.go
+			modify.RemoveProviderApply(modulePath, validationServiceProvider),
+		),
 
-			// Remove the Validation facade
-			modify.WhenFacade(facades.Validation, modify.File(validationFacadePath).Remove()),
-		).
-		Execute()
+		// Remove the Validation facade
+		modify.File(validationFacadePath).Remove(),
+	).Execute()
 }

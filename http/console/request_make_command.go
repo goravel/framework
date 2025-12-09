@@ -39,7 +39,7 @@ func (r *RequestMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *RequestMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "request", ctx.Argument(0), support.Config.Paths.Request)
+	m, err := supportconsole.NewMake(ctx, "request", ctx.Argument(0), support.Config.Paths.Requests)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil

@@ -52,7 +52,7 @@ func (r *MakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *MakeCommand) Handle(ctx console.Context) error {
-	make, err := supportconsole.NewMake(ctx, "command", ctx.Argument(0), support.Config.Paths.Command)
+	make, err := supportconsole.NewMake(ctx, "command", ctx.Argument(0), support.Config.Paths.Commands)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
