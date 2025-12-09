@@ -2,7 +2,7 @@ module github.com/goravel/framework
 
 go 1.24.0
 
-toolchain go1.25.4
+toolchain go1.25.5
 
 require (
 	github.com/Masterminds/squirrel v1.5.4
@@ -14,7 +14,7 @@ require (
 	github.com/dromara/carbon/v2 v2.6.11
 	github.com/gabriel-vasile/mimetype v1.4.11
 	github.com/go-viper/mapstructure/v2 v2.4.0
-	github.com/goforj/godump v1.6.0
+	github.com/goforj/godump v1.7.1
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
 	github.com/gookit/validate v1.5.6
@@ -132,8 +132,8 @@ require (
 )
 
 replace (
-	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20251124214823-79d6a2a48846
-	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20251124214823-79d6a2a48846
+	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20251202230838-ff82c1b0f217
+	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20251202230838-ff82c1b0f217
 )
 
 tool github.com/vektra/mockery/v2

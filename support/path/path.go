@@ -4,6 +4,11 @@ import (
 	"github.com/goravel/framework/facades"
 )
 
+/******************************************
+DONT USE BELOW FUNCTIONS IN THE FRAMEWORK TO AVOID IMPORT CYCLE.
+INJECT THE APP AND USE app.*Path() INSTEAD.
+*******************************************/
+
 func App(paths ...string) string {
 	return facades.App().Path(paths...)
 }

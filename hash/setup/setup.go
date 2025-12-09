@@ -9,35 +9,30 @@ import (
 )
 
 func main() {
+	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
-	modulePath := packages.GetModulePath()
+	modulePath := setup.ModulePath()
 	hashServiceProvider := "&hash.ServiceProvider{}"
 	configPath := path.Config("hashing.go")
-	hashFacade := "Hash"
 	hashFacadePath := path.Facades("hash.go")
 
-	packages.Setup(os.Args).
-		Install(
-			// Add the hash service provider to the providers array in bootstrap/providers.go
-			modify.AddProviderApply(modulePath, hashServiceProvider),
+	setup.Install(
+		// Add the hash service provider to the providers array in bootstrap/providers.go
+		modify.AddProviderApply(modulePath, hashServiceProvider),
 
-			// Create config/hashing.go
-			modify.File(configPath).Overwrite(stubs.Config(packages.GetModuleNameFromArgs(os.Args))),
+		// Create config/hashing.go
+		modify.File(configPath).Overwrite(stubs.Config(setup.PackageName())),
 
-			// Add the Hash facade
-			modify.WhenFacade(hashFacade, modify.File(hashFacadePath).Overwrite(stubs.HashFacade())),
-		).
-		Uninstall(
-			modify.WhenNoFacades([]string{hashFacade},
-				// Remove config/hashing.go
-				modify.File(configPath).Remove(),
+		// Add the Hash facade
+		modify.File(hashFacadePath).Overwrite(stubs.HashFacade()),
+	).Uninstall(
+		// Remove config/hashing.go
+		modify.File(configPath).Remove(),
 
-				// Remove the hash service provider from the providers array in bootstrap/providers.go
-				modify.RemoveProviderApply(modulePath, hashServiceProvider),
-			),
+		// Remove the hash service provider from the providers array in bootstrap/providers.go
+		modify.RemoveProviderApply(modulePath, hashServiceProvider),
 
-			// Remove the Hash facade
-			modify.WhenFacade(hashFacade, modify.File(hashFacadePath).Remove()),
-		).
-		Execute()
+		// Remove the Hash facade
+		modify.File(hashFacadePath).Remove(),
+	).Execute()
 }

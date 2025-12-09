@@ -5,11 +5,21 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"runtime/debug"
 	"slices"
 	"strings"
 
 	"github.com/goravel/framework/support/convert"
 )
+
+// PackageName returns the package name of application, eg: goravel.
+func PackageName() string {
+	if info, ok := debug.ReadBuildInfo(); ok {
+		return info.Main.Path
+	}
+
+	return "goravel"
+}
 
 // IsAir checks if the application is running using Air.
 func IsAir() bool {

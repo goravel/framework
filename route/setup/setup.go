@@ -10,16 +10,17 @@ import (
 )
 
 func main() {
+	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
 	routesPath := support.Config.Paths.Routes
 	routeFacadePath := path.Facades("route.go")
-	moduleName := packages.GetModuleNameFromArgs(os.Args)
-	routesPackage := moduleName + "/" + routesPath
+	packageName := setup.PackageName()
+	routesPackage := packageName + "/" + routesPath
 	webFunc := routesPath + ".Web"
 	webRoutePath := path.Base(routesPath, "web.go")
 	welcomeTmplPath := path.Base("resources", "views", "welcome.tmpl")
 	routeServiceProvider := "&route.ServiceProvider{}"
-	modulePath := packages.GetModulePath()
+	modulePath := setup.ModulePath()
 	envPath := path.Base(".env")
 	envExamplePath := path.Base(".env.example")
 	env := `
@@ -30,38 +31,35 @@ APP_PORT=3000
 JWT_SECRET=
 `
 
-	packages.Setup(os.Args).
-		Install(
-			// Add the route service provider to the providers array in bootstrap/providers.go
-			modify.AddProviderApply(modulePath, routeServiceProvider),
+	setup.Install(
+		// Add the route service provider to the providers array in bootstrap/providers.go
+		modify.AddProviderApply(modulePath, routeServiceProvider),
 
-			// Create resources/views/welcome.tmpl and routes/web.go
-			modify.File(welcomeTmplPath).Overwrite(stubs.WelcomeTmpl()),
-			modify.File(webRoutePath).Overwrite(stubs.Routes(moduleName)),
+		// Create resources/views/welcome.tmpl and routes/web.go
+		modify.File(welcomeTmplPath).Overwrite(stubs.WelcomeTmpl()),
+		modify.File(webRoutePath).Overwrite(stubs.Routes(packageName)),
 
-			// Add the Web function to WithRouting
-			modify.AddRouteApply(routesPackage, webFunc),
+		// Add the Web function to WithRouting
+		modify.AddRouteApply(routesPackage, webFunc),
 
-			// Register the Route facade
-			modify.File(routeFacadePath).Overwrite(stubs.RouteFacade()),
+		// Register the Route facade
+		modify.File(routeFacadePath).Overwrite(stubs.RouteFacade()),
 
-			// Add configurations to the .env and .env.example files
-			modify.WhenFileNotContains(envPath, "APP_URL", modify.File(envPath).Append(env)),
-			modify.WhenFileNotContains(envExamplePath, "APP_URL", modify.File(envExamplePath).Append(env)),
-		).
-		Uninstall(
-			// Remove the Route facade
-			modify.File(routeFacadePath).Remove(),
+		// Add configurations to the .env and .env.example files
+		modify.WhenFileNotContains(envPath, "APP_URL", modify.File(envPath).Append(env)),
+		modify.WhenFileNotContains(envExamplePath, "APP_URL", modify.File(envExamplePath).Append(env)),
+	).Uninstall(
+		// Remove the Route facade
+		modify.File(routeFacadePath).Remove(),
 
-			// Remove the Web function from WithRouting
-			modify.RemoveRouteApply(routesPackage, webFunc),
+		// Remove the Web function from WithRouting
+		modify.RemoveRouteApply(routesPackage, webFunc),
 
-			// Remove resources/views/welcome.tmpl and routes/web.go
-			modify.File(webRoutePath).Remove(),
-			modify.File(welcomeTmplPath).Remove(),
+		// Remove resources/views/welcome.tmpl and routes/web.go
+		modify.File(webRoutePath).Remove(),
+		modify.File(welcomeTmplPath).Remove(),
 
-			// Remove the route service provider from the providers array in bootstrap/providers.go
-			modify.RemoveProviderApply(modulePath, routeServiceProvider),
-		).
-		Execute()
+		// Remove the route service provider from the providers array in bootstrap/providers.go
+		modify.RemoveProviderApply(modulePath, routeServiceProvider),
+	).Execute()
 }

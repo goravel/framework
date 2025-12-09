@@ -1,6 +1,8 @@
 package packages
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
 	"path"
 	"runtime/debug"
@@ -8,8 +10,8 @@ import (
 
 	"github.com/goravel/framework/contracts/packages"
 	"github.com/goravel/framework/contracts/packages/modify"
-	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/packages/options"
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/color"
 )
 
@@ -17,46 +19,17 @@ type setup struct {
 	command     string
 	driver      string
 	facade      string
-	module      string
 	force       bool
 	onInstall   []modify.Apply
 	onUninstall []modify.Apply
+	packageName string
 }
 
 var osExit = os.Exit
 
-// GetModulePath returns the module path of package, it may be a sub-package, eg: github.com/goravel/framework/auth.
-func GetModulePath() string {
-	if info, ok := debug.ReadBuildInfo(); ok && strings.HasSuffix(info.Path, "setup") {
-		return path.Dir(info.Path)
-	}
-
-	return ""
-}
-
-// GetModuleName returns the module name of application, eg: goravel.
-func GetModuleName() string {
-	if info, ok := debug.ReadBuildInfo(); ok {
-		return info.Main.Path
-	}
-
-	return "goravel"
-}
-
-// GetModuleNameFromArgs returns the module name from command line arguments, default is "goravel".
-// It is used in the package:install command.
-func GetModuleNameFromArgs(args []string) string {
-	for _, arg := range args {
-		if strings.HasPrefix(arg, "--module=") {
-			return strings.TrimPrefix(arg, "--module=")
-		}
-	}
-
-	return "goravel"
-}
-
 func Setup(args []string) packages.Setup {
 	st := &setup{}
+	var packageName string
 
 	for _, arg := range args {
 		if arg == "install" || arg == "uninstall" {
@@ -71,31 +44,26 @@ func Setup(args []string) packages.Setup {
 		if strings.HasPrefix(arg, "--driver=") {
 			st.driver = strings.TrimPrefix(arg, "--driver=")
 		}
+		if strings.HasPrefix(arg, "--package-name=") {
+			packageName = strings.TrimPrefix(arg, "--package-name=")
+		}
+		if strings.HasPrefix(arg, "--paths=") {
+			if err := json.Unmarshal([]byte(strings.TrimPrefix(arg, "--paths=")), &support.Config.Paths); err != nil {
+				panic(fmt.Sprintf("failed to unmarshal paths: %s", err))
+			}
+		}
 	}
 
-	st.module = GetModulePath()
+	if packageName == "" {
+		packageName = "goravel"
+	}
+
+	st.packageName = packageName
 
 	return st
 }
 
-func (r *setup) Install(modifiers ...modify.Apply) packages.Setup {
-	r.onInstall = modifiers
-
-	return r
-}
-
-func (r *setup) Uninstall(modifiers ...modify.Apply) packages.Setup {
-	r.onUninstall = modifiers
-
-	return r
-}
-
 func (r *setup) Execute() {
-	if r.module == "" {
-		color.Errorln(errors.PackageModuleNameEmpty)
-		osExit(1)
-	}
-
 	if r.command == "install" {
 		for i := range r.onInstall {
 			r.reportError(r.onInstall[i].Apply(options.Driver(r.driver), options.Force(r.force), options.Facade(r.facade)))
@@ -111,6 +79,31 @@ func (r *setup) Execute() {
 
 		color.Successln("package uninstalled successfully")
 	}
+}
+
+// ModulePath returns the module path of package, it may be a sub-package, eg: github.com/goravel/framework/auth.
+func (r *setup) ModulePath() string {
+	if info, ok := debug.ReadBuildInfo(); ok && strings.HasSuffix(info.Path, "setup") {
+		return path.Dir(info.Path)
+	}
+
+	return ""
+}
+
+func (r *setup) PackageName() string {
+	return r.packageName
+}
+
+func (r *setup) Install(modifiers ...modify.Apply) packages.Setup {
+	r.onInstall = modifiers
+
+	return r
+}
+
+func (r *setup) Uninstall(modifiers ...modify.Apply) packages.Setup {
+	r.onUninstall = modifiers
+
+	return r
 }
 
 func (r *setup) reportError(err error) {

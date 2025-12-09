@@ -46,7 +46,7 @@ func (r *FilterMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *FilterMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "filter", ctx.Argument(0), support.Config.Paths.Filter)
+	m, err := supportconsole.NewMake(ctx, "filter", ctx.Argument(0), support.Config.Paths.Filters)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil

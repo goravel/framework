@@ -76,6 +76,31 @@ func (s *MakeTestSuite) TestGetPackageName() {
 
 	s.make.name = "user/Lowercase"
 	s.Equal("user", s.make.GetPackageName())
+
+	// Test with forward slashes in root (cross-platform compatibility)
+	s.make.name = "Auth"
+	s.make.root = "app/http/middleware"
+	s.Equal("middleware", s.make.GetPackageName())
+
+	// Test with nested paths using forward slashes
+	s.make.name = "user/Custom"
+	s.make.root = "app/http/middleware"
+	s.Equal("user", s.make.GetPackageName())
+
+	// Test with Windows-style backslashes in root
+	s.make.name = "Auth"
+	s.make.root = `app\http\middleware`
+	s.Equal("middleware", s.make.GetPackageName())
+
+	// Test with mixed separators (Windows path with forward slash in name)
+	s.make.name = "user/Custom"
+	s.make.root = `app\http\middleware`
+	s.Equal("user", s.make.GetPackageName())
+
+	// Test with Windows-style path at different depth
+	s.make.name = "Verify"
+	s.make.root = `app\http`
+	s.Equal("http", s.make.GetPackageName())
 }
 
 func (s *MakeTestSuite) TestGetFolderPath() {

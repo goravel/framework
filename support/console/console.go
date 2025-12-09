@@ -93,7 +93,10 @@ func (m *Make) GetPackageImportPath() string {
 func (m *Make) GetPackageName() string {
 	name := strings.TrimSuffix(m.name, ".go")
 	segments := strings.Split(name, "/")
-	packageName := str.Of(m.root).Trim(string(filepath.Separator)).AfterLast(string(filepath.Separator)).String()
+	// Normalize path separators to forward slashes for cross-platform compatibility
+	// Replace backslashes with forward slashes to handle Windows paths
+	normalizedRoot := strings.ReplaceAll(m.root, "\\", "/")
+	packageName := str.Of(normalizedRoot).Trim("/").AfterLast("/").String()
 
 	if len(segments) > 1 {
 		packageName = segments[len(segments)-2]

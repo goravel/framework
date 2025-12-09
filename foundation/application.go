@@ -94,8 +94,8 @@ func (r *Application) Boot() {
 		console.NewTestMakeCommand(),
 		console.NewPackageMakeCommand(),
 		console.NewProviderMakeCommand(),
-		console.NewPackageInstallCommand(binding.Bindings, r.Bindings()),
-		console.NewPackageUninstallCommand(r, binding.Bindings, r.Bindings()),
+		console.NewPackageInstallCommand(binding.Bindings, r.Bindings(), r.GetJson()),
+		console.NewPackageUninstallCommand(r, binding.Bindings, r.Bindings(), r.GetJson()),
 		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
 	})
 	r.bootArtisan()
@@ -214,23 +214,27 @@ func (r *Application) BasePath(path ...string) string {
 }
 
 func (r *Application) BootstrapPath(path ...string) string {
-	path = append([]string{support.RelativePath, "bootstrap"}, path...)
-	return internals.Abs(path...)
+	path = append(support.PathToSlice(support.Config.Paths.Bootstrap), path...)
+
+	return r.BasePath(path...)
 }
 
 func (r *Application) ConfigPath(path ...string) string {
-	path = append([]string{support.RelativePath, "config"}, path...)
-	return internals.Abs(path...)
+	path = append(support.PathToSlice(support.Config.Paths.Config), path...)
+
+	return r.BasePath(path...)
 }
 
 func (r *Application) ModelPath(path ...string) string {
-	path = append([]string{"models"}, path...)
-	return r.Path(path...)
+	path = append(support.PathToSlice(support.Config.Paths.Models), path...)
+
+	return r.BasePath(path...)
 }
 
 func (r *Application) DatabasePath(path ...string) string {
-	path = append([]string{support.RelativePath, "database"}, path...)
-	return internals.Abs(path...)
+	path = append(support.PathToSlice(support.Config.Paths.Database), path...)
+
+	return r.BasePath(path...)
 }
 
 func (r *Application) CurrentLocale(ctx context.Context) string {
@@ -245,7 +249,8 @@ func (r *Application) CurrentLocale(ctx context.Context) string {
 
 func (r *Application) ExecutablePath(path ...string) string {
 	path = append([]string{support.RootPath}, path...)
-	return internals.Abs(path...)
+
+	return r.BasePath(path...)
 }
 
 func (r *Application) FacadesPath(path ...string) string {
@@ -253,13 +258,20 @@ func (r *Application) FacadesPath(path ...string) string {
 }
 
 func (r *Application) LangPath(path ...string) string {
-	defaultPath := "lang"
 	if configFacade := r.MakeConfig(); configFacade != nil {
-		defaultPath = configFacade.GetString("app.lang_path", defaultPath)
+		// TODO: Remove deprecated config key "app.lang_path" in future major version.
+		defaultPath := configFacade.GetString("app.lang_path")
+
+		if defaultPath != "" {
+			path = append(support.PathToSlice(defaultPath), path...)
+
+			return r.BasePath(path...)
+		}
 	}
 
-	path = append([]string{support.RelativePath, defaultPath}, path...)
-	return internals.Abs(path...)
+	path = append(support.PathToSlice(support.Config.Paths.Lang), path...)
+
+	return r.BasePath(path...)
 }
 
 func (r *Application) Path(path ...string) string {
@@ -267,18 +279,21 @@ func (r *Application) Path(path ...string) string {
 }
 
 func (r *Application) PublicPath(path ...string) string {
-	path = append([]string{support.RelativePath, "public"}, path...)
-	return internals.Abs(path...)
+	path = append(support.PathToSlice(support.Config.Paths.Public), path...)
+
+	return r.BasePath(path...)
 }
 
 func (r *Application) ResourcePath(path ...string) string {
-	path = append([]string{support.RelativePath, "resources"}, path...)
-	return internals.Abs(path...)
+	path = append(support.PathToSlice(support.Config.Paths.Resources), path...)
+
+	return r.BasePath(path...)
 }
 
 func (r *Application) StoragePath(path ...string) string {
-	path = append([]string{support.RelativePath, "storage"}, path...)
-	return internals.Abs(path...)
+	path = append(support.PathToSlice(support.Config.Paths.Storage), path...)
+
+	return r.BasePath(path...)
 }
 
 func (r *Application) addPublishGroup(group string, paths map[string]string) {
@@ -360,8 +375,8 @@ func setEnv() {
 
 				break
 			} else {
-				testEnv = filepath.Join("../", testEnv)
-				relativePath = filepath.Join("../", relativePath)
+				testEnv = filepath.Join("..", testEnv)
+				relativePath = filepath.Join("..", relativePath)
 			}
 		}
 

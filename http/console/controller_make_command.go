@@ -44,7 +44,7 @@ func (r *ControllerMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *ControllerMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "controller", ctx.Argument(0), support.Config.Paths.Controller)
+	m, err := supportconsole.NewMake(ctx, "controller", ctx.Argument(0), support.Config.Paths.Controllers)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
