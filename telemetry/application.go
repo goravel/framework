@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"go.opentelemetry.io/otel"
+	otelmetric "go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
@@ -60,6 +61,14 @@ func NewApplication(cfg Config) (*Application, error) {
 		tracerProvider: tp,
 		propagator:     propagator,
 	}, nil
+}
+
+func (r *Application) Meter(name string, opts ...otelmetric.MeterOption) otelmetric.Meter {
+	panic("not implemented")
+}
+
+func (r *Application) MeterProvider() otelmetric.MeterProvider {
+	panic("not implemented")
 }
 
 func (r *Application) Propagator() propagation.TextMapPropagator {

@@ -6,6 +6,8 @@ import (
 	context "context"
 
 	mock "github.com/stretchr/testify/mock"
+	metric "go.opentelemetry.io/otel/metric"
+
 	propagation "go.opentelemetry.io/otel/propagation"
 
 	trace "go.opentelemetry.io/otel/trace"
@@ -22,6 +24,116 @@ type Telemetry_Expecter struct {
 
 func (_m *Telemetry) EXPECT() *Telemetry_Expecter {
 	return &Telemetry_Expecter{mock: &_m.Mock}
+}
+
+// Meter provides a mock function with given fields: name, opts
+func (_m *Telemetry) Meter(name string, opts ...metric.MeterOption) metric.Meter {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, name)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Meter")
+	}
+
+	var r0 metric.Meter
+	if rf, ok := ret.Get(0).(func(string, ...metric.MeterOption) metric.Meter); ok {
+		r0 = rf(name, opts...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(metric.Meter)
+		}
+	}
+
+	return r0
+}
+
+// Telemetry_Meter_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Meter'
+type Telemetry_Meter_Call struct {
+	*mock.Call
+}
+
+// Meter is a helper method to define mock.On call
+//   - name string
+//   - opts ...metric.MeterOption
+func (_e *Telemetry_Expecter) Meter(name interface{}, opts ...interface{}) *Telemetry_Meter_Call {
+	return &Telemetry_Meter_Call{Call: _e.mock.On("Meter",
+		append([]interface{}{name}, opts...)...)}
+}
+
+func (_c *Telemetry_Meter_Call) Run(run func(name string, opts ...metric.MeterOption)) *Telemetry_Meter_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]metric.MeterOption, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(metric.MeterOption)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Telemetry_Meter_Call) Return(_a0 metric.Meter) *Telemetry_Meter_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Telemetry_Meter_Call) RunAndReturn(run func(string, ...metric.MeterOption) metric.Meter) *Telemetry_Meter_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// MeterProvider provides a mock function with no fields
+func (_m *Telemetry) MeterProvider() metric.MeterProvider {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for MeterProvider")
+	}
+
+	var r0 metric.MeterProvider
+	if rf, ok := ret.Get(0).(func() metric.MeterProvider); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(metric.MeterProvider)
+		}
+	}
+
+	return r0
+}
+
+// Telemetry_MeterProvider_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MeterProvider'
+type Telemetry_MeterProvider_Call struct {
+	*mock.Call
+}
+
+// MeterProvider is a helper method to define mock.On call
+func (_e *Telemetry_Expecter) MeterProvider() *Telemetry_MeterProvider_Call {
+	return &Telemetry_MeterProvider_Call{Call: _e.mock.On("MeterProvider")}
+}
+
+func (_c *Telemetry_MeterProvider_Call) Run(run func()) *Telemetry_MeterProvider_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Telemetry_MeterProvider_Call) Return(_a0 metric.MeterProvider) *Telemetry_MeterProvider_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Telemetry_MeterProvider_Call) RunAndReturn(run func() metric.MeterProvider) *Telemetry_MeterProvider_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // Propagator provides a mock function with no fields
