@@ -27,6 +27,7 @@ const (
 	Seeder      = "Seeder"
 	Session     = "Session"
 	Storage     = "Storage"
+	Telemetry   = "Telemetry"
 	Testing     = "Testing"
 	Validation  = "Validation"
 	View        = "View"
@@ -57,6 +58,7 @@ var FacadeToBinding = map[string]string{
 	Seeder:      binding.Seeder,
 	Session:     binding.Session,
 	Storage:     binding.Storage,
+	Telemetry:   binding.Telemetry,
 	Testing:     binding.Testing,
 	Validation:  binding.Validation,
 	View:        binding.View,

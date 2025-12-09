@@ -31,6 +31,7 @@ import (
 	contractsroute "github.com/goravel/framework/contracts/route"
 	contractsschedule "github.com/goravel/framework/contracts/schedule"
 	contractsession "github.com/goravel/framework/contracts/session"
+	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	contractstesting "github.com/goravel/framework/contracts/testing"
 	contractstranslation "github.com/goravel/framework/contracts/translation"
 	contractsvalidation "github.com/goravel/framework/contracts/validation"
@@ -354,6 +355,16 @@ func (r *Container) MakeStorage() contractsfilesystem.Storage {
 	}
 
 	return instance.(contractsfilesystem.Storage)
+}
+
+func (r *Container) MakeTelemetry() contractstelemetry.Telemetry {
+	instance, err := r.Make(facades.FacadeToBinding[facades.Telemetry])
+	if err != nil {
+		color.Errorln(err)
+		return nil
+	}
+
+	return instance.(contractstelemetry.Telemetry)
 }
 
 func (r *Container) MakeTesting() contractstesting.Testing {

@@ -224,6 +224,11 @@ var (
 	TemplateFailedToFormatGoCode = New("failed to format go code: %v")
 	TemplateFailedToParse        = New("failed to parse template: %v")
 
+	TelemetryPropagatorRequired    = New("telemetry propagator is required").SetModule(ModuleTelemetry)
+	TelemetryExporterNotFound      = New("telemetry exporter not found").SetModule(ModuleTelemetry)
+	TelemetryUnsupportedDriver     = New("unsupported telemetry exporter driver: %s").SetModule(ModuleTelemetry)
+	TelemetryUnsupportedPropagator = New("unsupported telemetry propagator: %s").SetModule(ModuleTelemetry)
+
 	TestingImageBuildFailed   = New("init %s docker error: %v")
 	TestingImageNoContainerId = New("no container id return when creating %s docker")
 	TestingImageStopFailed    = New("stop %s docker error: %v")
