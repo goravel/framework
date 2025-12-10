@@ -29,8 +29,13 @@ func TestNewApplication(t *testing.T) {
 			expectError: errors.TelemetryUnsupportedPropagator.Args("invalid"),
 		},
 		{
-			name:            "empty exporter returns app with noop tracer provider",
-			config:          Config{Propagators: "tracecontext"},
+			name: "empty exporter returns app with noop tracer provider",
+			config: Config{
+				Service: ServiceConfig{
+					Name: "goravel",
+				},
+				Propagators: "tracecontext",
+			},
 			expectSDKTracer: false,
 		},
 		{
@@ -69,6 +74,9 @@ func TestNewApplication(t *testing.T) {
 		{
 			name: "zipkin exporter initializes SDK tracer provider",
 			config: Config{
+				Service: ServiceConfig{
+					Name: "goravel",
+				},
 				Propagators: "b3",
 				Traces:      TracesConfig{Exporter: "zipkin"},
 				Exporters: map[string]ExporterEntry{
@@ -83,6 +91,9 @@ func TestNewApplication(t *testing.T) {
 		{
 			name: "unknown exporter returns error",
 			config: Config{
+				Service: ServiceConfig{
+					Name: "goravel",
+				},
 				Propagators: "tracecontext",
 				Traces:      TracesConfig{Exporter: "unknown"},
 				Exporters:   map[string]ExporterEntry{},

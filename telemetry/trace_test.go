@@ -107,12 +107,14 @@ func TestNewConsoleTraceExporter(t *testing.T) {
 
 func TestNewZipkinTraceExporter(t *testing.T) {
 	tests := []struct {
-		name string
-		cfg  ExporterEntry
+		name        string
+		cfg         ExporterEntry
+		expectError error
 	}{
 		{
-			name: "default endpoint",
-			cfg:  ExporterEntry{},
+			name:        "empty endpoint",
+			cfg:         ExporterEntry{},
+			expectError: errors.TelemetryZipkinEndpointRequired,
 		},
 		{
 			name: "custom endpoint",
@@ -123,7 +125,10 @@ func TestNewZipkinTraceExporter(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			exp, err := newZipkinTraceExporter(tt.cfg)
-
+			if tt.expectError != nil {
+				assert.Equal(t, tt.expectError, err)
+				return
+			}
 			assert.NoError(t, err)
 			assert.NotNil(t, exp)
 		})
