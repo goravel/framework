@@ -4,13 +4,17 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/noop"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 
 	"github.com/goravel/framework/errors"
 )
@@ -116,8 +120,66 @@ func newMetricReader(ctx context.Context, cfg ExporterEntry, readerCfg MetricsRe
 }
 
 func newOTLPMetricExporter(ctx context.Context, cfg ExporterEntry) (sdkmetric.Exporter, error) {
-	// TODO: Implement OTLP exporter creation logic here, using cfg.Endpoint, cfg.Protocol, etc.
-	panic("newOTLPMetricExporter not yet implemented")
+	protocol := cfg.Protocol
+	if protocol == "" {
+		protocol = ProtocolHTTPProtobuf
+	}
+
+	temporalitySelector := getTemporalitySelector(cfg.MetricTemporality)
+
+	switch protocol {
+	case ProtocolGRPC:
+		opts := buildOTLPMetricOptions[otlpmetricgrpc.Option](cfg,
+			otlpmetricgrpc.WithEndpoint,
+			otlpmetricgrpc.WithInsecure,
+			otlpmetricgrpc.WithTimeout,
+			otlpmetricgrpc.WithHeaders,
+		)
+		opts = append(opts, otlpmetricgrpc.WithTemporalitySelector(temporalitySelector))
+		return otlpmetricgrpc.New(ctx, opts...)
+
+	default:
+		opts := buildOTLPMetricOptions[otlpmetrichttp.Option](cfg,
+			otlpmetrichttp.WithEndpoint,
+			otlpmetrichttp.WithInsecure,
+			otlpmetrichttp.WithTimeout,
+			otlpmetrichttp.WithHeaders,
+		)
+		opts = append(opts, otlpmetrichttp.WithTemporalitySelector(temporalitySelector))
+		return otlpmetrichttp.New(ctx, opts...)
+	}
+}
+
+func buildOTLPMetricOptions[T any](
+	cfg ExporterEntry,
+	withEndpoint func(string) T,
+	withInsecure func() T,
+	withTimeout func(time.Duration) T,
+	withHeaders func(map[string]string) T,
+) []T {
+	var opts []T
+
+	if cfg.Endpoint != "" {
+		endpoint := strings.TrimPrefix(cfg.Endpoint, "http://")
+		endpoint = strings.TrimPrefix(endpoint, "https://")
+		opts = append(opts, withEndpoint(endpoint))
+	}
+
+	if cfg.Insecure {
+		opts = append(opts, withInsecure())
+	}
+
+	timeout := defaultMetricExportTimeout
+	if cfg.Timeout > 0 {
+		timeout = cfg.Timeout
+	}
+	opts = append(opts, withTimeout(timeout))
+
+	if headers := cfg.Headers; len(headers) > 0 {
+		opts = append(opts, withHeaders(headers))
+	}
+
+	return opts
 }
 
 func newConsoleMetricExporter() (sdkmetric.Exporter, error) {
@@ -125,4 +187,13 @@ func newConsoleMetricExporter() (sdkmetric.Exporter, error) {
 		stdoutmetric.WithWriter(os.Stdout),
 		stdoutmetric.WithPrettyPrint(),
 	)
+}
+
+func getTemporalitySelector(t MetricTemporality) sdkmetric.TemporalitySelector {
+	return func(kind sdkmetric.InstrumentKind) metricdata.Temporality {
+		if t == TemporalityDelta {
+			return metricdata.DeltaTemporality
+		}
+		return metricdata.CumulativeTemporality
+	}
 }

@@ -50,7 +50,7 @@ type ExporterEntry struct {
 	Headers  map[string]string
 
 	// Metric Specific
-	MetricTemporality MetricTemporality
+	MetricTemporality MetricTemporality `mapstructure:"metric_temporality"`
 
 	// For custom Exporter
 	Via any
