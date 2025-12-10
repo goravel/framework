@@ -1,5 +1,7 @@
 package telemetry
 
+import "time"
+
 type Config struct {
 	Resource    map[string]string
 	Service     ServiceConfig
@@ -23,6 +25,12 @@ type TracesConfig struct {
 
 type MetricsConfig struct {
 	Exporter string
+	Reader   MetricsReaderConfig
+}
+
+type MetricsReaderConfig struct {
+	Interval time.Duration
+	Timeout  time.Duration
 }
 
 type SamplerConfig struct {
@@ -43,6 +51,9 @@ type ExporterEntry struct {
 
 	// Metric Specific
 	MetricTemporality MetricTemporality
+
+	// For custom Exporter
+	Via any
 }
 
 func (c Config) GetExporter(name string) (ExporterEntry, bool) {

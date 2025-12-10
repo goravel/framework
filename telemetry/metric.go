@@ -2,7 +2,9 @@ package telemetry
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"time"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
@@ -13,9 +15,12 @@ import (
 	"github.com/goravel/framework/errors"
 )
 
+type MetricReaderFactoryFunc func(ctx context.Context) (sdkmetric.Reader, error)
+
 const (
-	ExporterMetricsDriverOTLP    = "otlp"
-	ExporterMetricsDriverConsole = "console"
+	MetricsExporterDriverCustom  ExporterDriver = "custom"
+	MetricsExporterDriverOTLP    ExporterDriver = "otlp"
+	MetricsExporterDriverConsole ExporterDriver = "console"
 )
 
 type MetricTemporality string
@@ -23,6 +28,16 @@ type MetricTemporality string
 const (
 	TemporalityCumulative MetricTemporality = "cumulative"
 	TemporalityDelta      MetricTemporality = "delta"
+)
+
+const (
+	// DefaultMetricExportInterval is the default duration for which the PeriodicReader
+	// will wait between collection and export cycles (60 seconds).
+	defaultMetricExportInterval = 60 * time.Second
+
+	// DefaultMetricExportTimeout is the default maximum duration the PeriodicReader
+	// allows for a single export operation to complete (30 seconds).
+	defaultMetricExportTimeout = 30 * time.Second
 )
 
 func NewMeterProvider(ctx context.Context, cfg Config, opts ...sdkmetric.Option) (metric.MeterProvider, ShutdownFunc, error) {
@@ -38,36 +53,71 @@ func NewMeterProvider(ctx context.Context, cfg Config, opts ...sdkmetric.Option)
 		return nil, NoopShutdown(), errors.TelemetryExporterNotFound
 	}
 
-	exporter, err := newMetricExporter(ctx, exporterCfg)
+	reader, err := newMetricReader(ctx, exporterCfg, cfg.Metrics.Reader)
 	if err != nil {
 		return nil, NoopShutdown(), err
 	}
 
 	providerOptions := []sdkmetric.Option{
-		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(exporter)),
+		sdkmetric.WithReader(reader),
 	}
 	providerOptions = append(providerOptions, opts...)
 
 	mp := sdkmetric.NewMeterProvider(providerOptions...)
-
 	otel.SetMeterProvider(mp)
 
 	return mp, mp.Shutdown, nil
 }
 
-func newMetricExporter(ctx context.Context, cfg ExporterEntry) (sdkmetric.Exporter, error) {
+func newMetricReader(ctx context.Context, cfg ExporterEntry, readerCfg MetricsReaderConfig) (sdkmetric.Reader, error) {
+	interval := readerCfg.Interval
+	timeout := readerCfg.Timeout
+
+	if interval == 0 {
+		interval = defaultMetricExportInterval
+	}
+	if timeout == 0 {
+		timeout = defaultMetricExportTimeout
+	}
+
+	periodicOptions := []sdkmetric.PeriodicReaderOption{
+		sdkmetric.WithInterval(interval),
+		sdkmetric.WithTimeout(timeout),
+	}
+
 	switch cfg.Driver {
-	case ExporterMetricsDriverOTLP:
-		return newOTLPMetricExporter(ctx, cfg)
-	case ExporterMetricsDriverConsole:
-		return newConsoleMetricExporter()
+	case MetricsExporterDriverOTLP:
+		exporter, err := newOTLPMetricExporter(ctx, cfg)
+		if err != nil {
+			return nil, err
+		}
+		return sdkmetric.NewPeriodicReader(exporter, periodicOptions...), nil
+
+	case MetricsExporterDriverConsole:
+		exporter, err := newConsoleMetricExporter()
+		if err != nil {
+			return nil, err
+		}
+		return sdkmetric.NewPeriodicReader(exporter, periodicOptions...), nil
+
+	case MetricsExporterDriverCustom:
+		if cfg.Via == nil {
+			return nil, errors.TelemetryViaRequired
+		}
+		metricFactory, ok := cfg.Via.(MetricReaderFactoryFunc)
+		if !ok {
+			return nil, errors.TelemetryMetricViaTypeMismatch.Args(fmt.Sprintf("%T", cfg.Via))
+		}
+		return metricFactory(ctx)
+
 	default:
 		return nil, errors.TelemetryUnsupportedDriver.Args(string(cfg.Driver))
 	}
 }
 
 func newOTLPMetricExporter(ctx context.Context, cfg ExporterEntry) (sdkmetric.Exporter, error) {
-	panic("not implemented")
+	// TODO: Implement OTLP exporter creation logic here, using cfg.Endpoint, cfg.Protocol, etc.
+	panic("newOTLPMetricExporter not yet implemented")
 }
 
 func newConsoleMetricExporter() (sdkmetric.Exporter, error) {
