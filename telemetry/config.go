@@ -39,6 +39,9 @@ type ExporterEntry struct {
 	// OTLP-specific
 	Protocol Protocol
 	Headers  string
+
+	// Metric Specific
+	MetricsTemporality string
 }
 
 func (c Config) GetExporter(name string) (ExporterEntry, bool) {

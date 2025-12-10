@@ -30,6 +30,7 @@ func newResource(ctx context.Context, cfg ServiceConfig) (*resource.Resource, er
 	}
 
 	attrs = append(attrs,
+		resource.WithFromEnv(),
 		resource.WithOS(),
 		resource.WithProcess(),
 		resource.WithContainer(),

@@ -3,15 +3,12 @@ package telemetry
 import (
 	"context"
 
+	"github.com/goravel/framework/contracts/telemetry"
 	"go.opentelemetry.io/otel"
 	otelmetric "go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	oteltrace "go.opentelemetry.io/otel/trace"
-	tracenoop "go.opentelemetry.io/otel/trace/noop"
-
-	"github.com/goravel/framework/contracts/telemetry"
-	"github.com/goravel/framework/errors"
 )
 
 var _ telemetry.Telemetry = (*Application)(nil)
@@ -31,8 +28,7 @@ func NewApplication(cfg Config) (*Application, error) {
 	otel.SetTextMapPropagator(propagator)
 
 	ctx := context.Background()
-
-	traceProvider, err := createTraceProvider(ctx, cfg)
+	traceProvider, err := NewTracerProvider(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -68,46 +64,4 @@ func (r *Application) Tracer(name string, opts ...oteltrace.TracerOption) oteltr
 
 func (r *Application) TracerProvider() oteltrace.TracerProvider {
 	return r.tracerProvider
-}
-
-func createTraceProvider(ctx context.Context, cfg Config) (oteltrace.TracerProvider, error) {
-	exporterName := cfg.Traces.Exporter
-	if exporterName == "" {
-		return tracenoop.NewTracerProvider(), nil
-	}
-
-	exporterCfg, ok := cfg.GetExporter(exporterName)
-	if !ok {
-		return nil, errors.TelemetryExporterNotFound
-	}
-
-	var exporter sdktrace.SpanExporter
-	var err error
-	switch exporterCfg.Driver {
-	case ExporterTraceDriverOTLP:
-		exporter, err = newOTLPTraceExporter(ctx, exporterCfg)
-	case ExporterTraceDriverZipkin:
-		exporter, err = newZipkinTraceExporter(exporterCfg)
-	case ExporterTraceDriverConsole:
-		exporter, err = newConsoleTraceExporter()
-	default:
-		err = errors.TelemetryUnsupportedDriver.Args(string(exporterCfg.Driver))
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	res, err := newResource(ctx, cfg.Service)
-	if err != nil {
-		return nil, err
-	}
-
-	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(exporter),
-		sdktrace.WithResource(res),
-		sdktrace.WithSampler(newTraceSampler(cfg.Traces.Sampler)),
-	)
-
-	otel.SetTracerProvider(tp)
-	return tp, nil
 }
