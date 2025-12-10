@@ -229,6 +229,7 @@ var (
 	TelemetryUnsupportedDriver      = New("unsupported telemetry exporter driver: %s").SetModule(ModuleTelemetry)
 	TelemetryUnsupportedPropagator  = New("unsupported telemetry propagator: %s").SetModule(ModuleTelemetry)
 	TelemetryZipkinEndpointRequired = New("telemetry zipkin endpoint is required").SetModule(ModuleTelemetry)
+	TelemetryServiceNameRequired    = New("telemetry service name is required").SetModule(ModuleTelemetry)
 
 	TestingImageBuildFailed   = New("init %s docker error: %v")
 	TestingImageNoContainerId = New("no container id return when creating %s docker")

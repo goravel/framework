@@ -5,12 +5,14 @@ import (
 
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
+
+	"github.com/goravel/framework/errors"
 )
 
 func newResource(ctx context.Context, cfg ServiceConfig) (*resource.Resource, error) {
 	serviceName := cfg.Name
 	if serviceName == "" {
-		serviceName = "goravel"
+		return nil, errors.TelemetryServiceNameRequired
 	}
 
 	attrs := []resource.Option{
