@@ -1,6 +1,7 @@
 package telemetry
 
 type Config struct {
+	Resource    map[string]string
 	Service     ServiceConfig
 	Propagators string
 	Metrics     MetricsConfig

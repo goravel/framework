@@ -32,7 +32,7 @@ func NewApplication(cfg Config) (*Application, error) {
 	otel.SetTextMapPropagator(propagator)
 
 	ctx := context.Background()
-	resource, err := newResource(ctx, cfg.Service)
+	resource, err := newResource(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
