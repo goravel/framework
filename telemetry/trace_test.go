@@ -23,7 +23,7 @@ func TestNewTracerProvider(t *testing.T) {
 					Exporter: "console",
 				},
 				Exporters: map[string]ExporterEntry{
-					"console": {Driver: ExporterTraceDriverConsole},
+					"console": {Driver: TraceExporterDriverConsole},
 				},
 			},
 		},
@@ -35,7 +35,7 @@ func TestNewTracerProvider(t *testing.T) {
 				},
 				Exporters: map[string]ExporterEntry{
 					"otlp": {
-						Driver:   ExporterTraceDriverOTLP,
+						Driver:   TraceExporterDriverOTLP,
 						Endpoint: "localhost:4318",
 						Protocol: ProtocolHTTPProtobuf,
 						Insecure: true,
@@ -52,7 +52,7 @@ func TestNewTracerProvider(t *testing.T) {
 				},
 				Exporters: map[string]ExporterEntry{
 					"zipkin": {
-						Driver:   ExporterTraceDriverZipkin,
+						Driver:   TraceExporterDriverZipkin,
 						Endpoint: "http://localhost:9411/api/v2/spans",
 					},
 				},
@@ -75,7 +75,7 @@ func TestNewTracerProvider(t *testing.T) {
 					Exporter: "custom",
 				},
 				Exporters: map[string]ExporterEntry{
-					"custom": {Driver: ExporterTraceDriverConsole},
+					"custom": {Driver: TraceExporterDriverConsole},
 				},
 			},
 		},

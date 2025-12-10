@@ -2,6 +2,7 @@ package telemetry
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -18,12 +19,15 @@ import (
 	"github.com/goravel/framework/errors"
 )
 
+type TraceExporterFactoryFunc func(ctx context.Context) (sdktrace.SpanExporter, error)
+
 type ExporterDriver string
 
 const (
-	ExporterTraceDriverOTLP    ExporterDriver = "otlp"
-	ExporterTraceDriverZipkin  ExporterDriver = "zipkin"
-	ExporterTraceDriverConsole ExporterDriver = "console"
+	TraceExporterDriverCustom  ExporterDriver = "custom"
+	TraceExporterDriverOTLP    ExporterDriver = "otlp"
+	TraceExporterDriverZipkin  ExporterDriver = "zipkin"
+	TraceExporterDriverConsole ExporterDriver = "console"
 )
 
 type Protocol string
@@ -70,12 +74,23 @@ func NewTracerProvider(ctx context.Context, cfg Config, opts ...sdktrace.TracerP
 
 func newTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.SpanExporter, error) {
 	switch cfg.Driver {
-	case ExporterTraceDriverOTLP:
+	case TraceExporterDriverOTLP:
 		return newOTLPTraceExporter(ctx, cfg)
-	case ExporterTraceDriverZipkin:
+	case TraceExporterDriverZipkin:
 		return newZipkinTraceExporter(cfg)
-	case ExporterTraceDriverConsole:
+	case TraceExporterDriverConsole:
 		return newConsoleTraceExporter()
+	case TraceExporterDriverCustom:
+		if cfg.Via == nil {
+			return nil, errors.TelemetryViaRequired
+		}
+
+		traceFactory, ok := cfg.Via.(TraceExporterFactoryFunc)
+		if !ok {
+			return nil, errors.TelemetryTraceViaTypeMismatch.Args(fmt.Sprintf("%T", cfg.Via))
+		}
+		return traceFactory(ctx)
+
 	default:
 		return nil, errors.TelemetryUnsupportedDriver.Args(string(cfg.Driver))
 	}
@@ -128,7 +143,7 @@ func buildOTLPTraceOptions[T any](
 
 	timeout := defaultTimeout
 	if cfg.Timeout > 0 {
-		timeout = time.Duration(cfg.Timeout) * time.Millisecond
+		timeout = cfg.Timeout
 	}
 	opts = append(opts, withTimeout(timeout))
 

@@ -43,7 +43,7 @@ type ExporterEntry struct {
 	Driver   ExporterDriver
 	Endpoint string
 	Insecure bool
-	Timeout  int
+	Timeout  time.Duration
 
 	// OTLP-specific
 	Protocol Protocol

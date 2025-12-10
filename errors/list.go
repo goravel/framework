@@ -232,6 +232,7 @@ var (
 	TelemetryServiceNameRequired    = New("telemetry service name is required").SetModule(ModuleTelemetry)
 	TelemetryViaRequired            = New("custom driver requires a factory function to be provided in the 'via' field").SetModule(ModuleTelemetry)
 	TelemetryMetricViaTypeMismatch  = New("custom metrics driver requires MetricReaderFactoryFunc, received %s").SetModule(ModuleTelemetry)
+	TelemetryTraceViaTypeMismatch   = New("custom traces driver requires TraceExporterFactoryFunc, received %s").SetModule(ModuleTelemetry)
 
 	TestingImageBuildFailed   = New("init %s docker error: %v")
 	TestingImageNoContainerId = New("no container id return when creating %s docker")

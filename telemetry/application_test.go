@@ -40,7 +40,7 @@ func TestNewApplication(t *testing.T) {
 				Propagators: "tracecontext,baggage",
 				Traces:      TracesConfig{Exporter: "console"},
 				Exporters: map[string]ExporterEntry{
-					"console": {Driver: ExporterTraceDriverConsole},
+					"console": {Driver: TraceExporterDriverConsole},
 				},
 			},
 			expectSDKTracer: true,
@@ -56,7 +56,7 @@ func TestNewApplication(t *testing.T) {
 				},
 				Exporters: map[string]ExporterEntry{
 					"otlp": {
-						Driver:   ExporterTraceDriverOTLP,
+						Driver:   TraceExporterDriverOTLP,
 						Endpoint: "localhost:4318",
 						Protocol: ProtocolHTTPProtobuf,
 						Insecure: true,
@@ -73,7 +73,7 @@ func TestNewApplication(t *testing.T) {
 				Traces:      TracesConfig{Exporter: "zipkin"},
 				Exporters: map[string]ExporterEntry{
 					"zipkin": {
-						Driver:   ExporterTraceDriverZipkin,
+						Driver:   TraceExporterDriverZipkin,
 						Endpoint: "http://localhost:9411/api/v2/spans",
 					},
 				},
@@ -220,11 +220,11 @@ func TestConfig_GetExporter(t *testing.T) {
 			name: "returns existing exporter",
 			config: Config{
 				Exporters: map[string]ExporterEntry{
-					"otlp": {Driver: ExporterTraceDriverOTLP, Endpoint: "localhost:4318"},
+					"otlp": {Driver: TraceExporterDriverOTLP, Endpoint: "localhost:4318"},
 				},
 			},
 			exporterName: "otlp",
-			expectDriver: ExporterTraceDriverOTLP,
+			expectDriver: TraceExporterDriverOTLP,
 			expectFound:  true,
 		},
 		{
