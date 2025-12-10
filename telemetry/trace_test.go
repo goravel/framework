@@ -159,7 +159,9 @@ func TestNewOTLPTraceExporter(t *testing.T) {
 				Protocol: ProtocolHTTPProtobuf,
 				Insecure: true,
 				Timeout:  5000,
-				Headers:  "Authorization=Bearer token",
+				Headers: map[string]string{
+					"Authorization": "Bearer token",
+				},
 			},
 		},
 	}
@@ -171,47 +173,6 @@ func TestNewOTLPTraceExporter(t *testing.T) {
 
 			assert.NoError(t, err)
 			assert.NotNil(t, exp)
-		})
-	}
-}
-
-func TestParseHeaders(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    string
-		expected map[string]string
-	}{
-		{
-			name:     "empty string",
-			input:    "",
-			expected: map[string]string{},
-		},
-		{
-			name:     "single header",
-			input:    "Authorization=Bearer token",
-			expected: map[string]string{"Authorization": "Bearer token"},
-		},
-		{
-			name:     "multiple headers",
-			input:    "X-Api-Key=abc123,X-Tenant=tenant1",
-			expected: map[string]string{"X-Api-Key": "abc123", "X-Tenant": "tenant1"},
-		},
-		{
-			name:     "handles whitespace",
-			input:    " X-Api-Key = abc123 , X-Tenant = tenant1 ",
-			expected: map[string]string{"X-Api-Key": "abc123", "X-Tenant": "tenant1"},
-		},
-		{
-			name:     "skips invalid entries",
-			input:    "valid=value,invalid,another=one",
-			expected: map[string]string{"valid": "value", "another": "one"},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := parseHeaders(tt.input)
-			assert.Equal(t, tt.expected, result)
 		})
 	}
 }

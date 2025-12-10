@@ -31,11 +31,11 @@ const (
 )
 
 const (
-	// DefaultMetricExportInterval is the default duration for which the PeriodicReader
+	// defaultMetricExportInterval is the default duration for which the PeriodicReader
 	// will wait between collection and export cycles (60 seconds).
 	defaultMetricExportInterval = 60 * time.Second
 
-	// DefaultMetricExportTimeout is the default maximum duration the PeriodicReader
+	// defaultMetricExportTimeout is the default maximum duration the PeriodicReader
 	// allows for a single export operation to complete (30 seconds).
 	defaultMetricExportTimeout = 30 * time.Second
 )

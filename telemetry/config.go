@@ -47,7 +47,7 @@ type ExporterEntry struct {
 
 	// OTLP-specific
 	Protocol Protocol
-	Headers  string
+	Headers  map[string]string
 
 	// Metric Specific
 	MetricTemporality MetricTemporality

@@ -147,7 +147,7 @@ func buildOTLPTraceOptions[T any](
 	}
 	opts = append(opts, withTimeout(timeout))
 
-	if headers := parseHeaders(cfg.Headers); len(headers) > 0 {
+	if headers := cfg.Headers; len(headers) > 0 {
 		opts = append(opts, withHeaders(headers))
 	}
 
@@ -167,23 +167,4 @@ func newConsoleTraceExporter() (sdktrace.SpanExporter, error) {
 		stdouttrace.WithWriter(os.Stdout),
 		stdouttrace.WithPrettyPrint(),
 	)
-}
-
-func parseHeaders(headerStr string) map[string]string {
-	headers := make(map[string]string)
-	if headerStr == "" {
-		return headers
-	}
-
-	for _, pair := range strings.Split(headerStr, ",") {
-		pair = strings.TrimSpace(pair)
-		if pair == "" {
-			continue
-		}
-		// SplitN ensures we only split on the first '=' in case the value contains '=' (e.g. base64)
-		if kv := strings.SplitN(pair, "=", 2); len(kv) == 2 {
-			headers[strings.TrimSpace(kv[0])] = strings.TrimSpace(kv[1])
-		}
-	}
-	return headers
 }
