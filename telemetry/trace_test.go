@@ -85,7 +85,7 @@ func TestNewTracerProvider(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
 
-			exp, err := NewTracerProvider(ctx, tt.config)
+			exp, _, err := NewTracerProvider(ctx, tt.config)
 
 			if tt.expectError != nil {
 				assert.Equal(t, tt.expectError, err)
