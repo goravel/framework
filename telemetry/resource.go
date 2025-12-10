@@ -17,37 +17,39 @@ func newResource(ctx context.Context, cfg Config) (*resource.Resource, error) {
 		return nil, errors.TelemetryServiceNameRequired
 	}
 
-	attrs := []resource.Option{
-		resource.WithAttributes(semconv.ServiceName(serviceName)),
-	}
+	var attrsList []attribute.KeyValue
+	attrsList = append(attrsList, semconv.ServiceName(serviceName))
 
 	if serviceCfg.Version != "" {
-		attrs = append(attrs, resource.WithAttributes(semconv.ServiceVersion(serviceCfg.Version)))
+		attrsList = append(attrsList, semconv.ServiceVersion(serviceCfg.Version))
 	}
 
 	if serviceCfg.Environment != "" {
-		attrs = append(attrs, resource.WithAttributes(semconv.DeploymentEnvironmentName(serviceCfg.Environment)))
+		attrsList = append(attrsList, semconv.DeploymentEnvironmentName(serviceCfg.Environment))
 	}
 
 	if serviceCfg.InstanceID != "" {
-		attrs = append(attrs, resource.WithAttributes(semconv.ServiceInstanceID(serviceCfg.InstanceID)))
+		attrsList = append(attrsList, semconv.ServiceInstanceID(serviceCfg.InstanceID))
 	}
 
 	for k, v := range cfg.Resource {
 		if k != "" {
-			attrs = append(attrs, resource.WithAttributes(attribute.String(k, v)))
+			attrsList = append(attrsList, attribute.String(k, v))
 		}
 	}
 
-	attrs = append(attrs,
+	resourceOptions := []resource.Option{
+		resource.WithAttributes(attrsList...),
+
+		// Add automatic detection options
 		resource.WithFromEnv(),
 		resource.WithOS(),
 		resource.WithProcess(),
 		resource.WithContainer(),
 		resource.WithHost(),
-	)
+	}
 
-	detected, err := resource.New(ctx, attrs...)
+	detected, err := resource.New(ctx, resourceOptions...)
 	if err != nil {
 		return nil, err
 	}
