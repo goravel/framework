@@ -36,38 +36,36 @@ const (
 
 const defaultTimeout = 10 * time.Second
 
-func NewTracerProvider(ctx context.Context, cfg Config) (oteltrace.TracerProvider, error) {
+func NewTracerProvider(ctx context.Context, cfg Config, opts ...sdktrace.TracerProviderOption) (oteltrace.TracerProvider, ShutdownFunc, error) {
 	exporterName := cfg.Traces.Exporter
 
 	// 1. If disabled, return the true No-Op provider (Zero overhead)
 	if exporterName == "" {
-		return noop.NewTracerProvider(), nil
+		tp := noop.NewTracerProvider()
+		otel.SetTracerProvider(tp)
+		return tp, NoopShutdown(), nil
 	}
 
 	exporterCfg, ok := cfg.GetExporter(exporterName)
 	if !ok {
-		return nil, errors.TelemetryExporterNotFound
+		return nil, NoopShutdown(), errors.TelemetryExporterNotFound
 	}
 
 	exporter, err := newTraceExporter(ctx, exporterCfg)
 	if err != nil {
-		return nil, err
+		return nil, NoopShutdown(), err
 	}
 
-	res, err := newResource(ctx, cfg.Service)
-	if err != nil {
-		return nil, err
-	}
-
-	tp := sdktrace.NewTracerProvider(
+	providerOptions := []sdktrace.TracerProviderOption{
 		sdktrace.WithBatcher(exporter),
-		sdktrace.WithResource(res),
 		sdktrace.WithSampler(newTraceSampler(cfg.Traces.Sampler)),
-	)
+	}
+	providerOptions = append(providerOptions, opts...)
 
+	tp := sdktrace.NewTracerProvider(providerOptions...)
 	otel.SetTracerProvider(tp)
 
-	return tp, nil
+	return tp, tp.Shutdown, nil
 }
 
 func newTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.SpanExporter, error) {

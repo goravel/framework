@@ -7,8 +7,11 @@ import (
 	"go.opentelemetry.io/otel"
 	otelmetric "go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	oteltrace "go.opentelemetry.io/otel/trace"
+
+	"github.com/goravel/framework/errors"
 )
 
 var _ telemetry.Telemetry = (*Application)(nil)
@@ -17,6 +20,7 @@ type Application struct {
 	meterProvider  otelmetric.MeterProvider
 	propagator     propagation.TextMapPropagator
 	tracerProvider oteltrace.TracerProvider
+	shutdownFuncs  []ShutdownFunc
 }
 
 func NewApplication(cfg Config) (*Application, error) {
@@ -28,23 +32,38 @@ func NewApplication(cfg Config) (*Application, error) {
 	otel.SetTextMapPropagator(propagator)
 
 	ctx := context.Background()
-	traceProvider, err := NewTracerProvider(ctx, cfg)
+	resource, err := newResource(ctx, cfg.Service)
+	if err != nil {
+		return nil, err
+	}
+
+	traceProvider, traceShutdown, err := NewTracerProvider(ctx, cfg, sdktrace.WithResource(resource))
+	if err != nil {
+		return nil, err
+	}
+
+	meterProvider, metricShutdown, err := NewMeterProvider(ctx, cfg, sdkmetric.WithResource(resource))
 	if err != nil {
 		return nil, err
 	}
 
 	return &Application{
+		meterProvider:  meterProvider,
 		tracerProvider: traceProvider,
 		propagator:     propagator,
+		shutdownFuncs: []ShutdownFunc{
+			traceShutdown,
+			metricShutdown,
+		},
 	}, nil
 }
 
 func (r *Application) Meter(name string, opts ...otelmetric.MeterOption) otelmetric.Meter {
-	panic("not implemented")
+	return r.meterProvider.Meter(name, opts...)
 }
 
 func (r *Application) MeterProvider() otelmetric.MeterProvider {
-	panic("not implemented")
+	return r.meterProvider
 }
 
 func (r *Application) Propagator() propagation.TextMapPropagator {
@@ -52,10 +71,18 @@ func (r *Application) Propagator() propagation.TextMapPropagator {
 }
 
 func (r *Application) Shutdown(ctx context.Context) error {
-	if tp, ok := r.tracerProvider.(*sdktrace.TracerProvider); ok {
-		return tp.Shutdown(ctx)
+	var err error
+
+	for _, fn := range r.shutdownFuncs {
+		if fn == nil {
+			continue
+		}
+		if e := fn(ctx); e != nil {
+			err = errors.Join(err, e)
+		}
 	}
-	return nil
+
+	return err
 }
 
 func (r *Application) Tracer(name string, opts ...oteltrace.TracerOption) oteltrace.Tracer {
