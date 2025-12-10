@@ -6,11 +6,11 @@ import (
 
 type Stubs struct{}
 
-func (s Stubs) Config(module string) string {
-	content := `package config
+func (s Stubs) Config(pkg, main string) string {
+	content := `package DummyPackage
 
 import (
-	"DummyModule/app/facades"
+	"DummyMain/app/facades"
 )
 
 func init() {
@@ -47,7 +47,10 @@ func init() {
 }
 `
 
-	return strings.ReplaceAll(content, "DummyModule", module)
+	content = strings.ReplaceAll(content, "DummyPackage", pkg)
+	content = strings.ReplaceAll(content, "DummyMain", main)
+
+	return content
 }
 
 func (s Stubs) JobMigration(pkg, module string) (fileName, structName, content string) {
@@ -56,7 +59,7 @@ func (s Stubs) JobMigration(pkg, module string) (fileName, structName, content s
 import (
 	"github.com/goravel/framework/contracts/database/schema"
 
-	"DummyModule/app/facades"
+	"DummyMain/app/facades"
 )
 
 type M20210101000001CreateJobsTable struct{}
@@ -116,13 +119,13 @@ func (r *M20210101000001CreateJobsTable) Down() error {
 `
 
 	content = strings.ReplaceAll(content, "DummyPackage", pkg)
-	content = strings.ReplaceAll(content, "DummyModule", module)
+	content = strings.ReplaceAll(content, "DummyMain", module)
 
 	return "20210101000001_create_jobs_table.go", "M20210101000001CreateJobsTable{}", content
 }
 
-func (s Stubs) QueueFacade() string {
-	return `package facades
+func (s Stubs) QueueFacade(pkg string) string {
+	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/queue"
@@ -132,4 +135,6 @@ func Queue() queue.Queue {
 	return App().MakeQueue()
 }
 `
+
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }

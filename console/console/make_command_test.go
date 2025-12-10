@@ -35,13 +35,9 @@ func TestMakeCommand(t *testing.T) {
 	}()
 
 	kernelPath := filepath.Join("app", "console", "kernel.go")
-	appServiceProviderPath := filepath.Join("app", "providers", "app_service_provider.go")
 	makeCommand := &MakeCommand{}
 
 	t.Run("empty name", func(t *testing.T) {
-		assert.NoError(t, file.PutContent(kernelPath, Stubs{}.Kernel()))
-		assert.NoError(t, file.PutContent(appServiceProviderPath, appServiceProvider))
-
 		mockContext := mocksconsole.NewContext(t)
 		mockContext.EXPECT().Argument(0).Return("").Once()
 		mockContext.EXPECT().Ask("Enter the command name", mock.Anything).Return("", errors.New("the command name cannot be empty")).Once()
@@ -88,8 +84,6 @@ func (kernel Kernel) Schedule() []schedule.Event {
 	})
 
 	t.Run("command create and register successfully", func(t *testing.T) {
-		assert.NoError(t, file.PutContent(kernelPath, Stubs{}.Kernel()))
-
 		mockContext := mocksconsole.NewContext(t)
 		mockContext.EXPECT().Argument(0).Return("Goravel/CleanCache").Once()
 		mockContext.EXPECT().OptionBool("force").Return(false).Once()

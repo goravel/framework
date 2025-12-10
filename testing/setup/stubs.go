@@ -1,21 +1,23 @@
 package main
 
+import "strings"
+
 type Stubs struct{}
 
-func (s Stubs) ExampleTest() string {
-	return `package feature
+func (s Stubs) ExampleTest(imt, testsPackage string) string {
+	content := `package feature
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
 
-	"goravel/tests"
+	"DummyImport"
 )
 
 type ExampleTestSuite struct {
 	suite.Suite
-	tests.TestCase
+	DummyTestsPackage.TestCase
 }
 
 func TestExampleTestSuite(t *testing.T) {
@@ -34,15 +36,20 @@ func (s *ExampleTestSuite) TestIndex() {
 	s.True(true)
 }
 `
+
+	content = strings.ReplaceAll(content, "DummyImport", imt)
+	content = strings.ReplaceAll(content, "DummyTestsPackage", testsPackage)
+
+	return content
 }
 
-func (s Stubs) TestCase() string {
-	return `package tests
+func (s Stubs) TestCase(pkg, bootstrap string) string {
+	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/testing"
 
-	"goravel/bootstrap"
+	"DummyBootstrap"
 )
 
 func init() {
@@ -53,10 +60,15 @@ type TestCase struct {
 	testing.TestCase
 }
 `
+
+	content = strings.ReplaceAll(content, "DummyPackage", pkg)
+	content = strings.ReplaceAll(content, "DummyBootstrap", bootstrap)
+
+	return content
 }
 
-func (s Stubs) TestingFacade() string {
-	return `package facades
+func (s Stubs) TestingFacade(pkg string) string {
+	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/testing"
@@ -66,4 +78,6 @@ func Testing() testing.Testing {
 	return App().MakeTesting()
 }
 `
+
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }

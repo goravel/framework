@@ -18,9 +18,9 @@ func main() {
 	facadePath := path.Facades("grpc.go")
 	grpcRoutePath := path.Base(routesPath, "grpc.go")
 	grpcServiceProvider := "&grpc.ServiceProvider{}"
-	packageName := setup.PackageName()
-	routesPackage := packageName + "/" + routesPath
-	modulePath := setup.ModulePath()
+	mainPackage := setup.Paths().Main().Package()
+	moduleImport := setup.Paths().Module().Import()
+	routesPackage := mainPackage + "/" + routesPath
 	env := `
 GRPC_HOST=
 GRPC_PORT=
@@ -28,17 +28,17 @@ GRPC_PORT=
 
 	setup.Install(
 		// Add the grpc service provider to the providers array in bootstrap/providers.go
-		modify.AddProviderApply(modulePath, grpcServiceProvider),
+		modify.AddProviderApply(moduleImport, grpcServiceProvider),
 
 		// Create config/grpc.go, routes/grpc.go
-		modify.File(configPath).Overwrite(stubs.Config(packageName)),
-		modify.File(grpcRoutePath).Overwrite(stubs.Routes()),
+		modify.File(configPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), mainPackage)),
+		modify.File(grpcRoutePath).Overwrite(stubs.Routes(setup.Paths().Routes().Package())),
 
 		// Add the Grpc function to WithRouting
 		modify.AddRouteApply(routesPackage, grpcFunc),
 
 		// Register the Grpc facade
-		modify.File(facadePath).Overwrite(stubs.GrpcFacade()),
+		modify.File(facadePath).Overwrite(stubs.GrpcFacade(setup.Paths().Facades().Package())),
 
 		// Add configurations to the .env and .env.example files
 		modify.WhenFileNotContains(path.Base(".env"), "GRPC_HOST", modify.File(path.Base(".env")).Append(env)),
@@ -55,6 +55,6 @@ GRPC_PORT=
 		modify.File(grpcRoutePath).Remove(),
 
 		// Remove the gRPC service provider from the providers array in bootstrap/providers.go
-		modify.RemoveProviderApply(modulePath, grpcServiceProvider),
+		modify.RemoveProviderApply(moduleImport, grpcServiceProvider),
 	).Execute()
 }

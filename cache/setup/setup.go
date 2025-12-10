@@ -5,7 +5,6 @@ import (
 
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/packages/modify"
-	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/path"
 )
 
@@ -15,25 +14,23 @@ func main() {
 	cacheConfigPath := path.Config("cache.go")
 	cacheFacadePath := path.Facades("cache.go")
 	cacheServiceProvider := "&cache.ServiceProvider{}"
-	modulePath := setup.ModulePath()
-	configPackage := support.PathPackage(support.Config.Paths.Config, setup.PackageName())
-	facadePackage := support.PathPackage(support.Config.Paths.Facades, setup.PackageName())
+	moduleImport := setup.Paths().Module().Import()
 
 	setup.Install(
 		// Add the cache service provider to the providers array in bootstrap/providers.go
-		modify.AddProviderApply(modulePath, cacheServiceProvider),
+		modify.AddProviderApply(moduleImport, cacheServiceProvider),
 
 		// Create config/cache.go
-		modify.File(cacheConfigPath).Overwrite(stubs.Config(configPackage, setup.PackageName())),
+		modify.File(cacheConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Main().Package())),
 
 		// Add the Cache facade
-		modify.File(cacheFacadePath).Overwrite(stubs.CacheFacade(facadePackage)),
+		modify.File(cacheFacadePath).Overwrite(stubs.CacheFacade(setup.Paths().Facades().Package())),
 	).Uninstall(
 		// Remove config/cache.go
 		modify.File(cacheConfigPath).Remove(),
 
 		// Remove the cache service provider from the providers array in bootstrap/providers.go
-		modify.RemoveProviderApply(modulePath, cacheServiceProvider),
+		modify.RemoveProviderApply(moduleImport, cacheServiceProvider),
 
 		// Remove the Cache facade
 		modify.File(cacheFacadePath).Remove(),

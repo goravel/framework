@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/convert"
 )
 
@@ -43,7 +44,7 @@ func IsArtisan() bool {
 }
 
 func IsBootstrapSetup() bool {
-	data, err := os.ReadFile(filepath.Join("bootstrap", "app.go"))
+	data, err := os.ReadFile(filepath.Join(support.Config.Paths.Bootstrap, "app.go"))
 	if err != nil {
 		return false
 	}

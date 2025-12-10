@@ -2,8 +2,8 @@ package main
 
 type Stubs struct{}
 
-func (s Stubs) ValidationFacade() string {
-	return `package facades
+func (s Stubs) ValidationFacade(pkg string) string {
+	return `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/validation"

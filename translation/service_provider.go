@@ -10,6 +10,7 @@ import (
 	"github.com/goravel/framework/contracts/foundation"
 	contractstranslation "github.com/goravel/framework/contracts/translation"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support"
 )
 
 type ServiceProvider struct {
@@ -39,7 +40,10 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 
 		locale := config.GetString("app.locale")
 		fallback := config.GetString("app.fallback_locale")
-		path := config.GetString("app.lang_path", "lang")
+		path := config.GetString("app.lang_path")
+		if path == "" {
+			path = support.Config.Paths.Lang
+		}
 
 		var fileLoader contractstranslation.Loader
 		if path != "" {

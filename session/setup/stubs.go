@@ -6,14 +6,14 @@ import (
 
 type Stubs struct{}
 
-func (s Stubs) Config(module string) string {
+func (s Stubs) Config(pkg, main string) string {
 	content := `package config
 
 import (
 	"github.com/goravel/framework/support/path"
 	"github.com/goravel/framework/support/str"
 
-	"DummyModule/app/facades"
+	"DummyMain/app/facades"
 )
 
 func init() {
@@ -102,11 +102,14 @@ func init() {
 }
 `
 
-	return strings.ReplaceAll(content, "DummyModule", module)
+	content = strings.ReplaceAll(content, "DummyPackage", pkg)
+	content = strings.ReplaceAll(content, "DummyMain", main)
+
+	return content
 }
 
-func (s Stubs) SessionFacade() string {
-	return `package facades
+func (s Stubs) SessionFacade(pkg string) string {
+	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/session"
@@ -116,4 +119,6 @@ func Session() session.Manager {
 	return App().MakeSession()
 }
 `
+
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }

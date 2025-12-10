@@ -1,9 +1,11 @@
 package main
 
+import "strings"
+
 type Stubs struct{}
 
-func (s Stubs) LangFacade() string {
-	return `package facades
+func (s Stubs) LangFacade(pkg string) string {
+	content := `package DummyPackage
 
 import (
 	"context"
@@ -15,4 +17,6 @@ func Lang(ctx context.Context) translation.Translator {
 	return App().MakeLang(ctx)
 }
 `
+
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }

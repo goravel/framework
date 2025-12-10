@@ -6,11 +6,11 @@ import (
 
 type Stubs struct{}
 
-func (s Stubs) Config(module string) string {
-	content := `package config
+func (s Stubs) Config(pkg, main string) string {
+	content := `package DummyPackage
 
 import (
-	"DummyModule/app/facades"
+	"DummyMain/app/facades"
 	"github.com/goravel/framework/support/path"
 )
 
@@ -46,11 +46,14 @@ func init() {
 }
 `
 
-	return strings.ReplaceAll(content, "DummyModule", module)
+	content = strings.ReplaceAll(content, "DummyPackage", pkg)
+	content = strings.ReplaceAll(content, "DummyMain", main)
+
+	return content
 }
 
-func (s Stubs) StorageFacade() string {
-	return `package facades
+func (s Stubs) StorageFacade(pkg string) string {
+	return `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/filesystem"

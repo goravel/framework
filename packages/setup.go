@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path"
-	"runtime/debug"
 	"strings"
 
 	"github.com/goravel/framework/contracts/packages"
@@ -22,14 +20,14 @@ type setup struct {
 	force       bool
 	onInstall   []modify.Apply
 	onUninstall []modify.Apply
-	packageName string
+	paths       packages.Paths
 }
 
 var osExit = os.Exit
 
 func Setup(args []string) packages.Setup {
 	st := &setup{}
-	var packageName string
+	var mainName string
 
 	for _, arg := range args {
 		if arg == "install" || arg == "uninstall" {
@@ -45,7 +43,7 @@ func Setup(args []string) packages.Setup {
 			st.driver = strings.TrimPrefix(arg, "--driver=")
 		}
 		if strings.HasPrefix(arg, "--package-name=") {
-			packageName = strings.TrimPrefix(arg, "--package-name=")
+			mainName = strings.TrimPrefix(arg, "--package-name=")
 		}
 		if strings.HasPrefix(arg, "--paths=") {
 			if err := json.Unmarshal([]byte(strings.TrimPrefix(arg, "--paths=")), &support.Config.Paths); err != nil {
@@ -54,11 +52,11 @@ func Setup(args []string) packages.Setup {
 		}
 	}
 
-	if packageName == "" {
-		packageName = "goravel"
+	if mainName == "" {
+		mainName = "goravel"
 	}
 
-	st.packageName = packageName
+	st.paths = NewPaths(mainName)
 
 	return st
 }
@@ -81,17 +79,8 @@ func (r *setup) Execute() {
 	}
 }
 
-// ModulePath returns the module path of package, it may be a sub-package, eg: github.com/goravel/framework/auth.
-func (r *setup) ModulePath() string {
-	if info, ok := debug.ReadBuildInfo(); ok && strings.HasSuffix(info.Path, "setup") {
-		return path.Dir(info.Path)
-	}
-
-	return ""
-}
-
-func (r *setup) PackageName() string {
-	return r.packageName
+func (r *setup) Paths() packages.Paths {
+	return nil
 }
 
 func (r *setup) Install(modifiers ...modify.Apply) packages.Setup {
