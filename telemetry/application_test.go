@@ -3,6 +3,7 @@ package telemetry
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -65,7 +66,7 @@ func TestNewApplication(t *testing.T) {
 						Endpoint: "localhost:4318",
 						Protocol: ProtocolHTTPProtobuf,
 						Insecure: true,
-						Timeout:  5000,
+						Timeout:  5000 * time.Millisecond,
 					},
 				},
 			},

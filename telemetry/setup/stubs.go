@@ -66,7 +66,7 @@ func init() {
           "exporter": config.Env("OTEL_METRICS_EXPORTER", "otlp_metric"),
 
           // Reader Configuration
-          // 
+          //
           // Applies to push-based exporters (PeriodicReader timing).
           "reader": map[string]any{
              "interval": config.Env("OTEL_METRIC_EXPORT_INTERVAL", 60000), // ms or duration string
@@ -75,7 +75,7 @@ func init() {
        },
 
        // Exporters Configuration
-       // 
+       //
        // Configures transport and protocol details for telemetry destinations.
        "exporters": map[string]any{
           
