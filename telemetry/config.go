@@ -13,7 +13,7 @@ type ServiceConfig struct {
 	Name        string
 	Version     string
 	Environment string
-	InstanceID  string
+	InstanceID  string `mapstructure:"instance_id"`
 }
 
 type TracesConfig struct {
@@ -42,7 +42,7 @@ type ExporterEntry struct {
 	Headers  string
 
 	// Metric Specific
-	MetricsTemporality string
+	MetricTemporality MetricTemporality
 }
 
 func (c Config) GetExporter(name string) (ExporterEntry, bool) {

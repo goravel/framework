@@ -23,6 +23,7 @@ func init() {
 			"name":        config.Env("APP_NAME", "goravel"),
 			"version":     config.Env("APP_VERSION", ""),
 			"environment": config.Env("APP_ENV", ""),
+            "instance_id": config.Env("APP_INSTANCE_ID", ""),
 		},
 
 		// Propagators
