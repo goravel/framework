@@ -108,11 +108,15 @@ func newMetricReader(ctx context.Context, cfg ExporterEntry, readerCfg MetricsRe
 		if cfg.Via == nil {
 			return nil, errors.TelemetryViaRequired
 		}
-		metricFactory, ok := cfg.Via.(MetricReaderFactoryFunc)
-		if !ok {
-			return nil, errors.TelemetryMetricViaTypeMismatch.Args(fmt.Sprintf("%T", cfg.Via))
+
+		if reader, ok := cfg.Via.(sdkmetric.Reader); ok {
+			return reader, nil
 		}
-		return metricFactory(ctx)
+
+		if factory, ok := cfg.Via.(func(context.Context) (sdkmetric.Reader, error)); ok {
+			return factory(ctx)
+		}
+		return nil, errors.TelemetryMetricViaTypeMismatch.Args(fmt.Sprintf("%T", cfg.Via))
 
 	default:
 		return nil, errors.TelemetryUnsupportedDriver.Args(string(cfg.Driver))

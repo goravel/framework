@@ -231,7 +231,7 @@ var (
 	TelemetryZipkinEndpointRequired = New("telemetry zipkin endpoint is required").SetModule(ModuleTelemetry)
 	TelemetryServiceNameRequired    = New("telemetry service name is required").SetModule(ModuleTelemetry)
 	TelemetryViaRequired            = New("custom driver requires a factory function to be provided in the 'via' field").SetModule(ModuleTelemetry)
-	TelemetryMetricViaTypeMismatch  = New("custom metrics driver requires MetricReaderFactoryFunc, received %s").SetModule(ModuleTelemetry)
+	TelemetryMetricViaTypeMismatch  = New("custom metrics driver requires func(context.Context) (sdkmetric.Reader, error), received %s").SetModule(ModuleTelemetry)
 	TelemetryTraceViaTypeMismatch   = New("custom traces driver requires func(context.Context) (sdktrace.SpanExporter, error), received %s").SetModule(ModuleTelemetry)
 
 	TestingImageBuildFailed   = New("init %s docker error: %v")
