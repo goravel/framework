@@ -3,12 +3,20 @@ package telemetry
 import (
 	"context"
 
+	otellog "go.opentelemetry.io/otel/log"
 	otelmetric "go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 type Telemetry interface {
+	// Logger returns a log.Logger instance for emitting structured log records under the given instrumentation name.
+	// Optional log.LoggerOption parameters allow customization of logger behavior.
+	Logger(name string, opts ...otellog.LoggerOption) otellog.Logger
+
+	// LoggerProvider returns the underlying log.LoggerProvider responsible for creating loggers.
+	LoggerProvider() otellog.LoggerProvider
+
 	// Meter returns a metric.Meter instance for recording metrics under the given instrumentation name.
 	// The optional metric.MeterOption parameters allow further customization.
 	Meter(name string, opts ...otelmetric.MeterOption) otelmetric.Meter

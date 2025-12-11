@@ -5,8 +5,10 @@ package telemetry
 import (
 	context "context"
 
-	mock "github.com/stretchr/testify/mock"
+	log "go.opentelemetry.io/otel/log"
 	metric "go.opentelemetry.io/otel/metric"
+
+	mock "github.com/stretchr/testify/mock"
 
 	propagation "go.opentelemetry.io/otel/propagation"
 
@@ -24,6 +26,116 @@ type Telemetry_Expecter struct {
 
 func (_m *Telemetry) EXPECT() *Telemetry_Expecter {
 	return &Telemetry_Expecter{mock: &_m.Mock}
+}
+
+// Logger provides a mock function with given fields: name, opts
+func (_m *Telemetry) Logger(name string, opts ...log.LoggerOption) log.Logger {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, name)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Logger")
+	}
+
+	var r0 log.Logger
+	if rf, ok := ret.Get(0).(func(string, ...log.LoggerOption) log.Logger); ok {
+		r0 = rf(name, opts...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(log.Logger)
+		}
+	}
+
+	return r0
+}
+
+// Telemetry_Logger_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Logger'
+type Telemetry_Logger_Call struct {
+	*mock.Call
+}
+
+// Logger is a helper method to define mock.On call
+//   - name string
+//   - opts ...log.LoggerOption
+func (_e *Telemetry_Expecter) Logger(name interface{}, opts ...interface{}) *Telemetry_Logger_Call {
+	return &Telemetry_Logger_Call{Call: _e.mock.On("Logger",
+		append([]interface{}{name}, opts...)...)}
+}
+
+func (_c *Telemetry_Logger_Call) Run(run func(name string, opts ...log.LoggerOption)) *Telemetry_Logger_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]log.LoggerOption, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(log.LoggerOption)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Telemetry_Logger_Call) Return(_a0 log.Logger) *Telemetry_Logger_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Telemetry_Logger_Call) RunAndReturn(run func(string, ...log.LoggerOption) log.Logger) *Telemetry_Logger_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// LoggerProvider provides a mock function with no fields
+func (_m *Telemetry) LoggerProvider() log.LoggerProvider {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for LoggerProvider")
+	}
+
+	var r0 log.LoggerProvider
+	if rf, ok := ret.Get(0).(func() log.LoggerProvider); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(log.LoggerProvider)
+		}
+	}
+
+	return r0
+}
+
+// Telemetry_LoggerProvider_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LoggerProvider'
+type Telemetry_LoggerProvider_Call struct {
+	*mock.Call
+}
+
+// LoggerProvider is a helper method to define mock.On call
+func (_e *Telemetry_Expecter) LoggerProvider() *Telemetry_LoggerProvider_Call {
+	return &Telemetry_LoggerProvider_Call{Call: _e.mock.On("LoggerProvider")}
+}
+
+func (_c *Telemetry_LoggerProvider_Call) Run(run func()) *Telemetry_LoggerProvider_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Telemetry_LoggerProvider_Call) Return(_a0 log.LoggerProvider) *Telemetry_LoggerProvider_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Telemetry_LoggerProvider_Call) RunAndReturn(run func() log.LoggerProvider) *Telemetry_LoggerProvider_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // Meter provides a mock function with given fields: name, opts
