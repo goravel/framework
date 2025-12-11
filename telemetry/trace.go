@@ -19,8 +19,6 @@ import (
 	"github.com/goravel/framework/errors"
 )
 
-type TraceExporterFactoryFunc func(ctx context.Context) (sdktrace.SpanExporter, error)
-
 type ExporterDriver string
 
 const (
@@ -85,12 +83,15 @@ func newTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.SpanExpo
 			return nil, errors.TelemetryViaRequired
 		}
 
-		traceFactory, ok := cfg.Via.(TraceExporterFactoryFunc)
-		if !ok {
-			return nil, errors.TelemetryTraceViaTypeMismatch.Args(fmt.Sprintf("%T", cfg.Via))
+		if exporter, ok := cfg.Via.(sdktrace.SpanExporter); ok {
+			return exporter, nil
 		}
-		return traceFactory(ctx)
 
+		if factory, ok := cfg.Via.(func(context.Context) (sdktrace.SpanExporter, error)); ok {
+			return factory(ctx)
+		}
+
+		return nil, errors.TelemetryTraceViaTypeMismatch.Args(fmt.Sprintf("%T", cfg.Via))
 	default:
 		return nil, errors.TelemetryUnsupportedDriver.Args(string(cfg.Driver))
 	}

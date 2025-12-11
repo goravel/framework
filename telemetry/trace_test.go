@@ -5,11 +5,15 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/goravel/framework/errors"
 )
 
 func TestNewTracerProvider(t *testing.T) {
+	mockFactory := func(ctx context.Context) (sdktrace.SpanExporter, error) {
+		return &MockSpanExporter{}, nil
+	}
 	tests := []struct {
 		name         string
 		config       Config
@@ -57,6 +61,64 @@ func TestNewTracerProvider(t *testing.T) {
 					},
 				},
 			},
+		},
+		{
+			name: "creates custom exporter (via struct instance)",
+			config: Config{
+				Traces: TracesConfig{
+					Exporter: "custom_instance",
+				},
+				Exporters: map[string]ExporterEntry{
+					"custom_instance": {
+						Driver: TraceExporterDriverCustom,
+						Via:    &MockSpanExporter{},
+					},
+				},
+			},
+		},
+		{
+			name: "creates custom exporter (via factory function)",
+			config: Config{
+				Traces: TracesConfig{
+					Exporter: "custom_factory",
+				},
+				Exporters: map[string]ExporterEntry{
+					"custom_factory": {
+						Driver: TraceExporterDriverCustom,
+						Via:    mockFactory,
+					},
+				},
+			},
+		},
+		{
+			name: "fails custom exporter when Via is missing",
+			config: Config{
+				Traces: TracesConfig{
+					Exporter: "custom_invalid",
+				},
+				Exporters: map[string]ExporterEntry{
+					"custom_invalid": {
+						Driver: TraceExporterDriverCustom,
+						Via:    nil,
+					},
+				},
+			},
+			expectError: errors.TelemetryViaRequired,
+		},
+		{
+			name: "fails custom exporter when Via is wrong type",
+			config: Config{
+				Traces: TracesConfig{
+					Exporter: "custom_wrong_type",
+				},
+				Exporters: map[string]ExporterEntry{
+					"custom_wrong_type": {
+						Driver: TraceExporterDriverCustom,
+						Via:    "i-am-a-string-not-an-exporter",
+					},
+				},
+			},
+			expectError: errors.TelemetryTraceViaTypeMismatch.Args("string"),
 		},
 		{
 			name: "returns error for unknown exporter",
@@ -175,4 +237,14 @@ func TestNewOTLPTraceExporter(t *testing.T) {
 			assert.NotNil(t, exp)
 		})
 	}
+}
+
+type MockSpanExporter struct{}
+
+func (m *MockSpanExporter) ExportSpans(ctx context.Context, ss []sdktrace.ReadOnlySpan) error {
+	return nil
+}
+
+func (m *MockSpanExporter) Shutdown(ctx context.Context) error {
+	return nil
 }

@@ -30,7 +30,7 @@ func init() {
        // Resource Attributes
        //
        // Additional user-defined attributes to attach to the Resource object.
-       "resource": map[string]any{},
+       "resource": map[string]string{},
 
        // Propagators
        //
@@ -44,7 +44,7 @@ func init() {
           // Exporter
           //
           // The exporter determines where traces are sent.
-          "exporter": config.Env("OTEL_TRACES_EXPORTER", "otlp_trace"),
+          "exporter": config.Env("OTEL_TRACES_EXPORTER", "otlptrace"),
 
           // Sampler Configuration
           //
@@ -63,14 +63,14 @@ func init() {
           // Exporter
           //
           // The exporter determines where metrics are sent.
-          "exporter": config.Env("OTEL_METRICS_EXPORTER", "otlp_metric"),
+          "exporter": config.Env("OTEL_METRICS_EXPORTER", "otlpmetric"),
 
           // Reader Configuration
           //
           // Applies to push-based exporters (PeriodicReader timing).
           "reader": map[string]any{
-             "interval": config.Env("OTEL_METRIC_EXPORT_INTERVAL", 60000), // ms or duration string
-             "timeout":  config.Env("OTEL_METRIC_EXPORT_TIMEOUT", 30000),  // ms or duration string
+             "interval": config.Duration("OTEL_METRIC_EXPORT_INTERVAL", 60*time.Second),
+             "timeout":  config.Duration("OTEL_METRIC_EXPORT_TIMEOUT", 30*time.Second),
           },
        },
 
@@ -80,23 +80,21 @@ func init() {
        "exporters": map[string]any{
           
           // OTLP Trace Exporter
-          "otlp_trace": map[string]any{
+          "otlptrace": map[string]any{
              "driver":          "otlp",
              "endpoint":        config.Env("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "http://localhost:4318"),
              "protocol":        config.Env("OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "http/protobuf"),
              "insecure":        config.Env("OTEL_EXPORTER_OTLP_TRACES_INSECURE", true),
-             "timeout":         config.Env("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT", 10000), 
-             "headers":         config.Env("OTEL_EXPORTER_OTLP_TRACES_HEADERS", ""),
+             "timeout":         config.GetDuration("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT", 10*time.Second),
           },
           
           // OTLP Metric Exporter
-          "otlp_metric": map[string]any{
+          "otlpmetric": map[string]any{
              "driver":          "otlp",
              "endpoint":        config.Env("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", "http://localhost:4318"),
              "protocol":        config.Env("OTEL_EXPORTER_OTLP_METRICS_PROTOCOL", "http/protobuf"),
              "insecure":        config.Env("OTEL_EXPORTER_OTLP_METRICS_INSECURE", true),
-             "timeout":         config.Env("OTEL_EXPORTER_OTLP_METRICS_TIMEOUT", 10000),
-             "headers":         config.Env("OTEL_EXPORTER_OTLP_METRICS_HEADERS", ""),
+             "timeout":         config.GetDuration("OTEL_EXPORTER_OTLP_METRICS_TIMEOUT", 10*time.Second),
              "metric_temporality": config.Env("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY", "cumulative"), 
           },
           
