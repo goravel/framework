@@ -19,8 +19,6 @@ import (
 	"github.com/goravel/framework/errors"
 )
 
-type MetricReaderFactoryFunc func(ctx context.Context) (sdkmetric.Reader, error)
-
 const (
 	MetricsExporterDriverCustom  ExporterDriver = "custom"
 	MetricsExporterDriverOTLP    ExporterDriver = "otlp"

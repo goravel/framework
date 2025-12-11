@@ -44,6 +44,7 @@ func NewApplication(cfg Config) (*Application, error) {
 
 	meterProvider, metricShutdown, err := NewMeterProvider(ctx, cfg, sdkmetric.WithResource(resource))
 	if err != nil {
+		_ = traceShutdown(ctx) // Ensure tracer provider is shut down to avoid resource leak
 		return nil, err
 	}
 

@@ -10,6 +10,8 @@ func (s Stubs) Config(pkg, module string) string {
 	content := `package DummyPackage
 
 import (
+    "time"
+
 	"DummyModule/app/facades"
 )
 
@@ -69,8 +71,8 @@ func init() {
           //
           // Applies to push-based exporters (PeriodicReader timing).
           "reader": map[string]any{
-             "interval": config.Duration("OTEL_METRIC_EXPORT_INTERVAL", 60*time.Second),
-             "timeout":  config.Duration("OTEL_METRIC_EXPORT_TIMEOUT", 30*time.Second),
+             "interval": config.GetDuration("OTEL_METRIC_EXPORT_INTERVAL", 60*time.Second),
+             "timeout":  config.GetDuration("OTEL_METRIC_EXPORT_TIMEOUT", 30*time.Second),
           },
        },
 
