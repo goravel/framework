@@ -28,6 +28,7 @@ func newResource(ctx context.Context, cfg Config) (*resource.Resource, error) {
 		attrsList = append(attrsList, semconv.DeploymentEnvironmentName(serviceCfg.Environment))
 	}
 
+	// TODO: revisit the resource type, Need to consider any [In Next PR]
 	for k, v := range cfg.Resource {
 		if k != "" {
 			attrsList = append(attrsList, attribute.String(k, v))
