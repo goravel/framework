@@ -4,10 +4,11 @@ import (
 	"context"
 
 	"go.opentelemetry.io/otel"
+	otelmetric "go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/trace"
-	tracenoop "go.opentelemetry.io/otel/trace/noop"
+	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"github.com/goravel/framework/contracts/telemetry"
 	"github.com/goravel/framework/errors"
@@ -16,8 +17,10 @@ import (
 var _ telemetry.Telemetry = (*Application)(nil)
 
 type Application struct {
-	tracerProvider trace.TracerProvider
+	meterProvider  otelmetric.MeterProvider
+	tracerProvider oteltrace.TracerProvider
 	propagator     propagation.TextMapPropagator
+	shutdownFuncs  []ShutdownFunc
 }
 
 func NewApplication(cfg Config) (*Application, error) {
@@ -25,41 +28,38 @@ func NewApplication(cfg Config) (*Application, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	otel.SetTextMapPropagator(propagator)
 
-	exporterName := cfg.Traces.Exporter
-	if exporterName == "" {
-		return &Application{
-			tracerProvider: tracenoop.NewTracerProvider(),
-			propagator:     propagator,
-		}, nil
-	}
-
 	ctx := context.Background()
-
-	res, err := newResource(ctx, cfg.Service)
+	resource, err := newResource(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	exp, err := createTraceExporter(ctx, cfg)
+	traceProvider, traceShutdown, err := NewTracerProvider(ctx, cfg, sdktrace.WithResource(resource))
 	if err != nil {
 		return nil, err
 	}
 
-	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(exp),
-		sdktrace.WithResource(res),
-		sdktrace.WithSampler(newTraceSampler(cfg.Traces.Sampler)),
-	)
-
-	otel.SetTracerProvider(tp)
+	meterProvider, metricShutdown, err := NewMeterProvider(ctx, cfg, sdkmetric.WithResource(resource))
+	if err != nil {
+		_ = traceShutdown(ctx)
+		return nil, err
+	}
 
 	return &Application{
-		tracerProvider: tp,
+		meterProvider:  meterProvider,
+		tracerProvider: traceProvider,
 		propagator:     propagator,
+		shutdownFuncs: []ShutdownFunc{
+			traceShutdown,
+			metricShutdown,
+		},
 	}, nil
+}
+
+func (r *Application) Meter(name string, opts ...otelmetric.MeterOption) otelmetric.Meter {
+	return r.meterProvider.Meter(name, opts...)
 }
 
 func (r *Application) Propagator() propagation.TextMapPropagator {
@@ -67,35 +67,20 @@ func (r *Application) Propagator() propagation.TextMapPropagator {
 }
 
 func (r *Application) Shutdown(ctx context.Context) error {
-	if tp, ok := r.tracerProvider.(*sdktrace.TracerProvider); ok {
-		return tp.Shutdown(ctx)
+	var err error
+
+	for _, fn := range r.shutdownFuncs {
+		if fn == nil {
+			continue
+		}
+		if e := fn(ctx); e != nil {
+			err = errors.Join(err, e)
+		}
 	}
-	return nil
+
+	return err
 }
 
-func (r *Application) Tracer(name string, opts ...trace.TracerOption) trace.Tracer {
+func (r *Application) Tracer(name string, opts ...oteltrace.TracerOption) oteltrace.Tracer {
 	return r.tracerProvider.Tracer(name, opts...)
-}
-
-func (r *Application) TracerProvider() trace.TracerProvider {
-	return r.tracerProvider
-}
-
-func createTraceExporter(ctx context.Context, cfg Config) (sdktrace.SpanExporter, error) {
-	exporterName := cfg.Traces.Exporter
-	exporterCfg, ok := cfg.GetExporter(exporterName)
-	if !ok {
-		return nil, errors.TelemetryExporterNotFound
-	}
-
-	switch exporterCfg.Driver {
-	case ExporterDriverOTLP:
-		return newOTLPTraceExporter(ctx, exporterCfg)
-	case ExporterDriverZipkin:
-		return newZipkinTraceExporter(exporterCfg)
-	case ExporterDriverConsole:
-		return newConsoleTraceExporter()
-	default:
-		return nil, errors.TelemetryUnsupportedDriver.Args(string(exporterCfg.Driver))
-	}
 }

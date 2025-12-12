@@ -1,8 +1,12 @@
 package telemetry
 
+import "time"
+
 type Config struct {
+	Resource    map[string]string
 	Service     ServiceConfig
 	Propagators string
+	Metrics     MetricsConfig
 	Traces      TracesConfig
 	Exporters   map[string]ExporterEntry
 }
@@ -18,6 +22,16 @@ type TracesConfig struct {
 	Sampler  SamplerConfig
 }
 
+type MetricsConfig struct {
+	Exporter string
+	Reader   MetricsReaderConfig
+}
+
+type MetricsReaderConfig struct {
+	Interval time.Duration
+	Timeout  time.Duration
+}
+
 type SamplerConfig struct {
 	Type   string
 	Ratio  float64
@@ -28,18 +42,23 @@ type ExporterEntry struct {
 	Driver   ExporterDriver
 	Endpoint string
 	Insecure bool
-	Timeout  int
+	Timeout  time.Duration
 
 	// OTLP-specific
-	Protocol       Protocol
-	TracesTimeout  int      `mapstructure:"traces_timeout"`
-	TracesHeaders  string   `mapstructure:"traces_headers"`
-	TracesProtocol Protocol `mapstructure:"traces_protocol"`
+	Protocol Protocol
+	Headers  map[string]string
+
+	// Metric Specific
+	MetricTemporality MetricTemporality `mapstructure:"metric_temporality"`
+
+	// Console Driver Specific
+	PrettyPrint bool `mapstructure:"pretty_print"`
+
+	// For custom Exporter
+	Via any
 }
 
 func (c Config) GetExporter(name string) (ExporterEntry, bool) {
-	if exp, ok := c.Exporters[name]; ok {
-		return exp, true
-	}
-	return ExporterEntry{Driver: ExporterDriver(name)}, false
+	entry, ok := c.Exporters[name]
+	return entry, ok
 }

@@ -3,8 +3,11 @@ package telemetry
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+	metricnoop "go.opentelemetry.io/otel/metric/noop"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	tracenoop "go.opentelemetry.io/otel/trace/noop"
 
@@ -17,72 +20,65 @@ func TestNewApplication(t *testing.T) {
 		config          Config
 		expectError     error
 		expectSDKTracer bool
+		expectSDKMeter  bool
 	}{
 		{
-			name:        "empty propagator returns error",
+			name:        "Error: Empty propagator",
 			config:      Config{Propagators: ""},
 			expectError: errors.TelemetryPropagatorRequired,
 		},
 		{
-			name:        "invalid propagator returns error",
+			name:        "Error: Invalid propagator",
 			config:      Config{Propagators: "invalid"},
 			expectError: errors.TelemetryUnsupportedPropagator.Args("invalid"),
 		},
 		{
-			name:            "empty exporter returns app with noop tracer provider",
-			config:          Config{Propagators: "tracecontext"},
+			name: "Success: Defaults (No Exporters) returns Noop providers",
+			config: Config{
+				Service:     ServiceConfig{Name: "goravel"},
+				Propagators: "tracecontext",
+			},
 			expectSDKTracer: false,
+			expectSDKMeter:  false,
 		},
 		{
-			name: "console exporter initializes SDK tracer provider",
+			name: "Success: Console Exporters initialize SDKs",
 			config: Config{
 				Service:     ServiceConfig{Name: "test-service"},
-				Propagators: "tracecontext,baggage",
+				Propagators: "tracecontext",
 				Traces:      TracesConfig{Exporter: "console"},
+				Metrics:     MetricsConfig{Exporter: "console"},
 				Exporters: map[string]ExporterEntry{
-					"console": {Driver: ExporterDriverConsole},
+					"console": {Driver: TraceExporterDriverConsole},
 				},
 			},
 			expectSDKTracer: true,
+			expectSDKMeter:  true,
 		},
 		{
-			name: "otlp exporter initializes SDK tracer provider",
+			name: "Success: OTLP Exporters initialize SDKs",
 			config: Config{
-				Service:     ServiceConfig{Name: "test-service", Version: "1.0.0", Environment: "test"},
+				Service:     ServiceConfig{Name: "test-service"},
 				Propagators: "tracecontext",
-				Traces: TracesConfig{
-					Exporter: "otlp",
-					Sampler:  SamplerConfig{Type: "traceidratio", Ratio: 0.5, Parent: true},
-				},
+				Traces:      TracesConfig{Exporter: "otlp"},
+				Metrics:     MetricsConfig{Exporter: "otlp"},
 				Exporters: map[string]ExporterEntry{
 					"otlp": {
-						Driver:   ExporterDriverOTLP,
+						Driver:   TraceExporterDriverOTLP,
 						Endpoint: "localhost:4318",
 						Protocol: ProtocolHTTPProtobuf,
 						Insecure: true,
-						Timeout:  5000,
+						Timeout:  5 * time.Second,
 					},
 				},
 			},
 			expectSDKTracer: true,
+			expectSDKMeter:  true,
 		},
 		{
-			name: "zipkin exporter initializes SDK tracer provider",
+			name: "Error: Unknown Exporter",
 			config: Config{
-				Propagators: "b3",
-				Traces:      TracesConfig{Exporter: "zipkin"},
-				Exporters: map[string]ExporterEntry{
-					"zipkin": {
-						Driver:   ExporterDriverZipkin,
-						Endpoint: "http://localhost:9411/api/v2/spans",
-					},
-				},
-			},
-			expectSDKTracer: true,
-		},
-		{
-			name: "unknown exporter returns error",
-			config: Config{
+				Service:     ServiceConfig{Name: "goravel"},
 				Propagators: "tracecontext",
 				Traces:      TracesConfig{Exporter: "unknown"},
 				Exporters:   map[string]ExporterEntry{},
@@ -97,12 +93,14 @@ func TestNewApplication(t *testing.T) {
 
 			if tt.expectError != nil {
 				assert.Equal(t, tt.expectError, err)
+				assert.Nil(t, app)
 				return
 			}
 
 			assert.NoError(t, err)
 			assert.NotNil(t, app)
 			assert.NotNil(t, app.tracerProvider)
+			assert.NotNil(t, app.meterProvider)
 
 			if tt.expectSDKTracer {
 				_, ok := app.tracerProvider.(*sdktrace.TracerProvider)
@@ -111,190 +109,80 @@ func TestNewApplication(t *testing.T) {
 				_, ok := app.tracerProvider.(tracenoop.TracerProvider)
 				assert.True(t, ok, "expected noop tracer provider")
 			}
+
+			if tt.expectSDKMeter {
+				_, ok := app.meterProvider.(*sdkmetric.MeterProvider)
+				assert.True(t, ok, "expected SDK meter provider")
+			} else {
+				_, ok := app.meterProvider.(metricnoop.MeterProvider)
+				assert.True(t, ok, "expected noop meter provider")
+			}
 		})
 	}
 }
 
 func TestApplication_Tracer(t *testing.T) {
-	t.Run("returns tracer from noop provider", func(t *testing.T) {
-		app := &Application{
-			tracerProvider: tracenoop.NewTracerProvider(),
-		}
-
-		tracer := app.Tracer("test-tracer")
-
-		assert.NotNil(t, tracer)
-	})
-
-	t.Run("returns tracer from SDK provider", func(t *testing.T) {
-		tp := sdktrace.NewTracerProvider()
-		app := &Application{
-			tracerProvider: tp,
-		}
-
-		tracer := app.Tracer("test-tracer")
-
-		assert.NotNil(t, tracer)
-	})
+	app := &Application{
+		tracerProvider: tracenoop.NewTracerProvider(),
+	}
+	tracer := app.Tracer("test-tracer")
+	assert.NotNil(t, tracer)
 }
 
-func TestApplication_TracerProvider(t *testing.T) {
-	t.Run("returns noop provider", func(t *testing.T) {
-		noopTP := tracenoop.NewTracerProvider()
-		app := &Application{
-			tracerProvider: noopTP,
-		}
-
-		provider := app.TracerProvider()
-
-		assert.Equal(t, noopTP, provider)
-	})
-
-	t.Run("returns SDK provider", func(t *testing.T) {
-		tp := sdktrace.NewTracerProvider()
-		app := &Application{
-			tracerProvider: tp,
-		}
-
-		provider := app.TracerProvider()
-
-		assert.Equal(t, tp, provider)
-	})
+func TestApplication_Meter(t *testing.T) {
+	app := &Application{
+		meterProvider: metricnoop.NewMeterProvider(),
+	}
+	meter := app.Meter("test-meter")
+	assert.NotNil(t, meter)
 }
 
 func TestApplication_Propagator(t *testing.T) {
 	t.Run("returns nil when not set", func(t *testing.T) {
 		app := &Application{}
-
-		propagator := app.Propagator()
-
-		assert.Nil(t, propagator)
+		assert.Nil(t, app.Propagator())
 	})
 
 	t.Run("returns set propagator", func(t *testing.T) {
-		customPropagator, err := newCompositeTextMapPropagator("b3")
+		customPropagator, err := newCompositeTextMapPropagator("tracecontext")
 		assert.NoError(t, err)
-
-		app := &Application{
-			propagator: customPropagator,
-		}
-
-		propagator := app.Propagator()
-
-		assert.Equal(t, customPropagator, propagator)
+		app := &Application{propagator: customPropagator}
+		assert.Equal(t, customPropagator, app.Propagator())
 	})
 }
 
 func TestApplication_Shutdown(t *testing.T) {
-	t.Run("returns nil when tracer provider is noop", func(t *testing.T) {
+	t.Run("executes all shutdown functions", func(t *testing.T) {
+		shutdownCallCount := 0
+
+		mockShutdown := func(ctx context.Context) error {
+			shutdownCallCount++
+			return nil
+		}
+
 		app := &Application{
-			tracerProvider: tracenoop.NewTracerProvider(),
+			shutdownFuncs: []ShutdownFunc{mockShutdown, mockShutdown},
 		}
 
 		err := app.Shutdown(context.Background())
-
 		assert.NoError(t, err)
+		assert.Equal(t, 2, shutdownCallCount, "Shutdown should have been called twice")
 	})
 
-	t.Run("shuts down SDK tracer provider", func(t *testing.T) {
-		tp := sdktrace.NewTracerProvider()
+	t.Run("aggregates errors", func(t *testing.T) {
 		app := &Application{
-			tracerProvider: tp,
+			shutdownFuncs: []ShutdownFunc{
+				func(ctx context.Context) error { return errors.New("error 1") },
+				func(ctx context.Context) error { return nil },
+				func(ctx context.Context) error { return errors.New("error 2") },
+			},
 		}
 
 		err := app.Shutdown(context.Background())
-
-		assert.NoError(t, err)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "error 1")
+		assert.Contains(t, err.Error(), "error 2")
 	})
-}
-
-func TestCreateExporter(t *testing.T) {
-	tests := []struct {
-		name         string
-		config       Config
-		exporterName string
-		expectError  error
-	}{
-		{
-			name: "creates console exporter",
-			config: Config{
-				Traces: TracesConfig{
-					Exporter: "console",
-				},
-				Exporters: map[string]ExporterEntry{
-					"console": {Driver: ExporterDriverConsole},
-				},
-			},
-		},
-		{
-			name: "creates otlp exporter",
-			config: Config{
-				Traces: TracesConfig{
-					Exporter: "otlp",
-				},
-				Exporters: map[string]ExporterEntry{
-					"otlp": {
-						Driver:   ExporterDriverOTLP,
-						Endpoint: "localhost:4318",
-						Protocol: ProtocolHTTPProtobuf,
-						Insecure: true,
-						Timeout:  5000,
-					},
-				},
-			},
-		},
-		{
-			name: "creates zipkin exporter",
-			config: Config{
-				Traces: TracesConfig{
-					Exporter: "zipkin",
-				},
-				Exporters: map[string]ExporterEntry{
-					"zipkin": {
-						Driver:   ExporterDriverZipkin,
-						Endpoint: "http://localhost:9411/api/v2/spans",
-					},
-				},
-			},
-		},
-		{
-			name: "returns error for unknown exporter",
-			config: Config{
-				Traces: TracesConfig{
-					Exporter: "unknown",
-				},
-				Exporters: map[string]ExporterEntry{},
-			},
-			expectError: errors.TelemetryExporterNotFound,
-		},
-		{
-			name: "uses custom driver from config",
-			config: Config{
-				Traces: TracesConfig{
-					Exporter: "custom",
-				},
-				Exporters: map[string]ExporterEntry{
-					"custom": {Driver: ExporterDriverConsole},
-				},
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctx := context.Background()
-
-			exp, err := createTraceExporter(ctx, tt.config)
-
-			if tt.expectError != nil {
-				assert.Equal(t, tt.expectError, err)
-				return
-			}
-
-			assert.NoError(t, err)
-			assert.NotNil(t, exp)
-		})
-	}
 }
 
 func TestConfig_GetExporter(t *testing.T) {
@@ -309,20 +197,21 @@ func TestConfig_GetExporter(t *testing.T) {
 			name: "returns existing exporter",
 			config: Config{
 				Exporters: map[string]ExporterEntry{
-					"otlp": {Driver: ExporterDriverOTLP, Endpoint: "localhost:4318"},
+					"otlp": {Driver: TraceExporterDriverOTLP, Endpoint: "localhost:4318"},
 				},
 			},
 			exporterName: "otlp",
-			expectDriver: ExporterDriverOTLP,
+			expectDriver: TraceExporterDriverOTLP,
 			expectFound:  true,
 		},
 		{
-			name: "returns default for non-existent exporter",
+			name: "returns zero value for non-existent exporter",
 			config: Config{
 				Exporters: map[string]ExporterEntry{},
 			},
 			exporterName: "unknown",
-			expectDriver: "unknown",
+			// When key is not found, Driver string is empty "", NOT "unknown"
+			expectDriver: "",
 			expectFound:  false,
 		},
 	}
