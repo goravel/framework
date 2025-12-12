@@ -233,6 +233,7 @@ var (
 	TelemetryViaRequired            = New("custom driver requires a factory function to be provided in the 'via' field").SetModule(ModuleTelemetry)
 	TelemetryMetricViaTypeMismatch  = New("custom metrics driver requires func(context.Context) (sdkmetric.Reader, error), received %s").SetModule(ModuleTelemetry)
 	TelemetryTraceViaTypeMismatch   = New("custom traces driver requires func(context.Context) (sdktrace.SpanExporter, error), received %s").SetModule(ModuleTelemetry)
+	TelemetryLogViaTypeMismatch     = New("custom logger driver requires func(context.Context) (sdklog.Exporter, error), received %s").SetModule(ModuleTelemetry)
 
 	TestingImageBuildFailed   = New("init %s docker error: %v")
 	TestingImageNoContainerId = New("no container id return when creating %s docker")
