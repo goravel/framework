@@ -37,6 +37,7 @@ func init() {
        // Propagators
        //
        // Defines how trace context is passed between services.
+       // Supported: "tracecontext", "baggage", "b3", "b3multi"
        "propagators": config.Env("OTEL_PROPAGATORS", "tracecontext"),
 
        // Traces Configuration
@@ -52,8 +53,11 @@ func init() {
           //
           // Controls which traces are recorded.
           "sampler": map[string]any{
+            
              "parent": config.Env("OTEL_TRACES_SAMPLER_PARENT", true),
+             // Supported: "always_on", "always_off", "traceidratio"
              "type":   config.Env("OTEL_TRACES_SAMPLER_TYPE", "always_on"),
+             // Sampling ratio for "traceidratio" (0.0 to 1.0)
              "ratio":  config.Env("OTEL_TRACES_SAMPLER_RATIO", 0.05),
           },
        },
@@ -79,6 +83,7 @@ func init() {
        // Exporters Configuration
        //
        // Configures transport and protocol details for telemetry destinations.
+       // Supported drivers: "otlp", "zipkin", "console"
        "exporters": map[string]any{
           
           // OTLP Trace Exporter
