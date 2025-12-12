@@ -80,7 +80,7 @@ func (r *setup) Execute() {
 }
 
 func (r *setup) Paths() packages.Paths {
-	return nil
+	return r.paths
 }
 
 func (r *setup) Install(modifiers ...modify.Apply) packages.Setup {
