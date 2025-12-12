@@ -150,30 +150,6 @@ func TestApplication_Tracer(t *testing.T) {
 	})
 }
 
-func TestApplication_TracerProvider(t *testing.T) {
-	t.Run("returns noop provider", func(t *testing.T) {
-		noopTP := tracenoop.NewTracerProvider()
-		app := &Application{
-			tracerProvider: noopTP,
-		}
-
-		provider := app.TracerProvider()
-
-		assert.Equal(t, noopTP, provider)
-	})
-
-	t.Run("returns SDK provider", func(t *testing.T) {
-		tp := sdktrace.NewTracerProvider()
-		app := &Application{
-			tracerProvider: tp,
-		}
-
-		provider := app.TracerProvider()
-
-		assert.Equal(t, tp, provider)
-	})
-}
-
 func TestApplication_Propagator(t *testing.T) {
 	t.Run("returns nil when not set", func(t *testing.T) {
 		app := &Application{}

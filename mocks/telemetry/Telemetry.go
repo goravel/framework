@@ -89,53 +89,6 @@ func (_c *Telemetry_Meter_Call) RunAndReturn(run func(string, ...metric.MeterOpt
 	return _c
 }
 
-// MeterProvider provides a mock function with no fields
-func (_m *Telemetry) MeterProvider() metric.MeterProvider {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for MeterProvider")
-	}
-
-	var r0 metric.MeterProvider
-	if rf, ok := ret.Get(0).(func() metric.MeterProvider); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(metric.MeterProvider)
-		}
-	}
-
-	return r0
-}
-
-// Telemetry_MeterProvider_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MeterProvider'
-type Telemetry_MeterProvider_Call struct {
-	*mock.Call
-}
-
-// MeterProvider is a helper method to define mock.On call
-func (_e *Telemetry_Expecter) MeterProvider() *Telemetry_MeterProvider_Call {
-	return &Telemetry_MeterProvider_Call{Call: _e.mock.On("MeterProvider")}
-}
-
-func (_c *Telemetry_MeterProvider_Call) Run(run func()) *Telemetry_MeterProvider_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Telemetry_MeterProvider_Call) Return(_a0 metric.MeterProvider) *Telemetry_MeterProvider_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Telemetry_MeterProvider_Call) RunAndReturn(run func() metric.MeterProvider) *Telemetry_MeterProvider_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // Propagator provides a mock function with no fields
 func (_m *Telemetry) Propagator() propagation.TextMapPropagator {
 	ret := _m.Called()
@@ -288,53 +241,6 @@ func (_c *Telemetry_Tracer_Call) Return(_a0 trace.Tracer) *Telemetry_Tracer_Call
 }
 
 func (_c *Telemetry_Tracer_Call) RunAndReturn(run func(string, ...trace.TracerOption) trace.Tracer) *Telemetry_Tracer_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// TracerProvider provides a mock function with no fields
-func (_m *Telemetry) TracerProvider() trace.TracerProvider {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for TracerProvider")
-	}
-
-	var r0 trace.TracerProvider
-	if rf, ok := ret.Get(0).(func() trace.TracerProvider); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(trace.TracerProvider)
-		}
-	}
-
-	return r0
-}
-
-// Telemetry_TracerProvider_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TracerProvider'
-type Telemetry_TracerProvider_Call struct {
-	*mock.Call
-}
-
-// TracerProvider is a helper method to define mock.On call
-func (_e *Telemetry_Expecter) TracerProvider() *Telemetry_TracerProvider_Call {
-	return &Telemetry_TracerProvider_Call{Call: _e.mock.On("TracerProvider")}
-}
-
-func (_c *Telemetry_TracerProvider_Call) Run(run func()) *Telemetry_TracerProvider_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Telemetry_TracerProvider_Call) Return(_a0 trace.TracerProvider) *Telemetry_TracerProvider_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Telemetry_TracerProvider_Call) RunAndReturn(run func() trace.TracerProvider) *Telemetry_TracerProvider_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -63,10 +63,6 @@ func (r *Application) Meter(name string, opts ...otelmetric.MeterOption) otelmet
 	return r.meterProvider.Meter(name, opts...)
 }
 
-func (r *Application) MeterProvider() otelmetric.MeterProvider {
-	return r.meterProvider
-}
-
 func (r *Application) Propagator() propagation.TextMapPropagator {
 	return r.propagator
 }
@@ -88,8 +84,4 @@ func (r *Application) Shutdown(ctx context.Context) error {
 
 func (r *Application) Tracer(name string, opts ...oteltrace.TracerOption) oteltrace.Tracer {
 	return r.tracerProvider.Tracer(name, opts...)
-}
-
-func (r *Application) TracerProvider() oteltrace.TracerProvider {
-	return r.tracerProvider
 }

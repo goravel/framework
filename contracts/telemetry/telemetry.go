@@ -13,9 +13,6 @@ type Telemetry interface {
 	// The optional metric.MeterOption parameters allow further customization.
 	Meter(name string, opts ...otelmetric.MeterOption) otelmetric.Meter
 
-	// MeterProvider returns the underlying metric.MeterProvider responsible for creating meters.
-	MeterProvider() otelmetric.MeterProvider
-
 	// Propagator returns the configured TextMapPropagator used to inject and extract
 	// context across service boundaries for distributed tracing.
 	Propagator() propagation.TextMapPropagator
@@ -27,7 +24,4 @@ type Telemetry interface {
 	// Tracer returns a trace.Tracer instance for the given instrumentation name.
 	// Optional trace.TracerOption parameters allow customization of tracer behavior.
 	Tracer(name string, opts ...oteltrace.TracerOption) oteltrace.Tracer
-
-	// TracerProvider returns the underlying trace.TracerProvider responsible for creating tracers.
-	TracerProvider() oteltrace.TracerProvider
 }
