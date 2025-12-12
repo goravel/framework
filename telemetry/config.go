@@ -15,7 +15,6 @@ type ServiceConfig struct {
 	Name        string
 	Version     string
 	Environment string
-	InstanceID  string `mapstructure:"instance_id"`
 }
 
 type TracesConfig struct {

@@ -28,10 +28,6 @@ func newResource(ctx context.Context, cfg Config) (*resource.Resource, error) {
 		attrsList = append(attrsList, semconv.DeploymentEnvironmentName(serviceCfg.Environment))
 	}
 
-	if serviceCfg.InstanceID != "" {
-		attrsList = append(attrsList, semconv.ServiceInstanceID(serviceCfg.InstanceID))
-	}
-
 	for k, v := range cfg.Resource {
 		if k != "" {
 			attrsList = append(attrsList, attribute.String(k, v))

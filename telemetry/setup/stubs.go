@@ -26,7 +26,6 @@ func init() {
           "name":        config.Env("APP_NAME", "goravel"),
           "version":     config.Env("APP_VERSION", ""),
           "environment": config.Env("APP_ENV", ""),
-          "instance_id": config.Env("APP_INSTANCE_ID", ""),
        },
        
        // Resource Attributes
@@ -53,7 +52,6 @@ func init() {
           //
           // Controls which traces are recorded.
           "sampler": map[string]any{
-            
              "parent": config.Env("OTEL_TRACES_SAMPLER_PARENT", true),
              // Supported: "always_on", "always_off", "traceidratio"
              "type":   config.Env("OTEL_TRACES_SAMPLER_TYPE", "always_on"),

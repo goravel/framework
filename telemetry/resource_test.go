@@ -49,14 +49,12 @@ func TestNewResource(t *testing.T) {
 					Name:        "my-service",
 					Version:     "1.0.0",
 					Environment: "staging",
-					InstanceID:  "host-001",
 				},
 			},
 			expectedValues: map[attribute.Key]string{
 				semconv.ServiceNameKey:               "my-service",
 				semconv.ServiceVersionKey:            "1.0.0",
 				semconv.DeploymentEnvironmentNameKey: "staging",
-				semconv.ServiceInstanceIDKey:         "host-001",
 			},
 		},
 		{
