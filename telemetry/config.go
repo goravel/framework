@@ -6,6 +6,7 @@ type Config struct {
 	Resource    map[string]string
 	Service     ServiceConfig
 	Propagators string
+	Logs        LogsConfig
 	Metrics     MetricsConfig
 	Traces      TracesConfig
 	Exporters   map[string]ExporterEntry
@@ -25,6 +26,16 @@ type TracesConfig struct {
 type MetricsConfig struct {
 	Exporter string
 	Reader   MetricsReaderConfig
+}
+
+type LogsConfig struct {
+	Exporter  string
+	Processor LogsProcessorConfig
+}
+
+type LogsProcessorConfig struct {
+	Interval time.Duration
+	Timeout  time.Duration
 }
 
 type MetricsReaderConfig struct {

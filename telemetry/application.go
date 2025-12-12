@@ -4,8 +4,10 @@ import (
 	"context"
 
 	"go.opentelemetry.io/otel"
+	otellog "go.opentelemetry.io/otel/log"
 	otelmetric "go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
+	sdklog "go.opentelemetry.io/otel/sdk/log"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	oteltrace "go.opentelemetry.io/otel/trace"
@@ -17,6 +19,7 @@ import (
 var _ telemetry.Telemetry = (*Application)(nil)
 
 type Application struct {
+	loggerProvider otellog.LoggerProvider
 	meterProvider  otelmetric.MeterProvider
 	tracerProvider oteltrace.TracerProvider
 	propagator     propagation.TextMapPropagator
@@ -47,15 +50,28 @@ func NewApplication(cfg Config) (*Application, error) {
 		return nil, err
 	}
 
+	loggerProvider, loggerShutdown, err := NewLoggerProvider(ctx, cfg, sdklog.WithResource(resource))
+	if err != nil {
+		_ = traceShutdown(ctx)
+		_ = metricShutdown(ctx)
+		return nil, err
+	}
+
 	return &Application{
+		loggerProvider: loggerProvider,
 		meterProvider:  meterProvider,
 		tracerProvider: traceProvider,
 		propagator:     propagator,
 		shutdownFuncs: []ShutdownFunc{
 			traceShutdown,
 			metricShutdown,
+			loggerShutdown,
 		},
 	}, nil
+}
+
+func (r *Application) Logger(name string, opts ...otellog.LoggerOption) otellog.Logger {
+	return r.loggerProvider.Logger(name, opts...)
 }
 
 func (r *Application) Meter(name string, opts ...otelmetric.MeterOption) otelmetric.Meter {
