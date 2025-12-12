@@ -26,7 +26,7 @@ func main() {
 		modify.File(testCasePath).Overwrite(stubs.TestCase(setup.Paths().Tests().Package(), setup.Paths().Bootstrap().Import())),
 
 		// Create tests/feature/example_test.go
-		modify.File(exampleTestPath).Overwrite(stubs.ExampleTest(setup.Paths().Tests().Import()+"/feature", setup.Paths().Tests().Package())),
+		modify.File(exampleTestPath).Overwrite(stubs.ExampleTest(setup.Paths().Tests().Import(), setup.Paths().Tests().Package())),
 
 		// Add the Testing facade
 		modify.File(testingFacadePath).Overwrite(stubs.TestingFacade(setup.Paths().Facades().Package())),

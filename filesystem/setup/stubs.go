@@ -53,7 +53,7 @@ func init() {
 }
 
 func (s Stubs) StorageFacade(pkg string) string {
-	return `package DummyPackage
+	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/filesystem"
@@ -63,4 +63,6 @@ func Storage() filesystem.Storage {
 	return App().MakeStorage()
 }
 `
+
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }

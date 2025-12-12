@@ -42,7 +42,7 @@ func init() {
 }
 
 func (s Stubs) GrpcFacade(pkg string) string {
-	return `package DummyPackage
+	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/grpc"
@@ -52,13 +52,17 @@ func Grpc() grpc.Grpc {
 	return App().MakeGrpc()
 }
 `
+
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }
 
 func (s Stubs) Routes(pkg string) string {
-	return `package DummyPackage
+	content := `package DummyPackage
 
 func Grpc() {
 
 }
 `
+
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }

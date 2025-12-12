@@ -20,7 +20,7 @@ func main() {
 		modify.AddProviderApply(moduleImport, eventServiceProvider),
 
 		// Add the Event facade.
-		modify.File(eventFacadePath).Overwrite(stubs.EventFacade(setup.Paths().Facades().Import())),
+		modify.File(eventFacadePath).Overwrite(stubs.EventFacade(setup.Paths().Facades().Package())),
 	).Uninstall(
 		// Remove the Event facade and service provider.
 		modify.File(eventFacadePath).Remove(),
