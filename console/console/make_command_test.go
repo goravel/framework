@@ -27,6 +27,25 @@ func (receiver *AppServiceProvider) Register(app foundation.Application) {}
 
 func (receiver *AppServiceProvider) Boot(app foundation.Application) {}
 `
+
+	kernel = `package console
+
+import (
+	"github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/schedule"
+)
+
+type Kernel struct {
+}
+
+func (kernel Kernel) Commands() []console.Command {
+	return []console.Command{}
+}
+
+func (kernel Kernel) Schedule() []schedule.Event {
+	return []schedule.Event{}
+}
+`
 )
 
 func TestMakeCommand(t *testing.T) {
@@ -38,6 +57,8 @@ func TestMakeCommand(t *testing.T) {
 	makeCommand := &MakeCommand{}
 
 	t.Run("empty name", func(t *testing.T) {
+		assert.NoError(t, file.PutContent(kernelPath, kernel))
+
 		mockContext := mocksconsole.NewContext(t)
 		mockContext.EXPECT().Argument(0).Return("").Once()
 		mockContext.EXPECT().Ask("Enter the command name", mock.Anything).Return("", errors.New("the command name cannot be empty")).Once()
@@ -84,6 +105,8 @@ func (kernel Kernel) Schedule() []schedule.Event {
 	})
 
 	t.Run("command create and register successfully", func(t *testing.T) {
+		assert.NoError(t, file.PutContent(kernelPath, kernel))
+
 		mockContext := mocksconsole.NewContext(t)
 		mockContext.EXPECT().Argument(0).Return("Goravel/CleanCache").Once()
 		mockContext.EXPECT().OptionBool("force").Return(false).Once()

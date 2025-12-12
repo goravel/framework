@@ -125,6 +125,7 @@ func TestSetup(t *testing.T) {
 		driver:  "database",
 		facade:  "test",
 		force:   true,
+		paths:   NewPaths("goravel"),
 	}, s.(*setup))
 
 	s = Setup([]string{"uninstall", "-f", "--facade=test", "--driver=database"})
@@ -133,11 +134,13 @@ func TestSetup(t *testing.T) {
 		driver:  "database",
 		facade:  "test",
 		force:   true,
+		paths:   NewPaths("goravel"),
 	}, s.(*setup))
 
 	s = Setup([]string{"install", "--package-name=custom-package", "--facade=test"})
 	assert.Equal(t, &setup{
 		command: "install",
 		facade:  "test",
+		paths:   NewPaths("custom-package"),
 	}, s.(*setup))
 }
