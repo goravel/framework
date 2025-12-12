@@ -20,23 +20,25 @@ func main() {
 	httpFacadePath := path.Facades("http.go")
 	rateLimiterFacadePath := path.Facades("rate_limiter.go")
 	viewFacadePath := path.Facades("view.go")
-	packageName := setup.PackageName()
+	packageName := setup.Paths().Main().Package()
 	httpServiceProvider := "&http.ServiceProvider{}"
-	modulePath := setup.ModulePath()
+	moduleImport := setup.Paths().Module().Import()
+	configPackage := setup.Paths().Config().Package()
+	facadesPackage := setup.Paths().Facades().Package()
 
 	setup.Install(
 		// Add the http service provider to the providers array in bootstrap/providers.go
-		modify.AddProviderApply(modulePath, httpServiceProvider),
+		modify.AddProviderApply(moduleImport, httpServiceProvider),
 
 		// Create config/http.go, config/jwt.go, config/cors.go
-		modify.File(httpConfigPath).Overwrite(stubs.HttpConfig(packageName)),
-		modify.File(jwtConfigPath).Overwrite(stubs.JwtConfig(packageName)),
-		modify.File(corsConfigPath).Overwrite(stubs.CorsConfig(packageName)),
+		modify.File(httpConfigPath).Overwrite(stubs.HttpConfig(configPackage, packageName)),
+		modify.File(jwtConfigPath).Overwrite(stubs.JwtConfig(configPackage, packageName)),
+		modify.File(corsConfigPath).Overwrite(stubs.CorsConfig(configPackage, packageName)),
 
 		// Register the Http, RateLimiter, View facades
-		modify.WhenFacade(httpFacade, modify.File(httpFacadePath).Overwrite(stubs.HttpFacade())),
-		modify.WhenFacade(rateLimiterFacade, modify.File(rateLimiterFacadePath).Overwrite(stubs.RateLimiterFacade())),
-		modify.WhenFacade(viewFacade, modify.File(viewFacadePath).Overwrite(stubs.ViewFacade())),
+		modify.WhenFacade(httpFacade, modify.File(httpFacadePath).Overwrite(stubs.HttpFacade(facadesPackage))),
+		modify.WhenFacade(rateLimiterFacade, modify.File(rateLimiterFacadePath).Overwrite(stubs.RateLimiterFacade(facadesPackage))),
+		modify.WhenFacade(viewFacade, modify.File(viewFacadePath).Overwrite(stubs.ViewFacade(facadesPackage))),
 	).Uninstall(
 		modify.WhenNoFacades([]string{httpFacade, rateLimiterFacade, viewFacade},
 			// Remove config/http.go, config/jwt.go, config/cors.go
@@ -45,7 +47,7 @@ func main() {
 			modify.File(corsConfigPath).Remove(),
 
 			// Remove the http service provider from the providers array in bootstrap/providers.go
-			modify.RemoveProviderApply(modulePath, httpServiceProvider),
+			modify.RemoveProviderApply(moduleImport, httpServiceProvider),
 		),
 
 		// Remove the Http, RateLimiter, View facades

@@ -4,8 +4,8 @@ import "strings"
 
 type Stubs struct{}
 
-func (s Stubs) RouteFacade() string {
-	return `package facades
+func (s Stubs) RouteFacade(pkg string) string {
+	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/route"
@@ -15,16 +15,18 @@ func Route() route.Route {
 	return App().MakeRoute()
 }
 `
+
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }
 
-func (s Stubs) Routes(module string) string {
+func (s Stubs) Routes(pkg, main string) string {
 	content := `package routes
 
 import (
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/support"
 
-	"DummyModule/app/facades"
+	"DummyMain/app/facades"
 )
 
 func Web() {
@@ -36,7 +38,10 @@ func Web() {
 }
 `
 
-	return strings.ReplaceAll(content, "DummyModule", module)
+	content = strings.ReplaceAll(content, "DummyPackage", pkg)
+	content = strings.ReplaceAll(content, "DummyMain", main)
+
+	return content
 }
 
 func (s Stubs) WelcomeTmpl() string {

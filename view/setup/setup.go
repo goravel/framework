@@ -12,18 +12,18 @@ func main() {
 	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
 	viewServiceProvider := "&view.ServiceProvider{}"
-	modulePath := setup.ModulePath()
+	moduleImport := setup.Paths().Module().Import()
 	viewFacadePath := path.Facades("view.go")
 
 	setup.Install(
 		// Add the view service provider to the providers array in bootstrap/providers.go
-		modify.AddProviderApply(modulePath, viewServiceProvider),
+		modify.AddProviderApply(moduleImport, viewServiceProvider),
 
 		// Add the View facade
-		modify.File(viewFacadePath).Overwrite(stubs.ViewFacade()),
+		modify.File(viewFacadePath).Overwrite(stubs.ViewFacade(setup.Paths().Facades().Package())),
 	).Uninstall(
 		// Remove the view service provider from the providers array in bootstrap/providers.go
-		modify.RemoveProviderApply(modulePath, viewServiceProvider),
+		modify.RemoveProviderApply(moduleImport, viewServiceProvider),
 
 		// Remove the View facade
 		modify.File(viewFacadePath).Remove(),

@@ -6,13 +6,13 @@ import (
 
 type Stubs struct{}
 
-func (s Stubs) Config(pkg, module string) string {
+func (s Stubs) Config(pkg, facadesImport string) string {
 	content := `package DummyPackage
 
 import (
     "time"
 
-	"DummyModule/app/facades"
+	"DummyFacadesImport"
 )
 
 func init() {
@@ -24,7 +24,7 @@ func init() {
 		// to every trace and metric, allowing observability platforms to group
 		// data by service name, version, and environment.
 		// Reference: https://opentelemetry.io/docs/specs/semconv/resource/
-		"service": map[string]string{
+		"service": map[string]any{
 			"name":        config.Env("APP_NAME", "goravel"),
 			"version":     config.Env("APP_VERSION", ""),
 			"environment": config.Env("APP_ENV", ""),
@@ -203,7 +203,7 @@ func init() {
 `
 
 	content = strings.ReplaceAll(content, "DummyPackage", pkg)
-	content = strings.ReplaceAll(content, "DummyModule", module)
+	content = strings.ReplaceAll(content, "DummyFacadesImport", facadesImport)
 
 	return content
 }

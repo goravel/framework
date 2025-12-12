@@ -6,11 +6,11 @@ import (
 
 type Stubs struct{}
 
-func (s Stubs) Config(module string) string {
-	content := `package config
+func (s Stubs) Config(pkg, main string) string {
+	content := `package DummyPackage
 
 import (
-	"DummyModule/app/facades"
+	"DummyMain/app/facades"
 )
 
 func init() {
@@ -35,11 +35,14 @@ func init() {
 }
 `
 
-	return strings.ReplaceAll(content, "DummyModule", module)
+	content = strings.ReplaceAll(content, "DummyPackage", pkg)
+	content = strings.ReplaceAll(content, "DummyMain", main)
+
+	return content
 }
 
-func (s Stubs) GrpcFacade() string {
-	return `package facades
+func (s Stubs) GrpcFacade(pkg string) string {
+	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/grpc"
@@ -49,36 +52,17 @@ func Grpc() grpc.Grpc {
 	return App().MakeGrpc()
 }
 `
+
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }
 
-func (s Stubs) Kernel() string {
-	return `package grpc
-
-import (
-	"google.golang.org/grpc"
-)
-
-type Kernel struct {
-}
-
-// The application's global GRPC interceptor stack.
-// These middleware are run during every request to your application.
-func (kernel Kernel) UnaryServerInterceptors() []grpc.UnaryServerInterceptor {
-	return []grpc.UnaryServerInterceptor{}
-}
-
-// The application's client interceptor groups.
-func (kernel Kernel) UnaryClientInterceptorGroups() map[string][]grpc.UnaryClientInterceptor {
-	return map[string][]grpc.UnaryClientInterceptor{}
-}
-`
-}
-
-func (s Stubs) Routes() string {
-	return `package routes
+func (s Stubs) Routes(pkg string) string {
+	content := `package DummyPackage
 
 func Grpc() {
 
 }
 `
+
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }

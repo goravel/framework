@@ -6,11 +6,11 @@ import (
 
 type Stubs struct{}
 
-func (s Stubs) Config(module string) string {
-	content := `package config
+func (s Stubs) Config(pkg, main string) string {
+	content := `package DummyPackage
 
 import (
-	"DummyModule/app/facades"
+	"DummyMain/app/facades"
 )
 
 func init() {
@@ -77,11 +77,14 @@ func init() {
 }
 `
 
-	return strings.ReplaceAll(content, "DummyModule", module)
+	content = strings.ReplaceAll(content, "DummyPackage", pkg)
+	content = strings.ReplaceAll(content, "DummyMain", main)
+
+	return content
 }
 
-func (s Stubs) MailFacade() string {
-	return `package facades
+func (s Stubs) MailFacade(pkg string) string {
+	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/mail"
@@ -91,4 +94,6 @@ func Mail() mail.Mail {
 	return App().MakeMail()
 }
 `
+
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }

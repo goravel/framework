@@ -114,92 +114,49 @@ func (_c *Setup_Install_Call) RunAndReturn(run func(...modify.Apply) packages.Se
 	return _c
 }
 
-// ModulePath provides a mock function with no fields
-func (_m *Setup) ModulePath() string {
+// Paths provides a mock function with no fields
+func (_m *Setup) Paths() packages.Paths {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for ModulePath")
+		panic("no return value specified for Paths")
 	}
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
+	var r0 packages.Paths
+	if rf, ok := ret.Get(0).(func() packages.Paths); ok {
 		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(packages.Paths)
+		}
 	}
 
 	return r0
 }
 
-// Setup_ModulePath_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ModulePath'
-type Setup_ModulePath_Call struct {
+// Setup_Paths_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Paths'
+type Setup_Paths_Call struct {
 	*mock.Call
 }
 
-// ModulePath is a helper method to define mock.On call
-func (_e *Setup_Expecter) ModulePath() *Setup_ModulePath_Call {
-	return &Setup_ModulePath_Call{Call: _e.mock.On("ModulePath")}
+// Paths is a helper method to define mock.On call
+func (_e *Setup_Expecter) Paths() *Setup_Paths_Call {
+	return &Setup_Paths_Call{Call: _e.mock.On("Paths")}
 }
 
-func (_c *Setup_ModulePath_Call) Run(run func()) *Setup_ModulePath_Call {
+func (_c *Setup_Paths_Call) Run(run func()) *Setup_Paths_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run()
 	})
 	return _c
 }
 
-func (_c *Setup_ModulePath_Call) Return(_a0 string) *Setup_ModulePath_Call {
+func (_c *Setup_Paths_Call) Return(_a0 packages.Paths) *Setup_Paths_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Setup_ModulePath_Call) RunAndReturn(run func() string) *Setup_ModulePath_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// PackageName provides a mock function with no fields
-func (_m *Setup) PackageName() string {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for PackageName")
-	}
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	return r0
-}
-
-// Setup_PackageName_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PackageName'
-type Setup_PackageName_Call struct {
-	*mock.Call
-}
-
-// PackageName is a helper method to define mock.On call
-func (_e *Setup_Expecter) PackageName() *Setup_PackageName_Call {
-	return &Setup_PackageName_Call{Call: _e.mock.On("PackageName")}
-}
-
-func (_c *Setup_PackageName_Call) Run(run func()) *Setup_PackageName_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Setup_PackageName_Call) Return(_a0 string) *Setup_PackageName_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Setup_PackageName_Call) RunAndReturn(run func() string) *Setup_PackageName_Call {
+func (_c *Setup_Paths_Call) RunAndReturn(run func() packages.Paths) *Setup_Paths_Call {
 	_c.Call.Return(run)
 	return _c
 }

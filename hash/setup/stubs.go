@@ -6,11 +6,11 @@ import (
 
 type Stubs struct{}
 
-func (s Stubs) Config(module string) string {
-	content := `package config
+func (s Stubs) Config(pkg, main string) string {
+	content := `package DummyPackage
 
 import (
-	"DummyModule/app/facades"
+	"DummyMain/app/facades"
 )
 
 func init() {
@@ -49,11 +49,14 @@ func init() {
 }
 `
 
-	return strings.ReplaceAll(content, "DummyModule", module)
+	content = strings.ReplaceAll(content, "DummyPackage", pkg)
+	content = strings.ReplaceAll(content, "DummyMain", main)
+
+	return content
 }
 
-func (s Stubs) HashFacade() string {
-	return `package facades
+func (s Stubs) HashFacade(pkg string) string {
+	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/hash"
@@ -63,4 +66,6 @@ func Hash() hash.Hash {
 	return App().MakeHash()
 }
 `
+
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }

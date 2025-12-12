@@ -27,6 +27,25 @@ func (receiver *AppServiceProvider) Register(app foundation.Application) {}
 
 func (receiver *AppServiceProvider) Boot(app foundation.Application) {}
 `
+
+	kernel = `package console
+
+import (
+	"github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/schedule"
+)
+
+type Kernel struct {
+}
+
+func (kernel Kernel) Commands() []console.Command {
+	return []console.Command{}
+}
+
+func (kernel Kernel) Schedule() []schedule.Event {
+	return []schedule.Event{}
+}
+`
 )
 
 func TestMakeCommand(t *testing.T) {
@@ -35,12 +54,10 @@ func TestMakeCommand(t *testing.T) {
 	}()
 
 	kernelPath := filepath.Join("app", "console", "kernel.go")
-	appServiceProviderPath := filepath.Join("app", "providers", "app_service_provider.go")
 	makeCommand := &MakeCommand{}
 
 	t.Run("empty name", func(t *testing.T) {
-		assert.NoError(t, file.PutContent(kernelPath, Stubs{}.Kernel()))
-		assert.NoError(t, file.PutContent(appServiceProviderPath, appServiceProvider))
+		assert.NoError(t, file.PutContent(kernelPath, kernel))
 
 		mockContext := mocksconsole.NewContext(t)
 		mockContext.EXPECT().Argument(0).Return("").Once()
@@ -88,7 +105,7 @@ func (kernel Kernel) Schedule() []schedule.Event {
 	})
 
 	t.Run("command create and register successfully", func(t *testing.T) {
-		assert.NoError(t, file.PutContent(kernelPath, Stubs{}.Kernel()))
+		assert.NoError(t, file.PutContent(kernelPath, kernel))
 
 		mockContext := mocksconsole.NewContext(t)
 		mockContext.EXPECT().Argument(0).Return("Goravel/CleanCache").Once()

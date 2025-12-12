@@ -2,32 +2,11 @@ package stubs
 
 import "strings"
 
-func ConsoleKernel() string {
-	return `package console
+func DatabaseConfig(pkg, main string) string {
+	content := `package DummyPackage
 
 import (
-	"github.com/goravel/framework/contracts/console"
-	"github.com/goravel/framework/contracts/schedule"
-)
-
-type Kernel struct {
-}
-
-func (kernel Kernel) Commands() []console.Command {
-	return []console.Command{}
-}
-
-func (kernel Kernel) Schedule() []schedule.Event {
-	return []schedule.Event{}
-}
-`
-}
-
-func DatabaseConfig(module string) string {
-	content := `package config
-
-import (
-	"DummyModule/app/facades"
+	"DummyMain/app/facades"
 )
 
 func init() {
@@ -36,5 +15,5 @@ func init() {
 }
 `
 
-	return strings.ReplaceAll(content, "DummyModule", module)
+	return strings.ReplaceAll(strings.ReplaceAll(content, "DummyPackage", pkg), "DummyMain", main)
 }

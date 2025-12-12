@@ -14,13 +14,13 @@ func main() {
 	stubs := Stubs{}
 	routesPath := support.Config.Paths.Routes
 	routeFacadePath := path.Facades("route.go")
-	packageName := setup.PackageName()
+	packageName := setup.Paths().Main().Package()
 	routesPackage := packageName + "/" + routesPath
 	webFunc := routesPath + ".Web"
 	webRoutePath := path.Base(routesPath, "web.go")
-	welcomeTmplPath := path.Base("resources", "views", "welcome.tmpl")
+	welcomeTmplPath := path.Base(support.Config.Paths.Resources, "views", "welcome.tmpl")
 	routeServiceProvider := "&route.ServiceProvider{}"
-	modulePath := setup.ModulePath()
+	moduleImport := setup.Paths().Module().Import()
 	envPath := path.Base(".env")
 	envExamplePath := path.Base(".env.example")
 	env := `
@@ -33,17 +33,17 @@ JWT_SECRET=
 
 	setup.Install(
 		// Add the route service provider to the providers array in bootstrap/providers.go
-		modify.AddProviderApply(modulePath, routeServiceProvider),
+		modify.AddProviderApply(moduleImport, routeServiceProvider),
 
 		// Create resources/views/welcome.tmpl and routes/web.go
 		modify.File(welcomeTmplPath).Overwrite(stubs.WelcomeTmpl()),
-		modify.File(webRoutePath).Overwrite(stubs.Routes(packageName)),
+		modify.File(webRoutePath).Overwrite(stubs.Routes(setup.Paths().Routes().Package(), packageName)),
 
 		// Add the Web function to WithRouting
 		modify.AddRouteApply(routesPackage, webFunc),
 
 		// Register the Route facade
-		modify.File(routeFacadePath).Overwrite(stubs.RouteFacade()),
+		modify.File(routeFacadePath).Overwrite(stubs.RouteFacade(setup.Paths().Facades().Package())),
 
 		// Add configurations to the .env and .env.example files
 		modify.WhenFileNotContains(envPath, "APP_URL", modify.File(envPath).Append(env)),
@@ -60,6 +60,6 @@ JWT_SECRET=
 		modify.File(welcomeTmplPath).Remove(),
 
 		// Remove the route service provider from the providers array in bootstrap/providers.go
-		modify.RemoveProviderApply(modulePath, routeServiceProvider),
+		modify.RemoveProviderApply(moduleImport, routeServiceProvider),
 	).Execute()
 }

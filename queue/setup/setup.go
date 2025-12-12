@@ -17,11 +17,11 @@ func main() {
 	stubs := Stubs{}
 	queueFacade := "Queue"
 	databaseDriver := "database"
-	packageName := setup.PackageName()
+	packageName := setup.Paths().Main().Package()
 	queueFacadePath := path.Facades("queue.go")
 	queueConfigPath := path.Config("queue.go")
 	queueServiceProvider := "&queue.ServiceProvider{}"
-	modulePath := setup.ModulePath()
+	moduleImport := setup.Paths().Module().Import()
 	migrationPath := support.Config.Paths.Migrations
 	migrationPkg := filepath.Base(migrationPath)
 	migrationPkgPath := fmt.Sprintf("%s/%s", packageName, migrationPath)
@@ -32,13 +32,13 @@ func main() {
 	setup.Install(
 		modify.WhenFacade(queueFacade,
 			// Add the queue service provider to the providers array in bootstrap/providers.go
-			modify.AddProviderApply(modulePath, queueServiceProvider),
+			modify.AddProviderApply(moduleImport, queueServiceProvider),
 
 			// Add the queue configuration file
-			modify.File(queueConfigPath).Overwrite(stubs.Config(packageName)),
+			modify.File(queueConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), packageName)),
 
 			// Add the queue facade to the facades file
-			modify.File(queueFacadePath).Overwrite(stubs.QueueFacade()),
+			modify.File(queueFacadePath).Overwrite(stubs.QueueFacade(setup.Paths().Facades().Package())),
 
 			// Add the job migration file
 			modify.File(jobMigrationFilePath).Overwrite(jobMigrationContent),
@@ -63,6 +63,6 @@ func main() {
 		modify.File(queueConfigPath).Remove(),
 
 		// Remove the queue service provider from the providers array in bootstrap/providers.go
-		modify.RemoveProviderApply(modulePath, queueServiceProvider),
+		modify.RemoveProviderApply(moduleImport, queueServiceProvider),
 	).Execute()
 }

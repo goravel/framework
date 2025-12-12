@@ -214,25 +214,25 @@ func (r *Application) BasePath(path ...string) string {
 }
 
 func (r *Application) BootstrapPath(path ...string) string {
-	path = append(support.PathToSlice(support.Config.Paths.Bootstrap), path...)
+	path = append(internals.ToSlice(support.Config.Paths.Bootstrap), path...)
 
 	return r.BasePath(path...)
 }
 
 func (r *Application) ConfigPath(path ...string) string {
-	path = append(support.PathToSlice(support.Config.Paths.Config), path...)
+	path = append(internals.ToSlice(support.Config.Paths.Config), path...)
 
 	return r.BasePath(path...)
 }
 
 func (r *Application) ModelPath(path ...string) string {
-	path = append(support.PathToSlice(support.Config.Paths.Models), path...)
+	path = append(internals.ToSlice(support.Config.Paths.Models), path...)
 
 	return r.BasePath(path...)
 }
 
 func (r *Application) DatabasePath(path ...string) string {
-	path = append(support.PathToSlice(support.Config.Paths.Database), path...)
+	path = append(internals.ToSlice(support.Config.Paths.Database), path...)
 
 	return r.BasePath(path...)
 }
@@ -263,13 +263,13 @@ func (r *Application) LangPath(path ...string) string {
 		defaultPath := configFacade.GetString("app.lang_path")
 
 		if defaultPath != "" {
-			path = append(support.PathToSlice(defaultPath), path...)
+			path = append(internals.ToSlice(defaultPath), path...)
 
 			return r.BasePath(path...)
 		}
 	}
 
-	path = append(support.PathToSlice(support.Config.Paths.Lang), path...)
+	path = append(internals.ToSlice(support.Config.Paths.Lang), path...)
 
 	return r.BasePath(path...)
 }
@@ -279,19 +279,19 @@ func (r *Application) Path(path ...string) string {
 }
 
 func (r *Application) PublicPath(path ...string) string {
-	path = append(support.PathToSlice(support.Config.Paths.Public), path...)
+	path = append(internals.ToSlice(support.Config.Paths.Public), path...)
 
 	return r.BasePath(path...)
 }
 
 func (r *Application) ResourcePath(path ...string) string {
-	path = append(support.PathToSlice(support.Config.Paths.Resources), path...)
+	path = append(internals.ToSlice(support.Config.Paths.Resources), path...)
 
 	return r.BasePath(path...)
 }
 
 func (r *Application) StoragePath(path ...string) string {
-	path = append(support.PathToSlice(support.Config.Paths.Storage), path...)
+	path = append(internals.ToSlice(support.Config.Paths.Storage), path...)
 
 	return r.BasePath(path...)
 }
