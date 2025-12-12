@@ -3,7 +3,6 @@ package telemetry
 import (
 	"context"
 
-	"github.com/goravel/framework/contracts/telemetry"
 	"go.opentelemetry.io/otel"
 	otelmetric "go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
@@ -11,6 +10,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	oteltrace "go.opentelemetry.io/otel/trace"
 
+	"github.com/goravel/framework/contracts/telemetry"
 	"github.com/goravel/framework/errors"
 )
 
@@ -18,8 +18,8 @@ var _ telemetry.Telemetry = (*Application)(nil)
 
 type Application struct {
 	meterProvider  otelmetric.MeterProvider
-	propagator     propagation.TextMapPropagator
 	tracerProvider oteltrace.TracerProvider
+	propagator     propagation.TextMapPropagator
 	shutdownFuncs  []ShutdownFunc
 }
 
@@ -28,7 +28,6 @@ func NewApplication(cfg Config) (*Application, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	otel.SetTextMapPropagator(propagator)
 
 	ctx := context.Background()
@@ -44,7 +43,7 @@ func NewApplication(cfg Config) (*Application, error) {
 
 	meterProvider, metricShutdown, err := NewMeterProvider(ctx, cfg, sdkmetric.WithResource(resource))
 	if err != nil {
-		_ = traceShutdown(ctx) // Ensure tracer provider is shut down to avoid resource leak
+		_ = traceShutdown(ctx)
 		return nil, err
 	}
 

@@ -3,6 +3,7 @@ package telemetry
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -14,29 +15,32 @@ func TestNewTracerProvider(t *testing.T) {
 	mockFactory := func(ctx context.Context) (sdktrace.SpanExporter, error) {
 		return &MockSpanExporter{}, nil
 	}
+
 	tests := []struct {
-		name         string
-		config       Config
-		exporterName string
-		expectError  error
+		name        string
+		config      Config
+		expectError error
+		description string
 	}{
 		{
-			name: "creates console exporter",
+			name: "Success: Disabled (Empty Exporter)",
 			config: Config{
-				Traces: TracesConfig{
-					Exporter: "console",
-				},
+				Traces: TracesConfig{Exporter: ""},
+			},
+		},
+		{
+			name: "Success: Console Exporter",
+			config: Config{
+				Traces: TracesConfig{Exporter: "console"},
 				Exporters: map[string]ExporterEntry{
-					"console": {Driver: TraceExporterDriverConsole},
+					"console": {Driver: TraceExporterDriverConsole, PrettyPrint: true},
 				},
 			},
 		},
 		{
-			name: "creates otlp exporter",
+			name: "Success: OTLP HTTP Exporter",
 			config: Config{
-				Traces: TracesConfig{
-					Exporter: "otlp",
-				},
+				Traces: TracesConfig{Exporter: "otlp"},
 				Exporters: map[string]ExporterEntry{
 					"otlp": {
 						Driver:   TraceExporterDriverOTLP,
@@ -49,11 +53,23 @@ func TestNewTracerProvider(t *testing.T) {
 			},
 		},
 		{
-			name: "creates zipkin exporter",
+			name: "Success: OTLP gRPC Exporter",
 			config: Config{
-				Traces: TracesConfig{
-					Exporter: "zipkin",
+				Traces: TracesConfig{Exporter: "otlp_grpc"},
+				Exporters: map[string]ExporterEntry{
+					"otlp_grpc": {
+						Driver:   TraceExporterDriverOTLP,
+						Endpoint: "localhost:4317",
+						Protocol: ProtocolGRPC,
+						Insecure: true,
+					},
 				},
+			},
+		},
+		{
+			name: "Success: Zipkin Exporter",
+			config: Config{
+				Traces: TracesConfig{Exporter: "zipkin"},
 				Exporters: map[string]ExporterEntry{
 					"zipkin": {
 						Driver:   TraceExporterDriverZipkin,
@@ -63,13 +79,11 @@ func TestNewTracerProvider(t *testing.T) {
 			},
 		},
 		{
-			name: "creates custom exporter (via struct instance)",
+			name: "Success: Custom Exporter (Instance)",
 			config: Config{
-				Traces: TracesConfig{
-					Exporter: "custom_instance",
-				},
+				Traces: TracesConfig{Exporter: "custom_inst"},
 				Exporters: map[string]ExporterEntry{
-					"custom_instance": {
+					"custom_inst": {
 						Driver: TraceExporterDriverCustom,
 						Via:    &MockSpanExporter{},
 					},
@@ -77,13 +91,11 @@ func TestNewTracerProvider(t *testing.T) {
 			},
 		},
 		{
-			name: "creates custom exporter (via factory function)",
+			name: "Success: Custom Exporter (Factory)",
 			config: Config{
-				Traces: TracesConfig{
-					Exporter: "custom_factory",
-				},
+				Traces: TracesConfig{Exporter: "custom_fact"},
 				Exporters: map[string]ExporterEntry{
-					"custom_factory": {
+					"custom_fact": {
 						Driver: TraceExporterDriverCustom,
 						Via:    mockFactory,
 					},
@@ -91,55 +103,47 @@ func TestNewTracerProvider(t *testing.T) {
 			},
 		},
 		{
-			name: "fails custom exporter when Via is missing",
+			name: "Error: Exporter Not Found",
 			config: Config{
-				Traces: TracesConfig{
-					Exporter: "custom_invalid",
-				},
+				Traces: TracesConfig{Exporter: "missing"},
 				Exporters: map[string]ExporterEntry{
-					"custom_invalid": {
-						Driver: TraceExporterDriverCustom,
-						Via:    nil,
-					},
+					"other": {Driver: TraceExporterDriverConsole},
+				},
+			},
+			expectError: errors.TelemetryExporterNotFound,
+		},
+		{
+			name: "Error: Unsupported Driver",
+			config: Config{
+				Traces: TracesConfig{Exporter: "unknown"},
+				Exporters: map[string]ExporterEntry{
+					"unknown": {Driver: "alien_tech"},
+				},
+			},
+			expectError: errors.TelemetryUnsupportedDriver.Args("alien_tech"),
+		},
+		{
+			name: "Error: Custom Driver Missing Via",
+			config: Config{
+				Traces: TracesConfig{Exporter: "custom_bad"},
+				Exporters: map[string]ExporterEntry{
+					"custom_bad": {Driver: TraceExporterDriverCustom, Via: nil},
 				},
 			},
 			expectError: errors.TelemetryViaRequired,
 		},
 		{
-			name: "fails custom exporter when Via is wrong type",
+			name: "Error: Custom Driver Wrong Type",
 			config: Config{
-				Traces: TracesConfig{
-					Exporter: "custom_wrong_type",
-				},
+				Traces: TracesConfig{Exporter: "custom_type"},
 				Exporters: map[string]ExporterEntry{
-					"custom_wrong_type": {
+					"custom_type": {
 						Driver: TraceExporterDriverCustom,
-						Via:    "i-am-a-string-not-an-exporter",
+						Via:    "invalid-string",
 					},
 				},
 			},
 			expectError: errors.TelemetryTraceViaTypeMismatch.Args("string"),
-		},
-		{
-			name: "returns error for unknown exporter",
-			config: Config{
-				Traces: TracesConfig{
-					Exporter: "unknown",
-				},
-				Exporters: map[string]ExporterEntry{},
-			},
-			expectError: errors.TelemetryExporterNotFound,
-		},
-		{
-			name: "uses custom driver from config",
-			config: Config{
-				Traces: TracesConfig{
-					Exporter: "custom",
-				},
-				Exporters: map[string]ExporterEntry{
-					"custom": {Driver: TraceExporterDriverConsole},
-				},
-			},
 		},
 	}
 
@@ -147,24 +151,47 @@ func TestNewTracerProvider(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
 
-			exp, _, err := NewTracerProvider(ctx, tt.config)
+			provider, shutdown, err := NewTracerProvider(ctx, tt.config)
 
 			if tt.expectError != nil {
 				assert.Equal(t, tt.expectError, err)
-				return
-			}
+				assert.Nil(t, provider)
 
-			assert.NoError(t, err)
-			assert.NotNil(t, exp)
+				if shutdown != nil {
+					assert.NoError(t, shutdown(ctx))
+				}
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, provider)
+				assert.NotNil(t, shutdown)
+				assert.NoError(t, shutdown(ctx))
+			}
 		})
 	}
 }
 
 func TestNewConsoleTraceExporter(t *testing.T) {
-	exp, err := newConsoleTraceExporter()
+	tests := []struct {
+		name string
+		cfg  ExporterEntry
+	}{
+		{
+			name: "Default (No Pretty Print)",
+			cfg:  ExporterEntry{},
+		},
+		{
+			name: "With Pretty Print",
+			cfg:  ExporterEntry{PrettyPrint: true},
+		},
+	}
 
-	assert.NoError(t, err)
-	assert.NotNil(t, exp)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			exp, err := newConsoleTraceExporter(tt.cfg)
+			assert.NoError(t, err)
+			assert.NotNil(t, exp)
+		})
+	}
 }
 
 func TestNewZipkinTraceExporter(t *testing.T) {
@@ -174,12 +201,12 @@ func TestNewZipkinTraceExporter(t *testing.T) {
 		expectError error
 	}{
 		{
-			name:        "empty endpoint",
+			name:        "Error: Empty Endpoint",
 			cfg:         ExporterEntry{},
 			expectError: errors.TelemetryZipkinEndpointRequired,
 		},
 		{
-			name: "custom endpoint",
+			name: "Success: Valid Endpoint",
 			cfg:  ExporterEntry{Endpoint: "http://zipkin:9411/api/v2/spans"},
 		},
 	}
@@ -189,10 +216,10 @@ func TestNewZipkinTraceExporter(t *testing.T) {
 			exp, err := newZipkinTraceExporter(tt.cfg)
 			if tt.expectError != nil {
 				assert.Equal(t, tt.expectError, err)
-				return
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, exp)
 			}
-			assert.NoError(t, err)
-			assert.NotNil(t, exp)
 		})
 	}
 }
@@ -203,11 +230,11 @@ func TestNewOTLPTraceExporter(t *testing.T) {
 		cfg  ExporterEntry
 	}{
 		{
-			name: "default protocol (http/protobuf)",
+			name: "Default Protocol (HTTP)",
 			cfg:  ExporterEntry{Endpoint: "localhost:4318", Insecure: true},
 		},
 		{
-			name: "grpc protocol",
+			name: "gRPC Protocol",
 			cfg: ExporterEntry{
 				Endpoint: "localhost:4317",
 				Protocol: ProtocolGRPC,
@@ -215,15 +242,13 @@ func TestNewOTLPTraceExporter(t *testing.T) {
 			},
 		},
 		{
-			name: "with headers and timeout",
+			name: "Complex Configuration",
 			cfg: ExporterEntry{
-				Endpoint: "localhost:4318",
+				Endpoint: "https://otel.com",
 				Protocol: ProtocolHTTPProtobuf,
-				Insecure: true,
-				Timeout:  5000,
-				Headers: map[string]string{
-					"Authorization": "Bearer token",
-				},
+				Insecure: false, // TLS enabled
+				Timeout:  5 * time.Second,
+				Headers:  map[string]string{"Authorization": "Bearer token"},
 			},
 		},
 	}

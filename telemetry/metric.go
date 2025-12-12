@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"go.opentelemetry.io/otel"
@@ -96,7 +95,7 @@ func newMetricReader(ctx context.Context, cfg ExporterEntry, readerCfg MetricsRe
 		return sdkmetric.NewPeriodicReader(exporter, periodicOptions...), nil
 
 	case MetricsExporterDriverConsole:
-		exporter, err := newConsoleMetricExporter()
+		exporter, err := newConsoleMetricExporter(cfg)
 		if err != nil {
 			return nil, err
 		}
@@ -131,7 +130,7 @@ func newOTLPMetricExporter(ctx context.Context, cfg ExporterEntry) (sdkmetric.Ex
 
 	switch protocol {
 	case ProtocolGRPC:
-		opts := buildOTLPMetricOptions[otlpmetricgrpc.Option](cfg,
+		opts := buildOTLPOptions[otlpmetricgrpc.Option](cfg,
 			otlpmetricgrpc.WithEndpoint,
 			otlpmetricgrpc.WithInsecure,
 			otlpmetricgrpc.WithTimeout,
@@ -141,7 +140,7 @@ func newOTLPMetricExporter(ctx context.Context, cfg ExporterEntry) (sdkmetric.Ex
 		return otlpmetricgrpc.New(ctx, opts...)
 
 	default:
-		opts := buildOTLPMetricOptions[otlpmetrichttp.Option](cfg,
+		opts := buildOTLPOptions[otlpmetrichttp.Option](cfg,
 			otlpmetrichttp.WithEndpoint,
 			otlpmetrichttp.WithInsecure,
 			otlpmetrichttp.WithTimeout,
@@ -152,43 +151,16 @@ func newOTLPMetricExporter(ctx context.Context, cfg ExporterEntry) (sdkmetric.Ex
 	}
 }
 
-func buildOTLPMetricOptions[T any](
-	cfg ExporterEntry,
-	withEndpoint func(string) T,
-	withInsecure func() T,
-	withTimeout func(time.Duration) T,
-	withHeaders func(map[string]string) T,
-) []T {
-	var opts []T
-
-	if cfg.Endpoint != "" {
-		endpoint := strings.TrimPrefix(cfg.Endpoint, "http://")
-		endpoint = strings.TrimPrefix(endpoint, "https://")
-		opts = append(opts, withEndpoint(endpoint))
-	}
-
-	if cfg.Insecure {
-		opts = append(opts, withInsecure())
-	}
-
-	timeout := defaultMetricExportTimeout
-	if cfg.Timeout > 0 {
-		timeout = cfg.Timeout
-	}
-	opts = append(opts, withTimeout(timeout))
-
-	if headers := cfg.Headers; len(headers) > 0 {
-		opts = append(opts, withHeaders(headers))
-	}
-
-	return opts
-}
-
-func newConsoleMetricExporter() (sdkmetric.Exporter, error) {
-	return stdoutmetric.New(
+func newConsoleMetricExporter(cfg ExporterEntry) (sdkmetric.Exporter, error) {
+	opts := []stdoutmetric.Option{
 		stdoutmetric.WithWriter(os.Stdout),
-		stdoutmetric.WithPrettyPrint(),
-	)
+	}
+
+	if cfg.PrettyPrint {
+		opts = append(opts, stdoutmetric.WithPrettyPrint())
+	}
+
+	return stdoutmetric.New(opts...)
 }
 
 func getTemporalitySelector(t MetricTemporality) sdkmetric.TemporalitySelector {

@@ -14,7 +14,6 @@ import (
 
 func TestNewMeterProvider(t *testing.T) {
 	manualReader := sdkmetric.NewManualReader()
-
 	mockFactory := func(ctx context.Context) (sdkmetric.Reader, error) {
 		return manualReader, nil
 	}
@@ -36,7 +35,7 @@ func TestNewMeterProvider(t *testing.T) {
 			config: Config{
 				Metrics: MetricsConfig{Exporter: "console"},
 				Exporters: map[string]ExporterEntry{
-					"console": {Driver: MetricsExporterDriverConsole},
+					"console": {Driver: MetricsExporterDriverConsole, PrettyPrint: true},
 				},
 			},
 		},
@@ -49,6 +48,20 @@ func TestNewMeterProvider(t *testing.T) {
 						Driver:   MetricsExporterDriverOTLP,
 						Endpoint: "localhost:4318",
 						Protocol: ProtocolHTTPProtobuf,
+						Insecure: true,
+					},
+				},
+			},
+		},
+		{
+			name: "Success: OTLP gRPC Driver",
+			config: Config{
+				Metrics: MetricsConfig{Exporter: "otlp_grpc"},
+				Exporters: map[string]ExporterEntry{
+					"otlp_grpc": {
+						Driver:   MetricsExporterDriverOTLP,
+						Endpoint: "localhost:4317",
+						Protocol: ProtocolGRPC,
 						Insecure: true,
 					},
 				},
@@ -87,6 +100,16 @@ func TestNewMeterProvider(t *testing.T) {
 				},
 			},
 			expectError: errors.TelemetryExporterNotFound,
+		},
+		{
+			name: "Error: Unsupported Driver",
+			config: Config{
+				Metrics: MetricsConfig{Exporter: "alien_tech"},
+				Exporters: map[string]ExporterEntry{
+					"alien_tech": {Driver: "alien_driver"},
+				},
+			},
+			expectError: errors.TelemetryUnsupportedDriver.Args("alien_driver"),
 		},
 		{
 			name: "Error: Custom Driver Missing Via",
@@ -138,7 +161,7 @@ func TestNewMeterProvider(t *testing.T) {
 	}
 }
 
-func TestNewMetricReader_Timeouts(t *testing.T) {
+func TestNewMetricReader_Config(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
@@ -148,7 +171,7 @@ func TestNewMetricReader_Timeouts(t *testing.T) {
 	}{
 		{
 			name:      "Defaults",
-			readerCfg: MetricsReaderConfig{},
+			readerCfg: MetricsReaderConfig{}, // Should trigger defaults
 			cfg:       ExporterEntry{Driver: MetricsExporterDriverConsole},
 		},
 		{
@@ -196,6 +219,7 @@ func TestGetTemporalitySelector(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			selector := getTemporalitySelector(tt.temporality)
+			// Check Counter kind (usually what we care about for Delta vs Cumulative)
 			result := selector(sdkmetric.InstrumentKindCounter)
 			assert.Equal(t, tt.expected, result)
 		})
@@ -203,7 +227,63 @@ func TestGetTemporalitySelector(t *testing.T) {
 }
 
 func TestNewConsoleMetricExporter(t *testing.T) {
-	exp, err := newConsoleMetricExporter()
-	assert.NoError(t, err)
-	assert.NotNil(t, exp)
+	tests := []struct {
+		name string
+		cfg  ExporterEntry
+	}{
+		{
+			name: "Default (No Pretty Print)",
+			cfg:  ExporterEntry{},
+		},
+		{
+			name: "With Pretty Print",
+			cfg:  ExporterEntry{PrettyPrint: true},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			exp, err := newConsoleMetricExporter(tt.cfg)
+			assert.NoError(t, err)
+			assert.NotNil(t, exp)
+		})
+	}
+}
+
+func TestNewOTLPMetricExporter(t *testing.T) {
+	tests := []struct {
+		name string
+		cfg  ExporterEntry
+	}{
+		{
+			name: "Default Protocol (HTTP)",
+			cfg:  ExporterEntry{Endpoint: "localhost:4318", Insecure: true},
+		},
+		{
+			name: "gRPC Protocol",
+			cfg: ExporterEntry{
+				Endpoint: "localhost:4317",
+				Protocol: ProtocolGRPC,
+				Insecure: true,
+			},
+		},
+		{
+			name: "With Temporality Delta",
+			cfg: ExporterEntry{
+				Endpoint:          "localhost:4318",
+				Protocol:          ProtocolHTTPProtobuf,
+				MetricTemporality: TemporalityDelta,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			exp, err := newOTLPMetricExporter(ctx, tt.cfg)
+
+			assert.NoError(t, err)
+			assert.NotNil(t, exp)
+		})
+	}
 }

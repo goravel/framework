@@ -51,13 +51,14 @@ type ExporterEntry struct {
 	// Metric Specific
 	MetricTemporality MetricTemporality `mapstructure:"metric_temporality"`
 
+	// Console Driver Specific
+	PrettyPrint bool `mapstructure:"pretty_print"`
+
 	// For custom Exporter
 	Via any
 }
 
 func (c Config) GetExporter(name string) (ExporterEntry, bool) {
-	if exp, ok := c.Exporters[name]; ok {
-		return exp, true
-	}
-	return ExporterEntry{Driver: ExporterDriver(name)}, false
+	entry, ok := c.Exporters[name]
+	return entry, ok
 }

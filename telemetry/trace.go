@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
-	"time"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -27,16 +25,6 @@ const (
 	TraceExporterDriverZipkin  ExporterDriver = "zipkin"
 	TraceExporterDriverConsole ExporterDriver = "console"
 )
-
-type Protocol string
-
-const (
-	ProtocolGRPC         Protocol = "grpc"
-	ProtocolHTTPProtobuf Protocol = "http/protobuf"
-	ProtocolHTTPJSON     Protocol = "http/json"
-)
-
-const defaultTimeout = 10 * time.Second
 
 func NewTracerProvider(ctx context.Context, cfg Config, opts ...sdktrace.TracerProviderOption) (oteltrace.TracerProvider, ShutdownFunc, error) {
 	exporterName := cfg.Traces.Exporter
@@ -77,7 +65,7 @@ func newTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.SpanExpo
 	case TraceExporterDriverZipkin:
 		return newZipkinTraceExporter(cfg)
 	case TraceExporterDriverConsole:
-		return newConsoleTraceExporter()
+		return newConsoleTraceExporter(cfg)
 	case TraceExporterDriverCustom:
 		if cfg.Via == nil {
 			return nil, errors.TelemetryViaRequired
@@ -105,7 +93,7 @@ func newOTLPTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.Span
 
 	switch protocol {
 	case ProtocolGRPC:
-		opts := buildOTLPTraceOptions[otlptracegrpc.Option](cfg,
+		opts := buildOTLPOptions[otlptracegrpc.Option](cfg,
 			otlptracegrpc.WithEndpoint,
 			otlptracegrpc.WithInsecure,
 			otlptracegrpc.WithTimeout,
@@ -113,7 +101,7 @@ func newOTLPTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.Span
 		)
 		return otlptracegrpc.New(ctx, opts...)
 	default:
-		opts := buildOTLPTraceOptions[otlptracehttp.Option](cfg,
+		opts := buildOTLPOptions[otlptracehttp.Option](cfg,
 			otlptracehttp.WithEndpoint,
 			otlptracehttp.WithInsecure,
 			otlptracehttp.WithTimeout,
@@ -121,38 +109,6 @@ func newOTLPTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.Span
 		)
 		return otlptracehttp.New(ctx, opts...)
 	}
-}
-
-func buildOTLPTraceOptions[T any](
-	cfg ExporterEntry,
-	withEndpoint func(string) T,
-	withInsecure func() T,
-	withTimeout func(time.Duration) T,
-	withHeaders func(map[string]string) T,
-) []T {
-	var opts []T
-
-	if cfg.Endpoint != "" {
-		endpoint := strings.TrimPrefix(cfg.Endpoint, "http://")
-		endpoint = strings.TrimPrefix(endpoint, "https://")
-		opts = append(opts, withEndpoint(endpoint))
-	}
-
-	if cfg.Insecure {
-		opts = append(opts, withInsecure())
-	}
-
-	timeout := defaultTimeout
-	if cfg.Timeout > 0 {
-		timeout = cfg.Timeout
-	}
-	opts = append(opts, withTimeout(timeout))
-
-	if headers := cfg.Headers; len(headers) > 0 {
-		opts = append(opts, withHeaders(headers))
-	}
-
-	return opts
 }
 
 func newZipkinTraceExporter(cfg ExporterEntry) (sdktrace.SpanExporter, error) {
@@ -163,9 +119,14 @@ func newZipkinTraceExporter(cfg ExporterEntry) (sdktrace.SpanExporter, error) {
 	return zipkin.New(endpoint)
 }
 
-func newConsoleTraceExporter() (sdktrace.SpanExporter, error) {
-	return stdouttrace.New(
+func newConsoleTraceExporter(cfg ExporterEntry) (sdktrace.SpanExporter, error) {
+	opts := []stdouttrace.Option{
 		stdouttrace.WithWriter(os.Stdout),
-		stdouttrace.WithPrettyPrint(),
-	)
+	}
+
+	if cfg.PrettyPrint {
+		opts = append(opts, stdouttrace.WithPrettyPrint())
+	}
+
+	return stdouttrace.New(opts...)
 }
