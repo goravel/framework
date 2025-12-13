@@ -2,8 +2,15 @@ package telemetry
 
 import (
 	"github.com/goravel/framework/contracts/binding"
+	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/contracts/telemetry"
 	"github.com/goravel/framework/errors"
+)
+
+var (
+	TelemetryFacade telemetry.Telemetry
+	ConfigFacade    config.Config
 )
 
 type ServiceProvider struct {
@@ -35,5 +42,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 	})
 }
 
-func (r *ServiceProvider) Boot(_ foundation.Application) {
+func (r *ServiceProvider) Boot(app foundation.Application) {
+	ConfigFacade = app.MakeConfig()
+	TelemetryFacade = app.MakeTelemetry()
 }
