@@ -48,7 +48,7 @@ func (s *TelemetryChannelTestSuite) TestHandle_Disabled() {
 
 func (s *TelemetryChannelTestSuite) TestHandle_Enabled_DefaultName() {
 	s.mockConfig.EXPECT().GetBool("telemetry.instrumentation.log.enabled").Return(true).Once()
-	s.mockConfig.EXPECT().GetString("telemetry.instrumentation.log.name").Return("").Once()
+	s.mockConfig.EXPECT().GetString("telemetry.instrumentation.log.name", defaultInstrumentationName).Return(defaultInstrumentationName).Once()
 
 	s.mockTelemetry.On("Logger", defaultInstrumentationName).Return(noop.NewLoggerProvider().Logger("test")).Once()
 
@@ -63,7 +63,7 @@ func (s *TelemetryChannelTestSuite) TestHandle_Enabled_DefaultName() {
 
 func (s *TelemetryChannelTestSuite) TestHandle_Enabled_CustomName() {
 	s.mockConfig.EXPECT().GetBool("telemetry.instrumentation.log.enabled").Return(true).Once()
-	s.mockConfig.EXPECT().GetString("telemetry.instrumentation.log.name").Return("my-service-logs").Once()
+	s.mockConfig.EXPECT().GetString("telemetry.instrumentation.log.name", defaultInstrumentationName).Return("my-service-logs").Once()
 
 	s.mockTelemetry.On("Logger", "my-service-logs").Return(noop.NewLoggerProvider().Logger("test")).Once()
 
@@ -77,7 +77,7 @@ func (s *TelemetryChannelTestSuite) TestHandle_Enabled_CustomName() {
 
 func (s *TelemetryChannelTestSuite) TestHandle_Error_FacadeNotSet() {
 	s.mockConfig.EXPECT().GetBool("telemetry.instrumentation.log.enabled").Return(true).Once()
-	s.mockConfig.EXPECT().GetString("telemetry.instrumentation.log.name").Return("app").Once()
+	s.mockConfig.EXPECT().GetString("telemetry.instrumentation.log.name", defaultInstrumentationName).Return("app").Once()
 
 	telemetry.TelemetryFacade = nil
 
