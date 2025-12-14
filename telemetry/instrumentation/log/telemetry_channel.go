@@ -24,11 +24,7 @@ func (r *TelemetryChannel) Handle(_ string) (log.Hook, error) {
 		return &hook{enabled: false}, nil
 	}
 
-	instrumentName := config.GetString(configKeyName)
-	if instrumentName == "" {
-		instrumentName = defaultInstrumentationName
-	}
-
+	instrumentName := config.GetString(configKeyName, defaultInstrumentationName)
 	if telemetry.TelemetryFacade == nil {
 		return nil, errors.TelemetryFacadeNotSet
 	}
