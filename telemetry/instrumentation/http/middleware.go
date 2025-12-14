@@ -14,7 +14,7 @@ import (
 const defaultInstrumentationName = "github.com/goravel/framework/telemetry/instrumentation/http"
 
 func Telemetry(opts ...Option) http.Middleware {
-	var cfg Config
+	var cfg ServerConfig
 	_ = telemetry.ConfigFacade.UnmarshalKey("telemetry.instrumentation.http_server", &cfg)
 	for _, opt := range opts {
 		opt(&cfg)

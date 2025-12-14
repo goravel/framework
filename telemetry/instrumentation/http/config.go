@@ -10,22 +10,22 @@ type Filter func(ctx http.Context) bool
 
 type SpanNameFormatter func(route string, ctx http.Context) string
 
-type Option func(*Config)
+type Option func(*ServerConfig)
 
 func WithSpanNameFormatter(f SpanNameFormatter) Option {
-	return func(c *Config) {
+	return func(c *ServerConfig) {
 		c.SpanNameFormatter = f
 	}
 }
 
 func WithFilter(f Filter) Option {
-	return func(c *Config) {
+	return func(c *ServerConfig) {
 		c.Filters = append(c.Filters, f)
 	}
 }
 
-// Config maps to the "telemetry.instrumentation.http_server" key in the config file.
-type Config struct {
+// ServerConfig maps to the "telemetry.instrumentation.http_server" key in the config file.
+type ServerConfig struct {
 	Enabled           bool              `mapstructure:"enabled"`
 	Name              string            `mapstructure:"name"`
 	ExcludedPaths     []string          `mapstructure:"excluded_paths"`
