@@ -17,6 +17,7 @@ var (
 	RouteFacadeNotSet       = New("route facade is not initialized")
 	SessionFacadeNotSet     = New("session facade is not initialized")
 	ServiceProviderCycle    = New("circular dependency detected between providers: %s")
+	TelemetryFacadeNotSet   = New("telemetry facade is not initialized")
 
 	AuthEmptySecret             = New("authentication secret is missing or required")
 	AuthInvalidClaims           = New("authentication token contains invalid claims")
