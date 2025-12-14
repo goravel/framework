@@ -15,16 +15,17 @@ func main() {
 	hashServiceProvider := "&hash.ServiceProvider{}"
 	configPath := path.Config("hashing.go")
 	hashFacadePath := path.Facades("hash.go")
+	facadesPackage := setup.Paths().Facades().Package()
 
 	setup.Install(
 		// Add the hash service provider to the providers array in bootstrap/providers.go
 		modify.AddProviderApply(moduleImport, hashServiceProvider),
 
 		// Create config/hashing.go
-		modify.File(configPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Main().Package())),
+		modify.File(configPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Facades().Import(), facadesPackage)),
 
 		// Add the Hash facade
-		modify.File(hashFacadePath).Overwrite(stubs.HashFacade(setup.Paths().Facades().Package())),
+		modify.File(hashFacadePath).Overwrite(stubs.HashFacade(facadesPackage)),
 	).Uninstall(
 		// Remove config/hashing.go
 		modify.File(configPath).Remove(),

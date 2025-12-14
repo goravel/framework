@@ -2,6 +2,8 @@ package path
 
 import (
 	"github.com/goravel/framework/facades"
+	"github.com/goravel/framework/support"
+	"github.com/goravel/framework/support/path/internals"
 )
 
 /******************************************
@@ -23,6 +25,12 @@ func Bootstrap(paths ...string) string {
 
 func Config(paths ...string) string {
 	return facades.App().ConfigPath(paths...)
+}
+
+func Migration(paths ...string) string {
+	paths = append(internals.ToSlice(support.Config.Paths.Migrations), paths...)
+
+	return internals.Abs(paths...)
 }
 
 func Model(paths ...string) string {
@@ -49,10 +57,22 @@ func Resource(paths ...string) string {
 	return facades.App().ResourcePath(paths...)
 }
 
+func Route(paths ...string) string {
+	paths = append(internals.ToSlice(support.Config.Paths.Routes), paths...)
+
+	return internals.Abs(paths...)
+}
+
 func Lang(paths ...string) string {
 	return facades.App().LangPath(paths...)
 }
 
 func Public(paths ...string) string {
 	return facades.App().PublicPath(paths...)
+}
+
+func View(paths ...string) string {
+	paths = append(internals.ToSlice(support.Config.Paths.Views), paths...)
+
+	return internals.Abs(paths...)
 }

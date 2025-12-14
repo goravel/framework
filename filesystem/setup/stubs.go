@@ -6,16 +6,17 @@ import (
 
 type Stubs struct{}
 
-func (s Stubs) Config(pkg, main string) string {
+func (s Stubs) Config(pkg, facadesImport, facadesPackage string) string {
 	content := `package DummyPackage
 
 import (
-	"DummyMain/app/facades"
 	"github.com/goravel/framework/support/path"
+
+	"DummyFacadesImport"
 )
 
 func init() {
-	config := facades.Config()
+	config := DummyFacadesPackage.Config()
 	config.Add("filesystems", map[string]any{
 		// Default Filesystem Disk
 		//
@@ -47,7 +48,8 @@ func init() {
 `
 
 	content = strings.ReplaceAll(content, "DummyPackage", pkg)
-	content = strings.ReplaceAll(content, "DummyMain", main)
+	content = strings.ReplaceAll(content, "DummyFacadesImport", facadesImport)
+	content = strings.ReplaceAll(content, "DummyFacadesPackage", facadesPackage)
 
 	return content
 }

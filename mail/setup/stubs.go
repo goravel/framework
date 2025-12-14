@@ -6,15 +6,15 @@ import (
 
 type Stubs struct{}
 
-func (s Stubs) Config(pkg, main string) string {
+func (s Stubs) Config(pkg, facadesImport, facadesPackage string) string {
 	content := `package DummyPackage
 
 import (
-	"DummyMain/app/facades"
+	"DummyFacadesImport"
 )
 
 func init() {
-	config := facades.Config()
+	config := DummyFacadesPackage.Config()
 	config.Add("mail", map[string]any{
 		// SMTP Host Address
 		//
@@ -78,7 +78,8 @@ func init() {
 `
 
 	content = strings.ReplaceAll(content, "DummyPackage", pkg)
-	content = strings.ReplaceAll(content, "DummyMain", main)
+	content = strings.ReplaceAll(content, "DummyFacadesImport", facadesImport)
+	content = strings.ReplaceAll(content, "DummyFacadesPackage", facadesPackage)
 
 	return content
 }

@@ -30,7 +30,8 @@ func (receiver Stubs) Create() string {
 
 import (
 	"github.com/goravel/framework/contracts/database/schema"
-	"github.com/goravel/framework/facades"
+
+	"{{.FacadesImport}}"
 )
 
 type {{.StructName}} struct{}
@@ -42,8 +43,8 @@ func (r *{{.StructName}}) Signature() string {
 
 // Up Run the migrations.
 func (r *{{.StructName}}) Up() error {
-	if !facades.Schema().HasTable("{{.Table}}") {
-		return facades.Schema().Create("{{.Table}}", func(table schema.Blueprint) {
+	if !{{.FacadesPackage}}.Schema().HasTable("{{.Table}}") {
+		return {{.FacadesPackage}}.Schema().Create("{{.Table}}", func(table schema.Blueprint) {
 			{{- if .SchemaFields}}
 {{- range .SchemaFields}}
 			{{.}}
@@ -60,7 +61,7 @@ func (r *{{.StructName}}) Up() error {
 
 // Down Reverse the migrations.
 func (r *{{.StructName}}) Down() error {
- 	return facades.Schema().DropIfExists("{{.Table}}")
+ 	return {{.FacadesPackage}}.Schema().DropIfExists("{{.Table}}")
 }
 `
 }
@@ -70,7 +71,8 @@ func (receiver Stubs) Update() string {
 
 import (
 	"github.com/goravel/framework/contracts/database/schema"
-	"github.com/goravel/framework/facades"
+
+	"{{.FacadesImport}}"
 )
 
 type {{.StructName}} struct{}
@@ -82,7 +84,7 @@ func (r *{{.StructName}}) Signature() string {
 
 // Up Run the migrations.
 func (r *{{.StructName}}) Up() error {
-	return facades.Schema().Table("{{.Table}}", func(table schema.Blueprint) {
+	return {{.FacadesPackage}}.Schema().Table("{{.Table}}", func(table schema.Blueprint) {
 		{{- if .SchemaFields}}
 {{- range .SchemaFields}}
 		{{.}}

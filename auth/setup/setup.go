@@ -24,7 +24,7 @@ func main() {
 		modify.AddProviderApply(modulePath, authServiceProvider),
 
 		// Create config/auth.go
-		modify.File(authConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Main().Package())),
+		modify.File(authConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Facades().Import(), facadesPackage)),
 
 		// Add the Auth and Gate facades
 		modify.WhenFacade(facades.Auth, modify.File(authFacadePath).Overwrite(stubs.AuthFacade(facadesPackage))),

@@ -81,21 +81,38 @@ type DummyCamelName struct {}
 }
 
 func (r PackageMakeCommandStubs) Config() string {
-	content := `package config
+	content := `package DummyPackage
 
 import (
-	"github.com/goravel/framework/facades"
+	"DummyFacadesImport"
 )
 
 func init() {
-	config := facades.Config()
+	config := DummyFacadesPackage.Config()
 	config.Add("DummyName", map[string]any{
 		
 	})
 }
 `
 
-	return strings.ReplaceAll(content, "DummyName", r.name)
+	file := `package main
+
+import "strings"
+
+func config(configPackage string, facadesImport, facadesPackage string) string {
+	content := DummyContent
+	content = strings.ReplaceAll(content, "DummyPackage", configPackage)
+	content = strings.ReplaceAll(content, "DummyFacadesImport", facadesImport)
+	content = strings.ReplaceAll(content, "DummyFacadesPackage", facadesPackage)
+
+	return content
+}
+`
+
+	content = strings.ReplaceAll(content, "DummyName", r.name)
+	content = strings.ReplaceAll(file, "DummyContent", "`"+content+"`")
+
+	return content
 }
 
 func (r PackageMakeCommandStubs) Contracts() string {
@@ -136,30 +153,36 @@ func DummyCamelName() contracts.DummyCamelName {
 }
 
 func (r PackageMakeCommandStubs) Setup() string {
-	content := `package main
+	content := `
+package main
 
 import (
 	"os"
 
 	"github.com/goravel/framework/packages"
-	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support/path"
 )
 
 func main() {
-	packages.Setup(os.Args).
-		Install(
-			modify.GoFile(path.Config("app.go")).
-				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register("&DummyName.ServiceProvider{}")),
-		).
-		Uninstall(
-			modify.GoFile(path.Config("app.go")).
-				Find(match.Providers()).Modify(modify.Unregister("&DummyName.ServiceProvider{}")).
-				Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
-		).
-		Execute()
+	setup := packages.Setup(os.Args)
+	serviceProvider := "&DummyName.ServiceProvider{}"
+	moduleImport := setup.Paths().Module().Import()
+	configPath := path.Config("DummyName.go")
+
+	setup.Install(
+		// Register the service provider
+		modify.AddProviderApply(moduleImport, serviceProvider),
+
+		// Add config
+		modify.File(configPath).Overwrite(config(setup.Paths().Config().Package(), setup.Paths().Facades().Import(), setup.Paths().Facades().Package())),
+	).Uninstall(
+		// Remove config/cache.go
+		modify.File(configPath).Remove(),
+
+		// Remove the service provider
+		modify.RemoveProviderApply(moduleImport, serviceProvider),
+	).Execute()
 }
 `
 	content = strings.ReplaceAll(content, "DummyName", r.name)

@@ -6,15 +6,15 @@ import (
 
 type Stubs struct{}
 
-func (s Stubs) Config(pkg, main string) string {
+func (s Stubs) Config(pkg, facadesImport, facadesPackage string) string {
 	content := `package DummyPackage
 
 import (
-	"DummyMain/app/facades"
+	"DummyFacadesImport"
 )
 
 func init() {
-	config := facades.Config()
+	config := DummyFacadesPackage.Config()
 	config.Add("queue", map[string]any{
 		// Default Queue Connection Name
 		"default": "sync",
@@ -48,18 +48,19 @@ func init() {
 `
 
 	content = strings.ReplaceAll(content, "DummyPackage", pkg)
-	content = strings.ReplaceAll(content, "DummyMain", main)
+	content = strings.ReplaceAll(content, "DummyFacadesImport", facadesImport)
+	content = strings.ReplaceAll(content, "DummyFacadesPackage", facadesPackage)
 
 	return content
 }
 
-func (s Stubs) JobMigration(pkg, module string) (fileName, structName, content string) {
+func (s Stubs) JobMigration(pkg, facadesImport, facadesPackage string) (fileName, structName, content string) {
 	content = `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/database/schema"
 
-	"DummyMain/app/facades"
+	"DummyFacadesImport"
 )
 
 type M20210101000001CreateJobsTable struct{}
@@ -71,8 +72,8 @@ func (r *M20210101000001CreateJobsTable) Signature() string {
 
 // Up Run the migrations.
 func (r *M20210101000001CreateJobsTable) Up() error {
-	if !facades.Schema().HasTable("jobs") {
-		if err := facades.Schema().Create("jobs", func(table schema.Blueprint) {
+	if !DummyFacadesPackage.Schema().HasTable("jobs") {
+		if err := DummyFacadesPackage.Schema().Create("jobs", func(table schema.Blueprint) {
 			table.ID()
 			table.String("queue")
 			table.LongText("payload")
@@ -86,8 +87,8 @@ func (r *M20210101000001CreateJobsTable) Up() error {
 		}
 	}
 
-	if !facades.Schema().HasTable("failed_jobs") {
-		if err := facades.Schema().Create("failed_jobs", func(table schema.Blueprint) {
+	if !DummyFacadesPackage.Schema().HasTable("failed_jobs") {
+		if err := DummyFacadesPackage.Schema().Create("failed_jobs", func(table schema.Blueprint) {
 			table.ID()
 			table.String("uuid")
 			table.Text("connection")
@@ -106,11 +107,11 @@ func (r *M20210101000001CreateJobsTable) Up() error {
 
 // Down Reverse the migrations.
 func (r *M20210101000001CreateJobsTable) Down() error {
-	if err := facades.Schema().DropIfExists("jobs"); err != nil {
+	if err := DummyFacadesPackage.Schema().DropIfExists("jobs"); err != nil {
 		return err
 	}
 
-	if err := facades.Schema().DropIfExists("failed_jobs"); err != nil {
+	if err := DummyFacadesPackage.Schema().DropIfExists("failed_jobs"); err != nil {
 		return err
 	}
 
@@ -119,7 +120,8 @@ func (r *M20210101000001CreateJobsTable) Down() error {
 `
 
 	content = strings.ReplaceAll(content, "DummyPackage", pkg)
-	content = strings.ReplaceAll(content, "DummyMain", module)
+	content = strings.ReplaceAll(content, "DummyFacadesImport", facadesImport)
+	content = strings.ReplaceAll(content, "DummyFacadesPackage", facadesPackage)
 
 	return "20210101000001_create_jobs_table.go", "M20210101000001CreateJobsTable{}", content
 }

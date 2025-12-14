@@ -4,7 +4,7 @@ import "strings"
 
 type Stubs struct{}
 
-func (s Stubs) ExampleTest(imt, testsPackage string) string {
+func (s Stubs) ExampleTest(testsImport, testsPackage string) string {
 	content := `package feature
 
 import (
@@ -12,7 +12,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"DummyImport"
+	"DummyTestsImport"
 )
 
 type ExampleTestSuite struct {
@@ -37,23 +37,23 @@ func (s *ExampleTestSuite) TestIndex() {
 }
 `
 
-	content = strings.ReplaceAll(content, "DummyImport", imt)
+	content = strings.ReplaceAll(content, "DummyTestsImport", testsImport)
 	content = strings.ReplaceAll(content, "DummyTestsPackage", testsPackage)
 
 	return content
 }
 
-func (s Stubs) TestCase(pkg, bootstrap string) string {
+func (s Stubs) TestCase(pkg, bootstrapImport, bootstrapPackage string) string {
 	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/testing"
 
-	"DummyBootstrap"
+	"DummyBootstrapImport"
 )
 
 func init() {
-	bootstrap.Boot()
+	DummyBootstrapPackage.Boot()
 }
 
 type TestCase struct {
@@ -62,7 +62,8 @@ type TestCase struct {
 `
 
 	content = strings.ReplaceAll(content, "DummyPackage", pkg)
-	content = strings.ReplaceAll(content, "DummyBootstrap", bootstrap)
+	content = strings.ReplaceAll(content, "DummyBootstrapImport", bootstrapImport)
+	content = strings.ReplaceAll(content, "DummyBootstrapPackage", bootstrapPackage)
 
 	return content
 }

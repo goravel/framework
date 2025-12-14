@@ -23,7 +23,7 @@ func main() {
 		modify.AddProviderApply(moduleImport, testingServiceProvider),
 
 		// Create tests/test_case.go
-		modify.File(testCasePath).Overwrite(stubs.TestCase(setup.Paths().Tests().Package(), setup.Paths().Bootstrap().Import())),
+		modify.File(testCasePath).Overwrite(stubs.TestCase(setup.Paths().Tests().Package(), setup.Paths().Bootstrap().Import(), setup.Paths().Bootstrap().Package())),
 
 		// Create tests/feature/example_test.go
 		modify.File(exampleTestPath).Overwrite(stubs.ExampleTest(setup.Paths().Tests().Import(), setup.Paths().Tests().Package())),

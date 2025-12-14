@@ -24,6 +24,8 @@ type Paths interface {
 	Facades() Path
 	// Main returns the path for the main package, eg: github.com/goravel/goravel.
 	Main() Path
+	// Migrations returns the path for the migrations package, eg: goravel/database/migrations.
+	Migrations() Path
 	// Module returns the path for the module package, eg: github.com/goravel/framework/auth.
 	Module() Path
 	// Routes returns the path for the routes package, eg: goravel/routes.

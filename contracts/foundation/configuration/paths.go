@@ -25,8 +25,10 @@ type Paths interface {
 	Public(path string) Paths
 	Requests(path string) Paths
 	Resources(path string) Paths
+	Routes(path string) Paths
 	Rules(path string) Paths
 	Seeders(path string) Paths
 	Storage(path string) Paths
 	Tests(path string) Paths
+	Views(path string) Paths
 }

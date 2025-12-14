@@ -10,13 +10,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
-
-	"DummyModule/tests"
+	
+	DummyTestImport
 )
 
 type DummyTestSuite struct {
 	suite.Suite
-	tests.TestCase
+	DummyTestCase
 }
 
 func TestDummyTestSuite(t *testing.T) {

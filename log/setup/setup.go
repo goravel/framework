@@ -13,9 +13,9 @@ func main() {
 	stubs := Stubs{}
 	logFacadePath := path.Facades("log.go")
 	loggingConfigPath := path.Config("logging.go")
-	packageName := setup.Paths().Main().Package()
 	moduleImport := setup.Paths().Module().Import()
 	logServiceProvider := "&log.ServiceProvider{}"
+	facadesPackage := setup.Paths().Facades().Package()
 	envPath := path.Base(".env")
 	envExamplePath := path.Base(".env.example")
 	env := `
@@ -28,10 +28,10 @@ LOG_LEVEL=debug
 		modify.AddProviderApply(moduleImport, logServiceProvider),
 
 		// Create config/logging.go
-		modify.File(loggingConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), packageName)),
+		modify.File(loggingConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Facades().Import(), facadesPackage)),
 
 		// Add the Log facade
-		modify.File(logFacadePath).Overwrite(stubs.LogFacade(setup.Paths().Facades().Package())),
+		modify.File(logFacadePath).Overwrite(stubs.LogFacade(facadesPackage)),
 
 		// Add configurations to the .env and .env.example files
 		modify.WhenFileNotContains(envPath, "LOG_CHANNEL", modify.File(envPath).Append(env)),

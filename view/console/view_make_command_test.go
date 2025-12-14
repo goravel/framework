@@ -114,7 +114,7 @@ func TestViewMakeCommandPopulateStub(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := cmd.populateStub(tt.stub, tt.viewName, tt.viewPath)
+			result := cmd.populateStub(tt.stub, tt.viewPath)
 			assert.Equal(t, tt.expectedResult, result)
 		})
 	}
@@ -125,10 +125,9 @@ func TestViewMakeCommandPopulateStubWithResourcesPath(t *testing.T) {
 
 	// Test that resources/views/ prefix is removed from path definition
 	stub := "// DummyPathName\n{{ define \"DummyPathDefinition\" }}\n<h1>Welcome to DummyViewName</h1>\n{{ end }}"
-	viewName := "welcome.tmpl"
 	viewPath := "resources/views/welcome.tmpl"
 
-	result := cmd.populateStub(stub, viewName, viewPath)
+	result := cmd.populateStub(stub, viewPath)
 
 	// The path definition should have resources/views/ removed
 	assert.Contains(t, result, "{{ define \"welcome.tmpl\" }}")
@@ -140,10 +139,9 @@ func TestViewMakeCommandPopulateStubWithNonResourcesPath(t *testing.T) {
 
 	// Test that non-resources paths are not modified
 	stub := "// DummyPathName\n{{ define \"DummyPathDefinition\" }}\n<h1>Welcome to DummyViewName</h1>\n{{ end }}"
-	viewName := "custom.tmpl"
 	viewPath := "custom/views/custom.tmpl"
 
-	result := cmd.populateStub(stub, viewName, viewPath)
+	result := cmd.populateStub(stub, viewPath)
 
 	// The path definition should remain unchanged for non-resources paths
 	assert.Contains(t, result, "{{ define \"custom/views/custom.tmpl\" }}")

@@ -34,11 +34,13 @@ func (r *Creator) GetStub(table string, create bool) string {
 }
 
 type StubData struct {
-	Package      string
-	StructName   string
-	Signature    string
-	Table        string
-	SchemaFields []string
+	FacadesPackage string
+	FacadesImport  string
+	Package        string
+	SchemaFields   []string
+	Signature      string
+	StructName     string
+	Table          string
 }
 
 // PopulateStub Populate the place-holders in the migration stub.
