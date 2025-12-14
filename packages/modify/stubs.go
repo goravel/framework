@@ -99,7 +99,7 @@ func Rules() []validation.Rule {
 }
 
 func replaceDummyPackage(content string) string {
-	bootstrapPackage := paths.NewPaths(env.PackageName()).Bootstrap().Package()
+	bootstrapPackage := paths.NewPaths(env.MainPath()).Bootstrap().Package()
 
 	return strings.ReplaceAll(content, "DummyPackage", bootstrapPackage)
 }

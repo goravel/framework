@@ -55,7 +55,7 @@ func Setup(args []string) packages.Setup {
 	}
 
 	if mainName == "" {
-		mainName = env.PackageName()
+		mainName = env.MainPath()
 	}
 
 	st.paths = Paths(mainName)
@@ -111,7 +111,7 @@ func (r *setup) reportError(err error) {
 
 func Paths(mainPath ...string) *paths.Paths {
 	if len(mainPath) == 0 {
-		mainPath = []string{env.PackageName()}
+		mainPath = []string{env.MainPath()}
 	}
 	return paths.NewPaths(mainPath[0])
 }
