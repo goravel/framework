@@ -19,16 +19,20 @@ func NewTelemetryChannel() *TelemetryChannel {
 }
 
 func (r *TelemetryChannel) Handle(_ string) (log.Hook, error) {
+	if telemetry.TelemetryFacade == nil {
+		return nil, errors.TelemetryFacadeNotSet
+	}
+
 	config := telemetry.ConfigFacade
+	if config == nil {
+		return nil, errors.ConfigFacadeNotSet
+	}
+
 	if !config.GetBool(configKeyEnabled) {
 		return &hook{enabled: false}, nil
 	}
 
 	instrumentName := config.GetString(configKeyName, defaultInstrumentationName)
-	if telemetry.TelemetryFacade == nil {
-		return nil, errors.TelemetryFacadeNotSet
-	}
-
 	return &hook{
 		enabled: true,
 		logger:  telemetry.TelemetryFacade.Logger(instrumentName),
