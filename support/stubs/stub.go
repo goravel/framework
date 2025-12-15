@@ -2,39 +2,22 @@ package stubs
 
 import "strings"
 
-func ConsoleKernel() string {
-	return `package console
+func DatabaseConfig(pkg, facadesImport, facadesPackage string) string {
+	content := `package DummyPackage
 
 import (
-	"github.com/goravel/framework/contracts/console"
-	"github.com/goravel/framework/contracts/schedule"
-)
-
-type Kernel struct {
-}
-
-func (kernel Kernel) Commands() []console.Command {
-	return []console.Command{}
-}
-
-func (kernel Kernel) Schedule() []schedule.Event {
-	return []schedule.Event{}
-}
-`
-}
-
-func DatabaseConfig(module string) string {
-	content := `package config
-
-import (
-	"DummyModule/app/facades"
+	"DummyFacadesImport"
 )
 
 func init() {
-	config := facades.Config()
+	config := DummyFacadesPackage.Config()
 	config.Add("database", map[string]any{})
 }
 `
 
-	return strings.ReplaceAll(content, "DummyModule", module)
+	content = strings.ReplaceAll(content, "DummyPackage", pkg)
+	content = strings.ReplaceAll(content, "DummyFacadesImport", facadesImport)
+	content = strings.ReplaceAll(content, "DummyFacadesPackage", facadesPackage)
+
+	return content
 }

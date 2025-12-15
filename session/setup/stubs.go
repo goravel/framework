@@ -6,18 +6,18 @@ import (
 
 type Stubs struct{}
 
-func (s Stubs) Config(module string) string {
-	content := `package config
+func (s Stubs) Config(pkg, facadesImport, facadesPackage string) string {
+	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/support/path"
 	"github.com/goravel/framework/support/str"
 
-	"DummyModule/app/facades"
+	"DummyFacadesImport"
 )
 
 func init() {
-	config := facades.Config()
+	config := DummyFacadesPackage.Config()
 	config.Add("session", map[string]any{
 		// Default Session Driver
 		//
@@ -102,11 +102,15 @@ func init() {
 }
 `
 
-	return strings.ReplaceAll(content, "DummyModule", module)
+	content = strings.ReplaceAll(content, "DummyPackage", pkg)
+	content = strings.ReplaceAll(content, "DummyFacadesImport", facadesImport)
+	content = strings.ReplaceAll(content, "DummyFacadesPackage", facadesPackage)
+
+	return content
 }
 
-func (s Stubs) SessionFacade() string {
-	return `package facades
+func (s Stubs) SessionFacade(pkg string) string {
+	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/session"
@@ -116,4 +120,6 @@ func Session() session.Manager {
 	return App().MakeSession()
 }
 `
+
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }

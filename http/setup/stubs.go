@@ -6,15 +6,15 @@ import (
 
 type Stubs struct{}
 
-func (s Stubs) CorsConfig(module string) string {
-	content := `package config
+func (s Stubs) CorsConfig(pkg, facadesImport, facadesPackage string) string {
+	content := `package DummyPackage
 
 import (
-	"DummyModule/app/facades"
+	"DummyFacadesImport"
 )
 
 func init() {
-	config := facades.Config()
+	config := DummyFacadesPackage.Config()
 	config.Add("cors", map[string]any{
 		// Cross-Origin Resource Sharing (CORS) Configuration
 		//
@@ -34,18 +34,22 @@ func init() {
 }
 `
 
-	return strings.ReplaceAll(content, "DummyModule", module)
+	content = strings.ReplaceAll(content, "DummyPackage", pkg)
+	content = strings.ReplaceAll(content, "DummyFacadesImport", facadesImport)
+	content = strings.ReplaceAll(content, "DummyFacadesPackage", facadesPackage)
+
+	return content
 }
 
-func (s Stubs) HttpConfig(module string) string {
-	content := `package config
+func (s Stubs) HttpConfig(pkg, facadesImport, facadesPackage string) string {
+	content := `package DummyPackage
 
 import (
-	"DummyModule/app/facades"
+	"DummyFacadesImport"
 )
 
 func init() {
-	config := facades.Config()
+	config := DummyFacadesPackage.Config()
 	config.Add("http", map[string]any{
 		// HTTP Driver
 		"default": "",
@@ -86,11 +90,15 @@ func init() {
 }
 `
 
-	return strings.ReplaceAll(content, "DummyModule", module)
+	content = strings.ReplaceAll(content, "DummyPackage", pkg)
+	content = strings.ReplaceAll(content, "DummyFacadesImport", facadesImport)
+	content = strings.ReplaceAll(content, "DummyFacadesPackage", facadesPackage)
+
+	return content
 }
 
-func (s Stubs) HttpFacade() string {
-	return `package facades
+func (s Stubs) HttpFacade(pkg string) string {
+	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/http/client"
@@ -100,17 +108,19 @@ func Http() client.Request {
 	return App().MakeHttp()
 }
 `
+
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }
 
-func (s Stubs) JwtConfig(module string) string {
-	content := `package config
+func (s Stubs) JwtConfig(pkg, facadesImport, facadesPackage string) string {
+	content := `package DummyPackage
 
 import (
-	"DummyModule/app/facades"
+	"DummyFacadesImport"
 )
 
 func init() {
-	config := facades.Config()
+	config := DummyFacadesPackage.Config()
 	config.Add("jwt", map[string]any{
 		// JWT Authentication Secret
 		//
@@ -146,29 +156,15 @@ func init() {
 }
 `
 
-	return strings.ReplaceAll(content, "DummyModule", module)
+	content = strings.ReplaceAll(content, "DummyPackage", pkg)
+	content = strings.ReplaceAll(content, "DummyFacadesImport", facadesImport)
+	content = strings.ReplaceAll(content, "DummyFacadesPackage", facadesPackage)
+
+	return content
 }
 
-func (s Stubs) Kernel() string {
-	return `package http
-
-import (
-	"github.com/goravel/framework/contracts/http"
-)
-
-type Kernel struct {
-}
-
-// The application's global HTTP middleware stack.
-// These middleware are run during every request to your application.
-func (kernel Kernel) Middleware() []http.Middleware {
-	return []http.Middleware{}
-}
-`
-}
-
-func (s Stubs) RateLimiterFacade() string {
-	return `package facades
+func (s Stubs) RateLimiterFacade(pkg string) string {
+	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/http"
@@ -178,10 +174,12 @@ func RateLimiter() http.RateLimiter {
 	return App().MakeRateLimiter()
 }
 `
+
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }
 
-func (s Stubs) ViewFacade() string {
-	return `package facades
+func (s Stubs) ViewFacade(pkg string) string {
+	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/http"
@@ -191,4 +189,6 @@ func View() http.View {
 	return App().MakeView()
 }
 `
+
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }

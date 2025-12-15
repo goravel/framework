@@ -1172,6 +1172,54 @@ func (_c *Paths_Resources_Call) RunAndReturn(run func(string) configuration.Path
 	return _c
 }
 
+// Routes provides a mock function with given fields: path
+func (_m *Paths) Routes(path string) configuration.Paths {
+	ret := _m.Called(path)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Routes")
+	}
+
+	var r0 configuration.Paths
+	if rf, ok := ret.Get(0).(func(string) configuration.Paths); ok {
+		r0 = rf(path)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(configuration.Paths)
+		}
+	}
+
+	return r0
+}
+
+// Paths_Routes_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Routes'
+type Paths_Routes_Call struct {
+	*mock.Call
+}
+
+// Routes is a helper method to define mock.On call
+//   - path string
+func (_e *Paths_Expecter) Routes(path interface{}) *Paths_Routes_Call {
+	return &Paths_Routes_Call{Call: _e.mock.On("Routes", path)}
+}
+
+func (_c *Paths_Routes_Call) Run(run func(path string)) *Paths_Routes_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Paths_Routes_Call) Return(_a0 configuration.Paths) *Paths_Routes_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Paths_Routes_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Routes_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Rules provides a mock function with given fields: path
 func (_m *Paths) Rules(path string) configuration.Paths {
 	ret := _m.Called(path)
@@ -1360,6 +1408,54 @@ func (_c *Paths_Tests_Call) Return(_a0 configuration.Paths) *Paths_Tests_Call {
 }
 
 func (_c *Paths_Tests_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Tests_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Views provides a mock function with given fields: path
+func (_m *Paths) Views(path string) configuration.Paths {
+	ret := _m.Called(path)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Views")
+	}
+
+	var r0 configuration.Paths
+	if rf, ok := ret.Get(0).(func(string) configuration.Paths); ok {
+		r0 = rf(path)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(configuration.Paths)
+		}
+	}
+
+	return r0
+}
+
+// Paths_Views_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Views'
+type Paths_Views_Call struct {
+	*mock.Call
+}
+
+// Views is a helper method to define mock.On call
+//   - path string
+func (_e *Paths_Expecter) Views(path interface{}) *Paths_Views_Call {
+	return &Paths_Views_Call{Call: _e.mock.On("Views", path)}
+}
+
+func (_c *Paths_Views_Call) Run(run func(path string)) *Paths_Views_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Paths_Views_Call) Return(_a0 configuration.Paths) *Paths_Views_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Paths_Views_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Views_Call {
 	_c.Call.Return(run)
 	return _c
 }

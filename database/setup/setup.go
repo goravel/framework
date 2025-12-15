@@ -18,14 +18,16 @@ import (
 func main() {
 	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
-	modulePath := setup.ModulePath()
-	packageName := setup.PackageName()
+	moduleImport := setup.Paths().Module().Import()
+	configPackageName := setup.Paths().Config().Package()
+	facadesImport := setup.Paths().Facades().Import()
 	databaseConfigPath := path.Config("database.go")
 	dbFacadePath := path.Facades("db.go")
 	ormFacadePath := path.Facades("orm.go")
 	schemaFacadePath := path.Facades("schema.go")
 	seederFacadePath := path.Facades("seeder.go")
 	databaseServiceProvider := "&database.ServiceProvider{}"
+	facadesPackage := setup.Paths().Facades().Package()
 	env := `
 DB_HOST=
 DB_PORT=
@@ -37,7 +39,7 @@ DB_PASSWORD=
 	databaseConfigContent, err := file.GetContent(databaseConfigPath)
 	if err != nil {
 		// If the file does not exist, use the default content
-		databaseConfigContent = supportstubs.DatabaseConfig(packageName)
+		databaseConfigContent = supportstubs.DatabaseConfig(configPackageName, facadesImport, facadesPackage)
 	}
 
 	installConfigActionsFunc := func() []contractsmodify.Action {
@@ -70,24 +72,24 @@ DB_PASSWORD=
 
 	setup.Install(
 		// Create config/database.go
-		modify.WhenFileNotExists(databaseConfigPath, modify.File(databaseConfigPath).Overwrite(supportstubs.DatabaseConfig(packageName))),
+		modify.WhenFileNotExists(databaseConfigPath, modify.File(databaseConfigPath).Overwrite(supportstubs.DatabaseConfig(configPackageName, facadesImport, facadesPackage))),
 
 		// Add database configuration to config/database.go
 		modify.GoFile(databaseConfigPath).Find(match.Config("database")).Modify(installConfigActionsFunc()...),
 
 		// Add the database service provider to the providers array in bootstrap/providers.go
-		modify.AddProviderApply(modulePath, databaseServiceProvider),
+		modify.AddProviderApply(moduleImport, databaseServiceProvider),
 
 		// Register the DB, Orm, Schema and Seeder facades
-		modify.WhenFacade(facades.DB, modify.File(dbFacadePath).Overwrite(stubs.DBFacade())),
-		modify.WhenFacade(facades.Orm, modify.File(ormFacadePath).Overwrite(stubs.OrmFacade())),
+		modify.WhenFacade(facades.DB, modify.File(dbFacadePath).Overwrite(stubs.DBFacade(facadesPackage))),
+		modify.WhenFacade(facades.Orm, modify.File(ormFacadePath).Overwrite(stubs.OrmFacade(facadesPackage))),
 		modify.WhenFacade(facades.Schema,
 			// Register the Schema facade
-			modify.File(schemaFacadePath).Overwrite(stubs.SchemaFacade()),
+			modify.File(schemaFacadePath).Overwrite(stubs.SchemaFacade(facadesPackage)),
 		),
 		modify.WhenFacade(facades.Seeder,
 			// Register the Seeder facade
-			modify.File(seederFacadePath).Overwrite(stubs.SeederFacade()),
+			modify.File(seederFacadePath).Overwrite(stubs.SeederFacade(facadesPackage)),
 		),
 
 		// Add configurations to the .env and .env.example files
@@ -96,7 +98,7 @@ DB_PASSWORD=
 	).Uninstall(
 		modify.WhenNoFacades([]string{facades.DB, facades.Orm, facades.Schema, facades.Seeder},
 			// Remove the database service provider from the providers array in bootstrap/providers.go
-			modify.RemoveProviderApply(modulePath, databaseServiceProvider),
+			modify.RemoveProviderApply(moduleImport, databaseServiceProvider),
 
 			// Remove database configuration from config/database.go
 			modify.GoFile(databaseConfigPath).Find(match.Config("database")).Modify(uninstallConfigActionsFunc()...),
@@ -107,7 +109,7 @@ DB_PASSWORD=
 				if err != nil {
 					return false
 				}
-				return content == supportstubs.DatabaseConfig(packageName)
+				return content == supportstubs.DatabaseConfig(configPackageName, facadesImport, facadesPackage)
 			}, modify.File(databaseConfigPath).Remove()),
 		),
 

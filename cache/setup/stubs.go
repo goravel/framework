@@ -6,15 +6,15 @@ import (
 
 type Stubs struct{}
 
-func (s Stubs) Config(pkg, module string) string {
+func (s Stubs) Config(pkg, facadesImport, facadesPackage string) string {
 	content := `package DummyPackage
 
 import (
-	"DummyModule/app/facades"
+	"DummyFacadesImport"
 )
 
 func init() {
-	config := facades.Config()
+	config := DummyFacadesPackage.Config()
 	config.Add("cache", map[string]any{
 		// Default Cache Store
 		//
@@ -47,7 +47,8 @@ func init() {
 `
 
 	content = strings.ReplaceAll(content, "DummyPackage", pkg)
-	content = strings.ReplaceAll(content, "DummyModule", module)
+	content = strings.ReplaceAll(content, "DummyFacadesImport", facadesImport)
+	content = strings.ReplaceAll(content, "DummyFacadesPackage", facadesPackage)
 
 	return content
 }

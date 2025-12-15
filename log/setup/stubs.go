@@ -6,15 +6,15 @@ import (
 
 type Stubs struct{}
 
-func (s Stubs) Config(module string) string {
-	content := `package config
+func (s Stubs) Config(pkg, facadesImport, facadesPackage string) string {
+	content := `package DummyPackage
 
 import (
-	"DummyModule/app/facades"
+	"DummyFacadesImport"
 )
 
 func init() {
-	config := facades.Config()
+	config := DummyFacadesPackage.Config()
 	config.Add("logging", map[string]any{
 		// Default Log Channel
 		//
@@ -51,11 +51,15 @@ func init() {
 }
 `
 
-	return strings.ReplaceAll(content, "DummyModule", module)
+	content = strings.ReplaceAll(content, "DummyPackage", pkg)
+	content = strings.ReplaceAll(content, "DummyFacadesImport", facadesImport)
+	content = strings.ReplaceAll(content, "DummyFacadesPackage", facadesPackage)
+
+	return content
 }
 
-func (s Stubs) LogFacade() string {
-	return `package facades
+func (s Stubs) LogFacade(pkg string) string {
+	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/log"
@@ -65,4 +69,6 @@ func Log() log.Log {
 	return App().MakeLog()
 }
 `
+
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }

@@ -2,7 +2,6 @@ package console
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"runtime/debug"
 	"strings"
@@ -14,6 +13,7 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
+	"github.com/goravel/framework/support/path/internals"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -56,9 +56,10 @@ func (m *Make) GetName() string {
 }
 
 func (m *Make) GetFilePath() string {
-	pwd, _ := os.Getwd()
+	root := internals.ToSlice(m.root)
+	bootstrap := append(root, m.GetFolderPath(), str.Of(m.GetStructName()).Snake().String()+".go")
 
-	return filepath.Join(pwd, m.root, m.GetFolderPath(), str.Of(m.GetStructName()).Snake().String()+".go")
+	return internals.Abs(bootstrap...)
 }
 
 func (m *Make) GetSignature() string {

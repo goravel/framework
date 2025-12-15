@@ -11,9 +11,8 @@ func TestStubsView(t *testing.T) {
 	result := stubs.View()
 
 	assert.NotEmpty(t, result)
-	assert.Contains(t, result, "DummyPathName")
-	assert.Contains(t, result, "DummyPathDefinition")
-	assert.Contains(t, result, "DummyViewName")
+	assert.Contains(t, result, "DummyDefinition")
+	assert.Contains(t, result, "<h1>Welcome</h1>")
 	assert.Contains(t, result, "{{ define")
 	assert.Contains(t, result, "{{ end }}")
 }

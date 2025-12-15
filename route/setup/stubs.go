@@ -4,8 +4,8 @@ import "strings"
 
 type Stubs struct{}
 
-func (s Stubs) RouteFacade() string {
-	return `package facades
+func (s Stubs) RouteFacade(pkg string) string {
+	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/route"
@@ -15,20 +15,22 @@ func Route() route.Route {
 	return App().MakeRoute()
 }
 `
+
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }
 
-func (s Stubs) Routes(module string) string {
-	content := `package routes
+func (s Stubs) Routes(pkg, facadesImport, facadesPackage string) string {
+	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/support"
 
-	"DummyModule/app/facades"
+	"DummyFacadesImport"
 )
 
 func Web() {
-	facades.Route().Get("/", func(ctx http.Context) http.Response {
+	DummyFacadesPackage.Route().Get("/", func(ctx http.Context) http.Response {
 		return ctx.Response().View().Make("welcome.tmpl", map[string]any{
 			"version": support.Version,
 		})
@@ -36,7 +38,11 @@ func Web() {
 }
 `
 
-	return strings.ReplaceAll(content, "DummyModule", module)
+	content = strings.ReplaceAll(content, "DummyPackage", pkg)
+	content = strings.ReplaceAll(content, "DummyFacadesImport", facadesImport)
+	content = strings.ReplaceAll(content, "DummyFacadesPackage", facadesPackage)
+
+	return content
 }
 
 func (s Stubs) WelcomeTmpl() string {

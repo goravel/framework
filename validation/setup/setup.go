@@ -3,7 +3,6 @@ package main
 import (
 	"os"
 
-	"github.com/goravel/framework/contracts/facades"
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support/path"
@@ -14,19 +13,17 @@ func main() {
 	stubs := Stubs{}
 	validationFacadePath := path.Facades("validation.go")
 	validationServiceProvider := "&validation.ServiceProvider{}"
-	modulePath := setup.ModulePath()
+	moduleImport := setup.Paths().Module().Import()
 
 	setup.Install(
 		// Add the validation service provider to the providers array in bootstrap/providers.go
-		modify.AddProviderApply(modulePath, validationServiceProvider),
+		modify.AddProviderApply(moduleImport, validationServiceProvider),
 
 		// Add the Validation facade
-		modify.File(validationFacadePath).Overwrite(stubs.ValidationFacade()),
+		modify.File(validationFacadePath).Overwrite(stubs.ValidationFacade(setup.Paths().Facades().Package())),
 	).Uninstall(
-		modify.WhenNoFacades([]string{facades.Validation},
-			// Remove the validation service provider from the providers array in bootstrap/providers.go
-			modify.RemoveProviderApply(modulePath, validationServiceProvider),
-		),
+		// Remove the validation service provider from the providers array in bootstrap/providers.go
+		modify.RemoveProviderApply(moduleImport, validationServiceProvider),
 
 		// Remove the Validation facade
 		modify.File(validationFacadePath).Remove(),

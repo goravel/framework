@@ -13,17 +13,17 @@ func main() {
 	stubs := Stubs{}
 	langFacadePath := path.Facades("lang.go")
 	translationServiceProvider := "&translation.ServiceProvider{}"
-	modulePath := setup.ModulePath()
+	moduleImport := setup.Paths().Module().Import()
 
 	setup.Install(
 		// Add the translation service provider to the providers array in bootstrap/providers.go
-		modify.AddProviderApply(modulePath, translationServiceProvider),
+		modify.AddProviderApply(moduleImport, translationServiceProvider),
 
 		// Add the Lang facade
-		modify.File(langFacadePath).Overwrite(stubs.LangFacade()),
+		modify.File(langFacadePath).Overwrite(stubs.LangFacade(setup.Paths().Facades().Package())),
 	).Uninstall(
 		// Remove the translation service provider from the providers array in bootstrap/providers.go
-		modify.RemoveProviderApply(modulePath, translationServiceProvider),
+		modify.RemoveProviderApply(moduleImport, translationServiceProvider),
 
 		// Remove the Lang facade
 		modify.File(langFacadePath).Remove(),

@@ -13,19 +13,19 @@ func main() {
 	stubs := Stubs{}
 	eventFacadePath := path.Facades("event.go")
 	eventServiceProvider := "&event.ServiceProvider{}"
-	modulePath := setup.ModulePath()
+	moduleImport := setup.Paths().Module().Import()
 
 	setup.Install(
 		// Add the event service provider to the providers array in bootstrap/providers.go
-		modify.AddProviderApply(modulePath, eventServiceProvider),
+		modify.AddProviderApply(moduleImport, eventServiceProvider),
 
 		// Add the Event facade.
-		modify.File(eventFacadePath).Overwrite(stubs.EventFacade()),
+		modify.File(eventFacadePath).Overwrite(stubs.EventFacade(setup.Paths().Facades().Package())),
 	).Uninstall(
 		// Remove the Event facade and service provider.
 		modify.File(eventFacadePath).Remove(),
 
 		// Remove the event service provider from the providers array in bootstrap/providers.go
-		modify.RemoveProviderApply(modulePath, eventServiceProvider),
+		modify.RemoveProviderApply(moduleImport, eventServiceProvider),
 	).Execute()
 }

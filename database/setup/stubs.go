@@ -1,5 +1,9 @@
 package main
 
+import (
+	"strings"
+)
+
 type Config struct {
 	Key         string
 	Value       string
@@ -135,8 +139,8 @@ func (s Stubs) Config() []Config {
 
 }
 
-func (s Stubs) DBFacade() string {
-	return `package facades
+func (s Stubs) DBFacade(pkg string) string {
+	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/database/db"
@@ -146,10 +150,12 @@ func DB() db.DB {
 	return App().MakeDB()
 }
 `
+
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }
 
-func (s Stubs) OrmFacade() string {
-	return `package facades
+func (s Stubs) OrmFacade(pkg string) string {
+	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/database/orm"
@@ -159,10 +165,12 @@ func Orm() orm.Orm {
 	return App().MakeOrm()
 }
 `
+
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }
 
-func (s Stubs) SchemaFacade() string {
-	return `package facades
+func (s Stubs) SchemaFacade(pkg string) string {
+	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/database/schema"
@@ -172,10 +180,12 @@ func Schema() schema.Schema {
 	return App().MakeSchema()
 }
 `
+
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }
 
-func (s Stubs) SeederFacade() string {
-	return `package facades
+func (s Stubs) SeederFacade(pkg string) string {
+	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/database/seeder"
@@ -185,25 +195,6 @@ func Seeder() seeder.Facade {
 	return App().MakeSeeder()
 }
 `
-}
 
-func (s Stubs) Kernel() string {
-	return `package database
-
-import (
-	"github.com/goravel/framework/contracts/database/schema"
-	"github.com/goravel/framework/contracts/database/seeder"
-)
-
-type Kernel struct {
-}
-
-func (kernel Kernel) Migrations() []schema.Migration {
-	return []schema.Migration{}
-}
-
-func (kernel Kernel) Seeders() []seeder.Seeder {
-	return []seeder.Seeder{}
-}
-`
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }

@@ -15,19 +15,20 @@ func main() {
 	authConfigPath := path.Config("auth.go")
 	authFacadePath := path.Facades("auth.go")
 	gateFacadePath := path.Facades("gate.go")
-	modulePath := setup.ModulePath()
+	modulePath := setup.Paths().Module().Import()
 	authServiceProvider := "&auth.ServiceProvider{}"
+	facadesPackage := setup.Paths().Facades().Package()
 
 	setup.Install(
 		// Add the auth service provider to the providers array in bootstrap/providers.go
 		modify.AddProviderApply(modulePath, authServiceProvider),
 
 		// Create config/auth.go
-		modify.File(authConfigPath).Overwrite(stubs.Config(setup.PackageName())),
+		modify.File(authConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Facades().Import(), facadesPackage)),
 
 		// Add the Auth and Gate facades
-		modify.WhenFacade(facades.Auth, modify.File(authFacadePath).Overwrite(stubs.AuthFacade())),
-		modify.WhenFacade(facades.Gate, modify.File(gateFacadePath).Overwrite(stubs.GateFacade())),
+		modify.WhenFacade(facades.Auth, modify.File(authFacadePath).Overwrite(stubs.AuthFacade(facadesPackage))),
+		modify.WhenFacade(facades.Gate, modify.File(gateFacadePath).Overwrite(stubs.GateFacade(facadesPackage))),
 	).Uninstall(
 		modify.WhenNoFacades([]string{facades.Auth, facades.Gate},
 			// Remove config/auth.go

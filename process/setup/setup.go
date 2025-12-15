@@ -12,18 +12,18 @@ func main() {
 	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
 	processFacadePath := path.Facades("process.go")
-	modulePath := setup.ModulePath()
+	moduleImport := setup.Paths().Module().Import()
 	processServiceProvider := "&process.ServiceProvider{}"
 
 	setup.Install(
 		// Add the process service provider to the providers array in bootstrap/providers.go
-		modify.AddProviderApply(modulePath, processServiceProvider),
+		modify.AddProviderApply(moduleImport, processServiceProvider),
 
 		// Add the Process facade
-		modify.File(processFacadePath).Overwrite(stubs.ProcessFacade()),
+		modify.File(processFacadePath).Overwrite(stubs.ProcessFacade(setup.Paths().Facades().Package())),
 	).Uninstall(
 		// Remove the process service provider from the providers array in bootstrap/providers.go
-		modify.RemoveProviderApply(modulePath, processServiceProvider),
+		modify.RemoveProviderApply(moduleImport, processServiceProvider),
 
 		// Remove the Process facade
 		modify.File(processFacadePath).Remove(),
