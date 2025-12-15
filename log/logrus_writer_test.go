@@ -580,29 +580,51 @@ func (h *CustomHandler) Enabled(ctx context.Context, level slog.Level) bool {
 }
 
 func (h *CustomHandler) Handle(ctx context.Context, record slog.Record) error {
-	// Extract entry from record
-	entry := createEntryFromRecord(ctx, record)
+	// Extract attributes directly from slog.Record
+	var filename string
+	var code string
+	var user any
+	var level logcontracts.Level
 	
-	with := entry.With()
-	filename, ok := with["filename"]
-	if ok {
+	// Get level
+	level = logcontracts.FromSlog(record.Level)
+	
+	// Extract attributes
+	record.Attrs(func(a slog.Attr) bool {
+		if a.Key == "root" {
+			if rootMap, ok := a.Value.Any().(map[string]any); ok {
+				if with, ok := rootMap["with"].(map[string]any); ok {
+					if fn, ok := with["filename"]; ok {
+						filename = cast.ToString(fn)
+					}
+				}
+				if c, ok := rootMap["code"]; ok {
+					code = cast.ToString(c)
+				}
+				if u, ok := rootMap["user"]; ok {
+					user = u
+				}
+			}
+		}
+		return true
+	})
+	
+	if filename != "" {
 		var builder strings.Builder
-		message := entry.Message()
+		message := record.Message
 		if len(message) > 0 {
-			builder.WriteString(fmt.Sprintf("%s: %v\n", entry.Level(), message))
+			builder.WriteString(fmt.Sprintf("%s: %v\n", level, message))
 		}
 
-		code := entry.Code()
 		if len(code) > 0 {
 			builder.WriteString(fmt.Sprintf("custom_code: %v\n", code))
 		}
 
-		user := entry.User()
 		if user != nil {
 			builder.WriteString(fmt.Sprintf("custom_user: %v\n", user))
 		}
 
-		err := file.PutContent(cast.ToString(filename), builder.String())
+		err := file.PutContent(filename, builder.String())
 		if err != nil {
 			return err
 		}

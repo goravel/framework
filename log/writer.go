@@ -18,6 +18,12 @@ import (
 	"github.com/goravel/framework/log/logger"
 )
 
+// Custom slog levels for Fatal and Panic
+const (
+	FatalSlogLevel slog.Level = 12 // Between Error (8) and Panic (16)
+	PanicSlogLevel slog.Level = 16 // Higher than Fatal
+)
+
 type Writer struct {
 	owner        any
 	request      http.ContextRequest
@@ -90,27 +96,27 @@ func (r *Writer) Errorf(format string, args ...any) {
 
 func (r *Writer) Fatal(args ...any) {
 	r.withStackTrace(fmt.Sprint(args...))
-	r.instance.LogAttrs(r.ctx, slog.Level(12), fmt.Sprint(args...), slog.Any("root", r.toMap()))
+	r.instance.LogAttrs(r.ctx, FatalSlogLevel, fmt.Sprint(args...), slog.Any("root", r.toMap()))
 	os.Exit(1)
 }
 
 func (r *Writer) Fatalf(format string, args ...any) {
 	r.withStackTrace(fmt.Sprintf(format, args...))
-	r.instance.LogAttrs(r.ctx, slog.Level(12), fmt.Sprintf(format, args...), slog.Any("root", r.toMap()))
+	r.instance.LogAttrs(r.ctx, FatalSlogLevel, fmt.Sprintf(format, args...), slog.Any("root", r.toMap()))
 	os.Exit(1)
 }
 
 func (r *Writer) Panic(args ...any) {
 	r.withStackTrace(fmt.Sprint(args...))
 	msg := fmt.Sprint(args...)
-	r.instance.LogAttrs(r.ctx, slog.Level(12), msg, slog.Any("root", r.toMap()))
+	r.instance.LogAttrs(r.ctx, PanicSlogLevel, msg, slog.Any("root", r.toMap()))
 	panic(msg)
 }
 
 func (r *Writer) Panicf(format string, args ...any) {
 	r.withStackTrace(fmt.Sprintf(format, args...))
 	msg := fmt.Sprintf(format, args...)
-	r.instance.LogAttrs(r.ctx, slog.Level(12), msg, slog.Any("root", r.toMap()))
+	r.instance.LogAttrs(r.ctx, PanicSlogLevel, msg, slog.Any("root", r.toMap()))
 	panic(msg)
 }
 
