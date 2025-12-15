@@ -16,6 +16,7 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/log/formatter"
 	"github.com/goravel/framework/log/logger"
+	telemetrylog "github.com/goravel/framework/telemetry/instrumentation/log"
 )
 
 func NewLogrus() *logrus.Logger {
@@ -321,6 +322,13 @@ func registerHook(config config.Config, json foundation.Json, instance *logrus.L
 			instance.SetOutput(os.Stdout)
 			instance.SetFormatter(formatter.NewGeneral(config, json))
 		}
+	case log.OtelDriver:
+		logLogger := telemetrylog.NewTelemetryChannel()
+		logHook, err := logLogger.Handle(channelPath)
+		if err != nil {
+			return err
+		}
+		hook = &Hook{logHook}
 	case log.CustomDriver:
 		logLogger := config.Get(channelPath + ".via").(log.Logger)
 		logHook, err := logLogger.Handle(channelPath)

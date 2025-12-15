@@ -11,6 +11,7 @@ const (
 	StackDriver  = "stack"
 	SingleDriver = "single"
 	DailyDriver  = "daily"
+	OtelDriver   = "otel"
 	CustomDriver = "custom"
 )
 
