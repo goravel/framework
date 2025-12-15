@@ -49,7 +49,8 @@ func TestHookFire(t *testing.T) {
 	const loggerName = "test-logger"
 	now := time.Date(2024, 1, 1, 10, 0, 0, 0, time.UTC)
 
-	ctx := context.WithValue(context.Background(), "request_id", "req-123")
+	type ctxKey string
+	ctx := context.WithValue(context.Background(), ctxKey("request_id"), "req-123")
 
 	tests := []struct {
 		name    string
