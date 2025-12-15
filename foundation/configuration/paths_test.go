@@ -177,6 +177,12 @@ func (s *PathsTestSuite) TestResources() {
 	s.Equal(s.paths, result)
 }
 
+func (s *PathsTestSuite) TestRoutes() {
+	result := s.paths.Routes("custom/routes")
+	s.Equal("custom/routes", support.Config.Paths.Routes)
+	s.Equal(s.paths, result)
+}
+
 func (s *PathsTestSuite) TestRules() {
 	result := s.paths.Rules("custom/rules")
 	s.Equal("custom/rules", support.Config.Paths.Rules)
@@ -198,6 +204,12 @@ func (s *PathsTestSuite) TestStorage() {
 func (s *PathsTestSuite) TestTests() {
 	result := s.paths.Tests("custom/tests")
 	s.Equal("custom/tests", support.Config.Paths.Tests)
+	s.Equal(s.paths, result)
+}
+
+func (s *PathsTestSuite) TestViews() {
+	result := s.paths.Views("custom/views")
+	s.Equal("custom/views", support.Config.Paths.Views)
 	s.Equal(s.paths, result)
 }
 

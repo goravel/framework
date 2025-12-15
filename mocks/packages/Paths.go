@@ -208,6 +208,53 @@ func (_c *Paths_Main_Call) RunAndReturn(run func() packages.Path) *Paths_Main_Ca
 	return _c
 }
 
+// Migrations provides a mock function with no fields
+func (_m *Paths) Migrations() packages.Path {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Migrations")
+	}
+
+	var r0 packages.Path
+	if rf, ok := ret.Get(0).(func() packages.Path); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(packages.Path)
+		}
+	}
+
+	return r0
+}
+
+// Paths_Migrations_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Migrations'
+type Paths_Migrations_Call struct {
+	*mock.Call
+}
+
+// Migrations is a helper method to define mock.On call
+func (_e *Paths_Expecter) Migrations() *Paths_Migrations_Call {
+	return &Paths_Migrations_Call{Call: _e.mock.On("Migrations")}
+}
+
+func (_c *Paths_Migrations_Call) Run(run func()) *Paths_Migrations_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Paths_Migrations_Call) Return(_a0 packages.Path) *Paths_Migrations_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Paths_Migrations_Call) RunAndReturn(run func() packages.Path) *Paths_Migrations_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Module provides a mock function with no fields
 func (_m *Paths) Module() packages.Path {
 	ret := _m.Called()

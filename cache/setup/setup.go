@@ -15,16 +15,17 @@ func main() {
 	cacheFacadePath := path.Facades("cache.go")
 	cacheServiceProvider := "&cache.ServiceProvider{}"
 	moduleImport := setup.Paths().Module().Import()
+	facadesPackage := setup.Paths().Facades().Package()
 
 	setup.Install(
 		// Add the cache service provider to the providers array in bootstrap/providers.go
 		modify.AddProviderApply(moduleImport, cacheServiceProvider),
 
 		// Create config/cache.go
-		modify.File(cacheConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Main().Package())),
+		modify.File(cacheConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Facades().Import(), facadesPackage)),
 
 		// Add the Cache facade
-		modify.File(cacheFacadePath).Overwrite(stubs.CacheFacade(setup.Paths().Facades().Package())),
+		modify.File(cacheFacadePath).Overwrite(stubs.CacheFacade(facadesPackage)),
 	).Uninstall(
 		// Remove config/cache.go
 		modify.File(cacheConfigPath).Remove(),

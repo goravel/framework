@@ -15,16 +15,17 @@ func main() {
 	storageFacadePath := path.Facades("storage.go")
 	filesystemServiceProvider := "&filesystem.ServiceProvider{}"
 	moduleImport := setup.Paths().Module().Import()
+	facadesPackage := setup.Paths().Facades().Package()
 
 	setup.Install(
 		// Add the filesystem service provider to the providers array in bootstrap/providers.go
 		modify.AddProviderApply(moduleImport, filesystemServiceProvider),
 
 		// Create config/filesystems.go
-		modify.File(storageConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Main().Package())),
+		modify.File(storageConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Facades().Import(), facadesPackage)),
 
 		// Add the Storage facade
-		modify.File(storageFacadePath).Overwrite(stubs.StorageFacade(setup.Paths().Facades().Package())),
+		modify.File(storageFacadePath).Overwrite(stubs.StorageFacade(facadesPackage)),
 	).Uninstall(
 		// Remove config/filesystems.go
 		modify.File(storageConfigPath).Remove(),

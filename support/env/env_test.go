@@ -6,6 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPackageName(t *testing.T) {
-	assert.Equal(t, "github.com/goravel/framework", PackageName())
+func TestMainPath(t *testing.T) {
+	assert.Equal(t, "github.com/goravel/framework", MainPath())
 }

@@ -6,17 +6,15 @@ import (
 
 type Stubs struct{}
 
-func (s Stubs) Config(pkg, facadesImport string) string {
+func (s Stubs) Config(pkg, facadesImport, facadesPackage string) string {
 	content := `package DummyPackage
 
 import (
-    "time"
-
 	"DummyFacadesImport"
 )
 
 func init() {
-	config := facades.Config()
+	config := DummyFacadesPackage.Config()
 	config.Add("telemetry", map[string]any{
 		// Service Identification
 		//
@@ -204,6 +202,7 @@ func init() {
 
 	content = strings.ReplaceAll(content, "DummyPackage", pkg)
 	content = strings.ReplaceAll(content, "DummyFacadesImport", facadesImport)
+	content = strings.ReplaceAll(content, "DummyFacadesPackage", facadesPackage)
 
 	return content
 }
