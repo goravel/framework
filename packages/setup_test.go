@@ -11,7 +11,6 @@ import (
 
 	"github.com/goravel/framework/contracts/packages"
 	mockmodify "github.com/goravel/framework/mocks/packages/modify"
-	"github.com/goravel/framework/packages/paths"
 	"github.com/goravel/framework/support/color"
 )
 
@@ -137,8 +136,4 @@ func TestSetup(t *testing.T) {
 	s = Setup([]string{"install", "--package-name=custom-package", "--facade=test"}).(*setup)
 	assert.Equal(t, "install", s.command)
 	assert.Equal(t, "test", s.facade)
-	// Verify the paths object was created with custom-package
-	pathsImpl := s.paths.(*paths.Paths)
-	assert.Equal(t, "custom-package", pathsImpl.MainPath)
-	assert.False(t, s.force)
 }

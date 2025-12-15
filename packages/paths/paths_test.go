@@ -50,7 +50,7 @@ func (s *PathsTestSuite) TestNewPaths() {
 		s.Run(tt.name, func() {
 			paths := NewPaths(tt.mainPath)
 			s.NotNil(paths)
-			s.Equal(tt.mainPath, paths.MainPath)
+			s.Equal(tt.mainPath, paths.mainPath)
 		})
 	}
 }

@@ -11,35 +11,35 @@ import (
 )
 
 type Paths struct {
-	MainPath string
+	mainPath string
 }
 
-func NewPaths(main string) *Paths {
-	return &Paths{MainPath: main}
+func NewPaths(mainPath string) *Paths {
+	return &Paths{mainPath: mainPath}
 }
 
 // Bootstrap returns the bootstrap package path, eg: goravel/bootstrap.
 func (r *Paths) Bootstrap() packages.Path {
-	return NewPath(support.Config.Paths.Bootstrap, r.MainPath, false)
+	return NewPath(support.Config.Paths.Bootstrap, r.mainPath, false)
 }
 
 // Config returns the config package path, eg: goravel/config.
 func (r *Paths) Config() packages.Path {
-	return NewPath(support.Config.Paths.Config, r.MainPath, false)
+	return NewPath(support.Config.Paths.Config, r.mainPath, false)
 }
 
 // Facades returns the facades package path, eg: goravel/app/facades.
 func (r *Paths) Facades() packages.Path {
-	return NewPath(support.Config.Paths.Facades, r.MainPath, false)
+	return NewPath(support.Config.Paths.Facades, r.mainPath, false)
 }
 
 // Main returns the main package path, eg: github.com/goravel/goravel.
 func (r *Paths) Main() packages.Path {
-	return NewPath(r.MainPath, r.MainPath, false)
+	return NewPath(r.mainPath, r.mainPath, false)
 }
 
 func (r *Paths) Migrations() packages.Path {
-	return NewPath(support.Config.Paths.Migrations, r.MainPath, false)
+	return NewPath(support.Config.Paths.Migrations, r.mainPath, false)
 }
 
 // Module returns the module path of the package, eg: github.com/goravel/framework/auth.
@@ -49,17 +49,17 @@ func (r *Paths) Module() packages.Path {
 		p = path.Dir(info.Path)
 	}
 
-	return NewPath(p, r.MainPath, true)
+	return NewPath(p, r.mainPath, true)
 }
 
 // Routes returns the routes package path, eg: goravel/routes.
 func (r *Paths) Routes() packages.Path {
-	return NewPath(support.Config.Paths.Routes, r.MainPath, false)
+	return NewPath(support.Config.Paths.Routes, r.mainPath, false)
 }
 
 // Tests returns the tests package path, eg: goravel/tests.
 func (r *Paths) Tests() packages.Path {
-	return NewPath(support.Config.Paths.Tests, r.MainPath, false)
+	return NewPath(support.Config.Paths.Tests, r.mainPath, false)
 }
 
 type Path struct {
