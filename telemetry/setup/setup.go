@@ -4,26 +4,57 @@ import (
 	"os"
 
 	"github.com/goravel/framework/packages"
+	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support/path"
 )
 
 func main() {
+	const (
+		fileTelemetryConfig = "telemetry.go"
+		fileLoggingConfig   = "logging.go"
+		providerTelemetry   = "&telemetry.ServiceProvider{}"
+		importLog           = "github.com/goravel/framework/telemetry/instrumentation/log"
+		aliasLog            = "telemetrylog"
+		keyLoggingChannels  = "logging.channels"
+		keyOtel             = "otel"
+		configSnippetOtel   = `map[string]any{
+		"driver": "custom",
+		"via":    telemetrylog.NewTelemetryChannel(),
+	}`
+	)
+
 	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
-	telemetryConfigPath := path.Config("telemetry.go")
-	telemetryFacadePath := path.Facades("telemetry.go")
-	telemetryServiceProvider := "&telemetry.ServiceProvider{}"
-	modulePath := setup.Paths().Module().Import()
-	facadesPackage := setup.Paths().Facades().Package()
+	paths := setup.Paths()
+
+	pathConfigTelemetry := path.Config(fileTelemetryConfig)
+	pathFacadesTelemetry := path.Facades(fileTelemetryConfig)
+	pathConfigLogging := path.Config(fileLoggingConfig)
+
+	importModule := paths.Module().Import()
+	packageFacades := paths.Facades().Package()
+
+	matchLoggingChannels := match.Config(keyLoggingChannels)
+	matchImports := match.Imports()
 
 	setup.Install(
-		modify.AddProviderApply(modulePath, telemetryServiceProvider),
-		modify.File(telemetryConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Facades().Import(), facadesPackage)),
-		modify.File(telemetryFacadePath).Overwrite(stubs.TelemetryFacade(facadesPackage)),
+		modify.AddProviderApply(importModule, providerTelemetry),
+		modify.File(pathConfigTelemetry).Overwrite(stubs.Config(paths.Config().Package(), paths.Facades().Import(), packageFacades)),
+		modify.File(pathFacadesTelemetry).Overwrite(stubs.TelemetryFacade(packageFacades)),
+		modify.GoFile(pathConfigLogging).
+			Find(matchImports).
+			Modify(modify.AddImport(importLog, aliasLog)).
+			Find(matchLoggingChannels).
+			Modify(modify.AddConfig(keyOtel, configSnippetOtel)),
 	).Uninstall(
-		modify.File(telemetryConfigPath).Remove(),
-		modify.File(telemetryFacadePath).Remove(),
-		modify.RemoveProviderApply(modulePath, telemetryServiceProvider),
+		modify.File(pathConfigTelemetry).Remove(),
+		modify.File(pathFacadesTelemetry).Remove(),
+		modify.RemoveProviderApply(importModule, providerTelemetry),
+		modify.GoFile(pathConfigLogging).
+			Find(matchLoggingChannels).
+			Modify(modify.RemoveConfig(keyOtel)).
+			Find(matchImports).
+			Modify(modify.RemoveImport(importLog, aliasLog)),
 	).Execute()
 }
