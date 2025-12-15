@@ -11,7 +11,7 @@ import (
 func main() {
 	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
-	langFacadePath := path.Facades("lang.go")
+	langFacadePath := path.Facade("lang.go")
 	translationServiceProvider := "&translation.ServiceProvider{}"
 	moduleImport := setup.Paths().Module().Import()
 

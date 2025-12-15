@@ -107,6 +107,65 @@ func (_c *Path_Package_Call) RunAndReturn(run func() string) *Path_Package_Call 
 	return _c
 }
 
+// String provides a mock function with given fields: paths
+func (_m *Path) String(paths ...string) string {
+	_va := make([]interface{}, len(paths))
+	for _i := range paths {
+		_va[_i] = paths[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for String")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(...string) string); ok {
+		r0 = rf(paths...)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Path_String_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'String'
+type Path_String_Call struct {
+	*mock.Call
+}
+
+// String is a helper method to define mock.On call
+//   - paths ...string
+func (_e *Path_Expecter) String(paths ...interface{}) *Path_String_Call {
+	return &Path_String_Call{Call: _e.mock.On("String",
+		append([]interface{}{}, paths...)...)}
+}
+
+func (_c *Path_String_Call) Run(run func(paths ...string)) *Path_String_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Path_String_Call) Return(_a0 string) *Path_String_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Path_String_Call) RunAndReturn(run func(...string) string) *Path_String_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewPath creates a new instance of Path. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewPath(t interface {

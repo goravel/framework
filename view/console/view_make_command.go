@@ -1,16 +1,14 @@
 package console
 
 import (
-	"path/filepath"
 	"strings"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/file"
-	"github.com/goravel/framework/support/path/internals"
+	"github.com/goravel/framework/support/path"
 )
 
 const (
@@ -67,8 +65,7 @@ func (r *ViewMakeCommand) Handle(ctx console.Context) error {
 		viewName = viewName + viewExtension
 	}
 
-	viewPath := internals.ToSlice(support.Config.Paths.Views)
-	filePath := filepath.Join(append(viewPath, viewName)...)
+	filePath := path.View(viewName)
 
 	// Check if file already exists
 	if file.Exists(filePath) && !ctx.OptionBool("force") {

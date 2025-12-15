@@ -15,7 +15,7 @@ func main() {
 	stubs := Stubs{}
 	queueFacade := "Queue"
 	databaseDriver := "database"
-	queueFacadePath := path.Facades("queue.go")
+	queueFacadePath := path.Facade("queue.go")
 	queueConfigPath := path.Config("queue.go")
 	queueServiceProvider := "&queue.ServiceProvider{}"
 	moduleImport := setup.Paths().Module().Import()

@@ -11,7 +11,7 @@ import (
 func main() {
 	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
-	eventFacadePath := path.Facades("event.go")
+	eventFacadePath := path.Facade("event.go")
 	eventServiceProvider := "&event.ServiceProvider{}"
 	moduleImport := setup.Paths().Module().Import()
 

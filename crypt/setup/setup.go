@@ -11,7 +11,7 @@ import (
 func main() {
 	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
-	cryptFacadePath := path.Facades("crypt.go")
+	cryptFacadePath := path.Facade("crypt.go")
 	cryptServiceProvider := "&crypt.ServiceProvider{}"
 	moduleImport := setup.Paths().Module().Import()
 

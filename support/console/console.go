@@ -13,7 +13,6 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
-	"github.com/goravel/framework/support/path/internals"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -56,10 +55,14 @@ func (m *Make) GetName() string {
 }
 
 func (m *Make) GetFilePath() string {
-	root := internals.ToSlice(m.root)
-	bootstrap := append(root, m.GetFolderPath(), str.Of(m.GetStructName()).Snake().String()+".go")
-
-	return internals.Abs(bootstrap...)
+	root := strings.Split(m.root, "/")
+	paths := append(root, m.GetFolderPath(), str.Of(m.GetStructName()).Snake().String()+".go")
+	path := filepath.Join(paths...)
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return path
+	}
+	return abs
 }
 
 func (m *Make) GetSignature() string {

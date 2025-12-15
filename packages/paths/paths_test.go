@@ -2,9 +2,11 @@ package paths
 
 import (
 	"path"
+	"path/filepath"
 	"runtime/debug"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/support"
@@ -458,6 +460,116 @@ func (s *PathTestSuite) TestPathWithDifferentMainPaths() {
 			p := NewPath(tt.subPath, tt.mainPath, false)
 			s.Equal(tt.expectedPkg, p.Package())
 			s.Equal(tt.expectedImpt, p.Import())
+		})
+	}
+}
+
+func TestAbs(t *testing.T) {
+	tests := []struct {
+		name          string
+		relativePath  string
+		paths         []string
+		expectContain string
+	}{
+		{
+			name:          "single path",
+			relativePath:  ".",
+			paths:         []string{"test.txt"},
+			expectContain: "test.txt",
+		},
+		{
+			name:          "multiple paths",
+			relativePath:  ".",
+			paths:         []string{"app", "controllers", "user.go"},
+			expectContain: filepath.Join("app", "controllers", "user.go"),
+		},
+		{
+			name:          "empty paths",
+			relativePath:  ".",
+			paths:         []string{},
+			expectContain: "",
+		},
+		{
+			name:          "nested paths",
+			relativePath:  ".",
+			paths:         []string{"foo", "bar", "baz", "file.txt"},
+			expectContain: filepath.Join("foo", "bar", "baz", "file.txt"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			support.RelativePath = tt.relativePath
+			result := Abs(tt.paths...)
+
+			// The result should be an absolute path
+			assert.True(t, filepath.IsAbs(result))
+
+			// The result should contain the expected path components
+			if tt.expectContain != "" {
+				assert.Contains(t, result, tt.expectContain)
+			}
+		})
+	}
+}
+
+func TestToSlice(t *testing.T) {
+	tests := []struct {
+		name     string
+		path     string
+		expected []string
+	}{
+		{
+			name:     "Simple path with forward slashes",
+			path:     "app/http/controllers",
+			expected: []string{"app", "http", "controllers"},
+		},
+		{
+			name:     "Windows path with backslashes",
+			path:     "app\\http\\controllers",
+			expected: []string{"app", "http", "controllers"},
+		},
+		{
+			name:     "Path with leading and trailing slashes",
+			path:     "/app/http/controllers/",
+			expected: []string{"app", "http", "controllers"},
+		},
+		{
+			name:     "Mixed slashes with leading and trailing",
+			path:     "\\app\\http\\controllers\\",
+			expected: []string{"app", "http", "controllers"},
+		},
+		{
+			name:     "Single directory",
+			path:     "app",
+			expected: []string{"app"},
+		},
+		{
+			name:     "Deep nested path",
+			path:     "app/http/controllers/api/v1/users",
+			expected: []string{"app", "http", "controllers", "api", "v1", "users"},
+		},
+		{
+			name:     "Empty string",
+			path:     "",
+			expected: nil,
+		},
+		{
+			name:     "Root forward slash",
+			path:     "/",
+			expected: nil,
+		},
+		{
+			name:     "Root backslash",
+			path:     "\\",
+			expected: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := toSlice(tt.path)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
