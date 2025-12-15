@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log/slog"
 	nethttp "net/http"
 	"os"
 	"os/exec"
 	"strings"
 	"testing"
 
-	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
 
 	contractshttp "github.com/goravel/framework/contracts/http"
@@ -26,7 +26,7 @@ var (
 	dailyLog  = fmt.Sprintf("storage/logs/goravel-%s.log", carbon.Now().ToDateString())
 )
 
-func TestLogrus(t *testing.T) {
+func TestWriter(t *testing.T) {
 	var (
 		mockConfig *configmock.Config
 		log        *Application
@@ -390,7 +390,7 @@ func TestLogrus(t *testing.T) {
 	_ = file.Remove("storage")
 }
 
-func TestLogrusWithCustomLogger(t *testing.T) {
+func TestWriterWithCustomLogger(t *testing.T) {
 	mockConfig := configmock.NewConfig(t)
 	mockConfig.EXPECT().GetString("logging.default").Return("customLogger").Once()
 	mockConfig.EXPECT().GetString("logging.channels.customLogger.driver").Return("custom").Twice()
@@ -418,7 +418,7 @@ func TestLogrusWithCustomLogger(t *testing.T) {
 	assert.Nil(t, file.Remove(filename))
 }
 
-func TestLogrus_Fatal(t *testing.T) {
+func TestWriter_Fatal(t *testing.T) {
 	mockConfig := initMockConfig()
 	mockDriverConfig(mockConfig)
 	log, err := NewApplication(mockConfig, json.New())
@@ -429,7 +429,7 @@ func TestLogrus_Fatal(t *testing.T) {
 		log.Fatal("Goravel")
 		return
 	}
-	cmd := exec.Command(os.Args[0], "-test.run=TestLogrus_Fatal")
+	cmd := exec.Command(os.Args[0], "-test.run=TestWriter_Fatal")
 	cmd.Env = append(os.Environ(), "FATAL=1")
 	err = cmd.Run()
 
@@ -440,7 +440,7 @@ func TestLogrus_Fatal(t *testing.T) {
 	_ = file.Remove("storage")
 }
 
-func TestLogrus_Fatalf(t *testing.T) {
+func TestWriter_Fatalf(t *testing.T) {
 	mockConfig := initMockConfig()
 	mockDriverConfig(mockConfig)
 	log, err := NewApplication(mockConfig, json.New())
@@ -451,7 +451,7 @@ func TestLogrus_Fatalf(t *testing.T) {
 		log.Fatalf("Goravel")
 		return
 	}
-	cmd := exec.Command(os.Args[0], "-test.run=TestLogrus_Fatal")
+	cmd := exec.Command(os.Args[0], "-test.run=TestWriter_Fatal")
 	cmd.Env = append(os.Environ(), "FATAL=1")
 	err = cmd.Run()
 
@@ -560,51 +560,131 @@ func initMockConfig() *configmock.Config {
 func mockDriverConfig(mockConfig *configmock.Config) {
 	mockConfig.EXPECT().GetString("logging.channels.daily.level").Return("debug").Once()
 	mockConfig.EXPECT().GetString("logging.channels.single.level").Return("debug").Once()
-	mockConfig.EXPECT().GetString("app.env").Return("test")
+	mockConfig.EXPECT().GetString("app.env").Return("test").Maybe()
 }
 
+// CustomLogger is a custom logger for testing custom log drivers with slog.
 type CustomLogger struct {
 }
 
-func (logger *CustomLogger) Handle(channel string) (logcontracts.Hook, error) {
-	return &CustomHook{}, nil
+func (logger *CustomLogger) Handle(channel string) (slog.Handler, error) {
+	return &CustomHandler{}, nil
 }
 
-type CustomHook struct {
+// CustomHandler is a custom slog.Handler for testing.
+type CustomHandler struct {
+	attrs []slog.Attr
 }
 
-func (h *CustomHook) Levels() []logcontracts.Level {
-	return []logcontracts.Level{
-		logcontracts.InfoLevel,
-	}
+func (h *CustomHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	return level >= slog.LevelInfo
 }
 
-func (h *CustomHook) Fire(entry logcontracts.Entry) error {
-	with := entry.With()
-	filename, ok := with["filename"]
-	if ok {
+func (h *CustomHandler) Handle(ctx context.Context, r slog.Record) error {
+	var filename string
+	var code string
+	var user any
+
+	r.Attrs(func(a slog.Attr) bool {
+		if a.Key == "root" {
+			rootData := extractGroupData(a.Value)
+			if with, ok := rootData["with"].(map[string]any); ok {
+				if fn, ok := with["filename"]; ok {
+					filename = fmt.Sprintf("%v", fn)
+				}
+			}
+			if c, ok := rootData["code"].(string); ok {
+				code = c
+			}
+			if u, ok := rootData["user"]; ok {
+				user = u
+			}
+		}
+		return true
+	})
+
+	if filename != "" {
 		var builder strings.Builder
-		message := entry.Message()
+		message := r.Message
 		if len(message) > 0 {
-			builder.WriteString(fmt.Sprintf("%s: %v\n", entry.Level(), message))
+			builder.WriteString(fmt.Sprintf("%s: %v\n", levelToString(logcontracts.Level(r.Level)), message))
 		}
 
-		code := entry.Code()
 		if len(code) > 0 {
 			builder.WriteString(fmt.Sprintf("custom_code: %v\n", code))
 		}
 
-		user := entry.User()
 		if user != nil {
 			builder.WriteString(fmt.Sprintf("custom_user: %v\n", user))
 		}
 
-		err := file.PutContent(cast.ToString(filename), builder.String())
+		err := file.PutContent(filename, builder.String())
 		if err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func (h *CustomHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return &CustomHandler{attrs: append(h.attrs, attrs...)}
+}
+
+func (h *CustomHandler) WithGroup(name string) slog.Handler {
+	return h
+}
+
+func levelToString(level logcontracts.Level) string {
+	switch level {
+	case logcontracts.DebugLevel:
+		return "debug"
+	case logcontracts.InfoLevel:
+		return "info"
+	case logcontracts.WarningLevel:
+		return "warning"
+	case logcontracts.ErrorLevel:
+		return "error"
+	case logcontracts.FatalLevel:
+		return "fatal"
+	case logcontracts.PanicLevel:
+		return "panic"
+	default:
+		return "unknown"
+	}
+}
+
+func extractGroupData(v slog.Value) map[string]any {
+	result := make(map[string]any)
+
+	switch v.Kind() {
+	case slog.KindGroup:
+		for _, attr := range v.Group() {
+			result[attr.Key] = extractValue(attr.Value)
+		}
+	case slog.KindAny:
+		if m, ok := v.Any().(map[string]any); ok {
+			return m
+		}
+	}
+
+	return result
+}
+
+func extractValue(v slog.Value) any {
+	switch v.Kind() {
+	case slog.KindString:
+		return v.String()
+	case slog.KindGroup:
+		result := make(map[string]any)
+		for _, attr := range v.Group() {
+			result[attr.Key] = extractValue(attr.Value)
+		}
+		return result
+	case slog.KindAny:
+		return v.Any()
+	default:
+		return v.Any()
+	}
 }
 
 type TestRequest struct {

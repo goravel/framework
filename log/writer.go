@@ -1,37 +1,25 @@
 package log
 
 import (
+	"context"
 	"fmt"
-	"io"
+	"log/slog"
 	"maps"
 	"os"
 
 	"github.com/rotisserie/eris"
-	"github.com/sirupsen/logrus"
 
-	"github.com/goravel/framework/contracts/config"
-	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/log"
-	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/log/formatter"
-	"github.com/goravel/framework/log/logger"
 )
 
-func NewLogrus() *logrus.Logger {
-	instance := logrus.New()
-	instance.SetLevel(logrus.DebugLevel)
-	instance.SetOutput(io.Discard)
-
-	return instance
-}
-
 type Writer struct {
+	ctx          context.Context
+	logger       *slog.Logger
 	owner        any
 	request      http.ContextRequest
 	response     http.ContextResponse
 	user         any
-	instance     *logrus.Entry
 	stacktrace   map[string]any
 	with         map[string]any
 	code         string
@@ -42,12 +30,13 @@ type Writer struct {
 	stackEnabled bool
 }
 
-func NewWriter(instance *logrus.Entry) log.Writer {
+func NewWriter(logger *slog.Logger, ctx context.Context) log.Writer {
 	return &Writer{
+		ctx:          ctx,
+		logger:       logger,
 		code:         "",
 		domain:       "",
 		hint:         "",
-		instance:     instance,
 		message:      "",
 		owner:        nil,
 		request:      nil,
@@ -61,62 +50,70 @@ func NewWriter(instance *logrus.Entry) log.Writer {
 }
 
 func (r *Writer) Debug(args ...any) {
-	r.instance.WithField("root", r.toMap()).Debug(args...)
+	r.log(log.DebugLevel, fmt.Sprint(args...))
 }
 
 func (r *Writer) Debugf(format string, args ...any) {
-	r.instance.WithField("root", r.toMap()).Debugf(format, args...)
+	r.log(log.DebugLevel, fmt.Sprintf(format, args...))
 }
 
 func (r *Writer) Info(args ...any) {
-	r.instance.WithField("root", r.toMap()).Info(args...)
+	r.log(log.InfoLevel, fmt.Sprint(args...))
 }
 
 func (r *Writer) Infof(format string, args ...any) {
-	r.instance.WithField("root", r.toMap()).Infof(format, args...)
+	r.log(log.InfoLevel, fmt.Sprintf(format, args...))
 }
 
 func (r *Writer) Warning(args ...any) {
-	r.instance.WithField("root", r.toMap()).Warning(args...)
+	r.log(log.WarningLevel, fmt.Sprint(args...))
 }
 
 func (r *Writer) Warningf(format string, args ...any) {
-	r.instance.WithField("root", r.toMap()).Warningf(format, args...)
+	r.log(log.WarningLevel, fmt.Sprintf(format, args...))
 }
 
 func (r *Writer) Error(args ...any) {
-	r.withStackTrace(fmt.Sprint(args...))
-	r.instance.WithField("root", r.toMap()).Error(args...)
+	msg := fmt.Sprint(args...)
+	r.withStackTrace(msg)
+	r.log(log.ErrorLevel, msg)
 }
 
 func (r *Writer) Errorf(format string, args ...any) {
-	r.withStackTrace(fmt.Sprintf(format, args...))
-	r.instance.WithField("root", r.toMap()).Errorf(format, args...)
+	msg := fmt.Sprintf(format, args...)
+	r.withStackTrace(msg)
+	r.log(log.ErrorLevel, msg)
 }
 
 func (r *Writer) Fatal(args ...any) {
-	r.withStackTrace(fmt.Sprint(args...))
-	r.instance.WithField("root", r.toMap()).Fatal(args...)
+	msg := fmt.Sprint(args...)
+	r.withStackTrace(msg)
+	r.log(log.FatalLevel, msg)
+	os.Exit(1)
 }
 
 func (r *Writer) Fatalf(format string, args ...any) {
-	r.withStackTrace(fmt.Sprintf(format, args...))
-	r.instance.WithField("root", r.toMap()).Fatalf(format, args...)
+	msg := fmt.Sprintf(format, args...)
+	r.withStackTrace(msg)
+	r.log(log.FatalLevel, msg)
+	os.Exit(1)
 }
 
 func (r *Writer) Panic(args ...any) {
-	r.withStackTrace(fmt.Sprint(args...))
-	r.instance.WithField("root", r.toMap()).Panic(args...)
+	msg := fmt.Sprint(args...)
+	r.withStackTrace(msg)
+	r.log(log.PanicLevel, msg)
+	panic(msg)
 }
 
 func (r *Writer) Panicf(format string, args ...any) {
-	r.withStackTrace(fmt.Sprintf(format, args...))
-	r.instance.WithField("root", r.toMap()).Panicf(format, args...)
+	msg := fmt.Sprintf(format, args...)
+	r.withStackTrace(msg)
+	r.log(log.PanicLevel, msg)
+	panic(msg)
 }
 
 // Code set a code or slug that describes the error.
-// Error messages are intended to be read by humans, but such code is expected to
-// be read by machines and even transported over different services.
 func (r *Writer) Code(code string) log.Writer {
 	r.code = code
 	return r
@@ -125,43 +122,36 @@ func (r *Writer) Code(code string) log.Writer {
 // Hint set a hint for faster debugging.
 func (r *Writer) Hint(hint string) log.Writer {
 	r.hint = hint
-
 	return r
 }
 
 // In sets the feature category or domain in which the log entry is relevant.
 func (r *Writer) In(domain string) log.Writer {
 	r.domain = domain
-
 	return r
 }
 
 // Owner set the name/email of the colleague/team responsible for handling this error.
-// Useful for alerting purpose.
 func (r *Writer) Owner(owner any) log.Writer {
 	r.owner = owner
-
 	return r
 }
 
 // Request supplies a http.Request.
 func (r *Writer) Request(req http.ContextRequest) log.Writer {
 	r.request = req
-
 	return r
 }
 
 // Response supplies a http.Response.
 func (r *Writer) Response(res http.ContextResponse) log.Writer {
 	r.response = res
-
 	return r
 }
 
 // Tags add multiple tags, describing the feature returning an error.
 func (r *Writer) Tags(tags ...string) log.Writer {
 	r.tags = append(r.tags, tags...)
-
 	return r
 }
 
@@ -171,10 +161,9 @@ func (r *Writer) User(user any) log.Writer {
 	return r
 }
 
-// With adds key-value pairs to the context of the log entry
+// With adds key-value pairs to the context of the log entry.
 func (r *Writer) With(data map[string]any) log.Writer {
 	maps.Copy(r.with, data)
-
 	return r
 }
 
@@ -182,6 +171,12 @@ func (r *Writer) With(data map[string]any) log.Writer {
 func (r *Writer) WithTrace() log.Writer {
 	r.withStackTrace("")
 	return r
+}
+
+func (r *Writer) log(level log.Level, msg string) {
+	attrs := r.toAttrs()
+	r.logger.LogAttrs(r.ctx, level.SlogLevel(), msg, attrs...)
+	r.resetAll()
 }
 
 func (r *Writer) withStackTrace(message string) {
@@ -200,7 +195,7 @@ func (r *Writer) withStackTrace(message string) {
 	r.stackEnabled = true
 }
 
-// resetAll resets all properties of the log.Writer for a new log entry.
+// resetAll resets all properties for a new log entry.
 func (r *Writer) resetAll() {
 	r.code = ""
 	r.domain = ""
@@ -216,124 +211,67 @@ func (r *Writer) resetAll() {
 	r.with = map[string]any{}
 }
 
-// toMap returns a map representation of the error.
-func (r *Writer) toMap() map[string]any {
-	payload := map[string]any{}
+// toAttrs converts the writer state to slog attributes.
+func (r *Writer) toAttrs() []slog.Attr {
+	var attrs []slog.Attr
+
+	// Build root group with all metadata
+	rootAttrs := []any{}
 
 	if code := r.code; code != "" {
-		payload["code"] = code
+		rootAttrs = append(rootAttrs, slog.String("code", code))
 	}
-	if ctx := r.instance.Context; ctx != nil {
+	if ctx := r.ctx; ctx != nil {
 		values := make(map[any]any)
 		getContextValues(ctx, values)
 		if len(values) > 0 {
-			payload["context"] = values
+			rootAttrs = append(rootAttrs, slog.Any("context", values))
 		}
 	}
 	if domain := r.domain; domain != "" {
-		payload["domain"] = domain
+		rootAttrs = append(rootAttrs, slog.String("domain", domain))
 	}
 	if hint := r.hint; hint != "" {
-		payload["hint"] = hint
+		rootAttrs = append(rootAttrs, slog.String("hint", hint))
 	}
 	if message := r.message; message != "" {
-		payload["message"] = message
+		rootAttrs = append(rootAttrs, slog.String("message", message))
 	}
 	if owner := r.owner; owner != nil {
-		payload["owner"] = owner
+		rootAttrs = append(rootAttrs, slog.Any("owner", owner))
 	}
 	if req := r.request; req != nil {
-		payload["request"] = map[string]any{
+		rootAttrs = append(rootAttrs, slog.Any("request", map[string]any{
 			"method": req.Method(),
 			"uri":    req.FullUrl(),
 			"header": req.Headers(),
 			"body":   req.All(),
-		}
+		}))
 	}
 	if res := r.response; res != nil {
-		payload["response"] = map[string]any{
+		rootAttrs = append(rootAttrs, slog.Any("response", map[string]any{
 			"status": res.Origin().Status(),
 			"header": res.Origin().Header(),
 			"body":   res.Origin().Body(),
 			"size":   res.Origin().Size(),
-		}
+		}))
 	}
 	if stacktrace := r.stacktrace; stacktrace != nil || r.stackEnabled {
-		payload["stacktrace"] = stacktrace
+		rootAttrs = append(rootAttrs, slog.Any("stacktrace", stacktrace))
 	}
 	if tags := r.tags; len(tags) > 0 {
-		payload["tags"] = tags
+		rootAttrs = append(rootAttrs, slog.Any("tags", tags))
 	}
 	if r.user != nil {
-		payload["user"] = r.user
+		rootAttrs = append(rootAttrs, slog.Any("user", r.user))
 	}
 	if with := r.with; len(with) > 0 {
-		payload["with"] = with
+		rootAttrs = append(rootAttrs, slog.Any("with", with))
 	}
 
-	// reset all properties for a new log entry
-	r.resetAll()
-
-	return payload
-}
-
-func registerHook(config config.Config, json foundation.Json, instance *logrus.Logger, channel string) error {
-	var (
-		hook logrus.Hook
-		err  error
-
-		channelPath = "logging.channels." + channel
-		driver      = config.GetString(channelPath + ".driver")
-	)
-
-	switch driver {
-	case log.StackDriver:
-		for _, stackChannel := range config.Get(channelPath + ".channels").([]string) {
-			if stackChannel == channel {
-				return errors.LogDriverCircularReference.Args("stack")
-			}
-
-			if err := registerHook(config, json, instance, stackChannel); err != nil {
-				return err
-			}
-		}
-
-		return nil
-	case log.SingleDriver:
-		logLogger := logger.NewSingle(config, json)
-		hook, err = logLogger.Handle(channelPath)
-		if err != nil {
-			return err
-		}
-
-		if config.GetBool(channelPath + ".print") {
-			instance.SetOutput(os.Stdout)
-			instance.SetFormatter(formatter.NewGeneral(config, json))
-		}
-	case log.DailyDriver:
-		logLogger := logger.NewDaily(config, json)
-		hook, err = logLogger.Handle(channelPath)
-		if err != nil {
-			return err
-		}
-
-		if config.GetBool(channelPath + ".print") {
-			instance.SetOutput(os.Stdout)
-			instance.SetFormatter(formatter.NewGeneral(config, json))
-		}
-	case log.CustomDriver:
-		logLogger := config.Get(channelPath + ".via").(log.Logger)
-		logHook, err := logLogger.Handle(channelPath)
-		if err != nil {
-			return err
-		}
-
-		hook = &Hook{logHook}
-	default:
-		return errors.LogDriverNotSupported.Args(channel)
+	if len(rootAttrs) > 0 {
+		attrs = append(attrs, slog.Group("root", rootAttrs...))
 	}
 
-	instance.AddHook(hook)
-
-	return nil
+	return attrs
 }

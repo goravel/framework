@@ -2,23 +2,39 @@ package log
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
-
-	"github.com/sirupsen/logrus"
 )
 
-type Level logrus.Level
+// Level defines custom log levels for the logging system.
+// We define custom levels that extend slog's built-in levels to support
+// Panic and Fatal levels which are not part of the standard slog package.
+type Level slog.Level
 
-// Convert the Level to a string. E.g. PanicLevel becomes "panic".
+const (
+	// DebugLevel level. Usually only enabled when debugging. Very verbose logging.
+	DebugLevel Level = Level(slog.LevelDebug) // -4
+	// InfoLevel level. General operational entries about what's going on inside the application.
+	InfoLevel Level = Level(slog.LevelInfo) // 0
+	// WarningLevel level. Non-critical entries that deserve eyes.
+	WarningLevel Level = Level(slog.LevelWarn) // 4
+	// ErrorLevel level. Used for errors that should definitely be noted.
+	ErrorLevel Level = Level(slog.LevelError) // 8
+	// FatalLevel level. Logs and then calls `os.Exit(1)`.
+	FatalLevel Level = Level(slog.LevelError + 4) // 12
+	// PanicLevel level. Highest level of severity. Logs and then calls panic.
+	PanicLevel Level = Level(slog.LevelError + 8) // 16
+)
+
+// String converts the Level to a string. E.g. PanicLevel becomes "panic".
 func (level Level) String() string {
 	if b, err := level.MarshalText(); err == nil {
 		return string(b)
-	} else {
-		return "unknown"
 	}
+	return "unknown"
 }
 
-// ParseLevel takes a string level and returns the Logrus log level constant.
+// ParseLevel takes a string level and returns the log level constant.
 func ParseLevel(lvl string) (Level, error) {
 	switch strings.ToLower(lvl) {
 	case "panic":
@@ -36,7 +52,7 @@ func ParseLevel(lvl string) (Level, error) {
 	}
 
 	var l Level
-	return l, fmt.Errorf("not a valid logrus Level: %q", lvl)
+	return l, fmt.Errorf("not a valid log Level: %q", lvl)
 }
 
 // UnmarshalText implements encoding.TextUnmarshaler.
@@ -51,6 +67,7 @@ func (level *Level) UnmarshalText(text []byte) error {
 	return nil
 }
 
+// MarshalText implements encoding.TextMarshaler.
 func (level Level) MarshalText() ([]byte, error) {
 	switch level {
 	case DebugLevel:
@@ -67,5 +84,15 @@ func (level Level) MarshalText() ([]byte, error) {
 		return []byte("panic"), nil
 	}
 
-	return nil, fmt.Errorf("not a valid logrus level %d", level)
+	return nil, fmt.Errorf("not a valid log level %d", level)
+}
+
+// SlogLevel converts the custom Level to slog.Level for use with slog handlers.
+func (level Level) SlogLevel() slog.Level {
+	return slog.Level(level)
+}
+
+// Level implements the slog.Leveler interface.
+func (level Level) Level() slog.Level {
+	return slog.Level(level)
 }

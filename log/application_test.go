@@ -24,6 +24,7 @@ func TestNewApplication(t *testing.T) {
 	mockConfig.EXPECT().GetString("logging.channels.test.path").Return("test").Once()
 	mockConfig.EXPECT().GetString("logging.channels.test.level").Return("debug").Once()
 	mockConfig.EXPECT().GetBool("logging.channels.test.print").Return(true).Once()
+	mockConfig.EXPECT().GetString("app.env").Return("test").Maybe()
 	app, err = NewApplication(mockConfig, j)
 	assert.Nil(t, err)
 	assert.NotNil(t, app)
@@ -44,6 +45,7 @@ func TestApplication_Channel(t *testing.T) {
 	mockConfig.EXPECT().GetString("logging.channels.test.path").Return("test").Once()
 	mockConfig.EXPECT().GetString("logging.channels.test.level").Return("debug").Once()
 	mockConfig.EXPECT().GetBool("logging.channels.test.print").Return(true).Once()
+	mockConfig.EXPECT().GetString("app.env").Return("test").Maybe()
 
 	app, err := NewApplication(mockConfig, json.New())
 	assert.Nil(t, err)
@@ -71,6 +73,7 @@ func TestApplication_Stack(t *testing.T) {
 	mockConfig.EXPECT().GetString("logging.channels.test.path").Return("test").Once()
 	mockConfig.EXPECT().GetString("logging.channels.test.level").Return("debug").Once()
 	mockConfig.EXPECT().GetBool("logging.channels.test.print").Return(true).Once()
+	mockConfig.EXPECT().GetString("app.env").Return("test").Maybe()
 	app, err := NewApplication(mockConfig, json.New())
 
 	assert.Nil(t, err)
