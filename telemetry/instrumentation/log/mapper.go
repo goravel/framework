@@ -88,8 +88,8 @@ func toValue(v any) otellog.Value {
 	case time.Duration:
 		return otellog.Int64Value(val.Nanoseconds())
 	case complex64:
-		r := otellog.Float64("r", real(complex128(val)))
-		i := otellog.Float64("i", imag(complex128(val)))
+		r := otellog.Float64("r", float64(real(val)))
+		i := otellog.Float64("i", float64(imag(val)))
 		return otellog.MapValue(r, i)
 	case complex128:
 		r := otellog.Float64("r", real(val))

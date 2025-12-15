@@ -76,14 +76,21 @@ func (s *TelemetryChannelTestSuite) TestHandle_Enabled_CustomName() {
 }
 
 func (s *TelemetryChannelTestSuite) TestHandle_Error_FacadeNotSet() {
-	s.mockConfig.EXPECT().GetBool("telemetry.instrumentation.log.enabled").Return(true).Once()
-	s.mockConfig.EXPECT().GetString("telemetry.instrumentation.log.name", defaultInstrumentationName).Return("app").Once()
-
 	telemetry.TelemetryFacade = nil
 
 	channel := NewTelemetryChannel()
 	h, err := channel.Handle("logging.channels.otel")
 
 	s.ErrorIs(err, errors.TelemetryFacadeNotSet)
+	s.Nil(h)
+}
+
+func (s *TelemetryChannelTestSuite) TestHandle_Error_ConfigFacadeNotSet() {
+	telemetry.ConfigFacade = nil
+
+	channel := NewTelemetryChannel()
+	h, err := channel.Handle("logging.channels.otel")
+
+	s.ErrorIs(err, errors.ConfigFacadeNotSet)
 	s.Nil(h)
 }

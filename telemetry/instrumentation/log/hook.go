@@ -88,6 +88,9 @@ func (r *hook) convertEntry(e contractslog.Entry) otellog.Record {
 	}
 
 	for k, v := range e.Data() {
+		// Goravel packs all structured metadata (trace, request, user, etc.) into the "root" key.
+		// Since we have already extracted and mapped these fields to top-level OTel attributes above,
+		// we skip "root" here to prevent duplicating the entire context map.
 		if k != "root" {
 			attrs = append(attrs, otellog.KeyValue{Key: k, Value: toValue(v)})
 		}
