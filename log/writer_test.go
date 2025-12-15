@@ -448,16 +448,16 @@ func TestWriter_Fatalf(t *testing.T) {
 	assert.NotNil(t, log)
 
 	if os.Getenv("FATAL") == "1" {
-		log.Fatalf("Goravel")
+		log.Fatalf("Goravel: %s", "World")
 		return
 	}
-	cmd := exec.Command(os.Args[0], "-test.run=TestWriter_Fatal")
+	cmd := exec.Command(os.Args[0], "-test.run=TestWriter_Fatalf")
 	cmd.Env = append(os.Environ(), "FATAL=1")
 	err = cmd.Run()
 
 	assert.EqualError(t, err, "exit status 1")
-	assert.True(t, file.Contain(singleLog, "test.fatal: Goravel"))
-	assert.True(t, file.Contain(dailyLog, "test.fatal: Goravel"))
+	assert.True(t, file.Contain(singleLog, "test.fatal: Goravel: World"))
+	assert.True(t, file.Contain(dailyLog, "test.fatal: Goravel: World"))
 
 	_ = file.Remove("storage")
 }

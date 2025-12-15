@@ -13,6 +13,9 @@ import (
 	"github.com/goravel/framework/contracts/log"
 )
 
+// Writer implements the log.Writer interface using slog.
+// The Writer is designed to be reused - all metadata (code, hint, domain, etc.)
+// is reset after each log operation to ensure clean state for the next log entry.
 type Writer struct {
 	ctx          context.Context
 	logger       *slog.Logger
