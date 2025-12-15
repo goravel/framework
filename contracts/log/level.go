@@ -87,11 +87,6 @@ func (level Level) MarshalText() ([]byte, error) {
 	return nil, fmt.Errorf("not a valid log level %d", level)
 }
 
-// SlogLevel converts the custom Level to slog.Level for use with slog handlers.
-func (level Level) SlogLevel() slog.Level {
-	return slog.Level(level)
-}
-
 // Level implements the slog.Leveler interface.
 func (level Level) Level() slog.Level {
 	return slog.Level(level)

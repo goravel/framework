@@ -178,7 +178,7 @@ func (r *Writer) WithTrace() log.Writer {
 
 func (r *Writer) log(level log.Level, msg string) {
 	attrs := r.toAttrs()
-	r.logger.LogAttrs(r.ctx, level.SlogLevel(), msg, attrs...)
+	r.logger.LogAttrs(r.ctx, level.Level(), msg, attrs...)
 	r.resetAll()
 }
 
