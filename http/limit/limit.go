@@ -33,44 +33,44 @@ func PerDays(decayDays, maxAttempts int) contractshttp.Limit {
 
 type Limit struct {
 	// The store instance.
-	Store contractshttp.Store
+	store contractshttp.Store
 	// The response generator callback.
-	ResponseCallback func(ctx contractshttp.Context)
+	response func(ctx contractshttp.Context)
 	// The rate limit signature key.
-	Key string
+	key string
 }
 
 func NewLimit(maxAttempts, decayMinutes int) *Limit {
 	instance := NewStore(http.CacheFacade, http.JsonFacade, uint64(maxAttempts), time.Duration(decayMinutes)*time.Minute)
 
 	return &Limit{
-		Store: instance,
-		ResponseCallback: func(ctx contractshttp.Context) {
+		store: instance,
+		response: func(ctx contractshttp.Context) {
 			ctx.Request().Abort(contractshttp.StatusTooManyRequests)
 		},
 	}
 }
 
 func (r *Limit) By(key string) contractshttp.Limit {
-	r.Key = key
+	r.key = key
 
 	return r
 }
 
 func (r *Limit) GetKey() string {
-	return r.Key
+	return r.key
 }
 
-func (r *Limit) GetResponseCallback() func(ctx contractshttp.Context) {
-	return r.ResponseCallback
+func (r *Limit) GetResponse() func(ctx contractshttp.Context) {
+	return r.response
 }
 
 func (r *Limit) GetStore() contractshttp.Store {
-	return r.Store
+	return r.store
 }
 
 func (r *Limit) Response(callable func(ctx contractshttp.Context)) contractshttp.Limit {
-	r.ResponseCallback = callable
+	r.response = callable
 
 	return r
 }

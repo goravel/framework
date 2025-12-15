@@ -14,8 +14,8 @@ type Limit interface {
 	By(key string) Limit
 	// GetKey get the signature key name for the rate limiter.
 	GetKey() string
-	// GetResponseCallback get the response callback that should be used.
-	GetResponseCallback() func(ctx Context)
+	// GetResponse get the response callback that should be used.
+	GetResponse() func(ctx Context)
 	// GetStore get the store instance.
 	GetStore() Store
 	// Response set the response callback that should be used.

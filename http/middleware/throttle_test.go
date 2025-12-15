@@ -149,7 +149,7 @@ func (s *ThrottleTestSuite) TestThrottle_RequestRateLimited() {
 	s.mockResponse.EXPECT().Header("X-RateLimit-Reset", mock.AnythingOfType("string")).Return(s.mockResponse).Once()
 	s.mockResponse.EXPECT().Header("Retry-After", mock.AnythingOfType("string")).Return(s.mockResponse).Once()
 
-	s.mockLimit.EXPECT().GetResponseCallback().Return(nil).Once()
+	s.mockLimit.EXPECT().GetResponse().Return(nil).Once()
 
 	middleware := Throttle("api")
 	middleware(s.mockCtx)
@@ -181,7 +181,7 @@ func (s *ThrottleTestSuite) TestThrottle_RequestRateLimitedWithCustomCallback() 
 	customCallback := func(c httpcontract.Context) {
 		callbackCalled = true
 	}
-	s.mockLimit.EXPECT().GetResponseCallback().Return(customCallback).Once()
+	s.mockLimit.EXPECT().GetResponse().Return(customCallback).Once()
 
 	middleware := Throttle("api")
 	middleware(s.mockCtx)
@@ -307,7 +307,7 @@ func (s *ResponseTestSuite) TestResponse_WithResponseCallback() {
 	callback := func(c httpcontract.Context) {
 		callbackCalled = true
 	}
-	s.mockLimit.EXPECT().GetResponseCallback().Return(callback).Once()
+	s.mockLimit.EXPECT().GetResponse().Return(callback).Once()
 
 	response(s.mockCtx, s.mockLimit)
 
@@ -315,7 +315,7 @@ func (s *ResponseTestSuite) TestResponse_WithResponseCallback() {
 }
 
 func (s *ResponseTestSuite) TestResponse_WithoutResponseCallback_DefaultAbort() {
-	s.mockLimit.EXPECT().GetResponseCallback().Return(nil).Once()
+	s.mockLimit.EXPECT().GetResponse().Return(nil).Once()
 	s.mockCtx.EXPECT().Request().Return(s.mockRequest).Once()
 	s.mockRequest.EXPECT().Abort(httpcontract.StatusTooManyRequests).Once()
 
@@ -323,7 +323,7 @@ func (s *ResponseTestSuite) TestResponse_WithoutResponseCallback_DefaultAbort() 
 }
 
 func (s *ResponseTestSuite) TestResponse_NilRequest() {
-	s.mockLimit.EXPECT().GetResponseCallback().Return(nil).Once()
+	s.mockLimit.EXPECT().GetResponse().Return(nil).Once()
 	s.mockCtx.EXPECT().Request().Return(nil).Once()
 
 	// Should not panic

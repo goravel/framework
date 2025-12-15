@@ -66,7 +66,7 @@ func key(ctx httpcontract.Context, limit httpcontract.Limit, name string, index 
 }
 
 func response(ctx httpcontract.Context, limit httpcontract.Limit) {
-	if callback := limit.GetResponseCallback(); callback != nil {
+	if callback := limit.GetResponse(); callback != nil {
 		callback(ctx)
 	} else {
 		if request := ctx.Request(); request != nil {

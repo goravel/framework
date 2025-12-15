@@ -113,12 +113,12 @@ func (_c *Limit_GetKey_Call) RunAndReturn(run func() string) *Limit_GetKey_Call 
 	return _c
 }
 
-// GetResponseCallback provides a mock function with no fields
-func (_m *Limit) GetResponseCallback() func(http.Context) {
+// GetResponse provides a mock function with no fields
+func (_m *Limit) GetResponse() func(http.Context) {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetResponseCallback")
+		panic("no return value specified for GetResponse")
 	}
 
 	var r0 func(http.Context)
@@ -133,29 +133,29 @@ func (_m *Limit) GetResponseCallback() func(http.Context) {
 	return r0
 }
 
-// Limit_GetResponseCallback_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetResponseCallback'
-type Limit_GetResponseCallback_Call struct {
+// Limit_GetResponse_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetResponse'
+type Limit_GetResponse_Call struct {
 	*mock.Call
 }
 
-// GetResponseCallback is a helper method to define mock.On call
-func (_e *Limit_Expecter) GetResponseCallback() *Limit_GetResponseCallback_Call {
-	return &Limit_GetResponseCallback_Call{Call: _e.mock.On("GetResponseCallback")}
+// GetResponse is a helper method to define mock.On call
+func (_e *Limit_Expecter) GetResponse() *Limit_GetResponse_Call {
+	return &Limit_GetResponse_Call{Call: _e.mock.On("GetResponse")}
 }
 
-func (_c *Limit_GetResponseCallback_Call) Run(run func()) *Limit_GetResponseCallback_Call {
+func (_c *Limit_GetResponse_Call) Run(run func()) *Limit_GetResponse_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run()
 	})
 	return _c
 }
 
-func (_c *Limit_GetResponseCallback_Call) Return(_a0 func(http.Context)) *Limit_GetResponseCallback_Call {
+func (_c *Limit_GetResponse_Call) Return(_a0 func(http.Context)) *Limit_GetResponse_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Limit_GetResponseCallback_Call) RunAndReturn(run func() func(http.Context)) *Limit_GetResponseCallback_Call {
+func (_c *Limit_GetResponse_Call) RunAndReturn(run func() func(http.Context)) *Limit_GetResponse_Call {
 	_c.Call.Return(run)
 	return _c
 }
