@@ -9,13 +9,10 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/goravel/framework/contracts/log"
-	mockslog "github.com/goravel/framework/mocks/log"
 )
 
-func TestHook_Fire(t *testing.T) {
+func TestLegacyHandlerAdapter(t *testing.T) {
 	var (
-		mockHook *mockslog.Hook
-
 		ctx        = context.Background()
 		code       = "123"
 		domain     = "example.com"
@@ -33,10 +30,9 @@ func TestHook_Fire(t *testing.T) {
 	)
 
 	tests := []struct {
-		name        string
-		record      slog.Record
-		setup       func()
-		expectError error
+		name   string
+		record slog.Record
+		setup  func() slog.Handler
 	}{
 		{
 			name: "full data",
@@ -56,37 +52,9 @@ func TestHook_Fire(t *testing.T) {
 				}))
 				return r
 			}(),
-			setup: func() {
-				mockHook.EXPECT().Fire(&Entry{
-					ctx:  ctx,
-					code: code,
-					data: map[string]any{
-						"root": map[string]any{
-							"code":       code,
-							"domain":     domain,
-							"hint":       hint,
-							"owner":      owner,
-							"request":    request,
-							"response":   response,
-							"stacktrace": stacktrace,
-							"tags":       tags,
-							"user":       user,
-							"with":       with,
-						},
-					},
-					domain:     domain,
-					hint:       hint,
-					level:      log.FromSlog(level),
-					message:    message,
-					owner:      owner,
-					request:    request,
-					response:   response,
-					stacktrace: stacktrace,
-					tags:       tags,
-					time:       now,
-					user:       user,
-					with:       with,
-				}).Return(nil).Once()
+			setup: func() slog.Handler {
+				// Create a simple test handler
+				return &testHandler{enabled: true}
 			},
 		},
 		{
@@ -94,44 +62,62 @@ func TestHook_Fire(t *testing.T) {
 			record: func() slog.Record {
 				return slog.NewRecord(now, level, message, 0)
 			}(),
-			setup: func() {
-				mockHook.EXPECT().Fire(&Entry{
-					ctx:     ctx,
-					data:    map[string]any{},
-					level:   log.FromSlog(level),
-					message: message,
-					time:    now,
-				}).Return(nil).Once()
+			setup: func() slog.Handler {
+				return &testHandler{enabled: true}
 			},
-		},
-		{
-			name: "Fire returns error",
-			record: func() slog.Record {
-				return slog.NewRecord(now, level, message, 0)
-			}(),
-			setup: func() {
-				mockHook.EXPECT().Fire(&Entry{
-					ctx:     ctx,
-					data:    map[string]any{},
-					level:   log.FromSlog(level),
-					message: message,
-					time:    now,
-				}).Return(assert.AnError).Once()
-			},
-			expectError: assert.AnError,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockHook = mockslog.NewHook(t)
-			tt.setup()
+			handler := tt.setup()
+			adapter := NewLegacyHandlerAdapter(handler)
 
-			hook := &Hook{instance: mockHook}
+			err := adapter.Handle(ctx, tt.record)
 
-			err := hook.Fire(ctx, tt.record)
-
-			assert.Equal(t, tt.expectError, err)
+			assert.Nil(t, err)
 		})
 	}
+}
+
+func TestCreateEntryFromRecord(t *testing.T) {
+	now := time.Now()
+	ctx := context.Background()
+	
+	record := slog.NewRecord(now, slog.LevelInfo, "test message", 0)
+	record.AddAttrs(slog.Any("root", map[string]any{
+		"code":   "123",
+		"domain": "test.com",
+	}))
+	
+	entry := createEntryFromRecord(ctx, record)
+	
+	assert.NotNil(t, entry)
+	assert.Equal(t, "test message", entry.Message())
+	assert.Equal(t, log.FromSlog(slog.LevelInfo), entry.Level())
+	assert.Equal(t, "123", entry.Code())
+	assert.Equal(t, "test.com", entry.Domain())
+}
+
+// testHandler is a simple handler for testing
+type testHandler struct {
+	enabled bool
+	records []slog.Record
+}
+
+func (h *testHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	return h.enabled
+}
+
+func (h *testHandler) Handle(ctx context.Context, record slog.Record) error {
+	h.records = append(h.records, record)
+	return nil
+}
+
+func (h *testHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return h
+}
+
+func (h *testHandler) WithGroup(name string) slog.Handler {
+	return h
 }

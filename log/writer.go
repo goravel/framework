@@ -277,93 +277,94 @@ func (r *Writer) toMap() map[string]any {
 	return payload
 }
 
-func registerHandler(config config.Config, json foundation.Json, multiHandler *MultiHandler, channel string) error {
-	var (
-		handler slog.Handler
-		err     error
+func createHandlers(config config.Config, json foundation.Json, channel string) ([]slog.Handler, error) {
+	var handlers []slog.Handler
 
-		channelPath = "logging.channels." + channel
-		driver      = config.GetString(channelPath + ".driver")
-	)
+	channelPath := "logging.channels." + channel
+	driver := config.GetString(channelPath + ".driver")
 
 	switch driver {
 	case log.StackDriver:
-		for _, stackChannel := range config.Get(channelPath + ".channels").([]string) {
+		// For stack driver, recursively get handlers from all stacked channels
+		stackChannels := config.Get(channelPath + ".channels").([]string)
+		for _, stackChannel := range stackChannels {
 			if stackChannel == channel {
-				return errors.LogDriverCircularReference.Args("stack")
+				return nil, errors.LogDriverCircularReference.Args("stack")
 			}
 
-			if err := registerHandler(config, json, multiHandler, stackChannel); err != nil {
-				return err
+			channelHandlers, err := createHandlers(config, json, stackChannel)
+			if err != nil {
+				return nil, err
 			}
+			handlers = append(handlers, channelHandlers...)
 		}
 
-		return nil
+		return handlers, nil
+		
 	case log.SingleDriver:
 		logLogger := logger.NewSingle(config, json)
-		handler, err = logLogger.Handle(channelPath)
+		handler, err := logLogger.Handle(channelPath)
 		if err != nil {
-			return err
+			return nil, err
 		}
+		handlers = append(handlers, handler)
 
 		if config.GetBool(channelPath + ".print") {
 			// Add console handler for print mode
 			generalFormatter := formatter.NewGeneral(config, json)
-			consoleHandler := &formatterHandler{
-				writer:    os.Stdout,
+			consoleHandler := &consoleFormatterHandler{
 				formatter: generalFormatter,
 				minLevel:  slog.LevelDebug,
 			}
-			multiHandler.AddHandler(consoleHandler)
+			handlers = append(handlers, consoleHandler)
 		}
+		
 	case log.DailyDriver:
 		logLogger := logger.NewDaily(config, json)
-		handler, err = logLogger.Handle(channelPath)
+		handler, err := logLogger.Handle(channelPath)
 		if err != nil {
-			return err
+			return nil, err
 		}
+		handlers = append(handlers, handler)
 
 		if config.GetBool(channelPath + ".print") {
 			// Add console handler for print mode
 			generalFormatter := formatter.NewGeneral(config, json)
-			consoleHandler := &formatterHandler{
-				writer:    os.Stdout,
+			consoleHandler := &consoleFormatterHandler{
 				formatter: generalFormatter,
 				minLevel:  slog.LevelDebug,
 			}
-			multiHandler.AddHandler(consoleHandler)
+			handlers = append(handlers, consoleHandler)
 		}
+		
 	case log.CustomDriver:
-		logLogger := config.Get(channelPath + ".via").(log.Logger)
-		logHook, err := logLogger.Handle(channelPath)
+		customLogger := config.Get(channelPath + ".via").(log.Logger)
+		handler, err := customLogger.Handle(channelPath)
 		if err != nil {
-			return err
+			return nil, err
 		}
-
-		handler = &HookHandler{hook: logHook}
+		handlers = append(handlers, handler)
+		
 	default:
-		return errors.LogDriverNotSupported.Args(channel)
+		return nil, errors.LogDriverNotSupported.Args(channel)
 	}
 
-	multiHandler.AddHandler(handler)
-
-	return nil
+	return handlers, nil
 }
 
-// formatterHandler for console output
-type formatterHandler struct {
-	writer    *os.File
+// consoleFormatterHandler for console output
+type consoleFormatterHandler struct {
 	formatter *formatter.General
 	minLevel  slog.Level
 	attrs     []slog.Attr
 	groups    []string
 }
 
-func (h *formatterHandler) Enabled(ctx context.Context, level slog.Level) bool {
+func (h *consoleFormatterHandler) Enabled(ctx context.Context, level slog.Level) bool {
 	return level >= h.minLevel
 }
 
-func (h *formatterHandler) Handle(ctx context.Context, record slog.Record) error {
+func (h *consoleFormatterHandler) Handle(ctx context.Context, record slog.Record) error {
 	if !h.Enabled(ctx, record.Level) {
 		return nil
 	}
@@ -383,17 +384,16 @@ func (h *formatterHandler) Handle(ctx context.Context, record slog.Record) error
 		return err
 	}
 
-	_, err = h.writer.Write(formatted)
+	_, err = os.Stdout.Write(formatted)
 	return err
 }
 
-func (h *formatterHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+func (h *consoleFormatterHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	newAttrs := make([]slog.Attr, len(h.attrs)+len(attrs))
 	copy(newAttrs, h.attrs)
 	copy(newAttrs[len(h.attrs):], attrs)
 
-	return &formatterHandler{
-		writer:    h.writer,
+	return &consoleFormatterHandler{
 		formatter: h.formatter,
 		minLevel:  h.minLevel,
 		attrs:     newAttrs,
@@ -401,13 +401,12 @@ func (h *formatterHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	}
 }
 
-func (h *formatterHandler) WithGroup(name string) slog.Handler {
+func (h *consoleFormatterHandler) WithGroup(name string) slog.Handler {
 	newGroups := make([]string, len(h.groups)+1)
 	copy(newGroups, h.groups)
 	newGroups[len(h.groups)] = name
 
-	return &formatterHandler{
-		writer:    h.writer,
+	return &consoleFormatterHandler{
 		formatter: h.formatter,
 		minLevel:  h.minLevel,
 		attrs:     h.attrs,

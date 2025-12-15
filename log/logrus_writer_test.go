@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log/slog"
 	nethttp "net/http"
 	"os"
 	"os/exec"
@@ -566,20 +567,22 @@ func mockDriverConfig(mockConfig *configmock.Config) {
 type CustomLogger struct {
 }
 
-func (logger *CustomLogger) Handle(channel string) (logcontracts.Hook, error) {
-	return &CustomHook{}, nil
+func (logger *CustomLogger) Handle(channel string) (logcontracts.Handler, error) {
+	return &CustomHandler{}, nil
 }
 
-type CustomHook struct {
+type CustomHandler struct {
 }
 
-func (h *CustomHook) Levels() []logcontracts.Level {
-	return []logcontracts.Level{
-		logcontracts.InfoLevel,
-	}
+func (h *CustomHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	// Only enable for Info level and above
+	return level >= slog.LevelInfo
 }
 
-func (h *CustomHook) Fire(entry logcontracts.Entry) error {
+func (h *CustomHandler) Handle(ctx context.Context, record slog.Record) error {
+	// Extract entry from record
+	entry := createEntryFromRecord(ctx, record)
+	
 	with := entry.With()
 	filename, ok := with["filename"]
 	if ok {
@@ -605,6 +608,14 @@ func (h *CustomHook) Fire(entry logcontracts.Entry) error {
 		}
 	}
 	return nil
+}
+
+func (h *CustomHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return h
+}
+
+func (h *CustomHandler) WithGroup(name string) slog.Handler {
+	return h
 }
 
 type TestRequest struct {

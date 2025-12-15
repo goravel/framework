@@ -6,55 +6,6 @@ import (
 	"log/slog"
 )
 
-// MultiHandler wraps multiple slog.Handler instances to support multiple channels/hooks
-type MultiHandler struct {
-	handlers []slog.Handler
-}
-
-func NewMultiHandler(handlers ...slog.Handler) *MultiHandler {
-	return &MultiHandler{handlers: handlers}
-}
-
-func (h *MultiHandler) Enabled(ctx context.Context, level slog.Level) bool {
-	for _, handler := range h.handlers {
-		if handler.Enabled(ctx, level) {
-			return true
-		}
-	}
-	return false
-}
-
-func (h *MultiHandler) Handle(ctx context.Context, record slog.Record) error {
-	for _, handler := range h.handlers {
-		if handler.Enabled(ctx, record.Level) {
-			if err := handler.Handle(ctx, record); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func (h *MultiHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	newHandlers := make([]slog.Handler, len(h.handlers))
-	for i, handler := range h.handlers {
-		newHandlers[i] = handler.WithAttrs(attrs)
-	}
-	return &MultiHandler{handlers: newHandlers}
-}
-
-func (h *MultiHandler) WithGroup(name string) slog.Handler {
-	newHandlers := make([]slog.Handler, len(h.handlers))
-	for i, handler := range h.handlers {
-		newHandlers[i] = handler.WithGroup(name)
-	}
-	return &MultiHandler{handlers: newHandlers}
-}
-
-func (h *MultiHandler) AddHandler(handler slog.Handler) {
-	h.handlers = append(h.handlers, handler)
-}
-
 // DiscardHandler is a handler that discards all logs
 type DiscardHandler struct{}
 
@@ -76,11 +27,6 @@ func (h *DiscardHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 
 func (h *DiscardHandler) WithGroup(name string) slog.Handler {
 	return h
-}
-
-// NewSlogLogger creates a new slog.Logger with a discard handler by default
-func NewSlogLogger() *slog.Logger {
-	return slog.New(NewDiscardHandler())
 }
 
 // LeveledHandler filters logs based on minimum level
