@@ -68,6 +68,145 @@ func (_c *Limit_By_Call) RunAndReturn(run func(string) http.Limit) *Limit_By_Cal
 	return _c
 }
 
+// GetKey provides a mock function with no fields
+func (_m *Limit) GetKey() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetKey")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Limit_GetKey_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetKey'
+type Limit_GetKey_Call struct {
+	*mock.Call
+}
+
+// GetKey is a helper method to define mock.On call
+func (_e *Limit_Expecter) GetKey() *Limit_GetKey_Call {
+	return &Limit_GetKey_Call{Call: _e.mock.On("GetKey")}
+}
+
+func (_c *Limit_GetKey_Call) Run(run func()) *Limit_GetKey_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Limit_GetKey_Call) Return(_a0 string) *Limit_GetKey_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Limit_GetKey_Call) RunAndReturn(run func() string) *Limit_GetKey_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetResponseCallback provides a mock function with no fields
+func (_m *Limit) GetResponseCallback() func(http.Context) {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetResponseCallback")
+	}
+
+	var r0 func(http.Context)
+	if rf, ok := ret.Get(0).(func() func(http.Context)); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(func(http.Context))
+		}
+	}
+
+	return r0
+}
+
+// Limit_GetResponseCallback_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetResponseCallback'
+type Limit_GetResponseCallback_Call struct {
+	*mock.Call
+}
+
+// GetResponseCallback is a helper method to define mock.On call
+func (_e *Limit_Expecter) GetResponseCallback() *Limit_GetResponseCallback_Call {
+	return &Limit_GetResponseCallback_Call{Call: _e.mock.On("GetResponseCallback")}
+}
+
+func (_c *Limit_GetResponseCallback_Call) Run(run func()) *Limit_GetResponseCallback_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Limit_GetResponseCallback_Call) Return(_a0 func(http.Context)) *Limit_GetResponseCallback_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Limit_GetResponseCallback_Call) RunAndReturn(run func() func(http.Context)) *Limit_GetResponseCallback_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetStore provides a mock function with no fields
+func (_m *Limit) GetStore() http.Store {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetStore")
+	}
+
+	var r0 http.Store
+	if rf, ok := ret.Get(0).(func() http.Store); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(http.Store)
+		}
+	}
+
+	return r0
+}
+
+// Limit_GetStore_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetStore'
+type Limit_GetStore_Call struct {
+	*mock.Call
+}
+
+// GetStore is a helper method to define mock.On call
+func (_e *Limit_Expecter) GetStore() *Limit_GetStore_Call {
+	return &Limit_GetStore_Call{Call: _e.mock.On("GetStore")}
+}
+
+func (_c *Limit_GetStore_Call) Run(run func()) *Limit_GetStore_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Limit_GetStore_Call) Return(_a0 http.Store) *Limit_GetStore_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Limit_GetStore_Call) RunAndReturn(run func() http.Store) *Limit_GetStore_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Response provides a mock function with given fields: _a0
 func (_m *Limit) Response(_a0 func(http.Context)) http.Limit {
 	ret := _m.Called(_a0)

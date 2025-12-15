@@ -57,6 +57,18 @@ func (r *Limit) By(key string) contractshttp.Limit {
 	return r
 }
 
+func (r *Limit) GetKey() string {
+	return r.Key
+}
+
+func (r *Limit) GetResponseCallback() func(ctx contractshttp.Context) {
+	return r.ResponseCallback
+}
+
+func (r *Limit) GetStore() contractshttp.Store {
+	return r.Store
+}
+
 func (r *Limit) Response(callable func(ctx contractshttp.Context)) contractshttp.Limit {
 	r.ResponseCallback = callable
 
