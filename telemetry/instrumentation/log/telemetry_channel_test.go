@@ -35,25 +35,14 @@ func (s *TelemetryChannelTestSuite) TearDownTest() {
 	telemetry.TelemetryFacade = nil
 }
 
-func (s *TelemetryChannelTestSuite) TestHandle_Disabled() {
-	s.mockConfig.EXPECT().GetBool("telemetry.instrumentation.log.enabled").Return(false).Once()
-
-	channel := NewTelemetryChannel()
-	hk, err := channel.Handle("logging.channels.otel")
-
-	s.NoError(err)
-	s.NotNil(hk)
-	s.Nil(hk.Levels())
-}
-
-func (s *TelemetryChannelTestSuite) TestHandle_Enabled_DefaultName() {
-	s.mockConfig.EXPECT().GetBool("telemetry.instrumentation.log.enabled").Return(true).Once()
-	s.mockConfig.EXPECT().GetString("telemetry.instrumentation.log.name", defaultInstrumentationName).Return(defaultInstrumentationName).Once()
+func (s *TelemetryChannelTestSuite) TestHandle_Success_DefaultName() {
+	channelPath := "logging.channels.otel"
+	s.mockConfig.EXPECT().GetString(channelPath+".name", defaultInstrumentationName).Return(defaultInstrumentationName).Once()
 
 	s.mockTelemetry.On("Logger", defaultInstrumentationName).Return(noop.NewLoggerProvider().Logger("test")).Once()
 
 	channel := NewTelemetryChannel()
-	h, err := channel.Handle("logging.channels.otel")
+	h, err := channel.Handle(channelPath)
 
 	s.NoError(err)
 	s.NotNil(h)
@@ -61,21 +50,23 @@ func (s *TelemetryChannelTestSuite) TestHandle_Enabled_DefaultName() {
 	s.mockTelemetry.AssertExpectations(s.T())
 }
 
-func (s *TelemetryChannelTestSuite) TestHandle_Enabled_CustomName() {
-	s.mockConfig.EXPECT().GetBool("telemetry.instrumentation.log.enabled").Return(true).Once()
-	s.mockConfig.EXPECT().GetString("telemetry.instrumentation.log.name", defaultInstrumentationName).Return("my-service-logs").Once()
+func (s *TelemetryChannelTestSuite) TestHandle_Success_CustomName() {
+	channelPath := "logging.channels.otel"
+	customName := "my-service-logs"
 
-	s.mockTelemetry.On("Logger", "my-service-logs").Return(noop.NewLoggerProvider().Logger("test")).Once()
+	s.mockConfig.EXPECT().GetString(channelPath+".name", defaultInstrumentationName).Return(customName).Once()
+
+	s.mockTelemetry.On("Logger", customName).Return(noop.NewLoggerProvider().Logger("test")).Once()
 
 	channel := NewTelemetryChannel()
-	h, err := channel.Handle("logging.channels.otel")
+	h, err := channel.Handle(channelPath)
 
 	s.NoError(err)
 	s.NotNil(h)
 	s.mockTelemetry.AssertExpectations(s.T())
 }
 
-func (s *TelemetryChannelTestSuite) TestHandle_Error_FacadeNotSet() {
+func (s *TelemetryChannelTestSuite) TestHandle_Error_TelemetryFacadeNotSet() {
 	telemetry.TelemetryFacade = nil
 
 	channel := NewTelemetryChannel()
