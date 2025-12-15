@@ -8,10 +8,10 @@ import (
 )
 
 const (
-	StackDriver  = "stack"
-	SingleDriver = "single"
-	DailyDriver  = "daily"
-	CustomDriver = "custom"
+	DriverStack  = "stack"
+	DriverSingle = "single"
+	DriverDaily  = "daily"
+	DriverCustom = "custom"
 )
 
 type Data map[string]any
@@ -27,27 +27,27 @@ type Log interface {
 }
 
 type Writer interface {
-	// Debug logs a message at DebugLevel.
+	// Debug logs a message at LevelDebug.
 	Debug(args ...any)
 	// Debugf is equivalent to Debug, but with support for fmt.Printf-style arguments.
 	Debugf(format string, args ...any)
-	// Info logs a message at InfoLevel.
+	// Info logs a message at LevelInfo.
 	Info(args ...any)
 	// Infof is equivalent to Info, but with support for fmt.Printf-style arguments.
 	Infof(format string, args ...any)
-	// Warning logs a message at WarningLevel.
+	// Warning logs a message at LevelWarning.
 	Warning(args ...any)
 	// Warningf is equivalent to Warning, but with support for fmt.Printf-style arguments.
 	Warningf(format string, args ...any)
-	// Error logs a message at ErrorLevel.
+	// Error logs a message at LevelError.
 	Error(args ...any)
 	// Errorf is equivalent to Error, but with support for fmt.Printf-style arguments.
 	Errorf(format string, args ...any)
-	// Fatal logs a message at FatalLevel.
+	// Fatal logs a message at LevelFatal.
 	Fatal(args ...any)
 	// Fatalf is equivalent to Fatal, but with support for fmt.Printf-style arguments.
 	Fatalf(format string, args ...any)
-	// Panic logs a message at PanicLevel.
+	// Panic logs a message at LevelPanic.
 	Panic(args ...any)
 	// Panicf is equivalent to Panic, but with support for fmt.Printf-style arguments.
 	Panicf(format string, args ...any)

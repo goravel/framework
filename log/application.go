@@ -99,7 +99,7 @@ func getHandlers(config config.Config, json foundation.Json, channel string) ([]
 	driver := config.GetString(channelPath + ".driver")
 
 	switch driver {
-	case log.StackDriver:
+	case log.DriverStack:
 		var handlers []slog.Handler
 		for _, stackChannel := range config.Get(channelPath + ".channels").([]string) {
 			if stackChannel == channel {
@@ -114,7 +114,7 @@ func getHandlers(config config.Config, json foundation.Json, channel string) ([]
 		}
 		return handlers, nil
 
-	case log.SingleDriver:
+	case log.DriverSingle:
 		logLogger := logger.NewSingle(config, json)
 		handler, err := logLogger.Handle(channelPath)
 		if err != nil {
@@ -127,7 +127,7 @@ func getHandlers(config config.Config, json foundation.Json, channel string) ([]
 		}
 		return handlers, nil
 
-	case log.DailyDriver:
+	case log.DriverDaily:
 		logLogger := logger.NewDaily(config, json)
 		handler, err := logLogger.Handle(channelPath)
 		if err != nil {
@@ -140,7 +140,7 @@ func getHandlers(config config.Config, json foundation.Json, channel string) ([]
 		}
 		return handlers, nil
 
-	case log.CustomDriver:
+	case log.DriverCustom:
 		logLogger := config.Get(channelPath + ".via").(log.Logger)
 		handler, err := logLogger.Handle(channelPath)
 		if err != nil {

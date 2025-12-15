@@ -12,21 +12,21 @@ import (
 type Level slog.Level
 
 const (
-	// DebugLevel level. Usually only enabled when debugging. Very verbose logging.
-	DebugLevel Level = Level(slog.LevelDebug) // -4
-	// InfoLevel level. General operational entries about what's going on inside the application.
-	InfoLevel Level = Level(slog.LevelInfo) // 0
-	// WarningLevel level. Non-critical entries that deserve eyes.
-	WarningLevel Level = Level(slog.LevelWarn) // 4
-	// ErrorLevel level. Used for errors that should definitely be noted.
-	ErrorLevel Level = Level(slog.LevelError) // 8
-	// FatalLevel level. Logs and then calls `os.Exit(1)`.
-	FatalLevel Level = Level(slog.LevelError + 4) // 12
-	// PanicLevel level. Highest level of severity. Logs and then calls panic.
-	PanicLevel Level = Level(slog.LevelError + 8) // 16
+	// LevelDebug level. Usually only enabled when debugging. Very verbose logging.
+	LevelDebug Level = Level(slog.LevelDebug) // -4
+	// LevelInfo level. General operational entries about what's going on inside the application.
+	LevelInfo Level = Level(slog.LevelInfo) // 0
+	// LevelWarning level. Non-critical entries that deserve eyes.
+	LevelWarning Level = Level(slog.LevelWarn) // 4
+	// LevelError level. Used for errors that should definitely be noted.
+	LevelError Level = Level(slog.LevelError) // 8
+	// LevelFatal level. Logs and then calls `os.Exit(1)`.
+	LevelFatal Level = Level(slog.LevelError + 4) // 12
+	// LevelPanic level. Highest level of severity. Logs and then calls panic.
+	LevelPanic Level = Level(slog.LevelError + 8) // 16
 )
 
-// String converts the Level to a string. E.g. PanicLevel becomes "panic".
+// String converts the Level to a string. E.g. LevelPanic becomes "panic".
 func (level Level) String() string {
 	if b, err := level.MarshalText(); err == nil {
 		return string(b)
@@ -38,17 +38,17 @@ func (level Level) String() string {
 func ParseLevel(lvl string) (Level, error) {
 	switch strings.ToLower(lvl) {
 	case "panic":
-		return PanicLevel, nil
+		return LevelPanic, nil
 	case "fatal":
-		return FatalLevel, nil
+		return LevelFatal, nil
 	case "error":
-		return ErrorLevel, nil
+		return LevelError, nil
 	case "warn", "warning":
-		return WarningLevel, nil
+		return LevelWarning, nil
 	case "info":
-		return InfoLevel, nil
+		return LevelInfo, nil
 	case "debug":
-		return DebugLevel, nil
+		return LevelDebug, nil
 	}
 
 	var l Level
@@ -70,17 +70,17 @@ func (level *Level) UnmarshalText(text []byte) error {
 // MarshalText implements encoding.TextMarshaler.
 func (level Level) MarshalText() ([]byte, error) {
 	switch level {
-	case DebugLevel:
+	case LevelDebug:
 		return []byte("debug"), nil
-	case InfoLevel:
+	case LevelInfo:
 		return []byte("info"), nil
-	case WarningLevel:
+	case LevelWarning:
 		return []byte("warning"), nil
-	case ErrorLevel:
+	case LevelError:
 		return []byte("error"), nil
-	case FatalLevel:
+	case LevelFatal:
 		return []byte("fatal"), nil
-	case PanicLevel:
+	case LevelPanic:
 		return []byte("panic"), nil
 	}
 

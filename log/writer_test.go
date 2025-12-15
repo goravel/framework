@@ -636,17 +636,17 @@ func (h *CustomHandler) WithGroup(name string) slog.Handler {
 
 func levelToString(level logcontracts.Level) string {
 	switch level {
-	case logcontracts.DebugLevel:
+	case logcontracts.LevelDebug:
 		return "debug"
-	case logcontracts.InfoLevel:
+	case logcontracts.LevelInfo:
 		return "info"
-	case logcontracts.WarningLevel:
+	case logcontracts.LevelWarning:
 		return "warning"
-	case logcontracts.ErrorLevel:
+	case logcontracts.LevelError:
 		return "error"
-	case logcontracts.FatalLevel:
+	case logcontracts.LevelFatal:
 		return "fatal"
-	case logcontracts.PanicLevel:
+	case logcontracts.LevelPanic:
 		return "panic"
 	default:
 		return "unknown"

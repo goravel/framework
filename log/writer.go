@@ -53,66 +53,66 @@ func NewWriter(logger *slog.Logger, ctx context.Context) log.Writer {
 }
 
 func (r *Writer) Debug(args ...any) {
-	r.log(log.DebugLevel, fmt.Sprint(args...))
+	r.log(log.LevelDebug, fmt.Sprint(args...))
 }
 
 func (r *Writer) Debugf(format string, args ...any) {
-	r.log(log.DebugLevel, fmt.Sprintf(format, args...))
+	r.log(log.LevelDebug, fmt.Sprintf(format, args...))
 }
 
 func (r *Writer) Info(args ...any) {
-	r.log(log.InfoLevel, fmt.Sprint(args...))
+	r.log(log.LevelInfo, fmt.Sprint(args...))
 }
 
 func (r *Writer) Infof(format string, args ...any) {
-	r.log(log.InfoLevel, fmt.Sprintf(format, args...))
+	r.log(log.LevelInfo, fmt.Sprintf(format, args...))
 }
 
 func (r *Writer) Warning(args ...any) {
-	r.log(log.WarningLevel, fmt.Sprint(args...))
+	r.log(log.LevelWarning, fmt.Sprint(args...))
 }
 
 func (r *Writer) Warningf(format string, args ...any) {
-	r.log(log.WarningLevel, fmt.Sprintf(format, args...))
+	r.log(log.LevelWarning, fmt.Sprintf(format, args...))
 }
 
 func (r *Writer) Error(args ...any) {
 	msg := fmt.Sprint(args...)
 	r.withStackTrace(msg)
-	r.log(log.ErrorLevel, msg)
+	r.log(log.LevelError, msg)
 }
 
 func (r *Writer) Errorf(format string, args ...any) {
 	msg := fmt.Sprintf(format, args...)
 	r.withStackTrace(msg)
-	r.log(log.ErrorLevel, msg)
+	r.log(log.LevelError, msg)
 }
 
 func (r *Writer) Fatal(args ...any) {
 	msg := fmt.Sprint(args...)
 	r.withStackTrace(msg)
-	r.log(log.FatalLevel, msg)
+	r.log(log.LevelFatal, msg)
 	os.Exit(1)
 }
 
 func (r *Writer) Fatalf(format string, args ...any) {
 	msg := fmt.Sprintf(format, args...)
 	r.withStackTrace(msg)
-	r.log(log.FatalLevel, msg)
+	r.log(log.LevelFatal, msg)
 	os.Exit(1)
 }
 
 func (r *Writer) Panic(args ...any) {
 	msg := fmt.Sprint(args...)
 	r.withStackTrace(msg)
-	r.log(log.PanicLevel, msg)
+	r.log(log.LevelPanic, msg)
 	panic(msg)
 }
 
 func (r *Writer) Panicf(format string, args ...any) {
 	msg := fmt.Sprintf(format, args...)
 	r.withStackTrace(msg)
-	r.log(log.PanicLevel, msg)
+	r.log(log.LevelPanic, msg)
 	panic(msg)
 }
 

@@ -51,7 +51,7 @@ func (single *Single) Handle(channel string) (slog.Handler, error) {
 func getLevelFromString(level string) log.Level {
 	l, err := log.ParseLevel(level)
 	if err != nil {
-		return log.DebugLevel
+		return log.LevelDebug
 	}
 	return l
 }

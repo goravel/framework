@@ -212,17 +212,17 @@ func extractValue(v slog.Value) any {
 
 func levelToString(level log.Level) string {
 	switch level {
-	case log.DebugLevel:
+	case log.LevelDebug:
 		return "debug"
-	case log.InfoLevel:
+	case log.LevelInfo:
 		return "info"
-	case log.WarningLevel:
+	case log.LevelWarning:
 		return "warning"
-	case log.ErrorLevel:
+	case log.LevelError:
 		return "error"
-	case log.FatalLevel:
+	case log.LevelFatal:
 		return "fatal"
-	case log.PanicLevel:
+	case log.LevelPanic:
 		return "panic"
 	default:
 		return "unknown"
@@ -241,7 +241,7 @@ func NewConsoleHandler(config config.Config, json foundation.Json) *ConsoleHandl
 			writer: os.Stdout,
 			config: config,
 			json:   json,
-			level:  log.DebugLevel,
+			level:  log.LevelDebug,
 		},
 	}
 }
