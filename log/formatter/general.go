@@ -2,14 +2,18 @@ package formatter
 
 import (
 	"bytes"
+	"context"
 	"fmt"
+	"io"
+	"log/slog"
 	"strings"
+	"sync"
 
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/str"
 )
@@ -37,35 +41,110 @@ func NewGeneral(config config.Config, json foundation.Json) *General {
 	}
 }
 
-func (general *General) Format(entry *logrus.Entry) ([]byte, error) {
-	var b *bytes.Buffer
-	if entry.Buffer != nil {
-		b = entry.Buffer
-	} else {
-		b = &bytes.Buffer{}
+// GeneralHandler is a slog.Handler that formats logs in the Goravel general format.
+type GeneralHandler struct {
+	config config.Config
+	json   foundation.Json
+	writer io.Writer
+	level  log.Level
+	attrs  []slog.Attr
+	groups []string
+	mu     sync.Mutex
+}
+
+// NewGeneralHandler creates a new GeneralHandler.
+func NewGeneralHandler(config config.Config, json foundation.Json, writer io.Writer, level log.Level) *GeneralHandler {
+	return &GeneralHandler{
+		config: config,
+		json:   json,
+		writer: writer,
+		level:  level,
+		attrs:  []slog.Attr{},
+		groups: []string{},
+	}
+}
+
+// Enabled reports whether the handler handles records at the given level.
+func (h *GeneralHandler) Enabled(_ context.Context, level slog.Level) bool {
+	return log.Level(level) >= h.level
+}
+
+// Handle handles the Record.
+func (h *GeneralHandler) Handle(_ context.Context, record slog.Record) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	var b bytes.Buffer
+
+	timestamp := carbon.FromStdTime(record.Time, carbon.DefaultTimezone()).ToDateTimeMilliString()
+	levelStr := levelToString(log.Level(record.Level))
+	fmt.Fprintf(&b, "[%s] %s.%s: %s\n", timestamp, h.config.GetString("app.env"), levelStr, record.Message)
+
+	// Collect all attributes
+	data := make(map[string]any)
+	record.Attrs(func(attr slog.Attr) bool {
+		data[attr.Key] = attr.Value.Any()
+		return true
+	})
+
+	// Also add handler-level attrs
+	for _, attr := range h.attrs {
+		data[attr.Key] = attr.Value.Any()
 	}
 
-	timestamp := carbon.FromStdTime(entry.Time, carbon.DefaultTimezone()).ToDateTimeMilliString()
-	fmt.Fprintf(b, "[%s] %s.%s: %s\n", timestamp, general.config.GetString("app.env"), entry.Level, entry.Message)
-	data := entry.Data
 	if len(data) > 0 {
-		formattedData, err := general.formatData(data)
+		formattedData, err := h.formatData(data)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		b.WriteString(formattedData)
 	}
 
-	return b.Bytes(), nil
+	_, err := h.writer.Write(b.Bytes())
+	return err
 }
 
-func (general *General) formatData(data logrus.Fields) (string, error) {
+// WithAttrs returns a new Handler whose attributes consist of
+// both the receiver's attributes and the arguments.
+func (h *GeneralHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	newHandler := &GeneralHandler{
+		config: h.config,
+		json:   h.json,
+		writer: h.writer,
+		level:  h.level,
+		attrs:  make([]slog.Attr, len(h.attrs)+len(attrs)),
+		groups: make([]string, len(h.groups)),
+	}
+	copy(newHandler.attrs, h.attrs)
+	copy(newHandler.attrs[len(h.attrs):], attrs)
+	copy(newHandler.groups, h.groups)
+	return newHandler
+}
+
+// WithGroup returns a new Handler with the given group appended to
+// the receiver's existing groups.
+func (h *GeneralHandler) WithGroup(name string) slog.Handler {
+	newHandler := &GeneralHandler{
+		config: h.config,
+		json:   h.json,
+		writer: h.writer,
+		level:  h.level,
+		attrs:  make([]slog.Attr, len(h.attrs)),
+		groups: make([]string, len(h.groups)+1),
+	}
+	copy(newHandler.attrs, h.attrs)
+	copy(newHandler.groups, h.groups)
+	newHandler.groups[len(h.groups)] = name
+	return newHandler
+}
+
+func (h *GeneralHandler) formatData(data map[string]any) (string, error) {
 	var builder strings.Builder
 
 	if len(data) > 0 {
 		removedData := deleteKey(data, "root")
 		if len(removedData) > 0 {
-			removedDataStr, err := general.json.MarshalString(removedData)
+			removedDataStr, err := h.json.MarshalString(removedData)
 			if err != nil {
 				return "", err
 			}
@@ -75,7 +154,8 @@ func (general *General) formatData(data logrus.Fields) (string, error) {
 
 		root, err := cast.ToStringMapE(data["root"])
 		if err != nil {
-			return "", err
+			// If root key doesn't exist or is not a map, just return what we have so far
+			return builder.String(), nil
 		}
 
 		for _, key := range []string{"hint", "tags", "owner", "context", "with", "domain", "code", "request", "response", "user"} {
@@ -85,7 +165,7 @@ func (general *General) formatData(data logrus.Fields) (string, error) {
 		}
 
 		if stackTraceValue, exists := root["stacktrace"]; exists && stackTraceValue != nil {
-			traces, err := general.formatStackTraces(stackTraceValue)
+			traces, err := h.formatStackTraces(stackTraceValue)
 			if err != nil {
 				return "", err
 			}
@@ -97,15 +177,15 @@ func (general *General) formatData(data logrus.Fields) (string, error) {
 	return builder.String(), nil
 }
 
-func (general *General) formatStackTraces(stackTraces any) (string, error) {
+func (h *GeneralHandler) formatStackTraces(stackTraces any) (string, error) {
 	var formattedTraces strings.Builder
-	data, err := general.json.Marshal(stackTraces)
+	data, err := h.json.Marshal(stackTraces)
 
 	if err != nil {
 		return "", err
 	}
 	var traces StackTrace
-	err = general.json.Unmarshal(data, &traces)
+	err = h.json.Unmarshal(data, &traces)
 	if err != nil {
 		return "", err
 	}
@@ -133,8 +213,8 @@ func formatStackTrace(stackStr string) string {
 	return fmt.Sprintf("%s\n", stackStr)
 }
 
-func deleteKey(data logrus.Fields, keyToDelete string) logrus.Fields {
-	dataCopy := make(logrus.Fields)
+func deleteKey(data map[string]any, keyToDelete string) map[string]any {
+	dataCopy := make(map[string]any)
 	for key, value := range data {
 		if key != keyToDelete {
 			dataCopy[key] = value
@@ -142,4 +222,23 @@ func deleteKey(data logrus.Fields, keyToDelete string) logrus.Fields {
 	}
 
 	return dataCopy
+}
+
+func levelToString(level log.Level) string {
+	switch level {
+	case log.LevelDebug:
+		return "debug"
+	case log.LevelInfo:
+		return "info"
+	case log.LevelWarning:
+		return "warning"
+	case log.LevelError:
+		return "error"
+	case log.LevelFatal:
+		return "fatal"
+	case log.LevelPanic:
+		return "panic"
+	default:
+		return "unknown"
+	}
 }

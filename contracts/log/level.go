@@ -2,41 +2,58 @@ package log
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
-
-	"github.com/sirupsen/logrus"
 )
 
-type Level logrus.Level
+// Level represents a logging severity level.
+// The values are designed to be compatible with slog levels, with custom extensions
+// for Fatal and Panic levels. Higher values indicate more severe log events.
+type Level int
 
-// Convert the Level to a string. E.g. PanicLevel becomes "panic".
+const (
+	// LevelDebug is the debug level, used for detailed troubleshooting information.
+	LevelDebug Level = Level(slog.LevelDebug) // -4
+	// LevelInfo is the info level, used for general operational information.
+	LevelInfo Level = Level(slog.LevelInfo) // 0
+	// LevelWarning is the warning level, used for potentially harmful situations.
+	LevelWarning Level = Level(slog.LevelWarn) // 4
+	// LevelError is the error level, used for error events.
+	LevelError Level = Level(slog.LevelError) // 8
+	// LevelFatal is the fatal level, used for severe errors that cause application exit.
+	LevelFatal Level = 12
+	// LevelPanic is the panic level, used for severe errors that cause panic.
+	LevelPanic Level = 16
+)
+
+// String returns the string representation of the Level.
+// E.g., LevelPanic becomes "panic".
 func (level Level) String() string {
 	if b, err := level.MarshalText(); err == nil {
 		return string(b)
-	} else {
-		return "unknown"
 	}
+	return "unknown"
 }
 
-// ParseLevel takes a string level and returns the Logrus log level constant.
+// ParseLevel takes a string level and returns the corresponding Level constant.
 func ParseLevel(lvl string) (Level, error) {
 	switch strings.ToLower(lvl) {
 	case "panic":
-		return PanicLevel, nil
+		return LevelPanic, nil
 	case "fatal":
-		return FatalLevel, nil
+		return LevelFatal, nil
 	case "error":
-		return ErrorLevel, nil
+		return LevelError, nil
 	case "warn", "warning":
-		return WarningLevel, nil
+		return LevelWarning, nil
 	case "info":
-		return InfoLevel, nil
+		return LevelInfo, nil
 	case "debug":
-		return DebugLevel, nil
+		return LevelDebug, nil
 	}
 
 	var l Level
-	return l, fmt.Errorf("not a valid logrus Level: %q", lvl)
+	return l, fmt.Errorf("not a valid log Level: %q", lvl)
 }
 
 // UnmarshalText implements encoding.TextUnmarshaler.
@@ -47,25 +64,32 @@ func (level *Level) UnmarshalText(text []byte) error {
 	}
 
 	*level = l
-
 	return nil
 }
 
+// MarshalText implements encoding.TextMarshaler.
 func (level Level) MarshalText() ([]byte, error) {
 	switch level {
-	case DebugLevel:
+	case LevelDebug:
 		return []byte("debug"), nil
-	case InfoLevel:
+	case LevelInfo:
 		return []byte("info"), nil
-	case WarningLevel:
+	case LevelWarning:
 		return []byte("warning"), nil
-	case ErrorLevel:
+	case LevelError:
 		return []byte("error"), nil
-	case FatalLevel:
+	case LevelFatal:
 		return []byte("fatal"), nil
-	case PanicLevel:
+	case LevelPanic:
 		return []byte("panic"), nil
 	}
 
-	return nil, fmt.Errorf("not a valid logrus level %d", level)
+	return nil, fmt.Errorf("not a valid log level %d", level)
+}
+
+// SlogLevel returns the corresponding slog.Level for this Level.
+// For custom levels (Fatal, Panic), it returns the closest slog equivalent
+// with appropriate offset.
+func (level Level) SlogLevel() slog.Level {
+	return slog.Level(level)
 }

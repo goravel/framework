@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log/slog"
 	nethttp "net/http"
 	"os"
 	"os/exec"
@@ -566,35 +567,48 @@ func mockDriverConfig(mockConfig *configmock.Config) {
 type CustomLogger struct {
 }
 
-func (logger *CustomLogger) Handle(channel string) (logcontracts.Hook, error) {
-	return &CustomHook{}, nil
+func (logger *CustomLogger) Handle(channel string) (logcontracts.Handler, error) {
+	return &CustomHandler{}, nil
 }
 
-type CustomHook struct {
+type CustomHandler struct {
+	attrs []slog.Attr
 }
 
-func (h *CustomHook) Levels() []logcontracts.Level {
-	return []logcontracts.Level{
-		logcontracts.InfoLevel,
+func (h *CustomHandler) Enabled(_ context.Context, level logcontracts.Level) bool {
+	return level >= logcontracts.LevelInfo
+}
+
+func (h *CustomHandler) Handle(ctx context.Context, record logcontracts.Record) error {
+	var data map[string]any
+	record.Attrs(func(attr slog.Attr) bool {
+		if attr.Key == "root" {
+			if m, ok := attr.Value.Any().(map[string]any); ok {
+				data = m
+			}
+		}
+		return true
+	})
+
+	if data == nil {
+		return nil
 	}
-}
 
-func (h *CustomHook) Fire(entry logcontracts.Entry) error {
-	with := entry.With()
+	with, _ := data["with"].(map[string]any)
 	filename, ok := with["filename"]
 	if ok {
 		var builder strings.Builder
-		message := entry.Message()
+		message := record.Message()
 		if len(message) > 0 {
-			builder.WriteString(fmt.Sprintf("%s: %v\n", entry.Level(), message))
+			builder.WriteString(fmt.Sprintf("%s: %v\n", record.Level(), message))
 		}
 
-		code := entry.Code()
+		code, _ := data["code"].(string)
 		if len(code) > 0 {
 			builder.WriteString(fmt.Sprintf("custom_code: %v\n", code))
 		}
 
-		user := entry.User()
+		user := data["user"]
 		if user != nil {
 			builder.WriteString(fmt.Sprintf("custom_user: %v\n", user))
 		}
@@ -605,6 +619,19 @@ func (h *CustomHook) Fire(entry logcontracts.Entry) error {
 		}
 	}
 	return nil
+}
+
+func (h *CustomHandler) WithAttrs(attrs []slog.Attr) logcontracts.Handler {
+	newHandler := &CustomHandler{
+		attrs: make([]slog.Attr, len(h.attrs)+len(attrs)),
+	}
+	copy(newHandler.attrs, h.attrs)
+	copy(newHandler.attrs[len(h.attrs):], attrs)
+	return newHandler
+}
+
+func (h *CustomHandler) WithGroup(name string) logcontracts.Handler {
+	return h
 }
 
 type TestRequest struct {

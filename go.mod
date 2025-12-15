@@ -21,11 +21,10 @@ require (
 	github.com/goravel/file-rotatelogs/v2 v2.4.2
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/pterm/pterm v0.12.82
-	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rotisserie/eris v0.5.4
 	github.com/samber/lo v1.52.0
-	github.com/sirupsen/logrus v1.9.3
+	github.com/samber/slog-multi v1.6.0
 	github.com/spf13/cast v1.10.0
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
@@ -68,6 +67,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/openzipkin/zipkin-go v0.4.3 // indirect
 	github.com/rs/zerolog v1.33.0 // indirect
+	github.com/samber/slog-common v0.19.0 // indirect
 	github.com/spf13/cobra v1.8.1 // indirect
 	github.com/vektra/mockery/v2 v2.53.5 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect

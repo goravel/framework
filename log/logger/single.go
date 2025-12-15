@@ -1,13 +1,15 @@
 package logger
 
 import (
+	"context"
+	"io"
+	"log/slog"
+	"os"
 	"path/filepath"
-
-	"github.com/rifflock/lfshook"
-	"github.com/sirupsen/logrus"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/log/formatter"
 	"github.com/goravel/framework/support"
@@ -25,72 +27,76 @@ func NewSingle(config config.Config, json foundation.Json) *Single {
 	}
 }
 
-func (single *Single) Handle(channel string) (logrus.Hook, error) {
+func (single *Single) Handle(channel string) (slog.Handler, error) {
 	logPath := single.config.GetString(channel + ".path")
 	if logPath == "" {
 		return nil, errors.LogEmptyLogFilePath
 	}
 
 	logPath = filepath.Join(support.RelativePath, logPath)
-	levels := getLevels(single.config.GetString(channel + ".level"))
-	pathMap := lfshook.PathMap{}
-	for _, level := range levels {
-		pathMap[level] = logPath
+	level := getLevelFromString(single.config.GetString(channel + ".level"))
+
+	// Ensure parent directory exists
+	dir := filepath.Dir(logPath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return nil, err
 	}
 
-	return lfshook.NewHook(
-		pathMap,
-		formatter.NewGeneral(single.config, single.json),
-	), nil
+	// Open log file for appending
+	file, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		return nil, err
+	}
+
+	var writers []io.Writer
+	writers = append(writers, file)
+
+	if single.config.GetBool(channel + ".print") {
+		writers = append(writers, os.Stdout)
+	}
+
+	// Create the slog handler
+	handler := formatter.NewGeneralHandler(single.config, single.json, io.MultiWriter(writers...), level)
+	return handler, nil
 }
 
-func getLevels(level string) []logrus.Level {
-	if level == "panic" {
-		return []logrus.Level{
-			logrus.PanicLevel,
-		}
+func getLevelFromString(level string) log.Level {
+	switch level {
+	case "panic":
+		return log.LevelPanic
+	case "fatal":
+		return log.LevelFatal
+	case "error":
+		return log.LevelError
+	case "warning", "warn":
+		return log.LevelWarning
+	case "info":
+		return log.LevelInfo
+	case "debug":
+		return log.LevelDebug
+	default:
+		return log.LevelDebug
 	}
+}
 
-	if level == "fatal" {
-		return []logrus.Level{
-			logrus.FatalLevel,
-			logrus.PanicLevel,
-		}
-	}
+// levelHandler is a slog.Handler that filters by level
+type levelHandler struct {
+	level   log.Level
+	handler slog.Handler
+}
 
-	if level == "error" {
-		return []logrus.Level{
-			logrus.ErrorLevel,
-			logrus.FatalLevel,
-			logrus.PanicLevel,
-		}
-	}
+func (h *levelHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	return log.Level(level) >= h.level
+}
 
-	if level == "warning" {
-		return []logrus.Level{
-			logrus.WarnLevel,
-			logrus.ErrorLevel,
-			logrus.FatalLevel,
-			logrus.PanicLevel,
-		}
-	}
+func (h *levelHandler) Handle(ctx context.Context, record slog.Record) error {
+	return h.handler.Handle(ctx, record)
+}
 
-	if level == "info" {
-		return []logrus.Level{
-			logrus.InfoLevel,
-			logrus.WarnLevel,
-			logrus.ErrorLevel,
-			logrus.FatalLevel,
-			logrus.PanicLevel,
-		}
-	}
+func (h *levelHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return &levelHandler{level: h.level, handler: h.handler.WithAttrs(attrs)}
+}
 
-	return []logrus.Level{
-		logrus.DebugLevel,
-		logrus.InfoLevel,
-		logrus.WarnLevel,
-		logrus.ErrorLevel,
-		logrus.FatalLevel,
-		logrus.PanicLevel,
-	}
+func (h *levelHandler) WithGroup(name string) slog.Handler {
+	return &levelHandler{level: h.level, handler: h.handler.WithGroup(name)}
 }

@@ -2,8 +2,9 @@ package log
 
 import (
 	"context"
+	"log/slog"
 
-	"github.com/sirupsen/logrus"
+	slogmulti "github.com/samber/slog-multi"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
@@ -14,35 +15,50 @@ import (
 
 type Application struct {
 	log.Writer
-	instance *logrus.Logger
-	config   config.Config
-	json     foundation.Json
+	logger *slog.Logger
+	config config.Config
+	json   foundation.Json
 }
 
 func NewApplication(config config.Config, json foundation.Json) (*Application, error) {
-	instance := NewLogrus()
+	var handlers []slog.Handler
+
 	if config != nil {
 		if channel := config.GetString("logging.default"); channel != "" {
-			if err := registerHook(config, json, instance, channel); err != nil {
+			h, err := getHandlers(config, json, channel)
+			if err != nil {
 				return nil, err
 			}
+			handlers = append(handlers, h...)
 		}
 	}
 
+	var handler slog.Handler
+	if len(handlers) == 0 {
+		// Default handler that discards all logs
+		handler = &discardHandler{}
+	} else if len(handlers) == 1 {
+		handler = handlers[0]
+	} else {
+		handler = slogmulti.Fanout(handlers...)
+	}
+
+	logger := slog.New(handler)
+
 	return &Application{
-		instance: instance,
-		Writer:   NewWriter(instance.WithContext(context.Background())),
-		config:   config,
-		json:     json,
+		logger: logger,
+		Writer: NewWriter(logger.With(), context.Background()),
+		config: config,
+		json:   json,
 	}, nil
 }
 
 func (r *Application) WithContext(ctx context.Context) log.Writer {
 	if httpCtx, ok := ctx.(http.Context); ok {
-		return NewWriter(r.instance.WithContext(httpCtx.Context()))
+		return NewWriter(r.logger, httpCtx.Context())
 	}
 
-	return NewWriter(r.instance.WithContext(ctx))
+	return NewWriter(r.logger, ctx)
 }
 
 func (r *Application) Channel(channel string) log.Writer {
@@ -50,13 +66,23 @@ func (r *Application) Channel(channel string) log.Writer {
 		return r.Writer
 	}
 
-	instance := NewLogrus()
-	if err := registerHook(r.config, r.json, instance, channel); err != nil {
+	handlers, err := getHandlers(r.config, r.json, channel)
+	if err != nil {
 		color.Errorln(err)
 		return nil
 	}
 
-	return NewWriter(instance.WithContext(context.Background()))
+	var handler slog.Handler
+	if len(handlers) == 0 {
+		handler = &discardHandler{}
+	} else if len(handlers) == 1 {
+		handler = handlers[0]
+	} else {
+		handler = slogmulti.Fanout(handlers...)
+	}
+
+	logger := slog.New(handler)
+	return NewWriter(logger, context.Background())
 }
 
 func (r *Application) Stack(channels []string) log.Writer {
@@ -64,17 +90,48 @@ func (r *Application) Stack(channels []string) log.Writer {
 		return r.Writer
 	}
 
-	instance := NewLogrus()
+	var handlers []slog.Handler
 	for _, channel := range channels {
 		if channel == "" {
 			continue
 		}
 
-		if err := registerHook(r.config, r.json, instance, channel); err != nil {
+		h, err := getHandlers(r.config, r.json, channel)
+		if err != nil {
 			color.Errorln(err)
 			return nil
 		}
+		handlers = append(handlers, h...)
 	}
 
-	return NewWriter(instance.WithContext(context.Background()))
+	var handler slog.Handler
+	if len(handlers) == 0 {
+		handler = &discardHandler{}
+	} else if len(handlers) == 1 {
+		handler = handlers[0]
+	} else {
+		handler = slogmulti.Fanout(handlers...)
+	}
+
+	logger := slog.New(handler)
+	return NewWriter(logger, context.Background())
+}
+
+// discardHandler is a handler that discards all logs
+type discardHandler struct{}
+
+func (h *discardHandler) Enabled(_ context.Context, _ slog.Level) bool {
+	return false
+}
+
+func (h *discardHandler) Handle(_ context.Context, _ slog.Record) error {
+	return nil
+}
+
+func (h *discardHandler) WithAttrs(_ []slog.Attr) slog.Handler {
+	return h
+}
+
+func (h *discardHandler) WithGroup(_ string) slog.Handler {
+	return h
 }
