@@ -1,12 +1,13 @@
 package formatter
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
@@ -18,7 +19,7 @@ import (
 type GeneralTestSuite struct {
 	suite.Suite
 	mockConfig *configmock.Config
-	entry      *logrus.Entry
+	record     slog.Record
 	json       foundation.Json
 }
 
@@ -28,11 +29,7 @@ func TestGeneralTestSuite(t *testing.T) {
 
 func (s *GeneralTestSuite) SetupTest() {
 	s.mockConfig = configmock.NewConfig(s.T())
-	s.entry = &logrus.Entry{
-		Time:    time.Now().In(time.UTC),
-		Level:   logrus.InfoLevel,
-		Message: "Test Message",
-	}
+	s.record = slog.NewRecord(time.Now().In(time.UTC), slog.LevelInfo, "Test Message", 0)
 	s.json = json.New()
 }
 
@@ -48,12 +45,11 @@ func (s *GeneralTestSuite) TestFormat() {
 		{
 			name: "Error in Marshaling",
 			setup: func() {
-				s.entry.Data = logrus.Fields{
-					"root": make(chan int),
-				}
+				s.record = slog.NewRecord(time.Now().In(time.UTC), slog.LevelInfo, "Test Message", 0)
+				s.record.AddAttrs(slog.Any("root", make(chan int)))
 			},
 			assert: func() {
-				formatLog, err := general.Format(s.entry)
+				formatLog, err := general.Format(context.Background(), s.record)
 				s.NotNil(err)
 				s.Nil(formatLog)
 			},
@@ -61,19 +57,18 @@ func (s *GeneralTestSuite) TestFormat() {
 		{
 			name: "Data is not empty",
 			setup: func() {
-				s.entry.Data = logrus.Fields{
-					"root": map[string]any{
-						"code":   "200",
-						"domain": "example.com",
-						"owner":  "owner",
-						"user":   "user1",
-					},
-				}
+				s.record = slog.NewRecord(time.Now().In(time.UTC), slog.LevelInfo, "Test Message", 0)
+				s.record.AddAttrs(slog.Any("root", map[string]any{
+					"code":   "200",
+					"domain": "example.com",
+					"owner":  "owner",
+					"user":   "user1",
+				}))
 			},
 			assert: func() {
-				formatLog, err := general.Format(s.entry)
+				formatLog, err := general.Format(context.Background(), s.record)
 				s.Nil(err)
-				s.Contains(string(formatLog), fmt.Sprintf("[%s] test.info: Test Message", s.entry.Time.In(time.UTC).Format("2006-01-02 15:04:05.999")))
+				s.Contains(string(formatLog), fmt.Sprintf("[%s] test.info: Test Message", s.record.Time.In(time.UTC).Format("2006-01-02 15:04:05.999")))
 				s.Contains(string(formatLog), "[Code] 200")
 				s.Contains(string(formatLog), "[Domain] example.com")
 				s.Contains(string(formatLog), "[Owner] owner")
@@ -91,7 +86,7 @@ func (s *GeneralTestSuite) TestFormat() {
 }
 
 func (s *GeneralTestSuite) TestFormatData() {
-	var data logrus.Fields
+	var data map[string]any
 	general := NewGeneral(s.mockConfig, s.json)
 	tests := []struct {
 		name   string
@@ -101,7 +96,7 @@ func (s *GeneralTestSuite) TestFormatData() {
 		{
 			name: "Data is empty",
 			setup: func() {
-				data = logrus.Fields{}
+				data = map[string]any{}
 			},
 			assert: func() {
 				formattedData, err := general.formatData(data)
@@ -112,7 +107,7 @@ func (s *GeneralTestSuite) TestFormatData() {
 		{
 			name: "Root key is absent",
 			setup: func() {
-				data = logrus.Fields{
+				data = map[string]any{
 					"key": "value",
 				}
 			},
@@ -125,7 +120,7 @@ func (s *GeneralTestSuite) TestFormatData() {
 		{
 			name: "Data is not empty",
 			setup: func() {
-				data = logrus.Fields{
+				data = map[string]any{
 					"root": map[string]any{
 						"code":   "200",
 						"domain": "example.com",
@@ -281,36 +276,36 @@ func TestFormatStackTrace(t *testing.T) {
 func TestDeleteKey(t *testing.T) {
 	tests := []struct {
 		name   string
-		data   logrus.Fields
+		data   map[string]any
 		key    string
 		assert func()
 	}{
 		{
 			name: "Key is not present in data",
-			data: logrus.Fields{
+			data: map[string]any{
 				"key": "value",
 			},
 			key: "notPresent",
 			assert: func() {
-				removedData := deleteKey(logrus.Fields{
+				removedData := deleteKey(map[string]any{
 					"key": "value",
 				}, "notPresent")
-				assert.Equal(t, logrus.Fields{
+				assert.Equal(t, map[string]any{
 					"key": "value",
 				}, removedData)
 			},
 		},
 		{
 			name: "Key is present in data",
-			data: logrus.Fields{
+			data: map[string]any{
 				"key": "value",
 			},
 			key: "key",
 			assert: func() {
-				removedData := deleteKey(logrus.Fields{
+				removedData := deleteKey(map[string]any{
 					"key": "value",
 				}, "key")
-				assert.Equal(t, logrus.Fields{}, removedData)
+				assert.Equal(t, map[string]any{}, removedData)
 			},
 		},
 	}

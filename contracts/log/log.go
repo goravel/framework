@@ -2,6 +2,7 @@ package log
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"github.com/goravel/framework/contracts/http"
@@ -85,18 +86,21 @@ type Writer interface {
 	WithTrace() Writer
 }
 
+// Handler is similar to slog.Handler but works with our custom log system.
+// It allows custom log handlers to process log entries.
+type Handler interface {
+	slog.Handler
+}
+
+// Logger defines custom logger that returns a Handler instead of Hook.
+// This aligns with slog's design where handlers process log records.
 type Logger interface {
-	// Handle pass a channel config path here
-	Handle(channel string) (Hook, error)
+	// Handle returns a slog.Handler for the given channel configuration path
+	Handle(channel string) (Handler, error)
 }
 
-type Hook interface {
-	// Levels monitoring level
-	Levels() []Level
-	// Fire executes logic when trigger
-	Fire(Entry) error
-}
-
+// Entry represents a log entry with all contextual information.
+// This is passed to handlers for processing.
 type Entry interface {
 	// Code returns the associated code.
 	Code() string

@@ -2,14 +2,16 @@ package formatter
 
 import (
 	"bytes"
+	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
+	contractslog "github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/str"
 )
@@ -37,19 +39,22 @@ func NewGeneral(config config.Config, json foundation.Json) *General {
 	}
 }
 
-func (general *General) Format(entry *logrus.Entry) ([]byte, error) {
-	var b *bytes.Buffer
-	if entry.Buffer != nil {
-		b = entry.Buffer
-	} else {
-		b = &bytes.Buffer{}
-	}
+func (general *General) Format(ctx context.Context, record slog.Record) ([]byte, error) {
+	var b bytes.Buffer
 
-	timestamp := carbon.FromStdTime(entry.Time, carbon.DefaultTimezone()).ToDateTimeMilliString()
-	fmt.Fprintf(b, "[%s] %s.%s: %s\n", timestamp, general.config.GetString("app.env"), entry.Level, entry.Message)
-	data := entry.Data
-	if len(data) > 0 {
-		formattedData, err := general.formatData(data)
+	timestamp := carbon.FromStdTime(record.Time, carbon.DefaultTimezone()).ToDateTimeMilliString()
+	level := contractslog.FromSlog(record.Level)
+	fmt.Fprintf(&b, "[%s] %s.%s: %s\n", timestamp, general.config.GetString("app.env"), level.String(), record.Message)
+	
+	// Collect all attributes from the record
+	attrs := make(map[string]any)
+	record.Attrs(func(a slog.Attr) bool {
+		attrs[a.Key] = a.Value.Any()
+		return true
+	})
+	
+	if len(attrs) > 0 {
+		formattedData, err := general.formatData(attrs)
 		if err != nil {
 			return nil, err
 		}
@@ -59,7 +64,7 @@ func (general *General) Format(entry *logrus.Entry) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
-func (general *General) formatData(data logrus.Fields) (string, error) {
+func (general *General) formatData(data map[string]any) (string, error) {
 	var builder strings.Builder
 
 	if len(data) > 0 {
@@ -133,8 +138,8 @@ func formatStackTrace(stackStr string) string {
 	return fmt.Sprintf("%s\n", stackStr)
 }
 
-func deleteKey(data logrus.Fields, keyToDelete string) logrus.Fields {
-	dataCopy := make(logrus.Fields)
+func deleteKey(data map[string]any, keyToDelete string) map[string]any {
+	dataCopy := make(map[string]any)
 	for key, value := range data {
 		if key != keyToDelete {
 			dataCopy[key] = value

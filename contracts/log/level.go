@@ -2,12 +2,11 @@ package log
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
-
-	"github.com/sirupsen/logrus"
 )
 
-type Level logrus.Level
+type Level int
 
 // Convert the Level to a string. E.g. PanicLevel becomes "panic".
 func (level Level) String() string {
@@ -18,7 +17,7 @@ func (level Level) String() string {
 	}
 }
 
-// ParseLevel takes a string level and returns the Logrus log level constant.
+// ParseLevel takes a string level and returns the log level constant.
 func ParseLevel(lvl string) (Level, error) {
 	switch strings.ToLower(lvl) {
 	case "panic":
@@ -36,7 +35,7 @@ func ParseLevel(lvl string) (Level, error) {
 	}
 
 	var l Level
-	return l, fmt.Errorf("not a valid logrus Level: %q", lvl)
+	return l, fmt.Errorf("not a valid log Level: %q", lvl)
 }
 
 // UnmarshalText implements encoding.TextUnmarshaler.
@@ -67,5 +66,44 @@ func (level Level) MarshalText() ([]byte, error) {
 		return []byte("panic"), nil
 	}
 
-	return nil, fmt.Errorf("not a valid logrus level %d", level)
+	return nil, fmt.Errorf("not a valid log level %d", level)
+}
+
+// ToSlog converts our Level to slog.Level
+func (level Level) ToSlog() slog.Level {
+	// Map our levels to slog levels
+	// Note: slog.Level values are: Debug=-4, Info=0, Warn=4, Error=8
+	// Our levels are: Panic=0, Fatal=1, Error=2, Warning=3, Info=4, Debug=5
+	switch level {
+	case PanicLevel:
+		return slog.Level(12) // Higher than Error
+	case FatalLevel:
+		return slog.Level(12) // Higher than Error
+	case ErrorLevel:
+		return slog.LevelError
+	case WarningLevel:
+		return slog.LevelWarn
+	case InfoLevel:
+		return slog.LevelInfo
+	case DebugLevel:
+		return slog.LevelDebug
+	default:
+		return slog.LevelInfo
+	}
+}
+
+// FromSlog converts slog.Level to our Level
+func FromSlog(level slog.Level) Level {
+	switch {
+	case level >= 12:
+		return ErrorLevel // Treat very high levels as errors
+	case level >= slog.LevelError:
+		return ErrorLevel
+	case level >= slog.LevelWarn:
+		return WarningLevel
+	case level >= slog.LevelInfo:
+		return InfoLevel
+	default:
+		return DebugLevel
+	}
 }

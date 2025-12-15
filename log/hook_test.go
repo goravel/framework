@@ -2,10 +2,10 @@ package log
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/goravel/framework/contracts/log"
@@ -20,7 +20,7 @@ func TestHook_Fire(t *testing.T) {
 		code       = "123"
 		domain     = "example.com"
 		hint       = "hint"
-		level      = logrus.InfoLevel
+		level      = slog.LevelInfo
 		message    = "message"
 		owner      = "owner"
 		request    = map[string]any{"key": "value"}
@@ -34,32 +34,28 @@ func TestHook_Fire(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		entry       *logrus.Entry
+		record      slog.Record
 		setup       func()
 		expectError error
 	}{
 		{
 			name: "full data",
-			entry: &logrus.Entry{
-				Context: ctx,
-				Data: logrus.Fields{
-					"root": map[string]any{
-						"code":       code,
-						"domain":     domain,
-						"hint":       hint,
-						"owner":      owner,
-						"request":    request,
-						"response":   response,
-						"stacktrace": stacktrace,
-						"tags":       tags,
-						"user":       user,
-						"with":       with,
-					},
-				},
-				Level:   level,
-				Time:    now,
-				Message: message,
-			},
+			record: func() slog.Record {
+				r := slog.NewRecord(now, level, message, 0)
+				r.AddAttrs(slog.Any("root", map[string]any{
+					"code":       code,
+					"domain":     domain,
+					"hint":       hint,
+					"owner":      owner,
+					"request":    request,
+					"response":   response,
+					"stacktrace": stacktrace,
+					"tags":       tags,
+					"user":       user,
+					"with":       with,
+				}))
+				return r
+			}(),
 			setup: func() {
 				mockHook.EXPECT().Fire(&Entry{
 					ctx:  ctx,
@@ -80,7 +76,7 @@ func TestHook_Fire(t *testing.T) {
 					},
 					domain:     domain,
 					hint:       hint,
-					level:      log.Level(level),
+					level:      log.FromSlog(level),
 					message:    message,
 					owner:      owner,
 					request:    request,
@@ -95,18 +91,14 @@ func TestHook_Fire(t *testing.T) {
 		},
 		{
 			name: "empty data",
-			entry: &logrus.Entry{
-				Context: ctx,
-				Data:    logrus.Fields{},
-				Level:   level,
-				Time:    now,
-				Message: message,
-			},
+			record: func() slog.Record {
+				return slog.NewRecord(now, level, message, 0)
+			}(),
 			setup: func() {
 				mockHook.EXPECT().Fire(&Entry{
 					ctx:     ctx,
 					data:    map[string]any{},
-					level:   log.Level(level),
+					level:   log.FromSlog(level),
 					message: message,
 					time:    now,
 				}).Return(nil).Once()
@@ -114,18 +106,14 @@ func TestHook_Fire(t *testing.T) {
 		},
 		{
 			name: "Fire returns error",
-			entry: &logrus.Entry{
-				Context: ctx,
-				Data:    logrus.Fields{},
-				Level:   level,
-				Time:    now,
-				Message: message,
-			},
+			record: func() slog.Record {
+				return slog.NewRecord(now, level, message, 0)
+			}(),
 			setup: func() {
 				mockHook.EXPECT().Fire(&Entry{
 					ctx:     ctx,
 					data:    map[string]any{},
-					level:   log.Level(level),
+					level:   log.FromSlog(level),
 					message: message,
 					time:    now,
 				}).Return(assert.AnError).Once()
@@ -141,7 +129,7 @@ func TestHook_Fire(t *testing.T) {
 
 			hook := &Hook{instance: mockHook}
 
-			err := hook.Fire(tt.entry)
+			err := hook.Fire(ctx, tt.record)
 
 			assert.Equal(t, tt.expectError, err)
 		})

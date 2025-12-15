@@ -2,8 +2,7 @@ package log
 
 import (
 	"context"
-
-	"github.com/sirupsen/logrus"
+	"log/slog"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
@@ -14,16 +13,18 @@ import (
 
 type Application struct {
 	log.Writer
-	instance *logrus.Logger
+	instance *slog.Logger
 	config   config.Config
 	json     foundation.Json
 }
 
 func NewApplication(config config.Config, json foundation.Json) (*Application, error) {
-	instance := NewLogrus()
+	multiHandler := NewMultiHandler()
+	instance := slog.New(multiHandler)
+	
 	if config != nil {
 		if channel := config.GetString("logging.default"); channel != "" {
-			if err := registerHook(config, json, instance, channel); err != nil {
+			if err := registerHandler(config, json, multiHandler, channel); err != nil {
 				return nil, err
 			}
 		}
@@ -31,7 +32,7 @@ func NewApplication(config config.Config, json foundation.Json) (*Application, e
 
 	return &Application{
 		instance: instance,
-		Writer:   NewWriter(instance.WithContext(context.Background())),
+		Writer:   NewWriter(instance, context.Background()),
 		config:   config,
 		json:     json,
 	}, nil
@@ -39,10 +40,10 @@ func NewApplication(config config.Config, json foundation.Json) (*Application, e
 
 func (r *Application) WithContext(ctx context.Context) log.Writer {
 	if httpCtx, ok := ctx.(http.Context); ok {
-		return NewWriter(r.instance.WithContext(httpCtx.Context()))
+		return NewWriter(r.instance, httpCtx.Context())
 	}
 
-	return NewWriter(r.instance.WithContext(ctx))
+	return NewWriter(r.instance, ctx)
 }
 
 func (r *Application) Channel(channel string) log.Writer {
@@ -50,13 +51,15 @@ func (r *Application) Channel(channel string) log.Writer {
 		return r.Writer
 	}
 
-	instance := NewLogrus()
-	if err := registerHook(r.config, r.json, instance, channel); err != nil {
+	multiHandler := NewMultiHandler()
+	instance := slog.New(multiHandler)
+	
+	if err := registerHandler(r.config, r.json, multiHandler, channel); err != nil {
 		color.Errorln(err)
 		return nil
 	}
 
-	return NewWriter(instance.WithContext(context.Background()))
+	return NewWriter(instance, context.Background())
 }
 
 func (r *Application) Stack(channels []string) log.Writer {
@@ -64,17 +67,19 @@ func (r *Application) Stack(channels []string) log.Writer {
 		return r.Writer
 	}
 
-	instance := NewLogrus()
+	multiHandler := NewMultiHandler()
+	instance := slog.New(multiHandler)
+	
 	for _, channel := range channels {
 		if channel == "" {
 			continue
 		}
 
-		if err := registerHook(r.config, r.json, instance, channel); err != nil {
+		if err := registerHandler(r.config, r.json, multiHandler, channel); err != nil {
 			color.Errorln(err)
 			return nil
 		}
 	}
 
-	return NewWriter(instance.WithContext(context.Background()))
+	return NewWriter(instance, context.Background())
 }
