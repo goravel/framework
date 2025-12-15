@@ -71,6 +71,8 @@ func (h *LeveledHandler) WithGroup(name string) slog.Handler {
 type WriterHandler struct {
 	writer    io.Writer
 	formatter Formatter
+	attrs     []slog.Attr
+	groups    []string
 }
 
 func NewWriterHandler(w io.Writer, formatter Formatter) *WriterHandler {
@@ -85,7 +87,17 @@ func (h *WriterHandler) Enabled(ctx context.Context, level slog.Level) bool {
 }
 
 func (h *WriterHandler) Handle(ctx context.Context, record slog.Record) error {
-	formatted, err := h.formatter.Format(ctx, record)
+	// Create a new record with accumulated attrs
+	newRecord := slog.NewRecord(record.Time, record.Level, record.Message, record.PC)
+	record.Attrs(func(a slog.Attr) bool {
+		newRecord.AddAttrs(a)
+		return true
+	})
+	for _, attr := range h.attrs {
+		newRecord.AddAttrs(attr)
+	}
+	
+	formatted, err := h.formatter.Format(ctx, newRecord)
 	if err != nil {
 		return err
 	}
@@ -94,11 +106,29 @@ func (h *WriterHandler) Handle(ctx context.Context, record slog.Record) error {
 }
 
 func (h *WriterHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	return h
+	newAttrs := make([]slog.Attr, len(h.attrs)+len(attrs))
+	copy(newAttrs, h.attrs)
+	copy(newAttrs[len(h.attrs):], attrs)
+	
+	return &WriterHandler{
+		writer:    h.writer,
+		formatter: h.formatter,
+		attrs:     newAttrs,
+		groups:    h.groups,
+	}
 }
 
 func (h *WriterHandler) WithGroup(name string) slog.Handler {
-	return h
+	newGroups := make([]string, len(h.groups)+1)
+	copy(newGroups, h.groups)
+	newGroups[len(h.groups)] = name
+	
+	return &WriterHandler{
+		writer:    h.writer,
+		formatter: h.formatter,
+		attrs:     h.attrs,
+		groups:    newGroups,
+	}
 }
 
 // Formatter interface for formatting slog records

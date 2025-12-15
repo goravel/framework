@@ -283,6 +283,14 @@ func (r *Writer) toMap() map[string]any {
 	return payload
 }
 
+// createConsoleHandler creates a console output handler with the given formatter
+func createConsoleHandler(generalFormatter *formatter.General) slog.Handler {
+	return &consoleFormatterHandler{
+		formatter: generalFormatter,
+		minLevel:  slog.LevelDebug,
+	}
+}
+
 func createHandlers(config config.Config, json foundation.Json, channel string) ([]slog.Handler, error) {
 	var handlers []slog.Handler
 
@@ -316,13 +324,8 @@ func createHandlers(config config.Config, json foundation.Json, channel string) 
 		handlers = append(handlers, handler)
 
 		if config.GetBool(channelPath + ".print") {
-			// Add console handler for print mode
 			generalFormatter := formatter.NewGeneral(config, json)
-			consoleHandler := &consoleFormatterHandler{
-				formatter: generalFormatter,
-				minLevel:  slog.LevelDebug,
-			}
-			handlers = append(handlers, consoleHandler)
+			handlers = append(handlers, createConsoleHandler(generalFormatter))
 		}
 		
 	case log.DailyDriver:
@@ -334,13 +337,8 @@ func createHandlers(config config.Config, json foundation.Json, channel string) 
 		handlers = append(handlers, handler)
 
 		if config.GetBool(channelPath + ".print") {
-			// Add console handler for print mode
 			generalFormatter := formatter.NewGeneral(config, json)
-			consoleHandler := &consoleFormatterHandler{
-				formatter: generalFormatter,
-				minLevel:  slog.LevelDebug,
-			}
-			handlers = append(handlers, consoleHandler)
+			handlers = append(handlers, createConsoleHandler(generalFormatter))
 		}
 		
 	case log.CustomDriver:

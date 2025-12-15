@@ -13,6 +13,12 @@ import (
 	"github.com/goravel/framework/support"
 )
 
+// Custom slog levels (matching log/writer.go constants)
+const (
+	FatalSlogLevel slog.Level = 12
+	PanicSlogLevel slog.Level = 16
+)
+
 type Single struct {
 	config config.Config
 	json   foundation.Json
@@ -61,9 +67,9 @@ func (single *Single) Handle(channel string) (slog.Handler, error) {
 func getSlogLevel(level string) slog.Level {
 	switch level {
 	case "panic":
-		return slog.Level(12) // Higher than Error
+		return PanicSlogLevel
 	case "fatal":
-		return slog.Level(12)
+		return FatalSlogLevel
 	case "error":
 		return slog.LevelError
 	case "warning":
