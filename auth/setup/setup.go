@@ -13,8 +13,8 @@ func main() {
 	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
 	authConfigPath := path.Config("auth.go")
-	authFacadePath := path.Facades("auth.go")
-	gateFacadePath := path.Facades("gate.go")
+	authFacadePath := path.Facade("auth.go")
+	gateFacadePath := path.Facade("gate.go")
 	modulePath := setup.Paths().Module().Import()
 	authServiceProvider := "&auth.ServiceProvider{}"
 	facadesPackage := setup.Paths().Facades().Package()

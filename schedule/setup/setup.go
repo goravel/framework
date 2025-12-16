@@ -10,7 +10,7 @@ import (
 
 func main() {
 	setup := packages.Setup(os.Args)
-	scheduleFacadePath := path.Facades("schedule.go")
+	scheduleFacadePath := path.Facade("schedule.go")
 	scheduleServiceProvider := "&schedule.ServiceProvider{}"
 	moduleImport := setup.Paths().Module().Import()
 

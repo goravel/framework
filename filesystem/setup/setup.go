@@ -12,7 +12,7 @@ func main() {
 	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
 	storageConfigPath := path.Config("filesystems.go")
-	storageFacadePath := path.Facades("storage.go")
+	storageFacadePath := path.Facade("storage.go")
 	filesystemServiceProvider := "&filesystem.ServiceProvider{}"
 	moduleImport := setup.Paths().Module().Import()
 	facadesPackage := setup.Paths().Facades().Package()

@@ -12,7 +12,7 @@ func main() {
 	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
 	telemetryConfigPath := path.Config("telemetry.go")
-	telemetryFacadePath := path.Facades("telemetry.go")
+	telemetryFacadePath := path.Facade("telemetry.go")
 	telemetryServiceProvider := "&telemetry.ServiceProvider{}"
 	modulePath := setup.Paths().Module().Import()
 	facadesPackage := setup.Paths().Facades().Package()

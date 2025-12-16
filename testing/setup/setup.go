@@ -15,7 +15,7 @@ func main() {
 	testingServiceProvider := "&testing.ServiceProvider{}"
 	testCasePath := path.Base(support.Config.Paths.Tests, "test_case.go")
 	exampleTestPath := path.Base(support.Config.Paths.Tests, "feature", "example_test.go")
-	testingFacadePath := path.Facades("testing.go")
+	testingFacadePath := path.Facade("testing.go")
 	moduleImport := setup.Paths().Module().Import()
 
 	setup.Install(

@@ -11,7 +11,7 @@ import (
 func main() {
 	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
-	routeFacadePath := path.Facades("route.go")
+	routeFacadePath := path.Facade("route.go")
 	routesImport := setup.Paths().Routes().Import()
 	webFunc := setup.Paths().Routes().Package() + ".Web"
 	webRoutePath := path.Route("web.go")
