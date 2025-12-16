@@ -3,8 +3,7 @@
 package log
 
 import (
-	slog "log/slog"
-
+	log "github.com/goravel/framework/contracts/log"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -22,23 +21,23 @@ func (_m *Logger) EXPECT() *Logger_Expecter {
 }
 
 // Handle provides a mock function with given fields: channel
-func (_m *Logger) Handle(channel string) (slog.Handler, error) {
+func (_m *Logger) Handle(channel string) (log.Handler, error) {
 	ret := _m.Called(channel)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Handle")
 	}
 
-	var r0 slog.Handler
+	var r0 log.Handler
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (slog.Handler, error)); ok {
+	if rf, ok := ret.Get(0).(func(string) (log.Handler, error)); ok {
 		return rf(channel)
 	}
-	if rf, ok := ret.Get(0).(func(string) slog.Handler); ok {
+	if rf, ok := ret.Get(0).(func(string) log.Handler); ok {
 		r0 = rf(channel)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(slog.Handler)
+			r0 = ret.Get(0).(log.Handler)
 		}
 	}
 
@@ -69,12 +68,12 @@ func (_c *Logger_Handle_Call) Run(run func(channel string)) *Logger_Handle_Call 
 	return _c
 }
 
-func (_c *Logger_Handle_Call) Return(_a0 slog.Handler, _a1 error) *Logger_Handle_Call {
+func (_c *Logger_Handle_Call) Return(_a0 log.Handler, _a1 error) *Logger_Handle_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Logger_Handle_Call) RunAndReturn(run func(string) (slog.Handler, error)) *Logger_Handle_Call {
+func (_c *Logger_Handle_Call) RunAndReturn(run func(string) (log.Handler, error)) *Logger_Handle_Call {
 	_c.Call.Return(run)
 	return _c
 }
