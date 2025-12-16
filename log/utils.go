@@ -1,46 +1,34 @@
 package log
 
 import (
-	"reflect"
-	"unsafe"
+	"context"
+	"log/slog"
+
+	"github.com/goravel/framework/contracts/log"
 )
 
-func getContextValues(ctx any, values map[any]any) {
-	contextValues := reflect.Indirect(reflect.ValueOf(ctx))
-	contextKeys := reflect.TypeOf(ctx)
-	if contextKeys.Kind() == reflect.Ptr {
-		contextKeys = contextKeys.Elem()
-	}
+// slogAdapter wraps a log.Handler to implement slog.Handler
+type slogAdapter struct {
+	handler log.Handler
+}
 
-	if contextKeys.Kind() != reflect.Struct {
-		return
-	}
+func (h *slogAdapter) Enabled(ctx context.Context, level slog.Level) bool {
+	return h.handler.Enabled(log.Level(level))
+}
 
-	value := struct {
-		Key any
-		Val any
-	}{}
+func (h *slogAdapter) Handle(ctx context.Context, record slog.Record) error {
+	entry := FromSlogRecord(record)
+	return h.handler.Handle(entry)
+}
 
-	for i := 0; i < contextValues.NumField(); i++ {
-		reflectValue := contextValues.Field(i)
-		if !reflectValue.CanAddr() {
-			continue
-		}
+func (h *slogAdapter) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return h
+}
 
-		reflectValue = reflect.NewAt(reflectValue.Type(), unsafe.Pointer(reflectValue.UnsafeAddr())).Elem()
-		reflectField := contextKeys.Field(i)
+func (h *slogAdapter) WithGroup(name string) slog.Handler {
+	return h
+}
 
-		switch reflectField.Name {
-		case "Context":
-			getContextValues(reflectValue.Interface(), values)
-		case "key":
-			value.Key = reflectValue.Interface()
-		case "val":
-			value.Val = reflectValue.Interface()
-		}
-	}
-
-	if value.Key != nil {
-		values[value.Key] = value.Val
-	}
+func HandlerToSlogHandler(handler log.Handler) slog.Handler {
+	return &slogAdapter{handler: handler}
 }

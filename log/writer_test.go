@@ -21,6 +21,8 @@ import (
 	"github.com/goravel/framework/support/file"
 )
 
+type testContextKey any
+
 var (
 	singleLog = "storage/logs/goravel.log"
 	dailyLog  = fmt.Sprintf("storage/logs/goravel-%s.log", carbon.Now().ToDateString())
@@ -55,8 +57,8 @@ func TestWriter(t *testing.T) {
 				log.WithContext(ctx).Info("Goravel")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.info: Goravel\n[Context] map[key:value]"))
-				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\n[Context] map[key:value]"))
+				assert.True(t, file.Contains(singleLog, "test.info: Goravel\n[Context] map[key:value]"))
+				assert.True(t, file.Contains(dailyLog, "test.info: Goravel\n[Context] map[key:value]"))
 			},
 		},
 		{
@@ -68,8 +70,8 @@ func TestWriter(t *testing.T) {
 				log.Debug("Debug Goravel")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.debug: Debug Goravel"))
-				assert.True(t, file.Contain(dailyLog, "test.debug: Debug Goravel"))
+				assert.True(t, file.Contains(singleLog, "test.debug: Debug Goravel"))
+				assert.True(t, file.Contains(dailyLog, "test.debug: Debug Goravel"))
 			},
 		},
 		{
@@ -81,8 +83,8 @@ func TestWriter(t *testing.T) {
 				log.Debug("No Debug Goravel")
 			},
 			assert: func() {
-				assert.False(t, file.Contain(singleLog, "test.debug: No Debug Goravel"))
-				assert.False(t, file.Contain(dailyLog, "test.debug: No Debug Goravel"))
+				assert.False(t, file.Contains(singleLog, "test.debug: No Debug Goravel"))
+				assert.False(t, file.Contains(dailyLog, "test.debug: No Debug Goravel"))
 			},
 		},
 		{
@@ -94,8 +96,8 @@ func TestWriter(t *testing.T) {
 				log.Debugf("Goravel: %s", "World")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.debug: Goravel: World"))
-				assert.True(t, file.Contain(dailyLog, "test.debug: Goravel: World"))
+				assert.True(t, file.Contains(singleLog, "test.debug: Goravel: World"))
+				assert.True(t, file.Contains(dailyLog, "test.debug: Goravel: World"))
 			},
 		},
 		{
@@ -107,8 +109,8 @@ func TestWriter(t *testing.T) {
 				log.Info("Goravel")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.info: Goravel"))
-				assert.True(t, file.Contain(dailyLog, "test.info: Goravel"))
+				assert.True(t, file.Contains(singleLog, "test.info: Goravel"))
+				assert.True(t, file.Contains(dailyLog, "test.info: Goravel"))
 			},
 		},
 		{
@@ -120,8 +122,8 @@ func TestWriter(t *testing.T) {
 				log.Infof("Goravel: %s", "World")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.info: Goravel: World"))
-				assert.True(t, file.Contain(dailyLog, "test.info: Goravel: World"))
+				assert.True(t, file.Contains(singleLog, "test.info: Goravel: World"))
+				assert.True(t, file.Contains(dailyLog, "test.info: Goravel: World"))
 			},
 		},
 		{
@@ -133,8 +135,8 @@ func TestWriter(t *testing.T) {
 				log.Warning("Goravel")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.warning: Goravel"))
-				assert.True(t, file.Contain(dailyLog, "test.warning: Goravel"))
+				assert.True(t, file.Contains(singleLog, "test.warning: Goravel"))
+				assert.True(t, file.Contains(dailyLog, "test.warning: Goravel"))
 			},
 		},
 		{
@@ -146,8 +148,8 @@ func TestWriter(t *testing.T) {
 				log.Warningf("Goravel: %s", "World")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.warning: Goravel: World"))
-				assert.True(t, file.Contain(dailyLog, "test.warning: Goravel: World"))
+				assert.True(t, file.Contains(singleLog, "test.warning: Goravel: World"))
+				assert.True(t, file.Contains(dailyLog, "test.warning: Goravel: World"))
 			},
 		},
 		{
@@ -159,8 +161,8 @@ func TestWriter(t *testing.T) {
 				log.Error("Goravel")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.error: Goravel"))
-				assert.True(t, file.Contain(dailyLog, "test.error: Goravel"))
+				assert.True(t, file.Contains(singleLog, "test.error: Goravel"))
+				assert.True(t, file.Contains(dailyLog, "test.error: Goravel"))
 			},
 		},
 		{
@@ -172,8 +174,8 @@ func TestWriter(t *testing.T) {
 				log.Errorf("Goravel: %s", "World")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.error: Goravel: World"))
-				assert.True(t, file.Contain(dailyLog, "test.error: Goravel: World"))
+				assert.True(t, file.Contains(singleLog, "test.error: Goravel: World"))
+				assert.True(t, file.Contains(dailyLog, "test.error: Goravel: World"))
 			},
 		},
 		{
@@ -187,8 +189,8 @@ func TestWriter(t *testing.T) {
 				assert.Panics(t, func() {
 					log.Panic("Goravel")
 				})
-				assert.True(t, file.Contain(singleLog, "test.panic: Goravel"))
-				assert.True(t, file.Contain(dailyLog, "test.panic: Goravel"))
+				assert.True(t, file.Contains(singleLog, "test.panic: Goravel"))
+				assert.True(t, file.Contains(dailyLog, "test.panic: Goravel"))
 			},
 		},
 		{
@@ -202,8 +204,8 @@ func TestWriter(t *testing.T) {
 				assert.Panics(t, func() {
 					log.Panicf("Goravel: %s", "World")
 				})
-				assert.True(t, file.Contain(singleLog, "test.panic: Goravel: World"))
-				assert.True(t, file.Contain(dailyLog, "test.panic: Goravel: World"))
+				assert.True(t, file.Contains(singleLog, "test.panic: Goravel: World"))
+				assert.True(t, file.Contains(dailyLog, "test.panic: Goravel: World"))
 			},
 		},
 		{
@@ -215,8 +217,8 @@ func TestWriter(t *testing.T) {
 				log.Code("code").Info("Goravel")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.info: Goravel\n[Code] code"))
-				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\n[Code] code"))
+				assert.True(t, file.Contains(singleLog, "test.info: Goravel\n[Code] code"))
+				assert.True(t, file.Contains(dailyLog, "test.info: Goravel\n[Code] code"))
 			},
 		},
 		{
@@ -228,8 +230,8 @@ func TestWriter(t *testing.T) {
 				log.Hint("hint").Info("Goravel")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.info: Goravel\n[Hint] hint"))
-				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\n[Hint] hint"))
+				assert.True(t, file.Contains(singleLog, "test.info: Goravel\n[Hint] hint"))
+				assert.True(t, file.Contains(dailyLog, "test.info: Goravel\n[Hint] hint"))
 			},
 		},
 		{
@@ -241,8 +243,8 @@ func TestWriter(t *testing.T) {
 				log.In("domain").Info("Goravel")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.info: Goravel\n[Domain] domain"))
-				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\n[Domain] domain"))
+				assert.True(t, file.Contains(singleLog, "test.info: Goravel\n[Domain] domain"))
+				assert.True(t, file.Contains(dailyLog, "test.info: Goravel\n[Domain] domain"))
 			},
 		},
 		{
@@ -254,8 +256,8 @@ func TestWriter(t *testing.T) {
 				log.Owner("team@goravel.dev").Info("Goravel")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.info: Goravel\n[Owner] team@goravel.dev"))
-				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\n[Owner] team@goravel.dev"))
+				assert.True(t, file.Contains(singleLog, "test.info: Goravel\n[Owner] team@goravel.dev"))
+				assert.True(t, file.Contains(dailyLog, "test.info: Goravel\n[Owner] team@goravel.dev"))
 			},
 		},
 		{
@@ -278,8 +280,8 @@ func TestWriter(t *testing.T) {
 				}
 
 				for _, part := range expectedParts {
-					assert.True(t, file.Contain(singleLog, part), part)
-					assert.True(t, file.Contain(dailyLog, part), part)
+					assert.True(t, file.Contains(singleLog, part), part)
+					assert.True(t, file.Contains(dailyLog, part), part)
 				}
 			},
 		},
@@ -302,8 +304,8 @@ func TestWriter(t *testing.T) {
 				}
 
 				for _, part := range expectedParts {
-					assert.True(t, file.Contain(singleLog, part))
-					assert.True(t, file.Contain(dailyLog, part))
+					assert.True(t, file.Contains(singleLog, part))
+					assert.True(t, file.Contains(dailyLog, part))
 				}
 			},
 		},
@@ -316,8 +318,8 @@ func TestWriter(t *testing.T) {
 				log.Tags("tag").Info("Goravel")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.info: Goravel\n[Tags] [tag]"))
-				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\n[Tags] [tag]"))
+				assert.True(t, file.Contains(singleLog, "test.info: Goravel\n[Tags] [tag]"))
+				assert.True(t, file.Contains(dailyLog, "test.info: Goravel\n[Tags] [tag]"))
 			},
 		},
 		{
@@ -329,8 +331,8 @@ func TestWriter(t *testing.T) {
 				log.User(map[string]any{"name": "kkumar-gcc"}).Info("Goravel")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.info: Goravel\n[User] map[name:kkumar-gcc]"))
-				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\n[User] map[name:kkumar-gcc]"))
+				assert.True(t, file.Contains(singleLog, "test.info: Goravel\n[User] map[name:kkumar-gcc]"))
+				assert.True(t, file.Contains(dailyLog, "test.info: Goravel\n[User] map[name:kkumar-gcc]"))
 			},
 		},
 		{
@@ -342,8 +344,8 @@ func TestWriter(t *testing.T) {
 				log.With(map[string]any{"key": "value"}).Info("Goravel")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.info: Goravel\n[With] map[key:value]"))
-				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\n[With] map[key:value]"))
+				assert.True(t, file.Contains(singleLog, "test.info: Goravel\n[With] map[key:value]"))
+				assert.True(t, file.Contains(dailyLog, "test.info: Goravel\n[With] map[key:value]"))
 			},
 		},
 		{
@@ -355,8 +357,8 @@ func TestWriter(t *testing.T) {
 				log.WithTrace().Info("Goravel")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.info: Goravel\n[Trace]"))
-				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\n[Trace]"))
+				assert.True(t, file.Contains(singleLog, "test.info: Goravel\n[Trace]"))
+				assert.True(t, file.Contains(dailyLog, "test.info: Goravel\n[Trace]"))
 			},
 		},
 		{
@@ -369,12 +371,12 @@ func TestWriter(t *testing.T) {
 				log.Info("test info")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.error: test error\n[Trace]"))
-				assert.True(t, file.Contain(singleLog, "test.info: test info"))
-				assert.False(t, file.Contain(dailyLog, "test.info: test info\n[Trace]"))
-				assert.True(t, file.Contain(dailyLog, "test.error: test error"))
-				assert.True(t, file.Contain(dailyLog, "test.info: test info"))
-				assert.False(t, file.Contain(singleLog, "test.info: test info\n[Trace]"))
+				assert.True(t, file.Contains(singleLog, "test.error: test error\n[Trace]"))
+				assert.True(t, file.Contains(singleLog, "test.info: test info"))
+				assert.False(t, file.Contains(dailyLog, "test.info: test info\n[Trace]"))
+				assert.True(t, file.Contains(dailyLog, "test.error: test error"))
+				assert.True(t, file.Contains(dailyLog, "test.info: test info"))
+				assert.False(t, file.Contains(singleLog, "test.info: test info\n[Trace]"))
 			},
 		},
 	}
@@ -413,7 +415,7 @@ func TestWriterWithCustomLogger(t *testing.T) {
 		Code("code").Info("Goravel")
 
 	expectedContent := "info: Goravel\ncustom_code: code\ncustom_user: map[name:kkumar-gcc]\n"
-	assert.True(t, file.Contain(filename, expectedContent), "Log file content does not match expected output")
+	assert.True(t, file.Contains(filename, expectedContent), "Log file content does not match expected output")
 
 	assert.Nil(t, file.Remove(filename))
 }
@@ -434,8 +436,8 @@ func TestWriter_Fatal(t *testing.T) {
 	err = cmd.Run()
 
 	assert.EqualError(t, err, "exit status 1")
-	assert.True(t, file.Contain(singleLog, "test.fatal: Goravel"))
-	assert.True(t, file.Contain(dailyLog, "test.fatal: Goravel"))
+	assert.True(t, file.Contains(singleLog, "test.fatal: Goravel"))
+	assert.True(t, file.Contains(dailyLog, "test.fatal: Goravel"))
 
 	_ = file.Remove("storage")
 }
@@ -456,8 +458,8 @@ func TestWriter_Fatalf(t *testing.T) {
 	err = cmd.Run()
 
 	assert.EqualError(t, err, "exit status 1")
-	assert.True(t, file.Contain(singleLog, "test.fatal: Goravel: World"))
-	assert.True(t, file.Contain(dailyLog, "test.fatal: Goravel: World"))
+	assert.True(t, file.Contains(singleLog, "test.fatal: Goravel: World"))
+	assert.True(t, file.Contains(dailyLog, "test.fatal: Goravel: World"))
 
 	_ = file.Remove("storage")
 }

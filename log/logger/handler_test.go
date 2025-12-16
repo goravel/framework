@@ -84,7 +84,7 @@ func (s *FileHandlerTestSuite) TestEnabled() {
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
 			handler := NewFileHandler(s.buffer, s.mockConfig, s.json, tt.handlerLevel)
-			result := handler.Enabled(context.Background(), tt.recordLevel)
+			result := handler.Enabled(log.Level(tt.recordLevel))
 			s.Equal(tt.expectEnabled, result)
 		})
 	}
@@ -95,60 +95,15 @@ func (s *FileHandlerTestSuite) TestHandle() {
 
 	handler := NewFileHandler(s.buffer, s.mockConfig, s.json, log.LevelDebug)
 
-	record := slog.Record{
-		Time:    time.Now(),
-		Level:   slog.LevelInfo,
-		Message: "test message",
+	entry := &mockEntry{
+		time:    time.Now(),
+		level:   log.LevelInfo,
+		message: "test message",
 	}
 
-	err := handler.Handle(context.Background(), record)
+	err := handler.Handle(entry)
 	s.Nil(err)
 	s.Contains(s.buffer.String(), "test.info: test message")
-}
-
-func (s *FileHandlerTestSuite) TestHandleWithRootAttrs() {
-	s.mockConfig.EXPECT().GetString("app.env").Return("test").Maybe()
-
-	handler := NewFileHandler(s.buffer, s.mockConfig, s.json, log.LevelDebug)
-
-	record := slog.Record{
-		Time:    time.Now(),
-		Level:   slog.LevelInfo,
-		Message: "test message",
-	}
-	record.AddAttrs(slog.Group("root",
-		slog.String("code", "test_code"),
-		slog.String("hint", "test_hint"),
-	))
-
-	err := handler.Handle(context.Background(), record)
-	s.Nil(err)
-	output := s.buffer.String()
-	s.Contains(output, "test.info: test message")
-	s.Contains(output, "[Code] test_code")
-	s.Contains(output, "[Hint] test_hint")
-}
-
-func (s *FileHandlerTestSuite) TestWithAttrs() {
-	handler := NewFileHandler(s.buffer, s.mockConfig, s.json, log.LevelDebug)
-	newHandler := handler.WithAttrs([]slog.Attr{slog.String("key", "value")})
-
-	s.NotNil(newHandler)
-	s.IsType(&FileHandler{}, newHandler)
-	fileHandler := newHandler.(*FileHandler)
-	s.Len(fileHandler.attrs, 1)
-	s.Equal("key", fileHandler.attrs[0].Key)
-}
-
-func (s *FileHandlerTestSuite) TestWithGroup() {
-	handler := NewFileHandler(s.buffer, s.mockConfig, s.json, log.LevelDebug)
-	newHandler := handler.WithGroup("testgroup")
-
-	s.NotNil(newHandler)
-	s.IsType(&FileHandler{}, newHandler)
-	fileHandler := newHandler.(*FileHandler)
-	s.Len(fileHandler.groups, 1)
-	s.Equal("testgroup", fileHandler.groups[0])
 }
 
 func TestFormatStackTrace(t *testing.T) {
@@ -208,66 +163,10 @@ func TestLevelToString(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.expected, func(t *testing.T) {
-			result := levelToString(tt.level)
+			result := tt.level.String()
 			assert.Equal(t, tt.expected, result)
 		})
 	}
-}
-
-func TestExtractValue(t *testing.T) {
-	tests := []struct {
-		name     string
-		value    slog.Value
-		expected any
-	}{
-		{
-			name:     "string value",
-			value:    slog.StringValue("test"),
-			expected: "test",
-		},
-		{
-			name:     "int64 value",
-			value:    slog.Int64Value(42),
-			expected: int64(42),
-		},
-		{
-			name:     "float64 value",
-			value:    slog.Float64Value(3.14),
-			expected: 3.14,
-		},
-		{
-			name:     "bool value",
-			value:    slog.BoolValue(true),
-			expected: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := extractValue(tt.value)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
-func TestExtractGroupData(t *testing.T) {
-	// Test with group value
-	groupValue := slog.GroupValue(
-		slog.String("key1", "value1"),
-		slog.Int("key2", 42),
-	)
-	result := extractGroupData(groupValue)
-	assert.Equal(t, "value1", result["key1"])
-	assert.Equal(t, int64(42), result["key2"])
-
-	// Test with any value containing map
-	mapValue := slog.AnyValue(map[string]any{
-		"key1": "value1",
-		"key2": 42,
-	})
-	result = extractGroupData(mapValue)
-	assert.Equal(t, "value1", result["key1"])
-	assert.Equal(t, 42, result["key2"])
 }
 
 type ConsoleHandlerTestSuite struct {
@@ -290,4 +189,82 @@ func (s *ConsoleHandlerTestSuite) TestNewConsoleHandler() {
 	s.NotNil(handler)
 	s.NotNil(handler.FileHandler)
 	s.Equal(log.LevelDebug, handler.level)
+}
+
+type mockEntry struct {
+	time       time.Time
+	ctx        context.Context
+	owner      any
+	user       any
+	data       log.Data
+	request    map[string]any
+	response   map[string]any
+	stacktrace map[string]any
+	with       map[string]any
+	code       string
+	domain     string
+	hint       string
+	message    string
+	tags       []string
+	level      log.Level
+}
+
+func (e *mockEntry) Code() string {
+	return e.code
+}
+
+func (e *mockEntry) Context() context.Context {
+	return e.ctx
+}
+
+func (e *mockEntry) Data() log.Data {
+	return e.data
+}
+
+func (e *mockEntry) Domain() string {
+	return e.domain
+}
+
+func (e *mockEntry) Hint() string {
+	return e.hint
+}
+
+func (e *mockEntry) Level() log.Level {
+	return e.level
+}
+
+func (e *mockEntry) Message() string {
+	return e.message
+}
+
+func (e *mockEntry) Owner() any {
+	return e.owner
+}
+
+func (e *mockEntry) Request() map[string]any {
+	return e.request
+}
+
+func (e *mockEntry) Response() map[string]any {
+	return e.response
+}
+
+func (e *mockEntry) Tags() []string {
+	return e.tags
+}
+
+func (e *mockEntry) Time() time.Time {
+	return e.time
+}
+
+func (e *mockEntry) Trace() map[string]any {
+	return e.stacktrace
+}
+
+func (e *mockEntry) User() any {
+	return e.user
+}
+
+func (e *mockEntry) With() map[string]any {
+	return e.with
 }

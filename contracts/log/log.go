@@ -2,7 +2,6 @@ package log
 
 import (
 	"context"
-	"log/slog"
 	"time"
 
 	"github.com/goravel/framework/contracts/http"
@@ -78,10 +77,17 @@ type Writer interface {
 }
 
 // Logger is the interface for custom log drivers.
-// It follows slog's Handler model where Handle replaces the concept of Hook/Fire.
 type Logger interface {
-	// Handle returns a slog.Handler for the given channel config path.
-	Handle(channel string) (slog.Handler, error)
+	// Handle returns a Handler for the given channel config path.
+	Handle(channel string) (Handler, error)
+}
+
+// Handler is the interface for log handlers.
+type Handler interface {
+	// Enabled reports whether the handler is enabled for the given level.
+	Enabled(Level) bool
+	// Handle handles the log entry.
+	Handle(Entry) error
 }
 
 type Entry interface {

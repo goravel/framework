@@ -11,6 +11,7 @@ import (
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/carbon"
@@ -28,7 +29,7 @@ func NewDaily(config config.Config, json foundation.Json) *Daily {
 	}
 }
 
-func (daily *Daily) Handle(channel string) (slog.Handler, error) {
+func (daily *Daily) Handle(channel string) (log.Handler, error) {
 	logPath := daily.config.GetString(channel + ".path")
 	if logPath == "" {
 		return nil, errors.LogEmptyLogFilePath
@@ -54,7 +55,7 @@ func (daily *Daily) Handle(channel string) (slog.Handler, error) {
 }
 
 // NewRotatingFileHandler creates a new slog handler for rotating log files.
-func NewRotatingFileHandler(w io.Writer, config config.Config, json foundation.Json, level slog.Leveler) slog.Handler {
+func NewRotatingFileHandler(w io.Writer, config config.Config, json foundation.Json, level slog.Leveler) log.Handler {
 	return &FileHandler{
 		writer: w,
 		config: config,

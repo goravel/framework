@@ -3,7 +3,6 @@ package log
 import (
 	"context"
 	"log/slog"
-	"os"
 
 	slogmulti "github.com/samber/slog-multi"
 
@@ -93,7 +92,7 @@ func (r *Application) Stack(channels []string) log.Writer {
 	return NewWriter(slogLogger, context.Background())
 }
 
-// getHandlers returns slog handlers for the specified channel.
+// getHandlers returns slog log handlers for the specified channel.
 func getHandlers(config config.Config, json foundation.Json, channel string) ([]slog.Handler, error) {
 	channelPath := "logging.channels." + channel
 	driver := config.GetString(channelPath + ".driver")
@@ -121,9 +120,9 @@ func getHandlers(config config.Config, json foundation.Json, channel string) ([]
 			return nil, err
 		}
 
-		handlers := []slog.Handler{handler}
+		handlers := []slog.Handler{HandlerToSlogHandler(handler)}
 		if config.GetBool(channelPath + ".print") {
-			handlers = append(handlers, logger.NewConsoleHandler(config, json))
+			handlers = append(handlers, HandlerToSlogHandler(logger.NewConsoleHandler(config, json)))
 		}
 		return handlers, nil
 
@@ -134,9 +133,9 @@ func getHandlers(config config.Config, json foundation.Json, channel string) ([]
 			return nil, err
 		}
 
-		handlers := []slog.Handler{handler}
+		handlers := []slog.Handler{HandlerToSlogHandler(handler)}
 		if config.GetBool(channelPath + ".print") {
-			handlers = append(handlers, logger.NewConsoleHandler(config, json))
+			handlers = append(handlers, HandlerToSlogHandler(logger.NewConsoleHandler(config, json)))
 		}
 		return handlers, nil
 
@@ -146,17 +145,9 @@ func getHandlers(config config.Config, json foundation.Json, channel string) ([]
 		if err != nil {
 			return nil, err
 		}
-		return []slog.Handler{handler}, nil
+		return []slog.Handler{HandlerToSlogHandler(handler)}, nil
 
 	default:
 		return nil, errors.LogDriverNotSupported.Args(channel)
 	}
-}
-
-// NewDiscardLogger creates a logger that discards all output.
-// Used for testing or when logging is disabled.
-func NewDiscardLogger() *slog.Logger {
-	return slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-		Level: slog.Level(100), // Very high level, effectively disabling all logging
-	}))
 }

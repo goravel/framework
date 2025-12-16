@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -24,7 +23,7 @@ func NewSingle(config config.Config, json foundation.Json) *Single {
 	}
 }
 
-func (single *Single) Handle(channel string) (slog.Handler, error) {
+func (single *Single) Handle(channel string) (log.Handler, error) {
 	logPath := single.config.GetString(channel + ".path")
 	if logPath == "" {
 		return nil, errors.LogEmptyLogFilePath
