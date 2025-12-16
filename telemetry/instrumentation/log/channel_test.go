@@ -37,7 +37,7 @@ func (s *TelemetryChannelTestSuite) TearDownTest() {
 
 func (s *TelemetryChannelTestSuite) TestHandle_Success_DefaultName() {
 	channelPath := "logging.channels.otel"
-	s.mockConfig.EXPECT().GetString(channelPath+".name", defaultInstrumentationName).Return(defaultInstrumentationName).Once()
+	s.mockConfig.EXPECT().GetString(channelPath+".instrument_name", defaultInstrumentationName).Return(defaultInstrumentationName).Once()
 
 	s.mockTelemetry.On("Logger", defaultInstrumentationName).Return(noop.NewLoggerProvider().Logger("test")).Once()
 
@@ -54,7 +54,7 @@ func (s *TelemetryChannelTestSuite) TestHandle_Success_CustomName() {
 	channelPath := "logging.channels.otel"
 	customName := "my-service-logs"
 
-	s.mockConfig.EXPECT().GetString(channelPath+".name", defaultInstrumentationName).Return(customName).Once()
+	s.mockConfig.EXPECT().GetString(channelPath+".instrument_name", defaultInstrumentationName).Return(customName).Once()
 
 	s.mockTelemetry.On("Logger", customName).Return(noop.NewLoggerProvider().Logger("test")).Once()
 

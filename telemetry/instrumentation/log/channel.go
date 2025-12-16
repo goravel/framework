@@ -24,7 +24,7 @@ func (r *TelemetryChannel) Handle(channelPath string) (log.Hook, error) {
 		return nil, errors.ConfigFacadeNotSet
 	}
 
-	instrumentName := config.GetString(channelPath+".name", defaultInstrumentationName)
+	instrumentName := config.GetString(channelPath+".instrument_name", defaultInstrumentationName)
 	return &hook{
 		enabled: true,
 		logger:  telemetry.TelemetryFacade.Logger(instrumentName),
