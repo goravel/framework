@@ -150,10 +150,6 @@ func (s *UtilsTestSuite) TestHandlerToSlogHandler() {
 
 	s.NotNil(slogHandler)
 
-	// Verify it implements slog.Handler
-	_, ok := slogHandler.(slog.Handler)
-	s.True(ok)
-
 	// Verify it's our adapter
 	adapter, ok := slogHandler.(*slogAdapter)
 	s.True(ok)
