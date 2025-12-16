@@ -17,6 +17,65 @@ func (_m *Path) EXPECT() *Path_Expecter {
 	return &Path_Expecter{mock: &_m.Mock}
 }
 
+// Abs provides a mock function with given fields: paths
+func (_m *Path) Abs(paths ...string) string {
+	_va := make([]interface{}, len(paths))
+	for _i := range paths {
+		_va[_i] = paths[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Abs")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(...string) string); ok {
+		r0 = rf(paths...)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Path_Abs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Abs'
+type Path_Abs_Call struct {
+	*mock.Call
+}
+
+// Abs is a helper method to define mock.On call
+//   - paths ...string
+func (_e *Path_Expecter) Abs(paths ...interface{}) *Path_Abs_Call {
+	return &Path_Abs_Call{Call: _e.mock.On("Abs",
+		append([]interface{}{}, paths...)...)}
+}
+
+func (_c *Path_Abs_Call) Run(run func(paths ...string)) *Path_Abs_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Path_Abs_Call) Return(_a0 string) *Path_Abs_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Path_Abs_Call) RunAndReturn(run func(...string) string) *Path_Abs_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Import provides a mock function with no fields
 func (_m *Path) Import() string {
 	ret := _m.Called()

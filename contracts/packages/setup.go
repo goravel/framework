@@ -51,10 +51,12 @@ type Paths interface {
 }
 
 type Path interface {
+	// Abs returns the absolute path of the package.
+	Abs(paths ...string) string
 	// Package returns the sub-package name, or the main package name if no sub-package path is specified.
 	Package() string
 	// Import returns the sub-package import path, or the main package import path if no sub-package path is specified.
 	Import() string
-	// String returns the absolute path of the package.
+	// String returns the setting path of the package.
 	String(paths ...string) string
 }

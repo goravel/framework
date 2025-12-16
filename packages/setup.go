@@ -109,7 +109,7 @@ func (r *setup) reportError(err error) {
 	}
 }
 
-func Paths(mainPath ...string) *paths.Paths {
+func Paths(mainPath ...string) packages.Paths {
 	if len(mainPath) == 0 {
 		mainPath = []string{env.MainPath()}
 	}
