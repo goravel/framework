@@ -62,9 +62,6 @@ func (h *FileHandler) Handle(entry log.Entry) error {
 	if v := entry.Hint(); v != "" {
 		_, _ = fmt.Fprintf(&b, "[Hint] %+v\n", v)
 	}
-	if v := entry.Message(); v != "" {
-		_, _ = fmt.Fprintf(&b, "[Message] %+v\n", v)
-	}
 	if v := entry.Owner(); v != nil {
 		_, _ = fmt.Fprintf(&b, "[Owner] %+v\n", v)
 	}
@@ -79,7 +76,7 @@ func (h *FileHandler) Handle(entry log.Entry) error {
 		if err != nil {
 			return err
 		}
-		_, _ = fmt.Fprintf(&b, "[Stacktrace] %+v\n", traces)
+		_, _ = fmt.Fprintf(&b, "[Trace] %+v\n", traces)
 	}
 	if v := entry.Tags(); v != nil {
 		_, _ = fmt.Fprintf(&b, "[Tags] %+v\n", v)
@@ -135,7 +132,6 @@ func formatStackTraces(json foundation.Json, stackTraces any) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	formattedTraces.WriteString("[Trace]\n")
 	root := traces.Root
 	if len(root.Stack) > 0 {
 		for _, stackStr := range root.Stack {

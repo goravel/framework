@@ -12,8 +12,7 @@ import (
 var entryPool = sync.Pool{
 	New: func() any {
 		return &Entry{
-			with:       make(map[string]any),
-			stacktrace: make(map[string]any),
+			with: make(map[string]any),
 		}
 	},
 }
@@ -29,6 +28,7 @@ func releaseEntry(e *Entry) {
 	e.data = nil
 	e.request = nil
 	e.response = nil
+	e.stacktrace = nil
 	e.code = ""
 	e.domain = ""
 	e.hint = ""
@@ -36,7 +36,6 @@ func releaseEntry(e *Entry) {
 	e.tags = e.tags[:0]
 
 	clear(e.with)
-	clear(e.stacktrace)
 
 	entryPool.Put(e)
 }
