@@ -171,12 +171,11 @@ func (w *Writer) WithTrace() log.Writer {
 }
 
 func (w *Writer) log(level log.Level, msg string) {
-	defer releaseEntry(w.entry)
-
 	w.entry.message = msg
 	w.entry.level = level
 
 	_ = w.logger.Handler().Handle(w.entry.ctx, w.entry.ToSlogRecord())
+	releaseEntry(w.entry)
 }
 
 func (w *Writer) withStackTrace(message string) {
@@ -185,7 +184,6 @@ func (w *Writer) withStackTrace(message string) {
 		return
 	}
 
-	w.entry.message = erisNew.Error()
 	format := eris.NewDefaultJSONFormat(eris.FormatOptions{
 		InvertOutput: true,
 		WithTrace:    true,

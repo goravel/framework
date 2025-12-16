@@ -33,7 +33,7 @@ func releaseEntry(e *Entry) {
 	e.domain = ""
 	e.hint = ""
 	e.message = ""
-	e.tags = e.tags[:0]
+	e.tags = nil
 
 	clear(e.with)
 
@@ -137,9 +137,6 @@ func (e *Entry) ToSlogRecord() slog.Record {
 	}
 	if e.hint != "" {
 		r.Add("hint", e.hint)
-	}
-	if e.message != "" {
-		r.Add("message", e.message)
 	}
 	if e.owner != nil {
 		r.Add("owner", e.owner)
