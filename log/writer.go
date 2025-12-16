@@ -215,6 +215,7 @@ func (r *Writer) resetAll() {
 }
 
 // toAttrs converts the writer state to slog attributes.
+// TODO: use Entry struct to build slog.Attr.
 func (r *Writer) toAttrs() []slog.Attr {
 	var attrs []slog.Attr
 

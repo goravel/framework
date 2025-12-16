@@ -49,7 +49,7 @@ func (h *FileHandler) Handle(ctx context.Context, r slog.Record) error {
 	levelStr := levelToString(log.Level(r.Level))
 	env := h.config.GetString("app.env")
 
-	fmt.Fprintf(&b, "[%s] %s.%s: %s\n", timestamp, env, levelStr, r.Message)
+	_, _ = fmt.Fprintf(&b, "[%s] %s.%s: %s\n", timestamp, env, levelStr, r.Message)
 
 	// Format attributes
 	formattedData, err := h.formatAttrs(r)

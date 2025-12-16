@@ -27,28 +27,16 @@ const (
 )
 
 // String converts the Level to a string. E.g. LevelPanic becomes "panic".
-func (level *Level) String() string {
+func (level Level) String() string {
 	if b, err := level.MarshalText(); err == nil {
 		return string(b)
 	}
 	return "unknown"
 }
 
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (level *Level) UnmarshalText(text []byte) error {
-	l, err := ParseLevel(string(text))
-	if err != nil {
-		return err
-	}
-
-	*level = l
-
-	return nil
-}
-
 // MarshalText implements encoding.TextMarshaler.
-func (level *Level) MarshalText() ([]byte, error) {
-	switch *level {
+func (level Level) MarshalText() ([]byte, error) {
+	switch level {
 	case LevelDebug:
 		return []byte("debug"), nil
 	case LevelInfo:
@@ -66,9 +54,21 @@ func (level *Level) MarshalText() ([]byte, error) {
 	return nil, fmt.Errorf("not a valid log level %d", level)
 }
 
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (level *Level) UnmarshalText(text []byte) error {
+	l, err := ParseLevel(string(text))
+	if err != nil {
+		return err
+	}
+
+	*level = l
+
+	return nil
+}
+
 // Level implements the slog.Leveler interface.
-func (level *Level) Level() slog.Level {
-	return slog.Level(*level)
+func (level Level) Level() slog.Level {
+	return slog.Level(level)
 }
 
 // ParseLevel takes a string level and returns the log level constant.
