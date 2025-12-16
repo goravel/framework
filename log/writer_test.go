@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	contractshttp "github.com/goravel/framework/contracts/http"
-	logcontracts "github.com/goravel/framework/contracts/log"
+	contractslog "github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/foundation/json"
 	configmock "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/support/carbon"
@@ -565,51 +565,41 @@ func mockDriverConfig(mockConfig *configmock.Config) {
 	mockConfig.EXPECT().GetString("app.env").Return("test").Maybe()
 }
 
-// CustomLogger is a custom logger for testing custom log drivers with slog.
+// CustomLogger is a custom logger for testing custom log drivers.
 type CustomLogger struct {
 }
 
-func (logger *CustomLogger) Handle(channel string) (slog.Handler, error) {
+func (logger *CustomLogger) Handle(channel string) (contractslog.Handler, error) {
 	return &CustomHandler{}, nil
 }
 
 // CustomHandler is a custom slog.Handler for testing.
-type CustomHandler struct {
-	attrs []slog.Attr
+type CustomHandler struct{}
+
+func (h *CustomHandler) Enabled(level contractslog.Level) bool {
+	return level.Level() >= slog.LevelInfo
 }
 
-func (h *CustomHandler) Enabled(ctx context.Context, level slog.Level) bool {
-	return level >= slog.LevelInfo
-}
-
-func (h *CustomHandler) Handle(ctx context.Context, r slog.Record) error {
+func (h *CustomHandler) Handle(entry contractslog.Entry) error {
 	var filename string
 	var code string
 	var user any
 
-	r.Attrs(func(a slog.Attr) bool {
-		if a.Key == "root" {
-			rootData := extractGroupData(a.Value)
-			if with, ok := rootData["with"].(map[string]any); ok {
-				if fn, ok := with["filename"]; ok {
-					filename = fmt.Sprintf("%v", fn)
-				}
-			}
-			if c, ok := rootData["code"].(string); ok {
-				code = c
-			}
-			if u, ok := rootData["user"]; ok {
-				user = u
-			}
-		}
-		return true
-	})
+	if fn, ok := entry.With()["filename"]; ok {
+		filename = fmt.Sprintf("%v", fn)
+	}
+	if c := entry.Code(); c != "" {
+		code = c
+	}
+	if u := entry.User(); u != nil {
+		user = u
+	}
 
 	if filename != "" {
 		var builder strings.Builder
-		message := r.Message
+		message := entry.Message()
 		if len(message) > 0 {
-			builder.WriteString(fmt.Sprintf("%s: %v\n", levelToString(logcontracts.Level(r.Level)), message))
+			builder.WriteString(fmt.Sprintf("%s: %v\n", entry.Level().String(), message))
 		}
 
 		if len(code) > 0 {
@@ -626,67 +616,6 @@ func (h *CustomHandler) Handle(ctx context.Context, r slog.Record) error {
 		}
 	}
 	return nil
-}
-
-func (h *CustomHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	return &CustomHandler{attrs: append(h.attrs, attrs...)}
-}
-
-func (h *CustomHandler) WithGroup(name string) slog.Handler {
-	return h
-}
-
-func levelToString(level logcontracts.Level) string {
-	switch level {
-	case logcontracts.LevelDebug:
-		return "debug"
-	case logcontracts.LevelInfo:
-		return "info"
-	case logcontracts.LevelWarning:
-		return "warning"
-	case logcontracts.LevelError:
-		return "error"
-	case logcontracts.LevelFatal:
-		return "fatal"
-	case logcontracts.LevelPanic:
-		return "panic"
-	default:
-		return "unknown"
-	}
-}
-
-func extractGroupData(v slog.Value) map[string]any {
-	result := make(map[string]any)
-
-	switch v.Kind() {
-	case slog.KindGroup:
-		for _, attr := range v.Group() {
-			result[attr.Key] = extractValue(attr.Value)
-		}
-	case slog.KindAny:
-		if m, ok := v.Any().(map[string]any); ok {
-			return m
-		}
-	}
-
-	return result
-}
-
-func extractValue(v slog.Value) any {
-	switch v.Kind() {
-	case slog.KindString:
-		return v.String()
-	case slog.KindGroup:
-		result := make(map[string]any)
-		for _, attr := range v.Group() {
-			result[attr.Key] = extractValue(attr.Value)
-		}
-		return result
-	case slog.KindAny:
-		return v.Any()
-	default:
-		return v.Any()
-	}
 }
 
 type TestRequest struct {
