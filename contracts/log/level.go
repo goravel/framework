@@ -27,11 +27,48 @@ const (
 )
 
 // String converts the Level to a string. E.g. LevelPanic becomes "panic".
-func (level Level) String() string {
+func (level *Level) String() string {
 	if b, err := level.MarshalText(); err == nil {
 		return string(b)
 	}
 	return "unknown"
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (level *Level) UnmarshalText(text []byte) error {
+	l, err := ParseLevel(string(text))
+	if err != nil {
+		return err
+	}
+
+	*level = l
+
+	return nil
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (level *Level) MarshalText() ([]byte, error) {
+	switch *level {
+	case LevelDebug:
+		return []byte("debug"), nil
+	case LevelInfo:
+		return []byte("info"), nil
+	case LevelWarning:
+		return []byte("warning"), nil
+	case LevelError:
+		return []byte("error"), nil
+	case LevelFatal:
+		return []byte("fatal"), nil
+	case LevelPanic:
+		return []byte("panic"), nil
+	}
+
+	return nil, fmt.Errorf("not a valid log level %d", level)
+}
+
+// Level implements the slog.Leveler interface.
+func (level *Level) Level() slog.Level {
+	return slog.Level(*level)
 }
 
 // ParseLevel takes a string level and returns the log level constant.
@@ -53,41 +90,4 @@ func ParseLevel(lvl string) (Level, error) {
 
 	var l Level
 	return l, fmt.Errorf("not a valid log Level: %q", lvl)
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (level *Level) UnmarshalText(text []byte) error {
-	l, err := ParseLevel(string(text))
-	if err != nil {
-		return err
-	}
-
-	*level = l
-
-	return nil
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (level Level) MarshalText() ([]byte, error) {
-	switch level {
-	case LevelDebug:
-		return []byte("debug"), nil
-	case LevelInfo:
-		return []byte("info"), nil
-	case LevelWarning:
-		return []byte("warning"), nil
-	case LevelError:
-		return []byte("error"), nil
-	case LevelFatal:
-		return []byte("fatal"), nil
-	case LevelPanic:
-		return []byte("panic"), nil
-	}
-
-	return nil, fmt.Errorf("not a valid log level %d", level)
-}
-
-// Level implements the slog.Leveler interface.
-func (level Level) Level() slog.Level {
-	return slog.Level(level)
 }

@@ -3,6 +3,7 @@ package log
 import (
 	"context"
 	"log/slog"
+	"time"
 
 	"github.com/goravel/framework/contracts/http"
 )
@@ -81,4 +82,37 @@ type Writer interface {
 type Logger interface {
 	// Handle returns a slog.Handler for the given channel config path.
 	Handle(channel string) (slog.Handler, error)
+}
+
+type Entry interface {
+	// Code returns the associated code.
+	Code() string
+	// Context returns the context of the entry.
+	Context() context.Context
+	// Data returns the data of the entry.
+	Data() Data
+	// Domain returns the domain of the entry.
+	Domain() string
+	// Hint returns the hint of the entry.
+	Hint() string
+	// Level returns the level of the entry.
+	Level() Level
+	// Message returns the message of the entry.
+	Message() string
+	// Owner returns the log's owner.
+	Owner() any
+	// Request returns the request data.
+	Request() map[string]any
+	// Response returns the response data.
+	Response() map[string]any
+	// Tags returns the list of tags.
+	Tags() []string
+	// Time returns the timestamp of the entry.
+	Time() time.Time
+	// Trace returns the stack trace or trace data.
+	Trace() map[string]any
+	// User returns the user information.
+	User() any
+	// With returns additional context data.
+	With() map[string]any
 }
