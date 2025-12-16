@@ -47,7 +47,7 @@ func (r *Paths) Lang() packages.Path {
 
 // Main returns the main package path, eg: github.com/goravel/goravel.
 func (r *Paths) Main() packages.Path {
-	return NewPath(r.mainPath, r.mainPath, false)
+	return NewPath("", r.mainPath, false)
 }
 
 func (r *Paths) Migrations() packages.Path {
@@ -104,6 +104,12 @@ func NewPath(path, main string, isModule bool) *Path {
 	return &Path{path: path, main: main, isModule: isModule}
 }
 
+func (r *Path) Abs(paths ...string) string {
+	paths = append(toSlice(r.path), paths...)
+
+	return Abs(paths...)
+}
+
 // Package returns the sub-package name, or the main package name if no sub-package path is specified.
 // For example, if r.path is "app/http/controllers", it returns "controllers".
 // If r.path is empty, it returns the last component of r.main.
@@ -142,7 +148,7 @@ func (r *Path) Import() string {
 func (r *Path) String(paths ...string) string {
 	paths = append(toSlice(r.path), paths...)
 
-	return Abs(paths...)
+	return filepath.Join(paths...)
 }
 
 func Abs(paths ...string) string {

@@ -65,6 +65,10 @@ func (s *PathsTestSuite) TestApp() {
 	s.NotNil(result)
 	s.Equal("app", result.Package())
 	s.Equal("goravel/app", result.Import())
+	s.False(filepath.IsAbs(result.String()))
+	s.Equal("app", result.String())
+	s.True(filepath.IsAbs(result.Abs()))
+	s.Contains(result.Abs(), "app")
 }
 
 func (s *PathsTestSuite) TestBootstrap() {
@@ -77,6 +81,10 @@ func (s *PathsTestSuite) TestBootstrap() {
 	s.NotNil(result)
 	s.Equal("bootstrap", result.Package())
 	s.Equal("goravel/bootstrap", result.Import())
+	s.False(filepath.IsAbs(result.String()))
+	s.Equal("bootstrap", result.String())
+	s.True(filepath.IsAbs(result.Abs()))
+	s.Contains(result.Abs(), "bootstrap")
 }
 
 func (s *PathsTestSuite) TestConfig() {
@@ -89,6 +97,10 @@ func (s *PathsTestSuite) TestConfig() {
 	s.NotNil(result)
 	s.Equal("config", result.Package())
 	s.Equal("goravel/config", result.Import())
+	s.False(filepath.IsAbs(result.String()))
+	s.Equal("config", result.String())
+	s.True(filepath.IsAbs(result.Abs()))
+	s.Contains(result.Abs(), "config")
 }
 
 func (s *PathsTestSuite) TestDatabase() {
@@ -101,6 +113,10 @@ func (s *PathsTestSuite) TestDatabase() {
 	s.NotNil(result)
 	s.Equal("database", result.Package())
 	s.Equal("goravel/database", result.Import())
+	s.False(filepath.IsAbs(result.String()))
+	s.Equal("database", result.String())
+	s.True(filepath.IsAbs(result.Abs()))
+	s.Contains(result.Abs(), "database")
 }
 
 func (s *PathsTestSuite) TestFacades() {
@@ -113,6 +129,10 @@ func (s *PathsTestSuite) TestFacades() {
 	s.NotNil(result)
 	s.Equal("facades", result.Package())
 	s.Equal("goravel/app/facades", result.Import())
+	s.False(filepath.IsAbs(result.String()))
+	s.Equal(filepath.Join("app", "facades"), result.String())
+	s.True(filepath.IsAbs(result.Abs()))
+	s.Contains(result.Abs(), filepath.Join("app", "facades"))
 }
 
 func (s *PathsTestSuite) TestLang() {
@@ -125,7 +145,10 @@ func (s *PathsTestSuite) TestLang() {
 	s.NotNil(result)
 	s.Equal("lang", result.Package())
 	s.Equal("goravel/lang", result.Import())
-	// TODO: Add String() test
+	s.False(filepath.IsAbs(result.String()))
+	s.Equal("lang", result.String())
+	s.True(filepath.IsAbs(result.Abs()))
+	s.Contains(result.Abs(), "lang")
 }
 
 func (s *PathsTestSuite) TestMain() {
@@ -136,9 +159,10 @@ func (s *PathsTestSuite) TestMain() {
 
 	s.NotNil(result)
 	s.Equal("goravel", result.Package())
-	// Main() passes mainPath as both path and main, so Import() constructs the full path
-	// TODO: Incorrect here
-	s.Equal("goravel/github.com/goravel/goravel", result.Import())
+	s.Equal("goravel", result.Import())
+	s.False(filepath.IsAbs(result.String()))
+	s.Equal("", result.String())
+	s.True(filepath.IsAbs(result.Abs()))
 }
 
 func (s *PathsTestSuite) TestMigrations() {
@@ -151,6 +175,10 @@ func (s *PathsTestSuite) TestMigrations() {
 	s.NotNil(result)
 	s.Equal("migrations", result.Package())
 	s.Equal("goravel/database/migrations", result.Import())
+	s.False(filepath.IsAbs(result.String()))
+	s.Equal(filepath.Join("database", "migrations"), result.String())
+	s.True(filepath.IsAbs(result.Abs()))
+	s.Contains(result.Abs(), filepath.Join("database", "migrations"))
 }
 
 func (s *PathsTestSuite) TestModels() {
@@ -163,6 +191,10 @@ func (s *PathsTestSuite) TestModels() {
 	s.NotNil(result)
 	s.Equal("models", result.Package())
 	s.Equal("goravel/app/models", result.Import())
+	s.False(filepath.IsAbs(result.String()))
+	s.Equal(filepath.Join("app", "models"), result.String())
+	s.True(filepath.IsAbs(result.Abs()))
+	s.Contains(result.Abs(), filepath.Join("app", "models"))
 }
 
 func (s *PathsTestSuite) TestModule() {
@@ -186,6 +218,10 @@ func (s *PathsTestSuite) TestPublic() {
 	s.NotNil(result)
 	s.Equal("public", result.Package())
 	s.Equal("goravel/public", result.Import())
+	s.False(filepath.IsAbs(result.String()))
+	s.Equal("public", result.String())
+	s.True(filepath.IsAbs(result.Abs()))
+	s.Contains(result.Abs(), "public")
 }
 
 func (s *PathsTestSuite) TestResources() {
@@ -198,6 +234,10 @@ func (s *PathsTestSuite) TestResources() {
 	s.NotNil(result)
 	s.Equal("resources", result.Package())
 	s.Equal("goravel/resources", result.Import())
+	s.False(filepath.IsAbs(result.String()))
+	s.Equal("resources", result.String())
+	s.True(filepath.IsAbs(result.Abs()))
+	s.Contains(result.Abs(), "resources")
 }
 
 func (s *PathsTestSuite) TestRoutes() {
@@ -210,6 +250,10 @@ func (s *PathsTestSuite) TestRoutes() {
 	s.NotNil(result)
 	s.Equal("routes", result.Package())
 	s.Equal("goravel/routes", result.Import())
+	s.False(filepath.IsAbs(result.String()))
+	s.Equal("routes", result.String())
+	s.True(filepath.IsAbs(result.Abs()))
+	s.Contains(result.Abs(), "routes")
 }
 
 func (s *PathsTestSuite) TestStorage() {
@@ -222,6 +266,10 @@ func (s *PathsTestSuite) TestStorage() {
 	s.NotNil(result)
 	s.Equal("storage", result.Package())
 	s.Equal("goravel/storage", result.Import())
+	s.False(filepath.IsAbs(result.String()))
+	s.Equal("storage", result.String())
+	s.True(filepath.IsAbs(result.Abs()))
+	s.Contains(result.Abs(), "storage")
 }
 
 func (s *PathsTestSuite) TestTests() {
@@ -234,6 +282,10 @@ func (s *PathsTestSuite) TestTests() {
 	s.NotNil(result)
 	s.Equal("tests", result.Package())
 	s.Equal("goravel/tests", result.Import())
+	s.False(filepath.IsAbs(result.String()))
+	s.Equal("tests", result.String())
+	s.True(filepath.IsAbs(result.Abs()))
+	s.Contains(result.Abs(), "tests")
 }
 
 func (s *PathsTestSuite) TestViews() {
@@ -246,6 +298,10 @@ func (s *PathsTestSuite) TestViews() {
 	s.NotNil(result)
 	s.Equal("views", result.Package())
 	s.Equal("goravel/resources/views", result.Import())
+	s.False(filepath.IsAbs(result.String()))
+	s.Equal(filepath.Join("resources", "views"), result.String())
+	s.True(filepath.IsAbs(result.Abs()))
+	s.Contains(result.Abs(), filepath.Join("resources", "views"))
 }
 
 type PathTestSuite struct {
@@ -411,12 +467,75 @@ func (s *PathTestSuite) TestImport() {
 }
 
 func (s *PathTestSuite) TestString() {
+	tests := []struct {
+		name            string
+		path            string
+		main            string
+		additionalPaths []string
+		expected        string
+	}{
+		{
+			name:            "without additional paths",
+			path:            "app/http/controllers",
+			main:            "github.com/goravel/goravel",
+			additionalPaths: nil,
+			expected:        filepath.Join("app", "http", "controllers"),
+		},
+		{
+			name:            "with single additional path",
+			path:            "app/http",
+			main:            "github.com/goravel/goravel",
+			additionalPaths: []string{"controllers"},
+			expected:        filepath.Join("app", "http", "controllers"),
+		},
+		{
+			name:            "with multiple additional paths",
+			path:            "app",
+			main:            "github.com/goravel/goravel",
+			additionalPaths: []string{"http", "controllers", "user.go"},
+			expected:        filepath.Join("app", "http", "controllers", "user.go"),
+		},
+		{
+			name:            "with empty path and additional paths",
+			path:            "",
+			main:            "github.com/goravel/goravel",
+			additionalPaths: []string{"config", "app.go"},
+			expected:        filepath.Join("config", "app.go"),
+		},
+		{
+			name:            "with windows-style path",
+			path:            "app\\models",
+			main:            "github.com/goravel/goravel",
+			additionalPaths: []string{"user.go"},
+			expected:        filepath.Join("app", "models", "user.go"),
+		},
+		{
+			name:            "with empty path",
+			path:            "",
+			main:            "github.com/goravel/goravel",
+			additionalPaths: nil,
+			expected:        "",
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			p := NewPath(tt.path, tt.main, false)
+			result := p.String(tt.additionalPaths...)
+
+			s.False(filepath.IsAbs(result), "Result should be a relative path")
+			s.Equal(tt.expected, result)
+		})
+	}
+}
+
+func (s *PathTestSuite) TestAbs() {
 	originalRelativePath := support.RelativePath
 	defer func() {
 		support.RelativePath = originalRelativePath
 	}()
 
-	support.RelativePath = "/base/path"
+	support.RelativePath = "."
 
 	tests := []struct {
 		name            string
@@ -460,15 +579,24 @@ func (s *PathTestSuite) TestString() {
 			additionalPaths: []string{"user.go"},
 			expectContain:   filepath.Join("app", "models", "user.go"),
 		},
+		{
+			name:            "with empty path",
+			path:            "",
+			main:            "github.com/goravel/goravel",
+			additionalPaths: nil,
+			expectContain:   "",
+		},
 	}
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
 			p := NewPath(tt.path, tt.main, false)
-			result := p.String(tt.additionalPaths...)
+			result := p.Abs(tt.additionalPaths...)
 
 			s.True(filepath.IsAbs(result), "Result should be an absolute path")
-			s.Contains(result, tt.expectContain, "Result should contain expected path")
+			if tt.expectContain != "" {
+				s.Contains(result, tt.expectContain, "Result should contain expected path")
+			}
 		})
 	}
 }
