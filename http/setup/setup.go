@@ -17,9 +17,9 @@ func main() {
 	httpConfigPath := path.Config("http.go")
 	jwtConfigPath := path.Config("jwt.go")
 	corsConfigPath := path.Config("cors.go")
-	httpFacadePath := path.Facades("http.go")
-	rateLimiterFacadePath := path.Facades("rate_limiter.go")
-	viewFacadePath := path.Facades("view.go")
+	httpFacadePath := path.Facade("http.go")
+	rateLimiterFacadePath := path.Facade("rate_limiter.go")
+	viewFacadePath := path.Facade("view.go")
 	httpServiceProvider := "&http.ServiceProvider{}"
 	moduleImport := setup.Paths().Module().Import()
 	facadesImport := setup.Paths().Facades().Import()

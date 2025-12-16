@@ -11,7 +11,7 @@ import (
 func main() {
 	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
-	processFacadePath := path.Facades("process.go")
+	processFacadePath := path.Facade("process.go")
 	moduleImport := setup.Paths().Module().Import()
 	processServiceProvider := "&process.ServiceProvider{}"
 

@@ -11,7 +11,7 @@ import (
 func main() {
 	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
-	logFacadePath := path.Facades("log.go")
+	logFacadePath := path.Facade("log.go")
 	loggingConfigPath := path.Config("logging.go")
 	moduleImport := setup.Paths().Module().Import()
 	logServiceProvider := "&log.ServiceProvider{}"

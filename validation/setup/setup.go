@@ -11,7 +11,7 @@ import (
 func main() {
 	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
-	validationFacadePath := path.Facades("validation.go")
+	validationFacadePath := path.Facade("validation.go")
 	validationServiceProvider := "&validation.ServiceProvider{}"
 	moduleImport := setup.Paths().Module().Import()
 

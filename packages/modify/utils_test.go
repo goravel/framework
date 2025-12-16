@@ -15,7 +15,7 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support"
 	supportfile "github.com/goravel/framework/support/file"
-	"github.com/goravel/framework/support/path/internals"
+	"github.com/goravel/framework/support/path"
 )
 
 func TestAddCommand(t *testing.T) {
@@ -2926,7 +2926,7 @@ func Rules() []validation.Rule {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup
 			bootstrapDir := support.Config.Paths.Bootstrap
-			appFile := internals.BootstrapApp()
+			appFile := path.Bootstrap("app.go")
 			rulesFile := filepath.Join(bootstrapDir, "rules.go")
 
 			// Ensure clean state

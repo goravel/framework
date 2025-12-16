@@ -15,7 +15,7 @@ func main() {
 	routesPackage := setup.Paths().Routes().Package()
 	grpcFunc := routesPackage + ".Grpc"
 	configPath := path.Config("grpc.go")
-	facadePath := path.Facades("grpc.go")
+	facadePath := path.Facade("grpc.go")
 	grpcRoutePath := path.Route("grpc.go")
 	grpcServiceProvider := "&grpc.ServiceProvider{}"
 	moduleImport := setup.Paths().Module().Import()

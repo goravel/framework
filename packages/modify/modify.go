@@ -14,7 +14,7 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/color"
 	supportfile "github.com/goravel/framework/support/file"
-	"github.com/goravel/framework/support/path/internals"
+	"github.com/goravel/framework/support/path"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -348,5 +348,5 @@ func (r whenModifier) Apply(options ...modify.Option) error {
 }
 
 func facadeToFilepath(facade string) string {
-	return internals.Facades(str.Of(facade).Snake().String() + ".go")
+	return path.Facade(str.Of(facade).Snake().String() + ".go")
 }

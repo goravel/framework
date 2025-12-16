@@ -12,7 +12,7 @@ func main() {
 	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
 	sessionConfigPath := path.Config("session.go")
-	sessionFacadePath := path.Facades("session.go")
+	sessionFacadePath := path.Facade("session.go")
 	sessionServiceProvider := "&session.ServiceProvider{}"
 	moduleImport := setup.Paths().Module().Import()
 	facadesPackage := setup.Paths().Facades().Package()

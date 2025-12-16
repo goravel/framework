@@ -12,7 +12,7 @@ func main() {
 	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
 	cacheConfigPath := path.Config("cache.go")
-	cacheFacadePath := path.Facades("cache.go")
+	cacheFacadePath := path.Facade("cache.go")
 	cacheServiceProvider := "&cache.ServiceProvider{}"
 	moduleImport := setup.Paths().Module().Import()
 	facadesPackage := setup.Paths().Facades().Package()
