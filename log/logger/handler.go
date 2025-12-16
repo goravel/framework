@@ -13,17 +13,17 @@ import (
 	"github.com/goravel/framework/contracts/log"
 )
 
-// FileHandler is a log.Handler that writes formatted log entries to a file.
-type FileHandler struct {
+// IOHandler is a log.Handler that writes formatted log entries to an io.Writer.
+type IOHandler struct {
 	writer io.Writer
 	config config.Config
 	json   foundation.Json
 	level  slog.Leveler
 }
 
-// NewFileHandler creates a new file handler.
-func NewFileHandler(w io.Writer, config config.Config, json foundation.Json, level slog.Leveler) *FileHandler {
-	return &FileHandler{
+// NewIOHandler creates a new io handler.
+func NewIOHandler(w io.Writer, config config.Config, json foundation.Json, level slog.Leveler) *IOHandler {
+	return &IOHandler{
 		writer: w,
 		config: config,
 		json:   json,
@@ -32,12 +32,12 @@ func NewFileHandler(w io.Writer, config config.Config, json foundation.Json, lev
 }
 
 // Enabled reports whether the handler handles records at the given level.
-func (h *FileHandler) Enabled(level log.Level) bool {
-	return slog.Level(level) >= h.level.Level()
+func (h *IOHandler) Enabled(level log.Level) bool {
+	return level.Level() >= h.level.Level()
 }
 
 // Handle handles the Record.
-func (h *FileHandler) Handle(entry log.Entry) error {
+func (h *IOHandler) Handle(entry log.Entry) error {
 	var b bytes.Buffer
 
 	timestamp := entry.Time().UnixMilli()
@@ -94,13 +94,13 @@ func (h *FileHandler) Handle(entry log.Entry) error {
 
 // ConsoleHandler is a log.Handler that writes formatted log entries to stdout.
 type ConsoleHandler struct {
-	*FileHandler
+	*IOHandler
 }
 
 // NewConsoleHandler creates a new console handler.
 func NewConsoleHandler(config config.Config, json foundation.Json) *ConsoleHandler {
 	return &ConsoleHandler{
-		FileHandler: &FileHandler{
+		IOHandler: &IOHandler{
 			writer: os.Stdout,
 			config: config,
 			json:   json,

@@ -16,25 +16,25 @@ import (
 	mocksconfig "github.com/goravel/framework/mocks/config"
 )
 
-type FileHandlerTestSuite struct {
+type IOHandlerTestSuite struct {
 	suite.Suite
 	mockConfig *mocksconfig.Config
 	json       foundation.Json
 	buffer     *bytes.Buffer
 }
 
-func TestFileHandlerTestSuite(t *testing.T) {
-	suite.Run(t, new(FileHandlerTestSuite))
+func TestIOHandlerTestSuite(t *testing.T) {
+	suite.Run(t, new(IOHandlerTestSuite))
 }
 
-func (s *FileHandlerTestSuite) SetupTest() {
+func (s *IOHandlerTestSuite) SetupTest() {
 	s.mockConfig = mocksconfig.NewConfig(s.T())
 	s.json = json.New()
 	s.buffer = new(bytes.Buffer)
 }
 
-func (s *FileHandlerTestSuite) TestNewFileHandler() {
-	handler := NewFileHandler(s.buffer, s.mockConfig, s.json, log.LevelDebug)
+func (s *IOHandlerTestSuite) TestNewIOHandler() {
+	handler := NewIOHandler(s.buffer, s.mockConfig, s.json, log.LevelDebug)
 	s.NotNil(handler)
 	s.Equal(s.buffer, handler.writer)
 	s.Equal(s.mockConfig, handler.config)
@@ -42,7 +42,7 @@ func (s *FileHandlerTestSuite) TestNewFileHandler() {
 	s.Equal(log.LevelDebug, handler.level)
 }
 
-func (s *FileHandlerTestSuite) TestEnabled() {
+func (s *IOHandlerTestSuite) TestEnabled() {
 	tests := []struct {
 		name          string
 		handlerLevel  log.Level
@@ -83,17 +83,17 @@ func (s *FileHandlerTestSuite) TestEnabled() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			handler := NewFileHandler(s.buffer, s.mockConfig, s.json, tt.handlerLevel)
+			handler := NewIOHandler(s.buffer, s.mockConfig, s.json, tt.handlerLevel)
 			result := handler.Enabled(log.Level(tt.recordLevel))
 			s.Equal(tt.expectEnabled, result)
 		})
 	}
 }
 
-func (s *FileHandlerTestSuite) TestHandle() {
+func (s *IOHandlerTestSuite) TestHandle() {
 	s.mockConfig.EXPECT().GetString("app.env").Return("test").Maybe()
 
-	handler := NewFileHandler(s.buffer, s.mockConfig, s.json, log.LevelDebug)
+	handler := NewIOHandler(s.buffer, s.mockConfig, s.json, log.LevelDebug)
 
 	entry := &mockEntry{
 		time:    time.Now(),
@@ -187,7 +187,7 @@ func (s *ConsoleHandlerTestSuite) SetupTest() {
 func (s *ConsoleHandlerTestSuite) TestNewConsoleHandler() {
 	handler := NewConsoleHandler(s.mockConfig, s.json)
 	s.NotNil(handler)
-	s.NotNil(handler.FileHandler)
+	s.NotNil(handler.IOHandler)
 	s.Equal(log.LevelDebug, handler.level)
 }
 

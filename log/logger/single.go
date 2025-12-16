@@ -44,7 +44,7 @@ func (single *Single) Handle(channel string) (log.Handler, error) {
 
 	level := getLevelFromString(single.config.GetString(channel + ".level"))
 
-	return NewFileHandler(file, single.config, single.json, level), nil
+	return NewIOHandler(file, single.config, single.json, level), nil
 }
 
 func getLevelFromString(level string) log.Level {
