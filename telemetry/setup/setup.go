@@ -17,8 +17,8 @@ func main() {
 		keyLoggingChannels  = "logging.channels"
 		keyOtel             = "otel"
 		configSnippetOtel   = `map[string]any{
-		"driver": "otel",
-		"name":   config.GetString("APP_NAME", "goravel/log"),
+		"driver":          "otel",
+		"instrument_name": config.GetString("APP_NAME", "goravel/log"),
 	}`
 	)
 
@@ -27,7 +27,7 @@ func main() {
 	paths := setup.Paths()
 
 	pathConfigTelemetry := path.Config(fileTelemetryConfig)
-	pathFacadesTelemetry := path.Facades(fileTelemetryConfig)
+	pathFacadesTelemetry := path.Facade(fileTelemetryConfig)
 	pathConfigLogging := path.Config(fileLoggingConfig)
 
 	moduleImport := paths.Module().Import()
