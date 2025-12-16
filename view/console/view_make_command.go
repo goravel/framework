@@ -81,7 +81,7 @@ func (r *ViewMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	ctx.Success("View created successfully: " + filePath)
+	ctx.Success("View created successfully")
 
 	return nil
 }

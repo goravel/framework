@@ -60,7 +60,7 @@ func (s *ViewMakeCommandTestSuite) TestCreateSuccess() {
 	mockContext.EXPECT().Argument(0).Return("welcome").Once()
 
 	expectedPath := filepath.Join("resources", "views", "welcome.tmpl")
-	mockContext.EXPECT().Success("View created successfully: " + expectedPath).Once()
+	mockContext.EXPECT().Success("View created successfully").Once()
 
 	s.Nil(viewMakeCommand.Handle(mockContext))
 	s.True(file.Exists(expectedPath))
