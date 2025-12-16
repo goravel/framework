@@ -7,7 +7,7 @@ import (
 )
 
 func App(paths ...string) string {
-	return packages.Paths().App().String(paths...)
+	return packages.Paths().App().Abs(paths...)
 }
 
 func Base(paths ...string) string {
@@ -15,15 +15,15 @@ func Base(paths ...string) string {
 }
 
 func Bootstrap(paths ...string) string {
-	return packages.Paths().Bootstrap().String(paths...)
+	return packages.Paths().Bootstrap().Abs(paths...)
 }
 
 func Config(paths ...string) string {
-	return packages.Paths().Config().String(paths...)
+	return packages.Paths().Config().Abs(paths...)
 }
 
 func Database(paths ...string) string {
-	return packages.Paths().Database().String(paths...)
+	return packages.Paths().Database().Abs(paths...)
 }
 
 func Executable(paths ...string) string {
@@ -33,37 +33,37 @@ func Executable(paths ...string) string {
 }
 
 func Facade(paths ...string) string {
-	return packages.Paths().Facades().String(paths...)
+	return packages.Paths().Facades().Abs(paths...)
 }
 
 func Lang(paths ...string) string {
-	return packages.Paths().Lang().String(paths...)
+	return packages.Paths().Lang().Abs(paths...)
 }
 
 func Migration(paths ...string) string {
-	return packages.Paths().Migrations().String(paths...)
+	return packages.Paths().Migrations().Abs(paths...)
 }
 
 func Model(paths ...string) string {
-	return packages.Paths().Models().String(paths...)
+	return packages.Paths().Models().Abs(paths...)
 }
 
 func Public(paths ...string) string {
-	return packages.Paths().Public().String(paths...)
+	return packages.Paths().Public().Abs(paths...)
 }
 
 func Resource(paths ...string) string {
-	return packages.Paths().Resources().String(paths...)
+	return packages.Paths().Resources().Abs(paths...)
 }
 
 func Route(paths ...string) string {
-	return packages.Paths().Routes().String(paths...)
+	return packages.Paths().Routes().Abs(paths...)
 }
 
 func Storage(paths ...string) string {
-	return packages.Paths().Storage().String(paths...)
+	return packages.Paths().Storage().Abs(paths...)
 }
 
 func View(paths ...string) string {
-	return packages.Paths().Views().String(paths...)
+	return packages.Paths().Views().Abs(paths...)
 }
