@@ -13,6 +13,7 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/log/logger"
 	"github.com/goravel/framework/support/color"
+	telemetrylog "github.com/goravel/framework/telemetry/instrumentation/log"
 )
 
 type Application struct {
@@ -128,6 +129,19 @@ func getHandlers(config config.Config, json foundation.Json, channel string) ([]
 
 	case log.DriverDaily:
 		logLogger := logger.NewDaily(config, json)
+		handler, err := logLogger.Handle(channelPath)
+		if err != nil {
+			return nil, err
+		}
+
+		handlers := []slog.Handler{HandlerToSlogHandler(handler)}
+		if config.GetBool(channelPath + ".print") {
+			handlers = append(handlers, HandlerToSlogHandler(logger.NewConsoleHandler(config, json)))
+		}
+		return handlers, nil
+
+	case log.DriverOtel:
+		logLogger := telemetrylog.NewTelemetryChannel()
 		handler, err := logLogger.Handle(channelPath)
 		if err != nil {
 			return nil, err

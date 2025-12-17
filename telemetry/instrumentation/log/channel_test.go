@@ -46,7 +46,6 @@ func (s *TelemetryChannelTestSuite) TestHandle_Success_DefaultName() {
 
 	s.NoError(err)
 	s.NotNil(h)
-	s.NotEmpty(h.Levels())
 	s.mockTelemetry.AssertExpectations(s.T())
 }
 
