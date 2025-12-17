@@ -28,22 +28,22 @@ const (
 
 const (
 	// DebugLevel is an alias for LevelDebug level.
-	// Deprecated: use LevelDebug instead.
+	// Deprecated: use LevelDebug instead, DebugLevel will be removed in v1.18.
 	DebugLevel = LevelDebug
 	// InfoLevel is an alias for LevelInfo level.
-	// Deprecated: use LevelInfo instead.
+	// Deprecated: use LevelInfo instead, InfoLevel will be removed in v1.18.
 	InfoLevel = LevelInfo
 	// WarningLevel is an alias for LevelWarning level.
-	// Deprecated: use LevelWarning instead.
+	// Deprecated: use LevelWarning instead, WarningLevel will be removed in v1.18.
 	WarningLevel = LevelWarning
 	// ErrorLevel is an alias for LevelError level.
-	// Deprecated: use LevelError instead.
+	// Deprecated: use LevelError instead, ErrorLevel will be removed in v1.18.
 	ErrorLevel = LevelError
 	// FatalLevel is an alias for LevelFatal level.
-	// Deprecated: use LevelFatal instead.
+	// Deprecated: use LevelFatal instead, FatalLevel will be removed in v1.18.
 	FatalLevel = LevelFatal
 	// PanicLevel is an alias for LevelPanic level.
-	// Deprecated: use LevelPanic instead.
+	// Deprecated: use LevelPanic instead, PanicLevel will be removed in v1.18.
 	PanicLevel = LevelPanic
 )
 

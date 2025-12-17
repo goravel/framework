@@ -16,15 +16,13 @@ const (
 )
 
 const (
-	// Deprecated: use DriverStack instead
+	// Deprecated: use DriverStack instead, StackDriver will be removed in v1.18.
 	StackDriver = DriverStack
-	// Deprecated: use DriverSingle instead
+	// Deprecated: use DriverSingle instead, SingleDriver will be removed in v1.18.
 	SingleDriver = DriverSingle
-	// Deprecated: use DriverDaily instead
+	// Deprecated: use DriverDaily instead, DriverDaily will be removed in v1.18.
 	DailyDriver = DriverDaily
-	// Deprecated: use DriverOtel instead
-	OtelDriver = DriverOtel
-	// Deprecated: use DriverCustom instead
+	// Deprecated: use DriverCustom instead, CustomDriver will be removed in v1.18.
 	CustomDriver = DriverCustom
 )
 
