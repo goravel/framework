@@ -4,26 +4,60 @@ import (
 	"os"
 
 	"github.com/goravel/framework/packages"
+	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support/path"
 )
 
 func main() {
+	const (
+		fileTelemetryConfig = "telemetry.go"
+		fileLoggingConfig   = "logging.go"
+		providerTelemetry   = "&telemetry.ServiceProvider{}"
+		keyLoggingChannels  = "logging.channels"
+		keyOtel             = "otel"
+		configSnippetOtel   = `map[string]any{
+		"driver":          "otel",
+		"instrument_name": config.GetString("APP_NAME", "goravel/log"),
+	}`
+	)
+
 	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
-	telemetryConfigPath := path.Config("telemetry.go")
-	telemetryFacadePath := path.Facade("telemetry.go")
-	telemetryServiceProvider := "&telemetry.ServiceProvider{}"
-	modulePath := setup.Paths().Module().Import()
-	facadesPackage := setup.Paths().Facades().Package()
+	paths := setup.Paths()
+
+	pathConfigTelemetry := path.Config(fileTelemetryConfig)
+	pathFacadesTelemetry := path.Facade(fileTelemetryConfig)
+	pathConfigLogging := path.Config(fileLoggingConfig)
+
+	moduleImport := paths.Module().Import()
+	facadesPackage := paths.Facades().Package()
+
+	matchLoggingChannels := match.Config(keyLoggingChannels)
 
 	setup.Install(
-		modify.AddProviderApply(modulePath, telemetryServiceProvider),
-		modify.File(telemetryConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Facades().Import(), facadesPackage)),
-		modify.File(telemetryFacadePath).Overwrite(stubs.TelemetryFacade(facadesPackage)),
+		// Add Telemetry Service Provider
+		modify.AddProviderApply(moduleImport, providerTelemetry),
+
+		// Add Telemetry Config and Facade
+		modify.File(pathConfigTelemetry).Overwrite(stubs.Config(paths.Config().Package(), paths.Facades().Import(), facadesPackage)),
+		modify.File(pathFacadesTelemetry).Overwrite(stubs.TelemetryFacade(facadesPackage)),
+
+		// Add Otel Channel to Logging Config
+		modify.GoFile(pathConfigLogging).
+			Find(matchLoggingChannels).
+			Modify(modify.AddConfig(keyOtel, configSnippetOtel)),
 	).Uninstall(
-		modify.File(telemetryConfigPath).Remove(),
-		modify.File(telemetryFacadePath).Remove(),
-		modify.RemoveProviderApply(modulePath, telemetryServiceProvider),
+		// Remove Telemetry Config and Facade
+		modify.File(pathConfigTelemetry).Remove(),
+		modify.File(pathFacadesTelemetry).Remove(),
+
+		// Remove Telemetry Service Provider
+		modify.RemoveProviderApply(moduleImport, providerTelemetry),
+
+		// Remove Otel Channel from Logging Config
+		modify.GoFile(pathConfigLogging).
+			Find(matchLoggingChannels).
+			Modify(modify.RemoveConfig(keyOtel)),
 	).Execute()
 }

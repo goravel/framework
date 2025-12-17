@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	lognoop "go.opentelemetry.io/otel/log/noop"
 	metricnoop "go.opentelemetry.io/otel/metric/noop"
+	sdklog "go.opentelemetry.io/otel/sdk/log"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	tracenoop "go.opentelemetry.io/otel/trace/noop"
@@ -21,6 +23,7 @@ func TestNewApplication(t *testing.T) {
 		expectError     error
 		expectSDKTracer bool
 		expectSDKMeter  bool
+		expectSDKLogger bool
 	}{
 		{
 			name:        "Error: Empty propagator",
@@ -40,6 +43,7 @@ func TestNewApplication(t *testing.T) {
 			},
 			expectSDKTracer: false,
 			expectSDKMeter:  false,
+			expectSDKLogger: false,
 		},
 		{
 			name: "Success: Console Exporters initialize SDKs",
@@ -48,12 +52,14 @@ func TestNewApplication(t *testing.T) {
 				Propagators: "tracecontext",
 				Traces:      TracesConfig{Exporter: "console"},
 				Metrics:     MetricsConfig{Exporter: "console"},
+				Logs:        LogsConfig{Exporter: "console"},
 				Exporters: map[string]ExporterEntry{
 					"console": {Driver: TraceExporterDriverConsole},
 				},
 			},
 			expectSDKTracer: true,
 			expectSDKMeter:  true,
+			expectSDKLogger: true,
 		},
 		{
 			name: "Success: OTLP Exporters initialize SDKs",
@@ -62,6 +68,7 @@ func TestNewApplication(t *testing.T) {
 				Propagators: "tracecontext",
 				Traces:      TracesConfig{Exporter: "otlp"},
 				Metrics:     MetricsConfig{Exporter: "otlp"},
+				Logs:        LogsConfig{Exporter: "otlp"},
 				Exporters: map[string]ExporterEntry{
 					"otlp": {
 						Driver:   TraceExporterDriverOTLP,
@@ -74,6 +81,7 @@ func TestNewApplication(t *testing.T) {
 			},
 			expectSDKTracer: true,
 			expectSDKMeter:  true,
+			expectSDKLogger: true,
 		},
 		{
 			name: "Error: Unknown Exporter",
@@ -101,6 +109,7 @@ func TestNewApplication(t *testing.T) {
 			assert.NotNil(t, app)
 			assert.NotNil(t, app.tracerProvider)
 			assert.NotNil(t, app.meterProvider)
+			assert.NotNil(t, app.loggerProvider)
 
 			if tt.expectSDKTracer {
 				_, ok := app.tracerProvider.(*sdktrace.TracerProvider)
@@ -116,6 +125,14 @@ func TestNewApplication(t *testing.T) {
 			} else {
 				_, ok := app.meterProvider.(metricnoop.MeterProvider)
 				assert.True(t, ok, "expected noop meter provider")
+			}
+
+			if tt.expectSDKLogger {
+				_, ok := app.loggerProvider.(*sdklog.LoggerProvider)
+				assert.True(t, ok, "expected SDK logger provider")
+			} else {
+				_, ok := app.loggerProvider.(lognoop.LoggerProvider)
+				assert.True(t, ok, "expected noop logger provider")
 			}
 		})
 	}
@@ -135,6 +152,14 @@ func TestApplication_Meter(t *testing.T) {
 	}
 	meter := app.Meter("test-meter")
 	assert.NotNil(t, meter)
+}
+
+func TestApplication_Logger(t *testing.T) {
+	app := &Application{
+		loggerProvider: lognoop.NewLoggerProvider(),
+	}
+	logger := app.Logger("test-logger")
+	assert.NotNil(t, logger)
 }
 
 func TestApplication_Propagator(t *testing.T) {
@@ -210,7 +235,6 @@ func TestConfig_GetExporter(t *testing.T) {
 				Exporters: map[string]ExporterEntry{},
 			},
 			exporterName: "unknown",
-			// When key is not found, Driver string is empty "", NOT "unknown"
 			expectDriver: "",
 			expectFound:  false,
 		},
