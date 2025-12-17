@@ -19,18 +19,18 @@ func Route() route.Route {
 	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }
 
-func (s Stubs) Routes(pkg, main string) string {
-	content := `package routes
+func (s Stubs) Routes(pkg, facadesImport, facadesPackage string) string {
+	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/support"
 
-	"DummyMain/app/facades"
+	"DummyFacadesImport"
 )
 
 func Web() {
-	facades.Route().Get("/", func(ctx http.Context) http.Response {
+	DummyFacadesPackage.Route().Get("/", func(ctx http.Context) http.Response {
 		return ctx.Response().View().Make("welcome.tmpl", map[string]any{
 			"version": support.Version,
 		})
@@ -39,7 +39,8 @@ func Web() {
 `
 
 	content = strings.ReplaceAll(content, "DummyPackage", pkg)
-	content = strings.ReplaceAll(content, "DummyMain", main)
+	content = strings.ReplaceAll(content, "DummyFacadesImport", facadesImport)
+	content = strings.ReplaceAll(content, "DummyFacadesPackage", facadesPackage)
 
 	return content
 }

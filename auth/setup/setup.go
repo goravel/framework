@@ -13,8 +13,8 @@ func main() {
 	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
 	authConfigPath := path.Config("auth.go")
-	authFacadePath := path.Facades("auth.go")
-	gateFacadePath := path.Facades("gate.go")
+	authFacadePath := path.Facade("auth.go")
+	gateFacadePath := path.Facade("gate.go")
 	modulePath := setup.Paths().Module().Import()
 	authServiceProvider := "&auth.ServiceProvider{}"
 	facadesPackage := setup.Paths().Facades().Package()
@@ -24,7 +24,7 @@ func main() {
 		modify.AddProviderApply(modulePath, authServiceProvider),
 
 		// Create config/auth.go
-		modify.File(authConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Main().Package())),
+		modify.File(authConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Facades().Import(), facadesPackage)),
 
 		// Add the Auth and Gate facades
 		modify.WhenFacade(facades.Auth, modify.File(authFacadePath).Overwrite(stubs.AuthFacade(facadesPackage))),

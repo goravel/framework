@@ -2,7 +2,6 @@ package console
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"runtime/debug"
 	"strings"
@@ -56,9 +55,14 @@ func (m *Make) GetName() string {
 }
 
 func (m *Make) GetFilePath() string {
-	pwd, _ := os.Getwd()
-
-	return filepath.Join(pwd, m.root, m.GetFolderPath(), str.Of(m.GetStructName()).Snake().String()+".go")
+	root := strings.Split(m.root, "/")
+	paths := append(root, m.GetFolderPath(), str.Of(m.GetStructName()).Snake().String()+".go")
+	path := filepath.Join(paths...)
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return path
+	}
+	return abs
 }
 
 func (m *Make) GetSignature() string {

@@ -1,7 +1,6 @@
 package console
 
 import (
-	"path/filepath"
 	"strings"
 
 	"github.com/goravel/framework/contracts/config"
@@ -9,10 +8,10 @@ import (
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/file"
+	"github.com/goravel/framework/support/path"
 )
 
 const (
-	DefaultViewPath      = "resources/views"
 	DefaultViewExtension = ".tmpl"
 )
 
@@ -41,11 +40,6 @@ func (r *ViewMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
 		Flags: []command.Flag{
-			&command.StringFlag{
-				Name:  "path",
-				Value: DefaultViewPath,
-				Usage: "The path where the view file should be created",
-			},
 			&command.BoolFlag{
 				Name:    "force",
 				Aliases: []string{"f"},
@@ -63,11 +57,6 @@ func (r *ViewMakeCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	viewPath := ctx.Option("path")
-	if viewPath == "" {
-		viewPath = r.getViewPath()
-	}
-
 	// Get the view extension from configuration
 	viewExtension := r.getViewExtension()
 
@@ -76,7 +65,7 @@ func (r *ViewMakeCommand) Handle(ctx console.Context) error {
 		viewName = viewName + viewExtension
 	}
 
-	filePath := filepath.Join(viewPath, viewName)
+	filePath := path.View(viewName)
 
 	// Check if file already exists
 	if file.Exists(filePath) && !ctx.OptionBool("force") {
@@ -84,35 +73,17 @@ func (r *ViewMakeCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	// get the path name from the view path
-	viewPathName := filePath
-	if strings.Contains(filePath, "resources") {
-		index := strings.Index(filePath, "resources")
-		viewPathName = filePath[index:]
-	}
-
 	// Create the view file
 	stub := r.getStub()
-	content := r.populateStub(stub, viewName, viewPathName)
+	content := r.populateStub(stub, viewName)
 
 	if err := file.PutContent(filePath, content); err != nil {
 		return err
 	}
 
-	ctx.Success("View created successfully: " + filePath)
+	ctx.Success("View created successfully")
 
 	return nil
-}
-
-func (r *ViewMakeCommand) getViewPath() string {
-	if r.config != nil {
-		customViewPath := r.config.GetString("http.view.path", DefaultViewPath)
-		if customViewPath != "" {
-			return customViewPath
-		}
-	}
-
-	return DefaultViewPath
 }
 
 func (r *ViewMakeCommand) getStub() string {
@@ -145,12 +116,8 @@ func (r *ViewMakeCommand) getViewExtension() string {
 }
 
 // populateStub Populate the place-holders in the command stub.
-func (r *ViewMakeCommand) populateStub(stub string, viewName string, viewPath string) string {
-	viewPathDefinition := strings.ReplaceAll(viewPath, DefaultViewPath+"/", "")
-
-	stub = strings.ReplaceAll(stub, "DummyViewName", viewName)
-	stub = strings.ReplaceAll(stub, "DummyPathName", viewPath)
-	stub = strings.ReplaceAll(stub, "DummyPathDefinition", viewPathDefinition)
+func (r *ViewMakeCommand) populateStub(stub string, definition string) string {
+	stub = strings.ReplaceAll(stub, "DummyDefinition", definition)
 
 	return stub
 }

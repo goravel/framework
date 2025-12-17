@@ -156,6 +156,12 @@ func (r *Paths) Resources(path string) configuration.Paths {
 	return r
 }
 
+func (r *Paths) Routes(path string) configuration.Paths {
+	support.Config.Paths.Routes = path
+
+	return r
+}
+
 func (r *Paths) Rules(path string) configuration.Paths {
 	support.Config.Paths.Rules = path
 
@@ -176,6 +182,12 @@ func (r *Paths) Storage(path string) configuration.Paths {
 
 func (r *Paths) Tests(path string) configuration.Paths {
 	support.Config.Paths.Tests = path
+
+	return r
+}
+
+func (r *Paths) Views(path string) configuration.Paths {
+	support.Config.Paths.Views = path
 
 	return r
 }

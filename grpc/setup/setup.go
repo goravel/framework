@@ -5,22 +5,21 @@ import (
 
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/packages/modify"
-	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/path"
 )
 
 func main() {
 	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
-	routesPath := support.Config.Paths.Routes
-	grpcFunc := routesPath + ".Grpc"
+	routesImport := setup.Paths().Routes().Import()
+	routesPackage := setup.Paths().Routes().Package()
+	grpcFunc := routesPackage + ".Grpc"
 	configPath := path.Config("grpc.go")
-	facadePath := path.Facades("grpc.go")
-	grpcRoutePath := path.Base(routesPath, "grpc.go")
+	facadePath := path.Facade("grpc.go")
+	grpcRoutePath := path.Route("grpc.go")
 	grpcServiceProvider := "&grpc.ServiceProvider{}"
-	mainPackage := setup.Paths().Main().Package()
 	moduleImport := setup.Paths().Module().Import()
-	routesPackage := mainPackage + "/" + routesPath
+	facadesPackage := setup.Paths().Facades().Package()
 	env := `
 GRPC_HOST=
 GRPC_PORT=
@@ -31,14 +30,14 @@ GRPC_PORT=
 		modify.AddProviderApply(moduleImport, grpcServiceProvider),
 
 		// Create config/grpc.go, routes/grpc.go
-		modify.File(configPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), mainPackage)),
+		modify.File(configPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Facades().Import(), facadesPackage)),
 		modify.File(grpcRoutePath).Overwrite(stubs.Routes(setup.Paths().Routes().Package())),
 
 		// Add the Grpc function to WithRouting
-		modify.AddRouteApply(routesPackage, grpcFunc),
+		modify.AddRouteApply(routesImport, grpcFunc),
 
 		// Register the Grpc facade
-		modify.File(facadePath).Overwrite(stubs.GrpcFacade(setup.Paths().Facades().Package())),
+		modify.File(facadePath).Overwrite(stubs.GrpcFacade(facadesPackage)),
 
 		// Add configurations to the .env and .env.example files
 		modify.WhenFileNotContains(path.Base(".env"), "GRPC_HOST", modify.File(path.Base(".env")).Append(env)),
@@ -48,7 +47,7 @@ GRPC_PORT=
 		modify.File(facadePath).Remove(),
 
 		// Remove the Grpc function from WithRouting
-		modify.RemoveRouteApply(routesPackage, grpcFunc),
+		modify.RemoveRouteApply(routesImport, grpcFunc),
 
 		// Remove config/grpc.go, routes/grpc.go
 		modify.File(configPath).Remove(),

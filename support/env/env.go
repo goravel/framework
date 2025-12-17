@@ -13,8 +13,8 @@ import (
 	"github.com/goravel/framework/support/convert"
 )
 
-// PackageName returns the package name of application, eg: goravel.
-func PackageName() string {
+// MainPath returns the package name of application, eg: goravel.
+func MainPath() string {
 	if info, ok := debug.ReadBuildInfo(); ok {
 		return info.Main.Path
 	}

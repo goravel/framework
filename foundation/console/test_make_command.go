@@ -1,14 +1,16 @@
 package console
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/support"
 	supportconsole "github.com/goravel/framework/support/console"
-	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
+	"github.com/goravel/framework/support/str"
 )
 
 type TestMakeCommand struct {
@@ -44,7 +46,8 @@ func (r *TestMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *TestMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "test", ctx.Argument(0), support.Config.Paths.Tests)
+	filePath := ctx.Argument(0)
+	m, err := supportconsole.NewMake(ctx, "test", filePath, support.Config.Paths.Tests)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
@@ -52,7 +55,15 @@ func (r *TestMakeCommand) Handle(ctx console.Context) error {
 
 	stub := r.getStub()
 
-	if err := file.PutContent(m.GetFilePath(), r.populateStub(stub, m.GetPackageName(), m.GetStructName(), env.PackageName())); err != nil {
+	var testCase, testsImport string
+	if str.Of(filePath).Contains("/", "\\") {
+		testCase = fmt.Sprintf("%s.TestCase", packages.Paths().Tests().Package())
+		testsImport = fmt.Sprintf(`"%s"`, packages.Paths().Tests().Import())
+	} else {
+		testCase = "TestCase"
+	}
+
+	if err := file.PutContent(m.GetFilePath(), r.populateStub(stub, m.GetPackageName(), m.GetStructName(), testsImport, testCase)); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
@@ -67,10 +78,11 @@ func (r *TestMakeCommand) getStub() string {
 }
 
 // populateStub Populate the place-holders in the command stub.
-func (r *TestMakeCommand) populateStub(stub string, packageName, structName string, moduleName string) string {
-	stub = strings.ReplaceAll(stub, "DummyTest", structName)
+func (r *TestMakeCommand) populateStub(stub, packageName, structName, testsImport, testCase string) string {
+	stub = strings.ReplaceAll(stub, "DummyTestSuite", structName+"Suite")
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
-	stub = strings.ReplaceAll(stub, "DummyModule", moduleName)
+	stub = strings.ReplaceAll(stub, "DummyTestImport", testsImport)
+	stub = strings.ReplaceAll(stub, "DummyTestCase", testCase)
 
 	return stub
 }

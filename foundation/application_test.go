@@ -12,9 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/foundation"
-	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	"github.com/goravel/framework/support"
 )
@@ -72,51 +70,15 @@ func (s *ApplicationTestSuite) TestResourcePath() {
 }
 
 func (s *ApplicationTestSuite) TestLangPath() {
-	s.Run("with deprecated config key", func() {
-		// Create a fresh container for this subtest
-		app := &Application{
-			Container:     NewContainer(),
-			ctx:           s.app.ctx,
-			publishes:     make(map[string]map[string]string),
-			publishGroups: make(map[string]map[string]string),
-		}
+	// Create a fresh container for this subtest
+	app := &Application{
+		Container:     NewContainer(),
+		ctx:           s.app.ctx,
+		publishes:     make(map[string]map[string]string),
+		publishGroups: make(map[string]map[string]string),
+	}
 
-		mockConfig := mocksconfig.NewConfig(s.T())
-		mockConfig.EXPECT().GetString("app.lang_path").Return("custom/lang").Once()
-
-		app.Instance(binding.Config, mockConfig)
-
-		s.Equal(filepath.Join(support.RootPath, "custom", "lang", "goravel.go"), app.LangPath("goravel.go"))
-	})
-
-	s.Run("fallback to default when config is empty", func() {
-		// Create a fresh container for this subtest
-		app := &Application{
-			Container:     NewContainer(),
-			ctx:           s.app.ctx,
-			publishes:     make(map[string]map[string]string),
-			publishGroups: make(map[string]map[string]string),
-		}
-
-		mockConfig := mocksconfig.NewConfig(s.T())
-		mockConfig.EXPECT().GetString("app.lang_path").Return("").Once()
-
-		app.Instance(binding.Config, mockConfig)
-
-		s.Equal(filepath.Join(support.RootPath, support.Config.Paths.Lang, "goravel.go"), app.LangPath("goravel.go"))
-	})
-
-	s.Run("when config is not bound", func() {
-		// Create a fresh container without config binding
-		app := &Application{
-			Container:     NewContainer(),
-			ctx:           s.app.ctx,
-			publishes:     make(map[string]map[string]string),
-			publishGroups: make(map[string]map[string]string),
-		}
-
-		s.Equal(filepath.Join(support.RootPath, support.Config.Paths.Lang, "goravel.go"), app.LangPath("goravel.go"))
-	})
+	s.Equal(filepath.Join(support.RootPath, support.Config.Paths.Lang, "goravel.go"), app.LangPath("goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestPublicPath() {

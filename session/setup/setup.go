@@ -12,10 +12,10 @@ func main() {
 	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
 	sessionConfigPath := path.Config("session.go")
-	sessionFacadePath := path.Facades("session.go")
-	packageName := setup.Paths().Main().Package()
+	sessionFacadePath := path.Facade("session.go")
 	sessionServiceProvider := "&session.ServiceProvider{}"
 	moduleImport := setup.Paths().Module().Import()
+	facadesPackage := setup.Paths().Facades().Package()
 	envPath := path.Base(".env")
 	envExamplePath := path.Base(".env.example")
 	env := `
@@ -28,10 +28,10 @@ SESSION_LIFETIME=120
 		modify.AddProviderApply(moduleImport, sessionServiceProvider),
 
 		// Create config/session.go and the Session facade
-		modify.File(sessionConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), packageName)),
+		modify.File(sessionConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Facades().Import(), facadesPackage)),
 
 		// Add the Session facade
-		modify.File(sessionFacadePath).Overwrite(stubs.SessionFacade(setup.Paths().Facades().Package())),
+		modify.File(sessionFacadePath).Overwrite(stubs.SessionFacade(facadesPackage)),
 
 		// Add configurations to the .env and .env.example files
 		modify.WhenFileNotContains(envPath, "SESSION_DRIVER", modify.File(envPath).Append(env)),

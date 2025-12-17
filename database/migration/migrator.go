@@ -9,6 +9,7 @@ import (
 	"github.com/goravel/framework/contracts/database/orm"
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/support/collect"
 	"github.com/goravel/framework/support/color"
 	supportfile "github.com/goravel/framework/support/file"
@@ -54,11 +55,13 @@ func (r *Migrator) Create(name string, modelName string) (string, error) {
 	fileName := r.creator.GetFileName(name)
 
 	templateData := StubData{
-		Table:        table,
-		Package:      "migrations",
-		Signature:    fileName,
-		StructName:   str.Of(fileName).Prepend("m_").Studly().String(),
-		SchemaFields: schemaFields,
+		FacadesPackage: packages.Paths().Facades().Package(),
+		FacadesImport:  packages.Paths().Facades().Import(),
+		Package:        packages.Paths().Migrations().Package(),
+		SchemaFields:   schemaFields,
+		Signature:      fileName,
+		StructName:     str.Of(fileName).Prepend("m_").Studly().String(),
+		Table:          table,
 	}
 
 	content, err := r.creator.PopulateStub(stub, templateData)

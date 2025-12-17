@@ -4,147 +4,112 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/console/command"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/file"
 )
 
-func TestViewMakeCommandSignature(t *testing.T) {
-	cmd := &ViewMakeCommand{}
-	assert.Equal(t, "make:view", cmd.Signature())
+type ViewMakeCommandTestSuite struct {
+	suite.Suite
 }
 
-func TestViewMakeCommandDescription(t *testing.T) {
-	cmd := &ViewMakeCommand{}
-	assert.Equal(t, "Create a new view file", cmd.Description())
+func TestViewMakeCommandTestSuite(t *testing.T) {
+	suite.Run(t, new(ViewMakeCommandTestSuite))
 }
 
-func TestViewMakeCommandExtend(t *testing.T) {
+func (s *ViewMakeCommandTestSuite) TestSignature() {
+	cmd := &ViewMakeCommand{}
+	s.Equal("make:view", cmd.Signature())
+}
+
+func (s *ViewMakeCommandTestSuite) TestDescription() {
+	cmd := &ViewMakeCommand{}
+	s.Equal("Create a new view file", cmd.Description())
+}
+
+func (s *ViewMakeCommandTestSuite) TestExtend() {
 	cmd := &ViewMakeCommand{}
 	extend := cmd.Extend()
 
-	assert.Equal(t, "make", extend.Category)
-	assert.Len(t, extend.Flags, 2)
-
-	// Test StringFlag
-	stringFlag, ok := extend.Flags[0].(*command.StringFlag)
-	assert.True(t, ok)
-	assert.Equal(t, "path", stringFlag.Name)
-	assert.Equal(t, "resources/views", stringFlag.Value)
-	assert.Equal(t, "The path where the view file should be created", stringFlag.Usage)
+	s.Equal("make", extend.Category)
+	s.Len(extend.Flags, 1)
 
 	// Test BoolFlag
-	boolFlag, ok := extend.Flags[1].(*command.BoolFlag)
-	assert.True(t, ok)
-	assert.Equal(t, "force", boolFlag.Name)
-	assert.Equal(t, []string{"f"}, boolFlag.Aliases)
-	assert.Equal(t, "Create the view even if it already exists", boolFlag.Usage)
+	boolFlag, ok := extend.Flags[0].(*command.BoolFlag)
+	s.True(ok)
+	s.Equal("force", boolFlag.Name)
+	s.Equal([]string{"f"}, boolFlag.Aliases)
+	s.Equal("Create the view even if it already exists", boolFlag.Usage)
 }
 
-func TestViewMakeCommand_EmptyName(t *testing.T) {
+func (s *ViewMakeCommandTestSuite) TestEmptyName() {
 	viewMakeCommand := &ViewMakeCommand{}
-	mockContext := mocksconsole.NewContext(t)
+	mockContext := mocksconsole.NewContext(s.T())
 
 	mockContext.EXPECT().Argument(0).Return("").Once()
 	mockContext.EXPECT().Error("the view name name cannot be empty").Once()
-	assert.Nil(t, viewMakeCommand.Handle(mockContext))
+	s.Nil(viewMakeCommand.Handle(mockContext))
 }
 
-func TestViewMakeCommand_CreateSuccess(t *testing.T) {
+func (s *ViewMakeCommandTestSuite) TestCreateSuccess() {
 	viewMakeCommand := &ViewMakeCommand{}
-	mockContext := mocksconsole.NewContext(t)
+	mockContext := mocksconsole.NewContext(s.T())
 
-	mockContext.EXPECT().Argument(0).Return("welcome.tmpl").Once()
-	mockContext.EXPECT().Option("path").Return("resources/views").Once()
+	mockContext.EXPECT().Argument(0).Return("welcome").Once()
 
 	expectedPath := filepath.Join("resources", "views", "welcome.tmpl")
-	mockContext.EXPECT().Success("View created successfully: " + expectedPath).Once()
+	mockContext.EXPECT().Success("View created successfully").Once()
 
-	assert.Nil(t, viewMakeCommand.Handle(mockContext))
-	assert.True(t, file.Exists(expectedPath))
-	assert.Nil(t, file.Remove("resources"))
+	s.Nil(viewMakeCommand.Handle(mockContext))
+	s.True(file.Exists(expectedPath))
+	s.Nil(file.Remove("resources"))
 }
 
-func TestViewMakeCommandGetStub(t *testing.T) {
+func (s *ViewMakeCommandTestSuite) TestGetStub() {
 	cmd := &ViewMakeCommand{}
 	stub := cmd.getStub()
 
-	assert.NotEmpty(t, stub)
-	assert.Contains(t, stub, "DummyPathName")
-	assert.Contains(t, stub, "DummyViewName")
-	assert.Contains(t, stub, "DummyPathDefinition")
-	assert.Contains(t, stub, "{{ define")
-	assert.Contains(t, stub, "{{ end }}")
+	s.NotEmpty(stub)
+	s.Contains(stub, "DummyDefinition")
+	s.Contains(stub, "{{ define")
+	s.Contains(stub, "{{ end }}")
 }
 
-func TestViewMakeCommandPopulateStub(t *testing.T) {
+func (s *ViewMakeCommandTestSuite) TestPopulateStub() {
 	cmd := &ViewMakeCommand{}
 
 	tests := []struct {
 		name           string
 		stub           string
-		viewName       string
-		viewPath       string
+		definition     string
 		expectedResult string
 	}{
 		{
 			name:           "basic replacement",
-			stub:           "// DummyPathName\n{{ define \"DummyPathDefinition\" }}\n<h1>Welcome to DummyViewName</h1>\n{{ end }}",
-			viewName:       "welcome.tmpl",
-			viewPath:       "resources/views/welcome.tmpl",
-			expectedResult: "// resources/views/welcome.tmpl\n{{ define \"welcome.tmpl\" }}\n<h1>Welcome to welcome.tmpl</h1>\n{{ end }}",
+			stub:           "{{ define \"DummyDefinition\" }}\n<h1>Welcome</h1>\n{{ end }}\n",
+			definition:     "welcome.tmpl",
+			expectedResult: "{{ define \"welcome.tmpl\" }}\n<h1>Welcome</h1>\n{{ end }}\n",
 		},
 		{
 			name:           "subdirectory path",
-			stub:           "// DummyPathName\n{{ define \"DummyPathDefinition\" }}\n<h1>Welcome to DummyViewName</h1>\n{{ end }}",
-			viewName:       "admin/dashboard.tmpl",
-			viewPath:       "resources/views/admin/dashboard.tmpl",
-			expectedResult: "// resources/views/admin/dashboard.tmpl\n{{ define \"admin/dashboard.tmpl\" }}\n<h1>Welcome to admin/dashboard.tmpl</h1>\n{{ end }}",
+			stub:           "{{ define \"DummyDefinition\" }}\n<h1>Welcome</h1>\n{{ end }}\n",
+			definition:     "admin/dashboard.tmpl",
+			expectedResult: "{{ define \"admin/dashboard.tmpl\" }}\n<h1>Welcome</h1>\n{{ end }}\n",
 		},
 		{
-			name:           "custom path - should not remove custom path prefix",
-			stub:           "// DummyPathName\n{{ define \"DummyPathDefinition\" }}\n<h1>Welcome to DummyViewName</h1>\n{{ end }}",
-			viewName:       "home.tmpl",
-			viewPath:       "custom/views/home.tmpl",
-			expectedResult: "// custom/views/home.tmpl\n{{ define \"custom/views/home.tmpl\" }}\n<h1>Welcome to home.tmpl</h1>\n{{ end }}",
+			name:           "custom definition name",
+			stub:           "{{ define \"DummyDefinition\" }}\n<h1>Welcome</h1>\n{{ end }}\n",
+			definition:     "home",
+			expectedResult: "{{ define \"home\" }}\n<h1>Welcome</h1>\n{{ end }}\n",
 		},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := cmd.populateStub(tt.stub, tt.viewName, tt.viewPath)
-			assert.Equal(t, tt.expectedResult, result)
+		s.Run(tt.name, func() {
+			result := cmd.populateStub(tt.stub, tt.definition)
+			s.Equal(tt.expectedResult, result)
 		})
 	}
-}
-
-func TestViewMakeCommandPopulateStubWithResourcesPath(t *testing.T) {
-	cmd := &ViewMakeCommand{}
-
-	// Test that resources/views/ prefix is removed from path definition
-	stub := "// DummyPathName\n{{ define \"DummyPathDefinition\" }}\n<h1>Welcome to DummyViewName</h1>\n{{ end }}"
-	viewName := "welcome.tmpl"
-	viewPath := "resources/views/welcome.tmpl"
-
-	result := cmd.populateStub(stub, viewName, viewPath)
-
-	// The path definition should have resources/views/ removed
-	assert.Contains(t, result, "{{ define \"welcome.tmpl\" }}")
-	assert.NotContains(t, result, "{{ define \"resources/views/welcome.tmpl\" }}")
-}
-
-func TestViewMakeCommandPopulateStubWithNonResourcesPath(t *testing.T) {
-	cmd := &ViewMakeCommand{}
-
-	// Test that non-resources paths are not modified
-	stub := "// DummyPathName\n{{ define \"DummyPathDefinition\" }}\n<h1>Welcome to DummyViewName</h1>\n{{ end }}"
-	viewName := "custom.tmpl"
-	viewPath := "custom/views/custom.tmpl"
-
-	result := cmd.populateStub(stub, viewName, viewPath)
-
-	// The path definition should remain unchanged for non-resources paths
-	assert.Contains(t, result, "{{ define \"custom/views/custom.tmpl\" }}")
 }

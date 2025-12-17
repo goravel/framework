@@ -2,18 +2,22 @@ package stubs
 
 import "strings"
 
-func DatabaseConfig(pkg, main string) string {
+func DatabaseConfig(pkg, facadesImport, facadesPackage string) string {
 	content := `package DummyPackage
 
 import (
-	"DummyMain/app/facades"
+	"DummyFacadesImport"
 )
 
 func init() {
-	config := facades.Config()
+	config := DummyFacadesPackage.Config()
 	config.Add("database", map[string]any{})
 }
 `
 
-	return strings.ReplaceAll(strings.ReplaceAll(content, "DummyPackage", pkg), "DummyMain", main)
+	content = strings.ReplaceAll(content, "DummyPackage", pkg)
+	content = strings.ReplaceAll(content, "DummyFacadesImport", facadesImport)
+	content = strings.ReplaceAll(content, "DummyFacadesPackage", facadesPackage)
+
+	return content
 }

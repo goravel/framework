@@ -17,12 +17,12 @@ func main() {
 	httpConfigPath := path.Config("http.go")
 	jwtConfigPath := path.Config("jwt.go")
 	corsConfigPath := path.Config("cors.go")
-	httpFacadePath := path.Facades("http.go")
-	rateLimiterFacadePath := path.Facades("rate_limiter.go")
-	viewFacadePath := path.Facades("view.go")
-	packageName := setup.Paths().Main().Package()
+	httpFacadePath := path.Facade("http.go")
+	rateLimiterFacadePath := path.Facade("rate_limiter.go")
+	viewFacadePath := path.Facade("view.go")
 	httpServiceProvider := "&http.ServiceProvider{}"
 	moduleImport := setup.Paths().Module().Import()
+	facadesImport := setup.Paths().Facades().Import()
 	configPackage := setup.Paths().Config().Package()
 	facadesPackage := setup.Paths().Facades().Package()
 
@@ -31,9 +31,9 @@ func main() {
 		modify.AddProviderApply(moduleImport, httpServiceProvider),
 
 		// Create config/http.go, config/jwt.go, config/cors.go
-		modify.File(httpConfigPath).Overwrite(stubs.HttpConfig(configPackage, packageName)),
-		modify.File(jwtConfigPath).Overwrite(stubs.JwtConfig(configPackage, packageName)),
-		modify.File(corsConfigPath).Overwrite(stubs.CorsConfig(configPackage, packageName)),
+		modify.File(httpConfigPath).Overwrite(stubs.HttpConfig(configPackage, facadesImport, facadesPackage)),
+		modify.File(jwtConfigPath).Overwrite(stubs.JwtConfig(configPackage, facadesImport, facadesPackage)),
+		modify.File(corsConfigPath).Overwrite(stubs.CorsConfig(configPackage, facadesImport, facadesPackage)),
 
 		// Register the Http, RateLimiter, View facades
 		modify.WhenFacade(httpFacade, modify.File(httpFacadePath).Overwrite(stubs.HttpFacade(facadesPackage))),

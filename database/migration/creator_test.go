@@ -23,10 +23,12 @@ func (s *DefaultCreatorSuite) SetupTest() {
 
 func (s *DefaultCreatorSuite) TestPopulateStub() {
 	data := StubData{
-		Package:    "migrations",
-		StructName: "M202410131203CreateUsersTable",
-		Signature:  "202410131203_create_users_table",
-		Table:      "users",
+		Package:        "migrations",
+		StructName:     "M202410131203CreateUsersTable",
+		Signature:      "202410131203_create_users_table",
+		Table:          "users",
+		FacadesPackage: "facades",
+		FacadesImport:  "github.com/goravel/framework/facades",
 	}
 
 	tests := []struct {
@@ -68,6 +70,7 @@ func (r *M202410131203CreateUsersTable) Down() error {
 
 import (
 	"github.com/goravel/framework/contracts/database/schema"
+
 	"github.com/goravel/framework/facades"
 )
 
@@ -100,16 +103,19 @@ func (r *M202410131203CreateUsersTable) Down() error {
 			name: "Create stub with schema fields",
 			stub: Stubs{}.Create(),
 			data: StubData{
-				Package:      "migrations",
-				StructName:   "M202410131203CreateUsersTable",
-				Signature:    "202410131203_create_users_table",
-				Table:        "users",
-				SchemaFields: []string{`table.ID()`, `table.String("name")`, `table.TimestampsTz()`},
+				Package:        "migrations",
+				StructName:     "M202410131203CreateUsersTable",
+				Signature:      "202410131203_create_users_table",
+				Table:          "users",
+				FacadesPackage: "facades",
+				FacadesImport:  "github.com/goravel/framework/facades",
+				SchemaFields:   []string{`table.ID()`, `table.String("name")`, `table.TimestampsTz()`},
 			},
 			expected: `package migrations
 
 import (
 	"github.com/goravel/framework/contracts/database/schema"
+
 	"github.com/goravel/framework/facades"
 )
 
@@ -147,6 +153,7 @@ func (r *M202410131203CreateUsersTable) Down() error {
 
 import (
 	"github.com/goravel/framework/contracts/database/schema"
+
 	"github.com/goravel/framework/facades"
 )
 

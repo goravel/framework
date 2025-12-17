@@ -12,10 +12,10 @@ func main() {
 	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
 	mailConfigPath := path.Config("mail.go")
-	mailFacadePath := path.Facades("mail.go")
-	packageName := setup.Paths().Main().Package()
+	mailFacadePath := path.Facade("mail.go")
 	modulePath := setup.Paths().Module().Import()
 	mailServiceProvider := "&mail.ServiceProvider{}"
+	facadesPackage := setup.Paths().Facades().Package()
 	env := `
 MAIL_HOST=
 MAIL_PORT=
@@ -30,10 +30,10 @@ MAIL_FROM_NAME=
 		modify.AddProviderApply(modulePath, mailServiceProvider),
 
 		// Create config/mail.go and the Mail facade
-		modify.File(mailConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), packageName)),
+		modify.File(mailConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Facades().Import(), facadesPackage)),
 
 		// Add the Mail facade
-		modify.File(mailFacadePath).Overwrite(stubs.MailFacade(setup.Paths().Facades().Package())),
+		modify.File(mailFacadePath).Overwrite(stubs.MailFacade(facadesPackage)),
 
 		// Add configurations to the .env and .env.example files
 		modify.WhenFileNotContains(path.Base(".env"), "MAIL_HOST", modify.File(path.Base(".env")).Append(env)),

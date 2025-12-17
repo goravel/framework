@@ -43,6 +43,6 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (r *ServiceProvider) Boot(app foundation.Application) {
-	ConfigFacade = app.MakeConfig()
 	TelemetryFacade = app.MakeTelemetry()
+	ConfigFacade = app.MakeConfig()
 }

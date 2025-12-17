@@ -20,12 +20,12 @@ func main() {
 	stubs := Stubs{}
 	moduleImport := setup.Paths().Module().Import()
 	configPackageName := setup.Paths().Config().Package()
-	mainPackageName := setup.Paths().Main().Package()
+	facadesImport := setup.Paths().Facades().Import()
 	databaseConfigPath := path.Config("database.go")
-	dbFacadePath := path.Facades("db.go")
-	ormFacadePath := path.Facades("orm.go")
-	schemaFacadePath := path.Facades("schema.go")
-	seederFacadePath := path.Facades("seeder.go")
+	dbFacadePath := path.Facade("db.go")
+	ormFacadePath := path.Facade("orm.go")
+	schemaFacadePath := path.Facade("schema.go")
+	seederFacadePath := path.Facade("seeder.go")
 	databaseServiceProvider := "&database.ServiceProvider{}"
 	facadesPackage := setup.Paths().Facades().Package()
 	env := `
@@ -39,7 +39,7 @@ DB_PASSWORD=
 	databaseConfigContent, err := file.GetContent(databaseConfigPath)
 	if err != nil {
 		// If the file does not exist, use the default content
-		databaseConfigContent = supportstubs.DatabaseConfig(setup.Paths().Config().Package(), setup.Paths().Main().Package())
+		databaseConfigContent = supportstubs.DatabaseConfig(configPackageName, facadesImport, facadesPackage)
 	}
 
 	installConfigActionsFunc := func() []contractsmodify.Action {
@@ -72,7 +72,7 @@ DB_PASSWORD=
 
 	setup.Install(
 		// Create config/database.go
-		modify.WhenFileNotExists(databaseConfigPath, modify.File(databaseConfigPath).Overwrite(supportstubs.DatabaseConfig(configPackageName, mainPackageName))),
+		modify.WhenFileNotExists(databaseConfigPath, modify.File(databaseConfigPath).Overwrite(supportstubs.DatabaseConfig(configPackageName, facadesImport, facadesPackage))),
 
 		// Add database configuration to config/database.go
 		modify.GoFile(databaseConfigPath).Find(match.Config("database")).Modify(installConfigActionsFunc()...),
@@ -109,7 +109,7 @@ DB_PASSWORD=
 				if err != nil {
 					return false
 				}
-				return content == supportstubs.DatabaseConfig(configPackageName, mainPackageName)
+				return content == supportstubs.DatabaseConfig(configPackageName, facadesImport, facadesPackage)
 			}, modify.File(databaseConfigPath).Remove()),
 		),
 

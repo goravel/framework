@@ -59,6 +59,8 @@ type Paths struct {
 	Storage string
 	// The tests directory path, default is "tests".
 	Tests string
+	// The view directory path, default is "resources/views".
+	Views string
 }
 
 type Configuration struct {
@@ -109,6 +111,7 @@ var (
 			Seeders:     "database/seeders",
 			Storage:     "storage",
 			Tests:       "tests",
+			Views:       "resources/views",
 		},
 	}
 )

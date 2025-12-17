@@ -5,22 +5,20 @@ import (
 
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/packages/modify"
-	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/path"
 )
 
 func main() {
 	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
-	routesPath := support.Config.Paths.Routes
-	routeFacadePath := path.Facades("route.go")
-	packageName := setup.Paths().Main().Package()
-	routesPackage := packageName + "/" + routesPath
-	webFunc := routesPath + ".Web"
-	webRoutePath := path.Base(routesPath, "web.go")
-	welcomeTmplPath := path.Base(support.Config.Paths.Resources, "views", "welcome.tmpl")
+	routeFacadePath := path.Facade("route.go")
+	routesImport := setup.Paths().Routes().Import()
+	webFunc := setup.Paths().Routes().Package() + ".Web"
+	webRoutePath := path.Route("web.go")
+	welcomeTmplPath := path.Resource("views", "welcome.tmpl")
 	routeServiceProvider := "&route.ServiceProvider{}"
 	moduleImport := setup.Paths().Module().Import()
+	facadesPackage := setup.Paths().Facades().Package()
 	envPath := path.Base(".env")
 	envExamplePath := path.Base(".env.example")
 	env := `
@@ -37,13 +35,13 @@ JWT_SECRET=
 
 		// Create resources/views/welcome.tmpl and routes/web.go
 		modify.File(welcomeTmplPath).Overwrite(stubs.WelcomeTmpl()),
-		modify.File(webRoutePath).Overwrite(stubs.Routes(setup.Paths().Routes().Package(), packageName)),
+		modify.File(webRoutePath).Overwrite(stubs.Routes(setup.Paths().Routes().Package(), setup.Paths().Facades().Import(), facadesPackage)),
 
 		// Add the Web function to WithRouting
-		modify.AddRouteApply(routesPackage, webFunc),
+		modify.AddRouteApply(routesImport, webFunc),
 
 		// Register the Route facade
-		modify.File(routeFacadePath).Overwrite(stubs.RouteFacade(setup.Paths().Facades().Package())),
+		modify.File(routeFacadePath).Overwrite(stubs.RouteFacade(facadesPackage)),
 
 		// Add configurations to the .env and .env.example files
 		modify.WhenFileNotContains(envPath, "APP_URL", modify.File(envPath).Append(env)),
@@ -53,7 +51,7 @@ JWT_SECRET=
 		modify.File(routeFacadePath).Remove(),
 
 		// Remove the Web function from WithRouting
-		modify.RemoveRouteApply(routesPackage, webFunc),
+		modify.RemoveRouteApply(routesImport, webFunc),
 
 		// Remove resources/views/welcome.tmpl and routes/web.go
 		modify.File(webRoutePath).Remove(),

@@ -9,8 +9,10 @@ import (
 	"github.com/goravel/framework/contracts/packages"
 	"github.com/goravel/framework/contracts/packages/modify"
 	"github.com/goravel/framework/packages/options"
+	"github.com/goravel/framework/packages/paths"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/support/env"
 )
 
 type setup struct {
@@ -53,10 +55,10 @@ func Setup(args []string) packages.Setup {
 	}
 
 	if mainName == "" {
-		mainName = "goravel"
+		mainName = env.MainPath()
 	}
 
-	st.paths = NewPaths(mainName)
+	st.paths = Paths(mainName)
 
 	return st
 }
@@ -105,4 +107,11 @@ func (r *setup) reportError(err error) {
 		color.Errorln(err)
 		osExit(1)
 	}
+}
+
+func Paths(mainPath ...string) packages.Paths {
+	if len(mainPath) == 0 {
+		mainPath = []string{env.MainPath()}
+	}
+	return paths.NewPaths(mainPath[0])
 }

@@ -15,7 +15,7 @@ func main() {
 	testingServiceProvider := "&testing.ServiceProvider{}"
 	testCasePath := path.Base(support.Config.Paths.Tests, "test_case.go")
 	exampleTestPath := path.Base(support.Config.Paths.Tests, "feature", "example_test.go")
-	testingFacadePath := path.Facades("testing.go")
+	testingFacadePath := path.Facade("testing.go")
 	moduleImport := setup.Paths().Module().Import()
 
 	setup.Install(
@@ -23,7 +23,7 @@ func main() {
 		modify.AddProviderApply(moduleImport, testingServiceProvider),
 
 		// Create tests/test_case.go
-		modify.File(testCasePath).Overwrite(stubs.TestCase(setup.Paths().Tests().Package(), setup.Paths().Bootstrap().Import())),
+		modify.File(testCasePath).Overwrite(stubs.TestCase(setup.Paths().Tests().Package(), setup.Paths().Bootstrap().Import(), setup.Paths().Bootstrap().Package())),
 
 		// Create tests/feature/example_test.go
 		modify.File(exampleTestPath).Overwrite(stubs.ExampleTest(setup.Paths().Tests().Import(), setup.Paths().Tests().Package())),
