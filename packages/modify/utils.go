@@ -9,7 +9,7 @@ import (
 
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/packages/match"
-	"github.com/goravel/framework/support/path/internals"
+	"github.com/goravel/framework/support/path"
 )
 
 // AddCommand adds command to the foundation.Setup() chain in the Boot function.
@@ -68,7 +68,7 @@ func AddJob(pkg, job string) error {
 
 // AddMiddleware adds middleware to the foundation.Setup() chain in the Boot function.
 func AddMiddleware(pkg, middleware string) error {
-	appFilePath := internals.BootstrapApp()
+	appFilePath := path.Bootstrap("app.go")
 
 	if err := addMiddlewareImports(appFilePath, pkg); err != nil {
 		return err

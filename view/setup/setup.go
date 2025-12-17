@@ -13,7 +13,7 @@ func main() {
 	stubs := Stubs{}
 	viewServiceProvider := "&view.ServiceProvider{}"
 	moduleImport := setup.Paths().Module().Import()
-	viewFacadePath := path.Facades("view.go")
+	viewFacadePath := path.Facade("view.go")
 
 	setup.Install(
 		// Add the view service provider to the providers array in bootstrap/providers.go

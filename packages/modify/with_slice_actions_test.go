@@ -15,7 +15,7 @@ import (
 	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/support"
 	supportfile "github.com/goravel/framework/support/file"
-	"github.com/goravel/framework/support/path/internals"
+	"github.com/goravel/framework/support/path"
 )
 
 type WithSliceHandlerTestSuite struct {
@@ -30,7 +30,7 @@ func TestWithSliceHandlerTestSuite(t *testing.T) {
 
 func (s *WithSliceHandlerTestSuite) SetupTest() {
 	s.bootstrapDir = support.Config.Paths.Bootstrap
-	s.appFile = internals.BootstrapApp()
+	s.appFile = path.Bootstrap("app.go")
 }
 
 func (s *WithSliceHandlerTestSuite) TearDownTest() {

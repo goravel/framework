@@ -12,7 +12,7 @@ func main() {
 	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
 	mailConfigPath := path.Config("mail.go")
-	mailFacadePath := path.Facades("mail.go")
+	mailFacadePath := path.Facade("mail.go")
 	modulePath := setup.Paths().Module().Import()
 	mailServiceProvider := "&mail.ServiceProvider{}"
 	facadesPackage := setup.Paths().Facades().Package()

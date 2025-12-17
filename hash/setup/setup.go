@@ -14,7 +14,7 @@ func main() {
 	moduleImport := setup.Paths().Module().Import()
 	hashServiceProvider := "&hash.ServiceProvider{}"
 	configPath := path.Config("hashing.go")
-	hashFacadePath := path.Facades("hash.go")
+	hashFacadePath := path.Facade("hash.go")
 	facadesPackage := setup.Paths().Facades().Package()
 
 	setup.Install(

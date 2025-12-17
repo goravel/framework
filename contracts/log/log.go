@@ -11,6 +11,7 @@ const (
 	DriverStack  = "stack"
 	DriverSingle = "single"
 	DriverDaily  = "daily"
+	DriverOtel   = "otel"
 	DriverCustom = "custom"
 )
 

@@ -13,7 +13,7 @@ import (
 	"github.com/goravel/framework/contracts/packages/modify"
 	"github.com/goravel/framework/packages/match"
 	supportfile "github.com/goravel/framework/support/file"
-	"github.com/goravel/framework/support/path/internals"
+	"github.com/goravel/framework/support/path"
 )
 
 // withSliceConfig holds configuration for adding items to a slice in foundation.Setup() chain.
@@ -56,7 +56,7 @@ type withSliceHandler struct {
 
 // newWithSliceHandler creates a new withSliceHandler with the given configuration.
 func newWithSliceHandler(config withSliceConfig) *withSliceHandler {
-	appFilePath := internals.BootstrapApp()
+	appFilePath := path.Bootstrap("app.go")
 	bootstrapDir := filepath.Dir(appFilePath)
 
 	var filePath string

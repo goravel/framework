@@ -24,7 +24,7 @@ import (
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/env"
-	"github.com/goravel/framework/support/path/internals"
+	"github.com/goravel/framework/support/path"
 )
 
 var App foundation.Application
@@ -209,32 +209,24 @@ func (r *Application) Version() string {
 	return support.Version
 }
 
-func (r *Application) BasePath(path ...string) string {
-	return internals.Abs(path...)
+func (r *Application) BasePath(paths ...string) string {
+	return path.Base(paths...)
 }
 
-func (r *Application) BootstrapPath(path ...string) string {
-	path = append(internals.ToSlice(support.Config.Paths.Bootstrap), path...)
-
-	return r.BasePath(path...)
+func (r *Application) BootstrapPath(paths ...string) string {
+	return path.Bootstrap(paths...)
 }
 
-func (r *Application) ConfigPath(path ...string) string {
-	path = append(internals.ToSlice(support.Config.Paths.Config), path...)
-
-	return r.BasePath(path...)
+func (r *Application) ConfigPath(paths ...string) string {
+	return path.Config(paths...)
 }
 
-func (r *Application) ModelPath(path ...string) string {
-	path = append(internals.ToSlice(support.Config.Paths.Models), path...)
-
-	return r.BasePath(path...)
+func (r *Application) ModelPath(paths ...string) string {
+	return path.Model(paths...)
 }
 
-func (r *Application) DatabasePath(path ...string) string {
-	path = append(internals.ToSlice(support.Config.Paths.Database), path...)
-
-	return r.BasePath(path...)
+func (r *Application) DatabasePath(paths ...string) string {
+	return path.Database(paths...)
 }
 
 func (r *Application) CurrentLocale(ctx context.Context) string {
@@ -247,53 +239,32 @@ func (r *Application) CurrentLocale(ctx context.Context) string {
 	return lang.CurrentLocale()
 }
 
-func (r *Application) ExecutablePath(path ...string) string {
-	path = append([]string{support.RootPath}, path...)
-
-	return r.BasePath(path...)
+func (r *Application) ExecutablePath(paths ...string) string {
+	return path.Executable(paths...)
 }
 
-func (r *Application) FacadesPath(path ...string) string {
-	return internals.Facades(path...)
+func (r *Application) FacadesPath(paths ...string) string {
+	return path.Facade(paths...)
 }
 
-func (r *Application) LangPath(path ...string) string {
-	if configFacade := r.MakeConfig(); configFacade != nil {
-		// TODO: Remove deprecated config key "app.lang_path" in future major version.
-		defaultPath := configFacade.GetString("app.lang_path")
-
-		if defaultPath != "" {
-			path = append(internals.ToSlice(defaultPath), path...)
-
-			return r.BasePath(path...)
-		}
-	}
-
-	path = append(internals.ToSlice(support.Config.Paths.Lang), path...)
-
-	return r.BasePath(path...)
+func (r *Application) LangPath(paths ...string) string {
+	return path.Lang(paths...)
 }
 
-func (r *Application) Path(path ...string) string {
-	return internals.Path(path...)
+func (r *Application) Path(paths ...string) string {
+	return path.App(paths...)
 }
 
-func (r *Application) PublicPath(path ...string) string {
-	path = append(internals.ToSlice(support.Config.Paths.Public), path...)
-
-	return r.BasePath(path...)
+func (r *Application) PublicPath(paths ...string) string {
+	return path.Public(paths...)
 }
 
-func (r *Application) ResourcePath(path ...string) string {
-	path = append(internals.ToSlice(support.Config.Paths.Resources), path...)
-
-	return r.BasePath(path...)
+func (r *Application) ResourcePath(paths ...string) string {
+	return path.Resource(paths...)
 }
 
-func (r *Application) StoragePath(path ...string) string {
-	path = append(internals.ToSlice(support.Config.Paths.Storage), path...)
-
-	return r.BasePath(path...)
+func (r *Application) StoragePath(paths ...string) string {
+	return path.Storage(paths...)
 }
 
 func (r *Application) addPublishGroup(group string, paths map[string]string) {
