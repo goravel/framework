@@ -13,17 +13,38 @@ type Level slog.Level
 
 const (
 	// LevelDebug level. Usually only enabled when debugging. Very verbose logging.
-	LevelDebug Level = Level(slog.LevelDebug) // -4
+	LevelDebug = Level(slog.LevelDebug) // -4
 	// LevelInfo level. General operational entries about what's going on inside the application.
-	LevelInfo Level = Level(slog.LevelInfo) // 0
+	LevelInfo = Level(slog.LevelInfo) // 0
 	// LevelWarning level. Non-critical entries that deserve eyes.
-	LevelWarning Level = Level(slog.LevelWarn) // 4
+	LevelWarning = Level(slog.LevelWarn) // 4
 	// LevelError level. Used for errors that should definitely be noted.
-	LevelError Level = Level(slog.LevelError) // 8
+	LevelError = Level(slog.LevelError) // 8
 	// LevelFatal level. Logs and then calls `os.Exit(1)`.
-	LevelFatal Level = Level(slog.LevelError + 4) // 12
+	LevelFatal = Level(slog.LevelError + 4) // 12
 	// LevelPanic level. Highest level of severity. Logs and then calls panic.
-	LevelPanic Level = Level(slog.LevelError + 8) // 16
+	LevelPanic = Level(slog.LevelError + 8) // 16
+)
+
+const (
+	// DebugLevel is an alias for LevelDebug level.
+	// Deprecated: use LevelDebug instead.
+	DebugLevel = LevelDebug
+	// InfoLevel is an alias for LevelInfo level.
+	// Deprecated: use LevelInfo instead.
+	InfoLevel = LevelInfo
+	// WarningLevel is an alias for LevelWarning level.
+	// Deprecated: use LevelWarning instead.
+	WarningLevel = LevelWarning
+	// ErrorLevel is an alias for LevelError level.
+	// Deprecated: use LevelError instead.
+	ErrorLevel = LevelError
+	// FatalLevel is an alias for LevelFatal level.
+	// Deprecated: use LevelFatal instead.
+	FatalLevel = LevelFatal
+	// PanicLevel is an alias for LevelPanic level.
+	// Deprecated: use LevelPanic instead.
+	PanicLevel = LevelPanic
 )
 
 // String converts the Level to a string. E.g. LevelPanic becomes "panic".

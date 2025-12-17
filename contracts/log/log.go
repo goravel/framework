@@ -15,6 +15,19 @@ const (
 	DriverCustom = "custom"
 )
 
+const (
+	// Deprecated: use DriverStack instead
+	StackDriver = DriverStack
+	// Deprecated: use DriverSingle instead
+	SingleDriver = DriverSingle
+	// Deprecated: use DriverDaily instead
+	DailyDriver = DriverDaily
+	// Deprecated: use DriverOtel instead
+	OtelDriver = DriverOtel
+	// Deprecated: use DriverCustom instead
+	CustomDriver = DriverCustom
+)
+
 type Data map[string]any
 
 type Log interface {
