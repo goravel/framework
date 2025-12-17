@@ -91,6 +91,15 @@ type Handler interface {
 	Handle(Entry) error
 }
 
+// Hook is the interface for log hooks.
+// Deprecated: Use Handler instead, Hook will be removed in v1.18.
+type Hook interface {
+	// Levels monitoring level
+	Levels() []Level
+	// Fire executes logic when trigger
+	Fire(Entry) error
+}
+
 type Entry interface {
 	// Code returns the associated code.
 	Code() string

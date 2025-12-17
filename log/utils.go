@@ -32,3 +32,28 @@ func (h *slogAdapter) WithGroup(name string) slog.Handler {
 func HandlerToSlogHandler(handler log.Handler) slog.Handler {
 	return &slogAdapter{handler: handler}
 }
+
+// hookAdapter wraps a log.Hook to implement log.Handler for backward compatibility.
+// Deprecated: Use Handler directly instead, hookAdapter will be removed in v1.18.
+type hookAdapter struct {
+	hook log.Hook
+}
+
+func (h *hookAdapter) Enabled(level log.Level) bool {
+	for _, l := range h.hook.Levels() {
+		if l == level {
+			return true
+		}
+	}
+	return false
+}
+
+func (h *hookAdapter) Handle(entry log.Entry) error {
+	return h.hook.Fire(entry)
+}
+
+// HookToHandler converts a Hook to a Handler for backward compatibility.
+// Deprecated: Use Handler directly instead, HookToHandler will be removed in v1.18.
+func HookToHandler(hook log.Hook) log.Handler {
+	return &hookAdapter{hook: hook}
+}
