@@ -54,6 +54,10 @@ func (app *Application) Client(ctx context.Context, name string) (*grpc.ClientCo
 		if conn.GetState() != connectivity.Shutdown {
 			return conn, nil
 		}
+		// Found a Shutdown connection. Close and remove it immediately.
+		// This prevents stale connections from lingering if the subsequent creation fails.
+		_ = conn.Close()
+		delete(app.clients, name)
 	}
 
 	host := app.config.GetString(fmt.Sprintf("grpc.clients.%s.host", name))
@@ -127,20 +131,21 @@ func (app *Application) Server() *grpc.Server {
 }
 
 func (app *Application) Shutdown(force ...bool) error {
+	if len(force) > 0 && force[0] {
+		app.server.Stop()
+	} else {
+		app.server.GracefulStop()
+	}
+
 	app.mu.Lock()
+	defer app.mu.Unlock()
+
 	for _, conn := range app.clients {
 		_ = conn.Close()
 	}
+
 	// Clear the map to allow Garbage Collection
 	app.clients = make(map[string]*grpc.ClientConn)
-	app.mu.Unlock()
-
-	if len(force) > 0 && force[0] {
-		app.server.Stop()
-		return nil
-	}
-
-	app.server.GracefulStop()
 
 	return nil
 }

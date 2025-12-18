@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/metadata"
 
 	configmock "github.com/goravel/framework/mocks/config"
@@ -208,7 +210,7 @@ func TestClient(t *testing.T) {
 	}
 }
 
-func TestClient_Caching_And_Reuse(t *testing.T) {
+func TestClient_Caching(t *testing.T) {
 	var (
 		app        *Application
 		mockConfig *configmock.Config
@@ -216,25 +218,65 @@ func TestClient_Caching_And_Reuse(t *testing.T) {
 		host       = "127.0.0.1:3035"
 	)
 
-	mockConfig = &configmock.Config{}
-	app = NewApplication(mockConfig)
+	setup := func() {
+		mockConfig = &configmock.Config{}
+		app = NewApplication(mockConfig)
+	}
 
-	// We expect GetString to be called ONLY ONCE, even though we call Client() twice.
-	mockConfig.On("GetString", fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
-	mockConfig.On("Get", fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{}).Once()
+	t.Run("Serial Reuse: Should return same connection instance", func(t *testing.T) {
+		setup()
 
-	conn1, err := app.Client(context.Background(), name)
-	assert.NoError(t, err)
-	assert.NotNil(t, conn1)
+		// We expect GetString to be called ONLY ONCE, even though we call Client() twice.
+		mockConfig.On("GetString", fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
+		mockConfig.On("Get", fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{}).Once()
 
-	conn2, err := app.Client(context.Background(), name)
-	assert.NoError(t, err)
-	assert.NotNil(t, conn2)
+		conn1, err := app.Client(context.Background(), name)
+		assert.NoError(t, err)
+		assert.NotNil(t, conn1)
 
-	// The memory address of conn1 and conn2 must be identical
-	assert.Same(t, conn1, conn2, "Client should return cached connection instance")
+		conn2, err := app.Client(context.Background(), name)
+		assert.NoError(t, err)
 
-	mockConfig.AssertExpectations(t)
+		// The memory address of conn1 and conn2 must be identical
+		assert.Same(t, conn1, conn2, "Expected the cached connection instance to be returned")
+
+		mockConfig.AssertExpectations(t)
+	})
+
+	t.Run("Concurrent Access: Should handle race conditions safely", func(t *testing.T) {
+		setup()
+
+		mockConfig.On("GetString", fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
+		mockConfig.On("Get", fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{}).Once()
+
+		var wg sync.WaitGroup
+		concurrency := 50
+		connections := make([]*grpc.ClientConn, concurrency)
+
+		for i := 0; i < concurrency; i++ {
+			wg.Add(1)
+			go func(index int) {
+				defer wg.Done()
+				conn, err := app.Client(context.Background(), name)
+
+				assert.NoError(t, err)
+				assert.NotNil(t, conn)
+				assert.NotEqual(t, connectivity.Shutdown, conn.GetState())
+
+				connections[index] = conn
+			}(i)
+		}
+
+		wg.Wait()
+
+		// All returned connections should be identical (pointing to the same singleton)
+		firstConn := connections[0]
+		for i := 1; i < concurrency; i++ {
+			if connections[i] != nil {
+				assert.Same(t, firstConn, connections[i], "All goroutines should receive the same connection instance")
+			}
+		}
+	})
 }
 
 func TestShutdown(t *testing.T) {
