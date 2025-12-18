@@ -208,6 +208,35 @@ func TestClient(t *testing.T) {
 	}
 }
 
+func TestClient_Caching_And_Reuse(t *testing.T) {
+	var (
+		app        *Application
+		mockConfig *configmock.Config
+		name       = "user-service"
+		host       = "127.0.0.1:3035"
+	)
+
+	mockConfig = &configmock.Config{}
+	app = NewApplication(mockConfig)
+
+	// We expect GetString to be called ONLY ONCE, even though we call Client() twice.
+	mockConfig.On("GetString", fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
+	mockConfig.On("Get", fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{}).Once()
+
+	conn1, err := app.Client(context.Background(), name)
+	assert.NoError(t, err)
+	assert.NotNil(t, conn1)
+
+	conn2, err := app.Client(context.Background(), name)
+	assert.NoError(t, err)
+	assert.NotNil(t, conn2)
+
+	// The memory address of conn1 and conn2 must be identical
+	assert.Same(t, conn1, conn2, "Client should return cached connection instance")
+
+	mockConfig.AssertExpectations(t)
+}
+
 func TestShutdown(t *testing.T) {
 	var (
 		app        *Application
