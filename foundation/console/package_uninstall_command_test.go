@@ -80,7 +80,7 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{pkg}).Once()
 				mockContext.EXPECT().OptionBool("force").Return(false).Once()
-				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup uninstall --package-name=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(assert.AnError).Once()
+				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup uninstall --main-path=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(assert.AnError).Once()
 				mockContext.EXPECT().Error(fmt.Sprintf("failed to uninstall package: %s", assert.AnError)).Once()
 			},
 		},
@@ -90,7 +90,7 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 				s.T().Setenv("GO111MODULE", "off")
 				mockContext.EXPECT().Arguments().Return([]string{pkg}).Once()
 				mockContext.EXPECT().OptionBool("force").Return(true).Once()
-				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup uninstall --package-name=github.com/goravel/framework --paths="+pathsJSON+" --force", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup uninstall --main-path=github.com/goravel/framework --paths="+pathsJSON+" --force", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(assert.AnError).Once()
 				mockContext.EXPECT().Error(fmt.Sprintf("failed to tidy go.mod file: %s", assert.AnError)).Once()
 			},
@@ -100,7 +100,7 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{pkg}).Once()
 				mockContext.EXPECT().OptionBool("force").Return(true).Once()
-				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup uninstall --package-name=github.com/goravel/framework --paths="+pathsJSON+" --force", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup uninstall --main-path=github.com/goravel/framework --paths="+pathsJSON+" --force", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Package " + pkg + " uninstalled successfully").Once()
 			},
@@ -140,7 +140,7 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{facade}).Once()
 				mockContext.EXPECT().OptionBool("force").Return(false).Once()
-				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Auth].PkgPath+"/setup uninstall --facade=Auth --package-name=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(assert.AnError).Once()
+				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Auth].PkgPath+"/setup uninstall --facade=Auth --main-path=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(assert.AnError).Once()
 				mockContext.EXPECT().Error(fmt.Sprintf("Failed to uninstall facade %s, error: %s", "Auth", assert.AnError)).Once()
 			},
 		},
@@ -149,7 +149,7 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{facade}).Once()
 				mockContext.EXPECT().OptionBool("force").Return(true).Once()
-				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Auth].PkgPath+"/setup uninstall --facade=Auth --package-name=github.com/goravel/framework --paths="+pathsJSON+" --force", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Auth].PkgPath+"/setup uninstall --facade=Auth --main-path=github.com/goravel/framework --paths="+pathsJSON+" --force", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Facade Auth uninstalled successfully").Once()
 				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
 			},
@@ -160,12 +160,12 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 				mockContext.EXPECT().Arguments().Return([]string{pkg, facade}).Once()
 
 				mockContext.EXPECT().OptionBool("force").Return(true).Once()
-				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup uninstall --package-name=github.com/goravel/framework --paths="+pathsJSON+" --force", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup uninstall --main-path=github.com/goravel/framework --paths="+pathsJSON+" --force", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Package " + pkg + " uninstalled successfully").Once()
 
 				mockContext.EXPECT().OptionBool("force").Return(true).Once()
-				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Auth].PkgPath+"/setup uninstall --facade=Auth --package-name=github.com/goravel/framework --paths="+pathsJSON+" --force", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Auth].PkgPath+"/setup uninstall --facade=Auth --main-path=github.com/goravel/framework --paths="+pathsJSON+" --force", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Facade Auth uninstalled successfully").Once()
 				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
 			},
