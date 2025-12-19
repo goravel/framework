@@ -77,6 +77,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			name: "go get failed",
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{pkg}).Once()
+				mockContext.EXPECT().OptionBool("dev").Return(false).Once()
 				mockContext.EXPECT().Spinner("> @go get "+pkg, mock.Anything).Return(assert.AnError).Once()
 				mockContext.EXPECT().Error(fmt.Sprintf("failed to get package: %s", assert.AnError)).Once()
 			},
@@ -85,8 +86,9 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			name: "package install failed",
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{pkg}).Once()
+				mockContext.EXPECT().OptionBool("dev").Return(false).Once()
 				mockContext.EXPECT().Spinner("> @go get "+pkg, mock.Anything).Return(nil).Once()
-				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install --package-name=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(assert.AnError).Once()
+				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install --main-path=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(assert.AnError).Once()
 				mockContext.EXPECT().Error(fmt.Sprintf("failed to install package: %s", assert.AnError)).Once()
 			},
 		},
@@ -95,8 +97,9 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			setup: func() {
 				s.T().Setenv("GO111MODULE", "off")
 				mockContext.EXPECT().Arguments().Return([]string{pkg}).Once()
+				mockContext.EXPECT().OptionBool("dev").Return(false).Once()
 				mockContext.EXPECT().Spinner("> @go get "+pkg, mock.Anything).Return(nil).Once()
-				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install --package-name=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install --main-path=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(assert.AnError).Once()
 				mockContext.EXPECT().Error(fmt.Sprintf("failed to tidy go.mod file: %s", assert.AnError)).Once()
 			},
@@ -105,8 +108,9 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			name: "package install success(simulate)",
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{pkg}).Once()
+				mockContext.EXPECT().OptionBool("dev").Return(false).Once()
 				mockContext.EXPECT().Spinner("> @go get "+pkg, mock.Anything).Return(nil).Once()
-				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install --package-name=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install --main-path=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Package " + pkg + " installed successfully").Once()
 			},
@@ -176,7 +180,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 
 				mockContext.EXPECT().Arguments().Return([]string{}).Once()
 				mockContext.EXPECT().OptionBool("all-facades").Return(true).Once()
-				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Auth].PkgPath+"/setup install --facade=Auth --package-name=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(assert.AnError).Once()
+				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Auth].PkgPath+"/setup install --facade=Auth --main-path=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(assert.AnError).Once()
 				mockContext.EXPECT().Error(fmt.Sprintf("failed to install facade %s: %s", "Auth", assert.AnError)).Once()
 			},
 		},
@@ -187,7 +191,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 				mockContext.EXPECT().Arguments().Return([]string{facade}).Once()
 				mockContext.EXPECT().OptionBool("all-facades").Return(false).Once()
 				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facade, "Orm")).Once()
-				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Auth].PkgPath+"/setup install --facade=Auth --package-name=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Auth].PkgPath+"/setup install --facade=Auth --main-path=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Facade Auth installed successfully").Once()
 			},
@@ -198,9 +202,9 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 				mockContext.EXPECT().Arguments().Return([]string{facade}).Once()
 				mockContext.EXPECT().OptionBool("all-facades").Return(false).Once()
 				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facade, "Orm")).Once()
-				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Orm].PkgPath+"/setup install --facade=Orm --package-name=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Orm].PkgPath+"/setup install --facade=Orm --main-path=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Facade Orm installed successfully").Once()
-				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Auth].PkgPath+"/setup install --facade=Auth --package-name=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Auth].PkgPath+"/setup install --facade=Auth --main-path=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Facade Auth installed successfully").Once()
 			},
@@ -210,16 +214,17 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{pkg, facade}).Once()
 
+				mockContext.EXPECT().OptionBool("dev").Return(false).Once()
 				mockContext.EXPECT().Spinner("> @go get "+pkg, mock.Anything).Return(nil).Once()
-				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install --package-name=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install --main-path=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Package " + pkg + " installed successfully").Once()
 
 				mockContext.EXPECT().OptionBool("all-facades").Return(false).Once()
 				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facade, "Orm")).Once()
-				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Orm].PkgPath+"/setup install --facade=Orm --package-name=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Orm].PkgPath+"/setup install --facade=Orm --main-path=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Facade Orm installed successfully").Once()
-				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Auth].PkgPath+"/setup install --facade=Auth --package-name=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Auth].PkgPath+"/setup install --facade=Auth --main-path=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Facade Auth installed successfully").Once()
 				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
 			},
@@ -274,7 +279,8 @@ func (s *PackageInstallCommandTestSuite) Test_installFacade_TwoFacadesHaveTheSam
 	packageInstallCommand := NewPackageInstallCommand(bindings, installedBindings, mockJson)
 
 	// Install DB facade
-	mockContext.EXPECT().Spinner("> @go run "+bindings[binding.DB].PkgPath+"/setup install --facade=DB --package-name=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
+	mockContext.EXPECT().Spinner("> @go run "+bindings[binding.DB].PkgPath+"/setup install --facade=DB --main-path=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
+	mockContext.EXPECT().OptionBool("default").Return(false).Once()
 	mockContext.EXPECT().Choice(fmt.Sprintf("Select the %s driver to install", dbFacade), []console.Choice{
 		{Key: "Postgres", Value: pkg},
 		{Key: "MySQL", Value: "github.com/goravel/mysql"},
@@ -282,8 +288,9 @@ func (s *PackageInstallCommandTestSuite) Test_installFacade_TwoFacadesHaveTheSam
 	}, console.ChoiceOption{
 		Description: fmt.Sprintf("A driver is required for %s, please select one to install.", dbFacade),
 	}).Return(pkg, nil).Once()
+	mockContext.EXPECT().OptionBool("dev").Return(false).Once()
 	mockContext.EXPECT().Spinner("> @go get "+pkg, mock.Anything).Return(nil).Once()
-	mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install --package-name=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
+	mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install --main-path=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
 	mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Twice()
 	mockContext.EXPECT().Success("Package " + pkg + " installed successfully").Once()
 	mockContext.EXPECT().Success("Facade DB installed successfully").Once()
@@ -291,7 +298,7 @@ func (s *PackageInstallCommandTestSuite) Test_installFacade_TwoFacadesHaveTheSam
 	s.NoError(packageInstallCommand.installFacade(mockContext, dbFacade))
 
 	// Install Orm facade, should not install the driver again
-	mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Orm].PkgPath+"/setup install --facade=Orm --package-name=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
+	mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Orm].PkgPath+"/setup install --facade=Orm --main-path=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
 	mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
 	mockContext.EXPECT().Success("Facade Orm installed successfully").Once()
 
@@ -348,6 +355,7 @@ func (s *PackageInstallCommandTestSuite) Test_installDriver() {
 			name:        "select driver returns error",
 			bindingInfo: bindingInfo,
 			setup: func() {
+				mockContext.EXPECT().OptionBool("default").Return(false).Once()
 				mockContext.EXPECT().Choice(fmt.Sprintf("Select the %s driver to install", facade), []console.Choice{
 					{Key: "Route", Value: "route"},
 					{Key: "Gin" + color.Gray().Sprintf(" - %s", "Description"), Value: "github.com/goravel/gin"},
@@ -363,6 +371,7 @@ func (s *PackageInstallCommandTestSuite) Test_installDriver() {
 			name:        "select custom driver, but ask returns error",
 			bindingInfo: bindingInfo,
 			setup: func() {
+				mockContext.EXPECT().OptionBool("default").Return(false).Once()
 				mockContext.EXPECT().Choice(fmt.Sprintf("Select the %s driver to install", facade), []console.Choice{
 					{Key: "Route", Value: "route"},
 					{Key: "Gin" + color.Gray().Sprintf(" - %s", "Description"), Value: "github.com/goravel/gin"},
@@ -379,6 +388,7 @@ func (s *PackageInstallCommandTestSuite) Test_installDriver() {
 			name:        "select custom driver, but input empty",
 			bindingInfo: bindingInfo,
 			setup: func() {
+				mockContext.EXPECT().OptionBool("default").Return(false).Twice()
 				mockContext.EXPECT().Choice(fmt.Sprintf("Select the %s driver to install", facade), []console.Choice{
 					{Key: "Route", Value: "route"},
 					{Key: "Gin" + color.Gray().Sprintf(" - %s", "Description"), Value: "github.com/goravel/gin"},
@@ -403,6 +413,7 @@ func (s *PackageInstallCommandTestSuite) Test_installDriver() {
 			name:        "failed to install driver",
 			bindingInfo: bindingInfo,
 			setup: func() {
+				mockContext.EXPECT().OptionBool("default").Return(false).Once()
 				mockContext.EXPECT().Choice(fmt.Sprintf("Select the %s driver to install", facade), []console.Choice{
 					{Key: "Route", Value: "route"},
 					{Key: "Gin" + color.Gray().Sprintf(" - %s", "Description"), Value: "github.com/goravel/gin"},
@@ -411,6 +422,7 @@ func (s *PackageInstallCommandTestSuite) Test_installDriver() {
 				}, console.ChoiceOption{
 					Description: fmt.Sprintf("A driver is required for %s, please select one to install.", facade),
 				}).Return("github.com/goravel/gin", nil).Once()
+				mockContext.EXPECT().OptionBool("dev").Return(false).Once()
 				mockContext.EXPECT().Spinner("> @go get github.com/goravel/gin", mock.Anything).Return(assert.AnError).Once()
 			},
 			expectError: fmt.Errorf("failed to get package: %s", assert.AnError),
@@ -420,6 +432,7 @@ func (s *PackageInstallCommandTestSuite) Test_installDriver() {
 			bindingInfo: bindingInfo,
 			setup: func() {
 				pkg := "github.com/goravel/gin"
+				mockContext.EXPECT().OptionBool("default").Return(false).Once()
 				mockContext.EXPECT().Choice(fmt.Sprintf("Select the %s driver to install", facade), []console.Choice{
 					{Key: "Route", Value: "route"},
 					{Key: "Gin" + color.Gray().Sprintf(" - %s", "Description"), Value: "github.com/goravel/gin"},
@@ -428,8 +441,9 @@ func (s *PackageInstallCommandTestSuite) Test_installDriver() {
 				}, console.ChoiceOption{
 					Description: fmt.Sprintf("A driver is required for %s, please select one to install.", facade),
 				}).Return(pkg, nil).Once()
+				mockContext.EXPECT().OptionBool("dev").Return(false).Once()
 				mockContext.EXPECT().Spinner("> @go get "+pkg, mock.Anything).Return(nil).Once()
-				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install --package-name=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install --main-path=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Package " + pkg + " installed successfully").Once()
 			},
@@ -438,6 +452,7 @@ func (s *PackageInstallCommandTestSuite) Test_installDriver() {
 			name:        "failed to install internal driver",
 			bindingInfo: bindingInfo,
 			setup: func() {
+				mockContext.EXPECT().OptionBool("default").Return(false).Once()
 				mockContext.EXPECT().Choice(fmt.Sprintf("Select the %s driver to install", facade), []console.Choice{
 					{Key: "Route", Value: "route"},
 					{Key: "Gin" + color.Gray().Sprintf(" - %s", "Description"), Value: "github.com/goravel/gin"},
@@ -446,7 +461,7 @@ func (s *PackageInstallCommandTestSuite) Test_installDriver() {
 				}, console.ChoiceOption{
 					Description: fmt.Sprintf("A driver is required for %s, please select one to install.", facade),
 				}).Return("route", nil).Once()
-				mockContext.EXPECT().Spinner("> @go run github.com/goravel/framework/route/setup install --driver=route --package-name=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).
+				mockContext.EXPECT().Spinner("> @go run github.com/goravel/framework/route/setup install --driver=route --main-path=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).
 					Return(assert.AnError).Once()
 			},
 			expectError: fmt.Errorf("failed to install driver %s: %s", "route", assert.AnError),
@@ -455,6 +470,7 @@ func (s *PackageInstallCommandTestSuite) Test_installDriver() {
 			name:        "successful to install internal driver",
 			bindingInfo: bindingInfo,
 			setup: func() {
+				mockContext.EXPECT().OptionBool("default").Return(false).Once()
 				mockContext.EXPECT().Choice(fmt.Sprintf("Select the %s driver to install", facade), []console.Choice{
 					{Key: "Route", Value: "route"},
 					{Key: "Gin" + color.Gray().Sprintf(" - %s", "Description"), Value: "github.com/goravel/gin"},
@@ -463,7 +479,7 @@ func (s *PackageInstallCommandTestSuite) Test_installDriver() {
 				}, console.ChoiceOption{
 					Description: fmt.Sprintf("A driver is required for %s, please select one to install.", facade),
 				}).Return("route", nil).Once()
-				mockContext.EXPECT().Spinner("> @go run github.com/goravel/framework/route/setup install --driver=route --package-name=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).
+				mockContext.EXPECT().Spinner("> @go run github.com/goravel/framework/route/setup install --driver=route --main-path=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).
 					Return(nil).Once()
 				mockContext.EXPECT().Success("Driver route installed successfully").Once()
 			},
@@ -571,4 +587,183 @@ func Test_isInternalDriver(t *testing.T) {
 	assert.False(t, isInternalDriver(""))
 	assert.True(t, isInternalDriver("database"))
 	assert.False(t, isInternalDriver("github.com/goravel/redis"))
+}
+
+func (s *PackageInstallCommandTestSuite) Test_installDriver_WithDefaultFlag() {
+	var (
+		mockContext       = mocksconsole.NewContext(s.T())
+		mockJson          = mocksfoundation.NewJson(s.T())
+		pathsJSON         = `{"App":"app"}`
+		facade            = "Route"
+		installedBindings = []any{binding.Config}
+		bindingInfo       = binding.Info{
+			PkgPath:      "github.com/goravel/framework/route",
+			Dependencies: []string{binding.Config},
+			Drivers: []binding.Driver{
+				{
+					Name:    "Gin",
+					Package: "github.com/goravel/gin",
+				},
+				{
+					Name:    "Fiber",
+					Package: "github.com/goravel/fiber",
+				},
+			},
+		}
+		bindings = map[string]binding.Info{
+			binding.Route: bindingInfo,
+			binding.Config: {
+				PkgPath: "github.com/goravel/framework/config",
+				IsBase:  true,
+			},
+		}
+	)
+
+	tests := []struct {
+		name        string
+		bindingInfo binding.Info
+		setup       func()
+		expectError error
+	}{
+		{
+			name:        "install default driver (external package)",
+			bindingInfo: bindingInfo,
+			setup: func() {
+				pkg := "github.com/goravel/gin"
+				mockContext.EXPECT().OptionBool("default").Return(true).Once()
+				mockContext.EXPECT().OptionBool("dev").Return(false).Once()
+				mockContext.EXPECT().Spinner("> @go get "+pkg, mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install --main-path=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Success("Package " + pkg + " installed successfully").Once()
+			},
+		},
+		{
+			name: "install default driver (internal driver)",
+			bindingInfo: binding.Info{
+				PkgPath:      "github.com/goravel/framework/route",
+				Dependencies: []string{binding.Config},
+				Drivers: []binding.Driver{
+					{
+						Name:    "route",
+						Package: "route",
+					},
+					{
+						Name:    "Gin",
+						Package: "github.com/goravel/gin",
+					},
+				},
+			},
+			setup: func() {
+				mockContext.EXPECT().OptionBool("default").Return(true).Once()
+				mockContext.EXPECT().Spinner("> @go run github.com/goravel/framework/route/setup install --driver=route --main-path=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).
+					Return(nil).Once()
+				mockContext.EXPECT().Success("Driver route installed successfully").Once()
+			},
+		},
+		{
+			name:        "install default driver failed",
+			bindingInfo: bindingInfo,
+			setup: func() {
+				pkg := "github.com/goravel/gin"
+				mockContext.EXPECT().OptionBool("default").Return(true).Once()
+				mockContext.EXPECT().OptionBool("dev").Return(false).Once()
+				mockContext.EXPECT().Spinner("> @go get "+pkg, mock.Anything).Return(assert.AnError).Once()
+			},
+			expectError: fmt.Errorf("failed to get package: %s", assert.AnError),
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			mockContext = mocksconsole.NewContext(s.T())
+			mockJson = mocksfoundation.NewJson(s.T())
+			mockJson.EXPECT().MarshalString(mock.Anything).Return(pathsJSON, nil).Maybe()
+
+			tt.setup()
+
+			packageInstallCommand := NewPackageInstallCommand(bindings, installedBindings, mockJson)
+
+			s.Equal(tt.expectError, packageInstallCommand.installDriver(mockContext, facade, tt.bindingInfo))
+		})
+	}
+}
+
+func (s *PackageInstallCommandTestSuite) Test_installPackage_WithDevFlag() {
+	var (
+		mockContext       = mocksconsole.NewContext(s.T())
+		mockJson          = mocksfoundation.NewJson(s.T())
+		pathsJSON         = `{"App":"app"}`
+		pkg               = "github.com/goravel/package"
+		installedBindings = []any{binding.Config}
+		bindings          = map[string]binding.Info{}
+	)
+
+	tests := []struct {
+		name        string
+		pkg         string
+		setup       func()
+		expectError error
+	}{
+		{
+			name: "install package with --dev flag",
+			pkg:  pkg,
+			setup: func() {
+				mockContext.EXPECT().OptionBool("dev").Return(true).Once()
+				mockContext.EXPECT().Spinner("> @go get "+pkg+"@master", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install --main-path=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Success("Package " + pkg + "@master installed successfully").Once()
+			},
+		},
+		{
+			name: "install package with version, --dev flag should not append @master",
+			pkg:  pkg + "@v1.0.0",
+			setup: func() {
+				mockContext.EXPECT().Spinner("> @go get "+pkg+"@v1.0.0", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install --main-path=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Success("Package " + pkg + "@v1.0.0 installed successfully").Once()
+			},
+		},
+		{
+			name: "install package without --dev flag",
+			pkg:  pkg,
+			setup: func() {
+				mockContext.EXPECT().OptionBool("dev").Return(false).Once()
+				mockContext.EXPECT().Spinner("> @go get "+pkg, mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go run "+pkg+"/setup install --main-path=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Success("Package " + pkg + " installed successfully").Once()
+			},
+		},
+		{
+			name: "install package with --dev flag but go get fails",
+			pkg:  pkg,
+			setup: func() {
+				mockContext.EXPECT().OptionBool("dev").Return(true).Once()
+				mockContext.EXPECT().Spinner("> @go get "+pkg+"@master", mock.Anything).Return(assert.AnError).Once()
+			},
+			expectError: fmt.Errorf("failed to get package: %s", assert.AnError),
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			mockContext = mocksconsole.NewContext(s.T())
+			mockJson = mocksfoundation.NewJson(s.T())
+			mockJson.EXPECT().MarshalString(mock.Anything).Return(pathsJSON, nil).Maybe()
+
+			tt.setup()
+
+			packageInstallCommand := NewPackageInstallCommand(bindings, installedBindings, mockJson)
+
+			err := packageInstallCommand.installPackage(mockContext, tt.pkg)
+			if tt.expectError != nil {
+				s.EqualError(err, tt.expectError.Error())
+			} else {
+				s.NoError(err)
+			}
+		})
+	}
 }
