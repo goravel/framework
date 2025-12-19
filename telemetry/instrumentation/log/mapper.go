@@ -98,7 +98,7 @@ func toValue(v any) otellog.Value {
 	case fmt.Stringer:
 		return otellog.StringValue(val.String())
 	case attribute.Value:
-		return toValue(val.AsInterface())
+		return otellog.ValueFromAttribute(val)
 	}
 
 	return toReflectedValue(v)
