@@ -33,7 +33,7 @@ func TestRun(t *testing.T) {
 	)
 
 	beforeEach := func() {
-		mockConfig = &configmock.Config{}
+		mockConfig = configmock.NewConfig(t)
 
 		app = NewApplication(mockConfig)
 		app.UnaryServerInterceptors([]grpc.UnaryServerInterceptor{
@@ -56,8 +56,8 @@ func TestRun(t *testing.T) {
 			name: "success",
 			setup: func() {
 				host := "127.0.0.1:3030"
-				mockConfig.On("GetString", fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
-				mockConfig.On("Get", fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{"test"}).Once()
+				mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
+				mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{"test"}).Once()
 
 				go func() {
 					assert.Nil(t, app.Run(host))
@@ -79,7 +79,7 @@ func TestRun(t *testing.T) {
 		{
 			name: "success when host with port",
 			setup: func() {
-				mockConfig.On("GetString", "grpc.host").Return("127.0.0.1:3032").Once()
+				mockConfig.EXPECT().GetString("grpc.host").Return("127.0.0.1:3032").Once()
 				go func() {
 					assert.Nil(t, app.Run())
 				}()
@@ -89,15 +89,15 @@ func TestRun(t *testing.T) {
 		{
 			name: "error when host is empty",
 			setup: func() {
-				mockConfig.On("GetString", "grpc.host").Return("").Once()
+				mockConfig.EXPECT().GetString("grpc.host").Return("").Once()
 				assert.EqualError(t, app.Run(), "host can't be empty")
 			},
 		},
 		{
 			name: "error when port is empty",
 			setup: func() {
-				mockConfig.On("GetString", "grpc.host").Return("127.0.0.1").Once()
-				mockConfig.On("GetString", "grpc.port").Return("").Once()
+				mockConfig.EXPECT().GetString("grpc.host").Return("127.0.0.1").Once()
+				mockConfig.EXPECT().GetString("grpc.port").Return("").Once()
 				assert.EqualError(t, app.Run(), "port can't be empty")
 			},
 		},
@@ -105,8 +105,8 @@ func TestRun(t *testing.T) {
 			name: "error when request name = error",
 			setup: func() {
 				host := "127.0.0.1:3033"
-				mockConfig.On("GetString", fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
-				mockConfig.On("Get", fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{"test"}).Once()
+				mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
+				mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{"test"}).Once()
 
 				go func() {
 					assert.Nil(t, app.Run(host))
@@ -144,7 +144,7 @@ func TestClient(t *testing.T) {
 	)
 
 	beforeEach := func() {
-		mockConfig = &configmock.Config{}
+		mockConfig = configmock.NewConfig(t)
 		app = NewApplication(mockConfig)
 	}
 
@@ -156,8 +156,8 @@ func TestClient(t *testing.T) {
 		{
 			name: "success",
 			setup: func() {
-				mockConfig.On("GetString", fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
-				mockConfig.On("Get", fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{"trace"}).Once()
+				mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
+				mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{"trace"}).Once()
 				app.UnaryClientInterceptorGroups(map[string][]grpc.UnaryClientInterceptor{
 					"trace": {opentracingClient},
 				})
@@ -166,31 +166,31 @@ func TestClient(t *testing.T) {
 		{
 			name: "success when interceptors is empty",
 			setup: func() {
-				mockConfig.On("GetString", fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
-				mockConfig.On("Get", fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{"trace"}).Once()
+				mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
+				mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{"trace"}).Once()
 				app.UnaryClientInterceptorGroups(map[string][]grpc.UnaryClientInterceptor{})
 			},
 		},
 		{
 			name: "error when host is empty",
 			setup: func() {
-				mockConfig.On("GetString", fmt.Sprintf("grpc.clients.%s.host", name)).Return("").Once()
+				mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return("").Once()
 			},
 			expectErr: true,
 		},
 		{
 			name: "error when host doesn't have port and port is empty",
 			setup: func() {
-				mockConfig.On("GetString", fmt.Sprintf("grpc.clients.%s.host", name)).Return("127.0.0.1").Once()
-				mockConfig.On("GetString", fmt.Sprintf("grpc.clients.%s.port", name)).Return("").Once()
+				mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return("127.0.0.1").Once()
+				mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.port", name)).Return("").Once()
 			},
 			expectErr: true,
 		},
 		{
 			name: "error when interceptors isn't []string",
 			setup: func() {
-				mockConfig.On("GetString", fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
-				mockConfig.On("Get", fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return("trace").Once()
+				mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
+				mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return("trace").Once()
 			},
 			expectErr: true,
 		},
@@ -219,7 +219,7 @@ func TestClient_Caching(t *testing.T) {
 	)
 
 	setup := func() {
-		mockConfig = &configmock.Config{}
+		mockConfig = configmock.NewConfig(t)
 		app = NewApplication(mockConfig)
 	}
 
@@ -227,8 +227,8 @@ func TestClient_Caching(t *testing.T) {
 		setup()
 
 		// We expect GetString to be called ONLY ONCE, even though we call Client() twice.
-		mockConfig.On("GetString", fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
-		mockConfig.On("Get", fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{}).Once()
+		mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
+		mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{}).Once()
 
 		conn1, err := app.Client(context.Background(), name)
 		assert.NoError(t, err)
@@ -246,8 +246,8 @@ func TestClient_Caching(t *testing.T) {
 	t.Run("Concurrent Access: Should handle race conditions safely", func(t *testing.T) {
 		setup()
 
-		mockConfig.On("GetString", fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
-		mockConfig.On("Get", fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{}).Once()
+		mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
+		mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{}).Once()
 
 		var wg sync.WaitGroup
 		concurrency := 50
@@ -286,7 +286,7 @@ func TestShutdown(t *testing.T) {
 	)
 
 	beforeEach := func() {
-		mockConfig = &configmock.Config{}
+		mockConfig = configmock.NewConfig(t)
 		app = NewApplication(mockConfig)
 	}
 
@@ -331,7 +331,7 @@ func TestListen(t *testing.T) {
 	)
 
 	beforeEach := func() {
-		mockConfig = &configmock.Config{}
+		mockConfig = configmock.NewConfig(t)
 		app = NewApplication(mockConfig)
 	}
 
