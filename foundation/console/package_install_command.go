@@ -84,7 +84,7 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 	names := ctx.Arguments()
 
 	if len(names) == 0 {
-		if ctx.OptionBool("all-facades") {
+		if ctx.OptionBool("all") {
 			names = getAvailableFacades(r.bindings)
 		} else {
 			var err error
@@ -207,7 +207,7 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 	}
 
 	bindingsToInstall := r.getBindingsToInstall(binding)
-	if len(bindingsToInstall) > 0 && !ctx.OptionBool("all-facades") {
+	if len(bindingsToInstall) > 0 && !ctx.OptionBool("all") {
 		facades := make([]string, len(bindingsToInstall))
 		for i := range bindingsToInstall {
 			facades[i] = convert.BindingToFacade(bindingsToInstall[i])

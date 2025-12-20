@@ -119,7 +119,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			name: "facade name is empty, failed to choice what to install",
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{}).Once()
-				mockContext.EXPECT().OptionBool("all-facades").Return(false).Once()
+				mockContext.EXPECT().OptionBool("all").Return(false).Once()
 				mockContext.EXPECT().Choice("Which facades or package do you want to install?", options).
 					Return("", assert.AnError).Once()
 				mockContext.EXPECT().Error(assert.AnError.Error()).Once()
@@ -129,7 +129,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			name: "facade name is empty, failed to select facades",
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{}).Once()
-				mockContext.EXPECT().OptionBool("all-facades").Return(false).Once()
+				mockContext.EXPECT().OptionBool("all").Return(false).Once()
 				mockContext.EXPECT().Choice("Which facades or package do you want to install?", options).
 					Return("select", nil).Once()
 				mockContext.EXPECT().MultiSelect("Select the facades to install", facadeOptions, mock.Anything).
@@ -141,7 +141,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			name: "facade name is empty, failed to input third package",
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{}).Once()
-				mockContext.EXPECT().OptionBool("all-facades").Return(false).Once()
+				mockContext.EXPECT().OptionBool("all").Return(false).Once()
 				mockContext.EXPECT().Choice("Which facades or package do you want to install?", options).
 					Return("third", nil).Once()
 				mockContext.EXPECT().Ask("Enter the package", console.AskOption{
@@ -155,7 +155,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			setup: func() {
 				facade := "unknown"
 				mockContext.EXPECT().Arguments().Return([]string{}).Once()
-				mockContext.EXPECT().OptionBool("all-facades").Return(false).Once()
+				mockContext.EXPECT().OptionBool("all").Return(false).Once()
 				mockContext.EXPECT().Choice("Which facades or package do you want to install?", options).
 					Return("select", nil).Once()
 				mockContext.EXPECT().MultiSelect("Select the facades to install", facadeOptions, mock.Anything).
@@ -179,7 +179,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 				}
 
 				mockContext.EXPECT().Arguments().Return([]string{}).Once()
-				mockContext.EXPECT().OptionBool("all-facades").Return(true).Once()
+				mockContext.EXPECT().OptionBool("all").Return(true).Once()
 				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Auth].PkgPath+"/setup install --facade=Auth --main-path=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(assert.AnError).Once()
 				mockContext.EXPECT().Error(fmt.Sprintf("failed to install facade %s: %s", "Auth", assert.AnError)).Once()
 			},
@@ -189,7 +189,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			installedFacadesInTheCurrentCommand: []string{"Orm"},
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{facade}).Once()
-				mockContext.EXPECT().OptionBool("all-facades").Return(false).Once()
+				mockContext.EXPECT().OptionBool("all").Return(false).Once()
 				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facade, "Orm")).Once()
 				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Auth].PkgPath+"/setup install --facade=Auth --main-path=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
@@ -200,7 +200,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			name: "facades install success(simulate)",
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{facade}).Once()
-				mockContext.EXPECT().OptionBool("all-facades").Return(false).Once()
+				mockContext.EXPECT().OptionBool("all").Return(false).Once()
 				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facade, "Orm")).Once()
 				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Orm].PkgPath+"/setup install --facade=Orm --main-path=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Facade Orm installed successfully").Once()
@@ -220,7 +220,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 				mockContext.EXPECT().Spinner("> @go mod tidy", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Package " + pkg + " installed successfully").Once()
 
-				mockContext.EXPECT().OptionBool("all-facades").Return(false).Once()
+				mockContext.EXPECT().OptionBool("all").Return(false).Once()
 				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facade, "Orm")).Once()
 				mockContext.EXPECT().Spinner("> @go run "+bindings[binding.Orm].PkgPath+"/setup install --facade=Orm --main-path=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Success("Facade Orm installed successfully").Once()
