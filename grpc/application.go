@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"sync"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/goravel/framework/contracts/config"
@@ -18,16 +20,46 @@ type Application struct {
 	config                       config.Config
 	server                       *grpc.Server
 	unaryClientInterceptorGroups map[string][]grpc.UnaryClientInterceptor
+
+	// Mutex protects the clients map
+	mu      sync.RWMutex
+	clients map[string]*grpc.ClientConn
 }
 
 func NewApplication(config config.Config) *Application {
 	return &Application{
-		server: grpc.NewServer(),
-		config: config,
+		server:  grpc.NewServer(),
+		config:  config,
+		clients: make(map[string]*grpc.ClientConn),
 	}
 }
 
 func (app *Application) Client(ctx context.Context, name string) (*grpc.ClientConn, error) {
+	app.mu.RLock()
+	conn, ok := app.clients[name]
+	app.mu.RUnlock()
+
+	if ok {
+		// If connection exists and is healthy, return it immediately
+		if conn.GetState() != connectivity.Shutdown {
+			return conn, nil
+		}
+	}
+
+	app.mu.Lock()
+	defer app.mu.Unlock()
+
+	// Double-Check: Someone else might have created it while we waited for the lock
+	if conn, ok = app.clients[name]; ok {
+		if conn.GetState() != connectivity.Shutdown {
+			return conn, nil
+		}
+		// Found a Shutdown connection. Close and remove it immediately.
+		// This prevents stale connections from lingering if the subsequent creation fails.
+		_ = conn.Close()
+		delete(app.clients, name)
+	}
+
 	host := app.config.GetString(fmt.Sprintf("grpc.clients.%s.host", name))
 	if host == "" {
 		return nil, errors.GrpcEmptyClientHost
@@ -48,11 +80,18 @@ func (app *Application) Client(ctx context.Context, name string) (*grpc.ClientCo
 
 	clientInterceptors := app.getClientInterceptors(interceptors)
 
-	return grpc.NewClient(
+	newConn, err := grpc.NewClient(
 		host,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithChainUnaryInterceptor(clientInterceptors...),
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	app.clients[name] = newConn
+
+	return newConn, nil
 }
 
 func (app *Application) Listen(l net.Listener) error {
@@ -94,10 +133,19 @@ func (app *Application) Server() *grpc.Server {
 func (app *Application) Shutdown(force ...bool) error {
 	if len(force) > 0 && force[0] {
 		app.server.Stop()
-		return nil
+	} else {
+		app.server.GracefulStop()
 	}
 
-	app.server.GracefulStop()
+	app.mu.Lock()
+	defer app.mu.Unlock()
+
+	for _, conn := range app.clients {
+		_ = conn.Close()
+	}
+
+	// Clear the map to allow Garbage Collection
+	app.clients = make(map[string]*grpc.ClientConn)
 
 	return nil
 }
