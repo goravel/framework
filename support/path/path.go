@@ -64,6 +64,10 @@ func Storage(paths ...string) string {
 	return packages.Paths().Storage().Abs(paths...)
 }
 
+func Test(paths ...string) string {
+	return packages.Paths().Tests().Abs(paths...)
+}
+
 func View(paths ...string) string {
 	return packages.Paths().Views().Abs(paths...)
 }

@@ -3,11 +3,14 @@ package modify
 import (
 	"bytes"
 	"fmt"
+	"go/format"
+	"path/filepath"
 
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
 	"github.com/dave/dst/dstutil"
 	"github.com/spf13/cast"
+	"golang.org/x/tools/imports"
 
 	"github.com/goravel/framework/contracts/packages/match"
 	"github.com/goravel/framework/contracts/packages/modify"
@@ -252,6 +255,39 @@ func (r goFile) FindOrCreate(matchers []match.GoNode, fn func(node dst.Node) err
 	r.modifiers = append(r.modifiers, modifier)
 
 	return modifier
+}
+
+func (r goFile) Format() modify.Apply {
+	return Call(func(options []modify.Option) error {
+		if err := r.Apply(options...); err != nil {
+			return err
+		}
+
+		content, err := supportfile.GetContent(r.file)
+		if err != nil {
+			return nil
+		}
+
+		// Clear unused imports
+		opts := &imports.Options{
+			TabWidth:  8,
+			TabIndent: true,
+			Comments:  true,
+			Fragment:  false,
+		}
+		formatted, err := imports.Process(filepath.Base(r.file), []byte(content), opts)
+		if err != nil {
+			return err
+		}
+
+		// Format source code
+		formatted, err = format.Source(formatted)
+		if err != nil {
+			return err
+		}
+
+		return supportfile.PutContent(r.file, string(formatted))
+	})
 }
 
 type goNode struct {

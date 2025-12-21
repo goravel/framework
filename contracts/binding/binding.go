@@ -373,6 +373,7 @@ var (
 			PkgPath:     "github.com/goravel/framework/telemetry",
 			Dependencies: []string{
 				Config,
+				Log,
 			},
 		},
 		Testing: {

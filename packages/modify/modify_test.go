@@ -376,6 +376,199 @@ func main() {
 	})
 }
 
+func (s *GoFileTestSuite) TestFormat() {
+	tests := []struct {
+		name   string
+		setup  func()
+		assert func(err error)
+	}{
+		{
+			name: "format file with unused imports",
+			setup: func() {
+				src := `package main
+import "fmt"
+import "os"
+func main() {
+	fmt.Println("Hello, test!")
+}
+`
+				s.Require().NoError(supportfile.PutContent(s.file, src))
+			},
+			assert: func(err error) {
+				s.NoError(err)
+				content, err := supportfile.GetContent(s.file)
+				s.NoError(err)
+				// Should remove unused 'os' import
+				expected := `package main
+
+import "fmt"
+
+func main() {
+	fmt.Println("Hello, test!")
+}
+`
+				s.Equal(expected, content)
+			},
+		},
+		{
+			name: "format file with poor formatting",
+			setup: func() {
+				src := `package main
+import "fmt"
+func main() {
+fmt.Println("Hello, test!")
+}
+`
+				s.Require().NoError(supportfile.PutContent(s.file, src))
+			},
+			assert: func(err error) {
+				s.NoError(err)
+				content, err := supportfile.GetContent(s.file)
+				s.NoError(err)
+				// Should properly indent the Println call
+				expected := `package main
+
+import "fmt"
+
+func main() {
+	fmt.Println("Hello, test!")
+}
+`
+				s.Equal(expected, content)
+			},
+		},
+		{
+			name: "format file and apply modifications",
+			setup: func() {
+				src := `package main
+import "fmt"
+import "os"
+func main() {
+	fmt.Println("Hello, test!")
+}
+`
+				s.Require().NoError(supportfile.PutContent(s.file, src))
+			},
+			assert: func(err error) {
+				s.NoError(err)
+				content, err := supportfile.GetContent(s.file)
+				s.NoError(err)
+				// Should apply modification and format
+				expected := `package main
+
+import "fmt"
+
+func main() {
+	fmt.Println("Hello, test!!!")
+}
+`
+				s.Equal(expected, content)
+			},
+		},
+		{
+			name: "format file with multiple unused imports",
+			setup: func() {
+				src := `package main
+import (
+	"fmt"
+	"os"
+	"io"
+	"strings"
+)
+func main() {
+	fmt.Println("Hello, test!")
+}
+`
+				s.Require().NoError(supportfile.PutContent(s.file, src))
+			},
+			assert: func(err error) {
+				s.NoError(err)
+				content, err := supportfile.GetContent(s.file)
+				s.NoError(err)
+				// Should only keep the used import
+				expected := `package main
+
+import (
+	"fmt"
+)
+
+func main() {
+	fmt.Println("Hello, test!")
+}
+`
+				s.Equal(expected, content)
+			},
+		},
+		{
+			name: "format empty file",
+			setup: func() {
+				src := `package main
+`
+				s.Require().NoError(supportfile.PutContent(s.file, src))
+			},
+			assert: func(err error) {
+				s.NoError(err)
+				content, err := supportfile.GetContent(s.file)
+				s.NoError(err)
+				expected := `package main
+`
+				s.Equal(expected, content)
+			},
+		},
+		{
+			name: "format file that doesn't exist",
+			setup: func() {
+				// Ensure the file doesn't exist by using a non-existent path
+				s.file = filepath.Join(s.T().TempDir(), "nonexistent.go")
+			},
+			assert: func(err error) {
+				// When file doesn't exist and there are no modifiers,
+				// Apply() will fail when trying to read the file
+				s.Error(err)
+			},
+		},
+		{
+			name: "format file with invalid syntax should return error",
+			setup: func() {
+				src := `package main
+func main() {
+	invalid syntax here
+}
+`
+				s.Require().NoError(supportfile.PutContent(s.file, src))
+			},
+			assert: func(err error) {
+				s.Error(err)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			if tt.setup != nil {
+				tt.setup()
+			}
+
+			var goFile modify.GoFile = GoFile(s.file)
+
+			// For the test that applies modifications, add a modification
+			if tt.name == "format file and apply modifications" {
+				goFile = goFile.Find([]contractsmatch.GoNode{
+					match.BasicLit(strconv.Quote("Hello, test!")),
+				}).Modify(func(cursor *dstutil.Cursor) {
+					cursor.Replace(&dst.BasicLit{
+						Kind:  token.STRING,
+						Value: strconv.Quote("Hello, test!!!"),
+					})
+				})
+			}
+
+			err := goFile.Format().Apply()
+			tt.assert(err)
+		})
+	}
+}
+
 func TestWhen(t *testing.T) {
 	t.Run("match", func(t *testing.T) {
 		called := false

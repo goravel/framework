@@ -83,25 +83,19 @@ DB_PASSWORD=
 		// Register the DB, Orm, Schema and Seeder facades
 		modify.WhenFacade(facades.DB, modify.File(dbFacadePath).Overwrite(stubs.DBFacade(facadesPackage))),
 		modify.WhenFacade(facades.Orm, modify.File(ormFacadePath).Overwrite(stubs.OrmFacade(facadesPackage))),
-		modify.WhenFacade(facades.Schema,
-			// Register the Schema facade
-			modify.File(schemaFacadePath).Overwrite(stubs.SchemaFacade(facadesPackage)),
-		),
-		modify.WhenFacade(facades.Seeder,
-			// Register the Seeder facade
-			modify.File(seederFacadePath).Overwrite(stubs.SeederFacade(facadesPackage)),
-		),
+		modify.WhenFacade(facades.Schema, modify.File(schemaFacadePath).Overwrite(stubs.SchemaFacade(facadesPackage))),
+		modify.WhenFacade(facades.Seeder, modify.File(seederFacadePath).Overwrite(stubs.SeederFacade(facadesPackage))),
 
 		// Add configurations to the .env and .env.example files
-		modify.WhenFileNotContains(path.Base(".env"), "DB_HOST", modify.File(path.Base(".env")).Append(env)),
-		modify.WhenFileNotContains(path.Base(".env.example"), "DB_HOST", modify.File(path.Base(".env.example")).Append(env)),
+		modify.WhenFileExists(path.Base(".env"), modify.WhenFileNotContains(path.Base(".env"), "DB_HOST", modify.File(path.Base(".env")).Append(env))),
+		modify.WhenFileExists(path.Base(".env.example"), modify.WhenFileNotContains(path.Base(".env.example"), "DB_HOST", modify.File(path.Base(".env.example")).Append(env))),
 	).Uninstall(
 		modify.WhenNoFacades([]string{facades.DB, facades.Orm, facades.Schema, facades.Seeder},
 			// Remove the database service provider from the providers array in bootstrap/providers.go
 			modify.RemoveProviderApply(moduleImport, databaseServiceProvider),
 
 			// Remove database configuration from config/database.go
-			modify.GoFile(databaseConfigPath).Find(match.Config("database")).Modify(uninstallConfigActionsFunc()...),
+			modify.GoFile(databaseConfigPath).Find(match.Config("database")).Modify(uninstallConfigActionsFunc()...).Format(),
 
 			// Remove config/database.go
 			modify.When(func(_ map[string]any) bool {
@@ -114,14 +108,8 @@ DB_PASSWORD=
 		),
 
 		// Remove the DB, Orm, Schema and Seeder facades
-		modify.WhenFacade(facades.Seeder,
-			// Remove the seeder facade file.
-			modify.File(seederFacadePath).Remove(),
-		),
-		modify.WhenFacade(facades.Schema,
-			// Remove the schema facade file.
-			modify.File(schemaFacadePath).Remove(),
-		),
+		modify.WhenFacade(facades.Seeder, modify.File(seederFacadePath).Remove()),
+		modify.WhenFacade(facades.Schema, modify.File(schemaFacadePath).Remove()),
 		modify.WhenFacade(facades.Orm, modify.File(ormFacadePath).Remove()),
 		modify.WhenFacade(facades.DB, modify.File(dbFacadePath).Remove()),
 	).Execute()
