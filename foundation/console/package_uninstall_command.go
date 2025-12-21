@@ -23,7 +23,7 @@ type PackageUninstallCommand struct {
 	bindings map[string]binding.Info
 	// package:install and package:uninstall will be run simultaneously when testing,
 	// facades will be added to installedBindings when installing, and facades will be
-	// removed from installedBindings when uninstalling when uninstalling, so they share
+	// removed from installedBindings when uninstalling, so they share
 	// the same installedBindings pointer to avoid package:install and package:uninstall
 	// cannot be run simultaneously due to inconsistent installedBindings.
 	installedBindings *[]any
