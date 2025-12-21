@@ -549,7 +549,7 @@ func main() {
 				tt.setup()
 			}
 
-			var goFile modify.GoFile = GoFile(s.file)
+			goFile := GoFile(s.file)
 
 			// For the test that applies modifications, add a modification
 			if tt.name == "format file and apply modifications" {
