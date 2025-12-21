@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/stats"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/errors"
@@ -17,9 +18,16 @@ import (
 )
 
 type Application struct {
-	config                       config.Config
-	server                       *grpc.Server
+	config config.Config
+	server *grpc.Server
+
+	// Server Options
+	unaryServerInterceptors []grpc.UnaryServerInterceptor
+	serverStatsHandlers     []stats.Handler
+
+	// Client Options
 	unaryClientInterceptorGroups map[string][]grpc.UnaryClientInterceptor
+	clientStatsHandlerGroups     map[string][]stats.Handler
 
 	// Mutex protects the clients map
 	mu      sync.RWMutex
@@ -73,18 +81,25 @@ func (app *Application) Client(ctx context.Context, name string) (*grpc.ClientCo
 		host += ":" + port
 	}
 
-	interceptors, ok := app.config.Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).([]string)
+	interceptorKeys, ok := app.config.Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).([]string)
 	if !ok {
 		return nil, errors.GrpcInvalidInterceptorsType.Args(name)
 	}
 
-	clientInterceptors := app.getClientInterceptors(interceptors)
+	var dialOpts []grpc.DialOption
+	dialOpts = append(dialOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
-	newConn, err := grpc.NewClient(
-		host,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithChainUnaryInterceptor(clientInterceptors...),
-	)
+	if interceptors := app.getClientInterceptors(interceptorKeys); len(interceptors) > 0 {
+		dialOpts = append(dialOpts, grpc.WithChainUnaryInterceptor(interceptors...))
+	}
+
+	if handlers := app.getClientStatsHandlers(interceptorKeys); len(handlers) > 0 {
+		for _, h := range handlers {
+			dialOpts = append(dialOpts, grpc.WithStatsHandler(h))
+		}
+	}
+
+	newConn, err := grpc.NewClient(host, dialOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -151,22 +166,65 @@ func (app *Application) Shutdown(force ...bool) error {
 }
 
 func (app *Application) UnaryServerInterceptors(unaryServerInterceptors []grpc.UnaryServerInterceptor) {
-	app.server = grpc.NewServer(grpc.ChainUnaryInterceptor(unaryServerInterceptors...))
+	app.unaryServerInterceptors = append(app.unaryServerInterceptors, unaryServerInterceptors...)
+	app.refreshServer()
 }
 
-func (app *Application) UnaryClientInterceptorGroups(unaryClientInterceptorGroups map[string][]grpc.UnaryClientInterceptor) {
-	app.unaryClientInterceptorGroups = unaryClientInterceptorGroups
+func (app *Application) ServerStatsHandlers(handlers []stats.Handler) {
+	app.serverStatsHandlers = append(app.serverStatsHandlers, handlers...)
+	app.refreshServer()
 }
 
-func (app *Application) getClientInterceptors(interceptors []string) []grpc.UnaryClientInterceptor {
-	var unaryClientInterceptors []grpc.UnaryClientInterceptor
-	for _, interceptor := range interceptors {
-		for client, clientInterceptors := range app.unaryClientInterceptorGroups {
-			if interceptor == client {
-				unaryClientInterceptors = append(unaryClientInterceptors, clientInterceptors...)
-			}
-		}
+func (app *Application) UnaryClientInterceptorGroups(groups map[string][]grpc.UnaryClientInterceptor) {
+    if app.unaryClientInterceptorGroups == nil {
+        app.unaryClientInterceptorGroups = make(map[string][]grpc.UnaryClientInterceptor)
+    }
+
+    for key, interceptors := range groups {
+        app.unaryClientInterceptorGroups[key] = append(app.unaryClientInterceptorGroups[key], interceptors...)
+    }
+}
+
+func (app *Application) ClientStatsHandlerGroups(groups map[string][]stats.Handler) {
+    if app.clientStatsHandlerGroups == nil {
+        app.clientStatsHandlerGroups = make(map[string][]stats.Handler)
+    }
+
+    for key, handlers := range groups {
+        app.clientStatsHandlerGroups[key] = append(app.clientStatsHandlerGroups[key], handlers...)
+    }
+}
+
+func (app *Application) refreshServer() {
+	var opts []grpc.ServerOption
+
+	if len(app.unaryServerInterceptors) > 0 {
+		opts = append(opts, grpc.ChainUnaryInterceptor(app.unaryServerInterceptors...))
 	}
 
-	return unaryClientInterceptors
+	for _, h := range app.serverStatsHandlers {
+		opts = append(opts, grpc.StatsHandler(h))
+	}
+
+	app.server = grpc.NewServer(opts...)
+}
+
+func (app *Application) getClientInterceptors(keys []string) []grpc.UnaryClientInterceptor {
+	var result []grpc.UnaryClientInterceptor
+	for _, key := range keys {
+		if group, ok := app.unaryClientInterceptorGroups[key]; ok {
+			result = append(result, group...)
+		}
+	}
+	return result
+}
+
+func (app *Application) getClientStatsHandlers(keys []string) []stats.Handler {
+	var result []stats.Handler
+	for _, key := range keys {
+		if group, ok := app.clientStatsHandlerGroups[key]; ok {
+			result = append(result, group...)
+		}
+	}
+	return result
 }
