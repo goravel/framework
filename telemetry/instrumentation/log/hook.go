@@ -4,8 +4,9 @@ import (
 	"context"
 	"time"
 
-	contractslog "github.com/goravel/framework/contracts/log"
 	otellog "go.opentelemetry.io/otel/log"
+
+	contractslog "github.com/goravel/framework/contracts/log"
 )
 
 var _ contractslog.Hook = (*hook)(nil)

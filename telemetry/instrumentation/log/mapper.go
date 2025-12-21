@@ -13,9 +13,10 @@ import (
 	"strconv"
 	"time"
 
-	contractslog "github.com/goravel/framework/contracts/log"
 	"go.opentelemetry.io/otel/attribute"
 	otellog "go.opentelemetry.io/otel/log"
+
+	contractslog "github.com/goravel/framework/contracts/log"
 )
 
 func toSeverity(level contractslog.Level) otellog.Severity {
