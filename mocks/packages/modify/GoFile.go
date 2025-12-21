@@ -179,6 +179,53 @@ func (_c *GoFile_FindOrCreate_Call) RunAndReturn(run func([]match.GoNode, func(d
 	return _c
 }
 
+// Format provides a mock function with no fields
+func (_m *GoFile) Format() modify.Apply {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Format")
+	}
+
+	var r0 modify.Apply
+	if rf, ok := ret.Get(0).(func() modify.Apply); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(modify.Apply)
+		}
+	}
+
+	return r0
+}
+
+// GoFile_Format_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Format'
+type GoFile_Format_Call struct {
+	*mock.Call
+}
+
+// Format is a helper method to define mock.On call
+func (_e *GoFile_Expecter) Format() *GoFile_Format_Call {
+	return &GoFile_Format_Call{Call: _e.mock.On("Format")}
+}
+
+func (_c *GoFile_Format_Call) Run(run func()) *GoFile_Format_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *GoFile_Format_Call) Return(_a0 modify.Apply) *GoFile_Format_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *GoFile_Format_Call) RunAndReturn(run func() modify.Apply) *GoFile_Format_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewGoFile creates a new instance of GoFile. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewGoFile(t interface {
