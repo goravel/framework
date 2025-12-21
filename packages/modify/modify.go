@@ -265,7 +265,7 @@ func (r goFile) Format() modify.Apply {
 
 		content, err := supportfile.GetContent(r.file)
 		if err != nil {
-			return nil
+			return err
 		}
 
 		// Clear unused imports
