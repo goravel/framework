@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/stats"
 
 	configmock "github.com/goravel/framework/mocks/config"
 )
@@ -39,6 +40,11 @@ func TestRun(t *testing.T) {
 		app.UnaryServerInterceptors([]grpc.UnaryServerInterceptor{
 			serverInterceptor,
 		})
+
+		app.ServerStatsHandlers([]stats.Handler{
+			&mockStatsHandler{},
+		})
+
 		app.UnaryClientInterceptorGroups(map[string][]grpc.UnaryClientInterceptor{
 			"test": {
 				clientInterceptor,
@@ -164,6 +170,16 @@ func TestClient(t *testing.T) {
 			},
 		},
 		{
+			name: "success with stats handler",
+			setup: func() {
+				mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
+				mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{"otel"}).Once()
+				app.ClientStatsHandlerGroups(map[string][]stats.Handler{
+					"otel": {&mockStatsHandler{}},
+				})
+			},
+		},
+		{
 			name: "success when interceptors is empty",
 			setup: func() {
 				mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
@@ -277,6 +293,41 @@ func TestClient_Caching(t *testing.T) {
 			}
 		}
 	})
+}
+
+func TestShutdown_ClosesConnections(t *testing.T) {
+	var (
+		app        *Application
+		mockConfig *configmock.Config
+		name       = "cleanup-service"
+		host       = "127.0.0.1:3037"
+	)
+
+	mockConfig = configmock.NewConfig(t)
+	app = NewApplication(mockConfig)
+
+	mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Maybe()
+	mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{}).Maybe()
+
+	conn, err := app.Client(context.Background(), name)
+	assert.NoError(t, err)
+	assert.NotNil(t, conn)
+	assert.NotEqual(t, connectivity.Shutdown, conn.GetState())
+
+	err = app.Shutdown()
+	assert.NoError(t, err)
+
+	assert.Equal(t, connectivity.Shutdown, conn.GetState(), "Cached connection should be closed after App shutdown")
+}
+
+func TestServerStatsHandlers(t *testing.T) {
+	mockConfig := configmock.NewConfig(t)
+	app := NewApplication(mockConfig)
+	initialServer := app.Server()
+
+	app.ServerStatsHandlers([]stats.Handler{&mockStatsHandler{}})
+
+	assert.NotSame(t, initialServer, app.Server(), "Server instance should be rebuilt when adding StatsHandlers")
 }
 
 func TestShutdown(t *testing.T) {
@@ -400,6 +451,17 @@ func clientInterceptor(ctx context.Context, method string, req, reply any, cc *g
 
 	return nil
 }
+
+type mockStatsHandler struct{}
+
+func (m *mockStatsHandler) TagRPC(ctx context.Context, _ *stats.RPCTagInfo) context.Context {
+	return ctx
+}
+func (m *mockStatsHandler) HandleRPC(context.Context, stats.RPCStats) {}
+func (m *mockStatsHandler) TagConn(ctx context.Context, _ *stats.ConnTagInfo) context.Context {
+	return ctx
+}
+func (m *mockStatsHandler) HandleConn(context.Context, stats.ConnStats) {}
 
 type TestController struct {
 	UnimplementedTestServiceServer
