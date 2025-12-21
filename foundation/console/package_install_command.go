@@ -59,10 +59,21 @@ func (r *PackageInstallCommand) Extend() command.Extend {
 		Category:  "package",
 		Flags: []command.Flag{
 			&command.BoolFlag{
-				Name:    "all-facades",
+				Name:    "all",
 				Usage:   "Install all facades",
 				Aliases: []string{"a"},
 				Value:   false,
+			},
+			&command.BoolFlag{
+				Name:    "default",
+				Usage:   "Install facades with default drivers",
+				Aliases: []string{"d"},
+				Value:   false,
+			},
+			&command.BoolFlag{
+				Name:  "dev",
+				Usage: "Install drivers with the master branch",
+				Value: false,
 			},
 		},
 	}
@@ -73,7 +84,7 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 	names := ctx.Arguments()
 
 	if len(names) == 0 {
-		if ctx.OptionBool("all-facades") {
+		if ctx.OptionBool("all") {
 			names = getAvailableFacades(r.bindings)
 		} else {
 			var err error
@@ -160,6 +171,10 @@ func (r *PackageInstallCommand) inputThirdPackage(ctx console.Context) (string, 
 }
 
 func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) error {
+	if !strings.Contains(pkg, "@") && ctx.OptionBool("dev") {
+		pkg += "@master"
+	}
+
 	pkgPath, _, _ := strings.Cut(pkg, "@")
 	setup := pkgPath + "/setup"
 
@@ -169,7 +184,7 @@ func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) 
 	}
 
 	// install package
-	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--package-name="+env.MainPath(), "--paths="+r.paths)); err != nil {
+	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--main-path="+env.MainPath(), "--paths="+r.paths)); err != nil {
 		return fmt.Errorf("failed to install package: %s", err)
 	}
 
@@ -192,7 +207,7 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 	}
 
 	bindingsToInstall := r.getBindingsToInstall(binding)
-	if len(bindingsToInstall) > 0 && !ctx.OptionBool("all-facades") {
+	if len(bindingsToInstall) > 0 && !ctx.OptionBool("all") {
 		facades := make([]string, len(bindingsToInstall))
 		for i := range bindingsToInstall {
 			facades[i] = convert.BindingToFacade(bindingsToInstall[i])
@@ -210,7 +225,7 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 			continue
 		}
 
-		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--facade="+facade, "--package-name="+env.MainPath(), "--paths="+r.paths)); err != nil {
+		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--facade="+facade, "--main-path="+env.MainPath(), "--paths="+r.paths)); err != nil {
 			return fmt.Errorf("failed to install facade %s: %s", facade, err.Error())
 		}
 
@@ -271,27 +286,33 @@ func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string
 		Value: "Custom",
 	})
 
-	driver, err := ctx.Choice(fmt.Sprintf("Select the %s driver to install", facade), options, console.ChoiceOption{
-		Description: fmt.Sprintf("A driver is required for %s, please select one to install.", facade),
-	})
-	if err != nil {
-		return err
-	}
-
-	if driver == "Custom" {
-		driver, err = ctx.Ask(fmt.Sprintf("Please enter the %s driver package", facade))
+	var driver string
+	if ctx.OptionBool("default") {
+		driver = options[0].Value
+	} else {
+		var err error
+		driver, err = ctx.Choice(fmt.Sprintf("Select the %s driver to install", facade), options, console.ChoiceOption{
+			Description: fmt.Sprintf("A driver is required for %s, please select one to install.", facade),
+		})
 		if err != nil {
 			return err
 		}
-	}
 
-	if driver == "" {
-		return r.installDriver(ctx, facade, bindingInfo)
+		if driver == "Custom" {
+			driver, err = ctx.Ask(fmt.Sprintf("Please enter the %s driver package", facade))
+			if err != nil {
+				return err
+			}
+		}
+
+		if driver == "" {
+			return r.installDriver(ctx, facade, bindingInfo)
+		}
 	}
 
 	if isInternalDriver(driver) {
 		setup := bindingInfo.PkgPath + "/setup"
-		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--driver="+driver, "--package-name="+env.MainPath(), "--paths="+r.paths)); err != nil {
+		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--driver="+driver, "--main-path="+env.MainPath(), "--paths="+r.paths)); err != nil {
 			return fmt.Errorf("failed to install driver %s: %s", driver, err.Error())
 		}
 

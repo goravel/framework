@@ -114,7 +114,7 @@ func (r *PackageUninstallCommand) uninstallPackage(ctx console.Context, pkg stri
 	setup := pkgPath + "/setup"
 
 	// uninstall package
-	uninstall := exec.Command("go", "run", setup, "uninstall", "--package-name="+env.MainPath(), "--paths="+r.paths)
+	uninstall := exec.Command("go", "run", setup, "uninstall", "--main-path="+env.MainPath(), "--paths="+r.paths)
 	if ctx.OptionBool("force") {
 		uninstall.Args = append(uninstall.Args, "--force")
 	}
@@ -167,7 +167,7 @@ func (r *PackageUninstallCommand) uninstallFacade(ctx console.Context, name stri
 	force := ctx.OptionBool("force")
 	setup := bindingInfo.PkgPath + "/setup"
 	facade := convert.BindingToFacade(binding)
-	uninstall := exec.Command("go", "run", setup, "uninstall", "--facade="+facade, "--package-name="+env.MainPath(), "--paths="+r.paths)
+	uninstall := exec.Command("go", "run", setup, "uninstall", "--facade="+facade, "--main-path="+env.MainPath(), "--paths="+r.paths)
 
 	if force {
 		uninstall.Args = append(uninstall.Args, "--force")

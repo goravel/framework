@@ -133,7 +133,7 @@ func TestSetup(t *testing.T) {
 	assert.True(t, s.force)
 	assert.NotNil(t, s.paths)
 
-	s = Setup([]string{"install", "--package-name=custom-package", "--facade=test"}).(*setup)
+	s = Setup([]string{"install", "--main-path=custom-package", "--facade=test"}).(*setup)
 	assert.Equal(t, "install", s.command)
 	assert.Equal(t, "test", s.facade)
 }
