@@ -22,14 +22,19 @@ import (
 )
 
 type PackageInstallCommand struct {
-	bindings                            map[string]contractsbinding.Info
-	chosenDrivers                       [][]contractsbinding.Driver
-	installedBindings                   []any
+	bindings      map[string]contractsbinding.Info
+	chosenDrivers [][]contractsbinding.Driver
+	// package:install and package:uninstall will be run simultaneously when testing,
+	// facades will be added to installedBindings when installing, and facades will be
+	// removed from installedBindings when uninstalling, so they share
+	// the same installedBindings pointer to avoid package:install and package:uninstall
+	// cannot be run simultaneously due to inconsistent installedBindings.
+	installedBindings                   *[]any
 	installedFacadesInTheCurrentCommand []string
 	paths                               string
 }
 
-func NewPackageInstallCommand(bindings map[string]contractsbinding.Info, installedBindings []any, json contractsfoundation.Json) *PackageInstallCommand {
+func NewPackageInstallCommand(bindings map[string]contractsbinding.Info, installedBindings *[]any, json contractsfoundation.Json) *PackageInstallCommand {
 	paths, err := json.MarshalString(support.Config.Paths)
 	if err != nil {
 		panic(fmt.Sprintf("failed to marshal paths: %s", err))
@@ -240,6 +245,8 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 		if len(bindingInfo.Drivers) > 0 {
 			r.chosenDrivers = append(r.chosenDrivers, bindingInfo.Drivers)
 		}
+
+		*r.installedBindings = append(*r.installedBindings, binding)
 	}
 
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
@@ -327,20 +334,12 @@ func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string
 func (r *PackageInstallCommand) getBindingsToInstall(binding string) (bindingsToInstall []string) {
 	for _, dependencyBinding := range getDependencyBindings(binding, r.bindings) {
 		var binding any = dependencyBinding
-		if !slices.Contains(r.installedBindings, binding) {
+		if !slices.Contains(*r.installedBindings, binding) {
 			bindingsToInstall = append(bindingsToInstall, dependencyBinding)
 		}
 	}
 
-	InstallTogether := r.bindings[binding].InstallTogether
-	for _, installTogetherBinding := range InstallTogether {
-		var binding any = installTogetherBinding
-		if !slices.Contains(r.installedBindings, binding) && !slices.Contains(bindingsToInstall, installTogetherBinding) {
-			bindingsToInstall = append(bindingsToInstall, installTogetherBinding)
-		}
-	}
-
-	return
+	return bindingsToInstall
 }
 
 func getAvailableFacades(bindings map[string]contractsbinding.Info) []string {
@@ -372,11 +371,26 @@ func getAvailableFacades(bindings map[string]contractsbinding.Info) []string {
 }
 
 func getDependencyBindings(binding string, bindings map[string]contractsbinding.Info) []string {
+	visited := make(map[string]bool)
+	return getDependencyBindingsRecursive(binding, bindings, visited)
+}
+
+func getDependencyBindingsRecursive(binding string, bindings map[string]contractsbinding.Info, visited map[string]bool) []string {
 	var deps []string
+
 	for _, dep := range bindings[binding].Dependencies {
-		if info, ok := bindings[dep]; ok && !info.IsBase {
+		if info, ok := bindings[dep]; ok && !info.IsBase && !visited[dep] {
+			visited[dep] = true
+			deps = append(deps, getDependencyBindingsRecursive(dep, bindings, visited)...)
 			deps = append(deps, dep)
-			deps = append(deps, getDependencyBindings(dep, bindings)...)
+		}
+	}
+
+	for _, installTogetherBinding := range bindings[binding].InstallTogether {
+		if info, ok := bindings[installTogetherBinding]; ok && !info.IsBase && !visited[installTogetherBinding] {
+			visited[installTogetherBinding] = true
+			deps = append(deps, getDependencyBindingsRecursive(installTogetherBinding, bindings, visited)...)
+			deps = append(deps, installTogetherBinding)
 		}
 	}
 

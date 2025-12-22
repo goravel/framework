@@ -29,6 +29,7 @@ type GoFile interface {
 	Apply
 	Find(matchers []match.GoNode) GoNode
 	FindOrCreate(matchers []match.GoNode, fn func(node dst.Node) error) GoNode
+	Format() Apply
 }
 
 type GoNode interface {
