@@ -180,20 +180,12 @@ func (app *Application) ServerStatsHandlers(handlers []stats.Handler) {
 }
 
 func (app *Application) UnaryClientInterceptorGroups(groups map[string][]grpc.UnaryClientInterceptor) {
-	if app.unaryClientInterceptorGroups == nil {
-		app.unaryClientInterceptorGroups = make(map[string][]grpc.UnaryClientInterceptor)
-	}
-
 	for key, interceptors := range groups {
 		app.unaryClientInterceptorGroups[key] = append(app.unaryClientInterceptorGroups[key], interceptors...)
 	}
 }
 
 func (app *Application) ClientStatsHandlerGroups(groups map[string][]stats.Handler) {
-	if app.clientStatsHandlerGroups == nil {
-		app.clientStatsHandlerGroups = make(map[string][]stats.Handler)
-	}
-
 	for key, handlers := range groups {
 		app.clientStatsHandlerGroups[key] = append(app.clientStatsHandlerGroups[key], handlers...)
 	}
