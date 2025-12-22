@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"sync"
@@ -17,6 +18,7 @@ import (
 	"google.golang.org/grpc/stats"
 
 	configmock "github.com/goravel/framework/mocks/config"
+	"github.com/goravel/framework/support/color"
 )
 
 type contextKey int
@@ -37,6 +39,8 @@ func TestRun(t *testing.T) {
 		mockConfig = configmock.NewConfig(t)
 
 		app = NewApplication(mockConfig)
+
+		// Configure Handlers (Must be done BEFORE app.Server() is called)
 		app.UnaryServerInterceptors([]grpc.UnaryServerInterceptor{
 			serverInterceptor,
 		})
@@ -50,6 +54,8 @@ func TestRun(t *testing.T) {
 				clientInterceptor,
 			},
 		})
+
+		// Register Service (This triggers app.Server() creation and freezes config)
 		RegisterTestServiceServer(app.Server(), &TestController{})
 	}
 
@@ -137,6 +143,8 @@ func TestRun(t *testing.T) {
 			beforeEach()
 			test.setup()
 			mockConfig.AssertExpectations(t)
+			// Cleanup: Shutdown to close the server and release the port
+			_ = app.Shutdown(true)
 		})
 	}
 }
@@ -323,11 +331,35 @@ func TestShutdown_ClosesConnections(t *testing.T) {
 func TestServerStatsHandlers(t *testing.T) {
 	mockConfig := configmock.NewConfig(t)
 	app := NewApplication(mockConfig)
+
+	// Initial Call -> Freezes Configuration
 	initialServer := app.Server()
+	assert.NotNil(t, initialServer)
 
-	app.ServerStatsHandlers([]stats.Handler{&mockStatsHandler{}})
+	// Add Handlers AFTER freeze -> Should trigger warning
+	got := color.CaptureOutput(func(io.Writer) {
+		app.ServerStatsHandlers([]stats.Handler{&mockStatsHandler{}})
+	})
 
-	assert.NotSame(t, initialServer, app.Server(), "Server instance should be rebuilt when adding StatsHandlers")
+	assert.Contains(t, got, "[GRPC] Warning: stats handlers ignored because the gRPC server has already been initialized.")
+	assert.Same(t, initialServer, app.Server(), "Server instance should be a singleton (frozen) after initialization")
+}
+
+func TestUnaryServerInterceptors_FreezeCheck(t *testing.T) {
+	mockConfig := configmock.NewConfig(t)
+	app := NewApplication(mockConfig)
+
+	// Initial Call -> Freezes Configuration
+	initialServer := app.Server()
+	assert.NotNil(t, initialServer)
+
+	// Add Interceptor AFTER freeze -> Should trigger warning
+	got := color.CaptureOutput(func(io.Writer) {
+		app.UnaryServerInterceptors([]grpc.UnaryServerInterceptor{serverInterceptor})
+	})
+
+	assert.Contains(t, got, "[GRPC] Warning: interceptors ignored because the gRPC server has already been initialized.")
+	assert.Same(t, initialServer, app.Server(), "Server instance should be a singleton (frozen) after initialization")
 }
 
 func TestShutdown(t *testing.T) {
@@ -349,16 +381,24 @@ func TestShutdown(t *testing.T) {
 		{
 			name: "graceful shutdown",
 			setup: func() {
-				app.server = grpc.NewServer()
+				// Trigger Lazy Init so shutdown has something to stop
+				_ = app.Server()
 			},
 			force: false,
 		},
 		{
 			name: "force shutdown",
 			setup: func() {
-				app.server = grpc.NewServer()
+				_ = app.Server()
 			},
 			force: true,
+		},
+		{
+			name: "shutdown without server init",
+			setup: func() {
+				// Do not call app.Server() - verify no panic
+			},
+			force: false,
 		},
 	}
 

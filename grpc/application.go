@@ -36,7 +36,6 @@ type Application struct {
 
 func NewApplication(config config.Config) *Application {
 	return &Application{
-		server:                       grpc.NewServer(),
 		config:                       config,
 		clients:                      make(map[string]*grpc.ClientConn),
 		unaryServerInterceptors:      make([]grpc.UnaryServerInterceptor, 0),
@@ -115,7 +114,7 @@ func (app *Application) Client(ctx context.Context, name string) (*grpc.ClientCo
 
 func (app *Application) Listen(l net.Listener) error {
 	color.Green().Println("[GRPC] Listening on: " + l.Addr().String())
-	return app.server.Serve(l)
+	return app.Server().Serve(l)
 }
 
 func (app *Application) Run(host ...string) error {
@@ -142,18 +141,35 @@ func (app *Application) Run(host ...string) error {
 	}
 
 	color.Green().Println("[GRPC] Listening on: " + host[0])
-	return app.server.Serve(listen)
+	return app.Server().Serve(listen)
 }
 
 func (app *Application) Server() *grpc.Server {
+	if app.server != nil {
+		return app.server
+	}
+
+	var opts []grpc.ServerOption
+
+	if len(app.unaryServerInterceptors) > 0 {
+		opts = append(opts, grpc.ChainUnaryInterceptor(app.unaryServerInterceptors...))
+	}
+
+	for _, h := range app.serverStatsHandlers {
+		opts = append(opts, grpc.StatsHandler(h))
+	}
+
+	app.server = grpc.NewServer(opts...)
 	return app.server
 }
 
 func (app *Application) Shutdown(force ...bool) error {
-	if len(force) > 0 && force[0] {
-		app.server.Stop()
-	} else {
-		app.server.GracefulStop()
+	if app.server != nil {
+		if len(force) > 0 && force[0] {
+			app.server.Stop()
+		} else {
+			app.server.GracefulStop()
+		}
 	}
 
 	app.mu.Lock()
@@ -170,13 +186,19 @@ func (app *Application) Shutdown(force ...bool) error {
 }
 
 func (app *Application) UnaryServerInterceptors(unaryServerInterceptors []grpc.UnaryServerInterceptor) {
+	if app.server != nil {
+		color.Errorln("[GRPC] Warning: interceptors ignored because the gRPC server has already been initialized.")
+		return
+	}
 	app.unaryServerInterceptors = append(app.unaryServerInterceptors, unaryServerInterceptors...)
-	app.refreshServer()
 }
 
 func (app *Application) ServerStatsHandlers(handlers []stats.Handler) {
+	if app.server != nil {
+		color.Errorln("[GRPC] Warning: stats handlers ignored because the gRPC server has already been initialized.")
+		return
+	}
 	app.serverStatsHandlers = append(app.serverStatsHandlers, handlers...)
-	app.refreshServer()
 }
 
 func (app *Application) UnaryClientInterceptorGroups(groups map[string][]grpc.UnaryClientInterceptor) {
@@ -189,20 +211,6 @@ func (app *Application) ClientStatsHandlerGroups(groups map[string][]stats.Handl
 	for key, handlers := range groups {
 		app.clientStatsHandlerGroups[key] = append(app.clientStatsHandlerGroups[key], handlers...)
 	}
-}
-
-func (app *Application) refreshServer() {
-	var opts []grpc.ServerOption
-
-	if len(app.unaryServerInterceptors) > 0 {
-		opts = append(opts, grpc.ChainUnaryInterceptor(app.unaryServerInterceptors...))
-	}
-
-	for _, h := range app.serverStatsHandlers {
-		opts = append(opts, grpc.StatsHandler(h))
-	}
-
-	app.server = grpc.NewServer(opts...)
 }
 
 func (app *Application) getClientInterceptors(keys []string) []grpc.UnaryClientInterceptor {
