@@ -210,6 +210,54 @@ func TestApplication_Shutdown(t *testing.T) {
 	})
 }
 
+func TestApplication_TracerProvider(t *testing.T) {
+	t.Run("returns noop provider", func(t *testing.T) {
+		noopTP := tracenoop.NewTracerProvider()
+		app := &Application{
+			tracerProvider: noopTP,
+		}
+
+		provider := app.TracerProvider()
+
+		assert.Equal(t, noopTP, provider)
+	})
+
+	t.Run("returns SDK provider", func(t *testing.T) {
+		tp := sdktrace.NewTracerProvider()
+		app := &Application{
+			tracerProvider: tp,
+		}
+
+		provider := app.TracerProvider()
+
+		assert.Equal(t, tp, provider)
+	})
+}
+
+func TestApplication_MeterProvider(t *testing.T) {
+	t.Run("returns noop provider", func(t *testing.T) {
+		noopTP := metricnoop.NewMeterProvider()
+		app := &Application{
+			meterProvider: noopTP,
+		}
+
+		provider := app.MeterProvider()
+
+		assert.Equal(t, noopTP, provider)
+	})
+
+	t.Run("returns SDK provider", func(t *testing.T) {
+		tp := sdkmetric.NewMeterProvider()
+		app := &Application{
+			meterProvider: tp,
+		}
+
+		provider := app.MeterProvider()
+
+		assert.Equal(t, tp, provider)
+	})
+}
+
 func TestConfig_GetExporter(t *testing.T) {
 	tests := []struct {
 		name         string
