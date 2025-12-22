@@ -25,8 +25,8 @@ func WithFilter(filter func(info *stats.RPCTagInfo) bool) Option {
 // (span.AddEvent) on spans.
 //
 // Valid events are:
-//   - grpc.ReceivedEvents: Record the number of bytes read.
-//   - grpc.SentEvents: Record the number of bytes written.
+//   - ReceivedEvents: Record the number of bytes read.
+//   - SentEvents: Record the number of bytes written.
 func WithMessageEvents(events ...Event) Option {
 	return otelgrpc.WithMessageEvents(events...)
 }
