@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"io"
+	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/stats"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/database/schema"
@@ -47,9 +50,7 @@ func TestApplicationBuilderTestSuite(t *testing.T) {
 func (s *ApplicationBuilderTestSuite) SetupTest() {
 	s.originalPaths = support.Config.Paths
 	s.mockApp = mocksfoundation.NewApplication(s.T())
-	s.builder = &ApplicationBuilder{
-		app: s.mockApp,
-	}
+	s.builder = NewApplicationBuilder(s.mockApp)
 }
 
 func (s *ApplicationBuilderTestSuite) TearDownTest() {
@@ -373,7 +374,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
 		s.mockApp.EXPECT().Boot().Return().Once()
 		s.mockApp.EXPECT().MakeGrpc().Return(mockGrpc).Once()
-		mockGrpc.EXPECT().UnaryClientInterceptorGroups(interceptors).Return().Once()
+		mockGrpc.EXPECT().UnaryClientInterceptorGroups(mock.MatchedBy(func(interceptors map[string][]grpc.UnaryClientInterceptor) bool {
+			return len(interceptors) == 1 && len(interceptors["test"]) == 1
+		})).Return().Once()
 
 		app := s.builder.WithGrpcClientInterceptors(interceptors).Create()
 
@@ -410,14 +413,86 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
 		s.mockApp.EXPECT().Boot().Return().Once()
 		s.mockApp.EXPECT().MakeGrpc().Return(mockGrpc).Once()
-		mockGrpc.EXPECT().UnaryServerInterceptors(interceptors).Return().Once()
+		mockGrpc.EXPECT().UnaryServerInterceptors(mock.MatchedBy(func(interceptors []grpc.UnaryServerInterceptor) bool {
+			return len(interceptors) == 1
+		})).Return().Once()
 
 		app := s.builder.WithGrpcServerInterceptors(interceptors).Create()
 
 		s.NotNil(app)
 	})
 
-	s.Run("WithGrpcClientInterceptors and WithGrpcServerInterceptors", func() {
+	s.Run("WithGrpcClientStatsHandlers but Grpc facade is nil", func() {
+		s.SetupTest()
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().MakeGrpc().Return(nil).Once()
+
+		handler := &mockStatsHandler{}
+		got := color.CaptureOutput(func(io.Writer) {
+			app := s.builder.WithGrpcClientStatsHandlers(map[string][]stats.Handler{
+				"test": {handler},
+			}).Create()
+			s.NotNil(app)
+		})
+
+		s.Contains(got, "gRPC facade not found, please install it first: ./artisan package:install Grpc")
+	})
+
+	s.Run("WithGrpcClientStatsHandlers", func() {
+		s.SetupTest()
+
+		mockGrpc := mocksgrpc.NewGrpc(s.T())
+		handler := &mockStatsHandler{}
+		handlers := map[string][]stats.Handler{
+			"test": {handler},
+		}
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().MakeGrpc().Return(mockGrpc).Once()
+		mockGrpc.EXPECT().ClientStatsHandlerGroups(handlers).Return().Once()
+
+		app := s.builder.WithGrpcClientStatsHandlers(handlers).Create()
+
+		s.NotNil(app)
+	})
+
+	s.Run("WithGrpcServerStatsHandlers but Grpc facade is nil", func() {
+		s.SetupTest()
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().MakeGrpc().Return(nil).Once()
+
+		handler := &mockStatsHandler{}
+		got := color.CaptureOutput(func(io.Writer) {
+			app := s.builder.WithGrpcServerStatsHandlers([]stats.Handler{handler}).Create()
+			s.NotNil(app)
+		})
+
+		s.Contains(got, "gRPC facade not found, please install it first: ./artisan package:install Grpc")
+	})
+
+	s.Run("WithGrpcServerStatsHandlers", func() {
+		s.SetupTest()
+
+		mockGrpc := mocksgrpc.NewGrpc(s.T())
+		handler := &mockStatsHandler{}
+		handlers := []stats.Handler{handler}
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().MakeGrpc().Return(mockGrpc).Once()
+		mockGrpc.EXPECT().ServerStatsHandlers(handlers).Return().Once()
+
+		app := s.builder.WithGrpcServerStatsHandlers(handlers).Create()
+
+		s.NotNil(app)
+	})
+
+	s.Run("With All gRPC Components", func() {
 		s.SetupTest()
 
 		mockGrpc := mocksgrpc.NewGrpc(s.T())
@@ -427,20 +502,27 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		serverInterceptor := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 			return nil, nil
 		}
-		clientInterceptors := map[string][]grpc.UnaryClientInterceptor{
-			"test": {clientInterceptor},
-		}
-		serverInterceptors := []grpc.UnaryServerInterceptor{serverInterceptor}
+		clientStatsHandler := &mockStatsHandler{}
+		serverStatsHandler := &mockStatsHandler{}
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
 		s.mockApp.EXPECT().Boot().Return().Once()
 		s.mockApp.EXPECT().MakeGrpc().Return(mockGrpc).Once()
-		mockGrpc.EXPECT().UnaryClientInterceptorGroups(clientInterceptors).Return().Once()
-		mockGrpc.EXPECT().UnaryServerInterceptors(serverInterceptors).Return().Once()
+
+		mockGrpc.EXPECT().UnaryClientInterceptorGroups(mock.MatchedBy(func(m map[string][]grpc.UnaryClientInterceptor) bool {
+			return len(m["test"]) == 1
+		})).Return().Once()
+		mockGrpc.EXPECT().UnaryServerInterceptors(mock.MatchedBy(func(s []grpc.UnaryServerInterceptor) bool {
+			return len(s) == 1
+		})).Return().Once()
+		mockGrpc.EXPECT().ClientStatsHandlerGroups(map[string][]stats.Handler{"test": {clientStatsHandler}}).Return().Once()
+		mockGrpc.EXPECT().ServerStatsHandlers([]stats.Handler{serverStatsHandler}).Return().Once()
 
 		app := s.builder.
-			WithGrpcClientInterceptors(clientInterceptors).
-			WithGrpcServerInterceptors(serverInterceptors).
+			WithGrpcClientInterceptors(map[string][]grpc.UnaryClientInterceptor{"test": {clientInterceptor}}).
+			WithGrpcServerInterceptors([]grpc.UnaryServerInterceptor{serverInterceptor}).
+			WithGrpcClientStatsHandlers(map[string][]stats.Handler{"test": {clientStatsHandler}}).
+			WithGrpcServerStatsHandlers([]stats.Handler{serverStatsHandler}).
 			Create()
 
 		s.NotNil(app)
@@ -692,29 +774,76 @@ func (s *ApplicationBuilderTestSuite) TestWithSchedule() {
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithGrpcClientInterceptors() {
-	interceptor := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+	interceptor1 := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		return nil
 	}
-	interceptors := map[string][]grpc.UnaryClientInterceptor{
-		"test": {interceptor},
+	interceptor2 := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		return nil
 	}
 
-	builder := s.builder.WithGrpcClientInterceptors(interceptors)
+	builder := s.builder.WithGrpcClientInterceptors(map[string][]grpc.UnaryClientInterceptor{
+		"test": {interceptor1},
+	})
+	builder.WithGrpcClientInterceptors(map[string][]grpc.UnaryClientInterceptor{
+		"test": {interceptor2},
+	})
 
 	s.NotNil(builder)
-	s.Equal(interceptors, s.builder.grpcClientInterceptors)
+
+	s.Len(s.builder.grpcClientInterceptors["test"], 2)
+	s.Equal(reflect.ValueOf(interceptor1).Pointer(), reflect.ValueOf(s.builder.grpcClientInterceptors["test"][0]).Pointer())
+	s.Equal(reflect.ValueOf(interceptor2).Pointer(), reflect.ValueOf(s.builder.grpcClientInterceptors["test"][1]).Pointer())
+}
+
+func (s *ApplicationBuilderTestSuite) TestWithGrpcClientStatsHandlers() {
+	handler1 := &mockStatsHandler{}
+	handler2 := &mockStatsHandler{}
+
+	builder := s.builder.WithGrpcClientStatsHandlers(map[string][]stats.Handler{
+		"service-a": {handler1},
+	})
+	builder.WithGrpcClientStatsHandlers(map[string][]stats.Handler{
+		"service-a": {handler2},
+		"service-b": {handler1},
+	})
+
+	s.NotNil(builder)
+	s.Len(s.builder.grpcClientStatsHandlers, 2)
+	s.Len(s.builder.grpcClientStatsHandlers["service-a"], 2)
+	s.Len(s.builder.grpcClientStatsHandlers["service-b"], 1)
+	s.Equal(handler1, s.builder.grpcClientStatsHandlers["service-a"][0])
+	s.Equal(handler2, s.builder.grpcClientStatsHandlers["service-a"][1])
+	s.Equal(handler1, s.builder.grpcClientStatsHandlers["service-b"][0])
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithGrpcServerInterceptors() {
-	interceptor := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	interceptor1 := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		return nil, nil
 	}
-	interceptors := []grpc.UnaryServerInterceptor{interceptor}
+	interceptor2 := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		return nil, nil
+	}
 
-	builder := s.builder.WithGrpcServerInterceptors(interceptors)
+	builder := s.builder.WithGrpcServerInterceptors([]grpc.UnaryServerInterceptor{interceptor1})
+	builder.WithGrpcServerInterceptors([]grpc.UnaryServerInterceptor{interceptor2})
 
 	s.NotNil(builder)
-	s.Len(s.builder.grpcServerInterceptors, 1)
+	s.Len(s.builder.grpcServerInterceptors, 2)
+	s.Equal(reflect.ValueOf(interceptor1).Pointer(), reflect.ValueOf(s.builder.grpcServerInterceptors[0]).Pointer())
+	s.Equal(reflect.ValueOf(interceptor2).Pointer(), reflect.ValueOf(s.builder.grpcServerInterceptors[1]).Pointer())
+}
+
+func (s *ApplicationBuilderTestSuite) TestWithGrpcServerStatsHandlers() {
+	handler1 := &mockStatsHandler{}
+	handler2 := &mockStatsHandler{}
+
+	builder := s.builder.WithGrpcServerStatsHandlers([]stats.Handler{handler1})
+	builder.WithGrpcServerStatsHandlers([]stats.Handler{handler2})
+
+	s.NotNil(builder)
+	s.Len(s.builder.grpcServerStatsHandlers, 2)
+	s.Equal(handler1, s.builder.grpcServerStatsHandlers[0])
+	s.Equal(handler2, s.builder.grpcServerStatsHandlers[1])
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithJobs() {
@@ -752,3 +881,5 @@ func (s *ApplicationBuilderTestSuite) TestWithRules() {
 	s.NotNil(builder)
 	s.Len(s.builder.rules, 1)
 }
+
+type mockStatsHandler struct{ stats.Handler }
