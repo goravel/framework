@@ -7,8 +7,8 @@ import (
 	"github.com/goravel/framework/telemetry"
 )
 
-// ServerStatsHandler creates an OTel stats handler for the server.
-func ServerStatsHandler(opts ...Option) stats.Handler {
+// NewServerStatsHandler creates an OTel stats handler for the server.
+func NewServerStatsHandler(opts ...Option) stats.Handler {
 	if telemetry.TelemetryFacade == nil {
 		return nil
 	}
@@ -18,8 +18,8 @@ func ServerStatsHandler(opts ...Option) stats.Handler {
 	return otelgrpc.NewServerHandler(finalOpts...)
 }
 
-// ClientStatsHandler creates an OTel stats handler for the client.
-func ClientStatsHandler(opts ...Option) stats.Handler {
+// NewClientStatsHandler creates an OTel stats handler for the client.
+func NewClientStatsHandler(opts ...Option) stats.Handler {
 	if telemetry.TelemetryFacade == nil {
 		return nil
 	}

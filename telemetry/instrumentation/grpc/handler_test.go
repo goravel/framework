@@ -43,7 +43,7 @@ func (s *HandlerTestSuite) TestServerStatsHandler() {
 				telemetry.TelemetryFacade = nil
 			},
 			assert: func() {
-				s.Nil(ServerStatsHandler())
+				s.Nil(NewServerStatsHandler())
 			},
 		},
 		{
@@ -56,7 +56,7 @@ func (s *HandlerTestSuite) TestServerStatsHandler() {
 				telemetry.TelemetryFacade = mockTelemetry
 			},
 			assert: func() {
-				s.NotNil(ServerStatsHandler())
+				s.NotNil(NewServerStatsHandler())
 			},
 		},
 		{
@@ -69,7 +69,8 @@ func (s *HandlerTestSuite) TestServerStatsHandler() {
 				telemetry.TelemetryFacade = mockTelemetry
 			},
 			assert: func() {
-				handler := ServerStatsHandler(
+				WithMetricAttributes(telemetry.String("key", "value"))
+				handler := NewServerStatsHandler(
 					WithFilter(func(info *stats.RPCTagInfo) bool { return true }),
 					WithMessageEvents(ReceivedEvents, SentEvents),
 				)
@@ -100,7 +101,7 @@ func (s *HandlerTestSuite) TestClientStatsHandler() {
 				telemetry.TelemetryFacade = nil
 			},
 			assert: func() {
-				s.Nil(ClientStatsHandler())
+				s.Nil(NewClientStatsHandler())
 			},
 		},
 		{
@@ -113,7 +114,7 @@ func (s *HandlerTestSuite) TestClientStatsHandler() {
 				telemetry.TelemetryFacade = mockTelemetry
 			},
 			assert: func() {
-				s.NotNil(ClientStatsHandler())
+				s.NotNil(NewClientStatsHandler())
 			},
 		},
 		{
@@ -126,7 +127,7 @@ func (s *HandlerTestSuite) TestClientStatsHandler() {
 				telemetry.TelemetryFacade = mockTelemetry
 			},
 			assert: func() {
-				handler := ClientStatsHandler(
+				handler := NewClientStatsHandler(
 					WithSpanAttributes(),
 					WithMetricAttributes(),
 				)
