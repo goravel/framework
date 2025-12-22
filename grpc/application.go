@@ -187,7 +187,7 @@ func (app *Application) Shutdown(force ...bool) error {
 
 func (app *Application) UnaryServerInterceptors(unaryServerInterceptors []grpc.UnaryServerInterceptor) {
 	if app.server != nil {
-		color.Errorln("[GRPC] Warning: interceptors ignored because the gRPC server has already been initialized.")
+		color.Warningln("[GRPC] interceptors ignored because the gRPC server has already been initialized.")
 		return
 	}
 	app.unaryServerInterceptors = append(app.unaryServerInterceptors, unaryServerInterceptors...)
@@ -195,7 +195,7 @@ func (app *Application) UnaryServerInterceptors(unaryServerInterceptors []grpc.U
 
 func (app *Application) ServerStatsHandlers(handlers []stats.Handler) {
 	if app.server != nil {
-		color.Errorln("[GRPC] Warning: stats handlers ignored because the gRPC server has already been initialized.")
+		color.Warningln("[GRPC] stats handlers ignored because the gRPC server has already been initialized.")
 		return
 	}
 	app.serverStatsHandlers = append(app.serverStatsHandlers, handlers...)
