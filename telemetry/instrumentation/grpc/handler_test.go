@@ -1,6 +1,7 @@
 package grpc
 
 import (
+	"io"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -11,6 +12,7 @@ import (
 
 	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	mockstelemetry "github.com/goravel/framework/mocks/telemetry"
+	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/telemetry"
 )
 
@@ -38,12 +40,18 @@ func (s *HandlerTestSuite) TestServerStatsHandler() {
 		assert func()
 	}{
 		{
-			name: "returns nil when telemetry facade is nil",
+			name: "returns nil and logs warning when telemetry facade is nil",
 			setup: func(_ *mockstelemetry.Telemetry) {
 				telemetry.TelemetryFacade = nil
 			},
 			assert: func() {
-				s.Nil(NewServerStatsHandler())
+				var handler stats.Handler
+				out := color.CaptureOutput(func(w io.Writer) {
+					handler = NewServerStatsHandler()
+				})
+
+				s.Nil(handler)
+				s.Contains(out, "[Telemetry] Facade not initialized. gRPC server stats instrumentation is disabled.")
 			},
 		},
 		{
@@ -69,10 +77,10 @@ func (s *HandlerTestSuite) TestServerStatsHandler() {
 				telemetry.TelemetryFacade = mockTelemetry
 			},
 			assert: func() {
-				WithMetricAttributes(telemetry.String("key", "value"))
 				handler := NewServerStatsHandler(
 					WithFilter(func(info *stats.RPCTagInfo) bool { return true }),
 					WithMessageEvents(ReceivedEvents, SentEvents),
+					WithMetricAttributes(telemetry.String("key", "value")),
 				)
 				s.NotNil(handler)
 			},
@@ -96,12 +104,18 @@ func (s *HandlerTestSuite) TestClientStatsHandler() {
 		assert func()
 	}{
 		{
-			name: "returns nil when telemetry facade is nil",
+			name: "returns nil and logs warning when telemetry facade is nil",
 			setup: func(_ *mockstelemetry.Telemetry) {
 				telemetry.TelemetryFacade = nil
 			},
 			assert: func() {
-				s.Nil(NewClientStatsHandler())
+				var handler stats.Handler
+				out := color.CaptureOutput(func(w io.Writer) {
+					handler = NewClientStatsHandler()
+				})
+
+				s.Nil(handler)
+				s.Contains(out, "[Telemetry] Facade not initialized. gRPC client stats instrumentation is disabled.")
 			},
 		},
 		{

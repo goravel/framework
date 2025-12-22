@@ -98,6 +98,9 @@ func (app *Application) Client(ctx context.Context, name string) (*grpc.ClientCo
 
 	if handlers := app.getClientStatsHandlers(interceptorKeys); len(handlers) > 0 {
 		for _, h := range handlers {
+			if h == nil {
+				continue
+			}
 			dialOpts = append(dialOpts, grpc.WithStatsHandler(h))
 		}
 	}
@@ -156,6 +159,9 @@ func (app *Application) Server() *grpc.Server {
 	}
 
 	for _, h := range app.serverStatsHandlers {
+		if h == nil {
+			continue
+		}
 		opts = append(opts, grpc.StatsHandler(h))
 	}
 
@@ -187,7 +193,7 @@ func (app *Application) Shutdown(force ...bool) error {
 
 func (app *Application) UnaryServerInterceptors(unaryServerInterceptors []grpc.UnaryServerInterceptor) {
 	if app.server != nil {
-		color.Warningln("[GRPC] interceptors ignored because the gRPC server has already been initialized.")
+		color.Warningln("[GRPC] Server already initialized; unary server interceptor registration ignored.")
 		return
 	}
 	app.unaryServerInterceptors = append(app.unaryServerInterceptors, unaryServerInterceptors...)
@@ -195,7 +201,7 @@ func (app *Application) UnaryServerInterceptors(unaryServerInterceptors []grpc.U
 
 func (app *Application) ServerStatsHandlers(handlers []stats.Handler) {
 	if app.server != nil {
-		color.Warningln("[GRPC] stats handlers ignored because the gRPC server has already been initialized.")
+		color.Warningln("[GRPC] Server already initialized; server stats handler registration ignored.")
 		return
 	}
 	app.serverStatsHandlers = append(app.serverStatsHandlers, handlers...)

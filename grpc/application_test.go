@@ -341,7 +341,7 @@ func TestServerStatsHandlers(t *testing.T) {
 		app.ServerStatsHandlers([]stats.Handler{&mockStatsHandler{}})
 	})
 
-	assert.Contains(t, got, "[GRPC] stats handlers ignored because the gRPC server has already been initialized.")
+	assert.Contains(t, got, "[GRPC] Server already initialized; server stats handler registration ignored.")
 	assert.Same(t, initialServer, app.Server(), "Server instance should be a singleton (frozen) after initialization")
 }
 
@@ -358,7 +358,7 @@ func TestUnaryServerInterceptors_FreezeCheck(t *testing.T) {
 		app.UnaryServerInterceptors([]grpc.UnaryServerInterceptor{serverInterceptor})
 	})
 
-	assert.Contains(t, got, "[GRPC] interceptors ignored because the gRPC server has already been initialized.")
+	assert.Contains(t, got, "[GRPC] Server already initialized; unary server interceptor registration ignored.")
 	assert.Same(t, initialServer, app.Server(), "Server instance should be a singleton (frozen) after initialization")
 }
 
