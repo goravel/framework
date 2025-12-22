@@ -306,8 +306,8 @@ func TestShutdown_ClosesConnections(t *testing.T) {
 	mockConfig = configmock.NewConfig(t)
 	app = NewApplication(mockConfig)
 
-	mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Maybe()
-	mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{}).Maybe()
+	mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
+	mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{}).Once()
 
 	conn, err := app.Client(context.Background(), name)
 	assert.NoError(t, err)

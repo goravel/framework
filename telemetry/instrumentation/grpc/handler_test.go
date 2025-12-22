@@ -49,9 +49,9 @@ func (s *HandlerTestSuite) TestServerStatsHandler() {
 		{
 			name: "returns handler when telemetry facade is set",
 			setup: func(mockTelemetry *mockstelemetry.Telemetry) {
-				mockTelemetry.EXPECT().TracerProvider().Return(tracenoop.NewTracerProvider())
-				mockTelemetry.EXPECT().MeterProvider().Return(metricnoop.NewMeterProvider())
-				mockTelemetry.EXPECT().Propagator().Return(propagation.NewCompositeTextMapPropagator())
+				mockTelemetry.EXPECT().TracerProvider().Return(tracenoop.NewTracerProvider()).Once()
+				mockTelemetry.EXPECT().MeterProvider().Return(metricnoop.NewMeterProvider()).Once()
+				mockTelemetry.EXPECT().Propagator().Return(propagation.NewCompositeTextMapPropagator()).Once()
 
 				telemetry.TelemetryFacade = mockTelemetry
 			},
@@ -62,9 +62,9 @@ func (s *HandlerTestSuite) TestServerStatsHandler() {
 		{
 			name: "accepts options",
 			setup: func(mockTelemetry *mockstelemetry.Telemetry) {
-				mockTelemetry.EXPECT().TracerProvider().Return(tracenoop.NewTracerProvider())
-				mockTelemetry.EXPECT().MeterProvider().Return(metricnoop.NewMeterProvider())
-				mockTelemetry.EXPECT().Propagator().Return(propagation.NewCompositeTextMapPropagator())
+				mockTelemetry.EXPECT().TracerProvider().Return(tracenoop.NewTracerProvider()).Once()
+				mockTelemetry.EXPECT().MeterProvider().Return(metricnoop.NewMeterProvider()).Once()
+				mockTelemetry.EXPECT().Propagator().Return(propagation.NewCompositeTextMapPropagator()).Once()
 
 				telemetry.TelemetryFacade = mockTelemetry
 			},
@@ -106,9 +106,9 @@ func (s *HandlerTestSuite) TestClientStatsHandler() {
 		{
 			name: "returns handler when telemetry facade is set",
 			setup: func(mockTelemetry *mockstelemetry.Telemetry) {
-				mockTelemetry.EXPECT().TracerProvider().Return(tracenoop.NewTracerProvider())
-				mockTelemetry.EXPECT().MeterProvider().Return(metricnoop.NewMeterProvider())
-				mockTelemetry.EXPECT().Propagator().Return(propagation.NewCompositeTextMapPropagator())
+				mockTelemetry.EXPECT().TracerProvider().Return(tracenoop.NewTracerProvider()).Once()
+				mockTelemetry.EXPECT().MeterProvider().Return(metricnoop.NewMeterProvider()).Once()
+				mockTelemetry.EXPECT().Propagator().Return(propagation.NewCompositeTextMapPropagator()).Once()
 
 				telemetry.TelemetryFacade = mockTelemetry
 			},
@@ -119,9 +119,9 @@ func (s *HandlerTestSuite) TestClientStatsHandler() {
 		{
 			name: "accepts options",
 			setup: func(mockTelemetry *mockstelemetry.Telemetry) {
-				mockTelemetry.EXPECT().TracerProvider().Return(tracenoop.NewTracerProvider())
-				mockTelemetry.EXPECT().MeterProvider().Return(metricnoop.NewMeterProvider())
-				mockTelemetry.EXPECT().Propagator().Return(propagation.NewCompositeTextMapPropagator())
+				mockTelemetry.EXPECT().TracerProvider().Return(tracenoop.NewTracerProvider()).Once()
+				mockTelemetry.EXPECT().MeterProvider().Return(metricnoop.NewMeterProvider()).Once()
+				mockTelemetry.EXPECT().Propagator().Return(propagation.NewCompositeTextMapPropagator()).Once()
 
 				telemetry.TelemetryFacade = mockTelemetry
 			},
