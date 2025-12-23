@@ -11,6 +11,7 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/support/carbon"
 )
 
 // IOHandler is a log.Handler that writes formatted log entries to an io.Writer.
@@ -40,10 +41,10 @@ func (h *IOHandler) Enabled(level log.Level) bool {
 func (h *IOHandler) Handle(entry log.Entry) error {
 	var b bytes.Buffer
 
-	timestamp := entry.Time().UnixMilli()
+	timestamp := carbon.FromStdTime(entry.Time()).ToDateTimeMilliString()
 	env := h.config.GetString("app.env")
 
-	_, _ = fmt.Fprintf(&b, "[%d] %s.%s: %s\n", timestamp, env, entry.Level().String(), entry.Message())
+	_, _ = fmt.Fprintf(&b, "[%s] %s.%s: %s\n", timestamp, env, entry.Level().String(), entry.Message())
 
 	// Format Entry
 	if v := entry.Code(); v != "" {
@@ -78,13 +79,13 @@ func (h *IOHandler) Handle(entry log.Entry) error {
 		}
 		_, _ = fmt.Fprintf(&b, "[Trace] %+v\n", traces)
 	}
-	if v := entry.Tags(); v != nil {
+	if v := entry.Tags(); len(v) > 0 {
 		_, _ = fmt.Fprintf(&b, "[Tags] %+v\n", v)
 	}
 	if v := entry.User(); v != nil {
 		_, _ = fmt.Fprintf(&b, "[User] %+v\n", v)
 	}
-	if v := entry.With(); v != nil {
+	if v := entry.With(); len(v) > 0 {
 		_, _ = fmt.Fprintf(&b, "[With] %+v\n", v)
 	}
 
@@ -98,13 +99,13 @@ type ConsoleHandler struct {
 }
 
 // NewConsoleHandler creates a new console handler.
-func NewConsoleHandler(config config.Config, json foundation.Json) *ConsoleHandler {
+func NewConsoleHandler(config config.Config, json foundation.Json, level slog.Leveler) *ConsoleHandler {
 	return &ConsoleHandler{
 		IOHandler: &IOHandler{
 			writer: os.Stdout,
 			config: config,
 			json:   json,
-			level:  log.LevelDebug,
+			level:  level,
 		},
 	}
 }

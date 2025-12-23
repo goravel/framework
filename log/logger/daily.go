@@ -49,7 +49,7 @@ func (daily *Daily) Handle(channel string) (log.Handler, error) {
 		return nil, err
 	}
 
-	level := getLevelFromString(daily.config.GetString(channel + ".level"))
+	level := GetLevelFromString(daily.config.GetString(channel + ".level"))
 
 	return NewRotatingFileHandler(writer, daily.config, daily.json, level), nil
 }

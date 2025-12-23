@@ -123,7 +123,8 @@ func getHandlers(config config.Config, json foundation.Json, channel string) ([]
 
 		handlers := []slog.Handler{HandlerToSlogHandler(handler)}
 		if config.GetBool(channelPath + ".print") {
-			handlers = append(handlers, HandlerToSlogHandler(logger.NewConsoleHandler(config, json)))
+			level := logger.GetLevelFromString(config.GetString(channelPath + ".level"))
+			handlers = append(handlers, HandlerToSlogHandler(logger.NewConsoleHandler(config, json, level)))
 		}
 		return handlers, nil
 
@@ -136,7 +137,8 @@ func getHandlers(config config.Config, json foundation.Json, channel string) ([]
 
 		handlers := []slog.Handler{HandlerToSlogHandler(handler)}
 		if config.GetBool(channelPath + ".print") {
-			handlers = append(handlers, HandlerToSlogHandler(logger.NewConsoleHandler(config, json)))
+			level := logger.GetLevelFromString(config.GetString(channelPath + ".level"))
+			handlers = append(handlers, HandlerToSlogHandler(logger.NewConsoleHandler(config, json, level)))
 		}
 		return handlers, nil
 
@@ -149,7 +151,8 @@ func getHandlers(config config.Config, json foundation.Json, channel string) ([]
 
 		handlers := []slog.Handler{HandlerToSlogHandler(handler)}
 		if config.GetBool(channelPath + ".print") {
-			handlers = append(handlers, HandlerToSlogHandler(logger.NewConsoleHandler(config, json)))
+			level := logger.GetLevelFromString(config.GetString(channelPath + ".level"))
+			handlers = append(handlers, HandlerToSlogHandler(logger.NewConsoleHandler(config, json, level)))
 		}
 		return handlers, nil
 

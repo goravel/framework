@@ -91,7 +91,7 @@ func (s *IOHandlerTestSuite) TestEnabled() {
 }
 
 func (s *IOHandlerTestSuite) TestHandle() {
-	s.mockConfig.EXPECT().GetString("app.env").Return("test").Maybe()
+	s.mockConfig.EXPECT().GetString("app.env").Return("test").Once()
 
 	handler := NewIOHandler(s.buffer, s.mockConfig, s.json, log.LevelDebug)
 
@@ -105,6 +105,78 @@ func (s *IOHandlerTestSuite) TestHandle() {
 	s.Nil(err)
 	s.Contains(s.buffer.String(), "test.info: test message")
 }
+
+func (s *IOHandlerTestSuite) TestHandleWithAllFields() {
+	s.mockConfig.EXPECT().GetString("app.env").Return("test").Once()
+
+	handler := NewIOHandler(s.buffer, s.mockConfig, s.json, log.LevelDebug)
+
+	ctx := context.WithValue(context.Background(), handlerTestContextKey("key"), "value")
+	entry := &mockEntry{
+		time:       time.Now(),
+		level:      log.LevelError,
+		message:    "error message",
+		code:       "ERR001",
+		ctx:        ctx,
+		domain:     "payment",
+		hint:       "check balance",
+		owner:      "team-a",
+		request:    map[string]any{"method": "POST", "url": "/api"},
+		response:   map[string]any{"status": 500},
+		tags:       []string{"critical", "urgent"},
+		user:       map[string]any{"id": 123, "name": "test"},
+		with:       map[string]any{"extra": "data"},
+	}
+
+	err := handler.Handle(entry)
+	s.Nil(err)
+
+	output := s.buffer.String()
+	s.Contains(output, "test.error: error message")
+	s.Contains(output, "[Code] ERR001")
+	s.Contains(output, "[Context]")
+	s.Contains(output, "[Domain] payment")
+	s.Contains(output, "[Hint] check balance")
+	s.Contains(output, "[Owner] team-a")
+	s.Contains(output, "[Request]")
+	s.Contains(output, "[Response]")
+	s.Contains(output, "[Tags] [critical urgent]")
+	s.Contains(output, "[User]")
+	s.Contains(output, "[With]")
+}
+
+func (s *IOHandlerTestSuite) TestHandleEmptyOptionalFields() {
+	s.mockConfig.EXPECT().GetString("app.env").Return("test").Once()
+
+	handler := NewIOHandler(s.buffer, s.mockConfig, s.json, log.LevelDebug)
+
+	entry := &mockEntry{
+		time:    time.Now(),
+		level:   log.LevelInfo,
+		message: "simple message",
+		// All optional fields are empty/nil
+	}
+
+	err := handler.Handle(entry)
+	s.Nil(err)
+
+	output := s.buffer.String()
+	s.Contains(output, "test.info: simple message")
+	// Should NOT contain any of these sections
+	s.NotContains(output, "[Code]")
+	s.NotContains(output, "[Context]")
+	s.NotContains(output, "[Domain]")
+	s.NotContains(output, "[Hint]")
+	s.NotContains(output, "[Owner]")
+	s.NotContains(output, "[Request]")
+	s.NotContains(output, "[Response]")
+	s.NotContains(output, "[Tags]")
+	s.NotContains(output, "[User]")
+	s.NotContains(output, "[With]")
+	s.NotContains(output, "[Trace]")
+}
+
+type handlerTestContextKey string
 
 func TestFormatStackTrace(t *testing.T) {
 	tests := []struct {
@@ -185,10 +257,10 @@ func (s *ConsoleHandlerTestSuite) SetupTest() {
 }
 
 func (s *ConsoleHandlerTestSuite) TestNewConsoleHandler() {
-	handler := NewConsoleHandler(s.mockConfig, s.json)
+	handler := NewConsoleHandler(s.mockConfig, s.json, log.LevelInfo)
 	s.NotNil(handler)
 	s.NotNil(handler.IOHandler)
-	s.Equal(log.LevelDebug, handler.level)
+	s.Equal(log.LevelInfo, handler.level)
 }
 
 type mockEntry struct {

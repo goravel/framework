@@ -42,12 +42,13 @@ func (single *Single) Handle(channel string) (log.Handler, error) {
 		return nil, err
 	}
 
-	level := getLevelFromString(single.config.GetString(channel + ".level"))
+	level := GetLevelFromString(single.config.GetString(channel + ".level"))
 
 	return NewIOHandler(file, single.config, single.json, level), nil
 }
 
-func getLevelFromString(level string) log.Level {
+// GetLevelFromString converts a string log level to log.Level.
+func GetLevelFromString(level string) log.Level {
 	l, err := log.ParseLevel(level)
 	if err != nil {
 		return log.LevelDebug
