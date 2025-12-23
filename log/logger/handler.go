@@ -77,7 +77,7 @@ func (h *IOHandler) Handle(entry log.Entry) error {
 		if err != nil {
 			return err
 		}
-		_, _ = fmt.Fprintf(&b, "[Trace] %+v\n", traces)
+		_, _ = fmt.Fprintf(&b, "[Trace] %+v", traces)
 	}
 	if v := entry.Tags(); len(v) > 0 {
 		_, _ = fmt.Fprintf(&b, "[Tags] %+v\n", v)
