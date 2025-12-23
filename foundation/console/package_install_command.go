@@ -22,14 +22,19 @@ import (
 )
 
 type PackageInstallCommand struct {
-	bindings                            map[string]contractsbinding.Info
-	chosenDrivers                       [][]contractsbinding.Driver
-	installedBindings                   []any
+	bindings      map[string]contractsbinding.Info
+	chosenDrivers [][]contractsbinding.Driver
+	// package:install and package:uninstall will be run simultaneously when testing,
+	// facades will be added to installedBindings when installing, and facades will be
+	// removed from installedBindings when uninstalling, so they share
+	// the same installedBindings pointer to avoid package:install and package:uninstall
+	// cannot be run simultaneously due to inconsistent installedBindings.
+	installedBindings                   *[]any
 	installedFacadesInTheCurrentCommand []string
 	paths                               string
 }
 
-func NewPackageInstallCommand(bindings map[string]contractsbinding.Info, installedBindings []any, json contractsfoundation.Json) *PackageInstallCommand {
+func NewPackageInstallCommand(bindings map[string]contractsbinding.Info, installedBindings *[]any, json contractsfoundation.Json) *PackageInstallCommand {
 	paths, err := json.MarshalString(support.Config.Paths)
 	if err != nil {
 		panic(fmt.Sprintf("failed to marshal paths: %s", err))
@@ -59,10 +64,21 @@ func (r *PackageInstallCommand) Extend() command.Extend {
 		Category:  "package",
 		Flags: []command.Flag{
 			&command.BoolFlag{
-				Name:    "all-facades",
+				Name:    "all",
 				Usage:   "Install all facades",
 				Aliases: []string{"a"},
 				Value:   false,
+			},
+			&command.BoolFlag{
+				Name:    "default",
+				Usage:   "Install facades with default drivers",
+				Aliases: []string{"d"},
+				Value:   false,
+			},
+			&command.BoolFlag{
+				Name:  "dev",
+				Usage: "Install drivers with the master branch",
+				Value: false,
 			},
 		},
 	}
@@ -73,7 +89,7 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 	names := ctx.Arguments()
 
 	if len(names) == 0 {
-		if ctx.OptionBool("all-facades") {
+		if ctx.OptionBool("all") {
 			names = getAvailableFacades(r.bindings)
 		} else {
 			var err error
@@ -160,6 +176,10 @@ func (r *PackageInstallCommand) inputThirdPackage(ctx console.Context) (string, 
 }
 
 func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) error {
+	if !strings.Contains(pkg, "@") && ctx.OptionBool("dev") {
+		pkg += "@master"
+	}
+
 	pkgPath, _, _ := strings.Cut(pkg, "@")
 	setup := pkgPath + "/setup"
 
@@ -169,7 +189,7 @@ func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) 
 	}
 
 	// install package
-	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--package-name="+env.MainPath(), "--paths="+r.paths)); err != nil {
+	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--main-path="+env.MainPath(), "--paths="+r.paths)); err != nil {
 		return fmt.Errorf("failed to install package: %s", err)
 	}
 
@@ -192,7 +212,7 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 	}
 
 	bindingsToInstall := r.getBindingsToInstall(binding)
-	if len(bindingsToInstall) > 0 && !ctx.OptionBool("all-facades") {
+	if len(bindingsToInstall) > 0 && !ctx.OptionBool("all") {
 		facades := make([]string, len(bindingsToInstall))
 		for i := range bindingsToInstall {
 			facades[i] = convert.BindingToFacade(bindingsToInstall[i])
@@ -210,7 +230,7 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 			continue
 		}
 
-		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--facade="+facade, "--package-name="+env.MainPath(), "--paths="+r.paths)); err != nil {
+		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--facade="+facade, "--main-path="+env.MainPath(), "--paths="+r.paths)); err != nil {
 			return fmt.Errorf("failed to install facade %s: %s", facade, err.Error())
 		}
 
@@ -225,6 +245,8 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 		if len(bindingInfo.Drivers) > 0 {
 			r.chosenDrivers = append(r.chosenDrivers, bindingInfo.Drivers)
 		}
+
+		*r.installedBindings = append(*r.installedBindings, binding)
 	}
 
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
@@ -271,27 +293,33 @@ func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string
 		Value: "Custom",
 	})
 
-	driver, err := ctx.Choice(fmt.Sprintf("Select the %s driver to install", facade), options, console.ChoiceOption{
-		Description: fmt.Sprintf("A driver is required for %s, please select one to install.", facade),
-	})
-	if err != nil {
-		return err
-	}
-
-	if driver == "Custom" {
-		driver, err = ctx.Ask(fmt.Sprintf("Please enter the %s driver package", facade))
+	var driver string
+	if ctx.OptionBool("default") {
+		driver = options[0].Value
+	} else {
+		var err error
+		driver, err = ctx.Choice(fmt.Sprintf("Select the %s driver to install", facade), options, console.ChoiceOption{
+			Description: fmt.Sprintf("A driver is required for %s, please select one to install.", facade),
+		})
 		if err != nil {
 			return err
 		}
-	}
 
-	if driver == "" {
-		return r.installDriver(ctx, facade, bindingInfo)
+		if driver == "Custom" {
+			driver, err = ctx.Ask(fmt.Sprintf("Please enter the %s driver package", facade))
+			if err != nil {
+				return err
+			}
+		}
+
+		if driver == "" {
+			return r.installDriver(ctx, facade, bindingInfo)
+		}
 	}
 
 	if isInternalDriver(driver) {
 		setup := bindingInfo.PkgPath + "/setup"
-		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--driver="+driver, "--package-name="+env.MainPath(), "--paths="+r.paths)); err != nil {
+		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--driver="+driver, "--main-path="+env.MainPath(), "--paths="+r.paths)); err != nil {
 			return fmt.Errorf("failed to install driver %s: %s", driver, err.Error())
 		}
 
@@ -306,20 +334,12 @@ func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string
 func (r *PackageInstallCommand) getBindingsToInstall(binding string) (bindingsToInstall []string) {
 	for _, dependencyBinding := range getDependencyBindings(binding, r.bindings) {
 		var binding any = dependencyBinding
-		if !slices.Contains(r.installedBindings, binding) {
+		if !slices.Contains(*r.installedBindings, binding) {
 			bindingsToInstall = append(bindingsToInstall, dependencyBinding)
 		}
 	}
 
-	InstallTogether := r.bindings[binding].InstallTogether
-	for _, installTogetherBinding := range InstallTogether {
-		var binding any = installTogetherBinding
-		if !slices.Contains(r.installedBindings, binding) && !slices.Contains(bindingsToInstall, installTogetherBinding) {
-			bindingsToInstall = append(bindingsToInstall, installTogetherBinding)
-		}
-	}
-
-	return
+	return bindingsToInstall
 }
 
 func getAvailableFacades(bindings map[string]contractsbinding.Info) []string {
@@ -351,11 +371,26 @@ func getAvailableFacades(bindings map[string]contractsbinding.Info) []string {
 }
 
 func getDependencyBindings(binding string, bindings map[string]contractsbinding.Info) []string {
+	visited := make(map[string]bool)
+	return getDependencyBindingsRecursive(binding, bindings, visited)
+}
+
+func getDependencyBindingsRecursive(binding string, bindings map[string]contractsbinding.Info, visited map[string]bool) []string {
 	var deps []string
+
 	for _, dep := range bindings[binding].Dependencies {
-		if info, ok := bindings[dep]; ok && !info.IsBase {
+		if info, ok := bindings[dep]; ok && !info.IsBase && !visited[dep] {
+			visited[dep] = true
+			deps = append(deps, getDependencyBindingsRecursive(dep, bindings, visited)...)
 			deps = append(deps, dep)
-			deps = append(deps, getDependencyBindings(dep, bindings)...)
+		}
+	}
+
+	for _, installTogetherBinding := range bindings[binding].InstallTogether {
+		if info, ok := bindings[installTogetherBinding]; ok && !info.IsBase && !visited[installTogetherBinding] {
+			visited[installTogetherBinding] = true
+			deps = append(deps, getDependencyBindingsRecursive(installTogetherBinding, bindings, visited)...)
+			deps = append(deps, installTogetherBinding)
 		}
 	}
 

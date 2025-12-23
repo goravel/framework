@@ -5,7 +5,6 @@ import (
 
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/packages/modify"
-	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/path"
 )
 
@@ -13,8 +12,8 @@ func main() {
 	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
 	testingServiceProvider := "&testing.ServiceProvider{}"
-	testCasePath := path.Base(support.Config.Paths.Tests, "test_case.go")
-	exampleTestPath := path.Base(support.Config.Paths.Tests, "feature", "example_test.go")
+	testCasePath := path.Test("test_case.go")
+	exampleTestPath := path.Test("feature", "example_test.go")
 	testingFacadePath := path.Facade("testing.go")
 	moduleImport := setup.Paths().Module().Import()
 

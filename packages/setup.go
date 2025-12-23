@@ -44,8 +44,8 @@ func Setup(args []string) packages.Setup {
 		if strings.HasPrefix(arg, "--driver=") {
 			st.driver = strings.TrimPrefix(arg, "--driver=")
 		}
-		if strings.HasPrefix(arg, "--package-name=") {
-			mainName = strings.TrimPrefix(arg, "--package-name=")
+		if strings.HasPrefix(arg, "--main-path=") {
+			mainName = strings.TrimPrefix(arg, "--main-path=")
 		}
 		if strings.HasPrefix(arg, "--paths=") {
 			if err := json.Unmarshal([]byte(strings.TrimPrefix(arg, "--paths=")), &support.Config.Paths); err != nil {

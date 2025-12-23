@@ -2,6 +2,7 @@ package foundation
 
 import (
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/stats"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/database/schema"
@@ -26,10 +27,14 @@ type ApplicationBuilder interface {
 	WithEvents(eventToListeners map[event.Event][]event.Listener) ApplicationBuilder
 	// WithFilters sets the application's validation filters.
 	WithFilters(filters []validation.Filter) ApplicationBuilder
-	// WithGrpcClientInterceptors sets gRPC client interceptors for the application.
+	// WithGrpcClientInterceptors sets the grouped gRPC client interceptors.
 	WithGrpcClientInterceptors(groupToInterceptors map[string][]grpc.UnaryClientInterceptor) ApplicationBuilder
-	// WithGrpcServerInterceptors sets gRPC server interceptors for the application.
+	// WithGrpcClientStatsHandlers sets the grouped gRPC client stats handlers.
+	WithGrpcClientStatsHandlers(groupToHandlers map[string][]stats.Handler) ApplicationBuilder
+	// WithGrpcServerInterceptors sets the list of gRPC server interceptors.
 	WithGrpcServerInterceptors(interceptors []grpc.UnaryServerInterceptor) ApplicationBuilder
+	// WithGrpcServerStatsHandlers sets the list of gRPC server stats handlers.
+	WithGrpcServerStatsHandlers(handlers []stats.Handler) ApplicationBuilder
 	// WithJobs registers the application's jobs.
 	WithJobs(jobs []queue.Job) ApplicationBuilder
 	// WithMiddleware registers the http's middleware.

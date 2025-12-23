@@ -168,6 +168,11 @@ func TestToValue(t *testing.T) {
 			arg:  log.BoolValue(false),
 			want: log.BoolValue(false),
 		},
+		{
+			name: "attribute.Value",
+			arg:  attribute.StringValue("from_attribute"),
+			want: log.StringValue("from_attribute"),
+		},
 	}
 
 	for _, tt := range tests {
