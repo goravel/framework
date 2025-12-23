@@ -70,6 +70,7 @@ func TestRun(t *testing.T) {
 				host := "127.0.0.1:3030"
 				mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
 				mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{"test"}).Once()
+				mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.stats_handlers", name)).Return([]string{"test"}).Once()
 
 				go func() {
 					assert.Nil(t, app.Run(host))
@@ -119,6 +120,7 @@ func TestRun(t *testing.T) {
 				host := "127.0.0.1:3033"
 				mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
 				mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{"test"}).Once()
+				mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.stats_handlers", name)).Return([]string{"test"}).Once()
 
 				go func() {
 					assert.Nil(t, app.Run(host))
@@ -172,6 +174,7 @@ func TestClient(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
 				mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{"trace"}).Once()
+				mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.stats_handlers", name)).Return([]string{"trace"}).Once()
 				app.UnaryClientInterceptorGroups(map[string][]grpc.UnaryClientInterceptor{
 					"trace": {opentracingClient},
 				})
@@ -182,6 +185,7 @@ func TestClient(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
 				mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{"otel"}).Once()
+				mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.stats_handlers", name)).Return([]string{"otel"}).Once()
 				app.ClientStatsHandlerGroups(map[string][]stats.Handler{
 					"otel": {&mockStatsHandler{}},
 				})
@@ -192,6 +196,7 @@ func TestClient(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
 				mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{"trace"}).Once()
+				mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.stats_handlers", name)).Return([]string{"trace"}).Once()
 				app.UnaryClientInterceptorGroups(map[string][]grpc.UnaryClientInterceptor{})
 			},
 		},
@@ -253,6 +258,7 @@ func TestClient_Caching(t *testing.T) {
 		// We expect GetString to be called ONLY ONCE, even though we call Client() twice.
 		mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
 		mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{}).Once()
+		mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.stats_handlers", name)).Return([]string{}).Once()
 
 		conn1, err := app.Client(context.Background(), name)
 		assert.NoError(t, err)
@@ -272,6 +278,7 @@ func TestClient_Caching(t *testing.T) {
 
 		mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
 		mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{}).Once()
+		mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.stats_handlers", name)).Return([]string{}).Once()
 
 		var wg sync.WaitGroup
 		concurrency := 50
@@ -316,6 +323,7 @@ func TestShutdown_ClosesConnections(t *testing.T) {
 
 	mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
 	mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{}).Once()
+	mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.stats_handlers", name)).Return([]string{}).Once()
 
 	conn, err := app.Client(context.Background(), name)
 	assert.NoError(t, err)

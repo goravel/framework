@@ -96,12 +96,15 @@ func (app *Application) Client(ctx context.Context, name string) (*grpc.ClientCo
 		dialOpts = append(dialOpts, grpc.WithChainUnaryInterceptor(interceptors...))
 	}
 
-	if handlers := app.getClientStatsHandlers(interceptorKeys); len(handlers) > 0 {
-		for _, h := range handlers {
-			if h == nil {
-				continue
+	statsHandlerKeys, ok := app.config.Get(fmt.Sprintf("grpc.clients.%s.stats_handlers", name)).([]string)
+	if ok {
+		if handlers := app.getClientStatsHandlers(statsHandlerKeys); len(handlers) > 0 {
+			for _, h := range handlers {
+				if h == nil {
+					continue
+				}
+				dialOpts = append(dialOpts, grpc.WithStatsHandler(h))
 			}
-			dialOpts = append(dialOpts, grpc.WithStatsHandler(h))
 		}
 	}
 
