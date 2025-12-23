@@ -6,7 +6,6 @@ import (
 )
 
 // getContextValues gets all key-value pairs from the context
-// TODO: This method has a high performance overhead; is it necessary to retain it?
 func getContextValues(ctx any, values map[any]any) {
 	contextValues := reflect.Indirect(reflect.ValueOf(ctx))
 	contextKeys := reflect.TypeOf(ctx)
