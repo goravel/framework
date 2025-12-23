@@ -39,22 +39,20 @@ func (s *HandlerTestSuite) TestEnabled() {
 	s.True(s.handler.Enabled(contractslog.LevelError))
 }
 
-func (s *HandlerTestSuite) TestHandleEmptyEntry() {
-	entry := &TestEntry{
-		ctx:   context.Background(),
-		level: contractslog.LevelInfo,
-		time:  s.now,
-	}
-
-	err := s.handler.Handle(entry)
-	s.NoError(err)
-
-	result := s.recorder.Result()
-	s.normalizeObservedTimestamp(result)
-
-	expected := logtest.Recording{
-		logtest.Scope{Name: s.loggerName}: {
-			{
+func (s *HandlerTestSuite) TestHandle() {
+	tests := []struct {
+		name     string
+		entry    *TestEntry
+		expected logtest.Record
+	}{
+		{
+			name: "empty entry",
+			entry: &TestEntry{
+				ctx:   context.Background(),
+				level: contractslog.LevelInfo,
+				time:  s.now,
+			},
+			expected: logtest.Record{
 				Context:      context.Background(),
 				Timestamp:    s.now,
 				Severity:     log.SeverityInfo,
@@ -62,28 +60,15 @@ func (s *HandlerTestSuite) TestHandleEmptyEntry() {
 				Body:         log.StringValue(""),
 			},
 		},
-	}
-
-	logtest.AssertEqual(s.T(), expected, result)
-}
-
-func (s *HandlerTestSuite) TestHandleDebugWithMessage() {
-	entry := &TestEntry{
-		ctx:     s.ctx,
-		level:   contractslog.LevelDebug,
-		time:    s.now,
-		message: "debug message",
-	}
-
-	err := s.handler.Handle(entry)
-	s.NoError(err)
-
-	result := s.recorder.Result()
-	s.normalizeObservedTimestamp(result)
-
-	expected := logtest.Recording{
-		logtest.Scope{Name: s.loggerName}: {
-			{
+		{
+			name: "debug with message",
+			entry: &TestEntry{
+				ctx:     s.ctx,
+				level:   contractslog.LevelDebug,
+				time:    s.now,
+				message: "debug message",
+			},
+			expected: logtest.Record{
 				Context:      s.ctx,
 				Timestamp:    s.now,
 				Severity:     log.SeverityDebug,
@@ -91,31 +76,18 @@ func (s *HandlerTestSuite) TestHandleDebugWithMessage() {
 				Body:         log.StringValue("debug message"),
 			},
 		},
-	}
-
-	logtest.AssertEqual(s.T(), expected, result)
-}
-
-func (s *HandlerTestSuite) TestHandleErrorWithStandardFields() {
-	entry := &TestEntry{
-		ctx:     s.ctx,
-		level:   contractslog.LevelError,
-		time:    s.now,
-		message: "something went wrong",
-		code:    "ERR_500",
-		domain:  "payment",
-		hint:    "check balance",
-	}
-
-	err := s.handler.Handle(entry)
-	s.NoError(err)
-
-	result := s.recorder.Result()
-	s.normalizeObservedTimestamp(result)
-
-	expected := logtest.Recording{
-		logtest.Scope{Name: s.loggerName}: {
-			{
+		{
+			name: "error with standard fields",
+			entry: &TestEntry{
+				ctx:     s.ctx,
+				level:   contractslog.LevelError,
+				time:    s.now,
+				message: "something went wrong",
+				code:    "ERR_500",
+				domain:  "payment",
+				hint:    "check balance",
+			},
+			expected: logtest.Record{
 				Context:      s.ctx,
 				Timestamp:    s.now,
 				Severity:     log.SeverityError,
@@ -128,34 +100,21 @@ func (s *HandlerTestSuite) TestHandleErrorWithStandardFields() {
 				},
 			},
 		},
-	}
-
-	logtest.AssertEqual(s.T(), expected, result)
-}
-
-func (s *HandlerTestSuite) TestHandleWithContextData() {
-	entry := &TestEntry{
-		ctx:   s.ctx,
-		level: contractslog.LevelInfo,
-		time:  s.now,
-		with: map[string]any{
-			"foo": "bar",
-		},
-		data: map[string]any{
-			"user_id": 42,
-			"active":  true,
-		},
-	}
-
-	err := s.handler.Handle(entry)
-	s.NoError(err)
-
-	result := s.recorder.Result()
-	s.normalizeObservedTimestamp(result)
-
-	expected := logtest.Recording{
-		logtest.Scope{Name: s.loggerName}: {
-			{
+		{
+			name: "with context data",
+			entry: &TestEntry{
+				ctx:   s.ctx,
+				level: contractslog.LevelInfo,
+				time:  s.now,
+				with: map[string]any{
+					"foo": "bar",
+				},
+				data: map[string]any{
+					"user_id": 42,
+					"active":  true,
+				},
+			},
+			expected: logtest.Record{
 				Context:      s.ctx,
 				Timestamp:    s.now,
 				Severity:     log.SeverityInfo,
@@ -168,36 +127,23 @@ func (s *HandlerTestSuite) TestHandleWithContextData() {
 				},
 			},
 		},
-	}
-
-	logtest.AssertEqual(s.T(), expected, result)
-}
-
-func (s *HandlerTestSuite) TestHandleWithComplexTypes() {
-	entry := &TestEntry{
-		ctx:   s.ctx,
-		level: contractslog.LevelWarning,
-		time:  s.now,
-		user: map[string]any{
-			"id":   1,
-			"role": "admin",
-		},
-		tags: []string{"critical", "auth"},
-		request: map[string]any{
-			"method": "GET",
-			"url":    "/login",
-		},
-	}
-
-	err := s.handler.Handle(entry)
-	s.NoError(err)
-
-	result := s.recorder.Result()
-	s.normalizeObservedTimestamp(result)
-
-	expected := logtest.Recording{
-		logtest.Scope{Name: s.loggerName}: {
-			{
+		{
+			name: "with complex types",
+			entry: &TestEntry{
+				ctx:   s.ctx,
+				level: contractslog.LevelWarning,
+				time:  s.now,
+				user: map[string]any{
+					"id":   1,
+					"role": "admin",
+				},
+				tags: []string{"critical", "auth"},
+				request: map[string]any{
+					"method": "GET",
+					"url":    "/login",
+				},
+			},
+			expected: logtest.Record{
 				Context:      s.ctx,
 				Timestamp:    s.now,
 				Severity:     log.SeverityWarn,
@@ -219,27 +165,14 @@ func (s *HandlerTestSuite) TestHandleWithComplexTypes() {
 				},
 			},
 		},
-	}
-
-	logtest.AssertEqual(s.T(), expected, result)
-}
-
-func (s *HandlerTestSuite) TestHandleWithPanicLevel() {
-	entry := &TestEntry{
-		ctx:   s.ctx,
-		level: contractslog.LevelPanic,
-		time:  s.now,
-	}
-
-	err := s.handler.Handle(entry)
-	s.NoError(err)
-
-	result := s.recorder.Result()
-	s.normalizeObservedTimestamp(result)
-
-	expected := logtest.Recording{
-		logtest.Scope{Name: s.loggerName}: {
-			{
+		{
+			name: "panic level",
+			entry: &TestEntry{
+				ctx:   s.ctx,
+				level: contractslog.LevelPanic,
+				time:  s.now,
+			},
+			expected: logtest.Record{
 				Context:      s.ctx,
 				Timestamp:    s.now,
 				Severity:     log.SeverityFatal4,
@@ -249,7 +182,27 @@ func (s *HandlerTestSuite) TestHandleWithPanicLevel() {
 		},
 	}
 
-	logtest.AssertEqual(s.T(), expected, result)
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			// Reset the recorder for each test case
+			s.recorder = logtest.NewRecorder()
+			s.handler = &handler{
+				logger: s.recorder.Logger(s.loggerName),
+			}
+
+			err := s.handler.Handle(tt.entry)
+			s.NoError(err)
+
+			result := s.recorder.Result()
+			s.normalizeObservedTimestamp(result)
+
+			expected := logtest.Recording{
+				logtest.Scope{Name: s.loggerName}: {tt.expected},
+			}
+
+			logtest.AssertEqual(s.T(), expected, result)
+		})
+	}
 }
 
 func (s *HandlerTestSuite) normalizeObservedTimestamp(result logtest.Recording) {
