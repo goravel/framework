@@ -1,6 +1,9 @@
 package foundation
 
 import (
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/stats"
+
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/contracts/database/seeder"
@@ -12,7 +15,6 @@ import (
 	"github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/foundation/configuration"
 	"github.com/goravel/framework/support/color"
-	"google.golang.org/grpc"
 )
 
 func Setup() foundation.ApplicationBuilder {
@@ -27,7 +29,9 @@ type ApplicationBuilder struct {
 	eventToListeners           map[event.Event][]event.Listener
 	filters                    []validation.Filter
 	grpcClientInterceptors     map[string][]grpc.UnaryClientInterceptor
+	grpcClientStatsHandlers    map[string][]stats.Handler
 	grpcServerInterceptors     []grpc.UnaryServerInterceptor
+	grpcServerStatsHandlers    []stats.Handler
 	jobs                       []queue.Job
 	middleware                 func(middleware contractsconfiguration.Middleware)
 	migrations                 []schema.Migration
@@ -40,7 +44,9 @@ type ApplicationBuilder struct {
 
 func NewApplicationBuilder(app foundation.Application) *ApplicationBuilder {
 	return &ApplicationBuilder{
-		app: app,
+		app:                     app,
+		grpcClientInterceptors:  make(map[string][]grpc.UnaryClientInterceptor),
+		grpcClientStatsHandlers: make(map[string][]stats.Handler),
 	}
 }
 
@@ -73,8 +79,8 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 			routeFacade.SetGlobalMiddleware(middleware.GetGlobalMiddleware())
 
 			// Set up custom recover function
-			if recover := middleware.GetRecover(); recover != nil {
-				routeFacade.Recover(recover)
+			if recoveryHandler := middleware.GetRecover(); recoveryHandler != nil {
+				routeFacade.Recover(recoveryHandler)
 			}
 		}
 	}
@@ -135,7 +141,9 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 	}
 
 	// Register gRPC interceptors
-	if len(r.grpcClientInterceptors) > 0 || len(r.grpcServerInterceptors) > 0 {
+	if len(r.grpcClientInterceptors) > 0 || len(r.grpcServerInterceptors) > 0 ||
+		len(r.grpcClientStatsHandlers) > 0 || len(r.grpcServerStatsHandlers) > 0 {
+
 		grpcFacade := r.app.MakeGrpc()
 		if grpcFacade == nil {
 			color.Errorln("gRPC facade not found, please install it first: ./artisan package:install Grpc")
@@ -145,6 +153,12 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 			}
 			if len(r.grpcServerInterceptors) > 0 {
 				grpcFacade.UnaryServerInterceptors(r.grpcServerInterceptors)
+			}
+			if len(r.grpcClientStatsHandlers) > 0 {
+				grpcFacade.ClientStatsHandlerGroups(r.grpcClientStatsHandlers)
+			}
+			if len(r.grpcServerStatsHandlers) > 0 {
+				grpcFacade.ServerStatsHandlers(r.grpcServerStatsHandlers)
 			}
 		}
 	}
@@ -210,13 +224,29 @@ func (r *ApplicationBuilder) WithFilters(filters []validation.Filter) foundation
 }
 
 func (r *ApplicationBuilder) WithGrpcClientInterceptors(groupToInterceptors map[string][]grpc.UnaryClientInterceptor) foundation.ApplicationBuilder {
-	r.grpcClientInterceptors = groupToInterceptors
+	for group, interceptors := range groupToInterceptors {
+		r.grpcClientInterceptors[group] = append(r.grpcClientInterceptors[group], interceptors...)
+	}
+
+	return r
+}
+
+func (r *ApplicationBuilder) WithGrpcClientStatsHandlers(groupToHandlers map[string][]stats.Handler) foundation.ApplicationBuilder {
+	for group, handlers := range groupToHandlers {
+		r.grpcClientStatsHandlers[group] = append(r.grpcClientStatsHandlers[group], handlers...)
+	}
 
 	return r
 }
 
 func (r *ApplicationBuilder) WithGrpcServerInterceptors(interceptors []grpc.UnaryServerInterceptor) foundation.ApplicationBuilder {
-	r.grpcServerInterceptors = interceptors
+	r.grpcServerInterceptors = append(r.grpcServerInterceptors, interceptors...)
+
+	return r
+}
+
+func (r *ApplicationBuilder) WithGrpcServerStatsHandlers(handlers []stats.Handler) foundation.ApplicationBuilder {
+	r.grpcServerStatsHandlers = append(r.grpcServerStatsHandlers, handlers...)
 
 	return r
 }

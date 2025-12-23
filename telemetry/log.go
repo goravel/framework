@@ -62,6 +62,7 @@ func NewLoggerProvider(ctx context.Context, cfg Config, opts ...sdklog.LoggerPro
 	}
 
 	providerOptions := []sdklog.LoggerProviderOption{
+		// TODO: add support for SimpleProcessor
 		sdklog.WithProcessor(sdklog.NewBatchProcessor(exporter, processorOptions...)),
 	}
 	providerOptions = append(providerOptions, opts...)

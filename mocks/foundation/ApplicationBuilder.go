@@ -22,6 +22,8 @@ import (
 
 	seeder "github.com/goravel/framework/contracts/database/seeder"
 
+	stats "google.golang.org/grpc/stats"
+
 	validation "github.com/goravel/framework/contracts/validation"
 )
 
@@ -357,6 +359,54 @@ func (_c *ApplicationBuilder_WithGrpcClientInterceptors_Call) RunAndReturn(run f
 	return _c
 }
 
+// WithGrpcClientStatsHandlers provides a mock function with given fields: groupToHandlers
+func (_m *ApplicationBuilder) WithGrpcClientStatsHandlers(groupToHandlers map[string][]stats.Handler) foundation.ApplicationBuilder {
+	ret := _m.Called(groupToHandlers)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithGrpcClientStatsHandlers")
+	}
+
+	var r0 foundation.ApplicationBuilder
+	if rf, ok := ret.Get(0).(func(map[string][]stats.Handler) foundation.ApplicationBuilder); ok {
+		r0 = rf(groupToHandlers)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(foundation.ApplicationBuilder)
+		}
+	}
+
+	return r0
+}
+
+// ApplicationBuilder_WithGrpcClientStatsHandlers_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithGrpcClientStatsHandlers'
+type ApplicationBuilder_WithGrpcClientStatsHandlers_Call struct {
+	*mock.Call
+}
+
+// WithGrpcClientStatsHandlers is a helper method to define mock.On call
+//   - groupToHandlers map[string][]stats.Handler
+func (_e *ApplicationBuilder_Expecter) WithGrpcClientStatsHandlers(groupToHandlers interface{}) *ApplicationBuilder_WithGrpcClientStatsHandlers_Call {
+	return &ApplicationBuilder_WithGrpcClientStatsHandlers_Call{Call: _e.mock.On("WithGrpcClientStatsHandlers", groupToHandlers)}
+}
+
+func (_c *ApplicationBuilder_WithGrpcClientStatsHandlers_Call) Run(run func(groupToHandlers map[string][]stats.Handler)) *ApplicationBuilder_WithGrpcClientStatsHandlers_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(map[string][]stats.Handler))
+	})
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithGrpcClientStatsHandlers_Call) Return(_a0 foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcClientStatsHandlers_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithGrpcClientStatsHandlers_Call) RunAndReturn(run func(map[string][]stats.Handler) foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcClientStatsHandlers_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // WithGrpcServerInterceptors provides a mock function with given fields: interceptors
 func (_m *ApplicationBuilder) WithGrpcServerInterceptors(interceptors []grpc.UnaryServerInterceptor) foundation.ApplicationBuilder {
 	ret := _m.Called(interceptors)
@@ -401,6 +451,54 @@ func (_c *ApplicationBuilder_WithGrpcServerInterceptors_Call) Return(_a0 foundat
 }
 
 func (_c *ApplicationBuilder_WithGrpcServerInterceptors_Call) RunAndReturn(run func([]grpc.UnaryServerInterceptor) foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcServerInterceptors_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithGrpcServerStatsHandlers provides a mock function with given fields: handlers
+func (_m *ApplicationBuilder) WithGrpcServerStatsHandlers(handlers []stats.Handler) foundation.ApplicationBuilder {
+	ret := _m.Called(handlers)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithGrpcServerStatsHandlers")
+	}
+
+	var r0 foundation.ApplicationBuilder
+	if rf, ok := ret.Get(0).(func([]stats.Handler) foundation.ApplicationBuilder); ok {
+		r0 = rf(handlers)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(foundation.ApplicationBuilder)
+		}
+	}
+
+	return r0
+}
+
+// ApplicationBuilder_WithGrpcServerStatsHandlers_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithGrpcServerStatsHandlers'
+type ApplicationBuilder_WithGrpcServerStatsHandlers_Call struct {
+	*mock.Call
+}
+
+// WithGrpcServerStatsHandlers is a helper method to define mock.On call
+//   - handlers []stats.Handler
+func (_e *ApplicationBuilder_Expecter) WithGrpcServerStatsHandlers(handlers interface{}) *ApplicationBuilder_WithGrpcServerStatsHandlers_Call {
+	return &ApplicationBuilder_WithGrpcServerStatsHandlers_Call{Call: _e.mock.On("WithGrpcServerStatsHandlers", handlers)}
+}
+
+func (_c *ApplicationBuilder_WithGrpcServerStatsHandlers_Call) Run(run func(handlers []stats.Handler)) *ApplicationBuilder_WithGrpcServerStatsHandlers_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].([]stats.Handler))
+	})
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithGrpcServerStatsHandlers_Call) Return(_a0 foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcServerStatsHandlers_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithGrpcServerStatsHandlers_Call) RunAndReturn(run func([]stats.Handler) foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcServerStatsHandlers_Call {
 	_c.Call.Return(run)
 	return _c
 }

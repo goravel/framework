@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"sync"
@@ -14,8 +15,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/stats"
 
 	configmock "github.com/goravel/framework/mocks/config"
+	"github.com/goravel/framework/support/color"
 )
 
 type contextKey int
@@ -36,14 +39,23 @@ func TestRun(t *testing.T) {
 		mockConfig = configmock.NewConfig(t)
 
 		app = NewApplication(mockConfig)
+
+		// Configure Handlers (Must be done BEFORE app.Server() is called)
 		app.UnaryServerInterceptors([]grpc.UnaryServerInterceptor{
 			serverInterceptor,
 		})
+
+		app.ServerStatsHandlers([]stats.Handler{
+			&mockStatsHandler{},
+		})
+
 		app.UnaryClientInterceptorGroups(map[string][]grpc.UnaryClientInterceptor{
 			"test": {
 				clientInterceptor,
 			},
 		})
+
+		// Register Service (This triggers app.Server() creation and freezes config)
 		RegisterTestServiceServer(app.Server(), &TestController{})
 	}
 
@@ -58,6 +70,7 @@ func TestRun(t *testing.T) {
 				host := "127.0.0.1:3030"
 				mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
 				mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{"test"}).Once()
+				mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.stats_handlers", name)).Return([]string{"test"}).Once()
 
 				go func() {
 					assert.Nil(t, app.Run(host))
@@ -107,6 +120,7 @@ func TestRun(t *testing.T) {
 				host := "127.0.0.1:3033"
 				mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
 				mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{"test"}).Once()
+				mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.stats_handlers", name)).Return([]string{"test"}).Once()
 
 				go func() {
 					assert.Nil(t, app.Run(host))
@@ -131,6 +145,8 @@ func TestRun(t *testing.T) {
 			beforeEach()
 			test.setup()
 			mockConfig.AssertExpectations(t)
+			// Cleanup: Shutdown to close the server and release the port
+			_ = app.Shutdown(true)
 		})
 	}
 }
@@ -158,8 +174,20 @@ func TestClient(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
 				mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{"trace"}).Once()
+				mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.stats_handlers", name)).Return([]string{"trace"}).Once()
 				app.UnaryClientInterceptorGroups(map[string][]grpc.UnaryClientInterceptor{
 					"trace": {opentracingClient},
+				})
+			},
+		},
+		{
+			name: "success with stats handler",
+			setup: func() {
+				mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
+				mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{"otel"}).Once()
+				mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.stats_handlers", name)).Return([]string{"otel"}).Once()
+				app.ClientStatsHandlerGroups(map[string][]stats.Handler{
+					"otel": {&mockStatsHandler{}},
 				})
 			},
 		},
@@ -168,6 +196,7 @@ func TestClient(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
 				mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{"trace"}).Once()
+				mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.stats_handlers", name)).Return([]string{"trace"}).Once()
 				app.UnaryClientInterceptorGroups(map[string][]grpc.UnaryClientInterceptor{})
 			},
 		},
@@ -229,6 +258,7 @@ func TestClient_Caching(t *testing.T) {
 		// We expect GetString to be called ONLY ONCE, even though we call Client() twice.
 		mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
 		mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{}).Once()
+		mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.stats_handlers", name)).Return([]string{}).Once()
 
 		conn1, err := app.Client(context.Background(), name)
 		assert.NoError(t, err)
@@ -248,6 +278,7 @@ func TestClient_Caching(t *testing.T) {
 
 		mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
 		mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{}).Once()
+		mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.stats_handlers", name)).Return([]string{}).Once()
 
 		var wg sync.WaitGroup
 		concurrency := 50
@@ -279,6 +310,66 @@ func TestClient_Caching(t *testing.T) {
 	})
 }
 
+func TestShutdown_ClosesConnections(t *testing.T) {
+	var (
+		app        *Application
+		mockConfig *configmock.Config
+		name       = "cleanup-service"
+		host       = "127.0.0.1:3037"
+	)
+
+	mockConfig = configmock.NewConfig(t)
+	app = NewApplication(mockConfig)
+
+	mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
+	mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{}).Once()
+	mockConfig.EXPECT().Get(fmt.Sprintf("grpc.clients.%s.stats_handlers", name)).Return([]string{}).Once()
+
+	conn, err := app.Client(context.Background(), name)
+	assert.NoError(t, err)
+	assert.NotNil(t, conn)
+	assert.NotEqual(t, connectivity.Shutdown, conn.GetState())
+
+	err = app.Shutdown()
+	assert.NoError(t, err)
+
+	assert.Equal(t, connectivity.Shutdown, conn.GetState(), "Cached connection should be closed after App shutdown")
+}
+
+func TestServerStatsHandlers(t *testing.T) {
+	mockConfig := configmock.NewConfig(t)
+	app := NewApplication(mockConfig)
+
+	// Initial Call -> Freezes Configuration
+	initialServer := app.Server()
+	assert.NotNil(t, initialServer)
+
+	// Add Handlers AFTER freeze -> Should trigger warning
+	got := color.CaptureOutput(func(io.Writer) {
+		app.ServerStatsHandlers([]stats.Handler{&mockStatsHandler{}})
+	})
+
+	assert.Contains(t, got, "[GRPC] Server already initialized; server stats handler registration ignored.")
+	assert.Same(t, initialServer, app.Server(), "Server instance should be a singleton (frozen) after initialization")
+}
+
+func TestUnaryServerInterceptors_FreezeCheck(t *testing.T) {
+	mockConfig := configmock.NewConfig(t)
+	app := NewApplication(mockConfig)
+
+	// Initial Call -> Freezes Configuration
+	initialServer := app.Server()
+	assert.NotNil(t, initialServer)
+
+	// Add Interceptor AFTER freeze -> Should trigger warning
+	got := color.CaptureOutput(func(io.Writer) {
+		app.UnaryServerInterceptors([]grpc.UnaryServerInterceptor{serverInterceptor})
+	})
+
+	assert.Contains(t, got, "[GRPC] Server already initialized; unary server interceptor registration ignored.")
+	assert.Same(t, initialServer, app.Server(), "Server instance should be a singleton (frozen) after initialization")
+}
+
 func TestShutdown(t *testing.T) {
 	var (
 		app        *Application
@@ -298,16 +389,24 @@ func TestShutdown(t *testing.T) {
 		{
 			name: "graceful shutdown",
 			setup: func() {
-				app.server = grpc.NewServer()
+				// Trigger Lazy Init so shutdown has something to stop
+				_ = app.Server()
 			},
 			force: false,
 		},
 		{
 			name: "force shutdown",
 			setup: func() {
-				app.server = grpc.NewServer()
+				_ = app.Server()
 			},
 			force: true,
+		},
+		{
+			name: "shutdown without server init",
+			setup: func() {
+				// Do not call app.Server() - verify no panic
+			},
+			force: false,
 		},
 	}
 
@@ -400,6 +499,17 @@ func clientInterceptor(ctx context.Context, method string, req, reply any, cc *g
 
 	return nil
 }
+
+type mockStatsHandler struct{}
+
+func (m *mockStatsHandler) TagRPC(ctx context.Context, _ *stats.RPCTagInfo) context.Context {
+	return ctx
+}
+func (m *mockStatsHandler) HandleRPC(context.Context, stats.RPCStats) {}
+func (m *mockStatsHandler) TagConn(ctx context.Context, _ *stats.ConnTagInfo) context.Context {
+	return ctx
+}
+func (m *mockStatsHandler) HandleConn(context.Context, stats.ConnStats) {}
 
 type TestController struct {
 	UnimplementedTestServiceServer

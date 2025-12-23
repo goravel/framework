@@ -13,9 +13,10 @@ import (
 	"strconv"
 	"time"
 
-	contractslog "github.com/goravel/framework/contracts/log"
 	"go.opentelemetry.io/otel/attribute"
 	otellog "go.opentelemetry.io/otel/log"
+
+	contractslog "github.com/goravel/framework/contracts/log"
 )
 
 func toSeverity(level contractslog.Level) otellog.Severity {
@@ -98,7 +99,7 @@ func toValue(v any) otellog.Value {
 	case fmt.Stringer:
 		return otellog.StringValue(val.String())
 	case attribute.Value:
-		return toValue(val.AsInterface())
+		return otellog.ValueFromAttribute(val)
 	}
 
 	return toReflectedValue(v)

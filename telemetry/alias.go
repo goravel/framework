@@ -9,6 +9,8 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+type KeyValue = attribute.KeyValue
+
 // Attribute functions for creating span attributes.
 var (
 	Bool         = attribute.Bool
