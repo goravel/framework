@@ -116,3 +116,10 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 
 	return instance, nil
 }
+
+func ResetConnections() {
+	connectionToDBLock.Lock()
+	defer connectionToDBLock.Unlock()
+
+	connectionToDB = make(map[string]*gorm.DB)
+}
