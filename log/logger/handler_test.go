@@ -34,12 +34,13 @@ func (s *IOHandlerTestSuite) SetupTest() {
 }
 
 func (s *IOHandlerTestSuite) TestNewIOHandler() {
-	handler := NewIOHandler(s.buffer, s.mockConfig, s.json, log.LevelDebug)
+	handler := NewIOHandler(s.buffer, s.mockConfig, s.json, log.LevelDebug, FormatterText)
 	s.NotNil(handler)
 	s.Equal(s.buffer, handler.writer)
 	s.Equal(s.mockConfig, handler.config)
 	s.Equal(s.json, handler.json)
 	s.Equal(log.LevelDebug, handler.level)
+	s.Equal(FormatterText, handler.formatter)
 }
 
 func (s *IOHandlerTestSuite) TestEnabled() {
@@ -83,7 +84,7 @@ func (s *IOHandlerTestSuite) TestEnabled() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			handler := NewIOHandler(s.buffer, s.mockConfig, s.json, tt.handlerLevel)
+			handler := NewIOHandler(s.buffer, s.mockConfig, s.json, tt.handlerLevel, FormatterText)
 			result := handler.Enabled(log.Level(tt.recordLevel))
 			s.Equal(tt.expectEnabled, result)
 		})
@@ -93,7 +94,7 @@ func (s *IOHandlerTestSuite) TestEnabled() {
 func (s *IOHandlerTestSuite) TestHandle() {
 	s.mockConfig.EXPECT().GetString("app.env").Return("test").Once()
 
-	handler := NewIOHandler(s.buffer, s.mockConfig, s.json, log.LevelDebug)
+	handler := NewIOHandler(s.buffer, s.mockConfig, s.json, log.LevelDebug, FormatterText)
 
 	entry := &mockEntry{
 		time:    time.Now(),
@@ -109,7 +110,7 @@ func (s *IOHandlerTestSuite) TestHandle() {
 func (s *IOHandlerTestSuite) TestHandleWithAllFields() {
 	s.mockConfig.EXPECT().GetString("app.env").Return("test").Once()
 
-	handler := NewIOHandler(s.buffer, s.mockConfig, s.json, log.LevelDebug)
+	handler := NewIOHandler(s.buffer, s.mockConfig, s.json, log.LevelDebug, FormatterText)
 
 	ctx := context.WithValue(context.Background(), handlerTestContextKey("key"), "value")
 	entry := &mockEntry{
@@ -148,7 +149,7 @@ func (s *IOHandlerTestSuite) TestHandleWithAllFields() {
 func (s *IOHandlerTestSuite) TestHandleEmptyOptionalFields() {
 	s.mockConfig.EXPECT().GetString("app.env").Return("test").Once()
 
-	handler := NewIOHandler(s.buffer, s.mockConfig, s.json, log.LevelDebug)
+	handler := NewIOHandler(s.buffer, s.mockConfig, s.json, log.LevelDebug, FormatterText)
 
 	entry := &mockEntry{
 		time:    time.Now(),
@@ -257,10 +258,11 @@ func (s *ConsoleHandlerTestSuite) SetupTest() {
 }
 
 func (s *ConsoleHandlerTestSuite) TestNewConsoleHandler() {
-	handler := NewConsoleHandler(s.mockConfig, s.json, log.LevelInfo)
+	handler := NewConsoleHandler(s.mockConfig, s.json, log.LevelInfo, FormatterText)
 	s.NotNil(handler)
 	s.NotNil(handler.IOHandler)
 	s.Equal(log.LevelInfo, handler.level)
+	s.Equal(FormatterText, handler.formatter)
 }
 
 type mockEntry struct {
@@ -341,30 +343,20 @@ func (e *mockEntry) With() map[string]any {
 	return e.with
 }
 
-func TestNewIOHandlerWithFormatter(t *testing.T) {
+func TestNewIOHandler(t *testing.T) {
 	mockConfig := mocksconfig.NewConfig(t)
 	j := json.New()
 	buffer := new(bytes.Buffer)
 
-	// Test default formatter (text)
-	handler := NewIOHandlerWithFormatter(buffer, mockConfig, j, log.LevelDebug, "")
-	assert.NotNil(t, handler)
-	assert.Equal(t, FormatterText, handler.formatter)
-
 	// Test text formatter
-	handler = NewIOHandlerWithFormatter(buffer, mockConfig, j, log.LevelDebug, FormatterText)
+	handler := NewIOHandler(buffer, mockConfig, j, log.LevelDebug, FormatterText)
 	assert.NotNil(t, handler)
 	assert.Equal(t, FormatterText, handler.formatter)
 
 	// Test json formatter
-	handler = NewIOHandlerWithFormatter(buffer, mockConfig, j, log.LevelDebug, FormatterJson)
+	handler = NewIOHandler(buffer, mockConfig, j, log.LevelDebug, FormatterJson)
 	assert.NotNil(t, handler)
 	assert.Equal(t, FormatterJson, handler.formatter)
-
-	// Test invalid formatter defaults to text
-	handler = NewIOHandlerWithFormatter(buffer, mockConfig, j, log.LevelDebug, "invalid")
-	assert.NotNil(t, handler)
-	assert.Equal(t, FormatterText, handler.formatter)
 }
 
 func TestIOHandlerJSONFormat(t *testing.T) {
@@ -374,7 +366,7 @@ func TestIOHandlerJSONFormat(t *testing.T) {
 	j := json.New()
 	buffer := new(bytes.Buffer)
 
-	handler := NewIOHandlerWithFormatter(buffer, mockConfig, j, log.LevelDebug, FormatterJson)
+	handler := NewIOHandler(buffer, mockConfig, j, log.LevelDebug, FormatterJson)
 
 	entry := &mockEntry{
 		time:    time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
@@ -399,7 +391,7 @@ func TestIOHandlerJSONFormatWithAllFields(t *testing.T) {
 	j := json.New()
 	buffer := new(bytes.Buffer)
 
-	handler := NewIOHandlerWithFormatter(buffer, mockConfig, j, log.LevelDebug, FormatterJson)
+	handler := NewIOHandler(buffer, mockConfig, j, log.LevelDebug, FormatterJson)
 
 	ctx := context.WithValue(context.Background(), handlerTestContextKey("key"), "value")
 	entry := &mockEntry{
@@ -445,7 +437,7 @@ func TestIOHandlerJSONFormatEmptyOptionalFields(t *testing.T) {
 	j := json.New()
 	buffer := new(bytes.Buffer)
 
-	handler := NewIOHandlerWithFormatter(buffer, mockConfig, j, log.LevelDebug, FormatterJson)
+	handler := NewIOHandler(buffer, mockConfig, j, log.LevelDebug, FormatterJson)
 
 	entry := &mockEntry{
 		time:    time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
@@ -474,27 +466,17 @@ func TestIOHandlerJSONFormatEmptyOptionalFields(t *testing.T) {
 	assert.NotContains(t, output, `"trace"`)
 }
 
-func TestNewConsoleHandlerWithFormatter(t *testing.T) {
+func TestNewConsoleHandlerFormatter(t *testing.T) {
 	mockConfig := mocksconfig.NewConfig(t)
 	j := json.New()
 
-	// Test default formatter (text)
-	handler := NewConsoleHandlerWithFormatter(mockConfig, j, log.LevelInfo, "")
-	assert.NotNil(t, handler)
-	assert.Equal(t, FormatterText, handler.formatter)
-
 	// Test text formatter
-	handler = NewConsoleHandlerWithFormatter(mockConfig, j, log.LevelInfo, FormatterText)
+	handler := NewConsoleHandler(mockConfig, j, log.LevelInfo, FormatterText)
 	assert.NotNil(t, handler)
 	assert.Equal(t, FormatterText, handler.formatter)
 
 	// Test json formatter
-	handler = NewConsoleHandlerWithFormatter(mockConfig, j, log.LevelInfo, FormatterJson)
+	handler = NewConsoleHandler(mockConfig, j, log.LevelInfo, FormatterJson)
 	assert.NotNil(t, handler)
 	assert.Equal(t, FormatterJson, handler.formatter)
-
-	// Test invalid formatter defaults to text
-	handler = NewConsoleHandlerWithFormatter(mockConfig, j, log.LevelInfo, "invalid")
-	assert.NotNil(t, handler)
-	assert.Equal(t, FormatterText, handler.formatter)
 }

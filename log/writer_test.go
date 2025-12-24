@@ -78,9 +78,9 @@ func TestWriter(t *testing.T) {
 			name: "No Debug",
 			setup: func() {
 				mockConfig.EXPECT().GetString("logging.channels.daily.level").Return("info").Once()
-				mockConfig.EXPECT().GetString("logging.channels.daily.formatter").Return("").Once()
+				mockConfig.EXPECT().GetString("logging.channels.daily.formatter", "text").Return("text").Once()
 				mockConfig.EXPECT().GetString("logging.channels.single.level").Return("info").Once()
-				mockConfig.EXPECT().GetString("logging.channels.single.formatter").Return("").Once()
+				mockConfig.EXPECT().GetString("logging.channels.single.formatter", "text").Return("text").Once()
 				log, err = NewApplication(mockConfig, j)
 				log.Debug("No Debug Goravel")
 			},
@@ -563,9 +563,9 @@ func initMockConfig() *configmock.Config {
 
 func mockDriverConfig(mockConfig *configmock.Config) {
 	mockConfig.EXPECT().GetString("logging.channels.daily.level").Return("debug").Once()
-	mockConfig.EXPECT().GetString("logging.channels.daily.formatter").Return("").Once()
+	mockConfig.EXPECT().GetString("logging.channels.daily.formatter", "text").Return("text").Once()
 	mockConfig.EXPECT().GetString("logging.channels.single.level").Return("debug").Once()
-	mockConfig.EXPECT().GetString("logging.channels.single.formatter").Return("").Once()
+	mockConfig.EXPECT().GetString("logging.channels.single.formatter", "text").Return("text").Once()
 	mockConfig.EXPECT().GetString("app.env").Return("test").Maybe()
 }
 

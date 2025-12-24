@@ -29,22 +29,8 @@ type IOHandler struct {
 	formatter string
 }
 
-// NewIOHandler creates a new io handler with text formatter (default).
-func NewIOHandler(w io.Writer, config config.Config, json foundation.Json, level slog.Leveler) *IOHandler {
-	return &IOHandler{
-		writer:    w,
-		config:    config,
-		json:      json,
-		level:     level,
-		formatter: FormatterText,
-	}
-}
-
-// NewIOHandlerWithFormatter creates a new io handler with the specified formatter.
-func NewIOHandlerWithFormatter(w io.Writer, config config.Config, json foundation.Json, level slog.Leveler, formatter string) *IOHandler {
-	if formatter != FormatterJson && formatter != FormatterText {
-		formatter = FormatterText
-	}
+// NewIOHandler creates a new io handler with the specified formatter.
+func NewIOHandler(w io.Writer, config config.Config, json foundation.Json, level slog.Leveler, formatter string) *IOHandler {
 	return &IOHandler{
 		writer:    w,
 		config:    config,
@@ -195,24 +181,8 @@ type ConsoleHandler struct {
 	*IOHandler
 }
 
-// NewConsoleHandler creates a new console handler with text formatter (default).
-func NewConsoleHandler(config config.Config, json foundation.Json, level slog.Leveler) *ConsoleHandler {
-	return &ConsoleHandler{
-		IOHandler: &IOHandler{
-			writer:    os.Stdout,
-			config:    config,
-			json:      json,
-			level:     level,
-			formatter: FormatterText,
-		},
-	}
-}
-
-// NewConsoleHandlerWithFormatter creates a new console handler with the specified formatter.
-func NewConsoleHandlerWithFormatter(config config.Config, json foundation.Json, level slog.Leveler, formatter string) *ConsoleHandler {
-	if formatter != FormatterJson && formatter != FormatterText {
-		formatter = FormatterText
-	}
+// NewConsoleHandler creates a new console handler with the specified formatter.
+func NewConsoleHandler(config config.Config, json foundation.Json, level slog.Leveler, formatter string) *ConsoleHandler {
 	return &ConsoleHandler{
 		IOHandler: &IOHandler{
 			writer:    os.Stdout,

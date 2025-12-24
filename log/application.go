@@ -124,8 +124,8 @@ func getHandlers(config config.Config, json foundation.Json, channel string) ([]
 		handlers := []slog.Handler{HandlerToSlogHandler(handler)}
 		if config.GetBool(channelPath + ".print") {
 			level := logger.GetLevelFromString(config.GetString(channelPath + ".level"))
-			formatter := config.GetString(channelPath + ".formatter")
-			handlers = append(handlers, HandlerToSlogHandler(logger.NewConsoleHandlerWithFormatter(config, json, level, formatter)))
+			formatter := config.GetString(channelPath+".formatter", logger.FormatterText)
+			handlers = append(handlers, HandlerToSlogHandler(logger.NewConsoleHandler(config, json, level, formatter)))
 		}
 		return handlers, nil
 
@@ -139,8 +139,8 @@ func getHandlers(config config.Config, json foundation.Json, channel string) ([]
 		handlers := []slog.Handler{HandlerToSlogHandler(handler)}
 		if config.GetBool(channelPath + ".print") {
 			level := logger.GetLevelFromString(config.GetString(channelPath + ".level"))
-			formatter := config.GetString(channelPath + ".formatter")
-			handlers = append(handlers, HandlerToSlogHandler(logger.NewConsoleHandlerWithFormatter(config, json, level, formatter)))
+			formatter := config.GetString(channelPath+".formatter", logger.FormatterText)
+			handlers = append(handlers, HandlerToSlogHandler(logger.NewConsoleHandler(config, json, level, formatter)))
 		}
 		return handlers, nil
 
@@ -154,8 +154,8 @@ func getHandlers(config config.Config, json foundation.Json, channel string) ([]
 		handlers := []slog.Handler{HandlerToSlogHandler(handler)}
 		if config.GetBool(channelPath + ".print") {
 			level := logger.GetLevelFromString(config.GetString(channelPath + ".level"))
-			formatter := config.GetString(channelPath + ".formatter")
-			handlers = append(handlers, HandlerToSlogHandler(logger.NewConsoleHandlerWithFormatter(config, json, level, formatter)))
+			formatter := config.GetString(channelPath+".formatter", logger.FormatterText)
+			handlers = append(handlers, HandlerToSlogHandler(logger.NewConsoleHandler(config, json, level, formatter)))
 		}
 		return handlers, nil
 
