@@ -141,8 +141,8 @@ func (s *IOHandlerTestSuite) TestHandleWithAllFields() {
 	s.Contains(output, "[Request]")
 	s.Contains(output, "[Response]")
 	s.Contains(output, "[Tags] [critical urgent]")
-	s.Contains(output, "[User]")
-	s.Contains(output, "[With]")
+	s.Contains(output, "[User] map[id:123 name:test]")
+	s.Contains(output, "[With] map[extra:data]")
 }
 
 func (s *IOHandlerTestSuite) TestHandleEmptyOptionalFields() {
