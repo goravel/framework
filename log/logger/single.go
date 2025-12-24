@@ -1,15 +1,13 @@
 package logger
 
 import (
+	"os"
 	"path/filepath"
-
-	"github.com/rifflock/lfshook"
-	"github.com/sirupsen/logrus"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/log/formatter"
 	"github.com/goravel/framework/support"
 )
 
@@ -25,72 +23,35 @@ func NewSingle(config config.Config, json foundation.Json) *Single {
 	}
 }
 
-func (single *Single) Handle(channel string) (logrus.Hook, error) {
+func (single *Single) Handle(channel string) (log.Handler, error) {
 	logPath := single.config.GetString(channel + ".path")
 	if logPath == "" {
 		return nil, errors.LogEmptyLogFilePath
 	}
 
 	logPath = filepath.Join(support.RelativePath, logPath)
-	levels := getLevels(single.config.GetString(channel + ".level"))
-	pathMap := lfshook.PathMap{}
-	for _, level := range levels {
-		pathMap[level] = logPath
+
+	// Create directory if it doesn't exist
+	dir := filepath.Dir(logPath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return nil, err
 	}
 
-	return lfshook.NewHook(
-		pathMap,
-		formatter.NewGeneral(single.config, single.json),
-	), nil
+	file, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		return nil, err
+	}
+
+	level := GetLevelFromString(single.config.GetString(channel + ".level"))
+
+	return NewIOHandler(file, single.config, single.json, level), nil
 }
 
-func getLevels(level string) []logrus.Level {
-	if level == "panic" {
-		return []logrus.Level{
-			logrus.PanicLevel,
-		}
+// GetLevelFromString converts a string log level to log.Level.
+func GetLevelFromString(level string) log.Level {
+	l, err := log.ParseLevel(level)
+	if err != nil {
+		return log.LevelDebug
 	}
-
-	if level == "fatal" {
-		return []logrus.Level{
-			logrus.FatalLevel,
-			logrus.PanicLevel,
-		}
-	}
-
-	if level == "error" {
-		return []logrus.Level{
-			logrus.ErrorLevel,
-			logrus.FatalLevel,
-			logrus.PanicLevel,
-		}
-	}
-
-	if level == "warning" {
-		return []logrus.Level{
-			logrus.WarnLevel,
-			logrus.ErrorLevel,
-			logrus.FatalLevel,
-			logrus.PanicLevel,
-		}
-	}
-
-	if level == "info" {
-		return []logrus.Level{
-			logrus.InfoLevel,
-			logrus.WarnLevel,
-			logrus.ErrorLevel,
-			logrus.FatalLevel,
-			logrus.PanicLevel,
-		}
-	}
-
-	return []logrus.Level{
-		logrus.DebugLevel,
-		logrus.InfoLevel,
-		logrus.WarnLevel,
-		logrus.ErrorLevel,
-		logrus.FatalLevel,
-		logrus.PanicLevel,
-	}
+	return l
 }

@@ -1,18 +1,18 @@
 package logger
 
 import (
+	"io"
+	"log/slog"
 	"path/filepath"
 	"strings"
 	"time"
 
 	rotatelogs "github.com/goravel/file-rotatelogs/v2"
-	"github.com/rifflock/lfshook"
-	"github.com/sirupsen/logrus"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/log/formatter"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/carbon"
 )
@@ -29,11 +29,10 @@ func NewDaily(config config.Config, json foundation.Json) *Daily {
 	}
 }
 
-func (daily *Daily) Handle(channel string) (logrus.Hook, error) {
-	var hook logrus.Hook
+func (daily *Daily) Handle(channel string) (log.Handler, error) {
 	logPath := daily.config.GetString(channel + ".path")
 	if logPath == "" {
-		return hook, errors.LogEmptyLogFilePath
+		return nil, errors.LogEmptyLogFilePath
 	}
 
 	ext := filepath.Ext(logPath)
@@ -47,17 +46,20 @@ func (daily *Daily) Handle(channel string) (logrus.Hook, error) {
 		rotatelogs.WithClock(rotatelogs.NewClock(carbon.Now().StdTime())),
 	)
 	if err != nil {
-		return hook, err
+		return nil, err
 	}
 
-	levels := getLevels(daily.config.GetString(channel + ".level"))
-	writerMap := lfshook.WriterMap{}
-	for _, level := range levels {
-		writerMap[level] = writer
-	}
+	level := GetLevelFromString(daily.config.GetString(channel + ".level"))
 
-	return lfshook.NewHook(
-		writerMap,
-		formatter.NewGeneral(daily.config, daily.json),
-	), nil
+	return NewRotatingFileHandler(writer, daily.config, daily.json, level), nil
+}
+
+// NewRotatingFileHandler creates a new slog handler for rotating log files.
+func NewRotatingFileHandler(w io.Writer, config config.Config, json foundation.Json, level slog.Leveler) log.Handler {
+	return &IOHandler{
+		writer: w,
+		config: config,
+		json:   json,
+		level:  level,
+	}
 }

@@ -9,29 +9,18 @@ import (
 	contractslog "github.com/goravel/framework/contracts/log"
 )
 
-var _ contractslog.Hook = (*hook)(nil)
+var _ contractslog.Handler = (*handler)(nil)
 
-type hook struct {
-	enabled bool
-	logger  otellog.Logger
+type handler struct {
+	logger otellog.Logger
 }
 
-func (r *hook) Levels() []contractslog.Level {
-	if !r.enabled {
-		return nil
-	}
-	return []contractslog.Level{
-		contractslog.DebugLevel,
-		contractslog.InfoLevel,
-		contractslog.WarningLevel,
-		contractslog.ErrorLevel,
-		contractslog.FatalLevel,
-		contractslog.PanicLevel,
-	}
+func (r *handler) Enabled(level contractslog.Level) bool {
+	return true
 }
 
-func (r *hook) Fire(entry contractslog.Entry) error {
-	if !r.enabled || r.logger == nil {
+func (r *handler) Handle(entry contractslog.Entry) error {
+	if r.logger == nil {
 		return nil
 	}
 
@@ -45,7 +34,7 @@ func (r *hook) Fire(entry contractslog.Entry) error {
 	return nil
 }
 
-func (r *hook) convertEntry(e contractslog.Entry) otellog.Record {
+func (r *handler) convertEntry(e contractslog.Entry) otellog.Record {
 	var record otellog.Record
 	record.SetTimestamp(e.Time())
 	record.SetObservedTimestamp(time.Now())
