@@ -41,7 +41,7 @@ func (h *IOHandler) Enabled(level log.Level) bool {
 func (h *IOHandler) Handle(entry log.Entry) error {
 	var b bytes.Buffer
 
-	timestamp := carbon.FromStdTime(entry.Time()).ToDateTimeMilliString()
+timestamp := carbon.FromStdTime(entry.Time, carbon.DefaultTimezone()).ToDateTimeMilliString()
 	env := h.config.GetString("app.env")
 
 	_, _ = fmt.Fprintf(&b, "[%s] %s.%s: %s\n", timestamp, env, entry.Level().String(), entry.Message())
