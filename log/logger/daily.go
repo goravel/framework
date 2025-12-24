@@ -50,16 +50,32 @@ func (daily *Daily) Handle(channel string) (log.Handler, error) {
 	}
 
 	level := GetLevelFromString(daily.config.GetString(channel + ".level"))
+	formatter := daily.config.GetString(channel + ".formatter")
 
-	return NewRotatingFileHandler(writer, daily.config, daily.json, level), nil
+	return NewRotatingFileHandlerWithFormatter(writer, daily.config, daily.json, level, formatter), nil
 }
 
-// NewRotatingFileHandler creates a new slog handler for rotating log files.
+// NewRotatingFileHandler creates a new slog handler for rotating log files with text formatter (default).
 func NewRotatingFileHandler(w io.Writer, config config.Config, json foundation.Json, level slog.Leveler) log.Handler {
 	return &IOHandler{
-		writer: w,
-		config: config,
-		json:   json,
-		level:  level,
+		writer:    w,
+		config:    config,
+		json:      json,
+		level:     level,
+		formatter: FormatterText,
+	}
+}
+
+// NewRotatingFileHandlerWithFormatter creates a new slog handler for rotating log files with the specified formatter.
+func NewRotatingFileHandlerWithFormatter(w io.Writer, config config.Config, json foundation.Json, level slog.Leveler, formatter string) log.Handler {
+	if formatter != FormatterJson && formatter != FormatterText {
+		formatter = FormatterText
+	}
+	return &IOHandler{
+		writer:    w,
+		config:    config,
+		json:      json,
+		level:     level,
+		formatter: formatter,
 	}
 }
