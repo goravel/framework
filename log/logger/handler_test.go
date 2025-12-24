@@ -12,6 +12,7 @@ import (
 
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation/json"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 )
@@ -479,4 +480,37 @@ func TestNewConsoleHandlerFormatter(t *testing.T) {
 	handler = NewConsoleHandler(mockConfig, j, log.LevelInfo, FormatterJson)
 	assert.NotNil(t, handler)
 	assert.Equal(t, FormatterJson, handler.formatter)
+}
+
+func TestIOHandlerInvalidFormatter(t *testing.T) {
+	mockConfig := mocksconfig.NewConfig(t)
+	j := json.New()
+	buffer := new(bytes.Buffer)
+
+	tests := []struct {
+		name      string
+		formatter string
+	}{
+		{"yaml formatter", "yaml"},
+		{"xml formatter", "xml"},
+		{"empty formatter", ""},
+		{"random formatter", "random"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := NewIOHandler(buffer, mockConfig, j, log.LevelDebug, tt.formatter)
+			assert.NotNil(t, handler)
+
+			entry := &mockEntry{
+				time:    time.Now(),
+				level:   log.LevelInfo,
+				message: "test message",
+			}
+
+			err := handler.Handle(entry)
+			assert.NotNil(t, err)
+			assert.Equal(t, errors.LogFormatterNotSupported.Args(tt.formatter).Error(), err.Error())
+		})
+	}
 }

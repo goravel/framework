@@ -11,6 +11,7 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 )
 
@@ -47,10 +48,14 @@ func (h *IOHandler) Enabled(level log.Level) bool {
 
 // Handle handles the Record.
 func (h *IOHandler) Handle(entry log.Entry) error {
-	if h.formatter == FormatterJson {
+	switch h.formatter {
+	case FormatterJson:
 		return h.handleJSON(entry)
+	case FormatterText:
+		return h.handleText(entry)
+	default:
+		return errors.LogFormatterNotSupported.Args(h.formatter)
 	}
-	return h.handleText(entry)
 }
 
 // handleText formats the log entry as human-readable text.
