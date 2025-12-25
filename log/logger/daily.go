@@ -22,6 +22,16 @@ type Daily struct {
 	json   foundation.Json
 }
 
+type rotatelogsClock struct{}
+
+func (clock *rotatelogsClock) Now() time.Time {
+	return carbon.Now().StdTime()
+}
+
+func NewRotatelogsClock() rotatelogs.Clock {
+	return &rotatelogsClock{}
+}
+
 func NewDaily(config config.Config, json foundation.Json) *Daily {
 	return &Daily{
 		config: config,
@@ -43,7 +53,7 @@ func (daily *Daily) Handle(channel string) (log.Handler, error) {
 		logPath+"-%Y-%m-%d"+ext,
 		rotatelogs.WithRotationTime(time.Duration(24)*time.Hour),
 		rotatelogs.WithRotationCount(uint(daily.config.GetInt(channel+".days"))),
-		rotatelogs.WithClock(rotatelogs.NewClock(carbon.Now().StdTime())),
+		rotatelogs.WithClock(NewRotatelogsClock()),
 	)
 	if err != nil {
 		return nil, err
