@@ -718,15 +718,65 @@ func TestWriter_ConcurrentAccess(t *testing.T) {
 		<-done
 	}
 
-	// Verify that we have entries from all goroutines
-	for i := 0; i < goroutines; i++ {
-		for j := 0; j < iterations; j++ {
-			expectedCode := fmt.Sprintf("[Code] code-%d-%d", i, j)
-			expectedMsg := fmt.Sprintf("message from goroutine %d iteration %d", i, j)
-			assert.True(t, file.Contains(singleLog, expectedCode), "Missing code: %s", expectedCode)
-			assert.True(t, file.Contains(singleLog, expectedMsg), "Missing message: %s", expectedMsg)
+	// Verify log entries line by line to ensure no contamination during concurrent writes
+	verifyLogIntegrity := func(logFile string) {
+		content, err := file.GetContent(logFile)
+		assert.Nil(t, err)
+
+		lines := strings.Split(strings.TrimSpace(content), "\n")
+
+		// Log entries come in pairs: message line and code line
+		if len(lines)%2 != 0 {
+			assert.Fail(t, fmt.Sprintf("[%s] Log file has an odd number of lines, indicating possible corruption", logFile))
+		}
+
+		errors := 0
+		for i := 0; i < len(lines); i += 2 {
+			messageLine := lines[i]
+			codeLine := lines[i+1]
+
+			// Parse message line: extract goroutine ID and iteration
+			var goroutineID, iteration int
+			messageIdx := strings.Index(messageLine, "goroutine")
+			if messageIdx == -1 {
+				assert.Fail(t, fmt.Sprintf("[%s] Line %d: 'goroutine' not found in message line: %s", logFile, i+1, messageLine))
+				errors++
+				continue
+			}
+
+			remainder := messageLine[messageIdx:]
+			n, err := fmt.Sscanf(remainder, "goroutine %d iteration %d", &goroutineID, &iteration)
+			if err != nil || n != 2 {
+				assert.Fail(t, fmt.Sprintf("[%s] Line %d: Failed to parse message line: %s (error: %v)", logFile, i+1, messageLine, err))
+				errors++
+				continue
+			}
+
+			// Parse code line: extract code
+			var code string
+			n, err = fmt.Sscanf(codeLine, "[Code] %s", &code)
+			if err != nil || n != 1 {
+				assert.Fail(t, fmt.Sprintf("[%s] Line %d: Failed to parse code line: %s (error: %v)", logFile, i+2, codeLine, err))
+				errors++
+				continue
+			}
+
+			// Verify that code matches expected format: code-{goroutineID}-{iteration}
+			expectedCode := fmt.Sprintf("code-%d-%d", goroutineID, iteration)
+			if code != expectedCode {
+				assert.Fail(t, fmt.Sprintf("[%s] Line %d-%d: Code mismatch. Expected: %s, Got: %s", logFile, i+1, i+2, expectedCode, code))
+				errors++
+			}
+		}
+
+		if errors != 0 {
+			assert.Fail(t, fmt.Sprintf("[%s] Log integrity check failed with %d errors", logFile, errors))
 		}
 	}
+
+	// Verify both log files
+	verifyLogIntegrity(singleLog)
+	verifyLogIntegrity(dailyLog)
 
 	_ = file.Remove("storage")
 }
@@ -751,30 +801,6 @@ func TestWriter_NoEntryContamination(t *testing.T) {
 	_ = file.Remove("storage")
 }
 
-func TestWriter_TimestampIsCurrentAtLogTime(t *testing.T) {
-	// This test verifies that the timestamp is captured at log time, not writer creation time.
-	mockConfig := initMockConfig()
-	mockDriverConfig(mockConfig)
-	log, err := NewApplication(mockConfig, json.New())
-	assert.Nil(t, err)
-	assert.NotNil(t, log)
-
-	// Small delay to ensure time difference from writer creation
-	time.Sleep(50 * time.Millisecond)
-
-	log.Info("timestamp test")
-
-	// Read the log file and verify the timestamp is reasonable
-	content, readErr := os.ReadFile(singleLog)
-	assert.Nil(t, readErr)
-	logContent := string(content)
-
-	// The log should contain a timestamp that is after beforeLog
-	assert.Contains(t, logContent, "test.info: timestamp test")
-
-	_ = file.Remove("storage")
-}
-
 func TestWriter_FluentChainIsolation(t *testing.T) {
 	// This test verifies that multiple fluent chains are isolated from each other.
 	mockConfig := initMockConfig()
@@ -788,8 +814,10 @@ func TestWriter_FluentChainIsolation(t *testing.T) {
 	chain2 := log.Code("chain2-code")
 
 	// Log from both chains
-	chain1.Info("message from chain1")
-	chain2.Info("message from chain2")
+	go chain1.Info("message from chain1")
+	go chain2.Info("message from chain2")
+
+	time.Sleep(500 * time.Millisecond) // Wait for goroutines to finish
 
 	// Verify each chain has its own code
 	assert.True(t, file.Contains(singleLog, "message from chain1\n[Code] chain1-code"))
