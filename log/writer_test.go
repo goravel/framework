@@ -691,12 +691,12 @@ func (r *TestResponseOrigin) Status() int {
 func TestWriter_ConcurrentAccess(t *testing.T) {
 	// This test verifies that concurrent access to the same log.Writer
 	// does not cause data races or entry contamination.
+	_ = file.Remove("storage")
 	mockConfig := initMockConfig()
 	mockDriverConfig(mockConfig)
 	log, err := NewApplication(mockConfig, json.New())
 	assert.Nil(t, err)
 	assert.NotNil(t, log)
-	_ = file.Remove("storage")
 
 	const goroutines = 10
 	const iterations = 100
