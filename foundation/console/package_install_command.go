@@ -18,6 +18,7 @@ import (
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/framework/support/env"
+	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -29,6 +30,8 @@ type PackageInstallCommand struct {
 	// removed from installedBindings when uninstalling, so they share
 	// the same installedBindings pointer to avoid package:install and package:uninstall
 	// cannot be run simultaneously due to inconsistent installedBindings.
+
+	// TODO: These two fields can be removed, we need to judge the facade files directly.
 	installedBindings                   *[]any
 	installedFacadesInTheCurrentCommand []string
 	paths                               string
@@ -421,4 +424,8 @@ func isPackage(pkg string) bool {
 
 func isInternalDriver(name string) bool {
 	return name != "" && !str.Of(name).Contains(".", "/")
+}
+
+func doesFacadeExist(facade string) bool {
+	return file.Exists(convert.FacadeToFilepath(facade))
 }
