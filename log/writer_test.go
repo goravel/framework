@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -685,4 +686,118 @@ func (r *TestResponseOrigin) Size() int {
 
 func (r *TestResponseOrigin) Status() int {
 	return 200
+}
+
+func TestWriter_ConcurrentAccess(t *testing.T) {
+	// This test verifies that concurrent access to the same log.Writer
+	// does not cause data races or entry contamination.
+	mockConfig := initMockConfig()
+	mockDriverConfig(mockConfig)
+	log, err := NewApplication(mockConfig, json.New())
+	assert.Nil(t, err)
+	assert.NotNil(t, log)
+
+	const goroutines = 10
+	const iterations = 100
+
+	done := make(chan bool, goroutines)
+
+	for i := 0; i < goroutines; i++ {
+		go func(id int) {
+			for j := 0; j < iterations; j++ {
+				// Each goroutine uses its own unique code
+				code := fmt.Sprintf("code-%d-%d", id, j)
+				log.Code(code).Info(fmt.Sprintf("message from goroutine %d iteration %d", id, j))
+			}
+			done <- true
+		}(i)
+	}
+
+	// Wait for all goroutines to complete
+	for i := 0; i < goroutines; i++ {
+		<-done
+	}
+
+	// Verify that we have entries from all goroutines
+	for i := 0; i < goroutines; i++ {
+		for j := 0; j < iterations; j++ {
+			expectedCode := fmt.Sprintf("[Code] code-%d-%d", i, j)
+			expectedMsg := fmt.Sprintf("message from goroutine %d iteration %d", i, j)
+			assert.True(t, file.Contains(singleLog, expectedCode), "Missing code: %s", expectedCode)
+			assert.True(t, file.Contains(singleLog, expectedMsg), "Missing message: %s", expectedMsg)
+		}
+	}
+
+	_ = file.Remove("storage")
+}
+
+func TestWriter_NoEntryContamination(t *testing.T) {
+	// This test verifies that calling fluent methods on the base writer
+	// returns a new writer and does not affect the original.
+	mockConfig := initMockConfig()
+	mockDriverConfig(mockConfig)
+	log, err := NewApplication(mockConfig, json.New())
+	assert.Nil(t, err)
+	assert.NotNil(t, log)
+
+	// Call Code on the base writer, then log without code
+	_ = log.Code("should-not-appear")
+	log.Info("message without code")
+
+	// The message should NOT have the code since we didn't chain the calls
+	assert.True(t, file.Contains(singleLog, "test.info: message without code"))
+	assert.False(t, file.Contains(singleLog, "message without code\n[Code] should-not-appear"))
+
+	_ = file.Remove("storage")
+}
+
+func TestWriter_TimestampIsCurrentAtLogTime(t *testing.T) {
+	// This test verifies that the timestamp is captured at log time, not writer creation time.
+	mockConfig := initMockConfig()
+	mockDriverConfig(mockConfig)
+	log, err := NewApplication(mockConfig, json.New())
+	assert.Nil(t, err)
+	assert.NotNil(t, log)
+
+	// Small delay to ensure time difference from writer creation
+	time.Sleep(50 * time.Millisecond)
+
+	log.Info("timestamp test")
+
+	// Read the log file and verify the timestamp is reasonable
+	content, readErr := os.ReadFile(singleLog)
+	assert.Nil(t, readErr)
+	logContent := string(content)
+
+	// The log should contain a timestamp that is after beforeLog
+	assert.Contains(t, logContent, "test.info: timestamp test")
+
+	_ = file.Remove("storage")
+}
+
+func TestWriter_FluentChainIsolation(t *testing.T) {
+	// This test verifies that multiple fluent chains are isolated from each other.
+	mockConfig := initMockConfig()
+	mockDriverConfig(mockConfig)
+	log, err := NewApplication(mockConfig, json.New())
+	assert.Nil(t, err)
+	assert.NotNil(t, log)
+
+	// Create two separate chains
+	chain1 := log.Code("chain1-code")
+	chain2 := log.Code("chain2-code")
+
+	// Log from both chains
+	chain1.Info("message from chain1")
+	chain2.Info("message from chain2")
+
+	// Verify each chain has its own code
+	assert.True(t, file.Contains(singleLog, "message from chain1\n[Code] chain1-code"))
+	assert.True(t, file.Contains(singleLog, "message from chain2\n[Code] chain2-code"))
+
+	// Verify chain2 code doesn't appear in chain1's message
+	assert.False(t, file.Contains(singleLog, "message from chain1\n[Code] chain2-code"))
+	assert.False(t, file.Contains(singleLog, "message from chain2\n[Code] chain1-code"))
+
+	_ = file.Remove("storage")
 }

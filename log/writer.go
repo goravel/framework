@@ -15,20 +15,50 @@ import (
 )
 
 // Writer implements the log.Writer interface using slog.
-// The Writer is designed to be reused - all metadata (code, hint, domain, etc.)
-// is reset after each log operation to ensure clean state for the next log entry.
+// The Writer is designed to be thread-safe - each fluent method chain creates
+// a new Writer with its own Entry to prevent data races when used concurrently.
 type Writer struct {
 	logger *slog.Logger
-	entry  *Entry
+	ctx    context.Context
+	entry  *Entry // nil for base writer, only set when fluent methods are called
 }
 
 func NewWriter(logger *slog.Logger, ctx context.Context) log.Writer {
-	entry := acquireEntry()
-	entry.ctx = ctx
 	return &Writer{
 		logger: logger,
+		ctx:    ctx,
+		entry:  nil,
+	}
+}
+
+// getEntry returns the current entry or acquires a new one for thread safety.
+// When fluent methods are chained, the entry is preserved across calls.
+func (w *Writer) getEntry() *Entry {
+	if w.entry == nil {
+		entry := acquireEntry()
+		entry.ctx = w.ctx
+		return entry
+	}
+	return w.entry
+}
+
+// clone creates a new Writer with its own Entry for thread-safe method chaining.
+func (w *Writer) clone() *Writer {
+	entry := w.getEntry()
+	return &Writer{
+		logger: w.logger,
+		ctx:    w.ctx,
 		entry:  entry,
 	}
+}
+
+// ensureEntry returns the writer with an entry, creating one if needed.
+// For methods like Error/Fatal/Panic that need to set stacktrace.
+func (w *Writer) ensureEntry() *Writer {
+	if w.entry != nil {
+		return w
+	}
+	return w.clone()
 }
 
 func (w *Writer) Debug(args ...any) {
@@ -57,125 +87,148 @@ func (w *Writer) Warningf(format string, args ...any) {
 
 func (w *Writer) Error(args ...any) {
 	msg := fmt.Sprint(args...)
-	w.withStackTrace(msg)
-	w.log(log.LevelError, msg)
+	nw := w.ensureEntry()
+	nw.withStackTrace(msg)
+	nw.log(log.LevelError, msg)
 }
 
 func (w *Writer) Errorf(format string, args ...any) {
 	msg := fmt.Sprintf(format, args...)
-	w.withStackTrace(msg)
-	w.log(log.LevelError, msg)
+	nw := w.ensureEntry()
+	nw.withStackTrace(msg)
+	nw.log(log.LevelError, msg)
 }
 
 func (w *Writer) Fatal(args ...any) {
 	msg := fmt.Sprint(args...)
-	w.withStackTrace(msg)
-	w.log(log.LevelFatal, msg)
+	nw := w.ensureEntry()
+	nw.withStackTrace(msg)
+	nw.log(log.LevelFatal, msg)
 	os.Exit(1)
 }
 
 func (w *Writer) Fatalf(format string, args ...any) {
 	msg := fmt.Sprintf(format, args...)
-	w.withStackTrace(msg)
-	w.log(log.LevelFatal, msg)
+	nw := w.ensureEntry()
+	nw.withStackTrace(msg)
+	nw.log(log.LevelFatal, msg)
 	os.Exit(1)
 }
 
 func (w *Writer) Panic(args ...any) {
 	msg := fmt.Sprint(args...)
-	w.withStackTrace(msg)
-	w.log(log.LevelPanic, msg)
+	nw := w.ensureEntry()
+	nw.withStackTrace(msg)
+	nw.log(log.LevelPanic, msg)
 	panic(msg)
 }
 
 func (w *Writer) Panicf(format string, args ...any) {
 	msg := fmt.Sprintf(format, args...)
-	w.withStackTrace(msg)
-	w.log(log.LevelPanic, msg)
+	nw := w.ensureEntry()
+	nw.withStackTrace(msg)
+	nw.log(log.LevelPanic, msg)
 	panic(msg)
 }
 
 // Code set a code or slug that describes the error.
 func (w *Writer) Code(code string) log.Writer {
-	w.entry.code = code
-	return w
+	nw := w.clone()
+	nw.entry.code = code
+	return nw
 }
 
 // Hint set a hint for faster debugging.
 func (w *Writer) Hint(hint string) log.Writer {
-	w.entry.hint = hint
-	return w
+	nw := w.clone()
+	nw.entry.hint = hint
+	return nw
 }
 
 // In sets the feature category or domain in which the log entry is relevant.
 func (w *Writer) In(domain string) log.Writer {
-	w.entry.domain = domain
-	return w
+	nw := w.clone()
+	nw.entry.domain = domain
+	return nw
 }
 
 // Owner set the name/email of the colleague/team responsible for handling this error.
 func (w *Writer) Owner(owner any) log.Writer {
-	w.entry.owner = owner
-	return w
+	nw := w.clone()
+	nw.entry.owner = owner
+	return nw
 }
 
 // Request supplies a http.Request.
 func (w *Writer) Request(req http.ContextRequest) log.Writer {
+	nw := w.clone()
 	if req != nil {
-		w.entry.request = map[string]any{
+		nw.entry.request = map[string]any{
 			"method": req.Method(),
 			"uri":    req.FullUrl(),
 			"header": req.Headers(),
 			"body":   req.All(),
 		}
 	}
-	return w
+	return nw
 }
 
 // Response supplies a http.Response.
 func (w *Writer) Response(res http.ContextResponse) log.Writer {
+	nw := w.clone()
 	if res != nil {
-		w.entry.response = map[string]any{
+		nw.entry.response = map[string]any{
 			"status": res.Origin().Status(),
 			"header": res.Origin().Header(),
 			"body":   res.Origin().Body(),
 			"size":   res.Origin().Size(),
 		}
 	}
-	return w
+	return nw
 }
 
 // Tags add multiple tags, describing the feature returning an error.
 func (w *Writer) Tags(tags ...string) log.Writer {
-	w.entry.tags = append(w.entry.tags, tags...)
-	return w
+	nw := w.clone()
+	nw.entry.tags = append(nw.entry.tags, tags...)
+	return nw
 }
 
 // User sets the user associated with the log entry.
 func (w *Writer) User(user any) log.Writer {
-	w.entry.user = user
-	return w
+	nw := w.clone()
+	nw.entry.user = user
+	return nw
 }
 
 // With adds key-value pairs to the context of the log entry.
 func (w *Writer) With(data map[string]any) log.Writer {
-	maps.Copy(w.entry.with, data)
-	return w
+	nw := w.clone()
+	maps.Copy(nw.entry.with, data)
+	return nw
 }
 
 // WithTrace adds a stack trace to the log entry.
 func (w *Writer) WithTrace() log.Writer {
-	w.withStackTrace("")
-	return w
+	nw := w.clone()
+	nw.withStackTrace("")
+	return nw
 }
 
 func (w *Writer) log(level log.Level, msg string) {
-	w.entry.time = time.Now()
-	w.entry.message = msg
-	w.entry.level = level
+	entry := w.entry
+	if entry == nil {
+		// For direct log calls without fluent methods, acquire a fresh entry
+		entry = acquireEntry()
+		entry.ctx = w.ctx
+	}
 
-	_ = w.logger.Handler().Handle(w.entry.ctx, w.entry.ToSlogRecord())
-	releaseEntry(w.entry)
+	entry.time = time.Now()
+	entry.message = msg
+	entry.level = level
+
+	_ = w.logger.Handler().Handle(entry.ctx, entry.ToSlogRecord())
+	releaseEntry(entry)
 }
 
 func (w *Writer) withStackTrace(message string) {
