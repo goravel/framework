@@ -332,7 +332,7 @@ func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string
 }
 
 func (r *PackageInstallCommand) getBindingsToInstall(binding string) (bindingsToInstall []string) {
-	for _, dependencyBinding := range getDependencyBindings(binding, r.bindings) {
+	for _, dependencyBinding := range getDependencyBindings(binding, r.bindings, true) {
 		var binding any = dependencyBinding
 		if !slices.Contains(*r.installedBindings, binding) {
 			bindingsToInstall = append(bindingsToInstall, dependencyBinding)
@@ -370,27 +370,36 @@ func getAvailableFacades(bindings map[string]contractsbinding.Info) []string {
 	return availableFacades
 }
 
-func getDependencyBindings(binding string, bindings map[string]contractsbinding.Info) []string {
+func getDependencyBindings(binding string, bindings map[string]contractsbinding.Info, withInstallTogether bool) []string {
 	visited := make(map[string]bool)
-	return getDependencyBindingsRecursive(binding, bindings, visited)
+	dependencyBindings := getDependencyBindingsRecursive(binding, bindings, visited, withInstallTogether)
+
+	// binding may appear in InstallTogether, so it needs to be removed from dependencyBindings.
+	dependencyBindings = collect.Filter(dependencyBindings, func(s string, _ int) bool {
+		return s != binding
+	})
+
+	return dependencyBindings
 }
 
-func getDependencyBindingsRecursive(binding string, bindings map[string]contractsbinding.Info, visited map[string]bool) []string {
+func getDependencyBindingsRecursive(binding string, bindings map[string]contractsbinding.Info, visited map[string]bool, withInstallTogether bool) []string {
 	var deps []string
 
 	for _, dep := range bindings[binding].Dependencies {
 		if info, ok := bindings[dep]; ok && !info.IsBase && !visited[dep] {
 			visited[dep] = true
-			deps = append(deps, getDependencyBindingsRecursive(dep, bindings, visited)...)
+			deps = append(deps, getDependencyBindingsRecursive(dep, bindings, visited, withInstallTogether)...)
 			deps = append(deps, dep)
 		}
 	}
 
-	for _, installTogetherBinding := range bindings[binding].InstallTogether {
-		if info, ok := bindings[installTogetherBinding]; ok && !info.IsBase && !visited[installTogetherBinding] {
-			visited[installTogetherBinding] = true
-			deps = append(deps, getDependencyBindingsRecursive(installTogetherBinding, bindings, visited)...)
-			deps = append(deps, installTogetherBinding)
+	if withInstallTogether {
+		for _, installTogetherBinding := range bindings[binding].InstallTogether {
+			if info, ok := bindings[installTogetherBinding]; ok && !info.IsBase && !visited[installTogetherBinding] {
+				visited[installTogetherBinding] = true
+				deps = append(deps, getDependencyBindingsRecursive(installTogetherBinding, bindings, visited, withInstallTogether)...)
+				deps = append(deps, installTogetherBinding)
+			}
 		}
 	}
 

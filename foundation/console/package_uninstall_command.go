@@ -210,13 +210,13 @@ func (r *PackageUninstallCommand) getBindingsThatNeedUninstall(binding string) [
 			continue
 		}
 
-		for _, dependency := range getDependencyBindings(installedBindingStr, r.bindings) {
+		for _, dependency := range getDependencyBindings(installedBindingStr, r.bindings, false) {
 			facadeDependentCount[dependency]++
 		}
 	}
 
 	var needUninstallBindings []string
-	for _, dependency := range getDependencyBindings(binding, r.bindings) {
+	for _, dependency := range getDependencyBindings(binding, r.bindings, false) {
 		if facadeDependentCount[dependency] == 1 {
 			needUninstallBindings = append(needUninstallBindings, dependency)
 		}
@@ -237,13 +237,13 @@ func (r *PackageUninstallCommand) getExistingUpperDependencyFacades(binding stri
 			continue
 		}
 
-		for _, dependency := range getDependencyBindings(installedBindingStr, r.bindings) {
+		for _, dependency := range getDependencyBindings(installedBindingStr, r.bindings, false) {
 			facade := convert.BindingToFacade(installedBindingStr)
-
 			if dependency == binding && file.Exists(path.Facade(fmt.Sprintf("%s.go", strings.ToLower(facade)))) {
 				facades = append(facades, convert.BindingToFacade(installedBindingStr))
 			}
 		}
 	}
+
 	return facades
 }

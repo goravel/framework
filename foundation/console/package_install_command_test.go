@@ -571,7 +571,7 @@ func TestGetDependencyBindings(t *testing.T) {
 		binding.View,
 		binding.Route,
 	}
-	assert.Equal(t, expected, getDependencyBindings(binding.Testing, binding.Bindings))
+	assert.Equal(t, expected, getDependencyBindings(binding.Testing, binding.Bindings, true))
 }
 
 func TestGetDependencyBindings_CircularDependency(t *testing.T) {
@@ -592,7 +592,7 @@ func TestGetDependencyBindings_CircularDependency(t *testing.T) {
 	}
 
 	// This should not cause stack overflow or infinite recursion
-	result := getDependencyBindings("A", bindings)
+	result := getDependencyBindings("A", bindings, true)
 
 	// Should return unique dependencies without infinite loop
 	assert.ElementsMatch(t, []string{"B", "C", "A"}, result)
