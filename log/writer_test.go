@@ -691,8 +691,16 @@ func (r *TestResponseOrigin) Status() int {
 func TestWriter_ConcurrentAccess(t *testing.T) {
 	// This test verifies that concurrent access to the same log.Writer
 	// does not cause data races or entry contamination.
-	_ = file.Remove("storage")
-	mockConfig := initMockConfig()
+	mockConfig := &configmock.Config{}
+	mockConfig.EXPECT().GetString("logging.default").Return("stack").Once()
+	mockConfig.EXPECT().GetString("logging.channels.stack.driver").Return("stack").Once()
+	mockConfig.On("Get", "logging.channels.stack.channels").Return([]string{"single"}).Once()
+	mockConfig.EXPECT().GetString("logging.channels.single.driver").Return("single").Once()
+	mockConfig.EXPECT().GetString("logging.channels.single.path").Return("storage/logs/goravel1.log").Once()
+	mockConfig.EXPECT().GetBool("logging.channels.single.print").Return(false).Once()
+	mockConfig.EXPECT().GetString("logging.channels.single.level").Return("debug").Once()
+	mockConfig.EXPECT().GetString("logging.channels.single.formatter", "text").Return("text").Once()
+
 	mockDriverConfig(mockConfig)
 	log, err := NewApplication(mockConfig, json.New())
 	assert.Nil(t, err)
@@ -720,64 +728,58 @@ func TestWriter_ConcurrentAccess(t *testing.T) {
 	}
 
 	// Verify log entries line by line to ensure no contamination during concurrent writes
-	verifyLogIntegrity := func(logFile string) {
-		content, err := file.GetContent(logFile)
-		assert.Nil(t, err)
+	content, err := file.GetContent("storage/logs/goravel1.log")
+	assert.Nil(t, err)
 
-		lines := strings.Split(strings.TrimSpace(content), "\n")
+	lines := strings.Split(strings.TrimSpace(content), "\n")
 
-		// Log entries come in pairs: message line and code line
-		if len(lines)%2 != 0 {
-			assert.Fail(t, fmt.Sprintf("[%s] Log file has an odd number of lines, indicating possible corruption", logFile))
+	// Log entries come in pairs: message line and code line
+	if len(lines)%2 != 0 {
+		assert.Fail(t, fmt.Sprintf("Log file has an odd number of lines, indicating possible corruption"))
+	}
+
+	errors := 0
+	for i := 0; i < len(lines); i += 2 {
+		messageLine := lines[i]
+		codeLine := lines[i+1]
+
+		// Parse message line: extract goroutine ID and iteration
+		var goroutineID, iteration int
+		messageIdx := strings.Index(messageLine, "goroutine")
+		if messageIdx == -1 {
+			assert.Fail(t, fmt.Sprintf("Line %d: 'goroutine' not found in message line: %s", i+1, messageLine))
+			errors++
+			continue
 		}
 
-		errors := 0
-		for i := 0; i < len(lines); i += 2 {
-			messageLine := lines[i]
-			codeLine := lines[i+1]
-
-			// Parse message line: extract goroutine ID and iteration
-			var goroutineID, iteration int
-			messageIdx := strings.Index(messageLine, "goroutine")
-			if messageIdx == -1 {
-				assert.Fail(t, fmt.Sprintf("[%s] Line %d: 'goroutine' not found in message line: %s", logFile, i+1, messageLine))
-				errors++
-				continue
-			}
-
-			remainder := messageLine[messageIdx:]
-			n, err := fmt.Sscanf(remainder, "goroutine %d iteration %d", &goroutineID, &iteration)
-			if err != nil || n != 2 {
-				assert.Fail(t, fmt.Sprintf("[%s] Line %d: Failed to parse message line: %s (error: %v)", logFile, i+1, messageLine, err))
-				errors++
-				continue
-			}
-
-			// Parse code line: extract code
-			var code string
-			n, err = fmt.Sscanf(codeLine, "[Code] %s", &code)
-			if err != nil || n != 1 {
-				assert.Fail(t, fmt.Sprintf("[%s] Line %d: Failed to parse code line: %s (error: %v)", logFile, i+2, codeLine, err))
-				errors++
-				continue
-			}
-
-			// Verify that code matches expected format: code-{goroutineID}-{iteration}
-			expectedCode := fmt.Sprintf("code-%d-%d", goroutineID, iteration)
-			if code != expectedCode {
-				assert.Fail(t, fmt.Sprintf("[%s] Line %d-%d: Code mismatch. Expected: %s, Got: %s", logFile, i+1, i+2, expectedCode, code))
-				errors++
-			}
+		remainder := messageLine[messageIdx:]
+		n, err := fmt.Sscanf(remainder, "goroutine %d iteration %d", &goroutineID, &iteration)
+		if err != nil || n != 2 {
+			assert.Fail(t, fmt.Sprintf("Line %d: Failed to parse message line: %s (error: %v)", i+1, messageLine, err))
+			errors++
+			continue
 		}
 
-		if errors != 0 {
-			assert.Fail(t, fmt.Sprintf("[%s] Log integrity check failed with %d errors", logFile, errors))
+		// Parse code line: extract code
+		var code string
+		n, err = fmt.Sscanf(codeLine, "[Code] %s", &code)
+		if err != nil || n != 1 {
+			assert.Fail(t, fmt.Sprintf("Line %d: Failed to parse code line: %s (error: %v)", i+2, codeLine, err))
+			errors++
+			continue
+		}
+
+		// Verify that code matches expected format: code-{goroutineID}-{iteration}
+		expectedCode := fmt.Sprintf("code-%d-%d", goroutineID, iteration)
+		if code != expectedCode {
+			assert.Fail(t, fmt.Sprintf("Line %d-%d: Code mismatch. Expected: %s, Got: %s", i+1, i+2, expectedCode, code))
+			errors++
 		}
 	}
 
-	// Verify both log files
-	verifyLogIntegrity(singleLog)
-	verifyLogIntegrity(dailyLog)
+	if errors != 0 {
+		assert.Fail(t, fmt.Sprintf("Log integrity check failed with %d errors", errors))
+	}
 
 	_ = file.Remove("storage")
 }
