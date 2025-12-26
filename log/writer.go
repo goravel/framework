@@ -14,9 +14,6 @@ import (
 	"github.com/goravel/framework/contracts/log"
 )
 
-// Writer implements the log.Writer interface using slog.
-// The Writer is designed to be thread-safe - each fluent method chain creates
-// a new Writer with its own Entry to prevent data races when used concurrently.
 type Writer struct {
 	logger *slog.Logger
 	ctx    context.Context
@@ -29,36 +26,6 @@ func NewWriter(logger *slog.Logger, ctx context.Context) log.Writer {
 		ctx:    ctx,
 		entry:  nil,
 	}
-}
-
-// getEntry returns the current entry or acquires a new one for thread safety.
-// When fluent methods are chained, the entry is preserved across calls.
-func (w *Writer) getEntry() *Entry {
-	if w.entry == nil {
-		entry := acquireEntry()
-		entry.ctx = w.ctx
-		return entry
-	}
-	return w.entry
-}
-
-// clone creates a new Writer with its own Entry for thread-safe method chaining.
-func (w *Writer) clone() *Writer {
-	entry := w.getEntry()
-	return &Writer{
-		logger: w.logger,
-		ctx:    w.ctx,
-		entry:  entry,
-	}
-}
-
-// ensureEntry returns the writer with an entry, creating one if needed.
-// For methods like Error/Fatal/Panic that need to set stacktrace.
-func (w *Writer) ensureEntry() *Writer {
-	if w.entry != nil {
-		return w
-	}
-	return w.clone()
 }
 
 func (w *Writer) Debug(args ...any) {
@@ -243,4 +210,29 @@ func (w *Writer) withStackTrace(message string) {
 		InvertTrace:  true,
 	})
 	w.entry.stacktrace = eris.ToCustomJSON(erisNew, format)
+}
+
+func (w *Writer) getEntry() *Entry {
+	if w.entry == nil {
+		entry := acquireEntry()
+		entry.ctx = w.ctx
+		return entry
+	}
+	return w.entry
+}
+
+func (w *Writer) clone() *Writer {
+	entry := w.getEntry()
+	return &Writer{
+		logger: w.logger,
+		ctx:    w.ctx,
+		entry:  entry,
+	}
+}
+
+func (w *Writer) ensureEntry() *Writer {
+	if w.entry != nil {
+		return w
+	}
+	return w.clone()
 }

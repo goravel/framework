@@ -21,7 +21,6 @@ const (
 	FormatterJson = "json"
 )
 
-// IOHandler is a log.Handler that writes formatted log entries to an io.Writer.
 type IOHandler struct {
 	writer    io.Writer
 	config    config.Config
@@ -30,7 +29,6 @@ type IOHandler struct {
 	formatter string
 }
 
-// NewIOHandler creates a new io handler with the specified formatter.
 func NewIOHandler(w io.Writer, config config.Config, json foundation.Json, level slog.Leveler, formatter string) *IOHandler {
 	return &IOHandler{
 		writer:    w,
@@ -181,12 +179,10 @@ func (h *IOHandler) handleJSON(entry log.Entry) error {
 	return err
 }
 
-// ConsoleHandler is a log.Handler that writes formatted log entries to stdout.
 type ConsoleHandler struct {
 	*IOHandler
 }
 
-// NewConsoleHandler creates a new console handler with the specified formatter.
 func NewConsoleHandler(config config.Config, json foundation.Json, level slog.Leveler, formatter string) *ConsoleHandler {
 	return &ConsoleHandler{
 		IOHandler: &IOHandler{

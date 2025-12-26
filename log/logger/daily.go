@@ -55,7 +55,6 @@ func (daily *Daily) Handle(channel string) (log.Handler, error) {
 	return NewRotatingFileHandler(writer, daily.config, daily.json, level, formatter), nil
 }
 
-// NewRotatingFileHandler creates a new slog handler for rotating log files with the specified formatter.
 func NewRotatingFileHandler(w io.Writer, config config.Config, json foundation.Json, level slog.Leveler, formatter string) log.Handler {
 	return &IOHandler{
 		writer:    w,
