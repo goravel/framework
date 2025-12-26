@@ -24,7 +24,6 @@ type Writer struct {
 
 func NewWriter(logger *slog.Logger, ctx context.Context) log.Writer {
 	entry := acquireEntry()
-	entry.time = time.Now()
 	entry.ctx = ctx
 	return &Writer{
 		logger: logger,
@@ -171,6 +170,7 @@ func (w *Writer) WithTrace() log.Writer {
 }
 
 func (w *Writer) log(level log.Level, msg string) {
+	w.entry.time = time.Now()
 	w.entry.message = msg
 	w.entry.level = level
 

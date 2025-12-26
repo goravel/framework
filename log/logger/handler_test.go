@@ -379,10 +379,31 @@ func TestIOHandlerJSONFormat(t *testing.T) {
 	assert.Nil(t, err)
 
 	output := buffer.String()
-	assert.Contains(t, output, `"level":"info"`)
-	assert.Contains(t, output, `"message":"test json message"`)
-	assert.Contains(t, output, `"environment":"test"`)
-	assert.Contains(t, output, "\n") // Should end with newline
+	assert.True(t, len(output) > 0)
+	assert.Equal(t, '\n', rune(output[len(output)-1])) // Should end with newline
+
+	// Unmarshal and verify entire JSON content
+	var result map[string]any
+	err = j.Unmarshal([]byte(output), &result)
+	assert.Nil(t, err)
+
+	assert.Equal(t, "2024-01-15 10:30:00", result["time"])
+	assert.Equal(t, "test", result["environment"])
+	assert.Equal(t, "info", result["level"])
+	assert.Equal(t, "test json message", result["message"])
+
+	// Verify no optional fields are present
+	assert.Nil(t, result["code"])
+	assert.Nil(t, result["context"])
+	assert.Nil(t, result["domain"])
+	assert.Nil(t, result["hint"])
+	assert.Nil(t, result["owner"])
+	assert.Nil(t, result["request"])
+	assert.Nil(t, result["response"])
+	assert.Nil(t, result["trace"])
+	assert.Nil(t, result["tags"])
+	assert.Nil(t, result["user"])
+	assert.Nil(t, result["extra"])
 }
 
 func TestIOHandlerJSONFormatWithAllFields(t *testing.T) {
@@ -416,19 +437,64 @@ func TestIOHandlerJSONFormatWithAllFields(t *testing.T) {
 	assert.Nil(t, err)
 
 	output := buffer.String()
-	assert.Contains(t, output, `"level":"error"`)
-	assert.Contains(t, output, `"message":"error json message"`)
-	assert.Contains(t, output, `"code":"ERR001"`)
-	assert.Contains(t, output, `"domain":"payment"`)
-	assert.Contains(t, output, `"hint":"check balance"`)
-	assert.Contains(t, output, `"owner":"team-a"`)
-	assert.Contains(t, output, `"tags":["critical","urgent"]`)
-	assert.Contains(t, output, `"extra":{"extra":"data"}`)
-	assert.Contains(t, output, `"trace"`)
-	assert.Contains(t, output, `"context"`)
-	assert.Contains(t, output, `"request"`)
-	assert.Contains(t, output, `"response"`)
-	assert.Contains(t, output, `"user"`)
+	assert.True(t, len(output) > 0)
+	assert.Equal(t, '\n', rune(output[len(output)-1])) // Should end with newline
+
+	// Unmarshal and verify entire JSON content
+	var result map[string]any
+	err = j.Unmarshal([]byte(output), &result)
+	assert.Nil(t, err)
+
+	// Verify required fields
+	assert.Equal(t, "2024-01-15 10:30:00", result["time"])
+	assert.Equal(t, "test", result["environment"])
+	assert.Equal(t, "error", result["level"])
+	assert.Equal(t, "error json message", result["message"])
+
+	// Verify optional fields
+	assert.Equal(t, "ERR001", result["code"])
+	assert.Equal(t, "payment", result["domain"])
+	assert.Equal(t, "check balance", result["hint"])
+	assert.Equal(t, "team-a", result["owner"])
+
+	// Verify context
+	context, ok := result["context"].(map[string]any)
+	assert.True(t, ok)
+	assert.Equal(t, "value", context["key"])
+
+	// Verify request
+	request, ok := result["request"].(map[string]any)
+	assert.True(t, ok)
+	assert.Equal(t, "POST", request["method"])
+	assert.Equal(t, "/api", request["url"])
+
+	// Verify response
+	response, ok := result["response"].(map[string]any)
+	assert.True(t, ok)
+	assert.Equal(t, float64(500), response["status"])
+
+	// Verify tags
+	tags, ok := result["tags"].([]any)
+	assert.True(t, ok)
+	assert.Equal(t, []any{"critical", "urgent"}, tags)
+
+	// Verify user
+	user, ok := result["user"].(map[string]any)
+	assert.True(t, ok)
+	assert.Equal(t, float64(123), user["id"])
+	assert.Equal(t, "test", user["name"])
+
+	// Verify extra (from with)
+	extra, ok := result["extra"].(map[string]any)
+	assert.True(t, ok)
+	assert.Equal(t, "data", extra["extra"])
+
+	// Verify trace
+	trace, ok := result["trace"].(map[string]any)
+	assert.True(t, ok)
+	root, ok := trace["root"].(map[string]any)
+	assert.True(t, ok)
+	assert.Equal(t, "error", root["message"])
 }
 
 func TestIOHandlerJSONFormatEmptyOptionalFields(t *testing.T) {
