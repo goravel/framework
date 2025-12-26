@@ -560,18 +560,46 @@ func Test_getFacadeDescription(t *testing.T) {
 }
 
 func TestGetDependencyBindings(t *testing.T) {
-	expected := []string{
-		binding.Log,
-		binding.Cache,
-		binding.Schema,
-		binding.Orm,
-		binding.Session,
-		binding.Validation,
-		binding.Http,
-		binding.View,
-		binding.Route,
-	}
-	assert.Equal(t, expected, getDependencyBindings(binding.Testing, binding.Bindings, true))
+	t.Run("with InstallTogether", func(t *testing.T) {
+		expected := []string{
+			binding.Log,
+			binding.Cache,
+			binding.Schema,
+			binding.Orm,
+			binding.Session,
+			binding.Validation,
+			binding.Http,
+			binding.View,
+			binding.Route,
+		}
+		assert.Equal(t, expected, getDependencyBindings(binding.Testing, binding.Bindings, true))
+
+		expected = []string{
+			binding.Log,
+			binding.Orm,
+		}
+		assert.Equal(t, expected, getDependencyBindings(binding.Schema, binding.Bindings, true))
+	})
+
+	t.Run("without InstallTogether", func(t *testing.T) {
+		expected := []string{
+			binding.Log,
+			binding.Cache,
+			binding.Orm,
+			binding.Session,
+			binding.Validation,
+			binding.Http,
+			binding.View,
+			binding.Route,
+		}
+		assert.Equal(t, expected, getDependencyBindings(binding.Testing, binding.Bindings, false))
+
+		expected = []string{
+			binding.Log,
+			binding.Orm,
+		}
+		assert.Equal(t, expected, getDependencyBindings(binding.Schema, binding.Bindings, false))
+	})
 }
 
 func TestGetDependencyBindings_CircularDependency(t *testing.T) {
