@@ -696,6 +696,7 @@ func TestWriter_ConcurrentAccess(t *testing.T) {
 	log, err := NewApplication(mockConfig, json.New())
 	assert.Nil(t, err)
 	assert.NotNil(t, log)
+	_ = file.Remove("storage")
 
 	const goroutines = 10
 	const iterations = 100
