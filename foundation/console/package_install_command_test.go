@@ -44,14 +44,12 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			{Key: fmt.Sprintf("%-11s", "Auth") + color.Gray().Sprintf(" - %s", "Description"), Value: "Auth"},
 			{Key: "Orm", Value: "Orm"},
 		}
-		installedBindings = []any{binding.Config}
 	)
 
 	beforeEach := func() {
 		mockContext = mocksconsole.NewContext(s.T())
 		mockJson = mocksfoundation.NewJson(s.T())
 		mockJson.EXPECT().MarshalString(mock.Anything).Return(pathsJSON, nil).Once()
-		installedBindings = []any{binding.Config}
 		bindings = map[string]binding.Info{
 			binding.Auth: {
 				Description:  "Description",
@@ -237,8 +235,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			beforeEach()
 			test.setup()
 
-			packageInstallCommand := NewPackageInstallCommand(bindings, &installedBindings, mockJson)
-			packageInstallCommand.installedFacadesInTheCurrentCommand = test.installedFacadesInTheCurrentCommand
+			packageInstallCommand := NewPackageInstallCommand(bindings, mockJson)
 
 			s.NoError(packageInstallCommand.Handle(mockContext))
 		})
@@ -271,13 +268,12 @@ func (s *PackageInstallCommandTestSuite) Test_installFacade_TwoFacadesHaveTheSam
 				Drivers: drivers,
 			},
 		}
-		dbFacade          = "DB"
-		ormFacade         = "Orm"
-		installedBindings = []any{}
+		dbFacade  = "DB"
+		ormFacade = "Orm"
 	)
 
 	mockJson.EXPECT().MarshalString(mock.Anything).Return(pathsJSON, nil).Once()
-	packageInstallCommand := NewPackageInstallCommand(bindings, &installedBindings, mockJson)
+	packageInstallCommand := NewPackageInstallCommand(bindings, mockJson)
 
 	// Install DB facade
 	mockContext.EXPECT().Spinner("> @go run "+bindings[binding.DB].PkgPath+"/setup install --facade=DB --main-path=github.com/goravel/framework --paths="+pathsJSON, mock.Anything).Return(nil).Once()
@@ -339,7 +335,6 @@ func (s *PackageInstallCommandTestSuite) Test_installDriver() {
 				IsBase:  true,
 			},
 		}
-		installedBindings = []any{binding.Config}
 	)
 
 	tests := []struct {
@@ -495,7 +490,7 @@ func (s *PackageInstallCommandTestSuite) Test_installDriver() {
 
 			tt.setup()
 
-			packageInstallCommand := NewPackageInstallCommand(bindings, &installedBindings, mockJson)
+			packageInstallCommand := NewPackageInstallCommand(bindings, mockJson)
 
 			s.Equal(tt.expectError, packageInstallCommand.installDriver(mockContext, facade, tt.bindingInfo))
 		})
@@ -503,8 +498,7 @@ func (s *PackageInstallCommandTestSuite) Test_installDriver() {
 }
 
 func (s *PackageInstallCommandTestSuite) Test_getBindingsToInstall() {
-	installedBindings := []any{binding.Cache}
-	packageInstallCommand := NewPackageInstallCommand(binding.Bindings, &installedBindings, json.New())
+	packageInstallCommand := NewPackageInstallCommand(binding.Bindings, json.New())
 
 	expected := []string{
 		binding.Log,
@@ -634,12 +628,11 @@ func Test_isInternalDriver(t *testing.T) {
 
 func (s *PackageInstallCommandTestSuite) Test_installDriver_WithDefaultFlag() {
 	var (
-		mockContext       = mocksconsole.NewContext(s.T())
-		mockJson          = mocksfoundation.NewJson(s.T())
-		pathsJSON         = `{"App":"app"}`
-		facade            = "Route"
-		installedBindings = []any{binding.Config}
-		bindingInfo       = binding.Info{
+		mockContext = mocksconsole.NewContext(s.T())
+		mockJson    = mocksfoundation.NewJson(s.T())
+		pathsJSON   = `{"App":"app"}`
+		facade      = "Route"
+		bindingInfo = binding.Info{
 			PkgPath:      "github.com/goravel/framework/route",
 			Dependencies: []string{binding.Config},
 			Drivers: []binding.Driver{
@@ -725,7 +718,7 @@ func (s *PackageInstallCommandTestSuite) Test_installDriver_WithDefaultFlag() {
 
 			tt.setup()
 
-			packageInstallCommand := NewPackageInstallCommand(bindings, &installedBindings, mockJson)
+			packageInstallCommand := NewPackageInstallCommand(bindings, mockJson)
 
 			s.Equal(tt.expectError, packageInstallCommand.installDriver(mockContext, facade, tt.bindingInfo))
 		})
@@ -734,12 +727,11 @@ func (s *PackageInstallCommandTestSuite) Test_installDriver_WithDefaultFlag() {
 
 func (s *PackageInstallCommandTestSuite) Test_installPackage_WithDevFlag() {
 	var (
-		mockContext       = mocksconsole.NewContext(s.T())
-		mockJson          = mocksfoundation.NewJson(s.T())
-		pathsJSON         = `{"App":"app"}`
-		pkg               = "github.com/goravel/package"
-		installedBindings = []any{binding.Config}
-		bindings          = map[string]binding.Info{}
+		mockContext = mocksconsole.NewContext(s.T())
+		mockJson    = mocksfoundation.NewJson(s.T())
+		pathsJSON   = `{"App":"app"}`
+		pkg         = "github.com/goravel/package"
+		bindings    = map[string]binding.Info{}
 	)
 
 	tests := []struct {
@@ -799,7 +791,7 @@ func (s *PackageInstallCommandTestSuite) Test_installPackage_WithDevFlag() {
 
 			tt.setup()
 
-			packageInstallCommand := NewPackageInstallCommand(bindings, &installedBindings, mockJson)
+			packageInstallCommand := NewPackageInstallCommand(bindings, mockJson)
 
 			err := packageInstallCommand.installPackage(mockContext, tt.pkg)
 			if tt.expectError != nil {
