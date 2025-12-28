@@ -25,7 +25,7 @@ type RequestTestSuite struct {
 	json    foundation.Json
 }
 
-func TestClientTestSuite(t *testing.T) {
+func TestRequestTestSuite(t *testing.T) {
 	suite.Run(t, new(RequestTestSuite))
 }
 
