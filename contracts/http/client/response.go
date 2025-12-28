@@ -1,22 +1,45 @@
 package client
 
-import "net/http"
+import (
+	"io"
+	"net/http"
+)
 
 type Response interface {
+	// Bind unmarshal the response body into the provided value.
+	// It reads the body safely and allows unmarshalling into structs or maps.
+	Bind(value any) error
+	// Body returns the response body as a string.
 	Body() (string, error)
+	// ClientError determines if the response status code is >= 400 and < 500.
 	ClientError() bool
+	// Cookie retrieves a cookie by name from the response.
 	Cookie(name string) *http.Cookie
+	// Cookies returns all cookies from the response.
 	Cookies() []*http.Cookie
+	// Failed determines if the response status code is >= 400.
 	Failed() bool
+	// Header retrieves the first value of a given header field.
 	Header(name string) string
+	// Headers returns all response headers.
 	Headers() http.Header
+	// Json returns the response body parsed as a map[string]any.
 	Json() (map[string]any, error)
+	// Redirect determines if the response status code is >= 300 and < 400.
 	Redirect() bool
+	// ServerError determines if the response status code is >= 500.
 	ServerError() bool
+	// Status returns the HTTP status code.
 	Status() int
+	// Stream returns the underlying reader to stream the response body.
+	// Use this for large files to avoid loading the entire content into memory.
+	//
+	// NOTE: You are responsible for closing the returned reader.
+	Stream() (io.ReadCloser, error)
+	// Successful determines if the response status code is >= 200 and < 300.
 	Successful() bool
 
-	/* status code related methods */
+	/* Status Code Helpers */
 
 	OK() bool                  // 200 OK
 	Created() bool             // 201 Created

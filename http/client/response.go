@@ -3,6 +3,7 @@ package client
 import (
 	"io"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/goravel/framework/contracts/foundation"
@@ -26,6 +27,19 @@ func NewResponse(response *http.Response, json foundation.Json) *Response {
 		json:     json,
 		response: response,
 	}
+}
+
+func (r *Response) Bind(value any) error {
+	content, err := r.getContent()
+	if err != nil {
+		return errors.HttpClientResponseBindFailed.Args(err)
+	}
+
+	if err := r.json.UnmarshalString(content, value); err != nil {
+		return errors.HttpClientResponseUnmarshalFailed.Args(err)
+	}
+
+	return nil
 }
 
 func (r *Response) Body() (string, error) {
@@ -84,6 +98,27 @@ func (r *Response) ServerError() bool {
 
 func (r *Response) Status() int {
 	return r.getStatusCode()
+}
+
+func (r *Response) Stream() (io.ReadCloser, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	// If the user already called Bind(), Body(), or Json(), the content is
+	// stored in memory (r.content). We return a reader for this cached string
+	// so the stream works seamlessly even after parsing.
+	if r.content != "" {
+		return io.NopCloser(strings.NewReader(r.content)), nil
+	}
+
+	if r.response == nil || r.response.Body == nil {
+		return nil, errors.HttpClientResponseUnmarshalFailed.Args("response is nil")
+	}
+
+	// We give the raw network stream to the user.
+	// Note: Calling Bind() after this point will likely fail or return empty
+	// data because the stream will be consumed.
+	return r.response.Body, nil
 }
 
 func (r *Response) Successful() bool {
