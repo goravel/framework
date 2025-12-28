@@ -53,7 +53,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, errors.JSONParserNotSet.SetModule(errors.ModuleHttp)
 		}
 
-		var factoryConfig *client.FactoryConfig
+		factoryConfig := &client.FactoryConfig{}
 		if err := ConfigFacade.UnmarshalKey("http", factoryConfig); err != nil {
 			return nil, err
 		}
