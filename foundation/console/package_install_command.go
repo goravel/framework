@@ -326,10 +326,6 @@ func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string
 	return r.installPackage(ctx, driver)
 }
 
-func (r *PackageInstallCommand) getBindingsToInstall(binding string) (bindingsToInstall []string) {
-	return getDependencyBindings(binding, r.bindings, true)
-}
-
 func doesFacadeExist(facade string) bool {
 	return file.Exists(convert.FacadeToFilepath(facade))
 }

@@ -12,10 +12,10 @@ import (
 	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/foundation/json"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/support/file"
 )
 
 type PackageInstallCommandTestSuite struct {
@@ -68,9 +68,8 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 	}
 
 	tests := []struct {
-		name                                string
-		installedFacadesInTheCurrentCommand []string
-		setup                               func()
+		name  string
+		setup func()
 	}{
 		{
 			name: "go get failed",
@@ -184,9 +183,10 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			},
 		},
 		{
-			name:                                "The install facade has been installed in the current command",
-			installedFacadesInTheCurrentCommand: []string{"Orm"},
+			name: "The install facade has been installed in the current command",
 			setup: func() {
+				s.NoError(file.PutContent("app/facades/orm.go", "package facades\n"))
+
 				mockContext.EXPECT().Arguments().Return([]string{facade}).Once()
 				mockContext.EXPECT().OptionBool("all").Return(false).Once()
 				mockContext.EXPECT().Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", facade, "Orm")).Once()
@@ -233,11 +233,14 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 	for _, test := range tests {
 		s.Run(test.name, func() {
 			beforeEach()
+
 			test.setup()
 
 			packageInstallCommand := NewPackageInstallCommand(bindings, mockJson)
 
 			s.NoError(packageInstallCommand.Handle(mockContext))
+
+			s.NoError(file.Remove("app"))
 		})
 	}
 }
@@ -495,22 +498,6 @@ func (s *PackageInstallCommandTestSuite) Test_installDriver() {
 			s.Equal(tt.expectError, packageInstallCommand.installDriver(mockContext, facade, tt.bindingInfo))
 		})
 	}
-}
-
-func (s *PackageInstallCommandTestSuite) Test_getBindingsToInstall() {
-	packageInstallCommand := NewPackageInstallCommand(binding.Bindings, json.New())
-
-	expected := []string{
-		binding.Log,
-		binding.Schema,
-		binding.Orm,
-		binding.Session,
-		binding.Validation,
-		binding.Http,
-		binding.View,
-		binding.Route,
-	}
-	s.Equal(expected, packageInstallCommand.getBindingsToInstall(binding.Testing))
 }
 
 func Test_getAvailableFacades(t *testing.T) {
