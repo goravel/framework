@@ -298,13 +298,10 @@ func (r *Request) send(method, uri string, body io.Reader) (client.Response, err
 	}
 
 	response := NewResponse(res, r.json)
+	// TODO: Remove this logic and the `bind` field in next major version.
+	// This supports the deprecated `Request.Bind()` method.
 	if r.bind != nil {
-		body, err := response.Body()
-		if err != nil {
-			return nil, err
-		}
-
-		if err := r.json.UnmarshalString(body, r.bind); err != nil {
+		if err := response.Bind(r.bind); err != nil {
 			return nil, err
 		}
 	}
