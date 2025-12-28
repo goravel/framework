@@ -2,13 +2,13 @@ package client
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"sync"
 
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http/client"
+	"github.com/goravel/framework/errors"
 )
 
 var _ client.Factory = (*Factory)(nil)
@@ -40,7 +40,7 @@ func (r *Factory) Client(name ...string) client.Client {
 	//   b) The config file does not have a "default_client" key set.
 	// We cannot proceed because we don't know which connection to use.
 	if key == "" {
-		panic("http client: default client is not configured")
+		return newClientWithError(errors.HttpClientDefaultNotSet)
 	}
 
 	r.mu.RLock()
@@ -59,8 +59,9 @@ func (r *Factory) Client(name ...string) client.Client {
 	}
 
 	cfg, ok := r.config.Clients[key]
+	// Returns a "Zombie Client" that holds the error until a request is sent.
 	if !ok {
-		panic(fmt.Sprintf("http client: connection [%s] is not configured", key))
+		return newClientWithError(errors.HttpClientConnectionNotFound.Args(key))
 	}
 
 	newClient := NewClient(key, &cfg, r.json)
@@ -73,11 +74,11 @@ func (r *Factory) Request(name ...string) client.Request {
 	return r.Client(name...).NewRequest()
 }
 
-// ----------------------------------------------------------------------
+//
 // Proxy Methods (Backward Compatibility)
 // These methods allow the Factory to be used directly as a Request builder.
 // They strictly delegate to the default client's Request() method.
-// ----------------------------------------------------------------------
+//
 
 func (r *Factory) Get(uri string) (client.Response, error) {
 	return r.Request().Get(uri)

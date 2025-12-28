@@ -94,6 +94,14 @@ var (
 	GrpcEmptyServerPort         = New("port can't be empty")
 	GrpcInvalidInterceptorsType = New("the type of clients.%s.interceptors must be []string")
 
+	HttpClientConnectionNotFound      = New("connection [%s] is not configured").SetModule(ModuleHttp)
+	HttpClientDefaultNotSet           = New("default client is not configured").SetModule(ModuleHttp)
+	HttpClientInvalidURL              = New("invalid url: %v").SetModule(ModuleHttp)
+	HttpClientRequestFailed           = New("request failed: %v").SetModule(ModuleHttp)
+	HttpClientRequestMarshalFailed    = New("failed to marshal request body: %v").SetModule(ModuleHttp)
+	HttpClientResponseBindFailed      = New("failed to bind response: %v").SetModule(ModuleHttp)
+	HttpClientResponseUnmarshalFailed = New("failed to unmarshal response body: %v").SetModule(ModuleHttp)
+
 	HttpRateLimitFailedToTakeToken     = New("failed to take token")
 	HttpRateLimitFailedToCheckThrottle = New("failed to check throttle: %s")
 

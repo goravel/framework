@@ -14,6 +14,13 @@ type Client struct {
 	config     *client.Config
 	json       foundation.Json
 	httpClient *http.Client
+
+	// initError stores any error encountered during client creation (e.g., missing configuration).
+	//
+	// This allows us to support method chaining (Fluent API) without panicking or
+	// forcing the user to handle errors during client retrieval. The error is
+	// returned lazily when the request is eventually executed.
+	initError error
 }
 
 func NewClient(name string, cfg *client.Config, json foundation.Json) *Client {
@@ -43,6 +50,20 @@ func NewClient(name string, cfg *client.Config, json foundation.Json) *Client {
 	}
 }
 
+// newClientWithError creates a client that will fail immediately when used.
+//
+// This is used internally by the Factory when a requested client (e.g., "github")
+// is not found in the configuration. Instead of panicking, we return this
+// "zombie" client which returns the error lazily when a request is made.
+func newClientWithError(err error) *Client {
+	return &Client{
+		initError: err,
+		// We provide an empty config to ensure internal methods do not panic
+		// if they try to access config fields before the error is checked.
+		config: &client.Config{},
+	}
+}
+
 func (r *Client) Name() string {
 	return r.name
 }
@@ -56,5 +77,11 @@ func (r *Client) HTTPClient() *http.Client {
 }
 
 func (r *Client) NewRequest() client.Request {
-	return NewRequest(r, r.json)
+	req := NewRequest(r, r.json)
+
+	if r.initError != nil {
+		req.setClientErr(r.initError)
+	}
+
+	return req
 }

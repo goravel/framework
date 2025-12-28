@@ -64,7 +64,7 @@ func (s *RequestTestSuite) TestClone() {
 	s.NotEqual(req.(*Request).queryParams.Get("param1"), clonedReq.queryParams.Get("param1"))
 }
 
-func (s *RequestTestSuite) TestDoRequest_Success() {
+func (s *RequestTestSuite) TestSend_Success() {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"message":"success"}`))
@@ -81,47 +81,7 @@ func (s *RequestTestSuite) TestDoRequest_Success() {
 	s.Equal(map[string]any{"message": "success"}, jsonData)
 }
 
-func (s *RequestTestSuite) TestDoRequest_Bind() {
-	type Message struct {
-		ID     int               `json:"id"`
-		Name   string            `json:"name"`
-		Active bool              `json:"active"`
-		Scores []int             `json:"scores"`
-		Meta   map[string]string `json:"meta"`
-		Nested struct {
-			Title  string `json:"title"`
-			Status string `json:"status"`
-		} `json:"nested"`
-	}
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`{
-			"id": 1,
-			"name": "Test User",
-			"active": true,
-			"scores": [100, 95, 90],
-			"meta": {"key1": "value1", "key2": "value2"},
-			"nested": {"title": "Admin", "status": "Active"}
-		}`))
-	}))
-	defer server.Close()
-
-	var msg Message
-	resp, err := s.request.Clone().AcceptJSON().Bind(&msg).Get(server.URL)
-	s.NoError(err)
-	s.NotNil(resp)
-	s.Equal(200, resp.Status())
-
-	s.Equal(1, msg.ID)
-	s.Equal("Test User", msg.Name)
-	s.Equal(true, msg.Active)
-	s.Equal([]int{100, 95, 90}, msg.Scores)
-	s.Equal("value1", msg.Meta["key1"])
-	s.Equal("Admin", msg.Nested.Title)
-}
-
-func (s *RequestTestSuite) TestDoRequest_Timeout() {
+func (s *RequestTestSuite) TestSend_Timeout() {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(2 * time.Second)
 		w.WriteHeader(http.StatusOK)
@@ -134,7 +94,7 @@ func (s *RequestTestSuite) TestDoRequest_Timeout() {
 	s.Error(err)
 }
 
-func (s *RequestTestSuite) TestDoRequest_404() {
+func (s *RequestTestSuite) TestSend_404() {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 	}))

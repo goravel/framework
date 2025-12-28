@@ -27,6 +27,13 @@ type Request struct {
 	queryParams url.Values
 	urlParams   map[string]string
 	cookies     []*http.Cookie
+
+	// clientErr stores any error that occurred during the creation of the parent Client.
+	//
+	// This allows the Factory to return a "zombie" Client when a configuration is missing,
+	// preserving the fluent API chain (e.g., Http.Client("missing").Get("/")).
+	// The error is checked and returned lazily when the request is executed in send().
+	clientErr error
 }
 
 func NewRequest(client client.Client, json foundation.Json) *Request {
@@ -43,31 +50,31 @@ func NewRequest(client client.Client, json foundation.Json) *Request {
 }
 
 func (r *Request) Get(uri string) (client.Response, error) {
-	return r.doRequest(http.MethodGet, uri, nil)
+	return r.send(http.MethodGet, uri, nil)
 }
 
 func (r *Request) Post(uri string, body io.Reader) (client.Response, error) {
-	return r.doRequest(http.MethodPost, uri, body)
+	return r.send(http.MethodPost, uri, body)
 }
 
 func (r *Request) Put(uri string, body io.Reader) (client.Response, error) {
-	return r.doRequest(http.MethodPut, uri, body)
+	return r.send(http.MethodPut, uri, body)
 }
 
 func (r *Request) Delete(uri string, body io.Reader) (client.Response, error) {
-	return r.doRequest(http.MethodDelete, uri, body)
+	return r.send(http.MethodDelete, uri, body)
 }
 
 func (r *Request) Patch(uri string, body io.Reader) (client.Response, error) {
-	return r.doRequest(http.MethodPatch, uri, body)
+	return r.send(http.MethodPatch, uri, body)
 }
 
 func (r *Request) Head(uri string) (client.Response, error) {
-	return r.doRequest(http.MethodHead, uri, nil)
+	return r.send(http.MethodHead, uri, nil)
 }
 
 func (r *Request) Options(uri string) (client.Response, error) {
-	return r.doRequest(http.MethodOptions, uri, nil)
+	return r.send(http.MethodOptions, uri, nil)
 }
 
 func (r *Request) Accept(contentType string) client.Request {
@@ -82,6 +89,10 @@ func (r *Request) AsForm() client.Request {
 	return r.WithHeader("Content-Type", "application/x-www-form-urlencoded")
 }
 
+// Bind decodes the response body into the given variable.
+//
+// Deprecated: Do not use this method. It masks HTTP errors (like 500s) by
+// parsing the body before checking the status code. Use Response.Bind() instead.
 func (r *Request) Bind(value any) client.Request {
 	r.bind = value
 	return r
@@ -198,43 +209,6 @@ func (r *Request) WithUrlParameters(params map[string]string) client.Request {
 	return r
 }
 
-func (r *Request) doRequest(method, uri string, body io.Reader) (client.Response, error) {
-	parsedURL, err := r.parseRequestURL(uri)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequestWithContext(r.ctx, method, parsedURL, body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header = r.headers
-
-	for _, value := range r.cookies {
-		req.AddCookie(value)
-	}
-
-	res, err := r.client.HTTPClient().Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	response := NewResponse(res, r.json)
-	if r.bind != nil {
-		body, err := response.Body()
-		if err != nil {
-			return nil, err
-		}
-
-		if err := r.json.UnmarshalString(body, r.bind); err != nil {
-			return nil, err
-		}
-	}
-
-	return response, nil
-}
-
 func (r *Request) parseRequestURL(uri string) (string, error) {
 	baseURL := r.client.Config().BaseUrl
 
@@ -291,4 +265,49 @@ func (r *Request) parseRequestURL(uri string) (string, error) {
 	}
 
 	return reqURL.String(), nil
+}
+
+func (r *Request) setClientErr(err error) {
+	r.clientErr = err
+}
+
+func (r *Request) send(method, uri string, body io.Reader) (client.Response, error) {
+	if r.clientErr != nil {
+		return nil, r.clientErr
+	}
+
+	parsedURL, err := r.parseRequestURL(uri)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(r.ctx, method, parsedURL, body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header = r.headers
+
+	for _, value := range r.cookies {
+		req.AddCookie(value)
+	}
+
+	res, err := r.client.HTTPClient().Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	response := NewResponse(res, r.json)
+	if r.bind != nil {
+		body, err := response.Body()
+		if err != nil {
+			return nil, err
+		}
+
+		if err := r.json.UnmarshalString(body, r.bind); err != nil {
+			return nil, err
+		}
+	}
+
+	return response, nil
 }
