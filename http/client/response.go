@@ -23,8 +23,8 @@ type Response struct {
 
 func NewResponse(response *http.Response, json foundation.Json) *Response {
 	return &Response{
-		response: response,
 		json:     json,
+		response: response,
 	}
 }
 

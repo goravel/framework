@@ -12,13 +12,16 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http/client"
 	"github.com/goravel/framework/foundation/json"
 )
 
 type RequestTestSuite struct {
 	suite.Suite
-	request client.Request
+	request *Request
+	client  *Client
+	json    foundation.Json
 }
 
 func TestClientTestSuite(t *testing.T) {
@@ -26,14 +29,13 @@ func TestClientTestSuite(t *testing.T) {
 }
 
 func (s *RequestTestSuite) SetupTest() {
-	config := &client.Config{
-		Timeout:             30 * time.Second,
-		MaxIdleConns:        0,
-		MaxConnsPerHost:     0,
-		MaxIdleConnsPerHost: 0,
-		IdleConnTimeout:     30 * time.Second,
+	cfg := &client.Config{
+		BaseUrl: "https://api.example.com",
+		Timeout: 30 * time.Second,
 	}
-	s.request = NewRequest(config, json.New())
+	s.json = json.New()
+	s.client = NewClient("test", cfg, s.json)
+	s.request = NewRequest(s.client, s.json)
 }
 
 func (s *RequestTestSuite) TestClone() {
@@ -379,10 +381,11 @@ func (s *RequestTestSuite) TestParseRequestURL() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
+			cfg := &client.Config{
+				BaseUrl: tt.baseURL,
+			}
 			r := &Request{
-				config: &client.Config{
-					BaseUrl: tt.baseURL,
-				},
+				client:      NewClient("test2", cfg, s.json),
 				urlParams:   tt.urlParams,
 				queryParams: tt.queryParams,
 			}

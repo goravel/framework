@@ -7,6 +7,8 @@ import (
 	"github.com/goravel/framework/contracts/http/client"
 )
 
+var _ client.Client = (*Client)(nil)
+
 type Client struct {
 	name       string
 	config     *client.Config
