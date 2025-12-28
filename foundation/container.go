@@ -80,8 +80,8 @@ func (r *Container) Fresh(bindings ...any) {
 			return true
 		})
 	} else {
-		for _, bd := range bindings {
-			r.instances.Delete(bd)
+		for _, binding := range bindings {
+			r.instances.Delete(binding)
 		}
 	}
 }
@@ -406,7 +406,7 @@ func (r *Container) Singleton(key any, callback func(app contractsfoundation.App
 }
 
 func (r *Container) make(key any, parameters map[string]any) (any, error) {
-	bd, ok := r.bindings.Load(key)
+	binding, ok := r.bindings.Load(key)
 	if !ok {
 		return nil, fmt.Errorf("binding not found: %+v", key)
 	}
@@ -418,7 +418,7 @@ func (r *Container) make(key any, parameters map[string]any) (any, error) {
 		}
 	}
 
-	bindingImpl := bd.(instance)
+	bindingImpl := binding.(instance)
 	switch concrete := bindingImpl.concrete.(type) {
 	case func(app contractsfoundation.Application) (any, error):
 		concreteImpl, err := concrete(App)
