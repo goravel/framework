@@ -327,7 +327,7 @@ func setEnv() {
 				if arg == "artisan" {
 					support.RuntimeMode = support.RuntimeArtisan
 				}
-				support.DontVerifyEnvFileExists = slices.Contains(support.DontVerifyEnvFileWhitelist, arg)
+				support.DontVerifyEnvFileExists = support.DontVerifyEnvFileExists || slices.Contains(support.DontVerifyEnvFileWhitelist, arg)
 			}
 		}
 	}
