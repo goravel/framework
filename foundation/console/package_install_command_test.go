@@ -604,7 +604,7 @@ func TestGetDependencyBindings_CircularDependency(t *testing.T) {
 	result := getDependencyBindings("A", bindings, true)
 
 	// Should return unique dependencies without infinite loop
-	assert.ElementsMatch(t, []string{"B", "C", "A"}, result)
+	assert.ElementsMatch(t, []string{"B", "C"}, result)
 }
 
 func Test_isInternalDriver(t *testing.T) {
