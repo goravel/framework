@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -79,6 +80,84 @@ func (s *RequestTestSuite) TestSend_Success() {
 	jsonData, err := resp.Json()
 	s.NoError(err)
 	s.Equal(map[string]any{"message": "success"}, jsonData)
+}
+
+func (s *RequestTestSuite) TestSend_Bind() {
+	type Message struct {
+		ID     int               `json:"id"`
+		Name   string            `json:"name"`
+		Active bool              `json:"active"`
+		Scores []int             `json:"scores"`
+		Meta   map[string]string `json:"meta"`
+		Nested struct {
+			Title  string `json:"title"`
+			Status string `json:"status"`
+		} `json:"nested"`
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{
+			"id": 1,
+			"name": "Test User",
+			"active": true,
+			"scores": [100, 95, 90],
+			"meta": {"key1": "value1", "key2": "value2"},
+			"nested": {"title": "Admin", "status": "Active"}
+		}`))
+	}))
+	defer server.Close()
+
+	var msg Message
+	resp, err := s.request.Clone().AcceptJSON().Get(server.URL)
+	s.NoError(err)
+	s.NotNil(resp)
+	s.Equal(200, resp.Status())
+	s.NoError(resp.Bind(&msg))
+
+	s.Equal(1, msg.ID)
+	s.Equal("Test User", msg.Name)
+	s.Equal(true, msg.Active)
+	s.Equal([]int{100, 95, 90}, msg.Scores)
+	s.Equal("value1", msg.Meta["key1"])
+	s.Equal("Admin", msg.Nested.Title)
+}
+
+func (s *RequestTestSuite) TestSend_Stream() {
+	expectedData := "chunk1-chunk2-chunk3"
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(expectedData))
+	}))
+	defer server.Close()
+
+	resp, err := s.request.Clone().Get(server.URL)
+	s.NoError(err)
+
+	stream, err := resp.Stream()
+	s.NoError(err)
+	defer func(stream io.ReadCloser) {
+		s.NoError(stream.Close())
+	}(stream)
+
+	content, err := io.ReadAll(stream)
+	s.NoError(err)
+	s.Equal(expectedData, string(content))
+
+	// Scenario 2: Body() then Stream() (Smart Fallback)
+	resp2, err := s.request.Clone().Get(server.URL)
+	s.NoError(err)
+
+	bodyString, err := resp2.Body()
+	s.NoError(err)
+	s.Equal(expectedData, bodyString)
+
+	stream2, err := resp2.Stream()
+	s.NoError(err)
+
+	content2, err := io.ReadAll(stream2)
+	s.NoError(err)
+	s.Equal(expectedData, string(content2))
 }
 
 func (s *RequestTestSuite) TestSend_Timeout() {

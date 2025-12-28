@@ -301,7 +301,7 @@ func (r *Request) send(method, uri string, body io.Reader) (client.Response, err
 	// TODO: Remove this logic and the `bind` field in next major version.
 	// This supports the deprecated `Request.Bind()` method.
 	if r.bind != nil {
-		if err := response.Bind(r.bind); err != nil {
+		if err = response.Bind(r.bind); err != nil {
 			return nil, err
 		}
 	}
