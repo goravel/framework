@@ -144,7 +144,7 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 	}
 
 	// Clear chosen drivers after installation is complete, to avoid affecting subsequent installations.
-	clear(r.chosenDrivers)
+	r.chosenDrivers = nil
 
 	return nil
 }
