@@ -3,7 +3,14 @@
 package client
 
 import (
+	context "context"
+
 	client "github.com/goravel/framework/contracts/http/client"
+
+	http "net/http"
+
+	io "io"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -18,6 +25,196 @@ type Factory_Expecter struct {
 
 func (_m *Factory) EXPECT() *Factory_Expecter {
 	return &Factory_Expecter{mock: &_m.Mock}
+}
+
+// Accept provides a mock function with given fields: contentType
+func (_m *Factory) Accept(contentType string) client.Request {
+	ret := _m.Called(contentType)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Accept")
+	}
+
+	var r0 client.Request
+	if rf, ok := ret.Get(0).(func(string) client.Request); ok {
+		r0 = rf(contentType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Request)
+		}
+	}
+
+	return r0
+}
+
+// Factory_Accept_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Accept'
+type Factory_Accept_Call struct {
+	*mock.Call
+}
+
+// Accept is a helper method to define mock.On call
+//   - contentType string
+func (_e *Factory_Expecter) Accept(contentType interface{}) *Factory_Accept_Call {
+	return &Factory_Accept_Call{Call: _e.mock.On("Accept", contentType)}
+}
+
+func (_c *Factory_Accept_Call) Run(run func(contentType string)) *Factory_Accept_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Factory_Accept_Call) Return(_a0 client.Request) *Factory_Accept_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Factory_Accept_Call) RunAndReturn(run func(string) client.Request) *Factory_Accept_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// AcceptJSON provides a mock function with no fields
+func (_m *Factory) AcceptJSON() client.Request {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for AcceptJSON")
+	}
+
+	var r0 client.Request
+	if rf, ok := ret.Get(0).(func() client.Request); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Request)
+		}
+	}
+
+	return r0
+}
+
+// Factory_AcceptJSON_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AcceptJSON'
+type Factory_AcceptJSON_Call struct {
+	*mock.Call
+}
+
+// AcceptJSON is a helper method to define mock.On call
+func (_e *Factory_Expecter) AcceptJSON() *Factory_AcceptJSON_Call {
+	return &Factory_AcceptJSON_Call{Call: _e.mock.On("AcceptJSON")}
+}
+
+func (_c *Factory_AcceptJSON_Call) Run(run func()) *Factory_AcceptJSON_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Factory_AcceptJSON_Call) Return(_a0 client.Request) *Factory_AcceptJSON_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Factory_AcceptJSON_Call) RunAndReturn(run func() client.Request) *Factory_AcceptJSON_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// AsForm provides a mock function with no fields
+func (_m *Factory) AsForm() client.Request {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for AsForm")
+	}
+
+	var r0 client.Request
+	if rf, ok := ret.Get(0).(func() client.Request); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Request)
+		}
+	}
+
+	return r0
+}
+
+// Factory_AsForm_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AsForm'
+type Factory_AsForm_Call struct {
+	*mock.Call
+}
+
+// AsForm is a helper method to define mock.On call
+func (_e *Factory_Expecter) AsForm() *Factory_AsForm_Call {
+	return &Factory_AsForm_Call{Call: _e.mock.On("AsForm")}
+}
+
+func (_c *Factory_AsForm_Call) Run(run func()) *Factory_AsForm_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Factory_AsForm_Call) Return(_a0 client.Request) *Factory_AsForm_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Factory_AsForm_Call) RunAndReturn(run func() client.Request) *Factory_AsForm_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Bind provides a mock function with given fields: value
+func (_m *Factory) Bind(value interface{}) client.Request {
+	ret := _m.Called(value)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Bind")
+	}
+
+	var r0 client.Request
+	if rf, ok := ret.Get(0).(func(interface{}) client.Request); ok {
+		r0 = rf(value)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Request)
+		}
+	}
+
+	return r0
+}
+
+// Factory_Bind_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Bind'
+type Factory_Bind_Call struct {
+	*mock.Call
+}
+
+// Bind is a helper method to define mock.On call
+//   - value interface{}
+func (_e *Factory_Expecter) Bind(value interface{}) *Factory_Bind_Call {
+	return &Factory_Bind_Call{Call: _e.mock.On("Bind", value)}
+}
+
+func (_c *Factory_Bind_Call) Run(run func(value interface{})) *Factory_Bind_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(interface{}))
+	})
+	return _c
+}
+
+func (_c *Factory_Bind_Call) Return(_a0 client.Request) *Factory_Bind_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Factory_Bind_Call) RunAndReturn(run func(interface{}) client.Request) *Factory_Bind_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // Client provides a mock function with given fields: name
@@ -81,6 +278,558 @@ func (_c *Factory_Client_Call) RunAndReturn(run func(...string) client.Client) *
 	return _c
 }
 
+// Clone provides a mock function with no fields
+func (_m *Factory) Clone() client.Request {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Clone")
+	}
+
+	var r0 client.Request
+	if rf, ok := ret.Get(0).(func() client.Request); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Request)
+		}
+	}
+
+	return r0
+}
+
+// Factory_Clone_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Clone'
+type Factory_Clone_Call struct {
+	*mock.Call
+}
+
+// Clone is a helper method to define mock.On call
+func (_e *Factory_Expecter) Clone() *Factory_Clone_Call {
+	return &Factory_Clone_Call{Call: _e.mock.On("Clone")}
+}
+
+func (_c *Factory_Clone_Call) Run(run func()) *Factory_Clone_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Factory_Clone_Call) Return(_a0 client.Request) *Factory_Clone_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Factory_Clone_Call) RunAndReturn(run func() client.Request) *Factory_Clone_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Delete provides a mock function with given fields: uri, body
+func (_m *Factory) Delete(uri string, body io.Reader) (client.Response, error) {
+	ret := _m.Called(uri, body)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Delete")
+	}
+
+	var r0 client.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string, io.Reader) (client.Response, error)); ok {
+		return rf(uri, body)
+	}
+	if rf, ok := ret.Get(0).(func(string, io.Reader) client.Response); ok {
+		r0 = rf(uri, body)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string, io.Reader) error); ok {
+		r1 = rf(uri, body)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Factory_Delete_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Delete'
+type Factory_Delete_Call struct {
+	*mock.Call
+}
+
+// Delete is a helper method to define mock.On call
+//   - uri string
+//   - body io.Reader
+func (_e *Factory_Expecter) Delete(uri interface{}, body interface{}) *Factory_Delete_Call {
+	return &Factory_Delete_Call{Call: _e.mock.On("Delete", uri, body)}
+}
+
+func (_c *Factory_Delete_Call) Run(run func(uri string, body io.Reader)) *Factory_Delete_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(io.Reader))
+	})
+	return _c
+}
+
+func (_c *Factory_Delete_Call) Return(_a0 client.Response, _a1 error) *Factory_Delete_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Factory_Delete_Call) RunAndReturn(run func(string, io.Reader) (client.Response, error)) *Factory_Delete_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// FlushHeaders provides a mock function with no fields
+func (_m *Factory) FlushHeaders() client.Request {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for FlushHeaders")
+	}
+
+	var r0 client.Request
+	if rf, ok := ret.Get(0).(func() client.Request); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Request)
+		}
+	}
+
+	return r0
+}
+
+// Factory_FlushHeaders_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FlushHeaders'
+type Factory_FlushHeaders_Call struct {
+	*mock.Call
+}
+
+// FlushHeaders is a helper method to define mock.On call
+func (_e *Factory_Expecter) FlushHeaders() *Factory_FlushHeaders_Call {
+	return &Factory_FlushHeaders_Call{Call: _e.mock.On("FlushHeaders")}
+}
+
+func (_c *Factory_FlushHeaders_Call) Run(run func()) *Factory_FlushHeaders_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Factory_FlushHeaders_Call) Return(_a0 client.Request) *Factory_FlushHeaders_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Factory_FlushHeaders_Call) RunAndReturn(run func() client.Request) *Factory_FlushHeaders_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Get provides a mock function with given fields: uri
+func (_m *Factory) Get(uri string) (client.Response, error) {
+	ret := _m.Called(uri)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Get")
+	}
+
+	var r0 client.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (client.Response, error)); ok {
+		return rf(uri)
+	}
+	if rf, ok := ret.Get(0).(func(string) client.Response); ok {
+		r0 = rf(uri)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(uri)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Factory_Get_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Get'
+type Factory_Get_Call struct {
+	*mock.Call
+}
+
+// Get is a helper method to define mock.On call
+//   - uri string
+func (_e *Factory_Expecter) Get(uri interface{}) *Factory_Get_Call {
+	return &Factory_Get_Call{Call: _e.mock.On("Get", uri)}
+}
+
+func (_c *Factory_Get_Call) Run(run func(uri string)) *Factory_Get_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Factory_Get_Call) Return(_a0 client.Response, _a1 error) *Factory_Get_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Factory_Get_Call) RunAndReturn(run func(string) (client.Response, error)) *Factory_Get_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Head provides a mock function with given fields: uri
+func (_m *Factory) Head(uri string) (client.Response, error) {
+	ret := _m.Called(uri)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Head")
+	}
+
+	var r0 client.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (client.Response, error)); ok {
+		return rf(uri)
+	}
+	if rf, ok := ret.Get(0).(func(string) client.Response); ok {
+		r0 = rf(uri)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(uri)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Factory_Head_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Head'
+type Factory_Head_Call struct {
+	*mock.Call
+}
+
+// Head is a helper method to define mock.On call
+//   - uri string
+func (_e *Factory_Expecter) Head(uri interface{}) *Factory_Head_Call {
+	return &Factory_Head_Call{Call: _e.mock.On("Head", uri)}
+}
+
+func (_c *Factory_Head_Call) Run(run func(uri string)) *Factory_Head_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Factory_Head_Call) Return(_a0 client.Response, _a1 error) *Factory_Head_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Factory_Head_Call) RunAndReturn(run func(string) (client.Response, error)) *Factory_Head_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Options provides a mock function with given fields: uri
+func (_m *Factory) Options(uri string) (client.Response, error) {
+	ret := _m.Called(uri)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Options")
+	}
+
+	var r0 client.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (client.Response, error)); ok {
+		return rf(uri)
+	}
+	if rf, ok := ret.Get(0).(func(string) client.Response); ok {
+		r0 = rf(uri)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(uri)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Factory_Options_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Options'
+type Factory_Options_Call struct {
+	*mock.Call
+}
+
+// Options is a helper method to define mock.On call
+//   - uri string
+func (_e *Factory_Expecter) Options(uri interface{}) *Factory_Options_Call {
+	return &Factory_Options_Call{Call: _e.mock.On("Options", uri)}
+}
+
+func (_c *Factory_Options_Call) Run(run func(uri string)) *Factory_Options_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Factory_Options_Call) Return(_a0 client.Response, _a1 error) *Factory_Options_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Factory_Options_Call) RunAndReturn(run func(string) (client.Response, error)) *Factory_Options_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Patch provides a mock function with given fields: uri, body
+func (_m *Factory) Patch(uri string, body io.Reader) (client.Response, error) {
+	ret := _m.Called(uri, body)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Patch")
+	}
+
+	var r0 client.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string, io.Reader) (client.Response, error)); ok {
+		return rf(uri, body)
+	}
+	if rf, ok := ret.Get(0).(func(string, io.Reader) client.Response); ok {
+		r0 = rf(uri, body)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string, io.Reader) error); ok {
+		r1 = rf(uri, body)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Factory_Patch_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Patch'
+type Factory_Patch_Call struct {
+	*mock.Call
+}
+
+// Patch is a helper method to define mock.On call
+//   - uri string
+//   - body io.Reader
+func (_e *Factory_Expecter) Patch(uri interface{}, body interface{}) *Factory_Patch_Call {
+	return &Factory_Patch_Call{Call: _e.mock.On("Patch", uri, body)}
+}
+
+func (_c *Factory_Patch_Call) Run(run func(uri string, body io.Reader)) *Factory_Patch_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(io.Reader))
+	})
+	return _c
+}
+
+func (_c *Factory_Patch_Call) Return(_a0 client.Response, _a1 error) *Factory_Patch_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Factory_Patch_Call) RunAndReturn(run func(string, io.Reader) (client.Response, error)) *Factory_Patch_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Post provides a mock function with given fields: uri, body
+func (_m *Factory) Post(uri string, body io.Reader) (client.Response, error) {
+	ret := _m.Called(uri, body)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Post")
+	}
+
+	var r0 client.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string, io.Reader) (client.Response, error)); ok {
+		return rf(uri, body)
+	}
+	if rf, ok := ret.Get(0).(func(string, io.Reader) client.Response); ok {
+		r0 = rf(uri, body)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string, io.Reader) error); ok {
+		r1 = rf(uri, body)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Factory_Post_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Post'
+type Factory_Post_Call struct {
+	*mock.Call
+}
+
+// Post is a helper method to define mock.On call
+//   - uri string
+//   - body io.Reader
+func (_e *Factory_Expecter) Post(uri interface{}, body interface{}) *Factory_Post_Call {
+	return &Factory_Post_Call{Call: _e.mock.On("Post", uri, body)}
+}
+
+func (_c *Factory_Post_Call) Run(run func(uri string, body io.Reader)) *Factory_Post_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(io.Reader))
+	})
+	return _c
+}
+
+func (_c *Factory_Post_Call) Return(_a0 client.Response, _a1 error) *Factory_Post_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Factory_Post_Call) RunAndReturn(run func(string, io.Reader) (client.Response, error)) *Factory_Post_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Put provides a mock function with given fields: uri, body
+func (_m *Factory) Put(uri string, body io.Reader) (client.Response, error) {
+	ret := _m.Called(uri, body)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Put")
+	}
+
+	var r0 client.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string, io.Reader) (client.Response, error)); ok {
+		return rf(uri, body)
+	}
+	if rf, ok := ret.Get(0).(func(string, io.Reader) client.Response); ok {
+		r0 = rf(uri, body)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string, io.Reader) error); ok {
+		r1 = rf(uri, body)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Factory_Put_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Put'
+type Factory_Put_Call struct {
+	*mock.Call
+}
+
+// Put is a helper method to define mock.On call
+//   - uri string
+//   - body io.Reader
+func (_e *Factory_Expecter) Put(uri interface{}, body interface{}) *Factory_Put_Call {
+	return &Factory_Put_Call{Call: _e.mock.On("Put", uri, body)}
+}
+
+func (_c *Factory_Put_Call) Run(run func(uri string, body io.Reader)) *Factory_Put_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(io.Reader))
+	})
+	return _c
+}
+
+func (_c *Factory_Put_Call) Return(_a0 client.Response, _a1 error) *Factory_Put_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Factory_Put_Call) RunAndReturn(run func(string, io.Reader) (client.Response, error)) *Factory_Put_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ReplaceHeaders provides a mock function with given fields: headers
+func (_m *Factory) ReplaceHeaders(headers map[string]string) client.Request {
+	ret := _m.Called(headers)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ReplaceHeaders")
+	}
+
+	var r0 client.Request
+	if rf, ok := ret.Get(0).(func(map[string]string) client.Request); ok {
+		r0 = rf(headers)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Request)
+		}
+	}
+
+	return r0
+}
+
+// Factory_ReplaceHeaders_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ReplaceHeaders'
+type Factory_ReplaceHeaders_Call struct {
+	*mock.Call
+}
+
+// ReplaceHeaders is a helper method to define mock.On call
+//   - headers map[string]string
+func (_e *Factory_Expecter) ReplaceHeaders(headers interface{}) *Factory_ReplaceHeaders_Call {
+	return &Factory_ReplaceHeaders_Call{Call: _e.mock.On("ReplaceHeaders", headers)}
+}
+
+func (_c *Factory_ReplaceHeaders_Call) Run(run func(headers map[string]string)) *Factory_ReplaceHeaders_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(map[string]string))
+	})
+	return _c
+}
+
+func (_c *Factory_ReplaceHeaders_Call) Return(_a0 client.Request) *Factory_ReplaceHeaders_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Factory_ReplaceHeaders_Call) RunAndReturn(run func(map[string]string) client.Request) *Factory_ReplaceHeaders_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Request provides a mock function with given fields: name
 func (_m *Factory) Request(name ...string) client.Request {
 	_va := make([]interface{}, len(name))
@@ -138,6 +887,696 @@ func (_c *Factory_Request_Call) Return(_a0 client.Request) *Factory_Request_Call
 }
 
 func (_c *Factory_Request_Call) RunAndReturn(run func(...string) client.Request) *Factory_Request_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithBasicAuth provides a mock function with given fields: username, password
+func (_m *Factory) WithBasicAuth(username string, password string) client.Request {
+	ret := _m.Called(username, password)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithBasicAuth")
+	}
+
+	var r0 client.Request
+	if rf, ok := ret.Get(0).(func(string, string) client.Request); ok {
+		r0 = rf(username, password)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Request)
+		}
+	}
+
+	return r0
+}
+
+// Factory_WithBasicAuth_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithBasicAuth'
+type Factory_WithBasicAuth_Call struct {
+	*mock.Call
+}
+
+// WithBasicAuth is a helper method to define mock.On call
+//   - username string
+//   - password string
+func (_e *Factory_Expecter) WithBasicAuth(username interface{}, password interface{}) *Factory_WithBasicAuth_Call {
+	return &Factory_WithBasicAuth_Call{Call: _e.mock.On("WithBasicAuth", username, password)}
+}
+
+func (_c *Factory_WithBasicAuth_Call) Run(run func(username string, password string)) *Factory_WithBasicAuth_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *Factory_WithBasicAuth_Call) Return(_a0 client.Request) *Factory_WithBasicAuth_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Factory_WithBasicAuth_Call) RunAndReturn(run func(string, string) client.Request) *Factory_WithBasicAuth_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithContext provides a mock function with given fields: ctx
+func (_m *Factory) WithContext(ctx context.Context) client.Request {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithContext")
+	}
+
+	var r0 client.Request
+	if rf, ok := ret.Get(0).(func(context.Context) client.Request); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Request)
+		}
+	}
+
+	return r0
+}
+
+// Factory_WithContext_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithContext'
+type Factory_WithContext_Call struct {
+	*mock.Call
+}
+
+// WithContext is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *Factory_Expecter) WithContext(ctx interface{}) *Factory_WithContext_Call {
+	return &Factory_WithContext_Call{Call: _e.mock.On("WithContext", ctx)}
+}
+
+func (_c *Factory_WithContext_Call) Run(run func(ctx context.Context)) *Factory_WithContext_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *Factory_WithContext_Call) Return(_a0 client.Request) *Factory_WithContext_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Factory_WithContext_Call) RunAndReturn(run func(context.Context) client.Request) *Factory_WithContext_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithCookie provides a mock function with given fields: cookie
+func (_m *Factory) WithCookie(cookie *http.Cookie) client.Request {
+	ret := _m.Called(cookie)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithCookie")
+	}
+
+	var r0 client.Request
+	if rf, ok := ret.Get(0).(func(*http.Cookie) client.Request); ok {
+		r0 = rf(cookie)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Request)
+		}
+	}
+
+	return r0
+}
+
+// Factory_WithCookie_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithCookie'
+type Factory_WithCookie_Call struct {
+	*mock.Call
+}
+
+// WithCookie is a helper method to define mock.On call
+//   - cookie *http.Cookie
+func (_e *Factory_Expecter) WithCookie(cookie interface{}) *Factory_WithCookie_Call {
+	return &Factory_WithCookie_Call{Call: _e.mock.On("WithCookie", cookie)}
+}
+
+func (_c *Factory_WithCookie_Call) Run(run func(cookie *http.Cookie)) *Factory_WithCookie_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*http.Cookie))
+	})
+	return _c
+}
+
+func (_c *Factory_WithCookie_Call) Return(_a0 client.Request) *Factory_WithCookie_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Factory_WithCookie_Call) RunAndReturn(run func(*http.Cookie) client.Request) *Factory_WithCookie_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithCookies provides a mock function with given fields: cookies
+func (_m *Factory) WithCookies(cookies []*http.Cookie) client.Request {
+	ret := _m.Called(cookies)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithCookies")
+	}
+
+	var r0 client.Request
+	if rf, ok := ret.Get(0).(func([]*http.Cookie) client.Request); ok {
+		r0 = rf(cookies)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Request)
+		}
+	}
+
+	return r0
+}
+
+// Factory_WithCookies_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithCookies'
+type Factory_WithCookies_Call struct {
+	*mock.Call
+}
+
+// WithCookies is a helper method to define mock.On call
+//   - cookies []*http.Cookie
+func (_e *Factory_Expecter) WithCookies(cookies interface{}) *Factory_WithCookies_Call {
+	return &Factory_WithCookies_Call{Call: _e.mock.On("WithCookies", cookies)}
+}
+
+func (_c *Factory_WithCookies_Call) Run(run func(cookies []*http.Cookie)) *Factory_WithCookies_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].([]*http.Cookie))
+	})
+	return _c
+}
+
+func (_c *Factory_WithCookies_Call) Return(_a0 client.Request) *Factory_WithCookies_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Factory_WithCookies_Call) RunAndReturn(run func([]*http.Cookie) client.Request) *Factory_WithCookies_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithHeader provides a mock function with given fields: key, value
+func (_m *Factory) WithHeader(key string, value string) client.Request {
+	ret := _m.Called(key, value)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithHeader")
+	}
+
+	var r0 client.Request
+	if rf, ok := ret.Get(0).(func(string, string) client.Request); ok {
+		r0 = rf(key, value)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Request)
+		}
+	}
+
+	return r0
+}
+
+// Factory_WithHeader_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithHeader'
+type Factory_WithHeader_Call struct {
+	*mock.Call
+}
+
+// WithHeader is a helper method to define mock.On call
+//   - key string
+//   - value string
+func (_e *Factory_Expecter) WithHeader(key interface{}, value interface{}) *Factory_WithHeader_Call {
+	return &Factory_WithHeader_Call{Call: _e.mock.On("WithHeader", key, value)}
+}
+
+func (_c *Factory_WithHeader_Call) Run(run func(key string, value string)) *Factory_WithHeader_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *Factory_WithHeader_Call) Return(_a0 client.Request) *Factory_WithHeader_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Factory_WithHeader_Call) RunAndReturn(run func(string, string) client.Request) *Factory_WithHeader_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithHeaders provides a mock function with given fields: _a0
+func (_m *Factory) WithHeaders(_a0 map[string]string) client.Request {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithHeaders")
+	}
+
+	var r0 client.Request
+	if rf, ok := ret.Get(0).(func(map[string]string) client.Request); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Request)
+		}
+	}
+
+	return r0
+}
+
+// Factory_WithHeaders_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithHeaders'
+type Factory_WithHeaders_Call struct {
+	*mock.Call
+}
+
+// WithHeaders is a helper method to define mock.On call
+//   - _a0 map[string]string
+func (_e *Factory_Expecter) WithHeaders(_a0 interface{}) *Factory_WithHeaders_Call {
+	return &Factory_WithHeaders_Call{Call: _e.mock.On("WithHeaders", _a0)}
+}
+
+func (_c *Factory_WithHeaders_Call) Run(run func(_a0 map[string]string)) *Factory_WithHeaders_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(map[string]string))
+	})
+	return _c
+}
+
+func (_c *Factory_WithHeaders_Call) Return(_a0 client.Request) *Factory_WithHeaders_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Factory_WithHeaders_Call) RunAndReturn(run func(map[string]string) client.Request) *Factory_WithHeaders_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithQueryParameter provides a mock function with given fields: key, value
+func (_m *Factory) WithQueryParameter(key string, value string) client.Request {
+	ret := _m.Called(key, value)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithQueryParameter")
+	}
+
+	var r0 client.Request
+	if rf, ok := ret.Get(0).(func(string, string) client.Request); ok {
+		r0 = rf(key, value)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Request)
+		}
+	}
+
+	return r0
+}
+
+// Factory_WithQueryParameter_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithQueryParameter'
+type Factory_WithQueryParameter_Call struct {
+	*mock.Call
+}
+
+// WithQueryParameter is a helper method to define mock.On call
+//   - key string
+//   - value string
+func (_e *Factory_Expecter) WithQueryParameter(key interface{}, value interface{}) *Factory_WithQueryParameter_Call {
+	return &Factory_WithQueryParameter_Call{Call: _e.mock.On("WithQueryParameter", key, value)}
+}
+
+func (_c *Factory_WithQueryParameter_Call) Run(run func(key string, value string)) *Factory_WithQueryParameter_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *Factory_WithQueryParameter_Call) Return(_a0 client.Request) *Factory_WithQueryParameter_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Factory_WithQueryParameter_Call) RunAndReturn(run func(string, string) client.Request) *Factory_WithQueryParameter_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithQueryParameters provides a mock function with given fields: _a0
+func (_m *Factory) WithQueryParameters(_a0 map[string]string) client.Request {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithQueryParameters")
+	}
+
+	var r0 client.Request
+	if rf, ok := ret.Get(0).(func(map[string]string) client.Request); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Request)
+		}
+	}
+
+	return r0
+}
+
+// Factory_WithQueryParameters_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithQueryParameters'
+type Factory_WithQueryParameters_Call struct {
+	*mock.Call
+}
+
+// WithQueryParameters is a helper method to define mock.On call
+//   - _a0 map[string]string
+func (_e *Factory_Expecter) WithQueryParameters(_a0 interface{}) *Factory_WithQueryParameters_Call {
+	return &Factory_WithQueryParameters_Call{Call: _e.mock.On("WithQueryParameters", _a0)}
+}
+
+func (_c *Factory_WithQueryParameters_Call) Run(run func(_a0 map[string]string)) *Factory_WithQueryParameters_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(map[string]string))
+	})
+	return _c
+}
+
+func (_c *Factory_WithQueryParameters_Call) Return(_a0 client.Request) *Factory_WithQueryParameters_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Factory_WithQueryParameters_Call) RunAndReturn(run func(map[string]string) client.Request) *Factory_WithQueryParameters_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithQueryString provides a mock function with given fields: query
+func (_m *Factory) WithQueryString(query string) client.Request {
+	ret := _m.Called(query)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithQueryString")
+	}
+
+	var r0 client.Request
+	if rf, ok := ret.Get(0).(func(string) client.Request); ok {
+		r0 = rf(query)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Request)
+		}
+	}
+
+	return r0
+}
+
+// Factory_WithQueryString_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithQueryString'
+type Factory_WithQueryString_Call struct {
+	*mock.Call
+}
+
+// WithQueryString is a helper method to define mock.On call
+//   - query string
+func (_e *Factory_Expecter) WithQueryString(query interface{}) *Factory_WithQueryString_Call {
+	return &Factory_WithQueryString_Call{Call: _e.mock.On("WithQueryString", query)}
+}
+
+func (_c *Factory_WithQueryString_Call) Run(run func(query string)) *Factory_WithQueryString_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Factory_WithQueryString_Call) Return(_a0 client.Request) *Factory_WithQueryString_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Factory_WithQueryString_Call) RunAndReturn(run func(string) client.Request) *Factory_WithQueryString_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithToken provides a mock function with given fields: token, ttype
+func (_m *Factory) WithToken(token string, ttype ...string) client.Request {
+	_va := make([]interface{}, len(ttype))
+	for _i := range ttype {
+		_va[_i] = ttype[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, token)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithToken")
+	}
+
+	var r0 client.Request
+	if rf, ok := ret.Get(0).(func(string, ...string) client.Request); ok {
+		r0 = rf(token, ttype...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Request)
+		}
+	}
+
+	return r0
+}
+
+// Factory_WithToken_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithToken'
+type Factory_WithToken_Call struct {
+	*mock.Call
+}
+
+// WithToken is a helper method to define mock.On call
+//   - token string
+//   - ttype ...string
+func (_e *Factory_Expecter) WithToken(token interface{}, ttype ...interface{}) *Factory_WithToken_Call {
+	return &Factory_WithToken_Call{Call: _e.mock.On("WithToken",
+		append([]interface{}{token}, ttype...)...)}
+}
+
+func (_c *Factory_WithToken_Call) Run(run func(token string, ttype ...string)) *Factory_WithToken_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Factory_WithToken_Call) Return(_a0 client.Request) *Factory_WithToken_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Factory_WithToken_Call) RunAndReturn(run func(string, ...string) client.Request) *Factory_WithToken_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithUrlParameter provides a mock function with given fields: key, value
+func (_m *Factory) WithUrlParameter(key string, value string) client.Request {
+	ret := _m.Called(key, value)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithUrlParameter")
+	}
+
+	var r0 client.Request
+	if rf, ok := ret.Get(0).(func(string, string) client.Request); ok {
+		r0 = rf(key, value)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Request)
+		}
+	}
+
+	return r0
+}
+
+// Factory_WithUrlParameter_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithUrlParameter'
+type Factory_WithUrlParameter_Call struct {
+	*mock.Call
+}
+
+// WithUrlParameter is a helper method to define mock.On call
+//   - key string
+//   - value string
+func (_e *Factory_Expecter) WithUrlParameter(key interface{}, value interface{}) *Factory_WithUrlParameter_Call {
+	return &Factory_WithUrlParameter_Call{Call: _e.mock.On("WithUrlParameter", key, value)}
+}
+
+func (_c *Factory_WithUrlParameter_Call) Run(run func(key string, value string)) *Factory_WithUrlParameter_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *Factory_WithUrlParameter_Call) Return(_a0 client.Request) *Factory_WithUrlParameter_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Factory_WithUrlParameter_Call) RunAndReturn(run func(string, string) client.Request) *Factory_WithUrlParameter_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithUrlParameters provides a mock function with given fields: _a0
+func (_m *Factory) WithUrlParameters(_a0 map[string]string) client.Request {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithUrlParameters")
+	}
+
+	var r0 client.Request
+	if rf, ok := ret.Get(0).(func(map[string]string) client.Request); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Request)
+		}
+	}
+
+	return r0
+}
+
+// Factory_WithUrlParameters_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithUrlParameters'
+type Factory_WithUrlParameters_Call struct {
+	*mock.Call
+}
+
+// WithUrlParameters is a helper method to define mock.On call
+//   - _a0 map[string]string
+func (_e *Factory_Expecter) WithUrlParameters(_a0 interface{}) *Factory_WithUrlParameters_Call {
+	return &Factory_WithUrlParameters_Call{Call: _e.mock.On("WithUrlParameters", _a0)}
+}
+
+func (_c *Factory_WithUrlParameters_Call) Run(run func(_a0 map[string]string)) *Factory_WithUrlParameters_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(map[string]string))
+	})
+	return _c
+}
+
+func (_c *Factory_WithUrlParameters_Call) Return(_a0 client.Request) *Factory_WithUrlParameters_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Factory_WithUrlParameters_Call) RunAndReturn(run func(map[string]string) client.Request) *Factory_WithUrlParameters_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithoutHeader provides a mock function with given fields: key
+func (_m *Factory) WithoutHeader(key string) client.Request {
+	ret := _m.Called(key)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithoutHeader")
+	}
+
+	var r0 client.Request
+	if rf, ok := ret.Get(0).(func(string) client.Request); ok {
+		r0 = rf(key)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Request)
+		}
+	}
+
+	return r0
+}
+
+// Factory_WithoutHeader_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithoutHeader'
+type Factory_WithoutHeader_Call struct {
+	*mock.Call
+}
+
+// WithoutHeader is a helper method to define mock.On call
+//   - key string
+func (_e *Factory_Expecter) WithoutHeader(key interface{}) *Factory_WithoutHeader_Call {
+	return &Factory_WithoutHeader_Call{Call: _e.mock.On("WithoutHeader", key)}
+}
+
+func (_c *Factory_WithoutHeader_Call) Run(run func(key string)) *Factory_WithoutHeader_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Factory_WithoutHeader_Call) Return(_a0 client.Request) *Factory_WithoutHeader_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Factory_WithoutHeader_Call) RunAndReturn(run func(string) client.Request) *Factory_WithoutHeader_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithoutToken provides a mock function with no fields
+func (_m *Factory) WithoutToken() client.Request {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithoutToken")
+	}
+
+	var r0 client.Request
+	if rf, ok := ret.Get(0).(func() client.Request); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Request)
+		}
+	}
+
+	return r0
+}
+
+// Factory_WithoutToken_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithoutToken'
+type Factory_WithoutToken_Call struct {
+	*mock.Call
+}
+
+// WithoutToken is a helper method to define mock.On call
+func (_e *Factory_Expecter) WithoutToken() *Factory_WithoutToken_Call {
+	return &Factory_WithoutToken_Call{Call: _e.mock.On("WithoutToken")}
+}
+
+func (_c *Factory_WithoutToken_Call) Run(run func()) *Factory_WithoutToken_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Factory_WithoutToken_Call) Return(_a0 client.Request) *Factory_WithoutToken_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Factory_WithoutToken_Call) RunAndReturn(run func() client.Request) *Factory_WithoutToken_Call {
 	_c.Call.Return(run)
 	return _c
 }
