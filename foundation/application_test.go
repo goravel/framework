@@ -208,7 +208,7 @@ func (s *ApplicationTestSuite) TestStart_Complex() {
 		app.Wait()
 	})
 
-	s.Run("Call Start serveral times", func() {
+	s.Run("Call Start several times", func() {
 		s.SetupTest()
 		runner := mocksfoundation.NewRunner(s.T())
 		runner.EXPECT().ShouldRun().Return(true).Once()
