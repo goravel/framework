@@ -22,6 +22,13 @@ type Factory struct {
 }
 
 func NewFactory(config *FactoryConfig, json foundation.Json) *Factory {
+	if config == nil {
+		config = &FactoryConfig{
+			// Initialize the map so lookups don't crash either
+			Clients: make(map[string]client.Config),
+		}
+	}
+
 	return &Factory{
 		config:  config,
 		json:    json,
