@@ -1,6 +1,8 @@
 package client
 
 type Factory interface {
+	Request
+
 	// Client retrieves a configured Client instance by name.
 	//
 	// If no name is provided, the "default" client is returned.
