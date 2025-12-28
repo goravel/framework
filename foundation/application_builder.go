@@ -196,9 +196,7 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 }
 
 func (r *ApplicationBuilder) Start() foundation.Application {
-	r.Create().Start()
-
-	return r.app
+	return r.Create().Start()
 }
 
 func (r *ApplicationBuilder) WithCommands(commands []console.Command) foundation.ApplicationBuilder {
