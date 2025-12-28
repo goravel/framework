@@ -195,8 +195,10 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 	return r.app
 }
 
-func (r *ApplicationBuilder) Run() {
-	r.Create().Run()
+func (r *ApplicationBuilder) Start() foundation.Application {
+	r.Create().Start()
+
+	return r.app
 }
 
 func (r *ApplicationBuilder) WithCommands(commands []console.Command) foundation.ApplicationBuilder {

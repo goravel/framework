@@ -97,49 +97,138 @@ func (s *ApplicationTestSuite) TestExecutablePath() {
 	s.Equal(filepath.Join(path, "test", "test2/test3"), executable3)
 }
 
-func (s *ApplicationTestSuite) TestRun() {
-	oneServiceProvider := mocksfoundation.NewServiceProviderWithRunners(s.T())
-	oneRunner := mocksfoundation.NewRunner(s.T())
-	oneRunner.EXPECT().ShouldRun().Return(true).Once()
-	oneRunner.EXPECT().Run().Return(nil).Once()
-	oneRunner.EXPECT().Shutdown().Return(nil).Once()
-	oneServiceProvider.EXPECT().Runners(s.app).Return([]foundation.Runner{oneRunner}).Once()
+func (s *ApplicationTestSuite) TestStart() {
+	tests := []struct {
+		name  string
+		setup func() foundation.Runner
+	}{
+		{
+			name: "happy path",
+			setup: func() foundation.Runner {
+				runner := mocksfoundation.NewRunner(s.T())
+				runner.EXPECT().ShouldRun().Return(true).Once()
+				runner.EXPECT().Run().Return(nil).Once()
+				runner.EXPECT().Shutdown().Return(nil).Once()
 
-	secondServiceProvider := mocksfoundation.NewServiceProviderWithRunners(s.T())
-	secondRunner := mocksfoundation.NewRunner(s.T())
-	secondRunner.EXPECT().ShouldRun().Return(true).Once()
-	secondRunner.EXPECT().Run().Return(assert.AnError).Once()
-	secondServiceProvider.EXPECT().Runners(s.app).Return([]foundation.Runner{secondRunner}).Once()
+				return runner
+			},
+		},
+		{
+			name: "failed to run",
+			setup: func() foundation.Runner {
+				runner := mocksfoundation.NewRunner(s.T())
+				runner.EXPECT().ShouldRun().Return(true).Once()
+				runner.EXPECT().Run().Return(assert.AnError).Once()
 
-	thirdRunner := mocksfoundation.NewRunner(s.T())
-	thirdRunner.EXPECT().ShouldRun().Return(true).Once()
-	thirdRunner.EXPECT().Run().Return(nil).Once()
-	thirdRunner.EXPECT().Shutdown().Return(nil).Once()
+				return runner
+			},
+		},
+		{
+			name: "should not be run",
+			setup: func() foundation.Runner {
+				runner := mocksfoundation.NewRunner(s.T())
+				runner.EXPECT().ShouldRun().Return(false).Once()
 
-	fourthRunner := mocksfoundation.NewRunner(s.T())
-	fourthRunner.EXPECT().ShouldRun().Return(false).Once()
+				return runner
+			},
+		},
+	}
 
-	fifthServiceProvider := mocksfoundation.NewServiceProviderWithRunners(s.T())
-	fifthRunner := mocksfoundation.NewRunner(s.T())
-	fifthRunner.EXPECT().ShouldRun().Return(false).Once()
-	fifthServiceProvider.EXPECT().Runners(s.app).Return([]foundation.Runner{fifthRunner}).Once()
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			s.SetupTest()
+			runner := tt.setup()
+			serviceProvider := mocksfoundation.NewServiceProviderWithRunners(s.T())
+			serviceProvider.EXPECT().Runners(s.app).Return([]foundation.Runner{runner}).Once()
 
-	mockRepo := mocksfoundation.NewProviderRepository(s.T())
-	s.app.providerRepository = mockRepo
+			mockRepo := mocksfoundation.NewProviderRepository(s.T())
+			mockRepo.EXPECT().GetBooted().Return([]foundation.ServiceProvider{
+				serviceProvider,
+			}).Once()
 
-	mockRepo.EXPECT().GetBooted().Return([]foundation.ServiceProvider{
-		oneServiceProvider,
-		secondServiceProvider,
-		fifthServiceProvider,
-	}).Once()
+			s.app.providerRepository = mockRepo
+			s.app.runnerNames = nil
+			app := s.app.Start()
 
-	s.app.Run(thirdRunner, fourthRunner)
+			go func() {
+				time.Sleep(100 * time.Millisecond) // Wait for goroutines to start
+				s.cancel()
+			}()
 
-	time.Sleep(100 * time.Millisecond) // Wait for goroutines to start
+			app.Wait()
+		})
+	}
+}
 
-	s.cancel()
+func (s *ApplicationTestSuite) TestStart_Complex() {
+	s.Run("With additional runner", func() {
+		s.SetupTest()
+		runner := mocksfoundation.NewRunner(s.T())
+		runner.EXPECT().ShouldRun().Return(true).Once()
+		runner.EXPECT().Run().Return(nil).Once()
+		runner.EXPECT().Shutdown().Return(nil).Once()
 
-	time.Sleep(100 * time.Millisecond) // Wait for goroutines to end
+		mockRepo := mocksfoundation.NewProviderRepository(s.T())
+		mockRepo.EXPECT().GetBooted().Return(nil).Once()
+
+		s.app.providerRepository = mockRepo
+		app := s.app.Start(runner)
+
+		go func() {
+			time.Sleep(100 * time.Millisecond) // Wait for goroutines to start
+			s.cancel()
+		}()
+
+		app.Wait()
+	})
+
+	s.Run("With duplicated runners", func() {
+		s.SetupTest()
+		runner := mocksfoundation.NewRunner(s.T())
+		runner.EXPECT().ShouldRun().Return(true).Once()
+		runner.EXPECT().Run().Return(nil).Once()
+		runner.EXPECT().Shutdown().Return(nil).Once()
+
+		serviceProvider := mocksfoundation.NewServiceProviderWithRunners(s.T())
+		serviceProvider.EXPECT().Runners(s.app).Return([]foundation.Runner{runner}).Once()
+
+		mockRepo := mocksfoundation.NewProviderRepository(s.T())
+		mockRepo.EXPECT().GetBooted().Return([]foundation.ServiceProvider{
+			serviceProvider,
+		}).Once()
+
+		s.app.providerRepository = mockRepo
+		app := s.app.Start(runner)
+
+		go func() {
+			time.Sleep(100 * time.Millisecond) // Wait for goroutines to start
+			s.cancel()
+		}()
+
+		app.Wait()
+	})
+
+	s.Run("Call Start serveral times", func() {
+		s.SetupTest()
+		runner := mocksfoundation.NewRunner(s.T())
+		runner.EXPECT().ShouldRun().Return(true).Once()
+		runner.EXPECT().Run().Return(nil).Once()
+		runner.EXPECT().Shutdown().Return(nil).Once()
+
+		mockRepo := mocksfoundation.NewProviderRepository(s.T())
+		mockRepo.EXPECT().GetBooted().Return(nil).Twice()
+
+		s.app.providerRepository = mockRepo
+		app := s.app.Start(runner)
+		app = app.Start(runner)
+
+		go func() {
+			time.Sleep(100 * time.Millisecond) // Wait for goroutines to start
+			s.cancel()
+		}()
+
+		app.Wait()
+	})
 }
 
 func (s *ApplicationTestSuite) TestPublishes() {

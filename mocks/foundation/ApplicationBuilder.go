@@ -87,35 +87,50 @@ func (_c *ApplicationBuilder_Create_Call) RunAndReturn(run func() foundation.App
 	return _c
 }
 
-// Run provides a mock function with no fields
-func (_m *ApplicationBuilder) Run() {
-	_m.Called()
+// Start provides a mock function with no fields
+func (_m *ApplicationBuilder) Start() foundation.Application {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Start")
+	}
+
+	var r0 foundation.Application
+	if rf, ok := ret.Get(0).(func() foundation.Application); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(foundation.Application)
+		}
+	}
+
+	return r0
 }
 
-// ApplicationBuilder_Run_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Run'
-type ApplicationBuilder_Run_Call struct {
+// ApplicationBuilder_Start_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Start'
+type ApplicationBuilder_Start_Call struct {
 	*mock.Call
 }
 
-// Run is a helper method to define mock.On call
-func (_e *ApplicationBuilder_Expecter) Run() *ApplicationBuilder_Run_Call {
-	return &ApplicationBuilder_Run_Call{Call: _e.mock.On("Run")}
+// Start is a helper method to define mock.On call
+func (_e *ApplicationBuilder_Expecter) Start() *ApplicationBuilder_Start_Call {
+	return &ApplicationBuilder_Start_Call{Call: _e.mock.On("Start")}
 }
 
-func (_c *ApplicationBuilder_Run_Call) Run(run func()) *ApplicationBuilder_Run_Call {
+func (_c *ApplicationBuilder_Start_Call) Run(run func()) *ApplicationBuilder_Start_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run()
 	})
 	return _c
 }
 
-func (_c *ApplicationBuilder_Run_Call) Return() *ApplicationBuilder_Run_Call {
-	_c.Call.Return()
+func (_c *ApplicationBuilder_Start_Call) Return(_a0 foundation.Application) *ApplicationBuilder_Start_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ApplicationBuilder_Run_Call) RunAndReturn(run func()) *ApplicationBuilder_Run_Call {
-	_c.Run(run)
+func (_c *ApplicationBuilder_Start_Call) RunAndReturn(run func() foundation.Application) *ApplicationBuilder_Start_Call {
+	_c.Call.Return(run)
 	return _c
 }
 
