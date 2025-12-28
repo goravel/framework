@@ -1,29 +1,30 @@
 package client
 
-import "net/http"
+import (
+	"net/http"
+)
 
 type Client interface {
-	// Name returns the logical name of this client (for logging/metrics).
-	// Example: "default", "payments".
+	// Name returns the logical identifier of this client (e.g., "goravel", "downstream").
 	Name() string
 
-	// Config returns the resolved configuration for this client.
-	// The returned Config should be treated as read-only by callers.
+	// Config returns the configuration options used to initialize this client.
+	// The returned struct is read-only.
 	Config() *Config
 
-	// HTTPClient exposes the underlying *http.Client used to execute requests.
+	// HTTPClient exposes the underlying standard library *http.Client.
 	//
-	// This is an advanced escape hatch intended for:
-	//  - injecting a custom RoundTripper in tests,
-	//  - performing low-level operations not covered by the Request API.
+	// Use this only for advanced scenarios, such as:
+	//  1. Injecting the client into third-party SDKs.
+	//  2. Mocking the RoundTripper in tests.
+	//  3. Accessing low-level Transport details.
 	//
-	// Prefer using NewRequest() for normal request construction/execution.
+	// For standard HTTP calls, prefer using NewRequest().
 	HTTPClient() *http.Client
 
-	// NewRequest returns a fresh request builder bound to this client.
+	// NewRequest creates a fluent Request builder scoped to this client.
 	//
-	// The returned Request is mutable and owned by the caller. It must not be
-	// reused concurrently across goroutines. Call NewRequest() for each logical
-	// request (or Clone() it if you need to branch a base builder).
+	// The returned Request object is mutable and not thread-safe.
+	// It applies the client's BaseUrl and default headers automatically.
 	NewRequest() Request
 }

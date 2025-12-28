@@ -80,8 +80,8 @@ func (r *Container) Fresh(bindings ...any) {
 			return true
 		})
 	} else {
-		for _, binding := range bindings {
-			r.instances.Delete(binding)
+		for _, bd := range bindings {
+			r.instances.Delete(bd)
 		}
 	}
 }
@@ -205,14 +205,14 @@ func (r *Container) MakeHash() contractshash.Hash {
 	return instance.(contractshash.Hash)
 }
 
-func (r *Container) MakeHttp() contractshttpclient.Request {
+func (r *Container) MakeHttp() contractshttpclient.Factory {
 	instance, err := r.Make(facades.FacadeToBinding[facades.Http])
 	if err != nil {
 		color.Errorln(err)
 		return nil
 	}
 
-	return instance.(contractshttpclient.Request)
+	return instance.(contractshttpclient.Factory)
 }
 
 func (r *Container) MakeLang(ctx context.Context) contractstranslation.Translator {
@@ -406,7 +406,7 @@ func (r *Container) Singleton(key any, callback func(app contractsfoundation.App
 }
 
 func (r *Container) make(key any, parameters map[string]any) (any, error) {
-	binding, ok := r.bindings.Load(key)
+	bd, ok := r.bindings.Load(key)
 	if !ok {
 		return nil, fmt.Errorf("binding not found: %+v", key)
 	}
@@ -418,7 +418,7 @@ func (r *Container) make(key any, parameters map[string]any) (any, error) {
 		}
 	}
 
-	bindingImpl := binding.(instance)
+	bindingImpl := bd.(instance)
 	switch concrete := bindingImpl.concrete.(type) {
 	case func(app contractsfoundation.Application) (any, error):
 		concreteImpl, err := concrete(App)

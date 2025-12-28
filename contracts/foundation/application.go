@@ -140,7 +140,7 @@ type Application interface {
 	// MakeHash resolves the hash instance.
 	MakeHash() hash.Hash
 	// MakeHttp resolves the http instance.
-	MakeHttp() client.Request
+	MakeHttp() client.Factory
 	// MakeLang resolves the lang instance.
 	MakeLang(ctx context.Context) translation.Translator
 	// MakeLog resolves the log instance.

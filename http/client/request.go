@@ -18,27 +18,27 @@ import (
 var _ client.Request = (*Request)(nil)
 
 type Request struct {
+	client client.Client
+	json   foundation.Json
+
 	ctx         context.Context
 	bind        any
-	json        foundation.Json
-	client      *http.Client
-	config      *client.Config
 	headers     http.Header
 	queryParams url.Values
 	urlParams   map[string]string
 	cookies     []*http.Cookie
 }
 
-func NewRequest(config *client.Config, json foundation.Json) *Request {
+func NewRequest(client client.Client, json foundation.Json) *Request {
 	return &Request{
+		client: client,
+		json:   json,
+
 		ctx:         context.Background(),
-		config:      config,
-		client:      getHttpClient(config),
 		headers:     http.Header{},
 		cookies:     []*http.Cookie{},
 		queryParams: url.Values{},
 		urlParams:   map[string]string{},
-		json:        json,
 	}
 }
 
@@ -215,7 +215,7 @@ func (r *Request) doRequest(method, uri string, body io.Reader) (client.Response
 		req.AddCookie(value)
 	}
 
-	res, err := r.client.Do(req)
+	res, err := r.client.HTTPClient().Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -236,7 +236,7 @@ func (r *Request) doRequest(method, uri string, body io.Reader) (client.Response
 }
 
 func (r *Request) parseRequestURL(uri string) (string, error) {
-	baseURL := r.config.BaseUrl
+	baseURL := r.client.Config().BaseUrl
 
 	// Prepend base URL if needed
 	if !strings.HasPrefix(uri, "http://") && !strings.HasPrefix(uri, "https://") {

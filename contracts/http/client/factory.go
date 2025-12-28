@@ -1,22 +1,14 @@
 package client
 
 type Factory interface {
-	// Client returns a configured HTTP client by name.
+	// Client retrieves a configured Client instance by name.
 	//
-	// If no name is provided, the default client is returned.
-	// If the requested client is not configured, this method panics.
-	//
-	// This method is intended for advanced usage where the caller
-	// wants to reuse a client instance or create multiple requests
-	// from the same client.
+	// If no name is provided, the "default" client is returned.
+	// If the requested client name is not defined in the configuration,
+	// this method may panic or return a default, depending on implementation policy.
 	Client(name ...string) Client
 
-	// Request returns a new HTTP request builder for the given client.
-	//
-	// This is a convenience method equivalent to:
-	//   Http().Client(name).NewRequest()
-	//
-	// If no name is provided, the default client is used.
-	// If the requested client is not configured, this method panics.
+	// Request is a convenience alias for Client(name...).NewRequest().
+	// It immediately starts building a request using the specified (or default) client.
 	Request(name ...string) Request
 }
