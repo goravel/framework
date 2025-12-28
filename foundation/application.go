@@ -87,7 +87,6 @@ func (r *Application) Boot() {
 	r.providerRepository.Register(r)
 	r.providerRepository.Boot(r)
 
-	installedBindings := r.Bindings()
 	r.registerCommands([]contractsconsole.Command{
 		console.NewAboutCommand(r),
 		console.NewEnvEncryptCommand(),
@@ -95,8 +94,8 @@ func (r *Application) Boot() {
 		console.NewTestMakeCommand(),
 		console.NewPackageMakeCommand(),
 		console.NewProviderMakeCommand(),
-		console.NewPackageInstallCommand(binding.Bindings, &installedBindings, r.GetJson()),
-		console.NewPackageUninstallCommand(binding.Bindings, &installedBindings, r.GetJson()),
+		console.NewPackageInstallCommand(binding.Bindings, r.GetJson()),
+		console.NewPackageUninstallCommand(binding.Bindings, r.GetJson()),
 		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
 	})
 	r.bootArtisan()
