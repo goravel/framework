@@ -221,13 +221,14 @@ func (s *RequestTestSuite) TestPrefixAndPathVariables() {
 		Name    string `json:"name"`
 		Version string `json:"version"`
 	}
-	req := s.request.Clone().Bind(&user).WithUrlParameters(map[string]string{
+	req := s.request.Clone().WithUrlParameters(map[string]string{
 		"version": "v1",
 		"userID":  "1234",
 	}).WithQueryParameter("role", "admin")
 	resp, err := req.Get(server.URL + "/api/{version}/users/{userID}")
 	s.NoError(err)
 	s.NotNil(resp)
+	s.NoError(resp.Bind(&user))
 	s.Equal(200, resp.Status())
 	s.Equal(1234, user.ID)
 	s.Equal("User 1234", user.Name)
