@@ -75,22 +75,6 @@ func TestWriter(t *testing.T) {
 				assert.True(t, file.Contains(dailyLog, "test.debug: Debug Goravel"))
 			},
 		},
-		// {
-		// 	name: "No Debug",
-		// 	setup: func() {
-		// 		mockConfig.EXPECT().GetString("logging.channels.daily.level").Return("info").Once()
-		// 		mockConfig.EXPECT().GetString("logging.channels.daily.formatter", "text").Return("text").Once()
-		// 		mockConfig.EXPECT().GetString("logging.channels.single.level").Return("info").Once()
-		// 		mockConfig.EXPECT().GetString("logging.channels.single.formatter", "text").Return("text").Once()
-
-		// 		log, err = NewApplication(mockConfig, j)
-		// 		log.Debug("No Debug Goravel")
-		// 	},
-		// 	assert: func() {
-		// 		assert.False(t, file.Contains(singleLog, "test.debug: No Debug Goravel"))
-		// 		assert.False(t, file.Contains(dailyLog, "test.debug: No Debug Goravel"))
-		// 	},
-		// },
 		{
 			name: "Debugf",
 			setup: func() {

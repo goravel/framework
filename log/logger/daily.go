@@ -45,7 +45,7 @@ func (daily *Daily) Handle(channel string) (log.Handler, error) {
 		rotatelogs.WithRotationCount(uint(daily.config.GetInt(channel+".days"))),
 		// When using carbon.SetTestNow(), carbon.Now().StdTime() should always be used to get the current time.
 		// Hence, WithLocation cannot be used here.
-		rotatelogs.WithClock(NewRotatelogsClock()),
+		rotatelogs.WithClock(&rotatelogsClock{}),
 	)
 	if err != nil {
 		return nil, err
@@ -71,8 +71,4 @@ type rotatelogsClock struct{}
 
 func (clock *rotatelogsClock) Now() time.Time {
 	return carbon.Now().StdTime()
-}
-
-func NewRotatelogsClock() rotatelogs.Clock {
-	return &rotatelogsClock{}
 }
