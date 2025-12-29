@@ -131,6 +131,20 @@ func init() {
 			},
 		},
 
+		// Instrumentation Configuration
+		//
+		// Configures the automatic instrumentation for specific components.
+		"instrumentation": map[string]any{
+			// HTTP Server Instrumentation
+			//
+			// Configures the telemetry middleware for incoming HTTP requests.
+			"http_server": map[string]any{
+				"enabled":          config.Env("OTEL_HTTP_SERVER_ENABLED", true),
+				"excluded_paths":   []string{}, // e.g., ["/health", "/metrics"]
+				"excluded_methods": []string{}, // e.g., ["OPTIONS", "HEAD"]
+			},
+		},
+
 		// Exporters Configuration
 		//
 		// Defines the details for connecting to external telemetry backends.
