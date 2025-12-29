@@ -713,6 +713,13 @@ func (r *Query) Select(columns ...string) db.Query {
 	q.conditions.Selects = deep.Append(q.conditions.Selects, columns...)
 	q.conditions.Selects = collect.Unique(q.conditions.Selects)
 
+	// * may be added along with other columns, remove it.
+	if len(q.conditions.Selects) > 1 {
+		q.conditions.Selects = collect.Filter(q.conditions.Selects, func(column string, _ int) bool {
+			return column != "*"
+		})
+	}
+
 	return q
 }
 

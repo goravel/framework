@@ -776,6 +776,13 @@ func (r *Query) Select(columns ...string) contractsorm.Query {
 	conditions.selectColumns = append(conditions.selectColumns, columns...)
 	conditions.selectColumns = collect.Unique(conditions.selectColumns)
 
+	// * may be added along with other columns, remove it.
+	if len(conditions.selectColumns) > 1 {
+		conditions.selectColumns = collect.Filter(conditions.selectColumns, func(column string, _ int) bool {
+			return column != "*"
+		})
+	}
+
 	return r.setConditions(conditions)
 }
 
