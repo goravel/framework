@@ -12,6 +12,7 @@ import (
 	"github.com/goravel/framework/contracts/database"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/database/driver"
 	"github.com/goravel/framework/database/factory"
 	"github.com/goravel/framework/database/gorm"
 )
@@ -140,8 +141,10 @@ func (r *Orm) SetQuery(query contractsorm.Query) {
 	r.query = query
 }
 
+// TODO: The fresh logic needs to be optimized, it's a bit unclear now.
 func (r *Orm) Fresh() {
 	r.fresh(binding.Orm)
+	driver.ResetConnections()
 }
 
 func (r *Orm) Transaction(txFunc func(tx contractsorm.Query) error) (err error) {
