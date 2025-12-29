@@ -17,14 +17,14 @@ import (
 )
 
 var (
-	connectionToDB     = make(map[string]*gorm.DB)
-	connectionToDBLock = sync.Mutex{}
+	connectionToDB     sync.Map
+	connectionToDBLock sync.Mutex
 	pingWarning        sync.Once
 )
 
 func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool, connection string) (*gorm.DB, error) {
-	if db, ok := connectionToDB[connection]; ok {
-		return db, nil
+	if db, ok := connectionToDB.Load(connection); ok {
+		return db.(*gorm.DB), nil
 	}
 
 	if len(pool.Writers) == 0 {
@@ -34,8 +34,8 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 	connectionToDBLock.Lock()
 	defer connectionToDBLock.Unlock()
 
-	if db, ok := connectionToDB[connection]; ok {
-		return db, nil
+	if db, ok := connectionToDB.Load(connection); ok {
+		return db.(*gorm.DB), nil
 	}
 
 	gormConfig := &gorm.Config{
@@ -82,7 +82,7 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 		db.SetConnMaxIdleTime(connMaxIdleTime * time.Second)
 		db.SetConnMaxLifetime(connMaxLifetime * time.Second)
 
-		connectionToDB[connection] = instance
+		connectionToDB.Store(connection, instance)
 
 		return instance, nil
 	}
@@ -112,7 +112,7 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 		return nil, err
 	}
 
-	connectionToDB[connection] = instance
+	connectionToDB.Store(connection, instance)
 
 	return instance, nil
 }
@@ -121,5 +121,8 @@ func ResetConnections() {
 	connectionToDBLock.Lock()
 	defer connectionToDBLock.Unlock()
 
-	connectionToDB = make(map[string]*gorm.DB)
+	connectionToDB.Range(func(key, value interface{}) bool {
+		connectionToDB.Delete(key)
+		return true
+	})
 }
