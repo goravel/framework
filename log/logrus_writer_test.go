@@ -14,9 +14,9 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	contractshttp "github.com/goravel/framework/contracts/http"
-	logcontracts "github.com/goravel/framework/contracts/log"
+	contractslog "github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/foundation/json"
-	configmock "github.com/goravel/framework/mocks/config"
+	mocksconfig "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/file"
 )
@@ -28,7 +28,7 @@ var (
 
 func TestLogrus(t *testing.T) {
 	var (
-		mockConfig *configmock.Config
+		mockConfig *mocksconfig.Config
 		log        *Application
 		j          = json.New()
 		err        error
@@ -387,11 +387,42 @@ func TestLogrus(t *testing.T) {
 			test.assert()
 		})
 	}
-	_ = file.Remove("storage")
+	assert.NoError(t, file.Remove("storage"))
+}
+
+func TestLogrus_DailyLogWithDifferentDays(t *testing.T) {
+	mockConfig := initMockConfig()
+	mockDriverConfig(mockConfig)
+
+	log, err := NewApplication(mockConfig, json.New())
+	assert.Nil(t, err)
+	assert.NotNil(t, log)
+
+	log.Info("Goravel")
+
+	date := carbon.Now().Format("Y-m-d H:i")
+	assert.True(t, file.Contain(singleLog, date))
+	assert.True(t, file.Contain(singleLog, "test.info: Goravel"))
+	assert.True(t, file.Contain(dailyLog, date))
+	assert.True(t, file.Contain(dailyLog, "test.info: Goravel"))
+
+	nextDailyLog := fmt.Sprintf("storage/logs/goravel-%s.log", carbon.Now().AddDay().ToDateString())
+	carbon.SetTestNow(carbon.Now().AddDay())
+	defer carbon.ClearTestNow()
+
+	log.Info("Goravel Next Day")
+
+	date = carbon.Now().Format("Y-m-d H:i")
+	assert.True(t, file.Contain(singleLog, date))
+	assert.True(t, file.Contain(singleLog, "test.info: Goravel Next Day"))
+	assert.True(t, file.Contain(nextDailyLog, date))
+	assert.True(t, file.Contain(nextDailyLog, "test.info: Goravel Next Day"))
+
+	assert.NoError(t, file.Remove("storage"))
 }
 
 func TestLogrusWithCustomLogger(t *testing.T) {
-	mockConfig := configmock.NewConfig(t)
+	mockConfig := mocksconfig.NewConfig(t)
 	mockConfig.EXPECT().GetString("logging.default").Return("customLogger").Once()
 	mockConfig.EXPECT().GetString("logging.channels.customLogger.driver").Return("custom").Twice()
 	mockConfig.EXPECT().Get("logging.channels.customLogger.via").Return(&CustomLogger{}).Twice()
@@ -437,7 +468,7 @@ func TestLogrus_Fatal(t *testing.T) {
 	assert.True(t, file.Contain(singleLog, "test.fatal: Goravel"))
 	assert.True(t, file.Contain(dailyLog, "test.fatal: Goravel"))
 
-	_ = file.Remove("storage")
+	assert.NoError(t, file.Remove("storage"))
 }
 
 func TestLogrus_Fatalf(t *testing.T) {
@@ -459,7 +490,7 @@ func TestLogrus_Fatalf(t *testing.T) {
 	assert.True(t, file.Contain(singleLog, "test.fatal: Goravel"))
 	assert.True(t, file.Contain(dailyLog, "test.fatal: Goravel"))
 
-	_ = file.Remove("storage")
+	assert.NoError(t, file.Remove("storage"))
 }
 
 func Benchmark_Debug(b *testing.B) {
@@ -541,8 +572,8 @@ func Benchmark_Panic(b *testing.B) {
 	_ = file.Remove("storage")
 }
 
-func initMockConfig() *configmock.Config {
-	mockConfig := &configmock.Config{}
+func initMockConfig() *mocksconfig.Config {
+	mockConfig := &mocksconfig.Config{}
 	mockConfig.EXPECT().GetString("logging.default").Return("stack").Once()
 	mockConfig.EXPECT().GetString("logging.channels.stack.driver").Return("stack").Once()
 	mockConfig.On("Get", "logging.channels.stack.channels").Return([]string{"single", "daily"}).Once()
@@ -557,7 +588,7 @@ func initMockConfig() *configmock.Config {
 	return mockConfig
 }
 
-func mockDriverConfig(mockConfig *configmock.Config) {
+func mockDriverConfig(mockConfig *mocksconfig.Config) {
 	mockConfig.EXPECT().GetString("logging.channels.daily.level").Return("debug").Once()
 	mockConfig.EXPECT().GetString("logging.channels.single.level").Return("debug").Once()
 	mockConfig.EXPECT().GetString("app.env").Return("test")
@@ -566,20 +597,20 @@ func mockDriverConfig(mockConfig *configmock.Config) {
 type CustomLogger struct {
 }
 
-func (logger *CustomLogger) Handle(channel string) (logcontracts.Hook, error) {
+func (logger *CustomLogger) Handle(channel string) (contractslog.Hook, error) {
 	return &CustomHook{}, nil
 }
 
 type CustomHook struct {
 }
 
-func (h *CustomHook) Levels() []logcontracts.Level {
-	return []logcontracts.Level{
-		logcontracts.InfoLevel,
+func (h *CustomHook) Levels() []contractslog.Level {
+	return []contractslog.Level{
+		contractslog.InfoLevel,
 	}
 }
 
-func (h *CustomHook) Fire(entry logcontracts.Entry) error {
+func (h *CustomHook) Fire(entry contractslog.Entry) error {
 	with := entry.With()
 	filename, ok := with["filename"]
 	if ok {
