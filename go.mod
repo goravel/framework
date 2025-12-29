@@ -6,7 +6,7 @@ toolchain go1.25.5
 
 require (
 	github.com/Masterminds/squirrel v1.5.4
-	github.com/brianvoe/gofakeit/v7 v7.12.1
+	github.com/brianvoe/gofakeit/v7 v7.14.0
 	github.com/charmbracelet/huh v0.8.0
 	github.com/charmbracelet/huh/spinner v0.0.0-20251215014908-6f7d32faaff3
 	github.com/charmbracelet/lipgloss v1.1.0
@@ -14,7 +14,7 @@ require (
 	github.com/dromara/carbon/v2 v2.6.11
 	github.com/gabriel-vasile/mimetype v1.4.12
 	github.com/go-viper/mapstructure/v2 v2.4.0
-	github.com/goforj/godump v1.8.0
+	github.com/goforj/godump v1.9.0
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
 	github.com/gookit/validate v1.5.6
@@ -51,7 +51,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.39.0
 	golang.org/x/crypto v0.46.0
 	golang.org/x/exp v0.0.0-20251219203646-944ab1f22d93
-	google.golang.org/grpc v1.77.0
+	google.golang.org/grpc v1.78.0
 	google.golang.org/protobuf v1.36.11
 	gorm.io/gorm v1.31.1
 	gorm.io/plugin/dbresolver v1.6.2
