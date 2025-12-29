@@ -44,7 +44,9 @@ func (daily *Daily) Handle(channel string) (logrus.Hook, error) {
 		logPath+"-%Y-%m-%d"+ext,
 		rotatelogs.WithRotationTime(time.Duration(24)*time.Hour),
 		rotatelogs.WithRotationCount(uint(daily.config.GetInt(channel+".days"))),
-		rotatelogs.WithClock(rotatelogs.NewClock(carbon.Now().StdTime())),
+		// When using carbon.SetTestNow(), carbon.Now().StdTime() should always be used to get the current time.
+		// Hence, WithLocation cannot be used here.
+		rotatelogs.WithClock(NewRotatelogsClock()),
 	)
 	if err != nil {
 		return hook, err
@@ -60,4 +62,14 @@ func (daily *Daily) Handle(channel string) (logrus.Hook, error) {
 		writerMap,
 		formatter.NewGeneral(daily.config, daily.json),
 	), nil
+}
+
+type rotatelogsClock struct{}
+
+func (clock *rotatelogsClock) Now() time.Time {
+	return carbon.Now().StdTime()
+}
+
+func NewRotatelogsClock() rotatelogs.Clock {
+	return &rotatelogsClock{}
 }
