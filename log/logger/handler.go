@@ -63,7 +63,10 @@ func (h *IOHandler) handleText(entry log.Entry) error {
 	timestamp := carbon.FromStdTime(entry.Time(), carbon.DefaultTimezone()).ToDateTimeMilliString()
 	env := h.config.GetString("app.env")
 
-	_, _ = fmt.Fprintf(&b, "[%s] %s.%s: %s\n", timestamp, env, entry.Level().String(), entry.Message())
+	_, err := fmt.Fprintf(&b, "[%s] %s.%s: %s\n", timestamp, env, entry.Level().String(), entry.Message())
+	if err != nil {
+		return err
+	}
 
 	// Format Entry
 	if v := entry.Code(); v != "" {
@@ -108,7 +111,8 @@ func (h *IOHandler) handleText(entry log.Entry) error {
 		_, _ = fmt.Fprintf(&b, "[With] %+v\n", v)
 	}
 
-	_, err := h.writer.Write(b.Bytes())
+	_, err = h.writer.Write(b.Bytes())
+
 	return err
 }
 
