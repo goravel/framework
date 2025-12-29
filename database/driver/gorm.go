@@ -121,7 +121,7 @@ func ResetConnections() {
 	connectionToDBLock.Lock()
 	defer connectionToDBLock.Unlock()
 
-	connectionToDB.Range(func(key, value interface{}) bool {
+	connectionToDB.Range(func(key, value any) bool {
 		connectionToDB.Delete(key)
 		return true
 	})
