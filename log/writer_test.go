@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -78,7 +79,9 @@ func TestWriter(t *testing.T) {
 			name: "No Debug",
 			setup: func() {
 				mockConfig.EXPECT().GetString("logging.channels.daily.level").Return("info").Once()
+				mockConfig.EXPECT().GetString("logging.channels.daily.formatter", "text").Return("text").Once()
 				mockConfig.EXPECT().GetString("logging.channels.single.level").Return("info").Once()
+				mockConfig.EXPECT().GetString("logging.channels.single.formatter", "text").Return("text").Once()
 				log, err = NewApplication(mockConfig, j)
 				log.Debug("No Debug Goravel")
 			},
@@ -543,6 +546,151 @@ func Benchmark_Panic(b *testing.B) {
 	_ = file.Remove("storage")
 }
 
+func TestWriter_ConcurrentAccess(t *testing.T) {
+	// This test verifies that concurrent access to the same log.Writer
+	// does not cause data races or entry contamination.
+	mockConfig := &configmock.Config{}
+	mockConfig.EXPECT().GetString("logging.default").Return("stack").Once()
+	mockConfig.EXPECT().GetString("logging.channels.stack.driver").Return("stack").Once()
+	mockConfig.On("Get", "logging.channels.stack.channels").Return([]string{"single"}).Once()
+	mockConfig.EXPECT().GetString("logging.channels.single.driver").Return("single").Once()
+	mockConfig.EXPECT().GetString("logging.channels.single.path").Return("storage/logs/goravel1.log").Once()
+	mockConfig.EXPECT().GetBool("logging.channels.single.print").Return(false).Once()
+	mockConfig.EXPECT().GetString("logging.channels.single.level").Return("debug").Once()
+	mockConfig.EXPECT().GetString("logging.channels.single.formatter", "text").Return("text").Once()
+
+	mockDriverConfig(mockConfig)
+	log, err := NewApplication(mockConfig, json.New())
+	assert.Nil(t, err)
+	assert.NotNil(t, log)
+
+	const goroutines = 10
+	const iterations = 100
+
+	done := make(chan bool, goroutines)
+
+	for i := 0; i < goroutines; i++ {
+		go func(id int) {
+			for j := 0; j < iterations; j++ {
+				// Each goroutine uses its own unique code
+				code := fmt.Sprintf("code-%d-%d", id, j)
+				log.Code(code).Info(fmt.Sprintf("message from goroutine %d iteration %d", id, j))
+			}
+			done <- true
+		}(i)
+	}
+
+	// Wait for all goroutines to complete
+	for i := 0; i < goroutines; i++ {
+		<-done
+	}
+
+	// Verify log entries line by line to ensure no contamination during concurrent writes
+	content, err := file.GetContent("storage/logs/goravel1.log")
+	assert.Nil(t, err)
+
+	lines := strings.Split(strings.TrimSpace(content), "\n")
+
+	// Log entries come in pairs: message line and code line
+	if len(lines)%2 != 0 {
+		assert.Fail(t, "Log file has an odd number of lines, indicating possible corruption")
+	}
+
+	errors := 0
+	for i := 0; i < len(lines); i += 2 {
+		messageLine := lines[i]
+		codeLine := lines[i+1]
+
+		// Parse message line: extract goroutine ID and iteration
+		var goroutineID, iteration int
+		messageIdx := strings.Index(messageLine, "goroutine")
+		if messageIdx == -1 {
+			assert.Fail(t, fmt.Sprintf("Line %d: 'goroutine' not found in message line: %s", i+1, messageLine))
+			errors++
+			continue
+		}
+
+		remainder := messageLine[messageIdx:]
+		n, err := fmt.Sscanf(remainder, "goroutine %d iteration %d", &goroutineID, &iteration)
+		if err != nil || n != 2 {
+			assert.Fail(t, fmt.Sprintf("Line %d: Failed to parse message line: %s (error: %v)", i+1, messageLine, err))
+			errors++
+			continue
+		}
+
+		// Parse code line: extract code
+		var code string
+		n, err = fmt.Sscanf(codeLine, "[Code] %s", &code)
+		if err != nil || n != 1 {
+			assert.Fail(t, fmt.Sprintf("Line %d: Failed to parse code line: %s (error: %v)", i+2, codeLine, err))
+			errors++
+			continue
+		}
+
+		// Verify that code matches expected format: code-{goroutineID}-{iteration}
+		expectedCode := fmt.Sprintf("code-%d-%d", goroutineID, iteration)
+		if code != expectedCode {
+			assert.Fail(t, fmt.Sprintf("Line %d-%d: Code mismatch. Expected: %s, Got: %s", i+1, i+2, expectedCode, code))
+			errors++
+		}
+	}
+
+	if errors != 0 {
+		assert.Fail(t, fmt.Sprintf("Log integrity check failed with %d errors", errors))
+	}
+
+	_ = file.Remove("storage")
+}
+
+func TestWriter_NoEntryContamination(t *testing.T) {
+	// This test verifies that calling fluent methods on the base writer
+	// returns a new writer and does not affect the original.
+	mockConfig := initMockConfig()
+	mockDriverConfig(mockConfig)
+	log, err := NewApplication(mockConfig, json.New())
+	assert.Nil(t, err)
+	assert.NotNil(t, log)
+
+	// Call Code on the base writer, then log without code
+	_ = log.Code("should-not-appear")
+	log.Info("message without code")
+
+	// The message should NOT have the code since we didn't chain the calls
+	assert.True(t, file.Contains(singleLog, "test.info: message without code"))
+	assert.False(t, file.Contains(singleLog, "message without code\n[Code] should-not-appear"))
+
+	_ = file.Remove("storage")
+}
+
+func TestWriter_FluentChainIsolation(t *testing.T) {
+	// This test verifies that multiple fluent chains are isolated from each other.
+	mockConfig := initMockConfig()
+	mockDriverConfig(mockConfig)
+	log, err := NewApplication(mockConfig, json.New())
+	assert.Nil(t, err)
+	assert.NotNil(t, log)
+
+	// Create two separate chains
+	chain1 := log.Code("chain1-code")
+	chain2 := log.Code("chain2-code")
+
+	// Log from both chains
+	go chain1.Info("message from chain1")
+	go chain2.Info("message from chain2")
+
+	time.Sleep(500 * time.Millisecond) // Wait for goroutines to finish
+
+	// Verify each chain has its own code
+	assert.True(t, file.Contains(singleLog, "message from chain1\n[Code] chain1-code"))
+	assert.True(t, file.Contains(singleLog, "message from chain2\n[Code] chain2-code"))
+
+	// Verify chain2 code doesn't appear in chain1's message
+	assert.False(t, file.Contains(singleLog, "message from chain1\n[Code] chain2-code"))
+	assert.False(t, file.Contains(singleLog, "message from chain2\n[Code] chain1-code"))
+
+	_ = file.Remove("storage")
+}
+
 func initMockConfig() *configmock.Config {
 	mockConfig := &configmock.Config{}
 	mockConfig.EXPECT().GetString("logging.default").Return("stack").Once()
@@ -561,7 +709,9 @@ func initMockConfig() *configmock.Config {
 
 func mockDriverConfig(mockConfig *configmock.Config) {
 	mockConfig.EXPECT().GetString("logging.channels.daily.level").Return("debug").Once()
+	mockConfig.EXPECT().GetString("logging.channels.daily.formatter", "text").Return("text").Once()
 	mockConfig.EXPECT().GetString("logging.channels.single.level").Return("debug").Once()
+	mockConfig.EXPECT().GetString("logging.channels.single.formatter", "text").Return("text").Once()
 	mockConfig.EXPECT().GetString("app.env").Return("test").Maybe()
 }
 

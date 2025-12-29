@@ -44,6 +44,7 @@ func (s *SingleTestSuite) TestNewSingle() {
 func (s *SingleTestSuite) TestHandle_Success() {
 	s.mockConfig.EXPECT().GetString("logging.channels.single.path").Return("storage/logs/test.log").Once()
 	s.mockConfig.EXPECT().GetString("logging.channels.single.level").Return("debug").Once()
+	s.mockConfig.EXPECT().GetString("logging.channels.single.formatter", "text").Return("text").Once()
 
 	single := NewSingle(s.mockConfig, s.json)
 	handler, err := single.Handle("logging.channels.single")
@@ -81,6 +82,7 @@ func (s *SingleTestSuite) TestHandle_DifferentLevels() {
 			mockConfig := mocksconfig.NewConfig(s.T())
 			mockConfig.EXPECT().GetString("logging.channels.single.path").Return("storage/logs/test.log").Once()
 			mockConfig.EXPECT().GetString("logging.channels.single.level").Return(tt.level).Once()
+			mockConfig.EXPECT().GetString("logging.channels.single.formatter", "text").Return("text").Once()
 
 			single := NewSingle(mockConfig, s.json)
 			handler, err := single.Handle("logging.channels.single")

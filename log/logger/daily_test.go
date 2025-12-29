@@ -43,6 +43,7 @@ func (s *DailyTestSuite) TestNewDaily() {
 func (s *DailyTestSuite) TestHandle_Success() {
 	s.mockConfig.EXPECT().GetString("logging.channels.daily.path").Return("storage/logs/daily.log").Once()
 	s.mockConfig.EXPECT().GetString("logging.channels.daily.level").Return("debug").Once()
+	s.mockConfig.EXPECT().GetString("logging.channels.daily.formatter", "text").Return("text").Once()
 	s.mockConfig.EXPECT().GetInt("logging.channels.daily.days").Return(7).Once()
 
 	daily := NewDaily(s.mockConfig, s.json)
@@ -78,6 +79,7 @@ func (s *DailyTestSuite) TestHandle_DifferentLevels() {
 			mockConfig := mocksconfig.NewConfig(s.T())
 			mockConfig.EXPECT().GetString("logging.channels.daily.path").Return("storage/logs/daily.log").Once()
 			mockConfig.EXPECT().GetString("logging.channels.daily.level").Return(tt.level).Once()
+			mockConfig.EXPECT().GetString("logging.channels.daily.formatter", "text").Return("text").Once()
 			mockConfig.EXPECT().GetInt("logging.channels.daily.days").Return(7).Once()
 
 			daily := NewDaily(mockConfig, s.json)
@@ -104,6 +106,7 @@ func (s *DailyTestSuite) TestHandle_DifferentDays() {
 			mockConfig := mocksconfig.NewConfig(s.T())
 			mockConfig.EXPECT().GetString("logging.channels.daily.path").Return("storage/logs/daily.log").Once()
 			mockConfig.EXPECT().GetString("logging.channels.daily.level").Return("debug").Once()
+			mockConfig.EXPECT().GetString("logging.channels.daily.formatter", "text").Return("text").Once()
 			mockConfig.EXPECT().GetInt("logging.channels.daily.days").Return(tt.days).Once()
 
 			daily := NewDaily(mockConfig, s.json)
@@ -120,7 +123,7 @@ func TestNewRotatingFileHandler(t *testing.T) {
 	j := json.New()
 	buffer := new(bytes.Buffer)
 
-	handler := NewRotatingFileHandler(buffer, mockConfig, j, nil)
+	handler := NewRotatingFileHandler(buffer, mockConfig, j, nil, FormatterText)
 
 	if handler == nil {
 		t.Error("Expected handler to be not nil")

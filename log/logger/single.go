@@ -43,8 +43,9 @@ func (single *Single) Handle(channel string) (log.Handler, error) {
 	}
 
 	level := GetLevelFromString(single.config.GetString(channel + ".level"))
+	formatter := single.config.GetString(channel+".formatter", FormatterText)
 
-	return NewIOHandler(file, single.config, single.json, level), nil
+	return NewIOHandler(file, single.config, single.json, level, formatter), nil
 }
 
 // GetLevelFromString converts a string log level to log.Level.

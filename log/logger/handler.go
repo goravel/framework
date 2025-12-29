@@ -11,24 +11,31 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 )
 
-// IOHandler is a log.Handler that writes formatted log entries to an io.Writer.
+// Formatter types for log output
+const (
+	FormatterText = "text"
+	FormatterJson = "json"
+)
+
 type IOHandler struct {
-	writer io.Writer
-	config config.Config
-	json   foundation.Json
-	level  slog.Leveler
+	writer    io.Writer
+	config    config.Config
+	json      foundation.Json
+	level     slog.Leveler
+	formatter string
 }
 
-// NewIOHandler creates a new io handler.
-func NewIOHandler(w io.Writer, config config.Config, json foundation.Json, level slog.Leveler) *IOHandler {
+func NewIOHandler(w io.Writer, config config.Config, json foundation.Json, level slog.Leveler, formatter string) *IOHandler {
 	return &IOHandler{
-		writer: w,
-		config: config,
-		json:   json,
-		level:  level,
+		writer:    w,
+		config:    config,
+		json:      json,
+		level:     level,
+		formatter: formatter,
 	}
 }
 
@@ -39,6 +46,18 @@ func (h *IOHandler) Enabled(level log.Level) bool {
 
 // Handle handles the Record.
 func (h *IOHandler) Handle(entry log.Entry) error {
+	switch h.formatter {
+	case FormatterJson:
+		return h.handleJSON(entry)
+	case FormatterText:
+		return h.handleText(entry)
+	default:
+		return errors.LogFormatterNotSupported.Args(h.formatter)
+	}
+}
+
+// handleText formats the log entry as human-readable text.
+func (h *IOHandler) handleText(entry log.Entry) error {
 	var b bytes.Buffer
 
 	timestamp := carbon.FromStdTime(entry.Time(), carbon.DefaultTimezone()).ToDateTimeMilliString()
@@ -93,19 +112,85 @@ func (h *IOHandler) Handle(entry log.Entry) error {
 	return err
 }
 
-// ConsoleHandler is a log.Handler that writes formatted log entries to stdout.
+// handleJSON formats the log entry as a JSON object (one line per entry).
+func (h *IOHandler) handleJSON(entry log.Entry) error {
+	timestamp := carbon.FromStdTime(entry.Time(), carbon.DefaultTimezone()).ToDateTimeMilliString()
+	env := h.config.GetString("app.env")
+
+	data := map[string]any{
+		"time":        timestamp,
+		"environment": env,
+		"level":       entry.Level().String(),
+		"message":     entry.Message(),
+	}
+
+	if v := entry.Code(); v != "" {
+		data["code"] = v
+	}
+	if v := entry.Context(); v != nil {
+		values := make(map[any]any)
+		getContextValues(v, values)
+		if len(values) > 0 {
+			// Convert map[any]any to map[string]any for JSON serialization
+			stringValues := make(map[string]any)
+			for k, val := range values {
+				stringValues[fmt.Sprintf("%v", k)] = val
+			}
+			data["context"] = stringValues
+		}
+	}
+	if v := entry.Domain(); v != "" {
+		data["domain"] = v
+	}
+	if v := entry.Hint(); v != "" {
+		data["hint"] = v
+	}
+	if v := entry.Owner(); v != nil {
+		data["owner"] = v
+	}
+	if v := entry.Request(); v != nil {
+		data["request"] = v
+	}
+	if v := entry.Response(); v != nil {
+		data["response"] = v
+	}
+	if v := entry.Trace(); v != nil {
+		data["trace"] = v
+	}
+	if v := entry.Tags(); len(v) > 0 {
+		data["tags"] = v
+	}
+	if v := entry.User(); v != nil {
+		data["user"] = v
+	}
+	if v := entry.With(); len(v) > 0 {
+		data["extra"] = v
+	}
+
+	jsonBytes, err := h.json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	// Append newline for line-delimited JSON
+	jsonBytes = append(jsonBytes, '\n')
+
+	_, err = h.writer.Write(jsonBytes)
+	return err
+}
+
 type ConsoleHandler struct {
 	*IOHandler
 }
 
-// NewConsoleHandler creates a new console handler.
-func NewConsoleHandler(config config.Config, json foundation.Json, level slog.Leveler) *ConsoleHandler {
+func NewConsoleHandler(config config.Config, json foundation.Json, level slog.Leveler, formatter string) *ConsoleHandler {
 	return &ConsoleHandler{
 		IOHandler: &IOHandler{
-			writer: os.Stdout,
-			config: config,
-			json:   json,
-			level:  level,
+			writer:    os.Stdout,
+			config:    config,
+			json:      json,
+			level:     level,
+			formatter: formatter,
 		},
 	}
 }
