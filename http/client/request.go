@@ -22,7 +22,6 @@ type Request struct {
 	json   foundation.Json
 
 	ctx         context.Context
-	bind        any
 	headers     http.Header
 	queryParams url.Values
 	urlParams   map[string]string
@@ -87,15 +86,6 @@ func (r *Request) AcceptJSON() client.Request {
 
 func (r *Request) AsForm() client.Request {
 	return r.WithHeader("Content-Type", "application/x-www-form-urlencoded")
-}
-
-// Bind decodes the response body into the given variable.
-//
-// Deprecated: Do not use this method. It masks HTTP errors (like 500s) by
-// parsing the body before checking the status code. Use Response.Bind() instead.
-func (r *Request) Bind(value any) client.Request {
-	r.bind = value
-	return r
 }
 
 func (r *Request) Clone() client.Request {
@@ -297,14 +287,5 @@ func (r *Request) send(method, uri string, body io.Reader) (client.Response, err
 		return nil, err
 	}
 
-	response := NewResponse(res, r.json)
-	// TODO: Remove this logic and the `bind` field in next major version.
-	// This supports the deprecated `Request.Bind()` method.
-	if r.bind != nil {
-		if err = response.Bind(r.bind); err != nil {
-			return nil, err
-		}
-	}
-
-	return response, nil
+	return NewResponse(res, r.json), nil
 }

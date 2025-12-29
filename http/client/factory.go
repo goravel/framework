@@ -127,14 +127,6 @@ func (r *Factory) AsForm() client.Request {
 	return r.Request().AsForm()
 }
 
-// Bind decodes the response body into the given variable.
-//
-// Deprecated: Do not use this method. It masks HTTP errors (like 500s) by
-// parsing the body before checking the status code. Use Response.Bind() instead.
-func (r *Factory) Bind(value any) client.Request {
-	return r.Request().Bind(value)
-}
-
 func (r *Factory) Clone() client.Request {
 	return r.Request().Clone()
 }

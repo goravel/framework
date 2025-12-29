@@ -169,54 +169,6 @@ func (_c *Factory_AsForm_Call) RunAndReturn(run func() client.Request) *Factory_
 	return _c
 }
 
-// Bind provides a mock function with given fields: value
-func (_m *Factory) Bind(value interface{}) client.Request {
-	ret := _m.Called(value)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Bind")
-	}
-
-	var r0 client.Request
-	if rf, ok := ret.Get(0).(func(interface{}) client.Request); ok {
-		r0 = rf(value)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(client.Request)
-		}
-	}
-
-	return r0
-}
-
-// Factory_Bind_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Bind'
-type Factory_Bind_Call struct {
-	*mock.Call
-}
-
-// Bind is a helper method to define mock.On call
-//   - value interface{}
-func (_e *Factory_Expecter) Bind(value interface{}) *Factory_Bind_Call {
-	return &Factory_Bind_Call{Call: _e.mock.On("Bind", value)}
-}
-
-func (_c *Factory_Bind_Call) Run(run func(value interface{})) *Factory_Bind_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(interface{}))
-	})
-	return _c
-}
-
-func (_c *Factory_Bind_Call) Return(_a0 client.Request) *Factory_Bind_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Factory_Bind_Call) RunAndReturn(run func(interface{}) client.Request) *Factory_Bind_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // Client provides a mock function with given fields: name
 func (_m *Factory) Client(name ...string) client.Client {
 	_va := make([]interface{}, len(name))

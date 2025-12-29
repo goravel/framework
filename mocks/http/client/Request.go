@@ -169,54 +169,6 @@ func (_c *Request_AsForm_Call) RunAndReturn(run func() client.Request) *Request_
 	return _c
 }
 
-// Bind provides a mock function with given fields: value
-func (_m *Request) Bind(value interface{}) client.Request {
-	ret := _m.Called(value)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Bind")
-	}
-
-	var r0 client.Request
-	if rf, ok := ret.Get(0).(func(interface{}) client.Request); ok {
-		r0 = rf(value)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(client.Request)
-		}
-	}
-
-	return r0
-}
-
-// Request_Bind_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Bind'
-type Request_Bind_Call struct {
-	*mock.Call
-}
-
-// Bind is a helper method to define mock.On call
-//   - value interface{}
-func (_e *Request_Expecter) Bind(value interface{}) *Request_Bind_Call {
-	return &Request_Bind_Call{Call: _e.mock.On("Bind", value)}
-}
-
-func (_c *Request_Bind_Call) Run(run func(value interface{})) *Request_Bind_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(interface{}))
-	})
-	return _c
-}
-
-func (_c *Request_Bind_Call) Return(_a0 client.Request) *Request_Bind_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Request_Bind_Call) RunAndReturn(run func(interface{}) client.Request) *Request_Bind_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // Clone provides a mock function with no fields
 func (_m *Request) Clone() client.Request {
 	ret := _m.Called()

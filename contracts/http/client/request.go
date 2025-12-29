@@ -28,11 +28,6 @@ type Request interface {
 	AcceptJSON() Request
 	// AsForm sets the Content-Type header to "application/x-www-form-urlencoded".
 	AsForm() Request
-	// Bind decodes the response body into the given variable.
-	//
-	// Deprecated: Do not use this method. It masks HTTP errors (like 500s) by
-	// parsing the body before checking the status code. Use Response.Bind() instead.
-	Bind(value any) Request
 	// Clone creates a deep copy of the request builder.
 	// This is useful if you want to reuse a base request with shared headers/tokens
 	// for multiple distinct API calls.
