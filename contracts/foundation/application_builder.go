@@ -17,6 +17,8 @@ import (
 type ApplicationBuilder interface {
 	// Create a new application instance after configuring.
 	Create() Application
+	// Run creates and starts the application.
+	Run()
 	// Start starts modules, Wait should be called after to wait for all modules to shutdown.
 	Start() Application
 	// WithCommands sets the application's commands.
