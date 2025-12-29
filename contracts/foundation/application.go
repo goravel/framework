@@ -63,8 +63,8 @@ type Application interface {
 	Publishes(packageName string, paths map[string]string, groups ...string)
 	// Refresh all modules after changing config, will call the Boot method simultaneously.
 	Refresh()
-	// Run runs modules.
-	Run(runners ...Runner)
+	// Start starts modules.
+	Start(runners ...Runner) Application
 	// SetJson set the JSON implementation.
 	SetJson(json Json)
 	// SetLocale set the current application locale.
@@ -73,6 +73,8 @@ type Application interface {
 	Shutdown()
 	// Version gets the version number of the application.
 	Version() string
+	// Wait for all modules to shutdown.
+	Wait()
 
 	// Paths
 

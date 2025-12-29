@@ -695,12 +695,13 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 	})
 }
 
-func (s *ApplicationBuilderTestSuite) TestRun() {
+func (s *ApplicationBuilderTestSuite) TestStart() {
 	s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
 	s.mockApp.EXPECT().Boot().Return().Once()
-	s.mockApp.EXPECT().Run().Return().Once()
+	s.mockApp.EXPECT().Start().Return(s.mockApp).Once()
 
-	s.builder.Run()
+	app := s.builder.Start()
+	s.NotNil(app)
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithConfig() {
