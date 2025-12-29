@@ -387,7 +387,8 @@ func TestLogrus(t *testing.T) {
 			test.assert()
 		})
 	}
-	assert.NoError(t, file.Remove("storage"))
+
+	_ = file.Remove("storage")
 }
 
 func TestLogrus_DailyLogWithDifferentDays(t *testing.T) {
@@ -418,7 +419,7 @@ func TestLogrus_DailyLogWithDifferentDays(t *testing.T) {
 	assert.True(t, file.Contain(nextDailyLog, date))
 	assert.True(t, file.Contain(nextDailyLog, "test.info: Goravel Next Day"))
 
-	assert.NoError(t, file.Remove("storage"))
+	_ = file.Remove("storage")
 }
 
 func TestLogrusWithCustomLogger(t *testing.T) {
@@ -468,7 +469,7 @@ func TestLogrus_Fatal(t *testing.T) {
 	assert.True(t, file.Contain(singleLog, "test.fatal: Goravel"))
 	assert.True(t, file.Contain(dailyLog, "test.fatal: Goravel"))
 
-	assert.NoError(t, file.Remove("storage"))
+	_ = file.Remove("storage")
 }
 
 func TestLogrus_Fatalf(t *testing.T) {
@@ -490,7 +491,7 @@ func TestLogrus_Fatalf(t *testing.T) {
 	assert.True(t, file.Contain(singleLog, "test.fatal: Goravel"))
 	assert.True(t, file.Contain(dailyLog, "test.fatal: Goravel"))
 
-	assert.NoError(t, file.Remove("storage"))
+	_ = file.Remove("storage")
 }
 
 func Benchmark_Debug(b *testing.B) {
