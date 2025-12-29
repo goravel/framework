@@ -930,6 +930,15 @@ func (s *DBTestSuite) TestPaginate() {
 			s.Equal(int64(5), total)
 			s.Equal("paginate_product3", products[0].Name)
 			s.Equal("paginate_product4", products[1].Name)
+
+			// Fix: https://github.com/goravel/goravel/issues/842
+			products = []Product{}
+			err = query.DB().Table("products").Select("name as name").WhereLike("name", "paginate_product%").Paginate(2, 2, &products, &total)
+			s.NoError(err)
+			s.Equal(2, len(products))
+			s.Equal(int64(5), total)
+			s.Equal("paginate_product3", products[0].Name)
+			s.Equal("paginate_product4", products[1].Name)
 		})
 	}
 }
