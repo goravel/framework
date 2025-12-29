@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"maps"
 	"os"
-	"time"
 
+	"github.com/dromara/carbon/v2"
 	"github.com/rotisserie/eris"
 
 	"github.com/goravel/framework/contracts/http"
@@ -190,7 +190,7 @@ func (w *Writer) log(level log.Level, msg string) {
 		entry.ctx = w.ctx
 	}
 
-	entry.time = time.Now()
+	entry.time = carbon.Now().StdTime()
 	entry.message = msg
 	entry.level = level
 
