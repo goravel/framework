@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"testing"
@@ -619,6 +620,215 @@ func (s *QueryTestSuite) TestCursor() {
 
 				s.Equal(err1, err2)
 			}
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestCursor_WithJson_ScanMap() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			data := []JsonData{
+				{
+					Data: `{"string":"first","int":1,"float":123.456,"bool":true,"array":["abc","def","ghi"],"nested":{"string":"first","int":456},"objects":[{"level":"first","value":"abc"},{"level":"second","value":"def"}]}`,
+				},
+				{
+					Data: `{"string":"second","int":2,"float":789.123,"bool":false,"array":["jkl","def","abc"]}`,
+				},
+			}
+			s.Nil(query.Query().Create(&data))
+
+			type Result struct {
+				Data map[string]any
+			}
+
+			var result []Result
+			jsonData := query.Query().Model(&JsonData{}).Cursor()
+			for row := range jsonData {
+				var res Result
+				s.NoError(row.Scan(&res))
+				result = append(result, res)
+			}
+
+			s.Equal(2, len(result))
+			s.Equal(map[string]any{
+				"string": "first",
+				"int":    float64(1),
+				"float":  123.456,
+				"bool":   true,
+				"array":  []any{"abc", "def", "ghi"},
+				"nested": map[string]any{
+					"string": "first",
+					"int":    float64(456),
+				},
+				"objects": []any{
+					map[string]any{
+						"level": "first",
+						"value": "abc",
+					},
+					map[string]any{
+						"level": "second",
+						"value": "def",
+					},
+				},
+			}, result[0].Data)
+			s.Equal(map[string]any{
+				"string": "second",
+				"int":    float64(2),
+				"float":  789.123,
+				"bool":   false,
+				"array":  []any{"jkl", "def", "abc"},
+			}, result[1].Data)
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestCursor_WithJson_ScanStringSlice() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			data := []JsonData{
+				{
+					Data: `["a","b","c"]`,
+				},
+				{
+					Data: `["d","e","f"]`,
+				},
+			}
+			s.Nil(query.Query().Create(&data))
+
+			type Result struct {
+				Data []string
+			}
+
+			var result []Result
+			jsonData := query.Query().Model(&JsonData{}).Cursor()
+			for row := range jsonData {
+				var res Result
+				s.NoError(row.Scan(&res))
+				result = append(result, res)
+			}
+
+			s.Equal(2, len(result))
+			s.Equal([]string{"a", "b", "c"}, result[0].Data)
+			s.Equal([]string{"d", "e", "f"}, result[1].Data)
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestCursor_WithJson_ScanIntSlice() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			data := []JsonData{
+				{
+					Data: `[1,2,3]`,
+				},
+				{
+					Data: `[4,5,6]`,
+				},
+			}
+			s.Nil(query.Query().Create(&data))
+
+			type Result struct {
+				Data []int
+			}
+
+			var result []Result
+			jsonData := query.Query().Model(&JsonData{}).Cursor()
+			for row := range jsonData {
+				var res Result
+				s.NoError(row.Scan(&res))
+				result = append(result, res)
+			}
+
+			s.Equal(2, len(result))
+			s.Equal([]int{1, 2, 3}, result[0].Data)
+			s.Equal([]int{4, 5, 6}, result[1].Data)
+		})
+	}
+}
+
+type ResultData struct {
+	String string
+	Int    int
+	Float  float64
+	Bool   bool
+	Array  []string
+	Nested struct {
+		String string
+		Int    int
+	}
+	Objects []struct {
+		Level string
+		Value string
+	}
+}
+
+func (r *ResultData) Scan(value any) (err error) {
+	if data, ok := value.([]byte); ok && len(data) > 0 {
+		err = json.Unmarshal(data, &r)
+	}
+	return
+}
+
+func (s *QueryTestSuite) TestCursor_WithJson_ScanStruct() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			data := []JsonData{
+				{
+					Data: `{"string":"first","int":1,"float":123.456,"bool":true,"array":["abc","def","ghi"],"nested":{"string":"first","int":456},"objects":[{"level":"first","value":"abc"},{"level":"second","value":"def"}]}`,
+				},
+				{
+					Data: `{"string":"second","int":2,"float":789.123,"bool":false,"array":["jkl","def","abc"]}`,
+				},
+			}
+			s.Nil(query.Query().Create(&data))
+
+			type Result struct {
+				Data ResultData
+			}
+
+			var result []Result
+			jsonData := query.Query().Model(&JsonData{}).Cursor()
+			for row := range jsonData {
+				var res Result
+				s.NoError(row.Scan(&res))
+				result = append(result, res)
+			}
+
+			s.Equal(2, len(result))
+			s.Equal(ResultData{
+				String: "first",
+				Int:    1,
+				Float:  123.456,
+				Bool:   true,
+				Array:  []string{"abc", "def", "ghi"},
+				Nested: struct {
+					String string
+					Int    int
+				}{
+					String: "first",
+					Int:    456,
+				},
+				Objects: []struct {
+					Level string
+					Value string
+				}{
+					{
+						Level: "first",
+						Value: "abc",
+					},
+					{
+						Level: "second",
+						Value: "def",
+					},
+				},
+			}, result[0].Data)
+			s.Equal(ResultData{
+				String: "second",
+				Int:    2,
+				Float:  789.123,
+				Bool:   false,
+				Array:  []string{"jkl", "def", "abc"},
+			}, result[1].Data)
 		})
 	}
 }
