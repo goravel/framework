@@ -31,14 +31,3 @@ type Config struct {
 	// will remain idle before closing itself.
 	IdleConnTimeout time.Duration `mapstructure:"idle_conn_timeout"`
 }
-
-// DefaultConfig provides a safe baseline configuration.
-// It defaults to a 30s timeout to prevent hanging connections.
-var DefaultConfig = Config{
-	BaseUrl:             "",
-	Timeout:             30 * time.Second,
-	MaxIdleConns:        100,
-	MaxIdleConnsPerHost: 10,
-	MaxConnsPerHost:     0, // Unlimited
-	IdleConnTimeout:     90 * time.Second,
-}

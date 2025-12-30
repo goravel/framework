@@ -20,9 +20,9 @@ import (
 
 type RequestTestSuite struct {
 	suite.Suite
-	request *Request
-	client  *Client
-	json    foundation.Json
+	request    *Request
+	httpClient *http.Client
+	json       foundation.Json
 }
 
 func TestRequestTestSuite(t *testing.T) {
@@ -30,13 +30,11 @@ func TestRequestTestSuite(t *testing.T) {
 }
 
 func (s *RequestTestSuite) SetupTest() {
-	cfg := &client.Config{
-		BaseUrl: "https://api.example.com",
+	s.json = json.New()
+	s.httpClient = &http.Client{
 		Timeout: 30 * time.Second,
 	}
-	s.json = json.New()
-	s.client = NewClient("test", cfg, s.json)
-	s.request = NewRequest(s.client, s.json)
+	s.request = NewRequest(s.httpClient, s.json, "https://api.goravel.dev")
 }
 
 func (s *RequestTestSuite) TestClone() {
@@ -44,25 +42,28 @@ func (s *RequestTestSuite) TestClone() {
 	cookie := &http.Cookie{Name: "session", Value: "abc123"}
 	req = req.WithCookie(cookie)
 
+	originalConcrete := req.(*Request)
 	clonedReq := req.Clone().(*Request)
 
-	s.Equal(req.(*Request).queryParams.Encode(), clonedReq.queryParams.Encode())
+	s.Equal(originalConcrete.queryParams.Encode(), clonedReq.queryParams.Encode())
+
 	clonedReq = clonedReq.WithQueryParameter("newKey", "newValue").(*Request)
-	s.NotEqual(req.(*Request).queryParams.Encode(), clonedReq.queryParams.Encode())
+	s.NotEqual(originalConcrete.queryParams.Encode(), clonedReq.queryParams.Encode())
 
-	// Ensure cookies are copied properly
-	s.Equal(len(req.(*Request).cookies), len(clonedReq.cookies))
-	s.Equal(req.(*Request).cookies[0].Value, clonedReq.cookies[0].Value)
+	s.Equal(len(originalConcrete.cookies), len(clonedReq.cookies))
+	s.Equal(originalConcrete.cookies[0].Value, clonedReq.cookies[0].Value)
 
-	// Ensure modifying cloned cookies does not affect the original
 	clonedReq = clonedReq.WithCookie(&http.Cookie{Name: "session", Value: "modified"}).(*Request)
-	s.NotEqual(req.(*Request).cookies[0].Value, clonedReq.cookies[len(clonedReq.cookies)-1].Value)
+	s.NotEqual(originalConcrete.cookies[0].Value, clonedReq.cookies[len(clonedReq.cookies)-1].Value)
 
-	req = req.WithQueryParameter("param1", "value1").(*Request)
+	req = req.WithQueryParameter("param1", "value1")
+	originalConcrete = req.(*Request)
 	clonedReq = req.Clone().(*Request)
-	s.Equal(req.(*Request).queryParams.Get("param1"), clonedReq.queryParams.Get("param1"))
+
+	s.Equal(originalConcrete.queryParams.Get("param1"), clonedReq.queryParams.Get("param1"))
+
 	clonedReq = clonedReq.WithQueryParameter("param1", "changedValue").(*Request)
-	s.NotEqual(req.(*Request).queryParams.Get("param1"), clonedReq.queryParams.Get("param1"))
+	s.NotEqual(originalConcrete.queryParams.Get("param1"), clonedReq.queryParams.Get("param1"))
 }
 
 func (s *RequestTestSuite) TestSend_Success() {
@@ -98,13 +99,13 @@ func (s *RequestTestSuite) TestSend_Bind() {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{
-			"id": 1,
-			"name": "Test User",
-			"active": true,
-			"scores": [100, 95, 90],
-			"meta": {"key1": "value1", "key2": "value2"},
-			"nested": {"title": "Admin", "status": "Active"}
-		}`))
+          "id": 1,
+          "name": "Test User",
+          "active": true,
+          "scores": [100, 95, 90],
+          "meta": {"key1": "value1", "key2": "value2"},
+          "nested": {"title": "Admin", "status": "Active"}
+       }`))
 	}))
 	defer server.Close()
 
@@ -117,7 +118,7 @@ func (s *RequestTestSuite) TestSend_Bind() {
 
 	s.Equal(1, msg.ID)
 	s.Equal("Test User", msg.Name)
-	s.Equal(true, msg.Active)
+	s.True(msg.Active)
 	s.Equal([]int{100, 95, 90}, msg.Scores)
 	s.Equal("value1", msg.Meta["key1"])
 	s.Equal("Admin", msg.Nested.Title)
@@ -144,7 +145,6 @@ func (s *RequestTestSuite) TestSend_Stream() {
 	s.NoError(err)
 	s.Equal(expectedData, string(content))
 
-	// Scenario 2: Body() then Stream() (Smart Fallback)
 	resp2, err := s.request.Clone().Get(server.URL)
 	s.NoError(err)
 
@@ -162,12 +162,15 @@ func (s *RequestTestSuite) TestSend_Stream() {
 
 func (s *RequestTestSuite) TestSend_Timeout() {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(2 * time.Second)
+		time.Sleep(100 * time.Millisecond)
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer server.Close()
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+
+	// Set a context timeout shorter than the server sleep time
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 	defer cancel()
+
 	req := s.request.Clone()
 	_, err := req.WithContext(ctx).Get(server.URL)
 	s.Error(err)
@@ -188,17 +191,17 @@ func (s *RequestTestSuite) TestWithHeaders() {
 	req := s.request.Clone().WithHeaders(map[string]string{"Content-Type": "application/json"})
 	s.Equal("application/json", req.(*Request).headers.Get("Content-Type"))
 
-	req.ReplaceHeaders(map[string]string{
+	req = req.ReplaceHeaders(map[string]string{
 		"Content-Type": "application/x-www-form-urlencoded",
 		"X-CUSTOM":     "custom-header",
 	})
 	s.Equal("application/x-www-form-urlencoded", req.(*Request).headers.Get("Content-Type"))
 	s.Equal("custom-header", req.(*Request).headers.Get("X-CUSTOM"))
 
-	req.WithoutHeader("X-CUSTOM")
+	req = req.WithoutHeader("X-CUSTOM")
 	s.Equal("", req.(*Request).headers.Get("X-CUSTOM"))
 
-	req.FlushHeaders()
+	req = req.FlushHeaders()
 	s.Equal("", req.(*Request).headers.Get("Content-Type"))
 }
 
@@ -258,21 +261,23 @@ func (s *RequestTestSuite) TestAllHttpMethods() {
 
 			var resp client.Response
 			var err error
+
+			req := s.request.Clone()
 			switch method {
 			case http.MethodGet:
-				resp, err = s.request.Clone().Get(server.URL)
+				resp, err = req.Get(server.URL)
 			case http.MethodPost:
-				resp, err = s.request.Clone().Post(server.URL, nil)
+				resp, err = req.Post(server.URL, nil)
 			case http.MethodPut:
-				resp, err = s.request.Clone().Put(server.URL, nil)
+				resp, err = req.Put(server.URL, nil)
 			case http.MethodDelete:
-				resp, err = s.request.Clone().Delete(server.URL, nil)
+				resp, err = req.Delete(server.URL, nil)
 			case http.MethodPatch:
-				resp, err = s.request.Clone().Patch(server.URL, nil)
+				resp, err = req.Patch(server.URL, nil)
 			case http.MethodHead:
-				resp, err = s.request.Clone().Head(server.URL)
+				resp, err = req.Head(server.URL)
 			case http.MethodOptions:
-				resp, err = s.request.Clone().Options(server.URL)
+				resp, err = req.Options(server.URL)
 			}
 
 			s.NoError(err)
@@ -304,6 +309,7 @@ func (s *RequestTestSuite) TestPrefixAndPathVariables() {
 		"version": "v1",
 		"userID":  "1234",
 	}).WithQueryParameter("role", "admin")
+
 	resp, err := req.Get(server.URL + "/api/{version}/users/{userID}")
 	s.NoError(err)
 	s.NotNil(resp)
@@ -311,11 +317,13 @@ func (s *RequestTestSuite) TestPrefixAndPathVariables() {
 	s.Equal(200, resp.Status())
 	s.Equal(1234, user.ID)
 	s.Equal("User 1234", user.Name)
+	s.Equal("v1", user.Version)
 }
 
 func (s *RequestTestSuite) TestConcurrentRequests() {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
+		// Small delay to ensure context timeout triggers if set
 		time.Sleep(5 * time.Millisecond)
 		_, _ = w.Write(fmt.Appendf(nil, `{"message":"success-%s"}`, r.URL.Path))
 	}))
@@ -333,7 +341,7 @@ func (s *RequestTestSuite) TestConcurrentRequests() {
 	go func() {
 		defer wg.Done()
 		resp, err := reqTimeout.WithContext(ctx).Get(server.URL)
-		s.Error(err)
+		s.Error(err, "Should timeout")
 		s.Nil(resp)
 	}()
 
@@ -368,64 +376,62 @@ func (s *RequestTestSuite) TestParseRequestURL() {
 	}{
 		{
 			name:     "Absolute URL should remain unchanged",
-			baseURL:  "https://api.example.com",
+			baseURL:  "https://api.goravel.dev",
 			uri:      "https://external.com/data",
 			expected: "https://external.com/data",
 		},
 		{
 			name:     "Base URL should be prepended",
-			baseURL:  "https://api.example.com",
+			baseURL:  "https://api.goravel.dev",
 			uri:      "/users",
-			expected: "https://api.example.com/users",
+			expected: "https://api.goravel.dev/users",
 		},
 		{
 			name:      "Path parameters should be replaced",
-			baseURL:   "https://api.example.com",
+			baseURL:   "https://api.goravel.dev",
 			uri:       "/users/{id}/posts",
 			urlParams: map[string]string{"id": "123"},
-			expected:  "https://api.example.com/users/123/posts",
+			expected:  "https://api.goravel.dev/users/123/posts",
 		},
 		{
 			name:     "Unresolved path parameters remain",
-			baseURL:  "https://api.example.com",
+			baseURL:  "https://api.goravel.dev",
 			uri:      "/users/{id}/posts",
-			expected: "https://api.example.com/users/%7Bid%7D/posts",
+			expected: "https://api.goravel.dev/users/%7Bid%7D/posts",
 		},
 		{
 			name:        "Completely malformed URL should return an error",
-			baseURL:     "https://api.example.com",
+			baseURL:     "https://api.goravel.dev",
 			uri:         "http://:invalid",
 			expectError: true,
 		},
 		{
 			name:        "Query parameters should be appended",
-			baseURL:     "https://api.example.com",
+			baseURL:     "https://api.goravel.dev",
 			uri:         "/search",
 			queryParams: url.Values{"q": []string{"golang"}, "page": []string{"1"}},
-			expected:    "https://api.example.com/search?page=1&q=golang",
+			expected:    "https://api.goravel.dev/search?page=1&q=golang",
 		},
 		{
 			name:        "Existing query parameters should be preserved",
-			baseURL:     "https://api.example.com",
+			baseURL:     "https://api.goravel.dev",
 			uri:         "/search?sort=asc",
 			queryParams: url.Values{"q": []string{"golang"}},
-			expected:    "https://api.example.com/search?sort=asc&q=golang",
+			expected:    "https://api.goravel.dev/search?sort=asc&q=golang",
 		},
 		{
 			name:     "Unclosed path parameter should remain unchanged",
-			baseURL:  "https://api.example.com",
+			baseURL:  "https://api.goravel.dev",
 			uri:      "/users/{id",
-			expected: "https://api.example.com/users/%7Bid",
+			expected: "https://api.goravel.dev/users/%7Bid",
 		},
 	}
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			cfg := &client.Config{
-				BaseUrl: tt.baseURL,
-			}
 			r := &Request{
-				client:      NewClient("test2", cfg, s.json),
+				client:      s.httpClient,
+				baseUrl:     tt.baseURL,
 				urlParams:   tt.urlParams,
 				queryParams: tt.queryParams,
 			}

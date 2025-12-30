@@ -46,28 +46,26 @@ func (s *FactoryTestSuite) SetupTest() {
 
 func (s *FactoryTestSuite) TestClient_Resolution() {
 	s.Run("resolves default client", func() {
-		c := s.factory.Client()
-		s.NotNil(c)
-		s.Equal("main", c.Name())
-		s.Equal("https://main.com", c.Config().BaseUrl)
+		req := s.factory.Client()
+		s.NotNil(req)
+
+		s.Equal(10*time.Second, req.HttpClient().Timeout)
 	})
 
 	s.Run("resolves specific client", func() {
-		c := s.factory.Client("stripe")
-		s.NotNil(c)
-		s.Equal("stripe", c.Name())
-		s.Equal("https://api.stripe.com", c.Config().BaseUrl)
+		req := s.factory.Client("stripe")
+		s.NotNil(req)
+		s.Equal(5*time.Second, req.HttpClient().Timeout)
 	})
 
-	s.Run("caches client instances (Singleton)", func() {
-		c1 := s.factory.Client("stripe")
-		c2 := s.factory.Client("stripe")
+	s.Run("caches http client instances (Singleton Pool)", func() {
+		req1 := s.factory.Client("stripe")
+		req2 := s.factory.Client("stripe")
 
-		// Ensure we aren't re-allocating memory for the same CLIENT
-		s.Same(c1, c2, "Factory should return the exact same instance for the same name")
+		s.Same(req1.HttpClient(), req2.HttpClient(), "Factory should return the exact same *http.Client for the same name")
 
-		c3 := s.factory.Client("main")
-		s.NotSame(c1, c3, "Different clients must be different instances")
+		req3 := s.factory.Client("main")
+		s.NotSame(req1.HttpClient(), req3.HttpClient(), "Different config names must result in different *http.Client instances")
 	})
 }
 
@@ -77,19 +75,19 @@ func (s *FactoryTestSuite) TestErrorHandling() {
 		s.NotNil(f)
 
 		// Should return lazy error because no default is configured
-		resp, err := f.Client().NewRequest().Get("/")
+		resp, err := f.Client().Get("/")
 		s.Nil(resp)
 		s.ErrorIs(err, errors.HttpClientDefaultNotSet, "Expected HttpClientDefaultNotSet error")
 	})
 
 	s.Run("returns lazy error for missing client", func() {
-		c := s.factory.Client("missing_client")
-		s.NotNil(c)
+		req := s.factory.Client("missing_client")
+		s.NotNil(req)
 
 		// The error should only trigger when we attempt a request
-		resp, err := c.NewRequest().Get("/")
+		resp, err := req.Get("/")
 		s.Nil(resp)
-		s.ErrorIs(err, errors.HttpClientConnectionNotFound, "Expected HttpClientDefaultNotSet error")
+		s.ErrorIs(err, errors.HttpClientConnectionNotFound, "Expected HttpClientConnectionNotFound error")
 		s.Contains(err.Error(), "[missing_client]")
 	})
 
@@ -100,9 +98,8 @@ func (s *FactoryTestSuite) TestErrorHandling() {
 		}
 		f := NewFactory(cfg, s.json)
 
-		resp, err := f.Client().NewRequest().Get("/")
+		resp, err := f.Client().Get("/")
 		s.Nil(resp)
-		s.Error(err)
 		s.ErrorIs(err, errors.HttpClientDefaultNotSet)
 	})
 }
@@ -114,14 +111,12 @@ func (s *FactoryTestSuite) TestRouting_Integration() {
 	}))
 	defer serverA.Close()
 
-	// Server B (Simulates Stripe)
 	serverB := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
 		_, _ = w.Write([]byte("response_from_B"))
 	}))
 	defer serverB.Close()
 
-	// Setup Factory with dynamic URLs
 	cfg := &FactoryConfig{
 		Default: "server_a",
 		Clients: map[string]client.Config{
@@ -139,7 +134,7 @@ func (s *FactoryTestSuite) TestRouting_Integration() {
 	})
 
 	s.Run("named request hits specific server", func() {
-		resp, err := f.Request("server_b").Get("/")
+		resp, err := f.Client("server_b").Get("/")
 		s.NoError(err)
 		body, _ := resp.Body()
 		s.Equal("response_from_B", body)
@@ -150,15 +145,22 @@ func (s *FactoryTestSuite) TestConcurrency() {
 	cfg := &FactoryConfig{
 		Default: "main",
 		Clients: map[string]client.Config{
-			"main": {BaseUrl: "https://main.com"},
-			"new1": {BaseUrl: "https://new1.com"},
-			"new2": {BaseUrl: "https://new2.com"},
+			"main": {BaseUrl: "https://main.com", Timeout: 1 * time.Second},
+			"new1": {BaseUrl: "https://new1.com", Timeout: 2 * time.Second},
+			"new2": {BaseUrl: "https://new2.com", Timeout: 3 * time.Second},
 		},
 	}
 	f := NewFactory(cfg, s.json)
 
 	var wg sync.WaitGroup
-	// Pre-warm "main"
+
+	timeoutMap := map[string]time.Duration{
+		"main": 1 * time.Second,
+		"new1": 2 * time.Second,
+		"new2": 3 * time.Second,
+	}
+
+	// Pre-warm one client to ensure we test a mix of "read existing" vs "write new"
 	f.Client("main")
 
 	for i := 0; i < 100; i++ {
@@ -166,24 +168,53 @@ func (s *FactoryTestSuite) TestConcurrency() {
 		go func(idx int) {
 			defer wg.Done()
 
-			// Mixed workload:
+			var name string
 			if idx%2 == 0 {
-				// Access existing (RLock behavior)
-				c := f.Client("main")
-				s.Equal("main", c.Name())
+				name = "main" // Often hits the read lock (RLock)
 			} else {
-				// Access potentially new (Lock behavior)
-				// We toggle between existing and new to stress the mutex
-				name := "new1"
+				name = "new1"
 				if idx%3 == 0 {
-					name = "new2"
+					name = "new2" // Often hits the write lock (Lock)
 				}
-				c := f.Client(name)
-				s.Equal(name, c.Name())
 			}
+
+			req := f.Client(name)
+			s.NotNil(req)
+
+			// We verify the factory returned the CORRECT client for the requested name
+			// by checking the unique Timeout we configured.
+			// This proves the locking mechanism didn't return the wrong pointer or race.
+			s.Equal(timeoutMap[name], req.HttpClient().Timeout, "Concurrency failure: got wrong client config for %s", name)
+			concreteReq, ok := req.(*Request)
+			s.True(ok)
+			s.Equal(cfg.Clients[name].BaseUrl, concreteReq.baseUrl)
 		}(i)
 	}
 	wg.Wait()
+}
+
+func (s *FactoryTestSuite) TestBaseUrl_Override() {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte("hit"))
+	}))
+	defer server.Close()
+
+	cfg := &FactoryConfig{
+		Default: "main",
+		Clients: map[string]client.Config{
+			"main": {BaseUrl: "https://wrong-url.com"},
+		},
+	}
+	f := NewFactory(cfg, s.json)
+
+	s.Run("overrides config base url", func() {
+		// If override fails, it tries to hit wrong-url.com and fails connection
+		resp, err := f.BaseUrl(server.URL).Get("/")
+		s.NoError(err)
+		body, _ := resp.Body()
+		s.Equal("hit", body)
+	})
 }
 
 func (s *FactoryTestSuite) TestProxy_HttpMethods() {
@@ -205,7 +236,7 @@ func (s *FactoryTestSuite) TestProxy_HttpMethods() {
 		{"Put", func() (client.Response, error) { return f.Put("/", nil) }, "PUT"},
 		{"Patch", func() (client.Response, error) { return f.Patch("/", nil) }, "PATCH"},
 		{"Delete", func() (client.Response, error) { return f.Delete("/", nil) }, "DELETE"},
-		{"Head", func() (client.Response, error) { return f.Head("/") }, ""}, // HEAD returns no body
+		{"Head", func() (client.Response, error) { return f.Head("/") }, ""},
 		{"Options", func() (client.Response, error) { return f.Options("/") }, "OPTIONS"},
 	}
 
@@ -214,7 +245,8 @@ func (s *FactoryTestSuite) TestProxy_HttpMethods() {
 			resp, err := tt.action()
 			s.NoError(err)
 			if tt.expect != "" {
-				body, _ := resp.Body()
+				body, err := resp.Body()
+				s.NoError(err)
 				s.Equal(tt.expect, body)
 			} else {
 				s.Equal(200, resp.Status())
@@ -225,7 +257,6 @@ func (s *FactoryTestSuite) TestProxy_HttpMethods() {
 
 func (s *FactoryTestSuite) TestProxy_Headers() {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Echo specific headers back as JSON for validation
 		headers := map[string]string{
 			"Content-Type":  r.Header.Get("Content-Type"),
 			"Authorization": r.Header.Get("Authorization"),
@@ -249,14 +280,12 @@ func (s *FactoryTestSuite) TestProxy_Headers() {
 	})
 
 	s.Run("ReplaceHeaders & FlushHeaders", func() {
-		// Replace should overwrite previous headers
 		resp, _ := f.WithHeader("A", "B").ReplaceHeaders(map[string]string{"X-Custom": "replaced"}).Get("/")
 		var h map[string]string
 		_ = resp.Bind(&h)
 		s.Equal("replaced", h["X-Custom"])
 		s.Equal("", h["Authorization"])
 
-		// Flush should clear all
 		resp2, _ := f.WithHeader("A", "B").FlushHeaders().Get("/")
 		var h2 map[string]string
 		_ = resp2.Bind(&h2)
@@ -271,19 +300,16 @@ func (s *FactoryTestSuite) TestProxy_Headers() {
 	})
 
 	s.Run("Auth Helpers", func() {
-		// WithToken
 		resp, _ := f.WithToken("secret").Get("/")
 		var h map[string]string
 		_ = resp.Bind(&h)
 		s.Equal("Bearer secret", h["Authorization"])
 
-		// WithoutToken
 		resp2, _ := f.WithToken("secret").WithoutToken().Get("/")
 		var h2 map[string]string
 		_ = resp2.Bind(&h2)
 		s.Equal("", h2["Authorization"])
 
-		// WithBasicAuth
 		resp3, _ := f.WithBasicAuth("user", "pass").Get("/")
 		var h3 map[string]string
 		_ = resp3.Bind(&h3)
@@ -334,7 +360,6 @@ func (s *FactoryTestSuite) TestProxy_QueryParameters() {
 }
 
 func (s *FactoryTestSuite) TestProxy_UrlParameters() {
-	// URL Parameters modify the path, e.g. /users/{id}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(r.URL.Path))
 	}))
@@ -343,7 +368,6 @@ func (s *FactoryTestSuite) TestProxy_UrlParameters() {
 	f := NewFactory(&FactoryConfig{Default: "test", Clients: map[string]client.Config{"test": {BaseUrl: server.URL}}}, s.json)
 
 	s.Run("WithUrlParameter", func() {
-		// Note: The mock server URL doesn't have brackets, so we append them for the test
 		resp, _ := f.WithUrlParameter("id", "42").Get("/users/{id}")
 		body, _ := resp.Body()
 		s.Equal("/users/42", body)

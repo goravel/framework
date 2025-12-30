@@ -169,6 +169,54 @@ func (_c *Request_AsForm_Call) RunAndReturn(run func() client.Request) *Request_
 	return _c
 }
 
+// BaseUrl provides a mock function with given fields: url
+func (_m *Request) BaseUrl(url string) client.Request {
+	ret := _m.Called(url)
+
+	if len(ret) == 0 {
+		panic("no return value specified for BaseUrl")
+	}
+
+	var r0 client.Request
+	if rf, ok := ret.Get(0).(func(string) client.Request); ok {
+		r0 = rf(url)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Request)
+		}
+	}
+
+	return r0
+}
+
+// Request_BaseUrl_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BaseUrl'
+type Request_BaseUrl_Call struct {
+	*mock.Call
+}
+
+// BaseUrl is a helper method to define mock.On call
+//   - url string
+func (_e *Request_Expecter) BaseUrl(url interface{}) *Request_BaseUrl_Call {
+	return &Request_BaseUrl_Call{Call: _e.mock.On("BaseUrl", url)}
+}
+
+func (_c *Request_BaseUrl_Call) Run(run func(url string)) *Request_BaseUrl_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Request_BaseUrl_Call) Return(_a0 client.Request) *Request_BaseUrl_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Request_BaseUrl_Call) RunAndReturn(run func(string) client.Request) *Request_BaseUrl_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Clone provides a mock function with no fields
 func (_m *Request) Clone() client.Request {
 	ret := _m.Called()
@@ -434,6 +482,53 @@ func (_c *Request_Head_Call) Return(_a0 client.Response, _a1 error) *Request_Hea
 }
 
 func (_c *Request_Head_Call) RunAndReturn(run func(string) (client.Response, error)) *Request_Head_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// HttpClient provides a mock function with no fields
+func (_m *Request) HttpClient() *http.Client {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for HttpClient")
+	}
+
+	var r0 *http.Client
+	if rf, ok := ret.Get(0).(func() *http.Client); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Client)
+		}
+	}
+
+	return r0
+}
+
+// Request_HttpClient_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HttpClient'
+type Request_HttpClient_Call struct {
+	*mock.Call
+}
+
+// HttpClient is a helper method to define mock.On call
+func (_e *Request_Expecter) HttpClient() *Request_HttpClient_Call {
+	return &Request_HttpClient_Call{Call: _e.mock.On("HttpClient")}
+}
+
+func (_c *Request_HttpClient_Call) Run(run func()) *Request_HttpClient_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Request_HttpClient_Call) Return(_a0 *http.Client) *Request_HttpClient_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Request_HttpClient_Call) RunAndReturn(run func() *http.Client) *Request_HttpClient_Call {
 	_c.Call.Return(run)
 	return _c
 }

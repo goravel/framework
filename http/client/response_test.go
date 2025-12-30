@@ -44,19 +44,15 @@ func (s *ResponseTestSuite) TestJson() {
 }
 
 func (s *ResponseTestSuite) TestClientError() {
-	resp := newMockResponse(404, "Not Found", nil, s.mockJson)
-	s.True(resp.ClientError())
-
-	resp = newMockResponse(500, "Server Error", nil, s.mockJson)
-	s.False(resp.ClientError())
+	s.True(newMockResponse(404, "Not Found", nil, s.mockJson).ClientError())
+	s.False(newMockResponse(500, "Server Error", nil, s.mockJson).ClientError())
+	s.False(newMockResponse(200, "OK", nil, s.mockJson).ClientError())
 }
 
 func (s *ResponseTestSuite) TestServerError() {
-	resp := newMockResponse(500, "Internal Server Error", nil, s.mockJson)
-	s.True(resp.ServerError())
-
-	resp = newMockResponse(200, "OK", nil, s.mockJson)
-	s.False(resp.ServerError())
+	s.True(newMockResponse(500, "Internal Server Error", nil, s.mockJson).ServerError())
+	s.False(newMockResponse(200, "OK", nil, s.mockJson).ServerError())
+	s.False(newMockResponse(404, "Not Found", nil, s.mockJson).ServerError())
 }
 
 func (s *ResponseTestSuite) TestFailed() {
@@ -66,64 +62,97 @@ func (s *ResponseTestSuite) TestFailed() {
 }
 
 func (s *ResponseTestSuite) TestRedirect() {
-	resp := newMockResponse(302, "Found", nil, s.mockJson)
-	s.True(resp.Redirect())
-
-	resp = newMockResponse(200, "OK", nil, s.mockJson)
-	s.False(resp.Redirect())
+	s.True(newMockResponse(301, "Moved", nil, s.mockJson).Redirect())
+	s.True(newMockResponse(302, "Found", nil, s.mockJson).Redirect())
+	s.False(newMockResponse(200, "OK", nil, s.mockJson).Redirect())
 }
 
 func (s *ResponseTestSuite) TestSuccessful() {
 	s.True(newMockResponse(200, "", nil, s.mockJson).Successful())
 	s.True(newMockResponse(201, "", nil, s.mockJson).Successful())
 	s.False(newMockResponse(404, "", nil, s.mockJson).Successful())
+	s.False(newMockResponse(500, "", nil, s.mockJson).Successful())
 }
 
 func (s *ResponseTestSuite) TestHeader() {
 	headers := map[string]string{"Content-Type": "application/json"}
 	resp := newMockResponse(200, "", headers, s.mockJson)
 	s.Equal("application/json", resp.Header("Content-Type"))
+	s.Empty(resp.Header("X-Missing"))
 }
 
 func (s *ResponseTestSuite) TestHeaders() {
-	headers := map[string]string{"Content-Type": "application/json"}
+	headers := map[string]string{
+		"Content-Type": "application/json",
+		"X-Custom":     "123",
+	}
 	resp := newMockResponse(200, "", headers, s.mockJson)
-	s.Equal("application/json", resp.Headers().Get("Content-Type"))
+	h := resp.Headers()
+	s.Equal("application/json", h.Get("Content-Type"))
+	s.Equal("123", h.Get("X-Custom"))
 }
 
 func (s *ResponseTestSuite) TestCookies() {
-	cookie := &http.Cookie{Name: "session", Value: "xyz123"}
-	resp := newMockResponseWithCookies(200, "", nil, []*http.Cookie{cookie}, s.mockJson)
-	s.Len(resp.Cookies(), 1)
-	s.Equal("session", resp.Cookies()[0].Name)
+	cookies := []*http.Cookie{
+		{Name: "session", Value: "xyz123"},
+		{Name: "theme", Value: "dark"},
+	}
+	resp := newMockResponseWithCookies(200, "", nil, cookies, s.mockJson)
+
+	foundCookies := resp.Cookies()
+	s.Len(foundCookies, 2)
+
+	var session, theme *http.Cookie
+	for _, c := range foundCookies {
+		if c.Name == "session" {
+			session = c
+		}
+		if c.Name == "theme" {
+			theme = c
+		}
+	}
+
+	s.Require().NotNil(session, "Cookie 'session' should be found")
+	s.Equal("xyz123", session.Value)
+
+	s.Require().NotNil(theme, "Cookie 'theme' should be found")
+	s.Equal("dark", theme.Value)
 }
 
 func (s *ResponseTestSuite) TestCookie() {
 	cookie := &http.Cookie{Name: "session", Value: "xyz123"}
 	resp := newMockResponseWithCookies(200, "", nil, []*http.Cookie{cookie}, s.mockJson)
-	s.Equal("xyz123", resp.Cookie("session").Value)
+	c := resp.Cookie("session")
+	s.NotNil(c, "Cookie 'session' should exist")
+	if c != nil {
+		s.Equal("xyz123", c.Value)
+	}
+	s.Nil(resp.Cookie("missing_cookie"))
 }
 
-func (s *ResponseTestSuite) TestGetContent() {
+func (s *ResponseTestSuite) TestGetContent_Concurrency() {
 	body := `{"message": "cached"}`
 	resp := newMockResponse(200, body, nil, s.mockJson)
 
 	var wg sync.WaitGroup
-	wg.Add(2)
+	const routines = 10
+	wg.Add(routines)
 
-	var content1, content2 string
-	go func() {
-		defer wg.Done()
-		content1, _ = resp.Body()
-	}()
-	go func() {
-		defer wg.Done()
-		content2, _ = resp.Body()
-	}()
+	results := make([]string, routines)
+
+	for i := 0; i < routines; i++ {
+		go func(index int) {
+			defer wg.Done()
+			content, err := resp.Body()
+			s.NoError(err)
+			results[index] = content
+		}(i)
+	}
 	wg.Wait()
 
-	s.Equal(body, content1)
-	s.Equal(body, content2)
+	for _, res := range results {
+		s.Equal(body, res)
+	}
 }
 
 func (s *ResponseTestSuite) TestStatusCodeMethods() {
@@ -145,22 +174,35 @@ func (s *ResponseTestSuite) TestStatusCodeMethods() {
 }
 
 func newMockResponse(status int, body string, headers map[string]string, json foundation.Json) *Response {
-	resp := httptest.NewRecorder()
+	recorder := httptest.NewRecorder()
+
 	for key, value := range headers {
-		resp.Header().Set(key, value)
-	}
-	resp.WriteHeader(status)
-	if body != "" {
-		resp.Body.WriteString(body)
+		recorder.Header().Set(key, value)
 	}
 
-	return NewResponse(resp.Result(), json)
+	recorder.WriteHeader(status)
+	if body != "" {
+		_, _ = recorder.WriteString(body)
+	}
+
+	return NewResponse(recorder.Result(), json)
 }
 
 func newMockResponseWithCookies(status int, body string, headers map[string]string, cookies []*http.Cookie, json foundation.Json) *Response {
-	resp := newMockResponse(status, body, headers, json)
-	for _, cookie := range cookies {
-		resp.response.Header.Add("Set-Cookie", cookie.String())
+	recorder := httptest.NewRecorder()
+
+	for key, value := range headers {
+		recorder.Header().Set(key, value)
 	}
-	return resp
+
+	for _, cookie := range cookies {
+		http.SetCookie(recorder, cookie)
+	}
+
+	recorder.WriteHeader(status)
+	if body != "" {
+		_, _ = recorder.WriteString(body)
+	}
+
+	return NewResponse(recorder.Result(), json)
 }
