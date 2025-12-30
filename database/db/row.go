@@ -122,6 +122,14 @@ func ToScannerHookFunc() mapstructure.DecodeHookFunc {
 			return data, nil
 		}
 
+		// Handle nil or empty data
+		if data == nil {
+			return reflect.Zero(t).Interface(), nil
+		}
+		if str, ok := data.(string); ok && str == "" {
+			return reflect.Zero(t).Interface(), nil
+		}
+
 		// Create a new instance of the target type
 		result := reflect.New(t)
 		scanner := result.Interface().(interface{ Scan(any) error })
@@ -157,6 +165,11 @@ func ToSliceHookFunc() mapstructure.DecodeHookFunc {
 			return data, nil
 		}
 
+		// Return empty slice for empty string
+		if str == "" {
+			return reflect.MakeSlice(t, 0, 0).Interface(), nil
+		}
+
 		result := reflect.New(t).Interface()
 		if err := json.Unmarshal([]byte(str), result); err != nil {
 			return nil, err
@@ -180,6 +193,11 @@ func ToMapHookFunc() mapstructure.DecodeHookFunc {
 		str, ok := data.(string)
 		if !ok {
 			return data, nil
+		}
+
+		// Return empty map for empty string
+		if str == "" {
+			return reflect.MakeMap(t).Interface(), nil
 		}
 
 		result := reflect.MakeMap(t).Interface()
