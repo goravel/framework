@@ -1,9 +1,10 @@
 package console
 
 import (
+	"github.com/urfave/cli/v3"
+
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/urfave/cli/v3"
 )
 
 type ListCommand struct{}
