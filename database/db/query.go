@@ -18,6 +18,7 @@ import (
 	"github.com/goravel/framework/database/utils"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/collect"
 	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/framework/support/deep"
 	"github.com/goravel/framework/support/str"
@@ -711,6 +712,14 @@ func (r *Query) RightJoin(query string, args ...any) db.Query {
 func (r *Query) Select(columns ...string) db.Query {
 	q := r.clone()
 	q.conditions.Selects = deep.Append(q.conditions.Selects, columns...)
+	q.conditions.Selects = collect.Unique(q.conditions.Selects)
+
+	// * may be added along with other columns, remove it.
+	if len(q.conditions.Selects) > 1 {
+		q.conditions.Selects = collect.Filter(q.conditions.Selects, func(column string, _ int) bool {
+			return column != "*"
+		})
+	}
 
 	return q
 }
