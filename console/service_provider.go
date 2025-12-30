@@ -50,10 +50,9 @@ func (r *ServiceProvider) registerCommands(app foundation.Application) {
 	}
 
 	artisanFacade.Register([]consolecontract.Command{
-		console.NewListCommand(artisanFacade),
+		console.NewListCommand(),
 		console.NewKeyGenerateCommand(configFacade),
 		console.NewMakeCommand(),
 		console.NewBuildCommand(configFacade),
-		console.NewHelpCommand(),
 	})
 }
