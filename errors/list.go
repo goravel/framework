@@ -96,11 +96,8 @@ var (
 
 	HttpClientConnectionNotFound      = New("connection [%s] is not configured").SetModule(ModuleHttp)
 	HttpClientDefaultNotSet           = New("default client is not configured").SetModule(ModuleHttp)
-	HttpClientInvalidURL              = New("invalid url: %v").SetModule(ModuleHttp)
-	HttpClientRequestFailed           = New("request failed: %v").SetModule(ModuleHttp)
-	HttpClientRequestMarshalFailed    = New("failed to marshal request body: %v").SetModule(ModuleHttp)
-	HttpClientResponseBindFailed      = New("failed to bind response: %v").SetModule(ModuleHttp)
-	HttpClientResponseUnmarshalFailed = New("failed to unmarshal response body: %v").SetModule(ModuleHttp)
+	HttpClientResponseAlreadyStreamed = New("response body has already been streamed").SetModule(ModuleHttp)
+	HttpClientResponseIsNil           = New("response is nil").SetModule(ModuleHttp)
 
 	HttpRateLimitFailedToTakeToken     = New("failed to take token")
 	HttpRateLimitFailedToCheckThrottle = New("failed to check throttle: %s")

@@ -20,6 +20,9 @@ type Response struct {
 	response *http.Response
 	content  string
 	mu       sync.Mutex
+	// streamed tracks if the raw body has been handed over to the user via Stream().
+	// If true, subsequent calls to Bind/Body/Json must fail to avoid data corruption.
+	streamed bool
 }
 
 func NewResponse(response *http.Response, json foundation.Json) *Response {
@@ -30,13 +33,15 @@ func NewResponse(response *http.Response, json foundation.Json) *Response {
 }
 
 func (r *Response) Bind(value any) error {
+	// Do NOT lock here. getContent() handles its own locking.
+	// Locking here would cause a Deadlock because getContent() re-acquires the mutex.
 	content, err := r.getContent()
 	if err != nil {
-		return errors.HttpClientResponseBindFailed.Args(err)
+		return err
 	}
 
-	if err := r.json.UnmarshalString(content, value); err != nil {
-		return errors.HttpClientResponseUnmarshalFailed.Args(err)
+	if err = r.json.UnmarshalString(content, value); err != nil {
+		return err
 	}
 
 	return nil
@@ -55,7 +60,10 @@ func (r *Response) Cookie(name string) *http.Cookie {
 }
 
 func (r *Response) Cookies() []*http.Cookie {
-	return r.response.Cookies()
+	if r.response != nil {
+		return r.response.Cookies()
+	}
+	return []*http.Cookie{}
 }
 
 func (r *Response) Failed() bool {
@@ -67,7 +75,10 @@ func (r *Response) Header(name string) string {
 }
 
 func (r *Response) Headers() http.Header {
-	return r.response.Header
+	if r.response != nil {
+		return r.response.Header
+	}
+	return http.Header{}
 }
 
 func (r *Response) Json() (map[string]any, error) {
@@ -111,13 +122,23 @@ func (r *Response) Stream() (io.ReadCloser, error) {
 		return io.NopCloser(strings.NewReader(r.content)), nil
 	}
 
-	if r.response == nil || r.response.Body == nil {
-		return nil, errors.HttpClientResponseUnmarshalFailed.Args("response is nil")
+	// If the stream was already given away, we cannot read it again or cache it.
+	if r.streamed {
+		return nil, errors.HttpClientResponseAlreadyStreamed
 	}
 
-	// We give the raw network stream to the user.
-	// Note: Calling Bind() after this point will likely fail or return empty
-	// data because the stream will be consumed.
+	if r.response == nil {
+		return nil, errors.HttpClientResponseIsNil
+	}
+
+	// Valid State: Body is nil (e.g., 204 No Content or Mock)
+	// Return an empty reader so the user code doesn't crash on io.ReadAll(stream)
+	if r.response.Body == nil {
+		return io.NopCloser(strings.NewReader("")), nil
+	}
+
+	// Mark as streamed so getContent() knows the body is gone.
+	r.streamed = true
 	return r.response.Body, nil
 }
 
@@ -126,80 +147,23 @@ func (r *Response) Successful() bool {
 	return status >= http.StatusOK && status < http.StatusMultipleChoices
 }
 
-// OK checks if the status code is 200.
-func (r *Response) OK() bool {
-	return r.getStatusCode() == http.StatusOK
-}
-
-// Created checks if the status code is 201.
-func (r *Response) Created() bool {
-	return r.getStatusCode() == http.StatusCreated
-}
-
-// Accepted checks if the status code is 202.
-func (r *Response) Accepted() bool {
-	return r.getStatusCode() == http.StatusAccepted
-}
-
-// NoContent checks if the status code is 204.
-func (r *Response) NoContent() bool {
-	return r.getStatusCode() == http.StatusNoContent
-}
-
-// MovedPermanently checks if the status code is 301.
-func (r *Response) MovedPermanently() bool {
-	return r.getStatusCode() == http.StatusMovedPermanently
-}
-
-// Found checks if the status code is 302.
-func (r *Response) Found() bool {
-	return r.getStatusCode() == http.StatusFound
-}
-
-// BadRequest checks if the status code is 400.
-func (r *Response) BadRequest() bool {
-	return r.getStatusCode() == http.StatusBadRequest
-}
-
-// Unauthorized checks if the status code is 401.
-func (r *Response) Unauthorized() bool {
-	return r.getStatusCode() == http.StatusUnauthorized
-}
-
-// PaymentRequired checks if the status code is 402.
-func (r *Response) PaymentRequired() bool {
-	return r.getStatusCode() == http.StatusPaymentRequired
-}
-
-// Forbidden checks if the status code is 403.
-func (r *Response) Forbidden() bool {
-	return r.getStatusCode() == http.StatusForbidden
-}
-
-// NotFound checks if the status code is 404.
-func (r *Response) NotFound() bool {
-	return r.getStatusCode() == http.StatusNotFound
-}
-
-// RequestTimeout checks if the status code is 408.
-func (r *Response) RequestTimeout() bool {
-	return r.getStatusCode() == http.StatusRequestTimeout
-}
-
-// Conflict checks if the status code is 409.
-func (r *Response) Conflict() bool {
-	return r.getStatusCode() == http.StatusConflict
-}
-
-// UnprocessableEntity checks if the status code is 422.
+func (r *Response) OK() bool               { return r.getStatusCode() == http.StatusOK }
+func (r *Response) Created() bool          { return r.getStatusCode() == http.StatusCreated }
+func (r *Response) Accepted() bool         { return r.getStatusCode() == http.StatusAccepted }
+func (r *Response) NoContent() bool        { return r.getStatusCode() == http.StatusNoContent }
+func (r *Response) MovedPermanently() bool { return r.getStatusCode() == http.StatusMovedPermanently }
+func (r *Response) Found() bool            { return r.getStatusCode() == http.StatusFound }
+func (r *Response) BadRequest() bool       { return r.getStatusCode() == http.StatusBadRequest }
+func (r *Response) Unauthorized() bool     { return r.getStatusCode() == http.StatusUnauthorized }
+func (r *Response) PaymentRequired() bool  { return r.getStatusCode() == http.StatusPaymentRequired }
+func (r *Response) Forbidden() bool        { return r.getStatusCode() == http.StatusForbidden }
+func (r *Response) NotFound() bool         { return r.getStatusCode() == http.StatusNotFound }
+func (r *Response) RequestTimeout() bool   { return r.getStatusCode() == http.StatusRequestTimeout }
+func (r *Response) Conflict() bool         { return r.getStatusCode() == http.StatusConflict }
 func (r *Response) UnprocessableEntity() bool {
 	return r.getStatusCode() == http.StatusUnprocessableEntity
 }
-
-// TooManyRequests checks if the status code is 429.
-func (r *Response) TooManyRequests() bool {
-	return r.getStatusCode() == http.StatusTooManyRequests
-}
+func (r *Response) TooManyRequests() bool { return r.getStatusCode() == http.StatusTooManyRequests }
 
 func (r *Response) getStatusCode() int {
 	if r.response != nil {
@@ -216,6 +180,18 @@ func (r *Response) getContent() (string, error) {
 		return r.content, nil
 	}
 
+	if r.streamed {
+		return "", errors.HttpClientResponseAlreadyStreamed
+	}
+
+	if r.response == nil {
+		return "", errors.HttpClientResponseIsNil
+	}
+
+	if r.response.Body == nil {
+		return "", nil
+	}
+
 	defer errors.Ignore(r.response.Body.Close)
 
 	content, err := io.ReadAll(r.response.Body)
@@ -228,6 +204,9 @@ func (r *Response) getContent() (string, error) {
 }
 
 func (r *Response) getCookie(name string) *http.Cookie {
+	if r.response == nil {
+		return nil
+	}
 	for _, c := range r.response.Cookies() {
 		if c.Name == name {
 			return c
@@ -237,5 +216,8 @@ func (r *Response) getCookie(name string) *http.Cookie {
 }
 
 func (r *Response) getHeader(name string) string {
-	return r.response.Header.Get(name)
+	if r.response != nil {
+		return r.response.Header.Get(name)
+	}
+	return ""
 }
