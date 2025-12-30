@@ -184,7 +184,7 @@ func (r *Request) WithQueryParameters(params map[string]string) client.Request {
 func (r *Request) WithQueryString(query string) client.Request {
 	params, err := url.ParseQuery(strings.TrimSpace(query))
 	if err != nil {
-		return r
+		return r.clone()
 	}
 
 	n := r.clone()

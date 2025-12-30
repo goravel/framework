@@ -199,21 +199,27 @@ func (s *RequestTestSuite) TestSend_404() {
 }
 
 func (s *RequestTestSuite) TestWithHeaders() {
-	req := s.request.Clone().WithHeaders(map[string]string{"Content-Type": "application/json"})
+	req := s.request.Clone().WithHeaders(map[string]string{
+		"Content-Type": "application/json",
+		"Old-Header":   "preserve-me",
+	})
 	s.Equal("application/json", req.(*Request).headers.Get("Content-Type"))
 
 	req = req.ReplaceHeaders(map[string]string{
-		"Content-Type": "application/x-www-form-urlencoded",
-		"X-CUSTOM":     "custom-header",
+		"Content-Type": "application/x-www-form-urlencoded", // Should overwrite
+		"X-CUSTOM":     "custom-header",                     // Should add
 	})
+
 	s.Equal("application/x-www-form-urlencoded", req.(*Request).headers.Get("Content-Type"))
 	s.Equal("custom-header", req.(*Request).headers.Get("X-CUSTOM"))
+	s.Equal("preserve-me", req.(*Request).headers.Get("Old-Header"))
 
 	req = req.WithoutHeader("X-CUSTOM")
-	s.Equal("", req.(*Request).headers.Get("X-CUSTOM"))
+	s.Empty(req.(*Request).headers.Get("X-CUSTOM"))
 
 	req = req.FlushHeaders()
-	s.Equal("", req.(*Request).headers.Get("Content-Type"))
+	s.Empty(req.(*Request).headers.Get("Content-Type"))
+	s.Empty(req.(*Request).headers.Get("Old-Header"))
 }
 
 func (s *RequestTestSuite) TestWithBasicAuth() {

@@ -6,8 +6,19 @@ import (
 )
 
 type Response interface {
-	// Bind unmarshal the response body into the provided value.
-	// It reads the body safely and allows unmarshalling into structs or maps.
+	// Bind unmarshalls the response body into the provided value.
+	//
+	// Typical usage is:
+	//   1. Inspect the status (e.g. via Successful(), Failed(), or Status()).
+	//   2. Call Bind on responses where you expect a body to decode.
+	//
+	// Bind is intended for non-streaming use and assumes it can read the
+	// response body. If the body has already been consumed (for example by a
+	// prior call to Stream() or any other code that fully reads the body),
+	// Bind may return an error or fail to populate the target value.
+	//
+	// Prefer Bind when you want the entire body decoded into a struct or map.
+	// Prefer Stream() when you need to process large bodies incrementally.
 	Bind(value any) error
 	// Body returns the response body as a string.
 	Body() (string, error)

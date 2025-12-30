@@ -129,14 +129,18 @@ func (s *FactoryTestSuite) TestRouting_Integration() {
 	s.Run("proxy methods hit default server", func() {
 		resp, err := f.Get("/")
 		s.NoError(err)
-		body, _ := resp.Body()
+
+		body, err := resp.Body()
+		s.NoError(err)
 		s.Equal("response_from_A", body)
 	})
 
 	s.Run("named request hits specific server", func() {
 		resp, err := f.Client("server_b").Get("/")
 		s.NoError(err)
-		body, _ := resp.Body()
+
+		body, err := resp.Body()
+		s.NoError(err)
 		s.Equal("response_from_B", body)
 	})
 }
@@ -212,7 +216,9 @@ func (s *FactoryTestSuite) TestBaseUrl_Override() {
 		// If override fails, it tries to hit wrong-url.com and fails connection
 		resp, err := f.BaseUrl(server.URL).Get("/")
 		s.NoError(err)
-		body, _ := resp.Body()
+
+		body, err := resp.Body()
+		s.NoError(err)
 		s.Equal("hit", body)
 	})
 }
@@ -263,6 +269,7 @@ func (s *FactoryTestSuite) TestProxy_Headers() {
 			"Accept":        r.Header.Get("Accept"),
 			"X-Custom":      r.Header.Get("X-Custom"),
 			"X-Multi":       r.Header.Get("X-Multi"),
+			"A":             r.Header.Get("A"),
 		}
 		output, _ := s.json.Marshal(headers)
 		_, _ = w.Write(output)
@@ -272,60 +279,79 @@ func (s *FactoryTestSuite) TestProxy_Headers() {
 	f := NewFactory(&FactoryConfig{Default: "test", Clients: map[string]client.Config{"test": {BaseUrl: server.URL}}}, s.json)
 
 	s.Run("WithHeader & WithHeaders", func() {
-		resp, _ := f.WithHeader("X-Custom", "1").WithHeaders(map[string]string{"X-Multi": "2"}).Get("/")
+		resp, err := f.WithHeader("X-Custom", "1").WithHeaders(map[string]string{"X-Multi": "2"}).Get("/")
+		s.NoError(err)
+
 		var h map[string]string
-		_ = resp.Bind(&h)
+		s.NoError(resp.Bind(&h))
 		s.Equal("1", h["X-Custom"])
 		s.Equal("2", h["X-Multi"])
 	})
 
 	s.Run("ReplaceHeaders & FlushHeaders", func() {
-		resp, _ := f.WithHeader("A", "B").ReplaceHeaders(map[string]string{"X-Custom": "replaced"}).Get("/")
-		var h map[string]string
-		_ = resp.Bind(&h)
-		s.Equal("replaced", h["X-Custom"])
-		s.Equal("", h["Authorization"])
+		resp, err := f.WithHeader("A", "B").ReplaceHeaders(map[string]string{"X-Custom": "replaced"}).Get("/")
+		s.NoError(err)
 
-		resp2, _ := f.WithHeader("A", "B").FlushHeaders().Get("/")
+		var h map[string]string
+
+		s.NoError(resp.Bind(&h))
+		s.Equal("replaced", h["X-Custom"])
+		s.Equal("B", h["A"], "Expected 'ReplaceHeaders' to merge/preserve existing headers, not wipe them")
+
+		resp2, err := f.WithHeader("A", "B").FlushHeaders().Get("/")
+		s.NoError(err)
+
 		var h2 map[string]string
-		_ = resp2.Bind(&h2)
-		s.Equal("", h2["X-Custom"])
+		s.NoError(resp2.Bind(&h2))
+		s.Equal("", h2["A"], "Expected 'FlushHeaders' to remove previous headers")
 	})
 
 	s.Run("WithoutHeader", func() {
-		resp, _ := f.WithHeader("X-Custom", "val").WithoutHeader("X-Custom").Get("/")
+		resp, err := f.WithHeader("X-Custom", "val").WithoutHeader("X-Custom").Get("/")
+		s.NoError(err)
+
 		var h map[string]string
-		_ = resp.Bind(&h)
+		s.NoError(resp.Bind(&h))
 		s.Equal("", h["X-Custom"])
 	})
 
 	s.Run("Auth Helpers", func() {
-		resp, _ := f.WithToken("secret").Get("/")
+		resp, err := f.WithToken("secret").Get("/")
+		s.NoError(err)
+
 		var h map[string]string
-		_ = resp.Bind(&h)
+		s.NoError(resp.Bind(&h))
 		s.Equal("Bearer secret", h["Authorization"])
 
-		resp2, _ := f.WithToken("secret").WithoutToken().Get("/")
+		resp2, err := f.WithToken("secret").WithoutToken().Get("/")
+		s.NoError(err)
+
 		var h2 map[string]string
-		_ = resp2.Bind(&h2)
+		s.NoError(resp2.Bind(&h2))
 		s.Equal("", h2["Authorization"])
 
-		resp3, _ := f.WithBasicAuth("user", "pass").Get("/")
+		resp3, err := f.WithBasicAuth("user", "pass").Get("/")
+		s.NoError(err)
+
 		var h3 map[string]string
-		_ = resp3.Bind(&h3)
+		s.NoError(resp3.Bind(&h3))
 		s.Contains(h3["Authorization"], "Basic ")
 	})
 
 	s.Run("Content Type Helpers", func() {
-		resp, _ := f.Accept("text/html").AsForm().Get("/")
+		resp, err := f.Accept("text/html").AsForm().Get("/")
+		s.NoError(err)
+
 		var h map[string]string
-		_ = resp.Bind(&h)
+		s.NoError(resp.Bind(&h))
 		s.Equal("text/html", h["Accept"])
 		s.Equal("application/x-www-form-urlencoded", h["Content-Type"])
 
-		resp2, _ := f.AcceptJSON().Get("/")
+		resp2, err := f.AcceptJSON().Get("/")
+		s.NoError(err)
+
 		var h2 map[string]string
-		_ = resp2.Bind(&h2)
+		s.NoError(resp2.Bind(&h2))
 		s.Equal("application/json", h2["Accept"])
 	})
 }
@@ -339,21 +365,33 @@ func (s *FactoryTestSuite) TestProxy_QueryParameters() {
 	f := NewFactory(&FactoryConfig{Default: "test", Clients: map[string]client.Config{"test": {BaseUrl: server.URL}}}, s.json)
 
 	s.Run("WithQueryParameter", func() {
-		resp, _ := f.WithQueryParameter("page", "1").Get("/")
-		body, _ := resp.Body()
+		resp, err := f.WithQueryParameter("page", "1").Get("/")
+		s.NoError(err)
+
+		body, err := resp.Body()
+		s.NoError(err)
+
 		s.Contains(body, "page=1")
 	})
 
 	s.Run("WithQueryParameters", func() {
-		resp, _ := f.WithQueryParameters(map[string]string{"sort": "asc", "limit": "10"}).Get("/")
-		body, _ := resp.Body()
+		resp, err := f.WithQueryParameters(map[string]string{"sort": "asc", "limit": "10"}).Get("/")
+		s.NoError(err)
+
+		body, err := resp.Body()
+		s.NoError(err)
+
 		s.Contains(body, "sort=asc")
 		s.Contains(body, "limit=10")
 	})
 
 	s.Run("WithQueryString", func() {
-		resp, _ := f.WithQueryString("raw=true&manual=1").Get("/")
-		body, _ := resp.Body()
+		resp, err := f.WithQueryString("raw=true&manual=1").Get("/")
+		s.NoError(err)
+
+		body, err := resp.Body()
+		s.NoError(err)
+
 		s.Contains(body, "raw=true")
 		s.Contains(body, "manual=1")
 	})
@@ -368,14 +406,22 @@ func (s *FactoryTestSuite) TestProxy_UrlParameters() {
 	f := NewFactory(&FactoryConfig{Default: "test", Clients: map[string]client.Config{"test": {BaseUrl: server.URL}}}, s.json)
 
 	s.Run("WithUrlParameter", func() {
-		resp, _ := f.WithUrlParameter("id", "42").Get("/users/{id}")
-		body, _ := resp.Body()
+		resp, err := f.WithUrlParameter("id", "42").Get("/users/{id}")
+		s.NoError(err)
+
+		body, err := resp.Body()
+		s.NoError(err)
+
 		s.Equal("/users/42", body)
 	})
 
 	s.Run("WithUrlParameters", func() {
-		resp, _ := f.WithUrlParameters(map[string]string{"id": "99", "action": "edit"}).Get("/users/{id}/{action}")
-		body, _ := resp.Body()
+		resp, err := f.WithUrlParameters(map[string]string{"id": "99", "action": "edit"}).Get("/users/{id}/{action}")
+		s.NoError(err)
+
+		body, err := resp.Body()
+		s.NoError(err)
+
 		s.Equal("/users/99/edit", body)
 	})
 }
@@ -393,8 +439,11 @@ func (s *FactoryTestSuite) TestProxy_Cookies() {
 
 	s.Run("WithCookie", func() {
 		cookie := &http.Cookie{Name: "session", Value: "abc-123"}
-		resp, _ := f.WithCookie(cookie).Get("/")
-		body, _ := resp.Body()
+		resp, err := f.WithCookie(cookie).Get("/")
+		s.NoError(err)
+
+		body, err := resp.Body()
+		s.NoError(err)
 		s.Equal("abc-123", body)
 	})
 
@@ -402,8 +451,11 @@ func (s *FactoryTestSuite) TestProxy_Cookies() {
 		cookies := []*http.Cookie{
 			{Name: "session", Value: "multi-cookie"},
 		}
-		resp, _ := f.WithCookies(cookies).Get("/")
-		body, _ := resp.Body()
+		resp, err := f.WithCookies(cookies).Get("/")
+		s.NoError(err)
+
+		body, err := resp.Body()
+		s.NoError(err)
 		s.Equal("multi-cookie", body)
 	})
 }

@@ -77,12 +77,12 @@ func init() {
 				"key": "",
 			},
 		},
-
-        // The default client to use when Http.Request() is called with no name.
+        
+        // The default client used when Http().Client() is called without a name or via the Http() facade.
         "default_client": config.Env("HTTP_CLIENT_DEFAULT", "default"),
 
-		// Named Clients
-		// Map unique names (e.g., "default", "downstream") to their configurations.
+        // Named Clients
+        // Map unique names (e.g., "default", "downstream") to their configurations.
 		"clients": map[string]any{
 			"default": map[string]any{
 				"base_url":                config.GetString("HTTP_CLIENT_BASE_URL"),
