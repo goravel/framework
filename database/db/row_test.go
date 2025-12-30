@@ -89,15 +89,36 @@ func TestRow_Err(t *testing.T) {
 }
 
 func TestScan_Basics(t *testing.T) {
+	type CustomInt int
+	type CustomString string
+
 	type TestStruct struct {
-		ID       int
-		Name     string
-		AgentId  string
-		UserID   int
-		UserName string
-		Slice    []string
-		Map      map[string]any
-		Json     Json
+		ID         int
+		Name       string
+		AgentId    string
+		UserID     int
+		UserName   string
+		Slice      []string
+		Map        map[string]any
+		Json       Json
+		Active     bool
+		Score      float64
+		Count      int64
+		Total      uint
+		Amount     float32
+		Age        int32
+		Level      uint32
+		Size       int16
+		Priority   uint16
+		Flag       int8
+		Status     uint8
+		CustomInt  CustomInt
+		CustomStr  CustomString
+		NamePtr    *string
+		AgePtr     *int
+		ActivePtr  *bool
+		ScorePtr   *float64
+		unexported string
 	}
 
 	tests := []struct {
@@ -116,7 +137,21 @@ func TestScan_Basics(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "scan struct",
+			name:    "scan with nil target",
+			rowData: map[string]any{"id": 1},
+			rowErr:  nil,
+			target:  nil,
+			wantErr: true,
+		},
+		{
+			name:    "scan with non-pointer target",
+			rowData: map[string]any{"id": 1},
+			rowErr:  nil,
+			target:  TestStruct{},
+			wantErr: true,
+		},
+		{
+			name: "scan struct with basic types",
 			rowData: map[string]any{
 				"id":        1,
 				"name":      "test",
@@ -143,11 +178,243 @@ func TestScan_Basics(t *testing.T) {
 			},
 		},
 		{
+			name: "scan struct with all numeric types",
+			rowData: map[string]any{
+				"id":       1,
+				"count":    int64(100),
+				"total":    uint(200),
+				"score":    98.5,
+				"amount":   float32(45.5),
+				"age":      int32(30),
+				"level":    uint32(5),
+				"size":     int16(10),
+				"priority": uint16(3),
+				"flag":     int8(1),
+				"status":   uint8(2),
+			},
+			rowErr:  nil,
+			target:  &TestStruct{},
+			wantErr: false,
+			assertion: func(t *testing.T, target any) {
+				result := target.(*TestStruct)
+				assert.Equal(t, 1, result.ID)
+				assert.Equal(t, int64(100), result.Count)
+				assert.Equal(t, uint(200), result.Total)
+				assert.Equal(t, 98.5, result.Score)
+				assert.Equal(t, float32(45.5), result.Amount)
+				assert.Equal(t, int32(30), result.Age)
+				assert.Equal(t, uint32(5), result.Level)
+				assert.Equal(t, int16(10), result.Size)
+				assert.Equal(t, uint16(3), result.Priority)
+				assert.Equal(t, int8(1), result.Flag)
+				assert.Equal(t, uint8(2), result.Status)
+			},
+		},
+		{
+			name: "scan struct with boolean",
+			rowData: map[string]any{
+				"id":     1,
+				"active": true,
+			},
+			rowErr:  nil,
+			target:  &TestStruct{},
+			wantErr: false,
+			assertion: func(t *testing.T, target any) {
+				result := target.(*TestStruct)
+				assert.Equal(t, 1, result.ID)
+				assert.True(t, result.Active)
+			},
+		},
+		{
+			name: "scan struct with custom types",
+			rowData: map[string]any{
+				"id":         1,
+				"custom_int": 42,
+				"custom_str": "custom",
+			},
+			rowErr:  nil,
+			target:  &TestStruct{},
+			wantErr: false,
+			assertion: func(t *testing.T, target any) {
+				result := target.(*TestStruct)
+				assert.Equal(t, 1, result.ID)
+				assert.Equal(t, CustomInt(42), result.CustomInt)
+				assert.Equal(t, CustomString("custom"), result.CustomStr)
+			},
+		},
+		{
+			name: "scan struct with pointer fields",
+			rowData: map[string]any{
+				"id":         1,
+				"name_ptr":   "pointer",
+				"age_ptr":    25,
+				"active_ptr": true,
+				"score_ptr":  88.5,
+			},
+			rowErr:  nil,
+			target:  &TestStruct{},
+			wantErr: false,
+			assertion: func(t *testing.T, target any) {
+				result := target.(*TestStruct)
+				assert.Equal(t, 1, result.ID)
+				assert.NotNil(t, result.NamePtr)
+				assert.Equal(t, "pointer", *result.NamePtr)
+				assert.NotNil(t, result.AgePtr)
+				assert.Equal(t, 25, *result.AgePtr)
+				assert.NotNil(t, result.ActivePtr)
+				assert.True(t, *result.ActivePtr)
+				assert.NotNil(t, result.ScorePtr)
+				assert.Equal(t, 88.5, *result.ScorePtr)
+			},
+		},
+		{
+			name: "scan struct with nil pointer fields",
+			rowData: map[string]any{
+				"id":         1,
+				"name_ptr":   nil,
+				"age_ptr":    nil,
+				"active_ptr": nil,
+				"score_ptr":  nil,
+			},
+			rowErr:  nil,
+			target:  &TestStruct{},
+			wantErr: false,
+			assertion: func(t *testing.T, target any) {
+				result := target.(*TestStruct)
+				assert.Equal(t, 1, result.ID)
+				assert.Nil(t, result.NamePtr)
+				assert.Nil(t, result.AgePtr)
+				assert.Nil(t, result.ActivePtr)
+				assert.Nil(t, result.ScorePtr)
+			},
+		},
+		{
+			name: "scan with partial data",
+			rowData: map[string]any{
+				"id":   1,
+				"name": "partial",
+			},
+			rowErr:  nil,
+			target:  &TestStruct{},
+			wantErr: false,
+			assertion: func(t *testing.T, target any) {
+				result := target.(*TestStruct)
+				assert.Equal(t, 1, result.ID)
+				assert.Equal(t, "partial", result.Name)
+				assert.Equal(t, 0, result.UserID)
+				assert.Empty(t, result.UserName)
+			},
+		},
+		{
 			name:    "scan with empty data",
 			rowData: map[string]any{},
 			rowErr:  nil,
 			target:  &TestStruct{},
 			wantErr: false,
+			assertion: func(t *testing.T, target any) {
+				result := target.(*TestStruct)
+				assert.Equal(t, 0, result.ID)
+				assert.Empty(t, result.Name)
+			},
+		},
+		{
+			name: "scan with extra fields in data",
+			rowData: map[string]any{
+				"id":          1,
+				"name":        "test",
+				"extra_field": "ignored",
+				"another":     42,
+			},
+			rowErr:  nil,
+			target:  &TestStruct{},
+			wantErr: false,
+			assertion: func(t *testing.T, target any) {
+				result := target.(*TestStruct)
+				assert.Equal(t, 1, result.ID)
+				assert.Equal(t, "test", result.Name)
+			},
+		},
+		{
+			name: "scan with snake_case to CamelCase",
+			rowData: map[string]any{
+				"user_id":   10,
+				"user_name": "john",
+				"agent_id":  "agent123",
+			},
+			rowErr:  nil,
+			target:  &TestStruct{},
+			wantErr: false,
+			assertion: func(t *testing.T, target any) {
+				result := target.(*TestStruct)
+				assert.Equal(t, 10, result.UserID)
+				assert.Equal(t, "john", result.UserName)
+				assert.Equal(t, "agent123", result.AgentId)
+			},
+		},
+		{
+			name: "scan with unexported field",
+			rowData: map[string]any{
+				"id":         1,
+				"unexported": "ignored",
+			},
+			rowErr:  nil,
+			target:  &TestStruct{},
+			wantErr: false,
+			assertion: func(t *testing.T, target any) {
+				result := target.(*TestStruct)
+				assert.Equal(t, 1, result.ID)
+				assert.Empty(t, result.unexported)
+			},
+		},
+		{
+			name: "scan empty slice",
+			rowData: map[string]any{
+				"id":    1,
+				"slice": `[]`,
+			},
+			rowErr:  nil,
+			target:  &TestStruct{},
+			wantErr: false,
+			assertion: func(t *testing.T, target any) {
+				result := target.(*TestStruct)
+				assert.Equal(t, 1, result.ID)
+				assert.Empty(t, result.Slice)
+			},
+		},
+		{
+			name: "scan empty map",
+			rowData: map[string]any{
+				"id":  1,
+				"map": `{}`,
+			},
+			rowErr:  nil,
+			target:  &TestStruct{},
+			wantErr: false,
+			assertion: func(t *testing.T, target any) {
+				result := target.(*TestStruct)
+				assert.Equal(t, 1, result.ID)
+				assert.NotNil(t, result.Map)
+				assert.Empty(t, result.Map)
+			},
+		},
+		{
+			name: "scan with zero values",
+			rowData: map[string]any{
+				"id":     0,
+				"name":   "",
+				"active": false,
+				"score":  0.0,
+			},
+			rowErr:  nil,
+			target:  &TestStruct{},
+			wantErr: false,
+			assertion: func(t *testing.T, target any) {
+				result := target.(*TestStruct)
+				assert.Equal(t, 0, result.ID)
+				assert.Empty(t, result.Name)
+				assert.False(t, result.Active)
+				assert.Equal(t, 0.0, result.Score)
+			},
 		},
 	}
 
@@ -549,15 +816,22 @@ func TestScan_ToDeletedAt(t *testing.T) {
 	}
 }
 
-func TestScan_ToMap_EmptyData(t *testing.T) {
+func TestScan_ToMap(t *testing.T) {
 	tests := []struct {
 		name      string
+		target    any
 		rowData   map[string]any
+		wantErr   bool
 		assertion func(t *testing.T, result any)
 	}{
+		// Empty string cases
 		{
-			name:    "empty string to map[string]any",
+			name: "empty string to map[string]any",
+			target: &struct {
+				Metadata map[string]any
+			}{},
 			rowData: map[string]any{"metadata": ""},
+			wantErr: false,
 			assertion: func(t *testing.T, result any) {
 				target := result.(*struct {
 					Metadata map[string]any
@@ -568,8 +842,12 @@ func TestScan_ToMap_EmptyData(t *testing.T) {
 			},
 		},
 		{
-			name:    "empty string to map[string]string",
+			name: "empty string to map[string]string",
+			target: &struct {
+				Labels map[string]string
+			}{},
 			rowData: map[string]any{"labels": ""},
+			wantErr: false,
 			assertion: func(t *testing.T, result any) {
 				target := result.(*struct {
 					Labels map[string]string
@@ -580,8 +858,12 @@ func TestScan_ToMap_EmptyData(t *testing.T) {
 			},
 		},
 		{
-			name:    "empty string to map[string]int",
+			name: "empty string to map[string]int",
+			target: &struct {
+				Counters map[string]int
+			}{},
 			rowData: map[string]any{"counters": ""},
+			wantErr: false,
 			assertion: func(t *testing.T, result any) {
 				target := result.(*struct {
 					Counters map[string]int
@@ -591,9 +873,43 @@ func TestScan_ToMap_EmptyData(t *testing.T) {
 				assert.Equal(t, 0, len(target.Counters))
 			},
 		},
+		// Nil value cases
 		{
-			name:    "valid json string to map",
+			name: "nil to map[string]any",
+			target: &struct {
+				Metadata map[string]any
+			}{},
+			rowData: map[string]any{"metadata": nil},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Metadata map[string]any
+				})
+				assert.Nil(t, target.Metadata)
+			},
+		},
+		{
+			name: "nil to map[string]string",
+			target: &struct {
+				Labels map[string]string
+			}{},
+			rowData: map[string]any{"labels": nil},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Labels map[string]string
+				})
+				assert.Nil(t, target.Labels)
+			},
+		},
+		// Valid JSON string cases
+		{
+			name: "json string to map[string]any",
+			target: &struct {
+				Metadata map[string]any
+			}{},
 			rowData: map[string]any{"metadata": `{"key": "value", "count": 10}`},
+			wantErr: false,
 			assertion: func(t *testing.T, result any) {
 				target := result.(*struct {
 					Metadata map[string]any
@@ -602,37 +918,304 @@ func TestScan_ToMap_EmptyData(t *testing.T) {
 				assert.Equal(t, float64(10), target.Metadata["count"])
 			},
 		},
+		{
+			name: "json string to map[string]string",
+			target: &struct {
+				Labels map[string]string
+			}{},
+			rowData: map[string]any{"labels": `{"env": "prod", "version": "1.0"}`},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Labels map[string]string
+				})
+				assert.Equal(t, "prod", target.Labels["env"])
+				assert.Equal(t, "1.0", target.Labels["version"])
+			},
+		},
+		{
+			name: "json string to map[string]int",
+			target: &struct {
+				Counters map[string]int
+			}{},
+			rowData: map[string]any{"counters": `{"views": 100, "clicks": 50}`},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Counters map[string]int
+				})
+				assert.Equal(t, 100, target.Counters["views"])
+				assert.Equal(t, 50, target.Counters["clicks"])
+			},
+		},
+		{
+			name: "json string to map[string]float64",
+			target: &struct {
+				Rates map[string]float64
+			}{},
+			rowData: map[string]any{"rates": `{"usd": 1.0, "eur": 0.85}`},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Rates map[string]float64
+				})
+				assert.Equal(t, 1.0, target.Rates["usd"])
+				assert.Equal(t, 0.85, target.Rates["eur"])
+			},
+		},
+		{
+			name: "json string to map[string]bool",
+			target: &struct {
+				Flags map[string]bool
+			}{},
+			rowData: map[string]any{"flags": `{"enabled": true, "debug": false}`},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Flags map[string]bool
+				})
+				assert.Equal(t, true, target.Flags["enabled"])
+				assert.Equal(t, false, target.Flags["debug"])
+			},
+		},
+		{
+			name: "json string to map with mixed types",
+			target: &struct {
+				Data map[string]any
+			}{},
+			rowData: map[string]any{"data": `{"name": "test", "age": 30, "active": true, "score": 98.5}`},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Data map[string]any
+				})
+				assert.Equal(t, "test", target.Data["name"])
+				assert.Equal(t, float64(30), target.Data["age"])
+				assert.Equal(t, true, target.Data["active"])
+				assert.Equal(t, 98.5, target.Data["score"])
+			},
+		},
+		{
+			name: "json string to map with null values",
+			target: &struct {
+				Data map[string]any
+			}{},
+			rowData: map[string]any{"data": `{"key1": "value", "key2": null}`},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Data map[string]any
+				})
+				assert.Equal(t, "value", target.Data["key1"])
+				assert.Nil(t, target.Data["key2"])
+			},
+		},
+		// JSON bytes cases
+		{
+			name: "json bytes to map[string]any",
+			target: &struct {
+				Metadata map[string]any
+			}{},
+			rowData: map[string]any{"metadata": []byte(`{"region": "us-west", "tier": 2}`)},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Metadata map[string]any
+				})
+				assert.Equal(t, "us-west", target.Metadata["region"])
+				assert.Equal(t, float64(2), target.Metadata["tier"])
+			},
+		},
+		{
+			name: "json bytes to map[string]string",
+			target: &struct {
+				Labels map[string]string
+			}{},
+			rowData: map[string]any{"labels": []byte(`{"app": "myapp", "team": "backend"}`)},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Labels map[string]string
+				})
+				assert.Equal(t, "myapp", target.Labels["app"])
+				assert.Equal(t, "backend", target.Labels["team"])
+			},
+		},
+		// []uint8 cases
+		{
+			name: "uint8 slice to map[string]any",
+			target: &struct {
+				Data map[string]any
+			}{},
+			rowData: map[string]any{"data": []uint8(`{"status": "ok", "code": 200}`)},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Data map[string]any
+				})
+				assert.Equal(t, "ok", target.Data["status"])
+				assert.Equal(t, float64(200), target.Data["code"])
+			},
+		},
+		{
+			name: "uint8 slice to map[string]int",
+			target: &struct {
+				Stats map[string]int
+			}{},
+			rowData: map[string]any{"stats": []uint8(`{"total": 1000, "active": 750}`)},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Stats map[string]int
+				})
+				assert.Equal(t, 1000, target.Stats["total"])
+				assert.Equal(t, 750, target.Stats["active"])
+			},
+		},
+		// Single key-value cases
+		{
+			name: "single key-value map",
+			target: &struct {
+				Config map[string]string
+			}{},
+			rowData: map[string]any{"config": `{"theme": "dark"}`},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Config map[string]string
+				})
+				assert.Len(t, target.Config, 1)
+				assert.Equal(t, "dark", target.Config["theme"])
+			},
+		},
+		// Nested map cases
+		{
+			name: "nested maps",
+			target: &struct {
+				Config map[string]any
+			}{},
+			rowData: map[string]any{"config": `{"database": {"host": "localhost", "port": 5432}, "cache": {"ttl": 300}}`},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Config map[string]any
+				})
+				db := target.Config["database"].(map[string]any)
+				assert.Equal(t, "localhost", db["host"])
+				assert.Equal(t, float64(5432), db["port"])
+				cache := target.Config["cache"].(map[string]any)
+				assert.Equal(t, float64(300), cache["ttl"])
+			},
+		},
+		// Map with array values
+		{
+			name: "map with array values",
+			target: &struct {
+				Data map[string]any
+			}{},
+			rowData: map[string]any{"data": `{"tags": ["go", "test"], "scores": [95, 88, 92]}`},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Data map[string]any
+				})
+				tags := target.Data["tags"].([]any)
+				assert.Equal(t, "go", tags[0])
+				assert.Equal(t, "test", tags[1])
+				scores := target.Data["scores"].([]any)
+				assert.Equal(t, float64(95), scores[0])
+				assert.Equal(t, float64(88), scores[1])
+				assert.Equal(t, float64(92), scores[2])
+			},
+		},
+		// Large map case
+		{
+			name: "large map",
+			target: &struct {
+				Data map[string]int
+			}{},
+			rowData: map[string]any{"data": `{"k1":1,"k2":2,"k3":3,"k4":4,"k5":5,"k6":6,"k7":7,"k8":8,"k9":9,"k10":10}`},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Data map[string]int
+				})
+				assert.Len(t, target.Data, 10)
+				assert.Equal(t, 1, target.Data["k1"])
+				assert.Equal(t, 10, target.Data["k10"])
+			},
+		},
+		// Error cases
+		{
+			name: "invalid json string to map",
+			target: &struct {
+				Data map[string]any
+			}{},
+			rowData: map[string]any{"data": `{invalid json}`},
+			wantErr: true,
+		},
+		{
+			name: "non-object json to map",
+			target: &struct {
+				Data map[string]any
+			}{},
+			rowData: map[string]any{"data": `["array", "not", "object"]`},
+			wantErr: true,
+		},
+		{
+			name: "type mismatch in json object",
+			target: &struct {
+				Counters map[string]int
+			}{},
+			rowData: map[string]any{"counters": `{"key": "not_an_int"}`},
+			wantErr: true,
+		},
+		// Multiple map fields
+		{
+			name: "multiple map fields",
+			target: &struct {
+				Labels   map[string]string
+				Counters map[string]int
+				Flags    map[string]bool
+			}{},
+			rowData: map[string]any{
+				"labels":   `{"env": "prod"}`,
+				"counters": `{"views": 100}`,
+				"flags":    `{"enabled": true}`,
+			},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Labels   map[string]string
+					Counters map[string]int
+					Flags    map[string]bool
+				})
+				assert.Equal(t, "prod", target.Labels["env"])
+				assert.Equal(t, 100, target.Counters["views"])
+				assert.Equal(t, true, target.Flags["enabled"])
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var target any
-			switch tt.name {
-			case "empty string to map[string]any", "valid json string to map":
-				target = &struct {
-					Metadata map[string]any
-				}{}
-			case "empty string to map[string]string":
-				target = &struct {
-					Labels map[string]string
-				}{}
-			case "empty string to map[string]int":
-				target = &struct {
-					Counters map[string]int
-				}{}
-			}
-
 			row := NewRow(tt.rowData, nil)
-			err := row.Scan(target)
-			assert.NoError(t, err)
-			if tt.assertion != nil {
-				tt.assertion(t, target)
+			err := row.Scan(tt.target)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				if tt.assertion != nil {
+					tt.assertion(t, tt.target)
+				}
 			}
 		})
 	}
 }
 
 func TestScan_ToScanner(t *testing.T) {
+	now := time.Now()
+
 	tests := []struct {
 		name      string
 		target    any
@@ -640,6 +1223,35 @@ func TestScan_ToScanner(t *testing.T) {
 		wantErr   bool
 		assertion func(t *testing.T, target any)
 	}{
+		{
+			name: "same type should pass through - carbon.DateTime",
+			target: &struct {
+				CreatedAt carbon.DateTime
+			}{},
+			rowData: map[string]any{"created_at": carbon.Now()},
+			wantErr: false,
+			assertion: func(t *testing.T, target any) {
+				result := target.(*struct {
+					CreatedAt carbon.DateTime
+				})
+				assert.False(t, result.CreatedAt.IsZero())
+			},
+		},
+		{
+			name: "same type should pass through - Json",
+			target: &struct {
+				Data Json
+			}{},
+			rowData: map[string]any{"data": Json{A: "test", B: 123}},
+			wantErr: false,
+			assertion: func(t *testing.T, target any) {
+				result := target.(*struct {
+					Data Json
+				})
+				assert.Equal(t, "test", result.Data.A)
+				assert.Equal(t, 123, result.Data.B)
+			},
+		},
 		{
 			name: "scan valid json string to Json struct",
 			target: &struct {
@@ -727,6 +1339,191 @@ func TestScan_ToScanner(t *testing.T) {
 				assert.Equal(t, 2, result.Data2.B)
 			},
 		},
+		{
+			name: "convert []uint8 to custom scanner type - Json",
+			target: &struct {
+				Data Json
+			}{},
+			rowData: map[string]any{"data": []uint8(`{"a": "uint8", "b": 999}`)},
+			wantErr: false,
+			assertion: func(t *testing.T, target any) {
+				result := target.(*struct {
+					Data Json
+				})
+				assert.Equal(t, "uint8", result.Data.A)
+				assert.Equal(t, 999, result.Data.B)
+			},
+		},
+		{
+			name: "empty string should return zero value",
+			target: &struct {
+				Data Json
+			}{},
+			rowData: map[string]any{"data": ""},
+			wantErr: false,
+			assertion: func(t *testing.T, target any) {
+				result := target.(*struct {
+					Data Json
+				})
+				assert.Equal(t, "", result.Data.A)
+				assert.Equal(t, 0, result.Data.B)
+			},
+		},
+		{
+			name: "nil should return zero value",
+			target: &struct {
+				Data Json
+			}{},
+			rowData: map[string]any{"data": nil},
+			wantErr: false,
+			assertion: func(t *testing.T, target any) {
+				result := target.(*struct {
+					Data Json
+				})
+				assert.Equal(t, "", result.Data.A)
+				assert.Equal(t, 0, result.Data.B)
+			},
+		},
+		{
+			name: "string to carbon.DateTime",
+			target: &struct {
+				CreatedAt carbon.DateTime
+			}{},
+			rowData: map[string]any{"created_at": now.Format(time.RFC3339)},
+			wantErr: false,
+			assertion: func(t *testing.T, target any) {
+				result := target.(*struct {
+					CreatedAt carbon.DateTime
+				})
+				assert.False(t, result.CreatedAt.IsZero())
+			},
+		},
+		{
+			name: "[]byte to carbon.DateTime",
+			target: &struct {
+				CreatedAt carbon.DateTime
+			}{},
+			rowData: map[string]any{"created_at": []byte(now.Format(time.RFC3339))},
+			wantErr: false,
+			assertion: func(t *testing.T, target any) {
+				result := target.(*struct {
+					CreatedAt carbon.DateTime
+				})
+				assert.False(t, result.CreatedAt.IsZero())
+			},
+		},
+		{
+			name: "[]uint8 to carbon.DateTime",
+			target: &struct {
+				CreatedAt carbon.DateTime
+			}{},
+			rowData: map[string]any{"created_at": []uint8(now.Format(time.RFC3339))},
+			wantErr: false,
+			assertion: func(t *testing.T, target any) {
+				result := target.(*struct {
+					CreatedAt carbon.DateTime
+				})
+				assert.False(t, result.CreatedAt.IsZero())
+			},
+		},
+		{
+			name: "invalid json string should error",
+			target: &struct {
+				Data Json
+			}{},
+			rowData: map[string]any{"data": `{invalid json}`},
+			wantErr: true,
+		},
+		{
+			name: "time.Time should skip ToScannerHookFunc",
+			target: &struct {
+				CreatedAt time.Time
+			}{},
+			rowData: map[string]any{"created_at": now.Format(time.RFC3339)},
+			wantErr: false,
+			assertion: func(t *testing.T, target any) {
+				result := target.(*struct {
+					CreatedAt time.Time
+				})
+				// Should be handled by ToTimeHookFunc, not ToScannerHookFunc
+				assert.False(t, result.CreatedAt.IsZero())
+			},
+		},
+		{
+			name: "gorm.DeletedAt should skip ToScannerHookFunc",
+			target: &struct {
+				DeletedAt gorm.DeletedAt
+			}{},
+			rowData: map[string]any{"deleted_at": now.Format(time.RFC3339)},
+			wantErr: false,
+			assertion: func(t *testing.T, target any) {
+				result := target.(*struct {
+					DeletedAt gorm.DeletedAt
+				})
+				// Should be handled by ToDeletedAtHookFunc, not ToScannerHookFunc
+				assert.True(t, result.DeletedAt.Valid)
+			},
+		},
+		{
+			name: "nil data to carbon.DateTime",
+			target: &struct {
+				CreatedAt carbon.DateTime
+			}{},
+			rowData: map[string]any{"created_at": nil},
+			wantErr: false,
+			assertion: func(t *testing.T, target any) {
+				result := target.(*struct {
+					CreatedAt carbon.DateTime
+				})
+				// Carbon zero value is not nil and may not return IsZero() as true
+				// Just verify no error occurred
+				assert.NotNil(t, result)
+			},
+		},
+		{
+			name: "empty string to carbon.DateTime",
+			target: &struct {
+				CreatedAt carbon.DateTime
+			}{},
+			rowData: map[string]any{"created_at": ""},
+			wantErr: false,
+			assertion: func(t *testing.T, target any) {
+				result := target.(*struct {
+					CreatedAt carbon.DateTime
+				})
+				// Carbon zero value is not nil and may not return IsZero() as true
+				// Just verify no error occurred
+				assert.NotNil(t, result)
+			},
+		},
+		{
+			name: "nil data to Json",
+			target: &struct {
+				Data Json
+			}{},
+			rowData: map[string]any{"data": nil},
+			wantErr: false,
+			assertion: func(t *testing.T, target any) {
+				result := target.(*struct {
+					Data Json
+				})
+				assert.Equal(t, Json{}, result.Data)
+			},
+		},
+		{
+			name: "empty string to Json",
+			target: &struct {
+				Data Json
+			}{},
+			rowData: map[string]any{"data": ""},
+			wantErr: false,
+			assertion: func(t *testing.T, target any) {
+				result := target.(*struct {
+					Data Json
+				})
+				assert.Equal(t, Json{}, result.Data)
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -745,92 +1542,22 @@ func TestScan_ToScanner(t *testing.T) {
 	}
 }
 
-func TestScan_ToScanner_EmptyData(t *testing.T) {
+func TestScan_ToSlice(t *testing.T) {
 	tests := []struct {
 		name      string
 		target    any
 		rowData   map[string]any
-		assertion func(t *testing.T, target any)
-	}{
-		{
-			name: "nil data to carbon.DateTime",
-			target: &struct {
-				CreatedAt carbon.DateTime
-			}{},
-			rowData: map[string]any{"created_at": nil},
-			assertion: func(t *testing.T, target any) {
-				result := target.(*struct {
-					CreatedAt carbon.DateTime
-				})
-				// Carbon zero value is not nil and may not return IsZero() as true
-				// Just verify no error occurred
-				assert.NotNil(t, result)
-			},
-		},
-		{
-			name: "empty string to carbon.DateTime",
-			target: &struct {
-				CreatedAt carbon.DateTime
-			}{},
-			rowData: map[string]any{"created_at": ""},
-			assertion: func(t *testing.T, target any) {
-				result := target.(*struct {
-					CreatedAt carbon.DateTime
-				})
-				// Carbon zero value is not nil and may not return IsZero() as true
-				// Just verify no error occurred
-				assert.NotNil(t, result)
-			},
-		},
-		{
-			name: "nil data to Json",
-			target: &struct {
-				Data Json
-			}{},
-			rowData: map[string]any{"data": nil},
-			assertion: func(t *testing.T, target any) {
-				result := target.(*struct {
-					Data Json
-				})
-				assert.Equal(t, Json{}, result.Data)
-			},
-		},
-		{
-			name: "empty string to Json",
-			target: &struct {
-				Data Json
-			}{},
-			rowData: map[string]any{"data": ""},
-			assertion: func(t *testing.T, target any) {
-				result := target.(*struct {
-					Data Json
-				})
-				assert.Equal(t, Json{}, result.Data)
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			row := NewRow(tt.rowData, nil)
-			err := row.Scan(tt.target)
-			assert.NoError(t, err)
-			if tt.assertion != nil {
-				tt.assertion(t, tt.target)
-			}
-		})
-	}
-}
-
-func TestScan_ToSlice_EmptyData(t *testing.T) {
-	tests := []struct {
-		name      string
-		rowData   map[string]any
+		wantErr   bool
 		assertion func(t *testing.T, result any)
 	}{
+		// Empty string cases
 		{
-			name:    "empty string to string slice",
+			name: "empty string to string slice",
+			target: &struct {
+				Tags []string
+			}{},
 			rowData: map[string]any{"tags": ""},
+			wantErr: false,
 			assertion: func(t *testing.T, result any) {
 				target := result.(*struct {
 					Tags []string
@@ -841,8 +1568,12 @@ func TestScan_ToSlice_EmptyData(t *testing.T) {
 			},
 		},
 		{
-			name:    "empty string to int slice",
+			name: "empty string to int slice",
+			target: &struct {
+				Numbers []int
+			}{},
 			rowData: map[string]any{"numbers": ""},
+			wantErr: false,
 			assertion: func(t *testing.T, result any) {
 				target := result.(*struct {
 					Numbers []int
@@ -853,8 +1584,12 @@ func TestScan_ToSlice_EmptyData(t *testing.T) {
 			},
 		},
 		{
-			name:    "empty string to struct slice",
+			name: "empty string to struct slice",
+			target: &struct {
+				Items []Json
+			}{},
 			rowData: map[string]any{"items": ""},
+			wantErr: false,
 			assertion: func(t *testing.T, result any) {
 				target := result.(*struct {
 					Items []Json
@@ -864,9 +1599,43 @@ func TestScan_ToSlice_EmptyData(t *testing.T) {
 				assert.Equal(t, 0, len(target.Items))
 			},
 		},
+		// Nil value cases
 		{
-			name:    "valid json string to slice",
+			name: "nil to string slice",
+			target: &struct {
+				Tags []string
+			}{},
+			rowData: map[string]any{"tags": nil},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Tags []string
+				})
+				assert.Nil(t, target.Tags)
+			},
+		},
+		{
+			name: "nil to int slice",
+			target: &struct {
+				Numbers []int
+			}{},
+			rowData: map[string]any{"numbers": nil},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Numbers []int
+				})
+				assert.Nil(t, target.Numbers)
+			},
+		},
+		// Valid JSON string cases
+		{
+			name: "json string to string slice",
+			target: &struct {
+				Tags []string
+			}{},
 			rowData: map[string]any{"tags": `["a", "b", "c"]`},
+			wantErr: false,
 			assertion: func(t *testing.T, result any) {
 				target := result.(*struct {
 					Tags []string
@@ -874,31 +1643,284 @@ func TestScan_ToSlice_EmptyData(t *testing.T) {
 				assert.Equal(t, []string{"a", "b", "c"}, target.Tags)
 			},
 		},
+		{
+			name: "json string to int slice",
+			target: &struct {
+				Numbers []int
+			}{},
+			rowData: map[string]any{"numbers": `[1, 2, 3, 4, 5]`},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Numbers []int
+				})
+				assert.Equal(t, []int{1, 2, 3, 4, 5}, target.Numbers)
+			},
+		},
+		{
+			name: "json string to float slice",
+			target: &struct {
+				Values []float64
+			}{},
+			rowData: map[string]any{"values": `[1.1, 2.2, 3.3]`},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Values []float64
+				})
+				assert.Equal(t, []float64{1.1, 2.2, 3.3}, target.Values)
+			},
+		},
+		{
+			name: "json string to bool slice",
+			target: &struct {
+				Flags []bool
+			}{},
+			rowData: map[string]any{"flags": `[true, false, true]`},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Flags []bool
+				})
+				assert.Equal(t, []bool{true, false, true}, target.Flags)
+			},
+		},
+		{
+			name: "json string to struct slice",
+			target: &struct {
+				Items []Json
+			}{},
+			rowData: map[string]any{"items": `[{"a": "first", "b": 1}, {"a": "second", "b": 2}]`},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Items []Json
+				})
+				assert.Len(t, target.Items, 2)
+				assert.Equal(t, "first", target.Items[0].A)
+				assert.Equal(t, 1, target.Items[0].B)
+				assert.Equal(t, "second", target.Items[1].A)
+				assert.Equal(t, 2, target.Items[1].B)
+			},
+		},
+		{
+			name: "json string to any slice",
+			target: &struct {
+				Data []any
+			}{},
+			rowData: map[string]any{"data": `["string", 123, true, null]`},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Data []any
+				})
+				assert.Len(t, target.Data, 4)
+				assert.Equal(t, "string", target.Data[0])
+				assert.Equal(t, float64(123), target.Data[1])
+				assert.Equal(t, true, target.Data[2])
+				assert.Nil(t, target.Data[3])
+			},
+		},
+		// JSON bytes cases
+		{
+			name: "json bytes to string slice",
+			target: &struct {
+				Tags []string
+			}{},
+			rowData: map[string]any{"tags": []byte(`["x", "y", "z"]`)},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Tags []string
+				})
+				assert.Equal(t, []string{"x", "y", "z"}, target.Tags)
+			},
+		},
+		{
+			name: "json bytes to int slice",
+			target: &struct {
+				Numbers []int
+			}{},
+			rowData: map[string]any{"numbers": []byte(`[10, 20, 30]`)},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Numbers []int
+				})
+				assert.Equal(t, []int{10, 20, 30}, target.Numbers)
+			},
+		},
+		// []uint8 cases
+		{
+			name: "uint8 slice to string slice",
+			target: &struct {
+				Tags []string
+			}{},
+			rowData: map[string]any{"tags": []uint8(`["tag1", "tag2"]`)},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Tags []string
+				})
+				assert.Equal(t, []string{"tag1", "tag2"}, target.Tags)
+			},
+		},
+		{
+			name: "uint8 slice to int slice",
+			target: &struct {
+				Numbers []int
+			}{},
+			rowData: map[string]any{"numbers": []uint8(`[100, 200]`)},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Numbers []int
+				})
+				assert.Equal(t, []int{100, 200}, target.Numbers)
+			},
+		},
+		// Single element cases
+		{
+			name: "single element string slice",
+			target: &struct {
+				Tags []string
+			}{},
+			rowData: map[string]any{"tags": `["single"]`},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Tags []string
+				})
+				assert.Equal(t, []string{"single"}, target.Tags)
+			},
+		},
+		{
+			name: "single element int slice",
+			target: &struct {
+				Numbers []int
+			}{},
+			rowData: map[string]any{"numbers": `[42]`},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Numbers []int
+				})
+				assert.Equal(t, []int{42}, target.Numbers)
+			},
+		},
+		// Nested slice cases
+		{
+			name: "nested string slices",
+			target: &struct {
+				Matrix [][]string
+			}{},
+			rowData: map[string]any{"matrix": `[["a", "b"], ["c", "d"]]`},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Matrix [][]string
+				})
+				assert.Len(t, target.Matrix, 2)
+				assert.Equal(t, []string{"a", "b"}, target.Matrix[0])
+				assert.Equal(t, []string{"c", "d"}, target.Matrix[1])
+			},
+		},
+		{
+			name: "nested int slices",
+			target: &struct {
+				Matrix [][]int
+			}{},
+			rowData: map[string]any{"matrix": `[[1, 2], [3, 4]]`},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Matrix [][]int
+				})
+				assert.Len(t, target.Matrix, 2)
+				assert.Equal(t, []int{1, 2}, target.Matrix[0])
+				assert.Equal(t, []int{3, 4}, target.Matrix[1])
+			},
+		},
+		// Large slice case
+		{
+			name: "large int slice",
+			target: &struct {
+				Numbers []int
+			}{},
+			rowData: map[string]any{"numbers": `[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]`},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Numbers []int
+				})
+				assert.Len(t, target.Numbers, 20)
+				assert.Equal(t, 1, target.Numbers[0])
+				assert.Equal(t, 20, target.Numbers[19])
+			},
+		},
+		// Error cases
+		{
+			name: "invalid json string to slice",
+			target: &struct {
+				Tags []string
+			}{},
+			rowData: map[string]any{"tags": `[invalid json`},
+			wantErr: true,
+		},
+		{
+			name: "non-array json to slice",
+			target: &struct {
+				Tags []string
+			}{},
+			rowData: map[string]any{"tags": `{"key": "value"}`},
+			wantErr: true,
+		},
+		{
+			name: "type mismatch in json array",
+			target: &struct {
+				Numbers []int
+			}{},
+			rowData: map[string]any{"numbers": `["not", "numbers"]`},
+			wantErr: true,
+		},
+		// Multiple slice fields
+		{
+			name: "multiple slice fields",
+			target: &struct {
+				Tags    []string
+				Numbers []int
+				Flags   []bool
+			}{},
+			rowData: map[string]any{
+				"tags":    `["a", "b"]`,
+				"numbers": `[1, 2]`,
+				"flags":   `[true, false]`,
+			},
+			wantErr: false,
+			assertion: func(t *testing.T, result any) {
+				target := result.(*struct {
+					Tags    []string
+					Numbers []int
+					Flags   []bool
+				})
+				assert.Equal(t, []string{"a", "b"}, target.Tags)
+				assert.Equal(t, []int{1, 2}, target.Numbers)
+				assert.Equal(t, []bool{true, false}, target.Flags)
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var target any
-			switch tt.name {
-			case "empty string to string slice", "valid json string to slice":
-				target = &struct {
-					Tags []string
-				}{}
-			case "empty string to int slice":
-				target = &struct {
-					Numbers []int
-				}{}
-			case "empty string to struct slice":
-				target = &struct {
-					Items []Json
-				}{}
-			}
-
 			row := NewRow(tt.rowData, nil)
-			err := row.Scan(target)
-			assert.NoError(t, err)
-			if tt.assertion != nil {
-				tt.assertion(t, target)
+			err := row.Scan(tt.target)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				if tt.assertion != nil {
+					tt.assertion(t, tt.target)
+				}
 			}
 		})
 	}

@@ -113,6 +113,16 @@ func ToScannerHookFunc() mapstructure.DecodeHookFunc {
 			return data, nil
 		}
 
+		// Skip if source and target are the same type
+		if f == t {
+			return data, nil
+		}
+
+		// Only process database types (string, []byte, []uint8)
+		if f.Kind() != reflect.String && f != reflect.TypeOf([]byte(nil)) && f != reflect.TypeOf([]uint8(nil)) {
+			return data, nil
+		}
+
 		// Check if the target type implements a Scan method
 		scannerType := reflect.TypeOf((*interface{ Scan(any) error })(nil)).Elem()
 
@@ -152,11 +162,7 @@ func ToScannerHookFunc() mapstructure.DecodeHookFunc {
 // ToSliceHookFunc is a hook function that converts JSON string to slice.
 func ToSliceHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
-		if t.Kind() != reflect.Slice {
-			return data, nil
-		}
-
-		if f.Kind() != reflect.String {
+		if t.Kind() != reflect.Slice || f.Kind() != reflect.String {
 			return data, nil
 		}
 
@@ -182,11 +188,7 @@ func ToSliceHookFunc() mapstructure.DecodeHookFunc {
 // ToMapHookFunc is a hook function that converts JSON string to map.
 func ToMapHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
-		if t.Kind() != reflect.Map {
-			return data, nil
-		}
-
-		if f.Kind() != reflect.String {
+		if t.Kind() != reflect.Map || f.Kind() != reflect.String {
 			return data, nil
 		}
 
