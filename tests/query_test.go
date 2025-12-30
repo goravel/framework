@@ -2784,26 +2784,33 @@ func (s *QueryTestSuite) TestPaginate() {
 			s.True(user3.ID > 0)
 
 			var users []User
-			s.Nil(query.Query().Where("name = ?", "paginate_user").Paginate(1, 3, &users, nil))
+			s.Nil(query.Query().Where("name", "paginate_user").Paginate(1, 3, &users, nil))
 			s.Equal(3, len(users))
 
 			var users1 []User
 			var total1 int64
-			s.Nil(query.Query().Where("name = ?", "paginate_user").Paginate(2, 3, &users1, &total1))
+			s.Nil(query.Query().Where("name", "paginate_user").Paginate(2, 3, &users1, &total1))
 			s.Equal(1, len(users1))
 			s.Equal(int64(4), total1)
 
 			var users2 []User
 			var total2 int64
-			s.Nil(query.Query().Model(User{}).Where("name = ?", "paginate_user").Paginate(1, 3, &users2, &total2))
+			s.Nil(query.Query().Model(User{}).Where("name", "paginate_user").Paginate(1, 3, &users2, &total2))
 			s.Equal(3, len(users2))
 			s.Equal(int64(4), total2)
 
 			var users3 []User
 			var total3 int64
-			s.Nil(query.Query().Table("users").Where("name = ?", "paginate_user").Paginate(1, 3, &users3, &total3))
+			s.Nil(query.Query().Table("users").Where("name", "paginate_user").Paginate(1, 3, &users3, &total3))
 			s.Equal(3, len(users3))
 			s.Equal(int64(4), total3)
+
+			// Fix: https://github.com/goravel/goravel/issues/842
+			var users4 []User
+			var total4 int64
+			s.Nil(query.Query().Model(&User{}).Select("name as name").Where("name", "paginate_user").Paginate(1, 3, &users4, &total4))
+			s.Equal(3, len(users4))
+			s.Equal(int64(4), total4)
 		})
 	}
 }
