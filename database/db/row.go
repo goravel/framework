@@ -113,6 +113,16 @@ func ToScannerHookFunc() mapstructure.DecodeHookFunc {
 			return data, nil
 		}
 
+		// Skip if source and target are the same type
+		if f == t {
+			return data, nil
+		}
+
+		// Only process database types (string, []byte, []uint8, time.Time)
+		if f.Kind() != reflect.String && f != reflect.TypeOf([]byte(nil)) && f != reflect.TypeOf([]uint8(nil)) && f != reflect.TypeOf(time.Time{}) {
+			return data, nil
+		}
+
 		// Check if the target type implements a Scan method
 		scannerType := reflect.TypeOf((*interface{ Scan(any) error })(nil)).Elem()
 
@@ -120,6 +130,14 @@ func ToScannerHookFunc() mapstructure.DecodeHookFunc {
 		targetPtr := reflect.PointerTo(t)
 		if !targetPtr.Implements(scannerType) {
 			return data, nil
+		}
+
+		// Handle nil or empty data
+		if data == nil {
+			return reflect.Zero(t).Interface(), nil
+		}
+		if str, ok := data.(string); ok && str == "" {
+			return reflect.Zero(t).Interface(), nil
 		}
 
 		// Create a new instance of the target type
@@ -144,17 +162,18 @@ func ToScannerHookFunc() mapstructure.DecodeHookFunc {
 // ToSliceHookFunc is a hook function that converts JSON string to slice.
 func ToSliceHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
-		if t.Kind() != reflect.Slice {
-			return data, nil
-		}
-
-		if f.Kind() != reflect.String {
+		if t.Kind() != reflect.Slice || f.Kind() != reflect.String {
 			return data, nil
 		}
 
 		str, ok := data.(string)
 		if !ok {
 			return data, nil
+		}
+
+		// Return empty slice for empty string
+		if str == "" {
+			return reflect.MakeSlice(t, 0, 0).Interface(), nil
 		}
 
 		result := reflect.New(t).Interface()
@@ -169,17 +188,18 @@ func ToSliceHookFunc() mapstructure.DecodeHookFunc {
 // ToMapHookFunc is a hook function that converts JSON string to map.
 func ToMapHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
-		if t.Kind() != reflect.Map {
-			return data, nil
-		}
-
-		if f.Kind() != reflect.String {
+		if t.Kind() != reflect.Map || f.Kind() != reflect.String {
 			return data, nil
 		}
 
 		str, ok := data.(string)
 		if !ok {
 			return data, nil
+		}
+
+		// Return empty map for empty string
+		if str == "" {
+			return reflect.MakeMap(t).Interface(), nil
 		}
 
 		result := reflect.MakeMap(t).Interface()
