@@ -351,6 +351,38 @@ func (_c *Application_Boot_Call) RunAndReturn(run func()) *Application_Boot_Call
 	return _c
 }
 
+// BootServiceProviders provides a mock function with no fields
+func (_m *Application) BootServiceProviders() {
+	_m.Called()
+}
+
+// Application_BootServiceProviders_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BootServiceProviders'
+type Application_BootServiceProviders_Call struct {
+	*mock.Call
+}
+
+// BootServiceProviders is a helper method to define mock.On call
+func (_e *Application_Expecter) BootServiceProviders() *Application_BootServiceProviders_Call {
+	return &Application_BootServiceProviders_Call{Call: _e.mock.On("BootServiceProviders")}
+}
+
+func (_c *Application_BootServiceProviders_Call) Run(run func()) *Application_BootServiceProviders_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Application_BootServiceProviders_Call) Return() *Application_BootServiceProviders_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Application_BootServiceProviders_Call) RunAndReturn(run func()) *Application_BootServiceProviders_Call {
+	_c.Run(run)
+	return _c
+}
+
 // BootstrapPath provides a mock function with given fields: path
 func (_m *Application) BootstrapPath(path ...string) string {
 	_va := make([]interface{}, len(path))
@@ -2703,6 +2735,38 @@ func (_c *Application_Refresh_Call) Return() *Application_Refresh_Call {
 }
 
 func (_c *Application_Refresh_Call) RunAndReturn(run func()) *Application_Refresh_Call {
+	_c.Run(run)
+	return _c
+}
+
+// RegisterServiceProviders provides a mock function with no fields
+func (_m *Application) RegisterServiceProviders() {
+	_m.Called()
+}
+
+// Application_RegisterServiceProviders_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RegisterServiceProviders'
+type Application_RegisterServiceProviders_Call struct {
+	*mock.Call
+}
+
+// RegisterServiceProviders is a helper method to define mock.On call
+func (_e *Application_Expecter) RegisterServiceProviders() *Application_RegisterServiceProviders_Call {
+	return &Application_RegisterServiceProviders_Call{Call: _e.mock.On("RegisterServiceProviders")}
+}
+
+func (_c *Application_RegisterServiceProviders_Call) Run(run func()) *Application_RegisterServiceProviders_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Application_RegisterServiceProviders_Call) Return() *Application_RegisterServiceProviders_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Application_RegisterServiceProviders_Call) RunAndReturn(run func()) *Application_RegisterServiceProviders_Call {
 	_c.Run(run)
 	return _c
 }

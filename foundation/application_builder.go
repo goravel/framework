@@ -57,9 +57,12 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 		r.paths(paths)
 	}
 
-	// Register and boot custom service providers
+	// Add custom service providers
 	r.app.AddServiceProviders(r.configuredServiceProviders)
-	r.app.Boot()
+
+	// Register service providers, app.Boot should not be called here, because some
+	// settings need to be done before booting service providers.
+	r.app.RegisterServiceProviders()
 
 	// Apply custom configuration
 	if r.config != nil {
@@ -191,6 +194,9 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 			}
 		}
 	}
+
+	// Boot service providers after all settings
+	r.app.BootServiceProviders()
 
 	return r.app
 }
