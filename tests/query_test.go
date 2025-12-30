@@ -2,7 +2,6 @@ package tests
 
 import (
 	"context"
-	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -761,11 +760,6 @@ type ResultData struct {
 		Level string
 		Value string
 	}
-}
-
-func (r *ResultData) Value() (driver.Value, error) {
-	bytes, err := json.Marshal(r)
-	return string(bytes), err
 }
 
 func (r *ResultData) Scan(value any) (err error) {

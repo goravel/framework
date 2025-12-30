@@ -134,7 +134,7 @@ func ToScannerHookFunc() mapstructure.DecodeHookFunc {
 
 		// Call the Scan method with the data
 		if err := scanner.Scan(scanData); err != nil {
-			return data, err
+			return nil, err
 		}
 
 		return result.Elem().Interface(), nil
@@ -159,7 +159,7 @@ func ToSliceHookFunc() mapstructure.DecodeHookFunc {
 
 		result := reflect.New(t).Interface()
 		if err := json.Unmarshal([]byte(str), result); err != nil {
-			return data, nil
+			return nil, err
 		}
 
 		return reflect.ValueOf(result).Elem().Interface(), nil
@@ -184,7 +184,7 @@ func ToMapHookFunc() mapstructure.DecodeHookFunc {
 
 		result := reflect.MakeMap(t).Interface()
 		if err := json.Unmarshal([]byte(str), &result); err != nil {
-			return data, nil
+			return nil, err
 		}
 
 		return result, nil
