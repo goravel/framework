@@ -26,7 +26,7 @@ func TestShowCommandHelp_HelpPrinterCustom(t *testing.T) {
 	cliApp.Register([]contractsconsole.Command{
 		&TestFooCommand{},
 		&TestBarCommand{},
-		console.NewHelpCommand(),
+		console.NewListCommand(),
 	})
 
 	tests := []struct {
@@ -35,8 +35,8 @@ func TestShowCommandHelp_HelpPrinterCustom(t *testing.T) {
 		containsOutput []string
 	}{
 		{
-			name: "print app help",
-			call: "help",
+			name: "print commands list",
+			call: "list",
 			containsOutput: []string{
 				color.Yellow().Sprint("Usage:"),
 				color.Yellow().Sprint("Global options:"),
@@ -144,7 +144,7 @@ Global options:
    -v, --version    Print the version
 
 Available commands:
-  help      Shows a list of commands
+  list      List commands
  test:
   test:bar  Test command
   test:foo  Test command`,
