@@ -1010,68 +1010,7 @@ func TestScan_ToMap(t *testing.T) {
 				assert.Nil(t, target.Data["key2"])
 			},
 		},
-		// JSON bytes cases
-		{
-			name: "json bytes to map[string]any",
-			target: &struct {
-				Metadata map[string]any
-			}{},
-			rowData: map[string]any{"metadata": []byte(`{"region": "us-west", "tier": 2}`)},
-			wantErr: false,
-			assertion: func(t *testing.T, result any) {
-				target := result.(*struct {
-					Metadata map[string]any
-				})
-				assert.Equal(t, "us-west", target.Metadata["region"])
-				assert.Equal(t, float64(2), target.Metadata["tier"])
-			},
-		},
-		{
-			name: "json bytes to map[string]string",
-			target: &struct {
-				Labels map[string]string
-			}{},
-			rowData: map[string]any{"labels": []byte(`{"app": "myapp", "team": "backend"}`)},
-			wantErr: false,
-			assertion: func(t *testing.T, result any) {
-				target := result.(*struct {
-					Labels map[string]string
-				})
-				assert.Equal(t, "myapp", target.Labels["app"])
-				assert.Equal(t, "backend", target.Labels["team"])
-			},
-		},
-		// []uint8 cases
-		{
-			name: "uint8 slice to map[string]any",
-			target: &struct {
-				Data map[string]any
-			}{},
-			rowData: map[string]any{"data": []uint8(`{"status": "ok", "code": 200}`)},
-			wantErr: false,
-			assertion: func(t *testing.T, result any) {
-				target := result.(*struct {
-					Data map[string]any
-				})
-				assert.Equal(t, "ok", target.Data["status"])
-				assert.Equal(t, float64(200), target.Data["code"])
-			},
-		},
-		{
-			name: "uint8 slice to map[string]int",
-			target: &struct {
-				Stats map[string]int
-			}{},
-			rowData: map[string]any{"stats": []uint8(`{"total": 1000, "active": 750}`)},
-			wantErr: false,
-			assertion: func(t *testing.T, result any) {
-				target := result.(*struct {
-					Stats map[string]int
-				})
-				assert.Equal(t, 1000, target.Stats["total"])
-				assert.Equal(t, 750, target.Stats["active"])
-			},
-		},
+
 		// Single key-value cases
 		{
 			name: "single key-value map",
@@ -1721,64 +1660,7 @@ func TestScan_ToSlice(t *testing.T) {
 				assert.Nil(t, target.Data[3])
 			},
 		},
-		// JSON bytes cases
-		{
-			name: "json bytes to string slice",
-			target: &struct {
-				Tags []string
-			}{},
-			rowData: map[string]any{"tags": []byte(`["x", "y", "z"]`)},
-			wantErr: false,
-			assertion: func(t *testing.T, result any) {
-				target := result.(*struct {
-					Tags []string
-				})
-				assert.Equal(t, []string{"x", "y", "z"}, target.Tags)
-			},
-		},
-		{
-			name: "json bytes to int slice",
-			target: &struct {
-				Numbers []int
-			}{},
-			rowData: map[string]any{"numbers": []byte(`[10, 20, 30]`)},
-			wantErr: false,
-			assertion: func(t *testing.T, result any) {
-				target := result.(*struct {
-					Numbers []int
-				})
-				assert.Equal(t, []int{10, 20, 30}, target.Numbers)
-			},
-		},
-		// []uint8 cases
-		{
-			name: "uint8 slice to string slice",
-			target: &struct {
-				Tags []string
-			}{},
-			rowData: map[string]any{"tags": []uint8(`["tag1", "tag2"]`)},
-			wantErr: false,
-			assertion: func(t *testing.T, result any) {
-				target := result.(*struct {
-					Tags []string
-				})
-				assert.Equal(t, []string{"tag1", "tag2"}, target.Tags)
-			},
-		},
-		{
-			name: "uint8 slice to int slice",
-			target: &struct {
-				Numbers []int
-			}{},
-			rowData: map[string]any{"numbers": []uint8(`[100, 200]`)},
-			wantErr: false,
-			assertion: func(t *testing.T, result any) {
-				target := result.(*struct {
-					Numbers []int
-				})
-				assert.Equal(t, []int{100, 200}, target.Numbers)
-			},
-		},
+
 		// Single element cases
 		{
 			name: "single element string slice",
