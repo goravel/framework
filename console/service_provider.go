@@ -49,7 +49,7 @@ func (r *ServiceProvider) registerCommands(app foundation.Application) {
 	}
 
 	artisanFacade.Register([]consolecontract.Command{
-		console.NewListCommand(artisanFacade),
+		console.NewListCommand(),
 		console.NewKeyGenerateCommand(configFacade),
 		console.NewMakeCommand(),
 		console.NewBuildCommand(configFacade),
@@ -78,6 +78,5 @@ func (r *ServiceProvider) registerCommands(app foundation.Application) {
 		// 	"static": config.Env("DEPLOY_STATIC", true),
 		// },
 		// console.NewDeployCommand(configFacade, artisanFacade),
-		console.NewHelpCommand(),
 	})
 }
