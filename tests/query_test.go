@@ -586,7 +586,7 @@ func (s *QueryTestSuite) TestCursor() {
 			s.Equal(int64(1), res.RowsAffected)
 
 			// success
-			users := query.Query().Model(&User{}).Where("name = ?", "cursor_user").WithTrashed().With("Address").With("Books").Cursor()
+			users := query.Query().Model(&User{}).Where("name", "cursor_user").WithTrashed().With("Address").With("Books").Cursor()
 			var size int
 			var addressNum int
 			var bookNum int

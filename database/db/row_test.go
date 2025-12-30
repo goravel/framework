@@ -1404,6 +1404,22 @@ func TestScan_ToScanner(t *testing.T) {
 			},
 		},
 		{
+			name: "time.Time as source should be processed by ToScannerHookFunc",
+			target: &struct {
+				CreatedAt carbon.DateTime
+			}{},
+			rowData: map[string]any{"created_at": now},
+			wantErr: false,
+			assertion: func(t *testing.T, target any) {
+				result := target.(*struct {
+					CreatedAt carbon.DateTime
+				})
+				// When source is time.Time, f != reflect.TypeOf(time.Time{}) is false,
+				// so ToScannerHookFunc does NOT skip and continues processing
+				assert.False(t, result.CreatedAt.IsZero())
+			},
+		},
+		{
 			name: "nil data to carbon.DateTime",
 			target: &struct {
 				CreatedAt carbon.DateTime

@@ -119,7 +119,7 @@ func ToScannerHookFunc() mapstructure.DecodeHookFunc {
 		}
 
 		// Only process database types (string, []byte, []uint8)
-		if f.Kind() != reflect.String && f != reflect.TypeOf([]byte(nil)) && f != reflect.TypeOf([]uint8(nil)) {
+		if f.Kind() != reflect.String && f != reflect.TypeOf([]byte(nil)) && f != reflect.TypeOf([]uint8(nil)) && f != reflect.TypeOf(time.Time{}) {
 			return data, nil
 		}
 
