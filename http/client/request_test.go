@@ -38,12 +38,21 @@ func (s *RequestTestSuite) SetupTest() {
 }
 
 func (s *RequestTestSuite) TestClone() {
-	req := s.request.Clone().WithQueryParameter("key", "value")
+	req := s.request.Clone().
+		BaseUrl("https://original.com").
+		WithQueryParameter("key", "value")
+
 	cookie := &http.Cookie{Name: "session", Value: "abc123"}
 	req = req.WithCookie(cookie)
 
 	originalConcrete := req.(*Request)
 	clonedReq := req.Clone().(*Request)
+
+	s.Equal("https://original.com", clonedReq.baseUrl)
+
+	clonedReqWithNewBase := clonedReq.BaseUrl("https://modified.com").(*Request)
+	s.Equal("https://original.com", originalConcrete.baseUrl)
+	s.Equal("https://modified.com", clonedReqWithNewBase.baseUrl)
 
 	s.Equal(originalConcrete.queryParams.Encode(), clonedReq.queryParams.Encode())
 
@@ -54,7 +63,9 @@ func (s *RequestTestSuite) TestClone() {
 	s.Equal(originalConcrete.cookies[0].Value, clonedReq.cookies[0].Value)
 
 	clonedReq = clonedReq.WithCookie(&http.Cookie{Name: "session", Value: "modified"}).(*Request)
-	s.NotEqual(originalConcrete.cookies[0].Value, clonedReq.cookies[len(clonedReq.cookies)-1].Value)
+
+	s.Equal("abc123", originalConcrete.cookies[0].Value)
+	s.Equal("modified", clonedReq.cookies[len(clonedReq.cookies)-1].Value)
 
 	req = req.WithQueryParameter("param1", "value1")
 	originalConcrete = req.(*Request)
