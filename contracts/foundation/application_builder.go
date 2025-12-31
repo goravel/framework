@@ -21,6 +21,8 @@ type ApplicationBuilder interface {
 	Run()
 	// Start starts modules, Wait should be called after to wait for all modules to shutdown.
 	Start() Application
+	// WithCallback sets a callback function to be called during application creation.
+	WithCallback(func()) ApplicationBuilder
 	// WithCommands sets the application's commands.
 	WithCommands(commands []console.Command) ApplicationBuilder
 	// WithConfig sets a callback function to configure the application.

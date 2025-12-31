@@ -732,6 +732,24 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 
 		s.NotNil(app)
 	})
+
+	s.Run("WithCallback", func() {
+		s.SetupTest()
+		calledCallback := false
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
+
+		app := s.builder.
+			WithCallback(func() {
+				calledCallback = true
+			}).
+			Create()
+
+		s.NotNil(app)
+		s.True(calledCallback)
+	})
 }
 
 func (s *ApplicationBuilderTestSuite) TestStart() {
@@ -923,6 +941,22 @@ func (s *ApplicationBuilderTestSuite) TestWithRules() {
 
 	s.NotNil(builder)
 	s.Len(s.builder.rules, 1)
+}
+
+func (s *ApplicationBuilderTestSuite) TestWithCallback() {
+	called := false
+	fn := func() {
+		called = true
+	}
+
+	builder := s.builder.WithCallback(fn)
+
+	s.NotNil(builder)
+	s.NotNil(s.builder.callback)
+
+	// Verify callback can be executed
+	s.builder.callback()
+	s.True(called)
 }
 
 type mockStatsHandler struct{ stats.Handler }
