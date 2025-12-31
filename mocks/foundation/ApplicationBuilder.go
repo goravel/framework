@@ -886,17 +886,17 @@ func (_c *ApplicationBuilder_WithRules_Call) RunAndReturn(run func([]validation.
 	return _c
 }
 
-// WithSchedule provides a mock function with given fields: events
-func (_m *ApplicationBuilder) WithSchedule(events []schedule.Event) foundation.ApplicationBuilder {
-	ret := _m.Called(events)
+// WithSchedule provides a mock function with given fields: fn
+func (_m *ApplicationBuilder) WithSchedule(fn func() []schedule.Event) foundation.ApplicationBuilder {
+	ret := _m.Called(fn)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WithSchedule")
 	}
 
 	var r0 foundation.ApplicationBuilder
-	if rf, ok := ret.Get(0).(func([]schedule.Event) foundation.ApplicationBuilder); ok {
-		r0 = rf(events)
+	if rf, ok := ret.Get(0).(func(func() []schedule.Event) foundation.ApplicationBuilder); ok {
+		r0 = rf(fn)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(foundation.ApplicationBuilder)
@@ -912,14 +912,14 @@ type ApplicationBuilder_WithSchedule_Call struct {
 }
 
 // WithSchedule is a helper method to define mock.On call
-//   - events []schedule.Event
-func (_e *ApplicationBuilder_Expecter) WithSchedule(events interface{}) *ApplicationBuilder_WithSchedule_Call {
-	return &ApplicationBuilder_WithSchedule_Call{Call: _e.mock.On("WithSchedule", events)}
+//   - fn func() []schedule.Event
+func (_e *ApplicationBuilder_Expecter) WithSchedule(fn interface{}) *ApplicationBuilder_WithSchedule_Call {
+	return &ApplicationBuilder_WithSchedule_Call{Call: _e.mock.On("WithSchedule", fn)}
 }
 
-func (_c *ApplicationBuilder_WithSchedule_Call) Run(run func(events []schedule.Event)) *ApplicationBuilder_WithSchedule_Call {
+func (_c *ApplicationBuilder_WithSchedule_Call) Run(run func(fn func() []schedule.Event)) *ApplicationBuilder_WithSchedule_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]schedule.Event))
+		run(args[0].(func() []schedule.Event))
 	})
 	return _c
 }
@@ -929,7 +929,7 @@ func (_c *ApplicationBuilder_WithSchedule_Call) Return(_a0 foundation.Applicatio
 	return _c
 }
 
-func (_c *ApplicationBuilder_WithSchedule_Call) RunAndReturn(run func([]schedule.Event) foundation.ApplicationBuilder) *ApplicationBuilder_WithSchedule_Call {
+func (_c *ApplicationBuilder_WithSchedule_Call) RunAndReturn(run func(func() []schedule.Event) foundation.ApplicationBuilder) *ApplicationBuilder_WithSchedule_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -38,7 +38,7 @@ type ApplicationBuilder struct {
 	paths                      func(paths contractsconfiguration.Paths)
 	routes                     []func()
 	rules                      []validation.Rule
-	scheduledEvents            []schedule.Event
+	schedule                   func() []schedule.Event
 	seeders                    []seeder.Seeder
 }
 
@@ -114,12 +114,14 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 	}
 
 	// Register scheduled events
-	if len(r.scheduledEvents) > 0 {
-		scheduleFacade := r.app.MakeSchedule()
-		if scheduleFacade == nil {
-			color.Errorln("Schedule facade not found, please install it first: ./artisan package:install Schedule")
-		} else {
-			scheduleFacade.Register(r.scheduledEvents)
+	if r.schedule != nil {
+		if events := r.schedule(); len(events) > 0 {
+			scheduleFacade := r.app.MakeSchedule()
+			if scheduleFacade == nil {
+				color.Errorln("Schedule facade not found, please install it first: ./artisan package:install Schedule")
+			} else {
+				scheduleFacade.Register(events)
+			}
 		}
 	}
 
@@ -303,8 +305,8 @@ func (r *ApplicationBuilder) WithRules(rules []validation.Rule) foundation.Appli
 	return r
 }
 
-func (r *ApplicationBuilder) WithSchedule(events []schedule.Event) foundation.ApplicationBuilder {
-	r.scheduledEvents = events
+func (r *ApplicationBuilder) WithSchedule(fn func() []schedule.Event) foundation.ApplicationBuilder {
+	r.schedule = fn
 
 	return r
 }

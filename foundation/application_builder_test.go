@@ -297,7 +297,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 
 		mockEvent := mocksschedule.NewEvent(s.T())
 		got := color.CaptureOutput(func(io.Writer) {
-			app := s.builder.WithSchedule([]schedule.Event{mockEvent}).Create()
+			app := s.builder.WithSchedule(func() []schedule.Event {
+				return []schedule.Event{mockEvent}
+			}).Create()
 
 			s.NotNil(app)
 		})
@@ -317,7 +319,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		mockSchedule.EXPECT().Register([]schedule.Event{mockEvent}).Return().Once()
 		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
-		app := s.builder.WithSchedule([]schedule.Event{mockEvent}).Create()
+		app := s.builder.WithSchedule(func() []schedule.Event {
+			return []schedule.Event{mockEvent}
+		}).Create()
 
 		s.NotNil(app)
 	})
@@ -804,10 +808,12 @@ func (s *ApplicationBuilderTestSuite) TestWithRouting() {
 func (s *ApplicationBuilderTestSuite) TestWithSchedule() {
 	mockEvent := mocksschedule.NewEvent(s.T())
 
-	builder := s.builder.WithSchedule([]schedule.Event{mockEvent})
+	builder := s.builder.WithSchedule(func() []schedule.Event {
+		return []schedule.Event{mockEvent}
+	})
 
 	s.NotNil(builder)
-	s.Len(s.builder.scheduledEvents, 1)
+	s.NotNil(s.builder.schedule)
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithGrpcClientInterceptors() {
