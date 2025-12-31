@@ -23,6 +23,7 @@ func Setup() foundation.ApplicationBuilder {
 
 type ApplicationBuilder struct {
 	app                        foundation.Application
+	callback                   func()
 	commands                   []console.Command
 	config                     func()
 	configuredServiceProviders []foundation.ServiceProvider
@@ -197,6 +198,11 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 		}
 	}
 
+	// Execute callback function
+	if r.callback != nil {
+		r.callback()
+	}
+
 	// Boot service providers after all settings
 	r.app.BootServiceProviders()
 
@@ -209,6 +215,12 @@ func (r *ApplicationBuilder) Run() {
 
 func (r *ApplicationBuilder) Start() foundation.Application {
 	return r.Create().Start()
+}
+
+func (r *ApplicationBuilder) WithCallback(callback func()) foundation.ApplicationBuilder {
+	r.callback = callback
+
+	return r
 }
 
 func (r *ApplicationBuilder) WithCommands(commands []console.Command) foundation.ApplicationBuilder {

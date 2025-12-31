@@ -166,6 +166,54 @@ func (_c *ApplicationBuilder_Start_Call) RunAndReturn(run func() foundation.Appl
 	return _c
 }
 
+// WithCallback provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithCallback(_a0 func()) foundation.ApplicationBuilder {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithCallback")
+	}
+
+	var r0 foundation.ApplicationBuilder
+	if rf, ok := ret.Get(0).(func(func()) foundation.ApplicationBuilder); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(foundation.ApplicationBuilder)
+		}
+	}
+
+	return r0
+}
+
+// ApplicationBuilder_WithCallback_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithCallback'
+type ApplicationBuilder_WithCallback_Call struct {
+	*mock.Call
+}
+
+// WithCallback is a helper method to define mock.On call
+//   - _a0 func()
+func (_e *ApplicationBuilder_Expecter) WithCallback(_a0 interface{}) *ApplicationBuilder_WithCallback_Call {
+	return &ApplicationBuilder_WithCallback_Call{Call: _e.mock.On("WithCallback", _a0)}
+}
+
+func (_c *ApplicationBuilder_WithCallback_Call) Run(run func(_a0 func())) *ApplicationBuilder_WithCallback_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func()))
+	})
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithCallback_Call) Return(_a0 foundation.ApplicationBuilder) *ApplicationBuilder_WithCallback_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithCallback_Call) RunAndReturn(run func(func()) foundation.ApplicationBuilder) *ApplicationBuilder_WithCallback_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // WithCommands provides a mock function with given fields: commands
 func (_m *ApplicationBuilder) WithCommands(commands []console.Command) foundation.ApplicationBuilder {
 	ret := _m.Called(commands)
