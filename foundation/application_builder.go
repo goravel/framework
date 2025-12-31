@@ -115,11 +115,13 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 
 	// Register scheduled events
 	if r.schedule != nil {
-		scheduleFacade := r.app.MakeSchedule()
-		if scheduleFacade == nil {
-			color.Errorln("Schedule facade not found, please install it first: ./artisan package:install Schedule")
-		} else {
-			scheduleFacade.Register(r.schedule())
+		if events := r.schedule(); len(events) > 0 {
+			scheduleFacade := r.app.MakeSchedule()
+			if scheduleFacade == nil {
+				color.Errorln("Schedule facade not found, please install it first: ./artisan package:install Schedule")
+			} else {
+				scheduleFacade.Register(events)
+			}
 		}
 	}
 
