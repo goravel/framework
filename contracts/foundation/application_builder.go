@@ -52,7 +52,7 @@ type ApplicationBuilder interface {
 	// WithRules registers the custom validation rules.
 	WithRules(rules []validation.Rule) ApplicationBuilder
 	// WithSchedule sets scheduled events for the application.
-	WithSchedule(events []schedule.Event) ApplicationBuilder
+	WithSchedule(fn func() []schedule.Event) ApplicationBuilder
 	// WithSeeders registers the database seeders.
 	WithSeeders(seeders []seeder.Seeder) ApplicationBuilder
 }
