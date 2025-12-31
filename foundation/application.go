@@ -105,6 +105,23 @@ func (r *Application) Boot() {
 	r.bootArtisan()
 }
 
+func (r *Application) BootServiceProviders() {
+	r.providerRepository.Boot(r)
+
+	r.registerCommands([]contractsconsole.Command{
+		console.NewAboutCommand(r),
+		console.NewEnvEncryptCommand(),
+		console.NewEnvDecryptCommand(),
+		console.NewTestMakeCommand(),
+		console.NewPackageMakeCommand(),
+		console.NewProviderMakeCommand(),
+		console.NewPackageInstallCommand(binding.Bindings, r.GetJson()),
+		console.NewPackageUninstallCommand(binding.Bindings, r.GetJson()),
+		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
+	})
+	r.bootArtisan()
+}
+
 func (r *Application) Commands(commands []contractsconsole.Command) {
 	r.registerCommands(commands)
 }
@@ -135,6 +152,16 @@ func (r *Application) Refresh() {
 	r.Fresh()
 	r.providerRepository.Reset()
 	r.Boot()
+}
+
+func (r *Application) RegisterServiceProviders() {
+	r.providerRepository.LoadFromConfig(r.MakeConfig())
+	clear(r.publishes)
+	clear(r.publishGroups)
+
+	r.setTimezone()
+
+	r.providerRepository.Register(r)
 }
 
 func (r *Application) Start(runners ...foundation.Runner) foundation.Application {

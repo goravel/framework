@@ -67,7 +67,7 @@ func (r *MigrateRollbackCommand) Handle(ctx console.Context) error {
 
 	// Set defaults if neither option is provided
 	if step == 0 && batch == 0 {
-		step = 1
+		batch = 1
 	}
 
 	if err := r.migrator.Rollback(step, batch); err != nil {
