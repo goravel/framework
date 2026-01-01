@@ -30,7 +30,7 @@ func TestMigrateRollbackCommand(t *testing.T) {
 			setup: func() {
 				mockContext.EXPECT().OptionInt("step").Return(0).Once()
 				mockContext.EXPECT().OptionInt("batch").Return(0).Once()
-				mockMigrator.EXPECT().Rollback(1, 0).Return(nil).Once()
+				mockMigrator.EXPECT().Rollback(0, 1).Return(nil).Once()
 				mockContext.EXPECT().Success("Migration rollback success").Once()
 			},
 		},
@@ -81,7 +81,7 @@ func TestMigrateRollbackCommand(t *testing.T) {
 			setup: func() {
 				mockContext.EXPECT().OptionInt("step").Return(0).Once()
 				mockContext.EXPECT().OptionInt("batch").Return(0).Once()
-				mockMigrator.EXPECT().Rollback(1, 0).Return(assert.AnError).Once()
+				mockMigrator.EXPECT().Rollback(0, 1).Return(assert.AnError).Once()
 				mockContext.EXPECT().Error(errors.MigrationMigrateFailed.Args(assert.AnError).Error()).Once()
 			},
 		},

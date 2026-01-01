@@ -23,6 +23,7 @@ import (
 	databasedriver "github.com/goravel/framework/database/driver"
 	"github.com/goravel/framework/database/utils"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/collect"
 	"github.com/goravel/framework/support/database"
 	"github.com/goravel/framework/support/deep"
 )
@@ -120,7 +121,7 @@ func (r *Query) Commit() error {
 }
 
 func (r *Query) Count() (int64, error) {
-	query := r.addGlobalScopes().buildConditions()
+	query := r.resetSelect().addGlobalScopes().buildConditions()
 
 	var count int64
 
@@ -621,18 +622,16 @@ func (r *Query) OrWhere(query any, args ...any) contractsorm.Query {
 }
 
 func (r *Query) Paginate(page, limit int, dest any, total *int64) error {
-	query := r.dest(dest).addGlobalScopes().buildConditions()
-
 	offset := (page - 1) * limit
 	if total != nil {
-		if query.conditions.table == nil && query.conditions.model == nil {
-			count, err := query.Model(dest).Count()
+		if r.conditions.table == nil && r.conditions.model == nil {
+			count, err := r.Model(dest).Count()
 			if err != nil {
 				return err
 			}
 			*total = count
 		} else {
-			count, err := query.Count()
+			count, err := r.Count()
 			if err != nil {
 				return err
 			}
@@ -640,7 +639,7 @@ func (r *Query) Paginate(page, limit int, dest any, total *int64) error {
 		}
 	}
 
-	return query.Offset(offset).Limit(limit).Find(dest)
+	return r.Offset(offset).Limit(limit).Find(dest)
 }
 
 func (r *Query) Pluck(column string, dest any) error {
@@ -780,7 +779,15 @@ func (r *Query) Scopes(funcs ...func(contractsorm.Query) contractsorm.Query) con
 
 func (r *Query) Select(columns ...string) contractsorm.Query {
 	conditions := r.conditions
-	conditions.selectColumns = columns
+	conditions.selectColumns = append(conditions.selectColumns, columns...)
+	conditions.selectColumns = collect.Unique(conditions.selectColumns)
+
+	// * may be added along with other columns, remove it.
+	if len(conditions.selectColumns) > 1 {
+		conditions.selectColumns = collect.Filter(conditions.selectColumns, func(column string, _ int) bool {
+			return column != "*"
+		})
+	}
 
 	return r.setConditions(conditions)
 }
@@ -1781,6 +1788,13 @@ func (r *Query) refreshConnection() (*Query, error) {
 	query.conditions = r.conditions
 
 	return query, nil
+}
+
+func (r *Query) resetSelect() *Query {
+	conditions := r.conditions
+	conditions.selectColumns = nil
+
+	return r.setConditions(conditions)
 }
 
 func (r *Query) restored(dest any) error {

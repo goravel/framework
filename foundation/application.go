@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/goravel/framework/config"
@@ -42,6 +43,7 @@ func init() {
 		cancel:        cancel,
 		publishes:     make(map[string]map[string]string),
 		publishGroups: make(map[string]map[string]string),
+		runnerWg:      sync.WaitGroup{},
 	}
 
 	app.providerRepository = NewProviderRepository()
@@ -63,6 +65,8 @@ type Application struct {
 	publishes          map[string]map[string]string
 	publishGroups      map[string]map[string]string
 	json               foundation.Json
+	runnerNames        []string
+	runnerWg           sync.WaitGroup
 }
 
 func NewApplication() foundation.Application {
@@ -87,7 +91,6 @@ func (r *Application) Boot() {
 	r.providerRepository.Register(r)
 	r.providerRepository.Boot(r)
 
-	installedBindings := r.Bindings()
 	r.registerCommands([]contractsconsole.Command{
 		console.NewAboutCommand(r),
 		console.NewEnvEncryptCommand(),
@@ -95,8 +98,25 @@ func (r *Application) Boot() {
 		console.NewTestMakeCommand(),
 		console.NewPackageMakeCommand(),
 		console.NewProviderMakeCommand(),
-		console.NewPackageInstallCommand(binding.Bindings, &installedBindings, r.GetJson()),
-		console.NewPackageUninstallCommand(binding.Bindings, &installedBindings, r.GetJson()),
+		console.NewPackageInstallCommand(binding.Bindings, r.GetJson()),
+		console.NewPackageUninstallCommand(binding.Bindings, r.GetJson()),
+		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
+	})
+	r.bootArtisan()
+}
+
+func (r *Application) BootServiceProviders() {
+	r.providerRepository.Boot(r)
+
+	r.registerCommands([]contractsconsole.Command{
+		console.NewAboutCommand(r),
+		console.NewEnvEncryptCommand(),
+		console.NewEnvDecryptCommand(),
+		console.NewTestMakeCommand(),
+		console.NewPackageMakeCommand(),
+		console.NewProviderMakeCommand(),
+		console.NewPackageInstallCommand(binding.Bindings, r.GetJson()),
+		console.NewPackageUninstallCommand(binding.Bindings, r.GetJson()),
 		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
 	})
 	r.bootArtisan()
@@ -134,43 +154,69 @@ func (r *Application) Refresh() {
 	r.Boot()
 }
 
-func (r *Application) Run(runners ...foundation.Runner) {
+func (r *Application) RegisterServiceProviders() {
+	r.providerRepository.LoadFromConfig(r.MakeConfig())
+	clear(r.publishes)
+	clear(r.publishGroups)
+
+	r.setTimezone()
+
+	r.providerRepository.Register(r)
+}
+
+func (r *Application) Start(runners ...foundation.Runner) foundation.Application {
 	type RunnerWithInfo struct {
 		name    string
 		runner  foundation.Runner
 		running bool
 	}
 
-	var allRunners []*RunnerWithInfo
+	var runnersToRun []*RunnerWithInfo
 
 	for _, serviceProvider := range r.providerRepository.GetBooted() {
 		if serviceProviderWithRunners, ok := serviceProvider.(foundation.ServiceProviderWithRunners); ok {
 			for _, runner := range serviceProviderWithRunners.Runners(r) {
+				runnerName := fmt.Sprintf("%T", runner)
+				if slices.Contains(r.runnerNames, runnerName) {
+					continue
+				}
+
+				r.runnerNames = append(r.runnerNames, runnerName)
+
 				if runner.ShouldRun() {
-					allRunners = append(allRunners, &RunnerWithInfo{name: fmt.Sprintf("%T", runner), runner: runner, running: false})
+					runnersToRun = append(runnersToRun, &RunnerWithInfo{name: runnerName, runner: runner, running: false})
 				}
 			}
 		}
 	}
 
 	for _, runner := range runners {
+		runnerName := fmt.Sprintf("%T", runner)
+		if slices.Contains(r.runnerNames, runnerName) {
+			continue
+		}
+
+		r.runnerNames = append(r.runnerNames, runnerName)
+
 		if runner.ShouldRun() {
-			allRunners = append(allRunners, &RunnerWithInfo{name: fmt.Sprintf("%T", runner), runner: runner, running: false})
+			runnersToRun = append(runnersToRun, &RunnerWithInfo{name: runnerName, runner: runner, running: false})
 		}
 	}
 
 	run := func(runner *RunnerWithInfo) {
+		r.runnerWg.Add(1)
+
 		go func() {
+			runner.running = true
 			if err := runner.runner.Run(); err != nil {
+				r.runnerWg.Done()
+				runner.running = false
 				color.Errorf("%s Run error: %v\n", runner.name, err)
-			} else {
-				runner.running = true
 			}
 		}()
 
 		go func() {
 			<-r.ctx.Done()
-
 			if !runner.running {
 				return
 			}
@@ -178,12 +224,16 @@ func (r *Application) Run(runners ...foundation.Runner) {
 			if err := runner.runner.Shutdown(); err != nil {
 				color.Errorf("%s Shutdown error: %v\n", runner.name, err)
 			}
+
+			r.runnerWg.Done()
 		}()
 	}
 
-	for _, runner := range allRunners {
+	for _, runner := range runnersToRun {
 		run(runner)
 	}
+
+	return r
 }
 
 func (r *Application) SetJson(j foundation.Json) {
@@ -208,6 +258,10 @@ func (r *Application) Shutdown() {
 
 func (r *Application) Version() string {
 	return support.Version
+}
+
+func (r *Application) Wait() {
+	r.runnerWg.Wait()
 }
 
 func (r *Application) BasePath(paths ...string) string {
@@ -328,7 +382,7 @@ func setEnv() {
 				if arg == "artisan" {
 					support.RuntimeMode = support.RuntimeArtisan
 				}
-				support.DontVerifyEnvFileExists = slices.Contains(support.DontVerifyEnvFileWhitelist, arg)
+				support.DontVerifyEnvFileExists = support.DontVerifyEnvFileExists || slices.Contains(support.DontVerifyEnvFileWhitelist, arg)
 			}
 		}
 	}

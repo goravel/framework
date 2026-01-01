@@ -5,18 +5,19 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	nethttp "net/http"
+	"net/http"
 	"os"
 	"os/exec"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	contractshttp "github.com/goravel/framework/contracts/http"
 	contractslog "github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/foundation/json"
-	configmock "github.com/goravel/framework/mocks/config"
+	mocksconfig "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/file"
 )
@@ -30,14 +31,14 @@ var (
 
 func TestWriter(t *testing.T) {
 	var (
-		mockConfig *configmock.Config
+		mockConfig *mocksconfig.Config
 		log        *Application
 		j          = json.New()
 		err        error
 	)
 
 	beforeEach := func() {
-		mockConfig = initMockConfig()
+		mockConfig = initMockConfig(t)
 	}
 
 	tests := []struct {
@@ -49,7 +50,7 @@ func TestWriter(t *testing.T) {
 		{
 			name: "WithContext",
 			setup: func() {
-				mockDriverConfig(mockConfig)
+				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
 				log, err = NewApplication(mockConfig, j)
 				ctx := context.Background()
@@ -64,7 +65,7 @@ func TestWriter(t *testing.T) {
 		{
 			name: "Debug",
 			setup: func() {
-				mockDriverConfig(mockConfig)
+				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
 				log, err = NewApplication(mockConfig, j)
 				log.Debug("Debug Goravel")
@@ -75,22 +76,9 @@ func TestWriter(t *testing.T) {
 			},
 		},
 		{
-			name: "No Debug",
-			setup: func() {
-				mockConfig.EXPECT().GetString("logging.channels.daily.level").Return("info").Once()
-				mockConfig.EXPECT().GetString("logging.channels.single.level").Return("info").Once()
-				log, err = NewApplication(mockConfig, j)
-				log.Debug("No Debug Goravel")
-			},
-			assert: func() {
-				assert.False(t, file.Contains(singleLog, "test.debug: No Debug Goravel"))
-				assert.False(t, file.Contains(dailyLog, "test.debug: No Debug Goravel"))
-			},
-		},
-		{
 			name: "Debugf",
 			setup: func() {
-				mockDriverConfig(mockConfig)
+				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
 				log, err = NewApplication(mockConfig, j)
 				log.Debugf("Goravel: %s", "World")
@@ -103,7 +91,7 @@ func TestWriter(t *testing.T) {
 		{
 			name: "Info",
 			setup: func() {
-				mockDriverConfig(mockConfig)
+				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
 				log, err = NewApplication(mockConfig, j)
 				log.Info("Goravel")
@@ -116,7 +104,7 @@ func TestWriter(t *testing.T) {
 		{
 			name: "Infof",
 			setup: func() {
-				mockDriverConfig(mockConfig)
+				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
 				log, err = NewApplication(mockConfig, j)
 				log.Infof("Goravel: %s", "World")
@@ -129,7 +117,7 @@ func TestWriter(t *testing.T) {
 		{
 			name: "Warning",
 			setup: func() {
-				mockDriverConfig(mockConfig)
+				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
 				log, err = NewApplication(mockConfig, j)
 				log.Warning("Goravel")
@@ -142,7 +130,7 @@ func TestWriter(t *testing.T) {
 		{
 			name: "Warningf",
 			setup: func() {
-				mockDriverConfig(mockConfig)
+				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
 				log, err = NewApplication(mockConfig, j)
 				log.Warningf("Goravel: %s", "World")
@@ -155,7 +143,7 @@ func TestWriter(t *testing.T) {
 		{
 			name: "Error",
 			setup: func() {
-				mockDriverConfig(mockConfig)
+				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
 				log, err = NewApplication(mockConfig, j)
 				log.Error("Goravel")
@@ -168,7 +156,7 @@ func TestWriter(t *testing.T) {
 		{
 			name: "Errorf",
 			setup: func() {
-				mockDriverConfig(mockConfig)
+				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
 				log, err = NewApplication(mockConfig, j)
 				log.Errorf("Goravel: %s", "World")
@@ -181,7 +169,7 @@ func TestWriter(t *testing.T) {
 		{
 			name: "Panic",
 			setup: func() {
-				mockDriverConfig(mockConfig)
+				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
 				log, err = NewApplication(mockConfig, j)
 			},
@@ -196,7 +184,7 @@ func TestWriter(t *testing.T) {
 		{
 			name: "Panicf",
 			setup: func() {
-				mockDriverConfig(mockConfig)
+				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
 				log, err = NewApplication(mockConfig, j)
 			},
@@ -211,7 +199,7 @@ func TestWriter(t *testing.T) {
 		{
 			name: "Code",
 			setup: func() {
-				mockDriverConfig(mockConfig)
+				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
 				log, err = NewApplication(mockConfig, j)
 				log.Code("code").Info("Goravel")
@@ -224,7 +212,7 @@ func TestWriter(t *testing.T) {
 		{
 			name: "Hint",
 			setup: func() {
-				mockDriverConfig(mockConfig)
+				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
 				log, err = NewApplication(mockConfig, j)
 				log.Hint("hint").Info("Goravel")
@@ -237,7 +225,7 @@ func TestWriter(t *testing.T) {
 		{
 			name: "In",
 			setup: func() {
-				mockDriverConfig(mockConfig)
+				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
 				log, err = NewApplication(mockConfig, j)
 				log.In("domain").Info("Goravel")
@@ -250,7 +238,7 @@ func TestWriter(t *testing.T) {
 		{
 			name: "Owner",
 			setup: func() {
-				mockDriverConfig(mockConfig)
+				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
 				log, err = NewApplication(mockConfig, j)
 				log.Owner("team@goravel.dev").Info("Goravel")
@@ -263,7 +251,7 @@ func TestWriter(t *testing.T) {
 		{
 			name: "Request",
 			setup: func() {
-				mockDriverConfig(mockConfig)
+				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
 				log, err = NewApplication(mockConfig, j)
 				log.Request(&TestRequest{}).Info("Goravel")
@@ -288,7 +276,7 @@ func TestWriter(t *testing.T) {
 		{
 			name: "Response",
 			setup: func() {
-				mockDriverConfig(mockConfig)
+				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
 				log, err = NewApplication(mockConfig, j)
 				log.Response(&TestResponse{}).Info("Goravel")
@@ -312,7 +300,7 @@ func TestWriter(t *testing.T) {
 		{
 			name: "Tags",
 			setup: func() {
-				mockDriverConfig(mockConfig)
+				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
 				log, err = NewApplication(mockConfig, j)
 				log.Tags("tag").Info("Goravel")
@@ -325,7 +313,7 @@ func TestWriter(t *testing.T) {
 		{
 			name: "User",
 			setup: func() {
-				mockDriverConfig(mockConfig)
+				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
 				log, err = NewApplication(mockConfig, j)
 				log.User(map[string]any{"name": "kkumar-gcc"}).Info("Goravel")
@@ -338,7 +326,7 @@ func TestWriter(t *testing.T) {
 		{
 			name: "With",
 			setup: func() {
-				mockDriverConfig(mockConfig)
+				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
 				log, err = NewApplication(mockConfig, j)
 				log.With(map[string]any{"key": "value"}).Info("Goravel")
@@ -351,7 +339,7 @@ func TestWriter(t *testing.T) {
 		{
 			name: "WithTrace",
 			setup: func() {
-				mockDriverConfig(mockConfig)
+				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
 				log, err = NewApplication(mockConfig, j)
 				log.WithTrace().Info("Goravel")
@@ -364,7 +352,7 @@ func TestWriter(t *testing.T) {
 		{
 			name: "No traces when calling Info after Error",
 			setup: func() {
-				mockDriverConfig(mockConfig)
+				mockConfig.EXPECT().GetString("app.env").Return("test").Times(4)
 
 				log, err = NewApplication(mockConfig, j)
 				log.Error("test error")
@@ -392,8 +380,66 @@ func TestWriter(t *testing.T) {
 	_ = file.Remove("storage")
 }
 
+func TestWriter_LevelNotMatch(t *testing.T) {
+	mockConfig := mocksconfig.NewConfig(t)
+	mockConfig.EXPECT().GetString("logging.default").Return("stack").Once()
+	mockConfig.EXPECT().GetString("logging.channels.stack.driver").Return("stack").Once()
+	mockConfig.EXPECT().Get("logging.channels.stack.channels").Return([]string{"single", "daily"}).Once()
+	mockConfig.EXPECT().GetString("logging.channels.daily.driver").Return("daily").Once()
+	mockConfig.EXPECT().GetString("logging.channels.daily.path").Return(singleLog).Once()
+	mockConfig.EXPECT().GetInt("logging.channels.daily.days").Return(7).Once()
+	mockConfig.EXPECT().GetBool("logging.channels.daily.print").Return(false).Once()
+	mockConfig.EXPECT().GetString("logging.channels.daily.level").Return("info").Once()
+	mockConfig.EXPECT().GetString("logging.channels.daily.formatter", "text").Return("text").Once()
+
+	mockConfig.EXPECT().GetString("logging.channels.single.driver").Return("single").Once()
+	mockConfig.EXPECT().GetString("logging.channels.single.path").Return(singleLog).Once()
+	mockConfig.EXPECT().GetBool("logging.channels.single.print").Return(false).Once()
+	mockConfig.EXPECT().GetString("logging.channels.single.level").Return("info").Once()
+	mockConfig.EXPECT().GetString("logging.channels.single.formatter", "text").Return("text").Once()
+
+	log, err := NewApplication(mockConfig, json.New())
+	assert.Nil(t, err)
+
+	log.Debug("No Debug Goravel")
+
+	assert.False(t, file.Contains(singleLog, "test.debug: No Debug Goravel"))
+	assert.False(t, file.Contains(dailyLog, "test.debug: No Debug Goravel"))
+}
+
+func TestWriter_DailyLogWithDifferentDays(t *testing.T) {
+	mockConfig := initMockConfig(t)
+	mockConfig.EXPECT().GetString("app.env").Return("test").Times(4)
+
+	log, err := NewApplication(mockConfig, json.New())
+	assert.Nil(t, err)
+	assert.NotNil(t, log)
+
+	log.Info("Goravel")
+
+	date := carbon.Now().Format("Y-m-d H:i")
+	assert.True(t, file.Contain(singleLog, date))
+	assert.True(t, file.Contain(singleLog, "test.info: Goravel"))
+	assert.True(t, file.Contain(dailyLog, date))
+	assert.True(t, file.Contain(dailyLog, "test.info: Goravel"))
+
+	nextDailyLog := fmt.Sprintf("storage/logs/goravel-%s.log", carbon.Now().AddDay().ToDateString())
+	carbon.SetTestNow(carbon.Now().AddDay())
+	defer carbon.ClearTestNow()
+
+	log.Info("Goravel Next Day")
+
+	date = carbon.Now().Format("Y-m-d H:i")
+	assert.True(t, file.Contain(singleLog, date))
+	assert.True(t, file.Contain(singleLog, "test.info: Goravel Next Day"))
+	assert.True(t, file.Contain(nextDailyLog, date))
+	assert.True(t, file.Contain(nextDailyLog, "test.info: Goravel Next Day"))
+
+	_ = file.Remove("storage")
+}
+
 func TestWriterWithCustomLogger(t *testing.T) {
-	mockConfig := configmock.NewConfig(t)
+	mockConfig := mocksconfig.NewConfig(t)
 	mockConfig.EXPECT().GetString("logging.default").Return("customLogger").Once()
 	mockConfig.EXPECT().GetString("logging.channels.customLogger.driver").Return("custom").Twice()
 	mockConfig.EXPECT().Get("logging.channels.customLogger.via").Return(&CustomLogger{}).Twice()
@@ -421,13 +467,14 @@ func TestWriterWithCustomLogger(t *testing.T) {
 }
 
 func TestWriter_Fatal(t *testing.T) {
-	mockConfig := initMockConfig()
-	mockDriverConfig(mockConfig)
+	mockConfig := initMockConfig(t)
+
 	log, err := NewApplication(mockConfig, json.New())
 	assert.Nil(t, err)
 	assert.NotNil(t, log)
 
 	if os.Getenv("FATAL") == "1" {
+		mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 		log.Fatal("Goravel")
 		return
 	}
@@ -443,13 +490,14 @@ func TestWriter_Fatal(t *testing.T) {
 }
 
 func TestWriter_Fatalf(t *testing.T) {
-	mockConfig := initMockConfig()
-	mockDriverConfig(mockConfig)
+	mockConfig := initMockConfig(t)
+
 	log, err := NewApplication(mockConfig, json.New())
 	assert.Nil(t, err)
 	assert.NotNil(t, log)
 
 	if os.Getenv("FATAL") == "1" {
+		mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 		log.Fatalf("Goravel: %s", "World")
 		return
 	}
@@ -464,105 +512,174 @@ func TestWriter_Fatalf(t *testing.T) {
 	_ = file.Remove("storage")
 }
 
-func Benchmark_Debug(b *testing.B) {
-	mockConfig := initMockConfig()
-	mockDriverConfig(mockConfig)
-	log, err := NewApplication(mockConfig, json.New())
-	assert.Nil(b, err)
-	assert.NotNil(b, log)
-
-	for i := 0; i < b.N; i++ {
-		log.Debug("Debug Goravel")
-	}
-
-	_ = file.Remove("storage")
-}
-
-func Benchmark_Info(b *testing.B) {
-	mockConfig := initMockConfig()
-	mockDriverConfig(mockConfig)
-	log, err := NewApplication(mockConfig, json.New())
-	assert.Nil(b, err)
-	assert.NotNil(b, log)
-
-	for i := 0; i < b.N; i++ {
-		log.Info("Goravel")
-	}
-
-	_ = file.Remove("storage")
-}
-
-func Benchmark_Warning(b *testing.B) {
-	mockConfig := initMockConfig()
-	mockDriverConfig(mockConfig)
-	log, err := NewApplication(mockConfig, json.New())
-	assert.Nil(b, err)
-	assert.NotNil(b, log)
-
-	for i := 0; i < b.N; i++ {
-		log.Warning("Goravel")
-	}
-
-	_ = file.Remove("storage")
-}
-
-func Benchmark_Error(b *testing.B) {
-	mockConfig := initMockConfig()
-	mockDriverConfig(mockConfig)
-	log, err := NewApplication(mockConfig, json.New())
-	assert.Nil(b, err)
-	assert.NotNil(b, log)
-
-	for i := 0; i < b.N; i++ {
-		log.Error("Goravel")
-	}
-
-	_ = file.Remove("storage")
-}
-
-func Benchmark_Fatal(b *testing.B) {
-	// This test is not suitable for benchmarking because it will exit the program
-}
-
-func Benchmark_Panic(b *testing.B) {
-	mockConfig := initMockConfig()
-	mockDriverConfig(mockConfig)
-	log, err := NewApplication(mockConfig, json.New())
-	assert.Nil(b, err)
-	assert.NotNil(b, log)
-
-	for i := 0; i < b.N; i++ {
-		func() {
-			defer func() {
-				recover() //nolint:errcheck
-			}()
-			log.Panic("Goravel")
-		}()
-	}
-
-	_ = file.Remove("storage")
-}
-
-func initMockConfig() *configmock.Config {
-	mockConfig := &configmock.Config{}
+func TestWriter_ConcurrentAccess(t *testing.T) {
+	// This test verifies that concurrent access to the same log.Writer
+	// does not cause data races or entry contamination.
+	mockConfig := mocksconfig.NewConfig(t)
 	mockConfig.EXPECT().GetString("logging.default").Return("stack").Once()
 	mockConfig.EXPECT().GetString("logging.channels.stack.driver").Return("stack").Once()
-	mockConfig.On("Get", "logging.channels.stack.channels").Return([]string{"single", "daily"}).Once()
+	mockConfig.EXPECT().Get("logging.channels.stack.channels").Return([]string{"single"}).Once()
+	mockConfig.EXPECT().GetString("logging.channels.single.driver").Return("single").Once()
+	mockConfig.EXPECT().GetString("logging.channels.single.path").Return("storage/logs/goravel1.log").Once()
+	mockConfig.EXPECT().GetBool("logging.channels.single.print").Return(false).Once()
+	mockConfig.EXPECT().GetString("logging.channels.single.level").Return("debug").Once()
+	mockConfig.EXPECT().GetString("logging.channels.single.formatter", "text").Return("text").Once()
+
+	const goroutines = 10
+	const iterations = 100
+
+	// Mock app.env for all log entries (goroutines * iterations)
+	mockConfig.EXPECT().GetString("app.env").Return("test").Times(goroutines * iterations)
+
+	log, err := NewApplication(mockConfig, json.New())
+	assert.Nil(t, err)
+	assert.NotNil(t, log)
+
+	done := make(chan bool, goroutines)
+
+	for i := 0; i < goroutines; i++ {
+		go func(id int) {
+			for j := 0; j < iterations; j++ {
+				// Each goroutine uses its own unique code
+				code := fmt.Sprintf("code-%d-%d", id, j)
+				log.Code(code).Info(fmt.Sprintf("message from goroutine %d iteration %d", id, j))
+			}
+			done <- true
+		}(i)
+	}
+
+	// Wait for all goroutines to complete
+	for i := 0; i < goroutines; i++ {
+		<-done
+	}
+
+	// Verify log entries line by line to ensure no contamination during concurrent writes
+	content, err := file.GetContent("storage/logs/goravel1.log")
+	assert.Nil(t, err)
+
+	lines := strings.Split(strings.TrimSpace(content), "\n")
+
+	// Log entries come in pairs: message line and code line
+	if len(lines)%2 != 0 {
+		assert.Fail(t, "Log file has an odd number of lines, indicating possible corruption")
+	}
+
+	errors := 0
+	for i := 0; i < len(lines); i += 2 {
+		messageLine := lines[i]
+		codeLine := lines[i+1]
+
+		// Parse message line: extract goroutine ID and iteration
+		var goroutineID, iteration int
+		messageIdx := strings.Index(messageLine, "goroutine")
+		if messageIdx == -1 {
+			assert.Fail(t, fmt.Sprintf("Line %d: 'goroutine' not found in message line: %s", i+1, messageLine))
+			errors++
+			continue
+		}
+
+		remainder := messageLine[messageIdx:]
+		n, err := fmt.Sscanf(remainder, "goroutine %d iteration %d", &goroutineID, &iteration)
+		if err != nil || n != 2 {
+			assert.Fail(t, fmt.Sprintf("Line %d: Failed to parse message line: %s (error: %v)", i+1, messageLine, err))
+			errors++
+			continue
+		}
+
+		// Parse code line: extract code
+		var code string
+		n, err = fmt.Sscanf(codeLine, "[Code] %s", &code)
+		if err != nil || n != 1 {
+			assert.Fail(t, fmt.Sprintf("Line %d: Failed to parse code line: %s (error: %v)", i+2, codeLine, err))
+			errors++
+			continue
+		}
+
+		// Verify that code matches expected format: code-{goroutineID}-{iteration}
+		expectedCode := fmt.Sprintf("code-%d-%d", goroutineID, iteration)
+		if code != expectedCode {
+			assert.Fail(t, fmt.Sprintf("Line %d-%d: Code mismatch. Expected: %s, Got: %s", i+1, i+2, expectedCode, code))
+			errors++
+		}
+	}
+
+	if errors != 0 {
+		assert.Fail(t, fmt.Sprintf("Log integrity check failed with %d errors", errors))
+	}
+
+	_ = file.Remove("storage")
+}
+
+func TestWriter_NoEntryContamination(t *testing.T) {
+	// This test verifies that calling fluent methods on the base writer
+	// returns a new writer and does not affect the original.
+	mockConfig := initMockConfig(t)
+	mockConfig.EXPECT().GetString("app.env").Return("test").Times(2)
+
+	log, err := NewApplication(mockConfig, json.New())
+	assert.Nil(t, err)
+	assert.NotNil(t, log)
+
+	// Call Code on the base writer, then log without code
+	_ = log.Code("should-not-appear")
+	log.Info("message without code")
+
+	// The message should NOT have the code since we didn't chain the calls
+	assert.True(t, file.Contains(singleLog, "test.info: message without code"))
+	assert.False(t, file.Contains(singleLog, "message without code\n[Code] should-not-appear"))
+
+	_ = file.Remove("storage")
+}
+
+func TestWriter_FluentChainIsolation(t *testing.T) {
+	// This test verifies that multiple fluent chains are isolated from each other.
+	mockConfig := initMockConfig(t)
+	mockConfig.EXPECT().GetString("app.env").Return("test").Times(4)
+
+	log, err := NewApplication(mockConfig, json.New())
+	assert.Nil(t, err)
+	assert.NotNil(t, log)
+
+	// Create two separate chains
+	chain1 := log.Code("chain1-code")
+	chain2 := log.Code("chain2-code")
+
+	// Log from both chains
+	go chain1.Info("message from chain1")
+	go chain2.Info("message from chain2")
+
+	time.Sleep(500 * time.Millisecond) // Wait for goroutines to finish
+
+	// Verify each chain has its own code
+	assert.True(t, file.Contains(singleLog, "message from chain1\n[Code] chain1-code"))
+	assert.True(t, file.Contains(singleLog, "message from chain2\n[Code] chain2-code"))
+
+	// Verify chain2 code doesn't appear in chain1's message
+	assert.False(t, file.Contains(singleLog, "message from chain1\n[Code] chain2-code"))
+	assert.False(t, file.Contains(singleLog, "message from chain2\n[Code] chain1-code"))
+
+	_ = file.Remove("storage")
+}
+
+func initMockConfig(t *testing.T) *mocksconfig.Config {
+	mockConfig := mocksconfig.NewConfig(t)
+	mockConfig.EXPECT().GetString("logging.default").Return("stack").Once()
+	mockConfig.EXPECT().GetString("logging.channels.stack.driver").Return("stack").Once()
+	mockConfig.EXPECT().Get("logging.channels.stack.channels").Return([]string{"single", "daily"}).Once()
 	mockConfig.EXPECT().GetString("logging.channels.daily.driver").Return("daily").Once()
 	mockConfig.EXPECT().GetString("logging.channels.daily.path").Return(singleLog).Once()
 	mockConfig.EXPECT().GetInt("logging.channels.daily.days").Return(7).Once()
 	mockConfig.EXPECT().GetBool("logging.channels.daily.print").Return(false).Once()
+	mockConfig.EXPECT().GetString("logging.channels.daily.level").Return("debug").Once()
+	mockConfig.EXPECT().GetString("logging.channels.daily.formatter", "text").Return("text").Once()
+
 	mockConfig.EXPECT().GetString("logging.channels.single.driver").Return("single").Once()
 	mockConfig.EXPECT().GetString("logging.channels.single.path").Return(singleLog).Once()
 	mockConfig.EXPECT().GetBool("logging.channels.single.print").Return(false).Once()
+	mockConfig.EXPECT().GetString("logging.channels.single.level").Return("debug").Once()
+	mockConfig.EXPECT().GetString("logging.channels.single.formatter", "text").Return("text").Once()
 
 	return mockConfig
-}
-
-func mockDriverConfig(mockConfig *configmock.Config) {
-	mockConfig.EXPECT().GetString("logging.channels.daily.level").Return("debug").Once()
-	mockConfig.EXPECT().GetString("logging.channels.single.level").Return("debug").Once()
-	mockConfig.EXPECT().GetString("app.env").Return("test").Maybe()
 }
 
 // CustomLogger is a custom logger for testing custom log drivers.
@@ -622,8 +739,8 @@ type TestRequest struct {
 	contractshttp.ContextRequest
 }
 
-func (r *TestRequest) Headers() nethttp.Header {
-	return nethttp.Header{
+func (r *TestRequest) Headers() http.Header {
+	return http.Header{
 		"Sec-Fetch-User": []string{"?1"},
 		"Host":           []string{"localhost:3000"},
 	}
@@ -669,8 +786,8 @@ func (r *TestResponseOrigin) Body() *bytes.Buffer {
 	return bytes.NewBuffer([]byte("body"))
 }
 
-func (r *TestResponseOrigin) Header() nethttp.Header {
-	return nethttp.Header{
+func (r *TestResponseOrigin) Header() http.Header {
+	return http.Header{
 		"Content-Type": []string{"text/plain; charset=utf-8"},
 	}
 }

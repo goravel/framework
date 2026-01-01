@@ -17,8 +17,12 @@ import (
 type ApplicationBuilder interface {
 	// Create a new application instance after configuring.
 	Create() Application
-	// Run the application.
+	// Run creates and starts the application.
 	Run()
+	// Start starts modules, Wait should be called after to wait for all modules to shutdown.
+	Start() Application
+	// WithCallback sets a callback function to be called during application creation.
+	WithCallback(func()) ApplicationBuilder
 	// WithCommands sets the application's commands.
 	WithCommands(commands []console.Command) ApplicationBuilder
 	// WithConfig sets a callback function to configure the application.
@@ -50,7 +54,7 @@ type ApplicationBuilder interface {
 	// WithRules registers the custom validation rules.
 	WithRules(rules []validation.Rule) ApplicationBuilder
 	// WithSchedule sets scheduled events for the application.
-	WithSchedule(events []schedule.Event) ApplicationBuilder
+	WithSchedule(fn func() []schedule.Event) ApplicationBuilder
 	// WithSeeders registers the database seeders.
 	WithSeeders(seeders []seeder.Seeder) ApplicationBuilder
 }

@@ -22,6 +22,7 @@ func acquireEntry() *Entry {
 }
 
 func releaseEntry(e *Entry) {
+	e.time = time.Time{}
 	e.ctx = nil
 	e.owner = nil
 	e.user = nil
@@ -34,6 +35,7 @@ func releaseEntry(e *Entry) {
 	e.hint = ""
 	e.message = ""
 	e.tags = nil
+	e.level = 0
 
 	clear(e.with)
 

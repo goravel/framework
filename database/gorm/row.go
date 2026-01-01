@@ -1,12 +1,7 @@
 package gorm
 
 import (
-	"strings"
-
-	"github.com/go-viper/mapstructure/v2"
-
 	"github.com/goravel/framework/database/db"
-	"github.com/goravel/framework/support/str"
 )
 
 type Row struct {
@@ -20,27 +15,8 @@ func (r *Row) Err() error {
 }
 
 func (r *Row) Scan(value any) error {
-	if r.err != nil {
-		return r.err
-	}
-
-	msConfig := &mapstructure.DecoderConfig{
-		DecodeHook: mapstructure.ComposeDecodeHookFunc(
-			db.ToTimeHookFunc(), db.ToCarbonHookFunc(), db.ToDeletedAtHookFunc(),
-		),
-		Squash: true,
-		Result: value,
-		MatchName: func(mapKey, fieldName string) bool {
-			return str.Of(mapKey).Studly().String() == fieldName || strings.EqualFold(mapKey, fieldName)
-		},
-	}
-
-	decoder, err := mapstructure.NewDecoder(msConfig)
-	if err != nil {
-		return err
-	}
-
-	if err := decoder.Decode(r.row); err != nil {
+	row := db.NewRow(r.row, r.err)
+	if err := row.Scan(value); err != nil {
 		return err
 	}
 

@@ -24,6 +24,7 @@ func TestNewApplication(t *testing.T) {
 	mockConfig.EXPECT().GetString("logging.channels.test.driver").Return("single").Once()
 	mockConfig.EXPECT().GetString("logging.channels.test.path").Return("test").Once()
 	mockConfig.EXPECT().GetString("logging.channels.test.level").Return("debug").Times(2) // Called for file handler and console handler when print=true
+	mockConfig.EXPECT().GetString("logging.channels.test.formatter", "text").Return("text").Times(2) // Called for file handler and console handler when print=true
 	mockConfig.EXPECT().GetBool("logging.channels.test.print").Return(true).Once()
 	app, err = NewApplication(mockConfig, j)
 	assert.Nil(t, err)
@@ -48,6 +49,7 @@ func TestApplication_Channel(t *testing.T) {
 	mockConfig.EXPECT().GetString("logging.channels.test.driver").Return("single").Once()
 	mockConfig.EXPECT().GetString("logging.channels.test.path").Return("test").Once()
 	mockConfig.EXPECT().GetString("logging.channels.test.level").Return("debug").Times(2) // Called for file handler and console handler
+	mockConfig.EXPECT().GetString("logging.channels.test.formatter", "text").Return("text").Times(2) // Called for file handler and console handler
 	mockConfig.EXPECT().GetBool("logging.channels.test.print").Return(true).Once()
 
 	app, err := NewApplication(mockConfig, json.New())
@@ -58,6 +60,7 @@ func TestApplication_Channel(t *testing.T) {
 	mockConfig.EXPECT().GetString("logging.channels.dummy.driver").Return("daily").Once()
 	mockConfig.EXPECT().GetString("logging.channels.dummy.path").Return("dummy").Once()
 	mockConfig.EXPECT().GetString("logging.channels.dummy.level").Return("debug").Times(2) // Called for file handler and console handler
+	mockConfig.EXPECT().GetString("logging.channels.dummy.formatter", "text").Return("text").Times(2) // Called for file handler and console handler
 	mockConfig.EXPECT().GetBool("logging.channels.dummy.print").Return(true).Once()
 	mockConfig.EXPECT().GetInt("logging.channels.dummy.days").Return(1).Once()
 	writer := app.Channel("dummy")
@@ -79,6 +82,7 @@ func TestApplication_Stack(t *testing.T) {
 	mockConfig.EXPECT().GetString("logging.channels.test.driver").Return("single").Once()
 	mockConfig.EXPECT().GetString("logging.channels.test.path").Return("test").Once()
 	mockConfig.EXPECT().GetString("logging.channels.test.level").Return("debug").Times(2) // Called for file handler and console handler
+	mockConfig.EXPECT().GetString("logging.channels.test.formatter", "text").Return("text").Times(2) // Called for file handler and console handler
 	mockConfig.EXPECT().GetBool("logging.channels.test.print").Return(true).Once()
 	app, err := NewApplication(mockConfig, json.New())
 
@@ -94,6 +98,7 @@ func TestApplication_Stack(t *testing.T) {
 	mockConfig.EXPECT().GetString("logging.channels.dummy.driver").Return("daily").Once()
 	mockConfig.EXPECT().GetString("logging.channels.dummy.path").Return("dummy").Once()
 	mockConfig.EXPECT().GetString("logging.channels.dummy.level").Return("debug").Times(2) // Called for file handler and console handler
+	mockConfig.EXPECT().GetString("logging.channels.dummy.formatter", "text").Return("text").Times(2) // Called for file handler and console handler
 	mockConfig.EXPECT().GetBool("logging.channels.dummy.print").Return(true).Once()
 	mockConfig.EXPECT().GetInt("logging.channels.dummy.days").Return(1).Once()
 	assert.NotNil(t, app.Stack([]string{"dummy"}))

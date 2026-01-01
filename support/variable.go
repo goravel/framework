@@ -78,7 +78,7 @@ var (
 	EnvFileEncryptCipher = "AES-256-CBC"
 
 	DontVerifyEnvFileExists    = false
-	DontVerifyEnvFileWhitelist = []string{"key:generate", "env:decrypt"}
+	DontVerifyEnvFileWhitelist = []string{"key:generate", "env:decrypt", "package:install"}
 
 	Config = Configuration{
 		Paths: Paths{

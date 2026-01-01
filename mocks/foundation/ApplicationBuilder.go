@@ -119,6 +119,101 @@ func (_c *ApplicationBuilder_Run_Call) RunAndReturn(run func()) *ApplicationBuil
 	return _c
 }
 
+// Start provides a mock function with no fields
+func (_m *ApplicationBuilder) Start() foundation.Application {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Start")
+	}
+
+	var r0 foundation.Application
+	if rf, ok := ret.Get(0).(func() foundation.Application); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(foundation.Application)
+		}
+	}
+
+	return r0
+}
+
+// ApplicationBuilder_Start_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Start'
+type ApplicationBuilder_Start_Call struct {
+	*mock.Call
+}
+
+// Start is a helper method to define mock.On call
+func (_e *ApplicationBuilder_Expecter) Start() *ApplicationBuilder_Start_Call {
+	return &ApplicationBuilder_Start_Call{Call: _e.mock.On("Start")}
+}
+
+func (_c *ApplicationBuilder_Start_Call) Run(run func()) *ApplicationBuilder_Start_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ApplicationBuilder_Start_Call) Return(_a0 foundation.Application) *ApplicationBuilder_Start_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ApplicationBuilder_Start_Call) RunAndReturn(run func() foundation.Application) *ApplicationBuilder_Start_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithCallback provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithCallback(_a0 func()) foundation.ApplicationBuilder {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithCallback")
+	}
+
+	var r0 foundation.ApplicationBuilder
+	if rf, ok := ret.Get(0).(func(func()) foundation.ApplicationBuilder); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(foundation.ApplicationBuilder)
+		}
+	}
+
+	return r0
+}
+
+// ApplicationBuilder_WithCallback_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithCallback'
+type ApplicationBuilder_WithCallback_Call struct {
+	*mock.Call
+}
+
+// WithCallback is a helper method to define mock.On call
+//   - _a0 func()
+func (_e *ApplicationBuilder_Expecter) WithCallback(_a0 interface{}) *ApplicationBuilder_WithCallback_Call {
+	return &ApplicationBuilder_WithCallback_Call{Call: _e.mock.On("WithCallback", _a0)}
+}
+
+func (_c *ApplicationBuilder_WithCallback_Call) Run(run func(_a0 func())) *ApplicationBuilder_WithCallback_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func()))
+	})
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithCallback_Call) Return(_a0 foundation.ApplicationBuilder) *ApplicationBuilder_WithCallback_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithCallback_Call) RunAndReturn(run func(func()) foundation.ApplicationBuilder) *ApplicationBuilder_WithCallback_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // WithCommands provides a mock function with given fields: commands
 func (_m *ApplicationBuilder) WithCommands(commands []console.Command) foundation.ApplicationBuilder {
 	ret := _m.Called(commands)
@@ -839,17 +934,17 @@ func (_c *ApplicationBuilder_WithRules_Call) RunAndReturn(run func([]validation.
 	return _c
 }
 
-// WithSchedule provides a mock function with given fields: events
-func (_m *ApplicationBuilder) WithSchedule(events []schedule.Event) foundation.ApplicationBuilder {
-	ret := _m.Called(events)
+// WithSchedule provides a mock function with given fields: fn
+func (_m *ApplicationBuilder) WithSchedule(fn func() []schedule.Event) foundation.ApplicationBuilder {
+	ret := _m.Called(fn)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WithSchedule")
 	}
 
 	var r0 foundation.ApplicationBuilder
-	if rf, ok := ret.Get(0).(func([]schedule.Event) foundation.ApplicationBuilder); ok {
-		r0 = rf(events)
+	if rf, ok := ret.Get(0).(func(func() []schedule.Event) foundation.ApplicationBuilder); ok {
+		r0 = rf(fn)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(foundation.ApplicationBuilder)
@@ -865,14 +960,14 @@ type ApplicationBuilder_WithSchedule_Call struct {
 }
 
 // WithSchedule is a helper method to define mock.On call
-//   - events []schedule.Event
-func (_e *ApplicationBuilder_Expecter) WithSchedule(events interface{}) *ApplicationBuilder_WithSchedule_Call {
-	return &ApplicationBuilder_WithSchedule_Call{Call: _e.mock.On("WithSchedule", events)}
+//   - fn func() []schedule.Event
+func (_e *ApplicationBuilder_Expecter) WithSchedule(fn interface{}) *ApplicationBuilder_WithSchedule_Call {
+	return &ApplicationBuilder_WithSchedule_Call{Call: _e.mock.On("WithSchedule", fn)}
 }
 
-func (_c *ApplicationBuilder_WithSchedule_Call) Run(run func(events []schedule.Event)) *ApplicationBuilder_WithSchedule_Call {
+func (_c *ApplicationBuilder_WithSchedule_Call) Run(run func(fn func() []schedule.Event)) *ApplicationBuilder_WithSchedule_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]schedule.Event))
+		run(args[0].(func() []schedule.Event))
 	})
 	return _c
 }
@@ -882,7 +977,7 @@ func (_c *ApplicationBuilder_WithSchedule_Call) Return(_a0 foundation.Applicatio
 	return _c
 }
 
-func (_c *ApplicationBuilder_WithSchedule_Call) RunAndReturn(run func([]schedule.Event) foundation.ApplicationBuilder) *ApplicationBuilder_WithSchedule_Call {
+func (_c *ApplicationBuilder_WithSchedule_Call) RunAndReturn(run func(func() []schedule.Event) foundation.ApplicationBuilder) *ApplicationBuilder_WithSchedule_Call {
 	_c.Call.Return(run)
 	return _c
 }

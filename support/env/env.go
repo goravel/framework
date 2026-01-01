@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/goravel/framework/support"
-	"github.com/goravel/framework/support/convert"
 )
 
 // MainPath returns the package name of application, eg: goravel.
@@ -49,7 +48,7 @@ func IsBootstrapSetup() bool {
 		return false
 	}
 
-	return strings.Contains(convert.UnsafeString(data), "foundation.Setup().")
+	return strings.Contains(string(data), "foundation.Setup().")
 }
 
 // IsDarwin returns whether the current operating system is Darwin.
