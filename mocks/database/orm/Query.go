@@ -4673,6 +4673,67 @@ func (_c *Query_WithoutEvents_Call) RunAndReturn(run func() orm.Query) *Query_Wi
 	return _c
 }
 
+// WithoutGlobalScopes provides a mock function with given fields: names
+func (_m *Query) WithoutGlobalScopes(names ...string) orm.Query {
+	_va := make([]interface{}, len(names))
+	for _i := range names {
+		_va[_i] = names[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithoutGlobalScopes")
+	}
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(...string) orm.Query); ok {
+		r0 = rf(names...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_WithoutGlobalScopes_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithoutGlobalScopes'
+type Query_WithoutGlobalScopes_Call struct {
+	*mock.Call
+}
+
+// WithoutGlobalScopes is a helper method to define mock.On call
+//   - names ...string
+func (_e *Query_Expecter) WithoutGlobalScopes(names ...interface{}) *Query_WithoutGlobalScopes_Call {
+	return &Query_WithoutGlobalScopes_Call{Call: _e.mock.On("WithoutGlobalScopes",
+		append([]interface{}{}, names...)...)}
+}
+
+func (_c *Query_WithoutGlobalScopes_Call) Run(run func(names ...string)) *Query_WithoutGlobalScopes_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Query_WithoutGlobalScopes_Call) Return(_a0 orm.Query) *Query_WithoutGlobalScopes_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_WithoutGlobalScopes_Call) RunAndReturn(run func(...string) orm.Query) *Query_WithoutGlobalScopes_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewQuery creates a new instance of Query. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewQuery(t interface {
