@@ -12,85 +12,86 @@ import (
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/log/logger"
-	"github.com/goravel/framework/support/color"
 	telemetrylog "github.com/goravel/framework/telemetry/instrumentation/log"
 )
 
 type Application struct {
 	log.Writer
+	ctx      context.Context
+	channels []string
 	config   config.Config
 	json     foundation.Json
 	handlers []slog.Handler
 }
 
-func NewApplication(config config.Config, json foundation.Json) (*Application, error) {
+func NewApplication(ctx context.Context, channels []string, config config.Config, json foundation.Json) (*Application, error) {
 	var handlers []slog.Handler
 
-	if config != nil {
+	if len(channels) == 0 && config != nil {
 		if channel := config.GetString("logging.default"); channel != "" {
-			channelHandlers, err := getHandlers(config, json, channel)
-			if err != nil {
-				return nil, err
-			}
-			handlers = append(handlers, channelHandlers...)
+			channels = append(channels, channel)
 		}
+	}
+
+	for _, channel := range channels {
+		channelHandlers, err := getHandlers(config, json, channel)
+		if err != nil {
+			return nil, err
+		}
+
+		handlers = append(handlers, channelHandlers...)
 	}
 
 	slogLogger := slog.New(slogmulti.Fanout(handlers...))
 
 	return &Application{
+		ctx:      ctx,
+		channels: channels,
 		config:   config,
 		json:     json,
 		handlers: handlers,
-		Writer:   NewWriter(slogLogger, context.Background()),
+		Writer:   NewWriter(slogLogger, ctx),
 	}, nil
 }
 
-func (r *Application) WithContext(ctx context.Context) log.Writer {
+func (r *Application) WithContext(ctx context.Context) log.Log {
 	if httpCtx, ok := ctx.(http.Context); ok {
 		ctx = httpCtx.Context()
 	}
 
-	slogLogger := slog.New(slogmulti.Fanout(r.handlers...))
-	return NewWriter(slogLogger, ctx)
-}
+	app, err := NewApplication(ctx, r.channels, r.config, r.json)
 
-func (r *Application) Channel(channel string) log.Writer {
-	if channel == "" || r.config == nil {
-		return r.Writer
-	}
-
-	handlers, err := getHandlers(r.config, r.json, channel)
 	if err != nil {
-		color.Errorln(err)
-		return nil
+		panic(err)
 	}
 
-	slogLogger := slog.New(slogmulti.Fanout(handlers...))
-	return NewWriter(slogLogger, context.Background())
+	return app
 }
 
-func (r *Application) Stack(channels []string) log.Writer {
-	if r.config == nil || len(channels) == 0 {
-		return r.Writer
+func (r *Application) Channel(channel string) log.Log {
+	if channel == "" {
+		return r
 	}
 
-	var handlers []slog.Handler
-	for _, channel := range channels {
-		if channel == "" {
-			continue
-		}
-
-		channelHandlers, err := getHandlers(r.config, r.json, channel)
-		if err != nil {
-			color.Errorln(err)
-			return nil
-		}
-		handlers = append(handlers, channelHandlers...)
+	app, err := NewApplication(r.ctx, []string{channel}, r.config, r.json)
+	if err != nil {
+		panic(err)
 	}
 
-	slogLogger := slog.New(slogmulti.Fanout(handlers...))
-	return NewWriter(slogLogger, context.Background())
+	return app
+}
+
+func (r *Application) Stack(channels []string) log.Log {
+	if len(channels) == 0 {
+		return r
+	}
+
+	app, err := NewApplication(r.ctx, channels, r.config, r.json)
+	if err != nil {
+		panic(err)
+	}
+
+	return app
 }
 
 // getHandlers returns slog log handlers for the specified channel.

@@ -21,16 +21,16 @@ func NewTestLog() log.Log {
 	}
 }
 
-func (r *TestLog) WithContext(ctx context.Context) log.Writer {
-	return NewTestLogWriter()
+func (r *TestLog) WithContext(ctx context.Context) log.Log {
+	return r
 }
 
-func (r *TestLog) Channel(channel string) log.Writer {
-	return NewTestLogWriter()
+func (r *TestLog) Channel(channel string) log.Log {
+	return r
 }
 
-func (r *TestLog) Stack(channels []string) log.Writer {
-	return NewTestLogWriter()
+func (r *TestLog) Stack(channels []string) log.Log {
+	return r
 }
 
 type TestLogWriter struct {
