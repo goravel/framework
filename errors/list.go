@@ -98,6 +98,7 @@ var (
 	HttpClientDefaultNotSet           = New("default client is not configured").SetModule(ModuleHttp)
 	HttpClientResponseAlreadyStreamed = New("response body has already been streamed").SetModule(ModuleHttp)
 	HttpClientResponseIsNil           = New("response is nil").SetModule(ModuleHttp)
+	HttpClientConfigNotSet            = New("http client config is nil").SetModule(ModuleHttp)
 
 	HttpRateLimitFailedToTakeToken     = New("failed to take token")
 	HttpRateLimitFailedToCheckThrottle = New("failed to check throttle: %s")

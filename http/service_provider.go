@@ -58,7 +58,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, err
 		}
 
-		return client.NewFactory(factoryConfig, j), nil
+		return client.NewFactory(factoryConfig, j)
 	})
 }
 

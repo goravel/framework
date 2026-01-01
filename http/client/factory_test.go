@@ -30,7 +30,7 @@ func (s *FactoryTestSuite) SetupTest() {
 	s.json = json.New()
 	s.config = &FactoryConfig{
 		Default: "main",
-		Clients: map[string]client.Config{
+		Clients: map[string]Config{
 			"main": {
 				BaseUrl: "https://main.com",
 				Timeout: 10 * time.Second,
@@ -41,7 +41,9 @@ func (s *FactoryTestSuite) SetupTest() {
 			},
 		},
 	}
-	s.factory = NewFactory(s.config, s.json)
+	var err error
+	s.factory, err = NewFactory(s.config, s.json)
+	s.NoError(err)
 }
 
 func (s *FactoryTestSuite) TestClient_Resolution() {
@@ -71,32 +73,28 @@ func (s *FactoryTestSuite) TestClient_Resolution() {
 
 func (s *FactoryTestSuite) TestErrorHandling() {
 	s.Run("handles nil config safely", func() {
-		f := NewFactory(nil, s.json)
-		s.NotNil(f)
-
-		// Should return lazy error because no default is configured
-		resp, err := f.Client().Get("/")
-		s.Nil(resp)
-		s.ErrorIs(err, errors.HttpClientDefaultNotSet, "Expected HttpClientDefaultNotSet error")
+		f, err := NewFactory(nil, s.json)
+		s.Nil(f)
+		s.ErrorIs(err, errors.HttpClientConfigNotSet)
 	})
 
 	s.Run("returns lazy error for missing client", func() {
 		req := s.factory.Client("missing_client")
 		s.NotNil(req)
 
-		// The error should only trigger when we attempt a request
 		resp, err := req.Get("/")
 		s.Nil(resp)
-		s.ErrorIs(err, errors.HttpClientConnectionNotFound, "Expected HttpClientConnectionNotFound error")
+		s.ErrorIs(err, errors.HttpClientConnectionNotFound)
 		s.Contains(err.Error(), "[missing_client]")
 	})
 
 	s.Run("returns lazy error when default is empty in config", func() {
 		cfg := &FactoryConfig{
 			Default: "",
-			Clients: map[string]client.Config{"main": {}},
+			Clients: map[string]Config{"main": {}},
 		}
-		f := NewFactory(cfg, s.json)
+		f, err := NewFactory(cfg, s.json)
+		s.NoError(err)
 
 		resp, err := f.Client().Get("/")
 		s.Nil(resp)
@@ -119,12 +117,13 @@ func (s *FactoryTestSuite) TestRouting_Integration() {
 
 	cfg := &FactoryConfig{
 		Default: "server_a",
-		Clients: map[string]client.Config{
+		Clients: map[string]Config{
 			"server_a": {BaseUrl: serverA.URL},
 			"server_b": {BaseUrl: serverB.URL},
 		},
 	}
-	f := NewFactory(cfg, s.json)
+	f, err := NewFactory(cfg, s.json)
+	s.NoError(err)
 
 	s.Run("proxy methods hit default server", func() {
 		resp, err := f.Get("/")
@@ -148,13 +147,14 @@ func (s *FactoryTestSuite) TestRouting_Integration() {
 func (s *FactoryTestSuite) TestConcurrency() {
 	cfg := &FactoryConfig{
 		Default: "main",
-		Clients: map[string]client.Config{
+		Clients: map[string]Config{
 			"main": {BaseUrl: "https://main.com", Timeout: 1 * time.Second},
 			"new1": {BaseUrl: "https://new1.com", Timeout: 2 * time.Second},
 			"new2": {BaseUrl: "https://new2.com", Timeout: 3 * time.Second},
 		},
 	}
-	f := NewFactory(cfg, s.json)
+	f, err := NewFactory(cfg, s.json)
+	s.NoError(err)
 
 	var wg sync.WaitGroup
 
@@ -164,8 +164,7 @@ func (s *FactoryTestSuite) TestConcurrency() {
 		"new2": 3 * time.Second,
 	}
 
-	// Pre-warm one client to ensure we test a mix of "read existing" vs "write new"
-	f.Client("main")
+	f.Client("main") // Pre-warm
 
 	for i := 0; i < 100; i++ {
 		wg.Add(1)
@@ -174,21 +173,18 @@ func (s *FactoryTestSuite) TestConcurrency() {
 
 			var name string
 			if idx%2 == 0 {
-				name = "main" // Often hits the read lock (RLock)
+				name = "main"
 			} else {
 				name = "new1"
 				if idx%3 == 0 {
-					name = "new2" // Often hits the write lock (Lock)
+					name = "new2"
 				}
 			}
 
 			req := f.Client(name)
 			s.NotNil(req)
 
-			// We verify the factory returned the CORRECT client for the requested name
-			// by checking the unique Timeout we configured.
-			// This proves the locking mechanism didn't return the wrong pointer or race.
-			s.Equal(timeoutMap[name], req.HttpClient().Timeout, "Concurrency failure: got wrong client config for %s", name)
+			s.Equal(timeoutMap[name], req.HttpClient().Timeout)
 			concreteReq, ok := req.(*Request)
 			s.True(ok)
 			s.Equal(cfg.Clients[name].BaseUrl, concreteReq.baseUrl)
@@ -206,14 +202,14 @@ func (s *FactoryTestSuite) TestBaseUrl_Override() {
 
 	cfg := &FactoryConfig{
 		Default: "main",
-		Clients: map[string]client.Config{
+		Clients: map[string]Config{
 			"main": {BaseUrl: "https://wrong-url.com"},
 		},
 	}
-	f := NewFactory(cfg, s.json)
+	f, err := NewFactory(cfg, s.json)
+	s.NoError(err)
 
 	s.Run("overrides config base url", func() {
-		// If override fails, it tries to hit wrong-url.com and fails connection
 		resp, err := f.BaseUrl(server.URL).Get("/")
 		s.NoError(err)
 
@@ -230,7 +226,8 @@ func (s *FactoryTestSuite) TestProxy_HttpMethods() {
 	}))
 	defer server.Close()
 
-	f := NewFactory(&FactoryConfig{Default: "test", Clients: map[string]client.Config{"test": {BaseUrl: server.URL}}}, s.json)
+	f, err := NewFactory(&FactoryConfig{Default: "test", Clients: map[string]Config{"test": {BaseUrl: server.URL}}}, s.json)
+	s.NoError(err)
 
 	tests := []struct {
 		name   string
@@ -276,7 +273,8 @@ func (s *FactoryTestSuite) TestProxy_Headers() {
 	}))
 	defer server.Close()
 
-	f := NewFactory(&FactoryConfig{Default: "test", Clients: map[string]client.Config{"test": {BaseUrl: server.URL}}}, s.json)
+	f, err := NewFactory(&FactoryConfig{Default: "test", Clients: map[string]Config{"test": {BaseUrl: server.URL}}}, s.json)
+	s.NoError(err)
 
 	s.Run("WithHeader & WithHeaders", func() {
 		resp, err := f.WithHeader("X-Custom", "1").WithHeaders(map[string]string{"X-Multi": "2"}).Get("/")
@@ -293,7 +291,6 @@ func (s *FactoryTestSuite) TestProxy_Headers() {
 		s.NoError(err)
 
 		var h map[string]string
-
 		s.NoError(resp.Bind(&h))
 		s.Equal("replaced", h["X-Custom"])
 		s.Equal("B", h["A"], "Expected 'ReplaceHeaders' to merge/preserve existing headers, not wipe them")
@@ -362,7 +359,8 @@ func (s *FactoryTestSuite) TestProxy_QueryParameters() {
 	}))
 	defer server.Close()
 
-	f := NewFactory(&FactoryConfig{Default: "test", Clients: map[string]client.Config{"test": {BaseUrl: server.URL}}}, s.json)
+	f, err := NewFactory(&FactoryConfig{Default: "test", Clients: map[string]Config{"test": {BaseUrl: server.URL}}}, s.json)
+	s.NoError(err)
 
 	s.Run("WithQueryParameter", func() {
 		resp, err := f.WithQueryParameter("page", "1").Get("/")
@@ -403,7 +401,8 @@ func (s *FactoryTestSuite) TestProxy_UrlParameters() {
 	}))
 	defer server.Close()
 
-	f := NewFactory(&FactoryConfig{Default: "test", Clients: map[string]client.Config{"test": {BaseUrl: server.URL}}}, s.json)
+	f, err := NewFactory(&FactoryConfig{Default: "test", Clients: map[string]Config{"test": {BaseUrl: server.URL}}}, s.json)
+	s.NoError(err)
 
 	s.Run("WithUrlParameter", func() {
 		resp, err := f.WithUrlParameter("id", "42").Get("/users/{id}")
@@ -411,7 +410,6 @@ func (s *FactoryTestSuite) TestProxy_UrlParameters() {
 
 		body, err := resp.Body()
 		s.NoError(err)
-
 		s.Equal("/users/42", body)
 	})
 
@@ -421,7 +419,6 @@ func (s *FactoryTestSuite) TestProxy_UrlParameters() {
 
 		body, err := resp.Body()
 		s.NoError(err)
-
 		s.Equal("/users/99/edit", body)
 	})
 }
@@ -435,7 +432,8 @@ func (s *FactoryTestSuite) TestProxy_Cookies() {
 	}))
 	defer server.Close()
 
-	f := NewFactory(&FactoryConfig{Default: "test", Clients: map[string]client.Config{"test": {BaseUrl: server.URL}}}, s.json)
+	f, err := NewFactory(&FactoryConfig{Default: "test", Clients: map[string]Config{"test": {BaseUrl: server.URL}}}, s.json)
+	s.NoError(err)
 
 	s.Run("WithCookie", func() {
 		cookie := &http.Cookie{Name: "session", Value: "abc-123"}
