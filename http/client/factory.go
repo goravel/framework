@@ -7,6 +7,7 @@ import (
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http/client"
 	httperrors "github.com/goravel/framework/errors"
+	telemetryhttp "github.com/goravel/framework/telemetry/instrumentation/http"
 )
 
 var _ client.Factory = (*Factory)(nil)
@@ -105,13 +106,17 @@ func (f *Factory) resolveClient(name string) (*http.Client, error) {
 func (f *Factory) createHTTPClient(cfg *Config) *http.Client {
 	// Clone the default transport to ensure strict isolation between clients.
 	// This prevents shared state (like global timeouts) from leaking between instances.
-	transport := http.DefaultTransport.(*http.Transport).Clone()
+	baseTransport := http.DefaultTransport.(*http.Transport).Clone()
 
-	transport.MaxIdleConns = cfg.MaxIdleConns
-	transport.MaxIdleConnsPerHost = cfg.MaxIdleConnsPerHost
-	transport.MaxConnsPerHost = cfg.MaxConnsPerHost
-	transport.IdleConnTimeout = cfg.IdleConnTimeout
+	baseTransport.MaxIdleConns = cfg.MaxIdleConns
+	baseTransport.MaxIdleConnsPerHost = cfg.MaxIdleConnsPerHost
+	baseTransport.MaxConnsPerHost = cfg.MaxConnsPerHost
+	baseTransport.IdleConnTimeout = cfg.IdleConnTimeout
 
+	var transport http.RoundTripper = baseTransport
+	if cfg.EnableTelemetry {
+		transport = telemetryhttp.NewTransport(transport)
+	}
 	return &http.Client{
 		Timeout:   cfg.Timeout,
 		Transport: transport,
