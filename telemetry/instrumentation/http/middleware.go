@@ -24,6 +24,13 @@ const (
 	unitBytes   = "By"
 )
 
+// Telemetry creates HTTP server telemetry middleware that instruments incoming
+// requests with tracing and metrics. The optional opts parameters allow
+// customizing the server configuration (such as span naming and enabling or
+// disabling instrumentation). It returns an http.Middleware that propagates
+// context, records spans and metrics when telemetry is enabled, and otherwise
+// transparently passes requests through when telemetry is disabled or not
+// initialized.
 func Telemetry(opts ...Option) http.Middleware {
 	if telemetry.TelemetryFacade == nil {
 		color.Warningln("[Telemetry] Facade not initialized. HTTP middleware disabled.")
