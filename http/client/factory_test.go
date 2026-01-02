@@ -94,11 +94,8 @@ func (s *FactoryTestSuite) TestErrorHandling() {
 			Clients: map[string]Config{"main": {}},
 		}
 		f, err := NewFactory(cfg, s.json)
-		s.NoError(err)
-
-		resp, err := f.Client().Get("/")
-		s.Nil(resp)
 		s.ErrorIs(err, errors.HttpClientDefaultNotSet)
+		s.Nil(f)
 	})
 }
 

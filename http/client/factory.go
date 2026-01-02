@@ -35,15 +35,16 @@ func NewFactory(config *FactoryConfig, json foundation.Json) (*Factory, error) {
 		json:   json,
 	}
 
-	// Pre-resolve the default client to ensure immediate availability.
+	// Resolve the default client immediately.
+	// If the configuration is invalid (e.g., default client not found),
+	// we fail fast and return the error to the caller (Service Provider).
 	defaultClient, err := f.resolveClient(config.Default)
 	if err != nil {
-		// Initialize a "zombie" request that returns the error lazily upon execution.
-		f.Request = newRequestWithError(err)
-	} else {
-		cfg := config.Clients[config.Default]
-		f.Request = NewRequest(defaultClient, json, cfg.BaseUrl)
+		return nil, err
 	}
+
+	cfg := config.Clients[config.Default]
+	f.Request = NewRequest(defaultClient, json, cfg.BaseUrl)
 
 	return f, nil
 }
