@@ -5,7 +5,7 @@ import (
 )
 
 type TestingT interface {
-	Errorf(format string, args ...interface{})
+	Errorf(format string, args ...any)
 }
 
 type Testing interface {
