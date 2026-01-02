@@ -205,14 +205,14 @@ func (r *Container) MakeHash() contractshash.Hash {
 	return instance.(contractshash.Hash)
 }
 
-func (r *Container) MakeHttp() contractshttpclient.Request {
+func (r *Container) MakeHttp() contractshttpclient.Factory {
 	instance, err := r.Make(facades.FacadeToBinding[facades.Http])
 	if err != nil {
 		color.Errorln(err)
 		return nil
 	}
 
-	return instance.(contractshttpclient.Request)
+	return instance.(contractshttpclient.Factory)
 }
 
 func (r *Container) MakeLang(ctx context.Context) contractstranslation.Translator {

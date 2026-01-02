@@ -1576,19 +1576,19 @@ func (_c *Application_MakeHash_Call) RunAndReturn(run func() hash.Hash) *Applica
 }
 
 // MakeHttp provides a mock function with no fields
-func (_m *Application) MakeHttp() client.Request {
+func (_m *Application) MakeHttp() client.Factory {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for MakeHttp")
 	}
 
-	var r0 client.Request
-	if rf, ok := ret.Get(0).(func() client.Request); ok {
+	var r0 client.Factory
+	if rf, ok := ret.Get(0).(func() client.Factory); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(client.Request)
+			r0 = ret.Get(0).(client.Factory)
 		}
 	}
 
@@ -1612,12 +1612,12 @@ func (_c *Application_MakeHttp_Call) Run(run func()) *Application_MakeHttp_Call 
 	return _c
 }
 
-func (_c *Application_MakeHttp_Call) Return(_a0 client.Request) *Application_MakeHttp_Call {
+func (_c *Application_MakeHttp_Call) Return(_a0 client.Factory) *Application_MakeHttp_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Application_MakeHttp_Call) RunAndReturn(run func() client.Request) *Application_MakeHttp_Call {
+func (_c *Application_MakeHttp_Call) RunAndReturn(run func() client.Factory) *Application_MakeHttp_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -4,6 +4,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/go-viper/mapstructure/v2"
 	"github.com/spf13/cast"
 	"github.com/spf13/viper"
 
@@ -130,5 +131,7 @@ func (app *Application) GetDuration(path string, defaultValue ...time.Duration) 
 
 // UnmarshalKey unmarshal a specific key from config into a struct.
 func (app *Application) UnmarshalKey(key string, rawVal any) error {
-	return app.vip.UnmarshalKey(key, rawVal)
+	return app.vip.UnmarshalKey(key, rawVal, func(c *mapstructure.DecoderConfig) {
+		c.TagName = "json"
+	})
 }

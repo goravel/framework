@@ -229,8 +229,8 @@ func (s *ApplicationTestSuite) TestUnmarshalKey() {
 	})
 
 	type DatabaseConfig struct {
-		Default     string         `mapstructure:"default"`
-		Connections map[string]any `mapstructure:"connections"`
+		Default     string         `json:"default"`
+		Connections map[string]any `json:"connections"`
 	}
 
 	var dbConfig DatabaseConfig
@@ -270,9 +270,9 @@ func (s *ApplicationTestSuite) TestUnmarshalKey() {
 	})
 
 	type AppConfig struct {
-		Name  string `mapstructure:"name"`
-		Debug bool   `mapstructure:"debug"`
-		Port  int    `mapstructure:"port"`
+		Name  string `json:"name"`
+		Debug bool   `json:"debug"`
+		Port  int    `json:"port"`
 	}
 
 	var appConfig AppConfig

@@ -1,15 +1,12 @@
 package http
 
 import (
-	"time"
-
 	contractsbinding "github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/contracts/config"
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http"
-	contractsclient "github.com/goravel/framework/contracts/http/client"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/http/client"
@@ -45,7 +42,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(contractsbinding.RateLimiter, func(app foundation.Application) (any, error) {
 		return NewRateLimiter(), nil
 	})
-	app.Bind(contractsbinding.Http, func(app foundation.Application) (any, error) {
+	app.Singleton(contractsbinding.Http, func(app foundation.Application) (any, error) {
 		ConfigFacade = app.MakeConfig()
 		if ConfigFacade == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleHttp)
@@ -56,14 +53,12 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, errors.JSONParserNotSet.SetModule(errors.ModuleHttp)
 		}
 
-		return client.NewRequest(&contractsclient.Config{
-			Timeout:             time.Duration(ConfigFacade.GetInt("http.client.timeout", 30)) * time.Second,
-			BaseUrl:             ConfigFacade.GetString("http.client.base_url"),
-			MaxIdleConns:        ConfigFacade.GetInt("http.client.max_idle_conns"),
-			MaxIdleConnsPerHost: ConfigFacade.GetInt("http.client.max_idle_conns_per_host"),
-			MaxConnsPerHost:     ConfigFacade.GetInt("http.client.max_conns_per_host"),
-			IdleConnTimeout:     ConfigFacade.GetDuration("http.client.idle_conn_timeout"),
-		}, j), nil
+		factoryConfig := &client.FactoryConfig{}
+		if err := ConfigFacade.UnmarshalKey("http", factoryConfig); err != nil {
+			return nil, err
+		}
+
+		return client.NewFactory(factoryConfig, j)
 	})
 }
 
