@@ -6,18 +6,19 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/contracts/testing"
 	contractshttp "github.com/goravel/framework/contracts/testing/http"
 	"github.com/goravel/framework/support/maps"
 )
 
 type AssertableJson struct {
-	t       assert.TestingT
+	t       testing.TestingT
 	json    foundation.Json
 	decoded map[string]any
 	jsonStr string
 }
 
-func NewAssertableJSON(t assert.TestingT, json foundation.Json, jsonStr string) (contractshttp.AssertableJSON, error) {
+func NewAssertableJSON(t testing.TestingT, json foundation.Json, jsonStr string) (contractshttp.AssertableJSON, error) {
 	var decoded map[string]any
 	err := json.UnmarshalString(jsonStr, &decoded)
 	if err != nil {

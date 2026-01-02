@@ -13,6 +13,7 @@ import (
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/route"
 	"github.com/goravel/framework/contracts/session"
+	"github.com/goravel/framework/contracts/testing"
 	contractshttp "github.com/goravel/framework/contracts/testing/http"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/collect"
@@ -21,7 +22,7 @@ import (
 )
 
 type TestRequest struct {
-	t                 assert.TestingT
+	t                 testing.TestingT
 	ctx               context.Context
 	defaultHeaders    map[string]string
 	defaultCookies    []*http.Cookie
@@ -31,7 +32,7 @@ type TestRequest struct {
 	sessionAttributes map[string]any
 }
 
-func NewTestRequest(t assert.TestingT, json foundation.Json, route route.Route, session session.Manager) contractshttp.Request {
+func NewTestRequest(t testing.TestingT, json foundation.Json, route route.Route, session session.Manager) contractshttp.Request {
 	return &TestRequest{
 		t:                 t,
 		ctx:               context.Background(),

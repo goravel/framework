@@ -13,13 +13,14 @@ import (
 
 	"github.com/goravel/framework/contracts/foundation"
 	contractssession "github.com/goravel/framework/contracts/session"
+	"github.com/goravel/framework/contracts/testing"
 	contractshttp "github.com/goravel/framework/contracts/testing/http"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 )
 
 type TestResponseImpl struct {
-	t                 assert.TestingT
+	t                 testing.TestingT
 	json              foundation.Json
 	session           contractssession.Manager
 	response          *http.Response
@@ -28,7 +29,7 @@ type TestResponseImpl struct {
 	mu                sync.Mutex
 }
 
-func NewTestResponse(t assert.TestingT, response *http.Response, json foundation.Json, session contractssession.Manager) contractshttp.Response {
+func NewTestResponse(t testing.TestingT, response *http.Response, json foundation.Json, session contractssession.Manager) contractshttp.Response {
 	return &TestResponseImpl{
 		t:        t,
 		response: response,
