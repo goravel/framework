@@ -2,7 +2,8 @@ package testing
 
 import (
 	"fmt"
-	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	contractsseeder "github.com/goravel/framework/contracts/database/seeder"
 	contractshttp "github.com/goravel/framework/contracts/testing/http"
@@ -13,7 +14,7 @@ import (
 type TestCase struct {
 }
 
-func (r *TestCase) Http(t *testing.T) contractshttp.Request {
+func (r *TestCase) Http(t assert.TestingT) contractshttp.Request {
 	return http.NewTestRequest(t, json, routeFacade, sessionFacade)
 }
 

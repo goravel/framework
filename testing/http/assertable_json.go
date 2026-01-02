@@ -2,7 +2,6 @@ package http
 
 import (
 	"fmt"
-	"testing"
 
 	"github.com/stretchr/testify/assert"
 
@@ -12,13 +11,13 @@ import (
 )
 
 type AssertableJson struct {
+	t       assert.TestingT
 	json    foundation.Json
-	t       *testing.T
 	decoded map[string]any
 	jsonStr string
 }
 
-func NewAssertableJSON(t *testing.T, json foundation.Json, jsonStr string) (contractshttp.AssertableJSON, error) {
+func NewAssertableJSON(t assert.TestingT, json foundation.Json, jsonStr string) (contractshttp.AssertableJSON, error) {
 	var decoded map[string]any
 	err := json.UnmarshalString(jsonStr, &decoded)
 	if err != nil {
@@ -113,8 +112,7 @@ func (r *AssertableJson) First(key string, callback func(contractshttp.Assertabl
 		return r
 	}
 
-	firstItem := array[0]
-	itemJson, err := r.json.MarshalString(firstItem)
+	itemJson, err := r.json.MarshalString(array[0])
 	if assert.NoError(r.t, err, "Failed to marshal the first item") {
 		newJson, err := NewAssertableJSON(r.t, r.json, itemJson)
 		if assert.NoError(r.t, err, "Failed to create AssertableJSON for first item") {

@@ -7,7 +7,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/route"
@@ -20,9 +21,8 @@ import (
 )
 
 type TestRequest struct {
-	t                 *testing.T
+	t                 assert.TestingT
 	ctx               context.Context
-	bind              any
 	defaultHeaders    map[string]string
 	defaultCookies    []*http.Cookie
 	json              foundation.Json
@@ -31,7 +31,7 @@ type TestRequest struct {
 	sessionAttributes map[string]any
 }
 
-func NewTestRequest(t *testing.T, json foundation.Json, route route.Route, session session.Manager) contractshttp.Request {
+func NewTestRequest(t assert.TestingT, json foundation.Json, route route.Route, session session.Manager) contractshttp.Request {
 	return &TestRequest{
 		t:                 t,
 		ctx:               context.Background(),
@@ -78,11 +78,6 @@ func (r *TestRequest) Head(uri string) (contractshttp.Response, error) {
 
 func (r *TestRequest) Options(uri string) (contractshttp.Response, error) {
 	return r.call(http.MethodOptions, uri, nil)
-}
-
-func (r *TestRequest) Bind(value any) contractshttp.Request {
-	r.bind = value
-	return r
 }
 
 func (r *TestRequest) FlushHeaders() contractshttp.Request {
@@ -162,7 +157,8 @@ func (r *TestRequest) call(method string, uri string, body io.Reader) (contracts
 	}
 
 	if r.route == nil {
-		r.t.Fatal(errors.RouteFacadeNotSet.SetModule(errors.ModuleTesting))
+		assert.FailNow(r.t, errors.RouteFacadeNotSet.SetModule(errors.ModuleTesting).Error())
+		return nil, errors.RouteFacadeNotSet
 	}
 
 	response, err := r.route.Test(req)
@@ -170,19 +166,7 @@ func (r *TestRequest) call(method string, uri string, body io.Reader) (contracts
 		return nil, err
 	}
 
-	testResponse := NewTestResponse(r.t, response, r.json, r.session)
-	if r.bind != nil && testResponse.IsSuccessful() {
-		body, err := testResponse.Content()
-		if err != nil {
-			return nil, err
-		}
-
-		if err := r.json.Unmarshal([]byte(body), r.bind); err != nil {
-			return nil, err
-		}
-	}
-
-	return testResponse, nil
+	return NewTestResponse(r.t, response, r.json, r.session), nil
 }
 
 func (r *TestRequest) setSession() error {
@@ -201,22 +185,22 @@ func (r *TestRequest) setSession() error {
 	}
 
 	// Build session
-	session, err := r.session.BuildSession(driver)
+	sess, err := r.session.BuildSession(driver)
 	if err != nil {
 		return err
 	}
 
 	for key, value := range r.sessionAttributes {
-		session.Put(key, value)
+		sess.Put(key, value)
 	}
 
-	r.WithCookie(&http.Cookie{Name: session.GetName(), Value: session.GetID()})
+	r.WithCookie(&http.Cookie{Name: sess.GetName(), Value: sess.GetID()})
 
-	if err = session.Save(); err != nil {
+	if err = sess.Save(); err != nil {
 		return err
 	}
 
 	// Release session
-	r.session.ReleaseSession(session)
+	r.session.ReleaseSession(sess)
 	return nil
 }
