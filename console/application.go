@@ -131,7 +131,7 @@ func (r *Application) Run(args []string, exitIfArtisan bool) error {
 	if artisanIndex != -1 {
 		command := r.command()
 		if artisanIndex+1 == len(args) {
-			args = append(args, "help")
+			args = append(args, "list")
 		}
 
 		cliArgs := append([]string{args[0]}, args[artisanIndex+1:]...)

@@ -60,10 +60,10 @@ type ExporterEntry struct {
 	Headers  map[string]string
 
 	// Metric Specific
-	MetricTemporality MetricTemporality `mapstructure:"metric_temporality"`
+	MetricTemporality MetricTemporality `json:"metric_temporality"`
 
 	// Console Driver Specific
-	PrettyPrint bool `mapstructure:"pretty_print"`
+	PrettyPrint bool `json:"pretty_print"`
 
 	// For custom Exporter
 	Via any

@@ -18,56 +18,88 @@ import (
 var _ client.Request = (*Request)(nil)
 
 type Request struct {
+	client *http.Client
+	json   foundation.Json
+
+	baseUrl     string
 	ctx         context.Context
-	bind        any
-	json        foundation.Json
-	client      *http.Client
-	config      *client.Config
 	headers     http.Header
 	queryParams url.Values
 	urlParams   map[string]string
 	cookies     []*http.Cookie
+
+	// clientErr stores any error that occurred during the creation of the parent Client.
+	//
+	// This allows the Factory to return a "zombie" Client when a configuration is missing,
+	// preserving the fluent API chain (e.g., Http.Client("missing").Get("/")).
+	// The error is checked and returned lazily when the request is executed in send().
+	clientErr error
 }
 
-func NewRequest(config *client.Config, json foundation.Json) *Request {
+func NewRequest(client *http.Client, json foundation.Json, baseUrl string) *Request {
 	return &Request{
+		client:  client,
+		json:    json,
+		baseUrl: baseUrl,
+
 		ctx:         context.Background(),
-		config:      config,
-		client:      getHttpClient(config),
-		headers:     http.Header{},
-		cookies:     []*http.Cookie{},
-		queryParams: url.Values{},
-		urlParams:   map[string]string{},
-		json:        json,
+		headers:     make(http.Header),
+		cookies:     make([]*http.Cookie, 0),
+		queryParams: make(url.Values),
+		urlParams:   make(map[string]string),
 	}
 }
 
+// newRequestWithError creates a request instance that will fail immediately when executed.
+//
+// This is used internally by the Factory when a requested client configuration (e.g., "github")
+// is not found. Instead of panicking, we return this "zombie" request which allows
+// method chaining to continue, returning the error lazily only when the request is sent.
+func newRequestWithError(err error) *Request {
+	return &Request{
+		clientErr:   err,
+		ctx:         context.Background(),
+		headers:     make(http.Header),
+		cookies:     make([]*http.Cookie, 0),
+		queryParams: make(url.Values),
+		urlParams:   make(map[string]string),
+	}
+}
+
+func (r *Request) HttpClient() *http.Client {
+	return r.client
+}
+
+func (r *Request) Clone() client.Request {
+	return r.clone()
+}
+
 func (r *Request) Get(uri string) (client.Response, error) {
-	return r.doRequest(http.MethodGet, uri, nil)
+	return r.send(http.MethodGet, uri, nil)
 }
 
 func (r *Request) Post(uri string, body io.Reader) (client.Response, error) {
-	return r.doRequest(http.MethodPost, uri, body)
+	return r.send(http.MethodPost, uri, body)
 }
 
 func (r *Request) Put(uri string, body io.Reader) (client.Response, error) {
-	return r.doRequest(http.MethodPut, uri, body)
+	return r.send(http.MethodPut, uri, body)
 }
 
 func (r *Request) Delete(uri string, body io.Reader) (client.Response, error) {
-	return r.doRequest(http.MethodDelete, uri, body)
+	return r.send(http.MethodDelete, uri, body)
 }
 
 func (r *Request) Patch(uri string, body io.Reader) (client.Response, error) {
-	return r.doRequest(http.MethodPatch, uri, body)
+	return r.send(http.MethodPatch, uri, body)
 }
 
 func (r *Request) Head(uri string) (client.Response, error) {
-	return r.doRequest(http.MethodHead, uri, nil)
+	return r.send(http.MethodHead, uri, nil)
 }
 
 func (r *Request) Options(uri string) (client.Response, error) {
-	return r.doRequest(http.MethodOptions, uri, nil)
+	return r.send(http.MethodOptions, uri, nil)
 }
 
 func (r *Request) Accept(contentType string) client.Request {
@@ -82,29 +114,16 @@ func (r *Request) AsForm() client.Request {
 	return r.WithHeader("Content-Type", "application/x-www-form-urlencoded")
 }
 
-func (r *Request) Bind(value any) client.Request {
-	r.bind = value
-	return r
-}
-
-func (r *Request) Clone() client.Request {
-	clone := *r
-	clone.headers = r.headers.Clone()
-	copy(clone.cookies, r.cookies)
-	clone.queryParams = url.Values{}
-	for k, v := range r.queryParams {
-		clone.queryParams[k] = append([]string{}, v...)
-	}
-
-	clone.urlParams = make(map[string]string)
-	maps.Copy(clone.urlParams, r.urlParams)
-
-	return &clone
+func (r *Request) BaseUrl(url string) client.Request {
+	n := r.clone()
+	n.baseUrl = url
+	return n
 }
 
 func (r *Request) FlushHeaders() client.Request {
-	r.headers = make(http.Header)
-	return r
+	n := r.clone()
+	n.headers = make(http.Header)
+	return n
 }
 
 func (r *Request) ReplaceHeaders(headers map[string]string) client.Request {
@@ -117,61 +136,70 @@ func (r *Request) WithBasicAuth(username, password string) client.Request {
 }
 
 func (r *Request) WithContext(ctx context.Context) client.Request {
-	r.ctx = ctx
-	return r
+	n := r.clone()
+	n.ctx = ctx
+	return n
 }
 
 func (r *Request) WithCookies(cookies []*http.Cookie) client.Request {
-	r.cookies = append(r.cookies, cookies...)
-	return r
+	n := r.clone()
+	n.cookies = append(n.cookies, cookies...)
+	return n
 }
 
 func (r *Request) WithCookie(cookie *http.Cookie) client.Request {
-	r.cookies = append(r.cookies, cookie)
-	return r
+	n := r.clone()
+	n.cookies = append(n.cookies, cookie)
+	return n
 }
 
 func (r *Request) WithHeader(key, value string) client.Request {
-	r.headers.Set(key, value)
-	return r
+	n := r.clone()
+	n.headers.Set(key, value)
+	return n
 }
 
 func (r *Request) WithHeaders(headers map[string]string) client.Request {
+	n := r.clone()
 	for k, v := range headers {
-		r.WithHeader(k, v)
+		n.headers.Set(k, v)
 	}
-	return r
+	return n
 }
 
 func (r *Request) WithQueryParameter(key, value string) client.Request {
-	r.queryParams.Set(key, value)
-	return r
+	n := r.clone()
+	n.queryParams.Set(key, value)
+	return n
 }
 
 func (r *Request) WithQueryParameters(params map[string]string) client.Request {
+	n := r.clone()
 	for k, v := range params {
-		r.WithQueryParameter(k, v)
+		n.queryParams.Set(k, v)
 	}
-	return r
+	return n
 }
 
 func (r *Request) WithQueryString(query string) client.Request {
 	params, err := url.ParseQuery(strings.TrimSpace(query))
 	if err != nil {
-		return r
+		return r.clone()
 	}
 
+	n := r.clone()
 	for k, v := range params {
 		for _, vv := range v {
-			r.queryParams.Add(k, vv)
+			n.queryParams.Add(k, vv)
 		}
 	}
-	return r
+	return n
 }
 
 func (r *Request) WithoutHeader(key string) client.Request {
-	r.headers.Del(key)
-	return r
+	n := r.clone()
+	n.headers.Del(key)
+	return n
 }
 
 func (r *Request) WithToken(token string, ttype ...string) client.Request {
@@ -187,58 +215,52 @@ func (r *Request) WithoutToken() client.Request {
 }
 
 func (r *Request) WithUrlParameter(key, value string) client.Request {
-	supportmaps.Set(r.urlParams, key, url.PathEscape(value))
-	return r
+	n := r.clone()
+	supportmaps.Set(n.urlParams, key, url.PathEscape(value))
+	return n
 }
 
 func (r *Request) WithUrlParameters(params map[string]string) client.Request {
+	n := r.clone()
 	for k, v := range params {
-		r.WithUrlParameter(k, v)
+		supportmaps.Set(n.urlParams, k, url.PathEscape(v))
 	}
-	return r
+	return n
 }
 
-func (r *Request) doRequest(method, uri string, body io.Reader) (client.Response, error) {
-	parsedURL, err := r.parseRequestURL(uri)
-	if err != nil {
-		return nil, err
+func (r *Request) clone() *Request {
+	n := *r
+	n.headers = r.headers.Clone()
+
+	if len(r.cookies) > 0 {
+		n.cookies = make([]*http.Cookie, len(r.cookies))
+		copy(n.cookies, r.cookies)
 	}
 
-	req, err := http.NewRequestWithContext(r.ctx, method, parsedURL, body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header = r.headers
-
-	for _, value := range r.cookies {
-		req.AddCookie(value)
-	}
-
-	res, err := r.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	response := NewResponse(res, r.json)
-	if r.bind != nil {
-		body, err := response.Body()
-		if err != nil {
-			return nil, err
+	if len(r.queryParams) > 0 {
+		n.queryParams = make(url.Values, len(r.queryParams))
+		for k, v := range r.queryParams {
+			dst := make([]string, len(v))
+			copy(dst, v)
+			n.queryParams[k] = dst
 		}
-
-		if err := r.json.UnmarshalString(body, r.bind); err != nil {
-			return nil, err
-		}
+	} else {
+		n.queryParams = make(url.Values)
 	}
 
-	return response, nil
+	if len(r.urlParams) > 0 {
+		n.urlParams = make(map[string]string, len(r.urlParams))
+		maps.Copy(n.urlParams, r.urlParams)
+	} else {
+		n.urlParams = make(map[string]string)
+	}
+
+	return &n
 }
 
 func (r *Request) parseRequestURL(uri string) (string, error) {
-	baseURL := r.config.BaseUrl
+	baseURL := r.baseUrl
 
-	// Prepend base URL if needed
 	if !strings.HasPrefix(uri, "http://") && !strings.HasPrefix(uri, "https://") {
 		uri = strings.TrimSuffix(baseURL, "/") + "/" + strings.TrimPrefix(uri, "/")
 	}
@@ -291,4 +313,33 @@ func (r *Request) parseRequestURL(uri string) (string, error) {
 	}
 
 	return reqURL.String(), nil
+}
+
+func (r *Request) send(method, uri string, body io.Reader) (client.Response, error) {
+	if r.clientErr != nil {
+		return nil, r.clientErr
+	}
+
+	parsedURL, err := r.parseRequestURL(uri)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(r.ctx, method, parsedURL, body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header = r.headers
+
+	for _, value := range r.cookies {
+		req.AddCookie(value)
+	}
+
+	res, err := r.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewResponse(res, r.json), nil
 }

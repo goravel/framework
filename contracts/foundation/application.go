@@ -50,7 +50,10 @@ type Application interface {
 	// AddServiceProviders manually sets the list of configured providers.
 	AddServiceProviders(providers []ServiceProvider)
 	// Boot register and bootstrap configured service providers.
+	// It can be deprecated in the future given the With* functions are implemented.
 	Boot()
+	// BootServiceProviders boots registered service providers.
+	BootServiceProviders()
 	// Commands register the given commands with the console application.
 	Commands([]console.Command)
 	// Context gets the application context.
@@ -63,8 +66,10 @@ type Application interface {
 	Publishes(packageName string, paths map[string]string, groups ...string)
 	// Refresh all modules after changing config, will call the Boot method simultaneously.
 	Refresh()
-	// Run runs modules.
-	Run(runners ...Runner)
+	// RegisterServiceProviders registers configured service providers.
+	RegisterServiceProviders()
+	// Start starts modules.
+	Start(runners ...Runner) Application
 	// SetJson set the JSON implementation.
 	SetJson(json Json)
 	// SetLocale set the current application locale.
@@ -73,6 +78,8 @@ type Application interface {
 	Shutdown()
 	// Version gets the version number of the application.
 	Version() string
+	// Wait for all modules to shutdown.
+	Wait()
 
 	// Paths
 
@@ -140,7 +147,7 @@ type Application interface {
 	// MakeHash resolves the hash instance.
 	MakeHash() hash.Hash
 	// MakeHttp resolves the http instance.
-	MakeHttp() client.Request
+	MakeHttp() client.Factory
 	// MakeLang resolves the lang instance.
 	MakeLang(ctx context.Context) translation.Translator
 	// MakeLog resolves the log instance.

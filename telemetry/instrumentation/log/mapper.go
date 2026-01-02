@@ -21,17 +21,17 @@ import (
 
 func toSeverity(level contractslog.Level) otellog.Severity {
 	switch level {
-	case contractslog.PanicLevel:
+	case contractslog.LevelPanic:
 		return otellog.SeverityFatal4
-	case contractslog.FatalLevel:
+	case contractslog.LevelFatal:
 		return otellog.SeverityFatal
-	case contractslog.ErrorLevel:
+	case contractslog.LevelError:
 		return otellog.SeverityError
-	case contractslog.WarningLevel:
+	case contractslog.LevelWarning:
 		return otellog.SeverityWarn
-	case contractslog.InfoLevel:
+	case contractslog.LevelInfo:
 		return otellog.SeverityInfo
-	case contractslog.DebugLevel:
+	case contractslog.LevelDebug:
 		return otellog.SeverityDebug
 	default:
 		return otellog.SeverityInfo

@@ -62,7 +62,8 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.SetupTest()
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		app := s.builder.Create()
 
@@ -74,7 +75,8 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		calledConfig := false
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		app := s.builder.
 			WithConfig(func() {
@@ -92,7 +94,8 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		calledPaths := false
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		app := s.builder.
 			WithPaths(func(paths contractsconfiguration.Paths) {
@@ -110,8 +113,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.SetupTest()
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().MakeEvent().Return(nil).Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		got := color.CaptureOutput(func(io.Writer) {
 			app := s.builder.
@@ -130,7 +134,8 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.SetupTest()
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		app := s.builder.
 			WithEvents(map[event.Event][]event.Listener{}).
@@ -143,7 +148,7 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.SetupTest()
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 
 		mockEvent := mocksevent.NewEvent(s.T())
 		mockListener := mocksevent.NewListener(s.T())
@@ -155,6 +160,7 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 			Return().
 			Once()
 		s.mockApp.EXPECT().MakeEvent().Return(mockEventFacade).Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		app := s.builder.
 			WithEvents(map[event.Event][]event.Listener{
@@ -169,8 +175,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.SetupTest()
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().MakeRoute().Return(nil).Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		calledMiddleware := false
 		fn := func(middleware contractsconfiguration.Middleware) {
@@ -195,8 +202,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		mockRoute.EXPECT().SetGlobalMiddleware([]contractshttp.Middleware(nil)).Return().Once()
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().MakeRoute().Return(mockRoute).Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		calledMiddleware := false
 		fn := func(middleware contractsconfiguration.Middleware) {
@@ -216,7 +224,8 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		providers := []foundation.ServiceProvider{mockProvider}
 
 		s.mockApp.EXPECT().AddServiceProviders(providers).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		app := s.builder.WithProviders(providers).Create()
 
@@ -228,7 +237,8 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		calledRouting := false
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		app := s.builder.
 			WithRouting([]func(){
@@ -246,8 +256,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.SetupTest()
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().MakeArtisan().Return(nil).Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		mockCommand := mocksconsole.NewCommand(s.T())
 		got := color.CaptureOutput(func(io.Writer) {
@@ -266,9 +277,10 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		mockCommand := mocksconsole.NewCommand(s.T())
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().MakeArtisan().Return(mockArtisan).Once()
 		mockArtisan.EXPECT().Register([]console.Command{mockCommand}).Return().Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		app := s.builder.WithCommands([]console.Command{mockCommand}).Create()
 
@@ -279,12 +291,15 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.SetupTest()
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().MakeSchedule().Return(nil).Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		mockEvent := mocksschedule.NewEvent(s.T())
 		got := color.CaptureOutput(func(io.Writer) {
-			app := s.builder.WithSchedule([]schedule.Event{mockEvent}).Create()
+			app := s.builder.WithSchedule(func() []schedule.Event {
+				return []schedule.Event{mockEvent}
+			}).Create()
 
 			s.NotNil(app)
 		})
@@ -299,11 +314,14 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		mockEvent := mocksschedule.NewEvent(s.T())
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().MakeSchedule().Return(mockSchedule).Once()
 		mockSchedule.EXPECT().Register([]schedule.Event{mockEvent}).Return().Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
-		app := s.builder.WithSchedule([]schedule.Event{mockEvent}).Create()
+		app := s.builder.WithSchedule(func() []schedule.Event {
+			return []schedule.Event{mockEvent}
+		}).Create()
 
 		s.NotNil(app)
 	})
@@ -312,8 +330,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.SetupTest()
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().MakeSchema().Return(nil).Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		mockMigration := mocksschema.NewMigration(s.T())
 		got := color.CaptureOutput(func(io.Writer) {
@@ -331,9 +350,10 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		mockMigration := mocksschema.NewMigration(s.T())
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().MakeSchema().Return(mockSchema).Once()
 		mockSchema.EXPECT().Register([]schema.Migration{mockMigration}).Return().Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		app := s.builder.WithMigrations([]schema.Migration{mockMigration}).Create()
 
@@ -344,8 +364,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.SetupTest()
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().MakeGrpc().Return(nil).Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		interceptor := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 			return nil
@@ -372,11 +393,12 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		}
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().MakeGrpc().Return(mockGrpc).Once()
 		mockGrpc.EXPECT().UnaryClientInterceptorGroups(mock.MatchedBy(func(interceptors map[string][]grpc.UnaryClientInterceptor) bool {
 			return len(interceptors) == 1 && len(interceptors["test"]) == 1
 		})).Return().Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		app := s.builder.WithGrpcClientInterceptors(interceptors).Create()
 
@@ -387,8 +409,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.SetupTest()
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().MakeGrpc().Return(nil).Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		interceptor := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 			return nil, nil
@@ -411,11 +434,12 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		interceptors := []grpc.UnaryServerInterceptor{interceptor}
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().MakeGrpc().Return(mockGrpc).Once()
 		mockGrpc.EXPECT().UnaryServerInterceptors(mock.MatchedBy(func(interceptors []grpc.UnaryServerInterceptor) bool {
 			return len(interceptors) == 1
 		})).Return().Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		app := s.builder.WithGrpcServerInterceptors(interceptors).Create()
 
@@ -426,8 +450,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.SetupTest()
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().MakeGrpc().Return(nil).Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		handler := &mockStatsHandler{}
 		got := color.CaptureOutput(func(io.Writer) {
@@ -450,9 +475,10 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		}
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().MakeGrpc().Return(mockGrpc).Once()
 		mockGrpc.EXPECT().ClientStatsHandlerGroups(handlers).Return().Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		app := s.builder.WithGrpcClientStatsHandlers(handlers).Create()
 
@@ -463,8 +489,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.SetupTest()
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().MakeGrpc().Return(nil).Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		handler := &mockStatsHandler{}
 		got := color.CaptureOutput(func(io.Writer) {
@@ -483,9 +510,10 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		handlers := []stats.Handler{handler}
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().MakeGrpc().Return(mockGrpc).Once()
 		mockGrpc.EXPECT().ServerStatsHandlers(handlers).Return().Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		app := s.builder.WithGrpcServerStatsHandlers(handlers).Create()
 
@@ -506,7 +534,7 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		serverStatsHandler := &mockStatsHandler{}
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().MakeGrpc().Return(mockGrpc).Once()
 
 		mockGrpc.EXPECT().UnaryClientInterceptorGroups(mock.MatchedBy(func(m map[string][]grpc.UnaryClientInterceptor) bool {
@@ -517,6 +545,7 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		})).Return().Once()
 		mockGrpc.EXPECT().ClientStatsHandlerGroups(map[string][]stats.Handler{"test": {clientStatsHandler}}).Return().Once()
 		mockGrpc.EXPECT().ServerStatsHandlers([]stats.Handler{serverStatsHandler}).Return().Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		app := s.builder.
 			WithGrpcClientInterceptors(map[string][]grpc.UnaryClientInterceptor{"test": {clientInterceptor}}).
@@ -532,8 +561,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.SetupTest()
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().MakeQueue().Return(nil).Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		mockJob := mocksqueue.NewJob(s.T())
 		got := color.CaptureOutput(func(io.Writer) {
@@ -551,9 +581,10 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		mockJob := mocksqueue.NewJob(s.T())
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().MakeQueue().Return(mockQueue).Once()
 		mockQueue.EXPECT().Register([]queue.Job{mockJob}).Return().Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		app := s.builder.WithJobs([]queue.Job{mockJob}).Create()
 
@@ -564,8 +595,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.SetupTest()
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().MakeSeeder().Return(nil).Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		mockSeeder := mocksseeder.NewSeeder(s.T())
 		got := color.CaptureOutput(func(io.Writer) {
@@ -583,9 +615,10 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		mockSeeder := mocksseeder.NewSeeder(s.T())
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().MakeSeeder().Return(mockSeederFacade).Once()
 		mockSeederFacade.EXPECT().Register([]seeder.Seeder{mockSeeder}).Return().Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		app := s.builder.WithSeeders([]seeder.Seeder{mockSeeder}).Create()
 
@@ -596,8 +629,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.SetupTest()
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().MakeValidation().Return(nil).Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		mockFilter := mocksvalidation.NewFilter(s.T())
 		got := color.CaptureOutput(func(io.Writer) {
@@ -615,9 +649,10 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		mockFilter := mocksvalidation.NewFilter(s.T())
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().MakeValidation().Return(mockValidation).Once()
 		mockValidation.EXPECT().AddFilters([]validation.Filter{mockFilter}).Return(errors.New("validation error")).Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		got := color.CaptureOutput(func(io.Writer) {
 			app := s.builder.WithFilters([]validation.Filter{mockFilter}).Create()
@@ -634,9 +669,10 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		mockFilter := mocksvalidation.NewFilter(s.T())
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().MakeValidation().Return(mockValidation).Once()
 		mockValidation.EXPECT().AddFilters([]validation.Filter{mockFilter}).Return(nil).Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		app := s.builder.WithFilters([]validation.Filter{mockFilter}).Create()
 
@@ -647,8 +683,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.SetupTest()
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().MakeValidation().Return(nil).Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		mockRule := mocksvalidation.NewRule(s.T())
 		got := color.CaptureOutput(func(io.Writer) {
@@ -666,9 +703,10 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		mockRule := mocksvalidation.NewRule(s.T())
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().MakeValidation().Return(mockValidation).Once()
 		mockValidation.EXPECT().AddRules([]validation.Rule{mockRule}).Return(errors.New("validation error")).Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		got := color.CaptureOutput(func(io.Writer) {
 			app := s.builder.WithRules([]validation.Rule{mockRule}).Create()
@@ -685,22 +723,43 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		mockRule := mocksvalidation.NewRule(s.T())
 
 		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-		s.mockApp.EXPECT().Boot().Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().MakeValidation().Return(mockValidation).Once()
 		mockValidation.EXPECT().AddRules([]validation.Rule{mockRule}).Return(nil).Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		app := s.builder.WithRules([]validation.Rule{mockRule}).Create()
 
 		s.NotNil(app)
 	})
+
+	s.Run("WithCallback", func() {
+		s.SetupTest()
+		calledCallback := false
+
+		s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
+		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
+		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
+
+		app := s.builder.
+			WithCallback(func() {
+				calledCallback = true
+			}).
+			Create()
+
+		s.NotNil(app)
+		s.True(calledCallback)
+	})
 }
 
-func (s *ApplicationBuilderTestSuite) TestRun() {
+func (s *ApplicationBuilderTestSuite) TestStart() {
 	s.mockApp.EXPECT().AddServiceProviders([]foundation.ServiceProvider(nil)).Return().Once()
-	s.mockApp.EXPECT().Boot().Return().Once()
-	s.mockApp.EXPECT().Run().Return().Once()
+	s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
+	s.mockApp.EXPECT().BootServiceProviders().Return().Once()
+	s.mockApp.EXPECT().Start().Return(s.mockApp).Once()
 
-	s.builder.Run()
+	app := s.builder.Start()
+	s.NotNil(app)
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithConfig() {
@@ -767,10 +826,12 @@ func (s *ApplicationBuilderTestSuite) TestWithRouting() {
 func (s *ApplicationBuilderTestSuite) TestWithSchedule() {
 	mockEvent := mocksschedule.NewEvent(s.T())
 
-	builder := s.builder.WithSchedule([]schedule.Event{mockEvent})
+	builder := s.builder.WithSchedule(func() []schedule.Event {
+		return []schedule.Event{mockEvent}
+	})
 
 	s.NotNil(builder)
-	s.Len(s.builder.scheduledEvents, 1)
+	s.NotNil(s.builder.schedule)
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithGrpcClientInterceptors() {
@@ -880,6 +941,22 @@ func (s *ApplicationBuilderTestSuite) TestWithRules() {
 
 	s.NotNil(builder)
 	s.Len(s.builder.rules, 1)
+}
+
+func (s *ApplicationBuilderTestSuite) TestWithCallback() {
+	called := false
+	fn := func() {
+		called = true
+	}
+
+	builder := s.builder.WithCallback(fn)
+
+	s.NotNil(builder)
+	s.NotNil(s.builder.callback)
+
+	// Verify callback can be executed
+	s.builder.callback()
+	s.True(called)
 }
 
 type mockStatsHandler struct{ stats.Handler }

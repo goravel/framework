@@ -18,32 +18,25 @@ import (
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/framework/support/env"
+	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )
 
 type PackageInstallCommand struct {
 	bindings      map[string]contractsbinding.Info
 	chosenDrivers [][]contractsbinding.Driver
-	// package:install and package:uninstall will be run simultaneously when testing,
-	// facades will be added to installedBindings when installing, and facades will be
-	// removed from installedBindings when uninstalling, so they share
-	// the same installedBindings pointer to avoid package:install and package:uninstall
-	// cannot be run simultaneously due to inconsistent installedBindings.
-	installedBindings                   *[]any
-	installedFacadesInTheCurrentCommand []string
-	paths                               string
+	paths         string
 }
 
-func NewPackageInstallCommand(bindings map[string]contractsbinding.Info, installedBindings *[]any, json contractsfoundation.Json) *PackageInstallCommand {
+func NewPackageInstallCommand(bindings map[string]contractsbinding.Info, json contractsfoundation.Json) *PackageInstallCommand {
 	paths, err := json.MarshalString(support.Config.Paths)
 	if err != nil {
 		panic(fmt.Sprintf("failed to marshal paths: %s", err))
 	}
 
 	return &PackageInstallCommand{
-		bindings:          bindings,
-		installedBindings: installedBindings,
-		paths:             paths,
+		bindings: bindings,
+		paths:    paths,
 	}
 }
 
@@ -136,7 +129,10 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 				return nil
 			}
 		} else {
-			if slices.Contains(r.installedFacadesInTheCurrentCommand, name) {
+			if doesFacadeExist(name) {
+				if !ctx.OptionBool("all") {
+					ctx.Info(fmt.Sprintf("Facade %s already exists", name))
+				}
 				continue
 			}
 
@@ -146,6 +142,9 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 			}
 		}
 	}
+
+	// Clear chosen drivers after installation is complete, to avoid affecting subsequent installations.
+	r.chosenDrivers = nil
 
 	return nil
 }
@@ -211,30 +210,27 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 		return nil
 	}
 
-	bindingsToInstall := r.getBindingsToInstall(binding)
-	if len(bindingsToInstall) > 0 && !ctx.OptionBool("all") {
-		facades := make([]string, len(bindingsToInstall))
-		for i := range bindingsToInstall {
-			facades[i] = convert.BindingToFacade(bindingsToInstall[i])
+	dependencyBindings := getDependencyBindings(binding, r.bindings, true)
+	if len(dependencyBindings) > 0 && !ctx.OptionBool("all") {
+		facades := make([]string, len(dependencyBindings))
+		for i := range dependencyBindings {
+			facades[i] = convert.BindingToFacade(dependencyBindings[i])
 		}
 		ctx.Info(fmt.Sprintf("%s depends on %s, they will be installed simultaneously", name, strings.Join(facades, ", ")))
 	}
 
-	bindingsToInstall = append(bindingsToInstall, binding)
+	bindingsToInstall := append(dependencyBindings, binding)
 	for _, binding := range bindingsToInstall {
-		bindingInfo := r.bindings[binding]
-		setup := bindingInfo.PkgPath + "/setup"
 		facade := convert.BindingToFacade(binding)
-
-		if slices.Contains(r.installedFacadesInTheCurrentCommand, facade) {
+		if doesFacadeExist(facade) {
 			continue
 		}
 
+		bindingInfo := r.bindings[binding]
+		setup := bindingInfo.PkgPath + "/setup"
 		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--facade="+facade, "--main-path="+env.MainPath(), "--paths="+r.paths)); err != nil {
 			return fmt.Errorf("failed to install facade %s: %s", facade, err.Error())
 		}
-
-		r.installedFacadesInTheCurrentCommand = append(r.installedFacadesInTheCurrentCommand, facade)
 
 		ctx.Success(fmt.Sprintf("Facade %s installed successfully", facade))
 
@@ -245,8 +241,6 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 		if len(bindingInfo.Drivers) > 0 {
 			r.chosenDrivers = append(r.chosenDrivers, bindingInfo.Drivers)
 		}
-
-		*r.installedBindings = append(*r.installedBindings, binding)
 	}
 
 	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
@@ -261,6 +255,7 @@ func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string
 		return nil
 	}
 
+	// To avoid prompting for drivers that have already been installed
 	for _, chooseDriver := range r.chosenDrivers {
 		sortedChooseDriver := slices.Clone(chooseDriver)
 		slices.SortFunc(sortedChooseDriver, func(a, b contractsbinding.Driver) int {
@@ -331,15 +326,8 @@ func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string
 	return r.installPackage(ctx, driver)
 }
 
-func (r *PackageInstallCommand) getBindingsToInstall(binding string) (bindingsToInstall []string) {
-	for _, dependencyBinding := range getDependencyBindings(binding, r.bindings) {
-		var binding any = dependencyBinding
-		if !slices.Contains(*r.installedBindings, binding) {
-			bindingsToInstall = append(bindingsToInstall, dependencyBinding)
-		}
-	}
-
-	return bindingsToInstall
+func doesFacadeExist(facade string) bool {
+	return file.Exists(convert.FacadeToFilepath(facade))
 }
 
 func getAvailableFacades(bindings map[string]contractsbinding.Info) []string {
@@ -370,27 +358,36 @@ func getAvailableFacades(bindings map[string]contractsbinding.Info) []string {
 	return availableFacades
 }
 
-func getDependencyBindings(binding string, bindings map[string]contractsbinding.Info) []string {
+func getDependencyBindings(binding string, bindings map[string]contractsbinding.Info, withInstallTogether bool) []string {
 	visited := make(map[string]bool)
-	return getDependencyBindingsRecursive(binding, bindings, visited)
+	dependencyBindings := getDependencyBindingsRecursive(binding, bindings, visited, withInstallTogether)
+
+	// binding may appear in InstallTogether, so it needs to be removed from dependencyBindings.
+	dependencyBindings = collect.Filter(dependencyBindings, func(s string, _ int) bool {
+		return s != binding
+	})
+
+	return dependencyBindings
 }
 
-func getDependencyBindingsRecursive(binding string, bindings map[string]contractsbinding.Info, visited map[string]bool) []string {
+func getDependencyBindingsRecursive(binding string, bindings map[string]contractsbinding.Info, visited map[string]bool, withInstallTogether bool) []string {
 	var deps []string
 
 	for _, dep := range bindings[binding].Dependencies {
 		if info, ok := bindings[dep]; ok && !info.IsBase && !visited[dep] {
 			visited[dep] = true
-			deps = append(deps, getDependencyBindingsRecursive(dep, bindings, visited)...)
+			deps = append(deps, getDependencyBindingsRecursive(dep, bindings, visited, withInstallTogether)...)
 			deps = append(deps, dep)
 		}
 	}
 
-	for _, installTogetherBinding := range bindings[binding].InstallTogether {
-		if info, ok := bindings[installTogetherBinding]; ok && !info.IsBase && !visited[installTogetherBinding] {
-			visited[installTogetherBinding] = true
-			deps = append(deps, getDependencyBindingsRecursive(installTogetherBinding, bindings, visited)...)
-			deps = append(deps, installTogetherBinding)
+	if withInstallTogether {
+		for _, installTogetherBinding := range bindings[binding].InstallTogether {
+			if info, ok := bindings[installTogetherBinding]; ok && !info.IsBase && !visited[installTogetherBinding] {
+				visited[installTogetherBinding] = true
+				deps = append(deps, getDependencyBindingsRecursive(installTogetherBinding, bindings, visited, withInstallTogether)...)
+				deps = append(deps, installTogetherBinding)
+			}
 		}
 	}
 

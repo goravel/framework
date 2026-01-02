@@ -23,6 +23,7 @@ func Setup() foundation.ApplicationBuilder {
 
 type ApplicationBuilder struct {
 	app                        foundation.Application
+	callback                   func()
 	commands                   []console.Command
 	config                     func()
 	configuredServiceProviders []foundation.ServiceProvider
@@ -38,7 +39,7 @@ type ApplicationBuilder struct {
 	paths                      func(paths contractsconfiguration.Paths)
 	routes                     []func()
 	rules                      []validation.Rule
-	scheduledEvents            []schedule.Event
+	schedule                   func() []schedule.Event
 	seeders                    []seeder.Seeder
 }
 
@@ -57,9 +58,12 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 		r.paths(paths)
 	}
 
-	// Register and boot custom service providers
+	// Add custom service providers
 	r.app.AddServiceProviders(r.configuredServiceProviders)
-	r.app.Boot()
+
+	// Register service providers, app.Boot should not be called here, because some
+	// settings need to be done before booting service providers.
+	r.app.RegisterServiceProviders()
 
 	// Apply custom configuration
 	if r.config != nil {
@@ -111,12 +115,14 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 	}
 
 	// Register scheduled events
-	if len(r.scheduledEvents) > 0 {
-		scheduleFacade := r.app.MakeSchedule()
-		if scheduleFacade == nil {
-			color.Errorln("Schedule facade not found, please install it first: ./artisan package:install Schedule")
-		} else {
-			scheduleFacade.Register(r.scheduledEvents)
+	if r.schedule != nil {
+		if events := r.schedule(); len(events) > 0 {
+			scheduleFacade := r.app.MakeSchedule()
+			if scheduleFacade == nil {
+				color.Errorln("Schedule facade not found, please install it first: ./artisan package:install Schedule")
+			} else {
+				scheduleFacade.Register(events)
+			}
 		}
 	}
 
@@ -192,11 +198,29 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 		}
 	}
 
+	// Execute callback function
+	if r.callback != nil {
+		r.callback()
+	}
+
+	// Boot service providers after all settings
+	r.app.BootServiceProviders()
+
 	return r.app
 }
 
 func (r *ApplicationBuilder) Run() {
-	r.Create().Run()
+	r.Start().Wait()
+}
+
+func (r *ApplicationBuilder) Start() foundation.Application {
+	return r.Create().Start()
+}
+
+func (r *ApplicationBuilder) WithCallback(callback func()) foundation.ApplicationBuilder {
+	r.callback = callback
+
+	return r
 }
 
 func (r *ApplicationBuilder) WithCommands(commands []console.Command) foundation.ApplicationBuilder {
@@ -293,8 +317,8 @@ func (r *ApplicationBuilder) WithRules(rules []validation.Rule) foundation.Appli
 	return r
 }
 
-func (r *ApplicationBuilder) WithSchedule(events []schedule.Event) foundation.ApplicationBuilder {
-	r.scheduledEvents = events
+func (r *ApplicationBuilder) WithSchedule(fn func() []schedule.Event) foundation.ApplicationBuilder {
+	r.schedule = fn
 
 	return r
 }

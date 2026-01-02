@@ -98,11 +98,11 @@ func init() {
 			"reader": map[string]any{
 				// Interval: How often metrics are pushed.
 				// Format: Duration string (e.g., "60s", "1m", "500ms").
-				"interval": config.GetString("OTEL_METRIC_EXPORT_INTERVAL", "60s"),
+				"interval": config.Env("OTEL_METRIC_EXPORT_INTERVAL", "60s"),
 
 				// Timeout: Max time allowed for export before cancelling.
 				// Format: Duration string (e.g., "30s", "10s").
-				"timeout": config.GetString("OTEL_METRIC_EXPORT_TIMEOUT", "30s"),
+				"timeout": config.Env("OTEL_METRIC_EXPORT_TIMEOUT", "30s"),
 			},
 		},
 
@@ -123,11 +123,11 @@ func init() {
 			"processor": map[string]any{
 				// Interval: How often logs are flushed.
 				// Format: Duration string (e.g., "1s", "500ms").
-				"interval": config.GetString("OTEL_LOG_EXPORT_INTERVAL", "1s"),
+				"interval": config.Env("OTEL_LOG_EXPORT_INTERVAL", "1s"),
 
 				// Timeout: Max time allowed for export before cancelling.
 				// Format: Duration string (e.g., "30s").
-				"timeout": config.GetString("OTEL_LOG_EXPORT_TIMEOUT", "30s"),
+				"timeout": config.Env("OTEL_LOG_EXPORT_TIMEOUT", "30s"),
 			},
 		},
 
@@ -166,7 +166,7 @@ func init() {
 
 				// Timeout: Max time to wait for the backend to acknowledge.
 				// Format: Duration string (e.g., "10s", "500ms").
-				"timeout": config.GetString("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT", "10s"),
+				"timeout": config.Env("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT", "10s"),
 			},
 
 			// OTLP Metric Exporter
@@ -178,7 +178,7 @@ func init() {
 
 				// Timeout: Max time to wait for the backend to acknowledge.
 				// Format: Duration string (e.g., "10s", "500ms").
-				"timeout": config.GetString("OTEL_EXPORTER_OTLP_METRICS_TIMEOUT", "10s"),
+				"timeout": config.Env("OTEL_EXPORTER_OTLP_METRICS_TIMEOUT", "10s"),
 
 				// Metric Temporality: "cumulative" or "delta".
 				// - "cumulative": Standard for Prometheus (counts never reset).
@@ -195,7 +195,7 @@ func init() {
 
 				// Timeout: Max time to wait for the backend to acknowledge.
 				// Format: Duration string (e.g., "10s", "500ms").
-				"timeout": config.GetString("OTEL_EXPORTER_OTLP_LOGS_TIMEOUT", "10s"),
+				"timeout": config.Env("OTEL_EXPORTER_OTLP_LOGS_TIMEOUT", "10s"),
 			},
 
 			// Zipkin Trace Exporter (Tracing only)

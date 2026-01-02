@@ -14,7 +14,7 @@ func NewTelemetryChannel() *TelemetryChannel {
 	return &TelemetryChannel{}
 }
 
-func (r *TelemetryChannel) Handle(channelPath string) (log.Hook, error) {
+func (r *TelemetryChannel) Handle(channelPath string) (log.Handler, error) {
 	if telemetry.TelemetryFacade == nil {
 		return nil, errors.TelemetryFacadeNotSet
 	}
@@ -25,8 +25,7 @@ func (r *TelemetryChannel) Handle(channelPath string) (log.Hook, error) {
 	}
 
 	instrumentName := config.GetString(channelPath+".instrument_name", defaultInstrumentationName)
-	return &hook{
-		enabled: true,
-		logger:  telemetry.TelemetryFacade.Logger(instrumentName),
+	return &handler{
+		logger: telemetry.TelemetryFacade.Logger(instrumentName),
 	}, nil
 }

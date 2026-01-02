@@ -8,20 +8,22 @@ import (
 )
 
 const (
-	StackDriver  = "stack"
-	SingleDriver = "single"
-	DailyDriver  = "daily"
-	OtelDriver   = "otel"
-	CustomDriver = "custom"
+	DriverStack  = "stack"
+	DriverSingle = "single"
+	DriverDaily  = "daily"
+	DriverOtel   = "otel"
+	DriverCustom = "custom"
 )
 
 const (
-	PanicLevel Level = iota
-	FatalLevel
-	ErrorLevel
-	WarningLevel
-	InfoLevel
-	DebugLevel
+	// Deprecated: use DriverStack instead, StackDriver will be removed in v1.18.
+	StackDriver = DriverStack
+	// Deprecated: use DriverSingle instead, SingleDriver will be removed in v1.18.
+	SingleDriver = DriverSingle
+	// Deprecated: use DriverDaily instead, DriverDaily will be removed in v1.18.
+	DailyDriver = DriverDaily
+	// Deprecated: use DriverCustom instead, CustomDriver will be removed in v1.18.
+	CustomDriver = DriverCustom
 )
 
 type Data map[string]any
@@ -37,27 +39,27 @@ type Log interface {
 }
 
 type Writer interface {
-	// Debug logs a message at DebugLevel.
+	// Debug logs a message at LevelDebug.
 	Debug(args ...any)
 	// Debugf is equivalent to Debug, but with support for fmt.Printf-style arguments.
 	Debugf(format string, args ...any)
-	// Info logs a message at InfoLevel.
+	// Info logs a message at LevelInfo.
 	Info(args ...any)
 	// Infof is equivalent to Info, but with support for fmt.Printf-style arguments.
 	Infof(format string, args ...any)
-	// Warning logs a message at WarningLevel.
+	// Warning logs a message at LevelWarning.
 	Warning(args ...any)
 	// Warningf is equivalent to Warning, but with support for fmt.Printf-style arguments.
 	Warningf(format string, args ...any)
-	// Error logs a message at ErrorLevel.
+	// Error logs a message at LevelError.
 	Error(args ...any)
 	// Errorf is equivalent to Error, but with support for fmt.Printf-style arguments.
 	Errorf(format string, args ...any)
-	// Fatal logs a message at FatalLevel.
+	// Fatal logs a message at LevelFatal.
 	Fatal(args ...any)
 	// Fatalf is equivalent to Fatal, but with support for fmt.Printf-style arguments.
 	Fatalf(format string, args ...any)
-	// Panic logs a message at PanicLevel.
+	// Panic logs a message at LevelPanic.
 	Panic(args ...any)
 	// Panicf is equivalent to Panic, but with support for fmt.Printf-style arguments.
 	Panicf(format string, args ...any)
@@ -86,11 +88,22 @@ type Writer interface {
 	WithTrace() Writer
 }
 
+// Logger is the interface for custom log drivers.
 type Logger interface {
-	// Handle pass a channel config path here
-	Handle(channel string) (Hook, error)
+	// Handle returns a Handler for the given channel config path.
+	Handle(channel string) (Handler, error)
 }
 
+// Handler is the interface for log handlers.
+type Handler interface {
+	// Enabled reports whether the handler is enabled for the given level.
+	Enabled(Level) bool
+	// Handle handles the log entry.
+	Handle(Entry) error
+}
+
+// Hook is the interface for log hooks.
+// Deprecated: Use Handler instead, Hook will be removed in v1.18.
 type Hook interface {
 	// Levels monitoring level
 	Levels() []Level

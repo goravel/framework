@@ -20,12 +20,12 @@ func TestToSeverity(t *testing.T) {
 		level contractslog.Level
 		want  log.Severity
 	}{
-		{"Debug", contractslog.DebugLevel, log.SeverityDebug},
-		{"Info", contractslog.InfoLevel, log.SeverityInfo},
-		{"Warning", contractslog.WarningLevel, log.SeverityWarn},
-		{"Error", contractslog.ErrorLevel, log.SeverityError},
-		{"Fatal", contractslog.FatalLevel, log.SeverityFatal},
-		{"Panic", contractslog.PanicLevel, log.SeverityFatal4},
+		{"Debug", contractslog.LevelDebug, log.SeverityDebug},
+		{"Info", contractslog.LevelInfo, log.SeverityInfo},
+		{"Warning", contractslog.LevelWarning, log.SeverityWarn},
+		{"Error", contractslog.LevelError, log.SeverityError},
+		{"Fatal", contractslog.LevelFatal, log.SeverityFatal},
+		{"Panic", contractslog.LevelPanic, log.SeverityFatal4},
 		{"Unknown", UnknowLevel, log.SeverityInfo},
 	}
 

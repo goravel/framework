@@ -94,15 +94,22 @@ var (
 	GrpcEmptyServerPort         = New("port can't be empty")
 	GrpcInvalidInterceptorsType = New("the type of clients.%s.interceptors must be []string")
 
+	HttpClientConnectionNotFound      = New("connection [%s] is not configured").SetModule(ModuleHttp)
+	HttpClientDefaultNotSet           = New("default client is not configured").SetModule(ModuleHttp)
+	HttpClientResponseAlreadyStreamed = New("response body has already been streamed").SetModule(ModuleHttp)
+	HttpClientResponseIsNil           = New("response is nil").SetModule(ModuleHttp)
+	HttpClientConfigNotSet            = New("http client config is nil").SetModule(ModuleHttp)
+
 	HttpRateLimitFailedToTakeToken     = New("failed to take token")
 	HttpRateLimitFailedToCheckThrottle = New("failed to check throttle: %s")
 
 	LangFileNotExist      = New("translation file does not exist")
 	LangNoLoaderAvailable = New("no translation loader available")
 
-	LogDriverCircularReference = New("%s driver can't include self channel").SetModule(ModuleLog)
-	LogDriverNotSupported      = New("invalid driver: %s, only support stack, single, daily, custom").SetModule(ModuleLog)
-	LogEmptyLogFilePath        = New("empty log file path").SetModule(ModuleLog)
+	LogDriverCircularReference  = New("%s driver can't include self channel").SetModule(ModuleLog)
+	LogDriverNotSupported       = New("invalid driver: %s, only support stack, single, daily, custom").SetModule(ModuleLog)
+	LogEmptyLogFilePath         = New("empty log file path").SetModule(ModuleLog)
+	LogFormatterNotSupported    = New("invalid formatter: %s, only support text, json").SetModule(ModuleLog)
 
 	MailTemplateParseFailed         = New("failed to parse template %s: %w").SetModule(ModuleMail)
 	MailTemplateExecutionFailed     = New("failed to execute template %s: %w").SetModule(ModuleMail)

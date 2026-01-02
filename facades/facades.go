@@ -84,7 +84,7 @@ func Hash() hash.Hash {
 	return App().MakeHash()
 }
 
-func Http() client.Request {
+func Http() client.Factory {
 	return App().MakeHttp()
 }
 
