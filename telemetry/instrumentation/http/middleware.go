@@ -37,6 +37,11 @@ func Telemetry(opts ...Option) http.Middleware {
 		return func(ctx http.Context) { ctx.Request().Next() }
 	}
 
+	if telemetry.ConfigFacade == nil {
+		color.Warningln("[Telemetry] Config facade not initialized. HTTP middleware disabled.")
+		return func(ctx http.Context) { ctx.Request().Next() }
+	}
+
 	var cfg ServerConfig
 	_ = telemetry.ConfigFacade.UnmarshalKey("telemetry.instrumentation.http_server", &cfg)
 
