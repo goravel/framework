@@ -17,11 +17,11 @@ import (
 
 type Application struct {
 	log.Writer
-	ctx      context.Context
-	channels []string
-	config   config.Config
-	json     foundation.Json
-	handlers []slog.Handler
+	ctx               context.Context
+	channels          []string
+	channelToHandlers map[string][]slog.Handler
+	config            config.Config
+	json              foundation.Json
 }
 
 func NewApplication(ctx context.Context, channels []string, config config.Config, json foundation.Json) (*Application, error) {
@@ -33,6 +33,7 @@ func NewApplication(ctx context.Context, channels []string, config config.Config
 		}
 	}
 
+	channelToHandlers := make(map[string][]slog.Handler)
 	for _, channel := range channels {
 		channelHandlers, err := getHandlers(config, json, channel)
 		if err != nil {
@@ -40,17 +41,18 @@ func NewApplication(ctx context.Context, channels []string, config config.Config
 		}
 
 		handlers = append(handlers, channelHandlers...)
+		channelToHandlers[channel] = channelHandlers
 	}
 
 	slogLogger := slog.New(slogmulti.Fanout(handlers...))
 
 	return &Application{
-		ctx:      ctx,
-		channels: channels,
-		config:   config,
-		json:     json,
-		handlers: handlers,
-		Writer:   NewWriter(slogLogger, ctx),
+		ctx:               ctx,
+		channels:          channels,
+		config:            config,
+		json:              json,
+		channelToHandlers: channelToHandlers,
+		Writer:            NewWriter(ctx, slogLogger),
 	}, nil
 }
 
@@ -59,13 +61,16 @@ func (r *Application) WithContext(ctx context.Context) log.Log {
 		ctx = httpCtx.Context()
 	}
 
-	app, err := NewApplication(ctx, r.channels, r.config, r.json)
-
-	if err != nil {
-		panic(err)
+	var handles []slog.Handler
+	for _, handlers := range r.channelToHandlers {
+		handles = append(handles, handlers...)
 	}
 
-	return app
+	copy := *r
+	copy.ctx = ctx
+	copy.Writer = NewWriter(ctx, slog.New(slogmulti.Fanout(handles...)))
+
+	return &copy
 }
 
 func (r *Application) Channel(channel string) log.Log {
@@ -73,12 +78,15 @@ func (r *Application) Channel(channel string) log.Log {
 		return r
 	}
 
-	app, err := NewApplication(r.ctx, []string{channel}, r.config, r.json)
-	if err != nil {
-		panic(err)
+	handles, exist := r.channelToHandlers[channel]
+	if !exist {
+		panic(errors.LogChannelNotFound.Args(channel))
 	}
 
-	return app
+	copy := *r
+	copy.Writer = NewWriter(r.ctx, slog.New(slogmulti.Fanout(handles...)))
+
+	return &copy
 }
 
 func (r *Application) Stack(channels []string) log.Log {
@@ -86,12 +94,20 @@ func (r *Application) Stack(channels []string) log.Log {
 		return r
 	}
 
-	app, err := NewApplication(r.ctx, channels, r.config, r.json)
-	if err != nil {
-		panic(err)
+	var handles []slog.Handler
+	for _, channel := range channels {
+		handlers, exist := r.channelToHandlers[channel]
+		if !exist {
+			panic(errors.LogChannelNotFound.Args(channel))
+		}
+
+		handles = append(handles, handlers...)
 	}
 
-	return app
+	copy := *r
+	copy.Writer = NewWriter(r.ctx, slog.New(slogmulti.Fanout(handles...)))
+
+	return &copy
 }
 
 // getHandlers returns slog log handlers for the specified channel.
