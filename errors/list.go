@@ -101,6 +101,7 @@ var (
 	LangNoLoaderAvailable = New("no translation loader available")
 
 	LogChannelNotFound         = New("log channel %s not found")
+	LogChannelUnimplemented    = New("log channel %s doesn't implement contracts/log/logger").SetModule(ModuleLog)
 	LogDriverCircularReference = New("%s driver can't include self channel").SetModule(ModuleLog)
 	LogDriverNotSupported      = New("invalid driver: %s, only support stack, single, daily, custom").SetModule(ModuleLog)
 	LogEmptyLogFilePath        = New("empty log file path").SetModule(ModuleLog)
