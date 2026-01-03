@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -70,6 +71,7 @@ func TestOne(t *testing.T) {
 	for _, test := range tests {
 		maker = NewValidation()
 		validator, err := maker.Make(
+			context.Background(),
 			test.data,
 			test.rules,
 			test.options...,
@@ -115,6 +117,7 @@ func TestGet(t *testing.T) {
 	for _, test := range tests {
 		maker = NewValidation()
 		validator, err := maker.Make(
+			context.Background(),
 			test.data,
 			test.rules,
 			Filters(test.filters),
@@ -164,6 +167,7 @@ func TestAll(t *testing.T) {
 	for _, test := range tests {
 		maker = NewValidation()
 		validator, err := maker.Make(
+			context.Background(),
 			test.data,
 			test.rules,
 			Filters(test.filters),
@@ -204,6 +208,7 @@ func TestHas(t *testing.T) {
 	for _, test := range tests {
 		maker = NewValidation()
 		validator, err := maker.Make(
+			context.Background(),
 			test.data,
 			test.rules,
 			Filters(test.filters),
