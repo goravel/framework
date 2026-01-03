@@ -383,6 +383,7 @@ func (r *testTables) globalScopes() ([]string, error) {
 	blueprint.Create()
 	blueprint.BigIncrements("id")
 	blueprint.String("name")
+	blueprint.String("avatar")
 	blueprint.Timestamps()
 	blueprint.SoftDeletes()
 

@@ -548,13 +548,17 @@ type JsonData struct {
 type GlobalScope struct {
 	Model
 	Name      string
+	Avatar    string
 	DeletedAt gorm.DeletedAt `gorm:"column:deleted_at" json:"deleted_at" db:"deleted_at"`
 }
 
-func (r *GlobalScope) GlobalScopes() []func(contractsorm.Query) contractsorm.Query {
-	return []func(contractsorm.Query) contractsorm.Query{
-		func(query contractsorm.Query) contractsorm.Query {
-			return query.Where("name", "global_scope")
+func (r *GlobalScope) GlobalScopes() map[string]func(contractsorm.Query) contractsorm.Query {
+	return map[string]func(contractsorm.Query) contractsorm.Query{
+		"name": func(query contractsorm.Query) contractsorm.Query {
+			return query.Where("name", "name_scope")
+		},
+		"avatar": func(query contractsorm.Query) contractsorm.Query {
+			return query.Where("avatar", "avatar_scope")
 		},
 	}
 }
