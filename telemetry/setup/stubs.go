@@ -159,7 +159,11 @@ func init() {
 			"otlpmetric": map[string]any{
 				"driver":   "otlp",
 				"endpoint": config.Env("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", "http://localhost:4318"),
+
+				// Protocol: "http/protobuf", "http/json" or "grpc".
 				"protocol": config.Env("OTEL_EXPORTER_OTLP_METRICS_PROTOCOL", "http/protobuf"),
+
+				// Set to false to require TLS/SSL.
 				"insecure": config.Env("OTEL_EXPORTER_OTLP_METRICS_INSECURE", true),
 
 				// Timeout: Max time to wait for the backend to acknowledge.
@@ -176,7 +180,11 @@ func init() {
 			"otlplog": map[string]any{
 				"driver":   "otlp",
 				"endpoint": config.Env("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", "http://localhost:4318"),
+
+				// Protocol: "http/protobuf", "http/json" or "grpc".
 				"protocol": config.Env("OTEL_EXPORTER_OTLP_LOGS_PROTOCOL", "http/protobuf"),
+
+				// Set to false to require TLS/SSL.
 				"insecure": config.Env("OTEL_EXPORTER_OTLP_LOGS_INSECURE", true),
 
 				// Timeout: Max time to wait for the backend to acknowledge.
@@ -194,6 +202,22 @@ func init() {
 			// Prints telemetry data to stdout.
 			"console": map[string]any{
 				"driver": "console",
+
+				// Set to true to pretty print the output.
+				"pretty_print": false,
+			},
+
+			// Custom Exporter
+			//
+			// Use this to provide your own exporter implementation.
+			// The "via" key should contain an instance of your custom exporter.
+			"custom": map[string]any{
+				"driver": "custom",
+
+				// For traces, via should be an instance of go.opentelemetry.io/otel/sdk/trace.SpanExporter or func(context.Context) (sdktrace.SpanExporter, error)
+				// For metrics, via should be an instance of go.opentelemetry.io/otel/sdk/metric.Reader or func(context.Context) (sdkmetric.Reader, error)
+				// For log, via should be an instance of go.opentelemetry.io/otel/sdk/log.Exporter or func(context.Context) (sdklog.Exporter, error)
+				// "via": YourCustomExporterInstance,
 			},
 		},
 	})
