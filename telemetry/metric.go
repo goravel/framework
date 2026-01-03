@@ -130,7 +130,7 @@ func newOTLPMetricExporter(ctx context.Context, cfg ExporterEntry) (sdkmetric.Ex
 
 	switch protocol {
 	case ProtocolGRPC:
-		opts := buildOTLPOptions[otlpmetricgrpc.Option](cfg,
+		opts := buildOTLPOptions(cfg,
 			otlpmetricgrpc.WithEndpoint,
 			otlpmetricgrpc.WithInsecure,
 			otlpmetricgrpc.WithTimeout,
@@ -140,7 +140,7 @@ func newOTLPMetricExporter(ctx context.Context, cfg ExporterEntry) (sdkmetric.Ex
 		return otlpmetricgrpc.New(ctx, opts...)
 
 	default:
-		opts := buildOTLPOptions[otlpmetrichttp.Option](cfg,
+		opts := buildOTLPOptions(cfg,
 			otlpmetrichttp.WithEndpoint,
 			otlpmetrichttp.WithInsecure,
 			otlpmetrichttp.WithTimeout,
