@@ -43,6 +43,13 @@ type Query interface {
 	Begin() (Query, error)
 	// BeginTransaction begins a new transaction
 	BeginTransaction() (Query, error)
+	// Chunk processes a given number of records in batches.
+	Chunk(count int, callback func([]any) error) error
+	// ChunkByID processes records in batches by comparing numeric IDs in ascending order.
+	// This avoids issues with offset-based pagination when records are added or deleted during processing.
+	ChunkByID(count int, callback func([]any) error) error
+	// ChunkByIDDesc processes a given number of records in batches, ordered by ID in descending order.
+	ChunkByIDDesc(count int, callback func([]any) error) error
 	// Commit commits the changes in a transaction.
 	Commit() error
 	// Count retrieve the "count" result of the query.
