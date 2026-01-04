@@ -12,15 +12,16 @@ import (
 var _ contractslog.Handler = (*handler)(nil)
 
 type handler struct {
-	logger otellog.Logger
+	logger  otellog.Logger
+	enabled bool
 }
 
 func (r *handler) Enabled(level contractslog.Level) bool {
-	return true
+	return r.enabled
 }
 
 func (r *handler) Handle(entry contractslog.Entry) error {
-	if r.logger == nil {
+	if !r.enabled || r.logger == nil {
 		return nil
 	}
 
@@ -88,4 +89,15 @@ func (r *handler) convertEntry(e contractslog.Entry) otellog.Record {
 
 	record.AddAttributes(attrs...)
 	return record
+}
+
+// noopHandler is a hollow logger used when telemetry is disabled via config.
+type noopHandler struct{}
+
+func (h *noopHandler) Enabled(level contractslog.Level) bool {
+	return false
+}
+
+func (h *noopHandler) Handle(entry contractslog.Entry) error {
+	return nil
 }

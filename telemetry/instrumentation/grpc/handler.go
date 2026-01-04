@@ -10,6 +10,10 @@ import (
 
 // NewServerStatsHandler creates an OTel stats handler for the server.
 func NewServerStatsHandler(opts ...Option) stats.Handler {
+	if telemetry.ConfigFacade == nil || !telemetry.ConfigFacade.GetBool("telemetry.instrumentation.grpc_server", true) {
+		return nil
+	}
+
 	if telemetry.TelemetryFacade == nil {
 		color.Warningln("[Telemetry] Facade not initialized. gRPC server stats instrumentation is disabled.")
 		return nil
@@ -22,6 +26,10 @@ func NewServerStatsHandler(opts ...Option) stats.Handler {
 
 // NewClientStatsHandler creates an OTel stats handler for the client.
 func NewClientStatsHandler(opts ...Option) stats.Handler {
+	if telemetry.ConfigFacade == nil || !telemetry.ConfigFacade.GetBool("telemetry.instrumentation.grpc_client", true) {
+		return nil
+	}
+
 	if telemetry.TelemetryFacade == nil {
 		color.Warningln("[Telemetry] Facade not initialized. gRPC client stats instrumentation is disabled.")
 		return nil

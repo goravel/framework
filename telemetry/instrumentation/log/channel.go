@@ -15,17 +15,22 @@ func NewTelemetryChannel() *TelemetryChannel {
 }
 
 func (r *TelemetryChannel) Handle(channelPath string) (log.Handler, error) {
-	if telemetry.TelemetryFacade == nil {
-		return nil, errors.TelemetryFacadeNotSet
-	}
-
 	config := telemetry.ConfigFacade
 	if config == nil {
 		return nil, errors.ConfigFacadeNotSet
 	}
 
+	if !config.GetBool("telemetry.instrumentation.log", true) {
+		return &handler{enabled: false}, nil
+	}
+
+	if telemetry.TelemetryFacade == nil {
+		return nil, errors.TelemetryFacadeNotSet
+	}
+
 	instrumentName := config.GetString(channelPath+".instrument_name", defaultInstrumentationName)
 	return &handler{
-		logger: telemetry.TelemetryFacade.Logger(instrumentName),
+		enabled: true,
+		logger:  telemetry.TelemetryFacade.Logger(instrumentName),
 	}, nil
 }

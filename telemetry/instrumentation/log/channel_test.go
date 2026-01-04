@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"go.opentelemetry.io/otel/log/noop"
 
+	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/errors"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mockstelemetry "github.com/goravel/framework/mocks/telemetry"
@@ -37,8 +38,8 @@ func (s *TelemetryChannelTestSuite) TearDownTest() {
 
 func (s *TelemetryChannelTestSuite) TestHandle_Success_DefaultName() {
 	channelPath := "logging.channels.otel"
+	s.mockConfig.EXPECT().GetBool("telemetry.instrumentation.log", true).Return(true).Once()
 	s.mockConfig.EXPECT().GetString(channelPath+".instrument_name", defaultInstrumentationName).Return(defaultInstrumentationName).Once()
-
 	s.mockTelemetry.On("Logger", defaultInstrumentationName).Return(noop.NewLoggerProvider().Logger("test")).Once()
 
 	channel := NewTelemetryChannel()
@@ -46,6 +47,7 @@ func (s *TelemetryChannelTestSuite) TestHandle_Success_DefaultName() {
 
 	s.NoError(err)
 	s.NotNil(h)
+	s.True(h.Enabled(log.LevelInfo))
 	s.mockTelemetry.AssertExpectations(s.T())
 }
 
@@ -53,8 +55,8 @@ func (s *TelemetryChannelTestSuite) TestHandle_Success_CustomName() {
 	channelPath := "logging.channels.otel"
 	customName := "my-service-logs"
 
+	s.mockConfig.EXPECT().GetBool("telemetry.instrumentation.log", true).Return(true).Once()
 	s.mockConfig.EXPECT().GetString(channelPath+".instrument_name", defaultInstrumentationName).Return(customName).Once()
-
 	s.mockTelemetry.On("Logger", customName).Return(noop.NewLoggerProvider().Logger("test")).Once()
 
 	channel := NewTelemetryChannel()
@@ -62,11 +64,25 @@ func (s *TelemetryChannelTestSuite) TestHandle_Success_CustomName() {
 
 	s.NoError(err)
 	s.NotNil(h)
+	s.True(h.Enabled(log.LevelInfo))
 	s.mockTelemetry.AssertExpectations(s.T())
+}
+
+func (s *TelemetryChannelTestSuite) TestHandle_Disabled_KillSwitch() {
+	s.mockConfig.EXPECT().GetBool("telemetry.instrumentation.log", true).Return(false).Once()
+
+	channel := NewTelemetryChannel()
+	h, err := channel.Handle("logging.channels.otel")
+
+	s.NoError(err)
+	s.NotNil(h)
+	s.False(h.Enabled(log.LevelInfo))
 }
 
 func (s *TelemetryChannelTestSuite) TestHandle_Error_TelemetryFacadeNotSet() {
 	telemetry.TelemetryFacade = nil
+
+	s.mockConfig.EXPECT().GetBool("telemetry.instrumentation.log", true).Return(true).Once()
 
 	channel := NewTelemetryChannel()
 	h, err := channel.Handle("logging.channels.otel")
