@@ -90,14 +90,3 @@ func (r *handler) convertEntry(e contractslog.Entry) otellog.Record {
 	record.AddAttributes(attrs...)
 	return record
 }
-
-// noopHandler is a hollow logger used when telemetry is disabled via config.
-type noopHandler struct{}
-
-func (h *noopHandler) Enabled(level contractslog.Level) bool {
-	return false
-}
-
-func (h *noopHandler) Handle(entry contractslog.Entry) error {
-	return nil
-}
