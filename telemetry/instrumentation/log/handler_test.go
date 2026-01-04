@@ -10,28 +10,69 @@ import (
 	"go.opentelemetry.io/otel/log/logtest"
 
 	contractslog "github.com/goravel/framework/contracts/log"
+	mockstelemetry "github.com/goravel/framework/mocks/telemetry"
+	"github.com/goravel/framework/telemetry"
 )
 
 type HandlerTestSuite struct {
 	suite.Suite
-	recorder   *logtest.Recorder
-	handler    *handler
-	loggerName string
-	ctx        context.Context
-	now        time.Time
+	recorder      *logtest.Recorder
+	handler       *handler
+	loggerName    string
+	ctx           context.Context
+	now           time.Time
+	mockTelemetry *mockstelemetry.Telemetry // Added for lazy test
+}
+
+func TestHandlerTestSuite(t *testing.T) {
+	suite.Run(t, new(HandlerTestSuite))
 }
 
 func (s *HandlerTestSuite) SetupTest() {
 	s.loggerName = "test-logger"
 	s.recorder = logtest.NewRecorder()
+	s.mockTelemetry = mockstelemetry.NewTelemetry(s.T())
 	s.handler = &handler{
-		enabled: true,
-		logger:  s.recorder.Logger(s.loggerName),
+		enabled:        true,
+		instrumentName: s.loggerName,
+		logger:         s.recorder.Logger(s.loggerName),
 	}
 	s.now = time.Date(2024, 1, 1, 10, 0, 0, 0, time.UTC)
 
 	type ctxKey string
 	s.ctx = context.WithValue(context.Background(), ctxKey("request_id"), "req-123")
+}
+
+func (s *HandlerTestSuite) TearDownTest() {
+	telemetry.TelemetryFacade = nil
+}
+
+func (s *HandlerTestSuite) TestHandle_Lazy_Success() {
+	s.handler.logger = nil
+	telemetry.TelemetryFacade = s.mockTelemetry
+	s.mockTelemetry.On("Logger", s.loggerName).Return(s.recorder.Logger(s.loggerName)).Once()
+
+	entry := &TestEntry{
+		ctx:   context.Background(),
+		level: contractslog.LevelInfo,
+		time:  s.now,
+	}
+	err := s.handler.Handle(entry)
+	s.NoError(err)
+	s.mockTelemetry.AssertExpectations(s.T())
+	s.NotNil(s.handler.logger)
+}
+
+func (s *HandlerTestSuite) TestHandle_Lazy_FacadeNotSet() {
+	s.handler.logger = nil
+	telemetry.TelemetryFacade = nil
+	entry := &TestEntry{
+		ctx:   context.Background(),
+		level: contractslog.LevelInfo,
+	}
+	err := s.handler.Handle(entry)
+	s.NoError(err)
+	s.Nil(s.handler.logger)
 }
 
 func (s *HandlerTestSuite) TestEnabled() {
@@ -185,11 +226,11 @@ func (s *HandlerTestSuite) TestHandle() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			// Reset the recorder for each test case
 			s.recorder = logtest.NewRecorder()
 			s.handler = &handler{
-				enabled: true,
-				logger:  s.recorder.Logger(s.loggerName),
+				enabled:        true,
+				instrumentName: s.loggerName,
+				logger:         s.recorder.Logger(s.loggerName),
 			}
 
 			err := s.handler.Handle(tt.entry)
@@ -213,10 +254,6 @@ func (s *HandlerTestSuite) normalizeObservedTimestamp(result logtest.Recording) 
 			result[scope][i].ObservedTimestamp = time.Time{}
 		}
 	}
-}
-
-func TestHandlerTestSuite(t *testing.T) {
-	suite.Run(t, new(HandlerTestSuite))
 }
 
 type TestEntry struct {

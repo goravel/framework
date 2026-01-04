@@ -2,8 +2,10 @@ package log
 
 import (
 	"context"
+	"sync"
 	"time"
 
+	"github.com/goravel/framework/telemetry"
 	otellog "go.opentelemetry.io/otel/log"
 
 	contractslog "github.com/goravel/framework/contracts/log"
@@ -12,8 +14,10 @@ import (
 var _ contractslog.Handler = (*handler)(nil)
 
 type handler struct {
-	logger  otellog.Logger
-	enabled bool
+	enabled        bool
+	instrumentName string
+	logger         otellog.Logger
+	mu             sync.Mutex
 }
 
 func (r *handler) Enabled(level contractslog.Level) bool {
@@ -21,7 +25,12 @@ func (r *handler) Enabled(level contractslog.Level) bool {
 }
 
 func (r *handler) Handle(entry contractslog.Entry) error {
-	if !r.enabled || r.logger == nil {
+	if !r.enabled {
+		return nil
+	}
+
+	logger := r.getLogger()
+	if logger == nil {
 		return nil
 	}
 
@@ -30,9 +39,24 @@ func (r *handler) Handle(entry contractslog.Entry) error {
 		ctx = context.Background()
 	}
 
-	r.logger.Emit(ctx, r.convertEntry(entry))
+	logger.Emit(ctx, r.convertEntry(entry))
 
 	return nil
+}
+
+func (r *handler) getLogger() otellog.Logger {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if r.logger != nil {
+		return r.logger
+	}
+
+	if telemetry.TelemetryFacade != nil {
+		r.logger = telemetry.TelemetryFacade.Logger(r.instrumentName)
+	}
+
+	return r.logger
 }
 
 func (r *handler) convertEntry(e contractslog.Entry) otellog.Record {
