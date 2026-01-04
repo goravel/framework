@@ -5,9 +5,21 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"runtime/debug"
 	"slices"
 	"strings"
+
+	"github.com/goravel/framework/support"
 )
+
+// MainPath returns the package name of application, eg: goravel.
+func MainPath() string {
+	if info, ok := debug.ReadBuildInfo(); ok {
+		return info.Main.Path
+	}
+
+	return "goravel"
+}
 
 // IsAir checks if the application is running using Air.
 func IsAir() bool {
@@ -28,6 +40,15 @@ func IsArm() bool {
 
 func IsArtisan() bool {
 	return slices.Contains(os.Args, "artisan")
+}
+
+func IsBootstrapSetup() bool {
+	data, err := os.ReadFile(filepath.Join(support.Config.Paths.Bootstrap, "app.go"))
+	if err != nil {
+		return false
+	}
+
+	return strings.Contains(string(data), "foundation.Setup().")
 }
 
 // IsDarwin returns whether the current operating system is Darwin.

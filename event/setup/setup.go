@@ -4,28 +4,28 @@ import (
 	"os"
 
 	"github.com/goravel/framework/packages"
-	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support/path"
 )
 
 func main() {
+	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
+	eventFacadePath := path.Facade("event.go")
+	eventServiceProvider := "&event.ServiceProvider{}"
+	moduleImport := setup.Paths().Module().Import()
 
-	packages.Setup(os.Args).
-		Install(
-			modify.GoFile(path.Config("app.go")).
-				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register("&event.ServiceProvider{}")),
-			modify.WhenFacade("Event", modify.File(path.Facades("event.go")).Overwrite(stubs.EventFacade())),
-		).
-		Uninstall(
-			modify.WhenNoFacades([]string{"Event"},
-				modify.GoFile(path.Config("app.go")).
-					Find(match.Providers()).Modify(modify.Unregister("&event.ServiceProvider{}")).
-					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
-			),
-			modify.WhenFacade("Event", modify.File(path.Facades("event.go")).Remove()),
-		).
-		Execute()
+	setup.Install(
+		// Add the event service provider to the providers array in bootstrap/providers.go
+		modify.AddProviderApply(moduleImport, eventServiceProvider),
+
+		// Add the Event facade.
+		modify.File(eventFacadePath).Overwrite(stubs.EventFacade(setup.Paths().Facades().Package())),
+	).Uninstall(
+		// Remove the Event facade and service provider.
+		modify.File(eventFacadePath).Remove(),
+
+		// Remove the event service provider from the providers array in bootstrap/providers.go
+		modify.RemoveProviderApply(moduleImport, eventServiceProvider),
+	).Execute()
 }

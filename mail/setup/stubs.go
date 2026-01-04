@@ -6,15 +6,15 @@ import (
 
 type Stubs struct{}
 
-func (s Stubs) Config(module string) string {
-	content := `package config
+func (s Stubs) Config(pkg, facadesImport, facadesPackage string) string {
+	content := `package DummyPackage
 
 import (
-	"DummyModule/app/facades"
+	"DummyFacadesImport"
 )
 
 func init() {
-	config := facades.Config()
+	config := DummyFacadesPackage.Config()
 	config.Add("mail", map[string]any{
 		// SMTP Host Address
 		//
@@ -77,11 +77,15 @@ func init() {
 }
 `
 
-	return strings.ReplaceAll(content, "DummyModule", module)
+	content = strings.ReplaceAll(content, "DummyPackage", pkg)
+	content = strings.ReplaceAll(content, "DummyFacadesImport", facadesImport)
+	content = strings.ReplaceAll(content, "DummyFacadesPackage", facadesPackage)
+
+	return content
 }
 
-func (s Stubs) MailFacade() string {
-	return `package facades
+func (s Stubs) MailFacade(pkg string) string {
+	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/mail"
@@ -91,4 +95,6 @@ func Mail() mail.Mail {
 	return App().MakeMail()
 }
 `
+
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }

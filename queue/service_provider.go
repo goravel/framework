@@ -42,13 +42,13 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (r *ServiceProvider) Boot(app foundation.Application) {
-	r.registerCommands(app)
-}
-
-func (r *ServiceProvider) registerCommands(app foundation.Application) {
 	app.MakeArtisan().Register([]console.Command{
 		&queueconsole.JobMakeCommand{},
 		queueconsole.NewQueueRetryCommand(app.MakeQueue(), app.GetJson()),
 		queueconsole.NewQueueFailedCommand(app.MakeQueue()),
 	})
+}
+
+func (r *ServiceProvider) Runners(app foundation.Application) []foundation.Runner {
+	return []foundation.Runner{NewQueueRunner(app.MakeConfig(), app.MakeQueue())}
 }

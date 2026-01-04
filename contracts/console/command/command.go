@@ -16,6 +16,7 @@ type Extend struct {
 	ArgsUsage string
 	Category  string
 	Flags     []Flag
+	Arguments []Argument
 }
 
 type Flag interface {

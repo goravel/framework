@@ -2,6 +2,7 @@ package validation
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -23,6 +24,9 @@ import (
 )
 
 func TestBind_Rule(t *testing.T) {
+	type Embed struct {
+		C string `form:"c" json:"c"`
+	}
 	type Data struct {
 		A              string                  `form:"a" json:"a"`
 		B              int                     `form:"b" json:"b"`
@@ -44,6 +48,7 @@ func TestBind_Rule(t *testing.T) {
 		TimestampMicro *carbon.TimestampMicro  `form:"timestamp_micro" json:"timestamp_micro"`
 		TimestampNano  *carbon.TimestampNano   `form:"timestamp_nano" json:"timestamp_nano"`
 		Time           *time.Time              `form:"time" json:"time"`
+		Embed
 	}
 
 	tests := []struct {
@@ -636,12 +641,20 @@ func TestBind_Rule(t *testing.T) {
 				assert.Equal(t, file.Filename, data.Files[1].Filename)
 			},
 		},
+		{
+			name:  "data has embed struct field",
+			data:  validate.FromMap(map[string]any{"c": "cc"}),
+			rules: map[string]string{"c": "required"},
+			assert: func(data Data) {
+				assert.Equal(t, "cc", data.C)
+			},
+		},
 	}
 
 	validation := NewValidation()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			validator, err := validation.Make(test.data, test.rules)
+			validator, err := validation.Make(context.Background(), test.data, test.rules)
 			require.Nil(t, err)
 			require.Nil(t, validator.Errors())
 
@@ -752,7 +765,7 @@ func TestBind_Filter(t *testing.T) {
 	validation := NewValidation()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			validator, err := validation.Make(test.data, test.rules, Filters(test.filters))
+			validator, err := validation.Make(context.Background(), test.data, test.rules, Filters(test.filters))
 			require.Nil(t, err)
 			require.Nil(t, validator.Errors())
 
@@ -792,6 +805,7 @@ func TestFails(t *testing.T) {
 	for _, test := range tests {
 		maker = NewValidation()
 		validator, err := maker.Make(
+			context.Background(),
 			test.data,
 			test.rules,
 			Filters(test.filters),
@@ -1045,7 +1059,7 @@ func TestCastValue(t *testing.T) {
 	validation := NewValidation()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			validator, err := validation.Make(test.data, map[string]string{
+			validator, err := validation.Make(context.Background(), test.data, map[string]string{
 				"String": "required",
 			})
 			assert.Nil(t, err)

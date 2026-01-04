@@ -48,12 +48,12 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (r *ServiceProvider) Boot(app foundation.Application) {
-	r.registerCommands(app)
-}
-
-func (r *ServiceProvider) registerCommands(app foundation.Application) {
 	app.MakeArtisan().Register([]console.Command{
 		scheduleconsole.NewList(app.MakeSchedule()),
 		scheduleconsole.NewRun(app.MakeSchedule()),
 	})
+}
+
+func (r *ServiceProvider) Runners(app foundation.Application) []foundation.Runner {
+	return []foundation.Runner{NewScheduleRunner(app.MakeSchedule())}
 }

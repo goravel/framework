@@ -21,19 +21,19 @@ func (_m *Step) EXPECT() *Step_Expecter {
 }
 
 // As provides a mock function with given fields: key
-func (_m *Step) As(key string) process.Step {
+func (_m *Step) As(key string) process.PipeCommand {
 	ret := _m.Called(key)
 
 	if len(ret) == 0 {
 		panic("no return value specified for As")
 	}
 
-	var r0 process.Step
-	if rf, ok := ret.Get(0).(func(string) process.Step); ok {
+	var r0 process.PipeCommand
+	if rf, ok := ret.Get(0).(func(string) process.PipeCommand); ok {
 		r0 = rf(key)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(process.Step)
+			r0 = ret.Get(0).(process.PipeCommand)
 		}
 	}
 
@@ -58,12 +58,12 @@ func (_c *Step_As_Call) Run(run func(key string)) *Step_As_Call {
 	return _c
 }
 
-func (_c *Step_As_Call) Return(_a0 process.Step) *Step_As_Call {
+func (_c *Step_As_Call) Return(_a0 process.PipeCommand) *Step_As_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Step_As_Call) RunAndReturn(run func(string) process.Step) *Step_As_Call {
+func (_c *Step_As_Call) RunAndReturn(run func(string) process.PipeCommand) *Step_As_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -6,22 +6,22 @@ import (
 
 type Stubs struct{}
 
-func (s Stubs) Config(module string) string {
-	content := `package config
+func (s Stubs) Config(pkg, facadesImport, facadesPackage string) string {
+	content := `package DummyPackage
 
 import (
-	"DummyModule/app/facades"
+	"DummyFacadesImport"
 )
 
 func init() {
-	config := facades.Config()
+	config := DummyFacadesPackage.Config()
 	config.Add("cache", map[string]any{
 		// Default Cache Store
 		//
 		// This option controls the default cache connection that gets used while
 		// using this caching library. This connection is used when another is
 		// not explicitly specified when executing a given caching function.
-		"default": config.Env("CACHE_STORE", "memory"),
+		"default": "memory",
 
 		// Cache Stores
 		//
@@ -46,11 +46,15 @@ func init() {
 }
 `
 
-	return strings.ReplaceAll(content, "DummyModule", module)
+	content = strings.ReplaceAll(content, "DummyPackage", pkg)
+	content = strings.ReplaceAll(content, "DummyFacadesImport", facadesImport)
+	content = strings.ReplaceAll(content, "DummyFacadesPackage", facadesPackage)
+
+	return content
 }
 
-func (s Stubs) CacheFacade() string {
-	return `package facades
+func (s Stubs) CacheFacade(pkg string) string {
+	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/cache"
@@ -60,4 +64,6 @@ func Cache() cache.Cache {
 	return App().MakeCache()
 }
 `
+
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }

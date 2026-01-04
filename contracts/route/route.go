@@ -14,9 +14,12 @@ type Route interface {
 	Router
 	// Fallback registers a handler to be executed when no other route was matched.
 	Fallback(handler contractshttp.HandlerFunc)
+	// GetGlobalMiddleware retrieves all the global middleware registered with the router.
+	GetGlobalMiddleware() []contractshttp.Middleware
 	// GetRoutes retrieves all the routes registered with the router.
 	GetRoutes() []contractshttp.Info
-	// GlobalMiddleware registers global middleware to be applied to all routes of the router.
+	// GlobalMiddleware registers global middleware with default middleware to be applied to all routes of the router.
+	// DEPRECATED: Use WithMiddleware in bootstrap/app.go instead.
 	GlobalMiddleware(middlewares ...contractshttp.Middleware)
 	// Listen starts the HTTP server and listens on the specified listener.
 	Listen(l net.Listener) error
@@ -36,6 +39,8 @@ type Route interface {
 	RunTLSWithCert(host, certFile, keyFile string) error
 	// ServeHTTP serves HTTP requests.
 	ServeHTTP(writer http.ResponseWriter, request *http.Request)
+	// SetGlobalMiddleware sets the global middleware to be applied to all routes of the router.
+	SetGlobalMiddleware(middlewares []contractshttp.Middleware)
 	// Shutdown gracefully stop the serve.
 	Shutdown(ctx ...context.Context) error
 	// Test method to simulate HTTP requests (Fiber driver only)

@@ -1,0 +1,582 @@
+package logger
+
+import (
+	"bytes"
+	"context"
+	"log/slog"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
+
+	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/foundation/json"
+	mocksconfig "github.com/goravel/framework/mocks/config"
+)
+
+type IOHandlerTestSuite struct {
+	suite.Suite
+	mockConfig *mocksconfig.Config
+	json       foundation.Json
+	buffer     *bytes.Buffer
+}
+
+func TestIOHandlerTestSuite(t *testing.T) {
+	suite.Run(t, new(IOHandlerTestSuite))
+}
+
+func (s *IOHandlerTestSuite) SetupTest() {
+	s.mockConfig = mocksconfig.NewConfig(s.T())
+	s.json = json.New()
+	s.buffer = new(bytes.Buffer)
+}
+
+func (s *IOHandlerTestSuite) TestNewIOHandler() {
+	handler := NewIOHandler(s.buffer, s.mockConfig, s.json, log.LevelDebug, FormatterText)
+	s.NotNil(handler)
+	s.Equal(s.buffer, handler.writer)
+	s.Equal(s.mockConfig, handler.config)
+	s.Equal(s.json, handler.json)
+	s.Equal(log.LevelDebug, handler.level)
+	s.Equal(FormatterText, handler.formatter)
+}
+
+func (s *IOHandlerTestSuite) TestEnabled() {
+	tests := []struct {
+		name          string
+		handlerLevel  log.Level
+		recordLevel   slog.Level
+		expectEnabled bool
+	}{
+		{
+			name:          "debug handler allows debug",
+			handlerLevel:  log.LevelDebug,
+			recordLevel:   slog.LevelDebug,
+			expectEnabled: true,
+		},
+		{
+			name:          "debug handler allows info",
+			handlerLevel:  log.LevelDebug,
+			recordLevel:   slog.LevelInfo,
+			expectEnabled: true,
+		},
+		{
+			name:          "info handler blocks debug",
+			handlerLevel:  log.LevelInfo,
+			recordLevel:   slog.LevelDebug,
+			expectEnabled: false,
+		},
+		{
+			name:          "error handler blocks warning",
+			handlerLevel:  log.LevelError,
+			recordLevel:   slog.LevelWarn,
+			expectEnabled: false,
+		},
+		{
+			name:          "error handler allows error",
+			handlerLevel:  log.LevelError,
+			recordLevel:   slog.LevelError,
+			expectEnabled: true,
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			handler := NewIOHandler(s.buffer, s.mockConfig, s.json, tt.handlerLevel, FormatterText)
+			result := handler.Enabled(log.Level(tt.recordLevel))
+			s.Equal(tt.expectEnabled, result)
+		})
+	}
+}
+
+func (s *IOHandlerTestSuite) TestHandle() {
+	s.mockConfig.EXPECT().GetString("app.env").Return("test").Once()
+
+	handler := NewIOHandler(s.buffer, s.mockConfig, s.json, log.LevelDebug, FormatterText)
+
+	entry := &mockEntry{
+		time:    time.Now(),
+		level:   log.LevelInfo,
+		message: "test message",
+	}
+
+	err := handler.Handle(entry)
+	s.Nil(err)
+	s.Contains(s.buffer.String(), "test.info: test message")
+}
+
+func (s *IOHandlerTestSuite) TestHandleWithAllFields() {
+	s.mockConfig.EXPECT().GetString("app.env").Return("test").Once()
+
+	handler := NewIOHandler(s.buffer, s.mockConfig, s.json, log.LevelDebug, FormatterText)
+
+	ctx := context.WithValue(context.Background(), handlerTestContextKey("key"), "value")
+	entry := &mockEntry{
+		time:       time.Now(),
+		level:      log.LevelError,
+		message:    "error message",
+		code:       "ERR001",
+		ctx:        ctx,
+		domain:     "payment",
+		hint:       "check balance",
+		owner:      "team-a",
+		request:    map[string]any{"method": "POST", "url": "/api"},
+		response:   map[string]any{"status": 500},
+		tags:       []string{"critical", "urgent"},
+		user:       map[string]any{"id": 123, "name": "test"},
+		with:       map[string]any{"extra": "data"},
+	}
+
+	err := handler.Handle(entry)
+	s.Nil(err)
+
+	output := s.buffer.String()
+	s.Contains(output, "test.error: error message")
+	s.Contains(output, "[Code] ERR001")
+	s.Contains(output, "[Context] map[key:value]")
+	s.Contains(output, "[Domain] payment")
+	s.Contains(output, "[Hint] check balance")
+	s.Contains(output, "[Owner] team-a")
+	s.Contains(output, "[Request] map[method:POST url:/api]")
+	s.Contains(output, "[Response] map[status:500]")
+	s.Contains(output, "[Tags] [critical urgent]")
+	s.Contains(output, "[User] map[id:123 name:test]")
+	s.Contains(output, "[With] map[extra:data]")
+}
+
+func (s *IOHandlerTestSuite) TestHandleEmptyOptionalFields() {
+	s.mockConfig.EXPECT().GetString("app.env").Return("test").Once()
+
+	handler := NewIOHandler(s.buffer, s.mockConfig, s.json, log.LevelDebug, FormatterText)
+
+	entry := &mockEntry{
+		time:    time.Now(),
+		level:   log.LevelInfo,
+		message: "simple message",
+		// All optional fields are empty/nil
+	}
+
+	err := handler.Handle(entry)
+	s.Nil(err)
+
+	output := s.buffer.String()
+	s.Contains(output, "test.info: simple message")
+	// Should NOT contain any of these sections
+	s.NotContains(output, "[Code]")
+	s.NotContains(output, "[Context]")
+	s.NotContains(output, "[Domain]")
+	s.NotContains(output, "[Hint]")
+	s.NotContains(output, "[Owner]")
+	s.NotContains(output, "[Request]")
+	s.NotContains(output, "[Response]")
+	s.NotContains(output, "[Tags]")
+	s.NotContains(output, "[User]")
+	s.NotContains(output, "[With]")
+	s.NotContains(output, "[Trace]")
+}
+
+type handlerTestContextKey string
+
+func TestFormatStackTrace(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "Valid stack trace with file and method",
+			input:    "main.functionName:/path/to/file.go:42",
+			expected: "/path/to/file.go:42 [main.functionName]\n",
+		},
+		{
+			name:     "Valid stack trace without method",
+			input:    "/path/to/file.go:42",
+			expected: "/path/to/file.go:42\n",
+		},
+		{
+			name:     "No colons in stack trace",
+			input:    "invalidstacktrace",
+			expected: "invalidstacktrace\n",
+		},
+		{
+			name:     "Single colon in stack trace",
+			input:    "file.go:42",
+			expected: "file.go:42\n",
+		},
+		{
+			name:     "Edge case: Empty string",
+			input:    "",
+			expected: "\n",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := formatStackTrace(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestLevelToString(t *testing.T) {
+	tests := []struct {
+		level    log.Level
+		expected string
+	}{
+		{log.LevelDebug, "debug"},
+		{log.LevelInfo, "info"},
+		{log.LevelWarning, "warning"},
+		{log.LevelError, "error"},
+		{log.LevelFatal, "fatal"},
+		{log.LevelPanic, "panic"},
+		{log.Level(999), "unknown"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.expected, func(t *testing.T) {
+			result := tt.level.String()
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+type ConsoleHandlerTestSuite struct {
+	suite.Suite
+	mockConfig *mocksconfig.Config
+	json       foundation.Json
+}
+
+func TestConsoleHandlerTestSuite(t *testing.T) {
+	suite.Run(t, new(ConsoleHandlerTestSuite))
+}
+
+func (s *ConsoleHandlerTestSuite) SetupTest() {
+	s.mockConfig = mocksconfig.NewConfig(s.T())
+	s.json = json.New()
+}
+
+func (s *ConsoleHandlerTestSuite) TestNewConsoleHandler() {
+	handler := NewConsoleHandler(s.mockConfig, s.json, log.LevelInfo, FormatterText)
+	s.NotNil(handler)
+	s.NotNil(handler.IOHandler)
+	s.Equal(log.LevelInfo, handler.level)
+	s.Equal(FormatterText, handler.formatter)
+}
+
+type mockEntry struct {
+	time       time.Time
+	ctx        context.Context
+	owner      any
+	user       any
+	data       log.Data
+	request    map[string]any
+	response   map[string]any
+	stacktrace map[string]any
+	with       map[string]any
+	code       string
+	domain     string
+	hint       string
+	message    string
+	tags       []string
+	level      log.Level
+}
+
+func (e *mockEntry) Code() string {
+	return e.code
+}
+
+func (e *mockEntry) Context() context.Context {
+	return e.ctx
+}
+
+func (e *mockEntry) Data() log.Data {
+	return e.data
+}
+
+func (e *mockEntry) Domain() string {
+	return e.domain
+}
+
+func (e *mockEntry) Hint() string {
+	return e.hint
+}
+
+func (e *mockEntry) Level() log.Level {
+	return e.level
+}
+
+func (e *mockEntry) Message() string {
+	return e.message
+}
+
+func (e *mockEntry) Owner() any {
+	return e.owner
+}
+
+func (e *mockEntry) Request() map[string]any {
+	return e.request
+}
+
+func (e *mockEntry) Response() map[string]any {
+	return e.response
+}
+
+func (e *mockEntry) Tags() []string {
+	return e.tags
+}
+
+func (e *mockEntry) Time() time.Time {
+	return e.time
+}
+
+func (e *mockEntry) Trace() map[string]any {
+	return e.stacktrace
+}
+
+func (e *mockEntry) User() any {
+	return e.user
+}
+
+func (e *mockEntry) With() map[string]any {
+	return e.with
+}
+
+func TestNewIOHandler(t *testing.T) {
+	mockConfig := mocksconfig.NewConfig(t)
+	j := json.New()
+	buffer := new(bytes.Buffer)
+
+	// Test text formatter
+	handler := NewIOHandler(buffer, mockConfig, j, log.LevelDebug, FormatterText)
+	assert.NotNil(t, handler)
+	assert.Equal(t, FormatterText, handler.formatter)
+
+	// Test json formatter
+	handler = NewIOHandler(buffer, mockConfig, j, log.LevelDebug, FormatterJson)
+	assert.NotNil(t, handler)
+	assert.Equal(t, FormatterJson, handler.formatter)
+}
+
+func TestIOHandlerJSONFormat(t *testing.T) {
+	mockConfig := mocksconfig.NewConfig(t)
+	mockConfig.EXPECT().GetString("app.env").Return("test").Once()
+
+	j := json.New()
+	buffer := new(bytes.Buffer)
+
+	handler := NewIOHandler(buffer, mockConfig, j, log.LevelDebug, FormatterJson)
+
+	entry := &mockEntry{
+		time:    time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
+		level:   log.LevelInfo,
+		message: "test json message",
+	}
+
+	err := handler.Handle(entry)
+	assert.Nil(t, err)
+
+	output := buffer.String()
+	assert.True(t, len(output) > 0)
+	assert.Equal(t, '\n', rune(output[len(output)-1])) // Should end with newline
+
+	// Unmarshal and verify entire JSON content
+	var result map[string]any
+	err = j.Unmarshal([]byte(output), &result)
+	assert.Nil(t, err)
+
+	assert.Equal(t, "2024-01-15 10:30:00", result["time"])
+	assert.Equal(t, "test", result["environment"])
+	assert.Equal(t, "info", result["level"])
+	assert.Equal(t, "test json message", result["message"])
+
+	// Verify no optional fields are present
+	assert.Nil(t, result["code"])
+	assert.Nil(t, result["context"])
+	assert.Nil(t, result["domain"])
+	assert.Nil(t, result["hint"])
+	assert.Nil(t, result["owner"])
+	assert.Nil(t, result["request"])
+	assert.Nil(t, result["response"])
+	assert.Nil(t, result["trace"])
+	assert.Nil(t, result["tags"])
+	assert.Nil(t, result["user"])
+	assert.Nil(t, result["extra"])
+}
+
+func TestIOHandlerJSONFormatWithAllFields(t *testing.T) {
+	mockConfig := mocksconfig.NewConfig(t)
+	mockConfig.EXPECT().GetString("app.env").Return("test").Once()
+
+	j := json.New()
+	buffer := new(bytes.Buffer)
+
+	handler := NewIOHandler(buffer, mockConfig, j, log.LevelDebug, FormatterJson)
+
+	ctx := context.WithValue(context.Background(), handlerTestContextKey("key"), "value")
+	entry := &mockEntry{
+		time:       time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
+		level:      log.LevelError,
+		message:    "error json message",
+		code:       "ERR001",
+		ctx:        ctx,
+		domain:     "payment",
+		hint:       "check balance",
+		owner:      "team-a",
+		request:    map[string]any{"method": "POST", "url": "/api"},
+		response:   map[string]any{"status": 500},
+		tags:       []string{"critical", "urgent"},
+		user:       map[string]any{"id": 123, "name": "test"},
+		with:       map[string]any{"extra": "data"},
+		stacktrace: map[string]any{"root": map[string]any{"message": "error"}},
+	}
+
+	err := handler.Handle(entry)
+	assert.Nil(t, err)
+
+	output := buffer.String()
+	assert.True(t, len(output) > 0)
+	assert.Equal(t, '\n', rune(output[len(output)-1])) // Should end with newline
+
+	// Unmarshal and verify entire JSON content
+	var result map[string]any
+	err = j.Unmarshal([]byte(output), &result)
+	assert.Nil(t, err)
+
+	// Verify required fields
+	assert.Equal(t, "2024-01-15 10:30:00", result["time"])
+	assert.Equal(t, "test", result["environment"])
+	assert.Equal(t, "error", result["level"])
+	assert.Equal(t, "error json message", result["message"])
+
+	// Verify optional fields
+	assert.Equal(t, "ERR001", result["code"])
+	assert.Equal(t, "payment", result["domain"])
+	assert.Equal(t, "check balance", result["hint"])
+	assert.Equal(t, "team-a", result["owner"])
+
+	// Verify context
+	context, ok := result["context"].(map[string]any)
+	assert.True(t, ok)
+	assert.Equal(t, "value", context["key"])
+
+	// Verify request
+	request, ok := result["request"].(map[string]any)
+	assert.True(t, ok)
+	assert.Equal(t, "POST", request["method"])
+	assert.Equal(t, "/api", request["url"])
+
+	// Verify response
+	response, ok := result["response"].(map[string]any)
+	assert.True(t, ok)
+	assert.Equal(t, float64(500), response["status"])
+
+	// Verify tags
+	tags, ok := result["tags"].([]any)
+	assert.True(t, ok)
+	assert.Equal(t, []any{"critical", "urgent"}, tags)
+
+	// Verify user
+	user, ok := result["user"].(map[string]any)
+	assert.True(t, ok)
+	assert.Equal(t, float64(123), user["id"])
+	assert.Equal(t, "test", user["name"])
+
+	// Verify extra (from with)
+	extra, ok := result["extra"].(map[string]any)
+	assert.True(t, ok)
+	assert.Equal(t, "data", extra["extra"])
+
+	// Verify trace
+	trace, ok := result["trace"].(map[string]any)
+	assert.True(t, ok)
+	root, ok := trace["root"].(map[string]any)
+	assert.True(t, ok)
+	assert.Equal(t, "error", root["message"])
+}
+
+func TestIOHandlerJSONFormatEmptyOptionalFields(t *testing.T) {
+	mockConfig := mocksconfig.NewConfig(t)
+	mockConfig.EXPECT().GetString("app.env").Return("test").Once()
+
+	j := json.New()
+	buffer := new(bytes.Buffer)
+
+	handler := NewIOHandler(buffer, mockConfig, j, log.LevelDebug, FormatterJson)
+
+	entry := &mockEntry{
+		time:    time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
+		level:   log.LevelInfo,
+		message: "simple json message",
+		// All optional fields are empty/nil
+	}
+
+	err := handler.Handle(entry)
+	assert.Nil(t, err)
+
+	output := buffer.String()
+	assert.Contains(t, output, `"level":"info"`)
+	assert.Contains(t, output, `"message":"simple json message"`)
+	// Should NOT contain optional fields
+	assert.NotContains(t, output, `"code"`)
+	assert.NotContains(t, output, `"context"`)
+	assert.NotContains(t, output, `"domain"`)
+	assert.NotContains(t, output, `"hint"`)
+	assert.NotContains(t, output, `"owner"`)
+	assert.NotContains(t, output, `"request"`)
+	assert.NotContains(t, output, `"response"`)
+	assert.NotContains(t, output, `"tags"`)
+	assert.NotContains(t, output, `"user"`)
+	assert.NotContains(t, output, `"extra"`)
+	assert.NotContains(t, output, `"trace"`)
+}
+
+func TestNewConsoleHandlerFormatter(t *testing.T) {
+	mockConfig := mocksconfig.NewConfig(t)
+	j := json.New()
+
+	// Test text formatter
+	handler := NewConsoleHandler(mockConfig, j, log.LevelInfo, FormatterText)
+	assert.NotNil(t, handler)
+	assert.Equal(t, FormatterText, handler.formatter)
+
+	// Test json formatter
+	handler = NewConsoleHandler(mockConfig, j, log.LevelInfo, FormatterJson)
+	assert.NotNil(t, handler)
+	assert.Equal(t, FormatterJson, handler.formatter)
+}
+
+func TestIOHandlerInvalidFormatter(t *testing.T) {
+	mockConfig := mocksconfig.NewConfig(t)
+	j := json.New()
+	buffer := new(bytes.Buffer)
+
+	tests := []struct {
+		name      string
+		formatter string
+	}{
+		{"yaml formatter", "yaml"},
+		{"xml formatter", "xml"},
+		{"empty formatter", ""},
+		{"random formatter", "random"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := NewIOHandler(buffer, mockConfig, j, log.LevelDebug, tt.formatter)
+			assert.NotNil(t, handler)
+
+			entry := &mockEntry{
+				time:    time.Now(),
+				level:   log.LevelInfo,
+				message: "test message",
+			}
+
+			err := handler.Handle(entry)
+			assert.NotNil(t, err)
+			assert.Equal(t, errors.LogFormatterNotSupported.Args(tt.formatter).Error(), err.Error())
+		})
+	}
+}

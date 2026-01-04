@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"maps"
 	"reflect"
 	"slices"
 	"strings"
@@ -21,7 +22,9 @@ import (
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/database/db"
 	databasedriver "github.com/goravel/framework/database/driver"
+	"github.com/goravel/framework/database/utils"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/collect"
 	"github.com/goravel/framework/support/database"
 	"github.com/goravel/framework/support/deep"
 )
@@ -119,7 +122,7 @@ func (r *Query) Commit() error {
 }
 
 func (r *Query) Count() (int64, error) {
-	query := r.addGlobalScopes().buildConditions()
+	query := r.resetSelect().addGlobalScopes().buildConditions()
 
 	var count int64
 
@@ -475,13 +478,18 @@ func (r *Query) Load(model any, relation string, args ...any) error {
 	copyDest := copyStruct(model)
 	err := r.With(relation, args...).Find(model)
 
+	relationRoot := relation
+	if dotIndex := strings.Index(relation, "."); dotIndex > 0 {
+		relationRoot = relation[:dotIndex]
+	}
+
 	t := destType.Elem()
 	v := reflect.ValueOf(model).Elem()
 	for i := 0; i < t.NumField(); i++ {
 		if !t.Field(i).IsExported() {
 			continue
 		}
-		if t.Field(i).Name != relation {
+		if t.Field(i).Name != relationRoot {
 			v.Field(i).Set(copyDest.Field(i))
 		}
 	}
@@ -615,18 +623,16 @@ func (r *Query) OrWhere(query any, args ...any) contractsorm.Query {
 }
 
 func (r *Query) Paginate(page, limit int, dest any, total *int64) error {
-	query := r.dest(dest).addGlobalScopes().buildConditions()
-
 	offset := (page - 1) * limit
 	if total != nil {
-		if query.conditions.table == nil && query.conditions.model == nil {
-			count, err := query.Model(dest).Count()
+		if r.conditions.table == nil && r.conditions.model == nil {
+			count, err := r.Model(dest).Count()
 			if err != nil {
 				return err
 			}
 			*total = count
 		} else {
-			count, err := query.Count()
+			count, err := r.Count()
 			if err != nil {
 				return err
 			}
@@ -634,7 +640,7 @@ func (r *Query) Paginate(page, limit int, dest any, total *int64) error {
 		}
 	}
 
-	return query.Offset(offset).Limit(limit).Find(dest)
+	return r.Offset(offset).Limit(limit).Find(dest)
 }
 
 func (r *Query) Pluck(column string, dest any) error {
@@ -774,7 +780,25 @@ func (r *Query) Scopes(funcs ...func(contractsorm.Query) contractsorm.Query) con
 
 func (r *Query) Select(columns ...string) contractsorm.Query {
 	conditions := r.conditions
-	conditions.selectColumns = columns
+	conditions.selectColumns = append(conditions.selectColumns, columns...)
+	conditions.selectColumns = collect.Unique(conditions.selectColumns)
+
+	// * may be added along with other columns, remove it.
+	if len(conditions.selectColumns) > 1 {
+		conditions.selectColumns = collect.Filter(conditions.selectColumns, func(column string, _ int) bool {
+			return column != "*"
+		})
+	}
+
+	return r.setConditions(conditions)
+}
+
+func (r *Query) SelectRaw(query any, args ...any) contractsorm.Query {
+	conditions := r.conditions
+	conditions.selectRaw = &Select{
+		query: query,
+		args:  args,
+	}
 
 	return r.setConditions(conditions)
 }
@@ -792,16 +816,44 @@ func (r *Query) SharedLock() contractsorm.Query {
 	return r.setConditions(conditions)
 }
 
-func (r *Query) Sum(column string) (int64, error) {
-	query := r.addGlobalScopes().buildConditions()
-
-	var sum int64
-	err := query.instance.Select("SUM(" + column + ")").Row().Scan(&sum)
-	if err != nil {
-		return 0, err
+func (r *Query) Sum(column string, dest any) error {
+	destValue := reflect.ValueOf(dest)
+	if destValue.Kind() != reflect.Ptr {
+		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
 	}
 
-	return sum, nil
+	query := r.addGlobalScopes().buildConditions()
+	return query.instance.Select("SUM(" + column + ")").Row().Scan(dest)
+}
+
+func (r *Query) Avg(column string, dest any) error {
+	destValue := reflect.ValueOf(dest)
+	if destValue.Kind() != reflect.Ptr {
+		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
+	}
+
+	query := r.addGlobalScopes().buildConditions()
+	return query.instance.Select("AVG(" + column + ")").Row().Scan(dest)
+}
+
+func (r *Query) Min(column string, dest any) error {
+	destValue := reflect.ValueOf(dest)
+	if destValue.Kind() != reflect.Ptr {
+		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
+	}
+
+	query := r.addGlobalScopes().buildConditions()
+	return query.instance.Select("MIN(" + column + ")").Row().Scan(dest)
+}
+
+func (r *Query) Max(column string, dest any) error {
+	destValue := reflect.ValueOf(dest)
+	if destValue.Kind() != reflect.Ptr {
+		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
+	}
+
+	query := r.addGlobalScopes().buildConditions()
+	return query.instance.Select("MAX(" + column + ")").Row().Scan(dest)
 }
 
 func (r *Query) Table(name string, args ...any) contractsorm.Query {
@@ -885,6 +937,54 @@ func (r *Query) Where(query any, args ...any) contractsorm.Query {
 		Query: query,
 		Args:  args,
 	})
+}
+
+func (r *Query) WhereAll(columns []string, args ...any) contractsorm.Query {
+	op, value, err := utils.PrepareWhereOperatorAndValue(args...)
+	if err != nil {
+		query := r.new(r.instance.Session(&gormio.Session{}))
+		_ = query.instance.AddError(err)
+		return query
+	}
+
+	var conditions []string
+	var conditionArgs []any
+	for _, column := range columns {
+		conditions = append(conditions, fmt.Sprintf("%s %v ?", column, op))
+		conditionArgs = append(conditionArgs, value)
+	}
+
+	query := strings.Join(conditions, " AND ")
+	r = r.addWhere(contractsdriver.Where{
+		Query: query,
+		Args:  conditionArgs,
+	}).(*Query)
+
+	return r
+}
+
+func (r *Query) WhereAny(columns []string, args ...any) contractsorm.Query {
+	op, value, err := utils.PrepareWhereOperatorAndValue(args...)
+	if err != nil {
+		query := r.new(r.instance.Session(&gormio.Session{}))
+		_ = query.instance.AddError(err)
+		return query
+	}
+
+	var conditions []string
+	var conditionArgs []any
+	for _, column := range columns {
+		conditions = append(conditions, fmt.Sprintf("%s %v ?", column, op))
+		conditionArgs = append(conditionArgs, value)
+	}
+
+	query := fmt.Sprintf("(%s)", strings.Join(conditions, " OR "))
+	r = r.addWhere(contractsdriver.Where{
+		Query: query,
+		Args:  conditionArgs,
+	}).(*Query)
+
+	return r
 }
 
 func (r *Query) WhereIn(column string, values []any) contractsorm.Query {
@@ -1008,12 +1108,40 @@ func (r *Query) OrWhereNull(column string) contractsorm.Query {
 	return r.OrWhere(fmt.Sprintf("%s IS NULL", column))
 }
 
-func (r *Query) WhereNull(column string) contractsorm.Query {
-	return r.Where(fmt.Sprintf("%s IS NULL", column))
+func (r *Query) WhereNone(columns []string, args ...any) contractsorm.Query {
+	op, value, err := utils.PrepareWhereOperatorAndValue(args...)
+	if err != nil {
+		query := r.new(r.instance.Session(&gormio.Session{}))
+		_ = query.instance.AddError(err)
+		return query
+	}
+
+	var conditions []string
+	var conditionArgs []any
+	for _, column := range columns {
+		if op == "=" {
+			conditions = append(conditions, fmt.Sprintf("%s <> ?", column))
+		} else {
+			conditions = append(conditions, fmt.Sprintf("NOT (%s %v ?)", column, op))
+		}
+		conditionArgs = append(conditionArgs, value)
+	}
+
+	query := strings.Join(conditions, " AND ")
+	r = r.addWhere(contractsdriver.Where{
+		Query: query,
+		Args:  conditionArgs,
+	}).(*Query)
+
+	return r
 }
 
 func (r *Query) WhereNotNull(column string) contractsorm.Query {
 	return r.Where(fmt.Sprintf("%s IS NOT NULL", column))
+}
+
+func (r *Query) WhereNull(column string) contractsorm.Query {
+	return r.Where(fmt.Sprintf("%s IS NULL", column))
 }
 
 func (r *Query) With(query string, args ...any) contractsorm.Query {
@@ -1033,6 +1161,17 @@ func (r *Query) WithoutEvents() contractsorm.Query {
 	return r.setConditions(conditions)
 }
 
+func (r *Query) WithoutGlobalScopes(names ...string) contractsorm.Query {
+	conditions := r.conditions
+
+	if len(names) == 0 {
+		names = []string{"*"}
+	}
+	conditions.withoutGlobalScopes = append(conditions.withoutGlobalScopes, names...)
+
+	return r.setConditions(conditions)
+}
+
 func (r *Query) WithTrashed() contractsorm.Query {
 	conditions := r.conditions
 	conditions.withTrashed = true
@@ -1041,6 +1180,10 @@ func (r *Query) WithTrashed() contractsorm.Query {
 }
 
 func (r *Query) addGlobalScopes() *Query {
+	if slices.Contains(r.conditions.withoutGlobalScopes, "*") {
+		return r
+	}
+
 	var model any
 
 	if r.conditions.model != nil {
@@ -1061,9 +1204,20 @@ func (r *Query) addGlobalScopes() *Query {
 		return r
 	}
 
-	globalScopes := modelWithGlobalScopes.GlobalScopes()
-	if len(globalScopes) == 0 {
+	nameToGlobalScopes := modelWithGlobalScopes.GlobalScopes()
+	if len(nameToGlobalScopes) == 0 {
 		return r
+	}
+
+	var globalScopes []func(contractsorm.Query) contractsorm.Query
+
+	names := slices.Sorted(maps.Keys(nameToGlobalScopes))
+	for _, name := range names {
+		if slices.Contains(r.conditions.withoutGlobalScopes, name) {
+			continue
+		}
+
+		globalScopes = append(globalScopes, nameToGlobalScopes[name])
 	}
 
 	return r.Scopes(globalScopes...).(*Query)
@@ -1225,17 +1379,23 @@ func (r *Query) buildOrder(db *gormio.DB) *gormio.DB {
 }
 
 func (r *Query) buildSelectColumns(db *gormio.DB) *gormio.DB {
-	if len(r.conditions.selectColumns) == 0 {
+	if len(r.conditions.selectColumns) == 0 && r.conditions.selectRaw == nil {
 		return db
 	}
 
-	var selectColumns []any
-	for _, column := range r.conditions.selectColumns {
-		selectColumns = append(selectColumns, column)
+	if len(r.conditions.selectColumns) > 0 {
+		var selectColumns []any
+		for _, column := range r.conditions.selectColumns {
+			selectColumns = append(selectColumns, column)
+		}
+
+		db = db.Select(selectColumns[0], selectColumns[1:]...)
+	} else if r.conditions.selectRaw != nil {
+		db = db.Select(r.conditions.selectRaw.query, r.conditions.selectRaw.args...)
 	}
 
-	db = db.Select(selectColumns[0], selectColumns[1:]...)
 	r.conditions.selectColumns = nil
+	r.conditions.selectRaw = nil
 
 	return db
 }
@@ -1655,6 +1815,13 @@ func (r *Query) refreshConnection() (*Query, error) {
 	query.conditions = r.conditions
 
 	return query, nil
+}
+
+func (r *Query) resetSelect() *Query {
+	conditions := r.conditions
+	conditions.selectColumns = nil
+
+	return r.setConditions(conditions)
 }
 
 func (r *Query) restored(dest any) error {

@@ -6,15 +6,15 @@ import (
 
 type Stubs struct{}
 
-func (s Stubs) Config(module string) string {
-	content := `package config
+func (s Stubs) Config(pkg, facadesImport, facadesPackage string) string {
+	content := `package DummyPackage
 
 import (
-	"DummyModule/app/facades"
+	"DummyFacadesImport"
 )
 
 func init() {
-	config := facades.Config()
+	config := DummyFacadesPackage.Config()
 	config.Add("auth", map[string]any{
 		// Authentication Defaults
 		//
@@ -52,12 +52,15 @@ func init() {
 	})
 }
 `
+	content = strings.ReplaceAll(content, "DummyPackage", pkg)
+	content = strings.ReplaceAll(content, "DummyFacadesImport", facadesImport)
+	content = strings.ReplaceAll(content, "DummyFacadesPackage", facadesPackage)
 
-	return strings.ReplaceAll(content, "DummyModule", module)
+	return content
 }
 
-func (s Stubs) AuthFacade() string {
-	return `package facades
+func (s Stubs) AuthFacade(pkg string) string {
+	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/auth"
@@ -68,10 +71,12 @@ func Auth(ctx ...http.Context) auth.Auth {
 	return App().MakeAuth(ctx...)
 }
 `
+
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }
 
-func (s Stubs) GateFacade() string {
-	return `package facades
+func (s Stubs) GateFacade(pkg string) string {
+	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/auth/access"
@@ -82,4 +87,6 @@ func Gate(ctx ...http.Context) access.Gate {
 	return App().MakeGate()
 }
 `
+
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }

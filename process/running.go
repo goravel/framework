@@ -118,25 +118,6 @@ func (r *Running) ErrorOutput() string {
 	return r.stderrBuffer.String()
 }
 
-func (r *Running) LatestOutput() string {
-	return lastN(r.stdoutBuffer, 4096)
-}
-
-func (r *Running) LatestErrorOutput() string {
-	return lastN(r.stderrBuffer, 4096)
-}
-
-func lastN(buf *bytes.Buffer, n int) string {
-	if buf == nil {
-		return ""
-	}
-	s := buf.String()
-	if len(s) <= n {
-		return s
-	}
-	return s[len(s)-n:]
-}
-
 func getExitCode(cmd *exec.Cmd, err error) int {
 	exitCode := -1
 	if cmd != nil && cmd.ProcessState != nil {

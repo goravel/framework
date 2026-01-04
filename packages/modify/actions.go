@@ -4,6 +4,7 @@ import (
 	"go/token"
 	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/dave/dst"
 	"github.com/dave/dst/dstutil"
@@ -14,8 +15,21 @@ import (
 	"github.com/goravel/framework/support/color"
 )
 
+// Add adds an expression to the matched specified function.
+func Add(expression string) modify.Action {
+	return func(cursor *dstutil.Cursor) {
+		expr := MustParseExpr(expression).(dst.Expr)
+		stmt := &dst.ExprStmt{
+			X: expr,
+		}
+
+		node := cursor.Node().(*dst.FuncDecl)
+		node.Body.List = append(node.Body.List, stmt)
+	}
+}
+
 // AddConfig adds a configuration key with the given expression to the config file.
-func AddConfig(name, expression string) modify.Action {
+func AddConfig(name, expression string, annotations ...string) modify.Action {
 	return func(cursor *dstutil.Cursor) {
 		var value *dst.CompositeLit
 		switch node := cursor.Node().(type) {
@@ -24,17 +38,34 @@ func AddConfig(name, expression string) modify.Action {
 		case *dst.CallExpr:
 			value = node.Args[1].(*dst.CompositeLit)
 		}
-		key := WrapNewline(&dst.BasicLit{Kind: token.STRING, Value: strconv.Quote(name)})
-		if KeyExists(value.Elts, key) {
-			color.Warningln(errors.PackageConfigKeyExists.Args(name))
-			return
-		}
 
-		// add config
-		value.Elts = append(value.Elts, WrapNewline(&dst.KeyValueExpr{
+		key := WrapNewline(&dst.BasicLit{Kind: token.STRING, Value: strconv.Quote(name)})
+		newExpr := WrapNewline(&dst.KeyValueExpr{
 			Key:   key,
 			Value: WrapNewline(MustParseExpr(expression)).(dst.Expr),
-		}))
+		})
+
+		// Add annotations as comments if provided
+		if len(annotations) > 0 {
+			var comments dst.Decorations
+			for _, annotation := range annotations {
+				// Ensure the annotation starts with "//" for proper comment formatting
+				if !strings.HasPrefix(annotation, "//") {
+					annotation = "// " + annotation
+				}
+				comments = append(comments, annotation)
+			}
+			newExpr.Decs.Start = comments
+		}
+
+		existExprIndex := KeyIndex(value.Elts, key)
+
+		if existExprIndex >= 0 {
+			value.Elts[existExprIndex] = newExpr
+		} else {
+			// add config
+			value.Elts = append(value.Elts, newExpr)
+		}
 	}
 }
 
@@ -103,8 +134,21 @@ func Register(expression string, before ...string) modify.Action {
 			color.Warningln(errors.PackageRegistrationNotFound.Args(before[0]))
 		}
 
-		// insert registration at the end
 		node.Elts = append(node.Elts, expr)
+	}
+}
+
+// Remove removes an expression from the matched specified function.
+func Remove(expression string) modify.Action {
+	return func(cursor *dstutil.Cursor) {
+		expr := MustParseExpr(expression).(dst.Expr)
+		stmt := &dst.ExprStmt{
+			X: expr,
+		}
+		node := cursor.Node().(*dst.FuncDecl)
+		node.Body.List = slices.DeleteFunc(node.Body.List, func(ex dst.Stmt) bool {
+			return match.EqualNode(stmt).MatchNode(ex)
+		})
 	}
 }
 

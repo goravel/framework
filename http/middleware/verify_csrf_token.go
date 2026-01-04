@@ -15,8 +15,8 @@ func VerifyCsrfToken(excepts []string) contractshttp.Middleware {
 	absolutePaths := parseExceptPaths(excepts)
 	return func(ctx contractshttp.Context) {
 		if isReading(ctx.Request().Method()) || inExceptArray(absolutePaths, ctx.Request().Path()) || tokenMatch(ctx) {
-			ctx.Request().Next()
 			ctx.Response().Header(HeaderCsrfKey, ctx.Request().Session().Token())
+			ctx.Request().Next()
 		} else {
 			ctx.Request().Abort(contractshttp.StatusTokenMismatch)
 		}

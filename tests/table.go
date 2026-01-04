@@ -141,6 +141,7 @@ func (r *testTables) users() ([]string, error) {
 	blueprint.String("name")
 	blueprint.String("bio").Nullable()
 	blueprint.String("avatar").Nullable()
+	blueprint.Float("ratio").Nullable().Default(0)
 	blueprint.Timestamps()
 	blueprint.SoftDeletes()
 
@@ -164,6 +165,7 @@ func (r *testTables) user() ([]string, error) {
 	blueprint.String("name")
 	blueprint.String("bio").Nullable()
 	blueprint.String("avatar").Nullable()
+	blueprint.Float("ratio").Nullable().Default(0)
 	blueprint.Timestamps()
 	blueprint.SoftDeletes()
 
@@ -381,6 +383,7 @@ func (r *testTables) globalScopes() ([]string, error) {
 	blueprint.Create()
 	blueprint.BigIncrements("id")
 	blueprint.String("name")
+	blueprint.String("avatar")
 	blueprint.Timestamps()
 	blueprint.SoftDeletes()
 

@@ -1145,9 +1145,69 @@ func (s *QueryTestSuite) TestSum() {
 	s.mockReadBuilder.EXPECT().Explain("SELECT SUM(age) FROM users WHERE age = ?", 25).Return("SELECT SUM(age) FROM users WHERE age = 25").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT SUM(age) FROM users WHERE age = 25", int64(1), nil).Return().Once()
 
-	sum, err := s.query.Where("age", 25).Sum("age")
+	err := s.query.Where("age", 25).Sum("age", &sum)
 	s.Nil(err)
 	s.Equal(int64(25), sum)
+
+	err = s.query.Where("age", 25).Sum("age", nil)
+	s.Error(err)
+}
+
+func (s *QueryTestSuite) TestAvg() {
+	var avg float64
+
+	s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+	s.mockReadBuilder.EXPECT().GetContext(s.ctx, &avg, "SELECT AVG(age) FROM users WHERE age = ?", 25).Run(func(ctx context.Context, dest any, query string, args ...any) {
+		destAvg := dest.(*float64)
+		*destAvg = 25.5
+	}).Return(nil).Once()
+	s.mockReadBuilder.EXPECT().Explain("SELECT AVG(age) FROM users WHERE age = ?", 25).Return("SELECT AVG(age) FROM users WHERE age = 25").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT AVG(age) FROM users WHERE age = 25", int64(1), nil).Return().Once()
+
+	err := s.query.Where("age", 25).Avg("age", &avg)
+	s.Nil(err)
+	s.Equal(float64(25.5), avg)
+
+	err = s.query.Where("age", 25).Avg("age", nil)
+	s.Error(err)
+}
+
+func (s *QueryTestSuite) TestMin() {
+	var min int64
+
+	s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+	s.mockReadBuilder.EXPECT().GetContext(s.ctx, &min, "SELECT MIN(age) FROM users WHERE age = ?", 25).Run(func(ctx context.Context, dest any, query string, args ...any) {
+		destMin := dest.(*int64)
+		*destMin = 20
+	}).Return(nil).Once()
+	s.mockReadBuilder.EXPECT().Explain("SELECT MIN(age) FROM users WHERE age = ?", 25).Return("SELECT MIN(age) FROM users WHERE age = 25").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT MIN(age) FROM users WHERE age = 25", int64(1), nil).Return().Once()
+
+	err := s.query.Where("age", 25).Min("age", &min)
+	s.Nil(err)
+	s.Equal(int64(20), min)
+
+	err = s.query.Where("age", 25).Min("age", nil)
+	s.Error(err)
+}
+
+func (s *QueryTestSuite) TestMax() {
+	var max int64
+
+	s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+	s.mockReadBuilder.EXPECT().GetContext(s.ctx, &max, "SELECT MAX(age) FROM users WHERE age = ?", 25).Run(func(ctx context.Context, dest any, query string, args ...any) {
+		destMax := dest.(*int64)
+		*destMax = 30
+	}).Return(nil).Once()
+	s.mockReadBuilder.EXPECT().Explain("SELECT MAX(age) FROM users WHERE age = ?", 25).Return("SELECT MAX(age) FROM users WHERE age = 25").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT MAX(age) FROM users WHERE age = 25", int64(1), nil).Return().Once()
+
+	err := s.query.Where("age", 25).Max("age", &max)
+	s.Nil(err)
+	s.Equal(int64(30), max)
+
+	err = s.query.Where("age", 25).Max("age", nil)
+	s.Error(err)
 }
 
 func (s *QueryTestSuite) TestToSql() {
@@ -1899,6 +1959,181 @@ func (s *QueryTestSuite) TestWhereRaw() {
 
 	err := s.query.WhereRaw("age = ? or age = ?", []any{25, 30}).Get(&users)
 	s.Nil(err)
+}
+
+func (s *QueryTestSuite) TestWhereAny() {
+	s.Run("basic WhereAny", func() {
+		var users []TestUser
+		query := NewQuery(s.ctx, s.mockReadBuilder, s.mockWriteBuilder, s.mockGrammar, s.mockLogger, "users", nil)
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (name = ? OR email = ?)", "John", "John").Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT * FROM users WHERE (name = ? OR email = ?)", "John", "John").Return("SELECT * FROM users WHERE (name = \"John\" OR email = \"John\")").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" OR email = \"John\")", int64(0), nil).Return().Once()
+
+		err := query.WhereAny([]string{"name", "email"}, "=", "John").Get(&users)
+		s.Nil(err)
+	})
+
+	s.Run("combined with Where clause", func() {
+		var users []TestUser
+		query := NewQuery(s.ctx, s.mockReadBuilder, s.mockWriteBuilder, s.mockGrammar, s.mockLogger, "users", nil)
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (age = ? AND (name = ? OR email = ?))", 10, "John", "John").Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT * FROM users WHERE (age = ? AND (name = ? OR email = ?))", 10, "John", "John").Return("SELECT * FROM users WHERE (age = 10 AND (name = \"John\" OR email = \"John\"))").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (age = 10 AND (name = \"John\" OR email = \"John\"))", int64(0), nil).Return().Once()
+
+		err := query.Where("age = ?", 10).WhereAny([]string{"name", "email"}, "=", "John").Get(&users)
+		s.Nil(err)
+	})
+
+	s.Run("Where before and after WhereAny", func() {
+		var users []TestUser
+		query := NewQuery(s.ctx, s.mockReadBuilder, s.mockWriteBuilder, s.mockGrammar, s.mockLogger, "users", nil)
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (age >= ? AND (name = ? OR email = ?) AND status = ?)", 18, "John", "John", "active").Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT * FROM users WHERE (age >= ? AND (name = ? OR email = ?) AND status = ?)", 18, "John", "John", "active").Return("SELECT * FROM users WHERE (age >= 18 AND (name = \"John\" OR email = \"John\") AND status = \"active\")").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (age >= 18 AND (name = \"John\" OR email = \"John\") AND status = \"active\")", int64(0), nil).Return().Once()
+
+		err := query.Where("age >= ?", 18).WhereAny([]string{"name", "email"}, "=", "John").Where("status = ?", "active").Get(&users)
+		s.Nil(err)
+	})
+
+	s.Run("Where before and after WhereAny with greater than operator", func() {
+		var users []TestUser
+		query := NewQuery(s.ctx, s.mockReadBuilder, s.mockWriteBuilder, s.mockGrammar, s.mockLogger, "users", nil)
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (age >= ? AND (score > ? OR points > ?) AND status = ?)", 18, 100, 100, "active").Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT * FROM users WHERE (age >= ? AND (score > ? OR points > ?) AND status = ?)", 18, 100, 100, "active").Return("SELECT * FROM users WHERE (age >= 18 AND (score > 100 OR points > 100) AND status = \"active\")").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (age >= 18 AND (score > 100 OR points > 100) AND status = \"active\")", int64(0), nil).Return().Once()
+
+		err := query.Where("age >= ?", 18).WhereAny([]string{"score", "points"}, ">", 100).Where("status = ?", "active").Get(&users)
+		s.Nil(err)
+	})
+}
+
+func (s *QueryTestSuite) TestWhereAll() {
+	s.Run("basic WhereAll", func() {
+		var users []TestUser
+		query := NewQuery(s.ctx, s.mockReadBuilder, s.mockWriteBuilder, s.mockGrammar, s.mockLogger, "users", nil)
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE name = ? AND email = ?", "John", "John").Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT * FROM users WHERE name = ? AND email = ?", "John", "John").Return("SELECT * FROM users WHERE name = \"John\" AND email = \"John\"").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE name = \"John\" AND email = \"John\"", int64(0), nil).Return().Once()
+
+		err := query.WhereAll([]string{"name", "email"}, "=", "John").Get(&users)
+		s.Nil(err)
+	})
+
+	s.Run("combined with Where clause", func() {
+		var users []TestUser
+		query := NewQuery(s.ctx, s.mockReadBuilder, s.mockWriteBuilder, s.mockGrammar, s.mockLogger, "users", nil)
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (age = ? AND name = ? AND email = ?)", 10, "John", "John").Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT * FROM users WHERE (age = ? AND name = ? AND email = ?)", 10, "John", "John").Return("SELECT * FROM users WHERE (age = 10 AND name = \"John\" AND email = \"John\")").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (age = 10 AND name = \"John\" AND email = \"John\")", int64(0), nil).Return().Once()
+
+		err := query.Where("age = ?", 10).WhereAll([]string{"name", "email"}, "=", "John").Get(&users)
+		s.Nil(err)
+	})
+
+	s.Run("Where before and after WhereAll", func() {
+		var users []TestUser
+		query := NewQuery(s.ctx, s.mockReadBuilder, s.mockWriteBuilder, s.mockGrammar, s.mockLogger, "users", nil)
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (age >= ? AND name = ? AND email = ? AND status = ?)", 18, "John", "John", "active").Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT * FROM users WHERE (age >= ? AND name = ? AND email = ? AND status = ?)", 18, "John", "John", "active").Return("SELECT * FROM users WHERE (age >= 18 AND name = \"John\" AND email = \"John\" AND status = \"active\")").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (age >= 18 AND name = \"John\" AND email = \"John\" AND status = \"active\")", int64(0), nil).Return().Once()
+
+		err := query.Where("age >= ?", 18).WhereAll([]string{"name", "email"}, "=", "John").Where("status = ?", "active").Get(&users)
+		s.Nil(err)
+	})
+
+	s.Run("Where before and after WhereAll with greater than operator", func() {
+		var users []TestUser
+		query := NewQuery(s.ctx, s.mockReadBuilder, s.mockWriteBuilder, s.mockGrammar, s.mockLogger, "users", nil)
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (age >= ? AND score > ? AND points > ? AND status = ?)", 18, 100, 100, "active").Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT * FROM users WHERE (age >= ? AND score > ? AND points > ? AND status = ?)", 18, 100, 100, "active").Return("SELECT * FROM users WHERE (age >= 18 AND score > 100 AND points > 100 AND status = \"active\")").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (age >= 18 AND score > 100 AND points > 100 AND status = \"active\")", int64(0), nil).Return().Once()
+
+		err := query.Where("age >= ?", 18).WhereAll([]string{"score", "points"}, ">", 100).Where("status = ?", "active").Get(&users)
+		s.Nil(err)
+	})
+}
+
+func (s *QueryTestSuite) TestWhereNone() {
+	s.Run("equals operator", func() {
+		var users []TestUser
+		query := NewQuery(s.ctx, s.mockReadBuilder, s.mockWriteBuilder, s.mockGrammar, s.mockLogger, "users", nil)
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE name <> ? AND email <> ?", "John", "John").Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT * FROM users WHERE name <> ? AND email <> ?", "John", "John").Return("SELECT * FROM users WHERE name <> \"John\" AND email <> \"John\"").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE name <> \"John\" AND email <> \"John\"", int64(0), nil).Return().Once()
+
+		err := query.WhereNone([]string{"name", "email"}, "=", "John").Get(&users)
+		s.Nil(err)
+	})
+
+	s.Run("greater than operator", func() {
+		var users []TestUser
+		query := NewQuery(s.ctx, s.mockReadBuilder, s.mockWriteBuilder, s.mockGrammar, s.mockLogger, "users", nil)
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE NOT (age > ?) AND NOT (score > ?)", 18, 18).Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT * FROM users WHERE NOT (age > ?) AND NOT (score > ?)", 18, 18).Return("SELECT * FROM users WHERE NOT (age > 18) AND NOT (score > 18)").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE NOT (age > 18) AND NOT (score > 18)", int64(0), nil).Return().Once()
+
+		err := query.WhereNone([]string{"age", "score"}, ">", 18).Get(&users)
+		s.Nil(err)
+	})
+
+	s.Run("combined with Where clause", func() {
+		var users []TestUser
+		query := NewQuery(s.ctx, s.mockReadBuilder, s.mockWriteBuilder, s.mockGrammar, s.mockLogger, "users", nil)
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (age = ? AND name <> ? AND email <> ?)", 10, "John", "John").Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT * FROM users WHERE (age = ? AND name <> ? AND email <> ?)", 10, "John", "John").Return("SELECT * FROM users WHERE (age = 10 AND name <> \"John\" AND email <> \"John\")").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (age = 10 AND name <> \"John\" AND email <> \"John\")", int64(0), nil).Return().Once()
+
+		err := query.Where("age = ?", 10).WhereNone([]string{"name", "email"}, "=", "John").Get(&users)
+		s.Nil(err)
+	})
+
+	s.Run("Where before and after WhereNone", func() {
+		var users []TestUser
+		query := NewQuery(s.ctx, s.mockReadBuilder, s.mockWriteBuilder, s.mockGrammar, s.mockLogger, "users", nil)
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (age >= ? AND name <> ? AND email <> ? AND status = ?)", 18, "John", "John", "active").Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT * FROM users WHERE (age >= ? AND name <> ? AND email <> ? AND status = ?)", 18, "John", "John", "active").Return("SELECT * FROM users WHERE (age >= 18 AND name <> \"John\" AND email <> \"John\" AND status = \"active\")").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (age >= 18 AND name <> \"John\" AND email <> \"John\" AND status = \"active\")", int64(0), nil).Return().Once()
+
+		err := query.Where("age >= ?", 18).WhereNone([]string{"name", "email"}, "=", "John").Where("status = ?", "active").Get(&users)
+		s.Nil(err)
+	})
+
+	s.Run("Where before and after WhereNone with greater than operator", func() {
+		var users []TestUser
+		query := NewQuery(s.ctx, s.mockReadBuilder, s.mockWriteBuilder, s.mockGrammar, s.mockLogger, "users", nil)
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE (age >= ? AND NOT (score > ?) AND NOT (points > ?) AND status = ?)", 18, 100, 100, "active").Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT * FROM users WHERE (age >= ? AND NOT (score > ?) AND NOT (points > ?) AND status = ?)", 18, 100, 100, "active").Return("SELECT * FROM users WHERE (age >= 18 AND NOT (score > 100) AND NOT (points > 100) AND status = \"active\")").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (age >= 18 AND NOT (score > 100) AND NOT (points > 100) AND status = \"active\")", int64(0), nil).Return().Once()
+
+		err := query.Where("age >= ?", 18).WhereNone([]string{"score", "points"}, ">", 100).Where("status = ?", "active").Get(&users)
+		s.Nil(err)
+	})
 }
 
 // MockResult implements sql.Result interface for testing

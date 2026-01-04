@@ -1,6 +1,8 @@
 package log
 
 import (
+	"context"
+
 	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
@@ -30,7 +32,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		if json == nil {
 			return nil, errors.JSONParserNotSet.SetModule(errors.ModuleLog)
 		}
-		return NewApplication(config, json)
+		return NewApplication(context.Background(), nil, config, json)
 	})
 }
 

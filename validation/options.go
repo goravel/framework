@@ -1,15 +1,15 @@
 package validation
 
 import (
+	"context"
 	"strings"
 
 	"github.com/gookit/validate"
 
-	"github.com/goravel/framework/contracts/http"
-	httpvalidate "github.com/goravel/framework/contracts/validation"
+	contractsvalidation "github.com/goravel/framework/contracts/validation"
 )
 
-func Rules(rules map[string]string) httpvalidate.Option {
+func Rules(rules map[string]string) contractsvalidation.Option {
 	return func(options map[string]any) {
 		if len(rules) > 0 {
 			options["rules"] = rules
@@ -17,7 +17,7 @@ func Rules(rules map[string]string) httpvalidate.Option {
 	}
 }
 
-func Filters(filters map[string]string) httpvalidate.Option {
+func Filters(filters map[string]string) contractsvalidation.Option {
 	return func(options map[string]any) {
 		if len(filters) > 0 {
 			options["filters"] = filters
@@ -25,7 +25,7 @@ func Filters(filters map[string]string) httpvalidate.Option {
 	}
 }
 
-func CustomFilters(filters []httpvalidate.Filter) httpvalidate.Option {
+func CustomFilters(filters []contractsvalidation.Filter) contractsvalidation.Option {
 	return func(options map[string]any) {
 		if len(filters) > 0 {
 			options["customFilters"] = filters
@@ -33,7 +33,7 @@ func CustomFilters(filters []httpvalidate.Filter) httpvalidate.Option {
 	}
 }
 
-func CustomRules(rules []httpvalidate.Rule) httpvalidate.Option {
+func CustomRules(rules []contractsvalidation.Rule) contractsvalidation.Option {
 	return func(options map[string]any) {
 		if len(rules) > 0 {
 			options["customRules"] = rules
@@ -41,7 +41,7 @@ func CustomRules(rules []httpvalidate.Rule) httpvalidate.Option {
 	}
 }
 
-func Messages(messages map[string]string) httpvalidate.Option {
+func Messages(messages map[string]string) contractsvalidation.Option {
 	return func(options map[string]any) {
 		if len(messages) > 0 {
 			options["messages"] = messages
@@ -49,7 +49,7 @@ func Messages(messages map[string]string) httpvalidate.Option {
 	}
 }
 
-func Attributes(attributes map[string]string) httpvalidate.Option {
+func Attributes(attributes map[string]string) contractsvalidation.Option {
 	return func(options map[string]any) {
 		if len(attributes) > 0 {
 			options["attributes"] = attributes
@@ -57,14 +57,13 @@ func Attributes(attributes map[string]string) httpvalidate.Option {
 	}
 }
 
-func PrepareForValidation(ctx http.Context, prepare func(ctx http.Context, data httpvalidate.Data) error) httpvalidate.Option {
+func PrepareForValidation(prepare func(ctx context.Context, data contractsvalidation.Data) error) contractsvalidation.Option {
 	return func(options map[string]any) {
-		options["ctx"] = ctx
 		options["prepareForValidation"] = prepare
 	}
 }
 
-func GenerateOptions(options []httpvalidate.Option) map[string]any {
+func GenerateOptions(options []contractsvalidation.Option) map[string]any {
 	realOptions := make(map[string]any)
 	for _, option := range options {
 		option(realOptions)
@@ -73,18 +72,18 @@ func GenerateOptions(options []httpvalidate.Option) map[string]any {
 	return realOptions
 }
 
-func AppendOptions(validator *validate.Validation, options map[string]any) {
+func AppendOptions(ctx context.Context, validation *validate.Validation, options map[string]any) {
 	if options["rules"] != nil {
 		rules := options["rules"].(map[string]string)
 		for key, value := range rules {
-			validator.StringRule(key, value)
+			validation.StringRule(key, value)
 		}
 	}
 
 	if options["filters"] != nil {
 		filters, ok := options["filters"].(map[string]string)
 		if ok {
-			validator.FilterRules(filters)
+			validation.FilterRules(filters)
 		}
 	}
 
@@ -93,32 +92,36 @@ func AppendOptions(validator *validate.Validation, options map[string]any) {
 		for key, value := range messages {
 			messages[key] = strings.ReplaceAll(value, ":attribute", "{field}")
 		}
-		validator.AddMessages(messages)
+		validation.AddMessages(messages)
 	}
 
 	if options["attributes"] != nil && len(options["attributes"].(map[string]string)) > 0 {
-		validator.AddTranslates(options["attributes"].(map[string]string))
+		validation.AddTranslates(options["attributes"].(map[string]string))
 	}
 
 	if options["customRules"] != nil {
-		customRules := options["customRules"].([]httpvalidate.Rule)
+		customRules := options["customRules"].([]contractsvalidation.Rule)
 		for _, customRule := range customRules {
-			customRule := customRule
-			validator.AddMessages(map[string]string{
-				customRule.Signature(): strings.ReplaceAll(customRule.Message(), ":attribute", "{field}"),
+			validation.AddMessages(map[string]string{
+				customRule.Signature(): strings.ReplaceAll(customRule.Message(ctx), ":attribute", "{field}"),
 			})
-			validator.AddValidator(customRule.Signature(), func(val any, options ...any) bool {
-				return customRule.Passes(validator, val, options...)
+			validation.AddValidator(customRule.Signature(), func(val any, options ...any) bool {
+				return customRule.Passes(ctx, validation, val, options...)
 			})
 		}
 	}
 
 	if options["customFilters"] != nil {
-		customFilters := options["customFilters"].([]httpvalidate.Filter)
+		customFilters := options["customFilters"].([]contractsvalidation.Filter)
 		for _, customFilter := range customFilters {
-			validator.AddFilter(customFilter.Signature(), customFilter.Handle())
+			filterFunc := customFilter.Handle(ctx)
+			if filterFunc == nil {
+				continue
+			}
+
+			validation.AddFilter(customFilter.Signature(), filterFunc)
 		}
 	}
 
-	validator.Trans().FieldMap()
+	validation.Trans().FieldMap()
 }

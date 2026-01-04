@@ -147,7 +147,13 @@ type Query interface {
 	// SharedLock locks the selected rows in the table.
 	SharedLock() Query
 	// Sum calculates the sum of a column's values and populates the destination object.
-	Sum(column string) (int64, error)
+	Sum(column string, dest any) error
+	// Avg calculates the average of a column's values.
+	Avg(column string, dest any) error
+	// Min calculates the minimum value of a column.
+	Min(column string, dest any) error
+	// Max calculates the maximum value of a column.
+	Max(column string, dest any) error
 	// ToSql returns the query as a SQL string.
 	ToSql() ToSql
 	// ToRawSql returns the query as a raw SQL string.
@@ -163,6 +169,10 @@ type Query interface {
 	When(condition bool, callback func(query Query) Query, falseCallback ...func(query Query) Query) Query
 	// Where adds a "where" clause to the query.
 	Where(query any, args ...any) Query
+	// WhereAll adds a "where all columns match" clause to the query.
+	WhereAll(columns []string, args ...any) Query
+	// WhereAny adds a "where any of columns match" clause to the query.
+	WhereAny(columns []string, args ...any) Query
 	// WhereBetween adds a "where column between x and y" clause to the query.
 	WhereBetween(column string, x, y any) Query
 	// WhereColumn adds a "where" clause comparing two columns to the query.
@@ -183,6 +193,8 @@ type Query interface {
 	WhereJsonLength(column string, length int) Query
 	// WhereLike adds a "where like" clause to the query.
 	WhereLike(column string, value string) Query
+	// WhereNone adds a "where none of columns match" clause to the query.
+	WhereNone(columns []string, args ...any) Query
 	// WhereNot adds a basic "where not" clause to the query.
 	WhereNot(query any, args ...any) Query
 	// WhereNotBetween adds a "where column not between x and y" clause to the query.

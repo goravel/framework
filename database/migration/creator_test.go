@@ -22,18 +22,26 @@ func (s *DefaultCreatorSuite) SetupTest() {
 }
 
 func (s *DefaultCreatorSuite) TestPopulateStub() {
+	data := StubData{
+		Package:        "migrations",
+		StructName:     "M202410131203CreateUsersTable",
+		Signature:      "202410131203_create_users_table",
+		Table:          "users",
+		FacadesPackage: "facades",
+		FacadesImport:  "github.com/goravel/framework/facades",
+	}
+
 	tests := []struct {
-		name      string
-		stub      string
-		signature string
-		table     string
-		expected  string
+		name        string
+		stub        string
+		data        StubData
+		expected    string
+		expectError bool
 	}{
 		{
-			name:      "Empty stub",
-			stub:      Stubs{}.Empty(),
-			signature: "202410131203_create_users_table",
-			table:     "users",
+			name: "Empty stub",
+			stub: Stubs{}.Empty(),
+			data: data,
 			expected: `package migrations
 
 type M202410131203CreateUsersTable struct{}
@@ -55,14 +63,14 @@ func (r *M202410131203CreateUsersTable) Down() error {
 `,
 		},
 		{
-			name:      "Create stub",
-			stub:      Stubs{}.Create(),
-			signature: "202410131203_create_users_table",
-			table:     "users",
+			name: "Create stub",
+			stub: Stubs{}.Create(),
+			data: data,
 			expected: `package migrations
 
 import (
 	"github.com/goravel/framework/contracts/database/schema"
+
 	"github.com/goravel/framework/facades"
 )
 
@@ -87,18 +95,65 @@ func (r *M202410131203CreateUsersTable) Up() error {
 
 // Down Reverse the migrations.
 func (r *M202410131203CreateUsersTable) Down() error {
- 	return facades.Schema().DropIfExists("users")
+	return facades.Schema().DropIfExists("users")
 }
 `,
 		},
 		{
-			name:      "Update stub",
-			stub:      Stubs{}.Update(),
-			signature: "202410131203_create_users_table",
+			name: "Create stub with schema fields",
+			stub: Stubs{}.Create(),
+			data: StubData{
+				Package:        "migrations",
+				StructName:     "M202410131203CreateUsersTable",
+				Signature:      "202410131203_create_users_table",
+				Table:          "users",
+				FacadesPackage: "facades",
+				FacadesImport:  "github.com/goravel/framework/facades",
+				SchemaFields:   []string{`table.ID()`, `table.String("name")`, `table.TimestampsTz()`},
+			},
 			expected: `package migrations
 
 import (
 	"github.com/goravel/framework/contracts/database/schema"
+
+	"github.com/goravel/framework/facades"
+)
+
+type M202410131203CreateUsersTable struct{}
+
+// Signature The unique signature for the migration.
+func (r *M202410131203CreateUsersTable) Signature() string {
+	return "202410131203_create_users_table"
+}
+
+// Up Run the migrations.
+func (r *M202410131203CreateUsersTable) Up() error {
+	if !facades.Schema().HasTable("users") {
+		return facades.Schema().Create("users", func(table schema.Blueprint) {
+			table.ID()
+			table.String("name")
+			table.TimestampsTz()
+		})
+	}
+
+	return nil
+}
+
+// Down Reverse the migrations.
+func (r *M202410131203CreateUsersTable) Down() error {
+	return facades.Schema().DropIfExists("users")
+}
+`,
+		},
+		{
+			name: "Update stub",
+			stub: Stubs{}.Update(),
+			data: data,
+			expected: `package migrations
+
+import (
+	"github.com/goravel/framework/contracts/database/schema"
+
 	"github.com/goravel/framework/facades"
 )
 
@@ -121,14 +176,24 @@ func (r *M202410131203CreateUsersTable) Down() error {
 	return nil
 }
 `,
-			table: "users",
+		},
+		{
+			name:        "Invalid template returns error",
+			stub:        `{{.InvalidSyntax`,
+			data:        data,
+			expectError: true,
 		},
 	}
 
-	for _, test := range tests {
-		s.Run(test.name, func() {
-			actual := s.defaultCreator.PopulateStub(test.stub, test.signature, test.table)
-			s.Equal(test.expected, actual)
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			actual, err := s.defaultCreator.PopulateStub(tc.stub, tc.data)
+			if tc.expectError {
+				s.Error(err)
+			} else {
+				s.NoError(err)
+				s.Equal(tc.expected, actual)
+			}
 		})
 	}
 }

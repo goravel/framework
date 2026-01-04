@@ -4,30 +4,36 @@ import (
 	"os"
 
 	"github.com/goravel/framework/packages"
-	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support/path"
 )
 
 func main() {
+	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
+	moduleImport := setup.Paths().Module().Import()
+	hashServiceProvider := "&hash.ServiceProvider{}"
+	configPath := path.Config("hashing.go")
+	hashFacadePath := path.Facade("hash.go")
+	facadesPackage := setup.Paths().Facades().Package()
 
-	packages.Setup(os.Args).
-		Install(
-			modify.GoFile(path.Config("app.go")).
-				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register("&hash.ServiceProvider{}")),
-			modify.File(path.Config("hashing.go")).Overwrite(stubs.Config(packages.GetModuleNameFromArgs(os.Args))),
-			modify.WhenFacade("Hash", modify.File(path.Facades("hash.go")).Overwrite(stubs.HashFacade())),
-		).
-		Uninstall(
-			modify.WhenNoFacades([]string{"Hash"},
-				modify.GoFile(path.Config("app.go")).
-					Find(match.Providers()).Modify(modify.Unregister("&hash.ServiceProvider{}")).
-					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
-				modify.File(path.Config("hashing.go")).Remove(),
-			),
-			modify.WhenFacade("Hash", modify.File(path.Facades("hash.go")).Remove()),
-		).
-		Execute()
+	setup.Install(
+		// Add the hash service provider to the providers array in bootstrap/providers.go
+		modify.AddProviderApply(moduleImport, hashServiceProvider),
+
+		// Create config/hashing.go
+		modify.File(configPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Facades().Import(), facadesPackage)),
+
+		// Add the Hash facade
+		modify.File(hashFacadePath).Overwrite(stubs.HashFacade(facadesPackage)),
+	).Uninstall(
+		// Remove config/hashing.go
+		modify.File(configPath).Remove(),
+
+		// Remove the hash service provider from the providers array in bootstrap/providers.go
+		modify.RemoveProviderApply(moduleImport, hashServiceProvider),
+
+		// Remove the Hash facade
+		modify.File(hashFacadePath).Remove(),
+	).Execute()
 }

@@ -20,6 +20,54 @@ func (_m *File) EXPECT() *File_Expecter {
 	return &File_Expecter{mock: &_m.Mock}
 }
 
+// Append provides a mock function with given fields: content
+func (_m *File) Append(content string) modify.Apply {
+	ret := _m.Called(content)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Append")
+	}
+
+	var r0 modify.Apply
+	if rf, ok := ret.Get(0).(func(string) modify.Apply); ok {
+		r0 = rf(content)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(modify.Apply)
+		}
+	}
+
+	return r0
+}
+
+// File_Append_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Append'
+type File_Append_Call struct {
+	*mock.Call
+}
+
+// Append is a helper method to define mock.On call
+//   - content string
+func (_e *File_Expecter) Append(content interface{}) *File_Append_Call {
+	return &File_Append_Call{Call: _e.mock.On("Append", content)}
+}
+
+func (_c *File_Append_Call) Run(run func(content string)) *File_Append_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *File_Append_Call) Return(_a0 modify.Apply) *File_Append_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *File_Append_Call) RunAndReturn(run func(string) modify.Apply) *File_Append_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Overwrite provides a mock function with given fields: content
 func (_m *File) Overwrite(content string) modify.Apply {
 	ret := _m.Called(content)

@@ -17,12 +17,21 @@ func ClientOriginalExtension(file string) string {
 	return strings.ReplaceAll(filepath.Ext(file), ".", "")
 }
 
+// DEPRECATED: Use Contains instead
 func Contain(file string, search string) bool {
+	return Contains(file, search)
+}
+
+func Contains(file string, search string) bool {
 	if Exists(file) {
 		data, err := GetContent(file)
 		if err != nil {
 			return false
 		}
+
+		// Normalize line endings to handle Windows (CRLF) vs Unix (LF) differences
+		data = strings.ReplaceAll(data, "\r\n", "\n")
+		search = strings.ReplaceAll(search, "\r\n", "\n")
 
 		return strings.Contains(data, search)
 	}

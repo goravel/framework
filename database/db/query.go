@@ -15,8 +15,10 @@ import (
 	"github.com/goravel/framework/contracts/database/db"
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/logger"
+	"github.com/goravel/framework/database/utils"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/collect"
 	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/framework/support/deep"
 	"github.com/goravel/framework/support/str"
@@ -710,6 +712,14 @@ func (r *Query) RightJoin(query string, args ...any) db.Query {
 func (r *Query) Select(columns ...string) db.Query {
 	q := r.clone()
 	q.conditions.Selects = deep.Append(q.conditions.Selects, columns...)
+	q.conditions.Selects = collect.Unique(q.conditions.Selects)
+
+	// * may be added along with other columns, remove it.
+	if len(q.conditions.Selects) > 1 {
+		q.conditions.Selects = collect.Filter(q.conditions.Selects, func(column string, _ int) bool {
+			return column != "*"
+		})
+	}
 
 	return q
 }
@@ -721,14 +731,40 @@ func (r *Query) SharedLock() db.Query {
 	return q
 }
 
-func (r *Query) Sum(column string) (int64, error) {
-	var sum int64
-	err := r.Select(fmt.Sprintf("SUM(%s)", column)).First(&sum)
-	if err != nil {
-		return 0, err
+func (r *Query) Sum(column string, dest any) error {
+	destValue := reflect.ValueOf(dest)
+	if destValue.Kind() != reflect.Ptr {
+		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
 	}
 
-	return sum, nil
+	return r.Select(fmt.Sprintf("SUM(%s)", column)).First(dest)
+}
+
+func (r *Query) Avg(column string, dest any) error {
+	destValue := reflect.ValueOf(dest)
+	if destValue.Kind() != reflect.Ptr {
+		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
+	}
+
+	return r.Select(fmt.Sprintf("AVG(%s)", column)).First(dest)
+}
+
+func (r *Query) Min(column string, dest any) error {
+	destValue := reflect.ValueOf(dest)
+	if destValue.Kind() != reflect.Ptr {
+		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
+	}
+
+	return r.Select(fmt.Sprintf("MIN(%s)", column)).First(dest)
+}
+
+func (r *Query) Max(column string, dest any) error {
+	destValue := reflect.ValueOf(dest)
+	if destValue.Kind() != reflect.Ptr {
+		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
+	}
+
+	return r.Select(fmt.Sprintf("MAX(%s)", column)).First(dest)
 }
 
 func (r *Query) ToSql() db.ToSql {
@@ -829,6 +865,49 @@ func (r *Query) Where(query any, args ...any) db.Query {
 	})
 }
 
+func (r *Query) WhereAll(columns []string, args ...any) db.Query {
+	op, value, err := utils.PrepareWhereOperatorAndValue(args...)
+	if err != nil {
+		r.err = err
+		return r
+	}
+
+	var conditions []string
+	var conditionArgs []any
+	for _, column := range columns {
+		conditions = append(conditions, fmt.Sprintf("%s %v ?", column, op))
+		conditionArgs = append(conditionArgs, value)
+	}
+
+	query := strings.Join(conditions, " AND ")
+	where := contractsdriver.Where{
+		Query: sq.Expr(query, conditionArgs...),
+	}
+	r.conditions.Where = deep.Append(r.conditions.Where, where)
+
+	return r
+}
+
+func (r *Query) WhereAny(columns []string, args ...any) db.Query {
+	op, value, err := utils.PrepareWhereOperatorAndValue(args...)
+	if err != nil {
+		r.err = err
+		return r
+	}
+
+	var orConditions []sq.Sqlizer
+	for _, column := range columns {
+		orConditions = append(orConditions, sq.Expr(fmt.Sprintf("%s %v ?", column, op), value))
+	}
+
+	where := contractsdriver.Where{
+		Query: sq.Or(orConditions),
+	}
+	r.conditions.Where = deep.Append(r.conditions.Where, where)
+
+	return r
+}
+
 func (r *Query) WhereBetween(column string, x, y any) db.Query {
 	return r.Where(sq.Expr(fmt.Sprintf("%s BETWEEN ? AND ?", column), x, y))
 }
@@ -905,6 +984,33 @@ func (r *Query) WhereJsonLength(column string, length int) db.Query {
 
 func (r *Query) WhereLike(column string, value string) db.Query {
 	return r.Where(sq.Like{column: value})
+}
+
+func (r *Query) WhereNone(columns []string, args ...any) db.Query {
+	op, value, err := utils.PrepareWhereOperatorAndValue(args...)
+	if err != nil {
+		r.err = err
+		return r
+	}
+
+	var conditions []string
+	var conditionArgs []any
+	for _, column := range columns {
+		if op == "=" {
+			conditions = append(conditions, fmt.Sprintf("%s <> ?", column))
+		} else {
+			conditions = append(conditions, fmt.Sprintf("NOT (%s %v ?)", column, op))
+		}
+		conditionArgs = append(conditionArgs, value)
+	}
+
+	query := strings.Join(conditions, " AND ")
+	where := contractsdriver.Where{
+		Query: sq.Expr(query, conditionArgs...),
+	}
+	r.conditions.Where = deep.Append(r.conditions.Where, where)
+
+	return r
 }
 
 func (r *Query) WhereNot(query any, args ...any) db.Query {

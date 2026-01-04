@@ -90,14 +90,22 @@ func (r *DB) Connection(name string) contractsdb.DB {
 	return r.queries[name]
 }
 
-func (r *DB) Transaction(callback func(tx contractsdb.Tx) error) error {
+func (r *DB) Transaction(callback func(tx contractsdb.Tx) error) (err error) {
 	tx, err := r.BeginTransaction()
 	if err != nil {
 		return err
 	}
 
-	err = callback(tx)
-	if err != nil {
+	defer func() {
+		if re := recover(); re != nil {
+			err = fmt.Errorf("panic: %v", re)
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = errors.Join(err, rollbackErr)
+			}
+		}
+	}()
+
+	if err = callback(tx); err != nil {
 		if err := tx.Rollback(); err != nil {
 			return err
 		}

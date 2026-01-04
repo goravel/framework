@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -162,6 +163,26 @@ func (s *OrmSuite) TestTransactionError() {
 
 			return errors.New("error")
 		}))
+
+		var roles []Role
+		s.Nil(s.orm.Connection(connection).Query().Find(&roles))
+		s.Equal(0, len(roles))
+	}
+}
+
+func (s *OrmSuite) TestTransactionPanic() {
+	for connection := range s.queries {
+		err := s.orm.Connection(connection).Transaction(func(tx contractsorm.Query) error {
+			role := Role{Name: "transaction_error_role", Avatar: "transaction_error_avatar"}
+			s.Nil(tx.Create(&role))
+
+			role1 := Role{Name: "transaction_error_role1", Avatar: "transaction_error_avatar1"}
+			s.Nil(tx.Create(&role1))
+
+			panic(1)
+		})
+
+		s.Equal(fmt.Errorf("panic: %v", 1), err)
 
 		var roles []Role
 		s.Nil(s.orm.Connection(connection).Query().Find(&roles))

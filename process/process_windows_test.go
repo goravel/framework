@@ -11,6 +11,9 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
+	contractsprocess "github.com/goravel/framework/contracts/process"
+	"github.com/goravel/framework/errors"
 )
 
 func TestProcess_Run_Windows(t *testing.T) {
@@ -110,4 +113,44 @@ func TestProcess_Run_Windows(t *testing.T) {
 			tt.check(t, r)
 		})
 	}
+}
+
+func TestProcess_Pool_Windows(t *testing.T) {
+	t.Run("creates pool builder and executes commands", func(t *testing.T) {
+		p := New()
+		results, err := p.Pool(func(pool contractsprocess.Pool) {
+			pool.Command("cmd", "/C", "echo hello").As("hello")
+			pool.Command("cmd", "/C", "echo world").As("world")
+		}).Run()
+
+		assert.NoError(t, err)
+		assert.Len(t, results, 2)
+		assert.Contains(t, results["hello"].Output(), "hello")
+		assert.Contains(t, results["world"].Output(), "world")
+	})
+
+	t.Run("returns error with nil configurer", func(t *testing.T) {
+		p := New()
+		_, err := p.Pool(nil).Run()
+		assert.ErrorIs(t, err, errors.ProcessPoolNilConfigurer)
+	})
+}
+
+func TestProcess_Pipe_Windows(t *testing.T) {
+	t.Run("creates pipeline and executes commands", func(t *testing.T) {
+		p := New()
+		result, err := p.Pipe(func(pipe contractsprocess.Pipe) {
+			pipe.Command("cmd", "/C", "echo hello")
+			pipe.Command("findstr", "hello")
+		}).Run()
+
+		assert.NoError(t, err)
+		assert.Contains(t, result.Output(), "hello")
+	})
+
+	t.Run("returns error with nil configurer", func(t *testing.T) {
+		p := New()
+		_, err := p.Pipe(nil).Run()
+		assert.ErrorIs(t, err, errors.ProcessPipeNilConfigurer)
+	})
 }

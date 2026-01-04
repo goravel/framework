@@ -22,13 +22,16 @@ import (
 	"github.com/goravel/framework/contracts/http/client"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/mail"
+	"github.com/goravel/framework/contracts/process"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/contracts/route"
 	"github.com/goravel/framework/contracts/schedule"
 	"github.com/goravel/framework/contracts/session"
+	"github.com/goravel/framework/contracts/telemetry"
 	"github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/contracts/translation"
 	"github.com/goravel/framework/contracts/validation"
+	"github.com/goravel/framework/contracts/view"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation"
 )
@@ -81,7 +84,7 @@ func Hash() hash.Hash {
 	return App().MakeHash()
 }
 
-func Http() client.Request {
+func Http() client.Factory {
 	return App().MakeHttp()
 }
 
@@ -99,6 +102,10 @@ func Mail() mail.Mail {
 
 func Orm() orm.Orm {
 	return App().MakeOrm()
+}
+
+func Process() process.Process {
+	return App().MakeProcess()
 }
 
 func Queue() queue.Queue {
@@ -133,6 +140,10 @@ func Storage() filesystem.Storage {
 	return App().MakeStorage()
 }
 
+func Telemetry() telemetry.Telemetry {
+	return App().MakeTelemetry()
+}
+
 func Testing() testing.Testing {
 	return App().MakeTesting()
 }
@@ -141,6 +152,6 @@ func Validation() validation.Validation {
 	return App().MakeValidation()
 }
 
-func View() http.View {
+func View() view.View {
 	return App().MakeView()
 }

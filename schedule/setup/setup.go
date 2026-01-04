@@ -4,22 +4,27 @@ import (
 	"os"
 
 	"github.com/goravel/framework/packages"
-	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support/path"
 )
 
 func main() {
-	packages.Setup(os.Args).
-		Install(
-			modify.GoFile(path.Config("app.go")).
-				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register("&schedule.ServiceProvider{}")),
-		).
-		Uninstall(
-			modify.GoFile(path.Config("app.go")).
-				Find(match.Providers()).Modify(modify.Unregister("&schedule.ServiceProvider{}")).
-				Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
-		).
-		Execute()
+	setup := packages.Setup(os.Args)
+	scheduleFacadePath := path.Facade("schedule.go")
+	scheduleServiceProvider := "&schedule.ServiceProvider{}"
+	moduleImport := setup.Paths().Module().Import()
+
+	setup.Install(
+		// Create the schedule facade file.
+		modify.File(scheduleFacadePath).Overwrite(Stubs{}.ScheduleFacade(setup.Paths().Facades().Package())),
+
+		// Add the schedule service provider to the providers array in bootstrap/providers.go
+		modify.AddProviderApply(moduleImport, scheduleServiceProvider),
+	).Uninstall(
+		// Remove the schedule service provider from the providers array in bootstrap/providers.go
+		modify.RemoveProviderApply(moduleImport, scheduleServiceProvider),
+
+		// Remove the schedule facade file.
+		modify.File(scheduleFacadePath).Remove(),
+	).Execute()
 }

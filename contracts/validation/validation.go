@@ -1,10 +1,12 @@
 package validation
 
+import "context"
+
 type Option func(map[string]any)
 
 type Validation interface {
 	// Make create a new validator instance.
-	Make(data any, rules map[string]string, options ...Option) (Validator, error)
+	Make(ctx context.Context, data any, rules map[string]string, options ...Option) (Validator, error)
 	// AddFilters add the custom filters.
 	AddFilters([]Filter) error
 	// AddRules add the custom rules.
@@ -46,9 +48,9 @@ type Rule interface {
 	// Signature set the unique signature of the rule.
 	Signature() string
 	// Passes determine if the validation rule passes.
-	Passes(data Data, val any, options ...any) bool
+	Passes(ctx context.Context, data Data, val any, options ...any) bool
 	// Message gets the validation error message.
-	Message() string
+	Message(ctx context.Context) string
 }
 
 type Filter interface {
@@ -86,5 +88,5 @@ type Filter interface {
 	//        return val
 	//    }
 	//
-	Handle() any
+	Handle(ctx context.Context) any
 }

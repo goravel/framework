@@ -6,15 +6,21 @@ type Stubs struct {
 func (r Stubs) Model() string {
 	return `package {{.PackageName}}
 
-{{if .Imports -}}
+{{if or .Imports (and (not .Embeds) (not .Fields)) -}}
 import (
 {{- range $path, $_ := .Imports }}
 	"{{$path}}"
+{{- end }}
+{{- if and (not .Embeds) (not .Fields) }}
+	"github.com/goravel/framework/database/orm"
 {{- end }}
 )
 {{- end }}
 
 type {{.StructName}} struct {
+{{- if and (not .Embeds) (not .Fields) }}
+	orm.Model
+{{- end }}
 {{- range .Embeds }}
 	{{.}}
 {{- end }}

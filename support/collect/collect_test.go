@@ -20,6 +20,14 @@ func TestCountBy(t *testing.T) {
 	assert.Equal(t, 2, count)
 }
 
+func TestDiff(t *testing.T) {
+	diff := Diff([]int{1, 2, 3}, []int{2, 3, 4})
+	assert.Equal(t, []int{1}, diff)
+
+	diffStr := Diff([]string{"a", "b", "c"}, []string{"b", "c", "d"})
+	assert.Equal(t, []string{"a"}, diffStr)
+}
+
 func TestEach(t *testing.T) {
 	Each([]string{"hello", "world"}, func(x string, i int) {
 		if i == 0 {

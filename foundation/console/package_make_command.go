@@ -7,6 +7,7 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -35,7 +36,7 @@ func (r *PackageMakeCommand) Extend() command.Extend {
 				Name:    "root",
 				Aliases: []string{"r"},
 				Usage:   "The root path of package, default: packages",
-				Value:   "packages",
+				Value:   support.Config.Paths.Packages,
 			},
 		},
 	}
@@ -75,10 +76,10 @@ func (r *PackageMakeCommand) Handle(ctx console.Context) error {
 		"README.md":           packageMakeCommandStubs.Readme,
 		"service_provider.go": packageMakeCommandStubs.ServiceProvider,
 		packageName + ".go":   packageMakeCommandStubs.Main,
-		filepath.Join("contracts", packageName+".go"):       packageMakeCommandStubs.Contracts,
-		filepath.Join("facades", packageName+".go"):         packageMakeCommandStubs.Facades,
-		filepath.Join("setup", "config", packageName+".go"): packageMakeCommandStubs.Config,
-		filepath.Join("setup", "setup.go"):                  packageMakeCommandStubs.Setup,
+		filepath.Join("contracts", packageName+".go"): packageMakeCommandStubs.Contracts,
+		filepath.Join("facades", packageName+".go"):   packageMakeCommandStubs.Facades,
+		filepath.Join("setup", "stubs.go"):            packageMakeCommandStubs.Config,
+		filepath.Join("setup", "setup.go"):            packageMakeCommandStubs.Setup,
 	}
 
 	for path, content := range files {

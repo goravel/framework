@@ -6,15 +6,15 @@ import (
 
 type Stubs struct{}
 
-func (s Stubs) Config(module string) string {
-	content := `package config
+func (s Stubs) Config(pkg, facadesImport, facadesPackage string) string {
+	content := `package DummyPackage
 
 import (
-	"DummyModule/app/facades"
+	"DummyFacadesImport"
 )
 
 func init() {
-	config := facades.Config()
+	config := DummyFacadesPackage.Config()
 	config.Add("grpc", map[string]any{
 		// Configure your server host
 		"host": config.Env("GRPC_HOST", ""),
@@ -26,20 +26,25 @@ func init() {
 		// Interceptors can be the group name of UnaryClientInterceptorGroups in app/grpc/kernel.go.
 		"clients": map[string]any{
 			//"user": map[string]any{
-			//	"host":         config.Env("GRPC_USER_HOST", ""),
-			//	"port":         config.Env("GRPC_USER_PORT", ""),
-			//	"interceptors": []string{},
+			//	"host":           config.Env("GRPC_USER_HOST", ""),
+			//	"port":           config.Env("GRPC_USER_PORT", ""),
+			//	"interceptors":   []string{},
+            //  "stats_handlers": []string{},
 			//},
 		},
 	})
 }
 `
 
-	return strings.ReplaceAll(content, "DummyModule", module)
+	content = strings.ReplaceAll(content, "DummyPackage", pkg)
+	content = strings.ReplaceAll(content, "DummyFacadesImport", facadesImport)
+	content = strings.ReplaceAll(content, "DummyFacadesPackage", facadesPackage)
+
+	return content
 }
 
-func (s Stubs) GrpcFacade() string {
-	return `package facades
+func (s Stubs) GrpcFacade(pkg string) string {
+	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/grpc"
@@ -49,4 +54,17 @@ func Grpc() grpc.Grpc {
 	return App().MakeGrpc()
 }
 `
+
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
+}
+
+func (s Stubs) Routes(pkg string) string {
+	content := `package DummyPackage
+
+func Grpc() {
+
+}
+`
+
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }

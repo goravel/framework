@@ -36,6 +36,8 @@ type Schema interface {
 	GetIndexListing(table string) []string
 	// GetIndexes Get the indexes for a given table.
 	GetIndexes(table string) ([]driver.Index, error)
+	// GetModel Get the model from the registered models by name.
+	GetModel(name string) any
 	// GetTableListing Get the table listing for the database.
 	GetTableListing() []string
 	// GetTables Get the tables that belong to the database.
@@ -93,10 +95,11 @@ type Connection interface {
 // Extension represents an extension for the schema
 type Extension struct {
 	GoTypes []GoType
+	// Models is a list of model instances to register for runtime discovery and migration generation.
+	Models []any
 }
 
-// GoType represents a database column type to Go type mapping
-// This is kept for backward compatibility
+// GoType represents a database column type to Go type mapping.
 type GoType struct {
 	Pattern    string
 	Type       string

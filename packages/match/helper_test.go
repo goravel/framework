@@ -15,24 +15,20 @@ import (
 
 type MatchHelperTestSuite struct {
 	suite.Suite
-	configChained  *dst.File
-	configVariable *dst.File
-	console        *dst.File
-	database       *dst.File
-	validation     *dst.File
-	jobs           *dst.File
+	configChained       *dst.File
+	configVariable      *dst.File
+	providerVariable    *dst.File
+	providerInConfig    *dst.File
+	console             *dst.File
+	database            *dst.File
+	jobs                *dst.File
+	serviceProvider     *dst.File
+	validation          *dst.File
 }
 
 func (s *MatchHelperTestSuite) SetupTest() {
 	var err error
 	s.configChained, err = decorator.Parse(`package config
-
-import (
-	"github.com/goravel/framework/auth"
-	"github.com/goravel/framework/contracts/foundation"
-	"github.com/goravel/framework/crypt"
-	"github.com/goravel/framework/facades"
-)
 
 func Boot() {}
 
@@ -40,21 +36,10 @@ func init() {
 	facades.Config().Add("app", map[string]any{
 		"name":  config.Env("APP_NAME", "Goravel"),
 		"key": "value",
-		"providers": []foundation.ServiceProvider{
-			&auth.AuthServiceProvider{},
-			&crypt.ServiceProvider{},
-		},
 	})
 }`)
 	s.Require().NoError(err)
 	s.configVariable, err = decorator.Parse(`package config
-
-import (
-	"github.com/goravel/framework/auth"
-	"github.com/goravel/framework/contracts/foundation"
-	"github.com/goravel/framework/crypt"
-	"github.com/goravel/framework/facades"
-)
 
 func Boot() {}
 
@@ -63,10 +48,6 @@ func init() {
 	config.Add("app", map[string]any{
 		"name":  config.Env("APP_NAME", "Goravel"),
 		"key": "value",
-		"providers": []foundation.ServiceProvider{
-			&auth.AuthServiceProvider{},
-			&crypt.ServiceProvider{},
-		},
 	})
 }`)
 	s.Require().NoError(err)
@@ -184,6 +165,60 @@ func (receiver *QueueServiceProvider) Jobs() []queue.Job {
 }
 `)
 	s.Require().NoError(err)
+
+	s.serviceProvider, err = decorator.Parse(`package providers
+
+import (
+	"github.com/goravel/framework/contracts/foundation"
+)
+
+type AppServiceProvider struct {
+}
+
+func (receiver *AppServiceProvider) Register(app foundation.Application) {
+
+}
+
+func (receiver *AppServiceProvider) Boot(app foundation.Application) {
+
+}
+`)
+	s.Require().NoError(err)
+
+	s.providerVariable, err = decorator.Parse(`package bootstrap
+
+import (
+	"github.com/goravel/framework/auth"
+	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/crypt"
+)
+
+func Providers() []foundation.ServiceProvider {
+	return []foundation.ServiceProvider{
+		&auth.ServiceProvider{},
+		&crypt.ServiceProvider{},
+	}
+}`)
+	s.Require().NoError(err)
+
+	s.providerInConfig, err = decorator.Parse(`package config
+
+import (
+	"github.com/goravel/framework/auth"
+	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/crypt"
+)
+
+func init() {
+	config.Add("app", map[string]any{
+		"name": "Goravel",
+		"providers": []foundation.ServiceProvider{
+			&auth.ServiceProvider{},
+			&crypt.ServiceProvider{},
+		},
+	})
+}`)
+	s.Require().NoError(err)
 }
 
 func (s *MatchHelperTestSuite) TearDownTest() {}
@@ -223,19 +258,33 @@ func (s *MatchHelperTestSuite) TestHelper() {
 		},
 		{
 			name:     "match imports",
-			file:     s.configVariable,
+			file:     s.console,
 			matchers: Imports(),
 			assert: func(node dst.Node) {
 				n, ok := node.(*dst.GenDecl)
 				s.True(ok)
 				s.Equal(token.IMPORT, n.Tok)
-				s.Len(n.Specs, 4)
+				s.Len(n.Specs, 3)
 			},
 		},
 		{
 			name:     "match providers",
-			file:     s.configVariable,
+			file:     s.providerVariable,
 			matchers: Providers(),
+			assert: func(node dst.Node) {
+				s.True(CompositeLit(EqualNode(&dst.ArrayType{
+					Elt: &dst.SelectorExpr{
+						X:   &dst.Ident{Name: "foundation"},
+						Sel: &dst.Ident{Name: "ServiceProvider"},
+					},
+				})).MatchNode(node))
+				s.Len(node.(*dst.CompositeLit).Elts, 2)
+			},
+		},
+		{
+			name:     "match providers in config (deprecated pattern)",
+			file:     s.providerInConfig,
+			matchers: ProvidersInConfig(),
 			assert: func(node dst.Node) {
 				s.True(CompositeLit(EqualNode(&dst.ArrayType{
 					Elt: &dst.SelectorExpr{
@@ -328,6 +377,26 @@ func (s *MatchHelperTestSuite) TestHelper() {
 					},
 				})).MatchNode(node))
 				s.Len(node.(*dst.CompositeLit).Elts, 1)
+			},
+		},
+		{
+			name:     "match servicer provider's Register function",
+			file:     s.serviceProvider,
+			matchers: RegisterFunc(),
+			assert: func(node dst.Node) {
+				fn, ok := node.(*dst.FuncDecl)
+				s.True(ok)
+				s.True(fn.Name.Name == "Register")
+			},
+		},
+		{
+			name:     "match servicer provider's Boot function",
+			file:     s.serviceProvider,
+			matchers: BootFunc(),
+			assert: func(node dst.Node) {
+				fn, ok := node.(*dst.FuncDecl)
+				s.True(ok)
+				s.True(fn.Name.Name == "Boot")
 			},
 		},
 	}

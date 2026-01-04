@@ -4,39 +4,55 @@ import (
 	"os"
 
 	"github.com/goravel/framework/packages"
-	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support/path"
 )
 
 func main() {
-	module := packages.GetModuleNameFromArgs(os.Args)
+	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
+	httpFacade := "Http"
+	rateLimiterFacade := "RateLimiter"
+	viewFacade := "View"
+	httpConfigPath := path.Config("http.go")
+	jwtConfigPath := path.Config("jwt.go")
+	corsConfigPath := path.Config("cors.go")
+	httpFacadePath := path.Facade("http.go")
+	rateLimiterFacadePath := path.Facade("rate_limiter.go")
+	viewFacadePath := path.Facade("view.go")
+	httpServiceProvider := "&http.ServiceProvider{}"
+	moduleImport := setup.Paths().Module().Import()
+	facadesImport := setup.Paths().Facades().Import()
+	configPackage := setup.Paths().Config().Package()
+	facadesPackage := setup.Paths().Facades().Package()
 
-	packages.Setup(os.Args).
-		Install(
-			modify.GoFile(path.Config("app.go")).
-				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register("&http.ServiceProvider{}")),
-			modify.File(path.Config("http.go")).Overwrite(stubs.HttpConfig(module)),
-			modify.File(path.Config("jwt.go")).Overwrite(stubs.JwtConfig(module)),
-			modify.File(path.Config("cors.go")).Overwrite(stubs.CorsConfig(module)),
-			modify.WhenFacade("Http", modify.File(path.Facades("http.go")).Overwrite(stubs.HttpFacade())),
-			modify.WhenFacade("RateLimiter", modify.File(path.Facades("rate_limiter.go")).Overwrite(stubs.RateLimiterFacade())),
-			modify.WhenFacade("View", modify.File(path.Facades("view.go")).Overwrite(stubs.ViewFacade())),
-		).
-		Uninstall(
-			modify.WhenNoFacades([]string{"Http", "RateLimiter", "View"},
-				modify.GoFile(path.Config("app.go")).
-					Find(match.Providers()).Modify(modify.Unregister("&http.ServiceProvider{}")).
-					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
-				modify.File(path.Config("http.go")).Remove(),
-				modify.File(path.Config("jwt.go")).Remove(),
-				modify.File(path.Config("cors.go")).Remove(),
-			),
-			modify.WhenFacade("Http", modify.File(path.Facades("http.go")).Remove()),
-			modify.WhenFacade("RateLimiter", modify.File(path.Facades("rate_limiter.go")).Remove()),
-			modify.WhenFacade("View", modify.File(path.Facades("view.go")).Remove()),
-		).
-		Execute()
+	setup.Install(
+		// Add the http service provider to the providers array in bootstrap/providers.go
+		modify.AddProviderApply(moduleImport, httpServiceProvider),
+
+		// Create config/http.go, config/jwt.go, config/cors.go
+		modify.File(httpConfigPath).Overwrite(stubs.HttpConfig(configPackage, facadesImport, facadesPackage)),
+		modify.File(jwtConfigPath).Overwrite(stubs.JwtConfig(configPackage, facadesImport, facadesPackage)),
+		modify.File(corsConfigPath).Overwrite(stubs.CorsConfig(configPackage, facadesImport, facadesPackage)),
+
+		// Register the Http, RateLimiter, View facades
+		modify.WhenFacade(httpFacade, modify.File(httpFacadePath).Overwrite(stubs.HttpFacade(facadesPackage))),
+		modify.WhenFacade(rateLimiterFacade, modify.File(rateLimiterFacadePath).Overwrite(stubs.RateLimiterFacade(facadesPackage))),
+		modify.WhenFacade(viewFacade, modify.File(viewFacadePath).Overwrite(stubs.ViewFacade(facadesPackage))),
+	).Uninstall(
+		modify.WhenNoFacades([]string{httpFacade, rateLimiterFacade, viewFacade},
+			// Remove config/http.go, config/jwt.go, config/cors.go
+			modify.File(httpConfigPath).Remove(),
+			modify.File(jwtConfigPath).Remove(),
+			modify.File(corsConfigPath).Remove(),
+
+			// Remove the http service provider from the providers array in bootstrap/providers.go
+			modify.RemoveProviderApply(moduleImport, httpServiceProvider),
+		),
+
+		// Remove the Http, RateLimiter, View facades
+		modify.WhenFacade(httpFacade, modify.File(httpFacadePath).Remove()),
+		modify.WhenFacade(rateLimiterFacade, modify.File(rateLimiterFacadePath).Remove()),
+		modify.WhenFacade(viewFacade, modify.File(viewFacadePath).Remove()),
+	).Execute()
 }

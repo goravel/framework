@@ -2,7 +2,6 @@ package console
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"runtime/debug"
 	"strings"
@@ -51,10 +50,19 @@ func NewMake(ctx console.Context, ttype, name, root string) (*Make, error) {
 	return m, nil
 }
 
-func (m *Make) GetFilePath() string {
-	pwd, _ := os.Getwd()
+func (m *Make) GetName() string {
+	return m.name
+}
 
-	return filepath.Join(pwd, m.root, m.GetFolderPath(), str.Of(m.GetStructName()).Snake().String()+".go")
+func (m *Make) GetFilePath() string {
+	root := strings.Split(m.root, "/")
+	paths := append(root, m.GetFolderPath(), str.Of(m.GetStructName()).Snake().String()+".go")
+	path := filepath.Join(paths...)
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return path
+	}
+	return abs
 }
 
 func (m *Make) GetSignature() string {
@@ -89,7 +97,10 @@ func (m *Make) GetPackageImportPath() string {
 func (m *Make) GetPackageName() string {
 	name := strings.TrimSuffix(m.name, ".go")
 	segments := strings.Split(name, "/")
-	packageName := str.Of(m.root).Trim(string(filepath.Separator)).AfterLast(string(filepath.Separator)).String()
+	// Normalize path separators to forward slashes for cross-platform compatibility
+	// Replace backslashes with forward slashes to handle Windows paths
+	normalizedRoot := strings.ReplaceAll(m.root, "\\", "/")
+	packageName := str.Of(normalizedRoot).Trim("/").AfterLast("/").String()
 
 	if len(segments) > 1 {
 		packageName = segments[len(segments)-2]

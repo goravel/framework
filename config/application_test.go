@@ -178,6 +178,111 @@ func (s *ApplicationTestSuite) TestGetDuration() {
 	s.Equal(time.Duration(0), s.config.GetDuration("INVALID_DURATION", time.Second))
 }
 
+func (s *ApplicationTestSuite) TestEnvStringFunction() {
+	// existing value
+	s.T().Setenv("ENVSTRING_VAR", "hello")
+	s.Equal("hello", s.config.EnvString("ENVSTRING_VAR"))
+	s.Equal("hello", s.customConfig.EnvString("ENVSTRING_VAR"))
+
+	// default used when not set
+	s.Equal("fallback", s.config.EnvString("ENVSTRING_NOT_SET", "fallback"))
+
+	// empty string -> use provided default, otherwise empty string
+	s.T().Setenv("ENVSTRING_EMPTY", "")
+	s.Equal("fallback", s.config.EnvString("ENVSTRING_EMPTY", "fallback"))
+	s.Equal("", s.config.EnvString("ENVSTRING_EMPTY"))
+}
+
+func (s *ApplicationTestSuite) TestEnvBoolFunction() {
+	// true/false values
+	s.T().Setenv("ENVBOOL_TRUE", "true")
+	s.True(s.config.EnvBool("ENVBOOL_TRUE"))
+	s.T().Setenv("ENVBOOL_FALSE", "false")
+	s.False(s.config.EnvBool("ENVBOOL_FALSE"))
+
+	// not set -> default respected
+	s.True(s.config.EnvBool("ENVBOOL_NOT_SET", true))
+	s.False(s.config.EnvBool("ENVBOOL_NOT_SET2", false))
+
+	// empty string -> use default if provided; otherwise cast to false
+	s.T().Setenv("ENVBOOL_EMPTY", "")
+	s.True(s.config.EnvBool("ENVBOOL_EMPTY", true))
+	s.False(s.config.EnvBool("ENVBOOL_EMPTY"))
+
+	// invalid -> false
+	s.T().Setenv("ENVBOOL_INVALID", "invalid")
+	s.False(s.config.EnvBool("ENVBOOL_INVALID"))
+}
+
+func (s *ApplicationTestSuite) TestUnmarshalKey() {
+	s.config.Add("database", map[string]any{
+		"default": "mysql",
+		"connections": map[string]any{
+			"mysql": map[string]any{
+				"host":     "127.0.0.1",
+				"port":     3306,
+				"database": "goravel",
+				"username": "root",
+				"password": "secret",
+			},
+		},
+	})
+
+	type DatabaseConfig struct {
+		Default     string         `json:"default"`
+		Connections map[string]any `json:"connections"`
+	}
+
+	var dbConfig DatabaseConfig
+	err := s.config.UnmarshalKey("database", &dbConfig)
+	s.NoError(err)
+	s.Equal("mysql", dbConfig.Default)
+	s.NotNil(dbConfig.Connections["mysql"])
+
+	type MySQLConnection struct {
+		Host     string
+		Port     int
+		Database string
+		Username string
+		Password string
+	}
+
+	var mysqlConfig MySQLConnection
+	err = s.config.UnmarshalKey("database.connections.mysql", &mysqlConfig)
+	s.NoError(err)
+	s.Equal("127.0.0.1", mysqlConfig.Host)
+	s.Equal(3306, mysqlConfig.Port)
+	s.Equal("goravel", mysqlConfig.Database)
+	s.Equal("root", mysqlConfig.Username)
+	s.Equal("secret", mysqlConfig.Password)
+
+	var emptyConfig MySQLConnection
+	err = s.config.UnmarshalKey("non_existent_key", &emptyConfig)
+	s.NoError(err)
+	s.Equal("", emptyConfig.Host)
+	s.Equal(0, emptyConfig.Port)
+
+	// Test with custom config for customConfig instance
+	s.customConfig.Add("app", map[string]any{
+		"name":  "Goravel",
+		"debug": true,
+		"port":  8080,
+	})
+
+	type AppConfig struct {
+		Name  string `json:"name"`
+		Debug bool   `json:"debug"`
+		Port  int    `json:"port"`
+	}
+
+	var appConfig AppConfig
+	err = s.customConfig.UnmarshalKey("app", &appConfig)
+	s.NoError(err)
+	s.Equal("Goravel", appConfig.Name)
+	s.True(appConfig.Debug)
+	s.Equal(8080, appConfig.Port)
+}
+
 func TestOsVariables(t *testing.T) {
 	t.Setenv("APP_KEY", "12345678901234567890123456789013")
 	t.Setenv("APP_NAME", "goravel")

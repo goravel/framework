@@ -1,18 +1,16 @@
 package console
 
 import (
+	"github.com/urfave/cli/v3"
+
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 )
 
-type ListCommand struct {
-	artisan console.Artisan
-}
+type ListCommand struct{}
 
-func NewListCommand(artisan console.Artisan) *ListCommand {
-	return &ListCommand{
-		artisan: artisan,
-	}
+func NewListCommand() *ListCommand {
+	return &ListCommand{}
 }
 
 // Signature The name and signature of the console command.
@@ -32,5 +30,5 @@ func (r *ListCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *ListCommand) Handle(ctx console.Context) error {
-	return r.artisan.Call("--help")
+	return cli.ShowAppHelp(ctx.Instance())
 }

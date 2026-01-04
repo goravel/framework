@@ -21,19 +21,19 @@ func (_m *ModelWithGlobalScopes) EXPECT() *ModelWithGlobalScopes_Expecter {
 }
 
 // GlobalScopes provides a mock function with no fields
-func (_m *ModelWithGlobalScopes) GlobalScopes() []func(orm.Query) orm.Query {
+func (_m *ModelWithGlobalScopes) GlobalScopes() map[string]func(orm.Query) orm.Query {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for GlobalScopes")
 	}
 
-	var r0 []func(orm.Query) orm.Query
-	if rf, ok := ret.Get(0).(func() []func(orm.Query) orm.Query); ok {
+	var r0 map[string]func(orm.Query) orm.Query
+	if rf, ok := ret.Get(0).(func() map[string]func(orm.Query) orm.Query); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]func(orm.Query) orm.Query)
+			r0 = ret.Get(0).(map[string]func(orm.Query) orm.Query)
 		}
 	}
 
@@ -57,12 +57,12 @@ func (_c *ModelWithGlobalScopes_GlobalScopes_Call) Run(run func()) *ModelWithGlo
 	return _c
 }
 
-func (_c *ModelWithGlobalScopes_GlobalScopes_Call) Return(_a0 []func(orm.Query) orm.Query) *ModelWithGlobalScopes_GlobalScopes_Call {
+func (_c *ModelWithGlobalScopes_GlobalScopes_Call) Return(_a0 map[string]func(orm.Query) orm.Query) *ModelWithGlobalScopes_GlobalScopes_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ModelWithGlobalScopes_GlobalScopes_Call) RunAndReturn(run func() []func(orm.Query) orm.Query) *ModelWithGlobalScopes_GlobalScopes_Call {
+func (_c *ModelWithGlobalScopes_GlobalScopes_Call) RunAndReturn(run func() map[string]func(orm.Query) orm.Query) *ModelWithGlobalScopes_GlobalScopes_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -15,9 +15,10 @@ import (
 
 type ModifyActionsTestSuite struct {
 	suite.Suite
-	config   string
-	console  string
-	database string
+	config    string
+	console   string
+	database  string
+	providers string
 }
 
 func TestModifyActionsTestSuite(t *testing.T) {
@@ -30,9 +31,6 @@ func (s *ModifyActionsTestSuite) SetupTest() {
 import (	
 	"goravel/app/jobs"
 
-	"github.com/goravel/framework/auth"
-	"github.com/goravel/framework/contracts/foundation"
-	"github.com/goravel/framework/crypt"
 	"github.com/goravel/framework/facades"
 )
 
@@ -43,10 +41,6 @@ func init() {
 	config.Add("app", map[string]any{
 		"name":  config.Env("APP_NAME", "Goravel"),
 		"exist": map[string]any{},
-		"providers": []foundation.ServiceProvider{
-			&auth.AuthServiceProvider{},
-			&crypt.ServiceProvider{},
-		},
 	})
 }`
 	s.console = `package console
@@ -90,6 +84,21 @@ func (kernel Kernel) Seeders() []seeder.Seeder {
 	return []seeder.Seeder{
 		&seeders.DatabaseSeeder{},
 	}
+}
+`
+	s.providers = `package bootstrap
+
+import (
+	"github.com/goravel/framework/auth"
+	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/crypt"
+)
+
+func Providers() []foundation.ServiceProvider {
+	return []foundation.ServiceProvider{
+		&auth.ServiceProvider{},
+		&crypt.ServiceProvider{},
+	}
 }`
 }
 
@@ -104,11 +113,89 @@ func (s *ModifyActionsTestSuite) TestActions() {
 		assert   func(filename string)
 	}{
 		{
+			name: "add code to function when function's body is empty",
+			content: `package provider
+import (
+	"github.com/goravel/framework/contracts/foundation"
+)
+	
+type ServiceProvider struct {
+}
+
+func (provider *ServiceProvider) Register(app foundation.Application) {}
+
+func (provider *ServiceProvider) Boot(app foundation.Application) {}
+`,
+			matchers: match.RegisterFunc(),
+			actions: []modify.Action{
+				Add("facades.Schedule().Register(kernel.Schedule())"),
+			},
+			assert: func(content string) {
+				s.Contains(content, `func (provider *ServiceProvider) Register(app foundation.Application) {
+	facades.Schedule().Register(kernel.Schedule())
+}`)
+			},
+		},
+		{
+			name: "add code to function",
+			content: `package provider
+import (
+	"github.com/goravel/framework/contracts/foundation"
+)
+	
+type ServiceProvider struct {
+}
+
+func (provider *ServiceProvider) Register(app foundation.Application) {
+	facades.Artisan().Register(kernel.Commands())
+}
+
+func (provider *ServiceProvider) Boot(app foundation.Application) {}
+`,
+			matchers: match.RegisterFunc(),
+			actions: []modify.Action{
+				Add("facades.Schedule().Register(kernel.Schedule())"),
+			},
+			assert: func(content string) {
+				s.Contains(content, `func (provider *ServiceProvider) Register(app foundation.Application) {
+	facades.Artisan().Register(kernel.Commands())
+	facades.Schedule().Register(kernel.Schedule())
+}`)
+			},
+		},
+		{
+			name: "remove code from function",
+			content: `package provider
+import (
+	"github.com/goravel/framework/contracts/foundation"
+)
+	
+type ServiceProvider struct {
+}
+
+func (provider *ServiceProvider) Register(app foundation.Application) {
+	facades.Artisan().Register(kernel.Commands())
+	facades.Schedule().Register(kernel.Schedule())
+}
+
+func (provider *ServiceProvider) Boot(app foundation.Application) {}
+`,
+			matchers: match.RegisterFunc(),
+			actions: []modify.Action{
+				Remove("facades.Schedule().Register(kernel.Schedule())"),
+			},
+			assert: func(content string) {
+				s.Contains(content, `func (provider *ServiceProvider) Register(app foundation.Application) {
+	facades.Artisan().Register(kernel.Commands())
+}`)
+			},
+		},
+		{
 			name:     "add config (not exist)",
 			content:  s.config,
 			matchers: match.Config("app"),
 			actions: []modify.Action{
-				AddConfig("key", `"value"`),
+				AddConfig("key", `"value"`, "annotation 1", "annotation 2"),
 			},
 			assert: func(content string) {
 				s.Contains(content, `func init() {
@@ -116,10 +203,8 @@ func (s *ModifyActionsTestSuite) TestActions() {
 	config.Add("app", map[string]any{
 		"name":  config.Env("APP_NAME", "Goravel"),
 		"exist": map[string]any{},
-		"providers": []foundation.ServiceProvider{
-			&auth.AuthServiceProvider{},
-			&crypt.ServiceProvider{},
-		},
+		// annotation 1
+		// annotation 2
 		"key": "value",
 	})
 }`)
@@ -133,7 +218,7 @@ func (s *ModifyActionsTestSuite) TestActions() {
 				AddConfig("name", `"Goravel"`),
 			},
 			assert: func(content string) {
-				s.NotContains(content, `"name": "Goravel"`)
+				s.Contains(content, `"name":  "Goravel"`)
 			},
 		},
 		{
@@ -150,10 +235,6 @@ func (s *ModifyActionsTestSuite) TestActions() {
 		"name": config.Env("APP_NAME", "Goravel"),
 		"exist": map[string]any{
 			"key": "value",
-		},
-		"providers": []foundation.ServiceProvider{
-			&auth.AuthServiceProvider{},
-			&crypt.ServiceProvider{},
 		},
 	})
 }`)
@@ -187,10 +268,6 @@ func (s *ModifyActionsTestSuite) TestActions() {
 	config.Add("app", map[string]any{
 		"name":  config.Env("APP_NAME", "Goravel"),
 		"exist": map[string]any{},
-		"providers": []foundation.ServiceProvider{
-			&auth.AuthServiceProvider{},
-			&crypt.ServiceProvider{},
-		},
 		"drivers": map[string]any{
 			"fiber": map[string]any{
 				// prefork mode, see https://docs.gofiber.io/api/fiber/#config
@@ -223,9 +300,6 @@ func (s *ModifyActionsTestSuite) TestActions() {
 	t "github.com/goravel/test"
 	"goravel/app/jobs"
 
-	"github.com/goravel/framework/auth"
-	"github.com/goravel/framework/contracts/foundation"
-	"github.com/goravel/framework/crypt"
 	"github.com/goravel/framework/facades"
 )`)
 			},
@@ -241,75 +315,57 @@ func (s *ModifyActionsTestSuite) TestActions() {
 				s.Contains(content, `import (
 	"goravel/app/jobs"
 
-	"github.com/goravel/framework/auth"
-	"github.com/goravel/framework/contracts/foundation"
-	"github.com/goravel/framework/crypt"
 	"github.com/goravel/framework/facades"
 )`)
 			},
 		},
 		{
 			name:     "add provider at the beginning",
-			content:  s.config,
+			content:  s.providers,
 			matchers: match.Providers(),
 			actions: []modify.Action{
 				Register("&test.ServiceProvider{}", "*"),
 			},
 			assert: func(content string) {
-				s.Contains(content, `func init() {
-	config := facades.Config()
-	config.Add("app", map[string]any{
-		"name":  config.Env("APP_NAME", "Goravel"),
-		"exist": map[string]any{},
-		"providers": []foundation.ServiceProvider{
-			&test.ServiceProvider{},
-			&auth.AuthServiceProvider{},
-			&crypt.ServiceProvider{},
-		},
-	})
+				s.Contains(content, `func Providers() []foundation.ServiceProvider {
+	return []foundation.ServiceProvider{
+		&test.ServiceProvider{},
+		&auth.ServiceProvider{},
+		&crypt.ServiceProvider{},
+	}
 }`)
 			},
 		},
 		{
 			name:     "add provider (exist)",
-			content:  s.config,
+			content:  s.providers,
 			matchers: match.Providers(),
 			actions: []modify.Action{
 				Register("&crypt.ServiceProvider{}"),
 			},
 			assert: func(content string) {
-				s.Contains(content, `func init() {
-	config := facades.Config()
-	config.Add("app", map[string]any{
-		"name":  config.Env("APP_NAME", "Goravel"),
-		"exist": map[string]any{},
-		"providers": []foundation.ServiceProvider{
-			&auth.AuthServiceProvider{},
-			&crypt.ServiceProvider{},
-		},
-	})
+				s.Contains(content, `func Providers() []foundation.ServiceProvider {
+	return []foundation.ServiceProvider{
+		&auth.ServiceProvider{},
+		&crypt.ServiceProvider{},
+	}
 }`)
 			},
 		},
 		{
 			name:     "add provider before",
-			content:  s.config,
+			content:  s.providers,
 			matchers: match.Providers(),
 			actions: []modify.Action{
-				Register("&test.ServiceProvider{}", "&auth.AuthServiceProvider{}"),
+				Register("&test.ServiceProvider{}", "&auth.ServiceProvider{}"),
 			},
 			assert: func(content string) {
-				s.Contains(content, `func init() {
-	config := facades.Config()
-	config.Add("app", map[string]any{
-		"name":  config.Env("APP_NAME", "Goravel"),
-		"exist": map[string]any{},
-		"providers": []foundation.ServiceProvider{
-			&test.ServiceProvider{},
-			&auth.AuthServiceProvider{},
-			&crypt.ServiceProvider{},
-		},
-	})
+				s.Contains(content, `func Providers() []foundation.ServiceProvider {
+	return []foundation.ServiceProvider{
+		&test.ServiceProvider{},
+		&auth.ServiceProvider{},
+		&crypt.ServiceProvider{},
+	}
 }`)
 			},
 		},
@@ -318,15 +374,15 @@ func (s *ModifyActionsTestSuite) TestActions() {
 			content:  s.config,
 			matchers: match.Config("app"),
 			actions: []modify.Action{
-				RemoveConfig("providers"),
+				RemoveConfig("exist"),
 			},
 			assert: func(content string) {
-				s.NotContains(content, "providers")
+				s.NotContains(content, "exist")
 			},
 		},
 		{
 			name:     "remove import(in use)",
-			content:  s.config,
+			content:  s.providers,
 			matchers: match.Imports(),
 			actions: []modify.Action{
 				RemoveImport("github.com/goravel/framework/auth"),
@@ -348,13 +404,13 @@ func (s *ModifyActionsTestSuite) TestActions() {
 		},
 		{
 			name:     "remove provider",
-			content:  s.config,
+			content:  s.providers,
 			matchers: match.Providers(),
 			actions: []modify.Action{
-				Unregister("&auth.AuthServiceProvider{}"),
+				Unregister("&auth.ServiceProvider{}"),
 			},
 			assert: func(content string) {
-				s.NotContains(content, "&auth.AuthServiceProvider{}")
+				s.NotContains(content, "&auth.ServiceProvider{}")
 			},
 		},
 		{

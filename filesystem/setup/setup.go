@@ -4,30 +4,36 @@ import (
 	"os"
 
 	"github.com/goravel/framework/packages"
-	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support/path"
 )
 
 func main() {
+	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
+	storageConfigPath := path.Config("filesystems.go")
+	storageFacadePath := path.Facade("storage.go")
+	filesystemServiceProvider := "&filesystem.ServiceProvider{}"
+	moduleImport := setup.Paths().Module().Import()
+	facadesPackage := setup.Paths().Facades().Package()
 
-	packages.Setup(os.Args).
-		Install(
-			modify.GoFile(path.Config("app.go")).
-				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register("&filesystem.ServiceProvider{}")),
-			modify.File(path.Config("filesystems.go")).Overwrite(stubs.Config(packages.GetModuleNameFromArgs(os.Args))),
-			modify.WhenFacade("Storage", modify.File(path.Facades("storage.go")).Overwrite(stubs.StorageFacade())),
-		).
-		Uninstall(
-			modify.WhenNoFacades([]string{"Storage"},
-				modify.GoFile(path.Config("app.go")).
-					Find(match.Providers()).Modify(modify.Unregister("&filesystem.ServiceProvider{}")).
-					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
-				modify.File(path.Config("filesystems.go")).Remove(),
-			),
-			modify.WhenFacade("Storage", modify.File(path.Facades("storage.go")).Remove()),
-		).
-		Execute()
+	setup.Install(
+		// Add the filesystem service provider to the providers array in bootstrap/providers.go
+		modify.AddProviderApply(moduleImport, filesystemServiceProvider),
+
+		// Create config/filesystems.go
+		modify.File(storageConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Facades().Import(), facadesPackage)),
+
+		// Add the Storage facade
+		modify.File(storageFacadePath).Overwrite(stubs.StorageFacade(facadesPackage)),
+	).Uninstall(
+		// Remove config/filesystems.go
+		modify.File(storageConfigPath).Remove(),
+
+		// Remove the filesystem service provider from the providers array in bootstrap/providers.go
+		modify.RemoveProviderApply(moduleImport, filesystemServiceProvider),
+
+		// Remove the Storage facade
+		modify.File(storageFacadePath).Remove(),
+	).Execute()
 }

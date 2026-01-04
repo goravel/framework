@@ -5,6 +5,42 @@ import (
 	"github.com/goravel/framework/contracts/database/orm"
 )
 
+const (
+	MethodBigIncrements = "BigIncrements"
+	MethodBigInteger    = "BigInteger"
+	MethodBinary        = "Binary"
+	MethodBoolean       = "Boolean"
+	MethodComment       = "Comment"
+	MethodDate          = "Date"
+	MethodDecimal       = "Decimal"
+	MethodDefault       = "Default"
+	MethodDouble        = "Double"
+	MethodEnum          = "Enum"
+	MethodFloat         = "Float"
+	MethodIncrements    = "Increments"
+	MethodInteger       = "Integer"
+	MethodJson          = "Json"
+	MethodJsonb         = "Jsonb"
+	MethodNullable      = "Nullable"
+	MethodPlaces        = "Places"
+	MethodSmallInteger  = "SmallInteger"
+	MethodString        = "String"
+	MethodText          = "Text"
+	MethodTime          = "Time"
+	MethodTimestamp     = "Timestamp"
+	MethodTimestampTz   = "TimestampTz"
+	MethodTinyInteger   = "TinyInteger"
+	MethodTotal         = "Total"
+	MethodUlid          = "Ulid"
+	MethodUnsigned      = "Unsigned"
+	MethodUuid          = "Uuid"
+
+	MethodUnsignedBigInteger   = "UnsignedBigInteger"
+	MethodUnsignedInteger      = "UnsignedInteger"
+	MethodUnsignedSmallInteger = "UnsignedSmallInteger"
+	MethodUnsignedTinyInteger  = "UnsignedTinyInteger"
+)
+
 type Blueprint interface {
 	// BigIncrements Create a new auto-incrementing big integer (8-byte) column on the table.
 	BigIncrements(column string) driver.ColumnDefinition
@@ -72,6 +108,12 @@ type Blueprint interface {
 	Float(column string, precision ...int) driver.ColumnDefinition
 	// Foreign Specify a foreign key for the table.
 	Foreign(column ...string) ForeignKeyDefinition
+	// Foreign Create a new unsigned big integer (8-byte) column on the table.
+	ForeignID(column string) ForeignIDColumnDefinition
+	// ForeignUlid Create a new ULID column on the table with a foreign key constraint.
+	ForeignUlid(column string, length ...int) ForeignIDColumnDefinition
+	// ForeignUuid Create a new UUID column on the table with a foreign key constraint.
+	ForeignUuid(column string) ForeignIDColumnDefinition
 	// FullText Specify a fulltext for the table.
 	FullText(column ...string) IndexDefinition
 	// GetAddedColumns Get the added columns.

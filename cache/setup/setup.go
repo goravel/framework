@@ -4,30 +4,36 @@ import (
 	"os"
 
 	"github.com/goravel/framework/packages"
-	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support/path"
 )
 
 func main() {
+	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
+	cacheConfigPath := path.Config("cache.go")
+	cacheFacadePath := path.Facade("cache.go")
+	cacheServiceProvider := "&cache.ServiceProvider{}"
+	moduleImport := setup.Paths().Module().Import()
+	facadesPackage := setup.Paths().Facades().Package()
 
-	packages.Setup(os.Args).
-		Install(
-			modify.GoFile(path.Config("app.go")).
-				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register("&cache.ServiceProvider{}")),
-			modify.File(path.Config("cache.go")).Overwrite(stubs.Config(packages.GetModuleNameFromArgs(os.Args))),
-			modify.WhenFacade("Cache", modify.File(path.Facades("cache.go")).Overwrite(stubs.CacheFacade())),
-		).
-		Uninstall(
-			modify.WhenNoFacades([]string{"Cache"},
-				modify.GoFile(path.Config("app.go")).
-					Find(match.Providers()).Modify(modify.Unregister("&cache.ServiceProvider{}")).
-					Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
-				modify.File(path.Config("cache.go")).Remove(),
-			),
-			modify.WhenFacade("Cache", modify.File(path.Facades("cache.go")).Remove()),
-		).
-		Execute()
+	setup.Install(
+		// Add the cache service provider to the providers array in bootstrap/providers.go
+		modify.AddProviderApply(moduleImport, cacheServiceProvider),
+
+		// Create config/cache.go
+		modify.File(cacheConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Facades().Import(), facadesPackage)),
+
+		// Add the Cache facade
+		modify.File(cacheFacadePath).Overwrite(stubs.CacheFacade(facadesPackage)),
+	).Uninstall(
+		// Remove config/cache.go
+		modify.File(cacheConfigPath).Remove(),
+
+		// Remove the cache service provider from the providers array in bootstrap/providers.go
+		modify.RemoveProviderApply(moduleImport, cacheServiceProvider),
+
+		// Remove the Cache facade
+		modify.File(cacheFacadePath).Remove(),
+	).Execute()
 }

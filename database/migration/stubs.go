@@ -4,48 +4,55 @@ type Stubs struct {
 }
 
 func (receiver Stubs) Empty() string {
-	return `package migrations
+	return `package {{.Package}}
 
-type DummyMigration struct{}
+type {{.StructName}} struct{}
 
 // Signature The unique signature for the migration.
-func (r *DummyMigration) Signature() string {
-	return "DummySignature"
+func (r *{{.StructName}}) Signature() string {
+	return "{{.Signature}}"
 }
 
 // Up Run the migrations.
-func (r *DummyMigration) Up() error {
+func (r *{{.StructName}}) Up() error {
 	return nil
 }
 
 // Down Reverse the migrations.
-func (r *DummyMigration) Down() error {
+func (r *{{.StructName}}) Down() error {
 	return nil
 }
 `
 }
 
 func (receiver Stubs) Create() string {
-	return `package migrations
+	return `package {{.Package}}
 
 import (
 	"github.com/goravel/framework/contracts/database/schema"
-	"github.com/goravel/framework/facades"
+
+	"{{.FacadesImport}}"
 )
 
-type DummyMigration struct{}
+type {{.StructName}} struct{}
 
 // Signature The unique signature for the migration.
-func (r *DummyMigration) Signature() string {
-	return "DummySignature"
+func (r *{{.StructName}}) Signature() string {
+	return "{{.Signature}}"
 }
 
 // Up Run the migrations.
-func (r *DummyMigration) Up() error {
-	if !facades.Schema().HasTable("DummyTable") {
-		return facades.Schema().Create("DummyTable", func(table schema.Blueprint) {
+func (r *{{.StructName}}) Up() error {
+	if !{{.FacadesPackage}}.Schema().HasTable("{{.Table}}") {
+		return {{.FacadesPackage}}.Schema().Create("{{.Table}}", func(table schema.Blueprint) {
+			{{- if .SchemaFields}}
+{{- range .SchemaFields}}
+			{{.}}
+			{{- end}}
+			{{- else}}
 			table.ID()
 			table.TimestampsTz()
+			{{- end}}
 		})
 	}
 
@@ -53,36 +60,42 @@ func (r *DummyMigration) Up() error {
 }
 
 // Down Reverse the migrations.
-func (r *DummyMigration) Down() error {
- 	return facades.Schema().DropIfExists("DummyTable")
+func (r *{{.StructName}}) Down() error {
+ 	return {{.FacadesPackage}}.Schema().DropIfExists("{{.Table}}")
 }
 `
 }
 
 func (receiver Stubs) Update() string {
-	return `package migrations
+	return `package {{.Package}}
 
 import (
 	"github.com/goravel/framework/contracts/database/schema"
-	"github.com/goravel/framework/facades"
+
+	"{{.FacadesImport}}"
 )
 
-type DummyMigration struct{}
+type {{.StructName}} struct{}
 
 // Signature The unique signature for the migration.
-func (r *DummyMigration) Signature() string {
-	return "DummySignature"
+func (r *{{.StructName}}) Signature() string {
+	return "{{.Signature}}"
 }
 
 // Up Run the migrations.
-func (r *DummyMigration) Up() error {
-	return facades.Schema().Table("DummyTable", func(table schema.Blueprint) {
+func (r *{{.StructName}}) Up() error {
+	return {{.FacadesPackage}}.Schema().Table("{{.Table}}", func(table schema.Blueprint) {
+		{{- if .SchemaFields}}
+{{- range .SchemaFields}}
+		{{.}}
+		{{- end}}
+{{else}}
 
-	})
+{{end}}	})
 }
 
 // Down Reverse the migrations.
-func (r *DummyMigration) Down() error {
+func (r *{{.StructName}}) Down() error {
 	return nil
 }
 `

@@ -25,7 +25,7 @@ func init() {
 	cli.CommandHelpTemplate = commandHelpTemplate
 	cli.SubcommandHelpTemplate = commandHelpTemplate
 	cli.VersionPrinter = printVersion
-	huh.ErrUserAborted = cli.Exit(color.Red().Sprint("Cancelled."), 0)
+	huh.ErrUserAborted = cli.Exit(color.Red().Sprint("Cancelled"), 0)
 }
 
 const maxLineLength = 10000
@@ -46,9 +46,7 @@ var (
    {{ (colorize .Usage) }}
 
 {{ yellow "Usage:" }}
-   {{template "usageTemplate" .}}{{with $root := .Root}}
-
-{{ yellow "Global options:" }}{{template "flagTemplate"  (sortVisibleFlags $root)}}{{end}}{{if .VisibleFlags}}
+   {{template "usageTemplate" .}}{{with $root := .Root}}{{end}}{{if .VisibleFlags}}
 
 {{ yellow "Options:" }}{{template "flagTemplate" (sortVisibleFlags .)}}{{end}}
 `
@@ -57,7 +55,9 @@ var (
   {{$s := join .Names ", "}}{{green $s}}{{ $sp := subtract $cv (offset $s 3) }}{{ indent $sp ""}}{{wrap (colorize .Usage) $cv}}{{end}}{{end}}`
 	flagTemplate = `{{ $cv := offsetFlags . 5}}{{range  .}}
    {{$s := getFlagName .}}{{green $s}}{{ $sp := subtract $cv (offset $s 1) }}{{ indent $sp ""}}{{$us := (capitalize .Usage)}}{{wrap (colorize $us) $cv}}{{$df := getFlagDefaultText . }}{{if $df}} {{yellow $df}}{{end}}{{end}}`
-	usageTemplate = `{{if .UsageText}}{{wrap (colorize .UsageText) 3}}{{else}}{{(helpName .FullName)}}{{if .VisibleFlags}} [options]{{end}}{{if .ArgsUsage}}{{.ArgsUsage}}{{else}}{{if .Args}} [arguments...]{{end}}{{end}}{{end}}`
+	usageTemplate = `{{if .UsageText}}{{wrap (colorize .UsageText) 3}}{{else}}{{(helpName .FullName)}}{{if .VisibleFlags}} [options]{{end}}{{if .ArgsUsage}}{{.ArgsUsage}}{{else}}{{if .Arguments}}{{template "argsTemplate" .}}{{end}}{{end}}{{end}}`
+	argsTemplate  = `{{if .Arguments}}{{range .Arguments}}{{template "argTemplate" .}}{{end}}{{end}}`
+	argTemplate   = ` {{if .Min}}<{{else}}[{{end}}{{.Name}}{{if (or (gt .Max 1) (eq .Max -1))}}...{{end}}{{if .Min}}>{{else}}]{{end}}`
 )
 
 // colorsFuncMap is a map of functions for coloring text.
@@ -207,18 +207,6 @@ func handleNoANSI() {
 }
 
 func helpName(fullName string) string {
-	var namePath []string
-	for i, name := range strings.Split(fullName, " ") {
-		namePath = append(namePath, name)
-		if i == 0 {
-			namePath = append(namePath, "[global options]")
-		}
-	}
-
-	if len(namePath) > 1 {
-		fullName = strings.Join(namePath, " ")
-	}
-
 	return fullName
 }
 
@@ -290,6 +278,31 @@ func onUsageError(_ context.Context, _ *cli.Command, err error, _ bool) error {
 			return nil
 		}
 	}
+	if errMsg := err.Error(); strings.HasPrefix(errMsg, "invalid value") && strings.Contains(errMsg, "for argument") {
+		var value, argument string
+		if _, parseErr := fmt.Sscanf(errMsg, "invalid value %q for argument %s", &value, &argument); parseErr == nil {
+			var subErrMsg string
+			subErrMsgPos := strings.Index(errMsg, ":")
+			if subErrMsgPos != -1 {
+				subErrMsg = errMsg[subErrMsgPos+2:]
+			}
+			color.Red().Printfln("Invalid value '%s' for argument '%s'. Error: %s", value, strings.TrimSuffix(argument, ":"), subErrMsg)
+			return nil
+		}
+	}
+
+	if errMsg := err.Error(); strings.HasPrefix(errMsg, "sufficient count of arg") && strings.Contains(errMsg, "not provided") {
+		var argument string
+		var given, expected int
+		if _, parseErr := fmt.Sscanf(errMsg, "sufficient count of arg %s not provided, given %d expected %d", &argument, &given, &expected); parseErr == nil {
+			if expected == 1 {
+				color.Red().Printfln("The '%s' argument requires a value.", argument)
+			} else {
+				color.Red().Printfln("The '%s' argument requires at least %d values.", argument, expected)
+			}
+			return nil
+		}
+	}
 
 	return err
 }
@@ -319,6 +332,8 @@ func printHelpCustom(out io.Writer, templ string, data any, _ map[string]any) {
 		"usageTemplate":   usageTemplate,
 		"commandTemplate": commandTemplate,
 		"flagTemplate":    flagTemplate,
+		"argsTemplate":    argsTemplate,
+		"argTemplate":     argTemplate,
 	}
 	for name, value := range templates {
 		if _, err := t.New(name).Parse(value); err != nil {
@@ -340,7 +355,7 @@ func printHelpCustom(out io.Writer, templ string, data any, _ map[string]any) {
 
 func printTemplateError(err error) {
 	if os.Getenv("CLI_TEMPLATE_ERROR_DEBUG") != "" {
-		_, _ = fmt.Fprintf(cli.ErrWriter, "CLI TEMPLATE ERROR: %#v\n", err)
+		_, _ = fmt.Fprintf(cli.ErrWriter, "CLI TEMPLATE ERROR: %+v\n", err)
 	}
 }
 

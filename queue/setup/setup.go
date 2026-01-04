@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/goravel/framework/packages"
@@ -10,23 +11,56 @@ import (
 )
 
 func main() {
-	// config, err := supportfile.GetFrameworkContent("queue/setup/config/queue.go")
-	// if err != nil {
-	// 	panic(err)
-	// }
+	setup := packages.Setup(os.Args)
+	stubs := Stubs{}
+	queueFacade := "Queue"
+	databaseDriver := "database"
+	queueFacadePath := path.Facade("queue.go")
+	queueConfigPath := path.Config("queue.go")
+	queueServiceProvider := "&queue.ServiceProvider{}"
+	moduleImport := setup.Paths().Module().Import()
+	facadesImport := setup.Paths().Facades().Import()
+	migrationPkg := setup.Paths().Migrations().Package()
+	migrationPkgPath := setup.Paths().Migrations().Import()
+	facadesPackage := setup.Paths().Facades().Package()
+	jobMigrationFileName, jobMigrationStruct, jobMigrationContent := stubs.JobMigration(migrationPkg, facadesImport, facadesPackage)
+	jobMigrationFilePath := path.Migration(jobMigrationFileName)
+	jobMigrationStructWithPkg := fmt.Sprintf("&%s.%s", migrationPkg, jobMigrationStruct)
 
-	packages.Setup(os.Args).
-		Install(
-			modify.GoFile(path.Config("app.go")).
-				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register("&queue.ServiceProvider{}")),
-			// modify.File(path.Config("queue.go")).Overwrite(config),
-		).
-		Uninstall(
-			modify.GoFile(path.Config("app.go")).
-				Find(match.Providers()).Modify(modify.Unregister("&queue.ServiceProvider{}")).
-				Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
-			// modify.File(path.Config("queue.go")).Remove(),
-		).
-		Execute()
+	setup.Install(
+		modify.WhenFacade(queueFacade,
+			// Add the queue service provider to the providers array in bootstrap/providers.go
+			modify.AddProviderApply(moduleImport, queueServiceProvider),
+
+			// Add the queue configuration file
+			modify.File(queueConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), facadesImport, facadesPackage)),
+
+			// Add the queue facade to the facades file
+			modify.File(queueFacadePath).Overwrite(stubs.QueueFacade(facadesPackage)),
+
+			// Add the job migration file
+			modify.File(jobMigrationFilePath).Overwrite(jobMigrationContent),
+
+			// Register the job migration
+			modify.AddMigrationApply(migrationPkgPath, jobMigrationStructWithPkg),
+		),
+
+		// Add the database driver
+		modify.WhenDriver(databaseDriver, modify.GoFile(queueConfigPath).Find(match.Config("queue")).Modify(modify.AddConfig("default", `"database"`))),
+	).Uninstall(
+		// Unregister the job migration
+		modify.RemoveMigrationApply(migrationPkgPath, jobMigrationStructWithPkg),
+
+		// Remove the job migration file
+		modify.File(jobMigrationFilePath).Remove(),
+
+		// Remove the queue facade
+		modify.File(queueFacadePath).Remove(),
+
+		// Remove the queue configuration file
+		modify.File(queueConfigPath).Remove(),
+
+		// Remove the queue service provider from the providers array in bootstrap/providers.go
+		modify.RemoveProviderApply(moduleImport, queueServiceProvider),
+	).Execute()
 }

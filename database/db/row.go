@@ -1,6 +1,7 @@
 package db
 
 import (
+	"encoding/json"
 	"reflect"
 	"strings"
 	"time"
@@ -32,12 +33,12 @@ func (r *Row) Scan(value any) error {
 
 	msConfig := &mapstructure.DecoderConfig{
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
-			ToStringHookFunc(), ToTimeHookFunc(), ToCarbonHookFunc(), ToDeletedAtHookFunc(),
+			ToStringHookFunc(), ToTimeHookFunc(), ToDeletedAtHookFunc(), ToScannerHookFunc(), ToSliceHookFunc(), ToMapHookFunc(),
 		),
 		Squash: true,
 		Result: value,
 		MatchName: func(mapKey, fieldName string) bool {
-			return str.Of(mapKey).Studly().String() == fieldName || strings.EqualFold(mapKey, fieldName)
+			return str.Of(mapKey).Studly().String() == fieldName || mapKey == str.Of(fieldName).Snake().String() || strings.EqualFold(mapKey, fieldName)
 		},
 	}
 
@@ -85,69 +86,6 @@ func ToTimeHookFunc() mapstructure.DecodeHookFunc {
 	}
 }
 
-func ToCarbonHookFunc() mapstructure.DecodeHookFunc {
-	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
-		if f == reflect.TypeOf(time.Time{}) {
-			switch t {
-			case reflect.TypeOf(carbon.DateTime{}):
-				return carbon.NewDateTime(carbon.FromStdTime(data.(time.Time))), nil
-			case reflect.TypeOf(carbon.DateTimeMilli{}):
-				return carbon.NewDateTimeMilli(carbon.FromStdTime(data.(time.Time))), nil
-			case reflect.TypeOf(carbon.DateTimeMicro{}):
-				return carbon.NewDateTimeMicro(carbon.FromStdTime(data.(time.Time))), nil
-			case reflect.TypeOf(carbon.DateTimeNano{}):
-				return carbon.NewDateTimeNano(carbon.FromStdTime(data.(time.Time))), nil
-			case reflect.TypeOf(carbon.Date{}):
-				return carbon.NewDate(carbon.FromStdTime(data.(time.Time))), nil
-			case reflect.TypeOf(carbon.DateMilli{}):
-				return carbon.NewDateMilli(carbon.FromStdTime(data.(time.Time))), nil
-			case reflect.TypeOf(carbon.DateMicro{}):
-				return carbon.NewDateMicro(carbon.FromStdTime(data.(time.Time))), nil
-			case reflect.TypeOf(carbon.DateNano{}):
-				return carbon.NewDateNano(carbon.FromStdTime(data.(time.Time))), nil
-			case reflect.TypeOf(carbon.Timestamp{}):
-				return carbon.NewTimestamp(carbon.FromStdTime(data.(time.Time))), nil
-			case reflect.TypeOf(carbon.TimestampMilli{}):
-				return carbon.NewTimestampMilli(carbon.FromStdTime(data.(time.Time))), nil
-			case reflect.TypeOf(carbon.TimestampMicro{}):
-				return carbon.NewTimestampMicro(carbon.FromStdTime(data.(time.Time))), nil
-			case reflect.TypeOf(carbon.TimestampNano{}):
-				return carbon.NewTimestampNano(carbon.FromStdTime(data.(time.Time))), nil
-			}
-		}
-		if f.Kind() == reflect.String {
-			switch t {
-			case reflect.TypeOf(carbon.DateTime{}):
-				return carbon.NewDateTime(carbon.Parse(data.(string))), nil
-			case reflect.TypeOf(carbon.DateTimeMilli{}):
-				return carbon.NewDateTimeMilli(carbon.Parse(data.(string))), nil
-			case reflect.TypeOf(carbon.DateTimeMicro{}):
-				return carbon.NewDateTimeMicro(carbon.Parse(data.(string))), nil
-			case reflect.TypeOf(carbon.DateTimeNano{}):
-				return carbon.NewDateTimeNano(carbon.Parse(data.(string))), nil
-			case reflect.TypeOf(carbon.Date{}):
-				return carbon.NewDate(carbon.Parse(data.(string))), nil
-			case reflect.TypeOf(carbon.DateMilli{}):
-				return carbon.NewDateMilli(carbon.Parse(data.(string))), nil
-			case reflect.TypeOf(carbon.DateMicro{}):
-				return carbon.NewDateMicro(carbon.Parse(data.(string))), nil
-			case reflect.TypeOf(carbon.DateNano{}):
-				return carbon.NewDateNano(carbon.Parse(data.(string))), nil
-			case reflect.TypeOf(carbon.Timestamp{}):
-				return carbon.NewTimestamp(carbon.Parse(data.(string))), nil
-			case reflect.TypeOf(carbon.TimestampMilli{}):
-				return carbon.NewTimestampMilli(carbon.Parse(data.(string))), nil
-			case reflect.TypeOf(carbon.TimestampMicro{}):
-				return carbon.NewTimestampMicro(carbon.Parse(data.(string))), nil
-			case reflect.TypeOf(carbon.TimestampNano{}):
-				return carbon.NewTimestampNano(carbon.Parse(data.(string))), nil
-			}
-		}
-
-		return data, nil
-	}
-}
-
 func ToDeletedAtHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
 		if t != reflect.TypeOf(gorm.DeletedAt{}) {
@@ -163,5 +101,112 @@ func ToDeletedAtHookFunc() mapstructure.DecodeHookFunc {
 		}
 
 		return data, nil
+	}
+}
+
+// ToScannerHookFunc is a hook function that handles types with custom Scan methods (sql.Scanner interface).
+// This includes carbon types and other custom types implementing the Scan method.
+func ToScannerHookFunc() mapstructure.DecodeHookFunc {
+	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
+		// Skip types that are handled by other specific hooks
+		if t == reflect.TypeOf(time.Time{}) || t == reflect.TypeOf(gorm.DeletedAt{}) {
+			return data, nil
+		}
+
+		// Skip if source and target are the same type
+		if f == t {
+			return data, nil
+		}
+
+		// Only process database types (string, []byte, []uint8, time.Time)
+		if f.Kind() != reflect.String && f != reflect.TypeOf([]byte(nil)) && f != reflect.TypeOf([]uint8(nil)) && f != reflect.TypeOf(time.Time{}) {
+			return data, nil
+		}
+
+		// Check if the target type implements a Scan method
+		scannerType := reflect.TypeOf((*interface{ Scan(any) error })(nil)).Elem()
+
+		// Create a pointer to the target type to check for Scan method
+		targetPtr := reflect.PointerTo(t)
+		if !targetPtr.Implements(scannerType) {
+			return data, nil
+		}
+
+		// Handle nil or empty data
+		if data == nil {
+			return reflect.Zero(t).Interface(), nil
+		}
+		if str, ok := data.(string); ok && str == "" {
+			return reflect.Zero(t).Interface(), nil
+		}
+
+		// Create a new instance of the target type
+		result := reflect.New(t)
+		scanner := result.Interface().(interface{ Scan(any) error })
+
+		// Convert string to []byte if needed (common for JSON fields from database)
+		scanData := data
+		if str, ok := data.(string); ok {
+			scanData = []byte(str)
+		}
+
+		// Call the Scan method with the data
+		if err := scanner.Scan(scanData); err != nil {
+			return nil, err
+		}
+
+		return result.Elem().Interface(), nil
+	}
+}
+
+// ToSliceHookFunc is a hook function that converts JSON string to slice.
+func ToSliceHookFunc() mapstructure.DecodeHookFunc {
+	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
+		if t.Kind() != reflect.Slice || f.Kind() != reflect.String {
+			return data, nil
+		}
+
+		str, ok := data.(string)
+		if !ok {
+			return data, nil
+		}
+
+		// Return empty slice for empty string
+		if str == "" {
+			return reflect.MakeSlice(t, 0, 0).Interface(), nil
+		}
+
+		result := reflect.New(t).Interface()
+		if err := json.Unmarshal([]byte(str), result); err != nil {
+			return nil, err
+		}
+
+		return reflect.ValueOf(result).Elem().Interface(), nil
+	}
+}
+
+// ToMapHookFunc is a hook function that converts JSON string to map.
+func ToMapHookFunc() mapstructure.DecodeHookFunc {
+	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
+		if t.Kind() != reflect.Map || f.Kind() != reflect.String {
+			return data, nil
+		}
+
+		str, ok := data.(string)
+		if !ok {
+			return data, nil
+		}
+
+		// Return empty map for empty string
+		if str == "" {
+			return reflect.MakeMap(t).Interface(), nil
+		}
+
+		result := reflect.MakeMap(t).Interface()
+		if err := json.Unmarshal([]byte(str), &result); err != nil {
+			return nil, err
+		}
+
+		return result, nil
 	}
 }

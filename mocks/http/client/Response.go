@@ -3,6 +3,7 @@
 package client
 
 import (
+	io "io"
 	http "net/http"
 
 	mock "github.com/stretchr/testify/mock"
@@ -107,6 +108,52 @@ func (_c *Response_BadRequest_Call) Return(_a0 bool) *Response_BadRequest_Call {
 }
 
 func (_c *Response_BadRequest_Call) RunAndReturn(run func() bool) *Response_BadRequest_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Bind provides a mock function with given fields: value
+func (_m *Response) Bind(value interface{}) error {
+	ret := _m.Called(value)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Bind")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(interface{}) error); ok {
+		r0 = rf(value)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Response_Bind_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Bind'
+type Response_Bind_Call struct {
+	*mock.Call
+}
+
+// Bind is a helper method to define mock.On call
+//   - value interface{}
+func (_e *Response_Expecter) Bind(value interface{}) *Response_Bind_Call {
+	return &Response_Bind_Call{Call: _e.mock.On("Bind", value)}
+}
+
+func (_c *Response_Bind_Call) Run(run func(value interface{})) *Response_Bind_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(interface{}))
+	})
+	return _c
+}
+
+func (_c *Response_Bind_Call) Return(_a0 error) *Response_Bind_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Response_Bind_Call) RunAndReturn(run func(interface{}) error) *Response_Bind_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1082,6 +1129,63 @@ func (_c *Response_Status_Call) Return(_a0 int) *Response_Status_Call {
 }
 
 func (_c *Response_Status_Call) RunAndReturn(run func() int) *Response_Status_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Stream provides a mock function with no fields
+func (_m *Response) Stream() (io.ReadCloser, error) {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Stream")
+	}
+
+	var r0 io.ReadCloser
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (io.ReadCloser, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() io.ReadCloser); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(io.ReadCloser)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Response_Stream_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Stream'
+type Response_Stream_Call struct {
+	*mock.Call
+}
+
+// Stream is a helper method to define mock.On call
+func (_e *Response_Expecter) Stream() *Response_Stream_Call {
+	return &Response_Stream_Call{Call: _e.mock.On("Stream")}
+}
+
+func (_c *Response_Stream_Call) Run(run func()) *Response_Stream_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Response_Stream_Call) Return(_a0 io.ReadCloser, _a1 error) *Response_Stream_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Response_Stream_Call) RunAndReturn(run func() (io.ReadCloser, error)) *Response_Stream_Call {
 	_c.Call.Return(run)
 	return _c
 }

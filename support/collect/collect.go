@@ -18,6 +18,13 @@ func CountBy[T any](collection []T, predicate func(item T) bool) (count int) {
 	return lo.CountBy(collection, predicate)
 }
 
+// Diff creates a slice of slice values not included in the other given slice.
+func Diff[T comparable](list1, list2 []T) []T {
+	diff, _ := lo.Difference(list1, list2)
+
+	return diff
+}
+
 // Each iterates over elements of collection and invokes iteratee for each element.
 func Each[T any](collection []T, iteratee func(item T, index int)) {
 	lo.ForEach(collection, iteratee)

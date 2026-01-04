@@ -1,12 +1,12 @@
 package validation
 
 import (
+	"context"
 	"net/url"
 	"slices"
 
 	"github.com/gookit/validate"
 
-	"github.com/goravel/framework/contracts/http"
 	validatecontract "github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/errors"
 )
@@ -23,7 +23,7 @@ func NewValidation() *Validation {
 	}
 }
 
-func (r *Validation) Make(data any, rules map[string]string, options ...validatecontract.Option) (validatecontract.Validator, error) {
+func (r *Validation) Make(ctx context.Context, data any, rules map[string]string, options ...validatecontract.Option) (validatecontract.Validator, error) {
 	if data == nil {
 		return nil, errors.ValidationEmptyData
 	}
@@ -55,22 +55,13 @@ func (r *Validation) Make(data any, rules map[string]string, options ...validate
 	options = append(options, Rules(rules), CustomRules(r.rules), CustomFilters(r.filters))
 	generateOptions := GenerateOptions(options)
 	if generateOptions["prepareForValidation"] != nil {
-		var (
-			ctx   http.Context
-			exist bool
-		)
-		ctx, exist = generateOptions["ctx"].(http.Context)
-		if !exist {
-			ctx = nil
-		}
-
-		if err := generateOptions["prepareForValidation"].(func(ctx http.Context, data validatecontract.Data) error)(ctx, NewData(dataFace)); err != nil {
+		if err := generateOptions["prepareForValidation"].(func(ctx context.Context, data validatecontract.Data) error)(ctx, NewData(dataFace)); err != nil {
 			return nil, err
 		}
 	}
 
 	v := dataFace.Create()
-	AppendOptions(v, generateOptions)
+	AppendOptions(ctx, v, generateOptions)
 
 	return NewValidator(v, dataFace), nil
 }

@@ -162,10 +162,18 @@ type Query interface {
 	Scopes(funcs ...func(Query) Query) Query
 	// Select specifies fields that should be retrieved from the database.
 	Select(columns ...string) Query
+	// SelectRaw specifies a raw SQL query for selecting fields.
+	SelectRaw(query any, args ...any) Query
 	// SharedLock locks the selected rows in the table.
 	SharedLock() Query
 	// Sum calculates the sum of a column's values and populates the destination object.
-	Sum(column string) (int64, error)
+	Sum(column string, dest any) error
+	// Avg calculates the average of a column's values.
+	Avg(column string, dest any) error
+	// Min calculates the minimum value of a column.
+	Min(column string, dest any) error
+	// Max calculates the maximum value of a column.
+	Max(column string, dest any) error
 	// Table specifies the table for the query.
 	Table(name string, args ...any) Query
 	// ToSql returns the query as a SQL string.
@@ -179,6 +187,10 @@ type Query interface {
 	UpdateOrCreate(dest any, attributes any, values any) error
 	// Where add a "where" clause to the query.
 	Where(query any, args ...any) Query
+	// WhereAll adds a "where all columns match" clause to the query.
+	WhereAll(columns []string, args ...any) Query
+	// WhereAny adds a "where any of columns match" clause to the query.
+	WhereAny(columns []string, args ...any) Query
 	// WhereBetween adds a "where column between x and y" clause to the query.
 	WhereBetween(column string, x, y any) Query
 	// WhereIn adds a "where column in" clause to the query.
@@ -193,6 +205,8 @@ type Query interface {
 	WhereJsonDoesntContainKey(column string) Query
 	// WhereJsonLength add a "where JSON length" clause to the query.
 	WhereJsonLength(column string, length int) Query
+	// WhereNone adds a "where none of columns match" clause to the query.
+	WhereNone(columns []string, args ...any) Query
 	// WhereNotBetween adds a "where column not between x and y" clause to the query.
 	WhereNotBetween(column string, x, y any) Query
 	// WhereNotIn adds a "where column not in" clause to the query.
@@ -203,6 +217,8 @@ type Query interface {
 	WhereNull(column string) Query
 	// WithoutEvents disables event firing for the query.
 	WithoutEvents() Query
+	// WithoutGlobalScopes disables all global scopes for the query.
+	WithoutGlobalScopes(names ...string) Query
 	// WithTrashed allows soft deleted models to be included in the results.
 	WithTrashed() Query
 	// With returns a new query instance with the given relationships eager loaded.
@@ -238,7 +254,7 @@ type ModelWithConnection interface {
 }
 
 type ModelWithGlobalScopes interface {
-	GlobalScopes() []func(Query) Query
+	GlobalScopes() map[string]func(Query) Query
 }
 
 type ToSql interface {

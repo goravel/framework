@@ -23,6 +23,11 @@ func EpochValue() *Carbon {
 	return carbon.EpochValue()
 }
 
+// DefaultTimezone gets the default timezone.
+func DefaultTimezone() string {
+	return carbon.DefaultTimezone
+}
+
 // SetTimezone sets timezone.
 func SetTimezone(timezone string) {
 	carbon.SetTimezone(timezone)

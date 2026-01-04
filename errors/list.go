@@ -17,6 +17,7 @@ var (
 	RouteFacadeNotSet       = New("route facade is not initialized")
 	SessionFacadeNotSet     = New("session facade is not initialized")
 	ServiceProviderCycle    = New("circular dependency detected between providers: %s")
+	TelemetryFacadeNotSet   = New("telemetry facade is not initialized")
 
 	AuthEmptySecret             = New("authentication secret is missing or required")
 	AuthInvalidClaims           = New("authentication token contains invalid claims")
@@ -37,18 +38,22 @@ var (
 	CacheMemoryInvalidIntValueType    = New("value type of %s is not *atomic.Int64 or *int64 or *atomic.Int32 or *int32")
 	CacheStoreContractNotFulfilled    = New("%s doesn't implement contracts/cache/store")
 
+	CommandEmptyPackageName = New("the package name cannot be empty")
+
 	ConsoleProvidersNotArray = New("the app.providers configuration is not of type []foundation.ServiceProvider, skipping registering service providers")
 
-	ConsoleCommandRegisterFailed = New("command register failed: %v")
-	ConsoleDropAllTablesFailed   = New("drop all tables failed: %v")
-	ConsoleDropAllTypesFailed    = New("drop all types failed: %v")
-	ConsoleDropAllViewsFailed    = New("drop all views failed: %v")
-	ConsoleEmptyDatabaseConfig   = New("please fill database config first")
-	ConsoleEmptyFieldValue       = New("the %s name cannot be empty")
-	ConsoleFileAlreadyExists     = New("the %s already exists. Use the --force or -f flag to overwrite")
-	ConsoleFailedToConfirm       = New("failed to confirm the action: %v")
-	ConsolePruneFailed           = New("prune failed: %v")
-	ConsoleRunInProduction       = New("please use the --force option if you want to run the command in production")
+	ConsoleCommandRegisterFailed             = New("failed to register command '%s': %v")
+	ConsoleCommandRequiredArgumentWrongOrder = New("required argument '%s' should be placed before any not-required arguments")
+	ConsoleCommandArgumentUnknownType        = New("unknown type of console command argument %T, with value %+v")
+	ConsoleDropAllTablesFailed               = New("drop all tables failed: %v")
+	ConsoleDropAllTypesFailed                = New("drop all types failed: %v")
+	ConsoleDropAllViewsFailed                = New("drop all views failed: %v")
+	ConsoleEmptyDatabaseConfig               = New("please fill database config first")
+	ConsoleEmptyFieldValue                   = New("the %s name cannot be empty")
+	ConsoleFileAlreadyExists                 = New("the %s already exists. Use the --force or -f flag to overwrite")
+	ConsoleFailedToConfirm                   = New("failed to confirm the action: %v")
+	ConsolePruneFailed                       = New("prune failed: %v")
+	ConsoleRunInProduction                   = New("please use the --force option if you want to run the command in production")
 
 	CryptAppKeyNotSet        = New("APP_KEY is required in artisan environment")
 	CryptInvalidAppKeyLength = New("invalid APP_KEY length: %d bytes")
@@ -81,6 +86,7 @@ var (
 	FilesystemInvalidCustomDriver = New("init %s disk fail: via must be implement filesystem.Driver or func() (filesystem.Driver, error)")
 
 	FileAlreadyExists = New("file %s already exists")
+	FileNotExist      = New("file %s does not exist")
 
 	GrpcEmptyClientHost         = New("client's host can't be empty")
 	GrpcEmptyClientPort         = New("client's port can't be empty")
@@ -88,15 +94,24 @@ var (
 	GrpcEmptyServerPort         = New("port can't be empty")
 	GrpcInvalidInterceptorsType = New("the type of clients.%s.interceptors must be []string")
 
+	HttpClientConnectionNotFound      = New("connection [%s] is not configured").SetModule(ModuleHttp)
+	HttpClientDefaultNotSet           = New("default client is not configured").SetModule(ModuleHttp)
+	HttpClientResponseAlreadyStreamed = New("response body has already been streamed").SetModule(ModuleHttp)
+	HttpClientResponseIsNil           = New("response is nil").SetModule(ModuleHttp)
+	HttpClientConfigNotSet            = New("http client config is nil").SetModule(ModuleHttp)
+
 	HttpRateLimitFailedToTakeToken     = New("failed to take token")
 	HttpRateLimitFailedToCheckThrottle = New("failed to check throttle: %s")
 
 	LangFileNotExist      = New("translation file does not exist")
 	LangNoLoaderAvailable = New("no translation loader available")
 
+	LogChannelNotFound         = New("log channel %s not found")
+	LogChannelUnimplemented    = New("log channel %s doesn't implement contracts/log/logger").SetModule(ModuleLog)
 	LogDriverCircularReference = New("%s driver can't include self channel").SetModule(ModuleLog)
 	LogDriverNotSupported      = New("invalid driver: %s, only support stack, single, daily, custom").SetModule(ModuleLog)
 	LogEmptyLogFilePath        = New("empty log file path").SetModule(ModuleLog)
+	LogFormatterNotSupported   = New("invalid formatter: %s, only support text, json").SetModule(ModuleLog)
 
 	MailTemplateParseFailed         = New("failed to parse template %s: %w").SetModule(ModuleMail)
 	MailTemplateExecutionFailed     = New("failed to execute template %s: %w").SetModule(ModuleMail)
@@ -104,6 +119,8 @@ var (
 	MailTemplateEngineViaRequired   = New("custom template engine '%s' must specify 'via' factory function").SetModule(ModuleMail)
 	MailTemplateEngineViaInvalid    = New("invalid via type for template engine '%s'").SetModule(ModuleMail)
 	MailTemplateEngineFactoryFailed = New("factory for template engine '%s' failed: %w").SetModule(ModuleMail)
+
+	MiddlewareRegisterFailed = New("failed to register middleware '%s': %v")
 
 	MigrationCreateFailed    = New("create migration failed: %v")
 	MigrationFreshFailed     = New("migration fresh failed: %v")
@@ -142,11 +159,26 @@ var (
 	PackageModuleNameEmpty       = New("package module name is empty, please run command with module name")
 	PackageRegistrationDuplicate = New("'%s' had been registered")
 	PackageRegistrationNotFound  = New("'%s' not found, cannot insert before it")
+	PackageCommandsFileExists    = New("commands.go already exists but WithCommands is not registered in foundation.Setup(). The commands.go file should only be created when adding WithCommands to Setup()")
+	PackageFiltersFileExists     = New("filters.go already exists but WithFilters is not registered in foundation.Setup(). The filters.go file should only be created when adding WithFilters to Setup()")
+	PackageJobsFileExists        = New("jobs.go already exists but WithJobs is not registered in foundation.Setup(). The jobs.go file should only be created when adding WithJobs to Setup()")
+	PackageMigrationsFileExists  = New("migrations.go already exists but WithMigrations is not registered in foundation.Setup(). The migrations.go file should only be created when adding WithMigrations to Setup()")
+	PackageProvidersFileExists   = New("providers.go already exists but WithProviders is not registered in foundation.Setup(). The providers.go file should only be created when adding WithProviders to Setup()")
+	PackageRulesFileExists       = New("rules.go already exists but WithRules is not registered in foundation.Setup(). The rules.go file should only be created when adding WithRules to Setup()")
+	PackageSeedersFileExists     = New("seeders.go already exists but WithSeeders is not registered in foundation.Setup(). The seeders.go file should only be created when adding WithSeeders to Setup()")
 
 	PluralizerLanguageNotFound     = New("language %s not found").SetModule(ModulePluralizer)
 	PluralizerEmptyLanguageName    = New("language name cannot be empty").SetModule(ModulePluralizer)
 	PluralizerNoSubstitutionsGiven = New("no substitutions provided").SetModule(ModulePluralizer)
 	PluralizerNoWordsGiven         = New("no words provided").SetModule(ModulePluralizer)
+
+	ProcessNotStarted            = New("process not started").SetModule(ModuleProcess)
+	ProcessUnsupportedSignalType = New("unsupported signal type").SetModule(ModuleProcess)
+	ProcessPipelineEmpty         = New("pipeline must have at least one command").SetModule(ModuleProcess)
+	ProcessPipelineStartFailed   = New("failed to start pipeline: %v").SetModule(ModuleProcess)
+	ProcessPipeNilConfigurer     = New("pipe configurer cannot be nil").SetModule(ModuleProcess)
+	ProcessPoolNilConfigurer     = New("pool configurer cannot be nil").SetModule(ModuleProcess)
+	ProviderRegisterFailed       = New("failed to register provider '%s': %v")
 
 	QueueDriverFailedToPop           = New("failed to pop job from %s queue: %v")
 	QueueDriverInvalid               = New("%s doesn't implement contracts/queue/driver")
@@ -177,16 +209,18 @@ var (
 	RouteDefaultDriverNotSet = New("please set default driver")
 	RouteInvalidDriver       = New("init %s route driver fail: route must be implement route.Route or func() (route.Route, error)")
 
+	SchemaConnectionNotFound   = New("connection %s not found")
 	SchemaDriverNotSupported   = New("driver %s is not supported")
+	SchemaEmptyReferenceString = New("reference string can't be empty")
+	SchemaErrorReferenceFormat = New("invalid format: too many dots in reference")
 	SchemaFailedToCreateTable  = New("failed to create %s table: %v")
 	SchemaFailedToChangeTable  = New("failed to change %s table: %v")
 	SchemaFailedToDropTable    = New("failed to drop %s table: %v")
 	SchemaFailedToDropColumns  = New("failed to drop %s table columns: %v")
 	SchemaFailedToGetTables    = New("failed to get %s tables: %v")
 	SchemaFailedToRenameTable  = New("failed to rename %s table: %v")
-	SchemaEmptyReferenceString = New("reference string can't be empty")
-	SchemaErrorReferenceFormat = New("invalid format: too many dots in reference")
-	SchemaConnectionNotFound   = New("connection %s not found")
+	SchemaInvalidModel         = New("model must be a struct or pointer to struct")
+	SchemaModelNotFound        = New("model %s not found in registered models")
 	SchemaTableNotFound        = New("table %s not found")
 
 	SessionDriverAlreadyExists        = New("session driver [%s] already exists")
@@ -196,8 +230,20 @@ var (
 	SessionDriverRegisterFailed       = New("failed to register session drivers: %v")
 	SessionDriverContractNotFulfilled = New("%s doesn't implement contracts/session/driver")
 
-	TemplateFailedToParse         = New("failed to parse template: %v")
-	TemplateFailedToFormateGoCode = New("failed to format go code: %v")
+	TemplateFailedToExecute      = New("failed to execute template: %v")
+	TemplateFailedToFormatGoCode = New("failed to format go code: %v")
+	TemplateFailedToParse        = New("failed to parse template: %v")
+
+	TelemetryPropagatorRequired     = New("telemetry propagator is required").SetModule(ModuleTelemetry)
+	TelemetryExporterNotFound       = New("telemetry exporter not found").SetModule(ModuleTelemetry)
+	TelemetryUnsupportedDriver      = New("unsupported telemetry exporter driver: %s").SetModule(ModuleTelemetry)
+	TelemetryUnsupportedPropagator  = New("unsupported telemetry propagator: %s").SetModule(ModuleTelemetry)
+	TelemetryZipkinEndpointRequired = New("telemetry zipkin endpoint is required").SetModule(ModuleTelemetry)
+	TelemetryServiceNameRequired    = New("telemetry service name is required").SetModule(ModuleTelemetry)
+	TelemetryViaRequired            = New("custom driver requires a factory function to be provided in the 'via' field").SetModule(ModuleTelemetry)
+	TelemetryMetricViaTypeMismatch  = New("custom metrics driver requires func(context.Context) (sdkmetric.Reader, error), received %s").SetModule(ModuleTelemetry)
+	TelemetryTraceViaTypeMismatch   = New("custom traces driver requires func(context.Context) (sdktrace.SpanExporter, error), received %s").SetModule(ModuleTelemetry)
+	TelemetryLogViaTypeMismatch     = New("custom logger driver requires func(context.Context) (sdklog.Exporter, error), received %s").SetModule(ModuleTelemetry)
 
 	TestingImageBuildFailed   = New("init %s docker error: %v")
 	TestingImageNoContainerId = New("no container id return when creating %s docker")
@@ -213,11 +259,4 @@ var (
 	ValidationEmptyRules           = New("rules can't be empty")
 	ValidationFilterRegisterFailed = New("filter register failed: %v")
 	ValidationRuleRegisterFailed   = New("rule register failed: %v")
-
-	CommandEmptyPackageName = New("the package name cannot be empty")
-
-	ProcessNotStarted            = New("process not started").SetModule(ModuleProcess)
-	ProcessUnsupportedSignalType = New("unsupported signal type").SetModule(ModuleProcess)
-	ProcessPipelineEmpty         = New("pipeline must have at least one command").SetModule(ModuleProcess)
-	ProcessPipelineStartFailed   = New("failed to start pipeline: %v").SetModule(ModuleProcess)
 )

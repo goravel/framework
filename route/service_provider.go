@@ -33,11 +33,11 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (r *ServiceProvider) Boot(app foundation.Application) {
-	r.registerCommands(app)
-}
-
-func (r *ServiceProvider) registerCommands(app foundation.Application) {
 	app.MakeArtisan().Register([]console.Command{
 		routeconsole.NewList(app.MakeRoute()),
 	})
+}
+
+func (r *ServiceProvider) Runners(app foundation.Application) []foundation.Runner {
+	return []foundation.Runner{NewRouteRunner(app.MakeConfig(), app.MakeRoute())}
 }
