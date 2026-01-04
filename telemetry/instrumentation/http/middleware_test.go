@@ -132,26 +132,30 @@ func (s *MiddlewareTestSuite) TestTelemetry() {
 			tt.telemetrySetup(mockTelemetry)
 
 			handler := testMiddleware(tt.handler)
-			server := httptest.NewServer(handler)
-			defer server.Close()
+			if tt.expectPanic {
+				req := httptest.NewRequest("GET", tt.requestPath, nil)
+				w := httptest.NewRecorder()
+				s.Panics(func() {
+					handler.ServeHTTP(w, req)
+				})
+			} else {
+				server := httptest.NewServer(handler)
+				defer server.Close()
 
-			client := &nethttp.Client{}
-
-			action := func() {
-				_, err := client.Get(server.URL + tt.requestPath)
-				if !tt.expectPanic {
-					s.NoError(err)
+				client := &nethttp.Client{}
+				resp, err := client.Get(server.URL + tt.requestPath)
+				s.NoError(err)
+				if resp != nil {
+					s.NoError(resp.Body.Close())
 				}
 			}
-
-			action()
 		})
 	}
 }
 
 func testMiddleware(next nethttp.Handler) nethttp.Handler {
+	mw := Telemetry()
 	return nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
-		mw := Telemetry()
 		ctx := NewTestContext(r.Context(), next, w, r)
 		mw(ctx)
 	})
@@ -260,8 +264,6 @@ func NewTestResponse(ctx *TestContext) *TestResponse {
 func (r *TestResponse) Origin() contractshttp.ResponseOrigin {
 	return r.ctx.writer
 }
-
-// --- TestResponseWriter ---
 
 type TestResponseWriter struct {
 	nethttp.ResponseWriter

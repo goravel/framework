@@ -2,6 +2,7 @@ package http
 
 import (
 	"net/http"
+	"sync"
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
@@ -21,21 +22,39 @@ func NewTransport(base http.RoundTripper) http.RoundTripper {
 		base = http.DefaultTransport
 	}
 
-	// If telemetry.ConfigFacade is missing or set to false, return the original transport immediately.
-	// We use "telemetry.instrumentation.http_client" as the standard key for outgoing HTTP.
-	if telemetry.ConfigFacade == nil || !telemetry.ConfigFacade.GetBool("telemetry.instrumentation.http_client", true) {
-		return base
+	return &TransportProxy{
+		base: base,
+	}
+}
+
+type TransportProxy struct {
+	base          http.RoundTripper
+	otelTransport http.RoundTripper
+	once          sync.Once
+}
+
+func (t *TransportProxy) RoundTrip(req *http.Request) (*http.Response, error) {
+	t.once.Do(func() {
+		if telemetry.ConfigFacade == nil || !telemetry.ConfigFacade.GetBool("telemetry.instrumentation.http_client", true) {
+			return
+		}
+
+		if telemetry.TelemetryFacade == nil {
+			color.Warningln("[Telemetry] Facade not initialized. HTTP client instrumentation is disabled.")
+			return
+		}
+
+		t.otelTransport = otelhttp.NewTransport(
+			t.base,
+			otelhttp.WithTracerProvider(telemetry.TelemetryFacade.TracerProvider()),
+			otelhttp.WithMeterProvider(telemetry.TelemetryFacade.MeterProvider()),
+			otelhttp.WithPropagators(telemetry.TelemetryFacade.Propagator()),
+		)
+	})
+
+	if t.otelTransport != nil {
+		return t.otelTransport.RoundTrip(req)
 	}
 
-	if telemetry.TelemetryFacade == nil {
-		color.Warningln("[Telemetry] Facade not initialized. HTTP client instrumentation is disabled.")
-		return base
-	}
-
-	return otelhttp.NewTransport(
-		base,
-		otelhttp.WithTracerProvider(telemetry.TelemetryFacade.TracerProvider()),
-		otelhttp.WithMeterProvider(telemetry.TelemetryFacade.MeterProvider()),
-		otelhttp.WithPropagators(telemetry.TelemetryFacade.Propagator()),
-	)
+	return t.base.RoundTrip(req)
 }

@@ -3,8 +3,10 @@ package http
 import (
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	metricnoop "go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/propagation"
@@ -38,68 +40,43 @@ func TestTransportTestSuite(t *testing.T) {
 	suite.Run(t, new(TransportTestSuite))
 }
 
-func (s *TransportTestSuite) TestNewTransport() {
+func (s *TransportTestSuite) TestRoundTrip() {
+	req := httptest.NewRequest("GET", "http://example.com", nil)
+
 	tests := []struct {
-		name   string
-		setup  func(*mockstelemetry.Telemetry, *mocksconfig.Config)
-		base   http.RoundTripper
-		assert func(res http.RoundTripper)
+		name  string
+		setup func(*mockstelemetry.Telemetry, *mocksconfig.Config, *MockRoundTripper)
 	}{
 		{
-			name: "fallback: returns base when ConfigFacade is nil",
-			setup: func(_ *mockstelemetry.Telemetry, _ *mocksconfig.Config) {
+			name: "Fallback: Base used when ConfigFacade is nil",
+			setup: func(_ *mockstelemetry.Telemetry, _ *mocksconfig.Config, baseMock *MockRoundTripper) {
 				telemetry.ConfigFacade = nil
-			},
-			base: http.DefaultTransport,
-			assert: func(res http.RoundTripper) {
-				s.Equal(http.DefaultTransport, res)
+				baseMock.On("RoundTrip", req).Return(&http.Response{}, nil).Once()
 			},
 		},
 		{
-			name: "kill switch: returns base when http_client is disabled in config",
-			setup: func(_ *mockstelemetry.Telemetry, mockConfig *mocksconfig.Config) {
+			name: "Kill Switch: Base used when http_client is disabled",
+			setup: func(_ *mockstelemetry.Telemetry, mockConfig *mocksconfig.Config, baseMock *MockRoundTripper) {
 				telemetry.ConfigFacade = mockConfig
 				mockConfig.EXPECT().GetBool("telemetry.instrumentation.http_client", true).Return(false).Once()
-			},
-			base: http.DefaultTransport,
-			assert: func(res http.RoundTripper) {
-				s.Equal(http.DefaultTransport, res)
+
+				baseMock.On("RoundTrip", req).Return(&http.Response{}, nil).Once()
 			},
 		},
 		{
-			name: "fallback: returns base when TelemetryFacade is nil (even if config enabled)",
-			setup: func(_ *mockstelemetry.Telemetry, mockConfig *mocksconfig.Config) {
+			name: "Fallback: Base used (with warning) when TelemetryFacade is nil",
+			setup: func(_ *mockstelemetry.Telemetry, mockConfig *mocksconfig.Config, baseMock *MockRoundTripper) {
 				telemetry.ConfigFacade = mockConfig
 				telemetry.TelemetryFacade = nil
 
 				mockConfig.EXPECT().GetBool("telemetry.instrumentation.http_client", true).Return(true).Once()
-			},
-			base: http.DefaultTransport,
-			assert: func(res http.RoundTripper) {
-				s.Equal(http.DefaultTransport, res)
+
+				baseMock.On("RoundTrip", req).Return(&http.Response{}, nil).Once()
 			},
 		},
 		{
-			name: "success: returns wrapped transport when enabled and facades exist",
-			setup: func(mockTelemetry *mockstelemetry.Telemetry, mockConfig *mocksconfig.Config) {
-				telemetry.ConfigFacade = mockConfig
-				telemetry.TelemetryFacade = mockTelemetry
-
-				mockConfig.EXPECT().GetBool("telemetry.instrumentation.http_client", true).Return(true).Once()
-
-				mockTelemetry.EXPECT().TracerProvider().Return(tracenoop.NewTracerProvider()).Once()
-				mockTelemetry.EXPECT().MeterProvider().Return(metricnoop.NewMeterProvider()).Once()
-				mockTelemetry.EXPECT().Propagator().Return(propagation.NewCompositeTextMapPropagator()).Once()
-			},
-			base: http.DefaultTransport,
-			assert: func(res http.RoundTripper) {
-				s.NotNil(res)
-				s.NotEqual(http.DefaultTransport, res)
-			},
-		},
-		{
-			name: "success: handles nil base automatically (wraps DefaultTransport)",
-			setup: func(mockTelemetry *mockstelemetry.Telemetry, mockConfig *mocksconfig.Config) {
+			name: "Success: OTel Transport initialized and used",
+			setup: func(mockTelemetry *mockstelemetry.Telemetry, mockConfig *mocksconfig.Config, baseMock *MockRoundTripper) {
 				telemetry.ConfigFacade = mockConfig
 				telemetry.TelemetryFacade = mockTelemetry
 
@@ -107,13 +84,7 @@ func (s *TransportTestSuite) TestNewTransport() {
 				mockTelemetry.EXPECT().TracerProvider().Return(tracenoop.NewTracerProvider()).Once()
 				mockTelemetry.EXPECT().MeterProvider().Return(metricnoop.NewMeterProvider()).Once()
 				mockTelemetry.EXPECT().Propagator().Return(propagation.NewCompositeTextMapPropagator()).Once()
-			},
-			base: nil,
-			assert: func(res http.RoundTripper) {
-				// otelhttp.NewTransport(nil) will wrap DefaultTransport.
-				// So result should be NotNil.
-				s.NotNil(res)
-				s.NotEqual(http.DefaultTransport, res)
+				baseMock.On("RoundTrip", mock.Anything).Return(&http.Response{}, nil).Once()
 			},
 		},
 	}
@@ -122,15 +93,31 @@ func (s *TransportTestSuite) TestNewTransport() {
 		s.Run(test.name, func() {
 			mockTelemetry := mockstelemetry.NewTelemetry(s.T())
 			mockConfig := mocksconfig.NewConfig(s.T())
+			mockBase := &MockRoundTripper{}
 
-			test.setup(mockTelemetry, mockConfig)
+			test.setup(mockTelemetry, mockConfig, mockBase)
 
-			var res http.RoundTripper
+			transport := NewTransport(mockBase)
+
 			color.CaptureOutput(func(w io.Writer) {
-				res = NewTransport(test.base)
+				_, _ = transport.RoundTrip(req)
 			})
 
-			test.assert(res)
+			mockTelemetry.AssertExpectations(s.T())
+			mockConfig.AssertExpectations(s.T())
+			mockBase.AssertExpectations(s.T())
 		})
 	}
+}
+
+type MockRoundTripper struct {
+	mock.Mock
+}
+
+func (m *MockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	args := m.Called(req)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*http.Response), args.Error(1)
 }
