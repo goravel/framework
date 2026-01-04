@@ -89,11 +89,6 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 		}
 	}
 
-	// Register routes
-	for _, route := range r.routes {
-		route()
-	}
-
 	// Register event listeners
 	if len(r.eventToListeners) > 0 {
 		eventFacade := r.app.MakeEvent()
@@ -201,6 +196,11 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 	// Execute callback function
 	if r.callback != nil {
 		r.callback()
+	}
+
+	// Register routes
+	for _, route := range r.routes {
+		route()
 	}
 
 	// Boot service providers after all settings
