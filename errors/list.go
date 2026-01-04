@@ -106,10 +106,12 @@ var (
 	LangFileNotExist      = New("translation file does not exist")
 	LangNoLoaderAvailable = New("no translation loader available")
 
-	LogDriverCircularReference  = New("%s driver can't include self channel").SetModule(ModuleLog)
-	LogDriverNotSupported       = New("invalid driver: %s, only support stack, single, daily, custom").SetModule(ModuleLog)
-	LogEmptyLogFilePath         = New("empty log file path").SetModule(ModuleLog)
-	LogFormatterNotSupported    = New("invalid formatter: %s, only support text, json").SetModule(ModuleLog)
+	LogChannelNotFound         = New("log channel %s not found")
+	LogChannelUnimplemented    = New("log channel %s doesn't implement contracts/log/logger").SetModule(ModuleLog)
+	LogDriverCircularReference = New("%s driver can't include self channel").SetModule(ModuleLog)
+	LogDriverNotSupported      = New("invalid driver: %s, only support stack, single, daily, custom").SetModule(ModuleLog)
+	LogEmptyLogFilePath        = New("empty log file path").SetModule(ModuleLog)
+	LogFormatterNotSupported   = New("invalid formatter: %s, only support text, json").SetModule(ModuleLog)
 
 	MailTemplateParseFailed         = New("failed to parse template %s: %w").SetModule(ModuleMail)
 	MailTemplateExecutionFailed     = New("failed to execute template %s: %w").SetModule(ModuleMail)

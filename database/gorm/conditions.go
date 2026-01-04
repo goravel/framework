@@ -6,26 +6,27 @@ import (
 )
 
 type Conditions struct {
-	dest          any
-	model         any
-	having        *contractsdriver.Having
-	limit         *int
-	offset        *int
-	table         *Table
-	groupBy       []string
-	join          []contractsdriver.Join
-	omit          []string
-	order         []any
-	scopes        []func(contractsorm.Query) contractsorm.Query
-	selectColumns []string
-	selectRaw     *Select
-	where         []contractsdriver.Where
-	with          []With
-	distinct      bool
-	lockForUpdate bool
-	sharedLock    bool
-	withoutEvents bool
-	withTrashed   bool
+	dest                any
+	model               any
+	having              *contractsdriver.Having
+	limit               *int
+	offset              *int
+	table               *Table
+	groupBy             []string
+	join                []contractsdriver.Join
+	omit                []string
+	order               []any
+	scopes              []func(contractsorm.Query) contractsorm.Query
+	selectColumns       []string
+	selectRaw           *Select
+	where               []contractsdriver.Where
+	with                []With
+	distinct            bool
+	lockForUpdate       bool
+	sharedLock          bool
+	withoutEvents       bool
+	withoutGlobalScopes []string
+	withTrashed         bool
 }
 
 type Select struct {

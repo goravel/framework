@@ -30,11 +30,12 @@ type Data map[string]any
 
 type Log interface {
 	// WithContext adds a context to the logger.
-	WithContext(ctx context.Context) Writer
+	WithContext(ctx context.Context) Log
 	// Channel return a writer for a specific channel.
-	Channel(channel string) Writer
+	Channel(channel string) Log
 	// Stack return a writer for multiple channels.
-	Stack(channels []string) Writer
+	Stack(channels []string) Log
+	// Writer returns the underlying Writer.
 	Writer
 }
 

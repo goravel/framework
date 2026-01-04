@@ -93,7 +93,7 @@ func newOTLPTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.Span
 
 	switch protocol {
 	case ProtocolGRPC:
-		opts := buildOTLPOptions[otlptracegrpc.Option](cfg,
+		opts := buildOTLPOptions(cfg,
 			otlptracegrpc.WithEndpoint,
 			otlptracegrpc.WithInsecure,
 			otlptracegrpc.WithTimeout,
@@ -101,7 +101,7 @@ func newOTLPTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.Span
 		)
 		return otlptracegrpc.New(ctx, opts...)
 	default:
-		opts := buildOTLPOptions[otlptracehttp.Option](cfg,
+		opts := buildOTLPOptions(cfg,
 			otlptracehttp.WithEndpoint,
 			otlptracehttp.WithInsecure,
 			otlptracehttp.WithTimeout,
