@@ -6,11 +6,10 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/suite"
-	"go.opentelemetry.io/otel/log/noop"
+	lognoop "go.opentelemetry.io/otel/log/noop"
 
 	contractslog "github.com/goravel/framework/contracts/log"
 	mocksconfig "github.com/goravel/framework/mocks/config"
-	mockslog "github.com/goravel/framework/mocks/log"
 	mockstelemetry "github.com/goravel/framework/mocks/telemetry"
 	"github.com/goravel/framework/telemetry"
 )
@@ -19,7 +18,6 @@ type TelemetryChannelTestSuite struct {
 	suite.Suite
 	mockConfig    *mocksconfig.Config
 	mockTelemetry *mockstelemetry.Telemetry
-	mockEntry     *mockslog.Entry
 }
 
 func TestTelemetryChannelTestSuite(t *testing.T) {
@@ -29,7 +27,6 @@ func TestTelemetryChannelTestSuite(t *testing.T) {
 func (s *TelemetryChannelTestSuite) SetupTest() {
 	s.mockConfig = mocksconfig.NewConfig(s.T())
 	s.mockTelemetry = mockstelemetry.NewTelemetry(s.T())
-	s.mockEntry = mockslog.NewEntry(s.T())
 
 	telemetry.TelemetryFacade = s.mockTelemetry
 }
@@ -95,24 +92,19 @@ func (s *TelemetryChannelTestSuite) TestHandle_Runtime_LazyLoading_TriggersTelem
 	s.mockConfig.EXPECT().GetBool("telemetry.instrumentation.log", true).Return(true).Once()
 	s.mockConfig.EXPECT().GetString(channelPath+".instrument_name", defaultInstrumentationName).Return(defaultInstrumentationName).Once()
 
-	s.mockTelemetry.On("Logger", defaultInstrumentationName).Return(noop.NewLoggerProvider().Logger("test")).Once()
+	s.mockTelemetry.On("Logger", defaultInstrumentationName).Return(lognoop.NewLoggerProvider().Logger("test")).Once()
 
-	s.mockEntry.On("Context").Return(context.Background())
-	s.mockEntry.On("Time").Return(time.Now())
-	s.mockEntry.On("Message").Return("test message")
-	s.mockEntry.On("Level").Return(contractslog.InfoLevel)
-	s.mockEntry.On("Code").Return("")
-	s.mockEntry.On("Domain").Return("")
-	s.mockEntry.On("Hint").Return("")
-	s.mockEntry.On("Owner").Return(nil)
-	s.mockEntry.On("User").Return(nil)
-	s.mockEntry.On("With").Return(map[string]any{})
-	s.mockEntry.On("Data").Return(map[string]any{})
+	entry := &TestEntry{
+		ctx:     context.Background(),
+		level:   contractslog.LevelInfo,
+		time:    time.Now(),
+		message: "test message",
+	}
 
 	channel := NewTelemetryChannel(s.mockConfig)
 	h, err := channel.Handle(channelPath)
 	s.NoError(err)
-	s.NoError(h.Handle(s.mockEntry))
+	s.NoError(h.Handle(entry))
 
 	s.mockTelemetry.AssertExpectations(s.T())
 }
