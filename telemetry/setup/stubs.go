@@ -58,7 +58,7 @@ func init() {
 			//
 			// The name of the exporter definition in the "exporters" section below.
 			// Set to "" to disable tracing.
-			"exporter": config.Env("OTEL_TRACES_EXPORTER", "otlptrace"),
+			"exporter": config.Env("OTEL_TRACES_EXPORTER", ""),
 
 			// Sampler Configuration
 			//
@@ -89,7 +89,7 @@ func init() {
 			//
 			// The name of the exporter definition in the "exporters" section below.
 			// Set to "" to disable metrics.
-			"exporter": config.Env("OTEL_METRICS_EXPORTER", "otlpmetric"),
+			"exporter": config.Env("OTEL_METRICS_EXPORTER", ""),
 
 			// Reader Configuration
 			//
@@ -115,7 +115,7 @@ func init() {
 			//
 			// The name of the exporter definition in the "exporters" section below.
 			// Set to "" to disable OTel logging.
-			"exporter": config.Env("OTEL_LOGS_EXPORTER", "otlplog"),
+			"exporter": config.Env("OTEL_LOGS_EXPORTER", ""),
 
 			// Processor Configuration
 			//
@@ -128,6 +128,20 @@ func init() {
 				// Timeout: Max time allowed for export before cancelling.
 				// Format: Duration string (e.g., "30s").
 				"timeout": config.Env("OTEL_LOG_EXPORT_TIMEOUT", "30s"),
+			},
+		},
+
+		// Instrumentation Configuration
+		//
+		// Configures the automatic instrumentation for specific components.
+		"instrumentation": map[string]any{
+			// HTTP Server Instrumentation
+			//
+			// Configures the telemetry middleware for incoming HTTP requests.
+			"http_server": map[string]any{
+				"enabled":          config.Env("OTEL_HTTP_SERVER_ENABLED", true),
+				"excluded_paths":   []string{}, // e.g., ["/health", "/metrics"]
+				"excluded_methods": []string{}, // e.g., ["OPTIONS", "HEAD"]
 			},
 		},
 
