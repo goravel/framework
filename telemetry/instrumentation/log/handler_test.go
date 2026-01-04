@@ -21,7 +21,7 @@ type HandlerTestSuite struct {
 	loggerName    string
 	ctx           context.Context
 	now           time.Time
-	mockTelemetry *mockstelemetry.Telemetry // Added for lazy test
+	mockTelemetry *mockstelemetry.Telemetry
 }
 
 func TestHandlerTestSuite(t *testing.T) {
