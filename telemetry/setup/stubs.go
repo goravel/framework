@@ -143,6 +143,39 @@ func init() {
 				"excluded_paths":   []string{}, // e.g., ["/health", "/metrics"]
 				"excluded_methods": []string{}, // e.g., ["OPTIONS", "HEAD"]
 			},
+			
+			// HTTP Client Instrumentation
+			//
+			// Configures the instrumentation for outgoing HTTP requests made via
+			// the application's HTTP client Facade. This acts as a global kill switch
+			// for all clients. To disable telemetry for specific clients, configure
+			// "enable_telemetry" within the "http.clients.{client_name}" property.
+			"http_client": map[string]any{
+				"enabled": config.Env("OTEL_HTTP_CLIENT_ENABLED", true),
+			},
+			
+			// gRPC Server Instrumentation
+			//
+			// Configures the instrumentation for incoming gRPC requests to your server.
+			"grpc_server": map[string]any{
+				"enabled": config.Env("OTEL_GRPC_SERVER_ENABLED", true),
+			},
+			
+			// gRPC Client Instrumentation
+			//
+			// Configures the instrumentation for outgoing gRPC calls made by your application.
+			"grpc_client": map[string]any{
+				"enabled": config.Env("OTEL_GRPC_CLIENT_ENABLED", true),
+			},
+			
+			// Log Instrumentation
+			//
+			// Configures the instrumentation for the application logger.
+			// Disabling this acts as a global kill switch for sending logs to the OTel exporter,
+			// which can be useful for reducing cost/noise without changing logging config.
+			"log": map[string]any{
+				"enabled": config.Env("OTEL_LOG_ENABLED", true),
+			},
 		},
 
 		// Exporters Configuration
