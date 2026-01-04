@@ -16,7 +16,7 @@ type DownCommand struct {
 	app foundation.Application
 }
 
-type DownOptions struct {
+type MaintenanceOptions struct {
 	Reason   string `json:"reason,omitempty"`
 	Redirect string `json:"redirect,omitempty"`
 	Render   string `json:"render,omitempty"`
@@ -82,7 +82,7 @@ func (r *DownCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	options := DownOptions{}
+	options := MaintenanceOptions{}
 
 	options.Status = ctx.OptionInt("status")
 
