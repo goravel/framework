@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/foundation/console"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/path"
@@ -28,18 +29,26 @@ func CheckForMaintenance() http.Middleware {
 		}
 
 		secret := ctx.Request().Query("secret", "")
-		if secret != "" && maintenanceOptions.Secret != "" && secret == maintenanceOptions.Secret {
-			ctx.Request().Next()
-			return
+		if secret != "" && maintenanceOptions.Secret != "" {
+			if facades.Hash().Check(secret, maintenanceOptions.Secret) {
+				ctx.Request().Next()
+				return
+			}
 		}
 
 		if maintenanceOptions.Redirect != "" {
-			ctx.Response().Redirect(http.StatusTemporaryRedirect, maintenanceOptions.Redirect)
-			return
+			if ctx.Request().Path() == maintenanceOptions.Redirect {
+				ctx.Request().Next()
+				return
+			} else {
+				ctx.Response().Redirect(http.StatusTemporaryRedirect, maintenanceOptions.Redirect).Abort()
+				return
+			}
 		}
 
 		if maintenanceOptions.Render != "" {
-			ctx.Response().View().Make(maintenanceOptions.Render, nil).Render()
+			ctx.Request().Abort(maintenanceOptions.Status)
+			ctx.Response().View().Make(maintenanceOptions.Render, map[string]string{}).Render()
 			return
 		}
 
