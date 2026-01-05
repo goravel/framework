@@ -22,37 +22,37 @@ type ApplicationBuilder interface {
 	// WithCallback sets a callback function to be called during application creation.
 	WithCallback(func()) ApplicationBuilder
 	// WithCommands sets the application's commands.
-	WithCommands(commands []console.Command) ApplicationBuilder
+	WithCommands(func() []console.Command) ApplicationBuilder
 	// WithConfig sets a callback function to configure the application.
-	WithConfig(config func()) ApplicationBuilder
+	WithConfig(func()) ApplicationBuilder
 	// WithEvents sets event listeners for the application.
-	WithEvents(eventToListeners map[event.Event][]event.Listener) ApplicationBuilder
+	WithEvents(func() map[event.Event][]event.Listener) ApplicationBuilder
 	// WithFilters sets the application's validation filters.
-	WithFilters(filters []validation.Filter) ApplicationBuilder
+	WithFilters(func() []validation.Filter) ApplicationBuilder
 	// WithGrpcClientInterceptors sets the grouped gRPC client interceptors.
-	WithGrpcClientInterceptors(groupToInterceptors map[string][]grpc.UnaryClientInterceptor) ApplicationBuilder
+	WithGrpcClientInterceptors(func() map[string][]grpc.UnaryClientInterceptor) ApplicationBuilder
 	// WithGrpcClientStatsHandlers sets the grouped gRPC client stats handlers.
-	WithGrpcClientStatsHandlers(groupToHandlers map[string][]stats.Handler) ApplicationBuilder
+	WithGrpcClientStatsHandlers(func() map[string][]stats.Handler) ApplicationBuilder
 	// WithGrpcServerInterceptors sets the list of gRPC server interceptors.
-	WithGrpcServerInterceptors(interceptors []grpc.UnaryServerInterceptor) ApplicationBuilder
+	WithGrpcServerInterceptors(func() []grpc.UnaryServerInterceptor) ApplicationBuilder
 	// WithGrpcServerStatsHandlers sets the list of gRPC server stats handlers.
-	WithGrpcServerStatsHandlers(handlers []stats.Handler) ApplicationBuilder
+	WithGrpcServerStatsHandlers(func() []stats.Handler) ApplicationBuilder
 	// WithJobs registers the application's jobs.
-	WithJobs(jobs []queue.Job) ApplicationBuilder
+	WithJobs(func() []queue.Job) ApplicationBuilder
 	// WithMiddleware registers the http's middleware.
-	WithMiddleware(fn func(handler configuration.Middleware)) ApplicationBuilder
+	WithMiddleware(func(handler configuration.Middleware)) ApplicationBuilder
 	// WithMigrations registers the database migrations.
-	WithMigrations(migrations []schema.Migration) ApplicationBuilder
+	WithMigrations(func() []schema.Migration) ApplicationBuilder
 	// WithPaths sets custom paths for the application.
-	WithPaths(fn func(paths configuration.Paths)) ApplicationBuilder
+	WithPaths(func(paths configuration.Paths)) ApplicationBuilder
 	// WithProviders registers and boots custom service providers.
-	WithProviders(providers []ServiceProvider) ApplicationBuilder
+	WithProviders([]ServiceProvider) ApplicationBuilder
 	// WithRouting registers the application's routes.
-	WithRouting(routes []func()) ApplicationBuilder
+	WithRouting(func()) ApplicationBuilder
 	// WithRules registers the custom validation rules.
-	WithRules(rules []validation.Rule) ApplicationBuilder
+	WithRules(func() []validation.Rule) ApplicationBuilder
 	// WithSchedule sets scheduled events for the application.
-	WithSchedule(fn func() []schedule.Event) ApplicationBuilder
+	WithSchedule(func() []schedule.Event) ApplicationBuilder
 	// WithSeeders registers the database seeders.
-	WithSeeders(seeders []seeder.Seeder) ApplicationBuilder
+	WithSeeders(func() []seeder.Seeder) ApplicationBuilder
 }

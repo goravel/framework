@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"io"
-	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/mock"
@@ -119,8 +118,10 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 
 		got := color.CaptureOutput(func(io.Writer) {
 			app := s.builder.
-				WithEvents(map[event.Event][]event.Listener{
-					mocksevent.NewEvent(s.T()): {mocksevent.NewListener(s.T())},
+				WithEvents(func() map[event.Event][]event.Listener {
+					return map[event.Event][]event.Listener{
+						mocksevent.NewEvent(s.T()): {mocksevent.NewListener(s.T())},
+					}
 				}).
 				Create()
 
@@ -138,7 +139,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		app := s.builder.
-			WithEvents(map[event.Event][]event.Listener{}).
+			WithEvents(func() map[event.Event][]event.Listener {
+				return map[event.Event][]event.Listener{}
+			}).
 			Create()
 
 		s.NotNil(app)
@@ -163,8 +166,10 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		app := s.builder.
-			WithEvents(map[event.Event][]event.Listener{
-				mockEvent: {mockListener},
+			WithEvents(func() map[event.Event][]event.Listener {
+				return map[event.Event][]event.Listener{
+					mockEvent: {mockListener},
+				}
 			}).
 			Create()
 
@@ -241,10 +246,8 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		app := s.builder.
-			WithRouting([]func(){
-				func() {
-					calledRouting = true
-				},
+			WithRouting(func() {
+				calledRouting = true
 			}).
 			Create()
 
@@ -262,7 +265,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 
 		mockCommand := mocksconsole.NewCommand(s.T())
 		got := color.CaptureOutput(func(io.Writer) {
-			app := s.builder.WithCommands([]console.Command{mockCommand}).Create()
+			app := s.builder.WithCommands(func() []console.Command {
+				return []console.Command{mockCommand}
+			}).Create()
 
 			s.NotNil(app)
 		})
@@ -282,7 +287,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		mockArtisan.EXPECT().Register([]console.Command{mockCommand}).Return().Once()
 		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
-		app := s.builder.WithCommands([]console.Command{mockCommand}).Create()
+		app := s.builder.WithCommands(func() []console.Command {
+			return []console.Command{mockCommand}
+		}).Create()
 
 		s.NotNil(app)
 	})
@@ -336,7 +343,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 
 		mockMigration := mocksschema.NewMigration(s.T())
 		got := color.CaptureOutput(func(io.Writer) {
-			app := s.builder.WithMigrations([]schema.Migration{mockMigration}).Create()
+			app := s.builder.WithMigrations(func() []schema.Migration {
+				return []schema.Migration{mockMigration}
+			}).Create()
 			s.NotNil(app)
 		})
 
@@ -355,7 +364,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		mockSchema.EXPECT().Register([]schema.Migration{mockMigration}).Return().Once()
 		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
-		app := s.builder.WithMigrations([]schema.Migration{mockMigration}).Create()
+		app := s.builder.WithMigrations(func() []schema.Migration {
+			return []schema.Migration{mockMigration}
+		}).Create()
 
 		s.NotNil(app)
 	})
@@ -372,8 +383,10 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 			return nil
 		}
 		got := color.CaptureOutput(func(io.Writer) {
-			app := s.builder.WithGrpcClientInterceptors(map[string][]grpc.UnaryClientInterceptor{
-				"test": {interceptor},
+			app := s.builder.WithGrpcClientInterceptors(func() map[string][]grpc.UnaryClientInterceptor {
+				return map[string][]grpc.UnaryClientInterceptor{
+					"test": {interceptor},
+				}
 			}).Create()
 			s.NotNil(app)
 		})
@@ -400,7 +413,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		})).Return().Once()
 		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
-		app := s.builder.WithGrpcClientInterceptors(interceptors).Create()
+		app := s.builder.WithGrpcClientInterceptors(func() map[string][]grpc.UnaryClientInterceptor {
+			return interceptors
+		}).Create()
 
 		s.NotNil(app)
 	})
@@ -417,7 +432,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 			return nil, nil
 		}
 		got := color.CaptureOutput(func(io.Writer) {
-			app := s.builder.WithGrpcServerInterceptors([]grpc.UnaryServerInterceptor{interceptor}).Create()
+			app := s.builder.WithGrpcServerInterceptors(func() []grpc.UnaryServerInterceptor {
+				return []grpc.UnaryServerInterceptor{interceptor}
+			}).Create()
 			s.NotNil(app)
 		})
 
@@ -441,7 +458,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		})).Return().Once()
 		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
-		app := s.builder.WithGrpcServerInterceptors(interceptors).Create()
+		app := s.builder.WithGrpcServerInterceptors(func() []grpc.UnaryServerInterceptor {
+			return interceptors
+		}).Create()
 
 		s.NotNil(app)
 	})
@@ -456,8 +475,10 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 
 		handler := &mockStatsHandler{}
 		got := color.CaptureOutput(func(io.Writer) {
-			app := s.builder.WithGrpcClientStatsHandlers(map[string][]stats.Handler{
-				"test": {handler},
+			app := s.builder.WithGrpcClientStatsHandlers(func() map[string][]stats.Handler {
+				return map[string][]stats.Handler{
+					"test": {handler},
+				}
 			}).Create()
 			s.NotNil(app)
 		})
@@ -480,7 +501,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		mockGrpc.EXPECT().ClientStatsHandlerGroups(handlers).Return().Once()
 		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
-		app := s.builder.WithGrpcClientStatsHandlers(handlers).Create()
+		app := s.builder.WithGrpcClientStatsHandlers(func() map[string][]stats.Handler {
+			return handlers
+		}).Create()
 
 		s.NotNil(app)
 	})
@@ -495,7 +518,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 
 		handler := &mockStatsHandler{}
 		got := color.CaptureOutput(func(io.Writer) {
-			app := s.builder.WithGrpcServerStatsHandlers([]stats.Handler{handler}).Create()
+			app := s.builder.WithGrpcServerStatsHandlers(func() []stats.Handler {
+				return []stats.Handler{handler}
+			}).Create()
 			s.NotNil(app)
 		})
 
@@ -515,7 +540,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		mockGrpc.EXPECT().ServerStatsHandlers(handlers).Return().Once()
 		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
-		app := s.builder.WithGrpcServerStatsHandlers(handlers).Create()
+		app := s.builder.WithGrpcServerStatsHandlers(func() []stats.Handler {
+			return handlers
+		}).Create()
 
 		s.NotNil(app)
 	})
@@ -548,10 +575,18 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		app := s.builder.
-			WithGrpcClientInterceptors(map[string][]grpc.UnaryClientInterceptor{"test": {clientInterceptor}}).
-			WithGrpcServerInterceptors([]grpc.UnaryServerInterceptor{serverInterceptor}).
-			WithGrpcClientStatsHandlers(map[string][]stats.Handler{"test": {clientStatsHandler}}).
-			WithGrpcServerStatsHandlers([]stats.Handler{serverStatsHandler}).
+			WithGrpcClientInterceptors(func() map[string][]grpc.UnaryClientInterceptor {
+				return map[string][]grpc.UnaryClientInterceptor{"test": {clientInterceptor}}
+			}).
+			WithGrpcServerInterceptors(func() []grpc.UnaryServerInterceptor {
+				return []grpc.UnaryServerInterceptor{serverInterceptor}
+			}).
+			WithGrpcClientStatsHandlers(func() map[string][]stats.Handler {
+				return map[string][]stats.Handler{"test": {clientStatsHandler}}
+			}).
+			WithGrpcServerStatsHandlers(func() []stats.Handler {
+				return []stats.Handler{serverStatsHandler}
+			}).
 			Create()
 
 		s.NotNil(app)
@@ -567,7 +602,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 
 		mockJob := mocksqueue.NewJob(s.T())
 		got := color.CaptureOutput(func(io.Writer) {
-			app := s.builder.WithJobs([]queue.Job{mockJob}).Create()
+			app := s.builder.WithJobs(func() []queue.Job {
+				return []queue.Job{mockJob}
+			}).Create()
 			s.NotNil(app)
 		})
 
@@ -586,7 +623,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		mockQueue.EXPECT().Register([]queue.Job{mockJob}).Return().Once()
 		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
-		app := s.builder.WithJobs([]queue.Job{mockJob}).Create()
+		app := s.builder.WithJobs(func() []queue.Job {
+			return []queue.Job{mockJob}
+		}).Create()
 
 		s.NotNil(app)
 	})
@@ -601,7 +640,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 
 		mockSeeder := mocksseeder.NewSeeder(s.T())
 		got := color.CaptureOutput(func(io.Writer) {
-			app := s.builder.WithSeeders([]seeder.Seeder{mockSeeder}).Create()
+			app := s.builder.WithSeeders(func() []seeder.Seeder {
+				return []seeder.Seeder{mockSeeder}
+			}).Create()
 			s.NotNil(app)
 		})
 
@@ -620,7 +661,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		mockSeederFacade.EXPECT().Register([]seeder.Seeder{mockSeeder}).Return().Once()
 		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
-		app := s.builder.WithSeeders([]seeder.Seeder{mockSeeder}).Create()
+		app := s.builder.WithSeeders(func() []seeder.Seeder {
+			return []seeder.Seeder{mockSeeder}
+		}).Create()
 
 		s.NotNil(app)
 	})
@@ -635,7 +678,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 
 		mockFilter := mocksvalidation.NewFilter(s.T())
 		got := color.CaptureOutput(func(io.Writer) {
-			app := s.builder.WithFilters([]validation.Filter{mockFilter}).Create()
+			app := s.builder.WithFilters(func() []validation.Filter {
+				return []validation.Filter{mockFilter}
+			}).Create()
 			s.NotNil(app)
 		})
 
@@ -655,7 +700,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		got := color.CaptureOutput(func(io.Writer) {
-			app := s.builder.WithFilters([]validation.Filter{mockFilter}).Create()
+			app := s.builder.WithFilters(func() []validation.Filter {
+				return []validation.Filter{mockFilter}
+			}).Create()
 			s.NotNil(app)
 		})
 
@@ -674,7 +721,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		mockValidation.EXPECT().AddFilters([]validation.Filter{mockFilter}).Return(nil).Once()
 		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
-		app := s.builder.WithFilters([]validation.Filter{mockFilter}).Create()
+		app := s.builder.WithFilters(func() []validation.Filter {
+			return []validation.Filter{mockFilter}
+		}).Create()
 
 		s.NotNil(app)
 	})
@@ -689,7 +738,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 
 		mockRule := mocksvalidation.NewRule(s.T())
 		got := color.CaptureOutput(func(io.Writer) {
-			app := s.builder.WithRules([]validation.Rule{mockRule}).Create()
+			app := s.builder.WithRules(func() []validation.Rule {
+				return []validation.Rule{mockRule}
+			}).Create()
 			s.NotNil(app)
 		})
 
@@ -709,7 +760,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
 		got := color.CaptureOutput(func(io.Writer) {
-			app := s.builder.WithRules([]validation.Rule{mockRule}).Create()
+			app := s.builder.WithRules(func() []validation.Rule {
+				return []validation.Rule{mockRule}
+			}).Create()
 			s.NotNil(app)
 		})
 
@@ -728,7 +781,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		mockValidation.EXPECT().AddRules([]validation.Rule{mockRule}).Return(nil).Once()
 		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
-		app := s.builder.WithRules([]validation.Rule{mockRule}).Create()
+		app := s.builder.WithRules(func() []validation.Rule {
+			return []validation.Rule{mockRule}
+		}).Create()
 
 		s.NotNil(app)
 	})
@@ -792,10 +847,12 @@ func (s *ApplicationBuilderTestSuite) TestWithPaths() {
 func (s *ApplicationBuilderTestSuite) TestWithMigrations() {
 	mockMigration := mocksschema.NewMigration(s.T())
 
-	builder := s.builder.WithMigrations([]schema.Migration{mockMigration})
+	builder := s.builder.WithMigrations(func() []schema.Migration {
+		return []schema.Migration{mockMigration}
+	})
 
 	s.NotNil(builder)
-	s.Len(s.builder.migrations, 1)
+	s.NotNil(s.builder.migrations)
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithProviders() {
@@ -817,7 +874,7 @@ func (s *ApplicationBuilderTestSuite) TestWithProviders() {
 func (s *ApplicationBuilderTestSuite) TestWithRouting() {
 	fn := func() {}
 
-	builder := s.builder.WithRouting([]func(){fn})
+	builder := s.builder.WithRouting(fn)
 
 	s.NotNil(builder)
 	s.NotNil(s.builder.routes)
@@ -835,112 +892,83 @@ func (s *ApplicationBuilderTestSuite) TestWithSchedule() {
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithGrpcClientInterceptors() {
-	interceptor1 := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+	interceptor := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		return nil
 	}
-	interceptor2 := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-		return nil
-	}
-
-	builder := s.builder.WithGrpcClientInterceptors(map[string][]grpc.UnaryClientInterceptor{
-		"test": {interceptor1},
-	})
-	builder.WithGrpcClientInterceptors(map[string][]grpc.UnaryClientInterceptor{
-		"test": {interceptor2},
+	builder := s.builder.WithGrpcClientInterceptors(func() map[string][]grpc.UnaryClientInterceptor {
+		return map[string][]grpc.UnaryClientInterceptor{
+			"test": {interceptor},
+		}
 	})
 
 	s.NotNil(builder)
-
-	s.Len(s.builder.grpcClientInterceptors["test"], 2)
-	s.Equal(reflect.ValueOf(interceptor1).Pointer(), reflect.ValueOf(s.builder.grpcClientInterceptors["test"][0]).Pointer())
-	s.Equal(reflect.ValueOf(interceptor2).Pointer(), reflect.ValueOf(s.builder.grpcClientInterceptors["test"][1]).Pointer())
+	s.NotNil(s.builder.grpcClientInterceptors)
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithGrpcClientStatsHandlers() {
-	handler1 := &mockStatsHandler{}
-	handler2 := &mockStatsHandler{}
-
-	builder := s.builder.WithGrpcClientStatsHandlers(map[string][]stats.Handler{
-		"service-a": {handler1},
-	})
-	builder.WithGrpcClientStatsHandlers(map[string][]stats.Handler{
-		"service-a": {handler2},
-		"service-b": {handler1},
+	handler := &mockStatsHandler{}
+	builder := s.builder.WithGrpcClientStatsHandlers(func() map[string][]stats.Handler {
+		return map[string][]stats.Handler{
+			"service-a": {handler},
+		}
 	})
 
 	s.NotNil(builder)
-	s.Len(s.builder.grpcClientStatsHandlers, 2)
-	s.Len(s.builder.grpcClientStatsHandlers["service-a"], 2)
-	s.Len(s.builder.grpcClientStatsHandlers["service-b"], 1)
-	s.Equal(handler1, s.builder.grpcClientStatsHandlers["service-a"][0])
-	s.Equal(handler2, s.builder.grpcClientStatsHandlers["service-a"][1])
-	s.Equal(handler1, s.builder.grpcClientStatsHandlers["service-b"][0])
+	s.NotNil(s.builder.grpcClientStatsHandlers)
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithGrpcServerInterceptors() {
-	interceptor1 := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	interceptor := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		return nil, nil
 	}
-	interceptor2 := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		return nil, nil
-	}
-
-	builder := s.builder.WithGrpcServerInterceptors([]grpc.UnaryServerInterceptor{interceptor1})
-	builder.WithGrpcServerInterceptors([]grpc.UnaryServerInterceptor{interceptor2})
+	builder := s.builder.WithGrpcServerInterceptors(func() []grpc.UnaryServerInterceptor { return []grpc.UnaryServerInterceptor{interceptor} })
 
 	s.NotNil(builder)
-	s.Len(s.builder.grpcServerInterceptors, 2)
-	s.Equal(reflect.ValueOf(interceptor1).Pointer(), reflect.ValueOf(s.builder.grpcServerInterceptors[0]).Pointer())
-	s.Equal(reflect.ValueOf(interceptor2).Pointer(), reflect.ValueOf(s.builder.grpcServerInterceptors[1]).Pointer())
+	s.NotNil(s.builder.grpcServerInterceptors)
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithGrpcServerStatsHandlers() {
-	handler1 := &mockStatsHandler{}
-	handler2 := &mockStatsHandler{}
-
-	builder := s.builder.WithGrpcServerStatsHandlers([]stats.Handler{handler1})
-	builder.WithGrpcServerStatsHandlers([]stats.Handler{handler2})
+	handler := &mockStatsHandler{}
+	builder := s.builder.WithGrpcServerStatsHandlers(func() []stats.Handler { return []stats.Handler{handler} })
 
 	s.NotNil(builder)
-	s.Len(s.builder.grpcServerStatsHandlers, 2)
-	s.Equal(handler1, s.builder.grpcServerStatsHandlers[0])
-	s.Equal(handler2, s.builder.grpcServerStatsHandlers[1])
+	s.NotNil(s.builder.grpcServerStatsHandlers)
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithJobs() {
 	mockJob := mocksqueue.NewJob(s.T())
 
-	builder := s.builder.WithJobs([]queue.Job{mockJob})
+	builder := s.builder.WithJobs(func() []queue.Job { return []queue.Job{mockJob} })
 
 	s.NotNil(builder)
-	s.Len(s.builder.jobs, 1)
+	s.NotNil(s.builder.jobs)
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithSeeders() {
 	mockSeeder := mocksseeder.NewSeeder(s.T())
 
-	builder := s.builder.WithSeeders([]seeder.Seeder{mockSeeder})
+	builder := s.builder.WithSeeders(func() []seeder.Seeder { return []seeder.Seeder{mockSeeder} })
 
 	s.NotNil(builder)
-	s.Len(s.builder.seeders, 1)
+	s.NotNil(s.builder.seeders)
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithFilters() {
 	mockFilter := mocksvalidation.NewFilter(s.T())
 
-	builder := s.builder.WithFilters([]validation.Filter{mockFilter})
+	builder := s.builder.WithFilters(func() []validation.Filter { return []validation.Filter{mockFilter} })
 
 	s.NotNil(builder)
-	s.Len(s.builder.filters, 1)
+	s.NotNil(s.builder.filters)
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithRules() {
 	mockRule := mocksvalidation.NewRule(s.T())
 
-	builder := s.builder.WithRules([]validation.Rule{mockRule})
+	builder := s.builder.WithRules(func() []validation.Rule { return []validation.Rule{mockRule} })
 
 	s.NotNil(builder)
-	s.Len(s.builder.rules, 1)
+	s.NotNil(s.builder.rules)
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithCallback() {
