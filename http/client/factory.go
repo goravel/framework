@@ -1,12 +1,13 @@
 package client
 
 import (
+	"context"
 	"net/http"
 	"sync"
 
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http/client"
-	httperrors "github.com/goravel/framework/errors"
+	"github.com/goravel/framework/errors"
 )
 
 var _ client.Factory = (*Factory)(nil)
@@ -20,19 +21,27 @@ type Factory struct {
 	config *FactoryConfig
 	json   foundation.Json
 
-	// clients serves as a thread-safe, append-only cache for *http.Client instances.
-	// sync.Map is preferred here over RWMutex because keys are written once and read frequently.
+	// clients serves as a thread-safe cache for *http.Client instances.
+	// sync.Map is preferred here because keys are written once and read frequently.
 	clients sync.Map
+
+	// mu protects the mocking state (mockTransport) and the embedded Request.
+	// We use RWMutex to allow concurrent reads in createHTTPClient.
+	mu            sync.RWMutex
+	mockTransport *FakeTransport
+
+	responseFactory *ResponseFactory
 }
 
 func NewFactory(config *FactoryConfig, json foundation.Json) (*Factory, error) {
 	if config == nil {
-		return nil, httperrors.HttpClientConfigNotSet
+		return nil, errors.HttpClientConfigNotSet
 	}
 
 	f := &Factory{
-		config: config,
-		json:   json,
+		config:          config,
+		json:            json,
+		responseFactory: NewResponseFactory(json),
 	}
 
 	// Resolve the default client immediately.
@@ -44,14 +53,11 @@ func NewFactory(config *FactoryConfig, json foundation.Json) (*Factory, error) {
 	}
 
 	cfg := config.Clients[config.Default]
-	f.Request = NewRequest(defaultClient, json, cfg.BaseUrl)
+	f.Request = NewRequest(defaultClient, json, cfg.BaseUrl, config.Default)
 
 	return f, nil
 }
 
-// Client resolves or creates a specific client instance by name.
-// If no name is provided, it returns the default client.
-// Client switches the context to a specific client configuration.
 func (f *Factory) Client(name ...string) client.Request {
 	key := f.config.Default
 	if len(name) > 0 && name[0] != "" {
@@ -64,8 +70,13 @@ func (f *Factory) Client(name ...string) client.Request {
 	// Even if f.Request contains an error (e.g., configuration missing),
 	// we return it as-is. This preserves the "Lazy Error" behavior
 	// without re-allocating a new error object every time.
-	if key == f.config.Default && f.Request != nil {
-		return f.Request
+	f.mu.RLock()
+	isDefault := key == f.config.Default
+	embeddedReq := f.Request
+	f.mu.RUnlock()
+
+	if isDefault && embeddedReq != nil {
+		return embeddedReq
 	}
 
 	httpClient, err := f.resolveClient(key)
@@ -74,13 +85,12 @@ func (f *Factory) Client(name ...string) client.Request {
 	}
 
 	cfg := f.config.Clients[key]
-	return NewRequest(httpClient, f.json, cfg.BaseUrl)
+	return NewRequest(httpClient, f.json, cfg.BaseUrl, key)
 }
 
-// resolveClient retrieves a cached *http.Client or creates a new one using the Singleton pattern.
 func (f *Factory) resolveClient(name string) (*http.Client, error) {
 	if name == "" {
-		return nil, httperrors.HttpClientDefaultNotSet
+		return nil, errors.HttpClientDefaultNotSet
 	}
 
 	if val, ok := f.clients.Load(name); ok {
@@ -89,7 +99,7 @@ func (f *Factory) resolveClient(name string) (*http.Client, error) {
 
 	cfg, ok := f.config.Clients[name]
 	if !ok {
-		return nil, httperrors.HttpClientConnectionNotFound.Args(name)
+		return nil, errors.HttpClientConnectionNotFound.Args(name)
 	}
 
 	newClient := f.createHTTPClient(&cfg)
@@ -101,19 +111,148 @@ func (f *Factory) resolveClient(name string) (*http.Client, error) {
 	return actual.(*http.Client), nil
 }
 
-// createHTTPClient initializes the low-level transport with isolation settings.
 func (f *Factory) createHTTPClient(cfg *Config) *http.Client {
+	f.mu.RLock()
+	transport := f.mockTransport
+	f.mu.RUnlock()
+
+	// If the factory is in "Fake" mode, we inject the mock transport.
+	// This bypasses the network entirely and uses the defined stubs.
+	if transport != nil {
+		return &http.Client{
+			Timeout:   cfg.Timeout,
+			Transport: transport,
+		}
+	}
+
 	// Clone the default transport to ensure strict isolation between clients.
 	// This prevents shared state (like global timeouts) from leaking between instances.
-	transport := http.DefaultTransport.(*http.Transport).Clone()
+	stdTransport := http.DefaultTransport.(*http.Transport).Clone()
 
-	transport.MaxIdleConns = cfg.MaxIdleConns
-	transport.MaxIdleConnsPerHost = cfg.MaxIdleConnsPerHost
-	transport.MaxConnsPerHost = cfg.MaxConnsPerHost
-	transport.IdleConnTimeout = cfg.IdleConnTimeout
+	stdTransport.MaxIdleConns = cfg.MaxIdleConns
+	stdTransport.MaxIdleConnsPerHost = cfg.MaxIdleConnsPerHost
+	stdTransport.MaxConnsPerHost = cfg.MaxConnsPerHost
+	stdTransport.IdleConnTimeout = cfg.IdleConnTimeout
 
 	return &http.Client{
 		Timeout:   cfg.Timeout,
-		Transport: transport,
+		Transport: stdTransport,
 	}
+}
+
+func (f *Factory) Fake(mocks map[string]any) {
+	convertedMocks := make(map[string]func(client.Request) client.Response)
+
+	for pattern, value := range mocks {
+		var handler func(client.Request) client.Response
+
+		switch v := value.(type) {
+		case func(client.Request) client.Response:
+			handler = v
+		case client.Response:
+			handler = func(_ client.Request) client.Response { return v }
+		case string:
+			handler = func(_ client.Request) client.Response { return f.Response().String(v, 200) }
+		case int:
+			handler = func(_ client.Request) client.Response { return f.Response().Status(v) }
+		case *ResponseSequence:
+			handler = func(_ client.Request) client.Response { return v.getNext() }
+		}
+
+		if handler != nil {
+			convertedMocks[pattern] = handler
+		}
+	}
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	f.mockTransport = NewFakeTransport(f.json, convertedMocks)
+
+	// Clear the client cache safely by iterating keys.
+	// This forces subsequent calls to resolveClient to create new http.Client instances,
+	// which will now pick up the new mockTransport in createHTTPClient.
+	f.clients.Range(func(key, value any) bool {
+		f.clients.Delete(key)
+		return true
+	})
+
+	// Re-initialize the default client immediately so the embedded Request uses the fake.
+	// We manually inject the default client name into the context here since we are
+	// replacing the embedded instance directly.
+	if httpClient, err := f.resolveClient(f.config.Default); err == nil {
+		cfg := f.config.Clients[f.config.Default]
+		req := NewRequest(httpClient, f.json, cfg.BaseUrl, f.config.Default)
+		ctx := context.WithValue(context.Background(), clientNameKey, f.config.Default)
+		f.Request = req.WithContext(ctx)
+	}
+}
+
+func (f *Factory) Reset() {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	f.mockTransport = nil
+
+	f.clients.Range(func(key, value any) bool {
+		f.clients.Delete(key)
+		return true
+	})
+
+	if httpClient, err := f.resolveClient(f.config.Default); err == nil {
+		cfg := f.config.Clients[f.config.Default]
+		f.Request = NewRequest(httpClient, f.json, cfg.BaseUrl, f.config.Default)
+	}
+}
+
+func (f *Factory) Sequence() client.ResponseSequence {
+	return NewResponseSequence(f.responseFactory)
+}
+
+func (f *Factory) Response() client.ResponseFactory {
+	return f.responseFactory
+}
+
+func (f *Factory) AssertSent(assertion func(client.Request) bool) bool {
+	f.mu.RLock()
+	tr := f.mockTransport
+	f.mu.RUnlock()
+
+	if tr == nil {
+		return false
+	}
+
+	tr.mu.Lock()
+	defer tr.mu.Unlock()
+
+	for _, req := range tr.recorded {
+		if assertion(req) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (f *Factory) AssertSentCount(count int) bool {
+	f.mu.RLock()
+	tr := f.mockTransport
+	f.mu.RUnlock()
+
+	if tr == nil {
+		return count == 0
+	}
+
+	tr.mu.Lock()
+	defer tr.mu.Unlock()
+
+	return len(tr.recorded) == count
+}
+
+func (f *Factory) AssertNotSent(assertion func(client.Request) bool) bool {
+	return !f.AssertSent(assertion)
+}
+
+func (f *Factory) AssertNothingSent() bool {
+	return f.AssertSentCount(0)
 }

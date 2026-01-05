@@ -22,6 +22,7 @@ type Request struct {
 	json   foundation.Json
 
 	baseUrl     string
+	clientName  string
 	ctx         context.Context
 	headers     http.Header
 	queryParams url.Values
@@ -34,13 +35,21 @@ type Request struct {
 	// preserving the fluent API chain (e.g., Http.Client("missing").Get("/")).
 	// The error is checked and returned lazily when the request is executed in send().
 	clientErr error
+
+	// Inspection fields
+	// These fields are populated only during "Hydration" within FakeTransport.
+	// They are used solely for inspection/assertion purposes in tests.
+	payloadBody []byte
+	method      string
+	fullUrl     string
 }
 
-func NewRequest(client *http.Client, json foundation.Json, baseUrl string) *Request {
+func NewRequest(client *http.Client, json foundation.Json, baseUrl string, clientName string) *Request {
 	return &Request{
-		client:  client,
-		json:    json,
-		baseUrl: baseUrl,
+		client:     client,
+		json:       json,
+		baseUrl:    baseUrl,
+		clientName: clientName,
 
 		ctx:         context.Background(),
 		headers:     make(http.Header),
@@ -118,6 +127,10 @@ func (r *Request) BaseUrl(url string) client.Request {
 	n := r.clone()
 	n.baseUrl = url
 	return n
+}
+
+func (r *Request) ClientName() string {
+	return r.clientName
 }
 
 func (r *Request) FlushHeaders() client.Request {
@@ -228,6 +241,46 @@ func (r *Request) WithUrlParameters(params map[string]string) client.Request {
 	return n
 }
 
+func (r *Request) Method() string {
+	return r.method
+}
+
+func (r *Request) Url() string {
+	return r.fullUrl
+}
+
+func (r *Request) Body() string {
+	if len(r.payloadBody) > 0 {
+		return string(r.payloadBody)
+	}
+	return ""
+}
+
+func (r *Request) Header(key string) string {
+	return r.headers.Get(key)
+}
+
+func (r *Request) Headers() http.Header {
+	return r.headers
+}
+
+func (r *Request) Input(key string) any {
+	if len(r.payloadBody) > 0 {
+		var data map[string]any
+		if err := r.json.Unmarshal(r.payloadBody, &data); err == nil {
+			if val, ok := data[key]; ok {
+				return val
+			}
+		}
+	}
+
+	if r.queryParams.Has(key) {
+		return r.queryParams.Get(key)
+	}
+
+	return nil
+}
+
 func (r *Request) clone() *Request {
 	n := *r
 	n.headers = r.headers.Clone()
@@ -254,6 +307,10 @@ func (r *Request) clone() *Request {
 	} else {
 		n.urlParams = make(map[string]string)
 	}
+
+	n.payloadBody = nil
+	n.method = ""
+	n.fullUrl = ""
 
 	return &n
 }

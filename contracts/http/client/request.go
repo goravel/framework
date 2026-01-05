@@ -33,6 +33,8 @@ type Request interface {
 	// This allows you to hit a different domain than the one configured for the
 	// client, useful for dynamic subdomains or runtime overrides.
 	BaseUrl(url string) Request
+	// ClientName returns the name of the Goravel client configuration used for this request.
+	ClientName() string
 	// Clone creates a deep copy of the request builder.
 	// This is useful if you want to reuse a base request with shared headers/tokens
 	// for multiple distinct API calls.
@@ -73,4 +75,31 @@ type Request interface {
 	WithUrlParameter(key, value string) Request
 	// WithUrlParameters replaces multiple URL parameter placeholders.
 	WithUrlParameters(map[string]string) Request
+
+	// These methods are primarily used inside Fakes and Assertions to inspect
+	// the request that was sent (or intercepted).
+
+	// Method returns the HTTP verb (GET, POST, etc.) of the request.
+	Method() string
+	// Url returns the full URL of the request.
+	Url() string
+	// Body returns the raw request body as a string.
+	//
+	// This is safe to call multiple times as the body is buffered.
+	Body() string
+	// Header retrieves a specific header value from the request.
+	Header(key string) string
+	// Headers retrieves all headers from the request.
+	Headers() http.Header
+	// Input retrieves data from the request's payload.
+	//
+	// It attempts to find the key in the following order:
+	// 1. JSON Body
+	// 2. Form Data
+	// 3. Query Parameters
+	//
+	// Example:
+	//   // Given JSON: {"user": {"id": 1}}
+	//   req.Input("user.id") // returns 1
+	Input(key string) any
 }
