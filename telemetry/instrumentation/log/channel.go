@@ -1,31 +1,30 @@
 package log
 
 import (
+	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/log"
-	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/telemetry"
 )
 
 const defaultInstrumentationName = "github.com/goravel/framework/telemetry/instrumentation/log"
 
-type TelemetryChannel struct{}
+type TelemetryChannel struct {
+	config config.Config
+}
 
-func NewTelemetryChannel() *TelemetryChannel {
-	return &TelemetryChannel{}
+func NewTelemetryChannel(config config.Config) *TelemetryChannel {
+	return &TelemetryChannel{
+		config: config,
+	}
 }
 
 func (r *TelemetryChannel) Handle(channelPath string) (log.Handler, error) {
-	if telemetry.TelemetryFacade == nil {
-		return nil, errors.TelemetryFacadeNotSet
+	if !r.config.GetBool("telemetry.instrumentation.log", true) {
+		return &handler{enabled: false}, nil
 	}
 
-	config := telemetry.ConfigFacade
-	if config == nil {
-		return nil, errors.ConfigFacadeNotSet
-	}
-
-	instrumentName := config.GetString(channelPath+".instrument_name", defaultInstrumentationName)
+	instrumentName := r.config.GetString(channelPath+".instrument_name", defaultInstrumentationName)
 	return &handler{
-		logger: telemetry.TelemetryFacade.Logger(instrumentName),
+		enabled:        true,
+		instrumentName: instrumentName,
 	}, nil
 }

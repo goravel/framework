@@ -156,7 +156,7 @@ func getHandlers(config config.Config, json foundation.Json, channel string) ([]
 			handlers = append(handlers, HandlerToSlogHandler(logger.NewConsoleHandler(config, json, level, formatter)))
 		}
 	case log.DriverOtel:
-		logLogger := telemetrylog.NewTelemetryChannel()
+		logLogger := telemetrylog.NewTelemetryChannel(config)
 		handler, err := logLogger.Handle(channelPath)
 		if err != nil {
 			return nil, err
