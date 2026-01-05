@@ -25,19 +25,19 @@ func (_m *Log) EXPECT() *Log_Expecter {
 }
 
 // Channel provides a mock function with given fields: channel
-func (_m *Log) Channel(channel string) log.Writer {
+func (_m *Log) Channel(channel string) log.Log {
 	ret := _m.Called(channel)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Channel")
 	}
 
-	var r0 log.Writer
-	if rf, ok := ret.Get(0).(func(string) log.Writer); ok {
+	var r0 log.Log
+	if rf, ok := ret.Get(0).(func(string) log.Log); ok {
 		r0 = rf(channel)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(log.Writer)
+			r0 = ret.Get(0).(log.Log)
 		}
 	}
 
@@ -62,12 +62,12 @@ func (_c *Log_Channel_Call) Run(run func(channel string)) *Log_Channel_Call {
 	return _c
 }
 
-func (_c *Log_Channel_Call) Return(_a0 log.Writer) *Log_Channel_Call {
+func (_c *Log_Channel_Call) Return(_a0 log.Log) *Log_Channel_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Log_Channel_Call) RunAndReturn(run func(string) log.Writer) *Log_Channel_Call {
+func (_c *Log_Channel_Call) RunAndReturn(run func(string) log.Log) *Log_Channel_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -791,19 +791,19 @@ func (_c *Log_Response_Call) RunAndReturn(run func(http.ContextResponse) log.Wri
 }
 
 // Stack provides a mock function with given fields: channels
-func (_m *Log) Stack(channels []string) log.Writer {
+func (_m *Log) Stack(channels []string) log.Log {
 	ret := _m.Called(channels)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Stack")
 	}
 
-	var r0 log.Writer
-	if rf, ok := ret.Get(0).(func([]string) log.Writer); ok {
+	var r0 log.Log
+	if rf, ok := ret.Get(0).(func([]string) log.Log); ok {
 		r0 = rf(channels)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(log.Writer)
+			r0 = ret.Get(0).(log.Log)
 		}
 	}
 
@@ -828,12 +828,12 @@ func (_c *Log_Stack_Call) Run(run func(channels []string)) *Log_Stack_Call {
 	return _c
 }
 
-func (_c *Log_Stack_Call) Return(_a0 log.Writer) *Log_Stack_Call {
+func (_c *Log_Stack_Call) Return(_a0 log.Log) *Log_Stack_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Log_Stack_Call) RunAndReturn(run func([]string) log.Writer) *Log_Stack_Call {
+func (_c *Log_Stack_Call) RunAndReturn(run func([]string) log.Log) *Log_Stack_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1082,19 +1082,19 @@ func (_c *Log_With_Call) RunAndReturn(run func(map[string]interface{}) log.Write
 }
 
 // WithContext provides a mock function with given fields: ctx
-func (_m *Log) WithContext(ctx context.Context) log.Writer {
+func (_m *Log) WithContext(ctx context.Context) log.Log {
 	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WithContext")
 	}
 
-	var r0 log.Writer
-	if rf, ok := ret.Get(0).(func(context.Context) log.Writer); ok {
+	var r0 log.Log
+	if rf, ok := ret.Get(0).(func(context.Context) log.Log); ok {
 		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(log.Writer)
+			r0 = ret.Get(0).(log.Log)
 		}
 	}
 
@@ -1119,12 +1119,12 @@ func (_c *Log_WithContext_Call) Run(run func(ctx context.Context)) *Log_WithCont
 	return _c
 }
 
-func (_c *Log_WithContext_Call) Return(_a0 log.Writer) *Log_WithContext_Call {
+func (_c *Log_WithContext_Call) Return(_a0 log.Log) *Log_WithContext_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Log_WithContext_Call) RunAndReturn(run func(context.Context) log.Writer) *Log_WithContext_Call {
+func (_c *Log_WithContext_Call) RunAndReturn(run func(context.Context) log.Log) *Log_WithContext_Call {
 	_c.Call.Return(run)
 	return _c
 }

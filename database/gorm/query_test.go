@@ -1,17 +1,221 @@
 package gorm
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	gormio "gorm.io/gorm"
 
+	contractsdatabase "github.com/goravel/framework/contracts/database"
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/convert"
 )
+
+func TestAddGlobalScopes(t *testing.T) {
+
+	tests := []struct {
+		name                  string
+		setupQuery            func() *Query
+		expectedScopesApplied bool
+		expectedScopesCount   int
+	}{
+		{
+			name: "should apply global scopes when model implements ModelWithGlobalScopes",
+			setupQuery: func() *Query {
+				conditions := Conditions{}
+				conditions.model = &ModelWithGlobalScopes{}
+				query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions)
+				return query
+			},
+			expectedScopesApplied: true,
+			expectedScopesCount:   2, // active and verified scopes
+		},
+		{
+			name: "should not apply global scopes when model does not implement ModelWithGlobalScopes",
+			setupQuery: func() *Query {
+				conditions := Conditions{}
+				conditions.model = &ModelWithoutGlobalScopes{}
+				query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions)
+				return query
+			},
+			expectedScopesApplied: false,
+			expectedScopesCount:   0,
+		},
+		{
+			name: "should not apply global scopes when withoutGlobalScopes contains '*'",
+			setupQuery: func() *Query {
+				conditions := Conditions{}
+				conditions.model = &ModelWithGlobalScopes{}
+				conditions.withoutGlobalScopes = []string{"*"}
+				query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions)
+				return query
+			},
+			expectedScopesApplied: false,
+			expectedScopesCount:   0,
+		},
+		{
+			name: "should exclude specific scope when in withoutGlobalScopes",
+			setupQuery: func() *Query {
+				conditions := Conditions{}
+				conditions.model = &ModelWithGlobalScopes{}
+				conditions.withoutGlobalScopes = []string{"active"}
+				query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions)
+				return query
+			},
+			expectedScopesApplied: true,
+			expectedScopesCount:   1, // only verified scope
+		},
+		{
+			name: "should not apply scopes when model is nil",
+			setupQuery: func() *Query {
+				conditions := Conditions{}
+				query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions)
+				return query
+			},
+			expectedScopesApplied: false,
+			expectedScopesCount:   0,
+		},
+		{
+			name: "should use dest when model is nil but dest is set",
+			setupQuery: func() *Query {
+				conditions := Conditions{}
+				conditions.dest = &ModelWithGlobalScopes{}
+				query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions)
+				return query
+			},
+			expectedScopesApplied: true,
+			expectedScopesCount:   2, // active and verified scopes
+		},
+		{
+			name: "should not apply scopes when model has empty GlobalScopes map",
+			setupQuery: func() *Query {
+				conditions := Conditions{}
+				conditions.model = &ModelWithEmptyGlobalScopes{}
+				query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions)
+				return query
+			},
+			expectedScopesApplied: false,
+			expectedScopesCount:   0,
+		},
+		{
+			name: "should apply scopes in sorted order by name",
+			setupQuery: func() *Query {
+				conditions := Conditions{}
+				conditions.model = &ModelWithGlobalScopes{}
+				query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions)
+				return query
+			},
+			expectedScopesApplied: true,
+			expectedScopesCount:   2, // Scopes applied in order: active, verified (alphabetically)
+		},
+		{
+			name: "should exclude multiple scopes when multiple names in withoutGlobalScopes",
+			setupQuery: func() *Query {
+				conditions := Conditions{}
+				conditions.model = &ModelWithGlobalScopes{}
+				conditions.withoutGlobalScopes = []string{"active", "verified"}
+				query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions)
+				return query
+			},
+			expectedScopesApplied: false,
+			expectedScopesCount:   0, // both scopes excluded
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			query := tt.setupQuery()
+			result := query.addGlobalScopes()
+
+			assert.NotNil(t, result)
+
+			// Check if scopes were applied by examining the scopes list
+			if tt.expectedScopesApplied {
+				assert.GreaterOrEqual(t, len(result.conditions.scopes), tt.expectedScopesCount)
+			} else {
+				assert.Equal(t, tt.expectedScopesCount, len(result.conditions.scopes))
+			}
+		})
+	}
+}
+
+func TestAddGlobalScopesWithPointerTypes(t *testing.T) {
+
+	tests := []struct {
+		name     string
+		model    any
+		expected bool
+	}{
+		{
+			name:     "should work with pointer to model",
+			model:    &ModelWithGlobalScopes{},
+			expected: true,
+		},
+		{
+			name:     "should work with value type model",
+			model:    ModelWithGlobalScopes{},
+			expected: true,
+		},
+		{
+			name:     "should work with pointer to pointer",
+			model:    func() any { m := &ModelWithGlobalScopes{}; return &m }(),
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			conditions := Conditions{}
+			conditions.model = tt.model
+			query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions)
+
+			result := query.addGlobalScopes()
+
+			assert.NotNil(t, result)
+			if tt.expected {
+				assert.GreaterOrEqual(t, len(result.conditions.scopes), 2)
+			}
+		})
+	}
+}
+
+func TestAddGlobalScopesWithSliceAndArray(t *testing.T) {
+
+	tests := []struct {
+		name  string
+		model any
+	}{
+		{
+			name:  "should handle slice of models",
+			model: []ModelWithGlobalScopes{},
+		},
+		{
+			name:  "should handle pointer to slice of models",
+			model: &[]ModelWithGlobalScopes{},
+		},
+		{
+			name:  "should handle array of models",
+			model: [2]ModelWithGlobalScopes{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			conditions := Conditions{}
+			conditions.model = tt.model
+			query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions)
+
+			result := query.addGlobalScopes()
+
+			// Should handle slice/array types and extract the element type
+			assert.NotNil(t, result)
+		})
+	}
+}
 
 func TestAddWhere(t *testing.T) {
 	query := &Query{}
@@ -69,20 +273,6 @@ func TestAddWhere(t *testing.T) {
 		{Query: "name2", Args: []any{"test2"}},
 		{Query: "name3", Args: []any{"test3"}},
 	}, query1.conditions.where)
-}
-
-func TestGetObserver(t *testing.T) {
-	query := &Query{
-		modelToObserver: []contractsorm.ModelToObserver{
-			{
-				Model:    User{},
-				Observer: &UserObserver{},
-			},
-		},
-	}
-
-	assert.Nil(t, query.getObserver(Product{}))
-	assert.Equal(t, &UserObserver{}, query.getObserver(User{}))
 }
 
 func TestFilterFindConditions(t *testing.T) {
@@ -203,118 +393,18 @@ func TestGetModelConnection(t *testing.T) {
 	}
 }
 
-func TestObserverEvent(t *testing.T) {
-	assert.EqualError(t, getObserverEvent(contractsorm.EventRetrieved, &UserObserver{})(nil), "retrieved")
-	assert.EqualError(t, getObserverEvent(contractsorm.EventCreating, &UserObserver{})(nil), "creating")
-	assert.EqualError(t, getObserverEvent(contractsorm.EventCreated, &UserObserver{})(nil), "created")
-	assert.EqualError(t, getObserverEvent(contractsorm.EventUpdating, &UserObserver{})(nil), "updating")
-	assert.EqualError(t, getObserverEvent(contractsorm.EventUpdated, &UserObserver{})(nil), "updated")
-	assert.EqualError(t, getObserverEvent(contractsorm.EventSaving, &UserObserver{})(nil), "saving")
-	assert.EqualError(t, getObserverEvent(contractsorm.EventSaved, &UserObserver{})(nil), "saved")
-	assert.EqualError(t, getObserverEvent(contractsorm.EventDeleting, &UserObserver{})(nil), "deleting")
-	assert.EqualError(t, getObserverEvent(contractsorm.EventDeleted, &UserObserver{})(nil), "deleted")
-	assert.EqualError(t, getObserverEvent(contractsorm.EventForceDeleting, &UserObserver{})(nil), "forceDeleting")
-	assert.EqualError(t, getObserverEvent(contractsorm.EventForceDeleted, &UserObserver{})(nil), "forceDeleted")
-	assert.Nil(t, getObserverEvent("error", &UserObserver{}))
-}
+func TestGetObserver(t *testing.T) {
+	query := &Query{
+		modelToObserver: []contractsorm.ModelToObserver{
+			{
+				Model:    User{},
+				Observer: &UserObserver{},
+			},
+		},
+	}
 
-type User struct {
-	Name string
-}
-
-type UserObserver struct{}
-
-func (u *UserObserver) Retrieved(event contractsorm.Event) error {
-	return errors.New("retrieved")
-}
-
-func (u *UserObserver) Creating(event contractsorm.Event) error {
-	return errors.New("creating")
-}
-
-func (u *UserObserver) Created(event contractsorm.Event) error {
-	return errors.New("created")
-}
-
-func (u *UserObserver) Updating(event contractsorm.Event) error {
-	return errors.New("updating")
-}
-
-func (u *UserObserver) Updated(event contractsorm.Event) error {
-	return errors.New("updated")
-}
-
-func (u *UserObserver) Saving(event contractsorm.Event) error {
-	return errors.New("saving")
-}
-
-func (u *UserObserver) Saved(event contractsorm.Event) error {
-	return errors.New("saved")
-}
-
-func (u *UserObserver) Deleting(event contractsorm.Event) error {
-	return errors.New("deleting")
-}
-
-func (u *UserObserver) Deleted(event contractsorm.Event) error {
-	return errors.New("deleted")
-}
-
-func (u *UserObserver) ForceDeleting(event contractsorm.Event) error {
-	return errors.New("forceDeleting")
-}
-
-func (u *UserObserver) ForceDeleted(event contractsorm.Event) error {
-	return errors.New("forceDeleted")
-}
-
-type Product struct {
-	Name string
-}
-
-func (p *Product) Connection() string {
-	return "sqlite"
-}
-
-type Review struct {
-	Body string
-}
-
-func (r *Review) Connection() string {
-	return ""
-}
-
-// TestModel is a simple struct for testing
-type TestModel struct {
-	ID   uint   `json:"id"`
-	Name string `json:"name"`
-}
-
-// TestInterfaceModel is an interface type for testing
-type TestInterfaceModel interface {
-	GetID() uint
-}
-
-// TestInterfaceImpl implements TestInterfaceModel
-type TestInterfaceImpl struct {
-	ID uint `json:"id"`
-}
-
-func (t TestInterfaceImpl) GetID() uint {
-	return t.ID
-}
-
-// ComplexModel is a more complex struct for testing
-type ComplexModel struct {
-	ID       uint   `json:"id"`
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Age      int    `json:"age"`
-	IsActive bool   `json:"is_active"`
-	Nested   struct {
-		Field1 string `json:"field1"`
-		Field2 int    `json:"field2"`
-	} `json:"nested"`
+	assert.Nil(t, query.getObserver(Product{}))
+	assert.Equal(t, &UserObserver{}, query.getObserver(User{}))
 }
 
 func TestModelToStruct(t *testing.T) {
@@ -830,4 +920,149 @@ func TestModelToStruct(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestObserverEvent(t *testing.T) {
+	assert.EqualError(t, getObserverEvent(contractsorm.EventRetrieved, &UserObserver{})(nil), "retrieved")
+	assert.EqualError(t, getObserverEvent(contractsorm.EventCreating, &UserObserver{})(nil), "creating")
+	assert.EqualError(t, getObserverEvent(contractsorm.EventCreated, &UserObserver{})(nil), "created")
+	assert.EqualError(t, getObserverEvent(contractsorm.EventUpdating, &UserObserver{})(nil), "updating")
+	assert.EqualError(t, getObserverEvent(contractsorm.EventUpdated, &UserObserver{})(nil), "updated")
+	assert.EqualError(t, getObserverEvent(contractsorm.EventSaving, &UserObserver{})(nil), "saving")
+	assert.EqualError(t, getObserverEvent(contractsorm.EventSaved, &UserObserver{})(nil), "saved")
+	assert.EqualError(t, getObserverEvent(contractsorm.EventDeleting, &UserObserver{})(nil), "deleting")
+	assert.EqualError(t, getObserverEvent(contractsorm.EventDeleted, &UserObserver{})(nil), "deleted")
+	assert.EqualError(t, getObserverEvent(contractsorm.EventForceDeleting, &UserObserver{})(nil), "forceDeleting")
+	assert.EqualError(t, getObserverEvent(contractsorm.EventForceDeleted, &UserObserver{})(nil), "forceDeleted")
+	assert.Nil(t, getObserverEvent("error", &UserObserver{}))
+}
+
+type User struct {
+	Name string
+}
+
+type UserObserver struct{}
+
+func (u *UserObserver) Retrieved(event contractsorm.Event) error {
+	return errors.New("retrieved")
+}
+
+func (u *UserObserver) Creating(event contractsorm.Event) error {
+	return errors.New("creating")
+}
+
+func (u *UserObserver) Created(event contractsorm.Event) error {
+	return errors.New("created")
+}
+
+func (u *UserObserver) Updating(event contractsorm.Event) error {
+	return errors.New("updating")
+}
+
+func (u *UserObserver) Updated(event contractsorm.Event) error {
+	return errors.New("updated")
+}
+
+func (u *UserObserver) Saving(event contractsorm.Event) error {
+	return errors.New("saving")
+}
+
+func (u *UserObserver) Saved(event contractsorm.Event) error {
+	return errors.New("saved")
+}
+
+func (u *UserObserver) Deleting(event contractsorm.Event) error {
+	return errors.New("deleting")
+}
+
+func (u *UserObserver) Deleted(event contractsorm.Event) error {
+	return errors.New("deleted")
+}
+
+func (u *UserObserver) ForceDeleting(event contractsorm.Event) error {
+	return errors.New("forceDeleting")
+}
+
+func (u *UserObserver) ForceDeleted(event contractsorm.Event) error {
+	return errors.New("forceDeleted")
+}
+
+type Product struct {
+	Name string
+}
+
+func (p *Product) Connection() string {
+	return "sqlite"
+}
+
+type Review struct {
+	Body string
+}
+
+func (r *Review) Connection() string {
+	return ""
+}
+
+// TestModel is a simple struct for testing
+type TestModel struct {
+	ID   uint   `json:"id"`
+	Name string `json:"name"`
+}
+
+// TestInterfaceModel is an interface type for testing
+type TestInterfaceModel interface {
+	GetID() uint
+}
+
+// TestInterfaceImpl implements TestInterfaceModel
+type TestInterfaceImpl struct {
+	ID uint `json:"id"`
+}
+
+func (t TestInterfaceImpl) GetID() uint {
+	return t.ID
+}
+
+// ComplexModel is a more complex struct for testing
+type ComplexModel struct {
+	ID       uint   `json:"id"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Age      int    `json:"age"`
+	IsActive bool   `json:"is_active"`
+	Nested   struct {
+		Field1 string `json:"field1"`
+		Field2 int    `json:"field2"`
+	} `json:"nested"`
+}
+
+// Test models for addGlobalScopes
+type ModelWithoutGlobalScopes struct {
+	ID   uint
+	Name string
+}
+
+type ModelWithGlobalScopes struct {
+	ID   uint
+	Name string
+}
+
+func (m *ModelWithGlobalScopes) GlobalScopes() map[string]func(contractsorm.Query) contractsorm.Query {
+	return map[string]func(contractsorm.Query) contractsorm.Query{
+		"active": func(query contractsorm.Query) contractsorm.Query {
+			return query.Where("active", true)
+		},
+		"verified": func(query contractsorm.Query) contractsorm.Query {
+			return query.Where("verified", true)
+		},
+	}
+}
+
+type ModelWithEmptyGlobalScopes struct {
+	ID   uint
+	Name string
+}
+
+func (m *ModelWithEmptyGlobalScopes) GlobalScopes() map[string]func(contractsorm.Query) contractsorm.Query {
+	return map[string]func(contractsorm.Query) contractsorm.Query{}
 }

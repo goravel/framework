@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"maps"
 	"reflect"
 	"slices"
 	"strings"
@@ -1160,6 +1161,17 @@ func (r *Query) WithoutEvents() contractsorm.Query {
 	return r.setConditions(conditions)
 }
 
+func (r *Query) WithoutGlobalScopes(names ...string) contractsorm.Query {
+	conditions := r.conditions
+
+	if len(names) == 0 {
+		names = []string{"*"}
+	}
+	conditions.withoutGlobalScopes = append(conditions.withoutGlobalScopes, names...)
+
+	return r.setConditions(conditions)
+}
+
 func (r *Query) WithTrashed() contractsorm.Query {
 	conditions := r.conditions
 	conditions.withTrashed = true
@@ -1168,6 +1180,10 @@ func (r *Query) WithTrashed() contractsorm.Query {
 }
 
 func (r *Query) addGlobalScopes() *Query {
+	if slices.Contains(r.conditions.withoutGlobalScopes, "*") {
+		return r
+	}
+
 	var model any
 
 	if r.conditions.model != nil {
@@ -1188,9 +1204,20 @@ func (r *Query) addGlobalScopes() *Query {
 		return r
 	}
 
-	globalScopes := modelWithGlobalScopes.GlobalScopes()
-	if len(globalScopes) == 0 {
+	nameToGlobalScopes := modelWithGlobalScopes.GlobalScopes()
+	if len(nameToGlobalScopes) == 0 {
 		return r
+	}
+
+	var globalScopes []func(contractsorm.Query) contractsorm.Query
+
+	names := slices.Sorted(maps.Keys(nameToGlobalScopes))
+	for _, name := range names {
+		if slices.Contains(r.conditions.withoutGlobalScopes, name) {
+			continue
+		}
+
+		globalScopes = append(globalScopes, nameToGlobalScopes[name])
 	}
 
 	return r.Scopes(globalScopes...).(*Query)

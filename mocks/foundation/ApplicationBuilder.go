@@ -87,38 +87,6 @@ func (_c *ApplicationBuilder_Create_Call) RunAndReturn(run func() foundation.App
 	return _c
 }
 
-// Run provides a mock function with no fields
-func (_m *ApplicationBuilder) Run() {
-	_m.Called()
-}
-
-// ApplicationBuilder_Run_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Run'
-type ApplicationBuilder_Run_Call struct {
-	*mock.Call
-}
-
-// Run is a helper method to define mock.On call
-func (_e *ApplicationBuilder_Expecter) Run() *ApplicationBuilder_Run_Call {
-	return &ApplicationBuilder_Run_Call{Call: _e.mock.On("Run")}
-}
-
-func (_c *ApplicationBuilder_Run_Call) Run(run func()) *ApplicationBuilder_Run_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *ApplicationBuilder_Run_Call) Return() *ApplicationBuilder_Run_Call {
-	_c.Call.Return()
-	return _c
-}
-
-func (_c *ApplicationBuilder_Run_Call) RunAndReturn(run func()) *ApplicationBuilder_Run_Call {
-	_c.Run(run)
-	return _c
-}
-
 // Start provides a mock function with no fields
 func (_m *ApplicationBuilder) Start() foundation.Application {
 	ret := _m.Called()

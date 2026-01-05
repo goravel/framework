@@ -217,6 +217,8 @@ type Query interface {
 	WhereNull(column string) Query
 	// WithoutEvents disables event firing for the query.
 	WithoutEvents() Query
+	// WithoutGlobalScopes disables all global scopes for the query.
+	WithoutGlobalScopes(names ...string) Query
 	// WithTrashed allows soft deleted models to be included in the results.
 	WithTrashed() Query
 	// With returns a new query instance with the given relationships eager loaded.
@@ -252,7 +254,7 @@ type ModelWithConnection interface {
 }
 
 type ModelWithGlobalScopes interface {
-	GlobalScopes() []func(Query) Query
+	GlobalScopes() map[string]func(Query) Query
 }
 
 type ToSql interface {

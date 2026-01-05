@@ -3,6 +3,8 @@
 package validation
 
 import (
+	context "context"
+
 	validation "github.com/goravel/framework/contracts/validation"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -20,17 +22,17 @@ func (_m *Rule) EXPECT() *Rule_Expecter {
 	return &Rule_Expecter{mock: &_m.Mock}
 }
 
-// Message provides a mock function with no fields
-func (_m *Rule) Message() string {
-	ret := _m.Called()
+// Message provides a mock function with given fields: ctx
+func (_m *Rule) Message(ctx context.Context) string {
+	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Message")
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(context.Context) string); ok {
+		r0 = rf(ctx)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -44,13 +46,14 @@ type Rule_Message_Call struct {
 }
 
 // Message is a helper method to define mock.On call
-func (_e *Rule_Expecter) Message() *Rule_Message_Call {
-	return &Rule_Message_Call{Call: _e.mock.On("Message")}
+//   - ctx context.Context
+func (_e *Rule_Expecter) Message(ctx interface{}) *Rule_Message_Call {
+	return &Rule_Message_Call{Call: _e.mock.On("Message", ctx)}
 }
 
-func (_c *Rule_Message_Call) Run(run func()) *Rule_Message_Call {
+func (_c *Rule_Message_Call) Run(run func(ctx context.Context)) *Rule_Message_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(context.Context))
 	})
 	return _c
 }
@@ -60,15 +63,15 @@ func (_c *Rule_Message_Call) Return(_a0 string) *Rule_Message_Call {
 	return _c
 }
 
-func (_c *Rule_Message_Call) RunAndReturn(run func() string) *Rule_Message_Call {
+func (_c *Rule_Message_Call) RunAndReturn(run func(context.Context) string) *Rule_Message_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Passes provides a mock function with given fields: data, val, options
-func (_m *Rule) Passes(data validation.Data, val interface{}, options ...interface{}) bool {
+// Passes provides a mock function with given fields: ctx, data, val, options
+func (_m *Rule) Passes(ctx context.Context, data validation.Data, val interface{}, options ...interface{}) bool {
 	var _ca []interface{}
-	_ca = append(_ca, data, val)
+	_ca = append(_ca, ctx, data, val)
 	_ca = append(_ca, options...)
 	ret := _m.Called(_ca...)
 
@@ -77,8 +80,8 @@ func (_m *Rule) Passes(data validation.Data, val interface{}, options ...interfa
 	}
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(validation.Data, interface{}, ...interface{}) bool); ok {
-		r0 = rf(data, val, options...)
+	if rf, ok := ret.Get(0).(func(context.Context, validation.Data, interface{}, ...interface{}) bool); ok {
+		r0 = rf(ctx, data, val, options...)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
@@ -92,23 +95,24 @@ type Rule_Passes_Call struct {
 }
 
 // Passes is a helper method to define mock.On call
+//   - ctx context.Context
 //   - data validation.Data
 //   - val interface{}
 //   - options ...interface{}
-func (_e *Rule_Expecter) Passes(data interface{}, val interface{}, options ...interface{}) *Rule_Passes_Call {
+func (_e *Rule_Expecter) Passes(ctx interface{}, data interface{}, val interface{}, options ...interface{}) *Rule_Passes_Call {
 	return &Rule_Passes_Call{Call: _e.mock.On("Passes",
-		append([]interface{}{data, val}, options...)...)}
+		append([]interface{}{ctx, data, val}, options...)...)}
 }
 
-func (_c *Rule_Passes_Call) Run(run func(data validation.Data, val interface{}, options ...interface{})) *Rule_Passes_Call {
+func (_c *Rule_Passes_Call) Run(run func(ctx context.Context, data validation.Data, val interface{}, options ...interface{})) *Rule_Passes_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-2)
-		for i, a := range args[2:] {
+		variadicArgs := make([]interface{}, len(args)-3)
+		for i, a := range args[3:] {
 			if a != nil {
 				variadicArgs[i] = a.(interface{})
 			}
 		}
-		run(args[0].(validation.Data), args[1].(interface{}), variadicArgs...)
+		run(args[0].(context.Context), args[1].(validation.Data), args[2].(interface{}), variadicArgs...)
 	})
 	return _c
 }
@@ -118,7 +122,7 @@ func (_c *Rule_Passes_Call) Return(_a0 bool) *Rule_Passes_Call {
 	return _c
 }
 
-func (_c *Rule_Passes_Call) RunAndReturn(run func(validation.Data, interface{}, ...interface{}) bool) *Rule_Passes_Call {
+func (_c *Rule_Passes_Call) RunAndReturn(run func(context.Context, validation.Data, interface{}, ...interface{}) bool) *Rule_Passes_Call {
 	_c.Call.Return(run)
 	return _c
 }
