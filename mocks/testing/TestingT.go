@@ -61,6 +61,38 @@ func (_c *TestingT_Errorf_Call) RunAndReturn(run func(string, ...interface{})) *
 	return _c
 }
 
+// FailNow provides a mock function with no fields
+func (_m *TestingT) FailNow() {
+	_m.Called()
+}
+
+// TestingT_FailNow_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FailNow'
+type TestingT_FailNow_Call struct {
+	*mock.Call
+}
+
+// FailNow is a helper method to define mock.On call
+func (_e *TestingT_Expecter) FailNow() *TestingT_FailNow_Call {
+	return &TestingT_FailNow_Call{Call: _e.mock.On("FailNow")}
+}
+
+func (_c *TestingT_FailNow_Call) Run(run func()) *TestingT_FailNow_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *TestingT_FailNow_Call) Return() *TestingT_FailNow_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *TestingT_FailNow_Call) RunAndReturn(run func()) *TestingT_FailNow_Call {
+	_c.Run(run)
+	return _c
+}
+
 // NewTestingT creates a new instance of TestingT. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewTestingT(t interface {
