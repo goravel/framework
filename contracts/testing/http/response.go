@@ -3,7 +3,7 @@ package http
 import "net/http"
 
 type Response interface {
-	// Bind unmarshalLs the JSON response body into the provided value.
+	// Bind unmarshalls the JSON response body into the provided value.
 	Bind(value any) error
 	// Content returns the raw response body as a string.
 	Content() (string, error)
