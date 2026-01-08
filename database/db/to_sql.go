@@ -15,7 +15,10 @@ func NewToSql(query *Query, raw bool) *ToSql {
 }
 
 func (r *ToSql) Count() string {
-	r.query.conditions.Selects = []string{"COUNT(*)"}
+	if err := buildSelectForCount(r.query); err != nil {
+		return r.generate(r.query.readBuilder, "", nil, err)
+	}
+
 	sql, args, err := r.query.buildSelect()
 
 	return r.generate(r.query.readBuilder, sql, args, err)
