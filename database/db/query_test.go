@@ -311,20 +311,9 @@ func (s *QueryTestSuite) TestDistinct() {
 	})
 
 	s.Run("Count - with one column and rename", func() {
-		var count int64
-
-		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
-		s.mockReadBuilder.EXPECT().GetContext(s.ctx, &count, "SELECT COUNT(*) FROM users WHERE name = ?", "John").RunAndReturn(func(ctx context.Context, i1 interface{}, s string, i2 ...interface{}) error {
-			destCount := i1.(*int64)
-			*destCount = 1
-			return nil
-		}).Once()
-		s.mockReadBuilder.EXPECT().Explain("SELECT COUNT(*) FROM users WHERE name = ?", "John").Return("SELECT COUNT(*) FROM users WHERE name = \"John\"").Once()
-		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(*) FROM users WHERE name = \"John\"", int64(-1), nil).Return().Once()
-
 		res, err := s.query.Where("name", "John").Distinct("name as name").Count()
-		s.NoError(err)
-		s.Equal(int64(1), res)
+		s.Equal(errors.DatabaseCountDistinctWithoutColumns, err)
+		s.Equal(int64(0), res)
 	})
 
 	s.Run("Count - with multiple columns", func() {

@@ -368,6 +368,10 @@ func (s *DBTestSuite) TestDistinct() {
 			s.Error(err)
 			s.Equal(int64(0), count)
 
+			count, err = query.DB().Table("products").Distinct("name as name").Count()
+			s.Error(err)
+			s.Equal(int64(0), count)
+
 			count, err = query.DB().Table("products").Distinct("name").Count()
 			s.NoError(err)
 			s.Equal(int64(1), count)

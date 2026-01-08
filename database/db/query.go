@@ -1313,15 +1313,11 @@ func buildSelectForCount(query *Query) error {
 	// For example: Select("name as n").Count() will fail, but Select("name", "age as a").Count() will be treated as Select("*").Count()
 	if len(query.conditions.Selects) > 1 {
 		query.conditions.Selects = []string{"COUNT(*)"}
-	} else if len(query.conditions.Selects) == 1 {
-		if str.Of(query.conditions.Selects[0]).Trim().Contains(" ") {
-			query.conditions.Selects = []string{"COUNT(*)"}
+	} else if len(query.conditions.Selects) == 1 && !str.Of(query.conditions.Selects[0]).Trim().Contains(" ") {
+		if query.conditions.Distinct != nil && *query.conditions.Distinct {
+			query.conditions.Selects = []string{fmt.Sprintf("COUNT(DISTINCT %s)", query.conditions.Selects[0])}
 		} else {
-			if query.conditions.Distinct != nil && *query.conditions.Distinct {
-				query.conditions.Selects = []string{fmt.Sprintf("COUNT(DISTINCT %s)", query.conditions.Selects[0])}
-			} else {
-				query.conditions.Selects = []string{fmt.Sprintf("COUNT(%s)", query.conditions.Selects[0])}
-			}
+			query.conditions.Selects = []string{fmt.Sprintf("COUNT(%s)", query.conditions.Selects[0])}
 		}
 	} else {
 		if query.conditions.Distinct != nil && *query.conditions.Distinct {
