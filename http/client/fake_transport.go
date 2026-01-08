@@ -15,7 +15,9 @@ import (
 	"github.com/goravel/framework/contracts/http/client"
 )
 
-const clientNameKey = "goravel_http_client_name"
+type contextKey string
+
+const clientNameKey contextKey = "goravel_http_client_name"
 
 var _ http.RoundTripper = (*FakeTransport)(nil)
 
