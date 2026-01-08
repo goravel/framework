@@ -21,21 +21,21 @@ type Factory struct {
 	mock    *FakeTransport
 }
 
-func NewFactory(cfg *FactoryConfig, j foundation.Json) (*Factory, error) {
+func NewFactory(cfg *FactoryConfig, json foundation.Json) (*Factory, error) {
 	if cfg == nil {
 		return nil, errors.HttpClientConfigNotSet
 	}
 
-	f := &Factory{
+	factory := &Factory{
 		config: cfg,
-		json:   j,
+		json:   json,
 	}
 
-	if err := f.refreshDefaultClient(); err != nil {
+	if err := factory.refreshDefaultClient(); err != nil {
 		return nil, err
 	}
 
-	return f, nil
+	return factory, nil
 }
 
 func (r *Factory) Client(names ...string) client.Request {
