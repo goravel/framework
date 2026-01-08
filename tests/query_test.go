@@ -314,13 +314,33 @@ func (s *QueryTestSuite) TestCount() {
 			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
-			count, err := query.Query().Model(&User{}).Where("name = ?", "count_user").Count()
+			count, err := query.Query().Model(&User{}).Where("name", "count_user").Count()
 			s.Nil(err)
-			s.True(count > 0)
+			s.Equal(int64(2), count)
 
-			count, err = query.Query().Table("users").Where("name = ?", "count_user").Count()
+			count, err = query.Query().Table("users").Where("avatar", "count_avatar1").Count()
 			s.Nil(err)
-			s.True(count > 0)
+			s.Equal(int64(1), count)
+
+			count, err = query.Query().Model(&User{}).Select("name", "avatar").Where("avatar", "count_avatar1").Count()
+			s.Nil(err)
+			s.Equal(int64(1), count)
+
+			count, err = query.Query().Model(&User{}).Select("name as n", "avatar").Where("avatar", "count_avatar1").Count()
+			s.Nil(err)
+			s.Equal(int64(1), count)
+
+			count, err = query.Query().Model(&User{}).Select("name as n").Where("avatar", "count_avatar1").Count()
+			s.Nil(err)
+			s.Equal(int64(1), count)
+
+			count, err = query.Query().Model(&User{}).Select("name n").Where("avatar", "count_avatar1").Count()
+			s.Nil(err)
+			s.Equal(int64(1), count)
+
+			count, err = query.Query().Model(&User{}).Select("name").Where("avatar", "count_avatar1").Count()
+			s.Nil(err)
+			s.Equal(int64(1), count)
 		})
 	}
 }
@@ -1000,13 +1020,41 @@ func (s *QueryTestSuite) TestDistinct() {
 			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
+			user2 := User{Name: "distinct_user", Avatar: "distinct_avatar"}
+			s.Nil(query.Query().Create(&user2))
+			s.True(user2.ID > 0)
+
 			var users []User
+
+			s.Nil(query.Query().Distinct().Find(&users))
+			s.Equal(3, len(users))
+
 			s.Nil(query.Query().Distinct("name").Find(&users, []uint{user.ID, user1.ID}))
 			s.Equal(1, len(users))
 
-			var users1 []User
-			s.Nil(query.Query().Distinct().Select("name").Find(&users1, []uint{user.ID, user1.ID}))
-			s.Equal(1, len(users1))
+			s.Nil(query.Query().Distinct("name", "avatar").Find(&users, []uint{user.ID, user1.ID}))
+			s.Equal(2, len(users))
+
+			s.Nil(query.Query().Distinct().Select("name").Find(&users, []uint{user.ID, user1.ID}))
+			s.Equal(1, len(users))
+
+			// Select should be set when calling Count with Distinct
+			count, err := query.Query().Model(&User{}).Distinct().Count()
+			s.Error(err)
+			s.Equal(int64(0), count)
+
+			count, err = query.Query().Model(&User{}).Distinct("name").Count()
+			s.Nil(err)
+			s.Equal(int64(1), count)
+
+			count, err = query.Query().Model(&User{}).Distinct("name").Select("name").Count()
+			s.Nil(err)
+			s.Equal(int64(1), count)
+
+			// Gorm cannot support multiple distinct fields count directly, the sql will be COUNT(*).
+			count, err = query.Query().Model(&User{}).Distinct("name", "avatar").Count()
+			s.Nil(err)
+			s.Equal(int64(3), count)
 		})
 	}
 }
@@ -3018,9 +3066,21 @@ func (s *QueryTestSuite) TestPaginate() {
 			// Fix: https://github.com/goravel/goravel/issues/842
 			var users4 []User
 			var total4 int64
-			s.Nil(query.Query().Model(&User{}).Select("name as name").Where("name", "paginate_user").Paginate(1, 3, &users4, &total4))
+			s.Nil(query.Query().Model(&User{}).Select("name as name", "avatar").Where("name", "paginate_user").Paginate(1, 3, &users4, &total4))
 			s.Equal(3, len(users4))
 			s.Equal(int64(4), total4)
+
+			var users5 []User
+			var total5 int64
+			s.Nil(query.Query().Model(&User{}).Select("name as name").Where("name", "paginate_user").Paginate(1, 3, &users5, &total5))
+			s.Equal(3, len(users5))
+			s.Equal(int64(4), total5)
+
+			var users6 []User
+			var total6 int64
+			s.Nil(query.Query().Model(&User{}).Select("name name").Where("name", "paginate_user").Paginate(1, 3, &users6, &total6))
+			s.Equal(3, len(users6))
+			s.Equal(int64(4), total6)
 		})
 	}
 }

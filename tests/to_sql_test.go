@@ -39,6 +39,27 @@ func (s *ToSqlTestSuite) TestCount() {
 	toSql = gorm.NewToSql(s.query.Model(&User{}).Where("id", 1).(*gorm.Query), s.mockLog, true)
 	s.Equal("SELECT count(*) FROM \"users\" WHERE \"id\" = 1 AND \"users\".\"deleted_at\" IS NULL", toSql.Count())
 
+	toSql = gorm.NewToSql(s.query.Model(&User{}).Distinct().Where("id", 1).(*gorm.Query), s.mockLog, true)
+	s.Equal("SELECT COUNT(DISTINCT(\"*\")) FROM \"users\" WHERE \"id\" = 1 AND \"users\".\"deleted_at\" IS NULL", toSql.Count())
+
+	toSql = gorm.NewToSql(s.query.Model(&User{}).Distinct("name").Where("id", 1).(*gorm.Query), s.mockLog, true)
+	s.Equal("SELECT COUNT(DISTINCT(\"name\")) FROM \"users\" WHERE \"id\" = 1 AND \"users\".\"deleted_at\" IS NULL", toSql.Count())
+
+	toSql = gorm.NewToSql(s.query.Model(&User{}).Distinct("name", "avatar").Where("id", 1).(*gorm.Query), s.mockLog, true)
+	s.Equal("SELECT count(*) FROM \"users\" WHERE \"id\" = 1 AND \"users\".\"deleted_at\" IS NULL", toSql.Count())
+
+	toSql = gorm.NewToSql(s.query.Model(&User{}).Select("name", "avatar").Where("id", 1).(*gorm.Query), s.mockLog, true)
+	s.Equal("SELECT count(*) FROM \"users\" WHERE \"id\" = 1 AND \"users\".\"deleted_at\" IS NULL", toSql.Count())
+
+	toSql = gorm.NewToSql(s.query.Model(&User{}).Select("name as n").Where("id", 1).(*gorm.Query), s.mockLog, true)
+	s.Equal("SELECT count(*) FROM \"users\" WHERE \"id\" = 1 AND \"users\".\"deleted_at\" IS NULL", toSql.Count())
+
+	toSql = gorm.NewToSql(s.query.Model(&User{}).Select("name n").Where("id", 1).(*gorm.Query), s.mockLog, true)
+	s.Equal("SELECT count(*) FROM \"users\" WHERE \"id\" = 1 AND \"users\".\"deleted_at\" IS NULL", toSql.Count())
+
+	toSql = gorm.NewToSql(s.query.Model(&User{}).Select("name").Where("id", 1).(*gorm.Query), s.mockLog, true)
+	s.Equal("SELECT COUNT(\"name\") FROM \"users\" WHERE \"id\" = 1 AND \"users\".\"deleted_at\" IS NULL", toSql.Count())
+
 	// global scopes
 	toSql = gorm.NewToSql(s.query.Model(&GlobalScope{}).Where("id", 1).(*gorm.Query), s.mockLog, false)
 	s.Equal("SELECT count(*) FROM \"global_scopes\" WHERE \"id\" = $1 AND \"name\" = $2 AND \"global_scopes\".\"deleted_at\" IS NULL", toSql.Count())
