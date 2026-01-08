@@ -15,87 +15,101 @@ import (
 	"github.com/goravel/framework/contracts/http/client"
 )
 
-// clientNameKey is the context key used to store/retrieve the client name.
 const clientNameKey = "goravel_http_client_name"
 
 var _ http.RoundTripper = (*FakeTransport)(nil)
 
 type FakeTransport struct {
 	mu       sync.Mutex
-	rules    []*fakeRule
 	recorded []client.Request
+	rules    []*FakeRule
 	json     foundation.Json
 }
 
-type fakeRule struct {
-	original   string
-	clientName string
-	regex      *regexp.Regexp
-	handler    func(client.Request) client.Response
+type FakeRule struct {
+	pattern string
+	regex   *regexp.Regexp
+	handler func(client.Request) client.Response
 }
 
-func NewFakeTransport(json foundation.Json, mocks map[string]func(client.Request) client.Response) *FakeTransport {
+func NewFakeTransport(j foundation.Json, mocks map[string]any) *FakeTransport {
 	fakeTransport := &FakeTransport{
-		recorded: make([]client.Request, 0),
-		json:     json,
-		rules:    make([]*fakeRule, 0, len(mocks)),
+		json: j,
 	}
 
-	for pattern, handler := range mocks {
-		fakeTransport.rules = append(fakeTransport.rules, compileRule(pattern, handler))
+	for p, v := range mocks {
+		fakeTransport.rules = append(fakeTransport.rules, &FakeRule{
+			pattern: p,
+			regex:   fakeTransport.compilePattern(p),
+			handler: fakeTransport.toHandler(v),
+		})
 	}
 
-	// This ensures that specific rules (e.g., "github.com/users/1") are checked
-	// before broad wildcards (e.g., "github.com/*"), making matching deterministic.
 	sort.Slice(fakeTransport.rules, func(i, j int) bool {
-		return len(fakeTransport.rules[i].original) > len(fakeTransport.rules[j].original)
+		return len(fakeTransport.rules[i].pattern) > len(fakeTransport.rules[j].pattern)
 	})
 
 	return fakeTransport
 }
 
-func (r *FakeTransport) RoundTrip(stdReq *http.Request) (*http.Response, error) {
-	req := r.hydrateRequest(stdReq)
+func (r *FakeTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	mockReq := r.hydrate(req)
+
 	r.mu.Lock()
-	r.recorded = append(r.recorded, req)
+	r.recorded = append(r.recorded, mockReq)
 	r.mu.Unlock()
 
-	handler := r.match(stdReq.URL.String(), stdReq.URL.Path, req.ClientName())
-
+	handler := r.findHandler(req, mockReq.ClientName())
 	if handler == nil {
-		return nil, fmt.Errorf("goravel http fake: no fake defined for request [%s] %s", stdReq.Method, stdReq.URL.String())
+		return nil, fmt.Errorf("goravel http fake: no mock defined for %s %s", req.Method, req.URL)
 	}
 
-	response := handler(req)
-	if response == nil {
+	resp := handler(mockReq)
+	if resp == nil {
 		return nil, errors.New("goravel http fake: handler returned nil response")
 	}
 
-	if casted, ok := response.(*Response); ok {
-		return casted.response, nil
+	if r, ok := resp.(*Response); ok {
+		return r.response, nil
 	}
 
-	return nil, errors.New("goravel http fake: unknown response implementation")
+	return nil, errors.New("goravel http fake: invalid response type")
 }
 
-func (r *FakeTransport) match(fullURL, path, clientName string) func(client.Request) client.Response {
+func (r *FakeTransport) AssertSent(f func(client.Request) bool) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
+	for _, r := range r.recorded {
+		if f(r) {
+			return true
+		}
+	}
+	return false
+}
+
+func (r *FakeTransport) AssertSentCount(count int) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return len(r.recorded) == count
+}
+
+func (r *FakeTransport) findHandler(req *http.Request, name string) func(client.Request) client.Response {
+	url, path := req.URL.String(), req.URL.Path
+
 	for _, rule := range r.rules {
-		if rule.clientName != "" {
-			if rule.clientName != clientName {
-				continue
-			}
-			// If the rule has no regex, it matches the entire client (e.g., "github").
-			// If it has regex, it matches the path (e.g., "github:/users").
-			if rule.regex == nil || rule.regex.MatchString(path) {
-				return rule.handler
-			}
-			continue
+		// Match by exact client name (e.g., "github").
+		if !strings.ContainsAny(rule.pattern, "./:") && rule.pattern == name {
+			return rule.handler
 		}
 
-		if rule.regex != nil && rule.regex.MatchString(fullURL) {
+		// Match by full URL pattern (e.g., "google.com/*").
+		if rule.regex.MatchString(url) {
+			return rule.handler
+		}
+
+		// Match by scoped client path (e.g., "github:/users/*").
+		if name != "" && strings.HasPrefix(rule.pattern, name+":") && rule.regex.MatchString(path) {
 			return rule.handler
 		}
 	}
@@ -103,62 +117,52 @@ func (r *FakeTransport) match(fullURL, path, clientName string) func(client.Requ
 	return nil
 }
 
-func (r *FakeTransport) hydrateRequest(httpRequest *http.Request) *Request {
-	var bodyBytes []byte
-	if httpRequest.Body != nil {
-		// We ignore the error here as reading from a memory buffer is unlikely to fail.
-		bodyBytes, _ = io.ReadAll(httpRequest.Body)
-		// Reset the body immediately so it can be read again by downstream logic.
-		httpRequest.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+func (r *FakeTransport) toHandler(v any) func(client.Request) client.Response {
+	switch h := v.(type) {
+	case func(client.Request) client.Response:
+		return h
+	case client.Response:
+		return func(_ client.Request) client.Response { return h }
+	case string:
+		return func(_ client.Request) client.Response { return NewResponseFactory(r.json).String(h, 200) }
+	case int:
+		return func(_ client.Request) client.Response { return NewResponseFactory(r.json).Status(h) }
+	case *ResponseSequence:
+		return func(_ client.Request) client.Response { return h.getNext() }
+	default:
+		return func(_ client.Request) client.Response { return NewResponseFactory(r.json).Status(200) }
+	}
+}
+
+func (r *FakeTransport) hydrate(req *http.Request) *Request {
+	var body []byte
+	if req.Body != nil {
+		body, _ = io.ReadAll(req.Body)
+		req.Body = io.NopCloser(bytes.NewBuffer(body))
 	}
 
-	clientName, _ := httpRequest.Context().Value(clientNameKey).(string)
+	name, _ := req.Context().Value(clientNameKey).(string)
+
 	return &Request{
 		json:        r.json,
-		headers:     httpRequest.Header,
-		cookies:     httpRequest.Cookies(),
-		payloadBody: bodyBytes,
-		method:      httpRequest.Method,
-		fullUrl:     httpRequest.URL.String(),
-		clientName:  clientName,
+		headers:     req.Header,
+		cookies:     req.Cookies(),
+		payloadBody: body,
+		method:      req.Method,
+		fullUrl:     req.URL.String(),
+		clientName:  name,
+		queryParams: req.URL.Query(),
+		urlParams:   make(map[string]string),
 	}
 }
 
-func compileRule(pattern string, handler func(client.Request) client.Response) *fakeRule {
-	rule := &fakeRule{
-		original: pattern,
-		handler:  handler,
+func (r *FakeTransport) compilePattern(p string) *regexp.Regexp {
+	if i := strings.Index(p, ":"); i != -1 {
+		p = p[i+1:]
 	}
-
-	if strings.Contains(pattern, ":") {
-		parts := strings.SplitN(pattern, ":", 2)
-		rule.clientName = parts[0]
-		rule.regex = regexFromPattern(parts[1])
-		return rule
-	}
-
-	if !strings.ContainsAny(pattern, "./") {
-		rule.clientName = pattern
-		return rule
-	}
-
-	rule.regex = regexFromPattern(pattern)
-	return rule
-}
-
-func regexFromPattern(pattern string) *regexp.Regexp {
-	if pattern == "*" {
+	if p == "*" {
 		return regexp.MustCompile(".*")
 	}
-
-	// Escape strict characters to treat them literally (e.g., "." -> "\.")
-	quote := regexp.QuoteMeta(pattern)
-	// Convert the wildcard "*" back into the regex equivalent ".*"
-	regexStr := strings.ReplaceAll(quote, "\\*", ".*")
-	// Anchor the regex to ensure it matches the entire string
-	regexStr = "^" + regexStr + "$"
-
-	// We panic on compile error because this runs during test setup.
-	// Invalid regex in a test setup should stop execution immediately.
-	return regexp.MustCompile(regexStr)
+	expr := "^" + strings.ReplaceAll(regexp.QuoteMeta(p), "\\*", ".*") + "$"
+	return regexp.MustCompile(expr)
 }

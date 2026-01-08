@@ -23,11 +23,10 @@ func NewResponseFactory(json foundation.Json) *ResponseFactory {
 }
 
 func (r *ResponseFactory) Json(data any, status int) client.Response {
-	// If the data cannot be marshaled, we return an empty JSON object to avoid panic.
-	// In a test environment, valid structs are expected.
 	content, err := r.json.Marshal(data)
 	if err != nil {
-		return r.Make("{}", http.StatusInternalServerError, nil)
+		// Return error as body to help developer debug marshal issues in tests.
+		return r.Make(err.Error(), http.StatusInternalServerError, nil)
 	}
 
 	return r.Make(string(content), status, map[string]string{
@@ -50,25 +49,23 @@ func (r *ResponseFactory) Success() client.Response {
 func (r *ResponseFactory) File(path string, status int) client.Response {
 	content, err := os.ReadFile(path)
 	if err != nil {
-		// If the file is missing during a test setup, we treat it as a setup error.
-		// Returning a 404 or 500 helps the developer debug that the mock file is missing.
-		return r.String("Error reading fake file: "+err.Error(), http.StatusInternalServerError)
+		return r.Make("File not found: "+err.Error(), http.StatusInternalServerError, nil)
 	}
 
 	return r.Make(string(content), status, nil)
 }
 
 func (r *ResponseFactory) Make(body string, status int, headers map[string]string) client.Response {
-	httpResp := &http.Response{
+	resp := &http.Response{
 		StatusCode: status,
-		// We use NopCloser to create a readable stream from the string body
-		Body:   io.NopCloser(bytes.NewBufferString(body)),
-		Header: make(http.Header),
+		Header:     make(http.Header),
+		// NopCloser prevents the body from being closed prematurely during testing.
+		Body: io.NopCloser(bytes.NewBufferString(body)),
 	}
 
 	for key, value := range headers {
-		httpResp.Header.Set(key, value)
+		resp.Header.Set(key, value)
 	}
 
-	return NewResponse(httpResp, r.json)
+	return NewResponse(resp, r.json)
 }
