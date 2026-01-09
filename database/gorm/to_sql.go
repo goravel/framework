@@ -5,7 +5,6 @@ import (
 
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/support/database"
-	"github.com/goravel/framework/support/str"
 )
 
 type ToSql struct {
@@ -23,17 +22,7 @@ func NewToSql(query *Query, log log.Log, raw bool) *ToSql {
 }
 
 func (r *ToSql) Count() string {
-	conditions := r.query.conditions
-
-	// If selectColumns only contains a raw select with spaces, gorm will fail, hence ignore it here.
-	// If there are multiple selectColumns, gorm will transform them into *, so no need to handle that case.
-	// For example: Select("name as n").Count() will fail, but Select("name", "age as a").Count() will be treated as Select("*").Count()
-	if len(conditions.selectColumns) == 1 && str.Of(conditions.selectColumns[0]).Trim().Contains(" ") {
-		conditions.selectColumns = nil
-	}
-
-	query := r.query.setConditions(conditions).addGlobalScopes().buildConditions()
-
+	query := buildSelectForCount(r.query)
 	var count int64
 
 	return r.sql(query.instance.Session(&gorm.Session{DryRun: true}).Count(&count))

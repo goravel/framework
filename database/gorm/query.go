@@ -121,21 +121,10 @@ func (r *Query) Commit() error {
 }
 
 func (r *Query) Count() (int64, error) {
-	conditions := r.conditions
-
-	// If selectColumns only contains a raw select with spaces (rename), gorm will fail, but this case will appear when calling Paginate, so user COUNT(*) here.
-	// If there are multiple selectColumns, gorm will transform them into *, so no need to handle that case.
-	// For example: Select("name as n").Count() will fail, but Select("name", "age as a").Count() will be treated as Select("*").Count()
-	if len(conditions.selectColumns) == 1 && str.Of(conditions.selectColumns[0]).Trim().Contains(" ") {
-		conditions.selectColumns = nil
-	}
-
-	query := r.setConditions(conditions).addGlobalScopes().buildConditions()
+	query := buildSelectForCount(r)
 
 	var count int64
-
-	err := query.instance.Count(&count).Error
-	if err != nil {
+	if err := query.instance.Count(&count).Error; err != nil {
 		return 0, err
 	}
 
@@ -1839,6 +1828,19 @@ func (r *Query) update(values any) (*contractsdb.Result, error) {
 	return &contractsdb.Result{
 		RowsAffected: result.RowsAffected,
 	}, result.Error
+}
+
+func buildSelectForCount(query *Query) *Query {
+	conditions := query.conditions
+
+	// If selectColumns only contains a raw select with spaces (rename), gorm will fail, but this case will appear when calling Paginate, so user COUNT(*) here.
+	// If there are multiple selectColumns, gorm will transform them into *, so no need to handle that case.
+	// For example: Select("name as n").Count() will fail, but Select("name", "age as a").Count() will be treated as Select("*").Count()
+	if len(conditions.selectColumns) == 1 && str.Of(conditions.selectColumns[0]).Trim().Contains(" ") {
+		conditions.selectColumns = nil
+	}
+
+	return query.setConditions(conditions).addGlobalScopes().buildConditions()
 }
 
 func filterFindConditions(conds ...any) error {
