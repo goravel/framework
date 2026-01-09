@@ -1833,11 +1833,11 @@ func (r *Query) update(values any) (*contractsdb.Result, error) {
 func buildSelectForCount(query *Query) *Query {
 	conditions := query.conditions
 
-	// If selectColumns only contains a raw select with spaces (rename), gorm will fail, but this case will appear when calling Paginate, so user COUNT(*) here.
+	// If selectColumns only contains a raw select with spaces (rename), gorm will fail, but this case will appear when calling Paginate, so use COUNT(*) here.
 	// If there are multiple selectColumns, gorm will transform them into *, so no need to handle that case.
 	// For example: Select("name as n").Count() will fail, but Select("name", "age as a").Count() will be treated as Select("*").Count()
 	if len(conditions.selectColumns) == 1 && str.Of(conditions.selectColumns[0]).Trim().Contains(" ") {
-		conditions.selectColumns = nil
+		conditions.selectColumns = []string{str.Of(conditions.selectColumns[0]).Split(" ")[0]}
 	}
 
 	return query.setConditions(conditions).addGlobalScopes().buildConditions()

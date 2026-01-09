@@ -1308,19 +1308,26 @@ func (r *Query) trace(builder db.CommonBuilder, sql string, args []any, now *car
 }
 
 func buildSelectForCount(query *Query) error {
-	// If selectColumns only contains a raw select with spaces (rename), gorm will fail, but this case will appear when calling Paginate, so user COUNT(*) here.
+	distinct := query.conditions.Distinct != nil && *query.conditions.Distinct
+
+	// If selectColumns only contains a raw select with spaces (rename), gorm will fail, but this case will appear when calling Paginate, so use COUNT(*) here.
 	// If there are multiple selectColumns, gorm will transform them into *, so no need to handle that case.
 	// For example: Select("name as n").Count() will fail, but Select("name", "age as a").Count() will be treated as Select("*").Count()
 	if len(query.conditions.Selects) > 1 {
 		query.conditions.Selects = []string{"COUNT(*)"}
-	} else if len(query.conditions.Selects) == 1 && !str.Of(query.conditions.Selects[0]).Trim().Contains(" ") {
-		if query.conditions.Distinct != nil && *query.conditions.Distinct {
-			query.conditions.Selects = []string{fmt.Sprintf("COUNT(DISTINCT %s)", query.conditions.Selects[0])}
+	} else if len(query.conditions.Selects) == 1 {
+		column := query.conditions.Selects[0]
+		if str.Of(query.conditions.Selects[0]).Trim().Contains(" ") {
+			column = str.Of(query.conditions.Selects[0]).Split(" ")[0]
+		}
+
+		if distinct {
+			query.conditions.Selects = []string{fmt.Sprintf("COUNT(DISTINCT %s)", column)}
 		} else {
-			query.conditions.Selects = []string{fmt.Sprintf("COUNT(%s)", query.conditions.Selects[0])}
+			query.conditions.Selects = []string{fmt.Sprintf("COUNT(%s)", column)}
 		}
 	} else {
-		if query.conditions.Distinct != nil && *query.conditions.Distinct {
+		if distinct {
 			return errors.DatabaseCountDistinctWithoutColumns
 		} else {
 			query.conditions.Selects = []string{"COUNT(*)"}
