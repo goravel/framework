@@ -150,12 +150,12 @@ func (s *QueryTestSuite) TestCount() {
 		var count int64
 
 		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
-		s.mockReadBuilder.EXPECT().GetContext(s.ctx, &count, "SELECT COUNT(*) FROM users WHERE name = ?", "John").Run(func(ctx context.Context, dest any, query string, args ...any) {
+		s.mockReadBuilder.EXPECT().GetContext(s.ctx, &count, "SELECT COUNT(name) FROM users WHERE name = ?", "John").Run(func(ctx context.Context, dest any, query string, args ...any) {
 			destCount := dest.(*int64)
 			*destCount = 1
 		}).Return(nil).Once()
-		s.mockReadBuilder.EXPECT().Explain("SELECT COUNT(*) FROM users WHERE name = ?", "John").Return("SELECT COUNT(*) FROM users WHERE name = \"John\"").Once()
-		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(*) FROM users WHERE name = \"John\"", int64(-1), nil).Return().Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT COUNT(name) FROM users WHERE name = ?", "John").Return("SELECT COUNT(name) FROM users WHERE name = \"John\"").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(name) FROM users WHERE name = \"John\"", int64(-1), nil).Return().Once()
 
 		count, err := s.query.Select("name as name").Where("name", "John").Count()
 		s.NoError(err)
@@ -311,9 +311,20 @@ func (s *QueryTestSuite) TestDistinct() {
 	})
 
 	s.Run("Count - with one column and rename", func() {
+		var count int64
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().GetContext(s.ctx, &count, "SELECT COUNT(DISTINCT name) FROM users WHERE name = ?", "John").RunAndReturn(func(ctx context.Context, i1 interface{}, s string, i2 ...interface{}) error {
+			destCount := i1.(*int64)
+			*destCount = 1
+			return nil
+		}).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT COUNT(DISTINCT name) FROM users WHERE name = ?", "John").Return("SELECT COUNT(DISTINCT name) FROM users WHERE name = \"John\"").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(DISTINCT name) FROM users WHERE name = \"John\"", int64(-1), nil).Return().Once()
+
 		res, err := s.query.Where("name", "John").Distinct("name as name").Count()
-		s.Equal(errors.DatabaseCountDistinctWithoutColumns, err)
-		s.Equal(int64(0), res)
+		s.NoError(err)
+		s.Equal(int64(1), res)
 	})
 
 	s.Run("Count - with multiple columns", func() {
@@ -1215,13 +1226,13 @@ func (s *QueryTestSuite) TestPaginate() {
 		var total int64
 
 		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Twice()
-		s.mockReadBuilder.EXPECT().GetContext(s.ctx, &total, "SELECT COUNT(*) FROM users WHERE name = ?", "John").
+		s.mockReadBuilder.EXPECT().GetContext(s.ctx, &total, "SELECT COUNT(name) FROM users WHERE name = ?", "John").
 			Run(func(ctx context.Context, dest any, query string, args ...any) {
 				destTotal := dest.(*int64)
 				*destTotal = 2
 			}).Return(nil).Once()
-		s.mockReadBuilder.EXPECT().Explain("SELECT COUNT(*) FROM users WHERE name = ?", "John").Return("SELECT COUNT(*) FROM users WHERE name = \"John\"").Once()
-		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(*) FROM users WHERE name = \"John\"", int64(-1), nil).Return().Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT COUNT(name) FROM users WHERE name = ?", "John").Return("SELECT COUNT(name) FROM users WHERE name = \"John\"").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(name) FROM users WHERE name = \"John\"", int64(-1), nil).Return().Once()
 
 		s.mockReadBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT name as name FROM users WHERE name = ? LIMIT 10 OFFSET 0", "John").
 			Run(func(ctx context.Context, dest any, query string, args ...any) {
@@ -1376,10 +1387,10 @@ func (s *QueryTestSuite) TestToSql() {
 		s.Equal("SELECT COUNT(*) FROM users WHERE name = ?", sql)
 
 		sql = s.query.Select("name as n").Where("name", "John").ToSql().Count()
-		s.Equal("SELECT COUNT(*) FROM users WHERE name = ?", sql)
+		s.Equal("SELECT COUNT(name) FROM users WHERE name = ?", sql)
 
 		sql = s.query.Select("name n").Where("name", "John").ToSql().Count()
-		s.Equal("SELECT COUNT(*) FROM users WHERE name = ?", sql)
+		s.Equal("SELECT COUNT(name) FROM users WHERE name = ?", sql)
 
 		sql = s.query.Select("name").Where("name", "John").ToSql().Count()
 		s.Equal("SELECT COUNT(name) FROM users WHERE name = ?", sql)
