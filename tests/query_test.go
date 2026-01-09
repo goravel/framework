@@ -1043,9 +1043,9 @@ func (s *QueryTestSuite) TestDistinct() {
 			s.Error(err)
 			s.Equal(int64(0), count)
 
-			count, err = query.Query().Model(&User{}).Distinct("name as name").Count()
-			s.Error(err)
-			s.Equal(int64(0), count)
+			count, err = query.Query().Model(&User{}).Distinct("avatar as avatar").Count()
+			s.NoError(err)
+			s.Equal(int64(2), count)
 
 			count, err = query.Query().Model(&User{}).Distinct("name").Count()
 			s.Nil(err)
