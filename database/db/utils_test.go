@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/convert"
 )
 
 type Body struct {
@@ -20,11 +21,25 @@ type Body struct {
 	leg      int `db:"leg"`
 }
 
+type House struct {
+	Address string `db:"address"`
+	Size    *int   `db:"size"`
+}
+
+type Job struct {
+	Title  string   `db:"title"`
+	Salary *float64 `db:"salary"`
+}
+
 type User struct {
-	ID    int    `db:"id"`
-	Name  string `db:"-"`
-	Email string
+	ID     int    `db:"id"`
+	Name   string `db:"-"`
+	Email  string
+	Avatar *string
+	Alias  *int
 	Body
+	House *House
+	Job   Job
 	TestSoftDeletes
 	TestTimestamps
 }
@@ -123,6 +138,114 @@ func TestConvertToSliceMap(t *testing.T) {
 				{"weight": "90kg", "Age": 20},
 			},
 			want: []map[string]any{{"weight": "100kg", "Age": 25}, {"weight": "90kg", "Age": 20}},
+		},
+		{
+			name: "user with nested struct pointer",
+			data: User{
+				ID:              1,
+				Name:            "John",
+				Email:           "john@example.com",
+				Body:            Body{Weight: "100kg", Head: &head, DateTime: *dateTime},
+				House:           &House{Address: "123 Main St", Size: nil},
+				Job:             Job{Title: "Engineer", Salary: nil},
+				TestSoftDeletes: TestSoftDeletes{DeletedAt: deletedAt},
+				TestTimestamps:  TestTimestamps{CreatedAt: dateTime, UpdatedAt: dateTime},
+			},
+			want: []map[string]any{
+				{
+					"id": 1, "email": "john@example.com", "weight": "100kg", "head": &head, "date_time": *dateTime,
+					"house":      &House{Address: "123 Main St", Size: nil},
+					"job":        Job{Title: "Engineer", Salary: nil},
+					"created_at": dateTime, "updated_at": dateTime, "deleted_at": deletedAt,
+				},
+			},
+		},
+		{
+			name: "user with nil nested struct pointer",
+			data: User{
+				ID:             1,
+				Email:          "john@example.com",
+				Body:           Body{Weight: "100kg", DateTime: *dateTime},
+				House:          nil,
+				Job:            Job{Title: "Engineer"},
+				TestTimestamps: TestTimestamps{CreatedAt: dateTime, UpdatedAt: dateTime},
+			},
+			want: []map[string]any{
+				{
+					"id": 1, "email": "john@example.com", "weight": "100kg", "date_time": *dateTime,
+					"job":        Job{Title: "Engineer"},
+					"created_at": dateTime, "updated_at": dateTime,
+				},
+			},
+		},
+		{
+			name: "user with pointer fields",
+			data: func() User {
+				avatar := "avatar.jpg"
+				alias := 42
+				size := 100
+				salary := 50000.0
+				return User{
+					ID:             1,
+					Email:          "john@example.com",
+					Avatar:         &avatar,
+					Alias:          &alias,
+					Body:           Body{Weight: "100kg", Head: &head, DateTime: *dateTime},
+					House:          &House{Address: "123 Main St", Size: &size},
+					Job:            Job{Title: "Engineer", Salary: &salary},
+					TestTimestamps: TestTimestamps{CreatedAt: dateTime, UpdatedAt: dateTime},
+				}
+			}(),
+			want: []map[string]any{
+				{
+					"id": 1, "email": "john@example.com", "avatar": convert.Pointer("avatar.jpg"),
+					"alias": convert.Pointer(42), "weight": "100kg", "head": &head, "date_time": *dateTime,
+					"house":      &House{Address: "123 Main St", Size: convert.Pointer(100)},
+					"job":        Job{Title: "Engineer", Salary: convert.Pointer(50000.0)},
+					"created_at": dateTime, "updated_at": dateTime,
+				},
+			},
+		},
+		{
+			name: "user slice with mixed nested structs",
+			data: []User{
+				{
+					ID:             1,
+					Email:          "john@example.com",
+					Body:           Body{Length: 10, Weight: "100kg", Head: &head, DateTime: *dateTime},
+					House:          &House{Address: "123 Main St"},
+					Job:            Job{Title: "Engineer"},
+					TestTimestamps: TestTimestamps{CreatedAt: dateTime, UpdatedAt: dateTime},
+				},
+				{
+					ID:             2,
+					Email:          "jane@example.com",
+					Body:           Body{Weight: "90kg", DateTime: *dateTime},
+					House:          nil,
+					Job:            Job{Title: "Designer"},
+					TestTimestamps: TestTimestamps{CreatedAt: dateTime, UpdatedAt: dateTime},
+				},
+			},
+			want: []map[string]any{
+				{
+					"id": 1, "email": "john@example.com", "length": 10, "weight": "100kg", "head": &head, "date_time": *dateTime,
+					"house":      &House{Address: "123 Main St"},
+					"job":        Job{Title: "Engineer"},
+					"created_at": dateTime, "updated_at": dateTime,
+				},
+				{
+					"id": 2, "email": "jane@example.com", "weight": "90kg", "date_time": *dateTime,
+					"job":        Job{Title: "Designer"},
+					"created_at": dateTime, "updated_at": dateTime,
+				},
+			},
+		},
+		{
+			name: "user with all zero values",
+			data: User{},
+			want: []map[string]any{
+				{},
+			},
 		},
 	}
 
