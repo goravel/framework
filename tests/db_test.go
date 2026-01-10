@@ -480,7 +480,8 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 						},
 					},
 					{
-						Name: "multiple structs2",
+						Name:   "multiple structs2",
+						Weight: convert.Pointer(1),
 					},
 				})
 				s.NoError(err)
@@ -490,8 +491,15 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 				err = query.DB().Table("products").Where("name", []string{"multiple structs1", "multiple structs2"}).Where("deleted_at", nil).Get(&products)
 				s.NoError(err)
 				s.Equal(2, len(products))
+				s.True(products[0].ID > 0)
 				s.Equal("multiple structs1", products[0].Name)
+				s.NotEmpty(products[0].CreatedAt)
+				s.NotEmpty(products[0].UpdatedAt)
+				s.True(products[1].ID > 0)
 				s.Equal("multiple structs2", products[1].Name)
+				s.Equal(1, *products[1].Weight)
+				s.Empty(products[1].CreatedAt)
+				s.Empty(products[1].UpdatedAt)
 			})
 
 			s.Run("single map", func() {

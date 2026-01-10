@@ -555,6 +555,7 @@ func (s *StringTestSuite) TestSnake() {
 	s.Equal("a", Of("A").Snake().String())
 	s.Equal("foo123_bar", Of("foo123Bar").Snake().String())
 	s.Equal("123foo", Of("123foo").Snake().String())
+	s.Equal("id", Of("ID").Snake().String())
 }
 
 func (s *StringTestSuite) TestSplit() {
