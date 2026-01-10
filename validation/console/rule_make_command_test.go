@@ -62,7 +62,7 @@ import (
 
 func Boot() {
 	foundation.Setup().
-		WithRules(Rules()).WithConfig(config.Boot).Run()
+		WithRules(Rules).WithConfig(config.Boot).Run()
 }
 `
 
@@ -215,7 +215,7 @@ func TestRuleMakeCommand_WithBootstrapSetup(t *testing.T) {
 			appContent, err := file.GetContent(appFile)
 			assert.NoError(t, err)
 			if tt.expectSuccess {
-				assert.Contains(t, appContent, "WithRules(Rules())")
+				assert.Contains(t, appContent, "WithRules(Rules)")
 			}
 		})
 	}

@@ -162,12 +162,15 @@ func TestMigrateMakeCommand_WithBootstrapSetup(t *testing.T) {
 	bootstrapContent := `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"github.com/goravel/framework/contracts/database/schema"
 )
 
-func Boot() {
-	foundation.Setup().WithMigrations([]schema.Migration{}).Run()
+func Boot() contractsfoundation.Application {
+	foundation.Setup().WithMigrations(func() []schema.Migration {
+		return []schema.Migration{}
+	}).Start()
 }
 `
 	assert.NoError(t, file.PutContent("bootstrap/app.go", bootstrapContent))

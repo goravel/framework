@@ -35,12 +35,13 @@ func TestAddCommand(t *testing.T) {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			pkg:     "goravel/app/console/commands",
@@ -48,13 +49,14 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithCommands(Commands).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithCommands(Commands).WithConfig(config.Boot).Start()
 }
 `,
 			expectedCommands: `package bootstrap
@@ -77,13 +79,14 @@ func Commands() []console.Command {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithCommands(Commands).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithCommands(Commands).WithConfig(config.Boot).Start()
 }
 `,
 			commandsContent: `package bootstrap
@@ -105,13 +108,14 @@ func Commands() []console.Command {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithCommands(Commands).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithCommands(Commands).WithConfig(config.Boot).Start()
 }
 `,
 			expectedCommands: `package bootstrap
@@ -136,18 +140,19 @@ func Commands() []console.Command {
 
 import (
 	"github.com/goravel/framework/contracts/console"
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/app/console/commands"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithCommands(func() []console.Command {
 			return []console.Command{
 				&commands.ExistingCommand{},
 			}
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 			pkg:     "goravel/app/console/commands",
@@ -156,19 +161,20 @@ func Boot() {
 
 import (
 	"github.com/goravel/framework/contracts/console"
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/app/console/commands"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithCommands(func() []console.Command {
 			return []console.Command{
 				&commands.ExistingCommand{},
 				&commands.NewCommand{},
 			}
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 		},
@@ -177,12 +183,13 @@ func Boot() {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			commandsContent: `package bootstrap
@@ -208,11 +215,12 @@ func Commands() []console.Command {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 )
 
-func Boot() {
-	foundation.Setup().Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().Start()
 }
 `,
 			pkg:     "goravel/app/console/commands",
@@ -220,12 +228,13 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithCommands(Commands).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithCommands(Commands).Start()
 }
 `,
 			expectedCommands: `package bootstrap
@@ -304,12 +313,13 @@ func TestAddFilter(t *testing.T) {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			pkg:    "goravel/app/validators",
@@ -317,13 +327,14 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithFilters(Filters).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithFilters(Filters).WithConfig(config.Boot).Start()
 }
 `,
 			expectedFilters: `package bootstrap
@@ -346,13 +357,14 @@ func Filters() []validation.Filter {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithFilters(Filters).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithFilters(Filters).WithConfig(config.Boot).Start()
 }
 `,
 			filtersContent: `package bootstrap
@@ -374,13 +386,14 @@ func Filters() []validation.Filter {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithFilters(Filters).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithFilters(Filters).WithConfig(config.Boot).Start()
 }
 `,
 			expectedFilters: `package bootstrap
@@ -404,19 +417,20 @@ func Filters() []validation.Filter {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/foundation"
 	"goravel/app/validators"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithFilters(func() []validation.Filter {
 			return []validation.Filter{
 				&validators.ExistingFilter{},
 			}
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 			pkg:    "goravel/app/validators",
@@ -424,20 +438,21 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/foundation"
 	"goravel/app/validators"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithFilters(func() []validation.Filter {
 			return []validation.Filter{
 				&validators.ExistingFilter{},
 				&validators.NewFilter{},
 			}
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 		},
@@ -446,12 +461,13 @@ func Boot() {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			filtersContent: `package bootstrap
@@ -477,11 +493,12 @@ func Filters() []validation.Filter {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 )
 
-func Boot() {
-	foundation.Setup().Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().Start()
 }
 `,
 			pkg:    "goravel/app/validators",
@@ -489,12 +506,13 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithFilters(Filters).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithFilters(Filters).Start()
 }
 `,
 			expectedFilters: `package bootstrap
@@ -517,12 +535,13 @@ func Filters() []validation.Filter {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			pkg:    "github.com/mycompany/customfilters",
@@ -530,13 +549,14 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithFilters(Filters).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithFilters(Filters).WithConfig(config.Boot).Start()
 }
 `,
 			expectedFilters: `package bootstrap
@@ -558,13 +578,14 @@ func Filters() []validation.Filter {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithFilters(Filters).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithFilters(Filters).WithConfig(config.Boot).Start()
 }
 `,
 			filtersContent: `package bootstrap
@@ -586,13 +607,14 @@ func Filters() []validation.Filter {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithFilters(Filters).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithFilters(Filters).WithConfig(config.Boot).Start()
 }
 `,
 			expectedFilters: `package bootstrap
@@ -672,12 +694,13 @@ func TestAddJob(t *testing.T) {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			pkg: "goravel/app/jobs",
@@ -685,13 +708,14 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithJobs(Jobs).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithJobs(Jobs).WithConfig(config.Boot).Start()
 }
 `,
 			expectedJobs: `package bootstrap
@@ -714,13 +738,14 @@ func Jobs() []queue.Job {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithJobs(Jobs).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithJobs(Jobs).WithConfig(config.Boot).Start()
 }
 `,
 			jobsContent: `package bootstrap
@@ -742,13 +767,14 @@ func Jobs() []queue.Job {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithJobs(Jobs).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithJobs(Jobs).WithConfig(config.Boot).Start()
 }
 `,
 			expectedJobs: `package bootstrap
@@ -772,19 +798,20 @@ func Jobs() []queue.Job {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/foundation"
 	"goravel/app/jobs"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithJobs(func() []queue.Job {
 			return []queue.Job{
 				&jobs.ExistingJob{},
 			}
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 			pkg: "goravel/app/jobs",
@@ -792,20 +819,21 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/foundation"
 	"goravel/app/jobs"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithJobs(func() []queue.Job {
 			return []queue.Job{
 				&jobs.ExistingJob{},
 				&jobs.NewJob{},
 			}
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 		},
@@ -814,12 +842,13 @@ func Boot() {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			jobsContent: `package bootstrap
@@ -845,11 +874,12 @@ func Jobs() []queue.Job {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 )
 
-func Boot() {
-	foundation.Setup().Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().Start()
 }
 `,
 			pkg: "goravel/app/jobs",
@@ -857,12 +887,13 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithJobs(Jobs).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithJobs(Jobs).Start()
 }
 `,
 			expectedJobs: `package bootstrap
@@ -885,12 +916,13 @@ func Jobs() []queue.Job {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			pkg: "github.com/mycompany/customjobs",
@@ -898,13 +930,14 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithJobs(Jobs).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithJobs(Jobs).WithConfig(config.Boot).Start()
 }
 `,
 			expectedJobs: `package bootstrap
@@ -926,13 +959,14 @@ func Jobs() []queue.Job {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithJobs(Jobs).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithJobs(Jobs).WithConfig(config.Boot).Start()
 }
 `,
 			jobsContent: `package bootstrap
@@ -954,13 +988,14 @@ func Jobs() []queue.Job {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithJobs(Jobs).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithJobs(Jobs).WithConfig(config.Boot).Start()
 }
 `,
 			expectedJobs: `package bootstrap
@@ -1037,12 +1072,13 @@ func TestAddMiddleware(t *testing.T) {
 			content: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			pkg: "github.com/goravel/framework/http/middleware",
@@ -1050,19 +1086,20 @@ func Boot() {
 			expected: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/foundation/configuration"
 	"github.com/goravel/framework/foundation"
 	"github.com/goravel/framework/http/middleware"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithMiddleware(func(handler configuration.Middleware) {
 			handler.Append(
 				&middleware.Auth{},
 			)
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 		},
@@ -1071,17 +1108,18 @@ func Boot() {
 			content: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/foundation/configuration"
 	"github.com/goravel/framework/foundation"
 	"github.com/goravel/framework/http/middleware"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithMiddleware(func(handler configuration.Middleware) {
 			handler.Append(&middleware.Existing{})
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 			pkg: "github.com/goravel/framework/http/middleware",
@@ -1089,19 +1127,20 @@ func Boot() {
 			expected: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/foundation/configuration"
 	"github.com/goravel/framework/foundation"
 	"github.com/goravel/framework/http/middleware"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithMiddleware(func(handler configuration.Middleware) {
 			handler.Append(&middleware.Existing{},
 				&middleware.Auth{},
 			)
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 		},
@@ -1110,12 +1149,13 @@ func Boot() {
 			content: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).WithRoute(route.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).WithRoute(route.Boot).Start()
 }
 `,
 			pkg: "github.com/goravel/framework/http/middleware",
@@ -1123,19 +1163,20 @@ func Boot() {
 			expected: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/foundation/configuration"
 	"github.com/goravel/framework/foundation"
 	"github.com/goravel/framework/http/middleware"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithMiddleware(func(handler configuration.Middleware) {
 			handler.Append(
 				&middleware.Cors{},
 			)
-		}).WithConfig(config.Boot).WithRoute(route.Boot).Run()
+		}).WithConfig(config.Boot).WithRoute(route.Boot).Start()
 }
 `,
 		},
@@ -1144,16 +1185,17 @@ func Boot() {
 			content: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/foundation/configuration"
 	"github.com/goravel/framework/foundation"
 	"github.com/goravel/framework/http/middleware"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithMiddleware(func(handler configuration.Middleware) {
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 			pkg: "github.com/goravel/framework/http/middleware",
@@ -1161,19 +1203,20 @@ func Boot() {
 			expected: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/foundation/configuration"
 	"github.com/goravel/framework/foundation"
 	"github.com/goravel/framework/http/middleware"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithMiddleware(func(handler configuration.Middleware) {
 			handler.Append(
 				&middleware.Auth{},
 			)
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 		},
@@ -1182,14 +1225,14 @@ func Boot() {
 			content: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	app := foundation.NewApplication()
-	foundation.Setup().WithConfig(config.Boot).Run()
-	app.Start()
+func Boot() contractsfoundation.Application {
+	_ = foundation.NewApplication()
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			pkg: "github.com/goravel/framework/http/middleware",
@@ -1197,21 +1240,21 @@ func Boot() {
 			expected: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/foundation/configuration"
 	"github.com/goravel/framework/foundation"
 	"github.com/goravel/framework/http/middleware"
 	"goravel/config"
 )
 
-func Boot() {
-	app := foundation.NewApplication()
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	_ = foundation.NewApplication()
+	return foundation.Setup().
 		WithMiddleware(func(handler configuration.Middleware) {
 			handler.Append(
 				&middleware.Throttle{},
 			)
-		}).WithConfig(config.Boot).Run()
-	app.Start()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 		},
@@ -1258,12 +1301,13 @@ func TestAddMigration(t *testing.T) {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			pkg:       "goravel/database/migrations",
@@ -1271,13 +1315,14 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithMigrations(Migrations).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithMigrations(Migrations).WithConfig(config.Boot).Start()
 }
 `,
 			expectedMigrations: `package bootstrap
@@ -1300,13 +1345,14 @@ func Migrations() []schema.Migration {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithMigrations(Migrations).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithMigrations(Migrations).WithConfig(config.Boot).Start()
 }
 `,
 			migrationsContent: `package bootstrap
@@ -1328,13 +1374,14 @@ func Migrations() []schema.Migration {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithMigrations(Migrations).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithMigrations(Migrations).WithConfig(config.Boot).Start()
 }
 `,
 			expectedMigrations: `package bootstrap
@@ -1359,18 +1406,19 @@ func Migrations() []schema.Migration {
 
 import (
 	"github.com/goravel/framework/contracts/database/schema"
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 	"goravel/database/migrations"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithMigrations(func() []schema.Migration {
 			return []schema.Migration{
 				&migrations.ExistingMigration{},
 			}
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 			pkg:       "goravel/database/migrations",
@@ -1379,19 +1427,20 @@ func Boot() {
 
 import (
 	"github.com/goravel/framework/contracts/database/schema"
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 	"goravel/database/migrations"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithMigrations(func() []schema.Migration {
 			return []schema.Migration{
 				&migrations.ExistingMigration{},
 				&migrations.CreateUsersTable{},
 			}
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 		},
@@ -1400,12 +1449,13 @@ func Boot() {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			migrationsContent: `package bootstrap
@@ -1431,11 +1481,12 @@ func Migrations() []schema.Migration {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 )
 
-func Boot() {
-	foundation.Setup().Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().Start()
 }
 `,
 			pkg:       "goravel/database/migrations",
@@ -1443,12 +1494,13 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithMigrations(Migrations).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithMigrations(Migrations).Start()
 }
 `,
 			expectedMigrations: `package bootstrap
@@ -1527,12 +1579,13 @@ func TestAddProvider(t *testing.T) {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			pkg:      "goravel/app/providers",
@@ -1540,13 +1593,14 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithProviders(Providers).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithProviders(Providers).WithConfig(config.Boot).Start()
 }
 `,
 			expectedProviders: `package bootstrap
@@ -1569,13 +1623,14 @@ func Providers() []foundation.ServiceProvider {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithProviders(Providers).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithProviders(Providers).WithConfig(config.Boot).Start()
 }
 `,
 			providersContent: `package bootstrap
@@ -1597,13 +1652,14 @@ func Providers() []foundation.ServiceProvider {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithProviders(Providers).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithProviders(Providers).WithConfig(config.Boot).Start()
 }
 `,
 			expectedProviders: `package bootstrap
@@ -1627,19 +1683,19 @@ func Providers() []foundation.ServiceProvider {
 			appContent: `package bootstrap
 
 import (
-	"github.com/goravel/framework/contracts/foundation"
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/app/providers"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithProviders(func() []foundation.ServiceProvider {
 			return []foundation.ServiceProvider{
 				&providers.ExistingProvider{},
 			}
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 			pkg:      "goravel/app/providers",
@@ -1647,20 +1703,20 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
-	"github.com/goravel/framework/contracts/foundation"
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/app/providers"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithProviders(func() []foundation.ServiceProvider {
 			return []foundation.ServiceProvider{
 				&providers.ExistingProvider{},
 				&providers.AppServiceProvider{},
 			}
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 		},
@@ -1669,12 +1725,13 @@ func Boot() {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			providersContent: `package bootstrap
@@ -1701,11 +1758,12 @@ func Providers() []foundation.ServiceProvider {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 )
 
-func Boot() {
-	foundation.Setup().Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().Start()
 }
 `,
 			pkg:      "goravel/app/providers",
@@ -1713,12 +1771,13 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithProviders(Providers).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithProviders(Providers).Start()
 }
 `,
 			expectedProviders: `package bootstrap
@@ -1741,12 +1800,13 @@ func Providers() []foundation.ServiceProvider {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			pkg:      "github.com/goravel/redis",
@@ -1754,13 +1814,14 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithProviders(Providers).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithProviders(Providers).WithConfig(config.Boot).Start()
 }
 `,
 			expectedProviders: `package bootstrap
@@ -1782,13 +1843,14 @@ func Providers() []foundation.ServiceProvider {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithProviders(Providers).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithProviders(Providers).WithConfig(config.Boot).Start()
 }
 `,
 			providersContent: `package bootstrap
@@ -1810,13 +1872,14 @@ func Providers() []foundation.ServiceProvider {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithProviders(Providers).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithProviders(Providers).WithConfig(config.Boot).Start()
 }
 `,
 			expectedProviders: `package bootstrap
@@ -1894,12 +1957,13 @@ func TestAddRoute(t *testing.T) {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			pkg:   "goravel/routes",
@@ -1907,16 +1971,17 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 	"goravel/routes"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithRouting(func() {
 			routes.Web()
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 		},
@@ -1925,14 +1990,15 @@ func Boot() {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 	"goravel/routes"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithRouting(func() {}).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithRouting(func() {}).WithConfig(config.Boot).Start()
 }
 `,
 			pkg:   "goravel/routes",
@@ -1940,16 +2006,17 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 	"goravel/routes"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithRouting(func() {
 			routes.Web()
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 		},
@@ -1958,16 +2025,17 @@ func Boot() {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 	"goravel/routes"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithRouting(func() {
 			routes.Web()
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 			pkg:   "goravel/routes",
@@ -1975,17 +2043,18 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 	"goravel/routes"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithRouting(func() {
 			routes.Web()
 			routes.Api()
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 		},
@@ -1994,16 +2063,17 @@ func Boot() {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 	"goravel/routes"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithRouting(func() {
 			routes.Web()
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 			pkg:   "goravel/app/routes",
@@ -2011,18 +2081,19 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/app/routes"
 	"goravel/config"
 	"goravel/routes"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithRouting(func() {
 			routes.Web()
 			routes.Admin()
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 		},
@@ -2031,14 +2102,15 @@ func Boot() {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithCommands(Commands).
-		WithConfig(config.Boot).Run()
+		WithConfig(config.Boot).Start()
 }
 `,
 			pkg:   "goravel/routes",
@@ -2046,18 +2118,19 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 	"goravel/routes"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithRouting(func() {
 			routes.Web()
 		}).
 		WithCommands(Commands).
-		WithConfig(config.Boot).Run()
+		WithConfig(config.Boot).Start()
 }
 `,
 		},
@@ -2113,12 +2186,13 @@ func TestAddRule(t *testing.T) {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			pkg:  "goravel/app/rules",
@@ -2126,13 +2200,14 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithRules(Rules).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithRules(Rules).WithConfig(config.Boot).Start()
 }
 `,
 			expectedRules: `package bootstrap
@@ -2155,13 +2230,14 @@ func Rules() []validation.Rule {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithRules(Rules).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithRules(Rules).WithConfig(config.Boot).Start()
 }
 `,
 			rulesContent: `package bootstrap
@@ -2183,13 +2259,14 @@ func Rules() []validation.Rule {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithRules(Rules).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithRules(Rules).WithConfig(config.Boot).Start()
 }
 `,
 			expectedRules: `package bootstrap
@@ -2213,19 +2290,20 @@ func Rules() []validation.Rule {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/foundation"
 	"goravel/app/rules"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithRules(func() []validation.Rule {
 			return []validation.Rule{
 				&rules.ExistingRule{},
 			}	
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 			pkg:  "goravel/app/rules",
@@ -2233,20 +2311,21 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/foundation"
 	"goravel/app/rules"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithRules(func() []validation.Rule {
 			return []validation.Rule{
 				&rules.ExistingRule{},
 				&rules.NewRule{},
 			}
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 		},
@@ -2255,12 +2334,13 @@ func Boot() {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			rulesContent: `package bootstrap
@@ -2286,11 +2366,12 @@ func Rules() []validation.Rule {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 )
 
-func Boot() {
-	foundation.Setup().Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().Start()
 }
 `,
 			pkg:  "goravel/app/rules",
@@ -2298,12 +2379,13 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithRules(Rules).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithRules(Rules).Start()
 }
 `,
 			expectedRules: `package bootstrap
@@ -2326,12 +2408,13 @@ func Rules() []validation.Rule {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			pkg:  "github.com/mycompany/customrules",
@@ -2339,13 +2422,14 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithRules(Rules).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithRules(Rules).WithConfig(config.Boot).Start()
 }
 `,
 			expectedRules: `package bootstrap
@@ -2367,12 +2451,13 @@ func Rules() []validation.Rule {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			pkg:  "goravel/app/rules",
@@ -2380,13 +2465,14 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithRules(Rules).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithRules(Rules).WithConfig(config.Boot).Start()
 }
 `,
 			expectedRules: `package bootstrap
@@ -2409,13 +2495,14 @@ func Rules() []validation.Rule {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithRules(Rules).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithRules(Rules).WithConfig(config.Boot).Start()
 }
 `,
 			rulesContent: `package bootstrap
@@ -2437,13 +2524,14 @@ func Rules() []validation.Rule {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithRules(Rules).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithRules(Rules).WithConfig(config.Boot).Start()
 }
 `,
 			expectedRules: `package bootstrap
@@ -2466,12 +2554,13 @@ func Rules() []validation.Rule {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			pkg:  "goravel/app/rules",
@@ -2479,13 +2568,14 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithRules(Rules).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithRules(Rules).WithConfig(config.Boot).Start()
 }
 `,
 			expectedRules: `package bootstrap
@@ -2508,14 +2598,15 @@ func Rules() []validation.Rule {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithCommands(Commands).
-		WithConfig(config.Boot).Run()
+		WithConfig(config.Boot).Start()
 }
 `,
 			pkg:  "goravel/app/rules",
@@ -2523,15 +2614,16 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithRules(Rules).
 		WithCommands(Commands).
-		WithConfig(config.Boot).Run()
+		WithConfig(config.Boot).Start()
 }
 `,
 			expectedRules: `package bootstrap
@@ -2617,12 +2709,13 @@ func TestAddSeeder(t *testing.T) {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			pkg:    "goravel/database/seeders",
@@ -2630,13 +2723,14 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithSeeders(Seeders).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithSeeders(Seeders).WithConfig(config.Boot).Start()
 }
 `,
 			expectedSeeders: `package bootstrap
@@ -2659,13 +2753,14 @@ func Seeders() []seeder.Seeder {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithSeeders(Seeders).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithSeeders(Seeders).WithConfig(config.Boot).Start()
 }
 `,
 			seedersContent: `package bootstrap
@@ -2687,13 +2782,14 @@ func Seeders() []seeder.Seeder {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithSeeders(Seeders).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithSeeders(Seeders).WithConfig(config.Boot).Start()
 }
 `,
 			expectedSeeders: `package bootstrap
@@ -2718,18 +2814,19 @@ func Seeders() []seeder.Seeder {
 
 import (
 	"github.com/goravel/framework/contracts/database/seeder"
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 	"goravel/database/seeders"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithSeeders(func() []seeder.Seeder {
 			return []seeder.Seeder{
 				&seeders.ExistingSeeder{},
 			}
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 			pkg:    "goravel/database/seeders",
@@ -2738,19 +2835,20 @@ func Boot() {
 
 import (
 	"github.com/goravel/framework/contracts/database/seeder"
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 	"goravel/database/seeders"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithSeeders(func() []seeder.Seeder {
 			return []seeder.Seeder{
 				&seeders.ExistingSeeder{},
 				&seeders.NewSeeder{},
 			}
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 		},
@@ -2759,12 +2857,13 @@ func Boot() {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			seedersContent: `package bootstrap
@@ -2791,11 +2890,12 @@ func Seeders() []seeder.Seeder {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 )
 
-func Boot() {
-	foundation.Setup().Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().Start()
 }
 `,
 			pkg:    "goravel/database/seeders",
@@ -2803,12 +2903,13 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithSeeders(Seeders).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithSeeders(Seeders).Start()
 }
 `,
 			expectedSeeders: `package bootstrap
@@ -2965,13 +3066,14 @@ func TestRemoveProvider(t *testing.T) {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithProviders(Providers).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithProviders(Providers).WithConfig(config.Boot).Start()
 }
 `,
 			providersContent: `package bootstrap
@@ -2994,13 +3096,14 @@ func Providers() []foundation.ServiceProvider {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithProviders(Providers).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithProviders(Providers).WithConfig(config.Boot).Start()
 }
 `,
 			expectedProviders: `package bootstrap
@@ -3023,20 +3126,20 @@ func Providers() []foundation.ServiceProvider {
 			appContent: `package bootstrap
 
 import (
-	"github.com/goravel/framework/contracts/foundation"
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/app/providers"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithProviders(func() []foundation.ServiceProvider {
 			return []foundation.ServiceProvider{
 				&providers.AppServiceProvider{},
 				&providers.RouteServiceProvider{},
 			}
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 			pkg:      "goravel/app/providers",
@@ -3044,19 +3147,19 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
-	"github.com/goravel/framework/contracts/foundation"
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/app/providers"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithProviders(func() []foundation.ServiceProvider {
 			return []foundation.ServiceProvider{
 				&providers.RouteServiceProvider{},
 			}
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 		},
@@ -3065,13 +3168,14 @@ func Boot() {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithProviders(Providers).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithProviders(Providers).WithConfig(config.Boot).Start()
 }
 `,
 			providersContent: `package bootstrap
@@ -3093,13 +3197,14 @@ func Providers() []foundation.ServiceProvider {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithProviders(Providers).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithProviders(Providers).WithConfig(config.Boot).Start()
 }
 `,
 			expectedProviders: `package bootstrap
@@ -3118,13 +3223,14 @@ func Providers() []foundation.ServiceProvider {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithProviders(Providers).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithProviders(Providers).WithConfig(config.Boot).Start()
 }
 `,
 			providersContent: `package bootstrap
@@ -3148,13 +3254,14 @@ func Providers() []foundation.ServiceProvider {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithProviders(Providers).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithProviders(Providers).WithConfig(config.Boot).Start()
 }
 `,
 			expectedProviders: `package bootstrap
@@ -3177,12 +3284,13 @@ func Providers() []foundation.ServiceProvider {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			pkg:      "goravel/app/providers",
@@ -3190,12 +3298,13 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 		},
@@ -3204,13 +3313,14 @@ func Boot() {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithProviders(Providers).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithProviders(Providers).WithConfig(config.Boot).Start()
 }
 `,
 			providersContent: `package bootstrap
@@ -3232,13 +3342,14 @@ func Providers() []foundation.ServiceProvider {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithProviders(Providers).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithProviders(Providers).WithConfig(config.Boot).Start()
 }
 `,
 			expectedProviders: `package bootstrap
@@ -3261,13 +3372,14 @@ func Providers() []foundation.ServiceProvider {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithProviders(Providers).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithProviders(Providers).WithConfig(config.Boot).Start()
 }
 `,
 			providersContent: `package bootstrap
@@ -3290,13 +3402,14 @@ func Providers() []foundation.ServiceProvider {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithProviders(Providers).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithProviders(Providers).WithConfig(config.Boot).Start()
 }
 `,
 			expectedProviders: `package bootstrap
@@ -3364,13 +3477,14 @@ func TestRemoveMigration(t *testing.T) {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithMigrations(Migrations).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithMigrations(Migrations).WithConfig(config.Boot).Start()
 }
 `,
 			migrationsContent: `package bootstrap
@@ -3393,13 +3507,14 @@ func Migrations() []schema.Migration {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithMigrations(Migrations).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithMigrations(Migrations).WithConfig(config.Boot).Start()
 }
 `,
 			expectedMigrations: `package bootstrap
@@ -3423,19 +3538,20 @@ func Migrations() []schema.Migration {
 
 import (
 	"github.com/goravel/framework/contracts/database/schema"
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 	"goravel/database/migrations"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithMigrations(func() []schema.Migration {
 			return []schema.Migration{
 				&migrations.CreateUsersTable{},
 				&migrations.CreatePostsTable{},
 			}
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 			pkg:       "goravel/database/migrations",
@@ -3444,18 +3560,19 @@ func Boot() {
 
 import (
 	"github.com/goravel/framework/contracts/database/schema"
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 	"goravel/database/migrations"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithMigrations(func() []schema.Migration {
 			return []schema.Migration{
 				&migrations.CreatePostsTable{},
 			}
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 		},
@@ -3464,13 +3581,14 @@ func Boot() {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithMigrations(Migrations).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithMigrations(Migrations).WithConfig(config.Boot).Start()
 }
 `,
 			migrationsContent: `package bootstrap
@@ -3492,13 +3610,14 @@ func Migrations() []schema.Migration {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithMigrations(Migrations).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithMigrations(Migrations).WithConfig(config.Boot).Start()
 }
 `,
 			expectedMigrations: `package bootstrap
@@ -3517,13 +3636,14 @@ func Migrations() []schema.Migration {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithMigrations(Migrations).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithMigrations(Migrations).WithConfig(config.Boot).Start()
 }
 `,
 			migrationsContent: `package bootstrap
@@ -3547,13 +3667,14 @@ func Migrations() []schema.Migration {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithMigrations(Migrations).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithMigrations(Migrations).WithConfig(config.Boot).Start()
 }
 `,
 			expectedMigrations: `package bootstrap
@@ -3576,12 +3697,13 @@ func Migrations() []schema.Migration {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			pkg:       "goravel/database/migrations",
@@ -3589,12 +3711,13 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 		},
@@ -3603,13 +3726,14 @@ func Boot() {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithMigrations(Migrations).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithMigrations(Migrations).WithConfig(config.Boot).Start()
 }
 `,
 			migrationsContent: `package bootstrap
@@ -3631,13 +3755,14 @@ func Migrations() []schema.Migration {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithMigrations(Migrations).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithMigrations(Migrations).WithConfig(config.Boot).Start()
 }
 `,
 			expectedMigrations: `package bootstrap
@@ -3660,13 +3785,14 @@ func Migrations() []schema.Migration {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithMigrations(Migrations).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithMigrations(Migrations).WithConfig(config.Boot).Start()
 }
 `,
 			migrationsContent: `package bootstrap
@@ -3689,13 +3815,14 @@ func Migrations() []schema.Migration {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithMigrations(Migrations).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithMigrations(Migrations).WithConfig(config.Boot).Start()
 }
 `,
 			expectedMigrations: `package bootstrap
@@ -3761,17 +3888,18 @@ func TestRemoveRoute(t *testing.T) {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 	"goravel/routes"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithRouting(func() {
 			routes.Web()
 			routes.Api()
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 			pkg:   "goravel/routes",
@@ -3779,16 +3907,17 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 	"goravel/routes"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithRouting(func() {
 			routes.Api()
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 		},
@@ -3797,16 +3926,17 @@ func Boot() {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 	"goravel/routes"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithRouting(func() {
 			routes.Web()
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 			pkg:   "goravel/routes",
@@ -3814,14 +3944,15 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 	"goravel/routes"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithRouting(func() {}).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithRouting(func() {}).WithConfig(config.Boot).Start()
 }
 `,
 		},
@@ -3830,18 +3961,19 @@ func Boot() {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/app/routes"
 	"goravel/config"
 	"goravel/routes"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithRouting(func() {
 			routes.Web()
 			routes.Admin()
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 			pkg:   "goravel/app/routes",
@@ -3849,17 +3981,18 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/app/routes"
 	"goravel/config"
 	"goravel/routes"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithRouting(func() {
 			routes.Web()
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 		},
@@ -3868,18 +4001,19 @@ func Boot() {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 	"goravel/routes"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithRouting(func() {
 			routes.Web()
 			routes.Api()
 			routes.Admin()
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 			pkg:   "goravel/routes",
@@ -3887,17 +4021,18 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 	"goravel/routes"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithRouting(func() {
 			routes.Web()
 			routes.Admin()
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 		},
@@ -3906,12 +4041,13 @@ func Boot() {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			pkg:   "goravel/routes",
@@ -3919,12 +4055,13 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 		},
@@ -3933,16 +4070,17 @@ func Boot() {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 	"goravel/routes"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithRouting(func() {
 			routes.Web()
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 			pkg:   "goravel/routes",
@@ -3950,16 +4088,17 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 	"goravel/routes"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithRouting(func() {
 			routes.Web()
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 		},
@@ -3968,19 +4107,20 @@ func Boot() {
 			appContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 	"goravel/routes"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithRouting(func() {
 			routes.Web()
 			routes.Api()
 		}).
 		WithCommands(Commands).
-		WithConfig(config.Boot).Run()
+		WithConfig(config.Boot).Start()
 }
 `,
 			pkg:   "goravel/routes",
@@ -3988,18 +4128,19 @@ func Boot() {
 			expectedApp: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 	"goravel/routes"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithRouting(func() {
 			routes.Api()
 		}).
 		WithCommands(Commands).
-		WithConfig(config.Boot).Run()
+		WithConfig(config.Boot).Start()
 }
 `,
 		},

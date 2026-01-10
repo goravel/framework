@@ -488,6 +488,7 @@ func ValidationFilters() []match.GoNode {
 //   - foundation.Setup().WithConfig(...).Run()
 //   - foundation.Setup().WithMiddleware(...).WithConfig(...).Run()
 //   - foundation.Setup().WithCommand(...).Run()
+//   - return foundation.Setup().WithConfig(...).Start()
 //
 // Example usage:
 //
@@ -498,6 +499,9 @@ func ValidationFilters() []match.GoNode {
 func FoundationSetup() []match.GoNode {
 	return []match.GoNode{
 		Func(Ident("Boot")),
-		TypeOf(&dst.ExprStmt{}),
+		AnyOf(
+			TypeOf(&dst.ExprStmt{}),
+			TypeOf(&dst.ReturnStmt{}),
+		),
 	}
 }

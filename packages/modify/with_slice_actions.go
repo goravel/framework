@@ -96,11 +96,11 @@ func newWithSliceHandler(config withSliceConfig) *withSliceHandler {
 //
 // Before (app.go):
 //
-//	foundation.Setup().WithConfig(config.Boot).Boot()
+//	foundation.Setup().WithConfig(config.Boot).Start()
 //
 // After (app.go):
 //
-//	foundation.Setup().WithRules(Rules).WithConfig(config.Boot).Boot()
+//	foundation.Setup().WithRules(Rules).WithConfig(config.Boot).Start()
 //
 // And creates helper file (e.g., bootstrap/rules.go):
 //
@@ -118,7 +118,7 @@ func newWithSliceHandler(config withSliceConfig) *withSliceHandler {
 //	  return []validation.Rule{
 //		&rules.ExistingRule{},
 //	  },
-//	}).Boot()
+//	}).Start()
 //
 // After (app.go):
 //
@@ -127,13 +127,12 @@ func newWithSliceHandler(config withSliceConfig) *withSliceHandler {
 //		&rules.ExistingRule{},
 //		&rules.Uppercase{},
 //	  },
-//	}).Boot()
+//	}).Start()
 //
 // Example 3 - Appending to helper function:
 //
 // If helper file exists with Rules() function, appends to that function instead.
 func (r *withSliceHandler) AddItem(pkg, item string) error {
-	// Check if foundation.Setup() exists in app.go before performing any actions
 	hasFoundationSetup, err := r.containsFoundationSetupInAppFile()
 	if err != nil {
 		return err
@@ -241,19 +240,19 @@ func (r *withSliceHandler) checkWithMethodExists() (bool, error) {
 	return strings.Contains(content, r.config.withMethodName), nil
 }
 
-// containsFoundationSetupInAppFile checks if foundation.Setup() exists in the app file.
+// containsFoundationSetupInAppFile checks if .Setup(). exists in the app file.
 //
 // This check is performed at the start of AddItem to ensure no actions are taken
-// if the foundation.Setup() call doesn't exist in the file.
+// if the .Setup(). call doesn't exist in the file.
 //
-// Returns true if "foundation.Setup()" is found in the app file content.
+// Returns true if ".Setup()." is found in the app file content.
 func (r *withSliceHandler) containsFoundationSetupInAppFile() (bool, error) {
 	content, err := supportfile.GetContent(r.appFilePath)
 	if err != nil {
 		return false, err
 	}
 
-	return strings.Contains(content, "foundation.Setup()"), nil
+	return strings.Contains(content, ".Setup()."), nil
 }
 
 // createFile creates the file with the helper function.
@@ -606,14 +605,31 @@ func (r *withSliceHandler) findFoundationSetupCalls(callExpr *dst.CallExpr) (set
 //	    Boot()
 func (r *withSliceHandler) setupInline(item string) modify.Action {
 	return func(cursor *dstutil.Cursor) {
-		stmt := cursor.Node().(*dst.ExprStmt)
+		var callExpr *dst.CallExpr
 
-		if !containsFoundationSetup(stmt) {
-			return
-		}
-
-		callExpr, ok := stmt.X.(*dst.CallExpr)
-		if !ok {
+		switch stmt := cursor.Node().(type) {
+		case *dst.ExprStmt:
+			if !containsFoundationSetup(stmt) {
+				return
+			}
+			var ok bool
+			callExpr, ok = stmt.X.(*dst.CallExpr)
+			if !ok {
+				return
+			}
+		case *dst.ReturnStmt:
+			if !containsFoundationSetupInReturn(stmt) {
+				return
+			}
+			if len(stmt.Results) == 0 {
+				return
+			}
+			var ok bool
+			callExpr, ok = stmt.Results[0].(*dst.CallExpr)
+			if !ok {
+				return
+			}
+		default:
 			return
 		}
 
@@ -651,14 +667,31 @@ func (r *withSliceHandler) setupInline(item string) modify.Action {
 // Where Commands is a helper function defined in bootstrap/commands.go that returns []console.Command.
 func (r *withSliceHandler) setupWithFunction() modify.Action {
 	return func(cursor *dstutil.Cursor) {
-		stmt := cursor.Node().(*dst.ExprStmt)
+		var callExpr *dst.CallExpr
 
-		if !containsFoundationSetup(stmt) {
-			return
-		}
-
-		callExpr, ok := stmt.X.(*dst.CallExpr)
-		if !ok {
+		switch stmt := cursor.Node().(type) {
+		case *dst.ExprStmt:
+			if !containsFoundationSetup(stmt) {
+				return
+			}
+			var ok bool
+			callExpr, ok = stmt.X.(*dst.CallExpr)
+			if !ok {
+				return
+			}
+		case *dst.ReturnStmt:
+			if !containsFoundationSetupInReturn(stmt) {
+				return
+			}
+			if len(stmt.Results) == 0 {
+				return
+			}
+			var ok bool
+			callExpr, ok = stmt.Results[0].(*dst.CallExpr)
+			if !ok {
+				return
+			}
+		default:
 			return
 		}
 
@@ -715,14 +748,31 @@ func (r *withSliceHandler) setupWithFunction() modify.Action {
 //	    Boot()
 func (r *withSliceHandler) removeInline(item string) modify.Action {
 	return func(cursor *dstutil.Cursor) {
-		stmt := cursor.Node().(*dst.ExprStmt)
+		var callExpr *dst.CallExpr
 
-		if !containsFoundationSetup(stmt) {
-			return
-		}
-
-		callExpr, ok := stmt.X.(*dst.CallExpr)
-		if !ok {
+		switch stmt := cursor.Node().(type) {
+		case *dst.ExprStmt:
+			if !containsFoundationSetup(stmt) {
+				return
+			}
+			var ok bool
+			callExpr, ok = stmt.X.(*dst.CallExpr)
+			if !ok {
+				return
+			}
+		case *dst.ReturnStmt:
+			if !containsFoundationSetupInReturn(stmt) {
+				return
+			}
+			if len(stmt.Results) == 0 {
+				return
+			}
+			var ok bool
+			callExpr, ok = stmt.Results[0].(*dst.CallExpr)
+			if !ok {
+				return
+			}
+		default:
 			return
 		}
 
@@ -848,6 +898,24 @@ func appendToExistingMiddleware(withMiddlewareCall *dst.CallExpr, middlewareExpr
 
 // containsFoundationSetup checks if the statement contains a foundation.Setup() call.
 func containsFoundationSetup(stmt *dst.ExprStmt) bool {
+	var foundSetup bool
+	dst.Inspect(stmt, func(n dst.Node) bool {
+		if call, ok := n.(*dst.CallExpr); ok {
+			if sel, ok := call.Fun.(*dst.SelectorExpr); ok {
+				if ident, ok := sel.X.(*dst.Ident); ok {
+					if ident.Name == "foundation" && sel.Sel.Name == "Setup" {
+						foundSetup = true
+						return false
+					}
+				}
+			}
+		}
+		return true
+	})
+	return foundSetup
+}
+
+func containsFoundationSetupInReturn(stmt *dst.ReturnStmt) bool {
 	var foundSetup bool
 	dst.Inspect(stmt, func(n dst.Node) bool {
 		if call, ok := n.(*dst.CallExpr); ok {
@@ -992,14 +1060,31 @@ func findMiddlewareAppendCall(funcLit *dst.FuncLit) *dst.CallExpr {
 // foundationSetupMiddleware returns an action that modifies the foundation.Setup() chain.
 func foundationSetupMiddleware(middleware string) modify.Action {
 	return func(cursor *dstutil.Cursor) {
-		stmt := cursor.Node().(*dst.ExprStmt)
+		var callExpr *dst.CallExpr
 
-		if !containsFoundationSetup(stmt) {
-			return
-		}
-
-		callExpr, ok := stmt.X.(*dst.CallExpr)
-		if !ok {
+		switch stmt := cursor.Node().(type) {
+		case *dst.ExprStmt:
+			if !containsFoundationSetup(stmt) {
+				return
+			}
+			var ok bool
+			callExpr, ok = stmt.X.(*dst.CallExpr)
+			if !ok {
+				return
+			}
+		case *dst.ReturnStmt:
+			if !containsFoundationSetupInReturn(stmt) {
+				return
+			}
+			if len(stmt.Results) == 0 {
+				return
+			}
+			var ok bool
+			callExpr, ok = stmt.Results[0].(*dst.CallExpr)
+			if !ok {
+				return
+			}
+		default:
 			return
 		}
 
@@ -1027,14 +1112,31 @@ func addRouteImports(appFilePath, pkg string) error {
 // foundationSetupRouting returns an action that modifies the foundation.Setup() chain to add or update WithRouting.
 func foundationSetupRouting(route string) modify.Action {
 	return func(cursor *dstutil.Cursor) {
-		stmt := cursor.Node().(*dst.ExprStmt)
+		var callExpr *dst.CallExpr
 
-		if !containsFoundationSetup(stmt) {
-			return
-		}
-
-		callExpr, ok := stmt.X.(*dst.CallExpr)
-		if !ok {
+		switch stmt := cursor.Node().(type) {
+		case *dst.ExprStmt:
+			if !containsFoundationSetup(stmt) {
+				return
+			}
+			var ok bool
+			callExpr, ok = stmt.X.(*dst.CallExpr)
+			if !ok {
+				return
+			}
+		case *dst.ReturnStmt:
+			if !containsFoundationSetupInReturn(stmt) {
+				return
+			}
+			if len(stmt.Results) == 0 {
+				return
+			}
+			var ok bool
+			callExpr, ok = stmt.Results[0].(*dst.CallExpr)
+			if !ok {
+				return
+			}
+		default:
 			return
 		}
 
@@ -1057,14 +1159,31 @@ func foundationSetupRouting(route string) modify.Action {
 // removeRouteFromSetup returns an action that removes a route from WithRouting in foundation.Setup().
 func removeRouteFromSetup(route string) modify.Action {
 	return func(cursor *dstutil.Cursor) {
-		stmt := cursor.Node().(*dst.ExprStmt)
+		var callExpr *dst.CallExpr
 
-		if !containsFoundationSetup(stmt) {
-			return
-		}
-
-		callExpr, ok := stmt.X.(*dst.CallExpr)
-		if !ok {
+		switch stmt := cursor.Node().(type) {
+		case *dst.ExprStmt:
+			if !containsFoundationSetup(stmt) {
+				return
+			}
+			var ok bool
+			callExpr, ok = stmt.X.(*dst.CallExpr)
+			if !ok {
+				return
+			}
+		case *dst.ReturnStmt:
+			if !containsFoundationSetupInReturn(stmt) {
+				return
+			}
+			if len(stmt.Results) == 0 {
+				return
+			}
+			var ok bool
+			callExpr, ok = stmt.Results[0].(*dst.CallExpr)
+			if !ok {
+				return
+			}
+		default:
 			return
 		}
 
