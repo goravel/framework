@@ -51,25 +51,27 @@ func (receiver *ValidationServiceProvider) filters() []validation.Filter {
 var bootstrapAppFilter = `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `
 
 var bootstrapAppWithFilters = `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation" 
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithFilters(Filters()).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithFilters(Filters).WithConfig(config.Boot).Start()
 }
 `
 
@@ -222,7 +224,7 @@ func TestFilterMakeCommand_WithBootstrapSetup(t *testing.T) {
 			appContent, err := file.GetContent(appFile)
 			assert.NoError(t, err)
 			if tt.expectSuccess {
-				assert.Contains(t, appContent, "WithFilters(Filters())")
+				assert.Contains(t, appContent, "WithFilters(Filters)")
 			}
 		})
 	}

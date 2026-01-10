@@ -485,9 +485,10 @@ func ValidationFilters() []match.GoNode {
 
 // FoundationSetup matches the Boot function containing foundation.Setup() chain calls.
 // It matches both patterns:
-//   - foundation.Setup().WithConfig(...).Run()
-//   - foundation.Setup().WithMiddleware(...).WithConfig(...).Run()
-//   - foundation.Setup().WithCommand(...).Run()
+//   - foundation.Setup().WithConfig(...).Start()
+//   - foundation.Setup().WithMiddleware(...).WithConfig(...).Start()
+//   - foundation.Setup().WithCommand(...).Start()
+//   - return foundation.Setup().WithConfig(...).Start()
 //
 // Example usage:
 //
@@ -498,6 +499,9 @@ func ValidationFilters() []match.GoNode {
 func FoundationSetup() []match.GoNode {
 	return []match.GoNode{
 		Func(Ident("Boot")),
-		TypeOf(&dst.ExprStmt{}),
+		AnyOf(
+			TypeOf(&dst.ExprStmt{}),
+			TypeOf(&dst.ReturnStmt{}),
+		),
 	}
 }

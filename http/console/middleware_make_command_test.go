@@ -55,11 +55,12 @@ func TestMiddlewareMakeCommand_WithBootstrapSetup(t *testing.T) {
 	bootstrapContent := `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 )
 
-func Boot() {
-	foundation.Setup().Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().Start()
 }
 `
 	assert.NoError(t, file.PutContent(bootstrapPath, bootstrapContent))
@@ -90,17 +91,18 @@ func Boot() {
 
 import (
 	"github.com/goravel/framework/app/http/middleware"
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/foundation/configuration"
 	"github.com/goravel/framework/foundation"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithMiddleware(func(handler configuration.Middleware) {
 			handler.Append(
 				middleware.Auth(),
 			)
-		}).Run()
+		}).Start()
 }
 `
 	assert.Equal(t, expectedContent, bootstrapContent)
