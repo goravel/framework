@@ -62,9 +62,34 @@ func (s *DBTestSuite) TestCount() {
 				{Name: "count_product1"},
 				{Name: "count_product2"},
 			})
+
 			count, err := query.DB().Table("products").Count()
 			s.NoError(err)
 			s.Equal(int64(2), count)
+
+			count, err = query.DB().Table("products").Where("name", "count_product1").Count()
+			s.NoError(err)
+			s.Equal(int64(1), count)
+
+			count, err = query.DB().Table("products").Select("name", "weight").Where("name", "count_product1").Count()
+			s.NoError(err)
+			s.Equal(int64(1), count)
+
+			count, err = query.DB().Table("products").Select("name as n", "weight").Where("name", "count_product1").Count()
+			s.NoError(err)
+			s.Equal(int64(1), count)
+
+			count, err = query.DB().Table("products").Select("name as n").Where("name", "count_product1").Count()
+			s.NoError(err)
+			s.Equal(int64(1), count)
+
+			count, err = query.DB().Table("products").Select("name n").Where("name", "count_product1").Count()
+			s.NoError(err)
+			s.Equal(int64(1), count)
+
+			count, err = query.DB().Table("products").Select("name").Where("name", "count_product1").Count()
+			s.NoError(err)
+			s.Equal(int64(1), count)
 		})
 	}
 }
@@ -308,21 +333,57 @@ func (s *DBTestSuite) TestDistinct() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
 			query.DB().Table("products").Insert([]Product{
+				{Name: "distinct_product", Weight: convert.Pointer(1)},
 				{Name: "distinct_product"},
 				{Name: "distinct_product"},
 			})
 
 			var products []Product
-			err := query.DB().Table("products").Distinct().Select("name").Get(&products)
+
+			err := query.DB().Table("products").Distinct().OrderBy("id").Get(&products)
+			s.NoError(err)
+			s.Equal(3, len(products))
+			s.Equal("distinct_product", products[0].Name)
+			s.Equal(1, *products[0].Weight)
+			s.Equal("distinct_product", products[1].Name)
+			s.Nil(products[1].Weight)
+			s.Equal("distinct_product", products[2].Name)
+			s.Nil(products[2].Weight)
+
+			err = query.DB().Table("products").Distinct().Select("name").Get(&products)
 			s.NoError(err)
 			s.Equal(1, len(products))
 			s.Equal("distinct_product", products[0].Name)
 
-			var products1 []Product
-			err = query.DB().Table("products").Distinct("name").Get(&products1)
+			err = query.DB().Table("products").Distinct("name").Get(&products)
 			s.NoError(err)
 			s.Equal(1, len(products))
 			s.Equal("distinct_product", products[0].Name)
+
+			err = query.DB().Table("products").Distinct("name", "weight").Get(&products)
+			s.NoError(err)
+			s.Equal(2, len(products))
+
+			count, err := query.DB().Table("products").Distinct().Count()
+			s.Error(err)
+			s.Equal(int64(0), count)
+
+			count, err = query.DB().Table("products").Distinct("name as name").Count()
+			s.NoError(err)
+			s.Equal(int64(1), count)
+
+			count, err = query.DB().Table("products").Distinct("name").Count()
+			s.NoError(err)
+			s.Equal(int64(1), count)
+
+			count, err = query.DB().Table("products").Distinct("name").Select("name").Count()
+			s.NoError(err)
+			s.Equal(int64(1), count)
+
+			// Gorm cannot support multiple distinct fields count directly, the sql will be COUNT(*), keep consistent here.
+			count, err = query.DB().Table("products").Distinct("name", "weight").Count()
+			s.NoError(err)
+			s.Equal(int64(3), count)
 		})
 	}
 }
@@ -932,8 +993,21 @@ func (s *DBTestSuite) TestPaginate() {
 			s.Equal("paginate_product4", products[1].Name)
 
 			// Fix: https://github.com/goravel/goravel/issues/842
-			products = []Product{}
+			err = query.DB().Table("products").Select("name as name", "weight").WhereLike("name", "paginate_product%").Paginate(2, 2, &products, &total)
+			s.NoError(err)
+			s.Equal(2, len(products))
+			s.Equal(int64(5), total)
+			s.Equal("paginate_product3", products[0].Name)
+			s.Equal("paginate_product4", products[1].Name)
+
 			err = query.DB().Table("products").Select("name as name").WhereLike("name", "paginate_product%").Paginate(2, 2, &products, &total)
+			s.NoError(err)
+			s.Equal(2, len(products))
+			s.Equal(int64(5), total)
+			s.Equal("paginate_product3", products[0].Name)
+			s.Equal("paginate_product4", products[1].Name)
+
+			err = query.DB().Table("products").Select("name name").WhereLike("name", "paginate_product%").Paginate(2, 2, &products, &total)
 			s.NoError(err)
 			s.Equal(2, len(products))
 			s.Equal(int64(5), total)
