@@ -459,9 +459,8 @@ func (r *withSliceHandler) createWithMethod(setupCall *dst.CallExpr, parentOfSet
 		Elts: []dst.Expr{itemExpr},
 	}
 
-	var funcArg dst.Expr
 	// For typed slices, wrap the composite literal in a function literal: func() []Type { return []Type{...} }
-	funcArg = &dst.FuncLit{
+	funcArg := &dst.FuncLit{
 		Type: &dst.FuncType{
 			Params: &dst.FieldList{},
 			Results: &dst.FieldList{

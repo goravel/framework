@@ -69,7 +69,7 @@ import (
 
 func Boot() {
 	foundation.Setup().
-		WithFilters(Filters()).WithConfig(config.Boot).Run()
+		WithFilters(Filters).WithConfig(config.Boot).Run()
 }
 `
 
@@ -222,7 +222,7 @@ func TestFilterMakeCommand_WithBootstrapSetup(t *testing.T) {
 			appContent, err := file.GetContent(appFile)
 			assert.NoError(t, err)
 			if tt.expectSuccess {
-				assert.Contains(t, appContent, "WithFilters(Filters())")
+				assert.Contains(t, appContent, "WithFilters(Filters)")
 			}
 		})
 	}

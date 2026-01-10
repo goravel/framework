@@ -152,32 +152,47 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 		}
 	}
 
-	// Register gRPC interceptors
-	if r.grpcClientInterceptors != nil || r.grpcServerInterceptors != nil ||
-		r.grpcClientStatsHandlers != nil || r.grpcServerStatsHandlers != nil {
-		grpcClientInterceptors := r.grpcClientInterceptors()
-		grpcServerInterceptors := r.grpcServerInterceptors()
-		grpcClientStatsHandlers := r.grpcClientStatsHandlers()
-		grpcServerStatsHandlers := r.grpcServerStatsHandlers()
+	var (
+		grpcClientInterceptors  map[string][]grpc.UnaryClientInterceptor
+		grpcServerInterceptors  []grpc.UnaryServerInterceptor
+		grpcClientStatsHandlers map[string][]stats.Handler
+		grpcServerStatsHandlers []stats.Handler
+	)
 
-		if len(grpcClientInterceptors) > 0 || len(grpcServerInterceptors) > 0 ||
-			len(grpcClientStatsHandlers) > 0 || len(grpcServerStatsHandlers) > 0 {
-			grpcFacade := r.app.MakeGrpc()
-			if grpcFacade == nil {
-				color.Errorln("gRPC facade not found, please install it first: ./artisan package:install Grpc")
-			} else {
-				if len(grpcClientInterceptors) > 0 {
-					grpcFacade.UnaryClientInterceptorGroups(grpcClientInterceptors)
-				}
-				if len(grpcServerInterceptors) > 0 {
-					grpcFacade.UnaryServerInterceptors(grpcServerInterceptors)
-				}
-				if len(grpcClientStatsHandlers) > 0 {
-					grpcFacade.ClientStatsHandlerGroups(grpcClientStatsHandlers)
-				}
-				if len(grpcServerStatsHandlers) > 0 {
-					grpcFacade.ServerStatsHandlers(grpcServerStatsHandlers)
-				}
+	if r.grpcClientInterceptors != nil {
+		grpcClientInterceptors = r.grpcClientInterceptors()
+	}
+
+	if r.grpcServerInterceptors != nil {
+		grpcServerInterceptors = r.grpcServerInterceptors()
+	}
+
+	if r.grpcClientStatsHandlers != nil {
+		grpcClientStatsHandlers = r.grpcClientStatsHandlers()
+	}
+
+	if r.grpcServerStatsHandlers != nil {
+		grpcServerStatsHandlers = r.grpcServerStatsHandlers()
+	}
+
+	// Register gRPC interceptors
+	if len(grpcClientInterceptors) > 0 || len(grpcServerInterceptors) > 0 ||
+		len(grpcClientStatsHandlers) > 0 || len(grpcServerStatsHandlers) > 0 {
+		grpcFacade := r.app.MakeGrpc()
+		if grpcFacade == nil {
+			color.Errorln("gRPC facade not found, please install it first: ./artisan package:install Grpc")
+		} else {
+			if len(grpcClientInterceptors) > 0 {
+				grpcFacade.UnaryClientInterceptorGroups(grpcClientInterceptors)
+			}
+			if len(grpcServerInterceptors) > 0 {
+				grpcFacade.UnaryServerInterceptors(grpcServerInterceptors)
+			}
+			if len(grpcClientStatsHandlers) > 0 {
+				grpcFacade.ClientStatsHandlerGroups(grpcClientStatsHandlers)
+			}
+			if len(grpcServerStatsHandlers) > 0 {
+				grpcFacade.ServerStatsHandlers(grpcServerStatsHandlers)
 			}
 		}
 	}
@@ -196,25 +211,33 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 		}
 	}
 
-	// Register validation rules
-	if r.rules != nil || r.filters != nil {
-		rules := r.rules()
-		filters := r.filters()
+	var (
+		rules   []validation.Rule
+		filters []validation.Filter
+	)
 
-		if len(rules) > 0 || len(filters) > 0 {
-			validationFacade := r.app.MakeValidation()
-			if validationFacade == nil {
-				color.Errorln("Validation facade not found, please install it first: ./artisan package:install Validation")
-			} else {
-				if len(rules) > 0 {
-					if err := validationFacade.AddRules(rules); err != nil {
-						color.Errorf("add validation rules error: %+v", err)
-					}
+	if r.rules != nil {
+		rules = r.rules()
+	}
+
+	if r.filters != nil {
+		filters = r.filters()
+	}
+
+	// Register validation rules
+	if len(rules) > 0 || len(filters) > 0 {
+		validationFacade := r.app.MakeValidation()
+		if validationFacade == nil {
+			color.Errorln("Validation facade not found, please install it first: ./artisan package:install Validation")
+		} else {
+			if len(rules) > 0 {
+				if err := validationFacade.AddRules(rules); err != nil {
+					color.Errorf("add validation rules error: %+v", err)
 				}
-				if len(filters) > 0 {
-					if err := validationFacade.AddFilters(filters); err != nil {
-						color.Errorf("add validation filters error: %+v", err)
-					}
+			}
+			if len(filters) > 0 {
+				if err := validationFacade.AddFilters(filters); err != nil {
+					color.Errorf("add validation filters error: %+v", err)
 				}
 			}
 		}

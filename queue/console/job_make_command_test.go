@@ -60,7 +60,7 @@ import (
 
 func Boot() {
 	foundation.Setup().
-		WithJobs(Jobs()).WithConfig(config.Boot).Run()
+		WithJobs(Jobs).WithConfig(config.Boot).Run()
 }
 `
 
@@ -213,7 +213,7 @@ func TestJobMakeCommand_WithBootstrapSetup(t *testing.T) {
 			appContent, err := file.GetContent(appFile)
 			assert.NoError(t, err)
 			if tt.expectSuccess {
-				assert.Contains(t, appContent, "WithJobs(Jobs())")
+				assert.Contains(t, appContent, "WithJobs(Jobs)")
 			}
 		})
 	}

@@ -165,7 +165,7 @@ import (
 
 func Boot() {
 	foundation.Setup().
-		WithCommands(Commands()).Run()
+		WithCommands(Commands).Run()
 }
 `
 	assert.Equal(t, expectedAppContent, bootstrapContent)
