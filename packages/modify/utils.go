@@ -114,19 +114,18 @@ func AddProvider(pkg, provider string) error {
 }
 
 // AddRoute adds route to the foundation.Setup() chain in the Boot function.
-// Add WithRouting([]func(){}) to foundation.Setup() if not exists.
-// Add pkg to this file imports, and add route to the slice in WithRouting.
+// Add WithRouting(func()) to foundation.Setup() if not exists.
+// Add pkg to this file imports, and add route to the function body in WithRouting.
 // the pkg is the package path of the route file, e.g., "goravel/routes"
-// the route will be like "routes.Web"
+// the route will be like "routes.Web()"
 func AddRoute(pkg, route string) error {
-	config := withSliceConfig{
-		withMethodName: "WithRouting",
-		alwaysInline:   true,
-		isFuncSlice:    true,
+	appFilePath := path.Bootstrap("app.go")
+
+	if err := addRouteImports(appFilePath, pkg); err != nil {
+		return err
 	}
 
-	handler := newWithSliceHandler(config)
-	return handler.AddItem(pkg, route)
+	return GoFile(appFilePath).Find(match.FoundationSetup()).Modify(foundationSetupRouting(route)).Apply()
 }
 
 // AddRule adds rule to the foundation.Setup() chain in the Boot function.
@@ -387,14 +386,9 @@ func RemoveProvider(pkg, provider string) error {
 
 // RemoveRoute removes a route from the foundation.Setup() chain in the Boot function.
 func RemoveRoute(pkg, route string) error {
-	config := withSliceConfig{
-		withMethodName: "WithRouting",
-		alwaysInline:   true,
-		isFuncSlice:    true,
-	}
+	appFilePath := path.Bootstrap("app.go")
 
-	handler := newWithSliceHandler(config)
-	return handler.RemoveItem(pkg, route)
+	return GoFile(appFilePath).Find(match.FoundationSetup()).Modify(removeRouteFromSetup(route)).Apply()
 }
 
 // WrapNewline adds newline decorations to specific AST nodes for better formatting.

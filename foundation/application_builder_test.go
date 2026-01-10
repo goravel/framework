@@ -232,7 +232,9 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 		s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
 		s.mockApp.EXPECT().BootServiceProviders().Return().Once()
 
-		app := s.builder.WithProviders(providers).Create()
+		app := s.builder.WithProviders(func() []foundation.ServiceProvider {
+			return providers
+		}).Create()
 
 		s.NotNil(app)
 	})
@@ -861,12 +863,16 @@ func (s *ApplicationBuilderTestSuite) TestWithProviders() {
 	providers1 := []foundation.ServiceProvider{mockProvider1}
 	providers2 := []foundation.ServiceProvider{mockProvider2}
 
-	builder := s.builder.WithProviders(providers1)
+	builder := s.builder.WithProviders(func() []foundation.ServiceProvider {
+		return providers1
+	})
 
 	s.NotNil(builder)
 	s.Equal(providers1, s.builder.configuredServiceProviders)
 
-	builder.WithProviders(providers2)
+	builder.WithProviders(func() []foundation.ServiceProvider {
+		return providers2
+	})
 	expectedProviders := []foundation.ServiceProvider{mockProvider1, mockProvider2}
 	s.Equal(expectedProviders, s.builder.configuredServiceProviders)
 }

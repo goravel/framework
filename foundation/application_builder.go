@@ -26,7 +26,7 @@ type ApplicationBuilder struct {
 	callback                   func()
 	commands                   func() []console.Command
 	config                     func()
-	configuredServiceProviders []foundation.ServiceProvider
+	configuredServiceProviders func() []foundation.ServiceProvider
 	eventToListeners           func() map[event.Event][]event.Listener
 	filters                    func() []validation.Filter
 	grpcClientInterceptors     func() map[string][]grpc.UnaryClientInterceptor
@@ -57,7 +57,12 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 	}
 
 	// Add custom service providers
-	r.app.AddServiceProviders(r.configuredServiceProviders)
+	if r.configuredServiceProviders != nil {
+		configuredServiceProviders := r.configuredServiceProviders()
+		if len(configuredServiceProviders) > 0 {
+			r.app.AddServiceProviders(configuredServiceProviders)
+		}
+	}
 
 	// Register service providers, app.Boot should not be called here, because some
 	// settings need to be done before booting service providers.
@@ -313,8 +318,8 @@ func (r *ApplicationBuilder) WithPaths(fn func(paths contractsconfiguration.Path
 	return r
 }
 
-func (r *ApplicationBuilder) WithProviders(providers []foundation.ServiceProvider) foundation.ApplicationBuilder {
-	r.configuredServiceProviders = append(r.configuredServiceProviders, providers...)
+func (r *ApplicationBuilder) WithProviders(fn func() []foundation.ServiceProvider) foundation.ApplicationBuilder {
+	r.configuredServiceProviders = fn
 
 	return r
 }

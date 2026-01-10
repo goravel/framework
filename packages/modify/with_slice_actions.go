@@ -36,17 +36,12 @@ type withSliceConfig struct {
 	stubTemplate func() string
 	// matcherFunc is the function that returns the matcher to find the target location (e.g., matchPkg.Commands, matchPkg.Migrations)
 	matcherFunc func() []contractsmatch.GoNode
-	// alwaysInline determines whether items are always added inline in app.go (true for routing)
-	// or can use helper files (false for commands/migrations/etc)
-	alwaysInline bool
-	// isFuncSlice indicates if the slice type is []func() instead of a typed slice
-	isFuncSlice bool
 }
 
 // withSliceHandler handles adding items to a slice in foundation.Setup() chain.
 // It supports two modes:
 //  1. Helper file mode (alwaysInline=false): Items can be managed in separate helper files (e.g., commands.go, migrations.go)
-//  2. Always inline mode (alwaysInline=true): Items are always added directly to app.go (e.g., routing)
+//  2. Always inline mode (alwaysInline=true): Items are always added directly to app.go
 type withSliceHandler struct {
 	config      withSliceConfig
 	appFilePath string
@@ -63,7 +58,7 @@ func newWithSliceHandler(config withSliceConfig) *withSliceHandler {
 	var fileExists bool
 
 	// Only construct file path and check existence for helper file mode
-	if !config.alwaysInline && config.fileName != "" {
+	if config.fileName != "" {
 		filePath = filepath.Join(bootstrapDir, config.fileName)
 		fileExists = supportfile.Exists(filePath)
 	}
@@ -83,12 +78,12 @@ func newWithSliceHandler(config withSliceConfig) *withSliceHandler {
 // Always-inline mode (alwaysInline=true):
 //   - Always adds items directly to the inline array in app.go
 //   - Never creates helper files
-//   - Used for routing ([]func{} slices)
+//   - Used for routing (func{})
 //
 // Helper file mode (alwaysInline=false):
 //  1. If WithMethod doesn't exist:
 //     - If helper file exists: Returns an error (file should only exist when WithMethod is registered)
-//     - If helper file doesn't exist: Creates the helper file with the item, adds WithMethod(HelperFunc()) to Setup()
+//     - If helper file doesn't exist: Creates the helper file with the item, adds WithMethod(HelperFunc) to Setup()
 //  2. If WithMethod exists:
 //     - If helper file exists: Appends the item to the helper function
 //     - If helper file doesn't exist: Appends the item to the inline array in app.go
@@ -105,7 +100,7 @@ func newWithSliceHandler(config withSliceConfig) *withSliceHandler {
 //
 // After (app.go):
 //
-//	foundation.Setup().WithRules(Rules()).WithConfig(config.Boot).Boot()
+//	foundation.Setup().WithRules(Rules).WithConfig(config.Boot).Boot()
 //
 // And creates helper file (e.g., bootstrap/rules.go):
 //
@@ -119,15 +114,19 @@ func newWithSliceHandler(config withSliceConfig) *withSliceHandler {
 //
 // Before (app.go):
 //
-//	foundation.Setup().WithRules([]validation.Rule{
-//	  &rules.ExistingRule{},
+//	foundation.Setup().WithRules(func() []validation.Rule{
+//	  return []validation.Rule{
+//		&rules.ExistingRule{},
+//	  },
 //	}).Boot()
 //
 // After (app.go):
 //
-//	foundation.Setup().WithRules([]validation.Rule{
-//	  &rules.ExistingRule{},
-//	  &rules.Uppercase{},
+//	foundation.Setup().WithRules(func() []validation.Rule{
+//	  return []validation.Rule{
+//		&rules.ExistingRule{},
+//		&rules.Uppercase{},
+//	  },
 //	}).Boot()
 //
 // Example 3 - Appending to helper function:
@@ -143,7 +142,7 @@ func (r *withSliceHandler) AddItem(pkg, item string) error {
 		return nil
 	}
 
-	if !r.config.alwaysInline {
+	if r.config.fileName != "" {
 		// Helper file mode (like commands/migrations)
 		withMethodExists, err := r.checkWithMethodExists()
 		if err != nil {
@@ -230,7 +229,7 @@ func (r *withSliceHandler) RemoveItem(pkg, item string) error {
 //
 // Example: For a config with withMethodName="WithCommands", it searches for:
 //
-//	foundation.Setup().WithCommands(Commands()).Boot()
+//	foundation.Setup().WithCommands(Commands).Boot()
 //
 // Returns true if ".WithCommands" is found in the app file content.
 func (r *withSliceHandler) checkWithMethodExists() (bool, error) {
@@ -366,47 +365,59 @@ func (r *withSliceHandler) removeItemFromFile(pkg, item string) error {
 
 // appendToExisting appends an item to an existing WithMethod call.
 //
-// Example: For withCall representing ".WithCommands([]console.Command{&commands.Cmd1{}})" and itemExpr="&commands.Cmd2{}":
+// Example: For withCall representing ".WithCommands(func() []console.Command{...})" and itemExpr="&commands.Cmd2{}":
 //
 // Before:
 //
-//	.WithCommands([]console.Command{
-//	    &commands.Cmd1{},
+//	.WithCommands(func() []console.Command{
+//	    return []console.Command{
+//	        &commands.Cmd1{},
+//	    }
 //	})
 //
 // After:
 //
-//	.WithCommands([]console.Command{
-//	    &commands.Cmd1{},
-//	    &commands.Cmd2{},
+//	.WithCommands(func() []console.Command{
+//	    return []console.Command{
+//	        &commands.Cmd1{},
+//	        &commands.Cmd2{},
+//	    }
 //	})
 func (r *withSliceHandler) appendToExisting(withCall *dst.CallExpr, itemExpr dst.Expr) {
 	if len(withCall.Args) == 0 {
 		return
 	}
 
-	compositeLit, ok := withCall.Args[0].(*dst.CompositeLit)
+	// Check if the argument is a function literal (new API: func() []Type)
+	funcLit, ok := withCall.Args[0].(*dst.FuncLit)
 	if !ok {
 		return
 	}
 
-	// Add proper formatting for multi-line arrays
-	// For the first element, ensure it has proper newline formatting
-	if len(compositeLit.Elts) > 0 {
-		compositeLit.Elts[0].Decorations().Before = dst.NewLine
+	// Find the return statement and its composite literal
+	for _, stmt := range funcLit.Body.List {
+		if retStmt, ok := stmt.(*dst.ReturnStmt); ok {
+			if len(retStmt.Results) > 0 {
+				if compositeLit, ok := retStmt.Results[0].(*dst.CompositeLit); ok {
+					// Add proper formatting for multi-line arrays
+					if len(compositeLit.Elts) > 0 {
+						compositeLit.Elts[0].Decorations().Before = dst.NewLine
+					}
+
+					// Add newline before new item and after (for closing brace)
+					itemExpr.Decorations().Before = dst.NewLine
+					itemExpr.Decorations().After = dst.NewLine
+
+					compositeLit.Elts = append(compositeLit.Elts, itemExpr)
+					return
+				}
+			}
+		}
 	}
-
-	// Add newline before new item and after (for closing brace)
-	itemExpr.Decorations().Before = dst.NewLine
-	itemExpr.Decorations().After = dst.NewLine
-
-	compositeLit.Elts = append(compositeLit.Elts, itemExpr)
 }
 
 // createWithMethod creates a new WithMethod call and inserts it into the chain.
-// Supports both typed slices ([]console.Command) and function slices ([]func()) based on isFuncSlice config.
-//
-// Example 1 - Typed slice (commands):
+// Wraps the composite literal in a function literal: func() []Type { return []Type{...} }
 //
 // Before:
 //
@@ -415,38 +426,26 @@ func (r *withSliceHandler) appendToExisting(withCall *dst.CallExpr, itemExpr dst
 // After:
 //
 //	foundation.Setup().
-//	    WithCommands([]console.Command{
-//	        &commands.MyCommand{},
+//	    WithCommands(func() []console.Command {
+//	        return []console.Command{
+//	            &commands.MyCommand{},
+//	        }
 //	    }).
 //	    Boot()
-//
-// Example 2 - Function slice (routing):
-//
-// Before:
-//
-//	foundation.Setup().Boot()
-//
-// After:
-//
-//	foundation.Setup().
-//	    WithRouting([]func(){
-//	        routes.Web,
-//	    }).
-//	    Boot()
+
 func (r *withSliceHandler) createWithMethod(setupCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr, itemExpr dst.Expr) {
 	var arrayType dst.Expr
-	if r.config.isFuncSlice {
-		// For []func() type (routing)
-		arrayType = &dst.FuncType{
-			Func:   true,
-			Params: &dst.FieldList{},
-		}
-	} else {
-		// For typed slices (commands, migrations, etc.)
-		arrayType = &dst.SelectorExpr{
-			X:   &dst.Ident{Name: r.config.typePackage},
-			Sel: &dst.Ident{Name: r.config.typeName},
-		}
+	var returnArrayType dst.Expr
+
+	// For typed slices (commands, migrations, etc.)
+	arrayType = &dst.SelectorExpr{
+		X:   &dst.Ident{Name: r.config.typePackage},
+		Sel: &dst.Ident{Name: r.config.typeName},
+	}
+	// Create a separate instance for the return type
+	returnArrayType = &dst.SelectorExpr{
+		X:   &dst.Ident{Name: r.config.typePackage},
+		Sel: &dst.Ident{Name: r.config.typeName},
 	}
 
 	// Add proper formatting for multi-line array
@@ -458,6 +457,36 @@ func (r *withSliceHandler) createWithMethod(setupCall *dst.CallExpr, parentOfSet
 			Elt: arrayType,
 		},
 		Elts: []dst.Expr{itemExpr},
+	}
+
+	var funcArg dst.Expr
+	// For typed slices, wrap the composite literal in a function literal: func() []Type { return []Type{...} }
+	funcArg = &dst.FuncLit{
+		Type: &dst.FuncType{
+			Params: &dst.FieldList{},
+			Results: &dst.FieldList{
+				List: []*dst.Field{
+					{
+						Type: &dst.ArrayType{
+							Elt: returnArrayType,
+						},
+					},
+				},
+			},
+		},
+		Body: &dst.BlockStmt{
+			List: []dst.Stmt{
+				&dst.ReturnStmt{
+					Results: []dst.Expr{compositeLit},
+					Decs: dst.ReturnStmtDecorations{
+						NodeDecs: dst.NodeDecs{
+							Before: dst.NewLine,
+							After:  dst.NewLine,
+						},
+					},
+				},
+			},
+		},
 	}
 
 	newWithCall := &dst.CallExpr{
@@ -472,7 +501,7 @@ func (r *withSliceHandler) createWithMethod(setupCall *dst.CallExpr, parentOfSet
 				},
 			},
 		},
-		Args: []dst.Expr{compositeLit},
+		Args: []dst.Expr{funcArg},
 	}
 
 	parentOfSetup.X = newWithCall
@@ -482,11 +511,11 @@ func (r *withSliceHandler) createWithMethod(setupCall *dst.CallExpr, parentOfSet
 //
 // Example: For a chain like:
 //
-//	foundation.Setup().WithCommands(Commands()).WithMigrations(Migrations()).Boot()
+//	foundation.Setup().WithCommands(Commands).WithMigrations(Migrations).Boot()
 //
 // If withMethodName="WithCommands", returns:
 //   - setupCall: the CallExpr for "foundation.Setup()"
-//   - withCall: the CallExpr for "WithCommands(Commands())" (if it exists)
+//   - withCall: the CallExpr for "WithCommands(Commands)" (if it exists)
 //   - parentOfSetup: the SelectorExpr representing the next method after Setup (e.g., ".WithCommands")
 func (r *withSliceHandler) findFoundationSetupCalls(callExpr *dst.CallExpr) (setupCall, withCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr) {
 	current := callExpr
@@ -528,20 +557,24 @@ func (r *withSliceHandler) findFoundationSetupCalls(callExpr *dst.CallExpr) (set
 //
 // Before:
 //
-//	foundation.Setup().
-//	    WithCommands([]console.Command{
-//	        &commands.ExistingCmd{},
-//	    }).
-//	    Boot()
+//		foundation.Setup().
+//		    WithCommands(func []console.Command {
+//		        return []console.Command{
+//		        	&commands.ExistingCmd{},
+//	            }
+//		    }).
+//		    Boot()
 //
 // After:
 //
-//	foundation.Setup().
-//	    WithCommands([]console.Command{
-//	        &commands.ExistingCmd{},
-//	        &commands.MyCommand{},
-//	    }).
-//	    Boot()
+//		foundation.Setup().
+//		    WithCommands(func []console.Command {
+//		        return []console.Command{
+//		        	&commands.ExistingCmd{},
+//		        	&commands.MyCommand{},
+//	           }
+//		    }).
+//		    Boot()
 //
 // Or if WithCommands doesn't exist:
 //
@@ -552,8 +585,10 @@ func (r *withSliceHandler) findFoundationSetupCalls(callExpr *dst.CallExpr) (set
 // After:
 //
 //	foundation.Setup().
-//	    WithCommands([]console.Command{
-//	        &commands.MyCommand{},
+//	    WithCommands(func []console.Command {
+//	        return []console.Command{
+//	        	&commands.MyCommand{},
+//	        }
 //	    }).
 //	    Boot()
 //
@@ -566,8 +601,8 @@ func (r *withSliceHandler) findFoundationSetupCalls(callExpr *dst.CallExpr) (set
 // After:
 //
 //	foundation.Setup().
-//	    WithRouting([]func(){
-//	        routes.Web,
+//	    WithRouting(func(){
+//	        routes.Web(),
 //	    }).
 //	    Boot()
 func (r *withSliceHandler) setupInline(item string) modify.Action {
@@ -598,9 +633,9 @@ func (r *withSliceHandler) setupInline(item string) modify.Action {
 	}
 }
 
-// setupWithFunction returns an action that adds WithMethod(HelperFunc()) to the foundation.Setup() chain.
+// setupWithFunction returns an action that adds WithMethod(HelperFunc) to the foundation.Setup() chain.
 //
-// This is used when the helper file is created and we need to wire it into app.go using a helper function call.
+// This is used when the helper file is created and we need to wire it into app.go using a helper function reference.
 //
 // Example: For withMethodName="WithCommands" and helperFuncName="Commands":
 //
@@ -611,10 +646,10 @@ func (r *withSliceHandler) setupInline(item string) modify.Action {
 // After:
 //
 //	foundation.Setup().
-//	    WithCommands(Commands()).
+//	    WithCommands(Commands).
 //	    Boot()
 //
-// Where Commands() is a helper function defined in bootstrap/commands.go that returns []console.Command.
+// Where Commands is a helper function defined in bootstrap/commands.go that returns []console.Command.
 func (r *withSliceHandler) setupWithFunction() modify.Action {
 	return func(cursor *dstutil.Cursor) {
 		stmt := cursor.Node().(*dst.ExprStmt)
@@ -633,7 +668,7 @@ func (r *withSliceHandler) setupWithFunction() modify.Action {
 			return
 		}
 
-		// Create WithMethod(HelperFunc()) call
+		// Create WithMethod(HelperFunc) call
 		newWithCall := &dst.CallExpr{
 			Fun: &dst.SelectorExpr{
 				X: setupCall,
@@ -647,9 +682,7 @@ func (r *withSliceHandler) setupWithFunction() modify.Action {
 				},
 			},
 			Args: []dst.Expr{
-				&dst.CallExpr{
-					Fun: &dst.Ident{Name: r.config.helperFuncName},
-				},
+				&dst.Ident{Name: r.config.helperFuncName},
 			},
 		}
 
@@ -706,34 +739,49 @@ func (r *withSliceHandler) removeInline(item string) modify.Action {
 
 // removeFromExisting removes an item from an existing WithMethod call.
 //
-// Example: For withCall representing ".WithCommands([]console.Command{&commands.Cmd1{}, &commands.Cmd2{}})" and itemExpr="&commands.Cmd1{}":
+// Example: For withCall representing ".WithCommands(func() []console.Command{...})" and itemExpr="&commands.Cmd1{}":
 //
 // Before:
 //
-//	.WithCommands([]console.Command{
-//	    &commands.Cmd1{},
-//	    &commands.Cmd2{},
+//	.WithCommands(func() []console.Command {
+//	    return []console.Command{
+//	        &commands.Cmd1{},
+//	        &commands.Cmd2{},
+//	    }
 //	})
 //
 // After:
 //
-//	.WithCommands([]console.Command{
-//	    &commands.Cmd2{},
+//	.WithCommands(func() []console.Command {
+//	    return []console.Command{
+//	        &commands.Cmd2{},
+//	    }
 //	})
 func (r *withSliceHandler) removeFromExisting(withCall *dst.CallExpr, itemExpr dst.Expr) {
 	if len(withCall.Args) == 0 {
 		return
 	}
 
-	compositeLit, ok := withCall.Args[0].(*dst.CompositeLit)
+	// Check if the argument is a function literal (new API: func() []Type)
+	funcLit, ok := withCall.Args[0].(*dst.FuncLit)
 	if !ok {
 		return
 	}
 
-	// Use slices.DeleteFunc to remove the matching item
-	compositeLit.Elts = slices.DeleteFunc(compositeLit.Elts, func(ex dst.Expr) bool {
-		return match.EqualNode(itemExpr).MatchNode(ex)
-	})
+	// Find the return statement and its composite literal
+	for _, stmt := range funcLit.Body.List {
+		if retStmt, ok := stmt.(*dst.ReturnStmt); ok {
+			if len(retStmt.Results) > 0 {
+				if compositeLit, ok := retStmt.Results[0].(*dst.CompositeLit); ok {
+					// Use slices.DeleteFunc to remove the matching item
+					compositeLit.Elts = slices.DeleteFunc(compositeLit.Elts, func(ex dst.Expr) bool {
+						return match.EqualNode(itemExpr).MatchNode(ex)
+					})
+					return
+				}
+			}
+		}
+	}
 }
 
 // addMiddlewareAppendCall adds a new handler.Append() call to the function literal.
@@ -969,4 +1017,175 @@ func foundationSetupMiddleware(middleware string) modify.Action {
 			createWithMiddleware(setupCall, parentOfSetup, middlewareExpr)
 		}
 	}
+}
+
+// addRouteImports adds the required imports for the route package.
+func addRouteImports(appFilePath, pkg string) error {
+	importMatchers := match.Imports()
+	return GoFile(appFilePath).FindOrCreate(importMatchers, createImport).Modify(AddImport(pkg)).Apply()
+}
+
+// foundationSetupRouting returns an action that modifies the foundation.Setup() chain to add or update WithRouting.
+func foundationSetupRouting(route string) modify.Action {
+	return func(cursor *dstutil.Cursor) {
+		stmt := cursor.Node().(*dst.ExprStmt)
+
+		if !containsFoundationSetup(stmt) {
+			return
+		}
+
+		callExpr, ok := stmt.X.(*dst.CallExpr)
+		if !ok {
+			return
+		}
+
+		setupCall, withRoutingCall, parentOfSetup := findFoundationSetupCallsForRouting(callExpr)
+		if setupCall == nil || parentOfSetup == nil {
+			return
+		}
+
+		routeExpr := MustParseExpr(route).(dst.Expr)
+		routeStmt := &dst.ExprStmt{X: routeExpr}
+
+		if withRoutingCall != nil {
+			appendToExistingRouting(withRoutingCall, routeStmt)
+		} else {
+			createWithRouting(setupCall, parentOfSetup, routeStmt)
+		}
+	}
+}
+
+// removeRouteFromSetup returns an action that removes a route from WithRouting in foundation.Setup().
+func removeRouteFromSetup(route string) modify.Action {
+	return func(cursor *dstutil.Cursor) {
+		stmt := cursor.Node().(*dst.ExprStmt)
+
+		if !containsFoundationSetup(stmt) {
+			return
+		}
+
+		callExpr, ok := stmt.X.(*dst.CallExpr)
+		if !ok {
+			return
+		}
+
+		_, withRoutingCall, _ := findFoundationSetupCallsForRouting(callExpr)
+		if withRoutingCall == nil || len(withRoutingCall.Args) == 0 {
+			return
+		}
+
+		funcLit, ok := withRoutingCall.Args[0].(*dst.FuncLit)
+		if !ok {
+			return
+		}
+
+		routeExpr := MustParseExpr(route).(dst.Expr)
+		routeStmt := &dst.ExprStmt{X: routeExpr}
+		removeRouteFromFuncBody(funcLit.Body, routeStmt)
+	}
+}
+
+// findFoundationSetupCallsForRouting finds the Setup() call and WithRouting() call in the chain.
+func findFoundationSetupCallsForRouting(callExpr *dst.CallExpr) (setupCall *dst.CallExpr, withRoutingCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr) {
+	current := callExpr
+	for current != nil {
+		if sel, ok := current.Fun.(*dst.SelectorExpr); ok {
+			if innerCall, ok := sel.X.(*dst.CallExpr); ok {
+				if innerSel, ok := innerCall.Fun.(*dst.SelectorExpr); ok {
+					// Check if this is the Setup() call
+					if innerSel.Sel.Name == "Setup" {
+						if ident, ok := innerSel.X.(*dst.Ident); ok && ident.Name == "foundation" {
+							setupCall = innerCall
+							parentOfSetup = sel
+							break
+						}
+					}
+					// Check if this is WithRouting
+					if innerSel.Sel.Name == "WithRouting" {
+						withRoutingCall = innerCall
+					}
+				}
+				current = innerCall
+				continue
+			}
+		}
+		break
+	}
+	return
+}
+
+// createWithRouting creates a new WithRouting call and inserts it into the chain.
+func createWithRouting(setupCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr, routeStmt *dst.ExprStmt) {
+	// Add proper decorations to the route statement for formatting
+	routeStmt.Decs.Before = dst.NewLine
+	routeStmt.Decs.After = dst.NewLine
+
+	funcLit := &dst.FuncLit{
+		Type: &dst.FuncType{
+			Params: &dst.FieldList{
+				List: []*dst.Field{},
+			},
+		},
+		Body: &dst.BlockStmt{
+			List: []dst.Stmt{routeStmt},
+		},
+	}
+
+	withRoutingCall := &dst.CallExpr{
+		Fun: &dst.SelectorExpr{
+			X: setupCall,
+			Sel: &dst.Ident{
+				Name: "WithRouting",
+				Decs: dst.IdentDecorations{
+					NodeDecs: dst.NodeDecs{
+						Before: dst.NewLine,
+					},
+				},
+			},
+		},
+		Args: []dst.Expr{funcLit},
+	}
+
+	// Insert WithRouting into the chain
+	parentOfSetup.X = withRoutingCall
+}
+
+// appendToExistingRouting appends a route statement to an existing WithRouting call.
+func appendToExistingRouting(withRoutingCall *dst.CallExpr, routeStmt *dst.ExprStmt) {
+	if len(withRoutingCall.Args) == 0 {
+		return
+	}
+
+	funcLit, ok := withRoutingCall.Args[0].(*dst.FuncLit)
+	if !ok {
+		return
+	}
+
+	// Check if route already exists
+	for _, stmt := range funcLit.Body.List {
+		if match.EqualNode(routeStmt).MatchNode(stmt) {
+			return
+		}
+	}
+
+	// Ensure proper formatting for the first statement
+	if len(funcLit.Body.List) > 0 {
+		// Ensure existing statements have proper newlines
+		if funcLit.Body.List[0].Decorations().Before != dst.NewLine {
+			funcLit.Body.List[0].Decorations().Before = dst.NewLine
+		}
+	}
+
+	// Add proper decorations to the new route statement
+	routeStmt.Decs.Before = dst.NewLine
+	routeStmt.Decs.After = dst.NewLine
+
+	funcLit.Body.List = append(funcLit.Body.List, routeStmt)
+}
+
+// removeRouteFromFuncBody removes a route statement from the function body.
+func removeRouteFromFuncBody(body *dst.BlockStmt, routeStmt *dst.ExprStmt) {
+	body.List = slices.DeleteFunc(body.List, func(stmt dst.Stmt) bool {
+		return match.EqualNode(routeStmt).MatchNode(stmt)
+	})
 }

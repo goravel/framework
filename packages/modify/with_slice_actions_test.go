@@ -139,7 +139,6 @@ func Boot() {
 	appResult, err := supportfile.GetContent(s.appFile)
 	s.NoError(err)
 	s.NotContains(appResult, "WithCommands")
-	s.NotContains(appResult, "Commands()")
 
 	// Verify commands.go was NOT created
 	commandsFile := filepath.Join(s.bootstrapDir, "commands.go")
@@ -180,7 +179,7 @@ func Boot() {
 	// Verify app.go was updated
 	appResult, err := supportfile.GetContent(s.appFile)
 	s.NoError(err)
-	s.Contains(appResult, "WithCommands(Commands())")
+	s.Contains(appResult, "WithCommands(Commands)")
 
 	// Verify commands.go was created
 	commandsFile := filepath.Join(s.bootstrapDir, "commands.go")
@@ -256,7 +255,7 @@ import (
 )
 
 func Boot() {
-	foundation.Setup().WithCommands(Commands()).WithConfig(config.Boot).Run()
+	foundation.Setup().WithCommands(Commands).WithConfig(config.Boot).Run()
 }
 `
 	s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
@@ -314,8 +313,10 @@ import (
 
 func Boot() {
 	foundation.Setup().
-		WithCommands([]console.Command{
-			&commands.ExistingCommand{},
+		WithCommands(func() []console.Command{
+			return []console.Command{
+				&commands.ExistingCommand{},
+			}
 		}).WithConfig(config.Boot).Run()
 }
 `
@@ -345,7 +346,7 @@ func (s *WithSliceHandlerTestSuite) TestCheckWithMethodExists() {
 import "github.com/goravel/framework/foundation"
 
 func Boot() {
-	foundation.Setup().WithCommands(Commands()).Run()
+	foundation.Setup().WithCommands(Commands).Run()
 }
 `
 	s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
@@ -463,12 +464,22 @@ func (s *WithSliceHandlerTestSuite) TestAppendToExisting() {
 	s.Run("ValidCompositeLiteral", func() {
 		handler := newWithSliceHandler(config)
 
-		// Test with valid composite literal
+		// Test with valid function literal containing a return statement with composite literal
 		withCall := &dst.CallExpr{
 			Args: []dst.Expr{
-				&dst.CompositeLit{
-					Elts: []dst.Expr{
-						&dst.Ident{Name: "existing"},
+				&dst.FuncLit{
+					Body: &dst.BlockStmt{
+						List: []dst.Stmt{
+							&dst.ReturnStmt{
+								Results: []dst.Expr{
+									&dst.CompositeLit{
+										Elts: []dst.Expr{
+											&dst.Ident{Name: "existing"},
+										},
+									},
+								},
+							},
+						},
 					},
 				},
 			},
@@ -477,7 +488,9 @@ func (s *WithSliceHandlerTestSuite) TestAppendToExisting() {
 		itemExpr := &dst.Ident{Name: "new"}
 		handler.appendToExisting(withCall, itemExpr)
 
-		compositeLit := withCall.Args[0].(*dst.CompositeLit)
+		funcLit := withCall.Args[0].(*dst.FuncLit)
+		retStmt := funcLit.Body.List[0].(*dst.ReturnStmt)
+		compositeLit := retStmt.Results[0].(*dst.CompositeLit)
 		s.Len(compositeLit.Elts, 2)
 		s.Equal("existing", compositeLit.Elts[0].(*dst.Ident).Name)
 		s.Equal("new", compositeLit.Elts[1].(*dst.Ident).Name)
@@ -501,10 +514,10 @@ func (s *WithSliceHandlerTestSuite) TestAppendToExisting() {
 	s.Run("NotCompositeLit", func() {
 		handler := newWithSliceHandler(config)
 
-		// Test with non-composite literal arg
+		// Test with non-function literal arg
 		withCall := &dst.CallExpr{
 			Args: []dst.Expr{
-				&dst.Ident{Name: "notACompositeLit"},
+				&dst.Ident{Name: "notAFuncLit"},
 			},
 		}
 
@@ -513,7 +526,7 @@ func (s *WithSliceHandlerTestSuite) TestAppendToExisting() {
 
 		// Should not panic and should not modify
 		s.Len(withCall.Args, 1)
-		s.Equal("notACompositeLit", withCall.Args[0].(*dst.Ident).Name)
+		s.Equal("notAFuncLit", withCall.Args[0].(*dst.Ident).Name)
 	})
 }
 
@@ -551,9 +564,18 @@ func (s *WithSliceHandlerTestSuite) TestCreateWithMethod() {
 	s.True(ok)
 	s.Equal("WithCommands", withSel.Sel.Name)
 
-	// Verify the composite literal
+	// Verify the function literal wrapping
 	s.Len(newWithCall.Args, 1)
-	compositeLit, ok := newWithCall.Args[0].(*dst.CompositeLit)
+	funcLit, ok := newWithCall.Args[0].(*dst.FuncLit)
+	s.True(ok)
+	s.NotNil(funcLit)
+
+	// Verify the return statement contains the composite literal
+	s.Len(funcLit.Body.List, 1)
+	retStmt, ok := funcLit.Body.List[0].(*dst.ReturnStmt)
+	s.True(ok)
+	s.Len(retStmt.Results, 1)
+	compositeLit, ok := retStmt.Results[0].(*dst.CompositeLit)
 	s.True(ok)
 	s.Len(compositeLit.Elts, 1)
 }
@@ -642,8 +664,10 @@ import (
 
 func Boot() {
 	foundation.Setup().
-		WithCommands([]console.Command{
-			&commands.ExistingCommand{},
+		WithCommands(func() []console.Command{
+			return []console.Command{
+				&commands.ExistingCommand{},
+			}
 		}).Run()
 }
 `
@@ -684,7 +708,7 @@ func Boot() {
 
 		result, err := supportfile.GetContent(s.appFile)
 		s.NoError(err)
-		s.Contains(result, "WithCommands([]console.Command{")
+		s.Contains(result, "WithCommands(func() []console.Command {")
 		s.Contains(result, "&commands.NewCommand{}")
 	})
 }
@@ -716,7 +740,7 @@ func Boot() {
 
 	result, err := supportfile.GetContent(s.appFile)
 	s.NoError(err)
-	s.Contains(result, "WithCommands(Commands())")
+	s.Contains(result, "WithCommands(Commands)")
 }
 
 func (s *WithSliceHandlerTestSuite) TestAddItem_WithMigrations() {
@@ -753,7 +777,7 @@ func Boot() {
 	// Verify app.go was updated
 	appResult, err := supportfile.GetContent(s.appFile)
 	s.NoError(err)
-	s.Contains(appResult, "WithMigrations(Migrations())")
+	s.Contains(appResult, "WithMigrations(Migrations)")
 
 	// Verify migrations.go was created
 	migrationsFile := filepath.Join(s.bootstrapDir, "migrations.go")
@@ -815,7 +839,7 @@ import (
 )
 
 func Boot() {
-	foundation.Setup().WithCommands(Commands()).WithConfig(config.Boot).Run()
+	foundation.Setup().WithCommands(Commands).WithConfig(config.Boot).Run()
 }
 `
 		s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
@@ -866,9 +890,11 @@ import (
 
 func Boot() {
 	foundation.Setup().
-		WithCommands([]console.Command{
-			&commands.ExampleCommand{},
-			&commands.OtherCommand{},
+		WithCommands(func() []console.Command {
+			return []console.Command{
+				&commands.ExampleCommand{},
+				&commands.OtherCommand{},
+			}
 		}).WithConfig(config.Boot).Run()
 }
 `
@@ -899,7 +925,7 @@ import (
 )
 
 func Boot() {
-	foundation.Setup().WithCommands(Commands()).WithConfig(config.Boot).Run()
+	foundation.Setup().WithCommands(Commands).WithConfig(config.Boot).Run()
 }
 `
 		s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
@@ -948,8 +974,10 @@ import (
 
 func Boot() {
 	foundation.Setup().
-		WithCommands([]console.Command{
-			&commands.OnlyCommand{},
+		WithCommands(func() []console.Command {
+			return []console.Command{
+				&commands.OnlyCommand{},
+			}
 		}).WithConfig(config.Boot).Run()
 }
 `
@@ -1014,8 +1042,10 @@ import (
 
 func Boot() {
 	foundation.Setup().
-		WithCommands([]console.Command{
-			&commands.OtherCommand{},
+		WithCommands(func() []console.Command {
+			return []console.Command{
+				&commands.OtherCommand{},
+			}
 		}).WithConfig(config.Boot).Run()
 }
 `
@@ -1091,10 +1121,12 @@ import (
 
 func Boot() {
 	foundation.Setup().
-		WithCommands([]console.Command{
-			&commands.Command1{},
-			&commands.Command2{},
-			&commands.Command3{},
+		WithCommands(func() []console.Command {
+			return []console.Command{
+				&commands.Command1{},
+				&commands.Command2{},
+				&commands.Command3{},
+			}
 		}).Run()
 }
 `
@@ -1150,35 +1182,45 @@ func (s *WithSliceHandlerTestSuite) TestRemoveFromExisting() {
 	s.Run("RemoveMiddleItem", func() {
 		handler := newWithSliceHandler(config)
 
-		// Test with valid composite literal containing multiple items
+		// Test with valid function literal containing a return statement with composite literal
 		withCall := &dst.CallExpr{
 			Args: []dst.Expr{
-				&dst.CompositeLit{
-					Elts: []dst.Expr{
-						&dst.UnaryExpr{
-							Op: token.AND,
-							X: &dst.CompositeLit{
-								Type: &dst.SelectorExpr{
-									X:   &dst.Ident{Name: "commands"},
-									Sel: &dst.Ident{Name: "Command1"},
-								},
-							},
-						},
-						&dst.UnaryExpr{
-							Op: token.AND,
-							X: &dst.CompositeLit{
-								Type: &dst.SelectorExpr{
-									X:   &dst.Ident{Name: "commands"},
-									Sel: &dst.Ident{Name: "Command2"},
-								},
-							},
-						},
-						&dst.UnaryExpr{
-							Op: token.AND,
-							X: &dst.CompositeLit{
-								Type: &dst.SelectorExpr{
-									X:   &dst.Ident{Name: "commands"},
-									Sel: &dst.Ident{Name: "Command3"},
+				&dst.FuncLit{
+					Body: &dst.BlockStmt{
+						List: []dst.Stmt{
+							&dst.ReturnStmt{
+								Results: []dst.Expr{
+									&dst.CompositeLit{
+										Elts: []dst.Expr{
+											&dst.UnaryExpr{
+												Op: token.AND,
+												X: &dst.CompositeLit{
+													Type: &dst.SelectorExpr{
+														X:   &dst.Ident{Name: "commands"},
+														Sel: &dst.Ident{Name: "Command1"},
+													},
+												},
+											},
+											&dst.UnaryExpr{
+												Op: token.AND,
+												X: &dst.CompositeLit{
+													Type: &dst.SelectorExpr{
+														X:   &dst.Ident{Name: "commands"},
+														Sel: &dst.Ident{Name: "Command2"},
+													},
+												},
+											},
+											&dst.UnaryExpr{
+												Op: token.AND,
+												X: &dst.CompositeLit{
+													Type: &dst.SelectorExpr{
+														X:   &dst.Ident{Name: "commands"},
+														Sel: &dst.Ident{Name: "Command3"},
+													},
+												},
+											},
+										},
+									},
 								},
 							},
 						},
@@ -1190,7 +1232,9 @@ func (s *WithSliceHandlerTestSuite) TestRemoveFromExisting() {
 		itemExpr := MustParseExpr("&commands.Command2{}").(dst.Expr)
 		handler.removeFromExisting(withCall, itemExpr)
 
-		compositeLit := withCall.Args[0].(*dst.CompositeLit)
+		funcLit := withCall.Args[0].(*dst.FuncLit)
+		retStmt := funcLit.Body.List[0].(*dst.ReturnStmt)
+		compositeLit := retStmt.Results[0].(*dst.CompositeLit)
 		s.Len(compositeLit.Elts, 2)
 
 		// Verify Command1 and Command3 remain
@@ -1223,10 +1267,10 @@ func (s *WithSliceHandlerTestSuite) TestRemoveFromExisting() {
 	s.Run("NotCompositeLit", func() {
 		handler := newWithSliceHandler(config)
 
-		// Test with non-composite literal arg
+		// Test with non-function literal arg
 		withCall := &dst.CallExpr{
 			Args: []dst.Expr{
-				&dst.Ident{Name: "notACompositeLit"},
+				&dst.Ident{Name: "notAFuncLit"},
 			},
 		}
 
@@ -1235,7 +1279,7 @@ func (s *WithSliceHandlerTestSuite) TestRemoveFromExisting() {
 
 		// Should not panic and should not modify
 		s.Len(withCall.Args, 1)
-		s.Equal("notACompositeLit", withCall.Args[0].(*dst.Ident).Name)
+		s.Equal("notAFuncLit", withCall.Args[0].(*dst.Ident).Name)
 	})
 
 	s.Run("ItemNotFound", func() {
@@ -1244,23 +1288,33 @@ func (s *WithSliceHandlerTestSuite) TestRemoveFromExisting() {
 		// Test removing an item that doesn't exist
 		withCall := &dst.CallExpr{
 			Args: []dst.Expr{
-				&dst.CompositeLit{
-					Elts: []dst.Expr{
-						&dst.UnaryExpr{
-							Op: token.AND,
-							X: &dst.CompositeLit{
-								Type: &dst.SelectorExpr{
-									X:   &dst.Ident{Name: "commands"},
-									Sel: &dst.Ident{Name: "Command1"},
-								},
-							},
-						},
-						&dst.UnaryExpr{
-							Op: token.AND,
-							X: &dst.CompositeLit{
-								Type: &dst.SelectorExpr{
-									X:   &dst.Ident{Name: "commands"},
-									Sel: &dst.Ident{Name: "Command2"},
+				&dst.FuncLit{
+					Body: &dst.BlockStmt{
+						List: []dst.Stmt{
+							&dst.ReturnStmt{
+								Results: []dst.Expr{
+									&dst.CompositeLit{
+										Elts: []dst.Expr{
+											&dst.UnaryExpr{
+												Op: token.AND,
+												X: &dst.CompositeLit{
+													Type: &dst.SelectorExpr{
+														X:   &dst.Ident{Name: "commands"},
+														Sel: &dst.Ident{Name: "Command1"},
+													},
+												},
+											},
+											&dst.UnaryExpr{
+												Op: token.AND,
+												X: &dst.CompositeLit{
+													Type: &dst.SelectorExpr{
+														X:   &dst.Ident{Name: "commands"},
+														Sel: &dst.Ident{Name: "Command2"},
+													},
+												},
+											},
+										},
+									},
 								},
 							},
 						},
@@ -1272,7 +1326,9 @@ func (s *WithSliceHandlerTestSuite) TestRemoveFromExisting() {
 		itemExpr := MustParseExpr("&commands.NonExistent{}").(dst.Expr)
 		handler.removeFromExisting(withCall, itemExpr)
 
-		compositeLit := withCall.Args[0].(*dst.CompositeLit)
+		funcLit := withCall.Args[0].(*dst.FuncLit)
+		retStmt := funcLit.Body.List[0].(*dst.ReturnStmt)
+		compositeLit := retStmt.Results[0].(*dst.CompositeLit)
 		// Should still have both items since the item to remove wasn't found
 		s.Len(compositeLit.Elts, 2)
 	})
@@ -2057,172 +2113,11 @@ func Boot() {
 	}
 }
 
-func (s *WithSliceHandlerTestSuite) TestAddItem_AlwaysInline_NoFoundationSetup() {
-	config := withSliceConfig{
-		withMethodName: "WithRouting",
-		alwaysInline:   true,
-		isFuncSlice:    true,
-	}
-
-	// Create app.go file WITHOUT foundation.Setup()
-	appContent := `package bootstrap
-
-import "goravel/config"
-
-func Boot() {
-	config.Boot()
-}
-`
-	s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
-
-	handler := newWithSliceHandler(config)
-	err := handler.AddItem("goravel/routes", "routes.Web")
-
-	// Should return nil (no-op) when foundation.Setup() doesn't exist
-	s.NoError(err)
-
-	// Verify app.go was NOT modified
-	appResult, err := supportfile.GetContent(s.appFile)
-	s.NoError(err)
-	s.NotContains(appResult, "WithRouting")
-	s.NotContains(appResult, "routes.Web")
-}
-
-func (s *WithSliceHandlerTestSuite) TestAddItem_AlwaysInline_NoWithMethod() {
-	config := withSliceConfig{
-		withMethodName: "WithRouting",
-		alwaysInline:   true,
-		isFuncSlice:    true,
-	}
-
-	appContent := `package bootstrap
-
-import (
-	"github.com/goravel/framework/foundation"
-	"goravel/config"
-)
-
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
-}
-`
-	s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
-
-	handler := newWithSliceHandler(config)
-	err := handler.AddItem("goravel/routes", "routes.Web")
-
-	s.NoError(err)
-
-	// Verify app.go was updated with inline addition
-	appResult, err := supportfile.GetContent(s.appFile)
-	s.NoError(err)
-	s.Contains(appResult, "WithRouting([]func(){")
-	s.Contains(appResult, "routes.Web")
-	s.Contains(appResult, `"goravel/routes"`)
-
-	// Verify no helper file was created
-	routingFile := filepath.Join(s.bootstrapDir, "routing.go")
-	s.False(supportfile.Exists(routingFile))
-}
-
-func (s *WithSliceHandlerTestSuite) TestAddItem_AlwaysInline_WithMethodExists() {
-	config := withSliceConfig{
-		withMethodName: "WithRouting",
-		alwaysInline:   true,
-		isFuncSlice:    true,
-	}
-
-	appContent := `package bootstrap
-
-import (
-	"github.com/goravel/framework/foundation"
-	"goravel/config"
-	"goravel/routes"
-)
-
-func Boot() {
-	foundation.Setup().
-		WithRouting([]func(){
-			routes.Web,
-		}).WithConfig(config.Boot).Run()
-}
-`
-	s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
-
-	handler := newWithSliceHandler(config)
-	err := handler.AddItem("goravel/routes", "routes.Api")
-
-	s.NoError(err)
-
-	// Verify app.go was updated with inline addition
-	appResult, err := supportfile.GetContent(s.appFile)
-	s.NoError(err)
-	s.Contains(appResult, "routes.Web")
-	s.Contains(appResult, "routes.Api")
-
-	// Verify no helper file was created
-	routingFile := filepath.Join(s.bootstrapDir, "routing.go")
-	s.False(supportfile.Exists(routingFile))
-}
-
-func (s *WithSliceHandlerTestSuite) TestCreateWithMethod_FuncSlice() {
-	config := withSliceConfig{
-		withMethodName: "WithRouting",
-		isFuncSlice:    true,
-	}
-
-	handler := newWithSliceHandler(config)
-
-	setupCall := &dst.CallExpr{
-		Fun: &dst.SelectorExpr{
-			X:   &dst.Ident{Name: "foundation"},
-			Sel: &dst.Ident{Name: "Setup"},
-		},
-	}
-
-	parentOfSetup := &dst.SelectorExpr{
-		X:   setupCall,
-		Sel: &dst.Ident{Name: "Run"},
-	}
-
-	itemExpr := &dst.SelectorExpr{
-		X:   &dst.Ident{Name: "routes"},
-		Sel: &dst.Ident{Name: "Web"},
-	}
-
-	handler.createWithMethod(setupCall, parentOfSetup, itemExpr)
-
-	// Verify the chain was modified
-	newWithCall, ok := parentOfSetup.X.(*dst.CallExpr)
-	s.True(ok)
-	s.NotNil(newWithCall)
-
-	withSel, ok := newWithCall.Fun.(*dst.SelectorExpr)
-	s.True(ok)
-	s.Equal("WithRouting", withSel.Sel.Name)
-
-	// Verify the composite literal has []func() type
-	s.Len(newWithCall.Args, 1)
-	compositeLit, ok := newWithCall.Args[0].(*dst.CompositeLit)
-	s.True(ok)
-
-	arrayType, ok := compositeLit.Type.(*dst.ArrayType)
-	s.True(ok)
-
-	funcType, ok := arrayType.Elt.(*dst.FuncType)
-	s.True(ok)
-	s.True(funcType.Func)
-	s.NotNil(funcType.Params)
-
-	s.Len(compositeLit.Elts, 1)
-}
-
 func (s *WithSliceHandlerTestSuite) TestCreateWithMethod_TypedSlice() {
 	config := withSliceConfig{
 		withMethodName: "WithCommands",
 		typePackage:    "console",
 		typeName:       "Command",
-		isFuncSlice:    false,
 	}
 
 	handler := newWithSliceHandler(config)
@@ -2252,9 +2147,18 @@ func (s *WithSliceHandlerTestSuite) TestCreateWithMethod_TypedSlice() {
 	s.True(ok)
 	s.Equal("WithCommands", withSel.Sel.Name)
 
-	// Verify the composite literal has []console.Command type
+	// Verify the function literal wrapping
 	s.Len(newWithCall.Args, 1)
-	compositeLit, ok := newWithCall.Args[0].(*dst.CompositeLit)
+	funcLit, ok := newWithCall.Args[0].(*dst.FuncLit)
+	s.True(ok)
+	s.NotNil(funcLit)
+
+	// Verify the return statement contains the composite literal with []console.Command type
+	s.Len(funcLit.Body.List, 1)
+	retStmt, ok := funcLit.Body.List[0].(*dst.ReturnStmt)
+	s.True(ok)
+	s.Len(retStmt.Results, 1)
+	compositeLit, ok := retStmt.Results[0].(*dst.CompositeLit)
 	s.True(ok)
 
 	arrayType, ok := compositeLit.Type.(*dst.ArrayType)
@@ -2266,180 +2170,4 @@ func (s *WithSliceHandlerTestSuite) TestCreateWithMethod_TypedSlice() {
 	s.Equal("Command", selectorExpr.Sel.Name)
 
 	s.Len(compositeLit.Elts, 1)
-}
-
-func (s *WithSliceHandlerTestSuite) TestRemoveItem_AlwaysInline() {
-	config := withSliceConfig{
-		withMethodName: "WithRouting",
-		alwaysInline:   true,
-		isFuncSlice:    true,
-	}
-
-	s.Run("RemoveFromExistingRouting", func() {
-		defer func() {
-			s.NoError(supportfile.Remove(s.bootstrapDir))
-		}()
-
-		appContent := `package bootstrap
-
-import (
-	"github.com/goravel/framework/foundation"
-	"goravel/config"
-	"goravel/routes"
-)
-
-func Boot() {
-	foundation.Setup().
-		WithRouting([]func(){
-			routes.Web,
-			routes.Api,
-		}).WithConfig(config.Boot).Run()
-}
-`
-		s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
-
-		handler := newWithSliceHandler(config)
-		err := handler.RemoveItem("goravel/routes", "routes.Web")
-
-		s.NoError(err)
-
-		// Verify app.go was updated
-		appResult, err := supportfile.GetContent(s.appFile)
-		s.NoError(err)
-		s.NotContains(appResult, "routes.Web")
-		s.Contains(appResult, "routes.Api")
-	})
-
-	s.Run("NoWithMethod", func() {
-		defer func() {
-			s.NoError(supportfile.Remove(s.bootstrapDir))
-		}()
-
-		appContent := `package bootstrap
-
-import (
-	"github.com/goravel/framework/foundation"
-	"goravel/config"
-)
-
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
-}
-`
-		s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
-
-		handler := newWithSliceHandler(config)
-		err := handler.RemoveItem("goravel/routes", "routes.Web")
-
-		// Should return nil when WithMethod doesn't exist
-		s.NoError(err)
-	})
-
-	s.Run("NoFoundationSetup", func() {
-		defer func() {
-			s.NoError(supportfile.Remove(s.bootstrapDir))
-		}()
-
-		// Create app.go file WITHOUT foundation.Setup()
-		appContent := `package bootstrap
-
-import "goravel/config"
-
-func Boot() {
-	config.Boot()
-}
-`
-		s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
-
-		handler := newWithSliceHandler(config)
-		err := handler.RemoveItem("goravel/routes", "routes.Web")
-
-		// Should return nil (no-op) when foundation.Setup() doesn't exist
-		s.NoError(err)
-
-		// Verify app.go was NOT modified
-		appResult, err := supportfile.GetContent(s.appFile)
-		s.NoError(err)
-		s.Equal(appContent, appResult)
-	})
-}
-
-func (s *WithSliceHandlerTestSuite) TestAddImports_FuncSlice() {
-	config := withSliceConfig{
-		withMethodName: "WithRouting",
-		alwaysInline:   true,
-		isFuncSlice:    true,
-		typeImportPath: "", // No type import for func slices
-	}
-
-	appContent := `package bootstrap
-
-import "github.com/goravel/framework/foundation"
-
-func Boot() {
-	foundation.Setup().Run()
-}
-`
-	s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
-
-	handler := newWithSliceHandler(config)
-	err := handler.addImports("goravel/routes")
-
-	s.NoError(err)
-
-	content, err := supportfile.GetContent(s.appFile)
-	s.NoError(err)
-	s.Contains(content, `"goravel/routes"`)
-	// Should not add any type import since typeImportPath is empty
-	s.NotContains(content, "contracts")
-}
-
-func (s *WithSliceHandlerTestSuite) TestAddItem_AlwaysInline_NeverCreatesHelperFile() {
-	config := withSliceConfig{
-		fileName:       "routing.go", // This should never be created
-		withMethodName: "WithRouting",
-		helperFuncName: "Routing",
-		alwaysInline:   true,
-		isFuncSlice:    true,
-		stubTemplate: func() string {
-			return "THIS SHOULD NEVER BE CREATED"
-		},
-	}
-
-	appContent := `package bootstrap
-
-import (
-	"github.com/goravel/framework/foundation"
-	"goravel/config"
-)
-
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
-}
-`
-	s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
-
-	handler := newWithSliceHandler(config)
-
-	// Add first item
-	err := handler.AddItem("goravel/routes", "routes.Web")
-	s.NoError(err)
-
-	// Verify no helper file was created
-	routingFile := filepath.Join(s.bootstrapDir, "routing.go")
-	s.False(supportfile.Exists(routingFile))
-
-	// Add second item
-	err = handler.AddItem("goravel/routes", "routes.Api")
-	s.NoError(err)
-
-	// Verify still no helper file was created
-	s.False(supportfile.Exists(routingFile))
-
-	// Verify both items are in app.go
-	appResult, err := supportfile.GetContent(s.appFile)
-	s.NoError(err)
-	s.Contains(appResult, "routes.Web")
-	s.Contains(appResult, "routes.Api")
-	s.Contains(appResult, "WithRouting([]func(){")
 }

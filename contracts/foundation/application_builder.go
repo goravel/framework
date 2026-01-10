@@ -46,7 +46,7 @@ type ApplicationBuilder interface {
 	// WithPaths sets custom paths for the application.
 	WithPaths(func(paths configuration.Paths)) ApplicationBuilder
 	// WithProviders registers and boots custom service providers.
-	WithProviders([]ServiceProvider) ApplicationBuilder
+	WithProviders(func() []ServiceProvider) ApplicationBuilder
 	// WithRouting registers the application's routes.
 	WithRouting(func()) ApplicationBuilder
 	// WithRules registers the custom validation rules.

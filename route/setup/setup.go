@@ -13,7 +13,7 @@ func main() {
 	stubs := Stubs{}
 	routeFacadePath := path.Facade("route.go")
 	routesImport := setup.Paths().Routes().Import()
-	webFunc := setup.Paths().Routes().Package() + ".Web"
+	webFunc := setup.Paths().Routes().Package() + ".Web()"
 	webRoutePath := path.Route("web.go")
 	welcomeTmplPath := path.Resource("views", "welcome.tmpl")
 	routeServiceProvider := "&route.ServiceProvider{}"
