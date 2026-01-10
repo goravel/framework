@@ -20,6 +20,11 @@ func CheckForMaintenance() http.Middleware {
 
 		content, err := os.ReadFile(filepath)
 
+		if err != nil {
+			ctx.Request().Abort(http.StatusServiceUnavailable)
+			return
+		}
+
 		var maintenanceOptions *console.MaintenanceOptions
 		err = json.Unmarshal(content, &maintenanceOptions)
 
@@ -40,15 +45,19 @@ func CheckForMaintenance() http.Middleware {
 			if ctx.Request().Path() == maintenanceOptions.Redirect {
 				ctx.Request().Next()
 				return
-			} else {
-				ctx.Response().Redirect(http.StatusTemporaryRedirect, maintenanceOptions.Redirect).Abort()
+			}
+
+			if err = ctx.Response().Redirect(http.StatusTemporaryRedirect, maintenanceOptions.Redirect).Abort(); err != nil {
 				return
 			}
+			return
 		}
 
 		if maintenanceOptions.Render != "" {
 			ctx.Request().Abort(maintenanceOptions.Status)
-			ctx.Response().View().Make(maintenanceOptions.Render, map[string]string{}).Render()
+			if err = ctx.Response().View().Make(maintenanceOptions.Render, map[string]string{}).Render(); err != nil {
+				return
+			}
 			return
 		}
 
