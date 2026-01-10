@@ -1010,16 +1010,23 @@ func (r *Query) buildInsert(data []map[string]any) (sql string, args []any, err 
 		builder = builder.PlaceholderFormat(placeholderFormat)
 	}
 
-	first := data[0]
-	cols := make([]string, 0, len(first))
-	for col := range first {
+	// Collect all unique columns from all maps to avoid missing columns
+	colSet := make(map[string]bool)
+	for _, row := range data {
+		for col := range row {
+			colSet[col] = true
+		}
+	}
+
+	cols := make([]string, 0, len(colSet))
+	for col := range colSet {
 		cols = append(cols, col)
 	}
 	sort.Strings(cols)
 	builder = builder.Columns(cols...)
 
 	for _, row := range data {
-		vals := make([]any, 0, len(first))
+		vals := make([]any, 0, len(cols))
 		for _, col := range cols {
 			vals = append(vals, row[col])
 		}
