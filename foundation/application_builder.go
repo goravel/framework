@@ -50,211 +50,22 @@ func NewApplicationBuilder(app foundation.Application) *ApplicationBuilder {
 }
 
 func (r *ApplicationBuilder) Create() foundation.Application {
-	// Set custom paths
-	if r.paths != nil {
-		paths := configuration.NewPaths()
-		r.paths(paths)
-	}
-
-	// Add custom service providers
-	if r.configuredServiceProviders != nil {
-		configuredServiceProviders := r.configuredServiceProviders()
-		if len(configuredServiceProviders) > 0 {
-			r.app.AddServiceProviders(configuredServiceProviders)
-		}
-	}
-
-	// Register service providers, app.Boot should not be called here, because some
-	// settings need to be done before booting service providers.
-	r.app.RegisterServiceProviders()
-
-	// Apply custom configuration
-	if r.config != nil {
-		r.config()
-	}
-
-	// Register http middleware
-	if r.middleware != nil {
-		routeFacade := r.app.MakeRoute()
-		if routeFacade == nil {
-			color.Errorln("Route facade not found, please install it first: ./artisan package:install Route")
-		} else {
-			// Set up global middleware
-			defaultGlobalMiddleware := routeFacade.GetGlobalMiddleware()
-			middleware := configuration.NewMiddleware(defaultGlobalMiddleware)
-			r.middleware(middleware)
-			routeFacade.SetGlobalMiddleware(middleware.GetGlobalMiddleware())
-
-			// Set up custom recover function
-			if recoveryHandler := middleware.GetRecover(); recoveryHandler != nil {
-				routeFacade.Recover(recoveryHandler)
-			}
-		}
-	}
-
-	// Register event listeners
-	if r.eventToListeners != nil {
-		if eventToListeners := r.eventToListeners(); len(eventToListeners) > 0 {
-			eventFacade := r.app.MakeEvent()
-			if eventFacade == nil {
-				color.Errorln("Event facade not found, please install it first: ./artisan package:install Event")
-			} else {
-				eventFacade.Register(eventToListeners)
-			}
-		}
-	}
-
-	// Register commands
-	if r.commands != nil {
-		if commands := r.commands(); len(commands) > 0 {
-			artisanFacade := r.app.MakeArtisan()
-			if artisanFacade == nil {
-				color.Errorln("Artisan facade not found, please install it first: ./artisan package:install Artisan")
-			} else {
-				artisanFacade.Register(commands)
-			}
-		}
-	}
-
-	// Register scheduled events
-	if r.schedule != nil {
-		if events := r.schedule(); len(events) > 0 {
-			scheduleFacade := r.app.MakeSchedule()
-			if scheduleFacade == nil {
-				color.Errorln("Schedule facade not found, please install it first: ./artisan package:install Schedule")
-			} else {
-				scheduleFacade.Register(events)
-			}
-		}
-	}
-
-	// Register database migrations
-	if r.migrations != nil {
-		if migrations := r.migrations(); len(migrations) > 0 {
-			schemaFacade := r.app.MakeSchema()
-			if schemaFacade == nil {
-				color.Errorln("Schema facade not found, please install it first: ./artisan package:install Schema")
-			} else {
-				schemaFacade.Register(migrations)
-			}
-		}
-	}
-
-	// Register database seeders
-	if r.seeders != nil {
-		if seeders := r.seeders(); len(seeders) > 0 {
-			seederFacade := r.app.MakeSeeder()
-			if seederFacade == nil {
-				color.Errorln("Seeder facade not found, please install it first: ./artisan package:install Seeder")
-			} else {
-				seederFacade.Register(seeders)
-			}
-		}
-	}
-
-	var (
-		grpcClientInterceptors  map[string][]grpc.UnaryClientInterceptor
-		grpcServerInterceptors  []grpc.UnaryServerInterceptor
-		grpcClientStatsHandlers map[string][]stats.Handler
-		grpcServerStatsHandlers []stats.Handler
-	)
-
-	if r.grpcClientInterceptors != nil {
-		grpcClientInterceptors = r.grpcClientInterceptors()
-	}
-
-	if r.grpcServerInterceptors != nil {
-		grpcServerInterceptors = r.grpcServerInterceptors()
-	}
-
-	if r.grpcClientStatsHandlers != nil {
-		grpcClientStatsHandlers = r.grpcClientStatsHandlers()
-	}
-
-	if r.grpcServerStatsHandlers != nil {
-		grpcServerStatsHandlers = r.grpcServerStatsHandlers()
-	}
-
-	// Register gRPC interceptors
-	if len(grpcClientInterceptors) > 0 || len(grpcServerInterceptors) > 0 ||
-		len(grpcClientStatsHandlers) > 0 || len(grpcServerStatsHandlers) > 0 {
-		grpcFacade := r.app.MakeGrpc()
-		if grpcFacade == nil {
-			color.Errorln("gRPC facade not found, please install it first: ./artisan package:install Grpc")
-		} else {
-			if len(grpcClientInterceptors) > 0 {
-				grpcFacade.UnaryClientInterceptorGroups(grpcClientInterceptors)
-			}
-			if len(grpcServerInterceptors) > 0 {
-				grpcFacade.UnaryServerInterceptors(grpcServerInterceptors)
-			}
-			if len(grpcClientStatsHandlers) > 0 {
-				grpcFacade.ClientStatsHandlerGroups(grpcClientStatsHandlers)
-			}
-			if len(grpcServerStatsHandlers) > 0 {
-				grpcFacade.ServerStatsHandlers(grpcServerStatsHandlers)
-			}
-		}
-	}
-
-	// Register jobs
-	if r.jobs != nil {
-		jobs := r.jobs()
-
-		if len(jobs) > 0 {
-			queueFacade := r.app.MakeQueue()
-			if queueFacade == nil {
-				color.Errorln("Queue facade not found, please install it first: ./artisan package:install Queue")
-			} else {
-				queueFacade.Register(jobs)
-			}
-		}
-	}
-
-	var (
-		rules   []validation.Rule
-		filters []validation.Filter
-	)
-
-	if r.rules != nil {
-		rules = r.rules()
-	}
-
-	if r.filters != nil {
-		filters = r.filters()
-	}
-
-	// Register validation rules
-	if len(rules) > 0 || len(filters) > 0 {
-		validationFacade := r.app.MakeValidation()
-		if validationFacade == nil {
-			color.Errorln("Validation facade not found, please install it first: ./artisan package:install Validation")
-		} else {
-			if len(rules) > 0 {
-				if err := validationFacade.AddRules(rules); err != nil {
-					color.Errorf("add validation rules error: %+v", err)
-				}
-			}
-			if len(filters) > 0 {
-				if err := validationFacade.AddFilters(filters); err != nil {
-					color.Errorf("add validation filters error: %+v", err)
-				}
-			}
-		}
-	}
-
-	// Execute callback function
-	if r.callback != nil {
-		r.callback()
-	}
-
-	// Register routes
-	if r.routes != nil {
-		r.routes()
-	}
-
-	// Boot service providers after all settings
-	r.app.BootServiceProviders()
+	r.configurePaths()
+	r.configureServiceProviders()
+	r.registerServiceProviders()
+	r.configureCustomConfig()
+	r.configureMiddleware()
+	r.configureEventListeners()
+	r.configureCommands()
+	r.configureSchedule()
+	r.configureMigrations()
+	r.configureSeeders()
+	r.configureGrpc()
+	r.configureJobs()
+	r.configureValidation()
+	r.configureRoutes()
+	r.configureCallback()
+	r.bootServiceProviders()
 
 	return r.app
 }
@@ -369,4 +180,223 @@ func (r *ApplicationBuilder) WithSeeders(fn func() []seeder.Seeder) foundation.A
 	r.seeders = fn
 
 	return r
+}
+
+func (r *ApplicationBuilder) bootServiceProviders() {
+	r.app.BootServiceProviders()
+}
+
+func (r *ApplicationBuilder) configureCallback() {
+	if r.callback != nil {
+		r.callback()
+	}
+}
+
+func (r *ApplicationBuilder) configureCommands() {
+	if r.commands != nil {
+		if commands := r.commands(); len(commands) > 0 {
+			artisanFacade := r.app.MakeArtisan()
+			if artisanFacade == nil {
+				color.Errorln("Artisan facade not found, please install it first: ./artisan package:install Artisan")
+			} else {
+				artisanFacade.Register(commands)
+			}
+		}
+	}
+}
+
+func (r *ApplicationBuilder) configureCustomConfig() {
+	if r.config != nil {
+		r.config()
+	}
+}
+
+func (r *ApplicationBuilder) configureEventListeners() {
+	if r.eventToListeners != nil {
+		if eventToListeners := r.eventToListeners(); len(eventToListeners) > 0 {
+			eventFacade := r.app.MakeEvent()
+			if eventFacade == nil {
+				color.Errorln("Event facade not found, please install it first: ./artisan package:install Event")
+			} else {
+				eventFacade.Register(eventToListeners)
+			}
+		}
+	}
+}
+
+func (r *ApplicationBuilder) configureGrpc() {
+	var (
+		grpcClientInterceptors  map[string][]grpc.UnaryClientInterceptor
+		grpcServerInterceptors  []grpc.UnaryServerInterceptor
+		grpcClientStatsHandlers map[string][]stats.Handler
+		grpcServerStatsHandlers []stats.Handler
+	)
+
+	if r.grpcClientInterceptors != nil {
+		grpcClientInterceptors = r.grpcClientInterceptors()
+	}
+
+	if r.grpcServerInterceptors != nil {
+		grpcServerInterceptors = r.grpcServerInterceptors()
+	}
+
+	if r.grpcClientStatsHandlers != nil {
+		grpcClientStatsHandlers = r.grpcClientStatsHandlers()
+	}
+
+	if r.grpcServerStatsHandlers != nil {
+		grpcServerStatsHandlers = r.grpcServerStatsHandlers()
+	}
+
+	if len(grpcClientInterceptors) > 0 || len(grpcServerInterceptors) > 0 ||
+		len(grpcClientStatsHandlers) > 0 || len(grpcServerStatsHandlers) > 0 {
+		grpcFacade := r.app.MakeGrpc()
+		if grpcFacade == nil {
+			color.Errorln("gRPC facade not found, please install it first: ./artisan package:install Grpc")
+		} else {
+			if len(grpcClientInterceptors) > 0 {
+				grpcFacade.UnaryClientInterceptorGroups(grpcClientInterceptors)
+			}
+			if len(grpcServerInterceptors) > 0 {
+				grpcFacade.UnaryServerInterceptors(grpcServerInterceptors)
+			}
+			if len(grpcClientStatsHandlers) > 0 {
+				grpcFacade.ClientStatsHandlerGroups(grpcClientStatsHandlers)
+			}
+			if len(grpcServerStatsHandlers) > 0 {
+				grpcFacade.ServerStatsHandlers(grpcServerStatsHandlers)
+			}
+		}
+	}
+}
+
+func (r *ApplicationBuilder) configureJobs() {
+	if r.jobs != nil {
+		jobs := r.jobs()
+
+		if len(jobs) > 0 {
+			queueFacade := r.app.MakeQueue()
+			if queueFacade == nil {
+				color.Errorln("Queue facade not found, please install it first: ./artisan package:install Queue")
+			} else {
+				queueFacade.Register(jobs)
+			}
+		}
+	}
+}
+
+func (r *ApplicationBuilder) configureMiddleware() {
+	if r.middleware != nil {
+		routeFacade := r.app.MakeRoute()
+		if routeFacade == nil {
+			color.Errorln("Route facade not found, please install it first: ./artisan package:install Route")
+		} else {
+			defaultGlobalMiddleware := routeFacade.GetGlobalMiddleware()
+			middleware := configuration.NewMiddleware(defaultGlobalMiddleware)
+			r.middleware(middleware)
+			routeFacade.SetGlobalMiddleware(middleware.GetGlobalMiddleware())
+
+			if recoveryHandler := middleware.GetRecover(); recoveryHandler != nil {
+				routeFacade.Recover(recoveryHandler)
+			}
+		}
+	}
+}
+
+func (r *ApplicationBuilder) configureMigrations() {
+	if r.migrations != nil {
+		if migrations := r.migrations(); len(migrations) > 0 {
+			schemaFacade := r.app.MakeSchema()
+			if schemaFacade == nil {
+				color.Errorln("Schema facade not found, please install it first: ./artisan package:install Schema")
+			} else {
+				schemaFacade.Register(migrations)
+			}
+		}
+	}
+}
+
+func (r *ApplicationBuilder) configurePaths() {
+	if r.paths != nil {
+		paths := configuration.NewPaths()
+		r.paths(paths)
+	}
+}
+
+func (r *ApplicationBuilder) configureRoutes() {
+	if r.routes != nil {
+		r.routes()
+	}
+}
+
+func (r *ApplicationBuilder) configureSchedule() {
+	if r.schedule != nil {
+		if events := r.schedule(); len(events) > 0 {
+			scheduleFacade := r.app.MakeSchedule()
+			if scheduleFacade == nil {
+				color.Errorln("Schedule facade not found, please install it first: ./artisan package:install Schedule")
+			} else {
+				scheduleFacade.Register(events)
+			}
+		}
+	}
+}
+
+func (r *ApplicationBuilder) configureSeeders() {
+	if r.seeders != nil {
+		if seeders := r.seeders(); len(seeders) > 0 {
+			seederFacade := r.app.MakeSeeder()
+			if seederFacade == nil {
+				color.Errorln("Seeder facade not found, please install it first: ./artisan package:install Seeder")
+			} else {
+				seederFacade.Register(seeders)
+			}
+		}
+	}
+}
+
+func (r *ApplicationBuilder) configureServiceProviders() {
+	if r.configuredServiceProviders != nil {
+		configuredServiceProviders := r.configuredServiceProviders()
+		if len(configuredServiceProviders) > 0 {
+			r.app.AddServiceProviders(configuredServiceProviders)
+		}
+	}
+}
+
+func (r *ApplicationBuilder) configureValidation() {
+	var (
+		rules   []validation.Rule
+		filters []validation.Filter
+	)
+
+	if r.rules != nil {
+		rules = r.rules()
+	}
+
+	if r.filters != nil {
+		filters = r.filters()
+	}
+
+	if len(rules) > 0 || len(filters) > 0 {
+		validationFacade := r.app.MakeValidation()
+		if validationFacade == nil {
+			color.Errorln("Validation facade not found, please install it first: ./artisan package:install Validation")
+		} else {
+			if len(rules) > 0 {
+				if err := validationFacade.AddRules(rules); err != nil {
+					color.Errorf("add validation rules error: %+v", err)
+				}
+			}
+			if len(filters) > 0 {
+				if err := validationFacade.AddFilters(filters); err != nil {
+					color.Errorf("add validation filters error: %+v", err)
+				}
+			}
+		}
+	}
+}
+
+func (r *ApplicationBuilder) registerServiceProviders() {
+	r.app.RegisterServiceProviders()
 }

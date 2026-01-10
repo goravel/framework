@@ -1869,10 +1869,12 @@ func Boot() contractsfoundation.Application {
 			// Find the main call expression
 			var mainCallExpr *dst.CallExpr
 			dst.Inspect(file, func(n dst.Node) bool {
-				if stmt, ok := n.(*dst.ExprStmt); ok {
-					if call, ok := stmt.X.(*dst.CallExpr); ok {
-						mainCallExpr = call
-						return false
+				if retStmt, ok := n.(*dst.ReturnStmt); ok {
+					if len(retStmt.Results) > 0 {
+						if call, ok := retStmt.Results[0].(*dst.CallExpr); ok {
+							mainCallExpr = call
+							return false
+						}
 					}
 				}
 				return true
