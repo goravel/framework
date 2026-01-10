@@ -1,7 +1,6 @@
 package client
 
 import (
-	"context"
 	"net/http"
 	"sync"
 
@@ -14,20 +13,21 @@ var _ client.Factory = (*Factory)(nil)
 
 type Factory struct {
 	client.Request
-	json    foundation.Json
-	config  *FactoryConfig
-	clients sync.Map
-	mu      sync.Mutex
-	mock    *FakeTransport
+
+	json        foundation.Json
+	config      *FactoryConfig
+	clients     sync.Map
+	activeState *FakeState
+	mu          sync.RWMutex
 }
 
-func NewFactory(cfg *FactoryConfig, json foundation.Json) (*Factory, error) {
-	if cfg == nil {
+func NewFactory(config *FactoryConfig, json foundation.Json) (*Factory, error) {
+	if config == nil {
 		return nil, errors.HttpClientConfigNotSet
 	}
 
 	factory := &Factory{
-		config: cfg,
+		config: config,
 		json:   json,
 	}
 
@@ -44,23 +44,28 @@ func (r *Factory) Client(names ...string) client.Request {
 		name = names[0]
 	}
 
-	if val, ok := r.clients.Load(name); ok {
-		return NewRequest(val.(*http.Client), r.json, r.config.Clients[name].BaseUrl, name)
+	if name == r.config.Default && r.Request != nil {
+		return r.Request
 	}
 
-	c, err := r.createAndCache(name)
+	r.mu.RLock()
+	state := r.activeState
+	r.mu.RUnlock()
+
+	httpClient, err := r.resolveClient(name, state)
 	if err != nil {
 		return newRequestWithError(err)
 	}
 
-	return NewRequest(c, r.json, r.config.Clients[name].BaseUrl, name)
+	cfg := r.config.Clients[name]
+	return NewRequest(httpClient, r.json, cfg.BaseUrl, name)
 }
 
-func (r *Factory) Fake(mocks map[string]any) {
+func (r *Factory) Fake(mocks map[string]any) client.Factory {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	r.mock = NewFakeTransport(r.json, mocks)
+	r.activeState = NewFakeState(r.json, mocks)
 
 	r.clients.Range(func(key, value any) bool {
 		r.clients.Delete(key)
@@ -68,13 +73,14 @@ func (r *Factory) Fake(mocks map[string]any) {
 	})
 
 	_ = r.refreshDefaultClientLocked()
+	return r
 }
 
 func (r *Factory) Reset() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	r.mock = nil
+	r.activeState = nil
 
 	r.clients.Range(func(key, value any) bool {
 		r.clients.Delete(key)
@@ -84,31 +90,39 @@ func (r *Factory) Reset() {
 	_ = r.refreshDefaultClientLocked()
 }
 
-func (r *Factory) Sequence() client.ResponseSequence {
-	return NewResponseSequence(NewResponseFactory(r.json))
+func (r *Factory) PreventStrayRequests() client.Factory {
+	r.mu.RLock()
+	if r.activeState != nil {
+		defer r.mu.RUnlock()
+		r.activeState.PreventStrayRequests()
+		return r
+	}
+	r.mu.RUnlock()
+
+	return r.Fake(nil).PreventStrayRequests()
 }
 
-func (r *Factory) Response() client.ResponseFactory {
-	return NewResponseFactory(r.json)
+func (r *Factory) AllowStrayRequests(patterns []string) client.Factory {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	if r.activeState != nil {
+		r.activeState.AllowStrayRequests(patterns)
+	}
+	return r
 }
 
 func (r *Factory) AssertSent(assertion func(client.Request) bool) bool {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	if r.mock != nil {
-		return r.mock.AssertSent(assertion)
-	}
-
-	return false
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return r.activeState != nil && r.activeState.AssertSent(assertion)
 }
 
 func (r *Factory) AssertSentCount(count int) bool {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 
-	if r.mock != nil {
-		return r.mock.AssertSentCount(count)
+	if r.activeState != nil {
+		return r.activeState.AssertSentCount(count)
 	}
 
 	return count == 0
@@ -122,51 +136,63 @@ func (r *Factory) AssertNothingSent() bool {
 	return r.AssertSentCount(0)
 }
 
-func (r *Factory) createAndCache(name string) (*http.Client, error) {
-	cfg, ok := r.config.Clients[name]
-	if !ok {
-		return nil, errors.HttpClientConnectionNotFound.Args(name)
-	}
+func (r *Factory) Sequence() client.ResponseSequence {
+	return NewResponseSequence(NewResponseFactory(r.json))
+}
 
-	r.mu.Lock()
-	defer r.mu.Unlock()
+func (r *Factory) Response() client.ResponseFactory {
+	return NewResponseFactory(r.json)
+}
+
+func (r *Factory) resolveClient(name string, state *FakeState) (*http.Client, error) {
+	if name == "" {
+		return nil, errors.HttpClientDefaultNotSet
+	}
 
 	if val, ok := r.clients.Load(name); ok {
 		return val.(*http.Client), nil
 	}
 
-	c := r.buildClient(&cfg, r.mock)
-
-	r.clients.Store(name, c)
-	return c, nil
-}
-
-func (r *Factory) buildClient(cfg *Config, mock *FakeTransport) *http.Client {
-	if mock != nil {
-		return &http.Client{Timeout: cfg.Timeout, Transport: mock}
+	cfg, ok := r.config.Clients[name]
+	if !ok {
+		return nil, errors.HttpClientConnectionNotFound.Args(name)
 	}
 
-	base := http.DefaultTransport.(*http.Transport).Clone()
-	base.MaxIdleConns = cfg.MaxIdleConns
-	base.MaxIdleConnsPerHost = cfg.MaxIdleConnsPerHost
-	base.MaxConnsPerHost = cfg.MaxConnsPerHost
-	base.IdleConnTimeout = cfg.IdleConnTimeout
+	newClient := r.createHTTPClient(&cfg, state)
+	actual, _ := r.clients.LoadOrStore(name, newClient)
 
-	return &http.Client{Timeout: cfg.Timeout, Transport: base}
+	return actual.(*http.Client), nil
+}
+
+func (r *Factory) createHTTPClient(cfg *Config, state *FakeState) *http.Client {
+	baseTransport := http.DefaultTransport.(*http.Transport).Clone()
+	baseTransport.MaxIdleConns = cfg.MaxIdleConns
+	baseTransport.MaxIdleConnsPerHost = cfg.MaxIdleConnsPerHost
+	baseTransport.MaxConnsPerHost = cfg.MaxConnsPerHost
+	baseTransport.IdleConnTimeout = cfg.IdleConnTimeout
+
+	var transport http.RoundTripper = baseTransport
+
+	if state != nil {
+		transport = NewFakeTransport(state, baseTransport, r.json)
+	}
+
+	return &http.Client{
+		Timeout:   cfg.Timeout,
+		Transport: transport,
+	}
 }
 
 func (r *Factory) refreshDefaultClientLocked() error {
 	name := r.config.Default
-	cfg, ok := r.config.Clients[name]
-	if !ok {
-		return errors.HttpClientDefaultNotSet
+
+	c, err := r.resolveClient(name, r.activeState)
+	if err != nil {
+		return err
 	}
 
-	c := r.buildClient(&cfg, r.mock)
-	r.clients.Store(name, c)
-
-	ctx := context.WithValue(context.Background(), clientNameKey, name)
-	r.Request = NewRequest(c, r.json, cfg.BaseUrl, name).WithContext(ctx)
+	cfg := r.config.Clients[name]
+	r.Request = NewRequest(c, r.json, cfg.BaseUrl, name)
 
 	return nil
 }
