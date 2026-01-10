@@ -2,6 +2,7 @@ package console
 
 import (
 	"encoding/json"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -247,11 +248,11 @@ func (s *DownCommandTestSuite) TestHandleWithSecret() {
 	assert.Nil(s.T(), err)
 	assert.True(s.T(), file.Exists(tmpfile))
 
-	content, err := file.GetContent(tmpfile)
+	content, err := os.ReadFile(tmpfile)
 
 	assert.Nil(s.T(), err)
 	var maintenanceOptions *MaintenanceOptions
-	err = json.Unmarshal([]byte(content), &maintenanceOptions)
+	err = json.Unmarshal(content, &maintenanceOptions)
 	assert.Nil(s.T(), err)
 
 	assert.Equal(s.T(), "Under maintenance", maintenanceOptions.Reason)
