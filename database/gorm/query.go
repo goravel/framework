@@ -27,6 +27,7 @@ import (
 	"github.com/goravel/framework/support/collect"
 	"github.com/goravel/framework/support/database"
 	"github.com/goravel/framework/support/deep"
+	"github.com/goravel/framework/support/str"
 )
 
 const Associations = clause.Associations
@@ -122,12 +123,10 @@ func (r *Query) Commit() error {
 }
 
 func (r *Query) Count() (int64, error) {
-	query := r.resetSelect().addGlobalScopes().buildConditions()
+	query := buildSelectForCount(r)
 
 	var count int64
-
-	err := query.instance.Count(&count).Error
-	if err != nil {
+	if err := query.instance.Count(&count).Error; err != nil {
 		return 0, err
 	}
 
@@ -1817,13 +1816,6 @@ func (r *Query) refreshConnection() (*Query, error) {
 	return query, nil
 }
 
-func (r *Query) resetSelect() *Query {
-	conditions := r.conditions
-	conditions.selectColumns = nil
-
-	return r.setConditions(conditions)
-}
-
 func (r *Query) restored(dest any) error {
 	return r.event(contractsorm.EventRestored, r.conditions.model, dest)
 }
@@ -1973,6 +1965,19 @@ func (r *Query) update(values any) (*contractsdb.Result, error) {
 	return &contractsdb.Result{
 		RowsAffected: result.RowsAffected,
 	}, result.Error
+}
+
+func buildSelectForCount(query *Query) *Query {
+	conditions := query.conditions
+
+	// If selectColumns only contains a raw select with spaces (rename), gorm will fail, but this case will appear when calling Paginate, so use COUNT(*) here.
+	// If there are multiple selectColumns, gorm will transform them into *, so no need to handle that case.
+	// For example: Select("name as n").Count() will fail, but Select("name", "age as a").Count() will be treated as Select("*").Count()
+	if len(conditions.selectColumns) == 1 && str.Of(conditions.selectColumns[0]).Trim().Contains(" ") {
+		conditions.selectColumns = []string{str.Of(conditions.selectColumns[0]).Split(" ")[0]}
+	}
+
+	return query.setConditions(conditions).addGlobalScopes().buildConditions()
 }
 
 func filterFindConditions(conds ...any) error {

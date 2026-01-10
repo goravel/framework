@@ -61,6 +61,7 @@ var (
 	CryptMissingValueKey     = New("decrypt payload error: missing value key")
 
 	DatabaseConfigNotFound              = New("not found database configuration")
+	DatabaseCountDistinctWithoutColumns = New("cannot use Count with Distinct without specifying columns")
 	DatabaseTableIsRequired             = New("table is required")
 	DatabaseForceIsRequiredInProduction = New("application in production use --force to run this command")
 	DatabaseSeederNotFound              = New("not found %s seeder")
