@@ -382,7 +382,8 @@ func (r *Request) send(method, uri string, body io.Reader) (client.Response, err
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(r.ctx, method, parsedURL, body)
+	ctx := context.WithValue(r.ctx, clientNameKey, r.clientName)
+	req, err := http.NewRequestWithContext(ctx, method, parsedURL, body)
 	if err != nil {
 		return nil, err
 	}

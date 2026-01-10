@@ -24,6 +24,8 @@ type Response interface {
 	Headers() http.Header
 	// Json returns the response body parsed as a map[string]any.
 	Json() (map[string]any, error)
+	// Origin returns the underlying *http.Response instance.
+	Origin() *http.Response
 	// Redirect determines if the response status code is >= 300 and < 400.
 	Redirect() bool
 	// ServerError determines if the response status code is >= 500.

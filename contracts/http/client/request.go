@@ -76,27 +76,16 @@ type Request interface {
 	// These methods are primarily used inside Fakes and Assertions to inspect
 	// the request that was sent (or intercepted).
 
-	// Method returns the HTTP verb (GET, POST, etc.) of the request.
+	// Method returns the HTTP verb of the request.
 	Method() string
 	// Url returns the full URL of the request.
 	Url() string
 	// Body returns the raw request body as a string.
-	//
-	// This is safe to call multiple times as the body is buffered.
 	Body() string
 	// Header retrieves a specific header value from the request.
 	Header(key string) string
 	// Headers retrieves all headers from the request.
 	Headers() http.Header
-	// Input retrieves data from the request's payload.
-	//
-	// It attempts to find the key in the following order:
-	// 1. JSON Body
-	// 2. Form Data
-	// 3. Query Parameters
-	//
-	// Example:
-	//   // Given JSON: {"user": {"id": 1}}
-	//   req.Input("user.id") // returns 1
+	// Input retrieves a value from the request data by key.
 	Input(key string) any
 }

@@ -908,6 +908,53 @@ func (_c *Response_OK_Call) RunAndReturn(run func() bool) *Response_OK_Call {
 	return _c
 }
 
+// Origin provides a mock function with no fields
+func (_m *Response) Origin() *http.Response {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Origin")
+	}
+
+	var r0 *http.Response
+	if rf, ok := ret.Get(0).(func() *http.Response); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	return r0
+}
+
+// Response_Origin_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Origin'
+type Response_Origin_Call struct {
+	*mock.Call
+}
+
+// Origin is a helper method to define mock.On call
+func (_e *Response_Expecter) Origin() *Response_Origin_Call {
+	return &Response_Origin_Call{Call: _e.mock.On("Origin")}
+}
+
+func (_c *Response_Origin_Call) Run(run func()) *Response_Origin_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Response_Origin_Call) Return(_a0 *http.Response) *Response_Origin_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Response_Origin_Call) RunAndReturn(run func() *http.Response) *Response_Origin_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // PaymentRequired provides a mock function with no fields
 func (_m *Response) PaymentRequired() bool {
 	ret := _m.Called()
