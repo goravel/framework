@@ -114,19 +114,69 @@ func (s *QueryTestSuite) TestAddWhere() {
 }
 
 func (s *QueryTestSuite) TestCount() {
-	var count int64
+	s.Run("without select", func() {
+		var count int64
 
-	s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
-	s.mockReadBuilder.EXPECT().GetContext(s.ctx, &count, "SELECT COUNT(*) FROM users WHERE name = ?", "John").Run(func(ctx context.Context, dest any, query string, args ...any) {
-		destCount := dest.(*int64)
-		*destCount = 1
-	}).Return(nil).Once()
-	s.mockReadBuilder.EXPECT().Explain("SELECT COUNT(*) FROM users WHERE name = ?", "John").Return("SELECT COUNT(*) FROM users WHERE name = \"John\"").Once()
-	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(*) FROM users WHERE name = \"John\"", int64(-1), nil).Return().Once()
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().GetContext(s.ctx, &count, "SELECT COUNT(*) FROM users WHERE name = ?", "John").Run(func(ctx context.Context, dest any, query string, args ...any) {
+			destCount := dest.(*int64)
+			*destCount = 1
+		}).Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT COUNT(*) FROM users WHERE name = ?", "John").Return("SELECT COUNT(*) FROM users WHERE name = \"John\"").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(*) FROM users WHERE name = \"John\"", int64(-1), nil).Return().Once()
 
-	count, err := s.query.Where("name", "John").Count()
-	s.NoError(err)
-	s.Equal(int64(1), count)
+		count, err := s.query.Where("name", "John").Count()
+		s.NoError(err)
+		s.Equal(int64(1), count)
+	})
+
+	s.Run("with select - one column", func() {
+		var count int64
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().GetContext(s.ctx, &count, "SELECT COUNT(name) FROM users WHERE name = ?", "John").Run(func(ctx context.Context, dest any, query string, args ...any) {
+			destCount := dest.(*int64)
+			*destCount = 1
+		}).Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT COUNT(name) FROM users WHERE name = ?", "John").Return("SELECT COUNT(name) FROM users WHERE name = \"John\"").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(name) FROM users WHERE name = \"John\"", int64(-1), nil).Return().Once()
+
+		count, err := s.query.Select("name").Where("name", "John").Count()
+		s.NoError(err)
+		s.Equal(int64(1), count)
+	})
+
+	s.Run("with select - one column with rename", func() {
+		var count int64
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().GetContext(s.ctx, &count, "SELECT COUNT(name) FROM users WHERE name = ?", "John").Run(func(ctx context.Context, dest any, query string, args ...any) {
+			destCount := dest.(*int64)
+			*destCount = 1
+		}).Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT COUNT(name) FROM users WHERE name = ?", "John").Return("SELECT COUNT(name) FROM users WHERE name = \"John\"").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(name) FROM users WHERE name = \"John\"", int64(-1), nil).Return().Once()
+
+		count, err := s.query.Select("name as name").Where("name", "John").Count()
+		s.NoError(err)
+		s.Equal(int64(1), count)
+	})
+
+	s.Run("with select - multiple columns", func() {
+		var count int64
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().GetContext(s.ctx, &count, "SELECT COUNT(*) FROM users WHERE name = ?", "John").Run(func(ctx context.Context, dest any, query string, args ...any) {
+			destCount := dest.(*int64)
+			*destCount = 1
+		}).Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT COUNT(*) FROM users WHERE name = ?", "John").Return("SELECT COUNT(*) FROM users WHERE name = \"John\"").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(*) FROM users WHERE name = \"John\"", int64(-1), nil).Return().Once()
+
+		count, err := s.query.Select("name", "avatar").Where("name", "John").Count()
+		s.NoError(err)
+		s.Equal(int64(1), count)
+	})
 }
 
 func (s *QueryTestSuite) TestCrossJoin() {
@@ -201,15 +251,98 @@ func (s *QueryTestSuite) TestDelete() {
 }
 
 func (s *QueryTestSuite) TestDistinct() {
-	var users TestUser
+	s.Run("without column", func() {
+		var users TestUser
 
-	s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
-	s.mockReadBuilder.EXPECT().GetContext(s.ctx, &users, "SELECT DISTINCT * FROM users WHERE name = ?", "John").Return(nil).Once()
-	s.mockReadBuilder.EXPECT().Explain("SELECT DISTINCT * FROM users WHERE name = ?", "John").Return("SELECT DISTINCT * FROM users WHERE name = \"John\"").Once()
-	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT DISTINCT * FROM users WHERE name = \"John\"", int64(1), nil).Return().Once()
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().GetContext(s.ctx, &users, "SELECT DISTINCT * FROM users WHERE name = ?", "John").Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT DISTINCT * FROM users WHERE name = ?", "John").Return("SELECT DISTINCT * FROM users WHERE name = \"John\"").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT DISTINCT * FROM users WHERE name = \"John\"", int64(1), nil).Return().Once()
 
-	err := s.query.Where("name", "John").Distinct().First(&users)
-	s.NoError(err)
+		err := s.query.Where("name", "John").Distinct().First(&users)
+		s.NoError(err)
+	})
+
+	s.Run("with one column", func() {
+		var users TestUser
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().GetContext(s.ctx, &users, "SELECT DISTINCT name FROM users WHERE name = ?", "John").Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT DISTINCT name FROM users WHERE name = ?", "John").Return("SELECT DISTINCT name FROM users WHERE name = \"John\"").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT DISTINCT name FROM users WHERE name = \"John\"", int64(1), nil).Return().Once()
+
+		err := s.query.Where("name", "John").Distinct("name").First(&users)
+		s.NoError(err)
+	})
+
+	s.Run("with multiple columns", func() {
+		var users TestUser
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().GetContext(s.ctx, &users, "SELECT DISTINCT name, age FROM users WHERE name = ?", "John").Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT DISTINCT name, age FROM users WHERE name = ?", "John").Return("SELECT DISTINCT name, age FROM users WHERE name = \"John\"").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT DISTINCT name, age FROM users WHERE name = \"John\"", int64(1), nil).Return().Once()
+
+		err := s.query.Where("name", "John").Distinct("name", "age").First(&users)
+		s.NoError(err)
+	})
+
+	s.Run("Count - without column", func() {
+		count, err := s.query.Where("name", "John").Distinct().Count()
+		s.Equal(errors.DatabaseCountDistinctWithoutColumns, err)
+		s.Equal(int64(0), count)
+	})
+
+	s.Run("Count - with one column", func() {
+		var count int64
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().GetContext(s.ctx, &count, "SELECT COUNT(DISTINCT name) FROM users WHERE name = ?", "John").RunAndReturn(func(ctx context.Context, i1 interface{}, s string, i2 ...interface{}) error {
+			destCount := i1.(*int64)
+			*destCount = 1
+			return nil
+		}).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT COUNT(DISTINCT name) FROM users WHERE name = ?", "John").Return("SELECT COUNT(DISTINCT name) FROM users WHERE name = \"John\"").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(DISTINCT name) FROM users WHERE name = \"John\"", int64(-1), nil).Return().Once()
+
+		res, err := s.query.Where("name", "John").Distinct("name").Count()
+		s.NoError(err)
+		s.Equal(int64(1), res)
+	})
+
+	s.Run("Count - with one column and rename", func() {
+		var count int64
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().GetContext(s.ctx, &count, "SELECT COUNT(DISTINCT name) FROM users WHERE name = ?", "John").RunAndReturn(func(ctx context.Context, i1 interface{}, s string, i2 ...interface{}) error {
+			destCount := i1.(*int64)
+			*destCount = 1
+			return nil
+		}).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT COUNT(DISTINCT name) FROM users WHERE name = ?", "John").Return("SELECT COUNT(DISTINCT name) FROM users WHERE name = \"John\"").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(DISTINCT name) FROM users WHERE name = \"John\"", int64(-1), nil).Return().Once()
+
+		res, err := s.query.Where("name", "John").Distinct("name as name").Count()
+		s.NoError(err)
+		s.Equal(int64(1), res)
+	})
+
+	s.Run("Count - with multiple columns", func() {
+		var count int64
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().GetContext(s.ctx, &count, "SELECT COUNT(*) FROM users WHERE name = ?", "John").RunAndReturn(func(ctx context.Context, i1 interface{}, s string, i2 ...interface{}) error {
+			destCount := i1.(*int64)
+			*destCount = 1
+			return nil
+		}).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT COUNT(*) FROM users WHERE name = ?", "John").Return("SELECT COUNT(*) FROM users WHERE name = \"John\"").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(*) FROM users WHERE name = \"John\"", int64(-1), nil).Return().Once()
+
+		res, err := s.query.Where("name", "John").Distinct("name", "age").Count()
+		s.NoError(err)
+		s.Equal(int64(1), res)
+	})
 }
 
 func (s *QueryTestSuite) TestExists() {
@@ -1036,28 +1169,111 @@ func (s *QueryTestSuite) TestOrWhereRaw() {
 }
 
 func (s *QueryTestSuite) TestPaginate() {
-	var users []TestUser
-	var total int64
+	s.Run("without Select", func() {
+		var users []TestUser
+		var total int64
 
-	s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Twice()
-	s.mockReadBuilder.EXPECT().GetContext(s.ctx, &total, "SELECT COUNT(*) FROM users WHERE name = ?", "John").Run(func(ctx context.Context, dest any, query string, args ...any) {
-		destTotal := dest.(*int64)
-		*destTotal = 2
-	}).Return(nil).Once()
-	s.mockReadBuilder.EXPECT().Explain("SELECT COUNT(*) FROM users WHERE name = ?", "John").Return("SELECT COUNT(*) FROM users WHERE name = \"John\"").Once()
-	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(*) FROM users WHERE name = \"John\"", int64(-1), nil).Return().Once()
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Twice()
+		s.mockReadBuilder.EXPECT().GetContext(s.ctx, &total, "SELECT COUNT(*) FROM users WHERE name = ?", "John").Run(func(ctx context.Context, dest any, query string, args ...any) {
+			destTotal := dest.(*int64)
+			*destTotal = 2
+		}).Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT COUNT(*) FROM users WHERE name = ?", "John").Return("SELECT COUNT(*) FROM users WHERE name = \"John\"").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(*) FROM users WHERE name = \"John\"", int64(-1), nil).Return().Once()
 
-	s.mockReadBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE name = ? LIMIT 10 OFFSET 0", "John").Run(func(ctx context.Context, dest any, query string, args ...any) {
-		destUsers := dest.(*[]TestUser)
-		*destUsers = []TestUser{{ID: 1, Name: "John", Age: 25}, {ID: 2, Name: "Jane", Age: 30}}
-	}).Return(nil).Once()
-	s.mockReadBuilder.EXPECT().Explain("SELECT * FROM users WHERE name = ? LIMIT 10 OFFSET 0", "John").Return("SELECT * FROM users WHERE name = \"John\" LIMIT 10 OFFSET 0").Once()
-	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE name = \"John\" LIMIT 10 OFFSET 0", int64(2), nil).Return().Once()
+		s.mockReadBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE name = ? LIMIT 10 OFFSET 0", "John").Run(func(ctx context.Context, dest any, query string, args ...any) {
+			destUsers := dest.(*[]TestUser)
+			*destUsers = []TestUser{{ID: 1, Name: "John", Age: 25}, {ID: 2, Name: "Jane", Age: 30}}
+		}).Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT * FROM users WHERE name = ? LIMIT 10 OFFSET 0", "John").Return("SELECT * FROM users WHERE name = \"John\" LIMIT 10 OFFSET 0").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE name = \"John\" LIMIT 10 OFFSET 0", int64(2), nil).Return().Once()
 
-	err := s.query.Where("name", "John").Paginate(1, 10, &users, &total)
-	s.Nil(err)
-	s.Equal(int64(2), total)
-	s.Equal(2, len(users))
+		err := s.query.Where("name", "John").Paginate(1, 10, &users, &total)
+		s.Nil(err)
+		s.Equal(int64(2), total)
+		s.Equal(2, len(users))
+	})
+
+	s.Run("with Select - one column", func() {
+		var users []TestUser
+		var total int64
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Twice()
+		s.mockReadBuilder.EXPECT().GetContext(s.ctx, &total, "SELECT COUNT(name) FROM users WHERE name = ?", "John").
+			Run(func(ctx context.Context, dest any, query string, args ...any) {
+				destTotal := dest.(*int64)
+				*destTotal = 2
+			}).Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT COUNT(name) FROM users WHERE name = ?", "John").Return("SELECT COUNT(name) FROM users WHERE name = \"John\"").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(name) FROM users WHERE name = \"John\"", int64(-1), nil).Return().Once()
+
+		s.mockReadBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT name FROM users WHERE name = ? LIMIT 10 OFFSET 0", "John").
+			Run(func(ctx context.Context, dest any, query string, args ...any) {
+				destUsers := dest.(*[]TestUser)
+				*destUsers = []TestUser{{ID: 1, Name: "John", Age: 25}, {ID: 2, Name: "Jane", Age: 30}}
+			}).Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT name FROM users WHERE name = ? LIMIT 10 OFFSET 0", "John").Return("SELECT name FROM users WHERE name = \"John\" LIMIT 10 OFFSET 0").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT name FROM users WHERE name = \"John\" LIMIT 10 OFFSET 0", int64(2), nil).Return().Once()
+
+		err := s.query.Select("name").Where("name", "John").Paginate(1, 10, &users, &total)
+		s.Nil(err)
+		s.Equal(int64(2), total)
+		s.Equal(2, len(users))
+	})
+
+	s.Run("with Select - one column with rename", func() {
+		var users []TestUser
+		var total int64
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Twice()
+		s.mockReadBuilder.EXPECT().GetContext(s.ctx, &total, "SELECT COUNT(name) FROM users WHERE name = ?", "John").
+			Run(func(ctx context.Context, dest any, query string, args ...any) {
+				destTotal := dest.(*int64)
+				*destTotal = 2
+			}).Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT COUNT(name) FROM users WHERE name = ?", "John").Return("SELECT COUNT(name) FROM users WHERE name = \"John\"").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(name) FROM users WHERE name = \"John\"", int64(-1), nil).Return().Once()
+
+		s.mockReadBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT name as name FROM users WHERE name = ? LIMIT 10 OFFSET 0", "John").
+			Run(func(ctx context.Context, dest any, query string, args ...any) {
+				destUsers := dest.(*[]TestUser)
+				*destUsers = []TestUser{{ID: 1, Name: "John", Age: 25}, {ID: 2, Name: "Jane", Age: 30}}
+			}).Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT name as name FROM users WHERE name = ? LIMIT 10 OFFSET 0", "John").Return("SELECT name as name FROM users WHERE name = \"John\" LIMIT 10 OFFSET 0").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT name as name FROM users WHERE name = \"John\" LIMIT 10 OFFSET 0", int64(2), nil).Return().Once()
+
+		err := s.query.Select("name as name").Where("name", "John").Paginate(1, 10, &users, &total)
+		s.Nil(err)
+		s.Equal(int64(2), total)
+		s.Equal(2, len(users))
+	})
+
+	s.Run("with Select - multiple columns", func() {
+		var users []TestUser
+		var total int64
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Twice()
+		s.mockReadBuilder.EXPECT().GetContext(s.ctx, &total, "SELECT COUNT(*) FROM users WHERE name = ?", "John").
+			Run(func(ctx context.Context, dest any, query string, args ...any) {
+				destTotal := dest.(*int64)
+				*destTotal = 2
+			}).Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT COUNT(*) FROM users WHERE name = ?", "John").Return("SELECT COUNT(*) FROM users WHERE name = \"John\"").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(*) FROM users WHERE name = \"John\"", int64(-1), nil).Return().Once()
+
+		s.mockReadBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT name, age FROM users WHERE name = ? LIMIT 10 OFFSET 0", "John").
+			Run(func(ctx context.Context, dest any, query string, args ...any) {
+				destUsers := dest.(*[]TestUser)
+				*destUsers = []TestUser{{ID: 1, Name: "John", Age: 25}, {ID: 2, Name: "Jane", Age: 30}}
+			}).Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT name, age FROM users WHERE name = ? LIMIT 10 OFFSET 0", "John").Return("SELECT name, age FROM users WHERE name = \"John\" LIMIT 10 OFFSET 0").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT name, age FROM users WHERE name = \"John\" LIMIT 10 OFFSET 0", int64(2), nil).Return().Once()
+
+		err := s.query.Select("name", "age").Where("name", "John").Paginate(1, 10, &users, &total)
+		s.Nil(err)
+		s.Equal(int64(2), total)
+		s.Equal(2, len(users))
+	})
 }
 
 func (s *QueryTestSuite) TestPluck() {
@@ -1152,10 +1368,32 @@ func (s *QueryTestSuite) TestSum() {
 
 func (s *QueryTestSuite) TestToSql() {
 	s.Run("Count", func() {
-		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Times(7)
 
 		sql := s.query.Where("name", "John").ToSql().Count()
 		s.Equal("SELECT COUNT(*) FROM users WHERE name = ?", sql)
+
+		s.mockLogger.EXPECT().Errorf(s.ctx, "failed to get sql: cannot use Count with Distinct without specifying columns").Once()
+		sql = s.query.Distinct().Where("name", "John").ToSql().Count()
+		s.Empty(sql)
+
+		sql = s.query.Distinct("name").Where("name", "John").ToSql().Count()
+		s.Equal("SELECT COUNT(DISTINCT name) FROM users WHERE name = ?", sql)
+
+		sql = s.query.Distinct("name", "avatar").Where("name", "John").ToSql().Count()
+		s.Equal("SELECT COUNT(*) FROM users WHERE name = ?", sql)
+
+		sql = s.query.Select("name", "avatar").Where("name", "John").ToSql().Count()
+		s.Equal("SELECT COUNT(*) FROM users WHERE name = ?", sql)
+
+		sql = s.query.Select("name as n").Where("name", "John").ToSql().Count()
+		s.Equal("SELECT COUNT(name) FROM users WHERE name = ?", sql)
+
+		sql = s.query.Select("name n").Where("name", "John").ToSql().Count()
+		s.Equal("SELECT COUNT(name) FROM users WHERE name = ?", sql)
+
+		sql = s.query.Select("name").Where("name", "John").ToSql().Count()
+		s.Equal("SELECT COUNT(name) FROM users WHERE name = ?", sql)
 	})
 
 	s.Run("Delete", func() {
