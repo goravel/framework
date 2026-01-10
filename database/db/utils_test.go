@@ -181,18 +181,14 @@ func TestConvertToSliceMap(t *testing.T) {
 		{
 			name: "user with pointer fields",
 			data: func() User {
-				avatar := "avatar.jpg"
-				alias := 42
-				size := 100
-				salary := 50000.0
 				return User{
 					ID:             1,
 					Email:          "john@example.com",
-					Avatar:         &avatar,
-					Alias:          &alias,
+					Avatar:         convert.Pointer("avatar.jpg"),
+					Alias:          convert.Pointer(42),
 					Body:           Body{Weight: "100kg", Head: &head, DateTime: *dateTime},
-					House:          &House{Address: "123 Main St", Size: &size},
-					Job:            Job{Title: "Engineer", Salary: &salary},
+					House:          &House{Address: "123 Main St", Size: convert.Pointer(100)},
+					Job:            Job{Title: "Engineer", Salary: convert.Pointer(50000.0)},
 					TestTimestamps: TestTimestamps{CreatedAt: dateTime, UpdatedAt: dateTime},
 				}
 			}(),
