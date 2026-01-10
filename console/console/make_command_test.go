@@ -125,11 +125,12 @@ func TestMakeCommand_AddCommandToBootstrapSetup(t *testing.T) {
 	bootstrapContent := `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 )
 
-func Boot() {
-	foundation.Setup().Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().Start()
 }
 `
 	assert.NoError(t, file.PutContent(bootstrapPath, bootstrapContent))
@@ -160,12 +161,13 @@ func Boot() {
 	expectedAppContent := `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithCommands(Commands).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithCommands(Commands).Start()
 }
 `
 	assert.Equal(t, expectedAppContent, bootstrapContent)

@@ -618,7 +618,7 @@ func (r *withSliceHandler) setupInline(item string) modify.Action {
 				return
 			}
 		case *dst.ReturnStmt:
-			if !containsFoundationSetupInReturn(stmt) {
+			if !containsFoundationSetup(stmt) {
 				return
 			}
 			if len(stmt.Results) == 0 {
@@ -680,7 +680,7 @@ func (r *withSliceHandler) setupWithFunction() modify.Action {
 				return
 			}
 		case *dst.ReturnStmt:
-			if !containsFoundationSetupInReturn(stmt) {
+			if !containsFoundationSetup(stmt) {
 				return
 			}
 			if len(stmt.Results) == 0 {
@@ -761,7 +761,7 @@ func (r *withSliceHandler) removeInline(item string) modify.Action {
 				return
 			}
 		case *dst.ReturnStmt:
-			if !containsFoundationSetupInReturn(stmt) {
+			if !containsFoundationSetup(stmt) {
 				return
 			}
 			if len(stmt.Results) == 0 {
@@ -896,28 +896,11 @@ func appendToExistingMiddleware(withMiddlewareCall *dst.CallExpr, middlewareExpr
 	}
 }
 
-// containsFoundationSetup checks if the statement contains a foundation.Setup() call.
-func containsFoundationSetup(stmt *dst.ExprStmt) bool {
+// containsFoundationSetup checks if the given AST node contains a foundation.Setup() call.
+// It works with any dst.Node, including *dst.ExprStmt and *dst.ReturnStmt.
+func containsFoundationSetup(node dst.Node) bool {
 	var foundSetup bool
-	dst.Inspect(stmt, func(n dst.Node) bool {
-		if call, ok := n.(*dst.CallExpr); ok {
-			if sel, ok := call.Fun.(*dst.SelectorExpr); ok {
-				if ident, ok := sel.X.(*dst.Ident); ok {
-					if ident.Name == "foundation" && sel.Sel.Name == "Setup" {
-						foundSetup = true
-						return false
-					}
-				}
-			}
-		}
-		return true
-	})
-	return foundSetup
-}
-
-func containsFoundationSetupInReturn(stmt *dst.ReturnStmt) bool {
-	var foundSetup bool
-	dst.Inspect(stmt, func(n dst.Node) bool {
+	dst.Inspect(node, func(n dst.Node) bool {
 		if call, ok := n.(*dst.CallExpr); ok {
 			if sel, ok := call.Fun.(*dst.SelectorExpr); ok {
 				if ident, ok := sel.X.(*dst.Ident); ok {
@@ -1073,7 +1056,7 @@ func foundationSetupMiddleware(middleware string) modify.Action {
 				return
 			}
 		case *dst.ReturnStmt:
-			if !containsFoundationSetupInReturn(stmt) {
+			if !containsFoundationSetup(stmt) {
 				return
 			}
 			if len(stmt.Results) == 0 {
@@ -1125,7 +1108,7 @@ func foundationSetupRouting(route string) modify.Action {
 				return
 			}
 		case *dst.ReturnStmt:
-			if !containsFoundationSetupInReturn(stmt) {
+			if !containsFoundationSetup(stmt) {
 				return
 			}
 			if len(stmt.Results) == 0 {
@@ -1172,7 +1155,7 @@ func removeRouteFromSetup(route string) modify.Action {
 				return
 			}
 		case *dst.ReturnStmt:
-			if !containsFoundationSetupInReturn(stmt) {
+			if !containsFoundationSetup(stmt) {
 				return
 			}
 			if len(stmt.Results) == 0 {

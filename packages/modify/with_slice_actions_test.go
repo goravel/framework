@@ -607,7 +607,7 @@ func (s *WithSliceHandlerTestSuite) TestFindFoundationSetupCalls() {
 	s.Run("WithMethodExists", func() {
 		handler := newWithSliceHandler(config)
 
-		// Create a chain: foundation.Setup().WithCommands(...).Run()
+		// Create a chain: foundation.Setup().WithCommands(...).Start()
 		setupCall := &dst.CallExpr{
 			Fun: &dst.SelectorExpr{
 				X:   &dst.Ident{Name: "foundation"},
@@ -625,7 +625,7 @@ func (s *WithSliceHandlerTestSuite) TestFindFoundationSetupCalls() {
 		runCall := &dst.CallExpr{
 			Fun: &dst.SelectorExpr{
 				X:   withCall,
-				Sel: &dst.Ident{Name: "Run"},
+				Sel: &dst.Ident{Name: "Start"},
 			},
 		}
 
@@ -641,7 +641,7 @@ func (s *WithSliceHandlerTestSuite) TestFindFoundationSetupCalls() {
 	s.Run("NoWithMethod", func() {
 		handler := newWithSliceHandler(config)
 
-		// Create a chain without WithCommands: foundation.Setup().Run()
+		// Create a chain without WithCommands: foundation.Setup().Start()
 		setupCall := &dst.CallExpr{
 			Fun: &dst.SelectorExpr{
 				X:   &dst.Ident{Name: "foundation"},
@@ -652,7 +652,7 @@ func (s *WithSliceHandlerTestSuite) TestFindFoundationSetupCalls() {
 		runCall := &dst.CallExpr{
 			Fun: &dst.SelectorExpr{
 				X:   setupCall,
-				Sel: &dst.Ident{Name: "Run"},
+				Sel: &dst.Ident{Name: "Start"},
 			},
 		}
 
@@ -1753,22 +1753,22 @@ func Test_containsFoundationSetup(t *testing.T) {
 	}{
 		{
 			name:     "contains foundation.Setup()",
-			stmt:     `foundation.Setup().Run()`,
+			stmt:     `foundation.Setup().Start()`,
 			expected: true,
 		},
 		{
 			name:     "contains foundation.Setup() in chain",
-			stmt:     `foundation.Setup().WithConfig(config.Boot).Run()`,
+			stmt:     `foundation.Setup().WithConfig(config.Boot).Start()`,
 			expected: true,
 		},
 		{
 			name:     "does not contain foundation.Setup()",
-			stmt:     `app.Run()`,
+			stmt:     `app.Start()`,
 			expected: false,
 		},
 		{
 			name:     "contains Setup() but not from foundation",
-			stmt:     `something.Setup().Run()`,
+			stmt:     `something.Setup().Start()`,
 			expected: false,
 		},
 	}
