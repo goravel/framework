@@ -29,9 +29,6 @@ type Request interface {
 	// AsForm sets the Content-Type header to "application/x-www-form-urlencoded".
 	AsForm() Request
 	// BaseUrl overrides the base URL defined in the configuration for this specific request chain.
-	//
-	// This allows you to hit a different domain than the one configured for the
-	// client, useful for dynamic subdomains or runtime overrides.
 	BaseUrl(url string) Request
 	// ClientName returns the name of the Goravel client configuration used for this request.
 	ClientName() string

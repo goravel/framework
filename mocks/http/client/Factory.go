@@ -122,6 +122,54 @@ func (_c *Factory_AcceptJSON_Call) RunAndReturn(run func() client.Request) *Fact
 	return _c
 }
 
+// AllowStrayRequests provides a mock function with given fields: patterns
+func (_m *Factory) AllowStrayRequests(patterns []string) client.Factory {
+	ret := _m.Called(patterns)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AllowStrayRequests")
+	}
+
+	var r0 client.Factory
+	if rf, ok := ret.Get(0).(func([]string) client.Factory); ok {
+		r0 = rf(patterns)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Factory)
+		}
+	}
+
+	return r0
+}
+
+// Factory_AllowStrayRequests_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AllowStrayRequests'
+type Factory_AllowStrayRequests_Call struct {
+	*mock.Call
+}
+
+// AllowStrayRequests is a helper method to define mock.On call
+//   - patterns []string
+func (_e *Factory_Expecter) AllowStrayRequests(patterns interface{}) *Factory_AllowStrayRequests_Call {
+	return &Factory_AllowStrayRequests_Call{Call: _e.mock.On("AllowStrayRequests", patterns)}
+}
+
+func (_c *Factory_AllowStrayRequests_Call) Run(run func(patterns []string)) *Factory_AllowStrayRequests_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].([]string))
+	})
+	return _c
+}
+
+func (_c *Factory_AllowStrayRequests_Call) Return(_a0 client.Factory) *Factory_AllowStrayRequests_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Factory_AllowStrayRequests_Call) RunAndReturn(run func([]string) client.Factory) *Factory_AllowStrayRequests_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // AsForm provides a mock function with no fields
 func (_m *Factory) AsForm() client.Request {
 	ret := _m.Called()
@@ -658,8 +706,23 @@ func (_c *Factory_Delete_Call) RunAndReturn(run func(string, io.Reader) (client.
 }
 
 // Fake provides a mock function with given fields: mocks
-func (_m *Factory) Fake(mocks map[string]interface{}) {
-	_m.Called(mocks)
+func (_m *Factory) Fake(mocks map[string]interface{}) client.Factory {
+	ret := _m.Called(mocks)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Fake")
+	}
+
+	var r0 client.Factory
+	if rf, ok := ret.Get(0).(func(map[string]interface{}) client.Factory); ok {
+		r0 = rf(mocks)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Factory)
+		}
+	}
+
+	return r0
 }
 
 // Factory_Fake_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Fake'
@@ -680,13 +743,13 @@ func (_c *Factory_Fake_Call) Run(run func(mocks map[string]interface{})) *Factor
 	return _c
 }
 
-func (_c *Factory_Fake_Call) Return() *Factory_Fake_Call {
-	_c.Call.Return()
+func (_c *Factory_Fake_Call) Return(_a0 client.Factory) *Factory_Fake_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Factory_Fake_Call) RunAndReturn(run func(map[string]interface{})) *Factory_Fake_Call {
-	_c.Run(run)
+func (_c *Factory_Fake_Call) RunAndReturn(run func(map[string]interface{}) client.Factory) *Factory_Fake_Call {
+	_c.Call.Return(run)
 	return _c
 }
 
@@ -1258,6 +1321,53 @@ func (_c *Factory_Post_Call) Return(_a0 client.Response, _a1 error) *Factory_Pos
 }
 
 func (_c *Factory_Post_Call) RunAndReturn(run func(string, io.Reader) (client.Response, error)) *Factory_Post_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// PreventStrayRequests provides a mock function with no fields
+func (_m *Factory) PreventStrayRequests() client.Factory {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for PreventStrayRequests")
+	}
+
+	var r0 client.Factory
+	if rf, ok := ret.Get(0).(func() client.Factory); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Factory)
+		}
+	}
+
+	return r0
+}
+
+// Factory_PreventStrayRequests_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PreventStrayRequests'
+type Factory_PreventStrayRequests_Call struct {
+	*mock.Call
+}
+
+// PreventStrayRequests is a helper method to define mock.On call
+func (_e *Factory_Expecter) PreventStrayRequests() *Factory_PreventStrayRequests_Call {
+	return &Factory_PreventStrayRequests_Call{Call: _e.mock.On("PreventStrayRequests")}
+}
+
+func (_c *Factory_PreventStrayRequests_Call) Run(run func()) *Factory_PreventStrayRequests_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Factory_PreventStrayRequests_Call) Return(_a0 client.Factory) *Factory_PreventStrayRequests_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Factory_PreventStrayRequests_Call) RunAndReturn(run func() client.Factory) *Factory_PreventStrayRequests_Call {
 	_c.Call.Return(run)
 	return _c
 }
