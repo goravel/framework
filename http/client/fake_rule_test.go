@@ -36,7 +36,7 @@ func (s *FakeRuleTestSuite) TestMatches_URLStrategy() {
 }
 
 func (s *FakeRuleTestSuite) TestMatches_ScopedStrategy() {
-	rule := NewFakeRule("github:/repos/*", nil)
+	rule := NewFakeRule("github#/repos/*", nil)
 	s.True(rule.Matches(s.makeRequest("https://api.github.com/repos/goravel/framework"), "github"))
 	s.False(rule.Matches(s.makeRequest("https://api.github.com/repos/goravel/framework"), "gitlab"))
 	s.False(rule.Matches(s.makeRequest("https://api.github.com/user"), "github"))

@@ -35,22 +35,19 @@ func NewFakeRule(pattern string, handler func(client.Request) client.Response) *
 		strategy = strategyURL
 		regex = compileWildcard(pattern)
 
-		// If it starts with http/https, we treat it as a URL immediately.
-		// This prevents "https:" from being confused with a Scoped separator.
-	} else if strings.HasPrefix(pattern, "http://") || strings.HasPrefix(pattern, "https://") {
-		strategy = strategyURL
-		regex = compileWildcard(pattern)
-
-		// We've ruled out http/s, so if we see a colon, it must be "client:path".
-	} else if idx := strings.Index(pattern, ":"); idx != -1 {
+		// The hash symbol(client#path) is the definitive marker for Client Scoping.
+	} else if idx := strings.Index(pattern, "#"); idx != -1 {
 		strategy = strategyScoped
 		clientName = pattern[:idx]
 		regex = compileWildcard(pattern[idx+1:])
 
-		// If it has a dot (api.stripe.com) or slash (v1/users), it's a URL pattern.
-	} else if strings.ContainsAny(pattern, "./") {
+		// If it has dots, slashes, or colons (and no hash), it is a URL/Path.
+		// This correctly handles "localhost:8080", "http://...", and "api.stripe.com".
+	} else if strings.ContainsAny(pattern, "./:") || strings.HasPrefix(pattern, "http") {
 		strategy = strategyURL
 		regex = compileWildcard(pattern)
+
+		// Fallback for simple names like "stripe" or "github"
 	} else {
 		strategy = strategyClient
 		clientName = pattern
