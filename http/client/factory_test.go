@@ -1,8 +1,10 @@
 package client
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -39,6 +41,10 @@ func (s *FactoryTestSuite) SetupTest() {
 				BaseUrl: "https://api.stripe.com",
 				Timeout: 5 * time.Second,
 			},
+			"github": {
+				BaseUrl: "https://api.github.com",
+				Timeout: 10 * time.Second,
+			},
 		},
 	}
 	var err error
@@ -50,7 +56,6 @@ func (s *FactoryTestSuite) TestClient_Resolution() {
 	s.Run("resolves default client", func() {
 		req := s.factory.Client()
 		s.NotNil(req)
-
 		s.Equal(10*time.Second, req.HttpClient().Timeout)
 	})
 
@@ -96,48 +101,6 @@ func (s *FactoryTestSuite) TestErrorHandling() {
 		f, err := NewFactory(cfg, s.json)
 		s.ErrorIs(err, errors.HttpClientDefaultNotSet)
 		s.Nil(f)
-	})
-}
-
-func (s *FactoryTestSuite) TestRouting_Integration() {
-	serverA := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(200)
-		_, _ = w.Write([]byte("response_from_A"))
-	}))
-	defer serverA.Close()
-
-	serverB := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(200)
-		_, _ = w.Write([]byte("response_from_B"))
-	}))
-	defer serverB.Close()
-
-	cfg := &FactoryConfig{
-		Default: "server_a",
-		Clients: map[string]Config{
-			"server_a": {BaseUrl: serverA.URL},
-			"server_b": {BaseUrl: serverB.URL},
-		},
-	}
-	f, err := NewFactory(cfg, s.json)
-	s.NoError(err)
-
-	s.Run("proxy methods hit default server", func() {
-		resp, err := f.Get("/")
-		s.NoError(err)
-
-		body, err := resp.Body()
-		s.NoError(err)
-		s.Equal("response_from_A", body)
-	})
-
-	s.Run("named request hits specific server", func() {
-		resp, err := f.Client("server_b").Get("/")
-		s.NoError(err)
-
-		body, err := resp.Body()
-		s.NoError(err)
-		s.Equal("response_from_B", body)
 	})
 }
 
@@ -462,4 +425,142 @@ func (s *FactoryTestSuite) TestProxy_Misc() {
 
 		s.NotSame(req1, req2)
 	})
+}
+
+func (s *FactoryTestSuite) TestRouting_Integration() {
+	serverA := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte("response_from_A"))
+	}))
+	defer serverA.Close()
+
+	serverB := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte("response_from_B"))
+	}))
+	defer serverB.Close()
+
+	cfg := &FactoryConfig{
+		Default: "server_a",
+		Clients: map[string]Config{
+			"server_a": {BaseUrl: serverA.URL},
+			"server_b": {BaseUrl: serverB.URL},
+		},
+	}
+	f, err := NewFactory(cfg, s.json)
+	s.NoError(err)
+
+	s.Run("proxy methods hit default server", func() {
+		resp, err := f.Get("/")
+		s.NoError(err)
+
+		body, err := resp.Body()
+		s.NoError(err)
+		s.Equal("response_from_A", body)
+	})
+
+	s.Run("named request hits specific server", func() {
+		resp, err := f.Client("server_b").Get("/")
+		s.NoError(err)
+
+		body, err := resp.Body()
+		s.NoError(err)
+		s.Equal("response_from_B", body)
+	})
+}
+
+func (s *FactoryTestSuite) TestFake_GithubUserProfile() {
+	userMap := map[string]any{
+		"login": "goravel",
+		"id":    12345,
+		"type":  "Organization",
+	}
+	userJson, err := s.json.Marshal(userMap)
+	s.NoError(err)
+
+	s.factory.Fake(map[string]any{
+		"https://api.github.com/users/goravel": string(userJson),
+	})
+
+	resp, err := s.factory.Client("github").Get("/users/goravel")
+	s.NoError(err)
+
+	var user map[string]any
+	s.NoError(resp.Bind(&user))
+
+	s.Equal("goravel", user["login"])
+	s.Equal(float64(12345), user["id"])
+}
+
+func (s *FactoryTestSuite) TestFake_Sequence_RateLimiting() {
+	s.factory.Fake(map[string]any{
+		"https://api.github.com/rate_limit": s.factory.Sequence().
+			PushString(`{"remaining": 60}`, 200).
+			PushStatus(429).
+			PushString(`{"remaining": 59}`, 200),
+	})
+
+	githubClient := s.factory.Client("github")
+
+	resp1, _ := githubClient.Get("/rate_limit")
+	s.Equal(200, resp1.Status())
+
+	resp2, _ := githubClient.Get("/rate_limit")
+	s.Equal(429, resp2.Status())
+
+	resp3, _ := githubClient.Get("/rate_limit")
+	s.Equal(200, resp3.Status())
+}
+
+func (s *FactoryTestSuite) TestFake_PreventStrayRequests() {
+	s.factory.PreventStrayRequests()
+
+	resp, err := s.factory.Get("/unknown_endpoint")
+
+	s.Nil(resp)
+	s.ErrorIs(err, errors.HttpClientStrayRequest)
+}
+
+func (s *FactoryTestSuite) TestFake_RequestBuildingAssertion() {
+	s.factory.Fake(map[string]any{
+		"*": 200,
+	})
+
+	_, err := s.factory.Client("github").
+		WithToken("secret").
+		WithQueryParameters(map[string]string{"q": "goravel"}).
+		Get("/search")
+	s.NoError(err)
+
+	s.True(s.factory.AssertSent(func(req client.Request) bool {
+		return strings.HasPrefix(req.Url(), "https://api.github.com/search") &&
+			req.Header("Authorization") == "Bearer secret" &&
+			req.Input("q") == "goravel"
+	}))
+}
+
+func (s *FactoryTestSuite) TestIntegration_RealServer() {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(201)
+		_, _ = fmt.Fprint(w, `{"id": 1}`)
+	}))
+	defer server.Close()
+
+	cfg := &FactoryConfig{
+		Default: "local",
+		Clients: map[string]Config{
+			"local": {BaseUrl: server.URL},
+		},
+	}
+	factory, err := NewFactory(cfg, s.json)
+	s.NoError(err)
+
+	resp, err := factory.Post("/repos", nil)
+
+	s.NoError(err)
+	s.Equal(201, resp.Status())
+
+	body, err := resp.Body()
+	s.NoError(err)
+	s.JSONEq(`{"id": 1}`, body)
 }
