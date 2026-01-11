@@ -513,6 +513,7 @@ func (s *FactoryTestSuite) TestFake_Sequence_RateLimiting() {
 }
 
 func (s *FactoryTestSuite) TestFake_PreventStrayRequests() {
+	s.factory.Fake(nil)
 	s.factory.PreventStrayRequests()
 
 	resp, err := s.factory.Get("/unknown_endpoint")

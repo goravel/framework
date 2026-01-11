@@ -45,10 +45,11 @@ func (r *Factory) AllowStrayRequests(patterns []string) client.Factory {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	r.stray = patterns
-	r.ensureState()
-	r.activeState.AllowStrayRequests(patterns)
-	r.flushClients()
+	r.stray = append(r.stray, patterns...)
+
+	if r.activeState != nil {
+		r.activeState.AllowStrayRequests(patterns)
+	}
 
 	return r
 }
@@ -122,9 +123,10 @@ func (r *Factory) PreventStrayRequests() client.Factory {
 	defer r.mu.Unlock()
 
 	r.strict = true
-	r.ensureState()
-	r.activeState.PreventStrayRequests()
-	r.flushClients()
+
+	if r.activeState != nil {
+		r.activeState.PreventStrayRequests()
+	}
 
 	return r
 }
@@ -157,12 +159,6 @@ func (r *Factory) bindDefault() error {
 
 	r.Request = NewRequest(c, r.json, r.config.Clients[name].BaseUrl, name)
 	return nil
-}
-
-func (r *Factory) ensureState() {
-	if r.activeState == nil {
-		r.activeState = NewFakeState(r.json, nil)
-	}
 }
 
 func (r *Factory) flushClients() {
