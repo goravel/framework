@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	nethttp "net/http"
+	"net/http"
 	"net/url"
 	"time"
 
@@ -14,12 +14,12 @@ import (
 
 type TestContext struct {
 	ctx     context.Context
-	next    nethttp.Handler
-	request *nethttp.Request
-	writer  nethttp.ResponseWriter
+	next    http.Handler
+	request *http.Request
+	writer  http.ResponseWriter
 }
 
-func NewTestContext(ctx context.Context, next nethttp.Handler, w nethttp.ResponseWriter, r *nethttp.Request) *TestContext {
+func NewTestContext(ctx context.Context, next http.Handler, w http.ResponseWriter, r *http.Request) *TestContext {
 	return &TestContext{
 		ctx:     ctx,
 		next:    next,
@@ -181,7 +181,7 @@ func (r *TestResponse) Cookie(cookie contractshttp.Cookie) contractshttp.Context
 	if path == "" {
 		path = "/"
 	}
-	nethttp.SetCookie(r.ctx.writer, &nethttp.Cookie{
+	http.SetCookie(r.ctx.writer, &http.Cookie{
 		Name:     cookie.Name,
 		Value:    url.QueryEscape(cookie.Value),
 		MaxAge:   cookie.MaxAge,
