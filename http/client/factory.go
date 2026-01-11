@@ -14,11 +14,14 @@ var _ client.Factory = (*Factory)(nil)
 type Factory struct {
 	client.Request
 
-	json        foundation.Json
-	config      *FactoryConfig
-	clients     sync.Map
+	json    foundation.Json
+	config  *FactoryConfig
+	clients sync.Map
+	mu      sync.RWMutex
+
 	activeState *FakeState
-	mu          sync.RWMutex
+	strict      bool
+	stray       []string
 }
 
 func NewFactory(config *FactoryConfig, json foundation.Json) (*Factory, error) {
@@ -31,11 +34,46 @@ func NewFactory(config *FactoryConfig, json foundation.Json) (*Factory, error) {
 		json:   json,
 	}
 
-	if err := factory.refreshDefaultClient(); err != nil {
+	if err := factory.bindDefault(); err != nil {
 		return nil, err
 	}
 
 	return factory, nil
+}
+
+func (r *Factory) AllowStrayRequests(patterns []string) client.Factory {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.stray = patterns
+	r.ensureState()
+	r.activeState.AllowStrayRequests(patterns)
+	r.flushClients()
+
+	return r
+}
+
+func (r *Factory) AssertNotSent(assertion func(client.Request) bool) bool {
+	return !r.AssertSent(assertion)
+}
+
+func (r *Factory) AssertNothingSent() bool {
+	return r.AssertSentCount(0)
+}
+
+func (r *Factory) AssertSent(assertion func(client.Request) bool) bool {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return r.activeState != nil && r.activeState.AssertSent(assertion)
+}
+
+func (r *Factory) AssertSentCount(count int) bool {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	if r.activeState != nil {
+		return r.activeState.AssertSentCount(count)
+	}
+	return count == 0
 }
 
 func (r *Factory) Client(names ...string) client.Request {
@@ -67,12 +105,27 @@ func (r *Factory) Fake(mocks map[string]any) client.Factory {
 
 	r.activeState = NewFakeState(r.json, mocks)
 
-	r.clients.Range(func(key, value any) bool {
-		r.clients.Delete(key)
-		return true
-	})
+	if r.strict {
+		r.activeState.PreventStrayRequests()
+	}
+	if len(r.stray) > 0 {
+		r.activeState.AllowStrayRequests(r.stray)
+	}
 
-	_ = r.refreshDefaultClientLocked()
+	r.flushClients()
+
+	return r
+}
+
+func (r *Factory) PreventStrayRequests() client.Factory {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.strict = true
+	r.ensureState()
+	r.activeState.PreventStrayRequests()
+	r.flushClients()
+
 	return r
 }
 
@@ -81,67 +134,46 @@ func (r *Factory) Reset() {
 	defer r.mu.Unlock()
 
 	r.activeState = nil
+	r.strict = false
+	r.stray = nil
 
-	r.clients.Range(func(key, value any) bool {
-		r.clients.Delete(key)
-		return true
-	})
-
-	_ = r.refreshDefaultClientLocked()
+	r.flushClients()
 }
 
-func (r *Factory) PreventStrayRequests() client.Factory {
-	r.mu.RLock()
-	if r.activeState != nil {
-		defer r.mu.RUnlock()
-		r.activeState.PreventStrayRequests()
-		return r
-	}
-	r.mu.RUnlock()
-
-	return r.Fake(nil).PreventStrayRequests()
-}
-
-func (r *Factory) AllowStrayRequests(patterns []string) client.Factory {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-	if r.activeState != nil {
-		r.activeState.AllowStrayRequests(patterns)
-	}
-	return r
-}
-
-func (r *Factory) AssertSent(assertion func(client.Request) bool) bool {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-	return r.activeState != nil && r.activeState.AssertSent(assertion)
-}
-
-func (r *Factory) AssertSentCount(count int) bool {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	if r.activeState != nil {
-		return r.activeState.AssertSentCount(count)
-	}
-
-	return count == 0
-}
-
-func (r *Factory) AssertNotSent(assertion func(client.Request) bool) bool {
-	return !r.AssertSent(assertion)
-}
-
-func (r *Factory) AssertNothingSent() bool {
-	return r.AssertSentCount(0)
+func (r *Factory) Response() client.ResponseFactory {
+	return NewResponseFactory(r.json)
 }
 
 func (r *Factory) Sequence() client.ResponseSequence {
 	return NewResponseSequence(NewResponseFactory(r.json))
 }
 
-func (r *Factory) Response() client.ResponseFactory {
-	return NewResponseFactory(r.json)
+func (r *Factory) bindDefault() error {
+	name := r.config.Default
+	c, err := r.resolveClient(name, r.activeState)
+	if err != nil {
+		return err
+	}
+
+	r.Request = NewRequest(c, r.json, r.config.Clients[name].BaseUrl, name)
+	return nil
+}
+
+func (r *Factory) ensureState() {
+	if r.activeState == nil {
+		r.activeState = NewFakeState(r.json, nil)
+	}
+}
+
+func (r *Factory) flushClients() {
+	r.clients.Range(func(key, value any) bool {
+		r.clients.Delete(key)
+		return true
+	})
+
+	if err := r.bindDefault(); err != nil {
+		panic(err)
+	}
 }
 
 func (r *Factory) resolveClient(name string, state *FakeState) (*http.Client, error) {
@@ -158,13 +190,6 @@ func (r *Factory) resolveClient(name string, state *FakeState) (*http.Client, er
 		return nil, errors.HttpClientConnectionNotFound.Args(name)
 	}
 
-	newClient := r.createHTTPClient(&cfg, state)
-	actual, _ := r.clients.LoadOrStore(name, newClient)
-
-	return actual.(*http.Client), nil
-}
-
-func (r *Factory) createHTTPClient(cfg *Config, state *FakeState) *http.Client {
 	baseTransport := http.DefaultTransport.(*http.Transport).Clone()
 	baseTransport.MaxIdleConns = cfg.MaxIdleConns
 	baseTransport.MaxIdleConnsPerHost = cfg.MaxIdleConnsPerHost
@@ -172,33 +197,15 @@ func (r *Factory) createHTTPClient(cfg *Config, state *FakeState) *http.Client {
 	baseTransport.IdleConnTimeout = cfg.IdleConnTimeout
 
 	var transport http.RoundTripper = baseTransport
-
 	if state != nil {
 		transport = NewFakeTransport(state, baseTransport, r.json)
 	}
 
-	return &http.Client{
+	httpClient := &http.Client{
 		Timeout:   cfg.Timeout,
 		Transport: transport,
 	}
-}
 
-func (r *Factory) refreshDefaultClientLocked() error {
-	name := r.config.Default
-
-	c, err := r.resolveClient(name, r.activeState)
-	if err != nil {
-		return err
-	}
-
-	cfg := r.config.Clients[name]
-	r.Request = NewRequest(c, r.json, cfg.BaseUrl, name)
-
-	return nil
-}
-
-func (r *Factory) refreshDefaultClient() error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	return r.refreshDefaultClientLocked()
+	actual, _ := r.clients.LoadOrStore(name, httpClient)
+	return actual.(*http.Client), nil
 }
