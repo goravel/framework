@@ -15,7 +15,7 @@ import (
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	mockshash "github.com/goravel/framework/mocks/hash"
-	mockshttp "github.com/goravel/framework/mocks/http"
+	mocksview "github.com/goravel/framework/mocks/view"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -154,7 +154,7 @@ func (s *DownCommandTestSuite) TestHandleWithRender() {
 
 	app.EXPECT().StoragePath("framework/maintenance").Return(tmpfile)
 
-	views := mockshttp.NewView(s.T())
+	views := mocksview.NewView(s.T())
 	views.EXPECT().Exists("errors/503.tmpl").Return(true)
 	app.EXPECT().MakeView().Return(views)
 
