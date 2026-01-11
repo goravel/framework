@@ -16,6 +16,7 @@ func CheckForMaintenance() http.Middleware {
 		filepath := path.Storage("framework/maintenance")
 		if !file.Exists(filepath) {
 			ctx.Request().Next()
+			return
 		}
 
 		content, err := os.ReadFile(filepath)

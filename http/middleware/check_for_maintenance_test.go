@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/path"
 )
@@ -30,12 +31,12 @@ func TestMaintenanceMode(t *testing.T) {
 
 	resp, err := client.Get(server.URL)
 	require.NoError(t, err)
-	assert.Equal(t, resp.StatusCode, 503)
+	assert.Equal(t, http.StatusServiceUnavailable, resp.StatusCode)
 
 	err = file.Remove(path.Storage("framework/maintenance"))
 	require.NoError(t, err)
 
 	resp, err = client.Get(server.URL)
 	require.NoError(t, err)
-	assert.Equal(t, resp.StatusCode, 200)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
