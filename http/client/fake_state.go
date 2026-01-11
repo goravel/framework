@@ -107,7 +107,7 @@ func toHandler(json foundation.Json, v any) func(client.Request) client.Response
 	case int:
 		return func(_ client.Request) client.Response { return NewResponseFactory(json).Status(h) }
 	case *ResponseSequence:
-		return func(_ client.Request) client.Response { return h.getNext() }
+		return func(_ client.Request) client.Response { return h.GetNext() }
 	default:
 		return func(_ client.Request) client.Response { return NewResponseFactory(json).Status(200) }
 	}

@@ -56,22 +56,19 @@ func (r *ResponseSequence) WhenEmpty(response client.Response) client.ResponseSe
 	return r
 }
 
-// getNext handles the internal state transition to the next response.
-func (r *ResponseSequence) getNext() client.Response {
+func (r *ResponseSequence) GetNext() client.Response {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	// Return the next response in the queue if available.
 	if r.current < len(r.responses) {
 		response := r.responses[r.current]
 		r.current++
 		return response
 	}
 
-	// Fallback to the user-defined empty state or a default 404.
 	if r.whenEmpty != nil {
 		return r.whenEmpty
 	}
 
-	return r.factory.Status(404)
+	return nil
 }
