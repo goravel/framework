@@ -83,10 +83,6 @@ func (r *Factory) Client(names ...string) client.Request {
 		name = names[0]
 	}
 
-	if name == r.config.Default && r.Request != nil {
-		return r.Request
-	}
-
 	r.mu.RLock()
 	state := r.activeState
 	r.mu.RUnlock()
