@@ -3,10 +3,11 @@ package middleware
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	contractshttp "github.com/goravel/framework/contracts/http"
 	mockhttp "github.com/goravel/framework/mocks/http"
 	mocksession "github.com/goravel/framework/mocks/session"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestTokenMatch(t *testing.T) {

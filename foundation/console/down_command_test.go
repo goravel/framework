@@ -154,7 +154,7 @@ func (s *DownCommandTestSuite) TestHandleWithRender() {
 
 	app.EXPECT().StoragePath("framework/maintenance").Return(tmpfile)
 
-	views := NewView(s.T())
+	views := mockshttp.NewView(s.T())
 	views.EXPECT().Exists("errors/503.tmpl").Return(true)
 	app.EXPECT().MakeView().Return(views)
 
@@ -258,16 +258,4 @@ func (s *DownCommandTestSuite) TestHandleWithSecret() {
 	assert.Equal(s.T(), "Under maintenance", maintenanceOptions.Reason)
 	assert.Equal(s.T(), "randomhashedsecretpassword", maintenanceOptions.Secret)
 	assert.Equal(s.T(), 503, maintenanceOptions.Status)
-}
-
-func NewView(t interface {
-	mock.TestingT
-	Cleanup(func())
-}) *mockshttp.View {
-	mock := &mockshttp.View{}
-	mock.Mock.Test(t)
-
-	t.Cleanup(func() { mock.AssertExpectations(t) })
-
-	return mock
 }
