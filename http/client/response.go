@@ -98,6 +98,10 @@ func (r *Response) Json() (map[string]any, error) {
 	return r.decoded, nil
 }
 
+func (r *Response) Origin() *http.Response {
+	return r.response
+}
+
 func (r *Response) Redirect() bool {
 	status := r.getStatusCode()
 	return status >= http.StatusMultipleChoices && status < http.StatusBadRequest

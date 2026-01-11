@@ -34,7 +34,7 @@ func (s *RequestTestSuite) SetupTest() {
 	s.httpClient = &http.Client{
 		Timeout: 30 * time.Second,
 	}
-	s.request = NewRequest(s.httpClient, s.json, "https://api.goravel.dev")
+	s.request = NewRequest(s.httpClient, s.json, "https://api.goravel.dev", "")
 }
 
 func (s *RequestTestSuite) TestClone() {

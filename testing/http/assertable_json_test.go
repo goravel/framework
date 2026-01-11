@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -40,23 +41,30 @@ func (s *AssertableJsonTestSuite) TestCount() {
 
 	assertable.Count("items", 3)
 
-	// assertable.Count("items", 4)
+	mockT := &MockTestingT{}
+	mockAssertable, _ := NewAssertableJSON(mockT, json.New(), jsonStr)
+	mockAssertable.Count("items", 4)
+	s.True(mockT.Failed)
+	s.Contains(mockT.ErrorMessages[0], "expected size")
 }
 
 func (s *AssertableJsonTestSuite) TestHas() {
 	jsonStr := `{
-		"key1": "value1",
-		"key2": [1, 2, 3],
-		"nested": {"deep": "value"},
-		"nullKey": null
-	}`
+       "key1": "value1",
+       "key2": [1, 2, 3],
+       "nested": {"deep": "value"},
+       "nullKey": null
+    }`
 	assertable, err := NewAssertableJSON(s.T(), json.New(), jsonStr)
 	s.NoError(err)
 
-	assertable.Has("key1")
-	assertable.Has("nullKey")
+	assertable.Has("key1").Has("nullKey")
 
-	// assertable.Has("nonExistingKey")
+	mockT := &MockTestingT{}
+	mockAssertable, _ := NewAssertableJSON(mockT, json.New(), jsonStr)
+	mockAssertable.Has("nonExistingKey")
+	s.True(mockT.Failed)
+	s.Contains(mockT.ErrorMessages[0], "does not exist")
 }
 
 func (s *AssertableJsonTestSuite) TestHasAll() {
@@ -64,11 +72,13 @@ func (s *AssertableJsonTestSuite) TestHasAll() {
 	assertable, err := NewAssertableJSON(s.T(), json.New(), jsonStr)
 	s.NoError(err)
 
-	// Test all keys exist
 	assertable.HasAll([]string{"key1", "key2"})
 
-	// Test one key does not exist
-	// assertable.HasAll([]string{"key1", "nonExistingKey"})
+	mockT := &MockTestingT{}
+	mockAssertable, _ := NewAssertableJSON(mockT, json.New(), jsonStr)
+	mockAssertable.HasAll([]string{"key1", "nonExistingKey"})
+	s.True(mockT.Failed)
+	s.Contains(mockT.ErrorMessages[0], "does not exist")
 }
 
 func (s *AssertableJsonTestSuite) TestHasAny() {
@@ -76,11 +86,13 @@ func (s *AssertableJsonTestSuite) TestHasAny() {
 	assertable, err := NewAssertableJSON(s.T(), json.New(), jsonStr)
 	s.NoError(err)
 
-	// Test at least one key exists
 	assertable.HasAny([]string{"key1", "key2"})
 
-	// Test no keys exist
-	// assertable.HasAny([]string{"nonExistingKey1", "nonExistingKey2"})
+	mockT := &MockTestingT{}
+	mockAssertable, _ := NewAssertableJSON(mockT, json.New(), jsonStr)
+	mockAssertable.HasAny([]string{"nonExistingKey1", "nonExistingKey2"})
+	s.True(mockT.Failed)
+	s.Contains(mockT.ErrorMessages[0], "None of properties")
 }
 
 func (s *AssertableJsonTestSuite) TestMissing() {
@@ -88,11 +100,13 @@ func (s *AssertableJsonTestSuite) TestMissing() {
 	assertable, err := NewAssertableJSON(s.T(), json.New(), jsonStr)
 	s.NoError(err)
 
-	// Test key is missing
 	assertable.Missing("nonExistingKey")
 
-	// Test key exists
-	// assertable.Missing("key1")
+	mockT := &MockTestingT{}
+	mockAssertable, _ := NewAssertableJSON(mockT, json.New(), jsonStr)
+	mockAssertable.Missing("key1")
+	s.True(mockT.Failed)
+	s.Contains(mockT.ErrorMessages[0], "expected to be missing")
 }
 
 func (s *AssertableJsonTestSuite) TestMissingAll() {
@@ -100,39 +114,40 @@ func (s *AssertableJsonTestSuite) TestMissingAll() {
 	assertable, err := NewAssertableJSON(s.T(), json.New(), jsonStr)
 	s.NoError(err)
 
-	// Test all keys are missing
 	assertable.MissingAll([]string{"nonExistingKey1", "nonExistingKey2"})
 
-	// Test one key exists
-	// assertable.MissingAll([]string{"key1"})
+	mockT := &MockTestingT{}
+	mockAssertable, _ := NewAssertableJSON(mockT, json.New(), jsonStr)
+	mockAssertable.MissingAll([]string{"key1"})
+	s.True(mockT.Failed)
+	s.Contains(mockT.ErrorMessages[0], "expected to be missing")
 }
 
 func (s *AssertableJsonTestSuite) TestWhere() {
 	jsonStr := `{
-		"key1": "value1",
-		"intKey": 42,
-     	"floatKey": 42.0,
-		"nullKey": null,
-		"objKey": {"nested": "value"},
-		"arrayKey": [1, 2, 3]
-	}`
+       "key1": "value1",
+       "intKey": 42,
+       "floatKey": 42.0,
+       "nullKey": null,
+       "objKey": {"nested": "value"},
+       "arrayKey": [1, 2, 3]
+    }`
 	assertable, err := NewAssertableJSON(s.T(), json.New(), jsonStr)
 	s.NoError(err)
 
-	// Test correct value
-	assertable.Where("key1", "value1")
-	// Test number type handling
-	assertable.Where("intKey", float64(42))
-	assertable.Where("floatKey", float64(42))
-	// Test null
-	assertable.Where("nullKey", nil)
-	// Test object equality
-	assertable.Where("objKey", map[string]any{"nested": "value"})
-	// Test array equality
-	assertable.Where("arrayKey", []any{float64(1), float64(2), float64(3)})
+	assertable.Where("key1", "value1").
+		Where("intKey", float64(42)).
+		Where("floatKey", float64(42)).
+		Where("nullKey", nil).
+		Where("objKey", map[string]any{"nested": "value"}).
+		Where("arrayKey", []any{float64(1), float64(2), float64(3)})
 
-	// Test incorrect value
-	// assertable.Where("key1", "wrongValue")
+	mockT := &MockTestingT{}
+	mockAssertable, err := NewAssertableJSON(mockT, json.New(), jsonStr)
+	s.NoError(err)
+	mockAssertable.Where("key1", "wrongValue")
+	s.True(mockT.Failed)
+	s.Contains(mockT.ErrorMessages[0], "Expected property [key1]")
 }
 
 func (s *AssertableJsonTestSuite) TestWhereNot() {
@@ -140,62 +155,63 @@ func (s *AssertableJsonTestSuite) TestWhereNot() {
 	assertable, err := NewAssertableJSON(s.T(), json.New(), jsonStr)
 	s.NoError(err)
 
-	// Test value is not as expected
 	assertable.WhereNot("key1", "wrongValue")
 
-	// Test value is as expected
-	// assertable.WhereNot("key1", "value1")
+	mockT := &MockTestingT{}
+	mockAssertable, _ := NewAssertableJSON(mockT, json.New(), jsonStr)
+	mockAssertable.WhereNot("key1", "value1")
+	s.True(mockT.Failed)
+	s.Contains(mockT.ErrorMessages[0], "to not have value")
 }
 
 func (s *AssertableJsonTestSuite) TestFirst() {
 	jsonStr := `{"items": [{"id": 1}, {"id": 2}]}`
-
 	assertable, err := NewAssertableJSON(s.T(), json.New(), jsonStr)
 	s.NoError(err)
 
-	// Test fetching the first item
 	assertable.First("items", func(item contractshttp.AssertableJSON) {
 		item.Where("id", float64(1))
 	})
 
-	// Test with a non-existing key
-	// assertable.First("nonExistingKey", func(item contractstesting.AssertableJSON) {})
+	mockT := &MockTestingT{}
+	mockAssertable, _ := NewAssertableJSON(mockT, json.New(), jsonStr)
+	mockAssertable.First("nonExistingKey", func(item contractshttp.AssertableJSON) {})
+	s.True(mockT.Failed)
+	s.Contains(mockT.ErrorMessages[0], "does not exist")
 
-	// Test with an empty array
-	// emptyJsonStr := `{"items": []}`
-	// emptyAssertable, _ := NewAssertableJSON(t, emptyJsonStr)
-	// emptyAssertable.First("items", func(item contractstesting.AssertableJSON) {})
+	emptyJsonStr := `{"items": []}`
+	mockT2 := &MockTestingT{}
+	emptyAssertable, _ := NewAssertableJSON(mockT2, json.New(), emptyJsonStr)
+	emptyAssertable.First("items", func(item contractshttp.AssertableJSON) {})
+	s.True(mockT2.Failed)
+	s.Contains(mockT2.ErrorMessages[0], "non-empty array")
 }
 
 func (s *AssertableJsonTestSuite) TestHasWithScope() {
 	jsonStr := `{"items": [{"id": 1}, {"id": 2}]}`
-
 	assertable, err := NewAssertableJSON(s.T(), json.New(), jsonStr)
 	s.NoError(err)
 
-	// Test has with correct length
 	assertable.HasWithScope("items", 2, func(item contractshttp.AssertableJSON) {
 		item.Where("id", float64(1))
 	})
 
-	// Test incorrect length
-	// assertable.HasWithScope("items", 3, func(item contractstesting.AssertableJSON) {})
-
-	// Test with a non-existing key
-	// assertable.HasWithScope("nonExistingKey", 0, func(item contractstesting.AssertableJSON) {})
+	mockT := &MockTestingT{}
+	mockAssertable, _ := NewAssertableJSON(mockT, json.New(), jsonStr)
+	mockAssertable.HasWithScope("items", 3, func(item contractshttp.AssertableJSON) {})
+	s.True(mockT.Failed)
+	s.Contains(mockT.ErrorMessages[0], "expected length")
 }
 
 func (s *AssertableJsonTestSuite) TestEach() {
 	jsonStr := `{
-		"items": [{"id": 1}, {"id": 2}],
-		"mixedTypes": [42, "string", {"key": "value"}],
-		"nonArray": "value"
-	}`
-
+       "items": [{"id": 1}, {"id": 2}],
+       "mixedTypes": [42, "string", {"key": "value"}],
+       "nonArray": "value"
+    }`
 	assertable, err := NewAssertableJSON(s.T(), json.New(), jsonStr)
 	s.NoError(err)
 
-	// Test iterating over each item
 	callCount := 0
 	assertable.Each("items", func(item contractshttp.AssertableJSON) {
 		item.Where("id", float64(callCount+1))
@@ -203,17 +219,24 @@ func (s *AssertableJsonTestSuite) TestEach() {
 	})
 	s.Equal(2, callCount)
 
-	// Test with a non-existing key
-	// assertable.Each("nonExistingKey", func(item contractstesting.AssertableJSON) {})
+	mockT := &MockTestingT{}
+	mockAssertable, _ := NewAssertableJSON(mockT, json.New(), jsonStr)
+	mockAssertable.Each("nonExistingKey", func(item contractshttp.AssertableJSON) {})
+	s.True(mockT.Failed)
+	s.Contains(mockT.ErrorMessages[0], "does not exist")
+}
 
-	// Test with an empty array
-	emptyJsonStr := `{"items": []}`
-	emptyAssertable, err := NewAssertableJSON(s.T(), json.New(), emptyJsonStr)
-	s.NoError(err)
+// MockTestingT captures assertions instead of failing the test suite.
+type MockTestingT struct {
+	Failed        bool
+	ErrorMessages []string
+}
 
-	emptyCallCount := 0
-	emptyAssertable.Each("items", func(item contractshttp.AssertableJSON) {
-		emptyCallCount++
-	})
-	s.Equal(0, emptyCallCount)
+func (r *MockTestingT) Errorf(format string, args ...interface{}) {
+	r.Failed = true
+	r.ErrorMessages = append(r.ErrorMessages, fmt.Sprintf(format, args...))
+}
+
+func (r *MockTestingT) FailNow() {
+	r.Failed = true
 }

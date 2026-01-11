@@ -29,10 +29,9 @@ type Request interface {
 	// AsForm sets the Content-Type header to "application/x-www-form-urlencoded".
 	AsForm() Request
 	// BaseUrl overrides the base URL defined in the configuration for this specific request chain.
-	//
-	// This allows you to hit a different domain than the one configured for the
-	// client, useful for dynamic subdomains or runtime overrides.
 	BaseUrl(url string) Request
+	// ClientName returns the name of the Goravel client configuration used for this request.
+	ClientName() string
 	// Clone creates a deep copy of the request builder.
 	// This is useful if you want to reuse a base request with shared headers/tokens
 	// for multiple distinct API calls.
@@ -73,4 +72,20 @@ type Request interface {
 	WithUrlParameter(key, value string) Request
 	// WithUrlParameters replaces multiple URL parameter placeholders.
 	WithUrlParameters(map[string]string) Request
+
+	// These methods are primarily used inside Fakes and Assertions to inspect
+	// the request that was sent (or intercepted).
+
+	// Method returns the HTTP verb of the request.
+	Method() string
+	// Url returns the full URL of the request.
+	Url() string
+	// Body returns the raw request body as a string.
+	Body() string
+	// Header retrieves a specific header value from the request.
+	Header(key string) string
+	// Headers retrieves all headers from the request.
+	Headers() http.Header
+	// Input retrieves a value from the request data by key.
+	Input(key string) any
 }

@@ -103,6 +103,8 @@ var (
 
 	HttpRateLimitFailedToTakeToken     = New("failed to take token")
 	HttpRateLimitFailedToCheckThrottle = New("failed to check throttle: %s")
+	HttpClientHandlerReturnedNil       = New("mock handler returned a nil response").SetModule(ModuleHttp)
+	HttpClientStrayRequest             = New("stray request: no mock defined for [%s] %s").SetModule(ModuleHttp)
 
 	LangFileNotExist      = New("translation file does not exist")
 	LangNoLoaderAvailable = New("no translation loader available")

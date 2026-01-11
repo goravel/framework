@@ -56,31 +56,13 @@ func (s *TestRequestSuite) TestBindAndCall() {
 			Age  int    `json:"age"`
 		}
 
-		response, err := s.testRequest.Bind(&user).Get("/")
+		response, err := s.testRequest.Get("/")
 
 		s.NoError(err)
 		s.NotNil(response)
+		s.NoError(response.Bind(&user))
 		s.Equal("John", user.Name)
 		s.Equal(30, user.Age)
-	})
-
-	s.Run("should not bind when response is not successful", func() {
-		s.mockRoute.EXPECT().Test(httptest.NewRequest("GET", "/", nil).WithContext(context.Background())).Return(&http.Response{
-			StatusCode: http.StatusInternalServerError,
-		}, nil).Once()
-
-		var user struct {
-			Name string `json:"name"`
-			Age  int    `json:"age"`
-		}
-
-		response, err := s.testRequest.Bind(&user).Get("/")
-
-		s.NoError(err)
-		s.NotNil(response)
-		s.Equal(user.Name, "")
-		s.Equal(user.Age, 0)
-		response.AssertInternalServerError()
 	})
 }
 

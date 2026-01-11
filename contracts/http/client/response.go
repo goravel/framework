@@ -7,18 +7,6 @@ import (
 
 type Response interface {
 	// Bind unmarshalls the response body into the provided value.
-	//
-	// Typical usage is:
-	//   1. Inspect the status (e.g. via Successful(), Failed(), or Status()).
-	//   2. Call Bind on responses where you expect a body to decode.
-	//
-	// Bind is intended for non-streaming use and assumes it can read the
-	// response body. If the body has already been consumed (for example by a
-	// prior call to Stream() or any other code that fully reads the body),
-	// Bind may return an error or fail to populate the target value.
-	//
-	// Prefer Bind when you want the entire body decoded into a struct or map.
-	// Prefer Stream() when you need to process large bodies incrementally.
 	Bind(value any) error
 	// Body returns the response body as a string.
 	Body() (string, error)
@@ -36,6 +24,8 @@ type Response interface {
 	Headers() http.Header
 	// Json returns the response body parsed as a map[string]any.
 	Json() (map[string]any, error)
+	// Origin returns the underlying *http.Response instance.
+	Origin() *http.Response
 	// Redirect determines if the response status code is >= 300 and < 400.
 	Redirect() bool
 	// ServerError determines if the response status code is >= 500.
@@ -43,9 +33,6 @@ type Response interface {
 	// Status returns the HTTP status code.
 	Status() int
 	// Stream returns the underlying reader to stream the response body.
-	// Use this for large files to avoid loading the entire content into memory.
-	//
-	// NOTE: You are responsible for closing the returned reader.
 	Stream() (io.ReadCloser, error)
 	// Successful determines if the response status code is >= 200 and < 300.
 	Successful() bool

@@ -217,6 +217,96 @@ func (_c *Request_BaseUrl_Call) RunAndReturn(run func(string) client.Request) *R
 	return _c
 }
 
+// Body provides a mock function with no fields
+func (_m *Request) Body() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Body")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Request_Body_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Body'
+type Request_Body_Call struct {
+	*mock.Call
+}
+
+// Body is a helper method to define mock.On call
+func (_e *Request_Expecter) Body() *Request_Body_Call {
+	return &Request_Body_Call{Call: _e.mock.On("Body")}
+}
+
+func (_c *Request_Body_Call) Run(run func()) *Request_Body_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Request_Body_Call) Return(_a0 string) *Request_Body_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Request_Body_Call) RunAndReturn(run func() string) *Request_Body_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ClientName provides a mock function with no fields
+func (_m *Request) ClientName() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for ClientName")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Request_ClientName_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClientName'
+type Request_ClientName_Call struct {
+	*mock.Call
+}
+
+// ClientName is a helper method to define mock.On call
+func (_e *Request_Expecter) ClientName() *Request_ClientName_Call {
+	return &Request_ClientName_Call{Call: _e.mock.On("ClientName")}
+}
+
+func (_c *Request_ClientName_Call) Run(run func()) *Request_ClientName_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Request_ClientName_Call) Return(_a0 string) *Request_ClientName_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Request_ClientName_Call) RunAndReturn(run func() string) *Request_ClientName_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Clone provides a mock function with no fields
 func (_m *Request) Clone() client.Request {
 	ret := _m.Called()
@@ -486,6 +576,99 @@ func (_c *Request_Head_Call) RunAndReturn(run func(string) (client.Response, err
 	return _c
 }
 
+// Header provides a mock function with given fields: key
+func (_m *Request) Header(key string) string {
+	ret := _m.Called(key)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Header")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(key)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Request_Header_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Header'
+type Request_Header_Call struct {
+	*mock.Call
+}
+
+// Header is a helper method to define mock.On call
+//   - key string
+func (_e *Request_Expecter) Header(key interface{}) *Request_Header_Call {
+	return &Request_Header_Call{Call: _e.mock.On("Header", key)}
+}
+
+func (_c *Request_Header_Call) Run(run func(key string)) *Request_Header_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Request_Header_Call) Return(_a0 string) *Request_Header_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Request_Header_Call) RunAndReturn(run func(string) string) *Request_Header_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Headers provides a mock function with no fields
+func (_m *Request) Headers() http.Header {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Headers")
+	}
+
+	var r0 http.Header
+	if rf, ok := ret.Get(0).(func() http.Header); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(http.Header)
+		}
+	}
+
+	return r0
+}
+
+// Request_Headers_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Headers'
+type Request_Headers_Call struct {
+	*mock.Call
+}
+
+// Headers is a helper method to define mock.On call
+func (_e *Request_Expecter) Headers() *Request_Headers_Call {
+	return &Request_Headers_Call{Call: _e.mock.On("Headers")}
+}
+
+func (_c *Request_Headers_Call) Run(run func()) *Request_Headers_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Request_Headers_Call) Return(_a0 http.Header) *Request_Headers_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Request_Headers_Call) RunAndReturn(run func() http.Header) *Request_Headers_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // HttpClient provides a mock function with no fields
 func (_m *Request) HttpClient() *http.Client {
 	ret := _m.Called()
@@ -529,6 +712,99 @@ func (_c *Request_HttpClient_Call) Return(_a0 *http.Client) *Request_HttpClient_
 }
 
 func (_c *Request_HttpClient_Call) RunAndReturn(run func() *http.Client) *Request_HttpClient_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Input provides a mock function with given fields: key
+func (_m *Request) Input(key string) interface{} {
+	ret := _m.Called(key)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Input")
+	}
+
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func(string) interface{}); ok {
+		r0 = rf(key)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(interface{})
+		}
+	}
+
+	return r0
+}
+
+// Request_Input_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Input'
+type Request_Input_Call struct {
+	*mock.Call
+}
+
+// Input is a helper method to define mock.On call
+//   - key string
+func (_e *Request_Expecter) Input(key interface{}) *Request_Input_Call {
+	return &Request_Input_Call{Call: _e.mock.On("Input", key)}
+}
+
+func (_c *Request_Input_Call) Run(run func(key string)) *Request_Input_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Request_Input_Call) Return(_a0 interface{}) *Request_Input_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Request_Input_Call) RunAndReturn(run func(string) interface{}) *Request_Input_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Method provides a mock function with no fields
+func (_m *Request) Method() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Method")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Request_Method_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Method'
+type Request_Method_Call struct {
+	*mock.Call
+}
+
+// Method is a helper method to define mock.On call
+func (_e *Request_Expecter) Method() *Request_Method_Call {
+	return &Request_Method_Call{Call: _e.mock.On("Method")}
+}
+
+func (_c *Request_Method_Call) Run(run func()) *Request_Method_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Request_Method_Call) Return(_a0 string) *Request_Method_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Request_Method_Call) RunAndReturn(run func() string) *Request_Method_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -812,6 +1088,51 @@ func (_c *Request_ReplaceHeaders_Call) Return(_a0 client.Request) *Request_Repla
 }
 
 func (_c *Request_ReplaceHeaders_Call) RunAndReturn(run func(map[string]string) client.Request) *Request_ReplaceHeaders_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Url provides a mock function with no fields
+func (_m *Request) Url() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Url")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Request_Url_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Url'
+type Request_Url_Call struct {
+	*mock.Call
+}
+
+// Url is a helper method to define mock.On call
+func (_e *Request_Expecter) Url() *Request_Url_Call {
+	return &Request_Url_Call{Call: _e.mock.On("Url")}
+}
+
+func (_c *Request_Url_Call) Run(run func()) *Request_Url_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Request_Url_Call) Return(_a0 string) *Request_Url_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Request_Url_Call) RunAndReturn(run func() string) *Request_Url_Call {
 	_c.Call.Return(run)
 	return _c
 }

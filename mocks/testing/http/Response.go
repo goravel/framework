@@ -403,14 +403,14 @@ func (_c *Response_AssertCreated_Call) RunAndReturn(run func() http.Response) *R
 	return _c
 }
 
-// AssertDontSee provides a mock function with given fields: _a0, _a1
-func (_m *Response) AssertDontSee(_a0 []string, _a1 ...bool) http.Response {
-	_va := make([]interface{}, len(_a1))
-	for _i := range _a1 {
-		_va[_i] = _a1[_i]
+// AssertDontSee provides a mock function with given fields: value, escaped
+func (_m *Response) AssertDontSee(value []string, escaped ...bool) http.Response {
+	_va := make([]interface{}, len(escaped))
+	for _i := range escaped {
+		_va[_i] = escaped[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, _a0)
+	_ca = append(_ca, value)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
@@ -420,7 +420,7 @@ func (_m *Response) AssertDontSee(_a0 []string, _a1 ...bool) http.Response {
 
 	var r0 http.Response
 	if rf, ok := ret.Get(0).(func([]string, ...bool) http.Response); ok {
-		r0 = rf(_a0, _a1...)
+		r0 = rf(value, escaped...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(http.Response)
@@ -436,14 +436,14 @@ type Response_AssertDontSee_Call struct {
 }
 
 // AssertDontSee is a helper method to define mock.On call
-//   - _a0 []string
-//   - _a1 ...bool
-func (_e *Response_Expecter) AssertDontSee(_a0 interface{}, _a1 ...interface{}) *Response_AssertDontSee_Call {
+//   - value []string
+//   - escaped ...bool
+func (_e *Response_Expecter) AssertDontSee(value interface{}, escaped ...interface{}) *Response_AssertDontSee_Call {
 	return &Response_AssertDontSee_Call{Call: _e.mock.On("AssertDontSee",
-		append([]interface{}{_a0}, _a1...)...)}
+		append([]interface{}{value}, escaped...)...)}
 }
 
-func (_c *Response_AssertDontSee_Call) Run(run func(_a0 []string, _a1 ...bool)) *Response_AssertDontSee_Call {
+func (_c *Response_AssertDontSee_Call) Run(run func(value []string, escaped ...bool)) *Response_AssertDontSee_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		variadicArgs := make([]bool, len(args)-1)
 		for i, a := range args[1:] {
@@ -1427,14 +1427,14 @@ func (_c *Response_AssertRequestTimeout_Call) RunAndReturn(run func() http.Respo
 	return _c
 }
 
-// AssertSee provides a mock function with given fields: _a0, _a1
-func (_m *Response) AssertSee(_a0 []string, _a1 ...bool) http.Response {
-	_va := make([]interface{}, len(_a1))
-	for _i := range _a1 {
-		_va[_i] = _a1[_i]
+// AssertSee provides a mock function with given fields: value, escaped
+func (_m *Response) AssertSee(value []string, escaped ...bool) http.Response {
+	_va := make([]interface{}, len(escaped))
+	for _i := range escaped {
+		_va[_i] = escaped[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, _a0)
+	_ca = append(_ca, value)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
@@ -1444,7 +1444,7 @@ func (_m *Response) AssertSee(_a0 []string, _a1 ...bool) http.Response {
 
 	var r0 http.Response
 	if rf, ok := ret.Get(0).(func([]string, ...bool) http.Response); ok {
-		r0 = rf(_a0, _a1...)
+		r0 = rf(value, escaped...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(http.Response)
@@ -1460,14 +1460,14 @@ type Response_AssertSee_Call struct {
 }
 
 // AssertSee is a helper method to define mock.On call
-//   - _a0 []string
-//   - _a1 ...bool
-func (_e *Response_Expecter) AssertSee(_a0 interface{}, _a1 ...interface{}) *Response_AssertSee_Call {
+//   - value []string
+//   - escaped ...bool
+func (_e *Response_Expecter) AssertSee(value interface{}, escaped ...interface{}) *Response_AssertSee_Call {
 	return &Response_AssertSee_Call{Call: _e.mock.On("AssertSee",
-		append([]interface{}{_a0}, _a1...)...)}
+		append([]interface{}{value}, escaped...)...)}
 }
 
-func (_c *Response_AssertSee_Call) Run(run func(_a0 []string, _a1 ...bool)) *Response_AssertSee_Call {
+func (_c *Response_AssertSee_Call) Run(run func(value []string, escaped ...bool)) *Response_AssertSee_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		variadicArgs := make([]bool, len(args)-1)
 		for i, a := range args[1:] {
@@ -1490,14 +1490,14 @@ func (_c *Response_AssertSee_Call) RunAndReturn(run func([]string, ...bool) http
 	return _c
 }
 
-// AssertSeeInOrder provides a mock function with given fields: _a0, _a1
-func (_m *Response) AssertSeeInOrder(_a0 []string, _a1 ...bool) http.Response {
-	_va := make([]interface{}, len(_a1))
-	for _i := range _a1 {
-		_va[_i] = _a1[_i]
+// AssertSeeInOrder provides a mock function with given fields: value, escaped
+func (_m *Response) AssertSeeInOrder(value []string, escaped ...bool) http.Response {
+	_va := make([]interface{}, len(escaped))
+	for _i := range escaped {
+		_va[_i] = escaped[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, _a0)
+	_ca = append(_ca, value)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
@@ -1507,7 +1507,7 @@ func (_m *Response) AssertSeeInOrder(_a0 []string, _a1 ...bool) http.Response {
 
 	var r0 http.Response
 	if rf, ok := ret.Get(0).(func([]string, ...bool) http.Response); ok {
-		r0 = rf(_a0, _a1...)
+		r0 = rf(value, escaped...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(http.Response)
@@ -1523,14 +1523,14 @@ type Response_AssertSeeInOrder_Call struct {
 }
 
 // AssertSeeInOrder is a helper method to define mock.On call
-//   - _a0 []string
-//   - _a1 ...bool
-func (_e *Response_Expecter) AssertSeeInOrder(_a0 interface{}, _a1 ...interface{}) *Response_AssertSeeInOrder_Call {
+//   - value []string
+//   - escaped ...bool
+func (_e *Response_Expecter) AssertSeeInOrder(value interface{}, escaped ...interface{}) *Response_AssertSeeInOrder_Call {
 	return &Response_AssertSeeInOrder_Call{Call: _e.mock.On("AssertSeeInOrder",
-		append([]interface{}{_a0}, _a1...)...)}
+		append([]interface{}{value}, escaped...)...)}
 }
 
-func (_c *Response_AssertSeeInOrder_Call) Run(run func(_a0 []string, _a1 ...bool)) *Response_AssertSeeInOrder_Call {
+func (_c *Response_AssertSeeInOrder_Call) Run(run func(value []string, escaped ...bool)) *Response_AssertSeeInOrder_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		variadicArgs := make([]bool, len(args)-1)
 		for i, a := range args[1:] {
@@ -1973,6 +1973,52 @@ func (_c *Response_AssertUnsupportedMediaType_Call) Return(_a0 http.Response) *R
 }
 
 func (_c *Response_AssertUnsupportedMediaType_Call) RunAndReturn(run func() http.Response) *Response_AssertUnsupportedMediaType_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Bind provides a mock function with given fields: value
+func (_m *Response) Bind(value interface{}) error {
+	ret := _m.Called(value)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Bind")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(interface{}) error); ok {
+		r0 = rf(value)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Response_Bind_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Bind'
+type Response_Bind_Call struct {
+	*mock.Call
+}
+
+// Bind is a helper method to define mock.On call
+//   - value interface{}
+func (_e *Response_Expecter) Bind(value interface{}) *Response_Bind_Call {
+	return &Response_Bind_Call{Call: _e.mock.On("Bind", value)}
+}
+
+func (_c *Response_Bind_Call) Run(run func(value interface{})) *Response_Bind_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(interface{}))
+	})
+	return _c
+}
+
+func (_c *Response_Bind_Call) Return(_a0 error) *Response_Bind_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Response_Bind_Call) RunAndReturn(run func(interface{}) error) *Response_Bind_Call {
 	_c.Call.Return(run)
 	return _c
 }

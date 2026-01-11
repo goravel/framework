@@ -26,54 +26,6 @@ func (_m *Request) EXPECT() *Request_Expecter {
 	return &Request_Expecter{mock: &_m.Mock}
 }
 
-// Bind provides a mock function with given fields: value
-func (_m *Request) Bind(value interface{}) http.Request {
-	ret := _m.Called(value)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Bind")
-	}
-
-	var r0 http.Request
-	if rf, ok := ret.Get(0).(func(interface{}) http.Request); ok {
-		r0 = rf(value)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.Request)
-		}
-	}
-
-	return r0
-}
-
-// Request_Bind_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Bind'
-type Request_Bind_Call struct {
-	*mock.Call
-}
-
-// Bind is a helper method to define mock.On call
-//   - value interface{}
-func (_e *Request_Expecter) Bind(value interface{}) *Request_Bind_Call {
-	return &Request_Bind_Call{Call: _e.mock.On("Bind", value)}
-}
-
-func (_c *Request_Bind_Call) Run(run func(value interface{})) *Request_Bind_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(interface{}))
-	})
-	return _c
-}
-
-func (_c *Request_Bind_Call) Return(_a0 http.Request) *Request_Bind_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Request_Bind_Call) RunAndReturn(run func(interface{}) http.Request) *Request_Bind_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // Delete provides a mock function with given fields: uri, body
 func (_m *Request) Delete(uri string, body io.Reader) (http.Response, error) {
 	ret := _m.Called(uri, body)

@@ -4,6 +4,11 @@ import (
 	"github.com/goravel/framework/contracts/testing/docker"
 )
 
+type TestingT interface {
+	Errorf(format string, args ...any)
+	FailNow()
+}
+
 type Testing interface {
 	// Docker get the Docker instance.
 	Docker() Docker
