@@ -33,7 +33,11 @@ func NewFakeTransport(state *FakeState, base http.RoundTripper, json foundation.
 }
 
 func (r *FakeTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	mockReq := r.hydrate(req)
+	mockReq, err := r.hydrate(req)
+	if err != nil {
+		return nil, err
+	}
+
 	r.state.Record(mockReq)
 
 	handler := r.state.Match(req, mockReq.ClientName())
@@ -52,10 +56,16 @@ func (r *FakeTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return resp.Origin(), nil
 }
 
-func (r *FakeTransport) hydrate(req *http.Request) *Request {
+func (r *FakeTransport) hydrate(req *http.Request) (*Request, error) {
 	var body []byte
+	var err error
+
 	if req.Body != nil {
-		body, _ = io.ReadAll(req.Body)
+		body, err = io.ReadAll(req.Body)
+		if err != nil {
+			return nil, err
+		}
+		// Reset body so it can be read again if passed to real transport
 		req.Body = io.NopCloser(bytes.NewBuffer(body))
 	}
 
@@ -71,5 +81,5 @@ func (r *FakeTransport) hydrate(req *http.Request) *Request {
 		clientName:  name,
 		queryParams: req.URL.Query(),
 		urlParams:   make(map[string]string),
-	}
+	}, nil
 }
