@@ -12,12 +12,14 @@ import (
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/http"
+	mockfoundation "github.com/goravel/framework/mocks/foundation"
 	mockhttp "github.com/goravel/framework/mocks/http"
 	mocklog "github.com/goravel/framework/mocks/log"
 )
 
 type ThrottleTestSuite struct {
 	suite.Suite
+	mockApp         *mockfoundation.Application
 	mockRateLimiter *mockhttp.RateLimiter
 	mockCtx         *mockhttp.Context
 	mockRequest     *mockhttp.ContextRequest
@@ -35,6 +37,7 @@ func TestThrottleTestSuite(t *testing.T) {
 }
 
 func (s *ThrottleTestSuite) SetupTest() {
+	s.mockApp = mockfoundation.NewApplication(s.T())
 	s.mockRateLimiter = mockhttp.NewRateLimiter(s.T())
 	s.mockCtx = mockhttp.NewContext(s.T())
 	s.mockRequest = mockhttp.NewContextRequest(s.T())
@@ -43,19 +46,7 @@ func (s *ThrottleTestSuite) SetupTest() {
 	s.mockStore = mockhttp.NewStore(s.T())
 	s.mockLog = mocklog.NewLog(s.T())
 
-	// Store original facades
-	s.originalRateLimiter = http.RateLimiterFacade
-	s.originalLog = http.LogFacade
-
-	// Set mocks
-	http.RateLimiterFacade = s.mockRateLimiter
-	http.LogFacade = s.mockLog
-}
-
-func (s *ThrottleTestSuite) TearDownTest() {
-	// Restore original facades
-	http.RateLimiterFacade = s.originalRateLimiter
-	http.LogFacade = s.originalLog
+	http.App = s.mockApp
 }
 
 func (s *ThrottleTestSuite) TestThrottle_NoLimiterFound() {

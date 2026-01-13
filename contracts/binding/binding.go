@@ -177,9 +177,7 @@ var (
 			Description: "An easy-to-use, expressive, and minimalist API built on the standard net/http library.",
 			PkgPath:     "github.com/goravel/framework/http",
 			Dependencies: []string{
-				Cache,
 				Config,
-				Log,
 			},
 		},
 		Lang: {
@@ -268,6 +266,7 @@ var (
 			PkgPath:     "github.com/goravel/framework/http",
 			Dependencies: []string{
 				Cache,
+				Log,
 			},
 		},
 		Route: {
@@ -276,9 +275,10 @@ var (
 			Dependencies: []string{
 				Config,
 				Http,
-				View,
+				RateLimiter,
 				Session,
 				Validation,
+				View,
 			},
 			Drivers: []Driver{
 				{
