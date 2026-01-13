@@ -105,7 +105,7 @@ func (s *FakeStateTestSuite) TestStrayRequests() {
 }
 
 func (s *FakeStateTestSuite) TestMockValueConversions() {
-	seq := NewResponseSequence(NewResponseFactory(nil))
+	seq := NewFakeSequence(NewFakeResponse(nil))
 	seq.PushString("first", 200)
 	seq.PushString("second", 500)
 
@@ -113,9 +113,9 @@ func (s *FakeStateTestSuite) TestMockValueConversions() {
 		"http://string": "ok body",
 		"http://int":    404,
 		"http://func": func(_ client.Request) client.Response {
-			return NewResponseFactory(nil).Status(201)
+			return NewFakeResponse(nil).Status(201)
 		},
-		"http://resp": NewResponseFactory(nil).Status(202),
+		"http://resp": NewFakeResponse(nil).Status(202),
 		"http://nil":  nil,
 		"http://seq":  seq,
 	}

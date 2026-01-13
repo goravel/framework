@@ -494,16 +494,22 @@ func (_c *Factory_Body_Call) RunAndReturn(run func() string) *Factory_Body_Call 
 }
 
 // Client provides a mock function with given fields: name
-func (_m *Factory) Client(name string) client.Request {
-	ret := _m.Called(name)
+func (_m *Factory) Client(name ...string) client.Request {
+	_va := make([]interface{}, len(name))
+	for _i := range name {
+		_va[_i] = name[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Client")
 	}
 
 	var r0 client.Request
-	if rf, ok := ret.Get(0).(func(string) client.Request); ok {
-		r0 = rf(name)
+	if rf, ok := ret.Get(0).(func(...string) client.Request); ok {
+		r0 = rf(name...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(client.Request)
@@ -519,14 +525,21 @@ type Factory_Client_Call struct {
 }
 
 // Client is a helper method to define mock.On call
-//   - name string
-func (_e *Factory_Expecter) Client(name interface{}) *Factory_Client_Call {
-	return &Factory_Client_Call{Call: _e.mock.On("Client", name)}
+//   - name ...string
+func (_e *Factory_Expecter) Client(name ...interface{}) *Factory_Client_Call {
+	return &Factory_Client_Call{Call: _e.mock.On("Client",
+		append([]interface{}{}, name...)...)}
 }
 
-func (_c *Factory_Client_Call) Run(run func(name string)) *Factory_Client_Call {
+func (_c *Factory_Client_Call) Run(run func(name ...string)) *Factory_Client_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -536,7 +549,7 @@ func (_c *Factory_Client_Call) Return(_a0 client.Request) *Factory_Client_Call {
 	return _c
 }
 
-func (_c *Factory_Client_Call) RunAndReturn(run func(string) client.Request) *Factory_Client_Call {
+func (_c *Factory_Client_Call) RunAndReturn(run func(...string) client.Request) *Factory_Client_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -10,19 +10,19 @@ import (
 	"github.com/goravel/framework/contracts/http/client"
 )
 
-var _ client.ResponseFactory = (*ResponseFactory)(nil)
+var _ client.FakeResponse = (*FakeResponse)(nil)
 
-type ResponseFactory struct {
+type FakeResponse struct {
 	json foundation.Json
 }
 
-func NewResponseFactory(json foundation.Json) *ResponseFactory {
-	return &ResponseFactory{
+func NewFakeResponse(json foundation.Json) *FakeResponse {
+	return &FakeResponse{
 		json: json,
 	}
 }
 
-func (r *ResponseFactory) Json(data any, status int) client.Response {
+func (r *FakeResponse) Json(data any, status int) client.Response {
 	content, err := r.json.Marshal(data)
 	if err != nil {
 		// Return error as body to help developer debug marshal issues in tests.
@@ -34,19 +34,19 @@ func (r *ResponseFactory) Json(data any, status int) client.Response {
 	})
 }
 
-func (r *ResponseFactory) String(body string, status int) client.Response {
+func (r *FakeResponse) String(body string, status int) client.Response {
 	return r.Make(body, status, nil)
 }
 
-func (r *ResponseFactory) Status(code int) client.Response {
+func (r *FakeResponse) Status(code int) client.Response {
 	return r.Make("", code, nil)
 }
 
-func (r *ResponseFactory) Success() client.Response {
+func (r *FakeResponse) OK() client.Response {
 	return r.Status(http.StatusOK)
 }
 
-func (r *ResponseFactory) File(path string, status int) client.Response {
+func (r *FakeResponse) File(path string, status int) client.Response {
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return r.Make("File not found: "+err.Error(), http.StatusInternalServerError, nil)
@@ -55,7 +55,7 @@ func (r *ResponseFactory) File(path string, status int) client.Response {
 	return r.Make(string(content), status, nil)
 }
 
-func (r *ResponseFactory) Make(body string, status int, headers map[string]string) client.Response {
+func (r *FakeResponse) Make(body string, status int, headers map[string]string) client.Response {
 	resp := &http.Response{
 		StatusCode: status,
 		Header:     make(http.Header),

@@ -103,12 +103,12 @@ func toHandler(json foundation.Json, v any) func(client.Request) client.Response
 	case client.Response:
 		return func(_ client.Request) client.Response { return h }
 	case string:
-		return func(_ client.Request) client.Response { return NewResponseFactory(json).String(h, 200) }
+		return func(_ client.Request) client.Response { return NewFakeResponse(json).String(h, 200) }
 	case int:
-		return func(_ client.Request) client.Response { return NewResponseFactory(json).Status(h) }
-	case *ResponseSequence:
+		return func(_ client.Request) client.Response { return NewFakeResponse(json).Status(h) }
+	case *FakeSequence:
 		return func(_ client.Request) client.Response { return h.GetNext() }
 	default:
-		return func(_ client.Request) client.Response { return NewResponseFactory(json).Status(200) }
+		return func(_ client.Request) client.Response { return NewFakeResponse(json).Status(200) }
 	}
 }

@@ -12,27 +12,27 @@ import (
 	"github.com/goravel/framework/foundation/json"
 )
 
-type ResponseFactoryTestSuite struct {
+type FakeResponseTestSuite struct {
 	suite.Suite
-	factory *ResponseFactory
+	fakeResponse *FakeResponse
 }
 
-func TestResponseFactoryTestSuite(t *testing.T) {
-	suite.Run(t, new(ResponseFactoryTestSuite))
+func TestFakeResponseTestSuite(t *testing.T) {
+	suite.Run(t, new(FakeResponseTestSuite))
 }
 
-func (s *ResponseFactoryTestSuite) SetupTest() {
-	s.factory = NewResponseFactory(json.New())
+func (s *FakeResponseTestSuite) SetupTest() {
+	s.fakeResponse = NewFakeResponse(json.New())
 }
 
-func (s *ResponseFactoryTestSuite) TestJson() {
+func (s *FakeResponseTestSuite) TestJson() {
 	s.Run("Success", func() {
 		data := map[string]any{
 			"name": "Goravel",
 			"meta": map[string]int{"id": 1},
 		}
 
-		response := s.factory.Json(data, http.StatusCreated)
+		response := s.fakeResponse.Json(data, http.StatusCreated)
 		s.Equal(http.StatusCreated, response.Status())
 		s.Equal("application/json", response.Header("Content-Type"))
 
@@ -44,7 +44,7 @@ func (s *ResponseFactoryTestSuite) TestJson() {
 
 	s.Run("Marshal Error", func() {
 		invalidData := make(chan int) // Channels cannot be marshaled
-		response := s.factory.Json(invalidData, http.StatusOK)
+		response := s.fakeResponse.Json(invalidData, http.StatusOK)
 
 		s.Equal(http.StatusInternalServerError, response.Status())
 
@@ -54,7 +54,7 @@ func (s *ResponseFactoryTestSuite) TestJson() {
 	})
 }
 
-func (s *ResponseFactoryTestSuite) TestBasicResponses() {
+func (s *FakeResponseTestSuite) TestBasicResponses() {
 	tests := []struct {
 		name           string
 		response       client.Response
@@ -63,19 +63,19 @@ func (s *ResponseFactoryTestSuite) TestBasicResponses() {
 	}{
 		{
 			name:           "String Response",
-			response:       s.factory.String("Hello World", http.StatusNotFound),
+			response:       s.fakeResponse.String("Hello World", http.StatusNotFound),
 			expectedStatus: http.StatusNotFound,
 			expectedBody:   "Hello World",
 		},
 		{
 			name:           "Status Only (Teapot)",
-			response:       s.factory.Status(http.StatusTeapot),
+			response:       s.fakeResponse.Status(http.StatusTeapot),
 			expectedStatus: http.StatusTeapot,
 			expectedBody:   "",
 		},
 		{
-			name:           "Success Helper",
-			response:       s.factory.Success(),
+			name:           "OK Helper",
+			response:       s.fakeResponse.OK(),
 			expectedStatus: http.StatusOK,
 			expectedBody:   "",
 		},
@@ -92,7 +92,7 @@ func (s *ResponseFactoryTestSuite) TestBasicResponses() {
 	}
 }
 
-func (s *ResponseFactoryTestSuite) TestFile() {
+func (s *FakeResponseTestSuite) TestFile() {
 	s.Run("Success", func() {
 		dir := s.T().TempDir()
 		filePath := filepath.Join(dir, "test_file.txt")
@@ -101,7 +101,7 @@ func (s *ResponseFactoryTestSuite) TestFile() {
 		err := os.WriteFile(filePath, []byte(content), 0644)
 		s.Require().NoError(err)
 
-		response := s.factory.File(filePath, http.StatusOK)
+		response := s.fakeResponse.File(filePath, http.StatusOK)
 
 		s.Equal(http.StatusOK, response.Status())
 		body, err := response.Body()
@@ -110,7 +110,7 @@ func (s *ResponseFactoryTestSuite) TestFile() {
 	})
 
 	s.Run("Not Found", func() {
-		response := s.factory.File("non_existent_file.txt", http.StatusOK)
+		response := s.fakeResponse.File("non_existent_file.txt", http.StatusOK)
 
 		s.Equal(http.StatusInternalServerError, response.Status())
 		body, err := response.Body()
@@ -119,13 +119,13 @@ func (s *ResponseFactoryTestSuite) TestFile() {
 	})
 }
 
-func (s *ResponseFactoryTestSuite) TestMake_Headers() {
+func (s *FakeResponseTestSuite) TestMake_Headers() {
 	headers := map[string]string{
 		"X-Custom-Header": "Goravel",
 		"Cache-Control":   "no-cache",
 	}
 
-	response := s.factory.Make("body", http.StatusOK, headers)
+	response := s.fakeResponse.Make("body", http.StatusOK, headers)
 
 	s.Equal("Goravel", response.Header("X-Custom-Header"))
 	s.Equal("no-cache", response.Header("Cache-Control"))

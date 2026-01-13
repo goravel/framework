@@ -91,7 +91,7 @@ func (s *FakeTransportTestSuite) TestRoundTrip_PreventStray() {
 func (s *FakeTransportTestSuite) TestRoundTrip_Hydration() {
 	mocks := map[string]any{
 		"*": func(_ client.Request) client.Response {
-			return NewResponseFactory(nil).Status(200)
+			return NewFakeResponse(nil).Status(200)
 		},
 	}
 	state := NewFakeState(nil, mocks)

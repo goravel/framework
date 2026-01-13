@@ -9,22 +9,22 @@ import (
 	"github.com/goravel/framework/foundation/json"
 )
 
-type ResponseSequenceTestSuite struct {
+type FakeSequenceTestSuite struct {
 	suite.Suite
-	factory *ResponseFactory
+	factory *FakeResponse
 }
 
-func TestResponseSequenceTestSuite(t *testing.T) {
-	suite.Run(t, new(ResponseSequenceTestSuite))
+func TestFakeSequenceTestSuite(t *testing.T) {
+	suite.Run(t, new(FakeSequenceTestSuite))
 }
 
-func (s *ResponseSequenceTestSuite) SetupTest() {
-	s.factory = NewResponseFactory(json.New())
+func (s *FakeSequenceTestSuite) SetupTest() {
+	s.factory = NewFakeResponse(json.New())
 }
 
-func (s *ResponseSequenceTestSuite) TestSequence_Flow() {
+func (s *FakeSequenceTestSuite) TestSequence_Flow() {
 	s.Run("Iterates through mixed types", func() {
-		sequence := NewResponseSequence(s.factory)
+		sequence := NewFakeSequence(s.factory)
 
 		sequence.PushStatus(201)
 		sequence.PushString("Hello", 200)
@@ -50,9 +50,9 @@ func (s *ResponseSequenceTestSuite) TestSequence_Flow() {
 	})
 }
 
-func (s *ResponseSequenceTestSuite) TestSequence_WithCount() {
+func (s *FakeSequenceTestSuite) TestSequence_WithCount() {
 	s.Run("Repeats response N times based on count", func() {
-		sequence := NewResponseSequence(s.factory)
+		sequence := NewFakeSequence(s.factory)
 
 		// Push 500 Error -> 3 times
 		sequence.PushStatus(http.StatusInternalServerError, 3)
@@ -71,9 +71,9 @@ func (s *ResponseSequenceTestSuite) TestSequence_WithCount() {
 	})
 }
 
-func (s *ResponseSequenceTestSuite) TestSequence_WhenEmpty_Default() {
+func (s *FakeSequenceTestSuite) TestSequence_WhenEmpty_Default() {
 	s.Run("Strict Mode: Returns nil when exhausted", func() {
-		sequence := NewResponseSequence(s.factory)
+		sequence := NewFakeSequence(s.factory)
 		sequence.PushStatus(http.StatusTeapot)
 
 		s.Equal(http.StatusTeapot, sequence.GetNext().Status())
@@ -84,9 +84,9 @@ func (s *ResponseSequenceTestSuite) TestSequence_WhenEmpty_Default() {
 	})
 }
 
-func (s *ResponseSequenceTestSuite) TestSequence_WhenEmpty_Custom() {
+func (s *FakeSequenceTestSuite) TestSequence_WhenEmpty_Custom() {
 	s.Run("Returns specific fallback response when exhausted", func() {
-		sequence := NewResponseSequence(s.factory)
+		sequence := NewFakeSequence(s.factory)
 
 		// Sequence: 200
 		sequence.PushStatus(http.StatusOK)
@@ -108,9 +108,9 @@ func (s *ResponseSequenceTestSuite) TestSequence_WhenEmpty_Custom() {
 	})
 }
 
-func (s *ResponseSequenceTestSuite) TestSequence_NoResponses() {
+func (s *FakeSequenceTestSuite) TestSequence_NoResponses() {
 	s.Run("Strict Mode: Returns nil if initialized empty", func() {
-		sequence := NewResponseSequence(s.factory)
+		sequence := NewFakeSequence(s.factory)
 
 		s.Nil(sequence.GetNext())
 	})

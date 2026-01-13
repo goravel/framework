@@ -19,9 +19,9 @@ type Factory struct {
 	clients sync.Map
 	mu      sync.RWMutex
 
-	activeState *FakeState
-	strict      bool
-	stray       []string
+	fakeState *FakeState
+	strict    bool
+	stray     []string
 }
 
 func NewFactory(config *FactoryConfig, json foundation.Json) (*Factory, error) {
@@ -47,8 +47,8 @@ func (r *Factory) AllowStrayRequests(patterns []string) client.Factory {
 
 	r.stray = append(r.stray, patterns...)
 
-	if r.activeState != nil {
-		r.activeState.AllowStrayRequests(patterns)
+	if r.fakeState != nil {
+		r.fakeState.AllowStrayRequests(patterns)
 	}
 
 	return r
@@ -65,15 +65,18 @@ func (r *Factory) AssertNothingSent() bool {
 func (r *Factory) AssertSent(assertion func(client.Request) bool) bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	return r.activeState != nil && r.activeState.AssertSent(assertion)
+
+	return r.fakeState != nil && r.fakeState.AssertSent(assertion)
 }
 
 func (r *Factory) AssertSentCount(count int) bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	if r.activeState != nil {
-		return r.activeState.AssertSentCount(count)
+
+	if r.fakeState != nil {
+		return r.fakeState.AssertSentCount(count)
 	}
+
 	return count == 0
 }
 
@@ -84,7 +87,7 @@ func (r *Factory) Client(names ...string) client.Request {
 	}
 
 	r.mu.RLock()
-	state := r.activeState
+	state := r.fakeState
 	r.mu.RUnlock()
 
 	httpClient, err := r.resolveClient(name, state)
@@ -100,15 +103,16 @@ func (r *Factory) Fake(mocks map[string]any) client.Factory {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	r.activeState = NewFakeState(r.json, mocks)
+	r.fakeState = NewFakeState(r.json, mocks)
 
 	if r.strict {
-		r.activeState.PreventStrayRequests()
+		r.fakeState.PreventStrayRequests()
 	}
 	if len(r.stray) > 0 {
-		r.activeState.AllowStrayRequests(r.stray)
+		r.fakeState.AllowStrayRequests(r.stray)
 	}
 
+	// Flush existing clients to force them to re-resolve with the new FakeTransport
 	r.flushClients()
 
 	return r
@@ -120,8 +124,8 @@ func (r *Factory) PreventStrayRequests() client.Factory {
 
 	r.strict = true
 
-	if r.activeState != nil {
-		r.activeState.PreventStrayRequests()
+	if r.fakeState != nil {
+		r.fakeState.PreventStrayRequests()
 	}
 
 	return r
@@ -131,29 +135,32 @@ func (r *Factory) Reset() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	r.activeState = nil
+	r.fakeState = nil
 	r.strict = false
 	r.stray = nil
 
 	r.flushClients()
 }
 
-func (r *Factory) Response() client.ResponseFactory {
-	return NewResponseFactory(r.json)
+func (r *Factory) Response() client.FakeResponse {
+	return NewFakeResponse(r.json)
 }
 
-func (r *Factory) Sequence() client.ResponseSequence {
-	return NewResponseSequence(NewResponseFactory(r.json))
+func (r *Factory) Sequence() client.FakeSequence {
+	return NewFakeSequence(NewFakeResponse(r.json))
 }
 
 func (r *Factory) bindDefault() error {
 	name := r.config.Default
-	c, err := r.resolveClient(name, r.activeState)
+	c, err := r.resolveClient(name, r.fakeState)
 	if err != nil {
 		return err
 	}
 
+	// Bind the default client to the embedded Request implementation
+	// so that methods like Http.Get() use the default configuration.
 	r.Request = NewRequest(c, r.json, r.config.Clients[name].BaseUrl, name)
+
 	return nil
 }
 
@@ -182,6 +189,8 @@ func (r *Factory) resolveClient(name string, state *FakeState) (*http.Client, er
 		return nil, errors.HttpClientConnectionNotFound.Args(name)
 	}
 
+	// We clone the default transport to ensure we don't modify the global state
+	// when applying client-specific timeouts or fake transports.
 	baseTransport := http.DefaultTransport.(*http.Transport).Clone()
 	baseTransport.MaxIdleConns = cfg.MaxIdleConns
 	baseTransport.MaxIdleConnsPerHost = cfg.MaxIdleConnsPerHost
@@ -190,6 +199,7 @@ func (r *Factory) resolveClient(name string, state *FakeState) (*http.Client, er
 
 	var transport http.RoundTripper = baseTransport
 	if state != nil {
+		// If testing mode is active, wrap the real transport with our interceptor.
 		transport = NewFakeTransport(state, baseTransport, r.json)
 	}
 

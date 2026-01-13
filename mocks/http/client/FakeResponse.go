@@ -69,17 +69,17 @@ func (_c *FakeResponse_File_Call) RunAndReturn(run func(string, int) client.Resp
 	return _c
 }
 
-// Json provides a mock function with given fields: code, obj
-func (_m *FakeResponse) Json(code int, obj interface{}) client.Response {
-	ret := _m.Called(code, obj)
+// Json provides a mock function with given fields: obj, code
+func (_m *FakeResponse) Json(obj interface{}, code int) client.Response {
+	ret := _m.Called(obj, code)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Json")
 	}
 
 	var r0 client.Response
-	if rf, ok := ret.Get(0).(func(int, interface{}) client.Response); ok {
-		r0 = rf(code, obj)
+	if rf, ok := ret.Get(0).(func(interface{}, int) client.Response); ok {
+		r0 = rf(obj, code)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(client.Response)
@@ -95,15 +95,15 @@ type FakeResponse_Json_Call struct {
 }
 
 // Json is a helper method to define mock.On call
-//   - code int
 //   - obj interface{}
-func (_e *FakeResponse_Expecter) Json(code interface{}, obj interface{}) *FakeResponse_Json_Call {
-	return &FakeResponse_Json_Call{Call: _e.mock.On("Json", code, obj)}
+//   - code int
+func (_e *FakeResponse_Expecter) Json(obj interface{}, code interface{}) *FakeResponse_Json_Call {
+	return &FakeResponse_Json_Call{Call: _e.mock.On("Json", obj, code)}
 }
 
-func (_c *FakeResponse_Json_Call) Run(run func(code int, obj interface{})) *FakeResponse_Json_Call {
+func (_c *FakeResponse_Json_Call) Run(run func(obj interface{}, code int)) *FakeResponse_Json_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(int), args[1].(interface{}))
+		run(args[0].(interface{}), args[1].(int))
 	})
 	return _c
 }
@@ -113,7 +113,7 @@ func (_c *FakeResponse_Json_Call) Return(_a0 client.Response) *FakeResponse_Json
 	return _c
 }
 
-func (_c *FakeResponse_Json_Call) RunAndReturn(run func(int, interface{}) client.Response) *FakeResponse_Json_Call {
+func (_c *FakeResponse_Json_Call) RunAndReturn(run func(interface{}, int) client.Response) *FakeResponse_Json_Call {
 	_c.Call.Return(run)
 	return _c
 }

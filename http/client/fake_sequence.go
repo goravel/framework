@@ -6,24 +6,24 @@ import (
 	"github.com/goravel/framework/contracts/http/client"
 )
 
-var _ client.ResponseSequence = (*ResponseSequence)(nil)
+var _ client.FakeSequence = (*FakeSequence)(nil)
 
-type ResponseSequence struct {
+type FakeSequence struct {
 	mu        sync.Mutex
 	responses []client.Response
-	factory   client.ResponseFactory
+	factory   client.FakeResponse
 	whenEmpty client.Response
 	current   int
 }
 
-func NewResponseSequence(factory client.ResponseFactory) *ResponseSequence {
-	return &ResponseSequence{
+func NewFakeSequence(factory client.FakeResponse) *FakeSequence {
+	return &FakeSequence{
 		factory:   factory,
 		responses: make([]client.Response, 0),
 	}
 }
 
-func (r *ResponseSequence) Push(response client.Response, count ...int) client.ResponseSequence {
+func (r *FakeSequence) Push(response client.Response, count ...int) client.FakeSequence {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -39,15 +39,15 @@ func (r *ResponseSequence) Push(response client.Response, count ...int) client.R
 	return r
 }
 
-func (r *ResponseSequence) PushStatus(status int, count ...int) client.ResponseSequence {
+func (r *FakeSequence) PushStatus(status int, count ...int) client.FakeSequence {
 	return r.Push(r.factory.Status(status), count...)
 }
 
-func (r *ResponseSequence) PushString(body string, status int, count ...int) client.ResponseSequence {
+func (r *FakeSequence) PushString(body string, status int, count ...int) client.FakeSequence {
 	return r.Push(r.factory.String(body, status), count...)
 }
 
-func (r *ResponseSequence) WhenEmpty(response client.Response) client.ResponseSequence {
+func (r *FakeSequence) WhenEmpty(response client.Response) client.FakeSequence {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -56,7 +56,7 @@ func (r *ResponseSequence) WhenEmpty(response client.Response) client.ResponseSe
 	return r
 }
 
-func (r *ResponseSequence) GetNext() client.Response {
+func (r *FakeSequence) GetNext() client.Response {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

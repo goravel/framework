@@ -19,8 +19,10 @@ type Factory interface {
 	// AssertSentCount verifies that the specific number of requests matching the criteria were sent.
 	AssertSentCount(count int) bool
 
-	// Client returns a new request builder for the specific client configuration.
-	Client(name string) Request
+	// Client returns a new request builder.
+	// If name is provided, it returns the configuration for that specific client.
+	// If no name is provided, it returns the default client.
+	Client(name ...string) Request
 
 	// Fake registers the mock rules for testing.
 	Fake(mocks map[string]any) Factory
