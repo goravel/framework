@@ -180,8 +180,6 @@ var (
 				Cache,
 				Config,
 				Log,
-				Session,
-				Validation,
 			},
 		},
 		Lang: {
@@ -279,6 +277,8 @@ var (
 				Config,
 				Http,
 				View,
+				Session,
+				Validation,
 			},
 			Drivers: []Driver{
 				{
