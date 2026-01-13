@@ -1,29 +1,39 @@
 package client
 
-// Factory defines the contract for managing HTTP clients and testing state.
 type Factory interface {
-	// Request provides access to the default client's request builder methods.
+	// Request embeds the Request interface, allowing direct usage like Http.Get().
 	Request
-	// Client returns a request builder for a specific named configuration.
-	Client(name ...string) Request
-	// Fake intercepts outbound requests and returns stubbed responses.
-	Fake(mocks map[string]any) Factory
-	// PreventStrayRequests ensures all sent requests match a defined mock.
-	PreventStrayRequests() Factory
+
 	// AllowStrayRequests permits specific URL patterns to bypass the mock firewall.
 	AllowStrayRequests(patterns []string) Factory
-	// Reset restores the factory to its original state and clears all mocks.
-	Reset()
-	// Response returns a factory for creating stubbed response instances.
-	Response() ResponseFactory
-	// Sequence creates a builder for defining an ordered sequence of responses.
-	Sequence() ResponseSequence
-	// AssertSent verifies that at least one request matching the criteria was executed.
-	AssertSent(assertion func(req Request) bool) bool
-	// AssertSentCount verifies the total number of requests sent matches the expected count.
-	AssertSentCount(count int) bool
-	// AssertNotSent verifies that no requests matching the criteria were executed.
+
+	// AssertNotSent verifies that no request matching the given assertion was sent.
 	AssertNotSent(assertion func(req Request) bool) bool
-	// AssertNothingSent verifies that no HTTP requests were executed.
+
+	// AssertNothingSent verifies that no HTTP requests were sent at all.
 	AssertNothingSent() bool
+
+	// AssertSent verifies that at least one request matching the given assertion was sent.
+	AssertSent(assertion func(req Request) bool) bool
+
+	// AssertSentCount verifies that the specific number of requests matching the criteria were sent.
+	AssertSentCount(count int) bool
+
+	// Client returns a new request builder for the specific client configuration.
+	Client(name string) Request
+
+	// Fake registers the mock rules for testing.
+	Fake(mocks map[string]any) Factory
+
+	// PreventStrayRequests enforces that all sent requests must match a defined mock rule.
+	PreventStrayRequests() Factory
+
+	// Reset restores the factory to its original state, clearing all mocks.
+	Reset()
+
+	// Response returns a builder for creating stubbed responses.
+	Response() FakeResponse
+
+	// Sequence returns a builder for defining ordered mock responses.
+	Sequence() FakeSequence
 }

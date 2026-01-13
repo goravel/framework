@@ -1379,9 +1379,9 @@ func (_c *Request_WithHeader_Call) RunAndReturn(run func(string, string) client.
 	return _c
 }
 
-// WithHeaders provides a mock function with given fields: _a0
-func (_m *Request) WithHeaders(_a0 map[string]string) client.Request {
-	ret := _m.Called(_a0)
+// WithHeaders provides a mock function with given fields: headers
+func (_m *Request) WithHeaders(headers map[string]string) client.Request {
+	ret := _m.Called(headers)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WithHeaders")
@@ -1389,7 +1389,7 @@ func (_m *Request) WithHeaders(_a0 map[string]string) client.Request {
 
 	var r0 client.Request
 	if rf, ok := ret.Get(0).(func(map[string]string) client.Request); ok {
-		r0 = rf(_a0)
+		r0 = rf(headers)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(client.Request)
@@ -1405,12 +1405,12 @@ type Request_WithHeaders_Call struct {
 }
 
 // WithHeaders is a helper method to define mock.On call
-//   - _a0 map[string]string
-func (_e *Request_Expecter) WithHeaders(_a0 interface{}) *Request_WithHeaders_Call {
-	return &Request_WithHeaders_Call{Call: _e.mock.On("WithHeaders", _a0)}
+//   - headers map[string]string
+func (_e *Request_Expecter) WithHeaders(headers interface{}) *Request_WithHeaders_Call {
+	return &Request_WithHeaders_Call{Call: _e.mock.On("WithHeaders", headers)}
 }
 
-func (_c *Request_WithHeaders_Call) Run(run func(_a0 map[string]string)) *Request_WithHeaders_Call {
+func (_c *Request_WithHeaders_Call) Run(run func(headers map[string]string)) *Request_WithHeaders_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(map[string]string))
 	})
@@ -1476,9 +1476,9 @@ func (_c *Request_WithQueryParameter_Call) RunAndReturn(run func(string, string)
 	return _c
 }
 
-// WithQueryParameters provides a mock function with given fields: _a0
-func (_m *Request) WithQueryParameters(_a0 map[string]string) client.Request {
-	ret := _m.Called(_a0)
+// WithQueryParameters provides a mock function with given fields: params
+func (_m *Request) WithQueryParameters(params map[string]string) client.Request {
+	ret := _m.Called(params)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WithQueryParameters")
@@ -1486,7 +1486,7 @@ func (_m *Request) WithQueryParameters(_a0 map[string]string) client.Request {
 
 	var r0 client.Request
 	if rf, ok := ret.Get(0).(func(map[string]string) client.Request); ok {
-		r0 = rf(_a0)
+		r0 = rf(params)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(client.Request)
@@ -1502,12 +1502,12 @@ type Request_WithQueryParameters_Call struct {
 }
 
 // WithQueryParameters is a helper method to define mock.On call
-//   - _a0 map[string]string
-func (_e *Request_Expecter) WithQueryParameters(_a0 interface{}) *Request_WithQueryParameters_Call {
-	return &Request_WithQueryParameters_Call{Call: _e.mock.On("WithQueryParameters", _a0)}
+//   - params map[string]string
+func (_e *Request_Expecter) WithQueryParameters(params interface{}) *Request_WithQueryParameters_Call {
+	return &Request_WithQueryParameters_Call{Call: _e.mock.On("WithQueryParameters", params)}
 }
 
-func (_c *Request_WithQueryParameters_Call) Run(run func(_a0 map[string]string)) *Request_WithQueryParameters_Call {
+func (_c *Request_WithQueryParameters_Call) Run(run func(params map[string]string)) *Request_WithQueryParameters_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(map[string]string))
 	})
@@ -1684,9 +1684,9 @@ func (_c *Request_WithUrlParameter_Call) RunAndReturn(run func(string, string) c
 	return _c
 }
 
-// WithUrlParameters provides a mock function with given fields: _a0
-func (_m *Request) WithUrlParameters(_a0 map[string]string) client.Request {
-	ret := _m.Called(_a0)
+// WithUrlParameters provides a mock function with given fields: params
+func (_m *Request) WithUrlParameters(params map[string]string) client.Request {
+	ret := _m.Called(params)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WithUrlParameters")
@@ -1694,7 +1694,7 @@ func (_m *Request) WithUrlParameters(_a0 map[string]string) client.Request {
 
 	var r0 client.Request
 	if rf, ok := ret.Get(0).(func(map[string]string) client.Request); ok {
-		r0 = rf(_a0)
+		r0 = rf(params)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(client.Request)
@@ -1710,12 +1710,12 @@ type Request_WithUrlParameters_Call struct {
 }
 
 // WithUrlParameters is a helper method to define mock.On call
-//   - _a0 map[string]string
-func (_e *Request_Expecter) WithUrlParameters(_a0 interface{}) *Request_WithUrlParameters_Call {
-	return &Request_WithUrlParameters_Call{Call: _e.mock.On("WithUrlParameters", _a0)}
+//   - params map[string]string
+func (_e *Request_Expecter) WithUrlParameters(params interface{}) *Request_WithUrlParameters_Call {
+	return &Request_WithUrlParameters_Call{Call: _e.mock.On("WithUrlParameters", params)}
 }
 
-func (_c *Request_WithUrlParameters_Call) Run(run func(_a0 map[string]string)) *Request_WithUrlParameters_Call {
+func (_c *Request_WithUrlParameters_Call) Run(run func(params map[string]string)) *Request_WithUrlParameters_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(map[string]string))
 	})
