@@ -4,6 +4,7 @@ import (
 	"time"
 
 	contractshttp "github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/http"
 )
 
@@ -41,8 +42,18 @@ type Limit struct {
 }
 
 func NewLimit(maxAttempts, decayMinutes int) *Limit {
-	instance := NewStore(http.CacheFacade, http.JsonFacade, uint64(maxAttempts), time.Duration(decayMinutes)*time.Minute)
+	cacheFacade := http.App.MakeCache()
+	jsonFacade := http.App.GetJson()
 
+	if cacheFacade == nil {
+		panic(errors.CacheFacadeNotSet)
+	}
+
+	if jsonFacade == nil {
+		panic(errors.JSONParserNotSet)
+	}
+
+	instance := NewStore(cacheFacade, jsonFacade, uint64(maxAttempts), time.Duration(decayMinutes)*time.Minute)
 	return &Limit{
 		store: instance,
 		response: func(ctx contractshttp.Context) {
