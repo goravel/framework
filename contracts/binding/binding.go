@@ -84,7 +84,6 @@ var (
 			PkgPath:     "github.com/goravel/framework/auth",
 			Dependencies: []string{
 				Cache,
-				Config,
 				Log,
 				Orm,
 			},
@@ -93,7 +92,6 @@ var (
 			Description: "Gets and sets cached items.",
 			PkgPath:     "github.com/goravel/framework/cache",
 			Dependencies: []string{
-				Config,
 				Log,
 			},
 			Drivers: []Driver{
@@ -109,17 +107,14 @@ var (
 			},
 		},
 		Crypt: {
-			Description: "Provides encryption and decryption services.",
-			PkgPath:     "github.com/goravel/framework/crypt",
-			Dependencies: []string{
-				Config,
-			},
+			Description:  "Provides encryption and decryption services.",
+			PkgPath:      "github.com/goravel/framework/crypt",
+			Dependencies: []string{},
 		},
 		DB: {
 			Description: "Database management and query builder.",
 			PkgPath:     "github.com/goravel/framework/database",
 			Dependencies: []string{
-				Config,
 				Log,
 			},
 			Drivers: []Driver{
@@ -167,39 +162,31 @@ var (
 			},
 		},
 		Hash: {
-			Description: "Provides secure Argon2id and Bcrypt hashing for storing user passwords.",
-			PkgPath:     "github.com/goravel/framework/hash",
-			Dependencies: []string{
-				Config,
-			},
+			Description:  "Provides secure Argon2id and Bcrypt hashing for storing user passwords.",
+			PkgPath:      "github.com/goravel/framework/hash",
+			Dependencies: []string{},
 		},
 		Http: {
-			Description: "An easy-to-use, expressive, and minimalist API built on the standard net/http library.",
-			PkgPath:     "github.com/goravel/framework/http",
-			Dependencies: []string{
-				Config,
-			},
+			Description:  "An easy-to-use, expressive, and minimalist API built on the standard net/http library.",
+			PkgPath:      "github.com/goravel/framework/http",
+			Dependencies: []string{},
 		},
 		Lang: {
 			Description: "Provides localization support for multiple languages.",
 			PkgPath:     "github.com/goravel/framework/translation",
 			Dependencies: []string{
-				Config,
 				Log,
 			},
 		},
 		Log: {
-			Description: "Provides logging capabilities with support for multiple channels and formats.",
-			PkgPath:     "github.com/goravel/framework/log",
-			Dependencies: []string{
-				Config,
-			},
+			Description:  "Provides logging capabilities with support for multiple channels and formats.",
+			PkgPath:      "github.com/goravel/framework/log",
+			Dependencies: []string{},
 		},
 		Mail: {
 			Description: "A clean, simple API over popular email services.",
 			PkgPath:     "github.com/goravel/framework/mail",
 			Dependencies: []string{
-				Config,
 				Queue,
 			},
 		},
@@ -207,7 +194,6 @@ var (
 			Description: "An elegant ORM for Go, inspired by Eloquent.",
 			PkgPath:     "github.com/goravel/framework/database",
 			Dependencies: []string{
-				Config,
 				Log,
 			},
 			Drivers: []Driver{
@@ -240,7 +226,6 @@ var (
 			Description: "A solution by allowing you to create queued jobs that can run in the background.",
 			PkgPath:     "github.com/goravel/framework/queue",
 			Dependencies: []string{
-				Config,
 				DB,
 				Log,
 				Schema,
@@ -273,7 +258,6 @@ var (
 			Description: "Routing system, which supports multiple web frameworks.",
 			PkgPath:     "github.com/goravel/framework/route",
 			Dependencies: []string{
-				Config,
 				Http,
 				RateLimiter,
 				Session,
@@ -297,9 +281,7 @@ var (
 			Description: "A fresh approach to managing scheduled tasks on your server.",
 			PkgPath:     "github.com/goravel/framework/schedule",
 			Dependencies: []string{
-				Artisan,
 				Cache,
-				Config,
 				Log,
 			},
 		},
@@ -307,7 +289,6 @@ var (
 			Description: "Database schema builder and migration system.",
 			PkgPath:     "github.com/goravel/framework/database",
 			Dependencies: []string{
-				Config,
 				Log,
 				Orm,
 			},
@@ -317,11 +298,9 @@ var (
 			PkgPath:     "github.com/goravel/framework/database",
 		},
 		Session: {
-			Description: "Enables you to store user information across multiple requests.",
-			PkgPath:     "github.com/goravel/framework/session",
-			Dependencies: []string{
-				Config,
-			},
+			Description:  "Enables you to store user information across multiple requests.",
+			PkgPath:      "github.com/goravel/framework/session",
+			Dependencies: []string{},
 			Drivers: []Driver{
 				{
 					Name:        "File",
@@ -335,11 +314,9 @@ var (
 			},
 		},
 		Storage: {
-			Description: "Provides a unified API for interacting with various file storage systems.",
-			PkgPath:     "github.com/goravel/framework/filesystem",
-			Dependencies: []string{
-				Config,
-			},
+			Description:  "Provides a unified API for interacting with various file storage systems.",
+			PkgPath:      "github.com/goravel/framework/filesystem",
+			Dependencies: []string{},
 			Drivers: []Driver{
 				{
 					Name:        "Local",
@@ -372,7 +349,6 @@ var (
 			Description: "Provides distributed tracing with OpenTelemetry.",
 			PkgPath:     "github.com/goravel/framework/telemetry",
 			Dependencies: []string{
-				Config,
 				Log,
 			},
 		},
@@ -380,9 +356,7 @@ var (
 			Description: "Provides tools for testing your application.",
 			PkgPath:     "github.com/goravel/framework/testing",
 			Dependencies: []string{
-				Artisan,
 				Cache,
-				Config,
 				Orm,
 				Route,
 				Session,

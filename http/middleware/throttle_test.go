@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	httpcontract "github.com/goravel/framework/contracts/http"
-	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/http"
 	mockfoundation "github.com/goravel/framework/mocks/foundation"
@@ -27,9 +26,6 @@ type ThrottleTestSuite struct {
 	mockLimit       *mockhttp.Limit
 	mockStore       *mockhttp.Store
 	mockLog         *mocklog.Log
-
-	originalRateLimiter httpcontract.RateLimiter
-	originalLog         log.Log
 }
 
 func TestThrottleTestSuite(t *testing.T) {
@@ -50,6 +46,8 @@ func (s *ThrottleTestSuite) SetupTest() {
 }
 
 func (s *ThrottleTestSuite) TestThrottle_NoLimiterFound() {
+	s.mockApp.EXPECT().MakeLog().Return(s.mockLog).Once()
+	s.mockApp.EXPECT().MakeRateLimiter().Return(s.mockRateLimiter).Once()
 	s.mockRateLimiter.EXPECT().Limiter("test").Return(nil).Once()
 	s.mockCtx.EXPECT().Request().Return(s.mockRequest).Once()
 	s.mockRequest.EXPECT().Next().Once()
@@ -59,6 +57,8 @@ func (s *ThrottleTestSuite) TestThrottle_NoLimiterFound() {
 }
 
 func (s *ThrottleTestSuite) TestThrottle_LimiterReturnsEmptyLimits() {
+	s.mockApp.EXPECT().MakeLog().Return(s.mockLog).Once()
+	s.mockApp.EXPECT().MakeRateLimiter().Return(s.mockRateLimiter).Once()
 	s.mockRateLimiter.EXPECT().Limiter("test").Return(func(ctx httpcontract.Context) []httpcontract.Limit {
 		return []httpcontract.Limit{}
 	}).Once()
@@ -72,6 +72,8 @@ func (s *ThrottleTestSuite) TestThrottle_LimiterReturnsEmptyLimits() {
 func (s *ThrottleTestSuite) TestThrottle_RequestAllowed() {
 	resetTime := uint64(time.Now().Add(time.Minute).UnixNano())
 
+	s.mockApp.EXPECT().MakeLog().Return(s.mockLog).Once()
+	s.mockApp.EXPECT().MakeRateLimiter().Return(s.mockRateLimiter).Once()
 	s.mockRateLimiter.EXPECT().Limiter("api").Return(func(c httpcontract.Context) []httpcontract.Limit {
 		return []httpcontract.Limit{s.mockLimit}
 	}).Once()
@@ -97,6 +99,8 @@ func (s *ThrottleTestSuite) TestThrottle_RequestAllowed() {
 func (s *ThrottleTestSuite) TestThrottle_RequestAllowedWithCustomKey() {
 	resetTime := uint64(time.Now().Add(time.Minute).UnixNano())
 
+	s.mockApp.EXPECT().MakeLog().Return(s.mockLog).Once()
+	s.mockApp.EXPECT().MakeRateLimiter().Return(s.mockRateLimiter).Once()
 	s.mockRateLimiter.EXPECT().Limiter("api").Return(func(c httpcontract.Context) []httpcontract.Limit {
 		return []httpcontract.Limit{s.mockLimit}
 	}).Once()
@@ -119,6 +123,8 @@ func (s *ThrottleTestSuite) TestThrottle_RequestAllowedWithCustomKey() {
 func (s *ThrottleTestSuite) TestThrottle_RequestRateLimited() {
 	resetTime := uint64(time.Now().Add(time.Minute).UnixNano())
 
+	s.mockApp.EXPECT().MakeLog().Return(s.mockLog).Once()
+	s.mockApp.EXPECT().MakeRateLimiter().Return(s.mockRateLimiter).Once()
 	s.mockRateLimiter.EXPECT().Limiter("api").Return(func(c httpcontract.Context) []httpcontract.Limit {
 		return []httpcontract.Limit{s.mockLimit}
 	}).Once()
@@ -150,6 +156,8 @@ func (s *ThrottleTestSuite) TestThrottle_RequestRateLimited() {
 func (s *ThrottleTestSuite) TestThrottle_RequestRateLimitedWithCustomCallback() {
 	resetTime := uint64(time.Now().Add(time.Minute).UnixNano())
 
+	s.mockApp.EXPECT().MakeLog().Return(s.mockLog).Once()
+	s.mockApp.EXPECT().MakeRateLimiter().Return(s.mockRateLimiter).Once()
 	s.mockRateLimiter.EXPECT().Limiter("api").Return(func(c httpcontract.Context) []httpcontract.Limit {
 		return []httpcontract.Limit{s.mockLimit}
 	}).Once()
@@ -182,6 +190,8 @@ func (s *ThrottleTestSuite) TestThrottle_RequestRateLimitedWithCustomCallback() 
 }
 
 func (s *ThrottleTestSuite) TestThrottle_StoreTakeError() {
+	s.mockApp.EXPECT().MakeLog().Return(s.mockLog).Once()
+	s.mockApp.EXPECT().MakeRateLimiter().Return(s.mockRateLimiter).Once()
 	s.mockRateLimiter.EXPECT().Limiter("api").Return(func(c httpcontract.Context) []httpcontract.Limit {
 		return []httpcontract.Limit{s.mockLimit}
 	}).Once()
@@ -209,6 +219,8 @@ func (s *ThrottleTestSuite) TestThrottle_MultipleLimits() {
 	mockLimit2 := mockhttp.NewLimit(s.T())
 	mockStore2 := mockhttp.NewStore(s.T())
 
+	s.mockApp.EXPECT().MakeLog().Return(s.mockLog).Once()
+	s.mockApp.EXPECT().MakeRateLimiter().Return(s.mockRateLimiter).Once()
 	s.mockRateLimiter.EXPECT().Limiter("api").Return(func(c httpcontract.Context) []httpcontract.Limit {
 		return []httpcontract.Limit{s.mockLimit, mockLimit2}
 	}).Once()
