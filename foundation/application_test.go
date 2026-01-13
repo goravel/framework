@@ -175,7 +175,7 @@ func (s *ApplicationTestSuite) TestStart_Complex() {
 		app := s.app.Start(runner)
 
 		go func() {
-			time.Sleep(100 * time.Millisecond) // Wait for goroutines to start
+			time.Sleep(200 * time.Millisecond) // Wait for goroutines to start
 			s.cancel()
 		}()
 
@@ -201,7 +201,7 @@ func (s *ApplicationTestSuite) TestStart_Complex() {
 		app := s.app.Start(runner)
 
 		go func() {
-			time.Sleep(100 * time.Millisecond) // Wait for goroutines to start
+			time.Sleep(200 * time.Millisecond) // Wait for goroutines to start
 			s.cancel()
 		}()
 
@@ -223,7 +223,7 @@ func (s *ApplicationTestSuite) TestStart_Complex() {
 		app = app.Start(runner)
 
 		go func() {
-			time.Sleep(100 * time.Millisecond) // Wait for goroutines to start
+			time.Sleep(200 * time.Millisecond) // Wait for goroutines to start
 			s.cancel()
 		}()
 
