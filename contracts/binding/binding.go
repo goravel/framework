@@ -167,9 +167,11 @@ var (
 			},
 		},
 		Hash: {
-			Description:  "Provides secure Argon2id and Bcrypt hashing for storing user passwords.",
-			PkgPath:      "github.com/goravel/framework/hash",
-			Dependencies: []string{},
+			Description: "Provides secure Argon2id and Bcrypt hashing for storing user passwords.",
+			PkgPath:     "github.com/goravel/framework/hash",
+			Dependencies: []string{
+				Config,
+			},
 		},
 		Http: {
 			Description: "An easy-to-use, expressive, and minimalist API built on the standard net/http library.",
