@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"regexp"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/goravel/framework/contracts/foundation"
@@ -24,8 +25,25 @@ func NewFakeState(json foundation.Json, mocks map[string]any) *FakeState {
 		rules = append(rules, NewFakeRule(p, toHandler(json, v)))
 	}
 
+	// Sort rules to ensure the most specific pattern matches first.
+	// 1. Exact matches (no wildcards) take precedence over wildcards.
+	// 2. Longer patterns take precedence over shorter ones.
+	// 3. Alphabetical order determines priority for identical specificity.
 	sort.Slice(rules, func(i, j int) bool {
-		return len(rules[i].pattern) > len(rules[j].pattern)
+		pI, pJ := rules[i].pattern, rules[j].pattern
+
+		noWildI := !strings.Contains(pI, "*")
+		noWildJ := !strings.Contains(pJ, "*")
+
+		if noWildI != noWildJ {
+			return noWildI
+		}
+
+		if len(pI) != len(pJ) {
+			return len(pI) > len(pJ)
+		}
+
+		return pI < pJ
 	})
 
 	return &FakeState{
@@ -101,14 +119,28 @@ func toHandler(json foundation.Json, v any) func(client.Request) client.Response
 	case func(client.Request) client.Response:
 		return h
 	case client.Response:
-		return func(_ client.Request) client.Response { return h }
+		// Wrap single response in a Sequence to handle body snapshotting automatically.
+		seq := NewFakeSequence(json)
+		seq.WhenEmpty(h)
+
+		return func(_ client.Request) client.Response {
+			return seq.getNext()
+		}
 	case string:
-		return func(_ client.Request) client.Response { return NewFakeResponse(json).String(h, 200) }
+		return func(_ client.Request) client.Response {
+			return NewFakeResponse(json).String(h, 200)
+		}
 	case int:
-		return func(_ client.Request) client.Response { return NewFakeResponse(json).Status(h) }
+		return func(_ client.Request) client.Response {
+			return NewFakeResponse(json).Status(h)
+		}
 	case *FakeSequence:
-		return func(_ client.Request) client.Response { return h.GetNext() }
+		return func(_ client.Request) client.Response {
+			return h.getNext()
+		}
 	default:
-		return func(_ client.Request) client.Response { return NewFakeResponse(json).Status(200) }
+		return func(_ client.Request) client.Response {
+			return NewFakeResponse(json).Status(200)
+		}
 	}
 }
