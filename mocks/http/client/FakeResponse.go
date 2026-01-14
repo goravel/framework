@@ -3,7 +3,10 @@
 package client
 
 import (
+	http "net/http"
+
 	client "github.com/goravel/framework/contracts/http/client"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -118,17 +121,17 @@ func (_c *FakeResponse_Json_Call) RunAndReturn(run func(interface{}, int) client
 	return _c
 }
 
-// Make provides a mock function with given fields: body, status, headers
-func (_m *FakeResponse) Make(body string, status int, headers map[string]string) client.Response {
-	ret := _m.Called(body, status, headers)
+// Make provides a mock function with given fields: body, status, header
+func (_m *FakeResponse) Make(body string, status int, header http.Header) client.Response {
+	ret := _m.Called(body, status, header)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Make")
 	}
 
 	var r0 client.Response
-	if rf, ok := ret.Get(0).(func(string, int, map[string]string) client.Response); ok {
-		r0 = rf(body, status, headers)
+	if rf, ok := ret.Get(0).(func(string, int, http.Header) client.Response); ok {
+		r0 = rf(body, status, header)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(client.Response)
@@ -146,14 +149,14 @@ type FakeResponse_Make_Call struct {
 // Make is a helper method to define mock.On call
 //   - body string
 //   - status int
-//   - headers map[string]string
-func (_e *FakeResponse_Expecter) Make(body interface{}, status interface{}, headers interface{}) *FakeResponse_Make_Call {
-	return &FakeResponse_Make_Call{Call: _e.mock.On("Make", body, status, headers)}
+//   - header http.Header
+func (_e *FakeResponse_Expecter) Make(body interface{}, status interface{}, header interface{}) *FakeResponse_Make_Call {
+	return &FakeResponse_Make_Call{Call: _e.mock.On("Make", body, status, header)}
 }
 
-func (_c *FakeResponse_Make_Call) Run(run func(body string, status int, headers map[string]string)) *FakeResponse_Make_Call {
+func (_c *FakeResponse_Make_Call) Run(run func(body string, status int, header http.Header)) *FakeResponse_Make_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(int), args[2].(map[string]string))
+		run(args[0].(string), args[1].(int), args[2].(http.Header))
 	})
 	return _c
 }
@@ -163,7 +166,7 @@ func (_c *FakeResponse_Make_Call) Return(_a0 client.Response) *FakeResponse_Make
 	return _c
 }
 
-func (_c *FakeResponse_Make_Call) RunAndReturn(run func(string, int, map[string]string) client.Response) *FakeResponse_Make_Call {
+func (_c *FakeResponse_Make_Call) RunAndReturn(run func(string, int, http.Header) client.Response) *FakeResponse_Make_Call {
 	_c.Call.Return(run)
 	return _c
 }

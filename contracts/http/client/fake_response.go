@@ -1,5 +1,7 @@
 package client
 
+import "net/http"
+
 type FakeResponse interface {
 	// File creates a mock response using the contents of a file at the specified path.
 	File(path string, status int) Response
@@ -8,7 +10,7 @@ type FakeResponse interface {
 	Json(obj any, code int) Response
 
 	// Make constructs a custom mock response with the specified body, status, and headers.
-	Make(body string, status int, headers map[string]string) Response
+	Make(body string, status int, header http.Header) Response
 
 	// OK creates a generic 200 OK mock response with an empty body.
 	OK() Response

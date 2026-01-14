@@ -8,7 +8,6 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/goravel/framework/contracts/http/client"
 	"github.com/goravel/framework/foundation/json"
 )
 
@@ -25,108 +24,229 @@ func (s *FakeResponseTestSuite) SetupTest() {
 	s.fakeResponse = NewFakeResponse(json.New())
 }
 
-func (s *FakeResponseTestSuite) TestJson() {
-	s.Run("Success", func() {
-		data := map[string]any{
-			"name": "Goravel",
-			"meta": map[string]int{"id": 1},
-		}
+func (s *FakeResponseTestSuite) TestFile() {
+	dir := s.T().TempDir()
+	validFile := filepath.Join(dir, "test.txt")
+	s.Require().NoError(os.WriteFile(validFile, []byte("Goravel File Content"), 0644))
 
-		response := s.fakeResponse.Json(data, http.StatusCreated)
-		s.Equal(http.StatusCreated, response.Status())
-		s.Equal("application/json", response.Header("Content-Type"))
-
-		body, err := response.Json()
-		s.NoError(err)
-		s.Equal("Goravel", body["name"])
-		s.Equal(map[string]any{"id": float64(1)}, body["meta"])
-	})
-
-	s.Run("Marshal Error", func() {
-		invalidData := make(chan int) // Channels cannot be marshaled
-		response := s.fakeResponse.Json(invalidData, http.StatusOK)
-
-		s.Equal(http.StatusInternalServerError, response.Status())
-
-		bodyStr, err := response.Body()
-		s.NoError(err)
-		s.Contains(bodyStr, "json: unsupported type")
-	})
-}
-
-func (s *FakeResponseTestSuite) TestBasicResponses() {
 	tests := []struct {
 		name           string
-		response       client.Response
+		path           string
+		status         int
 		expectedStatus int
 		expectedBody   string
+		expectError    bool
 	}{
 		{
-			name:           "String Response",
-			response:       s.fakeResponse.String("Hello World", http.StatusNotFound),
-			expectedStatus: http.StatusNotFound,
-			expectedBody:   "Hello World",
-		},
-		{
-			name:           "Status Only (Teapot)",
-			response:       s.fakeResponse.Status(http.StatusTeapot),
-			expectedStatus: http.StatusTeapot,
-			expectedBody:   "",
-		},
-		{
-			name:           "OK Helper",
-			response:       s.fakeResponse.OK(),
+			name:           "Success reads file content",
+			path:           validFile,
+			status:         http.StatusOK,
 			expectedStatus: http.StatusOK,
-			expectedBody:   "",
+			expectedBody:   "Goravel File Content",
+		},
+		{
+			name:           "Error when file does not exist",
+			path:           filepath.Join(dir, "missing.txt"),
+			status:         http.StatusOK,
+			expectedStatus: http.StatusInternalServerError,
+			// Matches the exact error message in implementation
+			expectedBody: "Failed to read mock file",
+			expectError:  true,
 		},
 	}
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			s.Equal(tt.expectedStatus, tt.response.Status())
+			resp := s.fakeResponse.File(tt.path, tt.status)
 
-			body, err := tt.response.Body()
+			s.Equal(tt.expectedStatus, resp.Status())
+
+			body, err := resp.Body()
 			s.NoError(err)
+			if tt.expectError {
+				s.Contains(body, tt.expectedBody)
+				return
+			}
+
 			s.Equal(tt.expectedBody, body)
 		})
 	}
 }
 
-func (s *FakeResponseTestSuite) TestFile() {
-	s.Run("Success", func() {
-		dir := s.T().TempDir()
-		filePath := filepath.Join(dir, "test_file.txt")
-		content := "File Content"
-
-		err := os.WriteFile(filePath, []byte(content), 0644)
-		s.Require().NoError(err)
-
-		response := s.fakeResponse.File(filePath, http.StatusOK)
-
-		s.Equal(http.StatusOK, response.Status())
-		body, err := response.Body()
-		s.NoError(err)
-		s.Equal(content, body)
-	})
-
-	s.Run("Not Found", func() {
-		response := s.fakeResponse.File("non_existent_file.txt", http.StatusOK)
-
-		s.Equal(http.StatusInternalServerError, response.Status())
-		body, err := response.Body()
-		s.NoError(err)
-		s.Contains(body, "File not found")
-	})
-}
-
-func (s *FakeResponseTestSuite) TestMake_Headers() {
-	headers := map[string]string{
-		"X-Custom-Header": "Goravel",
-		"Cache-Control":   "no-cache",
+func (s *FakeResponseTestSuite) TestJson() {
+	tests := []struct {
+		name           string
+		data           any
+		status         int
+		expectedStatus int
+		expectedBody   string
+		expectHeader   string
+	}{
+		{
+			name:           "Success marshals map",
+			data:           map[string]string{"foo": "bar"},
+			status:         http.StatusCreated,
+			expectedStatus: http.StatusCreated,
+			expectedBody:   `{"foo":"bar"}`,
+			expectHeader:   "application/json",
+		},
+		{
+			name:           "Success marshals struct",
+			data:           struct{ ID int }{ID: 1},
+			status:         http.StatusOK,
+			expectedStatus: http.StatusOK,
+			expectedBody:   `{"ID":1}`,
+			expectHeader:   "application/json",
+		},
+		{
+			name:           "Error marshals invalid channel",
+			data:           make(chan int),
+			status:         http.StatusOK,
+			expectedStatus: http.StatusInternalServerError,
+			expectedBody:   "Failed to marshal mock JSON",
+		},
 	}
 
-	response := s.fakeResponse.Make("body", http.StatusOK, headers)
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			resp := s.fakeResponse.Json(tt.data, tt.status)
 
-	s.Equal("Goravel", response.Header("X-Custom-Header"))
-	s.Equal("no-cache", response.Header("Cache-Control"))
+			s.Equal(tt.expectedStatus, resp.Status())
+
+			if tt.expectHeader != "" {
+				s.Equal(tt.expectHeader, resp.Header("Content-Type"))
+			}
+
+			body, err := resp.Body()
+			s.NoError(err)
+			if tt.expectedStatus == http.StatusInternalServerError {
+				s.Contains(body, tt.expectedBody)
+				return
+			}
+
+			s.JSONEq(tt.expectedBody, body)
+		})
+	}
+}
+
+func (s *FakeResponseTestSuite) TestMake() {
+	tests := []struct {
+		name            string
+		body            string
+		status          int
+		headers         http.Header
+		expectedStatus  int
+		expectedBody    string
+		expectedHeaders http.Header
+	}{
+		{
+			name:           "Success with simple headers",
+			body:           "Custom Body",
+			status:         http.StatusTeapot,
+			headers:        http.Header{"X-Test": []string{"True"}},
+			expectedStatus: http.StatusTeapot,
+			expectedBody:   "Custom Body",
+			expectedHeaders: http.Header{
+				"X-Test": []string{"True"},
+			},
+		},
+		{
+			name:           "Success with multi-value headers (Cookies)",
+			body:           "Cookie Monster",
+			status:         200,
+			headers:        http.Header{"Set-Cookie": []string{"a=1", "b=2"}},
+			expectedStatus: 200,
+			expectedBody:   "Cookie Monster",
+			expectedHeaders: http.Header{
+				"Set-Cookie": []string{"a=1", "b=2"},
+			},
+		},
+		{
+			name:            "Success with empty headers",
+			body:            "",
+			status:          http.StatusOK,
+			headers:         nil,
+			expectedStatus:  http.StatusOK,
+			expectedBody:    "",
+			expectedHeaders: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			resp := s.fakeResponse.Make(tt.body, tt.status, tt.headers)
+
+			s.Equal(tt.expectedStatus, resp.Status())
+
+			body, err := resp.Body()
+			s.NoError(err)
+			s.Equal(tt.expectedBody, body)
+
+			for k, expectedVals := range tt.expectedHeaders {
+				actualVals := resp.Headers().Values(k)
+				s.ElementsMatch(expectedVals, actualVals)
+			}
+		})
+	}
+}
+
+func (s *FakeResponseTestSuite) TestOK() {
+	resp := s.fakeResponse.OK()
+	s.Equal(http.StatusOK, resp.Status())
+
+	body, err := resp.Body()
+	s.NoError(err)
+	s.Empty(body)
+}
+
+func (s *FakeResponseTestSuite) TestStatus() {
+	tests := []struct {
+		code int
+	}{
+		{http.StatusOK},
+		{http.StatusBadRequest},
+		{http.StatusInternalServerError},
+	}
+
+	for _, tt := range tests {
+		s.Run("Status matches", func() {
+			resp := s.fakeResponse.Status(tt.code)
+			s.Equal(tt.code, resp.Status())
+			body, err := resp.Body()
+			s.NoError(err)
+			s.Empty(body)
+		})
+	}
+}
+
+func (s *FakeResponseTestSuite) TestString() {
+	tests := []struct {
+		name           string
+		body           string
+		status         int
+		expectedStatus int
+	}{
+		{
+			name:           "Simple string",
+			body:           "Hello",
+			status:         http.StatusOK,
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Empty string",
+			body:           "",
+			status:         http.StatusNoContent,
+			expectedStatus: http.StatusNoContent,
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			resp := s.fakeResponse.String(tt.body, tt.status)
+			s.Equal(tt.expectedStatus, resp.Status())
+			body, err := resp.Body()
+			s.NoError(err)
+			s.Equal(tt.body, body)
+		})
+	}
 }
