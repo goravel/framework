@@ -11,10 +11,14 @@ import (
 
 const HeaderCsrfKey = "X-CSRF-TOKEN"
 
-func VerifyCsrfToken(excepts []string) contractshttp.Middleware {
-	absolutePaths := parseExceptPaths(excepts)
+func VerifyCsrfToken(excepts ...[]string) contractshttp.Middleware {
+	var exceptPaths []string
+	if len(excepts) > 0 {
+		exceptPaths = parseExceptPaths(excepts[0])
+	}
+
 	return func(ctx contractshttp.Context) {
-		if isReading(ctx.Request().Method()) || inExceptArray(absolutePaths, ctx.Request().Path()) || tokenMatch(ctx) {
+		if isReading(ctx.Request().Method()) || isExcept(exceptPaths, ctx.Request().Path()) || isTokenMatch(ctx) {
 			ctx.Response().Header(HeaderCsrfKey, ctx.Request().Session().Token())
 			ctx.Request().Next()
 		} else {
@@ -23,7 +27,7 @@ func VerifyCsrfToken(excepts []string) contractshttp.Middleware {
 	}
 }
 
-func tokenMatch(ctx contractshttp.Context) bool {
+func isTokenMatch(ctx contractshttp.Context) bool {
 	if !ctx.Request().HasSession() {
 		return false
 	}
@@ -38,7 +42,7 @@ func tokenMatch(ctx contractshttp.Context) bool {
 	return true
 }
 
-func inExceptArray(excepts []string, currentPath string) bool {
+func isExcept(excepts []string, currentPath string) bool {
 	currentPath = strings.Trim(currentPath, "/")
 	for _, pattern := range excepts {
 		if matched, err := path.Match(pattern, currentPath); err == nil && matched {
