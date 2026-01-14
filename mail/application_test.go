@@ -52,6 +52,26 @@ func (s *ApplicationTestSuite) TestSendMail() {
 		Send())
 }
 
+func (s *ApplicationTestSuite) TestSendMailViaTempalte() {
+	s.mockConfig = mockConfig(465)
+
+	app, err := NewApplication(s.mockConfig, nil)
+	s.Nil(err)
+	s.Nil(app.To([]string{testTo}).
+		Cc([]string{testCc}).
+		Bcc([]string{testBcc}).
+		Attach([]string{"../logo.png"}).
+		Subject("Goravel Test 465").
+		Content(mail.Content{
+			View: "test.tmpl",
+			With: map[string]any{
+				"name": "Goravel",
+			},
+		}).
+		Headers(map[string]string{"Test-Mailer-Port": "465"}).
+		Send())
+}
+
 func (s *ApplicationTestSuite) TestSendMailWithFromBy587Port() {
 	s.mockConfig = mockConfig(587)
 
@@ -175,7 +195,7 @@ func mockConfig(mailPort int) *mocksconfig.Config {
 		config.EXPECT().GetString("mail.template.default", "html").Return("html").Once()
 		config.EXPECT().GetString("mail.template.engines.html.driver", "html").Return("html").Once()
 		config.EXPECT().GetString("mail.template.engines.html.path", "resources/views/mail").
-			Return("resources/views/mail").Once()
+			Return(".").Once()
 
 		testFromAddress = os.Getenv("MAIL_FROM_ADDRESS")
 		testFromName = os.Getenv("MAIL_FROM_NAME")
