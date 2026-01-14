@@ -475,10 +475,7 @@ func (r *Query) Load(model any, relation string, args ...any) error {
 	copyDest := copyStruct(model)
 	err := r.With(relation, args...).Find(model)
 
-	relationRoot := relation
-	if dotIndex := strings.Index(relation, "."); dotIndex > 0 {
-		relationRoot = relation[:dotIndex]
-	}
+	relationRoot := strings.SplitN(relation, ".", 2)[0]
 
 	t := destType.Elem()
 	v := reflect.ValueOf(model).Elem()
