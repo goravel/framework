@@ -3263,15 +3263,22 @@ func (s *QueryTestSuite) TestLimit() {
 
 func (s *QueryTestSuite) TestLoad() {
 	for _, query := range s.queries {
-		user := User{Name: "load_user", Address: &Address{}, Books: []*Book{{}, {}}}
+		user := User{Name: "load_user", Address: &Address{}, Books: []*Book{{}, {}}, Roles: []*Role{{}, {}}}
 		user.Address.Name = "load_address"
 		user.Books[0].Name = "load_book0"
+		user.Books[0].Author = &Author{Name: "load_book0_author"}
 		user.Books[1].Name = "load_book1"
+		user.Roles[0].Name = "load_role0"
+		user.Roles[1].Name = "load_role1"
+
 		s.Nil(query.Query().Select(gorm.Associations).Create(&user))
 		s.True(user.ID > 0)
 		s.True(user.Address.ID > 0)
 		s.True(user.Books[0].ID > 0)
 		s.True(user.Books[1].ID > 0)
+		s.True(user.Books[0].Author.ID > 0)
+		s.True(user.Roles[0].ID > 0)
+		s.True(user.Roles[1].ID > 0)
 
 		tests := []struct {
 			description string
@@ -3323,6 +3330,27 @@ func (s *QueryTestSuite) TestLoad() {
 					s.Nil(user1.Address)
 					s.Equal(1, len(user1.Books))
 					s.Equal("load_book0", user.Books[0].Name)
+				},
+			},
+			{
+				description: "load nested relationship",
+				setup: func(description string) {
+					var user1 User
+					s.Nil(query.Query().Find(&user1, user.ID))
+					s.True(user1.ID > 0)
+					s.Equal("load_user", user1.Name)
+					s.Nil(query.Query().Load(&user1, "Books.Author"))
+					s.True(user1.Books[0].ID > 0)
+					s.Equal("load_book0", user1.Books[0].Name)
+					s.True(user1.Books[0].Author.ID > 0)
+					s.Equal("load_book0_author", user1.Books[0].Author.Name)
+					s.True(user1.Books[1].ID > 0)
+					s.Equal("load_book1", user1.Books[1].Name)
+					s.Nil(user1.Books[1].Author)
+					s.Nil(query.Query().Load(&user1, "Roles.Users"))
+					s.Equal("load_role0", user1.Roles[0].Name)
+					s.Equal("load_user", user1.Roles[0].Users[0].Name)
+					s.Equal("load_role1", user1.Roles[1].Name)
 				},
 			},
 			{
