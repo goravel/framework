@@ -147,7 +147,7 @@ func (r *Factory) Response() client.FakeResponse {
 }
 
 func (r *Factory) Sequence() client.FakeSequence {
-	return NewFakeSequence(NewFakeResponse(r.json))
+	return NewFakeSequence(r.json)
 }
 
 func (r *Factory) bindDefault() error {
