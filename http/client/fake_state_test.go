@@ -20,11 +20,11 @@ func TestFakeStateTestSuite(t *testing.T) {
 
 func (s *FakeStateTestSuite) TestMatchSpecificity() {
 	mocks := map[string]any{
-		"*":                      "generic_wildcard",
-		"api.github.com/*":       "domain_wildcard",
-		"api.github.com/users/*": "path_wildcard",
-		"api.github.com/users/1": "specific_id",
-		"api.github.com/users/a": "specific_id_alpha",
+		"*":                       "generic_wildcard",
+		"api.github.com/*":        "domain_wildcard",
+		"api.github.com/users/*":  "path_wildcard",
+		"api.github.com/users/1":  "specific_id",
+		"api.github.com/users/ab": "specific_id_alpha",
 	}
 
 	state := NewFakeState(nil, mocks)
@@ -36,8 +36,10 @@ func (s *FakeStateTestSuite) TestMatchSpecificity() {
 		{"https://google.com", "generic_wildcard"},
 		{"https://api.github.com/repos", "domain_wildcard"},
 		{"https://api.github.com/users/goravel", "path_wildcard"},
+		// Should match "api.github.com/users/1" (Most specific)
 		{"https://api.github.com/users/1", "specific_id"},
-		{"https://api.github.com/users/a", "specific_id_alpha"},
+		// Should match "api.github.com/users/ab" (Specific alpha ID)
+		{"https://api.github.com/users/ab", "specific_id_alpha"},
 	}
 
 	for _, tt := range tests {
@@ -48,7 +50,7 @@ func (s *FakeStateTestSuite) TestMatchSpecificity() {
 		resp := handler(nil)
 		body, err := resp.Body()
 		s.NoError(err)
-		s.Equal(tt.expected, body, "Match failed for %s", tt.url)
+		s.Equal(tt.expected, body, "Match logic failed for %s", tt.url)
 	}
 }
 
@@ -59,7 +61,7 @@ func (s *FakeStateTestSuite) TestMatchMissing() {
 	state := NewFakeState(nil, mocks)
 
 	req := s.makeHttpRequest("https://google.com")
-	handler := state.Match(req, "stripe")
+	handler := state.Match(req, "dummy_client")
 
 	s.Nil(handler)
 }
@@ -75,7 +77,7 @@ func (s *FakeStateTestSuite) TestRecord() {
 	s.True(found)
 
 	notFound := state.AssertSent(func(r client.Request) bool {
-		return r.ClientName() == "stripe"
+		return r.ClientName() == "wrong_name"
 	})
 	s.False(notFound)
 }
@@ -102,26 +104,26 @@ func (s *FakeStateTestSuite) TestStrayRequests() {
 	s.True(state.ShouldPreventStray("https://google.com"))
 
 	state.AllowStrayRequests([]string{"github.com/*"})
-	s.False(state.ShouldPreventStray("https://github.com/api"))
-	s.True(state.ShouldPreventStray("https://google.com"))
+	s.False(state.ShouldPreventStray("https://github.com/api"), "Should allow whitelisted pattern")
+	s.True(state.ShouldPreventStray("https://google.com"), "Should still block non-whitelisted pattern")
 }
 
 func (s *FakeStateTestSuite) TestMockValueConversions() {
 	seq := NewFakeSequence(nil)
-	seq.PushString("first", 200)
-	seq.PushString("second", 500)
+	seq.PushString("first_event", 200)
+	seq.PushString("second_event", 500)
 
 	singleResp := NewFakeResponse(nil).String("static content", 202)
 
 	mocks := map[string]any{
-		"http://string": "ok body",
-		"http://int":    404,
-		"http://resp":   singleResp,
-		"http://seq":    seq,
-		"http://func": func(_ client.Request) client.Response {
+		"https://api.github.com/zen":    "practicality beats purity", // String -> 200 OK + Body
+		"https://api.github.com/404":    404,                         // Int -> Status Code Only
+		"https://api.github.com/status": singleResp,                  // Response Object
+		"https://api.github.com/events": seq,                         // Sequence Object
+		"https://api.github.com/func": func(_ client.Request) client.Response {
 			return NewFakeResponse(nil).Status(201)
 		},
-		"http://unknown": struct{}{},
+		"https://api.github.com/empty": struct{}{}, // Unknown Type -> 200 OK + Empty
 	}
 
 	state := NewFakeState(nil, mocks)
@@ -131,17 +133,17 @@ func (s *FakeStateTestSuite) TestMockValueConversions() {
 		status int
 		body   string
 	}{
-		{"http://string", 200, "ok body"},
-		{"http://int", 404, ""},
-		{"http://func", 201, ""},
-		{"http://unknown", 200, ""},
+		{"https://api.github.com/zen", 200, "practicality beats purity"},
+		{"https://api.github.com/404", 404, ""},
+		{"https://api.github.com/func", 201, ""},
+		{"https://api.github.com/empty", 200, ""},
 	}
 
 	for _, tt := range tests {
 		req := s.makeHttpRequest(tt.url)
 		resp := state.Match(req, "any")(nil)
 
-		s.Equal(tt.status, resp.Status(), "Failed for %s", tt.url)
+		s.Equal(tt.status, resp.Status(), "Failed status check for %s", tt.url)
 		if tt.body != "" {
 			body, err := resp.Body()
 			s.NoError(err)
@@ -149,7 +151,7 @@ func (s *FakeStateTestSuite) TestMockValueConversions() {
 		}
 	}
 
-	reqResp := s.makeHttpRequest("http://resp")
+	reqResp := s.makeHttpRequest("https://api.github.com/status")
 	handlerResp := state.Match(reqResp, "any")
 
 	for i := 0; i < 2; i++ {
@@ -157,23 +159,23 @@ func (s *FakeStateTestSuite) TestMockValueConversions() {
 		body, err := resp.Body()
 		s.NoError(err)
 		s.Equal(202, resp.Status())
-		s.Equal("static content", body, "Failed on iteration %d: Body was drained", i+1)
+		s.Equal("static content", body, "Failed on iteration %d: Body was drained or altered", i+1)
 	}
 
-	reqSeq := s.makeHttpRequest("http://seq")
+	reqSeq := s.makeHttpRequest("https://api.github.com/events")
 	handlerSeq := state.Match(reqSeq, "any")
 
 	resp1 := handlerSeq(nil)
 	body1, err := resp1.Body()
 	s.NoError(err)
 	s.Equal(200, resp1.Status())
-	s.Equal("first", body1)
+	s.Equal("first_event", body1)
 
 	resp2 := handlerSeq(nil)
 	body2, err := resp2.Body()
 	s.NoError(err)
 	s.Equal(500, resp2.Status())
-	s.Equal("second", body2)
+	s.Equal("second_event", body2)
 }
 
 func (s *FakeStateTestSuite) makeHttpRequest(link string) *http.Request {

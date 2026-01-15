@@ -8,17 +8,8 @@ import (
 	"github.com/goravel/framework/contracts/http/client"
 )
 
-type matchStrategy int
-
-const (
-	strategyClient matchStrategy = iota
-	strategyURL
-	strategyScoped
-)
-
 type FakeRule struct {
 	pattern    string
-	strategy   matchStrategy
 	clientName string
 	regex      *regexp.Regexp
 	handler    func(client.Request) client.Response
@@ -26,36 +17,28 @@ type FakeRule struct {
 
 func NewFakeRule(pattern string, handler func(client.Request) client.Response) *FakeRule {
 	var (
-		strategy   matchStrategy
 		clientName string
 		regex      *regexp.Regexp
 	)
 
-	if pattern == "*" {
-		strategy = strategyURL
+	// Scoped rules use the format "client#path" (e.g., "github#repos").
+	// We split the string once: the left side is the client, the right is the path.
+	if before, after, found := strings.Cut(pattern, "#"); found {
+		clientName = before
+		regex = compileWildcard(after)
+
+		// Patterns containing URL-specific characters or wildcards are treated as URL rules.
+		// We strictly check "localhost" since it lacks special characters but represents a host.
+	} else if strings.ContainsAny(pattern, ".:/*") || pattern == "localhost" {
 		regex = compileWildcard(pattern)
 
-		// The hash symbol(client#path) is the definitive marker for Client Scoping.
-	} else if idx := strings.Index(pattern, "#"); idx != -1 {
-		strategy = strategyScoped
-		clientName = pattern[:idx]
-		regex = compileWildcard(pattern[idx+1:])
-
-		// If it has dots, slashes, or colons (and no hash), it is a URL/Path.
-		// This correctly handles "localhost:8080", "http://...", and "api.stripe.com".
-	} else if strings.ContainsAny(pattern, "./:") || strings.HasPrefix(pattern, "http") {
-		strategy = strategyURL
-		regex = compileWildcard(pattern)
-
-		// Fallback for simple names like "stripe" or "github"
+		// If no special characters are found, assume it is a simple client name.
 	} else {
-		strategy = strategyClient
 		clientName = pattern
 	}
 
 	return &FakeRule{
 		pattern:    pattern,
-		strategy:   strategy,
 		clientName: clientName,
 		regex:      regex,
 		handler:    handler,
@@ -63,20 +46,17 @@ func NewFakeRule(pattern string, handler func(client.Request) client.Response) *
 }
 
 func (r *FakeRule) Matches(req *http.Request, clientName string) bool {
-	switch r.strategy {
-	case strategyClient:
-		return r.clientName == clientName
-
-	case strategyURL:
-		return r.regex.MatchString(req.URL.String())
-
-	case strategyScoped:
-		if r.clientName == clientName {
+	if r.clientName != "" {
+		if r.clientName != clientName {
+			return false
+		}
+		if r.regex != nil {
 			return r.regex.MatchString(req.URL.Path)
 		}
+		return true
 	}
 
-	return false
+	return r.regex.MatchString(req.URL.String())
 }
 
 func compileWildcard(p string) *regexp.Regexp {

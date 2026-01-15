@@ -19,20 +19,42 @@ func TestFakeRuleTestSuite(t *testing.T) {
 func (s *FakeRuleTestSuite) TestMatches_ClientStrategy() {
 	rule := NewFakeRule("github", nil)
 	s.True(rule.Matches(s.makeRequest("https://any.com"), "github"))
+	s.True(rule.Matches(s.makeRequest("https://api.github.com"), "github"))
 	s.False(rule.Matches(s.makeRequest("https://any.com"), "gitlab"))
 }
 
 func (s *FakeRuleTestSuite) TestMatches_URLStrategy() {
-	rule := NewFakeRule("api.stripe.com/*", nil)
-	s.True(rule.Matches(s.makeRequest("https://api.stripe.com/v1/charges"), "any"))
+	rule := NewFakeRule("api.github.com/*", nil)
+	s.True(rule.Matches(s.makeRequest("https://api.github.com/users"), "any"))
 	s.False(rule.Matches(s.makeRequest("https://google.com"), "any"))
 
-	rule = NewFakeRule("*/users", nil)
-	s.True(rule.Matches(s.makeRequest("https://example.com/users"), "any"))
+	rule = NewFakeRule("*/issues", nil)
+	s.True(rule.Matches(s.makeRequest("https://github.com/issues"), "any"))
+	s.False(rule.Matches(s.makeRequest("https://github.com/pulls"), "any"))
 
-	rule = NewFakeRule("https://google.com", nil)
-	s.True(rule.Matches(s.makeRequest("https://google.com"), "any"))
-	s.False(rule.Matches(s.makeRequest("https://google.com/news"), "any"))
+	rule = NewFakeRule("github.com", nil)
+	s.True(rule.Matches(s.makeRequest("https://github.com"), "any"))
+	s.True(rule.Matches(s.makeRequest("http://github.com"), "any"))
+	s.False(rule.Matches(s.makeRequest("https://github.com/news"), "any"))
+}
+
+func (s *FakeRuleTestSuite) TestMatches_PartialWildcard() {
+	rule := NewFakeRule("github*", nil)
+
+	s.True(rule.Matches(s.makeRequest("https://github.com"), "any"))
+	s.True(rule.Matches(s.makeRequest("https://github-status.com"), "any"))
+	s.False(rule.Matches(s.makeRequest("https://google.com"), "any"))
+}
+
+func (s *FakeRuleTestSuite) TestMatches_Localhost() {
+	rule := NewFakeRule("localhost", nil)
+
+	s.True(rule.Matches(s.makeRequest("http://localhost"), "any"))
+	s.True(rule.Matches(s.makeRequest("https://localhost"), "any"))
+	s.False(rule.Matches(s.makeRequest("http://localhost/api"), "any"))
+
+	ruleWild := NewFakeRule("localhost/*", nil)
+	s.True(ruleWild.Matches(s.makeRequest("http://localhost/api"), "any"))
 }
 
 func (s *FakeRuleTestSuite) TestMatches_ScopedStrategy() {
@@ -45,8 +67,8 @@ func (s *FakeRuleTestSuite) TestMatches_ScopedStrategy() {
 func (s *FakeRuleTestSuite) TestMatches_GlobalWildcard() {
 	rule := NewFakeRule("*", nil)
 
-	s.True(rule.Matches(s.makeRequest("https://google.com"), "any"))
-	s.True(rule.Matches(s.makeRequest("https://facebook.com"), "other"))
+	s.True(rule.Matches(s.makeRequest("https://github.com"), "any"))
+	s.True(rule.Matches(s.makeRequest("https://gitlab.com"), "other"))
 }
 
 func (s *FakeRuleTestSuite) TestCompileWildcard() {
@@ -65,35 +87,36 @@ func (s *FakeRuleTestSuite) TestCompileWildcard() {
 			},
 			shouldFail: []string{
 				"https://google.com",
-				"https://api.github.com.evil.com", // Validates dot escaping
+				// Validates dot escaping (prevents apiXgithubXcom)
+				"https://apiXgithubXcom/users",
 			},
 		},
 		{
 			name:    "Explicit Scheme: Should strictly match the provided scheme",
-			pattern: "https://secure.com/*",
+			pattern: "https://secure.github.com/*",
 			shouldMatch: []string{
-				"https://secure.com/login",
+				"https://secure.github.com/login",
 			},
 			shouldFail: []string{
-				"http://secure.com/login",
+				"http://secure.github.com/login",
 			},
 		},
 		{
 			name:    "Path Wildcard: Should match anywhere in the path",
 			pattern: "*/users/*",
 			shouldMatch: []string{
-				"https://example.com/users/1",
+				"https://github.com/users/1",
 				"http://localhost/users/create",
 			},
 			shouldFail: []string{
-				"https://example.com/posts/1",
+				"https://github.com/posts/1",
 			},
 		},
 		{
 			name:    "Global Catch-All: Should match absolutely anything",
 			pattern: "*",
 			shouldMatch: []string{
-				"https://google.com",
+				"https://github.com",
 				"random string",
 				"",
 			},
@@ -101,13 +124,13 @@ func (s *FakeRuleTestSuite) TestCompileWildcard() {
 		},
 		{
 			name:    "Dot Escaping Security Check: '.' should not match other chars",
-			pattern: "goravel.com",
+			pattern: "github.com",
 			shouldMatch: []string{
-				"https://goravel.com",
-				"http://goravel.com",
+				"https://github.com",
+				"http://github.com",
 			},
 			shouldFail: []string{
-				"https://goravelocom", // Ensures '.' is treated as literal dot, not regex 'any char'
+				"https://githubXcom", // Ensures '.' is treated as literal dot
 			},
 		},
 	}
