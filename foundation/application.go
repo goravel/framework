@@ -65,7 +65,7 @@ type Application struct {
 	publishes          map[string]map[string]string
 	publishGroups      map[string]map[string]string
 	json               foundation.Json
-	runnerNames        []string
+	bootedRunnerNames  []string
 	runnerWg           sync.WaitGroup
 }
 
@@ -177,11 +177,11 @@ func (r *Application) Start(runners ...foundation.Runner) foundation.Application
 		if serviceProviderWithRunners, ok := serviceProvider.(foundation.ServiceProviderWithRunners); ok {
 			for _, runner := range serviceProviderWithRunners.Runners(r) {
 				runnerName := fmt.Sprintf("%T", runner)
-				if slices.Contains(r.runnerNames, runnerName) {
+				if slices.Contains(r.bootedRunnerNames, runnerName) {
 					continue
 				}
 
-				r.runnerNames = append(r.runnerNames, runnerName)
+				r.bootedRunnerNames = append(r.bootedRunnerNames, runnerName)
 
 				if runner.ShouldRun() {
 					runnersToRun = append(runnersToRun, &RunnerWithInfo{name: runnerName, runner: runner, running: false})
@@ -192,11 +192,11 @@ func (r *Application) Start(runners ...foundation.Runner) foundation.Application
 
 	for _, runner := range runners {
 		runnerName := fmt.Sprintf("%T", runner)
-		if slices.Contains(r.runnerNames, runnerName) {
+		if slices.Contains(r.bootedRunnerNames, runnerName) {
 			continue
 		}
 
-		r.runnerNames = append(r.runnerNames, runnerName)
+		r.bootedRunnerNames = append(r.bootedRunnerNames, runnerName)
 
 		if runner.ShouldRun() {
 			runnersToRun = append(runnersToRun, &RunnerWithInfo{name: runnerName, runner: runner, running: false})

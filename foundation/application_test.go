@@ -147,7 +147,7 @@ func (s *ApplicationTestSuite) TestStart() {
 			}).Once()
 
 			s.app.providerRepository = mockRepo
-			s.app.runnerNames = nil
+			s.app.bootedRunnerNames = nil
 			app := s.app.Start()
 
 			go func() {
