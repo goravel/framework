@@ -51,9 +51,9 @@ func NewApplicationBuilder(app foundation.Application) *ApplicationBuilder {
 
 func (r *ApplicationBuilder) Create() foundation.Application {
 	r.configurePaths()
+	r.configureCustomConfig()
 	r.configureServiceProviders()
 	r.registerServiceProviders()
-	r.configureCustomConfig()
 	r.configureMiddleware()
 	r.configureEventListeners()
 	r.configureCommands()
