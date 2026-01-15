@@ -475,13 +475,15 @@ func (r *Query) Load(model any, relation string, args ...any) error {
 	copyDest := copyStruct(model)
 	err := r.With(relation, args...).Find(model)
 
+	relationRoot := strings.SplitN(relation, ".", 2)[0]
+
 	t := destType.Elem()
 	v := reflect.ValueOf(model).Elem()
 	for i := 0; i < t.NumField(); i++ {
 		if !t.Field(i).IsExported() {
 			continue
 		}
-		if t.Field(i).Name != relation {
+		if t.Field(i).Name != relationRoot {
 			v.Field(i).Set(copyDest.Field(i))
 		}
 	}
