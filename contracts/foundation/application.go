@@ -59,9 +59,12 @@ type Application interface {
 	// Context gets the application context.
 	Context() context.Context
 	// GetJson get the JSON implementation.
+	// DEPERATED, use Json instead.
 	GetJson() Json
 	// IsLocale get the current application locale.
 	IsLocale(ctx context.Context, locale string) bool
+	// Json gets the JSON implementation.
+	Json() Json
 	// Publishes register the given paths to be published by the "vendor:publish" command.
 	Publishes(packageName string, paths map[string]string, groups ...string)
 	// Refresh all modules after changing config, will call the Boot method simultaneously.

@@ -51,6 +51,8 @@ type ApplicationBuilder interface {
 	WithRouting(func()) ApplicationBuilder
 	// WithRules registers the custom validation rules.
 	WithRules(func() []validation.Rule) ApplicationBuilder
+	// WithRunners registers the application's runners.
+	WithRunners(func() []Runner) ApplicationBuilder
 	// WithSchedule sets scheduled events for the application.
 	WithSchedule(func() []schedule.Event) ApplicationBuilder
 	// WithSeeders registers the database seeders.

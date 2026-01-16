@@ -138,6 +138,10 @@ func (r *Application) IsLocale(ctx context.Context, locale string) bool {
 	return r.CurrentLocale(ctx) == locale
 }
 
+func (r *Application) Json() foundation.Json {
+	return r.json
+}
+
 func (r *Application) Publishes(packageName string, paths map[string]string, groups ...string) {
 	if _, exist := r.publishes[packageName]; !exist {
 		r.publishes[packageName] = make(map[string]string)

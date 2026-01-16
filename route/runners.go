@@ -22,7 +22,25 @@ func (r *RouteRunner) ShouldRun() bool {
 }
 
 func (r *RouteRunner) Run() error {
-	return r.route.Run()
+	host := r.config.GetString("http.host")
+	port := r.config.GetString("http.port")
+
+	if host != "" && port != "" {
+		if err := r.route.Run(); err != nil {
+			return err
+		}
+	}
+
+	tlsHost := r.config.GetString("http.tls.host")
+	tlsPort := r.config.GetString("http.tls.port")
+
+	if tlsHost != "" && tlsPort != "" && port != tlsPort {
+		if err := r.route.RunTLS(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (r *RouteRunner) Shutdown() error {

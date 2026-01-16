@@ -39,6 +39,7 @@ type ApplicationBuilder struct {
 	paths                      func(paths contractsconfiguration.Paths)
 	routes                     func()
 	rules                      func() []validation.Rule
+	runners                    func() []foundation.Runner
 	schedule                   func() []schedule.Event
 	seeders                    func() []seeder.Seeder
 }
@@ -71,7 +72,12 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 }
 
 func (r *ApplicationBuilder) Start() foundation.Application {
-	return r.Create().Start()
+	var runners []foundation.Runner
+	if r.runners != nil {
+		runners = r.runners()
+	}
+
+	return r.Create().Start(runners...)
 }
 
 func (r *ApplicationBuilder) WithCallback(callback func()) foundation.ApplicationBuilder {
@@ -166,6 +172,12 @@ func (r *ApplicationBuilder) WithRouting(fn func()) foundation.ApplicationBuilde
 
 func (r *ApplicationBuilder) WithRules(fn func() []validation.Rule) foundation.ApplicationBuilder {
 	r.rules = fn
+
+	return r
+}
+
+func (r *ApplicationBuilder) WithRunners(fn func() []foundation.Runner) foundation.ApplicationBuilder {
+	r.runners = fn
 
 	return r
 }
