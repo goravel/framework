@@ -52,7 +52,7 @@ func (s *ApplicationTestSuite) TestSendMail() {
 		Send())
 }
 
-func (s *ApplicationTestSuite) TestSendMailViaTempalte() {
+func (s *ApplicationTestSuite) TestSendMailViaTemplate() {
 	s.mockConfig = mockConfig(465)
 
 	app, err := NewApplication(s.mockConfig, nil)
