@@ -35,6 +35,7 @@ func (s *RouteRunnerTestSuite) TestNewRouteRunner() {
 
 func (s *RouteRunnerTestSuite) TestShouldRun_WhenRouteNotNilAndDefaultConfigSet() {
 	s.mockConfig.EXPECT().GetString("http.default").Return("gin").Once()
+	s.mockConfig.EXPECT().GetBool("app.auto_run", true).Return(true).Once()
 
 	result := s.runner.ShouldRun()
 
@@ -59,10 +60,26 @@ func (s *RouteRunnerTestSuite) TestShouldRun_WhenDefaultConfigEmpty() {
 }
 
 func (s *RouteRunnerTestSuite) TestRun_SuccessfullyRunHTTPServerOnly() {
-	s.mockConfig.EXPECT().GetString("http.host").Return("127.0.0.1").Once()
-	s.mockConfig.EXPECT().GetString("http.port").Return("3000").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.host").Return("").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.port").Return("").Once()
+	s.mockConfig.EXPECT().GetString("http.tls.ssl.cert").Return("").Once()
+	s.mockConfig.EXPECT().GetString("http.tls.ssl.key").Return("").Once()
+	s.mockConfig.EXPECT().GetString("http.host").Return("127.0.0.1").Once()
+	s.mockConfig.EXPECT().GetString("http.port").Return("3000").Once()
+	s.mockRoute.EXPECT().Run().Return(nil).Once()
+
+	err := s.runner.Run()
+
+	s.NoError(err)
+}
+
+func (s *RouteRunnerTestSuite) TestRun_SuccessfullyRunHTTPServerOnly_PortsAreTheSame() {
+	s.mockConfig.EXPECT().GetString("http.tls.host").Return("").Once()
+	s.mockConfig.EXPECT().GetString("http.tls.port").Return("3000").Once()
+	s.mockConfig.EXPECT().GetString("http.tls.ssl.cert").Return("").Once()
+	s.mockConfig.EXPECT().GetString("http.tls.ssl.key").Return("").Once()
+	s.mockConfig.EXPECT().GetString("http.host").Return("127.0.0.1").Once()
+	s.mockConfig.EXPECT().GetString("http.port").Return("3000").Once()
 	s.mockRoute.EXPECT().Run().Return(nil).Once()
 
 	err := s.runner.Run()
@@ -71,12 +88,14 @@ func (s *RouteRunnerTestSuite) TestRun_SuccessfullyRunHTTPServerOnly() {
 }
 
 func (s *RouteRunnerTestSuite) TestRun_SuccessfullyRunBothHTTPAndHTTPSServers() {
-	s.mockConfig.EXPECT().GetString("http.host").Return("127.0.0.1").Once()
-	s.mockConfig.EXPECT().GetString("http.port").Return("3000").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.host").Return("127.0.0.1").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.port").Return("3001").Once()
-	s.mockRoute.EXPECT().Run().Return(nil).Once()
+	s.mockConfig.EXPECT().GetString("http.tls.ssl.cert").Return("/path/to/cert").Once()
+	s.mockConfig.EXPECT().GetString("http.tls.ssl.key").Return("/path/to/key").Once()
 	s.mockRoute.EXPECT().RunTLS().Return(nil).Once()
+	s.mockConfig.EXPECT().GetString("http.host").Return("127.0.0.1").Once()
+	s.mockConfig.EXPECT().GetString("http.port").Return("3000").Once()
+	s.mockRoute.EXPECT().Run().Return(nil).Once()
 
 	err := s.runner.Run()
 
@@ -84,6 +103,10 @@ func (s *RouteRunnerTestSuite) TestRun_SuccessfullyRunBothHTTPAndHTTPSServers() 
 }
 
 func (s *RouteRunnerTestSuite) TestRun_ErrorWhenHTTPServerFailsToStart() {
+	s.mockConfig.EXPECT().GetString("http.tls.host").Return("").Once()
+	s.mockConfig.EXPECT().GetString("http.tls.port").Return("").Once()
+	s.mockConfig.EXPECT().GetString("http.tls.ssl.cert").Return("").Once()
+	s.mockConfig.EXPECT().GetString("http.tls.ssl.key").Return("").Once()
 	s.mockConfig.EXPECT().GetString("http.host").Return("127.0.0.1").Once()
 	s.mockConfig.EXPECT().GetString("http.port").Return("3000").Once()
 	s.mockRoute.EXPECT().Run().Return(assert.AnError).Once()
@@ -95,11 +118,10 @@ func (s *RouteRunnerTestSuite) TestRun_ErrorWhenHTTPServerFailsToStart() {
 }
 
 func (s *RouteRunnerTestSuite) TestRun_ErrorWhenHTTPSServerFailsToStart() {
-	s.mockConfig.EXPECT().GetString("http.host").Return("127.0.0.1").Once()
-	s.mockConfig.EXPECT().GetString("http.port").Return("3000").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.host").Return("127.0.0.1").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.port").Return("3001").Once()
-	s.mockRoute.EXPECT().Run().Return(nil).Once()
+	s.mockConfig.EXPECT().GetString("http.tls.ssl.cert").Return("/path/to/cert").Once()
+	s.mockConfig.EXPECT().GetString("http.tls.ssl.key").Return("/path/to/key").Once()
 	s.mockRoute.EXPECT().RunTLS().Return(assert.AnError).Once()
 
 	err := s.runner.Run()
@@ -109,10 +131,12 @@ func (s *RouteRunnerTestSuite) TestRun_ErrorWhenHTTPSServerFailsToStart() {
 }
 
 func (s *RouteRunnerTestSuite) TestRun_SkipHTTPServerWhenHostIsEmpty() {
-	s.mockConfig.EXPECT().GetString("http.host").Return("").Once()
-	s.mockConfig.EXPECT().GetString("http.port").Return("3000").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.host").Return("").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.port").Return("").Once()
+	s.mockConfig.EXPECT().GetString("http.tls.ssl.cert").Return("").Once()
+	s.mockConfig.EXPECT().GetString("http.tls.ssl.key").Return("").Once()
+	s.mockConfig.EXPECT().GetString("http.host").Return("").Once()
+	s.mockConfig.EXPECT().GetString("http.port").Return("3000").Once()
 
 	err := s.runner.Run()
 
@@ -120,10 +144,12 @@ func (s *RouteRunnerTestSuite) TestRun_SkipHTTPServerWhenHostIsEmpty() {
 }
 
 func (s *RouteRunnerTestSuite) TestRun_SkipHTTPServerWhenPortIsEmpty() {
-	s.mockConfig.EXPECT().GetString("http.host").Return("127.0.0.1").Once()
-	s.mockConfig.EXPECT().GetString("http.port").Return("").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.host").Return("").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.port").Return("").Once()
+	s.mockConfig.EXPECT().GetString("http.tls.ssl.cert").Return("").Once()
+	s.mockConfig.EXPECT().GetString("http.tls.ssl.key").Return("").Once()
+	s.mockConfig.EXPECT().GetString("http.host").Return("127.0.0.1").Once()
+	s.mockConfig.EXPECT().GetString("http.port").Return("").Once()
 
 	err := s.runner.Run()
 
@@ -131,10 +157,12 @@ func (s *RouteRunnerTestSuite) TestRun_SkipHTTPServerWhenPortIsEmpty() {
 }
 
 func (s *RouteRunnerTestSuite) TestRun_SkipHTTPSServerWhenTLSHostIsEmpty() {
-	s.mockConfig.EXPECT().GetString("http.host").Return("127.0.0.1").Once()
-	s.mockConfig.EXPECT().GetString("http.port").Return("3000").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.host").Return("").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.port").Return("3001").Once()
+	s.mockConfig.EXPECT().GetString("http.tls.ssl.cert").Return("/path/to/cert").Once()
+	s.mockConfig.EXPECT().GetString("http.tls.ssl.key").Return("/path/to/key").Once()
+	s.mockConfig.EXPECT().GetString("http.host").Return("127.0.0.1").Once()
+	s.mockConfig.EXPECT().GetString("http.port").Return("3000").Once()
 	s.mockRoute.EXPECT().Run().Return(nil).Once()
 
 	err := s.runner.Run()
@@ -143,10 +171,12 @@ func (s *RouteRunnerTestSuite) TestRun_SkipHTTPSServerWhenTLSHostIsEmpty() {
 }
 
 func (s *RouteRunnerTestSuite) TestRun_SkipHTTPSServerWhenTLSPortIsEmpty() {
-	s.mockConfig.EXPECT().GetString("http.host").Return("127.0.0.1").Once()
-	s.mockConfig.EXPECT().GetString("http.port").Return("3000").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.host").Return("127.0.0.1").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.port").Return("").Once()
+	s.mockConfig.EXPECT().GetString("http.tls.ssl.cert").Return("/path/to/cert").Once()
+	s.mockConfig.EXPECT().GetString("http.tls.ssl.key").Return("/path/to/key").Once()
+	s.mockConfig.EXPECT().GetString("http.host").Return("127.0.0.1").Once()
+	s.mockConfig.EXPECT().GetString("http.port").Return("3000").Once()
 	s.mockRoute.EXPECT().Run().Return(nil).Once()
 
 	err := s.runner.Run()
@@ -154,12 +184,14 @@ func (s *RouteRunnerTestSuite) TestRun_SkipHTTPSServerWhenTLSPortIsEmpty() {
 	s.NoError(err)
 }
 
-func (s *RouteRunnerTestSuite) TestRun_SkipHTTPSServerWhenTLSPortEqualsHTTPPort() {
-	s.mockConfig.EXPECT().GetString("http.host").Return("127.0.0.1").Once()
-	s.mockConfig.EXPECT().GetString("http.port").Return("3000").Once()
+func (s *RouteRunnerTestSuite) TestRun_SkipHTTPServerWhenTLSPortEqualsHTTPPort() {
 	s.mockConfig.EXPECT().GetString("http.tls.host").Return("127.0.0.1").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.port").Return("3000").Once()
-	s.mockRoute.EXPECT().Run().Return(nil).Once()
+	s.mockConfig.EXPECT().GetString("http.tls.ssl.cert").Return("/path/to/cert").Once()
+	s.mockConfig.EXPECT().GetString("http.tls.ssl.key").Return("/path/to/key").Once()
+	s.mockRoute.EXPECT().RunTLS().Return(nil).Once()
+	s.mockConfig.EXPECT().GetString("http.host").Return("127.0.0.1").Once()
+	s.mockConfig.EXPECT().GetString("http.port").Return("3000").Once()
 
 	err := s.runner.Run()
 
@@ -186,15 +218,18 @@ func (s *RouteRunnerTestSuite) TestShutdown_ErrorDuringShutdown() {
 func (s *RouteRunnerTestSuite) TestIntegration_FullLifecycle() {
 	// Test ShouldRun
 	s.mockConfig.EXPECT().GetString("http.default").Return("gin").Once()
+	s.mockConfig.EXPECT().GetBool("app.auto_run", true).Return(true).Once()
 	s.True(s.runner.ShouldRun())
 
 	// Test Run
-	s.mockConfig.EXPECT().GetString("http.host").Return("127.0.0.1").Once()
-	s.mockConfig.EXPECT().GetString("http.port").Return("3000").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.host").Return("127.0.0.1").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.port").Return("3001").Once()
-	s.mockRoute.EXPECT().Run().Return(nil).Once()
+	s.mockConfig.EXPECT().GetString("http.tls.ssl.cert").Return("/path/to/cert").Once()
+	s.mockConfig.EXPECT().GetString("http.tls.ssl.key").Return("/path/to/key").Once()
 	s.mockRoute.EXPECT().RunTLS().Return(nil).Once()
+	s.mockConfig.EXPECT().GetString("http.host").Return("127.0.0.1").Once()
+	s.mockConfig.EXPECT().GetString("http.port").Return("3000").Once()
+	s.mockRoute.EXPECT().Run().Return(nil).Once()
 	err := s.runner.Run()
 	s.NoError(err)
 

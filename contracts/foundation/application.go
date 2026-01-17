@@ -34,6 +34,7 @@ import (
 )
 
 type Runner interface {
+	Signature() string
 	ShouldRun() bool
 	Run() error
 	Shutdown() error
@@ -59,7 +60,7 @@ type Application interface {
 	// Context gets the application context.
 	Context() context.Context
 	// GetJson get the JSON implementation.
-	// DEPERATED, use Json instead.
+	// DEPRECATED, use Json instead.
 	GetJson() Json
 	// IsLocale get the current application locale.
 	IsLocale(ctx context.Context, locale string) bool

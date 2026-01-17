@@ -24,10 +24,17 @@ func NewQueueRunner(config config.Config, queue contractsqueue.Queue) *QueueRunn
 	}
 }
 
+func (r *QueueRunner) Signature() string {
+	return "queue"
+}
+
 func (r *QueueRunner) ShouldRun() bool {
 	connection := r.config.GetString("queue.default")
 
-	return r.worker != nil && connection != "" && r.config.GetString(fmt.Sprintf("queue.connections.%s.driver", connection)) != SyncDriverName
+	return r.worker != nil &&
+		connection != "" &&
+		r.config.GetString(fmt.Sprintf("queue.connections.%s.driver", connection)) != SyncDriverName &&
+		r.config.GetBool("app.auto_run", true)
 }
 
 func (r *QueueRunner) Run() error {
