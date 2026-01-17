@@ -31,9 +31,9 @@ func init() {
 		// HTTPS Configuration
 		"tls": map[string]any{
 			// HTTPS Host
-			"host": config.Env("APP_HOST", "127.0.0.1"),
+			"host": config.Env("APP_HOST"),
 			// HTTPS Port
-			"port": config.Env("APP_PORT", "3000"),
+			"port": config.Env("APP_PORT"),
 			// SSL Certificate, you can put the certificate in /public folder
 			"ssl": map[string]any{
 				// ca.pem

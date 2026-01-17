@@ -67,7 +67,7 @@ func TestTokenMatch(t *testing.T) {
 			} else {
 				mockCtx.EXPECT().Request().Return(mockRequest).Once()
 			}
-			result := tokenMatch(mockCtx)
+			result := isTokenMatch(mockCtx)
 			assert.Equal(t, tt.expectedMatch, result)
 		})
 	}
@@ -102,7 +102,7 @@ func TestInExceptArray(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := inExceptArray(tt.excepts, tt.currentPath)
+			result := isExcept(tt.excepts, tt.currentPath)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
