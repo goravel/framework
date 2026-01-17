@@ -27,7 +27,8 @@ func (r *RouteRunner) Run() error {
 	certFile := r.config.GetString("http.tls.ssl.cert")
 	keyFile := r.config.GetString("http.tls.ssl.key")
 
-	if tlsHost != "" && tlsPort != "" && certFile != "" && keyFile != "" {
+	tlsShouldRun := tlsHost != "" && tlsPort != "" && certFile != "" && keyFile != ""
+	if tlsShouldRun {
 		if err := r.route.RunTLS(); err != nil {
 			return err
 		}
@@ -36,7 +37,7 @@ func (r *RouteRunner) Run() error {
 	host := r.config.GetString("http.host")
 	port := r.config.GetString("http.port")
 
-	if host != "" && port != "" && port != tlsPort {
+	if host != "" && port != "" && (!tlsShouldRun || port != tlsPort) {
 		if err := r.route.Run(); err != nil {
 			return err
 		}

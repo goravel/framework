@@ -73,6 +73,20 @@ func (s *RouteRunnerTestSuite) TestRun_SuccessfullyRunHTTPServerOnly() {
 	s.NoError(err)
 }
 
+func (s *RouteRunnerTestSuite) TestRun_SuccessfullyRunHTTPServerOnly_PortsAreTheSame() {
+	s.mockConfig.EXPECT().GetString("http.tls.host").Return("").Once()
+	s.mockConfig.EXPECT().GetString("http.tls.port").Return("3000").Once()
+	s.mockConfig.EXPECT().GetString("http.tls.ssl.cert").Return("").Once()
+	s.mockConfig.EXPECT().GetString("http.tls.ssl.key").Return("").Once()
+	s.mockConfig.EXPECT().GetString("http.host").Return("127.0.0.1").Once()
+	s.mockConfig.EXPECT().GetString("http.port").Return("3000").Once()
+	s.mockRoute.EXPECT().Run().Return(nil).Once()
+
+	err := s.runner.Run()
+
+	s.NoError(err)
+}
+
 func (s *RouteRunnerTestSuite) TestRun_SuccessfullyRunBothHTTPAndHTTPSServers() {
 	s.mockConfig.EXPECT().GetString("http.tls.host").Return("127.0.0.1").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.port").Return("3001").Once()
