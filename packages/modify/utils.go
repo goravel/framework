@@ -388,7 +388,7 @@ func RemoveProvider(pkg, provider string) error {
 func RemoveRoute(pkg, route string) error {
 	appFilePath := path.Bootstrap("app.go")
 
-	return GoFile(appFilePath).Find(match.FoundationSetup()).Modify(removeRouteFromSetup(route)).Apply()
+	return GoFile(appFilePath).Find(match.FoundationSetup()).Modify(removeRouteFromSetup(route)).Find(match.Imports()).Modify(RemoveImport(pkg)).Apply()
 }
 
 // WrapNewline adds newline decorations to specific AST nodes for better formatting.
