@@ -1,21 +1,24 @@
 package schedule
 
 import (
+	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/schedule"
 )
 
 type ScheduleRunner struct {
+	config   config.Config
 	schedule schedule.Schedule
 }
 
-func NewScheduleRunner(schedule schedule.Schedule) *ScheduleRunner {
+func NewScheduleRunner(config config.Config, schedule schedule.Schedule) *ScheduleRunner {
 	return &ScheduleRunner{
+		config:   config,
 		schedule: schedule,
 	}
 }
 
 func (r *ScheduleRunner) ShouldRun() bool {
-	return r.schedule != nil && len(r.schedule.Events()) > 0
+	return r.schedule != nil && len(r.schedule.Events()) > 0 && r.config.GetBool("app.auto_run", true)
 }
 
 func (r *ScheduleRunner) Run() error {
