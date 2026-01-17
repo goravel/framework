@@ -4,6 +4,27 @@ import "strings"
 
 type Stubs struct{}
 
+func (s Stubs) Controller() string {
+	return `package controllers
+
+import (
+	"github.com/goravel/framework/contracts/http"
+)
+
+type UserController struct {}
+
+func NewUserController() *UserController {
+	return &UserController{}
+}
+
+func (r *UserController) Index(ctx http.Context) http.Response {
+	return ctx.Response().Success().Json(http.Json{
+		"Hello": "Goravel",
+	})
+}
+`
+}
+
 func (s Stubs) CorsConfig(pkg, facadesImport, facadesPackage string) string {
 	content := `package DummyPackage
 
@@ -105,13 +126,14 @@ func Route() route.Route {
 	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }
 
-func (s Stubs) Routes(pkg, facadesImport, facadesPackage string) string {
+func (s Stubs) Routes(pkg, appImport, facadesImport, facadesPackage string) string {
 	content := `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/support"
 
+	"DummyAppImport/http/controllers"
 	"DummyFacadesImport"
 )
 
@@ -121,10 +143,16 @@ func Web() {
 			"version": support.Version,
 		})
 	})
+
+	DummyFacadesPackage.Route().Static("public", "./public")
+
+	userController := controllers.NewUserController()
+	DummyFacadesPackage.Route().Get("/users", userController.Index)
 }
 `
 
 	content = strings.ReplaceAll(content, "DummyPackage", pkg)
+	content = strings.ReplaceAll(content, "DummyAppImport", appImport)
 	content = strings.ReplaceAll(content, "DummyFacadesImport", facadesImport)
 	content = strings.ReplaceAll(content, "DummyFacadesPackage", facadesPackage)
 
