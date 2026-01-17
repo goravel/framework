@@ -17,6 +17,10 @@ func NewScheduleRunner(config config.Config, schedule schedule.Schedule) *Schedu
 	}
 }
 
+func (r *ScheduleRunner) Signature() string {
+	return "schedule"
+}
+
 func (r *ScheduleRunner) ShouldRun() bool {
 	return r.schedule != nil && len(r.schedule.Events()) > 0 && r.config.GetBool("app.auto_run", true)
 }

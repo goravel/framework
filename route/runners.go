@@ -17,6 +17,10 @@ func NewRouteRunner(config config.Config, route route.Route) *RouteRunner {
 	}
 }
 
+func (r *RouteRunner) Signature() string {
+	return "route"
+}
+
 func (r *RouteRunner) ShouldRun() bool {
 	return r.route != nil && r.config.GetString("http.default") != "" && r.config.GetBool("app.auto_run", true)
 }

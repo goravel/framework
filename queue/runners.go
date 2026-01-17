@@ -24,6 +24,10 @@ func NewQueueRunner(config config.Config, queue contractsqueue.Queue) *QueueRunn
 	}
 }
 
+func (r *QueueRunner) Signature() string {
+	return "queue"
+}
+
 func (r *QueueRunner) ShouldRun() bool {
 	connection := r.config.GetString("queue.default")
 

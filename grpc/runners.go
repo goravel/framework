@@ -17,6 +17,10 @@ func NewGrpcRunner(config config.Config, grpc grpc.Grpc) *GrpcRunner {
 	}
 }
 
+func (r *GrpcRunner) Signature() string {
+	return "grpc"
+}
+
 func (r *GrpcRunner) ShouldRun() bool {
 	return r.grpc != nil && r.config.GetString("grpc.host") != "" && r.config.GetBool("app.auto_run", true)
 }

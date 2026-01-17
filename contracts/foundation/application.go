@@ -34,6 +34,7 @@ import (
 )
 
 type Runner interface {
+	Signature() string
 	ShouldRun() bool
 	Run() error
 	Shutdown() error

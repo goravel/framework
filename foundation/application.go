@@ -3,7 +3,6 @@ package foundation
 import (
 	"context"
 	"flag"
-	"fmt"
 	"maps"
 	"os"
 	"os/signal"
@@ -65,7 +64,7 @@ type Application struct {
 	publishes          map[string]map[string]string
 	publishGroups      map[string]map[string]string
 	json               foundation.Json
-	bootedRunnerNames  []string
+	bootedRunners      []string
 	runnerWg           sync.WaitGroup
 }
 
@@ -170,9 +169,9 @@ func (r *Application) RegisterServiceProviders() {
 
 func (r *Application) Start(runners ...foundation.Runner) foundation.Application {
 	type RunnerWithInfo struct {
-		name    string
-		runner  foundation.Runner
-		running bool
+		signature string
+		runner    foundation.Runner
+		running   bool
 	}
 
 	var runnersToRun []*RunnerWithInfo
@@ -180,30 +179,30 @@ func (r *Application) Start(runners ...foundation.Runner) foundation.Application
 	for _, serviceProvider := range r.providerRepository.GetBooted() {
 		if serviceProviderWithRunners, ok := serviceProvider.(foundation.ServiceProviderWithRunners); ok {
 			for _, runner := range serviceProviderWithRunners.Runners(r) {
-				runnerName := fmt.Sprintf("%T", runner)
-				if slices.Contains(r.bootedRunnerNames, runnerName) {
+				signature := runner.Signature()
+				if slices.Contains(r.bootedRunners, signature) {
 					continue
 				}
 
-				r.bootedRunnerNames = append(r.bootedRunnerNames, runnerName)
+				r.bootedRunners = append(r.bootedRunners, signature)
 
 				if runner.ShouldRun() {
-					runnersToRun = append(runnersToRun, &RunnerWithInfo{name: runnerName, runner: runner, running: false})
+					runnersToRun = append(runnersToRun, &RunnerWithInfo{signature: signature, runner: runner, running: false})
 				}
 			}
 		}
 	}
 
 	for _, runner := range runners {
-		runnerName := fmt.Sprintf("%T", runner)
-		if slices.Contains(r.bootedRunnerNames, runnerName) {
+		signature := runner.Signature()
+		if slices.Contains(r.bootedRunners, signature) {
 			continue
 		}
 
-		r.bootedRunnerNames = append(r.bootedRunnerNames, runnerName)
+		r.bootedRunners = append(r.bootedRunners, signature)
 
 		if runner.ShouldRun() {
-			runnersToRun = append(runnersToRun, &RunnerWithInfo{name: runnerName, runner: runner, running: false})
+			runnersToRun = append(runnersToRun, &RunnerWithInfo{signature: signature, runner: runner, running: false})
 		}
 	}
 
@@ -215,7 +214,7 @@ func (r *Application) Start(runners ...foundation.Runner) foundation.Application
 			if err := runner.runner.Run(); err != nil {
 				r.runnerWg.Done()
 				runner.running = false
-				color.Errorf("%s Run error: %v\n", runner.name, err)
+				color.Errorf("failed to run %s: %v\n", runner.signature, err)
 			}
 		}()
 
@@ -226,7 +225,7 @@ func (r *Application) Start(runners ...foundation.Runner) foundation.Application
 			}
 
 			if err := runner.runner.Shutdown(); err != nil {
-				color.Errorf("%s Shutdown error: %v\n", runner.name, err)
+				color.Errorf("failed to shutdown %s: %v\n", runner.signature, err)
 			}
 
 			r.runnerWg.Done()
