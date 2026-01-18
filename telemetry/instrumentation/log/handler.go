@@ -14,12 +14,12 @@ import (
 var _ contractslog.Handler = (*handler)(nil)
 
 type handler struct {
-	telemetry      contractstelemetry.Telemetry
+	resolver       contractstelemetry.Resolver  // The un-executed function
+	telemetry      contractstelemetry.Telemetry // The cached instance
 	enabled        bool
 	instrumentName string
-
-	logger otellog.Logger
-	mu     sync.Mutex
+	logger         otellog.Logger
+	mu             sync.Mutex
 }
 
 func (r *handler) Enabled(level contractslog.Level) bool {
@@ -52,6 +52,10 @@ func (r *handler) getLogger() otellog.Logger {
 
 	if r.logger != nil {
 		return r.logger
+	}
+
+	if r.telemetry == nil && r.resolver != nil {
+		r.telemetry = r.resolver()
 	}
 
 	if r.telemetry != nil {

@@ -9,14 +9,20 @@ import (
 const defaultInstrumentationName = "github.com/goravel/framework/telemetry/instrumentation/log"
 
 type TelemetryChannel struct {
-	config    contractsconfig.Config
-	telemetry contractstelemetry.Telemetry
+	config   contractsconfig.Config
+	resolver contractstelemetry.Resolver
 }
 
 func NewTelemetryChannel(config contractsconfig.Config, telemetry contractstelemetry.Telemetry) *TelemetryChannel {
+	return NewLazyTelemetryChannel(config, func() contractstelemetry.Telemetry {
+		return telemetry
+	})
+}
+
+func NewLazyTelemetryChannel(config contractsconfig.Config, resolver contractstelemetry.Resolver) *TelemetryChannel {
 	return &TelemetryChannel{
-		config:    config,
-		telemetry: telemetry,
+		config:   config,
+		resolver: resolver,
 	}
 }
 
@@ -27,7 +33,7 @@ func (r *TelemetryChannel) Handle(channelPath string) (contractslog.Handler, err
 
 	instrumentName := r.config.GetString(channelPath+".instrument_name", defaultInstrumentationName)
 	return &handler{
-		telemetry:      r.telemetry,
+		resolver:       r.resolver,
 		enabled:        true,
 		instrumentName: instrumentName,
 	}, nil

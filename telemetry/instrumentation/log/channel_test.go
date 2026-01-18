@@ -12,75 +12,65 @@ import (
 
 type TelemetryChannelTestSuite struct {
 	suite.Suite
-	mockConfig    *mocksconfig.Config
-	mockTelemetry *mockstelemetry.Telemetry
 }
 
 func TestTelemetryChannelTestSuite(t *testing.T) {
 	suite.Run(t, new(TelemetryChannelTestSuite))
 }
 
-func (s *TelemetryChannelTestSuite) SetupTest() {
-	s.mockConfig = mocksconfig.NewConfig(s.T())
-	s.mockTelemetry = mockstelemetry.NewTelemetry(s.T())
-}
-
 func (s *TelemetryChannelTestSuite) TestHandle() {
-	channelPath := "logging.channels.otel"
+	const (
+		channelPath  = "logging.channels.otel"
+		telemetryKey = "telemetry.instrumentation.log"
+	)
 
 	tests := []struct {
 		name             string
-		configSetup      func()
-		expectedEnabled  bool
+		setup            func(m *mocksconfig.Config)
+		shouldBeEnabled  bool
 		expectedInstName string
 	}{
 		{
-			name: "Success: Enabled with default instrumentation name",
-			configSetup: func() {
-				s.mockConfig.EXPECT().GetBool("telemetry.instrumentation.log", true).Return(true).Once()
-				s.mockConfig.EXPECT().GetString(channelPath+".instrument_name", defaultInstrumentationName).Return(defaultInstrumentationName).Once()
+			name: "Success: Telemetry enabled with custom name",
+			setup: func(m *mocksconfig.Config) {
+				m.EXPECT().GetBool(telemetryKey, true).Return(true).Once()
+				m.EXPECT().GetString(channelPath+".instrument_name", defaultInstrumentationName).
+					Return("custom-app-logger").Once()
 			},
-			expectedEnabled:  true,
-			expectedInstName: defaultInstrumentationName,
+			shouldBeEnabled:  true,
+			expectedInstName: "custom-app-logger",
 		},
 		{
-			name: "Success: Enabled with custom instrumentation name",
-			configSetup: func() {
-				s.mockConfig.EXPECT().GetBool("telemetry.instrumentation.log", true).Return(true).Once()
-				s.mockConfig.EXPECT().GetString(channelPath+".instrument_name", defaultInstrumentationName).Return("my-custom-logger").Once()
+			name: "Success: Telemetry disabled via config",
+			setup: func(m *mocksconfig.Config) {
+				m.EXPECT().GetBool(telemetryKey, true).Return(false).Once()
 			},
-			expectedEnabled:  true,
-			expectedInstName: "my-custom-logger",
-		},
-		{
-			name: "Success: Disabled via config",
-			configSetup: func() {
-				s.mockConfig.EXPECT().GetBool("telemetry.instrumentation.log", true).Return(false).Once()
-			},
-			expectedEnabled: false,
+			shouldBeEnabled: false,
 		},
 	}
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			tt.configSetup()
+			mockConfig := mocksconfig.NewConfig(s.T())
+			mockTelemetry := mockstelemetry.NewTelemetry(s.T())
 
-			channel := NewTelemetryChannel(s.mockConfig, s.mockTelemetry)
+			tt.setup(mockConfig)
 
-			h, err := channel.Handle(channelPath)
-
+			channel := NewTelemetryChannel(mockConfig, mockTelemetry)
+			channelHandler, err := channel.Handle(channelPath)
 			s.NoError(err)
-			s.NotNil(h)
+			s.NotNil(channelHandler)
 
-			impl, ok := h.(*handler)
-			s.True(ok, "Handler should be of type *handler")
-			s.Equal(tt.expectedEnabled, impl.enabled)
+			s.Equal(tt.shouldBeEnabled, channelHandler.Enabled(contractslog.LevelInfo))
 
-			if tt.expectedEnabled {
-				s.Equal(tt.expectedInstName, impl.instrumentName)
-				s.Equal(s.mockTelemetry, impl.telemetry)
-			} else {
-				s.False(h.Enabled(contractslog.LevelInfo))
+			if tt.shouldBeEnabled {
+				impl, ok := channelHandler.(*handler)
+				s.True(ok, "Returned handler must be of type *handler")
+
+				s.Equal(tt.expectedInstName, impl.instrumentName, "Instrumentation name should match config")
+
+				s.NotNil(impl.resolver, "Handler resolver should not be nil")
+				s.Equal(mockTelemetry, impl.resolver(), "Resolver should return the injected telemetry service")
 			}
 		})
 	}

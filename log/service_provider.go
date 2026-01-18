@@ -5,6 +5,7 @@ import (
 
 	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/foundation"
+	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	"github.com/goravel/framework/errors"
 )
 
@@ -32,7 +33,10 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		if json == nil {
 			return nil, errors.JSONParserNotSet.SetModule(errors.ModuleLog)
 		}
-		return NewApplication(context.Background(), nil, config, json)
+		return NewApplication(context.Background(), nil, config, json, func() contractstelemetry.Telemetry {
+			// todo: check if we can omit the warning published by MakeTelemetry method
+			return app.MakeTelemetry()
+		})
 	})
 }
 
