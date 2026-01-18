@@ -87,38 +87,6 @@ func (_c *ApplicationBuilder_Create_Call) RunAndReturn(run func() foundation.App
 	return _c
 }
 
-// Run provides a mock function with no fields
-func (_m *ApplicationBuilder) Run() {
-	_m.Called()
-}
-
-// ApplicationBuilder_Run_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Run'
-type ApplicationBuilder_Run_Call struct {
-	*mock.Call
-}
-
-// Run is a helper method to define mock.On call
-func (_e *ApplicationBuilder_Expecter) Run() *ApplicationBuilder_Run_Call {
-	return &ApplicationBuilder_Run_Call{Call: _e.mock.On("Run")}
-}
-
-func (_c *ApplicationBuilder_Run_Call) Run(run func()) *ApplicationBuilder_Run_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *ApplicationBuilder_Run_Call) Return() *ApplicationBuilder_Run_Call {
-	_c.Call.Return()
-	return _c
-}
-
-func (_c *ApplicationBuilder_Run_Call) RunAndReturn(run func()) *ApplicationBuilder_Run_Call {
-	_c.Run(run)
-	return _c
-}
-
 // Start provides a mock function with no fields
 func (_m *ApplicationBuilder) Start() foundation.Application {
 	ret := _m.Called()
@@ -214,17 +182,17 @@ func (_c *ApplicationBuilder_WithCallback_Call) RunAndReturn(run func(func()) fo
 	return _c
 }
 
-// WithCommands provides a mock function with given fields: commands
-func (_m *ApplicationBuilder) WithCommands(commands []console.Command) foundation.ApplicationBuilder {
-	ret := _m.Called(commands)
+// WithCommands provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithCommands(_a0 func() []console.Command) foundation.ApplicationBuilder {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WithCommands")
 	}
 
 	var r0 foundation.ApplicationBuilder
-	if rf, ok := ret.Get(0).(func([]console.Command) foundation.ApplicationBuilder); ok {
-		r0 = rf(commands)
+	if rf, ok := ret.Get(0).(func(func() []console.Command) foundation.ApplicationBuilder); ok {
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(foundation.ApplicationBuilder)
@@ -240,14 +208,14 @@ type ApplicationBuilder_WithCommands_Call struct {
 }
 
 // WithCommands is a helper method to define mock.On call
-//   - commands []console.Command
-func (_e *ApplicationBuilder_Expecter) WithCommands(commands interface{}) *ApplicationBuilder_WithCommands_Call {
-	return &ApplicationBuilder_WithCommands_Call{Call: _e.mock.On("WithCommands", commands)}
+//   - _a0 func() []console.Command
+func (_e *ApplicationBuilder_Expecter) WithCommands(_a0 interface{}) *ApplicationBuilder_WithCommands_Call {
+	return &ApplicationBuilder_WithCommands_Call{Call: _e.mock.On("WithCommands", _a0)}
 }
 
-func (_c *ApplicationBuilder_WithCommands_Call) Run(run func(commands []console.Command)) *ApplicationBuilder_WithCommands_Call {
+func (_c *ApplicationBuilder_WithCommands_Call) Run(run func(_a0 func() []console.Command)) *ApplicationBuilder_WithCommands_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]console.Command))
+		run(args[0].(func() []console.Command))
 	})
 	return _c
 }
@@ -257,14 +225,14 @@ func (_c *ApplicationBuilder_WithCommands_Call) Return(_a0 foundation.Applicatio
 	return _c
 }
 
-func (_c *ApplicationBuilder_WithCommands_Call) RunAndReturn(run func([]console.Command) foundation.ApplicationBuilder) *ApplicationBuilder_WithCommands_Call {
+func (_c *ApplicationBuilder_WithCommands_Call) RunAndReturn(run func(func() []console.Command) foundation.ApplicationBuilder) *ApplicationBuilder_WithCommands_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// WithConfig provides a mock function with given fields: config
-func (_m *ApplicationBuilder) WithConfig(config func()) foundation.ApplicationBuilder {
-	ret := _m.Called(config)
+// WithConfig provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithConfig(_a0 func()) foundation.ApplicationBuilder {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WithConfig")
@@ -272,7 +240,7 @@ func (_m *ApplicationBuilder) WithConfig(config func()) foundation.ApplicationBu
 
 	var r0 foundation.ApplicationBuilder
 	if rf, ok := ret.Get(0).(func(func()) foundation.ApplicationBuilder); ok {
-		r0 = rf(config)
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(foundation.ApplicationBuilder)
@@ -288,12 +256,12 @@ type ApplicationBuilder_WithConfig_Call struct {
 }
 
 // WithConfig is a helper method to define mock.On call
-//   - config func()
-func (_e *ApplicationBuilder_Expecter) WithConfig(config interface{}) *ApplicationBuilder_WithConfig_Call {
-	return &ApplicationBuilder_WithConfig_Call{Call: _e.mock.On("WithConfig", config)}
+//   - _a0 func()
+func (_e *ApplicationBuilder_Expecter) WithConfig(_a0 interface{}) *ApplicationBuilder_WithConfig_Call {
+	return &ApplicationBuilder_WithConfig_Call{Call: _e.mock.On("WithConfig", _a0)}
 }
 
-func (_c *ApplicationBuilder_WithConfig_Call) Run(run func(config func())) *ApplicationBuilder_WithConfig_Call {
+func (_c *ApplicationBuilder_WithConfig_Call) Run(run func(_a0 func())) *ApplicationBuilder_WithConfig_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(func()))
 	})
@@ -310,17 +278,17 @@ func (_c *ApplicationBuilder_WithConfig_Call) RunAndReturn(run func(func()) foun
 	return _c
 }
 
-// WithEvents provides a mock function with given fields: eventToListeners
-func (_m *ApplicationBuilder) WithEvents(eventToListeners map[event.Event][]event.Listener) foundation.ApplicationBuilder {
-	ret := _m.Called(eventToListeners)
+// WithEvents provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithEvents(_a0 func() map[event.Event][]event.Listener) foundation.ApplicationBuilder {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WithEvents")
 	}
 
 	var r0 foundation.ApplicationBuilder
-	if rf, ok := ret.Get(0).(func(map[event.Event][]event.Listener) foundation.ApplicationBuilder); ok {
-		r0 = rf(eventToListeners)
+	if rf, ok := ret.Get(0).(func(func() map[event.Event][]event.Listener) foundation.ApplicationBuilder); ok {
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(foundation.ApplicationBuilder)
@@ -336,14 +304,14 @@ type ApplicationBuilder_WithEvents_Call struct {
 }
 
 // WithEvents is a helper method to define mock.On call
-//   - eventToListeners map[event.Event][]event.Listener
-func (_e *ApplicationBuilder_Expecter) WithEvents(eventToListeners interface{}) *ApplicationBuilder_WithEvents_Call {
-	return &ApplicationBuilder_WithEvents_Call{Call: _e.mock.On("WithEvents", eventToListeners)}
+//   - _a0 func() map[event.Event][]event.Listener
+func (_e *ApplicationBuilder_Expecter) WithEvents(_a0 interface{}) *ApplicationBuilder_WithEvents_Call {
+	return &ApplicationBuilder_WithEvents_Call{Call: _e.mock.On("WithEvents", _a0)}
 }
 
-func (_c *ApplicationBuilder_WithEvents_Call) Run(run func(eventToListeners map[event.Event][]event.Listener)) *ApplicationBuilder_WithEvents_Call {
+func (_c *ApplicationBuilder_WithEvents_Call) Run(run func(_a0 func() map[event.Event][]event.Listener)) *ApplicationBuilder_WithEvents_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(map[event.Event][]event.Listener))
+		run(args[0].(func() map[event.Event][]event.Listener))
 	})
 	return _c
 }
@@ -353,22 +321,22 @@ func (_c *ApplicationBuilder_WithEvents_Call) Return(_a0 foundation.ApplicationB
 	return _c
 }
 
-func (_c *ApplicationBuilder_WithEvents_Call) RunAndReturn(run func(map[event.Event][]event.Listener) foundation.ApplicationBuilder) *ApplicationBuilder_WithEvents_Call {
+func (_c *ApplicationBuilder_WithEvents_Call) RunAndReturn(run func(func() map[event.Event][]event.Listener) foundation.ApplicationBuilder) *ApplicationBuilder_WithEvents_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// WithFilters provides a mock function with given fields: filters
-func (_m *ApplicationBuilder) WithFilters(filters []validation.Filter) foundation.ApplicationBuilder {
-	ret := _m.Called(filters)
+// WithFilters provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithFilters(_a0 func() []validation.Filter) foundation.ApplicationBuilder {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WithFilters")
 	}
 
 	var r0 foundation.ApplicationBuilder
-	if rf, ok := ret.Get(0).(func([]validation.Filter) foundation.ApplicationBuilder); ok {
-		r0 = rf(filters)
+	if rf, ok := ret.Get(0).(func(func() []validation.Filter) foundation.ApplicationBuilder); ok {
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(foundation.ApplicationBuilder)
@@ -384,14 +352,14 @@ type ApplicationBuilder_WithFilters_Call struct {
 }
 
 // WithFilters is a helper method to define mock.On call
-//   - filters []validation.Filter
-func (_e *ApplicationBuilder_Expecter) WithFilters(filters interface{}) *ApplicationBuilder_WithFilters_Call {
-	return &ApplicationBuilder_WithFilters_Call{Call: _e.mock.On("WithFilters", filters)}
+//   - _a0 func() []validation.Filter
+func (_e *ApplicationBuilder_Expecter) WithFilters(_a0 interface{}) *ApplicationBuilder_WithFilters_Call {
+	return &ApplicationBuilder_WithFilters_Call{Call: _e.mock.On("WithFilters", _a0)}
 }
 
-func (_c *ApplicationBuilder_WithFilters_Call) Run(run func(filters []validation.Filter)) *ApplicationBuilder_WithFilters_Call {
+func (_c *ApplicationBuilder_WithFilters_Call) Run(run func(_a0 func() []validation.Filter)) *ApplicationBuilder_WithFilters_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]validation.Filter))
+		run(args[0].(func() []validation.Filter))
 	})
 	return _c
 }
@@ -401,22 +369,22 @@ func (_c *ApplicationBuilder_WithFilters_Call) Return(_a0 foundation.Application
 	return _c
 }
 
-func (_c *ApplicationBuilder_WithFilters_Call) RunAndReturn(run func([]validation.Filter) foundation.ApplicationBuilder) *ApplicationBuilder_WithFilters_Call {
+func (_c *ApplicationBuilder_WithFilters_Call) RunAndReturn(run func(func() []validation.Filter) foundation.ApplicationBuilder) *ApplicationBuilder_WithFilters_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// WithGrpcClientInterceptors provides a mock function with given fields: groupToInterceptors
-func (_m *ApplicationBuilder) WithGrpcClientInterceptors(groupToInterceptors map[string][]grpc.UnaryClientInterceptor) foundation.ApplicationBuilder {
-	ret := _m.Called(groupToInterceptors)
+// WithGrpcClientInterceptors provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithGrpcClientInterceptors(_a0 func() map[string][]grpc.UnaryClientInterceptor) foundation.ApplicationBuilder {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WithGrpcClientInterceptors")
 	}
 
 	var r0 foundation.ApplicationBuilder
-	if rf, ok := ret.Get(0).(func(map[string][]grpc.UnaryClientInterceptor) foundation.ApplicationBuilder); ok {
-		r0 = rf(groupToInterceptors)
+	if rf, ok := ret.Get(0).(func(func() map[string][]grpc.UnaryClientInterceptor) foundation.ApplicationBuilder); ok {
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(foundation.ApplicationBuilder)
@@ -432,14 +400,14 @@ type ApplicationBuilder_WithGrpcClientInterceptors_Call struct {
 }
 
 // WithGrpcClientInterceptors is a helper method to define mock.On call
-//   - groupToInterceptors map[string][]grpc.UnaryClientInterceptor
-func (_e *ApplicationBuilder_Expecter) WithGrpcClientInterceptors(groupToInterceptors interface{}) *ApplicationBuilder_WithGrpcClientInterceptors_Call {
-	return &ApplicationBuilder_WithGrpcClientInterceptors_Call{Call: _e.mock.On("WithGrpcClientInterceptors", groupToInterceptors)}
+//   - _a0 func() map[string][]grpc.UnaryClientInterceptor
+func (_e *ApplicationBuilder_Expecter) WithGrpcClientInterceptors(_a0 interface{}) *ApplicationBuilder_WithGrpcClientInterceptors_Call {
+	return &ApplicationBuilder_WithGrpcClientInterceptors_Call{Call: _e.mock.On("WithGrpcClientInterceptors", _a0)}
 }
 
-func (_c *ApplicationBuilder_WithGrpcClientInterceptors_Call) Run(run func(groupToInterceptors map[string][]grpc.UnaryClientInterceptor)) *ApplicationBuilder_WithGrpcClientInterceptors_Call {
+func (_c *ApplicationBuilder_WithGrpcClientInterceptors_Call) Run(run func(_a0 func() map[string][]grpc.UnaryClientInterceptor)) *ApplicationBuilder_WithGrpcClientInterceptors_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(map[string][]grpc.UnaryClientInterceptor))
+		run(args[0].(func() map[string][]grpc.UnaryClientInterceptor))
 	})
 	return _c
 }
@@ -449,22 +417,22 @@ func (_c *ApplicationBuilder_WithGrpcClientInterceptors_Call) Return(_a0 foundat
 	return _c
 }
 
-func (_c *ApplicationBuilder_WithGrpcClientInterceptors_Call) RunAndReturn(run func(map[string][]grpc.UnaryClientInterceptor) foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcClientInterceptors_Call {
+func (_c *ApplicationBuilder_WithGrpcClientInterceptors_Call) RunAndReturn(run func(func() map[string][]grpc.UnaryClientInterceptor) foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcClientInterceptors_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// WithGrpcClientStatsHandlers provides a mock function with given fields: groupToHandlers
-func (_m *ApplicationBuilder) WithGrpcClientStatsHandlers(groupToHandlers map[string][]stats.Handler) foundation.ApplicationBuilder {
-	ret := _m.Called(groupToHandlers)
+// WithGrpcClientStatsHandlers provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithGrpcClientStatsHandlers(_a0 func() map[string][]stats.Handler) foundation.ApplicationBuilder {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WithGrpcClientStatsHandlers")
 	}
 
 	var r0 foundation.ApplicationBuilder
-	if rf, ok := ret.Get(0).(func(map[string][]stats.Handler) foundation.ApplicationBuilder); ok {
-		r0 = rf(groupToHandlers)
+	if rf, ok := ret.Get(0).(func(func() map[string][]stats.Handler) foundation.ApplicationBuilder); ok {
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(foundation.ApplicationBuilder)
@@ -480,14 +448,14 @@ type ApplicationBuilder_WithGrpcClientStatsHandlers_Call struct {
 }
 
 // WithGrpcClientStatsHandlers is a helper method to define mock.On call
-//   - groupToHandlers map[string][]stats.Handler
-func (_e *ApplicationBuilder_Expecter) WithGrpcClientStatsHandlers(groupToHandlers interface{}) *ApplicationBuilder_WithGrpcClientStatsHandlers_Call {
-	return &ApplicationBuilder_WithGrpcClientStatsHandlers_Call{Call: _e.mock.On("WithGrpcClientStatsHandlers", groupToHandlers)}
+//   - _a0 func() map[string][]stats.Handler
+func (_e *ApplicationBuilder_Expecter) WithGrpcClientStatsHandlers(_a0 interface{}) *ApplicationBuilder_WithGrpcClientStatsHandlers_Call {
+	return &ApplicationBuilder_WithGrpcClientStatsHandlers_Call{Call: _e.mock.On("WithGrpcClientStatsHandlers", _a0)}
 }
 
-func (_c *ApplicationBuilder_WithGrpcClientStatsHandlers_Call) Run(run func(groupToHandlers map[string][]stats.Handler)) *ApplicationBuilder_WithGrpcClientStatsHandlers_Call {
+func (_c *ApplicationBuilder_WithGrpcClientStatsHandlers_Call) Run(run func(_a0 func() map[string][]stats.Handler)) *ApplicationBuilder_WithGrpcClientStatsHandlers_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(map[string][]stats.Handler))
+		run(args[0].(func() map[string][]stats.Handler))
 	})
 	return _c
 }
@@ -497,22 +465,22 @@ func (_c *ApplicationBuilder_WithGrpcClientStatsHandlers_Call) Return(_a0 founda
 	return _c
 }
 
-func (_c *ApplicationBuilder_WithGrpcClientStatsHandlers_Call) RunAndReturn(run func(map[string][]stats.Handler) foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcClientStatsHandlers_Call {
+func (_c *ApplicationBuilder_WithGrpcClientStatsHandlers_Call) RunAndReturn(run func(func() map[string][]stats.Handler) foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcClientStatsHandlers_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// WithGrpcServerInterceptors provides a mock function with given fields: interceptors
-func (_m *ApplicationBuilder) WithGrpcServerInterceptors(interceptors []grpc.UnaryServerInterceptor) foundation.ApplicationBuilder {
-	ret := _m.Called(interceptors)
+// WithGrpcServerInterceptors provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithGrpcServerInterceptors(_a0 func() []grpc.UnaryServerInterceptor) foundation.ApplicationBuilder {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WithGrpcServerInterceptors")
 	}
 
 	var r0 foundation.ApplicationBuilder
-	if rf, ok := ret.Get(0).(func([]grpc.UnaryServerInterceptor) foundation.ApplicationBuilder); ok {
-		r0 = rf(interceptors)
+	if rf, ok := ret.Get(0).(func(func() []grpc.UnaryServerInterceptor) foundation.ApplicationBuilder); ok {
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(foundation.ApplicationBuilder)
@@ -528,14 +496,14 @@ type ApplicationBuilder_WithGrpcServerInterceptors_Call struct {
 }
 
 // WithGrpcServerInterceptors is a helper method to define mock.On call
-//   - interceptors []grpc.UnaryServerInterceptor
-func (_e *ApplicationBuilder_Expecter) WithGrpcServerInterceptors(interceptors interface{}) *ApplicationBuilder_WithGrpcServerInterceptors_Call {
-	return &ApplicationBuilder_WithGrpcServerInterceptors_Call{Call: _e.mock.On("WithGrpcServerInterceptors", interceptors)}
+//   - _a0 func() []grpc.UnaryServerInterceptor
+func (_e *ApplicationBuilder_Expecter) WithGrpcServerInterceptors(_a0 interface{}) *ApplicationBuilder_WithGrpcServerInterceptors_Call {
+	return &ApplicationBuilder_WithGrpcServerInterceptors_Call{Call: _e.mock.On("WithGrpcServerInterceptors", _a0)}
 }
 
-func (_c *ApplicationBuilder_WithGrpcServerInterceptors_Call) Run(run func(interceptors []grpc.UnaryServerInterceptor)) *ApplicationBuilder_WithGrpcServerInterceptors_Call {
+func (_c *ApplicationBuilder_WithGrpcServerInterceptors_Call) Run(run func(_a0 func() []grpc.UnaryServerInterceptor)) *ApplicationBuilder_WithGrpcServerInterceptors_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]grpc.UnaryServerInterceptor))
+		run(args[0].(func() []grpc.UnaryServerInterceptor))
 	})
 	return _c
 }
@@ -545,22 +513,22 @@ func (_c *ApplicationBuilder_WithGrpcServerInterceptors_Call) Return(_a0 foundat
 	return _c
 }
 
-func (_c *ApplicationBuilder_WithGrpcServerInterceptors_Call) RunAndReturn(run func([]grpc.UnaryServerInterceptor) foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcServerInterceptors_Call {
+func (_c *ApplicationBuilder_WithGrpcServerInterceptors_Call) RunAndReturn(run func(func() []grpc.UnaryServerInterceptor) foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcServerInterceptors_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// WithGrpcServerStatsHandlers provides a mock function with given fields: handlers
-func (_m *ApplicationBuilder) WithGrpcServerStatsHandlers(handlers []stats.Handler) foundation.ApplicationBuilder {
-	ret := _m.Called(handlers)
+// WithGrpcServerStatsHandlers provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithGrpcServerStatsHandlers(_a0 func() []stats.Handler) foundation.ApplicationBuilder {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WithGrpcServerStatsHandlers")
 	}
 
 	var r0 foundation.ApplicationBuilder
-	if rf, ok := ret.Get(0).(func([]stats.Handler) foundation.ApplicationBuilder); ok {
-		r0 = rf(handlers)
+	if rf, ok := ret.Get(0).(func(func() []stats.Handler) foundation.ApplicationBuilder); ok {
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(foundation.ApplicationBuilder)
@@ -576,14 +544,14 @@ type ApplicationBuilder_WithGrpcServerStatsHandlers_Call struct {
 }
 
 // WithGrpcServerStatsHandlers is a helper method to define mock.On call
-//   - handlers []stats.Handler
-func (_e *ApplicationBuilder_Expecter) WithGrpcServerStatsHandlers(handlers interface{}) *ApplicationBuilder_WithGrpcServerStatsHandlers_Call {
-	return &ApplicationBuilder_WithGrpcServerStatsHandlers_Call{Call: _e.mock.On("WithGrpcServerStatsHandlers", handlers)}
+//   - _a0 func() []stats.Handler
+func (_e *ApplicationBuilder_Expecter) WithGrpcServerStatsHandlers(_a0 interface{}) *ApplicationBuilder_WithGrpcServerStatsHandlers_Call {
+	return &ApplicationBuilder_WithGrpcServerStatsHandlers_Call{Call: _e.mock.On("WithGrpcServerStatsHandlers", _a0)}
 }
 
-func (_c *ApplicationBuilder_WithGrpcServerStatsHandlers_Call) Run(run func(handlers []stats.Handler)) *ApplicationBuilder_WithGrpcServerStatsHandlers_Call {
+func (_c *ApplicationBuilder_WithGrpcServerStatsHandlers_Call) Run(run func(_a0 func() []stats.Handler)) *ApplicationBuilder_WithGrpcServerStatsHandlers_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]stats.Handler))
+		run(args[0].(func() []stats.Handler))
 	})
 	return _c
 }
@@ -593,22 +561,22 @@ func (_c *ApplicationBuilder_WithGrpcServerStatsHandlers_Call) Return(_a0 founda
 	return _c
 }
 
-func (_c *ApplicationBuilder_WithGrpcServerStatsHandlers_Call) RunAndReturn(run func([]stats.Handler) foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcServerStatsHandlers_Call {
+func (_c *ApplicationBuilder_WithGrpcServerStatsHandlers_Call) RunAndReturn(run func(func() []stats.Handler) foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcServerStatsHandlers_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// WithJobs provides a mock function with given fields: jobs
-func (_m *ApplicationBuilder) WithJobs(jobs []queue.Job) foundation.ApplicationBuilder {
-	ret := _m.Called(jobs)
+// WithJobs provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithJobs(_a0 func() []queue.Job) foundation.ApplicationBuilder {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WithJobs")
 	}
 
 	var r0 foundation.ApplicationBuilder
-	if rf, ok := ret.Get(0).(func([]queue.Job) foundation.ApplicationBuilder); ok {
-		r0 = rf(jobs)
+	if rf, ok := ret.Get(0).(func(func() []queue.Job) foundation.ApplicationBuilder); ok {
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(foundation.ApplicationBuilder)
@@ -624,14 +592,14 @@ type ApplicationBuilder_WithJobs_Call struct {
 }
 
 // WithJobs is a helper method to define mock.On call
-//   - jobs []queue.Job
-func (_e *ApplicationBuilder_Expecter) WithJobs(jobs interface{}) *ApplicationBuilder_WithJobs_Call {
-	return &ApplicationBuilder_WithJobs_Call{Call: _e.mock.On("WithJobs", jobs)}
+//   - _a0 func() []queue.Job
+func (_e *ApplicationBuilder_Expecter) WithJobs(_a0 interface{}) *ApplicationBuilder_WithJobs_Call {
+	return &ApplicationBuilder_WithJobs_Call{Call: _e.mock.On("WithJobs", _a0)}
 }
 
-func (_c *ApplicationBuilder_WithJobs_Call) Run(run func(jobs []queue.Job)) *ApplicationBuilder_WithJobs_Call {
+func (_c *ApplicationBuilder_WithJobs_Call) Run(run func(_a0 func() []queue.Job)) *ApplicationBuilder_WithJobs_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]queue.Job))
+		run(args[0].(func() []queue.Job))
 	})
 	return _c
 }
@@ -641,14 +609,14 @@ func (_c *ApplicationBuilder_WithJobs_Call) Return(_a0 foundation.ApplicationBui
 	return _c
 }
 
-func (_c *ApplicationBuilder_WithJobs_Call) RunAndReturn(run func([]queue.Job) foundation.ApplicationBuilder) *ApplicationBuilder_WithJobs_Call {
+func (_c *ApplicationBuilder_WithJobs_Call) RunAndReturn(run func(func() []queue.Job) foundation.ApplicationBuilder) *ApplicationBuilder_WithJobs_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// WithMiddleware provides a mock function with given fields: fn
-func (_m *ApplicationBuilder) WithMiddleware(fn func(configuration.Middleware)) foundation.ApplicationBuilder {
-	ret := _m.Called(fn)
+// WithMiddleware provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithMiddleware(_a0 func(configuration.Middleware)) foundation.ApplicationBuilder {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WithMiddleware")
@@ -656,7 +624,7 @@ func (_m *ApplicationBuilder) WithMiddleware(fn func(configuration.Middleware)) 
 
 	var r0 foundation.ApplicationBuilder
 	if rf, ok := ret.Get(0).(func(func(configuration.Middleware)) foundation.ApplicationBuilder); ok {
-		r0 = rf(fn)
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(foundation.ApplicationBuilder)
@@ -672,12 +640,12 @@ type ApplicationBuilder_WithMiddleware_Call struct {
 }
 
 // WithMiddleware is a helper method to define mock.On call
-//   - fn func(configuration.Middleware)
-func (_e *ApplicationBuilder_Expecter) WithMiddleware(fn interface{}) *ApplicationBuilder_WithMiddleware_Call {
-	return &ApplicationBuilder_WithMiddleware_Call{Call: _e.mock.On("WithMiddleware", fn)}
+//   - _a0 func(configuration.Middleware)
+func (_e *ApplicationBuilder_Expecter) WithMiddleware(_a0 interface{}) *ApplicationBuilder_WithMiddleware_Call {
+	return &ApplicationBuilder_WithMiddleware_Call{Call: _e.mock.On("WithMiddleware", _a0)}
 }
 
-func (_c *ApplicationBuilder_WithMiddleware_Call) Run(run func(fn func(configuration.Middleware))) *ApplicationBuilder_WithMiddleware_Call {
+func (_c *ApplicationBuilder_WithMiddleware_Call) Run(run func(_a0 func(configuration.Middleware))) *ApplicationBuilder_WithMiddleware_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(func(configuration.Middleware)))
 	})
@@ -694,17 +662,17 @@ func (_c *ApplicationBuilder_WithMiddleware_Call) RunAndReturn(run func(func(con
 	return _c
 }
 
-// WithMigrations provides a mock function with given fields: migrations
-func (_m *ApplicationBuilder) WithMigrations(migrations []schema.Migration) foundation.ApplicationBuilder {
-	ret := _m.Called(migrations)
+// WithMigrations provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithMigrations(_a0 func() []schema.Migration) foundation.ApplicationBuilder {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WithMigrations")
 	}
 
 	var r0 foundation.ApplicationBuilder
-	if rf, ok := ret.Get(0).(func([]schema.Migration) foundation.ApplicationBuilder); ok {
-		r0 = rf(migrations)
+	if rf, ok := ret.Get(0).(func(func() []schema.Migration) foundation.ApplicationBuilder); ok {
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(foundation.ApplicationBuilder)
@@ -720,14 +688,14 @@ type ApplicationBuilder_WithMigrations_Call struct {
 }
 
 // WithMigrations is a helper method to define mock.On call
-//   - migrations []schema.Migration
-func (_e *ApplicationBuilder_Expecter) WithMigrations(migrations interface{}) *ApplicationBuilder_WithMigrations_Call {
-	return &ApplicationBuilder_WithMigrations_Call{Call: _e.mock.On("WithMigrations", migrations)}
+//   - _a0 func() []schema.Migration
+func (_e *ApplicationBuilder_Expecter) WithMigrations(_a0 interface{}) *ApplicationBuilder_WithMigrations_Call {
+	return &ApplicationBuilder_WithMigrations_Call{Call: _e.mock.On("WithMigrations", _a0)}
 }
 
-func (_c *ApplicationBuilder_WithMigrations_Call) Run(run func(migrations []schema.Migration)) *ApplicationBuilder_WithMigrations_Call {
+func (_c *ApplicationBuilder_WithMigrations_Call) Run(run func(_a0 func() []schema.Migration)) *ApplicationBuilder_WithMigrations_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]schema.Migration))
+		run(args[0].(func() []schema.Migration))
 	})
 	return _c
 }
@@ -737,14 +705,14 @@ func (_c *ApplicationBuilder_WithMigrations_Call) Return(_a0 foundation.Applicat
 	return _c
 }
 
-func (_c *ApplicationBuilder_WithMigrations_Call) RunAndReturn(run func([]schema.Migration) foundation.ApplicationBuilder) *ApplicationBuilder_WithMigrations_Call {
+func (_c *ApplicationBuilder_WithMigrations_Call) RunAndReturn(run func(func() []schema.Migration) foundation.ApplicationBuilder) *ApplicationBuilder_WithMigrations_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// WithPaths provides a mock function with given fields: fn
-func (_m *ApplicationBuilder) WithPaths(fn func(configuration.Paths)) foundation.ApplicationBuilder {
-	ret := _m.Called(fn)
+// WithPaths provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithPaths(_a0 func(configuration.Paths)) foundation.ApplicationBuilder {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WithPaths")
@@ -752,7 +720,7 @@ func (_m *ApplicationBuilder) WithPaths(fn func(configuration.Paths)) foundation
 
 	var r0 foundation.ApplicationBuilder
 	if rf, ok := ret.Get(0).(func(func(configuration.Paths)) foundation.ApplicationBuilder); ok {
-		r0 = rf(fn)
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(foundation.ApplicationBuilder)
@@ -768,12 +736,12 @@ type ApplicationBuilder_WithPaths_Call struct {
 }
 
 // WithPaths is a helper method to define mock.On call
-//   - fn func(configuration.Paths)
-func (_e *ApplicationBuilder_Expecter) WithPaths(fn interface{}) *ApplicationBuilder_WithPaths_Call {
-	return &ApplicationBuilder_WithPaths_Call{Call: _e.mock.On("WithPaths", fn)}
+//   - _a0 func(configuration.Paths)
+func (_e *ApplicationBuilder_Expecter) WithPaths(_a0 interface{}) *ApplicationBuilder_WithPaths_Call {
+	return &ApplicationBuilder_WithPaths_Call{Call: _e.mock.On("WithPaths", _a0)}
 }
 
-func (_c *ApplicationBuilder_WithPaths_Call) Run(run func(fn func(configuration.Paths))) *ApplicationBuilder_WithPaths_Call {
+func (_c *ApplicationBuilder_WithPaths_Call) Run(run func(_a0 func(configuration.Paths))) *ApplicationBuilder_WithPaths_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(func(configuration.Paths)))
 	})
@@ -790,17 +758,17 @@ func (_c *ApplicationBuilder_WithPaths_Call) RunAndReturn(run func(func(configur
 	return _c
 }
 
-// WithProviders provides a mock function with given fields: providers
-func (_m *ApplicationBuilder) WithProviders(providers []foundation.ServiceProvider) foundation.ApplicationBuilder {
-	ret := _m.Called(providers)
+// WithProviders provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithProviders(_a0 func() []foundation.ServiceProvider) foundation.ApplicationBuilder {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WithProviders")
 	}
 
 	var r0 foundation.ApplicationBuilder
-	if rf, ok := ret.Get(0).(func([]foundation.ServiceProvider) foundation.ApplicationBuilder); ok {
-		r0 = rf(providers)
+	if rf, ok := ret.Get(0).(func(func() []foundation.ServiceProvider) foundation.ApplicationBuilder); ok {
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(foundation.ApplicationBuilder)
@@ -816,14 +784,14 @@ type ApplicationBuilder_WithProviders_Call struct {
 }
 
 // WithProviders is a helper method to define mock.On call
-//   - providers []foundation.ServiceProvider
-func (_e *ApplicationBuilder_Expecter) WithProviders(providers interface{}) *ApplicationBuilder_WithProviders_Call {
-	return &ApplicationBuilder_WithProviders_Call{Call: _e.mock.On("WithProviders", providers)}
+//   - _a0 func() []foundation.ServiceProvider
+func (_e *ApplicationBuilder_Expecter) WithProviders(_a0 interface{}) *ApplicationBuilder_WithProviders_Call {
+	return &ApplicationBuilder_WithProviders_Call{Call: _e.mock.On("WithProviders", _a0)}
 }
 
-func (_c *ApplicationBuilder_WithProviders_Call) Run(run func(providers []foundation.ServiceProvider)) *ApplicationBuilder_WithProviders_Call {
+func (_c *ApplicationBuilder_WithProviders_Call) Run(run func(_a0 func() []foundation.ServiceProvider)) *ApplicationBuilder_WithProviders_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]foundation.ServiceProvider))
+		run(args[0].(func() []foundation.ServiceProvider))
 	})
 	return _c
 }
@@ -833,22 +801,22 @@ func (_c *ApplicationBuilder_WithProviders_Call) Return(_a0 foundation.Applicati
 	return _c
 }
 
-func (_c *ApplicationBuilder_WithProviders_Call) RunAndReturn(run func([]foundation.ServiceProvider) foundation.ApplicationBuilder) *ApplicationBuilder_WithProviders_Call {
+func (_c *ApplicationBuilder_WithProviders_Call) RunAndReturn(run func(func() []foundation.ServiceProvider) foundation.ApplicationBuilder) *ApplicationBuilder_WithProviders_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// WithRouting provides a mock function with given fields: routes
-func (_m *ApplicationBuilder) WithRouting(routes []func()) foundation.ApplicationBuilder {
-	ret := _m.Called(routes)
+// WithRouting provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithRouting(_a0 func()) foundation.ApplicationBuilder {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WithRouting")
 	}
 
 	var r0 foundation.ApplicationBuilder
-	if rf, ok := ret.Get(0).(func([]func()) foundation.ApplicationBuilder); ok {
-		r0 = rf(routes)
+	if rf, ok := ret.Get(0).(func(func()) foundation.ApplicationBuilder); ok {
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(foundation.ApplicationBuilder)
@@ -864,14 +832,14 @@ type ApplicationBuilder_WithRouting_Call struct {
 }
 
 // WithRouting is a helper method to define mock.On call
-//   - routes []func()
-func (_e *ApplicationBuilder_Expecter) WithRouting(routes interface{}) *ApplicationBuilder_WithRouting_Call {
-	return &ApplicationBuilder_WithRouting_Call{Call: _e.mock.On("WithRouting", routes)}
+//   - _a0 func()
+func (_e *ApplicationBuilder_Expecter) WithRouting(_a0 interface{}) *ApplicationBuilder_WithRouting_Call {
+	return &ApplicationBuilder_WithRouting_Call{Call: _e.mock.On("WithRouting", _a0)}
 }
 
-func (_c *ApplicationBuilder_WithRouting_Call) Run(run func(routes []func())) *ApplicationBuilder_WithRouting_Call {
+func (_c *ApplicationBuilder_WithRouting_Call) Run(run func(_a0 func())) *ApplicationBuilder_WithRouting_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]func()))
+		run(args[0].(func()))
 	})
 	return _c
 }
@@ -881,22 +849,22 @@ func (_c *ApplicationBuilder_WithRouting_Call) Return(_a0 foundation.Application
 	return _c
 }
 
-func (_c *ApplicationBuilder_WithRouting_Call) RunAndReturn(run func([]func()) foundation.ApplicationBuilder) *ApplicationBuilder_WithRouting_Call {
+func (_c *ApplicationBuilder_WithRouting_Call) RunAndReturn(run func(func()) foundation.ApplicationBuilder) *ApplicationBuilder_WithRouting_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// WithRules provides a mock function with given fields: rules
-func (_m *ApplicationBuilder) WithRules(rules []validation.Rule) foundation.ApplicationBuilder {
-	ret := _m.Called(rules)
+// WithRules provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithRules(_a0 func() []validation.Rule) foundation.ApplicationBuilder {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WithRules")
 	}
 
 	var r0 foundation.ApplicationBuilder
-	if rf, ok := ret.Get(0).(func([]validation.Rule) foundation.ApplicationBuilder); ok {
-		r0 = rf(rules)
+	if rf, ok := ret.Get(0).(func(func() []validation.Rule) foundation.ApplicationBuilder); ok {
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(foundation.ApplicationBuilder)
@@ -912,14 +880,14 @@ type ApplicationBuilder_WithRules_Call struct {
 }
 
 // WithRules is a helper method to define mock.On call
-//   - rules []validation.Rule
-func (_e *ApplicationBuilder_Expecter) WithRules(rules interface{}) *ApplicationBuilder_WithRules_Call {
-	return &ApplicationBuilder_WithRules_Call{Call: _e.mock.On("WithRules", rules)}
+//   - _a0 func() []validation.Rule
+func (_e *ApplicationBuilder_Expecter) WithRules(_a0 interface{}) *ApplicationBuilder_WithRules_Call {
+	return &ApplicationBuilder_WithRules_Call{Call: _e.mock.On("WithRules", _a0)}
 }
 
-func (_c *ApplicationBuilder_WithRules_Call) Run(run func(rules []validation.Rule)) *ApplicationBuilder_WithRules_Call {
+func (_c *ApplicationBuilder_WithRules_Call) Run(run func(_a0 func() []validation.Rule)) *ApplicationBuilder_WithRules_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]validation.Rule))
+		run(args[0].(func() []validation.Rule))
 	})
 	return _c
 }
@@ -929,14 +897,62 @@ func (_c *ApplicationBuilder_WithRules_Call) Return(_a0 foundation.ApplicationBu
 	return _c
 }
 
-func (_c *ApplicationBuilder_WithRules_Call) RunAndReturn(run func([]validation.Rule) foundation.ApplicationBuilder) *ApplicationBuilder_WithRules_Call {
+func (_c *ApplicationBuilder_WithRules_Call) RunAndReturn(run func(func() []validation.Rule) foundation.ApplicationBuilder) *ApplicationBuilder_WithRules_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// WithSchedule provides a mock function with given fields: fn
-func (_m *ApplicationBuilder) WithSchedule(fn func() []schedule.Event) foundation.ApplicationBuilder {
-	ret := _m.Called(fn)
+// WithRunners provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithRunners(_a0 func() []foundation.Runner) foundation.ApplicationBuilder {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithRunners")
+	}
+
+	var r0 foundation.ApplicationBuilder
+	if rf, ok := ret.Get(0).(func(func() []foundation.Runner) foundation.ApplicationBuilder); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(foundation.ApplicationBuilder)
+		}
+	}
+
+	return r0
+}
+
+// ApplicationBuilder_WithRunners_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithRunners'
+type ApplicationBuilder_WithRunners_Call struct {
+	*mock.Call
+}
+
+// WithRunners is a helper method to define mock.On call
+//   - _a0 func() []foundation.Runner
+func (_e *ApplicationBuilder_Expecter) WithRunners(_a0 interface{}) *ApplicationBuilder_WithRunners_Call {
+	return &ApplicationBuilder_WithRunners_Call{Call: _e.mock.On("WithRunners", _a0)}
+}
+
+func (_c *ApplicationBuilder_WithRunners_Call) Run(run func(_a0 func() []foundation.Runner)) *ApplicationBuilder_WithRunners_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func() []foundation.Runner))
+	})
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithRunners_Call) Return(_a0 foundation.ApplicationBuilder) *ApplicationBuilder_WithRunners_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithRunners_Call) RunAndReturn(run func(func() []foundation.Runner) foundation.ApplicationBuilder) *ApplicationBuilder_WithRunners_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithSchedule provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithSchedule(_a0 func() []schedule.Event) foundation.ApplicationBuilder {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WithSchedule")
@@ -944,7 +960,7 @@ func (_m *ApplicationBuilder) WithSchedule(fn func() []schedule.Event) foundatio
 
 	var r0 foundation.ApplicationBuilder
 	if rf, ok := ret.Get(0).(func(func() []schedule.Event) foundation.ApplicationBuilder); ok {
-		r0 = rf(fn)
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(foundation.ApplicationBuilder)
@@ -960,12 +976,12 @@ type ApplicationBuilder_WithSchedule_Call struct {
 }
 
 // WithSchedule is a helper method to define mock.On call
-//   - fn func() []schedule.Event
-func (_e *ApplicationBuilder_Expecter) WithSchedule(fn interface{}) *ApplicationBuilder_WithSchedule_Call {
-	return &ApplicationBuilder_WithSchedule_Call{Call: _e.mock.On("WithSchedule", fn)}
+//   - _a0 func() []schedule.Event
+func (_e *ApplicationBuilder_Expecter) WithSchedule(_a0 interface{}) *ApplicationBuilder_WithSchedule_Call {
+	return &ApplicationBuilder_WithSchedule_Call{Call: _e.mock.On("WithSchedule", _a0)}
 }
 
-func (_c *ApplicationBuilder_WithSchedule_Call) Run(run func(fn func() []schedule.Event)) *ApplicationBuilder_WithSchedule_Call {
+func (_c *ApplicationBuilder_WithSchedule_Call) Run(run func(_a0 func() []schedule.Event)) *ApplicationBuilder_WithSchedule_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(func() []schedule.Event))
 	})
@@ -982,17 +998,17 @@ func (_c *ApplicationBuilder_WithSchedule_Call) RunAndReturn(run func(func() []s
 	return _c
 }
 
-// WithSeeders provides a mock function with given fields: seeders
-func (_m *ApplicationBuilder) WithSeeders(seeders []seeder.Seeder) foundation.ApplicationBuilder {
-	ret := _m.Called(seeders)
+// WithSeeders provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithSeeders(_a0 func() []seeder.Seeder) foundation.ApplicationBuilder {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WithSeeders")
 	}
 
 	var r0 foundation.ApplicationBuilder
-	if rf, ok := ret.Get(0).(func([]seeder.Seeder) foundation.ApplicationBuilder); ok {
-		r0 = rf(seeders)
+	if rf, ok := ret.Get(0).(func(func() []seeder.Seeder) foundation.ApplicationBuilder); ok {
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(foundation.ApplicationBuilder)
@@ -1008,14 +1024,14 @@ type ApplicationBuilder_WithSeeders_Call struct {
 }
 
 // WithSeeders is a helper method to define mock.On call
-//   - seeders []seeder.Seeder
-func (_e *ApplicationBuilder_Expecter) WithSeeders(seeders interface{}) *ApplicationBuilder_WithSeeders_Call {
-	return &ApplicationBuilder_WithSeeders_Call{Call: _e.mock.On("WithSeeders", seeders)}
+//   - _a0 func() []seeder.Seeder
+func (_e *ApplicationBuilder_Expecter) WithSeeders(_a0 interface{}) *ApplicationBuilder_WithSeeders_Call {
+	return &ApplicationBuilder_WithSeeders_Call{Call: _e.mock.On("WithSeeders", _a0)}
 }
 
-func (_c *ApplicationBuilder_WithSeeders_Call) Run(run func(seeders []seeder.Seeder)) *ApplicationBuilder_WithSeeders_Call {
+func (_c *ApplicationBuilder_WithSeeders_Call) Run(run func(_a0 func() []seeder.Seeder)) *ApplicationBuilder_WithSeeders_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]seeder.Seeder))
+		run(args[0].(func() []seeder.Seeder))
 	})
 	return _c
 }
@@ -1025,7 +1041,7 @@ func (_c *ApplicationBuilder_WithSeeders_Call) Return(_a0 foundation.Application
 	return _c
 }
 
-func (_c *ApplicationBuilder_WithSeeders_Call) RunAndReturn(run func([]seeder.Seeder) foundation.ApplicationBuilder) *ApplicationBuilder_WithSeeders_Call {
+func (_c *ApplicationBuilder_WithSeeders_Call) RunAndReturn(run func(func() []seeder.Seeder) foundation.ApplicationBuilder) *ApplicationBuilder_WithSeeders_Call {
 	_c.Call.Return(run)
 	return _c
 }

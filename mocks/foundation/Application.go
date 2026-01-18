@@ -974,6 +974,53 @@ func (_c *Application_IsLocale_Call) RunAndReturn(run func(context.Context, stri
 	return _c
 }
 
+// Json provides a mock function with no fields
+func (_m *Application) Json() foundation.Json {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Json")
+	}
+
+	var r0 foundation.Json
+	if rf, ok := ret.Get(0).(func() foundation.Json); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(foundation.Json)
+		}
+	}
+
+	return r0
+}
+
+// Application_Json_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Json'
+type Application_Json_Call struct {
+	*mock.Call
+}
+
+// Json is a helper method to define mock.On call
+func (_e *Application_Expecter) Json() *Application_Json_Call {
+	return &Application_Json_Call{Call: _e.mock.On("Json")}
+}
+
+func (_c *Application_Json_Call) Run(run func()) *Application_Json_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Application_Json_Call) Return(_a0 foundation.Json) *Application_Json_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Application_Json_Call) RunAndReturn(run func() foundation.Json) *Application_Json_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // LangPath provides a mock function with given fields: path
 func (_m *Application) LangPath(path ...string) string {
 	_va := make([]interface{}, len(path))

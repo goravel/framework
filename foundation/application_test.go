@@ -106,6 +106,7 @@ func (s *ApplicationTestSuite) TestStart() {
 			name: "happy path",
 			setup: func() foundation.Runner {
 				runner := mocksfoundation.NewRunner(s.T())
+				runner.EXPECT().Signature().Return("test-runner").Once()
 				runner.EXPECT().ShouldRun().Return(true).Once()
 				runner.EXPECT().Run().Return(nil).Once()
 				runner.EXPECT().Shutdown().Return(nil).Once()
@@ -117,6 +118,7 @@ func (s *ApplicationTestSuite) TestStart() {
 			name: "failed to run",
 			setup: func() foundation.Runner {
 				runner := mocksfoundation.NewRunner(s.T())
+				runner.EXPECT().Signature().Return("test-runner").Once()
 				runner.EXPECT().ShouldRun().Return(true).Once()
 				runner.EXPECT().Run().Return(assert.AnError).Once()
 
@@ -127,6 +129,7 @@ func (s *ApplicationTestSuite) TestStart() {
 			name: "should not be run",
 			setup: func() foundation.Runner {
 				runner := mocksfoundation.NewRunner(s.T())
+				runner.EXPECT().Signature().Return("test-runner").Once()
 				runner.EXPECT().ShouldRun().Return(false).Once()
 
 				return runner
@@ -147,7 +150,7 @@ func (s *ApplicationTestSuite) TestStart() {
 			}).Once()
 
 			s.app.providerRepository = mockRepo
-			s.app.runnerNames = nil
+			s.app.bootedRunners = nil
 			app := s.app.Start()
 
 			go func() {
@@ -164,6 +167,7 @@ func (s *ApplicationTestSuite) TestStart_Complex() {
 	s.Run("With additional runner", func() {
 		s.SetupTest()
 		runner := mocksfoundation.NewRunner(s.T())
+		runner.EXPECT().Signature().Return("test-runner").Once()
 		runner.EXPECT().ShouldRun().Return(true).Once()
 		runner.EXPECT().Run().Return(nil).Once()
 		runner.EXPECT().Shutdown().Return(nil).Once()
@@ -175,7 +179,7 @@ func (s *ApplicationTestSuite) TestStart_Complex() {
 		app := s.app.Start(runner)
 
 		go func() {
-			time.Sleep(100 * time.Millisecond) // Wait for goroutines to start
+			time.Sleep(200 * time.Millisecond) // Wait for goroutines to start
 			s.cancel()
 		}()
 
@@ -185,6 +189,7 @@ func (s *ApplicationTestSuite) TestStart_Complex() {
 	s.Run("With duplicated runners", func() {
 		s.SetupTest()
 		runner := mocksfoundation.NewRunner(s.T())
+		runner.EXPECT().Signature().Return("test-runner").Twice()
 		runner.EXPECT().ShouldRun().Return(true).Once()
 		runner.EXPECT().Run().Return(nil).Once()
 		runner.EXPECT().Shutdown().Return(nil).Once()
@@ -201,7 +206,7 @@ func (s *ApplicationTestSuite) TestStart_Complex() {
 		app := s.app.Start(runner)
 
 		go func() {
-			time.Sleep(100 * time.Millisecond) // Wait for goroutines to start
+			time.Sleep(200 * time.Millisecond) // Wait for goroutines to start
 			s.cancel()
 		}()
 
@@ -211,6 +216,7 @@ func (s *ApplicationTestSuite) TestStart_Complex() {
 	s.Run("Call Start several times", func() {
 		s.SetupTest()
 		runner := mocksfoundation.NewRunner(s.T())
+		runner.EXPECT().Signature().Return("test-runner").Twice()
 		runner.EXPECT().ShouldRun().Return(true).Once()
 		runner.EXPECT().Run().Return(nil).Once()
 		runner.EXPECT().Shutdown().Return(nil).Once()
@@ -223,7 +229,7 @@ func (s *ApplicationTestSuite) TestStart_Complex() {
 		app = app.Start(runner)
 
 		go func() {
-			time.Sleep(100 * time.Millisecond) // Wait for goroutines to start
+			time.Sleep(200 * time.Millisecond) // Wait for goroutines to start
 			s.cancel()
 		}()
 

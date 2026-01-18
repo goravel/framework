@@ -547,9 +547,10 @@ func TestGetDependencyBindings(t *testing.T) {
 			binding.Cache,
 			binding.Schema,
 			binding.Orm,
+			binding.Http,
+			binding.RateLimiter,
 			binding.Session,
 			binding.Validation,
-			binding.Http,
 			binding.View,
 			binding.Route,
 		}
@@ -567,9 +568,10 @@ func TestGetDependencyBindings(t *testing.T) {
 			binding.Log,
 			binding.Cache,
 			binding.Orm,
+			binding.Http,
+			binding.RateLimiter,
 			binding.Session,
 			binding.Validation,
-			binding.Http,
 			binding.View,
 			binding.Route,
 		}

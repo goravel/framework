@@ -2,12 +2,8 @@ package http
 
 import (
 	contractsbinding "github.com/goravel/framework/contracts/binding"
-	"github.com/goravel/framework/contracts/cache"
-	"github.com/goravel/framework/contracts/config"
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
-	"github.com/goravel/framework/contracts/http"
-	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/http/client"
 	"github.com/goravel/framework/http/console"
@@ -17,11 +13,7 @@ import (
 type ServiceProvider struct{}
 
 var (
-	CacheFacade       cache.Cache
-	ConfigFacade      config.Config
-	LogFacade         log.Log
-	RateLimiterFacade http.RateLimiter
-	JsonFacade        foundation.Json
+	App foundation.Application
 )
 
 func (r *ServiceProvider) Relationship() contractsbinding.Relationship {
@@ -43,8 +35,8 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		return NewRateLimiter(), nil
 	})
 	app.Singleton(contractsbinding.Http, func(app foundation.Application) (any, error) {
-		ConfigFacade = app.MakeConfig()
-		if ConfigFacade == nil {
+		configFacade := app.MakeConfig()
+		if configFacade == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleHttp)
 		}
 
@@ -54,7 +46,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		}
 
 		factoryConfig := &client.FactoryConfig{}
-		if err := ConfigFacade.UnmarshalKey("http", factoryConfig); err != nil {
+		if err := configFacade.UnmarshalKey("http", factoryConfig); err != nil {
 			return nil, err
 		}
 
@@ -63,30 +55,8 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (r *ServiceProvider) Boot(app foundation.Application) {
-	CacheFacade = app.MakeCache()
-	if CacheFacade == nil {
-		panic(errors.CacheFacadeNotSet.SetModule(errors.ModuleHttp))
-	}
+	App = app
 
-	LogFacade = app.MakeLog()
-	if LogFacade == nil {
-		panic(errors.LogFacadeNotSet.SetModule(errors.ModuleHttp))
-	}
-
-	RateLimiterFacade = app.MakeRateLimiter()
-	if RateLimiterFacade == nil {
-		panic(errors.RateLimiterFacadeNotSet.SetModule(errors.ModuleHttp))
-	}
-
-	JsonFacade = app.GetJson()
-	if JsonFacade == nil {
-		panic(errors.JSONParserNotSet.SetModule(errors.ModuleHttp))
-	}
-
-	r.registerCommands(app)
-}
-
-func (r *ServiceProvider) registerCommands(app foundation.Application) {
 	app.Commands([]contractsconsole.Command{
 		&console.RequestMakeCommand{},
 		&console.ControllerMakeCommand{},

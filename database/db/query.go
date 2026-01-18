@@ -82,7 +82,9 @@ func (r *Query) Chunk(size uint64, callback func(rows []db.Row) error) error {
 }
 
 func (r *Query) Count() (int64, error) {
-	r.conditions.Selects = []string{"COUNT(*)"}
+	if err := buildSelectForCount(r); err != nil {
+		return 0, err
+	}
 
 	sql, args, err := r.buildSelect()
 	if err != nil {
@@ -1105,16 +1107,23 @@ func (r *Query) buildInsert(data []map[string]any) (sql string, args []any, err 
 		builder = builder.PlaceholderFormat(placeholderFormat)
 	}
 
-	first := data[0]
-	cols := make([]string, 0, len(first))
-	for col := range first {
+	// Collect all unique columns from all maps to avoid missing columns
+	colSet := make(map[string]bool)
+	for _, row := range data {
+		for col := range row {
+			colSet[col] = true
+		}
+	}
+
+	cols := make([]string, 0, len(colSet))
+	for col := range colSet {
 		cols = append(cols, col)
 	}
 	sort.Strings(cols)
 	builder = builder.Columns(cols...)
 
 	for _, row := range data {
-		vals := make([]any, 0, len(first))
+		vals := make([]any, 0, len(cols))
 		for _, col := range cols {
 			vals = append(vals, row[col])
 		}
@@ -1400,4 +1409,36 @@ func (r *Query) trace(builder db.CommonBuilder, sql string, args []any, now *car
 	} else {
 		r.logger.Trace(r.ctx, now, builder.Explain(sql, args...), rowsAffected, err)
 	}
+}
+
+func buildSelectForCount(query *Query) error {
+	distinct := query.conditions.Distinct != nil && *query.conditions.Distinct
+
+	// If selectColumns only contains a raw select with spaces (rename), gorm will fail, but this case will appear when calling Paginate, so use COUNT(*) here.
+	// If there are multiple selectColumns, gorm will transform them into *, so no need to handle that case.
+	// For example: Select("name as n").Count() will fail, but Select("name", "age as a").Count() will be treated as Select("*").Count()
+	if len(query.conditions.Selects) > 1 {
+		query.conditions.Selects = []string{"COUNT(*)"}
+	} else if len(query.conditions.Selects) == 1 {
+		column := query.conditions.Selects[0]
+		if str.Of(query.conditions.Selects[0]).Trim().Contains(" ") {
+			column = str.Of(query.conditions.Selects[0]).Split(" ")[0]
+		}
+
+		if distinct {
+			query.conditions.Selects = []string{fmt.Sprintf("COUNT(DISTINCT %s)", column)}
+		} else {
+			query.conditions.Selects = []string{fmt.Sprintf("COUNT(%s)", column)}
+		}
+	} else {
+		if distinct {
+			return errors.DatabaseCountDistinctWithoutColumns
+		} else {
+			query.conditions.Selects = []string{"COUNT(*)"}
+		}
+	}
+
+	query.conditions.Distinct = nil
+
+	return nil
 }

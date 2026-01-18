@@ -22,7 +22,7 @@ func NewToSql(query *Query, log log.Log, raw bool) *ToSql {
 }
 
 func (r *ToSql) Count() string {
-	query := r.query.addGlobalScopes().buildConditions()
+	query := buildSelectForCount(r.query)
 	var count int64
 
 	return r.sql(query.instance.Session(&gorm.Session{DryRun: true}).Count(&count))

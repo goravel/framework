@@ -44,25 +44,27 @@ func (receiver *ValidationServiceProvider) rules() []validation.Rule {
 var bootstrapApp = `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `
 
 var bootstrapAppWithRules = `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithRules(Rules()).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithRules(Rules).WithConfig(config.Boot).Start()
 }
 `
 
@@ -215,7 +217,7 @@ func TestRuleMakeCommand_WithBootstrapSetup(t *testing.T) {
 			appContent, err := file.GetContent(appFile)
 			assert.NoError(t, err)
 			if tt.expectSuccess {
-				assert.Contains(t, appContent, "WithRules(Rules())")
+				assert.Contains(t, appContent, "WithRules(Rules)")
 			}
 		})
 	}

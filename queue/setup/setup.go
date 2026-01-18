@@ -13,7 +13,6 @@ import (
 func main() {
 	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
-	queueFacade := "Queue"
 	databaseDriver := "database"
 	queueFacadePath := path.Facade("queue.go")
 	queueConfigPath := path.Config("queue.go")
@@ -28,22 +27,20 @@ func main() {
 	jobMigrationStructWithPkg := fmt.Sprintf("&%s.%s", migrationPkg, jobMigrationStruct)
 
 	setup.Install(
-		modify.WhenFacade(queueFacade,
-			// Add the queue service provider to the providers array in bootstrap/providers.go
-			modify.AddProviderApply(moduleImport, queueServiceProvider),
+		// Add the queue service provider to the providers array in bootstrap/providers.go
+		modify.AddProviderApply(moduleImport, queueServiceProvider),
 
-			// Add the queue configuration file
-			modify.File(queueConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), facadesImport, facadesPackage)),
+		// Add the queue configuration file
+		modify.File(queueConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), facadesImport, facadesPackage)),
 
-			// Add the queue facade to the facades file
-			modify.File(queueFacadePath).Overwrite(stubs.QueueFacade(facadesPackage)),
+		// Add the queue facade to the facades file
+		modify.File(queueFacadePath).Overwrite(stubs.QueueFacade(facadesPackage)),
 
-			// Add the job migration file
-			modify.File(jobMigrationFilePath).Overwrite(jobMigrationContent),
+		// Add the job migration file
+		modify.File(jobMigrationFilePath).Overwrite(jobMigrationContent),
 
-			// Register the job migration
-			modify.AddMigrationApply(migrationPkgPath, jobMigrationStructWithPkg),
-		),
+		// Register the job migration
+		modify.AddMigrationApply(migrationPkgPath, jobMigrationStructWithPkg),
 
 		// Add the database driver
 		modify.WhenDriver(databaseDriver, modify.GoFile(queueConfigPath).Find(match.Config("queue")).Modify(modify.AddConfig("default", `"database"`))),

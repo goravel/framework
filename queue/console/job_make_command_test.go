@@ -42,25 +42,27 @@ func (receiver *QueueServiceProvider) Jobs() []queue.Job {
 var bootstrapApp = `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `
 
 var bootstrapAppWithJobs = `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithJobs(Jobs()).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithJobs(Jobs).WithConfig(config.Boot).Start()
 }
 `
 
@@ -213,7 +215,7 @@ func TestJobMakeCommand_WithBootstrapSetup(t *testing.T) {
 			appContent, err := file.GetContent(appFile)
 			assert.NoError(t, err)
 			if tt.expectSuccess {
-				assert.Contains(t, appContent, "WithJobs(Jobs())")
+				assert.Contains(t, appContent, "WithJobs(Jobs)")
 			}
 		})
 	}

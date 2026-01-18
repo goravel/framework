@@ -84,12 +84,15 @@ func TestSeederMakeCommand_BootstrapSetup(t *testing.T) {
 	bootstrapContent := `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"github.com/goravel/framework/contracts/database/seeder"
 )
 
-func Boot() {
-	foundation.Setup().WithSeeders([]seeder.Seeder{}).Run()
+func Boot() contractsfoundation.Application {
+	foundation.Setup().WithSeeders(func() []seeder.Seeder {
+		return []seeder.Seeder{}
+	}).Start()
 }
 `
 	assert.NoError(t, file.PutContent("bootstrap/app.go", bootstrapContent))

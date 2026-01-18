@@ -54,10 +54,13 @@ func (s *WithSliceHandlerTestSuite) TestNewWithSliceHandler() {
 		// Create app.go file
 		s.Require().NoError(supportfile.PutContent(s.appFile, `package bootstrap
 
-import "github.com/goravel/framework/foundation"
+import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation"
+)
 
-func Boot() {
-	foundation.Setup().Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().Start()
 }
 `))
 
@@ -82,10 +85,13 @@ func Boot() {
 		// Create both app.go and commands.go
 		s.Require().NoError(supportfile.PutContent(s.appFile, `package bootstrap
 
-import "github.com/goravel/framework/foundation"
+import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation"
+)
 
-func Boot() {
-	foundation.Setup().Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().Start()
 }
 `))
 
@@ -139,7 +145,6 @@ func Boot() {
 	appResult, err := supportfile.GetContent(s.appFile)
 	s.NoError(err)
 	s.NotContains(appResult, "WithCommands")
-	s.NotContains(appResult, "Commands()")
 
 	// Verify commands.go was NOT created
 	commandsFile := filepath.Join(s.bootstrapDir, "commands.go")
@@ -162,12 +167,13 @@ func (s *WithSliceHandlerTestSuite) TestAddItem_NoWithMethod_NoFile() {
 	appContent := `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `
 	s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
@@ -180,7 +186,7 @@ func Boot() {
 	// Verify app.go was updated
 	appResult, err := supportfile.GetContent(s.appFile)
 	s.NoError(err)
-	s.Contains(appResult, "WithCommands(Commands())")
+	s.Contains(appResult, "WithCommands(Commands)")
 
 	// Verify commands.go was created
 	commandsFile := filepath.Join(s.bootstrapDir, "commands.go")
@@ -207,12 +213,13 @@ func (s *WithSliceHandlerTestSuite) TestAddItem_NoWithMethod_FileExists() {
 	appContent := `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `
 	s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
@@ -251,12 +258,13 @@ func (s *WithSliceHandlerTestSuite) TestAddItem_WithMethodExists_FileExists() {
 	appContent := `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithCommands(Commands()).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithCommands(Commands).WithConfig(config.Boot).Start()
 }
 `
 	s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
@@ -306,17 +314,20 @@ func (s *WithSliceHandlerTestSuite) TestAddItem_WithMethodExists_NoFile_InlineAr
 	appContent := `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/foundation"
 	"goravel/app/console/commands"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithCommands([]console.Command{
-			&commands.ExistingCommand{},
-		}).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithCommands(func() []console.Command{
+			return []console.Command{
+				&commands.ExistingCommand{},
+			}
+		}).WithConfig(config.Boot).Start()
 }
 `
 	s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
@@ -342,10 +353,13 @@ func (s *WithSliceHandlerTestSuite) TestCheckWithMethodExists() {
 	// Test when method exists
 	appContent := `package bootstrap
 
-import "github.com/goravel/framework/foundation"
+import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation"
+)
 
-func Boot() {
-	foundation.Setup().WithCommands(Commands()).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithCommands(Commands).Start()
 }
 `
 	s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
@@ -359,10 +373,13 @@ func Boot() {
 	// Test when method doesn't exist
 	appContent = `package bootstrap
 
-import "github.com/goravel/framework/foundation"
+import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation"
+)
 
-func Boot() {
-	foundation.Setup().Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().Start()
 }
 `
 	s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
@@ -403,10 +420,13 @@ func (s *WithSliceHandlerTestSuite) TestAddImports() {
 
 	appContent := `package bootstrap
 
-import "github.com/goravel/framework/foundation"
+import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation"
+)
 
-func Boot() {
-	foundation.Setup().Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().Start()
 }
 `
 	s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
@@ -463,12 +483,22 @@ func (s *WithSliceHandlerTestSuite) TestAppendToExisting() {
 	s.Run("ValidCompositeLiteral", func() {
 		handler := newWithSliceHandler(config)
 
-		// Test with valid composite literal
+		// Test with valid function literal containing a return statement with composite literal
 		withCall := &dst.CallExpr{
 			Args: []dst.Expr{
-				&dst.CompositeLit{
-					Elts: []dst.Expr{
-						&dst.Ident{Name: "existing"},
+				&dst.FuncLit{
+					Body: &dst.BlockStmt{
+						List: []dst.Stmt{
+							&dst.ReturnStmt{
+								Results: []dst.Expr{
+									&dst.CompositeLit{
+										Elts: []dst.Expr{
+											&dst.Ident{Name: "existing"},
+										},
+									},
+								},
+							},
+						},
 					},
 				},
 			},
@@ -477,7 +507,9 @@ func (s *WithSliceHandlerTestSuite) TestAppendToExisting() {
 		itemExpr := &dst.Ident{Name: "new"}
 		handler.appendToExisting(withCall, itemExpr)
 
-		compositeLit := withCall.Args[0].(*dst.CompositeLit)
+		funcLit := withCall.Args[0].(*dst.FuncLit)
+		retStmt := funcLit.Body.List[0].(*dst.ReturnStmt)
+		compositeLit := retStmt.Results[0].(*dst.CompositeLit)
 		s.Len(compositeLit.Elts, 2)
 		s.Equal("existing", compositeLit.Elts[0].(*dst.Ident).Name)
 		s.Equal("new", compositeLit.Elts[1].(*dst.Ident).Name)
@@ -501,10 +533,10 @@ func (s *WithSliceHandlerTestSuite) TestAppendToExisting() {
 	s.Run("NotCompositeLit", func() {
 		handler := newWithSliceHandler(config)
 
-		// Test with non-composite literal arg
+		// Test with non-function literal arg
 		withCall := &dst.CallExpr{
 			Args: []dst.Expr{
-				&dst.Ident{Name: "notACompositeLit"},
+				&dst.Ident{Name: "notAFuncLit"},
 			},
 		}
 
@@ -513,7 +545,7 @@ func (s *WithSliceHandlerTestSuite) TestAppendToExisting() {
 
 		// Should not panic and should not modify
 		s.Len(withCall.Args, 1)
-		s.Equal("notACompositeLit", withCall.Args[0].(*dst.Ident).Name)
+		s.Equal("notAFuncLit", withCall.Args[0].(*dst.Ident).Name)
 	})
 }
 
@@ -551,9 +583,18 @@ func (s *WithSliceHandlerTestSuite) TestCreateWithMethod() {
 	s.True(ok)
 	s.Equal("WithCommands", withSel.Sel.Name)
 
-	// Verify the composite literal
+	// Verify the function literal wrapping
 	s.Len(newWithCall.Args, 1)
-	compositeLit, ok := newWithCall.Args[0].(*dst.CompositeLit)
+	funcLit, ok := newWithCall.Args[0].(*dst.FuncLit)
+	s.True(ok)
+	s.NotNil(funcLit)
+
+	// Verify the return statement contains the composite literal
+	s.Len(funcLit.Body.List, 1)
+	retStmt, ok := funcLit.Body.List[0].(*dst.ReturnStmt)
+	s.True(ok)
+	s.Len(retStmt.Results, 1)
+	compositeLit, ok := retStmt.Results[0].(*dst.CompositeLit)
 	s.True(ok)
 	s.Len(compositeLit.Elts, 1)
 }
@@ -566,7 +607,7 @@ func (s *WithSliceHandlerTestSuite) TestFindFoundationSetupCalls() {
 	s.Run("WithMethodExists", func() {
 		handler := newWithSliceHandler(config)
 
-		// Create a chain: foundation.Setup().WithCommands(...).Run()
+		// Create a chain: foundation.Setup().WithCommands(...).Start()
 		setupCall := &dst.CallExpr{
 			Fun: &dst.SelectorExpr{
 				X:   &dst.Ident{Name: "foundation"},
@@ -584,7 +625,7 @@ func (s *WithSliceHandlerTestSuite) TestFindFoundationSetupCalls() {
 		runCall := &dst.CallExpr{
 			Fun: &dst.SelectorExpr{
 				X:   withCall,
-				Sel: &dst.Ident{Name: "Run"},
+				Sel: &dst.Ident{Name: "Start"},
 			},
 		}
 
@@ -600,7 +641,7 @@ func (s *WithSliceHandlerTestSuite) TestFindFoundationSetupCalls() {
 	s.Run("NoWithMethod", func() {
 		handler := newWithSliceHandler(config)
 
-		// Create a chain without WithCommands: foundation.Setup().Run()
+		// Create a chain without WithCommands: foundation.Setup().Start()
 		setupCall := &dst.CallExpr{
 			Fun: &dst.SelectorExpr{
 				X:   &dst.Ident{Name: "foundation"},
@@ -611,7 +652,7 @@ func (s *WithSliceHandlerTestSuite) TestFindFoundationSetupCalls() {
 		runCall := &dst.CallExpr{
 			Fun: &dst.SelectorExpr{
 				X:   setupCall,
-				Sel: &dst.Ident{Name: "Run"},
+				Sel: &dst.Ident{Name: "Start"},
 			},
 		}
 
@@ -635,16 +676,19 @@ func (s *WithSliceHandlerTestSuite) TestSetupInline() {
 		appContent := `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/foundation"
 	"goravel/app/console/commands"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithCommands([]console.Command{
-			&commands.ExistingCommand{},
-		}).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithCommands(func() []console.Command{
+			return []console.Command{
+				&commands.ExistingCommand{},
+			}
+		}).Start()
 }
 `
 		s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
@@ -665,13 +709,14 @@ func Boot() {
 		appContent := `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/foundation"
 	"goravel/app/console/commands"
 )
 
-func Boot() {
-	foundation.Setup().Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().Start()
 }
 `
 		s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
@@ -684,7 +729,7 @@ func Boot() {
 
 		result, err := supportfile.GetContent(s.appFile)
 		s.NoError(err)
-		s.Contains(result, "WithCommands([]console.Command{")
+		s.Contains(result, "WithCommands(func() []console.Command {")
 		s.Contains(result, "&commands.NewCommand{}")
 	})
 }
@@ -698,12 +743,13 @@ func (s *WithSliceHandlerTestSuite) TestSetupWithFunction() {
 	appContent := `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `
 	s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
@@ -716,7 +762,7 @@ func Boot() {
 
 	result, err := supportfile.GetContent(s.appFile)
 	s.NoError(err)
-	s.Contains(result, "WithCommands(Commands())")
+	s.Contains(result, "WithCommands(Commands)")
 }
 
 func (s *WithSliceHandlerTestSuite) TestAddItem_WithMigrations() {
@@ -735,12 +781,13 @@ func (s *WithSliceHandlerTestSuite) TestAddItem_WithMigrations() {
 	appContent := `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `
 	s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
@@ -753,7 +800,7 @@ func Boot() {
 	// Verify app.go was updated
 	appResult, err := supportfile.GetContent(s.appFile)
 	s.NoError(err)
-	s.Contains(appResult, "WithMigrations(Migrations())")
+	s.Contains(appResult, "WithMigrations(Migrations)")
 
 	// Verify migrations.go was created
 	migrationsFile := filepath.Join(s.bootstrapDir, "migrations.go")
@@ -785,12 +832,13 @@ func (s *WithSliceHandlerTestSuite) TestRemoveItem() {
 		appContent := `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `
 		s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
@@ -810,12 +858,13 @@ func Boot() {
 		appContent := `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithCommands(Commands()).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithCommands(Commands).WithConfig(config.Boot).Start()
 }
 `
 		s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
@@ -858,18 +907,21 @@ func Commands() []console.Command {
 		appContent := `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/foundation"
 	"goravel/app/console/commands"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithCommands([]console.Command{
-			&commands.ExampleCommand{},
-			&commands.OtherCommand{},
-		}).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithCommands(func() []console.Command {
+			return []console.Command{
+				&commands.ExampleCommand{},
+				&commands.OtherCommand{},
+			}
+		}).WithConfig(config.Boot).Start()
 }
 `
 		s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
@@ -894,12 +946,13 @@ func Boot() {
 		appContent := `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithCommands(Commands()).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithCommands(Commands).WithConfig(config.Boot).Start()
 }
 `
 		s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
@@ -940,17 +993,20 @@ func Commands() []console.Command {
 		appContent := `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/foundation"
 	"goravel/app/console/commands"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithCommands([]console.Command{
-			&commands.OnlyCommand{},
-		}).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithCommands(func() []console.Command {
+			return []console.Command{
+				&commands.OnlyCommand{},
+			}
+		}).WithConfig(config.Boot).Start()
 }
 `
 		s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
@@ -1005,6 +1061,7 @@ func (s *WithSliceHandlerTestSuite) TestRemoveImports() {
 	appContent := `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/foundation"
 	"goravel/app/console/commands"
@@ -1012,11 +1069,13 @@ import (
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithCommands([]console.Command{
-			&commands.OtherCommand{},
-		}).WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithCommands(func() []console.Command {
+			return []console.Command{
+				&commands.OtherCommand{},
+			}
+		}).WithConfig(config.Boot).Start()
 }
 `
 	s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
@@ -1084,18 +1143,21 @@ func (s *WithSliceHandlerTestSuite) TestRemoveInline() {
 		appContent := `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/foundation"
 	"goravel/app/console/commands"
 )
 
-func Boot() {
-	foundation.Setup().
-		WithCommands([]console.Command{
-			&commands.Command1{},
-			&commands.Command2{},
-			&commands.Command3{},
-		}).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithCommands(func() []console.Command {
+			return []console.Command{
+				&commands.Command1{},
+				&commands.Command2{},
+				&commands.Command3{},
+			}
+		}).Start()
 }
 `
 		s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
@@ -1117,12 +1179,13 @@ func Boot() {
 		appContent := `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `
 		s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
@@ -1137,7 +1200,7 @@ func Boot() {
 		result, err := supportfile.GetContent(s.appFile)
 		s.NoError(err)
 		// Content should remain unchanged
-		s.Contains(result, "foundation.Setup().WithConfig(config.Boot).Run()")
+		s.Contains(result, "foundation.Setup().WithConfig(config.Boot).Start()")
 	})
 }
 
@@ -1150,35 +1213,45 @@ func (s *WithSliceHandlerTestSuite) TestRemoveFromExisting() {
 	s.Run("RemoveMiddleItem", func() {
 		handler := newWithSliceHandler(config)
 
-		// Test with valid composite literal containing multiple items
+		// Test with valid function literal containing a return statement with composite literal
 		withCall := &dst.CallExpr{
 			Args: []dst.Expr{
-				&dst.CompositeLit{
-					Elts: []dst.Expr{
-						&dst.UnaryExpr{
-							Op: token.AND,
-							X: &dst.CompositeLit{
-								Type: &dst.SelectorExpr{
-									X:   &dst.Ident{Name: "commands"},
-									Sel: &dst.Ident{Name: "Command1"},
-								},
-							},
-						},
-						&dst.UnaryExpr{
-							Op: token.AND,
-							X: &dst.CompositeLit{
-								Type: &dst.SelectorExpr{
-									X:   &dst.Ident{Name: "commands"},
-									Sel: &dst.Ident{Name: "Command2"},
-								},
-							},
-						},
-						&dst.UnaryExpr{
-							Op: token.AND,
-							X: &dst.CompositeLit{
-								Type: &dst.SelectorExpr{
-									X:   &dst.Ident{Name: "commands"},
-									Sel: &dst.Ident{Name: "Command3"},
+				&dst.FuncLit{
+					Body: &dst.BlockStmt{
+						List: []dst.Stmt{
+							&dst.ReturnStmt{
+								Results: []dst.Expr{
+									&dst.CompositeLit{
+										Elts: []dst.Expr{
+											&dst.UnaryExpr{
+												Op: token.AND,
+												X: &dst.CompositeLit{
+													Type: &dst.SelectorExpr{
+														X:   &dst.Ident{Name: "commands"},
+														Sel: &dst.Ident{Name: "Command1"},
+													},
+												},
+											},
+											&dst.UnaryExpr{
+												Op: token.AND,
+												X: &dst.CompositeLit{
+													Type: &dst.SelectorExpr{
+														X:   &dst.Ident{Name: "commands"},
+														Sel: &dst.Ident{Name: "Command2"},
+													},
+												},
+											},
+											&dst.UnaryExpr{
+												Op: token.AND,
+												X: &dst.CompositeLit{
+													Type: &dst.SelectorExpr{
+														X:   &dst.Ident{Name: "commands"},
+														Sel: &dst.Ident{Name: "Command3"},
+													},
+												},
+											},
+										},
+									},
 								},
 							},
 						},
@@ -1190,7 +1263,9 @@ func (s *WithSliceHandlerTestSuite) TestRemoveFromExisting() {
 		itemExpr := MustParseExpr("&commands.Command2{}").(dst.Expr)
 		handler.removeFromExisting(withCall, itemExpr)
 
-		compositeLit := withCall.Args[0].(*dst.CompositeLit)
+		funcLit := withCall.Args[0].(*dst.FuncLit)
+		retStmt := funcLit.Body.List[0].(*dst.ReturnStmt)
+		compositeLit := retStmt.Results[0].(*dst.CompositeLit)
 		s.Len(compositeLit.Elts, 2)
 
 		// Verify Command1 and Command3 remain
@@ -1223,10 +1298,10 @@ func (s *WithSliceHandlerTestSuite) TestRemoveFromExisting() {
 	s.Run("NotCompositeLit", func() {
 		handler := newWithSliceHandler(config)
 
-		// Test with non-composite literal arg
+		// Test with non-function literal arg
 		withCall := &dst.CallExpr{
 			Args: []dst.Expr{
-				&dst.Ident{Name: "notACompositeLit"},
+				&dst.Ident{Name: "notAFuncLit"},
 			},
 		}
 
@@ -1235,7 +1310,7 @@ func (s *WithSliceHandlerTestSuite) TestRemoveFromExisting() {
 
 		// Should not panic and should not modify
 		s.Len(withCall.Args, 1)
-		s.Equal("notACompositeLit", withCall.Args[0].(*dst.Ident).Name)
+		s.Equal("notAFuncLit", withCall.Args[0].(*dst.Ident).Name)
 	})
 
 	s.Run("ItemNotFound", func() {
@@ -1244,23 +1319,33 @@ func (s *WithSliceHandlerTestSuite) TestRemoveFromExisting() {
 		// Test removing an item that doesn't exist
 		withCall := &dst.CallExpr{
 			Args: []dst.Expr{
-				&dst.CompositeLit{
-					Elts: []dst.Expr{
-						&dst.UnaryExpr{
-							Op: token.AND,
-							X: &dst.CompositeLit{
-								Type: &dst.SelectorExpr{
-									X:   &dst.Ident{Name: "commands"},
-									Sel: &dst.Ident{Name: "Command1"},
-								},
-							},
-						},
-						&dst.UnaryExpr{
-							Op: token.AND,
-							X: &dst.CompositeLit{
-								Type: &dst.SelectorExpr{
-									X:   &dst.Ident{Name: "commands"},
-									Sel: &dst.Ident{Name: "Command2"},
+				&dst.FuncLit{
+					Body: &dst.BlockStmt{
+						List: []dst.Stmt{
+							&dst.ReturnStmt{
+								Results: []dst.Expr{
+									&dst.CompositeLit{
+										Elts: []dst.Expr{
+											&dst.UnaryExpr{
+												Op: token.AND,
+												X: &dst.CompositeLit{
+													Type: &dst.SelectorExpr{
+														X:   &dst.Ident{Name: "commands"},
+														Sel: &dst.Ident{Name: "Command1"},
+													},
+												},
+											},
+											&dst.UnaryExpr{
+												Op: token.AND,
+												X: &dst.CompositeLit{
+													Type: &dst.SelectorExpr{
+														X:   &dst.Ident{Name: "commands"},
+														Sel: &dst.Ident{Name: "Command2"},
+													},
+												},
+											},
+										},
+									},
 								},
 							},
 						},
@@ -1272,7 +1357,9 @@ func (s *WithSliceHandlerTestSuite) TestRemoveFromExisting() {
 		itemExpr := MustParseExpr("&commands.NonExistent{}").(dst.Expr)
 		handler.removeFromExisting(withCall, itemExpr)
 
-		compositeLit := withCall.Args[0].(*dst.CompositeLit)
+		funcLit := withCall.Args[0].(*dst.FuncLit)
+		retStmt := funcLit.Body.List[0].(*dst.ReturnStmt)
+		compositeLit := retStmt.Results[0].(*dst.CompositeLit)
 		// Should still have both items since the item to remove wasn't found
 		s.Len(compositeLit.Elts, 2)
 	})
@@ -1290,16 +1377,17 @@ func Test_appendToExistingMiddleware(t *testing.T) {
 			initialContent: `package test
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/foundation/configuration"
 	"github.com/goravel/framework/foundation"
 	"github.com/goravel/framework/http/middleware"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithMiddleware(func(handler configuration.Middleware) {
 			handler.Append(&middleware.Auth{})
-		}).Run()
+		}).Start()
 }`,
 			middlewareToAdd:   "&middleware.Cors{}",
 			expectedArgsCount: 2,
@@ -1309,15 +1397,16 @@ func Boot() {
 			initialContent: `package test
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/foundation/configuration"
 	"github.com/goravel/framework/foundation"
 	"github.com/goravel/framework/http/middleware"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithMiddleware(func(handler configuration.Middleware) {
-		}).Run()
+		}).Start()
 }`,
 			middlewareToAdd:   "&middleware.Auth{}",
 			expectedArgsCount: 1,
@@ -1374,15 +1463,16 @@ func Test_addMiddlewareAppendCall(t *testing.T) {
 			initialContent: `package test
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/foundation/configuration"
 	"github.com/goravel/framework/foundation"
 	"github.com/goravel/framework/http/middleware"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithMiddleware(func(handler configuration.Middleware) {
-		}).Run()
+		}).Start()
 }`,
 			middlewareToAdd: "&middleware.Auth{}",
 		},
@@ -1391,15 +1481,16 @@ func Boot() {
 			initialContent: `package test
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/foundation/configuration"
 	"github.com/goravel/framework/foundation"
 	"github.com/goravel/framework/http/middleware"
 )
 
-func Boot() {
-	foundation.Setup().WithMiddleware(func(handler configuration.Middleware) {
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithMiddleware(func(handler configuration.Middleware) {
 		handler.Register(&middleware.Other{})
-	}).Run()
+	}).Start()
 }`,
 			middlewareToAdd: "&middleware.Cors{}",
 		},
@@ -1456,12 +1547,13 @@ func Test_addMiddlewareImports(t *testing.T) {
 			initialContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			pkg:         "github.com/goravel/framework/http/middleware",
@@ -1476,13 +1568,14 @@ func Boot() {
 			initialContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/foundation/configuration"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			pkg:         "github.com/goravel/framework/http/middleware",
@@ -1497,13 +1590,14 @@ func Boot() {
 			initialContent: `package bootstrap
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"github.com/goravel/framework/http/middleware"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			pkg:         "github.com/goravel/framework/http/middleware",
@@ -1555,12 +1649,13 @@ func Test_createWithMiddleware(t *testing.T) {
 			initialContent: `package test
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			middlewareToAdd: "&middleware.Auth{}",
@@ -1575,12 +1670,13 @@ func Boot() {
 			initialContent: `package test
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).WithRoute(route.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).WithRoute(route.Boot).Start()
 }
 `,
 			middlewareToAdd: "&middleware.Cors{}",
@@ -1657,22 +1753,22 @@ func Test_containsFoundationSetup(t *testing.T) {
 	}{
 		{
 			name:     "contains foundation.Setup()",
-			stmt:     `foundation.Setup().Run()`,
+			stmt:     `foundation.Setup().Start()`,
 			expected: true,
 		},
 		{
 			name:     "contains foundation.Setup() in chain",
-			stmt:     `foundation.Setup().WithConfig(config.Boot).Run()`,
+			stmt:     `foundation.Setup().WithConfig(config.Boot).Start()`,
 			expected: true,
 		},
 		{
 			name:     "does not contain foundation.Setup()",
-			stmt:     `app.Run()`,
+			stmt:     `app.Start()`,
 			expected: false,
 		},
 		{
 			name:     "contains Setup() but not from foundation",
-			stmt:     `something.Setup().Run()`,
+			stmt:     `something.Setup().Start()`,
 			expected: false,
 		},
 	}
@@ -1702,12 +1798,13 @@ func Test_findFoundationSetupCallsForMiddleware(t *testing.T) {
 			initialContent: `package test
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			expectSetup:          true,
@@ -1719,17 +1816,18 @@ func Boot() {
 			initialContent: `package test
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/foundation/configuration"
 	"github.com/goravel/framework/foundation"
 	"github.com/goravel/framework/http/middleware"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithMiddleware(func(handler configuration.Middleware) {
 			handler.Append(&middleware.Auth{})
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 			expectSetup:             true,
@@ -1742,12 +1840,13 @@ func Boot() {
 			initialContent: `package test
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).WithRoute(route.Boot).WithSchedule(schedule.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).WithRoute(route.Boot).WithSchedule(schedule.Boot).Start()
 }
 `,
 			expectSetup:          true,
@@ -1770,10 +1869,12 @@ func Boot() {
 			// Find the main call expression
 			var mainCallExpr *dst.CallExpr
 			dst.Inspect(file, func(n dst.Node) bool {
-				if stmt, ok := n.(*dst.ExprStmt); ok {
-					if call, ok := stmt.X.(*dst.CallExpr); ok {
-						mainCallExpr = call
-						return false
+				if retStmt, ok := n.(*dst.ReturnStmt); ok {
+					if len(retStmt.Results) > 0 {
+						if call, ok := retStmt.Results[0].(*dst.CallExpr); ok {
+							mainCallExpr = call
+							return false
+						}
 					}
 				}
 				return true
@@ -1823,15 +1924,16 @@ func Test_findMiddlewareAppendCall(t *testing.T) {
 			initialContent: `package test
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/foundation/configuration"
 	"github.com/goravel/framework/foundation"
 	"github.com/goravel/framework/http/middleware"
 )
 
-func Boot() {
-	foundation.Setup().WithMiddleware(func(handler configuration.Middleware) {
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithMiddleware(func(handler configuration.Middleware) {
 		handler.Append(&middleware.Auth{})
-	}).Run()
+	}).Start()
 }`,
 			expectFound:  true,
 			expectedArgs: 1,
@@ -1841,16 +1943,17 @@ func Boot() {
 			initialContent: `package test
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/foundation/configuration"
 	"github.com/goravel/framework/foundation"
 	"github.com/goravel/framework/http/middleware"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithMiddleware(func(handler configuration.Middleware) {
 			handler.Append(&middleware.Auth{}, &middleware.Cors{})
-		}).Run()
+		}).Start()
 }`,
 			expectFound:  true,
 			expectedArgs: 2,
@@ -1860,15 +1963,16 @@ func Boot() {
 			initialContent: `package test
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/foundation/configuration"
 	"github.com/goravel/framework/foundation"
 	"github.com/goravel/framework/http/middleware"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithMiddleware(func(handler configuration.Middleware) {
-		}).Run()
+		}).Start()
 }`,
 			expectFound: false,
 		},
@@ -1877,16 +1981,17 @@ func Boot() {
 			initialContent: `package test
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/foundation/configuration"
 	"github.com/goravel/framework/foundation"
 	"github.com/goravel/framework/http/middleware"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithMiddleware(func(handler configuration.Middleware) {
 			handler.Register(&middleware.Auth{})
-		}).Run()
+		}).Start()
 }`,
 			expectFound: false,
 		},
@@ -1939,29 +2044,31 @@ func Test_foundationSetupMiddleware(t *testing.T) {
 			initialContent: `package test
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
 }
 `,
 			middlewareToAdd: "&middleware.Auth{}",
 			expectedResult: `package test
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithMiddleware(func(handler configuration.Middleware) {
 			handler.Append(
 				&middleware.Auth{},
 			)
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 		},
@@ -1970,36 +2077,38 @@ func Boot() {
 			initialContent: `package test
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/foundation/configuration"
 	"github.com/goravel/framework/foundation"
 	"github.com/goravel/framework/http/middleware"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithMiddleware(func(handler configuration.Middleware) {
 			handler.Append(&middleware.Existing{})
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 			middlewareToAdd: "&middleware.Auth{}",
 			expectedResult: `package test
 
 import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/foundation/configuration"
 	"github.com/goravel/framework/foundation"
 	"github.com/goravel/framework/http/middleware"
 	"goravel/config"
 )
 
-func Boot() {
-	foundation.Setup().
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
 		WithMiddleware(func(handler configuration.Middleware) {
 			handler.Append(&middleware.Existing{},
 				&middleware.Auth{},
 			)
-		}).WithConfig(config.Boot).Run()
+		}).WithConfig(config.Boot).Start()
 }
 `,
 		},
@@ -2057,172 +2166,11 @@ func Boot() {
 	}
 }
 
-func (s *WithSliceHandlerTestSuite) TestAddItem_AlwaysInline_NoFoundationSetup() {
-	config := withSliceConfig{
-		withMethodName: "WithRouting",
-		alwaysInline:   true,
-		isFuncSlice:    true,
-	}
-
-	// Create app.go file WITHOUT foundation.Setup()
-	appContent := `package bootstrap
-
-import "goravel/config"
-
-func Boot() {
-	config.Boot()
-}
-`
-	s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
-
-	handler := newWithSliceHandler(config)
-	err := handler.AddItem("goravel/routes", "routes.Web")
-
-	// Should return nil (no-op) when foundation.Setup() doesn't exist
-	s.NoError(err)
-
-	// Verify app.go was NOT modified
-	appResult, err := supportfile.GetContent(s.appFile)
-	s.NoError(err)
-	s.NotContains(appResult, "WithRouting")
-	s.NotContains(appResult, "routes.Web")
-}
-
-func (s *WithSliceHandlerTestSuite) TestAddItem_AlwaysInline_NoWithMethod() {
-	config := withSliceConfig{
-		withMethodName: "WithRouting",
-		alwaysInline:   true,
-		isFuncSlice:    true,
-	}
-
-	appContent := `package bootstrap
-
-import (
-	"github.com/goravel/framework/foundation"
-	"goravel/config"
-)
-
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
-}
-`
-	s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
-
-	handler := newWithSliceHandler(config)
-	err := handler.AddItem("goravel/routes", "routes.Web")
-
-	s.NoError(err)
-
-	// Verify app.go was updated with inline addition
-	appResult, err := supportfile.GetContent(s.appFile)
-	s.NoError(err)
-	s.Contains(appResult, "WithRouting([]func(){")
-	s.Contains(appResult, "routes.Web")
-	s.Contains(appResult, `"goravel/routes"`)
-
-	// Verify no helper file was created
-	routingFile := filepath.Join(s.bootstrapDir, "routing.go")
-	s.False(supportfile.Exists(routingFile))
-}
-
-func (s *WithSliceHandlerTestSuite) TestAddItem_AlwaysInline_WithMethodExists() {
-	config := withSliceConfig{
-		withMethodName: "WithRouting",
-		alwaysInline:   true,
-		isFuncSlice:    true,
-	}
-
-	appContent := `package bootstrap
-
-import (
-	"github.com/goravel/framework/foundation"
-	"goravel/config"
-	"goravel/routes"
-)
-
-func Boot() {
-	foundation.Setup().
-		WithRouting([]func(){
-			routes.Web,
-		}).WithConfig(config.Boot).Run()
-}
-`
-	s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
-
-	handler := newWithSliceHandler(config)
-	err := handler.AddItem("goravel/routes", "routes.Api")
-
-	s.NoError(err)
-
-	// Verify app.go was updated with inline addition
-	appResult, err := supportfile.GetContent(s.appFile)
-	s.NoError(err)
-	s.Contains(appResult, "routes.Web")
-	s.Contains(appResult, "routes.Api")
-
-	// Verify no helper file was created
-	routingFile := filepath.Join(s.bootstrapDir, "routing.go")
-	s.False(supportfile.Exists(routingFile))
-}
-
-func (s *WithSliceHandlerTestSuite) TestCreateWithMethod_FuncSlice() {
-	config := withSliceConfig{
-		withMethodName: "WithRouting",
-		isFuncSlice:    true,
-	}
-
-	handler := newWithSliceHandler(config)
-
-	setupCall := &dst.CallExpr{
-		Fun: &dst.SelectorExpr{
-			X:   &dst.Ident{Name: "foundation"},
-			Sel: &dst.Ident{Name: "Setup"},
-		},
-	}
-
-	parentOfSetup := &dst.SelectorExpr{
-		X:   setupCall,
-		Sel: &dst.Ident{Name: "Run"},
-	}
-
-	itemExpr := &dst.SelectorExpr{
-		X:   &dst.Ident{Name: "routes"},
-		Sel: &dst.Ident{Name: "Web"},
-	}
-
-	handler.createWithMethod(setupCall, parentOfSetup, itemExpr)
-
-	// Verify the chain was modified
-	newWithCall, ok := parentOfSetup.X.(*dst.CallExpr)
-	s.True(ok)
-	s.NotNil(newWithCall)
-
-	withSel, ok := newWithCall.Fun.(*dst.SelectorExpr)
-	s.True(ok)
-	s.Equal("WithRouting", withSel.Sel.Name)
-
-	// Verify the composite literal has []func() type
-	s.Len(newWithCall.Args, 1)
-	compositeLit, ok := newWithCall.Args[0].(*dst.CompositeLit)
-	s.True(ok)
-
-	arrayType, ok := compositeLit.Type.(*dst.ArrayType)
-	s.True(ok)
-
-	funcType, ok := arrayType.Elt.(*dst.FuncType)
-	s.True(ok)
-	s.True(funcType.Func)
-	s.NotNil(funcType.Params)
-
-	s.Len(compositeLit.Elts, 1)
-}
-
 func (s *WithSliceHandlerTestSuite) TestCreateWithMethod_TypedSlice() {
 	config := withSliceConfig{
 		withMethodName: "WithCommands",
 		typePackage:    "console",
 		typeName:       "Command",
-		isFuncSlice:    false,
 	}
 
 	handler := newWithSliceHandler(config)
@@ -2252,9 +2200,18 @@ func (s *WithSliceHandlerTestSuite) TestCreateWithMethod_TypedSlice() {
 	s.True(ok)
 	s.Equal("WithCommands", withSel.Sel.Name)
 
-	// Verify the composite literal has []console.Command type
+	// Verify the function literal wrapping
 	s.Len(newWithCall.Args, 1)
-	compositeLit, ok := newWithCall.Args[0].(*dst.CompositeLit)
+	funcLit, ok := newWithCall.Args[0].(*dst.FuncLit)
+	s.True(ok)
+	s.NotNil(funcLit)
+
+	// Verify the return statement contains the composite literal with []console.Command type
+	s.Len(funcLit.Body.List, 1)
+	retStmt, ok := funcLit.Body.List[0].(*dst.ReturnStmt)
+	s.True(ok)
+	s.Len(retStmt.Results, 1)
+	compositeLit, ok := retStmt.Results[0].(*dst.CompositeLit)
 	s.True(ok)
 
 	arrayType, ok := compositeLit.Type.(*dst.ArrayType)
@@ -2266,180 +2223,4 @@ func (s *WithSliceHandlerTestSuite) TestCreateWithMethod_TypedSlice() {
 	s.Equal("Command", selectorExpr.Sel.Name)
 
 	s.Len(compositeLit.Elts, 1)
-}
-
-func (s *WithSliceHandlerTestSuite) TestRemoveItem_AlwaysInline() {
-	config := withSliceConfig{
-		withMethodName: "WithRouting",
-		alwaysInline:   true,
-		isFuncSlice:    true,
-	}
-
-	s.Run("RemoveFromExistingRouting", func() {
-		defer func() {
-			s.NoError(supportfile.Remove(s.bootstrapDir))
-		}()
-
-		appContent := `package bootstrap
-
-import (
-	"github.com/goravel/framework/foundation"
-	"goravel/config"
-	"goravel/routes"
-)
-
-func Boot() {
-	foundation.Setup().
-		WithRouting([]func(){
-			routes.Web,
-			routes.Api,
-		}).WithConfig(config.Boot).Run()
-}
-`
-		s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
-
-		handler := newWithSliceHandler(config)
-		err := handler.RemoveItem("goravel/routes", "routes.Web")
-
-		s.NoError(err)
-
-		// Verify app.go was updated
-		appResult, err := supportfile.GetContent(s.appFile)
-		s.NoError(err)
-		s.NotContains(appResult, "routes.Web")
-		s.Contains(appResult, "routes.Api")
-	})
-
-	s.Run("NoWithMethod", func() {
-		defer func() {
-			s.NoError(supportfile.Remove(s.bootstrapDir))
-		}()
-
-		appContent := `package bootstrap
-
-import (
-	"github.com/goravel/framework/foundation"
-	"goravel/config"
-)
-
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
-}
-`
-		s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
-
-		handler := newWithSliceHandler(config)
-		err := handler.RemoveItem("goravel/routes", "routes.Web")
-
-		// Should return nil when WithMethod doesn't exist
-		s.NoError(err)
-	})
-
-	s.Run("NoFoundationSetup", func() {
-		defer func() {
-			s.NoError(supportfile.Remove(s.bootstrapDir))
-		}()
-
-		// Create app.go file WITHOUT foundation.Setup()
-		appContent := `package bootstrap
-
-import "goravel/config"
-
-func Boot() {
-	config.Boot()
-}
-`
-		s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
-
-		handler := newWithSliceHandler(config)
-		err := handler.RemoveItem("goravel/routes", "routes.Web")
-
-		// Should return nil (no-op) when foundation.Setup() doesn't exist
-		s.NoError(err)
-
-		// Verify app.go was NOT modified
-		appResult, err := supportfile.GetContent(s.appFile)
-		s.NoError(err)
-		s.Equal(appContent, appResult)
-	})
-}
-
-func (s *WithSliceHandlerTestSuite) TestAddImports_FuncSlice() {
-	config := withSliceConfig{
-		withMethodName: "WithRouting",
-		alwaysInline:   true,
-		isFuncSlice:    true,
-		typeImportPath: "", // No type import for func slices
-	}
-
-	appContent := `package bootstrap
-
-import "github.com/goravel/framework/foundation"
-
-func Boot() {
-	foundation.Setup().Run()
-}
-`
-	s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
-
-	handler := newWithSliceHandler(config)
-	err := handler.addImports("goravel/routes")
-
-	s.NoError(err)
-
-	content, err := supportfile.GetContent(s.appFile)
-	s.NoError(err)
-	s.Contains(content, `"goravel/routes"`)
-	// Should not add any type import since typeImportPath is empty
-	s.NotContains(content, "contracts")
-}
-
-func (s *WithSliceHandlerTestSuite) TestAddItem_AlwaysInline_NeverCreatesHelperFile() {
-	config := withSliceConfig{
-		fileName:       "routing.go", // This should never be created
-		withMethodName: "WithRouting",
-		helperFuncName: "Routing",
-		alwaysInline:   true,
-		isFuncSlice:    true,
-		stubTemplate: func() string {
-			return "THIS SHOULD NEVER BE CREATED"
-		},
-	}
-
-	appContent := `package bootstrap
-
-import (
-	"github.com/goravel/framework/foundation"
-	"goravel/config"
-)
-
-func Boot() {
-	foundation.Setup().WithConfig(config.Boot).Run()
-}
-`
-	s.Require().NoError(supportfile.PutContent(s.appFile, appContent))
-
-	handler := newWithSliceHandler(config)
-
-	// Add first item
-	err := handler.AddItem("goravel/routes", "routes.Web")
-	s.NoError(err)
-
-	// Verify no helper file was created
-	routingFile := filepath.Join(s.bootstrapDir, "routing.go")
-	s.False(supportfile.Exists(routingFile))
-
-	// Add second item
-	err = handler.AddItem("goravel/routes", "routes.Api")
-	s.NoError(err)
-
-	// Verify still no helper file was created
-	s.False(supportfile.Exists(routingFile))
-
-	// Verify both items are in app.go
-	appResult, err := supportfile.GetContent(s.appFile)
-	s.NoError(err)
-	s.Contains(appResult, "routes.Web")
-	s.Contains(appResult, "routes.Api")
-	s.Contains(appResult, "WithRouting([]func(){")
 }
