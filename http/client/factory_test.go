@@ -466,11 +466,11 @@ func (s *FactoryTestSuite) TestFake_GithubUserProfile() {
 }
 
 func (s *FactoryTestSuite) TestFake_Sequence_RateLimiting() {
+	s.factory.Fake(map[string]any{
 		"https://api.github.com/rate_limit": s.factory.Sequence().
 			PushString(200, `{"remaining": 60}`).
 			PushStatus(429).
 			PushString(200, `{"remaining": 59}`),
-	s.factory.Fake(map[string]any{
 	})
 
 	githubClient := s.factory.Client("github")

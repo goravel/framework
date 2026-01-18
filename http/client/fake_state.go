@@ -114,33 +114,39 @@ func (r *FakeState) AssertSentCount(count int) bool {
 	return len(r.recorded) == count
 }
 
-func toHandler(json foundation.Json, v any) func(client.Request) client.Response {
-	switch h := v.(type) {
+func toHandler(json foundation.Json, value any) func(client.Request) client.Response {
+	if value == nil {
+		return func(_ client.Request) client.Response {
+			return NewFakeResponse(json).Status(200)
+		}
+	}
+
+	switch v := value.(type) {
 	case func(client.Request) client.Response:
-		return h
+		return v
 	case client.Response:
 		// Wrap single response in a Sequence to handle body snapshotting automatically.
 		seq := NewFakeSequence(json)
-		seq.WhenEmpty(h)
+		seq.WhenEmpty(v)
 
 		return func(_ client.Request) client.Response {
 			return seq.getNext()
 		}
-	case string:
+	case *FakeSequence:
 		return func(_ client.Request) client.Response {
-			return NewFakeResponse(json).String(200, h)
+			return v.getNext()
 		}
 	case int:
 		return func(_ client.Request) client.Response {
-			return NewFakeResponse(json).Status(h)
+			return NewFakeResponse(json).Status(v)
 		}
-	case *FakeSequence:
+	case string:
 		return func(_ client.Request) client.Response {
-			return h.getNext()
+			return NewFakeResponse(json).String(200, v)
 		}
 	default:
 		return func(_ client.Request) client.Response {
-			return NewFakeResponse(json).Status(200)
+			return NewFakeResponse(json).Json(200, v)
 		}
 	}
 }

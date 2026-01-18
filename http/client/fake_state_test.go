@@ -7,15 +7,22 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http/client"
+	"github.com/goravel/framework/foundation/json"
 )
 
 type FakeStateTestSuite struct {
 	suite.Suite
+	json foundation.Json
 }
 
 func TestFakeStateTestSuite(t *testing.T) {
 	suite.Run(t, new(FakeStateTestSuite))
+}
+
+func (s *FakeStateTestSuite) SetupTest() {
+	s.json = json.New()
 }
 
 func (s *FakeStateTestSuite) TestMatchSpecificity() {
@@ -28,7 +35,7 @@ func (s *FakeStateTestSuite) TestMatchSpecificity() {
 		"api.github.com/users/ab": "specific_id_alpha",
 	}
 
-	state := NewFakeState(nil, mocks)
+	state := NewFakeState(s.json, mocks)
 
 	tests := []struct {
 		url      string
@@ -36,7 +43,8 @@ func (s *FakeStateTestSuite) TestMatchSpecificity() {
 	}{
 		{"https://google.com", "generic_wildcard"},
 		{"https://api.github.com/repos", "domain_wildcard"},
-		{"https://api.github.com/users/goravel", "path_wildcard"},
+		{"https://api.github.com/users/goxravel", "path_wildcard"},
+		{"https://api.github.com/user/profile", "path_wildcard_2"},
 		// Should match "api.github.com/users/1" (Most specific)
 		{"https://api.github.com/users/1", "specific_id"},
 		// Should match "api.github.com/users/ab" (Specific alpha ID)
@@ -59,7 +67,7 @@ func (s *FakeStateTestSuite) TestMatchMissing() {
 	mocks := map[string]any{
 		"github": "ok",
 	}
-	state := NewFakeState(nil, mocks)
+	state := NewFakeState(s.json, mocks)
 
 	req := s.makeHttpRequest("https://google.com")
 	handler := state.Match(req, "dummy_client")
@@ -68,7 +76,7 @@ func (s *FakeStateTestSuite) TestMatchMissing() {
 }
 
 func (s *FakeStateTestSuite) TestRecord() {
-	state := NewFakeState(nil, nil)
+	state := NewFakeState(s.json, nil)
 	mockReq := NewRequest(nil, nil, "https://api.github.com", "github")
 	state.Record(mockReq)
 
@@ -84,7 +92,7 @@ func (s *FakeStateTestSuite) TestRecord() {
 }
 
 func (s *FakeStateTestSuite) TestAssertSentCount() {
-	state := NewFakeState(nil, nil)
+	state := NewFakeState(s.json, nil)
 
 	s.True(state.AssertSentCount(0))
 
@@ -97,7 +105,7 @@ func (s *FakeStateTestSuite) TestAssertSentCount() {
 }
 
 func (s *FakeStateTestSuite) TestStrayRequests() {
-	state := NewFakeState(nil, nil)
+	state := NewFakeState(s.json, nil)
 
 	s.False(state.ShouldPreventStray("https://google.com"))
 
@@ -110,11 +118,11 @@ func (s *FakeStateTestSuite) TestStrayRequests() {
 }
 
 func (s *FakeStateTestSuite) TestMockValueConversions() {
-	seq := NewFakeSequence(nil)
+	seq := NewFakeSequence(s.json)
 	seq.PushString(200, "first_event")
 	seq.PushString(500, "second_event")
 
-	singleResp := NewFakeResponse(nil).String(202, "static content")
+	singleResp := NewFakeResponse(s.json).String(202, "static content")
 
 	mocks := map[string]any{
 		"https://api.github.com/zen":    "practicality beats purity", // String -> 200 OK + Body
@@ -122,12 +130,13 @@ func (s *FakeStateTestSuite) TestMockValueConversions() {
 		"https://api.github.com/status": singleResp,                  // Response Object
 		"https://api.github.com/events": seq,                         // Sequence Object
 		"https://api.github.com/func": func(_ client.Request) client.Response {
-			return NewFakeResponse(nil).Status(201)
+			return NewFakeResponse(s.json).Status(201)
 		},
-		"https://api.github.com/empty": struct{}{}, // Unknown Type -> 200 OK + Empty
+		"https://api.github.com/json":  map[string]any{"key": "value"},
+		"https://api.github.com/empty": struct{}{},
 	}
 
-	state := NewFakeState(nil, mocks)
+	state := NewFakeState(s.json, mocks)
 
 	tests := []struct {
 		url    string
@@ -137,7 +146,8 @@ func (s *FakeStateTestSuite) TestMockValueConversions() {
 		{"https://api.github.com/zen", 200, "practicality beats purity"},
 		{"https://api.github.com/404", 404, ""},
 		{"https://api.github.com/func", 201, ""},
-		{"https://api.github.com/empty", 200, ""},
+		{"https://api.github.com/json", 200, `{"key":"value"}`},
+		{"https://api.github.com/empty", 200, "{}"},
 	}
 
 	for _, tt := range tests {
