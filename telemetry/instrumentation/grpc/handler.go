@@ -5,8 +5,6 @@ import (
 	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc/stats"
-
-	"github.com/goravel/framework/telemetry"
 )
 
 // NewServerStatsHandler creates an OTel stats handler for the server.
@@ -19,7 +17,7 @@ func NewServerStatsHandler(config contractsconfig.Config, telemetry contractstel
 		return nil
 	}
 
-	finalOpts := append(getCommonOptions(), opts...)
+	finalOpts := append(getCommonOptions(telemetry), opts...)
 
 	return otelgrpc.NewServerHandler(finalOpts...)
 }
@@ -34,16 +32,16 @@ func NewClientStatsHandler(config contractsconfig.Config, telemetry contractstel
 		return nil
 	}
 
-	finalOpts := append(getCommonOptions(), opts...)
+	finalOpts := append(getCommonOptions(telemetry), opts...)
 
 	return otelgrpc.NewClientHandler(finalOpts...)
 }
 
-func getCommonOptions() []otelgrpc.Option {
+func getCommonOptions(telemetry contractstelemetry.Telemetry) []otelgrpc.Option {
 	return []otelgrpc.Option{
-		otelgrpc.WithTracerProvider(telemetry.TelemetryFacade.TracerProvider()),
-		otelgrpc.WithMeterProvider(telemetry.TelemetryFacade.MeterProvider()),
-		otelgrpc.WithPropagators(telemetry.TelemetryFacade.Propagator()),
+		otelgrpc.WithTracerProvider(telemetry.TracerProvider()),
+		otelgrpc.WithMeterProvider(telemetry.MeterProvider()),
+		otelgrpc.WithPropagators(telemetry.Propagator()),
 		otelgrpc.WithMessageEvents(otelgrpc.ReceivedEvents, otelgrpc.SentEvents),
 	}
 }
