@@ -11,7 +11,6 @@ import (
 
 	contractslog "github.com/goravel/framework/contracts/log"
 	mockstelemetry "github.com/goravel/framework/mocks/telemetry"
-	"github.com/goravel/framework/telemetry"
 )
 
 type HandlerTestSuite struct {
@@ -32,9 +31,11 @@ func (s *HandlerTestSuite) SetupTest() {
 	s.loggerName = "test-logger"
 	s.recorder = logtest.NewRecorder()
 	s.mockTelemetry = mockstelemetry.NewTelemetry(s.T())
+
 	s.handler = &handler{
 		enabled:        true,
 		instrumentName: s.loggerName,
+		telemetry:      s.mockTelemetry,
 		logger:         s.recorder.Logger(s.loggerName),
 	}
 	s.now = time.Date(2024, 1, 1, 10, 0, 0, 0, time.UTC)
@@ -44,12 +45,11 @@ func (s *HandlerTestSuite) SetupTest() {
 }
 
 func (s *HandlerTestSuite) TearDownTest() {
-	telemetry.TelemetryFacade = nil
 }
 
-func (s *HandlerTestSuite) TestHandle_Lazy_Success() {
+func (s *HandlerTestSuite) TestHandle_InitLogger_Success() {
 	s.handler.logger = nil
-	telemetry.TelemetryFacade = s.mockTelemetry
+
 	s.mockTelemetry.On("Logger", s.loggerName).Return(s.recorder.Logger(s.loggerName)).Once()
 
 	entry := &TestEntry{
@@ -57,22 +57,27 @@ func (s *HandlerTestSuite) TestHandle_Lazy_Success() {
 		level: contractslog.LevelInfo,
 		time:  s.now,
 	}
+
 	err := s.handler.Handle(entry)
+
 	s.NoError(err)
 	s.mockTelemetry.AssertExpectations(s.T())
-	s.NotNil(s.handler.logger)
+	s.NotNil(s.handler.logger, "Logger should have been initialized")
 }
 
-func (s *HandlerTestSuite) TestHandle_Lazy_FacadeNotSet() {
+func (s *HandlerTestSuite) TestHandle_InitLogger_TelemetryNil() {
 	s.handler.logger = nil
-	telemetry.TelemetryFacade = nil
+	s.handler.telemetry = nil
+
 	entry := &TestEntry{
 		ctx:   context.Background(),
 		level: contractslog.LevelInfo,
 	}
+
 	err := s.handler.Handle(entry)
+
 	s.NoError(err)
-	s.Nil(s.handler.logger)
+	s.Nil(s.handler.logger, "Logger should remain nil if telemetry is missing")
 }
 
 func (s *HandlerTestSuite) TestEnabled() {
@@ -230,6 +235,7 @@ func (s *HandlerTestSuite) TestHandle() {
 			s.handler = &handler{
 				enabled:        true,
 				instrumentName: s.loggerName,
+				telemetry:      s.mockTelemetry,
 				logger:         s.recorder.Logger(s.loggerName),
 			}
 

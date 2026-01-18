@@ -5,19 +5,21 @@ import (
 	"sync"
 	"time"
 
-	"github.com/goravel/framework/telemetry"
 	otellog "go.opentelemetry.io/otel/log"
 
 	contractslog "github.com/goravel/framework/contracts/log"
+	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 )
 
 var _ contractslog.Handler = (*handler)(nil)
 
 type handler struct {
+	telemetry      contractstelemetry.Telemetry
 	enabled        bool
 	instrumentName string
-	logger         otellog.Logger
-	mu             sync.Mutex
+
+	logger otellog.Logger
+	mu     sync.Mutex
 }
 
 func (r *handler) Enabled(level contractslog.Level) bool {
@@ -52,8 +54,8 @@ func (r *handler) getLogger() otellog.Logger {
 		return r.logger
 	}
 
-	if telemetry.TelemetryFacade != nil {
-		r.logger = telemetry.TelemetryFacade.Logger(r.instrumentName)
+	if r.telemetry != nil {
+		r.logger = r.telemetry.Logger(r.instrumentName)
 	}
 
 	return r.logger
