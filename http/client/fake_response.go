@@ -22,44 +22,44 @@ func NewFakeResponse(json foundation.Json) *FakeResponse {
 	}
 }
 
-func (r *FakeResponse) File(path string, status int) client.Response {
+func (r *FakeResponse) File(status int, path string) client.Response {
 	content, err := os.ReadFile(path)
 	if err != nil {
-		return r.make("Failed to read mock file "+path+": "+err.Error(), http.StatusInternalServerError, nil)
+		return r.make(http.StatusInternalServerError, "Failed to read mock file "+path+": "+err.Error(), nil)
 	}
 
-	return r.make(string(content), status, nil)
+	return r.make(status, string(content), nil)
 }
 
-func (r *FakeResponse) Json(data any, status int) client.Response {
+func (r *FakeResponse) Json(status int, data any) client.Response {
 	content, err := r.json.Marshal(data)
 	if err != nil {
-		return r.make("Failed to marshal mock JSON: "+err.Error(), http.StatusInternalServerError, nil)
+		return r.make(http.StatusInternalServerError, "Failed to marshal mock JSON: "+err.Error(), nil)
 	}
 
 	header := http.Header{}
 	header.Set("Content-Type", "application/json")
 
-	return r.make(string(content), status, header)
+	return r.make(status, string(content), header)
 }
 
-func (r *FakeResponse) Make(body string, status int, header http.Header) client.Response {
-	return r.make(body, status, header)
+func (r *FakeResponse) Make(status int, body string, header http.Header) client.Response {
+	return r.make(status, body, header)
 }
 
 func (r *FakeResponse) OK() client.Response {
 	return r.Status(http.StatusOK)
 }
 
-func (r *FakeResponse) Status(code int) client.Response {
-	return r.make("", code, nil)
+func (r *FakeResponse) Status(status int) client.Response {
+	return r.make(status, "", nil)
 }
 
-func (r *FakeResponse) String(body string, status int) client.Response {
-	return r.make(body, status, nil)
+func (r *FakeResponse) String(status int, body string) client.Response {
+	return r.make(status, body, nil)
 }
 
-func (r *FakeResponse) make(body string, status int, header http.Header) client.Response {
+func (r *FakeResponse) make(status int, body string, header http.Header) client.Response {
 	resp := &http.Response{
 		StatusCode: status,
 		Header:     make(http.Header),

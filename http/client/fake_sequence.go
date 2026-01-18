@@ -65,7 +65,7 @@ func (r *FakeSequence) PushStatus(status int, count ...int) client.FakeSequence 
 	return r.pushSnapshot(snapshot, count...)
 }
 
-func (r *FakeSequence) PushString(body string, status int, count ...int) client.FakeSequence {
+func (r *FakeSequence) PushString(status int, body string, count ...int) client.FakeSequence {
 	snapshot := responseSnapshot{
 		body:    body,
 		status:  status,

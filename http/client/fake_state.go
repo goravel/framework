@@ -128,7 +128,7 @@ func toHandler(json foundation.Json, v any) func(client.Request) client.Response
 		}
 	case string:
 		return func(_ client.Request) client.Response {
-			return NewFakeResponse(json).String(h, 200)
+			return NewFakeResponse(json).String(200, h)
 		}
 	case int:
 		return func(_ client.Request) client.Response {

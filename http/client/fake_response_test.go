@@ -57,7 +57,7 @@ func (s *FakeResponseTestSuite) TestFile() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			resp := s.fakeResponse.File(tt.path, tt.status)
+			resp := s.fakeResponse.File(tt.status, tt.path)
 
 			s.Equal(tt.expectedStatus, resp.Status())
 
@@ -109,7 +109,7 @@ func (s *FakeResponseTestSuite) TestJson() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			resp := s.fakeResponse.Json(tt.data, tt.status)
+			resp := s.fakeResponse.Json(tt.status, tt.data)
 
 			s.Equal(tt.expectedStatus, resp.Status())
 
@@ -174,7 +174,7 @@ func (s *FakeResponseTestSuite) TestMake() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			resp := s.fakeResponse.Make(tt.body, tt.status, tt.headers)
+			resp := s.fakeResponse.Make(tt.status, tt.body, tt.headers)
 
 			s.Equal(tt.expectedStatus, resp.Status())
 
@@ -242,7 +242,7 @@ func (s *FakeResponseTestSuite) TestString() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			resp := s.fakeResponse.String(tt.body, tt.status)
+			resp := s.fakeResponse.String(tt.status, tt.body)
 			s.Equal(tt.expectedStatus, resp.Status())
 			body, err := resp.Body()
 			s.NoError(err)

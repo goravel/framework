@@ -23,6 +23,7 @@ func (s *FakeStateTestSuite) TestMatchSpecificity() {
 		"*":                       "generic_wildcard",
 		"api.github.com/*":        "domain_wildcard",
 		"api.github.com/users/*":  "path_wildcard",
+		"api.github.com/user/*":   "path_wildcard_2",
 		"api.github.com/users/1":  "specific_id",
 		"api.github.com/users/ab": "specific_id_alpha",
 	}
@@ -110,10 +111,10 @@ func (s *FakeStateTestSuite) TestStrayRequests() {
 
 func (s *FakeStateTestSuite) TestMockValueConversions() {
 	seq := NewFakeSequence(nil)
-	seq.PushString("first_event", 200)
-	seq.PushString("second_event", 500)
+	seq.PushString(200, "first_event")
+	seq.PushString(500, "second_event")
 
-	singleResp := NewFakeResponse(nil).String("static content", 202)
+	singleResp := NewFakeResponse(nil).String(202, "static content")
 
 	mocks := map[string]any{
 		"https://api.github.com/zen":    "practicality beats purity", // String -> 200 OK + Body

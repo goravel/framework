@@ -23,17 +23,17 @@ func (_m *FakeResponse) EXPECT() *FakeResponse_Expecter {
 	return &FakeResponse_Expecter{mock: &_m.Mock}
 }
 
-// File provides a mock function with given fields: path, status
-func (_m *FakeResponse) File(path string, status int) client.Response {
-	ret := _m.Called(path, status)
+// File provides a mock function with given fields: status, path
+func (_m *FakeResponse) File(status int, path string) client.Response {
+	ret := _m.Called(status, path)
 
 	if len(ret) == 0 {
 		panic("no return value specified for File")
 	}
 
 	var r0 client.Response
-	if rf, ok := ret.Get(0).(func(string, int) client.Response); ok {
-		r0 = rf(path, status)
+	if rf, ok := ret.Get(0).(func(int, string) client.Response); ok {
+		r0 = rf(status, path)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(client.Response)
@@ -49,15 +49,15 @@ type FakeResponse_File_Call struct {
 }
 
 // File is a helper method to define mock.On call
-//   - path string
 //   - status int
-func (_e *FakeResponse_Expecter) File(path interface{}, status interface{}) *FakeResponse_File_Call {
-	return &FakeResponse_File_Call{Call: _e.mock.On("File", path, status)}
+//   - path string
+func (_e *FakeResponse_Expecter) File(status interface{}, path interface{}) *FakeResponse_File_Call {
+	return &FakeResponse_File_Call{Call: _e.mock.On("File", status, path)}
 }
 
-func (_c *FakeResponse_File_Call) Run(run func(path string, status int)) *FakeResponse_File_Call {
+func (_c *FakeResponse_File_Call) Run(run func(status int, path string)) *FakeResponse_File_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(int))
+		run(args[0].(int), args[1].(string))
 	})
 	return _c
 }
@@ -67,22 +67,22 @@ func (_c *FakeResponse_File_Call) Return(_a0 client.Response) *FakeResponse_File
 	return _c
 }
 
-func (_c *FakeResponse_File_Call) RunAndReturn(run func(string, int) client.Response) *FakeResponse_File_Call {
+func (_c *FakeResponse_File_Call) RunAndReturn(run func(int, string) client.Response) *FakeResponse_File_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Json provides a mock function with given fields: obj, code
-func (_m *FakeResponse) Json(obj interface{}, code int) client.Response {
-	ret := _m.Called(obj, code)
+// Json provides a mock function with given fields: code, obj
+func (_m *FakeResponse) Json(code int, obj interface{}) client.Response {
+	ret := _m.Called(code, obj)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Json")
 	}
 
 	var r0 client.Response
-	if rf, ok := ret.Get(0).(func(interface{}, int) client.Response); ok {
-		r0 = rf(obj, code)
+	if rf, ok := ret.Get(0).(func(int, interface{}) client.Response); ok {
+		r0 = rf(code, obj)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(client.Response)
@@ -98,15 +98,15 @@ type FakeResponse_Json_Call struct {
 }
 
 // Json is a helper method to define mock.On call
-//   - obj interface{}
 //   - code int
-func (_e *FakeResponse_Expecter) Json(obj interface{}, code interface{}) *FakeResponse_Json_Call {
-	return &FakeResponse_Json_Call{Call: _e.mock.On("Json", obj, code)}
+//   - obj interface{}
+func (_e *FakeResponse_Expecter) Json(code interface{}, obj interface{}) *FakeResponse_Json_Call {
+	return &FakeResponse_Json_Call{Call: _e.mock.On("Json", code, obj)}
 }
 
-func (_c *FakeResponse_Json_Call) Run(run func(obj interface{}, code int)) *FakeResponse_Json_Call {
+func (_c *FakeResponse_Json_Call) Run(run func(code int, obj interface{})) *FakeResponse_Json_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(interface{}), args[1].(int))
+		run(args[0].(int), args[1].(interface{}))
 	})
 	return _c
 }
@@ -116,22 +116,22 @@ func (_c *FakeResponse_Json_Call) Return(_a0 client.Response) *FakeResponse_Json
 	return _c
 }
 
-func (_c *FakeResponse_Json_Call) RunAndReturn(run func(interface{}, int) client.Response) *FakeResponse_Json_Call {
+func (_c *FakeResponse_Json_Call) RunAndReturn(run func(int, interface{}) client.Response) *FakeResponse_Json_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Make provides a mock function with given fields: body, status, header
-func (_m *FakeResponse) Make(body string, status int, header http.Header) client.Response {
-	ret := _m.Called(body, status, header)
+// Make provides a mock function with given fields: status, body, header
+func (_m *FakeResponse) Make(status int, body string, header http.Header) client.Response {
+	ret := _m.Called(status, body, header)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Make")
 	}
 
 	var r0 client.Response
-	if rf, ok := ret.Get(0).(func(string, int, http.Header) client.Response); ok {
-		r0 = rf(body, status, header)
+	if rf, ok := ret.Get(0).(func(int, string, http.Header) client.Response); ok {
+		r0 = rf(status, body, header)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(client.Response)
@@ -147,16 +147,16 @@ type FakeResponse_Make_Call struct {
 }
 
 // Make is a helper method to define mock.On call
-//   - body string
 //   - status int
+//   - body string
 //   - header http.Header
-func (_e *FakeResponse_Expecter) Make(body interface{}, status interface{}, header interface{}) *FakeResponse_Make_Call {
-	return &FakeResponse_Make_Call{Call: _e.mock.On("Make", body, status, header)}
+func (_e *FakeResponse_Expecter) Make(status interface{}, body interface{}, header interface{}) *FakeResponse_Make_Call {
+	return &FakeResponse_Make_Call{Call: _e.mock.On("Make", status, body, header)}
 }
 
-func (_c *FakeResponse_Make_Call) Run(run func(body string, status int, header http.Header)) *FakeResponse_Make_Call {
+func (_c *FakeResponse_Make_Call) Run(run func(status int, body string, header http.Header)) *FakeResponse_Make_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(int), args[2].(http.Header))
+		run(args[0].(int), args[1].(string), args[2].(http.Header))
 	})
 	return _c
 }
@@ -166,7 +166,7 @@ func (_c *FakeResponse_Make_Call) Return(_a0 client.Response) *FakeResponse_Make
 	return _c
 }
 
-func (_c *FakeResponse_Make_Call) RunAndReturn(run func(string, int, http.Header) client.Response) *FakeResponse_Make_Call {
+func (_c *FakeResponse_Make_Call) RunAndReturn(run func(int, string, http.Header) client.Response) *FakeResponse_Make_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -266,17 +266,17 @@ func (_c *FakeResponse_Status_Call) RunAndReturn(run func(int) client.Response) 
 	return _c
 }
 
-// String provides a mock function with given fields: body, status
-func (_m *FakeResponse) String(body string, status int) client.Response {
-	ret := _m.Called(body, status)
+// String provides a mock function with given fields: status, body
+func (_m *FakeResponse) String(status int, body string) client.Response {
+	ret := _m.Called(status, body)
 
 	if len(ret) == 0 {
 		panic("no return value specified for String")
 	}
 
 	var r0 client.Response
-	if rf, ok := ret.Get(0).(func(string, int) client.Response); ok {
-		r0 = rf(body, status)
+	if rf, ok := ret.Get(0).(func(int, string) client.Response); ok {
+		r0 = rf(status, body)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(client.Response)
@@ -292,15 +292,15 @@ type FakeResponse_String_Call struct {
 }
 
 // String is a helper method to define mock.On call
-//   - body string
 //   - status int
-func (_e *FakeResponse_Expecter) String(body interface{}, status interface{}) *FakeResponse_String_Call {
-	return &FakeResponse_String_Call{Call: _e.mock.On("String", body, status)}
+//   - body string
+func (_e *FakeResponse_Expecter) String(status interface{}, body interface{}) *FakeResponse_String_Call {
+	return &FakeResponse_String_Call{Call: _e.mock.On("String", status, body)}
 }
 
-func (_c *FakeResponse_String_Call) Run(run func(body string, status int)) *FakeResponse_String_Call {
+func (_c *FakeResponse_String_Call) Run(run func(status int, body string)) *FakeResponse_String_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(int))
+		run(args[0].(int), args[1].(string))
 	})
 	return _c
 }
@@ -310,7 +310,7 @@ func (_c *FakeResponse_String_Call) Return(_a0 client.Response) *FakeResponse_St
 	return _c
 }
 
-func (_c *FakeResponse_String_Call) RunAndReturn(run func(string, int) client.Response) *FakeResponse_String_Call {
+func (_c *FakeResponse_String_Call) RunAndReturn(run func(int, string) client.Response) *FakeResponse_String_Call {
 	_c.Call.Return(run)
 	return _c
 }

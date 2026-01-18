@@ -146,14 +146,14 @@ func (_c *FakeSequence_PushStatus_Call) RunAndReturn(run func(int, ...int) clien
 	return _c
 }
 
-// PushString provides a mock function with given fields: body, status, count
-func (_m *FakeSequence) PushString(body string, status int, count ...int) client.FakeSequence {
+// PushString provides a mock function with given fields: status, body, count
+func (_m *FakeSequence) PushString(status int, body string, count ...int) client.FakeSequence {
 	_va := make([]interface{}, len(count))
 	for _i := range count {
 		_va[_i] = count[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, body, status)
+	_ca = append(_ca, status, body)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
@@ -162,8 +162,8 @@ func (_m *FakeSequence) PushString(body string, status int, count ...int) client
 	}
 
 	var r0 client.FakeSequence
-	if rf, ok := ret.Get(0).(func(string, int, ...int) client.FakeSequence); ok {
-		r0 = rf(body, status, count...)
+	if rf, ok := ret.Get(0).(func(int, string, ...int) client.FakeSequence); ok {
+		r0 = rf(status, body, count...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(client.FakeSequence)
@@ -179,15 +179,15 @@ type FakeSequence_PushString_Call struct {
 }
 
 // PushString is a helper method to define mock.On call
-//   - body string
 //   - status int
+//   - body string
 //   - count ...int
-func (_e *FakeSequence_Expecter) PushString(body interface{}, status interface{}, count ...interface{}) *FakeSequence_PushString_Call {
+func (_e *FakeSequence_Expecter) PushString(status interface{}, body interface{}, count ...interface{}) *FakeSequence_PushString_Call {
 	return &FakeSequence_PushString_Call{Call: _e.mock.On("PushString",
-		append([]interface{}{body, status}, count...)...)}
+		append([]interface{}{status, body}, count...)...)}
 }
 
-func (_c *FakeSequence_PushString_Call) Run(run func(body string, status int, count ...int)) *FakeSequence_PushString_Call {
+func (_c *FakeSequence_PushString_Call) Run(run func(status int, body string, count ...int)) *FakeSequence_PushString_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		variadicArgs := make([]int, len(args)-2)
 		for i, a := range args[2:] {
@@ -195,7 +195,7 @@ func (_c *FakeSequence_PushString_Call) Run(run func(body string, status int, co
 				variadicArgs[i] = a.(int)
 			}
 		}
-		run(args[0].(string), args[1].(int), variadicArgs...)
+		run(args[0].(int), args[1].(string), variadicArgs...)
 	})
 	return _c
 }
@@ -205,7 +205,7 @@ func (_c *FakeSequence_PushString_Call) Return(_a0 client.FakeSequence) *FakeSeq
 	return _c
 }
 
-func (_c *FakeSequence_PushString_Call) RunAndReturn(run func(string, int, ...int) client.FakeSequence) *FakeSequence_PushString_Call {
+func (_c *FakeSequence_PushString_Call) RunAndReturn(run func(int, string, ...int) client.FakeSequence) *FakeSequence_PushString_Call {
 	_c.Call.Return(run)
 	return _c
 }

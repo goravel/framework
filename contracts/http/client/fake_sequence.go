@@ -8,7 +8,7 @@ type FakeSequence interface {
 	PushStatus(status int, count ...int) FakeSequence
 
 	// PushString adds a string-body response to the sequence.
-	PushString(body string, status int, count ...int) FakeSequence
+	PushString(status int, body string, count ...int) FakeSequence
 
 	// WhenEmpty defines the default response to return when the sequence is exhausted.
 	WhenEmpty(response Response) FakeSequence

@@ -30,8 +30,8 @@ func (s *FakeSequenceTestSuite) TestSequence_Flow() {
 		sequence := NewFakeSequence(s.json)
 
 		sequence.PushStatus(201)
-		sequence.PushString("Hello", 200)
-		sequence.Push(s.factory.Json(map[string]int{"id": 1}, 200))
+		sequence.PushString(200, "Hello")
+		sequence.Push(s.factory.Json(200, map[string]int{"id": 1}))
 
 		// Call 1
 		resp1 := sequence.getNext()
