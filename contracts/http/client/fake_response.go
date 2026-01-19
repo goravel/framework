@@ -7,7 +7,7 @@ type FakeResponse interface {
 	File(status int, path string) Response
 
 	// Json creates a mock response with a JSON body and "application/json" content type.
-	Json(code int, obj any) Response
+	Json(status int, obj any) Response
 
 	// Make constructs a custom mock response with the specified body, status, and headers.
 	Make(status int, body string, header http.Header) Response
@@ -16,7 +16,7 @@ type FakeResponse interface {
 	OK() Response
 
 	// Status creates a mock response with the specified status code and an empty body.
-	Status(code int) Response
+	Status(status int) Response
 
 	// String creates a mock response with a raw string body.
 	String(status int, body string) Response
