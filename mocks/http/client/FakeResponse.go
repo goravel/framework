@@ -72,9 +72,9 @@ func (_c *FakeResponse_File_Call) RunAndReturn(run func(int, string) client.Resp
 	return _c
 }
 
-// Json provides a mock function with given fields: code, obj
-func (_m *FakeResponse) Json(code int, obj interface{}) client.Response {
-	ret := _m.Called(code, obj)
+// Json provides a mock function with given fields: status, obj
+func (_m *FakeResponse) Json(status int, obj interface{}) client.Response {
+	ret := _m.Called(status, obj)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Json")
@@ -82,7 +82,7 @@ func (_m *FakeResponse) Json(code int, obj interface{}) client.Response {
 
 	var r0 client.Response
 	if rf, ok := ret.Get(0).(func(int, interface{}) client.Response); ok {
-		r0 = rf(code, obj)
+		r0 = rf(status, obj)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(client.Response)
@@ -98,13 +98,13 @@ type FakeResponse_Json_Call struct {
 }
 
 // Json is a helper method to define mock.On call
-//   - code int
+//   - status int
 //   - obj interface{}
-func (_e *FakeResponse_Expecter) Json(code interface{}, obj interface{}) *FakeResponse_Json_Call {
-	return &FakeResponse_Json_Call{Call: _e.mock.On("Json", code, obj)}
+func (_e *FakeResponse_Expecter) Json(status interface{}, obj interface{}) *FakeResponse_Json_Call {
+	return &FakeResponse_Json_Call{Call: _e.mock.On("Json", status, obj)}
 }
 
-func (_c *FakeResponse_Json_Call) Run(run func(code int, obj interface{})) *FakeResponse_Json_Call {
+func (_c *FakeResponse_Json_Call) Run(run func(status int, obj interface{})) *FakeResponse_Json_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(int), args[1].(interface{}))
 	})
@@ -218,9 +218,9 @@ func (_c *FakeResponse_OK_Call) RunAndReturn(run func() client.Response) *FakeRe
 	return _c
 }
 
-// Status provides a mock function with given fields: code
-func (_m *FakeResponse) Status(code int) client.Response {
-	ret := _m.Called(code)
+// Status provides a mock function with given fields: status
+func (_m *FakeResponse) Status(status int) client.Response {
+	ret := _m.Called(status)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Status")
@@ -228,7 +228,7 @@ func (_m *FakeResponse) Status(code int) client.Response {
 
 	var r0 client.Response
 	if rf, ok := ret.Get(0).(func(int) client.Response); ok {
-		r0 = rf(code)
+		r0 = rf(status)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(client.Response)
@@ -244,12 +244,12 @@ type FakeResponse_Status_Call struct {
 }
 
 // Status is a helper method to define mock.On call
-//   - code int
-func (_e *FakeResponse_Expecter) Status(code interface{}) *FakeResponse_Status_Call {
-	return &FakeResponse_Status_Call{Call: _e.mock.On("Status", code)}
+//   - status int
+func (_e *FakeResponse_Expecter) Status(status interface{}) *FakeResponse_Status_Call {
+	return &FakeResponse_Status_Call{Call: _e.mock.On("Status", status)}
 }
 
-func (_c *FakeResponse_Status_Call) Run(run func(code int)) *FakeResponse_Status_Call {
+func (_c *FakeResponse_Status_Call) Run(run func(status int)) *FakeResponse_Status_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(int))
 	})
