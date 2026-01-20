@@ -47,7 +47,12 @@ func Copy(src, dst string) error {
 	}
 	defer errors.Ignore(in.Close)
 
-	out, err := os.Create(dst)
+	info, err := in.Stat()
+	if err != nil {
+		return err
+	}
+
+	out, err := os.OpenFile(dst, os.O_RDWR|os.O_CREATE|os.O_TRUNC, info.Mode())
 	if err != nil {
 		return err
 	}

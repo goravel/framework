@@ -74,7 +74,6 @@ type Process interface {
 	OnOutput(handler OnOutputFunc) Process
 
 	// Run starts the process, waits for it to complete, and returns the result.
-	// It returns an error if the process cannot be started or if execution fails.
 	Run(name string, arg ...string) Result
 
 	// Start begins running the process asynchronously and returns a Running

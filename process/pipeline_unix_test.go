@@ -14,11 +14,13 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	contractsprocess "github.com/goravel/framework/contracts/process"
+	"github.com/goravel/framework/errors"
 )
 
 func TestPipe_ErrorOnNoSteps_Unix(t *testing.T) {
 	res := NewPipe().Quietly().Pipe(func(b contractsprocess.Pipe) {}).Run()
-	assert.Contains(t, res.Error(), "pipeline must have at least one command")
+
+	assert.Equal(t, errors.ProcessPipelineEmpty, res.Error())
 }
 
 func TestPipe_Run_SimplePipeline_Unix(t *testing.T) {

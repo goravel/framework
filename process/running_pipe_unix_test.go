@@ -80,3 +80,19 @@ func TestRunningPipe_Panic_AppendsToStderr_Unix(t *testing.T) {
 	<-rp.Done()
 	assert.Equal(t, "panic: runtime error: invalid memory address or nil pointer dereference\n", stderr.String())
 }
+
+func TestRunningPipe_Interruption_MiddleCommandFails(t *testing.T) {
+	rp, err := NewPipe().Quietly().Pipe(func(b contractsprocess.Pipe) {
+		b.Command("echo", "line1").As("first")
+		b.Command("sh", "-c", "cat; exit 1").As("second")
+		b.Command("echo", "line2")
+		b.Command("cat")
+	}).Start()
+	assert.NoError(t, err)
+
+	res := rp.Wait()
+	assert.False(t, res.Successful())
+	assert.Equal(t, 1, res.ExitCode())
+	assert.Contains(t, res.Output(), "line1")
+	assert.NotContains(t, res.Output(), "line2")
+}

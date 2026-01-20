@@ -72,11 +72,11 @@ func (r *Result) Error() error {
 		return r.err
 	}
 
-	if r.stderr != "" {
-		return errors.New(r.stderr)
-	}
-
 	if r.ExitCode() != 0 {
+		if r.stderr != "" {
+			return errors.New(strings.TrimSpace(r.stderr))
+		}
+
 		return fmt.Errorf("process exited with code %d", r.ExitCode())
 	}
 

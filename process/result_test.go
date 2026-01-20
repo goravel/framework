@@ -3,17 +3,15 @@ package process
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/goravel/framework/errors"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestResult_Methods(t *testing.T) {
-	err := errors.New("hello")
-	res := NewResult(err, 0, "cmd arg1", "out", "err")
-	assert.ErrorIs(t, err, res.Error())
-	assert.True(t, res.Successful())
-	assert.False(t, res.Failed())
+	res := NewResult(assert.AnError, 0, "cmd arg1", "out", "err")
+	assert.Equal(t, assert.AnError, res.Error())
+	assert.True(t, res.Failed())
+	assert.False(t, res.Successful())
 	assert.Equal(t, 0, res.ExitCode())
 	assert.Equal(t, "out", res.Output())
 	assert.Equal(t, "err", res.ErrorOutput())
@@ -35,8 +33,6 @@ func TestResult_NilReceiverSafety(t *testing.T) {
 }
 
 func TestResultMethods_TableDriven(t *testing.T) {
-	dummyErr := errors.New("error")
-
 	tests := []struct {
 		name           string
 		res            *Result
@@ -90,6 +86,7 @@ func TestResultMethods_TableDriven(t *testing.T) {
 			expectExitCode: 2,
 			expectOutput:   "out",
 			expectErrOut:   "err msg",
+			expectedErr:    errors.New("err msg"),
 			expectCommand:  "cmd",
 			seeOut:         "nope",
 			seeErr:         "err",
@@ -112,14 +109,14 @@ func TestResultMethods_TableDriven(t *testing.T) {
 		},
 		{
 			name:           "command wait error",
-			res:            NewResult(dummyErr, 0, "cmd", "abc", "xyz"),
-			expectSuccess:  true,
-			expectFailed:   false,
+			res:            NewResult(assert.AnError, 0, "cmd", "abc", "xyz"),
+			expectSuccess:  false,
+			expectFailed:   true,
 			expectExitCode: 0,
 			expectOutput:   "abc",
 			expectErrOut:   "xyz",
 			expectCommand:  "cmd",
-			expectedErr:    dummyErr,
+			expectedErr:    assert.AnError,
 			seeOut:         "",
 			seeErr:         "",
 			seeOutWant:     false,
@@ -135,7 +132,7 @@ func TestResultMethods_TableDriven(t *testing.T) {
 			assert.Equal(t, test.expectOutput, test.res.Output())
 			assert.Equal(t, test.expectErrOut, test.res.ErrorOutput())
 			assert.Equal(t, test.expectCommand, test.res.Command())
-			assert.ErrorIs(t, test.expectedErr, test.res.Error())
+			assert.Equal(t, test.expectedErr, test.res.Error())
 			assert.Equal(t, test.seeOutWant, test.res.SeeInOutput(test.seeOut))
 			assert.Equal(t, test.seeErrOutWant, test.res.SeeInErrorOutput(test.seeErr))
 		})

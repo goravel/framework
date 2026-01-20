@@ -99,18 +99,50 @@ func TestContains(t *testing.T) {
 }
 
 func TestCopyFile(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "test-copy-file")
-	assert.Nil(t, err)
-	src := filepath.Join(tmpDir, ".env.example")
-	dst := filepath.Join(tmpDir, ".env")
+	t.Run("copy file successfully", func(t *testing.T) {
+		src := filepath.Join(t.TempDir(), ".env.example")
+		dst := filepath.Join(t.TempDir(), ".env")
+		content := "example env content"
 
-	err = os.WriteFile(src, []byte("example env"), os.ModePerm)
-	assert.Nil(t, err)
-	assert.True(t, Exists(src))
-	assert.Nil(t, Copy(src, dst))
-	assert.True(t, Exists(dst))
-	assert.Nil(t, os.Remove(src))
-	assert.Nil(t, os.Remove(dst))
+		assert.NoError(t, os.WriteFile(src, []byte(content), os.ModePerm))
+		assert.True(t, Exists(src))
+
+		assert.NoError(t, Copy(src, dst))
+		assert.True(t, Exists(dst))
+
+		// Verify content was copied correctly
+		dstContent, err := GetContent(dst)
+		assert.NoError(t, err)
+		assert.Equal(t, content, dstContent)
+	})
+
+	t.Run("source file does not exist", func(t *testing.T) {
+		src := filepath.Join(t.TempDir(), "nonexistent.txt")
+		dst := filepath.Join(t.TempDir(), "destination.txt")
+
+		assert.Error(t, Copy(src, dst))
+		assert.False(t, Exists(dst))
+	})
+
+	t.Run("copy to existing file overwrites", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		src := filepath.Join(tmpDir, "source.txt")
+		dst := filepath.Join(tmpDir, "destination.txt")
+		srcContent := "new content"
+		oldContent := "old content"
+
+		// Create destination with old content
+		assert.NoError(t, PutContent(dst, oldContent))
+		// Create source with new content
+		assert.NoError(t, PutContent(src, srcContent))
+
+		// Copy should overwrite
+		assert.NoError(t, Copy(src, dst))
+
+		result, err := GetContent(dst)
+		assert.NoError(t, err)
+		assert.Equal(t, srcContent, result)
+	})
 }
 
 func TestCreate(t *testing.T) {

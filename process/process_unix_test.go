@@ -190,6 +190,23 @@ func TestProcess_WithContext(t *testing.T) {
 	})
 }
 
+func TestProcess_WithLoading(t *testing.T) {
+	t.Run("With default message", func(t *testing.T) {
+		process := New().WithLoading()
+
+		assert.True(t, process.(*Process).loading)
+		assert.Empty(t, process.(*Process).loadingMessage)
+	})
+
+	t.Run("With custom message", func(t *testing.T) {
+		customMessage := "Processing..."
+		process := New().WithLoading(customMessage)
+
+		assert.True(t, process.(*Process).loading)
+		assert.Equal(t, customMessage, process.(*Process).loadingMessage)
+	})
+}
+
 func TestGetExitCode_Unix(t *testing.T) {
 	assert.Equal(t, 0, getExitCode(nil, nil))
 

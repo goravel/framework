@@ -106,8 +106,8 @@ func TestProcess_Run_Windows(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			p := New()
 			tt.setup(p)
-			res, err := p.Run(tt.args[0], tt.args[1:]...)
-			assert.Equal(t, tt.expectOK, err == nil)
+			res := p.Run(tt.args[0], tt.args[1:]...)
+			assert.Equal(t, tt.expectOK, res.Error() == nil)
 			r, ok := res.(*Result)
 			assert.True(t, ok, "unexpected result type")
 			tt.check(t, r)
@@ -139,18 +139,17 @@ func TestProcess_Pool_Windows(t *testing.T) {
 func TestProcess_Pipe_Windows(t *testing.T) {
 	t.Run("creates pipeline and executes commands", func(t *testing.T) {
 		p := New()
-		result, err := p.Pipe(func(pipe contractsprocess.Pipe) {
+		result := p.Pipe(func(pipe contractsprocess.Pipe) {
 			pipe.Command("cmd", "/C", "echo hello")
 			pipe.Command("findstr", "hello")
 		}).Run()
 
-		assert.NoError(t, err)
 		assert.Contains(t, result.Output(), "hello")
 	})
 
 	t.Run("returns error with nil configurer", func(t *testing.T) {
 		p := New()
-		_, err := p.Pipe(nil).Run()
-		assert.ErrorIs(t, err, errors.ProcessPipeNilConfigurer)
+		res := p.Pipe(nil).Run()
+		assert.Equal(t, errors.ProcessPipeNilConfigurer, res.Error())
 	})
 }
