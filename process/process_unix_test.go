@@ -234,19 +234,18 @@ func TestProcess_Pool_Unix(t *testing.T) {
 func TestProcess_Pipe_Unix(t *testing.T) {
 	t.Run("creates pipeline and executes commands", func(t *testing.T) {
 		p := New()
-		result, err := p.Pipe(func(pipe contractsprocess.Pipe) {
+		result := p.Pipe(func(pipe contractsprocess.Pipe) {
 			pipe.Command("echo", "hello")
 			pipe.Command("cat")
 			pipe.Command("tr", "a-z", "A-Z")
 		}).Run()
 
-		assert.NoError(t, err)
 		assert.Contains(t, result.Output(), "HELLO")
 	})
 
 	t.Run("returns error with nil configurer", func(t *testing.T) {
 		p := New()
-		_, err := p.Pipe(nil).Run()
-		assert.ErrorIs(t, err, errors.ProcessPipeNilConfigurer)
+		result := p.Pipe(nil).Run()
+		assert.ErrorIs(t, result.Error(), errors.ProcessPipeNilConfigurer)
 	})
 }

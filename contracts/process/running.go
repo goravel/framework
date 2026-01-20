@@ -8,9 +8,6 @@ import (
 // Running represents a handle to a single, active process.
 // Its primary role is to manage the lifecycle and inspect the state of the process.
 type Running interface {
-	// Command returns the full command string used to start the process,
-	Command() string
-
 	// Done returns a read-only channel that is closed once the process has exited.
 	//
 	// This provides an efficient, non-polling mechanism to wait for process completion,

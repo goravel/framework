@@ -80,7 +80,7 @@ func (r *Process) Quietly() contractsprocess.Process {
 func (r *Process) Run(name string, args ...string) contractsprocess.Result {
 	run, err := r.start(name, args...)
 	if err != nil {
-		return NewResult(err, 1, run.Command(), "", "")
+		return NewResult(err, 1, "", "", "")
 	}
 
 	return run.Wait()

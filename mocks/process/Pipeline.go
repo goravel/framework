@@ -361,7 +361,7 @@ func (_c *Pipeline_Quietly_Call) RunAndReturn(run func() process.Pipeline) *Pipe
 }
 
 // Run provides a mock function with no fields
-func (_m *Pipeline) Run() (process.Result, error) {
+func (_m *Pipeline) Run() process.Result {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
@@ -369,10 +369,6 @@ func (_m *Pipeline) Run() (process.Result, error) {
 	}
 
 	var r0 process.Result
-	var r1 error
-	if rf, ok := ret.Get(0).(func() (process.Result, error)); ok {
-		return rf()
-	}
 	if rf, ok := ret.Get(0).(func() process.Result); ok {
 		r0 = rf()
 	} else {
@@ -381,13 +377,7 @@ func (_m *Pipeline) Run() (process.Result, error) {
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // Pipeline_Run_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Run'
@@ -407,12 +397,12 @@ func (_c *Pipeline_Run_Call) Run(run func()) *Pipeline_Run_Call {
 	return _c
 }
 
-func (_c *Pipeline_Run_Call) Return(_a0 process.Result, _a1 error) *Pipeline_Run_Call {
-	_c.Call.Return(_a0, _a1)
+func (_c *Pipeline_Run_Call) Return(_a0 process.Result) *Pipeline_Run_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Pipeline_Run_Call) RunAndReturn(run func() (process.Result, error)) *Pipeline_Run_Call {
+func (_c *Pipeline_Run_Call) RunAndReturn(run func() process.Result) *Pipeline_Run_Call {
 	_c.Call.Return(run)
 	return _c
 }

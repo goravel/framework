@@ -25,51 +25,6 @@ func (_m *Running) EXPECT() *Running_Expecter {
 	return &Running_Expecter{mock: &_m.Mock}
 }
 
-// Command provides a mock function with no fields
-func (_m *Running) Command() string {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for Command")
-	}
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	return r0
-}
-
-// Running_Command_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Command'
-type Running_Command_Call struct {
-	*mock.Call
-}
-
-// Command is a helper method to define mock.On call
-func (_e *Running_Expecter) Command() *Running_Command_Call {
-	return &Running_Command_Call{Call: _e.mock.On("Command")}
-}
-
-func (_c *Running_Command_Call) Run(run func()) *Running_Command_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Running_Command_Call) Return(_a0 string) *Running_Command_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Running_Command_Call) RunAndReturn(run func() string) *Running_Command_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // Done provides a mock function with no fields
 func (_m *Running) Done() <-chan struct{} {
 	ret := _m.Called()

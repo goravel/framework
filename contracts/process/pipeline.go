@@ -43,7 +43,7 @@ type Pipeline interface {
 	OnOutput(handler OnPipeOutputFunc) Pipeline
 
 	// Run executes, waits for completion, and returns the final Result.
-	Run() (Result, error)
+	Run() Result
 
 	// Start starts execution asynchronously, returning a RunningPipe.
 	Start() (RunningPipe, error)

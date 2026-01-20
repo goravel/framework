@@ -14,8 +14,8 @@ import (
 
 type RunningPipe struct {
 	commands     []*exec.Cmd
-	pipeCommands []*PipeCommand
 	cancel       context.CancelFunc
+	pipeCommands []*PipeCommand
 
 	interReaders []*io.PipeReader
 	interWriters []*io.PipeWriter
@@ -37,8 +37,8 @@ func NewRunningPipe(
 ) *RunningPipe {
 	pipeRunner := &RunningPipe{
 		commands:         commands,
-		pipeCommands:     pipeCommands,
 		cancel:           cancel,
+		pipeCommands:     pipeCommands,
 		interReaders:     interReaders,
 		interWriters:     interWriters,
 		stdOutputBuffers: stdout,
@@ -47,16 +47,19 @@ func NewRunningPipe(
 	}
 
 	go func(runner *RunningPipe) {
+		var (
+			lastCmd *exec.Cmd
+			lastIdx int
+			err     error
+		)
+
 		defer func() {
 			if err := recover(); err != nil {
 				// append panic to the last step's stderr buffer if available
-				if len(runner.stdErrorBuffers) > 0 {
-					lastIdx := len(runner.stdErrorBuffers) - 1
-					if runner.stdErrorBuffers[lastIdx] != nil {
-						runner.stdErrorBuffers[lastIdx].WriteString("panic: ")
-						_, _ = fmt.Fprint(runner.stdErrorBuffers[lastIdx], err)
-						runner.stdErrorBuffers[lastIdx].WriteString("\n")
-					}
+				if len(runner.stdErrorBuffers) > 0 && runner.stdErrorBuffers[lastIdx] != nil {
+					runner.stdErrorBuffers[lastIdx].WriteString("panic: ")
+					_, _ = fmt.Fprint(runner.stdErrorBuffers[lastIdx], err)
+					runner.stdErrorBuffers[lastIdx].WriteString("\n")
 				}
 			}
 			if runner.cancel != nil {
@@ -65,23 +68,28 @@ func NewRunningPipe(
 			close(runner.doneChan)
 		}()
 
-		var waitErr error
 		for i, cmd := range runner.commands {
-			waitErr = cmd.Wait()
+			lastCmd = cmd
+			lastIdx = i
+			err = cmd.Wait()
 
 			// Close the writer that fed the next process's stdin.
 			// Closing here ensures the next process sees EOF when upstream finishes.
 			if i < len(runner.interWriters) {
 				_ = runner.interWriters[i].Close()
 			}
+
+			if err != nil {
+				for j := i + 1; j < len(runner.interWriters); j++ {
+					_ = runner.interWriters[j].Close()
+				}
+
+				break
+			}
 		}
 
-		lastIdx := len(runner.commands) - 1
-		finalCmd := runner.commands[lastIdx]
-
-		exitCode := getExitCode(finalCmd, waitErr)
-
-		cmdStr := finalCmd.String()
+		exitCode := getExitCode(lastCmd, err)
+		cmdStr := lastCmd.String()
 
 		stdoutStr, stderrStr := "", ""
 		if runner.stdOutputBuffers[lastIdx] != nil {
@@ -91,11 +99,8 @@ func NewRunningPipe(
 			stderrStr = runner.stdErrorBuffers[lastIdx].String()
 		}
 
-		runner.result = NewResult(waitErr, exitCode, cmdStr, stdoutStr, stderrStr)
+		runner.result = NewResult(err, exitCode, cmdStr, stdoutStr, stderrStr)
 
-		for _, w := range runner.interWriters {
-			_ = w.Close()
-		}
 		for _, r := range runner.interReaders {
 			_ = r.Close()
 		}

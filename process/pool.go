@@ -45,7 +45,11 @@ func (r *PoolBuilder) Pool(configurer func(pool contractsprocess.Pool)) contract
 }
 
 func (r *PoolBuilder) Run() (map[string]contractsprocess.Result, error) {
-	return r.run(r.poolConfigurer)
+	run, err := r.start(r.poolConfigurer)
+	if err != nil {
+		return nil, err
+	}
+	return run.Wait(), nil
 }
 
 func (r *PoolBuilder) Start() (contractsprocess.RunningPool, error) {
@@ -63,14 +67,6 @@ func (r *PoolBuilder) WithContext(ctx context.Context) contractsprocess.PoolBuil
 	}
 	r.ctx = ctx
 	return r
-}
-
-func (r *PoolBuilder) run(configurer func(pool contractsprocess.Pool)) (map[string]contractsprocess.Result, error) {
-	run, err := r.start(configurer)
-	if err != nil {
-		return nil, err
-	}
-	return run.Wait(), nil
 }
 
 type job struct {
@@ -129,6 +125,7 @@ func (r *PoolBuilder) start(configurer func(contractsprocess.Pool)) (contractspr
 
 	var resultsWg sync.WaitGroup
 	var workersWg sync.WaitGroup
+	var startsWg sync.WaitGroup
 	var mu sync.Mutex
 
 	// The results collector goroutine centralizes writing to the results map
@@ -189,15 +186,23 @@ func (r *PoolBuilder) start(configurer func(contractsprocess.Pool)) (contractspr
 						resultCh <- result{key: k, res: res}
 					}(run, command.key)
 				}
+
+				// Signal that this process has completed its start attempt
+				startsWg.Done()
 			}
 		}()
 	}
 
+	startsWg.Add(len(commands))
 	for i, command := range commands {
 		keys[i] = command.key
 		jobCh <- job{id: i, command: command}
 	}
 	close(jobCh)
+
+	// Wait for all processes to complete their start attempts before returning.
+	// This ensures the runningProcesses slice is fully populated and safe to access.
+	startsWg.Wait()
 
 	// This goroutine orchestrates the clean shutdown. It waits for all workers
 	// to finish processing jobs, then waits for all results to be collected.
