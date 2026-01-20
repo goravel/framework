@@ -91,6 +91,7 @@ func (r *PackageInstallCommand) Handle(ctx console.Context) error {
 				{Key: "All facades", Value: "all"},
 				{Key: "Select facades", Value: "select"},
 				{Key: "Third-party package", Value: "third"},
+				{Key: "None", Value: "none"},
 			}
 
 			choice, err := ctx.Choice("Which facades or package do you want to install?", options)

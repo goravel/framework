@@ -2,6 +2,7 @@ package file
 
 import (
 	"go/build"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -37,6 +38,24 @@ func Contains(file string, search string) bool {
 	}
 
 	return false
+}
+
+func Copy(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer errors.Ignore(in.Close)
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer errors.Ignore(out.Close)
+
+	_, err = io.Copy(out, in)
+
+	return err
 }
 
 // Create a file with the given content

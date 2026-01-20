@@ -128,8 +128,8 @@ func TestProcess_Run_Unix(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			p := New()
 			tt.setup(p)
-			res, err := p.Run(tt.args[0], tt.args[1:]...)
-			assert.Equal(t, tt.expectOK, err == nil)
+			res := p.Run(tt.args[0], tt.args[1:]...)
+			assert.True(t, res.Successful())
 			assert.NotNil(t, res)
 			r, ok := res.(*Result)
 			assert.True(t, ok, "unexpected result type")
@@ -148,8 +148,7 @@ func TestProcess_OnOutput_Callbacks_Unix(t *testing.T) {
 			errLines = append(errLines, append([]byte(nil), line...))
 		}
 	}).Quietly()
-	res, err := p.Run("sh", "-c", "printf 'a\n'; printf 'b\n' 1>&2")
-	assert.NoError(t, err)
+	res := p.Run("sh", "-c", "printf 'a\n'; printf 'b\n' 1>&2")
 	assert.True(t, res.Successful())
 	if assert.NotEmpty(t, outLines) {
 		assert.Equal(t, "a", strings.TrimSpace(string(outLines[0])))
@@ -163,8 +162,8 @@ func TestProcess_ErrorOnMissingCommand_Unix(t *testing.T) {
 	_, err := New().Quietly().Start("")
 	assert.Error(t, err)
 
-	_, err = New().Quietly().Run("")
-	assert.Error(t, err)
+	res := New().Quietly().Run("")
+	assert.True(t, res.Failed())
 }
 
 func TestProcess_WithContext(t *testing.T) {
@@ -172,9 +171,8 @@ func TestProcess_WithContext(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		res, err := New().WithContext(ctx).Quietly().Run("echo", "hello world")
+		res := New().WithContext(ctx).Quietly().Run("echo", "hello world")
 
-		assert.NoError(t, err, "Run should not return an error on success")
 		assert.NotNil(t, res, "Result object should not be nil")
 		assert.True(t, res.Successful(), "Process should be successful")
 		assert.Equal(t, 0, res.ExitCode(), "Exit code should be 0 for a successful command")
@@ -185,8 +183,7 @@ func TestProcess_WithContext(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 		defer cancel()
 
-		res, err := New().WithContext(ctx).Quietly().Run("sleep", "2")
-		assert.NoError(t, err, "Run should not return an error, but the result should indicate failure")
+		res := New().WithContext(ctx).Quietly().Run("sleep", "2")
 		assert.NotNil(t, res, "Result object should not be nil even on failure")
 		assert.False(t, res.Successful(), "Process should have failed because it was killed")
 		assert.NotEqual(t, 0, res.ExitCode(), "Exit code should be non-zero")

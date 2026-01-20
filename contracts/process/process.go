@@ -75,7 +75,7 @@ type Process interface {
 
 	// Run starts the process, waits for it to complete, and returns the result.
 	// It returns an error if the process cannot be started or if execution fails.
-	Run(name string, arg ...string) (Result, error)
+	Run(name string, arg ...string) Result
 
 	// Start begins running the process asynchronously and returns a Running
 	// handle to monitor and control its execution. The caller must later
@@ -105,4 +105,7 @@ type Process interface {
 	// will be terminated. When combined with Timeout, the earlier of
 	// the two deadlines takes effect.
 	WithContext(ctx context.Context) Process
+
+	// WithLoading enables a loading spinner in the terminal while the process is running.
+	WithLoading(message ...string) Process
 }

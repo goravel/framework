@@ -3,6 +3,7 @@ package file
 import (
 	"os"
 	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -95,6 +96,21 @@ func TestContains(t *testing.T) {
 		assert.True(t, Contains(filePath, "world"))
 		assert.True(t, Contains(filePath, "hello world"))
 	})
+}
+
+func TestCopyFile(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "test-copy-file")
+	assert.Nil(t, err)
+	src := filepath.Join(tmpDir, ".env.example")
+	dst := filepath.Join(tmpDir, ".env")
+
+	err = os.WriteFile(src, []byte("example env"), os.ModePerm)
+	assert.Nil(t, err)
+	assert.True(t, Exists(src))
+	assert.Nil(t, Copy(src, dst))
+	assert.True(t, Exists(dst))
+	assert.Nil(t, os.Remove(src))
+	assert.Nil(t, os.Remove(dst))
 }
 
 func TestCreate(t *testing.T) {

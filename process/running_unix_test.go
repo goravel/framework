@@ -191,7 +191,7 @@ func TestRunning_DisableBuffering_OutputEmpty_Unix(t *testing.T) {
 func TestRunning_Panic_AppendsToStderr_Unix(t *testing.T) {
 	stderr := &bytes.Buffer{}
 	// Intentionally pass nil cmd to trigger panic in goroutine
-	r := NewRunning(nil, nil, nil, stderr)
+	r := NewRunning(nil, nil, nil, nil, stderr, false, "")
 	<-r.Done()
 	assert.Equal(t, "panic: runtime error: invalid memory address or nil pointer dereference\n", stderr.String())
 }
