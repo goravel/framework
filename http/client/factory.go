@@ -7,6 +7,7 @@ import (
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http/client"
 	"github.com/goravel/framework/errors"
+	telemetryhttp "github.com/goravel/framework/telemetry/instrumentation/http"
 )
 
 var _ client.Factory = (*Factory)(nil)
@@ -198,6 +199,10 @@ func (r *Factory) resolveClient(name string, state *FakeState) (*http.Client, er
 	baseTransport.IdleConnTimeout = cfg.IdleConnTimeout
 
 	var transport http.RoundTripper = baseTransport
+	if cfg.EnableTelemetry {
+		transport = telemetryhttp.NewTransport(transport)
+	}
+
 	if state != nil {
 		// If testing mode is active, wrap the real transport with our interceptor.
 		transport = NewFakeTransport(state, baseTransport, r.json)
