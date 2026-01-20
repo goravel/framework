@@ -2,59 +2,37 @@ package http
 
 import (
 	"net/http"
-	"sync"
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
-	"github.com/goravel/framework/support/color"
-	"github.com/goravel/framework/telemetry"
+	contractsconfig "github.com/goravel/framework/contracts/config"
+	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 )
 
 // NewTransport returns an http.RoundTripper instrumented with OpenTelemetry.
 // It wraps the provided base RoundTripper with otelhttp using the configured
 // telemetry facade's tracer provider, meter provider, and propagator.
 //
-// If telemetry.TelemetryFacade is nil, a warning is logged and no
-// instrumentation is applied. In that case, http.DefaultTransport is returned
-// when base is nil; otherwise the provided base RoundTripper is returned.
-func NewTransport(base http.RoundTripper) http.RoundTripper {
+// If telemetry is nil, no instrumentation is applied. In that case,
+// http.DefaultTransport is returned when base is nil; otherwise the provided
+// base RoundTripper is returned.
+func NewTransport(config contractsconfig.Config, telemetry contractstelemetry.Telemetry, base http.RoundTripper) http.RoundTripper {
 	if base == nil {
 		base = http.DefaultTransport
 	}
 
-	return &TransportProxy{
-		base: base,
-	}
-}
-
-type TransportProxy struct {
-	base          http.RoundTripper
-	otelTransport http.RoundTripper
-	once          sync.Once
-}
-
-func (t *TransportProxy) RoundTrip(req *http.Request) (*http.Response, error) {
-	t.once.Do(func() {
-		if telemetry.ConfigFacade == nil || !telemetry.ConfigFacade.GetBool("telemetry.instrumentation.http_client", true) {
-			return
-		}
-
-		if telemetry.TelemetryFacade == nil {
-			color.Warningln("[Telemetry] Facade not initialized. HTTP client instrumentation is disabled.")
-			return
-		}
-
-		t.otelTransport = otelhttp.NewTransport(
-			t.base,
-			otelhttp.WithTracerProvider(telemetry.TelemetryFacade.TracerProvider()),
-			otelhttp.WithMeterProvider(telemetry.TelemetryFacade.MeterProvider()),
-			otelhttp.WithPropagators(telemetry.TelemetryFacade.Propagator()),
-		)
-	})
-
-	if t.otelTransport != nil {
-		return t.otelTransport.RoundTrip(req)
+	if config == nil || telemetry == nil {
+		return base
 	}
 
-	return t.base.RoundTrip(req)
+	if !config.GetBool("telemetry.instrumentation.http_client", true) {
+		return base
+	}
+
+	return otelhttp.NewTransport(
+		base,
+		otelhttp.WithTracerProvider(telemetry.TracerProvider()),
+		otelhttp.WithMeterProvider(telemetry.MeterProvider()),
+		otelhttp.WithPropagators(telemetry.Propagator()),
+	)
 }

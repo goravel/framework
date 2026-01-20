@@ -2,7 +2,6 @@ package http
 
 import (
 	"fmt"
-	"sync"
 	"time"
 
 	"go.opentelemetry.io/otel/codes"
@@ -11,7 +10,9 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
 	"go.opentelemetry.io/otel/trace"
 
+	contractsconfig "github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/http"
+	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/telemetry"
 )
@@ -34,19 +35,64 @@ const (
 // context, records spans and metrics when telemetry is enabled, and otherwise
 // transparently passes requests through when telemetry is disabled or not
 // initialized.
-func Telemetry(opts ...Option) http.Middleware {
+func Telemetry(config contractsconfig.Config, telemetry contractstelemetry.Telemetry, opts ...Option) http.Middleware {
+	if config == nil || telemetry == nil {
+		return func(ctx http.Context) {
+			ctx.Request().Next()
+		}
+	}
+
+	var cfg ServerConfig
+	if err := config.UnmarshalKey("telemetry.instrumentation.http_server", &cfg); err != nil {
+		color.Warningln("Failed to load http server telemetry instrumentation config:", err)
+		return func(ctx http.Context) {
+			ctx.Request().Next()
+		}
+	}
+
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+
+	if !cfg.Enabled {
+		return func(ctx http.Context) {
+			ctx.Request().Next()
+		}
+	}
+
+	if cfg.SpanNameFormatter == nil {
+		cfg.SpanNameFormatter = defaultSpanNameFormatter
+	}
+
+	meter := telemetry.Meter(instrumentationName)
+	durationHist, _ := meter.Float64Histogram(metricRequestDuration, metric.WithUnit(unitSeconds), metric.WithDescription("Duration of HTTP server requests"))
+	requestSizeHist, _ := meter.Int64Histogram(metricRequestBodySize, metric.WithUnit(unitBytes), metric.WithDescription("Size of HTTP server request body"))
+	responseSizeHist, _ := meter.Int64Histogram(metricResponseBodySize, metric.WithUnit(unitBytes), metric.WithDescription("Size of HTTP server response body"))
+
+	excludedPaths := make(map[string]bool, len(cfg.ExcludedPaths))
+	for _, p := range cfg.ExcludedPaths {
+		excludedPaths[p] = true
+	}
+	excludedMethods := make(map[string]bool, len(cfg.ExcludedMethods))
+	for _, m := range cfg.ExcludedMethods {
+		excludedMethods[m] = true
+	}
+
 	h := &MiddlewareHandler{
-		opts: opts,
+		tracer:           telemetry.Tracer(instrumentationName),
+		propagator:       telemetry.Propagator(),
+		durationHist:     durationHist,
+		requestSizeHist:  requestSizeHist,
+		responseSizeHist: responseSizeHist,
+		cfg:              cfg,
+		excludedPaths:    excludedPaths,
+		excludedMethods:  excludedMethods,
 	}
 
 	return h.Handle
 }
 
 type MiddlewareHandler struct {
-	opts     []Option
-	once     sync.Once
-	disabled bool
-
 	// Telemetry components
 	tracer           trace.Tracer
 	propagator       propagation.TextMapPropagator
@@ -60,13 +106,6 @@ type MiddlewareHandler struct {
 }
 
 func (r *MiddlewareHandler) Handle(ctx http.Context) {
-	r.once.Do(r.init)
-
-	if r.disabled {
-		ctx.Request().Next()
-		return
-	}
-
 	req := ctx.Request()
 
 	routePath := req.OriginPath()
@@ -154,50 +193,6 @@ func (r *MiddlewareHandler) Handle(ctx http.Context) {
 	r.durationHist.Record(spanCtx, time.Since(start).Seconds(), metricAttrs)
 	r.requestSizeHist.Record(spanCtx, getRequestSize(req), metricAttrs)
 	r.responseSizeHist.Record(spanCtx, int64(ctx.Response().Origin().Size()), metricAttrs)
-}
-
-func (r *MiddlewareHandler) init() {
-	if telemetry.TelemetryFacade == nil || telemetry.ConfigFacade == nil {
-		color.Warningln("[Telemetry] Facades not initialized. HTTP middleware disabled.")
-		r.disabled = true
-		return
-	}
-
-	if err := telemetry.ConfigFacade.UnmarshalKey("telemetry.instrumentation.http_server", &r.cfg); err != nil {
-		color.Errorf("[Telemetry] Failed to load HTTP server config: %v. HTTP middleware disabled.", err)
-		r.disabled = true
-		return
-	}
-
-	for _, opt := range r.opts {
-		opt(&r.cfg)
-	}
-
-	if !r.cfg.Enabled {
-		r.disabled = true
-		return
-	}
-
-	if r.cfg.SpanNameFormatter == nil {
-		r.cfg.SpanNameFormatter = defaultSpanNameFormatter
-	}
-
-	r.tracer = telemetry.TelemetryFacade.Tracer(instrumentationName)
-	r.propagator = telemetry.TelemetryFacade.Propagator()
-	meter := telemetry.TelemetryFacade.Meter(instrumentationName)
-
-	r.durationHist, _ = meter.Float64Histogram(metricRequestDuration, metric.WithUnit(unitSeconds), metric.WithDescription("Duration of HTTP server requests"))
-	r.requestSizeHist, _ = meter.Int64Histogram(metricRequestBodySize, metric.WithUnit(unitBytes), metric.WithDescription("Size of HTTP server request body"))
-	r.responseSizeHist, _ = meter.Int64Histogram(metricResponseBodySize, metric.WithUnit(unitBytes), metric.WithDescription("Size of HTTP server response body"))
-
-	r.excludedPaths = make(map[string]bool, len(r.cfg.ExcludedPaths))
-	for _, p := range r.cfg.ExcludedPaths {
-		r.excludedPaths[p] = true
-	}
-	r.excludedMethods = make(map[string]bool, len(r.cfg.ExcludedMethods))
-	for _, m := range r.cfg.ExcludedMethods {
-		r.excludedMethods[m] = true
-	}
 }
 
 func getRequestSize(req http.ContextRequest) int64 {
