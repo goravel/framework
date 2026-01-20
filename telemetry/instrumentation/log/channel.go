@@ -6,7 +6,7 @@ import (
 	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 )
 
-const defaultInstrumentationName = "github.com/goravel/framework/telemetry/instrumentation/log"
+const DefaultInstrumentationName = "github.com/goravel/framework/telemetry/instrumentation/log"
 
 type TelemetryChannel struct {
 	config   contractsconfig.Config
@@ -31,7 +31,7 @@ func (r *TelemetryChannel) Handle(channelPath string) (contractslog.Handler, err
 		return &handler{enabled: false}, nil
 	}
 
-	instrumentName := r.config.GetString(channelPath+".instrument_name", defaultInstrumentationName)
+	instrumentName := r.config.GetString(channelPath+".instrument_name", DefaultInstrumentationName)
 	return &handler{
 		resolver:       r.resolver,
 		enabled:        true,

@@ -29,12 +29,11 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleLog)
 		}
 
-		json := app.GetJson()
+		json := app.Json()
 		if json == nil {
 			return nil, errors.JSONParserNotSet.SetModule(errors.ModuleLog)
 		}
 		return NewApplication(context.Background(), nil, config, json, func() contractstelemetry.Telemetry {
-			// todo: check if we can omit the warning published by MakeTelemetry method
 			return app.MakeTelemetry()
 		})
 	})

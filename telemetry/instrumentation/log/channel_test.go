@@ -34,7 +34,7 @@ func (s *TelemetryChannelTestSuite) TestHandle() {
 			name: "Success: Telemetry enabled with custom name",
 			setup: func(m *mocksconfig.Config) {
 				m.EXPECT().GetBool(telemetryKey, true).Return(true).Once()
-				m.EXPECT().GetString(channelPath+".instrument_name", defaultInstrumentationName).
+				m.EXPECT().GetString(channelPath+".instrument_name", DefaultInstrumentationName).
 					Return("custom-app-logger").Once()
 			},
 			shouldBeEnabled:  true,
