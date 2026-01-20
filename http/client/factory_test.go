@@ -1,8 +1,10 @@
 package client
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -39,6 +41,10 @@ func (s *FactoryTestSuite) SetupTest() {
 				BaseUrl: "https://api.stripe.com",
 				Timeout: 5 * time.Second,
 			},
+			"github": {
+				BaseUrl: "https://api.github.com",
+				Timeout: 10 * time.Second,
+			},
 		},
 	}
 	var err error
@@ -50,7 +56,6 @@ func (s *FactoryTestSuite) TestClient_Resolution() {
 	s.Run("resolves default client", func() {
 		req := s.factory.Client()
 		s.NotNil(req)
-
 		s.Equal(10*time.Second, req.HttpClient().Timeout)
 	})
 
@@ -99,48 +104,6 @@ func (s *FactoryTestSuite) TestErrorHandling() {
 	})
 }
 
-func (s *FactoryTestSuite) TestRouting_Integration() {
-	serverA := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(200)
-		_, _ = w.Write([]byte("response_from_A"))
-	}))
-	defer serverA.Close()
-
-	serverB := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(200)
-		_, _ = w.Write([]byte("response_from_B"))
-	}))
-	defer serverB.Close()
-
-	cfg := &FactoryConfig{
-		Default: "server_a",
-		Clients: map[string]Config{
-			"server_a": {BaseUrl: serverA.URL},
-			"server_b": {BaseUrl: serverB.URL},
-		},
-	}
-	f, err := NewFactory(cfg, s.json)
-	s.NoError(err)
-
-	s.Run("proxy methods hit default server", func() {
-		resp, err := f.Get("/")
-		s.NoError(err)
-
-		body, err := resp.Body()
-		s.NoError(err)
-		s.Equal("response_from_A", body)
-	})
-
-	s.Run("named request hits specific server", func() {
-		resp, err := f.Client("server_b").Get("/")
-		s.NoError(err)
-
-		body, err := resp.Body()
-		s.NoError(err)
-		s.Equal("response_from_B", body)
-	})
-}
-
 func (s *FactoryTestSuite) TestConcurrency() {
 	cfg := &FactoryConfig{
 		Default: "main",
@@ -154,7 +117,6 @@ func (s *FactoryTestSuite) TestConcurrency() {
 	s.NoError(err)
 
 	var wg sync.WaitGroup
-
 	timeoutMap := map[string]time.Duration{
 		"main": 1 * time.Second,
 		"new1": 2 * time.Second,
@@ -167,7 +129,6 @@ func (s *FactoryTestSuite) TestConcurrency() {
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()
-
 			var name string
 			if idx%2 == 0 {
 				name = "main"
@@ -180,7 +141,6 @@ func (s *FactoryTestSuite) TestConcurrency() {
 
 			req := f.Client(name)
 			s.NotNil(req)
-
 			s.Equal(timeoutMap[name], req.HttpClient().Timeout)
 			concreteReq, ok := req.(*Request)
 			s.True(ok)
@@ -209,7 +169,6 @@ func (s *FactoryTestSuite) TestBaseUrl_Override() {
 	s.Run("overrides config base url", func() {
 		resp, err := f.BaseUrl(server.URL).Get("/")
 		s.NoError(err)
-
 		body, err := resp.Body()
 		s.NoError(err)
 		s.Equal("hit", body)
@@ -276,7 +235,6 @@ func (s *FactoryTestSuite) TestProxy_Headers() {
 	s.Run("WithHeader & WithHeaders", func() {
 		resp, err := f.WithHeader("X-Custom", "1").WithHeaders(map[string]string{"X-Multi": "2"}).Get("/")
 		s.NoError(err)
-
 		var h map[string]string
 		s.NoError(resp.Bind(&h))
 		s.Equal("1", h["X-Custom"])
@@ -286,24 +244,21 @@ func (s *FactoryTestSuite) TestProxy_Headers() {
 	s.Run("ReplaceHeaders & FlushHeaders", func() {
 		resp, err := f.WithHeader("A", "B").ReplaceHeaders(map[string]string{"X-Custom": "replaced"}).Get("/")
 		s.NoError(err)
-
 		var h map[string]string
 		s.NoError(resp.Bind(&h))
 		s.Equal("replaced", h["X-Custom"])
-		s.Equal("B", h["A"], "Expected 'ReplaceHeaders' to merge/preserve existing headers, not wipe them")
+		s.Equal("B", h["A"])
 
 		resp2, err := f.WithHeader("A", "B").FlushHeaders().Get("/")
 		s.NoError(err)
-
 		var h2 map[string]string
 		s.NoError(resp2.Bind(&h2))
-		s.Equal("", h2["A"], "Expected 'FlushHeaders' to remove previous headers")
+		s.Equal("", h2["A"])
 	})
 
 	s.Run("WithoutHeader", func() {
 		resp, err := f.WithHeader("X-Custom", "val").WithoutHeader("X-Custom").Get("/")
 		s.NoError(err)
-
 		var h map[string]string
 		s.NoError(resp.Bind(&h))
 		s.Equal("", h["X-Custom"])
@@ -312,21 +267,18 @@ func (s *FactoryTestSuite) TestProxy_Headers() {
 	s.Run("Auth Helpers", func() {
 		resp, err := f.WithToken("secret").Get("/")
 		s.NoError(err)
-
 		var h map[string]string
 		s.NoError(resp.Bind(&h))
 		s.Equal("Bearer secret", h["Authorization"])
 
 		resp2, err := f.WithToken("secret").WithoutToken().Get("/")
 		s.NoError(err)
-
 		var h2 map[string]string
 		s.NoError(resp2.Bind(&h2))
 		s.Equal("", h2["Authorization"])
 
 		resp3, err := f.WithBasicAuth("user", "pass").Get("/")
 		s.NoError(err)
-
 		var h3 map[string]string
 		s.NoError(resp3.Bind(&h3))
 		s.Contains(h3["Authorization"], "Basic ")
@@ -335,7 +287,6 @@ func (s *FactoryTestSuite) TestProxy_Headers() {
 	s.Run("Content Type Helpers", func() {
 		resp, err := f.Accept("text/html").AsForm().Get("/")
 		s.NoError(err)
-
 		var h map[string]string
 		s.NoError(resp.Bind(&h))
 		s.Equal("text/html", h["Accept"])
@@ -343,7 +294,6 @@ func (s *FactoryTestSuite) TestProxy_Headers() {
 
 		resp2, err := f.AcceptJSON().Get("/")
 		s.NoError(err)
-
 		var h2 map[string]string
 		s.NoError(resp2.Bind(&h2))
 		s.Equal("application/json", h2["Accept"])
@@ -362,20 +312,16 @@ func (s *FactoryTestSuite) TestProxy_QueryParameters() {
 	s.Run("WithQueryParameter", func() {
 		resp, err := f.WithQueryParameter("page", "1").Get("/")
 		s.NoError(err)
-
 		body, err := resp.Body()
 		s.NoError(err)
-
 		s.Contains(body, "page=1")
 	})
 
 	s.Run("WithQueryParameters", func() {
 		resp, err := f.WithQueryParameters(map[string]string{"sort": "asc", "limit": "10"}).Get("/")
 		s.NoError(err)
-
 		body, err := resp.Body()
 		s.NoError(err)
-
 		s.Contains(body, "sort=asc")
 		s.Contains(body, "limit=10")
 	})
@@ -383,10 +329,8 @@ func (s *FactoryTestSuite) TestProxy_QueryParameters() {
 	s.Run("WithQueryString", func() {
 		resp, err := f.WithQueryString("raw=true&manual=1").Get("/")
 		s.NoError(err)
-
 		body, err := resp.Body()
 		s.NoError(err)
-
 		s.Contains(body, "raw=true")
 		s.Contains(body, "manual=1")
 	})
@@ -404,7 +348,6 @@ func (s *FactoryTestSuite) TestProxy_UrlParameters() {
 	s.Run("WithUrlParameter", func() {
 		resp, err := f.WithUrlParameter("id", "42").Get("/users/{id}")
 		s.NoError(err)
-
 		body, err := resp.Body()
 		s.NoError(err)
 		s.Equal("/users/42", body)
@@ -413,7 +356,6 @@ func (s *FactoryTestSuite) TestProxy_UrlParameters() {
 	s.Run("WithUrlParameters", func() {
 		resp, err := f.WithUrlParameters(map[string]string{"id": "99", "action": "edit"}).Get("/users/{id}/{action}")
 		s.NoError(err)
-
 		body, err := resp.Body()
 		s.NoError(err)
 		s.Equal("/users/99/edit", body)
@@ -436,7 +378,6 @@ func (s *FactoryTestSuite) TestProxy_Cookies() {
 		cookie := &http.Cookie{Name: "session", Value: "abc-123"}
 		resp, err := f.WithCookie(cookie).Get("/")
 		s.NoError(err)
-
 		body, err := resp.Body()
 		s.NoError(err)
 		s.Equal("abc-123", body)
@@ -448,7 +389,6 @@ func (s *FactoryTestSuite) TestProxy_Cookies() {
 		}
 		resp, err := f.WithCookies(cookies).Get("/")
 		s.NoError(err)
-
 		body, err := resp.Body()
 		s.NoError(err)
 		s.Equal("multi-cookie", body)
@@ -459,7 +399,208 @@ func (s *FactoryTestSuite) TestProxy_Misc() {
 	s.Run("Clone", func() {
 		req1 := s.factory.WithHeader("A", "B")
 		req2 := req1.Clone()
-
 		s.NotSame(req1, req2)
 	})
+}
+
+func (s *FactoryTestSuite) TestRouting_Integration() {
+	serverA := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte("response_from_A"))
+	}))
+	defer serverA.Close()
+
+	serverB := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte("response_from_B"))
+	}))
+	defer serverB.Close()
+
+	cfg := &FactoryConfig{
+		Default: "server_a",
+		Clients: map[string]Config{
+			"server_a": {BaseUrl: serverA.URL},
+			"server_b": {BaseUrl: serverB.URL},
+		},
+	}
+	f, err := NewFactory(cfg, s.json)
+	s.NoError(err)
+
+	s.Run("proxy methods hit default server", func() {
+		resp, err := f.Get("/")
+		s.NoError(err)
+		body, err := resp.Body()
+		s.NoError(err)
+		s.Equal("response_from_A", body)
+	})
+
+	s.Run("named request hits specific server", func() {
+		resp, err := f.Client("server_b").Get("/")
+		s.NoError(err)
+		body, err := resp.Body()
+		s.NoError(err)
+		s.Equal("response_from_B", body)
+	})
+}
+
+func (s *FactoryTestSuite) TestFake_GithubUserProfile() {
+	userMap := map[string]any{
+		"login": "goravel",
+		"id":    12345,
+		"type":  "Organization",
+	}
+	userJson, err := s.json.Marshal(userMap)
+	s.NoError(err)
+
+	s.factory.Fake(map[string]any{
+		"https://api.github.com/users/goravel": string(userJson),
+	})
+
+	resp, err := s.factory.Client("github").Get("/users/goravel")
+	s.NoError(err)
+
+	var user map[string]any
+	s.NoError(resp.Bind(&user))
+	s.Equal("goravel", user["login"])
+	s.Equal(float64(12345), user["id"])
+}
+
+func (s *FactoryTestSuite) TestFake_Sequence_RateLimiting() {
+	s.factory.Fake(map[string]any{
+		"https://api.github.com/rate_limit": s.factory.Sequence().
+			PushString(200, `{"remaining": 60}`).
+			PushStatus(429).
+			PushString(200, `{"remaining": 59}`),
+	})
+
+	githubClient := s.factory.Client("github")
+
+	resp1, err := githubClient.Get("/rate_limit")
+	s.NoError(err)
+	s.Equal(200, resp1.Status())
+
+	resp2, err := githubClient.Get("/rate_limit")
+	s.NoError(err)
+	s.Equal(429, resp2.Status())
+
+	resp3, err := githubClient.Get("/rate_limit")
+	s.NoError(err)
+	s.Equal(200, resp3.Status())
+}
+
+func (s *FactoryTestSuite) TestFake_PreventStrayRequests() {
+	s.factory.Fake(nil)
+	s.factory.PreventStrayRequests()
+
+	resp, err := s.factory.Get("/unknown_endpoint")
+	s.Nil(resp)
+	s.ErrorIs(err, errors.HttpClientStrayRequest)
+}
+
+func (s *FactoryTestSuite) TestFake_RequestBuildingAssertion() {
+	s.factory.Fake(map[string]any{
+		"*": 200,
+	})
+
+	_, err := s.factory.Client("github").
+		WithToken("secret").
+		WithQueryParameters(map[string]string{"q": "goravel"}).
+		Get("/search")
+	s.NoError(err)
+
+	s.True(s.factory.AssertSent(func(req client.Request) bool {
+		return strings.HasPrefix(req.Url(), "https://api.github.com/search") &&
+			req.Header("Authorization") == "Bearer secret" &&
+			req.Input("q") == "goravel"
+	}))
+}
+
+func (s *FactoryTestSuite) TestFactory_Reset() {
+	s.factory.Fake(map[string]any{
+		"https://api.github.com/zen": "fake_response",
+	})
+
+	req := s.factory.Client("github")
+	resp, err := req.Get("/zen")
+	s.NoError(err)
+	body, err := resp.Body()
+	s.NoError(err)
+	s.Equal("fake_response", body)
+
+	s.factory.Reset()
+
+	// We expect a real network call (or failure) but definitely NOT the mock
+	reqReal := s.factory.Client("github")
+	respReal, errReal := reqReal.Get("/zen")
+
+	if errReal == nil {
+		realBody, err := respReal.Body()
+		s.NoError(err)
+		s.NotEqual("fake_response", realBody)
+	}
+}
+
+func (s *FactoryTestSuite) TestFactory_AllowStrayRequests() {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte("real_server_hit"))
+	}))
+	defer server.Close()
+
+	s.factory.config.Clients["github"] = Config{BaseUrl: server.URL}
+	s.factory.Reset()
+
+	s.factory.Fake(nil).PreventStrayRequests().AllowStrayRequests([]string{server.URL + "/*"})
+
+	// Whitelisted request goes through
+	resp, err := s.factory.Client("github").Get("/users")
+	s.NoError(err)
+	body, _ := resp.Body()
+	s.Equal("real_server_hit", body)
+
+	// Non-whitelisted request is blocked
+	respBlock, errBlock := s.factory.Client("stripe").Get("/charges")
+	s.Nil(respBlock)
+	s.ErrorIs(errBlock, errors.HttpClientStrayRequest)
+}
+
+func (s *FactoryTestSuite) TestFactory_Assertions_Negatives() {
+	s.factory.Fake(nil)
+
+	s.True(s.factory.AssertNothingSent())
+	_, err := s.factory.Client("github").Get("/")
+	s.NoError(err)
+	s.False(s.factory.AssertNothingSent())
+
+	s.True(s.factory.AssertNotSent(func(req client.Request) bool {
+		return req.ClientName() == "stripe"
+	}))
+	s.False(s.factory.AssertNotSent(func(req client.Request) bool {
+		return req.ClientName() == "github"
+	}))
+}
+
+func (s *FactoryTestSuite) TestIntegration_RealServer() {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(201)
+		_, _ = fmt.Fprint(w, `{"id": 1}`)
+	}))
+	defer server.Close()
+
+	cfg := &FactoryConfig{
+		Default: "local",
+		Clients: map[string]Config{
+			"local": {BaseUrl: server.URL},
+		},
+	}
+	factory, err := NewFactory(cfg, s.json)
+	s.NoError(err)
+
+	resp, err := factory.Post("/repos", nil)
+	s.NoError(err)
+	s.Equal(201, resp.Status())
+
+	body, err := resp.Body()
+	s.NoError(err)
+	s.JSONEq(`{"id": 1}`, body)
 }
