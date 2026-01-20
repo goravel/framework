@@ -17,7 +17,7 @@ import (
 )
 
 var _ contractsprocess.Running = (*Running)(nil)
-
+var spinnerStyle = lipgloss.NewStyle().Foreground(lipgloss.CompleteColor{TrueColor: "#3D8C8D", ANSI256: "30", ANSI: "6"})
 type Running struct {
 	ctx            context.Context
 	cmd            *exec.Cmd
@@ -144,8 +144,7 @@ func (r *Running) spinner(fn func() error) error {
 		r.loadingMessage = fmt.Sprintf("> %s", strings.Join(r.cmd.Args, " "))
 	}
 
-	style := lipgloss.NewStyle().Foreground(lipgloss.CompleteColor{TrueColor: "#3D8C8D", ANSI256: "30", ANSI: "6"})
-	spin := spinner.New().Title(r.loadingMessage).Style(style).TitleStyle(style)
+	spin := spinner.New().Title(r.loadingMessage).Style(spinnerStyle).TitleStyle(spinnerStyle)
 
 	var err error
 	spin = spin.Context(r.ctx).Action(func() {

@@ -105,6 +105,6 @@ type Process interface {
 	// the two deadlines takes effect.
 	WithContext(ctx context.Context) Process
 
-	// WithLoading enables a loading spinner in the terminal while the process is running.
-	WithLoading(message ...string) Process
+	// WithSpinner enables a loading spinner in the terminal while the process is running.
+	WithSpinner(message ...string) Process
 }

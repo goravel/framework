@@ -17,10 +17,12 @@ var _ contractsprocess.Pool = (*Pool)(nil)
 var _ contractsprocess.PoolCommand = (*PoolCommand)(nil)
 
 type PoolBuilder struct {
-	concurrency int
-	ctx         context.Context
-	onOutput    contractsprocess.OnPoolOutputFunc
-	timeout     time.Duration
+	concurrency    int
+	ctx            context.Context
+	loading        bool
+	loadingMessage string
+	onOutput       contractsprocess.OnPoolOutputFunc
+	timeout        time.Duration
 
 	poolConfigurer func(pool contractsprocess.Pool)
 }
@@ -66,6 +68,14 @@ func (r *PoolBuilder) WithContext(ctx context.Context) contractsprocess.PoolBuil
 		ctx = context.Background()
 	}
 	r.ctx = ctx
+	return r
+}
+
+func (r *PoolBuilder) WithSpinner(message ...string) contractsprocess.PoolBuilder {
+	r.loading = true
+	if len(message) > 0 {
+		r.loadingMessage = message[0]
+	}
 	return r
 }
 
@@ -217,7 +227,7 @@ func (r *PoolBuilder) start(configurer func(contractsprocess.Pool)) (contractspr
 		close(done)
 	}()
 
-	return NewRunningPool(runningProcesses, keys, cancel, results, done), nil
+	return NewRunningPool(ctx, runningProcesses, keys, cancel, results, done, r.loading, r.loadingMessage), nil
 }
 
 type Pool struct {

@@ -25,14 +25,16 @@ func NewPipe() *Pipeline {
 }
 
 type Pipeline struct {
-	ctx       context.Context
-	input     io.Reader
-	env       []string
-	timeout   time.Duration
-	onOutput  contractsprocess.OnPipeOutputFunc
-	quietly   bool
-	path      string
-	buffering bool
+	ctx            context.Context
+	input          io.Reader
+	env            []string
+	timeout        time.Duration
+	onOutput       contractsprocess.OnPipeOutputFunc
+	quietly        bool
+	path           string
+	buffering      bool
+	loading        bool
+	loadingMessage string
 
 	pipeConfigurer func(pipe contractsprocess.Pipe)
 }
@@ -98,6 +100,15 @@ func (r *Pipeline) WithContext(ctx context.Context) contractsprocess.Pipeline {
 	}
 
 	r.ctx = ctx
+	return r
+}
+
+func (r *Pipeline) WithSpinner(message ...string) contractsprocess.Pipeline {
+	r.loading = true
+	if len(message) > 0 {
+		r.loadingMessage = message[0]
+	}
+
 	return r
 }
 
@@ -223,7 +234,7 @@ func (r *Pipeline) start(configurer func(contractsprocess.Pipe)) (contractsproce
 		started = i + 1
 	}
 
-	return NewRunningPipe(commands, pipeCommands, cancel, interReaders, interWriters, stdoutBuffers, stderrBuffers), nil
+	return NewRunningPipe(ctx, commands, pipeCommands, cancel, interReaders, interWriters, stdoutBuffers, stderrBuffers, r.loading, r.loadingMessage), nil
 }
 
 type Pipe struct {
@@ -237,9 +248,11 @@ func (r *Pipe) Command(name string, args ...string) contractsprocess.PipeCommand
 }
 
 type PipeCommand struct {
-	key  string
-	name string
-	args []string
+	key            string
+	name           string
+	args           []string
+	loading        bool
+	loadingMessage string
 }
 
 func NewPipeCommand(key, name string, args []string) *PipeCommand {
@@ -252,5 +265,14 @@ func NewPipeCommand(key, name string, args []string) *PipeCommand {
 
 func (r *PipeCommand) As(key string) contractsprocess.PipeCommand {
 	r.key = key
+	return r
+}
+
+func (r *PipeCommand) WithSpinner(message ...string) contractsprocess.PipeCommand {
+	r.loading = true
+	if len(message) > 0 {
+		r.loadingMessage = message[0]
+	}
+
 	return r
 }

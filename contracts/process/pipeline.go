@@ -53,6 +53,9 @@ type Pipeline interface {
 
 	// WithContext binds pipeline execution to the provided context.
 	WithContext(ctx context.Context) Pipeline
+
+	// WithSpinner enables a loading spinner in the terminal while the pipeline is running.
+	WithSpinner(message ...string) Pipeline
 }
 
 // Pipe defines an interface for adding commands to a pipeline.
@@ -67,4 +70,7 @@ type PipeCommand interface {
 	// As assigns a unique string key to the command.
 	// This key is used to identify the command in the output handler.
 	As(key string) PipeCommand
+
+	// WithSpinner enables a loading spinner in the terminal while the process is running.
+	WithSpinner(message ...string) PipeCommand
 }

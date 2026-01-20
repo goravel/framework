@@ -3,6 +3,7 @@
 package process
 
 import (
+	"context"
 	"strings"
 	"sync"
 	"testing"
@@ -312,4 +313,135 @@ func TestRunningPool_DoneChannel_Unix(t *testing.T) {
 			tt.setup(t)
 		})
 	}
+}
+
+func TestRunningPool_Spinner_Unix(t *testing.T) {
+	t.Run("spinner method without loading executes function directly", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		rp := NewRunningPool(
+			ctx,
+			nil,
+			nil,
+			cancel,
+			make(map[string]contractsprocess.Result),
+			make(chan struct{}),
+			false, // loading disabled
+			"",
+		)
+
+		executed := false
+		err := rp.spinner(func() error {
+			executed = true
+			return nil
+		})
+
+		assert.NoError(t, err)
+		assert.True(t, executed)
+	})
+
+	t.Run("spinner method with loading uses default message", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		done := make(chan struct{})
+		rp := NewRunningPool(
+			ctx,
+			nil,
+			nil,
+			cancel,
+			make(map[string]contractsprocess.Result),
+			done,
+			true, // loading enabled
+			"",   // empty loading message
+		)
+
+		executed := false
+		err := rp.spinner(func() error {
+			executed = true
+			close(done)
+			return nil
+		})
+
+		assert.NoError(t, err)
+		assert.True(t, executed)
+	})
+
+	t.Run("spinner method with loading uses custom message", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		done := make(chan struct{})
+		rp := NewRunningPool(
+			ctx,
+			nil,
+			nil,
+			cancel,
+			make(map[string]contractsprocess.Result),
+			done,
+			true,                     // loading enabled
+			"Custom loading message", // custom loading message
+		)
+
+		executed := false
+		err := rp.spinner(func() error {
+			executed = true
+			close(done)
+			return nil
+		})
+
+		assert.NoError(t, err)
+		assert.True(t, executed)
+	})
+
+	t.Run("spinner method propagates function error when loading disabled", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		rp := NewRunningPool(
+			ctx,
+			nil,
+			nil,
+			cancel,
+			make(map[string]contractsprocess.Result),
+			make(chan struct{}),
+			false, // loading disabled
+			"",
+		)
+
+		expectedErr := assert.AnError
+		err := rp.spinner(func() error {
+			return expectedErr
+		})
+
+		assert.Error(t, err)
+		assert.Equal(t, expectedErr, err)
+	})
+
+	t.Run("spinner method propagates function error when loading enabled", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		done := make(chan struct{})
+		rp := NewRunningPool(
+			ctx,
+			nil,
+			nil,
+			cancel,
+			make(map[string]contractsprocess.Result),
+			done,
+			true, // loading enabled
+			"Processing...",
+		)
+
+		expectedErr := assert.AnError
+		err := rp.spinner(func() error {
+			close(done)
+			return expectedErr
+		})
+
+		assert.Error(t, err)
+		assert.Equal(t, expectedErr, err)
+	})
 }

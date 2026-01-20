@@ -687,8 +687,8 @@ func (_c *Process_WithContext_Call) RunAndReturn(run func(context.Context) proce
 	return _c
 }
 
-// WithLoading provides a mock function with given fields: message
-func (_m *Process) WithLoading(message ...string) process.Process {
+// WithSpinner provides a mock function with given fields: message
+func (_m *Process) WithSpinner(message ...string) process.Process {
 	_va := make([]interface{}, len(message))
 	for _i := range message {
 		_va[_i] = message[_i]
@@ -698,7 +698,7 @@ func (_m *Process) WithLoading(message ...string) process.Process {
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
-		panic("no return value specified for WithLoading")
+		panic("no return value specified for WithSpinner")
 	}
 
 	var r0 process.Process
@@ -713,19 +713,19 @@ func (_m *Process) WithLoading(message ...string) process.Process {
 	return r0
 }
 
-// Process_WithLoading_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithLoading'
-type Process_WithLoading_Call struct {
+// Process_WithSpinner_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithSpinner'
+type Process_WithSpinner_Call struct {
 	*mock.Call
 }
 
-// WithLoading is a helper method to define mock.On call
+// WithSpinner is a helper method to define mock.On call
 //   - message ...string
-func (_e *Process_Expecter) WithLoading(message ...interface{}) *Process_WithLoading_Call {
-	return &Process_WithLoading_Call{Call: _e.mock.On("WithLoading",
+func (_e *Process_Expecter) WithSpinner(message ...interface{}) *Process_WithSpinner_Call {
+	return &Process_WithSpinner_Call{Call: _e.mock.On("WithSpinner",
 		append([]interface{}{}, message...)...)}
 }
 
-func (_c *Process_WithLoading_Call) Run(run func(message ...string)) *Process_WithLoading_Call {
+func (_c *Process_WithSpinner_Call) Run(run func(message ...string)) *Process_WithSpinner_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		variadicArgs := make([]string, len(args)-0)
 		for i, a := range args[0:] {
@@ -738,12 +738,12 @@ func (_c *Process_WithLoading_Call) Run(run func(message ...string)) *Process_Wi
 	return _c
 }
 
-func (_c *Process_WithLoading_Call) Return(_a0 process.Process) *Process_WithLoading_Call {
+func (_c *Process_WithSpinner_Call) Return(_a0 process.Process) *Process_WithSpinner_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Process_WithLoading_Call) RunAndReturn(run func(...string) process.Process) *Process_WithLoading_Call {
+func (_c *Process_WithSpinner_Call) RunAndReturn(run func(...string) process.Process) *Process_WithSpinner_Call {
 	_c.Call.Return(run)
 	return _c
 }

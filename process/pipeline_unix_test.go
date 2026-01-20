@@ -109,7 +109,7 @@ func TestPipe_Start_ErrorOnStartFailure_Unix(t *testing.T) {
 }
 
 func TestPipe_WithContext_Unix(t *testing.T) {
-	res := NewPipe().WithContext(context.TODO()).Quietly().Pipe(func(b contractsprocess.Pipe) {
+	res := NewPipe().WithContext(context.Background()).Quietly().Pipe(func(b contractsprocess.Pipe) {
 		b.Command("sh", "-c", "printf 'ok'")
 	}).Run()
 	assert.True(t, res.Successful())
@@ -126,4 +126,116 @@ func TestPipe_DefaultStepKeys_Unix(t *testing.T) {
 	assert.Greater(t, pids["1"], 0)
 	_ = rp.Stop(1 * time.Second)
 	_ = rp.Wait()
+}
+
+func TestPipe_WithSpinner_Unix(t *testing.T) {
+	tests := []struct {
+		name            string
+		setupPipeline   func() *Pipeline
+		expectedLoading bool
+		expectedMessage string
+	}{
+		{
+			name: "WithSpinner without message",
+			setupPipeline: func() *Pipeline {
+				pipeline := NewPipe()
+				pipeline.WithSpinner()
+				return pipeline
+			},
+			expectedLoading: true,
+			expectedMessage: "",
+		},
+		{
+			name: "WithSpinner with custom message",
+			setupPipeline: func() *Pipeline {
+				pipeline := NewPipe()
+				pipeline.WithSpinner("Processing...")
+				return pipeline
+			},
+			expectedLoading: true,
+			expectedMessage: "Processing...",
+		},
+		{
+			name: "WithSpinner with empty string message",
+			setupPipeline: func() *Pipeline {
+				pipeline := NewPipe()
+				pipeline.WithSpinner("")
+				return pipeline
+			},
+			expectedLoading: true,
+			expectedMessage: "",
+		},
+		{
+			name: "Without WithSpinner",
+			setupPipeline: func() *Pipeline {
+				return NewPipe()
+			},
+			expectedLoading: false,
+			expectedMessage: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pipeline := tt.setupPipeline()
+			assert.Equal(t, tt.expectedLoading, pipeline.loading)
+			assert.Equal(t, tt.expectedMessage, pipeline.loadingMessage)
+		})
+	}
+}
+
+func TestPipeCommand_WithSpinner_Unix(t *testing.T) {
+	tests := []struct {
+		name            string
+		setupCommand    func() *PipeCommand
+		expectedLoading bool
+		expectedMessage string
+	}{
+		{
+			name: "WithSpinner without message",
+			setupCommand: func() *PipeCommand {
+				cmd := NewPipeCommand("test", "echo", []string{"hello"})
+				cmd.WithSpinner()
+				return cmd
+			},
+			expectedLoading: true,
+			expectedMessage: "",
+		},
+		{
+			name: "WithSpinner with custom message",
+			setupCommand: func() *PipeCommand {
+				cmd := NewPipeCommand("test", "echo", []string{"hello"})
+				cmd.WithSpinner("Loading data...")
+				return cmd
+			},
+			expectedLoading: true,
+			expectedMessage: "Loading data...",
+		},
+		{
+			name: "WithSpinner with empty string message",
+			setupCommand: func() *PipeCommand {
+				cmd := NewPipeCommand("test", "echo", []string{"hello"})
+				cmd.WithSpinner("")
+				return cmd
+			},
+			expectedLoading: true,
+			expectedMessage: "",
+		},
+		{
+			name: "Without WithSpinner",
+			setupCommand: func() *PipeCommand {
+				return NewPipeCommand("test", "echo", []string{"hello"})
+			},
+			expectedLoading: false,
+			expectedMessage: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := tt.setupCommand()
+			assert.Equal(t, tt.expectedLoading, cmd.loading)
+			assert.Equal(t, tt.expectedMessage, cmd.loadingMessage)
+		})
+	}
 }

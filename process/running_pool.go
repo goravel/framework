@@ -5,32 +5,43 @@ import (
 	"os"
 	"time"
 
+	"github.com/charmbracelet/huh/spinner"
+
 	contractsprocess "github.com/goravel/framework/contracts/process"
 )
 
 var _ contractsprocess.RunningPool = (*RunningPool)(nil)
 
 type RunningPool struct {
-	running []contractsprocess.Running
-	keys    []string
-	cancel  context.CancelFunc
-	results map[string]contractsprocess.Result
-	done    chan struct{}
+	ctx            context.Context
+	running        []contractsprocess.Running
+	keys           []string
+	cancel         context.CancelFunc
+	loading        bool
+	loadingMessage string
+	results        map[string]contractsprocess.Result
+	done           chan struct{}
 }
 
 func NewRunningPool(
+	ctx context.Context,
 	running []contractsprocess.Running,
 	keys []string,
 	cancel context.CancelFunc,
 	results map[string]contractsprocess.Result,
 	done chan struct{},
+	loading bool,
+	loadingMessage string,
 ) *RunningPool {
 	return &RunningPool{
-		running: running,
-		keys:    keys,
-		cancel:  cancel,
-		results: results,
-		done:    done,
+		ctx:            ctx,
+		running:        running,
+		keys:           keys,
+		cancel:         cancel,
+		loading:        loading,
+		loadingMessage: loadingMessage,
+		results:        results,
+		done:           done,
 	}
 }
 
@@ -60,7 +71,12 @@ func (r *RunningPool) Done() <-chan struct{} {
 }
 
 func (r *RunningPool) Wait() map[string]contractsprocess.Result {
-	<-r.Done()
+	if err := r.spinner(func() error {
+		<-r.Done()
+		return nil
+	}); err != nil {
+		return r.results
+	}
 	return r.results
 }
 
@@ -88,4 +104,27 @@ func (r *RunningPool) Signal(sig os.Signal) error {
 		}
 	}
 	return firstErr
+}
+
+func (r *RunningPool) spinner(fn func() error) error {
+	if !r.loading {
+		return fn()
+	}
+
+	loadingMessage := r.loadingMessage
+	if loadingMessage == "" {
+		loadingMessage = "Running..."
+	}
+
+	spin := spinner.New().Title(loadingMessage).Style(spinnerStyle).TitleStyle(spinnerStyle)
+
+	var err error
+	spin = spin.Context(r.ctx).Action(func() {
+		err = fn()
+	})
+	if err := spin.Run(); err != nil {
+		return err
+	}
+
+	return err
 }

@@ -7,15 +7,21 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
+
+	"github.com/charmbracelet/huh/spinner"
 
 	contractsprocess "github.com/goravel/framework/contracts/process"
 )
 
 type RunningPipe struct {
-	commands     []*exec.Cmd
-	cancel       context.CancelFunc
-	pipeCommands []*PipeCommand
+	ctx            context.Context
+	commands       []*exec.Cmd
+	cancel         context.CancelFunc
+	pipeCommands   []*PipeCommand
+	loading        bool
+	loadingMessage string
 
 	interReaders []*io.PipeReader
 	interWriters []*io.PipeWriter
@@ -28,17 +34,23 @@ type RunningPipe struct {
 }
 
 func NewRunningPipe(
+	ctx context.Context,
 	commands []*exec.Cmd,
 	pipeCommands []*PipeCommand,
 	cancel context.CancelFunc,
 	interReaders []*io.PipeReader,
 	interWriters []*io.PipeWriter,
 	stdout, stderr []*bytes.Buffer,
+	loading bool,
+	loadingMessage string,
 ) *RunningPipe {
 	pipeRunner := &RunningPipe{
+		ctx:              ctx,
 		commands:         commands,
 		cancel:           cancel,
 		pipeCommands:     pipeCommands,
+		loading:          loading,
+		loadingMessage:   loadingMessage,
 		interReaders:     interReaders,
 		interWriters:     interWriters,
 		stdOutputBuffers: stdout,
@@ -71,7 +83,11 @@ func NewRunningPipe(
 		for i, cmd := range runner.commands {
 			lastCmd = cmd
 			lastIdx = i
-			err = cmd.Wait()
+
+			// Execute cmd.Wait() with spinner for this specific command
+			err = runner.spinnerForCommand(i, func() error {
+				return cmd.Wait()
+			})
 
 			// Close the writer that fed the next process's stdin.
 			// Closing here ensures the next process sees EOF when upstream finishes.
@@ -164,4 +180,39 @@ func (r *RunningPipe) Stop(timeout time.Duration, sig ...os.Signal) error {
 		}
 	}
 	return firstErr
+}
+
+func (r *RunningPipe) spinnerForCommand(index int, fn func() error) error {
+	pc := r.pipeCommands[index]
+
+	// Determine if loading should be shown for this command
+	showLoading := pc.loading || r.loading
+	if !showLoading {
+		return fn()
+	}
+
+	// Determine the loading message for this command
+	loadingMessage := pc.loadingMessage
+	if loadingMessage == "" {
+		// Use global message if set
+		if r.loadingMessage != "" {
+			loadingMessage = r.loadingMessage
+		} else {
+			// Generate default message from this command
+			args := append([]string{pc.name}, pc.args...)
+			loadingMessage = fmt.Sprintf("> %s", strings.Join(args, " "))
+		}
+	}
+
+	spin := spinner.New().Title(loadingMessage).Style(spinnerStyle).TitleStyle(spinnerStyle)
+
+	var err error
+	spin = spin.Context(r.ctx).Action(func() {
+		err = fn()
+	})
+	if err := spin.Run(); err != nil {
+		return err
+	}
+
+	return err
 }

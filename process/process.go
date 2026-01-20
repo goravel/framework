@@ -109,7 +109,7 @@ func (r *Process) WithContext(ctx context.Context) contractsprocess.Process {
 	return r
 }
 
-func (r *Process) WithLoading(message ...string) contractsprocess.Process {
+func (r *Process) WithSpinner(message ...string) contractsprocess.Process {
 	r.loading = true
 	if len(message) > 0 {
 		r.loadingMessage = message[0]
@@ -183,5 +183,5 @@ func (r *Process) start(name string, args ...string) (contractsprocess.Running, 
 		return nil, err
 	}
 
-	return NewRunning(r.ctx, cmd, cancel, stdoutBuffer, stderrBuffer, r.loading, r.loadingMessage), nil
+	return NewRunning(ctx, cmd, cancel, stdoutBuffer, stderrBuffer, r.loading, r.loadingMessage), nil
 }

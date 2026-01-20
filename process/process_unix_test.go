@@ -181,9 +181,9 @@ func TestProcess_WithContext(t *testing.T) {
 	})
 }
 
-func TestProcess_WithLoading(t *testing.T) {
+func TestProcess_WithSpinner(t *testing.T) {
 	t.Run("With default message", func(t *testing.T) {
-		process := New().WithLoading()
+		process := New().WithSpinner()
 
 		assert.True(t, process.(*Process).loading)
 		assert.Empty(t, process.(*Process).loadingMessage)
@@ -191,7 +191,7 @@ func TestProcess_WithLoading(t *testing.T) {
 
 	t.Run("With custom message", func(t *testing.T) {
 		customMessage := "Processing..."
-		process := New().WithLoading(customMessage)
+		process := New().WithSpinner(customMessage)
 
 		assert.True(t, process.(*Process).loading)
 		assert.Equal(t, customMessage, process.(*Process).loadingMessage)

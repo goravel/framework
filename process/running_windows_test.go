@@ -89,7 +89,7 @@ func TestRunning_Stop_Windows(t *testing.T) {
 func TestRunning_Panic_AppendsToStderr_Windows(t *testing.T) {
 	stderr := &bytes.Buffer{}
 	// Intentionally pass nil cmd to trigger panic in goroutine
-	r := NewRunning(context.TODO(), nil, nil, nil, stderr, false, "")
+	r := NewRunning(context.Background(), nil, nil, nil, stderr, false, "")
 	<-r.Done()
 	assert.Equal(t, "panic: runtime error: invalid memory address or nil pointer dereference\n", stderr.String())
 }
@@ -129,7 +129,7 @@ func TestRunning_Spinner_Windows(t *testing.T) {
 	})
 
 	t.Run("spinner enabled with custom message", func(t *testing.T) {
-		r, err := New().WithLoading("Custom loading message").Quietly().Start("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Milliseconds 100")
+		r, err := New().WithSpinner("Custom loading message").Quietly().Start("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Milliseconds 100")
 		assert.NoError(t, err)
 		run, _ := r.(*Running)
 
@@ -149,7 +149,7 @@ func TestRunning_Spinner_Windows(t *testing.T) {
 	})
 
 	t.Run("spinner enabled with default message", func(t *testing.T) {
-		r, err := New().WithLoading().Quietly().Start("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Milliseconds 100")
+		r, err := New().WithSpinner().Quietly().Start("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Milliseconds 100")
 		assert.NoError(t, err)
 		run, _ := r.(*Running)
 
@@ -169,7 +169,7 @@ func TestRunning_Spinner_Windows(t *testing.T) {
 	})
 
 	t.Run("spinner enabled - propagates function error", func(t *testing.T) {
-		r, err := New().WithLoading().Quietly().Start("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Milliseconds 100")
+		r, err := New().WithSpinner().Quietly().Start("powershell", "-NoLogo", "-NoProfile", "-Command", "Start-Sleep -Milliseconds 100")
 		assert.NoError(t, err)
 		run, _ := r.(*Running)
 
