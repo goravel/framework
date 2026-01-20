@@ -63,9 +63,9 @@ func TestRunningPipe_Panic_AppendsToStderr_Windows(t *testing.T) {
 
 func TestRunningPipe_Interruption_MiddleCommandFails(t *testing.T) {
 	rp, err := NewPipe().Quietly().Pipe(func(b contractsprocess.Pipe) {
-		b.Command("powershell", "-NoLogo", "-NoProfile", "-Command", "Write-Output line1").As("first")
+		b.Command("powershell", "-NoLogo", "-NoProfile", "-Command", "echo line1").As("first")
 		b.Command("powershell", "-NoLogo", "-NoProfile", "-Command", "$input | Out-Null; exit 1").As("second")
-		b.Command("powershell", "-NoLogo", "-NoProfile", "-Command", "Write-Output line2")
+		b.Command("powershell", "-NoLogo", "-NoProfile", "-Command", "echo line2")
 		b.Command("powershell", "-NoLogo", "-NoProfile", "-Command", "$input | Out-Null")
 	}).Start()
 	assert.NoError(t, err)
