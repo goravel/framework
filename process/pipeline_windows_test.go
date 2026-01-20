@@ -4,6 +4,7 @@ package process
 
 import (
 	"bytes"
+	"context"
 	"strings"
 	"testing"
 	"time"
@@ -100,7 +101,7 @@ func TestPipe_Start_ErrorOnStartFailure_Windows(t *testing.T) {
 }
 
 func TestPipe_WithContext_Windows(t *testing.T) {
-	res := NewPipe().WithContext(nil).Quietly().Pipe(func(b contractsprocess.Pipe) {
+	res := NewPipe().WithContext(context.Background()).Quietly().Pipe(func(b contractsprocess.Pipe) {
 		b.Command("cmd", "/C", "echo hi").As("echo")
 	}).Run()
 	assert.Equal(t, "hi\r\n", res.Output())
