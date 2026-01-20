@@ -6,119 +6,208 @@ import (
 
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http/client"
-	httperrors "github.com/goravel/framework/errors"
-	telemetryhttp "github.com/goravel/framework/telemetry/instrumentation/http"
+	"github.com/goravel/framework/errors"
 )
 
 var _ client.Factory = (*Factory)(nil)
 
 type Factory struct {
-	// Request embeds the client.Request interface.
-	// This allows the Factory to act directly as the default client proxy,
-	// simplifying usage (e.g., Facades.Http().Get(...) works immediately).
 	client.Request
 
-	config *FactoryConfig
-	json   foundation.Json
-
-	// clients serves as a thread-safe, append-only cache for *http.Client instances.
-	// sync.Map is preferred here over RWMutex because keys are written once and read frequently.
+	json    foundation.Json
+	config  *FactoryConfig
 	clients sync.Map
+	mu      sync.RWMutex
+
+	fakeState *FakeState
+	strict    bool
+	stray     []string
 }
 
 func NewFactory(config *FactoryConfig, json foundation.Json) (*Factory, error) {
 	if config == nil {
-		return nil, httperrors.HttpClientConfigNotSet
+		return nil, errors.HttpClientConfigNotSet
 	}
 
-	f := &Factory{
+	factory := &Factory{
 		config: config,
 		json:   json,
 	}
 
-	// Resolve the default client immediately.
-	// If the configuration is invalid (e.g., default client not found),
-	// we fail fast and return the error to the caller (Service Provider).
-	defaultClient, err := f.resolveClient(config.Default)
-	if err != nil {
+	if err := factory.bindDefault(); err != nil {
 		return nil, err
 	}
 
-	cfg := config.Clients[config.Default]
-	f.Request = NewRequest(defaultClient, json, cfg.BaseUrl)
-
-	return f, nil
+	return factory, nil
 }
 
-// Client resolves or creates a specific client instance by name.
-// If no name is provided, it returns the default client.
-// Client switches the context to a specific client configuration.
-func (f *Factory) Client(name ...string) client.Request {
-	key := f.config.Default
-	if len(name) > 0 && name[0] != "" {
-		key = name[0]
+func (r *Factory) AllowStrayRequests(patterns []string) client.Factory {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.stray = append(r.stray, patterns...)
+
+	if r.fakeState != nil {
+		r.fakeState.AllowStrayRequests(patterns)
 	}
 
-	// If the requested client is the default one,
-	// return the embedded instance directly.
-	//
-	// Even if f.Request contains an error (e.g., configuration missing),
-	// we return it as-is. This preserves the "Lazy Error" behavior
-	// without re-allocating a new error object every time.
-	if key == f.config.Default && f.Request != nil {
-		return f.Request
+	return r
+}
+
+func (r *Factory) AssertNotSent(assertion func(client.Request) bool) bool {
+	return !r.AssertSent(assertion)
+}
+
+func (r *Factory) AssertNothingSent() bool {
+	return r.AssertSentCount(0)
+}
+
+func (r *Factory) AssertSent(assertion func(client.Request) bool) bool {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	return r.fakeState != nil && r.fakeState.AssertSent(assertion)
+}
+
+func (r *Factory) AssertSentCount(count int) bool {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	if r.fakeState != nil {
+		return r.fakeState.AssertSentCount(count)
 	}
 
-	httpClient, err := f.resolveClient(key)
+	return count == 0
+}
+
+func (r *Factory) Client(names ...string) client.Request {
+	name := r.config.Default
+	if len(names) > 0 && names[0] != "" {
+		name = names[0]
+	}
+
+	r.mu.RLock()
+	state := r.fakeState
+	r.mu.RUnlock()
+
+	httpClient, err := r.resolveClient(name, state)
 	if err != nil {
 		return newRequestWithError(err)
 	}
 
-	cfg := f.config.Clients[key]
-	return NewRequest(httpClient, f.json, cfg.BaseUrl)
+	cfg := r.config.Clients[name]
+	return NewRequest(httpClient, r.json, cfg.BaseUrl, name)
 }
 
-// resolveClient retrieves a cached *http.Client or creates a new one using the Singleton pattern.
-func (f *Factory) resolveClient(name string) (*http.Client, error) {
-	if name == "" {
-		return nil, httperrors.HttpClientDefaultNotSet
+func (r *Factory) Fake(mocks map[string]any) client.Factory {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.fakeState = NewFakeState(r.json, mocks)
+
+	if r.strict {
+		r.fakeState.PreventStrayRequests()
+	}
+	if len(r.stray) > 0 {
+		r.fakeState.AllowStrayRequests(r.stray)
 	}
 
-	if val, ok := f.clients.Load(name); ok {
+	// Flush existing clients to force them to re-resolve with the new FakeTransport
+	r.flushClients()
+
+	return r
+}
+
+func (r *Factory) PreventStrayRequests() client.Factory {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.strict = true
+
+	if r.fakeState != nil {
+		r.fakeState.PreventStrayRequests()
+	}
+
+	return r
+}
+
+func (r *Factory) Reset() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.fakeState = nil
+	r.strict = false
+	r.stray = nil
+
+	r.flushClients()
+}
+
+func (r *Factory) Response() client.FakeResponse {
+	return NewFakeResponse(r.json)
+}
+
+func (r *Factory) Sequence() client.FakeSequence {
+	return NewFakeSequence(r.json)
+}
+
+func (r *Factory) bindDefault() error {
+	name := r.config.Default
+	c, err := r.resolveClient(name, r.fakeState)
+	if err != nil {
+		return err
+	}
+
+	// Bind the default client to the embedded Request implementation
+	// so that methods like Http.Get() use the default configuration.
+	r.Request = NewRequest(c, r.json, r.config.Clients[name].BaseUrl, name)
+
+	return nil
+}
+
+func (r *Factory) flushClients() {
+	r.clients.Range(func(key, value any) bool {
+		r.clients.Delete(key)
+		return true
+	})
+
+	if err := r.bindDefault(); err != nil {
+		panic(err)
+	}
+}
+
+func (r *Factory) resolveClient(name string, state *FakeState) (*http.Client, error) {
+	if name == "" {
+		return nil, errors.HttpClientDefaultNotSet
+	}
+
+	if val, ok := r.clients.Load(name); ok {
 		return val.(*http.Client), nil
 	}
 
-	cfg, ok := f.config.Clients[name]
+	cfg, ok := r.config.Clients[name]
 	if !ok {
-		return nil, httperrors.HttpClientConnectionNotFound.Args(name)
+		return nil, errors.HttpClientConnectionNotFound.Args(name)
 	}
 
-	newClient := f.createHTTPClient(&cfg)
-
-	// LoadOrStore handles the race condition atomically.
-	// If another goroutine created the client while we were working, actual will be theirs.
-	actual, _ := f.clients.LoadOrStore(name, newClient)
-
-	return actual.(*http.Client), nil
-}
-
-// createHTTPClient initializes the low-level transport with isolation settings.
-func (f *Factory) createHTTPClient(cfg *Config) *http.Client {
-	// Clone the default transport to ensure strict isolation between clients.
-	// This prevents shared state (like global timeouts) from leaking between instances.
+	// We clone the default transport to ensure we don't modify the global state
+	// when applying client-specific timeouts or fake transports.
 	baseTransport := http.DefaultTransport.(*http.Transport).Clone()
-
 	baseTransport.MaxIdleConns = cfg.MaxIdleConns
 	baseTransport.MaxIdleConnsPerHost = cfg.MaxIdleConnsPerHost
 	baseTransport.MaxConnsPerHost = cfg.MaxConnsPerHost
 	baseTransport.IdleConnTimeout = cfg.IdleConnTimeout
 
 	var transport http.RoundTripper = baseTransport
-	if cfg.EnableTelemetry {
-		transport = telemetryhttp.NewTransport(transport)
+	if state != nil {
+		// If testing mode is active, wrap the real transport with our interceptor.
+		transport = NewFakeTransport(state, baseTransport, r.json)
 	}
-	return &http.Client{
+
+	httpClient := &http.Client{
 		Timeout:   cfg.Timeout,
 		Transport: transport,
 	}
+
+	actual, _ := r.clients.LoadOrStore(name, httpClient)
+	return actual.(*http.Client), nil
 }

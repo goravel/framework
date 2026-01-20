@@ -20,9 +20,9 @@ func (_m *AssertableJSON) EXPECT() *AssertableJSON_Expecter {
 	return &AssertableJSON_Expecter{mock: &_m.Mock}
 }
 
-// Count provides a mock function with given fields: key, value
-func (_m *AssertableJSON) Count(key string, value int) http.AssertableJSON {
-	ret := _m.Called(key, value)
+// Count provides a mock function with given fields: key, length
+func (_m *AssertableJSON) Count(key string, length int) http.AssertableJSON {
+	ret := _m.Called(key, length)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Count")
@@ -30,7 +30,7 @@ func (_m *AssertableJSON) Count(key string, value int) http.AssertableJSON {
 
 	var r0 http.AssertableJSON
 	if rf, ok := ret.Get(0).(func(string, int) http.AssertableJSON); ok {
-		r0 = rf(key, value)
+		r0 = rf(key, length)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(http.AssertableJSON)
@@ -47,12 +47,12 @@ type AssertableJSON_Count_Call struct {
 
 // Count is a helper method to define mock.On call
 //   - key string
-//   - value int
-func (_e *AssertableJSON_Expecter) Count(key interface{}, value interface{}) *AssertableJSON_Count_Call {
-	return &AssertableJSON_Count_Call{Call: _e.mock.On("Count", key, value)}
+//   - length int
+func (_e *AssertableJSON_Expecter) Count(key interface{}, length interface{}) *AssertableJSON_Count_Call {
+	return &AssertableJSON_Count_Call{Call: _e.mock.On("Count", key, length)}
 }
 
-func (_c *AssertableJSON_Count_Call) Run(run func(key string, value int)) *AssertableJSON_Count_Call {
+func (_c *AssertableJSON_Count_Call) Run(run func(key string, length int)) *AssertableJSON_Count_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string), args[1].(int))
 	})

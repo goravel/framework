@@ -7,29 +7,29 @@ import (
 	"net/http"
 	"strings"
 	"sync"
-	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/goravel/framework/contracts/foundation"
 	contractssession "github.com/goravel/framework/contracts/session"
+	"github.com/goravel/framework/contracts/testing"
 	contractshttp "github.com/goravel/framework/contracts/testing/http"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 )
 
 type TestResponseImpl struct {
+	t                 testing.TestingT
 	json              foundation.Json
 	session           contractssession.Manager
-	t                 *testing.T
 	response          *http.Response
 	sessionAttributes map[string]any
 	content           string
 	mu                sync.Mutex
 }
 
-func NewTestResponse(t *testing.T, response *http.Response, json foundation.Json, session contractssession.Manager) contractshttp.Response {
+func NewTestResponse(t testing.TestingT, response *http.Response, json foundation.Json, session contractssession.Manager) contractshttp.Response {
 	return &TestResponseImpl{
 		t:        t,
 		response: response,
@@ -38,18 +38,27 @@ func NewTestResponse(t *testing.T, response *http.Response, json foundation.Json
 	}
 }
 
+func (r *TestResponseImpl) Bind(value any) error {
+	content, err := r.getContent()
+	if err != nil {
+		return err
+	}
+
+	return r.json.UnmarshalString(content, value)
+}
+
 func (r *TestResponseImpl) Json() (map[string]any, error) {
 	content, err := r.getContent()
 	if err != nil {
 		return nil, err
 	}
 
-	testAble, err := NewAssertableJSON(r.t, r.json, content)
+	assertable, err := NewAssertableJSON(r.t, r.json, content)
 	if err != nil {
 		return nil, err
 	}
 
-	return testAble.Json(), nil
+	return assertable.Json(), nil
 }
 
 func (r *TestResponseImpl) Headers() http.Header {
