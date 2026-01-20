@@ -23,7 +23,7 @@ func TestPipe_ErrorOnNoSteps_Windows(t *testing.T) {
 func TestPipe_Run_SimplePipeline_Windows(t *testing.T) {
 	// Step1: emit "hello" without newline; Step2: uppercase via PowerShell reading from STDIN
 	res := NewPipe().Quietly().Pipe(func(b contractsprocess.Pipe) {
-		b.Command("cmd", "/C", "set", "/p=hello<nul").As("first")
+		b.Command("powershell", "-NoLogo", "-NoProfile", "-Command", "Write-Host -NoNewline 'hello'").As("first")
 		b.Command("powershell", "-NoLogo", "-NoProfile", "-Command",
 			"$t=[Console]::In.ReadToEnd(); [Console]::Out.Write($t.ToUpper())").As("upper")
 	}).Run()
