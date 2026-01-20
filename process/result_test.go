@@ -3,8 +3,9 @@ package process
 import (
 	"testing"
 
-	"github.com/goravel/framework/errors"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/goravel/framework/errors"
 )
 
 func TestResult_Methods(t *testing.T) {

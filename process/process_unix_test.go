@@ -25,11 +25,10 @@ func (fakeSig) Signal()        {}
 
 func TestProcess_Run_Unix(t *testing.T) {
 	tests := []struct {
-		name     string
-		args     []string
-		setup    func(p *Process)
-		expectOK bool
-		check    func(t *testing.T, res *Result)
+		name  string
+		args  []string
+		setup func(p *Process)
+		check func(t *testing.T, res *Result)
 	}{
 		{
 			name: "echo to stdout",
@@ -37,7 +36,6 @@ func TestProcess_Run_Unix(t *testing.T) {
 			setup: func(p *Process) {
 				p.Quietly()
 			},
-			expectOK: true,
 			check: func(t *testing.T, res *Result) {
 				assert.Equal(t, "hello", res.Output())
 				assert.Equal(t, "", res.ErrorOutput())
@@ -50,7 +48,6 @@ func TestProcess_Run_Unix(t *testing.T) {
 			setup: func(p *Process) {
 				p.Quietly()
 			},
-			expectOK: true, // Run doesn't error on non-zero exit
 			check: func(t *testing.T, res *Result) {
 				assert.Equal(t, "bad", res.ErrorOutput())
 				assert.Equal(t, "", res.Output())
@@ -64,7 +61,6 @@ func TestProcess_Run_Unix(t *testing.T) {
 			setup: func(p *Process) {
 				p.Env(map[string]string{"FOO": "BAR"}).Quietly()
 			},
-			expectOK: true,
 			check: func(t *testing.T, res *Result) {
 				assert.Equal(t, "BAR", res.Output())
 			},
@@ -79,7 +75,6 @@ func TestProcess_Run_Unix(t *testing.T) {
 				_ = os.Chmod(path, 0o755)
 				p.Path(dir).Quietly()
 			},
-			expectOK: true,
 			check: func(t *testing.T, res *Result) {
 				assert.Equal(t, "ok", res.Output())
 			},
@@ -90,7 +85,6 @@ func TestProcess_Run_Unix(t *testing.T) {
 			setup: func(p *Process) {
 				p.Input(bytes.NewBufferString("ping")).Quietly()
 			},
-			expectOK: true,
 			check: func(t *testing.T, res *Result) {
 				assert.Equal(t, "ping", res.Output())
 			},
@@ -101,7 +95,6 @@ func TestProcess_Run_Unix(t *testing.T) {
 			setup: func(p *Process) {
 				p.Timeout(100 * time.Millisecond).Quietly()
 			},
-			expectOK: true, // Run doesn't error on timeout
 			check: func(t *testing.T, res *Result) {
 				assert.False(t, res.Successful())
 				assert.NotEqual(t, 0, res.ExitCode())
@@ -115,7 +108,6 @@ func TestProcess_Run_Unix(t *testing.T) {
 					// The handler still works, but the Result buffer is what we're testing.
 				})
 			},
-			expectOK: true,
 			check: func(t *testing.T, res *Result) {
 				assert.Equal(t, "", res.Output())
 				assert.Equal(t, "", res.ErrorOutput())
@@ -129,10 +121,9 @@ func TestProcess_Run_Unix(t *testing.T) {
 			p := New()
 			tt.setup(p)
 			res := p.Run(tt.args[0], tt.args[1:]...)
-			assert.True(t, res.Successful())
 			assert.NotNil(t, res)
 			r, ok := res.(*Result)
-			assert.True(t, ok, "unexpected result type")
+			assert.True(t, ok)
 			tt.check(t, r)
 		})
 	}

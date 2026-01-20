@@ -18,11 +18,10 @@ import (
 
 func TestProcess_Run_Windows(t *testing.T) {
 	tests := []struct {
-		name     string
-		args     []string
-		setup    func(p *Process)
-		expectOK bool
-		check    func(t *testing.T, res *Result)
+		name  string
+		args  []string
+		setup func(p *Process)
+		check func(t *testing.T, res *Result)
 	}{
 		{
 			name: "echo via cmd",
@@ -30,7 +29,6 @@ func TestProcess_Run_Windows(t *testing.T) {
 			setup: func(p *Process) {
 				p.Quietly()
 			},
-			expectOK: true,
 			check: func(t *testing.T, res *Result) {
 				assert.Equal(t, "hello\r\n", res.Output())
 				assert.True(t, res.Successful())
@@ -43,7 +41,6 @@ func TestProcess_Run_Windows(t *testing.T) {
 				// powershell: write-error writes to stderr and returns non-zero
 				p.Quietly()
 			},
-			expectOK: true, // Run doesn't error on non-zero exit
 			check: func(t *testing.T, res *Result) {
 				assert.Contains(t, res.ErrorOutput(), "bad")
 				assert.False(t, res.Successful())
@@ -59,7 +56,6 @@ func TestProcess_Run_Windows(t *testing.T) {
 				_ = os.WriteFile(path, []byte("@echo off\r\necho ok\r\n"), 0644)
 				p.Path(dir).Quietly()
 			},
-			expectOK: true,
 			check: func(t *testing.T, res *Result) {
 				assert.Equal(t, "ok\r\n", res.Output())
 			},
@@ -70,7 +66,6 @@ func TestProcess_Run_Windows(t *testing.T) {
 			setup: func(p *Process) {
 				p.Input(bytes.NewBufferString("ping\r\n")).Quietly()
 			},
-			expectOK: true,
 			check: func(t *testing.T, res *Result) {
 				assert.Equal(t, "ping", strings.TrimSpace(res.Output()))
 			},
@@ -81,7 +76,6 @@ func TestProcess_Run_Windows(t *testing.T) {
 			setup: func(p *Process) {
 				p.Timeout(200 * time.Millisecond).Quietly()
 			},
-			expectOK: true, // Run doesn't error on timeout
 			check: func(t *testing.T, res *Result) {
 				assert.False(t, res.Successful())
 				assert.NotEqual(t, 0, res.ExitCode())
@@ -93,7 +87,6 @@ func TestProcess_Run_Windows(t *testing.T) {
 			setup: func(p *Process) {
 				p.DisableBuffering().Quietly()
 			},
-			expectOK: true,
 			check: func(t *testing.T, res *Result) {
 				assert.Equal(t, "", res.Output())
 				assert.Equal(t, "", res.ErrorOutput())
@@ -107,9 +100,8 @@ func TestProcess_Run_Windows(t *testing.T) {
 			p := New()
 			tt.setup(p)
 			res := p.Run(tt.args[0], tt.args[1:]...)
-			assert.Equal(t, tt.expectOK, res.Error() == nil)
 			r, ok := res.(*Result)
-			assert.True(t, ok, "unexpected result type")
+			assert.True(t, ok)
 			tt.check(t, r)
 		})
 	}
