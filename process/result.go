@@ -1,7 +1,6 @@
 package process
 
 import (
-	"fmt"
 	"strings"
 
 	contractsprocess "github.com/goravel/framework/contracts/process"
@@ -77,7 +76,7 @@ func (r *Result) Error() error {
 			return errors.New(strings.TrimSpace(r.stderr))
 		}
 
-		return fmt.Errorf("process exited with code %d", r.ExitCode())
+		return errors.ProcessExitedWithCode.Args(r.ExitCode())
 	}
 
 	return nil

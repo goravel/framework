@@ -5,8 +5,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/charmbracelet/huh/spinner"
-
 	contractsprocess "github.com/goravel/framework/contracts/process"
 )
 
@@ -107,24 +105,10 @@ func (r *RunningPool) Signal(sig os.Signal) error {
 }
 
 func (r *RunningPool) spinner(fn func() error) error {
-	if !r.loading {
-		return fn()
-	}
-
 	loadingMessage := r.loadingMessage
 	if loadingMessage == "" {
 		loadingMessage = "Running..."
 	}
 
-	spin := spinner.New().Title(loadingMessage).Style(spinnerStyle).TitleStyle(spinnerStyle)
-
-	var err error
-	spin = spin.Context(r.ctx).Action(func() {
-		err = fn()
-	})
-	if err := spin.Run(); err != nil {
-		return err
-	}
-
-	return err
+	return spinner(r.ctx, r.loading, r.loadingMessage, fn)
 }

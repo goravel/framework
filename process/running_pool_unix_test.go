@@ -320,16 +320,7 @@ func TestRunningPool_Spinner_Unix(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		rp := NewRunningPool(
-			ctx,
-			nil,
-			nil,
-			cancel,
-			make(map[string]contractsprocess.Result),
-			make(chan struct{}),
-			false, // loading disabled
-			"",
-		)
+		rp := NewRunningPool(ctx, nil, nil, cancel, make(map[string]contractsprocess.Result), make(chan struct{}), false, "")
 
 		executed := false
 		err := rp.spinner(func() error {
@@ -346,16 +337,7 @@ func TestRunningPool_Spinner_Unix(t *testing.T) {
 		defer cancel()
 
 		done := make(chan struct{})
-		rp := NewRunningPool(
-			ctx,
-			nil,
-			nil,
-			cancel,
-			make(map[string]contractsprocess.Result),
-			done,
-			true, // loading enabled
-			"",   // empty loading message
-		)
+		rp := NewRunningPool(ctx, nil, nil, cancel, make(map[string]contractsprocess.Result), done, true, "")
 
 		executed := false
 		err := rp.spinner(func() error {
@@ -373,16 +355,7 @@ func TestRunningPool_Spinner_Unix(t *testing.T) {
 		defer cancel()
 
 		done := make(chan struct{})
-		rp := NewRunningPool(
-			ctx,
-			nil,
-			nil,
-			cancel,
-			make(map[string]contractsprocess.Result),
-			done,
-			true,                     // loading enabled
-			"Custom loading message", // custom loading message
-		)
+		rp := NewRunningPool(ctx, nil, nil, cancel, make(map[string]contractsprocess.Result), done, true, "Custom loading message")
 
 		executed := false
 		err := rp.spinner(func() error {
@@ -399,16 +372,7 @@ func TestRunningPool_Spinner_Unix(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		rp := NewRunningPool(
-			ctx,
-			nil,
-			nil,
-			cancel,
-			make(map[string]contractsprocess.Result),
-			make(chan struct{}),
-			false, // loading disabled
-			"",
-		)
+		rp := NewRunningPool(ctx, nil, nil, cancel, make(map[string]contractsprocess.Result), make(chan struct{}), false, "")
 
 		expectedErr := assert.AnError
 		err := rp.spinner(func() error {
@@ -424,16 +388,7 @@ func TestRunningPool_Spinner_Unix(t *testing.T) {
 		defer cancel()
 
 		done := make(chan struct{})
-		rp := NewRunningPool(
-			ctx,
-			nil,
-			nil,
-			cancel,
-			make(map[string]contractsprocess.Result),
-			done,
-			true, // loading enabled
-			"Processing...",
-		)
+		rp := NewRunningPool(ctx, nil, nil, cancel, make(map[string]contractsprocess.Result), done, true, "Processing...")
 
 		expectedErr := assert.AnError
 		err := rp.spinner(func() error {

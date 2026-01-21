@@ -10,8 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/huh/spinner"
-
 	contractsprocess "github.com/goravel/framework/contracts/process"
 )
 
@@ -186,10 +184,7 @@ func (r *RunningPipe) spinnerForCommand(index int, fn func() error) error {
 	pc := r.pipeCommands[index]
 
 	// Determine if loading should be shown for this command
-	showLoading := pc.loading || r.loading
-	if !showLoading {
-		return fn()
-	}
+	loading := pc.loading || r.loading
 
 	// Determine the loading message for this command
 	loadingMessage := pc.loadingMessage
@@ -204,15 +199,5 @@ func (r *RunningPipe) spinnerForCommand(index int, fn func() error) error {
 		}
 	}
 
-	spin := spinner.New().Title(loadingMessage).Style(spinnerStyle).TitleStyle(spinnerStyle)
-
-	var err error
-	spin = spin.Context(r.ctx).Action(func() {
-		err = fn()
-	})
-	if err := spin.Run(); err != nil {
-		return err
-	}
-
-	return err
+	return spinner(r.ctx, loading, loadingMessage, fn)
 }

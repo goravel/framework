@@ -10,14 +10,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/huh/spinner"
+	huhspinner "github.com/charmbracelet/huh/spinner"
 	"github.com/charmbracelet/lipgloss"
 
 	contractsprocess "github.com/goravel/framework/contracts/process"
 )
 
 var _ contractsprocess.Running = (*Running)(nil)
-var spinnerStyle = lipgloss.NewStyle().Foreground(lipgloss.CompleteColor{TrueColor: "#3D8C8D", ANSI256: "30", ANSI: "6"})
+
 type Running struct {
 	ctx            context.Context
 	cmd            *exec.Cmd
@@ -136,25 +136,11 @@ func (r *Running) ErrorOutput() string {
 }
 
 func (r *Running) spinner(fn func() error) error {
-	if !r.loading {
-		return fn()
-	}
-
 	if r.loadingMessage == "" {
 		r.loadingMessage = fmt.Sprintf("> %s", strings.Join(r.cmd.Args, " "))
 	}
 
-	spin := spinner.New().Title(r.loadingMessage).Style(spinnerStyle).TitleStyle(spinnerStyle)
-
-	var err error
-	spin = spin.Context(r.ctx).Action(func() {
-		err = fn()
-	})
-	if err := spin.Run(); err != nil {
-		return err
-	}
-
-	return err
+	return spinner(r.ctx, r.loading, r.loadingMessage, fn)
 }
 
 func getExitCode(cmd *exec.Cmd, err error) int {
@@ -172,4 +158,23 @@ func getExitCode(cmd *exec.Cmd, err error) int {
 	}
 
 	return exitCode
+}
+
+func spinner(ctx context.Context, loading bool, message string, fn func() error) error {
+	if !loading {
+		return fn()
+	}
+
+	style := lipgloss.NewStyle().Foreground(lipgloss.CompleteColor{TrueColor: "#3D8C8D", ANSI256: "30", ANSI: "6"})
+	spin := huhspinner.New().Title(message).Style(style).TitleStyle(style)
+
+	var err error
+	spin = spin.Context(ctx).Action(func() {
+		err = fn()
+	})
+	if err := spin.Run(); err != nil {
+		return err
+	}
+
+	return err
 }
