@@ -25,14 +25,16 @@ func NewPipe() *Pipeline {
 }
 
 type Pipeline struct {
-	ctx       context.Context
-	input     io.Reader
-	env       []string
-	timeout   time.Duration
-	onOutput  contractsprocess.OnPipeOutputFunc
-	quietly   bool
-	path      string
-	buffering bool
+	ctx            context.Context
+	input          io.Reader
+	env            []string
+	timeout        time.Duration
+	onOutput       contractsprocess.OnPipeOutputFunc
+	quietly        bool
+	path           string
+	buffering      bool
+	loading        bool
+	loadingMessage string
 
 	pipeConfigurer func(pipe contractsprocess.Pipe)
 }
@@ -79,8 +81,13 @@ func (r *Pipeline) OnOutput(onOutput contractsprocess.OnPipeOutputFunc) contract
 	return r
 }
 
-func (r *Pipeline) Run() (contractsprocess.Result, error) {
-	return r.run(r.pipeConfigurer)
+func (r *Pipeline) Run() contractsprocess.Result {
+	run, err := r.start(r.pipeConfigurer)
+	if err != nil {
+		return NewResult(err, 1, "", "", "")
+	}
+
+	return run.Wait()
 }
 
 func (r *Pipeline) Start() (contractsprocess.RunningPipe, error) {
@@ -96,12 +103,13 @@ func (r *Pipeline) WithContext(ctx context.Context) contractsprocess.Pipeline {
 	return r
 }
 
-func (r *Pipeline) run(configurer func(contractsprocess.Pipe)) (contractsprocess.Result, error) {
-	run, err := r.start(configurer)
-	if err != nil {
-		return nil, err
+func (r *Pipeline) WithSpinner(message ...string) contractsprocess.Pipeline {
+	r.loading = true
+	if len(message) > 0 {
+		r.loadingMessage = message[0]
 	}
-	return run.Wait(), nil
+
+	return r
 }
 
 func (r *Pipeline) start(configurer func(contractsprocess.Pipe)) (contractsprocess.RunningPipe, error) {
@@ -226,7 +234,7 @@ func (r *Pipeline) start(configurer func(contractsprocess.Pipe)) (contractsproce
 		started = i + 1
 	}
 
-	return NewRunningPipe(commands, pipeCommands, cancel, interReaders, interWriters, stdoutBuffers, stderrBuffers), nil
+	return NewRunningPipe(ctx, commands, pipeCommands, cancel, interReaders, interWriters, stdoutBuffers, stderrBuffers, r.loading, r.loadingMessage), nil
 }
 
 type Pipe struct {
@@ -240,9 +248,11 @@ func (r *Pipe) Command(name string, args ...string) contractsprocess.PipeCommand
 }
 
 type PipeCommand struct {
-	key  string
-	name string
-	args []string
+	key            string
+	name           string
+	args           []string
+	loading        bool
+	loadingMessage string
 }
 
 func NewPipeCommand(key, name string, args []string) *PipeCommand {
@@ -255,5 +265,14 @@ func NewPipeCommand(key, name string, args []string) *PipeCommand {
 
 func (r *PipeCommand) As(key string) contractsprocess.PipeCommand {
 	r.key = key
+	return r
+}
+
+func (r *PipeCommand) WithSpinner(message ...string) contractsprocess.PipeCommand {
+	r.loading = true
+	if len(message) > 0 {
+		r.loadingMessage = message[0]
+	}
+
 	return r
 }

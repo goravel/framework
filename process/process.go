@@ -14,15 +14,17 @@ import (
 var _ contractsprocess.Process = (*Process)(nil)
 
 type Process struct {
-	buffering bool
-	ctx       context.Context
-	env       []string
-	input     io.Reader
-	onOutput  contractsprocess.OnOutputFunc
-	path      string
-	quietly   bool
-	timeout   time.Duration
-	tty       bool
+	buffering      bool
+	ctx            context.Context
+	env            []string
+	input          io.Reader
+	loading        bool
+	loadingMessage string
+	onOutput       contractsprocess.OnOutputFunc
+	path           string
+	quietly        bool
+	timeout        time.Duration
+	tty            bool
 }
 
 func New() *Process {
@@ -75,8 +77,13 @@ func (r *Process) Quietly() contractsprocess.Process {
 	return r
 }
 
-func (r *Process) Run(name string, args ...string) (contractsprocess.Result, error) {
-	return r.run(name, args...)
+func (r *Process) Run(name string, args ...string) contractsprocess.Result {
+	run, err := r.start(name, args...)
+	if err != nil {
+		return NewResult(err, 1, "", "", "")
+	}
+
+	return run.Wait()
 }
 
 func (r *Process) Start(name string, args ...string) (contractsprocess.Running, error) {
@@ -102,12 +109,13 @@ func (r *Process) WithContext(ctx context.Context) contractsprocess.Process {
 	return r
 }
 
-func (r *Process) run(name string, args ...string) (contractsprocess.Result, error) {
-	run, err := r.start(name, args...)
-	if err != nil {
-		return nil, err
+func (r *Process) WithSpinner(message ...string) contractsprocess.Process {
+	r.loading = true
+	if len(message) > 0 {
+		r.loadingMessage = message[0]
 	}
-	return run.Wait(), nil
+
+	return r
 }
 
 func (r *Process) start(name string, args ...string) (contractsprocess.Running, error) {
@@ -175,5 +183,5 @@ func (r *Process) start(name string, args ...string) (contractsprocess.Running, 
 		return nil, err
 	}
 
-	return NewRunning(cmd, cancel, stdoutBuffer, stderrBuffer), nil
+	return NewRunning(ctx, cmd, cancel, stdoutBuffer, stderrBuffer, r.loading, r.loadingMessage), nil
 }

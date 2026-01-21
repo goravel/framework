@@ -141,8 +141,7 @@ func TestPool_WithContext_Unix(t *testing.T) {
 	})
 
 	t.Run("handles nil context", func(t *testing.T) {
-		// Passing nil should use background context
-		builder := NewPool().WithContext(context.TODO())
+		builder := NewPool().WithContext(context.Background())
 
 		rp, err := builder.Pool(func(p contractsprocess.Pool) {
 			p.Command("echo", "test").As("test")
@@ -468,4 +467,60 @@ func TestPool_Cleanup_Unix(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Contains(t, string(content), "test")
 	})
+}
+
+func TestPoolBuilder_WithSpinner_Unix(t *testing.T) {
+	tests := []struct {
+		name            string
+		setupBuilder    func() *PoolBuilder
+		expectedLoading bool
+		expectedMessage string
+	}{
+		{
+			name: "WithSpinner without message",
+			setupBuilder: func() *PoolBuilder {
+				builder := NewPool()
+				builder.WithSpinner()
+				return builder
+			},
+			expectedLoading: true,
+			expectedMessage: "",
+		},
+		{
+			name: "WithSpinner with custom message",
+			setupBuilder: func() *PoolBuilder {
+				builder := NewPool()
+				builder.WithSpinner("Processing pool...")
+				return builder
+			},
+			expectedLoading: true,
+			expectedMessage: "Processing pool...",
+		},
+		{
+			name: "WithSpinner with empty string message",
+			setupBuilder: func() *PoolBuilder {
+				builder := NewPool()
+				builder.WithSpinner("")
+				return builder
+			},
+			expectedLoading: true,
+			expectedMessage: "",
+		},
+		{
+			name: "Without WithSpinner",
+			setupBuilder: func() *PoolBuilder {
+				return NewPool()
+			},
+			expectedLoading: false,
+			expectedMessage: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			builder := tt.setupBuilder()
+			assert.Equal(t, tt.expectedLoading, builder.loading)
+			assert.Equal(t, tt.expectedMessage, builder.loadingMessage)
+		})
+	}
 }

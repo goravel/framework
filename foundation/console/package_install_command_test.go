@@ -39,6 +39,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			{Key: "All facades", Value: "all"},
 			{Key: "Select facades", Value: "select"},
 			{Key: "Third-party package", Value: "third"},
+			{Key: "None", Value: "none"},
 		}
 		facadeOptions = []console.Choice{
 			{Key: fmt.Sprintf("%-11s", "Auth") + color.Gray().Sprintf(" - %s", "Description"), Value: "Auth"},

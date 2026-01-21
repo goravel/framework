@@ -15,7 +15,7 @@ jobs:
       - name: Install dependencies
         run: go mod tidy
       - name: Run tests with coverage
-        run: go test -timeout 1h -coverprofile="coverage.out" $(go list ./... | grep -v /mocks | grep -v /facades | grep -v /contracts | grep -v /testing/mock | grep -v /database)
+        run: go test -timeout 10m -coverprofile="coverage.out" $(go list ./... | grep -v /mocks | grep -v /facades | grep -v /contracts | grep -v /testing/mock | grep -v /database)
       - name: Print coverage report
         run: go tool cover -func=coverage.out
       - name: Upload coverage report to Codecov

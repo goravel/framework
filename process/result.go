@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	contractsprocess "github.com/goravel/framework/contracts/process"
+	"github.com/goravel/framework/errors"
 )
 
 var _ contractsprocess.Result = (*Result)(nil)
@@ -30,14 +31,14 @@ func (r *Result) Successful() bool {
 	if r == nil {
 		return false
 	}
-	return r.exitCode == 0
+	return r.exitCode == 0 && r.err == nil
 }
 
 func (r *Result) Failed() bool {
 	if r == nil {
 		return true
 	}
-	return r.exitCode != 0
+	return r.exitCode != 0 || r.err != nil
 }
 
 func (r *Result) ExitCode() int {
@@ -66,7 +67,19 @@ func (r *Result) Error() error {
 		return nil
 	}
 
-	return r.err
+	if r.err != nil {
+		return r.err
+	}
+
+	if r.ExitCode() != 0 {
+		if r.stderr != "" {
+			return errors.New(strings.TrimSpace(r.stderr))
+		}
+
+		return errors.ProcessExitedWithCode.Args(r.ExitCode())
+	}
+
+	return nil
 }
 
 func (r *Result) Command() string {

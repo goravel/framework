@@ -51,7 +51,6 @@ func init() {
 	baseProviders := app.getBaseServiceProviders()
 	app.providerRepository.Add(baseProviders)
 	app.providerRepository.Register(app)
-	app.providerRepository.Boot(app)
 
 	app.SetJson(json.New())
 }
