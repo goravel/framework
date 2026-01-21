@@ -146,10 +146,13 @@ func init() {
 			
 			// HTTP Client Instrumentation
 			//
-			// Configures the instrumentation for outgoing HTTP requests made via
-			// the application's HTTP client Facade. This acts as a global kill switch
-			// for all clients. To disable telemetry for specific clients, configure
-			// "enable_telemetry" within the "http.clients.{client_name}" property.
+			// Configures instrumentation for outgoing HTTP requests made through the
+			// application's HTTP client facade. This acts as a global kill switch for
+			// HTTP client telemetry across all clients.
+			//
+			// To disable telemetry for a specific client, set
+			// "http.clients.{client_name}.enable_telemetry" to false for the
+			// corresponding client configuration.
 			"http_client": map[string]any{
 				"enabled": config.Env("OTEL_HTTP_CLIENT_ENABLED", true),
 			},

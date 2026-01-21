@@ -149,6 +149,7 @@ func (r *MiddlewareHandler) Handle(ctx http.Context) {
 		telemetry.WithAttributes(baseAttrs...),
 		telemetry.WithSpanKind(telemetry.SpanKindServer),
 	)
+	defer span.End()
 
 	ctx.WithContext(spanCtx)
 
@@ -165,7 +166,6 @@ func (r *MiddlewareHandler) Handle(ctx http.Context) {
 				r.requestSizeHist.Record(spanCtx, getRequestSize(req), metricAttrs)
 				r.responseSizeHist.Record(spanCtx, 0, metricAttrs)
 
-				span.End()
 				panic(rec)
 			}
 		}()
@@ -178,15 +178,11 @@ func (r *MiddlewareHandler) Handle(ctx http.Context) {
 
 	if status >= 500 {
 		span.SetStatus(codes.Error, "")
-	} else {
-		span.SetStatus(codes.Ok, "")
 	}
 
 	if err := ctx.Err(); err != nil {
 		span.RecordError(err)
 	}
-
-	span.End()
 
 	metricAttrs := metric.WithAttributes(append(baseAttrs, semconv.HTTPResponseStatusCode(status))...)
 
