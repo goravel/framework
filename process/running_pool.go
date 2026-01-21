@@ -110,5 +110,5 @@ func (r *RunningPool) spinner(fn func() error) error {
 		loadingMessage = "Running..."
 	}
 
-	return spinner(r.ctx, r.loading, r.loadingMessage, fn)
+	return spinner(r.ctx, r.loading, loadingMessage, fn)
 }
