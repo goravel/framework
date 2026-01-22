@@ -9,19 +9,22 @@ import (
 	"github.com/charmbracelet/huh/spinner"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/pterm/pterm"
+	"github.com/spf13/cast"
 	"github.com/urfave/cli/v3"
 
 	"github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
 )
 
 type CliContext struct {
-	instance *cli.Command
+	arguments []command.Argument
+	instance  *cli.Command
 }
 
-func NewCliContext(instance *cli.Command) *CliContext {
-	return &CliContext{instance}
+func NewCliContext(instance *cli.Command, arguments []command.Argument) *CliContext {
+	return &CliContext{arguments, instance}
 }
 
 func (r *CliContext) Ask(question string, option ...console.AskOption) (string, error) {
@@ -224,16 +227,21 @@ func (r *CliContext) OptionInt64Slice(key string) []int64 {
 }
 
 func (r *CliContext) ArgumentString(key string) string {
-	ret := r.instance.StringArgs(key)
-	if len(ret) > 0 {
-		return ret[0]
+	value := r.instance.StringArgs(key)
+	if len(value) > 0 {
+		return value[0]
 	}
-	var zero string
-	return zero
+
+	return cast.ToString(r.getDefaultArgumentValue(key))
 }
 
 func (r *CliContext) ArgumentStringSlice(key string) []string {
-	return r.instance.StringArgs(key)
+	value := r.instance.StringArgs(key)
+	if len(value) > 0 {
+		return value
+	}
+
+	return cast.ToStringSlice(r.getDefaultArgumentValue(key))
 }
 
 func (r *CliContext) ArgumentFloat32(key string) float32 {
@@ -241,12 +249,24 @@ func (r *CliContext) ArgumentFloat32(key string) float32 {
 	if len(ret) > 0 {
 		return ret[0]
 	}
-	var zero float32
-	return zero
+
+	return cast.ToFloat32(r.getDefaultArgumentValue(key))
 }
 
 func (r *CliContext) ArgumentFloat32Slice(key string) []float32 {
-	return r.instance.Float32Args(key)
+	value := r.instance.Float32Args(key)
+	if len(value) > 0 {
+		return value
+	}
+
+	defaultValue := r.getDefaultArgumentValue(key)
+	if defaultValue == nil {
+		return nil
+	}
+	if v, ok := defaultValue.([]float32); ok {
+		return v
+	}
+	return nil
 }
 
 func (r *CliContext) ArgumentFloat64(key string) float64 {
@@ -254,12 +274,17 @@ func (r *CliContext) ArgumentFloat64(key string) float64 {
 	if len(ret) > 0 {
 		return ret[0]
 	}
-	var zero float64
-	return zero
+
+	return cast.ToFloat64(r.getDefaultArgumentValue(key))
 }
 
 func (r *CliContext) ArgumentFloat64Slice(key string) []float64 {
-	return r.instance.Float64Args(key)
+	value := r.instance.Float64Args(key)
+	if len(value) > 0 {
+		return value
+	}
+
+	return cast.ToFloat64Slice(r.getDefaultArgumentValue(key))
 }
 
 func (r *CliContext) ArgumentInt(key string) int {
@@ -267,12 +292,17 @@ func (r *CliContext) ArgumentInt(key string) int {
 	if len(ret) > 0 {
 		return ret[0]
 	}
-	var zero int
-	return zero
+
+	return cast.ToInt(r.getDefaultArgumentValue(key))
 }
 
 func (r *CliContext) ArgumentIntSlice(key string) []int {
-	return r.instance.IntArgs(key)
+	value := r.instance.IntArgs(key)
+	if len(value) > 0 {
+		return value
+	}
+
+	return cast.ToIntSlice(r.getDefaultArgumentValue(key))
 }
 
 func (r *CliContext) ArgumentInt8(key string) int8 {
@@ -280,12 +310,24 @@ func (r *CliContext) ArgumentInt8(key string) int8 {
 	if len(ret) > 0 {
 		return ret[0]
 	}
-	var zero int8
-	return zero
+
+	return cast.ToInt8(r.getDefaultArgumentValue(key))
 }
 
 func (r *CliContext) ArgumentInt8Slice(key string) []int8 {
-	return r.instance.Int8Args(key)
+	value := r.instance.Int8Args(key)
+	if len(value) > 0 {
+		return value
+	}
+
+	defaultValue := r.getDefaultArgumentValue(key)
+	if defaultValue == nil {
+		return nil
+	}
+	if v, ok := defaultValue.([]int8); ok {
+		return v
+	}
+	return nil
 }
 
 func (r *CliContext) ArgumentInt16(key string) int16 {
@@ -293,12 +335,24 @@ func (r *CliContext) ArgumentInt16(key string) int16 {
 	if len(ret) > 0 {
 		return ret[0]
 	}
-	var zero int16
-	return zero
+
+	return cast.ToInt16(r.getDefaultArgumentValue(key))
 }
 
 func (r *CliContext) ArgumentInt16Slice(key string) []int16 {
-	return r.instance.Int16Args(key)
+	value := r.instance.Int16Args(key)
+	if len(value) > 0 {
+		return value
+	}
+
+	defaultValue := r.getDefaultArgumentValue(key)
+	if defaultValue == nil {
+		return nil
+	}
+	if v, ok := defaultValue.([]int16); ok {
+		return v
+	}
+	return nil
 }
 
 func (r *CliContext) ArgumentInt32(key string) int32 {
@@ -306,12 +360,24 @@ func (r *CliContext) ArgumentInt32(key string) int32 {
 	if len(ret) > 0 {
 		return ret[0]
 	}
-	var zero int32
-	return zero
+
+	return cast.ToInt32(r.getDefaultArgumentValue(key))
 }
 
 func (r *CliContext) ArgumentInt32Slice(key string) []int32 {
-	return r.instance.Int32Args(key)
+	value := r.instance.Int32Args(key)
+	if len(value) > 0 {
+		return value
+	}
+
+	defaultValue := r.getDefaultArgumentValue(key)
+	if defaultValue == nil {
+		return nil
+	}
+	if v, ok := defaultValue.([]int32); ok {
+		return v
+	}
+	return nil
 }
 
 func (r *CliContext) ArgumentInt64(key string) int64 {
@@ -319,12 +385,17 @@ func (r *CliContext) ArgumentInt64(key string) int64 {
 	if len(ret) > 0 {
 		return ret[0]
 	}
-	var zero int64
-	return zero
+
+	return cast.ToInt64(r.getDefaultArgumentValue(key))
 }
 
 func (r *CliContext) ArgumentInt64Slice(key string) []int64 {
-	return r.instance.Int64Args(key)
+	value := r.instance.Int64Args(key)
+	if len(value) > 0 {
+		return value
+	}
+
+	return cast.ToInt64Slice(r.getDefaultArgumentValue(key))
 }
 
 func (r *CliContext) ArgumentUint(key string) uint {
@@ -332,12 +403,17 @@ func (r *CliContext) ArgumentUint(key string) uint {
 	if len(ret) > 0 {
 		return ret[0]
 	}
-	var zero uint
-	return zero
+
+	return cast.ToUint(r.getDefaultArgumentValue(key))
 }
 
 func (r *CliContext) ArgumentUintSlice(key string) []uint {
-	return r.instance.UintArgs(key)
+	value := r.instance.UintArgs(key)
+	if len(value) > 0 {
+		return value
+	}
+
+	return cast.ToUintSlice(r.getDefaultArgumentValue(key))
 }
 
 func (r *CliContext) ArgumentUint8(key string) uint8 {
@@ -345,12 +421,24 @@ func (r *CliContext) ArgumentUint8(key string) uint8 {
 	if len(ret) > 0 {
 		return ret[0]
 	}
-	var zero uint8
-	return zero
+
+	return cast.ToUint8(r.getDefaultArgumentValue(key))
 }
 
 func (r *CliContext) ArgumentUint8Slice(key string) []uint8 {
-	return r.instance.Uint8Args(key)
+	value := r.instance.Uint8Args(key)
+	if len(value) > 0 {
+		return value
+	}
+
+	defaultValue := r.getDefaultArgumentValue(key)
+	if defaultValue == nil {
+		return nil
+	}
+	if v, ok := defaultValue.([]uint8); ok {
+		return v
+	}
+	return nil
 }
 
 func (r *CliContext) ArgumentUint16(key string) uint16 {
@@ -358,12 +446,24 @@ func (r *CliContext) ArgumentUint16(key string) uint16 {
 	if len(ret) > 0 {
 		return ret[0]
 	}
-	var zero uint16
-	return zero
+
+	return cast.ToUint16(r.getDefaultArgumentValue(key))
 }
 
 func (r *CliContext) ArgumentUint16Slice(key string) []uint16 {
-	return r.instance.Uint16Args(key)
+	value := r.instance.Uint16Args(key)
+	if len(value) > 0 {
+		return value
+	}
+
+	defaultValue := r.getDefaultArgumentValue(key)
+	if defaultValue == nil {
+		return nil
+	}
+	if v, ok := defaultValue.([]uint16); ok {
+		return v
+	}
+	return nil
 }
 
 func (r *CliContext) ArgumentUint32(key string) uint32 {
@@ -371,12 +471,24 @@ func (r *CliContext) ArgumentUint32(key string) uint32 {
 	if len(ret) > 0 {
 		return ret[0]
 	}
-	var zero uint32
-	return zero
+
+	return cast.ToUint32(r.getDefaultArgumentValue(key))
 }
 
 func (r *CliContext) ArgumentUint32Slice(key string) []uint32 {
-	return r.instance.Uint32Args(key)
+	value := r.instance.Uint32Args(key)
+	if len(value) > 0 {
+		return value
+	}
+
+	defaultValue := r.getDefaultArgumentValue(key)
+	if defaultValue == nil {
+		return nil
+	}
+	if v, ok := defaultValue.([]uint32); ok {
+		return v
+	}
+	return nil
 }
 
 func (r *CliContext) ArgumentUint64(key string) uint64 {
@@ -384,12 +496,24 @@ func (r *CliContext) ArgumentUint64(key string) uint64 {
 	if len(ret) > 0 {
 		return ret[0]
 	}
-	var zero uint64
-	return zero
+
+	return cast.ToUint64(r.getDefaultArgumentValue(key))
 }
 
 func (r *CliContext) ArgumentUint64Slice(key string) []uint64 {
-	return r.instance.Uint64Args(key)
+	value := r.instance.Uint64Args(key)
+	if len(value) > 0 {
+		return value
+	}
+
+	defaultValue := r.getDefaultArgumentValue(key)
+	if defaultValue == nil {
+		return nil
+	}
+	if v, ok := defaultValue.([]uint64); ok {
+		return v
+	}
+	return nil
 }
 
 func (r *CliContext) ArgumentTimestamp(key string) time.Time {
@@ -397,11 +521,24 @@ func (r *CliContext) ArgumentTimestamp(key string) time.Time {
 	if len(ret) > 0 {
 		return ret[0]
 	}
-	return time.Time{}
+
+	return cast.ToTime(r.getDefaultArgumentValue(key))
 }
 
 func (r *CliContext) ArgumentTimestampSlice(key string) []time.Time {
-	return r.instance.TimestampArgs(key)
+	value := r.instance.TimestampArgs(key)
+	if len(value) > 0 {
+		return value
+	}
+
+	defaultValue := r.getDefaultArgumentValue(key)
+	if defaultValue == nil {
+		return nil
+	}
+	if v, ok := defaultValue.([]time.Time); ok {
+		return v
+	}
+	return nil
 }
 
 func (r *CliContext) Secret(question string, option ...console.SecretOption) (string, error) {
@@ -432,10 +569,9 @@ func (r *CliContext) Spinner(message string, option console.SpinnerOption) error
 	spin := spinner.New().Title(message).Style(style).TitleStyle(style)
 
 	var err error
-	spin.Context(option.Ctx).Action(func() {
+	if err := spin.Context(option.Ctx).Action(func() {
 		err = option.Action()
-	})
-	if err := spin.Run(); err != nil {
+	}).Run(); err != nil {
 		return err
 	}
 
@@ -529,4 +665,14 @@ func (r *CliContext) Black(message string) {
 
 func (r *CliContext) Blackln(message string) {
 	color.Black().Println(message)
+}
+
+func (r *CliContext) getDefaultArgumentValue(key string) any {
+	for _, arg := range r.arguments {
+		if arg.GetName() == key && arg.GetValue() != nil {
+			return arg.GetValue()
+		}
+	}
+
+	return nil
 }

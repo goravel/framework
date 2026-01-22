@@ -27,7 +27,7 @@ var (
 )
 
 type Application struct {
-	commands   []cli.Command
+	commands   []console.Command
 	name       string
 	usage      string
 	usageText  string
@@ -38,7 +38,7 @@ type Application struct {
 
 // NewApplication Create a new Artisan application.
 // Will add artisan flag to the command if useArtisan is true.
-func NewApplication(name, usage, usageText, version string, useArtisan bool) console.Artisan {
+func NewApplication(name, usage, usageText, version string, useArtisan bool) *Application {
 	return &Application{
 		name:       name,
 		usage:      usage,
@@ -46,35 +46,6 @@ func NewApplication(name, usage, usageText, version string, useArtisan bool) con
 		useArtisan: useArtisan,
 		version:    version,
 		writer:     os.Stdout,
-	}
-}
-
-func (r *Application) Register(commands []console.Command) {
-	for _, item := range commands {
-		arguments, err := argumentsToCliArgs(item.Extend().Arguments)
-		if err != nil {
-			color.Errorln(errors.ConsoleCommandRegisterFailed.Args(item.Signature(), err).Error())
-			continue
-		}
-		cliCommand := cli.Command{
-			Name:  item.Signature(),
-			Usage: item.Description(),
-			Action: func(ctx context.Context, cmd *cli.Command) error {
-				cliCtx := NewCliContext(cmd)
-				if cliCtx.OptionBool("help") {
-					return cli.ShowCommandHelp(ctx, cmd, cmd.Name)
-				}
-
-				return item.Handle(cliCtx)
-			},
-			Category:     item.Extend().Category,
-			ArgsUsage:    item.Extend().ArgsUsage,
-			Flags:        flagsToCliFlags(item.Extend().Flags),
-			Arguments:    arguments,
-			OnUsageError: onUsageError,
-		}
-
-		r.commands = append(r.commands, cliCommand)
 	}
 }
 
@@ -106,6 +77,11 @@ func (r *Application) CallAndExit(command string) {
 	}
 
 	_ = r.Run(append(commands, strings.Split(command, " ")...), true)
+}
+
+// Register commands to the application.
+func (r *Application) Register(commands []console.Command) {
+	r.commands = append(r.commands, commands...)
 }
 
 // Run a command. Args come from os.Args.
@@ -151,10 +127,38 @@ func (r *Application) Run(args []string, exitIfArtisan bool) error {
 	return nil
 }
 
+// SetCommands Set the commands for the application.
+func (r *Application) SetCommands(commands []console.Command) {
+	r.commands = commands
+}
+
 func (r *Application) command() *cli.Command {
 	commands := make([]*cli.Command, len(r.commands))
-	for i, cmd := range r.commands {
-		commands[i] = &cmd
+
+	for i, item := range r.commands {
+		arguments := item.Extend().Arguments
+		cliArguments, err := argumentsToCliArgs(arguments)
+		if err != nil {
+			color.Errorln(errors.ConsoleCommandRegisterFailed.Args(item.Signature(), err).Error())
+			continue
+		}
+		commands[i] = &cli.Command{
+			Name:  item.Signature(),
+			Usage: item.Description(),
+			Action: func(ctx context.Context, cmd *cli.Command) error {
+				cliCtx := NewCliContext(cmd, arguments)
+				if cliCtx.OptionBool("help") {
+					return cli.ShowCommandHelp(ctx, cmd, cmd.Name)
+				}
+
+				return item.Handle(cliCtx)
+			},
+			Category:     item.Extend().Category,
+			ArgsUsage:    item.Extend().ArgsUsage,
+			Flags:        flagsToCliFlags(item.Extend().Flags),
+			Arguments:    cliArguments,
+			OnUsageError: onUsageError,
+		}
 	}
 
 	command := &cli.Command{}
@@ -302,10 +306,10 @@ func argumentsToCliArgs(args []command.Argument) ([]cli.Argument, error) {
 	cliArgs := make([]cli.Argument, 0, len)
 	previousIsRequired := true
 	for _, v := range args {
-		if v.MinOccurrences() != 0 && !previousIsRequired {
-			return nil, errors.ConsoleCommandRequiredArgumentWrongOrder.Args(v.ArgumentName())
+		if v.GetMin() != 0 && !previousIsRequired {
+			return nil, errors.ConsoleCommandRequiredArgumentWrongOrder.Args(v.GetName())
 		}
-		if v.MinOccurrences() != 0 {
+		if v.GetMin() != 0 {
 			previousIsRequired = true
 		} else {
 			previousIsRequired = false
@@ -315,73 +319,64 @@ func argumentsToCliArgs(args []command.Argument) ([]cli.Argument, error) {
 			cliArgs = append(cliArgs, &cli.Float32Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
-				Value:     arg.Value,
-				Min:       arg.MinOccurrences(),
-				Max:       arg.MaxOccurrences(),
+				Min:       arg.GetMin(),
+				Max:       arg.GetMax(),
 			})
 		case *command.ArgumentFloat64:
 			cliArgs = append(cliArgs, &cli.Float64Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
-				Value:     arg.Value,
-				Min:       arg.MinOccurrences(),
-				Max:       arg.MaxOccurrences(),
+				Min:       arg.GetMin(),
+				Max:       arg.GetMax(),
 			})
 		case *command.ArgumentInt:
 			cliArgs = append(cliArgs, &cli.IntArgs{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
-				Value:     arg.Value,
-				Min:       arg.MinOccurrences(),
-				Max:       arg.MaxOccurrences(),
+				Min:       arg.GetMin(),
+				Max:       arg.GetMax(),
 			})
 		case *command.ArgumentInt8:
 			cliArgs = append(cliArgs, &cli.Int8Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
-				Value:     arg.Value,
-				Min:       arg.MinOccurrences(),
-				Max:       arg.MaxOccurrences(),
+				Min:       arg.GetMin(),
+				Max:       arg.GetMax(),
 			})
 		case *command.ArgumentInt16:
 			cliArgs = append(cliArgs, &cli.Int16Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
-				Value:     arg.Value,
-				Min:       arg.MinOccurrences(),
-				Max:       arg.MaxOccurrences(),
+				Min:       arg.GetMin(),
+				Max:       arg.GetMax(),
 			})
 		case *command.ArgumentInt32:
 			cliArgs = append(cliArgs, &cli.Int32Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
-				Value:     arg.Value,
-				Min:       arg.MinOccurrences(),
-				Max:       arg.MaxOccurrences(),
+				Min:       arg.GetMin(),
+				Max:       arg.GetMax(),
 			})
 		case *command.ArgumentInt64:
 			cliArgs = append(cliArgs, &cli.Int64Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
-				Value:     arg.Value,
-				Min:       arg.MinOccurrences(),
-				Max:       arg.MaxOccurrences(),
+				Min:       arg.GetMin(),
+				Max:       arg.GetMax(),
 			})
 		case *command.ArgumentString:
 			cliArgs = append(cliArgs, &cli.StringArgs{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
-				Value:     arg.Value,
-				Min:       arg.MinOccurrences(),
-				Max:       arg.MaxOccurrences(),
+				Min:       arg.GetMin(),
+				Max:       arg.GetMax(),
 			})
 		case *command.ArgumentTimestamp:
 			cliArgs = append(cliArgs, &cli.TimestampArgs{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
-				Value:     arg.Value,
-				Min:       arg.MinOccurrences(),
-				Max:       arg.MaxOccurrences(),
+				Min:       arg.GetMin(),
+				Max:       arg.GetMax(),
 				Config: cli.TimestampConfig{
 					Layouts: arg.Layouts,
 				},
@@ -390,114 +385,100 @@ func argumentsToCliArgs(args []command.Argument) ([]cli.Argument, error) {
 			cliArgs = append(cliArgs, &cli.UintArgs{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
-				Value:     arg.Value,
-				Min:       arg.MinOccurrences(),
-				Max:       arg.MaxOccurrences(),
+				Min:       arg.GetMin(),
+				Max:       arg.GetMax(),
 			})
 		case *command.ArgumentUint8:
 			cliArgs = append(cliArgs, &cli.Uint8Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
-				Value:     arg.Value,
-				Min:       arg.MinOccurrences(),
-				Max:       arg.MaxOccurrences(),
+				Min:       arg.GetMin(),
+				Max:       arg.GetMax(),
 			})
 		case *command.ArgumentUint16:
 			cliArgs = append(cliArgs, &cli.Uint16Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
-				Value:     arg.Value,
-				Min:       arg.MinOccurrences(),
-				Max:       arg.MaxOccurrences(),
+				Min:       arg.GetMin(),
+				Max:       arg.GetMax(),
 			})
 		case *command.ArgumentUint32:
 			cliArgs = append(cliArgs, &cli.Uint32Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
-				Value:     arg.Value,
-				Min:       arg.MinOccurrences(),
-				Max:       arg.MaxOccurrences(),
+				Min:       arg.GetMin(),
+				Max:       arg.GetMax(),
 			})
 		case *command.ArgumentUint64:
 			cliArgs = append(cliArgs, &cli.Uint64Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
-				Value:     arg.Value,
-				Min:       arg.MinOccurrences(),
-				Max:       arg.MaxOccurrences(),
+				Min:       arg.GetMin(),
+				Max:       arg.GetMax(),
 			})
 
 		case *command.ArgumentFloat32Slice:
 			cliArgs = append(cliArgs, &cli.Float32Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
-				Value:     arg.Value,
-				Min:       arg.MinOccurrences(),
-				Max:       arg.MaxOccurrences(),
+				Min:       arg.GetMin(),
+				Max:       arg.GetMax(),
 			})
 		case *command.ArgumentFloat64Slice:
 			cliArgs = append(cliArgs, &cli.Float64Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
-				Value:     arg.Value,
-				Min:       arg.MinOccurrences(),
-				Max:       arg.MaxOccurrences(),
+				Min:       arg.GetMin(),
+				Max:       arg.GetMax(),
 			})
 		case *command.ArgumentIntSlice:
 			cliArgs = append(cliArgs, &cli.IntArgs{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
-				Value:     arg.Value,
-				Min:       arg.MinOccurrences(),
-				Max:       arg.MaxOccurrences(),
+				Min:       arg.GetMin(),
+				Max:       arg.GetMax(),
 			})
 		case *command.ArgumentInt8Slice:
 			cliArgs = append(cliArgs, &cli.Int8Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
-				Value:     arg.Value,
-				Min:       arg.MinOccurrences(),
-				Max:       arg.MaxOccurrences(),
+				Min:       arg.GetMin(),
+				Max:       arg.GetMax(),
 			})
 		case *command.ArgumentInt16Slice:
 			cliArgs = append(cliArgs, &cli.Int16Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
-				Value:     arg.Value,
-				Min:       arg.MinOccurrences(),
-				Max:       arg.MaxOccurrences(),
+				Min:       arg.GetMin(),
+				Max:       arg.GetMax(),
 			})
 		case *command.ArgumentInt32Slice:
 			cliArgs = append(cliArgs, &cli.Int32Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
-				Value:     arg.Value,
-				Min:       arg.MinOccurrences(),
-				Max:       arg.MaxOccurrences(),
+				Min:       arg.GetMin(),
+				Max:       arg.GetMax(),
 			})
 		case *command.ArgumentInt64Slice:
 			cliArgs = append(cliArgs, &cli.Int64Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
-				Value:     arg.Value,
-				Min:       arg.MinOccurrences(),
-				Max:       arg.MaxOccurrences(),
+				Min:       arg.GetMin(),
+				Max:       arg.GetMax(),
 			})
 		case *command.ArgumentStringSlice:
 			cliArgs = append(cliArgs, &cli.StringArgs{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
-				Value:     arg.Value,
-				Min:       arg.MinOccurrences(),
-				Max:       arg.MaxOccurrences(),
+				Min:       arg.GetMin(),
+				Max:       arg.GetMax(),
 			})
 		case *command.ArgumentTimestampSlice:
 			cliArgs = append(cliArgs, &cli.TimestampArgs{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
-				Value:     arg.Value,
-				Min:       arg.MinOccurrences(),
-				Max:       arg.MaxOccurrences(),
+				Min:       arg.GetMin(),
+				Max:       arg.GetMax(),
 				Config: cli.TimestampConfig{
 					Layouts: arg.Layouts,
 				},
@@ -506,41 +487,36 @@ func argumentsToCliArgs(args []command.Argument) ([]cli.Argument, error) {
 			cliArgs = append(cliArgs, &cli.UintArgs{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
-				Value:     arg.Value,
-				Min:       arg.MinOccurrences(),
-				Max:       arg.MaxOccurrences(),
+				Min:       arg.GetMin(),
+				Max:       arg.GetMax(),
 			})
 		case *command.ArgumentUint8Slice:
 			cliArgs = append(cliArgs, &cli.Uint8Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
-				Value:     arg.Value,
-				Min:       arg.MinOccurrences(),
-				Max:       arg.MaxOccurrences(),
+				Min:       arg.GetMin(),
+				Max:       arg.GetMax(),
 			})
 		case *command.ArgumentUint16Slice:
 			cliArgs = append(cliArgs, &cli.Uint16Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
-				Value:     arg.Value,
-				Min:       arg.MinOccurrences(),
-				Max:       arg.MaxOccurrences(),
+				Min:       arg.GetMin(),
+				Max:       arg.GetMax(),
 			})
 		case *command.ArgumentUint32Slice:
 			cliArgs = append(cliArgs, &cli.Uint32Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
-				Value:     arg.Value,
-				Min:       arg.MinOccurrences(),
-				Max:       arg.MaxOccurrences(),
+				Min:       arg.GetMin(),
+				Max:       arg.GetMax(),
 			})
 		case *command.ArgumentUint64Slice:
 			cliArgs = append(cliArgs, &cli.Uint64Args{
 				Name:      arg.Name,
 				UsageText: arg.Usage,
-				Value:     arg.Value,
-				Min:       arg.MinOccurrences(),
-				Max:       arg.MaxOccurrences(),
+				Min:       arg.GetMin(),
+				Max:       arg.GetMax(),
 			})
 		default:
 			return nil, errors.ConsoleCommandArgumentUnknownType.Args(arg, arg)
