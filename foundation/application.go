@@ -128,6 +128,8 @@ func (r *Application) Context() context.Context {
 	return r.ctx
 }
 
+// GetJson get the JSON implementation.
+// DEPRECATED, use Json instead.
 func (r *Application) GetJson() foundation.Json {
 	return r.json
 }

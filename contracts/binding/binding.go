@@ -367,14 +367,15 @@ var (
 				},
 			},
 		},
-		Telemetry: {
-			Description: "Provides distributed tracing with OpenTelemetry.",
-			PkgPath:     "github.com/goravel/framework/telemetry",
-			Dependencies: []string{
-				Config,
-				Log,
-			},
-		},
+		// TODO: Pending stability testing. Scheduled for release in next major version(v1.18)
+		//Telemetry: {
+		//	Description: "Provides distributed tracing with OpenTelemetry.",
+		//	PkgPath:     "github.com/goravel/framework/telemetry",
+		//	Dependencies: []string{
+		//		Config,
+		//		Log,
+		//	},
+		//},
 		Testing: {
 			Description: "Provides tools for testing your application.",
 			PkgPath:     "github.com/goravel/framework/testing",
