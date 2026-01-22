@@ -105,7 +105,11 @@ func (r *Application) Run(args []string, exitIfArtisan bool) error {
 	}
 
 	if artisanIndex != -1 {
-		command := r.command()
+		command, err := r.command()
+		if err != nil {
+			return err
+		}
+
 		if artisanIndex+1 == len(args) {
 			args = append(args, "list")
 		}
@@ -132,17 +136,39 @@ func (r *Application) SetCommands(commands []console.Command) {
 	r.commands = commands
 }
 
-func (r *Application) command() *cli.Command {
-	commands := make([]*cli.Command, len(r.commands))
+func (r *Application) command() (*cli.Command, error) {
+	cliCommands, err := commandsToCliCommands(r.commands)
+	if err != nil {
+		return nil, err
+	}
 
-	for i, item := range r.commands {
+	command := &cli.Command{}
+	command.CommandNotFound = commandNotFound
+	command.Commands = cliCommands
+	command.Flags = []cli.Flag{noANSIFlag}
+	command.Name = r.name
+	command.OnUsageError = onUsageError
+	command.Usage = r.usage
+	command.UsageText = r.usageText
+	command.Version = r.version
+	command.Writer = r.writer
+
+	// There is a concurrency issue with urfave/cli v3 when help is not hidden.
+	command.HideHelp = true
+
+	return command, nil
+}
+
+func commandsToCliCommands(commands []console.Command) ([]*cli.Command, error) {
+	cliCommands := make([]*cli.Command, len(commands))
+
+	for i, item := range commands {
 		arguments := item.Extend().Arguments
 		cliArguments, err := argumentsToCliArgs(arguments)
 		if err != nil {
-			color.Errorln(errors.ConsoleCommandRegisterFailed.Args(item.Signature(), err).Error())
-			continue
+			return nil, errors.ConsoleCommandRegisterFailed.Args(item.Signature(), err)
 		}
-		commands[i] = &cli.Command{
+		cliCommands[i] = &cli.Command{
 			Name:  item.Signature(),
 			Usage: item.Description(),
 			Action: func(ctx context.Context, cmd *cli.Command) error {
@@ -161,21 +187,7 @@ func (r *Application) command() *cli.Command {
 		}
 	}
 
-	command := &cli.Command{}
-	command.CommandNotFound = commandNotFound
-	command.Commands = commands
-	command.Flags = []cli.Flag{noANSIFlag}
-	command.Name = r.name
-	command.OnUsageError = onUsageError
-	command.Usage = r.usage
-	command.UsageText = r.usageText
-	command.Version = r.version
-	command.Writer = r.writer
-
-	// There is a concurrency issue with urfave/cli v3 when help is not hidden.
-	command.HideHelp = true
-
-	return command
+	return cliCommands, nil
 }
 
 func flagsToCliFlags(flags []command.Flag) []cli.Flag {
