@@ -260,9 +260,6 @@ func (r *CliContext) ArgumentFloat32Slice(key string) []float32 {
 	}
 
 	defaultValue := r.getDefaultArgumentValue(key)
-	if defaultValue == nil {
-		return nil
-	}
 	if v, ok := defaultValue.([]float32); ok {
 		return v
 	}
@@ -321,9 +318,6 @@ func (r *CliContext) ArgumentInt8Slice(key string) []int8 {
 	}
 
 	defaultValue := r.getDefaultArgumentValue(key)
-	if defaultValue == nil {
-		return nil
-	}
 	if v, ok := defaultValue.([]int8); ok {
 		return v
 	}
@@ -346,9 +340,6 @@ func (r *CliContext) ArgumentInt16Slice(key string) []int16 {
 	}
 
 	defaultValue := r.getDefaultArgumentValue(key)
-	if defaultValue == nil {
-		return nil
-	}
 	if v, ok := defaultValue.([]int16); ok {
 		return v
 	}
@@ -371,9 +362,6 @@ func (r *CliContext) ArgumentInt32Slice(key string) []int32 {
 	}
 
 	defaultValue := r.getDefaultArgumentValue(key)
-	if defaultValue == nil {
-		return nil
-	}
 	if v, ok := defaultValue.([]int32); ok {
 		return v
 	}
@@ -432,9 +420,6 @@ func (r *CliContext) ArgumentUint8Slice(key string) []uint8 {
 	}
 
 	defaultValue := r.getDefaultArgumentValue(key)
-	if defaultValue == nil {
-		return nil
-	}
 	if v, ok := defaultValue.([]uint8); ok {
 		return v
 	}
@@ -457,9 +442,6 @@ func (r *CliContext) ArgumentUint16Slice(key string) []uint16 {
 	}
 
 	defaultValue := r.getDefaultArgumentValue(key)
-	if defaultValue == nil {
-		return nil
-	}
 	if v, ok := defaultValue.([]uint16); ok {
 		return v
 	}
@@ -482,9 +464,6 @@ func (r *CliContext) ArgumentUint32Slice(key string) []uint32 {
 	}
 
 	defaultValue := r.getDefaultArgumentValue(key)
-	if defaultValue == nil {
-		return nil
-	}
 	if v, ok := defaultValue.([]uint32); ok {
 		return v
 	}
@@ -507,9 +486,6 @@ func (r *CliContext) ArgumentUint64Slice(key string) []uint64 {
 	}
 
 	defaultValue := r.getDefaultArgumentValue(key)
-	if defaultValue == nil {
-		return nil
-	}
 	if v, ok := defaultValue.([]uint64); ok {
 		return v
 	}
@@ -532,9 +508,6 @@ func (r *CliContext) ArgumentTimestampSlice(key string) []time.Time {
 	}
 
 	defaultValue := r.getDefaultArgumentValue(key)
-	if defaultValue == nil {
-		return nil
-	}
 	if v, ok := defaultValue.([]time.Time); ok {
 		return v
 	}
