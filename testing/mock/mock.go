@@ -22,7 +22,6 @@ import (
 	mocksmail "github.com/goravel/framework/mocks/mail"
 	mocksprocess "github.com/goravel/framework/mocks/process"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
-	mockstelemetry "github.com/goravel/framework/mocks/telemetry"
 	mockstranslation "github.com/goravel/framework/mocks/translation"
 	mocksvalidate "github.com/goravel/framework/mocks/validation"
 	mocksview "github.com/goravel/framework/mocks/view"
@@ -233,12 +232,12 @@ func (r *factory) StorageFile() *mocksfilesystem.File {
 	return &mocksfilesystem.File{}
 }
 
-func (r *factory) Telemetry() *mockstelemetry.Telemetry {
-	mockTelemetry := &mockstelemetry.Telemetry{}
-	r.app.EXPECT().MakeTelemetry().Return(mockTelemetry)
+// func (r *factory) Telemetry() *mockstelemetry.Telemetry {
+// 	mockTelemetry := &mockstelemetry.Telemetry{}
+// 	r.app.EXPECT().MakeTelemetry().Return(mockTelemetry)
 
-	return mockTelemetry
-}
+// 	return mockTelemetry
+// }
 
 func (r *factory) Validation() *mocksvalidate.Validation {
 	mockValidation := &mocksvalidate.Validation{}
