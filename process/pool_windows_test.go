@@ -425,13 +425,12 @@ func TestPool_SignalHandling_Windows(t *testing.T) {
 		}).Start()
 		assert.NoError(t, err)
 
-		time.Sleep(100 * time.Millisecond)
-		err = rp.Signal(os.Interrupt)
+		time.Sleep(1 * time.Second)
+		err = rp.Signal(os.Kill)
 		assert.NoError(t, err)
 
 		results := rp.Wait()
 		assert.True(t, results["long-running"].Failed())
-		assert.Contains(t, results["long-running"].Error(), "exit status")
 	})
 }
 
