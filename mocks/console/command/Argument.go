@@ -17,12 +17,102 @@ func (_m *Argument) EXPECT() *Argument_Expecter {
 	return &Argument_Expecter{mock: &_m.Mock}
 }
 
-// ArgumentName provides a mock function with no fields
-func (_m *Argument) ArgumentName() string {
+// GetMax provides a mock function with no fields
+func (_m *Argument) GetMax() int {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for ArgumentName")
+		panic("no return value specified for GetMax")
+	}
+
+	var r0 int
+	if rf, ok := ret.Get(0).(func() int); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	return r0
+}
+
+// Argument_GetMax_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetMax'
+type Argument_GetMax_Call struct {
+	*mock.Call
+}
+
+// GetMax is a helper method to define mock.On call
+func (_e *Argument_Expecter) GetMax() *Argument_GetMax_Call {
+	return &Argument_GetMax_Call{Call: _e.mock.On("GetMax")}
+}
+
+func (_c *Argument_GetMax_Call) Run(run func()) *Argument_GetMax_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Argument_GetMax_Call) Return(_a0 int) *Argument_GetMax_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Argument_GetMax_Call) RunAndReturn(run func() int) *Argument_GetMax_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetMin provides a mock function with no fields
+func (_m *Argument) GetMin() int {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetMin")
+	}
+
+	var r0 int
+	if rf, ok := ret.Get(0).(func() int); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	return r0
+}
+
+// Argument_GetMin_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetMin'
+type Argument_GetMin_Call struct {
+	*mock.Call
+}
+
+// GetMin is a helper method to define mock.On call
+func (_e *Argument_Expecter) GetMin() *Argument_GetMin_Call {
+	return &Argument_GetMin_Call{Call: _e.mock.On("GetMin")}
+}
+
+func (_c *Argument_GetMin_Call) Run(run func()) *Argument_GetMin_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Argument_GetMin_Call) Return(_a0 int) *Argument_GetMin_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Argument_GetMin_Call) RunAndReturn(run func() int) *Argument_GetMin_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetName provides a mock function with no fields
+func (_m *Argument) GetName() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetName")
 	}
 
 	var r0 string
@@ -35,119 +125,76 @@ func (_m *Argument) ArgumentName() string {
 	return r0
 }
 
-// Argument_ArgumentName_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ArgumentName'
-type Argument_ArgumentName_Call struct {
+// Argument_GetName_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetName'
+type Argument_GetName_Call struct {
 	*mock.Call
 }
 
-// ArgumentName is a helper method to define mock.On call
-func (_e *Argument_Expecter) ArgumentName() *Argument_ArgumentName_Call {
-	return &Argument_ArgumentName_Call{Call: _e.mock.On("ArgumentName")}
+// GetName is a helper method to define mock.On call
+func (_e *Argument_Expecter) GetName() *Argument_GetName_Call {
+	return &Argument_GetName_Call{Call: _e.mock.On("GetName")}
 }
 
-func (_c *Argument_ArgumentName_Call) Run(run func()) *Argument_ArgumentName_Call {
+func (_c *Argument_GetName_Call) Run(run func()) *Argument_GetName_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run()
 	})
 	return _c
 }
 
-func (_c *Argument_ArgumentName_Call) Return(_a0 string) *Argument_ArgumentName_Call {
+func (_c *Argument_GetName_Call) Return(_a0 string) *Argument_GetName_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Argument_ArgumentName_Call) RunAndReturn(run func() string) *Argument_ArgumentName_Call {
+func (_c *Argument_GetName_Call) RunAndReturn(run func() string) *Argument_GetName_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// MaxOccurrences provides a mock function with no fields
-func (_m *Argument) MaxOccurrences() int {
+// GetValue provides a mock function with no fields
+func (_m *Argument) GetValue() interface{} {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for MaxOccurrences")
+		panic("no return value specified for GetValue")
 	}
 
-	var r0 int
-	if rf, ok := ret.Get(0).(func() int); ok {
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func() interface{}); ok {
 		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(int)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(interface{})
+		}
 	}
 
 	return r0
 }
 
-// Argument_MaxOccurrences_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MaxOccurrences'
-type Argument_MaxOccurrences_Call struct {
+// Argument_GetValue_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetValue'
+type Argument_GetValue_Call struct {
 	*mock.Call
 }
 
-// MaxOccurrences is a helper method to define mock.On call
-func (_e *Argument_Expecter) MaxOccurrences() *Argument_MaxOccurrences_Call {
-	return &Argument_MaxOccurrences_Call{Call: _e.mock.On("MaxOccurrences")}
+// GetValue is a helper method to define mock.On call
+func (_e *Argument_Expecter) GetValue() *Argument_GetValue_Call {
+	return &Argument_GetValue_Call{Call: _e.mock.On("GetValue")}
 }
 
-func (_c *Argument_MaxOccurrences_Call) Run(run func()) *Argument_MaxOccurrences_Call {
+func (_c *Argument_GetValue_Call) Run(run func()) *Argument_GetValue_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run()
 	})
 	return _c
 }
 
-func (_c *Argument_MaxOccurrences_Call) Return(_a0 int) *Argument_MaxOccurrences_Call {
+func (_c *Argument_GetValue_Call) Return(_a0 interface{}) *Argument_GetValue_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Argument_MaxOccurrences_Call) RunAndReturn(run func() int) *Argument_MaxOccurrences_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// MinOccurrences provides a mock function with no fields
-func (_m *Argument) MinOccurrences() int {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for MinOccurrences")
-	}
-
-	var r0 int
-	if rf, ok := ret.Get(0).(func() int); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(int)
-	}
-
-	return r0
-}
-
-// Argument_MinOccurrences_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MinOccurrences'
-type Argument_MinOccurrences_Call struct {
-	*mock.Call
-}
-
-// MinOccurrences is a helper method to define mock.On call
-func (_e *Argument_Expecter) MinOccurrences() *Argument_MinOccurrences_Call {
-	return &Argument_MinOccurrences_Call{Call: _e.mock.On("MinOccurrences")}
-}
-
-func (_c *Argument_MinOccurrences_Call) Run(run func()) *Argument_MinOccurrences_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Argument_MinOccurrences_Call) Return(_a0 int) *Argument_MinOccurrences_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Argument_MinOccurrences_Call) RunAndReturn(run func() int) *Argument_MinOccurrences_Call {
+func (_c *Argument_GetValue_Call) RunAndReturn(run func() interface{}) *Argument_GetValue_Call {
 	_c.Call.Return(run)
 	return _c
 }

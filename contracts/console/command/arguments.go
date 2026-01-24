@@ -3,22 +3,20 @@ package command
 import "time"
 
 type Argument interface {
-	// Count of minimum occurrences
-	MinOccurrences() int
-	// Count of maximum occurrences
-	MaxOccurrences() int
-	// Argument name
-	ArgumentName() string
+	GetMin() int
+	GetMax() int
+	GetName() string
+	GetValue() any
 }
 
 type ArgumentBase[T any] struct {
 	Name     string // the name of this argument
-	Value    T      // the default value of this argument
+	Default  T      // the default value of this argument
 	Usage    string // the usage text to show
 	Required bool   // if this argument is required
 }
 
-func (a ArgumentBase[T]) MinOccurrences() int {
+func (a *ArgumentBase[T]) GetMin() int {
 	if a.Required {
 		return 1
 	} else {
@@ -26,32 +24,40 @@ func (a ArgumentBase[T]) MinOccurrences() int {
 	}
 }
 
-func (a ArgumentBase[T]) MaxOccurrences() int {
+func (a *ArgumentBase[T]) GetMax() int {
 	return 1
 }
 
-func (a ArgumentBase[T]) ArgumentName() string {
+func (a *ArgumentBase[T]) GetName() string {
 	return a.Name
+}
+
+func (a *ArgumentBase[T]) GetValue() any {
+	return a.Default
 }
 
 type ArgumentsBase[T any] struct {
-	Name  string // the name of this argument
-	Value T      // the default value of this argument
-	Usage string // the usage text to show
-	Min   int    // the min num of occurrences of this argument
-	Max   int    // the max num of occurrences of this argument, set to -1 for unlimited
+	Name    string // the name of this argument
+	Default []T    // the default value of this argument
+	Usage   string // the usage text to show
+	Min     int    // the min num of occurrences of this argument
+	Max     int    // the max num of occurrences of this argument, set to -1 for unlimited
 }
 
-func (a ArgumentsBase[T]) MinOccurrences() int {
+func (a *ArgumentsBase[T]) GetMin() int {
 	return a.Min
 }
 
-func (a ArgumentsBase[T]) MaxOccurrences() int {
+func (a *ArgumentsBase[T]) GetMax() int {
 	return a.Max
 }
 
-func (a ArgumentsBase[T]) ArgumentName() string {
+func (a *ArgumentsBase[T]) GetName() string {
 	return a.Name
+}
+
+func (a *ArgumentsBase[T]) GetValue() any {
+	return a.Default
 }
 
 type (
@@ -96,7 +102,7 @@ type ArgumentTimestamp struct {
 	Layouts []string
 }
 
-func (a ArgumentTimestamp) MinOccurrences() int {
+func (a *ArgumentTimestamp) GetMin() int {
 	if a.Required {
 		return 1
 	} else {
@@ -104,12 +110,16 @@ func (a ArgumentTimestamp) MinOccurrences() int {
 	}
 }
 
-func (a ArgumentTimestamp) MaxOccurrences() int {
+func (a *ArgumentTimestamp) GetMax() int {
 	return 1
 }
 
-func (a ArgumentTimestamp) ArgumentName() string {
+func (a *ArgumentTimestamp) GetName() string {
 	return a.Name
+}
+
+func (a *ArgumentTimestamp) GetValue() any {
+	return a.Value
 }
 
 type ArgumentTimestampSlice struct {
@@ -125,14 +135,18 @@ type ArgumentTimestampSlice struct {
 	Layouts []string
 }
 
-func (a ArgumentTimestampSlice) MinOccurrences() int {
+func (a *ArgumentTimestampSlice) GetMin() int {
 	return a.Min
 }
 
-func (a ArgumentTimestampSlice) MaxOccurrences() int {
+func (a *ArgumentTimestampSlice) GetMax() int {
 	return a.Max
 }
 
-func (a ArgumentTimestampSlice) ArgumentName() string {
+func (a *ArgumentTimestampSlice) GetName() string {
 	return a.Name
+}
+
+func (a *ArgumentTimestampSlice) GetValue() any {
+	return a.Value
 }
