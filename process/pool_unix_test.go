@@ -259,12 +259,12 @@ func TestPool_Concurrency_Unix(t *testing.T) {
 
 func TestPool_OnOutput_Unix(t *testing.T) {
 	t.Run("captures output via callback", func(t *testing.T) {
-		mx := sync.Mutex{}
+		var mu sync.Mutex
 		outputs := make(map[string][]string)
 		builder := NewPool().OnOutput(func(typ contractsprocess.OutputType, line []byte, key string) {
-			mx.Lock()
+			mu.Lock()
 			outputs[key] = append(outputs[key], string(line))
-			mx.Unlock()
+			mu.Unlock()
 		})
 
 		rp, err := builder.Pool(func(p contractsprocess.Pool) {
@@ -285,10 +285,13 @@ func TestPool_OnOutput_Unix(t *testing.T) {
 	})
 
 	t.Run("distinguishes stdout and stderr", func(t *testing.T) {
+		var mu sync.Mutex
 		stdoutLines := make(map[string][]string)
 		stderrLines := make(map[string][]string)
 
 		builder := NewPool().OnOutput(func(typ contractsprocess.OutputType, line []byte, key string) {
+			mu.Lock()
+			defer mu.Unlock()
 			if typ == contractsprocess.OutputTypeStdout {
 				stdoutLines[key] = append(stdoutLines[key], string(line))
 			} else {

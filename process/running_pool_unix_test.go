@@ -231,8 +231,8 @@ func TestRunningPool_Timeout_Unix(t *testing.T) {
 
 func TestRunningPool_OnOutput_Unix(t *testing.T) {
 	t.Run("captures output via callback", func(t *testing.T) {
+		var mu sync.Mutex
 		outputs := make(map[string][]string)
-		mu := sync.Mutex{}
 		builder := NewPool().OnOutput(func(typ contractsprocess.OutputType, line []byte, key string) {
 			mu.Lock()
 			outputs[key] = append(outputs[key], string(line))

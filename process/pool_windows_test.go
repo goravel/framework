@@ -7,6 +7,7 @@ import (
 	"context"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -257,11 +258,13 @@ func TestPool_Concurrency_Windows(t *testing.T) {
 }
 
 func TestPool_OnOutput_Windows(t *testing.T) {
-	// TODO: fix sync issue when writing concurrently
 	t.Run("captures output via callback", func(t *testing.T) {
+		var mu sync.Mutex
 		outputs := make(map[string][]string)
 		builder := NewPool().OnOutput(func(typ contractsprocess.OutputType, line []byte, key string) {
+			mu.Lock()
 			outputs[key] = append(outputs[key], string(line))
+			mu.Unlock()
 		})
 
 		rp, err := builder.Pool(func(p contractsprocess.Pool) {
@@ -282,10 +285,13 @@ func TestPool_OnOutput_Windows(t *testing.T) {
 	})
 
 	t.Run("distinguishes stdout and stderr", func(t *testing.T) {
+		var mu sync.Mutex
 		stdoutLines := make(map[string][]string)
 		stderrLines := make(map[string][]string)
 
 		builder := NewPool().OnOutput(func(typ contractsprocess.OutputType, line []byte, key string) {
+			mu.Lock()
+			defer mu.Unlock()
 			if typ == contractsprocess.OutputTypeStdout {
 				stdoutLines[key] = append(stdoutLines[key], string(line))
 			} else {
@@ -414,19 +420,18 @@ func TestPool_SignalHandling_Windows(t *testing.T) {
 	t.Run("forwards signals to child processes", func(t *testing.T) {
 		builder := NewPool()
 		rp, err := builder.Pool(func(p contractsprocess.Pool) {
-			// Set up a PowerShell script that can handle CTRL_BREAK_EVENT (mapped from os.Interrupt)
-			p.Command("powershell", "-Command", "$global:interrupted = $false; [console]::TreatControlCAsInput = $true; $handler = [Console]::CancelKeyPress; [Console]::CancelKeyPress = { $global:interrupted = $true; Write-Output 'caught'; $_.Cancel = $true }; Start-Sleep -Seconds 5; if ($global:interrupted) { exit 0 } else { exit 1 }").As("trap")
+			// Start a long sleep that would normally take 10 seconds
+			p.Command("powershell", "-Command", "Start-Sleep -Seconds 10").As("long-running")
 		}).Start()
 		assert.NoError(t, err)
 
 		time.Sleep(100 * time.Millisecond)
-		// Send os.Interrupt which should be mapped to CTRL_BREAK_EVENT on Windows
 		err = rp.Signal(os.Interrupt)
-		// We don't assert on the error because Windows process signal behavior can be inconsistent
+		assert.NoError(t, err)
 
 		results := rp.Wait()
-		// The important thing is that the process completes
-		assert.Contains(t, results, "trap")
+		assert.True(t, results["long-running"].Failed())
+		assert.Contains(t, results["long-running"].Error(), "exit status")
 	})
 }
 
