@@ -231,8 +231,8 @@ func TestRunningPool_Timeout_Unix(t *testing.T) {
 
 func TestRunningPool_OnOutput_Unix(t *testing.T) {
 	t.Run("captures output via callback", func(t *testing.T) {
+		var mu sync.Mutex
 		outputs := make(map[string][]string)
-		mu := sync.Mutex{}
 		builder := NewPool().OnOutput(func(typ contractsprocess.OutputType, line []byte, key string) {
 			mu.Lock()
 			outputs[key] = append(outputs[key], string(line))
@@ -320,7 +320,7 @@ func TestRunningPool_Spinner_Unix(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		rp := NewRunningPool(ctx, nil, nil, cancel, make(map[string]contractsprocess.Result), make(chan struct{}), false, "")
+		rp := NewRunningPool(ctx, cancel, nil, make(chan struct{}), false, "")
 
 		executed := false
 		err := rp.spinner(func() error {
@@ -337,7 +337,7 @@ func TestRunningPool_Spinner_Unix(t *testing.T) {
 		defer cancel()
 
 		done := make(chan struct{})
-		rp := NewRunningPool(ctx, nil, nil, cancel, make(map[string]contractsprocess.Result), done, true, "")
+		rp := NewRunningPool(ctx, cancel, nil, done, true, "")
 
 		executed := false
 		err := rp.spinner(func() error {
@@ -355,7 +355,7 @@ func TestRunningPool_Spinner_Unix(t *testing.T) {
 		defer cancel()
 
 		done := make(chan struct{})
-		rp := NewRunningPool(ctx, nil, nil, cancel, make(map[string]contractsprocess.Result), done, true, "Custom loading message")
+		rp := NewRunningPool(ctx, cancel, nil, done, true, "Custom loading message")
 
 		executed := false
 		err := rp.spinner(func() error {
@@ -372,7 +372,7 @@ func TestRunningPool_Spinner_Unix(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		rp := NewRunningPool(ctx, nil, nil, cancel, make(map[string]contractsprocess.Result), make(chan struct{}), false, "")
+		rp := NewRunningPool(ctx, cancel, nil, make(chan struct{}), false, "")
 
 		expectedErr := assert.AnError
 		err := rp.spinner(func() error {
@@ -388,7 +388,7 @@ func TestRunningPool_Spinner_Unix(t *testing.T) {
 		defer cancel()
 
 		done := make(chan struct{})
-		rp := NewRunningPool(ctx, nil, nil, cancel, make(map[string]contractsprocess.Result), done, true, "Processing...")
+		rp := NewRunningPool(ctx, cancel, nil, done, true, "Processing...")
 
 		expectedErr := assert.AnError
 		err := rp.spinner(func() error {

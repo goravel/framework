@@ -79,28 +79,26 @@ func (r *PoolBuilder) WithSpinner(message ...string) contractsprocess.PoolBuilde
 	return r
 }
 
-type job struct {
-	id      int
-	command *PoolCommand
-}
-
 type result struct {
 	key string
 	res contractsprocess.Result
 }
 
-// start initiates the execution of all configured commands concurrently but does not wait for them to complete.
-// It orchestrates a pool of worker goroutines to process commands up to the specified concurrency limit.
+// start initiates the execution of all configured commands concurrently based on the
+// concurrency limit, but does not wait for them to complete.
 //
-// This method is non-blocking. It returns a RunningPool instance immediately, which can be used to
-// wait for the completion of all processes and retrieve their results.
+// This method is non-blocking. It returns a RunningPool instance immediately, which
+// can be used to wait for the completion of all processes and retrieve their results.
 //
 // The core concurrency pattern is as follows:
 //  1. A job channel (`jobCh`) distributes commands to a pool of worker goroutines.
-//  2. A result channel (`resultCh`) collects the outcome of each command from a dedicated waiter goroutine.
-//  3. A separate "collector" goroutine safely populates the final results map from the result channel.
-//  4. WaitGroups synchronize the completion of all workers and the collection of all results
-//     before the entire operation is marked as "done".
+//  2. Workers pick up a job, start the process, and wait synchronously for it to finish.
+//     This synchronous wait ensures the concurrency limit is strictly respected.
+//  3. A result channel (`resultCh`) collects the outcome (success/failure) of each command.
+//  4. A separate "collector" goroutine safely populates the RunningPool's internal map
+//     from the result channel to avoid concurrent map write panics.
+//  5. A background orchestrator waits for all workers and results to finish, then
+//     cleanly closes resources and signals the `done` channel.
 func (r *PoolBuilder) start(configurer func(contractsprocess.Pool)) (contractsprocess.RunningPool, error) {
 	if configurer == nil {
 		return nil, errors.ProcessPoolNilConfigurer
@@ -118,25 +116,28 @@ func (r *PoolBuilder) start(configurer func(contractsprocess.Pool)) (contractspr
 	var cancel context.CancelFunc
 	if r.timeout > 0 {
 		ctx, cancel = context.WithTimeout(ctx, r.timeout)
+	} else {
+		ctx, cancel = context.WithCancel(ctx)
 	}
+
+	jobCh := make(chan *PoolCommand, len(commands))
+	resultCh := make(chan result, len(commands))
+	done := make(chan struct{})
+
+	keys := make([]string, len(commands))
+	for i, cmd := range commands {
+		keys[i] = cmd.key
+	}
+
+	runningPool := NewRunningPool(ctx, cancel, keys, done, r.loading, r.loadingMessage)
 
 	concurrency := r.concurrency
 	if concurrency <= 0 || concurrency > len(commands) {
 		concurrency = len(commands)
 	}
 
-	jobCh := make(chan job, len(commands))
-	resultCh := make(chan result, len(commands))
-	done := make(chan struct{})
-
-	results := make(map[string]contractsprocess.Result, len(commands))
-	runningProcesses := make([]contractsprocess.Running, len(commands))
-	keys := make([]string, len(commands))
-
 	var resultsWg sync.WaitGroup
 	var workersWg sync.WaitGroup
-	var startsWg sync.WaitGroup
-	var mu sync.Mutex
 
 	// The results collector goroutine centralizes writing to the results map
 	// to avoid race conditions, as map writes are not concurrent-safe.
@@ -145,9 +146,7 @@ func (r *PoolBuilder) start(configurer func(contractsprocess.Pool)) (contractspr
 	go func() {
 		for i := 0; i < len(commands); i++ {
 			rc := <-resultCh
-			mu.Lock()
-			results[rc.key] = rc.res
-			mu.Unlock()
+			runningPool.setResult(rc.key, rc.res)
 			resultsWg.Done()
 		}
 	}()
@@ -156,8 +155,16 @@ func (r *PoolBuilder) start(configurer func(contractsprocess.Pool)) (contractspr
 		workersWg.Add(1)
 		go func() {
 			defer workersWg.Done()
-			for currentJob := range jobCh {
-				command := currentJob.command
+			for command := range jobCh {
+				if ctx.Err() != nil {
+					// If the pool was stopped (Stop() called or timeout reached), we skip execution.
+					// We must still send a result to ensure resultsWg decrements correctly.
+					resultCh <- result{
+						key: command.key,
+						res: NewResult(ctx.Err(), -1, "", "", ""),
+					}
+					continue
+				}
 				cmdCtx := command.ctx
 				if cmdCtx == nil {
 					cmdCtx = ctx
@@ -184,35 +191,18 @@ func (r *PoolBuilder) start(configurer func(contractsprocess.Pool)) (contractspr
 				if err != nil {
 					resultCh <- result{key: command.key, res: NewResult(err, -1, command.name, "", "")}
 				} else {
-					mu.Lock()
-					runningProcesses[currentJob.id] = run
-					mu.Unlock()
-
-					// Launch a dedicated goroutine to wait for the process to finish.
-					// This prevents the worker from being blocked by a long-running process
-					// and allows it to immediately pick up the next job from jobCh.
-					go func(p contractsprocess.Running, k string) {
-						res := p.Wait()
-						resultCh <- result{key: k, res: res}
-					}(run, command.key)
+					runningPool.setProcess(command.key, run)
+					res := run.Wait()
+					resultCh <- result{key: command.key, res: res}
 				}
-
-				// Signal that this process has completed its start attempt
-				startsWg.Done()
 			}
 		}()
 	}
 
-	startsWg.Add(len(commands))
-	for i, command := range commands {
-		keys[i] = command.key
-		jobCh <- job{id: i, command: command}
+	for _, command := range commands {
+		jobCh <- command
 	}
 	close(jobCh)
-
-	// Wait for all processes to complete their start attempts before returning.
-	// This ensures the runningProcesses slice is fully populated and safe to access.
-	startsWg.Wait()
 
 	// This goroutine orchestrates the clean shutdown. It waits for all workers
 	// to finish processing jobs, then waits for all results to be collected.
@@ -227,7 +217,7 @@ func (r *PoolBuilder) start(configurer func(contractsprocess.Pool)) (contractspr
 		close(done)
 	}()
 
-	return NewRunningPool(ctx, runningProcesses, keys, cancel, results, done, r.loading, r.loadingMessage), nil
+	return runningPool, nil
 }
 
 type Pool struct {
