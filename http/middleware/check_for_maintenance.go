@@ -11,7 +11,7 @@ import (
 	"github.com/goravel/framework/support/path"
 )
 
-func CheckForMaintenance() http.Middleware {
+func CheckForMaintenanceMode() http.Middleware {
 	return func(ctx http.Context) {
 		filepath := path.Storage("framework/maintenance")
 		if !file.Exists(filepath) {
@@ -22,7 +22,7 @@ func CheckForMaintenance() http.Middleware {
 		content, err := os.ReadFile(filepath)
 
 		if err != nil {
-			ctx.Request().Abort(http.StatusServiceUnavailable)
+			ctx.Response().String(http.StatusServiceUnavailable, err.Error()).Abort()
 			return
 		}
 
@@ -30,7 +30,7 @@ func CheckForMaintenance() http.Middleware {
 		err = json.Unmarshal(content, &maintenanceOptions)
 
 		if err != nil {
-			ctx.Request().Abort(http.StatusServiceUnavailable)
+			ctx.Response().String(http.StatusServiceUnavailable, err.Error()).Abort()
 			return
 		}
 
@@ -62,9 +62,8 @@ func CheckForMaintenance() http.Middleware {
 			return
 		}
 
-		// Checking err to suppress the linter
 		if err = ctx.Response().String(maintenanceOptions.Status, maintenanceOptions.Reason).Abort(); err != nil {
-			return
+			panic(err)
 		}
 	}
 }

@@ -38,7 +38,7 @@ func (r *UpCommand) Handle(ctx console.Context) error {
 			return err
 		}
 
-		ctx.Info("The application is up and live now")
+		ctx.Success("The application is up and live now")
 
 		return nil
 	}

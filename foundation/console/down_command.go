@@ -8,12 +8,18 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/contracts/hash"
+	"github.com/goravel/framework/contracts/view"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/file"
+	"github.com/goravel/framework/support/path"
 	"github.com/goravel/framework/support/str"
 )
 
 type DownCommand struct {
-	app foundation.Application
+	app  foundation.Application
+	view view.View
+	hash hash.Hash
 }
 
 type MaintenanceOptions struct {
@@ -25,7 +31,7 @@ type MaintenanceOptions struct {
 }
 
 func NewDownCommand(app foundation.Application) *DownCommand {
-	return &DownCommand{app}
+	return &DownCommand{app, app.MakeView(), app.MakeHash()}
 }
 
 // Signature The name and signature of the console command.
@@ -74,21 +80,19 @@ func (r *DownCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *DownCommand) Handle(ctx console.Context) error {
-	path := r.app.StoragePath("framework/maintenance")
+	path := path.Storage("framework/maintenance")
 
 	options := MaintenanceOptions{}
 
 	options.Status = ctx.OptionInt("status")
 
-	if redirect := ctx.Option("redirect"); redirect != "" {
-		options.Redirect = redirect
-	}
+	options.Redirect = ctx.Option("redirect")
 
 	if render := ctx.Option("render"); render != "" {
-		if r.app.MakeView().Exists(render) {
+		if r.view.Exists(render) {
 			options.Render = render
 		} else {
-			ctx.Error("Unable to find the view template")
+			ctx.Error(errors.ViewTemplateNotExist.Args(render).Error())
 			return nil
 		}
 	}
@@ -98,9 +102,10 @@ func (r *DownCommand) Handle(ctx console.Context) error {
 	}
 
 	if secret := ctx.Option("secret"); secret != "" {
-		hash, err := r.app.MakeHash().Make(secret)
+		hash, err := r.hash.Make(secret)
 		if err != nil {
-			ctx.Error("Unable to generate and hash the secret")
+			ctx.Error(err.Error())
+			return nil
 		} else {
 			options.Secret = hash
 		}
@@ -111,7 +116,7 @@ func (r *DownCommand) Handle(ctx console.Context) error {
 		hash, err := r.app.MakeHash().Make(secret)
 
 		if err != nil {
-			ctx.Error("Unable to generate and hash the secret")
+			ctx.Error(err.Error())
 			return nil
 		} else {
 			options.Secret = hash
@@ -122,14 +127,16 @@ func (r *DownCommand) Handle(ctx console.Context) error {
 	jsonBytes, err := json.Marshal(options)
 
 	if err != nil {
-		return err
+		ctx.Error(err.Error())
+		return nil
 	}
 
 	if err := file.PutContent(path, string(jsonBytes)); err != nil {
-		return err
+		ctx.Error(err.Error())
+		return nil
 	}
 
-	ctx.Info("The application is in maintenance mode now")
+	ctx.Success("The application is in maintenance mode now")
 
 	return nil
 }
