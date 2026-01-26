@@ -22,7 +22,9 @@ func CheckForMaintenanceMode() http.Middleware {
 		content, err := os.ReadFile(filepath)
 
 		if err != nil {
-			ctx.Response().String(http.StatusServiceUnavailable, err.Error()).Abort()
+			if err = ctx.Response().String(http.StatusServiceUnavailable, err.Error()).Abort(); err != nil {
+				panic(err)
+			}
 			return
 		}
 
@@ -30,7 +32,9 @@ func CheckForMaintenanceMode() http.Middleware {
 		err = json.Unmarshal(content, &maintenanceOptions)
 
 		if err != nil {
-			ctx.Response().String(http.StatusServiceUnavailable, err.Error()).Abort()
+			if err = ctx.Response().String(http.StatusServiceUnavailable, err.Error()).Abort(); err != nil {
+				panic(err)
+			}
 			return
 		}
 
