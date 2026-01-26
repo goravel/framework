@@ -1,15 +1,16 @@
 package grpc
 
 import (
-	contractsconfig "github.com/goravel/framework/contracts/config"
-	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc/stats"
+
+	contractsconfig "github.com/goravel/framework/contracts/config"
+	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 )
 
 // NewServerStatsHandler creates an OTel stats handler for the server.
 func NewServerStatsHandler(config contractsconfig.Config, telemetry contractstelemetry.Telemetry, opts ...Option) stats.Handler {
-	if config == nil || !config.GetBool("telemetry.instrumentation.grpc_server", true) {
+	if config == nil || !config.GetBool("telemetry.instrumentation.grpc_server") {
 		return nil
 	}
 
@@ -24,7 +25,7 @@ func NewServerStatsHandler(config contractsconfig.Config, telemetry contractstel
 
 // NewClientStatsHandler creates an OTel stats handler for the client.
 func NewClientStatsHandler(config contractsconfig.Config, telemetry contractstelemetry.Telemetry, opts ...Option) stats.Handler {
-	if config == nil || !config.GetBool("telemetry.instrumentation.grpc_client", true) {
+	if config == nil || !config.GetBool("telemetry.instrumentation.grpc_client") {
 		return nil
 	}
 

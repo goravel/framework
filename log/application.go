@@ -5,13 +5,13 @@ import (
 	"log/slog"
 	"sync"
 
-	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	slogmulti "github.com/samber/slog-multi"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/log"
+	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/log/logger"
 	telemetrylog "github.com/goravel/framework/telemetry/instrumentation/log"

@@ -51,7 +51,7 @@ func (s *HandlerTestSuite) TestHandle_Lazy_Success() {
 	s.handler.logger = nil
 	s.handler.telemetry = nil
 
-	s.mockTelemetry.On("Logger", s.loggerName).Return(s.recorder.Logger(s.loggerName)).Once()
+	s.mockTelemetry.EXPECT().Logger(s.loggerName).Return(s.recorder.Logger(s.loggerName)).Once()
 
 	entry := &TestEntry{
 		ctx:   context.Background(),

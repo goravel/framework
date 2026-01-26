@@ -31,7 +31,7 @@ func (s *HandlerTestSuite) TestServerStatsHandler() {
 		{
 			name: "Returns nil if config is disabled",
 			setup: func(_ *mockstelemetry.Telemetry, mockConfig *mocksconfig.Config) {
-				mockConfig.EXPECT().GetBool("telemetry.instrumentation.grpc_server", true).Return(false).Once()
+				mockConfig.EXPECT().GetBool("telemetry.instrumentation.grpc_server").Return(false).Once()
 			},
 			assert: func(t *mockstelemetry.Telemetry, c *mocksconfig.Config) {
 				s.Nil(NewServerStatsHandler(c, t))
@@ -40,7 +40,7 @@ func (s *HandlerTestSuite) TestServerStatsHandler() {
 		{
 			name: "Returns nil (no warning) if telemetry is nil",
 			setup: func(_ *mockstelemetry.Telemetry, mockConfig *mocksconfig.Config) {
-				mockConfig.EXPECT().GetBool("telemetry.instrumentation.grpc_server", true).Return(true).Once()
+				mockConfig.EXPECT().GetBool("telemetry.instrumentation.grpc_server").Return(true).Once()
 			},
 			assert: func(_ *mockstelemetry.Telemetry, c *mocksconfig.Config) {
 				s.Nil(NewServerStatsHandler(c, nil))
@@ -49,7 +49,7 @@ func (s *HandlerTestSuite) TestServerStatsHandler() {
 		{
 			name: "Returns handler when enabled and dependencies set",
 			setup: func(mockTelemetry *mockstelemetry.Telemetry, mockConfig *mocksconfig.Config) {
-				mockConfig.EXPECT().GetBool("telemetry.instrumentation.grpc_server", true).Return(true).Once()
+				mockConfig.EXPECT().GetBool("telemetry.instrumentation.grpc_server").Return(true).Once()
 				mockTelemetry.EXPECT().TracerProvider().Return(tracenoop.NewTracerProvider()).Once()
 				mockTelemetry.EXPECT().MeterProvider().Return(metricnoop.NewMeterProvider()).Once()
 				mockTelemetry.EXPECT().Propagator().Return(propagation.NewCompositeTextMapPropagator()).Once()
@@ -61,7 +61,7 @@ func (s *HandlerTestSuite) TestServerStatsHandler() {
 		{
 			name: "Accepts options",
 			setup: func(mockTelemetry *mockstelemetry.Telemetry, mockConfig *mocksconfig.Config) {
-				mockConfig.EXPECT().GetBool("telemetry.instrumentation.grpc_server", true).Return(true).Once()
+				mockConfig.EXPECT().GetBool("telemetry.instrumentation.grpc_server").Return(true).Once()
 				mockTelemetry.EXPECT().TracerProvider().Return(tracenoop.NewTracerProvider()).Once()
 				mockTelemetry.EXPECT().MeterProvider().Return(metricnoop.NewMeterProvider()).Once()
 				mockTelemetry.EXPECT().Propagator().Return(propagation.NewCompositeTextMapPropagator()).Once()
@@ -99,7 +99,7 @@ func (s *HandlerTestSuite) TestClientStatsHandler() {
 		{
 			name: "Returns nil if config is disabled",
 			setup: func(_ *mockstelemetry.Telemetry, mockConfig *mocksconfig.Config) {
-				mockConfig.EXPECT().GetBool("telemetry.instrumentation.grpc_client", true).Return(false).Once()
+				mockConfig.EXPECT().GetBool("telemetry.instrumentation.grpc_client").Return(false).Once()
 			},
 			assert: func(t *mockstelemetry.Telemetry, c *mocksconfig.Config) {
 				s.Nil(NewClientStatsHandler(c, t))
@@ -108,7 +108,7 @@ func (s *HandlerTestSuite) TestClientStatsHandler() {
 		{
 			name: "Returns nil (no warning) if telemetry is nil",
 			setup: func(_ *mockstelemetry.Telemetry, mockConfig *mocksconfig.Config) {
-				mockConfig.EXPECT().GetBool("telemetry.instrumentation.grpc_client", true).Return(true).Once()
+				mockConfig.EXPECT().GetBool("telemetry.instrumentation.grpc_client").Return(true).Once()
 			},
 			assert: func(_ *mockstelemetry.Telemetry, c *mocksconfig.Config) {
 				s.Nil(NewClientStatsHandler(c, nil))
@@ -117,7 +117,7 @@ func (s *HandlerTestSuite) TestClientStatsHandler() {
 		{
 			name: "Returns handler when dependencies set",
 			setup: func(mockTelemetry *mockstelemetry.Telemetry, mockConfig *mocksconfig.Config) {
-				mockConfig.EXPECT().GetBool("telemetry.instrumentation.grpc_client", true).Return(true).Once()
+				mockConfig.EXPECT().GetBool("telemetry.instrumentation.grpc_client").Return(true).Once()
 				mockTelemetry.EXPECT().TracerProvider().Return(tracenoop.NewTracerProvider()).Once()
 				mockTelemetry.EXPECT().MeterProvider().Return(metricnoop.NewMeterProvider()).Once()
 				mockTelemetry.EXPECT().Propagator().Return(propagation.NewCompositeTextMapPropagator()).Once()

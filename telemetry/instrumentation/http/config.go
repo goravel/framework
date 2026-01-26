@@ -19,12 +19,12 @@ type Option func(*ServerConfig)
 
 // ServerConfig maps to "telemetry.instrumentation.http_server".
 type ServerConfig struct {
-	Enabled           bool                 `mapstructure:"enabled"`
-	ExcludedPaths     []string             `mapstructure:"excluded_paths"`
-	ExcludedMethods   []string             `mapstructure:"excluded_methods"`
-	Filters           []Filter             `mapstructure:"-"`
-	SpanNameFormatter SpanNameFormatter    `mapstructure:"-"`
-	MetricAttributes  []attribute.KeyValue `mapstructure:"-"`
+	Enabled           bool                 `json:"enabled"`
+	ExcludedPaths     []string             `json:"excluded_paths"`
+	ExcludedMethods   []string             `json:"excluded_methods"`
+	Filters           []Filter             `json:"-"`
+	SpanNameFormatter SpanNameFormatter    `json:"-"`
+	MetricAttributes  []attribute.KeyValue `json:"-"`
 }
 
 func WithFilter(f Filter) Option {
