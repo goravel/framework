@@ -31,6 +31,11 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 		return nil, errors.DatabaseConfigNotFound
 	}
 
+	// If the database is empty, it means the database is not configured, we don't want to return an error or print a warning here.
+	if pool.Writers[0].Database == "" {
+		return nil, nil
+	}
+
 	connectionToDBLock.Lock()
 	defer connectionToDBLock.Unlock()
 

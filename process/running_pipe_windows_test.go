@@ -4,6 +4,7 @@ package process
 
 import (
 	"bytes"
+	"context"
 	"os"
 	"os/exec"
 	"testing"
@@ -55,7 +56,23 @@ func TestRunningPipe_Signal_Windows_NoOp(t *testing.T) {
 
 func TestRunningPipe_Panic_AppendsToStderr_Windows(t *testing.T) {
 	stderr := &bytes.Buffer{}
-	rp := NewRunningPipe([]*exec.Cmd{nil}, []*PipeCommand{{key: "0"}}, nil, nil, nil, []*bytes.Buffer{nil}, []*bytes.Buffer{stderr})
+	rp := NewRunningPipe(context.Background(), []*exec.Cmd{nil}, []*PipeCommand{{key: "0"}}, nil, nil, nil, []*bytes.Buffer{nil}, []*bytes.Buffer{stderr}, false, "")
 	<-rp.Done()
 	assert.Equal(t, "panic: runtime error: invalid memory address or nil pointer dereference\n", stderr.String())
+}
+
+func TestRunningPipe_Interruption_MiddleCommandFails(t *testing.T) {
+	rp, err := NewPipe().Quietly().Pipe(func(b contractsprocess.Pipe) {
+		b.Command("powershell", "-NoLogo", "-NoProfile", "-Command", "echo line1").As("first")
+		b.Command("powershell", "-NoLogo", "-NoProfile", "-Command", "$input; exit 1").As("second")
+		b.Command("powershell", "-NoLogo", "-NoProfile", "-Command", "echo line2")
+		b.Command("powershell", "-NoLogo", "-NoProfile", "-Command", "$input")
+	}).Start()
+	assert.NoError(t, err)
+
+	res := rp.Wait()
+	assert.False(t, res.Successful())
+	assert.Equal(t, 1, res.ExitCode())
+	assert.Contains(t, res.Output(), "line1")
+	assert.NotContains(t, res.Output(), "line2")
 }

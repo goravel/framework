@@ -361,7 +361,7 @@ func (_c *Pipeline_Quietly_Call) RunAndReturn(run func() process.Pipeline) *Pipe
 }
 
 // Run provides a mock function with no fields
-func (_m *Pipeline) Run() (process.Result, error) {
+func (_m *Pipeline) Run() process.Result {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
@@ -369,10 +369,6 @@ func (_m *Pipeline) Run() (process.Result, error) {
 	}
 
 	var r0 process.Result
-	var r1 error
-	if rf, ok := ret.Get(0).(func() (process.Result, error)); ok {
-		return rf()
-	}
 	if rf, ok := ret.Get(0).(func() process.Result); ok {
 		r0 = rf()
 	} else {
@@ -381,13 +377,7 @@ func (_m *Pipeline) Run() (process.Result, error) {
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // Pipeline_Run_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Run'
@@ -407,12 +397,12 @@ func (_c *Pipeline_Run_Call) Run(run func()) *Pipeline_Run_Call {
 	return _c
 }
 
-func (_c *Pipeline_Run_Call) Return(_a0 process.Result, _a1 error) *Pipeline_Run_Call {
-	_c.Call.Return(_a0, _a1)
+func (_c *Pipeline_Run_Call) Return(_a0 process.Result) *Pipeline_Run_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Pipeline_Run_Call) RunAndReturn(run func() (process.Result, error)) *Pipeline_Run_Call {
+func (_c *Pipeline_Run_Call) RunAndReturn(run func() process.Result) *Pipeline_Run_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -566,6 +556,67 @@ func (_c *Pipeline_WithContext_Call) Return(_a0 process.Pipeline) *Pipeline_With
 }
 
 func (_c *Pipeline_WithContext_Call) RunAndReturn(run func(context.Context) process.Pipeline) *Pipeline_WithContext_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithSpinner provides a mock function with given fields: message
+func (_m *Pipeline) WithSpinner(message ...string) process.Pipeline {
+	_va := make([]interface{}, len(message))
+	for _i := range message {
+		_va[_i] = message[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithSpinner")
+	}
+
+	var r0 process.Pipeline
+	if rf, ok := ret.Get(0).(func(...string) process.Pipeline); ok {
+		r0 = rf(message...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(process.Pipeline)
+		}
+	}
+
+	return r0
+}
+
+// Pipeline_WithSpinner_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithSpinner'
+type Pipeline_WithSpinner_Call struct {
+	*mock.Call
+}
+
+// WithSpinner is a helper method to define mock.On call
+//   - message ...string
+func (_e *Pipeline_Expecter) WithSpinner(message ...interface{}) *Pipeline_WithSpinner_Call {
+	return &Pipeline_WithSpinner_Call{Call: _e.mock.On("WithSpinner",
+		append([]interface{}{}, message...)...)}
+}
+
+func (_c *Pipeline_WithSpinner_Call) Run(run func(message ...string)) *Pipeline_WithSpinner_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Pipeline_WithSpinner_Call) Return(_a0 process.Pipeline) *Pipeline_WithSpinner_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Pipeline_WithSpinner_Call) RunAndReturn(run func(...string) process.Pipeline) *Pipeline_WithSpinner_Call {
 	_c.Call.Return(run)
 	return _c
 }

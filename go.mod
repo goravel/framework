@@ -147,8 +147,8 @@ require (
 )
 
 replace (
-	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260114163908-3f89685c29c3
-	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20260114163908-3f89685c29c3
+	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260122232226-8e98ce8d340d
+	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20260122232226-8e98ce8d340d
 )
 
 tool github.com/vektra/mockery/v2

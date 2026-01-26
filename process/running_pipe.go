@@ -7,15 +7,19 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	contractsprocess "github.com/goravel/framework/contracts/process"
 )
 
 type RunningPipe struct {
-	commands     []*exec.Cmd
-	pipeCommands []*PipeCommand
-	cancel       context.CancelFunc
+	ctx            context.Context
+	commands       []*exec.Cmd
+	cancel         context.CancelFunc
+	pipeCommands   []*PipeCommand
+	loading        bool
+	loadingMessage string
 
 	interReaders []*io.PipeReader
 	interWriters []*io.PipeWriter
@@ -28,17 +32,23 @@ type RunningPipe struct {
 }
 
 func NewRunningPipe(
+	ctx context.Context,
 	commands []*exec.Cmd,
 	pipeCommands []*PipeCommand,
 	cancel context.CancelFunc,
 	interReaders []*io.PipeReader,
 	interWriters []*io.PipeWriter,
 	stdout, stderr []*bytes.Buffer,
+	loading bool,
+	loadingMessage string,
 ) *RunningPipe {
 	pipeRunner := &RunningPipe{
+		ctx:              ctx,
 		commands:         commands,
-		pipeCommands:     pipeCommands,
 		cancel:           cancel,
+		pipeCommands:     pipeCommands,
+		loading:          loading,
+		loadingMessage:   loadingMessage,
 		interReaders:     interReaders,
 		interWriters:     interWriters,
 		stdOutputBuffers: stdout,
@@ -47,16 +57,19 @@ func NewRunningPipe(
 	}
 
 	go func(runner *RunningPipe) {
+		var (
+			lastCmd *exec.Cmd
+			lastIdx int
+			err     error
+		)
+
 		defer func() {
 			if err := recover(); err != nil {
 				// append panic to the last step's stderr buffer if available
-				if len(runner.stdErrorBuffers) > 0 {
-					lastIdx := len(runner.stdErrorBuffers) - 1
-					if runner.stdErrorBuffers[lastIdx] != nil {
-						runner.stdErrorBuffers[lastIdx].WriteString("panic: ")
-						_, _ = fmt.Fprint(runner.stdErrorBuffers[lastIdx], err)
-						runner.stdErrorBuffers[lastIdx].WriteString("\n")
-					}
+				if len(runner.stdErrorBuffers) > 0 && runner.stdErrorBuffers[lastIdx] != nil {
+					runner.stdErrorBuffers[lastIdx].WriteString("panic: ")
+					_, _ = fmt.Fprint(runner.stdErrorBuffers[lastIdx], err)
+					runner.stdErrorBuffers[lastIdx].WriteString("\n")
 				}
 			}
 			if runner.cancel != nil {
@@ -65,23 +78,32 @@ func NewRunningPipe(
 			close(runner.doneChan)
 		}()
 
-		var waitErr error
 		for i, cmd := range runner.commands {
-			waitErr = cmd.Wait()
+			lastCmd = cmd
+			lastIdx = i
+
+			// Execute cmd.Wait() with spinner for this specific command
+			err = runner.spinnerForCommand(i, func() error {
+				return cmd.Wait()
+			})
 
 			// Close the writer that fed the next process's stdin.
 			// Closing here ensures the next process sees EOF when upstream finishes.
 			if i < len(runner.interWriters) {
 				_ = runner.interWriters[i].Close()
 			}
+
+			if err != nil {
+				for j := i + 1; j < len(runner.interWriters); j++ {
+					_ = runner.interWriters[j].Close()
+				}
+
+				break
+			}
 		}
 
-		lastIdx := len(runner.commands) - 1
-		finalCmd := runner.commands[lastIdx]
-
-		exitCode := getExitCode(finalCmd, waitErr)
-
-		cmdStr := finalCmd.String()
+		exitCode := getExitCode(lastCmd, err)
+		cmdStr := lastCmd.String()
 
 		stdoutStr, stderrStr := "", ""
 		if runner.stdOutputBuffers[lastIdx] != nil {
@@ -91,11 +113,8 @@ func NewRunningPipe(
 			stderrStr = runner.stdErrorBuffers[lastIdx].String()
 		}
 
-		runner.result = NewResult(waitErr, exitCode, cmdStr, stdoutStr, stderrStr)
+		runner.result = NewResult(err, exitCode, cmdStr, stdoutStr, stderrStr)
 
-		for _, w := range runner.interWriters {
-			_ = w.Close()
-		}
 		for _, r := range runner.interReaders {
 			_ = r.Close()
 		}
@@ -159,4 +178,26 @@ func (r *RunningPipe) Stop(timeout time.Duration, sig ...os.Signal) error {
 		}
 	}
 	return firstErr
+}
+
+func (r *RunningPipe) spinnerForCommand(index int, fn func() error) error {
+	pc := r.pipeCommands[index]
+
+	// Determine if loading should be shown for this command
+	loading := pc.loading || r.loading
+
+	// Determine the loading message for this command
+	loadingMessage := pc.loadingMessage
+	if loadingMessage == "" {
+		// Use global message if set
+		if r.loadingMessage != "" {
+			loadingMessage = r.loadingMessage
+		} else {
+			// Generate default message from this command
+			args := append([]string{pc.name}, pc.args...)
+			loadingMessage = fmt.Sprintf("> %s", strings.Join(args, " "))
+		}
+	}
+
+	return spinner(r.ctx, loading, loadingMessage, fn)
 }

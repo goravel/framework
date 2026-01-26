@@ -181,7 +181,9 @@ var (
 	ProcessPipelineStartFailed   = New("failed to start pipeline: %v").SetModule(ModuleProcess)
 	ProcessPipeNilConfigurer     = New("pipe configurer cannot be nil").SetModule(ModuleProcess)
 	ProcessPoolNilConfigurer     = New("pool configurer cannot be nil").SetModule(ModuleProcess)
-	ProviderRegisterFailed       = New("failed to register provider '%s': %v")
+	ProcessExitedWithCode        = New("process exited with code %d").SetModule(ModuleProcess)
+
+	ProviderRegisterFailed = New("failed to register provider '%s': %v")
 
 	QueueDriverFailedToPop           = New("failed to pop job from %s queue: %v")
 	QueueDriverInvalid               = New("%s doesn't implement contracts/queue/driver")
