@@ -264,4 +264,6 @@ var (
 	ValidationEmptyRules           = New("rules can't be empty")
 	ValidationFilterRegisterFailed = New("filter register failed: %v")
 	ValidationRuleRegisterFailed   = New("rule register failed: %v")
+
+	ViewTemplateNotExist = New("view template %s does not exist")
 )
