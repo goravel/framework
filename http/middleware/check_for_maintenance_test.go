@@ -15,7 +15,7 @@ import (
 
 func testHttpCheckForMaintenanceMiddleware(next nethttp.Handler) nethttp.Handler {
 	return nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
-		CheckForMaintenance()(NewTestContext(r.Context(), next, w, r))
+		CheckForMaintenanceMode()(NewTestContext(r.Context(), next, w, r))
 	})
 }
 
