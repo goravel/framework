@@ -25,12 +25,23 @@ const (
 
 func Throttle(name string) httpcontract.Middleware {
 	return func(ctx httpcontract.Context) {
-		if limiter := http.RateLimiterFacade.Limiter(name); limiter != nil {
+		logFacade := http.App.MakeLog()
+		rateLimiterFacade := http.App.MakeRateLimiter()
+
+		if logFacade == nil {
+			panic(errors.LogFacadeNotSet)
+		}
+
+		if rateLimiterFacade == nil {
+			panic(errors.RateLimiterFacadeNotSet)
+		}
+
+		if limiter := rateLimiterFacade.Limiter(name); limiter != nil {
 			if limits := limiter(ctx); len(limits) > 0 {
 				for index, limit := range limits {
 					tokens, remaining, reset, ok, err := limit.GetStore().Take(ctx, key(ctx, limit, name, index))
 					if err != nil {
-						http.LogFacade.Error(errors.HttpRateLimitFailedToCheckThrottle.Args(err))
+						logFacade.Error(errors.HttpRateLimitFailedToCheckThrottle.Args(err))
 						break
 					}
 

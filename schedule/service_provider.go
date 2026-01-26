@@ -55,5 +55,5 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 }
 
 func (r *ServiceProvider) Runners(app foundation.Application) []foundation.Runner {
-	return []foundation.Runner{NewScheduleRunner(app.MakeSchedule())}
+	return []foundation.Runner{NewScheduleRunner(app.MakeConfig(), app.MakeSchedule())}
 }

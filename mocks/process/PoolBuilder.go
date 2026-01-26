@@ -378,6 +378,67 @@ func (_c *PoolBuilder_WithContext_Call) RunAndReturn(run func(context.Context) p
 	return _c
 }
 
+// WithSpinner provides a mock function with given fields: message
+func (_m *PoolBuilder) WithSpinner(message ...string) process.PoolBuilder {
+	_va := make([]interface{}, len(message))
+	for _i := range message {
+		_va[_i] = message[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithSpinner")
+	}
+
+	var r0 process.PoolBuilder
+	if rf, ok := ret.Get(0).(func(...string) process.PoolBuilder); ok {
+		r0 = rf(message...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(process.PoolBuilder)
+		}
+	}
+
+	return r0
+}
+
+// PoolBuilder_WithSpinner_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithSpinner'
+type PoolBuilder_WithSpinner_Call struct {
+	*mock.Call
+}
+
+// WithSpinner is a helper method to define mock.On call
+//   - message ...string
+func (_e *PoolBuilder_Expecter) WithSpinner(message ...interface{}) *PoolBuilder_WithSpinner_Call {
+	return &PoolBuilder_WithSpinner_Call{Call: _e.mock.On("WithSpinner",
+		append([]interface{}{}, message...)...)}
+}
+
+func (_c *PoolBuilder_WithSpinner_Call) Run(run func(message ...string)) *PoolBuilder_WithSpinner_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *PoolBuilder_WithSpinner_Call) Return(_a0 process.PoolBuilder) *PoolBuilder_WithSpinner_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *PoolBuilder_WithSpinner_Call) RunAndReturn(run func(...string) process.PoolBuilder) *PoolBuilder_WithSpinner_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewPoolBuilder creates a new instance of PoolBuilder. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewPoolBuilder(t interface {

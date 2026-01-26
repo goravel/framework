@@ -177,18 +177,13 @@ var (
 			Description: "An easy-to-use, expressive, and minimalist API built on the standard net/http library.",
 			PkgPath:     "github.com/goravel/framework/http",
 			Dependencies: []string{
-				Cache,
 				Config,
-				Log,
-				Session,
-				Validation,
 			},
 		},
 		Lang: {
 			Description: "Provides localization support for multiple languages.",
 			PkgPath:     "github.com/goravel/framework/translation",
 			Dependencies: []string{
-				Config,
 				Log,
 			},
 		},
@@ -270,6 +265,7 @@ var (
 			PkgPath:     "github.com/goravel/framework/http",
 			Dependencies: []string{
 				Cache,
+				Log,
 			},
 		},
 		Route: {
@@ -278,6 +274,9 @@ var (
 			Dependencies: []string{
 				Config,
 				Http,
+				RateLimiter,
+				Session,
+				Validation,
 				View,
 			},
 			Drivers: []Driver{
@@ -368,14 +367,14 @@ var (
 				},
 			},
 		},
-		Telemetry: {
-			Description: "Provides distributed tracing with OpenTelemetry.",
-			PkgPath:     "github.com/goravel/framework/telemetry",
-			Dependencies: []string{
-				Config,
-				Log,
-			},
-		},
+		// Telemetry: {
+		// 	Description: "Provides distributed tracing with OpenTelemetry.",
+		// 	PkgPath:     "github.com/goravel/framework/telemetry",
+		// 	Dependencies: []string{
+		// 		Config,
+		// 		Log,
+		// 	},
+		// },
 		Testing: {
 			Description: "Provides tools for testing your application.",
 			PkgPath:     "github.com/goravel/framework/testing",

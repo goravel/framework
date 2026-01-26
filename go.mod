@@ -2,7 +2,7 @@ module github.com/goravel/framework
 
 go 1.24.0
 
-toolchain go1.25.5
+toolchain go1.25.6
 
 require (
 	github.com/Masterminds/squirrel v1.5.4
@@ -13,7 +13,7 @@ require (
 	github.com/dave/dst v0.27.3
 	github.com/dromara/carbon/v2 v2.6.11
 	github.com/gabriel-vasile/mimetype v1.4.12
-	github.com/go-viper/mapstructure/v2 v2.4.0
+	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/goforj/godump v1.9.0
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
@@ -24,11 +24,11 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rotisserie/eris v0.5.4
 	github.com/samber/lo v1.52.0
-	github.com/samber/slog-multi v1.6.0
+	github.com/samber/slog-multi v1.7.0
 	github.com/spf13/cast v1.10.0
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
-	github.com/urfave/cli/v3 v3.6.1
+	github.com/urfave/cli/v3 v3.6.2
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.64.0
 	go.opentelemetry.io/contrib/propagators/b3 v1.39.0
 	go.opentelemetry.io/otel v1.39.0
@@ -49,8 +49,8 @@ require (
 	go.opentelemetry.io/otel/sdk/log v0.15.0
 	go.opentelemetry.io/otel/sdk/metric v1.39.0
 	go.opentelemetry.io/otel/trace v1.39.0
-	golang.org/x/crypto v0.46.0
-	golang.org/x/exp v0.0.0-20251219203646-944ab1f22d93
+	golang.org/x/crypto v0.47.0
+	golang.org/x/exp v0.0.0-20260112195511-716be5621a96
 	google.golang.org/grpc v1.78.0
 	google.golang.org/protobuf v1.36.11
 	gorm.io/gorm v1.31.1
@@ -133,20 +133,20 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/xrash/smetrics v0.0.0-20250705151800-55b8f293f342
-	golang.org/x/mod v0.31.0 // indirect
-	golang.org/x/net v0.48.0 // indirect
+	golang.org/x/mod v0.32.0 // indirect
+	golang.org/x/net v0.49.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
-	golang.org/x/sys v0.39.0
-	golang.org/x/term v0.38.0 // indirect
-	golang.org/x/text v0.32.0
-	golang.org/x/tools v0.40.0
+	golang.org/x/sys v0.40.0
+	golang.org/x/term v0.39.0 // indirect
+	golang.org/x/text v0.33.0
+	golang.org/x/tools v0.41.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251202230838-ff82c1b0f217 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 replace (
-	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20251222181119-0a764e51fe1b
-	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20251222181119-0a764e51fe1b
+	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260114163908-3f89685c29c3
+	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20260114163908-3f89685c29c3
 )
 
 tool github.com/vektra/mockery/v2

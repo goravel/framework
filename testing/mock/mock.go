@@ -20,6 +20,7 @@ import (
 	mockshash "github.com/goravel/framework/mocks/hash"
 	mockshttp "github.com/goravel/framework/mocks/http"
 	mocksmail "github.com/goravel/framework/mocks/mail"
+	mocksprocess "github.com/goravel/framework/mocks/process"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
 	mockstranslation "github.com/goravel/framework/mocks/translation"
 	mocksvalidate "github.com/goravel/framework/mocks/validation"
@@ -168,6 +169,13 @@ func (r *factory) OrmToSql() *mocksorm.ToSql {
 	return &mocksorm.ToSql{}
 }
 
+func (r *factory) Process() *mocksprocess.Process {
+	mockProcess := &mocksprocess.Process{}
+	r.app.EXPECT().MakeProcess().Return(mockProcess)
+
+	return mockProcess
+}
+
 func (r *factory) Queue() *mocksqueue.Queue {
 	mockQueue := &mocksqueue.Queue{}
 	r.app.On("MakeQueue").Return(mockQueue)
@@ -223,6 +231,13 @@ func (r *factory) StorageDriver() *mocksfilesystem.Driver {
 func (r *factory) StorageFile() *mocksfilesystem.File {
 	return &mocksfilesystem.File{}
 }
+
+// func (r *factory) Telemetry() *mockstelemetry.Telemetry {
+// 	mockTelemetry := &mockstelemetry.Telemetry{}
+// 	r.app.EXPECT().MakeTelemetry().Return(mockTelemetry)
+
+// 	return mockTelemetry
+// }
 
 func (r *factory) Validation() *mocksvalidate.Validation {
 	mockValidation := &mocksvalidate.Validation{}

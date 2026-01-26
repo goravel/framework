@@ -4,6 +4,7 @@ package process
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -191,7 +192,98 @@ func TestRunning_DisableBuffering_OutputEmpty_Unix(t *testing.T) {
 func TestRunning_Panic_AppendsToStderr_Unix(t *testing.T) {
 	stderr := &bytes.Buffer{}
 	// Intentionally pass nil cmd to trigger panic in goroutine
-	r := NewRunning(nil, nil, nil, stderr)
+	r := NewRunning(context.Background(), nil, nil, nil, stderr, false, "")
 	<-r.Done()
 	assert.Equal(t, "panic: runtime error: invalid memory address or nil pointer dereference\n", stderr.String())
+}
+
+func TestRunning_Spinner_Unix(t *testing.T) {
+	t.Run("spinner disabled - executes function directly", func(t *testing.T) {
+		r, err := New().Quietly().Start("sleep", "0.1")
+		assert.NoError(t, err)
+		run, _ := r.(*Running)
+
+		executed := false
+		err = run.spinner(func() error {
+			executed = true
+			return nil
+		})
+
+		assert.NoError(t, err)
+		assert.True(t, executed, "Function should be executed")
+
+		_ = run.Wait()
+	})
+
+	t.Run("spinner disabled - propagates function error", func(t *testing.T) {
+		r, err := New().Quietly().Start("sleep", "0.1")
+		assert.NoError(t, err)
+		run, _ := r.(*Running)
+
+		expectedErr := fmt.Errorf("test error")
+		err = run.spinner(func() error {
+			return expectedErr
+		})
+
+		assert.Equal(t, expectedErr, err)
+
+		res := run.Wait()
+		assert.True(t, res.Successful())
+	})
+
+	t.Run("spinner enabled with custom message", func(t *testing.T) {
+		r, err := New().WithSpinner("Custom loading message").Quietly().Start("sleep", "0.1")
+		assert.NoError(t, err)
+		run, _ := r.(*Running)
+
+		executed := false
+		err = run.spinner(func() error {
+			executed = true
+			time.Sleep(50 * time.Millisecond)
+			return nil
+		})
+
+		assert.NoError(t, err)
+		assert.True(t, executed, "Function should be executed")
+		assert.Equal(t, "Custom loading message", run.loadingMessage)
+
+		res := run.Wait()
+		assert.True(t, res.Successful())
+	})
+
+	t.Run("spinner enabled with default message", func(t *testing.T) {
+		r, err := New().WithSpinner().Quietly().Start("sleep", "0.1")
+		assert.NoError(t, err)
+		run, _ := r.(*Running)
+
+		executed := false
+		err = run.spinner(func() error {
+			executed = true
+			time.Sleep(50 * time.Millisecond)
+			return nil
+		})
+
+		assert.NoError(t, err)
+		assert.True(t, executed, "Function should be executed")
+		assert.Equal(t, "> sleep 0.1", run.loadingMessage)
+
+		res := run.Wait()
+		assert.True(t, res.Successful())
+	})
+
+	t.Run("spinner enabled - propagates function error", func(t *testing.T) {
+		r, err := New().WithSpinner().Quietly().Start("sleep", "0.1")
+		assert.NoError(t, err)
+		run, _ := r.(*Running)
+
+		err = run.spinner(func() error {
+			time.Sleep(50 * time.Millisecond)
+			return assert.AnError
+		})
+
+		assert.Equal(t, assert.AnError, err)
+
+		res := run.Wait()
+		assert.True(t, res.Successful())
+	})
 }

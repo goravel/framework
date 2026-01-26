@@ -26,25 +26,28 @@ func init() {
 		// Log Channels
 		//
 		// Here you may configure the log channels for your application.
-		// Available Drivers: "single", "daily", "otel", "custom", "stack"
+		// Available Drivers: "single", "daily", "custom", "stack"
 		// Available Level: "debug", "info", "warning", "error", "fatal", "panic"
+		// Available Formatter: "text", "json"
 		"channels": map[string]any{
 			"stack": map[string]any{
 				"driver":   "stack",
 				"channels": []string{"daily"},
 			},
 			"single": map[string]any{
-				"driver": "single",
-				"path":   "storage/logs/goravel.log",
-				"level":  config.Env("LOG_LEVEL", "debug"),
-				"print":  false,
+				"driver":    "single",
+				"path":      "storage/logs/goravel.log",
+				"level":     config.Env("LOG_LEVEL", "debug"),
+				"print":     false,
+				"formatter": "text",
 			},
 			"daily": map[string]any{
-				"driver": "daily",
-				"path":   "storage/logs/goravel.log",
-				"level":  config.Env("LOG_LEVEL", "debug"),
-				"days":   7,
-				"print":  false,
+				"driver":    "daily",
+				"path":      "storage/logs/goravel.log",
+				"level":     config.Env("LOG_LEVEL", "debug"),
+				"days":      7,
+				"print":     false,
+				"formatter": "text",
 			},
 		},
 	})

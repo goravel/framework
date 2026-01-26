@@ -25,11 +25,10 @@ func (fakeSig) Signal()        {}
 
 func TestProcess_Run_Unix(t *testing.T) {
 	tests := []struct {
-		name     string
-		args     []string
-		setup    func(p *Process)
-		expectOK bool
-		check    func(t *testing.T, res *Result)
+		name  string
+		args  []string
+		setup func(p *Process)
+		check func(t *testing.T, res *Result)
 	}{
 		{
 			name: "echo to stdout",
@@ -37,7 +36,6 @@ func TestProcess_Run_Unix(t *testing.T) {
 			setup: func(p *Process) {
 				p.Quietly()
 			},
-			expectOK: true,
 			check: func(t *testing.T, res *Result) {
 				assert.Equal(t, "hello", res.Output())
 				assert.Equal(t, "", res.ErrorOutput())
@@ -50,7 +48,6 @@ func TestProcess_Run_Unix(t *testing.T) {
 			setup: func(p *Process) {
 				p.Quietly()
 			},
-			expectOK: true, // Run doesn't error on non-zero exit
 			check: func(t *testing.T, res *Result) {
 				assert.Equal(t, "bad", res.ErrorOutput())
 				assert.Equal(t, "", res.Output())
@@ -64,7 +61,6 @@ func TestProcess_Run_Unix(t *testing.T) {
 			setup: func(p *Process) {
 				p.Env(map[string]string{"FOO": "BAR"}).Quietly()
 			},
-			expectOK: true,
 			check: func(t *testing.T, res *Result) {
 				assert.Equal(t, "BAR", res.Output())
 			},
@@ -79,7 +75,6 @@ func TestProcess_Run_Unix(t *testing.T) {
 				_ = os.Chmod(path, 0o755)
 				p.Path(dir).Quietly()
 			},
-			expectOK: true,
 			check: func(t *testing.T, res *Result) {
 				assert.Equal(t, "ok", res.Output())
 			},
@@ -90,7 +85,6 @@ func TestProcess_Run_Unix(t *testing.T) {
 			setup: func(p *Process) {
 				p.Input(bytes.NewBufferString("ping")).Quietly()
 			},
-			expectOK: true,
 			check: func(t *testing.T, res *Result) {
 				assert.Equal(t, "ping", res.Output())
 			},
@@ -101,7 +95,6 @@ func TestProcess_Run_Unix(t *testing.T) {
 			setup: func(p *Process) {
 				p.Timeout(100 * time.Millisecond).Quietly()
 			},
-			expectOK: true, // Run doesn't error on timeout
 			check: func(t *testing.T, res *Result) {
 				assert.False(t, res.Successful())
 				assert.NotEqual(t, 0, res.ExitCode())
@@ -115,7 +108,6 @@ func TestProcess_Run_Unix(t *testing.T) {
 					// The handler still works, but the Result buffer is what we're testing.
 				})
 			},
-			expectOK: true,
 			check: func(t *testing.T, res *Result) {
 				assert.Equal(t, "", res.Output())
 				assert.Equal(t, "", res.ErrorOutput())
@@ -128,11 +120,10 @@ func TestProcess_Run_Unix(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			p := New()
 			tt.setup(p)
-			res, err := p.Run(tt.args[0], tt.args[1:]...)
-			assert.Equal(t, tt.expectOK, err == nil)
+			res := p.Run(tt.args[0], tt.args[1:]...)
 			assert.NotNil(t, res)
 			r, ok := res.(*Result)
-			assert.True(t, ok, "unexpected result type")
+			assert.True(t, ok)
 			tt.check(t, r)
 		})
 	}
@@ -148,8 +139,7 @@ func TestProcess_OnOutput_Callbacks_Unix(t *testing.T) {
 			errLines = append(errLines, append([]byte(nil), line...))
 		}
 	}).Quietly()
-	res, err := p.Run("sh", "-c", "printf 'a\n'; printf 'b\n' 1>&2")
-	assert.NoError(t, err)
+	res := p.Run("sh", "-c", "printf 'a\n'; printf 'b\n' 1>&2")
 	assert.True(t, res.Successful())
 	if assert.NotEmpty(t, outLines) {
 		assert.Equal(t, "a", strings.TrimSpace(string(outLines[0])))
@@ -163,8 +153,8 @@ func TestProcess_ErrorOnMissingCommand_Unix(t *testing.T) {
 	_, err := New().Quietly().Start("")
 	assert.Error(t, err)
 
-	_, err = New().Quietly().Run("")
-	assert.Error(t, err)
+	res := New().Quietly().Run("")
+	assert.True(t, res.Failed())
 }
 
 func TestProcess_WithContext(t *testing.T) {
@@ -172,9 +162,8 @@ func TestProcess_WithContext(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		res, err := New().WithContext(ctx).Quietly().Run("echo", "hello world")
+		res := New().WithContext(ctx).Quietly().Run("echo", "hello world")
 
-		assert.NoError(t, err, "Run should not return an error on success")
 		assert.NotNil(t, res, "Result object should not be nil")
 		assert.True(t, res.Successful(), "Process should be successful")
 		assert.Equal(t, 0, res.ExitCode(), "Exit code should be 0 for a successful command")
@@ -185,11 +174,27 @@ func TestProcess_WithContext(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 		defer cancel()
 
-		res, err := New().WithContext(ctx).Quietly().Run("sleep", "2")
-		assert.NoError(t, err, "Run should not return an error, but the result should indicate failure")
+		res := New().WithContext(ctx).Quietly().Run("sleep", "2")
 		assert.NotNil(t, res, "Result object should not be nil even on failure")
 		assert.False(t, res.Successful(), "Process should have failed because it was killed")
 		assert.NotEqual(t, 0, res.ExitCode(), "Exit code should be non-zero")
+	})
+}
+
+func TestProcess_WithSpinner(t *testing.T) {
+	t.Run("With default message", func(t *testing.T) {
+		process := New().WithSpinner()
+
+		assert.True(t, process.(*Process).loading)
+		assert.Empty(t, process.(*Process).loadingMessage)
+	})
+
+	t.Run("With custom message", func(t *testing.T) {
+		customMessage := "Processing..."
+		process := New().WithSpinner(customMessage)
+
+		assert.True(t, process.(*Process).loading)
+		assert.Equal(t, customMessage, process.(*Process).loadingMessage)
 	})
 }
 
@@ -237,19 +242,18 @@ func TestProcess_Pool_Unix(t *testing.T) {
 func TestProcess_Pipe_Unix(t *testing.T) {
 	t.Run("creates pipeline and executes commands", func(t *testing.T) {
 		p := New()
-		result, err := p.Pipe(func(pipe contractsprocess.Pipe) {
+		result := p.Pipe(func(pipe contractsprocess.Pipe) {
 			pipe.Command("echo", "hello")
 			pipe.Command("cat")
 			pipe.Command("tr", "a-z", "A-Z")
 		}).Run()
 
-		assert.NoError(t, err)
 		assert.Contains(t, result.Output(), "HELLO")
 	})
 
 	t.Run("returns error with nil configurer", func(t *testing.T) {
 		p := New()
-		_, err := p.Pipe(nil).Run()
-		assert.ErrorIs(t, err, errors.ProcessPipeNilConfigurer)
+		result := p.Pipe(nil).Run()
+		assert.ErrorIs(t, result.Error(), errors.ProcessPipeNilConfigurer)
 	})
 }

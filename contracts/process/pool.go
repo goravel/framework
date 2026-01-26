@@ -41,6 +41,9 @@ type PoolBuilder interface {
 	// WithContext binds the pool's lifecycle to the provided context. If the context
 	// is canceled, all running processes will be terminated.
 	WithContext(ctx context.Context) PoolBuilder
+
+	// WithSpinner enables a loading spinner in the terminal while the pool is running.
+	WithSpinner(message ...string) PoolBuilder
 }
 
 type Pool interface {

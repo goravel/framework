@@ -52,6 +52,26 @@ func (s *ApplicationTestSuite) TestSendMail() {
 		Send())
 }
 
+func (s *ApplicationTestSuite) TestSendMailViaTemplate() {
+	s.mockConfig = mockConfig(465)
+
+	app, err := NewApplication(s.mockConfig, nil)
+	s.Nil(err)
+	s.Nil(app.To([]string{testTo}).
+		Cc([]string{testCc}).
+		Bcc([]string{testBcc}).
+		Attach([]string{"../logo.png"}).
+		Subject("Goravel Test template").
+		Content(mail.Content{
+			View: "test.tmpl",
+			With: map[string]any{
+				"name": "Goravel",
+			},
+		}).
+		Headers(map[string]string{"Test-Mailer-Port": "465"}).
+		Send())
+}
+
 func (s *ApplicationTestSuite) TestSendMailWithFromBy587Port() {
 	s.mockConfig = mockConfig(587)
 
@@ -127,14 +147,13 @@ func (s *ApplicationTestSuite) TestQueueMailWithMailable() {
 
 func mockConfig(mailPort int) *mocksconfig.Config {
 	config := &mocksconfig.Config{}
-	config.On("GetString", "app.name").Return("goravel")
-	config.On("GetString", "queue.default").Return("sync")
-	config.On("GetString", "queue.connections.sync.queue", "default").Return("default")
-	config.On("GetString", "queue.connections.sync.driver").Return("sync")
-	config.On("GetInt", "queue.connections.sync.concurrent", 1).Return(1)
-	config.On("GetString", "queue.failed.database").Return("database")
-	config.On("GetString", "queue.failed.table").Return("failed_jobs")
-
+	config.EXPECT().GetString("app.name").Return("goravel")
+	config.EXPECT().GetString("queue.default").Return("sync")
+	config.EXPECT().GetString("queue.connections.sync.queue", "default").Return("default")
+	config.EXPECT().GetString("queue.connections.sync.driver").Return("sync")
+	config.EXPECT().GetInt("queue.connections.sync.concurrent", 1).Return(1)
+	config.EXPECT().GetString("queue.failed.database").Return("database")
+	config.EXPECT().GetString("queue.failed.table").Return("failed_jobs")
 	if file.Exists(support.EnvFilePath) {
 		vip := viper.New()
 		vip.SetConfigName(support.EnvFilePath)
@@ -144,15 +163,15 @@ func mockConfig(mailPort int) *mocksconfig.Config {
 		vip.SetEnvPrefix("goravel")
 		vip.AutomaticEnv()
 
-		config.On("GetString", "mail.host").Return(vip.Get("MAIL_HOST"))
-		config.On("GetInt", "mail.port").Return(mailPort)
-		config.On("GetString", "mail.from.address").Return(vip.Get("MAIL_FROM_ADDRESS"))
-		config.On("GetString", "mail.from.name").Return(vip.Get("MAIL_FROM_NAME"))
-		config.On("GetString", "mail.username").Return(vip.Get("MAIL_USERNAME"))
-		config.On("GetString", "mail.password").Return(vip.Get("MAIL_PASSWORD"))
-		config.On("GetString", "mail.to").Return(vip.Get("MAIL_TO"))
-		config.On("GetString", "mail.cc").Return(vip.Get("MAIL_CC"))
-		config.On("GetString", "mail.bcc").Return(vip.Get("MAIL_BCC"))
+		config.EXPECT().GetString("mail.host").Return(vip.GetString("MAIL_HOST"))
+		config.EXPECT().GetInt("mail.port").Return(mailPort)
+		config.EXPECT().GetString("mail.from.address").Return(vip.GetString("MAIL_FROM_ADDRESS"))
+		config.EXPECT().GetString("mail.from.name").Return(vip.GetString("MAIL_FROM_NAME"))
+		config.EXPECT().GetString("mail.username").Return(vip.GetString("MAIL_USERNAME"))
+		config.EXPECT().GetString("mail.password").Return(vip.GetString("MAIL_PASSWORD"))
+		config.EXPECT().GetString("mail.to").Return(vip.GetString("MAIL_TO"))
+		config.EXPECT().GetString("mail.cc").Return(vip.GetString("MAIL_CC"))
+		config.EXPECT().GetString("mail.bcc").Return(vip.GetString("MAIL_BCC"))
 		config.EXPECT().GetString("mail.template.default", "html").Return("html").Once()
 		config.EXPECT().GetString("mail.template.engines.html.driver", "html").Return("html").Once()
 		config.EXPECT().GetString("mail.template.engines.html.path", "resources/views/mail").
@@ -163,19 +182,19 @@ func mockConfig(mailPort int) *mocksconfig.Config {
 		testTo = vip.Get("MAIL_TO").(string)
 	}
 	if os.Getenv("MAIL_HOST") != "" {
-		config.On("GetString", "mail.host").Return(os.Getenv("MAIL_HOST"))
-		config.On("GetInt", "mail.port").Return(mailPort)
-		config.On("GetString", "mail.from.address").Return(os.Getenv("MAIL_FROM_ADDRESS"))
-		config.On("GetString", "mail.from.name").Return(os.Getenv("MAIL_FROM_NAME"))
-		config.On("GetString", "mail.username").Return(os.Getenv("MAIL_USERNAME"))
-		config.On("GetString", "mail.password").Return(os.Getenv("MAIL_PASSWORD"))
-		config.On("GetString", "mail.to").Return(os.Getenv("MAIL_TO"))
-		config.On("GetString", "mail.cc").Return(os.Getenv("MAIL_CC"))
-		config.On("GetString", "mail.bcc").Return(os.Getenv("MAIL_BCC"))
+		config.EXPECT().GetString("mail.host").Return(os.Getenv("MAIL_HOST"))
+		config.EXPECT().GetInt("mail.port").Return(mailPort)
+		config.EXPECT().GetString("mail.from.address").Return(os.Getenv("MAIL_FROM_ADDRESS"))
+		config.EXPECT().GetString("mail.from.name").Return(os.Getenv("MAIL_FROM_NAME"))
+		config.EXPECT().GetString("mail.username").Return(os.Getenv("MAIL_USERNAME"))
+		config.EXPECT().GetString("mail.password").Return(os.Getenv("MAIL_PASSWORD"))
+		config.EXPECT().GetString("mail.to").Return(os.Getenv("MAIL_TO"))
+		config.EXPECT().GetString("mail.cc").Return(os.Getenv("MAIL_CC"))
+		config.EXPECT().GetString("mail.bcc").Return(os.Getenv("MAIL_BCC"))
 		config.EXPECT().GetString("mail.template.default", "html").Return("html").Once()
 		config.EXPECT().GetString("mail.template.engines.html.driver", "html").Return("html").Once()
 		config.EXPECT().GetString("mail.template.engines.html.path", "resources/views/mail").
-			Return("resources/views/mail").Once()
+			Return(".").Once()
 
 		testFromAddress = os.Getenv("MAIL_FROM_ADDRESS")
 		testFromName = os.Getenv("MAIL_FROM_NAME")

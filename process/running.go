@@ -7,7 +7,11 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
+
+	huhspinner "github.com/charmbracelet/huh/spinner"
+	"github.com/charmbracelet/lipgloss"
 
 	contractsprocess "github.com/goravel/framework/contracts/process"
 )
@@ -15,8 +19,11 @@ import (
 var _ contractsprocess.Running = (*Running)(nil)
 
 type Running struct {
-	cmd    *exec.Cmd
-	cancel context.CancelFunc
+	ctx            context.Context
+	cmd            *exec.Cmd
+	cancel         context.CancelFunc
+	loading        bool
+	loadingMessage string
 
 	stdoutBuffer *bytes.Buffer
 	stderrBuffer *bytes.Buffer
@@ -25,13 +32,16 @@ type Running struct {
 	result   contractsprocess.Result
 }
 
-func NewRunning(cmd *exec.Cmd, cancel context.CancelFunc, stdout, stderr *bytes.Buffer) *Running {
+func NewRunning(ctx context.Context, cmd *exec.Cmd, cancel context.CancelFunc, stdout, stderr *bytes.Buffer, loading bool, loadingMessage string) *Running {
 	runner := &Running{
-		cmd:          cmd,
-		cancel:       cancel,
-		stdoutBuffer: stdout,
-		stderrBuffer: stderr,
-		doneChan:     make(chan struct{}),
+		ctx:            ctx,
+		cmd:            cmd,
+		cancel:         cancel,
+		loading:        loading,
+		loadingMessage: loadingMessage,
+		stdoutBuffer:   stdout,
+		stderrBuffer:   stderr,
+		doneChan:       make(chan struct{}),
 	}
 
 	go func(runner *Running) {
@@ -68,12 +78,23 @@ func NewRunning(cmd *exec.Cmd, cancel context.CancelFunc, stdout, stderr *bytes.
 	return runner
 }
 
+func (r *Running) Command() string {
+	return r.cmd.String()
+}
+
 func (r *Running) Done() <-chan struct{} {
 	return r.doneChan
 }
 
 func (r *Running) Wait() contractsprocess.Result {
-	<-r.Done()
+	if err := r.spinner(func() error {
+		<-r.Done()
+
+		return nil
+	}); err != nil {
+		return NewResult(err, 1, "", "", "")
+	}
+
 	return r.result
 }
 
@@ -82,10 +103,6 @@ func (r *Running) PID() int {
 		return 0
 	}
 	return r.cmd.Process.Pid
-}
-
-func (r *Running) Command() string {
-	return r.cmd.String()
 }
 
 func (r *Running) Running() bool {
@@ -118,6 +135,14 @@ func (r *Running) ErrorOutput() string {
 	return r.stderrBuffer.String()
 }
 
+func (r *Running) spinner(fn func() error) error {
+	if r.loadingMessage == "" {
+		r.loadingMessage = fmt.Sprintf("> %s", strings.Join(r.cmd.Args, " "))
+	}
+
+	return spinner(r.ctx, r.loading, r.loadingMessage, fn)
+}
+
 func getExitCode(cmd *exec.Cmd, err error) int {
 	exitCode := -1
 	if cmd != nil && cmd.ProcessState != nil {
@@ -133,4 +158,23 @@ func getExitCode(cmd *exec.Cmd, err error) int {
 	}
 
 	return exitCode
+}
+
+func spinner(ctx context.Context, loading bool, message string, fn func() error) error {
+	if !loading {
+		return fn()
+	}
+
+	style := lipgloss.NewStyle().Foreground(lipgloss.CompleteColor{TrueColor: "#3D8C8D", ANSI256: "30", ANSI: "6"})
+	spin := huhspinner.New().Title(message).Style(style).TitleStyle(style)
+
+	var err error
+	spin = spin.Context(ctx).Action(func() {
+		err = fn()
+	})
+	if err := spin.Run(); err != nil {
+		return err
+	}
+
+	return err
 }

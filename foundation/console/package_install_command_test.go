@@ -39,6 +39,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 			{Key: "All facades", Value: "all"},
 			{Key: "Select facades", Value: "select"},
 			{Key: "Third-party package", Value: "third"},
+			{Key: "None", Value: "none"},
 		}
 		facadeOptions = []console.Choice{
 			{Key: fmt.Sprintf("%-11s", "Auth") + color.Gray().Sprintf(" - %s", "Description"), Value: "Auth"},
@@ -547,9 +548,10 @@ func TestGetDependencyBindings(t *testing.T) {
 			binding.Cache,
 			binding.Schema,
 			binding.Orm,
+			binding.Http,
+			binding.RateLimiter,
 			binding.Session,
 			binding.Validation,
-			binding.Http,
 			binding.View,
 			binding.Route,
 		}
@@ -567,9 +569,10 @@ func TestGetDependencyBindings(t *testing.T) {
 			binding.Log,
 			binding.Cache,
 			binding.Orm,
+			binding.Http,
+			binding.RateLimiter,
 			binding.Session,
 			binding.Validation,
-			binding.Http,
 			binding.View,
 			binding.Route,
 		}

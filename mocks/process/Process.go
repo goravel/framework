@@ -409,7 +409,7 @@ func (_c *Process_Quietly_Call) RunAndReturn(run func() process.Process) *Proces
 }
 
 // Run provides a mock function with given fields: name, arg
-func (_m *Process) Run(name string, arg ...string) (process.Result, error) {
+func (_m *Process) Run(name string, arg ...string) process.Result {
 	_va := make([]interface{}, len(arg))
 	for _i := range arg {
 		_va[_i] = arg[_i]
@@ -424,10 +424,6 @@ func (_m *Process) Run(name string, arg ...string) (process.Result, error) {
 	}
 
 	var r0 process.Result
-	var r1 error
-	if rf, ok := ret.Get(0).(func(string, ...string) (process.Result, error)); ok {
-		return rf(name, arg...)
-	}
 	if rf, ok := ret.Get(0).(func(string, ...string) process.Result); ok {
 		r0 = rf(name, arg...)
 	} else {
@@ -436,13 +432,7 @@ func (_m *Process) Run(name string, arg ...string) (process.Result, error) {
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string, ...string) error); ok {
-		r1 = rf(name, arg...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // Process_Run_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Run'
@@ -471,12 +461,12 @@ func (_c *Process_Run_Call) Run(run func(name string, arg ...string)) *Process_R
 	return _c
 }
 
-func (_c *Process_Run_Call) Return(_a0 process.Result, _a1 error) *Process_Run_Call {
-	_c.Call.Return(_a0, _a1)
+func (_c *Process_Run_Call) Return(_a0 process.Result) *Process_Run_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Process_Run_Call) RunAndReturn(run func(string, ...string) (process.Result, error)) *Process_Run_Call {
+func (_c *Process_Run_Call) RunAndReturn(run func(string, ...string) process.Result) *Process_Run_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -693,6 +683,67 @@ func (_c *Process_WithContext_Call) Return(_a0 process.Process) *Process_WithCon
 }
 
 func (_c *Process_WithContext_Call) RunAndReturn(run func(context.Context) process.Process) *Process_WithContext_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithSpinner provides a mock function with given fields: message
+func (_m *Process) WithSpinner(message ...string) process.Process {
+	_va := make([]interface{}, len(message))
+	for _i := range message {
+		_va[_i] = message[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithSpinner")
+	}
+
+	var r0 process.Process
+	if rf, ok := ret.Get(0).(func(...string) process.Process); ok {
+		r0 = rf(message...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(process.Process)
+		}
+	}
+
+	return r0
+}
+
+// Process_WithSpinner_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithSpinner'
+type Process_WithSpinner_Call struct {
+	*mock.Call
+}
+
+// WithSpinner is a helper method to define mock.On call
+//   - message ...string
+func (_e *Process_Expecter) WithSpinner(message ...interface{}) *Process_WithSpinner_Call {
+	return &Process_WithSpinner_Call{Call: _e.mock.On("WithSpinner",
+		append([]interface{}{}, message...)...)}
+}
+
+func (_c *Process_WithSpinner_Call) Run(run func(message ...string)) *Process_WithSpinner_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Process_WithSpinner_Call) Return(_a0 process.Process) *Process_WithSpinner_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Process_WithSpinner_Call) RunAndReturn(run func(...string) process.Process) *Process_WithSpinner_Call {
 	_c.Call.Return(run)
 	return _c
 }

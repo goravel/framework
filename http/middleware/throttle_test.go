@@ -8,26 +8,24 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
-	httpcontract "github.com/goravel/framework/contracts/http"
-	"github.com/goravel/framework/contracts/log"
+	contractshttp "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/http"
-	mockhttp "github.com/goravel/framework/mocks/http"
-	mocklog "github.com/goravel/framework/mocks/log"
+	mocksfoundation "github.com/goravel/framework/mocks/foundation"
+	mockshttp "github.com/goravel/framework/mocks/http"
+	mockslog "github.com/goravel/framework/mocks/log"
 )
 
 type ThrottleTestSuite struct {
 	suite.Suite
-	mockRateLimiter *mockhttp.RateLimiter
-	mockCtx         *mockhttp.Context
-	mockRequest     *mockhttp.ContextRequest
-	mockResponse    *mockhttp.ContextResponse
-	mockLimit       *mockhttp.Limit
-	mockStore       *mockhttp.Store
-	mockLog         *mocklog.Log
-
-	originalRateLimiter httpcontract.RateLimiter
-	originalLog         log.Log
+	mockApp         *mocksfoundation.Application
+	mockRateLimiter *mockshttp.RateLimiter
+	mockCtx         *mockshttp.Context
+	mockRequest     *mockshttp.ContextRequest
+	mockResponse    *mockshttp.ContextResponse
+	mockLimit       *mockshttp.Limit
+	mockStore       *mockshttp.Store
+	mockLog         *mockslog.Log
 }
 
 func TestThrottleTestSuite(t *testing.T) {
@@ -35,30 +33,21 @@ func TestThrottleTestSuite(t *testing.T) {
 }
 
 func (s *ThrottleTestSuite) SetupTest() {
-	s.mockRateLimiter = mockhttp.NewRateLimiter(s.T())
-	s.mockCtx = mockhttp.NewContext(s.T())
-	s.mockRequest = mockhttp.NewContextRequest(s.T())
-	s.mockResponse = mockhttp.NewContextResponse(s.T())
-	s.mockLimit = mockhttp.NewLimit(s.T())
-	s.mockStore = mockhttp.NewStore(s.T())
-	s.mockLog = mocklog.NewLog(s.T())
+	s.mockApp = mocksfoundation.NewApplication(s.T())
+	s.mockRateLimiter = mockshttp.NewRateLimiter(s.T())
+	s.mockCtx = mockshttp.NewContext(s.T())
+	s.mockRequest = mockshttp.NewContextRequest(s.T())
+	s.mockResponse = mockshttp.NewContextResponse(s.T())
+	s.mockLimit = mockshttp.NewLimit(s.T())
+	s.mockStore = mockshttp.NewStore(s.T())
+	s.mockLog = mockslog.NewLog(s.T())
 
-	// Store original facades
-	s.originalRateLimiter = http.RateLimiterFacade
-	s.originalLog = http.LogFacade
-
-	// Set mocks
-	http.RateLimiterFacade = s.mockRateLimiter
-	http.LogFacade = s.mockLog
-}
-
-func (s *ThrottleTestSuite) TearDownTest() {
-	// Restore original facades
-	http.RateLimiterFacade = s.originalRateLimiter
-	http.LogFacade = s.originalLog
+	http.App = s.mockApp
 }
 
 func (s *ThrottleTestSuite) TestThrottle_NoLimiterFound() {
+	s.mockApp.EXPECT().MakeLog().Return(s.mockLog).Once()
+	s.mockApp.EXPECT().MakeRateLimiter().Return(s.mockRateLimiter).Once()
 	s.mockRateLimiter.EXPECT().Limiter("test").Return(nil).Once()
 	s.mockCtx.EXPECT().Request().Return(s.mockRequest).Once()
 	s.mockRequest.EXPECT().Next().Once()
@@ -68,8 +57,10 @@ func (s *ThrottleTestSuite) TestThrottle_NoLimiterFound() {
 }
 
 func (s *ThrottleTestSuite) TestThrottle_LimiterReturnsEmptyLimits() {
-	s.mockRateLimiter.EXPECT().Limiter("test").Return(func(ctx httpcontract.Context) []httpcontract.Limit {
-		return []httpcontract.Limit{}
+	s.mockApp.EXPECT().MakeLog().Return(s.mockLog).Once()
+	s.mockApp.EXPECT().MakeRateLimiter().Return(s.mockRateLimiter).Once()
+	s.mockRateLimiter.EXPECT().Limiter("test").Return(func(ctx contractshttp.Context) []contractshttp.Limit {
+		return []contractshttp.Limit{}
 	}).Once()
 	s.mockCtx.EXPECT().Request().Return(s.mockRequest).Once()
 	s.mockRequest.EXPECT().Next().Once()
@@ -81,8 +72,10 @@ func (s *ThrottleTestSuite) TestThrottle_LimiterReturnsEmptyLimits() {
 func (s *ThrottleTestSuite) TestThrottle_RequestAllowed() {
 	resetTime := uint64(time.Now().Add(time.Minute).UnixNano())
 
-	s.mockRateLimiter.EXPECT().Limiter("api").Return(func(c httpcontract.Context) []httpcontract.Limit {
-		return []httpcontract.Limit{s.mockLimit}
+	s.mockApp.EXPECT().MakeLog().Return(s.mockLog).Once()
+	s.mockApp.EXPECT().MakeRateLimiter().Return(s.mockRateLimiter).Once()
+	s.mockRateLimiter.EXPECT().Limiter("api").Return(func(c contractshttp.Context) []contractshttp.Limit {
+		return []contractshttp.Limit{s.mockLimit}
 	}).Once()
 
 	s.mockLimit.EXPECT().GetStore().Return(s.mockStore).Once()
@@ -106,8 +99,10 @@ func (s *ThrottleTestSuite) TestThrottle_RequestAllowed() {
 func (s *ThrottleTestSuite) TestThrottle_RequestAllowedWithCustomKey() {
 	resetTime := uint64(time.Now().Add(time.Minute).UnixNano())
 
-	s.mockRateLimiter.EXPECT().Limiter("api").Return(func(c httpcontract.Context) []httpcontract.Limit {
-		return []httpcontract.Limit{s.mockLimit}
+	s.mockApp.EXPECT().MakeLog().Return(s.mockLog).Once()
+	s.mockApp.EXPECT().MakeRateLimiter().Return(s.mockRateLimiter).Once()
+	s.mockRateLimiter.EXPECT().Limiter("api").Return(func(c contractshttp.Context) []contractshttp.Limit {
+		return []contractshttp.Limit{s.mockLimit}
 	}).Once()
 
 	s.mockLimit.EXPECT().GetStore().Return(s.mockStore).Once()
@@ -128,8 +123,10 @@ func (s *ThrottleTestSuite) TestThrottle_RequestAllowedWithCustomKey() {
 func (s *ThrottleTestSuite) TestThrottle_RequestRateLimited() {
 	resetTime := uint64(time.Now().Add(time.Minute).UnixNano())
 
-	s.mockRateLimiter.EXPECT().Limiter("api").Return(func(c httpcontract.Context) []httpcontract.Limit {
-		return []httpcontract.Limit{s.mockLimit}
+	s.mockApp.EXPECT().MakeLog().Return(s.mockLog).Once()
+	s.mockApp.EXPECT().MakeRateLimiter().Return(s.mockRateLimiter).Once()
+	s.mockRateLimiter.EXPECT().Limiter("api").Return(func(c contractshttp.Context) []contractshttp.Limit {
+		return []contractshttp.Limit{s.mockLimit}
 	}).Once()
 
 	s.mockLimit.EXPECT().GetStore().Return(s.mockStore).Once()
@@ -142,7 +139,7 @@ func (s *ThrottleTestSuite) TestThrottle_RequestRateLimited() {
 	s.mockCtx.EXPECT().Request().Return(s.mockRequest).Times(2)
 	s.mockRequest.EXPECT().Ip().Return("127.0.0.1").Once()
 	s.mockRequest.EXPECT().Path().Return("/test").Once()
-	s.mockRequest.EXPECT().Abort(httpcontract.StatusTooManyRequests).Once()
+	s.mockRequest.EXPECT().Abort(contractshttp.StatusTooManyRequests).Once()
 
 	s.mockCtx.EXPECT().Response().Return(s.mockResponse).Times(4)
 	s.mockResponse.EXPECT().Header("X-RateLimit-Limit", "10").Return(s.mockResponse).Once()
@@ -159,8 +156,10 @@ func (s *ThrottleTestSuite) TestThrottle_RequestRateLimited() {
 func (s *ThrottleTestSuite) TestThrottle_RequestRateLimitedWithCustomCallback() {
 	resetTime := uint64(time.Now().Add(time.Minute).UnixNano())
 
-	s.mockRateLimiter.EXPECT().Limiter("api").Return(func(c httpcontract.Context) []httpcontract.Limit {
-		return []httpcontract.Limit{s.mockLimit}
+	s.mockApp.EXPECT().MakeLog().Return(s.mockLog).Once()
+	s.mockApp.EXPECT().MakeRateLimiter().Return(s.mockRateLimiter).Once()
+	s.mockRateLimiter.EXPECT().Limiter("api").Return(func(c contractshttp.Context) []contractshttp.Limit {
+		return []contractshttp.Limit{s.mockLimit}
 	}).Once()
 
 	s.mockLimit.EXPECT().GetStore().Return(s.mockStore).Once()
@@ -179,7 +178,7 @@ func (s *ThrottleTestSuite) TestThrottle_RequestRateLimitedWithCustomCallback() 
 	s.mockResponse.EXPECT().Header("Retry-After", mock.MatchedBy(func(v string) bool { return v != "" })).Return(s.mockResponse).Once()
 
 	callbackCalled := false
-	customCallback := func(c httpcontract.Context) {
+	customCallback := func(c contractshttp.Context) {
 		callbackCalled = true
 	}
 	s.mockLimit.EXPECT().GetResponse().Return(customCallback).Once()
@@ -191,8 +190,10 @@ func (s *ThrottleTestSuite) TestThrottle_RequestRateLimitedWithCustomCallback() 
 }
 
 func (s *ThrottleTestSuite) TestThrottle_StoreTakeError() {
-	s.mockRateLimiter.EXPECT().Limiter("api").Return(func(c httpcontract.Context) []httpcontract.Limit {
-		return []httpcontract.Limit{s.mockLimit}
+	s.mockApp.EXPECT().MakeLog().Return(s.mockLog).Once()
+	s.mockApp.EXPECT().MakeRateLimiter().Return(s.mockRateLimiter).Once()
+	s.mockRateLimiter.EXPECT().Limiter("api").Return(func(c contractshttp.Context) []contractshttp.Limit {
+		return []contractshttp.Limit{s.mockLimit}
 	}).Once()
 
 	s.mockLimit.EXPECT().GetStore().Return(s.mockStore).Once()
@@ -215,11 +216,13 @@ func (s *ThrottleTestSuite) TestThrottle_StoreTakeError() {
 func (s *ThrottleTestSuite) TestThrottle_MultipleLimits() {
 	resetTime := uint64(time.Now().Add(time.Minute).UnixNano())
 
-	mockLimit2 := mockhttp.NewLimit(s.T())
-	mockStore2 := mockhttp.NewStore(s.T())
+	mockLimit2 := mockshttp.NewLimit(s.T())
+	mockStore2 := mockshttp.NewStore(s.T())
 
-	s.mockRateLimiter.EXPECT().Limiter("api").Return(func(c httpcontract.Context) []httpcontract.Limit {
-		return []httpcontract.Limit{s.mockLimit, mockLimit2}
+	s.mockApp.EXPECT().MakeLog().Return(s.mockLog).Once()
+	s.mockApp.EXPECT().MakeRateLimiter().Return(s.mockRateLimiter).Once()
+	s.mockRateLimiter.EXPECT().Limiter("api").Return(func(c contractshttp.Context) []contractshttp.Limit {
+		return []contractshttp.Limit{s.mockLimit, mockLimit2}
 	}).Once()
 
 	// First limit passes (GetKey called once per key() call)
@@ -247,9 +250,9 @@ func (s *ThrottleTestSuite) TestThrottle_MultipleLimits() {
 
 type KeyTestSuite struct {
 	suite.Suite
-	mockCtx     *mockhttp.Context
-	mockRequest *mockhttp.ContextRequest
-	mockLimit   *mockhttp.Limit
+	mockCtx     *mockshttp.Context
+	mockRequest *mockshttp.ContextRequest
+	mockLimit   *mockshttp.Limit
 }
 
 func TestKeyTestSuite(t *testing.T) {
@@ -257,9 +260,9 @@ func TestKeyTestSuite(t *testing.T) {
 }
 
 func (s *KeyTestSuite) SetupTest() {
-	s.mockCtx = mockhttp.NewContext(s.T())
-	s.mockRequest = mockhttp.NewContextRequest(s.T())
-	s.mockLimit = mockhttp.NewLimit(s.T())
+	s.mockCtx = mockshttp.NewContext(s.T())
+	s.mockRequest = mockshttp.NewContextRequest(s.T())
+	s.mockLimit = mockshttp.NewLimit(s.T())
 }
 
 func (s *KeyTestSuite) TestKey_NoKeySet_UsesIpAndPath() {
@@ -289,9 +292,9 @@ func (s *KeyTestSuite) TestKey_NilRequest() {
 
 type ResponseTestSuite struct {
 	suite.Suite
-	mockCtx     *mockhttp.Context
-	mockRequest *mockhttp.ContextRequest
-	mockLimit   *mockhttp.Limit
+	mockCtx     *mockshttp.Context
+	mockRequest *mockshttp.ContextRequest
+	mockLimit   *mockshttp.Limit
 }
 
 func TestResponseTestSuite(t *testing.T) {
@@ -299,14 +302,14 @@ func TestResponseTestSuite(t *testing.T) {
 }
 
 func (s *ResponseTestSuite) SetupTest() {
-	s.mockCtx = mockhttp.NewContext(s.T())
-	s.mockRequest = mockhttp.NewContextRequest(s.T())
-	s.mockLimit = mockhttp.NewLimit(s.T())
+	s.mockCtx = mockshttp.NewContext(s.T())
+	s.mockRequest = mockshttp.NewContextRequest(s.T())
+	s.mockLimit = mockshttp.NewLimit(s.T())
 }
 
 func (s *ResponseTestSuite) TestResponse_WithResponseCallback() {
 	callbackCalled := false
-	callback := func(c httpcontract.Context) {
+	callback := func(c contractshttp.Context) {
 		callbackCalled = true
 	}
 	s.mockLimit.EXPECT().GetResponse().Return(callback).Once()
@@ -319,7 +322,7 @@ func (s *ResponseTestSuite) TestResponse_WithResponseCallback() {
 func (s *ResponseTestSuite) TestResponse_WithoutResponseCallback_DefaultAbort() {
 	s.mockLimit.EXPECT().GetResponse().Return(nil).Once()
 	s.mockCtx.EXPECT().Request().Return(s.mockRequest).Once()
-	s.mockRequest.EXPECT().Abort(httpcontract.StatusTooManyRequests).Once()
+	s.mockRequest.EXPECT().Abort(contractshttp.StatusTooManyRequests).Once()
 
 	response(s.mockCtx, s.mockLimit)
 }
