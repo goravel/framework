@@ -8,7 +8,8 @@ import (
 	"github.com/goravel/framework/contracts/http"
 )
 
-// Filter allows excluding specific requests from being traced.
+// Filter determines whether a specific request should be traced.
+// Return true to trace the request, or false to exclude it.
 type Filter func(ctx http.Context) bool
 
 // SpanNameFormatter allows customizing the span name.
