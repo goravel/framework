@@ -151,90 +151,15 @@ func (s *ApplicationTestSuite) TestStart() {
 
 			s.app.providerRepository = mockRepo
 			s.app.bootedRunners = nil
-			app := s.app.Start()
 
 			go func() {
 				time.Sleep(100 * time.Millisecond) // Wait for goroutines to start
 				s.cancel()
 			}()
 
-			app.Wait()
+			s.app.Start()
 		})
 	}
-}
-
-func (s *ApplicationTestSuite) TestStart_Complex() {
-	s.Run("With additional runner", func() {
-		s.SetupTest()
-		runner := mocksfoundation.NewRunner(s.T())
-		runner.EXPECT().Signature().Return("test-runner").Once()
-		runner.EXPECT().ShouldRun().Return(true).Once()
-		runner.EXPECT().Run().Return(nil).Once()
-		runner.EXPECT().Shutdown().Return(nil).Once()
-
-		mockRepo := mocksfoundation.NewProviderRepository(s.T())
-		mockRepo.EXPECT().GetBooted().Return(nil).Once()
-
-		s.app.providerRepository = mockRepo
-		app := s.app.Start(runner)
-
-		go func() {
-			time.Sleep(200 * time.Millisecond) // Wait for goroutines to start
-			s.cancel()
-		}()
-
-		app.Wait()
-	})
-
-	s.Run("With duplicated runners", func() {
-		s.SetupTest()
-		runner := mocksfoundation.NewRunner(s.T())
-		runner.EXPECT().Signature().Return("test-runner").Twice()
-		runner.EXPECT().ShouldRun().Return(true).Once()
-		runner.EXPECT().Run().Return(nil).Once()
-		runner.EXPECT().Shutdown().Return(nil).Once()
-
-		serviceProvider := mocksfoundation.NewServiceProviderWithRunners(s.T())
-		serviceProvider.EXPECT().Runners(s.app).Return([]foundation.Runner{runner}).Once()
-
-		mockRepo := mocksfoundation.NewProviderRepository(s.T())
-		mockRepo.EXPECT().GetBooted().Return([]foundation.ServiceProvider{
-			serviceProvider,
-		}).Once()
-
-		s.app.providerRepository = mockRepo
-		app := s.app.Start(runner)
-
-		go func() {
-			time.Sleep(200 * time.Millisecond) // Wait for goroutines to start
-			s.cancel()
-		}()
-
-		app.Wait()
-	})
-
-	s.Run("Call Start several times", func() {
-		s.SetupTest()
-		runner := mocksfoundation.NewRunner(s.T())
-		runner.EXPECT().Signature().Return("test-runner").Twice()
-		runner.EXPECT().ShouldRun().Return(true).Once()
-		runner.EXPECT().Run().Return(nil).Once()
-		runner.EXPECT().Shutdown().Return(nil).Once()
-
-		mockRepo := mocksfoundation.NewProviderRepository(s.T())
-		mockRepo.EXPECT().GetBooted().Return(nil).Twice()
-
-		s.app.providerRepository = mockRepo
-		app := s.app.Start(runner)
-		app = app.Start(runner)
-
-		go func() {
-			time.Sleep(200 * time.Millisecond) // Wait for goroutines to start
-			s.cancel()
-		}()
-
-		app.Wait()
-	})
 }
 
 func (s *ApplicationTestSuite) TestPublishes() {

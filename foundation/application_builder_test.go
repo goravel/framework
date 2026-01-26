@@ -774,15 +774,6 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 	})
 }
 
-func (s *ApplicationBuilderTestSuite) TestStart() {
-	s.mockApp.EXPECT().RegisterServiceProviders().Return().Once()
-	s.mockApp.EXPECT().BootServiceProviders().Return().Once()
-	s.mockApp.EXPECT().Start().Return(s.mockApp).Once()
-
-	app := s.builder.Start()
-	s.NotNil(app)
-}
-
 func (s *ApplicationBuilderTestSuite) TestWithConfig() {
 	fn := func() {}
 

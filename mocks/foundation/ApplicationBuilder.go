@@ -87,53 +87,6 @@ func (_c *ApplicationBuilder_Create_Call) RunAndReturn(run func() foundation.App
 	return _c
 }
 
-// Start provides a mock function with no fields
-func (_m *ApplicationBuilder) Start() foundation.Application {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for Start")
-	}
-
-	var r0 foundation.Application
-	if rf, ok := ret.Get(0).(func() foundation.Application); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(foundation.Application)
-		}
-	}
-
-	return r0
-}
-
-// ApplicationBuilder_Start_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Start'
-type ApplicationBuilder_Start_Call struct {
-	*mock.Call
-}
-
-// Start is a helper method to define mock.On call
-func (_e *ApplicationBuilder_Expecter) Start() *ApplicationBuilder_Start_Call {
-	return &ApplicationBuilder_Start_Call{Call: _e.mock.On("Start")}
-}
-
-func (_c *ApplicationBuilder_Start_Call) Run(run func()) *ApplicationBuilder_Start_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *ApplicationBuilder_Start_Call) Return(_a0 foundation.Application) *ApplicationBuilder_Start_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *ApplicationBuilder_Start_Call) RunAndReturn(run func() foundation.Application) *ApplicationBuilder_Start_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // WithCallback provides a mock function with given fields: _a0
 func (_m *ApplicationBuilder) WithCallback(_a0 func()) foundation.ApplicationBuilder {
 	ret := _m.Called(_a0)

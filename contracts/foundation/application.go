@@ -47,17 +47,15 @@ type AboutItem struct {
 type Application interface {
 	// About add information to the application's about command.
 	About(section string, items []AboutItem)
-	// AddServiceProviders manually sets the list of configured providers.
-	AddServiceProviders(providers []ServiceProvider)
 	// Boot register and bootstrap configured service providers.
 	// It can be deprecated in the future given the With* functions are implemented.
 	Boot()
-	// BootServiceProviders boots registered service providers.
-	BootServiceProviders()
 	// Commands register the given commands with the console application.
 	Commands([]console.Command)
 	// Context gets the application context.
 	Context() context.Context
+	// Build creates a new application instance after configuring.
+	Build() Application
 	// GetJson get the JSON implementation.
 	// DEPRECATED, use Json instead.
 	GetJson() Json
@@ -67,22 +65,22 @@ type Application interface {
 	Json() Json
 	// Publishes register the given paths to be published by the "vendor:publish" command.
 	Publishes(packageName string, paths map[string]string, groups ...string)
-	// Refresh all modules after changing config, will call the Boot method simultaneously.
+	// Refresh reboots facades after changing config, if you want to restart the runners as well, please use the Restart method.
 	Refresh()
-	// RegisterServiceProviders registers configured service providers.
-	RegisterServiceProviders()
+	// Restart restarts the application.
+	Restart() error
 	// Start starts modules.
-	Start(runners ...Runner) Application
+	Start()
+	// SetBuilder sets the application builder.
+	SetBuilder(builder ApplicationBuilder) Application
 	// SetJson set the JSON implementation.
 	SetJson(json Json)
 	// SetLocale set the current application locale.
 	SetLocale(ctx context.Context, locale string) context.Context
 	// Shutdown the application and all its runners.
-	Shutdown()
+	Shutdown() error
 	// Version gets the version number of the application.
 	Version() string
-	// Wait for all modules to shutdown.
-	Wait()
 
 	// Paths
 
