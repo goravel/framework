@@ -50,12 +50,12 @@ type Application interface {
 	// Boot register and bootstrap configured service providers.
 	// It can be deprecated in the future given the With* functions are implemented.
 	Boot()
+	// Build creates a new application instance after configuring.
+	Build() Application
 	// Commands register the given commands with the console application.
 	Commands([]console.Command)
 	// Context gets the application context.
 	Context() context.Context
-	// Build creates a new application instance after configuring.
-	Build() Application
 	// GetJson get the JSON implementation.
 	// DEPRECATED, use Json instead.
 	GetJson() Json
@@ -69,8 +69,6 @@ type Application interface {
 	Refresh()
 	// Restart restarts the application.
 	Restart() error
-	// Start starts modules.
-	Start()
 	// SetBuilder sets the application builder.
 	SetBuilder(builder ApplicationBuilder) Application
 	// SetJson set the JSON implementation.
@@ -79,6 +77,8 @@ type Application interface {
 	SetLocale(ctx context.Context, locale string) context.Context
 	// Shutdown the application and all its runners.
 	Shutdown() error
+	// Start starts modules.
+	Start()
 	// Version gets the version number of the application.
 	Version() string
 
