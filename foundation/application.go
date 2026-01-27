@@ -275,11 +275,7 @@ func (r *Application) Start() {
 }
 
 func (r *Application) SetBuilder(builder foundation.ApplicationBuilder) foundation.Application {
-	if b, ok := builder.(*ApplicationBuilder); ok {
-		r.builder = b
-	} else {
-		panic(fmt.Sprintf("builder must be of type *ApplicationBuilder, got %T", builder))
-	}
+	r.builder = builder.(*ApplicationBuilder)
 
 	return r
 }
