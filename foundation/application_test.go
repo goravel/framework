@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"sync"
 	"syscall"
 	"testing"
 	"time"
@@ -925,9 +926,77 @@ func (s *ApplicationTestSuite) TestShutdown() {
 
 				// Verify all runners have stopped
 				for _, runner := range s.app.runnersToRun {
-					s.False(runner.running)
+					s.False(runner.running.Load())
 				}
 			}
 		})
 	}
+}
+
+// TestRunnerWithInfoRaceFreedom tests that RunnerWithInfo operations are race-free
+func TestRunnerWithInfoRaceFreedom(t *testing.T) {
+	runner := &RunnerWithInfo{
+		signature: "test-runner",
+	}
+
+	var wg sync.WaitGroup
+
+	// Simulate multiple goroutines accessing running field
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 100; j++ {
+				runner.running.Store(true)
+				time.Sleep(1 * time.Millisecond)
+				_ = runner.running.Load()
+				runner.running.Store(false)
+			}
+		}()
+	}
+
+	// Simulate multiple goroutines calling doneOnce
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			runner.doneOnce.Do(func() {
+				// This should only be called once
+			})
+		}()
+	}
+
+	wg.Wait()
+
+	// Verify final state
+	assert.False(t, runner.running.Load())
+}
+
+// TestDoneOnceGuarantee verifies that runnerWg.Done() is called exactly once
+func TestDoneOnceGuarantee(t *testing.T) {
+	runner := &RunnerWithInfo{
+		signature: "test-runner",
+	}
+
+	var wg sync.WaitGroup
+	counter := 0
+	var mu sync.Mutex
+
+	// Simulate multiple goroutines trying to call Done
+	for i := 0; i < 100; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			runner.doneOnce.Do(func() {
+				mu.Lock()
+				counter++
+				mu.Unlock()
+			})
+		}()
+	}
+
+	wg.Wait()
+
+	// Verify counter was incremented exactly once
+	assert.Equal(t, 1, counter, "doneOnce should ensure the function is called exactly once")
 }

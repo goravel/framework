@@ -11,6 +11,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -40,7 +41,8 @@ var _ = flag.String("env", support.EnvFilePath, "custom .env path")
 type RunnerWithInfo struct {
 	signature string
 	runner    foundation.Runner
-	running   bool
+	running   atomic.Bool
+	doneOnce  sync.Once
 }
 
 func init() {
@@ -209,10 +211,10 @@ func (r *Application) Restart() error {
 	go r.Start()
 
 	i := 0
-	for true {
+	for {
 		failed := ""
 		for _, runner := range r.runnersToRun {
-			if !runner.running {
+			if !runner.running.Load() {
 				failed = runner.signature
 				break
 			}
@@ -238,10 +240,12 @@ func (r *Application) Start() {
 		r.runnerWg.Add(1)
 
 		go func() {
-			runner.running = true
+			runner.running.Store(true)
 			if err := runner.runner.Run(); err != nil {
-				r.runnerWg.Done()
-				runner.running = false
+				runner.doneOnce.Do(func() {
+					r.runnerWg.Done()
+				})
+				runner.running.Store(false)
 				color.Errorf("failed to run %s: %v\n", runner.signature, err)
 			}
 			// Run may be a blocking call, so don't write anything after it.
@@ -249,15 +253,17 @@ func (r *Application) Start() {
 
 		go func() {
 			<-r.ctx.Done()
-			if !runner.running {
+			if !runner.running.Load() {
 				return
 			}
 
 			if err := runner.runner.Shutdown(); err != nil {
 				color.Errorf("failed to shutdown %s: %v\n", runner.signature, err)
 			}
-			runner.running = false
-			r.runnerWg.Done()
+			runner.running.Store(false)
+			runner.doneOnce.Do(func() {
+				r.runnerWg.Done()
+			})
 		}()
 	}
 
@@ -269,7 +275,11 @@ func (r *Application) Start() {
 }
 
 func (r *Application) SetBuilder(builder foundation.ApplicationBuilder) foundation.Application {
-	r.builder = builder.(*ApplicationBuilder)
+	if b, ok := builder.(*ApplicationBuilder); ok {
+		r.builder = b
+	} else {
+		panic(fmt.Sprintf("builder must be of type *ApplicationBuilder, got %T", builder))
+	}
 
 	return r
 }
@@ -294,10 +304,10 @@ func (r *Application) Shutdown() error {
 	r.cancel()
 
 	i := 0
-	for true {
+	for {
 		running := ""
 		for _, runner := range r.runnersToRun {
-			if runner.running {
+			if runner.running.Load() {
 				running = runner.signature
 				break
 			}
@@ -553,7 +563,7 @@ func (r *Application) configureRunners() {
 				r.bootedRunners = append(r.bootedRunners, signature)
 
 				if runner.ShouldRun() {
-					r.runnersToRun = append(r.runnersToRun, &RunnerWithInfo{signature: signature, runner: runner, running: false})
+					r.runnersToRun = append(r.runnersToRun, &RunnerWithInfo{signature: signature, runner: runner})
 				}
 			}
 		}
@@ -569,7 +579,7 @@ func (r *Application) configureRunners() {
 			r.bootedRunners = append(r.bootedRunners, signature)
 
 			if runner.ShouldRun() {
-				r.runnersToRun = append(r.runnersToRun, &RunnerWithInfo{signature: signature, runner: runner, running: false})
+				r.runnersToRun = append(r.runnersToRun, &RunnerWithInfo{signature: signature, runner: runner})
 			}
 		}
 	}
