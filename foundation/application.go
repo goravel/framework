@@ -205,7 +205,6 @@ func (r *Application) Restart() error {
 	}
 
 	r.Refresh()
-	r.Build()
 
 	go r.Start()
 
