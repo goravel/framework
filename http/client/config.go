@@ -33,4 +33,7 @@ type Config struct {
 	// IdleConnTimeout is the maximum amount of time an idle (keep-alive) connection
 	// will remain idle before closing itself.
 	IdleConnTimeout time.Duration `json:"idle_conn_timeout"`
+
+	// EnableTelemetry determines if OpenTelemetry tracing/metrics are enabled for this client.
+	EnableTelemetry bool `json:"enable_telemetry"`
 }
