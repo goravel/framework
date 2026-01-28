@@ -34,13 +34,13 @@ func (s *ImageDriverTestSuite) SetupTest() {
 }
 
 func (s *ImageDriverTestSuite) TestNewImageDriver() {
-	driver := NewImageDriver(s.image)
+	driver := NewImageDriver(s.image, nil)
 	assert.NotNil(s.T(), driver)
 	assert.Equal(s.T(), s.image, driver.image)
 }
 
 func (s *ImageDriverTestSuite) TestBuildConfigReadyShutdown() {
-	driver := NewImageDriver(s.image)
+	driver := NewImageDriver(s.image, nil)
 	err := driver.Build()
 	s.NoError(err)
 
@@ -53,7 +53,7 @@ func (s *ImageDriverTestSuite) TestBuildConfigReadyShutdown() {
 }
 
 func (s *ImageDriverTestSuite) TestReady() {
-	driver := NewImageDriver(s.image)
+	driver := NewImageDriver(s.image, nil)
 
 	err := driver.Ready(func() error {
 		return nil
