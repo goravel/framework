@@ -145,6 +145,8 @@ func (r *Application) Build() foundation.Application {
 		console.NewPackageInstallCommand(binding.Bindings, r.GetJson()),
 		console.NewPackageUninstallCommand(binding.Bindings, r.GetJson()),
 		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
+		console.NewUpCommand(r),
+		console.NewDownCommand(r),
 	})
 	r.bootArtisan()
 
