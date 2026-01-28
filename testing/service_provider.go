@@ -37,6 +37,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleTesting)
 		}
 
+		// They are checked when using actually
 		artisan := app.MakeArtisan()
 		cache := app.MakeCache()
 		orm := app.MakeOrm()
