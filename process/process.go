@@ -6,11 +6,11 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"strings"
 	"time"
 
 	contractsprocess "github.com/goravel/framework/contracts/process"
 	"github.com/goravel/framework/support/env"
+	"github.com/goravel/framework/support/str"
 )
 
 var _ contractsprocess.Process = (*Process)(nil)
@@ -190,13 +190,13 @@ func (r *Process) start(name string, args ...string) (contractsprocess.Running, 
 }
 
 func formatCommand(name string, args []string) (string, []string) {
-	if len(args) == 0 && strings.Contains(name, " &") {
+	if len(args) == 0 && str.Of(name).Contains(" ", "&", "|") {
 		if env.IsWindows() {
-			name = "cmd"
 			args = []string{"/c", name}
+			name = "cmd"
 		} else {
-			name = "/bin/sh"
 			args = []string{"-c", name}
+			name = "/bin/sh"
 		}
 	}
 

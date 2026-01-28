@@ -35,10 +35,9 @@ func NewDocker(
 }
 
 func (r *Docker) Cache(store ...string) (docker.CacheDriver, error) {
-	if r.config == nil {
-		return nil, errors.ConfigFacadeNotSet
+	if r.cache == nil {
+		return nil, errors.CacheFacadeNotSet.SetModule(errors.ModuleTesting)
 	}
-
 	if len(store) == 0 {
 		store = append(store, r.config.GetString("cache.default"))
 	}
@@ -47,6 +46,13 @@ func (r *Docker) Cache(store ...string) (docker.CacheDriver, error) {
 }
 
 func (r *Docker) Database(connection ...string) (docker.Database, error) {
+	if r.artisan == nil {
+		return nil, errors.ConsoleFacadeNotSet.SetModule(errors.ModuleTesting)
+	}
+	if r.orm == nil {
+		return nil, errors.OrmFacadeNotSet.SetModule(errors.ModuleTesting)
+	}
+
 	if len(connection) == 0 {
 		return NewDatabase(r.artisan, r.config, r.orm, "")
 	} else {

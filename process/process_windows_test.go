@@ -145,3 +145,106 @@ func TestProcess_Pipe_Windows(t *testing.T) {
 		assert.Equal(t, errors.ProcessPipeNilConfigurer, res.Error())
 	})
 }
+
+func TestFormatCommand_Windows(t *testing.T) {
+	tests := []struct {
+		name         string
+		inputName    string
+		inputArgs    []string
+		expectedName string
+		expectedArgs []string
+	}{
+		{
+			name:         "command with args - not wrapped",
+			inputName:    "echo",
+			inputArgs:    []string{"hello", "world"},
+			expectedName: "echo",
+			expectedArgs: []string{"hello", "world"},
+		},
+		{
+			name:         "simple command - not wrapped",
+			inputName:    "dir",
+			inputArgs:    []string{},
+			expectedName: "dir",
+			expectedArgs: []string{},
+		},
+		{
+			name:         "command with space only - wrapped",
+			inputName:    "echo hello",
+			inputArgs:    []string{},
+			expectedName: "cmd",
+			expectedArgs: []string{"/c", "echo hello"},
+		},
+		{
+			name:         "command with space and ampersand but has args - not wrapped",
+			inputName:    "timeout 5 &",
+			inputArgs:    []string{"/nobreak"},
+			expectedName: "timeout 5 &",
+			expectedArgs: []string{"/nobreak"},
+		},
+		{
+			name:         "background command - wrapped",
+			inputName:    "timeout 5 &",
+			inputArgs:    []string{},
+			expectedName: "cmd",
+			expectedArgs: []string{"/c", "timeout 5 &"},
+		},
+		{
+			name:         "piped command - wrapped",
+			inputName:    "type file.txt | findstr test",
+			inputArgs:    []string{},
+			expectedName: "cmd",
+			expectedArgs: []string{"/c", "type file.txt | findstr test"},
+		},
+		{
+			name:         "piped background command - wrapped",
+			inputName:    "type file.txt | findstr test &",
+			inputArgs:    []string{},
+			expectedName: "cmd",
+			expectedArgs: []string{"/c", "type file.txt | findstr test &"},
+		},
+		{
+			name:         "logical AND operators - wrapped",
+			inputName:    "echo hello && echo world",
+			inputArgs:    []string{},
+			expectedName: "cmd",
+			expectedArgs: []string{"/c", "echo hello && echo world"},
+		},
+		{
+			name:         "multiple pipes - wrapped",
+			inputName:    "type file | sort | findstr test",
+			inputArgs:    []string{},
+			expectedName: "cmd",
+			expectedArgs: []string{"/c", "type file | sort | findstr test"},
+		},
+		{
+			name:         "command with ampersand only - wrapped",
+			inputName:    "test&",
+			inputArgs:    []string{},
+			expectedName: "cmd",
+			expectedArgs: []string{"/c", "test&"},
+		},
+		{
+			name:         "command with pipe only - wrapped",
+			inputName:    "test|",
+			inputArgs:    []string{},
+			expectedName: "cmd",
+			expectedArgs: []string{"/c", "test|"},
+		},
+		{
+			name:         "single ampersand - wrapped",
+			inputName:    "&",
+			inputArgs:    []string{},
+			expectedName: "cmd",
+			expectedArgs: []string{"/c", "&"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotName, gotArgs := formatCommand(tt.inputName, tt.inputArgs)
+			assert.Equal(t, tt.expectedName, gotName)
+			assert.Equal(t, tt.expectedArgs, gotArgs)
+		})
+	}
+}

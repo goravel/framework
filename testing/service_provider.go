@@ -32,26 +32,15 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 
 func (r *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(binding.Testing, func(app foundation.Application) (any, error) {
-		artisan := app.MakeArtisan()
-		if artisan == nil {
-			return nil, errors.ConsoleFacadeNotSet.SetModule(errors.ModuleTesting)
-		}
-		cache := app.MakeCache()
-		if cache == nil {
-			return nil, errors.CacheFacadeNotSet.SetModule(errors.ModuleTesting)
-		}
 		config := app.MakeConfig()
 		if config == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleTesting)
 		}
+
+		artisan := app.MakeArtisan()
+		cache := app.MakeCache()
 		orm := app.MakeOrm()
-		if orm == nil {
-			return nil, errors.OrmFacadeNotSet.SetModule(errors.ModuleTesting)
-		}
 		process := app.MakeProcess()
-		if process == nil {
-			return nil, errors.ProcessFacadeNotSet.SetModule(errors.ModuleTesting)
-		}
 
 		return NewApplication(artisan, cache, config, orm, process), nil
 	})

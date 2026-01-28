@@ -26,6 +26,10 @@ func NewImageDriver(image contractsdocker.Image, process contractsprocess.Proces
 }
 
 func (r *ImageDriver) Build() error {
+	if r.process == nil {
+		return errors.ProcessFacadeNotSet.SetModule(errors.ModuleTesting)
+	}
+
 	command, exposedPorts := supportdocker.ImageToCommand(&r.image)
 	res := r.process.Run(command)
 	if res.Failed() {

@@ -69,12 +69,12 @@ func (s *DockerTestSuite) TestCache() {
 			wantErr: nil,
 		},
 		{
-			name:  "error when config is nil",
+			name:  "error when cache is nil",
 			store: []string{},
 			setup: func() {
-				s.docker.config = nil
+				s.docker.cache = nil
 			},
-			wantErr: errors.ConfigFacadeNotSet,
+			wantErr: errors.CacheFacadeNotSet,
 		},
 		{
 			name:  "error when docker returns error",
