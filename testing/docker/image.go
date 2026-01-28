@@ -5,29 +5,38 @@ import (
 	"fmt"
 	"time"
 
+	contractsprocess "github.com/goravel/framework/contracts/process"
 	contractsdocker "github.com/goravel/framework/contracts/testing/docker"
 	"github.com/goravel/framework/errors"
 	supportdocker "github.com/goravel/framework/support/docker"
-	"github.com/goravel/framework/support/process"
+	"github.com/goravel/framework/support/str"
 )
 
 type ImageDriver struct {
-	config contractsdocker.ImageConfig
-	image  contractsdocker.Image
+	config  contractsdocker.ImageConfig
+	image   contractsdocker.Image
+	process contractsprocess.Process
 }
 
-func NewImageDriver(image contractsdocker.Image) *ImageDriver {
+func NewImageDriver(image contractsdocker.Image, process contractsprocess.Process) *ImageDriver {
 	return &ImageDriver{
-		image: image,
+		image:   image,
+		process: process,
 	}
 }
 
 func (r *ImageDriver) Build() error {
-	command, exposedPorts := supportdocker.ImageToCommand(&r.image)
-	containerID, err := process.Run(command)
-	if err != nil {
-		return errors.TestingImageBuildFailed.Args(r.image.Repository, err)
+	if r.process == nil {
+		return errors.ProcessFacadeNotSet.SetModule(errors.ModuleTesting)
 	}
+
+	command, exposedPorts := supportdocker.ImageToCommand(&r.image)
+	res := r.process.Run(command)
+	if res.Failed() {
+		return errors.TestingImageBuildFailed.Args(r.image.Repository, res.Error())
+	}
+
+	containerID := str.Of(res.Output()).Squish().String()
 	if containerID == "" {
 		return errors.TestingImageNoContainerId.Args(r.image.Repository)
 	}
@@ -69,8 +78,8 @@ func (r *ImageDriver) Ready(fn func() error, durations ...time.Duration) error {
 
 func (r *ImageDriver) Shutdown() error {
 	if r.config.ContainerID != "" {
-		if _, err := process.Run(fmt.Sprintf("docker stop %s", r.config.ContainerID)); err != nil {
-			return errors.TestingImageStopFailed.Args(r.image.Repository, err)
+		if res := r.process.Run(fmt.Sprintf("docker stop %s", r.config.ContainerID)); res.Failed() {
+			return errors.TestingImageStopFailed.Args(r.image.Repository, res.Error())
 		}
 	}
 

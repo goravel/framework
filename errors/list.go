@@ -9,6 +9,7 @@ var (
 	JSONParserNotSet        = New("JSON parser is not initialized")
 	LogFacadeNotSet         = New("log facade is not initialized")
 	OrmFacadeNotSet         = New("orm facade is not initialized")
+	ProcessFacadeNotSet     = New("process facade is not initialized")
 	QueueFacadeNotSet       = New("queue facade is not initialized")
 	RateLimiterFacadeNotSet = New("rate limiter facade is not initialized")
 	ScheduleFacadeNotSet    = New("schedule facade is not initialized")
