@@ -11,6 +11,7 @@ import (
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
+	mocksprocess "github.com/goravel/framework/mocks/process"
 	mocksdocker "github.com/goravel/framework/mocks/testing/docker"
 )
 
@@ -20,6 +21,7 @@ type DockerTestSuite struct {
 	mockCache       *mockscache.Cache
 	mockConfig      *mocksconfig.Config
 	mockOrm         *mocksorm.Orm
+	mockProcess     *mocksprocess.Process
 	mockCacheDriver *mockscache.Driver
 	mockDocker      *mocksdocker.CacheDriver
 	docker          *Docker
@@ -34,9 +36,10 @@ func (s *DockerTestSuite) SetupTest() {
 	s.mockCache = mockscache.NewCache(s.T())
 	s.mockConfig = mocksconfig.NewConfig(s.T())
 	s.mockOrm = mocksorm.NewOrm(s.T())
+	s.mockProcess = mocksprocess.NewProcess(s.T())
 	s.mockCacheDriver = mockscache.NewDriver(s.T())
 	s.mockDocker = mocksdocker.NewCacheDriver(s.T())
-	s.docker = NewDocker(s.mockArtisan, s.mockCache, s.mockConfig, s.mockOrm)
+	s.docker = NewDocker(s.mockArtisan, s.mockCache, s.mockConfig, s.mockOrm, s.mockProcess)
 }
 
 func (s *DockerTestSuite) TestCache() {
@@ -66,12 +69,12 @@ func (s *DockerTestSuite) TestCache() {
 			wantErr: nil,
 		},
 		{
-			name:  "error when config is nil",
+			name:  "error when cache is nil",
 			store: []string{},
 			setup: func() {
-				s.docker.config = nil
+				s.docker.cache = nil
 			},
-			wantErr: errors.ConfigFacadeNotSet,
+			wantErr: errors.CacheFacadeNotSet,
 		},
 		{
 			name:  "error when docker returns error",

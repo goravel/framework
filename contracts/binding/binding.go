@@ -383,6 +383,7 @@ var (
 				Cache,
 				Config,
 				Orm,
+				Process,
 				Route,
 				Session,
 			},

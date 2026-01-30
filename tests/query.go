@@ -15,6 +15,7 @@ import (
 	databasedriver "github.com/goravel/framework/database/driver"
 	databasegorm "github.com/goravel/framework/database/gorm"
 	mocksconfig "github.com/goravel/framework/mocks/config"
+	"github.com/goravel/framework/process"
 	"github.com/goravel/framework/support/str"
 	"github.com/goravel/framework/testing/utils"
 	"github.com/goravel/mysql"
@@ -286,14 +287,14 @@ func (r *TestQueryBuilder) single(driver, prefix, timezone string, singular bool
 
 	switch driver {
 	case postgres.Name:
-		dockerDriver = postgres.NewDocker(postgres.NewConfig(mockConfig, connection), testDatabase, testUsername, testPassword)
-		databaseDriver = postgres.NewPostgres(mockConfig, utils.NewTestLog(), connection)
+		dockerDriver = postgres.NewDocker(postgres.NewConfig(mockConfig, connection), process.New(), testDatabase, testUsername, testPassword)
+		databaseDriver = postgres.NewPostgres(mockConfig, utils.NewTestLog(), process.New(), connection)
 	case mysql.Name:
-		dockerDriver = mysql.NewDocker(mysql.NewConfig(mockConfig, connection), testDatabase, testUsername, testPassword)
-		databaseDriver = mysql.NewMysql(mockConfig, utils.NewTestLog(), connection)
+		dockerDriver = mysql.NewDocker(mysql.NewConfig(mockConfig, connection), process.New(), testDatabase, testUsername, testPassword)
+		databaseDriver = mysql.NewMysql(mockConfig, utils.NewTestLog(), process.New(), connection)
 	case sqlserver.Name:
-		dockerDriver = sqlserver.NewDocker(sqlserver.NewConfig(mockConfig, connection), testDatabase, testUsername, testPassword)
-		databaseDriver = sqlserver.NewSqlserver(mockConfig, utils.NewTestLog(), connection)
+		dockerDriver = sqlserver.NewDocker(sqlserver.NewConfig(mockConfig, connection), process.New(), testDatabase, testUsername, testPassword)
+		databaseDriver = sqlserver.NewSqlserver(mockConfig, utils.NewTestLog(), process.New(), connection)
 	}
 
 	container := NewContainer(dockerDriver)
@@ -354,7 +355,7 @@ func (r *TestQueryBuilder) mix(driver string, writeDatabaseConfig, readDatabaseC
 
 	switch driver {
 	case postgres.Name:
-		databaseDriver = postgres.NewPostgres(mockConfig, utils.NewTestLog(), connection)
+		databaseDriver = postgres.NewPostgres(mockConfig, utils.NewTestLog(), process.New(), connection)
 		mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.write", connection)).Return([]postgrescontracts.Config{
 			{
 				Host:     writeDatabaseConfig.Host,
@@ -375,7 +376,7 @@ func (r *TestQueryBuilder) mix(driver string, writeDatabaseConfig, readDatabaseC
 		})
 
 	case mysql.Name:
-		databaseDriver = mysql.NewMysql(mockConfig, utils.NewTestLog(), connection)
+		databaseDriver = mysql.NewMysql(mockConfig, utils.NewTestLog(), process.New(), connection)
 		mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.write", connection)).Return([]mysqlcontracts.Config{
 			{
 				Host:     writeDatabaseConfig.Host,
@@ -395,7 +396,7 @@ func (r *TestQueryBuilder) mix(driver string, writeDatabaseConfig, readDatabaseC
 			},
 		})
 	case sqlserver.Name:
-		databaseDriver = sqlserver.NewSqlserver(mockConfig, utils.NewTestLog(), connection)
+		databaseDriver = sqlserver.NewSqlserver(mockConfig, utils.NewTestLog(), process.New(), connection)
 		mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.write", connection)).Return([]sqlservercontracts.Config{
 			{
 				Host:     writeDatabaseConfig.Host,

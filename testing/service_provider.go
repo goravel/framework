@@ -32,7 +32,18 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 
 func (r *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(binding.Testing, func(app foundation.Application) (any, error) {
-		return NewApplication(app.MakeArtisan(), app.MakeCache(), app.MakeConfig(), app.MakeOrm()), nil
+		config := app.MakeConfig()
+		if config == nil {
+			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleTesting)
+		}
+
+		// They are checked when using actually
+		artisan := app.MakeArtisan()
+		cache := app.MakeCache()
+		orm := app.MakeOrm()
+		process := app.MakeProcess()
+
+		return NewApplication(artisan, cache, config, orm, process), nil
 	})
 }
 

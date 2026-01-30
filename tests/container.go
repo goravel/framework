@@ -10,8 +10,8 @@ import (
 	"github.com/goravel/framework/contracts/testing/docker"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation/json"
+	supportdocker "github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/file"
-	"github.com/goravel/framework/support/process"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -51,7 +51,7 @@ func (r *Container) Build() (docker.DatabaseDriver, error) {
 
 	// If the port is not occupied, provide the container is released.
 	if databaseConfigs != nil {
-		if _, exist := databaseConfigs[r.name]; exist && process.IsPortUsing(databaseConfigs[r.name].Port) {
+		if _, exist := databaseConfigs[r.name]; exist && supportdocker.IsPortUsing(databaseConfigs[r.name].Port) {
 			if err := r.databaseDriver.Reuse(databaseConfigs[r.name].ContainerID, databaseConfigs[r.name].Port); err == nil {
 				isReused = true
 			}
