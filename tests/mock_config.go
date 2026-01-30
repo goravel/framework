@@ -7,6 +7,7 @@ import (
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/driver"
 	mocksconfig "github.com/goravel/framework/mocks/config"
+	"github.com/goravel/framework/process"
 	"github.com/goravel/framework/testing/utils"
 	"github.com/goravel/mysql"
 	"github.com/goravel/postgres"
@@ -47,21 +48,21 @@ func mockDatabaseConfigWithoutWriteAndRead(mockConfig *mocksconfig.Config, confi
 		mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.sslmode", connection)).Return("disable")
 		mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.timezone", connection)).Return(config.Timezone)
 		mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.via", connection)).Return(func() (driver.Driver, error) {
-			return postgres.NewPostgres(mockConfig, utils.NewTestLog(), connection), nil
+			return postgres.NewPostgres(mockConfig, utils.NewTestLog(), process.New(), connection), nil
 		})
 	}
 	if config.Driver == mysql.Name {
 		mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.loc", connection)).Return(config.Timezone)
 		mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.charset", connection)).Return("utf8mb4")
 		mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.via", connection)).Return(func() (driver.Driver, error) {
-			return mysql.NewMysql(mockConfig, utils.NewTestLog(), connection), nil
+			return mysql.NewMysql(mockConfig, utils.NewTestLog(), process.New(), connection), nil
 		})
 	}
 	if config.Driver == sqlserver.Name {
 		mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.charset", connection)).Return("utf8mb4")
 		mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.timezone", connection)).Return(config.Timezone)
 		mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.via", connection)).Return(func() (driver.Driver, error) {
-			return sqlserver.NewSqlserver(mockConfig, utils.NewTestLog(), connection), nil
+			return sqlserver.NewSqlserver(mockConfig, utils.NewTestLog(), process.New(), connection), nil
 		})
 	}
 	if config.Driver == sqlite.Name {
