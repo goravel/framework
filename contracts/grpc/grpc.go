@@ -13,7 +13,7 @@ type Grpc interface {
 	Client(ctx context.Context, name string) (*grpc.ClientConn, error)
 	// ClientStatsHandlerGroups sets the gRPC client stats handler groups.
 	ClientStatsHandlerGroups(map[string][]stats.Handler)
-	// Connection gets a gRPC client connection to the given server.
+	// Connect gets a gRPC client connection to the given server.
 	// The server connection will be cached to improve performance.
 	Connect(server string) (*grpc.ClientConn, error)
 	// Listen starts the gRPC server with the given listener.
