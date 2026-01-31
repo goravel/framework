@@ -14,6 +14,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	contractsprocess "github.com/goravel/framework/contracts/process"
+	"github.com/goravel/framework/support/collect"
 )
 
 var _ contractsprocess.Running = (*Running)(nil)
@@ -164,6 +165,12 @@ func spinner(ctx context.Context, loading bool, message string, fn func() error)
 	if !loading {
 		return fn()
 	}
+
+	messageSlice := strings.Split(message, "\n")
+	messageSlice = collect.Map(messageSlice, func(s string, _ int) string {
+		return strings.TrimSpace(s)
+	})
+	message = strings.Join(messageSlice, " ")
 
 	style := lipgloss.NewStyle().Foreground(lipgloss.CompleteColor{TrueColor: "#3D8C8D", ANSI256: "30", ANSI: "6"})
 	spin := huhspinner.New().Title(message).Style(style).TitleStyle(style)
