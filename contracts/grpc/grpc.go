@@ -9,10 +9,13 @@ import (
 )
 
 type Grpc interface {
-	// Client gets the gRPC client instance.
+	// DEPRECATED: Use Connect instead, will be removed in v1.18.
 	Client(ctx context.Context, name string) (*grpc.ClientConn, error)
 	// ClientStatsHandlerGroups sets the gRPC client stats handler groups.
 	ClientStatsHandlerGroups(map[string][]stats.Handler)
+	// Connection gets a gRPC client connection to the given server.
+	// The server connection will be cached to improve performance.
+	Connect(server string) (*grpc.ClientConn, error)
 	// Listen starts the gRPC server with the given listener.
 	Listen(l net.Listener) error
 	// Run starts the gRPC server.
