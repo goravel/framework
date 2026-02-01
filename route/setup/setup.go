@@ -39,7 +39,7 @@ JWT_SECRET=
 
 	setup.Install(
 		// Add the route service provider to the providers array in bootstrap/providers.go
-		modify.AddProviderApply(moduleImport, routeServiceProvider),
+		modify.RegisterProvider(moduleImport, routeServiceProvider),
 
 		// Create resources/views/welcome.tmpl, app/http/controllers/user_controller.go, public/.gitignore, routes/web.go, config/jwt.go, config/cors.go
 		modify.File(welcomeTmplPath).Overwrite(stubs.WelcomeTmpl()),
@@ -50,7 +50,7 @@ JWT_SECRET=
 		modify.File(corsConfigPath).Overwrite(stubs.CorsConfig(configPackage, facadesImport, facadesPackage)),
 
 		// Add the Web function to WithRouting
-		modify.AddRouteApply(routesImport, webFunc),
+		modify.RegisterRoute(routesImport, webFunc),
 		// Register the Route facade
 		modify.File(routeFacadePath).Overwrite(stubs.RouteFacade(facadesPackage)),
 
@@ -62,7 +62,7 @@ JWT_SECRET=
 		modify.File(routeFacadePath).Remove(),
 
 		// Remove the Web function from WithRouting
-		modify.RemoveRouteApply(routesImport, webFunc),
+		modify.UnregisterRoute(routesImport, webFunc),
 
 		// Remove resources folder, app folder, public folder, routes/web.go, config/jwt.go, config/cors.go
 		modify.File(webRoutePath).Remove(),
@@ -83,6 +83,6 @@ JWT_SECRET=
 		modify.File(corsConfigPath).Remove(),
 
 		// Remove the route service provider from the providers array in bootstrap/providers.go
-		modify.RemoveProviderApply(moduleImport, routeServiceProvider),
+		modify.UnregisterProvider(moduleImport, routeServiceProvider),
 	).Execute()
 }

@@ -19,7 +19,7 @@ func main() {
 
 	setup.Install(
 		// Add the filesystem service provider to the providers array in bootstrap/providers.go
-		modify.AddProviderApply(moduleImport, filesystemServiceProvider),
+		modify.RegisterProvider(moduleImport, filesystemServiceProvider),
 
 		// Create config/filesystems.go
 		modify.File(storageConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Facades().Import(), facadesPackage)),
@@ -31,7 +31,7 @@ func main() {
 		modify.File(storageConfigPath).Remove(),
 
 		// Remove the filesystem service provider from the providers array in bootstrap/providers.go
-		modify.RemoveProviderApply(moduleImport, filesystemServiceProvider),
+		modify.UnregisterProvider(moduleImport, filesystemServiceProvider),
 
 		// Remove the Storage facade
 		modify.File(storageFacadePath).Remove(),

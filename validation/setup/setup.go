@@ -17,13 +17,13 @@ func main() {
 
 	setup.Install(
 		// Add the validation service provider to the providers array in bootstrap/providers.go
-		modify.AddProviderApply(moduleImport, validationServiceProvider),
+		modify.RegisterProvider(moduleImport, validationServiceProvider),
 
 		// Add the Validation facade
 		modify.File(validationFacadePath).Overwrite(stubs.ValidationFacade(setup.Paths().Facades().Package())),
 	).Uninstall(
 		// Remove the validation service provider from the providers array in bootstrap/providers.go
-		modify.RemoveProviderApply(moduleImport, validationServiceProvider),
+		modify.UnregisterProvider(moduleImport, validationServiceProvider),
 
 		// Remove the Validation facade
 		modify.File(validationFacadePath).Remove(),

@@ -19,7 +19,7 @@ func main() {
 
 	setup.Install(
 		// Add the cache service provider to the providers array in bootstrap/providers.go
-		modify.AddProviderApply(moduleImport, cacheServiceProvider),
+		modify.RegisterProvider(moduleImport, cacheServiceProvider),
 
 		// Create config/cache.go
 		modify.File(cacheConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Facades().Import(), facadesPackage)),
@@ -31,7 +31,7 @@ func main() {
 		modify.File(cacheConfigPath).Remove(),
 
 		// Remove the cache service provider from the providers array in bootstrap/providers.go
-		modify.RemoveProviderApply(moduleImport, cacheServiceProvider),
+		modify.UnregisterProvider(moduleImport, cacheServiceProvider),
 
 		// Remove the Cache facade
 		modify.File(cacheFacadePath).Remove(),

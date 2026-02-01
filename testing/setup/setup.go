@@ -19,7 +19,7 @@ func main() {
 
 	setup.Install(
 		// Add the testing service provider to the providers array in bootstrap/providers.go
-		modify.AddProviderApply(moduleImport, testingServiceProvider),
+		modify.RegisterProvider(moduleImport, testingServiceProvider),
 
 		// Create tests/test_case.go
 		modify.File(testCasePath).Overwrite(stubs.TestCase(setup.Paths().Tests().Package(), setup.Paths().Bootstrap().Import(), setup.Paths().Bootstrap().Package())),
@@ -37,7 +37,7 @@ func main() {
 		modify.File(testCasePath).Remove(),
 
 		// Remove the testing service provider from the providers array in bootstrap/providers.go
-		modify.RemoveProviderApply(moduleImport, testingServiceProvider),
+		modify.UnregisterProvider(moduleImport, testingServiceProvider),
 
 		// Remove the Testing facade
 		modify.File(testingFacadePath).Remove(),

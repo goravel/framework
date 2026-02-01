@@ -17,13 +17,13 @@ func main() {
 
 	setup.Install(
 		// Add the process service provider to the providers array in bootstrap/providers.go
-		modify.AddProviderApply(moduleImport, processServiceProvider),
+		modify.RegisterProvider(moduleImport, processServiceProvider),
 
 		// Add the Process facade
 		modify.File(processFacadePath).Overwrite(stubs.ProcessFacade(setup.Paths().Facades().Package())),
 	).Uninstall(
 		// Remove the process service provider from the providers array in bootstrap/providers.go
-		modify.RemoveProviderApply(moduleImport, processServiceProvider),
+		modify.UnregisterProvider(moduleImport, processServiceProvider),
 
 		// Remove the Process facade
 		modify.File(processFacadePath).Remove(),

@@ -25,7 +25,7 @@ SESSION_LIFETIME=120
 
 	setup.Install(
 		// Add the session service provider to the providers array in bootstrap/providers.go
-		modify.AddProviderApply(moduleImport, sessionServiceProvider),
+		modify.RegisterProvider(moduleImport, sessionServiceProvider),
 
 		// Create config/session.go and the Session facade
 		modify.File(sessionConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Facades().Import(), facadesPackage)),
@@ -41,7 +41,7 @@ SESSION_LIFETIME=120
 		modify.File(sessionConfigPath).Remove(),
 
 		// Remove the session service provider from the providers array in bootstrap/providers.go
-		modify.RemoveProviderApply(moduleImport, sessionServiceProvider),
+		modify.UnregisterProvider(moduleImport, sessionServiceProvider),
 
 		// Remove the Session facade
 		modify.File(sessionFacadePath).Remove(),

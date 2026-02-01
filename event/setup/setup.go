@@ -17,7 +17,7 @@ func main() {
 
 	setup.Install(
 		// Add the event service provider to the providers array in bootstrap/providers.go
-		modify.AddProviderApply(moduleImport, eventServiceProvider),
+		modify.RegisterProvider(moduleImport, eventServiceProvider),
 
 		// Add the Event facade.
 		modify.File(eventFacadePath).Overwrite(stubs.EventFacade(setup.Paths().Facades().Package())),
@@ -26,6 +26,6 @@ func main() {
 		modify.File(eventFacadePath).Remove(),
 
 		// Remove the event service provider from the providers array in bootstrap/providers.go
-		modify.RemoveProviderApply(moduleImport, eventServiceProvider),
+		modify.UnregisterProvider(moduleImport, eventServiceProvider),
 	).Execute()
 }

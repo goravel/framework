@@ -17,13 +17,13 @@ func main() {
 
 	setup.Install(
 		// Add the crypt service provider to the providers array in bootstrap/providers.go
-		modify.AddProviderApply(moduleImport, cryptServiceProvider),
+		modify.RegisterProvider(moduleImport, cryptServiceProvider),
 
 		// Add the Crypt facade
 		modify.File(cryptFacadePath).Overwrite(stubs.CryptFacade(setup.Paths().Facades().Package())),
 	).Uninstall(
 		// Remove the crypt service provider from the providers array in bootstrap/providers.go
-		modify.RemoveProviderApply(moduleImport, cryptServiceProvider),
+		modify.UnregisterProvider(moduleImport, cryptServiceProvider),
 
 		// Remove the Crypt facade
 		modify.File(cryptFacadePath).Remove(),
