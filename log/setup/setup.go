@@ -25,7 +25,7 @@ LOG_LEVEL=debug
 
 	setup.Install(
 		// Add the log service provider to the providers array in bootstrap/providers.go
-		modify.AddProviderApply(moduleImport, logServiceProvider),
+		modify.RegisterProvider(moduleImport, logServiceProvider),
 
 		// Create config/logging.go
 		modify.File(loggingConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Facades().Import(), facadesPackage)),
@@ -41,7 +41,7 @@ LOG_LEVEL=debug
 		modify.File(loggingConfigPath).Remove(),
 
 		// Remove the log service provider from the providers array in bootstrap/providers.go
-		modify.RemoveProviderApply(moduleImport, logServiceProvider),
+		modify.UnregisterProvider(moduleImport, logServiceProvider),
 
 		// Remove the Log facade
 		modify.File(logFacadePath).Remove(),

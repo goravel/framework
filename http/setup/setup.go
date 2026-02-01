@@ -26,7 +26,7 @@ func main() {
 
 	setup.Install(
 		// Add the http service provider to the providers array in bootstrap/providers.go
-		modify.AddProviderApply(moduleImport, httpServiceProvider),
+		modify.RegisterProvider(moduleImport, httpServiceProvider),
 
 		// Register the Http, RateLimiter, View facades
 		modify.WhenFacade(httpFacade,
@@ -41,7 +41,7 @@ func main() {
 	).Uninstall(
 		modify.WhenNoFacades([]string{httpFacade, rateLimiterFacade, viewFacade},
 			// Remove the http service provider from the providers array in bootstrap/providers.go
-			modify.RemoveProviderApply(moduleImport, httpServiceProvider),
+			modify.UnregisterProvider(moduleImport, httpServiceProvider),
 		),
 
 		// Remove the Http, RateLimiter, View facades

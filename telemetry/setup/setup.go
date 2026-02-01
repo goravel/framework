@@ -37,7 +37,7 @@ func main() {
 
 	setup.Install(
 		// Add Telemetry Service Provider
-		modify.AddProviderApply(moduleImport, providerTelemetry),
+		modify.RegisterProvider(moduleImport, providerTelemetry),
 
 		// Add Telemetry Config and Facade
 		modify.File(pathConfigTelemetry).Overwrite(stubs.Config(paths.Config().Package(), paths.Facades().Import(), facadesPackage)),
@@ -53,7 +53,7 @@ func main() {
 		modify.File(pathFacadesTelemetry).Remove(),
 
 		// Remove Telemetry Service Provider
-		modify.RemoveProviderApply(moduleImport, providerTelemetry),
+		modify.UnregisterProvider(moduleImport, providerTelemetry),
 
 		// Remove Otel Channel from Logging Config
 		modify.GoFile(pathConfigLogging).

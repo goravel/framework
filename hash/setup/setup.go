@@ -19,7 +19,7 @@ func main() {
 
 	setup.Install(
 		// Add the hash service provider to the providers array in bootstrap/providers.go
-		modify.AddProviderApply(moduleImport, hashServiceProvider),
+		modify.RegisterProvider(moduleImport, hashServiceProvider),
 
 		// Create config/hashing.go
 		modify.File(configPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Facades().Import(), facadesPackage)),
@@ -31,7 +31,7 @@ func main() {
 		modify.File(configPath).Remove(),
 
 		// Remove the hash service provider from the providers array in bootstrap/providers.go
-		modify.RemoveProviderApply(moduleImport, hashServiceProvider),
+		modify.UnregisterProvider(moduleImport, hashServiceProvider),
 
 		// Remove the Hash facade
 		modify.File(hashFacadePath).Remove(),

@@ -28,7 +28,7 @@ func main() {
 
 	setup.Install(
 		// Add the queue service provider to the providers array in bootstrap/providers.go
-		modify.AddProviderApply(moduleImport, queueServiceProvider),
+		modify.RegisterProvider(moduleImport, queueServiceProvider),
 
 		// Add the queue configuration file
 		modify.File(queueConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), facadesImport, facadesPackage)),
@@ -40,13 +40,13 @@ func main() {
 		modify.File(jobMigrationFilePath).Overwrite(jobMigrationContent),
 
 		// Register the job migration
-		modify.AddMigrationApply(migrationPkgPath, jobMigrationStructWithPkg),
+		modify.RegisterMigration(migrationPkgPath, jobMigrationStructWithPkg),
 
 		// Add the database driver
 		modify.WhenDriver(databaseDriver, modify.GoFile(queueConfigPath).Find(match.Config("queue")).Modify(modify.AddConfig("default", `"database"`))),
 	).Uninstall(
 		// Unregister the job migration
-		modify.RemoveMigrationApply(migrationPkgPath, jobMigrationStructWithPkg),
+		modify.UnregisterMigration(migrationPkgPath, jobMigrationStructWithPkg),
 
 		// Remove the job migration file
 		modify.File(jobMigrationFilePath).Remove(),
@@ -58,6 +58,6 @@ func main() {
 		modify.File(queueConfigPath).Remove(),
 
 		// Remove the queue service provider from the providers array in bootstrap/providers.go
-		modify.RemoveProviderApply(moduleImport, queueServiceProvider),
+		modify.UnregisterProvider(moduleImport, queueServiceProvider),
 	).Execute()
 }

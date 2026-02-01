@@ -21,7 +21,7 @@ func main() {
 
 	setup.Install(
 		// Add the auth service provider to the providers array in bootstrap/providers.go
-		modify.AddProviderApply(modulePath, authServiceProvider),
+		modify.RegisterProvider(modulePath, authServiceProvider),
 
 		// Create config/auth.go
 		modify.File(authConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Facades().Import(), facadesPackage)),
@@ -35,7 +35,7 @@ func main() {
 			modify.File(authConfigPath).Remove(),
 
 			// Remove the auth service provider from the providers array in bootstrap/providers.go
-			modify.RemoveProviderApply(modulePath, authServiceProvider),
+			modify.UnregisterProvider(modulePath, authServiceProvider),
 		),
 
 		// Remove the Auth and Gate facades
