@@ -2,22 +2,24 @@ package console
 
 import (
 	"fmt"
-	"os/exec"
 	"runtime"
+	"strings"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	supportconsole "github.com/goravel/framework/support/console"
+	"github.com/goravel/framework/contracts/process"
 )
 
 type BuildCommand struct {
-	config config.Config
+	config  config.Config
+	process process.Process
 }
 
-func NewBuildCommand(config config.Config) *BuildCommand {
+func NewBuildCommand(config config.Config, process process.Process) *BuildCommand {
 	return &BuildCommand{
-		config: config,
+		config:  config,
+		process: process,
 	}
 }
 
@@ -88,8 +90,12 @@ func (r *BuildCommand) Handle(ctx console.Context) error {
 		}
 	}
 
-	if err = supportconsole.ExecuteCommand(ctx, generateCommand(ctx.Option("name"), os, ctx.Option("arch"), ctx.OptionBool("static")), "Building..."); err != nil {
-		ctx.Error(err.Error())
+	if res := r.process.Env(map[string]string{
+		"CGO_ENABLED": "0",
+		"GOOS":        os,
+		"GOARCH":      ctx.Option("arch"),
+	}).WithSpinner("Building...").Run(generateCommand(ctx.Option("name"), ctx.OptionBool("static"))); res.Failed() {
+		ctx.Error(res.Error().Error())
 		return nil
 	}
 
@@ -98,8 +104,8 @@ func (r *BuildCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func generateCommand(name, os, arch string, static bool) *exec.Cmd {
-	args := []string{"build"}
+func generateCommand(name string, static bool) string {
+	args := []string{"go", "build"}
 
 	if static {
 		args = append(args, "-ldflags", "-extldflags -static")
@@ -111,8 +117,5 @@ func generateCommand(name, os, arch string, static bool) *exec.Cmd {
 
 	args = append(args, ".")
 
-	cmd := exec.Command("go", args...)
-	cmd.Env = append(cmd.Environ(), "CGO_ENABLED=0", "GOARCH="+arch, "GOOS="+os)
-
-	return cmd
+	return strings.Join(args, " ")
 }

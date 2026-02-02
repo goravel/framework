@@ -28,6 +28,7 @@ import (
 	"github.com/goravel/framework/foundation/configuration"
 	"github.com/goravel/framework/foundation/console"
 	"github.com/goravel/framework/foundation/json"
+	"github.com/goravel/framework/process"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/color"
@@ -102,8 +103,8 @@ func (r *Application) Boot() {
 		console.NewTestMakeCommand(),
 		console.NewPackageMakeCommand(),
 		console.NewProviderMakeCommand(),
-		console.NewPackageInstallCommand(binding.Bindings, r.GetJson()),
-		console.NewPackageUninstallCommand(binding.Bindings, r.GetJson()),
+		console.NewPackageInstallCommand(binding.Bindings, r.MakeProcess(), r.Json()),
+		console.NewPackageUninstallCommand(binding.Bindings, r.MakeProcess(), r.Json()),
 		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
 	})
 	r.bootArtisan()
@@ -122,6 +123,7 @@ func (r *Application) Build() foundation.Application {
 	r.configureCustomConfig()
 	r.configureServiceProviders()
 	r.providerRepository.Register(r)
+	r.providerRepository.Boot(r)
 	r.configureMiddleware()
 	r.configureEventListeners()
 	r.configureCommands()
@@ -132,8 +134,6 @@ func (r *Application) Build() foundation.Application {
 	r.configureJobs()
 	r.configureValidation()
 	r.configureRoutes()
-	r.configureCallback()
-	r.providerRepository.Boot(r)
 	r.configureRunners()
 	r.registerCommands([]contractsconsole.Command{
 		console.NewAboutCommand(r),
@@ -142,10 +142,11 @@ func (r *Application) Build() foundation.Application {
 		console.NewTestMakeCommand(),
 		console.NewPackageMakeCommand(),
 		console.NewProviderMakeCommand(),
-		console.NewPackageInstallCommand(binding.Bindings, r.GetJson()),
-		console.NewPackageUninstallCommand(binding.Bindings, r.GetJson()),
+		console.NewPackageInstallCommand(binding.Bindings, r.MakeProcess(), r.Json()),
+		console.NewPackageUninstallCommand(binding.Bindings, r.MakeProcess(), r.Json()),
 		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
 	})
+	r.configureCallback()
 	r.bootArtisan()
 
 	return r
@@ -655,6 +656,7 @@ func (r *Application) getBaseServiceProviders() []foundation.ServiceProvider {
 	return []foundation.ServiceProvider{
 		&config.ServiceProvider{},
 		&frameworkconsole.ServiceProvider{},
+		&process.ServiceProvider{},
 	}
 }
 
