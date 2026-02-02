@@ -9,7 +9,7 @@ godebug x509negativeserial=1
 require (
 	github.com/brianvoe/gofakeit/v7 v7.14.0
 	github.com/google/uuid v1.6.0
-	github.com/goravel/framework v1.16.1-0.20260128144145-280cdc17fcee
+	github.com/goravel/framework v1.16.7
 	github.com/goravel/mysql v1.4.1-0.20260130090702-6eb356b420cf
 	github.com/goravel/postgres v1.4.2-0.20260130090236-17eee6b25b9a
 	github.com/goravel/sqlite v1.4.0
@@ -41,7 +41,7 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dromara/carbon/v2 v2.6.11 // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
-	github.com/gabriel-vasile/mimetype v1.4.12 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.13 // indirect
 	github.com/go-sql-driver/mysql v1.9.3 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/golang-sql/civil v0.0.0-20220223132316-b832511892a9 // indirect
