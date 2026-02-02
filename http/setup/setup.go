@@ -26,7 +26,7 @@ func main() {
 
 	setup.Install(
 		// Add the http service provider to the providers array in bootstrap/providers.go
-		modify.RegisterProvider(moduleImport, httpServiceProvider),
+		modify.WhenFileNotContains(path.Bootstrap("providers.go"), httpServiceProvider, modify.RegisterProvider(moduleImport, httpServiceProvider)),
 
 		// Register the Http, RateLimiter, View facades
 		modify.WhenFacade(httpFacade,

@@ -58,7 +58,6 @@ func (s *PackagesSetupTestSuite) TestExecute() {
 				mockModify.EXPECT().Apply(mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option")).Return(nil).Once()
 				return st.Install(mockModify)
 			},
-			output: "package installed successfully",
 		},
 		{
 			name:    "uninstall failed",
@@ -91,7 +90,6 @@ func (s *PackagesSetupTestSuite) TestExecute() {
 				mockModify.EXPECT().Apply(mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option"), mock.AnythingOfType("modify.Option")).Return(nil).Once()
 				return st.Uninstall(mockModify)
 			},
-			output: "package uninstalled successfully",
 		},
 	}
 
@@ -110,9 +108,10 @@ func (s *PackagesSetupTestSuite) TestExecute() {
 				}()
 			})
 
-			s.Contains(output, tt.output)
 			if tt.err != nil {
 				s.Contains(output, tt.err.Error())
+			} else {
+				s.Empty(output)
 			}
 		})
 	}
