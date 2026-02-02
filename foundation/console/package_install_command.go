@@ -2,7 +2,6 @@ package console
 
 import (
 	"fmt"
-	"os/exec"
 	"slices"
 	"strings"
 
@@ -11,11 +10,11 @@ import (
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/facades"
 	contractsfoundation "github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/contracts/process"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/collect"
 	"github.com/goravel/framework/support/color"
-	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
@@ -26,9 +25,10 @@ type PackageInstallCommand struct {
 	bindings      map[string]contractsbinding.Info
 	chosenDrivers [][]contractsbinding.Driver
 	paths         string
+	process       process.Process
 }
 
-func NewPackageInstallCommand(bindings map[string]contractsbinding.Info, json contractsfoundation.Json) *PackageInstallCommand {
+func NewPackageInstallCommand(bindings map[string]contractsbinding.Info, process process.Process, json contractsfoundation.Json) *PackageInstallCommand {
 	paths, err := json.MarshalString(support.Config.Paths)
 	if err != nil {
 		panic(fmt.Sprintf("failed to marshal paths: %s", err))
@@ -37,6 +37,7 @@ func NewPackageInstallCommand(bindings map[string]contractsbinding.Info, json co
 	return &PackageInstallCommand{
 		bindings: bindings,
 		paths:    paths,
+		process:  process,
 	}
 }
 
@@ -184,18 +185,18 @@ func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) 
 	setup := pkgPath + "/setup"
 
 	// get package
-	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "get", pkg)); err != nil {
-		return fmt.Errorf("failed to get package: %s", err)
+	if res := r.process.Run("go", "get", pkg); res.Failed() {
+		return fmt.Errorf("failed to get package: %s", res.Error().Error())
 	}
 
 	// install package
-	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--main-path="+env.MainPath(), "--paths="+r.paths)); err != nil {
-		return fmt.Errorf("failed to install package: %s", err)
+	if res := r.process.WithSpinner("Installing "+pkg).Run("go", "run", setup, "install", "--main-path="+env.MainPath(), "--paths="+r.paths); res.Failed() {
+		return fmt.Errorf("failed to install package: %s", res.Error().Error())
 	}
 
 	// tidy go.mod file
-	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
-		return fmt.Errorf("failed to tidy go.mod file: %s", err)
+	if res := r.process.Run("go", "mod", "tidy"); res.Failed() {
+		return fmt.Errorf("failed to tidy go.mod file: %s", res.Error().Error())
 	}
 
 	ctx.Success(fmt.Sprintf("Package %s installed successfully", pkg))
@@ -229,8 +230,9 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 
 		bindingInfo := r.bindings[binding]
 		setup := bindingInfo.PkgPath + "/setup"
-		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--facade="+facade, "--main-path="+env.MainPath(), "--paths="+r.paths)); err != nil {
-			return fmt.Errorf("failed to install facade %s: %s", facade, err.Error())
+
+		if res := r.process.WithSpinner("Installing "+facade).Run("go", "run", setup, "install", "--facade="+facade, "--main-path="+env.MainPath(), "--paths="+r.paths); res.Failed() {
+			return fmt.Errorf("failed to install facade %s: %s", facade, res.Error().Error())
 		}
 
 		ctx.Success(fmt.Sprintf("Facade %s installed successfully", facade))
@@ -244,8 +246,8 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 		}
 	}
 
-	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
-		return fmt.Errorf("failed to tidy go.mod file: %s", err)
+	if res := r.process.Run("go", "mod", "tidy"); res.Failed() {
+		return fmt.Errorf("failed to tidy go.mod file: %s", res.Error().Error())
 	}
 
 	return nil
@@ -315,8 +317,9 @@ func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string
 
 	if isInternalDriver(driver) {
 		setup := bindingInfo.PkgPath + "/setup"
-		if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "run", setup, "install", "--driver="+driver, "--main-path="+env.MainPath(), "--paths="+r.paths)); err != nil {
-			return fmt.Errorf("failed to install driver %s: %s", driver, err.Error())
+
+		if res := r.process.WithSpinner("Installing "+driver).Run("go", "run", setup, "install", "--driver="+driver, "--main-path="+env.MainPath(), "--paths="+r.paths); res.Failed() {
+			return fmt.Errorf("failed to install driver %s: %s", driver, res.Error().Error())
 		}
 
 		ctx.Success(fmt.Sprintf("Driver %s installed successfully", driver))

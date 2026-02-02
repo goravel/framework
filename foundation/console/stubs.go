@@ -243,7 +243,7 @@ func main() {
 
 	setup.Install(
 		// Register the service provider
-		modify.AddProviderApply(moduleImport, serviceProvider),
+		modify.RegisterProvider(moduleImport, serviceProvider),
 
 		// Add config
 		modify.File(configPath).Overwrite(config(setup.Paths().Config().Package(), setup.Paths().Facades().Import(), setup.Paths().Facades().Package())),
@@ -251,8 +251,8 @@ func main() {
 		// Remove config/cache.go
 		modify.File(configPath).Remove(),
 
-		// Remove the service provider
-		modify.RemoveProviderApply(moduleImport, serviceProvider),
+		// Unregister the service provider
+		modify.UnregisterProvider(moduleImport, serviceProvider),
 	).Execute()
 }
 `
