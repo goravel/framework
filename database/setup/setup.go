@@ -78,7 +78,7 @@ DB_PASSWORD=
 		modify.GoFile(databaseConfigPath).Find(match.Config("database")).Modify(installConfigActionsFunc()...),
 
 		// Add the database service provider to the providers array in bootstrap/providers.go
-		modify.RegisterProvider(moduleImport, databaseServiceProvider),
+		modify.WhenFileNotContains(path.Bootstrap("providers.go"), databaseServiceProvider, modify.RegisterProvider(moduleImport, databaseServiceProvider)),
 
 		// Register the DB, Orm, Schema and Seeder facades
 		modify.WhenFacade(facades.DB, modify.File(dbFacadePath).Overwrite(stubs.DBFacade(facadesPackage))),

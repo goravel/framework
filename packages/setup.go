@@ -68,16 +68,12 @@ func (r *setup) Execute() {
 		for i := range r.onInstall {
 			r.reportError(r.onInstall[i].Apply(options.Driver(r.driver), options.Force(r.force), options.Facade(r.facade)))
 		}
-
-		color.Successln("package installed successfully")
 	}
 
 	if r.command == "uninstall" {
 		for i := range r.onUninstall {
 			r.reportError(r.onUninstall[i].Apply(options.Driver(r.driver), options.Force(r.force), options.Facade(r.facade)))
 		}
-
-		color.Successln("package uninstalled successfully")
 	}
 }
 
