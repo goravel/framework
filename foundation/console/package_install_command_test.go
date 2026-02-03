@@ -142,7 +142,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 				s.mockContext.EXPECT().OptionBool("all").Return(false).Once()
 				s.mockContext.EXPECT().Choice("Which facades or package do you want to install?", options).
 					Return("select", nil).Once()
-				s.mockContext.EXPECT().MultiSelect("Select the facades to install", facadeOptions, mock.Anything).
+				s.mockContext.EXPECT().MultiSelect("Select the facades to install\nPlease check the how-to guide at the bottom", facadeOptions, mock.Anything).
 					Return(nil, assert.AnError).Once()
 				s.mockContext.EXPECT().Error(assert.AnError.Error()).Once()
 			},
@@ -168,7 +168,7 @@ func (s *PackageInstallCommandTestSuite) TestHandle() {
 				s.mockContext.EXPECT().OptionBool("all").Return(false).Once()
 				s.mockContext.EXPECT().Choice("Which facades or package do you want to install?", options).
 					Return("select", nil).Once()
-				s.mockContext.EXPECT().MultiSelect("Select the facades to install", facadeOptions, mock.Anything).
+				s.mockContext.EXPECT().MultiSelect("Select the facades to install\nPlease check the how-to guide at the bottom", facadeOptions, mock.Anything).
 					Return([]string{facade}, nil).Once()
 				s.mockContext.EXPECT().Warning(errors.PackageFacadeNotFound.Args(facade).Error()).Once()
 				s.mockContext.EXPECT().Info(fmt.Sprintf("Available facades: %s", strings.Join(getAvailableFacades(bindings), ", ")))

@@ -165,7 +165,7 @@ func (r *PackageInstallCommand) selectFacades(ctx console.Context) ([]string, er
 		})
 	}
 
-	return ctx.MultiSelect("Select the facades to install", facadeOptions, console.MultiSelectOption{
+	return ctx.MultiSelect("Select the facades to install\nPlease check the how-to guide at the bottom", facadeOptions, console.MultiSelectOption{
 		Filterable: true,
 	})
 }
