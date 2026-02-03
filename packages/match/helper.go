@@ -301,17 +301,9 @@ func Rules() []match.GoNode {
 	}
 }
 
-// Deprecated: ProvidersInConfig represents the old logic of registering
-// service providers inside the `config/app.go` file.
-//
-// This pattern is deprecated and will be removed in future versions.
-// Please migrate to the new Providers() function-based registration approach.
-// NOTE: in the current internal setup files, ProvidersInConfig is only used for
-// uninstall (not for install). It will continue to serve as an uninstall-only
-// fallback for the next few releases — during which both Providers() and
-// ProvidersInConfig matchers will be supported to ensure backward compatibility
-// with older versions. After that deprecation period, ProvidersInConfig will
-// be removed entirely.
+// ProvidersInConfig represents the old logic of registering service providers inside the `config/app.go` file.
+// If you are using the new code structure that registers service providers via the Providers() function in the
+// bootstrap folder, you should use the Providers function instead.
 func ProvidersInConfig() []match.GoNode {
 	return []match.GoNode{
 		Func(Ident("init")),

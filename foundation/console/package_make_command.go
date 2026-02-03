@@ -8,6 +8,7 @@ import (
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support"
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -78,8 +79,13 @@ func (r *PackageMakeCommand) Handle(ctx console.Context) error {
 		packageName + ".go":   packageMakeCommandStubs.Main,
 		filepath.Join("contracts", packageName+".go"): packageMakeCommandStubs.Contracts,
 		filepath.Join("facades", packageName+".go"):   packageMakeCommandStubs.Facades,
-		filepath.Join("setup", "stubs.go"):            packageMakeCommandStubs.Config,
 		filepath.Join("setup", "setup.go"):            packageMakeCommandStubs.Setup,
+	}
+	if env.IsBootstrapSetup() {
+		files[filepath.Join("setup", "stubs.go")] = packageMakeCommandStubs.Config
+	} else {
+		files[filepath.Join("setup", "config", packageName+".go")] = packageMakeCommandStubs.OldConfig
+		files[filepath.Join("setup", "setup.go")] = packageMakeCommandStubs.OldSetup
 	}
 
 	for path, content := range files {
