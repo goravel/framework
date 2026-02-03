@@ -79,10 +79,10 @@ func (r *PackageMakeCommand) Handle(ctx console.Context) error {
 		packageName + ".go":   packageMakeCommandStubs.Main,
 		filepath.Join("contracts", packageName+".go"): packageMakeCommandStubs.Contracts,
 		filepath.Join("facades", packageName+".go"):   packageMakeCommandStubs.Facades,
-		filepath.Join("setup", "setup.go"):            packageMakeCommandStubs.Setup,
 	}
 	if env.IsBootstrapSetup() {
 		files[filepath.Join("setup", "stubs.go")] = packageMakeCommandStubs.Config
+		files[filepath.Join("setup", "setup.go")] = packageMakeCommandStubs.Setup
 	} else {
 		files[filepath.Join("setup", "config", packageName+".go")] = packageMakeCommandStubs.OldConfig
 		files[filepath.Join("setup", "setup.go")] = packageMakeCommandStubs.OldSetup
