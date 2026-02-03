@@ -48,7 +48,7 @@ func TestBuildCommand(t *testing.T) {
 					"GOARCH":      "amd64",
 				}).Return(mockProcess).Once()
 				mockProcess.EXPECT().WithSpinner("Building...").Return(mockProcess).Once()
-				mockProcess.EXPECT().Run("go build -ldflags -extldflags -static .").Return(mockResult).Once()
+				mockProcess.EXPECT().Run("go build -ldflags \"-s -w -extldflags -static\" .").Return(mockResult).Once()
 				mockResult.EXPECT().Failed().Return(false).Once()
 				mockContext.EXPECT().Info("Built successfully.").Once()
 			},
@@ -91,7 +91,7 @@ func TestBuildCommand(t *testing.T) {
 					"GOARCH":      "invalid",
 				}).Return(mockProcess).Once()
 				mockProcess.EXPECT().WithSpinner("Building...").Return(mockProcess).Once()
-				mockProcess.EXPECT().Run("go build -ldflags -extldflags -static .").Return(mockResult).Once()
+				mockProcess.EXPECT().Run("go build -ldflags \"-s -w -extldflags -static\" .").Return(mockResult).Once()
 				mockResult.EXPECT().Failed().Return(true).Once()
 				mockResult.EXPECT().Error().Return(errors.New("go: unsupported GOOS/GOARCH pair invalid/invalid")).Once()
 				mockContext.EXPECT().Error("go: unsupported GOOS/GOARCH pair invalid/invalid").Once()
@@ -111,7 +111,7 @@ func TestBuildCommand(t *testing.T) {
 					"GOARCH":      "amd64",
 				}).Return(mockProcess).Once()
 				mockProcess.EXPECT().WithSpinner("Building...").Return(mockProcess).Once()
-				mockProcess.EXPECT().Run("go build -ldflags -extldflags -static .").Return(mockResult).Once()
+				mockProcess.EXPECT().Run("go build -ldflags \"-s -w -extldflags -static\" .").Return(mockResult).Once()
 				mockResult.EXPECT().Failed().Return(true).Once()
 				mockResult.EXPECT().Error().Return(errors.New("error")).Once()
 				mockContext.EXPECT().Error("error").Once()
@@ -142,12 +142,12 @@ func TestGenerateCommand(t *testing.T) {
 			description: "Generate command with static and name",
 			name:        "test",
 			static:      true,
-			expected:    "go build -ldflags -extldflags -static -o test .",
+			expected:    "go build -ldflags \"-s -w -extldflags -static\" -o test .",
 		},
 		{
 			description: "Generate command with static without name",
 			static:      true,
-			expected:    "go build -ldflags -extldflags -static .",
+			expected:    "go build -ldflags \"-s -w -extldflags -static\" .",
 		},
 		{
 			description: "Generate command without static with name",
