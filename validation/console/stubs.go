@@ -7,6 +7,8 @@ func (r Stubs) Rule() string {
 	return `package DummyPackage
 
 import (
+	"context"
+
 	"github.com/goravel/framework/contracts/validation"
 )
 
@@ -19,12 +21,12 @@ func (receiver *DummyRule) Signature() string {
 }
 
 // Passes Determine if the validation rule passes.
-func (receiver *DummyRule) Passes(data validation.Data, val any, options ...any) bool {
+func (receiver *DummyRule) Passes(ctx context.Context, data validation.Data, val any, options ...any) bool {
 	return true
 }
 
 // Message Get the validation error message.
-func (receiver *DummyRule) Message() string {
+func (receiver *DummyRule) Message(ctx context.Context) string {
 	return ""
 }
 `
@@ -32,6 +34,8 @@ func (receiver *DummyRule) Message() string {
 
 func (r Stubs) Filter() string {
 	return `package DummyPackage
+
+import "context"
 
 type DummyFilter struct {
 }
@@ -72,7 +76,7 @@ func (receiver *DummyFilter) Signature() string {
 //        return val
 //    }
 //
-func (receiver *DummyFilter) Handle() any {
+func (receiver *DummyFilter) Handle(ctx context.Context) any {
 	return nil
 }
 `

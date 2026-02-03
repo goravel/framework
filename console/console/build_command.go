@@ -108,7 +108,7 @@ func generateCommand(name string, static bool) string {
 	args := []string{"go", "build"}
 
 	if static {
-		args = append(args, "-ldflags", "-extldflags -static")
+		args = append(args, "-ldflags", `"-s -w -extldflags -static"`)
 	}
 
 	if name != "" {
