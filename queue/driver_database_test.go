@@ -72,7 +72,7 @@ func (s *DatabaseTestSuite) TestNewDatabase() {
 			setup: func() {
 				mockConfig.EXPECT().GetString("queue.connections.default.connection").Return("").Once()
 			},
-			expectedError: errors.QueueInvalidDatabaseConnection.Args(""),
+			expectedError: errors.QueueInvalidDatabaseConnection.Args("default"),
 		},
 	}
 
@@ -264,7 +264,7 @@ func (s *DatabaseTestSuite) TestPush() {
 					CreatedAt:   carbon.NewDateTime(carbon.Now()),
 				}).Return(nil, assert.AnError).Once()
 			},
-			expectedError: errors.QueueFailedToInsertJobToDatabase.Args(&models.Job{
+			expectedError: errors.QueueFailedToInsertJobToDatabase.Args(models.Job{
 				Queue:       queue,
 				Payload:     payload,
 				AvailableAt: carbon.NewDateTime(carbon.Now()),

@@ -207,7 +207,7 @@ func (r *Worker) printFailedLog(task queue.Task, duration string) {
 
 func (r *Worker) run() error {
 	if r.debug {
-		color.Infoln(errors.QueueProcessingJobs.Args(r.connection, r.queue))
+		color.Infoln(errors.QueueProcessingJobs.Args(r.connection, r.queue).Error())
 	}
 
 	for i := 0; i < r.concurrent; i++ {
