@@ -901,9 +901,23 @@ func (s *ApplicationTestSuite) TestStart() {
 			s.app.configureRunners()
 
 			if tt.expectPanic {
-				s.Panics(func() {
+				// s.Panics does not work well with goroutines, so we capture the panic manually
+				panicChan := make(chan interface{}, 1)
+				go func() {
+					defer func() {
+						if r := recover(); r != nil {
+							panicChan <- r
+						}
+					}()
 					s.app.Start()
-				})
+				}()
+
+				select {
+				case <-panicChan:
+					// Panic occurred as expected
+				case <-time.After(1 * time.Second):
+					s.Fail("expected panic but none occurred")
+				}
 			} else {
 				// Only trigger cancel for non-panic cases
 				// For panic cases, the error handling will call cancel automatically
