@@ -846,7 +846,7 @@ func (s *ApplicationTestSuite) TestStart() {
 				runner1.EXPECT().Signature().Return("test-runner-1").Once()
 				runner1.EXPECT().ShouldRun().Return(true).Once()
 				runner1.EXPECT().Run().Return(nil).Once()
-				runner1.EXPECT().Shutdown().Return(nil).Maybe()
+				runner1.EXPECT().Shutdown().Return(nil).Once()
 
 				runner2 := mocksfoundation.NewRunner(s.T())
 				runner2.EXPECT().Signature().Return("test-runner-2").Once()
@@ -900,16 +900,18 @@ func (s *ApplicationTestSuite) TestStart() {
 			s.app.runnersToRun = nil
 			s.app.configureRunners()
 
-			go func() {
-				time.Sleep(100 * time.Millisecond) // Wait for goroutines to start
-				s.cancel()
-			}()
-
 			if tt.expectPanic {
 				s.Panics(func() {
 					s.app.Start()
 				})
 			} else {
+				// Only trigger cancel for non-panic cases
+				// For panic cases, the error handling will call cancel automatically
+				go func() {
+					time.Sleep(100 * time.Millisecond) // Wait for goroutines to start
+					s.cancel()
+				}()
+
 				s.NotPanics(func() {
 					s.app.Start()
 				})
