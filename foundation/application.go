@@ -239,6 +239,11 @@ func (r *Application) Restart() error {
 }
 
 func (r *Application) Start() {
+	var (
+		errsMu sync.Mutex
+		errs   []error
+	)
+
 	run := func(runner *RunnerWithInfo) {
 		r.runnerWg.Add(1)
 
@@ -249,7 +254,13 @@ func (r *Application) Start() {
 					r.runnerWg.Done()
 				})
 				runner.running.Store(false)
-				color.Errorf("failed to run %s: %v\n", runner.signature, err)
+				errsMu.Lock()
+				errs = append(errs, fmt.Errorf("failed to run %s: %w", runner.signature, err))
+				errsMu.Unlock()
+				if log := r.MakeLog(); log != nil {
+					log.Errorf("failed to run %s: %v\n", runner.signature, err)
+				}
+				r.cancel()
 			}
 			// Run may be a blocking call, so don't write anything after it.
 		}()
@@ -261,7 +272,9 @@ func (r *Application) Start() {
 			}
 
 			if err := runner.runner.Shutdown(); err != nil {
-				color.Errorf("failed to shutdown %s: %v\n", runner.signature, err)
+				if log := r.MakeLog(); log != nil {
+					log.Errorf("failed to shutdown %s: %v\n", runner.signature, err)
+				}
 			}
 			runner.running.Store(false)
 			runner.doneOnce.Do(func() {
@@ -275,6 +288,10 @@ func (r *Application) Start() {
 	}
 
 	r.runnerWg.Wait()
+
+	if len(errs) > 0 {
+		panic(errors.Join(errs...))
+	}
 }
 
 func (r *Application) SetBuilder(builder foundation.ApplicationBuilder) foundation.Application {
