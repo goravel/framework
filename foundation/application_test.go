@@ -774,50 +774,120 @@ func (s *ApplicationTestSuite) TestResourcePath() {
 
 func (s *ApplicationTestSuite) TestStart() {
 	tests := []struct {
-		name  string
-		setup func() foundation.Runner
+		name        string
+		setup       func() []foundation.Runner
+		expectPanic bool
 	}{
 		{
 			name: "happy path",
-			setup: func() foundation.Runner {
+			setup: func() []foundation.Runner {
 				runner := mocksfoundation.NewRunner(s.T())
 				runner.EXPECT().Signature().Return("test-runner").Once()
 				runner.EXPECT().ShouldRun().Return(true).Once()
 				runner.EXPECT().Run().Return(nil).Once()
 				runner.EXPECT().Shutdown().Return(nil).Once()
 
-				return runner
+				return []foundation.Runner{runner}
 			},
+			expectPanic: false,
 		},
 		{
 			name: "failed to run",
-			setup: func() foundation.Runner {
+			setup: func() []foundation.Runner {
 				runner := mocksfoundation.NewRunner(s.T())
 				runner.EXPECT().Signature().Return("test-runner").Once()
 				runner.EXPECT().ShouldRun().Return(true).Once()
 				runner.EXPECT().Run().Return(assert.AnError).Once()
 
-				return runner
+				return []foundation.Runner{runner}
 			},
+			expectPanic: true,
 		},
 		{
 			name: "should not be run",
-			setup: func() foundation.Runner {
+			setup: func() []foundation.Runner {
 				runner := mocksfoundation.NewRunner(s.T())
 				runner.EXPECT().Signature().Return("test-runner").Once()
 				runner.EXPECT().ShouldRun().Return(false).Once()
 
-				return runner
+				return []foundation.Runner{runner}
 			},
+			expectPanic: false,
+		},
+		{
+			name: "multiple runners all successful",
+			setup: func() []foundation.Runner {
+				runner1 := mocksfoundation.NewRunner(s.T())
+				runner1.EXPECT().Signature().Return("test-runner-1").Once()
+				runner1.EXPECT().ShouldRun().Return(true).Once()
+				runner1.EXPECT().Run().Return(nil).Once()
+				runner1.EXPECT().Shutdown().Return(nil).Once()
+
+				runner2 := mocksfoundation.NewRunner(s.T())
+				runner2.EXPECT().Signature().Return("test-runner-2").Once()
+				runner2.EXPECT().ShouldRun().Return(true).Once()
+				runner2.EXPECT().Run().Return(nil).Once()
+				runner2.EXPECT().Shutdown().Return(nil).Once()
+
+				runner3 := mocksfoundation.NewRunner(s.T())
+				runner3.EXPECT().Signature().Return("test-runner-3").Once()
+				runner3.EXPECT().ShouldRun().Return(true).Once()
+				runner3.EXPECT().Run().Return(nil).Once()
+				runner3.EXPECT().Shutdown().Return(nil).Once()
+
+				return []foundation.Runner{runner1, runner2, runner3}
+			},
+			expectPanic: false,
+		},
+		{
+			name: "multiple runners with one failure",
+			setup: func() []foundation.Runner {
+				runner1 := mocksfoundation.NewRunner(s.T())
+				runner1.EXPECT().Signature().Return("test-runner-1").Once()
+				runner1.EXPECT().ShouldRun().Return(true).Once()
+				runner1.EXPECT().Run().Return(nil).Once()
+				runner1.EXPECT().Shutdown().Return(nil).Once()
+
+				runner2 := mocksfoundation.NewRunner(s.T())
+				runner2.EXPECT().Signature().Return("test-runner-2").Once()
+				runner2.EXPECT().ShouldRun().Return(true).Once()
+				runner2.EXPECT().Run().Return(assert.AnError).Once()
+
+				return []foundation.Runner{runner1, runner2}
+			},
+			expectPanic: true,
+		},
+		{
+			name: "multiple runners with mixed should run",
+			setup: func() []foundation.Runner {
+				runner1 := mocksfoundation.NewRunner(s.T())
+				runner1.EXPECT().Signature().Return("test-runner-1").Once()
+				runner1.EXPECT().ShouldRun().Return(true).Once()
+				runner1.EXPECT().Run().Return(nil).Once()
+				runner1.EXPECT().Shutdown().Return(nil).Once()
+
+				runner2 := mocksfoundation.NewRunner(s.T())
+				runner2.EXPECT().Signature().Return("test-runner-2").Once()
+				runner2.EXPECT().ShouldRun().Return(false).Once()
+
+				runner3 := mocksfoundation.NewRunner(s.T())
+				runner3.EXPECT().Signature().Return("test-runner-3").Once()
+				runner3.EXPECT().ShouldRun().Return(true).Once()
+				runner3.EXPECT().Run().Return(nil).Once()
+				runner3.EXPECT().Shutdown().Return(nil).Once()
+
+				return []foundation.Runner{runner1, runner2, runner3}
+			},
+			expectPanic: false,
 		},
 	}
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
 			s.SetupTest()
-			runner := tt.setup()
+			runners := tt.setup()
 			serviceProvider := mocksfoundation.NewServiceProviderWithRunners(s.T())
-			serviceProvider.EXPECT().Runners(s.app).Return([]foundation.Runner{runner}).Once()
+			serviceProvider.EXPECT().Runners(s.app).Return(runners).Once()
 
 			mockRepo := mocksfoundation.NewProviderRepository(s.T())
 			mockRepo.EXPECT().GetBooted().Return([]foundation.ServiceProvider{
@@ -827,14 +897,39 @@ func (s *ApplicationTestSuite) TestStart() {
 			s.app.builder = NewApplicationBuilder(s.app)
 			s.app.providerRepository = mockRepo
 			s.app.bootedRunners = nil
+			s.app.runnersToRun = nil
 			s.app.configureRunners()
 
-			go func() {
-				time.Sleep(100 * time.Millisecond) // Wait for goroutines to start
-				s.cancel()
-			}()
+			if tt.expectPanic {
+				// s.Panics does not work well with goroutines, so we capture the panic manually
+				panicChan := make(chan interface{}, 1)
+				go func() {
+					defer func() {
+						if r := recover(); r != nil {
+							panicChan <- r
+						}
+					}()
+					s.app.Start()
+				}()
 
-			s.app.Start()
+				select {
+				case <-panicChan:
+					// Panic occurred as expected
+				case <-time.After(1 * time.Second):
+					s.Fail("expected panic but none occurred")
+				}
+			} else {
+				// Only trigger cancel for non-panic cases
+				// For panic cases, the error handling will call cancel automatically
+				go func() {
+					time.Sleep(100 * time.Millisecond) // Wait for goroutines to start
+					s.cancel()
+				}()
+
+				s.NotPanics(func() {
+					s.app.Start()
+				})
+			}
 		})
 	}
 }
