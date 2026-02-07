@@ -3,6 +3,7 @@ package console
 import (
 	"strings"
 
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -78,13 +79,14 @@ func (r *DummyServiceProvider) Boot(app foundation.Application) {
 }
 
 type PackageMakeCommandStubs struct {
+	main string
 	pkg  string
 	root string
 	name string
 }
 
 func NewPackageMakeCommandStubs(pkg, root string) *PackageMakeCommandStubs {
-	return &PackageMakeCommandStubs{pkg: pkg, root: root, name: packageName(pkg)}
+	return &PackageMakeCommandStubs{main: env.MainPath(), pkg: pkg, root: root, name: packageName(pkg)}
 }
 
 func (r PackageMakeCommandStubs) Readme() string {
@@ -123,7 +125,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 	App = app
 
 	app.Bind(Binding, func(app foundation.Application) (any, error) {
-		return nil, nil
+		return &DummyCamelName{}, nil
 	})
 }
 
@@ -135,6 +137,7 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 
 	content = strings.ReplaceAll(content, "DummyPackage", r.pkg)
 	content = strings.ReplaceAll(content, "DummyName", r.name)
+	content = strings.ReplaceAll(content, "DummyCamelName", str.Of(r.name).Studly().String())
 
 	return content
 }
@@ -186,6 +189,24 @@ func config(configPackage string, facadesImport, facadesPackage string) string {
 	return content
 }
 
+func (r PackageMakeCommandStubs) OldConfig() string {
+	content := `package config
+
+import (
+	"github.com/goravel/framework/facades"
+)
+
+func init() {
+	config := facades.Config()
+	config.Add("DummyName", map[string]any{
+		
+	})
+}
+`
+
+	return strings.ReplaceAll(content, "DummyName", r.name)
+}
+
 func (r PackageMakeCommandStubs) Contracts() string {
 	content := `package contracts
 
@@ -201,8 +222,8 @@ func (r PackageMakeCommandStubs) Facades() string {
 import (
 	"log"
 
-	"goravel/DummyRoot"
-	"goravel/DummyRoot/contracts"
+	"DummyMain/DummyRoot"
+	"DummyMain/DummyRoot/contracts"
 )
 
 func DummyCamelName() contracts.DummyCamelName {
@@ -216,6 +237,7 @@ func DummyCamelName() contracts.DummyCamelName {
 }
 `
 
+	content = strings.ReplaceAll(content, "DummyMain", r.main)
 	content = strings.ReplaceAll(content, "DummyRoot", r.root)
 	content = strings.ReplaceAll(content, "DummyName", r.name)
 	content = strings.ReplaceAll(content, "DummyCamelName", str.Of(r.name).Studly().String())
@@ -243,7 +265,7 @@ func main() {
 
 	setup.Install(
 		// Register the service provider
-		modify.AddProviderApply(moduleImport, serviceProvider),
+		modify.RegisterProvider(moduleImport, serviceProvider),
 
 		// Add config
 		modify.File(configPath).Overwrite(config(setup.Paths().Config().Package(), setup.Paths().Facades().Import(), setup.Paths().Facades().Package())),
@@ -251,8 +273,38 @@ func main() {
 		// Remove config/cache.go
 		modify.File(configPath).Remove(),
 
-		// Remove the service provider
-		modify.RemoveProviderApply(moduleImport, serviceProvider),
+		// Unregister the service provider
+		modify.UnregisterProvider(moduleImport, serviceProvider),
+	).Execute()
+}
+`
+	content = strings.ReplaceAll(content, "DummyName", r.name)
+
+	return content
+}
+
+func (r PackageMakeCommandStubs) OldSetup() string {
+	content := `package main
+
+import (
+	"os"
+
+	"github.com/goravel/framework/packages"
+	"github.com/goravel/framework/packages/match"
+	"github.com/goravel/framework/packages/modify"
+	"github.com/goravel/framework/support/path"
+)
+
+func main() {
+	setup := packages.Setup(os.Args)
+	setup.Install(
+		modify.GoFile(path.Config("app.go")).
+			Find(match.Imports()).Modify(modify.AddImport(setup.Paths().Module().Import())).
+			Find(match.ProvidersInConfig()).Modify(modify.Register("&DummyName.ServiceProvider{}")),
+	).Uninstall(
+		modify.GoFile(path.Config("app.go")).
+			Find(match.ProvidersInConfig()).Modify(modify.Unregister("&DummyName.ServiceProvider{}")).
+			Find(match.Imports()).Modify(modify.RemoveImport(setup.Paths().Module().Import())),
 	).Execute()
 }
 `

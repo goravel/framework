@@ -5,7 +5,6 @@ import (
 	"github.com/goravel/framework/contracts/binding"
 	consolecontract "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
-	"github.com/goravel/framework/support/color"
 )
 
 type ServiceProvider struct {
@@ -37,22 +36,13 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 
 func (r *ServiceProvider) registerCommands(app foundation.Application) {
 	artisanFacade := app.MakeArtisan()
-	if artisanFacade == nil {
-		color.Warningln("Artisan Facade is not initialized. Skipping command registration.")
-		return
-	}
-
 	configFacade := app.MakeConfig()
-	if configFacade == nil {
-		color.Warningln("Config Facade is not initialized. Skipping certain command registrations.")
-		return
-	}
-
+	processFacade := app.MakeProcess()
 	artisanFacade.Register([]consolecontract.Command{
 		console.NewListCommand(),
 		console.NewKeyGenerateCommand(configFacade),
 		console.NewMakeCommand(),
-		console.NewBuildCommand(configFacade),
+		console.NewBuildCommand(configFacade, processFacade),
 		// The deploy command is not completely ready yet, comment it out for now.
 		// https://github.com/goravel/goravel/issues/778
 		// https://github.com/goravel/goravel/issues/804

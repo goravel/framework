@@ -62,6 +62,9 @@ type Pipeline interface {
 type Pipe interface {
 	// Command creates a new command to be added to the pipeline.
 	// The command's stdout will be connected to the stdin of the next command in the pipeline.
+	// If only name is provided, and the name contains special characters (like spaces, &, |),
+	// the name will be added a `/bin/sh -c` or `cmd /c` wrapper to ensure correct execution.
+	// This feature provides a convenient way to run complex shell commands that don't need to add the wrapper manually.
 	Command(name string, arg ...string) PipeCommand
 }
 

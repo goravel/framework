@@ -225,6 +225,7 @@ type Pool struct {
 }
 
 func (r *Pool) Command(name string, args ...string) contractsprocess.PoolCommand {
+	name, args = formatCommand(name, args)
 	command := NewPoolCommand(strconv.Itoa(len(r.commands)), name, args)
 	r.commands = append(r.commands, command)
 	return command

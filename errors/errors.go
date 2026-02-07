@@ -27,8 +27,11 @@ func New(text string, module ...string) contractserrors.Error {
 }
 
 func (e *errorString) Args(args ...any) contractserrors.Error {
-	e.args = args
-	return e
+	return &errorString{
+		text:   e.text,
+		module: e.module,
+		args:   args,
+	}
 }
 
 func (e *errorString) Error() string {
@@ -46,8 +49,19 @@ func (e *errorString) Error() string {
 }
 
 func (e *errorString) SetModule(module string) contractserrors.Error {
-	e.module = module
-	return e
+	return &errorString{
+		text:   e.text,
+		module: module,
+		args:   e.args,
+	}
+}
+
+func (e *errorString) Is(target error) bool {
+	t, ok := target.(*errorString)
+	if !ok {
+		return false
+	}
+	return e.text == t.text
 }
 
 func Is(err, target error) bool {

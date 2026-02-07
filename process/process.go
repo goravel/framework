@@ -9,6 +9,8 @@ import (
 	"time"
 
 	contractsprocess "github.com/goravel/framework/contracts/process"
+	"github.com/goravel/framework/support/env"
+	"github.com/goravel/framework/support/str"
 )
 
 var _ contractsprocess.Process = (*Process)(nil)
@@ -78,6 +80,7 @@ func (r *Process) Quietly() contractsprocess.Process {
 }
 
 func (r *Process) Run(name string, args ...string) contractsprocess.Result {
+	name, args = formatCommand(name, args)
 	run, err := r.start(name, args...)
 	if err != nil {
 		return NewResult(err, 1, "", "", "")
@@ -184,4 +187,18 @@ func (r *Process) start(name string, args ...string) (contractsprocess.Running, 
 	}
 
 	return NewRunning(ctx, cmd, cancel, stdoutBuffer, stderrBuffer, r.loading, r.loadingMessage), nil
+}
+
+func formatCommand(name string, args []string) (string, []string) {
+	if len(args) == 0 && str.Of(name).Contains(" ", "&", "|") {
+		if env.IsWindows() {
+			args = []string{"/c", name}
+			name = "cmd"
+		} else {
+			args = []string{"-c", name}
+			name = "/bin/sh"
+		}
+	}
+
+	return name, args
 }

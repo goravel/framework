@@ -78,7 +78,7 @@ DB_PASSWORD=
 		modify.GoFile(databaseConfigPath).Find(match.Config("database")).Modify(installConfigActionsFunc()...),
 
 		// Add the database service provider to the providers array in bootstrap/providers.go
-		modify.AddProviderApply(moduleImport, databaseServiceProvider),
+		modify.WhenFileNotContains(path.Bootstrap("providers.go"), databaseServiceProvider, modify.RegisterProvider(moduleImport, databaseServiceProvider)),
 
 		// Register the DB, Orm, Schema and Seeder facades
 		modify.WhenFacade(facades.DB, modify.File(dbFacadePath).Overwrite(stubs.DBFacade(facadesPackage))),
@@ -92,7 +92,7 @@ DB_PASSWORD=
 	).Uninstall(
 		modify.WhenNoFacades([]string{facades.DB, facades.Orm, facades.Schema, facades.Seeder},
 			// Remove the database service provider from the providers array in bootstrap/providers.go
-			modify.RemoveProviderApply(moduleImport, databaseServiceProvider),
+			modify.UnregisterProvider(moduleImport, databaseServiceProvider),
 
 			// Remove database configuration from config/database.go
 			modify.GoFile(databaseConfigPath).Find(match.Config("database")).Modify(uninstallConfigActionsFunc()...).Format(),

@@ -242,6 +242,7 @@ type Pipe struct {
 }
 
 func (r *Pipe) Command(name string, args ...string) contractsprocess.PipeCommand {
+	name, args = formatCommand(name, args)
 	command := NewPipeCommand(strconv.Itoa(len(r.commands)), name, args)
 	r.commands = append(r.commands, command)
 	return command

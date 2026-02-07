@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/goravel/framework/contracts/facades"
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support/path"
@@ -24,26 +25,31 @@ SESSION_LIFETIME=120
 `
 
 	setup.Install(
-		// Add the session service provider to the providers array in bootstrap/providers.go
-		modify.AddProviderApply(moduleImport, sessionServiceProvider),
+		// Avoid duplicate installation when installing drivers
+		modify.WhenFacade(facades.Session,
+			// Add the session service provider to the providers array in bootstrap/providers.go
+			modify.RegisterProvider(moduleImport, sessionServiceProvider),
 
-		// Create config/session.go and the Session facade
-		modify.File(sessionConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Facades().Import(), facadesPackage)),
+			// Create config/session.go and the Session facade
+			modify.File(sessionConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Facades().Import(), facadesPackage)),
 
-		// Add the Session facade
-		modify.File(sessionFacadePath).Overwrite(stubs.SessionFacade(facadesPackage)),
+			// Add the Session facade
+			modify.File(sessionFacadePath).Overwrite(stubs.SessionFacade(facadesPackage)),
 
-		// Add configurations to the .env and .env.example files
-		modify.WhenFileNotContains(envPath, "SESSION_DRIVER", modify.File(envPath).Append(env)),
-		modify.WhenFileNotContains(envExamplePath, "SESSION_DRIVER", modify.File(envExamplePath).Append(env)),
+			// Add configurations to the .env and .env.example files
+			modify.WhenFileNotContains(envPath, "SESSION_DRIVER", modify.File(envPath).Append(env)),
+			modify.WhenFileNotContains(envExamplePath, "SESSION_DRIVER", modify.File(envExamplePath).Append(env)),
+		),
 	).Uninstall(
-		// Remove config/session.go
-		modify.File(sessionConfigPath).Remove(),
+		modify.WhenFacade(facades.Session,
+			// Remove config/session.go
+			modify.File(sessionConfigPath).Remove(),
 
-		// Remove the session service provider from the providers array in bootstrap/providers.go
-		modify.RemoveProviderApply(moduleImport, sessionServiceProvider),
+			// Remove the session service provider from the providers array in bootstrap/providers.go
+			modify.UnregisterProvider(moduleImport, sessionServiceProvider),
 
-		// Remove the Session facade
-		modify.File(sessionFacadePath).Remove(),
+			// Remove the Session facade
+			modify.File(sessionFacadePath).Remove(),
+		),
 	).Execute()
 }

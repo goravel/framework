@@ -19,6 +19,7 @@ import (
 	mocksgrpc "github.com/goravel/framework/mocks/grpc"
 	mockshash "github.com/goravel/framework/mocks/hash"
 	mockshttp "github.com/goravel/framework/mocks/http"
+	mockshttpclient "github.com/goravel/framework/mocks/http/client"
 	mocksmail "github.com/goravel/framework/mocks/mail"
 	mocksprocess "github.com/goravel/framework/mocks/process"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
@@ -131,6 +132,13 @@ func (r *factory) Hash() *mockshash.Hash {
 	r.app.On("MakeHash").Return(mockHash)
 
 	return mockHash
+}
+
+func (r *factory) Http() *mockshttpclient.Factory {
+	mockHttp := &mockshttpclient.Factory{}
+	r.app.On("MakeHttp").Return(mockHttp)
+
+	return mockHttp
 }
 
 func (r *factory) Lang(ctx context.Context) *mockstranslation.Translator {

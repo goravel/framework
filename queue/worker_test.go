@@ -330,7 +330,7 @@ func (s *WorkerTestSuite) Test_run() {
 		mockQuery := mocksdb.NewQuery(s.T())
 		s.mockDB.EXPECT().Table("failed_jobs").Return(mockQuery).Once()
 		mockQuery.EXPECT().Insert(failedJob).Return(nil, assert.AnError).Once()
-		s.mockLog.EXPECT().Error(errors.QueueFailedToSaveFailedJob.Args(assert.AnError, failedJob)).Once()
+		s.mockLog.EXPECT().Error(errors.QueueFailedToSaveFailedJob.Args(assert.AnError, *failedJob)).Once()
 
 		go func() {
 			err := s.worker.run()

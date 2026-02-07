@@ -27,7 +27,7 @@ MAIL_FROM_NAME=
 
 	setup.Install(
 		// Add the mail service provider to the providers array in bootstrap/providers.go
-		modify.AddProviderApply(modulePath, mailServiceProvider),
+		modify.RegisterProvider(modulePath, mailServiceProvider),
 
 		// Create config/mail.go and the Mail facade
 		modify.File(mailConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Facades().Import(), facadesPackage)),
@@ -43,7 +43,7 @@ MAIL_FROM_NAME=
 		modify.File(mailConfigPath).Remove(),
 
 		// Remove the mail service provider from the providers array in bootstrap/providers.go
-		modify.RemoveProviderApply(modulePath, mailServiceProvider),
+		modify.UnregisterProvider(modulePath, mailServiceProvider),
 
 		// Remove the Mail facade
 		modify.File(mailFacadePath).Remove(),

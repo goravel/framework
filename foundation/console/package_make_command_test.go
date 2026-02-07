@@ -74,7 +74,20 @@ func (s *PackageMakeCommandTestSuite) TestHandle() {
 
 	beforeEach := func() {
 		mockContext = mocksconsole.NewContext(s.T())
+		// Create bootstrap/app.go to trigger IsBootstrapSetup() == true
+		_ = file.Create("bootstrap/app.go", `package bootstrap
+
+import "github.com/goravel/framework/foundation"
+
+func Boot() {
+	foundation.Setup().Start()
+}
+`)
 	}
+
+	s.T().Cleanup(func() {
+		_ = file.Remove("bootstrap")
+	})
 
 	tests := []struct {
 		name   string
@@ -106,8 +119,8 @@ func (s *PackageMakeCommandTestSuite) TestHandle() {
 				s.True(file.Exists("packages/sms/sms.go"))
 				s.True(file.Exists("packages/sms/contracts/sms.go"))
 				s.True(file.Exists("packages/sms/facades/sms.go"))
-				s.True(file.Contain("packages/sms/facades/sms.go", "goravel/packages/sms"))
-				s.True(file.Contain("packages/sms/facades/sms.go", "goravel/packages/sms/contracts"))
+				s.True(file.Contain("packages/sms/facades/sms.go", "github.com/goravel/framework/packages/sms"))
+				s.True(file.Contain("packages/sms/facades/sms.go", "github.com/goravel/framework/packages/sms/contracts"))
 				s.True(file.Exists("packages/sms/setup/stubs.go"))
 				s.True(file.Exists("packages/sms/setup/setup.go"))
 				s.NoError(file.Remove("packages"))

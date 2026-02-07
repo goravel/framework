@@ -12,7 +12,7 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	supportconsole "github.com/goravel/framework/support/console"
+	"github.com/goravel/framework/contracts/process"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
@@ -264,14 +264,16 @@ type uploadOptions struct {
 }
 
 type DeployCommand struct {
-	config  config.Config
 	artisan console.Artisan
+	config  config.Config
+	process process.Process
 }
 
-func NewDeployCommand(config config.Config, artisan console.Artisan) *DeployCommand {
+func NewDeployCommand(artisan console.Artisan, config config.Config, process process.Process) *DeployCommand {
 	return &DeployCommand{
-		config:  config,
 		artisan: artisan,
+		config:  config,
+		process: process,
 	}
 }
 
@@ -321,10 +323,11 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 			ctx.Error(err.Error())
 			return nil
 		}
-		if err := supportconsole.ExecuteCommand(ctx, rollbackCommand(opts), "Rolling back..."); err != nil {
-			ctx.Error(err.Error())
+		if res := r.process.WithSpinner("Rolling back...").Run(rollbackCommand(opts)); res.Failed() {
+			ctx.Error(res.Error().Error())
 			return nil
 		}
+
 		ctx.Info("Rollback successful.")
 		return nil
 	}
@@ -387,16 +390,17 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 
 	// Step 3: set up server on first run —- skip if already set up unless --force-setup is used
 	forceSetup := ctx.OptionBool("force-setup")
-	setupNeeded := forceSetup || !isServerAlreadySetup(opts)
+	setupNeeded := forceSetup || !r.isServerAlreadySetup(opts)
 	if setupNeeded {
 		if forceSetup {
-			if err = supportconsole.ExecuteCommand(ctx, teardownServerCommand(opts), "Removing previous server configuration..."); err != nil {
-				ctx.Error(err.Error())
+			if res := r.process.WithSpinner("Removing previous server configuration...").Run(teardownServerCommand(opts)); res.Failed() {
+				ctx.Error(res.Error().Error())
 				return nil
 			}
 		}
-		if err = supportconsole.ExecuteCommand(ctx, setupServerCommand(opts), "Setting up server (first time only)..."); err != nil {
-			ctx.Error(err.Error())
+
+		if res := r.process.WithSpinner("Setting up server (first time only)...").Run(setupServerCommand(opts)); res.Failed() {
+			ctx.Error(res.Error().Error())
 			return nil
 		}
 	} else {
@@ -409,8 +413,8 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 	}
 
 	// Step 4: upload files
-	if err = supportconsole.ExecuteCommand(ctx, uploadFilesCommand(opts, upload, envPathToUpload, remoteDecrypt, remoteEncName), "Uploading files..."); err != nil {
-		ctx.Error(err.Error())
+	if res := r.process.WithSpinner("Uploading files...").Run(uploadFilesCommand(opts, upload, envPathToUpload, remoteDecrypt, remoteEncName)); res.Failed() {
+		ctx.Error(res.Error().Error())
 		return nil
 	}
 
@@ -426,15 +430,16 @@ func (r *DeployCommand) Handle(ctx console.Context) error {
 			decryptCmd += fmt.Sprintf(" --key %q", opts.envDecryptKey)
 		}
 		script := fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s '%s'", opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.sshIp, decryptCmd)
-		if err = supportconsole.ExecuteCommand(ctx, makeLocalCommand(script), "Decrypting environment on remote..."); err != nil {
-			ctx.Error(err.Error())
+
+		if res := r.process.WithSpinner("Decrypting environment on remote...").Run(script); res.Failed() {
+			ctx.Error(res.Error().Error())
 			return nil
 		}
 	}
 
 	// Step 5: restart service
-	if err = supportconsole.ExecuteCommand(ctx, restartServiceCommand(opts), "Restarting service..."); err != nil {
-		ctx.Error(err.Error())
+	if res := r.process.WithSpinner("Restarting service...").Run(restartServiceCommand(opts)); res.Failed() {
+		ctx.Error(res.Error().Error())
 		return nil
 	}
 
@@ -511,6 +516,16 @@ func (r *DeployCommand) getDeployOptions(ctx console.Context) (deployOptions, er
 	}
 
 	return opts, nil
+}
+
+// isServerAlreadySetup checks if the systemd unit already exists on remote host
+func (r *DeployCommand) isServerAlreadySetup(opts deployOptions) bool {
+	checkCmd := fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'test -f /etc/systemd/system/%s.service'", opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.sshIp, opts.appName)
+	if res := r.process.Run(checkCmd); res.Failed() {
+		return false
+	}
+
+	return true
 }
 
 // isEncryptedEnvContent determines whether the provided bytes likely represent an encrypted env
@@ -596,16 +611,8 @@ func validLocalHost() error {
 	return nil
 }
 
-// makeLocalCommand chooses the appropriate local shell to execute the composed script.
-func makeLocalCommand(script string) *exec.Cmd {
-	if env.IsWindows() {
-		return exec.Command("cmd", "/C", script)
-	}
-	return exec.Command("bash", "-lc", script)
-}
-
 // setupServerCommand ensures Caddy and a systemd service are installed; no-op on subsequent runs
-func setupServerCommand(opts deployOptions) *exec.Cmd {
+func setupServerCommand(opts deployOptions) string {
 	// Directories and service
 	baseDir := opts.deployBaseDir
 	if !strings.HasSuffix(baseDir, "/") {
@@ -721,11 +728,11 @@ fi
 		"true",
 	)
 
-	return makeLocalCommand(script)
+	return script
 }
 
 // teardownServerCommand removes prior Caddy and systemd service configuration to allow re-provisioning
-func teardownServerCommand(opts deployOptions) *exec.Cmd {
+func teardownServerCommand(opts deployOptions) string {
 	baseDir := opts.deployBaseDir
 	if !strings.HasSuffix(baseDir, "/") {
 		baseDir += "/"
@@ -750,11 +757,11 @@ fi
 sudo mkdir -p %s
 sudo chown -R %s:%s %s
 '`, opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.sshIp, opts.appName, opts.appName, opts.appName, opts.appName, appDir, opts.sshUser, opts.sshUser, appDir)
-	return makeLocalCommand(script)
+	return script
 }
 
 // uploadFilesCommand uploads available artifacts to remote server
-func uploadFilesCommand(opts deployOptions, up uploadOptions, envPathToUpload string, remoteDecrypt bool, remoteEncName string) *exec.Cmd {
+func uploadFilesCommand(opts deployOptions, up uploadOptions, envPathToUpload string, remoteDecrypt bool, remoteEncName string) string {
 	baseDir := opts.deployBaseDir
 	if !strings.HasSuffix(baseDir, "/") {
 		baseDir += "/"
@@ -814,17 +821,15 @@ func uploadFilesCommand(opts deployOptions, up uploadOptions, envPathToUpload st
 		)
 	}
 
-	script := strings.Join(cmds, " && ")
-	return makeLocalCommand(script)
+	return strings.Join(cmds, " && ")
 }
 
-func restartServiceCommand(opts deployOptions) *exec.Cmd {
-	script := fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'sudo systemctl daemon-reload && sudo systemctl restart %s || sudo systemctl start %s'", opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.sshIp, opts.appName, opts.appName)
-	return makeLocalCommand(script)
+func restartServiceCommand(opts deployOptions) string {
+	return fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'sudo systemctl daemon-reload && sudo systemctl restart %s || sudo systemctl start %s'", opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.sshIp, opts.appName, opts.appName)
 }
 
 // rollbackCommand swaps main and main.prev if available, then restarts the service
-func rollbackCommand(opts deployOptions) *exec.Cmd {
+func rollbackCommand(opts deployOptions) string {
 	baseDir := opts.deployBaseDir
 	if !strings.HasSuffix(baseDir, "/") {
 		baseDir += "/"
@@ -866,15 +871,5 @@ find "$APP_DIR" -maxdepth 1 -name "*.newcurrent" -type f -exec sudo rm -f {} + |
 sudo systemctl daemon-reload
 sudo systemctl restart "$SERVICE" || sudo systemctl start "$SERVICE"
  '`, opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.sshIp, appDir, opts.appName)
-	return exec.Command("bash", "-lc", script)
-}
-
-// isServerAlreadySetup checks if the systemd unit already exists on remote host
-func isServerAlreadySetup(opts deployOptions) bool {
-	checkCmd := fmt.Sprintf("ssh -o StrictHostKeyChecking=no -i %q -p %s %s@%s 'test -f /etc/systemd/system/%s.service'", opts.sshKeyPath, opts.sshPort, opts.sshUser, opts.sshIp, opts.appName)
-	cmd := makeLocalCommand(checkCmd)
-	if err := cmd.Run(); err != nil {
-		return false
-	}
-	return true
+	return script
 }

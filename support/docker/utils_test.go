@@ -56,3 +56,7 @@ func TestImageToCommand(t *testing.T) {
 	})
 	assert.Equal(t, "docker run --rm -d -e a=b -p 1234:6379 redis:latest --a=b sleep 1000", command)
 }
+
+func TestValidPort(t *testing.T) {
+	assert.True(t, ValidPort() > 0)
+}

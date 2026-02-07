@@ -12,6 +12,7 @@ import (
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/support/collect"
 	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/support/env"
 	supportfile "github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )
@@ -53,10 +54,14 @@ func (r *Migrator) Create(name string, modelName string) (string, error) {
 
 	// Prepend timestamp to the file name.
 	fileName := r.creator.GetFileName(name)
+	facadesImport := packages.Paths().Facades().Import()
+	if !env.IsBootstrapSetup() {
+		facadesImport = "github.com/goravel/framework/facades"
+	}
 
 	templateData := StubData{
 		FacadesPackage: packages.Paths().Facades().Package(),
-		FacadesImport:  packages.Paths().Facades().Import(),
+		FacadesImport:  facadesImport,
 		Package:        packages.Paths().Migrations().Package(),
 		SchemaFields:   schemaFields,
 		Signature:      fileName,

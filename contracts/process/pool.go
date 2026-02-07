@@ -47,6 +47,9 @@ type PoolBuilder interface {
 }
 
 type Pool interface {
+	// If only name is provided, and the name contains special characters (like spaces, &, |),
+	// the name will be added a `/bin/sh -c` or `cmd /c` wrapper to ensure correct execution.
+	// This feature provides a convenient way to run complex shell commands that don't need to add the wrapper manually.
 	Command(name string, arg ...string) PoolCommand
 }
 

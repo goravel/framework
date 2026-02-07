@@ -2,7 +2,6 @@ package console
 
 import (
 	"fmt"
-	"os/exec"
 	"slices"
 	"strings"
 
@@ -10,9 +9,9 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/contracts/process"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support"
-	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/framework/support/env"
 )
@@ -20,10 +19,12 @@ import (
 type PackageUninstallCommand struct {
 	bindings map[string]binding.Info
 	paths    string
+	process  process.Process
 }
 
 func NewPackageUninstallCommand(
 	bindings map[string]binding.Info,
+	process process.Process,
 	json foundation.Json,
 ) *PackageUninstallCommand {
 	paths, err := json.MarshalString(support.Config.Paths)
@@ -34,6 +35,7 @@ func NewPackageUninstallCommand(
 	return &PackageUninstallCommand{
 		bindings: bindings,
 		paths:    paths,
+		process:  process,
 	}
 }
 
@@ -107,21 +109,19 @@ func (r *PackageUninstallCommand) uninstallPackage(ctx console.Context, pkg stri
 	setup := pkgPath + "/setup"
 
 	// uninstall package
-	uninstall := exec.Command("go", "run", setup, "uninstall", "--main-path="+env.MainPath(), "--paths="+r.paths)
+	uninstallCmd := []string{"go", "run", setup, "uninstall", "--main-path=" + env.MainPath(), "--paths=" + r.paths}
 	if ctx.OptionBool("force") {
-		uninstall.Args = append(uninstall.Args, "--force")
+		uninstallCmd = append(uninstallCmd, "--force")
 	}
 
-	if err := supportconsole.ExecuteCommand(ctx, uninstall); err != nil {
-		ctx.Error(fmt.Sprintf("failed to uninstall package: %s", err))
-
+	if res := r.process.WithSpinner("Uninstalling "+pkg).Run(uninstallCmd[0], uninstallCmd[1:]...); res.Failed() {
+		ctx.Error(fmt.Sprintf("failed to uninstall package: %s", res.Error().Error()))
 		return nil
 	}
 
 	// tidy go.mod file
-	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
-		ctx.Error(fmt.Sprintf("failed to tidy go.mod file: %s", err))
-
+	if res := r.process.Run("go", "mod", "tidy"); res.Failed() {
+		ctx.Error(fmt.Sprintf("failed to tidy go.mod file: %s", res.Error().Error()))
 		return nil
 	}
 
@@ -158,23 +158,22 @@ func (r *PackageUninstallCommand) uninstallFacade(ctx console.Context, name stri
 	force := ctx.OptionBool("force")
 	setup := bindingInfo.PkgPath + "/setup"
 	facade := convert.BindingToFacade(binding)
-	uninstall := exec.Command("go", "run", setup, "uninstall", "--facade="+facade, "--main-path="+env.MainPath(), "--paths="+r.paths)
 
+	uninstallCmd := []string{"go", "run", setup, "uninstall", "--facade=" + facade, "--main-path=" + env.MainPath(), "--paths=" + r.paths}
 	if force {
-		uninstall.Args = append(uninstall.Args, "--force")
+		uninstallCmd = append(uninstallCmd, "--force")
 	}
 
-	if err := supportconsole.ExecuteCommand(ctx, uninstall); err != nil {
-		ctx.Error(fmt.Sprintf("Failed to uninstall facade %s, error: %s", facade, err.Error()))
+	if res := r.process.Run(uninstallCmd[0], uninstallCmd[1:]...); res.Failed() {
+		ctx.Error(fmt.Sprintf("Failed to uninstall facade %s, error: %s", facade, res.Error().Error()))
 
 		return nil
 	}
 
 	ctx.Success(fmt.Sprintf("Facade %s uninstalled successfully", facade))
 
-	if err := supportconsole.ExecuteCommand(ctx, exec.Command("go", "mod", "tidy")); err != nil {
-		ctx.Error(fmt.Sprintf("failed to tidy go.mod file: %s", err))
-
+	if res := r.process.Run("go", "mod", "tidy"); res.Failed() {
+		ctx.Error(fmt.Sprintf("failed to tidy go.mod file: %s", res.Error().Error()))
 		return nil
 	}
 

@@ -112,39 +112,6 @@ func (_c *Application_About_Call) RunAndReturn(run func(string, []foundation.Abo
 	return _c
 }
 
-// AddServiceProviders provides a mock function with given fields: providers
-func (_m *Application) AddServiceProviders(providers []foundation.ServiceProvider) {
-	_m.Called(providers)
-}
-
-// Application_AddServiceProviders_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddServiceProviders'
-type Application_AddServiceProviders_Call struct {
-	*mock.Call
-}
-
-// AddServiceProviders is a helper method to define mock.On call
-//   - providers []foundation.ServiceProvider
-func (_e *Application_Expecter) AddServiceProviders(providers interface{}) *Application_AddServiceProviders_Call {
-	return &Application_AddServiceProviders_Call{Call: _e.mock.On("AddServiceProviders", providers)}
-}
-
-func (_c *Application_AddServiceProviders_Call) Run(run func(providers []foundation.ServiceProvider)) *Application_AddServiceProviders_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]foundation.ServiceProvider))
-	})
-	return _c
-}
-
-func (_c *Application_AddServiceProviders_Call) Return() *Application_AddServiceProviders_Call {
-	_c.Call.Return()
-	return _c
-}
-
-func (_c *Application_AddServiceProviders_Call) RunAndReturn(run func([]foundation.ServiceProvider)) *Application_AddServiceProviders_Call {
-	_c.Run(run)
-	return _c
-}
-
 // BasePath provides a mock function with given fields: path
 func (_m *Application) BasePath(path ...string) string {
 	_va := make([]interface{}, len(path))
@@ -351,38 +318,6 @@ func (_c *Application_Boot_Call) RunAndReturn(run func()) *Application_Boot_Call
 	return _c
 }
 
-// BootServiceProviders provides a mock function with no fields
-func (_m *Application) BootServiceProviders() {
-	_m.Called()
-}
-
-// Application_BootServiceProviders_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BootServiceProviders'
-type Application_BootServiceProviders_Call struct {
-	*mock.Call
-}
-
-// BootServiceProviders is a helper method to define mock.On call
-func (_e *Application_Expecter) BootServiceProviders() *Application_BootServiceProviders_Call {
-	return &Application_BootServiceProviders_Call{Call: _e.mock.On("BootServiceProviders")}
-}
-
-func (_c *Application_BootServiceProviders_Call) Run(run func()) *Application_BootServiceProviders_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Application_BootServiceProviders_Call) Return() *Application_BootServiceProviders_Call {
-	_c.Call.Return()
-	return _c
-}
-
-func (_c *Application_BootServiceProviders_Call) RunAndReturn(run func()) *Application_BootServiceProviders_Call {
-	_c.Run(run)
-	return _c
-}
-
 // BootstrapPath provides a mock function with given fields: path
 func (_m *Application) BootstrapPath(path ...string) string {
 	_va := make([]interface{}, len(path))
@@ -438,6 +373,53 @@ func (_c *Application_BootstrapPath_Call) Return(_a0 string) *Application_Bootst
 }
 
 func (_c *Application_BootstrapPath_Call) RunAndReturn(run func(...string) string) *Application_BootstrapPath_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Build provides a mock function with no fields
+func (_m *Application) Build() foundation.Application {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Build")
+	}
+
+	var r0 foundation.Application
+	if rf, ok := ret.Get(0).(func() foundation.Application); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(foundation.Application)
+		}
+	}
+
+	return r0
+}
+
+// Application_Build_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Build'
+type Application_Build_Call struct {
+	*mock.Call
+}
+
+// Build is a helper method to define mock.On call
+func (_e *Application_Expecter) Build() *Application_Build_Call {
+	return &Application_Build_Call{Call: _e.mock.On("Build")}
+}
+
+func (_c *Application_Build_Call) Run(run func()) *Application_Build_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Application_Build_Call) Return(_a0 foundation.Application) *Application_Build_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Application_Build_Call) RunAndReturn(run func() foundation.Application) *Application_Build_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -2786,38 +2768,6 @@ func (_c *Application_Refresh_Call) RunAndReturn(run func()) *Application_Refres
 	return _c
 }
 
-// RegisterServiceProviders provides a mock function with no fields
-func (_m *Application) RegisterServiceProviders() {
-	_m.Called()
-}
-
-// Application_RegisterServiceProviders_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RegisterServiceProviders'
-type Application_RegisterServiceProviders_Call struct {
-	*mock.Call
-}
-
-// RegisterServiceProviders is a helper method to define mock.On call
-func (_e *Application_Expecter) RegisterServiceProviders() *Application_RegisterServiceProviders_Call {
-	return &Application_RegisterServiceProviders_Call{Call: _e.mock.On("RegisterServiceProviders")}
-}
-
-func (_c *Application_RegisterServiceProviders_Call) Run(run func()) *Application_RegisterServiceProviders_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Application_RegisterServiceProviders_Call) Return() *Application_RegisterServiceProviders_Call {
-	_c.Call.Return()
-	return _c
-}
-
-func (_c *Application_RegisterServiceProviders_Call) RunAndReturn(run func()) *Application_RegisterServiceProviders_Call {
-	_c.Run(run)
-	return _c
-}
-
 // ResourcePath provides a mock function with given fields: path
 func (_m *Application) ResourcePath(path ...string) string {
 	_va := make([]interface{}, len(path))
@@ -2873,6 +2823,99 @@ func (_c *Application_ResourcePath_Call) Return(_a0 string) *Application_Resourc
 }
 
 func (_c *Application_ResourcePath_Call) RunAndReturn(run func(...string) string) *Application_ResourcePath_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Restart provides a mock function with no fields
+func (_m *Application) Restart() error {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Restart")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Application_Restart_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Restart'
+type Application_Restart_Call struct {
+	*mock.Call
+}
+
+// Restart is a helper method to define mock.On call
+func (_e *Application_Expecter) Restart() *Application_Restart_Call {
+	return &Application_Restart_Call{Call: _e.mock.On("Restart")}
+}
+
+func (_c *Application_Restart_Call) Run(run func()) *Application_Restart_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Application_Restart_Call) Return(_a0 error) *Application_Restart_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Application_Restart_Call) RunAndReturn(run func() error) *Application_Restart_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SetBuilder provides a mock function with given fields: builder
+func (_m *Application) SetBuilder(builder foundation.ApplicationBuilder) foundation.Application {
+	ret := _m.Called(builder)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SetBuilder")
+	}
+
+	var r0 foundation.Application
+	if rf, ok := ret.Get(0).(func(foundation.ApplicationBuilder) foundation.Application); ok {
+		r0 = rf(builder)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(foundation.Application)
+		}
+	}
+
+	return r0
+}
+
+// Application_SetBuilder_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetBuilder'
+type Application_SetBuilder_Call struct {
+	*mock.Call
+}
+
+// SetBuilder is a helper method to define mock.On call
+//   - builder foundation.ApplicationBuilder
+func (_e *Application_Expecter) SetBuilder(builder interface{}) *Application_SetBuilder_Call {
+	return &Application_SetBuilder_Call{Call: _e.mock.On("SetBuilder", builder)}
+}
+
+func (_c *Application_SetBuilder_Call) Run(run func(builder foundation.ApplicationBuilder)) *Application_SetBuilder_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(foundation.ApplicationBuilder))
+	})
+	return _c
+}
+
+func (_c *Application_SetBuilder_Call) Return(_a0 foundation.Application) *Application_SetBuilder_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Application_SetBuilder_Call) RunAndReturn(run func(foundation.ApplicationBuilder) foundation.Application) *Application_SetBuilder_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -2960,8 +3003,21 @@ func (_c *Application_SetLocale_Call) RunAndReturn(run func(context.Context, str
 }
 
 // Shutdown provides a mock function with no fields
-func (_m *Application) Shutdown() {
-	_m.Called()
+func (_m *Application) Shutdown() error {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Shutdown")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // Application_Shutdown_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Shutdown'
@@ -2981,13 +3037,13 @@ func (_c *Application_Shutdown_Call) Run(run func()) *Application_Shutdown_Call 
 	return _c
 }
 
-func (_c *Application_Shutdown_Call) Return() *Application_Shutdown_Call {
-	_c.Call.Return()
+func (_c *Application_Shutdown_Call) Return(_a0 error) *Application_Shutdown_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Application_Shutdown_Call) RunAndReturn(run func()) *Application_Shutdown_Call {
-	_c.Run(run)
+func (_c *Application_Shutdown_Call) RunAndReturn(run func() error) *Application_Shutdown_Call {
+	_c.Call.Return(run)
 	return _c
 }
 
@@ -3025,30 +3081,9 @@ func (_c *Application_Singleton_Call) RunAndReturn(run func(interface{}, func(fo
 	return _c
 }
 
-// Start provides a mock function with given fields: runners
-func (_m *Application) Start(runners ...foundation.Runner) foundation.Application {
-	_va := make([]interface{}, len(runners))
-	for _i := range runners {
-		_va[_i] = runners[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Start")
-	}
-
-	var r0 foundation.Application
-	if rf, ok := ret.Get(0).(func(...foundation.Runner) foundation.Application); ok {
-		r0 = rf(runners...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(foundation.Application)
-		}
-	}
-
-	return r0
+// Start provides a mock function with no fields
+func (_m *Application) Start() {
+	_m.Called()
 }
 
 // Application_Start_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Start'
@@ -3057,32 +3092,24 @@ type Application_Start_Call struct {
 }
 
 // Start is a helper method to define mock.On call
-//   - runners ...foundation.Runner
-func (_e *Application_Expecter) Start(runners ...interface{}) *Application_Start_Call {
-	return &Application_Start_Call{Call: _e.mock.On("Start",
-		append([]interface{}{}, runners...)...)}
+func (_e *Application_Expecter) Start() *Application_Start_Call {
+	return &Application_Start_Call{Call: _e.mock.On("Start")}
 }
 
-func (_c *Application_Start_Call) Run(run func(runners ...foundation.Runner)) *Application_Start_Call {
+func (_c *Application_Start_Call) Run(run func()) *Application_Start_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]foundation.Runner, len(args)-0)
-		for i, a := range args[0:] {
-			if a != nil {
-				variadicArgs[i] = a.(foundation.Runner)
-			}
-		}
-		run(variadicArgs...)
+		run()
 	})
 	return _c
 }
 
-func (_c *Application_Start_Call) Return(_a0 foundation.Application) *Application_Start_Call {
-	_c.Call.Return(_a0)
+func (_c *Application_Start_Call) Return() *Application_Start_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *Application_Start_Call) RunAndReturn(run func(...foundation.Runner) foundation.Application) *Application_Start_Call {
-	_c.Call.Return(run)
+func (_c *Application_Start_Call) RunAndReturn(run func()) *Application_Start_Call {
+	_c.Run(run)
 	return _c
 }
 
@@ -3187,38 +3214,6 @@ func (_c *Application_Version_Call) Return(_a0 string) *Application_Version_Call
 
 func (_c *Application_Version_Call) RunAndReturn(run func() string) *Application_Version_Call {
 	_c.Call.Return(run)
-	return _c
-}
-
-// Wait provides a mock function with no fields
-func (_m *Application) Wait() {
-	_m.Called()
-}
-
-// Application_Wait_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Wait'
-type Application_Wait_Call struct {
-	*mock.Call
-}
-
-// Wait is a helper method to define mock.On call
-func (_e *Application_Expecter) Wait() *Application_Wait_Call {
-	return &Application_Wait_Call{Call: _e.mock.On("Wait")}
-}
-
-func (_c *Application_Wait_Call) Run(run func()) *Application_Wait_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Application_Wait_Call) Return() *Application_Wait_Call {
-	_c.Call.Return()
-	return _c
-}
-
-func (_c *Application_Wait_Call) RunAndReturn(run func()) *Application_Wait_Call {
-	_c.Run(run)
 	return _c
 }
 

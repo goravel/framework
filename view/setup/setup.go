@@ -17,13 +17,13 @@ func main() {
 
 	setup.Install(
 		// Add the view service provider to the providers array in bootstrap/providers.go
-		modify.AddProviderApply(moduleImport, viewServiceProvider),
+		modify.RegisterProvider(moduleImport, viewServiceProvider),
 
 		// Add the View facade
 		modify.File(viewFacadePath).Overwrite(stubs.ViewFacade(setup.Paths().Facades().Package())),
 	).Uninstall(
 		// Remove the view service provider from the providers array in bootstrap/providers.go
-		modify.RemoveProviderApply(moduleImport, viewServiceProvider),
+		modify.UnregisterProvider(moduleImport, viewServiceProvider),
 
 		// Remove the View facade
 		modify.File(viewFacadePath).Remove(),

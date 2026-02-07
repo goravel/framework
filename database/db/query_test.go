@@ -2043,7 +2043,7 @@ func (s *QueryTestSuite) TestWhereColumn() {
 
 	s.Run("with not enough arguments", func() {
 		err := s.query.WhereColumn("age").WhereColumn("name", "=", "John").Get(&users)
-		s.Equal(errors.DatabaseInvalidArgumentNumber.Args(2, "1 or 2"), err)
+		s.Equal(errors.DatabaseInvalidArgumentNumber.Args(0, "1 or 2"), err)
 	})
 }
 
