@@ -201,6 +201,7 @@ var (
 	QueueFailedToGetFailedJob        = New("failed to get failed job: %+v, err: %v")
 	QueueFailedToInsertJobToDatabase = New("failed to insert job to database: %+v, err: %v")
 	QueueFailedToReserveJob          = New("failed to reserve job: %+v, err: %v")
+	QueuePopIsLocked                 = New("queue %s is locked, please remove the cache lock key manually: %s")
 	QueueFailedToRetryJob            = New("failed to retry job: %+v, err: %v")
 	QueueFailedToSaveFailedJob       = New("failed to save failed job: %v")
 	QueueInvalidDatabaseConnection   = New("invalid database connection: %s")

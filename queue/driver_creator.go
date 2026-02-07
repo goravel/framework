@@ -1,6 +1,7 @@
 package queue
 
 import (
+	contractscache "github.com/goravel/framework/contracts/cache"
 	contractsdb "github.com/goravel/framework/contracts/database/db"
 	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	contractslog "github.com/goravel/framework/contracts/log"
@@ -10,15 +11,17 @@ import (
 
 type DriverCreator struct {
 	config    contractsqueue.Config
+	cache     contractscache.Cache
 	db        contractsdb.DB
 	jobStorer contractsqueue.JobStorer
 	json      contractsfoundation.Json
 	log       contractslog.Log
 }
 
-func NewDriverCreator(config contractsqueue.Config, db contractsdb.DB, jobStorer contractsqueue.JobStorer, json contractsfoundation.Json, log contractslog.Log) *DriverCreator {
+func NewDriverCreator(config contractsqueue.Config, cache contractscache.Cache, db contractsdb.DB, jobStorer contractsqueue.JobStorer, json contractsfoundation.Json, log contractslog.Log) *DriverCreator {
 	return &DriverCreator{
 		config:    config,
+		cache:     cache,
 		db:        db,
 		jobStorer: jobStorer,
 		json:      json,
@@ -37,7 +40,7 @@ func (r *DriverCreator) Create(connection string) (contractsqueue.Driver, error)
 			return nil, errors.QueueInvalidDatabaseConnection.Args(connection)
 		}
 
-		return NewDatabase(r.config, r.db, r.jobStorer, r.json, connection)
+		return NewDatabase(r.config, r.cache, r.db, r.jobStorer, r.json, connection)
 	case contractsqueue.DriverCustom:
 		custom := r.config.Via(connection)
 		if driver, ok := custom.(contractsqueue.Driver); ok {
