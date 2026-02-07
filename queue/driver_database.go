@@ -64,6 +64,10 @@ func (r *Database) Pop(queue string) (contractsqueue.ReservedJob, error) {
 
 	cacheLock := fmt.Sprintf("goravel:queue-database-%s:lock", queue)
 	lock := r.cache.Lock(cacheLock, 1*time.Minute)
+	if !lock.Block(1 * time.Minute) {
+		return nil, errors.QueuePopIsLocked.Args(queue, cacheLock)
+	}
+
 	defer lock.Release()
 
 	if err := r.db.Transaction(func(tx contractsdb.Tx) error {

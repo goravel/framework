@@ -137,6 +137,7 @@ func (s *DatabaseTestSuite) TestPop() {
 			setup: func() {
 				mockCacheLock := mockscache.NewLock(s.T())
 				s.mockCache.EXPECT().Lock("goravel:queue-database-default:lock", 1*time.Minute).Return(mockCacheLock).Once()
+				mockCacheLock.EXPECT().Block(1 * time.Minute).Return(true).Once()
 				mockCacheLock.EXPECT().Release().Return(true).Once()
 
 				mockTx := mocksdb.NewTx(s.T())
@@ -207,6 +208,7 @@ func (s *DatabaseTestSuite) TestPop() {
 			setup: func() {
 				mockCacheLock := mockscache.NewLock(s.T())
 				s.mockCache.EXPECT().Lock("goravel:queue-database-default:lock", 1*time.Minute).Return(mockCacheLock).Once()
+				mockCacheLock.EXPECT().Block(1 * time.Minute).Return(true).Once()
 				mockCacheLock.EXPECT().Release().Return(true).Once()
 				s.mockDB.EXPECT().Transaction(mock.Anything).Return(errors.QueueDriverNoJobFound.Args(queue)).Once()
 			},
