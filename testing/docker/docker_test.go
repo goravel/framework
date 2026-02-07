@@ -74,7 +74,7 @@ func (s *DockerTestSuite) TestCache() {
 			setup: func() {
 				s.docker.cache = nil
 			},
-			wantErr: errors.CacheFacadeNotSet,
+			wantErr: errors.CacheFacadeNotSet.SetModule(errors.ModuleTesting),
 		},
 		{
 			name:  "error when docker returns error",
