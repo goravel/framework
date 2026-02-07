@@ -2,14 +2,17 @@ package queue
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
+	contractscache "github.com/goravel/framework/contracts/cache"
 	contractsdb "github.com/goravel/framework/contracts/database/db"
 	contractsqueue "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
+	mockscache "github.com/goravel/framework/mocks/cache"
 	mocksdb "github.com/goravel/framework/mocks/database/db"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
@@ -20,6 +23,7 @@ import (
 
 type DatabaseTestSuite struct {
 	suite.Suite
+	mockCache     *mockscache.Cache
 	mockDB        *mocksdb.DB
 	mockJobStorer *mocksqueue.JobStorer
 	mockJson      *mocksfoundation.Json
@@ -34,6 +38,7 @@ func TestDatabaseTestSuite(t *testing.T) {
 }
 
 func (s *DatabaseTestSuite) SetupTest() {
+	s.mockCache = mockscache.NewCache(s.T())
 	s.mockDB = mocksdb.NewDB(s.T())
 	s.mockJobStorer = mocksqueue.NewJobStorer(s.T())
 	s.mockJson = mocksfoundation.NewJson(s.T())
@@ -41,6 +46,7 @@ func (s *DatabaseTestSuite) SetupTest() {
 	s.retryAfter = 60
 	s.connection = "default"
 	s.database = &Database{
+		cache:      s.mockCache,
 		db:         s.mockDB,
 		jobStorer:  s.mockJobStorer,
 		json:       s.mockJson,
@@ -54,11 +60,13 @@ func (s *DatabaseTestSuite) TestNewDatabase() {
 
 	tests := []struct {
 		name          string
+		cache         contractscache.Cache
 		setup         func()
 		expectedError error
 	}{
 		{
-			name: "successful creation",
+			name:  "successful creation",
+			cache: mockscache.NewCache(s.T()),
 			setup: func() {
 				mockConfig.EXPECT().GetString("queue.connections.default.connection").Return("mysql").Once()
 				mockConfig.EXPECT().GetString("queue.connections.default.table", "jobs").Return("jobs").Once()
@@ -68,7 +76,13 @@ func (s *DatabaseTestSuite) TestNewDatabase() {
 			expectedError: nil,
 		},
 		{
-			name: "invalid database connection",
+			name:          "invalid cache",
+			setup:         func() {},
+			expectedError: errors.CacheFacadeNotSet.SetModule(errors.ModuleQueue),
+		},
+		{
+			name:  "invalid database connection",
+			cache: mockscache.NewCache(s.T()),
 			setup: func() {
 				mockConfig.EXPECT().GetString("queue.connections.default.connection").Return("").Once()
 			},
@@ -82,7 +96,7 @@ func (s *DatabaseTestSuite) TestNewDatabase() {
 
 			test.setup()
 
-			database, err := NewDatabase(mockConfig, s.mockDB, s.mockJobStorer, s.mockJson, s.connection)
+			database, err := NewDatabase(mockConfig, test.cache, s.mockDB, s.mockJobStorer, s.mockJson, s.connection)
 
 			if test.expectedError != nil {
 				s.Equal(test.expectedError, err)
@@ -121,6 +135,10 @@ func (s *DatabaseTestSuite) TestPop() {
 		{
 			name: "happy path",
 			setup: func() {
+				mockCacheLock := mockscache.NewLock(s.T())
+				s.mockCache.EXPECT().Lock("goravel:queue-database-default:lock", 1*time.Minute).Return(mockCacheLock).Once()
+				mockCacheLock.EXPECT().Release().Return(true).Once()
+
 				mockTx := mocksdb.NewTx(s.T())
 				mockQuery := mocksdb.NewQuery(s.T())
 
@@ -187,6 +205,9 @@ func (s *DatabaseTestSuite) TestPop() {
 		{
 			name: "no job found",
 			setup: func() {
+				mockCacheLock := mockscache.NewLock(s.T())
+				s.mockCache.EXPECT().Lock("goravel:queue-database-default:lock", 1*time.Minute).Return(mockCacheLock).Once()
+				mockCacheLock.EXPECT().Release().Return(true).Once()
 				s.mockDB.EXPECT().Transaction(mock.Anything).Return(errors.QueueDriverNoJobFound.Args(queue)).Once()
 			},
 			wantError: errors.QueueDriverNoJobFound.Args(queue),

@@ -66,7 +66,7 @@ func (s *WorkerTestSuite) TestNewWorker() {
 	s.Run("happy path", func() {
 		s.mockConfig.EXPECT().Driver("sync").Return(contractsqueue.DriverSync).Once()
 		s.mockConfig.EXPECT().Debug().Return(true).Once()
-		worker, err := NewWorker(s.mockConfig, s.mockDB, s.mockJob, s.mockJson, s.mockLog, "sync", "default", 2, 1)
+		worker, err := NewWorker(s.mockConfig, nil, s.mockDB, s.mockJob, s.mockJson, s.mockLog, "sync", "default", 2, 1)
 
 		s.NotNil(worker)
 		s.NoError(err)
@@ -74,7 +74,7 @@ func (s *WorkerTestSuite) TestNewWorker() {
 
 	s.Run("failed to create driver", func() {
 		s.mockConfig.EXPECT().Driver("sync").Return("unknown").Once()
-		worker, err := NewWorker(s.mockConfig, s.mockDB, s.mockJob, s.mockJson, s.mockLog, "sync", "default", 2, 1)
+		worker, err := NewWorker(s.mockConfig, nil, s.mockDB, s.mockJob, s.mockJson, s.mockLog, "sync", "default", 2, 1)
 		s.Nil(worker)
 		s.Equal(errors.QueueDriverNotSupported.Args("unknown"), err)
 	})

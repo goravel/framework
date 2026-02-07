@@ -3,6 +3,7 @@ package queue
 import (
 	"fmt"
 
+	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/contracts/database/db"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/log"
@@ -11,15 +12,17 @@ import (
 
 type Application struct {
 	config    queue.Config
+	cache     cache.Cache
 	db        db.DB
 	jobStorer queue.JobStorer
 	json      foundation.Json
 	log       log.Log
 }
 
-func NewApplication(config queue.Config, db db.DB, job queue.JobStorer, json foundation.Json, log log.Log) *Application {
+func NewApplication(config queue.Config, cache cache.Cache, db db.DB, job queue.JobStorer, json foundation.Json, log log.Log) *Application {
 	return &Application{
 		config:    config,
+		cache:     cache,
 		db:        db,
 		jobStorer: job,
 		json:      json,
@@ -28,11 +31,11 @@ func NewApplication(config queue.Config, db db.DB, job queue.JobStorer, json fou
 }
 
 func (r *Application) Connection(name string) (queue.Driver, error) {
-	return NewDriverCreator(r.config, r.db, r.jobStorer, r.json, r.log).Create(name)
+	return NewDriverCreator(r.config, r.cache, r.db, r.jobStorer, r.json, r.log).Create(name)
 }
 
 func (r *Application) Chain(jobs []queue.ChainJob) queue.PendingJob {
-	return NewPendingChainJob(r.config, r.db, r.jobStorer, r.json, jobs, r.log)
+	return NewPendingChainJob(r.config, r.cache, r.db, r.jobStorer, r.json, jobs, r.log)
 }
 
 func (r *Application) GetJob(signature string) (queue.Job, error) {
@@ -52,7 +55,7 @@ func (r *Application) JobStorer() queue.JobStorer {
 }
 
 func (r *Application) Job(job queue.Job, args ...[]queue.Arg) queue.PendingJob {
-	return NewPendingJob(r.config, r.db, r.jobStorer, r.json, job, r.log, args...)
+	return NewPendingJob(r.config, r.cache, r.db, r.jobStorer, r.json, job, r.log, args...)
 }
 
 func (r *Application) Register(jobs []queue.Job) {
@@ -65,7 +68,7 @@ func (r *Application) Worker(payloads ...queue.Args) queue.Worker {
 	defaultConcurrent := r.config.DefaultConcurrent()
 
 	if len(payloads) == 0 {
-		worker, err := NewWorker(r.config, r.db, r.jobStorer, r.json, r.log, defaultConnection, defaultQueue, defaultConcurrent, 1)
+		worker, err := NewWorker(r.config, r.cache, r.db, r.jobStorer, r.json, r.log, defaultConnection, defaultQueue, defaultConcurrent, 1)
 		if err != nil {
 			panic(err)
 		}
@@ -81,7 +84,7 @@ func (r *Application) Worker(payloads ...queue.Args) queue.Worker {
 		payloads[0].Concurrent = r.config.GetInt(fmt.Sprintf("queue.connections.%s.concurrent", payloads[0].Connection), 1)
 	}
 
-	worker, err := NewWorker(r.config, r.db, r.jobStorer, r.json, r.log, payloads[0].Connection, payloads[0].Queue, payloads[0].Concurrent, payloads[0].Tries)
+	worker, err := NewWorker(r.config, r.cache, r.db, r.jobStorer, r.json, r.log, payloads[0].Connection, payloads[0].Queue, payloads[0].Concurrent, payloads[0].Tries)
 	if err != nil {
 		panic(err)
 	}
