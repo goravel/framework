@@ -144,6 +144,7 @@ var (
 	OrmMissingWhereClause          = New("WHERE conditions required")
 	OrmNoDialectorsFound           = New("no dialectors found")
 	OrmQueryAssociationsConflict   = New("cannot set orm.Associations and other fields at the same time")
+	OrmQueryChunkZeroOrLess        = New("chunk count must be greater than 0")
 	OrmQueryConditionRequired      = New("query condition is required")
 	OrmQueryEmptyId                = New("id can't be empty")
 	OrmQueryEmptyRelation          = New("relation can't be empty")
