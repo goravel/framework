@@ -2,25 +2,37 @@ package log
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	otellog "go.opentelemetry.io/otel/log"
 
 	contractslog "github.com/goravel/framework/contracts/log"
+	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 )
 
 var _ contractslog.Handler = (*handler)(nil)
 
 type handler struct {
-	logger otellog.Logger
+	resolver       contractstelemetry.Resolver  // The un-executed function
+	telemetry      contractstelemetry.Telemetry // The cached instance
+	enabled        bool
+	instrumentName string
+	logger         otellog.Logger
+	mu             sync.Mutex
 }
 
 func (r *handler) Enabled(level contractslog.Level) bool {
-	return true
+	return r.enabled
 }
 
 func (r *handler) Handle(entry contractslog.Entry) error {
-	if r.logger == nil {
+	if !r.enabled {
+		return nil
+	}
+
+	logger := r.getLogger()
+	if logger == nil {
 		return nil
 	}
 
@@ -29,9 +41,28 @@ func (r *handler) Handle(entry contractslog.Entry) error {
 		ctx = context.Background()
 	}
 
-	r.logger.Emit(ctx, r.convertEntry(entry))
+	logger.Emit(ctx, r.convertEntry(entry))
 
 	return nil
+}
+
+func (r *handler) getLogger() otellog.Logger {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if r.logger != nil {
+		return r.logger
+	}
+
+	if r.telemetry == nil && r.resolver != nil {
+		r.telemetry = r.resolver()
+	}
+
+	if r.telemetry != nil {
+		r.logger = r.telemetry.Logger(r.instrumentName)
+	}
+
+	return r.logger
 }
 
 func (r *handler) convertEntry(e contractslog.Entry) otellog.Record {

@@ -4,39 +4,45 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc/stats"
 
-	"github.com/goravel/framework/support/color"
-	"github.com/goravel/framework/telemetry"
+	contractsconfig "github.com/goravel/framework/contracts/config"
+	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 )
 
 // NewServerStatsHandler creates an OTel stats handler for the server.
-func NewServerStatsHandler(opts ...Option) stats.Handler {
-	if telemetry.TelemetryFacade == nil {
-		color.Warningln("[Telemetry] Facade not initialized. gRPC server stats instrumentation is disabled.")
+func NewServerStatsHandler(config contractsconfig.Config, telemetry contractstelemetry.Telemetry, opts ...Option) stats.Handler {
+	if config == nil || !config.GetBool("telemetry.instrumentation.grpc_server") {
 		return nil
 	}
 
-	finalOpts := append(getCommonOptions(), opts...)
+	if telemetry == nil {
+		return nil
+	}
+
+	finalOpts := append(getCommonOptions(telemetry), opts...)
 
 	return otelgrpc.NewServerHandler(finalOpts...)
 }
 
 // NewClientStatsHandler creates an OTel stats handler for the client.
-func NewClientStatsHandler(opts ...Option) stats.Handler {
-	if telemetry.TelemetryFacade == nil {
-		color.Warningln("[Telemetry] Facade not initialized. gRPC client stats instrumentation is disabled.")
+func NewClientStatsHandler(config contractsconfig.Config, telemetry contractstelemetry.Telemetry, opts ...Option) stats.Handler {
+	if config == nil || !config.GetBool("telemetry.instrumentation.grpc_client") {
 		return nil
 	}
 
-	finalOpts := append(getCommonOptions(), opts...)
+	if telemetry == nil {
+		return nil
+	}
+
+	finalOpts := append(getCommonOptions(telemetry), opts...)
 
 	return otelgrpc.NewClientHandler(finalOpts...)
 }
 
-func getCommonOptions() []otelgrpc.Option {
+func getCommonOptions(telemetry contractstelemetry.Telemetry) []otelgrpc.Option {
 	return []otelgrpc.Option{
-		otelgrpc.WithTracerProvider(telemetry.TelemetryFacade.TracerProvider()),
-		otelgrpc.WithMeterProvider(telemetry.TelemetryFacade.MeterProvider()),
-		otelgrpc.WithPropagators(telemetry.TelemetryFacade.Propagator()),
+		otelgrpc.WithTracerProvider(telemetry.TracerProvider()),
+		otelgrpc.WithMeterProvider(telemetry.MeterProvider()),
+		otelgrpc.WithPropagators(telemetry.Propagator()),
 		otelgrpc.WithMessageEvents(otelgrpc.ReceivedEvents, otelgrpc.SentEvents),
 	}
 }
