@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 )
@@ -141,31 +142,30 @@ func (rl *RotateLogs) rotate() error {
 
 // cleanup removes old log files based on rotation count
 func (rl *RotateLogs) cleanup() {
-	// Get the base directory and pattern for matching files
-	dir := filepath.Dir(rl.currentPath)
+	// Generate glob pattern from the strftime pattern
+	// For example, "storage/logs/daily-%Y-%m-%d.log" becomes "storage/logs/daily-*.log"
+	globPattern := rl.generateGlobPattern()
 	
-	// List all files in the directory
-	entries, err := os.ReadDir(dir)
+	// Find all files matching the pattern
+	matches, err := filepath.Glob(globPattern)
 	if err != nil {
 		return
 	}
 
-	// Get the base name pattern (without the date part)
-	// For example, if pattern is "storage/logs/daily-%Y-%m-%d.log"
-	// we want to match files like "daily-*.log"
-	
+	// Filter to only include regular files (not symlinks or directories)
 	var logFiles []string
-	for _, entry := range entries {
-		if entry.IsDir() {
+	for _, path := range matches {
+		fi, err := os.Stat(path)
+		if err != nil {
 			continue
 		}
 		
-		fullPath := filepath.Join(dir, entry.Name())
+		// Skip if not a regular file
+		if !fi.Mode().IsRegular() {
+			continue
+		}
 		
-		// Simple heuristic: if the file has a similar extension and is in the same directory
-		// we consider it part of this log rotation set
-		// This is a simplified version - the original package uses glob patterns
-		logFiles = append(logFiles, fullPath)
+		logFiles = append(logFiles, path)
 	}
 
 	// Sort files by modification time (oldest first)
@@ -182,12 +182,32 @@ func (rl *RotateLogs) cleanup() {
 	if uint(len(logFiles)) > rl.rotationCount {
 		filesToDelete := logFiles[:len(logFiles)-int(rl.rotationCount)]
 		for _, path := range filesToDelete {
-			// Don't delete the current file
-			if path != rl.currentPath {
-				os.Remove(path)
-			}
+			os.Remove(path)
 		}
 	}
+}
+
+// generateGlobPattern converts a strftime pattern to a glob pattern
+func (rl *RotateLogs) generateGlobPattern() string {
+	// Get the pattern and replace all strftime specifiers with *
+	pattern := rl.pattern.pattern
+	
+	// Replace common strftime patterns with wildcards
+	replacements := []string{
+		"%Y", "*",
+		"%m", "*",
+		"%d", "*",
+		"%H", "*",
+		"%M", "*",
+		"%S", "*",
+	}
+	
+	result := pattern
+	for i := 0; i < len(replacements); i += 2 {
+		result = strings.ReplaceAll(result, replacements[i], replacements[i+1])
+	}
+	
+	return result
 }
 
 // Close closes the current log file
