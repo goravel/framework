@@ -29,11 +29,12 @@ type RotateLogs struct {
 	clock         Clock
 	rotationTime  time.Duration
 	rotationCount uint
-	
+
 	mutex         sync.Mutex
 	currentFile   *os.File
 	currentPath   string
 	lastRotation  time.Time
+	cleanupWg     sync.WaitGroup // For testing - wait for cleanup to complete
 }
 
 // Option is a functional option for RotateLogs
@@ -134,7 +135,11 @@ func (rl *RotateLogs) rotate() error {
 
 	// Clean up old files if rotation count is set
 	if rl.rotationCount > 0 {
-		go rl.cleanup()
+		rl.cleanupWg.Add(1)
+		go func() {
+			defer rl.cleanupWg.Done()
+			rl.cleanup()
+		}()
 	}
 
 	return nil
@@ -182,7 +187,7 @@ func (rl *RotateLogs) cleanup() {
 	if uint(len(logFiles)) > rl.rotationCount {
 		filesToDelete := logFiles[:len(logFiles)-int(rl.rotationCount)]
 		for _, path := range filesToDelete {
-			os.Remove(path)
+			_ = os.Remove(path) // Ignore errors during cleanup - files may already be deleted
 		}
 	}
 }
@@ -212,6 +217,9 @@ func (rl *RotateLogs) generateGlobPattern() string {
 
 // Close closes the current log file
 func (rl *RotateLogs) Close() error {
+	// Wait for any pending cleanups to complete
+	rl.cleanupWg.Wait()
+
 	rl.mutex.Lock()
 	defer rl.mutex.Unlock()
 

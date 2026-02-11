@@ -168,11 +168,11 @@ func TestRotateLogs_Cleanup(t *testing.T) {
 		_, err = rl.Write([]byte("log entry\n"))
 		assert.NoError(t, err)
 		mockClock.current = mockClock.current.Add(24 * time.Hour)
-		time.Sleep(10 * time.Millisecond) // Give cleanup goroutine time to run
 	}
 
-	// Wait a bit for cleanup goroutine to finish
-	time.Sleep(100 * time.Millisecond)
+	// Close will wait for cleanup to complete
+	err = rl.Close()
+	assert.NoError(t, err)
 
 	// Check how many files exist
 	entries, err := os.ReadDir(tmpDir)
