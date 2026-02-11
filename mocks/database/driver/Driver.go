@@ -4,10 +4,8 @@ package driver
 
 import (
 	database "github.com/goravel/framework/contracts/database"
-	docker "github.com/goravel/framework/contracts/testing/docker"
-
 	driver "github.com/goravel/framework/contracts/database/driver"
-
+	docker "github.com/goravel/framework/contracts/testing/docker"
 	mock "github.com/stretchr/testify/mock"
 )
 

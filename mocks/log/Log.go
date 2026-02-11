@@ -7,7 +7,6 @@ import (
 
 	http "github.com/goravel/framework/contracts/http"
 	log "github.com/goravel/framework/contracts/log"
-
 	mock "github.com/stretchr/testify/mock"
 )
 

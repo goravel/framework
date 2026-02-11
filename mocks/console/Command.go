@@ -5,7 +5,6 @@ package console
 import (
 	console "github.com/goravel/framework/contracts/console"
 	command "github.com/goravel/framework/contracts/console/command"
-
 	mock "github.com/stretchr/testify/mock"
 )
 

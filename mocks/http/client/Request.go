@@ -4,13 +4,10 @@ package client
 
 import (
 	context "context"
-
-	client "github.com/goravel/framework/contracts/http/client"
-
+	io "io"
 	http "net/http"
 
-	io "io"
-
+	client "github.com/goravel/framework/contracts/http/client"
 	mock "github.com/stretchr/testify/mock"
 )
 
