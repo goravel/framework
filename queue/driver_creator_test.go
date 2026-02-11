@@ -7,6 +7,7 @@ import (
 
 	contractsqueue "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
+	mockscache "github.com/goravel/framework/mocks/cache"
 	mocksdb "github.com/goravel/framework/mocks/database/db"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
@@ -14,6 +15,7 @@ import (
 
 type DriverCreatorTestSuite struct {
 	suite.Suite
+	mockCache     *mockscache.Cache
 	mockConfig    *mocksqueue.Config
 	mockDB        *mocksdb.DB
 	mockJobStorer *mocksqueue.JobStorer
@@ -26,11 +28,13 @@ func TestDriverCreatorTestSuite(t *testing.T) {
 }
 
 func (s *DriverCreatorTestSuite) SetupTest() {
+	s.mockCache = mockscache.NewCache(s.T())
 	s.mockConfig = mocksqueue.NewConfig(s.T())
 	s.mockDB = mocksdb.NewDB(s.T())
 	s.mockJobStorer = mocksqueue.NewJobStorer(s.T())
 	s.mockJson = mocksfoundation.NewJson(s.T())
 	s.driverCreator = &DriverCreator{
+		cache:     s.mockCache,
 		config:    s.mockConfig,
 		db:        s.mockDB,
 		jobStorer: s.mockJobStorer,
@@ -39,8 +43,9 @@ func (s *DriverCreatorTestSuite) SetupTest() {
 }
 
 func (s *DriverCreatorTestSuite) TestNewDriverCreator() {
-	creator := NewDriverCreator(s.mockConfig, s.mockDB, s.mockJobStorer, s.mockJson, nil)
+	creator := NewDriverCreator(s.mockConfig, s.mockCache, s.mockDB, s.mockJobStorer, s.mockJson, nil)
 	s.NotNil(creator)
+	s.Equal(s.mockCache, creator.cache)
 	s.Equal(s.mockConfig, creator.config)
 	s.Equal(s.mockDB, creator.db)
 	s.Equal(s.mockJobStorer, creator.jobStorer)

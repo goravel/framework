@@ -928,7 +928,7 @@ func (s *DBTestSuite) TestOrWhereColumn() {
 			s.Run("with not enough arguments", func() {
 				var product Product
 				err := query.DB().Table("products").OrWhereColumn("name").First(&product)
-				s.Equal(errors.DatabaseInvalidArgumentNumber.Args(2, "1 or 2"), err)
+				s.Equal(errors.DatabaseInvalidArgumentNumber.Args(0, "1 or 2"), err)
 			})
 		})
 	}
@@ -1508,7 +1508,7 @@ func (s *DBTestSuite) TestWhereColumn() {
 			s.Run("with not enough arguments", func() {
 				var product Product
 				err := query.DB().Table("products").WhereColumn("name").First(&product)
-				s.Equal(errors.DatabaseInvalidArgumentNumber.Args(2, "1 or 2"), err)
+				s.Equal(errors.DatabaseInvalidArgumentNumber.Args(0, "1 or 2"), err)
 			})
 		})
 	}

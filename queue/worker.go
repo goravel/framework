@@ -7,6 +7,7 @@ import (
 
 	"github.com/RichardKnop/machinery/v2"
 
+	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/contracts/database/db"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/log"
@@ -43,8 +44,8 @@ type Worker struct {
 	debug        bool
 }
 
-func NewWorker(config queue.Config, db db.DB, job queue.JobStorer, json foundation.Json, log log.Log, connection, queue string, concurrent, tries int) (*Worker, error) {
-	driverCreator := NewDriverCreator(config, db, job, json, log)
+func NewWorker(config queue.Config, cache cache.Cache, db db.DB, job queue.JobStorer, json foundation.Json, log log.Log, connection, queue string, concurrent, tries int) (*Worker, error) {
+	driverCreator := NewDriverCreator(config, cache, db, job, json, log)
 	driver, err := driverCreator.Create(connection)
 	if err != nil {
 		return nil, err
@@ -237,7 +238,7 @@ func (r *Worker) printFailedLog(task queue.Task, duration string) {
 
 func (r *Worker) run() error {
 	if r.debug {
-		color.Infoln(errors.QueueProcessingJobs.Args(r.connection, r.queue))
+		color.Infoln(errors.QueueProcessingJobs.Args(r.connection, r.queue).Error())
 	}
 
 	for i := 0; i < r.concurrent; i++ {

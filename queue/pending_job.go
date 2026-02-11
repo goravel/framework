@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	contractscache "github.com/goravel/framework/contracts/cache"
 	contractsdb "github.com/goravel/framework/contracts/database/db"
 	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	contractslog "github.com/goravel/framework/contracts/log"
@@ -21,6 +22,7 @@ type PendingJob struct {
 
 func NewPendingJob(
 	config contractsqueue.Config,
+	cache contractscache.Cache,
 	db contractsdb.DB,
 	jobStorer contractsqueue.JobStorer,
 	json contractsfoundation.Json,
@@ -37,7 +39,7 @@ func NewPendingJob(
 
 	return &PendingJob{
 		connection:    connection,
-		driverCreator: NewDriverCreator(config, db, jobStorer, json, log),
+		driverCreator: NewDriverCreator(config, cache, db, jobStorer, json, log),
 		queue:         queue,
 		task: contractsqueue.Task{
 			UUID: uuid.New().String(),
@@ -51,6 +53,7 @@ func NewPendingJob(
 
 func NewPendingChainJob(
 	config contractsqueue.Config,
+	cache contractscache.Cache,
 	db contractsdb.DB,
 	jobStorer contractsqueue.JobStorer,
 	json contractsfoundation.Json,
@@ -81,7 +84,7 @@ func NewPendingChainJob(
 
 	return &PendingJob{
 		connection:    connection,
-		driverCreator: NewDriverCreator(config, db, jobStorer, json, log),
+		driverCreator: NewDriverCreator(config, cache, db, jobStorer, json, log),
 		queue:         queue,
 		task: contractsqueue.Task{
 			UUID:     uuid.New().String(),
