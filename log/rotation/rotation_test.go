@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/goravel/framework/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -88,7 +89,7 @@ func TestRotateLogs_Write(t *testing.T) {
 
 	rl, err := New(logPath, WithClock(mockClock))
 	assert.NoError(t, err)
-	defer rl.Close()
+	defer errors.Ignore(rl.Close)
 
 	// Write some data
 	n, err := rl.Write([]byte("test log entry\n"))
@@ -116,7 +117,7 @@ func TestRotateLogs_Rotation(t *testing.T) {
 
 	rl, err := New(logPath, WithClock(mockClock), WithRotationTime(24*time.Hour))
 	assert.NoError(t, err)
-	defer rl.Close()
+	defer errors.Ignore(rl.Close)
 
 	// Write to first day
 	_, err = rl.Write([]byte("day 1\n"))
@@ -161,7 +162,7 @@ func TestRotateLogs_Cleanup(t *testing.T) {
 		WithRotationCount(2), // Keep only 2 files
 	)
 	assert.NoError(t, err)
-	defer rl.Close()
+	defer errors.Ignore(rl.Close)
 
 	// Create 4 log files over 4 days
 	for i := 0; i < 4; i++ {
