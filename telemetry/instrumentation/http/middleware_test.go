@@ -14,48 +14,53 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	tracenoop "go.opentelemetry.io/otel/trace/noop"
 
-	contractsconfig "github.com/goravel/framework/contracts/config"
 	contractshttp "github.com/goravel/framework/contracts/http"
-	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mockstelemetry "github.com/goravel/framework/mocks/telemetry"
+	"github.com/goravel/framework/telemetry"
 )
 
 type MiddlewareTestSuite struct {
 	suite.Suite
+	mockTelemetry *mockstelemetry.Telemetry
+	mockConfig    *mocksconfig.Config
 }
 
 func TestMiddlewareTestSuite(t *testing.T) {
 	suite.Run(t, new(MiddlewareTestSuite))
 }
 
+func (s *MiddlewareTestSuite) SetupTest() {
+	s.mockTelemetry = mockstelemetry.NewTelemetry(s.T())
+	s.mockConfig = mocksconfig.NewConfig(s.T())
+}
+
 func (s *MiddlewareTestSuite) TestTelemetry() {
-	defaultTelemetrySetup := func(mockTelemetry *mockstelemetry.Telemetry) {
-		mockTelemetry.EXPECT().Tracer(instrumentationName).Return(tracenoop.NewTracerProvider().Tracer("test")).Once()
-		mockTelemetry.EXPECT().Meter(instrumentationName).Return(metricnoop.NewMeterProvider().Meter("test")).Once()
-		mockTelemetry.EXPECT().Propagator().Return(propagation.NewCompositeTextMapPropagator()).Once()
+	defaultTelemetrySetup := func() {
+		s.mockTelemetry.EXPECT().Tracer(instrumentationName).Return(tracenoop.NewTracerProvider().Tracer("test")).Once()
+		s.mockTelemetry.EXPECT().Meter(instrumentationName).Return(metricnoop.NewMeterProvider().Meter("test")).Once()
+		s.mockTelemetry.EXPECT().Propagator().Return(propagation.NewCompositeTextMapPropagator()).Once()
 	}
 
 	tests := []struct {
-		name           string
-		configSetup    func(*mocksconfig.Config)
-		telemetrySetup func(*mockstelemetry.Telemetry)
-		opts           []Option
-		handler        nethttp.HandlerFunc
-		requestPath    string
-		expectPanic    bool
+		name        string
+		setup       func()
+		opts        []Option
+		handler     nethttp.HandlerFunc
+		requestPath string
+		expectPanic bool
 	}{
 		{
 			name:        "Success: Request is traced and metrics recorded",
 			requestPath: "/users",
-			configSetup: func(mockConfig *mocksconfig.Config) {
-				mockConfig.EXPECT().UnmarshalKey("telemetry.instrumentation.http_server", mock.Anything).
+			setup: func() {
+				s.mockConfig.EXPECT().UnmarshalKey("telemetry.instrumentation.http_server", mock.Anything).
 					Run(func(_ string, cfg any) {
 						c := cfg.(*ServerConfig)
 						c.Enabled = true
 					}).Return(nil).Once()
+				defaultTelemetrySetup()
 			},
-			telemetrySetup: defaultTelemetrySetup,
 			handler: func(w nethttp.ResponseWriter, r *nethttp.Request) {
 				w.WriteHeader(nethttp.StatusOK)
 				_, _ = w.Write([]byte("OK"))
@@ -70,14 +75,14 @@ func (s *MiddlewareTestSuite) TestTelemetry() {
 					return ctx.Request().OriginPath() != "/admin"
 				}),
 			},
-			configSetup: func(mockConfig *mocksconfig.Config) {
-				mockConfig.EXPECT().UnmarshalKey("telemetry.instrumentation.http_server", mock.Anything).
+			setup: func() {
+				s.mockConfig.EXPECT().UnmarshalKey("telemetry.instrumentation.http_server", mock.Anything).
 					Run(func(_ string, cfg any) {
 						c := cfg.(*ServerConfig)
 						c.Enabled = true
 					}).Return(nil).Once()
+				defaultTelemetrySetup()
 			},
-			telemetrySetup: defaultTelemetrySetup,
 			handler: func(w nethttp.ResponseWriter, r *nethttp.Request) {
 				w.WriteHeader(nethttp.StatusOK)
 			},
@@ -85,15 +90,15 @@ func (s *MiddlewareTestSuite) TestTelemetry() {
 		{
 			name:        "Ignored: Excluded path is skipped",
 			requestPath: "/health",
-			configSetup: func(mockConfig *mocksconfig.Config) {
-				mockConfig.EXPECT().UnmarshalKey("telemetry.instrumentation.http_server", mock.Anything).
-					Run(func(_ string, cfg interface{}) {
+			setup: func() {
+				s.mockConfig.EXPECT().UnmarshalKey("telemetry.instrumentation.http_server", mock.Anything).
+					Run(func(_ string, cfg any) {
 						c := cfg.(*ServerConfig)
 						c.Enabled = true
 						c.ExcludedPaths = []string{"/health"}
 					}).Return(nil).Once()
+				defaultTelemetrySetup()
 			},
-			telemetrySetup: defaultTelemetrySetup,
 			handler: func(w nethttp.ResponseWriter, r *nethttp.Request) {
 				w.WriteHeader(nethttp.StatusOK)
 			},
@@ -101,14 +106,12 @@ func (s *MiddlewareTestSuite) TestTelemetry() {
 		{
 			name:        "Ignored: Disabled via config",
 			requestPath: "/users",
-			configSetup: func(mockConfig *mocksconfig.Config) {
-				mockConfig.EXPECT().UnmarshalKey("telemetry.instrumentation.http_server", mock.Anything).
-					Run(func(_ string, cfg interface{}) {
+			setup: func() {
+				s.mockConfig.EXPECT().UnmarshalKey("telemetry.instrumentation.http_server", mock.Anything).
+					Run(func(_ string, cfg any) {
 						c := cfg.(*ServerConfig)
 						c.Enabled = false
 					}).Return(nil).Once()
-			},
-			telemetrySetup: func(mockTelemetry *mockstelemetry.Telemetry) {
 				// If disabled, Tracer/Meter should NOT be initialized
 			},
 			handler: func(w nethttp.ResponseWriter, r *nethttp.Request) {
@@ -119,14 +122,14 @@ func (s *MiddlewareTestSuite) TestTelemetry() {
 			name:        "Panic: Metrics recorded as 500 and panic re-thrown",
 			requestPath: "/crash",
 			expectPanic: true,
-			configSetup: func(mockConfig *mocksconfig.Config) {
-				mockConfig.EXPECT().UnmarshalKey("telemetry.instrumentation.http_server", mock.Anything).
+			setup: func() {
+				s.mockConfig.EXPECT().UnmarshalKey("telemetry.instrumentation.http_server", mock.Anything).
 					Run(func(_ string, cfg any) {
 						c := cfg.(*ServerConfig)
 						c.Enabled = true
 					}).Return(nil).Once()
+				defaultTelemetrySetup()
 			},
-			telemetrySetup: defaultTelemetrySetup,
 			handler: func(w nethttp.ResponseWriter, r *nethttp.Request) {
 				panic("server crash")
 			},
@@ -135,13 +138,12 @@ func (s *MiddlewareTestSuite) TestTelemetry() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			mockConfig := mocksconfig.NewConfig(s.T())
-			mockTelemetry := mockstelemetry.NewTelemetry(s.T())
+			telemetry.Facade = s.mockTelemetry
+			telemetry.ConfigFacade = s.mockConfig
 
-			tt.configSetup(mockConfig)
-			tt.telemetrySetup(mockTelemetry)
+			tt.setup()
 
-			handler := testMiddleware(mockConfig, mockTelemetry, tt.handler, tt.opts...)
+			handler := testMiddleware(tt.handler, tt.opts...)
 
 			if tt.expectPanic {
 				req := httptest.NewRequest("GET", tt.requestPath, nil)
@@ -164,8 +166,8 @@ func (s *MiddlewareTestSuite) TestTelemetry() {
 	}
 }
 
-func testMiddleware(config contractsconfig.Config, telemetry contractstelemetry.Telemetry, next nethttp.Handler, opts ...Option) nethttp.Handler {
-	mw := Telemetry(config, telemetry, opts...)
+func testMiddleware(next nethttp.Handler, opts ...Option) nethttp.Handler {
+	mw := Telemetry(opts...)
 	return nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
 		ctx := NewTestContext(r.Context(), next, w, r)
 		mw(ctx)

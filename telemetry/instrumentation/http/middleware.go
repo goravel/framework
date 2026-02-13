@@ -10,9 +10,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
 	"go.opentelemetry.io/otel/trace"
 
-	contractsconfig "github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/http"
-	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/telemetry"
 )
@@ -35,15 +33,15 @@ const (
 // context, records spans and metrics when telemetry is enabled, and otherwise
 // transparently passes requests through when telemetry is disabled or not
 // initialized.
-func Telemetry(config contractsconfig.Config, telemetry contractstelemetry.Telemetry, opts ...Option) http.Middleware {
-	if config == nil || telemetry == nil {
+func Telemetry(opts ...Option) http.Middleware {
+	if telemetry.ConfigFacade == nil || telemetry.Facade == nil {
 		return func(ctx http.Context) {
 			ctx.Request().Next()
 		}
 	}
 
 	var cfg ServerConfig
-	if err := config.UnmarshalKey("telemetry.instrumentation.http_server", &cfg); err != nil {
+	if err := telemetry.ConfigFacade.UnmarshalKey("telemetry.instrumentation.http_server", &cfg); err != nil {
 		color.Warningln("Failed to load http server telemetry instrumentation config:", err)
 		return func(ctx http.Context) {
 			ctx.Request().Next()
@@ -64,7 +62,7 @@ func Telemetry(config contractsconfig.Config, telemetry contractstelemetry.Telem
 		cfg.SpanNameFormatter = defaultSpanNameFormatter
 	}
 
-	meter := telemetry.Meter(instrumentationName)
+	meter := telemetry.Facade.Meter(instrumentationName)
 	durationHist, _ := meter.Float64Histogram(metricRequestDuration, metric.WithUnit(unitSeconds), metric.WithDescription("Duration of HTTP server requests"))
 	requestSizeHist, _ := meter.Int64Histogram(metricRequestBodySize, metric.WithUnit(unitBytes), metric.WithDescription("Size of HTTP server request body"))
 	responseSizeHist, _ := meter.Int64Histogram(metricResponseBodySize, metric.WithUnit(unitBytes), metric.WithDescription("Size of HTTP server response body"))
@@ -79,8 +77,8 @@ func Telemetry(config contractsconfig.Config, telemetry contractstelemetry.Telem
 	}
 
 	h := &MiddlewareHandler{
-		tracer:           telemetry.Tracer(instrumentationName),
-		propagator:       telemetry.Propagator(),
+		tracer:           telemetry.Facade.Tracer(instrumentationName),
+		propagator:       telemetry.Facade.Propagator(),
 		durationHist:     durationHist,
 		requestSizeHist:  requestSizeHist,
 		responseSizeHist: responseSizeHist,
