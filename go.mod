@@ -40,7 +40,7 @@ require (
 	go.opentelemetry.io/otel/exporters/stdout/stdoutlog v0.16.0
 	go.opentelemetry.io/otel/exporters/stdout/stdoutmetric v1.40.0
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.40.0
-	go.opentelemetry.io/otel/exporters/zipkin v1.40.0
+	go.opentelemetry.io/otel/exporters/zipkin v1.39.0
 	go.opentelemetry.io/otel/log v0.16.0
 	go.opentelemetry.io/otel/log/logtest v0.16.0
 	go.opentelemetry.io/otel/metric v1.40.0
