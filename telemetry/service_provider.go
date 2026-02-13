@@ -2,8 +2,15 @@ package telemetry
 
 import (
 	"github.com/goravel/framework/contracts/binding"
+	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/contracts/telemetry"
 	"github.com/goravel/framework/errors"
+)
+
+var (
+	Facade       telemetry.Telemetry
+	ConfigFacade config.Config
 )
 
 type ServiceProvider struct {
@@ -21,13 +28,13 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 
 func (r *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(binding.Telemetry, func(app foundation.Application) (any, error) {
-		config := app.MakeConfig()
-		if config == nil {
+		cfg := app.MakeConfig()
+		if cfg == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleTelemetry)
 		}
 
 		var telemetryCfg Config
-		if err := config.UnmarshalKey("telemetry", &telemetryCfg); err != nil {
+		if err := cfg.UnmarshalKey("telemetry", &telemetryCfg); err != nil {
 			return nil, err
 		}
 
@@ -36,4 +43,6 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (r *ServiceProvider) Boot(app foundation.Application) {
+	Facade = app.MakeTelemetry()
+	ConfigFacade = app.MakeConfig()
 }
