@@ -9,7 +9,6 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
-	"go.opentelemetry.io/otel/exporters/zipkin"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	oteltrace "go.opentelemetry.io/otel/trace"
 	"go.opentelemetry.io/otel/trace/noop"
@@ -22,7 +21,6 @@ type ExporterDriver string
 const (
 	TraceExporterDriverCustom  ExporterDriver = "custom"
 	TraceExporterDriverOTLP    ExporterDriver = "otlp"
-	TraceExporterDriverZipkin  ExporterDriver = "zipkin"
 	TraceExporterDriverConsole ExporterDriver = "console"
 )
 
@@ -62,8 +60,6 @@ func newTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.SpanExpo
 	switch cfg.Driver {
 	case TraceExporterDriverOTLP:
 		return newOTLPTraceExporter(ctx, cfg)
-	case TraceExporterDriverZipkin:
-		return newZipkinTraceExporter(cfg)
 	case TraceExporterDriverConsole:
 		return newConsoleTraceExporter(cfg)
 	case TraceExporterDriverCustom:
@@ -109,14 +105,6 @@ func newOTLPTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.Span
 		)
 		return otlptracehttp.New(ctx, opts...)
 	}
-}
-
-func newZipkinTraceExporter(cfg ExporterEntry) (sdktrace.SpanExporter, error) {
-	endpoint := cfg.Endpoint
-	if endpoint == "" {
-		return nil, errors.TelemetryZipkinEndpointRequired
-	}
-	return zipkin.New(endpoint)
 }
 
 func newConsoleTraceExporter(cfg ExporterEntry) (sdktrace.SpanExporter, error) {

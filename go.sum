@@ -198,8 +198,6 @@ github.com/muesli/cancelreader v0.2.2 h1:3I4Kt4BQjOR54NavqnDogx/MIoWBFa0StPA8ELU
 github.com/muesli/cancelreader v0.2.2/go.mod h1:3XuTXfFS2VjM+HTLZY9Ak0l6eUKfijIfMUZ4EgX0QYo=
 github.com/muesli/termenv v0.16.0 h1:S5AlUN9dENB57rsbnkPyfdGuWIlkmzJjbFf0Tf5FWUc=
 github.com/muesli/termenv v0.16.0/go.mod h1:ZRfOIKPFDYQoDFF4Olj7/QJbW60Ol/kL1pU3VfY/Cnk=
-github.com/openzipkin/zipkin-go v0.4.3 h1:9EGwpqkgnwdEIJ+Od7QVSEIH+ocmm5nPat0G7sjsSdg=
-github.com/openzipkin/zipkin-go v0.4.3/go.mod h1:M9wCJZFWCo2RiY+o1eBCEMe0Dp2S5LDHcMZmk3RmK7c=
 github.com/pelletier/go-toml/v2 v2.2.4 h1:mye9XuhQ6gvn5h28+VilKrrPoQVanw5PMw/TB0t5Ec4=
 github.com/pelletier/go-toml/v2 v2.2.4/go.mod h1:2gIqNv+qfxSVS7cM2xJQKtLSTLUE9V8t9Stt+h56mCY=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
@@ -302,8 +300,6 @@ go.opentelemetry.io/otel/exporters/stdout/stdoutmetric v1.39.0 h1:5gn2urDL/FBnK8
 go.opentelemetry.io/otel/exporters/stdout/stdoutmetric v1.39.0/go.mod h1:0fBG6ZJxhqByfFZDwSwpZGzJU671HkwpWaNe2t4VUPI=
 go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.39.0 h1:8UPA4IbVZxpsD76ihGOQiFml99GPAEZLohDXvqHdi6U=
 go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.39.0/go.mod h1:MZ1T/+51uIVKlRzGw1Fo46KEWThjlCBZKl2LzY5nv4g=
-go.opentelemetry.io/otel/exporters/zipkin v1.39.0 h1:zas8I6MeDWD5rxJmkXcCPRnpvNtZHkENiTkX/eJlycg=
-go.opentelemetry.io/otel/exporters/zipkin v1.39.0/go.mod h1:SmFF1H2pTNFFvD4NqRanxPP8W+8KjTgFJhJQi3C6Co0=
 go.opentelemetry.io/otel/log v0.15.0 h1:0VqVnc3MgyYd7QqNVIldC3dsLFKgazR6P3P3+ypkyDY=
 go.opentelemetry.io/otel/log v0.15.0/go.mod h1:9c/G1zbyZfgu1HmQD7Qj84QMmwTp2QCQsZH1aeoWDE4=
 go.opentelemetry.io/otel/log/logtest v0.15.0 h1:porNFuxAjodl6LhePevOc3n7bo3Wi3JhGXNWe7KP8iU=

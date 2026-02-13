@@ -42,7 +42,6 @@ require (
 	go.opentelemetry.io/otel/exporters/stdout/stdoutlog v0.15.0
 	go.opentelemetry.io/otel/exporters/stdout/stdoutmetric v1.39.0
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.39.0
-	go.opentelemetry.io/otel/exporters/zipkin v1.39.0
 	go.opentelemetry.io/otel/log v0.15.0
 	go.opentelemetry.io/otel/log/logtest v0.15.0
 	go.opentelemetry.io/otel/metric v1.39.0
@@ -75,7 +74,6 @@ require (
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
-	github.com/openzipkin/zipkin-go v0.4.3 // indirect
 	github.com/rs/zerolog v1.33.0 // indirect
 	github.com/samber/slog-common v0.19.0 // indirect
 	github.com/spf13/cobra v1.8.1 // indirect

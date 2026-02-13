@@ -186,7 +186,7 @@ func init() {
 		// Defines the details for connecting to external telemetry backends.
 		// These definitions are referenced by name in the signal sections above.
 		//
-		// Supported drivers: "otlp", "zipkin", "console", "custom"
+		// Supported drivers: "otlp", "console", "custom"
 		"exporters": map[string]any{
 			// OTLP Trace Exporter
 			// Reference: https://opentelemetry.io/docs/specs/otel/protocol/
@@ -240,12 +240,6 @@ func init() {
 				// Timeout: Max time to wait for the backend to acknowledge.
 				// Format: Duration string (e.g., "10s", "500ms").
 				"timeout": config.Env("OTEL_EXPORTER_OTLP_LOGS_TIMEOUT", "10s"),
-			},
-
-			// Zipkin Trace Exporter (Tracing only)
-			"zipkin": map[string]any{
-				"driver":   "zipkin",
-				"endpoint": config.Env("OTEL_EXPORTER_ZIPKIN_ENDPOINT", "http://localhost:9411/api/v2/spans"),
 			},
 
 			// Console Exporter (Debugging)
