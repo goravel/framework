@@ -25,7 +25,7 @@ func NewTransport(config contractsconfig.Config, telemetry contractstelemetry.Te
 		return base
 	}
 
-	if !config.GetBool("telemetry.instrumentation.http_client", true) {
+	if !config.GetBool("telemetry.instrumentation.http_client.enabled", true) {
 		return base
 	}
 

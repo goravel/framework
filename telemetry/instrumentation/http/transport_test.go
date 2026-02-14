@@ -49,7 +49,7 @@ func (s *TransportTestSuite) TestNewTransport() {
 			name: "Kill Switch: Returns base when http_client is disabled",
 			setup: func(t *testing.T) (contractstelemetry.Telemetry, contractsconfig.Config) {
 				mockConfig := mocksconfig.NewConfig(t)
-				mockConfig.EXPECT().GetBool("telemetry.instrumentation.http_client", true).Return(false).Once()
+				mockConfig.EXPECT().GetBool("telemetry.instrumentation.http_client.enabled", true).Return(false).Once()
 				return mockstelemetry.NewTelemetry(t), mockConfig
 			},
 			expectWrapped: false,
@@ -58,7 +58,7 @@ func (s *TransportTestSuite) TestNewTransport() {
 			name: "Success: Returns wrapped transport when enabled",
 			setup: func(t *testing.T) (contractstelemetry.Telemetry, contractsconfig.Config) {
 				mockConfig := mocksconfig.NewConfig(t)
-				mockConfig.EXPECT().GetBool("telemetry.instrumentation.http_client", true).Return(true).Once()
+				mockConfig.EXPECT().GetBool("telemetry.instrumentation.http_client.enabled", true).Return(true).Once()
 
 				mockTelemetry := mockstelemetry.NewTelemetry(t)
 				mockTelemetry.EXPECT().TracerProvider().Return(tracenoop.NewTracerProvider()).Once()
