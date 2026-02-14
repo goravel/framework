@@ -206,7 +206,7 @@ func TestGetHandlers(t *testing.T) {
 
 	t.Run("OTeL driver", func(t *testing.T) {
 		mockConfig := mocksconfig.NewConfig(t)
-		mockConfig.EXPECT().GetBool("telemetry.instrumentation.log", false).Return(true).Once()
+		mockConfig.EXPECT().GetBool("telemetry.instrumentation.log.enabled", false).Return(true).Once()
 		mockConfig.EXPECT().GetString("logging.channels.test-otel.driver").Return("otel").Once()
 		mockConfig.EXPECT().GetString("logging.channels.test-otel.instrument_name", telemetrylog.DefaultInstrumentationName).
 			Return("goravel").Once()
