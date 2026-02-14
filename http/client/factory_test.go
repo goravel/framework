@@ -481,7 +481,7 @@ func (s *FactoryTestSuite) TestTelemetry_Integration() {
 		},
 	}
 
-	s.mockConfig.EXPECT().GetBool("telemetry.instrumentation.http_client", true).
+	s.mockConfig.EXPECT().GetBool("telemetry.instrumentation.http_client.enabled", true).
 		Return(true).Once()
 
 	s.mockTelemetry.EXPECT().TracerProvider().Return(tracenoop.NewTracerProvider()).Once()
