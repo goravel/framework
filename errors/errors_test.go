@@ -210,8 +210,8 @@ func TestErrorString_Is(t *testing.T) {
 
 func TestNew(t *testing.T) {
 	t.Run("New without module", func(t *testing.T) {
-		err := New("test error")
-		assert.Equal(t, "test error", err.Error())
+		err := New("error")
+		assert.Equal(t, "error", err.Error())
 	})
 
 	t.Run("New with module", func(t *testing.T) {
