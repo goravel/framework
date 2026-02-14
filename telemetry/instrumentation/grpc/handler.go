@@ -16,7 +16,7 @@ func NewServerStatsHandler(opts ...Option) stats.Handler {
 		return nil
 	}
 
-	if telemetry.ConfigFacade == nil || !telemetry.ConfigFacade.GetBool("telemetry.instrumentation.grpc_server") {
+	if telemetry.ConfigFacade == nil || !telemetry.ConfigFacade.GetBool("telemetry.instrumentation.grpc_server.enabled") {
 		return nil
 	}
 
@@ -32,7 +32,7 @@ func NewClientStatsHandler(opts ...Option) stats.Handler {
 		return nil
 	}
 
-	if telemetry.ConfigFacade == nil || !telemetry.ConfigFacade.GetBool("telemetry.instrumentation.grpc_client") {
+	if telemetry.ConfigFacade == nil || !telemetry.ConfigFacade.GetBool("telemetry.instrumentation.grpc_client.enabled") {
 		return nil
 	}
 

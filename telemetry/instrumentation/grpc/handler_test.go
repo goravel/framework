@@ -71,7 +71,7 @@ func (s *HandlerTestSuite) TestServerStatsHandler() {
 				s.mockTelemetry.EXPECT().TracerProvider().Return(tracenoop.NewTracerProvider()).Once()
 				s.mockTelemetry.EXPECT().MeterProvider().Return(metricnoop.NewMeterProvider()).Once()
 				s.mockTelemetry.EXPECT().Propagator().Return(propagation.NewCompositeTextMapPropagator()).Once()
-				s.mockConfig.EXPECT().GetBool("telemetry.instrumentation.grpc_server").Return(true).Once()
+				s.mockConfig.EXPECT().GetBool("telemetry.instrumentation.grpc_server.enabled").Return(true).Once()
 			},
 			assert: func() {
 				handler := NewServerStatsHandler(
@@ -130,7 +130,7 @@ func (s *HandlerTestSuite) TestClientStatsHandler() {
 				s.mockTelemetry.EXPECT().TracerProvider().Return(tracenoop.NewTracerProvider()).Once()
 				s.mockTelemetry.EXPECT().MeterProvider().Return(metricnoop.NewMeterProvider()).Once()
 				s.mockTelemetry.EXPECT().Propagator().Return(propagation.NewCompositeTextMapPropagator()).Once()
-				s.mockConfig.EXPECT().GetBool("telemetry.instrumentation.grpc_client").Return(true).Once()
+				s.mockConfig.EXPECT().GetBool("telemetry.instrumentation.grpc_client.enabled").Return(true).Once()
 			},
 			assert: func() {
 				handler := NewClientStatsHandler(
