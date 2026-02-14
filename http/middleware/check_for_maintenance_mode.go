@@ -2,24 +2,22 @@ package middleware
 
 import (
 	"encoding/json"
-	"os"
 
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/foundation/console"
-	"github.com/goravel/framework/support/file"
-	"github.com/goravel/framework/support/path"
 )
 
 func CheckForMaintenanceMode() http.Middleware {
 	return func(ctx http.Context) {
-		filepath := path.Storage("framework/maintenance")
-		if !file.Exists(filepath) {
+		storage := facades.Storage()
+		filepath := "framework/maintenance.json"
+		if !storage.Exists(filepath) {
 			ctx.Request().Next()
 			return
 		}
 
-		content, err := os.ReadFile(filepath)
+		content, err := storage.GetBytes(filepath)
 
 		if err != nil {
 			if err = ctx.Response().String(http.StatusServiceUnavailable, err.Error()).Abort(); err != nil {
@@ -60,8 +58,8 @@ func CheckForMaintenanceMode() http.Middleware {
 
 		if maintenanceOptions.Render != "" {
 			ctx.Request().Abort(maintenanceOptions.Status)
-			if err = ctx.Response().View().Make(maintenanceOptions.Render, map[string]string{}).Render(); err != nil {
-				return
+			if err = ctx.Response().View().Make(maintenanceOptions.Render).Render(); err != nil {
+				panic(err)
 			}
 			return
 		}
