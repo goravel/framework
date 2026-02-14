@@ -27,7 +27,7 @@ func NewLazyTelemetryChannel(config contractsconfig.Config, resolver contractste
 }
 
 func (r *TelemetryChannel) Handle(channelPath string) (contractslog.Handler, error) {
-	if r.config == nil || !r.config.GetBool("telemetry.instrumentation.log", false) {
+	if r.config == nil || !r.config.GetBool("telemetry.instrumentation.log.enabled", false) {
 		return &handler{enabled: false}, nil
 	}
 

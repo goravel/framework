@@ -21,7 +21,7 @@ func TestTelemetryChannelTestSuite(t *testing.T) {
 func (s *TelemetryChannelTestSuite) TestHandle() {
 	const (
 		channelPath  = "logging.channels.otel"
-		telemetryKey = "telemetry.instrumentation.log"
+		telemetryKey = "telemetry.instrumentation.log.enabled"
 	)
 
 	tests := []struct {
