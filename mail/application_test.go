@@ -106,7 +106,7 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 	s.mockConfig.EXPECT().GetString("queue.failed.database").Return("mysql").Once()
 	s.mockConfig.EXPECT().GetString("queue.failed.table").Return("failed_jobs").Once()
 
-	queueFacade := queue.NewApplication(queue.NewConfig(s.mockConfig), nil, queue.NewJobStorer(), json.New(), nil)
+	queueFacade := queue.NewApplication(queue.NewConfig(s.mockConfig), nil, nil, queue.NewJobStorer(), json.New(), nil)
 	queueFacade.Register([]contractsqueue.Job{
 		NewSendMailJob(s.mockConfig),
 	})
@@ -135,7 +135,7 @@ func (s *ApplicationTestSuite) TestQueueMailWithMailable() {
 	s.mockConfig.EXPECT().GetString("queue.failed.database").Return("mysql").Once()
 	s.mockConfig.EXPECT().GetString("queue.failed.table").Return("failed_jobs").Once()
 
-	queueFacade := queue.NewApplication(queue.NewConfig(s.mockConfig), nil, queue.NewJobStorer(), json.New(), nil)
+	queueFacade := queue.NewApplication(queue.NewConfig(s.mockConfig), nil, nil, queue.NewJobStorer(), json.New(), nil)
 	queueFacade.Register([]contractsqueue.Job{
 		NewSendMailJob(s.mockConfig),
 	})

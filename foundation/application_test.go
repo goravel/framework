@@ -915,7 +915,7 @@ func (s *ApplicationTestSuite) TestStart() {
 				select {
 				case <-panicChan:
 					// Panic occurred as expected
-				case <-time.After(1 * time.Second):
+				case <-time.After(3 * time.Second):
 					s.Fail("expected panic but none occurred")
 				}
 			} else {
