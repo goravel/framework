@@ -250,16 +250,18 @@ func (r *Application) Start() {
 		go func() {
 			runner.running.Store(true)
 			if err := runner.runner.Run(); err != nil {
-				runner.doneOnce.Do(func() {
-					r.runnerWg.Done()
-				})
 				runner.running.Store(false)
 				errsMu.Lock()
+				defer errsMu.Unlock()
+
 				errs = append(errs, fmt.Errorf("failed to run %s: %w", runner.signature, err))
-				errsMu.Unlock()
 				if log := r.MakeLog(); log != nil {
 					log.Errorf("failed to run %s: %v\n", runner.signature, err)
 				}
+
+				runner.doneOnce.Do(func() {
+					r.runnerWg.Done()
+				})
 				r.cancel()
 			}
 			// Run may be a blocking call, so don't write anything after it.
