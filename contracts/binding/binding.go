@@ -369,14 +369,14 @@ var (
 				},
 			},
 		},
-		// Telemetry: {
-		// 	Description: "Provides distributed tracing with OpenTelemetry.",
-		// 	PkgPath:     "github.com/goravel/framework/telemetry",
-		// 	Dependencies: []string{
-		// 		Config,
-		// 		Log,
-		// 	},
-		// },
+		Telemetry: {
+			Description: "Provides distributed tracing with OpenTelemetry.",
+			PkgPath:     "github.com/goravel/framework/telemetry",
+			Dependencies: []string{
+				Config,
+				Log,
+			},
+		},
 		Testing: {
 			Description: "Provides tools for testing your application.",
 			PkgPath:     "github.com/goravel/framework/testing",

@@ -1,31 +1,40 @@
 package log
 
 import (
-	"github.com/goravel/framework/contracts/log"
-	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/telemetry"
+	contractsconfig "github.com/goravel/framework/contracts/config"
+	contractslog "github.com/goravel/framework/contracts/log"
+	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 )
 
-const defaultInstrumentationName = "github.com/goravel/framework/telemetry/instrumentation/log"
+const DefaultInstrumentationName = "github.com/goravel/framework/telemetry/instrumentation/log"
 
-type TelemetryChannel struct{}
-
-func NewTelemetryChannel() *TelemetryChannel {
-	return &TelemetryChannel{}
+type TelemetryChannel struct {
+	config   contractsconfig.Config
+	resolver contractstelemetry.Resolver
 }
 
-func (r *TelemetryChannel) Handle(channelPath string) (log.Handler, error) {
-	if telemetry.TelemetryFacade == nil {
-		return nil, errors.TelemetryFacadeNotSet
+func NewTelemetryChannel(config contractsconfig.Config, telemetry contractstelemetry.Telemetry) *TelemetryChannel {
+	return NewLazyTelemetryChannel(config, func() contractstelemetry.Telemetry {
+		return telemetry
+	})
+}
+
+func NewLazyTelemetryChannel(config contractsconfig.Config, resolver contractstelemetry.Resolver) *TelemetryChannel {
+	return &TelemetryChannel{
+		config:   config,
+		resolver: resolver,
+	}
+}
+
+func (r *TelemetryChannel) Handle(channelPath string) (contractslog.Handler, error) {
+	if r.config == nil || !r.config.GetBool("telemetry.instrumentation.log.enabled", false) {
+		return &handler{enabled: false}, nil
 	}
 
-	config := telemetry.ConfigFacade
-	if config == nil {
-		return nil, errors.ConfigFacadeNotSet
-	}
-
-	instrumentName := config.GetString(channelPath+".instrument_name", defaultInstrumentationName)
+	instrumentName := r.config.GetString(channelPath+".instrument_name", DefaultInstrumentationName)
 	return &handler{
-		logger: telemetry.TelemetryFacade.Logger(instrumentName),
+		resolver:       r.resolver,
+		enabled:        true,
+		instrumentName: instrumentName,
 	}, nil
 }

@@ -58,7 +58,7 @@ func init() {
 			//
 			// The name of the exporter definition in the "exporters" section below.
 			// Set to "" to disable tracing.
-			"exporter": config.Env("OTEL_TRACES_EXPORTER", "otlptrace"),
+			"exporter": config.Env("OTEL_TRACES_EXPORTER"),
 
 			// Sampler Configuration
 			//
@@ -89,7 +89,7 @@ func init() {
 			//
 			// The name of the exporter definition in the "exporters" section below.
 			// Set to "" to disable metrics.
-			"exporter": config.Env("OTEL_METRICS_EXPORTER", "otlpmetric"),
+			"exporter": config.Env("OTEL_METRICS_EXPORTER"),
 
 			// Reader Configuration
 			//
@@ -115,7 +115,7 @@ func init() {
 			//
 			// The name of the exporter definition in the "exporters" section below.
 			// Set to "" to disable OTel logging.
-			"exporter": config.Env("OTEL_LOGS_EXPORTER", "otlplog"),
+			"exporter": config.Env("OTEL_LOGS_EXPORTER"),
 
 			// Processor Configuration
 			//
@@ -131,12 +131,62 @@ func init() {
 			},
 		},
 
+		// Instrumentation Configuration
+		//
+		// Configures the automatic instrumentation for specific components.
+		"instrumentation": map[string]any{
+			// HTTP Server Instrumentation
+			//
+			// Configures the telemetry middleware for incoming HTTP requests.
+			"http_server": map[string]any{
+				"enabled":          config.Env("OTEL_HTTP_SERVER_ENABLED", true),
+				"excluded_paths":   []string{}, // e.g., ["/health", "/metrics"]
+				"excluded_methods": []string{}, // e.g., ["OPTIONS", "HEAD"]
+			},
+			
+			// HTTP Client Instrumentation
+			//
+			// Configures instrumentation for outgoing HTTP requests made through the
+			// application's HTTP client facade. This acts as a global kill switch for
+			// HTTP client telemetry across all clients.
+			//
+			// To disable telemetry for a specific client, set
+			// "http.clients.{client_name}.enable_telemetry" to false for the
+			// corresponding client configuration.
+			"http_client": map[string]any{
+				"enabled": config.Env("OTEL_HTTP_CLIENT_ENABLED", true),
+			},
+			
+			// gRPC Server Instrumentation
+			//
+			// Configures the instrumentation for incoming gRPC requests to your server.
+			"grpc_server": map[string]any{
+				"enabled": config.Env("OTEL_GRPC_SERVER_ENABLED", true),
+			},
+			
+			// gRPC Client Instrumentation
+			//
+			// Configures the instrumentation for outgoing gRPC calls made by your application.
+			"grpc_client": map[string]any{
+				"enabled": config.Env("OTEL_GRPC_CLIENT_ENABLED", true),
+			},
+			
+			// Log Instrumentation
+			//
+			// Configures the instrumentation for the application logger.
+			// Disabling this acts as a global kill switch for sending logs to the OTel exporter,
+			// which can be useful for reducing cost/noise without changing logging config.
+			"log": map[string]any{
+				"enabled": config.Env("OTEL_LOG_ENABLED", true),
+			},
+		},
+
 		// Exporters Configuration
 		//
 		// Defines the details for connecting to external telemetry backends.
 		// These definitions are referenced by name in the signal sections above.
 		//
-		// Supported drivers: "otlp", "zipkin", "console", "custom"
+		// Supported drivers: "otlp", "console", "custom"
 		"exporters": map[string]any{
 			// OTLP Trace Exporter
 			// Reference: https://opentelemetry.io/docs/specs/otel/protocol/
@@ -190,12 +240,6 @@ func init() {
 				// Timeout: Max time to wait for the backend to acknowledge.
 				// Format: Duration string (e.g., "10s", "500ms").
 				"timeout": config.Env("OTEL_EXPORTER_OTLP_LOGS_TIMEOUT", "10s"),
-			},
-
-			// Zipkin Trace Exporter (Tracing only)
-			"zipkin": map[string]any{
-				"driver":   "zipkin",
-				"endpoint": config.Env("OTEL_EXPORTER_ZIPKIN_ENDPOINT", "http://localhost:9411/api/v2/spans"),
 			},
 
 			// Console Exporter (Debugging)

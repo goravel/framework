@@ -4,14 +4,19 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc/stats"
 
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/telemetry"
 )
 
 // NewServerStatsHandler creates an OTel stats handler for the server.
 func NewServerStatsHandler(opts ...Option) stats.Handler {
-	if telemetry.TelemetryFacade == nil {
-		color.Warningln("[Telemetry] Facade not initialized. gRPC server stats instrumentation is disabled.")
+	if telemetry.Facade == nil {
+		color.Warningln(errors.TelemetryGrpcServerStatsHandlerDisabled.Error())
+		return nil
+	}
+
+	if telemetry.ConfigFacade == nil || !telemetry.ConfigFacade.GetBool("telemetry.instrumentation.grpc_server.enabled") {
 		return nil
 	}
 
@@ -22,8 +27,12 @@ func NewServerStatsHandler(opts ...Option) stats.Handler {
 
 // NewClientStatsHandler creates an OTel stats handler for the client.
 func NewClientStatsHandler(opts ...Option) stats.Handler {
-	if telemetry.TelemetryFacade == nil {
-		color.Warningln("[Telemetry] Facade not initialized. gRPC client stats instrumentation is disabled.")
+	if telemetry.Facade == nil {
+		color.Warningln(errors.TelemetryGrpcClientStatsHandlerDisabled.Error())
+		return nil
+	}
+
+	if telemetry.ConfigFacade == nil || !telemetry.ConfigFacade.GetBool("telemetry.instrumentation.grpc_client.enabled") {
 		return nil
 	}
 
@@ -34,9 +43,9 @@ func NewClientStatsHandler(opts ...Option) stats.Handler {
 
 func getCommonOptions() []otelgrpc.Option {
 	return []otelgrpc.Option{
-		otelgrpc.WithTracerProvider(telemetry.TelemetryFacade.TracerProvider()),
-		otelgrpc.WithMeterProvider(telemetry.TelemetryFacade.MeterProvider()),
-		otelgrpc.WithPropagators(telemetry.TelemetryFacade.Propagator()),
+		otelgrpc.WithTracerProvider(telemetry.Facade.TracerProvider()),
+		otelgrpc.WithMeterProvider(telemetry.Facade.MeterProvider()),
+		otelgrpc.WithPropagators(telemetry.Facade.Propagator()),
 		otelgrpc.WithMessageEvents(otelgrpc.ReceivedEvents, otelgrpc.SentEvents),
 	}
 }

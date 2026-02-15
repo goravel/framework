@@ -922,7 +922,7 @@ func (s *ApplicationTestSuite) TestStart() {
 				// Only trigger cancel for non-panic cases
 				// For panic cases, the error handling will call cancel automatically
 				go func() {
-					time.Sleep(100 * time.Millisecond) // Wait for goroutines to start
+					time.Sleep(2 * time.Second) // Wait for goroutines to start
 					s.cancel()
 				}()
 

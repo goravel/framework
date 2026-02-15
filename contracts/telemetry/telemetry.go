@@ -9,6 +9,8 @@ import (
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
+type Resolver = func() Telemetry
+
 type Telemetry interface {
 	// Logger returns a log.Logger instance for emitting structured log records under the given instrumentation name.
 	// Optional log.LoggerOption parameters allow customization of logger behavior.

@@ -67,18 +67,6 @@ func TestNewTracerProvider(t *testing.T) {
 			},
 		},
 		{
-			name: "Success: Zipkin Exporter",
-			config: Config{
-				Traces: TracesConfig{Exporter: "zipkin"},
-				Exporters: map[string]ExporterEntry{
-					"zipkin": {
-						Driver:   TraceExporterDriverZipkin,
-						Endpoint: "http://localhost:9411/api/v2/spans",
-					},
-				},
-			},
-		},
-		{
 			name: "Success: Custom Exporter (Instance)",
 			config: Config{
 				Traces: TracesConfig{Exporter: "custom_inst"},
@@ -190,36 +178,6 @@ func TestNewConsoleTraceExporter(t *testing.T) {
 			exp, err := newConsoleTraceExporter(tt.cfg)
 			assert.NoError(t, err)
 			assert.NotNil(t, exp)
-		})
-	}
-}
-
-func TestNewZipkinTraceExporter(t *testing.T) {
-	tests := []struct {
-		name        string
-		cfg         ExporterEntry
-		expectError error
-	}{
-		{
-			name:        "Error: Empty Endpoint",
-			cfg:         ExporterEntry{},
-			expectError: errors.TelemetryZipkinEndpointRequired,
-		},
-		{
-			name: "Success: Valid Endpoint",
-			cfg:  ExporterEntry{Endpoint: "http://zipkin:9411/api/v2/spans"},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			exp, err := newZipkinTraceExporter(tt.cfg)
-			if tt.expectError != nil {
-				assert.Equal(t, tt.expectError, err)
-			} else {
-				assert.NoError(t, err)
-				assert.NotNil(t, exp)
-			}
 		})
 	}
 }

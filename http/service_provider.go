@@ -4,6 +4,7 @@ import (
 	contractsbinding "github.com/goravel/framework/contracts/binding"
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
+	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/http/client"
 	"github.com/goravel/framework/http/console"
@@ -40,7 +41,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleHttp)
 		}
 
-		j := app.GetJson()
+		j := app.Json()
 		if j == nil {
 			return nil, errors.JSONParserNotSet.SetModule(errors.ModuleHttp)
 		}
@@ -50,7 +51,9 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, err
 		}
 
-		return client.NewFactory(factoryConfig, j)
+		return client.NewFactory(factoryConfig, configFacade, j, func() contractstelemetry.Telemetry {
+			return app.MakeTelemetry()
+		})
 	})
 }
 

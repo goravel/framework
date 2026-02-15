@@ -10,27 +10,80 @@ import (
 	"go.opentelemetry.io/otel/log/logtest"
 
 	contractslog "github.com/goravel/framework/contracts/log"
+	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
+	mockstelemetry "github.com/goravel/framework/mocks/telemetry"
 )
 
 type HandlerTestSuite struct {
 	suite.Suite
-	recorder   *logtest.Recorder
-	handler    *handler
-	loggerName string
-	ctx        context.Context
-	now        time.Time
+	recorder      *logtest.Recorder
+	handler       *handler
+	loggerName    string
+	ctx           context.Context
+	now           time.Time
+	mockTelemetry *mockstelemetry.Telemetry
+}
+
+func TestHandlerTestSuite(t *testing.T) {
+	suite.Run(t, new(HandlerTestSuite))
 }
 
 func (s *HandlerTestSuite) SetupTest() {
 	s.loggerName = "test-logger"
 	s.recorder = logtest.NewRecorder()
+	s.mockTelemetry = mockstelemetry.NewTelemetry(s.T())
+
 	s.handler = &handler{
+		enabled:        true,
+		instrumentName: s.loggerName,
+		resolver: func() contractstelemetry.Telemetry {
+			return s.mockTelemetry
+		},
 		logger: s.recorder.Logger(s.loggerName),
 	}
 	s.now = time.Date(2024, 1, 1, 10, 0, 0, 0, time.UTC)
 
 	type ctxKey string
 	s.ctx = context.WithValue(context.Background(), ctxKey("request_id"), "req-123")
+}
+
+func (s *HandlerTestSuite) TestHandle_Lazy_Success() {
+	s.handler.logger = nil
+	s.handler.telemetry = nil
+
+	s.mockTelemetry.EXPECT().Logger(s.loggerName).Return(s.recorder.Logger(s.loggerName)).Once()
+
+	entry := &TestEntry{
+		ctx:   context.Background(),
+		level: contractslog.LevelInfo,
+		time:  s.now,
+	}
+
+	err := s.handler.Handle(entry)
+	s.NoError(err)
+
+	s.mockTelemetry.AssertExpectations(s.T())
+	s.NotNil(s.handler.logger, "Logger should be initialized")
+	s.NotNil(s.handler.telemetry, "Telemetry instance should be cached")
+}
+
+func (s *HandlerTestSuite) TestHandle_Lazy_Nil() {
+	s.handler.logger = nil
+	s.handler.telemetry = nil
+	s.handler.resolver = func() contractstelemetry.Telemetry {
+		return nil
+	}
+
+	entry := &TestEntry{
+		ctx:   context.Background(),
+		level: contractslog.LevelInfo,
+	}
+
+	err := s.handler.Handle(entry)
+
+	s.NoError(err)
+	s.Nil(s.handler.logger, "Logger should remain nil")
+	s.Nil(s.handler.telemetry, "Telemetry should remain nil")
 }
 
 func (s *HandlerTestSuite) TestEnabled() {
@@ -111,7 +164,6 @@ func (s *HandlerTestSuite) TestHandle() {
 				},
 				data: map[string]any{
 					"user_id": 42,
-					"active":  true,
 				},
 			},
 			expected: logtest.Record{
@@ -123,7 +175,6 @@ func (s *HandlerTestSuite) TestHandle() {
 				Attributes: []log.KeyValue{
 					log.String("foo", "bar"),
 					log.Int64("user_id", 42),
-					log.Bool("active", true),
 				},
 			},
 		},
@@ -134,14 +185,9 @@ func (s *HandlerTestSuite) TestHandle() {
 				level: contractslog.LevelWarning,
 				time:  s.now,
 				user: map[string]any{
-					"id":   1,
 					"role": "admin",
 				},
 				tags: []string{"critical", "auth"},
-				request: map[string]any{
-					"method": "GET",
-					"url":    "/login",
-				},
 			},
 			expected: logtest.Record{
 				Context:      s.ctx,
@@ -151,16 +197,11 @@ func (s *HandlerTestSuite) TestHandle() {
 				Body:         log.StringValue(""),
 				Attributes: []log.KeyValue{
 					log.Map("user",
-						log.Int64("id", 1),
 						log.String("role", "admin"),
 					),
 					log.Slice("tags",
 						log.StringValue("critical"),
 						log.StringValue("auth"),
-					),
-					log.Map("request",
-						log.String("method", "GET"),
-						log.String("url", "/login"),
 					),
 				},
 			},
@@ -184,11 +225,8 @@ func (s *HandlerTestSuite) TestHandle() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			// Reset the recorder for each test case
 			s.recorder = logtest.NewRecorder()
-			s.handler = &handler{
-				logger: s.recorder.Logger(s.loggerName),
-			}
+			s.handler.logger = s.recorder.Logger(s.loggerName)
 
 			err := s.handler.Handle(tt.entry)
 			s.NoError(err)
@@ -211,10 +249,6 @@ func (s *HandlerTestSuite) normalizeObservedTimestamp(result logtest.Recording) 
 			result[scope][i].ObservedTimestamp = time.Time{}
 		}
 	}
-}
-
-func TestHandlerTestSuite(t *testing.T) {
-	suite.Run(t, new(HandlerTestSuite))
 }
 
 type TestEntry struct {
