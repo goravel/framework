@@ -190,6 +190,179 @@ func (r *Query) Cursor() chan contractsdb.Row {
 	return cursorChan
 }
 
+func (r *Query) Chunk(count int, callback func([]any) error) error {
+	if count <= 0 {
+		return errors.OrmQueryChunkZeroOrLess
+	}
+
+	if r.conditions.model == nil {
+		return errors.OrmQueryInvalidModel.Args("nil")
+	}
+
+	initialOffset := 0
+	if r.conditions.offset != nil {
+		initialOffset = *r.conditions.offset
+	}
+	var remaining *int
+	if r.conditions.limit != nil {
+		limit := *r.conditions.limit
+		remaining = &limit
+	}
+
+	query := r.addGlobalScopes().buildConditions()
+
+	destType := reflect.TypeOf(r.conditions.model)
+	sliceType := reflect.SliceOf(reflect.PointerTo(destType))
+	offset := initialOffset
+
+	for remaining == nil || *remaining > 0 {
+		chunkLimit := count
+		if remaining != nil && *remaining < count {
+			chunkLimit = *remaining
+		}
+
+		results := reflect.New(sliceType).Interface()
+
+		chunkQuery := query.Offset(offset).Limit(chunkLimit).(*Query)
+		err := chunkQuery.Find(results)
+		if err != nil {
+			return err
+		}
+
+		resultsValue := reflect.ValueOf(results).Elem()
+		length := resultsValue.Len()
+		if length == 0 {
+			return nil
+		}
+
+		if remaining != nil {
+			*remaining = max(*remaining-length, 0)
+		}
+
+		values := make([]any, length)
+		for i := 0; i < length; i++ {
+			values[i] = resultsValue.Index(i).Interface()
+		}
+
+		if err = callback(values); err != nil {
+			return err
+		}
+
+		if length < chunkLimit {
+			return nil
+		}
+
+		offset += chunkLimit
+	}
+
+	return nil
+}
+
+func (r *Query) ChunkByID(count int, callback func([]any) error) error {
+	return r.orderedChunkByID(count, callback, false)
+}
+
+func (r *Query) ChunkByIDDesc(count int, callback func([]any) error) error {
+	return r.orderedChunkByID(count, callback, true)
+}
+
+func (r *Query) orderedChunkByID(count int, callback func([]any) error, descending bool) error {
+	if count <= 0 {
+		return errors.OrmQueryChunkZeroOrLess
+	}
+
+	if r.conditions.model == nil {
+		return errors.OrmQueryInvalidModel.Args("nil")
+	}
+
+	column := "id"
+	initialOffset := 0
+	if r.conditions.offset != nil {
+		initialOffset = *r.conditions.offset
+	}
+	var remaining *int
+	if r.conditions.limit != nil {
+		limit := *r.conditions.limit
+		remaining = &limit
+	}
+
+	destType := reflect.TypeOf(r.conditions.model)
+	sliceType := reflect.SliceOf(reflect.PointerTo(destType))
+	var lastID any
+	page := 1
+
+	for remaining == nil || *remaining > 0 {
+		chunkLimit := count
+		if remaining != nil && *remaining < count {
+			chunkLimit = *remaining
+		}
+
+		clone := r.addGlobalScopes()
+
+		if initialOffset > 0 {
+			if page > 1 {
+				clone = clone.Offset(0).(*Query)
+			} else {
+				clone = clone.Offset(initialOffset).(*Query)
+			}
+		}
+
+		if descending {
+			clone = clone.OrderByDesc(column).(*Query)
+		} else {
+			clone = clone.OrderBy(column).(*Query)
+		}
+
+		if lastID != nil {
+			if descending {
+				clone = clone.Where(column+" < ?", lastID).(*Query)
+			} else {
+				clone = clone.Where(column+" > ?", lastID).(*Query)
+			}
+		}
+		clone = clone.Limit(chunkLimit).(*Query)
+
+		query := clone.buildConditions()
+		results := reflect.New(sliceType).Interface()
+
+		err := query.Find(results)
+		if err != nil {
+			return err
+		}
+
+		resultsValue := reflect.ValueOf(results).Elem()
+		length := resultsValue.Len()
+
+		if length == 0 {
+			break
+		}
+
+		if remaining != nil {
+			*remaining = max(*remaining-length, 0)
+		}
+
+		values := make([]any, length)
+		for i := 0; i < length; i++ {
+			values[i] = resultsValue.Index(i).Interface()
+		}
+
+		lastRecord := values[length-1]
+		lastID = database.GetID(lastRecord)
+
+		if err = callback(values); err != nil {
+			return err
+		}
+
+		if length < chunkLimit {
+			break
+		}
+
+		page++
+	}
+
+	return nil
+}
+
 func (r *Query) DB() (*sql.DB, error) {
 	return r.instance.DB()
 }
