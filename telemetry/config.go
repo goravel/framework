@@ -34,6 +34,7 @@ type LogsConfig struct {
 }
 
 type LogsProcessorConfig struct {
+	Type     string
 	Interval time.Duration
 	Timeout  time.Duration
 }

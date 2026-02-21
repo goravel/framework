@@ -24,6 +24,11 @@ const (
 )
 
 const (
+	LogProcessorSimple = "simple"
+	LogProcessorBatch  = "batch"
+)
+
+const (
 	defaultLogExportInterval = 1 * time.Second
 	defaultLogExportTimeout  = 30 * time.Second
 )
@@ -46,24 +51,29 @@ func NewLoggerProvider(ctx context.Context, cfg Config, opts ...sdklog.LoggerPro
 		return nil, NoopShutdown(), err
 	}
 
-	interval := cfg.Logs.Processor.Interval
-	timeout := cfg.Logs.Processor.Timeout
+	var processor sdklog.Processor
+	if cfg.Logs.Processor.Type == LogProcessorSimple {
+		processor = sdklog.NewSimpleProcessor(exporter)
+	} else {
+		interval := cfg.Logs.Processor.Interval
+		timeout := cfg.Logs.Processor.Timeout
 
-	if interval == 0 {
-		interval = defaultLogExportInterval
-	}
-	if timeout == 0 {
-		timeout = defaultLogExportTimeout
-	}
+		if interval == 0 {
+			interval = defaultLogExportInterval
+		}
+		if timeout == 0 {
+			timeout = defaultLogExportTimeout
+		}
 
-	processorOptions := []sdklog.BatchProcessorOption{
-		sdklog.WithExportInterval(interval),
-		sdklog.WithExportTimeout(timeout),
+		batchOptions := []sdklog.BatchProcessorOption{
+			sdklog.WithExportInterval(interval),
+			sdklog.WithExportTimeout(timeout),
+		}
+		processor = sdklog.NewBatchProcessor(exporter, batchOptions...)
 	}
 
 	providerOptions := []sdklog.LoggerProviderOption{
-		// TODO: add support for SimpleProcessor
-		sdklog.WithProcessor(sdklog.NewBatchProcessor(exporter, processorOptions...)),
+		sdklog.WithProcessor(processor),
 	}
 	providerOptions = append(providerOptions, opts...)
 

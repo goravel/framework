@@ -10,7 +10,6 @@ type Protocol string
 const (
 	ProtocolGRPC         Protocol = "grpc"
 	ProtocolHTTPProtobuf Protocol = "http/protobuf"
-	ProtocolHTTPJSON     Protocol = "http/json"
 )
 
 const defaultOTLPTimeout = 10 * time.Second

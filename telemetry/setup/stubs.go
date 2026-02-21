@@ -121,6 +121,12 @@ func init() {
 			//
 			// Configures the BatchLogProcessor, which batches logs before export.
 			"processor": map[string]any{
+			    // Type: The strategy used to process logs.
+				// Options: 
+				// - "batch": (Recommended) Buffers logs and sends them in groups for better performance.
+				// - "simple": Sends each log entry immediately. Useful for local debugging.
+				"type": config.Env("OTEL_LOG_PROCESSOR_TYPE", "batch"),
+
 				// Interval: How often logs are flushed.
 				// Format: Duration string (e.g., "1s", "500ms").
 				"interval": config.Env("OTEL_LOG_EXPORT_INTERVAL", "1s"),
