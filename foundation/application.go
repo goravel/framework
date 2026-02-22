@@ -259,9 +259,6 @@ func (r *Application) Start() {
 					log.Errorf("failed to run %s: %v\n", runner.signature, err)
 				}
 
-				runner.doneOnce.Do(func() {
-					r.runnerWg.Done()
-				})
 				r.cancel()
 			}
 			// Run may be a blocking call, so don't write anything after it.
@@ -269,6 +266,8 @@ func (r *Application) Start() {
 
 		go func() {
 			<-r.ctx.Done()
+
+			// Only call Shutdown if the runner is still running (Run didn't error)
 			if runner.running.Load() {
 				if err := runner.runner.Shutdown(); err != nil {
 					if log := r.MakeLog(); log != nil {
@@ -277,6 +276,7 @@ func (r *Application) Start() {
 				}
 				runner.running.Store(false)
 			}
+
 			runner.doneOnce.Do(func() {
 				r.runnerWg.Done()
 			})
