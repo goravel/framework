@@ -633,6 +633,9 @@ func (r *CliContext) Table(headers []string, rows [][]string, option ...console.
 		if userOpt.Height > 0 {
 			opt.Height = userOpt.Height
 		}
+		if userOpt.ColumnStyles != nil {
+			opt.ColumnStyles = userOpt.ColumnStyles
+		}
 	}
 
 	t.Border(opt.Border).BorderStyle(opt.BorderStyle)
@@ -669,7 +672,17 @@ func (r *CliContext) Table(headers []string, rows [][]string, option ...console.
 	if opt.StyleFunc == nil {
 		opt.StyleFunc = DefaultTableStyleFunc
 	}
-	t.StyleFunc(opt.StyleFunc)
+	t.StyleFunc(func(row, col int) lipgloss.Style {
+		style := opt.StyleFunc(row, col)
+
+		if opt.ColumnStyles != nil {
+			if colStyle, ok := opt.ColumnStyles[col]; ok {
+				style = style.Inherit(colStyle)
+			}
+		}
+
+		return style
+	})
 
 	r.Line(t.Render())
 }
