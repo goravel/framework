@@ -17,11 +17,15 @@ import (
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
+	"github.com/goravel/framework/support/convert"
 )
 
 var (
-	DefaultTableBorderColor = lipgloss.Color("240")
-	DefaultTableHeaderColor = lipgloss.Color("#3D8C8D")
+	BrandColor = lipgloss.CompleteColor{TrueColor: "#3D8C8D", ANSI256: "30", ANSI: "6"}
+	MutedColor = lipgloss.CompleteColor{TrueColor: "#4a4a4a", ANSI256: "240", ANSI: "8"}
+
+	DefaultTableHeaderColor = BrandColor
+	DefaultTableBorderColor = MutedColor
 
 	DefaultTableHeaderStyle = lipgloss.NewStyle().Foreground(DefaultTableHeaderColor).Bold(true).Padding(0, 1)
 	DefaultTableCellStyle   = lipgloss.NewStyle().Padding(0, 1)
@@ -34,8 +38,19 @@ var (
 	}
 
 	DefaultTableOption = console.TableOption{
+		Border: lipgloss.RoundedBorder(),
+
 		BorderStyle: lipgloss.NewStyle().Foreground(DefaultTableBorderColor),
-		StyleFunc:   DefaultTableStyleFunc,
+
+		StyleFunc: DefaultTableStyleFunc,
+
+		BorderTop:    convert.Pointer(true),
+		BorderBottom: convert.Pointer(true),
+		BorderLeft:   convert.Pointer(true),
+		BorderRight:  convert.Pointer(true),
+		BorderHeader: convert.Pointer(true),
+		BorderColumn: convert.Pointer(true),
+		BorderRow:    convert.Pointer(false),
 	}
 )
 
@@ -559,7 +574,7 @@ func (r *CliContext) Secret(question string, option ...console.SecretOption) (st
 }
 
 func (r *CliContext) Spinner(message string, option console.SpinnerOption) error {
-	style := lipgloss.NewStyle().Foreground(lipgloss.CompleteColor{TrueColor: "#3D8C8D", ANSI256: "30", ANSI: "6"})
+	style := lipgloss.NewStyle().Foreground(BrandColor)
 	spin := spinner.New().Title(message).Style(style).TitleStyle(style)
 
 	var err error
@@ -581,8 +596,46 @@ func (r *CliContext) Table(headers []string, rows [][]string, option ...console.
 
 	opt := DefaultTableOption
 	if len(option) > 0 {
-		opt = option[0]
+		userOpt := option[0]
+		if (userOpt.Border != lipgloss.Border{}) {
+			opt.Border = userOpt.Border
+		}
+		if userOpt.BorderStyle.Value() != "" {
+			opt.BorderStyle = userOpt.BorderStyle
+		}
+		if userOpt.StyleFunc != nil {
+			opt.StyleFunc = userOpt.StyleFunc
+		}
+		if userOpt.BorderTop != nil {
+			opt.BorderTop = userOpt.BorderTop
+		}
+		if userOpt.BorderBottom != nil {
+			opt.BorderBottom = userOpt.BorderBottom
+		}
+		if userOpt.BorderLeft != nil {
+			opt.BorderLeft = userOpt.BorderLeft
+		}
+		if userOpt.BorderRight != nil {
+			opt.BorderRight = userOpt.BorderRight
+		}
+		if userOpt.BorderHeader != nil {
+			opt.BorderHeader = userOpt.BorderHeader
+		}
+		if userOpt.BorderColumn != nil {
+			opt.BorderColumn = userOpt.BorderColumn
+		}
+		if userOpt.BorderRow != nil {
+			opt.BorderRow = userOpt.BorderRow
+		}
+		if userOpt.Width > 0 {
+			opt.Width = userOpt.Width
+		}
+		if userOpt.Height > 0 {
+			opt.Height = userOpt.Height
+		}
 	}
+
+	t.Border(opt.Border).BorderStyle(opt.BorderStyle)
 
 	if opt.BorderTop != nil {
 		t.BorderTop(*opt.BorderTop)
@@ -606,13 +659,6 @@ func (r *CliContext) Table(headers []string, rows [][]string, option ...console.
 		t.BorderRow(*opt.BorderRow)
 	}
 
-	if (opt.Border != lipgloss.Border{}) {
-		t.Border(opt.Border)
-	}
-	if opt.BorderStyle.Value() != "" {
-		t.BorderStyle(opt.BorderStyle)
-	}
-
 	if opt.Width > 0 {
 		t.Width(opt.Width)
 	}
@@ -620,19 +666,10 @@ func (r *CliContext) Table(headers []string, rows [][]string, option ...console.
 		t.Height(opt.Height)
 	}
 
-	if len(opt.ColumnStyles) > 0 {
-		t.StyleFunc(func(row, col int) lipgloss.Style {
-			base := opt.StyleFunc(row, col)
-			if row != table.HeaderRow {
-				if colStyle, ok := opt.ColumnStyles[col]; ok {
-					return base.Inherit(colStyle)
-				}
-			}
-			return base
-		})
-	} else {
-		t.StyleFunc(opt.StyleFunc)
+	if opt.StyleFunc == nil {
+		opt.StyleFunc = DefaultTableStyleFunc
 	}
+	t.StyleFunc(opt.StyleFunc)
 
 	r.Line(t.Render())
 }
