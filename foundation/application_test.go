@@ -851,7 +851,10 @@ func (s *ApplicationTestSuite) TestStart() {
 				runner2 := mocksfoundation.NewRunner(s.T())
 				runner2.EXPECT().Signature().Return("test-runner-2").Once()
 				runner2.EXPECT().ShouldRun().Return(true).Once()
-				runner2.EXPECT().Run().Return(assert.AnError).Once()
+				runner2.EXPECT().Run().RunAndReturn(func() error {
+					time.Sleep(1 * time.Second)
+					return assert.AnError
+				}).Once()
 
 				return []foundation.Runner{runner1, runner2}
 			},
