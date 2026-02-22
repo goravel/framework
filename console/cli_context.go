@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/huh/spinner"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/lipgloss/table"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cast"
 	"github.com/urfave/cli/v3"
@@ -16,6 +17,26 @@ import (
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
+)
+
+var (
+	DefaultTableBorderColor = lipgloss.Color("240")
+	DefaultTableHeaderColor = lipgloss.Color("#3D8C8D")
+
+	DefaultTableHeaderStyle = lipgloss.NewStyle().Foreground(DefaultTableHeaderColor).Bold(true).Padding(0, 1)
+	DefaultTableCellStyle   = lipgloss.NewStyle().Padding(0, 1)
+
+	DefaultTableStyleFunc = func(row, col int) lipgloss.Style {
+		if row == table.HeaderRow {
+			return DefaultTableHeaderStyle
+		}
+		return DefaultTableCellStyle
+	}
+
+	DefaultTableOption = console.TableOption{
+		BorderStyle: lipgloss.NewStyle().Foreground(DefaultTableBorderColor),
+		StyleFunc:   DefaultTableStyleFunc,
+	}
 )
 
 type CliContext struct {
@@ -553,6 +574,67 @@ func (r *CliContext) Spinner(message string, option console.SpinnerOption) error
 
 func (r *CliContext) Success(message string) {
 	color.Successln(message)
+}
+
+func (r *CliContext) Table(headers []string, rows [][]string, option ...console.TableOption) {
+	t := table.New().Headers(headers...).Rows(rows...)
+
+	opt := DefaultTableOption
+	if len(option) > 0 {
+		opt = option[0]
+	}
+
+	if opt.BorderTop != nil {
+		t.BorderTop(*opt.BorderTop)
+	}
+	if opt.BorderBottom != nil {
+		t.BorderBottom(*opt.BorderBottom)
+	}
+	if opt.BorderLeft != nil {
+		t.BorderLeft(*opt.BorderLeft)
+	}
+	if opt.BorderRight != nil {
+		t.BorderRight(*opt.BorderRight)
+	}
+	if opt.BorderHeader != nil {
+		t.BorderHeader(*opt.BorderHeader)
+	}
+	if opt.BorderColumn != nil {
+		t.BorderColumn(*opt.BorderColumn)
+	}
+	if opt.BorderRow != nil {
+		t.BorderRow(*opt.BorderRow)
+	}
+
+	if (opt.Border != lipgloss.Border{}) {
+		t.Border(opt.Border)
+	}
+	if opt.BorderStyle.Value() != "" {
+		t.BorderStyle(opt.BorderStyle)
+	}
+
+	if opt.Width > 0 {
+		t.Width(opt.Width)
+	}
+	if opt.Height > 0 {
+		t.Height(opt.Height)
+	}
+
+	if len(opt.ColumnStyles) > 0 {
+		t.StyleFunc(func(row, col int) lipgloss.Style {
+			base := opt.StyleFunc(row, col)
+			if row != table.HeaderRow {
+				if colStyle, ok := opt.ColumnStyles[col]; ok {
+					return base.Inherit(colStyle)
+				}
+			}
+			return base
+		})
+	} else {
+		t.StyleFunc(opt.StyleFunc)
+	}
+
+	r.Line(t.Render())
 }
 
 func (r *CliContext) Warning(message string) {

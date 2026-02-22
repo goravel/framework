@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/lipgloss/table"
 	"github.com/urfave/cli/v3"
 
 	"github.com/goravel/framework/contracts/console/command"
@@ -127,6 +129,8 @@ type Context interface {
 	Spinner(message string, option SpinnerOption) error
 	// Success writes a success message to the console.
 	Success(message string)
+	// Table renders a formatted table to the console.
+	Table(headers []string, rows [][]string, option ...TableOption)
 	// Warning writes a warning message to the console.
 	Warning(message string)
 	// WithProgressBar executes a callback with a progress bar.
@@ -247,4 +251,36 @@ type SpinnerOption struct {
 	Ctx context.Context
 	// Action the action to execute.
 	Action func() error
+}
+
+type TableOption struct {
+	// BorderTop enables/disables the very top horizontal line.
+	BorderTop *bool
+	// BorderBottom enables/disables the very bottom horizontal line.
+	BorderBottom *bool
+	// BorderLeft enables/disables the leftmost vertical line.
+	BorderLeft *bool
+	// BorderRight enables/disables the rightmost vertical line.
+	BorderRight *bool
+	// BorderHeader enables/disables the separator line between the header and the first row.
+	BorderHeader *bool
+	// BorderColumn enables/disables vertical lines between columns.
+	BorderColumn *bool
+	// BorderRow enables/disables horizontal lines between every data row.
+	BorderRow *bool
+
+	// Border allows setting a custom lipgloss.Border (e.g., lipgloss.DoubleBorder()).
+	Border lipgloss.Border
+	// BorderStyle sets the color and style for the grid lines.
+	BorderStyle lipgloss.Style
+	// ColumnStyles allows specific styling for individual columns (key is column index).
+	// Useful for right-aligning numbers: map[int]lipgloss.Style{1: lipgloss.NewStyle().Align(lipgloss.Right)}
+	ColumnStyles map[int]lipgloss.Style
+	// StyleFunc is an escape hatch for advanced cell-by-cell styling based on content or position.
+	StyleFunc table.StyleFunc
+
+	// Width sets a fixed total width for the table. Columns will auto-scale to fit.
+	Width int
+	// Height sets a fixed total height for the table.
+	Height int
 }
