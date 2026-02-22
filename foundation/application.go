@@ -269,16 +269,14 @@ func (r *Application) Start() {
 
 		go func() {
 			<-r.ctx.Done()
-			if !runner.running.Load() {
-				return
-			}
-
-			if err := runner.runner.Shutdown(); err != nil {
-				if log := r.MakeLog(); log != nil {
-					log.Errorf("failed to shutdown %s: %v\n", runner.signature, err)
+			if runner.running.Load() {
+				if err := runner.runner.Shutdown(); err != nil {
+					if log := r.MakeLog(); log != nil {
+						log.Errorf("failed to shutdown %s: %v\n", runner.signature, err)
+					}
 				}
+				runner.running.Store(false)
 			}
-			runner.running.Store(false)
 			runner.doneOnce.Do(func() {
 				r.runnerWg.Done()
 			})
