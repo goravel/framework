@@ -259,16 +259,19 @@ func (r *Application) Start() {
 					log.Errorf("failed to run %s: %v\n", runner.signature, err)
 				}
 
-				runner.doneOnce.Do(func() {
-					r.runnerWg.Done()
-				})
 				r.cancel()
 			}
 			// Run may be a blocking call, so don't write anything after it.
 		}()
 
 		go func() {
+			defer runner.doneOnce.Do(func() {
+				r.runnerWg.Done()
+			})
+
 			<-r.ctx.Done()
+
+			// Only call Shutdown if the runner is still running (Run didn't error)
 			if !runner.running.Load() {
 				return
 			}
@@ -278,10 +281,8 @@ func (r *Application) Start() {
 					log.Errorf("failed to shutdown %s: %v\n", runner.signature, err)
 				}
 			}
+
 			runner.running.Store(false)
-			runner.doneOnce.Do(func() {
-				r.runnerWg.Done()
-			})
 		}()
 	}
 
