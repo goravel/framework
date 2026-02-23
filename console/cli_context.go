@@ -46,7 +46,7 @@ func (r *CliContext) Ask(question string, option ...console.AskOption) (string, 
 			}
 		}
 
-		err := input.Value(&answer).Run()
+		err := input.Value(&answer).WithTheme(GlobalHuhTheme).Run()
 		if err != nil {
 			return "", err
 		}
@@ -60,7 +60,7 @@ func (r *CliContext) Ask(question string, option ...console.AskOption) (string, 
 			}
 		}
 
-		err := input.Value(&answer).Run()
+		err := input.Value(&answer).WithTheme(GlobalHuhTheme).Run()
 		if err != nil {
 			return "", err
 		}
@@ -101,7 +101,7 @@ func (r *CliContext) Choice(question string, choices []console.Choice, option ..
 		}
 	}
 
-	err := huh.NewForm(huh.NewGroup(input.Value(&answer))).Run()
+	err := huh.NewForm(huh.NewGroup(input.Value(&answer))).WithTheme(GlobalHuhTheme).Run()
 	if err != nil {
 		return "", err
 	}
@@ -128,7 +128,7 @@ func (r *CliContext) Confirm(question string, option ...console.ConfirmOption) b
 		answer = option[0].Default
 	}
 
-	if err := input.Value(&answer).Run(); err != nil {
+	if err := input.Value(&answer).WithTheme(GlobalHuhTheme).Run(); err != nil {
 		r.Error(err.Error())
 
 		return false
@@ -173,7 +173,7 @@ func (r *CliContext) MultiSelect(question string, choices []console.Choice, opti
 		}
 	}
 
-	err := huh.NewForm(huh.NewGroup(input.Value(&answer))).Run()
+	err := huh.NewForm(huh.NewGroup(input.Value(&answer))).WithTheme(GlobalHuhTheme).Run()
 	if err != nil {
 		return nil, err
 	}
@@ -530,7 +530,7 @@ func (r *CliContext) Secret(question string, option ...console.SecretOption) (st
 		}
 	}
 
-	err := input.Value(&answer).Run()
+	err := input.Value(&answer).WithTheme(GlobalHuhTheme).Run()
 	if err != nil {
 		return "", err
 	}
@@ -539,8 +539,10 @@ func (r *CliContext) Secret(question string, option ...console.SecretOption) (st
 }
 
 func (r *CliContext) Spinner(message string, option console.SpinnerOption) error {
-	style := lipgloss.NewStyle().Foreground(BrandColor)
-	spin := spinner.New().Title(message).Style(style).TitleStyle(style)
+	spin := spinner.New().
+		Title(message).
+		Style(DefaultSpinnerStyle).
+		TitleStyle(DefaultSpinnerTitleStyle)
 
 	var err error
 	if err := spin.Context(option.Ctx).Action(func() {
