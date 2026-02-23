@@ -3,10 +3,8 @@ package foundation
 import (
 	"context"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"sync"
-	"syscall"
 	"testing"
 	"time"
 
@@ -38,7 +36,7 @@ func TestApplicationTestSuite(t *testing.T) {
 }
 
 func (s *ApplicationTestSuite) SetupTest() {
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	ctx, cancel := context.WithCancel(context.Background())
 
 	s.app = &Application{
 		Container:     NewContainer(),
@@ -924,9 +922,10 @@ func (s *ApplicationTestSuite) TestStart() {
 			} else {
 				// Only trigger cancel for non-panic cases
 				// For panic cases, the error handling will call cancel automatically
+				cancel := s.cancel
 				go func() {
 					time.Sleep(2 * time.Second) // Wait for goroutines to start
-					s.cancel()
+					cancel()
 				}()
 
 				s.NotPanics(func() {
@@ -993,6 +992,8 @@ func (s *ApplicationTestSuite) TestShutdown() {
 			s.SetupTest()
 			runners := tt.setup()
 
+			var err error
+
 			if len(runners) > 0 {
 				serviceProvider := mocksfoundation.NewServiceProviderWithRunners(s.T())
 				serviceProvider.EXPECT().Runners(s.app).Return(runners).Once()
@@ -1008,14 +1009,24 @@ func (s *ApplicationTestSuite) TestShutdown() {
 				s.app.configureRunners()
 
 				// Start runners in the background
-				go s.app.Start()
+				startDone := make(chan struct{})
+				go func() {
+					defer close(startDone)
+					s.app.Start()
+				}()
 
 				// Wait a moment for runners to start
 				time.Sleep(50 * time.Millisecond)
-			}
 
-			// Shutdown the application
-			err := s.app.Shutdown()
+				// Shutdown the application
+				err = s.app.Shutdown()
+
+				// Wait for Start() to complete before mock cleanup
+				<-startDone
+			} else {
+				// Shutdown the application
+				err = s.app.Shutdown()
+			}
 
 			if tt.expectError {
 				s.Error(err)
