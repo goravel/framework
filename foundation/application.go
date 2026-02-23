@@ -249,9 +249,7 @@ func (r *Application) Start() {
 
 		go func() {
 			runner.running.Store(true)
-			err := runner.runner.Run()
-
-			if err != nil {
+			if err := runner.runner.Run(); err != nil {
 				runner.running.Store(false)
 				errsMu.Lock()
 				defer errsMu.Unlock()
@@ -263,7 +261,7 @@ func (r *Application) Start() {
 
 				r.cancel()
 			}
-			// Note: Don't set running=false on success - let the shutdown goroutine handle it
+			// Run may be a blocking call, so don't write anything after it.
 		}()
 
 		go func() {
