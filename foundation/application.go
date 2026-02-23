@@ -272,14 +272,17 @@ func (r *Application) Start() {
 			<-r.ctx.Done()
 
 			// Only call Shutdown if the runner is still running (Run didn't error)
-			if runner.running.Load() {
-				if err := runner.runner.Shutdown(); err != nil {
-					if log := r.MakeLog(); log != nil {
-						log.Errorf("failed to shutdown %s: %v\n", runner.signature, err)
-					}
-				}
-				runner.running.Store(false)
+			if !runner.running.Load() {
+				return
 			}
+
+			if err := runner.runner.Shutdown(); err != nil {
+				if log := r.MakeLog(); log != nil {
+					log.Errorf("failed to shutdown %s: %v\n", runner.signature, err)
+				}
+			}
+
+			runner.running.Store(false)
 		}()
 	}
 
