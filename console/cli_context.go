@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/huh/spinner"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/lipgloss/table"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cast"
 	"github.com/urfave/cli/v3"
@@ -45,7 +46,7 @@ func (r *CliContext) Ask(question string, option ...console.AskOption) (string, 
 			}
 		}
 
-		err := input.Value(&answer).Run()
+		err := input.Value(&answer).WithTheme(GlobalHuhTheme).Run()
 		if err != nil {
 			return "", err
 		}
@@ -59,7 +60,7 @@ func (r *CliContext) Ask(question string, option ...console.AskOption) (string, 
 			}
 		}
 
-		err := input.Value(&answer).Run()
+		err := input.Value(&answer).WithTheme(GlobalHuhTheme).Run()
 		if err != nil {
 			return "", err
 		}
@@ -100,7 +101,7 @@ func (r *CliContext) Choice(question string, choices []console.Choice, option ..
 		}
 	}
 
-	err := huh.NewForm(huh.NewGroup(input.Value(&answer))).Run()
+	err := huh.NewForm(huh.NewGroup(input.Value(&answer))).WithTheme(GlobalHuhTheme).Run()
 	if err != nil {
 		return "", err
 	}
@@ -127,7 +128,7 @@ func (r *CliContext) Confirm(question string, option ...console.ConfirmOption) b
 		answer = option[0].Default
 	}
 
-	if err := input.Value(&answer).Run(); err != nil {
+	if err := input.Value(&answer).WithTheme(GlobalHuhTheme).Run(); err != nil {
 		r.Error(err.Error())
 
 		return false
@@ -172,7 +173,7 @@ func (r *CliContext) MultiSelect(question string, choices []console.Choice, opti
 		}
 	}
 
-	err := huh.NewForm(huh.NewGroup(input.Value(&answer))).Run()
+	err := huh.NewForm(huh.NewGroup(input.Value(&answer))).WithTheme(GlobalHuhTheme).Run()
 	if err != nil {
 		return nil, err
 	}
@@ -529,7 +530,7 @@ func (r *CliContext) Secret(question string, option ...console.SecretOption) (st
 		}
 	}
 
-	err := input.Value(&answer).Run()
+	err := input.Value(&answer).WithTheme(GlobalHuhTheme).Run()
 	if err != nil {
 		return "", err
 	}
@@ -538,8 +539,10 @@ func (r *CliContext) Secret(question string, option ...console.SecretOption) (st
 }
 
 func (r *CliContext) Spinner(message string, option console.SpinnerOption) error {
-	style := lipgloss.NewStyle().Foreground(lipgloss.CompleteColor{TrueColor: "#3D8C8D", ANSI256: "30", ANSI: "6"})
-	spin := spinner.New().Title(message).Style(style).TitleStyle(style)
+	spin := spinner.New().
+		Title(message).
+		Style(DefaultSpinnerStyle).
+		TitleStyle(DefaultSpinnerTitleStyle)
 
 	var err error
 	if err := spin.Context(option.Ctx).Action(func() {
@@ -553,6 +556,102 @@ func (r *CliContext) Spinner(message string, option console.SpinnerOption) error
 
 func (r *CliContext) Success(message string) {
 	color.Successln(message)
+}
+
+func (r *CliContext) Table(headers []string, rows [][]string, option ...console.TableOption) {
+	t := table.New().Headers(headers...).Rows(rows...)
+
+	opt := DefaultTableOption
+	if len(option) > 0 {
+		userOpt := option[0]
+		if (userOpt.Border != lipgloss.Border{}) {
+			opt.Border = userOpt.Border
+		}
+		if userOpt.BorderStyle.Value() != "" {
+			opt.BorderStyle = userOpt.BorderStyle
+		}
+		if userOpt.StyleFunc != nil {
+			opt.StyleFunc = userOpt.StyleFunc
+		}
+		if userOpt.BorderTop != nil {
+			opt.BorderTop = userOpt.BorderTop
+		}
+		if userOpt.BorderBottom != nil {
+			opt.BorderBottom = userOpt.BorderBottom
+		}
+		if userOpt.BorderLeft != nil {
+			opt.BorderLeft = userOpt.BorderLeft
+		}
+		if userOpt.BorderRight != nil {
+			opt.BorderRight = userOpt.BorderRight
+		}
+		if userOpt.BorderHeader != nil {
+			opt.BorderHeader = userOpt.BorderHeader
+		}
+		if userOpt.BorderColumn != nil {
+			opt.BorderColumn = userOpt.BorderColumn
+		}
+		if userOpt.BorderRow != nil {
+			opt.BorderRow = userOpt.BorderRow
+		}
+		if userOpt.Width > 0 {
+			opt.Width = userOpt.Width
+		}
+		if userOpt.Height > 0 {
+			opt.Height = userOpt.Height
+		}
+		if userOpt.ColumnStyles != nil {
+			opt.ColumnStyles = userOpt.ColumnStyles
+		}
+	}
+
+	t.Border(opt.Border).BorderStyle(opt.BorderStyle)
+
+	if opt.BorderTop != nil {
+		t.BorderTop(*opt.BorderTop)
+	}
+	if opt.BorderBottom != nil {
+		t.BorderBottom(*opt.BorderBottom)
+	}
+	if opt.BorderLeft != nil {
+		t.BorderLeft(*opt.BorderLeft)
+	}
+	if opt.BorderRight != nil {
+		t.BorderRight(*opt.BorderRight)
+	}
+	if opt.BorderHeader != nil {
+		t.BorderHeader(*opt.BorderHeader)
+	}
+	if opt.BorderColumn != nil {
+		t.BorderColumn(*opt.BorderColumn)
+	}
+	if opt.BorderRow != nil {
+		t.BorderRow(*opt.BorderRow)
+	}
+
+	if opt.Width > 0 {
+		t.Width(opt.Width)
+	}
+	if opt.Height > 0 {
+		t.Height(opt.Height)
+	}
+
+	if opt.StyleFunc == nil {
+		opt.StyleFunc = DefaultTableStyleFunc
+	}
+	t.StyleFunc(func(row, col int) lipgloss.Style {
+		style := opt.StyleFunc(row, col)
+
+		if opt.ColumnStyles != nil {
+			if colStyle, ok := opt.ColumnStyles[col]; ok {
+				style = style.Inherit(colStyle)
+			}
+		}
+
+		return style
+	})
+
+	r.Line(t.Render())
 }
 
 func (r *CliContext) Warning(message string) {
