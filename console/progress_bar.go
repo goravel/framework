@@ -13,8 +13,8 @@ type ProgressBar struct {
 func NewProgressBar(total int) *ProgressBar {
 	return &ProgressBar{
 		instance: pterm.DefaultProgressbar.WithTotal(total).
-			WithBarStyle(pterm.NewStyle(pterm.FgLightGreen)).
-			WithTitleStyle(pterm.NewStyle(pterm.FgWhite)),
+			WithBarStyle(DefaultProgressBarStyle).
+			WithTitleStyle(DefaultProgressTitleStyle),
 	}
 }
 

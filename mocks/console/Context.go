@@ -2800,6 +2800,55 @@ func (_c *Context_Success_Call) RunAndReturn(run func(string)) *Context_Success_
 	return _c
 }
 
+// Table provides a mock function with given fields: headers, rows, option
+func (_m *Context) Table(headers []string, rows [][]string, option ...console.TableOption) {
+	_va := make([]interface{}, len(option))
+	for _i := range option {
+		_va[_i] = option[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, headers, rows)
+	_ca = append(_ca, _va...)
+	_m.Called(_ca...)
+}
+
+// Context_Table_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Table'
+type Context_Table_Call struct {
+	*mock.Call
+}
+
+// Table is a helper method to define mock.On call
+//   - headers []string
+//   - rows [][]string
+//   - option ...console.TableOption
+func (_e *Context_Expecter) Table(headers interface{}, rows interface{}, option ...interface{}) *Context_Table_Call {
+	return &Context_Table_Call{Call: _e.mock.On("Table",
+		append([]interface{}{headers, rows}, option...)...)}
+}
+
+func (_c *Context_Table_Call) Run(run func(headers []string, rows [][]string, option ...console.TableOption)) *Context_Table_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]console.TableOption, len(args)-2)
+		for i, a := range args[2:] {
+			if a != nil {
+				variadicArgs[i] = a.(console.TableOption)
+			}
+		}
+		run(args[0].([]string), args[1].([][]string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Context_Table_Call) Return() *Context_Table_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Context_Table_Call) RunAndReturn(run func([]string, [][]string, ...console.TableOption)) *Context_Table_Call {
+	_c.Run(run)
+	return _c
+}
+
 // TwoColumnDetail provides a mock function with given fields: first, second, filler
 func (_m *Context) TwoColumnDetail(first string, second string, filler ...rune) {
 	_va := make([]interface{}, len(filler))
