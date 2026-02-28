@@ -3,16 +3,17 @@ package console
 import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/contracts/filesystem"
 	"github.com/goravel/framework/contracts/foundation"
-	"github.com/goravel/framework/support/file"
 )
 
 type UpCommand struct {
-	app foundation.Application
+	app     foundation.Application
+	storage filesystem.Storage
 }
 
 func NewUpCommand(app foundation.Application) *UpCommand {
-	return &UpCommand{app}
+	return &UpCommand{app, app.MakeStorage()}
 }
 
 // Signature The name and signature of the console command.
@@ -32,9 +33,9 @@ func (r *UpCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *UpCommand) Handle(ctx console.Context) error {
-	path := r.app.StoragePath("framework/maintenance")
-	if ok := file.Exists(path); ok {
-		if err := file.Remove(path); err != nil {
+	path := "framework/maintenance.json"
+	if ok := r.storage.Exists(path); ok {
+		if err := r.storage.Delete(path); err != nil {
 			return err
 		}
 
