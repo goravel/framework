@@ -1,6 +1,7 @@
 package console
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,7 +19,6 @@ import (
 type DownCommandTestSuite struct {
 	suite.Suite
 	mockApp     *mocksfoundation.Application
-	mockCtx     *mocksconsole.Context
 	mockHash    *mockshash.Hash
 	mockView    *mocksview.View
 	mockStorage *mocksfilesystem.Storage
@@ -30,7 +30,6 @@ func TestDownCommandTestSuite(t *testing.T) {
 
 func (s *DownCommandTestSuite) SetupSuite() {
 	s.mockApp = mocksfoundation.NewApplication(s.T())
-	s.mockCtx = mocksconsole.NewContext(s.T())
 	s.mockHash = mockshash.NewHash(s.T())
 	s.mockView = mocksview.NewView(s.T())
 	s.mockStorage = mocksfilesystem.NewStorage(s.T())
@@ -61,47 +60,50 @@ func (s *DownCommandTestSuite) TestHandle() {
 	cmd := NewDownCommand(s.mockApp)
 
 	flag := cmd.Extend().Flags[0].(*command.StringFlag)
-	s.mockCtx.EXPECT().OptionInt("status").Return(503)
-	s.mockCtx.EXPECT().Option("render").Return("")
-	s.mockCtx.EXPECT().Option("redirect").Return("")
-	s.mockCtx.EXPECT().Option("secret").Return("")
-	s.mockCtx.EXPECT().OptionBool("with-secret").Return(false)
-	s.mockCtx.EXPECT().Option("reason").Return(flag.Value)
-	s.mockCtx.EXPECT().Success("The application is in maintenance mode now").Once()
+	mockCtx := mocksconsole.NewContext(s.T())
+	mockCtx.EXPECT().OptionInt("status").Return(503)
+	mockCtx.EXPECT().Option("render").Return("")
+	mockCtx.EXPECT().Option("redirect").Return("")
+	mockCtx.EXPECT().Option("secret").Return("")
+	mockCtx.EXPECT().OptionBool("with-secret").Return(false)
+	mockCtx.EXPECT().Option("reason").Return(flag.Value)
+	mockCtx.EXPECT().Success("The application is in maintenance mode now").Once()
 	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"reason\":\"The application is under maintenance\",\"status\":503}").Return(nil)
 
-	err := cmd.Handle(s.mockCtx)
+	err := cmd.Handle(mockCtx)
 
 	assert.Nil(s.T(), err)
 }
 
 func (s *DownCommandTestSuite) TestHandleWithReason() {
-	s.mockCtx.EXPECT().OptionInt("status").Return(505)
-	// s.mockCtx.EXPECT().Option("reason").Return("Under maintenance").Once()
-	// s.mockCtx.EXPECT().Option("redirect").Return("").Once()
-	// s.mockCtx.EXPECT().Option("render").Return("").Once()
-	// s.mockCtx.EXPECT().Option("secret").Return("").Once()
-	// s.mockCtx.EXPECT().OptionBool("with-secret").Return(false).Once()
-	// s.mockCtx.EXPECT().Success("The application is in maintenance mode now").Once()
-	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"reason\":\"Under maintenance\",\"status\":505}").Return(nil)
+	mockCtx := mocksconsole.NewContext(s.T())
+	mockCtx.EXPECT().OptionInt("status").Return(505)
+	mockCtx.EXPECT().Option("reason").Return("Under maintenance").Once()
+	mockCtx.EXPECT().Option("redirect").Return("").Once()
+	mockCtx.EXPECT().Option("render").Return("").Once()
+	mockCtx.EXPECT().Option("secret").Return("").Once()
+	mockCtx.EXPECT().OptionBool("with-secret").Return(false).Once()
+	mockCtx.EXPECT().Success("The application is in maintenance mode now").Once()
+	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"reason\":\"Under maintenance\",\"status\":505}").Return(nil).Once()
 
 	cmd := NewDownCommand(s.mockApp)
-	err := cmd.Handle(s.mockCtx)
+	err := cmd.Handle(mockCtx)
 
 	assert.Nil(s.T(), err)
 }
 
 func (s *DownCommandTestSuite) TestHandleWithRedirect() {
-	s.mockCtx.EXPECT().OptionInt("status").Return(503)
-	s.mockCtx.EXPECT().Option("render").Return("")
-	s.mockCtx.EXPECT().Option("redirect").Return("/maintenance")
-	s.mockCtx.EXPECT().Option("secret").Return("")
-	s.mockCtx.EXPECT().OptionBool("with-secret").Return(false)
-	s.mockCtx.EXPECT().Success("The application is in maintenance mode now")
-	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"reason\":\"Under maintenance\",\"status\":503, \"redirect\": \"/maintenance\"}").Return(nil)
+	mockCtx := mocksconsole.NewContext(s.T())
+	mockCtx.EXPECT().OptionInt("status").Return(503).Once()
+	mockCtx.EXPECT().Option("render").Return("").Once()
+	mockCtx.EXPECT().Option("redirect").Return("/maintenance").Once()
+	mockCtx.EXPECT().Option("secret").Return("").Once()
+	mockCtx.EXPECT().OptionBool("with-secret").Return(false).Once()
+	mockCtx.EXPECT().Success("The application is in maintenance mode now").Once()
+	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"redirect\":\"/maintenance\",\"status\":503}").Return(nil).Once()
 
 	cmd := NewDownCommand(s.mockApp)
-	err := cmd.Handle(s.mockCtx)
+	err := cmd.Handle(mockCtx)
 
 	assert.Nil(s.T(), err)
 }
@@ -109,53 +111,56 @@ func (s *DownCommandTestSuite) TestHandleWithRedirect() {
 func (s *DownCommandTestSuite) TestHandleWithRender() {
 	s.mockView.EXPECT().Exists("errors/503.tmpl").Return(true)
 
-	s.mockCtx.EXPECT().OptionInt("status").Return(503)
-	s.mockCtx.EXPECT().Option("render").Return("errors/503.tmpl")
-	s.mockCtx.EXPECT().Option("redirect").Return("")
-	s.mockCtx.EXPECT().Option("secret").Return("")
-	s.mockCtx.EXPECT().OptionBool("with-secret").Return(false)
-	s.mockCtx.EXPECT().Success("The application is in maintenance mode now")
-	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"reason\":\"Under maintenance\",\"status\":503, \"render\": \"errors/503.tmpl\"}").Return(nil)
+	mockCtx := mocksconsole.NewContext(s.T())
+	mockCtx.EXPECT().OptionInt("status").Return(503).Once()
+	mockCtx.EXPECT().Option("render").Return("errors/503.tmpl").Once()
+	mockCtx.EXPECT().Option("redirect").Return("").Once()
+	mockCtx.EXPECT().Option("secret").Return("").Once()
+	mockCtx.EXPECT().OptionBool("with-secret").Return(false).Once()
+	mockCtx.EXPECT().Success("The application is in maintenance mode now").Once()
+	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"render\":\"errors/503.tmpl\",\"status\":503}").Return(nil).Once()
 
 	cmd := NewDownCommand(s.mockApp)
-	err := cmd.Handle(s.mockCtx)
+	err := cmd.Handle(mockCtx)
 
 	assert.Nil(s.T(), err)
 }
-
 func (s *DownCommandTestSuite) TestHandleSecret() {
 	s.mockHash.EXPECT().Make("secretpassword").Return("hashedsecretpassword", nil)
 
-	s.mockCtx.EXPECT().OptionInt("status").Return(503)
-	s.mockCtx.EXPECT().Option("reason").Return("Under maintenance")
-	s.mockCtx.EXPECT().Option("render").Return("")
-	s.mockCtx.EXPECT().Option("redirect").Return("")
-	s.mockCtx.EXPECT().Option("secret").Return("secretpassword").Once()
-	s.mockCtx.EXPECT().OptionBool("with-secret").Return(false).Once()
-	s.mockCtx.EXPECT().Success("The application is in maintenance mode now")
-	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"reason\":\"Under maintenance\",\"status\":503, \"secret\": \"hashedsecretpassword\"}").Return(nil)
+	mockCtx := mocksconsole.NewContext(s.T())
+	mockCtx.EXPECT().OptionInt("status").Return(503).Once()
+	mockCtx.EXPECT().Option("reason").Return("Under maintenance").Once()
+	mockCtx.EXPECT().Option("render").Return("").Once()
+	mockCtx.EXPECT().Option("redirect").Return("").Once()
+	mockCtx.EXPECT().Option("secret").Return("secretpassword").Once()
+	mockCtx.EXPECT().OptionBool("with-secret").Return(false).Once()
+	mockCtx.EXPECT().Success("The application is in maintenance mode now").Once()
+	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"reason\":\"Under maintenance\",\"secret\":\"hashedsecretpassword\",\"status\":503}").Return(nil).Once()
 
 	cmd := NewDownCommand(s.mockApp)
-	err := cmd.Handle(s.mockCtx)
+	err := cmd.Handle(mockCtx)
 
 	assert.Nil(s.T(), err)
 }
-
 func (s *DownCommandTestSuite) TestHandleWithSecret() {
 	s.mockHash.EXPECT().Make(mock.Anything).Return("randomhashedsecretpassword", nil)
 
-	s.mockCtx.EXPECT().OptionInt("status").Return(503)
-	s.mockCtx.EXPECT().Option("reason").Return("Under maintenance")
-	s.mockCtx.EXPECT().Option("render").Return("")
-	s.mockCtx.EXPECT().Option("redirect").Return("")
-	s.mockCtx.EXPECT().Option("secret").Return("")
-	s.mockCtx.EXPECT().OptionBool("with-secret").Return(true)
-	s.mockCtx.EXPECT().Info("Using secret: randomhashedsecretpassword").Once()
-	s.mockCtx.EXPECT().Success("The application is in maintenance mode now")
-	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"reason\":\"Under maintenance\",\"status\":503, \"secret\": \"randomhashedsecretpassword\"}").Return(nil).Once()
+	mockCtx := mocksconsole.NewContext(s.T())
+	mockCtx.EXPECT().OptionInt("status").Return(503).Once()
+	mockCtx.EXPECT().Option("reason").Return("Under maintenance").Once()
+	mockCtx.EXPECT().Option("render").Return("").Once()
+	mockCtx.EXPECT().Option("redirect").Return("").Once()
+	mockCtx.EXPECT().Option("secret").Return("").Once()
+	mockCtx.EXPECT().OptionBool("with-secret").Return(true).Once()
+	mockCtx.EXPECT().Info(mock.MatchedBy(func(arg string) bool {
+		return strings.HasPrefix(arg, "Using secret:")
+	})).Once()
+	mockCtx.EXPECT().Success("The application is in maintenance mode now").Once()
+	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"reason\":\"Under maintenance\",\"secret\":\"randomhashedsecretpassword\",\"status\":503}").Return(nil).Once()
 
 	cmd := NewDownCommand(s.mockApp)
-	err := cmd.Handle(s.mockCtx)
+	err := cmd.Handle(mockCtx)
 
 	assert.Nil(s.T(), err)
 }

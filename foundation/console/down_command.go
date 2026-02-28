@@ -96,7 +96,6 @@ func (r *DownCommand) Handle(ctx console.Context) error {
 			return nil
 		}
 	}
-	println("DEBUG: ", options.Redirect, options.Render, ctx.OptionInt("status"))
 
 	if options.Redirect == "" && options.Render == "" {
 		options.Reason = ctx.Option("reason")
@@ -136,8 +135,6 @@ func (r *DownCommand) Handle(ctx console.Context) error {
 		ctx.Error(err.Error())
 		return nil
 	}
-
-	println(string(jsonBytes))
 
 	ctx.Success("The application is in maintenance mode now")
 
