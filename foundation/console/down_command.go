@@ -7,19 +7,19 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/contracts/filesystem"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/hash"
 	"github.com/goravel/framework/contracts/view"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/support/file"
-	"github.com/goravel/framework/support/path"
 	"github.com/goravel/framework/support/str"
 )
 
 type DownCommand struct {
-	app  foundation.Application
-	view view.View
-	hash hash.Hash
+	app     foundation.Application
+	view    view.View
+	hash    hash.Hash
+	storage filesystem.Storage
 }
 
 type MaintenanceOptions struct {
@@ -31,7 +31,7 @@ type MaintenanceOptions struct {
 }
 
 func NewDownCommand(app foundation.Application) *DownCommand {
-	return &DownCommand{app, app.MakeView(), app.MakeHash()}
+	return &DownCommand{app, app.MakeView(), app.MakeHash(), app.MakeStorage()}
 }
 
 // Signature The name and signature of the console command.
@@ -80,7 +80,7 @@ func (r *DownCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *DownCommand) Handle(ctx console.Context) error {
-	path := path.Storage("framework/maintenance")
+	path := "framework/maintenance.json"
 
 	options := MaintenanceOptions{}
 
@@ -96,6 +96,7 @@ func (r *DownCommand) Handle(ctx console.Context) error {
 			return nil
 		}
 	}
+	println("DEBUG: ", options.Redirect, options.Render, ctx.OptionInt("status"))
 
 	if options.Redirect == "" && options.Render == "" {
 		options.Reason = ctx.Option("reason")
@@ -113,7 +114,7 @@ func (r *DownCommand) Handle(ctx console.Context) error {
 
 	if withSecret := ctx.OptionBool("with-secret"); withSecret {
 		secret := str.Random(40)
-		hash, err := r.app.MakeHash().Make(secret)
+		hash, err := r.hash.Make(secret)
 
 		if err != nil {
 			ctx.Error(err.Error())
@@ -131,10 +132,12 @@ func (r *DownCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	if err := file.PutContent(path, string(jsonBytes)); err != nil {
+	if err := r.storage.Put(path, string(jsonBytes)); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
+
+	println(string(jsonBytes))
 
 	ctx.Success("The application is in maintenance mode now")
 

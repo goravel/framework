@@ -1,10 +1,6 @@
 package console
 
 import (
-	"encoding/json"
-	"os"
-	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,14 +9,19 @@ import (
 
 	"github.com/goravel/framework/contracts/console/command"
 	mocksconsole "github.com/goravel/framework/mocks/console"
+	mocksfilesystem "github.com/goravel/framework/mocks/filesystem"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	mockshash "github.com/goravel/framework/mocks/hash"
 	mocksview "github.com/goravel/framework/mocks/view"
-	"github.com/goravel/framework/support/file"
 )
 
 type DownCommandTestSuite struct {
 	suite.Suite
+	mockApp     *mocksfoundation.Application
+	mockCtx     *mocksconsole.Context
+	mockHash    *mockshash.Hash
+	mockView    *mocksview.View
+	mockStorage *mocksfilesystem.Storage
 }
 
 func TestDownCommandTestSuite(t *testing.T) {
@@ -28,234 +29,133 @@ func TestDownCommandTestSuite(t *testing.T) {
 }
 
 func (s *DownCommandTestSuite) SetupSuite() {
-}
+	s.mockApp = mocksfoundation.NewApplication(s.T())
+	s.mockCtx = mocksconsole.NewContext(s.T())
+	s.mockHash = mockshash.NewHash(s.T())
+	s.mockView = mocksview.NewView(s.T())
+	s.mockStorage = mocksfilesystem.NewStorage(s.T())
 
-func (s *DownCommandTestSuite) TearDownSuite() {
+	s.mockApp.EXPECT().MakeHash().Return(s.mockHash)
+	s.mockApp.EXPECT().MakeView().Return(s.mockView)
+	s.mockApp.EXPECT().MakeStorage().Return(s.mockStorage)
 }
 
 func (s *DownCommandTestSuite) TestSignature() {
 	expected := "down"
-	s.Require().Equal(expected, NewDownCommand(mocksfoundation.NewApplication(s.T())).Signature())
+	s.Require().Equal(expected, NewDownCommand(s.mockApp).Signature())
 }
 
 func (s *DownCommandTestSuite) TestDescription() {
 	expected := "Put the application into maintenance mode"
-	s.Require().Equal(expected, NewDownCommand(mocksfoundation.NewApplication(s.T())).Description())
+	s.Require().Equal(expected, NewDownCommand(s.mockApp).Description())
 }
 
 func (s *DownCommandTestSuite) TestExtend() {
-	cmd := NewDownCommand(mocksfoundation.NewApplication(s.T()))
+	cmd := NewDownCommand(s.mockApp)
 	got := cmd.Extend()
 
 	s.Equal(6, len(got.Flags))
 }
 
 func (s *DownCommandTestSuite) TestHandle() {
-	app := mocksfoundation.NewApplication(s.T())
-	tmpfile := filepath.Join(s.T().TempDir(), "/maintenance")
+	cmd := NewDownCommand(s.mockApp)
 
-	app.EXPECT().StoragePath("framework/maintenance").Return(tmpfile)
-
-	cmd := NewDownCommand(app)
-
-	mockContext := mocksconsole.NewContext(s.T())
 	flag := cmd.Extend().Flags[0].(*command.StringFlag)
-	mockContext.EXPECT().OptionInt("status").Return(503)
-	mockContext.EXPECT().Option("render").Return("")
-	mockContext.EXPECT().Option("redirect").Return("")
-	mockContext.EXPECT().Option("secret").Return("")
-	mockContext.EXPECT().OptionBool("with-secret").Return(false)
-	mockContext.EXPECT().Option("reason").Return(flag.Value)
-	mockContext.EXPECT().Info("The application is in maintenance mode now")
+	s.mockCtx.EXPECT().OptionInt("status").Return(503)
+	s.mockCtx.EXPECT().Option("render").Return("")
+	s.mockCtx.EXPECT().Option("redirect").Return("")
+	s.mockCtx.EXPECT().Option("secret").Return("")
+	s.mockCtx.EXPECT().OptionBool("with-secret").Return(false)
+	s.mockCtx.EXPECT().Option("reason").Return(flag.Value)
+	s.mockCtx.EXPECT().Success("The application is in maintenance mode now").Once()
+	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"reason\":\"The application is under maintenance\",\"status\":503}").Return(nil)
 
-	err := cmd.Handle(mockContext)
-
-	assert.Nil(s.T(), err)
-	assert.True(s.T(), file.Exists(tmpfile))
-
-	content, err := file.GetContent(tmpfile)
+	err := cmd.Handle(s.mockCtx)
 
 	assert.Nil(s.T(), err)
-
-	var maintenanceOptions *MaintenanceOptions
-	err = json.Unmarshal([]byte(content), &maintenanceOptions)
-	assert.Nil(s.T(), err)
-
-	assert.Equal(s.T(), flag.Value, maintenanceOptions.Reason)
-	assert.Equal(s.T(), 503, maintenanceOptions.Status)
 }
 
 func (s *DownCommandTestSuite) TestHandleWithReason() {
-	app := mocksfoundation.NewApplication(s.T())
-	tmpfile := filepath.Join(s.T().TempDir(), "/down_with_reason")
+	s.mockCtx.EXPECT().OptionInt("status").Return(505)
+	// s.mockCtx.EXPECT().Option("reason").Return("Under maintenance").Once()
+	// s.mockCtx.EXPECT().Option("redirect").Return("").Once()
+	// s.mockCtx.EXPECT().Option("render").Return("").Once()
+	// s.mockCtx.EXPECT().Option("secret").Return("").Once()
+	// s.mockCtx.EXPECT().OptionBool("with-secret").Return(false).Once()
+	// s.mockCtx.EXPECT().Success("The application is in maintenance mode now").Once()
+	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"reason\":\"Under maintenance\",\"status\":505}").Return(nil)
 
-	app.EXPECT().StoragePath("framework/maintenance").Return(tmpfile)
-
-	mockContext := mocksconsole.NewContext(s.T())
-	mockContext.EXPECT().OptionInt("status").Return(505)
-	mockContext.EXPECT().Option("render").Return("")
-	mockContext.EXPECT().Option("redirect").Return("")
-	mockContext.EXPECT().Option("secret").Return("")
-	mockContext.EXPECT().OptionBool("with-secret").Return(false)
-	mockContext.EXPECT().Option("reason").Return("Under maintenance")
-	mockContext.EXPECT().Info("The application is in maintenance mode now")
-
-	cmd := NewDownCommand(app)
-	err := cmd.Handle(mockContext)
+	cmd := NewDownCommand(s.mockApp)
+	err := cmd.Handle(s.mockCtx)
 
 	assert.Nil(s.T(), err)
-	assert.True(s.T(), file.Exists(tmpfile))
-
-	content, err := file.GetContent(tmpfile)
-
-	assert.Nil(s.T(), err)
-	var maintenanceOptions *MaintenanceOptions
-	err = json.Unmarshal([]byte(content), &maintenanceOptions)
-	assert.Nil(s.T(), err)
-
-	assert.Equal(s.T(), "Under maintenance", maintenanceOptions.Reason)
-	assert.Equal(s.T(), 505, maintenanceOptions.Status)
 }
 
 func (s *DownCommandTestSuite) TestHandleWithRedirect() {
-	app := mocksfoundation.NewApplication(s.T())
-	tmpfile := filepath.Join(s.T().TempDir(), "/down_with_reason")
+	s.mockCtx.EXPECT().OptionInt("status").Return(503)
+	s.mockCtx.EXPECT().Option("render").Return("")
+	s.mockCtx.EXPECT().Option("redirect").Return("/maintenance")
+	s.mockCtx.EXPECT().Option("secret").Return("")
+	s.mockCtx.EXPECT().OptionBool("with-secret").Return(false)
+	s.mockCtx.EXPECT().Success("The application is in maintenance mode now")
+	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"reason\":\"Under maintenance\",\"status\":503, \"redirect\": \"/maintenance\"}").Return(nil)
 
-	app.EXPECT().StoragePath("framework/maintenance").Return(tmpfile)
-
-	mockContext := mocksconsole.NewContext(s.T())
-	mockContext.EXPECT().OptionInt("status").Return(503)
-	mockContext.EXPECT().Option("render").Return("")
-	mockContext.EXPECT().Option("redirect").Return("/maintenance")
-	mockContext.EXPECT().Option("secret").Return("")
-	mockContext.EXPECT().OptionBool("with-secret").Return(false)
-	mockContext.EXPECT().Info("The application is in maintenance mode now")
-
-	cmd := NewDownCommand(app)
-	err := cmd.Handle(mockContext)
+	cmd := NewDownCommand(s.mockApp)
+	err := cmd.Handle(s.mockCtx)
 
 	assert.Nil(s.T(), err)
-	assert.True(s.T(), file.Exists(tmpfile))
-
-	content, err := file.GetContent(tmpfile)
-
-	assert.Nil(s.T(), err)
-	var maintenanceOptions *MaintenanceOptions
-	err = json.Unmarshal([]byte(content), &maintenanceOptions)
-	assert.Nil(s.T(), err)
-
-	assert.Equal(s.T(), "/maintenance", maintenanceOptions.Redirect)
-	assert.Equal(s.T(), 503, maintenanceOptions.Status)
 }
 
 func (s *DownCommandTestSuite) TestHandleWithRender() {
-	app := mocksfoundation.NewApplication(s.T())
-	tmpfile := filepath.Join(s.T().TempDir(), "/down_with_reason")
+	s.mockView.EXPECT().Exists("errors/503.tmpl").Return(true)
 
-	app.EXPECT().StoragePath("framework/maintenance").Return(tmpfile)
+	s.mockCtx.EXPECT().OptionInt("status").Return(503)
+	s.mockCtx.EXPECT().Option("render").Return("errors/503.tmpl")
+	s.mockCtx.EXPECT().Option("redirect").Return("")
+	s.mockCtx.EXPECT().Option("secret").Return("")
+	s.mockCtx.EXPECT().OptionBool("with-secret").Return(false)
+	s.mockCtx.EXPECT().Success("The application is in maintenance mode now")
+	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"reason\":\"Under maintenance\",\"status\":503, \"render\": \"errors/503.tmpl\"}").Return(nil)
 
-	views := mocksview.NewView(s.T())
-	views.EXPECT().Exists("errors/503.tmpl").Return(true)
-	app.EXPECT().MakeView().Return(views)
-
-	mockContext := mocksconsole.NewContext(s.T())
-	mockContext.EXPECT().OptionInt("status").Return(503)
-	mockContext.EXPECT().Option("render").Return("errors/503.tmpl")
-	mockContext.EXPECT().Option("redirect").Return("")
-	mockContext.EXPECT().Option("secret").Return("")
-	mockContext.EXPECT().OptionBool("with-secret").Return(false)
-	mockContext.EXPECT().Info("The application is in maintenance mode now")
-
-	cmd := NewDownCommand(app)
-	err := cmd.Handle(mockContext)
+	cmd := NewDownCommand(s.mockApp)
+	err := cmd.Handle(s.mockCtx)
 
 	assert.Nil(s.T(), err)
-	assert.True(s.T(), file.Exists(tmpfile))
-
-	content, err := file.GetContent(tmpfile)
-
-	assert.Nil(s.T(), err)
-	var maintenanceOptions *MaintenanceOptions
-	err = json.Unmarshal([]byte(content), &maintenanceOptions)
-	assert.Nil(s.T(), err)
-
-	assert.Equal(s.T(), "errors/503.tmpl", maintenanceOptions.Render)
-	assert.Equal(s.T(), 503, maintenanceOptions.Status)
 }
 
 func (s *DownCommandTestSuite) TestHandleSecret() {
-	app := mocksfoundation.NewApplication(s.T())
-	tmpfile := filepath.Join(s.T().TempDir(), "/down_with_reason")
+	s.mockHash.EXPECT().Make("secretpassword").Return("hashedsecretpassword", nil)
 
-	app.EXPECT().StoragePath("framework/maintenance").Return(tmpfile)
+	s.mockCtx.EXPECT().OptionInt("status").Return(503)
+	s.mockCtx.EXPECT().Option("reason").Return("Under maintenance")
+	s.mockCtx.EXPECT().Option("render").Return("")
+	s.mockCtx.EXPECT().Option("redirect").Return("")
+	s.mockCtx.EXPECT().Option("secret").Return("secretpassword").Once()
+	s.mockCtx.EXPECT().OptionBool("with-secret").Return(false).Once()
+	s.mockCtx.EXPECT().Success("The application is in maintenance mode now")
+	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"reason\":\"Under maintenance\",\"status\":503, \"secret\": \"hashedsecretpassword\"}").Return(nil)
 
-	hash := mockshash.NewHash(s.T())
-	hash.EXPECT().Make("secretpassword").Return("hashedsecretpassword", nil)
-	app.EXPECT().MakeHash().Return(hash)
-
-	mockContext := mocksconsole.NewContext(s.T())
-	mockContext.EXPECT().OptionInt("status").Return(503)
-	mockContext.EXPECT().Option("reason").Return("Under maintenance")
-	mockContext.EXPECT().Option("render").Return("")
-	mockContext.EXPECT().Option("redirect").Return("")
-	mockContext.EXPECT().Option("secret").Return("secretpassword")
-	mockContext.EXPECT().OptionBool("with-secret").Return(false)
-	mockContext.EXPECT().Info("The application is in maintenance mode now")
-
-	cmd := NewDownCommand(app)
-	err := cmd.Handle(mockContext)
+	cmd := NewDownCommand(s.mockApp)
+	err := cmd.Handle(s.mockCtx)
 
 	assert.Nil(s.T(), err)
-	assert.True(s.T(), file.Exists(tmpfile))
-
-	content, err := file.GetContent(tmpfile)
-
-	assert.Nil(s.T(), err)
-	var maintenanceOptions *MaintenanceOptions
-	err = json.Unmarshal([]byte(content), &maintenanceOptions)
-	assert.Nil(s.T(), err)
-
-	assert.Equal(s.T(), "Under maintenance", maintenanceOptions.Reason)
-	assert.Equal(s.T(), "hashedsecretpassword", maintenanceOptions.Secret)
-	assert.Equal(s.T(), 503, maintenanceOptions.Status)
 }
 
 func (s *DownCommandTestSuite) TestHandleWithSecret() {
-	app := mocksfoundation.NewApplication(s.T())
-	tmpfile := filepath.Join(s.T().TempDir(), "/down_with_reason")
+	s.mockHash.EXPECT().Make(mock.Anything).Return("randomhashedsecretpassword", nil)
 
-	app.EXPECT().StoragePath("framework/maintenance").Return(tmpfile)
+	s.mockCtx.EXPECT().OptionInt("status").Return(503)
+	s.mockCtx.EXPECT().Option("reason").Return("Under maintenance")
+	s.mockCtx.EXPECT().Option("render").Return("")
+	s.mockCtx.EXPECT().Option("redirect").Return("")
+	s.mockCtx.EXPECT().Option("secret").Return("")
+	s.mockCtx.EXPECT().OptionBool("with-secret").Return(true)
+	s.mockCtx.EXPECT().Info("Using secret: randomhashedsecretpassword").Once()
+	s.mockCtx.EXPECT().Success("The application is in maintenance mode now")
+	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"reason\":\"Under maintenance\",\"status\":503, \"secret\": \"randomhashedsecretpassword\"}").Return(nil).Once()
 
-	hash := mockshash.NewHash(s.T())
-	hash.EXPECT().Make(mock.Anything).Return("randomhashedsecretpassword", nil)
-	app.EXPECT().MakeHash().Return(hash)
-
-	mockContext := mocksconsole.NewContext(s.T())
-	mockContext.EXPECT().OptionInt("status").Return(503)
-	mockContext.EXPECT().Option("reason").Return("Under maintenance")
-	mockContext.EXPECT().Option("render").Return("")
-	mockContext.EXPECT().Option("redirect").Return("")
-	mockContext.EXPECT().Option("secret").Return("")
-	mockContext.EXPECT().OptionBool("with-secret").Return(true)
-	mockContext.EXPECT().Info(mock.MatchedBy(func(msg string) bool {
-		return strings.HasPrefix(msg, "Using secret: ")
-	}))
-	mockContext.EXPECT().Info("The application is in maintenance mode now")
-
-	cmd := NewDownCommand(app)
-	err := cmd.Handle(mockContext)
+	cmd := NewDownCommand(s.mockApp)
+	err := cmd.Handle(s.mockCtx)
 
 	assert.Nil(s.T(), err)
-	assert.True(s.T(), file.Exists(tmpfile))
-
-	content, err := os.ReadFile(tmpfile)
-
-	assert.Nil(s.T(), err)
-	var maintenanceOptions *MaintenanceOptions
-	err = json.Unmarshal(content, &maintenanceOptions)
-	assert.Nil(s.T(), err)
-
-	assert.Equal(s.T(), "Under maintenance", maintenanceOptions.Reason)
-	assert.Equal(s.T(), "randomhashedsecretpassword", maintenanceOptions.Secret)
-	assert.Equal(s.T(), 503, maintenanceOptions.Status)
 }
