@@ -164,7 +164,7 @@ func TestServiceProviderRegister(t *testing.T) {
 	mockApp := mocksfoundation.NewApplication(t)
 
 	var callback func(foundation.Application) (any, error)
-	mockApp.EXPECT().Singleton(binding.Hash, mock.AnythingOfType(singletonCallbackType)).Run(func(key interface{}, cb func(foundation.Application) (interface{}, error)) {
+	mockApp.EXPECT().Singleton(binding.Hash, mock.AnythingOfType(singletonCallbackType)).Run(func(key any, cb func(foundation.Application) (any, error)) {
 		assert.Equal(t, binding.Hash, key)
 		callback = cb
 	}).Once()
