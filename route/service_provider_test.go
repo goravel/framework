@@ -31,7 +31,7 @@ func TestServiceProviderRegister(t *testing.T) {
 
 	t.Run("config facade not set", func(t *testing.T) {
 		app := mocksfoundation.NewApplication(t)
-		app.EXPECT().Singleton(binding.Route, mock.Anything).Run(func(_ interface{}, callback func(contractsfoundation.Application) (interface{}, error)) {
+		app.EXPECT().Singleton(binding.Route, mock.AnythingOfType("func(foundation.Application) (interface {}, error)")).Run(func(_ any, callback func(contractsfoundation.Application) (any, error)) {
 			callbackApp := mocksfoundation.NewApplication(t)
 			callbackApp.EXPECT().MakeConfig().Return(nil).Once()
 
@@ -47,7 +47,7 @@ func TestServiceProviderRegister(t *testing.T) {
 
 	t.Run("register route singleton", func(t *testing.T) {
 		app := mocksfoundation.NewApplication(t)
-		app.EXPECT().Singleton(binding.Route, mock.Anything).Run(func(_ interface{}, callback func(contractsfoundation.Application) (interface{}, error)) {
+		app.EXPECT().Singleton(binding.Route, mock.AnythingOfType("func(foundation.Application) (interface {}, error)")).Run(func(_ any, callback func(contractsfoundation.Application) (any, error)) {
 			callbackApp := mocksfoundation.NewApplication(t)
 			config := mocksconfig.NewConfig(t)
 			callbackApp.EXPECT().MakeConfig().Return(config).Once()
