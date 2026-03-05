@@ -10,14 +10,14 @@ import (
 	contractsfilesystem "github.com/goravel/framework/contracts/filesystem"
 	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
-	configmock "github.com/goravel/framework/mocks/config"
-	filesystemmock "github.com/goravel/framework/mocks/filesystem"
-	foundationmock "github.com/goravel/framework/mocks/foundation"
+	mocksconfig "github.com/goravel/framework/mocks/config"
+	mocksfilesystem "github.com/goravel/framework/mocks/filesystem"
+	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 )
 
 func TestNewStorage(t *testing.T) {
 	t.Run("returns error when default disk is not configured", func(t *testing.T) {
-		config := configmock.NewConfig(t)
+		config := mocksconfig.NewConfig(t)
 		config.EXPECT().GetString("filesystems.default").Return("").Once()
 
 		storage, err := NewStorage(config)
@@ -28,7 +28,7 @@ func TestNewStorage(t *testing.T) {
 	})
 
 	t.Run("creates storage and caches loaded disk", func(t *testing.T) {
-		config := configmock.NewConfig(t)
+		config := mocksconfig.NewConfig(t)
 		config.EXPECT().GetString("filesystems.default").Return("local").Once()
 		config.EXPECT().GetString("filesystems.disks.local.driver").Return("local").Once()
 		config.EXPECT().GetString("filesystems.disks.local.root").Return(t.TempDir()).Once()
@@ -52,7 +52,7 @@ func TestNewStorage(t *testing.T) {
 
 func TestNewDriver(t *testing.T) {
 	t.Run("returns local driver", func(t *testing.T) {
-		config := configmock.NewConfig(t)
+		config := mocksconfig.NewConfig(t)
 		config.EXPECT().GetString("filesystems.disks.local.driver").Return("local").Once()
 		config.EXPECT().GetString("filesystems.disks.local.root").Return(t.TempDir()).Once()
 		config.EXPECT().GetString("filesystems.disks.local.url").Return("").Once()
@@ -64,8 +64,8 @@ func TestNewDriver(t *testing.T) {
 	})
 
 	t.Run("returns custom driver instance", func(t *testing.T) {
-		config := configmock.NewConfig(t)
-		custom := filesystemmock.NewDriver(t)
+		config := mocksconfig.NewConfig(t)
+		custom := mocksfilesystem.NewDriver(t)
 		config.EXPECT().GetString("filesystems.disks.custom.driver").Return("custom").Once()
 		config.EXPECT().Get("filesystems.disks.custom.via").Return(custom).Once()
 
@@ -76,8 +76,8 @@ func TestNewDriver(t *testing.T) {
 	})
 
 	t.Run("returns custom driver from callback", func(t *testing.T) {
-		config := configmock.NewConfig(t)
-		custom := filesystemmock.NewDriver(t)
+		config := mocksconfig.NewConfig(t)
+		custom := mocksfilesystem.NewDriver(t)
 		config.EXPECT().GetString("filesystems.disks.custom.driver").Return("custom").Once()
 		config.EXPECT().Get("filesystems.disks.custom.via").Return(func() (contractsfilesystem.Driver, error) {
 			return custom, nil
@@ -90,7 +90,7 @@ func TestNewDriver(t *testing.T) {
 	})
 
 	t.Run("returns error for invalid custom driver", func(t *testing.T) {
-		config := configmock.NewConfig(t)
+		config := mocksconfig.NewConfig(t)
 		config.EXPECT().GetString("filesystems.disks.custom.driver").Return("custom").Once()
 		config.EXPECT().Get("filesystems.disks.custom.via").Return("invalid").Once()
 
@@ -102,7 +102,7 @@ func TestNewDriver(t *testing.T) {
 	})
 
 	t.Run("returns error for unsupported driver", func(t *testing.T) {
-		config := configmock.NewConfig(t)
+		config := mocksconfig.NewConfig(t)
 		config.EXPECT().GetString("filesystems.disks.s3.driver").Return("s3").Once()
 
 		driver, err := NewDriver(config, "s3")
@@ -114,7 +114,7 @@ func TestNewDriver(t *testing.T) {
 }
 
 func TestStorageDisk_PanicOnInvalidDisk(t *testing.T) {
-	config := configmock.NewConfig(t)
+	config := mocksconfig.NewConfig(t)
 	config.EXPECT().GetString("filesystems.default").Return("local").Once()
 	config.EXPECT().GetString("filesystems.disks.local.driver").Return("local").Once()
 	config.EXPECT().GetString("filesystems.disks.local.root").Return(t.TempDir()).Once()
@@ -141,9 +141,9 @@ func TestServiceProvider(t *testing.T) {
 	})
 
 	t.Run("register returns error when config facade not set", func(t *testing.T) {
-		app := foundationmock.NewApplication(t)
-		app.EXPECT().Singleton(binding.Storage, mock.Anything).Run(func(_ interface{}, callback func(contractsfoundation.Application) (interface{}, error)) {
-			callbackApp := foundationmock.NewApplication(t)
+		app := mocksfoundation.NewApplication(t)
+		app.EXPECT().Singleton(binding.Storage, mock.AnythingOfType("func(foundation.Application) (interface {}, error)")).Run(func(_ any, callback func(contractsfoundation.Application) (any, error)) {
+			callbackApp := mocksfoundation.NewApplication(t)
 			callbackApp.EXPECT().MakeConfig().Return(nil).Once()
 
 			instance, err := callback(callbackApp)
@@ -157,10 +157,10 @@ func TestServiceProvider(t *testing.T) {
 	})
 
 	t.Run("register creates storage singleton", func(t *testing.T) {
-		app := foundationmock.NewApplication(t)
-		app.EXPECT().Singleton(binding.Storage, mock.Anything).Run(func(_ interface{}, callback func(contractsfoundation.Application) (interface{}, error)) {
-			callbackApp := foundationmock.NewApplication(t)
-			config := configmock.NewConfig(t)
+		app := mocksfoundation.NewApplication(t)
+		app.EXPECT().Singleton(binding.Storage, mock.AnythingOfType("func(foundation.Application) (interface {}, error)")).Run(func(_ any, callback func(contractsfoundation.Application) (any, error)) {
+			callbackApp := mocksfoundation.NewApplication(t)
+			config := mocksconfig.NewConfig(t)
 			callbackApp.EXPECT().MakeConfig().Return(config).Once()
 			config.EXPECT().GetString("filesystems.default").Return("local").Once()
 			config.EXPECT().GetString("filesystems.disks.local.driver").Return("local").Once()
@@ -184,9 +184,9 @@ func TestServiceProvider(t *testing.T) {
 			StorageFacade = originStorageFacade
 		})
 
-		app := foundationmock.NewApplication(t)
-		config := configmock.NewConfig(t)
-		storage := filesystemmock.NewStorage(t)
+		app := mocksfoundation.NewApplication(t)
+		config := mocksconfig.NewConfig(t)
+		storage := mocksfilesystem.NewStorage(t)
 		app.EXPECT().MakeConfig().Return(config).Once()
 		app.EXPECT().MakeStorage().Return(storage).Once()
 

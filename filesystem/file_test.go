@@ -12,15 +12,15 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/errors"
-	configmock "github.com/goravel/framework/mocks/config"
-	filesystemmock "github.com/goravel/framework/mocks/filesystem"
+	mocksconfig "github.com/goravel/framework/mocks/config"
+	mocksfilesystem "github.com/goravel/framework/mocks/filesystem"
 	"github.com/goravel/framework/support/file"
 )
 
 type FileTestSuite struct {
 	suite.Suite
 	file       *File
-	mockConfig *configmock.Config
+	mockConfig *mocksconfig.Config
 }
 
 func TestFileTestSuite(t *testing.T) {
@@ -30,7 +30,7 @@ func TestFileTestSuite(t *testing.T) {
 }
 
 func (s *FileTestSuite) SetupTest() {
-	s.mockConfig = &configmock.Config{}
+	s.mockConfig = &mocksconfig.Config{}
 	s.mockConfig.On("GetString", "filesystems.default").Return("local").Once()
 	ConfigFacade = s.mockConfig
 
@@ -66,7 +66,7 @@ func (s *FileTestSuite) TestExtension() {
 }
 
 func TestNewFileFromRequest(t *testing.T) {
-	mockConfig := &configmock.Config{}
+	mockConfig := &mocksconfig.Config{}
 	ConfigFacade = mockConfig
 	mockConfig.On("GetString", "app.name").Return("goravel").Once()
 	mockConfig.On("GetString", "filesystems.default").Return("local").Once()
@@ -109,8 +109,8 @@ func TestNewFile_ConfigFacadeNotSet(t *testing.T) {
 }
 
 func TestFileStore(t *testing.T) {
-	storage := filesystemmock.NewStorage(t)
-	driver := filesystemmock.NewDriver(t)
+	storage := mocksfilesystem.NewStorage(t)
+	driver := mocksfilesystem.NewDriver(t)
 	file := &File{
 		storage: storage,
 		disk:    "s3",
@@ -127,8 +127,8 @@ func TestFileStore(t *testing.T) {
 }
 
 func TestFileStoreAs(t *testing.T) {
-	storage := filesystemmock.NewStorage(t)
-	driver := filesystemmock.NewDriver(t)
+	storage := mocksfilesystem.NewStorage(t)
+	driver := mocksfilesystem.NewDriver(t)
 	file := &File{
 		storage: storage,
 		disk:    "s3",
@@ -161,7 +161,7 @@ func TestFileStore_ErrorWhenStorageFacadeMissing(t *testing.T) {
 }
 
 func TestFileMetadataAndDisk(t *testing.T) {
-	mockConfig := configmock.NewConfig(t)
+	mockConfig := mocksconfig.NewConfig(t)
 	tempFile := filepath.Join(t.TempDir(), "goravel.txt")
 	assert.NoError(t, os.WriteFile(tempFile, []byte("framework"), 0o644))
 
