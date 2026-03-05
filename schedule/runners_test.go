@@ -43,6 +43,18 @@ func TestScheduleRunner(t *testing.T) {
 		assert.False(t, runner.ShouldRun())
 	})
 
+	t.Run("should not run when auto_run disabled", func(t *testing.T) {
+		config := mocksconfig.NewConfig(t)
+		schedule := mocksschedule.NewSchedule(t)
+		event := mocksschedule.NewEvent(t)
+
+		schedule.EXPECT().Events().Return([]contractsschedule.Event{event}).Once()
+		config.EXPECT().GetBool("app.auto_run", true).Return(false).Once()
+
+		runner := NewScheduleRunner(config, schedule)
+		assert.False(t, runner.ShouldRun())
+	})
+
 	t.Run("run and shutdown", func(t *testing.T) {
 		config := mocksconfig.NewConfig(t)
 		schedule := mocksschedule.NewSchedule(t)

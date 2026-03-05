@@ -140,7 +140,14 @@ func TestServiceProviderBoot(t *testing.T) {
 	app.EXPECT().MakeArtisan().Return(artisan).Once()
 	app.EXPECT().MakeSchedule().Return(schedule).Twice()
 	artisan.EXPECT().Register(mock.MatchedBy(func(commands []contractsconsole.Command) bool {
-		return len(commands) == 2 && commands[0] != nil && commands[1] != nil
+		if len(commands) != 2 || commands[0] == nil || commands[1] == nil {
+			return false
+		}
+
+		_, okList := commands[0].(interface{ Signature() string })
+		_, okRun := commands[1].(interface{ Signature() string })
+
+		return okList && okRun && commands[0].Signature() == "schedule:list" && commands[1].Signature() == "schedule:run"
 	})).Once()
 
 	provider.Boot(app)
