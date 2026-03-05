@@ -4,13 +4,16 @@ import (
 	"bytes"
 	"mime/multipart"
 	"net/http"
+	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/errors"
 	configmock "github.com/goravel/framework/mocks/config"
+	filesystemmock "github.com/goravel/framework/mocks/filesystem"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -89,4 +92,83 @@ func TestNewFileFromRequest(t *testing.T) {
 	assert.Equal(t, ".txt", filepath.Ext(requestFile.path))
 
 	mockConfig.AssertExpectations(t)
+}
+
+func TestNewFile_ConfigFacadeNotSet(t *testing.T) {
+	ConfigFacade = nil
+
+	f, err := NewFile("./file.go")
+
+	assert.Nil(t, f)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), errors.ConfigFacadeNotSet.Error())
+}
+
+func TestFileStoreAndStoreAs(t *testing.T) {
+	storage := filesystemmock.NewStorage(t)
+	driver := filesystemmock.NewDriver(t)
+	file := &File{
+		storage: storage,
+		disk:    "s3",
+		path:    "./file.go",
+		name:    "file.go",
+	}
+
+	storage.EXPECT().Disk("s3").Return(driver).Twice()
+	driver.EXPECT().PutFile("uploads", file).Return("uploads/hash.go", nil).Once()
+	driver.EXPECT().PutFileAs("uploads", file, "goravel.go").Return("uploads/goravel.go", nil).Once()
+
+	path, err := file.Store("uploads")
+	assert.NoError(t, err)
+	assert.Equal(t, "uploads/hash.go", path)
+
+	path, err = file.StoreAs("uploads", "goravel.go")
+	assert.NoError(t, err)
+	assert.Equal(t, "uploads/goravel.go", path)
+}
+
+func TestFileStore_ErrorWhenStorageFacadeMissing(t *testing.T) {
+	file := &File{
+		path: "./file.go",
+	}
+
+	path, err := file.Store("uploads")
+	assert.Empty(t, path)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), errors.StorageFacadeNotSet.Error())
+
+	path, err = file.StoreAs("uploads", "goravel.go")
+	assert.Empty(t, path)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), errors.StorageFacadeNotSet.Error())
+}
+
+func TestFileMetadataAndDisk(t *testing.T) {
+	mockConfig := configmock.NewConfig(t)
+	tempFile := filepath.Join(t.TempDir(), "goravel.txt")
+	assert.NoError(t, os.WriteFile(tempFile, []byte("framework"), 0o644))
+
+	testFile := &File{
+		config: mockConfig,
+		path:   tempFile,
+		name:   "goravel.txt",
+		disk:   "local",
+	}
+
+	assert.Same(t, testFile, testFile.Disk("s3"))
+	assert.Equal(t, "s3", testFile.disk)
+	assert.Equal(t, tempFile, testFile.File())
+
+	mockConfig.EXPECT().GetString("app.timezone").Return("UTC").Once()
+	lastModified, err := testFile.LastModified()
+	assert.NoError(t, err)
+	assert.False(t, lastModified.IsZero())
+
+	mimeType, err := testFile.MimeType()
+	assert.NoError(t, err)
+	assert.NotEmpty(t, mimeType)
+
+	size, err := testFile.Size()
+	assert.NoError(t, err)
+	assert.Equal(t, int64(9), size)
 }
