@@ -2,6 +2,7 @@ package mail
 
 import (
 	"errors"
+	"os"
 	"testing"
 
 	"github.com/goravel/framework/contracts/binding"
@@ -48,6 +49,7 @@ func TestApplicationBuilderMethodsCloneAndMutate(t *testing.T) {
 		Headers(map[string]string{"X-Test": "yes"}).
 		Content(contractsmail.Content{Html: "<h1>Hello</h1>", View: "mail.tmpl", Text: "mail.txt", With: contentWith}).(*Application)
 
+	// Builder methods should keep returning the same cloned instance for fluent chaining.
 	assert.Same(t, instance, chained)
 	assert.Equal(t, "subject", instance.params.Subject)
 	assert.Equal(t, []string{"cc@example.com"}, instance.params.CC)
@@ -157,8 +159,12 @@ func TestApplicationQueue(t *testing.T) {
 			assert.Len(t, args[0], 10)
 			assert.Equal(t, "queue-subject", args[0][0].Value)
 			assert.Equal(t, "<h1>Queue</h1>", args[0][1].Value)
+			assert.Equal(t, "", args[0][2].Value)
 			assert.Equal(t, "from@example.com", args[0][3].Value)
+			assert.Equal(t, "From", args[0][4].Value)
 			assert.Equal(t, []string{"to@example.com"}, args[0][5].Value)
+			assert.Equal(t, []string{"cc@example.com"}, args[0][6].Value)
+			assert.Equal(t, []string{"bcc@example.com"}, args[0][7].Value)
 			assert.Equal(t, []string{"/tmp/logo.png"}, args[0][8].Value)
 			assert.Equal(t, []string{"X-Test: queue"}, args[0][9].Value)
 		}).
@@ -238,7 +244,7 @@ func TestNewApplication(t *testing.T) {
 
 		app, err := NewApplication(mockConfig, nil)
 		assert.Nil(t, app)
-		assert.Error(t, err)
+		assert.ErrorContains(t, err, "not supported")
 	})
 }
 
@@ -251,7 +257,7 @@ func TestSendMailAttachmentError(t *testing.T) {
 		To:          []string{"to@example.com"},
 		Attachments: []string{"/tmp/does-not-exist.txt"},
 	})
-	assert.Error(t, err)
+	assert.ErrorIs(t, err, os.ErrNotExist)
 }
 
 func TestServiceProviderRelationship(t *testing.T) {
@@ -270,34 +276,40 @@ func TestServiceProviderRegister(t *testing.T) {
 
 	app.EXPECT().Bind(mock.Anything, mock.Anything).
 		Run(func(_ interface{}, callback func(contractsfoundation.Application) (interface{}, error)) {
-			withoutConfig := mocksfoundation.NewApplication(t)
-			withoutConfig.EXPECT().MakeConfig().Return(nil).Once()
+			t.Run("without config", func(t *testing.T) {
+				withoutConfig := mocksfoundation.NewApplication(t)
+				withoutConfig.EXPECT().MakeConfig().Return(nil).Once()
 
-			instance, err := callback(withoutConfig)
-			assert.Nil(t, instance)
-			assert.Error(t, err)
+				instance, err := callback(withoutConfig)
+				assert.Nil(t, instance)
+				assert.Error(t, err)
+			})
 
-			withoutQueue := mocksfoundation.NewApplication(t)
-			configOnly := mocksconfig.NewConfig(t)
-			withoutQueue.EXPECT().MakeConfig().Return(configOnly).Once()
-			withoutQueue.EXPECT().MakeQueue().Return(nil).Once()
+			t.Run("without queue", func(t *testing.T) {
+				withoutQueue := mocksfoundation.NewApplication(t)
+				configOnly := mocksconfig.NewConfig(t)
+				withoutQueue.EXPECT().MakeConfig().Return(configOnly).Once()
+				withoutQueue.EXPECT().MakeQueue().Return(nil).Once()
 
-			instance, err = callback(withoutQueue)
-			assert.Nil(t, instance)
-			assert.Error(t, err)
+				instance, err := callback(withoutQueue)
+				assert.Nil(t, instance)
+				assert.Error(t, err)
+			})
 
-			withAll := mocksfoundation.NewApplication(t)
-			configAndQueue := mocksconfig.NewConfig(t)
-			queue := mocksqueue.NewQueue(t)
-			withAll.EXPECT().MakeConfig().Return(configAndQueue).Once()
-			withAll.EXPECT().MakeQueue().Return(queue).Once()
-			configAndQueue.EXPECT().GetString("mail.template.default", "html").Return("mail_service_provider").Once()
-			configAndQueue.EXPECT().GetString("mail.template.engines.mail_service_provider.driver", "html").Return("html").Once()
-			configAndQueue.EXPECT().GetString("mail.template.engines.mail_service_provider.path", "resources/views/mail").Return(".").Once()
+			t.Run("with config and queue", func(t *testing.T) {
+				withAll := mocksfoundation.NewApplication(t)
+				configAndQueue := mocksconfig.NewConfig(t)
+				queue := mocksqueue.NewQueue(t)
+				withAll.EXPECT().MakeConfig().Return(configAndQueue).Once()
+				withAll.EXPECT().MakeQueue().Return(queue).Once()
+				configAndQueue.EXPECT().GetString("mail.template.default", "html").Return("mail_service_provider").Once()
+				configAndQueue.EXPECT().GetString("mail.template.engines.mail_service_provider.driver", "html").Return("html").Once()
+				configAndQueue.EXPECT().GetString("mail.template.engines.mail_service_provider.path", "resources/views/mail").Return(".").Once()
 
-			instance, err = callback(withAll)
-			assert.NoError(t, err)
-			assert.NotNil(t, instance)
+				instance, err := callback(withAll)
+				assert.NoError(t, err)
+				assert.NotNil(t, instance)
+			})
 		}).
 		Once()
 
