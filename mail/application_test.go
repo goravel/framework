@@ -3,7 +3,6 @@ package mail
 import (
 	"errors"
 	"os"
-	"reflect"
 	"testing"
 	"time"
 
@@ -513,13 +512,10 @@ func TestServiceProviderRelationship(t *testing.T) {
 func TestServiceProviderRegister(t *testing.T) {
 	provider := &ServiceProvider{}
 	app := mocksfoundation.NewApplication(t)
-	bindCallbackType := reflect.TypeOf(func(contractsfoundation.Application) (any, error) {
-		return nil, nil
-	}).String()
 
 	app.EXPECT().Bind(
 		binding.Mail,
-		mock.AnythingOfType(bindCallbackType),
+		mock.AnythingOfType("func(foundation.Application) (interface {}, error)"),
 	).
 		Run(func(_ any, callback func(contractsfoundation.Application) (any, error)) {
 			t.Run("without config", func(t *testing.T) {
