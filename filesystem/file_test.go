@@ -108,7 +108,7 @@ func TestNewFile_ConfigFacadeNotSet(t *testing.T) {
 	assert.Contains(t, err.Error(), errors.ConfigFacadeNotSet.Error())
 }
 
-func TestFileStoreAndStoreAs(t *testing.T) {
+func TestFileStore(t *testing.T) {
 	storage := filesystemmock.NewStorage(t)
 	driver := filesystemmock.NewDriver(t)
 	file := &File{
@@ -118,15 +118,28 @@ func TestFileStoreAndStoreAs(t *testing.T) {
 		name:    "file.go",
 	}
 
-	storage.EXPECT().Disk("s3").Return(driver).Twice()
+	storage.EXPECT().Disk("s3").Return(driver).Once()
 	driver.EXPECT().PutFile("uploads", file).Return("uploads/hash.go", nil).Once()
-	driver.EXPECT().PutFileAs("uploads", file, "goravel.go").Return("uploads/goravel.go", nil).Once()
 
 	path, err := file.Store("uploads")
 	assert.NoError(t, err)
 	assert.Equal(t, "uploads/hash.go", path)
+}
 
-	path, err = file.StoreAs("uploads", "goravel.go")
+func TestFileStoreAs(t *testing.T) {
+	storage := filesystemmock.NewStorage(t)
+	driver := filesystemmock.NewDriver(t)
+	file := &File{
+		storage: storage,
+		disk:    "s3",
+		path:    "./file.go",
+		name:    "file.go",
+	}
+
+	storage.EXPECT().Disk("s3").Return(driver).Once()
+	driver.EXPECT().PutFileAs("uploads", file, "goravel.go").Return("uploads/goravel.go", nil).Once()
+
+	path, err := file.StoreAs("uploads", "goravel.go")
 	assert.NoError(t, err)
 	assert.Equal(t, "uploads/goravel.go", path)
 }
@@ -174,5 +187,5 @@ func TestFileMetadataAndDisk(t *testing.T) {
 
 	size, err := testFile.Size()
 	assert.NoError(t, err)
-	assert.Equal(t, int64(9), size)
+	assert.Equal(t, int64(len("framework")), size)
 }

@@ -79,10 +79,9 @@ func TestNewDriver(t *testing.T) {
 		config := configmock.NewConfig(t)
 		custom := filesystemmock.NewDriver(t)
 		config.EXPECT().GetString("filesystems.disks.custom.driver").Return("custom").Once()
-		// NewDriver checks "via" as a Driver first, then as a callback.
 		config.EXPECT().Get("filesystems.disks.custom.via").Return(func() (contractsfilesystem.Driver, error) {
 			return custom, nil
-		}).Twice()
+		}).Once()
 
 		driver, err := NewDriver(config, "custom")
 
@@ -93,8 +92,7 @@ func TestNewDriver(t *testing.T) {
 	t.Run("returns error for invalid custom driver", func(t *testing.T) {
 		config := configmock.NewConfig(t)
 		config.EXPECT().GetString("filesystems.disks.custom.driver").Return("custom").Once()
-		// NewDriver checks "via" as a Driver first, then as a callback.
-		config.EXPECT().Get("filesystems.disks.custom.via").Return("invalid").Twice()
+		config.EXPECT().Get("filesystems.disks.custom.via").Return("invalid").Once()
 
 		driver, err := NewDriver(config, "custom")
 
