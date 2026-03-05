@@ -25,8 +25,8 @@ type AesTestSuite struct {
 }
 
 func TestAesTestSuite(t *testing.T) {
-	mockConfig := &configmock.Config{}
-	mockConfig.On("GetString", "app.key").Return(testKeyAES256).Once()
+	mockConfig := configmock.NewConfig(t)
+	mockConfig.EXPECT().GetString("app.key").Return(testKeyAES256).Once()
 	aes, err := NewAES(mockConfig, json.New())
 
 	assert.NoError(t, err)
@@ -34,7 +34,6 @@ func TestAesTestSuite(t *testing.T) {
 	suite.Run(t, &AesTestSuite{
 		aes: aes,
 	})
-	mockConfig.AssertExpectations(t)
 }
 
 func (s *AesTestSuite) SetupTest() {
@@ -73,8 +72,8 @@ func (s *AesTestSuite) TestDecryptString() {
 }
 
 func Benchmark_EncryptString(b *testing.B) {
-	mockConfig := &configmock.Config{}
-	mockConfig.On("GetString", "app.key").Return(testKeyAES256).Once()
+	mockConfig := configmock.NewConfig(b)
+	mockConfig.EXPECT().GetString("app.key").Return(testKeyAES256).Once()
 	aes, err := NewAES(mockConfig, json.New())
 	if err != nil {
 		b.Fatal(err)
@@ -91,8 +90,8 @@ func Benchmark_EncryptString(b *testing.B) {
 }
 
 func Benchmark_DecryptString(b *testing.B) {
-	mockConfig := &configmock.Config{}
-	mockConfig.On("GetString", "app.key").Return(testKeyAES256).Once()
+	mockConfig := configmock.NewConfig(b)
+	mockConfig.EXPECT().GetString("app.key").Return(testKeyAES256).Once()
 	aes, err := NewAES(mockConfig, json.New())
 	if err != nil {
 		b.Fatal(err)
