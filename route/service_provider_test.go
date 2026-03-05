@@ -7,13 +7,13 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/goravel/framework/contracts/binding"
-	consolecontract "github.com/goravel/framework/contracts/console"
-	foundationcontract "github.com/goravel/framework/contracts/foundation"
+	contractsconsole "github.com/goravel/framework/contracts/console"
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
-	configmock "github.com/goravel/framework/mocks/config"
-	consolemock "github.com/goravel/framework/mocks/console"
-	foundationmock "github.com/goravel/framework/mocks/foundation"
-	routemock "github.com/goravel/framework/mocks/route"
+	mocksconfig "github.com/goravel/framework/mocks/config"
+	mocksconsole "github.com/goravel/framework/mocks/console"
+	mocksfoundation "github.com/goravel/framework/mocks/foundation"
+	mocksroute "github.com/goravel/framework/mocks/route"
 )
 
 func TestServiceProviderRelationship(t *testing.T) {
@@ -30,9 +30,9 @@ func TestServiceProviderRegister(t *testing.T) {
 	provider := &ServiceProvider{}
 
 	t.Run("config facade not set", func(t *testing.T) {
-		app := foundationmock.NewApplication(t)
-		app.EXPECT().Singleton(binding.Route, mock.Anything).Run(func(_ interface{}, callback func(foundationcontract.Application) (interface{}, error)) {
-			callbackApp := foundationmock.NewApplication(t)
+		app := mocksfoundation.NewApplication(t)
+		app.EXPECT().Singleton(binding.Route, mock.Anything).Run(func(_ interface{}, callback func(contractsfoundation.Application) (interface{}, error)) {
+			callbackApp := mocksfoundation.NewApplication(t)
 			callbackApp.EXPECT().MakeConfig().Return(nil).Once()
 
 			instance, err := callback(callbackApp)
@@ -46,10 +46,10 @@ func TestServiceProviderRegister(t *testing.T) {
 	})
 
 	t.Run("register route singleton", func(t *testing.T) {
-		app := foundationmock.NewApplication(t)
-		app.EXPECT().Singleton(binding.Route, mock.Anything).Run(func(_ interface{}, callback func(foundationcontract.Application) (interface{}, error)) {
-			callbackApp := foundationmock.NewApplication(t)
-			config := configmock.NewConfig(t)
+		app := mocksfoundation.NewApplication(t)
+		app.EXPECT().Singleton(binding.Route, mock.Anything).Run(func(_ interface{}, callback func(contractsfoundation.Application) (interface{}, error)) {
+			callbackApp := mocksfoundation.NewApplication(t)
+			config := mocksconfig.NewConfig(t)
 			callbackApp.EXPECT().MakeConfig().Return(config).Once()
 			config.EXPECT().GetString("http.default").Return("").Once()
 
@@ -67,13 +67,13 @@ func TestServiceProviderRegister(t *testing.T) {
 
 func TestServiceProviderBoot(t *testing.T) {
 	provider := &ServiceProvider{}
-	app := foundationmock.NewApplication(t)
-	artisan := consolemock.NewArtisan(t)
-	route := routemock.NewRoute(t)
+	app := mocksfoundation.NewApplication(t)
+	artisan := mocksconsole.NewArtisan(t)
+	route := mocksroute.NewRoute(t)
 
 	app.EXPECT().MakeArtisan().Return(artisan).Once()
 	app.EXPECT().MakeRoute().Return(route).Once()
-	artisan.EXPECT().Register(mock.MatchedBy(func(commands []consolecontract.Command) bool {
+	artisan.EXPECT().Register(mock.MatchedBy(func(commands []contractsconsole.Command) bool {
 		return len(commands) == 1 && commands[0] != nil
 	})).Once()
 
@@ -82,9 +82,9 @@ func TestServiceProviderBoot(t *testing.T) {
 
 func TestServiceProviderRunners(t *testing.T) {
 	provider := &ServiceProvider{}
-	app := foundationmock.NewApplication(t)
-	config := configmock.NewConfig(t)
-	route := routemock.NewRoute(t)
+	app := mocksfoundation.NewApplication(t)
+	config := mocksconfig.NewConfig(t)
+	route := mocksroute.NewRoute(t)
 
 	app.EXPECT().MakeConfig().Return(config).Once()
 	app.EXPECT().MakeRoute().Return(route).Once()

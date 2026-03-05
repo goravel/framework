@@ -5,15 +5,15 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	routecontract "github.com/goravel/framework/contracts/route"
-	configmock "github.com/goravel/framework/mocks/config"
-	routemock "github.com/goravel/framework/mocks/route"
+	contractsroute "github.com/goravel/framework/contracts/route"
+	mocksconfig "github.com/goravel/framework/mocks/config"
+	mocksroute "github.com/goravel/framework/mocks/route"
 )
 
 func TestNewDriver(t *testing.T) {
 	t.Run("route instance", func(t *testing.T) {
-		mockConfig := configmock.NewConfig(t)
-		mockRoute := routemock.NewRoute(t)
+		mockConfig := mocksconfig.NewConfig(t)
+		mockRoute := mocksroute.NewRoute(t)
 		mockConfig.EXPECT().Get("http.drivers.gin.route").Return(mockRoute).Once()
 
 		driver, err := NewDriver(mockConfig, "gin")
@@ -23,9 +23,9 @@ func TestNewDriver(t *testing.T) {
 	})
 
 	t.Run("route callback", func(t *testing.T) {
-		mockConfig := configmock.NewConfig(t)
-		mockRoute := routemock.NewRoute(t)
-		mockConfig.EXPECT().Get("http.drivers.gin.route").Return(func() (routecontract.Route, error) {
+		mockConfig := mocksconfig.NewConfig(t)
+		mockRoute := mocksroute.NewRoute(t)
+		mockConfig.EXPECT().Get("http.drivers.gin.route").Return(func() (contractsroute.Route, error) {
 			return mockRoute, nil
 		}).Twice()
 
@@ -36,8 +36,8 @@ func TestNewDriver(t *testing.T) {
 	})
 
 	t.Run("callback returns error", func(t *testing.T) {
-		mockConfig := configmock.NewConfig(t)
-		mockConfig.EXPECT().Get("http.drivers.gin.route").Return(func() (routecontract.Route, error) {
+		mockConfig := mocksconfig.NewConfig(t)
+		mockConfig.EXPECT().Get("http.drivers.gin.route").Return(func() (contractsroute.Route, error) {
 			return nil, assert.AnError
 		}).Twice()
 
@@ -48,7 +48,7 @@ func TestNewDriver(t *testing.T) {
 	})
 
 	t.Run("invalid driver", func(t *testing.T) {
-		mockConfig := configmock.NewConfig(t)
+		mockConfig := mocksconfig.NewConfig(t)
 		mockConfig.EXPECT().Get("http.drivers.gin.route").Return(nil).Twice()
 
 		driver, err := NewDriver(mockConfig, "gin")
@@ -61,7 +61,7 @@ func TestNewDriver(t *testing.T) {
 
 func TestNewRoute(t *testing.T) {
 	t.Run("default driver empty", func(t *testing.T) {
-		mockConfig := configmock.NewConfig(t)
+		mockConfig := mocksconfig.NewConfig(t)
 		mockConfig.EXPECT().GetString("http.default").Return("").Once()
 
 		router, err := NewRoute(mockConfig)
@@ -73,8 +73,8 @@ func TestNewRoute(t *testing.T) {
 	})
 
 	t.Run("default driver set", func(t *testing.T) {
-		mockConfig := configmock.NewConfig(t)
-		mockRoute := routemock.NewRoute(t)
+		mockConfig := mocksconfig.NewConfig(t)
+		mockRoute := mocksroute.NewRoute(t)
 		mockConfig.EXPECT().GetString("http.default").Return("gin").Once()
 		mockConfig.EXPECT().Get("http.drivers.gin.route").Return(mockRoute).Once()
 
@@ -87,7 +87,7 @@ func TestNewRoute(t *testing.T) {
 	})
 
 	t.Run("driver init fails", func(t *testing.T) {
-		mockConfig := configmock.NewConfig(t)
+		mockConfig := mocksconfig.NewConfig(t)
 		mockConfig.EXPECT().GetString("http.default").Return("gin").Once()
 		mockConfig.EXPECT().Get("http.drivers.gin.route").Return(nil).Twice()
 
