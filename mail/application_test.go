@@ -266,6 +266,11 @@ func (s *stubMailable) Envelope() *mail.Envelope   { return s.envelope }
 func (s *stubMailable) Headers() map[string]string { return s.headers }
 func (s *stubMailable) Queue() *mail.Queue         { return s.queue }
 
+func matchWithID(data interface{}) bool {
+	with, ok := data.(map[string]any)
+	return ok && with["id"] == 1
+}
+
 func TestApplicationBuilderMethodsCloneAndMutate(t *testing.T) {
 	base := &Application{}
 
@@ -352,10 +357,7 @@ func TestApplicationRenderViewTemplate(t *testing.T) {
 
 	t.Run("html render failed", func(t *testing.T) {
 		template := mocksmail.NewTemplate(t)
-		template.EXPECT().Render("mail.tmpl", mock.MatchedBy(func(data interface{}) bool {
-			with, ok := data.(map[string]any)
-			return ok && with["id"] == 1
-		})).Return("", errors.New("render failed")).Once()
+		template.EXPECT().Render("mail.tmpl", mock.MatchedBy(matchWithID)).Return("", errors.New("render failed")).Once()
 
 		app := &Application{template: template, view: "mail.tmpl", with: map[string]any{"id": 1}}
 		err := app.renderViewTemplate()
@@ -364,10 +366,7 @@ func TestApplicationRenderViewTemplate(t *testing.T) {
 
 	t.Run("text render failed", func(t *testing.T) {
 		template := mocksmail.NewTemplate(t)
-		template.EXPECT().Render("mail.txt", mock.MatchedBy(func(data interface{}) bool {
-			with, ok := data.(map[string]any)
-			return ok && with["id"] == 1
-		})).Return("", errors.New("text render failed")).Once()
+		template.EXPECT().Render("mail.txt", mock.MatchedBy(matchWithID)).Return("", errors.New("text render failed")).Once()
 
 		app := &Application{template: template, text: "mail.txt", with: map[string]any{"id": 1}}
 		err := app.renderViewTemplate()
@@ -395,7 +394,7 @@ func TestApplicationQueue(t *testing.T) {
 	}
 
 	mockQueue.EXPECT().Job(
-		mock.MatchedBy(func(job contractsqueue.Job) bool { return job != nil }),
+		mock.MatchedBy(func(job contractsqueue.Job) bool { return job != nil && job.Signature() == "goravel_send_mail_job" }),
 		mock.MatchedBy(func(args []contractsqueue.Arg) bool { return len(args) == 10 }),
 	).
 		Run(func(_ contractsqueue.Job, args ...[]contractsqueue.Arg) {
@@ -425,10 +424,7 @@ func TestApplicationQueue(t *testing.T) {
 
 func TestApplicationQueueRenderError(t *testing.T) {
 	template := mocksmail.NewTemplate(t)
-	template.EXPECT().Render("mail.tmpl", mock.MatchedBy(func(data interface{}) bool {
-		with, ok := data.(map[string]any)
-		return ok && with["id"] == 1
-	})).Return("", errors.New("render failed")).Once()
+	template.EXPECT().Render("mail.tmpl", mock.MatchedBy(matchWithID)).Return("", errors.New("render failed")).Once()
 
 	app := &Application{template: template, view: "mail.tmpl", with: map[string]any{"id": 1}}
 
@@ -438,10 +434,7 @@ func TestApplicationQueueRenderError(t *testing.T) {
 
 func TestApplicationSendRenderError(t *testing.T) {
 	template := mocksmail.NewTemplate(t)
-	template.EXPECT().Render("mail.tmpl", mock.MatchedBy(func(data interface{}) bool {
-		with, ok := data.(map[string]any)
-		return ok && with["id"] == 1
-	})).Return("", errors.New("render failed")).Once()
+	template.EXPECT().Render("mail.tmpl", mock.MatchedBy(matchWithID)).Return("", errors.New("render failed")).Once()
 
 	app := &Application{template: template}
 	err := app.Send(&stubMailable{content: &mail.Content{View: "mail.tmpl", With: map[string]any{"id": 1}}})
