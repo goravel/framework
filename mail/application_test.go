@@ -266,11 +266,6 @@ func (s *stubMailable) Envelope() *mail.Envelope   { return s.envelope }
 func (s *stubMailable) Headers() map[string]string { return s.headers }
 func (s *stubMailable) Queue() *mail.Queue         { return s.queue }
 
-func matchWithID(data interface{}) bool {
-	with, ok := data.(map[string]any)
-	return ok && with["id"] == 1
-}
-
 func TestApplicationBuilderMethodsCloneAndMutate(t *testing.T) {
 	base := &Application{}
 
@@ -357,7 +352,7 @@ func TestApplicationRenderViewTemplate(t *testing.T) {
 
 	t.Run("html render failed", func(t *testing.T) {
 		template := mocksmail.NewTemplate(t)
-		template.EXPECT().Render("mail.tmpl", mock.MatchedBy(matchWithID)).Return("", errors.New("render failed")).Once()
+		template.EXPECT().Render("mail.tmpl", map[string]any{"id": 1}).Return("", errors.New("render failed")).Once()
 
 		app := &Application{template: template, view: "mail.tmpl", with: map[string]any{"id": 1}}
 		err := app.renderViewTemplate()
@@ -366,7 +361,7 @@ func TestApplicationRenderViewTemplate(t *testing.T) {
 
 	t.Run("text render failed", func(t *testing.T) {
 		template := mocksmail.NewTemplate(t)
-		template.EXPECT().Render("mail.txt", mock.MatchedBy(matchWithID)).Return("", errors.New("text render failed")).Once()
+		template.EXPECT().Render("mail.txt", map[string]any{"id": 1}).Return("", errors.New("text render failed")).Once()
 
 		app := &Application{template: template, text: "mail.txt", with: map[string]any{"id": 1}}
 		err := app.renderViewTemplate()
@@ -394,10 +389,11 @@ func TestApplicationQueue(t *testing.T) {
 	}
 
 	mockQueue.EXPECT().Job(
-		mock.MatchedBy(func(job contractsqueue.Job) bool { return job != nil && job.Signature() == "goravel_send_mail_job" }),
-		mock.MatchedBy(func(args []contractsqueue.Arg) bool { return len(args) == 10 }),
+		mock.AnythingOfType("*mail.SendMailJob"),
+		mock.AnythingOfType("[]queue.Arg"),
 	).
-		Run(func(_ contractsqueue.Job, args ...[]contractsqueue.Arg) {
+		Run(func(job contractsqueue.Job, args ...[]contractsqueue.Arg) {
+			assert.Equal(t, "goravel_send_mail_job", job.Signature())
 			assert.Len(t, args, 1)
 			assert.Len(t, args[0], 10)
 			assert.Equal(t, "queue-subject", args[0][0].Value)
@@ -424,7 +420,7 @@ func TestApplicationQueue(t *testing.T) {
 
 func TestApplicationQueueRenderError(t *testing.T) {
 	template := mocksmail.NewTemplate(t)
-	template.EXPECT().Render("mail.tmpl", mock.MatchedBy(matchWithID)).Return("", errors.New("render failed")).Once()
+	template.EXPECT().Render("mail.tmpl", map[string]any{"id": 1}).Return("", errors.New("render failed")).Once()
 
 	app := &Application{template: template, view: "mail.tmpl", with: map[string]any{"id": 1}}
 
@@ -434,7 +430,7 @@ func TestApplicationQueueRenderError(t *testing.T) {
 
 func TestApplicationSendRenderError(t *testing.T) {
 	template := mocksmail.NewTemplate(t)
-	template.EXPECT().Render("mail.tmpl", mock.MatchedBy(matchWithID)).Return("", errors.New("render failed")).Once()
+	template.EXPECT().Render("mail.tmpl", map[string]any{"id": 1}).Return("", errors.New("render failed")).Once()
 
 	app := &Application{template: template}
 	err := app.Send(&stubMailable{content: &mail.Content{View: "mail.tmpl", With: map[string]any{"id": 1}}})
@@ -519,12 +515,9 @@ func TestServiceProviderRegister(t *testing.T) {
 
 	app.EXPECT().Bind(
 		binding.Mail,
-		mock.MatchedBy(func(callback interface{}) bool {
-			_, ok := callback.(func(contractsfoundation.Application) (interface{}, error))
-			return ok
-		}),
+		mock.AnythingOfType("func(foundation.Application) (interface {}, error)"),
 	).
-		Run(func(_ interface{}, callback func(contractsfoundation.Application) (interface{}, error)) {
+		Run(func(_ any, callback func(contractsfoundation.Application) (any, error)) {
 			t.Run("without config", func(t *testing.T) {
 				withoutConfig := mocksfoundation.NewApplication(t)
 				withoutConfig.EXPECT().MakeConfig().Return(nil).Once()
@@ -572,14 +565,14 @@ func TestServiceProviderBootAndRegisterJobs(t *testing.T) {
 		queue := mocksqueue.NewQueue(t)
 		config := mocksconfig.NewConfig(t)
 
-		app.EXPECT().Commands(mock.MatchedBy(func(commands []contractsconsole.Command) bool {
-			return len(commands) == 1
-		})).Once()
+		app.EXPECT().Commands(mock.AnythingOfType("[]console.Command")).
+			Run(func(commands []contractsconsole.Command) {
+				assert.Len(t, commands, 1)
+			}).
+			Once()
 		app.EXPECT().MakeQueue().Return(queue).Once()
 		app.EXPECT().MakeConfig().Return(config).Once()
-		queue.EXPECT().Register(mock.MatchedBy(func(jobs []contractsqueue.Job) bool {
-			return len(jobs) == 1
-		})).
+		queue.EXPECT().Register(mock.AnythingOfType("[]queue.Job")).
 			Run(func(jobs []contractsqueue.Job) {
 				assert.Len(t, jobs, 1)
 				assert.Equal(t, "goravel_send_mail_job", jobs[0].Signature())
