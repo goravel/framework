@@ -33,6 +33,10 @@ func (s *RouteRunnerTestSuite) TestNewRouteRunner() {
 	s.Equal(s.mockRoute, s.runner.route)
 }
 
+func (s *RouteRunnerTestSuite) TestSignature() {
+	s.Equal("route", s.runner.Signature())
+}
+
 func (s *RouteRunnerTestSuite) TestShouldRun_WhenRouteNotNilAndDefaultConfigSet() {
 	s.mockConfig.EXPECT().GetString("http.default").Return("gin").Once()
 	s.mockConfig.EXPECT().GetBool("app.auto_run", true).Return(true).Once()
