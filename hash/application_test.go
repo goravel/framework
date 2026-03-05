@@ -161,25 +161,24 @@ func TestServiceProviderRelationship(t *testing.T) {
 
 func TestServiceProviderRegister(t *testing.T) {
 	provider := &ServiceProvider{}
-	app := mocksfoundation.NewApplication(t)
+	mockApp := mocksfoundation.NewApplication(t)
 
 	var callback func(foundation.Application) (any, error)
-	app.On("Singleton", binding.Hash, mock.AnythingOfType(singletonCallbackType)).Run(func(args mock.Arguments) {
-		cb, ok := args.Get(1).(func(foundation.Application) (any, error))
-		require.True(t, ok)
+	mockApp.EXPECT().Singleton(binding.Hash, mock.AnythingOfType(singletonCallbackType)).Run(func(key interface{}, cb func(foundation.Application) (interface{}, error)) {
+		assert.Equal(t, binding.Hash, key)
 		callback = cb
 	}).Once()
 
-	provider.Register(app)
+	provider.Register(mockApp)
 	assert.NotNil(t, callback)
 
 	t.Run("returns hash application when config is available", func(t *testing.T) {
 		config := mocksconfig.NewConfig(t)
-		app.On("MakeConfig").Return(config).Once()
+		mockApp.EXPECT().MakeConfig().Return(config).Once()
 		config.EXPECT().GetString("hashing.driver", "argon2id").Return(DriverBcrypt).Once()
 		config.EXPECT().GetInt("hashing.bcrypt.rounds", 12).Return(expectedBcryptRounds).Once()
 
-		hash, err := callback(app)
+		hash, err := callback(mockApp)
 
 		assert.NoError(t, err)
 		_, ok := hash.(*Bcrypt)
@@ -187,9 +186,9 @@ func TestServiceProviderRegister(t *testing.T) {
 	})
 
 	t.Run("returns error when config facade is nil", func(t *testing.T) {
-		app.On("MakeConfig").Return(nil).Once()
+		mockApp.EXPECT().MakeConfig().Return(nil).Once()
 
-		_, err := callback(app)
+		_, err := callback(mockApp)
 
 		assert.Error(t, err)
 		assert.True(t, frameworkerrors.Is(err, frameworkerrors.ConfigFacadeNotSet))
