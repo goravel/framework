@@ -14,10 +14,14 @@ import (
 	mockscache "github.com/goravel/framework/mocks/cache"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
+	mockshttp "github.com/goravel/framework/mocks/http"
 	mockslog "github.com/goravel/framework/mocks/log"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
+	mockssession "github.com/goravel/framework/mocks/session"
 	"github.com/goravel/framework/support/binding"
 )
+
+const expectedAuthCommandCount = 2
 
 func TestAuthServiceProviderRelationship(t *testing.T) {
 	provider := &ServiceProvider{}
@@ -85,6 +89,39 @@ func TestAuthServiceProviderRegister(t *testing.T) {
 		assert.IsType(t, &Auth{}, instance)
 	})
 
+	t.Run("creates auth instance with context parameter", func(t *testing.T) {
+		callbackApp := mocksfoundation.NewApplication(t)
+		config := mocksconfig.NewConfig(t)
+		log := mockslog.NewLog(t)
+		ctx := mockshttp.NewContext(t)
+		request := mockshttp.NewContextRequest(t)
+		session := mockssession.NewSession(t)
+		originOrmFacade := ormFacade
+		ormFacade = mocksorm.NewOrm(t)
+		t.Cleanup(func() {
+			ormFacade = originOrmFacade
+		})
+
+		callbackApp.EXPECT().MakeConfig().Return(config).Once()
+		callbackApp.EXPECT().MakeLog().Return(log).Once()
+		config.EXPECT().GetString("auth.defaults.guard").Return("web").Once()
+		config.EXPECT().GetString("auth.guards.web.driver").Return("session").Once()
+		config.EXPECT().GetString("auth.guards.web.provider").Return("users").Once()
+		config.EXPECT().GetString("auth.providers.users.driver").Return("orm").Once()
+		ctx.EXPECT().Request().Return(request).Once()
+		request.EXPECT().Session().Return(session).Once()
+
+		instance, err := authCallback(callbackApp, map[string]any{
+			"ctx": ctx,
+		})
+
+		assert.NoError(t, err)
+		auth, ok := instance.(*Auth)
+		assert.True(t, ok)
+		assert.Same(t, ctx, auth.ctx)
+		assert.NotNil(t, auth.GuardDriver)
+	})
+
 	t.Run("registers gate singleton", func(t *testing.T) {
 		instance, err := gateCallback(app)
 
@@ -94,6 +131,7 @@ func TestAuthServiceProviderRegister(t *testing.T) {
 }
 
 func TestAuthServiceProviderBoot(t *testing.T) {
+	// This test mutates package-level facades and should not run in parallel.
 	provider := &ServiceProvider{}
 	app := mocksfoundation.NewApplication(t)
 	cache := mockscache.NewCache(t)
@@ -111,7 +149,18 @@ func TestAuthServiceProviderBoot(t *testing.T) {
 	app.EXPECT().MakeOrm().Return(orm).Once()
 	app.EXPECT().MakeConfig().Return(config).Once()
 	app.EXPECT().Commands(mock.MatchedBy(func(commands []contractsconsole.Command) bool {
-		return len(commands) == 2 && commands[0] != nil && commands[1] != nil
+		if len(commands) != expectedAuthCommandCount {
+			t.Logf("expected %d auth commands, got %d", expectedAuthCommandCount, len(commands))
+			return false
+		}
+		for i, command := range commands {
+			if command == nil {
+				t.Logf("auth command %d is nil", i)
+				return false
+			}
+		}
+
+		return true
 	})).Once()
 
 	provider.Boot(app)

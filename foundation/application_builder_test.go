@@ -20,6 +20,7 @@ import (
 	mocksschema "github.com/goravel/framework/mocks/database/schema"
 	mocksseeder "github.com/goravel/framework/mocks/database/seeder"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
+	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
 	mocksschedule "github.com/goravel/framework/mocks/schedule"
 	mocksvalidation "github.com/goravel/framework/mocks/validation"
@@ -83,12 +84,16 @@ func (s *ApplicationBuilderTestSuite) TestCreate() {
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithCommands() {
+	command := mocksconsole.NewCommand(s.T())
 	builder := s.builder.WithCommands(func() []contractsconsole.Command {
-		return nil
+		return []contractsconsole.Command{command}
 	})
 
 	s.NotNil(builder)
 	s.NotNil(s.builder.commands)
+	commands := s.builder.commands()
+	s.Len(commands, 1)
+	s.Same(command, commands[0])
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithEvents() {

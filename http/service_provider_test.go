@@ -114,6 +114,32 @@ func TestServiceProviderRegister(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, instance)
 	})
+
+	t.Run("returns error when default client is missing from clients", func(t *testing.T) {
+		callbackApp := mocksfoundation.NewApplication(t)
+		config := mocksconfig.NewConfig(t)
+		j := foundationjson.New()
+		callbackApp.EXPECT().MakeConfig().Return(config).Once()
+		callbackApp.EXPECT().Json().Return(j).Once()
+		config.EXPECT().UnmarshalKey("http", mock.Anything).RunAndReturn(func(_ string, target any) error {
+			factoryConfig, ok := target.(*client.FactoryConfig)
+			if !ok {
+				return assert.AnError
+			}
+			factoryConfig.Default = "missing_client"
+			factoryConfig.Clients = map[string]client.Config{
+				"other": {},
+			}
+
+			return nil
+		}).Once()
+
+		instance, err := httpCallback(callbackApp)
+
+		assert.Nil(t, instance)
+		assert.Error(t, err)
+		assert.True(t, frameworkerrors.Is(err, frameworkerrors.HttpClientConnectionNotFound.Args("missing_client")))
+	})
 }
 
 func TestServiceProviderBoot(t *testing.T) {
