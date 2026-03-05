@@ -39,15 +39,17 @@ func TestNewApplication(t *testing.T) {
 	})
 }
 
-func TestBcryptMakeReturnsErrorWhenRoundsInvalid(t *testing.T) {
-	config := configmock.NewConfig(t)
-	config.EXPECT().GetInt("hashing.bcrypt.rounds", 12).Return(32).Once()
+func TestBcrypt(t *testing.T) {
+	t.Run("returns error when rounds invalid", func(t *testing.T) {
+		config := configmock.NewConfig(t)
+		config.EXPECT().GetInt("hashing.bcrypt.rounds", 12).Return(32).Once()
 
-	hasher := NewBcrypt(config)
-	hash, err := hasher.Make("password")
+		hasher := NewBcrypt(config)
+		hash, err := hasher.Make("password")
 
-	assert.Error(t, err)
-	assert.Empty(t, hash)
+		assert.Error(t, err)
+		assert.Empty(t, hash)
+	})
 }
 
 func TestServiceProviderRelationship(t *testing.T) {
@@ -98,8 +100,11 @@ func TestServiceProviderRegister(t *testing.T) {
 
 func TestServiceProviderBoot(t *testing.T) {
 	provider := &ServiceProvider{}
+	app := foundationmock.NewApplication(t)
 
-	assert.NotPanics(t, func() {
-		provider.Boot(nil)
+	t.Run("does not panic", func(t *testing.T) {
+		assert.NotPanics(t, func() {
+			provider.Boot(app)
+		})
 	})
 }
