@@ -225,7 +225,7 @@ func TestNew(t *testing.T) {
 func TestAs(t *testing.T) {
 	t.Run("As matches wrapped custom error", func(t *testing.T) {
 		base := &customError{}
-		err := stdErrors.Join(stdErrors.New("outer"), base)
+		err := fmt.Errorf("outer: %w", base)
 
 		var target *customError
 		assert.True(t, As(err, &target))
