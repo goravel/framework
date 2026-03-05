@@ -95,6 +95,10 @@ func TestNewFileFromRequest(t *testing.T) {
 }
 
 func TestNewFile_ConfigFacadeNotSet(t *testing.T) {
+	originConfigFacade := ConfigFacade
+	t.Cleanup(func() {
+		ConfigFacade = originConfigFacade
+	})
 	ConfigFacade = nil
 
 	f, err := NewFile("./file.go")

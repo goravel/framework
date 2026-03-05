@@ -79,6 +79,7 @@ func TestNewDriver(t *testing.T) {
 		config := configmock.NewConfig(t)
 		custom := filesystemmock.NewDriver(t)
 		config.EXPECT().GetString("filesystems.disks.custom.driver").Return("custom").Once()
+		// NewDriver checks "via" as a Driver first, then as a callback.
 		config.EXPECT().Get("filesystems.disks.custom.via").Return(func() (contractsfilesystem.Driver, error) {
 			return custom, nil
 		}).Twice()
@@ -92,6 +93,7 @@ func TestNewDriver(t *testing.T) {
 	t.Run("returns error for invalid custom driver", func(t *testing.T) {
 		config := configmock.NewConfig(t)
 		config.EXPECT().GetString("filesystems.disks.custom.driver").Return("custom").Once()
+		// NewDriver checks "via" as a Driver first, then as a callback.
 		config.EXPECT().Get("filesystems.disks.custom.via").Return("invalid").Twice()
 
 		driver, err := NewDriver(config, "custom")
@@ -140,7 +142,7 @@ func TestServiceProvider(t *testing.T) {
 		assert.Empty(t, relationship.ProvideFor)
 	})
 
-	t.Run("register returns config error", func(t *testing.T) {
+	t.Run("register returns error when config facade not set", func(t *testing.T) {
 		app := foundationmock.NewApplication(t)
 		app.EXPECT().Singleton(binding.Storage, mock.Anything).Run(func(_ interface{}, callback func(contractsfoundation.Application) (interface{}, error)) {
 			callbackApp := foundationmock.NewApplication(t)
@@ -177,6 +179,13 @@ func TestServiceProvider(t *testing.T) {
 	})
 
 	t.Run("boot sets facades", func(t *testing.T) {
+		originConfigFacade := ConfigFacade
+		originStorageFacade := StorageFacade
+		t.Cleanup(func() {
+			ConfigFacade = originConfigFacade
+			StorageFacade = originStorageFacade
+		})
+
 		app := foundationmock.NewApplication(t)
 		config := configmock.NewConfig(t)
 		storage := filesystemmock.NewStorage(t)
