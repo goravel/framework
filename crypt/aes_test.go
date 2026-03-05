@@ -132,33 +132,30 @@ func TestNewAES(t *testing.T) {
 		}
 
 		for _, testCase := range cases {
-			mockConfig := &configmock.Config{}
-			mockConfig.On("GetString", "app.key").Return(testCase.key).Once()
+			mockConfig := configmock.NewConfig(t)
+			mockConfig.EXPECT().GetString("app.key").Return(testCase.key).Once()
 			aes, err := NewAES(mockConfig, json.New())
 			assert.NoError(t, err, testCase.name)
 			assert.NotNil(t, aes, testCase.name)
-			mockConfig.AssertExpectations(t)
 		}
 	})
 
 	t.Run("empty key in artisan mode", func(t *testing.T) {
 		setRuntimeMode(t, support.RuntimeArtisan)
 
-		mockConfig := &configmock.Config{}
-		mockConfig.On("GetString", "app.key").Return("").Once()
+		mockConfig := configmock.NewConfig(t)
+		mockConfig.EXPECT().GetString("app.key").Return("").Once()
 		aes, err := NewAES(mockConfig, json.New())
 		assert.Nil(t, aes)
 		assert.Equal(t, errors.CryptAppKeyNotSet, err)
-		mockConfig.AssertExpectations(t)
 	})
 
 	t.Run("invalid key length", func(t *testing.T) {
-		mockConfig := &configmock.Config{}
-		mockConfig.On("GetString", "app.key").Return("invalid").Once()
+		mockConfig := configmock.NewConfig(t)
+		mockConfig.EXPECT().GetString("app.key").Return("invalid").Once()
 		aes, err := NewAES(mockConfig, json.New())
 		assert.Nil(t, aes)
 		assert.True(t, errors.Is(err, errors.CryptInvalidAppKeyLength))
-		mockConfig.AssertExpectations(t)
 	})
 }
 
