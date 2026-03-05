@@ -1,6 +1,8 @@
 package errors
 
 import (
+	stdErrors "errors"
+	"fmt"
 	"sync"
 	"testing"
 
@@ -218,4 +220,57 @@ func TestNew(t *testing.T) {
 		err := New("test error", "TestModule")
 		assert.Equal(t, "[TestModule] test error", err.Error())
 	})
+}
+
+func TestAs(t *testing.T) {
+	t.Run("As matches wrapped custom error", func(t *testing.T) {
+		base := &customError{}
+		err := stdErrors.Join(stdErrors.New("outer"), base)
+
+		var target *customError
+		assert.True(t, As(err, &target))
+		assert.Equal(t, base, target)
+	})
+
+	t.Run("As returns false when type does not match", func(t *testing.T) {
+		err := stdErrors.New("plain")
+		var target *customError
+
+		assert.False(t, As(err, &target))
+		assert.Nil(t, target)
+	})
+}
+
+func TestUnwrap(t *testing.T) {
+	inner := stdErrors.New("inner")
+	wrapped := fmt.Errorf("outer: %w", inner)
+
+	assert.Equal(t, inner, Unwrap(wrapped))
+	assert.Nil(t, Unwrap(nil))
+}
+
+func TestIgnore(t *testing.T) {
+	called := false
+	Ignore(func() error {
+		called = true
+		return stdErrors.New("ignored")
+	})
+
+	assert.True(t, called)
+}
+
+func TestJoin(t *testing.T) {
+	err1 := stdErrors.New("first")
+	err2 := stdErrors.New("second")
+	joined := Join(err1, nil, err2)
+
+	assert.NotNil(t, joined)
+	assert.True(t, stdErrors.Is(joined, err1))
+	assert.True(t, stdErrors.Is(joined, err2))
+}
+
+type customError struct{}
+
+func (e *customError) Error() string {
+	return "custom error"
 }
