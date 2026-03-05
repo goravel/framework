@@ -109,16 +109,21 @@ func Benchmark_DecryptString(b *testing.B) {
 
 func TestNewAES(t *testing.T) {
 	t.Run("valid key lengths", func(t *testing.T) {
-		for _, key := range []string{
-			"1111111111111111",
-			"111111111111111111111111",
-			"11111111111111111111111111111111",
-		} {
+		cases := []struct {
+			name string
+			key  string
+		}{
+			{name: "aes-128", key: "1111111111111111"},
+			{name: "aes-192", key: "111111111111111111111111"},
+			{name: "aes-256", key: "11111111111111111111111111111111"},
+		}
+
+		for _, testCase := range cases {
 			mockConfig := &configmock.Config{}
-			mockConfig.On("GetString", "app.key").Return(key).Once()
+			mockConfig.On("GetString", "app.key").Return(testCase.key).Once()
 			aes, err := NewAES(mockConfig, json.New())
-			assert.NoError(t, err)
-			assert.NotNil(t, aes)
+			assert.NoError(t, err, testCase.name)
+			assert.NotNil(t, aes, testCase.name)
 			mockConfig.AssertExpectations(t)
 		}
 	})
