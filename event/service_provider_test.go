@@ -60,10 +60,20 @@ func TestServiceProviderBoot(t *testing.T) {
 		if len(commands) != 2 {
 			return false
 		}
-		_, ok1 := commands[0].(*eventConsole.EventMakeCommand)
-		_, ok2 := commands[1].(*eventConsole.ListenerMakeCommand)
+		var (
+			hasEventCmd    bool
+			hasListenerCmd bool
+		)
+		for _, command := range commands {
+			if _, ok := command.(*eventConsole.EventMakeCommand); ok {
+				hasEventCmd = true
+			}
+			if _, ok := command.(*eventConsole.ListenerMakeCommand); ok {
+				hasListenerCmd = true
+			}
+		}
 
-		return ok1 && ok2
+		return hasEventCmd && hasListenerCmd
 	})).Once()
 
 	serviceProvider.Boot(app)

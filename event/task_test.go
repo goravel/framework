@@ -135,6 +135,26 @@ func TestDispatchWithQueue(t *testing.T) {
 	assert.Nil(t, task.Dispatch())
 }
 
+func TestDispatchWithQueueError(t *testing.T) {
+	mockQueue := queuemock.NewQueue(t)
+	listener := &TestQueueListener{}
+	mockTask := queuemock.NewTask(t)
+
+	mockQueue.EXPECT().Job(listener, []queue.Arg{
+		{Type: "string", Value: "test"},
+	}).Return(mockTask).Once()
+	mockTask.EXPECT().OnConnection("redis").Return(mockTask).Once()
+	mockTask.EXPECT().OnQueue("emails").Return(mockTask).Once()
+	mockTask.EXPECT().Dispatch().Return(errors.New("queue error")).Once()
+
+	task := NewTask(mockQueue, []event.Arg{
+		{Type: "string", Value: "test"},
+	}, &TestEvent{}, []event.Listener{
+		listener,
+	})
+	assert.EqualError(t, task.Dispatch(), "queue error")
+}
+
 func TestTestUtils(t *testing.T) {
 	assert.Equal(t, "test_listener", (&TestListener{}).Signature())
 	assert.Nil(t, (&TestListener{}).Handle())
