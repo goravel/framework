@@ -89,6 +89,11 @@ func (s *PendingJobTestSuite) TestDispatchSync() {
 }
 
 func (s *PendingJobTestSuite) TestNewPendingChainJob() {
+	s.Run("without jobs", func() {
+		pendingChainJob := NewPendingChainJob(nil, nil, nil, nil, nil, nil, nil)
+		s.Nil(pendingChainJob)
+	})
+
 	jobs := []contractsqueue.ChainJob{
 		{
 			Job: &TestJobOne{},
