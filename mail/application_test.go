@@ -352,7 +352,7 @@ func TestApplicationRenderViewTemplate(t *testing.T) {
 
 	t.Run("html render failed", func(t *testing.T) {
 		template := mocksmail.NewTemplate(t)
-		template.EXPECT().Render("mail.tmpl", map[string]any{"id": 1}).Return("", errors.New("render failed")).Once()
+		template.EXPECT().Render("mail.tmpl", mock.AnythingOfType("map[string]interface {}")).Return("", errors.New("render failed")).Once()
 
 		app := &Application{template: template, view: "mail.tmpl", with: map[string]any{"id": 1}}
 		err := app.renderViewTemplate()
@@ -361,7 +361,7 @@ func TestApplicationRenderViewTemplate(t *testing.T) {
 
 	t.Run("text render failed", func(t *testing.T) {
 		template := mocksmail.NewTemplate(t)
-		template.EXPECT().Render("mail.txt", map[string]any{"id": 1}).Return("", errors.New("text render failed")).Once()
+		template.EXPECT().Render("mail.txt", mock.AnythingOfType("map[string]interface {}")).Return("", errors.New("text render failed")).Once()
 
 		app := &Application{template: template, text: "mail.txt", with: map[string]any{"id": 1}}
 		err := app.renderViewTemplate()
@@ -420,7 +420,7 @@ func TestApplicationQueue(t *testing.T) {
 
 func TestApplicationQueueRenderError(t *testing.T) {
 	template := mocksmail.NewTemplate(t)
-	template.EXPECT().Render("mail.tmpl", map[string]any{"id": 1}).Return("", errors.New("render failed")).Once()
+	template.EXPECT().Render("mail.tmpl", mock.AnythingOfType("map[string]interface {}")).Return("", errors.New("render failed")).Once()
 
 	app := &Application{template: template, view: "mail.tmpl", with: map[string]any{"id": 1}}
 
@@ -430,7 +430,7 @@ func TestApplicationQueueRenderError(t *testing.T) {
 
 func TestApplicationSendRenderError(t *testing.T) {
 	template := mocksmail.NewTemplate(t)
-	template.EXPECT().Render("mail.tmpl", map[string]any{"id": 1}).Return("", errors.New("render failed")).Once()
+	template.EXPECT().Render("mail.tmpl", mock.AnythingOfType("map[string]interface {}")).Return("", errors.New("render failed")).Once()
 
 	app := &Application{template: template}
 	err := app.Send(&stubMailable{content: &mail.Content{View: "mail.tmpl", With: map[string]any{"id": 1}}})
