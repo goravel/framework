@@ -90,7 +90,15 @@ func (s *PendingJobTestSuite) TestDispatchSync() {
 
 func (s *PendingJobTestSuite) TestNewPendingChainJob() {
 	s.Run("without jobs", func() {
-		pendingChainJob := NewPendingChainJob(nil, nil, nil, nil, nil, nil, nil)
+		pendingChainJob := NewPendingChainJob(
+			nil, // config
+			nil, // cache
+			nil, // db
+			nil, // jobStorer
+			nil, // json
+			nil, // jobs
+			nil, // log
+		)
 		s.Nil(pendingChainJob)
 	})
 
