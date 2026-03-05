@@ -1,17 +1,22 @@
 package crypt
 
 import (
+	"encoding/base64"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation/json"
 	configmock "github.com/goravel/framework/mocks/config"
-	foundationmock "github.com/goravel/framework/mocks/foundation"
 	"github.com/goravel/framework/support"
+)
+
+const (
+	testKeyAES128 = "1234567890123456"
+	testKeyAES192 = "123456789012345678901234"
+	testKeyAES256 = "12345678901234567890123456789012"
 )
 
 type AesTestSuite struct {
@@ -21,7 +26,7 @@ type AesTestSuite struct {
 
 func TestAesTestSuite(t *testing.T) {
 	mockConfig := &configmock.Config{}
-	mockConfig.On("GetString", "app.key").Return("11111111111111111111111111111111").Once()
+	mockConfig.On("GetString", "app.key").Return(testKeyAES256).Once()
 	aes, err := NewAES(mockConfig, json.New())
 
 	assert.NoError(t, err)
@@ -69,7 +74,7 @@ func (s *AesTestSuite) TestDecryptString() {
 
 func Benchmark_EncryptString(b *testing.B) {
 	mockConfig := &configmock.Config{}
-	mockConfig.On("GetString", "app.key").Return("11111111111111111111111111111111").Once()
+	mockConfig.On("GetString", "app.key").Return(testKeyAES256).Once()
 	aes, err := NewAES(mockConfig, json.New())
 	if err != nil {
 		b.Fatal(err)
@@ -87,7 +92,7 @@ func Benchmark_EncryptString(b *testing.B) {
 
 func Benchmark_DecryptString(b *testing.B) {
 	mockConfig := &configmock.Config{}
-	mockConfig.On("GetString", "app.key").Return("11111111111111111111111111111111").Once()
+	mockConfig.On("GetString", "app.key").Return(testKeyAES256).Once()
 	aes, err := NewAES(mockConfig, json.New())
 	if err != nil {
 		b.Fatal(err)
@@ -107,15 +112,23 @@ func Benchmark_DecryptString(b *testing.B) {
 	}
 }
 
+func setRuntimeMode(t *testing.T, mode string) {
+	runtimeMode := support.RuntimeMode
+	support.RuntimeMode = mode
+	t.Cleanup(func() {
+		support.RuntimeMode = runtimeMode
+	})
+}
+
 func TestNewAES(t *testing.T) {
 	t.Run("valid key lengths", func(t *testing.T) {
 		cases := []struct {
 			name string
 			key  string
 		}{
-			{name: "aes-128", key: "1111111111111111"},
-			{name: "aes-192", key: "111111111111111111111111"},
-			{name: "aes-256", key: "11111111111111111111111111111111"},
+			{name: "aes-128", key: testKeyAES128},
+			{name: "aes-192", key: testKeyAES192},
+			{name: "aes-256", key: testKeyAES256},
 		}
 
 		for _, testCase := range cases {
@@ -129,11 +142,7 @@ func TestNewAES(t *testing.T) {
 	})
 
 	t.Run("empty key in artisan mode", func(t *testing.T) {
-		runtimeMode := support.RuntimeMode
-		support.RuntimeMode = support.RuntimeArtisan
-		t.Cleanup(func() {
-			support.RuntimeMode = runtimeMode
-		})
+		setRuntimeMode(t, support.RuntimeArtisan)
 
 		mockConfig := &configmock.Config{}
 		mockConfig.On("GetString", "app.key").Return("").Once()
@@ -154,26 +163,39 @@ func TestNewAES(t *testing.T) {
 }
 
 func TestEncryptString(t *testing.T) {
-	t.Run("invalid key", func(t *testing.T) {
+	cases := []struct {
+		name       string
+		inputValue string
+	}{
+		{name: "normal value", inputValue: "Goravel"},
+		{name: "empty value", inputValue: ""},
+		{name: "unicode value", inputValue: "你好, Goravel 👋"},
+	}
+
+	for _, testCase := range cases {
+		t.Run("invalid key with "+testCase.name, func(t *testing.T) {
+			aes := &AES{
+				json: json.New(),
+				key:  []byte("invalid"),
+			}
+			_, err := aes.EncryptString(testCase.inputValue)
+			assert.Error(t, err)
+			assert.ErrorContains(t, err, "invalid key size")
+		})
+	}
+
+	t.Run("encrypt/decrypt unicode round trip", func(t *testing.T) {
 		aes := &AES{
 			json: json.New(),
-			key:  []byte("invalid"),
-		}
-		_, err := aes.EncryptString("Goravel")
-		assert.Error(t, err)
-	})
-
-	t.Run("json marshal error", func(t *testing.T) {
-		jsonMock := foundationmock.NewJson(t)
-		jsonMock.EXPECT().Marshal(mock.Anything).Return(nil, assert.AnError).Once()
-
-		aes := &AES{
-			json: jsonMock,
-			key:  []byte("11111111111111111111111111111111"),
+			key:  []byte(testKeyAES256),
 		}
 
-		_, err := aes.EncryptString("Goravel")
-		assert.ErrorIs(t, err, assert.AnError)
+		payload, err := aes.EncryptString("你好, Goravel 👋")
+		assert.NoError(t, err)
+
+		value, err := aes.DecryptString(payload)
+		assert.NoError(t, err)
+		assert.Equal(t, "你好, Goravel 👋", value)
 	})
 }
 
@@ -181,7 +203,7 @@ func TestDecryptString(t *testing.T) {
 	t.Run("invalid key", func(t *testing.T) {
 		validAES := &AES{
 			json: json.New(),
-			key:  []byte("11111111111111111111111111111111"),
+			key:  []byte(testKeyAES256),
 		}
 		payload, err := validAES.EncryptString("Goravel")
 		assert.NoError(t, err)
@@ -192,18 +214,17 @@ func TestDecryptString(t *testing.T) {
 		}
 		_, err = invalidAES.DecryptString(payload)
 		assert.Error(t, err)
+		assert.ErrorContains(t, err, "invalid key size")
 	})
 
 	t.Run("json unmarshal error", func(t *testing.T) {
-		jsonMock := foundationmock.NewJson(t)
-		jsonMock.EXPECT().Unmarshal(mock.Anything, mock.Anything).Return(assert.AnError).Once()
-
 		aes := &AES{
-			json: jsonMock,
-			key:  []byte("11111111111111111111111111111111"),
+			json: json.New(),
+			key:  []byte(testKeyAES256),
 		}
 
-		_, err := aes.DecryptString("e30=")
-		assert.ErrorIs(t, err, assert.AnError)
+		malformedJSONPayload := base64.StdEncoding.EncodeToString([]byte("{"))
+		_, err := aes.DecryptString(malformedJSONPayload)
+		assert.Error(t, err)
 	})
 }
