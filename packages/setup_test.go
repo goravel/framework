@@ -124,6 +124,7 @@ func TestSetup(t *testing.T) {
 	assert.Equal(t, "test", s.facade)
 	assert.True(t, s.force)
 	assert.NotNil(t, s.paths)
+	assert.NotNil(t, s.Paths())
 
 	s = Setup([]string{"uninstall", "-f", "--facade=test", "--driver=database"}).(*setup)
 	assert.Equal(t, "uninstall", s.command)
@@ -131,8 +132,15 @@ func TestSetup(t *testing.T) {
 	assert.Equal(t, "test", s.facade)
 	assert.True(t, s.force)
 	assert.NotNil(t, s.paths)
+	assert.NotNil(t, s.Paths())
 
 	s = Setup([]string{"install", "--main-path=custom-package", "--facade=test"}).(*setup)
 	assert.Equal(t, "install", s.command)
 	assert.Equal(t, "test", s.facade)
+	assert.NotNil(t, s.Paths())
+}
+
+func TestPaths(t *testing.T) {
+	assert.NotNil(t, Paths())
+	assert.NotNil(t, Paths("custom-package"))
 }
