@@ -839,7 +839,7 @@ func ruleMin(ctx *RuleContext) bool {
 	if len(ctx.Parameters) == 0 {
 		return false
 	}
-	min, err := strconv.ParseFloat(ctx.Parameters[0], 64)
+	minV, err := strconv.ParseFloat(ctx.Parameters[0], 64)
 	if err != nil {
 		return false
 	}
@@ -848,7 +848,7 @@ func ruleMin(ctx *RuleContext) bool {
 	if !ok {
 		return false
 	}
-	return size >= min
+	return size >= minV
 }
 
 func ruleMax(ctx *RuleContext) bool {
@@ -1008,11 +1008,11 @@ func ruleDigitsBetween(ctx *RuleContext) bool {
 	}
 	s := fmt.Sprintf("%v", ctx.Value)
 	s = strings.TrimSpace(s)
-	min, err := strconv.Atoi(ctx.Parameters[0])
+	minV, err := strconv.Atoi(ctx.Parameters[0])
 	if err != nil {
 		return false
 	}
-	max, err := strconv.Atoi(ctx.Parameters[1])
+	maxV, err := strconv.Atoi(ctx.Parameters[1])
 	if err != nil {
 		return false
 	}
@@ -1022,7 +1022,7 @@ func ruleDigitsBetween(ctx *RuleContext) bool {
 		}
 	}
 	l := len(s)
-	return l >= min && l <= max
+	return l >= minV && l <= maxV
 }
 
 func ruleDecimal(ctx *RuleContext) bool {
@@ -1088,15 +1088,15 @@ func ruleMinDigits(ctx *RuleContext) bool {
 			digitCount++
 		}
 	}
-	min, err := strconv.Atoi(ctx.Parameters[0])
+	minV, err := strconv.Atoi(ctx.Parameters[0])
 	if err != nil {
 		return false
 	}
 	// Must be numeric
-	if _, err := strconv.ParseFloat(s, 64); err != nil {
+	if _, err = strconv.ParseFloat(s, 64); err != nil {
 		return false
 	}
-	return digitCount >= min
+	return digitCount >= minV
 }
 
 func ruleMaxDigits(ctx *RuleContext) bool {
@@ -1111,14 +1111,14 @@ func ruleMaxDigits(ctx *RuleContext) bool {
 			digitCount++
 		}
 	}
-	max, err := strconv.Atoi(ctx.Parameters[0])
+	maxV, err := strconv.Atoi(ctx.Parameters[0])
 	if err != nil {
 		return false
 	}
-	if _, err := strconv.ParseFloat(s, 64); err != nil {
+	if _, err = strconv.ParseFloat(s, 64); err != nil {
 		return false
 	}
-	return digitCount <= max
+	return digitCount <= maxV
 }
 
 // ---- String Format Rules ----
