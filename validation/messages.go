@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// defaultMessages contains all default validation error messages, aligned with Laravel 12.x.
+// defaultMessages contains all default validation error messages.
 // Size-dependent rules have type-specific variants: "rule.string", "rule.numeric", "rule.array", "rule.file".
 var defaultMessages = map[string]string{
 	// Existence rules
