@@ -17,8 +17,9 @@ import (
 // DataBag provides a unified data abstraction for validation.
 // It supports nested data access via dot notation (e.g., "user.name", "users.0.email").
 type DataBag struct {
-	data  map[string]any
-	files map[string]any
+	data       map[string]any
+	files      map[string]any
+	cachedKeys []string
 }
 
 // NewDataBag creates a DataBag from various input types:
@@ -138,6 +139,12 @@ func (d *DataBag) Get(key string) (any, bool) {
 		return val, true
 	}
 
+	// Fast path: no dot notation
+	if !strings.Contains(key, ".") {
+		val, ok := d.data[key]
+		return val, ok
+	}
+
 	return dotGet(d.data, strings.Split(key, "."))
 }
 
@@ -145,6 +152,14 @@ func (d *DataBag) Get(key string) (any, bool) {
 func (d *DataBag) Set(key string, val any) error {
 	if key == "" {
 		return fmt.Errorf("key cannot be empty")
+	}
+
+	d.cachedKeys = nil // invalidate cache
+
+	// Fast path: no dot notation
+	if !strings.Contains(key, ".") {
+		d.data[key] = val
+		return nil
 	}
 
 	dotSet(d.data, strings.Split(key, "."), val)
@@ -168,14 +183,19 @@ func (d *DataBag) Files() map[string]any {
 }
 
 // Keys returns all dot-notation paths in the data, for wildcard expansion.
+// Results are cached and invalidated when Set() is called.
 func (d *DataBag) Keys() []string {
+	if d.cachedKeys != nil {
+		return d.cachedKeys
+	}
 	keys := make([]string, 0)
 	collectKeys(d.data, "", &keys)
 	for k := range d.files {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
-	return keys
+	d.cachedKeys = keys
+	return d.cachedKeys
 }
 
 // HasFile checks if a file exists for the given key.

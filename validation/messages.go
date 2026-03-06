@@ -211,6 +211,32 @@ func getMessage(field, rule string, customMessages map[string]string, attrType s
 // Keys are sorted by length descending so that longer placeholders (e.g. ":values")
 // are replaced before shorter ones (e.g. ":value") to avoid partial replacements.
 func formatMessage(message string, replacements map[string]string) string {
+	if len(replacements) == 0 {
+		return message
+	}
+
+	// Fast path: most error messages have 1-4 replacements.
+	// Use a fixed-size array with insertion sort to avoid slice allocation.
+	if len(replacements) <= 4 {
+		type kv struct{ k, v string }
+		var sorted [4]kv
+		n := 0
+		for k, v := range replacements {
+			// Insertion sort by key length descending
+			pos := n
+			for pos > 0 && len(sorted[pos-1].k) < len(k) {
+				sorted[pos] = sorted[pos-1]
+				pos--
+			}
+			sorted[pos] = kv{k, v}
+			n++
+		}
+		for i := range n {
+			message = strings.ReplaceAll(message, sorted[i].k, sorted[i].v)
+		}
+		return message
+	}
+
 	keys := make([]string, 0, len(replacements))
 	for k := range replacements {
 		keys = append(keys, k)

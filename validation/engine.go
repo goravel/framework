@@ -21,6 +21,8 @@ type Engine struct {
 	errors         *Errors
 	excludes       map[string]bool
 	distinctValues map[string]map[string]bool // For tracking distinct values
+	expandedRules  map[string][]ParsedRule    // Cached result of expandWildcardRules
+	ruleCtx        RuleContext                // Reusable context for builtin rule execution
 }
 
 type engineOptions struct {
@@ -84,8 +86,13 @@ func (e *Engine) ValidatedData() map[string]any {
 }
 
 // expandWildcardRules expands rules with wildcard (*) patterns based on actual data.
+// Results are cached for the lifetime of the Engine.
 func (e *Engine) expandWildcardRules() map[string][]ParsedRule {
-	return expandWildcardFields(e.rules, e.data.Keys(), true)
+	if e.expandedRules != nil {
+		return e.expandedRules
+	}
+	e.expandedRules = expandWildcardFields(e.rules, e.data.Keys(), true)
+	return e.expandedRules
 }
 
 // validateField validates a single field against all its rules.
@@ -182,17 +189,15 @@ func (e *Engine) executeRule(field string, rule ParsedRule, value any, allRules 
 		return customRule.Passes(e.ctx, e.data, value, anySlice(rule.Parameters)...)
 	}
 
-	// Check built-in rules
+	// Check built-in rules (reuse RuleContext to avoid heap allocation)
 	if fn, ok := builtinRules[rule.Name]; ok {
-		ruleCtx := &RuleContext{
-			Ctx:        e.ctx,
-			Attribute:  field,
-			Value:      value,
-			Parameters: rule.Parameters,
-			Data:       e.data,
-			Rules:      allRules,
-		}
-		return fn(ruleCtx)
+		e.ruleCtx.Ctx = e.ctx
+		e.ruleCtx.Attribute = field
+		e.ruleCtx.Value = value
+		e.ruleCtx.Parameters = rule.Parameters
+		e.ruleCtx.Data = e.data
+		e.ruleCtx.Rules = allRules
+		return fn(&e.ruleCtx)
 	}
 
 	// Unknown rule — pass (don't block on unrecognized rules)
