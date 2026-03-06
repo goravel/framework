@@ -36,10 +36,6 @@ func (v *Validator) Bind(ptr any) error {
 	for key, value := range v.data.All() {
 		data[key] = value
 	}
-	// Include files for struct binding (e.g., *multipart.FileHeader fields)
-	for key, value := range v.data.Files() {
-		data[key] = value
-	}
 	// Validated data overrides
 	for key, value := range v.validated {
 		data[key] = value

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"mime/multipart"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -24,7 +23,6 @@ const defaultMaxMultipartMemory = 32 << 20 // 32 MB
 // It supports nested data access via dot notation (e.g., "user.name", "users.0.email").
 type DataBag struct {
 	data       map[string]any
-	files      map[string]any
 	cachedKeys []string
 }
 
@@ -62,10 +60,7 @@ func NewDataBagFromRequest(r *http.Request, maxMemory int64) (*DataBag, error) {
 		return nil, fmt.Errorf("request cannot be nil")
 	}
 
-	bag := &DataBag{
-		data:  make(map[string]any),
-		files: make(map[string]any),
-	}
+	bag := &DataBag{data: make(map[string]any)}
 
 	// Parse query parameters first (body data takes priority)
 	if r.URL != nil {
@@ -116,9 +111,9 @@ func NewDataBagFromRequest(r *http.Request, maxMemory int64) (*DataBag, error) {
 			}
 			for key, files := range r.MultipartForm.File {
 				if len(files) == 1 {
-					bag.files[key] = files[0]
+					bag.data[key] = files[0]
 				} else {
-					bag.files[key] = files
+					bag.data[key] = files
 				}
 			}
 		}
@@ -146,11 +141,6 @@ func NewDataBagFromRequest(r *http.Request, maxMemory int64) (*DataBag, error) {
 func (d *DataBag) Get(key string) (any, bool) {
 	if key == "" {
 		return nil, false
-	}
-
-	// Check files first for simple keys
-	if val, ok := d.files[key]; ok {
-		return val, true
 	}
 
 	// Fast path: no dot notation
@@ -191,11 +181,6 @@ func (d *DataBag) All() map[string]any {
 	return d.data
 }
 
-// Files returns all the files.
-func (d *DataBag) Files() map[string]any {
-	return d.files
-}
-
 // Keys returns all dot-notation paths in the data, for wildcard expansion.
 // Results are cached and invalidated when Set() is called.
 func (d *DataBag) Keys() []string {
@@ -204,45 +189,9 @@ func (d *DataBag) Keys() []string {
 	}
 	keys := make([]string, 0)
 	collectKeys(d.data, "", &keys)
-	for k := range d.files {
-		keys = append(keys, k)
-	}
 	sort.Strings(keys)
 	d.cachedKeys = keys
 	return d.cachedKeys
-}
-
-// HasFile checks if a file exists for the given key.
-func (d *DataBag) HasFile(key string) bool {
-	_, ok := d.files[key]
-	return ok
-}
-
-// GetFile retrieves a file header for the given key.
-func (d *DataBag) GetFile(key string) (*multipart.FileHeader, bool) {
-	val, ok := d.files[key]
-	if !ok {
-		return nil, false
-	}
-	if fh, ok := val.(*multipart.FileHeader); ok {
-		return fh, true
-	}
-	return nil, false
-}
-
-// GetFiles retrieves multiple file headers for the given key.
-func (d *DataBag) GetFiles(key string) ([]*multipart.FileHeader, bool) {
-	val, ok := d.files[key]
-	if !ok {
-		return nil, false
-	}
-	if fhs, ok := val.([]*multipart.FileHeader); ok {
-		return fhs, true
-	}
-	if fh, ok := val.(*multipart.FileHeader); ok {
-		return []*multipart.FileHeader{fh}, true
-	}
-	return nil, false
 }
 
 // dotGet navigates nested maps/slices using path segments.
