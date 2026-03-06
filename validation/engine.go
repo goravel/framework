@@ -67,8 +67,9 @@ func (e *Engine) Validate() *Errors {
 	return e.errors
 }
 
-// ValidatedData returns only the data for fields that passed validation,
-// excluding fields marked for exclusion.
+// ValidatedData returns the data for all fields that have validation rules,
+// excluding fields marked for exclusion. Callers should check Errors first
+// to determine if validation passed before using the result.
 func (e *Engine) ValidatedData() map[string]any {
 	result := make(map[string]any)
 	expandedRules := e.expandWildcardRules()
@@ -164,15 +165,18 @@ func (e *Engine) validateField(field string, fieldRules []ParsedRule, allRules m
 		// Execute the rule
 		passed := e.executeRule(field, rule, value, allRules)
 
+		// Handle distinct tracking: the builtin ruleDistinct always returns true,
+		// actual duplicate detection happens here via cross-field value tracking.
+		if rule.Name == "distinct" && passed {
+			if e.trackDistinct(field, value) {
+				passed = false
+			}
+		}
+
 		if !passed {
 			attrType := getAttributeType(field, value, allRules)
 			msg := e.formatErrorMessage(field, rule, attrType)
 			e.errors.Add(field, rule.Name, msg)
-		}
-
-		// Handle distinct tracking
-		if rule.Name == "distinct" && passed {
-			e.trackDistinct(field, value)
 		}
 
 		// Bail: stop on first error for this field
@@ -254,7 +258,8 @@ func (e *Engine) isExcluded(field string) bool {
 }
 
 // trackDistinct tracks values for distinct validation across wildcard-expanded fields.
-func (e *Engine) trackDistinct(field string, value any) {
+// Returns true if a duplicate was detected (i.e., validation should fail).
+func (e *Engine) trackDistinct(field string, value any) bool {
 	// Find the wildcard pattern this field belongs to
 	for pattern := range e.rules {
 		if strings.Contains(pattern, "*") {
@@ -266,16 +271,14 @@ func (e *Engine) trackDistinct(field string, value any) {
 				}
 				valStr := fmt.Sprintf("%v", value)
 				if e.distinctValues[pattern][valStr] {
-					// Duplicate found - add error
-					attrType := getAttributeType(field, value, e.rules)
-					msg := e.formatErrorMessage(field, ParsedRule{Name: "distinct"}, attrType)
-					e.errors.Add(field, "distinct", msg)
+					return true // duplicate found
 				}
 				e.distinctValues[pattern][valStr] = true
-				return
+				return false
 			}
 		}
 	}
+	return false
 }
 
 // formatErrorMessage creates the error message for a rule failure.

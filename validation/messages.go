@@ -255,8 +255,5 @@ func getDisplayableAttribute(field string, customAttributes map[string]string) s
 	if name, ok := customAttributes[field]; ok {
 		return name
 	}
-	// Convert dot notation to the last segment, replace underscores with spaces
-	parts := strings.Split(field, ".")
-	last := parts[len(parts)-1]
-	return strings.ReplaceAll(last, "_", " ")
+	return strings.ReplaceAll(field, "_", " ")
 }

@@ -4,6 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"io"
 	"math"
 	"mime/multipart"
@@ -735,6 +739,9 @@ func ruleInteger(ctx *RuleContext) bool {
 	case float32:
 		return v == float32(int64(v))
 	case float64:
+		if v > float64(math.MaxInt64) || v < float64(math.MinInt64) {
+			return false
+		}
 		return v == float64(int64(v))
 	case json.Number:
 		_, err := v.Int64()
@@ -848,7 +855,7 @@ func ruleMax(ctx *RuleContext) bool {
 	if len(ctx.Parameters) == 0 {
 		return false
 	}
-	max, err := strconv.ParseFloat(ctx.Parameters[0], 64)
+	maxV, err := strconv.ParseFloat(ctx.Parameters[0], 64)
 	if err != nil {
 		return false
 	}
@@ -857,18 +864,18 @@ func ruleMax(ctx *RuleContext) bool {
 	if !ok {
 		return false
 	}
-	return size <= max
+	return size <= maxV
 }
 
 func ruleBetween(ctx *RuleContext) bool {
 	if len(ctx.Parameters) < 2 {
 		return false
 	}
-	min, err := strconv.ParseFloat(ctx.Parameters[0], 64)
+	minV, err := strconv.ParseFloat(ctx.Parameters[0], 64)
 	if err != nil {
 		return false
 	}
-	max, err := strconv.ParseFloat(ctx.Parameters[1], 64)
+	maxV, err := strconv.ParseFloat(ctx.Parameters[1], 64)
 	if err != nil {
 		return false
 	}
@@ -877,7 +884,7 @@ func ruleBetween(ctx *RuleContext) bool {
 	if !ok {
 		return false
 	}
-	return size >= min && size <= max
+	return size >= minV && size <= maxV
 }
 
 func ruleGt(ctx *RuleContext) bool {
@@ -1063,7 +1070,9 @@ func ruleMultipleOf(ctx *RuleContext) bool {
 	if err != nil || divisor == 0 {
 		return false
 	}
-	return math.Mod(val, divisor) == 0
+	remainder := math.Mod(val, divisor)
+	epsilon := 1e-9
+	return math.Abs(remainder) < epsilon || math.Abs(remainder-divisor) < epsilon
 }
 
 func ruleMinDigits(ctx *RuleContext) bool {
@@ -1201,7 +1210,8 @@ func ruleActiveUrl(ctx *RuleContext) bool {
 	if err != nil || u.Host == "" {
 		return false
 	}
-	_, err = net.LookupHost(u.Hostname())
+	resolver := net.Resolver{}
+	_, err = resolver.LookupHost(ctx.Ctx, u.Hostname())
 	return err == nil
 }
 
@@ -1706,11 +1716,93 @@ func ruleExtensions(ctx *RuleContext) bool {
 }
 
 func ruleDimensions(ctx *RuleContext) bool {
-	// Dimensions validation requires image parsing - basic implementation
-	if _, ok := ctx.Value.(*multipart.FileHeader); ok {
+	// Parse named parameters: "min_width=100,max_width=500,width=200,height=200,ratio=3/2"
+	constraints := make(map[string]string, len(ctx.Parameters))
+	for _, p := range ctx.Parameters {
+		if k, v, found := strings.Cut(p, "="); found {
+			constraints[k] = v
+		}
+	}
+
+	check := func(fh *multipart.FileHeader) bool {
+		f, err := fh.Open()
+		if err != nil {
+			return false
+		}
+		defer func(f multipart.File) { _ = f.Close() }(f)
+
+		cfg, _, err := image.DecodeConfig(f)
+		if err != nil {
+			return false
+		}
+
+		width, height := cfg.Width, cfg.Height
+
+		if v, ok := constraints["width"]; ok {
+			if w, err := strconv.Atoi(v); err == nil && width != w {
+				return false
+			}
+		}
+		if v, ok := constraints["height"]; ok {
+			if h, err := strconv.Atoi(v); err == nil && height != h {
+				return false
+			}
+		}
+		if v, ok := constraints["min_width"]; ok {
+			if mw, err := strconv.Atoi(v); err == nil && width < mw {
+				return false
+			}
+		}
+		if v, ok := constraints["max_width"]; ok {
+			if mw, err := strconv.Atoi(v); err == nil && width > mw {
+				return false
+			}
+		}
+		if v, ok := constraints["min_height"]; ok {
+			if mh, err := strconv.Atoi(v); err == nil && height < mh {
+				return false
+			}
+		}
+		if v, ok := constraints["max_height"]; ok {
+			if mh, err := strconv.Atoi(v); err == nil && height > mh {
+				return false
+			}
+		}
+
+		if v, ok := constraints["ratio"]; ok {
+			var targetRatio float64
+			if num, den, found := strings.Cut(v, "/"); found {
+				n, err1 := strconv.ParseFloat(num, 64)
+				d, err2 := strconv.ParseFloat(den, 64)
+				if err1 != nil || err2 != nil || d == 0 {
+					return false
+				}
+				targetRatio = n / d
+			} else {
+				r, err := strconv.ParseFloat(v, 64)
+				if err != nil {
+					return false
+				}
+				targetRatio = r
+			}
+			actualRatio := float64(width) / float64(height)
+			if math.Abs(actualRatio-targetRatio) > 0.01 {
+				return false
+			}
+		}
+
 		return true
 	}
+
+	if fh, ok := ctx.Value.(*multipart.FileHeader); ok {
+		return check(fh)
+	}
 	if fhs, ok := ctx.Value.([]*multipart.FileHeader); ok {
+		for _, fh := range fhs {
+			if !check(fh) {
+				return false
+			}
+		}
 		return len(fhs) > 0
 	}
 	return false

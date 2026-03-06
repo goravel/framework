@@ -122,6 +122,7 @@ func (r *Validation) AddRules(rules []validatecontract.Rule) error {
 		if slices.Contains(existRuleNames, rule.Signature()) {
 			return errors.ValidationDuplicateRule.Args(rule.Signature())
 		}
+		existRuleNames = append(existRuleNames, rule.Signature())
 	}
 
 	r.rules = append(r.rules, rules...)
@@ -134,6 +135,7 @@ func (r *Validation) AddFilters(filters []validatecontract.Filter) error {
 		if slices.Contains(existFilterNames, filter.Signature()) {
 			return errors.ValidationDuplicateFilter.Args(filter.Signature())
 		}
+		existFilterNames = append(existFilterNames, filter.Signature())
 	}
 
 	r.filters = append(r.filters, filters...)

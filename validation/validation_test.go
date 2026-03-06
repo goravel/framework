@@ -421,7 +421,7 @@ func TestRule_Required(t *testing.T) {
 				assert.NotNil(t, validator, c.description)
 				assert.True(t, validator.Fails(), c.description)
 				assert.Equal(t, map[string]string{
-					"required": "The first field is required.",
+					"required": "The name.first field is required.",
 				}, validator.Errors().Get("name.first"))
 			},
 		},

@@ -11,6 +11,8 @@ import (
 	"unicode"
 
 	"github.com/spf13/cast"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	validatecontract "github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/errors"
@@ -37,7 +39,7 @@ var builtinFilters = map[string]func(val any) any{
 		return strings.ToUpper(cast.ToString(val))
 	},
 	"title": func(val any) any {
-		return strings.ToTitle(cast.ToString(val))
+		return cases.Title(language.Und).String(cast.ToString(val))
 	},
 	"ucfirst": func(val any) any {
 		s := cast.ToString(val)

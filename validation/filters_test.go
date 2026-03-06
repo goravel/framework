@@ -26,7 +26,7 @@ func TestBuiltinFilters(t *testing.T) {
 		// Case conversion
 		{"lower", "lower", "HELLO", "hello"},
 		{"upper", "upper", "hello", "HELLO"},
-		{"title", "title", "hello world", "HELLO WORLD"},
+		{"title", "title", "hello world", "Hello World"},
 		{"ucfirst", "ucfirst", "hello", "Hello"},
 		{"ucfirst empty", "ucfirst", "", ""},
 		{"lcfirst", "lcfirst", "Hello", "hello"},
