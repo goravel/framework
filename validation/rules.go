@@ -177,6 +177,10 @@ var builtinRules = map[string]func(ctx *RuleContext) bool{
 	// Other
 	"distinct":            ruleDistinct,
 	"required_array_keys": ruleRequiredArrayKeys,
+
+	// Database
+	"exists": ruleExists,
+	"unique": ruleUnique,
 }
 
 // implicitRules are rules that run even when the field is missing or empty.

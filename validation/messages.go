@@ -167,6 +167,10 @@ var defaultMessages = map[string]string{
 	// Other rules
 	"distinct":            "The :attribute field has a duplicate value.",
 	"required_array_keys": "The :attribute field must contain entries for: :values.",
+
+	// Database rules
+	"exists": "The :attribute does not exist.",
+	"unique": "The :attribute has already been taken.",
 }
 
 // sizeRules are rules that have type-specific messages.
