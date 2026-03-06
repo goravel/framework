@@ -30,6 +30,9 @@ func (r *Validation) Make(ctx context.Context, data any, rules map[string]any, o
 		return nil, errors.ValidationEmptyRules
 	}
 
+	// Process options
+	opts := applyOptions(options)
+
 	// Create DataBag from data
 	var bag *DataBag
 	var err error
@@ -37,7 +40,7 @@ func (r *Validation) Make(ctx context.Context, data any, rules map[string]any, o
 	case *DataBag:
 		bag = td
 	case *http.Request:
-		bag, err = NewDataBagFromRequest(td)
+		bag, err = NewDataBagFromRequest(td, opts.MaxMultipartMemory)
 	case map[string]any:
 		bag, err = NewDataBag(td)
 	case url.Values:
@@ -50,9 +53,6 @@ func (r *Validation) Make(ctx context.Context, data any, rules map[string]any, o
 	if err != nil {
 		return nil, errors.ValidationDataInvalidType
 	}
-
-	// Process options
-	opts := applyOptions(options)
 
 	// Merge globally registered filters with per-call custom filters
 	if len(r.filters) > 0 {

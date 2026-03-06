@@ -36,6 +36,12 @@ func CustomFilters(filters []contractsvalidation.Filter) contractsvalidation.Opt
 	}
 }
 
+func MaxMultipartMemory(maxMemory int64) contractsvalidation.Option {
+	return func(opts *contractsvalidation.Options) {
+		opts.MaxMultipartMemory = maxMemory
+	}
+}
+
 func applyOptions(options []contractsvalidation.Option) *contractsvalidation.Options {
 	opts := &contractsvalidation.Options{}
 	for _, o := range options {

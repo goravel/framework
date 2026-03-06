@@ -1,7 +1,7 @@
 package validation
 
 import (
-	"encoding/json"
+	"bytes"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -12,7 +12,13 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	supportjson "github.com/goravel/framework/support/json"
 )
+
+// defaultMaxMultipartMemory is the default maximum memory (in bytes) used
+// to buffer multipart form data in memory before spilling to disk.
+const defaultMaxMultipartMemory = 32 << 20 // 32 MB
 
 // DataBag provides a unified data abstraction for validation.
 // It supports nested data access via dot notation (e.g., "user.name", "users.0.email").
@@ -49,7 +55,9 @@ func NewDataBag(input any) (*DataBag, error) {
 }
 
 // NewDataBagFromRequest parses an HTTP request into a DataBag.
-func NewDataBagFromRequest(r *http.Request) (*DataBag, error) {
+// maxMemory controls the maximum memory (in bytes) used to buffer multipart
+// form data before spilling to disk. If 0, defaults to 32 MB.
+func NewDataBagFromRequest(r *http.Request, maxMemory int64) (*DataBag, error) {
 	if r == nil {
 		return nil, fmt.Errorf("request cannot be nil")
 	}
@@ -79,8 +87,10 @@ func NewDataBagFromRequest(r *http.Request) (*DataBag, error) {
 			if err != nil {
 				return bag, nil
 			}
+			// Restore body for potential re-reads
+			r.Body = io.NopCloser(bytes.NewReader(body))
 			var jsonData map[string]any
-			if err := json.Unmarshal(body, &jsonData); err == nil {
+			if err = supportjson.Unmarshal(body, &jsonData); err == nil {
 				// Body data overrides query data
 				for k, v := range jsonData {
 					bag.data[k] = v
@@ -88,7 +98,11 @@ func NewDataBagFromRequest(r *http.Request) (*DataBag, error) {
 			}
 		}
 	case strings.HasPrefix(contentType, "multipart/form-data"):
-		if err := r.ParseMultipartForm(32 << 20); err == nil && r.MultipartForm != nil {
+		memory := int64(defaultMaxMultipartMemory)
+		if maxMemory > 0 {
+			memory = maxMemory
+		}
+		if err := r.ParseMultipartForm(memory); err == nil && r.MultipartForm != nil {
 			for key, values := range r.MultipartForm.Value {
 				if len(values) == 1 {
 					bag.data[key] = values[0]

@@ -8,6 +8,7 @@ type Options struct {
 	Messages             map[string]string
 	Attributes           map[string]string
 	PrepareForValidation func(ctx context.Context, data Data) error
+	MaxMultipartMemory   int64
 }
 
 type Option func(*Options)

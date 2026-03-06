@@ -8,6 +8,7 @@ import (
 	"math"
 	"mime/multipart"
 	"net"
+	"net/mail"
 	"net/url"
 	"reflect"
 	"regexp"
@@ -1165,14 +1166,18 @@ func ruleAscii(ctx *RuleContext) bool {
 	return true
 }
 
-var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
-
 func ruleEmail(ctx *RuleContext) bool {
 	s, ok := ctx.Value.(string)
 	if !ok {
 		return false
 	}
-	return emailRegex.MatchString(s)
+	addr, err := mail.ParseAddress(s)
+	if err != nil {
+		return false
+	}
+	// mail.ParseAddress accepts "Name <email>" format, but validation
+	// should only accept bare email addresses.
+	return addr.Address == s
 }
 
 func ruleUrl(ctx *RuleContext) bool {
