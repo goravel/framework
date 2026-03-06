@@ -96,23 +96,3 @@ func TestApplyOptions(t *testing.T) {
 		})
 	}
 }
-
-// Mock implementations for testing
-
-type mockRule struct {
-	signature string
-	message   string
-	passes    bool
-}
-
-func (m *mockRule) Signature() string {
-	return m.signature
-}
-
-func (m *mockRule) Passes(ctx context.Context, data contractsvalidation.Data, val any, options ...any) bool {
-	return m.passes
-}
-
-func (m *mockRule) Message(ctx context.Context) string {
-	return m.message
-}
