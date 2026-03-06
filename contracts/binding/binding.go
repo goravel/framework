@@ -393,6 +393,9 @@ var (
 		Validation: {
 			Description: "Provides validation services for incoming data.",
 			PkgPath:     "github.com/goravel/framework/validation",
+			Dependencies: []string{
+				Orm,
+			},
 		},
 		View: {
 			Description: "Provides a simple yet powerful templating engine.",
