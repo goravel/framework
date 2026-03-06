@@ -762,7 +762,7 @@ func ruleBoolean(ctx *RuleContext) bool {
 		return v == 0 || v == 1
 	case string:
 		v = strings.TrimSpace(v)
-		return v == "true" || v == "false" || v == "0" || v == "1"
+		return v == "true" || v == "false" || v == "0" || v == "1" || v == "on" || v == "off" || v == "yes" || v == "no"
 	}
 	return false
 }

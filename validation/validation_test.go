@@ -962,9 +962,29 @@ func TestCustomRule(t *testing.T) {
 			description: "success",
 			setup: func(c Case) {
 				validator, err := validation.Make(context.Background(), map[string]any{
+					"name1":   "on",
+					"name2":   "off",
+					"name3":   "yes",
+					"name4":   "no",
+					"name5":   true,
+					"name6":   false,
+					"name7":   "true",
+					"name8":   "false",
+					"name9":   "1",
+					"name10":  "0",
 					"name":    "ABC",
 					"address": "de",
 				}, map[string]any{
+					"name1":   "bool",
+					"name2":   "bool",
+					"name3":   "bool",
+					"name4":   "bool",
+					"name5":   "bool",
+					"name6":   "bool",
+					"name7":   "bool",
+					"name8":   "bool",
+					"name9":   "bool",
+					"name10":  "bool",
 					"name":    "required|custom_uppercase:3",
 					"address": "required|custom_lowercase:2",
 				})
@@ -977,9 +997,15 @@ func TestCustomRule(t *testing.T) {
 			description: "error",
 			setup: func(c Case) {
 				validator, err := validation.Make(context.Background(), map[string]any{
+					"name1":   1,
+					"name2":   0,
+					"name3":   "a",
 					"name":    "abc",
 					"address": "DE",
 				}, map[string]any{
+					"name1":   "bool",
+					"name2":   "bool",
+					"name3":   "bool",
 					"name":    "required|custom_uppercase:3",
 					"address": "required|custom_lowercase:2",
 				})
