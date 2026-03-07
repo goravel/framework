@@ -50,3 +50,40 @@ golangci-lint run                      # lint
 
 - When writing Go code, AI agents should use `any` instead of `interface{}`.
 - Avoid adding `mock.Anything` when writing test cases.
+- Use the testify `EXPECT` method when writing test cases.
+
+### Examples
+
+1. Use `any` instead of `interface{}`
+
+```go
+// Avoid
+func Handle(data interface{}) error {
+	return nil
+}
+
+// Prefer
+func Handle(data any) error {
+	return nil
+}
+```
+
+2. Avoid `mock.Anything` in tests
+
+```go
+// Avoid
+repo.EXPECT().Find(mock.Anything).Return(user, nil)
+
+// Prefer
+repo.EXPECT().Find("user-1").Return(user, nil)
+```
+
+3. Use `EXPECT` method for mock expectations
+
+```go
+// Avoid
+repo.On("Find", "user-1").Return(user, nil)
+
+// Prefer
+repo.EXPECT().Find("user-1").Return(user, nil)
+```
