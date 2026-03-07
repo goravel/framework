@@ -2,10 +2,9 @@ package validation
 
 import (
 	"context"
+	"net/http"
 	"net/url"
 	"slices"
-
-	"github.com/gookit/validate"
 
 	validatecontract "github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/errors"
@@ -23,7 +22,7 @@ func NewValidation() *Validation {
 	}
 }
 
-func (r *Validation) Make(ctx context.Context, data any, rules map[string]string, options ...validatecontract.Option) (validatecontract.Validator, error) {
+func (r *Validation) Make(ctx context.Context, data any, rules map[string]any, options ...validatecontract.Option) (validatecontract.Validator, error) {
 	if data == nil {
 		return nil, errors.ValidationEmptyData
 	}
@@ -31,51 +30,109 @@ func (r *Validation) Make(ctx context.Context, data any, rules map[string]string
 		return nil, errors.ValidationEmptyRules
 	}
 
-	var dataFace validate.DataFace
+	// Process options
+	opts := applyOptions(options)
+
+	// Create DataBag from data
+	var bag *DataBag
 	var err error
 	switch td := data.(type) {
-	case validate.DataFace:
-		dataFace = td
+	case *DataBag:
+		bag = td
+	case *http.Request:
+		bag, err = NewDataBagFromRequest(td, opts.MaxMultipartMemory)
 	case map[string]any:
-		if len(td) == 0 {
-			return nil, errors.ValidationEmptyData
-		}
-		dataFace = validate.FromMap(td)
+		bag, err = NewDataBag(td)
 	case url.Values:
-		dataFace = validate.FromURLValues(td)
+		bag, err = NewDataBag(td)
 	case map[string][]string:
-		dataFace = validate.FromURLValues(td)
+		bag, err = NewDataBag(td)
 	default:
-		dataFace, err = validate.FromStruct(data)
-		if err != nil {
-			return nil, errors.ValidationDataInvalidType
-		}
+		bag, err = NewDataBag(data)
+	}
+	if err != nil {
+		return nil, errors.ValidationDataInvalidType
 	}
 
-	options = append(options, Rules(rules), CustomRules(r.rules), CustomFilters(r.filters))
-	generateOptions := GenerateOptions(options)
-	if generateOptions["prepareForValidation"] != nil {
-		if err := generateOptions["prepareForValidation"].(func(ctx context.Context, data validatecontract.Data) error)(ctx, NewData(dataFace)); err != nil {
+	// Merge globally registered filters with per-call custom filters
+	if len(r.filters) > 0 {
+		opts.CustomFilters = append(opts.CustomFilters, r.filters...)
+	}
+
+	// Run PrepareForValidation if set
+	if opts.PrepareForValidation != nil {
+		if err := opts.PrepareForValidation(ctx, bag); err != nil {
 			return nil, err
 		}
 	}
 
-	v := dataFace.Create()
-	AppendOptions(ctx, v, generateOptions)
-
-	return NewValidator(v, dataFace), nil
-}
-
-func (r *Validation) AddFilters(filters []validatecontract.Filter) error {
-	existFilterNames := r.existFilterNames()
-	for _, filter := range filters {
-		if slices.Contains(existFilterNames, filter.Signature()) {
-			return errors.ValidationDuplicateFilter.Args(filter.Signature())
+	// Apply filters before validation
+	if len(opts.Filters) > 0 {
+		if err := applyFilters(ctx, bag, opts.Filters, opts.CustomFilters); err != nil {
+			return nil, err
 		}
 	}
 
-	r.filters = append(r.filters, filters...)
-	return nil
+	// Parse all rule strings
+	parsedRules := make(map[string][]ParsedRule)
+	for field, ruleVal := range rules {
+		switch v := ruleVal.(type) {
+		case string:
+			parsedRules[field] = ParseRules(v)
+		case []string:
+			parsedRules[field] = ParseRuleSlice(v)
+		default:
+			return nil, errors.ValidationInvalidRuleType.Args(field)
+		}
+	}
+
+	// Build custom rules map
+	customRulesMap := make(map[string]validatecontract.Rule)
+	for _, cr := range r.rules {
+		customRulesMap[cr.Signature()] = cr
+	}
+
+	// Validate that all rule names are known (builtin, custom, or control)
+	for field, fieldRules := range parsedRules {
+		for _, pr := range fieldRules {
+			if isControlRule(pr.Name) {
+				continue
+			}
+			if _, ok := builtinRules[pr.Name]; ok {
+				continue
+			}
+			if _, ok := excludeRules[pr.Name]; ok {
+				continue
+			}
+			if _, ok := customRulesMap[pr.Name]; ok {
+				continue
+			}
+			return nil, errors.ValidationUnknownRule.Args(field + "." + pr.Name)
+		}
+	}
+
+	// Get custom messages
+	customMessages := opts.Messages
+	if customMessages == nil {
+		customMessages = make(map[string]string)
+	}
+
+	// Get custom attributes
+	customAttributes := opts.Attributes
+	if customAttributes == nil {
+		customAttributes = make(map[string]string)
+	}
+
+	// Create and run engine
+	engine := NewEngine(ctx, bag, parsedRules, engineOptions{
+		customRules: customRulesMap,
+		messages:    customMessages,
+		attributes:  customAttributes,
+	})
+	errorBag := engine.Validate()
+	validatedData := engine.ValidatedData()
+
+	return NewValidator(bag, errorBag, validatedData), nil
 }
 
 func (r *Validation) AddRules(rules []validatecontract.Rule) error {
@@ -84,9 +141,23 @@ func (r *Validation) AddRules(rules []validatecontract.Rule) error {
 		if slices.Contains(existRuleNames, rule.Signature()) {
 			return errors.ValidationDuplicateRule.Args(rule.Signature())
 		}
+		existRuleNames = append(existRuleNames, rule.Signature())
 	}
 
 	r.rules = append(r.rules, rules...)
+	return nil
+}
+
+func (r *Validation) AddFilters(filters []validatecontract.Filter) error {
+	existFilterNames := r.existFilterNames()
+	for _, filter := range filters {
+		if slices.Contains(existFilterNames, filter.Signature()) {
+			return errors.ValidationDuplicateFilter.Args(filter.Signature())
+		}
+		existFilterNames = append(existFilterNames, filter.Signature())
+	}
+
+	r.filters = append(r.filters, filters...)
 	return nil
 }
 
@@ -99,271 +170,23 @@ func (r *Validation) Filters() []validatecontract.Filter {
 }
 
 func (r *Validation) existRuleNames() []string {
-	rules := []string{
-		"required",
-		"required_if",
-		"requiredIf",
-		"required_unless",
-		"requiredUnless",
-		"required_with",
-		"requiredWith",
-		"required_with_all",
-		"requiredWithAll",
-		"required_without",
-		"requiredWithout",
-		"required_without_all",
-		"requiredWithoutAll",
-		"safe",
-		"int",
-		"integer",
-		"isInt",
-		"uint",
-		"isUint",
-		"bool",
-		"isBool",
-		"string",
-		"isString",
-		"float",
-		"isFloat",
-		"slice",
-		"isSlice",
-		"in",
-		"enum",
-		"not_in",
-		"notIn",
-		"contains",
-		"not_contains",
-		"notContains",
-		"string_contains",
-		"stringContains",
-		"starts_with",
-		"startsWith",
-		"ends_with",
-		"endsWith",
-		"range",
-		"between",
-		"max",
-		"lte",
-		"min",
-		"gte",
-		"eq",
-		"equal",
-		"isEqual",
-		"ne",
-		"notEq",
-		"notEqual",
-		"lt",
-		"lessThan",
-		"gt",
-		"greaterThan",
-		"int_eq",
-		"intEq",
-		"intEqual",
-		"len",
-		"length",
-		"min_len",
-		"minLen",
-		"minLength",
-		"max_len",
-		"maxLen",
-		"maxLength",
-		"email",
-		"isEmail",
-		"regex",
-		"regexp",
-		"arr",
-		"list",
-		"array",
-		"isArray",
-		"map",
-		"isMap",
-		"strings",
-		"isStrings",
-		"ints",
-		"isInts",
-		"eq_field",
-		"eqField",
-		"ne_field",
-		"neField",
-		"gte_field",
-		"gtField",
-		"gt_field",
-		"gteField",
-		"lt_field",
-		"ltField",
-		"lte_field",
-		"lteField",
-		"file",
-		"isFile",
-		"image",
-		"isImage",
-		"mime",
-		"mimeType",
-		"inMimeTypes",
-		"date",
-		"isDate",
-		"gt_date",
-		"gtDate",
-		"afterDate",
-		"lt_date",
-		"ltDate",
-		"beforeDate",
-		"gte_date",
-		"gteDate",
-		"afterOrEqualDate",
-		"lte_date",
-		"lteDate",
-		"beforeOrEqualDate",
-		"hasWhitespace",
-		"ascii",
-		"ASCII",
-		"isASCII",
-		"alpha",
-		"isAlpha",
-		"alpha_num",
-		"alphaNum",
-		"isAlphaNum",
-		"alpha_dash",
-		"alphaDash",
-		"isAlphaDash",
-		"multi_byte",
-		"multiByte",
-		"isMultiByte",
-		"base64",
-		"isBase64",
-		"dns_name",
-		"dnsName",
-		"DNSName",
-		"isDNSName",
-		"data_uri",
-		"dataURI",
-		"isDataURI",
-		"empty",
-		"isEmpty",
-		"hex_color",
-		"hexColor",
-		"isHexColor",
-		"hexadecimal",
-		"isHexadecimal",
-		"json",
-		"JSON",
-		"isJSON",
-		"lat",
-		"latitude",
-		"isLatitude",
-		"lon",
-		"longitude",
-		"isLongitude",
-		"mac",
-		"isMAC",
-		"num",
-		"number",
-		"isNumber",
-		"cn_mobile",
-		"cnMobile",
-		"isCnMobile",
-		"printableASCII",
-		"isPrintableASCII",
-		"rgbColor",
-		"RGBColor",
-		"isRGBColor",
-		"full_url",
-		"fullUrl",
-		"isFullURL",
-		"url",
-		"URL",
-		"isURL",
-		"ip",
-		"IP",
-		"isIP",
-		"ipv4",
-		"isIPv4",
-		"ipv6",
-		"isIPv6",
-		"cidr",
-		"CIDR",
-		"isCIDR",
-		"CIDRv4",
-		"isCIDRv4",
-		"CIDRv6",
-		"isCIDRv6",
-		"uuid",
-		"isUUID",
-		"uuid3",
-		"isUUID3",
-		"uuid4",
-		"isUUID4",
-		"uuid5",
-		"isUUID5",
-		"filePath",
-		"isFilePath",
-		"unixPath",
-		"isUnixPath",
-		"winPath",
-		"isWinPath",
-		"isbn10",
-		"ISBN10",
-		"isISBN10",
-		"isbn13",
-		"ISBN13",
-		"isISBN13",
+	names := make([]string, 0, len(builtinRules)+len(r.rules))
+	for name := range builtinRules {
+		names = append(names, name)
 	}
 	for _, rule := range r.rules {
-		rules = append(rules, rule.Signature())
+		names = append(names, rule.Signature())
 	}
-
-	return rules
+	return names
 }
 
 func (r *Validation) existFilterNames() []string {
-	filters := []string{
-		"int",
-		"toInt",
-		"uint",
-		"toUint",
-		"int64",
-		"toInt64",
-		"float",
-		"toFloat",
-		"bool",
-		"toBool",
-		"trim",
-		"trimSpace",
-		"ltrim",
-		"trimLeft",
-		"rtrim",
-		"trimRight",
-		"int",
-		"integer",
-		"lower",
-		"lowercase",
-		"upper",
-		"uppercase",
-		"lcFirst",
-		"lowerFirst",
-		"ucFirst",
-		"upperFirst",
-		"ucWord",
-		"upperWord",
-		"camel",
-		"camelCase",
-		"snake",
-		"snakeCase",
-		"escapeJs",
-		"escapeJS",
-		"escapeHtml",
-		"escapeHTML",
-		"str2ints",
-		"strToInts",
-		"str2time",
-		"strToTime",
-		"str2arr",
-		"str2array",
-		"strToArray",
+	names := make([]string, 0, len(builtinFilters)+len(r.filters))
+	for name := range builtinFilters {
+		names = append(names, name)
 	}
 	for _, filter := range r.filters {
-		filters = append(filters, filter.Signature())
+		names = append(names, filter.Signature())
 	}
-
-	return filters
+	return names
 }

@@ -267,7 +267,10 @@ var (
 	ValidationEmptyData            = New("data can't be empty")
 	ValidationEmptyRules           = New("rules can't be empty")
 	ValidationFilterRegisterFailed = New("filter register failed: %v")
+	ValidationInvalidFilterType    = New("invalid filter type for field %s, must be string or []string")
+	ValidationInvalidRuleType      = New("invalid rule type for field %s, must be string or []string")
 	ValidationRuleRegisterFailed   = New("rule register failed: %v")
+	ValidationUnknownRule          = New("unknown validation rule: %s")
 
 	ViewTemplateNotExist = New("view template %s does not exist")
 )
