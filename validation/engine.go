@@ -204,8 +204,8 @@ func (e *Engine) executeRule(field string, rule ParsedRule, value any, allRules 
 		return fn(&e.ruleCtx)
 	}
 
-	// Unknown rule — pass (don't block on unrecognized rules)
-	return true
+	// Unknown rule
+	return false
 }
 
 // handleExcludeRule processes exclude rules and marks fields for exclusion.
