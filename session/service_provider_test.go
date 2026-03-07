@@ -31,7 +31,7 @@ func TestSessionServiceProviderRegister(t *testing.T) {
 	app := mocksfoundation.NewApplication(t)
 
 	var callback func(contractsfoundation.Application) (any, error)
-	app.EXPECT().Singleton(binding.Session, mock.Anything).Run(func(_ any, cb func(contractsfoundation.Application) (any, error)) {
+	app.EXPECT().Singleton(binding.Session, mock.AnythingOfType("func(foundation.Application) (interface {}, error)")).Run(func(_ any, cb func(contractsfoundation.Application) (any, error)) {
 		callback = cb
 	}).Once()
 

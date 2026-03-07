@@ -40,10 +40,10 @@ func TestAuthServiceProviderRegister(t *testing.T) {
 
 	var authCallback func(contractsfoundation.Application, map[string]any) (any, error)
 	var gateCallback func(contractsfoundation.Application) (any, error)
-	app.EXPECT().BindWith(contractsbinding.Auth, mock.Anything).Run(func(_ any, callback func(contractsfoundation.Application, map[string]any) (any, error)) {
+	app.EXPECT().BindWith(contractsbinding.Auth, mock.AnythingOfType("func(foundation.Application, map[string]interface {}) (interface {}, error)")).Run(func(_ any, callback func(contractsfoundation.Application, map[string]any) (any, error)) {
 		authCallback = callback
 	}).Once()
-	app.EXPECT().Singleton(contractsbinding.Gate, mock.Anything).Run(func(_ any, callback func(contractsfoundation.Application) (any, error)) {
+	app.EXPECT().Singleton(contractsbinding.Gate, mock.AnythingOfType("func(foundation.Application) (interface {}, error)")).Run(func(_ any, callback func(contractsfoundation.Application) (any, error)) {
 		gateCallback = callback
 	}).Once()
 

@@ -27,7 +27,7 @@ func TestServiceProviderRegister(t *testing.T) {
 	t.Setenv("APP_KEY", "12345678901234567890123456789012")
 
 	var callback func(foundation.Application) (any, error)
-	app.EXPECT().Singleton(binding.Config, mock.Anything).Run(func(_ any, cb func(foundation.Application) (any, error)) {
+	app.EXPECT().Singleton(binding.Config, mock.AnythingOfType("func(foundation.Application) (interface {}, error)")).Run(func(_ any, cb func(foundation.Application) (any, error)) {
 		callback = cb
 	}).Once()
 

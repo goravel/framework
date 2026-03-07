@@ -34,10 +34,10 @@ func TestServiceProviderRegister(t *testing.T) {
 
 	var rateLimiterCallback func(contractsfoundation.Application) (any, error)
 	var httpCallback func(contractsfoundation.Application) (any, error)
-	app.EXPECT().Singleton(contractsbinding.RateLimiter, mock.Anything).Run(func(_ any, callback func(contractsfoundation.Application) (any, error)) {
+	app.EXPECT().Singleton(contractsbinding.RateLimiter, mock.AnythingOfType("func(foundation.Application) (interface {}, error)")).Run(func(_ any, callback func(contractsfoundation.Application) (any, error)) {
 		rateLimiterCallback = callback
 	}).Once()
-	app.EXPECT().Singleton(contractsbinding.Http, mock.Anything).Run(func(_ any, callback func(contractsfoundation.Application) (any, error)) {
+	app.EXPECT().Singleton(contractsbinding.Http, mock.AnythingOfType("func(foundation.Application) (interface {}, error)")).Run(func(_ any, callback func(contractsfoundation.Application) (any, error)) {
 		httpCallback = callback
 	}).Once()
 
@@ -82,7 +82,7 @@ func TestServiceProviderRegister(t *testing.T) {
 		j := foundationjson.New()
 		callbackApp.EXPECT().MakeConfig().Return(config).Once()
 		callbackApp.EXPECT().Json().Return(j).Once()
-		config.EXPECT().UnmarshalKey("http", mock.Anything).Return(assert.AnError).Once()
+		config.EXPECT().UnmarshalKey("http", mock.AnythingOfType("*client.FactoryConfig")).Return(assert.AnError).Once()
 
 		instance, err := httpCallback(callbackApp)
 
@@ -96,7 +96,7 @@ func TestServiceProviderRegister(t *testing.T) {
 		j := foundationjson.New()
 		callbackApp.EXPECT().MakeConfig().Return(config).Once()
 		callbackApp.EXPECT().Json().Return(j).Once()
-		config.EXPECT().UnmarshalKey("http", mock.Anything).RunAndReturn(func(_ string, target any) error {
+		config.EXPECT().UnmarshalKey("http", mock.AnythingOfType("*client.FactoryConfig")).RunAndReturn(func(_ string, target any) error {
 			factoryConfig, ok := target.(*client.FactoryConfig)
 			if !ok {
 				return assert.AnError
@@ -121,16 +121,12 @@ func TestServiceProviderRegister(t *testing.T) {
 		j := foundationjson.New()
 		callbackApp.EXPECT().MakeConfig().Return(config).Once()
 		callbackApp.EXPECT().Json().Return(j).Once()
-		config.EXPECT().UnmarshalKey("http", mock.Anything).RunAndReturn(func(_ string, target any) error {
+		config.EXPECT().UnmarshalKey("http", mock.AnythingOfType("*client.FactoryConfig")).RunAndReturn(func(_ string, target any) error {
 			factoryConfig, ok := target.(*client.FactoryConfig)
 			if !ok {
 				return assert.AnError
 			}
 			factoryConfig.Default = "missing_client"
-			factoryConfig.Clients = map[string]client.Config{
-				"other": {},
-			}
-
 			return nil
 		}).Once()
 
