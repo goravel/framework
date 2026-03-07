@@ -82,5 +82,7 @@ func TestServiceProviderRegister(t *testing.T) {
 
 func TestServiceProviderBoot(t *testing.T) {
 	provider := &ServiceProvider{}
-	provider.Boot(nil)
+	assert.NotPanics(t, func() {
+		provider.Boot(nil)
+	})
 }
