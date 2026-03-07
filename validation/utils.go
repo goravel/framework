@@ -3,6 +3,7 @@ package validation
 import (
 	"fmt"
 	"mime/multipart"
+	"reflect"
 	"strings"
 )
 
@@ -14,14 +15,15 @@ func isValueEmpty(val any) bool {
 	switch v := val.(type) {
 	case string:
 		return strings.TrimSpace(v) == ""
-	case []any:
-		return len(v) == 0
-	case []string:
-		return len(v) == 0
-	case map[string]any:
-		return len(v) == 0
+	default:
+		rv := reflect.ValueOf(v)
+		switch rv.Kind() {
+		case reflect.Slice, reflect.Array, reflect.Map:
+			return rv.Len() == 0
+		default:
+			return false
+		}
 	}
-	return false
 }
 
 // getAttributeType determines the type of an attribute for size rules.
@@ -65,4 +67,9 @@ func matchesOtherValue(otherValue any, comparisonValues []string) bool {
 		}
 	}
 	return false
+}
+
+// isControlRule returns true for rule names that are control directives (not actual validation rules).
+func isControlRule(name string) bool {
+	return name == "bail" || name == "nullable" || name == "sometimes"
 }

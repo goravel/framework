@@ -92,6 +92,25 @@ func (r *Validation) Make(ctx context.Context, data any, rules map[string]any, o
 		customRulesMap[cr.Signature()] = cr
 	}
 
+	// Validate that all rule names are known (builtin, custom, or control)
+	for field, fieldRules := range parsedRules {
+		for _, pr := range fieldRules {
+			if isControlRule(pr.Name) {
+				continue
+			}
+			if _, ok := builtinRules[pr.Name]; ok {
+				continue
+			}
+			if _, ok := excludeRules[pr.Name]; ok {
+				continue
+			}
+			if _, ok := customRulesMap[pr.Name]; ok {
+				continue
+			}
+			return nil, errors.ValidationUnknownRule.Args(field + "." + pr.Name)
+		}
+	}
+
 	// Get custom messages
 	customMessages := opts.Messages
 	if customMessages == nil {

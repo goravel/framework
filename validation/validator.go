@@ -37,9 +37,7 @@ func (v *Validator) Bind(ptr any) error {
 		data[key] = value
 	}
 	// Validated data overrides
-	for key, value := range v.validated {
-		data[key] = value
-	}
+	deepMerge(data, v.validated)
 
 	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
 		TagName:    "form",
@@ -234,4 +232,25 @@ func castCarbon(from reflect.Value, transfrom func(carbon *carbon.Carbon) any) a
 	}
 
 	return c
+}
+
+// deepMerge recursively merges src into dst.
+// For overlapping keys where both values are map[string]any, it merges recursively.
+// Otherwise, the src value overwrites the dst value.
+func deepMerge(dst, src map[string]any) {
+	for key, srcVal := range src {
+		dstVal, exists := dst[key]
+		if !exists {
+			dst[key] = srcVal
+			continue
+		}
+
+		srcMap, srcOk := srcVal.(map[string]any)
+		dstMap, dstOk := dstVal.(map[string]any)
+		if srcOk && dstOk {
+			deepMerge(dstMap, srcMap)
+		} else {
+			dst[key] = srcVal
+		}
+	}
 }

@@ -123,6 +123,17 @@ func (e *Engine) validateField(field string, fieldRules []ParsedRule, allRules m
 		return
 	}
 
+	// Pre-pass: run exclude rules before any validation to ensure order-independence
+	for _, rule := range fieldRules {
+		if !excludeRules[rule.Name] {
+			continue
+		}
+		e.handleExcludeRule(field, rule)
+		if e.isExcluded(field) {
+			return
+		}
+	}
+
 	value, exists := e.data.Get(field)
 
 	// Nullable: if value is nil, skip non-implicit rules
@@ -135,14 +146,9 @@ func (e *Engine) validateField(field string, fieldRules []ParsedRule, allRules m
 		}
 
 		isImplicit := implicitRules[rule.Name]
-		isExcludeRule := excludeRules[rule.Name]
 
-		// Exclude rules always execute
-		if isExcludeRule {
-			e.handleExcludeRule(field, rule)
-			if e.isExcluded(field) {
-				break
-			}
+		// Skip exclude rules (already handled in pre-pass)
+		if excludeRules[rule.Name] {
 			continue
 		}
 
@@ -204,7 +210,7 @@ func (e *Engine) executeRule(field string, rule ParsedRule, value any, allRules 
 		return fn(&e.ruleCtx)
 	}
 
-	// Unknown rule
+	// Unknown rule (should not reach here — Make() validates all rule names)
 	return false
 }
 

@@ -17,6 +17,10 @@ func TestMake(t *testing.T) {
 		A string `form:"a"`
 	}
 
+	validation := NewValidation()
+	err := validation.AddRules([]httpvalidate.Rule{&CustomUppercase{}})
+	assert.Nil(t, err)
+
 	tests := []struct {
 		description     string
 		data            any
@@ -27,26 +31,26 @@ func TestMake(t *testing.T) {
 	}{
 		{
 			description:     "success when data is map[string]any",
-			data:            map[string]any{"a": "b"},
-			rules:           map[string]any{"a": "some_rule"},
+			data:            map[string]any{"name": "ABC"},
+			rules:           map[string]any{"name": "custom_uppercase:3"},
 			expectValidator: true,
 		},
 		{
 			description:     "success when data is struct",
 			data:            &Data{A: "b"},
-			rules:           map[string]any{"a": "some_rule"},
+			rules:           map[string]any{"a": "nullable"},
 			expectValidator: true,
 		},
 		{
 			description: "error when data isn't map[string]any or map[string][]string or struct",
 			data:        "1   ",
-			rules:       map[string]any{"a": "some_rule"},
+			rules:       map[string]any{"a": "nullable"},
 			expectErr:   errors.ValidationDataInvalidType,
 		},
 		{
 			description: "error when data is nil",
 			data:        nil,
-			rules:       map[string]any{"a": "some_rule"},
+			rules:       map[string]any{"a": "nullable"},
 			expectErr:   errors.ValidationEmptyData,
 		},
 		{
@@ -57,8 +61,8 @@ func TestMake(t *testing.T) {
 		},
 		{
 			description: "error when PrepareForValidation returns error",
-			data:        map[string]any{"a": "b"},
-			rules:       map[string]any{"a": "some_rule"},
+			data:        map[string]any{"name": "ABC"},
+			rules:       map[string]any{"name": "custom_uppercase:3"},
 			options: []httpvalidate.Option{
 				PrepareForValidation(func(ctx context.Context, data httpvalidate.Data) error {
 					return assert.AnError
@@ -67,12 +71,12 @@ func TestMake(t *testing.T) {
 			expectErr: assert.AnError,
 		},
 		{
-			description: "success with PrepareForValidation modifying data",
-			data:        map[string]any{"a": "b"},
-			rules:       map[string]any{"a": "some_rule"},
+			description:     "success with PrepareForValidation modifying data",
+			data:            map[string]any{"name": "ABC"},
+			rules:           map[string]any{"name": "custom_uppercase:3"},
 			options: []httpvalidate.Option{
 				PrepareForValidation(func(ctx context.Context, data httpvalidate.Data) error {
-					return data.Set("a", "c")
+					return data.Set("name", "XYZ")
 				}),
 			},
 			expectValidator: true,
@@ -83,11 +87,16 @@ func TestMake(t *testing.T) {
 			rules:       map[string]any{"a": 123},
 			expectErr:   errors.ValidationInvalidRuleType,
 		},
+		{
+			description: "error when rule name is unknown",
+			data:        map[string]any{"a": "b"},
+			rules:       map[string]any{"a": "unknown_rule"},
+			expectErr:   errors.ValidationUnknownRule,
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
-			validation := NewValidation()
 			validator, err := validation.Make(context.Background(), test.data, test.rules, test.options...)
 			assert.Equal(t, test.expectValidator, validator != nil, test.description)
 			if test.expectErr != nil {
