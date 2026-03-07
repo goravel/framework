@@ -2,6 +2,7 @@ package console
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"io"
 	"testing"
@@ -312,7 +313,7 @@ func TestOnUsageError(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := onUsageError(nil, nil, tt.err, false)
+			got := onUsageError(context.TODO(), nil, tt.err, false)
 			if tt.wantNil {
 				assert.Nil(t, got)
 			} else {
