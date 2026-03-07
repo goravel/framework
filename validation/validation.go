@@ -110,7 +110,10 @@ func (r *Validation) Make(ctx context.Context, data any, rules map[string]any, o
 		messages:    customMessages,
 		attributes:  customAttributes,
 	})
-	errorBag := engine.Validate()
+	errorBag, err := engine.Validate()
+	if err != nil {
+		return nil, err
+	}
 	validatedData := engine.ValidatedData()
 
 	return NewValidator(bag, errorBag, validatedData), nil

@@ -80,16 +80,17 @@ func NewDataBagFromRequest(r *http.Request, maxMemory int64) (*DataBag, error) {
 		if r.Body != nil {
 			body, err := io.ReadAll(r.Body)
 			if err != nil {
-				return bag, nil
+				return nil, fmt.Errorf("failed to read request body: %w", err)
 			}
 			// Restore body for potential re-reads
 			r.Body = io.NopCloser(bytes.NewReader(body))
 			var jsonData map[string]any
-			if err = supportjson.Unmarshal(body, &jsonData); err == nil {
-				// Body data overrides query data
-				for k, v := range jsonData {
-					bag.data[k] = v
-				}
+			if err = supportjson.Unmarshal(body, &jsonData); err != nil {
+				return nil, fmt.Errorf("failed to parse JSON body: %w", err)
+			}
+			// Body data overrides query data
+			for k, v := range jsonData {
+				bag.data[k] = v
 			}
 		}
 	case strings.HasPrefix(contentType, "multipart/form-data"):
@@ -97,7 +98,10 @@ func NewDataBagFromRequest(r *http.Request, maxMemory int64) (*DataBag, error) {
 		if maxMemory > 0 {
 			memory = maxMemory
 		}
-		if err := r.ParseMultipartForm(memory); err == nil && r.MultipartForm != nil {
+		if err := r.ParseMultipartForm(memory); err != nil {
+			return nil, fmt.Errorf("failed to parse multipart form: %w", err)
+		}
+		if r.MultipartForm != nil {
 			for key, values := range r.MultipartForm.Value {
 				if len(values) == 1 {
 					bag.data[key] = values[0]
@@ -118,17 +122,18 @@ func NewDataBagFromRequest(r *http.Request, maxMemory int64) (*DataBag, error) {
 			}
 		}
 	case strings.HasPrefix(contentType, "application/x-www-form-urlencoded"):
-		if err := r.ParseForm(); err == nil {
-			for key, values := range r.PostForm {
-				if len(values) == 1 {
-					bag.data[key] = values[0]
-				} else {
-					s := make([]any, len(values))
-					for i, v := range values {
-						s[i] = v
-					}
-					bag.data[key] = s
+		if err := r.ParseForm(); err != nil {
+			return nil, fmt.Errorf("failed to parse form: %w", err)
+		}
+		for key, values := range r.PostForm {
+			if len(values) == 1 {
+				bag.data[key] = values[0]
+			} else {
+				s := make([]any, len(values))
+				for i, v := range values {
+					s[i] = v
 				}
+				bag.data[key] = s
 			}
 		}
 	}
@@ -405,8 +410,41 @@ func structToMap(rv reflect.Value) map[string]any {
 			continue
 		}
 
-		result[tag] = val.Interface()
+		result[tag] = normalizeValue(val)
 	}
 
 	return result
+}
+
+// normalizeValue recursively normalizes a reflect.Value into types that
+// dotGet and collectKeys can traverse: map[string]any, []any, and primitives.
+func normalizeValue(rv reflect.Value) any {
+	// Dereference pointers/interfaces
+	for rv.Kind() == reflect.Ptr || rv.Kind() == reflect.Interface {
+		if rv.IsNil() {
+			return nil
+		}
+		rv = rv.Elem()
+	}
+
+	switch rv.Kind() {
+	case reflect.Struct:
+		return structToMap(rv)
+	case reflect.Map:
+		result := make(map[string]any, rv.Len())
+		iter := rv.MapRange()
+		for iter.Next() {
+			key := fmt.Sprintf("%v", iter.Key().Interface())
+			result[key] = normalizeValue(iter.Value())
+		}
+		return result
+	case reflect.Slice, reflect.Array:
+		result := make([]any, rv.Len())
+		for i := 0; i < rv.Len(); i++ {
+			result[i] = normalizeValue(rv.Index(i))
+		}
+		return result
+	default:
+		return rv.Interface()
+	}
 }

@@ -19,6 +19,7 @@ type Engine struct {
 	messages       map[string]string
 	attributes     map[string]string
 	errors         *Errors
+	internalError  error                    // configuration/internal errors (e.g. unknown rule)
 	excludes       map[string]bool
 	distinctValues map[string]map[string]bool // For tracking distinct values
 	expandedRules  map[string][]ParsedRule    // Cached result of expandWildcardRules
@@ -47,7 +48,8 @@ func NewEngine(ctx context.Context, data *DataBag, rules map[string][]ParsedRule
 }
 
 // Validate runs all validation rules and returns the error bag.
-func (e *Engine) Validate() *Errors {
+// Returns an internal error if a configuration issue is detected (e.g., unknown rule).
+func (e *Engine) Validate() (*Errors, error) {
 	// Step 1: Expand wildcards
 	expandedRules := e.expandWildcardRules()
 
@@ -62,9 +64,12 @@ func (e *Engine) Validate() *Errors {
 	for _, field := range sortedFields {
 		fieldRules := expandedRules[field]
 		e.validateField(field, fieldRules, expandedRules)
+		if e.internalError != nil {
+			return nil, e.internalError
+		}
 	}
 
-	return e.errors
+	return e.errors, nil
 }
 
 // ValidatedData returns the data for all fields that have validation rules,
@@ -88,11 +93,37 @@ func (e *Engine) ValidatedData() map[string]any {
 
 // expandWildcardRules expands rules with wildcard (*) patterns based on actual data.
 // Results are cached for the lifetime of the Engine.
+// Rules are merged (appended) when multiple patterns match the same concrete key,
+// and unmatched wildcard patterns are dropped.
 func (e *Engine) expandWildcardRules() map[string][]ParsedRule {
 	if e.expandedRules != nil {
 		return e.expandedRules
 	}
-	e.expandedRules = expandWildcardFields(e.rules, e.data.Keys(), true)
+
+	expanded := make(map[string][]ParsedRule)
+	dataKeys := e.data.Keys()
+
+	for field, rules := range e.rules {
+		if !strings.Contains(field, "*") {
+			expanded[field] = append(expanded[field], rules...)
+			continue
+		}
+
+		pattern := "^" + regexp.QuoteMeta(field) + "$"
+		pattern = strings.ReplaceAll(pattern, `\*`, `[^.]+`)
+		re, err := regexp.Compile(pattern)
+		if err != nil {
+			continue
+		}
+
+		for _, key := range dataKeys {
+			if re.MatchString(key) {
+				expanded[key] = append(expanded[key], rules...)
+			}
+		}
+	}
+
+	e.expandedRules = expanded
 	return e.expandedRules
 }
 
@@ -123,28 +154,33 @@ func (e *Engine) validateField(field string, fieldRules []ParsedRule, allRules m
 		return
 	}
 
+	// Pre-pass: run exclude rules before any validation rules (order-independent)
+	for _, rule := range fieldRules {
+		if !excludeRules[rule.Name] {
+			continue
+		}
+		e.handleExcludeRule(field, rule)
+		if e.isExcluded(field) {
+			return
+		}
+	}
+
 	value, exists := e.data.Get(field)
 
 	// Nullable: if value is nil, skip non-implicit rules
 	isNull := !exists || value == nil
 
 	for _, rule := range fieldRules {
-		// Skip control rules
+		// Skip control rules and exclude rules (already handled in pre-pass)
 		if rule.Name == "bail" || rule.Name == "nullable" || rule.Name == "sometimes" {
 			continue
 		}
 
-		isImplicit := implicitRules[rule.Name]
-		isExcludeRule := excludeRules[rule.Name]
-
-		// Exclude rules always execute
-		if isExcludeRule {
-			e.handleExcludeRule(field, rule)
-			if e.isExcluded(field) {
-				break
-			}
+		if excludeRules[rule.Name] {
 			continue
 		}
+
+		isImplicit := implicitRules[rule.Name]
 
 		// Non-implicit rule + value empty/missing → skip
 		if !isImplicit {
@@ -163,7 +199,11 @@ func (e *Engine) validateField(field string, fieldRules []ParsedRule, allRules m
 		}
 
 		// Execute the rule
-		passed := e.executeRule(field, rule, value, allRules)
+		passed, err := e.executeRule(field, rule, value, allRules)
+		if err != nil {
+			e.internalError = err
+			return
+		}
 
 		// Handle distinct tracking: the builtin ruleDistinct always returns true,
 		// actual duplicate detection happens here via cross-field value tracking.
@@ -187,10 +227,11 @@ func (e *Engine) validateField(field string, fieldRules []ParsedRule, allRules m
 }
 
 // executeRule runs a single rule and returns whether it passed.
-func (e *Engine) executeRule(field string, rule ParsedRule, value any, allRules map[string][]ParsedRule) bool {
+// Returns an error if the rule is unknown (not registered as builtin or custom).
+func (e *Engine) executeRule(field string, rule ParsedRule, value any, allRules map[string][]ParsedRule) (bool, error) {
 	// Check custom rules first
 	if customRule, ok := e.customRules[rule.Name]; ok {
-		return customRule.Passes(e.ctx, e.data, value, anySlice(rule.Parameters)...)
+		return customRule.Passes(e.ctx, e.data, value, anySlice(rule.Parameters)...), nil
 	}
 
 	// Check built-in rules (reuse RuleContext to avoid heap allocation)
@@ -201,11 +242,11 @@ func (e *Engine) executeRule(field string, rule ParsedRule, value any, allRules 
 		e.ruleCtx.Parameters = rule.Parameters
 		e.ruleCtx.Data = e.data
 		e.ruleCtx.Rules = allRules
-		return fn(&e.ruleCtx)
+		return fn(&e.ruleCtx), nil
 	}
 
-	// Unknown rule
-	return false
+	// Unknown rule: this is a configuration error, not a validation failure
+	return false, fmt.Errorf("unknown validation rule: %s", rule.Name)
 }
 
 // handleExcludeRule processes exclude rules and marks fields for exclusion.

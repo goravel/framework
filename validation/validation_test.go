@@ -22,19 +22,22 @@ func TestMake(t *testing.T) {
 		data            any
 		rules           map[string]any
 		options         []httpvalidate.Option
+		customRules     []httpvalidate.Rule
 		expectValidator bool
 		expectErr       error
 	}{
 		{
 			description:     "success when data is map[string]any",
 			data:            map[string]any{"a": "b"},
-			rules:           map[string]any{"a": "some_rule"},
+			rules:           map[string]any{"a": "custom_uppercase"},
+			customRules:     []httpvalidate.Rule{&CustomUppercase{}},
 			expectValidator: true,
 		},
 		{
 			description:     "success when data is struct",
 			data:            &Data{A: "b"},
-			rules:           map[string]any{"a": "some_rule"},
+			rules:           map[string]any{"a": "custom_uppercase"},
+			customRules:     []httpvalidate.Rule{&CustomUppercase{}},
 			expectValidator: true,
 		},
 		{
@@ -69,7 +72,8 @@ func TestMake(t *testing.T) {
 		{
 			description: "success with PrepareForValidation modifying data",
 			data:        map[string]any{"a": "b"},
-			rules:       map[string]any{"a": "some_rule"},
+			rules:       map[string]any{"a": "custom_uppercase"},
+			customRules: []httpvalidate.Rule{&CustomUppercase{}},
 			options: []httpvalidate.Option{
 				PrepareForValidation(func(ctx context.Context, data httpvalidate.Data) error {
 					return data.Set("a", "c")
@@ -83,15 +87,28 @@ func TestMake(t *testing.T) {
 			rules:       map[string]any{"a": 123},
 			expectErr:   errors.ValidationInvalidRuleType,
 		},
+		{
+			description: "error when rule is unknown",
+			data:        map[string]any{"a": "b"},
+			rules:       map[string]any{"a": "unknown_rule"},
+			expectErr:   nil,
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
 			validation := NewValidation()
+			if len(test.customRules) > 0 {
+				err := validation.AddRules(test.customRules)
+				assert.Nil(t, err)
+			}
 			validator, err := validation.Make(context.Background(), test.data, test.rules, test.options...)
 			assert.Equal(t, test.expectValidator, validator != nil, test.description)
 			if test.expectErr != nil {
 				assert.ErrorIs(t, err, test.expectErr, test.description)
+			} else if test.description == "error when rule is unknown" {
+				assert.Error(t, err, test.description)
+				assert.Contains(t, err.Error(), "unknown validation rule")
 			} else {
 				assert.Nil(t, err, test.description)
 			}

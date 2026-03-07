@@ -30,15 +30,17 @@ func (v *Validator) Bind(ptr any) error {
 		return nil
 	}
 
-	// Merge validated data with original unvalidated data.
-	// Original data provides fallback values for fields not in rules.
-	data := make(map[string]any)
+	// Merge validated data with original unvalidated data using DataBag.Set
+	// for proper nested path handling. Original data provides fallback values
+	// for fields not in rules.
+	merged := &DataBag{data: make(map[string]any)}
 	for key, value := range v.data.All() {
-		data[key] = value
+		merged.data[key] = value
 	}
-	// Validated data overrides
 	for key, value := range v.validated {
-		data[key] = value
+		if err := merged.Set(key, value); err != nil {
+			return err
+		}
 	}
 
 	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
@@ -51,7 +53,7 @@ func (v *Validator) Bind(ptr any) error {
 		return err
 	}
 
-	return decoder.Decode(data)
+	return decoder.Decode(merged.All())
 }
 
 func (v *Validator) Errors() httpvalidate.Errors {

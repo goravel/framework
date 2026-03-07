@@ -3,6 +3,7 @@ package validation
 import (
 	"fmt"
 	"mime/multipart"
+	"reflect"
 	"strings"
 )
 
@@ -14,12 +15,12 @@ func isValueEmpty(val any) bool {
 	switch v := val.(type) {
 	case string:
 		return strings.TrimSpace(v) == ""
-	case []any:
-		return len(v) == 0
-	case []string:
-		return len(v) == 0
-	case map[string]any:
-		return len(v) == 0
+	}
+
+	rv := reflect.ValueOf(val)
+	switch rv.Kind() {
+	case reflect.Array, reflect.Slice, reflect.Map:
+		return rv.Len() == 0
 	}
 	return false
 }
@@ -34,6 +35,16 @@ func getAttributeType(attribute string, value any, rules map[string][]ParsedRule
 			if r.Name == "array" || r.Name == "list" || r.Name == "slice" || r.Name == "map" {
 				return "array"
 			}
+		}
+	}
+
+	// Fallback: infer numeric type from runtime value kind
+	if value != nil {
+		switch reflect.TypeOf(value).Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+			reflect.Float32, reflect.Float64:
+			return "numeric"
 		}
 	}
 
