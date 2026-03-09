@@ -270,7 +270,9 @@ func dotSet(data map[string]any, segments []string, val any) {
 			return
 		}
 		if len(remaining) == 1 {
-			v[idx] = map[string]any{"": val}
+			if m, ok := val.(map[string]any); ok {
+				v[idx] = m
+			}
 			return
 		}
 		dotSet(v[idx], remaining[1:], val)
@@ -405,8 +407,38 @@ func structToMap(rv reflect.Value) map[string]any {
 			continue
 		}
 
-		result[tag] = val.Interface()
+		result[tag] = normalizeValue(val)
 	}
 
 	return result
+}
+
+// normalizeValue recursively converts reflect.Value to map[string]any / []any
+// so that dotGet and collectKeys can traverse nested data.
+func normalizeValue(rv reflect.Value) any {
+	if rv.Kind() == reflect.Ptr || rv.Kind() == reflect.Interface {
+		if rv.IsNil() {
+			return nil
+		}
+		rv = rv.Elem()
+	}
+
+	switch rv.Kind() {
+	case reflect.Struct:
+		return structToMap(rv)
+	case reflect.Slice, reflect.Array:
+		result := make([]any, rv.Len())
+		for i := 0; i < rv.Len(); i++ {
+			result[i] = normalizeValue(rv.Index(i))
+		}
+		return result
+	case reflect.Map:
+		result := make(map[string]any, rv.Len())
+		for _, key := range rv.MapKeys() {
+			result[fmt.Sprintf("%v", key.Interface())] = normalizeValue(rv.MapIndex(key))
+		}
+		return result
+	default:
+		return rv.Interface()
+	}
 }

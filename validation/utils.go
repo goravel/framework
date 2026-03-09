@@ -47,6 +47,19 @@ func getAttributeType(attribute string, value any, rules map[string][]ParsedRule
 		return "file"
 	}
 
+	// Fallback: determine type from runtime value
+	if value != nil {
+		rv := reflect.ValueOf(value)
+		switch rv.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+			reflect.Float32, reflect.Float64:
+			return "numeric"
+		case reflect.Slice, reflect.Array, reflect.Map:
+			return "array"
+		}
+	}
+
 	return "string"
 }
 

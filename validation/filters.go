@@ -63,9 +63,10 @@ func applyFilters(ctx context.Context, bag *DataBag, filterRules map[string]any,
 			// Check custom filters
 			if customFilter, ok := customFilterMap[pf.Name]; ok {
 				result, err := callFilterFunc(ctx, customFilter, val, pf.Parameters)
-				if err == nil {
-					val = result
+				if err != nil {
+					return fmt.Errorf("filter %s on field %s: %w", pf.Name, field, err)
 				}
+				val = result
 			}
 		}
 
