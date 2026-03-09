@@ -9,7 +9,7 @@ require (
 	github.com/brianvoe/gofakeit/v7 v7.14.1
 	github.com/charmbracelet/huh v0.8.0
 	github.com/charmbracelet/huh/spinner v0.0.0-20260223110133-9dc45e34a40b
-	github.com/charmbracelet/lipgloss v1.1.0
+	github.com/charmbracelet/lipgloss/v2 v2.0.0
 	github.com/dave/dst v0.27.3
 	github.com/dromara/carbon/v2 v2.6.11
 	github.com/gabriel-vasile/mimetype v1.4.13
