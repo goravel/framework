@@ -49,6 +49,13 @@ func (r *BuildCommand) Extend() command.Extend {
 				Usage:   "Target os",
 			},
 			&command.BoolFlag{
+				Name:               "generate",
+				Aliases:            []string{"g"},
+				Value:              false,
+				Usage:              "Run go generate before building",
+				DisableDefaultText: true,
+			},
+			&command.BoolFlag{
 				Name:               "static",
 				Aliases:            []string{"s"},
 				Value:              false,
@@ -90,11 +97,22 @@ func (r *BuildCommand) Handle(ctx console.Context) error {
 		}
 	}
 
-	if res := r.process.Env(map[string]string{
+	runner := r.process.Env(map[string]string{
 		"CGO_ENABLED": "0",
 		"GOOS":        os,
 		"GOARCH":      ctx.Option("arch"),
-	}).WithSpinner("Building...").Run(generateCommand(ctx.Option("name"), ctx.OptionBool("static"))); res.Failed() {
+	})
+
+	if ctx.OptionBool("generate") {
+		if res := runner.WithSpinner("Running go generate...").Run("go generate ./..."); res.Failed() {
+			ctx.Error(res.Error().Error())
+			return nil
+		}
+
+		ctx.Info("Go generate completed.")
+	}
+
+	if res := runner.WithSpinner("Building...").Run(generateCommand(ctx.Option("name"), ctx.OptionBool("static"))); res.Failed() {
 		ctx.Error(res.Error().Error())
 		return nil
 	}
