@@ -39,6 +39,7 @@ func TestBuildCommand(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("local").Once()
 				mockContext.EXPECT().Option("os").Return("linux").Once()
+				mockContext.EXPECT().OptionBool("generate").Return(true).Once()
 				mockContext.EXPECT().Option("arch").Return("amd64").Once()
 				mockContext.EXPECT().Option("name").Return("").Once()
 				mockContext.EXPECT().OptionBool("static").Return(true).Once()
@@ -47,6 +48,10 @@ func TestBuildCommand(t *testing.T) {
 					"GOOS":        "linux",
 					"GOARCH":      "amd64",
 				}).Return(mockProcess).Once()
+				mockProcess.EXPECT().WithSpinner("Running go generate...").Return(mockProcess).Once()
+				mockProcess.EXPECT().Run("go generate ./...").Return(mockResult).Once()
+				mockResult.EXPECT().Failed().Return(false).Once()
+				mockContext.EXPECT().Info("Go generate completed.").Once()
 				mockProcess.EXPECT().WithSpinner("Building...").Return(mockProcess).Once()
 				mockProcess.EXPECT().Run("go build -ldflags \"-s -w -extldflags -static\" .").Return(mockResult).Once()
 				mockResult.EXPECT().Failed().Return(false).Once()
@@ -83,6 +88,7 @@ func TestBuildCommand(t *testing.T) {
 				mockConfig.EXPECT().GetString("app.env").Return("local").Once()
 				mockContext.EXPECT().Option("os").Return("invalid").Once()
 				mockContext.EXPECT().Option("arch").Return("invalid").Once()
+				mockContext.EXPECT().OptionBool("generate").Return(false).Once()
 				mockContext.EXPECT().Option("name").Return("").Once()
 				mockContext.EXPECT().OptionBool("static").Return(true).Once()
 				mockProcess.EXPECT().Env(map[string]string{
@@ -103,6 +109,7 @@ func TestBuildCommand(t *testing.T) {
 				mockConfig.EXPECT().GetString("app.env").Return("local").Once()
 				mockContext.EXPECT().Option("os").Return("linux").Once()
 				mockContext.EXPECT().Option("arch").Return("amd64").Once()
+				mockContext.EXPECT().OptionBool("generate").Return(false).Once()
 				mockContext.EXPECT().Option("name").Return("").Once()
 				mockContext.EXPECT().OptionBool("static").Return(true).Once()
 				mockProcess.EXPECT().Env(map[string]string{
