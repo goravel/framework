@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	Facade       telemetry.Telemetry
-	ConfigFacade config.Config
+	TelemetryFacade telemetry.Telemetry
+	ConfigFacade    config.Config
 )
 
 type ServiceProvider struct {
@@ -28,13 +28,13 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 
 func (r *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(binding.Telemetry, func(app foundation.Application) (any, error) {
-		cfg := app.MakeConfig()
-		if cfg == nil {
+		config := app.MakeConfig()
+		if config == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleTelemetry)
 		}
 
 		var telemetryCfg Config
-		if err := cfg.UnmarshalKey("telemetry", &telemetryCfg); err != nil {
+		if err := config.UnmarshalKey("telemetry", &telemetryCfg); err != nil {
 			return nil, err
 		}
 
@@ -43,6 +43,6 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (r *ServiceProvider) Boot(app foundation.Application) {
-	Facade = app.MakeTelemetry()
+	// TelemetryFacade = app.MakeTelemetry()
 	ConfigFacade = app.MakeConfig()
 }

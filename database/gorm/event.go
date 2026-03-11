@@ -30,7 +30,7 @@ func NewEvent(query *Query, model, dest any) *Event {
 }
 
 func (e *Event) Context() context.Context {
-	return e.query.Context()
+	return e.query.ctx
 }
 
 func (e *Event) GetAttribute(key string) any {

@@ -45,8 +45,6 @@ type Query interface {
 	BeginTransaction() (Query, error)
 	// Commit commits the changes in a transaction.
 	Commit() error
-	// Context gets the context used by the query.
-	Context() context.Context
 	// Count retrieve the "count" result of the query.
 	Count() (int64, error)
 	// Create inserts new record into the database.

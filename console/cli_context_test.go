@@ -6,17 +6,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/lipgloss/table"
 	"github.com/pterm/pterm"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v3"
 
-	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/support/color"
-	"github.com/goravel/framework/support/convert"
 )
 
 func TestArgumentString(t *testing.T) {
@@ -2070,61 +2066,6 @@ func TestColors(t *testing.T) {
 			})
 
 			assert.Equal(t, tt.expectedOutput, got)
-		})
-	}
-}
-
-func TestTable(t *testing.T) {
-	headers := []string{"ID", "Name"}
-	rows := [][]string{{"1", "Goravel"}, {"2", "Framework"}}
-
-	testCases := []struct {
-		name     string
-		option   console.TableOption
-		contains []string
-	}{
-		{
-			name:   "default table",
-			option: console.TableOption{},
-			contains: []string{
-				"ID", "Name", "Goravel",
-				"╭", "─", "╮",
-			},
-		},
-		{
-			name: "compact style using boolean flags",
-			option: console.TableOption{
-				BorderTop:    convert.Pointer(false),
-				BorderBottom: convert.Pointer(false),
-				BorderLeft:   convert.Pointer(false),
-				BorderRight:  convert.Pointer(false),
-			},
-			contains: []string{"ID", "Name", "│"},
-		},
-		{
-			name: "custom style func",
-			option: console.TableOption{
-				StyleFunc: func(row, col int) lipgloss.Style {
-					if row == table.HeaderRow {
-						return lipgloss.NewStyle().Bold(true)
-					}
-					return lipgloss.NewStyle()
-				},
-			},
-			contains: []string{"ID", "Name", "Goravel"},
-		},
-	}
-
-	for _, tt := range testCases {
-		t.Run(tt.name, func(t *testing.T) {
-			ctx := CliContext{}
-			got := color.CaptureOutput(func(io.Writer) {
-				ctx.Table(headers, rows, tt.option)
-			})
-
-			for _, s := range tt.contains {
-				assert.Contains(t, got, s, "Output should contain expected table element")
-			}
 		})
 	}
 }

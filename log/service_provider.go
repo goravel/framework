@@ -5,7 +5,6 @@ import (
 
 	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/foundation"
-	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	"github.com/goravel/framework/errors"
 )
 
@@ -29,13 +28,11 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleLog)
 		}
 
-		json := app.Json()
+		json := app.GetJson()
 		if json == nil {
 			return nil, errors.JSONParserNotSet.SetModule(errors.ModuleLog)
 		}
-		return NewApplication(context.Background(), nil, config, json, func() contractstelemetry.Telemetry {
-			return app.MakeTelemetry()
-		})
+		return NewApplication(context.Background(), nil, config, json)
 	})
 }
 

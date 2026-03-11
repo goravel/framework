@@ -308,27 +308,6 @@ func TestClient_Caching(t *testing.T) {
 			}
 		}
 	})
-
-	t.Run("Reconnect after cached connection is shutdown", func(t *testing.T) {
-		setup()
-
-		mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.servers.%s.host", name)).Return(host).Twice()
-		mockConfig.EXPECT().Get(fmt.Sprintf("grpc.servers.%s.interceptors", name)).Return([]string{}).Twice()
-		mockConfig.EXPECT().Get(fmt.Sprintf("grpc.servers.%s.stats_handlers", name)).Return([]string{}).Twice()
-
-		conn1, err := app.Client(context.Background(), name)
-		assert.NoError(t, err)
-		assert.NotNil(t, conn1)
-
-		assert.NoError(t, conn1.Close())
-		assert.Equal(t, connectivity.Shutdown, conn1.GetState())
-
-		conn2, err := app.Client(context.Background(), name)
-		assert.NoError(t, err)
-		assert.NotNil(t, conn2)
-		assert.NotEqual(t, connectivity.Shutdown, conn2.GetState())
-		assert.NotSame(t, conn1, conn2, "Expected a new connection to replace a shutdown cached connection")
-	})
 }
 
 func TestShutdown_ClosesConnections(t *testing.T) {

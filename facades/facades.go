@@ -27,7 +27,6 @@ import (
 	"github.com/goravel/framework/contracts/route"
 	"github.com/goravel/framework/contracts/schedule"
 	"github.com/goravel/framework/contracts/session"
-	"github.com/goravel/framework/contracts/telemetry"
 	"github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/contracts/translation"
 	"github.com/goravel/framework/contracts/validation"
@@ -140,9 +139,9 @@ func Storage() filesystem.Storage {
 	return App().MakeStorage()
 }
 
-func Telemetry() telemetry.Telemetry {
-	return App().MakeTelemetry()
-}
+// func Telemetry() telemetry.Telemetry {
+// 	return App().MakeTelemetry()
+// }
 
 func Testing() testing.Testing {
 	return App().MakeTesting()

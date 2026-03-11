@@ -54,7 +54,7 @@ func TestWriter(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
-				log, err = NewApplication(context.Background(), nil, mockConfig, j, nil)
+				log, err = NewApplication(context.Background(), nil, mockConfig, j)
 				log.Debug("Debug Goravel")
 			},
 			assert: func() {
@@ -67,7 +67,7 @@ func TestWriter(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
-				log, err = NewApplication(context.Background(), nil, mockConfig, j, nil)
+				log, err = NewApplication(context.Background(), nil, mockConfig, j)
 				log.Debugf("Goravel: %s", "World")
 			},
 			assert: func() {
@@ -80,7 +80,7 @@ func TestWriter(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
-				log, err = NewApplication(context.Background(), nil, mockConfig, j, nil)
+				log, err = NewApplication(context.Background(), nil, mockConfig, j)
 				log.Info("Goravel")
 			},
 			assert: func() {
@@ -93,7 +93,7 @@ func TestWriter(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
-				log, err = NewApplication(context.Background(), nil, mockConfig, j, nil)
+				log, err = NewApplication(context.Background(), nil, mockConfig, j)
 				log.Infof("Goravel: %s", "World")
 			},
 			assert: func() {
@@ -106,7 +106,7 @@ func TestWriter(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
-				log, err = NewApplication(context.Background(), nil, mockConfig, j, nil)
+				log, err = NewApplication(context.Background(), nil, mockConfig, j)
 				log.Warning("Goravel")
 			},
 			assert: func() {
@@ -119,7 +119,7 @@ func TestWriter(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
-				log, err = NewApplication(context.Background(), nil, mockConfig, j, nil)
+				log, err = NewApplication(context.Background(), nil, mockConfig, j)
 				log.Warningf("Goravel: %s", "World")
 			},
 			assert: func() {
@@ -132,7 +132,7 @@ func TestWriter(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
-				log, err = NewApplication(context.Background(), nil, mockConfig, j, nil)
+				log, err = NewApplication(context.Background(), nil, mockConfig, j)
 				log.Error("Goravel")
 			},
 			assert: func() {
@@ -145,7 +145,7 @@ func TestWriter(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
-				log, err = NewApplication(context.Background(), nil, mockConfig, j, nil)
+				log, err = NewApplication(context.Background(), nil, mockConfig, j)
 				log.Errorf("Goravel: %s", "World")
 			},
 			assert: func() {
@@ -158,7 +158,7 @@ func TestWriter(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
-				log, err = NewApplication(context.Background(), nil, mockConfig, j, nil)
+				log, err = NewApplication(context.Background(), nil, mockConfig, j)
 			},
 			assert: func() {
 				assert.Panics(t, func() {
@@ -173,7 +173,7 @@ func TestWriter(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
-				log, err = NewApplication(context.Background(), nil, mockConfig, j, nil)
+				log, err = NewApplication(context.Background(), nil, mockConfig, j)
 			},
 			assert: func() {
 				assert.Panics(t, func() {
@@ -188,7 +188,7 @@ func TestWriter(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
-				log, err = NewApplication(context.Background(), nil, mockConfig, j, nil)
+				log, err = NewApplication(context.Background(), nil, mockConfig, j)
 				log.Code("code").Info("Goravel")
 			},
 			assert: func() {
@@ -201,7 +201,7 @@ func TestWriter(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
-				log, err = NewApplication(context.Background(), nil, mockConfig, j, nil)
+				log, err = NewApplication(context.Background(), nil, mockConfig, j)
 				log.Hint("hint").Info("Goravel")
 			},
 			assert: func() {
@@ -214,7 +214,7 @@ func TestWriter(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
-				log, err = NewApplication(context.Background(), nil, mockConfig, j, nil)
+				log, err = NewApplication(context.Background(), nil, mockConfig, j)
 				log.In("domain").Info("Goravel")
 			},
 			assert: func() {
@@ -227,7 +227,7 @@ func TestWriter(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
-				log, err = NewApplication(context.Background(), nil, mockConfig, j, nil)
+				log, err = NewApplication(context.Background(), nil, mockConfig, j)
 				log.Owner("team@goravel.dev").Info("Goravel")
 			},
 			assert: func() {
@@ -240,7 +240,7 @@ func TestWriter(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
-				log, err = NewApplication(context.Background(), nil, mockConfig, j, nil)
+				log, err = NewApplication(context.Background(), nil, mockConfig, j)
 				log.Request(&TestRequest{}).Info("Goravel")
 			},
 			assert: func() {
@@ -265,7 +265,7 @@ func TestWriter(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
-				log, err = NewApplication(context.Background(), nil, mockConfig, j, nil)
+				log, err = NewApplication(context.Background(), nil, mockConfig, j)
 				log.Response(&TestResponse{}).Info("Goravel")
 			},
 			assert: func() {
@@ -289,7 +289,7 @@ func TestWriter(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
-				log, err = NewApplication(context.Background(), nil, mockConfig, j, nil)
+				log, err = NewApplication(context.Background(), nil, mockConfig, j)
 				log.Tags("tag").Info("Goravel")
 			},
 			assert: func() {
@@ -302,7 +302,7 @@ func TestWriter(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
-				log, err = NewApplication(context.Background(), nil, mockConfig, j, nil)
+				log, err = NewApplication(context.Background(), nil, mockConfig, j)
 				log.User(map[string]any{"name": "kkumar-gcc"}).Info("Goravel")
 			},
 			assert: func() {
@@ -315,7 +315,7 @@ func TestWriter(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
-				log, err = NewApplication(context.Background(), nil, mockConfig, j, nil)
+				log, err = NewApplication(context.Background(), nil, mockConfig, j)
 				log.With(map[string]any{"key": "value"}).Info("Goravel")
 			},
 			assert: func() {
@@ -328,7 +328,7 @@ func TestWriter(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
-				log, err = NewApplication(context.Background(), nil, mockConfig, j, nil)
+				log, err = NewApplication(context.Background(), nil, mockConfig, j)
 				log.WithTrace().Info("Goravel")
 			},
 			assert: func() {
@@ -341,7 +341,7 @@ func TestWriter(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("test").Times(4)
 
-				log, err = NewApplication(context.Background(), nil, mockConfig, j, nil)
+				log, err = NewApplication(context.Background(), nil, mockConfig, j)
 				log.Error("test error")
 				log.Info("test info")
 			},
@@ -392,7 +392,7 @@ func TestWriter_WithContext(t *testing.T) {
 	// app.env is called twice per log write (once for each handler: single + daily)
 	mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
 
-	log, err := NewApplication(context.Background(), nil, mockConfig, json.New(), nil)
+	log, err := NewApplication(context.Background(), nil, mockConfig, json.New())
 	assert.Nil(t, err)
 
 	ctx := context.Background()
@@ -426,7 +426,7 @@ func TestWriter_LevelNotMatch(t *testing.T) {
 	mockConfig.EXPECT().GetString("logging.channels.single.level").Return("info").Once()
 	mockConfig.EXPECT().GetString("logging.channels.single.formatter", "text").Return("text").Once()
 
-	log, err := NewApplication(context.Background(), nil, mockConfig, json.New(), nil)
+	log, err := NewApplication(context.Background(), nil, mockConfig, json.New())
 	assert.Nil(t, err)
 
 	log.Debug("No Debug Goravel")
@@ -444,7 +444,7 @@ func TestWriter_DailyLogWithDifferentDays(t *testing.T) {
 	// We log twice in this test, so 2 * 2 = 4 calls
 	mockConfig.EXPECT().GetString("app.env").Return("test").Times(4)
 
-	log, err := NewApplication(context.Background(), nil, mockConfig, json.New(), nil)
+	log, err := NewApplication(context.Background(), nil, mockConfig, json.New())
 	assert.Nil(t, err)
 	assert.NotNil(t, log)
 
@@ -482,7 +482,7 @@ func TestWriterWithCustomLogger(t *testing.T) {
 
 	filename := "custom.log"
 
-	logger, err := NewApplication(context.Background(), nil, mockConfig, json.New(), nil)
+	logger, err := NewApplication(context.Background(), nil, mockConfig, json.New())
 	assert.Nil(t, err)
 	assert.NotNil(t, logger)
 
@@ -507,7 +507,7 @@ func TestWriter_Fatal(t *testing.T) {
 	clearChannelCache()
 
 	mockConfig := initMockConfig(t)
-	log, err := NewApplication(context.Background(), nil, mockConfig, json.New(), nil)
+	log, err := NewApplication(context.Background(), nil, mockConfig, json.New())
 	assert.Nil(t, err)
 	assert.NotNil(t, log)
 
@@ -532,7 +532,7 @@ func TestWriter_Fatalf(t *testing.T) {
 	clearChannelCache()
 
 	mockConfig := initMockConfig(t)
-	log, err := NewApplication(context.Background(), nil, mockConfig, json.New(), nil)
+	log, err := NewApplication(context.Background(), nil, mockConfig, json.New())
 	assert.Nil(t, err)
 	assert.NotNil(t, log)
 
@@ -574,7 +574,7 @@ func TestWriter_ConcurrentAccess(t *testing.T) {
 	// Mock app.env for all log entries (goroutines * iterations)
 	mockConfig.EXPECT().GetString("app.env").Return("test").Times(goroutines * iterations)
 
-	log, err := NewApplication(context.Background(), nil, mockConfig, json.New(), nil)
+	log, err := NewApplication(context.Background(), nil, mockConfig, json.New())
 	assert.Nil(t, err)
 	assert.NotNil(t, log)
 
@@ -666,7 +666,7 @@ func TestWriter_NoEntryContamination(t *testing.T) {
 	mockConfig := initMockConfig(t)
 	mockConfig.EXPECT().GetString("app.env").Return("test").Times(2)
 
-	log, err := NewApplication(context.Background(), nil, mockConfig, json.New(), nil)
+	log, err := NewApplication(context.Background(), nil, mockConfig, json.New())
 	assert.Nil(t, err)
 	assert.NotNil(t, log)
 
@@ -689,7 +689,7 @@ func TestWriter_FluentChainIsolation(t *testing.T) {
 	mockConfig := initMockConfig(t)
 	mockConfig.EXPECT().GetString("app.env").Return("test").Times(4)
 
-	log, err := NewApplication(context.Background(), nil, mockConfig, json.New(), nil)
+	log, err := NewApplication(context.Background(), nil, mockConfig, json.New())
 	assert.Nil(t, err)
 	assert.NotNil(t, log)
 
@@ -769,15 +769,15 @@ func (h *CustomHandler) Handle(entry contractslog.Entry) error {
 		var builder strings.Builder
 		message := entry.Message()
 		if len(message) > 0 {
-			_, _ = fmt.Fprintf(&builder, "%s: %v\n", entry.Level().String(), message)
+			builder.WriteString(fmt.Sprintf("%s: %v\n", entry.Level().String(), message))
 		}
 
 		if len(code) > 0 {
-			_, _ = fmt.Fprintf(&builder, "custom_code: %v\n", code)
+			builder.WriteString(fmt.Sprintf("custom_code: %v\n", code))
 		}
 
 		if user != nil {
-			_, _ = fmt.Fprintf(&builder, "custom_user: %v\n", user)
+			builder.WriteString(fmt.Sprintf("custom_user: %v\n", user))
 		}
 
 		err := file.PutContent(filename, builder.String())

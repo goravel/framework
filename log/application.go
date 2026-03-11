@@ -11,7 +11,6 @@ import (
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/log"
-	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/log/logger"
 	telemetrylog "github.com/goravel/framework/telemetry/instrumentation/log"
@@ -21,14 +20,13 @@ var channelToHandlers sync.Map
 
 type Application struct {
 	log.Writer
-	ctx               context.Context
-	channels          []string
-	config            config.Config
-	json              foundation.Json
-	telemetryResolver contractstelemetry.Resolver
+	ctx      context.Context
+	channels []string
+	config   config.Config
+	json     foundation.Json
 }
 
-func NewApplication(ctx context.Context, channels []string, config config.Config, json foundation.Json, resolver contractstelemetry.Resolver) (*Application, error) {
+func NewApplication(ctx context.Context, channels []string, config config.Config, json foundation.Json) (*Application, error) {
 	var handlers []slog.Handler
 
 	if len(channels) == 0 && config != nil {
@@ -38,7 +36,7 @@ func NewApplication(ctx context.Context, channels []string, config config.Config
 	}
 
 	for _, channel := range channels {
-		channelHandlers, err := getHandlers(config, json, resolver, channel)
+		channelHandlers, err := getHandlers(config, json, channel)
 		if err != nil {
 			return nil, err
 		}
@@ -49,12 +47,11 @@ func NewApplication(ctx context.Context, channels []string, config config.Config
 	slogLogger := slog.New(slogmulti.Fanout(handlers...))
 
 	return &Application{
-		ctx:               ctx,
-		channels:          channels,
-		config:            config,
-		json:              json,
-		telemetryResolver: resolver,
-		Writer:            NewWriter(ctx, slogLogger),
+		ctx:      ctx,
+		channels: channels,
+		config:   config,
+		json:     json,
+		Writer:   NewWriter(ctx, slogLogger),
 	}, nil
 }
 
@@ -63,7 +60,7 @@ func (r *Application) WithContext(ctx context.Context) log.Log {
 		ctx = httpCtx.Context()
 	}
 
-	app, err := NewApplication(ctx, r.channels, r.config, r.json, r.telemetryResolver)
+	app, err := NewApplication(ctx, r.channels, r.config, r.json)
 	if err != nil {
 		r.Error(err)
 
@@ -78,7 +75,7 @@ func (r *Application) Channel(channel string) log.Log {
 		return r
 	}
 
-	app, err := NewApplication(r.ctx, []string{channel}, r.config, r.json, r.telemetryResolver)
+	app, err := NewApplication(r.ctx, []string{channel}, r.config, r.json)
 	if err != nil {
 		r.Error(err)
 
@@ -93,7 +90,7 @@ func (r *Application) Stack(channels []string) log.Log {
 		return r
 	}
 
-	app, err := NewApplication(r.ctx, channels, r.config, r.json, r.telemetryResolver)
+	app, err := NewApplication(r.ctx, channels, r.config, r.json)
 	if err != nil {
 		r.Error(err)
 
@@ -104,7 +101,7 @@ func (r *Application) Stack(channels []string) log.Log {
 }
 
 // getHandlers returns slog log handlers for the specified channel.
-func getHandlers(config config.Config, json foundation.Json, telemetryResolver contractstelemetry.Resolver, channel string) ([]slog.Handler, error) {
+func getHandlers(config config.Config, json foundation.Json, channel string) ([]slog.Handler, error) {
 	var handlers []slog.Handler
 	handlersAny, ok := channelToHandlers.Load(channel)
 	if ok {
@@ -126,7 +123,7 @@ func getHandlers(config config.Config, json foundation.Json, telemetryResolver c
 				return nil, errors.LogDriverCircularReference.Args("stack")
 			}
 
-			channelHandlers, err := getHandlers(config, json, telemetryResolver, stackChannel)
+			channelHandlers, err := getHandlers(config, json, stackChannel)
 			if err != nil {
 				return nil, err
 			}
@@ -159,7 +156,7 @@ func getHandlers(config config.Config, json foundation.Json, telemetryResolver c
 			handlers = append(handlers, HandlerToSlogHandler(logger.NewConsoleHandler(config, json, level, formatter)))
 		}
 	case log.DriverOtel:
-		logLogger := telemetrylog.NewLazyTelemetryChannel(config, telemetryResolver)
+		logLogger := telemetrylog.NewTelemetryChannel()
 		handler, err := logLogger.Handle(channelPath)
 		if err != nil {
 			return nil, err

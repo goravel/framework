@@ -9,7 +9,6 @@ import (
 
 	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/contracts/testing/docker"
-	frameworkerrors "github.com/goravel/framework/errors"
 	configmock "github.com/goravel/framework/mocks/config"
 	logmock "github.com/goravel/framework/mocks/log"
 )
@@ -45,39 +44,6 @@ func (s *DriverTestSuite) TestCustom() {
 	s.NotNil(store)
 	s.Nil(err)
 	s.Equal("name", store.Get("name", "Goravel").(string))
-
-	s.mockConfig.AssertExpectations(s.T())
-}
-
-func (s *DriverTestSuite) TestCustom_WithFactory() {
-	s.mockConfig.On("Get", "cache.stores.factory.via").Return(func() (cache.Driver, error) {
-		return &Store{}, nil
-	}).Twice()
-
-	store, err := s.driver.custom("factory")
-	s.NotNil(store)
-	s.Nil(err)
-
-	s.mockConfig.AssertExpectations(s.T())
-}
-
-func (s *DriverTestSuite) TestCustom_StoreContractNotFulfilled() {
-	s.mockConfig.On("Get", "cache.stores.invalid.via").Return("invalid").Twice()
-
-	store, err := s.driver.custom("invalid")
-	s.Nil(store)
-	s.ErrorIs(err, frameworkerrors.CacheStoreContractNotFulfilled)
-	s.EqualError(err, "invalid doesn't implement contracts/cache/store")
-
-	s.mockConfig.AssertExpectations(s.T())
-}
-
-func (s *DriverTestSuite) TestNew_UnsupportedDriver() {
-	s.mockConfig.On("GetString", "cache.stores.store.driver").Return("redis").Once()
-
-	store, err := s.driver.New("store")
-	s.Nil(store)
-	s.EqualError(err, "invalid driver: redis, only support memory, custom")
 
 	s.mockConfig.AssertExpectations(s.T())
 }

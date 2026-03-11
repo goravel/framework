@@ -4,12 +4,9 @@ import (
 	"net/http"
 	"sync"
 
-	contractsconfig "github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http/client"
-	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	"github.com/goravel/framework/errors"
-	telemetryhttp "github.com/goravel/framework/telemetry/instrumentation/http"
 )
 
 var _ client.Factory = (*Factory)(nil)
@@ -17,11 +14,8 @@ var _ client.Factory = (*Factory)(nil)
 type Factory struct {
 	client.Request
 
-	factoryConfig     *FactoryConfig
-	config            contractsconfig.Config
-	json              foundation.Json
-	telemetryResolver contractstelemetry.Resolver
-
+	json    foundation.Json
+	config  *FactoryConfig
 	clients sync.Map
 	mu      sync.RWMutex
 
@@ -30,21 +24,14 @@ type Factory struct {
 	stray     []string
 }
 
-func NewFactory(
-	factoryConfig *FactoryConfig,
-	config contractsconfig.Config,
-	json foundation.Json,
-	telemetryResolver contractstelemetry.Resolver,
-) (*Factory, error) {
-	if factoryConfig == nil {
+func NewFactory(config *FactoryConfig, json foundation.Json) (*Factory, error) {
+	if config == nil {
 		return nil, errors.HttpClientConfigNotSet
 	}
 
 	factory := &Factory{
-		factoryConfig:     factoryConfig,
-		config:            config,
-		json:              json,
-		telemetryResolver: telemetryResolver,
+		config: config,
+		json:   json,
 	}
 
 	if err := factory.bindDefault(); err != nil {
@@ -94,7 +81,7 @@ func (r *Factory) AssertSentCount(count int) bool {
 }
 
 func (r *Factory) Client(names ...string) client.Request {
-	name := r.factoryConfig.Default
+	name := r.config.Default
 	if len(names) > 0 && names[0] != "" {
 		name = names[0]
 	}
@@ -108,7 +95,7 @@ func (r *Factory) Client(names ...string) client.Request {
 		return newRequestWithError(err)
 	}
 
-	cfg := r.factoryConfig.Clients[name]
+	cfg := r.config.Clients[name]
 	return NewRequest(httpClient, r.json, cfg.BaseUrl, name)
 }
 
@@ -164,7 +151,7 @@ func (r *Factory) Sequence() client.FakeSequence {
 }
 
 func (r *Factory) bindDefault() error {
-	name := r.factoryConfig.Default
+	name := r.config.Default
 	c, err := r.resolveClient(name, r.fakeState)
 	if err != nil {
 		return err
@@ -172,7 +159,7 @@ func (r *Factory) bindDefault() error {
 
 	// Bind the default client to the embedded Request implementation
 	// so that methods like Http.Get() use the default configuration.
-	r.Request = NewRequest(c, r.json, r.factoryConfig.Clients[name].BaseUrl, name)
+	r.Request = NewRequest(c, r.json, r.config.Clients[name].BaseUrl, name)
 
 	return nil
 }
@@ -197,7 +184,7 @@ func (r *Factory) resolveClient(name string, state *FakeState) (*http.Client, er
 		return val.(*http.Client), nil
 	}
 
-	cfg, ok := r.factoryConfig.Clients[name]
+	cfg, ok := r.config.Clients[name]
 	if !ok {
 		return nil, errors.HttpClientConnectionNotFound.Args(name)
 	}
@@ -211,10 +198,6 @@ func (r *Factory) resolveClient(name string, state *FakeState) (*http.Client, er
 	baseTransport.IdleConnTimeout = cfg.IdleConnTimeout
 
 	var transport http.RoundTripper = baseTransport
-	if cfg.EnableTelemetry && r.telemetryResolver != nil {
-		transport = telemetryhttp.NewTransport(r.config, r.telemetryResolver(), transport)
-	}
-
 	if state != nil {
 		// If testing mode is active, wrap the real transport with our interceptor.
 		transport = NewFakeTransport(state, baseTransport, r.json)

@@ -4,74 +4,83 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
+	"go.opentelemetry.io/otel/log/noop"
 
-	contractslog "github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/errors"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mockstelemetry "github.com/goravel/framework/mocks/telemetry"
+	"github.com/goravel/framework/telemetry"
 )
 
 type TelemetryChannelTestSuite struct {
 	suite.Suite
+	mockConfig    *mocksconfig.Config
+	mockTelemetry *mockstelemetry.Telemetry
 }
 
 func TestTelemetryChannelTestSuite(t *testing.T) {
 	suite.Run(t, new(TelemetryChannelTestSuite))
 }
 
-func (s *TelemetryChannelTestSuite) TestHandle() {
-	const (
-		channelPath  = "logging.channels.otel"
-		telemetryKey = "telemetry.instrumentation.log.enabled"
-	)
+func (s *TelemetryChannelTestSuite) SetupTest() {
+	s.mockConfig = mocksconfig.NewConfig(s.T())
+	s.mockTelemetry = mockstelemetry.NewTelemetry(s.T())
 
-	tests := []struct {
-		name             string
-		setup            func(m *mocksconfig.Config)
-		shouldBeEnabled  bool
-		expectedInstName string
-	}{
-		{
-			name: "Success: Telemetry enabled with custom name",
-			setup: func(m *mocksconfig.Config) {
-				m.EXPECT().GetBool(telemetryKey, false).Return(true).Once()
-				m.EXPECT().GetString(channelPath+".instrument_name", DefaultInstrumentationName).
-					Return("custom-app-logger").Once()
-			},
-			shouldBeEnabled:  true,
-			expectedInstName: "custom-app-logger",
-		},
-		{
-			name: "Success: Telemetry disabled via config",
-			setup: func(m *mocksconfig.Config) {
-				m.EXPECT().GetBool(telemetryKey, false).Return(false).Once()
-			},
-			shouldBeEnabled: false,
-		},
-	}
+	telemetry.ConfigFacade = s.mockConfig
+	telemetry.TelemetryFacade = s.mockTelemetry
+}
 
-	for _, tt := range tests {
-		s.Run(tt.name, func() {
-			mockConfig := mocksconfig.NewConfig(s.T())
-			mockTelemetry := mockstelemetry.NewTelemetry(s.T())
+func (s *TelemetryChannelTestSuite) TearDownTest() {
+	telemetry.ConfigFacade = nil
+	telemetry.TelemetryFacade = nil
+}
 
-			tt.setup(mockConfig)
+func (s *TelemetryChannelTestSuite) TestHandle_Success_DefaultName() {
+	channelPath := "logging.channels.otel"
+	s.mockConfig.EXPECT().GetString(channelPath+".instrument_name", defaultInstrumentationName).Return(defaultInstrumentationName).Once()
 
-			channel := NewTelemetryChannel(mockConfig, mockTelemetry)
-			channelHandler, err := channel.Handle(channelPath)
-			s.NoError(err)
-			s.NotNil(channelHandler)
+	s.mockTelemetry.On("Logger", defaultInstrumentationName).Return(noop.NewLoggerProvider().Logger("test")).Once()
 
-			s.Equal(tt.shouldBeEnabled, channelHandler.Enabled(contractslog.LevelInfo))
+	channel := NewTelemetryChannel()
+	h, err := channel.Handle(channelPath)
 
-			if tt.shouldBeEnabled {
-				impl, ok := channelHandler.(*handler)
-				s.True(ok, "Returned handler must be of type *handler")
+	s.NoError(err)
+	s.NotNil(h)
+	s.mockTelemetry.AssertExpectations(s.T())
+}
 
-				s.Equal(tt.expectedInstName, impl.instrumentName, "Instrumentation name should match config")
+func (s *TelemetryChannelTestSuite) TestHandle_Success_CustomName() {
+	channelPath := "logging.channels.otel"
+	customName := "my-service-logs"
 
-				s.NotNil(impl.resolver, "Handler resolver should not be nil")
-				s.Equal(mockTelemetry, impl.resolver(), "Resolver should return the injected telemetry service")
-			}
-		})
-	}
+	s.mockConfig.EXPECT().GetString(channelPath+".instrument_name", defaultInstrumentationName).Return(customName).Once()
+
+	s.mockTelemetry.On("Logger", customName).Return(noop.NewLoggerProvider().Logger("test")).Once()
+
+	channel := NewTelemetryChannel()
+	h, err := channel.Handle(channelPath)
+
+	s.NoError(err)
+	s.NotNil(h)
+	s.mockTelemetry.AssertExpectations(s.T())
+}
+
+func (s *TelemetryChannelTestSuite) TestHandle_Error_TelemetryFacadeNotSet() {
+	telemetry.TelemetryFacade = nil
+
+	channel := NewTelemetryChannel()
+	h, err := channel.Handle("logging.channels.otel")
+
+	s.ErrorIs(err, errors.TelemetryFacadeNotSet)
+	s.Nil(h)
+}
+
+func (s *TelemetryChannelTestSuite) TestHandle_Error_ConfigFacadeNotSet() {
+	telemetry.ConfigFacade = nil
+
+	channel := NewTelemetryChannel()
+	h, err := channel.Handle("logging.channels.otel")
+
+	s.ErrorIs(err, errors.ConfigFacadeNotSet)
+	s.Nil(h)
 }

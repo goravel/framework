@@ -47,13 +47,12 @@ func NewDriver(config config.Config, disk string) (filesystem.Driver, error) {
 	case DriverLocal:
 		return NewLocal(config, disk)
 	case DriverCustom:
-		via := config.Get(fmt.Sprintf("filesystems.disks.%s.via", disk))
-		driver, ok := via.(filesystem.Driver)
+		driver, ok := config.Get(fmt.Sprintf("filesystems.disks.%s.via", disk)).(filesystem.Driver)
 		if ok {
 			return driver, nil
 		}
 
-		driverCallback, ok := via.(func() (filesystem.Driver, error))
+		driverCallback, ok := config.Get(fmt.Sprintf("filesystems.disks.%s.via", disk)).(func() (filesystem.Driver, error))
 		if ok {
 			return driverCallback()
 		}

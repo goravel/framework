@@ -10,28 +10,18 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/suite"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-	metricnoop "go.opentelemetry.io/otel/metric/noop"
-	"go.opentelemetry.io/otel/propagation"
-	tracenoop "go.opentelemetry.io/otel/trace/noop"
 
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http/client"
-	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation/json"
-	mocksconfig "github.com/goravel/framework/mocks/config"
-	mockstelemetry "github.com/goravel/framework/mocks/telemetry"
 )
 
 type FactoryTestSuite struct {
 	suite.Suite
-	json          foundation.Json
-	factory       *Factory
-	factoryConfig *FactoryConfig
-	mockConfig    *mocksconfig.Config
-	mockTelemetry *mockstelemetry.Telemetry
-	mockResolver  contractstelemetry.Resolver
+	json    foundation.Json
+	factory *Factory
+	config  *FactoryConfig
 }
 
 func TestFactoryTestSuite(t *testing.T) {
@@ -40,14 +30,7 @@ func TestFactoryTestSuite(t *testing.T) {
 
 func (s *FactoryTestSuite) SetupTest() {
 	s.json = json.New()
-	s.mockConfig = mocksconfig.NewConfig(s.T())
-	s.mockTelemetry = mockstelemetry.NewTelemetry(s.T())
-
-	s.mockResolver = func() contractstelemetry.Telemetry {
-		return s.mockTelemetry
-	}
-
-	s.factoryConfig = &FactoryConfig{
+	s.config = &FactoryConfig{
 		Default: "main",
 		Clients: map[string]Config{
 			"main": {
@@ -65,7 +48,7 @@ func (s *FactoryTestSuite) SetupTest() {
 		},
 	}
 	var err error
-	s.factory, err = NewFactory(s.factoryConfig, s.mockConfig, s.json, s.mockResolver)
+	s.factory, err = NewFactory(s.config, s.json)
 	s.NoError(err)
 }
 
@@ -94,8 +77,8 @@ func (s *FactoryTestSuite) TestClient_Resolution() {
 }
 
 func (s *FactoryTestSuite) TestErrorHandling() {
-	s.Run("handles nil factoryConfig safely", func() {
-		f, err := NewFactory(nil, s.mockConfig, s.json, s.mockResolver)
+	s.Run("handles nil config safely", func() {
+		f, err := NewFactory(nil, s.json)
 		s.Nil(f)
 		s.ErrorIs(err, errors.HttpClientConfigNotSet)
 	})
@@ -110,12 +93,12 @@ func (s *FactoryTestSuite) TestErrorHandling() {
 		s.Contains(err.Error(), "[missing_client]")
 	})
 
-	s.Run("returns lazy error when default is empty in factoryConfig", func() {
+	s.Run("returns lazy error when default is empty in config", func() {
 		cfg := &FactoryConfig{
 			Default: "",
 			Clients: map[string]Config{"main": {}},
 		}
-		f, err := NewFactory(cfg, s.mockConfig, s.json, s.mockResolver)
+		f, err := NewFactory(cfg, s.json)
 		s.ErrorIs(err, errors.HttpClientDefaultNotSet)
 		s.Nil(f)
 	})
@@ -130,7 +113,7 @@ func (s *FactoryTestSuite) TestConcurrency() {
 			"new2": {BaseUrl: "https://new2.com", Timeout: 3 * time.Second},
 		},
 	}
-	f, err := NewFactory(cfg, s.mockConfig, s.json, s.mockResolver)
+	f, err := NewFactory(cfg, s.json)
 	s.NoError(err)
 
 	var wg sync.WaitGroup
@@ -180,7 +163,7 @@ func (s *FactoryTestSuite) TestBaseUrl_Override() {
 			"main": {BaseUrl: "https://wrong-url.com"},
 		},
 	}
-	f, err := NewFactory(cfg, s.mockConfig, s.json, s.mockResolver)
+	f, err := NewFactory(cfg, s.json)
 	s.NoError(err)
 
 	s.Run("overrides config base url", func() {
@@ -199,12 +182,7 @@ func (s *FactoryTestSuite) TestProxy_HttpMethods() {
 	}))
 	defer server.Close()
 
-	f, err := NewFactory(
-		&FactoryConfig{Default: "test", Clients: map[string]Config{"test": {BaseUrl: server.URL}}},
-		s.mockConfig,
-		s.json,
-		s.mockResolver,
-	)
+	f, err := NewFactory(&FactoryConfig{Default: "test", Clients: map[string]Config{"test": {BaseUrl: server.URL}}}, s.json)
 	s.NoError(err)
 
 	tests := []struct {
@@ -251,12 +229,7 @@ func (s *FactoryTestSuite) TestProxy_Headers() {
 	}))
 	defer server.Close()
 
-	f, err := NewFactory(
-		&FactoryConfig{Default: "test", Clients: map[string]Config{"test": {BaseUrl: server.URL}}},
-		s.mockConfig,
-		s.json,
-		s.mockResolver,
-	)
+	f, err := NewFactory(&FactoryConfig{Default: "test", Clients: map[string]Config{"test": {BaseUrl: server.URL}}}, s.json)
 	s.NoError(err)
 
 	s.Run("WithHeader & WithHeaders", func() {
@@ -333,7 +306,7 @@ func (s *FactoryTestSuite) TestProxy_QueryParameters() {
 	}))
 	defer server.Close()
 
-	f, err := NewFactory(&FactoryConfig{Default: "test", Clients: map[string]Config{"test": {BaseUrl: server.URL}}}, s.mockConfig, s.json, s.mockResolver)
+	f, err := NewFactory(&FactoryConfig{Default: "test", Clients: map[string]Config{"test": {BaseUrl: server.URL}}}, s.json)
 	s.NoError(err)
 
 	s.Run("WithQueryParameter", func() {
@@ -369,7 +342,7 @@ func (s *FactoryTestSuite) TestProxy_UrlParameters() {
 	}))
 	defer server.Close()
 
-	f, err := NewFactory(&FactoryConfig{Default: "test", Clients: map[string]Config{"test": {BaseUrl: server.URL}}}, s.mockConfig, s.json, s.mockResolver)
+	f, err := NewFactory(&FactoryConfig{Default: "test", Clients: map[string]Config{"test": {BaseUrl: server.URL}}}, s.json)
 	s.NoError(err)
 
 	s.Run("WithUrlParameter", func() {
@@ -398,7 +371,7 @@ func (s *FactoryTestSuite) TestProxy_Cookies() {
 	}))
 	defer server.Close()
 
-	f, err := NewFactory(&FactoryConfig{Default: "test", Clients: map[string]Config{"test": {BaseUrl: server.URL}}}, s.mockConfig, s.json, s.mockResolver)
+	f, err := NewFactory(&FactoryConfig{Default: "test", Clients: map[string]Config{"test": {BaseUrl: server.URL}}}, s.json)
 	s.NoError(err)
 
 	s.Run("WithCookie", func() {
@@ -450,7 +423,7 @@ func (s *FactoryTestSuite) TestRouting_Integration() {
 			"server_b": {BaseUrl: serverB.URL},
 		},
 	}
-	f, err := NewFactory(cfg, s.mockConfig, s.json, s.mockResolver)
+	f, err := NewFactory(cfg, s.json)
 	s.NoError(err)
 
 	s.Run("proxy methods hit default server", func() {
@@ -468,41 +441,6 @@ func (s *FactoryTestSuite) TestRouting_Integration() {
 		s.NoError(err)
 		s.Equal("response_from_B", body)
 	})
-}
-
-func (s *FactoryTestSuite) TestTelemetry_Integration() {
-	factoryConfig := &FactoryConfig{
-		Default: "telemetry_client",
-		Clients: map[string]Config{
-			"telemetry_client": {
-				BaseUrl:         "https://example.com",
-				EnableTelemetry: true,
-			},
-		},
-	}
-
-	s.mockConfig.EXPECT().GetBool("telemetry.instrumentation.http_client.enabled", true).
-		Return(true).Once()
-
-	s.mockTelemetry.EXPECT().TracerProvider().Return(tracenoop.NewTracerProvider()).Once()
-	s.mockTelemetry.EXPECT().MeterProvider().Return(metricnoop.NewMeterProvider()).Once()
-	s.mockTelemetry.EXPECT().Propagator().Return(propagation.NewCompositeTextMapPropagator()).Once()
-
-	factory, err := NewFactory(factoryConfig, s.mockConfig, s.json, s.mockResolver)
-	s.NoError(err)
-
-	req := factory.Client("telemetry_client")
-	s.NotNil(req)
-
-	concreteReq, ok := req.(*Request)
-	s.True(ok, "Request should be of type *client.Request")
-
-	httpClient := concreteReq.HttpClient()
-	s.NotNil(httpClient.Transport)
-	s.IsType(&otelhttp.Transport{}, httpClient.Transport)
-
-	_, isPlainTransport := httpClient.Transport.(*http.Transport)
-	s.False(isPlainTransport)
 }
 
 func (s *FactoryTestSuite) TestFake_GithubUserProfile() {
@@ -609,7 +547,7 @@ func (s *FactoryTestSuite) TestFactory_AllowStrayRequests() {
 	}))
 	defer server.Close()
 
-	s.factory.factoryConfig.Clients["github"] = Config{BaseUrl: server.URL}
+	s.factory.config.Clients["github"] = Config{BaseUrl: server.URL}
 	s.factory.Reset()
 
 	s.factory.Fake(nil).PreventStrayRequests().AllowStrayRequests([]string{server.URL + "/*"})
@@ -655,7 +593,7 @@ func (s *FactoryTestSuite) TestIntegration_RealServer() {
 			"local": {BaseUrl: server.URL},
 		},
 	}
-	factory, err := NewFactory(cfg, s.mockConfig, s.json, s.mockResolver)
+	factory, err := NewFactory(cfg, s.json)
 	s.NoError(err)
 
 	resp, err := factory.Post("/repos", nil)

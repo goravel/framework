@@ -1,40 +1,31 @@
 package log
 
 import (
-	contractsconfig "github.com/goravel/framework/contracts/config"
-	contractslog "github.com/goravel/framework/contracts/log"
-	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
+	"github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/telemetry"
 )
 
-const DefaultInstrumentationName = "github.com/goravel/framework/telemetry/instrumentation/log"
+const defaultInstrumentationName = "github.com/goravel/framework/telemetry/instrumentation/log"
 
-type TelemetryChannel struct {
-	config   contractsconfig.Config
-	resolver contractstelemetry.Resolver
+type TelemetryChannel struct{}
+
+func NewTelemetryChannel() *TelemetryChannel {
+	return &TelemetryChannel{}
 }
 
-func NewTelemetryChannel(config contractsconfig.Config, telemetry contractstelemetry.Telemetry) *TelemetryChannel {
-	return NewLazyTelemetryChannel(config, func() contractstelemetry.Telemetry {
-		return telemetry
-	})
-}
-
-func NewLazyTelemetryChannel(config contractsconfig.Config, resolver contractstelemetry.Resolver) *TelemetryChannel {
-	return &TelemetryChannel{
-		config:   config,
-		resolver: resolver,
-	}
-}
-
-func (r *TelemetryChannel) Handle(channelPath string) (contractslog.Handler, error) {
-	if r.config == nil || !r.config.GetBool("telemetry.instrumentation.log.enabled", false) {
-		return &handler{enabled: false}, nil
+func (r *TelemetryChannel) Handle(channelPath string) (log.Handler, error) {
+	if telemetry.TelemetryFacade == nil {
+		return nil, errors.TelemetryFacadeNotSet
 	}
 
-	instrumentName := r.config.GetString(channelPath+".instrument_name", DefaultInstrumentationName)
+	config := telemetry.ConfigFacade
+	if config == nil {
+		return nil, errors.ConfigFacadeNotSet
+	}
+
+	instrumentName := config.GetString(channelPath+".instrument_name", defaultInstrumentationName)
 	return &handler{
-		resolver:       r.resolver,
-		enabled:        true,
-		instrumentName: instrumentName,
+		logger: telemetry.TelemetryFacade.Logger(instrumentName),
 	}, nil
 }

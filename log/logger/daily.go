@@ -7,11 +7,12 @@ import (
 	"strings"
 	"time"
 
+	rotatelogs "github.com/goravel/file-rotatelogs/v2"
+
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/log/rotation"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/carbon"
 )
@@ -38,13 +39,13 @@ func (daily *Daily) Handle(channel string) (log.Handler, error) {
 	logPath = strings.ReplaceAll(logPath, ext, "")
 	logPath = filepath.Join(support.RelativePath, logPath)
 
-	writer, err := rotation.New(
+	writer, err := rotatelogs.New(
 		logPath+"-%Y-%m-%d"+ext,
-		rotation.WithRotationTime(time.Duration(24)*time.Hour),
-		rotation.WithRotationCount(uint(daily.config.GetInt(channel+".days"))),
+		rotatelogs.WithRotationTime(time.Duration(24)*time.Hour),
+		rotatelogs.WithRotationCount(uint(daily.config.GetInt(channel+".days"))),
 		// When using carbon.SetTestNow(), carbon.Now().StdTime() should always be used to get the current time.
 		// Hence, WithLocation cannot be used here.
-		rotation.WithClock(&rotatelogsClock{}),
+		rotatelogs.WithClock(&rotatelogsClock{}),
 	)
 	if err != nil {
 		return nil, err

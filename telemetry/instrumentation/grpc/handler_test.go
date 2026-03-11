@@ -10,8 +10,7 @@ import (
 	tracenoop "go.opentelemetry.io/otel/trace/noop"
 	"google.golang.org/grpc/stats"
 
-	"github.com/goravel/framework/errors"
-	mocksconfig "github.com/goravel/framework/mocks/config"
+	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	mockstelemetry "github.com/goravel/framework/mocks/telemetry"
 	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/telemetry"
@@ -19,16 +18,15 @@ import (
 
 type HandlerTestSuite struct {
 	suite.Suite
-	mockTelemetry *mockstelemetry.Telemetry
-	mockConfig    *mocksconfig.Config
+	originalFacade contractstelemetry.Telemetry
 }
 
 func (s *HandlerTestSuite) SetupTest() {
-	s.mockTelemetry = mockstelemetry.NewTelemetry(s.T())
-	s.mockConfig = mocksconfig.NewConfig(s.T())
+	s.originalFacade = telemetry.TelemetryFacade
 }
 
 func (s *HandlerTestSuite) TearDownTest() {
+	telemetry.TelemetryFacade = s.originalFacade
 }
 
 func TestHandlerTestSuite(t *testing.T) {
@@ -38,13 +36,13 @@ func TestHandlerTestSuite(t *testing.T) {
 func (s *HandlerTestSuite) TestServerStatsHandler() {
 	tests := []struct {
 		name   string
-		setup  func()
+		setup  func(*mockstelemetry.Telemetry)
 		assert func()
 	}{
 		{
 			name: "returns nil and logs warning when telemetry facade is nil",
-			setup: func() {
-				telemetry.Facade = nil
+			setup: func(_ *mockstelemetry.Telemetry) {
+				telemetry.TelemetryFacade = nil
 			},
 			assert: func() {
 				var handler stats.Handler
@@ -53,25 +51,30 @@ func (s *HandlerTestSuite) TestServerStatsHandler() {
 				})
 
 				s.Nil(handler)
-				s.Contains(out, errors.TelemetryGrpcServerStatsHandlerDisabled.Error())
+				s.Contains(out, "[Telemetry] Facade not initialized. gRPC server stats instrumentation is disabled.")
 			},
 		},
 		{
-			name: "Returns nil if config is disabled",
-			setup: func() {
-				telemetry.ConfigFacade = nil
+			name: "returns handler when telemetry facade is set",
+			setup: func(mockTelemetry *mockstelemetry.Telemetry) {
+				mockTelemetry.EXPECT().TracerProvider().Return(tracenoop.NewTracerProvider()).Once()
+				mockTelemetry.EXPECT().MeterProvider().Return(metricnoop.NewMeterProvider()).Once()
+				mockTelemetry.EXPECT().Propagator().Return(propagation.NewCompositeTextMapPropagator()).Once()
+
+				telemetry.TelemetryFacade = mockTelemetry
 			},
 			assert: func() {
-				s.Nil(NewServerStatsHandler())
+				s.NotNil(NewServerStatsHandler())
 			},
 		},
 		{
-			name: "Accepts options",
-			setup: func() {
-				s.mockTelemetry.EXPECT().TracerProvider().Return(tracenoop.NewTracerProvider()).Once()
-				s.mockTelemetry.EXPECT().MeterProvider().Return(metricnoop.NewMeterProvider()).Once()
-				s.mockTelemetry.EXPECT().Propagator().Return(propagation.NewCompositeTextMapPropagator()).Once()
-				s.mockConfig.EXPECT().GetBool("telemetry.instrumentation.grpc_server.enabled").Return(true).Once()
+			name: "accepts options",
+			setup: func(mockTelemetry *mockstelemetry.Telemetry) {
+				mockTelemetry.EXPECT().TracerProvider().Return(tracenoop.NewTracerProvider()).Once()
+				mockTelemetry.EXPECT().MeterProvider().Return(metricnoop.NewMeterProvider()).Once()
+				mockTelemetry.EXPECT().Propagator().Return(propagation.NewCompositeTextMapPropagator()).Once()
+
+				telemetry.TelemetryFacade = mockTelemetry
 			},
 			assert: func() {
 				handler := NewServerStatsHandler(
@@ -86,9 +89,9 @@ func (s *HandlerTestSuite) TestServerStatsHandler() {
 
 	for _, test := range tests {
 		s.Run(test.name, func() {
-			telemetry.Facade = s.mockTelemetry
-			telemetry.ConfigFacade = s.mockConfig
-			test.setup()
+			mockTelemetry := mockstelemetry.NewTelemetry(s.T())
+
+			test.setup(mockTelemetry)
 			test.assert()
 		})
 	}
@@ -97,13 +100,13 @@ func (s *HandlerTestSuite) TestServerStatsHandler() {
 func (s *HandlerTestSuite) TestClientStatsHandler() {
 	tests := []struct {
 		name   string
-		setup  func()
+		setup  func(*mockstelemetry.Telemetry)
 		assert func()
 	}{
 		{
 			name: "returns nil and logs warning when telemetry facade is nil",
-			setup: func() {
-				telemetry.Facade = nil
+			setup: func(_ *mockstelemetry.Telemetry) {
+				telemetry.TelemetryFacade = nil
 			},
 			assert: func() {
 				var handler stats.Handler
@@ -112,25 +115,30 @@ func (s *HandlerTestSuite) TestClientStatsHandler() {
 				})
 
 				s.Nil(handler)
-				s.Contains(out, errors.TelemetryGrpcClientStatsHandlerDisabled.Error())
+				s.Contains(out, "[Telemetry] Facade not initialized. gRPC client stats instrumentation is disabled.")
 			},
 		},
 		{
-			name: "Returns nil if config is disabled",
-			setup: func() {
-				telemetry.ConfigFacade = nil
+			name: "returns handler when telemetry facade is set",
+			setup: func(mockTelemetry *mockstelemetry.Telemetry) {
+				mockTelemetry.EXPECT().TracerProvider().Return(tracenoop.NewTracerProvider()).Once()
+				mockTelemetry.EXPECT().MeterProvider().Return(metricnoop.NewMeterProvider()).Once()
+				mockTelemetry.EXPECT().Propagator().Return(propagation.NewCompositeTextMapPropagator()).Once()
+
+				telemetry.TelemetryFacade = mockTelemetry
 			},
 			assert: func() {
-				s.Nil(NewServerStatsHandler())
+				s.NotNil(NewClientStatsHandler())
 			},
 		},
 		{
-			name: "Accepts options",
-			setup: func() {
-				s.mockTelemetry.EXPECT().TracerProvider().Return(tracenoop.NewTracerProvider()).Once()
-				s.mockTelemetry.EXPECT().MeterProvider().Return(metricnoop.NewMeterProvider()).Once()
-				s.mockTelemetry.EXPECT().Propagator().Return(propagation.NewCompositeTextMapPropagator()).Once()
-				s.mockConfig.EXPECT().GetBool("telemetry.instrumentation.grpc_client.enabled").Return(true).Once()
+			name: "accepts options",
+			setup: func(mockTelemetry *mockstelemetry.Telemetry) {
+				mockTelemetry.EXPECT().TracerProvider().Return(tracenoop.NewTracerProvider()).Once()
+				mockTelemetry.EXPECT().MeterProvider().Return(metricnoop.NewMeterProvider()).Once()
+				mockTelemetry.EXPECT().Propagator().Return(propagation.NewCompositeTextMapPropagator()).Once()
+
+				telemetry.TelemetryFacade = mockTelemetry
 			},
 			assert: func() {
 				handler := NewClientStatsHandler(
@@ -144,9 +152,9 @@ func (s *HandlerTestSuite) TestClientStatsHandler() {
 
 	for _, test := range tests {
 		s.Run(test.name, func() {
-			telemetry.Facade = s.mockTelemetry
-			telemetry.ConfigFacade = s.mockConfig
-			test.setup()
+			mockTelemetry := mockstelemetry.NewTelemetry(s.T())
+
+			test.setup(mockTelemetry)
 			test.assert()
 		})
 	}
