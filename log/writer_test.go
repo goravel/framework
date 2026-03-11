@@ -769,15 +769,15 @@ func (h *CustomHandler) Handle(entry contractslog.Entry) error {
 		var builder strings.Builder
 		message := entry.Message()
 		if len(message) > 0 {
-			builder.WriteString(fmt.Sprintf("%s: %v\n", entry.Level().String(), message))
+			_, _ = fmt.Fprintf(&builder, "%s: %v\n", entry.Level().String(), message)
 		}
 
 		if len(code) > 0 {
-			builder.WriteString(fmt.Sprintf("custom_code: %v\n", code))
+			_, _ = fmt.Fprintf(&builder, "custom_code: %v\n", code)
 		}
 
 		if user != nil {
-			builder.WriteString(fmt.Sprintf("custom_user: %v\n", user))
+			_, _ = fmt.Fprintf(&builder, "custom_user: %v\n", user)
 		}
 
 		err := file.PutContent(filename, builder.String())
