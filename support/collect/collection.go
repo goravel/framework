@@ -532,7 +532,7 @@ func (c *Collection[T]) Map(fn func(T, int) interface{}) *Collection[interface{}
 	return &Collection[interface{}]{items: mapped}
 }
 
-// MapCollect It will be renamed to Map in next release
+// MapCollect will be renamed to Map in next release.
 func MapCollect[T, R any](c *Collection[T], fn func(T, int) R) *Collection[R] {
 	mapped := make([]R, len(c.items))
 	for i, item := range c.items {
@@ -1341,7 +1341,16 @@ func valuesEqual(a, b any) bool {
 }
 
 func isSimpleComparable(value any) bool {
-	switch reflect.TypeOf(value).Kind() {
+	if value == nil {
+		return false
+	}
+
+	valueType := reflect.TypeOf(value)
+	if valueType == nil {
+		return false
+	}
+
+	switch valueType.Kind() {
 	case reflect.Bool,
 		reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr,

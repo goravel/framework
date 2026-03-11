@@ -880,6 +880,7 @@ func (lc *LazyCollection[T]) execute() <-chan T {
 	return ch
 }
 
+// drainChannel consumes all remaining values to avoid blocking upstream producers.
 func drainChannel[T any](ch <-chan T) {
 	for range ch {
 	}
