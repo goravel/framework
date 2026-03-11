@@ -368,6 +368,11 @@ func TestWhereIn(t *testing.T) {
 	if filtered.Count() != 2 {
 		t.Errorf("Expected 2 items, got %d", filtered.Count())
 	}
+
+	filtered = c.WhereIn("Age", 25, 35)
+	if filtered.Count() != 2 {
+		t.Errorf("Expected 2 items with variadic values, got %d", filtered.Count())
+	}
 }
 
 func TestPluck(t *testing.T) {
@@ -596,6 +601,14 @@ func TestWhereEnhanced(t *testing.T) {
 	nameNotLikeTest := c.Where("Name", "not like", "test")
 	if nameNotLikeTest.Count() != 5 { // All users since none have 'test' in name
 		t.Errorf("Expected 5 users without 'test' in name, got %d", nameNotLikeTest.Count())
+	}
+
+	type Product struct {
+		Price int
+	}
+	products := Of([]Product{{Price: 100}})
+	if products.Where("Price", "=", "100").Count() != 1 {
+		t.Error("Expected equality where to match numerically equivalent string and int values")
 	}
 }
 
@@ -1211,14 +1224,14 @@ func TestDoesnt(t *testing.T) {
 
 func TestDuplicates(t *testing.T) {
 	c := New(1, 2, 2, 3, 3, 3, 4)
-	if !reflect.DeepEqual(c.Duplicates().All(), []int{2, 3, 3}) {
+	if !reflect.DeepEqual(c.Duplicates().All(), []int{2, 3}) {
 		t.Error("Expected correct duplicates")
 	}
-	if New(1, 2, 3, 4, 5).Duplicates().Count() != 0 || New(5, 5, 5, 5).Duplicates().Count() != 3 || New[int]().Duplicates().Count() != 0 {
+	if New(1, 2, 3, 4, 5).Duplicates().Count() != 0 || New(5, 5, 5, 5).Duplicates().Count() != 1 || New[int]().Duplicates().Count() != 0 {
 		t.Error("Expected correct duplicate counts")
 	}
-	if New("apple", "banana", "apple", "cherry", "banana", "apple").Duplicates().Count() != 3 {
-		t.Error("Expected 3 duplicate strings")
+	if New("apple", "banana", "apple", "cherry", "banana", "apple").Duplicates().Count() != 2 {
+		t.Error("Expected 2 duplicate strings")
 	}
 }
 
@@ -1774,6 +1787,18 @@ func TestSplice(t *testing.T) {
 	}
 	if c.Splice(-2, 1, 99).All()[3] != 99 {
 		t.Error("Expected negative index to work")
+	}
+	if !reflect.DeepEqual(c.Splice(2, -1, 8).All(), []int{1, 2, 8, 3, 4, 5}) {
+		t.Error("Expected negative deleteCount to be treated as 0")
+	}
+}
+
+func TestZip(t *testing.T) {
+	if !reflect.DeepEqual(New(1, 2).Zip(New(3)), [][]int{{1, 3}}) {
+		t.Error("Expected zip to stop at shorter collection")
+	}
+	if !reflect.DeepEqual(New(1).Zip(New(2, 3)), [][]int{{1, 2}}) {
+		t.Error("Expected zip to stop at shorter collection when first is shorter")
 	}
 }
 

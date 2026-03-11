@@ -9,12 +9,18 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
 type Collection[T any] struct {
 	items []T
 }
+
+var (
+	randomMu  sync.Mutex
+	randomGen = rand.New(rand.NewSource(time.Now().UnixNano()))
+)
 
 func (c *Collection[T]) After(value T) *T {
 	for i, item := range c.items {
@@ -259,11 +265,13 @@ func (c *Collection[T]) Dump() *Collection[T] {
 
 func (c *Collection[T]) Duplicates() *Collection[T] {
 	seen := make(map[string]bool)
+	added := make(map[string]bool)
 	var duplicates []T
 
 	for _, item := range c.items {
 		key := fmt.Sprintf("%v", item)
-		if seen[key] {
+		if seen[key] && !added[key] {
+			added[key] = true
 			duplicates = append(duplicates, item)
 		} else {
 			seen[key] = true
@@ -524,7 +532,7 @@ func (c *Collection[T]) Map(fn func(T, int) interface{}) *Collection[interface{}
 	return &Collection[interface{}]{items: mapped}
 }
 
-// MapCollect it will be renamed to Map in next release
+// MapCollect It will be renamed to Map in next release
 func MapCollect[T, R any](c *Collection[T], fn func(T, int) R) *Collection[R] {
 	mapped := make([]R, len(c.items))
 	for i, item := range c.items {
@@ -797,8 +805,10 @@ func (c *Collection[T]) Random() *T {
 	if len(c.items) == 0 {
 		return nil
 	}
-	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
-	return &c.items[rng.Intn(len(c.items))]
+	randomMu.Lock()
+	defer randomMu.Unlock()
+
+	return &c.items[randomGen.Intn(len(c.items))]
 }
 
 func Reduce[T, R any](c *Collection[T], fn func(R, T, int) R, initial R) R {
@@ -963,6 +973,9 @@ func (c *Collection[T]) Splice(start, deleteCount int, replacement ...T) *Collec
 	}
 	if start > len(c.items) {
 		start = len(c.items)
+	}
+	if deleteCount < 0 {
+		deleteCount = 0
 	}
 
 	end := start + deleteCount
@@ -1169,9 +1182,10 @@ func (c *Collection[T]) Where(params ...interface{}) *Collection[T] {
 	}
 }
 
-func (c *Collection[T]) WhereIn(field string, values []interface{}) *Collection[T] {
+func (c *Collection[T]) WhereIn(field string, values ...interface{}) *Collection[T] {
+	normalizedValues := normalizeInValues(values)
 	valueMap := make(map[string]bool)
-	for _, v := range values {
+	for _, v := range normalizedValues {
 		valueMap[fmt.Sprintf("%v", v)] = true
 	}
 
@@ -1184,9 +1198,10 @@ func (c *Collection[T]) WhereIn(field string, values []interface{}) *Collection[
 	})
 }
 
-func (c *Collection[T]) WhereNotIn(field string, values []interface{}) *Collection[T] {
+func (c *Collection[T]) WhereNotIn(field string, values ...interface{}) *Collection[T] {
+	normalizedValues := normalizeInValues(values)
 	valueMap := make(map[string]bool)
-	for _, v := range values {
+	for _, v := range normalizedValues {
 		valueMap[fmt.Sprintf("%v", v)] = true
 	}
 
@@ -1218,21 +1233,14 @@ func (c *Collection[T]) Wrap(wrapper interface{}) interface{} {
 }
 
 func (c *Collection[T]) Zip(other *Collection[T]) [][]T {
-	maxLen := len(c.items)
-	if len(other.items) > maxLen {
-		maxLen = len(other.items)
+	minLen := len(c.items)
+	if len(other.items) < minLen {
+		minLen = len(other.items)
 	}
 
-	var result [][]T
-	for i := 0; i < maxLen; i++ {
-		var pair []T
-		if i < len(c.items) {
-			pair = append(pair, c.items[i])
-		}
-		if i < len(other.items) {
-			pair = append(pair, other.items[i])
-		}
-		result = append(result, pair)
+	result := make([][]T, 0, minLen)
+	for i := 0; i < minLen; i++ {
+		result = append(result, []T{c.items[i], other.items[i]})
 	}
 
 	return result
@@ -1267,9 +1275,9 @@ func compareFieldValue(item interface{}, field string, operator string, value in
 
 	switch operator {
 	case "=", "==":
-		return reflect.DeepEqual(*fieldValue, value)
+		return valuesEqual(*fieldValue, value)
 	case "!=":
-		return !reflect.DeepEqual(*fieldValue, value)
+		return !valuesEqual(*fieldValue, value)
 	case ">":
 		return compareValues(*fieldValue, value) > 0
 	case ">=":
@@ -1308,6 +1316,41 @@ func compareValues(a, b interface{}) int {
 		return 1
 	}
 	return 0
+}
+
+func normalizeInValues(values []interface{}) []interface{} {
+	if len(values) == 1 {
+		if expanded, ok := values[0].([]interface{}); ok {
+			return expanded
+		}
+	}
+
+	return values
+}
+
+func valuesEqual(a, b any) bool {
+	if reflect.DeepEqual(a, b) {
+		return true
+	}
+
+	if !isSimpleComparable(a) || !isSimpleComparable(b) {
+		return false
+	}
+
+	return compareValues(a, b) == 0
+}
+
+func isSimpleComparable(value any) bool {
+	switch reflect.TypeOf(value).Kind() {
+	case reflect.Bool,
+		reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr,
+		reflect.Float32, reflect.Float64,
+		reflect.String:
+		return true
+	default:
+		return false
+	}
 }
 
 func getFieldValue(item interface{}, field string) *interface{} {

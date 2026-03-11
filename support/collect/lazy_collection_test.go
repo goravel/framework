@@ -370,6 +370,17 @@ func TestLazyIterator(t *testing.T) {
 	}
 }
 
+func TestLazyIteratorClosedChannel(t *testing.T) {
+	ch := make(chan int)
+	close(ch)
+
+	iter := LazyFromChannel(ch).Iterator()
+	value, ok := iter.Next()
+	if ok {
+		t.Errorf("Expected closed channel iterator to return ok=false, got value=%v", value)
+	}
+}
+
 func TestLazyCollect_Convert(t *testing.T) {
 	lazy := LazyRange(1, 6)
 	collection := lazy.Collect()
@@ -429,6 +440,37 @@ func TestLazyFromChannel(t *testing.T) {
 	if !reflect.DeepEqual(result, expected) {
 		t.Errorf("Expected %v, got %v", expected, result)
 	}
+}
+
+func TestLazyEarlyReturnMethodsDrainChannel(t *testing.T) {
+	assertDrained := func(t *testing.T, call func(*LazyCollection[int])) {
+		t.Helper()
+
+		source := make(chan int)
+		done := make(chan struct{})
+		go func() {
+			defer close(done)
+			for i := 1; i <= 5; i++ {
+				source <- i
+			}
+			close(source)
+		}()
+
+		call(LazyFromChannel(source))
+
+		select {
+		case <-done:
+		case <-time.After(100 * time.Millisecond):
+			t.Fatal("expected source channel sender to finish")
+		}
+	}
+
+	assertDrained(t, func(lc *LazyCollection[int]) { _ = lc.First() })
+	assertDrained(t, func(lc *LazyCollection[int]) { _ = lc.FirstWhere(func(item int) bool { return item == 2 }) })
+	assertDrained(t, func(lc *LazyCollection[int]) { _ = lc.Every(func(item int) bool { return item < 2 }) })
+	assertDrained(t, func(lc *LazyCollection[int]) { _ = lc.Some(func(item int) bool { return item == 2 }) })
+	assertDrained(t, func(lc *LazyCollection[int]) { _ = lc.Take(1).All() })
+	assertDrained(t, func(lc *LazyCollection[int]) { _ = lc.TakeWhile(func(item int) bool { return item < 2 }).All() })
 }
 
 func TestLazyFromFunc(t *testing.T) {

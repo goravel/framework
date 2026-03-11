@@ -211,6 +211,7 @@ func (lc *LazyCollection[T]) Every(predicate func(T) bool) bool {
 	ch := lc.execute()
 	for item := range ch {
 		if !predicate(item) {
+			go drainChannel(ch)
 			return false
 		}
 	}
@@ -245,6 +246,7 @@ func (lc *LazyCollection[T]) Filter(predicate func(T, int) bool) *LazyCollection
 func (lc *LazyCollection[T]) First() *T {
 	ch := lc.execute()
 	for item := range ch {
+		go drainChannel(ch)
 		return &item
 	}
 	return nil
@@ -262,6 +264,7 @@ func (lc *LazyCollection[T]) FirstWhere(predicate func(T) bool) *T {
 	ch := lc.execute()
 	for item := range ch {
 		if predicate(item) {
+			go drainChannel(ch)
 			return &item
 		}
 	}
@@ -486,34 +489,34 @@ func LazyRepeat[T any](value T, count int) *LazyCollection[T] {
 
 func (lc *LazyCollection[T]) Max(keyFunc func(T) float64) float64 {
 	ch := lc.execute()
-	var max float64
+	var maxVal float64
 	first := true
 
 	for item := range ch {
 		val := keyFunc(item)
-		if first || val > max {
-			max = val
+		if first || val > maxVal {
+			maxVal = val
 			first = false
 		}
 	}
 
-	return max
+	return maxVal
 }
 
 func (lc *LazyCollection[T]) Min(keyFunc func(T) float64) float64 {
 	ch := lc.execute()
-	var min float64
+	var minVal float64
 	first := true
 
 	for item := range ch {
 		val := keyFunc(item)
-		if first || val < min {
-			min = val
+		if first || val < minVal {
+			minVal = val
 			first = false
 		}
 	}
 
-	return min
+	return minVal
 }
 
 func (lc *LazyCollection[T]) Partition(predicate func(T) bool) (*Collection[T], *Collection[T]) {
@@ -614,6 +617,7 @@ func (lc *LazyCollection[T]) Some(predicate func(T) bool) bool {
 	ch := lc.execute()
 	for item := range ch {
 		if predicate(item) {
+			go drainChannel(ch)
 			return true
 		}
 	}
@@ -666,6 +670,7 @@ func (lc *LazyCollection[T]) Take(n int) *LazyCollection[T] {
 			taken := 0
 			for item := range input {
 				if taken >= n {
+					go drainChannel(input)
 					break
 				}
 				output <- item
@@ -691,6 +696,7 @@ func (lc *LazyCollection[T]) TakeWhile(predicate func(T) bool) *LazyCollection[T
 			defer close(output)
 			for item := range input {
 				if !predicate(item) {
+					go drainChannel(input)
 					break
 				}
 				output <- item
@@ -814,9 +820,10 @@ func (lc *LazyCollection[T]) Where(params ...interface{}) *LazyCollection[T] {
 	}
 }
 
-func (lc *LazyCollection[T]) WhereIn(field string, values []interface{}) *LazyCollection[T] {
+func (lc *LazyCollection[T]) WhereIn(field string, values ...interface{}) *LazyCollection[T] {
+	normalizedValues := normalizeInValues(values)
 	valueMap := make(map[string]bool)
-	for _, v := range values {
+	for _, v := range normalizedValues {
 		valueMap[fmt.Sprintf("%v", v)] = true
 	}
 
@@ -829,9 +836,10 @@ func (lc *LazyCollection[T]) WhereIn(field string, values []interface{}) *LazyCo
 	})
 }
 
-func (lc *LazyCollection[T]) WhereNotIn(field string, values []interface{}) *LazyCollection[T] {
+func (lc *LazyCollection[T]) WhereNotIn(field string, values ...interface{}) *LazyCollection[T] {
+	normalizedValues := normalizeInValues(values)
 	valueMap := make(map[string]bool)
-	for _, v := range values {
+	for _, v := range normalizedValues {
 		valueMap[fmt.Sprintf("%v", v)] = true
 	}
 
@@ -852,10 +860,12 @@ func (lc *LazyCollection[T]) Zip(other *LazyCollection[T]) [][]T {
 	for item1 := range ch1 {
 		item2, ok2 := <-ch2
 		if !ok2 {
+			go drainChannel(ch1)
 			break
 		}
 		result = append(result, []T{item1, item2})
 	}
+	go drainChannel(ch2)
 
 	return result
 }
@@ -868,4 +878,9 @@ func (lc *LazyCollection[T]) execute() <-chan T {
 	}
 
 	return ch
+}
+
+func drainChannel[T any](ch <-chan T) {
+	for range ch {
+	}
 }
