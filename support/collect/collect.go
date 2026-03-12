@@ -50,15 +50,6 @@ func Map[T any, R any](collection []T, iteratee func(item T, index int) R) []R {
 	return lo.Map(collection, iteratee)
 }
 
-// MapCollect manipulates a collection and transforms it to a collection of another type.
-func MapCollect[T, R any](c *Collection[T], fn func(T, int) R) *Collection[R] {
-	mapped := make([]R, len(c.items))
-	for i, item := range c.items {
-		mapped[i] = fn(item, i)
-	}
-	return &Collection[R]{items: mapped}
-}
-
 // Max searches the maximum value of a collection.
 func Max[T constraints.Ordered](collection []T) T {
 	return lo.Max(collection)
@@ -72,14 +63,6 @@ func Merge[K comparable, V any](maps ...map[K]V) map[K]V {
 // Min search the minimum value of a collection.
 func Min[T constraints.Ordered](collection []T) T {
 	return lo.Min(collection)
-}
-
-func Reduce[T, R any](c *Collection[T], fn func(R, T, int) R, initial R) R {
-	result := initial
-	for i, item := range c.items {
-		result = fn(result, item, i)
-	}
-	return result
 }
 
 // Reverse reverses array so that the first element becomes the last, the second element becomes the second to last, and so on.

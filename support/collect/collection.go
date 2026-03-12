@@ -717,10 +717,15 @@ func (c *Collection[T]) Reject(predicate func(T, int) bool) *Collection[T] {
 func (c *Collection[T]) Replace(replacements map[int]T) *Collection[T] {
 	result := c.Clone()
 	for index, value := range replacements {
-		if index < 0 || index >= len(result.items) {
+		if index < 0 {
 			continue
 		}
-		result.items[index] = value
+
+		if index < len(result.items) {
+			result.items[index] = value
+		} else {
+			result.items = append(result.items, value)
+		}
 	}
 	return result
 }
