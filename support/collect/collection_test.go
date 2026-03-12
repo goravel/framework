@@ -1227,7 +1227,168 @@ func TestCollectionWhereNullVariants(t *testing.T) {
 	assert.Equal(t, []user{{Name: "bob", Age: 30, DeletedAt: &deleted}}, users.WhereNotIn("Age", []any{20, 40}).All())
 }
 
-func TestNormalizeInValues(t *testing.T) {
-	assert.Equal(t, []any{1, 2, 3}, normalizeInValues([]any{[]any{1, 2, 3}}))
-	assert.Equal(t, []any{1, 2, 3}, normalizeInValues([]any{1, 2, 3}))
+func TestGetFieldValue(t *testing.T) {
+	type item struct {
+		Name string
+		Age  int
+		Ptr  *string
+	}
+
+	s := "hello"
+	obj := item{Name: "Alice", Age: 30, Ptr: &s}
+
+	// existing field
+	v := getFieldValue(obj, "Name")
+	assert.NotNil(t, v)
+	assert.Equal(t, "Alice", *v)
+
+	// numeric field
+	v = getFieldValue(obj, "Age")
+	assert.NotNil(t, v)
+	assert.Equal(t, 30, *v)
+
+	// pointer field that is non-nil
+	v = getFieldValue(obj, "Ptr")
+	assert.NotNil(t, v)
+
+	// pointer field that is nil
+	obj.Ptr = nil
+	v = getFieldValue(obj, "Ptr")
+	assert.Nil(t, v)
+
+	// pointer to struct
+	v = getFieldValue(&obj, "Name")
+	assert.NotNil(t, v)
+	assert.Equal(t, "Alice", *v)
+
+	// non-existent field
+	v = getFieldValue(obj, "Missing")
+	assert.Nil(t, v)
+
+	// non-struct value
+	v = getFieldValue(42, "whatever")
+	assert.Nil(t, v)
+}
+
+func TestIsSimpleComparable(t *testing.T) {
+	assert.True(t, isSimpleComparable(42))
+	assert.True(t, isSimpleComparable(int8(1)))
+	assert.True(t, isSimpleComparable(int16(1)))
+	assert.True(t, isSimpleComparable(int32(1)))
+	assert.True(t, isSimpleComparable(int64(1)))
+	assert.True(t, isSimpleComparable(uint(1)))
+	assert.True(t, isSimpleComparable(uint8(1)))
+	assert.True(t, isSimpleComparable(uint16(1)))
+	assert.True(t, isSimpleComparable(uint32(1)))
+	assert.True(t, isSimpleComparable(uint64(1)))
+	assert.True(t, isSimpleComparable(float32(1.0)))
+	assert.True(t, isSimpleComparable(float64(1.0)))
+	assert.True(t, isSimpleComparable("hello"))
+	assert.True(t, isSimpleComparable(true))
+
+	// nil is not simple comparable
+	assert.False(t, isSimpleComparable(nil))
+
+	// slice is not simple comparable
+	assert.False(t, isSimpleComparable([]int{1, 2}))
+
+	// struct is not simple comparable
+	assert.False(t, isSimpleComparable(struct{ X int }{1}))
+}
+
+func TestCompareValues(t *testing.T) {
+	// numeric comparisons
+	assert.Equal(t, -1, compareValues(1, 2))
+	assert.Equal(t, 0, compareValues(2, 2))
+	assert.Equal(t, 1, compareValues(3, 2))
+
+	// float numeric comparisons
+	assert.Equal(t, -1, compareValues(1.5, 2.5))
+	assert.Equal(t, 0, compareValues(2.5, 2.5))
+	assert.Equal(t, 1, compareValues(3.5, 2.5))
+
+	// mixed int / float
+	assert.Equal(t, 0, compareValues(2, 2.0))
+	assert.Equal(t, -1, compareValues(1, 1.5))
+
+	// string comparisons (non-numeric)
+	assert.Equal(t, -1, compareValues("apple", "banana"))
+	assert.Equal(t, 0, compareValues("apple", "apple"))
+	assert.Equal(t, 1, compareValues("banana", "apple"))
+}
+
+func TestValuesEqual(t *testing.T) {
+	// identical types
+	assert.True(t, valuesEqual(1, 1))
+	assert.True(t, valuesEqual("hello", "hello"))
+	assert.True(t, valuesEqual(1.5, 1.5))
+
+	// cross-type numeric equality via string conversion
+	assert.True(t, valuesEqual(int(2), float64(2.0)))
+	assert.True(t, valuesEqual(int64(3), int(3)))
+
+	// unequal values
+	assert.False(t, valuesEqual(1, 2))
+	assert.False(t, valuesEqual("a", "b"))
+
+	// non-simple comparable (slice) falls back to DeepEqual
+	assert.True(t, valuesEqual([]int{1, 2}, []int{1, 2}))
+	assert.False(t, valuesEqual([]int{1, 2}, []int{1, 3}))
+
+	// mixed simple and non-simple
+	assert.False(t, valuesEqual(1, []int{1}))
+}
+
+func TestCompareFieldValue(t *testing.T) {
+	type product struct {
+		Name  string
+		Price float64
+		Tag   *string
+	}
+
+	tag := "sale"
+	p := product{Name: "Widget", Price: 9.99, Tag: &tag}
+
+	// equality operators
+	assert.True(t, compareFieldValue(p, "Name", "=", "Widget"))
+	assert.True(t, compareFieldValue(p, "Name", "==", "Widget"))
+	assert.False(t, compareFieldValue(p, "Name", "=", "Gadget"))
+
+	// inequality
+	assert.True(t, compareFieldValue(p, "Name", "!=", "Gadget"))
+	assert.False(t, compareFieldValue(p, "Name", "!=", "Widget"))
+
+	// numeric comparison operators
+	assert.True(t, compareFieldValue(p, "Price", ">", 5.0))
+	assert.False(t, compareFieldValue(p, "Price", ">", 10.0))
+	assert.True(t, compareFieldValue(p, "Price", ">=", 9.99))
+	assert.True(t, compareFieldValue(p, "Price", "<", 20.0))
+	assert.False(t, compareFieldValue(p, "Price", "<", 5.0))
+	assert.True(t, compareFieldValue(p, "Price", "<=", 9.99))
+
+	// like / not like
+	assert.True(t, compareFieldValue(p, "Name", "like", "wid"))
+	assert.True(t, compareFieldValue(p, "Name", "like", "WIDGET"))
+	assert.False(t, compareFieldValue(p, "Name", "like", "xyz"))
+	assert.True(t, compareFieldValue(p, "Name", "not like", "xyz"))
+	assert.False(t, compareFieldValue(p, "Name", "not like", "widget"))
+
+	// unknown operator
+	assert.False(t, compareFieldValue(p, "Name", "~=", "Widget"))
+
+	// value is nil: field is non-nil
+	assert.False(t, compareFieldValue(p, "Name", "=", nil))
+	assert.True(t, compareFieldValue(p, "Name", "!=", nil))
+	assert.False(t, compareFieldValue(p, "Name", ">", nil))
+
+	// fieldValue is nil (nil pointer field), value is non-nil
+	p.Tag = nil
+	assert.False(t, compareFieldValue(p, "Tag", "=", "sale"))
+	assert.True(t, compareFieldValue(p, "Tag", "!=", "sale"))
+	assert.False(t, compareFieldValue(p, "Tag", ">", "sale"))
+
+	// both nil
+	assert.True(t, compareFieldValue(p, "Tag", "=", nil))
+	assert.False(t, compareFieldValue(p, "Tag", "!=", nil))
+	assert.False(t, compareFieldValue(p, "Tag", ">", nil))
 }

@@ -1199,16 +1199,6 @@ func compareValues(a, b any) int {
 	return 0
 }
 
-func normalizeInValues(values []any) []any {
-	if len(values) == 1 {
-		if expanded, ok := values[0].([]any); ok {
-			return expanded
-		}
-	}
-
-	return values
-}
-
 func valuesEqual(a, b any) bool {
 	if reflect.DeepEqual(a, b) {
 		return true
