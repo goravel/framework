@@ -9,11 +9,25 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
+)
+
+var (
+	randomMu  sync.Mutex
+	randomGen = rand.New(rand.NewSource(time.Now().UnixNano()))
 )
 
 type Collection[T any] struct {
 	items []T
+}
+
+func New[T any](items ...T) *Collection[T] {
+	return &Collection[T]{items: items}
+}
+
+func Of[T any](items []T) *Collection[T] {
+	return &Collection[T]{items: items}
 }
 
 func (c *Collection[T]) After(value T) *T {
@@ -29,15 +43,11 @@ func (c *Collection[T]) All() []T {
 	return c.items
 }
 
-func (c *Collection[T]) Average(keyFunc func(T) float64) float64 {
+func (c *Collection[T]) Avg(keyFunc func(T) float64) float64 {
 	if len(c.items) == 0 {
 		return 0
 	}
 	return c.Sum(keyFunc) / float64(len(c.items))
-}
-
-func (c *Collection[T]) Avg(keyFunc func(T) float64) float64 {
-	return c.Average(keyFunc)
 }
 
 func (c *Collection[T]) Before(value T) *T {
@@ -112,20 +122,6 @@ func (c *Collection[T]) Collapse() *Collection[T] {
 	return &Collection[T]{items: flattened}
 }
 
-func Of[T any](items []T) *Collection[T] {
-	return &Collection[T]{items: items}
-}
-
-func (c *Collection[T]) Combine(keys []string) map[string]T {
-	result := make(map[string]T)
-	for i, key := range keys {
-		if i < len(c.items) {
-			result[key] = c.items[i]
-		}
-	}
-	return result
-}
-
 func (c *Collection[T]) Concat(other *Collection[T]) *Collection[T] {
 	merged := make([]T, len(c.items)+len(other.items))
 	copy(merged, c.items)
@@ -174,11 +170,6 @@ func (c *Collection[T]) CrossJoin(other *Collection[T]) [][]T {
 	return result
 }
 
-func (c *Collection[T]) Debug() *Collection[T] {
-	fmt.Printf("Collection contents: %+v\n", c.items)
-	return c
-}
-
 func (c *Collection[T]) Diff(other *Collection[T]) *Collection[T] {
 	otherMap := make(map[string]bool)
 	for _, item := range other.items {
@@ -215,55 +206,27 @@ func (c *Collection[T]) DiffKeys(other *Collection[T]) *Collection[T] {
 	return &Collection[T]{items: diff}
 }
 
-func (c *Collection[T]) Doesnt(value T) bool {
+func (c *Collection[T]) DoesntContain(value T) bool {
 	return !c.Contains(value)
 }
 
-func (c *Collection[T]) Dot() map[string]interface{} {
-	result := make(map[string]interface{})
+func (c *Collection[T]) Dot() map[string]any {
+	result := make(map[string]any)
 	for i, item := range c.items {
 		result[strconv.Itoa(i)] = item
 	}
 	return result
 }
 
-func (c *Collection[T]) Drop(n int) *Collection[T] {
-	if n >= len(c.items) {
-		return &Collection[T]{items: []T{}}
-	}
-	return &Collection[T]{items: c.items[n:]}
-}
-
-func (c *Collection[T]) DropUntil(predicate func(T) bool) *Collection[T] {
-	for i, item := range c.items {
-		if predicate(item) {
-			return &Collection[T]{items: c.items[i:]}
-		}
-	}
-	return &Collection[T]{items: []T{}}
-}
-
-func (c *Collection[T]) DropWhile(predicate func(T) bool) *Collection[T] {
-	for i, item := range c.items {
-		if !predicate(item) {
-			return &Collection[T]{items: c.items[i:]}
-		}
-	}
-	return &Collection[T]{items: []T{}}
-}
-
-func (c *Collection[T]) Dump() *Collection[T] {
-	fmt.Printf("Collection: %+v\n", c.items)
-	return c
-}
-
 func (c *Collection[T]) Duplicates() *Collection[T] {
 	seen := make(map[string]bool)
+	added := make(map[string]bool)
 	var duplicates []T
 
 	for _, item := range c.items {
 		key := fmt.Sprintf("%v", item)
-		if seen[key] {
+		if seen[key] && !added[key] {
+			added[key] = true
 			duplicates = append(duplicates, item)
 		} else {
 			seen[key] = true
@@ -347,13 +310,6 @@ func (c *Collection[T]) First() *T {
 	return &c.items[0]
 }
 
-func (c *Collection[T]) FirstOrFail() (*T, error) {
-	if len(c.items) == 0 {
-		return nil, fmt.Errorf("collection is empty")
-	}
-	return &c.items[0], nil
-}
-
 func (c *Collection[T]) FirstWhere(predicate func(T) bool) *T {
 	for _, item := range c.items {
 		if predicate(item) {
@@ -371,18 +327,6 @@ func (c *Collection[T]) FlatMap(fn func(T) []T) *Collection[T] {
 	return &Collection[T]{items: result}
 }
 
-func (c *Collection[T]) Flatten() *Collection[T] {
-	return c.Collapse()
-}
-
-func (c *Collection[T]) Flip() map[string]string {
-	result := make(map[string]string)
-	for i, item := range c.items {
-		result[fmt.Sprintf("%v", item)] = strconv.Itoa(i)
-	}
-	return result
-}
-
 func (c *Collection[T]) ForPage(page, perPage int) *Collection[T] {
 	start := (page - 1) * perPage
 	if start >= len(c.items) {
@@ -398,7 +342,8 @@ func (c *Collection[T]) ForPage(page, perPage int) *Collection[T] {
 }
 
 func (c *Collection[T]) Forget(indices ...int) *Collection[T] {
-	return c.Except(indices...)
+	c.items = c.Except(indices...).items
+	return c
 }
 
 func (c *Collection[T]) Get(index int) *T {
@@ -406,20 +351,6 @@ func (c *Collection[T]) Get(index int) *T {
 		return nil
 	}
 	return &c.items[index]
-}
-
-func (c *Collection[T]) GroupBy(keyFunc func(T) string) map[string]*Collection[T] {
-	groups := make(map[string]*Collection[T])
-
-	for _, item := range c.items {
-		key := keyFunc(item)
-		if _, exists := groups[key]; !exists {
-			groups[key] = &Collection[T]{items: []T{}}
-		}
-		groups[key].items = append(groups[key].items, item)
-	}
-
-	return groups
 }
 
 func (c *Collection[T]) Has(index int) bool {
@@ -433,14 +364,6 @@ func (c *Collection[T]) HasAny(indices ...int) bool {
 		}
 	}
 	return false
-}
-
-func (c *Collection[T]) Implode(separator string) string {
-	var parts []string
-	for _, item := range c.items {
-		parts = append(parts, fmt.Sprintf("%v", item))
-	}
-	return strings.Join(parts, separator)
 }
 
 func (c *Collection[T]) Intersect(other *Collection[T]) *Collection[T] {
@@ -478,7 +401,11 @@ func (c *Collection[T]) IsNotEmpty() bool {
 }
 
 func (c *Collection[T]) Join(separator string) string {
-	return c.Implode(separator)
+	var parts []string
+	for _, item := range c.items {
+		parts = append(parts, fmt.Sprintf("%v", item))
+	}
+	return strings.Join(parts, separator)
 }
 
 func (c *Collection[T]) KeyBy(keyFunc func(T) string) map[string]T {
@@ -505,36 +432,16 @@ func (c *Collection[T]) Last() *T {
 	return &c.items[len(c.items)-1]
 }
 
-func (c *Collection[T]) LastOrFail() (*T, error) {
-	if len(c.items) == 0 {
-		return nil, fmt.Errorf("collection is empty")
-	}
-	return &c.items[len(c.items)-1], nil
-}
-
-func (c *Collection[T]) Make(items ...T) *Collection[T] {
-	return &Collection[T]{items: items}
-}
-
-func (c *Collection[T]) Map(fn func(T, int) interface{}) *Collection[interface{}] {
-	mapped := make([]interface{}, len(c.items))
+func (c *Collection[T]) Map(fn func(T, int) any) *Collection[any] {
+	mapped := make([]any, len(c.items))
 	for i, item := range c.items {
 		mapped[i] = fn(item, i)
 	}
-	return &Collection[interface{}]{items: mapped}
-}
-
-// MapCollect it will be renamed to Map in next release
-func MapCollect[T, R any](c *Collection[T], fn func(T, int) R) *Collection[R] {
-	mapped := make([]R, len(c.items))
-	for i, item := range c.items {
-		mapped[i] = fn(item, i)
-	}
-	return &Collection[R]{items: mapped}
+	return &Collection[any]{items: mapped}
 }
 
 // Reduce reduces the collection to a single value using the given reducer function
-func (c *Collection[T]) Reduce(fn func(acc interface{}, item T, index int) interface{}, initial interface{}) interface{} {
+func (c *Collection[T]) Reduce(fn func(acc any, item T, index int) any, initial any) any {
 	acc := initial
 	for i, item := range c.items {
 		acc = fn(acc, item, i)
@@ -544,9 +451,9 @@ func (c *Collection[T]) Reduce(fn func(acc interface{}, item T, index int) inter
 
 // MapInto maps each element of the collection using reflection to cast to target type
 // and returns a new collection of the target type
-func (c *Collection[T]) MapInto(target interface{}) *Collection[interface{}] {
+func (c *Collection[T]) MapInto(target any) *Collection[any] {
 	targetType := reflect.TypeOf(target)
-	mapped := make([]interface{}, len(c.items))
+	mapped := make([]any, len(c.items))
 
 	for i, item := range c.items {
 		itemValue := reflect.ValueOf(item)
@@ -561,7 +468,7 @@ func (c *Collection[T]) MapInto(target interface{}) *Collection[interface{}] {
 		}
 	}
 
-	return &Collection[interface{}]{items: mapped}
+	return &Collection[any]{items: mapped}
 }
 
 func (c *Collection[T]) MapSpread(fn func(...T) T) *Collection[T] {
@@ -592,8 +499,18 @@ func (c *Collection[T]) MapToDictionary(keyFunc func(T) string) map[string][]T {
 	return result
 }
 
-func (c *Collection[T]) MapToGroups(keyFunc func(T) string) map[string]*Collection[T] {
-	return c.GroupBy(keyFunc)
+func (c *Collection[T]) MapToGroups(keyFunc func(T, int) string) map[string]*Collection[T] {
+	groups := make(map[string]*Collection[T])
+
+	for index, item := range c.items {
+		key := keyFunc(item, index)
+		if _, exists := groups[key]; !exists {
+			groups[key] = &Collection[T]{items: []T{}}
+		}
+		groups[key].items = append(groups[key].items, item)
+	}
+
+	return groups
 }
 
 func (c *Collection[T]) MapWithKeys(fn func(T) (string, T)) map[string]T {
@@ -638,14 +555,6 @@ func (c *Collection[T]) Median(keyFunc func(T) float64) float64 {
 	return values[n/2]
 }
 
-func (c *Collection[T]) Merge(other *Collection[T]) *Collection[T] {
-	return c.Concat(other)
-}
-
-func (c *Collection[T]) MergeRecursive(other *Collection[T]) *Collection[T] {
-	return c.Concat(other)
-}
-
 func (c *Collection[T]) Min(keyFunc func(T) float64) float64 {
 	if len(c.items) == 0 {
 		return 0
@@ -676,10 +585,6 @@ func (c *Collection[T]) Mode(keyFunc func(T) string) []string {
 		}
 	}
 	return modes
-}
-
-func New[T any](items ...T) *Collection[T] {
-	return &Collection[T]{items: items}
 }
 
 func (c *Collection[T]) Nth(n int) *Collection[T] {
@@ -733,12 +638,12 @@ func (c *Collection[T]) Partition(predicate func(T) bool) (*Collection[T], *Coll
 	return &Collection[T]{items: truthy}, &Collection[T]{items: falsy}
 }
 
-func (c *Collection[T]) Pipe(fn func(*Collection[T]) interface{}) interface{} {
+func (c *Collection[T]) Pipe(fn func(*Collection[T]) any) any {
 	return fn(c)
 }
 
-func (c *Collection[T]) Pluck(field string) *Collection[interface{}] {
-	var result []interface{}
+func (c *Collection[T]) Pluck(field string) *Collection[any] {
+	var result []any
 
 	for _, item := range c.items {
 		v := reflect.ValueOf(item)
@@ -753,7 +658,7 @@ func (c *Collection[T]) Pluck(field string) *Collection[interface{}] {
 		}
 	}
 
-	return &Collection[interface{}]{items: result}
+	return &Collection[any]{items: result}
 }
 
 func (c *Collection[T]) Pop() *T {
@@ -797,16 +702,10 @@ func (c *Collection[T]) Random() *T {
 	if len(c.items) == 0 {
 		return nil
 	}
-	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
-	return &c.items[rng.Intn(len(c.items))]
-}
+	randomMu.Lock()
+	defer randomMu.Unlock()
 
-func Reduce[T, R any](c *Collection[T], fn func(R, T, int) R, initial R) R {
-	result := initial
-	for i, item := range c.items {
-		result = fn(result, item, i)
-	}
-	return result
+	return &c.items[randomGen.Intn(len(c.items))]
 }
 
 func (c *Collection[T]) Reject(predicate func(T, int) bool) *Collection[T] {
@@ -818,15 +717,17 @@ func (c *Collection[T]) Reject(predicate func(T, int) bool) *Collection[T] {
 func (c *Collection[T]) Replace(replacements map[int]T) *Collection[T] {
 	result := c.Clone()
 	for index, value := range replacements {
-		if index >= 0 && index < len(result.items) {
+		if index < 0 {
+			continue
+		}
+
+		if index < len(result.items) {
 			result.items[index] = value
+		} else {
+			result.items = append(result.items, value)
 		}
 	}
 	return result
-}
-
-func (c *Collection[T]) ReplaceRecursive(replacements map[int]T) *Collection[T] {
-	return c.Replace(replacements)
 }
 
 func (c *Collection[T]) Reverse() *Collection[T] {
@@ -878,43 +779,53 @@ func (c *Collection[T]) Shuffle() *Collection[T] {
 }
 
 func (c *Collection[T]) Skip(n int) *Collection[T] {
-	return c.Drop(n)
+	if n >= len(c.items) {
+		return &Collection[T]{items: []T{}}
+	}
+	return &Collection[T]{items: c.items[n:]}
 }
 
 func (c *Collection[T]) SkipUntil(predicate func(T) bool) *Collection[T] {
-	return c.DropUntil(predicate)
+	for i, item := range c.items {
+		if predicate(item) {
+			return &Collection[T]{items: c.items[i:]}
+		}
+	}
+	return &Collection[T]{items: []T{}}
 }
 
 func (c *Collection[T]) SkipWhile(predicate func(T) bool) *Collection[T] {
-	return c.DropWhile(predicate)
+	for i, item := range c.items {
+		if !predicate(item) {
+			return &Collection[T]{items: c.items[i:]}
+		}
+	}
+	return &Collection[T]{items: []T{}}
 }
 
-func (c *Collection[T]) Slice(start, length int) *Collection[T] {
-	if start < 0 {
-		start = len(c.items) + start
+func (c *Collection[T]) Slice(offset int, length ...int) *Collection[T] {
+	if offset < 0 {
+		offset = len(c.items) + offset
 	}
-	if start < 0 {
-		start = 0
+	if offset < 0 {
+		offset = 0
 	}
-	if start >= len(c.items) {
+	if offset >= len(c.items) {
 		return &Collection[T]{items: []T{}}
 	}
 
-	end := start + length
-	if end > len(c.items) {
-		end = len(c.items)
-	}
-
-	return &Collection[T]{items: c.items[start:end]}
-}
-
-func (c *Collection[T]) Some(predicate func(T) bool) bool {
-	for _, item := range c.items {
-		if predicate(item) {
-			return true
+	end := len(c.items)
+	if len(length) > 0 {
+		end = offset + length[0]
+		if end > len(c.items) {
+			end = len(c.items)
+		}
+		if end < offset {
+			end = offset
 		}
 	}
-	return false
+
+	return &Collection[T]{items: c.items[offset:end]}
 }
 
 func (c *Collection[T]) Sort(less func(T, T) bool) *Collection[T] {
@@ -946,14 +857,6 @@ func (c *Collection[T]) SortDesc(less func(T, T) bool) *Collection[T] {
 	})
 }
 
-func (c *Collection[T]) SortKeys() *Collection[T] {
-	return c.Clone()
-}
-
-func (c *Collection[T]) SortKeysDesc() *Collection[T] {
-	return c.Clone()
-}
-
 func (c *Collection[T]) Splice(start, deleteCount int, replacement ...T) *Collection[T] {
 	if start < 0 {
 		start = len(c.items) + start
@@ -964,18 +867,24 @@ func (c *Collection[T]) Splice(start, deleteCount int, replacement ...T) *Collec
 	if start > len(c.items) {
 		start = len(c.items)
 	}
+	if deleteCount < 0 {
+		deleteCount = 0
+	}
 
 	end := start + deleteCount
 	if end > len(c.items) {
 		end = len(c.items)
 	}
+	removed := make([]T, end-start)
+	copy(removed, c.items[start:end])
 
-	result := make([]T, start)
-	copy(result, c.items[:start])
+	result := make([]T, 0, start+len(replacement)+len(c.items)-end)
+	result = append(result, c.items[:start]...)
 	result = append(result, replacement...)
 	result = append(result, c.items[end:]...)
+	c.items = result
 
-	return &Collection[T]{items: result}
+	return &Collection[T]{items: removed}
 }
 
 func (c *Collection[T]) Split(groups int) [][]T {
@@ -1025,19 +934,7 @@ func (c *Collection[T]) Tap(fn func(*Collection[T])) *Collection[T] {
 	return c
 }
 
-func (c *Collection[T]) Times(n int, fn func(int) T) *Collection[T] {
-	items := make([]T, n)
-	for i := 0; i < n; i++ {
-		items[i] = fn(i)
-	}
-	return &Collection[T]{items: items}
-}
-
-func (c *Collection[T]) ToArray() []T {
-	return c.items
-}
-
-func (c *Collection[T]) ToJSON() (string, error) {
+func (c *Collection[T]) ToJson() (string, error) {
 	data, err := json.Marshal(c.items)
 	if err != nil {
 		return "", err
@@ -1117,10 +1014,6 @@ func (c *Collection[T]) Unshift(items ...T) *Collection[T] {
 	return c
 }
 
-func (c *Collection[T]) Values() *Collection[T] {
-	return c.Clone()
-}
-
 func (c *Collection[T]) When(condition bool, fn func(*Collection[T]) *Collection[T]) *Collection[T] {
 	if condition {
 		return fn(c)
@@ -1136,7 +1029,7 @@ func (c *Collection[T]) WhenNotEmpty(fn func(*Collection[T]) *Collection[T]) *Co
 	return c.When(c.IsNotEmpty(), fn)
 }
 
-func (c *Collection[T]) Where(params ...interface{}) *Collection[T] {
+func (c *Collection[T]) Where(params ...any) *Collection[T] {
 	switch len(params) {
 	case 1:
 		// where(callback)
@@ -1169,7 +1062,7 @@ func (c *Collection[T]) Where(params ...interface{}) *Collection[T] {
 	}
 }
 
-func (c *Collection[T]) WhereIn(field string, values []interface{}) *Collection[T] {
+func (c *Collection[T]) WhereIn(field string, values []any) *Collection[T] {
 	valueMap := make(map[string]bool)
 	for _, v := range values {
 		valueMap[fmt.Sprintf("%v", v)] = true
@@ -1184,7 +1077,7 @@ func (c *Collection[T]) WhereIn(field string, values []interface{}) *Collection[
 	})
 }
 
-func (c *Collection[T]) WhereNotIn(field string, values []interface{}) *Collection[T] {
+func (c *Collection[T]) WhereNotIn(field string, values []any) *Collection[T] {
 	valueMap := make(map[string]bool)
 	for _, v := range values {
 		valueMap[fmt.Sprintf("%v", v)] = true
@@ -1213,10 +1106,6 @@ func (c *Collection[T]) WhereNull(field string) *Collection[T] {
 	})
 }
 
-func (c *Collection[T]) Wrap(wrapper interface{}) interface{} {
-	return wrapper
-}
-
 func (c *Collection[T]) Zip(other *Collection[T]) [][]T {
 	maxLen := len(c.items)
 	if len(other.items) > maxLen {
@@ -1238,7 +1127,7 @@ func (c *Collection[T]) Zip(other *Collection[T]) [][]T {
 	return result
 }
 
-func compareFieldValue(item interface{}, field string, operator string, value interface{}) bool {
+func compareFieldValue(item any, field string, operator string, value any) bool {
 	fieldValue := getFieldValue(item, field)
 
 	// Handle null comparisons
@@ -1267,9 +1156,9 @@ func compareFieldValue(item interface{}, field string, operator string, value in
 
 	switch operator {
 	case "=", "==":
-		return reflect.DeepEqual(*fieldValue, value)
+		return valuesEqual(*fieldValue, value)
 	case "!=":
-		return !reflect.DeepEqual(*fieldValue, value)
+		return !valuesEqual(*fieldValue, value)
 	case ">":
 		return compareValues(*fieldValue, value) > 0
 	case ">=":
@@ -1287,7 +1176,7 @@ func compareFieldValue(item interface{}, field string, operator string, value in
 	}
 }
 
-func compareValues(a, b interface{}) int {
+func compareValues(a, b any) int {
 	aStr := fmt.Sprintf("%v", a)
 	bStr := fmt.Sprintf("%v", b)
 
@@ -1310,7 +1199,41 @@ func compareValues(a, b interface{}) int {
 	return 0
 }
 
-func getFieldValue(item interface{}, field string) *interface{} {
+func valuesEqual(a, b any) bool {
+	if reflect.DeepEqual(a, b) {
+		return true
+	}
+
+	if !isSimpleComparable(a) || !isSimpleComparable(b) {
+		return false
+	}
+
+	return compareValues(a, b) == 0
+}
+
+func isSimpleComparable(value any) bool {
+	if value == nil {
+		return false
+	}
+
+	valueType := reflect.TypeOf(value)
+	if valueType == nil {
+		return false
+	}
+
+	switch valueType.Kind() {
+	case reflect.Bool,
+		reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr,
+		reflect.Float32, reflect.Float64,
+		reflect.String:
+		return true
+	default:
+		return false
+	}
+}
+
+func getFieldValue(item any, field string) *any {
 	v := reflect.ValueOf(item)
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()

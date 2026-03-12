@@ -2,8 +2,9 @@ package collect
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type TestStruct struct {
@@ -13,222 +14,126 @@ type TestStruct struct {
 }
 
 func TestNew(t *testing.T) {
-	c := New(1, 2, 3)
-	if c.Count() != 3 {
-		t.Errorf("Expected count 3, got %d", c.Count())
-	}
+	assert.Equal(t, 3, Of([]int{1, 2, 3}).Count())
 }
 
 func TestCollect(t *testing.T) {
-	items := []int{1, 2, 3, 4, 5}
-	c := Of(items)
-	if c.Count() != 5 {
-		t.Errorf("Expected count 5, got %d", c.Count())
-	}
+	assert.Equal(t, 5, Of([]int{1, 2, 3, 4, 5}).Count())
 }
 
 func TestAll(t *testing.T) {
 	items := []int{1, 2, 3}
-	c := Of(items)
-	all := c.All()
-	if !reflect.DeepEqual(all, items) {
-		t.Errorf("Expected %v, got %v", items, all)
-	}
+	assert.Equal(t, items, Of(items).All())
 }
 
 func TestCollectCount(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
-	if c.Count() != 5 {
-		t.Errorf("Expected count 5, got %d", c.Count())
-	}
+	assert.Equal(t, 5, Of([]int{1, 2, 3, 4, 5}).Count())
 }
 
 func TestIsEmpty(t *testing.T) {
-	c := New[int]()
-	if !c.IsEmpty() {
-		t.Error("Expected collection to be empty")
-	}
-
+	c := Of([]int{})
+	assert.True(t, c.IsEmpty())
 	c.Push(1)
-	if c.IsEmpty() {
-		t.Error("Expected collection to not be empty")
-	}
+	assert.False(t, c.IsEmpty())
 }
 
 func TestIsNotEmpty(t *testing.T) {
-	c := New(1, 2, 3)
-	if !c.IsNotEmpty() {
-		t.Error("Expected collection to not be empty")
-	}
+	assert.True(t, Of([]int{1, 2, 3}).IsNotEmpty())
 }
 
 func TestFirst(t *testing.T) {
-	c := New(1, 2, 3)
-	first := c.First()
-	if first == nil || *first != 1 {
-		t.Errorf("Expected first element to be 1, got %v", first)
-	}
+	first := Of([]int{1, 2, 3}).First()
+	assert.NotNil(t, first)
+	assert.Equal(t, 1, *first)
 }
 
 func TestLast(t *testing.T) {
-	c := New(1, 2, 3)
-	last := c.Last()
-	if last == nil || *last != 3 {
-		t.Errorf("Expected last element to be 3, got %v", last)
-	}
+	last := Of([]int{1, 2, 3}).Last()
+	assert.NotNil(t, last)
+	assert.Equal(t, 3, *last)
 }
 
 func TestPush(t *testing.T) {
-	c := New(1, 2)
+	c := Of([]int{1, 2})
 	c.Push(3, 4)
-	if c.Count() != 4 {
-		t.Errorf("Expected count 4, got %d", c.Count())
-	}
-	if *c.Last() != 4 {
-		t.Errorf("Expected last element to be 4, got %v", c.Last())
-	}
+	assert.Equal(t, 4, c.Count())
+	assert.Equal(t, 4, *c.Last())
 }
 
 func TestPop(t *testing.T) {
-	c := New(1, 2, 3)
+	c := Of([]int{1, 2, 3})
 	popped := c.Pop()
-	if popped == nil || *popped != 3 {
-		t.Errorf("Expected popped element to be 3, got %v", popped)
-	}
-	if c.Count() != 2 {
-		t.Errorf("Expected count 2, got %d", c.Count())
-	}
+	assert.NotNil(t, popped)
+	assert.Equal(t, 3, *popped)
+	assert.Equal(t, 2, c.Count())
 }
 
 func TestShift(t *testing.T) {
-	c := New(1, 2, 3)
+	c := Of([]int{1, 2, 3})
 	shifted := c.Shift()
-	if shifted == nil || *shifted != 1 {
-		t.Errorf("Expected shifted element to be 1, got %v", shifted)
-	}
-	if c.Count() != 2 {
-		t.Errorf("Expected count 2, got %d", c.Count())
-	}
+	assert.NotNil(t, shifted)
+	assert.Equal(t, 1, *shifted)
+	assert.Equal(t, 2, c.Count())
 }
 
 func TestUnshift(t *testing.T) {
-	c := New(2, 3)
+	c := Of([]int{2, 3})
 	c.Unshift(1)
-	if c.Count() != 3 {
-		t.Errorf("Expected count 3, got %d", c.Count())
-	}
-	if *c.First() != 1 {
-		t.Errorf("Expected first element to be 1, got %v", c.First())
-	}
+	assert.Equal(t, 3, c.Count())
+	assert.Equal(t, 1, *c.First())
 }
 
 func TestCollectFilter(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
+	c := Of([]int{1, 2, 3, 4, 5})
 	filtered := c.Filter(func(item int, index int) bool {
 		return item%2 == 0
 	})
-	expected := []int{2, 4}
-	if !reflect.DeepEqual(filtered.All(), expected) {
-		t.Errorf("Expected %v, got %v", expected, filtered.All())
-	}
+	assert.Equal(t, []int{2, 4}, filtered.All())
 }
 
 func TestCollectEach(t *testing.T) {
-	c := New(1, 2, 3)
+	c := Of([]int{1, 2, 3})
 	sum := 0
 	c.Each(func(item int, index int) {
 		sum += item
 	})
-	if sum != 6 {
-		t.Errorf("Expected sum 6, got %d", sum)
-	}
+	assert.Equal(t, 6, sum)
 }
 
 func TestContains(t *testing.T) {
-	c := New(1, 2, 3)
-	if !c.Contains(2) {
-		t.Error("Expected collection to contain 2")
-	}
-	if c.Contains(4) {
-		t.Error("Expected collection to not contain 4")
-	}
+	c := Of([]int{1, 2, 3})
+	assert.True(t, c.Contains(2))
+	assert.False(t, c.Contains(4))
 }
 
 func TestCollectUnique(t *testing.T) {
-	c := New(1, 2, 2, 3, 3, 3)
-	unique := c.Unique()
-	expected := []int{1, 2, 3}
-	if !reflect.DeepEqual(unique.All(), expected) {
-		t.Errorf("Expected %v, got %v", expected, unique.All())
-	}
+	assert.Equal(t, []int{1, 2, 3}, Of([]int{1, 2, 2, 3, 3, 3}).Unique().All())
 }
 
 func TestCollectReverse(t *testing.T) {
-	c := New(1, 2, 3)
-	reversed := c.Reverse()
-	expected := []int{3, 2, 1}
-	if !reflect.DeepEqual(reversed.All(), expected) {
-		t.Errorf("Expected %v, got %v", expected, reversed.All())
-	}
+	assert.Equal(t, []int{3, 2, 1}, Of([]int{1, 2, 3}).Reverse().All())
 }
 
 func TestSlice(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
-	sliced := c.Slice(1, 3)
-	expected := []int{2, 3, 4}
-	if !reflect.DeepEqual(sliced.All(), expected) {
-		t.Errorf("Expected %v, got %v", expected, sliced.All())
-	}
+	assert.Equal(t, []int{2, 3, 4}, Of([]int{1, 2, 3, 4, 5}).Slice(1, 3).All())
+	assert.Equal(t, []int{3, 4, 5}, Of([]int{1, 2, 3, 4, 5}).Slice(2).All())
 }
 
 func TestTake(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
-	taken := c.Take(3)
-	expected := []int{1, 2, 3}
-	if !reflect.DeepEqual(taken.All(), expected) {
-		t.Errorf("Expected %v, got %v", expected, taken.All())
-	}
+	assert.Equal(t, []int{1, 2, 3}, Of([]int{1, 2, 3, 4, 5}).Take(3).All())
 }
 
 func TestSkip(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
-	skipped := c.Skip(2)
-	expected := []int{3, 4, 5}
-	if !reflect.DeepEqual(skipped.All(), expected) {
-		t.Errorf("Expected %v, got %v", expected, skipped.All())
-	}
+	assert.Equal(t, []int{3, 4, 5}, Of([]int{1, 2, 3, 4, 5}).Skip(2).All())
 }
 
 func TestChunk(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
-	chunked := c.Chunk(2)
-	expected := [][]int{{1, 2}, {3, 4}, {5}}
-	if !reflect.DeepEqual(chunked, expected) {
-		t.Errorf("Expected %v, got %v", expected, chunked)
-	}
-}
-
-func TestFlatten(t *testing.T) {
-	// Create collection with slices as elements
-	c := New([]int{1, 2}, []int{3, 4})
-	flattened := c.Flatten()
-
-	// The current implementation doesn't handle nested slices correctly
-	// This test just checks that the method exists and returns a collection
-	if flattened.Count() < 0 {
-		t.Errorf("Expected valid collection, got %v", flattened)
-	}
+	assert.Equal(t, [][]int{{1, 2}, {3, 4}, {5}}, Of([]int{1, 2, 3, 4, 5}).Chunk(2))
 }
 
 func TestSort(t *testing.T) {
-	c := New(3, 1, 4, 1, 5)
-	sorted := c.Sort(func(a, b int) bool {
-		return a < b
-	})
-	expected := []int{1, 1, 3, 4, 5}
-	if !reflect.DeepEqual(sorted.All(), expected) {
-		t.Errorf("Expected %v, got %v", expected, sorted.All())
-	}
+	c := Of([]int{3, 1, 4, 1, 5})
+	assert.Equal(t, []int{1, 1, 3, 4, 5}, c.Sort(func(a, b int) bool { return a < b }).All())
 }
 
 func TestSortBy(t *testing.T) {
@@ -242,104 +147,37 @@ func TestSortBy(t *testing.T) {
 		return item.Name
 	})
 
-	if sorted.All()[0].Name != "Alice" {
-		t.Errorf("Expected first item to be Alice, got %s", sorted.All()[0].Name)
-	}
-}
-
-func TestCollectGroupBy(t *testing.T) {
-	items := []TestStruct{
-		{ID: 1, Name: "Alice", Age: 25},
-		{ID: 2, Name: "Bob", Age: 25},
-		{ID: 3, Name: "Charlie", Age: 30},
-	}
-	c := Of(items)
-	grouped := c.GroupBy(func(item TestStruct) string {
-		return string(rune(item.Age))
-	})
-
-	if len(grouped) != 2 {
-		t.Errorf("Expected 2 groups, got %d", len(grouped))
-	}
+	assert.Equal(t, "Alice", sorted.All()[0].Name)
 }
 
 func TestCollectSum(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
-	sum := c.Sum(func(item int) float64 {
-		return float64(item)
-	})
-	if sum != 15.0 {
-		t.Errorf("Expected sum 15.0, got %f", sum)
-	}
+	sum := Of([]int{1, 2, 3, 4, 5}).Sum(func(item int) float64 { return float64(item) })
+	assert.Equal(t, 15.0, sum)
 }
 
 func TestAvg(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
-	avg := c.Avg(func(item int) float64 {
-		return float64(item)
-	})
-	if avg != 3.0 {
-		t.Errorf("Expected average 3.0, got %f", avg)
-	}
+	avg := Of([]int{1, 2, 3, 4, 5}).Avg(func(item int) float64 { return float64(item) })
+	assert.Equal(t, 3.0, avg)
 }
 
 func TestCollectMin(t *testing.T) {
-	c := New(3, 1, 4, 1, 5)
-	min := c.Min(func(item int) float64 {
-		return float64(item)
-	})
-	if min != 1.0 {
-		t.Errorf("Expected min 1.0, got %f", min)
-	}
+	assert.Equal(t, 1.0, Of([]int{3, 1, 4, 1, 5}).Min(func(item int) float64 { return float64(item) }))
 }
 
 func TestCollectMax(t *testing.T) {
-	c := New(3, 1, 4, 1, 5)
-	max := c.Max(func(item int) float64 {
-		return float64(item)
-	})
-	if max != 5.0 {
-		t.Errorf("Expected max 5.0, got %f", max)
-	}
+	assert.Equal(t, 5.0, Of([]int{3, 1, 4, 1, 5}).Max(func(item int) float64 { return float64(item) }))
 }
 
 func TestJoin(t *testing.T) {
-	c := New(1, 2, 3)
-	joined := c.Join(",")
-	expected := "1,2,3"
-	if joined != expected {
-		t.Errorf("Expected %s, got %s", expected, joined)
-	}
-}
-
-func TestCollectMerge(t *testing.T) {
-	c1 := New(1, 2, 3)
-	c2 := New(4, 5, 6)
-	merged := c1.Merge(c2)
-	expected := []int{1, 2, 3, 4, 5, 6}
-	if !reflect.DeepEqual(merged.All(), expected) {
-		t.Errorf("Expected %v, got %v", expected, merged.All())
-	}
+	assert.Equal(t, "1,2,3", Of([]int{1, 2, 3}).Join(","))
 }
 
 func TestCollectionDiff(t *testing.T) {
-	c1 := New(1, 2, 3, 4, 5)
-	c2 := New(3, 4, 5, 6, 7)
-	diff := c1.Diff(c2)
-	expected := []int{1, 2}
-	if !reflect.DeepEqual(diff.All(), expected) {
-		t.Errorf("Expected %v, got %v", expected, diff.All())
-	}
+	assert.Equal(t, []int{1, 2}, Of([]int{1, 2, 3, 4, 5}).Diff(Of([]int{3, 4, 5, 6, 7})).All())
 }
 
 func TestIntersect(t *testing.T) {
-	c1 := New(1, 2, 3, 4, 5)
-	c2 := New(3, 4, 5, 6, 7)
-	intersection := c1.Intersect(c2)
-	expected := []int{3, 4, 5}
-	if !reflect.DeepEqual(intersection.All(), expected) {
-		t.Errorf("Expected %v, got %v", expected, intersection.All())
-	}
+	assert.Equal(t, []int{3, 4, 5}, Of([]int{1, 2, 3, 4, 5}).Intersect(Of([]int{3, 4, 5, 6, 7})).All())
 }
 
 func TestWhere(t *testing.T) {
@@ -348,12 +186,7 @@ func TestWhere(t *testing.T) {
 		{ID: 2, Name: "Bob", Age: 30},
 		{ID: 3, Name: "Charlie", Age: 25},
 	}
-	c := Of(items)
-	filtered := c.Where("Age", "=", 25)
-
-	if filtered.Count() != 2 {
-		t.Errorf("Expected 2 items, got %d", filtered.Count())
-	}
+	assert.Equal(t, 2, Of(items).Where("Age", "=", 25).Count())
 }
 
 func TestWhereIn(t *testing.T) {
@@ -362,12 +195,7 @@ func TestWhereIn(t *testing.T) {
 		{ID: 2, Name: "Bob", Age: 30},
 		{ID: 3, Name: "Charlie", Age: 35},
 	}
-	c := Of(items)
-	filtered := c.WhereIn("Age", []interface{}{25, 35})
-
-	if filtered.Count() != 2 {
-		t.Errorf("Expected 2 items, got %d", filtered.Count())
-	}
+	assert.Equal(t, 2, Of(items).WhereIn("Age", []any{25, 35}).Count())
 }
 
 func TestPluck(t *testing.T) {
@@ -376,143 +204,79 @@ func TestPluck(t *testing.T) {
 		{ID: 2, Name: "Bob", Age: 30},
 		{ID: 3, Name: "Charlie", Age: 35},
 	}
-	c := Of(items)
-	names := c.Pluck("Name")
-
-	if names.Count() != 3 {
-		t.Errorf("Expected 3 names, got %d", names.Count())
-	}
+	assert.Equal(t, 3, Of(items).Pluck("Name").Count())
 }
 
 func TestEvery(t *testing.T) {
-	c := New(2, 4, 6, 8)
-	allEven := c.Every(func(item int) bool {
-		return item%2 == 0
-	})
-	if !allEven {
-		t.Error("Expected all items to be even")
-	}
-}
-
-func TestSome(t *testing.T) {
-	c := New(1, 3, 5, 8)
-	hasEven := c.Some(func(item int) bool {
-		return item%2 == 0
-	})
-	if !hasEven {
-		t.Error("Expected at least one item to be even")
-	}
+	allEven := Of([]int{2, 4, 6, 8}).Every(func(item int) bool { return item%2 == 0 })
+	assert.True(t, allEven)
 }
 
 func TestPartition(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
+	c := Of([]int{1, 2, 3, 4, 5})
 	even, odd := c.Partition(func(item int) bool {
 		return item%2 == 0
 	})
 
-	expectedEven := []int{2, 4}
-	expectedOdd := []int{1, 3, 5}
-
-	if !reflect.DeepEqual(even.All(), expectedEven) {
-		t.Errorf("Expected even %v, got %v", expectedEven, even.All())
-	}
-	if !reflect.DeepEqual(odd.All(), expectedOdd) {
-		t.Errorf("Expected odd %v, got %v", expectedOdd, odd.All())
-	}
+	assert.Equal(t, []int{2, 4}, even.All())
+	assert.Equal(t, []int{1, 3, 5}, odd.All())
 }
 
 func TestWhen(t *testing.T) {
-	c := New(1, 2, 3)
+	c := Of([]int{1, 2, 3})
 	result := c.When(true, func(col *Collection[int]) *Collection[int] {
 		return col.Filter(func(item int, _ int) bool {
 			return item > 1
 		})
 	})
 
-	expected := []int{2, 3}
-	if !reflect.DeepEqual(result.All(), expected) {
-		t.Errorf("Expected %v, got %v", expected, result.All())
-	}
+	assert.Equal(t, []int{2, 3}, result.All())
 }
 
 func TestUnless(t *testing.T) {
-	c := New(1, 2, 3)
+	c := Of([]int{1, 2, 3})
 	result := c.Unless(false, func(col *Collection[int]) *Collection[int] {
 		return col.Filter(func(item int, _ int) bool {
 			return item > 1
 		})
 	})
 
-	expected := []int{2, 3}
-	if !reflect.DeepEqual(result.All(), expected) {
-		t.Errorf("Expected %v, got %v", expected, result.All())
-	}
+	assert.Equal(t, []int{2, 3}, result.All())
 }
 
 func TestTap(t *testing.T) {
-	c := New(1, 2, 3)
+	c := Of([]int{1, 2, 3})
 	tapped := false
 	result := c.Tap(func(col *Collection[int]) {
 		tapped = true
 	})
 
-	if !tapped {
-		t.Error("Expected tap function to be called")
-	}
-	if result.Count() != 3 {
-		t.Errorf("Expected count 3, got %d", result.Count())
-	}
+	assert.True(t, tapped)
+	assert.Equal(t, 3, result.Count())
 }
 
 func TestPipe(t *testing.T) {
-	c := New(1, 2, 3)
-	result := c.Pipe(func(col *Collection[int]) interface{} {
+	result := Of([]int{1, 2, 3}).Pipe(func(col *Collection[int]) any {
 		return col.Count()
 	})
 
-	if result != 3 {
-		t.Errorf("Expected result 3, got %v", result)
-	}
+	assert.Equal(t, 3, result)
 }
 
 func TestClone(t *testing.T) {
-	c := New(1, 2, 3)
+	c := Of([]int{1, 2, 3})
 	cloned := c.Clone()
 
-	if !reflect.DeepEqual(c.All(), cloned.All()) {
-		t.Error("Expected cloned collection to be equal to original")
-	}
+	assert.Equal(t, c.All(), cloned.All())
 
 	cloned.Push(4)
-	if c.Count() == cloned.Count() {
-		t.Error("Expected cloned collection to be independent")
-	}
+	assert.NotEqual(t, c.Count(), cloned.Count())
 }
 
 func TestSearch(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
-	index := c.Search(3)
-	if index != 2 {
-		t.Errorf("Expected index 2, got %d", index)
-	}
-
-	index = c.Search(6)
-	if index != -1 {
-		t.Errorf("Expected index -1, got %d", index)
-	}
-}
-
-func TestToJSON(t *testing.T) {
-	c := New(1, 2, 3)
-	json, err := c.ToJSON()
-	if err != nil {
-		t.Errorf("Expected no error, got %v", err)
-	}
-
-	expected := "[1,2,3]"
-	if json != expected {
-		t.Errorf("Expected %s, got %s", expected, json)
-	}
+	c := Of([]int{1, 2, 3, 4, 5})
+	assert.Equal(t, 2, c.Search(3))
+	assert.Equal(t, -1, c.Search(6))
 }
 
 // Enhanced Where method tests
@@ -538,65 +302,49 @@ func TestWhereEnhanced(t *testing.T) {
 
 	// Test 1: Two parameters (field, value) - implies '=' operator
 	frenchUsers := c.Where("Country", "FR")
-	if frenchUsers.Count() != 2 {
-		t.Errorf("Expected 2 French users, got %d", frenchUsers.Count())
-	}
+	assert.Equal(t, 2, frenchUsers.Count())
 
 	youngUsers := c.Where("Age", 25)
-	if youngUsers.Count() != 2 {
-		t.Errorf("Expected 2 users aged 25, got %d", youngUsers.Count())
-	}
+	assert.Equal(t, 2, youngUsers.Count())
 
 	// Test 2: Three parameters (field, operator, value)
 	richUsers := c.Where("Balance", ">", 100.0)
-	if richUsers.Count() != 3 {
-		t.Errorf("Expected 3 rich users, got %d", richUsers.Count())
-	}
+	assert.Equal(t, 3, richUsers.Count())
 
 	nonFrenchUsers := c.Where("Country", "!=", "FR")
-	if nonFrenchUsers.Count() != 3 {
-		t.Errorf("Expected 3 non-French users, got %d", nonFrenchUsers.Count())
-	}
+	assert.Equal(t, 3, nonFrenchUsers.Count())
 
 	seniorUsers := c.Where("Age", ">=", 35)
-	if seniorUsers.Count() != 2 {
-		t.Errorf("Expected 2 senior users, got %d", seniorUsers.Count())
-	}
+	assert.Equal(t, 2, seniorUsers.Count())
 
 	youngAdults := c.Where("Age", "<", 35)
-	if youngAdults.Count() != 3 {
-		t.Errorf("Expected 3 young adults, got %d", youngAdults.Count())
-	}
+	assert.Equal(t, 3, youngAdults.Count())
 
 	// Test 3: Single parameter (callback function)
 	customFilter := c.Where(func(u User) bool {
 		return u.Age > 25 && u.Country == "US"
 	})
-	if customFilter.Count() != 2 {
-		t.Errorf("Expected 2 users matching custom filter, got %d", customFilter.Count())
-	}
+	assert.Equal(t, 2, customFilter.Count())
 
 	// Test 4: Null comparisons
 	activeUsers := c.Where("DeletedAt", "=", nil)
-	if activeUsers.Count() != 4 {
-		t.Errorf("Expected 4 active users, got %d", activeUsers.Count())
-	}
+	assert.Equal(t, 4, activeUsers.Count())
 
 	deletedUsers := c.Where("DeletedAt", "!=", nil)
-	if deletedUsers.Count() != 1 {
-		t.Errorf("Expected 1 deleted user, got %d", deletedUsers.Count())
-	}
+	assert.Equal(t, 1, deletedUsers.Count())
 
 	// Test 5: String operations (like/not like)
 	nameWithA := c.Where("Name", "like", "a")
-	if nameWithA.Count() != 3 { // Alice, Charlie, and David
-		t.Errorf("Expected 3 users with 'a' in name, got %d", nameWithA.Count())
-	}
+	assert.Equal(t, 3, nameWithA.Count()) // Alice, Charlie, and David
 
 	nameNotLikeTest := c.Where("Name", "not like", "test")
-	if nameNotLikeTest.Count() != 5 { // All users since none have 'test' in name
-		t.Errorf("Expected 5 users without 'test' in name, got %d", nameNotLikeTest.Count())
+	assert.Equal(t, 5, nameNotLikeTest.Count()) // All users since none have 'test' in name
+
+	type Product struct {
+		Price int
 	}
+	products := Of([]Product{{Price: 100}})
+	assert.Equal(t, 1, products.Where("Price", "=", "100").Count())
 }
 
 func TestWhereErrorCases(t *testing.T) {
@@ -614,57 +362,41 @@ func TestWhereErrorCases(t *testing.T) {
 
 	// Test invalid parameter counts
 	result := c.Where()
-	if result.Count() != 2 {
-		t.Errorf("Expected original collection for no parameters, got %d items", result.Count())
-	}
+	assert.Equal(t, 2, result.Count())
 
 	result = c.Where("Age", "=", 25, "extra")
-	if result.Count() != 2 {
-		t.Errorf("Expected original collection for too many parameters, got %d items", result.Count())
-	}
+	assert.Equal(t, 2, result.Count())
 
 	// Test invalid callback type
 	result = c.Where("not a callback")
-	if result.Count() != 2 {
-		t.Errorf("Expected original collection for invalid callback, got %d items", result.Count())
-	}
+	assert.Equal(t, 2, result.Count())
 
 	// Test invalid field name (non-string)
 	result = c.Where(123, 25)
-	if result.Count() != 2 {
-		t.Errorf("Expected original collection for invalid field name, got %d items", result.Count())
-	}
+	assert.Equal(t, 2, result.Count())
 
 	// Test invalid operator (non-string)
 	result = c.Where("Age", 123, 25)
-	if result.Count() != 2 {
-		t.Errorf("Expected original collection for invalid operator, got %d items", result.Count())
-	}
+	assert.Equal(t, 2, result.Count())
 }
 
 func TestMapMethod(t *testing.T) {
 	// Test with integers
-	numbers := New(1, 2, 3, 4, 5)
+	numbers := Of([]int{1, 2, 3, 4, 5})
 
 	// Test basic transformation
-	doubled := numbers.Map(func(n int, _ int) interface{} {
+	doubled := numbers.Map(func(n int, _ int) any {
 		return n * 2
 	})
 
-	expected := []interface{}{2, 4, 6, 8, 10}
-	if !reflect.DeepEqual(doubled.All(), expected) {
-		t.Errorf("Expected %v, got %v", expected, doubled.All())
-	}
+	assert.Equal(t, []any{2, 4, 6, 8, 10}, doubled.All())
 
 	// Test with index
-	withIndex := numbers.Map(func(n int, i int) interface{} {
+	withIndex := numbers.Map(func(n int, i int) any {
 		return fmt.Sprintf("item_%d_%d", i, n)
 	})
 
-	expectedWithIndex := []interface{}{"item_0_1", "item_1_2", "item_2_3", "item_3_4", "item_4_5"}
-	if !reflect.DeepEqual(withIndex.All(), expectedWithIndex) {
-		t.Errorf("Expected %v, got %v", expectedWithIndex, withIndex.All())
-	}
+	assert.Equal(t, []any{"item_0_1", "item_1_2", "item_2_3", "item_3_4", "item_4_5"}, withIndex.All())
 
 	// Test with structs
 	type User struct {
@@ -680,108 +412,87 @@ func TestMapMethod(t *testing.T) {
 	})
 
 	// Extract names
-	names := users.Map(func(u User, _ int) interface{} {
+	names := users.Map(func(u User, _ int) any {
 		return u.Name
 	})
 
-	expectedNames := []interface{}{"Alice", "Bob", "Charlie"}
-	if !reflect.DeepEqual(names.All(), expectedNames) {
-		t.Errorf("Expected %v, got %v", expectedNames, names.All())
-	}
+	assert.Equal(t, []any{"Alice", "Bob", "Charlie"}, names.All())
 
 	// Complex transformation
-	summaries := users.Map(func(u User, i int) interface{} {
-		return map[string]interface{}{
+	summaries := users.Map(func(u User, i int) any {
+		return map[string]any{
 			"id":      u.ID,
 			"summary": fmt.Sprintf("%s (%d years)", u.Name, u.Age),
 			"index":   i,
 		}
 	})
 
-	if summaries.Count() != 3 {
-		t.Errorf("Expected 3 summaries, got %d", summaries.Count())
-	}
+	assert.Equal(t, 3, summaries.Count())
 
 	// Test chaining with other methods
 	result := numbers.
-		Map(func(n int, _ int) interface{} {
+		Map(func(n int, _ int) any {
 			return n * 2
 		}).
-		Filter(func(item interface{}, _ int) bool {
+		Filter(func(item any, _ int) bool {
 			return item.(int) > 5
 		})
 
-	expectedChained := []interface{}{6, 8, 10}
-	if !reflect.DeepEqual(result.All(), expectedChained) {
-		t.Errorf("Expected %v, got %v", expectedChained, result.All())
-	}
+	assert.Equal(t, []any{6, 8, 10}, result.All())
 }
 
 func TestMapMethodTypes(t *testing.T) {
 	// Test different return types
-	numbers := New(1, 2, 3)
+	numbers := Of([]int{1, 2, 3})
 
 	// Map to strings
-	strings := numbers.Map(func(n int, _ int) interface{} {
+	strings := numbers.Map(func(n int, _ int) any {
 		return fmt.Sprintf("number_%d", n)
 	})
 
-	expectedStrings := []interface{}{"number_1", "number_2", "number_3"}
-	if !reflect.DeepEqual(strings.All(), expectedStrings) {
-		t.Errorf("Expected %v, got %v", expectedStrings, strings.All())
-	}
+	assert.Equal(t, []any{"number_1", "number_2", "number_3"}, strings.All())
 
 	// Map to booleans
-	booleans := numbers.Map(func(n int, _ int) interface{} {
+	booleans := numbers.Map(func(n int, _ int) any {
 		return n%2 == 0
 	})
 
-	expectedBooleans := []interface{}{false, true, false}
-	if !reflect.DeepEqual(booleans.All(), expectedBooleans) {
-		t.Errorf("Expected %v, got %v", expectedBooleans, booleans.All())
-	}
+	assert.Equal(t, []any{false, true, false}, booleans.All())
 
 	// Map to maps
-	maps := numbers.Map(func(n int, i int) interface{} {
+	maps := numbers.Map(func(n int, i int) any {
 		return map[string]int{
 			"value": n,
 			"index": i,
 		}
 	})
 
-	if maps.Count() != 3 {
-		t.Errorf("Expected 3 maps, got %d", maps.Count())
-	}
+	assert.Equal(t, 3, maps.Count())
 
 	// Test empty collection
-	empty := New[int]()
-	emptyMapped := empty.Map(func(n int, _ int) interface{} {
+	empty := Of([]int{})
+	emptyMapped := empty.Map(func(n int, _ int) any {
 		return n * 2
 	})
 
-	if emptyMapped.Count() != 0 {
-		t.Errorf("Expected empty mapped collection, got %d items", emptyMapped.Count())
-	}
+	assert.Equal(t, 0, emptyMapped.Count())
 }
 
 func TestReduceMethod(t *testing.T) {
 	// Test with integers
-	numbers := New(1, 2, 3, 4, 5)
+	numbers := Of([]int{1, 2, 3, 4, 5})
 
 	// Test basic sum reduction
-	sum := numbers.Reduce(func(acc interface{}, item int, index int) interface{} {
+	sum := numbers.Reduce(func(acc any, item int, index int) any {
 		accValue, _ := acc.(int)
 		return accValue + item
 	}, 0)
 
-	expectedSum := 15
-	if sum != expectedSum {
-		t.Errorf("Expected sum %v, got %v", expectedSum, sum)
-	}
+	assert.Equal(t, 15, sum)
 
 	// Test with string concatenation
-	strings := New("hello", "world", "test")
-	concat := strings.Reduce(func(acc interface{}, item string, index int) interface{} {
+	strings := Of([]string{"hello", "world", "test"})
+	concat := strings.Reduce(func(acc any, item string, index int) any {
 		accValue, _ := acc.(string)
 		if index > 0 {
 			return accValue + "-" + item
@@ -789,10 +500,7 @@ func TestReduceMethod(t *testing.T) {
 		return accValue + item
 	}, "")
 
-	expectedConcat := "hello-world-test"
-	if concat != expectedConcat {
-		t.Errorf("Expected concatenation %v, got %v", expectedConcat, concat)
-	}
+	assert.Equal(t, "hello-world-test", concat)
 
 	// Test with custom accumulator type
 	type Accumulator struct {
@@ -800,7 +508,7 @@ func TestReduceMethod(t *testing.T) {
 		Count int
 	}
 
-	avgAcc := numbers.Reduce(func(acc interface{}, item int, _ int) interface{} {
+	avgAcc := numbers.Reduce(func(acc any, item int, _ int) any {
 		accValue, _ := acc.(Accumulator)
 		return Accumulator{
 			Sum:   accValue.Sum + item,
@@ -809,84 +517,62 @@ func TestReduceMethod(t *testing.T) {
 	}, Accumulator{Sum: 0, Count: 0})
 
 	expectedAcc := Accumulator{Sum: 15, Count: 5}
-	if avgAcc.(Accumulator).Sum != expectedAcc.Sum || avgAcc.(Accumulator).Count != expectedAcc.Count {
-		t.Errorf("Expected accumulator %v, got %v", expectedAcc, avgAcc)
-	}
+	assert.Equal(t, expectedAcc.Sum, avgAcc.(Accumulator).Sum)
+	assert.Equal(t, expectedAcc.Count, avgAcc.(Accumulator).Count)
 
 	// Test with empty collection
-	empty := New[int]()
-	emptyResult := empty.Reduce(func(acc interface{}, item int, _ int) interface{} {
+	empty := Of([]int{})
+	emptyResult := empty.Reduce(func(acc any, item int, _ int) any {
 		accValue, _ := acc.(int)
 		return accValue + item
 	}, 0)
 
-	if emptyResult != 0 {
-		t.Errorf("Expected empty result 0, got %v", emptyResult)
-	}
+	assert.Equal(t, 0, emptyResult)
 
 	// Test using index in reducer
-	indexSum := numbers.Reduce(func(acc interface{}, item int, index int) interface{} {
+	indexSum := numbers.Reduce(func(acc any, item int, index int) any {
 		accValue, _ := acc.(int)
 		return accValue + (item * index)
 	}, 0)
 
 	// 0*1 + 1*2 + 2*3 + 3*4 + 4*5 = 40
-	expectedIndexSum := 40
-	if indexSum != expectedIndexSum {
-		t.Errorf("Expected index sum %v, got %v", expectedIndexSum, indexSum)
-	}
+	assert.Equal(t, 40, indexSum)
 }
 
 func TestMapIntoMethod(t *testing.T) {
 	// Test converting ints to floats (compatible types)
-	numbers := New(1, 2, 3, 4, 5)
+	numbers := Of([]int{1, 2, 3, 4, 5})
 	floatTarget := float64(0) // Target type hint
 
 	floatColl := numbers.MapInto(floatTarget)
-	if floatColl.Count() != numbers.Count() {
-		t.Errorf("Expected same collection size after MapInto, got %d vs %d", floatColl.Count(), numbers.Count())
-	}
+	assert.Equal(t, numbers.Count(), floatColl.Count())
 
 	// Verify all items were converted to float64
 	for i, item := range floatColl.All() {
 		val, ok := item.(float64)
-		if !ok {
-			t.Errorf("Item at index %d should be float64, got %T", i, item)
-		}
-		expectedFloat := float64(i + 1)
-		if val != expectedFloat {
-			t.Errorf("Expected float value %v at index %d, got %v", expectedFloat, i, val)
-		}
+		assert.True(t, ok, "Item at index %d should be float64, got %T", i, item)
+		assert.Equal(t, float64(i+1), val)
 	}
 
 	// Test with incompatible types (string to int)
-	strings := New("1", "2", "3", "foo", "bar")
+	strings := Of([]string{"1", "2", "3", "foo", "bar"})
 	intTarget := 0 // Target type hint
 
 	convColl := strings.MapInto(intTarget)
-	if convColl.Count() != strings.Count() {
-		t.Errorf("Expected same collection size after MapInto, got %d vs %d", convColl.Count(), strings.Count())
-	}
+	assert.Equal(t, strings.Count(), convColl.Count())
 
 	// Verify incompatible items remain as original strings
 	for _, item := range convColl.All() {
 		_, ok := item.(int)
-		if ok {
-			t.Errorf("String should not convert to int, got %T: %v", item, item)
-		}
+		assert.False(t, ok, "String should not convert to int, got %T: %v", item, item)
 		_, isString := item.(string)
-		if !isString {
-			t.Errorf("Item should remain as string, got %T: %v", item, item)
-		}
+		assert.True(t, isString, "Item should remain as string, got %T: %v", item, item)
 	}
 
 	// Test with empty collection
-	empty := New[int]()
+	empty := Of([]int{})
 	emptyResult := empty.MapInto(floatTarget)
-
-	if emptyResult.Count() != 0 {
-		t.Errorf("Expected empty result collection, got size %d", emptyResult.Count())
-	}
+	assert.Equal(t, 0, emptyResult.Count())
 
 	// Test with custom struct types
 	type SimpleStruct struct {
@@ -898,11 +584,7 @@ func TestMapIntoMethod(t *testing.T) {
 		Extra string
 	}
 
-	simple := New(
-		SimpleStruct{Value: 1},
-		SimpleStruct{Value: 2},
-		SimpleStruct{Value: 3},
-	)
+	simple := Of([]SimpleStruct{SimpleStruct{Value: 1}, SimpleStruct{Value: 2}, SimpleStruct{Value: 3}})
 
 	// SimpleStruct is not convertible to ComplexStruct
 	complexTarget := ComplexStruct{}
@@ -910,368 +592,126 @@ func TestMapIntoMethod(t *testing.T) {
 
 	for _, item := range complexColl.All() {
 		_, ok := item.(ComplexStruct)
-		if ok {
-			t.Errorf("SimpleStruct should not be convertible to ComplexStruct")
-		}
+		assert.False(t, ok, "SimpleStruct should not be convertible to ComplexStruct")
 
 		// Items should remain as SimpleStruct
 		_, isSimple := item.(SimpleStruct)
-		if !isSimple {
-			t.Errorf("Item should remain as SimpleStruct, got %T", item)
-		}
+		assert.True(t, isSimple, "Item should remain as SimpleStruct, got %T", item)
 	}
 }
-
-func TestMapCollectFunction(t *testing.T) {
-	// Test MapCollect with simple types
-	numbers := New(1, 2, 3, 4, 5)
-
-	// Map int to int
-	doubled := MapCollect(numbers, func(item int, _ int) int {
-		return item * 2
-	})
-
-	expectedDoubled := []int{2, 4, 6, 8, 10}
-	if !reflect.DeepEqual(doubled.All(), expectedDoubled) {
-		t.Errorf("Expected %v after MapCollect, got %v", expectedDoubled, doubled.All())
-	}
-
-	// Map int to string
-	numberStrings := MapCollect(numbers, func(item int, index int) string {
-		return fmt.Sprintf("item-%d-%d", index, item)
-	})
-
-	expectedStrings := []string{"item-0-1", "item-1-2", "item-2-3", "item-3-4", "item-4-5"}
-	if !reflect.DeepEqual(numberStrings.All(), expectedStrings) {
-		t.Errorf("Expected %v after MapCollect, got %v", expectedStrings, numberStrings.All())
-	}
-
-	// Test with empty collection
-	empty := New[int]()
-	emptyMapped := MapCollect(empty, func(item int, _ int) string {
-		return fmt.Sprintf("%d", item)
-	})
-
-	if emptyMapped.Count() != 0 {
-		t.Errorf("Expected empty collection after MapCollect, got %d items", emptyMapped.Count())
-	}
-
-	// Test with complex types
-	type Person struct {
-		Name string
-		Age  int
-	}
-
-	type PersonSummary struct {
-		DisplayName string
-		IsAdult     bool
-	}
-
-	people := New(
-		Person{Name: "Alice", Age: 25},
-		Person{Name: "Bob", Age: 17},
-		Person{Name: "Charlie", Age: 30},
-	)
-
-	summaries := MapCollect(people, func(p Person, i int) PersonSummary {
-		return PersonSummary{
-			DisplayName: fmt.Sprintf("%d: %s", i+1, p.Name),
-			IsAdult:     p.Age >= 18,
-		}
-	})
-
-	expectedSummaries := []PersonSummary{
-		{DisplayName: "1: Alice", IsAdult: true},
-		{DisplayName: "2: Bob", IsAdult: false},
-		{DisplayName: "3: Charlie", IsAdult: true},
-	}
-
-	if summaries.Count() != 3 {
-		t.Errorf("Expected 3 items after MapCollect, got %d", summaries.Count())
-	}
-
-	// Test struct equality
-	for i, summary := range summaries.All() {
-		expected := expectedSummaries[i]
-		if summary.DisplayName != expected.DisplayName || summary.IsAdult != expected.IsAdult {
-			t.Errorf("Expected summary %v at index %d, got %v", expected, i, summary)
-		}
-	}
-
-	// Test nested mapping and chaining
-	result := MapCollect(numbers, func(n int, _ int) int {
-		return n * 2
-	}).Filter(func(n int, _ int) bool {
-		return n > 5
-	})
-
-	expectedResult := []int{6, 8, 10}
-	if !reflect.DeepEqual(result.All(), expectedResult) {
-		t.Errorf("Expected %v after chained operations, got %v", expectedResult, result.All())
-	}
-}
-
-func TestGenericReduceFunction(t *testing.T) {
-	// Test basic sum reduction with int to int
-	numbers := New(1, 2, 3, 4, 5)
-	sum := Reduce(numbers, func(acc int, item int, _ int) int {
-		return acc + item
-	}, 0)
-
-	expectedSum := 15
-	if sum != expectedSum {
-		t.Errorf("Expected sum %d, got %d", expectedSum, sum)
-	}
-
-	// Test string concatenation with string to string
-	words := New("Hello", "World", "Test")
-	concat := Reduce(words, func(acc string, item string, index int) string {
-		if index == 0 {
-			return item
-		}
-		return acc + " " + item
-	}, "")
-
-	expectedConcat := "Hello World Test"
-	if concat != expectedConcat {
-		t.Errorf("Expected concatenation %q, got %q", expectedConcat, concat)
-	}
-
-	// Test with custom types - calculate average age
-	type Person struct {
-		Name string
-		Age  int
-	}
-
-	type Stats struct {
-		Total int
-		Count int
-	}
-
-	people := New(
-		Person{Name: "Alice", Age: 25},
-		Person{Name: "Bob", Age: 17},
-		Person{Name: "Charlie", Age: 30},
-	)
-
-	ageStats := Reduce(people, func(acc Stats, p Person, _ int) Stats {
-		return Stats{
-			Total: acc.Total + p.Age,
-			Count: acc.Count + 1,
-		}
-	}, Stats{Total: 0, Count: 0})
-
-	expectedStats := Stats{Total: 72, Count: 3} // 25 + 17 + 30 = 72, count = 3
-	if ageStats.Total != expectedStats.Total || ageStats.Count != expectedStats.Count {
-		t.Errorf("Expected stats %v, got %v", expectedStats, ageStats)
-	}
-
-	avgAge := float64(ageStats.Total) / float64(ageStats.Count)
-	expectedAvg := 24.0 // (25 + 17 + 30) / 3 = 24
-	if avgAge != expectedAvg {
-		t.Errorf("Expected average age %.1f, got %.1f", expectedAvg, avgAge)
-	}
-
-	// Test with empty collection
-	empty := New[int]()
-	emptyResult := Reduce(empty, func(acc int, item int, _ int) int {
-		return acc + item
-	}, 100) // Initial value should be returned for empty collections
-
-	if emptyResult != 100 {
-		t.Errorf("Expected initial value 100 for empty collection, got %d", emptyResult)
-	}
-
-	// Test with index usage in reducer
-	indexProduct := Reduce(numbers, func(acc int, item int, index int) int {
-		return acc + (item * index)
-	}, 0)
-
-	// 0*1 + 1*2 + 2*3 + 3*4 + 4*5 = 40
-	expectedIndexProduct := 40
-	if indexProduct != expectedIndexProduct {
-		t.Errorf("Expected index product %d, got %d", expectedIndexProduct, indexProduct)
-	}
-
-	// Test chaining with other collection methods
-	even := numbers.Filter(func(n int, _ int) bool {
-		return n%2 == 0
-	})
-
-	evenSum := Reduce(even, func(acc int, item int, _ int) int {
-		return acc + item
-	}, 0)
-
-	expectedEvenSum := 6 // 2 + 4 = 6
-	if evenSum != expectedEvenSum {
-		t.Errorf("Expected filtered sum %d, got %d", expectedEvenSum, evenSum)
-	}
-}
-
-// ===== PHASE 1: NAVIGATION & INDEXING =====
 
 func TestAfter(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
+	c := Of([]int{1, 2, 3, 4, 5})
 
-	// Happy path and boundaries
-	if result := c.After(3); result == nil || *result != 4 {
-		t.Errorf("Expected 4 after 3, got %v", result)
-	}
-	if c.After(5) != nil {
-		t.Error("Expected nil after last element")
-	}
-	if c.After(99) != nil {
-		t.Error("Expected nil for non-existent element")
-	}
-	if New[int]().After(1) != nil {
-		t.Error("Expected nil for empty collection")
-	}
+	result := c.After(3)
+	assert.NotNil(t, result)
+	assert.Equal(t, 4, *result)
+	assert.Nil(t, c.After(5))
+	assert.Nil(t, c.After(99))
+	assert.Nil(t, Of([]int{}).After(1))
 }
 
 func TestBefore(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
+	c := Of([]int{1, 2, 3, 4, 5})
 
-	if result := c.Before(3); result == nil || *result != 2 {
-		t.Errorf("Expected 2 before 3, got %v", result)
-	}
-	if c.Before(1) != nil {
-		t.Error("Expected nil before first element")
-	}
-	if c.Before(99) != nil || New[int]().Before(1) != nil {
-		t.Error("Expected nil for non-existent or empty")
-	}
+	result := c.Before(3)
+	assert.NotNil(t, result)
+	assert.Equal(t, 2, *result)
+	assert.Nil(t, c.Before(1))
+	assert.Nil(t, c.Before(99))
+	assert.Nil(t, Of([]int{}).Before(1))
 }
 
 func TestGet(t *testing.T) {
-	c := New(10, 20, 30, 40, 50)
+	c := Of([]int{10, 20, 30, 40, 50})
 
-	if result := c.Get(2); result == nil || *result != 30 {
-		t.Errorf("Expected 30 at index 2, got %v", result)
-	}
-	if result := c.Get(0); result == nil || *result != 10 {
-		t.Error("Expected first element")
-	}
-	if c.Get(-1) != nil || c.Get(10) != nil || New[int]().Get(0) != nil {
-		t.Error("Expected nil for invalid indices")
-	}
+	result := c.Get(2)
+	assert.NotNil(t, result)
+	assert.Equal(t, 30, *result)
+	first := c.Get(0)
+	assert.NotNil(t, first)
+	assert.Equal(t, 10, *first)
+	assert.Nil(t, c.Get(-1))
+	assert.Nil(t, c.Get(10))
+	assert.Nil(t, Of([]int{}).Get(0))
 }
 
 func TestHas(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
+	c := Of([]int{1, 2, 3, 4, 5})
 
-	if !c.Has(0) || !c.Has(2) || !c.Has(4) {
-		t.Error("Expected to have valid indices")
-	}
-	if c.Has(-1) || c.Has(5) || New[int]().Has(0) {
-		t.Error("Expected not to have invalid indices or empty")
-	}
+	assert.True(t, c.Has(0))
+	assert.True(t, c.Has(2))
+	assert.True(t, c.Has(4))
+	assert.False(t, c.Has(-1))
+	assert.False(t, c.Has(5))
+	assert.False(t, Of([]int{}).Has(0))
 }
 
 func TestHasAny(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
+	c := Of([]int{1, 2, 3, 4, 5})
 
-	if !c.HasAny(2, 10, 20) || !c.HasAny(0, 1, 2) {
-		t.Error("Expected to have at least one valid index")
-	}
-	if c.HasAny(10, 20, 30) || c.HasAny() || New[int]().HasAny(0, 1, 2) {
-		t.Error("Expected false for invalid/empty cases")
-	}
+	assert.True(t, c.HasAny(2, 10, 20))
+	assert.True(t, c.HasAny(0, 1, 2))
+	assert.False(t, c.HasAny(10, 20, 30))
+	assert.False(t, c.HasAny())
+	assert.False(t, Of([]int{}).HasAny(0, 1, 2))
 }
 
-// ===== PHASE 1: EXISTENCE & FILTERING =====
-
 func TestContainsStrict(t *testing.T) {
-	c := New(1, 2, 3)
-	if !c.ContainsStrict(2) || !c.ContainsStrict(1) || c.ContainsStrict(99) || New[int]().ContainsStrict(1) {
-		t.Error("Expected correct strict containment checks")
-	}
+	c := Of([]int{1, 2, 3})
+	assert.True(t, c.ContainsStrict(2))
+	assert.True(t, c.ContainsStrict(1))
+	assert.False(t, c.ContainsStrict(99))
+	assert.False(t, Of([]int{}).ContainsStrict(1))
 
 	type Product struct {
 		ID    int
 		Name  string
 		Price float64
 	}
-	products := New(Product{ID: 1, Name: "Book", Price: 10.99}, Product{ID: 2, Name: "Pen", Price: 2.99})
-	if !products.ContainsStrict(Product{ID: 1, Name: "Book", Price: 10.99}) || products.ContainsStrict(Product{ID: 1, Name: "Book", Price: 11.99}) {
-		t.Error("Expected correct struct strict containment")
-	}
+	products := Of([]Product{Product{ID: 1, Name: "Book", Price: 10.99}, Product{ID: 2, Name: "Pen", Price: 2.99}})
+	assert.True(t, products.ContainsStrict(Product{ID: 1, Name: "Book", Price: 10.99}))
+	assert.False(t, products.ContainsStrict(Product{ID: 1, Name: "Book", Price: 11.99}))
 }
 
-func TestDoesnt(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
-	if c.Doesnt(3) || !c.Doesnt(99) || !New[int]().Doesnt(1) {
-		t.Error("Expected correct Doesnt behavior")
-	}
+func TestDoesntContain(t *testing.T) {
+	c := Of([]int{1, 2, 3, 4, 5})
+	assert.False(t, c.DoesntContain(3))
+	assert.True(t, c.DoesntContain(99))
+	assert.True(t, Of([]int{}).DoesntContain(1))
 
-	words := New("apple", "banana", "cherry")
-	if !words.Doesnt("orange") || words.Doesnt("banana") {
-		t.Error("Expected correct Doesnt for strings")
-	}
+	words := Of([]string{"apple", "banana", "cherry"})
+	assert.True(t, words.DoesntContain("orange"))
+	assert.False(t, words.DoesntContain("banana"))
 }
 
 func TestDuplicates(t *testing.T) {
-	c := New(1, 2, 2, 3, 3, 3, 4)
-	if !reflect.DeepEqual(c.Duplicates().All(), []int{2, 3, 3}) {
-		t.Error("Expected correct duplicates")
-	}
-	if New(1, 2, 3, 4, 5).Duplicates().Count() != 0 || New(5, 5, 5, 5).Duplicates().Count() != 3 || New[int]().Duplicates().Count() != 0 {
-		t.Error("Expected correct duplicate counts")
-	}
-	if New("apple", "banana", "apple", "cherry", "banana", "apple").Duplicates().Count() != 3 {
-		t.Error("Expected 3 duplicate strings")
-	}
+	c := Of([]int{1, 2, 2, 3, 3, 3, 4})
+	assert.Equal(t, []int{2, 3}, c.Duplicates().All())
+	assert.Equal(t, 0, Of([]int{1, 2, 3, 4, 5}).Duplicates().Count())
+	assert.Equal(t, 1, Of([]int{5, 5, 5, 5}).Duplicates().Count())
+	assert.Equal(t, 0, Of([]int{}).Duplicates().Count())
+	assert.Equal(t, 2, Of([]string{"apple", "banana", "apple", "cherry", "banana", "apple"}).Duplicates().Count())
 }
 
 func TestReject(t *testing.T) {
-	c := New(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-	if !reflect.DeepEqual(c.Reject(func(n int, _ int) bool { return n%2 == 0 }).All(), []int{1, 3, 5, 7, 9}) {
-		t.Error("Expected correct rejection of even numbers")
-	}
-	if c.Reject(func(n int, _ int) bool { return true }).Count() != 0 || !reflect.DeepEqual(c.Reject(func(n int, _ int) bool { return false }).All(), c.All()) {
-		t.Error("Expected correct reject all/none")
-	}
+	c := Of([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
+	assert.Equal(t, []int{1, 3, 5, 7, 9}, c.Reject(func(n int, _ int) bool { return n%2 == 0 }).All())
+	assert.Equal(t, 0, c.Reject(func(n int, _ int) bool { return true }).Count())
+	assert.Equal(t, c.All(), c.Reject(func(n int, _ int) bool { return false }).All())
 
 	type Item struct{ Value int }
-	if New(Item{1}, Item{2}, Item{3}, Item{4}).Reject(func(_ Item, i int) bool { return i%2 == 0 }).Count() != 2 || New[int]().Reject(func(n int, _ int) bool { return n > 5 }).Count() != 0 {
-		t.Error("Expected correct rejection by index and empty")
-	}
-}
-
-// ===== PHASE 1: CONVERSIONS =====
-
-func TestCombine(t *testing.T) {
-	result := New(10, 20, 30).Combine([]string{"a", "b", "c"})
-	if result["a"] != 10 || result["b"] != 20 || result["c"] != 30 {
-		t.Error("Expected correct key-value combinations")
-	}
-
-	result2 := New(100, 200).Combine([]string{"x", "y", "z"})
-	if len(result2) != 2 {
-		t.Error("Expected 2 entries when fewer values than keys")
-	}
-	if len(New(1, 2, 3, 4).Combine([]string{"a", "b"})) != 2 || len(New(1, 2, 3).Combine([]string{})) != 0 {
-		t.Error("Expected correct lengths for mismatched/empty combines")
-	}
+	assert.Equal(t, 2, Of([]Item{Item{1}, Item{2}, Item{3}, Item{4}}).Reject(func(_ Item, i int) bool { return i%2 == 0 }).Count())
+	assert.Equal(t, 0, Of([]int{}).Reject(func(n int, _ int) bool { return n > 5 }).Count())
 }
 
 func TestDot(t *testing.T) {
-	result := New("apple", "banana", "cherry").Dot()
-	if result["0"] != "apple" || result["1"] != "banana" || result["2"] != "cherry" {
-		t.Error("Expected correct dot notation mapping")
-	}
-	if len(New[string]().Dot()) != 0 || New(42).Dot()["0"] != 42 {
-		t.Error("Expected correct empty/single element dot")
-	}
-}
-
-func TestFlip(t *testing.T) {
-	result := New("apple", "banana", "cherry").Flip()
-	if result["apple"] != "0" || result["banana"] != "1" || result["cherry"] != "2" {
-		t.Error("Expected correct flipped mapping")
-	}
-	if New("a", "b", "a").Flip()["a"] != "2" || len(New[string]().Flip()) != 0 {
-		t.Error("Expected correct duplicate/empty flip")
-	}
+	result := Of([]string{"apple", "banana", "cherry"}).Dot()
+	assert.Equal(t, "apple", result["0"])
+	assert.Equal(t, "banana", result["1"])
+	assert.Equal(t, "cherry", result["2"])
+	assert.Equal(t, 0, len(Of([]string{}).Dot()))
+	assert.Equal(t, 42, Of([]int{42}).Dot()["0"])
 }
 
 func TestKeyBy(t *testing.T) {
@@ -1280,178 +720,102 @@ func TestKeyBy(t *testing.T) {
 		Name string
 	}
 
-	result := New(Product{ID: 1, Name: "Book"}, Product{ID: 2, Name: "Pen"}, Product{ID: 3, Name: "Pencil"}).KeyBy(func(p Product) string { return p.Name })
-	if result["Book"].ID != 1 || result["Pen"].ID != 2 {
-		t.Error("Expected correct key-by mapping")
-	}
+	result := Of([]Product{Product{ID: 1, Name: "Book"}, Product{ID: 2, Name: "Pen"}, Product{ID: 3, Name: "Pencil"}}).KeyBy(func(p Product) string { return p.Name })
+	assert.Equal(t, 1, result["Book"].ID)
+	assert.Equal(t, 2, result["Pen"].ID)
 
-	dupResult := New(Product{ID: 1, Name: "Item"}, Product{ID: 2, Name: "Item"}).KeyBy(func(p Product) string { return p.Name })
-	if dupResult["Item"].ID != 2 || len(New[Product]().KeyBy(func(p Product) string { return p.Name })) != 0 {
-		t.Error("Expected last item wins for duplicates and empty for empty collection")
-	}
+	dupResult := Of([]Product{Product{ID: 1, Name: "Item"}, Product{ID: 2, Name: "Item"}}).KeyBy(func(p Product) string { return p.Name })
+	assert.Equal(t, 2, dupResult["Item"].ID)
+	assert.Equal(t, 0, len(Of([]Product{}).KeyBy(func(p Product) string { return p.Name })))
 }
 
-// ===== PHASE 1: INDEX OPERATIONS =====
-
 func TestOnly(t *testing.T) {
-	c := New(10, 20, 30, 40, 50)
-	if !reflect.DeepEqual(c.Only(1, 3).All(), []int{20, 40}) || !reflect.DeepEqual(c.Only(0, 10, 2).All(), []int{10, 30}) {
-		t.Error("Expected correct Only selections")
-	}
-	if c.Only().Count() != 0 || c.Only(1, 1, 3).Count() != 3 || New[int]().Only(0, 1, 2).Count() != 0 {
-		t.Error("Expected correct Only edge cases")
-	}
+	c := Of([]int{10, 20, 30, 40, 50})
+	assert.Equal(t, []int{20, 40}, c.Only(1, 3).All())
+	assert.Equal(t, []int{10, 30}, c.Only(0, 10, 2).All())
+	assert.Equal(t, 0, c.Only().Count())
+	assert.Equal(t, 3, c.Only(1, 1, 3).Count())
+	assert.Equal(t, 0, Of([]int{}).Only(0, 1, 2).Count())
 }
 
 func TestExcept(t *testing.T) {
-	c := New(10, 20, 30, 40, 50)
-	if !reflect.DeepEqual(c.Except(1, 3).All(), []int{10, 30, 50}) || !reflect.DeepEqual(c.Except(0, 10, 2).All(), []int{20, 40, 50}) {
-		t.Error("Expected correct Except exclusions")
-	}
-	if !reflect.DeepEqual(c.Except().All(), c.All()) || !reflect.DeepEqual(c.Except(1, 1, 3).All(), []int{10, 30, 50}) || New[int]().Except(0, 1, 2).Count() != 0 {
-		t.Error("Expected correct Except edge cases")
-	}
+	c := Of([]int{10, 20, 30, 40, 50})
+	assert.Equal(t, []int{10, 30, 50}, c.Except(1, 3).All())
+	assert.Equal(t, []int{20, 40, 50}, c.Except(0, 10, 2).All())
+	assert.Equal(t, c.All(), c.Except().All())
+	assert.Equal(t, []int{10, 30, 50}, c.Except(1, 1, 3).All())
+	assert.Equal(t, 0, Of([]int{}).Except(0, 1, 2).Count())
 }
 
 func TestForget(t *testing.T) {
-	if !reflect.DeepEqual(New(10, 20, 30, 40, 50).Forget(1, 3).All(), []int{10, 30, 50}) {
-		t.Error("Expected correct Forget (alias for Except)")
-	}
+	c := Of([]int{10, 20, 30, 40, 50})
+	result := c.Forget(1, 3)
+	assert.Same(t, c, result)
+	assert.Equal(t, []int{10, 30, 50}, c.All())
 }
-
-// ===== PHASE 1: CONSTRUCTORS & ALIASES =====
-
-func TestMake(t *testing.T) {
-	c := New(1, 2, 3)
-	if !reflect.DeepEqual(c.Make(10, 20, 30).All(), []int{10, 20, 30}) || c.Make().Count() != 0 {
-		t.Error("Expected correct Make behavior")
-	}
-}
-
-func TestToArray(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
-	result := c.ToArray()
-	if !reflect.DeepEqual(result, []int{1, 2, 3, 4, 5}) || &c.All()[0] != &result[0] {
-		t.Error("Expected correct ToArray with same reference")
-	}
-}
-
-func TestWrap(t *testing.T) {
-	c := New(1, 2, 3)
-	wrapper := "test"
-	if c.Wrap(wrapper) != wrapper || c.Wrap(nil) != nil {
-		t.Error("Expected correct Wrap behavior")
-	}
-}
-
-// ===== PHASE 1: MUTATIONS =====
 
 func TestPrepend(t *testing.T) {
-	c := New(3, 4, 5)
+	c := Of([]int{3, 4, 5})
 	result := c.Prepend(1, 2)
-	if !reflect.DeepEqual(c.All(), []int{1, 2, 3, 4, 5}) || result != c {
-		t.Error("Expected correct Prepend mutation and chaining")
-	}
+	assert.Equal(t, []int{1, 2, 3, 4, 5}, c.All())
+	assert.Same(t, c, result)
 
-	empty := New[int]()
+	empty := Of([]int{})
 	empty.Prepend(10)
-	if empty.Count() != 1 || *empty.First() != 10 {
-		t.Error("Expected single element after prepending to empty")
-	}
+	assert.Equal(t, 1, empty.Count())
+	assert.Equal(t, 10, *empty.First())
 }
 
 func TestPull(t *testing.T) {
-	c := New(10, 20, 30, 40, 50)
+	c := Of([]int{10, 20, 30, 40, 50})
 	pulled := c.Pull(2)
-	if pulled == nil || *pulled != 30 || !reflect.DeepEqual(c.All(), []int{10, 20, 40, 50}) {
-		t.Error("Expected correct Pull and removal")
-	}
-	if c.Pull(10) != nil || c.Pull(-1) != nil {
-		t.Error("Expected nil for invalid Pull indices")
-	}
+	assert.NotNil(t, pulled)
+	assert.Equal(t, 30, *pulled)
+	assert.Equal(t, []int{10, 20, 40, 50}, c.All())
+	assert.Nil(t, c.Pull(10))
+	assert.Nil(t, c.Pull(-1))
 }
 
 func TestPut(t *testing.T) {
-	c := New(10, 20, 30, 40, 50)
+	c := Of([]int{10, 20, 30, 40, 50})
 	result := c.Put(2, 99)
 	expected := []int{10, 20, 99, 40, 50}
-	if !reflect.DeepEqual(c.All(), expected) || result != c {
-		t.Error("Expected correct Put mutation and chaining")
-	}
+	assert.Equal(t, expected, c.All())
+	assert.Same(t, c, result)
 	c.Put(10, 100)
 	c.Put(-1, 200)
-	if !reflect.DeepEqual(c.All(), expected) {
-		t.Error("Expected collection unchanged for invalid Put")
-	}
-}
-
-// ===== PHASE 1: SEARCHES =====
-
-func TestFirstOrFail(t *testing.T) {
-	c := New(1, 2, 3)
-	first, err := c.FirstOrFail()
-	if err != nil || first == nil || *first != 1 {
-		t.Error("Expected first element with no error")
-	}
-
-	emptyFirst, err := New[int]().FirstOrFail()
-	if err == nil || emptyFirst != nil {
-		t.Error("Expected error and nil for empty collection")
-	}
-}
-
-func TestLastOrFail(t *testing.T) {
-	c := New(1, 2, 3)
-	last, err := c.LastOrFail()
-	if err != nil || last == nil || *last != 3 {
-		t.Error("Expected last element with no error")
-	}
-
-	emptyLast, err := New[int]().LastOrFail()
-	if err == nil || emptyLast != nil {
-		t.Error("Expected error and nil for empty collection")
-	}
+	assert.Equal(t, expected, c.All())
 }
 
 func TestFirstWhere(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
+	c := Of([]int{1, 2, 3, 4, 5})
 	result := c.FirstWhere(func(n int) bool { return n%2 == 0 })
-	if result == nil || *result != 2 {
-		t.Error("Expected first even number to be 2")
-	}
-	if c.FirstWhere(func(n int) bool { return n > 10 }) != nil || New[int]().FirstWhere(func(n int) bool { return true }) != nil {
-		t.Error("Expected nil for no match and empty")
-	}
+	assert.NotNil(t, result)
+	assert.Equal(t, 2, *result)
+	assert.Nil(t, c.FirstWhere(func(n int) bool { return n > 10 }))
+	assert.Nil(t, Of([]int{}).FirstWhere(func(n int) bool { return true }))
 
 	type User struct {
 		Name string
 		Age  int
 	}
-	oldUser := New(User{Name: "Alice", Age: 25}, User{Name: "Bob", Age: 30}, User{Name: "Charlie", Age: 35}).FirstWhere(func(u User) bool { return u.Age >= 30 })
-	if oldUser == nil || oldUser.Name != "Bob" {
-		t.Error("Expected to find Bob")
-	}
+	oldUser := Of([]User{User{Name: "Alice", Age: 25}, User{Name: "Bob", Age: 30}, User{Name: "Charlie", Age: 35}}).FirstWhere(func(u User) bool { return u.Age >= 30 })
+	assert.NotNil(t, oldUser)
+	assert.Equal(t, "Bob", oldUser.Name)
 }
 
 func TestSearchBy(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
-	if c.SearchBy(func(n int) bool { return n%2 == 0 }) != 1 {
-		t.Error("Expected index 1 for first even number")
-	}
-	if c.SearchBy(func(n int) bool { return n > 10 }) != -1 || New[int]().SearchBy(func(n int) bool { return true }) != -1 {
-		t.Error("Expected -1 for no match and empty")
-	}
+	c := Of([]int{1, 2, 3, 4, 5})
+	assert.Equal(t, 1, c.SearchBy(func(n int) bool { return n%2 == 0 }))
+	assert.Equal(t, -1, c.SearchBy(func(n int) bool { return n > 10 }))
+	assert.Equal(t, -1, Of([]int{}).SearchBy(func(n int) bool { return true }))
 
 	type Product struct {
 		Name  string
 		Price float64
 	}
-	if New(Product{Name: "Book", Price: 10.99}, Product{Name: "Pen", Price: 2.99}, Product{Name: "Notebook", Price: 5.99}).SearchBy(func(p Product) bool { return p.Price > 5.00 }) != 0 {
-		t.Error("Expected index 0 for first expensive product")
-	}
+	assert.Equal(t, 0, Of([]Product{Product{Name: "Book", Price: 10.99}, Product{Name: "Pen", Price: 2.99}, Product{Name: "Notebook", Price: 5.99}}).SearchBy(func(p Product) bool { return p.Price > 5.00 }))
 }
-
-// ===== PHASE 1: SORTING =====
 
 func TestSortByDesc(t *testing.T) {
 	type User struct {
@@ -1459,153 +823,98 @@ func TestSortByDesc(t *testing.T) {
 		Age  int
 	}
 
-	users := New(User{Name: "Alice", Age: 25}, User{Name: "Bob", Age: 35}, User{Name: "Charlie", Age: 30})
+	users := Of([]User{User{Name: "Alice", Age: 25}, User{Name: "Bob", Age: 35}, User{Name: "Charlie", Age: 30}})
 	sorted := users.SortByDesc(func(u User) string { return fmt.Sprintf("%02d", u.Age) })
 
-	if sorted.All()[0].Name != "Bob" || sorted.All()[1].Name != "Charlie" || sorted.All()[2].Name != "Alice" {
-		t.Error("Expected descending sort: Bob, Charlie, Alice")
-	}
-	if users.All()[0].Name != "Alice" || New[User]().SortByDesc(func(u User) string { return u.Name }).Count() != 0 {
-		t.Error("Expected original unchanged and empty sort")
-	}
+	assert.Equal(t, "Bob", sorted.All()[0].Name)
+	assert.Equal(t, "Charlie", sorted.All()[1].Name)
+	assert.Equal(t, "Alice", sorted.All()[2].Name)
+	assert.Equal(t, "Alice", users.All()[0].Name)
+	assert.Equal(t, 0, Of([]User{}).SortByDesc(func(u User) string { return u.Name }).Count())
 }
 
-// ===== PHASE 2: ADDITIONAL METHODS =====
-
 func TestChunkWhile(t *testing.T) {
-	c := New(1, 2, 2, 3, 3, 3, 4)
+	c := Of([]int{1, 2, 2, 3, 3, 3, 4})
 	chunks := c.ChunkWhile(func(item int, _ int, chunk []int) bool { return len(chunk) == 0 || item == chunk[0] })
-	if len(chunks) != 4 || len(chunks[0]) != 1 || len(chunks[1]) != 2 || len(chunks[2]) != 3 {
-		t.Error("Expected chunks grouped by same values")
-	}
-	if len(New[int]().ChunkWhile(func(int, int, []int) bool { return true })) != 0 {
-		t.Error("Expected empty result for empty collection")
-	}
+	assert.Equal(t, 4, len(chunks))
+	assert.Equal(t, 1, len(chunks[0]))
+	assert.Equal(t, 2, len(chunks[1]))
+	assert.Equal(t, 3, len(chunks[2]))
+	assert.Equal(t, 0, len(Of([]int{}).ChunkWhile(func(int, int, []int) bool { return true })))
 }
 
 func TestCollectionCountBy(t *testing.T) {
 	type Product struct{ Type string }
-	products := New(Product{"fruit"}, Product{"veg"}, Product{"fruit"}, Product{"meat"})
+	products := Of([]Product{Product{"fruit"}, Product{"veg"}, Product{"fruit"}, Product{"meat"}})
 	counts := products.CountBy(func(p Product) string { return p.Type })
-	if counts["fruit"] != 2 || counts["veg"] != 1 || counts["meat"] != 1 {
-		t.Error("Expected correct category counts")
-	}
-	if len(New[Product]().CountBy(func(p Product) string { return p.Type })) != 0 {
-		t.Error("Expected empty map for empty collection")
-	}
+	assert.Equal(t, 2, counts["fruit"])
+	assert.Equal(t, 1, counts["veg"])
+	assert.Equal(t, 1, counts["meat"])
+	assert.Equal(t, 0, len(Of([]Product{}).CountBy(func(p Product) string { return p.Type })))
 }
 
 func TestCrossJoin(t *testing.T) {
-	c1 := New(1, 2)
-	c2 := New(3, 4)
+	c1 := Of([]int{1, 2})
+	c2 := Of([]int{3, 4})
 	result := c1.CrossJoin(c2)
-	if len(result) != 4 || !reflect.DeepEqual(result[0], []int{1, 3}) || !reflect.DeepEqual(result[3], []int{2, 4}) {
-		t.Error("Expected correct cross join")
-	}
-	if len(New[int]().CrossJoin(c2)) != 0 || len(c1.CrossJoin(New[int]())) != 0 {
-		t.Error("Expected empty for empty collections")
-	}
+	assert.Equal(t, 4, len(result))
+	assert.Equal(t, []int{1, 3}, result[0])
+	assert.Equal(t, []int{2, 4}, result[3])
+	assert.Equal(t, 0, len(Of([]int{}).CrossJoin(c2)))
+	assert.Equal(t, 0, len(c1.CrossJoin(Of([]int{}))))
 }
 
 func TestDiffAssoc(t *testing.T) {
-	c1 := New(1, 2, 3, 4)
-	c2 := New(1, 2, 5, 6)
+	c1 := Of([]int{1, 2, 3, 4})
+	c2 := Of([]int{1, 2, 5, 6})
 	diff := c1.DiffAssoc(c2)
-	if !reflect.DeepEqual(diff.All(), []int{3, 4}) {
-		t.Errorf("Expected [3, 4], got %v", diff.All())
-	}
-	if New[int]().DiffAssoc(c2).Count() != 0 || c1.DiffAssoc(New[int]()).Count() != 4 {
-		t.Error("Expected correct diff for empty collections")
-	}
-}
-
-func TestDropUntil(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
-	result := c.DropUntil(func(n int) bool { return n >= 3 })
-	if !reflect.DeepEqual(result.All(), []int{3, 4, 5}) {
-		t.Error("Expected [3, 4, 5]")
-	}
-	if c.DropUntil(func(n int) bool { return n > 10 }).Count() != 0 || New[int]().DropUntil(func(int) bool { return true }).Count() != 0 {
-		t.Error("Expected empty for no match and empty collection")
-	}
-}
-
-func TestDropWhile(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
-	result := c.DropWhile(func(n int) bool { return n < 3 })
-	if !reflect.DeepEqual(result.All(), []int{3, 4, 5}) {
-		t.Error("Expected [3, 4, 5]")
-	}
-	if c.DropWhile(func(n int) bool { return n < 10 }).Count() != 0 || New[int]().DropWhile(func(int) bool { return false }).Count() != 0 {
-		t.Error("Expected empty for all dropped and empty collection")
-	}
-}
-
-func TestDump(t *testing.T) {
-	c := New(1, 2, 3)
-	result := c.Dump()
-	if result != c || result.Count() != 3 {
-		t.Error("Expected Dump to return same collection unchanged")
-	}
+	assert.Equal(t, []int{3, 4}, diff.All())
+	assert.Equal(t, 0, Of([]int{}).DiffAssoc(c2).Count())
+	assert.Equal(t, 4, c1.DiffAssoc(Of([]int{})).Count())
 }
 
 func TestEachSpread(t *testing.T) {
 	count := 0
-	c := New(1, 2, 3)
+	c := Of([]int{1, 2, 3})
 	c.EachSpread(func(items ...int) {
 		count += len(items)
 	})
-	if count != 3 {
-		t.Errorf("Expected count of 3, got %d", count)
-	}
+	assert.Equal(t, 3, count)
 }
 
 func TestFlatMap(t *testing.T) {
-	c := New(1, 2, 3)
+	c := Of([]int{1, 2, 3})
 	result := c.FlatMap(func(n int) []int { return []int{n, n * 2} })
-	if !reflect.DeepEqual(result.All(), []int{1, 2, 2, 4, 3, 6}) {
-		t.Error("Expected [1, 2, 2, 4, 3, 6]")
-	}
-	if New[int]().FlatMap(func(n int) []int { return []int{n} }).Count() != 0 {
-		t.Error("Expected empty for empty collection")
-	}
+	assert.Equal(t, []int{1, 2, 2, 4, 3, 6}, result.All())
+	assert.Equal(t, 0, Of([]int{}).FlatMap(func(n int) []int { return []int{n} }).Count())
 }
 
 func TestForPage(t *testing.T) {
-	c := New(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-	if !reflect.DeepEqual(c.ForPage(1, 3).All(), []int{1, 2, 3}) || !reflect.DeepEqual(c.ForPage(2, 3).All(), []int{4, 5, 6}) {
-		t.Error("Expected correct pagination")
-	}
-	if c.ForPage(10, 3).Count() != 0 || New[int]().ForPage(1, 3).Count() != 0 {
-		t.Error("Expected empty for out of bounds and empty collection")
-	}
+	c := Of([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
+	assert.Equal(t, []int{1, 2, 3}, c.ForPage(1, 3).All())
+	assert.Equal(t, []int{4, 5, 6}, c.ForPage(2, 3).All())
+	assert.Equal(t, 0, c.ForPage(10, 3).Count())
+	assert.Equal(t, 0, Of([]int{}).ForPage(1, 3).Count())
 }
 
 func TestIntersectByKeys(t *testing.T) {
-	c1 := New(10, 20, 30, 40, 50)
-	c2 := New(1, 2, 3)
+	c1 := Of([]int{10, 20, 30, 40, 50})
+	c2 := Of([]int{1, 2, 3})
 	result := c1.IntersectByKeys(c2)
-	if !reflect.DeepEqual(result.All(), []int{10, 20, 30}) {
-		t.Error("Expected first 3 elements")
-	}
-	if New[int]().IntersectByKeys(c2).Count() != 0 || c1.IntersectByKeys(New[int]()).Count() != 0 {
-		t.Error("Expected empty for empty collections")
-	}
+	assert.Equal(t, []int{10, 20, 30}, result.All())
+	assert.Equal(t, 0, Of([]int{}).IntersectByKeys(c2).Count())
+	assert.Equal(t, 0, c1.IntersectByKeys(Of([]int{})).Count())
 }
 
 func TestCollectionKeys(t *testing.T) {
-	c := New(10, 20, 30)
+	c := Of([]int{10, 20, 30})
 	keys := c.Keys()
-	if !reflect.DeepEqual(keys, []int{0, 1, 2}) {
-		t.Error("Expected [0, 1, 2]")
-	}
-	if len(New[int]().Keys()) != 0 {
-		t.Error("Expected empty keys for empty collection")
-	}
+	assert.Equal(t, []int{0, 1, 2}, keys)
+	assert.Equal(t, 0, len(Of([]int{}).Keys()))
 }
 
 func TestMapSpread(t *testing.T) {
-	c := New(1, 2, 3)
+	c := Of([]int{1, 2, 3})
 	result := c.MapSpread(func(items ...int) int {
 		sum := 0
 		for _, v := range items {
@@ -1613,9 +922,10 @@ func TestMapSpread(t *testing.T) {
 		}
 		return sum
 	})
-	if result.Count() != 3 || result.All()[0] != 1 || result.All()[1] != 2 || result.All()[2] != 3 {
-		t.Error("Expected correct MapSpread results")
-	}
+	assert.Equal(t, 3, result.Count())
+	assert.Equal(t, 1, result.All()[0])
+	assert.Equal(t, 2, result.All()[1])
+	assert.Equal(t, 3, result.All()[2])
 }
 
 func TestMapToDictionary(t *testing.T) {
@@ -1623,200 +933,462 @@ func TestMapToDictionary(t *testing.T) {
 		Name string
 		Type string
 	}
-	products := New(Product{"Apple", "fruit"}, Product{"Carrot", "veg"}, Product{"Banana", "fruit"})
+	products := Of([]Product{Product{"Apple", "fruit"}, Product{"Carrot", "veg"}, Product{"Banana", "fruit"}})
 	dict := products.MapToDictionary(func(p Product) string { return p.Type })
-	if len(dict["fruit"]) != 2 || len(dict["veg"]) != 1 {
-		t.Error("Expected correct grouping by type")
-	}
-	if len(New[Product]().MapToDictionary(func(p Product) string { return p.Type })) != 0 {
-		t.Error("Expected empty dictionary for empty collection")
-	}
+	assert.Equal(t, 2, len(dict["fruit"]))
+	assert.Equal(t, 1, len(dict["veg"]))
+	assert.Equal(t, 0, len(Of([]Product{}).MapToDictionary(func(p Product) string { return p.Type })))
 }
 
 func TestMedian(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
-	if c.Median(func(n int) float64 { return float64(n) }) != 3.0 {
-		t.Error("Expected median of 3")
-	}
-	c2 := New(1, 2, 3, 4)
-	if c2.Median(func(n int) float64 { return float64(n) }) != 2.5 {
-		t.Error("Expected median of 2.5 for even count")
-	}
-	if New[int]().Median(func(n int) float64 { return float64(n) }) != 0 {
-		t.Error("Expected 0 for empty collection")
-	}
-}
-
-func TestMergeRecursive(t *testing.T) {
-	c1 := New(1, 2, 3)
-	c2 := New(4, 5, 6)
-	result := c1.MergeRecursive(c2)
-	if !reflect.DeepEqual(result.All(), []int{1, 2, 3, 4, 5, 6}) {
-		t.Error("Expected merged collection")
-	}
-	if New[int]().MergeRecursive(c2).Count() != 3 {
-		t.Error("Expected correct merge with empty")
-	}
+	c := Of([]int{1, 2, 3, 4, 5})
+	assert.Equal(t, 3.0, c.Median(func(n int) float64 { return float64(n) }))
+	c2 := Of([]int{1, 2, 3, 4})
+	assert.Equal(t, 2.5, c2.Median(func(n int) float64 { return float64(n) }))
+	assert.Equal(t, 0.0, Of([]int{}).Median(func(n int) float64 { return float64(n) }))
 }
 
 func TestMode(t *testing.T) {
 	type Item struct{ Category string }
-	items := New(Item{"A"}, Item{"B"}, Item{"A"}, Item{"C"}, Item{"A"})
+	items := Of([]Item{Item{"A"}, Item{"B"}, Item{"A"}, Item{"C"}, Item{"A"}})
 	modes := items.Mode(func(i Item) string { return i.Category })
-	if len(modes) != 1 || modes[0] != "A" {
-		t.Error("Expected mode to be [A]")
-	}
-	if len(New[Item]().Mode(func(i Item) string { return i.Category })) != 0 {
-		t.Error("Expected empty modes for empty collection")
-	}
+	assert.Equal(t, 1, len(modes))
+	assert.Equal(t, "A", modes[0])
+
+	assert.Equal(t, 0, len(Of([]Item{}).Mode(func(i Item) string { return i.Category })))
+
+	items = Of([]Item{Item{"A"}, Item{"B"}, Item{"A"}, Item{"B"}})
+	modes = items.Mode(func(i Item) string { return i.Category })
+	assert.Equal(t, 2, len(modes))
+	assert.Contains(t, modes, "A")
+	assert.Contains(t, modes, "B")
 }
 
 func TestNth(t *testing.T) {
-	c := New(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-	if !reflect.DeepEqual(c.Nth(2).All(), []int{1, 3, 5, 7, 9}) {
-		t.Error("Expected every 2nd element starting from 0")
-	}
-	if c.Nth(0).Count() != 0 || c.Nth(-1).Count() != 0 || New[int]().Nth(2).Count() != 0 {
-		t.Error("Expected empty for invalid n and empty collection")
-	}
+	c := Of([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
+	assert.Equal(t, []int{1, 3, 5, 7, 9}, c.Nth(2).All())
+	assert.Equal(t, 0, c.Nth(0).Count())
+	assert.Equal(t, 0, c.Nth(-1).Count())
+	assert.Equal(t, 0, Of([]int{}).Nth(2).Count())
 }
 
 func TestPad(t *testing.T) {
-	c := New(1, 2, 3)
+	c := Of([]int{1, 2, 3})
 	result := c.Pad(5, 0)
-	if !reflect.DeepEqual(result.All(), []int{1, 2, 3, 0, 0}) {
-		t.Error("Expected padded with zeros")
-	}
-	if c.Pad(2, 0).Count() != 3 {
-		t.Error("Expected original size when pad size is smaller")
-	}
+	assert.Equal(t, []int{1, 2, 3, 0, 0}, result.All())
+	assert.Equal(t, 3, c.Pad(2, 0).Count())
 }
 
 func TestReplace(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
+	c := Of([]int{1, 2, 3, 4, 5})
 	result := c.Replace(map[int]int{0: 10, 2: 30, 10: 100})
-	if !reflect.DeepEqual(result.All(), []int{10, 2, 30, 4, 5}) {
-		t.Error("Expected replaced values at indices 0 and 2")
-	}
-	if !reflect.DeepEqual(c.All(), []int{1, 2, 3, 4, 5}) {
-		t.Error("Expected original collection unchanged")
-	}
+	assert.Equal(t, []int{10, 2, 30, 4, 5, 100}, result.All())
+	assert.Equal(t, []int{1, 2, 3, 4, 5}, c.All())
 }
 
 func TestCollectionShuffle(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
+	c := Of([]int{1, 2, 3, 4, 5})
 	result := c.Shuffle()
-	if result.Count() != 5 || !reflect.DeepEqual(c.All(), []int{1, 2, 3, 4, 5}) {
-		t.Error("Expected same count and original unchanged")
-	}
-	if New[int]().Shuffle().Count() != 0 {
-		t.Error("Expected empty shuffle for empty collection")
-	}
+	assert.Equal(t, 5, result.Count())
+	assert.Equal(t, []int{1, 2, 3, 4, 5}, c.All())
+	assert.Equal(t, 0, Of([]int{}).Shuffle().Count())
 }
 
 func TestSkipUntil(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
+	c := Of([]int{1, 2, 3, 4, 5})
 	result := c.SkipUntil(func(n int) bool { return n >= 3 })
-	if !reflect.DeepEqual(result.All(), []int{3, 4, 5}) {
-		t.Error("Expected [3, 4, 5]")
-	}
-	if c.SkipUntil(func(n int) bool { return n > 10 }).Count() != 0 {
-		t.Error("Expected empty when condition never met")
-	}
+	assert.Equal(t, []int{3, 4, 5}, result.All())
+	assert.Equal(t, 0, c.SkipUntil(func(n int) bool { return n > 10 }).Count())
 }
 
 func TestSkipWhile(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
+	c := Of([]int{1, 2, 3, 4, 5})
 	result := c.SkipWhile(func(n int) bool { return n < 3 })
-	if !reflect.DeepEqual(result.All(), []int{3, 4, 5}) {
-		t.Error("Expected [3, 4, 5]")
-	}
-	if c.SkipWhile(func(n int) bool { return n < 10 }).Count() != 0 {
-		t.Error("Expected empty when all skipped")
-	}
+	assert.Equal(t, []int{3, 4, 5}, result.All())
+	assert.Equal(t, 0, c.SkipWhile(func(n int) bool { return n < 10 }).Count())
 }
 
 func TestSortDesc(t *testing.T) {
-	c := New(3, 1, 4, 1, 5, 9, 2, 6)
+	c := Of([]int{3, 1, 4, 1, 5, 9, 2, 6})
 	result := c.SortDesc(func(a, b int) bool { return a < b })
-	if !reflect.DeepEqual(result.All(), []int{9, 6, 5, 4, 3, 2, 1, 1}) {
-		t.Error("Expected descending sort")
-	}
-	if !reflect.DeepEqual(c.All(), []int{3, 1, 4, 1, 5, 9, 2, 6}) {
-		t.Error("Expected original unchanged")
-	}
-}
-
-func TestSortKeys(t *testing.T) {
-	c := New(3, 1, 4)
-	result := c.SortKeys()
-	if !reflect.DeepEqual(result.All(), []int{3, 1, 4}) {
-		t.Error("Expected clone of original (SortKeys has no effect on slices)")
-	}
-}
-
-func TestSortKeysDesc(t *testing.T) {
-	c := New(3, 1, 4)
-	result := c.SortKeysDesc()
-	if !reflect.DeepEqual(result.All(), []int{3, 1, 4}) {
-		t.Error("Expected clone of original (SortKeysDesc has no effect on slices)")
-	}
+	assert.Equal(t, []int{9, 6, 5, 4, 3, 2, 1, 1}, result.All())
+	assert.Equal(t, []int{3, 1, 4, 1, 5, 9, 2, 6}, c.All())
 }
 
 func TestSplice(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
-	result := c.Splice(1, 2, 10, 20)
-	if !reflect.DeepEqual(result.All(), []int{1, 10, 20, 4, 5}) {
-		t.Error("Expected [1, 10, 20, 4, 5]")
-	}
-	if !reflect.DeepEqual(c.All(), []int{1, 2, 3, 4, 5}) {
-		t.Error("Expected original unchanged")
-	}
-	if c.Splice(-2, 1, 99).All()[3] != 99 {
-		t.Error("Expected negative index to work")
-	}
+	c := Of([]int{1, 2, 3, 4, 5})
+	removed := c.Splice(1, 2, 10, 20)
+	assert.Equal(t, []int{2, 3}, removed.All())
+	assert.Equal(t, []int{1, 10, 20, 4, 5}, c.All())
+
+	removed = c.Splice(-2, 1, 99)
+	assert.Equal(t, []int{4}, removed.All())
+	assert.Equal(t, []int{1, 10, 20, 99, 5}, c.All())
+
+	removed = c.Splice(2, -1, 8)
+	assert.Equal(t, []int{}, removed.All())
+	assert.Equal(t, []int{1, 10, 8, 20, 99, 5}, c.All())
+}
+
+func TestZip(t *testing.T) {
+	// Equal length collections
+	assert.Equal(t, [][]int{{1, 3}, {2, 4}}, Of([]int{1, 2}).Zip(Of([]int{3, 4})))
+
+	// First collection is longer — trailing element forms a partial pair
+	assert.Equal(t, [][]int{{1, 3}, {2}}, Of([]int{1, 2}).Zip(Of([]int{3})))
+
+	// Second collection is longer — trailing element forms a partial pair
+	assert.Equal(t, [][]int{{1, 2}, {3}}, Of([]int{1}).Zip(Of([]int{2, 3})))
+
+	// Empty collections
+	assert.Equal(t, 0, len(Of([]int{}).Zip(Of([]int{}))))
 }
 
 func TestCollectionSplit(t *testing.T) {
-	c := New(1, 2, 3, 4, 5, 6, 7)
+	c := Of([]int{1, 2, 3, 4, 5, 6, 7})
 	groups := c.Split(3)
-	if len(groups) != 3 || len(groups[0]) != 3 || len(groups[2]) != 1 {
-		t.Error("Expected 3 groups with sizes [3, 3, 1]")
-	}
-	if len(New[int]().Split(3)) != 0 || len(c.Split(0)) != 0 {
-		t.Error("Expected empty for empty collection and invalid groups")
-	}
+	assert.Equal(t, 3, len(groups))
+	assert.Equal(t, 3, len(groups[0]))
+	assert.Equal(t, 1, len(groups[2]))
+	assert.Equal(t, 0, len(Of([]int{}).Split(3)))
+	assert.Equal(t, 0, len(c.Split(0)))
 }
 
 func TestTakeUntil(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
+	c := Of([]int{1, 2, 3, 4, 5})
 	result := c.TakeUntil(func(n int) bool { return n >= 3 })
-	if !reflect.DeepEqual(result.All(), []int{1, 2}) {
-		t.Error("Expected [1, 2]")
-	}
-	if c.TakeUntil(func(n int) bool { return n > 10 }).Count() != 5 {
-		t.Error("Expected all items when condition never met")
-	}
+	assert.Equal(t, []int{1, 2}, result.All())
+	assert.Equal(t, 5, c.TakeUntil(func(n int) bool { return n > 10 }).Count())
 }
 
 func TestTakeWhile(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
+	c := Of([]int{1, 2, 3, 4, 5})
 	result := c.TakeWhile(func(n int) bool { return n < 3 })
-	if !reflect.DeepEqual(result.All(), []int{1, 2}) {
-		t.Error("Expected [1, 2]")
-	}
-	if c.TakeWhile(func(n int) bool { return n > 10 }).Count() != 0 {
-		t.Error("Expected empty when no items match")
-	}
+	assert.Equal(t, []int{1, 2}, result.All())
+	assert.Equal(t, 0, c.TakeWhile(func(n int) bool { return n > 10 }).Count())
 }
 
 func TestTransform(t *testing.T) {
-	c := New(1, 2, 3, 4, 5)
+	c := Of([]int{1, 2, 3, 4, 5})
 	result := c.Transform(func(n int, _ int) int { return n * 2 })
-	if !reflect.DeepEqual(result.All(), []int{2, 4, 6, 8, 10}) {
-		t.Error("Expected [2, 4, 6, 8, 10]")
+	assert.Equal(t, []int{2, 4, 6, 8, 10}, result.All())
+	assert.Same(t, c, result)
+}
+
+func TestCollectionNewFunction(t *testing.T) {
+	c := New(1, 2, 3)
+	assert.Equal(t, []int{1, 2, 3}, c.All())
+}
+
+func TestCollectionCollapse(t *testing.T) {
+	items := Of([]any{1, []any{2, 3}, "x"}).Collapse().All()
+	assert.Equal(t, []any{1, 2, 3, "x"}, items)
+}
+
+func TestCollectionConcat(t *testing.T) {
+	left := Of([]int{1, 2})
+	right := Of([]int{3, 4})
+	assert.Equal(t, []int{1, 2, 3, 4}, left.Concat(right).All())
+}
+
+func TestCollectionDiffKeys(t *testing.T) {
+	result := Of([]int{10, 20, 30, 40, 50}).DiffKeys(Of([]int{1, 2, 3})).All()
+	assert.Equal(t, []int{40, 50}, result)
+}
+
+func TestCollectionEachUntil(t *testing.T) {
+	visited := 0
+	Of([]int{1, 2, 3, 4}).EachUntil(func(item int, _ int) bool {
+		visited += item
+		return item < 3
+	})
+	assert.Equal(t, 6, visited)
+}
+
+func TestCollectionMapToGroups(t *testing.T) {
+	groups := Of([]int{1, 2, 3, 4}).MapToGroups(func(item int, index int) string {
+		if (item+index)%2 == 0 {
+			return "even"
+		}
+		return "odd"
+	})
+	assert.Equal(t, []int{1, 2, 3, 4}, groups["odd"].All())
+}
+
+func TestCollectionMapWithKeys(t *testing.T) {
+	mapped := Of([]int{1, 2, 3}).MapWithKeys(func(item int) (string, int) {
+		return string(rune('a' + item - 1)), item * 10
+	})
+	assert.Equal(t, map[string]int{"a": 10, "b": 20, "c": 30}, mapped)
+}
+
+func TestCollectionRandom(t *testing.T) {
+	empty := Of([]int{}).Random()
+	assert.Nil(t, empty)
+
+	got := Of([]int{1, 2, 3}).Random()
+	assert.NotNil(t, got)
+	assert.Contains(t, []int{1, 2, 3}, *got)
+}
+
+func TestCollectionToJsonError(t *testing.T) {
+	json, err := Of([]int{1, 2, 3}).ToJson()
+	assert.NoError(t, err)
+	assert.Equal(t, "[1,2,3]", json)
+
+	type bad struct {
+		Fn func()
 	}
-	if result != c {
-		t.Error("Expected Transform to mutate original collection")
+	_, err = Of([]bad{{Fn: func() {}}}).ToJson()
+	assert.Error(t, err)
+}
+
+func TestCollectionUnion(t *testing.T) {
+	result := Of([]int{1, 2, 2}).Union(Of([]int{2, 3, 4})).All()
+	assert.Equal(t, []int{1, 2, 2, 3, 4}, result)
+}
+
+func TestCollectionUniqueByAdditional(t *testing.T) {
+	type user struct {
+		Name    string
+		Country string
 	}
+
+	result := Of([]user{
+		{Name: "alice", Country: "US"},
+		{Name: "bob", Country: "US"},
+		{Name: "charlie", Country: "UK"},
+	}).UniqueBy(func(item user) string {
+		return item.Country
+	}).All()
+
+	assert.Equal(t, []user{{Name: "alice", Country: "US"}, {Name: "charlie", Country: "UK"}}, result)
+}
+
+func TestCollectionUnlessAndWhenVariants(t *testing.T) {
+	emptyCalled := false
+	notEmptyCalled := false
+
+	empty := Of([]int{})
+	nonEmpty := Of([]int{1, 2})
+
+	empty.UnlessEmpty(func(c *Collection[int]) *Collection[int] {
+		emptyCalled = true
+		return c.Push(10)
+	})
+	assert.False(t, emptyCalled)
+
+	nonEmpty.UnlessEmpty(func(c *Collection[int]) *Collection[int] {
+		notEmptyCalled = true
+		return c.Push(3)
+	})
+	assert.True(t, notEmptyCalled)
+	assert.Equal(t, []int{1, 2, 3}, nonEmpty.All())
+
+	notEmptyCalled = false
+	nonEmpty.UnlessNotEmpty(func(c *Collection[int]) *Collection[int] {
+		notEmptyCalled = true
+		return c
+	})
+	assert.False(t, notEmptyCalled)
+
+	emptyCalled = false
+	empty.WhenEmpty(func(c *Collection[int]) *Collection[int] {
+		emptyCalled = true
+		return c.Push(20)
+	})
+	assert.True(t, emptyCalled)
+
+	notEmptyCalled = false
+	nonEmpty.WhenNotEmpty(func(c *Collection[int]) *Collection[int] {
+		notEmptyCalled = true
+		return c.Push(4)
+	})
+	assert.True(t, notEmptyCalled)
+	assert.Equal(t, []int{1, 2, 3, 4}, nonEmpty.All())
+}
+
+func TestCollectionWhereNullVariants(t *testing.T) {
+	type user struct {
+		Name      string
+		Age       int
+		DeletedAt *string
+	}
+
+	deleted := "yes"
+	users := Of([]user{
+		{Name: "alice", Age: 20, DeletedAt: nil},
+		{Name: "bob", Age: 30, DeletedAt: &deleted},
+		{Name: "charlie", Age: 40, DeletedAt: nil},
+	})
+
+	assert.Equal(t, []user{{Name: "bob", Age: 30, DeletedAt: &deleted}}, users.WhereNotNull("DeletedAt").All())
+	assert.Equal(t, 2, users.WhereNull("DeletedAt").Count())
+	assert.Equal(t, []user{{Name: "bob", Age: 30, DeletedAt: &deleted}}, users.WhereNotIn("Age", []any{20, 40}).All())
+}
+
+func TestGetFieldValue(t *testing.T) {
+	type item struct {
+		Name string
+		Age  int
+		Ptr  *string
+	}
+
+	s := "hello"
+	obj := item{Name: "Alice", Age: 30, Ptr: &s}
+
+	// existing field
+	v := getFieldValue(obj, "Name")
+	assert.NotNil(t, v)
+	assert.Equal(t, "Alice", *v)
+
+	// numeric field
+	v = getFieldValue(obj, "Age")
+	assert.NotNil(t, v)
+	assert.Equal(t, 30, *v)
+
+	// pointer field that is non-nil
+	v = getFieldValue(obj, "Ptr")
+	assert.NotNil(t, v)
+
+	// pointer field that is nil
+	obj.Ptr = nil
+	v = getFieldValue(obj, "Ptr")
+	assert.Nil(t, v)
+
+	// pointer to struct
+	v = getFieldValue(&obj, "Name")
+	assert.NotNil(t, v)
+	assert.Equal(t, "Alice", *v)
+
+	// non-existent field
+	v = getFieldValue(obj, "Missing")
+	assert.Nil(t, v)
+
+	// non-struct value
+	v = getFieldValue(42, "whatever")
+	assert.Nil(t, v)
+}
+
+func TestIsSimpleComparable(t *testing.T) {
+	assert.True(t, isSimpleComparable(42))
+	assert.True(t, isSimpleComparable(int8(1)))
+	assert.True(t, isSimpleComparable(int16(1)))
+	assert.True(t, isSimpleComparable(int32(1)))
+	assert.True(t, isSimpleComparable(int64(1)))
+	assert.True(t, isSimpleComparable(uint(1)))
+	assert.True(t, isSimpleComparable(uint8(1)))
+	assert.True(t, isSimpleComparable(uint16(1)))
+	assert.True(t, isSimpleComparable(uint32(1)))
+	assert.True(t, isSimpleComparable(uint64(1)))
+	assert.True(t, isSimpleComparable(float32(1.0)))
+	assert.True(t, isSimpleComparable(float64(1.0)))
+	assert.True(t, isSimpleComparable("hello"))
+	assert.True(t, isSimpleComparable(true))
+
+	// nil is not simple comparable
+	assert.False(t, isSimpleComparable(nil))
+
+	// slice is not simple comparable
+	assert.False(t, isSimpleComparable([]int{1, 2}))
+
+	// struct is not simple comparable
+	assert.False(t, isSimpleComparable(struct{ X int }{1}))
+}
+
+func TestCompareValues(t *testing.T) {
+	// numeric comparisons
+	assert.Equal(t, -1, compareValues(1, 2))
+	assert.Equal(t, 0, compareValues(2, 2))
+	assert.Equal(t, 1, compareValues(3, 2))
+
+	// float numeric comparisons
+	assert.Equal(t, -1, compareValues(1.5, 2.5))
+	assert.Equal(t, 0, compareValues(2.5, 2.5))
+	assert.Equal(t, 1, compareValues(3.5, 2.5))
+
+	// mixed int / float
+	assert.Equal(t, 0, compareValues(2, 2.0))
+	assert.Equal(t, -1, compareValues(1, 1.5))
+
+	// string comparisons (non-numeric)
+	assert.Equal(t, -1, compareValues("apple", "banana"))
+	assert.Equal(t, 0, compareValues("apple", "apple"))
+	assert.Equal(t, 1, compareValues("banana", "apple"))
+}
+
+func TestValuesEqual(t *testing.T) {
+	// identical types
+	assert.True(t, valuesEqual(1, 1))
+	assert.True(t, valuesEqual("hello", "hello"))
+	assert.True(t, valuesEqual(1.5, 1.5))
+
+	// cross-type numeric equality via string conversion
+	assert.True(t, valuesEqual(int(2), float64(2.0)))
+	assert.True(t, valuesEqual(int64(3), int(3)))
+
+	// unequal values
+	assert.False(t, valuesEqual(1, 2))
+	assert.False(t, valuesEqual("a", "b"))
+
+	// non-simple comparable (slice) falls back to DeepEqual
+	assert.True(t, valuesEqual([]int{1, 2}, []int{1, 2}))
+	assert.False(t, valuesEqual([]int{1, 2}, []int{1, 3}))
+
+	// mixed simple and non-simple
+	assert.False(t, valuesEqual(1, []int{1}))
+}
+
+func TestCompareFieldValue(t *testing.T) {
+	type product struct {
+		Name  string
+		Price float64
+		Tag   *string
+	}
+
+	tag := "sale"
+	p := product{Name: "Widget", Price: 9.99, Tag: &tag}
+
+	// equality operators
+	assert.True(t, compareFieldValue(p, "Name", "=", "Widget"))
+	assert.True(t, compareFieldValue(p, "Name", "==", "Widget"))
+	assert.False(t, compareFieldValue(p, "Name", "=", "Gadget"))
+
+	// inequality
+	assert.True(t, compareFieldValue(p, "Name", "!=", "Gadget"))
+	assert.False(t, compareFieldValue(p, "Name", "!=", "Widget"))
+
+	// numeric comparison operators
+	assert.True(t, compareFieldValue(p, "Price", ">", 5.0))
+	assert.False(t, compareFieldValue(p, "Price", ">", 10.0))
+	assert.True(t, compareFieldValue(p, "Price", ">=", 9.99))
+	assert.True(t, compareFieldValue(p, "Price", "<", 20.0))
+	assert.False(t, compareFieldValue(p, "Price", "<", 5.0))
+	assert.True(t, compareFieldValue(p, "Price", "<=", 9.99))
+
+	// like / not like
+	assert.True(t, compareFieldValue(p, "Name", "like", "wid"))
+	assert.True(t, compareFieldValue(p, "Name", "like", "WIDGET"))
+	assert.False(t, compareFieldValue(p, "Name", "like", "xyz"))
+	assert.True(t, compareFieldValue(p, "Name", "not like", "xyz"))
+	assert.False(t, compareFieldValue(p, "Name", "not like", "widget"))
+
+	// unknown operator
+	assert.False(t, compareFieldValue(p, "Name", "~=", "Widget"))
+
+	// value is nil: field is non-nil
+	assert.False(t, compareFieldValue(p, "Name", "=", nil))
+	assert.True(t, compareFieldValue(p, "Name", "!=", nil))
+	assert.False(t, compareFieldValue(p, "Name", ">", nil))
+
+	// fieldValue is nil (nil pointer field), value is non-nil
+	p.Tag = nil
+	assert.False(t, compareFieldValue(p, "Tag", "=", "sale"))
+	assert.True(t, compareFieldValue(p, "Tag", "!=", "sale"))
+	assert.False(t, compareFieldValue(p, "Tag", ">", "sale"))
+
+	// both nil
+	assert.True(t, compareFieldValue(p, "Tag", "=", nil))
+	assert.False(t, compareFieldValue(p, "Tag", "!=", nil))
+	assert.False(t, compareFieldValue(p, "Tag", ">", nil))
 }
