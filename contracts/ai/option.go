@@ -1,9 +1,8 @@
 package ai
 
 const (
-	OptionProvider = "provider"
-	OptionModel    = "model"
-	OptionTimeout  = "timeout"
+	OptionModel   = "model"
+	OptionTimeout = "timeout"
 )
 
 // Option applies conversation options for provider selection and model behavior.

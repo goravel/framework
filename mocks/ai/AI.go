@@ -144,6 +144,102 @@ func (_c *AI_WithContext_Call) RunAndReturn(run func(context.Context) ai.AI) *AI
 	return _c
 }
 
+// WithModel provides a mock function with given fields: model
+func (_m *AI) WithModel(model string) ai.AI {
+	ret := _m.Called(model)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithModel")
+	}
+
+	var r0 ai.AI
+	if rf, ok := ret.Get(0).(func(string) ai.AI); ok {
+		r0 = rf(model)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(ai.AI)
+		}
+	}
+
+	return r0
+}
+
+// AI_WithModel_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithModel'
+type AI_WithModel_Call struct {
+	*mock.Call
+}
+
+// WithModel is a helper method to define mock.On call
+//   - model string
+func (_e *AI_Expecter) WithModel(model interface{}) *AI_WithModel_Call {
+	return &AI_WithModel_Call{Call: _e.mock.On("WithModel", model)}
+}
+
+func (_c *AI_WithModel_Call) Run(run func(model string)) *AI_WithModel_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *AI_WithModel_Call) Return(_a0 ai.AI) *AI_WithModel_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *AI_WithModel_Call) RunAndReturn(run func(string) ai.AI) *AI_WithModel_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithProvider provides a mock function with given fields: provider
+func (_m *AI) WithProvider(provider string) ai.AI {
+	ret := _m.Called(provider)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithProvider")
+	}
+
+	var r0 ai.AI
+	if rf, ok := ret.Get(0).(func(string) ai.AI); ok {
+		r0 = rf(provider)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(ai.AI)
+		}
+	}
+
+	return r0
+}
+
+// AI_WithProvider_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithProvider'
+type AI_WithProvider_Call struct {
+	*mock.Call
+}
+
+// WithProvider is a helper method to define mock.On call
+//   - provider string
+func (_e *AI_Expecter) WithProvider(provider interface{}) *AI_WithProvider_Call {
+	return &AI_WithProvider_Call{Call: _e.mock.On("WithProvider", provider)}
+}
+
+func (_c *AI_WithProvider_Call) Run(run func(provider string)) *AI_WithProvider_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *AI_WithProvider_Call) Return(_a0 ai.AI) *AI_WithProvider_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *AI_WithProvider_Call) RunAndReturn(run func(string) ai.AI) *AI_WithProvider_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewAI creates a new instance of AI. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewAI(t interface {

@@ -16,6 +16,8 @@ type Application struct {
 	config        config.Config
 	drivers       map[string]contractsai.Provider
 	ctx           context.Context
+	provider      string
+	model         string
 	mu            *sync.RWMutex
 }
 
@@ -39,6 +41,32 @@ func (r *Application) WithContext(ctx context.Context) contractsai.AI {
 		config:        r.config,
 		defaultDriver: r.defaultDriver,
 		drivers:       r.drivers,
+		provider:      r.provider,
+		model:         r.model,
+		mu:            r.mu,
+	}
+}
+
+func (r *Application) WithProvider(provider string) contractsai.AI {
+	return &Application{
+		ctx:           r.ctx,
+		config:        r.config,
+		defaultDriver: r.defaultDriver,
+		drivers:       r.drivers,
+		provider:      provider,
+		model:         r.model,
+		mu:            r.mu,
+	}
+}
+
+func (r *Application) WithModel(model string) contractsai.AI {
+	return &Application{
+		ctx:           r.ctx,
+		config:        r.config,
+		defaultDriver: r.defaultDriver,
+		drivers:       r.drivers,
+		provider:      r.provider,
+		model:         model,
 		mu:            r.mu,
 	}
 }

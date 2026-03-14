@@ -6,6 +6,10 @@ import "context"
 type AI interface {
 	// WithContext returns a request-scoped AI instance.
 	WithContext(ctx context.Context) AI
+	// WithProvider sets the provider to use for the conversation.
+	WithProvider(provider string) AI
+	// WithModel sets the model to use for the conversation.
+	WithModel(model string) AI
 	// Agent creates a conversation bound to the resolved driver.
 	Agent(agent Agent, options ...Option) (Conversation, error)
 }
