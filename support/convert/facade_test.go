@@ -8,6 +8,9 @@ import (
 )
 
 func TestFacadeBindingConversion(t *testing.T) {
+	assert.Equal(t, "AI", BindingToFacade(binding.AI))
+	assert.Equal(t, binding.AI, FacadeToBinding("AI"))
+
 	assert.Equal(t, "Auth", BindingToFacade(binding.Auth))
 	assert.Equal(t, binding.Auth, FacadeToBinding("Auth"))
 

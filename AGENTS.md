@@ -6,9 +6,7 @@ Application scaffold: [goravel/goravel](https://github.com/goravel/goravel).
 ## Common Commands
 
 ```bash
-go test ./...                          # all unit tests
-go test ./cache/...                    # package tests
-go test ./cache/... -run TestMemory    # single test
+go test                                # unit tests
 cd tests && go test ./...              # integration tests
 go tool mockery                        # regenerate mocks
 golangci-lint run                      # lint
@@ -42,12 +40,10 @@ golangci-lint run                      # lint
 - Cache/Session/Queue: `goravel/redis`
 - Storage: `goravel/s3`, `oss`, `cos`, `minio`
 
-## Build Flow
+## AI Agent Code Rule
 
-`foundation.Application.Build()` handles configuration, provider registration/boot, middleware/events/commands setup, and command registration.
-
-## AI Agent Go Style Rule
-
-- When writing Go code, AI agents should use `any` instead of `interface{}`.
+- Should use `any` instead of `interface{}`.
 - Avoid adding `mock.Anything` when writing test cases.
 - Use the testify `EXPECT` method when writing test cases.
+- Don't modify the files in the `mocks` directory, run the `go tool mockery` command to regenerate mocks instead if needed.
+- Don't run `go test ./...` if unnecessary, the command is a bit slow, run `go test` with the specific package or test function instead.
