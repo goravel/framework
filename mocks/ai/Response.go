@@ -3,10 +3,7 @@
 package ai
 
 import (
-	context "context"
-
 	ai "github.com/goravel/framework/contracts/ai"
-
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -23,65 +20,17 @@ func (_m *Response) EXPECT() *Response_Expecter {
 	return &Response_Expecter{mock: &_m.Mock}
 }
 
-// Raw provides a mock function with given fields: ctx
-func (_m *Response) Raw(ctx context.Context) interface{} {
-	ret := _m.Called(ctx)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Raw")
-	}
-
-	var r0 interface{}
-	if rf, ok := ret.Get(0).(func(context.Context) interface{}); ok {
-		r0 = rf(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(interface{})
-		}
-	}
-
-	return r0
-}
-
-// Response_Raw_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Raw'
-type Response_Raw_Call struct {
-	*mock.Call
-}
-
-// Raw is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *Response_Expecter) Raw(ctx interface{}) *Response_Raw_Call {
-	return &Response_Raw_Call{Call: _e.mock.On("Raw", ctx)}
-}
-
-func (_c *Response_Raw_Call) Run(run func(ctx context.Context)) *Response_Raw_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
-	})
-	return _c
-}
-
-func (_c *Response_Raw_Call) Return(_a0 interface{}) *Response_Raw_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Response_Raw_Call) RunAndReturn(run func(context.Context) interface{}) *Response_Raw_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// Text provides a mock function with given fields: ctx
-func (_m *Response) Text(ctx context.Context) string {
-	ret := _m.Called(ctx)
+// Text provides a mock function with no fields
+func (_m *Response) Text() string {
+	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Text")
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context) string); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -95,14 +44,13 @@ type Response_Text_Call struct {
 }
 
 // Text is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *Response_Expecter) Text(ctx interface{}) *Response_Text_Call {
-	return &Response_Text_Call{Call: _e.mock.On("Text", ctx)}
+func (_e *Response_Expecter) Text() *Response_Text_Call {
+	return &Response_Text_Call{Call: _e.mock.On("Text")}
 }
 
-func (_c *Response_Text_Call) Run(run func(ctx context.Context)) *Response_Text_Call {
+func (_c *Response_Text_Call) Run(run func()) *Response_Text_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		run()
 	})
 	return _c
 }
@@ -112,22 +60,22 @@ func (_c *Response_Text_Call) Return(_a0 string) *Response_Text_Call {
 	return _c
 }
 
-func (_c *Response_Text_Call) RunAndReturn(run func(context.Context) string) *Response_Text_Call {
+func (_c *Response_Text_Call) RunAndReturn(run func() string) *Response_Text_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Usage provides a mock function with given fields: ctx
-func (_m *Response) Usage(ctx context.Context) ai.Usage {
-	ret := _m.Called(ctx)
+// Usage provides a mock function with no fields
+func (_m *Response) Usage() ai.Usage {
+	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Usage")
 	}
 
 	var r0 ai.Usage
-	if rf, ok := ret.Get(0).(func(context.Context) ai.Usage); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func() ai.Usage); ok {
+		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(ai.Usage)
@@ -143,14 +91,13 @@ type Response_Usage_Call struct {
 }
 
 // Usage is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *Response_Expecter) Usage(ctx interface{}) *Response_Usage_Call {
-	return &Response_Usage_Call{Call: _e.mock.On("Usage", ctx)}
+func (_e *Response_Expecter) Usage() *Response_Usage_Call {
+	return &Response_Usage_Call{Call: _e.mock.On("Usage")}
 }
 
-func (_c *Response_Usage_Call) Run(run func(ctx context.Context)) *Response_Usage_Call {
+func (_c *Response_Usage_Call) Run(run func()) *Response_Usage_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		run()
 	})
 	return _c
 }
@@ -160,7 +107,7 @@ func (_c *Response_Usage_Call) Return(_a0 ai.Usage) *Response_Usage_Call {
 	return _c
 }
 
-func (_c *Response_Usage_Call) RunAndReturn(run func(context.Context) ai.Usage) *Response_Usage_Call {
+func (_c *Response_Usage_Call) RunAndReturn(run func() ai.Usage) *Response_Usage_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -33,16 +33,6 @@ func NewApplication(config config.Config) *Application {
 	return app
 }
 
-func (r *Application) WithContext(ctx context.Context) contractsai.AI {
-	return &Application{
-		ctx:           ctx,
-		config:        r.config,
-		defaultDriver: r.defaultDriver,
-		drivers:       r.drivers,
-		mu:            r.mu,
-	}
-}
-
 func (r *Application) Agent(agent contractsai.Agent, options ...contractsai.Option) (contractsai.Conversation, error) {
 	return &conversation{}, nil
 }

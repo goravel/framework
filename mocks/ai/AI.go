@@ -3,10 +3,7 @@
 package ai
 
 import (
-	context "context"
-
 	ai "github.com/goravel/framework/contracts/ai"
-
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -92,54 +89,6 @@ func (_c *AI_Agent_Call) Return(_a0 ai.Conversation, _a1 error) *AI_Agent_Call {
 }
 
 func (_c *AI_Agent_Call) RunAndReturn(run func(ai.Agent, ...ai.Option) (ai.Conversation, error)) *AI_Agent_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// WithContext provides a mock function with given fields: ctx
-func (_m *AI) WithContext(ctx context.Context) ai.AI {
-	ret := _m.Called(ctx)
-
-	if len(ret) == 0 {
-		panic("no return value specified for WithContext")
-	}
-
-	var r0 ai.AI
-	if rf, ok := ret.Get(0).(func(context.Context) ai.AI); ok {
-		r0 = rf(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(ai.AI)
-		}
-	}
-
-	return r0
-}
-
-// AI_WithContext_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithContext'
-type AI_WithContext_Call struct {
-	*mock.Call
-}
-
-// WithContext is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *AI_Expecter) WithContext(ctx interface{}) *AI_WithContext_Call {
-	return &AI_WithContext_Call{Call: _e.mock.On("WithContext", ctx)}
-}
-
-func (_c *AI_WithContext_Call) Run(run func(ctx context.Context)) *AI_WithContext_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
-	})
-	return _c
-}
-
-func (_c *AI_WithContext_Call) Return(_a0 ai.AI) *AI_WithContext_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *AI_WithContext_Call) RunAndReturn(run func(context.Context) ai.AI) *AI_WithContext_Call {
 	_c.Call.Return(run)
 	return _c
 }

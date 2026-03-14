@@ -19,7 +19,7 @@ type conversation struct {
 	mu           sync.RWMutex
 }
 
-func (r *conversation) Prompt(input string) (contractsai.Response, error) {
+func (r *conversation) Prompt(ctx context.Context, input string) (contractsai.Response, error) {
 	return nil, nil
 }
 
