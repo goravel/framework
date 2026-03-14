@@ -17,12 +17,12 @@ func (_m *Usage) EXPECT() *Usage_Expecter {
 	return &Usage_Expecter{mock: &_m.Mock}
 }
 
-// InputTokens provides a mock function with no fields
-func (_m *Usage) InputTokens() int {
+// Input provides a mock function with no fields
+func (_m *Usage) Input() int {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for InputTokens")
+		panic("no return value specified for Input")
 	}
 
 	var r0 int
@@ -35,39 +35,39 @@ func (_m *Usage) InputTokens() int {
 	return r0
 }
 
-// Usage_InputTokens_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InputTokens'
-type Usage_InputTokens_Call struct {
+// Usage_Input_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Input'
+type Usage_Input_Call struct {
 	*mock.Call
 }
 
-// InputTokens is a helper method to define mock.On call
-func (_e *Usage_Expecter) InputTokens() *Usage_InputTokens_Call {
-	return &Usage_InputTokens_Call{Call: _e.mock.On("InputTokens")}
+// Input is a helper method to define mock.On call
+func (_e *Usage_Expecter) Input() *Usage_Input_Call {
+	return &Usage_Input_Call{Call: _e.mock.On("Input")}
 }
 
-func (_c *Usage_InputTokens_Call) Run(run func()) *Usage_InputTokens_Call {
+func (_c *Usage_Input_Call) Run(run func()) *Usage_Input_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run()
 	})
 	return _c
 }
 
-func (_c *Usage_InputTokens_Call) Return(_a0 int) *Usage_InputTokens_Call {
+func (_c *Usage_Input_Call) Return(_a0 int) *Usage_Input_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Usage_InputTokens_Call) RunAndReturn(run func() int) *Usage_InputTokens_Call {
+func (_c *Usage_Input_Call) RunAndReturn(run func() int) *Usage_Input_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// OutputTokens provides a mock function with no fields
-func (_m *Usage) OutputTokens() int {
+// Output provides a mock function with no fields
+func (_m *Usage) Output() int {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for OutputTokens")
+		panic("no return value specified for Output")
 	}
 
 	var r0 int
@@ -80,39 +80,39 @@ func (_m *Usage) OutputTokens() int {
 	return r0
 }
 
-// Usage_OutputTokens_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OutputTokens'
-type Usage_OutputTokens_Call struct {
+// Usage_Output_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Output'
+type Usage_Output_Call struct {
 	*mock.Call
 }
 
-// OutputTokens is a helper method to define mock.On call
-func (_e *Usage_Expecter) OutputTokens() *Usage_OutputTokens_Call {
-	return &Usage_OutputTokens_Call{Call: _e.mock.On("OutputTokens")}
+// Output is a helper method to define mock.On call
+func (_e *Usage_Expecter) Output() *Usage_Output_Call {
+	return &Usage_Output_Call{Call: _e.mock.On("Output")}
 }
 
-func (_c *Usage_OutputTokens_Call) Run(run func()) *Usage_OutputTokens_Call {
+func (_c *Usage_Output_Call) Run(run func()) *Usage_Output_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run()
 	})
 	return _c
 }
 
-func (_c *Usage_OutputTokens_Call) Return(_a0 int) *Usage_OutputTokens_Call {
+func (_c *Usage_Output_Call) Return(_a0 int) *Usage_Output_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Usage_OutputTokens_Call) RunAndReturn(run func() int) *Usage_OutputTokens_Call {
+func (_c *Usage_Output_Call) RunAndReturn(run func() int) *Usage_Output_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// TotalTokens provides a mock function with no fields
-func (_m *Usage) TotalTokens() int {
+// Total provides a mock function with no fields
+func (_m *Usage) Total() int {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for TotalTokens")
+		panic("no return value specified for Total")
 	}
 
 	var r0 int
@@ -125,29 +125,29 @@ func (_m *Usage) TotalTokens() int {
 	return r0
 }
 
-// Usage_TotalTokens_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TotalTokens'
-type Usage_TotalTokens_Call struct {
+// Usage_Total_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Total'
+type Usage_Total_Call struct {
 	*mock.Call
 }
 
-// TotalTokens is a helper method to define mock.On call
-func (_e *Usage_Expecter) TotalTokens() *Usage_TotalTokens_Call {
-	return &Usage_TotalTokens_Call{Call: _e.mock.On("TotalTokens")}
+// Total is a helper method to define mock.On call
+func (_e *Usage_Expecter) Total() *Usage_Total_Call {
+	return &Usage_Total_Call{Call: _e.mock.On("Total")}
 }
 
-func (_c *Usage_TotalTokens_Call) Run(run func()) *Usage_TotalTokens_Call {
+func (_c *Usage_Total_Call) Run(run func()) *Usage_Total_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run()
 	})
 	return _c
 }
 
-func (_c *Usage_TotalTokens_Call) Return(_a0 int) *Usage_TotalTokens_Call {
+func (_c *Usage_Total_Call) Return(_a0 int) *Usage_Total_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Usage_TotalTokens_Call) RunAndReturn(run func() int) *Usage_TotalTokens_Call {
+func (_c *Usage_Total_Call) RunAndReturn(run func() int) *Usage_Total_Call {
 	_c.Call.Return(run)
 	return _c
 }

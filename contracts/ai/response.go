@@ -8,7 +8,7 @@ type Response interface {
 
 // Usage contains token statistics for a response.
 type Usage interface {
-	InputTokens() int
-	OutputTokens() int
-	TotalTokens() int
+	Input() int
+	Output() int
+	Total() int
 }
