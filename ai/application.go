@@ -44,5 +44,5 @@ func (r *Application) WithContext(ctx context.Context) contractsai.AI {
 }
 
 func (r *Application) Agent(agent contractsai.Agent, options ...contractsai.Option) (contractsai.Conversation, error) {
-	return nil, nil
+	return &conversation{}, nil
 }
