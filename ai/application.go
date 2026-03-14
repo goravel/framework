@@ -1,9 +1,6 @@
 package ai
 
 import (
-	"context"
-	"sync"
-
 	contractsai "github.com/goravel/framework/contracts/ai"
 	"github.com/goravel/framework/contracts/config"
 )
@@ -12,25 +9,10 @@ var _ contractsai.AI = (*Application)(nil)
 
 // Application is the AI manager implementation.
 type Application struct {
-	defaultDriver string
-	config        config.Config
-	drivers       map[string]contractsai.Provider
-	ctx           context.Context
-	mu            *sync.RWMutex
 }
 
 func NewApplication(config config.Config) *Application {
-	app := &Application{
-		config:  config,
-		drivers: make(map[string]contractsai.Provider),
-		ctx:     context.Background(),
-		mu:      &sync.RWMutex{},
-	}
-	if config != nil {
-		app.defaultDriver = config.GetString("ai.default")
-	}
-
-	return app
+	return &Application{}
 }
 
 func (r *Application) Agent(agent contractsai.Agent, options ...contractsai.Option) (contractsai.Conversation, error) {
