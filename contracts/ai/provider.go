@@ -5,5 +5,6 @@ import "context"
 // Provider defines low-level model interactions.
 type Provider interface {
 	// Prompt executes a non-streaming model request.
-	Prompt(ctx context.Context, agent Agent, messages []Message, options ...Option) (Response, error)
+	// TODO: Optimize the parameters when implementing a real provider.
+	Prompt(ctx context.Context) (Response, error)
 }
