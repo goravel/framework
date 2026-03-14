@@ -3,6 +3,7 @@ package foundation
 import (
 	"context"
 
+	"github.com/goravel/framework/contracts/ai"
 	"github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/auth/access"
 	"github.com/goravel/framework/contracts/cache"
@@ -128,6 +129,8 @@ type Application interface {
 	Instance(key, instance any)
 	// Make resolves the given type from the container.
 	Make(key any) (any, error)
+	// MakeAI resolves the ai instance.
+	MakeAI() ai.AI
 	// MakeArtisan resolves the artisan console instance.
 	MakeArtisan() console.Artisan
 	// MakeAuth resolves the auth instance.
