@@ -136,7 +136,7 @@ func TestNewDataBagFromRequest(t *testing.T) {
 		_ = writer.WriteField("city", "Beijing")
 		fw, _ := writer.CreateFormFile("avatar", "test.png")
 		_, _ = fw.Write([]byte("fake-image"))
-		writer.Close()
+		require.NoError(t, writer.Close())
 
 		req, _ := http.NewRequest("POST", "http://example.com", &buf)
 		req.Header.Set("Content-Type", writer.FormDataContentType())
