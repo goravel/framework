@@ -26,17 +26,21 @@ func TestAgentsInstallCommand(t *testing.T) {
 		os.Remove("AGENTS.md")
 	}
 
-	filePaths := []string{"AGENTS.md", "prompt/route.md"}
+	manifest := []ManifestEntry{
+		{Facade: "", Path: "AGENTS.md", Default: true},
+		{Facade: "Route", Path: "prompt/route.md", Default: true},
+		{Facade: "Auth", Path: "prompt/auth.md", Default: false},
+	}
 
 	tests := []struct {
 		name  string
 		setup func()
 	}{
 		{
-			name: "Happy path - install all files",
+			name: "Happy path - installs defaults when no facades given",
 			setup: func() {
-				installCommand.treeFetcher = func(branch string) ([]string, error) {
-					return filePaths, nil
+				installCommand.manifestFetcher = func(branch string) ([]ManifestEntry, error) {
+					return manifest, nil
 				}
 				installCommand.fetcher = func(branch, path string) ([]byte, error) {
 					return []byte("# " + path), nil
@@ -44,16 +48,51 @@ func TestAgentsInstallCommand(t *testing.T) {
 
 				mockContext.EXPECT().Option("version").Return("v1.17").Once()
 				mockContext.EXPECT().OptionBool("force").Return(true).Once()
-				mockContext.EXPECT().Option("file").Return("").Once()
+				mockContext.EXPECT().Arguments().Return([]string{}).Once()
+				mockContext.EXPECT().OptionBool("all").Return(false).Once()
 				mockContext.EXPECT().Info("Installed 2 file(s) for version v1.17.").Once()
 			},
 		},
 		{
-			name: "Happy path - falls back to master when version branch has no agent files",
+			name: "Happy path - installs all when --all flag set",
 			setup: func() {
-				installCommand.treeFetcher = func(branch string) ([]string, error) {
+				installCommand.manifestFetcher = func(branch string) ([]ManifestEntry, error) {
+					return manifest, nil
+				}
+				installCommand.fetcher = func(branch, path string) ([]byte, error) {
+					return []byte("# " + path), nil
+				}
+
+				mockContext.EXPECT().Option("version").Return("v1.17").Once()
+				mockContext.EXPECT().OptionBool("force").Return(true).Once()
+				mockContext.EXPECT().Arguments().Return([]string{}).Once()
+				mockContext.EXPECT().OptionBool("all").Return(true).Once()
+				mockContext.EXPECT().Info("Installed 3 file(s) for version v1.17.").Once()
+			},
+		},
+		{
+			name: "Happy path - installs specific facade by name",
+			setup: func() {
+				installCommand.manifestFetcher = func(branch string) ([]ManifestEntry, error) {
+					return manifest, nil
+				}
+				installCommand.fetcher = func(branch, path string) ([]byte, error) {
+					return []byte("# " + path), nil
+				}
+
+				mockContext.EXPECT().Option("version").Return("v1.17").Once()
+				mockContext.EXPECT().OptionBool("force").Return(true).Once()
+				mockContext.EXPECT().Arguments().Return([]string{"Auth"}).Once()
+				mockContext.EXPECT().OptionBool("all").Return(false).Once()
+				mockContext.EXPECT().Info("Installed 1 file(s) for version v1.17.").Once()
+			},
+		},
+		{
+			name: "Happy path - falls back to master when version branch has no manifest",
+			setup: func() {
+				installCommand.manifestFetcher = func(branch string) ([]ManifestEntry, error) {
 					if branch == docsFallbackBranch {
-						return filePaths, nil
+						return manifest, nil
 					}
 					return nil, nil
 				}
@@ -63,19 +102,45 @@ func TestAgentsInstallCommand(t *testing.T) {
 
 				mockContext.EXPECT().Option("version").Return("v1.99").Once()
 				mockContext.EXPECT().OptionBool("force").Return(true).Once()
-				mockContext.EXPECT().Option("file").Return("").Once()
+				mockContext.EXPECT().Arguments().Return([]string{}).Once()
+				mockContext.EXPECT().OptionBool("all").Return(false).Once()
 				mockContext.EXPECT().Info("Installed 2 file(s) for version v1.99.").Once()
 			},
 		},
 		{
-			name: "Sad path - no files on branch or master",
+			name: "Sad path - no manifest on branch or master",
 			setup: func() {
-				installCommand.treeFetcher = func(branch string) ([]string, error) {
+				installCommand.manifestFetcher = func(branch string) ([]ManifestEntry, error) {
 					return nil, nil
 				}
 
 				mockContext.EXPECT().Option("version").Return("v9.99").Once()
 				mockContext.EXPECT().Error("No agent files found for version v9.99. Check https://github.com/goravel/docs").Once()
+			},
+		},
+		{
+			name: "Sad path - manifest fetch error",
+			setup: func() {
+				installCommand.manifestFetcher = func(branch string) ([]ManifestEntry, error) {
+					return nil, errors.New("network error")
+				}
+
+				mockContext.EXPECT().Option("version").Return("v1.17").Once()
+				mockContext.EXPECT().Error("network error").Once()
+			},
+		},
+		{
+			name: "Sad path - facade not found in manifest",
+			setup: func() {
+				installCommand.manifestFetcher = func(branch string) ([]ManifestEntry, error) {
+					return manifest, nil
+				}
+
+				mockContext.EXPECT().Option("version").Return("v1.17").Once()
+				mockContext.EXPECT().OptionBool("force").Return(true).Once()
+				mockContext.EXPECT().Arguments().Return([]string{"Nonexistent"}).Once()
+				mockContext.EXPECT().OptionBool("all").Return(false).Once()
+				mockContext.EXPECT().Error("No agent files found for facade(s): Nonexistent").Once()
 			},
 		},
 		{
@@ -86,34 +151,10 @@ func TestAgentsInstallCommand(t *testing.T) {
 			},
 		},
 		{
-			name: "Sad path - tree fetch error",
-			setup: func() {
-				installCommand.treeFetcher = func(branch string) ([]string, error) {
-					return nil, errors.New("network error")
-				}
-
-				mockContext.EXPECT().Option("version").Return("v1.17").Once()
-				mockContext.EXPECT().Error("network error").Once()
-			},
-		},
-		{
-			name: "Sad path - file filter no match",
-			setup: func() {
-				installCommand.treeFetcher = func(branch string) ([]string, error) {
-					return filePaths, nil
-				}
-
-				mockContext.EXPECT().Option("version").Return("v1.17").Once()
-				mockContext.EXPECT().OptionBool("force").Return(true).Once()
-				mockContext.EXPECT().Option("file").Return("nonexistent").Once()
-				mockContext.EXPECT().Error("No file matching 'nonexistent' found in remote repository.").Once()
-			},
-		},
-		{
 			name: "Sad path - existing install, user cancels",
 			setup: func() {
-				installCommand.treeFetcher = func(branch string) ([]string, error) {
-					return filePaths, nil
+				installCommand.manifestFetcher = func(branch string) ([]ManifestEntry, error) {
+					return manifest, nil
 				}
 
 				os.MkdirAll(".ai", 0755)

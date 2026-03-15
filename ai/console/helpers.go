@@ -37,13 +37,13 @@ type githubBranch struct {
 	Name string `json:"name"`
 }
 
-type gitTreeEntry struct {
-	Path string `json:"path"`
-	Type string `json:"type"`
-}
-
-type gitTreeResponse struct {
-	Tree []gitTreeEntry `json:"tree"`
+// ManifestEntry describes a single agent file available in goravel/docs.
+// Facade is the Goravel facade name (e.g. "Route", "Auth"); empty for non-facade files like AGENTS.md.
+// Default marks files that are installed by agents:install when no specific facades are requested.
+type ManifestEntry struct {
+	Facade  string `json:"facade"`
+	Path    string `json:"path"`
+	Default bool   `json:"default"`
 }
 
 // isSupportedVersion reports whether a version string has agent file support.
@@ -75,53 +75,21 @@ func encodeBranchForURL(branch string) string {
 	return strings.ReplaceAll(encoded, "%2F", "/")
 }
 
-// fetchFileTree lists all downloadable files under .ai/ in the goravel/docs repo
-// for the given branch. Returns paths relative to .ai/ (e.g. "AGENTS.md", "prompt/route.md").
-func fetchFileTree(branch string) ([]string, error) {
-	encodedBranch := encodeBranchForURL(branch)
-	apiURL := fmt.Sprintf("https://api.github.com/repos/goravel/docs/git/trees/%s?recursive=1", encodedBranch)
-
-	req, err := http.NewRequest(http.MethodGet, apiURL, nil)
+// fetchManifest fetches and parses the manifest.json from the goravel/docs .ai/ directory.
+// Returns nil entries (not an error) when the file is not found on the branch.
+func fetchManifest(branch string) ([]ManifestEntry, error) {
+	data, err := fetchRaw(branch, "manifest.json")
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Accept", "application/vnd.github.v3+json")
-
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("GET %s: %w", apiURL, err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusNotFound {
+	if data == nil {
 		return nil, nil
 	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("GET %s: status %d", apiURL, resp.StatusCode)
+	var entries []ManifestEntry
+	if err := json.Unmarshal(data, &entries); err != nil {
+		return nil, fmt.Errorf("decode manifest: %w", err)
 	}
-
-	var tree gitTreeResponse
-	if err := json.NewDecoder(resp.Body).Decode(&tree); err != nil {
-		return nil, fmt.Errorf("decode tree: %w", err)
-	}
-
-	var paths []string
-	for _, entry := range tree.Tree {
-		if entry.Type != "blob" {
-			continue
-		}
-		if !strings.HasPrefix(entry.Path, ".ai/") {
-			continue
-		}
-		rel := strings.TrimPrefix(entry.Path, ".ai/")
-		if rel == "" {
-			continue
-		}
-		paths = append(paths, rel)
-	}
-
-	return paths, nil
+	return entries, nil
 }
 
 // fetchAvailableBranches returns versioned branches (v1.17+) from goravel/docs,
@@ -187,7 +155,7 @@ func detectGoravelVersionFrom(gomodPath string) (string, error) {
 	}
 	defer f.Close()
 
-	re := regexp.MustCompile(`github\.com/goravel/framework\s+v(\d+)\.(\d+)`)
+	re := regexp.MustCompile(`^\s*(?:require\s+)?github\.com/goravel/framework\s+v(\d+)\.(\d+)`)
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		if m := re.FindStringSubmatch(scanner.Text()); m != nil {
@@ -254,23 +222,6 @@ func destPathFor(key string) string {
 		return "AGENTS.md"
 	}
 	return filepath.Join(".ai", key)
-}
-
-// filterPaths returns only paths whose base filename (without extension) matches filter.
-// Returns all paths when filter is empty.
-func filterPaths(paths []string, filter string) []string {
-	if filter == "" {
-		return paths
-	}
-	var filtered []string
-	for _, p := range paths {
-		base := filepath.Base(p)
-		baseName := strings.TrimSuffix(base, filepath.Ext(base))
-		if baseName == filter {
-			filtered = append(filtered, p)
-		}
-	}
-	return filtered
 }
 
 func writeAgentFile(key string, content []byte) error {

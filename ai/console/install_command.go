@@ -3,20 +3,21 @@ package console
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 )
 
 type AgentsInstallCommand struct {
-	treeFetcher func(branch string) ([]string, error)
-	fetcher     func(branch, path string) ([]byte, error)
+	manifestFetcher func(branch string) ([]ManifestEntry, error)
+	fetcher         func(branch, path string) ([]byte, error)
 }
 
 func NewAgentsInstallCommand() *AgentsInstallCommand {
 	return &AgentsInstallCommand{
-		treeFetcher: fetchFileTree,
-		fetcher:     fetchRaw,
+		manifestFetcher: fetchManifest,
+		fetcher:         fetchRaw,
 	}
 }
 
@@ -42,9 +43,12 @@ func (r *AgentsInstallCommand) Extend() command.Extend {
 				Usage:              "Skip confirmation and overwrite existing files",
 				DisableDefaultText: true,
 			},
-			&command.StringFlag{
-				Name:  "file",
-				Usage: "Install only one prompt file (e.g. route)",
+			&command.BoolFlag{
+				Name:               "all",
+				Aliases:            []string{"a"},
+				Value:              false,
+				Usage:              "Install all available facade agent files",
+				DisableDefaultText: true,
 			},
 		},
 	}
@@ -57,12 +61,12 @@ func (r *AgentsInstallCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	paths, branch, err := r.resolveFilePaths(branch)
+	entries, branch, err := r.resolveManifest(branch)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
-	if len(paths) == 0 {
+	if len(entries) == 0 {
 		ctx.Error(fmt.Sprintf("No agent files found for version %s. Check https://github.com/goravel/docs", version))
 		return nil
 	}
@@ -76,40 +80,47 @@ func (r *AgentsInstallCommand) Handle(ctx console.Context) error {
 		}
 	}
 
-	filter := ctx.Option("file")
-	pathsToInstall := filterPaths(paths, filter)
-	if filter != "" && len(pathsToInstall) == 0 {
-		ctx.Error(fmt.Sprintf("No file matching '%s' found in remote repository.", filter))
-
-		return nil
+	facadeArgs := ctx.Arguments()
+	var toInstall []ManifestEntry
+	switch {
+	case ctx.OptionBool("all"):
+		toInstall = entries
+	case len(facadeArgs) > 0:
+		toInstall = entriesForFacades(entries, facadeArgs)
+		if len(toInstall) == 0 {
+			ctx.Error(fmt.Sprintf("No agent files found for facade(s): %s", strings.Join(facadeArgs, ", ")))
+			return nil
+		}
+	default:
+		toInstall = defaultEntries(entries)
 	}
 
 	type downloadResult struct {
-		key     string
+		path    string
 		content []byte
 		err     error
 	}
 
-	ch := make(chan downloadResult, len(pathsToInstall))
-	for _, key := range pathsToInstall {
-		go func(k string) {
-			content, fetchErr := r.fetcher(branch, k)
-			ch <- downloadResult{key: k, content: content, err: fetchErr}
-		}(key)
+	ch := make(chan downloadResult, len(toInstall))
+	for _, entry := range toInstall {
+		go func(e ManifestEntry) {
+			content, fetchErr := r.fetcher(branch, e.Path)
+			ch <- downloadResult{path: e.Path, content: content, err: fetchErr}
+		}(entry)
 	}
 
 	downloaded := make(map[string][]byte)
-	for range pathsToInstall {
+	for range toInstall {
 		res := <-ch
 		if res.err != nil {
 			ctx.Error(res.err.Error())
 			return nil
 		}
 		if res.content == nil {
-			ctx.Error(fmt.Sprintf("File not found upstream: %s", res.key))
+			ctx.Error(fmt.Sprintf("File not found upstream: %s", res.path))
 			return nil
 		}
-		downloaded[res.key] = res.content
+		downloaded[res.path] = res.content
 	}
 
 	existing, _ := readVersionFile()
@@ -118,12 +129,12 @@ func (r *AgentsInstallCommand) Handle(ctx console.Context) error {
 		local.Files[k] = v
 	}
 
-	for key, content := range downloaded {
-		if err := writeAgentFile(key, content); err != nil {
-			ctx.Error(fmt.Sprintf("Failed to write %s: %v", key, err))
+	for path, content := range downloaded {
+		if err := writeAgentFile(path, content); err != nil {
+			ctx.Error(fmt.Sprintf("Failed to write %s: %v", path, err))
 			return nil
 		}
-		local.Files[key] = sha256sum(content)
+		local.Files[path] = sha256sum(content)
 	}
 
 	if err := os.MkdirAll(".ai/skills", 0755); err != nil {
@@ -177,16 +188,40 @@ func (r *AgentsInstallCommand) resolveVersionAndBranch(ctx console.Context) (ver
 	return version, resolveBranch(version), nil
 }
 
-// resolveFilePaths fetches the file tree for the given branch, falling back to
-// master if the version branch has no .ai/ files.
-func (r *AgentsInstallCommand) resolveFilePaths(branch string) ([]string, string, error) {
-	paths, err := r.treeFetcher(branch)
+// resolveManifest fetches the manifest for the given branch, falling back to master
+// if the version branch has no manifest.
+func (r *AgentsInstallCommand) resolveManifest(branch string) ([]ManifestEntry, string, error) {
+	entries, err := r.manifestFetcher(branch)
 	if err != nil {
 		return nil, branch, err
 	}
-	if len(paths) == 0 && branch != docsFallbackBranch {
-		paths, err = r.treeFetcher(docsFallbackBranch)
-		return paths, docsFallbackBranch, err
+	if len(entries) == 0 && branch != docsFallbackBranch {
+		entries, err = r.manifestFetcher(docsFallbackBranch)
+		return entries, docsFallbackBranch, err
 	}
-	return paths, branch, nil
+	return entries, branch, nil
+}
+
+func entriesForFacades(entries []ManifestEntry, facades []string) []ManifestEntry {
+	set := make(map[string]bool, len(facades))
+	for _, f := range facades {
+		set[f] = true
+	}
+	var out []ManifestEntry
+	for _, e := range entries {
+		if set[e.Facade] {
+			out = append(out, e)
+		}
+	}
+	return out
+}
+
+func defaultEntries(entries []ManifestEntry) []ManifestEntry {
+	var out []ManifestEntry
+	for _, e := range entries {
+		if e.Default {
+			out = append(out, e)
+		}
+	}
+	return out
 }
