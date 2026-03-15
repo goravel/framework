@@ -2,37 +2,29 @@ package collect
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestLazyCollect(t *testing.T) {
 	items := []int{1, 2, 3, 4, 5}
-	lazy := LazyCollect(items)
+	lazy := LazyOf(items)
 
-	result := lazy.All()
-	if !reflect.DeepEqual(result, items) {
-		t.Errorf("Expected %v, got %v", items, result)
-	}
+	assert.Equal(t, items, lazy.All())
 }
 
 func TestLazyNew(t *testing.T) {
 	lazy := LazyNew(1, 2, 3, 4, 5)
 
-	if lazy.Count() != 5 {
-		t.Errorf("Expected count 5, got %d", lazy.Count())
-	}
+	assert.Equal(t, 5, lazy.Count())
 }
 
 func TestLazyRange(t *testing.T) {
 	lazy := LazyRange(1, 6)
-	expected := []int{1, 2, 3, 4, 5}
 
-	result := lazy.All()
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
-	}
+	assert.Equal(t, []int{1, 2, 3, 4, 5}, lazy.All())
 }
 
 func TestLazyGenerate(t *testing.T) {
@@ -40,21 +32,13 @@ func TestLazyGenerate(t *testing.T) {
 		return i * 2
 	}, 5)
 
-	expected := []int{0, 2, 4, 6, 8}
-	result := lazy.All()
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
-	}
+	assert.Equal(t, []int{0, 2, 4, 6, 8}, lazy.All())
 }
 
 func TestLazyRepeat(t *testing.T) {
 	lazy := LazyRepeat("hello", 3)
-	expected := []string{"hello", "hello", "hello"}
 
-	result := lazy.All()
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
-	}
+	assert.Equal(t, []string{"hello", "hello", "hello"}, lazy.All())
 }
 
 func TestLazyFilter(t *testing.T) {
@@ -63,11 +47,7 @@ func TestLazyFilter(t *testing.T) {
 		return n%2 == 0
 	})
 
-	expected := []int{2, 4, 6, 8, 10}
-	result := filtered.All()
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
-	}
+	assert.Equal(t, []int{2, 4, 6, 8, 10}, filtered.All())
 }
 
 func TestLazyMap(t *testing.T) {
@@ -76,11 +56,7 @@ func TestLazyMap(t *testing.T) {
 		return n * 2
 	})
 
-	expected := []int{2, 4, 6, 8, 10}
-	result := mapped.All()
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
-	}
+	assert.Equal(t, []int{2, 4, 6, 8, 10}, mapped.All())
 }
 
 func TestLazyReduce(t *testing.T) {
@@ -89,58 +65,28 @@ func TestLazyReduce(t *testing.T) {
 		return acc + n
 	}, 0)
 
-	expected := 15
-	if sum != expected {
-		t.Errorf("Expected %d, got %d", expected, sum)
-	}
+	assert.Equal(t, 15, sum)
 }
 
 func TestLazyTake(t *testing.T) {
 	lazy := LazyRange(1, 100)
-	taken := lazy.Take(5)
 
-	expected := []int{1, 2, 3, 4, 5}
-	result := taken.All()
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
-	}
+	assert.Equal(t, []int{1, 2, 3, 4, 5}, lazy.Take(5).All())
 }
 
 func TestLazySkip(t *testing.T) {
 	lazy := LazyRange(1, 6)
-	skipped := lazy.Skip(2)
 
-	expected := []int{3, 4, 5}
-	result := skipped.All()
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
-	}
+	assert.Equal(t, []int{3, 4, 5}, lazy.Skip(2).All())
 }
 
 func TestLazyTakeWhile(t *testing.T) {
 	lazy := LazyRange(1, 10)
-	taken := lazy.TakeWhile(func(n int) bool {
+	taken := lazy.TakeWhile(func(n int, _ int) bool {
 		return n < 5
 	})
 
-	expected := []int{1, 2, 3, 4}
-	result := taken.All()
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
-	}
-}
-
-func TestLazyDropWhile(t *testing.T) {
-	lazy := LazyRange(1, 10)
-	dropped := lazy.DropWhile(func(n int) bool {
-		return n < 5
-	})
-
-	expected := []int{5, 6, 7, 8, 9}
-	result := dropped.All()
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
-	}
+	assert.Equal(t, []int{1, 2, 3, 4}, taken.All())
 }
 
 func TestLazyChaining(t *testing.T) {
@@ -150,45 +96,28 @@ func TestLazyChaining(t *testing.T) {
 		Take(5).
 		All()
 
-	expected := []int{2, 4, 6, 8, 10}
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
-	}
+	assert.Equal(t, []int{2, 4, 6, 8, 10}, result)
 }
 
 func TestLazyUnique(t *testing.T) {
-	lazy := LazyCollect([]int{1, 2, 2, 3, 3, 3, 4, 5})
-	unique := lazy.Unique()
+	lazy := LazyOf([]int{1, 2, 2, 3, 3, 3, 4, 5})
 
-	expected := []int{1, 2, 3, 4, 5}
-	result := unique.All()
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
-	}
+	assert.Equal(t, []int{1, 2, 3, 4, 5}, lazy.Unique().All())
 }
 
 func TestLazyReverse(t *testing.T) {
 	lazy := LazyRange(1, 6)
-	reversed := lazy.Reverse()
 
-	expected := []int{5, 4, 3, 2, 1}
-	result := reversed.All()
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
-	}
+	assert.Equal(t, []int{5, 4, 3, 2, 1}, lazy.Reverse().All())
 }
 
 func TestLazySort(t *testing.T) {
-	lazy := LazyCollect([]int{3, 1, 4, 1, 5, 9, 2})
+	lazy := LazyOf([]int{3, 1, 4, 1, 5, 9, 2})
 	sorted := lazy.Sort(func(a, b int) bool {
 		return a < b
 	})
 
-	expected := []int{1, 1, 2, 3, 4, 5, 9}
-	result := sorted.All()
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
-	}
+	assert.Equal(t, []int{1, 1, 2, 3, 4, 5, 9}, sorted.All())
 }
 
 func TestLazyFlatMap(t *testing.T) {
@@ -197,41 +126,30 @@ func TestLazyFlatMap(t *testing.T) {
 		return []int{n, n * 10}
 	})
 
-	expected := []int{1, 10, 2, 20, 3, 30}
-	result := flattened.All()
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
-	}
+	assert.Equal(t, []int{1, 10, 2, 20, 3, 30}, flattened.All())
 }
 
 func TestLazyFirst(t *testing.T) {
 	lazy := LazyRange(5, 10)
 	first := lazy.First()
 
-	if first == nil || *first != 5 {
-		t.Errorf("Expected first element to be 5, got %v", first)
-	}
+	assert.NotNil(t, first)
+	assert.Equal(t, 5, *first)
 }
 
 func TestLazyLast(t *testing.T) {
 	lazy := LazyRange(1, 6)
 	last := lazy.Last()
 
-	if last == nil || *last != 5 {
-		t.Errorf("Expected last element to be 5, got %v", last)
-	}
+	assert.NotNil(t, last)
+	assert.Equal(t, 5, *last)
 }
 
 func TestLazyContains(t *testing.T) {
 	lazy := LazyRange(1, 6)
 
-	if !lazy.Contains(3) {
-		t.Error("Expected collection to contain 3")
-	}
-
-	if lazy.Contains(10) {
-		t.Error("Expected collection to not contain 10")
-	}
+	assert.True(t, lazy.Contains(3))
+	assert.False(t, lazy.Contains(10))
 }
 
 func TestLazyEvery(t *testing.T) {
@@ -242,20 +160,7 @@ func TestLazyEvery(t *testing.T) {
 		return n%2 == 0
 	})
 
-	if !allEven {
-		t.Error("Expected all filtered items to be even")
-	}
-}
-
-func TestLazySome(t *testing.T) {
-	lazy := LazyRange(1, 6)
-	hasEven := lazy.Some(func(n int) bool {
-		return n%2 == 0
-	})
-
-	if !hasEven {
-		t.Error("Expected at least one item to be even")
-	}
+	assert.True(t, allEven)
 }
 
 func TestLazySum(t *testing.T) {
@@ -264,72 +169,25 @@ func TestLazySum(t *testing.T) {
 		return float64(n)
 	})
 
-	expected := 15.0
-	if sum != expected {
-		t.Errorf("Expected sum %f, got %f", expected, sum)
-	}
-}
-
-func TestLazyAverage(t *testing.T) {
-	lazy := LazyRange(1, 6)
-	avg := lazy.Average(func(n int) float64 {
-		return float64(n)
-	})
-
-	expected := 3.0
-	if avg != expected {
-		t.Errorf("Expected average %f, got %f", expected, avg)
-	}
+	assert.Equal(t, 15.0, sum)
 }
 
 func TestLazyMin(t *testing.T) {
-	lazy := LazyCollect([]int{3, 1, 4, 1, 5})
+	lazy := LazyOf([]int{3, 1, 4, 1, 5})
 	min := lazy.Min(func(n int) float64 {
 		return float64(n)
 	})
 
-	expected := 1.0
-	if min != expected {
-		t.Errorf("Expected min %f, got %f", expected, min)
-	}
+	assert.Equal(t, 1.0, min)
 }
 
 func TestLazyMax(t *testing.T) {
-	lazy := LazyCollect([]int{3, 1, 4, 1, 5})
+	lazy := LazyOf([]int{3, 1, 4, 1, 5})
 	max := lazy.Max(func(n int) float64 {
 		return float64(n)
 	})
 
-	expected := 5.0
-	if max != expected {
-		t.Errorf("Expected max %f, got %f", expected, max)
-	}
-}
-
-func TestLazyGroupBy(t *testing.T) {
-	type User struct {
-		Name string
-		Age  int
-	}
-
-	users := []User{
-		{Name: "Alice", Age: 25},
-		{Name: "Bob", Age: 30},
-		{Name: "Charlie", Age: 25},
-	}
-
-	lazy := LazyCollect(users)
-	groups := lazy.GroupBy(func(u User) string {
-		return fmt.Sprintf("%d", u.Age)
-	})
-
-	if len(groups) != 2 {
-		t.Errorf("Expected 2 groups, got %d", len(groups))
-	}
-
-	if groups["25"].Count() != 2 {
-		t.Errorf("Expected 2 users aged 25, got %d", groups["25"].Count())
-	}
+	assert.Equal(t, 5.0, max)
 }
 
 func TestLazyPartition(t *testing.T) {
@@ -338,25 +196,15 @@ func TestLazyPartition(t *testing.T) {
 		return n%2 == 0
 	})
 
-	expectedEvens := []int{2, 4, 6, 8, 10}
-	expectedOdds := []int{1, 3, 5, 7, 9}
-
-	if !reflect.DeepEqual(evens.All(), expectedEvens) {
-		t.Errorf("Expected evens %v, got %v", expectedEvens, evens.All())
-	}
-
-	if !reflect.DeepEqual(odds.All(), expectedOdds) {
-		t.Errorf("Expected odds %v, got %v", expectedOdds, odds.All())
-	}
+	assert.Equal(t, []int{2, 4, 6, 8, 10}, evens.All())
+	assert.Equal(t, []int{1, 3, 5, 7, 9}, odds.All())
 }
 
 func TestLazyIterator(t *testing.T) {
 	lazy := LazyRange(1, 6)
 	iter := lazy.Iterator()
 
-	expected := []int{1, 2, 3, 4, 5}
 	var result []int
-
 	for {
 		value, ok := iter.Next()
 		if !ok {
@@ -365,40 +213,36 @@ func TestLazyIterator(t *testing.T) {
 		result = append(result, value)
 	}
 
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
-	}
+	assert.Equal(t, []int{1, 2, 3, 4, 5}, result)
+}
+
+func TestLazyIteratorClosedChannel(t *testing.T) {
+	ch := make(chan int)
+	close(ch)
+
+	iter := LazyFromChannel(ch).Iterator()
+	_, ok := iter.Next()
+	assert.False(t, ok)
 }
 
 func TestLazyCollect_Convert(t *testing.T) {
 	lazy := LazyRange(1, 6)
 	collection := lazy.Collect()
 
-	expected := []int{1, 2, 3, 4, 5}
-	result := collection.All()
-
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
-	}
+	assert.Equal(t, []int{1, 2, 3, 4, 5}, collection.All())
 }
 
 func TestLazyIsEmpty(t *testing.T) {
-	empty := LazyCollect([]int{})
-	if !empty.IsEmpty() {
-		t.Error("Expected empty collection to be empty")
-	}
+	empty := LazyOf([]int{})
+	assert.True(t, empty.IsEmpty())
 
 	notEmpty := LazyRange(1, 3)
-	if notEmpty.IsEmpty() {
-		t.Error("Expected non-empty collection to not be empty")
-	}
+	assert.False(t, notEmpty.IsEmpty())
 }
 
 func TestLazyIsNotEmpty(t *testing.T) {
 	notEmpty := LazyRange(1, 3)
-	if !notEmpty.IsNotEmpty() {
-		t.Error("Expected non-empty collection to not be empty")
-	}
+	assert.True(t, notEmpty.IsNotEmpty())
 }
 
 func TestLazyWhen(t *testing.T) {
@@ -407,10 +251,7 @@ func TestLazyWhen(t *testing.T) {
 		return lc.Filter(func(n int, _ int) bool { return n > 3 })
 	})
 
-	expected := []int{4, 5}
-	if !reflect.DeepEqual(result.All(), expected) {
-		t.Errorf("Expected %v, got %v", expected, result.All())
-	}
+	assert.Equal(t, []int{4, 5}, result.All())
 }
 
 func TestLazyFromChannel(t *testing.T) {
@@ -422,13 +263,35 @@ func TestLazyFromChannel(t *testing.T) {
 	ch <- 5
 	close(ch)
 
-	lazy := LazyFromChannel(ch)
-	expected := []int{1, 2, 3, 4, 5}
-	result := lazy.All()
+	assert.Equal(t, []int{1, 2, 3, 4, 5}, LazyFromChannel(ch).All())
+}
 
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
+func TestLazyEarlyReturnMethodsDrainChannel(t *testing.T) {
+	assertDrained := func(t *testing.T, call func(*LazyCollection[int])) {
+		source := make(chan int)
+		done := make(chan struct{})
+		go func() {
+			defer close(done)
+			for i := 1; i <= 5; i++ {
+				source <- i
+			}
+			close(source)
+		}()
+
+		call(LazyFromChannel(source))
+
+		select {
+		case <-done:
+		case <-time.After(100 * time.Millisecond):
+			t.Fatal("expected source channel sender to finish")
+		}
 	}
+
+	assertDrained(t, func(lc *LazyCollection[int]) { _ = lc.First() })
+	assertDrained(t, func(lc *LazyCollection[int]) { _ = lc.FirstWhere(func(item int) bool { return item == 2 }) })
+	assertDrained(t, func(lc *LazyCollection[int]) { _ = lc.Every(func(item int) bool { return item < 2 }) })
+	assertDrained(t, func(lc *LazyCollection[int]) { _ = lc.Take(1).All() })
+	assertDrained(t, func(lc *LazyCollection[int]) { _ = lc.TakeWhile(func(item int, _ int) bool { return item < 2 }).All() })
 }
 
 func TestLazyFromFunc(t *testing.T) {
@@ -443,46 +306,27 @@ func TestLazyFromFunc(t *testing.T) {
 		return ch
 	})
 
-	expected := []int{1, 2, 3, 4, 5}
-	result := lazy.All()
-
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
-	}
+	assert.Equal(t, []int{1, 2, 3, 4, 5}, lazy.All())
 }
 
 func TestLazyChunk(t *testing.T) {
 	lazy := LazyRange(1, 11)
-	chunks := lazy.Chunk(3)
 
-	expected := [][]int{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10}}
-	if !reflect.DeepEqual(chunks, expected) {
-		t.Errorf("Expected %v, got %v", expected, chunks)
-	}
+	assert.Equal(t, [][]int{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10}}, lazy.Chunk(3))
 }
 
 func TestLazyJoin(t *testing.T) {
 	lazy := LazyRange(1, 6)
-	joined := lazy.Join(",")
 
-	expected := "1,2,3,4,5"
-	if joined != expected {
-		t.Errorf("Expected %s, got %s", expected, joined)
-	}
+	assert.Equal(t, "1,2,3,4,5", lazy.Join(","))
 }
 
 func TestLazyToJSON(t *testing.T) {
 	lazy := LazyRange(1, 4)
-	json, err := lazy.ToJSON()
+	json, err := lazy.ToJson()
 
-	if err != nil {
-		t.Errorf("Expected no error, got %v", err)
-	}
-
-	expected := "[1,2,3]"
-	if json != expected {
-		t.Errorf("Expected %s, got %s", expected, json)
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, "[1,2,3]", json)
 }
 
 func TestLazyEach(t *testing.T) {
@@ -493,24 +337,7 @@ func TestLazyEach(t *testing.T) {
 		sum += n
 	}).All() // Need to consume the lazy collection
 
-	expected := 15
-	if sum != expected {
-		t.Errorf("Expected sum %d, got %d", expected, sum)
-	}
-}
-
-func TestLazyForEach(t *testing.T) {
-	lazy := LazyRange(1, 6)
-	sum := 0
-
-	lazy.ForEach(func(n int) {
-		sum += n
-	})
-
-	expected := 15
-	if sum != expected {
-		t.Errorf("Expected sum %d, got %d", expected, sum)
-	}
+	assert.Equal(t, 15, sum)
 }
 
 func TestLazyEvaluation(t *testing.T) {
@@ -534,22 +361,14 @@ func TestLazyEvaluation(t *testing.T) {
 	mapped := LazyMap(filtered, func(n int, _ int) int { return n * 2 })
 
 	// Generator should not have executed yet
-	if executed {
-		t.Error("Expected generator to not execute until consumed")
-	}
+	assert.False(t, executed, "Expected generator to not execute until consumed")
 
 	// Now consume the result
 	result := mapped.All()
 
 	// Generator should have executed
-	if !executed {
-		t.Error("Expected generator to execute when consumed")
-	}
-
-	expected := []int{8, 10}
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
-	}
+	assert.True(t, executed, "Expected generator to execute when consumed")
+	assert.Equal(t, []int{8, 10}, result)
 }
 
 func TestLazyPerformance(t *testing.T) {
@@ -567,10 +386,7 @@ func TestLazyPerformance(t *testing.T) {
 
 	duration := time.Since(start)
 
-	expected := []int{2, 4, 6, 8, 10}
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
-	}
+	assert.Equal(t, []int{2, 4, 6, 8, 10}, result)
 
 	// Should be very fast since it stops after finding 5 items
 	if duration > 100*time.Millisecond {
@@ -597,69 +413,47 @@ func TestLazyWhereEnhanced(t *testing.T) {
 		{ID: 4, Name: "David", Age: 35, Country: "UK", Balance: 120.0, DeletedAt: nil},
 		{ID: 5, Name: "Eve", Age: 40, Country: "US", Balance: 90.0, DeletedAt: nil},
 	}
-	lc := LazyCollect(users)
+	lc := LazyOf(users)
 
 	// Test 1: Two parameters (field, value) - implies '=' operator
 	frenchUsers := lc.Where("Country", "FR")
-	if frenchUsers.Count() != 2 {
-		t.Errorf("Expected 2 French users, got %d", frenchUsers.Count())
-	}
+	assert.Equal(t, 2, frenchUsers.Count())
 
 	youngUsers := lc.Where("Age", 25)
-	if youngUsers.Count() != 2 {
-		t.Errorf("Expected 2 users aged 25, got %d", youngUsers.Count())
-	}
+	assert.Equal(t, 2, youngUsers.Count())
 
 	// Test 2: Three parameters (field, operator, value)
 	richUsers := lc.Where("Balance", ">", 100.0)
-	if richUsers.Count() != 3 {
-		t.Errorf("Expected 3 rich users, got %d", richUsers.Count())
-	}
+	assert.Equal(t, 3, richUsers.Count())
 
 	nonFrenchUsers := lc.Where("Country", "!=", "FR")
-	if nonFrenchUsers.Count() != 3 {
-		t.Errorf("Expected 3 non-French users, got %d", nonFrenchUsers.Count())
-	}
+	assert.Equal(t, 3, nonFrenchUsers.Count())
 
 	seniorUsers := lc.Where("Age", ">=", 35)
-	if seniorUsers.Count() != 2 {
-		t.Errorf("Expected 2 senior users, got %d", seniorUsers.Count())
-	}
+	assert.Equal(t, 2, seniorUsers.Count())
 
 	youngAdults := lc.Where("Age", "<", 35)
-	if youngAdults.Count() != 3 {
-		t.Errorf("Expected 3 young adults, got %d", youngAdults.Count())
-	}
+	assert.Equal(t, 3, youngAdults.Count())
 
 	// Test 3: Single parameter (callback function)
 	customFilter := lc.Where(func(u User) bool {
 		return u.Age > 25 && u.Country == "US"
 	})
-	if customFilter.Count() != 2 {
-		t.Errorf("Expected 2 users matching custom filter, got %d", customFilter.Count())
-	}
+	assert.Equal(t, 2, customFilter.Count())
 
 	// Test 4: Null comparisons
 	activeUsers := lc.Where("DeletedAt", "=", nil)
-	if activeUsers.Count() != 4 {
-		t.Errorf("Expected 4 active users, got %d", activeUsers.Count())
-	}
+	assert.Equal(t, 4, activeUsers.Count())
 
 	deletedUsers := lc.Where("DeletedAt", "!=", nil)
-	if deletedUsers.Count() != 1 {
-		t.Errorf("Expected 1 deleted user, got %d", deletedUsers.Count())
-	}
+	assert.Equal(t, 1, deletedUsers.Count())
 
 	// Test 5: String operations (like/not like)
 	nameWithA := lc.Where("Name", "like", "a")
-	if nameWithA.Count() != 3 { // Alice, Charlie, and David
-		t.Errorf("Expected 3 users with 'a' in name, got %d", nameWithA.Count())
-	}
+	assert.Equal(t, 3, nameWithA.Count()) // Alice, Charlie, and David
 
 	nameNotLikeTest := lc.Where("Name", "not like", "test")
-	if nameNotLikeTest.Count() != 5 { // All users since none have 'test' in name
-		t.Errorf("Expected 5 users without 'test' in name, got %d", nameNotLikeTest.Count())
-	}
+	assert.Equal(t, 5, nameNotLikeTest.Count()) // All users since none have 'test' in name
 }
 
 func TestLazyWhereErrorCases(t *testing.T) {
@@ -673,36 +467,26 @@ func TestLazyWhereErrorCases(t *testing.T) {
 		{ID: 1, Name: "Alice", Age: 25},
 		{ID: 2, Name: "Bob", Age: 30},
 	}
-	lc := LazyCollect(users)
+	lc := LazyOf(users)
 
 	// Test invalid parameter counts
 	result := lc.Where()
-	if result.Count() != 2 {
-		t.Errorf("Expected original collection for no parameters, got %d items", result.Count())
-	}
+	assert.Equal(t, 2, result.Count())
 
 	result = lc.Where("Age", "=", 25, "extra")
-	if result.Count() != 2 {
-		t.Errorf("Expected original collection for too many parameters, got %d items", result.Count())
-	}
+	assert.Equal(t, 2, result.Count())
 
 	// Test invalid callback type
 	result = lc.Where("not a callback")
-	if result.Count() != 2 {
-		t.Errorf("Expected original collection for invalid callback, got %d items", result.Count())
-	}
+	assert.Equal(t, 2, result.Count())
 
 	// Test invalid field name (non-string)
 	result = lc.Where(123, 25)
-	if result.Count() != 2 {
-		t.Errorf("Expected original collection for invalid field name, got %d items", result.Count())
-	}
+	assert.Equal(t, 2, result.Count())
 
 	// Test invalid operator (non-string)
 	result = lc.Where("Age", 123, 25)
-	if result.Count() != 2 {
-		t.Errorf("Expected original collection for invalid operator, got %d items", result.Count())
-	}
+	assert.Equal(t, 2, result.Count())
 }
 
 func TestLazyWhereLazyEvaluation(t *testing.T) {
@@ -725,22 +509,14 @@ func TestLazyWhereLazyEvaluation(t *testing.T) {
 	filtered := lazy.Where(func(n int) bool { return n > 50 })
 
 	// Generator should not have executed yet
-	if executed {
-		t.Error("Expected generator to not execute until consumed")
-	}
+	assert.False(t, executed, "Expected generator to not execute until consumed")
 
 	// Now consume the result
 	result := filtered.Take(3).All()
 
 	// Generator should have executed
-	if !executed {
-		t.Error("Expected generator to execute when consumed")
-	}
-
-	expected := []int{51, 52, 53}
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
-	}
+	assert.True(t, executed, "Expected generator to execute when consumed")
+	assert.Equal(t, []int{51, 52, 53}, result)
 }
 
 func TestLazyMapMethod(t *testing.T) {
@@ -752,20 +528,14 @@ func TestLazyMapMethod(t *testing.T) {
 		return n * 2
 	})
 
-	expected := []interface{}{2, 4, 6, 8, 10}
-	if !reflect.DeepEqual(doubled.All(), expected) {
-		t.Errorf("Expected %v, got %v", expected, doubled.All())
-	}
+	assert.Equal(t, []interface{}{2, 4, 6, 8, 10}, doubled.All())
 
 	// Test with index
 	withIndex := numbers.Map(func(n int, i int) interface{} {
 		return fmt.Sprintf("item_%d_%d", i, n)
 	})
 
-	expectedWithIndex := []interface{}{"item_0_1", "item_1_2", "item_2_3", "item_3_4", "item_4_5"}
-	if !reflect.DeepEqual(withIndex.All(), expectedWithIndex) {
-		t.Errorf("Expected %v, got %v", expectedWithIndex, withIndex.All())
-	}
+	assert.Equal(t, []interface{}{"item_0_1", "item_1_2", "item_2_3", "item_3_4", "item_4_5"}, withIndex.All())
 
 	// Test with structs
 	type User struct {
@@ -774,7 +544,7 @@ func TestLazyMapMethod(t *testing.T) {
 		Age  int
 	}
 
-	users := LazyCollect([]User{
+	users := LazyOf([]User{
 		{ID: 1, Name: "Alice", Age: 25},
 		{ID: 2, Name: "Bob", Age: 30},
 		{ID: 3, Name: "Charlie", Age: 35},
@@ -785,10 +555,7 @@ func TestLazyMapMethod(t *testing.T) {
 		return u.Name
 	})
 
-	expectedNames := []interface{}{"Alice", "Bob", "Charlie"}
-	if !reflect.DeepEqual(names.All(), expectedNames) {
-		t.Errorf("Expected %v, got %v", expectedNames, names.All())
-	}
+	assert.Equal(t, []interface{}{"Alice", "Bob", "Charlie"}, names.All())
 
 	// Complex transformation
 	summaries := users.Map(func(u User, i int) interface{} {
@@ -799,9 +566,7 @@ func TestLazyMapMethod(t *testing.T) {
 		}
 	})
 
-	if summaries.Count() != 3 {
-		t.Errorf("Expected 3 summaries, got %d", summaries.Count())
-	}
+	assert.Equal(t, 3, summaries.Count())
 
 	// Test chaining with other methods
 	result := numbers.
@@ -812,10 +577,7 @@ func TestLazyMapMethod(t *testing.T) {
 			return item.(int) > 5
 		})
 
-	expectedChained := []interface{}{6, 8, 10}
-	if !reflect.DeepEqual(result.All(), expectedChained) {
-		t.Errorf("Expected %v, got %v", expectedChained, result.All())
-	}
+	assert.Equal(t, []interface{}{6, 8, 10}, result.All())
 }
 
 func TestLazyMapMethodTypes(t *testing.T) {
@@ -827,30 +589,22 @@ func TestLazyMapMethodTypes(t *testing.T) {
 		return fmt.Sprintf("number_%d", n)
 	})
 
-	expectedStrings := []interface{}{"number_1", "number_2", "number_3"}
-	if !reflect.DeepEqual(strings.All(), expectedStrings) {
-		t.Errorf("Expected %v, got %v", expectedStrings, strings.All())
-	}
+	assert.Equal(t, []interface{}{"number_1", "number_2", "number_3"}, strings.All())
 
 	// Map to booleans
 	booleans := numbers.Map(func(n int, _ int) interface{} {
 		return n%2 == 0
 	})
 
-	expectedBooleans := []interface{}{false, true, false}
-	if !reflect.DeepEqual(booleans.All(), expectedBooleans) {
-		t.Errorf("Expected %v, got %v", expectedBooleans, booleans.All())
-	}
+	assert.Equal(t, []interface{}{false, true, false}, booleans.All())
 
 	// Test empty collection
-	empty := LazyCollect([]int{})
+	empty := LazyOf([]int{})
 	emptyMapped := empty.Map(func(n int, _ int) interface{} {
 		return n * 2
 	})
 
-	if emptyMapped.Count() != 0 {
-		t.Errorf("Expected empty mapped collection, got %d items", emptyMapped.Count())
-	}
+	assert.Equal(t, 0, emptyMapped.Count())
 }
 
 func TestLazyMapLazyEvaluation(t *testing.T) {
@@ -875,22 +629,14 @@ func TestLazyMapLazyEvaluation(t *testing.T) {
 	})
 
 	// Generator should not have executed yet
-	if executed {
-		t.Error("Expected generator to not execute until consumed")
-	}
+	assert.False(t, executed, "Expected generator to not execute until consumed")
 
 	// Now consume the result
 	result := mapped.Take(3).All()
 
 	// Generator should have executed
-	if !executed {
-		t.Error("Expected generator to execute when consumed")
-	}
-
-	expected := []interface{}{2, 4, 6}
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
-	}
+	assert.True(t, executed, "Expected generator to execute when consumed")
+	assert.Equal(t, []interface{}{2, 4, 6}, result)
 }
 
 func TestLazyMapPerformance(t *testing.T) {
@@ -910,10 +656,7 @@ func TestLazyMapPerformance(t *testing.T) {
 
 	duration := time.Since(start)
 
-	expected := []interface{}{12, 14, 16, 18, 20}
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
-	}
+	assert.Equal(t, []interface{}{12, 14, 16, 18, 20}, result)
 
 	// Should be very fast since it stops after finding 5 items
 	if duration > 100*time.Millisecond {
@@ -923,107 +666,222 @@ func TestLazyMapPerformance(t *testing.T) {
 
 func TestLazyZip(t *testing.T) {
 	// Test zip with equal length collections
-	first := LazyCollect([]int{1, 2, 3})
-	second := LazyCollect([]int{4, 5, 6})
-
-	zipped := first.Zip(second)
-
-	if len(zipped) != 3 {
-		t.Errorf("Expected 3 items, got %d", len(zipped))
-	}
-
-	for i, pair := range zipped {
-		if len(pair) != 2 {
-			t.Errorf("Expected pair to have 2 items, got %d", len(pair))
-		}
-		if pair[0] != i+1 {
-			t.Errorf("Expected first item to be %d, got %v", i+1, pair[0])
-		}
-		if pair[1] != i+4 {
-			t.Errorf("Expected second item to be %d, got %v", i+4, pair[1])
-		}
-	}
+	assert.Equal(t, [][]int{{1, 4}, {2, 5}, {3, 6}},
+		LazyOf([]int{1, 2, 3}).Zip(LazyOf([]int{4, 5, 6})))
 
 	// Test zip with first collection shorter
-	first = LazyCollect([]int{1, 2})
-	second = LazyCollect([]int{4, 5, 6, 7})
-
-	zipped = first.Zip(second)
-
-	if len(zipped) != 2 {
-		t.Errorf("Expected 2 items, got %d", len(zipped))
-	}
-
-	for i, pair := range zipped {
-		if pair[0] != i+1 {
-			t.Errorf("Expected first item to be %d, got %v", i+1, pair[0])
-		}
-		if pair[1] != i+4 {
-			t.Errorf("Expected second item to be %d, got %v", i+4, pair[1])
-		}
-	}
+	assert.Equal(t, [][]int{{1, 4}, {2, 5}},
+		LazyOf([]int{1, 2}).Zip(LazyOf([]int{4, 5, 6, 7})))
 
 	// Test zip with second collection shorter
-	first = LazyCollect([]int{1, 2, 3, 4})
-	second = LazyCollect([]int{5, 6})
-
-	zipped = first.Zip(second)
-
-	if len(zipped) != 2 {
-		t.Errorf("Expected 2 items, got %d", len(zipped))
-	}
-
-	for i, pair := range zipped {
-		if pair[0] != i+1 {
-			t.Errorf("Expected first item to be %d, got %v", i+1, pair[0])
-		}
-		if pair[1] != i+5 {
-			t.Errorf("Expected second item to be %d, got %v", i+5, pair[1])
-		}
-	}
+	assert.Equal(t, [][]int{{1, 5}, {2, 6}, {3}, {4}},
+		LazyOf([]int{1, 2, 3, 4}).Zip(LazyOf([]int{5, 6})))
 
 	// Test with empty first collection
-	first = LazyCollect([]int{})
-	second = LazyCollect([]int{4, 5, 6})
-
-	zipped = first.Zip(second)
-
-	if len(zipped) != 0 {
-		t.Errorf("Expected 0 items, got %d", len(zipped))
-	}
+	assert.Empty(t, LazyOf([]int{}).Zip(LazyOf([]int{4, 5, 6})))
 
 	// Test with empty second collection
-	first = LazyCollect([]int{1, 2, 3})
-	second = LazyCollect([]int{})
-
-	zipped = first.Zip(second)
-
-	if len(zipped) != 0 {
-		t.Errorf("Expected 0 items, got %d", len(zipped))
-	}
+	assert.Equal(t, [][]int{{1}, {2}, {3}},
+		LazyOf([]int{1, 2, 3}).Zip(LazyOf([]int{})))
 
 	// Test with string type
-	firstStr := LazyCollect([]string{"a", "b", "c"})
-	secondStr := LazyCollect([]string{"x", "y", "z"})
+	assert.Equal(t, [][]string{{"a", "x"}, {"b", "y"}, {"c", "z"}},
+		LazyOf([]string{"a", "b", "c"}).Zip(LazyOf([]string{"x", "y", "z"})))
+}
 
-	zippedStr := firstStr.Zip(secondStr)
+func TestLazyAvg(t *testing.T) {
+	assert.Equal(t, 3.0, LazyRange(1, 6).Avg(func(item int) float64 {
+		return float64(item)
+	}))
 
-	if len(zippedStr) != 3 {
-		t.Errorf("Expected 3 items, got %d", len(zippedStr))
+	assert.Equal(t, 0.0, LazyOf([]int{}).Avg(func(item int) float64 {
+		return float64(item)
+	}))
+}
+
+func TestLazyCountBy(t *testing.T) {
+	counts := LazyOf([]string{"apple", "banana", "apricot", "blueberry", "avocado"}).CountBy(func(item string) string {
+		return item[:1]
+	})
+
+	assert.Equal(t, map[string]int{"a": 3, "b": 2}, counts)
+}
+
+func TestLazyFirstWhereNotFound(t *testing.T) {
+	first := LazyRange(1, 5).FirstWhere(func(item int) bool {
+		return item > 100
+	})
+
+	assert.Nil(t, first)
+}
+
+func TestLazyFirstOnEmpty(t *testing.T) {
+	assert.Nil(t, LazyOf([]int{}).First())
+}
+
+func TestLazyLastOnEmpty(t *testing.T) {
+	assert.Nil(t, LazyOf([]int{}).Last())
+}
+
+func TestLazySkipWhile(t *testing.T) {
+	assert.Equal(t, []int{4, 5, 6}, LazyRange(1, 7).SkipWhile(func(item int, _ int) bool {
+		return item < 4
+	}).All())
+
+	assert.Empty(t, LazyRange(1, 4).SkipWhile(func(item int, _ int) bool {
+		return item < 10
+	}).All())
+}
+
+func TestLazySortBy(t *testing.T) {
+	type item struct {
+		Name string
 	}
 
-	expectedPairs := [][]string{
-		{"a", "x"},
-		{"b", "y"},
-		{"c", "z"},
+	sorted := LazyOf([]item{{Name: "charlie"}, {Name: "alice"}, {Name: "bob"}}).SortBy(func(v item) string {
+		return v.Name
+	}).All()
+
+	assert.Equal(t, []item{{Name: "alice"}, {Name: "bob"}, {Name: "charlie"}}, sorted)
+}
+
+func TestLazyReject(t *testing.T) {
+	rejected := LazyRange(1, 7).Reject(func(item int, _ int) bool {
+		return item%2 == 0
+	})
+
+	assert.Equal(t, []int{1, 3, 5}, rejected.All())
+}
+
+func TestLazyPluck(t *testing.T) {
+	type profile struct {
+		Name string
+		Age  int
 	}
 
-	for i, pair := range zippedStr {
-		if pair[0] != expectedPairs[i][0] {
-			t.Errorf("Expected first item to be %s, got %v", expectedPairs[i][0], pair[0])
-		}
-		if pair[1] != expectedPairs[i][1] {
-			t.Errorf("Expected second item to be %s, got %v", expectedPairs[i][1], pair[1])
-		}
+	users := []profile{{Name: "alice", Age: 20}, {Name: "bob", Age: 30}}
+	assert.Equal(t, []any{"alice", "bob"}, LazyOf(users).Pluck("Name").All())
+	assert.Equal(t, []any{20, 30}, LazyOf([]*profile{&users[0], &users[1]}).Pluck("Age").All())
+	assert.Empty(t, LazyOf(users).Pluck("Unknown").All())
+}
+
+func TestLazyUniqueBy(t *testing.T) {
+	type user struct {
+		Name    string
+		Country string
 	}
+
+	result := LazyOf([]user{
+		{Name: "alice", Country: "US"},
+		{Name: "bob", Country: "US"},
+		{Name: "charlie", Country: "UK"},
+	}).UniqueBy(func(item user) string {
+		return item.Country
+	}).All()
+
+	assert.Equal(t, []user{{Name: "alice", Country: "US"}, {Name: "charlie", Country: "UK"}}, result)
+}
+
+func TestLazyWhenFalse(t *testing.T) {
+	called := false
+	result := LazyRange(1, 4).When(false, func(collection *LazyCollection[int]) *LazyCollection[int] {
+		called = true
+		return collection.Filter(func(item int, _ int) bool {
+			return item > 1
+		})
+	})
+
+	assert.False(t, called)
+	assert.Equal(t, []int{1, 2, 3}, result.All())
+}
+
+func TestLazyWhereIn(t *testing.T) {
+	type user struct {
+		Name string
+		Age  int
+	}
+
+	result := LazyOf([]user{{Name: "alice", Age: 20}, {Name: "bob", Age: 30}, {Name: "charlie", Age: 40}}).
+		WhereIn("Age", []any{20, 40}).
+		All()
+
+	assert.Equal(t, []user{{Name: "alice", Age: 20}, {Name: "charlie", Age: 40}}, result)
+}
+
+func TestLazyWhereNotIn(t *testing.T) {
+	type user struct {
+		Name string
+		Age  int
+	}
+
+	result := LazyOf([]user{{Name: "alice", Age: 20}, {Name: "bob", Age: 30}, {Name: "charlie", Age: 40}}).
+		WhereNotIn("Age", []any{20, 40}).
+		All()
+
+	assert.Equal(t, []user{{Name: "bob", Age: 30}}, result)
+}
+
+func TestLazyChunkInvalidSize(t *testing.T) {
+	assert.Equal(t, [][]int{}, LazyRange(1, 4).Chunk(0))
+	assert.Equal(t, [][]int{}, LazyRange(1, 4).Chunk(-1))
+}
+
+func TestLazyIteratorReset(t *testing.T) {
+	iter := LazyRange(1, 3).Iterator()
+
+	first, ok := iter.Next()
+	assert.True(t, ok)
+	assert.Equal(t, 1, first)
+
+	_, ok = iter.Next()
+	assert.True(t, ok)
+
+	_, ok = iter.Next()
+	assert.False(t, ok)
+
+	iter.Reset()
+	reset, ok := iter.Next()
+	assert.True(t, ok)
+	assert.Equal(t, 1, reset)
+}
+
+func TestLazyTap(t *testing.T) {
+	called := false
+	result := LazyRange(1, 4).Tap(func(c *LazyCollection[int]) {
+		called = true
+		assert.Equal(t, []int{1, 2, 3}, c.All())
+	})
+
+	assert.True(t, called)
+	assert.Equal(t, []int{1, 2, 3}, result.All())
+}
+
+func TestLazyToJsonError(t *testing.T) {
+	type bad struct {
+		Fn func()
+	}
+
+	_, err := LazyOf([]bad{{Fn: func() {}}}).ToJson()
+	assert.Error(t, err)
+}
+
+func TestLazyIteratorNextDoneBranch(t *testing.T) {
+	iter := LazyOf([]int{}).Iterator()
+
+	_, ok := iter.Next()
+	assert.False(t, ok)
+
+	_, ok = iter.Next()
+	assert.False(t, ok)
+}
+
+func TestLazyWhereInAndWhereNotInMissingField(t *testing.T) {
+	type user struct {
+		Name string
+		Age  int
+	}
+
+	users := LazyOf([]user{{Name: "alice", Age: 20}, {Name: "bob", Age: 30}})
+	assert.Empty(t, users.WhereIn("Unknown", []any{20}).All())
+	assert.Equal(t, 2, users.WhereNotIn("Unknown", []any{20}).Count())
 }

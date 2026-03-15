@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	contractsai "github.com/goravel/framework/contracts/ai"
 	contractsauth "github.com/goravel/framework/contracts/auth"
 	contractsaccess "github.com/goravel/framework/contracts/auth/access"
 	"github.com/goravel/framework/contracts/binding"
@@ -92,6 +93,16 @@ func (r *Container) Instance(key any, ins any) {
 
 func (r *Container) Make(key any) (any, error) {
 	return r.make(key, nil)
+}
+
+func (r *Container) MakeAI() contractsai.AI {
+	instance, err := r.Make(facades.FacadeToBinding[facades.AI])
+	if err != nil {
+		color.Errorln(err)
+		return nil
+	}
+
+	return instance.(contractsai.AI)
 }
 
 func (r *Container) MakeArtisan() contractsconsole.Artisan {

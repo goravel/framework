@@ -3,6 +3,7 @@ package facades
 import (
 	"context"
 
+	"github.com/goravel/framework/contracts/ai"
 	"github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/auth/access"
 	"github.com/goravel/framework/contracts/cache"
@@ -42,6 +43,10 @@ func App() foundationcontract.Application {
 	} else {
 		return foundation.App
 	}
+}
+
+func AI() ai.AI {
+	return App().MakeAI()
 }
 
 func Artisan() console.Artisan {

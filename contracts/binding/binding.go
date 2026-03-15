@@ -1,6 +1,7 @@
 package binding
 
 const (
+	AI          = "goravel.ai"
 	Artisan     = "goravel.artisan"
 	Auth        = "goravel.auth"
 	Cache       = "goravel.cache"
@@ -83,6 +84,13 @@ var (
 			Description: "Executes and manages external processes with concurrency support.",
 			PkgPath:     "github.com/goravel/framework/process",
 			IsBase:      true,
+		},
+		AI: {
+			Description: "Provides manager and driver contracts for AI model interactions.",
+			PkgPath:     "github.com/goravel/framework/ai",
+			Dependencies: []string{
+				Config,
+			},
 		},
 		Auth: {
 			Description: "Provides support for JWT and Session drivers.",

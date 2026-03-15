@@ -122,6 +122,10 @@ func (r *Query) Commit() error {
 	return r.instance.Commit().Error
 }
 
+func (r *Query) Context() context.Context {
+	return r.ctx
+}
+
 func (r *Query) Count() (int64, error) {
 	query := buildSelectForCount(r)
 

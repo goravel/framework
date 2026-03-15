@@ -3,8 +3,10 @@
 package foundation
 
 import (
-	auth "github.com/goravel/framework/contracts/auth"
+	ai "github.com/goravel/framework/contracts/ai"
 	access "github.com/goravel/framework/contracts/auth/access"
+
+	auth "github.com/goravel/framework/contracts/auth"
 
 	cache "github.com/goravel/framework/contracts/cache"
 
@@ -1116,6 +1118,53 @@ func (_c *Application_Make_Call) Return(_a0 interface{}, _a1 error) *Application
 }
 
 func (_c *Application_Make_Call) RunAndReturn(run func(interface{}) (interface{}, error)) *Application_Make_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// MakeAI provides a mock function with no fields
+func (_m *Application) MakeAI() ai.AI {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for MakeAI")
+	}
+
+	var r0 ai.AI
+	if rf, ok := ret.Get(0).(func() ai.AI); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(ai.AI)
+		}
+	}
+
+	return r0
+}
+
+// Application_MakeAI_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MakeAI'
+type Application_MakeAI_Call struct {
+	*mock.Call
+}
+
+// MakeAI is a helper method to define mock.On call
+func (_e *Application_Expecter) MakeAI() *Application_MakeAI_Call {
+	return &Application_MakeAI_Call{Call: _e.mock.On("MakeAI")}
+}
+
+func (_c *Application_MakeAI_Call) Run(run func()) *Application_MakeAI_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Application_MakeAI_Call) Return(_a0 ai.AI) *Application_MakeAI_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Application_MakeAI_Call) RunAndReturn(run func() ai.AI) *Application_MakeAI_Call {
 	_c.Call.Return(run)
 	return _c
 }

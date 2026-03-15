@@ -11,6 +11,24 @@ import (
 	queuemock "github.com/goravel/framework/mocks/queue"
 )
 
+type TestQueueListener struct{}
+
+func (receiver *TestQueueListener) Signature() string {
+	return "test_queue_listener"
+}
+
+func (receiver *TestQueueListener) Queue(args ...any) event.Queue {
+	return event.Queue{
+		Enable:     true,
+		Connection: "redis",
+		Queue:      "emails",
+	}
+}
+
+func (receiver *TestQueueListener) Handle(args ...any) error {
+	return nil
+}
+
 func TestDispatch(t *testing.T) {
 	var (
 		mockQueue *queuemock.Queue
@@ -95,4 +113,51 @@ func TestDispatch(t *testing.T) {
 			mockQueue.AssertExpectations(t)
 		})
 	}
+}
+
+func TestDispatchWithQueue(t *testing.T) {
+	mockQueue := queuemock.NewQueue(t)
+	listener := &TestQueueListener{}
+	mockTask := queuemock.NewTask(t)
+
+	mockQueue.EXPECT().Job(listener, []queue.Arg{
+		{Type: "string", Value: "test"},
+	}).Return(mockTask).Once()
+	mockTask.EXPECT().OnConnection("redis").Return(mockTask).Once()
+	mockTask.EXPECT().OnQueue("emails").Return(mockTask).Once()
+	mockTask.EXPECT().Dispatch().Return(nil).Once()
+
+	task := NewTask(mockQueue, []event.Arg{
+		{Type: "string", Value: "test"},
+	}, &TestEvent{}, []event.Listener{
+		listener,
+	})
+	assert.Nil(t, task.Dispatch())
+}
+
+func TestDispatchWithQueueError(t *testing.T) {
+	mockQueue := queuemock.NewQueue(t)
+	listener := &TestQueueListener{}
+	mockTask := queuemock.NewTask(t)
+
+	mockQueue.EXPECT().Job(listener, []queue.Arg{
+		{Type: "string", Value: "test"},
+	}).Return(mockTask).Once()
+	mockTask.EXPECT().OnConnection("redis").Return(mockTask).Once()
+	mockTask.EXPECT().OnQueue("emails").Return(mockTask).Once()
+	mockTask.EXPECT().Dispatch().Return(errors.New("queue error")).Once()
+
+	task := NewTask(mockQueue, []event.Arg{
+		{Type: "string", Value: "test"},
+	}, &TestEvent{}, []event.Listener{
+		listener,
+	})
+	assert.EqualError(t, task.Dispatch(), "queue error")
+}
+
+func TestTestUtils(t *testing.T) {
+	assert.Equal(t, "test_listener", (&TestListener{}).Signature())
+	assert.Nil(t, (&TestListener{}).Handle())
+	assert.Equal(t, "test_listener", (&TestListenerHandleError{}).Signature())
+	assert.EqualError(t, (&TestListenerHandleError{}).Handle(), "error")
 }

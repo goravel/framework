@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	contractsprocess "github.com/goravel/framework/contracts/process"
 )
@@ -24,14 +25,17 @@ func TestRunningPool_BasicFunctions_Windows(t *testing.T) {
 		{
 			name: "PIDs returns process IDs",
 			setup: func(p contractsprocess.Pool) {
-				p.Command("powershell", "-Command", "Start-Sleep -Milliseconds 200").As("a")
-				p.Command("powershell", "-Command", "Start-Sleep -Milliseconds 200").As("b")
+				p.Command("powershell", "-Command", "Start-Sleep -Seconds 1").As("a")
+				p.Command("powershell", "-Command", "Start-Sleep -Seconds 1").As("b")
 			},
 			validate: func(t *testing.T, rp contractsprocess.RunningPool) {
-				// Give processes time to start
-				time.Sleep(50 * time.Millisecond)
+				// Poll until processes are registered (PowerShell startup on Windows CI can be slow)
+				var pids map[string]int
+				require.Eventually(t, func() bool {
+					pids = rp.PIDs()
+					return pids["a"] != 0 && pids["b"] != 0
+				}, 10*time.Second, 50*time.Millisecond, "processes should have non-zero PIDs")
 
-				pids := rp.PIDs()
 				assert.Len(t, pids, 2)
 				assert.NotEqual(t, 0, pids["a"])
 				assert.NotEqual(t, 0, pids["b"])

@@ -3,6 +3,7 @@ package facades
 import "github.com/goravel/framework/contracts/binding"
 
 const (
+	AI          = "AI"
 	Artisan     = "Artisan"
 	Auth        = "Auth"
 	Cache       = "Cache"
@@ -34,6 +35,7 @@ const (
 )
 
 var FacadeToBinding = map[string]string{
+	AI:          binding.AI,
 	Artisan:     binding.Artisan,
 	Auth:        binding.Auth,
 	Cache:       binding.Cache,

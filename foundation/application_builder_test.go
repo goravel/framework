@@ -8,8 +8,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/stats"
 
+	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/contracts/database/seeder"
+	contractsevent "github.com/goravel/framework/contracts/event"
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	contractsconfiguration "github.com/goravel/framework/contracts/foundation/configuration"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/contracts/schedule"
@@ -17,6 +20,7 @@ import (
 	mocksschema "github.com/goravel/framework/mocks/database/schema"
 	mocksseeder "github.com/goravel/framework/mocks/database/seeder"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
+	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
 	mocksschedule "github.com/goravel/framework/mocks/schedule"
 	mocksvalidation "github.com/goravel/framework/mocks/validation"
@@ -51,6 +55,54 @@ func (s *ApplicationBuilderTestSuite) TestWithConfig() {
 
 	s.NotNil(builder)
 	s.NotNil(s.builder.config)
+}
+
+func (s *ApplicationBuilderTestSuite) TestSetup() {
+	originalApp := App
+	t := s.T()
+	t.Cleanup(func() {
+		App = originalApp
+	})
+
+	App = s.mockApp
+
+	builder := Setup()
+	applicationBuilder, ok := builder.(*ApplicationBuilder)
+	s.True(ok)
+	s.Equal(s.mockApp, applicationBuilder.app)
+}
+
+func (s *ApplicationBuilderTestSuite) TestCreate() {
+	app := mocksfoundation.NewApplication(s.T())
+	builder := NewApplicationBuilder(app)
+	app.EXPECT().SetBuilder(builder).Return(app).Once()
+	app.EXPECT().Build().Return(app).Once()
+
+	created := builder.Create()
+
+	s.Equal(app, created)
+}
+
+func (s *ApplicationBuilderTestSuite) TestWithCommands() {
+	command := mocksconsole.NewCommand(s.T())
+	builder := s.builder.WithCommands(func() []contractsconsole.Command {
+		return []contractsconsole.Command{command}
+	})
+
+	s.NotNil(builder)
+	s.NotNil(s.builder.commands)
+	commands := s.builder.commands()
+	s.Len(commands, 1)
+	s.Same(command, commands[0])
+}
+
+func (s *ApplicationBuilderTestSuite) TestWithEvents() {
+	builder := s.builder.WithEvents(func() map[contractsevent.Event][]contractsevent.Listener {
+		return nil
+	})
+
+	s.NotNil(builder)
+	s.NotNil(s.builder.eventToListeners)
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithMiddleware() {
@@ -89,6 +141,14 @@ func (s *ApplicationBuilderTestSuite) TestWithRouting() {
 
 	s.NotNil(builder)
 	s.NotNil(s.builder.routes)
+}
+
+func (s *ApplicationBuilderTestSuite) TestWithProviders() {
+	provider := mocksfoundation.NewServiceProvider(s.T())
+	builder := s.builder.WithProviders(func() []contractsfoundation.ServiceProvider { return []contractsfoundation.ServiceProvider{provider} })
+
+	s.NotNil(builder)
+	s.NotNil(s.builder.configuredServiceProviders)
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithSchedule() {
@@ -180,6 +240,14 @@ func (s *ApplicationBuilderTestSuite) TestWithRules() {
 
 	s.NotNil(builder)
 	s.NotNil(s.builder.rules)
+}
+
+func (s *ApplicationBuilderTestSuite) TestWithRunners() {
+	runner := mocksfoundation.NewRunner(s.T())
+	builder := s.builder.WithRunners(func() []contractsfoundation.Runner { return []contractsfoundation.Runner{runner} })
+
+	s.NotNil(builder)
+	s.NotNil(s.builder.runners)
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithCallback() {

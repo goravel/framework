@@ -2,6 +2,8 @@ package console
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"io"
 	"testing"
 
@@ -273,5 +275,50 @@ func TestLexicographicLess(t *testing.T) {
 	for _, tt := range tests {
 		actual := lexicographicLess(tt.i, tt.j)
 		assert.Equal(t, tt.expected, actual)
+	}
+}
+
+func TestOnUsageError(t *testing.T) {
+	tests := []struct {
+		name    string
+		err     error
+		wantNil bool
+	}{
+		{
+			name:    "unknown option",
+			err:     errors.New("flag provided but not defined: -missing"),
+			wantNil: true,
+		},
+		{
+			name:    "option missing value",
+			err:     errors.New("flag needs an argument: --name"),
+			wantNil: true,
+		},
+		{
+			name:    "invalid option value",
+			err:     errors.New(`invalid value "x" for flag -count: parse error`),
+			wantNil: true,
+		},
+		{
+			name:    "missing argument values",
+			err:     errors.New("sufficient count of arg users not provided, given 1 expected 2"),
+			wantNil: true,
+		},
+		{
+			name:    "unmatched error",
+			err:     errors.New("generic failure"),
+			wantNil: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := onUsageError(context.TODO(), nil, tt.err, false)
+			if tt.wantNil {
+				assert.Nil(t, got)
+			} else {
+				assert.Equal(t, tt.err, got)
+			}
+		})
 	}
 }
