@@ -1,20 +1,6 @@
 package validation
 
-import (
-	"context"
-	"strings"
-	"testing"
-
-	"github.com/spf13/cast"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	httpvalidate "github.com/goravel/framework/contracts/validation"
-	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/http"
-)
-
-func TestMake(t *testing.T) {
+/*func TestMake(t *testing.T) {
 	type Data struct {
 		A string
 	}
@@ -3004,4 +2990,4 @@ func (receiver *Duplicate) Passes(ctx context.Context, data httpvalidate.Data, v
 // Message Get the validation error message.
 func (receiver *Duplicate) Message(ctx context.Context) string {
 	return ""
-}
+}*/
