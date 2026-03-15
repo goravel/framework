@@ -1,7 +1,9 @@
 package ai
 
 import (
+	"github.com/goravel/framework/ai/console"
 	"github.com/goravel/framework/contracts/binding"
+	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 )
 
@@ -22,4 +24,17 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 	})
 }
 
-func (r *ServiceProvider) Boot(app foundation.Application) {}
+func (r *ServiceProvider) Boot(app foundation.Application) {
+	r.registerCommands(app)
+}
+
+func (r *ServiceProvider) registerCommands(app foundation.Application) {
+	artisan := app.MakeArtisan()
+	if artisan == nil {
+		return
+	}
+	artisan.Register([]contractsconsole.Command{
+		console.NewAgentsInstallCommand(),
+		console.NewAgentsUpdateCommand(),
+	})
+}
