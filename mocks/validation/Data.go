@@ -17,6 +17,53 @@ func (_m *Data) EXPECT() *Data_Expecter {
 	return &Data_Expecter{mock: &_m.Mock}
 }
 
+// All provides a mock function with no fields
+func (_m *Data) All() map[string]interface{} {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for All")
+	}
+
+	var r0 map[string]interface{}
+	if rf, ok := ret.Get(0).(func() map[string]interface{}); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]interface{})
+		}
+	}
+
+	return r0
+}
+
+// Data_All_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'All'
+type Data_All_Call struct {
+	*mock.Call
+}
+
+// All is a helper method to define mock.On call
+func (_e *Data_Expecter) All() *Data_All_Call {
+	return &Data_All_Call{Call: _e.mock.On("All")}
+}
+
+func (_c *Data_All_Call) Run(run func()) *Data_All_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Data_All_Call) Return(_a0 map[string]interface{}) *Data_All_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Data_All_Call) RunAndReturn(run func() map[string]interface{}) *Data_All_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Get provides a mock function with given fields: key
 func (_m *Data) Get(key string) (interface{}, bool) {
 	ret := _m.Called(key)

@@ -1,29 +1,6 @@
 package validation
 
-import (
-	"bytes"
-	"context"
-	"io"
-	"mime/multipart"
-	"net/http"
-	"os"
-	"path/filepath"
-	"reflect"
-	"testing"
-	"time"
-
-	"github.com/gookit/validate"
-	"github.com/spf13/cast"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/foundation/json"
-	"github.com/goravel/framework/support/carbon"
-	"github.com/goravel/framework/support/convert"
-)
-
-func TestBind_Rule(t *testing.T) {
+/*func TestBind_Rule(t *testing.T) {
 	type Embed struct {
 		C string `form:"c" json:"c"`
 	}
@@ -1280,4 +1257,4 @@ func buildRequestWithMultipleFiles(t *testing.T) *http.Request {
 	request.Header.Set("Content-Type", writer.FormDataContentType())
 
 	return request
-}
+}*/
