@@ -764,6 +764,45 @@ func (s *RulesTestSuite) TestInteger() {
 	}
 }
 
+func (s *RulesTestSuite) TestUintRule() {
+	tests := []struct {
+		name  string
+		data  map[string]any
+		rules map[string]any
+		fails bool
+	}{
+		{"pass_uint", map[string]any{"v": uint(42)}, map[string]any{"v": "uint"}, false},
+		{"pass_uint8", map[string]any{"v": uint8(255)}, map[string]any{"v": "uint"}, false},
+		{"pass_uint16", map[string]any{"v": uint16(65535)}, map[string]any{"v": "uint"}, false},
+		{"pass_uint32", map[string]any{"v": uint32(100)}, map[string]any{"v": "uint"}, false},
+		{"pass_uint64", map[string]any{"v": uint64(100)}, map[string]any{"v": "uint"}, false},
+		{"pass_int_positive", map[string]any{"v": 42}, map[string]any{"v": "uint"}, false},
+		{"pass_int8_positive", map[string]any{"v": int8(1)}, map[string]any{"v": "uint"}, false},
+		{"pass_int16_positive", map[string]any{"v": int16(1)}, map[string]any{"v": "uint"}, false},
+		{"pass_int32_positive", map[string]any{"v": int32(1)}, map[string]any{"v": "uint"}, false},
+		{"pass_int64_positive", map[string]any{"v": int64(1)}, map[string]any{"v": "uint"}, false},
+		{"pass_zero", map[string]any{"v": 0}, map[string]any{"v": "uint"}, false},
+		{"pass_string_zero", map[string]any{"v": "0"}, map[string]any{"v": "uint"}, false},
+		{"pass_string", map[string]any{"v": "42"}, map[string]any{"v": "uint"}, false},
+		{"pass_float64_whole", map[string]any{"v": float64(42)}, map[string]any{"v": "uint"}, false},
+		{"fail_negative", map[string]any{"v": -1}, map[string]any{"v": "uint"}, true},
+		{"fail_negative_int64", map[string]any{"v": int64(-1)}, map[string]any{"v": "uint"}, true},
+		{"fail_float", map[string]any{"v": 3.14}, map[string]any{"v": "uint"}, true},
+		{"fail_string_alpha", map[string]any{"v": "abc"}, map[string]any{"v": "uint"}, true},
+		{"fail_negative_string", map[string]any{"v": "-5"}, map[string]any{"v": "uint"}, true},
+		{"fail_float_string", map[string]any{"v": "3.14"}, map[string]any{"v": "uint"}, true},
+		{"fail_bool", map[string]any{"v": true}, map[string]any{"v": "uint"}, true},
+		{"fail_slice", map[string]any{"v": []any{1}}, map[string]any{"v": "uint"}, true},
+		{"fail_map", map[string]any{"v": map[string]any{}}, map[string]any{"v": "uint"}, true},
+	}
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			v := s.makeValidator(tt.data, tt.rules)
+			s.Equal(tt.fails, v.Fails())
+		})
+	}
+}
+
 func (s *RulesTestSuite) TestNumeric() {
 	tests := []struct {
 		name  string
@@ -1674,13 +1713,100 @@ func (s *RulesTestSuite) TestUuid() {
 		fails bool
 	}{
 		{"pass_v4", map[string]any{"x": "550e8400-e29b-41d4-a716-446655440000"}, map[string]any{"x": "uuid"}, false},
+		{"pass_v3", map[string]any{"x": "a3bb189e-8bf9-3888-9912-ace4e6543002"}, map[string]any{"x": "uuid"}, false},
+		{"pass_v5", map[string]any{"x": "886313e1-3b8a-5372-9b90-0c9aee199e5d"}, map[string]any{"x": "uuid"}, false},
+		{"pass_v1", map[string]any{"x": "550e8400-e29b-11d4-a716-446655440000"}, map[string]any{"x": "uuid"}, false},
 		{"pass_lowercase", map[string]any{"x": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"}, map[string]any{"x": "uuid"}, false},
 		{"pass_uppercase", map[string]any{"x": "A0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A11"}, map[string]any{"x": "uuid"}, false},
 		{"pass_nil_uuid", map[string]any{"x": "00000000-0000-0000-0000-000000000000"}, map[string]any{"x": "uuid"}, false},
 		{"fail_invalid", map[string]any{"x": "not-a-uuid"}, map[string]any{"x": "uuid"}, true},
 		{"fail_missing_dashes", map[string]any{"x": "550e8400e29b41d4a716446655440000"}, map[string]any{"x": "uuid"}, true},
 		{"fail_too_short", map[string]any{"x": "550e8400-e29b"}, map[string]any{"x": "uuid"}, true},
+		{"fail_too_long", map[string]any{"x": "550e8400-e29b-41d4-a716-446655440000a"}, map[string]any{"x": "uuid"}, true},
 		{"fail_invalid_chars", map[string]any{"x": "gggggggg-gggg-gggg-gggg-gggggggggggg"}, map[string]any{"x": "uuid"}, true},
+		{"fail_int", map[string]any{"x": 123}, map[string]any{"x": "uuid"}, true},
+		{"fail_nil", map[string]any{"x": nil}, map[string]any{"x": "uuid"}, true},
+		{"fail_extra_dash", map[string]any{"x": "550e8400-e29b-41d4-a716-4466554400-00"}, map[string]any{"x": "uuid"}, true},
+	}
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			v := s.makeValidator(tt.data, tt.rules)
+			s.Equal(tt.fails, v.Fails())
+		})
+	}
+}
+
+func (s *RulesTestSuite) TestUuid3() {
+	tests := []struct {
+		name  string
+		data  map[string]any
+		rules map[string]any
+		fails bool
+	}{
+		{"pass", map[string]any{"v": "a3bb189e-8bf9-3888-9912-ace4e6543002"}, map[string]any{"v": "uuid3"}, false},
+		{"pass_uppercase", map[string]any{"v": "A3BB189E-8BF9-3888-9912-ACE4E6543002"}, map[string]any{"v": "uuid3"}, false},
+		{"fail_uuid4", map[string]any{"v": "550e8400-e29b-41d4-a716-446655440000"}, map[string]any{"v": "uuid3"}, true},
+		{"fail_uuid5", map[string]any{"v": "886313e1-3b8a-5372-9b90-0c9aee199e5d"}, map[string]any{"v": "uuid3"}, true},
+		{"fail_uuid1", map[string]any{"v": "550e8400-e29b-11d4-a716-446655440000"}, map[string]any{"v": "uuid3"}, true},
+		{"fail_not_uuid", map[string]any{"v": "not-a-uuid"}, map[string]any{"v": "uuid3"}, true},
+		{"fail_int", map[string]any{"v": 123}, map[string]any{"v": "uuid3"}, true},
+		{"fail_nil", map[string]any{"v": nil}, map[string]any{"v": "uuid3"}, true},
+		{"fail_too_short", map[string]any{"v": "a3bb189e-8bf9-3888"}, map[string]any{"v": "uuid3"}, true},
+	}
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			v := s.makeValidator(tt.data, tt.rules)
+			s.Equal(tt.fails, v.Fails())
+		})
+	}
+}
+
+func (s *RulesTestSuite) TestUuid4() {
+	tests := []struct {
+		name  string
+		data  map[string]any
+		rules map[string]any
+		fails bool
+	}{
+		{"pass", map[string]any{"v": "550e8400-e29b-41d4-a716-446655440000"}, map[string]any{"v": "uuid4"}, false},
+		{"pass_variant_8", map[string]any{"v": "550e8400-e29b-41d4-8716-446655440000"}, map[string]any{"v": "uuid4"}, false},
+		{"pass_variant_9", map[string]any{"v": "550e8400-e29b-41d4-9716-446655440000"}, map[string]any{"v": "uuid4"}, false},
+		{"pass_variant_b", map[string]any{"v": "550e8400-e29b-41d4-b716-446655440000"}, map[string]any{"v": "uuid4"}, false},
+		{"pass_uppercase", map[string]any{"v": "550E8400-E29B-41D4-A716-446655440000"}, map[string]any{"v": "uuid4"}, false},
+		{"fail_uuid3", map[string]any{"v": "a3bb189e-8bf9-3888-9912-ace4e6543002"}, map[string]any{"v": "uuid4"}, true},
+		{"fail_uuid5", map[string]any{"v": "886313e1-3b8a-5372-9b90-0c9aee199e5d"}, map[string]any{"v": "uuid4"}, true},
+		{"fail_uuid1", map[string]any{"v": "550e8400-e29b-11d4-a716-446655440000"}, map[string]any{"v": "uuid4"}, true},
+		{"fail_bad_variant", map[string]any{"v": "550e8400-e29b-41d4-0716-446655440000"}, map[string]any{"v": "uuid4"}, true},
+		{"fail_not_uuid", map[string]any{"v": "not-a-uuid"}, map[string]any{"v": "uuid4"}, true},
+		{"fail_int", map[string]any{"v": 123}, map[string]any{"v": "uuid4"}, true},
+		{"fail_nil", map[string]any{"v": nil}, map[string]any{"v": "uuid4"}, true},
+	}
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			v := s.makeValidator(tt.data, tt.rules)
+			s.Equal(tt.fails, v.Fails())
+		})
+	}
+}
+
+func (s *RulesTestSuite) TestUuid5() {
+	tests := []struct {
+		name  string
+		data  map[string]any
+		rules map[string]any
+		fails bool
+	}{
+		{"pass", map[string]any{"v": "886313e1-3b8a-5372-9b90-0c9aee199e5d"}, map[string]any{"v": "uuid5"}, false},
+		{"pass_variant_8", map[string]any{"v": "886313e1-3b8a-5372-8b90-0c9aee199e5d"}, map[string]any{"v": "uuid5"}, false},
+		{"pass_variant_b", map[string]any{"v": "886313e1-3b8a-5372-bb90-0c9aee199e5d"}, map[string]any{"v": "uuid5"}, false},
+		{"pass_uppercase", map[string]any{"v": "886313E1-3B8A-5372-9B90-0C9AEE199E5D"}, map[string]any{"v": "uuid5"}, false},
+		{"fail_uuid3", map[string]any{"v": "a3bb189e-8bf9-3888-9912-ace4e6543002"}, map[string]any{"v": "uuid5"}, true},
+		{"fail_uuid4", map[string]any{"v": "550e8400-e29b-41d4-a716-446655440000"}, map[string]any{"v": "uuid5"}, true},
+		{"fail_uuid1", map[string]any{"v": "550e8400-e29b-11d4-a716-446655440000"}, map[string]any{"v": "uuid5"}, true},
+		{"fail_bad_variant", map[string]any{"v": "886313e1-3b8a-5372-0b90-0c9aee199e5d"}, map[string]any{"v": "uuid5"}, true},
+		{"fail_not_uuid", map[string]any{"v": "not-a-uuid"}, map[string]any{"v": "uuid5"}, true},
+		{"fail_int", map[string]any{"v": 123}, map[string]any{"v": "uuid5"}, true},
+		{"fail_nil", map[string]any{"v": nil}, map[string]any{"v": "uuid5"}, true},
 	}
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
@@ -2011,6 +2137,59 @@ func (s *RulesTestSuite) TestDifferent() {
 		{"fail_string_int_same_via_sprintf", map[string]any{"a": "1", "b": 1}, map[string]any{"a": "different:b"}, true},
 		{"fail_same_string", map[string]any{"a": "x", "b": "x"}, map[string]any{"a": "different:b"}, true},
 		{"fail_same_int", map[string]any{"a": 42, "b": 42}, map[string]any{"a": "different:b"}, true},
+	}
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			v := s.makeValidator(tt.data, tt.rules)
+			s.Equal(tt.fails, v.Fails())
+		})
+	}
+}
+
+func (s *RulesTestSuite) TestEq() {
+	tests := []struct {
+		name  string
+		data  map[string]any
+		rules map[string]any
+		fails bool
+	}{
+		{"pass_string", map[string]any{"v": "hello"}, map[string]any{"v": "eq:hello"}, false},
+		{"pass_int", map[string]any{"v": 42}, map[string]any{"v": "eq:42"}, false},
+		{"pass_float", map[string]any{"v": 3.14}, map[string]any{"v": "eq:3.14"}, false},
+		{"pass_bool_true", map[string]any{"v": true}, map[string]any{"v": "eq:true"}, false},
+		{"pass_bool_false", map[string]any{"v": false}, map[string]any{"v": "eq:false"}, false},
+		{"pass_zero", map[string]any{"v": 0}, map[string]any{"v": "eq:0"}, false},
+		{"pass_empty_string", map[string]any{"v": ""}, map[string]any{"v": "eq:"}, false},
+		{"fail_different_string", map[string]any{"v": "hello"}, map[string]any{"v": "eq:world"}, true},
+		{"fail_different_int", map[string]any{"v": 42}, map[string]any{"v": "eq:43"}, true},
+		{"fail_type_mismatch", map[string]any{"v": 42}, map[string]any{"v": "eq:hello"}, true},
+		{"fail_case_sensitive", map[string]any{"v": "Hello"}, map[string]any{"v": "eq:hello"}, true},
+		{"fail_no_params", map[string]any{"v": "hello"}, map[string]any{"v": "eq"}, true},
+	}
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			v := s.makeValidator(tt.data, tt.rules)
+			s.Equal(tt.fails, v.Fails())
+		})
+	}
+}
+
+func (s *RulesTestSuite) TestNe() {
+	tests := []struct {
+		name  string
+		data  map[string]any
+		rules map[string]any
+		fails bool
+	}{
+		{"pass_different_string", map[string]any{"v": "hello"}, map[string]any{"v": "ne:world"}, false},
+		{"pass_different_int", map[string]any{"v": 42}, map[string]any{"v": "ne:43"}, false},
+		{"pass_case_sensitive", map[string]any{"v": "Hello"}, map[string]any{"v": "ne:hello"}, false},
+		{"pass_type_mismatch", map[string]any{"v": 42}, map[string]any{"v": "ne:hello"}, false},
+		{"fail_same_string", map[string]any{"v": "hello"}, map[string]any{"v": "ne:hello"}, true},
+		{"fail_same_int", map[string]any{"v": 42}, map[string]any{"v": "ne:42"}, true},
+		{"fail_same_zero", map[string]any{"v": 0}, map[string]any{"v": "ne:0"}, true},
+		{"fail_same_bool", map[string]any{"v": true}, map[string]any{"v": "ne:true"}, true},
+		{"fail_no_params", map[string]any{"v": "hello"}, map[string]any{"v": "ne"}, true},
 	}
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
@@ -3891,4 +4070,85 @@ func (s *DBRulesTestSuite) TestRuleUnique_NoParameters() {
 		Parameters: []string{},
 	}
 	s.False(ruleUnique(ctx))
+}
+
+// ===== Deprecated Rule Aliases =====
+
+func (s *RulesTestSuite) TestDeprecatedAliases() {
+	tests := []struct {
+		name  string
+		data  map[string]any
+		rules map[string]any
+		fails bool
+	}{
+		// len → size
+		{"len_string_pass", map[string]any{"name": "hello"}, map[string]any{"name": "string|len:5"}, false},
+		{"len_string_fail", map[string]any{"name": "hi"}, map[string]any{"name": "string|len:5"}, true},
+
+		// min_len → min
+		{"min_len_pass", map[string]any{"name": "hello"}, map[string]any{"name": "string|min_len:3"}, false},
+		{"min_len_fail", map[string]any{"name": "hi"}, map[string]any{"name": "string|min_len:3"}, true},
+
+		// max_len → max
+		{"max_len_pass", map[string]any{"name": "hi"}, map[string]any{"name": "string|max_len:5"}, false},
+		{"max_len_fail", map[string]any{"name": "hello world"}, map[string]any{"name": "string|max_len:5"}, true},
+
+		// eq_field → same
+		{"eq_field_pass", map[string]any{"a": "x", "b": "x"}, map[string]any{"a": "eq_field:b"}, false},
+		{"eq_field_fail", map[string]any{"a": "x", "b": "y"}, map[string]any{"a": "eq_field:b"}, true},
+
+		// ne_field → different
+		{"ne_field_pass", map[string]any{"a": "x", "b": "y"}, map[string]any{"a": "ne_field:b"}, false},
+		{"ne_field_fail", map[string]any{"a": "x", "b": "x"}, map[string]any{"a": "ne_field:b"}, true},
+
+		// gt_field → gt
+		{"gt_field_pass", map[string]any{"a": 10, "b": 5}, map[string]any{"a": "numeric|gt_field:b"}, false},
+		{"gt_field_fail", map[string]any{"a": 3, "b": 5}, map[string]any{"a": "numeric|gt_field:b"}, true},
+
+		// gte_field → gte
+		{"gte_field_pass", map[string]any{"a": 5, "b": 5}, map[string]any{"a": "numeric|gte_field:b"}, false},
+		{"gte_field_fail", map[string]any{"a": 3, "b": 5}, map[string]any{"a": "numeric|gte_field:b"}, true},
+
+		// lt_field → lt
+		{"lt_field_pass", map[string]any{"a": 3, "b": 5}, map[string]any{"a": "numeric|lt_field:b"}, false},
+		{"lt_field_fail", map[string]any{"a": 10, "b": 5}, map[string]any{"a": "numeric|lt_field:b"}, true},
+
+		// lte_field → lte
+		{"lte_field_pass", map[string]any{"a": 5, "b": 5}, map[string]any{"a": "numeric|lte_field:b"}, false},
+		{"lte_field_fail", map[string]any{"a": 10, "b": 5}, map[string]any{"a": "numeric|lte_field:b"}, true},
+
+		// gt_date → after
+		{"gt_date_pass", map[string]any{"d": "2025-01-02"}, map[string]any{"d": "gt_date:2025-01-01"}, false},
+		{"gt_date_fail", map[string]any{"d": "2025-01-01"}, map[string]any{"d": "gt_date:2025-01-02"}, true},
+
+		// lt_date → before
+		{"lt_date_pass", map[string]any{"d": "2025-01-01"}, map[string]any{"d": "lt_date:2025-01-02"}, false},
+		{"lt_date_fail", map[string]any{"d": "2025-01-02"}, map[string]any{"d": "lt_date:2025-01-01"}, true},
+
+		// gte_date → after_or_equal
+		{"gte_date_pass_equal", map[string]any{"d": "2025-01-01"}, map[string]any{"d": "gte_date:2025-01-01"}, false},
+		{"gte_date_pass_after", map[string]any{"d": "2025-01-02"}, map[string]any{"d": "gte_date:2025-01-01"}, false},
+		{"gte_date_fail", map[string]any{"d": "2024-12-31"}, map[string]any{"d": "gte_date:2025-01-01"}, true},
+
+		// lte_date → before_or_equal
+		{"lte_date_pass_equal", map[string]any{"d": "2025-01-01"}, map[string]any{"d": "lte_date:2025-01-01"}, false},
+		{"lte_date_pass_before", map[string]any{"d": "2024-12-31"}, map[string]any{"d": "lte_date:2025-01-01"}, false},
+		{"lte_date_fail", map[string]any{"d": "2025-01-02"}, map[string]any{"d": "lte_date:2025-01-01"}, true},
+
+		// number → numeric
+		{"number_pass_int", map[string]any{"v": 42}, map[string]any{"v": "number"}, false},
+		{"number_pass_string", map[string]any{"v": "3.14"}, map[string]any{"v": "number"}, false},
+		{"number_fail", map[string]any{"v": "abc"}, map[string]any{"v": "number"}, true},
+
+		// full_url → url
+		{"full_url_pass", map[string]any{"v": "https://goravel.dev"}, map[string]any{"v": "full_url"}, false},
+		{"full_url_fail", map[string]any{"v": "not-a-url"}, map[string]any{"v": "full_url"}, true},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			v := s.makeValidator(tt.data, tt.rules)
+			s.Equal(tt.fails, v.Fails())
+		})
+	}
 }

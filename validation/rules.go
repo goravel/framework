@@ -77,6 +77,7 @@ var builtinRules = map[string]func(ctx *RuleContext) bool{
 	"string":  ruleString,
 	"integer": ruleInteger,
 	"int":     ruleInteger, // Go alias
+	"uint":    ruleUint,    // Go-specific
 	"numeric": ruleNumeric,
 	"boolean": ruleBoolean,
 	"bool":    ruleBoolean, // Go alias
@@ -119,6 +120,9 @@ var builtinRules = map[string]func(ctx *RuleContext) bool{
 	"mac":         ruleMacAddress, // alias
 	"json":        ruleJson,
 	"uuid":        ruleUuid,
+	"uuid3":       ruleUuid3,
+	"uuid4":       ruleUuid4,
+	"uuid5":       ruleUuid5,
 	"ulid":        ruleUlid,
 	"hex_color":   ruleHexColor,
 	"regex":       ruleRegex,
@@ -138,6 +142,8 @@ var builtinRules = map[string]func(ctx *RuleContext) bool{
 	// Comparison
 	"same":          ruleSame,
 	"different":     ruleDifferent,
+	"eq":            ruleEq,
+	"ne":            ruleNe,
 	"in":            ruleIn,
 	"not_in":        ruleNotIn,
 	"in_array":      ruleInArray,
@@ -181,6 +187,23 @@ var builtinRules = map[string]func(ctx *RuleContext) bool{
 	// Database
 	"exists": ruleExists,
 	"unique": ruleUnique,
+
+	// Deprecated: use the new names instead, will be removed in the next version.
+	"len":       ruleSize,          // use "size"
+	"min_len":   ruleMin,           // use "min"
+	"max_len":   ruleMax,           // use "max"
+	"eq_field":  ruleSame,          // use "same"
+	"ne_field":  ruleDifferent,     // use "different"
+	"gt_field":  ruleGt,            // use "gt"
+	"gte_field": ruleGte,           // use "gte"
+	"lt_field":  ruleLt,            // use "lt"
+	"lte_field": ruleLte,           // use "lte"
+	"gt_date":   ruleAfter,         // use "after"
+	"lt_date":   ruleBefore,        // use "before"
+	"gte_date":  ruleAfterOrEqual,  // use "after_or_equal"
+	"lte_date":  ruleBeforeOrEqual, // use "before_or_equal"
+	"number":    ruleNumeric,       // use "numeric"
+	"full_url":  ruleUrl,           // use "url"
 }
 
 // implicitRules are rules that run even when the field is missing or empty.
@@ -1016,6 +1039,36 @@ func ruleUuid(ctx *RuleContext) bool {
 	return uuidRegex.MatchString(s)
 }
 
+var uuid3Regex = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-3[0-9a-fA-F]{3}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+
+func ruleUuid3(ctx *RuleContext) bool {
+	s, ok := ctx.Value.(string)
+	if !ok {
+		return false
+	}
+	return uuid3Regex.MatchString(s)
+}
+
+var uuid4Regex = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`)
+
+func ruleUuid4(ctx *RuleContext) bool {
+	s, ok := ctx.Value.(string)
+	if !ok {
+		return false
+	}
+	return uuid4Regex.MatchString(s)
+}
+
+var uuid5Regex = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-5[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`)
+
+func ruleUuid5(ctx *RuleContext) bool {
+	s, ok := ctx.Value.(string)
+	if !ok {
+		return false
+	}
+	return uuid5Regex.MatchString(s)
+}
+
 var ulidRegex = regexp.MustCompile(`^[0-9A-HJ-KM-NP-TV-Za-hj-km-np-tv-z]{26}$`)
 
 func ruleUlid(ctx *RuleContext) bool {
@@ -1171,6 +1224,27 @@ func ruleDifferent(ctx *RuleContext) bool {
 		return true
 	}
 	return fmt.Sprintf("%v", ctx.Value) != fmt.Sprintf("%v", otherVal)
+}
+
+func ruleEq(ctx *RuleContext) bool {
+	if len(ctx.Parameters) == 0 {
+		return false
+	}
+	return fmt.Sprintf("%v", ctx.Value) == ctx.Parameters[0]
+}
+
+func ruleNe(ctx *RuleContext) bool {
+	if len(ctx.Parameters) == 0 {
+		return false
+	}
+	return fmt.Sprintf("%v", ctx.Value) != ctx.Parameters[0]
+}
+
+func ruleUint(ctx *RuleContext) bool {
+	if !ruleInteger(ctx) {
+		return false
+	}
+	return cast.ToInt64(ctx.Value) >= 0
 }
 
 func ruleIn(ctx *RuleContext) bool {
