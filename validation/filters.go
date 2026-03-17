@@ -20,26 +20,14 @@ import (
 // builtinFilters contains all built-in filter functions.
 var builtinFilters = map[string]func(val any) any{
 	// String cleaning
-	"trim": func(val any) any {
-		return strings.TrimSpace(cast.ToString(val))
-	},
-	"ltrim": func(val any) any {
-		return strings.TrimLeft(cast.ToString(val), " \t\n\r")
-	},
-	"rtrim": func(val any) any {
-		return strings.TrimRight(cast.ToString(val), " \t\n\r")
-	},
+	"trim":  func(val any) any { return strings.TrimSpace(cast.ToString(val)) },
+	"ltrim": func(val any) any { return strings.TrimLeft(cast.ToString(val), " \t\n\r") },
+	"rtrim": func(val any) any { return strings.TrimRight(cast.ToString(val), " \t\n\r") },
 
 	// Case conversion
-	"lower": func(val any) any {
-		return strings.ToLower(cast.ToString(val))
-	},
-	"upper": func(val any) any {
-		return strings.ToUpper(cast.ToString(val))
-	},
-	"title": func(val any) any {
-		return cases.Title(language.Und).String(cast.ToString(val))
-	},
+	"lower": func(val any) any { return strings.ToLower(cast.ToString(val)) },
+	"upper": func(val any) any { return strings.ToUpper(cast.ToString(val)) },
+	"title": func(val any) any { return cases.Title(language.Und).String(cast.ToString(val)) },
 	"ucfirst": func(val any) any {
 		s := cast.ToString(val)
 		if len(s) == 0 {
@@ -60,40 +48,28 @@ var builtinFilters = map[string]func(val any) any{
 	},
 
 	// Naming style
-	"camel": func(val any) any {
-		return toCamelCase(cast.ToString(val))
-	},
-	"snake": func(val any) any {
-		return toSnakeCase(cast.ToString(val))
-	},
+	"camel": func(val any) any { return toCamelCase(cast.ToString(val)) },
+	"snake": func(val any) any { return toSnakeCase(cast.ToString(val)) },
 
 	// Type conversion
-	"to_int": func(val any) any {
-		return cast.ToInt(val)
-	},
-	"to_uint": func(val any) any {
-		return cast.ToUint(val)
-	},
-	"to_float": func(val any) any {
-		return cast.ToFloat64(val)
-	},
-	"to_bool": func(val any) any {
-		return cast.ToBool(val)
-	},
-	"to_string": func(val any) any {
-		return cast.ToString(val)
-	},
-	"to_time": func(val any) any {
-		return cast.ToTime(val)
-	},
+	"to_int":    func(val any) any { return cast.ToInt(val) },
+	"to_int64":  func(val any) any { return cast.ToInt64(val) },
+	"to_uint":   func(val any) any { return cast.ToUint(val) },
+	"to_float":  func(val any) any { return cast.ToFloat64(val) },
+	"to_bool":   func(val any) any { return cast.ToBool(val) },
+	"to_string": func(val any) any { return cast.ToString(val) },
+	"to_time":   func(val any) any { return cast.ToTime(val) },
+	"int":       func(val any) any { return cast.ToInt(val) },
+	"int64":     func(val any) any { return cast.ToInt64(val) },
+	"uint":      func(val any) any { return cast.ToUint(val) },
+	"float":     func(val any) any { return cast.ToFloat64(val) },
+	"bool":      func(val any) any { return cast.ToBool(val) },
 
 	// Encoding
-	"escape_html": func(val any) any {
-		return html.EscapeString(cast.ToString(val))
-	},
-	"url_encode": func(val any) any {
-		return url.QueryEscape(cast.ToString(val))
-	},
+	"strip_tags":  func(val any) any { return stripHTMLTags(cast.ToString(val)) },
+	"escape_js":   func(val any) any { return escapeJS(cast.ToString(val)) },
+	"escape_html": func(val any) any { return html.EscapeString(cast.ToString(val)) },
+	"url_encode":  func(val any) any { return url.QueryEscape(cast.ToString(val)) },
 	"url_decode": func(val any) any {
 		decoded, err := url.QueryUnescape(cast.ToString(val))
 		if err != nil {
@@ -102,10 +78,66 @@ var builtinFilters = map[string]func(val any) any{
 		return decoded
 	},
 
-	// Cleaning
-	"strip_tags": func(val any) any {
-		return stripHTMLTags(cast.ToString(val))
+	// String splitting
+	"str_to_ints":  func(val any) any { return strToInts(cast.ToString(val)) },
+	"str_to_array": func(val any) any { return strToArray(cast.ToString(val)) },
+	"str_to_time":  func(val any) any { return cast.ToTime(val) },
+
+	// Deprecated: use snake_case names instead, will be removed in the next version.
+	"trimSpace": func(val any) any { return strings.TrimSpace(cast.ToString(val)) },
+	"trimLeft":  func(val any) any { return strings.TrimLeft(cast.ToString(val), " \t\n\r") },
+	"trimRight": func(val any) any { return strings.TrimRight(cast.ToString(val), " \t\n\r") },
+	"lowercase": func(val any) any { return strings.ToLower(cast.ToString(val)) },
+	"uppercase": func(val any) any { return strings.ToUpper(cast.ToString(val)) },
+	"lowerFirst": func(val any) any {
+		s := cast.ToString(val)
+		if len(s) == 0 {
+			return s
+		}
+		runes := []rune(s)
+		runes[0] = unicode.ToLower(runes[0])
+		return string(runes)
 	},
+	"upperFirst": func(val any) any {
+		s := cast.ToString(val)
+		if len(s) == 0 {
+			return s
+		}
+		runes := []rune(s)
+		runes[0] = unicode.ToUpper(runes[0])
+		return string(runes)
+	},
+	"ucWord":     func(val any) any { return cases.Title(language.Und).String(cast.ToString(val)) },
+	"upperWord":  func(val any) any { return cases.Title(language.Und).String(cast.ToString(val)) },
+	"camelCase":  func(val any) any { return toCamelCase(cast.ToString(val)) },
+	"snakeCase":  func(val any) any { return toSnakeCase(cast.ToString(val)) },
+	"toInt":      func(val any) any { return cast.ToInt(val) },
+	"toUint":     func(val any) any { return cast.ToUint(val) },
+	"toInt64":    func(val any) any { return cast.ToInt64(val) },
+	"toFloat":    func(val any) any { return cast.ToFloat64(val) },
+	"toBool":     func(val any) any { return cast.ToBool(val) },
+	"toString":   func(val any) any { return cast.ToString(val) },
+	"toTime":     func(val any) any { return cast.ToTime(val) },
+	"str2time":   func(val any) any { return cast.ToTime(val) },
+	"strToTime":  func(val any) any { return cast.ToTime(val) },
+	"escapeHtml": func(val any) any { return html.EscapeString(cast.ToString(val)) },
+	"escapeHTML": func(val any) any { return html.EscapeString(cast.ToString(val)) },
+	"escapeJs":   func(val any) any { return escapeJS(cast.ToString(val)) },
+	"escapeJS":   func(val any) any { return escapeJS(cast.ToString(val)) },
+	"urlEncode":  func(val any) any { return url.QueryEscape(cast.ToString(val)) },
+	"urlDecode": func(val any) any {
+		decoded, err := url.QueryUnescape(cast.ToString(val))
+		if err != nil {
+			return cast.ToString(val)
+		}
+		return decoded
+	},
+	"stripTags":  func(val any) any { return stripHTMLTags(cast.ToString(val)) },
+	"str2ints":   func(val any) any { return strToInts(cast.ToString(val)) },
+	"strToInts":  func(val any) any { return strToInts(cast.ToString(val)) },
+	"str2arr":    func(val any) any { return strToArray(cast.ToString(val)) },
+	"str2array":  func(val any) any { return strToArray(cast.ToString(val)) },
+	"strToArray": func(val any) any { return strToArray(cast.ToString(val)) },
 }
 
 // applyFilters applies filter rules to the DataBag.

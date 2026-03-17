@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -41,21 +42,72 @@ func TestBuiltinFilters(t *testing.T) {
 		// Type conversion
 		{"to_int from string", "to_int", "42", 42},
 		{"to_int from float", "to_int", 42.9, 42},
+		{"to_int64 from string", "to_int64", "9999999999", int64(9999999999)},
+		{"to_int64 from int", "to_int64", 42, int64(42)},
 		{"to_uint from string", "to_uint", "42", uint(42)},
 		{"to_float from string", "to_float", "3.14", 3.14},
 		{"to_bool true", "to_bool", "true", true},
 		{"to_bool false", "to_bool", "false", false},
 		{"to_string from int", "to_string", 42, "42"},
+		{"to_time", "to_time", "2024-01-01", time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)},
+		{"int alias", "int", "42", 42},
+		{"int64 alias", "int64", "9999999999", int64(9999999999)},
+		{"uint alias", "uint", "42", uint(42)},
+		{"float alias", "float", "3.14", 3.14},
+		{"bool alias", "bool", "true", true},
 
 		// Encoding
+		{"strip_tags", "strip_tags", "<p>Hello <b>World</b></p>", "Hello World"},
+		{"strip_tags no tags", "strip_tags", "Hello World", "Hello World"},
+		{"escape_js", "escape_js", `<script>alert("xss")</script>`, `\x3cscript\x3ealert(\"xss\")\x3c\/script\x3e`},
+		{"escape_js newlines", "escape_js", "line1\nline2", `line1\nline2`},
 		{"escape_html", "escape_html", "<script>alert('xss')</script>", "&lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt;"},
 		{"url_encode", "url_encode", "hello world&foo=bar", "hello+world%26foo%3Dbar"},
 		{"url_decode", "url_decode", "hello+world%26foo%3Dbar", "hello world&foo=bar"},
 		{"url_decode invalid", "url_decode", "%zz", "%zz"},
 
-		// Cleaning
-		{"strip_tags", "strip_tags", "<p>Hello <b>World</b></p>", "Hello World"},
-		{"strip_tags no tags", "strip_tags", "Hello World", "Hello World"},
+		// String splitting
+		{"str_to_ints", "str_to_ints", "1,2,3", []int{1, 2, 3}},
+		{"str_to_ints with spaces", "str_to_ints", "1, 2, 3", []int{1, 2, 3}},
+		{"str_to_ints single", "str_to_ints", "42", []int{42}},
+		{"str_to_array", "str_to_array", "a,b,c", []string{"a", "b", "c"}},
+		{"str_to_array with spaces", "str_to_array", "a, b, c", []string{"a", "b", "c"}},
+		{"str_to_array single", "str_to_array", "hello", []string{"hello"}},
+		{"str_to_time", "str_to_time", "2024-01-01", time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)},
+
+		// Deprecated aliases
+		{"trimSpace", "trimSpace", "  hello  ", "hello"},
+		{"trimLeft", "trimLeft", "  hello  ", "hello  "},
+		{"trimRight", "trimRight", "  hello  ", "  hello"},
+		{"lowercase", "lowercase", "HELLO", "hello"},
+		{"uppercase", "uppercase", "hello", "HELLO"},
+		{"lowerFirst", "lowerFirst", "Hello", "hello"},
+		{"upperFirst", "upperFirst", "hello", "Hello"},
+		{"ucWord", "ucWord", "hello world", "Hello World"},
+		{"upperWord", "upperWord", "hello world", "Hello World"},
+		{"camelCase", "camelCase", "hello_world", "helloWorld"},
+		{"snakeCase", "snakeCase", "helloWorld", "hello_world"},
+		{"toInt", "toInt", "42", 42},
+		{"toUint", "toUint", "42", uint(42)},
+		{"toInt64", "toInt64", "100", int64(100)},
+		{"toFloat", "toFloat", "3.14", 3.14},
+		{"toBool", "toBool", "true", true},
+		{"toString", "toString", 42, "42"},
+		{"toTime", "toTime", "2024-01-01", time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)},
+		{"str2time", "str2time", "2024-01-01", time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)},
+		{"strToTime", "strToTime", "2024-01-01", time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)},
+		{"escapeHtml", "escapeHtml", "<b>hi</b>", "&lt;b&gt;hi&lt;/b&gt;"},
+		{"escapeHTML", "escapeHTML", "<b>hi</b>", "&lt;b&gt;hi&lt;/b&gt;"},
+		{"escapeJs", "escapeJs", "alert('x')", `alert(\'x\')`},
+		{"escapeJS", "escapeJS", "alert('x')", `alert(\'x\')`},
+		{"urlEncode", "urlEncode", "a b", "a+b"},
+		{"urlDecode", "urlDecode", "a+b", "a b"},
+		{"stripTags", "stripTags", "<p>hi</p>", "hi"},
+		{"str2ints", "str2ints", "1,2", []int{1, 2}},
+		{"strToInts", "strToInts", "1,2", []int{1, 2}},
+		{"str2arr", "str2arr", "a,b", []string{"a", "b"}},
+		{"str2array", "str2array", "a,b", []string{"a", "b"}},
+		{"strToArray", "strToArray", "a,b", []string{"a", "b"}},
 	}
 
 	for _, tt := range tests {

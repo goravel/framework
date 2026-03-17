@@ -517,6 +517,49 @@ func stripHTMLTags(s string) string {
 	return htmlTagRegex.ReplaceAllString(s, "")
 }
 
+// escapeJS escapes a string for safe embedding in JavaScript.
+func escapeJS(s string) string {
+	replacer := strings.NewReplacer(
+		`\`, `\\`,
+		`"`, `\"`,
+		`'`, `\'`,
+		"\n", `\n`,
+		"\r", `\r`,
+		"<", `\x3c`,
+		">", `\x3e`,
+		"/", `\/`,
+	)
+	return replacer.Replace(s)
+}
+
+// strToInts splits a comma-separated string into []int.
+func strToInts(s string) []int {
+	parts := strings.Split(s, ",")
+	result := make([]int, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		result = append(result, cast.ToInt(p))
+	}
+	return result
+}
+
+// strToArray splits a comma-separated string into []string.
+func strToArray(s string) []string {
+	parts := strings.Split(s, ",")
+	result := make([]string, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		result = append(result, p)
+	}
+	return result
+}
+
 // detectMIME detects the real MIME type of a multipart file by reading its content.
 func detectMIME(fh *multipart.FileHeader) (*mimetype.MIME, error) {
 	f, err := fh.Open()
