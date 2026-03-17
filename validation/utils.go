@@ -416,8 +416,8 @@ func isAcceptedValue(val any) bool {
 		v = strings.ToLower(strings.TrimSpace(v))
 		return v == "yes" || v == "on" || v == "1" || v == "true"
 	}
-	v := cast.ToInt(val)
-	return v == 1
+	v, err := cast.ToIntE(val)
+	return v == 1 && err == nil
 }
 
 // isDeclinedValue checks if a value is one of the "declined" values.
@@ -430,8 +430,8 @@ func isDeclinedValue(val any) bool {
 		v = strings.ToLower(strings.TrimSpace(v))
 		return v == "no" || v == "off" || v == "0" || v == "false"
 	}
-	v := cast.ToInt(val)
-	return v == 0
+	v, err := cast.ToIntE(val)
+	return v == 0 && err == nil
 }
 
 // parseDependentValues extracts the other field's value and comparison values from parameters.
