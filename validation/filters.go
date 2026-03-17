@@ -3,16 +3,110 @@ package validation
 import (
 	"context"
 	"fmt"
+	"html"
+	"net/url"
 	"reflect"
+	"strings"
+	"unicode"
 
 	"github.com/spf13/cast"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	validatecontract "github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/errors"
 )
 
 // builtinFilters contains all built-in filter functions.
-var builtinFilters = map[string]func(val any) any{}
+var builtinFilters = map[string]func(val any) any{
+	// String cleaning
+	"trim": func(val any) any {
+		return strings.TrimSpace(cast.ToString(val))
+	},
+	"ltrim": func(val any) any {
+		return strings.TrimLeft(cast.ToString(val), " \t\n\r")
+	},
+	"rtrim": func(val any) any {
+		return strings.TrimRight(cast.ToString(val), " \t\n\r")
+	},
+
+	// Case conversion
+	"lower": func(val any) any {
+		return strings.ToLower(cast.ToString(val))
+	},
+	"upper": func(val any) any {
+		return strings.ToUpper(cast.ToString(val))
+	},
+	"title": func(val any) any {
+		return cases.Title(language.Und).String(cast.ToString(val))
+	},
+	"ucfirst": func(val any) any {
+		s := cast.ToString(val)
+		if len(s) == 0 {
+			return s
+		}
+		runes := []rune(s)
+		runes[0] = unicode.ToUpper(runes[0])
+		return string(runes)
+	},
+	"lcfirst": func(val any) any {
+		s := cast.ToString(val)
+		if len(s) == 0 {
+			return s
+		}
+		runes := []rune(s)
+		runes[0] = unicode.ToLower(runes[0])
+		return string(runes)
+	},
+
+	// Naming style
+	"camel": func(val any) any {
+		return toCamelCase(cast.ToString(val))
+	},
+	"snake": func(val any) any {
+		return toSnakeCase(cast.ToString(val))
+	},
+
+	// Type conversion
+	"to_int": func(val any) any {
+		return cast.ToInt(val)
+	},
+	"to_uint": func(val any) any {
+		return cast.ToUint(val)
+	},
+	"to_float": func(val any) any {
+		return cast.ToFloat64(val)
+	},
+	"to_bool": func(val any) any {
+		return cast.ToBool(val)
+	},
+	"to_string": func(val any) any {
+		return cast.ToString(val)
+	},
+	"to_time": func(val any) any {
+		return cast.ToTime(val)
+	},
+
+	// Encoding
+	"escape_html": func(val any) any {
+		return html.EscapeString(cast.ToString(val))
+	},
+	"url_encode": func(val any) any {
+		return url.QueryEscape(cast.ToString(val))
+	},
+	"url_decode": func(val any) any {
+		decoded, err := url.QueryUnescape(cast.ToString(val))
+		if err != nil {
+			return cast.ToString(val)
+		}
+		return decoded
+	},
+
+	// Cleaning
+	"strip_tags": func(val any) any {
+		return stripHTMLTags(cast.ToString(val))
+	},
+}
 
 // applyFilters applies filter rules to the DataBag.
 // Supports wildcard patterns (e.g., "users.*.name": "trim") that expand

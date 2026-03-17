@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"encoding/json"
 	"fmt"
 	"mime/multipart"
 	"net/url"
@@ -8,6 +9,12 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
+	"unicode"
+	"unicode/utf8"
+
+	"github.com/gabriel-vasile/mimetype"
+	"github.com/goravel/framework/contracts/database/orm"
 )
 
 // isValueEmpty checks if a value is considered "empty" for validation purposes.
@@ -337,4 +344,353 @@ func normalizeValue(rv reflect.Value) any {
 	default:
 		return rv.Interface()
 	}
+}
+
+// isValuePresent checks if a value is "present" (not nil/empty).
+func isValuePresent(val any) bool {
+	if val == nil {
+		return false
+	}
+	switch v := val.(type) {
+	case string:
+		return strings.TrimSpace(v) != ""
+	default:
+		rv := reflect.ValueOf(v)
+		switch rv.Kind() {
+		case reflect.Slice, reflect.Array, reflect.Map:
+			return rv.Len() > 0
+		default:
+			return true
+		}
+	}
+}
+
+// toFloat64 attempts to convert a value to float64.
+func toFloat64(val any) (float64, bool) {
+	switch v := val.(type) {
+	case int:
+		return float64(v), true
+	case int8:
+		return float64(v), true
+	case int16:
+		return float64(v), true
+	case int32:
+		return float64(v), true
+	case int64:
+		return float64(v), true
+	case uint:
+		return float64(v), true
+	case uint8:
+		return float64(v), true
+	case uint16:
+		return float64(v), true
+	case uint32:
+		return float64(v), true
+	case uint64:
+		return float64(v), true
+	case float32:
+		return float64(v), true
+	case float64:
+		return v, true
+	case string:
+		f, err := strconv.ParseFloat(strings.TrimSpace(v), 64)
+		if err != nil {
+			return 0, false
+		}
+		return f, true
+	case json.Number:
+		f, err := v.Float64()
+		if err != nil {
+			return 0, false
+		}
+		return f, true
+	case bool:
+		if v {
+			return 1, true
+		}
+		return 0, true
+	}
+	return 0, false
+}
+
+// getSize returns the "size" of a value based on its attribute type.
+func getSize(val any, attrType string) (float64, bool) {
+	switch attrType {
+	case "numeric":
+		return toFloat64(val)
+	case "array":
+		if val == nil {
+			return 0, false
+		}
+		rv := reflect.ValueOf(val)
+		kind := rv.Kind()
+		if kind == reflect.Slice || kind == reflect.Array || kind == reflect.Map {
+			return float64(rv.Len()), true
+		}
+		return 0, false
+	case "file":
+		if fh, ok := val.(*multipart.FileHeader); ok {
+			return float64(fh.Size) / 1024, true // kilobytes
+		}
+		if fhs, ok := val.([]*multipart.FileHeader); ok {
+			var total int64
+			for _, fh := range fhs {
+				total += fh.Size
+			}
+			return float64(total) / 1024, true
+		}
+		return 0, false
+	default: // string
+		s := fmt.Sprintf("%v", val)
+		return float64(utf8.RuneCountInString(s)), true
+	}
+}
+
+// parseDateValue attempts to parse a date from a value or field reference.
+func parseDateValue(val string, data *DataBag) (time.Time, bool) {
+	// Try as a field reference first
+	if fieldVal, ok := data.Get(val); ok {
+		val = fmt.Sprintf("%v", fieldVal)
+	}
+
+	// Try common date formats
+	formats := []string{
+		time.RFC3339,
+		"2006-01-02T15:04:05",
+		"2006-01-02 15:04:05",
+		"2006-01-02",
+		time.RFC1123,
+		time.RFC822,
+	}
+	for _, f := range formats {
+		if t, err := time.Parse(f, val); err == nil {
+			return t, true
+		}
+	}
+	return time.Time{}, false
+}
+
+// parseDate attempts to parse a value as a date.
+func parseDate(val any) (time.Time, bool) {
+	switch v := val.(type) {
+	case time.Time:
+		return v, true
+	case string:
+		formats := []string{
+			time.RFC3339,
+			"2006-01-02T15:04:05",
+			"2006-01-02 15:04:05",
+			"2006-01-02",
+			time.RFC1123,
+			time.RFC822,
+		}
+		for _, f := range formats {
+			if t, err := time.Parse(f, v); err == nil {
+				return t, true
+			}
+		}
+	}
+	return time.Time{}, false
+}
+
+// isAcceptedValue checks if a value is one of the "accepted" values.
+func isAcceptedValue(val any) bool {
+	switch v := val.(type) {
+	case string:
+		v = strings.ToLower(strings.TrimSpace(v))
+		return v == "yes" || v == "on" || v == "1" || v == "true"
+	case bool:
+		return v
+	case int:
+		return v == 1
+	case int64:
+		return v == 1
+	case float64:
+		return v == 1
+	}
+	return false
+}
+
+// isDeclinedValue checks if a value is one of the "declined" values.
+func isDeclinedValue(val any) bool {
+	switch v := val.(type) {
+	case string:
+		v = strings.ToLower(strings.TrimSpace(v))
+		return v == "no" || v == "off" || v == "0" || v == "false"
+	case bool:
+		return !v
+	case int:
+		return v == 0
+	case int64:
+		return v == 0
+	case float64:
+		return v == 0
+	}
+	return false
+}
+
+// parseDependentValues extracts the other field's value and comparison values from parameters.
+// params[0] is the other field name, params[1:] are comparison values.
+func parseDependentValues(ctx *RuleContext) (otherValue any, comparisonValues []string, otherField string) {
+	if len(ctx.Parameters) == 0 {
+		return nil, nil, ""
+	}
+	otherField = ctx.Parameters[0]
+	otherValue, _ = ctx.Data.Get(otherField)
+	comparisonValues = ctx.Parameters[1:]
+	return
+}
+
+// parseExistsParams extracts table, columns, and connection from exists rule parameters.
+// Supports "connection.table" format for specifying database connection.
+// All parameters after the table name are treated as column names.
+func parseExistsParams(ctx *RuleContext) (table string, columns []string, connection string) {
+	if len(ctx.Parameters) == 0 {
+		return "", []string{ctx.Attribute}, ""
+	}
+
+	table = ctx.Parameters[0]
+
+	// Parse connection.table format
+	if dotIdx := strings.Index(table, "."); dotIdx > 0 {
+		connection = table[:dotIdx]
+		table = table[dotIdx+1:]
+	}
+
+	// Collect all columns from parameters (starting at index 1)
+	for i := 1; i < len(ctx.Parameters); i++ {
+		if ctx.Parameters[i] != "" {
+			columns = append(columns, ctx.Parameters[i])
+		}
+	}
+
+	// Default column to field name if none specified
+	if len(columns) == 0 {
+		columns = []string{ctx.Attribute}
+	}
+
+	return table, columns, connection
+}
+
+// parseUniqueParams extracts table, column, and connection from unique rule parameters.
+// Supports "connection.table" format for specifying database connection.
+func parseUniqueParams(ctx *RuleContext) (table, column, connection string) {
+	if len(ctx.Parameters) == 0 {
+		return "", ctx.Attribute, ""
+	}
+
+	table = ctx.Parameters[0]
+
+	// Parse connection.table format
+	if dotIdx := strings.Index(table, "."); dotIdx > 0 {
+		connection = table[:dotIdx]
+		table = table[dotIdx+1:]
+	}
+
+	// Column defaults to field name
+	column = ctx.Attribute
+	if len(ctx.Parameters) >= 2 && ctx.Parameters[1] != "" {
+		column = ctx.Parameters[1]
+	}
+
+	return table, column, connection
+}
+
+// getOrmQuery returns an ORM query, optionally with a specific connection.
+func getOrmQuery(ctx *RuleContext, connection string) orm.Query {
+	o := ormFacade.WithContext(ctx.Ctx)
+	if connection != "" {
+		o = o.Connection(connection)
+	}
+	return o.Query()
+}
+
+// toCamelCase converts a string to camelCase.
+func toCamelCase(s string) string {
+	words := splitWords(s)
+	if len(words) == 0 {
+		return ""
+	}
+
+	result := strings.ToLower(words[0])
+	for _, w := range words[1:] {
+		if len(w) > 0 {
+			runes := []rune(strings.ToLower(w))
+			runes[0] = unicode.ToUpper(runes[0])
+			result += string(runes)
+		}
+	}
+
+	return result
+}
+
+// toSnakeCase converts a string to snake_case.
+func toSnakeCase(s string) string {
+	words := splitWords(s)
+	for i, w := range words {
+		words[i] = strings.ToLower(w)
+	}
+	return strings.Join(words, "_")
+}
+
+// splitWords splits a string into words based on separators and case changes.
+func splitWords(s string) []string {
+	// Replace common separators with spaces
+	s = strings.NewReplacer("-", " ", "_", " ").Replace(s)
+
+	// Split on camelCase boundaries
+	var words []string
+	current := strings.Builder{}
+
+	runes := []rune(s)
+	for i, r := range runes {
+		if r == ' ' {
+			if current.Len() > 0 {
+				words = append(words, current.String())
+				current.Reset()
+			}
+			continue
+		}
+
+		if i > 0 && unicode.IsUpper(r) && !unicode.IsUpper(runes[i-1]) {
+			if current.Len() > 0 {
+				words = append(words, current.String())
+				current.Reset()
+			}
+		}
+
+		current.WriteRune(r)
+	}
+
+	if current.Len() > 0 {
+		words = append(words, current.String())
+	}
+
+	return words
+}
+
+var htmlTagRegex = regexp.MustCompile(`<[^>]*>`)
+
+// stripHTMLTags removes HTML tags from a string.
+func stripHTMLTags(s string) string {
+	return htmlTagRegex.ReplaceAllString(s, "")
+}
+
+// detectMIME detects the real MIME type of a multipart file by reading its content.
+func detectMIME(fh *multipart.FileHeader) (*mimetype.MIME, error) {
+	f, err := fh.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer func(f multipart.File) { _ = f.Close() }(f)
+
+	return mimetype.DetectReader(f)
+}
+
+func getFileExtension(filename string) string {
+	idx := strings.LastIndex(filename, ".")
+	if idx == -1 {
+		return ""
+	}
+	return filename[idx+1:]
 }

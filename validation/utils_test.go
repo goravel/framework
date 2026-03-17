@@ -436,3 +436,60 @@ func TestNormalizeValue(t *testing.T) {
 		assert.Equal(t, "Alice", result["name"])
 	})
 }
+
+func TestToCamelCase(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"hello_world", "helloWorld"},
+		{"hello-world", "helloWorld"},
+		{"hello world", "helloWorld"},
+		{"HelloWorld", "helloWorld"},
+		{"", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.expected, toCamelCase(tt.input))
+		})
+	}
+}
+
+func TestToSnakeCase(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"helloWorld", "hello_world"},
+		{"hello-world", "hello_world"},
+		{"hello world", "hello_world"},
+		{"HelloWorld", "hello_world"},
+		{"", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.expected, toSnakeCase(tt.input))
+		})
+	}
+}
+
+func TestStripHTMLTags(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"<p>Hello</p>", "Hello"},
+		{"<b>Bold</b> and <i>italic</i>", "Bold and italic"},
+		{"No tags here", "No tags here"},
+		{"<script>alert('xss')</script>", "alert('xss')"},
+		{"", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.expected, stripHTMLTags(tt.input))
+		})
+	}
+}
