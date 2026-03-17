@@ -416,7 +416,7 @@ func isAcceptedValue(val any) bool {
 		v = strings.ToLower(strings.TrimSpace(v))
 		return v == "yes" || v == "on" || v == "1" || v == "true"
 	}
-	v, err := cast.ToIntE(val)
+	v, err := cast.ToFloat64E(val)
 	return v == 1 && err == nil
 }
 
@@ -430,7 +430,7 @@ func isDeclinedValue(val any) bool {
 		v = strings.ToLower(strings.TrimSpace(v))
 		return v == "no" || v == "off" || v == "0" || v == "false"
 	}
-	v, err := cast.ToIntE(val)
+	v, err := cast.ToFloat64E(val)
 	return v == 0 && err == nil
 }
 
