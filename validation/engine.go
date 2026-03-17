@@ -349,9 +349,20 @@ func (e *Engine) formatErrorMessage(field string, rule ParsedRule, attrType stri
 			}
 			replacements[":values"] = strings.Join(names, ", ")
 		}
+	case "exclude_if", "exclude_unless":
+		if len(rule.Parameters) > 0 {
+			replacements[":other"] = getDisplayableAttribute(rule.Parameters[0], e.attributes)
+		}
+		if len(rule.Parameters) > 1 {
+			replacements[":value"] = strings.Join(rule.Parameters[1:], ", ")
+		}
 	case "same", "different", "in_array", "confirmed", "prohibits":
 		if len(rule.Parameters) > 0 {
 			replacements[":other"] = getDisplayableAttribute(rule.Parameters[0], e.attributes)
+		}
+	case "eq", "ne":
+		if len(rule.Parameters) > 0 {
+			replacements[":value"] = rule.Parameters[0]
 		}
 	case "digits":
 		if len(rule.Parameters) > 0 {
@@ -378,6 +389,31 @@ func (e *Engine) formatErrorMessage(field string, rule ParsedRule, attrType stri
 	case "date_format":
 		if len(rule.Parameters) > 0 {
 			replacements[":format"] = rule.Parameters[0]
+		}
+	// Deprecated: will be removed in the next version.
+	case "len":
+		if len(rule.Parameters) > 0 {
+			replacements[":size"] = rule.Parameters[0]
+		}
+	case "min_len":
+		if len(rule.Parameters) > 0 {
+			replacements[":min"] = rule.Parameters[0]
+		}
+	case "max_len":
+		if len(rule.Parameters) > 0 {
+			replacements[":max"] = rule.Parameters[0]
+		}
+	case "eq_field", "ne_field":
+		if len(rule.Parameters) > 0 {
+			replacements[":other"] = getDisplayableAttribute(rule.Parameters[0], e.attributes)
+		}
+	case "gt_field", "gte_field", "lt_field", "lte_field":
+		if len(rule.Parameters) > 0 {
+			replacements[":value"] = getDisplayableAttribute(rule.Parameters[0], e.attributes)
+		}
+	case "gt_date", "lt_date", "gte_date", "lte_date":
+		if len(rule.Parameters) > 0 {
+			replacements[":date"] = rule.Parameters[0]
 		}
 	}
 
