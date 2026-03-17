@@ -13,7 +13,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/gabriel-vasile/mimetype"
-	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/spf13/cast"
 )
 
@@ -447,61 +446,6 @@ func parseDependentValues(ctx *RuleContext) (otherValue any, comparisonValues []
 	return
 }
 
-// parseExistsParams extracts table, columns, and connection from exists rule parameters.
-// Supports "connection.table" format for specifying database connection.
-// All parameters after the table name are treated as column names.
-func parseExistsParams(ctx *RuleContext) (table string, columns []string, connection string) {
-	if len(ctx.Parameters) == 0 {
-		return "", []string{ctx.Attribute}, ""
-	}
-
-	table = ctx.Parameters[0]
-
-	// Parse connection.table format
-	if dotIdx := strings.Index(table, "."); dotIdx > 0 {
-		connection = table[:dotIdx]
-		table = table[dotIdx+1:]
-	}
-
-	// Collect all columns from parameters (starting at index 1)
-	for i := 1; i < len(ctx.Parameters); i++ {
-		if ctx.Parameters[i] != "" {
-			columns = append(columns, ctx.Parameters[i])
-		}
-	}
-
-	// Default column to field name if none specified
-	if len(columns) == 0 {
-		columns = []string{ctx.Attribute}
-	}
-
-	return table, columns, connection
-}
-
-// parseUniqueParams extracts table, column, and connection from unique rule parameters.
-// Supports "connection.table" format for specifying database connection.
-func parseUniqueParams(ctx *RuleContext) (table, column, connection string) {
-	if len(ctx.Parameters) == 0 {
-		return "", ctx.Attribute, ""
-	}
-
-	table = ctx.Parameters[0]
-
-	// Parse connection.table format
-	if dotIdx := strings.Index(table, "."); dotIdx > 0 {
-		connection = table[:dotIdx]
-		table = table[dotIdx+1:]
-	}
-
-	// Column defaults to field name
-	column = ctx.Attribute
-	if len(ctx.Parameters) >= 2 && ctx.Parameters[1] != "" {
-		column = ctx.Parameters[1]
-	}
-
-	return table, column, connection
-}
-
 // toCamelCase converts a string to camelCase.
 func toCamelCase(s string) string {
 	words := splitWords(s)
@@ -590,13 +534,4 @@ func getFileExtension(filename string) string {
 		return ""
 	}
 	return filename[idx+1:]
-}
-
-// getOrmQuery returns an ORM query, optionally with a specific connection.
-func getOrmQuery(ctx *RuleContext, connection string) orm.Query {
-	o := ormFacade.WithContext(ctx.Ctx)
-	if connection != "" {
-		o = o.Connection(connection)
-	}
-	return o.Query()
 }

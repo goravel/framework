@@ -6,9 +6,11 @@ import (
 	"mime/multipart"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	contractsvalidation "github.com/goravel/framework/contracts/validation"
+	mocksorm "github.com/goravel/framework/mocks/database/orm"
 )
 
 type RulesTestSuite struct {
@@ -3586,4 +3588,307 @@ func makeFileHeader(t *testing.T, filename string, content []byte) *multipart.Fi
 		t.Fatal(err)
 	}
 	return form.File["file"][0]
+}
+
+// ---- Database Rules Tests ----
+
+type DBRulesTestSuite struct {
+	suite.Suite
+	mockOrm   *mocksorm.Orm
+	mockQuery *mocksorm.Query
+}
+
+func TestDBRulesTestSuite(t *testing.T) {
+	suite.Run(t, new(DBRulesTestSuite))
+}
+
+func (s *DBRulesTestSuite) SetupTest() {
+	s.mockOrm = mocksorm.NewOrm(s.T())
+	s.mockQuery = mocksorm.NewQuery(s.T())
+	ormFacade = s.mockOrm
+}
+
+func (s *DBRulesTestSuite) TearDownTest() {
+	ormFacade = nil
+}
+
+// --- exists rule tests ---
+
+func (s *DBRulesTestSuite) TestRuleExists_SingleColumn_Found() {
+	s.mockOrm.EXPECT().WithContext(mock.Anything).Return(s.mockOrm).Once()
+	s.mockOrm.EXPECT().Query().Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Table("users").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Where("email", "test@example.com").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Exists().Return(true, nil).Once()
+
+	ctx := &RuleContext{
+		Ctx:        context.Background(),
+		Attribute:  "email",
+		Value:      "test@example.com",
+		Parameters: []string{"users", "email"},
+	}
+	s.True(ruleExists(ctx))
+}
+
+func (s *DBRulesTestSuite) TestRuleExists_SingleColumn_NotFound() {
+	s.mockOrm.EXPECT().WithContext(mock.Anything).Return(s.mockOrm).Once()
+	s.mockOrm.EXPECT().Query().Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Table("users").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Where("email", "notfound@example.com").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Exists().Return(false, nil).Once()
+
+	ctx := &RuleContext{
+		Ctx:        context.Background(),
+		Attribute:  "email",
+		Value:      "notfound@example.com",
+		Parameters: []string{"users", "email"},
+	}
+	s.False(ruleExists(ctx))
+}
+
+func (s *DBRulesTestSuite) TestRuleExists_DefaultColumn() {
+	s.mockOrm.EXPECT().WithContext(mock.Anything).Return(s.mockOrm).Once()
+	s.mockOrm.EXPECT().Query().Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Table("users").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Where("email", "test@example.com").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Exists().Return(true, nil).Once()
+
+	ctx := &RuleContext{
+		Ctx:        context.Background(),
+		Attribute:  "email",
+		Value:      "test@example.com",
+		Parameters: []string{"users"},
+	}
+	s.True(ruleExists(ctx))
+}
+
+func (s *DBRulesTestSuite) TestRuleExists_MultipleColumns_OR() {
+	s.mockOrm.EXPECT().WithContext(mock.Anything).Return(s.mockOrm).Once()
+	s.mockOrm.EXPECT().Query().Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Table("users").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Where("email", "test@example.com").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().OrWhere("username", "test@example.com").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Exists().Return(true, nil).Once()
+
+	ctx := &RuleContext{
+		Ctx:        context.Background(),
+		Attribute:  "email",
+		Value:      "test@example.com",
+		Parameters: []string{"users", "email", "username"},
+	}
+	s.True(ruleExists(ctx))
+}
+
+func (s *DBRulesTestSuite) TestRuleExists_MultipleColumns_ThreeFields() {
+	s.mockOrm.EXPECT().WithContext(mock.Anything).Return(s.mockOrm).Once()
+	s.mockOrm.EXPECT().Query().Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Table("users").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Where("email", "value").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().OrWhere("username", "value").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().OrWhere("phone", "value").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Exists().Return(false, nil).Once()
+
+	ctx := &RuleContext{
+		Ctx:        context.Background(),
+		Attribute:  "email",
+		Value:      "value",
+		Parameters: []string{"users", "email", "username", "phone"},
+	}
+	s.False(ruleExists(ctx))
+}
+
+func (s *DBRulesTestSuite) TestRuleExists_ConnectionTable() {
+	s.mockOrm.EXPECT().WithContext(mock.Anything).Return(s.mockOrm).Once()
+	s.mockOrm.EXPECT().Connection("mysql").Return(s.mockOrm).Once()
+	s.mockOrm.EXPECT().Query().Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Table("users").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Where("email", "test@example.com").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Exists().Return(true, nil).Once()
+
+	ctx := &RuleContext{
+		Ctx:        context.Background(),
+		Attribute:  "email",
+		Value:      "test@example.com",
+		Parameters: []string{"mysql.users", "email"},
+	}
+	s.True(ruleExists(ctx))
+}
+
+func (s *DBRulesTestSuite) TestRuleExists_OrmNil() {
+	ormFacade = nil
+
+	ctx := &RuleContext{
+		Ctx:        context.Background(),
+		Attribute:  "email",
+		Value:      "test@example.com",
+		Parameters: []string{"users", "email"},
+	}
+	s.False(ruleExists(ctx))
+}
+
+func (s *DBRulesTestSuite) TestRuleExists_NoParameters() {
+	ctx := &RuleContext{
+		Ctx:        context.Background(),
+		Attribute:  "email",
+		Value:      "test@example.com",
+		Parameters: []string{},
+	}
+	s.False(ruleExists(ctx))
+}
+
+// --- unique rule tests ---
+
+func (s *DBRulesTestSuite) TestRuleUnique_IsUnique() {
+	s.mockOrm.EXPECT().WithContext(mock.Anything).Return(s.mockOrm).Once()
+	s.mockOrm.EXPECT().Query().Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Table("users").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Where("email", "test@example.com").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Count().Return(int64(0), nil).Once()
+
+	ctx := &RuleContext{
+		Ctx:        context.Background(),
+		Attribute:  "email",
+		Value:      "test@example.com",
+		Parameters: []string{"users", "email"},
+	}
+	s.True(ruleUnique(ctx))
+}
+
+func (s *DBRulesTestSuite) TestRuleUnique_NotUnique() {
+	s.mockOrm.EXPECT().WithContext(mock.Anything).Return(s.mockOrm).Once()
+	s.mockOrm.EXPECT().Query().Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Table("users").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Where("email", "taken@example.com").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Count().Return(int64(1), nil).Once()
+
+	ctx := &RuleContext{
+		Ctx:        context.Background(),
+		Attribute:  "email",
+		Value:      "taken@example.com",
+		Parameters: []string{"users", "email"},
+	}
+	s.False(ruleUnique(ctx))
+}
+
+func (s *DBRulesTestSuite) TestRuleUnique_DefaultColumn() {
+	s.mockOrm.EXPECT().WithContext(mock.Anything).Return(s.mockOrm).Once()
+	s.mockOrm.EXPECT().Query().Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Table("users").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Where("email", "test@example.com").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Count().Return(int64(0), nil).Once()
+
+	ctx := &RuleContext{
+		Ctx:        context.Background(),
+		Attribute:  "email",
+		Value:      "test@example.com",
+		Parameters: []string{"users"},
+	}
+	s.True(ruleUnique(ctx))
+}
+
+func (s *DBRulesTestSuite) TestRuleUnique_WithExcept() {
+	s.mockOrm.EXPECT().WithContext(mock.Anything).Return(s.mockOrm).Once()
+	s.mockOrm.EXPECT().Query().Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Table("users").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Where("email", "test@example.com").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().WhereNotIn("id", []any{"5"}).Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Count().Return(int64(0), nil).Once()
+
+	ctx := &RuleContext{
+		Ctx:        context.Background(),
+		Attribute:  "email",
+		Value:      "test@example.com",
+		Parameters: []string{"users", "email", "id", "5"},
+	}
+	s.True(ruleUnique(ctx))
+}
+
+func (s *DBRulesTestSuite) TestRuleUnique_WithCustomIdColumnAndExcept() {
+	s.mockOrm.EXPECT().WithContext(mock.Anything).Return(s.mockOrm).Once()
+	s.mockOrm.EXPECT().Query().Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Table("users").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Where("email", "test@example.com").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().WhereNotIn("user_id", []any{"5"}).Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Count().Return(int64(0), nil).Once()
+
+	ctx := &RuleContext{
+		Ctx:        context.Background(),
+		Attribute:  "email",
+		Value:      "test@example.com",
+		Parameters: []string{"users", "email", "user_id", "5"},
+	}
+	s.True(ruleUnique(ctx))
+}
+
+func (s *DBRulesTestSuite) TestRuleUnique_WithMultipleExcepts() {
+	s.mockOrm.EXPECT().WithContext(mock.Anything).Return(s.mockOrm).Once()
+	s.mockOrm.EXPECT().Query().Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Table("users").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Where("email", "test@example.com").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().WhereNotIn("id", []any{"1", "2", "3"}).Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Count().Return(int64(0), nil).Once()
+
+	ctx := &RuleContext{
+		Ctx:        context.Background(),
+		Attribute:  "email",
+		Value:      "test@example.com",
+		Parameters: []string{"users", "email", "id", "1", "2", "3"},
+	}
+	s.True(ruleUnique(ctx))
+}
+
+func (s *DBRulesTestSuite) TestRuleUnique_WithDefaultIdColumn() {
+	s.mockOrm.EXPECT().WithContext(mock.Anything).Return(s.mockOrm).Once()
+	s.mockOrm.EXPECT().Query().Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Table("users").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Where("email", "test@example.com").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().WhereNotIn("id", []any{"5"}).Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Count().Return(int64(0), nil).Once()
+
+	ctx := &RuleContext{
+		Ctx:        context.Background(),
+		Attribute:  "email",
+		Value:      "test@example.com",
+		Parameters: []string{"users", "email", "", "5"},
+	}
+	s.True(ruleUnique(ctx))
+}
+
+func (s *DBRulesTestSuite) TestRuleUnique_ConnectionTable() {
+	s.mockOrm.EXPECT().WithContext(mock.Anything).Return(s.mockOrm).Once()
+	s.mockOrm.EXPECT().Connection("pgsql").Return(s.mockOrm).Once()
+	s.mockOrm.EXPECT().Query().Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Table("users").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Where("email", "test@example.com").Return(s.mockQuery).Once()
+	s.mockQuery.EXPECT().Count().Return(int64(0), nil).Once()
+
+	ctx := &RuleContext{
+		Ctx:        context.Background(),
+		Attribute:  "email",
+		Value:      "test@example.com",
+		Parameters: []string{"pgsql.users", "email"},
+	}
+	s.True(ruleUnique(ctx))
+}
+
+func (s *DBRulesTestSuite) TestRuleUnique_OrmNil() {
+	ormFacade = nil
+
+	ctx := &RuleContext{
+		Ctx:        context.Background(),
+		Attribute:  "email",
+		Value:      "test@example.com",
+		Parameters: []string{"users", "email"},
+	}
+	s.False(ruleUnique(ctx))
+}
+
+func (s *DBRulesTestSuite) TestRuleUnique_NoParameters() {
+	ctx := &RuleContext{
+		Ctx:        context.Background(),
+		Attribute:  "email",
+		Value:      "test@example.com",
+		Parameters: []string{},
+	}
+	s.False(ruleUnique(ctx))
 }
