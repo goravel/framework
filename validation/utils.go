@@ -1,7 +1,6 @@
 package validation
 
 import (
-	"encoding/json"
 	"fmt"
 	"mime/multipart"
 	"net/url"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/goravel/framework/contracts/database/orm"
+	"github.com/spf13/cast"
 )
 
 // isValueEmpty checks if a value is considered "empty" for validation purposes.
@@ -90,11 +90,6 @@ func matchesOtherValue(otherValue any, comparisonValues []string) bool {
 		}
 	}
 	return false
-}
-
-// isControlRule returns true for rule names that are control directives (not actual validation rules).
-func isControlRule(name string) bool {
-	return name == "bail" || name == "nullable" || name == "sometimes"
 }
 
 // dotGet navigates nested maps/slices using path segments.
@@ -346,78 +341,12 @@ func normalizeValue(rv reflect.Value) any {
 	}
 }
 
-// isValuePresent checks if a value is "present" (not nil/empty).
-func isValuePresent(val any) bool {
-	if val == nil {
-		return false
-	}
-	switch v := val.(type) {
-	case string:
-		return strings.TrimSpace(v) != ""
-	default:
-		rv := reflect.ValueOf(v)
-		switch rv.Kind() {
-		case reflect.Slice, reflect.Array, reflect.Map:
-			return rv.Len() > 0
-		default:
-			return true
-		}
-	}
-}
-
-// toFloat64 attempts to convert a value to float64.
-func toFloat64(val any) (float64, bool) {
-	switch v := val.(type) {
-	case int:
-		return float64(v), true
-	case int8:
-		return float64(v), true
-	case int16:
-		return float64(v), true
-	case int32:
-		return float64(v), true
-	case int64:
-		return float64(v), true
-	case uint:
-		return float64(v), true
-	case uint8:
-		return float64(v), true
-	case uint16:
-		return float64(v), true
-	case uint32:
-		return float64(v), true
-	case uint64:
-		return float64(v), true
-	case float32:
-		return float64(v), true
-	case float64:
-		return v, true
-	case string:
-		f, err := strconv.ParseFloat(strings.TrimSpace(v), 64)
-		if err != nil {
-			return 0, false
-		}
-		return f, true
-	case json.Number:
-		f, err := v.Float64()
-		if err != nil {
-			return 0, false
-		}
-		return f, true
-	case bool:
-		if v {
-			return 1, true
-		}
-		return 0, true
-	}
-	return 0, false
-}
-
 // getSize returns the "size" of a value based on its attribute type.
 func getSize(val any, attrType string) (float64, bool) {
 	switch attrType {
 	case "numeric":
-		return toFloat64(val)
+		num, err := cast.ToFloat64E(val)
+		return num, err == nil
 	case "array":
 		if val == nil {
 			return 0, false
@@ -450,24 +379,9 @@ func getSize(val any, attrType string) (float64, bool) {
 func parseDateValue(val string, data *DataBag) (time.Time, bool) {
 	// Try as a field reference first
 	if fieldVal, ok := data.Get(val); ok {
-		val = fmt.Sprintf("%v", fieldVal)
+		return parseDate(fieldVal)
 	}
-
-	// Try common date formats
-	formats := []string{
-		time.RFC3339,
-		"2006-01-02T15:04:05",
-		"2006-01-02 15:04:05",
-		"2006-01-02",
-		time.RFC1123,
-		time.RFC822,
-	}
-	for _, f := range formats {
-		if t, err := time.Parse(f, val); err == nil {
-			return t, true
-		}
-	}
-	return time.Time{}, false
+	return parseDate(val)
 }
 
 // parseDate attempts to parse a value as a date.
@@ -495,38 +409,30 @@ func parseDate(val any) (time.Time, bool) {
 
 // isAcceptedValue checks if a value is one of the "accepted" values.
 func isAcceptedValue(val any) bool {
+	if val == nil {
+		return false
+	}
 	switch v := val.(type) {
 	case string:
 		v = strings.ToLower(strings.TrimSpace(v))
 		return v == "yes" || v == "on" || v == "1" || v == "true"
-	case bool:
-		return v
-	case int:
-		return v == 1
-	case int64:
-		return v == 1
-	case float64:
-		return v == 1
 	}
-	return false
+	v := cast.ToInt(val)
+	return v == 1
 }
 
 // isDeclinedValue checks if a value is one of the "declined" values.
 func isDeclinedValue(val any) bool {
+	if val == nil {
+		return false
+	}
 	switch v := val.(type) {
 	case string:
 		v = strings.ToLower(strings.TrimSpace(v))
 		return v == "no" || v == "off" || v == "0" || v == "false"
-	case bool:
-		return !v
-	case int:
-		return v == 0
-	case int64:
-		return v == 0
-	case float64:
-		return v == 0
 	}
-	return false
+	v := cast.ToInt(val)
+	return v == 0
 }
 
 // parseDependentValues extracts the other field's value and comparison values from parameters.
@@ -594,15 +500,6 @@ func parseUniqueParams(ctx *RuleContext) (table, column, connection string) {
 	}
 
 	return table, column, connection
-}
-
-// getOrmQuery returns an ORM query, optionally with a specific connection.
-func getOrmQuery(ctx *RuleContext, connection string) orm.Query {
-	o := ormFacade.WithContext(ctx.Ctx)
-	if connection != "" {
-		o = o.Connection(connection)
-	}
-	return o.Query()
 }
 
 // toCamelCase converts a string to camelCase.
@@ -693,4 +590,13 @@ func getFileExtension(filename string) string {
 		return ""
 	}
 	return filename[idx+1:]
+}
+
+// getOrmQuery returns an ORM query, optionally with a specific connection.
+func getOrmQuery(ctx *RuleContext, connection string) orm.Query {
+	o := ormFacade.WithContext(ctx.Ctx)
+	if connection != "" {
+		o = o.Connection(connection)
+	}
+	return o.Query()
 }

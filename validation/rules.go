@@ -21,6 +21,8 @@ import (
 	"time"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/spf13/cast"
 )
 
 // RuleContext provides context for rule evaluation.
@@ -217,7 +219,7 @@ func ruleRequired(ctx *RuleContext) bool {
 	if ctx.Value == nil {
 		return false
 	}
-	return isValuePresent(ctx.Value)
+	return !isValueEmpty(ctx.Value)
 }
 
 func ruleRequiredIf(ctx *RuleContext) bool {
@@ -238,7 +240,7 @@ func ruleRequiredUnless(ctx *RuleContext) bool {
 
 func ruleRequiredWith(ctx *RuleContext) bool {
 	for _, field := range ctx.Parameters {
-		if val, ok := ctx.Data.Get(field); ok && isValuePresent(val) {
+		if val, ok := ctx.Data.Get(field); ok && !isValueEmpty(val) {
 			return ruleRequired(ctx)
 		}
 	}
@@ -248,7 +250,7 @@ func ruleRequiredWith(ctx *RuleContext) bool {
 func ruleRequiredWithAll(ctx *RuleContext) bool {
 	allPresent := true
 	for _, field := range ctx.Parameters {
-		if val, ok := ctx.Data.Get(field); !ok || !isValuePresent(val) {
+		if val, ok := ctx.Data.Get(field); !ok || isValueEmpty(val) {
 			allPresent = false
 			break
 		}
@@ -261,7 +263,7 @@ func ruleRequiredWithAll(ctx *RuleContext) bool {
 
 func ruleRequiredWithout(ctx *RuleContext) bool {
 	for _, field := range ctx.Parameters {
-		if val, ok := ctx.Data.Get(field); !ok || !isValuePresent(val) {
+		if val, ok := ctx.Data.Get(field); !ok || isValueEmpty(val) {
 			return ruleRequired(ctx)
 		}
 	}
@@ -271,7 +273,7 @@ func ruleRequiredWithout(ctx *RuleContext) bool {
 func ruleRequiredWithoutAll(ctx *RuleContext) bool {
 	nonePresent := true
 	for _, field := range ctx.Parameters {
-		if val, ok := ctx.Data.Get(field); ok && isValuePresent(val) {
+		if val, ok := ctx.Data.Get(field); ok && !isValueEmpty(val) {
 			nonePresent = false
 			break
 		}
@@ -308,7 +310,7 @@ func ruleFilled(ctx *RuleContext) bool {
 	if !ctx.Data.Has(ctx.Attribute) {
 		return true // Not present = ok for filled
 	}
-	return isValuePresent(ctx.Value)
+	return !isValueEmpty(ctx.Value)
 }
 
 func rulePresent(ctx *RuleContext) bool {
@@ -390,25 +392,25 @@ func ruleMissingWithAll(ctx *RuleContext) bool {
 // ---- Accept/Decline Rules ----
 
 func ruleAccepted(ctx *RuleContext) bool {
-	return isValuePresent(ctx.Value) && isAcceptedValue(ctx.Value)
+	return !isValueEmpty(ctx.Value) && isAcceptedValue(ctx.Value)
 }
 
 func ruleAcceptedIf(ctx *RuleContext) bool {
 	otherValue, comparisonValues, _ := parseDependentValues(ctx)
 	if matchesOtherValue(otherValue, comparisonValues) {
-		return isValuePresent(ctx.Value) && isAcceptedValue(ctx.Value)
+		return !isValueEmpty(ctx.Value) && isAcceptedValue(ctx.Value)
 	}
 	return true
 }
 
 func ruleDeclined(ctx *RuleContext) bool {
-	return isValuePresent(ctx.Value) && isDeclinedValue(ctx.Value)
+	return !isValueEmpty(ctx.Value) && isDeclinedValue(ctx.Value)
 }
 
 func ruleDeclinedIf(ctx *RuleContext) bool {
 	otherValue, comparisonValues, _ := parseDependentValues(ctx)
 	if matchesOtherValue(otherValue, comparisonValues) {
-		return isValuePresent(ctx.Value) && isDeclinedValue(ctx.Value)
+		return !isValueEmpty(ctx.Value) && isDeclinedValue(ctx.Value)
 	}
 	return true
 }
@@ -498,8 +500,8 @@ func ruleInteger(ctx *RuleContext) bool {
 }
 
 func ruleNumeric(ctx *RuleContext) bool {
-	_, ok := toFloat64(ctx.Value)
-	return ok
+	_, err := cast.ToFloat64E(ctx.Value)
+	return err == nil
 }
 
 func ruleBoolean(ctx *RuleContext) bool {
@@ -806,8 +808,8 @@ func ruleMultipleOf(ctx *RuleContext) bool {
 	if len(ctx.Parameters) == 0 {
 		return false
 	}
-	val, ok := toFloat64(ctx.Value)
-	if !ok {
+	val, err := cast.ToFloat64E(ctx.Value)
+	if err != nil {
 		return false
 	}
 	divisor, err := strconv.ParseFloat(ctx.Parameters[0], 64)

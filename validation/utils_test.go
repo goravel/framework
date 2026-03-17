@@ -78,14 +78,6 @@ func TestMatchesOtherValue(t *testing.T) {
 	})
 }
 
-func TestIsControlRule(t *testing.T) {
-	assert.True(t, isControlRule("bail"))
-	assert.True(t, isControlRule("nullable"))
-	assert.True(t, isControlRule("sometimes"))
-	assert.False(t, isControlRule("required"))
-	assert.False(t, isControlRule("string"))
-}
-
 func TestDotGet(t *testing.T) {
 	data := map[string]any{
 		"user": map[string]any{

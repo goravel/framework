@@ -192,9 +192,9 @@ func (s *RulesTestSuite) TestRequiredWithoutAll() {
 		{"pass_none_present_and_filled", map[string]any{"c": "val"}, map[string]any{"c": "required_without_all:a,b"}, false},
 		{"pass_some_present", map[string]any{"a": "1"}, map[string]any{"c": "required_without_all:a,b"}, false},
 		{"pass_all_present", map[string]any{"a": "1", "b": "2"}, map[string]any{"c": "required_without_all:a,b"}, false},
+		{"pass_one_of_three_present", map[string]any{"b": "2"}, map[string]any{"d": "required_without_all:a,b,c"}, false},
 		{"fail_none_present_and_empty", map[string]any{"other": "x"}, map[string]any{"c": "required_without_all:a,b"}, true},
 		{"fail_none_present_and_missing", map[string]any{}, map[string]any{"c": "required_without_all:a,b"}, true},
-		{"pass_one_of_three_present", map[string]any{"b": "2"}, map[string]any{"d": "required_without_all:a,b,c"}, false},
 	}
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
@@ -214,12 +214,12 @@ func (s *RulesTestSuite) TestRequiredIfAccepted() {
 		{"pass_accepted_and_filled", map[string]any{"terms": true, "sig": "yes"}, map[string]any{"sig": "required_if_accepted:terms"}, false},
 		{"pass_not_accepted_bool", map[string]any{"terms": false}, map[string]any{"sig": "required_if_accepted:terms"}, false},
 		{"pass_not_accepted_string", map[string]any{"terms": "no"}, map[string]any{"sig": "required_if_accepted:terms"}, false},
+		{"pass_other_field_missing", map[string]any{}, map[string]any{"sig": "required_if_accepted:terms"}, false},
 		{"fail_accepted_bool_and_missing", map[string]any{"terms": true}, map[string]any{"sig": "required_if_accepted:terms"}, true},
 		{"fail_accepted_string_yes", map[string]any{"terms": "yes"}, map[string]any{"sig": "required_if_accepted:terms"}, true},
 		{"fail_accepted_string_on", map[string]any{"terms": "on"}, map[string]any{"sig": "required_if_accepted:terms"}, true},
 		{"fail_accepted_string_1", map[string]any{"terms": "1"}, map[string]any{"sig": "required_if_accepted:terms"}, true},
 		{"fail_accepted_int_1", map[string]any{"terms": 1}, map[string]any{"sig": "required_if_accepted:terms"}, true},
-		{"pass_other_field_missing", map[string]any{}, map[string]any{"sig": "required_if_accepted:terms"}, false},
 	}
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
@@ -239,12 +239,12 @@ func (s *RulesTestSuite) TestRequiredIfDeclined() {
 		{"pass_declined_and_filled", map[string]any{"auto": false, "reason": "manual"}, map[string]any{"reason": "required_if_declined:auto"}, false},
 		{"pass_not_declined_bool", map[string]any{"auto": true}, map[string]any{"reason": "required_if_declined:auto"}, false},
 		{"pass_not_declined_string", map[string]any{"auto": "yes"}, map[string]any{"reason": "required_if_declined:auto"}, false},
+		{"pass_other_field_missing", map[string]any{}, map[string]any{"reason": "required_if_declined:auto"}, false},
 		{"fail_declined_bool_and_missing", map[string]any{"auto": false}, map[string]any{"reason": "required_if_declined:auto"}, true},
 		{"fail_declined_string_no", map[string]any{"auto": "no"}, map[string]any{"reason": "required_if_declined:auto"}, true},
 		{"fail_declined_string_off", map[string]any{"auto": "off"}, map[string]any{"reason": "required_if_declined:auto"}, true},
 		{"fail_declined_string_0", map[string]any{"auto": "0"}, map[string]any{"reason": "required_if_declined:auto"}, true},
 		{"fail_declined_int_0", map[string]any{"auto": 0}, map[string]any{"reason": "required_if_declined:auto"}, true},
-		{"pass_other_field_missing", map[string]any{}, map[string]any{"reason": "required_if_declined:auto"}, false},
 	}
 	for _, tt := range tests {
 		s.Run(tt.name, func() {

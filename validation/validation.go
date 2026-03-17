@@ -95,7 +95,8 @@ func (r *Validation) Make(ctx context.Context, data any, rules map[string]any, o
 	// Validate that all rule names are known (builtin, custom, or control)
 	for field, fieldRules := range parsedRules {
 		for _, pr := range fieldRules {
-			if isControlRule(pr.Name) {
+			// skip control rules
+			if slices.Contains([]string{"bail", "sometimes", "nullable"}, pr.Name) {
 				continue
 			}
 			if _, ok := builtinRules[pr.Name]; ok {
