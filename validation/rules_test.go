@@ -1089,6 +1089,43 @@ func (s *RulesTestSuite) TestMax() {
 	}
 }
 
+func (s *RulesTestSuite) TestNumericAliasesWithSizeRules() {
+	tests := []struct {
+		name  string
+		data  map[string]any
+		rules map[string]any
+		fails bool
+	}{
+		// int alias should resolve size as numeric value, not string length
+		{"int_max_pass", map[string]any{"x": 3}, map[string]any{"x": "int|max:3"}, false},
+		{"int_max_fail", map[string]any{"x": 42}, map[string]any{"x": "int|max:3"}, true},
+		{"int_max_string_input_fail", map[string]any{"x": "42"}, map[string]any{"x": "int|max:3"}, true},
+		{"int_min_pass", map[string]any{"x": 10}, map[string]any{"x": "int|min:5"}, false},
+		{"int_min_fail", map[string]any{"x": 2}, map[string]any{"x": "int|min:5"}, true},
+		{"int_between_pass", map[string]any{"x": 5}, map[string]any{"x": "int|between:1,10"}, false},
+		{"int_between_fail", map[string]any{"x": 20}, map[string]any{"x": "int|between:1,10"}, true},
+
+		// uint alias
+		{"uint_max_pass", map[string]any{"x": 3}, map[string]any{"x": "uint|max:5"}, false},
+		{"uint_max_fail", map[string]any{"x": 10}, map[string]any{"x": "uint|max:5"}, true},
+		{"uint_min_pass", map[string]any{"x": 5}, map[string]any{"x": "uint|min:0"}, false},
+
+		// float alias
+		{"float_max_pass", map[string]any{"x": 3.14}, map[string]any{"x": "float|max:5"}, false},
+		{"float_max_fail", map[string]any{"x": 10.5}, map[string]any{"x": "float|max:5"}, true},
+		{"float_min_pass", map[string]any{"x": 3.14}, map[string]any{"x": "float|min:3.14"}, false},
+		{"float_min_fail", map[string]any{"x": 1.5}, map[string]any{"x": "float|min:3.14"}, true},
+		{"float_size_pass", map[string]any{"x": 3.14}, map[string]any{"x": "float|size:3.14"}, false},
+		{"float_size_fail", map[string]any{"x": 2.0}, map[string]any{"x": "float|size:3.14"}, true},
+	}
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			v := s.makeValidator(tt.data, tt.rules)
+			s.Equal(tt.fails, v.Fails(), tt.name)
+		})
+	}
+}
+
 func (s *RulesTestSuite) TestBetween() {
 	tests := []struct {
 		name  string
