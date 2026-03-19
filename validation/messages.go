@@ -48,6 +48,7 @@ var defaultMessages = map[string]string{
 	"string":  "The :attribute field must be a string.",
 	"integer": "The :attribute field must be an integer.",
 	"int":     "The :attribute field must be an integer.",
+	"uint":    "The :attribute field must be a positive integer.",
 	"numeric": "The :attribute field must be a number.",
 	"boolean": "The :attribute field must be true or false.",
 	"bool":    "The :attribute field must be true or false.",
@@ -114,6 +115,9 @@ var defaultMessages = map[string]string{
 	"mac":         "The :attribute field must be a valid MAC address.",
 	"json":        "The :attribute field must be a valid JSON string.",
 	"uuid":        "The :attribute field must be a valid UUID.",
+	"uuid3":       "The :attribute field must be a valid UUID v3.",
+	"uuid4":       "The :attribute field must be a valid UUID v4.",
+	"uuid5":       "The :attribute field must be a valid UUID v5.",
 	"ulid":        "The :attribute field must be a valid ULID.",
 	"hex_color":   "The :attribute field must be a valid hexadecimal color.",
 	"regex":       "The :attribute field format is invalid.",
@@ -133,6 +137,8 @@ var defaultMessages = map[string]string{
 	// Comparison rules
 	"same":          "The :attribute field must match :other.",
 	"different":     "The :attribute field and :other must be different.",
+	"eq":            "The :attribute field must be equal to :value.",
+	"ne":            "The :attribute field must not be equal to :value.",
 	"in":            "The selected :attribute is invalid.",
 	"not_in":        "The selected :attribute is invalid.",
 	"in_array":      "The :attribute field must exist in :other.",
@@ -171,6 +177,23 @@ var defaultMessages = map[string]string{
 	// Database rules
 	"exists": "The :attribute does not exist.",
 	"unique": "The :attribute has already been taken.",
+
+	// Deprecated: use the new names instead, will be removed in the next version.
+	"len":       "The :attribute field must be :size characters.",
+	"min_len":   "The :attribute field must be at least :min characters.",
+	"max_len":   "The :attribute field must not be greater than :max characters.",
+	"eq_field":  "The :attribute field must match :other.",
+	"ne_field":  "The :attribute field and :other must be different.",
+	"gt_field":  "The :attribute field must be greater than :value.",
+	"gte_field": "The :attribute field must be greater than or equal to :value.",
+	"lt_field":  "The :attribute field must be less than :value.",
+	"lte_field": "The :attribute field must be less than or equal to :value.",
+	"gt_date":   "The :attribute field must be a date after :date.",
+	"lt_date":   "The :attribute field must be a date before :date.",
+	"gte_date":  "The :attribute field must be a date after or equal to :date.",
+	"lte_date":  "The :attribute field must be a date before or equal to :date.",
+	"number":    "The :attribute field must be a number.",
+	"full_url":  "The :attribute field must be a valid URL.",
 }
 
 // sizeRules are rules that have type-specific messages.

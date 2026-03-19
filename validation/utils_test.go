@@ -1,9 +1,11 @@
 package validation
 
 import (
+	"context"
 	"net/url"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -76,14 +78,6 @@ func TestMatchesOtherValue(t *testing.T) {
 		assert.True(t, matchesOtherValue(false, []string{"0"}))
 		assert.False(t, matchesOtherValue(false, []string{"true"}))
 	})
-}
-
-func TestIsControlRule(t *testing.T) {
-	assert.True(t, isControlRule("bail"))
-	assert.True(t, isControlRule("nullable"))
-	assert.True(t, isControlRule("sometimes"))
-	assert.False(t, isControlRule("required"))
-	assert.False(t, isControlRule("string"))
 }
 
 func TestDotGet(t *testing.T) {
@@ -435,4 +429,331 @@ func TestNormalizeValue(t *testing.T) {
 		result := normalizeValue(rv).(map[string]any)
 		assert.Equal(t, "Alice", result["name"])
 	})
+}
+
+func TestGetSize(t *testing.T) {
+	t.Run("numeric", func(t *testing.T) {
+		size, ok := getSize(42, "numeric")
+		assert.True(t, ok)
+		assert.Equal(t, float64(42), size)
+
+		size, ok = getSize(3.14, "numeric")
+		assert.True(t, ok)
+		assert.Equal(t, 3.14, size)
+
+		size, ok = getSize("100", "numeric")
+		assert.True(t, ok)
+		assert.Equal(t, float64(100), size)
+	})
+
+	t.Run("string", func(t *testing.T) {
+		size, ok := getSize("hello", "string")
+		assert.True(t, ok)
+		assert.Equal(t, float64(5), size)
+
+		size, ok = getSize("你好", "string")
+		assert.True(t, ok)
+		assert.Equal(t, float64(2), size)
+	})
+
+	t.Run("array", func(t *testing.T) {
+		size, ok := getSize([]any{1, 2, 3}, "array")
+		assert.True(t, ok)
+		assert.Equal(t, float64(3), size)
+
+		size, ok = getSize(map[string]any{"a": 1, "b": 2}, "array")
+		assert.True(t, ok)
+		assert.Equal(t, float64(2), size)
+
+		_, ok = getSize(nil, "array")
+		assert.False(t, ok)
+
+		_, ok = getSize("not-array", "array")
+		assert.False(t, ok)
+	})
+}
+
+func TestParseDateValue(t *testing.T) {
+	bag, _ := NewDataBag(map[string]any{
+		"start": "2024-01-15",
+	})
+
+	t.Run("field reference", func(t *testing.T) {
+		dt, ok := parseDateValue("start", bag)
+		assert.True(t, ok)
+		assert.Equal(t, 2024, dt.Year())
+		assert.Equal(t, time.January, dt.Month())
+		assert.Equal(t, 15, dt.Day())
+	})
+
+	t.Run("literal date string", func(t *testing.T) {
+		dt, ok := parseDateValue("2023-06-01", bag)
+		assert.True(t, ok)
+		assert.Equal(t, 2023, dt.Year())
+	})
+
+	t.Run("invalid date", func(t *testing.T) {
+		_, ok := parseDateValue("not-a-date", bag)
+		assert.False(t, ok)
+	})
+
+	t.Run("missing field falls back to literal", func(t *testing.T) {
+		_, ok := parseDateValue("missing_field", bag)
+		assert.False(t, ok)
+	})
+}
+
+func TestParseDate(t *testing.T) {
+	t.Run("time.Time value", func(t *testing.T) {
+		now := time.Now()
+		dt, ok := parseDate(now)
+		assert.True(t, ok)
+		assert.Equal(t, now, dt)
+	})
+
+	t.Run("RFC3339 string", func(t *testing.T) {
+		dt, ok := parseDate("2024-01-15T10:30:00Z")
+		assert.True(t, ok)
+		assert.Equal(t, 2024, dt.Year())
+	})
+
+	t.Run("date only string", func(t *testing.T) {
+		dt, ok := parseDate("2024-01-15")
+		assert.True(t, ok)
+		assert.Equal(t, 15, dt.Day())
+	})
+
+	t.Run("datetime string", func(t *testing.T) {
+		dt, ok := parseDate("2024-01-15 10:30:00")
+		assert.True(t, ok)
+		assert.Equal(t, 10, dt.Hour())
+	})
+
+	t.Run("invalid string", func(t *testing.T) {
+		_, ok := parseDate("not-a-date")
+		assert.False(t, ok)
+	})
+
+	t.Run("non-string non-time", func(t *testing.T) {
+		_, ok := parseDate(12345)
+		assert.False(t, ok)
+	})
+}
+
+func TestIsAcceptedValue(t *testing.T) {
+	tests := []struct {
+		name     string
+		val      any
+		expected bool
+	}{
+		{"nil", nil, false},
+		{"string yes", "yes", true},
+		{"string on", "on", true},
+		{"string 1", "1", true},
+		{"string true", "true", true},
+		{"string YES", "YES", true},
+		{"string True", "True", true},
+		{"string  yes ", " yes ", true},
+		{"string no", "no", false},
+		{"string false", "false", false},
+		{"string empty", "", false},
+		{"string random", "hello", false},
+		{"string 2", "2", false},
+		{"bool true", true, true},
+		{"bool false", false, false},
+		{"int 1", 1, true},
+		{"int 0", 0, false},
+		{"int 2", 2, false},
+		{"int -1", -1, false},
+		{"int64 1", int64(1), true},
+		{"int64 0", int64(0), false},
+		{"float64 1", float64(1), true},
+		{"float64 0", float64(0), false},
+		{"float64 0.5", float64(0.5), false},
+		{"slice", []any{1, 2}, false},
+		{"map", map[string]any{"a": 1}, false},
+		{"struct", struct{ Name string }{"test"}, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, isAcceptedValue(tt.val))
+		})
+	}
+}
+
+func TestIsDeclinedValue(t *testing.T) {
+	tests := []struct {
+		name     string
+		val      any
+		expected bool
+	}{
+		{"nil", nil, false},
+		{"string no", "no", true},
+		{"string off", "off", true},
+		{"string 0", "0", true},
+		{"string false", "false", true},
+		{"string NO", "NO", true},
+		{"string False", "False", true},
+		{"string  no ", " no ", true},
+		{"string yes", "yes", false},
+		{"string true", "true", false},
+		{"string empty", "", false},
+		{"string random", "hello", false},
+		{"string 2", "2", false},
+		{"bool false", false, true},
+		{"bool true", true, false},
+		{"int 0", 0, true},
+		{"int 1", 1, false},
+		{"int 2", 2, false},
+		{"int -1", -1, false},
+		{"int64 0", int64(0), true},
+		{"int64 1", int64(1), false},
+		{"float64 0", float64(0), true},
+		{"float64 1", float64(1), false},
+		{"float64 0.5", 0.5, false},
+		{"slice", []any{1, 2}, false},
+		{"map", map[string]any{"a": 1}, false},
+		{"struct", struct{ Name string }{"test"}, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, isDeclinedValue(tt.val))
+		})
+	}
+}
+
+func TestParseDependentValues(t *testing.T) {
+	bag, _ := NewDataBag(map[string]any{"status": "active"})
+
+	t.Run("no parameters", func(t *testing.T) {
+		ctx := &RuleContext{Ctx: context.Background(), Data: bag, Parameters: []string{}}
+		otherValue, comparisonValues, otherField := parseDependentValues(ctx)
+		assert.Nil(t, otherValue)
+		assert.Nil(t, comparisonValues)
+		assert.Empty(t, otherField)
+	})
+
+	t.Run("with field and values", func(t *testing.T) {
+		ctx := &RuleContext{Ctx: context.Background(), Data: bag, Parameters: []string{"status", "active", "pending"}}
+		otherValue, comparisonValues, otherField := parseDependentValues(ctx)
+		assert.Equal(t, "active", otherValue)
+		assert.Equal(t, []string{"active", "pending"}, comparisonValues)
+		assert.Equal(t, "status", otherField)
+	})
+
+	t.Run("field only no comparison values", func(t *testing.T) {
+		ctx := &RuleContext{Ctx: context.Background(), Data: bag, Parameters: []string{"status"}}
+		otherValue, comparisonValues, otherField := parseDependentValues(ctx)
+		assert.Equal(t, "active", otherValue)
+		assert.Empty(t, comparisonValues)
+		assert.Equal(t, "status", otherField)
+	})
+
+	t.Run("missing field", func(t *testing.T) {
+		ctx := &RuleContext{Ctx: context.Background(), Data: bag, Parameters: []string{"missing", "val"}}
+		otherValue, comparisonValues, _ := parseDependentValues(ctx)
+		assert.Nil(t, otherValue)
+		assert.Equal(t, []string{"val"}, comparisonValues)
+	})
+}
+
+func TestToCamelCase(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"hello_world", "helloWorld"},
+		{"hello-world", "helloWorld"},
+		{"hello world", "helloWorld"},
+		{"HelloWorld", "helloWorld"},
+		{"", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.expected, toCamelCase(tt.input))
+		})
+	}
+}
+
+func TestToSnakeCase(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"helloWorld", "hello_world"},
+		{"hello-world", "hello_world"},
+		{"hello world", "hello_world"},
+		{"HelloWorld", "hello_world"},
+		{"", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.expected, toSnakeCase(tt.input))
+		})
+	}
+}
+
+func TestSplitWords(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected []string
+	}{
+		{"underscore", "hello_world", []string{"hello", "world"}},
+		{"dash", "hello-world", []string{"hello", "world"}},
+		{"space", "hello world", []string{"hello", "world"}},
+		{"camelCase", "helloWorld", []string{"hello", "World"}},
+		{"PascalCase", "HelloWorld", []string{"Hello", "World"}},
+		{"empty", "", nil},
+		{"single word", "hello", []string{"hello"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, splitWords(tt.input))
+		})
+	}
+}
+
+func TestStripHTMLTags(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"<p>Hello</p>", "Hello"},
+		{"<b>Bold</b> and <i>italic</i>", "Bold and italic"},
+		{"No tags here", "No tags here"},
+		{"<script>alert('xss')</script>", "alert('xss')"},
+		{"", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.expected, stripHTMLTags(tt.input))
+		})
+	}
+}
+
+func TestGetFileExtension(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{"normal", "photo.jpg", "jpg"},
+		{"multiple dots", "archive.tar.gz", "gz"},
+		{"no extension", "README", ""},
+		{"dot only", ".", ""},
+		{"hidden file", ".gitignore", "gitignore"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, getFileExtension(tt.input))
+		})
+	}
 }

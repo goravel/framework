@@ -8,6 +8,12 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
+	"unicode"
+	"unicode/utf8"
+
+	"github.com/gabriel-vasile/mimetype"
+	"github.com/spf13/cast"
 )
 
 // isValueEmpty checks if a value is considered "empty" for validation purposes.
@@ -83,11 +89,6 @@ func matchesOtherValue(otherValue any, comparisonValues []string) bool {
 		}
 	}
 	return false
-}
-
-// isControlRule returns true for rule names that are control directives (not actual validation rules).
-func isControlRule(name string) bool {
-	return name == "bail" || name == "nullable" || name == "sometimes"
 }
 
 // dotGet navigates nested maps/slices using path segments.
@@ -337,4 +338,243 @@ func normalizeValue(rv reflect.Value) any {
 	default:
 		return rv.Interface()
 	}
+}
+
+// getSize returns the "size" of a value based on its attribute type.
+func getSize(val any, attrType string) (float64, bool) {
+	switch attrType {
+	case "numeric":
+		num, err := cast.ToFloat64E(val)
+		return num, err == nil
+	case "array":
+		if val == nil {
+			return 0, false
+		}
+		rv := reflect.ValueOf(val)
+		kind := rv.Kind()
+		if kind == reflect.Slice || kind == reflect.Array || kind == reflect.Map {
+			return float64(rv.Len()), true
+		}
+		return 0, false
+	case "file":
+		if fh, ok := val.(*multipart.FileHeader); ok {
+			return float64(fh.Size) / 1024, true // kilobytes
+		}
+		if fhs, ok := val.([]*multipart.FileHeader); ok {
+			var total int64
+			for _, fh := range fhs {
+				total += fh.Size
+			}
+			return float64(total) / 1024, true
+		}
+		return 0, false
+	default: // string
+		s := fmt.Sprintf("%v", val)
+		return float64(utf8.RuneCountInString(s)), true
+	}
+}
+
+// parseDateValue attempts to parse a date from a value or field reference.
+func parseDateValue(val string, data *DataBag) (time.Time, bool) {
+	// Try as a field reference first
+	if fieldVal, ok := data.Get(val); ok {
+		return parseDate(fieldVal)
+	}
+	return parseDate(val)
+}
+
+// parseDate attempts to parse a value as a date.
+func parseDate(val any) (time.Time, bool) {
+	switch v := val.(type) {
+	case time.Time:
+		return v, true
+	case string:
+		formats := []string{
+			time.RFC3339,
+			"2006-01-02T15:04:05",
+			"2006-01-02 15:04:05",
+			"2006-01-02",
+			time.RFC1123,
+			time.RFC822,
+		}
+		for _, f := range formats {
+			if t, err := time.Parse(f, v); err == nil {
+				return t, true
+			}
+		}
+	}
+	return time.Time{}, false
+}
+
+// isAcceptedValue checks if a value is one of the "accepted" values.
+func isAcceptedValue(val any) bool {
+	if val == nil {
+		return false
+	}
+	switch v := val.(type) {
+	case string:
+		v = strings.ToLower(strings.TrimSpace(v))
+		return v == "yes" || v == "on" || v == "1" || v == "true"
+	}
+	v, err := cast.ToFloat64E(val)
+	return v == 1 && err == nil
+}
+
+// isDeclinedValue checks if a value is one of the "declined" values.
+func isDeclinedValue(val any) bool {
+	if val == nil {
+		return false
+	}
+	switch v := val.(type) {
+	case string:
+		v = strings.ToLower(strings.TrimSpace(v))
+		return v == "no" || v == "off" || v == "0" || v == "false"
+	}
+	v, err := cast.ToFloat64E(val)
+	return v == 0 && err == nil
+}
+
+// parseDependentValues extracts the other field's value and comparison values from parameters.
+// params[0] is the other field name, params[1:] are comparison values.
+func parseDependentValues(ctx *RuleContext) (otherValue any, comparisonValues []string, otherField string) {
+	if len(ctx.Parameters) == 0 {
+		return nil, nil, ""
+	}
+	otherField = ctx.Parameters[0]
+	otherValue, _ = ctx.Data.Get(otherField)
+	comparisonValues = ctx.Parameters[1:]
+	return
+}
+
+// toCamelCase converts a string to camelCase.
+func toCamelCase(s string) string {
+	words := splitWords(s)
+	if len(words) == 0 {
+		return ""
+	}
+
+	result := strings.ToLower(words[0])
+	for _, w := range words[1:] {
+		if len(w) > 0 {
+			runes := []rune(strings.ToLower(w))
+			runes[0] = unicode.ToUpper(runes[0])
+			result += string(runes)
+		}
+	}
+
+	return result
+}
+
+// toSnakeCase converts a string to snake_case.
+func toSnakeCase(s string) string {
+	words := splitWords(s)
+	for i, w := range words {
+		words[i] = strings.ToLower(w)
+	}
+	return strings.Join(words, "_")
+}
+
+// splitWords splits a string into words based on separators and case changes.
+func splitWords(s string) []string {
+	// Replace common separators with spaces
+	s = strings.NewReplacer("-", " ", "_", " ").Replace(s)
+
+	// Split on camelCase boundaries
+	var words []string
+	current := strings.Builder{}
+
+	runes := []rune(s)
+	for i, r := range runes {
+		if r == ' ' {
+			if current.Len() > 0 {
+				words = append(words, current.String())
+				current.Reset()
+			}
+			continue
+		}
+
+		if i > 0 && unicode.IsUpper(r) && !unicode.IsUpper(runes[i-1]) {
+			if current.Len() > 0 {
+				words = append(words, current.String())
+				current.Reset()
+			}
+		}
+
+		current.WriteRune(r)
+	}
+
+	if current.Len() > 0 {
+		words = append(words, current.String())
+	}
+
+	return words
+}
+
+var htmlTagRegex = regexp.MustCompile(`<[^>]*>`)
+
+// stripHTMLTags removes HTML tags from a string.
+func stripHTMLTags(s string) string {
+	return htmlTagRegex.ReplaceAllString(s, "")
+}
+
+// escapeJS escapes a string for safe embedding in JavaScript.
+func escapeJS(s string) string {
+	replacer := strings.NewReplacer(
+		`\`, `\\`,
+		`"`, `\"`,
+		`'`, `\'`,
+		"\n", `\n`,
+		"\r", `\r`,
+		"<", `\x3c`,
+		">", `\x3e`,
+		"/", `\/`,
+	)
+	return replacer.Replace(s)
+}
+
+// strToInts splits a comma-separated string into []int.
+func strToInts(s string) []int {
+	parts := strings.Split(s, ",")
+	result := make([]int, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		result = append(result, cast.ToInt(p))
+	}
+	return result
+}
+
+// strToArray splits a comma-separated string into []string.
+func strToArray(s string) []string {
+	parts := strings.Split(s, ",")
+	result := make([]string, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		result = append(result, p)
+	}
+	return result
+}
+
+// detectMIME detects the real MIME type of a multipart file by reading its content.
+func detectMIME(fh *multipart.FileHeader) (*mimetype.MIME, error) {
+	f, err := fh.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer func(f multipart.File) { _ = f.Close() }(f)
+
+	return mimetype.DetectReader(f)
+}
+
+func getFileExtension(filename string) string {
+	idx := strings.LastIndex(filename, ".")
+	if idx == -1 {
+		return ""
+	}
+	return filename[idx+1:]
 }

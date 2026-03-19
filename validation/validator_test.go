@@ -1,6 +1,27 @@
 package validation
 
-/*func TestBind_Rule(t *testing.T) {
+import (
+	"bytes"
+	"context"
+	"io"
+	"mime/multipart"
+	"net/http"
+	"os"
+	"path/filepath"
+	"reflect"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/foundation/json"
+	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/convert"
+)
+
+func TestBind_Rule(t *testing.T) {
 	type Embed struct {
 		C string `form:"c" json:"c"`
 	}
@@ -30,14 +51,14 @@ package validation
 
 	tests := []struct {
 		name   string
-		data   validate.DataFace
-		rules  map[string]string
+		data   any
+		rules  map[string]any
 		assert func(data Data)
 	}{
 		{
 			name:  "data is map and key is lowercase",
-			data:  validate.FromMap(map[string]any{"a": "aa", "b": "1"}),
-			rules: map[string]string{"a": "required"},
+			data:  map[string]any{"a": "aa", "b": "1"},
+			rules: map[string]any{"a": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "aa", data.A)
 				assert.Equal(t, 1, data.B)
@@ -45,35 +66,30 @@ package validation
 		},
 		{
 			name:  "data is map and cast key",
-			data:  validate.FromMap(map[string]any{"b": "1"}),
-			rules: map[string]string{"b": "required"},
+			data:  map[string]any{"b": "1"},
+			rules: map[string]any{"b": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, 1, data.B)
 			},
 		},
 		{
 			name:  "data is map and key is uppercase",
-			data:  validate.FromMap(map[string]any{"A": "aa"}),
-			rules: map[string]string{"A": "required"},
+			data:  map[string]any{"A": "aa"},
+			rules: map[string]any{"A": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "aa", data.A)
 			},
 		},
 		{
 			name: "data is struct",
-			data: func() validate.DataFace {
-				data, err := validate.FromStruct(&struct {
-					A string
-					B int
-				}{
-					A: "a",
-					B: 1,
-				})
-				assert.Nil(t, err)
-
-				return data
-			}(),
-			rules: map[string]string{"A": "required"},
+			data: &struct {
+				A string
+				B int
+			}{
+				A: "a",
+				B: 1,
+			},
+			rules: map[string]any{"A": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "a", data.A)
 				assert.Equal(t, 1, data.B)
@@ -81,15 +97,12 @@ package validation
 		},
 		{
 			name: "data is get request",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodGet, "/?a=aa&&b=1", nil)
 				assert.Nil(t, err)
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"a": "required"},
+			rules: map[string]any{"a": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "aa", data.A)
 				assert.Equal(t, 1, data.B)
@@ -97,37 +110,25 @@ package validation
 		},
 		{
 			name: "data is get request with names",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodGet, "/?names=a&names=b", nil)
 				assert.Nil(t, err)
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"names": "required|array|len:2"},
+			rules: map[string]any{"names": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, []string{"a", "b"}, data.Names)
 			},
 		},
 		{
 			name: "data is post request",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"a":"Goravel", "b": 1, "ages": [1, 2], "names": ["a", "b"]}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				age, exist := data.Get("ages")
-				assert.True(t, exist)
-
-				_, err = data.Set("ages", cast.ToIntSlice(age))
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"a": "required", "ages.*": "int", "names.*": "string"},
+			rules: map[string]any{"a": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "Goravel", data.A)
 				assert.Equal(t, 1, data.B)
@@ -137,456 +138,348 @@ package validation
 		},
 		{
 			name: "data is post request with Carbon",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"carbon": "2024-07-04 10:00:52"}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"carbon": "string"},
+			rules: map[string]any{"carbon": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "2024-07-04 10:00:52", data.Carbon.ToDateTimeString())
 			},
 		},
 		{
 			name: "data is post request with DateTime",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_time": "2024-07-04 10:00:52"}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"date_time": "string"},
+			rules: map[string]any{"date_time": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "2024-07-04 10:00:52", data.DateTime.ToDateTimeString())
 			},
 		},
 		{
 			name: "data is post request with DateTime(string)",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_time": "1720087252"}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"date_time": "required"},
+			rules: map[string]any{"date_time": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "2024-07-04 10:00:52", data.DateTime.ToDateTimeString())
 			},
 		},
 		{
 			name: "data is post request with DateTime(int)",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_time": 1720087252}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"date_time": "required"},
+			rules: map[string]any{"date_time": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "2024-07-04 10:00:52", data.DateTime.ToDateTimeString())
 			},
 		},
 		{
 			name: "data is post request with DateTime(milli)",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_time": 1720087252000}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"date_time": "required"},
+			rules: map[string]any{"date_time": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "2024-07-04 10:00:52", data.DateTime.ToDateTimeString())
 			},
 		},
 		{
 			name: "data is post request with DateTime(micro)",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_time": 1720087252000000}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"date_time": "required"},
+			rules: map[string]any{"date_time": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "2024-07-04 10:00:52", data.DateTime.ToDateTimeString())
 			},
 		},
 		{
 			name: "data is post request with DateTime(nano)",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_time": 1720087252000000000}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"date_time": "required"},
+			rules: map[string]any{"date_time": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "2024-07-04 10:00:52", data.DateTime.ToDateTimeString())
 			},
 		},
 		{
 			name: "data is post request with DateTimeMilli",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_time_milli": "2024-07-04 10:00:52.123"}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"date_time_milli": "string"},
+			rules: map[string]any{"date_time_milli": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "2024-07-04 10:00:52.123", data.DateTimeMilli.ToDateTimeMilliString())
 			},
 		},
 		{
 			name: "data is post request with DateTimeMilli(int)",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_time_milli": 1720087252123}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"date_time_milli": "required"},
+			rules: map[string]any{"date_time_milli": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "2024-07-04 10:00:52.123", data.DateTimeMilli.ToDateTimeMilliString())
 			},
 		},
 		{
 			name: "data is post request with DateTimeMicro",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_time_micro": "2024-07-04 10:00:52.123456"}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"date_time_micro": "string"},
+			rules: map[string]any{"date_time_micro": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "2024-07-04 10:00:52.123456", data.DateTimeMicro.ToDateTimeMicroString())
 			},
 		},
 		{
 			name: "data is post request with DateTimeNano",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_time_nano": "2024-07-04 10:00:52.123456789"}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"date_time_nano": "string"},
+			rules: map[string]any{"date_time_nano": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "2024-07-04 10:00:52.123456789", data.DateTimeNano.ToDateTimeNanoString())
 			},
 		},
 		{
 			name: "data is post request with DateTimeNano(int)",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_time_nano": "1720087252123456789"}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"date_time_nano": "required"},
+			rules: map[string]any{"date_time_nano": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "2024-07-04 10:00:52.123456789", data.DateTimeNano.ToDateTimeNanoString())
 			},
 		},
 		{
 			name: "data is post request with Date",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date": "2024-07-04"}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"date": "string"},
+			rules: map[string]any{"date": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "2024-07-04", data.Date.ToDateString())
 			},
 		},
 		{
 			name: "data is post request with Date(int)",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date": 1720087252}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"date": "required"},
+			rules: map[string]any{"date": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "2024-07-04", data.Date.ToDateString())
 			},
 		},
 		{
 			name: "data is post request with DateMilli",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_milli": "2024-07-04.123"}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"date_milli": "string"},
+			rules: map[string]any{"date_milli": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "2024-07-04.123", data.DateMilli.ToDateMilliString())
 			},
 		},
 		{
 			name: "data is post request with DateMilli(int)",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_milli": 1720087252123}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"date_milli": "required"},
+			rules: map[string]any{"date_milli": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "2024-07-04.123", data.DateMilli.ToDateMilliString())
 			},
 		},
 		{
 			name: "data is post request with DateMicro",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_micro": "2024-07-04.123456"}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"date_micro": "string"},
+			rules: map[string]any{"date_micro": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "2024-07-04.123456", data.DateMicro.ToDateMicroString())
 			},
 		},
 		{
 			name: "data is post request with DateMicro(int)",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_micro": 1720087252123456}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"date_micro": "required"},
+			rules: map[string]any{"date_micro": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "2024-07-04.123456", data.DateMicro.ToDateMicroString())
 			},
 		},
 		{
 			name: "data is post request with DateNano",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_nano": "2024-07-04.123456789"}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"date_nano": "string"},
+			rules: map[string]any{"date_nano": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "2024-07-04.123456789", data.DateNano.ToDateNanoString())
 			},
 		},
 		{
 			name: "data is post request with DateNano(int)",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_nano": "1720087252123456789"}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"date_nano": "required"},
+			rules: map[string]any{"date_nano": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "2024-07-04.123456789", data.DateNano.ToDateNanoString())
 			},
 		},
 		{
 			name: "data is post request with Timestamp",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"timestamp": 1720087252}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"timestamp": "required"},
+			rules: map[string]any{"timestamp": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "2024-07-04 10:00:52", data.Timestamp.ToDateTimeString())
 			},
 		},
 		{
 			name: "data is post request with TimestampMilli",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"timestamp_milli": 1720087252123}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"timestamp_milli": "required"},
+			rules: map[string]any{"timestamp_milli": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "2024-07-04 10:00:52.123", data.TimestampMilli.ToDateTimeMilliString())
 			},
 		},
 		{
 			name: "data is post request with TimestampMicro",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"timestamp_micro": 1720087252123456}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"timestamp_micro": "required"},
+			rules: map[string]any{"timestamp_micro": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "2024-07-04 10:00:52.123456", data.TimestampMicro.ToDateTimeMicroString())
 			},
 		},
 		{
 			name: "data is post request with TimestampNano",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"timestamp_nano": "1720087252123456789"}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"timestamp_nano": "required"},
+			rules: map[string]any{"timestamp_nano": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "2024-07-04 10:00:52.123456789", data.TimestampNano.ToDateTimeNanoString())
 			},
 		},
 		{
 			name: "data is post request with Time",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"time": "2025-05-23 22:16:39"}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"time": "required"},
+			rules: map[string]any{"time": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "2025-05-23 22:16:39", data.Time.Format("2006-01-02 15:04:05"))
 			},
 		},
 		{
 			name: "data is post request with Time(date)",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"time": "2025-05-23"}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules: map[string]string{"time": "required"},
+			rules: map[string]any{"time": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "2025-05-23", data.Time.Format("2006-01-02"))
 			},
 		},
 		{
 			name: "data is post request with body",
-			data: func() validate.DataFace {
-				request := buildRequest(t)
-				data, err := validate.FromRequest(request, 1)
-				assert.Nil(t, err)
-
-				return data
+			data: func() *http.Request {
+				return buildRequest(t)
 			}(),
-			rules: map[string]string{"a": "required", "file": "file"},
+			rules: map[string]any{"a": "required", "file": "file"},
 			assert: func(data Data) {
 				request := buildRequest(t)
 				_, file, err := request.FormFile("file")
@@ -599,14 +492,10 @@ package validation
 		},
 		{
 			name: "data is post request with multiple files",
-			data: func() validate.DataFace {
-				request := buildRequestWithMultipleFiles(t)
-				data, err := validate.FromRequest(request, 1)
-				assert.Nil(t, err)
-
-				return data
+			data: func() *http.Request {
+				return buildRequestWithMultipleFiles(t)
 			}(),
-			rules: map[string]string{"a": "required", "files": "file"},
+			rules: map[string]any{"a": "required", "files": "file"},
 			assert: func(data Data) {
 				request := buildRequestWithMultipleFiles(t)
 				_, file, err := request.FormFile("files")
@@ -620,8 +509,8 @@ package validation
 		},
 		{
 			name:  "data has embed struct field",
-			data:  validate.FromMap(map[string]any{"c": "cc"}),
-			rules: map[string]string{"c": "required"},
+			data:  map[string]any{"c": "cc"},
+			rules: map[string]any{"c": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "cc", data.C)
 			},
@@ -652,61 +541,53 @@ func TestBind_Filter(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		data    validate.DataFace
-		rules   map[string]string
-		filters map[string]string
+		data    any
+		rules   map[string]any
+		filters map[string]any
 		assert  func(data Data)
 	}{
 		{
 			name:    "data is map and key is lowercase",
-			data:    validate.FromMap(map[string]any{"a": " a ", "b": "1"}),
-			rules:   map[string]string{"a": "required", "b": "required"},
-			filters: map[string]string{"a": "trim", "b": "int"},
+			data:    map[string]any{"a": " a ", "b": "1"},
+			rules:   map[string]any{"a": "required", "b": "required"},
+			filters: map[string]any{"a": "trim", "b": "to_int"},
 			assert: func(data Data) {
 				assert.Equal(t, "a", data.A)
 				assert.Equal(t, 1, data.B)
 			},
 		},
 		{
-			name:    "data is map and key is lowercase, a no rule but has filter, a should keep the original value.",
-			data:    validate.FromMap(map[string]any{"a": "a", "b": " 1"}),
-			rules:   map[string]string{"b": "required"},
-			filters: map[string]string{"a": "upper", "b": "trim|int"},
+			name:    "data is map and key is lowercase, has filters",
+			data:    map[string]any{"a": "a", "b": " 1"},
+			rules:   map[string]any{"b": "required"},
+			filters: map[string]any{"a": "upper", "b": "trim|to_int"},
 			assert: func(data Data) {
-				assert.Equal(t, "a", data.A)
+				assert.Equal(t, "A", data.A)
 				assert.Equal(t, 1, data.B)
 			},
 		},
 		{
 			name: "data is struct",
-			data: func() validate.DataFace {
-				data, err := validate.FromStruct(&struct {
-					A string
-				}{
-					A: " a ",
-				})
-				assert.Nil(t, err)
-
-				return data
-			}(),
-			rules:   map[string]string{"A": "required"},
-			filters: map[string]string{"A": "trim"},
+			data: &struct {
+				A string
+			}{
+				A: " a ",
+			},
+			rules:   map[string]any{"A": "required"},
+			filters: map[string]any{"A": "trim"},
 			assert: func(data Data) {
 				assert.Equal(t, "a", data.A)
 			},
 		},
 		{
 			name: "data is get request",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				request, err := http.NewRequest(http.MethodGet, "/?a= a &&b=1", nil)
 				assert.Nil(t, err)
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules:   map[string]string{"a": "required", "b": "required"},
-			filters: map[string]string{"a": "trim"},
+			rules:   map[string]any{"a": "required", "b": "required"},
+			filters: map[string]any{"a": "trim"},
 			assert: func(data Data) {
 				assert.Equal(t, "a", data.A)
 				assert.Equal(t, 1, data.B)
@@ -714,7 +595,7 @@ func TestBind_Filter(t *testing.T) {
 		},
 		{
 			name: "data is post request with body",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				payload := &bytes.Buffer{}
 				writer := multipart.NewWriter(payload)
 
@@ -726,13 +607,10 @@ func TestBind_Filter(t *testing.T) {
 				assert.Nil(t, err)
 				request.Header.Set("Content-Type", writer.FormDataContentType())
 
-				data, err := validate.FromRequest(request, 1)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
-			rules:   map[string]string{"a": "required", "file": "file"},
-			filters: map[string]string{"a": "trim"},
+			rules:   map[string]any{"a": "required", "file": "file"},
+			filters: map[string]any{"a": "trim"},
 			assert: func(data Data) {
 				assert.Equal(t, "a", data.A)
 			},
@@ -756,36 +634,31 @@ func TestBind_Filter(t *testing.T) {
 }
 
 func TestFails(t *testing.T) {
-	var maker *Validation
 	tests := []struct {
 		describe  string
 		data      any
-		rules     map[string]string
-		filters   map[string]string
+		rules     map[string]any
 		expectRes bool
 	}{
 		{
 			describe: "false",
 			data:     map[string]any{"a": "aa"},
-			rules:    map[string]string{"a": "required"},
-			filters:  map[string]string{},
+			rules:    map[string]any{"a": "required"},
 		},
 		{
 			describe:  "true",
 			data:      map[string]any{"b": "bb"},
-			rules:     map[string]string{"a": "required"},
-			filters:   map[string]string{},
+			rules:     map[string]any{"a": "required"},
 			expectRes: true,
 		},
 	}
 
 	for _, test := range tests {
-		maker = NewValidation()
+		maker := NewValidation()
 		validator, err := maker.Make(
 			context.Background(),
 			test.data,
 			test.rules,
-			Filters(test.filters),
 		)
 		assert.Nil(t, err)
 		assert.Equal(t, test.expectRes, validator.Fails(), test.describe)
@@ -902,12 +775,12 @@ func TestCastValue(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		data    validate.DataFace
+		data    any
 		wantErr error
 	}{
 		{
 			name: "success with struct",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				body := &Data{
 					String:                "1",
 					Int:                   1,
@@ -962,15 +835,12 @@ func TestCastValue(t *testing.T) {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBuffer(jsonBytes))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
 		},
 		{
 			name: "success with map",
-			data: func() validate.DataFace {
+			data: func() *http.Request {
 				body := map[string]any{
 					"String":                "1",
 					"Int":                   "1",
@@ -1025,10 +895,7 @@ func TestCastValue(t *testing.T) {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBuffer(jsonBytes))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
-				data, err := validate.FromRequest(request)
-				assert.Nil(t, err)
-
-				return data
+				return request
 			}(),
 		},
 	}
@@ -1036,7 +903,7 @@ func TestCastValue(t *testing.T) {
 	validation := NewValidation()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			validator, err := validation.Make(context.Background(), test.data, map[string]string{
+			validator, err := validation.Make(context.Background(), test.data, map[string]any{
 				"String": "required",
 			})
 			assert.Nil(t, err)
@@ -1157,7 +1024,7 @@ func TestCastCarbon(t *testing.T) {
 			},
 		},
 		{
-			name: "Happy path - length 19 int",
+			name: "Happy path - length 19 string",
 			from: reflect.ValueOf("1720087252123456789"),
 			transform: func(c *carbon.Carbon) any {
 				return carbon.NewTimestampNano(c)
@@ -1257,4 +1124,4 @@ func buildRequestWithMultipleFiles(t *testing.T) *http.Request {
 	request.Header.Set("Content-Type", writer.FormDataContentType())
 
 	return request
-}*/
+}

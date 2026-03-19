@@ -19,8 +19,8 @@ func TestFiltersOption(t *testing.T) {
 }
 
 func TestCustomFiltersOption(t *testing.T) {
-	mockFilter := &mockFilter{signature: "test"}
-	customFilters := []contractsvalidation.Filter{mockFilter}
+	f := &mockFilter{signature: "test"}
+	customFilters := []contractsvalidation.Filter{f}
 
 	opts := &contractsvalidation.Options{}
 	CustomFilters(customFilters)(opts)
@@ -56,19 +56,6 @@ func TestPrepareForValidationOption(t *testing.T) {
 	PrepareForValidation(prepareFunc)(opts)
 
 	assert.NotNil(t, opts.PrepareForValidation)
-}
-
-type mockFilter struct {
-	signature string
-	handler   any
-}
-
-func (m *mockFilter) Signature() string {
-	return m.signature
-}
-
-func (m *mockFilter) Handle(_ context.Context) any {
-	return m.handler
 }
 
 func TestApplyOptions(t *testing.T) {
