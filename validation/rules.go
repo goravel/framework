@@ -234,6 +234,7 @@ var excludeRules = map[string]bool{
 // numericRuleNames are rules that indicate a field should be treated as numeric for size rules.
 var numericRuleNames = map[string]bool{
 	"numeric": true, "integer": true, "decimal": true,
+	"int": true, "uint": true, "float": true,
 }
 
 // ---- Existence Rules ----

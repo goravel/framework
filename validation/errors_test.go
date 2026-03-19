@@ -223,6 +223,7 @@ func TestHas(t *testing.T) {
 				errors := validator.Errors()
 				assert.NotNil(t, errors)
 				assert.Equal(t, test.expectRes, errors.Has("a"), test.describe)
+				assert.False(t, errors.Has("nonexistent"), test.describe)
 			}
 		})
 	}

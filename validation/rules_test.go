@@ -3409,7 +3409,7 @@ func (s *RulesTestSuite) TestActiveUrl() {
 		rules map[string]any
 		fails bool
 	}{
-		{"pass_google", map[string]any{"u": "https://google.com"}, map[string]any{"u": "active_url"}, false},
+		{"pass_goravel", map[string]any{"u": "https://goravel.dev"}, map[string]any{"u": "active_url"}, false},
 		{"fail_non_string", map[string]any{"u": 123}, map[string]any{"u": "active_url"}, true},
 		{"fail_no_host", map[string]any{"u": "not-a-url"}, map[string]any{"u": "active_url"}, true},
 	}
