@@ -7,52 +7,52 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/goravel/framework/errors" // Adjust import path as needed
 	mocksconsole "github.com/goravel/framework/mocks/console"
 )
 
-func TestAgentsUpdateCommandMissingVersionFile(t *testing.T) {
-	os.RemoveAll(".ai")
+func TestAiDocsUpdateCommandMissingVersionFile(t *testing.T) {
+	assert.Nil(t, os.RemoveAll(".ai"))
 
 	mockContext := mocksconsole.NewContext(t)
-	mockContext.EXPECT().Error("No .ai/.version found. Run agents:install first.").Once()
+	mockContext.EXPECT().Error(errors.AiDocsNotInstalled.Error()).Once()
 
-	cmd := &AgentsUpdateCommand{
+	cmd := &AiDocsUpdateCommand{
 		manifestFetcher: func(branch string) ([]ManifestEntry, error) { return nil, nil },
 		fetcher:         func(branch, path string) ([]byte, error) { return nil, nil },
 	}
 	assert.Nil(t, cmd.Handle(mockContext))
 }
 
-func TestAgentsUpdateCommandUnsupportedVersion(t *testing.T) {
-	os.MkdirAll(".ai", 0755)
-	os.WriteFile(versionFilePath, []byte(`{"version":"v1.16","files":{}}`), 0644)
-	defer os.RemoveAll(".ai")
+func TestAiDocsUpdateCommandNoDocsFound(t *testing.T) {
+	assert.Nil(t, os.MkdirAll(".ai", 0755))
+	assert.Nil(t, os.WriteFile(versionFilePath, []byte(`{"version":"v1.16","files":{}}`), 0644))
+	defer func() { assert.Nil(t, os.RemoveAll(".ai")) }()
 
 	mockContext := mocksconsole.NewContext(t)
-	mockContext.EXPECT().Option("version").Return("v1.16").Once()
-	mockContext.EXPECT().Error("Agent files are only available for Goravel v1.17 and above (got v1.16).").Once()
+	mockContext.EXPECT().Error(errors.AiDocsManifestFailed.Error()).Once()
 
-	cmd := &AgentsUpdateCommand{
+	cmd := &AiDocsUpdateCommand{
 		manifestFetcher: func(branch string) ([]ManifestEntry, error) { return nil, nil },
 		fetcher:         func(branch, path string) ([]byte, error) { return nil, nil },
 	}
 	assert.Nil(t, cmd.Handle(mockContext))
 }
 
-func TestAgentsUpdateCommandConflictDetection(t *testing.T) {
+func TestAiDocsUpdateCommandConflictDetection(t *testing.T) {
 	var (
 		mockContext *mocksconsole.Context
-		cmd         *AgentsUpdateCommand
+		cmd         *AiDocsUpdateCommand
 	)
 
 	beforeEach := func() {
 		mockContext = mocksconsole.NewContext(t)
-		cmd = &AgentsUpdateCommand{}
+		cmd = &AiDocsUpdateCommand{}
 	}
 
 	cleanup := func() {
-		os.RemoveAll(".ai")
-		os.Remove("AGENTS.md")
+		assert.Nil(t, os.RemoveAll(".ai"))
+		assert.Nil(t, os.RemoveAll("AGENTS.md"))
 	}
 
 	originalContent := []byte("original content")
@@ -68,9 +68,11 @@ func TestAgentsUpdateCommandConflictDetection(t *testing.T) {
 			Version: "v1.17",
 			Files:   map[string]string{"prompt/route.md": checksum},
 		}
-		data, _ := json.MarshalIndent(vf, "", "  ")
-		os.MkdirAll(".ai/prompt", 0755)
-		os.WriteFile(versionFilePath, data, 0644)
+		data, err := json.MarshalIndent(vf, "", "  ")
+		assert.Nil(t, err)
+
+		assert.Nil(t, os.MkdirAll(".ai/prompt", 0755))
+		assert.Nil(t, os.WriteFile(versionFilePath, data, 0644))
 	}
 
 	makeManifestFetcher := func() func(string) ([]ManifestEntry, error) {
@@ -87,98 +89,93 @@ func TestAgentsUpdateCommandConflictDetection(t *testing.T) {
 			name: "Conflict - user modified and upstream changed, no force",
 			setup: func() {
 				setupLocalVersionFile(storedChecksum)
-				os.WriteFile(".ai/prompt/route.md", userContent, 0644)
+				assert.Nil(t, os.WriteFile(".ai/prompt/route.md", userContent, 0644))
 
 				cmd.manifestFetcher = makeManifestFetcher()
 				cmd.fetcher = func(branch, path string) ([]byte, error) {
 					return upstreamContent, nil
 				}
 
-				mockContext.EXPECT().Option("version").Return("v1.17").Once()
 				mockContext.EXPECT().Arguments().Return([]string{}).Once()
 				mockContext.EXPECT().OptionBool("all").Return(false).Once()
 				mockContext.EXPECT().OptionBool("force").Return(false).Once()
 				mockContext.EXPECT().Warning("Conflict: prompt/route.md modified locally and changed upstream. Use --force to overwrite.").Once()
-				mockContext.EXPECT().Info("0 updated, 0 skipped (user modified), 1 conflicts (use --force to overwrite), 0 already up to date.").Once()
+				mockContext.EXPECT().Info("0 updated, 0 skipped (user modified), 1 conflicts (use --force), 0 up to date.").Once()
 			},
 		},
 		{
 			name: "Conflict - user modified and upstream changed, force overwrites",
 			setup: func() {
 				setupLocalVersionFile(storedChecksum)
-				os.WriteFile(".ai/prompt/route.md", userContent, 0644)
+				assert.Nil(t, os.WriteFile(".ai/prompt/route.md", userContent, 0644))
 
 				cmd.manifestFetcher = makeManifestFetcher()
 				cmd.fetcher = func(branch, path string) ([]byte, error) {
 					return upstreamContent, nil
 				}
 
-				mockContext.EXPECT().Option("version").Return("v1.17").Once()
 				mockContext.EXPECT().Arguments().Return([]string{}).Once()
 				mockContext.EXPECT().OptionBool("all").Return(false).Once()
 				mockContext.EXPECT().OptionBool("force").Return(true).Once()
-				mockContext.EXPECT().Info("1 updated, 0 skipped (user modified), 0 conflicts (use --force to overwrite), 0 already up to date.").Once()
+				mockContext.EXPECT().Info("1 updated, 0 skipped (user modified), 0 conflicts (use --force), 0 up to date.").Once()
 			},
 		},
 		{
 			name: "Upstream changed, user did not modify - download",
 			setup: func() {
 				setupLocalVersionFile(storedChecksum)
-				os.WriteFile(".ai/prompt/route.md", originalContent, 0644)
+				assert.Nil(t, os.WriteFile(".ai/prompt/route.md", originalContent, 0644))
 
 				cmd.manifestFetcher = makeManifestFetcher()
 				cmd.fetcher = func(branch, path string) ([]byte, error) {
 					return upstreamContent, nil
 				}
 
-				mockContext.EXPECT().Option("version").Return("v1.17").Once()
 				mockContext.EXPECT().Arguments().Return([]string{}).Once()
 				mockContext.EXPECT().OptionBool("all").Return(false).Once()
 				mockContext.EXPECT().OptionBool("force").Return(false).Once()
-				mockContext.EXPECT().Info("1 updated, 0 skipped (user modified), 0 conflicts (use --force to overwrite), 0 already up to date.").Once()
+				mockContext.EXPECT().Info("1 updated, 0 skipped (user modified), 0 conflicts (use --force), 0 up to date.").Once()
 			},
 		},
 		{
 			name: "User modified, upstream unchanged - skip",
 			setup: func() {
 				setupLocalVersionFile(storedChecksum)
-				os.WriteFile(".ai/prompt/route.md", userContent, 0644)
+				assert.Nil(t, os.WriteFile(".ai/prompt/route.md", userContent, 0644))
 
 				cmd.manifestFetcher = makeManifestFetcher()
 				cmd.fetcher = func(branch, path string) ([]byte, error) {
 					return originalContent, nil
 				}
 
-				mockContext.EXPECT().Option("version").Return("v1.17").Once()
 				mockContext.EXPECT().Arguments().Return([]string{}).Once()
 				mockContext.EXPECT().OptionBool("all").Return(false).Once()
 				mockContext.EXPECT().OptionBool("force").Return(false).Once()
-				mockContext.EXPECT().Info("0 updated, 1 skipped (user modified), 0 conflicts (use --force to overwrite), 0 already up to date.").Once()
+				mockContext.EXPECT().Info("0 updated, 1 skipped (user modified), 0 conflicts (use --force), 0 up to date.").Once()
 			},
 		},
 		{
 			name: "Already up to date",
 			setup: func() {
 				setupLocalVersionFile(storedChecksum)
-				os.WriteFile(".ai/prompt/route.md", originalContent, 0644)
+				assert.Nil(t, os.WriteFile(".ai/prompt/route.md", originalContent, 0644))
 
 				cmd.manifestFetcher = makeManifestFetcher()
 				cmd.fetcher = func(branch, path string) ([]byte, error) {
 					return originalContent, nil
 				}
 
-				mockContext.EXPECT().Option("version").Return("v1.17").Once()
 				mockContext.EXPECT().Arguments().Return([]string{}).Once()
 				mockContext.EXPECT().OptionBool("all").Return(false).Once()
 				mockContext.EXPECT().OptionBool("force").Return(false).Once()
-				mockContext.EXPECT().Info("0 updated, 0 skipped (user modified), 0 conflicts (use --force to overwrite), 1 already up to date.").Once()
+				mockContext.EXPECT().Info("0 updated, 0 skipped (user modified), 0 conflicts (use --force), 1 up to date.").Once()
 			},
 		},
 		{
 			name: "New file in manifest with --all - download",
 			setup: func() {
 				setupLocalVersionFile(storedChecksum)
-				os.WriteFile(".ai/prompt/route.md", originalContent, 0644)
+				assert.Nil(t, os.WriteFile(".ai/prompt/route.md", originalContent, 0644))
 
 				cmd.manifestFetcher = func(branch string) ([]ManifestEntry, error) {
 					return []ManifestEntry{
@@ -193,18 +190,17 @@ func TestAgentsUpdateCommandConflictDetection(t *testing.T) {
 					return originalContent, nil
 				}
 
-				mockContext.EXPECT().Option("version").Return("v1.17").Once()
 				mockContext.EXPECT().Arguments().Return([]string{}).Once()
 				mockContext.EXPECT().OptionBool("all").Return(true).Once()
 				mockContext.EXPECT().OptionBool("force").Return(false).Once()
-				mockContext.EXPECT().Info("1 updated, 0 skipped (user modified), 0 conflicts (use --force to overwrite), 1 already up to date.").Once()
+				mockContext.EXPECT().Info("1 updated, 0 skipped (user modified), 0 conflicts (use --force), 1 up to date.").Once()
 			},
 		},
 		{
 			name: "Specific facade via argument",
 			setup: func() {
 				setupLocalVersionFile(storedChecksum)
-				os.WriteFile(".ai/prompt/route.md", originalContent, 0644)
+				assert.Nil(t, os.WriteFile(".ai/prompt/route.md", originalContent, 0644))
 
 				cmd.manifestFetcher = func(branch string) ([]ManifestEntry, error) {
 					return []ManifestEntry{
@@ -216,10 +212,9 @@ func TestAgentsUpdateCommandConflictDetection(t *testing.T) {
 					return upstreamContent, nil
 				}
 
-				mockContext.EXPECT().Option("version").Return("v1.17").Once()
 				mockContext.EXPECT().Arguments().Return([]string{"Route"}).Once()
 				mockContext.EXPECT().OptionBool("force").Return(false).Once()
-				mockContext.EXPECT().Info("1 updated, 0 skipped (user modified), 0 conflicts (use --force to overwrite), 0 already up to date.").Once()
+				mockContext.EXPECT().Info("1 updated, 0 skipped (user modified), 0 conflicts (use --force), 0 up to date.").Once()
 			},
 		},
 	}

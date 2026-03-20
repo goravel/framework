@@ -12,7 +12,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -24,124 +23,17 @@ const (
 )
 
 // VersionFile is the local .ai/.version tracking file.
-// It is never fetched from goravel/docs — it is created and maintained by these commands.
-// files maps each relative path (e.g. "prompt/route.md") to the SHA256 of its content
-// at the time it was installed or last updated. Used to detect both upstream changes
-// and local user modifications during agents:update.
+// It maps each relative path to its installed SHA256 content hash.
 type VersionFile struct {
 	Version string            `json:"version"`
 	Files   map[string]string `json:"files"`
 }
 
-type githubBranch struct {
-	Name string `json:"name"`
-}
-
-// ManifestEntry describes a single agent file available in goravel/docs.
-// Facade is the Goravel facade name (e.g. "Route", "Auth"); empty for non-facade files like AGENTS.md.
-// Default marks files that are installed by agents:install when no specific facades are requested.
+// ManifestEntry describes a single AI doc file available upstream.
 type ManifestEntry struct {
 	Facade  string `json:"facade"`
 	Path    string `json:"path"`
 	Default bool   `json:"default"`
-}
-
-// isSupportedVersion reports whether a version string has agent file support.
-// Agent files were introduced in Goravel v1.17. "master" and "latest" are always accepted.
-func isSupportedVersion(version string) bool {
-	if version == docsFallbackBranch || version == "latest" {
-		return true
-	}
-	major, minor := parseVersionParts(version)
-	if major > 1 {
-		return true
-	}
-	return major == 1 && minor >= 17
-}
-
-// resolveBranch maps a framework version to its goravel/docs branch.
-// "latest" is an alias for master. All other versions use their string as the branch name.
-func resolveBranch(version string) string {
-	if version == "latest" {
-		return docsFallbackBranch
-	}
-	return version
-}
-
-// encodeBranchForURL percent-encodes characters that break URLs (e.g. #) while
-// preserving forward slashes, which are valid in git branch names and GitHub URLs.
-func encodeBranchForURL(branch string) string {
-	encoded := url.PathEscape(branch)
-	return strings.ReplaceAll(encoded, "%2F", "/")
-}
-
-// fetchManifest fetches and parses the manifest.json from the goravel/docs .ai/ directory.
-// Returns nil entries (not an error) when the file is not found on the branch.
-func fetchManifest(branch string) ([]ManifestEntry, error) {
-	data, err := fetchRaw(branch, "manifest.json")
-	if err != nil {
-		return nil, err
-	}
-	if data == nil {
-		return nil, nil
-	}
-	var entries []ManifestEntry
-	if err := json.Unmarshal(data, &entries); err != nil {
-		return nil, fmt.Errorf("decode manifest: %w", err)
-	}
-	return entries, nil
-}
-
-// fetchAvailableBranches returns versioned branches (v1.17+) from goravel/docs,
-// sorted newest first. Used for the interactive version picker when go.mod detection fails.
-func fetchAvailableBranches() ([]string, error) {
-	req, err := http.NewRequest(http.MethodGet, "https://api.github.com/repos/goravel/docs/branches?per_page=100", nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Accept", "application/vnd.github.v3+json")
-
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch available versions: %w", err)
-	}
-	defer resp.Body.Close()
-
-	var branches []githubBranch
-	if err := json.NewDecoder(resp.Body).Decode(&branches); err != nil {
-		return nil, fmt.Errorf("failed to parse available versions: %w", err)
-	}
-
-	re := regexp.MustCompile(`^v\d+\.\d+$`)
-	var versions []string
-	for _, b := range branches {
-		if re.MatchString(b.Name) && isSupportedVersion(b.Name) {
-			versions = append(versions, b.Name)
-		}
-	}
-
-	sort.Slice(versions, func(i, j int) bool {
-		maj1, min1 := parseVersionParts(versions[i])
-		maj2, min2 := parseVersionParts(versions[j])
-		if maj1 != maj2 {
-			return maj1 > maj2
-		}
-		return min1 > min2
-	})
-
-	return versions, nil
-}
-
-func parseVersionParts(v string) (int, int) {
-	v = strings.TrimPrefix(v, "v")
-	parts := strings.SplitN(v, ".", 2)
-	if len(parts) < 2 {
-		return 0, 0
-	}
-	major, _ := strconv.Atoi(parts[0])
-	minor, _ := strconv.Atoi(parts[1])
-	return major, minor
 }
 
 func detectGoravelVersion() (string, error) {
@@ -165,15 +57,54 @@ func detectGoravelVersionFrom(gomodPath string) (string, error) {
 	return "", fmt.Errorf("github.com/goravel/framework not found in %s", gomodPath)
 }
 
+func isSupportedVersion(version string) bool {
+	if version == docsFallbackBranch || version == "latest" {
+		return true
+	}
+	v := strings.TrimPrefix(version, "v")
+	parts := strings.SplitN(v, ".", 2)
+	if len(parts) < 2 {
+		return false
+	}
+	major, _ := strconv.Atoi(parts[0])
+	minor, _ := strconv.Atoi(parts[1])
+	return major > 1 || (major == 1 && minor >= 17)
+}
+
+func resolveBranch(version string) string {
+	if version == "latest" {
+		return docsFallbackBranch
+	}
+	return version
+}
+
+func fetchManifest(branch string) ([]ManifestEntry, error) {
+	data, err := fetchRaw(branch, "manifest.json")
+	if err != nil || data == nil {
+		// Fallback to master if specific branch manifest doesn't exist
+		if branch != docsFallbackBranch {
+			return fetchManifest(docsFallbackBranch)
+		}
+		return nil, err
+	}
+	var entries []ManifestEntry
+	if err := json.Unmarshal(data, &entries); err != nil {
+		return nil, fmt.Errorf("decode manifest: %w", err)
+	}
+	return entries, nil
+}
+
 func fetchRaw(branch, path string) ([]byte, error) {
-	encodedBranch := encodeBranchForURL(branch)
+	encodedBranch := strings.ReplaceAll(url.PathEscape(branch), "%2F", "/")
 	rawURL := fmt.Sprintf("https://raw.githubusercontent.com/goravel/docs/%s/.ai/%s", encodedBranch, path)
+
 	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Get(rawURL) //nolint:noctx
+	resp, err := client.Get(rawURL)
 	if err != nil {
 		return nil, fmt.Errorf("GET %s: %w", rawURL, err)
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, nil
 	}
@@ -183,9 +114,55 @@ func fetchRaw(branch, path string) ([]byte, error) {
 	return io.ReadAll(resp.Body)
 }
 
-func sha256sum(content []byte) string {
-	sum := sha256.Sum256(content)
-	return hex.EncodeToString(sum[:])
+func downloadFiles(branch string, toInstall []ManifestEntry, fetcher func(string, string) ([]byte, error)) (map[string][]byte, error) {
+	type result struct {
+		path    string
+		content []byte
+		err     error
+	}
+
+	ch := make(chan result, len(toInstall))
+	for _, entry := range toInstall {
+		go func(e ManifestEntry) {
+			content, err := fetcher(branch, e.Path)
+			ch <- result{path: e.Path, content: content, err: err}
+		}(entry)
+	}
+
+	downloaded := make(map[string][]byte)
+	for range toInstall {
+		res := <-ch
+		if res.err != nil {
+			return nil, res.err
+		}
+		if res.content == nil {
+			return nil, fmt.Errorf("file not found upstream: %s", res.path)
+		}
+		downloaded[res.path] = res.content
+	}
+	return downloaded, nil
+}
+
+func saveFiles(version string, downloaded map[string][]byte) error {
+	existing, _ := readVersionFile()
+	local := VersionFile{Version: version, Files: make(map[string]string)}
+
+	for k, v := range existing.Files {
+		local.Files[k] = v
+	}
+
+	if err := os.MkdirAll(".ai/skills", 0755); err != nil {
+		return err
+	}
+
+	for path, content := range downloaded {
+		if err := writeAgentFile(path, content); err != nil {
+			return err
+		}
+		local.Files[path] = sha256sum(content)
+	}
+
+	return writeVersionFile(local)
 }
 
 func readVersionFile() (VersionFile, error) {
@@ -230,4 +207,43 @@ func writeAgentFile(key string, content []byte) error {
 		return err
 	}
 	return os.WriteFile(dest, content, 0644)
+}
+
+func sha256sum(content []byte) string {
+	sum := sha256.Sum256(content)
+	return hex.EncodeToString(sum[:])
+}
+
+func entriesForFacades(entries []ManifestEntry, facades []string) []ManifestEntry {
+	set := make(map[string]bool, len(facades))
+	for _, f := range facades {
+		set[f] = true
+	}
+	var out []ManifestEntry
+	for _, e := range entries {
+		if set[e.Facade] {
+			out = append(out, e)
+		}
+	}
+	return out
+}
+
+func defaultEntries(entries []ManifestEntry) []ManifestEntry {
+	var out []ManifestEntry
+	for _, e := range entries {
+		if e.Default {
+			out = append(out, e)
+		}
+	}
+	return out
+}
+
+func installedEntries(entries []ManifestEntry, installedFiles map[string]string) []ManifestEntry {
+	var out []ManifestEntry
+	for _, e := range entries {
+		if _, ok := installedFiles[e.Path]; ok {
+			out = append(out, e)
+		}
+	}
+	return out
 }

@@ -34,7 +34,7 @@ func (r *ServiceProvider) registerCommands(app foundation.Application) {
 		return
 	}
 	artisan.Register([]contractsconsole.Command{
-		console.NewAgentsInstallCommand(),
-		console.NewAgentsUpdateCommand(),
+		console.NewAiDocsInstallCommand(),
+		console.NewAiDocsUpdateCommand(),
 	})
 }

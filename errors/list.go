@@ -20,6 +20,11 @@ var (
 	ServiceProviderCycle    = New("circular dependency detected between providers: %s")
 	TelemetryFacadeNotSet   = New("telemetry facade is not initialized")
 
+	AiDocsNotInstalled   = New("no .ai/.version found. Run 'artisan ai:docs:install' first")
+	AiDocsNotSupported   = New("AI docs are only available for Goravel v1.17 and above")
+	AiDocsManifestFailed = New("no AI docs found for this version. Check https://github.com/goravel/docs")
+	AiDocsFacadeNotFound = New("no AI docs found for the specified facade(s): %s")
+
 	AuthEmptySecret             = New("authentication secret is missing or required")
 	AuthInvalidClaims           = New("authentication token contains invalid claims")
 	AuthInvalidKey              = New("authentication key is invalid")

@@ -10,20 +10,22 @@ import (
 	mocksconsole "github.com/goravel/framework/mocks/console"
 )
 
-func TestAgentsInstallCommand(t *testing.T) {
+func TestAiDocsInstallCommand(t *testing.T) {
 	var (
 		mockContext    *mocksconsole.Context
-		installCommand *AgentsInstallCommand
+		installCommand *AiDocsInstallCommand
 	)
 
 	beforeEach := func() {
 		mockContext = mocksconsole.NewContext(t)
-		installCommand = &AgentsInstallCommand{}
+		installCommand = &AiDocsInstallCommand{
+			versionDetector: func() (string, error) { return "v1.17", nil },
+		}
 	}
 
 	cleanup := func() {
-		os.RemoveAll(".ai")
-		os.Remove("AGENTS.md")
+		assert.Nil(t, os.RemoveAll(".ai"))
+		assert.Nil(t, os.RemoveAll("AGENTS.md"))
 	}
 
 	manifest := []ManifestEntry{
@@ -46,7 +48,6 @@ func TestAgentsInstallCommand(t *testing.T) {
 					return []byte("# " + path), nil
 				}
 
-				mockContext.EXPECT().Option("version").Return("v1.17").Once()
 				mockContext.EXPECT().OptionBool("force").Return(true).Once()
 				mockContext.EXPECT().Arguments().Return([]string{}).Once()
 				mockContext.EXPECT().OptionBool("all").Return(false).Once()
@@ -63,7 +64,6 @@ func TestAgentsInstallCommand(t *testing.T) {
 					return []byte("# " + path), nil
 				}
 
-				mockContext.EXPECT().Option("version").Return("v1.17").Once()
 				mockContext.EXPECT().OptionBool("force").Return(true).Once()
 				mockContext.EXPECT().Arguments().Return([]string{}).Once()
 				mockContext.EXPECT().OptionBool("all").Return(true).Once()
@@ -80,7 +80,6 @@ func TestAgentsInstallCommand(t *testing.T) {
 					return []byte("# " + path), nil
 				}
 
-				mockContext.EXPECT().Option("version").Return("v1.17").Once()
 				mockContext.EXPECT().OptionBool("force").Return(true).Once()
 				mockContext.EXPECT().Arguments().Return([]string{"Auth"}).Once()
 				mockContext.EXPECT().OptionBool("all").Return(false).Once()
@@ -90,6 +89,7 @@ func TestAgentsInstallCommand(t *testing.T) {
 		{
 			name: "Happy path - falls back to master when version branch has no manifest",
 			setup: func() {
+				installCommand.versionDetector = func() (string, error) { return "v1.99", nil }
 				installCommand.manifestFetcher = func(branch string) ([]ManifestEntry, error) {
 					if branch == docsFallbackBranch {
 						return manifest, nil
@@ -100,7 +100,6 @@ func TestAgentsInstallCommand(t *testing.T) {
 					return []byte("# " + path), nil
 				}
 
-				mockContext.EXPECT().Option("version").Return("v1.99").Once()
 				mockContext.EXPECT().OptionBool("force").Return(true).Once()
 				mockContext.EXPECT().Arguments().Return([]string{}).Once()
 				mockContext.EXPECT().OptionBool("all").Return(false).Once()
@@ -110,12 +109,12 @@ func TestAgentsInstallCommand(t *testing.T) {
 		{
 			name: "Sad path - no manifest on branch or master",
 			setup: func() {
+				installCommand.versionDetector = func() (string, error) { return "v9.99", nil }
 				installCommand.manifestFetcher = func(branch string) ([]ManifestEntry, error) {
 					return nil, nil
 				}
 
-				mockContext.EXPECT().Option("version").Return("v9.99").Once()
-				mockContext.EXPECT().Error("No agent files found for version v9.99. Check https://github.com/goravel/docs").Once()
+				mockContext.EXPECT().Error("No AI docs found for version v9.99. Check https://github.com/goravel/docs").Once()
 			},
 		},
 		{
@@ -125,7 +124,6 @@ func TestAgentsInstallCommand(t *testing.T) {
 					return nil, errors.New("network error")
 				}
 
-				mockContext.EXPECT().Option("version").Return("v1.17").Once()
 				mockContext.EXPECT().Error("network error").Once()
 			},
 		},
@@ -136,18 +134,17 @@ func TestAgentsInstallCommand(t *testing.T) {
 					return manifest, nil
 				}
 
-				mockContext.EXPECT().Option("version").Return("v1.17").Once()
 				mockContext.EXPECT().OptionBool("force").Return(true).Once()
 				mockContext.EXPECT().Arguments().Return([]string{"Nonexistent"}).Once()
 				mockContext.EXPECT().OptionBool("all").Return(false).Once()
-				mockContext.EXPECT().Error("No agent files found for facade(s): Nonexistent").Once()
+				mockContext.EXPECT().Error("No AI docs found for facade(s): Nonexistent").Once()
 			},
 		},
 		{
 			name: "Sad path - unsupported version",
 			setup: func() {
-				mockContext.EXPECT().Option("version").Return("v1.16").Once()
-				mockContext.EXPECT().Error("agent files are only available for Goravel v1.17 and above (got v1.16)").Once()
+				installCommand.versionDetector = func() (string, error) { return "v1.16", nil }
+				mockContext.EXPECT().Error("AI docs are only available for Goravel v1.17 and above (got v1.16)").Once()
 			},
 		},
 		{
@@ -157,12 +154,11 @@ func TestAgentsInstallCommand(t *testing.T) {
 					return manifest, nil
 				}
 
-				os.MkdirAll(".ai", 0755)
-				os.WriteFile(versionFilePath, []byte(`{"version":"v1.16","files":{}}`), 0644)
+				assert.Nil(t, os.MkdirAll(".ai", 0755))
+				assert.Nil(t, os.WriteFile(versionFilePath, []byte(`{"version":"v1.17","files":{}}`), 0644))
 
-				mockContext.EXPECT().Option("version").Return("v1.17").Once()
 				mockContext.EXPECT().OptionBool("force").Return(false).Once()
-				mockContext.EXPECT().Confirm("Agent files are already installed. Overwrite?").Return(false).Once()
+				mockContext.EXPECT().Confirm("AI docs are already installed. Overwrite?").Return(false).Once()
 				mockContext.EXPECT().Warning("Cancelled.").Once()
 			},
 		},

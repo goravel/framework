@@ -18,15 +18,18 @@ func TestDetectGoravelVersionFrom(t *testing.T) {
 			name:     "valid go.mod",
 			content:  "module example\n\nrequire github.com/goravel/framework v1.17.3\n",
 			expected: "v1.17",
+			hasError: false,
 		},
 		{
 			name:     "malformed version string",
 			content:  "module example\n\nrequire github.com/goravel/framework vX.Y.Z\n",
+			expected: "",
 			hasError: true,
 		},
 		{
 			name:     "framework not found",
 			content:  "module example\n\nrequire github.com/some/other v1.0.0\n",
+			expected: "",
 			hasError: true,
 		},
 	}
@@ -39,7 +42,7 @@ func TestDetectGoravelVersionFrom(t *testing.T) {
 
 			_, err = f.WriteString(tt.content)
 			assert.Nil(t, err)
-			f.Close()
+			assert.Nil(t, f.Close())
 
 			result, err := detectGoravelVersionFrom(f.Name())
 			if tt.hasError {
@@ -75,6 +78,7 @@ func TestIsSupportedVersion(t *testing.T) {
 		{"v1.16", false},
 		{"v1.0", false},
 		{"v0.9", false},
+		{"invalid", false},
 	}
 
 	for _, tt := range tests {
@@ -89,6 +93,8 @@ func TestResolveBranch(t *testing.T) {
 		version  string
 		expected string
 	}{
+		{"latest", "master"},
+		{"master", "master"},
 		{"v1.17", "v1.17"},
 		{"v1.16", "v1.16"},
 		{"v1.13", "v1.13"},
@@ -101,18 +107,4 @@ func TestResolveBranch(t *testing.T) {
 			assert.Equal(t, tt.expected, resolveBranch(tt.version))
 		})
 	}
-}
-
-func TestParseVersionParts(t *testing.T) {
-	major, minor := parseVersionParts("v1.17")
-	assert.Equal(t, 1, major)
-	assert.Equal(t, 17, minor)
-
-	major, minor = parseVersionParts("v2.5")
-	assert.Equal(t, 2, major)
-	assert.Equal(t, 5, minor)
-
-	major, minor = parseVersionParts("invalid")
-	assert.Equal(t, 0, major)
-	assert.Equal(t, 0, minor)
 }
