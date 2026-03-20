@@ -231,6 +231,53 @@ func TestEngine_ValidatedData(t *testing.T) {
 		assert.Equal(t, "Alice", data["name"])
 		assert.NotContains(t, data, "secret")
 	})
+
+	t.Run("wildcard arrays are reconstructed as slices", func(t *testing.T) {
+		bag, _ := NewDataBag(map[string]any{
+			"tags":   []any{"tag1", "tag2"},
+			"scores": []int{1, 2},
+		})
+		rules := map[string][]ParsedRule{
+			"tags.*":   {{Name: "custom_pass"}},
+			"scores.*": {{Name: "custom_pass"}},
+		}
+		engine := NewEngine(context.Background(), bag, rules, engineOptions{
+			customRules: map[string]contractsvalidation.Rule{
+				"custom_pass": newAlwaysPassRule("custom_pass"),
+			},
+		})
+		engine.Validate()
+
+		data := engine.ValidatedData()
+
+		tags, ok := data["tags"].([]any)
+		assert.True(t, ok)
+		assert.Equal(t, []any{"tag1", "tag2"}, tags)
+
+		scores, ok := data["scores"].([]int)
+		assert.True(t, ok)
+		assert.Equal(t, []int{1, 2}, scores)
+	})
+
+	t.Run("sparse indexed wildcard falls back to []any with nil gaps", func(t *testing.T) {
+		bag, _ := NewDataBag(map[string]any{
+			"items": []int{10, 20, 30},
+		})
+		rules := map[string][]ParsedRule{
+			"items.2": {{Name: "custom_pass"}},
+		}
+		engine := NewEngine(context.Background(), bag, rules, engineOptions{
+			customRules: map[string]contractsvalidation.Rule{
+				"custom_pass": newAlwaysPassRule("custom_pass"),
+			},
+		})
+		engine.Validate()
+
+		data := engine.ValidatedData()
+		items, ok := data["items"].([]any)
+		assert.True(t, ok)
+		assert.Equal(t, []any{nil, nil, 30}, items)
+	})
 }
 
 func TestEngine_HandleExcludeRule(t *testing.T) {
@@ -354,6 +401,20 @@ func TestEngine_ExpandWildcardRules(t *testing.T) {
 	// Results should be cached
 	expanded2 := engine.expandWildcardRules()
 	assert.Equal(t, expanded, expanded2)
+}
+
+func TestEngine_ExpandWildcardRules_TypedSlice(t *testing.T) {
+	bag, _ := NewDataBag(map[string]any{
+		"scores": []int{1, 2},
+	})
+	rules := map[string][]ParsedRule{
+		"scores.*": {{Name: "required"}},
+	}
+	engine := NewEngine(context.Background(), bag, rules, engineOptions{})
+
+	expanded := engine.expandWildcardRules()
+	assert.Contains(t, expanded, "scores.0")
+	assert.Contains(t, expanded, "scores.1")
 }
 
 func TestEngine_TrackDistinct(t *testing.T) {

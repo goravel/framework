@@ -79,10 +79,13 @@ func (e *Engine) ValidatedData() map[string]any {
 			continue
 		}
 		if val, ok := e.data.Get(field); ok {
-			dotSet(result, strings.Split(field, "."), val)
+			setValidated(result, e.data.All(), strings.Split(field, "."), val)
 		}
 	}
 
+	if normalized, ok := normalizeValidatedShape(result, e.data.All()).(map[string]any); ok {
+		return normalized
+	}
 	return result
 }
 

@@ -107,12 +107,6 @@ func dotGet(data any, segments []string) (any, bool) {
 			return nil, false
 		}
 		return dotGet(val, remaining)
-	case []any:
-		idx, err := strconv.Atoi(segment)
-		if err != nil || idx < 0 || idx >= len(v) {
-			return nil, false
-		}
-		return dotGet(v[idx], remaining)
 	case []map[string]any:
 		idx, err := strconv.Atoi(segment)
 		if err != nil || idx < 0 || idx >= len(v) {
@@ -120,6 +114,14 @@ func dotGet(data any, segments []string) (any, bool) {
 		}
 		return dotGet(v[idx], remaining)
 	default:
+		rv := reflect.ValueOf(data)
+		if rv.Kind() == reflect.Slice || rv.Kind() == reflect.Array {
+			idx, err := strconv.Atoi(segment)
+			if err != nil || idx < 0 || idx >= rv.Len() {
+				return nil, false
+			}
+			return dotGet(rv.Index(idx).Interface(), remaining)
+		}
 		return nil, false
 	}
 }
@@ -180,6 +182,229 @@ func dotSet(data map[string]any, segments []string, val any) {
 	}
 }
 
+// setValidated sets a value in nested maps/slices using path segments while
+// preserving container shape from source data for validated output.
+func setValidated(current map[string]any, source any, segments []string, val any) {
+	if len(segments) == 0 {
+		return
+	}
+
+	segment := segments[0]
+	if len(segments) == 1 {
+		current[segment] = val
+		return
+	}
+
+	sourceChild, sourceExists := getValidatedChild(source, segment)
+	useSlice := sourceExists && isIndexSegment(segments[1]) && isSliceOrArray(sourceChild)
+
+	next, exists := current[segment]
+	if !exists || !isExpectedContainer(next, useSlice) {
+		if useSlice {
+			nextIdx, _ := strconv.Atoi(segments[1])
+			next = make([]any, nextIdx+1)
+		} else {
+			next = make(map[string]any)
+		}
+	}
+
+	if useSlice {
+		nextSlice, ok := toAnySlice(next)
+		if !ok {
+			nextIdx, _ := strconv.Atoi(segments[1])
+			nextSlice = make([]any, nextIdx+1)
+		}
+		current[segment] = setValidatedOnSlice(nextSlice, sourceChild, segments[1:], val)
+		return
+	}
+
+	nextMap, ok := next.(map[string]any)
+	if !ok {
+		nextMap = make(map[string]any)
+	}
+	setValidated(nextMap, sourceChild, segments[1:], val)
+	current[segment] = nextMap
+}
+
+func setValidatedOnSlice(current []any, source any, segments []string, val any) []any {
+	if len(segments) == 0 {
+		return current
+	}
+
+	idx, err := strconv.Atoi(segments[0])
+	if err != nil || idx < 0 {
+		return current
+	}
+
+	current = ensureAnySliceLen(current, idx+1)
+	if len(segments) == 1 {
+		current[idx] = val
+		return current
+	}
+
+	sourceChild, sourceExists := getValidatedChild(source, segments[0])
+	useSlice := sourceExists && isIndexSegment(segments[1]) && isSliceOrArray(sourceChild)
+
+	if useSlice {
+		existingSlice, ok := toAnySlice(current[idx])
+		if !ok {
+			nextIdx, _ := strconv.Atoi(segments[1])
+			existingSlice = make([]any, nextIdx+1)
+		}
+		current[idx] = setValidatedOnSlice(existingSlice, sourceChild, segments[1:], val)
+		return current
+	}
+
+	existingMap, ok := current[idx].(map[string]any)
+	if !ok {
+		existingMap = make(map[string]any)
+	}
+	setValidated(existingMap, sourceChild, segments[1:], val)
+	current[idx] = existingMap
+	return current
+}
+
+func isExpectedContainer(val any, wantSlice bool) bool {
+	if wantSlice {
+		_, ok := toAnySlice(val)
+		return ok
+	}
+	_, ok := val.(map[string]any)
+	return ok
+}
+
+func isIndexSegment(segment string) bool {
+	idx, err := strconv.Atoi(segment)
+	return err == nil && idx >= 0
+}
+
+func isSliceOrArray(val any) bool {
+	if val == nil {
+		return false
+	}
+	rv := reflect.ValueOf(val)
+	return rv.Kind() == reflect.Slice || rv.Kind() == reflect.Array
+}
+
+func ensureAnySliceLen(in []any, n int) []any {
+	if len(in) >= n {
+		return in
+	}
+	return append(in, make([]any, n-len(in))...)
+}
+
+func toAnySlice(val any) ([]any, bool) {
+	switch v := val.(type) {
+	case []any:
+		return v, true
+	default:
+		if v == nil {
+			return nil, false
+		}
+		rv := reflect.ValueOf(v)
+		if rv.Kind() != reflect.Slice && rv.Kind() != reflect.Array {
+			return nil, false
+		}
+		out := make([]any, rv.Len())
+		for i := 0; i < rv.Len(); i++ {
+			out[i] = rv.Index(i).Interface()
+		}
+		return out, true
+	}
+}
+
+func getValidatedChild(source any, segment string) (any, bool) {
+	if source == nil {
+		return nil, false
+	}
+
+	switch v := source.(type) {
+	case map[string]any:
+		child, ok := v[segment]
+		return child, ok
+	default:
+		rv := reflect.ValueOf(source)
+		if rv.Kind() != reflect.Slice && rv.Kind() != reflect.Array {
+			return nil, false
+		}
+		idx, err := strconv.Atoi(segment)
+		if err != nil || idx < 0 || idx >= rv.Len() {
+			return nil, false
+		}
+		return rv.Index(idx).Interface(), true
+	}
+}
+
+// normalizeValidatedShape recursively normalizes validated output and converts
+// []any back to source slice type when conversion is safe.
+func normalizeValidatedShape(data any, source any) any {
+	switch v := data.(type) {
+	case map[string]any:
+		for key, child := range v {
+			sourceChild, _ := getValidatedChild(source, key)
+			v[key] = normalizeValidatedShape(child, sourceChild)
+		}
+		return v
+	case []any:
+		for i := range v {
+			sourceChild, _ := getValidatedChild(source, strconv.Itoa(i))
+			v[i] = normalizeValidatedShape(v[i], sourceChild)
+		}
+		return convertAnySliceToSourceType(v, source)
+	default:
+		return data
+	}
+}
+
+func convertAnySliceToSourceType(data []any, source any) any {
+	if source == nil {
+		return data
+	}
+
+	sourceType := reflect.TypeOf(source)
+	switch sourceType.Kind() {
+	case reflect.Slice:
+	case reflect.Array:
+		sourceType = reflect.SliceOf(sourceType.Elem())
+	default:
+		return data
+	}
+
+	elemType := sourceType.Elem()
+	out := reflect.MakeSlice(sourceType, len(data), len(data))
+	for i, item := range data {
+		if item == nil {
+			if canBeNil(elemType) {
+				out.Index(i).Set(reflect.Zero(elemType))
+				continue
+			}
+			return data
+		}
+
+		itemValue := reflect.ValueOf(item)
+		if itemValue.Type().AssignableTo(elemType) {
+			out.Index(i).Set(itemValue)
+			continue
+		}
+		if itemValue.Type().ConvertibleTo(elemType) {
+			out.Index(i).Set(itemValue.Convert(elemType))
+			continue
+		}
+		return data
+	}
+
+	return out.Interface()
+}
+
+func canBeNil(t reflect.Type) bool {
+	switch t.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		return true
+	default:
+		return false
+	}
+}
+
 // collectKeys recursively collects all dot-notation keys.
 func collectKeys(data any, prefix string, keys *[]string) {
 	switch v := data.(type) {
@@ -192,15 +417,6 @@ func collectKeys(data any, prefix string, keys *[]string) {
 			*keys = append(*keys, fullKey)
 			collectKeys(val, fullKey, keys)
 		}
-	case []any:
-		for i, val := range v {
-			fullKey := strconv.Itoa(i)
-			if prefix != "" {
-				fullKey = prefix + "." + strconv.Itoa(i)
-			}
-			*keys = append(*keys, fullKey)
-			collectKeys(val, fullKey, keys)
-		}
 	case []map[string]any:
 		for i, val := range v {
 			fullKey := strconv.Itoa(i)
@@ -209,6 +425,18 @@ func collectKeys(data any, prefix string, keys *[]string) {
 			}
 			*keys = append(*keys, fullKey)
 			collectKeys(val, fullKey, keys)
+		}
+	default:
+		rv := reflect.ValueOf(v)
+		if rv.Kind() == reflect.Slice || rv.Kind() == reflect.Array {
+			for i := 0; i < rv.Len(); i++ {
+				fullKey := strconv.Itoa(i)
+				if prefix != "" {
+					fullKey = prefix + "." + strconv.Itoa(i)
+				}
+				*keys = append(*keys, fullKey)
+				collectKeys(rv.Index(i).Interface(), fullKey, keys)
+			}
 		}
 	}
 }

@@ -1045,6 +1045,50 @@ func TestValidated(t *testing.T) {
 	assert.False(t, exists)
 }
 
+func TestMapRules(t *testing.T) {
+	validation := NewValidation()
+
+	t.Run("map rule fails when nested key does not exist", func(t *testing.T) {
+		validator, err := validation.Make(context.Background(), map[string]any{
+			"users": map[string]any{},
+		}, map[string]any{
+			"users.name": "required",
+		})
+		assert.Nil(t, err)
+		assert.True(t, validator.Fails())
+		assert.Equal(t, map[string]string{
+			"required": "The users.name field is required.",
+		}, validator.Errors().Get("users.name"))
+	})
+
+	t.Run("map rule fails when nested key is empty", func(t *testing.T) {
+		validator, err := validation.Make(context.Background(), map[string]any{
+			"users": map[string]any{
+				"name": "",
+			},
+		}, map[string]any{
+			"users.name": "required",
+		})
+		assert.Nil(t, err)
+		assert.True(t, validator.Fails())
+		assert.Equal(t, map[string]string{
+			"required": "The users.name field is required.",
+		}, validator.Errors().Get("users.name"))
+	})
+
+	t.Run("map rule succeeds when nested key is present", func(t *testing.T) {
+		validator, err := validation.Make(context.Background(), map[string]any{
+			"users": map[string]any{
+				"name": "Alice",
+			},
+		}, map[string]any{
+			"users.name": "required",
+		})
+		assert.Nil(t, err)
+		assert.False(t, validator.Fails())
+	})
+}
+
 func TestWildcardRules(t *testing.T) {
 	validation := NewValidation()
 
@@ -1069,6 +1113,36 @@ func TestWildcardRules(t *testing.T) {
 			},
 		}, map[string]any{
 			"users.*.name": "required|string",
+		})
+		assert.Nil(t, err)
+		assert.False(t, validator.Fails())
+	})
+
+	t.Run("validates wildcard fields with typed string slice", func(t *testing.T) {
+		validator, err := validation.Make(context.Background(), map[string]any{
+			"scores": []string{"a", "b"},
+		}, map[string]any{
+			"scores.*": "required|string",
+		})
+		assert.Nil(t, err)
+		assert.False(t, validator.Fails())
+	})
+
+	t.Run("validates wildcard fields with typed int slice", func(t *testing.T) {
+		validator, err := validation.Make(context.Background(), map[string]any{
+			"scores": []int{1, 2},
+		}, map[string]any{
+			"scores.*": "required|int",
+		})
+		assert.Nil(t, err)
+		assert.False(t, validator.Fails())
+	})
+
+	t.Run("validates wildcard fields with []any primitive array", func(t *testing.T) {
+		validator, err := validation.Make(context.Background(), map[string]any{
+			"scores": []any{float64(1), float64(2)},
+		}, map[string]any{
+			"scores.*": "required|int",
 		})
 		assert.Nil(t, err)
 		assert.False(t, validator.Fails())
