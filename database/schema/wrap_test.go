@@ -90,6 +90,10 @@ func (s *WrapTestSuite) TestQuote() {
 	result := s.wrap.Quote("value")
 	s.Equal("'value'", result)
 
+	// With single quote inside value (SQL injection check)
+	result = s.wrap.Quote("val'ue")
+	s.Equal("'val''ue'", result)
+
 	// With empty value
 	result = s.wrap.Quote("")
 	s.Equal("", result)

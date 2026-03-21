@@ -70,6 +70,7 @@ var (
 	DatabaseFailToRunSeeder             = New("fail to run seeder: %v")
 	DatabaseUnsupportedType             = New("unsupported type: %s, expected %s")
 	DatabaseInvalidArgumentNumber       = New("invalid argument number: %s, expected %s")
+	DatabaseInvalidOperator             = New("invalid operator: %s")
 	DatabaseTransactionNotStarted       = New("transaction not started")
 	DatabaseFailedToGetSql              = New("failed to get sql: %v")
 	DatabaseDataIsEmpty                 = New("data can't be empty")

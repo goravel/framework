@@ -1,6 +1,16 @@
 package utils
 
-import "github.com/goravel/framework/errors"
+import (
+	"slices"
+	"strings"
+
+	"github.com/goravel/framework/errors"
+)
+
+// validOperators is the whitelist of allowed SQL comparison operators.
+var validOperators = []string{
+	"=", "<>", "!=", "<", ">", "<=", ">=", "like", "not like",
+}
 
 func PrepareWhereOperatorAndValue(args ...any) (op any, value any, err error) {
 	if len(args) == 0 || len(args) > 2 {
@@ -13,6 +23,13 @@ func PrepareWhereOperatorAndValue(args ...any) (op any, value any, err error) {
 	} else {
 		op = args[0]
 		value = args[1]
+	}
+
+	// Validate the operator to prevent SQL injection
+	if opStr, ok := op.(string); ok {
+		if !slices.Contains(validOperators, strings.ToLower(strings.TrimSpace(opStr))) {
+			return nil, nil, errors.DatabaseInvalidOperator.Args(opStr)
+		}
 	}
 
 	return

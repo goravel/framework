@@ -140,7 +140,7 @@ func (r *Wrap) Quote(value string) string {
 		return value
 	}
 
-	return fmt.Sprintf("'%s'", value)
+	return fmt.Sprintf("'%s'", strings.ReplaceAll(value, "'", "''"))
 }
 
 func (r *Wrap) Quotes(value []string) []string {
