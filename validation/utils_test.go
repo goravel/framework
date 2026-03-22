@@ -2,6 +2,7 @@ package validation
 
 import (
 	"context"
+	"mime/multipart"
 	"net/url"
 	"reflect"
 	"testing"
@@ -147,6 +148,18 @@ func TestDotGet(t *testing.T) {
 		_, ok := dotGet("string", []string{"key"})
 		assert.False(t, ok)
 	})
+
+	t.Run("nil intermediate does not panic", func(t *testing.T) {
+		data := map[string]any{"user": nil}
+		_, ok := dotGet(data, []string{"user", "name"})
+		assert.False(t, ok)
+	})
+
+	t.Run("nil slice element does not panic", func(t *testing.T) {
+		data := map[string]any{"items": []any{nil, "b"}}
+		_, ok := dotGet(data, []string{"items", "0", "key"})
+		assert.False(t, ok)
+	})
 }
 
 func TestDotSet(t *testing.T) {
@@ -200,6 +213,229 @@ func TestDotSet(t *testing.T) {
 	})
 }
 
+func TestSetValidated(t *testing.T) {
+	t.Run("empty segments does nothing", func(t *testing.T) {
+		data := map[string]any{"name": "Alice"}
+		setValidated(data, map[string]any{"name": "Alice"}, []string{}, "Bob")
+		assert.Equal(t, map[string]any{"name": "Alice"}, data)
+	})
+
+	t.Run("creates slice containers based on source shape", func(t *testing.T) {
+		data := map[string]any{}
+		source := map[string]any{
+			"tags": []any{"a", "b"},
+		}
+
+		setValidated(data, source, []string{"tags", "1"}, "B")
+		normalized := normalizeValidatedShape(data, source).(map[string]any)
+
+		tags, ok := normalized["tags"].([]any)
+		assert.True(t, ok)
+		assert.Equal(t, []any{nil, "B"}, tags)
+	})
+
+	t.Run("preserves map container for numeric map key", func(t *testing.T) {
+		data := map[string]any{}
+		source := map[string]any{
+			"meta": map[string]any{"0": "x"},
+		}
+
+		setValidated(data, source, []string{"meta", "0"}, "value")
+
+		meta, ok := data["meta"].(map[string]any)
+		assert.True(t, ok)
+		assert.Equal(t, "value", meta["0"])
+	})
+
+	t.Run("normalizes to typed slice when conversion is safe", func(t *testing.T) {
+		data := map[string]any{}
+		source := map[string]any{
+			"scores": []int{1, 2},
+		}
+
+		setValidated(data, source, []string{"scores", "0"}, 1)
+		setValidated(data, source, []string{"scores", "1"}, 2)
+
+		normalized := normalizeValidatedShape(data, source).(map[string]any)
+		scores, ok := normalized["scores"].([]int)
+		assert.True(t, ok)
+		assert.Equal(t, []int{1, 2}, scores)
+	})
+
+	t.Run("replaces incompatible existing container with map", func(t *testing.T) {
+		data := map[string]any{"meta": []any{"wrong"}}
+		source := map[string]any{
+			"meta": map[string]any{},
+		}
+
+		setValidated(data, source, []string{"meta", "name"}, "goravel")
+
+		meta, ok := data["meta"].(map[string]any)
+		assert.True(t, ok)
+		assert.Equal(t, "goravel", meta["name"])
+	})
+}
+
+func TestSetValidatedOnSlice(t *testing.T) {
+	t.Run("empty segments returns current", func(t *testing.T) {
+		current := []any{"a"}
+		result := setValidatedOnSlice(current, nil, []string{}, "b")
+		assert.Equal(t, []any{"a"}, result)
+	})
+
+	t.Run("invalid index leaves current unchanged", func(t *testing.T) {
+		current := []any{"a"}
+		result := setValidatedOnSlice(current, nil, []string{"x"}, "b")
+		assert.Equal(t, []any{"a"}, result)
+	})
+
+	t.Run("single segment sets value", func(t *testing.T) {
+		current := []any{"a"}
+		result := setValidatedOnSlice(current, nil, []string{"0"}, "b")
+		assert.Equal(t, []any{"b"}, result)
+	})
+
+	t.Run("creates nested map when source is not slice", func(t *testing.T) {
+		current := []any{}
+		source := map[string]any{"name": "a"}
+
+		result := setValidatedOnSlice(current, source, []string{"0", "name"}, "b")
+		item, ok := result[0].(map[string]any)
+		assert.True(t, ok)
+		assert.Equal(t, "b", item["name"])
+	})
+
+	t.Run("creates nested slice when source child is slice", func(t *testing.T) {
+		current := []any{}
+		source := []any{
+			[]int{1, 2},
+		}
+
+		result := setValidatedOnSlice(current, source, []string{"0", "1"}, 99)
+		nested, ok := result[0].([]any)
+		assert.True(t, ok)
+		assert.Equal(t, []any{nil, 99}, nested)
+	})
+}
+
+func TestHelpersForValidatedShape(t *testing.T) {
+	t.Run("isExpectedContainer", func(t *testing.T) {
+		assert.True(t, isExpectedContainer([]any{"a"}, true))
+		assert.True(t, isExpectedContainer(map[string]any{"a": 1}, false))
+		assert.False(t, isExpectedContainer(map[string]any{"a": 1}, true))
+		assert.False(t, isExpectedContainer([]any{"a"}, false))
+	})
+
+	t.Run("isIndexSegment", func(t *testing.T) {
+		assert.True(t, isIndexSegment("0"))
+		assert.False(t, isIndexSegment("-1"))
+		assert.False(t, isIndexSegment("abc"))
+	})
+
+	t.Run("isSliceOrArray", func(t *testing.T) {
+		assert.True(t, isSliceOrArray([]int{1}))
+		assert.True(t, isSliceOrArray([1]int{1}))
+		assert.False(t, isSliceOrArray(nil))
+		assert.False(t, isSliceOrArray("x"))
+	})
+
+	t.Run("ensureAnySliceLen", func(t *testing.T) {
+		assert.Equal(t, []any{"a", nil, nil}, ensureAnySliceLen([]any{"a"}, 3))
+		assert.Equal(t, []any{"a"}, ensureAnySliceLen([]any{"a"}, 1))
+	})
+
+	t.Run("toAnySlice", func(t *testing.T) {
+		v, ok := toAnySlice([]any{"a"})
+		assert.True(t, ok)
+		assert.Equal(t, []any{"a"}, v)
+
+		v, ok = toAnySlice([]int{1, 2})
+		assert.True(t, ok)
+		assert.Equal(t, []any{1, 2}, v)
+
+		v, ok = toAnySlice([2]int{3, 4})
+		assert.True(t, ok)
+		assert.Equal(t, []any{3, 4}, v)
+
+		_, ok = toAnySlice(nil)
+		assert.False(t, ok)
+
+		_, ok = toAnySlice("not-slice")
+		assert.False(t, ok)
+	})
+
+	t.Run("getValidatedChild", func(t *testing.T) {
+		_, ok := getValidatedChild(nil, "name")
+		assert.False(t, ok)
+
+		child, ok := getValidatedChild(map[string]any{"name": "goravel"}, "name")
+		assert.True(t, ok)
+		assert.Equal(t, "goravel", child)
+
+		_, ok = getValidatedChild(map[string]any{"name": "goravel"}, "missing")
+		assert.False(t, ok)
+
+		child, ok = getValidatedChild([]any{"a", "b"}, "1")
+		assert.True(t, ok)
+		assert.Equal(t, "b", child)
+
+		_, ok = getValidatedChild([]any{"a", "b"}, "x")
+		assert.False(t, ok)
+
+		_, ok = getValidatedChild("plain", "0")
+		assert.False(t, ok)
+	})
+}
+
+func TestConvertAnySliceToSourceType(t *testing.T) {
+	t.Run("returns original for nil source", func(t *testing.T) {
+		data := []any{1}
+		assert.Equal(t, data, convertAnySliceToSourceType(data, nil))
+	})
+
+	t.Run("returns original for non-slice source", func(t *testing.T) {
+		data := []any{1}
+		assert.Equal(t, data, convertAnySliceToSourceType(data, "x"))
+	})
+
+	t.Run("converts to typed slice when assignable", func(t *testing.T) {
+		data := []any{1, 2}
+		result := convertAnySliceToSourceType(data, []int{0})
+		assert.Equal(t, []int{1, 2}, result)
+	})
+
+	t.Run("converts to typed slice when convertible", func(t *testing.T) {
+		data := []any{int32(1), int32(2)}
+		result := convertAnySliceToSourceType(data, []int{0})
+		assert.Equal(t, []int{1, 2}, result)
+	})
+
+	t.Run("returns original when nil element cannot be represented", func(t *testing.T) {
+		data := []any{nil}
+		assert.Equal(t, data, convertAnySliceToSourceType(data, []int{0}))
+	})
+
+	t.Run("keeps nil for nil-able element type", func(t *testing.T) {
+		data := []any{nil}
+		result := convertAnySliceToSourceType(data, []*int{})
+		typed, ok := result.([]*int)
+		assert.True(t, ok)
+		assert.Len(t, typed, 1)
+		assert.Nil(t, typed[0])
+	})
+
+	t.Run("returns original when element type mismatches", func(t *testing.T) {
+		data := []any{"x"}
+		assert.Equal(t, data, convertAnySliceToSourceType(data, []int{0}))
+	})
+
+	t.Run("array source converts to slice type", func(t *testing.T) {
+		data := []any{1, 2}
+		result := convertAnySliceToSourceType(data, [2]int{})
+		assert.Equal(t, []int{1, 2}, result)
+	})
+}
+
 func TestCollectKeys(t *testing.T) {
 	t.Run("flat map", func(t *testing.T) {
 		data := map[string]any{"a": 1, "b": 2}
@@ -249,6 +485,21 @@ func TestCollectKeys(t *testing.T) {
 		collectKeys(data, "arr", &keys)
 		assert.Contains(t, keys, "arr.0")
 		assert.Contains(t, keys, "arr.1")
+	})
+
+	t.Run("nil map value does not panic", func(t *testing.T) {
+		data := map[string]any{"name": nil}
+		var keys []string
+		assert.NotPanics(t, func() { collectKeys(data, "", &keys) })
+		assert.Contains(t, keys, "name")
+	})
+
+	t.Run("nil slice element does not panic", func(t *testing.T) {
+		data := []any{nil, "b"}
+		var keys []string
+		assert.NotPanics(t, func() { collectKeys(data, "items", &keys) })
+		assert.Contains(t, keys, "items.0")
+		assert.Contains(t, keys, "items.1")
 	})
 }
 
@@ -469,6 +720,22 @@ func TestGetSize(t *testing.T) {
 		assert.False(t, ok)
 
 		_, ok = getSize("not-array", "array")
+		assert.False(t, ok)
+	})
+
+	t.Run("file", func(t *testing.T) {
+		size, ok := getSize(&multipart.FileHeader{Size: 2048}, "file")
+		assert.True(t, ok)
+		assert.Equal(t, float64(2), size)
+
+		size, ok = getSize([]*multipart.FileHeader{
+			{Size: 1024},
+			{Size: 3072},
+		}, "file")
+		assert.True(t, ok)
+		assert.Equal(t, float64(4), size)
+
+		_, ok = getSize("not-file", "file")
 		assert.False(t, ok)
 	})
 }
@@ -756,4 +1023,16 @@ func TestGetFileExtension(t *testing.T) {
 			assert.Equal(t, tt.expected, getFileExtension(tt.input))
 		})
 	}
+}
+
+func TestStrToInts(t *testing.T) {
+	assert.Equal(t, []int{1, 2, 3}, strToInts("1,2,3"))
+	assert.Equal(t, []int{1, 0, 3}, strToInts("1, nope, 3"))
+	assert.Equal(t, []int{}, strToInts(" , , "))
+}
+
+func TestStrToArray(t *testing.T) {
+	assert.Equal(t, []string{"a", "b", "c"}, strToArray("a,b,c"))
+	assert.Equal(t, []string{"a", "b"}, strToArray(" a , , b "))
+	assert.Equal(t, []string{}, strToArray(" , "))
 }

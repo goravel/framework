@@ -79,10 +79,13 @@ func (e *Engine) ValidatedData() map[string]any {
 			continue
 		}
 		if val, ok := e.data.Get(field); ok {
-			dotSet(result, strings.Split(field, "."), val)
+			setValidated(result, e.data.All(), strings.Split(field, "."), val)
 		}
 	}
 
+	if normalized, ok := normalizeValidatedShape(result, e.data.All()).(map[string]any); ok {
+		return normalized
+	}
 	return result
 }
 
@@ -289,13 +292,14 @@ func (e *Engine) trackDistinct(field string, value any) bool {
 
 // formatErrorMessage creates the error message for a rule failure.
 func (e *Engine) formatErrorMessage(field string, rule ParsedRule, attrType string) string {
-	// Check for custom rule message
-	if customRule, ok := e.customRules[rule.Name]; ok {
-		msg := customRule.Message(e.ctx)
-		return strings.ReplaceAll(msg, ":attribute", getDisplayableAttribute(field, e.attributes))
-	}
-
 	msg := getMessage(field, rule.Name, e.messages, attrType)
+	if _, hasFieldRuleMessage := e.messages[field+"."+rule.Name]; !hasFieldRuleMessage {
+		if _, hasRuleMessage := e.messages[rule.Name]; !hasRuleMessage {
+			if customRule, ok := e.customRules[rule.Name]; ok {
+				msg = customRule.Message(e.ctx)
+			}
+		}
+	}
 
 	replacements := map[string]string{
 		":attribute": getDisplayableAttribute(field, e.attributes),

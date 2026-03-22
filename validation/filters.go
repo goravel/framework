@@ -112,6 +112,7 @@ var builtinFilters = map[string]func(val any) any{
 	"camelCase":  func(val any) any { return toCamelCase(cast.ToString(val)) },
 	"snakeCase":  func(val any) any { return toSnakeCase(cast.ToString(val)) },
 	"toInt":      func(val any) any { return cast.ToInt(val) },
+	"integer":    func(val any) any { return cast.ToInt(val) },
 	"toUint":     func(val any) any { return cast.ToUint(val) },
 	"toInt64":    func(val any) any { return cast.ToInt64(val) },
 	"toFloat":    func(val any) any { return cast.ToFloat64(val) },
@@ -125,6 +126,24 @@ var builtinFilters = map[string]func(val any) any{
 	"escapeJs":   func(val any) any { return escapeJS(cast.ToString(val)) },
 	"escapeJS":   func(val any) any { return escapeJS(cast.ToString(val)) },
 	"urlEncode":  func(val any) any { return url.QueryEscape(cast.ToString(val)) },
+	"ucFirst": func(val any) any {
+		s := cast.ToString(val)
+		if len(s) == 0 {
+			return s
+		}
+		runes := []rune(s)
+		runes[0] = unicode.ToUpper(runes[0])
+		return string(runes)
+	},
+	"lcFirst": func(val any) any {
+		s := cast.ToString(val)
+		if len(s) == 0 {
+			return s
+		}
+		runes := []rune(s)
+		runes[0] = unicode.ToLower(runes[0])
+		return string(runes)
+	},
 	"urlDecode": func(val any) any {
 		decoded, err := url.QueryUnescape(cast.ToString(val))
 		if err != nil {

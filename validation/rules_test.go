@@ -3611,15 +3611,52 @@ func (s *RulesTestSuite) TestValidatedDataNestedDot() {
 }
 
 func (s *RulesTestSuite) TestValidatedDataWithWildcard() {
-	v := s.makeValidator(
-		map[string]any{"tags": []any{"go", "rust", "zig"}},
-		map[string]any{"tags.*": "required|string"},
-	)
-	s.False(v.Fails())
-	data := v.Validated()
-	tags, ok := data["tags"].(map[string]any)
-	s.True(ok)
-	s.Equal("go", tags["0"])
+	s.Run("any slice", func() {
+		v := s.makeValidator(
+			map[string]any{"tags": []any{"go", "rust", "zig"}},
+			map[string]any{"tags.*": "required|string"},
+		)
+		s.False(v.Fails())
+		data := v.Validated()
+		tags, ok := data["tags"].([]any)
+		s.True(ok)
+		s.Equal([]any{"go", "rust", "zig"}, tags)
+	})
+
+	s.Run("typed int slice", func() {
+		v := s.makeValidator(
+			map[string]any{"scores": []int{1, 2}},
+			map[string]any{"scores.*": "required|integer"},
+		)
+		s.False(v.Fails())
+		data := v.Validated()
+		scores, ok := data["scores"].([]int)
+		s.True(ok)
+		s.Equal([]int{1, 2}, scores)
+	})
+
+	s.Run("nested wildcard", func() {
+		v := s.makeValidator(
+			map[string]any{
+				"users": []any{
+					map[string]any{"name": "alice", "email": "alice@example.com"},
+					map[string]any{"name": "bob", "email": "bob@example.com"},
+				},
+			},
+			map[string]any{"users.*.name": "required|string"},
+		)
+		s.False(v.Fails())
+		data := v.Validated()
+		users, ok := data["users"].([]any)
+		s.True(ok)
+		s.Equal(
+			[]any{
+				map[string]any{"name": "alice"},
+				map[string]any{"name": "bob"},
+			},
+			users,
+		)
+	})
 }
 
 // ===== Error Bag Methods Tests =====

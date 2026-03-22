@@ -231,6 +231,53 @@ func TestEngine_ValidatedData(t *testing.T) {
 		assert.Equal(t, "Alice", data["name"])
 		assert.NotContains(t, data, "secret")
 	})
+
+	t.Run("wildcard arrays are reconstructed as slices", func(t *testing.T) {
+		bag, _ := NewDataBag(map[string]any{
+			"tags":   []any{"tag1", "tag2"},
+			"scores": []int{1, 2},
+		})
+		rules := map[string][]ParsedRule{
+			"tags.*":   {{Name: "custom_pass"}},
+			"scores.*": {{Name: "custom_pass"}},
+		}
+		engine := NewEngine(context.Background(), bag, rules, engineOptions{
+			customRules: map[string]contractsvalidation.Rule{
+				"custom_pass": newAlwaysPassRule("custom_pass"),
+			},
+		})
+		engine.Validate()
+
+		data := engine.ValidatedData()
+
+		tags, ok := data["tags"].([]any)
+		assert.True(t, ok)
+		assert.Equal(t, []any{"tag1", "tag2"}, tags)
+
+		scores, ok := data["scores"].([]int)
+		assert.True(t, ok)
+		assert.Equal(t, []int{1, 2}, scores)
+	})
+
+	t.Run("sparse indexed wildcard falls back to []any with nil gaps", func(t *testing.T) {
+		bag, _ := NewDataBag(map[string]any{
+			"items": []int{10, 20, 30},
+		})
+		rules := map[string][]ParsedRule{
+			"items.2": {{Name: "custom_pass"}},
+		}
+		engine := NewEngine(context.Background(), bag, rules, engineOptions{
+			customRules: map[string]contractsvalidation.Rule{
+				"custom_pass": newAlwaysPassRule("custom_pass"),
+			},
+		})
+		engine.Validate()
+
+		data := engine.ValidatedData()
+		items, ok := data["items"].([]any)
+		assert.True(t, ok)
+		assert.Equal(t, []any{nil, nil, 30}, items)
+	})
 }
 
 func TestEngine_HandleExcludeRule(t *testing.T) {
@@ -356,6 +403,20 @@ func TestEngine_ExpandWildcardRules(t *testing.T) {
 	assert.Equal(t, expanded, expanded2)
 }
 
+func TestEngine_ExpandWildcardRules_TypedSlice(t *testing.T) {
+	bag, _ := NewDataBag(map[string]any{
+		"scores": []int{1, 2},
+	})
+	rules := map[string][]ParsedRule{
+		"scores.*": {{Name: "required"}},
+	}
+	engine := NewEngine(context.Background(), bag, rules, engineOptions{})
+
+	expanded := engine.expandWildcardRules()
+	assert.Contains(t, expanded, "scores.0")
+	assert.Contains(t, expanded, "scores.1")
+}
+
 func TestEngine_TrackDistinct(t *testing.T) {
 	rules := map[string][]ParsedRule{
 		"items.*.id": {{Name: "distinct"}},
@@ -375,7 +436,7 @@ func TestEngine_TrackDistinct(t *testing.T) {
 }
 
 func TestEngine_FormatErrorMessage(t *testing.T) {
-	t.Run("custom rule message", func(t *testing.T) {
+	t.Run("custom rule message without custom message override", func(t *testing.T) {
 		bag, _ := NewDataBag(map[string]any{})
 		engine := NewEngine(context.Background(), bag, nil, engineOptions{
 			customRules: map[string]contractsvalidation.Rule{
@@ -386,6 +447,36 @@ func TestEngine_FormatErrorMessage(t *testing.T) {
 
 		msg := engine.formatErrorMessage("name", ParsedRule{Name: "my_rule"}, "string")
 		assert.Equal(t, "The Full Name is bad.", msg)
+	})
+
+	t.Run("custom field+rule message overrides custom rule message", func(t *testing.T) {
+		bag, _ := NewDataBag(map[string]any{})
+		engine := NewEngine(context.Background(), bag, nil, engineOptions{
+			customRules: map[string]contractsvalidation.Rule{
+				"custom_exists": newAlwaysFailRule("custom_exists", "The :attribute does not exist in custom rule."),
+			},
+			messages: map[string]string{
+				"f.custom_exists": "custom_exists failed for :attribute",
+			},
+		})
+
+		msg := engine.formatErrorMessage("f", ParsedRule{Name: "custom_exists"}, "string")
+		assert.Equal(t, "custom_exists failed for f", msg)
+	})
+
+	t.Run("custom rule message override overrides custom rule message", func(t *testing.T) {
+		bag, _ := NewDataBag(map[string]any{})
+		engine := NewEngine(context.Background(), bag, nil, engineOptions{
+			customRules: map[string]contractsvalidation.Rule{
+				"custom_exists": newAlwaysFailRule("custom_exists", "The :attribute does not exist in custom rule."),
+			},
+			messages: map[string]string{
+				"custom_exists": "custom_exists failed",
+			},
+		})
+
+		msg := engine.formatErrorMessage("f", ParsedRule{Name: "custom_exists"}, "string")
+		assert.Equal(t, "custom_exists failed", msg)
 	})
 
 	t.Run("custom message override", func(t *testing.T) {
