@@ -148,6 +148,18 @@ func TestDotGet(t *testing.T) {
 		_, ok := dotGet("string", []string{"key"})
 		assert.False(t, ok)
 	})
+
+	t.Run("nil intermediate does not panic", func(t *testing.T) {
+		data := map[string]any{"user": nil}
+		_, ok := dotGet(data, []string{"user", "name"})
+		assert.False(t, ok)
+	})
+
+	t.Run("nil slice element does not panic", func(t *testing.T) {
+		data := map[string]any{"items": []any{nil, "b"}}
+		_, ok := dotGet(data, []string{"items", "0", "key"})
+		assert.False(t, ok)
+	})
 }
 
 func TestDotSet(t *testing.T) {
@@ -473,6 +485,21 @@ func TestCollectKeys(t *testing.T) {
 		collectKeys(data, "arr", &keys)
 		assert.Contains(t, keys, "arr.0")
 		assert.Contains(t, keys, "arr.1")
+	})
+
+	t.Run("nil map value does not panic", func(t *testing.T) {
+		data := map[string]any{"name": nil}
+		var keys []string
+		assert.NotPanics(t, func() { collectKeys(data, "", &keys) })
+		assert.Contains(t, keys, "name")
+	})
+
+	t.Run("nil slice element does not panic", func(t *testing.T) {
+		data := []any{nil, "b"}
+		var keys []string
+		assert.NotPanics(t, func() { collectKeys(data, "items", &keys) })
+		assert.Contains(t, keys, "items.0")
+		assert.Contains(t, keys, "items.1")
 	})
 }
 

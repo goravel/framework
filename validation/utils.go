@@ -114,7 +114,13 @@ func dotGet(data any, segments []string) (any, bool) {
 		}
 		return dotGet(v[idx], remaining)
 	default:
+		if data == nil {
+			return nil, false
+		}
 		rv := reflect.ValueOf(data)
+		if !rv.IsValid() {
+			return nil, false
+		}
 		if rv.Kind() == reflect.Slice || rv.Kind() == reflect.Array {
 			idx, err := strconv.Atoi(segment)
 			if err != nil || idx < 0 || idx >= rv.Len() {
@@ -427,7 +433,13 @@ func collectKeys(data any, prefix string, keys *[]string) {
 			collectKeys(val, fullKey, keys)
 		}
 	default:
+		if v == nil {
+			return
+		}
 		rv := reflect.ValueOf(v)
+		if !rv.IsValid() {
+			return
+		}
 		if rv.Kind() == reflect.Slice || rv.Kind() == reflect.Array {
 			for i := 0; i < rv.Len(); i++ {
 				fullKey := strconv.Itoa(i)
