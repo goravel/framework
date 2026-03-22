@@ -436,7 +436,7 @@ func TestEngine_TrackDistinct(t *testing.T) {
 }
 
 func TestEngine_FormatErrorMessage(t *testing.T) {
-	t.Run("custom rule message", func(t *testing.T) {
+	t.Run("custom rule message without custom message override", func(t *testing.T) {
 		bag, _ := NewDataBag(map[string]any{})
 		engine := NewEngine(context.Background(), bag, nil, engineOptions{
 			customRules: map[string]contractsvalidation.Rule{
@@ -447,6 +447,36 @@ func TestEngine_FormatErrorMessage(t *testing.T) {
 
 		msg := engine.formatErrorMessage("name", ParsedRule{Name: "my_rule"}, "string")
 		assert.Equal(t, "The Full Name is bad.", msg)
+	})
+
+	t.Run("custom field+rule message overrides custom rule message", func(t *testing.T) {
+		bag, _ := NewDataBag(map[string]any{})
+		engine := NewEngine(context.Background(), bag, nil, engineOptions{
+			customRules: map[string]contractsvalidation.Rule{
+				"custom_exists": newAlwaysFailRule("custom_exists", "The :attribute does not exist in custom rule."),
+			},
+			messages: map[string]string{
+				"f.custom_exists": "custom_exists failed for :attribute",
+			},
+		})
+
+		msg := engine.formatErrorMessage("f", ParsedRule{Name: "custom_exists"}, "string")
+		assert.Equal(t, "custom_exists failed for f", msg)
+	})
+
+	t.Run("custom rule message override overrides custom rule message", func(t *testing.T) {
+		bag, _ := NewDataBag(map[string]any{})
+		engine := NewEngine(context.Background(), bag, nil, engineOptions{
+			customRules: map[string]contractsvalidation.Rule{
+				"custom_exists": newAlwaysFailRule("custom_exists", "The :attribute does not exist in custom rule."),
+			},
+			messages: map[string]string{
+				"custom_exists": "custom_exists failed",
+			},
+		})
+
+		msg := engine.formatErrorMessage("f", ParsedRule{Name: "custom_exists"}, "string")
+		assert.Equal(t, "custom_exists failed", msg)
 	})
 
 	t.Run("custom message override", func(t *testing.T) {
