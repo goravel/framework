@@ -1,6 +1,9 @@
 package ai
 
 import (
+	"context"
+
+	contractsai "github.com/goravel/framework/contracts/ai"
 	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/foundation"
 )
@@ -18,7 +21,13 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 
 func (r *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(binding.AI, func(app foundation.Application) (any, error) {
-		return NewApplication(app.MakeConfig()), nil
+		config := app.MakeConfig()
+		var aiConfig contractsai.Config
+		if err := config.UnmarshalKey("ai", &aiConfig); err != nil {
+			return nil, err
+		}
+
+		return NewApplication(context.Background(), aiConfig), nil
 	})
 }
 

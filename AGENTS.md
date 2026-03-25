@@ -40,10 +40,12 @@ golangci-lint run                      # lint
 - Cache/Session/Queue: `goravel/redis`
 - Storage: `goravel/s3`, `oss`, `cos`, `minio`
 
-## AI Agent Code Rule
+## Code Rules
 
-- Should use `any` instead of `interface{}`.
-- Avoid adding `mock.Anything` when writing test cases.
-- Use the testify `EXPECT` method when writing test cases.
-- Don't modify the files in the `mocks` directory, run the `go tool mockery` command to regenerate mocks instead if needed.
-- Don't run `go test ./...` if unnecessary, the command is a bit slow, run `go test` with the specific package or test function instead.
+- Use `any` instead of `interface{}`.
+- Never edit `mocks/` directly; run `go tool mockery` to regenerate.
+- Follow standard Go formatting/naming; add comments where logic isn't self-evident. Go version is in go.mod.
+
+## Tests
+
+When writing tests, use the rules in `.ai/prompts/tests.md` for guidance.
