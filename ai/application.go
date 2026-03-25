@@ -8,7 +8,6 @@ import (
 
 var _ contractsai.AI = (*Application)(nil)
 
-// Application is the AI manager implementation.
 type Application struct {
 	ctx      context.Context
 	config   contractsai.Config

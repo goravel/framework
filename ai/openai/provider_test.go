@@ -8,13 +8,15 @@ import (
 	"strings"
 	"testing"
 
-	contractsai "github.com/goravel/framework/contracts/ai"
-	mocksai "github.com/goravel/framework/mocks/ai"
-	mocksconfig "github.com/goravel/framework/mocks/config"
 	goopenai "github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	contractsai "github.com/goravel/framework/contracts/ai"
+	"github.com/goravel/framework/errors"
+	mocksai "github.com/goravel/framework/mocks/ai"
+	mocksconfig "github.com/goravel/framework/mocks/config"
 )
 
 type capturedRequest struct {
@@ -283,7 +285,7 @@ func newChatServer(t *testing.T, status int, body string, captured chan<- captur
 	t.Helper()
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close()
+		defer errors.Ignore(r.Body.Close)
 
 		var payload struct {
 			Model    string           `json:"model"`

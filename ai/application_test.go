@@ -4,9 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	contractsai "github.com/goravel/framework/contracts/ai"
 	mocksai "github.com/goravel/framework/mocks/ai"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestApplication_Agent(t *testing.T) {
@@ -103,7 +104,7 @@ func TestApplication_Agent(t *testing.T) {
 			assert.True(t, ok)
 
 			expectedPrompt := contractsai.AgentPrompt{
-				Agent: convImpl.agent,
+				Agent: convImpl,
 				Input: tt.promptInput,
 				Model: tt.expectedModel,
 			}
@@ -149,8 +150,10 @@ func TestApplication_Agent_ResolverError(t *testing.T) {
 	assert.Equal(t, assert.AnError, err)
 }
 
+type testCtxKey string
+
 func TestApplication_WithContext(t *testing.T) {
-	origCtx := context.WithValue(context.Background(), "orig", true)
+	origCtx := context.WithValue(context.Background(), testCtxKey("orig"), true)
 	provider := mocksai.NewProvider(t)
 	config := contractsai.Config{
 		Default: "default",
@@ -160,7 +163,7 @@ func TestApplication_WithContext(t *testing.T) {
 	}
 
 	app := NewApplication(origCtx, config)
-	newCtx := context.WithValue(context.Background(), "orig", false)
+	newCtx := context.WithValue(context.Background(), testCtxKey("orig"), false)
 	aiWithCtx := app.WithContext(newCtx)
 	aiImpl, ok := aiWithCtx.(*Application)
 	assert.True(t, ok)

@@ -3,8 +3,9 @@ package ai
 import (
 	"testing"
 
-	contractsai "github.com/goravel/framework/contracts/ai"
 	"github.com/stretchr/testify/assert"
+
+	contractsai "github.com/goravel/framework/contracts/ai"
 )
 
 func TestWithProvider(t *testing.T) {

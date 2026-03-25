@@ -4,9 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	contractsai "github.com/goravel/framework/contracts/ai"
 	errs "github.com/goravel/framework/errors"
-	"github.com/stretchr/testify/assert"
 )
 
 type testProvider struct {

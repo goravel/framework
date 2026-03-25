@@ -17,6 +17,14 @@
 - The basic table-driven test pattern is:
 
 ```go
+import (
+	[system packages]
+
+	[third-party packages]
+
+	[internal packages]
+)
+
 func TestFunction(t *testing.T) {
 	// The name should start with `mock` to indicate it's a mocked function.
 	var (
