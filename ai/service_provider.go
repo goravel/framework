@@ -12,7 +12,7 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 		Bindings: []string{
 			binding.AI,
 		},
-		Dependencies: binding.Bindings[binding.AI].Dependencies,
+		// Dependencies: binding.Bindings[binding.AI].Dependencies,
 	}
 }
 
