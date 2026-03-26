@@ -125,11 +125,10 @@ func (r *Path) Package() string {
 
 // Import returns the sub-package import path, or the main package import path if no sub-package path is specified.
 // For example, if r.path is "app/http/controllers" and r.main is "github.com/goravel/goravel",
-// it returns "goravel/app/http/controllers". If r.path is empty, it returns "goravel".
+// it returns "github.com/goravel/goravel/app/http/controllers". If r.path is empty, it returns "github.com/goravel/goravel".
 // The path will be returned directly if it starts with "github.com/goravel/framework/", given it's a framework sub-package.
 func (r *Path) Import() string {
-	mainSlice := toSlice(r.main)
-	mainImport := mainSlice[len(mainSlice)-1]
+	mainImport := strings.Trim(strings.ReplaceAll(r.main, "\\", "/"), "/")
 
 	if r.path != "" {
 		if r.isModule {
@@ -137,6 +136,9 @@ func (r *Path) Import() string {
 		}
 
 		pathSlice := toSlice(r.path)
+		if mainImport == "" {
+			return strings.Join(pathSlice, "/")
+		}
 		importSlice := append([]string{mainImport}, pathSlice...)
 
 		return strings.Join(importSlice, "/")
