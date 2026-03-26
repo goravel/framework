@@ -64,7 +64,7 @@ func (s *PathsTestSuite) TestApp() {
 
 	s.NotNil(result)
 	s.Equal("app", result.Package())
-	s.Equal("goravel/app", result.Import())
+	s.Equal("github.com/goravel/goravel/app", result.Import())
 	s.False(filepath.IsAbs(result.String()))
 	s.Equal("app", result.String())
 	s.True(filepath.IsAbs(result.Abs()))
@@ -80,7 +80,7 @@ func (s *PathsTestSuite) TestBootstrap() {
 
 	s.NotNil(result)
 	s.Equal("bootstrap", result.Package())
-	s.Equal("goravel/bootstrap", result.Import())
+	s.Equal("github.com/goravel/goravel/bootstrap", result.Import())
 	s.False(filepath.IsAbs(result.String()))
 	s.Equal("bootstrap", result.String())
 	s.True(filepath.IsAbs(result.Abs()))
@@ -96,7 +96,7 @@ func (s *PathsTestSuite) TestConfig() {
 
 	s.NotNil(result)
 	s.Equal("config", result.Package())
-	s.Equal("goravel/config", result.Import())
+	s.Equal("github.com/goravel/goravel/config", result.Import())
 	s.False(filepath.IsAbs(result.String()))
 	s.Equal("config", result.String())
 	s.True(filepath.IsAbs(result.Abs()))
@@ -112,7 +112,7 @@ func (s *PathsTestSuite) TestDatabase() {
 
 	s.NotNil(result)
 	s.Equal("database", result.Package())
-	s.Equal("goravel/database", result.Import())
+	s.Equal("github.com/goravel/goravel/database", result.Import())
 	s.False(filepath.IsAbs(result.String()))
 	s.Equal("database", result.String())
 	s.True(filepath.IsAbs(result.Abs()))
@@ -128,7 +128,7 @@ func (s *PathsTestSuite) TestFacades() {
 
 	s.NotNil(result)
 	s.Equal("facades", result.Package())
-	s.Equal("goravel/app/facades", result.Import())
+	s.Equal("github.com/goravel/goravel/app/facades", result.Import())
 	s.False(filepath.IsAbs(result.String()))
 	s.Equal(filepath.Join("app", "facades"), result.String())
 	s.True(filepath.IsAbs(result.Abs()))
@@ -144,7 +144,7 @@ func (s *PathsTestSuite) TestLang() {
 
 	s.NotNil(result)
 	s.Equal("lang", result.Package())
-	s.Equal("goravel/lang", result.Import())
+	s.Equal("github.com/goravel/goravel/lang", result.Import())
 	s.False(filepath.IsAbs(result.String()))
 	s.Equal("lang", result.String())
 	s.True(filepath.IsAbs(result.Abs()))
@@ -159,7 +159,7 @@ func (s *PathsTestSuite) TestMain() {
 
 	s.NotNil(result)
 	s.Equal("goravel", result.Package())
-	s.Equal("goravel", result.Import())
+	s.Equal("github.com/goravel/goravel", result.Import())
 	s.False(filepath.IsAbs(result.String()))
 	s.Equal("", result.String())
 	s.True(filepath.IsAbs(result.Abs()))
@@ -174,7 +174,7 @@ func (s *PathsTestSuite) TestMigrations() {
 
 	s.NotNil(result)
 	s.Equal("migrations", result.Package())
-	s.Equal("goravel/database/migrations", result.Import())
+	s.Equal("github.com/goravel/goravel/database/migrations", result.Import())
 	s.False(filepath.IsAbs(result.String()))
 	s.Equal(filepath.Join("database", "migrations"), result.String())
 	s.True(filepath.IsAbs(result.Abs()))
@@ -190,7 +190,7 @@ func (s *PathsTestSuite) TestModels() {
 
 	s.NotNil(result)
 	s.Equal("models", result.Package())
-	s.Equal("goravel/app/models", result.Import())
+	s.Equal("github.com/goravel/goravel/app/models", result.Import())
 	s.False(filepath.IsAbs(result.String()))
 	s.Equal(filepath.Join("app", "models"), result.String())
 	s.True(filepath.IsAbs(result.Abs()))
@@ -217,7 +217,7 @@ func (s *PathsTestSuite) TestPublic() {
 
 	s.NotNil(result)
 	s.Equal("public", result.Package())
-	s.Equal("goravel/public", result.Import())
+	s.Equal("github.com/goravel/goravel/public", result.Import())
 	s.False(filepath.IsAbs(result.String()))
 	s.Equal("public", result.String())
 	s.True(filepath.IsAbs(result.Abs()))
@@ -233,7 +233,7 @@ func (s *PathsTestSuite) TestResources() {
 
 	s.NotNil(result)
 	s.Equal("resources", result.Package())
-	s.Equal("goravel/resources", result.Import())
+	s.Equal("github.com/goravel/goravel/resources", result.Import())
 	s.False(filepath.IsAbs(result.String()))
 	s.Equal("resources", result.String())
 	s.True(filepath.IsAbs(result.Abs()))
@@ -249,7 +249,7 @@ func (s *PathsTestSuite) TestRoutes() {
 
 	s.NotNil(result)
 	s.Equal("routes", result.Package())
-	s.Equal("goravel/routes", result.Import())
+	s.Equal("github.com/goravel/goravel/routes", result.Import())
 	s.False(filepath.IsAbs(result.String()))
 	s.Equal("routes", result.String())
 	s.True(filepath.IsAbs(result.Abs()))
@@ -265,7 +265,7 @@ func (s *PathsTestSuite) TestStorage() {
 
 	s.NotNil(result)
 	s.Equal("storage", result.Package())
-	s.Equal("goravel/storage", result.Import())
+	s.Equal("github.com/goravel/goravel/storage", result.Import())
 	s.False(filepath.IsAbs(result.String()))
 	s.Equal("storage", result.String())
 	s.True(filepath.IsAbs(result.Abs()))
@@ -281,7 +281,7 @@ func (s *PathsTestSuite) TestTests() {
 
 	s.NotNil(result)
 	s.Equal("tests", result.Package())
-	s.Equal("goravel/tests", result.Import())
+	s.Equal("github.com/goravel/goravel/tests", result.Import())
 	s.False(filepath.IsAbs(result.String()))
 	s.Equal("tests", result.String())
 	s.True(filepath.IsAbs(result.Abs()))
@@ -297,7 +297,7 @@ func (s *PathsTestSuite) TestViews() {
 
 	s.NotNil(result)
 	s.Equal("views", result.Package())
-	s.Equal("goravel/resources/views", result.Import())
+	s.Equal("github.com/goravel/goravel/resources/views", result.Import())
 	s.False(filepath.IsAbs(result.String()))
 	s.Equal(filepath.Join("resources", "views"), result.String())
 	s.True(filepath.IsAbs(result.Abs()))
@@ -411,21 +411,21 @@ func (s *PathTestSuite) TestImport() {
 			path:     "app/http/controllers",
 			main:     "github.com/goravel/goravel",
 			isModule: false,
-			expected: "goravel/app/http/controllers",
+			expected: "github.com/goravel/goravel/app/http/controllers",
 		},
 		{
 			name:     "with empty path returns main import",
 			path:     "",
 			main:     "github.com/goravel/goravel",
 			isModule: false,
-			expected: "goravel",
+			expected: "github.com/goravel/goravel",
 		},
 		{
 			name:     "with single segment path",
 			path:     "config",
 			main:     "github.com/user/project",
 			isModule: false,
-			expected: "project/config",
+			expected: "github.com/user/project/config",
 		},
 		{
 			name:     "with module path",
@@ -439,21 +439,21 @@ func (s *PathTestSuite) TestImport() {
 			path:     "app/http/controllers/admin",
 			main:     "github.com/organization/app",
 			isModule: false,
-			expected: "app/app/http/controllers/admin",
+			expected: "github.com/organization/app/app/http/controllers/admin",
 		},
 		{
 			name:     "with windows-style path",
 			path:     "app\\http\\controllers",
 			main:     "github.com/goravel/goravel",
 			isModule: false,
-			expected: "goravel/app/http/controllers",
+			expected: "github.com/goravel/goravel/app/http/controllers",
 		},
 		{
 			name:     "with complex main path",
 			path:     "routes",
 			main:     "github.com/company/division/product",
 			isModule: false,
-			expected: "product/routes",
+			expected: "github.com/company/division/product/routes",
 		},
 	}
 
@@ -684,7 +684,7 @@ func (s *PathTestSuite) TestModuleImportBehavior() {
 				s.Equal(tt.modulePath, p.Import())
 			} else {
 				// Empty module path should return main import
-				s.Equal("goravel", p.Import())
+				s.Equal("github.com/goravel/goravel", p.Import())
 			}
 		})
 	}
@@ -708,22 +708,22 @@ func (s *PathTestSuite) TestPathWithCustomConfigs() {
 	paths := NewPaths(mainPath)
 
 	s.Equal("bootstrap", paths.Bootstrap().Package())
-	s.Equal("goravel/custom/bootstrap", paths.Bootstrap().Import())
+	s.Equal("github.com/goravel/goravel/custom/bootstrap", paths.Bootstrap().Import())
 
 	s.Equal("config", paths.Config().Package())
-	s.Equal("goravel/custom/config", paths.Config().Import())
+	s.Equal("github.com/goravel/goravel/custom/config", paths.Config().Import())
 
 	s.Equal("facades", paths.Facades().Package())
-	s.Equal("goravel/custom/app/facades", paths.Facades().Import())
+	s.Equal("github.com/goravel/goravel/custom/app/facades", paths.Facades().Import())
 
 	s.Equal("migrations", paths.Migrations().Package())
-	s.Equal("goravel/custom/db/migrations", paths.Migrations().Import())
+	s.Equal("github.com/goravel/goravel/custom/db/migrations", paths.Migrations().Import())
 
 	s.Equal("routes", paths.Routes().Package())
-	s.Equal("goravel/custom/routes", paths.Routes().Import())
+	s.Equal("github.com/goravel/goravel/custom/routes", paths.Routes().Import())
 
 	s.Equal("tests", paths.Tests().Package())
-	s.Equal("goravel/custom/tests", paths.Tests().Import())
+	s.Equal("github.com/goravel/goravel/custom/tests", paths.Tests().Import())
 }
 
 func (s *PathTestSuite) TestPathWithDifferentMainPaths() {
@@ -739,14 +739,14 @@ func (s *PathTestSuite) TestPathWithDifferentMainPaths() {
 			mainPath:     "github.com/goravel/goravel",
 			subPath:      "app/http",
 			expectedPkg:  "http",
-			expectedImpt: "goravel/app/http",
+			expectedImpt: "github.com/goravel/goravel/app/http",
 		},
 		{
 			name:         "gitlab.com path",
 			mainPath:     "gitlab.com/user/project",
 			subPath:      "controllers",
 			expectedPkg:  "controllers",
-			expectedImpt: "project/controllers",
+			expectedImpt: "gitlab.com/user/project/controllers",
 		},
 		{
 			name:         "single segment main",
@@ -760,7 +760,7 @@ func (s *PathTestSuite) TestPathWithDifferentMainPaths() {
 			mainPath:     "git.company.com/team/division/project",
 			subPath:      "models",
 			expectedPkg:  "models",
-			expectedImpt: "project/models",
+			expectedImpt: "git.company.com/team/division/project/models",
 		},
 	}
 
