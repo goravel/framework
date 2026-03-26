@@ -36,7 +36,7 @@ func TestFunction(t *testing.T) {
 		mockFunc = mocks.NewMockedInterface(t)
 	}
 
-	testCases := []struct {
+	tests := []struct {
 		name        string
 		input       any
 		setup       func()

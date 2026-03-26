@@ -8,21 +8,21 @@ import (
 	"github.com/stretchr/testify/require"
 
 	contractsai "github.com/goravel/framework/contracts/ai"
-	mockai "github.com/goravel/framework/mocks/ai"
+	mocksai "github.com/goravel/framework/mocks/ai"
 )
 
 func TestConversation_Prompt(t *testing.T) {
 	ctx := context.Background()
 
 	var (
-		mockProvider *mockai.Provider
+		mockProvider *mocksai.Provider
 		conv         *conversation
 	)
 
 	beforeEach := func(initial []contractsai.Message, model string) {
-		mockAgent := mockai.NewAgent(t)
+		mockAgent := mocksai.NewAgent(t)
 		mockAgent.EXPECT().Messages().Return(initial).Once()
-		mockProvider = mockai.NewProvider(t)
+		mockProvider = mocksai.NewProvider(t)
 		conv = NewConversation(ctx, mockAgent, mockProvider, model)
 	}
 
@@ -41,7 +41,7 @@ func TestConversation_Prompt(t *testing.T) {
 			model:   "model-x",
 			input:   "hello",
 			setup: func() contractsai.Response {
-				mockResponse := mockai.NewResponse(t)
+				mockResponse := mocksai.NewResponse(t)
 				mockResponse.EXPECT().Text().Return("got it").Once()
 				mockProvider.EXPECT().Prompt(ctx, contractsai.AgentPrompt{Agent: conv, Input: "hello", Model: "model-x"}).Return(mockResponse, nil).Once()
 				return mockResponse
@@ -72,7 +72,7 @@ func TestConversation_Prompt(t *testing.T) {
 			model:   "model-empty",
 			input:   "",
 			setup: func() contractsai.Response {
-				mockResponse := mockai.NewResponse(t)
+				mockResponse := mocksai.NewResponse(t)
 				mockResponse.EXPECT().Text().Return("").Once()
 				mockProvider.EXPECT().Prompt(ctx, contractsai.AgentPrompt{Agent: conv, Input: "", Model: "model-empty"}).Return(mockResponse, nil).Once()
 				return mockResponse
@@ -101,14 +101,14 @@ func TestConversation_Reset(t *testing.T) {
 	ctx := context.Background()
 
 	var (
-		mockProvider *mockai.Provider
+		mockProvider *mocksai.Provider
 		conv         *conversation
 	)
 
 	beforeEach := func(initial []contractsai.Message) {
-		mockAgent := mockai.NewAgent(t)
+		mockAgent := mocksai.NewAgent(t)
 		mockAgent.EXPECT().Messages().Return(initial).Times(2)
-		mockProvider = mockai.NewProvider(t)
+		mockProvider = mocksai.NewProvider(t)
 		conv = NewConversation(ctx, mockAgent, mockProvider, "model-z")
 	}
 
@@ -127,7 +127,7 @@ func TestConversation_Reset(t *testing.T) {
 			input:        "append",
 			promptBefore: true,
 			setup: func() {
-				response := mockai.NewResponse(t)
+				response := mocksai.NewResponse(t)
 				mockProvider.EXPECT().Prompt(ctx, contractsai.AgentPrompt{Agent: conv, Input: "append", Model: "model-z"}).Return(response, nil).Once()
 				response.EXPECT().Text().Return("done").Once()
 			},

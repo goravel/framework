@@ -2,12 +2,13 @@ package ai
 
 import (
 	"context"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
 	contractsai "github.com/goravel/framework/contracts/ai"
-	errs "github.com/goravel/framework/errors"
+	"github.com/goravel/framework/errors"
 )
 
 type testProvider struct {
@@ -32,7 +33,7 @@ func TestProviderResolver_New(t *testing.T) {
 			name:         "unsupported provider",
 			config:       contractsai.Config{Providers: map[string]contractsai.ProviderConfig{}},
 			providerName: "missing",
-			wantErr:      errs.AIProviderNotSupported.Args("missing"),
+			wantErr:      errors.AIProviderNotSupported.Args("missing"),
 		},
 		{
 			name: "direct provider via instance",
@@ -48,7 +49,7 @@ func TestProviderResolver_New(t *testing.T) {
 				"broken": {Via: "not-a-provider"},
 			}},
 			providerName: "broken",
-			wantErr:      errs.AIProviderContractNotFulfilled.Args("broken"),
+			wantErr:      errors.AIProviderContractNotFulfilled.Args("broken"),
 		},
 		{
 			name: "factory returns error",
@@ -126,5 +127,41 @@ func TestProviderResolver_NewCacheBehavior(t *testing.T) {
 			assert.Equal(t, want, second)
 			assert.Equal(t, tt.wantFactoryCalled, getFactoryCalled())
 		})
+	}
+}
+
+func TestProviderResolver_NewConcurrent(t *testing.T) {
+	const goroutines = 50
+
+	var factoryCalled int
+	var mu sync.Mutex
+	want := &testProvider{id: "concurrent"}
+
+	resolver := NewProviderResolver(contractsai.Config{Providers: map[string]contractsai.ProviderConfig{
+		"p": {Via: func() (contractsai.Provider, error) {
+			mu.Lock()
+			factoryCalled++
+			mu.Unlock()
+			return want, nil
+		}},
+	}})
+
+	results := make([]contractsai.Provider, goroutines)
+	errs := make([]error, goroutines)
+
+	var wg sync.WaitGroup
+	wg.Add(goroutines)
+	for i := range goroutines {
+		go func(i int) {
+			defer wg.Done()
+			results[i], errs[i] = resolver.New("p")
+		}(i)
+	}
+	wg.Wait()
+
+	assert.Equal(t, 1, factoryCalled, "factory should be called exactly once")
+	for i := range goroutines {
+		assert.NoError(t, errs[i])
+		assert.Equal(t, want, results[i])
 	}
 }

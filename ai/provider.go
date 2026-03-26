@@ -33,14 +33,21 @@ func (r *ProviderResolver) New(providerName string) (contractsai.Provider, error
 		return nil, errors.AIProviderNotSupported.Args(providerName)
 	}
 
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	// Double-check after acquiring the write lock to avoid TOCTOU races.
+	if provider, ok := r.providers[providerName]; ok {
+		return provider, nil
+	}
+
 	provider, err := r.resolve(providerName, providerCfg)
 	if err != nil {
 		return nil, err
 	}
-
-	r.mu.Lock()
-	r.providers[providerName] = provider
-	r.mu.Unlock()
+	if provider != nil {
+		r.providers[providerName] = provider
+	}
 
 	return provider, nil
 }
