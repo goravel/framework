@@ -2,6 +2,7 @@ package modify
 
 import (
 	"go/token"
+	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
@@ -15,6 +16,7 @@ import (
 	"github.com/goravel/framework/contracts/packages/modify"
 	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/options"
+	"github.com/goravel/framework/support"
 	supportfile "github.com/goravel/framework/support/file"
 )
 
@@ -567,6 +569,53 @@ func main() {
 			tt.assert(err)
 		})
 	}
+}
+
+func TestEnv(t *testing.T) {
+	t.Run("update existing key", func(t *testing.T) {
+		envPath := setupEnvRelativePath(t)
+		assert.NoError(t, os.WriteFile(envPath, []byte("APP_NAME=Old\nAPP_ENV=local"), 0o644))
+
+		err := Env("APP_NAME", "New").Apply()
+		assert.NoError(t, err)
+
+		content, err := os.ReadFile(envPath)
+		assert.NoError(t, err)
+		assert.Equal(t, "APP_NAME=New\nAPP_ENV=local", string(content))
+	})
+
+	t.Run("append key when not exists", func(t *testing.T) {
+		envPath := setupEnvRelativePath(t)
+		assert.NoError(t, os.WriteFile(envPath, []byte("APP_ENV=local"), 0o644))
+
+		err := Env("APP_NAME", "New").Apply()
+		assert.NoError(t, err)
+
+		content, err := os.ReadFile(envPath)
+		assert.NoError(t, err)
+		assert.Equal(t, "APP_ENV=local\nAPP_NAME=New", string(content))
+	})
+
+	t.Run("return error when env file not exists", func(t *testing.T) {
+		setupEnvRelativePath(t)
+
+		err := Env("APP_NAME", "New").Apply()
+
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, os.ErrNotExist)
+	})
+}
+
+func setupEnvRelativePath(t *testing.T) string {
+	tempDir := t.TempDir()
+	originalRelativePath := support.RelativePath
+	support.RelativePath = tempDir
+
+	t.Cleanup(func() {
+		support.RelativePath = originalRelativePath
+	})
+
+	return filepath.Join(tempDir, ".env")
 }
 
 func TestWhen(t *testing.T) {
