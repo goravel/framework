@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"go/format"
+	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
@@ -20,6 +22,29 @@ import (
 	"github.com/goravel/framework/support/path"
 	"github.com/goravel/framework/support/str"
 )
+
+func Env(file, key, value string) modify.Apply {
+	return Call(func(_ []modify.Option) error {
+		content, err := os.ReadFile(file)
+		if err != nil {
+			return err
+		}
+
+		lines := strings.Split(string(content), "\n")
+		updated := false
+		for i, line := range lines {
+			if strings.HasPrefix(line, key+"=") {
+				lines[i] = key + "=" + value
+				updated = true
+			}
+		}
+		if !updated {
+			lines = append(lines, key+"="+value)
+		}
+
+		return os.WriteFile(file, []byte(strings.Join(lines, "\n")), 0o644)
+	})
+}
 
 func RegisterMigration(pkg, migration string) modify.Apply {
 	return Call(func(_ []modify.Option) error {
