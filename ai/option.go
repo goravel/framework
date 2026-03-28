@@ -1,10 +1,6 @@
 package ai
 
-import (
-	"time"
-
-	contractsai "github.com/goravel/framework/contracts/ai"
-)
+import contractsai "github.com/goravel/framework/contracts/ai"
 
 func WithProvider(provider string) contractsai.Option {
 	return func(options map[string]any) {
@@ -15,11 +11,5 @@ func WithProvider(provider string) contractsai.Option {
 func WithModel(model string) contractsai.Option {
 	return func(options map[string]any) {
 		options[contractsai.OptionModel] = model
-	}
-}
-
-func WithTimeout(timeout time.Duration) contractsai.Option {
-	return func(options map[string]any) {
-		options[contractsai.OptionTimeout] = timeout
 	}
 }

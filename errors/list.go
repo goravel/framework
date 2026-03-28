@@ -33,6 +33,9 @@ var (
 	AuthProviderDriverNotFound  = New("driver %s for user provider %s was not found")
 	AuthUnsupportedDriverMethod = New("The method was not supported for the driver %s")
 
+	AIProviderNotSupported         = New("ai provider not found: %s")
+	AIProviderContractNotFulfilled = New("%s.via must be contracts/ai.Provider or func() (contracts/ai.Provider, error)")
+
 	CacheDriverNotSupported           = New("invalid driver: %s, only support memory, custom")
 	CacheForeverFailed                = New("cache forever is failed")
 	CacheMemoryDriverNotSupportDocker = New("memory driver doesn't support docker")

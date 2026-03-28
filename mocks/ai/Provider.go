@@ -23,9 +23,9 @@ func (_m *Provider) EXPECT() *Provider_Expecter {
 	return &Provider_Expecter{mock: &_m.Mock}
 }
 
-// Prompt provides a mock function with given fields: ctx
-func (_m *Provider) Prompt(ctx context.Context) (ai.Response, error) {
-	ret := _m.Called(ctx)
+// Prompt provides a mock function with given fields: ctx, prompt
+func (_m *Provider) Prompt(ctx context.Context, prompt ai.AgentPrompt) (ai.Response, error) {
+	ret := _m.Called(ctx, prompt)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Prompt")
@@ -33,19 +33,19 @@ func (_m *Provider) Prompt(ctx context.Context) (ai.Response, error) {
 
 	var r0 ai.Response
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (ai.Response, error)); ok {
-		return rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, ai.AgentPrompt) (ai.Response, error)); ok {
+		return rf(ctx, prompt)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) ai.Response); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, ai.AgentPrompt) ai.Response); ok {
+		r0 = rf(ctx, prompt)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(ai.Response)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, ai.AgentPrompt) error); ok {
+		r1 = rf(ctx, prompt)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -60,13 +60,14 @@ type Provider_Prompt_Call struct {
 
 // Prompt is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *Provider_Expecter) Prompt(ctx interface{}) *Provider_Prompt_Call {
-	return &Provider_Prompt_Call{Call: _e.mock.On("Prompt", ctx)}
+//   - prompt ai.AgentPrompt
+func (_e *Provider_Expecter) Prompt(ctx interface{}, prompt interface{}) *Provider_Prompt_Call {
+	return &Provider_Prompt_Call{Call: _e.mock.On("Prompt", ctx, prompt)}
 }
 
-func (_c *Provider_Prompt_Call) Run(run func(ctx context.Context)) *Provider_Prompt_Call {
+func (_c *Provider_Prompt_Call) Run(run func(ctx context.Context, prompt ai.AgentPrompt)) *Provider_Prompt_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		run(args[0].(context.Context), args[1].(ai.AgentPrompt))
 	})
 	return _c
 }
@@ -76,7 +77,7 @@ func (_c *Provider_Prompt_Call) Return(_a0 ai.Response, _a1 error) *Provider_Pro
 	return _c
 }
 
-func (_c *Provider_Prompt_Call) RunAndReturn(run func(context.Context) (ai.Response, error)) *Provider_Prompt_Call {
+func (_c *Provider_Prompt_Call) RunAndReturn(run func(context.Context, ai.AgentPrompt) (ai.Response, error)) *Provider_Prompt_Call {
 	_c.Call.Return(run)
 	return _c
 }
