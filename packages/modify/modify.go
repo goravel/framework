@@ -23,10 +23,9 @@ import (
 	"github.com/goravel/framework/support/str"
 )
 
-func Env(key, value string) modify.Apply {
+func Env(file, key, value string) modify.Apply {
 	return Call(func(_ []modify.Option) error {
-		envPath := path.Base(".env")
-		content, err := os.ReadFile(envPath)
+		content, err := os.ReadFile(file)
 		if err != nil {
 			return err
 		}
@@ -43,7 +42,7 @@ func Env(key, value string) modify.Apply {
 			lines = append(lines, key+"="+value)
 		}
 
-		return os.WriteFile(envPath, []byte(strings.Join(lines, "\n")), 0o644)
+		return os.WriteFile(file, []byte(strings.Join(lines, "\n")), 0o644)
 	})
 }
 
