@@ -157,6 +157,10 @@ func (r *Path) String(paths ...string) string {
 }
 
 func Abs(paths ...string) string {
+	if len(paths) > 0 && filepath.IsAbs(paths[0]) {
+		return filepath.Join(paths...)
+	}
+
 	fullPaths := []string{support.RelativePath}
 	for _, path := range paths {
 		fullPaths = append(fullPaths, toSlice(path)...)

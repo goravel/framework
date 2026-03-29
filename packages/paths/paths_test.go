@@ -844,6 +844,12 @@ func TestAbs(t *testing.T) {
 			paths:         []string{"app/migrations", "user.go"},
 			expectContain: filepath.Join("app", "migrations", "user.go"),
 		},
+		{
+			name:          "already absolute path",
+			relativePath:  ".",
+			paths:         []string{"/var/app", "user.go"},
+			expectContain: filepath.Join("/var/app", "user.go"),
+		},
 	}
 
 	for _, tt := range tests {
