@@ -60,7 +60,7 @@ func TestIsBootstrapSetup(t *testing.T) {
 
 import "github.com/goravel/framework/foundation"
 
-var App = foundation.Setup()
+var App = foundation.Setup().Create()
 `
 				assert.NoError(t, os.WriteFile(filepath.Join(bootstrapDir, "app.go"), []byte(content), 0644))
 			},
