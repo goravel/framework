@@ -516,6 +516,20 @@ func (s *PathTestSuite) TestString() {
 			additionalPaths: nil,
 			expected:        "",
 		},
+		{
+			name:            "with multi-segment additional path",
+			path:            "app",
+			main:            "github.com/goravel/goravel",
+			additionalPaths: []string{"http/controllers"},
+			expected:        filepath.Join("app", "http", "controllers"),
+		},
+		{
+			name:            "with multiple multi-segment additional paths",
+			path:            "app",
+			main:            "github.com/goravel/goravel",
+			additionalPaths: []string{"http/controllers", "v1"},
+			expected:        filepath.Join("app", "http", "controllers", "v1"),
+		},
 	}
 
 	for _, tt := range tests {
@@ -585,6 +599,20 @@ func (s *PathTestSuite) TestAbs() {
 			main:            "github.com/goravel/goravel",
 			additionalPaths: nil,
 			expectContain:   "",
+		},
+		{
+			name:            "with multi-segment base path",
+			path:            "app/http",
+			main:            "github.com/goravel/goravel",
+			additionalPaths: []string{"controllers"},
+			expectContain:   filepath.Join("app", "http", "controllers"),
+		},
+		{
+			name:            "with multi-segment additional path",
+			path:            "database",
+			main:            "github.com/goravel/goravel",
+			additionalPaths: []string{"migrations/user.go"},
+			expectContain:   filepath.Join("database", "migrations", "user.go"),
 		},
 	}
 
@@ -803,6 +831,18 @@ func TestAbs(t *testing.T) {
 			relativePath:  ".",
 			paths:         []string{"foo", "bar", "baz", "file.txt"},
 			expectContain: filepath.Join("foo", "bar", "baz", "file.txt"),
+		},
+		{
+			name:          "single multi-segment path arg",
+			relativePath:  ".",
+			paths:         []string{"app/migrations"},
+			expectContain: filepath.Join("app", "migrations"),
+		},
+		{
+			name:          "multi-segment path arg with extra file",
+			relativePath:  ".",
+			paths:         []string{"app/migrations", "user.go"},
+			expectContain: filepath.Join("app", "migrations", "user.go"),
 		},
 	}
 

@@ -30,7 +30,7 @@ No additional top-level sections are permitted.
 - <behavior bullet 2>
 - <optional behavior bullet 3>
 
-<optional: Closes #1234>
+<optional: Closes https://github.com/goravel/goravel/issues/1234>
 
 ## Why
 <1–2 short paragraphs about what changed and why it matters.>
@@ -53,7 +53,7 @@ No additional top-level sections are permitted.
 - Include exactly 2 to 3 bullet points.
 - Bullets must describe behavior changes, not file-by-file edits.
 - If an issue number is detected, append a standalone closing line after the bullets:
-  `Closes #<number>`
+  `Closes https://github.com/goravel/goravel/issues/<number>`
 
 ### Why Rules
 
@@ -83,7 +83,7 @@ No additional top-level sections are permitted.
 
 2. **Detect issue number**
    - Extract the first issue-like number from `branch` (e.g. `type/1234-description` → `1234`).
-   - If found, set `closing_line = Closes #<number>`; otherwise omit it.
+   - If found, set `closing_line = Closes https://github.com/goravel/goravel/issues/<number>`; otherwise omit it.
 
 3. **Detect existing PR**
    - Run `gh pr view --json number,title,body,headRefName --head "$branch"`.
@@ -103,7 +103,7 @@ No additional top-level sections are permitted.
    - Confirm the composed body satisfies all constraints in the PR Body Specification.
    - Ensure no placeholder markers (`<...>`) remain in the final body.
 
-7. **Determine title** (creation only)
+7. **Determine title**
    - Summarize from the logic changes, or fall back to the branch name.
    - Title must satisfy: https://github.com/goravel/.github/blob/master/.github/workflows/check_pr_title.yml
 
