@@ -1109,3 +1109,142 @@ func TestDoneOnceGuarantee(t *testing.T) {
 	// Verify counter was incremented exactly once
 	assert.Equal(t, 1, counter, "doneOnce should ensure the function is called exactly once")
 }
+
+func backupSetEnvGlobalState(t *testing.T) {
+	originalArgs := append([]string(nil), os.Args...)
+	originalRuntimeMode := support.RuntimeMode
+	originalDontVerifyAppKey := support.DontVerifyAppKey
+	originalEnvFilePath := support.EnvFilePath
+	originalRelativePath := support.RelativePath
+
+	t.Cleanup(func() {
+		os.Args = originalArgs
+		support.RuntimeMode = originalRuntimeMode
+		support.DontVerifyAppKey = originalDontVerifyAppKey
+		support.EnvFilePath = originalEnvFilePath
+		support.RelativePath = originalRelativePath
+	})
+}
+
+func TestGetEnvFilePath_NoPanicOnMissingValue(t *testing.T) {
+	backupSetEnvGlobalState(t)
+
+	tests := []struct {
+		name string
+		args []string
+	}{
+		{
+			name: "missing value for --env at end",
+			args: []string{"goravel", "--env"},
+		},
+		{
+			name: "missing value for -env at end",
+			args: []string{"goravel", "-env"},
+		},
+		{
+			name: "missing value for -e at end",
+			args: []string{"goravel", "-e"},
+		},
+		{
+			name: "missing value for --env followed by another flag",
+			args: []string{"goravel", "--env", "--ansi"},
+		},
+		{
+			name: "missing value for -env followed by another flag",
+			args: []string{"goravel", "-env", "-v"},
+		},
+		{
+			name: "missing value for -e followed by another flag",
+			args: []string{"goravel", "-e", "-v"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			os.Args = tt.args
+
+			assert.NotPanics(t, func() {
+				assert.Equal(t, ".env", getEnvFilePath())
+			})
+		})
+	}
+}
+
+func TestGetEnvFilePath_ParseValue(t *testing.T) {
+	backupSetEnvGlobalState(t)
+
+	tests := []struct {
+		name     string
+		args     []string
+		expected string
+	}{
+		{
+			name:     "parse value from --env=",
+			args:     []string{"goravel", "--env=.env.testing"},
+			expected: ".env.testing",
+		},
+		{
+			name:     "parse value from -env=",
+			args:     []string{"goravel", "-env=.env.dev"},
+			expected: ".env.dev",
+		},
+		{
+			name:     "parse value from -e=",
+			args:     []string{"goravel", "-e=.env.staging"},
+			expected: ".env.staging",
+		},
+		{
+			name:     "parse split value from --env",
+			args:     []string{"goravel", "--env", ".env.prod"},
+			expected: ".env.prod",
+		},
+		{
+			name:     "parse split value from -env",
+			args:     []string{"goravel", "-env", ".env.qa"},
+			expected: ".env.qa",
+		},
+		{
+			name:     "parse split value from -e",
+			args:     []string{"goravel", "-e", ".env.local"},
+			expected: ".env.local",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			os.Args = tt.args
+			assert.Equal(t, tt.expected, getEnvFilePath())
+		})
+	}
+}
+
+func TestSetEnv_DebugBinaryWithoutTestArgs(t *testing.T) {
+	backupSetEnvGlobalState(t)
+
+	support.RuntimeMode = ""
+	support.DontVerifyAppKey = false
+	support.EnvFilePath = ".env"
+	support.RelativePath = ""
+	os.Args = []string{"/tmp/__debug_bin"}
+
+	setEnv()
+
+	assert.Equal(t, "", support.RuntimeMode)
+	assert.False(t, support.DontVerifyAppKey)
+	assert.Equal(t, ".env", support.EnvFilePath)
+}
+
+func TestSetEnv_DebugBinaryWithTestArgs(t *testing.T) {
+	backupSetEnvGlobalState(t)
+
+	support.RuntimeMode = ""
+	support.DontVerifyAppKey = false
+	support.EnvFilePath = ".env"
+	support.RelativePath = ""
+	os.Args = []string{"/tmp/__debug_bin", "-test.v=true"}
+
+	setEnv()
+
+	assert.Equal(t, support.RuntimeTest, support.RuntimeMode)
+	assert.True(t, support.DontVerifyAppKey)
+}
