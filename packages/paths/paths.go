@@ -105,7 +105,7 @@ func NewPath(path, main string, isModule bool) *Path {
 }
 
 func (r *Path) Abs(paths ...string) string {
-	paths = append(toSlice(r.path), paths...)
+	paths = append([]string{r.path}, paths...)
 
 	return Abs(paths...)
 }
@@ -148,18 +148,26 @@ func (r *Path) Import() string {
 }
 
 func (r *Path) String(paths ...string) string {
-	paths = append(toSlice(r.path), paths...)
+	fullPaths := toSlice(r.path)
+	for _, path := range paths {
+		fullPaths = append(fullPaths, toSlice(path)...)
+	}
 
-	return filepath.Join(paths...)
+	return filepath.Join(fullPaths...)
 }
 
 func Abs(paths ...string) string {
-	paths = append([]string{support.RelativePath}, paths...)
-	path := filepath.Join(paths...)
+	fullPaths := []string{support.RelativePath}
+	for _, path := range paths {
+		fullPaths = append(fullPaths, toSlice(path)...)
+	}
+
+	path := filepath.Join(fullPaths...)
 	abs, err := filepath.Abs(path)
 	if err != nil {
 		return path
 	}
+
 	return abs
 }
 

@@ -18,7 +18,7 @@ func (s Stubs) Config() []Config {
 		// "default": "",
 		{
 			Key:   "default",
-			Value: `""`,
+			Value: `config.Env("DB_CONNECTION")`,
 			Annotations: []string{
 				"Default database connection name",
 			},

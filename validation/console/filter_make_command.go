@@ -2,7 +2,6 @@ package console
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"github.com/goravel/framework/contracts/console"
@@ -14,6 +13,7 @@ import (
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
+	"github.com/goravel/framework/support/path"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -89,7 +89,7 @@ func (r *FilterMakeCommand) populateStub(stub string, packageName, structName, s
 }
 
 func (r *FilterMakeCommand) registerInKernel(m *supportconsole.Make) error {
-	return modify.GoFile(filepath.Join("app", "providers", "validation_service_provider.go")).
+	return modify.GoFile(path.App("providers", "validation_service_provider.go")).
 		Find(match.Imports()).Modify(modify.AddImport(m.GetPackageImportPath())).
 		Find(match.ValidationFilters()).Modify(modify.Register(fmt.Sprintf("&%s.%s{}", m.GetPackageName(), m.GetStructName()))).
 		Apply()
