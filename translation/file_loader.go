@@ -2,11 +2,11 @@ package translation
 
 import (
 	"os"
-	"path/filepath"
 
 	"github.com/goravel/framework/contracts/foundation"
 	contractstranslation "github.com/goravel/framework/contracts/translation"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/packages/paths"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -25,9 +25,9 @@ func NewFileLoader(paths []string, json foundation.Json) contractstranslation.Lo
 func (f *FileLoader) Load(locale string, group string) (map[string]any, error) {
 	for _, path := range f.paths {
 		var val map[string]any
-		fullPath := filepath.Join(path, locale, group+".json")
+		fullPath := paths.Abs(path, locale, group+".json")
 		if group == "*" {
-			fullPath = filepath.Join(path, locale+".json")
+			fullPath = paths.Abs(path, locale+".json")
 		}
 
 		if file.Exists(fullPath) {
@@ -38,8 +38,10 @@ func (f *FileLoader) Load(locale string, group string) (map[string]any, error) {
 			if err = f.json.Unmarshal(data, &val); err != nil {
 				return nil, err
 			}
+
 			return val, nil
 		}
 	}
+
 	return nil, errors.LangFileNotExist
 }

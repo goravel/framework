@@ -4,13 +4,11 @@ import (
 	"bytes"
 	"fmt"
 	"go/format"
-	"os"
-	"path/filepath"
 	"text/template"
 
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/path"
 )
 
 type Creator struct {
@@ -65,9 +63,7 @@ func (r *Creator) PopulateStub(stub string, data StubData) (string, error) {
 
 // GetPath Get the full path to the migration.
 func (r *Creator) GetPath(name string) string {
-	pwd, _ := os.Getwd()
-
-	return filepath.Join(pwd, support.Config.Paths.Migrations, name+".go")
+	return path.Migration(name + ".go")
 }
 
 // GetFileName Get the full path to the migration.

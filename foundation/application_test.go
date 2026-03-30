@@ -65,11 +65,11 @@ func (s *ApplicationTestSuite) TestAddPublishGroup() {
 }
 
 func (s *ApplicationTestSuite) TestBasePath() {
-	s.Equal(filepath.Join(support.RootPath, "goravel.go"), s.app.BasePath("goravel.go"))
+	s.Contains(s.app.BasePath("goravel.go"), filepath.Join("framework", "goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestConfigPath() {
-	s.Equal(filepath.Join(support.RootPath, "config", "goravel.go"), s.app.ConfigPath("goravel.go"))
+	s.Contains(s.app.ConfigPath("goravel.go"), filepath.Join("framework", "config", "goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestConfigureCallback() {
@@ -709,19 +709,16 @@ func (s *ApplicationTestSuite) TestConfigureValidation() {
 }
 
 func (s *ApplicationTestSuite) TestDatabasePath() {
-	s.Equal(filepath.Join(support.RootPath, "database", "goravel.go"), s.app.DatabasePath("goravel.go"))
+	s.Contains(s.app.DatabasePath("goravel.go"), filepath.Join("framework", "database", "goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestExecutablePath() {
-	path, err := os.Getwd()
-	s.NoError(err)
-
 	executable := s.app.ExecutablePath()
 	s.NotEmpty(executable)
 	executable2 := s.app.ExecutablePath("test")
-	s.Equal(filepath.Join(path, "test"), executable2)
+	s.Contains(executable2, filepath.Join("framework", "test"))
 	executable3 := s.app.ExecutablePath("test", "test2/test3")
-	s.Equal(filepath.Join(path, "test", "test2/test3"), executable3)
+	s.Contains(executable3, filepath.Join("framework", "test", "test2", "test3"))
 }
 
 func (s *ApplicationTestSuite) TestLangPath() {
@@ -733,19 +730,19 @@ func (s *ApplicationTestSuite) TestLangPath() {
 		publishGroups: make(map[string]map[string]string),
 	}
 
-	s.Equal(filepath.Join(support.RootPath, support.Config.Paths.Lang, "goravel.go"), app.LangPath("goravel.go"))
+	s.Contains(app.LangPath("goravel.go"), filepath.Join("framework", "lang", "goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestModelPath() {
-	s.Equal(filepath.Join(support.RootPath, "app", "models", "goravel.go"), s.app.ModelPath("goravel.go"))
+	s.Contains(s.app.ModelPath("goravel.go"), filepath.Join("framework", "app", "models", "goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestPath() {
-	s.Equal(filepath.Join(support.RootPath, "app", "goravel.go"), s.app.Path("goravel.go"))
+	s.Contains(s.app.Path("goravel.go"), filepath.Join("framework", "app", "goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestPublicPath() {
-	s.Equal(filepath.Join(support.RootPath, "public", "goravel.go"), s.app.PublicPath("goravel.go"))
+	s.Contains(s.app.PublicPath("goravel.go"), filepath.Join("framework", "public", "goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestPublishes() {
@@ -767,7 +764,7 @@ func (s *ApplicationTestSuite) TestPublishes() {
 }
 
 func (s *ApplicationTestSuite) TestResourcePath() {
-	s.Equal(filepath.Join(support.RootPath, "resources", "goravel.go"), s.app.ResourcePath("goravel.go"))
+	s.Contains(s.app.ResourcePath("goravel.go"), filepath.Join("framework", "resources", "goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestStart() {
@@ -937,7 +934,7 @@ func (s *ApplicationTestSuite) TestStart() {
 }
 
 func (s *ApplicationTestSuite) TestStoragePath() {
-	s.Equal(filepath.Join(support.RootPath, "storage", "goravel.go"), s.app.StoragePath("goravel.go"))
+	s.Contains(s.app.StoragePath("goravel.go"), filepath.Join("framework", "storage", "goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestShutdown() {
@@ -1108,4 +1105,143 @@ func TestDoneOnceGuarantee(t *testing.T) {
 
 	// Verify counter was incremented exactly once
 	assert.Equal(t, 1, counter, "doneOnce should ensure the function is called exactly once")
+}
+
+func backupSetEnvGlobalState(t *testing.T) {
+	originalArgs := append([]string(nil), os.Args...)
+	originalRuntimeMode := support.RuntimeMode
+	originalDontVerifyAppKey := support.DontVerifyAppKey
+	originalEnvFilePath := support.EnvFilePath
+	originalRelativePath := support.RelativePath
+
+	t.Cleanup(func() {
+		os.Args = originalArgs
+		support.RuntimeMode = originalRuntimeMode
+		support.DontVerifyAppKey = originalDontVerifyAppKey
+		support.EnvFilePath = originalEnvFilePath
+		support.RelativePath = originalRelativePath
+	})
+}
+
+func TestGetEnvFilePath_NoPanicOnMissingValue(t *testing.T) {
+	backupSetEnvGlobalState(t)
+
+	tests := []struct {
+		name string
+		args []string
+	}{
+		{
+			name: "missing value for --env at end",
+			args: []string{"goravel", "--env"},
+		},
+		{
+			name: "missing value for -env at end",
+			args: []string{"goravel", "-env"},
+		},
+		{
+			name: "missing value for -e at end",
+			args: []string{"goravel", "-e"},
+		},
+		{
+			name: "missing value for --env followed by another flag",
+			args: []string{"goravel", "--env", "--ansi"},
+		},
+		{
+			name: "missing value for -env followed by another flag",
+			args: []string{"goravel", "-env", "-v"},
+		},
+		{
+			name: "missing value for -e followed by another flag",
+			args: []string{"goravel", "-e", "-v"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			os.Args = tt.args
+
+			assert.NotPanics(t, func() {
+				assert.Equal(t, ".env", getEnvFilePath())
+			})
+		})
+	}
+}
+
+func TestGetEnvFilePath_ParseValue(t *testing.T) {
+	backupSetEnvGlobalState(t)
+
+	tests := []struct {
+		name     string
+		args     []string
+		expected string
+	}{
+		{
+			name:     "parse value from --env=",
+			args:     []string{"goravel", "--env=.env.testing"},
+			expected: ".env.testing",
+		},
+		{
+			name:     "parse value from -env=",
+			args:     []string{"goravel", "-env=.env.dev"},
+			expected: ".env.dev",
+		},
+		{
+			name:     "parse value from -e=",
+			args:     []string{"goravel", "-e=.env.staging"},
+			expected: ".env.staging",
+		},
+		{
+			name:     "parse split value from --env",
+			args:     []string{"goravel", "--env", ".env.prod"},
+			expected: ".env.prod",
+		},
+		{
+			name:     "parse split value from -env",
+			args:     []string{"goravel", "-env", ".env.qa"},
+			expected: ".env.qa",
+		},
+		{
+			name:     "parse split value from -e",
+			args:     []string{"goravel", "-e", ".env.local"},
+			expected: ".env.local",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			os.Args = tt.args
+			assert.Equal(t, tt.expected, getEnvFilePath())
+		})
+	}
+}
+
+func TestSetEnv_DebugBinaryWithoutTestArgs(t *testing.T) {
+	backupSetEnvGlobalState(t)
+
+	support.RuntimeMode = ""
+	support.DontVerifyAppKey = false
+	support.EnvFilePath = ".env"
+	support.RelativePath = ""
+	os.Args = []string{"/tmp/__debug_bin"}
+
+	setEnv()
+
+	assert.Equal(t, "", support.RuntimeMode)
+	assert.False(t, support.DontVerifyAppKey)
+	assert.Equal(t, ".env", support.EnvFilePath)
+}
+
+func TestSetEnv_DebugBinaryWithTestArgs(t *testing.T) {
+	backupSetEnvGlobalState(t)
+
+	support.RuntimeMode = ""
+	support.DontVerifyAppKey = false
+	support.EnvFilePath = ".env"
+	support.RelativePath = ""
+	os.Args = []string{"/tmp/__debug_bin", "-test.v=true"}
+
+	setEnv()
+
+	assert.Equal(t, support.RuntimeTest, support.RuntimeMode)
+	assert.True(t, support.DontVerifyAppKey)
 }

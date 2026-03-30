@@ -32,6 +32,19 @@ type Schema struct {
 }
 
 func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, driver driver.Driver, migrations []contractsschema.Migration) (*Schema, error) {
+	if driver == nil {
+		return &Schema{
+			config:           config,
+			driver:           driver,
+			log:              log,
+			migrations:       migrations,
+			orm:              orm,
+			goTypes:          defaultGoTypes(),
+			models:           make([]any, 0),
+			modelsByFullName: make(map[string]any),
+		}, nil
+	}
+
 	writers := driver.Pool().Writers
 	if len(writers) == 0 {
 		return nil, errors.DatabaseConfigNotFound

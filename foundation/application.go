@@ -705,10 +705,14 @@ func (r *Application) setTimezone() {
 
 func setEnv() {
 	args := os.Args
+	isDebugBinary := strings.Contains(args[0], "__debug")
+	isTestDebugBinary := isDebugBinary && slices.ContainsFunc(args[1:], func(arg string) bool {
+		return strings.HasPrefix(arg, "-test.")
+	})
 
 	if strings.HasSuffix(args[0], ".test") ||
 		strings.HasSuffix(args[0], ".test.exe") ||
-		strings.Contains(args[0], "__debug") {
+		isTestDebugBinary {
 		support.RuntimeMode = support.RuntimeTest
 		support.DontVerifyAppKey = true
 	} else {
@@ -733,22 +737,45 @@ func setEnv() {
 		var (
 			relativePath string
 			envExist     bool
+			goModExist   bool
 			testEnv      = envFilePath
+			wg           sync.WaitGroup
 		)
 
-		for range 50 {
-			if _, err := os.Stat(testEnv); err == nil {
-				envExist = true
+		wg.Add(2)
+		go func() {
+			defer wg.Done()
 
-				break
-			} else {
-				testEnv = filepath.Join("..", testEnv)
-				relativePath = filepath.Join("..", relativePath)
+			for range 10 {
+				if _, err := os.Stat(testEnv); err == nil {
+					envExist = true
+					break
+				} else {
+					testEnv = filepath.Join("..", testEnv)
+				}
 			}
-		}
+
+		}()
+
+		go func() {
+			defer wg.Done()
+
+			for range 10 {
+				if _, err := os.Stat(filepath.Join(relativePath, "go.mod")); err == nil {
+					goModExist = true
+					break
+				} else {
+					relativePath = filepath.Join("..", relativePath)
+				}
+			}
+		}()
+
+		wg.Wait()
 
 		if envExist {
 			envFilePath = testEnv
+		}
+		if goModExist {
 			support.RelativePath = relativePath
 		}
 	}
@@ -780,7 +807,7 @@ func getEnvFilePath() string {
 		}
 
 		if arg == "--env" || arg == "-env" || arg == "-e" {
-			if len(args) >= index+1 && !strings.HasPrefix(args[index+1], "-") {
+			if index+1 < len(args) && !strings.HasPrefix(args[index+1], "-") {
 				envFilePath = args[index+1]
 				break
 			}

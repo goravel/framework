@@ -48,4 +48,4 @@ golangci-lint run                      # lint
 
 ## Tests
 
-When writing tests, use the rules in `.ai/prompts/tests.md` for guidance.
+When writing tests, use the rules in `.agents/prompts/tests.md` for guidance.
