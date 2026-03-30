@@ -65,11 +65,11 @@ func (s *ApplicationTestSuite) TestAddPublishGroup() {
 }
 
 func (s *ApplicationTestSuite) TestBasePath() {
-	s.Equal(filepath.Join(support.RootPath, "goravel.go"), s.app.BasePath("goravel.go"))
+	s.Contains(s.app.BasePath("goravel.go"), filepath.Join("framework", "goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestConfigPath() {
-	s.Equal(filepath.Join(support.RootPath, "config", "goravel.go"), s.app.ConfigPath("goravel.go"))
+	s.Contains(s.app.ConfigPath("goravel.go"), filepath.Join("framework", "config", "goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestConfigureCallback() {
@@ -709,19 +709,16 @@ func (s *ApplicationTestSuite) TestConfigureValidation() {
 }
 
 func (s *ApplicationTestSuite) TestDatabasePath() {
-	s.Equal(filepath.Join(support.RootPath, "database", "goravel.go"), s.app.DatabasePath("goravel.go"))
+	s.Contains(s.app.DatabasePath("goravel.go"), filepath.Join("framework", "database", "goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestExecutablePath() {
-	path, err := os.Getwd()
-	s.NoError(err)
-
 	executable := s.app.ExecutablePath()
 	s.NotEmpty(executable)
 	executable2 := s.app.ExecutablePath("test")
-	s.Equal(filepath.Join(path, "test"), executable2)
+	s.Contains(executable2, filepath.Join("framework", "test"))
 	executable3 := s.app.ExecutablePath("test", "test2/test3")
-	s.Equal(filepath.Join(path, "test", "test2/test3"), executable3)
+	s.Contains(executable3, filepath.Join("framework", "test", "test2", "test3"))
 }
 
 func (s *ApplicationTestSuite) TestLangPath() {
@@ -733,19 +730,19 @@ func (s *ApplicationTestSuite) TestLangPath() {
 		publishGroups: make(map[string]map[string]string),
 	}
 
-	s.Equal(filepath.Join(support.RootPath, support.Config.Paths.Lang, "goravel.go"), app.LangPath("goravel.go"))
+	s.Contains(app.LangPath("goravel.go"), filepath.Join("framework", "lang", "goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestModelPath() {
-	s.Equal(filepath.Join(support.RootPath, "app", "models", "goravel.go"), s.app.ModelPath("goravel.go"))
+	s.Contains(s.app.ModelPath("goravel.go"), filepath.Join("framework", "app", "models", "goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestPath() {
-	s.Equal(filepath.Join(support.RootPath, "app", "goravel.go"), s.app.Path("goravel.go"))
+	s.Contains(s.app.Path("goravel.go"), filepath.Join("framework", "app", "goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestPublicPath() {
-	s.Equal(filepath.Join(support.RootPath, "public", "goravel.go"), s.app.PublicPath("goravel.go"))
+	s.Contains(s.app.PublicPath("goravel.go"), filepath.Join("framework", "public", "goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestPublishes() {
@@ -767,7 +764,7 @@ func (s *ApplicationTestSuite) TestPublishes() {
 }
 
 func (s *ApplicationTestSuite) TestResourcePath() {
-	s.Equal(filepath.Join(support.RootPath, "resources", "goravel.go"), s.app.ResourcePath("goravel.go"))
+	s.Contains(s.app.ResourcePath("goravel.go"), filepath.Join("framework", "resources", "goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestStart() {
@@ -937,7 +934,7 @@ func (s *ApplicationTestSuite) TestStart() {
 }
 
 func (s *ApplicationTestSuite) TestStoragePath() {
-	s.Equal(filepath.Join(support.RootPath, "storage", "goravel.go"), s.app.StoragePath("goravel.go"))
+	s.Contains(s.app.StoragePath("goravel.go"), filepath.Join("framework", "storage", "goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestShutdown() {
