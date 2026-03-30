@@ -11,14 +11,12 @@ import (
 	"github.com/goravel/framework/contracts/console/command"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksfilesystem "github.com/goravel/framework/mocks/filesystem"
-	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	mockshash "github.com/goravel/framework/mocks/hash"
 	mocksview "github.com/goravel/framework/mocks/view"
 )
 
 type DownCommandTestSuite struct {
 	suite.Suite
-	mockApp     *mocksfoundation.Application
 	mockHash    *mockshash.Hash
 	mockView    *mocksview.View
 	mockStorage *mocksfilesystem.Storage
@@ -29,35 +27,30 @@ func TestDownCommandTestSuite(t *testing.T) {
 }
 
 func (s *DownCommandTestSuite) SetupSuite() {
-	s.mockApp = mocksfoundation.NewApplication(s.T())
 	s.mockHash = mockshash.NewHash(s.T())
 	s.mockView = mocksview.NewView(s.T())
 	s.mockStorage = mocksfilesystem.NewStorage(s.T())
-
-	s.mockApp.EXPECT().MakeHash().Return(s.mockHash)
-	s.mockApp.EXPECT().MakeView().Return(s.mockView)
-	s.mockApp.EXPECT().MakeStorage().Return(s.mockStorage)
 }
 
 func (s *DownCommandTestSuite) TestSignature() {
 	expected := "down"
-	s.Require().Equal(expected, NewDownCommand(s.mockApp).Signature())
+	s.Require().Equal(expected, NewDownCommand(s.mockView, s.mockHash, s.mockStorage).Signature())
 }
 
 func (s *DownCommandTestSuite) TestDescription() {
 	expected := "Put the application into maintenance mode"
-	s.Require().Equal(expected, NewDownCommand(s.mockApp).Description())
+	s.Require().Equal(expected, NewDownCommand(s.mockView, s.mockHash, s.mockStorage).Description())
 }
 
 func (s *DownCommandTestSuite) TestExtend() {
-	cmd := NewDownCommand(s.mockApp)
+	cmd := NewDownCommand(s.mockView, s.mockHash, s.mockStorage)
 	got := cmd.Extend()
 
 	s.Equal(6, len(got.Flags))
 }
 
 func (s *DownCommandTestSuite) TestHandle() {
-	cmd := NewDownCommand(s.mockApp)
+	cmd := NewDownCommand(s.mockView, s.mockHash, s.mockStorage)
 
 	flag := cmd.Extend().Flags[0].(*command.StringFlag)
 	mockCtx := mocksconsole.NewContext(s.T())
@@ -86,7 +79,7 @@ func (s *DownCommandTestSuite) TestHandleWithReason() {
 	mockCtx.EXPECT().Success("The application is in maintenance mode now").Once()
 	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"reason\":\"Under maintenance\",\"status\":505}").Return(nil).Once()
 
-	cmd := NewDownCommand(s.mockApp)
+	cmd := NewDownCommand(s.mockView, s.mockHash, s.mockStorage)
 	err := cmd.Handle(mockCtx)
 
 	assert.Nil(s.T(), err)
@@ -102,7 +95,7 @@ func (s *DownCommandTestSuite) TestHandleWithRedirect() {
 	mockCtx.EXPECT().Success("The application is in maintenance mode now").Once()
 	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"redirect\":\"/maintenance\",\"status\":503}").Return(nil).Once()
 
-	cmd := NewDownCommand(s.mockApp)
+	cmd := NewDownCommand(s.mockView, s.mockHash, s.mockStorage)
 	err := cmd.Handle(mockCtx)
 
 	assert.Nil(s.T(), err)
@@ -120,7 +113,7 @@ func (s *DownCommandTestSuite) TestHandleWithRender() {
 	mockCtx.EXPECT().Success("The application is in maintenance mode now").Once()
 	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"render\":\"errors/503.tmpl\",\"status\":503}").Return(nil).Once()
 
-	cmd := NewDownCommand(s.mockApp)
+	cmd := NewDownCommand(s.mockView, s.mockHash, s.mockStorage)
 	err := cmd.Handle(mockCtx)
 
 	assert.Nil(s.T(), err)
@@ -138,7 +131,7 @@ func (s *DownCommandTestSuite) TestHandleSecret() {
 	mockCtx.EXPECT().Success("The application is in maintenance mode now").Once()
 	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"reason\":\"Under maintenance\",\"secret\":\"hashedsecretpassword\",\"status\":503}").Return(nil).Once()
 
-	cmd := NewDownCommand(s.mockApp)
+	cmd := NewDownCommand(s.mockView, s.mockHash, s.mockStorage)
 	err := cmd.Handle(mockCtx)
 
 	assert.Nil(s.T(), err)
@@ -159,7 +152,7 @@ func (s *DownCommandTestSuite) TestHandleWithSecret() {
 	mockCtx.EXPECT().Success("The application is in maintenance mode now").Once()
 	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"reason\":\"Under maintenance\",\"secret\":\"randomhashedsecretpassword\",\"status\":503}").Return(nil).Once()
 
-	cmd := NewDownCommand(s.mockApp)
+	cmd := NewDownCommand(s.mockView, s.mockHash, s.mockStorage)
 	err := cmd.Handle(mockCtx)
 
 	assert.Nil(s.T(), err)

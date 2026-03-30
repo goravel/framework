@@ -8,12 +8,10 @@ import (
 
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksfilesystem "github.com/goravel/framework/mocks/filesystem"
-	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 )
 
 type UpCommandTestSuite struct {
 	suite.Suite
-	mockApp     *mocksfoundation.Application
 	mockStorage *mocksfilesystem.Storage
 }
 
@@ -22,10 +20,7 @@ func TestUpCommandTestSuite(t *testing.T) {
 }
 
 func (s *UpCommandTestSuite) SetupSuite() {
-	s.mockApp = mocksfoundation.NewApplication(s.T())
 	s.mockStorage = mocksfilesystem.NewStorage(s.T())
-
-	s.mockApp.EXPECT().MakeStorage().Return(s.mockStorage)
 }
 
 func (s *UpCommandTestSuite) TearDownSuite() {
@@ -33,16 +28,16 @@ func (s *UpCommandTestSuite) TearDownSuite() {
 
 func (s *UpCommandTestSuite) TestSignature() {
 	expected := "up"
-	s.Require().Equal(expected, NewUpCommand(s.mockApp).Signature())
+	s.Require().Equal(expected, NewUpCommand(s.mockStorage).Signature())
 }
 
 func (s *UpCommandTestSuite) TestDescription() {
 	expected := "Bring the application out of maintenance mode"
-	s.Require().Equal(expected, NewUpCommand(s.mockApp).Description())
+	s.Require().Equal(expected, NewUpCommand(s.mockStorage).Description())
 }
 
 func (s *UpCommandTestSuite) TestExtend() {
-	cmd := NewUpCommand(s.mockApp)
+	cmd := NewUpCommand(s.mockStorage)
 	got := cmd.Extend()
 
 	s.Empty(got)
@@ -55,7 +50,7 @@ func (s *UpCommandTestSuite) TestHandle() {
 	mockContext := mocksconsole.NewContext(s.T())
 	mockContext.EXPECT().Success("The application is up and live now").Once()
 
-	cmd := NewUpCommand(s.mockApp)
+	cmd := NewUpCommand(s.mockStorage)
 	err := cmd.Handle(mockContext)
 	assert.Nil(s.T(), err)
 }
@@ -65,7 +60,7 @@ func (s *UpCommandTestSuite) TestHandleWhenNotDown() {
 	mockContext := mocksconsole.NewContext(s.T())
 	mockContext.EXPECT().Error("The application is not in maintenance mode").Once()
 
-	cmd := NewUpCommand(s.mockApp)
+	cmd := NewUpCommand(s.mockStorage)
 	err := cmd.Handle(mockContext)
 	assert.Nil(s.T(), err)
 }

@@ -96,17 +96,7 @@ func (r *Application) Boot() {
 	r.providerRepository.Register(r)
 	r.providerRepository.Boot(r)
 
-	r.registerCommands([]contractsconsole.Command{
-		console.NewAboutCommand(r),
-		console.NewEnvEncryptCommand(),
-		console.NewEnvDecryptCommand(),
-		console.NewTestMakeCommand(),
-		console.NewPackageMakeCommand(),
-		console.NewProviderMakeCommand(),
-		console.NewPackageInstallCommand(binding.Bindings, r.MakeProcess(), r.Json()),
-		console.NewPackageUninstallCommand(binding.Bindings, r.MakeProcess(), r.Json()),
-		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
-	})
+	r.registerCommands(r.defaultCommands())
 	r.bootArtisan()
 }
 
@@ -135,19 +125,7 @@ func (r *Application) Build() foundation.Application {
 	r.configureValidation()
 	r.configureRoutes()
 	r.configureRunners()
-	r.registerCommands([]contractsconsole.Command{
-		console.NewAboutCommand(r),
-		console.NewEnvEncryptCommand(),
-		console.NewEnvDecryptCommand(),
-		console.NewTestMakeCommand(),
-		console.NewPackageMakeCommand(),
-		console.NewProviderMakeCommand(),
-		console.NewPackageInstallCommand(binding.Bindings, r.MakeProcess(), r.Json()),
-		console.NewPackageUninstallCommand(binding.Bindings, r.MakeProcess(), r.Json()),
-		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
-		console.NewUpCommand(r),
-		console.NewDownCommand(r),
-	})
+	r.registerCommands(r.defaultCommands())
 	r.configureCallback()
 	r.bootArtisan()
 
@@ -201,7 +179,7 @@ func (r *Application) Refresh() {
 }
 
 func (r *Application) RegisterBaseServiceProviders() {
-	baseProviders := r.getBaseServiceProviders()
+	baseProviders := r.baseServiceProviders()
 	r.providerRepository.Add(baseProviders)
 	r.providerRepository.Register(r)
 }
@@ -674,7 +652,31 @@ func (r *Application) configureValidation() {
 	}
 }
 
-func (r *Application) getBaseServiceProviders() []foundation.ServiceProvider {
+func (r *Application) defaultCommands() []contractsconsole.Command {
+	commands := []contractsconsole.Command{
+		console.NewAboutCommand(r),
+		console.NewEnvEncryptCommand(),
+		console.NewEnvDecryptCommand(),
+		console.NewTestMakeCommand(),
+		console.NewPackageMakeCommand(),
+		console.NewProviderMakeCommand(),
+		console.NewPackageInstallCommand(binding.Bindings, r.MakeProcess(), r.Json()),
+		console.NewPackageUninstallCommand(binding.Bindings, r.MakeProcess(), r.Json()),
+		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
+	}
+
+	storage := r.MakeStorage()
+	view := r.MakeView()
+	hash := r.MakeHash()
+
+	if storage != nil && view != nil && hash != nil {
+		commands = append(commands, console.NewUpCommand(storage), console.NewDownCommand(view, hash, storage))
+	}
+
+	return commands
+}
+
+func (r *Application) baseServiceProviders() []foundation.ServiceProvider {
 	return []foundation.ServiceProvider{
 		&config.ServiceProvider{},
 		&frameworkconsole.ServiceProvider{},

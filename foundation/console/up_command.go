@@ -4,16 +4,14 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/filesystem"
-	"github.com/goravel/framework/contracts/foundation"
 )
 
 type UpCommand struct {
-	app     foundation.Application
 	storage filesystem.Storage
 }
 
-func NewUpCommand(app foundation.Application) *UpCommand {
-	return &UpCommand{app, app.MakeStorage()}
+func NewUpCommand(storage filesystem.Storage) *UpCommand {
+	return &UpCommand{storage}
 }
 
 // Signature The name and signature of the console command.
