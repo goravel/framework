@@ -118,7 +118,9 @@ func (s *ServiceProviderTestSuite) TestBoot() {
 	mockApp := mocksfoundation.NewApplication(s.T())
 
 	mockApp.EXPECT().Commands(mock.MatchedBy(func(commands []contractsconsole.Command) bool {
-		return len(commands) == 1 && commands[0] != nil
+		return len(commands) == 1 &&
+			commands[0] != nil &&
+			commands[0].Signature() == "make:agent"
 	})).Once()
 
 	provider.Boot(mockApp)
