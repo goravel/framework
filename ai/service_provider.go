@@ -3,8 +3,10 @@ package ai
 import (
 	"context"
 
+	"github.com/goravel/framework/ai/console"
 	contractsai "github.com/goravel/framework/contracts/ai"
 	"github.com/goravel/framework/contracts/binding"
+	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 )
 
@@ -15,7 +17,7 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 		Bindings: []string{
 			binding.AI,
 		},
-		// Dependencies: binding.Bindings[binding.AI].Dependencies,
+		Dependencies: binding.Bindings[binding.AI].Dependencies,
 	}
 }
 
@@ -31,4 +33,8 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 	})
 }
 
-func (r *ServiceProvider) Boot(app foundation.Application) {}
+func (r *ServiceProvider) Boot(app foundation.Application) {
+	app.Commands([]contractsconsole.Command{
+		&console.AgentMakeCommand{},
+	})
+}
