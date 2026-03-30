@@ -18,15 +18,16 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
 	github.com/jmoiron/sqlx v1.4.0
+	github.com/openai/openai-go v1.12.0
 	github.com/pterm/pterm v0.12.83
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rotisserie/eris v0.5.4
 	github.com/samber/lo v1.53.0
-	github.com/samber/slog-multi v1.7.1
+	github.com/samber/slog-multi v1.8.0
 	github.com/spf13/cast v1.10.0
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
-	github.com/urfave/cli/v3 v3.7.0
+	github.com/urfave/cli/v3 v3.8.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.67.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.67.0
 	go.opentelemetry.io/contrib/propagators/b3 v1.42.0
@@ -74,9 +75,8 @@ require (
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
-	github.com/openai/openai-go v1.12.0 // indirect
 	github.com/rs/zerolog v1.33.0 // indirect
-	github.com/samber/slog-common v0.20.0 // indirect
+	github.com/samber/slog-common v0.21.0 // indirect
 	github.com/spf13/cobra v1.8.1 // indirect
 	github.com/tidwall/gjson v1.14.4 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
