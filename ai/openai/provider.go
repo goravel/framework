@@ -3,8 +3,8 @@ package openai
 import (
 	"context"
 
-	goopenai "github.com/openai/openai-go"
-	"github.com/openai/openai-go/option"
+	goopenai "github.com/openai/openai-go/v3"
+	"github.com/openai/openai-go/v3/option"
 
 	contractsai "github.com/goravel/framework/contracts/ai"
 	contractsconfig "github.com/goravel/framework/contracts/config"
