@@ -9,6 +9,7 @@ import (
 
 	contractsai "github.com/goravel/framework/contracts/ai"
 	"github.com/goravel/framework/contracts/binding"
+	contractsconsole "github.com/goravel/framework/contracts/console"
 	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
@@ -110,4 +111,17 @@ func (s *ServiceProviderTestSuite) TestRegister() {
 			s.Equal(contractsai.Config{Default: "default"}, instance.(*Application).config)
 		})
 	}
+}
+
+func (s *ServiceProviderTestSuite) TestBoot() {
+	provider := &ServiceProvider{}
+	mockApp := mocksfoundation.NewApplication(s.T())
+
+	mockApp.EXPECT().Commands(mock.MatchedBy(func(commands []contractsconsole.Command) bool {
+		return len(commands) == 1 &&
+			commands[0] != nil &&
+			commands[0].Signature() == "make:agent"
+	})).Once()
+
+	provider.Boot(mockApp)
 }
