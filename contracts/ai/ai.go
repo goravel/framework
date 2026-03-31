@@ -14,6 +14,8 @@ type AI interface {
 type Conversation interface {
 	// Prompt sends a non-streaming input and updates the conversation history.
 	Prompt(input string) (Response, error)
+	// Stream sends a streaming input and returns a streamable response object.
+	Stream(input string) (StreamableResponse, error)
 	// Messages returns current conversation history.
 	Messages() []Message
 	// Reset clears runtime history and restores initial agent messages.

@@ -46,4 +46,23 @@ func (r *conversation) Prompt(input string) (contractsai.Response, error) {
 	return resp, nil
 }
 
+func (r *conversation) Stream(input string) (contractsai.StreamableResponse, error) {
+	stream, err := r.provider.Stream(r.ctx, contractsai.AgentPrompt{
+		Agent: r,
+		Input: input,
+		Model: r.model,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return stream.Then(func(resp contractsai.Response) error {
+		r.messages = append(r.messages,
+			contractsai.Message{Role: contractsai.RoleUser, Content: input},
+			contractsai.Message{Role: contractsai.RoleAssistant, Content: resp.Text()},
+		)
+		return nil
+	}), nil
+}
+
 func (r *conversation) Reset() { r.messages = slices.Clone(r.agent.Messages()) }

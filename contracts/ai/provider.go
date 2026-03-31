@@ -15,4 +15,6 @@ type AgentPrompt struct {
 type Provider interface {
 	// Prompt executes a non-streaming model request.
 	Prompt(ctx context.Context, prompt AgentPrompt) (Response, error)
+	// Stream executes a streaming model request and returns a streamable response.
+	Stream(ctx context.Context, prompt AgentPrompt) (StreamableResponse, error)
 }
