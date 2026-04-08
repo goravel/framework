@@ -701,7 +701,7 @@ func (s *WorkerTestSuite) Test_runWithReceive() {
 			s.NoError(s.worker.run())
 		}()
 
-		time.Sleep(200 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 		s.NoError(s.worker.Shutdown())
 	})
 
