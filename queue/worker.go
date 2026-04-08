@@ -216,14 +216,6 @@ func (r *Worker) run() error {
 		color.Infoln(errors.QueueProcessingJobs.Args(r.connection, r.queue).Error())
 	}
 
-	if receiver, ok := r.driver.(queue.DriverWithReceive); ok {
-		return r.runWithReceive(receiver)
-	}
-
-	return r.runWithPop()
-}
-
-func (r *Worker) runWithPop() error {
 	r.failedJobWg.Add(1)
 	go func() {
 		defer r.failedJobWg.Done()
@@ -232,6 +224,14 @@ func (r *Worker) runWithPop() error {
 		}
 	}()
 
+	if receiver, ok := r.driver.(queue.DriverWithReceive); ok {
+		return r.runWithReceive(receiver)
+	}
+
+	return r.runWithPop()
+}
+
+func (r *Worker) runWithPop() error {
 	for i := 0; i < r.concurrent; i++ {
 		r.jobWg.Add(1)
 		go func() {
@@ -278,14 +278,6 @@ func (r *Worker) runWithPop() error {
 }
 
 func (r *Worker) runWithReceive(receiver queue.DriverWithReceive) error {
-	r.failedJobWg.Add(1)
-	go func() {
-		defer r.failedJobWg.Done()
-		for job := range r.failedJobChan {
-			r.logFailedJob(job)
-		}
-	}()
-
 	r.jobWg.Add(1)
 	defer r.jobWg.Done()
 
