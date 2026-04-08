@@ -53,6 +53,8 @@ func (s *WorkerTestSuite) SetupTest() {
 		json:   s.mockJson,
 		log:    s.mockLog,
 
+		failedJobChan: make(chan models.FailedJob, 1),
+
 		connection:     "sync",
 		queue:          "default",
 		concurrent:     1,
@@ -60,10 +62,6 @@ func (s *WorkerTestSuite) SetupTest() {
 		debug:          true,
 		shutdownCtx:    shutdownCtx,
 		shutdownCancel: shutdownCancel,
-
-		currentDelay:  1 * time.Second,
-		failedJobChan: make(chan models.FailedJob, 1),
-		maxDelay:      32 * time.Second,
 	}
 }
 
