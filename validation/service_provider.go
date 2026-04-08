@@ -13,7 +13,7 @@ import (
 
 var (
 	ormFacade  orm.Orm
-	langFacade func(ctx context.Context) contractstranslation.Translator
+	langFacade = func(ctx context.Context) contractstranslation.Translator { return nil }
 )
 
 type ServiceProvider struct {

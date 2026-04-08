@@ -37,16 +37,17 @@ func getMessage(field, rule string, customMessages map[string]string, attrType s
 	}
 
 	// 3. Translated message
-	// For size rules, try type-specific translation first
-	if sizeRules[rule] {
-		key := "validation." + rule + "." + attrType
+	if translator != nil {
+		if sizeRules[rule] {
+			key := "validation." + rule + "." + attrType
+			if translator.Has(key) {
+				return translator.Get(key)
+			}
+		}
+		key := "validation." + rule
 		if translator.Has(key) {
 			return translator.Get(key)
 		}
-	}
-	key := "validation." + rule
-	if translator.Has(key) {
-		return translator.Get(key)
 	}
 
 	// 4. Type-specific default for size rules
