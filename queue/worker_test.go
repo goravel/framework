@@ -43,6 +43,8 @@ func (s *WorkerTestSuite) SetupTest() {
 	s.mockJob = mocksqueue.NewJobStorer(s.T())
 	s.mockJson = mocksfoundation.NewJson(s.T())
 
+	shutdownCtx, shutdownCancel := context.WithCancel(context.Background())
+
 	s.worker = &Worker{
 		config: s.mockConfig,
 		db:     s.mockDB,
@@ -51,11 +53,13 @@ func (s *WorkerTestSuite) SetupTest() {
 		json:   s.mockJson,
 		log:    s.mockLog,
 
-		connection: "sync",
-		queue:      "default",
-		concurrent: 1,
-		tries:      1,
-		debug:      true,
+		connection:     "sync",
+		queue:          "default",
+		concurrent:     1,
+		tries:          1,
+		debug:          true,
+		shutdownCtx:    shutdownCtx,
+		shutdownCancel: shutdownCancel,
 
 		currentDelay:  1 * time.Second,
 		failedJobChan: make(chan models.FailedJob, 1),

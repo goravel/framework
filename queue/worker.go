@@ -19,6 +19,12 @@ import (
 	"github.com/goravel/framework/support/console"
 )
 
+// TODO make these constants configurable in the future if needed
+const (
+	receiveTimeout = 5 * time.Second
+	receiveBackoff = 100 * time.Millisecond
+)
+
 type Worker struct {
 	config queue.Config
 	db     db.DB
@@ -29,12 +35,14 @@ type Worker struct {
 
 	failedJobChan chan models.FailedJob
 
-	connection  string
-	queue       string
-	jobWg       sync.WaitGroup
-	failedJobWg sync.WaitGroup
-	concurrent  int
-	tries       int
+	connection     string
+	queue          string
+	jobWg          sync.WaitGroup
+	failedJobWg    sync.WaitGroup
+	concurrent     int
+	tries          int
+	shutdownCtx    context.Context
+	shutdownCancel context.CancelFunc
 
 	currentDelay time.Duration
 	maxDelay     time.Duration
@@ -49,6 +57,8 @@ func NewWorker(config queue.Config, cache cache.Cache, db db.DB, job queue.JobSt
 		return nil, err
 	}
 
+	shutdownCtx, shutdownCancel := context.WithCancel(context.Background())
+
 	return &Worker{
 		config: config,
 		db:     db,
@@ -57,11 +67,13 @@ func NewWorker(config queue.Config, cache cache.Cache, db db.DB, job queue.JobSt
 		json:   json,
 		log:    log,
 
-		connection: connection,
-		queue:      queue,
-		concurrent: concurrent,
-		tries:      tries,
-		debug:      config.Debug(),
+		connection:     connection,
+		queue:          queue,
+		concurrent:     concurrent,
+		tries:          tries,
+		debug:          config.Debug(),
+		shutdownCtx:    shutdownCtx,
+		shutdownCancel: shutdownCancel,
 
 		currentDelay:  1 * time.Second,
 		failedJobChan: make(chan models.FailedJob, concurrent),
@@ -82,6 +94,7 @@ func (r *Worker) Run() error {
 
 func (r *Worker) Shutdown() error {
 	r.isShutdown.Store(true)
+	r.shutdownCancel()
 
 	// Wait for all worker goroutines to finish processing current tasks
 	r.jobWg.Wait()
@@ -276,25 +289,37 @@ func (r *Worker) runWithReceive(receiver queue.DriverWithReceive) error {
 	r.jobWg.Add(1)
 	defer r.jobWg.Done()
 
+	currentDelay := receiveBackoff
+
 	for {
 		if r.isShutdown.Load() {
 			return nil
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.shutdownCtx, receiveTimeout)
 		jobs, err := receiver.Receive(ctx, r.queue, r.concurrent)
 		cancel()
 
 		if err != nil {
 			if !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
 				r.log.Error(errors.QueueDriverFailedToReceive.Args(r.queue, err))
+
+				currentDelay *= 2
+				if currentDelay > r.maxDelay {
+					currentDelay = r.maxDelay
+				}
 			}
+
+			time.Sleep(currentDelay)
 			continue
 		}
 
 		if len(jobs) == 0 {
+			time.Sleep(currentDelay)
 			continue
 		}
+
+		currentDelay = receiveBackoff
 
 		var wg sync.WaitGroup
 		for _, reservedJob := range jobs {
