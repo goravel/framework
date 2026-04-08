@@ -38,10 +38,8 @@ type Worker struct {
 	shutdownCtx    context.Context
 	shutdownCancel context.CancelFunc
 
-	currentDelay time.Duration
-	maxDelay     time.Duration
-	isShutdown   atomic.Bool
-	debug        bool
+	isShutdown atomic.Bool
+	debug      bool
 }
 
 func NewWorker(config queue.Config, cache cache.Cache, db db.DB, job queue.JobStorer, json foundation.Json, log log.Log, connection, queue string, concurrent, tries int) (*Worker, error) {
@@ -70,9 +68,6 @@ func NewWorker(config queue.Config, cache cache.Cache, db db.DB, job queue.JobSt
 		debug:          config.Debug(),
 		shutdownCtx:    shutdownCtx,
 		shutdownCancel: shutdownCancel,
-
-		currentDelay: 1 * time.Second,
-		maxDelay:     32 * time.Second,
 	}, nil
 }
 
@@ -240,6 +235,11 @@ func (r *Worker) runWithPop() error {
 		r.jobWg.Add(1)
 		go func() {
 			defer r.jobWg.Done()
+
+			// TODO make the initial delay and max delay configurable
+			currentDelay := 1 * time.Second
+			maxDelay := 32 * time.Second
+
 			for {
 				if r.isShutdown.Load() {
 					return
@@ -250,18 +250,18 @@ func (r *Worker) runWithPop() error {
 					if !errors.Is(err, errors.QueueDriverNoJobFound) {
 						r.log.Error(errors.QueueDriverFailedToPop.Args(r.queue, err))
 
-						r.currentDelay *= 2
-						if r.currentDelay > r.maxDelay {
-							r.currentDelay = r.maxDelay
+						currentDelay *= 2
+						if currentDelay > maxDelay {
+							currentDelay = maxDelay
 						}
 					}
 
-					time.Sleep(r.currentDelay)
+					time.Sleep(currentDelay)
 
 					continue
 				}
 
-				r.currentDelay = 1 * time.Second
+				currentDelay = 1 * time.Second
 				r.processReservedJob(reservedJob)
 			}
 		}()
@@ -285,8 +285,8 @@ func (r *Worker) runWithReceive(receiver queue.DriverWithReceive) error {
 	defer r.jobWg.Done()
 
 	// TODO make the initial delay and max delay configurable
-	r.currentDelay = 100 * time.Millisecond
-	r.maxDelay = 3200 * time.Millisecond
+	currentDelay := 100 * time.Millisecond
+	maxDelay := 3200 * time.Millisecond
 
 	for {
 		if r.isShutdown.Load() {
@@ -298,25 +298,28 @@ func (r *Worker) runWithReceive(receiver queue.DriverWithReceive) error {
 		cancel()
 
 		if err != nil {
-			if !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
+			if errors.Is(err, context.Canceled) {
+				continue
+			}
+			if !errors.Is(err, context.DeadlineExceeded) {
 				r.log.Error(errors.QueueDriverFailedToReceive.Args(r.queue, err))
 
-				r.currentDelay *= 2
-				if r.currentDelay > r.maxDelay {
-					r.currentDelay = r.maxDelay
+				currentDelay *= 2
+				if currentDelay > maxDelay {
+					currentDelay = maxDelay
 				}
 			}
 
-			time.Sleep(r.currentDelay)
+			time.Sleep(currentDelay)
 			continue
 		}
 
 		if len(jobs) == 0 {
-			time.Sleep(r.currentDelay)
+			time.Sleep(currentDelay)
 			continue
 		}
 
-		r.currentDelay = 100 * time.Millisecond
+		currentDelay = 100 * time.Millisecond
 
 		var wg sync.WaitGroup
 		for _, reservedJob := range jobs {
