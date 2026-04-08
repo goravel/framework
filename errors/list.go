@@ -190,6 +190,7 @@ var (
 	ProviderRegisterFailed = New("failed to register provider '%s': %v")
 
 	QueueDriverFailedToPop           = New("failed to pop job from %s queue: %v")
+	QueueDriverFailedToReceive       = New("failed to receive jobs from %s queue: %v")
 	QueueDriverInvalid               = New("%s doesn't implement contracts/queue/driver")
 	QueueDriverNoJobFound            = New("no job found in %s queue")
 	QueueDriverNotSupported          = New("unknown queue driver: %s")

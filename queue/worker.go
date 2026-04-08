@@ -273,6 +273,9 @@ func (r *Worker) runWithReceive(receiver queue.DriverWithReceive) error {
 		}
 	}()
 
+	r.jobWg.Add(1)
+	defer r.jobWg.Done()
+
 	for {
 		if r.isShutdown.Load() {
 			return nil
@@ -284,7 +287,7 @@ func (r *Worker) runWithReceive(receiver queue.DriverWithReceive) error {
 
 		if err != nil {
 			if !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
-				r.log.Error(errors.QueueDriverFailedToPop.Args(r.queue, err))
+				r.log.Error(errors.QueueDriverFailedToReceive.Args(r.queue, err))
 			}
 			continue
 		}
@@ -295,10 +298,8 @@ func (r *Worker) runWithReceive(receiver queue.DriverWithReceive) error {
 
 		var wg sync.WaitGroup
 		for _, reservedJob := range jobs {
-			r.jobWg.Add(1)
 			wg.Add(1)
 			go func() {
-				defer r.jobWg.Done()
 				defer wg.Done()
 				r.processReservedJob(reservedJob)
 			}()
