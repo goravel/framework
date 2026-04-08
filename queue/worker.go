@@ -284,6 +284,10 @@ func (r *Worker) runWithReceive(receiver queue.DriverWithReceive) error {
 	r.jobWg.Add(1)
 	defer r.jobWg.Done()
 
+	// TODO make the initial delay and max delay configurable
+	r.currentDelay = 100 * time.Millisecond
+	r.maxDelay = 3200 * time.Millisecond
+
 	for {
 		if r.isShutdown.Load() {
 			return nil
@@ -312,7 +316,7 @@ func (r *Worker) runWithReceive(receiver queue.DriverWithReceive) error {
 			continue
 		}
 
-		r.currentDelay = 1 * time.Second
+		r.currentDelay = 100 * time.Millisecond
 
 		var wg sync.WaitGroup
 		for _, reservedJob := range jobs {
