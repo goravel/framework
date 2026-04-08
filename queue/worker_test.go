@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -612,6 +613,269 @@ func (s *WorkerTestSuite) Test_run() {
 
 		s.NoError(s.worker.Shutdown())
 		s.worker.tries = 1
+	})
+}
+
+// receiveDriver combines Driver and DriverWithReceive for testing runWithReceive.
+type receiveDriver struct {
+	driver   *mocksqueue.Driver
+	receiver *mocksqueue.DriverWithReceive
+}
+
+func (r *receiveDriver) Driver() string {
+	return r.driver.Driver()
+}
+
+func (r *receiveDriver) Pop(queue string) (contractsqueue.ReservedJob, error) {
+	return r.driver.Pop(queue)
+}
+
+func (r *receiveDriver) Push(task contractsqueue.Task, queue string) error {
+	return r.driver.Push(task, queue)
+}
+
+func (r *receiveDriver) Receive(ctx context.Context, queue string, count int) ([]contractsqueue.ReservedJob, error) {
+	return r.receiver.Receive(ctx, queue, count)
+}
+
+func (s *WorkerTestSuite) Test_runWithReceive() {
+	carbon.SetTestNow(carbon.FromStdTime(time.Now()))
+	defer carbon.ClearTestNow()
+
+	connection := "kafka"
+	queue := "default"
+	testJobOne := &TestJobOne{}
+	testJobErr := &TestJobErr{}
+
+	s.Run("no messages returned", func() {
+		s.SetupTest()
+
+		mockDriverWithReceive := mocksqueue.NewDriverWithReceive(s.T())
+		s.worker.driver = &receiveDriver{
+			driver:   s.mockDriver,
+			receiver: mockDriverWithReceive,
+		}
+		s.worker.connection = connection
+
+		// First call returns empty, second call blocks until context canceled (simulating shutdown)
+		mockDriverWithReceive.EXPECT().Receive(mock.Anything, queue, s.worker.concurrent).
+			Return(nil, nil).Once()
+		mockDriverWithReceive.EXPECT().Receive(mock.Anything, queue, s.worker.concurrent).
+			RunAndReturn(func(ctx context.Context, _ string, _ int) ([]contractsqueue.ReservedJob, error) {
+				<-ctx.Done()
+				return nil, ctx.Err()
+			}).Once()
+
+		go func() {
+			s.NoError(s.worker.run())
+		}()
+
+		time.Sleep(200 * time.Millisecond)
+		s.NoError(s.worker.Shutdown())
+	})
+
+	s.Run("receive error", func() {
+		s.SetupTest()
+
+		mockDriverWithReceive := mocksqueue.NewDriverWithReceive(s.T())
+		s.worker.driver = &receiveDriver{
+			driver:   s.mockDriver,
+			receiver: mockDriverWithReceive,
+		}
+		s.worker.connection = connection
+
+		// First call returns error, second call blocks until shutdown
+		mockDriverWithReceive.EXPECT().Receive(mock.Anything, queue, s.worker.concurrent).
+			Return(nil, assert.AnError).Once()
+		mockDriverWithReceive.EXPECT().Receive(mock.Anything, queue, s.worker.concurrent).
+			RunAndReturn(func(ctx context.Context, _ string, _ int) ([]contractsqueue.ReservedJob, error) {
+				<-ctx.Done()
+				return nil, ctx.Err()
+			}).Once()
+
+		s.mockLog.EXPECT().Error(errors.QueueDriverFailedToReceive.Args(queue, assert.AnError)).Once()
+
+		go func() {
+			s.NoError(s.worker.run())
+		}()
+
+		time.Sleep(200 * time.Millisecond)
+		s.NoError(s.worker.Shutdown())
+	})
+
+	s.Run("happy path", func() {
+		s.SetupTest()
+
+		successTask := contractsqueue.Task{
+			ChainJob: contractsqueue.ChainJob{
+				Job: testJobOne,
+			},
+			UUID:  "test-receive",
+			Chain: []contractsqueue.ChainJob{},
+		}
+
+		mockDriverWithReceive := mocksqueue.NewDriverWithReceive(s.T())
+		s.worker.driver = &receiveDriver{
+			driver:   s.mockDriver,
+			receiver: mockDriverWithReceive,
+		}
+		s.worker.connection = connection
+
+		mockReservedJob := mocksqueue.NewReservedJob(s.T())
+		mockReservedJob.EXPECT().Task().Return(successTask).Once()
+		mockReservedJob.EXPECT().Delete().Return(nil).Once()
+
+		mockDriverWithReceive.EXPECT().Receive(mock.Anything, queue, s.worker.concurrent).
+			Return([]contractsqueue.ReservedJob{mockReservedJob}, nil).Once()
+		mockDriverWithReceive.EXPECT().Receive(mock.Anything, queue, s.worker.concurrent).
+			RunAndReturn(func(ctx context.Context, _ string, _ int) ([]contractsqueue.ReservedJob, error) {
+				<-ctx.Done()
+				return nil, ctx.Err()
+			}).Once()
+
+		s.mockJob.EXPECT().Call(successTask.Job.Signature(), make([]any, 0)).Return(nil).Once()
+
+		go func() {
+			s.NoError(s.worker.run())
+		}()
+
+		time.Sleep(500 * time.Millisecond)
+		s.NoError(s.worker.Shutdown())
+	})
+
+	s.Run("job failed, insert failed job", func() {
+		s.SetupTest()
+
+		errorTask := contractsqueue.Task{
+			ChainJob: contractsqueue.ChainJob{
+				Job: testJobErr,
+			},
+			UUID: "test-receive-err",
+		}
+
+		mockDriverWithReceive := mocksqueue.NewDriverWithReceive(s.T())
+		s.worker.driver = &receiveDriver{
+			driver:   s.mockDriver,
+			receiver: mockDriverWithReceive,
+		}
+		s.worker.connection = connection
+
+		mockReservedJob := mocksqueue.NewReservedJob(s.T())
+		mockReservedJob.EXPECT().Task().Return(errorTask).Once()
+		mockReservedJob.EXPECT().Delete().Return(nil).Once()
+
+		mockDriverWithReceive.EXPECT().Receive(mock.Anything, queue, s.worker.concurrent).
+			Return([]contractsqueue.ReservedJob{mockReservedJob}, nil).Once()
+		mockDriverWithReceive.EXPECT().Receive(mock.Anything, queue, s.worker.concurrent).
+			RunAndReturn(func(ctx context.Context, _ string, _ int) ([]contractsqueue.ReservedJob, error) {
+				<-ctx.Done()
+				return nil, ctx.Err()
+			}).Once()
+
+		s.mockJob.EXPECT().Call(errorTask.Job.Signature(), make([]any, 0)).Return(assert.AnError).Once()
+		s.mockJson.EXPECT().MarshalString(utils.Task{
+			Job: utils.Job{
+				Signature: errorTask.Job.Signature(),
+			},
+			UUID: "test-receive-err",
+		}).Return("{}", nil).Once()
+
+		s.mockConfig.EXPECT().FailedDatabase().Return("mysql").Once()
+		s.mockConfig.EXPECT().FailedTable().Return("failed_jobs").Once()
+		s.mockDB.EXPECT().Connection("mysql").Return(s.mockDB).Once()
+		mockQuery := mocksdb.NewQuery(s.T())
+		s.mockDB.EXPECT().Table("failed_jobs").Return(mockQuery).Once()
+		mockQuery.EXPECT().Insert(matchFailedJob("test-receive-err")).Return(nil, nil).Once()
+
+		go func() {
+			s.NoError(s.worker.run())
+		}()
+
+		time.Sleep(500 * time.Millisecond)
+		s.NoError(s.worker.Shutdown())
+	})
+
+	s.Run("batch messages", func() {
+		s.SetupTest()
+		s.worker.concurrent = 3
+
+		mockDriverWithReceive := mocksqueue.NewDriverWithReceive(s.T())
+		s.worker.driver = &receiveDriver{
+			driver:   s.mockDriver,
+			receiver: mockDriverWithReceive,
+		}
+		s.worker.connection = connection
+
+		tasks := make([]contractsqueue.Task, 3)
+		mockReservedJobs := make([]*mocksqueue.ReservedJob, 3)
+		reservedJobs := make([]contractsqueue.ReservedJob, 3)
+
+		for i := 0; i < 3; i++ {
+			tasks[i] = contractsqueue.Task{
+				ChainJob: contractsqueue.ChainJob{Job: testJobOne},
+				UUID:     "test-batch-" + string(rune('a'+i)),
+			}
+			mockReservedJobs[i] = mocksqueue.NewReservedJob(s.T())
+			mockReservedJobs[i].EXPECT().Task().Return(tasks[i]).Once()
+			mockReservedJobs[i].EXPECT().Delete().Return(nil).Once()
+			reservedJobs[i] = mockReservedJobs[i]
+		}
+
+		mockDriverWithReceive.EXPECT().Receive(mock.Anything, queue, 3).
+			Return(reservedJobs, nil).Once()
+		mockDriverWithReceive.EXPECT().Receive(mock.Anything, queue, 3).
+			Return(nil, nil).Maybe()
+
+		s.mockJob.EXPECT().Call(testJobOne.Signature(), make([]any, 0)).Return(nil).Times(3)
+
+		go func() {
+			s.NoError(s.worker.run())
+		}()
+
+		time.Sleep(500 * time.Millisecond)
+		s.NoError(s.worker.Shutdown())
+	})
+
+	s.Run("shutdown waits for receive loop", func() {
+		s.SetupTest()
+
+		mockDriverWithReceive := mocksqueue.NewDriverWithReceive(s.T())
+		s.worker.driver = &receiveDriver{
+			driver:   s.mockDriver,
+			receiver: mockDriverWithReceive,
+		}
+		s.worker.connection = connection
+
+		successTask := contractsqueue.Task{
+			ChainJob: contractsqueue.ChainJob{Job: testJobOne},
+			UUID:     "test-shutdown-wait",
+		}
+
+		mockReservedJob := mocksqueue.NewReservedJob(s.T())
+		mockReservedJob.EXPECT().Task().Return(successTask).Once()
+		mockReservedJob.EXPECT().Delete().Return(nil).Once()
+
+		called := false
+		s.mockJob.EXPECT().Call(successTask.Job.Signature(), make([]any, 0)).RunAndReturn(func(s string, i []any) error {
+			time.Sleep(300 * time.Millisecond)
+			called = true
+			return nil
+		}).Once()
+
+		mockDriverWithReceive.EXPECT().Receive(mock.Anything, queue, s.worker.concurrent).
+			Return([]contractsqueue.ReservedJob{mockReservedJob}, nil).Once()
+
+		go func() {
+			s.NoError(s.worker.run())
+		}()
+
+		// Shutdown is called while job is still running (job takes 300ms, shutdown at 100ms)
+		time.Sleep(100 * time.Millisecond)
+
+		// Shutdown should block until the in-flight job completes
+		err := s.worker.Shutdown()
+		s.NoError(err)
+		s.True(called)
 	})
 }
 
