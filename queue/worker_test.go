@@ -826,7 +826,10 @@ func (s *WorkerTestSuite) Test_runWithReceive() {
 		mockDriverWithReceive.EXPECT().Receive(mock.Anything, queue, 3).
 			Return(reservedJobs, nil).Once()
 		mockDriverWithReceive.EXPECT().Receive(mock.Anything, queue, 3).
-			Return(nil, nil).Maybe()
+			RunAndReturn(func(ctx context.Context, _ string, _ int) ([]contractsqueue.ReservedJob, error) {
+				<-ctx.Done()
+				return nil, ctx.Err()
+			}).Once()
 
 		s.mockJob.EXPECT().Call(testJobOne.Signature(), make([]any, 0)).Return(nil).Times(3)
 

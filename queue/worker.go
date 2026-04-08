@@ -78,6 +78,7 @@ func (r *Worker) Run() error {
 	}
 
 	r.isShutdown.Store(false)
+	r.shutdownCtx, r.shutdownCancel = context.WithCancel(context.Background())
 
 	return r.run()
 }
@@ -256,7 +257,11 @@ func (r *Worker) runWithPop() error {
 						}
 					}
 
-					time.Sleep(currentDelay)
+					select {
+					case <-time.After(currentDelay):
+					case <-r.shutdownCtx.Done():
+						return
+					}
 
 					continue
 				}
@@ -310,12 +315,20 @@ func (r *Worker) runWithReceive(receiver queue.DriverWithReceive) error {
 				}
 			}
 
-			time.Sleep(currentDelay)
+			select {
+			case <-time.After(currentDelay):
+			case <-r.shutdownCtx.Done():
+				return nil
+			}
 			continue
 		}
 
 		if len(jobs) == 0 {
-			time.Sleep(currentDelay)
+			select {
+			case <-time.After(currentDelay):
+			case <-r.shutdownCtx.Done():
+				return nil
+			}
 			continue
 		}
 
