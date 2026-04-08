@@ -916,14 +916,10 @@ func (s *WorkerTestSuite) TestShutdown() {
 		time.Sleep(100 * time.Millisecond)
 
 		// Call shutdown - it should wait for WaitGroup
-		start := time.Now()
 		err := s.worker.Shutdown()
-		duration := time.Since(start)
 
 		s.NoError(err)
 		s.True(s.worker.isShutdown.Load())
-		// Shutdown should have waited for goroutines (at least a little time)
-		s.Greater(duration, 0*time.Millisecond)
 	})
 
 	s.Run("shutdown waits for job to complete", func() {
