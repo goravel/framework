@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	mocktranslation "github.com/goravel/framework/mocks/translation"
 )
 
 func TestGetMessage(t *testing.T) {
@@ -12,7 +14,7 @@ func TestGetMessage(t *testing.T) {
 			"name.required": "Name is absolutely required!",
 			"required":      "Field is required.",
 		}
-		msg := getMessage("name", "required", custom, "string")
+		msg := getMessage("name", "required", custom, "string", nil)
 		assert.Equal(t, "Name is absolutely required!", msg)
 	})
 
@@ -20,41 +22,92 @@ func TestGetMessage(t *testing.T) {
 		custom := map[string]string{
 			"required": "This field cannot be empty.",
 		}
-		msg := getMessage("email", "required", custom, "string")
+		msg := getMessage("email", "required", custom, "string", nil)
 		assert.Equal(t, "This field cannot be empty.", msg)
 	})
 
 	t.Run("type-specific default for size rules", func(t *testing.T) {
-		msg := getMessage("name", "min", nil, "string")
+		msg := getMessage("name", "min", nil, "string", nil)
 		assert.Equal(t, "The :attribute field must be at least :min characters.", msg)
 
-		msg = getMessage("age", "min", nil, "numeric")
+		msg = getMessage("age", "min", nil, "numeric", nil)
 		assert.Equal(t, "The :attribute field must be at least :min.", msg)
 
-		msg = getMessage("items", "min", nil, "array")
+		msg = getMessage("items", "min", nil, "array", nil)
 		assert.Equal(t, "The :attribute field must have at least :min items.", msg)
 
-		msg = getMessage("doc", "min", nil, "file")
+		msg = getMessage("doc", "min", nil, "file", nil)
 		assert.Equal(t, "The :attribute field must be at least :min kilobytes.", msg)
 	})
 
 	t.Run("generic default message", func(t *testing.T) {
-		msg := getMessage("email", "email", nil, "string")
+		msg := getMessage("email", "email", nil, "string", nil)
 		assert.Equal(t, "The :attribute field must be a valid email address.", msg)
 	})
 
 	t.Run("unknown rule returns fallback", func(t *testing.T) {
-		msg := getMessage("field", "unknown_rule_xyz", nil, "string")
+		msg := getMessage("field", "unknown_rule_xyz", nil, "string", nil)
 		assert.Equal(t, "The :attribute field is invalid.", msg)
 	})
 
 	t.Run("all size rules have type variants", func(t *testing.T) {
 		for rule := range sizeRules {
 			for _, typ := range []string{"string", "numeric", "array", "file"} {
-				msg := getMessage("field", rule, nil, typ)
+				msg := getMessage("field", rule, nil, typ, nil)
 				assert.NotEqual(t, "The :attribute field is invalid.", msg, "missing message for %s.%s", rule, typ)
 			}
 		}
+	})
+
+	t.Run("translated message overrides default", func(t *testing.T) {
+		translator := mocktranslation.NewTranslator(t)
+		translator.EXPECT().Has("validation.required").Return(true)
+		translator.EXPECT().Get("validation.required").Return("Le champ :attribute est requis.")
+
+		msg := getMessage("name", "required", nil, "string", translator)
+		assert.Equal(t, "Le champ :attribute est requis.", msg)
+	})
+
+	t.Run("translated size-specific message", func(t *testing.T) {
+		translator := mocktranslation.NewTranslator(t)
+		translator.EXPECT().Has("validation.min.string").Return(true)
+		translator.EXPECT().Get("validation.min.string").Return("Le champ :attribute doit avoir au moins :min caracteres.")
+
+		msg := getMessage("name", "min", nil, "string", translator)
+		assert.Equal(t, "Le champ :attribute doit avoir au moins :min caracteres.", msg)
+	})
+
+	t.Run("translated generic message when type-specific not found", func(t *testing.T) {
+		translator := mocktranslation.NewTranslator(t)
+		translator.EXPECT().Has("validation.min.string").Return(false)
+		translator.EXPECT().Has("validation.min").Return(true)
+		translator.EXPECT().Get("validation.min").Return("Le champ :attribute doit etre au moins :min.")
+
+		msg := getMessage("name", "min", nil, "string", translator)
+		assert.Equal(t, "Le champ :attribute doit etre au moins :min.", msg)
+	})
+
+	t.Run("custom message takes priority over translation", func(t *testing.T) {
+		translator := mocktranslation.NewTranslator(t)
+
+		custom := map[string]string{
+			"required": "Custom required message.",
+		}
+		msg := getMessage("name", "required", custom, "string", translator)
+		assert.Equal(t, "Custom required message.", msg)
+	})
+
+	t.Run("nil translator falls back to default", func(t *testing.T) {
+		msg := getMessage("name", "required", nil, "string", nil)
+		assert.Equal(t, "The :attribute field is required.", msg)
+	})
+
+	t.Run("translator has no translation falls back to default", func(t *testing.T) {
+		translator := mocktranslation.NewTranslator(t)
+		translator.EXPECT().Has("validation.required").Return(false)
+
+		msg := getMessage("name", "required", nil, "string", translator)
+		assert.Equal(t, "The :attribute field is required.", msg)
 	})
 }
 

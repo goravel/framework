@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	contractstranslation "github.com/goravel/framework/contracts/translation"
 	contractsvalidation "github.com/goravel/framework/contracts/validation"
 )
 
@@ -18,6 +19,7 @@ type Engine struct {
 	customRules    map[string]contractsvalidation.Rule
 	messages       map[string]string
 	attributes     map[string]string
+	translator     contractstranslation.Translator
 	errors         *Errors
 	excludes       map[string]bool
 	distinctValues map[string]map[string]bool // For tracking distinct values
@@ -29,6 +31,7 @@ type engineOptions struct {
 	customRules map[string]contractsvalidation.Rule
 	messages    map[string]string
 	attributes  map[string]string
+	translator  contractstranslation.Translator
 }
 
 // NewEngine creates a new validation engine.
@@ -40,6 +43,7 @@ func NewEngine(ctx context.Context, data *DataBag, rules map[string][]ParsedRule
 		customRules:    opts.customRules,
 		messages:       opts.messages,
 		attributes:     opts.attributes,
+		translator:     opts.translator,
 		errors:         NewErrors(),
 		excludes:       make(map[string]bool),
 		distinctValues: make(map[string]map[string]bool),
@@ -184,7 +188,7 @@ func (e *Engine) validateField(field string, fieldRules []ParsedRule, allRules m
 
 		if !passed {
 			attrType := getAttributeType(field, value, allRules)
-			msg := e.formatErrorMessage(field, rule, attrType)
+			msg := e.formatErrorMessage(field, rule, attrType, value)
 			e.errors.Add(field, rule.Name, msg)
 		}
 
@@ -291,8 +295,8 @@ func (e *Engine) trackDistinct(field string, value any) bool {
 }
 
 // formatErrorMessage creates the error message for a rule failure.
-func (e *Engine) formatErrorMessage(field string, rule ParsedRule, attrType string) string {
-	msg := getMessage(field, rule.Name, e.messages, attrType)
+func (e *Engine) formatErrorMessage(field string, rule ParsedRule, attrType string, value any) string {
+	msg := getMessage(field, rule.Name, e.messages, attrType, e.translator)
 	if _, hasFieldRuleMessage := e.messages[field+"."+rule.Name]; !hasFieldRuleMessage {
 		if _, hasRuleMessage := e.messages[rule.Name]; !hasRuleMessage {
 			if customRule, ok := e.customRules[rule.Name]; ok {
@@ -303,6 +307,14 @@ func (e *Engine) formatErrorMessage(field string, rule ParsedRule, attrType stri
 
 	replacements := map[string]string{
 		":attribute": getDisplayableAttribute(field, e.attributes),
+	}
+
+	// Add placeholders for custom rules: :value and :option0, :option1, etc.
+	if _, ok := e.customRules[rule.Name]; ok {
+		replacements[":value"] = fmt.Sprintf("%v", value)
+		for i, param := range rule.Parameters {
+			replacements[fmt.Sprintf(":option%d", i)] = param
+		}
 	}
 
 	// Add parameter-specific replacements
