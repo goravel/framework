@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"context"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -211,6 +212,22 @@ func (r *Worker) run() error {
 		color.Infoln(errors.QueueProcessingJobs.Args(r.connection, r.queue).Error())
 	}
 
+	if receiver, ok := r.driver.(queue.DriverWithReceive); ok {
+		return r.runWithReceive(receiver)
+	}
+
+	return r.runWithPop()
+}
+
+func (r *Worker) runWithPop() error {
+	r.failedJobWg.Add(1)
+	go func() {
+		defer r.failedJobWg.Done()
+		for job := range r.failedJobChan {
+			r.logFailedJob(job)
+		}
+	}()
+
 	for i := 0; i < r.concurrent; i++ {
 		r.jobWg.Add(1)
 		go func() {
@@ -237,44 +254,17 @@ func (r *Worker) run() error {
 				}
 
 				r.currentDelay = 1 * time.Second
-				task := reservedJob.Task()
-
-				if err := r.call(task); err != nil {
-					if !errors.Is(err, errors.QueueFailedToCallJob) {
-						r.log.Error(err)
-					}
-
-					if err := reservedJob.Delete(); err != nil {
-						r.log.Error(errors.QueueFailedToDeleteReservedJob.Args(reservedJob, err))
-					}
-
-					continue
-				}
-
-				if len(task.Chain) > 0 {
-					for i, chain := range task.Chain {
-						chainTask := queue.Task{
-							ChainJob: chain,
-							UUID:     task.UUID,
-							Chain:    task.Chain[i+1:],
-						}
-
-						if err := r.call(chainTask); err != nil {
-							if !errors.Is(err, errors.QueueFailedToCallJob) {
-								r.log.Error(err)
-							}
-							break
-						}
-					}
-				}
-
-				if err := reservedJob.Delete(); err != nil {
-					r.log.Error(errors.QueueFailedToDeleteReservedJob.Args(reservedJob, err))
-				}
+				r.processReservedJob(reservedJob)
 			}
 		}()
 	}
 
+	r.jobWg.Wait()
+
+	return nil
+}
+
+func (r *Worker) runWithReceive(receiver queue.DriverWithReceive) error {
 	r.failedJobWg.Add(1)
 	go func() {
 		defer r.failedJobWg.Done()
@@ -283,7 +273,73 @@ func (r *Worker) run() error {
 		}
 	}()
 
-	r.jobWg.Wait()
+	for {
+		if r.isShutdown.Load() {
+			return nil
+		}
 
-	return nil
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		jobs, err := receiver.Receive(ctx, r.queue, r.concurrent)
+		cancel()
+
+		if err != nil {
+			if !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
+				r.log.Error(errors.QueueDriverFailedToPop.Args(r.queue, err))
+			}
+			continue
+		}
+
+		if len(jobs) == 0 {
+			continue
+		}
+
+		var wg sync.WaitGroup
+		for _, reservedJob := range jobs {
+			r.jobWg.Add(1)
+			wg.Add(1)
+			go func() {
+				defer r.jobWg.Done()
+				defer wg.Done()
+				r.processReservedJob(reservedJob)
+			}()
+		}
+		wg.Wait()
+	}
+}
+
+func (r *Worker) processReservedJob(reservedJob queue.ReservedJob) {
+	task := reservedJob.Task()
+
+	if err := r.call(task); err != nil {
+		if !errors.Is(err, errors.QueueFailedToCallJob) {
+			r.log.Error(err)
+		}
+
+		if err = reservedJob.Delete(); err != nil {
+			r.log.Error(errors.QueueFailedToDeleteReservedJob.Args(reservedJob, err))
+		}
+
+		return
+	}
+
+	if len(task.Chain) > 0 {
+		for i, chain := range task.Chain {
+			chainTask := queue.Task{
+				ChainJob: chain,
+				UUID:     task.UUID,
+				Chain:    task.Chain[i+1:],
+			}
+
+			if err := r.call(chainTask); err != nil {
+				if !errors.Is(err, errors.QueueFailedToCallJob) {
+					r.log.Error(err)
+				}
+				break
+			}
+		}
+	}
+
+	if err := reservedJob.Delete(); err != nil {
+		r.log.Error(errors.QueueFailedToDeleteReservedJob.Args(reservedJob, err))
+	}
 }
