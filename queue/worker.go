@@ -19,12 +19,6 @@ import (
 	"github.com/goravel/framework/support/console"
 )
 
-// TODO make these constants configurable in the future if needed
-const (
-	receiveTimeout = 5 * time.Second
-	receiveBackoff = 100 * time.Millisecond
-)
-
 type Worker struct {
 	config queue.Config
 	db     db.DB
@@ -67,6 +61,8 @@ func NewWorker(config queue.Config, cache cache.Cache, db db.DB, job queue.JobSt
 		json:   json,
 		log:    log,
 
+		failedJobChan: make(chan models.FailedJob, concurrent),
+
 		connection:     connection,
 		queue:          queue,
 		concurrent:     concurrent,
@@ -75,9 +71,8 @@ func NewWorker(config queue.Config, cache cache.Cache, db db.DB, job queue.JobSt
 		shutdownCtx:    shutdownCtx,
 		shutdownCancel: shutdownCancel,
 
-		currentDelay:  1 * time.Second,
-		failedJobChan: make(chan models.FailedJob, concurrent),
-		maxDelay:      32 * time.Second,
+		currentDelay: 1 * time.Second,
+		maxDelay:     32 * time.Second,
 	}, nil
 }
 
@@ -289,14 +284,12 @@ func (r *Worker) runWithReceive(receiver queue.DriverWithReceive) error {
 	r.jobWg.Add(1)
 	defer r.jobWg.Done()
 
-	currentDelay := receiveBackoff
-
 	for {
 		if r.isShutdown.Load() {
 			return nil
 		}
 
-		ctx, cancel := context.WithTimeout(r.shutdownCtx, receiveTimeout)
+		ctx, cancel := context.WithTimeout(r.shutdownCtx, 5*time.Second) // TODO make the timeout configurable
 		jobs, err := receiver.Receive(ctx, r.queue, r.concurrent)
 		cancel()
 
@@ -304,22 +297,22 @@ func (r *Worker) runWithReceive(receiver queue.DriverWithReceive) error {
 			if !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
 				r.log.Error(errors.QueueDriverFailedToReceive.Args(r.queue, err))
 
-				currentDelay *= 2
-				if currentDelay > r.maxDelay {
-					currentDelay = r.maxDelay
+				r.currentDelay *= 2
+				if r.currentDelay > r.maxDelay {
+					r.currentDelay = r.maxDelay
 				}
 			}
 
-			time.Sleep(currentDelay)
+			time.Sleep(r.currentDelay)
 			continue
 		}
 
 		if len(jobs) == 0 {
-			time.Sleep(currentDelay)
+			time.Sleep(r.currentDelay)
 			continue
 		}
 
-		currentDelay = receiveBackoff
+		r.currentDelay = 1 * time.Second
 
 		var wg sync.WaitGroup
 		for _, reservedJob := range jobs {
