@@ -158,7 +158,6 @@
   "uuid4": "The :attribute field must be a valid UUID v4.",
   "uuid5": "The :attribute field must be a valid UUID v5.",
 
-  "active_url": "The :attribute field must be a valid URL.",
   "len": "The :attribute field must be :size characters.",
   "min_len": "The :attribute field must be at least :min characters.",
   "max_len": "The :attribute field must not be greater than :max characters.",

@@ -61,8 +61,8 @@ func TestGetMessage(t *testing.T) {
 
 	t.Run("translated message overrides default", func(t *testing.T) {
 		translator := mocktranslation.NewTranslator(t)
-		translator.EXPECT().Has("validation.required").Return(true)
-		translator.EXPECT().Get("validation.required").Return("Le champ :attribute est requis.")
+		translator.EXPECT().Has("validation.required").Return(true).Once()
+		translator.EXPECT().Get("validation.required").Return("Le champ :attribute est requis.").Once()
 
 		msg := getMessage("name", "required", nil, "string", translator)
 		assert.Equal(t, "Le champ :attribute est requis.", msg)
@@ -70,8 +70,8 @@ func TestGetMessage(t *testing.T) {
 
 	t.Run("translated size-specific message", func(t *testing.T) {
 		translator := mocktranslation.NewTranslator(t)
-		translator.EXPECT().Has("validation.min.string").Return(true)
-		translator.EXPECT().Get("validation.min.string").Return("Le champ :attribute doit avoir au moins :min caracteres.")
+		translator.EXPECT().Has("validation.min.string").Return(true).Once()
+		translator.EXPECT().Get("validation.min.string").Return("Le champ :attribute doit avoir au moins :min caracteres.").Once()
 
 		msg := getMessage("name", "min", nil, "string", translator)
 		assert.Equal(t, "Le champ :attribute doit avoir au moins :min caracteres.", msg)
@@ -79,9 +79,9 @@ func TestGetMessage(t *testing.T) {
 
 	t.Run("translated generic message when type-specific not found", func(t *testing.T) {
 		translator := mocktranslation.NewTranslator(t)
-		translator.EXPECT().Has("validation.min.string").Return(false)
-		translator.EXPECT().Has("validation.min").Return(true)
-		translator.EXPECT().Get("validation.min").Return("Le champ :attribute doit etre au moins :min.")
+		translator.EXPECT().Has("validation.min.string").Return(false).Once()
+		translator.EXPECT().Has("validation.min").Return(true).Once()
+		translator.EXPECT().Get("validation.min").Return("Le champ :attribute doit etre au moins :min.").Once()
 
 		msg := getMessage("name", "min", nil, "string", translator)
 		assert.Equal(t, "Le champ :attribute doit etre au moins :min.", msg)
@@ -104,7 +104,7 @@ func TestGetMessage(t *testing.T) {
 
 	t.Run("translator has no translation falls back to default", func(t *testing.T) {
 		translator := mocktranslation.NewTranslator(t)
-		translator.EXPECT().Has("validation.required").Return(false)
+		translator.EXPECT().Has("validation.required").Return(false).Once()
 
 		msg := getMessage("name", "required", nil, "string", translator)
 		assert.Equal(t, "The :attribute field is required.", msg)
