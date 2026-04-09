@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"context"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -28,17 +29,17 @@ type Worker struct {
 
 	failedJobChan chan models.FailedJob
 
-	connection  string
-	queue       string
-	jobWg       sync.WaitGroup
-	failedJobWg sync.WaitGroup
-	concurrent  int
-	tries       int
+	connection     string
+	queue          string
+	jobWg          sync.WaitGroup
+	failedJobWg    sync.WaitGroup
+	concurrent     int
+	tries          int
+	shutdownCtx    context.Context
+	shutdownCancel context.CancelFunc
 
-	currentDelay time.Duration
-	maxDelay     time.Duration
-	isShutdown   atomic.Bool
-	debug        bool
+	isShutdown atomic.Bool
+	debug      bool
 }
 
 func NewWorker(config queue.Config, cache cache.Cache, db db.DB, job queue.JobStorer, json foundation.Json, log log.Log, connection, queue string, concurrent, tries int) (*Worker, error) {
@@ -48,6 +49,8 @@ func NewWorker(config queue.Config, cache cache.Cache, db db.DB, job queue.JobSt
 		return nil, err
 	}
 
+	shutdownCtx, shutdownCancel := context.WithCancel(context.Background())
+
 	return &Worker{
 		config: config,
 		db:     db,
@@ -56,15 +59,15 @@ func NewWorker(config queue.Config, cache cache.Cache, db db.DB, job queue.JobSt
 		json:   json,
 		log:    log,
 
-		connection: connection,
-		queue:      queue,
-		concurrent: concurrent,
-		tries:      tries,
-		debug:      config.Debug(),
-
-		currentDelay:  1 * time.Second,
 		failedJobChan: make(chan models.FailedJob, concurrent),
-		maxDelay:      32 * time.Second,
+
+		connection:     connection,
+		queue:          queue,
+		concurrent:     concurrent,
+		tries:          tries,
+		debug:          config.Debug(),
+		shutdownCtx:    shutdownCtx,
+		shutdownCancel: shutdownCancel,
 	}, nil
 }
 
@@ -75,12 +78,14 @@ func (r *Worker) Run() error {
 	}
 
 	r.isShutdown.Store(false)
+	r.shutdownCtx, r.shutdownCancel = context.WithCancel(context.Background())
 
 	return r.run()
 }
 
 func (r *Worker) Shutdown() error {
 	r.isShutdown.Store(true)
+	r.shutdownCancel()
 
 	// Wait for all worker goroutines to finish processing current tasks
 	r.jobWg.Wait()
@@ -211,10 +216,31 @@ func (r *Worker) run() error {
 		color.Infoln(errors.QueueProcessingJobs.Args(r.connection, r.queue).Error())
 	}
 
+	r.failedJobWg.Add(1)
+	go func() {
+		defer r.failedJobWg.Done()
+		for job := range r.failedJobChan {
+			r.logFailedJob(job)
+		}
+	}()
+
+	if receiver, ok := r.driver.(queue.DriverWithReceive); ok {
+		return r.runWithReceive(receiver)
+	}
+
+	return r.runWithPop()
+}
+
+func (r *Worker) runWithPop() error {
 	for i := 0; i < r.concurrent; i++ {
 		r.jobWg.Add(1)
 		go func() {
 			defer r.jobWg.Done()
+
+			// TODO make the initial delay and max delay configurable
+			currentDelay := 1 * time.Second
+			maxDelay := 32 * time.Second
+
 			for {
 				if r.isShutdown.Load() {
 					return
@@ -225,65 +251,126 @@ func (r *Worker) run() error {
 					if !errors.Is(err, errors.QueueDriverNoJobFound) {
 						r.log.Error(errors.QueueDriverFailedToPop.Args(r.queue, err))
 
-						r.currentDelay *= 2
-						if r.currentDelay > r.maxDelay {
-							r.currentDelay = r.maxDelay
+						currentDelay *= 2
+						if currentDelay > maxDelay {
+							currentDelay = maxDelay
 						}
 					}
 
-					time.Sleep(r.currentDelay)
-
-					continue
-				}
-
-				r.currentDelay = 1 * time.Second
-				task := reservedJob.Task()
-
-				if err := r.call(task); err != nil {
-					if !errors.Is(err, errors.QueueFailedToCallJob) {
-						r.log.Error(err)
-					}
-
-					if err := reservedJob.Delete(); err != nil {
-						r.log.Error(errors.QueueFailedToDeleteReservedJob.Args(reservedJob, err))
+					select {
+					case <-time.After(currentDelay):
+					case <-r.shutdownCtx.Done():
+						return
 					}
 
 					continue
 				}
 
-				if len(task.Chain) > 0 {
-					for i, chain := range task.Chain {
-						chainTask := queue.Task{
-							ChainJob: chain,
-							UUID:     task.UUID,
-							Chain:    task.Chain[i+1:],
-						}
-
-						if err := r.call(chainTask); err != nil {
-							if !errors.Is(err, errors.QueueFailedToCallJob) {
-								r.log.Error(err)
-							}
-							break
-						}
-					}
-				}
-
-				if err := reservedJob.Delete(); err != nil {
-					r.log.Error(errors.QueueFailedToDeleteReservedJob.Args(reservedJob, err))
-				}
+				currentDelay = 1 * time.Second
+				r.processReservedJob(reservedJob)
 			}
 		}()
 	}
 
-	r.failedJobWg.Add(1)
-	go func() {
-		defer r.failedJobWg.Done()
-		for job := range r.failedJobChan {
-			r.logFailedJob(job)
-		}
-	}()
-
 	r.jobWg.Wait()
 
 	return nil
+}
+
+func (r *Worker) runWithReceive(receiver queue.DriverWithReceive) error {
+	r.jobWg.Add(1)
+	defer r.jobWg.Done()
+
+	// TODO make the initial delay and max delay configurable
+	currentDelay := 100 * time.Millisecond
+	maxDelay := 3200 * time.Millisecond
+
+	for {
+		if r.isShutdown.Load() {
+			return nil
+		}
+
+		ctx, cancel := context.WithTimeout(r.shutdownCtx, 5*time.Second) // TODO make the timeout configurable
+		jobs, err := receiver.Receive(ctx, r.queue, r.concurrent)
+		cancel()
+
+		if err != nil {
+			if errors.Is(err, context.Canceled) {
+				continue
+			}
+			if !errors.Is(err, context.DeadlineExceeded) {
+				r.log.Error(errors.QueueDriverFailedToReceive.Args(r.queue, err))
+
+				currentDelay *= 2
+				if currentDelay > maxDelay {
+					currentDelay = maxDelay
+				}
+			}
+
+			select {
+			case <-time.After(currentDelay):
+			case <-r.shutdownCtx.Done():
+				return nil
+			}
+			continue
+		}
+
+		if len(jobs) == 0 {
+			select {
+			case <-time.After(currentDelay):
+			case <-r.shutdownCtx.Done():
+				return nil
+			}
+			continue
+		}
+
+		currentDelay = 100 * time.Millisecond
+
+		var wg sync.WaitGroup
+		for _, reservedJob := range jobs {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				r.processReservedJob(reservedJob)
+			}()
+		}
+		wg.Wait()
+	}
+}
+
+func (r *Worker) processReservedJob(reservedJob queue.ReservedJob) {
+	task := reservedJob.Task()
+
+	if err := r.call(task); err != nil {
+		if !errors.Is(err, errors.QueueFailedToCallJob) {
+			r.log.Error(err)
+		}
+
+		if err = reservedJob.Delete(); err != nil {
+			r.log.Error(errors.QueueFailedToDeleteReservedJob.Args(reservedJob, err))
+		}
+
+		return
+	}
+
+	if len(task.Chain) > 0 {
+		for i, chain := range task.Chain {
+			chainTask := queue.Task{
+				ChainJob: chain,
+				UUID:     task.UUID,
+				Chain:    task.Chain[i+1:],
+			}
+
+			if err := r.call(chainTask); err != nil {
+				if !errors.Is(err, errors.QueueFailedToCallJob) {
+					r.log.Error(err)
+				}
+				break
+			}
+		}
+	}
+
+	if err := reservedJob.Delete(); err != nil {
+		r.log.Error(errors.QueueFailedToDeleteReservedJob.Args(reservedJob, err))
+	}
 }
