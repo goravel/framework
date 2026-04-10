@@ -277,14 +277,13 @@ func (r *withSliceHandler) createFile() error {
 //	    "github.com/goravel/framework/contracts/console"
 //	)
 func (r *withSliceHandler) addImports(pkg string) error {
-	importMatchers := match.Imports()
-	if err := GoFile(r.appFilePath).FindOrCreate(importMatchers, createImport).Modify(AddImport(pkg)).Apply(); err != nil {
+	if err := addImportsToFile(r.appFilePath, pkg); err != nil {
 		return err
 	}
 
 	// Skip adding type import for function slices (like routing)
 	if r.config.typeImportPath != "" {
-		return GoFile(r.appFilePath).Find(importMatchers).Modify(AddImport(r.config.typeImportPath)).Apply()
+		return addImportsToFile(r.appFilePath, r.config.typeImportPath)
 	}
 
 	return nil
@@ -311,8 +310,7 @@ func (r *withSliceHandler) addImports(pkg string) error {
 //	}
 func (r *withSliceHandler) addItemToFile(pkg, item string) error {
 	// Add the item package import
-	importMatchers := match.Imports()
-	if err := GoFile(r.filePath).FindOrCreate(importMatchers, createImport).Modify(AddImport(pkg)).Apply(); err != nil {
+	if err := addImportsToFile(r.filePath, pkg); err != nil {
 		return err
 	}
 
@@ -321,10 +319,8 @@ func (r *withSliceHandler) addItemToFile(pkg, item string) error {
 }
 
 // removeImports removes the item package import if it's no longer used.
-// It checks both app.go and the helper file (if it exists) to determine if the import is still in use.
 func (r *withSliceHandler) removeImports(pkg string) error {
-	importMatchers := match.Imports()
-	return GoFile(r.appFilePath).Find(importMatchers).Modify(RemoveImport(pkg)).Apply()
+	return removeImportsFromFile(r.appFilePath, pkg)
 }
 
 // removeItemFromFile removes an item from the existing helper function in the file.
@@ -358,8 +354,7 @@ func (r *withSliceHandler) removeItemFromFile(pkg, item string) error {
 	}
 
 	// Clean up the import if it's no longer used
-	importMatchers := match.Imports()
-	return GoFile(r.filePath).Find(importMatchers).Modify(RemoveImport(pkg)).Apply()
+	return removeImportsFromFile(r.filePath, pkg)
 }
 
 // appendToExisting appends an item to an existing WithMethod call.
@@ -859,13 +854,12 @@ func addMiddlewareAppendCall(funcLit *dst.FuncLit, middlewareArg dst.Expr) {
 
 // addMiddlewareImports adds the required imports for middleware and configuration packages.
 func addMiddlewareImports(appFilePath, pkg string) error {
-	importMatchers := match.Imports()
-	if err := GoFile(appFilePath).FindOrCreate(importMatchers, createImport).Modify(AddImport(pkg)).Apply(); err != nil {
+	if err := addImportsToFile(appFilePath, pkg); err != nil {
 		return err
 	}
 
 	configImportPath := "github.com/goravel/framework/contracts/foundation/configuration"
-	return GoFile(appFilePath).Find(importMatchers).Modify(AddImport(configImportPath)).Apply()
+	return addImportsToFile(appFilePath, configImportPath)
 }
 
 // appendToExistingMiddleware appends middleware to an existing WithMiddleware call.
@@ -1084,12 +1078,6 @@ func foundationSetupMiddleware(middleware string) modify.Action {
 			createWithMiddleware(setupCall, parentOfSetup, middlewareExpr)
 		}
 	}
-}
-
-// addRouteImports adds the required imports for the route package.
-func addRouteImports(appFilePath, pkg string) error {
-	importMatchers := match.Imports()
-	return GoFile(appFilePath).FindOrCreate(importMatchers, createImport).Modify(AddImport(pkg)).Apply()
 }
 
 // foundationSetupRouting returns an action that modifies the foundation.Setup() chain to add or update WithRouting.

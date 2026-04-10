@@ -121,7 +121,7 @@ func AddProvider(pkg, provider string) error {
 func AddRoute(pkg, route string) error {
 	appFilePath := path.Bootstrap("app.go")
 
-	if err := addRouteImports(appFilePath, pkg); err != nil {
+	if err := addImportsToFile(appFilePath, pkg); err != nil {
 		return err
 	}
 
@@ -388,7 +388,11 @@ func RemoveProvider(pkg, provider string) error {
 func RemoveRoute(pkg, route string) error {
 	appFilePath := path.Bootstrap("app.go")
 
-	return GoFile(appFilePath).Find(match.FoundationSetup()).Modify(removeRouteFromSetup(route)).Find(match.Imports()).Modify(RemoveImport(pkg)).Apply()
+	if err := GoFile(appFilePath).Find(match.FoundationSetup()).Modify(removeRouteFromSetup(route)).Apply(); err != nil {
+		return err
+	}
+
+	return removeImportsFromFile(appFilePath, pkg)
 }
 
 // WrapNewline adds newline decorations to specific AST nodes for better formatting.
@@ -429,6 +433,17 @@ func WrapNewline[T dst.Node](node T) T {
 	})
 
 	return node
+}
+
+// addImportsToFile adds the specified import to the file, creating the import block if needed.
+func addImportsToFile(filePath, pkg string) error {
+	importMatchers := match.Imports()
+
+	if alias, importPath, found := strings.Cut(pkg, " "); found {
+		return GoFile(filePath).FindOrCreate(importMatchers, createImport).Modify(AddImport(importPath, alias)).Apply()
+	}
+
+	return GoFile(filePath).FindOrCreate(importMatchers, createImport).Modify(AddImport(pkg)).Apply()
 }
 
 // isThirdParty determines if an import path refers to a third-party package.
@@ -477,4 +492,15 @@ func isThirdParty(importPath string) bool {
 func isTopName(n dst.Expr, name string) bool {
 	id, ok := n.(*dst.Ident)
 	return ok && id.Name == name && id.Obj == nil
+}
+
+// removeImportsFromFile removes the specified import from the file.
+func removeImportsFromFile(filePath, pkg string) error {
+	importMatchers := match.Imports()
+
+	if alias, importPath, found := strings.Cut(pkg, " "); found {
+		return GoFile(filePath).Find(importMatchers).Modify(RemoveImport(importPath, alias)).Apply()
+	}
+
+	return GoFile(filePath).Find(importMatchers).Modify(RemoveImport(pkg)).Apply()
 }
