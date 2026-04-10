@@ -495,7 +495,7 @@ func isTopName(n dst.Expr, name string) bool {
 }
 
 // removeImportsFromFile removes the specified import from the file.
-func removeImportsFromFile(appFilePath, pkg string) error {
+func removeImportsFromFile(filePath, pkg string) error {
 	importMatchers := match.Imports()
 
 	if alias, importPath, found := strings.Cut(pkg, " "); found {
