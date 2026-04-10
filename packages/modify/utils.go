@@ -436,7 +436,7 @@ func WrapNewline[T dst.Node](node T) T {
 }
 
 // addImportsToFile adds the specified import to the file, creating the import block if needed.
-func addImportsToFile(appFilePath, pkg string) error {
+func addImportsToFile(filePath, pkg string) error {
 	importMatchers := match.Imports()
 
 	if alias, importPath, found := strings.Cut(pkg, " "); found {
