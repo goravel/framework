@@ -319,7 +319,6 @@ func (r *withSliceHandler) addItemToFile(pkg, item string) error {
 }
 
 // removeImports removes the item package import if it's no longer used.
-// It checks both app.go and the helper file (if it exists) to determine if the import is still in use.
 func (r *withSliceHandler) removeImports(pkg string) error {
 	return removeImportsFromFile(r.appFilePath, pkg)
 }
