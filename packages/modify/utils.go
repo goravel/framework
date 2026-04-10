@@ -440,10 +440,10 @@ func addImportsToFile(filePath, pkg string) error {
 	importMatchers := match.Imports()
 
 	if alias, importPath, found := strings.Cut(pkg, " "); found {
-		return GoFile(appFilePath).FindOrCreate(importMatchers, createImport).Modify(AddImport(importPath, alias)).Apply()
+		return GoFile(filePath).FindOrCreate(importMatchers, createImport).Modify(AddImport(importPath, alias)).Apply()
 	}
 
-	return GoFile(appFilePath).FindOrCreate(importMatchers, createImport).Modify(AddImport(pkg)).Apply()
+	return GoFile(filePath).FindOrCreate(importMatchers, createImport).Modify(AddImport(pkg)).Apply()
 }
 
 // isThirdParty determines if an import path refers to a third-party package.
@@ -499,8 +499,8 @@ func removeImportsFromFile(filePath, pkg string) error {
 	importMatchers := match.Imports()
 
 	if alias, importPath, found := strings.Cut(pkg, " "); found {
-		return GoFile(appFilePath).Find(importMatchers).Modify(RemoveImport(importPath, alias)).Apply()
+		return GoFile(filePath).Find(importMatchers).Modify(RemoveImport(importPath, alias)).Apply()
 	}
 
-	return GoFile(appFilePath).Find(importMatchers).Modify(RemoveImport(pkg)).Apply()
+	return GoFile(filePath).Find(importMatchers).Modify(RemoveImport(pkg)).Apply()
 }
