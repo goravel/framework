@@ -1,0 +1,68 @@
+name: Test In Example
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_ACCESS_KEY_SECRET: ${{ secrets.AWS_ACCESS_KEY_SECRET }}
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_BUCKET: ${{ secrets.AWS_BUCKET }}
+  AWS_URL: ${{ secrets.AWS_URL }}
+  ALIYUN_ACCESS_KEY_ID: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
+  ALIYUN_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
+  ALIYUN_BUCKET: ${{ secrets.ALIYUN_BUCKET }}
+  ALIYUN_URL: ${{ secrets.ALIYUN_URL }}
+  ALIYUN_ENDPOINT: ${{ secrets.ALIYUN_ENDPOINT }}
+  TENCENT_ACCESS_KEY_ID: ${{ secrets.TENCENT_ACCESS_KEY_ID }}
+  TENCENT_ACCESS_KEY_SECRET: ${{ secrets.TENCENT_ACCESS_KEY_SECRET }}
+  TENCENT_URL: ${{ secrets.TENCENT_URL }}
+  MINIO_ACCESS_KEY_ID: ${{ secrets.MINIO_ACCESS_KEY_ID }}
+  MINIO_ACCESS_KEY_SECRET: ${{ secrets.MINIO_ACCESS_KEY_SECRET }}
+  MINIO_BUCKET: ${{ secrets.MINIO_BUCKET }}
+
+jobs:
+  test-in-example:
+    strategy:
+      matrix:
+        go: [ "1.25", "1.26" ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout framework
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          path: framework
+
+      - name: Checkout goravel/example
+        uses: actions/checkout@v6
+        with:
+          repository: goravel/example
+          path: example
+
+      - name: Set up Go ${{ matrix.go }}
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: Go mod cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('example/**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Replace framework with local checkout
+        working-directory: example
+        run: |
+          go mod edit -replace github.com/goravel/framework=../framework
+          go mod tidy
+
+      - name: Run tests
+        working-directory: example
+        run: go test -timeout 10m -p 1 ./...
