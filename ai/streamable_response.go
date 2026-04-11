@@ -60,16 +60,19 @@ type streamableResponse struct {
 func (r *streamableResponse) Each(callback func(contractsai.StreamEvent) error) error {
 	r.start()
 
-	index := 0
 	for {
 		r.mu.Lock()
-		for index >= len(r.events) && !r.finished {
+		for len(r.events) == 0 && !r.finished {
 			r.cond.Wait()
 		}
 
-		if index < len(r.events) {
-			event := r.events[index]
-			index++
+		if len(r.events) > 0 {
+			event := r.events[0]
+			r.events[0] = contractsai.StreamEvent{}
+			r.events = r.events[1:]
+			if len(r.events) == 0 {
+				r.events = nil
+			}
 			r.mu.Unlock()
 
 			if callback != nil {
