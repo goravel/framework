@@ -43,6 +43,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: goravel/example
+          ref: master
           path: example
 
       - name: Set up Go ${{ matrix.go }}
@@ -56,9 +57,9 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('example/**/go.sum') }}
+          key: ${{ runner.os }}-go-${{ matrix.go }}-${{ hashFiles('example/**/go.sum', 'framework/**/go.sum') }}
           restore-keys: |
-            ${{ runner.os }}-go-
+            ${{ runner.os }}-go-${{ matrix.go }}-
 
       - name: Replace framework with local checkout
         working-directory: example
