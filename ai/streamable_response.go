@@ -8,12 +8,11 @@ import (
 
 	contractsai "github.com/goravel/framework/contracts/ai"
 	contractshttp "github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/errors"
 )
 
 var (
 	_ contractsai.StreamableResponse = (*streamableResponse)(nil)
-
-	errStreamRunnerRequired = stderrors.New("ai stream runner is required")
 )
 
 const (
@@ -24,20 +23,6 @@ const (
 )
 
 type StreamRunner func(ctx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.Response, error)
-
-func NewStreamableResponse(ctx context.Context, runner StreamRunner) contractsai.StreamableResponse {
-	if ctx == nil {
-		ctx = context.Background()
-	}
-
-	stream := &streamableResponse{
-		ctx:    ctx,
-		runner: runner,
-	}
-	stream.cond = sync.NewCond(&stream.mu)
-
-	return stream
-}
 
 type streamableResponse struct {
 	ctx    context.Context
@@ -55,6 +40,20 @@ type streamableResponse struct {
 	thenErr  error
 
 	thenCallbacks []func(contractsai.Response) error
+}
+
+func NewStreamableResponse(ctx context.Context, runner StreamRunner) contractsai.StreamableResponse {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	stream := &streamableResponse{
+		ctx:    ctx,
+		runner: runner,
+	}
+	stream.cond = sync.NewCond(&stream.mu)
+
+	return stream
 }
 
 func (r *streamableResponse) Each(callback func(contractsai.StreamEvent) error) error {
@@ -226,7 +225,7 @@ func (r *streamableResponse) start() {
 
 func (r *streamableResponse) run(ctx context.Context) {
 	if r.runner == nil {
-		r.complete(nil, errStreamRunnerRequired)
+		r.complete(nil, errors.AIStreamRunnerRequired)
 		return
 	}
 
