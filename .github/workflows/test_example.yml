@@ -5,6 +5,9 @@ on:
       - master
   pull_request:
 
+permissions:
+  contents: read
+
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_ACCESS_KEY_SECRET: ${{ secrets.AWS_ACCESS_KEY_SECRET }}
