@@ -14,6 +14,7 @@
 - Name tests `Test<FunctionName>_[Optional]`; use table style or sub-tests for multiple cases.
 - Don't use `assert.*` with `if` statements; use `assert.*` directly for clarity and better failure messages.
 - Use `t.Run()` for sub-tests when testing multiple cases for the same function, and use table-driven tests for multiple cases with similar setup/assertions. Avoid writing separate test functions for each case when they share common logic.
+- Prefer the simplest test setup that proves behavior; avoid extra helper abstractions/state tracking (e.g., counters/wrappers) unless reused or required by interface constraints.
 - The basic table-driven test pattern is:
 
 ```go
