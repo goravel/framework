@@ -9,24 +9,6 @@ permissions:
   actions: write
   contents: read
 
-env:
-  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  AWS_ACCESS_KEY_SECRET: ${{ secrets.AWS_ACCESS_KEY_SECRET }}
-  AWS_REGION: ${{ secrets.AWS_REGION }}
-  AWS_BUCKET: ${{ secrets.AWS_BUCKET }}
-  AWS_URL: ${{ secrets.AWS_URL }}
-  ALIYUN_ACCESS_KEY_ID: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
-  ALIYUN_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
-  ALIYUN_BUCKET: ${{ secrets.ALIYUN_BUCKET }}
-  ALIYUN_URL: ${{ secrets.ALIYUN_URL }}
-  ALIYUN_ENDPOINT: ${{ secrets.ALIYUN_ENDPOINT }}
-  TENCENT_ACCESS_KEY_ID: ${{ secrets.TENCENT_ACCESS_KEY_ID }}
-  TENCENT_ACCESS_KEY_SECRET: ${{ secrets.TENCENT_ACCESS_KEY_SECRET }}
-  TENCENT_URL: ${{ secrets.TENCENT_URL }}
-  MINIO_ACCESS_KEY_ID: ${{ secrets.MINIO_ACCESS_KEY_ID }}
-  MINIO_ACCESS_KEY_SECRET: ${{ secrets.MINIO_ACCESS_KEY_SECRET }}
-  MINIO_BUCKET: ${{ secrets.MINIO_BUCKET }}
-
 jobs:
   test-in-example:
     strategy:
