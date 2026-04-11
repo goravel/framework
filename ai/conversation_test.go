@@ -5,13 +5,21 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 
 	contractsai "github.com/goravel/framework/contracts/ai"
 	mocksai "github.com/goravel/framework/mocks/ai"
 )
 
-func TestConversation_Prompt(t *testing.T) {
+type ConversationTestSuite struct {
+	suite.Suite
+}
+
+func TestConversationTestSuite(t *testing.T) {
+	suite.Run(t, &ConversationTestSuite{})
+}
+
+func (s *ConversationTestSuite) TestPrompt() {
 	ctx := context.Background()
 
 	var (
@@ -20,9 +28,9 @@ func TestConversation_Prompt(t *testing.T) {
 	)
 
 	beforeEach := func(initial []contractsai.Message, model string) {
-		mockAgent := mocksai.NewAgent(t)
+		mockAgent := mocksai.NewAgent(s.T())
 		mockAgent.EXPECT().Messages().Return(initial).Once()
-		mockProvider = mocksai.NewProvider(t)
+		mockProvider = mocksai.NewProvider(s.T())
 		conv = NewConversation(ctx, mockAgent, mockProvider, model)
 	}
 
@@ -41,7 +49,7 @@ func TestConversation_Prompt(t *testing.T) {
 			model:   "model-x",
 			input:   "hello",
 			setup: func() contractsai.Response {
-				mockResponse := mocksai.NewResponse(t)
+				mockResponse := mocksai.NewResponse(s.T())
 				mockResponse.EXPECT().Text().Return("got it").Once()
 				mockProvider.EXPECT().Prompt(ctx, contractsai.AgentPrompt{Agent: conv, Input: "hello", Model: "model-x"}).Return(mockResponse, nil).Once()
 				return mockResponse
@@ -72,7 +80,7 @@ func TestConversation_Prompt(t *testing.T) {
 			model:   "model-empty",
 			input:   "",
 			setup: func() contractsai.Response {
-				mockResponse := mocksai.NewResponse(t)
+				mockResponse := mocksai.NewResponse(s.T())
 				mockResponse.EXPECT().Text().Return("").Once()
 				mockProvider.EXPECT().Prompt(ctx, contractsai.AgentPrompt{Agent: conv, Input: "", Model: "model-empty"}).Return(mockResponse, nil).Once()
 				return mockResponse
@@ -85,19 +93,19 @@ func TestConversation_Prompt(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		s.Run(tt.name, func() {
 			beforeEach(tt.initial, tt.model)
 			expectResp := tt.setup()
 
 			resp, err := conv.Prompt(tt.input)
-			assert.Equal(t, tt.expectError, err)
-			assert.Equal(t, expectResp, resp)
-			assert.Equal(t, tt.expectMessages, conv.Messages())
+			s.Equal(tt.expectError, err)
+			s.Equal(expectResp, resp)
+			s.Equal(tt.expectMessages, conv.Messages())
 		})
 	}
 }
 
-func TestConversation_Reset(t *testing.T) {
+func (s *ConversationTestSuite) TestReset() {
 	ctx := context.Background()
 
 	var (
@@ -106,9 +114,9 @@ func TestConversation_Reset(t *testing.T) {
 	)
 
 	beforeEach := func(initial []contractsai.Message) {
-		mockAgent := mocksai.NewAgent(t)
+		mockAgent := mocksai.NewAgent(s.T())
 		mockAgent.EXPECT().Messages().Return(initial).Times(2)
-		mockProvider = mocksai.NewProvider(t)
+		mockProvider = mocksai.NewProvider(s.T())
 		conv = NewConversation(ctx, mockAgent, mockProvider, "model-z")
 	}
 
@@ -127,7 +135,7 @@ func TestConversation_Reset(t *testing.T) {
 			input:        "append",
 			promptBefore: true,
 			setup: func() {
-				response := mocksai.NewResponse(t)
+				response := mocksai.NewResponse(s.T())
 				mockProvider.EXPECT().Prompt(ctx, contractsai.AgentPrompt{Agent: conv, Input: "append", Model: "model-z"}).Return(response, nil).Once()
 				response.EXPECT().Text().Return("done").Once()
 			},
@@ -149,20 +157,20 @@ func TestConversation_Reset(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		s.Run(tt.name, func() {
 			beforeEach(tt.initial)
 			tt.setup()
 
 			if tt.promptBefore {
 				_, err := conv.Prompt(tt.input)
-				require.NoError(t, err)
+				s.Require().NoError(err)
 			}
 
-			assert.Equal(t, tt.expectBefore, conv.Messages())
+			s.Equal(tt.expectBefore, conv.Messages())
 			conv.Reset()
 			resetMessages := conv.Messages()
-			assert.Equal(t, tt.expectAfter, resetMessages)
-			assert.NotSame(t, &tt.initial[0], &resetMessages[0])
+			s.Equal(tt.expectAfter, resetMessages)
+			s.NotSame(&tt.initial[0], &resetMessages[0])
 		})
 	}
 }
@@ -183,20 +191,20 @@ func (r *conversationProviderStub) Stream(ctx context.Context, prompt contractsa
 	return r.streamFn(ctx, prompt)
 }
 
-func TestConversation_Stream(t *testing.T) {
+func (s *ConversationTestSuite) TestStream() {
 	ctx := context.Background()
 	model := "stream-model"
 
-	t.Run("returns provider error without mutating messages", func(t *testing.T) {
+	s.Run("returns provider error without mutating messages", func() {
 		initial := []contractsai.Message{{Role: contractsai.RoleAssistant, Content: "seed"}}
-		mockAgent := mocksai.NewAgent(t)
+		mockAgent := mocksai.NewAgent(s.T())
 		mockAgent.EXPECT().Messages().Return(initial).Once()
 
 		var conv *conversation
 		provider := &conversationProviderStub{
 			streamFn: func(gotCtx context.Context, prompt contractsai.AgentPrompt) (contractsai.StreamableResponse, error) {
-				assert.Equal(t, ctx, gotCtx)
-				assert.Equal(t, contractsai.AgentPrompt{Agent: conv, Input: "hello", Model: model}, prompt)
+				s.Equal(ctx, gotCtx)
+				s.Equal(contractsai.AgentPrompt{Agent: conv, Input: "hello", Model: model}, prompt)
 				return nil, assert.AnError
 			},
 		}
@@ -204,21 +212,21 @@ func TestConversation_Stream(t *testing.T) {
 
 		stream, err := conv.Stream("hello")
 
-		assert.Equal(t, assert.AnError, err)
-		assert.Nil(t, stream)
-		assert.Equal(t, initial, conv.Messages())
+		s.Equal(assert.AnError, err)
+		s.Nil(stream)
+		s.Equal(initial, conv.Messages())
 	})
 
-	t.Run("appends messages after successful stream completion", func(t *testing.T) {
+	s.Run("appends messages after successful stream completion", func() {
 		initial := []contractsai.Message{{Role: contractsai.RoleAssistant, Content: "seed"}}
-		mockAgent := mocksai.NewAgent(t)
+		mockAgent := mocksai.NewAgent(s.T())
 		mockAgent.EXPECT().Messages().Return(initial).Once()
 
 		var conv *conversation
 		provider := &conversationProviderStub{
 			streamFn: func(gotCtx context.Context, prompt contractsai.AgentPrompt) (contractsai.StreamableResponse, error) {
-				assert.Equal(t, ctx, gotCtx)
-				assert.Equal(t, contractsai.AgentPrompt{Agent: conv, Input: "hi", Model: model}, prompt)
+				s.Equal(ctx, gotCtx)
+				s.Equal(contractsai.AgentPrompt{Agent: conv, Input: "hi", Model: model}, prompt)
 				return NewStreamableResponse(gotCtx, func(_ context.Context, emit func(contractsai.StreamEvent) error) (contractsai.Response, error) {
 					if err := emit(contractsai.StreamEvent{Type: contractsai.StreamEventTypeTextDelta, Delta: "partial"}); err != nil {
 						return nil, err
@@ -234,9 +242,9 @@ func TestConversation_Stream(t *testing.T) {
 		conv = NewConversation(ctx, mockAgent, provider, model)
 
 		stream, err := conv.Stream("hi")
-		require.NoError(t, err)
-		require.NotNil(t, stream)
-		assert.Equal(t, initial, conv.Messages())
+		s.Require().NoError(err)
+		s.Require().NotNil(stream)
+		s.Equal(initial, conv.Messages())
 
 		var events []contractsai.StreamEvent
 		err = stream.Each(func(event contractsai.StreamEvent) error {
@@ -244,28 +252,28 @@ func TestConversation_Stream(t *testing.T) {
 			return nil
 		})
 
-		assert.NoError(t, err)
-		assert.Equal(t, normalizeStreamEvents([]contractsai.StreamEvent{
+		s.NoError(err)
+		s.Equal(normalizeStreamEvents([]contractsai.StreamEvent{
 			{Type: contractsai.StreamEventTypeTextDelta, Delta: "partial"},
 			{Type: contractsai.StreamEventTypeDone},
 		}), normalizeStreamEvents(events))
-		assert.Equal(t, []contractsai.Message{
+		s.Equal([]contractsai.Message{
 			{Role: contractsai.RoleAssistant, Content: "seed"},
 			{Role: contractsai.RoleUser, Content: "hi"},
 			{Role: contractsai.RoleAssistant, Content: "assistant reply"},
 		}, conv.Messages())
 	})
 
-	t.Run("does not append messages when stream completes with error", func(t *testing.T) {
+	s.Run("does not append messages when stream completes with error", func() {
 		initial := []contractsai.Message{{Role: contractsai.RoleAssistant, Content: "seed"}}
-		mockAgent := mocksai.NewAgent(t)
+		mockAgent := mocksai.NewAgent(s.T())
 		mockAgent.EXPECT().Messages().Return(initial).Once()
 
 		var conv *conversation
 		provider := &conversationProviderStub{
 			streamFn: func(gotCtx context.Context, prompt contractsai.AgentPrompt) (contractsai.StreamableResponse, error) {
-				assert.Equal(t, ctx, gotCtx)
-				assert.Equal(t, contractsai.AgentPrompt{Agent: conv, Input: "hi", Model: model}, prompt)
+				s.Equal(ctx, gotCtx)
+				s.Equal(contractsai.AgentPrompt{Agent: conv, Input: "hi", Model: model}, prompt)
 				return NewStreamableResponse(gotCtx, func(_ context.Context, emit func(contractsai.StreamEvent) error) (contractsai.Response, error) {
 					if err := emit(contractsai.StreamEvent{Type: contractsai.StreamEventTypeTextDelta, Delta: "partial"}); err != nil {
 						return nil, err
@@ -278,20 +286,20 @@ func TestConversation_Stream(t *testing.T) {
 		conv = NewConversation(ctx, mockAgent, provider, model)
 
 		stream, err := conv.Stream("hi")
-		require.NoError(t, err)
-		require.NotNil(t, stream)
+		s.Require().NoError(err)
+		s.Require().NotNil(stream)
 
 		err = stream.Each(nil)
-		assert.Equal(t, assert.AnError, err)
-		assert.Equal(t, initial, conv.Messages())
+		s.Equal(assert.AnError, err)
+		s.Equal(initial, conv.Messages())
 	})
 }
 
-func TestConversation_MessagesClone(t *testing.T) {
+func (s *ConversationTestSuite) TestMessagesClone() {
 	ctx := context.Background()
 	initial := []contractsai.Message{{Role: contractsai.RoleAssistant, Content: "seed"}}
 
-	mockAgent := mocksai.NewAgent(t)
+	mockAgent := mocksai.NewAgent(s.T())
 	mockAgent.EXPECT().Messages().Return(initial).Once()
 	conv := NewConversation(ctx, mockAgent, &conversationProviderStub{}, "model")
 
@@ -299,8 +307,8 @@ func TestConversation_MessagesClone(t *testing.T) {
 	initial = append(initial, contractsai.Message{Role: contractsai.RoleUser, Content: "new"})
 
 	got := conv.Messages()
-	assert.Equal(t, []contractsai.Message{{Role: contractsai.RoleAssistant, Content: "seed"}}, got)
+	s.Equal([]contractsai.Message{{Role: contractsai.RoleAssistant, Content: "seed"}}, got)
 
 	got[0].Content = "changed"
-	assert.Equal(t, []contractsai.Message{{Role: contractsai.RoleAssistant, Content: "seed"}}, conv.Messages())
+	s.Equal([]contractsai.Message{{Role: contractsai.RoleAssistant, Content: "seed"}}, conv.Messages())
 }
