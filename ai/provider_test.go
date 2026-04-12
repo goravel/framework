@@ -19,6 +19,10 @@ func (t *testProvider) Prompt(ctx context.Context, prompt contractsai.AgentPromp
 	return nil, nil
 }
 
+func (t *testProvider) Stream(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.StreamableResponse, error) {
+	return nil, nil
+}
+
 func TestProviderResolver_New(t *testing.T) {
 	direct := &testProvider{id: "direct"}
 

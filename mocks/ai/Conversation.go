@@ -157,6 +157,64 @@ func (_c *Conversation_Reset_Call) RunAndReturn(run func()) *Conversation_Reset_
 	return _c
 }
 
+// Stream provides a mock function with given fields: input
+func (_m *Conversation) Stream(input string) (ai.StreamableResponse, error) {
+	ret := _m.Called(input)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Stream")
+	}
+
+	var r0 ai.StreamableResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (ai.StreamableResponse, error)); ok {
+		return rf(input)
+	}
+	if rf, ok := ret.Get(0).(func(string) ai.StreamableResponse); ok {
+		r0 = rf(input)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(ai.StreamableResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(input)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Conversation_Stream_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Stream'
+type Conversation_Stream_Call struct {
+	*mock.Call
+}
+
+// Stream is a helper method to define mock.On call
+//   - input string
+func (_e *Conversation_Expecter) Stream(input interface{}) *Conversation_Stream_Call {
+	return &Conversation_Stream_Call{Call: _e.mock.On("Stream", input)}
+}
+
+func (_c *Conversation_Stream_Call) Run(run func(input string)) *Conversation_Stream_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Conversation_Stream_Call) Return(_a0 ai.StreamableResponse, _a1 error) *Conversation_Stream_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Conversation_Stream_Call) RunAndReturn(run func(string) (ai.StreamableResponse, error)) *Conversation_Stream_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewConversation creates a new instance of Conversation. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewConversation(t interface {

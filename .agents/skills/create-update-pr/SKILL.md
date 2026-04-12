@@ -36,15 +36,17 @@ No additional top-level sections are permitted.
 <1–2 short paragraphs about what changed and why it matters.>
 
 ```go
-<real user-facing code derived from test cases>
+<real user-facing code, written in the style of https://github.com/goravel/example>
 ```
 
 <1–2 short paragraphs about what was fixed and why it matters.>
 
 ```go
-<real user-facing code derived before the fix from test cases, add comments to clarify what was wrong>
+// Before: <describe what was wrong>
+<real user-facing code before the fix, written in the style of https://github.com/goravel/example>
 
-<real user-facing code derived after the fix from test cases, add comments to clarify the fix>
+// After: <describe the fix>
+<real user-facing code after the fix, written in the style of https://github.com/goravel/example>
 ```
 ````
 
@@ -62,9 +64,9 @@ No additional top-level sections are permitted.
 - Code blocks must contain only real user-facing code; never include implementation snippets, placeholder markers, or pseudo-code inside code fences.
 
 **Feature PRs**
-- Include exactly one fenced code block generated from test cases.
+- Include exactly one fenced code block written in the style of https://github.com/goravel/example.
 - The block must reflect end-user usage semantics, not internal implementation detail.
-- Prefer integration/black-box tests; fall back to the nearest relevant test case.
+- Model the snippet after the closest matching pattern in the example repository (controllers, routes, models, etc.).
 
 **Bug-fix PRs**
 - Include one fenced code block per distinct bug.
@@ -72,6 +74,65 @@ No additional top-level sections are permitted.
 
 **Mixed PRs (feature + bug fix)**
 - Use bug-fix formatting when multiple bug fixes are present; otherwise use feature formatting.
+
+---
+
+## Code Style Reference
+
+All user-facing code blocks must be written in the style of https://github.com/goravel/example. The following patterns are representative examples.
+
+**Route registration** (`routes/api.go`)
+
+```go
+facades.Route().Prefix("jwt").Group(func(route route.Router) {
+	route.Post("login", authController.LoginByJwt)
+	route.Middleware(middleware.Jwt()).Get("info", authController.InfoByJwt)
+})
+```
+
+**ORM query** (`app/http/controllers/db_controller.go`)
+
+```go
+if err := facades.Orm().Query().Create(&models.User{
+	Name: ctx.Request().Input("name"),
+}); err != nil {
+	return ctx.Response().Json(http.StatusInternalServerError, http.Json{
+		"error": err.Error(),
+	})
+}
+```
+
+**Auth / JWT login** (`app/http/controllers/auth_controller.go`)
+
+```go
+token, err := facades.Auth(ctx).LoginUsingID(user.ID)
+if err != nil {
+	return ctx.Response().String(http.StatusInternalServerError, err.Error())
+}
+return ctx.Response().Success().Json(http.Json{
+	"token": token,
+	"user":  user,
+})
+```
+
+**Request validation** (`app/http/controllers/validation_controller.go`)
+
+```go
+validator, err := ctx.Request().Validate(map[string]any{
+	"name": "required",
+	"age":  "required|integer|min:1",
+})
+if err != nil {
+	return ctx.Response().Json(http.StatusBadRequest, http.Json{"message": err.Error()})
+}
+if validator.Fails() {
+	return ctx.Response().Json(http.StatusBadRequest, http.Json{"message": validator.Errors().All()})
+}
+var user User
+if err := validator.Bind(&user); err != nil {
+	return ctx.Response().Json(http.StatusBadRequest, http.Json{"message": err.Error()})
+}
+```
 
 ---
 
@@ -94,7 +155,7 @@ No additional top-level sections are permitted.
    - Compute diff: `git diff "$base"...HEAD`.
    - Derive behavior-oriented summary bullets from the diff.
    - Detect PR type (`feature` or `bug fix`) from branch intent and diff semantics.
-   - Derive code example(s) from test cases per the Why Rules above.
+   - Derive code example(s) in the style of https://github.com/goravel/example per the Why Rules above.
 
 5. **Compose PR body**
    - Fill the PR Body Specification template using the context from step 4.

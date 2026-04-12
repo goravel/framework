@@ -23,12 +23,12 @@ func NewApplication(ctx context.Context, config contractsai.Config) *Application
 }
 
 func (r *Application) Agent(agent contractsai.Agent, options ...contractsai.Option) (contractsai.Conversation, error) {
-	opts := make(map[string]any)
+	opts := &contractsai.Options{}
 	for _, option := range options {
 		option(opts)
 	}
 
-	providerName, _ := opts[contractsai.OptionProvider].(string)
+	providerName := opts.Provider
 	if providerName == "" {
 		providerName = r.config.Default
 	}
@@ -38,7 +38,7 @@ func (r *Application) Agent(agent contractsai.Agent, options ...contractsai.Opti
 		return nil, err
 	}
 
-	model, _ := opts[contractsai.OptionModel].(string)
+	model := opts.Model
 
 	return NewConversation(r.ctx, agent, provider, model), nil
 }

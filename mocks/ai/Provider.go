@@ -82,6 +82,65 @@ func (_c *Provider_Prompt_Call) RunAndReturn(run func(context.Context, ai.AgentP
 	return _c
 }
 
+// Stream provides a mock function with given fields: ctx, prompt
+func (_m *Provider) Stream(ctx context.Context, prompt ai.AgentPrompt) (ai.StreamableResponse, error) {
+	ret := _m.Called(ctx, prompt)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Stream")
+	}
+
+	var r0 ai.StreamableResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, ai.AgentPrompt) (ai.StreamableResponse, error)); ok {
+		return rf(ctx, prompt)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, ai.AgentPrompt) ai.StreamableResponse); ok {
+		r0 = rf(ctx, prompt)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(ai.StreamableResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, ai.AgentPrompt) error); ok {
+		r1 = rf(ctx, prompt)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Provider_Stream_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Stream'
+type Provider_Stream_Call struct {
+	*mock.Call
+}
+
+// Stream is a helper method to define mock.On call
+//   - ctx context.Context
+//   - prompt ai.AgentPrompt
+func (_e *Provider_Expecter) Stream(ctx interface{}, prompt interface{}) *Provider_Stream_Call {
+	return &Provider_Stream_Call{Call: _e.mock.On("Stream", ctx, prompt)}
+}
+
+func (_c *Provider_Stream_Call) Run(run func(ctx context.Context, prompt ai.AgentPrompt)) *Provider_Stream_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(ai.AgentPrompt))
+	})
+	return _c
+}
+
+func (_c *Provider_Stream_Call) Return(_a0 ai.StreamableResponse, _a1 error) *Provider_Stream_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Provider_Stream_Call) RunAndReturn(run func(context.Context, ai.AgentPrompt) (ai.StreamableResponse, error)) *Provider_Stream_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewProvider creates a new instance of Provider. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewProvider(t interface {
