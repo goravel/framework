@@ -304,7 +304,6 @@ func (s *ConversationTestSuite) TestMessagesClone() {
 	conv := NewConversation(ctx, mockAgent, &conversationProviderStub{}, "model")
 
 	initial[0].Content = "mutated"
-	initial = append(initial, contractsai.Message{Role: contractsai.RoleUser, Content: "new"})
 
 	got := conv.Messages()
 	s.Equal([]contractsai.Message{{Role: contractsai.RoleAssistant, Content: "seed"}}, got)
