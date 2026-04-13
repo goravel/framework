@@ -3298,23 +3298,22 @@ func (s *QueryTestSuite) TestManyToManyUpdateWithAssociations() {
 					},
 				},
 				{
-					name: "Select(*, Associations).Update updates main fields and associations",
+					name: "Select(Associations).Save updates main fields and associations",
 					setup: func() {
 						user := &User{
 							Name:  "m2m_update_field_user",
 							Roles: []*Role{{Name: "m2m_update_field_role"}},
 						}
-						s.Nil(query.Query().Select("*", orm.Associations).Create(&user))
+						s.Nil(query.Query().Select(orm.Associations).Create(&user))
 						s.True(user.ID > 0)
 
-						// Select("*", Associations) updates all scalar columns AND associations.
+						// Save with Select(Associations) uses FullSaveAssociations + Save,
+						// which updates all scalar columns AND syncs associations.
 						user.Name = "m2m_update_field_user_updated"
-						_, err := query.Query().Model(user).Select("*", orm.Associations).Update(user)
-						s.Nil(err)
+						s.Nil(query.Query().Select(orm.Associations).Save(user))
 
 						var userLoaded User
 						s.Nil(query.Query().Find(&userLoaded, user.ID))
-						// Name should be updated because "*" includes all scalar columns.
 						s.Equal("m2m_update_field_user_updated", userLoaded.Name)
 					},
 				},
