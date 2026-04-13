@@ -13,7 +13,7 @@ import (
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/gorm"
-	orm "github.com/goravel/framework/database/orm"
+	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/convert"
