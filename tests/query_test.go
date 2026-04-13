@@ -10,10 +10,10 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/goravel/framework/contracts/database/orm"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/gorm"
+	orm "github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/convert"
@@ -2526,7 +2526,7 @@ func (s *QueryTestSuite) TestGet() {
 }
 
 func (s *QueryTestSuite) TestGlobalScopes() {
-	prepareData := func(query orm.Query) {
+	prepareData := func(query contractsorm.Query) {
 		globalScope := GlobalScope{Name: "name_scope", Avatar: "avatar_scope"}
 		s.Nil(query.Create(&globalScope))
 		s.True(globalScope.ID > 0)
@@ -3298,26 +3298,24 @@ func (s *QueryTestSuite) TestManyToManyUpdateWithAssociations() {
 					},
 				},
 				{
-					name: "Select(Associations).Update does not update main fields",
+					name: "Select(*, Associations).Update updates main fields and associations",
 					setup: func() {
 						user := &User{
 							Name:  "m2m_update_field_user",
 							Roles: []*Role{{Name: "m2m_update_field_role"}},
 						}
-						s.Nil(query.Query().Select(gorm.Associations).Create(&user))
+						s.Nil(query.Query().Select("*", orm.Associations).Create(&user))
 						s.True(user.ID > 0)
 
-						// Changing the name in memory, but Select(Associations) only syncs
-						// associations — the main model columns are not part of the update.
+						// Select("*", Associations) updates all scalar columns AND associations.
 						user.Name = "m2m_update_field_user_updated"
-						_, err := query.Query().Model(user).Select(gorm.Associations).Update(user)
+						_, err := query.Query().Model(user).Select("*", orm.Associations).Update(user)
 						s.Nil(err)
 
 						var userLoaded User
 						s.Nil(query.Query().Find(&userLoaded, user.ID))
-						// Name should remain unchanged because Select(Associations) restricts
-						// the update to association fields only.
-						s.Equal("m2m_update_field_user", userLoaded.Name)
+						// Name should be updated because "*" includes all scalar columns.
+						s.Equal("m2m_update_field_user_updated", userLoaded.Name)
 					},
 				},
 				{
@@ -4569,7 +4567,7 @@ func (s *QueryTestSuite) TestWithoutEvents() {
 }
 
 func (s *QueryTestSuite) TestWithoutGlobalScopes() {
-	prepareData := func(query orm.Query) {
+	prepareData := func(query contractsorm.Query) {
 		globalScope := GlobalScope{Name: "name_scope", Avatar: "avatar_scope"}
 		s.Nil(query.Create(&globalScope))
 		s.True(globalScope.ID > 0)
