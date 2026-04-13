@@ -3298,7 +3298,7 @@ func (s *QueryTestSuite) TestManyToManyUpdateWithAssociations() {
 					},
 				},
 				{
-					name: "Select(Associations).Update updates main fields",
+					name: "Select(Associations).Update does not update main fields",
 					setup: func() {
 						user := &User{
 							Name:  "m2m_update_field_user",
@@ -3307,13 +3307,17 @@ func (s *QueryTestSuite) TestManyToManyUpdateWithAssociations() {
 						s.Nil(query.Query().Select(gorm.Associations).Create(&user))
 						s.True(user.ID > 0)
 
+						// Changing the name in memory, but Select(Associations) only syncs
+						// associations — the main model columns are not part of the update.
 						user.Name = "m2m_update_field_user_updated"
 						_, err := query.Query().Model(user).Select(gorm.Associations).Update(user)
 						s.Nil(err)
 
 						var userLoaded User
 						s.Nil(query.Query().Find(&userLoaded, user.ID))
-						s.Equal("m2m_update_field_user_updated", userLoaded.Name)
+						// Name should remain unchanged because Select(Associations) restricts
+						// the update to association fields only.
+						s.Equal("m2m_update_field_user", userLoaded.Name)
 					},
 				},
 				{
