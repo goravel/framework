@@ -3248,6 +3248,110 @@ func (s *QueryTestSuite) TestManyToMany() {
 	}
 }
 
+func (s *QueryTestSuite) TestManyToManyUpdateWithAssociations() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			tests := []struct {
+				name  string
+				setup func()
+			}{
+				{
+					name: "Select(Associations).Update only appends new m2m relations, does not remove existing ones",
+					setup: func() {
+						// Step 1: create user with role A and role B
+						roleA := &Role{Name: "m2m_update_role_a"}
+						roleB := &Role{Name: "m2m_update_role_b"}
+						user := &User{
+							Name:  "m2m_update_user",
+							Roles: []*Role{roleA, roleB},
+						}
+						s.Nil(query.Query().Select(gorm.Associations).Create(&user))
+						s.True(user.ID > 0)
+						s.True(roleA.ID > 0)
+						s.True(roleB.ID > 0)
+
+						// Step 2: reload and confirm 2 roles
+						var userLoaded User
+						s.Nil(query.Query().With("Roles").Find(&userLoaded, user.ID))
+						s.Len(userLoaded.Roles, 2)
+
+						// Step 3: update user with only role C (remove A and B from slice)
+						roleC := &Role{Name: "m2m_update_role_c"}
+						userLoaded.Roles = []*Role{roleC}
+						_, err := query.Query().Model(&userLoaded).Select(gorm.Associations).Update(&userLoaded)
+						s.Nil(err)
+
+						// Step 4: reload and assert that A and B are still linked (not deleted), C is added
+						var userAfterUpdate User
+						s.Nil(query.Query().With("Roles").Find(&userAfterUpdate, user.ID))
+						s.Len(userAfterUpdate.Roles, 3)
+
+						roleNames := make([]string, 0, len(userAfterUpdate.Roles))
+						for _, r := range userAfterUpdate.Roles {
+							roleNames = append(roleNames, r.Name)
+						}
+						// A and B should still be present — only append, no delete
+						s.Contains(roleNames, "m2m_update_role_a")
+						s.Contains(roleNames, "m2m_update_role_b")
+						// C should have been appended
+						s.Contains(roleNames, "m2m_update_role_c")
+					},
+				},
+				{
+					name: "Select(Associations).Update updates main fields",
+					setup: func() {
+						user := &User{
+							Name:  "m2m_update_field_user",
+							Roles: []*Role{{Name: "m2m_update_field_role"}},
+						}
+						s.Nil(query.Query().Select(gorm.Associations).Create(&user))
+						s.True(user.ID > 0)
+
+						user.Name = "m2m_update_field_user_updated"
+						_, err := query.Query().Model(user).Select(gorm.Associations).Update(user)
+						s.Nil(err)
+
+						var userLoaded User
+						s.Nil(query.Query().Find(&userLoaded, user.ID))
+						s.Equal("m2m_update_field_user_updated", userLoaded.Name)
+					},
+				},
+				{
+					name: "Update without Select(Associations) does not touch m2m relations",
+					setup: func() {
+						roleA := &Role{Name: "m2m_no_select_role_a"}
+						user := &User{
+							Name:  "m2m_no_select_user",
+							Roles: []*Role{roleA},
+						}
+						s.Nil(query.Query().Select(gorm.Associations).Create(&user))
+						s.True(user.ID > 0)
+						s.True(roleA.ID > 0)
+
+						// Update user with a different role slice but without Select(Associations)
+						roleB := &Role{Name: "m2m_no_select_role_b"}
+						user.Roles = []*Role{roleB}
+						_, err := query.Query().Model(user).Update(user)
+						s.Nil(err)
+
+						// The m2m pivot table should be unchanged — role A still linked, role B not added
+						var userLoaded User
+						s.Nil(query.Query().With("Roles").Find(&userLoaded, user.ID))
+						s.Len(userLoaded.Roles, 1)
+						s.Equal("m2m_no_select_role_a", userLoaded.Roles[0].Name)
+					},
+				},
+			}
+
+			for _, test := range tests {
+				s.Run(test.name, func() {
+					test.setup()
+				})
+			}
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestLimit() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
