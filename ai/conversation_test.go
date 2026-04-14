@@ -24,11 +24,12 @@ func (s *ConversationTestSuite) TestPrompt() {
 
 	var (
 		mockProvider *mocksai.Provider
+		mockAgent    *mocksai.Agent
 		conv         *conversation
 	)
 
 	beforeEach := func(initial []contractsai.Message, model string) {
-		mockAgent := mocksai.NewAgent(s.T())
+		mockAgent = mocksai.NewAgent(s.T())
 		mockAgent.EXPECT().Messages().Return(initial).Once()
 		mockProvider = mocksai.NewProvider(s.T())
 		conv = NewConversation(ctx, mockAgent, mockProvider, model)
@@ -49,7 +50,9 @@ func (s *ConversationTestSuite) TestPrompt() {
 			model:   "model-x",
 			input:   "hello",
 			setup: func() contractsai.Response {
+				mockAgent.EXPECT().Tools().Return(nil).Once()
 				mockResponse := mocksai.NewResponse(s.T())
+				mockResponse.EXPECT().ToolCalls().Return(nil).Once()
 				mockResponse.EXPECT().Text().Return("got it").Once()
 				mockProvider.EXPECT().Prompt(ctx, contractsai.AgentPrompt{Agent: conv, Input: "hello", Model: "model-x"}).Return(mockResponse, nil).Once()
 				return mockResponse
@@ -66,6 +69,7 @@ func (s *ConversationTestSuite) TestPrompt() {
 			model:   "model-y",
 			input:   "fail",
 			setup: func() contractsai.Response {
+				mockAgent.EXPECT().Tools().Return(nil).Once()
 				mockProvider.EXPECT().Prompt(ctx, contractsai.AgentPrompt{Agent: conv, Input: "fail", Model: "model-y"}).Return(nil, assert.AnError).Once()
 				return nil
 			},
@@ -80,7 +84,9 @@ func (s *ConversationTestSuite) TestPrompt() {
 			model:   "model-empty",
 			input:   "",
 			setup: func() contractsai.Response {
+				mockAgent.EXPECT().Tools().Return(nil).Once()
 				mockResponse := mocksai.NewResponse(s.T())
+				mockResponse.EXPECT().ToolCalls().Return(nil).Once()
 				mockResponse.EXPECT().Text().Return("").Once()
 				mockProvider.EXPECT().Prompt(ctx, contractsai.AgentPrompt{Agent: conv, Input: "", Model: "model-empty"}).Return(mockResponse, nil).Once()
 				return mockResponse
@@ -110,11 +116,12 @@ func (s *ConversationTestSuite) TestReset() {
 
 	var (
 		mockProvider *mocksai.Provider
+		mockAgent    *mocksai.Agent
 		conv         *conversation
 	)
 
 	beforeEach := func(initial []contractsai.Message) {
-		mockAgent := mocksai.NewAgent(s.T())
+		mockAgent = mocksai.NewAgent(s.T())
 		mockAgent.EXPECT().Messages().Return(initial).Times(2)
 		mockProvider = mocksai.NewProvider(s.T())
 		conv = NewConversation(ctx, mockAgent, mockProvider, "model-z")
@@ -135,8 +142,10 @@ func (s *ConversationTestSuite) TestReset() {
 			input:        "append",
 			promptBefore: true,
 			setup: func() {
+				mockAgent.EXPECT().Tools().Return(nil).Once()
 				response := mocksai.NewResponse(s.T())
 				mockProvider.EXPECT().Prompt(ctx, contractsai.AgentPrompt{Agent: conv, Input: "append", Model: "model-z"}).Return(response, nil).Once()
+				response.EXPECT().ToolCalls().Return(nil).Once()
 				response.EXPECT().Text().Return("done").Once()
 			},
 			expectBefore: []contractsai.Message{
@@ -191,14 +200,23 @@ func (r *conversationProviderStub) Stream(ctx context.Context, prompt contractsa
 	return r.streamFn(ctx, prompt)
 }
 
+// agentStub is a minimal Agent implementation for stream tests that avoids mock expectation tracking.
+type agentStub struct {
+	messages []contractsai.Message
+	tools    []contractsai.Tool
+}
+
+func (a *agentStub) Instructions() string        { return "" }
+func (a *agentStub) Messages() []contractsai.Message { return a.messages }
+func (a *agentStub) Tools() []contractsai.Tool   { return a.tools }
+
 func (s *ConversationTestSuite) TestStream() {
 	ctx := context.Background()
 	model := "stream-model"
 
 	s.Run("returns provider error without mutating messages", func() {
 		initial := []contractsai.Message{{Role: contractsai.RoleAssistant, Content: "seed"}}
-		mockAgent := mocksai.NewAgent(s.T())
-		mockAgent.EXPECT().Messages().Return(initial).Once()
+		agent := &agentStub{messages: initial}
 
 		var conv *conversation
 		provider := &conversationProviderStub{
@@ -208,7 +226,7 @@ func (s *ConversationTestSuite) TestStream() {
 				return nil, assert.AnError
 			},
 		}
-		conv = NewConversation(ctx, mockAgent, provider, model)
+		conv = NewConversation(ctx, agent, provider, model)
 
 		stream, err := conv.Stream("hello")
 
@@ -219,8 +237,7 @@ func (s *ConversationTestSuite) TestStream() {
 
 	s.Run("appends messages after successful stream completion", func() {
 		initial := []contractsai.Message{{Role: contractsai.RoleAssistant, Content: "seed"}}
-		mockAgent := mocksai.NewAgent(s.T())
-		mockAgent.EXPECT().Messages().Return(initial).Once()
+		agent := &agentStub{messages: initial}
 
 		var conv *conversation
 		provider := &conversationProviderStub{
@@ -239,7 +256,7 @@ func (s *ConversationTestSuite) TestStream() {
 				}), nil
 			},
 		}
-		conv = NewConversation(ctx, mockAgent, provider, model)
+		conv = NewConversation(ctx, agent, provider, model)
 
 		stream, err := conv.Stream("hi")
 		s.Require().NoError(err)
@@ -266,8 +283,7 @@ func (s *ConversationTestSuite) TestStream() {
 
 	s.Run("does not append messages when stream completes with error", func() {
 		initial := []contractsai.Message{{Role: contractsai.RoleAssistant, Content: "seed"}}
-		mockAgent := mocksai.NewAgent(s.T())
-		mockAgent.EXPECT().Messages().Return(initial).Once()
+		agent := &agentStub{messages: initial}
 
 		var conv *conversation
 		provider := &conversationProviderStub{
@@ -283,7 +299,7 @@ func (s *ConversationTestSuite) TestStream() {
 				}), nil
 			},
 		}
-		conv = NewConversation(ctx, mockAgent, provider, model)
+		conv = NewConversation(ctx, agent, provider, model)
 
 		stream, err := conv.Stream("hi")
 		s.Require().NoError(err)
@@ -299,9 +315,8 @@ func (s *ConversationTestSuite) TestMessagesClone() {
 	ctx := context.Background()
 	initial := []contractsai.Message{{Role: contractsai.RoleAssistant, Content: "seed"}}
 
-	mockAgent := mocksai.NewAgent(s.T())
-	mockAgent.EXPECT().Messages().Return(initial).Once()
-	conv := NewConversation(ctx, mockAgent, &conversationProviderStub{}, "model")
+	agent := &agentStub{messages: initial}
+	conv := NewConversation(ctx, agent, &conversationProviderStub{}, "model")
 
 	initial[0].Content = "mutated"
 
@@ -310,4 +325,163 @@ func (s *ConversationTestSuite) TestMessagesClone() {
 
 	got[0].Content = "changed"
 	s.Equal([]contractsai.Message{{Role: contractsai.RoleAssistant, Content: "seed"}}, conv.Messages())
+}
+
+func (s *ConversationTestSuite) TestPromptToolInvocationLoop() {
+	ctx := context.Background()
+
+	// A provider stub that returns responses from a queue.
+	type promptCall struct {
+		response contractsai.Response
+		err      error
+	}
+
+	type promptRecord struct {
+		prompt contractsai.AgentPrompt
+	}
+
+	var (
+		calls   []promptCall
+		callIdx int
+		records []promptRecord
+	)
+
+	provider := &conversationToolProviderStub{
+		promptFn: func(_ context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
+			records = append(records, promptRecord{prompt: prompt})
+			resp := calls[callIdx]
+			callIdx++
+			return resp.response, resp.err
+		},
+	}
+
+	s.Run("executes tool and re-prompts until plain text response", func() {
+		calls = []promptCall{
+			{response: &stubResponse{toolCalls: []contractsai.ToolCall{{ID: "c1", Name: "get_weather", Args: map[string]any{"city": "London"}, RawArgs: `{"city":"London"}`}}}},
+			{response: &stubResponse{text: "The weather is sunny."}},
+		}
+		callIdx = 0
+		records = nil
+
+		tool := &stubTool{name: "get_weather", result: "Sunny, 25°C"}
+		agent := &agentStub{tools: []contractsai.Tool{tool}}
+		conv := NewConversation(ctx, agent, provider, "m")
+
+		resp, err := conv.Prompt("What's the weather in London?")
+		s.Require().NoError(err)
+		s.Equal("The weather is sunny.", resp.Text())
+
+		// History: user + assistant(tool_calls) + tool_result + assistant(final)
+		msgs := conv.Messages()
+		s.Require().Len(msgs, 4)
+		s.Equal(contractsai.RoleUser, msgs[0].Role)
+		s.Equal("What's the weather in London?", msgs[0].Content)
+		s.Equal(contractsai.RoleAssistant, msgs[1].Role)
+		s.Len(msgs[1].ToolCalls, 1)
+		s.Equal("c1", msgs[1].ToolCalls[0].ID)
+		s.Equal(contractsai.RoleToolResult, msgs[2].Role)
+		s.Equal("Sunny, 25°C", msgs[2].Content)
+		s.Equal("c1", msgs[2].ToolCallID)
+		s.Equal(contractsai.RoleAssistant, msgs[3].Role)
+		s.Equal("The weather is sunny.", msgs[3].Content)
+
+		// Second prompt had empty input (continuation after tool result).
+		s.Equal("", records[1].prompt.Input)
+		s.Equal(1, tool.callCount)
+	})
+
+	s.Run("returns error when tool is not found", func() {
+		calls = []promptCall{
+			{response: &stubResponse{toolCalls: []contractsai.ToolCall{{ID: "c2", Name: "unknown_tool", Args: nil}}}},
+		}
+		callIdx = 0
+		records = nil
+
+		agent := &agentStub{tools: []contractsai.Tool{}}
+		conv := NewConversation(ctx, agent, provider, "m")
+
+		initialLen := len(conv.Messages())
+		_, err := conv.Prompt("do something")
+		s.ErrorContains(err, `tool "unknown_tool" not found`)
+		// Message history must not grow on error.
+		s.Len(conv.Messages(), initialLen)
+	})
+
+	s.Run("returns error when tool execution fails", func() {
+		calls = []promptCall{
+			{response: &stubResponse{toolCalls: []contractsai.ToolCall{{ID: "c3", Name: "fail_tool", Args: nil}}}},
+		}
+		callIdx = 0
+		records = nil
+
+		tool := &stubTool{name: "fail_tool", execErr: assert.AnError}
+		agent := &agentStub{tools: []contractsai.Tool{tool}}
+		conv := NewConversation(ctx, agent, provider, "m")
+
+		initialLen := len(conv.Messages())
+		_, err := conv.Prompt("do something")
+		s.ErrorContains(err, `tool "fail_tool" execution failed`)
+		s.Len(conv.Messages(), initialLen)
+	})
+
+	s.Run("returns error when max iterations exceeded", func() {
+		// Build MaxToolCallIterations responses that all return tool calls.
+		calls = make([]promptCall, MaxToolCallIterations)
+		for i := range calls {
+			calls[i] = promptCall{
+				response: &stubResponse{toolCalls: []contractsai.ToolCall{{ID: "cx", Name: "loop_tool", Args: nil}}},
+			}
+		}
+		callIdx = 0
+		records = nil
+
+		tool := &stubTool{name: "loop_tool", result: "result"}
+		agent := &agentStub{tools: []contractsai.Tool{tool}}
+		conv := NewConversation(ctx, agent, provider, "m")
+
+		initialLen := len(conv.Messages())
+		_, err := conv.Prompt("loop forever")
+		s.ErrorContains(err, "exceeded")
+		s.Len(conv.Messages(), initialLen)
+	})
+}
+
+// conversationToolProviderStub is a Provider stub that delegates Prompt to a func.
+type conversationToolProviderStub struct {
+	promptFn func(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error)
+}
+
+func (r *conversationToolProviderStub) Prompt(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
+	return r.promptFn(ctx, prompt)
+}
+
+func (r *conversationToolProviderStub) Stream(_ context.Context, _ contractsai.AgentPrompt) (contractsai.StreamableResponse, error) {
+	return nil, nil
+}
+
+// stubResponse is a minimal Response with configurable text and tool calls.
+type stubResponse struct {
+	text      string
+	toolCalls []contractsai.ToolCall
+	usage     contractsai.Usage
+}
+
+func (r *stubResponse) Text() string                    { return r.text }
+func (r *stubResponse) Usage() contractsai.Usage        { return r.usage }
+func (r *stubResponse) ToolCalls() []contractsai.ToolCall { return r.toolCalls }
+
+// stubTool records calls and returns a fixed result or error.
+type stubTool struct {
+	name      string
+	result    string
+	execErr   error
+	callCount int
+}
+
+func (t *stubTool) Name() string                   { return t.name }
+func (t *stubTool) Description() string            { return "" }
+func (t *stubTool) Parameters() map[string]any     { return nil }
+func (t *stubTool) Execute(_ context.Context, _ map[string]any) (string, error) {
+	t.callCount++
+	return t.result, t.execErr
 }

@@ -4,6 +4,9 @@ package ai
 type Response interface {
 	Text() string
 	Usage() Usage
+	// ToolCalls returns any tool invocations the model requested.
+	// Returns nil or an empty slice when the model returns plain text.
+	ToolCalls() []ToolCall
 }
 
 // Usage contains token statistics for a response.

@@ -2,10 +2,13 @@ package openai
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 
 	goopenai "github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
+	"github.com/openai/openai-go/v3/packages/param"
+	"github.com/openai/openai-go/v3/shared"
 
 	frameworkai "github.com/goravel/framework/ai"
 	contractsai "github.com/goravel/framework/contracts/ai"
@@ -44,20 +47,30 @@ func (r *Provider) Prompt(ctx context.Context, prompt contractsai.AgentPrompt) (
 	model := r.resolveModel(prompt.Model)
 	messages := r.buildMessages(prompt)
 
-	completion, err := r.client.Chat.Completions.New(ctx, goopenai.ChatCompletionNewParams{
+	params := goopenai.ChatCompletionNewParams{
 		Model:    model,
 		Messages: messages,
-	})
+	}
+	if len(prompt.Tools) > 0 {
+		params.Tools = r.buildTools(prompt.Tools)
+	}
+
+	completion, err := r.client.Chat.Completions.New(ctx, params)
 	if err != nil {
 		return nil, err
 	}
 
 	text := ""
+	var toolCalls []contractsai.ToolCall
 	if len(completion.Choices) > 0 {
-		text = completion.Choices[0].Message.Content
+		msg := completion.Choices[0].Message
+		text = msg.Content
+		toolCalls = r.parseToolCalls(msg.ToolCalls)
 	}
+
 	return &response{
-		text: text,
+		text:      text,
+		toolCalls: toolCalls,
 		usage: &usage{
 			input:  int(completion.Usage.PromptTokens),
 			output: int(completion.Usage.CompletionTokens),
@@ -146,6 +159,8 @@ func (r *Provider) resolveModel(model string) string {
 	return r.config.Models.Text.Default
 }
 
+// buildMessages converts the conversation history and current input into the
+// slice of OpenAI message params that the API expects.
 func (r *Provider) buildMessages(prompt contractsai.AgentPrompt) []goopenai.ChatCompletionMessageParamUnion {
 	var messages []goopenai.ChatCompletionMessageParamUnion
 	if instructions := prompt.Agent.Instructions(); instructions != "" {
@@ -156,10 +171,76 @@ func (r *Provider) buildMessages(prompt contractsai.AgentPrompt) []goopenai.Chat
 		case contractsai.RoleUser:
 			messages = append(messages, goopenai.UserMessage(m.Content))
 		case contractsai.RoleAssistant:
-			messages = append(messages, goopenai.AssistantMessage(m.Content))
+			if len(m.ToolCalls) > 0 {
+				// Assistant message that requested tool invocations.
+				assistant := goopenai.ChatCompletionAssistantMessageParam{}
+				if m.Content != "" {
+					assistant.Content.OfString = param.NewOpt(m.Content)
+				}
+				for _, tc := range m.ToolCalls {
+					assistant.ToolCalls = append(assistant.ToolCalls, goopenai.ChatCompletionMessageToolCallUnionParam{
+						OfFunction: &goopenai.ChatCompletionMessageFunctionToolCallParam{
+							ID: tc.ID,
+							Function: goopenai.ChatCompletionMessageFunctionToolCallFunctionParam{
+								Name:      tc.Name,
+								Arguments: tc.RawArgs,
+							},
+						},
+					})
+				}
+				messages = append(messages, goopenai.ChatCompletionMessageParamUnion{OfAssistant: &assistant})
+			} else {
+				messages = append(messages, goopenai.AssistantMessage(m.Content))
+			}
+		case contractsai.RoleToolResult:
+			messages = append(messages, goopenai.ToolMessage(m.Content, m.ToolCallID))
 		}
 	}
 	messages = append(messages, goopenai.UserMessage(prompt.Input))
 
 	return messages
+}
+
+// buildTools converts a slice of Tool definitions into OpenAI tool params.
+func (r *Provider) buildTools(tools []contractsai.Tool) []goopenai.ChatCompletionToolUnionParam {
+	params := make([]goopenai.ChatCompletionToolUnionParam, 0, len(tools))
+	for _, tool := range tools {
+		fn := shared.FunctionDefinitionParam{
+			Name: tool.Name(),
+		}
+		if desc := tool.Description(); desc != "" {
+			fn.Description = param.NewOpt(desc)
+		}
+		if schema := tool.Parameters(); schema != nil {
+			fn.Parameters = shared.FunctionParameters(schema)
+		}
+		params = append(params, goopenai.ChatCompletionFunctionTool(fn))
+	}
+	return params
+}
+
+// parseToolCalls converts OpenAI tool-call response objects into the framework's ToolCall type.
+func (r *Provider) parseToolCalls(raw []goopenai.ChatCompletionMessageToolCallUnion) []contractsai.ToolCall {
+	if len(raw) == 0 {
+		return nil
+	}
+	calls := make([]contractsai.ToolCall, 0, len(raw))
+	for _, tc := range raw {
+		if tc.Type != "function" {
+			continue
+		}
+		fn := tc.Function
+		var args map[string]any
+		if fn.Arguments != "" {
+			// Best-effort decode; invalid JSON is surfaced as an empty map.
+			_ = json.Unmarshal([]byte(fn.Arguments), &args)
+		}
+		calls = append(calls, contractsai.ToolCall{
+			ID:      tc.ID,
+			Name:    fn.Name,
+			Args:    args,
+			RawArgs: fn.Arguments,
+		})
+	}
+	return calls
 }

@@ -3,12 +3,14 @@ package openai
 import contractsai "github.com/goravel/framework/contracts/ai"
 
 type response struct {
-	text  string
-	usage *usage
+	text      string
+	usage     *usage
+	toolCalls []contractsai.ToolCall
 }
 
-func (r *response) Text() string             { return r.text }
-func (r *response) Usage() contractsai.Usage { return r.usage }
+func (r *response) Text() string                    { return r.text }
+func (r *response) Usage() contractsai.Usage        { return r.usage }
+func (r *response) ToolCalls() []contractsai.ToolCall { return r.toolCalls }
 
 type usage struct{ input, output, total int }
 

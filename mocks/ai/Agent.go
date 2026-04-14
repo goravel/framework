@@ -112,6 +112,53 @@ func (_c *Agent_Messages_Call) RunAndReturn(run func() []ai.Message) *Agent_Mess
 	return _c
 }
 
+// Tools provides a mock function with no fields
+func (_m *Agent) Tools() []ai.Tool {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Tools")
+	}
+
+	var r0 []ai.Tool
+	if rf, ok := ret.Get(0).(func() []ai.Tool); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]ai.Tool)
+		}
+	}
+
+	return r0
+}
+
+// Agent_Tools_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Tools'
+type Agent_Tools_Call struct {
+	*mock.Call
+}
+
+// Tools is a helper method to define mock.On call
+func (_e *Agent_Expecter) Tools() *Agent_Tools_Call {
+	return &Agent_Tools_Call{Call: _e.mock.On("Tools")}
+}
+
+func (_c *Agent_Tools_Call) Run(run func()) *Agent_Tools_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Agent_Tools_Call) Return(_a0 []ai.Tool) *Agent_Tools_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Agent_Tools_Call) RunAndReturn(run func() []ai.Tool) *Agent_Tools_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewAgent creates a new instance of Agent. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewAgent(t interface {
