@@ -21,6 +21,13 @@ type conversation struct {
 	provider contractsai.Provider
 	model    string
 	mu       sync.RWMutex
+	// promptMu serializes concurrent Prompt() calls so that a failure in one
+	// call cannot corrupt history being written by another concurrent call.
+	promptMu sync.Mutex
+	// pending holds the in-progress message history during a Prompt call.
+	// It is set before calling the provider and cleared on commit or rollback.
+	// Messages() returns pending when it is non-nil.
+	pending []contractsai.Message
 }
 
 func NewConversation(ctx context.Context, agent contractsai.Agent, provider contractsai.Provider, model string) *conversation {
@@ -39,29 +46,43 @@ func (r *conversation) Messages() []contractsai.Message {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
+	if r.pending != nil {
+		return slices.Clone(r.pending)
+	}
+
 	return slices.Clone(r.messages)
 }
 
 func (r *conversation) Tools() []contractsai.Tool { return r.agent.Tools() }
 
 func (r *conversation) Prompt(input string) (contractsai.Response, error) {
+	// Serialize concurrent calls to prevent one failure from corrupting
+	// history written by another in-flight Prompt.
+	r.promptMu.Lock()
+	defer r.promptMu.Unlock()
+
 	tools := r.agent.Tools()
 
-	// Snapshot the message length before we touch anything so we can roll back
-	// cleanly on any error path.
-	r.mu.Lock()
-	snapshot := len(r.messages)
-	r.messages = append(r.messages, contractsai.Message{Role: contractsai.RoleUser, Content: input})
-	r.mu.Unlock()
+	// Build an isolated working copy of the message history for this call.
+	// We do not touch r.messages until the entire call succeeds.
+	// The user message is NOT added to working yet — buildMessages sees the
+	// current history via Messages() and appends Input itself on the first
+	// call, avoiding a duplicate.
+	r.mu.RLock()
+	working := slices.Clone(r.messages)
+	r.mu.RUnlock()
 
-	rollback := func() {
+	// pending is nil for the first provider call: Messages() returns the
+	// committed history and buildMessages appends Input.  After the first
+	// tool-call round we flip pending to the expanded working copy so
+	// subsequent iterations see the full in-progress history while Input is "".
+
+	clearPending := func() {
 		r.mu.Lock()
-		r.messages = r.messages[:snapshot]
+		r.pending = nil
 		r.mu.Unlock()
 	}
 
-	// Build the initial prompt. The conversation acts as its own Agent so the
-	// provider always sees the live runtime history.
 	agentPrompt := contractsai.AgentPrompt{
 		Agent: r,
 		Input: input,
@@ -77,7 +98,7 @@ func (r *conversation) Prompt(input string) (contractsai.Response, error) {
 	for i := range MaxToolCallIterations {
 		resp, err = r.provider.Prompt(r.ctx, agentPrompt)
 		if err != nil {
-			rollback()
+			clearPending()
 			return nil, err
 		}
 
@@ -88,30 +109,37 @@ func (r *conversation) Prompt(input string) (contractsai.Response, error) {
 		}
 
 		if i == MaxToolCallIterations-1 {
-			// About to exceed the limit — roll back everything and return error.
-			rollback()
+			clearPending()
 			return nil, fmt.Errorf("ai: tool call loop exceeded %d iterations", MaxToolCallIterations)
 		}
 
 		// Execute each requested tool and collect results.
 		toolResults, execErr := r.executeTools(tools, toolCalls)
 		if execErr != nil {
-			rollback()
+			clearPending()
 			return nil, execErr
 		}
 
-		// Append the assistant's tool-call message and all tool results to history.
-		r.mu.Lock()
-		r.messages = append(r.messages, contractsai.Message{
+		// Extend the working copy with the user message (if this is the first
+		// tool round), the assistant tool-call message and tool results, then
+		// expose it via pending so the provider sees the full history on the
+		// next iteration (where Input will be "").
+		if i == 0 {
+			working = append(working, contractsai.Message{Role: contractsai.RoleUser, Content: input})
+		}
+		working = append(working, contractsai.Message{
 			Role:      contractsai.RoleAssistant,
 			Content:   resp.Text(),
 			ToolCalls: toolCalls,
 		})
-		r.messages = append(r.messages, toolResults...)
+		working = append(working, toolResults...)
+
+		r.mu.Lock()
+		r.pending = working
 		r.mu.Unlock()
 
-		// On the next iteration the input is empty — the model continues from
-		// the tool results already in the history.
+		// On the next iteration Input is empty — the model continues from the
+		// tool results already in the pending history.
 		agentPrompt = contractsai.AgentPrompt{
 			Agent: r,
 			Input: "",
@@ -120,9 +148,19 @@ func (r *conversation) Prompt(input string) (contractsai.Response, error) {
 		}
 	}
 
-	// Append the final assistant reply to history.
+	// Commit: append the user message (when no tool calls were made — in the
+	// tool-call path it was already added to working during the loop) and the
+	// final assistant reply, then replace r.messages with the complete history.
+	if r.pending == nil {
+		// No tool calls occurred; working still equals the pre-call snapshot.
+		// Prepend the user message before the assistant reply.
+		working = append(working, contractsai.Message{Role: contractsai.RoleUser, Content: input})
+	}
+	working = append(working, contractsai.Message{Role: contractsai.RoleAssistant, Content: resp.Text()})
+
 	r.mu.Lock()
-	r.messages = append(r.messages, contractsai.Message{Role: contractsai.RoleAssistant, Content: resp.Text()})
+	r.messages = working
+	r.pending = nil
 	r.mu.Unlock()
 
 	return resp, nil
@@ -133,7 +171,6 @@ func (r *conversation) Stream(input string) (contractsai.StreamableResponse, err
 		Agent: r,
 		Input: input,
 		Model: r.model,
-		Tools: r.agent.Tools(),
 	})
 	if err != nil {
 		return nil, err

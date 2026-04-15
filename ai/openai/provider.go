@@ -196,7 +196,9 @@ func (r *Provider) buildMessages(prompt contractsai.AgentPrompt) []goopenai.Chat
 			messages = append(messages, goopenai.ToolMessage(m.Content, m.ToolCallID))
 		}
 	}
-	messages = append(messages, goopenai.UserMessage(prompt.Input))
+	if prompt.Input != "" {
+		messages = append(messages, goopenai.UserMessage(prompt.Input))
+	}
 
 	return messages
 }
@@ -230,9 +232,9 @@ func (r *Provider) parseToolCalls(raw []goopenai.ChatCompletionMessageToolCallUn
 			continue
 		}
 		fn := tc.Function
-		var args map[string]any
+		args := make(map[string]any)
 		if fn.Arguments != "" {
-			// Best-effort decode; invalid JSON is surfaced as an empty map.
+			// Best-effort decode; invalid JSON leaves args as an empty map.
 			_ = json.Unmarshal([]byte(fn.Arguments), &args)
 		}
 		calls = append(calls, contractsai.ToolCall{
