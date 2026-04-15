@@ -80,7 +80,7 @@ when Y?", "Is this thread-safe?". These need an answer, not a code change.
 
 1. **Fetch comments**
    ```bash
-   gh pr view --json comments,reviewThreads
+   gh pr view {pr_number} --json comments,reviewThreads
    # or for inline review comments:
    gh api repos/{owner}/{repo}/pulls/{pr_number}/comments
    ```
