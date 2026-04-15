@@ -93,11 +93,18 @@ when Y?", "Is this thread-safe?". These need an answer, not a code change.
 4. **Reply to every comment** — resolved or not. Leaving a comment without a
    reply signals that it was missed.
 
-5. **Mark threads resolved** after replying:
+5. **Mark threads resolved** after replying, using the GitHub GraphQL
+   `resolveReviewThread` mutation (requires the thread node ID):
    ```bash
-   gh api repos/{owner}/{repo}/pulls/{pr_number}/reviews \
-     --method POST --field body="" --field event="COMMENT"
+   gh api graphql -f query='
+     mutation {
+       resolveReviewThread(input: {threadId: "<thread_node_id>"}) {
+         thread { isResolved }
+       }
+     }'
    ```
+   To get thread node IDs: `gh api repos/{owner}/{repo}/pulls/{pr_number}/comments --jq '.[].node_id'`
+   Alternatively, resolve threads directly in the GitHub UI.
 
 6. **Push the updated branch** if any code changed:
    ```bash
