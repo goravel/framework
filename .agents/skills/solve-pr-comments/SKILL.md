@@ -103,7 +103,10 @@ when Y?", "Is this thread-safe?". These need an answer, not a code change.
        }
      }'
    ```
-   To get thread node IDs: `gh api repos/{owner}/{repo}/pulls/{pr_number}/comments --jq '.[].node_id'`
+   To get thread node IDs (type `PRRT_...`, not comment IDs):
+   ```bash
+   gh pr view {pr_number} --json reviewThreads --jq '.reviewThreads[].id'
+   ```
    Alternatively, resolve threads directly in the GitHub UI.
 
 6. **Push the updated branch** if any code changed:
