@@ -65,6 +65,53 @@ func (_c *Response_Text_Call) RunAndReturn(run func() string) *Response_Text_Cal
 	return _c
 }
 
+// ToolCalls provides a mock function with no fields
+func (_m *Response) ToolCalls() []ai.ToolCall {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for ToolCalls")
+	}
+
+	var r0 []ai.ToolCall
+	if rf, ok := ret.Get(0).(func() []ai.ToolCall); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]ai.ToolCall)
+		}
+	}
+
+	return r0
+}
+
+// Response_ToolCalls_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ToolCalls'
+type Response_ToolCalls_Call struct {
+	*mock.Call
+}
+
+// ToolCalls is a helper method to define mock.On call
+func (_e *Response_Expecter) ToolCalls() *Response_ToolCalls_Call {
+	return &Response_ToolCalls_Call{Call: _e.mock.On("ToolCalls")}
+}
+
+func (_c *Response_ToolCalls_Call) Run(run func()) *Response_ToolCalls_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Response_ToolCalls_Call) Return(_a0 []ai.ToolCall) *Response_ToolCalls_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Response_ToolCalls_Call) RunAndReturn(run func() []ai.ToolCall) *Response_ToolCalls_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Usage provides a mock function with no fields
 func (_m *Response) Usage() ai.Usage {
 	ret := _m.Called()

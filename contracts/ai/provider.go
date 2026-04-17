@@ -8,6 +8,8 @@ type AgentPrompt struct {
 	Agent Agent
 	Input string
 	Model string
+	// Tools lists the tools available to the model for this request.
+	Tools []Tool
 }
 
 // Provider defines low-level model interactions (text generation).

@@ -21,8 +21,9 @@ type streamableTestResponse struct {
 	usage contractsai.Usage
 }
 
-func (r *streamableTestResponse) Text() string             { return r.text }
-func (r *streamableTestResponse) Usage() contractsai.Usage { return r.usage }
+func (r *streamableTestResponse) Text() string                    { return r.text }
+func (r *streamableTestResponse) Usage() contractsai.Usage        { return r.usage }
+func (r *streamableTestResponse) ToolCalls() []contractsai.ToolCall { return nil }
 
 type streamableTestUsage struct {
 	input  int
