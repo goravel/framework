@@ -36,6 +36,9 @@ var (
 	AIProviderNotSupported         = New("ai provider not found: %s")
 	AIProviderContractNotFulfilled = New("%s.via must be contracts/ai.Provider or func() (contracts/ai.Provider, error)")
 	AIStreamRunnerRequired         = New("ai stream runner is required")
+	AIToolCallLoopExceeded         = New("ai: tool call loop exceeded %d iterations")
+	AIToolExecutionFailed          = New("ai: tool %q execution failed: %v")
+	AIToolNotFound                 = New("ai: tool %q not found")
 
 	CacheDriverNotSupported           = New("invalid driver: %s, only support memory, custom")
 	CacheForeverFailed                = New("cache forever is failed")

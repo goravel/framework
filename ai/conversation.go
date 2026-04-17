@@ -2,11 +2,11 @@ package ai
 
 import (
 	"context"
-	"fmt"
 	"slices"
 	"sync"
 
 	contractsai "github.com/goravel/framework/contracts/ai"
+	"github.com/goravel/framework/errors"
 )
 
 // MaxToolCallIterations is the maximum number of tool-call/re-prompt cycles
@@ -110,7 +110,7 @@ func (r *conversation) Prompt(input string) (contractsai.Response, error) {
 
 		if i == MaxToolCallIterations-1 {
 			clearPending()
-			return nil, fmt.Errorf("ai: tool call loop exceeded %d iterations", MaxToolCallIterations)
+			return nil, errors.AIToolCallLoopExceeded.Args(MaxToolCallIterations)
 		}
 
 		// Execute each requested tool and collect results.
@@ -207,12 +207,12 @@ func (r *conversation) executeTools(tools []contractsai.Tool, calls []contractsa
 	for _, call := range calls {
 		tool, ok := index[call.Name]
 		if !ok {
-			return nil, fmt.Errorf("ai: tool %q not found", call.Name)
+			return nil, errors.AIToolNotFound.Args(call.Name)
 		}
 
 		result, err := tool.Execute(r.ctx, call.Args)
 		if err != nil {
-			return nil, fmt.Errorf("ai: tool %q execution failed: %w", call.Name, err)
+			return nil, errors.AIToolExecutionFailed.Args(call.Name, err)
 		}
 
 		results = append(results, contractsai.Message{
