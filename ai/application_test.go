@@ -109,19 +109,19 @@ func TestApplication_Agent(t *testing.T) {
 				Model: tt.expectedModel,
 			}
 
-		agent.EXPECT().Tools().Return(nil).Once()
+			agent.EXPECT().Tools().Return(nil).Once()
 
-		var response *mocksai.Response
-		if tt.expectResponse {
-			response = mocksai.NewResponse(t)
-			response.EXPECT().ToolCalls().Return(nil).Once()
-			response.EXPECT().Text().Return(tt.responseText).Once()
-		}
+			var response *mocksai.Response
+			if tt.expectResponse {
+				response = mocksai.NewResponse(t)
+				response.EXPECT().ToolCalls().Return(nil).Once()
+				response.EXPECT().Text().Return(tt.responseText).Once()
+			}
 
-		provider.EXPECT().
-			Prompt(ctx, expectedPrompt).
-			Return(response, tt.promptErr).
-			Once()
+			provider.EXPECT().
+				Prompt(ctx, expectedPrompt).
+				Return(response, tt.promptErr).
+				Once()
 
 			resp, err := conv.Prompt(tt.promptInput)
 			if tt.expectPromptErr {
