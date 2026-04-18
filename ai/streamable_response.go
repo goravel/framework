@@ -168,10 +168,17 @@ func (r *streamableResponse) HTTPResponse(ctx contractshttp.Context, options ...
 	})
 }
 
+type streamToolCallPayload struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	Args any    `json:"args,omitempty"`
+}
+
 type streamEventPayload struct {
-	Delta string              `json:"delta,omitempty"`
-	Usage *streamUsagePayload `json:"usage,omitempty"`
-	Error string              `json:"error,omitempty"`
+	Delta     string                   `json:"delta,omitempty"`
+	Usage     *streamUsagePayload      `json:"usage,omitempty"`
+	Error     string                   `json:"error,omitempty"`
+	ToolCalls []streamToolCallPayload  `json:"tool_calls,omitempty"`
 }
 
 type streamUsagePayload struct {
@@ -191,6 +198,13 @@ func defaultStreamRender(w contractshttp.StreamWriter, event contractsai.StreamE
 			Output: event.Usage.Output(),
 			Total:  event.Usage.Total(),
 		}
+	}
+	for _, tc := range event.ToolCalls {
+		payload.ToolCalls = append(payload.ToolCalls, streamToolCallPayload{
+			ID:   tc.ID,
+			Name: tc.Name,
+			Args: tc.Args,
+		})
 	}
 
 	data, err := json.Marshal(payload)

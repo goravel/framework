@@ -214,15 +214,14 @@ func (s *ConversationTestSuite) TestStream() {
 	ctx := context.Background()
 	model := "stream-model"
 
-	s.Run("returns provider error without mutating messages", func() {
+	s.Run("returns provider error via Each without mutating messages", func() {
 		initial := []contractsai.Message{{Role: contractsai.RoleAssistant, Content: "seed"}}
 		agent := &agentStub{messages: initial}
 
 		var conv *conversation
 		provider := &conversationProviderStub{
 			streamFn: func(gotCtx context.Context, prompt contractsai.AgentPrompt) (contractsai.StreamableResponse, error) {
-				s.Equal(ctx, gotCtx)
-				s.Equal(contractsai.AgentPrompt{Agent: conv, Input: "hello", Model: model}, prompt)
+				s.Equal(contractsai.AgentPrompt{Agent: conv, Input: "hello", Model: model, Tools: nil}, prompt)
 				return nil, assert.AnError
 			},
 		}
@@ -230,8 +229,11 @@ func (s *ConversationTestSuite) TestStream() {
 
 		stream, err := conv.Stream("hello")
 
-		s.Equal(assert.AnError, err)
-		s.Nil(stream)
+		// Stream() itself succeeds; the provider error surfaces through Each().
+		s.NoError(err)
+		s.NotNil(stream)
+		eachErr := stream.Each(nil)
+		s.Equal(assert.AnError, eachErr)
 		s.Equal(initial, conv.Messages())
 	})
 
@@ -242,8 +244,7 @@ func (s *ConversationTestSuite) TestStream() {
 		var conv *conversation
 		provider := &conversationProviderStub{
 			streamFn: func(gotCtx context.Context, prompt contractsai.AgentPrompt) (contractsai.StreamableResponse, error) {
-				s.Equal(ctx, gotCtx)
-				s.Equal(contractsai.AgentPrompt{Agent: conv, Input: "hi", Model: model}, prompt)
+				s.Equal(contractsai.AgentPrompt{Agent: conv, Input: "hi", Model: model, Tools: nil}, prompt)
 				return NewStreamableResponse(gotCtx, func(_ context.Context, emit func(contractsai.StreamEvent) error) (contractsai.Response, error) {
 					if err := emit(contractsai.StreamEvent{Type: contractsai.StreamEventTypeTextDelta, Delta: "partial"}); err != nil {
 						return nil, err
@@ -272,7 +273,6 @@ func (s *ConversationTestSuite) TestStream() {
 		s.NoError(err)
 		s.Equal(normalizeStreamEvents([]contractsai.StreamEvent{
 			{Type: contractsai.StreamEventTypeTextDelta, Delta: "partial"},
-			{Type: contractsai.StreamEventTypeDone},
 		}), normalizeStreamEvents(events))
 		s.Equal([]contractsai.Message{
 			{Role: contractsai.RoleAssistant, Content: "seed"},
@@ -288,8 +288,7 @@ func (s *ConversationTestSuite) TestStream() {
 		var conv *conversation
 		provider := &conversationProviderStub{
 			streamFn: func(gotCtx context.Context, prompt contractsai.AgentPrompt) (contractsai.StreamableResponse, error) {
-				s.Equal(ctx, gotCtx)
-				s.Equal(contractsai.AgentPrompt{Agent: conv, Input: "hi", Model: model}, prompt)
+				s.Equal(contractsai.AgentPrompt{Agent: conv, Input: "hi", Model: model, Tools: nil}, prompt)
 				return NewStreamableResponse(gotCtx, func(_ context.Context, emit func(contractsai.StreamEvent) error) (contractsai.Response, error) {
 					if err := emit(contractsai.StreamEvent{Type: contractsai.StreamEventTypeTextDelta, Delta: "partial"}); err != nil {
 						return nil, err
@@ -446,17 +445,170 @@ func (s *ConversationTestSuite) TestPromptToolInvocationLoop() {
 	})
 }
 
+func (s *ConversationTestSuite) TestStreamToolInvocationLoop() {
+	ctx := context.Background()
+
+	type streamCall struct {
+		response contractsai.Response
+		events   []contractsai.StreamEvent
+		err      error
+	}
+
+	makeProvider := func(calls []streamCall) (*conversationToolProviderStub, *int) {
+		idx := 0
+		p := &conversationToolProviderStub{
+			promptFn: func(_ context.Context, _ contractsai.AgentPrompt) (contractsai.Response, error) {
+				return nil, nil
+			},
+			streamFn: func(streamCtx context.Context, _ contractsai.AgentPrompt) (contractsai.StreamableResponse, error) {
+				c := calls[idx]
+				idx++
+				if c.err != nil {
+					return nil, c.err
+				}
+				return NewStreamableResponse(streamCtx, func(_ context.Context, emit func(contractsai.StreamEvent) error) (contractsai.Response, error) {
+					for _, ev := range c.events {
+						if err := emit(ev); err != nil {
+							return nil, err
+						}
+					}
+					return c.response, nil
+				}), nil
+			},
+		}
+		return p, &idx
+	}
+
+	s.Run("executes tool and re-prompts until plain text response", func() {
+		toolCall := contractsai.ToolCall{ID: "c1", Name: "get_weather", Args: map[string]any{"city": "London"}, RawArgs: `{"city":"London"}`}
+		provider, _ := makeProvider([]streamCall{
+			{
+				response: &stubResponse{toolCalls: []contractsai.ToolCall{toolCall}},
+				events:   []contractsai.StreamEvent{{Type: contractsai.StreamEventTypeDone}},
+			},
+			{
+				response: &stubResponse{text: "The weather is sunny."},
+				events: []contractsai.StreamEvent{
+					{Type: contractsai.StreamEventTypeTextDelta, Delta: "The weather is sunny."},
+					{Type: contractsai.StreamEventTypeDone},
+				},
+			},
+		})
+
+		tool := &stubTool{name: "get_weather", result: "Sunny, 25°C"}
+		agent := &agentStub{tools: []contractsai.Tool{tool}}
+		conv := NewConversation(ctx, agent, provider, "m")
+
+		stream, err := conv.Stream("What's the weather in London?")
+		s.Require().NoError(err)
+
+		var gotTypes []contractsai.StreamEventType
+		var gotToolCalls []contractsai.ToolCall
+		eachErr := stream.Each(func(event contractsai.StreamEvent) error {
+			gotTypes = append(gotTypes, event.Type)
+			if event.Type == contractsai.StreamEventTypeToolCall {
+				gotToolCalls = append(gotToolCalls, event.ToolCalls...)
+			}
+			return nil
+		})
+		s.NoError(eachErr)
+
+		s.Contains(gotTypes, contractsai.StreamEventTypeToolCall)
+		s.Contains(gotTypes, contractsai.StreamEventTypeTextDelta)
+		s.Equal([]contractsai.ToolCall{toolCall}, gotToolCalls)
+		s.Equal(1, tool.callCount)
+
+		// History: user + assistant(tool_calls) + tool_result + assistant(final)
+		msgs := conv.Messages()
+		s.Require().Len(msgs, 4)
+		s.Equal(contractsai.RoleUser, msgs[0].Role)
+		s.Equal("What's the weather in London?", msgs[0].Content)
+		s.Equal(contractsai.RoleAssistant, msgs[1].Role)
+		s.Equal(toolCall, msgs[1].ToolCalls[0])
+		s.Equal(contractsai.RoleToolResult, msgs[2].Role)
+		s.Equal("Sunny, 25°C", msgs[2].Content)
+		s.Equal("c1", msgs[2].ToolCallID)
+		s.Equal(contractsai.RoleAssistant, msgs[3].Role)
+		s.Equal("The weather is sunny.", msgs[3].Content)
+	})
+
+	s.Run("returns provider stream error via Each without mutating messages", func() {
+		provider, _ := makeProvider([]streamCall{
+			{err: assert.AnError},
+		})
+
+		agent := &agentStub{tools: nil}
+		conv := NewConversation(ctx, agent, provider, "m")
+		initial := conv.Messages()
+
+		stream, err := conv.Stream("hello")
+		s.NoError(err)
+
+		eachErr := stream.Each(nil)
+		s.Equal(assert.AnError, eachErr)
+		s.Equal(initial, conv.Messages())
+	})
+
+	s.Run("returns error when tool is not found", func() {
+		toolCall := contractsai.ToolCall{ID: "cx", Name: "missing_tool", Args: map[string]any{}}
+		provider, _ := makeProvider([]streamCall{
+			{
+				response: &stubResponse{toolCalls: []contractsai.ToolCall{toolCall}},
+				events:   []contractsai.StreamEvent{{Type: contractsai.StreamEventTypeDone}},
+			},
+		})
+
+		tool := &stubTool{name: "known_tool"}
+		agent := &agentStub{tools: []contractsai.Tool{tool}}
+		conv := NewConversation(ctx, agent, provider, "m")
+
+		stream, err := conv.Stream("hello")
+		s.NoError(err)
+
+		eachErr := stream.Each(nil)
+		s.ErrorContains(eachErr, `tool "missing_tool" not found`)
+		s.Len(conv.Messages(), 0)
+	})
+
+	s.Run("returns error when max iterations exceeded", func() {
+		toolCall := contractsai.ToolCall{ID: "cx", Name: "loop_tool", Args: map[string]any{}}
+		calls := make([]streamCall, MaxToolCallIterations)
+		for i := range calls {
+			calls[i] = streamCall{
+				response: &stubResponse{toolCalls: []contractsai.ToolCall{toolCall}},
+				events:   []contractsai.StreamEvent{{Type: contractsai.StreamEventTypeDone}},
+			}
+		}
+		provider, _ := makeProvider(calls)
+
+		tool := &stubTool{name: "loop_tool", result: "result"}
+		agent := &agentStub{tools: []contractsai.Tool{tool}}
+		conv := NewConversation(ctx, agent, provider, "m")
+
+		stream, err := conv.Stream("loop forever")
+		s.NoError(err)
+
+		eachErr := stream.Each(nil)
+		s.ErrorContains(eachErr, "exceeded")
+		s.Len(conv.Messages(), 0)
+	})
+}
+
 // conversationToolProviderStub is a Provider stub that delegates Prompt to a func.
 type conversationToolProviderStub struct {
 	promptFn func(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error)
+	streamFn func(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.StreamableResponse, error)
 }
 
 func (r *conversationToolProviderStub) Prompt(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
 	return r.promptFn(ctx, prompt)
 }
 
-func (r *conversationToolProviderStub) Stream(_ context.Context, _ contractsai.AgentPrompt) (contractsai.StreamableResponse, error) {
-	return nil, nil
+func (r *conversationToolProviderStub) Stream(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.StreamableResponse, error) {
+	if r.streamFn == nil {
+		return nil, nil
+	}
+	return r.streamFn(ctx, prompt)
 }
 
 // stubResponse is a minimal Response with configurable text and tool calls.

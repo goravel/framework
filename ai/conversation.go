@@ -167,24 +167,117 @@ func (r *conversation) Prompt(input string) (contractsai.Response, error) {
 }
 
 func (r *conversation) Stream(input string) (contractsai.StreamableResponse, error) {
-	stream, err := r.provider.Stream(r.ctx, contractsai.AgentPrompt{
-		Agent: r,
-		Input: input,
-		Model: r.model,
-	})
-	if err != nil {
-		return nil, err
-	}
+	tools := r.agent.Tools()
 
-	return stream.Then(func(resp contractsai.Response) error {
-		r.mu.Lock()
-		r.messages = append(r.messages,
-			contractsai.Message{Role: contractsai.RoleUser, Content: input},
-			contractsai.Message{Role: contractsai.RoleAssistant, Content: resp.Text()},
-		)
-		r.mu.Unlock()
+	return NewStreamableResponse(r.ctx, func(streamCtx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.Response, error) {
+		r.promptMu.Lock()
+		defer r.promptMu.Unlock()
 
-		return nil
+		r.mu.RLock()
+		working := slices.Clone(r.messages)
+		r.mu.RUnlock()
+
+		clearPending := func() {
+			r.mu.Lock()
+			r.pending = nil
+			r.mu.Unlock()
+		}
+
+		agentPrompt := contractsai.AgentPrompt{
+			Agent: r,
+			Input: input,
+			Model: r.model,
+			Tools: tools,
+		}
+
+		for i := range MaxToolCallIterations {
+			innerStream, err := r.provider.Stream(streamCtx, agentPrompt)
+			if err != nil {
+				clearPending()
+				return nil, err
+			}
+
+			var resp contractsai.Response
+			innerStream.Then(func(res contractsai.Response) error {
+				resp = res
+				return nil
+			})
+
+			// Forward all events from this iteration, suppressing intermediate
+			// done events — only the final iteration's done event is forwarded.
+			if err := innerStream.Each(func(event contractsai.StreamEvent) error {
+				if event.Type == contractsai.StreamEventTypeDone {
+					return nil
+				}
+				return emit(event)
+			}); err != nil {
+				clearPending()
+				return nil, err
+			}
+
+			toolCalls := resp.ToolCalls()
+			if len(toolCalls) == 0 {
+				// No tool calls — commit history and return the final response.
+				if r.pending == nil {
+					working = append(working, contractsai.Message{Role: contractsai.RoleUser, Content: input})
+				}
+				working = append(working, contractsai.Message{Role: contractsai.RoleAssistant, Content: resp.Text()})
+
+				r.mu.Lock()
+				r.messages = working
+				r.pending = nil
+				r.mu.Unlock()
+
+				return resp, nil
+			}
+
+			if i == MaxToolCallIterations-1 {
+				clearPending()
+				return nil, errors.AIToolCallLoopExceeded.Args(MaxToolCallIterations)
+			}
+
+			// Emit a tool_call event so the caller can observe the invocations.
+			if err := emit(contractsai.StreamEvent{
+				Type:      contractsai.StreamEventTypeToolCall,
+				ToolCalls: toolCalls,
+			}); err != nil {
+				clearPending()
+				return nil, err
+			}
+
+			toolResults, execErr := r.executeTools(tools, toolCalls)
+			if execErr != nil {
+				clearPending()
+				return nil, execErr
+			}
+
+			// Extend the working copy with the user message (first round only),
+			// the assistant tool-call message, and tool results.
+			if i == 0 {
+				working = append(working, contractsai.Message{Role: contractsai.RoleUser, Content: input})
+			}
+			working = append(working, contractsai.Message{
+				Role:      contractsai.RoleAssistant,
+				Content:   resp.Text(),
+				ToolCalls: toolCalls,
+			})
+			working = append(working, toolResults...)
+
+			r.mu.Lock()
+			r.pending = working
+			r.mu.Unlock()
+
+			// On subsequent iterations Input is empty — history is in pending.
+			agentPrompt = contractsai.AgentPrompt{
+				Agent: r,
+				Input: "",
+				Model: r.model,
+				Tools: tools,
+			}
+		}
+
+		clearPending()
+		return nil, errors.AIToolCallLoopExceeded.Args(MaxToolCallIterations)
 	}), nil
 }
 

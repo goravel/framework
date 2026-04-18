@@ -83,18 +83,30 @@ func (r *Provider) Stream(ctx context.Context, prompt contractsai.AgentPrompt) (
 	model := r.resolveModel(prompt.Model)
 	messages := r.buildMessages(prompt)
 
+	params := goopenai.ChatCompletionNewParams{
+		Model:    model,
+		Messages: messages,
+		StreamOptions: goopenai.ChatCompletionStreamOptionsParam{
+			IncludeUsage: goopenai.Bool(true),
+		},
+	}
+	if len(prompt.Tools) > 0 {
+		params.Tools = r.buildTools(prompt.Tools)
+	}
+
 	return frameworkai.NewStreamableResponse(ctx, func(streamCtx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.Response, error) {
-		stream := r.client.Chat.Completions.NewStreaming(streamCtx, goopenai.ChatCompletionNewParams{
-			Model:    model,
-			Messages: messages,
-			StreamOptions: goopenai.ChatCompletionStreamOptionsParam{
-				IncludeUsage: goopenai.Bool(true),
-			},
-		})
+		stream := r.client.Chat.Completions.NewStreaming(streamCtx, params)
 		defer errors.Ignore(stream.Close)
 
 		text := strings.Builder{}
 		currentUsage := &usage{}
+		// toolCallBuilders accumulates argument fragments for each tool call, keyed by index.
+		type toolCallBuilder struct {
+			id   string
+			name string
+			args strings.Builder
+		}
+		var toolCallBuilders []*toolCallBuilder
 
 		for stream.Next() {
 			chunk := stream.Current()
@@ -110,17 +122,31 @@ func (r *Provider) Stream(ctx context.Context, prompt contractsai.AgentPrompt) (
 				continue
 			}
 
-			delta := chunk.Choices[0].Delta.Content
-			if delta == "" {
-				continue
+			delta := chunk.Choices[0].Delta
+
+			if delta.Content != "" {
+				text.WriteString(delta.Content)
+				if err := emit(contractsai.StreamEvent{
+					Type:  contractsai.StreamEventTypeTextDelta,
+					Delta: delta.Content,
+				}); err != nil {
+					return nil, err
+				}
 			}
 
-			text.WriteString(delta)
-			if err := emit(contractsai.StreamEvent{
-				Type:  contractsai.StreamEventTypeTextDelta,
-				Delta: delta,
-			}); err != nil {
-				return nil, err
+			for _, tc := range delta.ToolCalls {
+				idx := int(tc.Index)
+				for len(toolCallBuilders) <= idx {
+					toolCallBuilders = append(toolCallBuilders, &toolCallBuilder{})
+				}
+				b := toolCallBuilders[idx]
+				if tc.ID != "" {
+					b.id = tc.ID
+				}
+				if tc.Function.Name != "" {
+					b.name = tc.Function.Name
+				}
+				b.args.WriteString(tc.Function.Arguments)
 			}
 		}
 
@@ -137,6 +163,22 @@ func (r *Provider) Stream(ctx context.Context, prompt contractsai.AgentPrompt) (
 			return nil, err
 		}
 
+		// Parse accumulated tool calls into the framework's ToolCall type.
+		var toolCalls []contractsai.ToolCall
+		for _, b := range toolCallBuilders {
+			rawArgs := b.args.String()
+			args := make(map[string]any)
+			if rawArgs != "" {
+				_ = json.Unmarshal([]byte(rawArgs), &args)
+			}
+			toolCalls = append(toolCalls, contractsai.ToolCall{
+				ID:      b.id,
+				Name:    b.name,
+				Args:    args,
+				RawArgs: rawArgs,
+			})
+		}
+
 		if err := emit(contractsai.StreamEvent{
 			Type:  contractsai.StreamEventTypeDone,
 			Usage: currentUsage,
@@ -145,8 +187,9 @@ func (r *Provider) Stream(ctx context.Context, prompt contractsai.AgentPrompt) (
 		}
 
 		return &response{
-			text:  text.String(),
-			usage: currentUsage,
+			text:      text.String(),
+			toolCalls: toolCalls,
+			usage:     currentUsage,
 		}, nil
 	}), nil
 }
