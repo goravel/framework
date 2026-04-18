@@ -21,8 +21,8 @@ type streamableTestResponse struct {
 	usage contractsai.Usage
 }
 
-func (r *streamableTestResponse) Text() string                    { return r.text }
-func (r *streamableTestResponse) Usage() contractsai.Usage        { return r.usage }
+func (r *streamableTestResponse) Text() string                      { return r.text }
+func (r *streamableTestResponse) Usage() contractsai.Usage          { return r.usage }
 func (r *streamableTestResponse) ToolCalls() []contractsai.ToolCall { return nil }
 
 type streamableTestUsage struct {
@@ -401,6 +401,20 @@ func TestDefaultStreamRender(t *testing.T) {
 			},
 			writer:       &recordingStreamWriter{},
 			expectWrites: []string{"event: done\n", "data: {\"usage\":{\"input\":3,\"output\":4,\"total\":7}}\n\n"},
+			expectFlush:  1,
+		},
+		{
+			name: "renders tool call payload",
+			event: contractsai.StreamEvent{
+				Type: contractsai.StreamEventTypeToolCall,
+				ToolCalls: []contractsai.ToolCall{{
+					ID:   "call_1",
+					Name: "get_weather",
+					Args: map[string]any{"city": "London"},
+				}},
+			},
+			writer:       &recordingStreamWriter{},
+			expectWrites: []string{"event: tool_call\n", "data: {\"tool_calls\":[{\"id\":\"call_1\",\"name\":\"get_weather\",\"args\":{\"city\":\"London\"}}]}\n\n"},
 			expectFlush:  1,
 		},
 		{

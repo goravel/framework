@@ -67,6 +67,7 @@ type normalizedStreamEvent struct {
 	delta     string
 	err       string
 	usage     *streamUsageSnapshot
+	toolCalls []contractsai.ToolCall
 }
 
 func TestNewOpenAIUnmarshalError(t *testing.T) {
@@ -351,6 +352,7 @@ func TestProviderStream(t *testing.T) {
 		expectErrMessage string
 		expectText       string
 		expectUsage      usageCheck
+		expectToolCalls  []contractsai.ToolCall
 		expectEvents     []normalizedStreamEvent
 		expectRequest    normalizedCapturedStreamRequest
 	}{
@@ -430,6 +432,47 @@ func TestProviderStream(t *testing.T) {
 			},
 		},
 		{
+			name:        "accumulates streaming tool call deltas across chunks",
+			status:      http.StatusOK,
+			contentType: "text/event-stream",
+			body: strings.Join([]string{
+				`data: {"id":"chatcmpl_stream_tc","object":"chat.completion.chunk","created":1,"model":"gpt-test","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"get_weather","arguments":"{\"city\":"}}]},"finish_reason":null}],"usage":null}`,
+				``,
+				`data: {"id":"chatcmpl_stream_tc","object":"chat.completion.chunk","created":1,"model":"gpt-test","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"type":"function","function":{"arguments":"\"London\",\"units\":\"celsius\"}"}}]},"finish_reason":null}],"usage":null}`,
+				``,
+				`data: {"id":"chatcmpl_stream_tc","object":"chat.completion.chunk","created":1,"model":"gpt-test","choices":[],"usage":{"prompt_tokens":6,"completion_tokens":3,"total_tokens":9}}`,
+				``,
+				`data: [DONE]`,
+				``,
+			}, "\n"),
+			setup: func() {
+				mockAgent.EXPECT().Instructions().Return("").Once()
+				mockAgent.EXPECT().Messages().Return(nil).Once()
+			},
+			input:       "hello",
+			expectUsage: usageCheck{input: 6, output: 3, total: 9},
+			expectToolCalls: []contractsai.ToolCall{{
+				ID:      "call_1",
+				Name:    "get_weather",
+				Args:    map[string]any{"city": "London", "units": "celsius"},
+				RawArgs: `{"city":"London","units":"celsius"}`,
+			}},
+			expectEvents: []normalizedStreamEvent{{
+				eventType: contractsai.StreamEventTypeDone,
+				usage:     &streamUsageSnapshot{input: 6, output: 3, total: 9},
+			}},
+			expectRequest: normalizedCapturedStreamRequest{
+				path:          "/chat/completions",
+				authorization: "Bearer test-key",
+				model:         "gpt-default",
+				stream:        true,
+				includeUsage:  true,
+				messages: []normalizedMessage{
+					{role: "user", content: "hello"},
+				},
+			},
+		},
+		{
 			name:             "emits error event when stream request fails",
 			status:           http.StatusInternalServerError,
 			contentType:      "application/json",
@@ -482,9 +525,11 @@ func TestProviderStream(t *testing.T) {
 			thenCalled := 0
 			var thenText string
 			var thenUsage usageCheck
+			var thenToolCalls []contractsai.ToolCall
 			stream.Then(func(resp contractsai.Response) error {
 				thenCalled++
 				thenText = resp.Text()
+				thenToolCalls = resp.ToolCalls()
 				if resp.Usage() != nil {
 					thenUsage = usageCheck{
 						input:  resp.Usage().Input(),
@@ -521,6 +566,7 @@ func TestProviderStream(t *testing.T) {
 				assert.Equal(t, 1, thenCalled)
 				assert.Equal(t, tt.expectText, thenText)
 				assert.Equal(t, tt.expectUsage, thenUsage)
+				assert.Equal(t, tt.expectToolCalls, thenToolCalls)
 			}
 
 			req, ok := readCapturedStreamRequest(t, captured)
@@ -695,6 +741,7 @@ func normalizeProviderStreamEvents(events []contractsai.StreamEvent) []normalize
 			eventType: event.Type,
 			delta:     event.Delta,
 			err:       event.Error,
+			toolCalls: event.ToolCalls,
 		}
 		if event.Usage != nil {
 			entry.usage = &streamUsageSnapshot{

@@ -206,15 +206,15 @@ type agentStub struct {
 	tools    []contractsai.Tool
 }
 
-func (a *agentStub) Instructions() string        { return "" }
+func (a *agentStub) Instructions() string            { return "" }
 func (a *agentStub) Messages() []contractsai.Message { return a.messages }
-func (a *agentStub) Tools() []contractsai.Tool   { return a.tools }
+func (a *agentStub) Tools() []contractsai.Tool       { return a.tools }
 
 func (s *ConversationTestSuite) TestStream() {
 	ctx := context.Background()
 	model := "stream-model"
 
-	s.Run("returns provider error via Each without mutating messages", func() {
+	s.Run("returns provider error immediately without mutating messages", func() {
 		initial := []contractsai.Message{{Role: contractsai.RoleAssistant, Content: "seed"}}
 		agent := &agentStub{messages: initial}
 
@@ -229,11 +229,8 @@ func (s *ConversationTestSuite) TestStream() {
 
 		stream, err := conv.Stream("hello")
 
-		// Stream() itself succeeds; the provider error surfaces through Each().
-		s.NoError(err)
-		s.NotNil(stream)
-		eachErr := stream.Each(nil)
-		s.Equal(assert.AnError, eachErr)
+		s.Equal(assert.AnError, err)
+		s.Nil(stream)
 		s.Equal(initial, conv.Messages())
 	})
 
@@ -273,6 +270,7 @@ func (s *ConversationTestSuite) TestStream() {
 		s.NoError(err)
 		s.Equal(normalizeStreamEvents([]contractsai.StreamEvent{
 			{Type: contractsai.StreamEventTypeTextDelta, Delta: "partial"},
+			{Type: contractsai.StreamEventTypeDone},
 		}), normalizeStreamEvents(events))
 		s.Equal([]contractsai.Message{
 			{Role: contractsai.RoleAssistant, Content: "seed"},
@@ -515,6 +513,7 @@ func (s *ConversationTestSuite) TestStreamToolInvocationLoop() {
 
 		s.Contains(gotTypes, contractsai.StreamEventTypeToolCall)
 		s.Contains(gotTypes, contractsai.StreamEventTypeTextDelta)
+		s.Contains(gotTypes, contractsai.StreamEventTypeDone)
 		s.Equal([]contractsai.ToolCall{toolCall}, gotToolCalls)
 		s.Equal(1, tool.callCount)
 
@@ -532,7 +531,7 @@ func (s *ConversationTestSuite) TestStreamToolInvocationLoop() {
 		s.Equal("The weather is sunny.", msgs[3].Content)
 	})
 
-	s.Run("returns provider stream error via Each without mutating messages", func() {
+	s.Run("returns provider stream error immediately without mutating messages", func() {
 		provider, _ := makeProvider([]streamCall{
 			{err: assert.AnError},
 		})
@@ -542,10 +541,8 @@ func (s *ConversationTestSuite) TestStreamToolInvocationLoop() {
 		initial := conv.Messages()
 
 		stream, err := conv.Stream("hello")
-		s.NoError(err)
-
-		eachErr := stream.Each(nil)
-		s.Equal(assert.AnError, eachErr)
+		s.Equal(assert.AnError, err)
+		s.Nil(stream)
 		s.Equal(initial, conv.Messages())
 	})
 
@@ -611,6 +608,25 @@ func (r *conversationToolProviderStub) Stream(ctx context.Context, prompt contra
 	return r.streamFn(ctx, prompt)
 }
 
+func (s *ConversationTestSuite) TestExecuteTools_UsesProvidedContext() {
+	ctx := context.Background()
+	streamCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	tool := &stubTool{name: "get_weather", result: "Sunny"}
+	conv := NewConversation(ctx, &agentStub{tools: []contractsai.Tool{tool}}, &conversationProviderStub{}, "m")
+
+	results, err := conv.executeTools(streamCtx, []contractsai.Tool{tool}, []contractsai.ToolCall{{ID: "c1", Name: "get_weather", Args: map[string]any{"city": "London"}}})
+
+	s.NoError(err)
+	s.Equal([]contractsai.Message{{
+		Role:       contractsai.RoleToolResult,
+		Content:    "Sunny",
+		ToolCallID: "c1",
+	}}, results)
+	s.Same(streamCtx, tool.lastCtx)
+}
+
 // stubResponse is a minimal Response with configurable text and tool calls.
 type stubResponse struct {
 	text      string
@@ -618,8 +634,8 @@ type stubResponse struct {
 	usage     contractsai.Usage
 }
 
-func (r *stubResponse) Text() string                    { return r.text }
-func (r *stubResponse) Usage() contractsai.Usage        { return r.usage }
+func (r *stubResponse) Text() string                      { return r.text }
+func (r *stubResponse) Usage() contractsai.Usage          { return r.usage }
 func (r *stubResponse) ToolCalls() []contractsai.ToolCall { return r.toolCalls }
 
 // stubTool records calls and returns a fixed result or error.
@@ -628,12 +644,14 @@ type stubTool struct {
 	result    string
 	execErr   error
 	callCount int
+	lastCtx   context.Context
 }
 
-func (t *stubTool) Name() string                   { return t.name }
-func (t *stubTool) Description() string            { return "" }
-func (t *stubTool) Parameters() map[string]any     { return nil }
-func (t *stubTool) Execute(_ context.Context, _ map[string]any) (string, error) {
+func (t *stubTool) Name() string               { return t.name }
+func (t *stubTool) Description() string        { return "" }
+func (t *stubTool) Parameters() map[string]any { return nil }
+func (t *stubTool) Execute(ctx context.Context, _ map[string]any) (string, error) {
 	t.callCount++
+	t.lastCtx = ctx
 	return t.result, t.execErr
 }
