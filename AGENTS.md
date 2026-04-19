@@ -40,6 +40,10 @@ golangci-lint run                      # lint
 - Cache/Session/Queue: `goravel/redis`
 - Storage: `goravel/s3`, `oss`, `cos`, `minio`
 
+## Planning Rules
+
+- When asked to plan or investigate, produce a plan only — do not implement it until the user explicitly asks you to proceed.
+
 ## Code Rules
 
 - Use `any` instead of `interface{}`.
