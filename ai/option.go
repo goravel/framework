@@ -14,6 +14,12 @@ func WithModel(model string) contractsai.Option {
 	}
 }
 
+func WithMiddleware(middlewares ...contractsai.Middleware) contractsai.Option {
+	return func(options *contractsai.Options) {
+		options.Middlewares = append(options.Middlewares, middlewares...)
+	}
+}
+
 func WithStreamCode(code int) contractsai.StreamOption {
 	return func(options *contractsai.StreamOptions) {
 		options.Code = code

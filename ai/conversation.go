@@ -15,12 +15,13 @@ import (
 const MaxToolCallIterations = 10
 
 type conversation struct {
-	ctx      context.Context
-	agent    contractsai.Agent
-	messages []contractsai.Message
-	provider contractsai.Provider
-	model    string
-	mu       sync.RWMutex
+	ctx         context.Context
+	agent       contractsai.Agent
+	messages    []contractsai.Message
+	provider    contractsai.Provider
+	model       string
+	middlewares []contractsai.Middleware
+	mu          sync.RWMutex
 	// promptMu serializes concurrent Prompt() calls so that a failure in one
 	// call cannot corrupt history being written by another concurrent call.
 	promptMu sync.Mutex
@@ -30,13 +31,14 @@ type conversation struct {
 	pending []contractsai.Message
 }
 
-func NewConversation(ctx context.Context, agent contractsai.Agent, provider contractsai.Provider, model string) *conversation {
+func NewConversation(ctx context.Context, agent contractsai.Agent, provider contractsai.Provider, model string, middlewares ...contractsai.Middleware) *conversation {
 	return &conversation{
-		ctx:      ctx,
-		agent:    agent,
-		messages: slices.Clone(agent.Messages()),
-		provider: provider,
-		model:    model,
+		ctx:         ctx,
+		agent:       agent,
+		messages:    slices.Clone(agent.Messages()),
+		provider:    provider,
+		model:       model,
+		middlewares: slices.Clone(middlewares),
 	}
 }
 
@@ -96,7 +98,7 @@ func (r *conversation) Prompt(input string) (contractsai.Response, error) {
 	)
 
 	for i := range MaxToolCallIterations {
-		resp, err = r.provider.Prompt(r.ctx, agentPrompt)
+		resp, err = r.prompt(r.ctx, agentPrompt)
 		if err != nil {
 			clearPending()
 			return nil, err
@@ -164,6 +166,22 @@ func (r *conversation) Prompt(input string) (contractsai.Response, error) {
 	r.mu.Unlock()
 
 	return resp, nil
+}
+
+func (r *conversation) prompt(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
+	next := func(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
+		return r.provider.Prompt(ctx, prompt)
+	}
+
+	for i := len(r.middlewares) - 1; i >= 0; i-- {
+		middleware := r.middlewares[i]
+		nextHandler := next
+		next = func(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
+			return middleware.Handle(ctx, prompt, nextHandler)
+		}
+	}
+
+	return next(ctx, prompt)
 }
 
 func (r *conversation) Stream(input string) (contractsai.StreamableResponse, error) {
