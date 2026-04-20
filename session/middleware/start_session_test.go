@@ -82,6 +82,38 @@ func TestStartSession(t *testing.T) {
 	assert.NoError(t, file.Remove("storage"))
 }
 
+func TestStartSession_RegenerateReachesClient(t *testing.T) {
+	mockConfig := configmocks.NewConfig(t)
+	session.ConfigFacade = mockConfig
+	mockConfig.EXPECT().GetString("session.default", "file").Return("file").Once()
+	mockConfig.EXPECT().GetString("session.drivers.file.driver").Return("file").Once()
+	mockConfig.EXPECT().GetInt("session.lifetime", 120).Return(120).Once()
+	mockConfig.EXPECT().GetInt("session.gc_interval", 30).Return(30).Once()
+	mockConfig.EXPECT().GetString("session.files").Return(path.Storage("framework/sessions")).Once()
+	mockConfig.EXPECT().GetString("session.cookie").Return("goravel_session").Once()
+
+	session.SessionFacade = session.NewManager(mockConfig, json.New())
+
+	var preID, postID string
+	server := httptest.NewServer(testHttpSessionMiddleware(nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
+		s := r.Context().Value("session").(contractsession.Session)
+		preID = s.GetID()
+		require.NoError(t, s.Regenerate(true))
+		postID = s.GetID()
+	}), mockConfig))
+	defer server.Close()
+
+	resp, err := (&nethttp.Client{}).Get(server.URL + "/login")
+	require.NoError(t, err)
+	require.NotEmpty(t, resp.Cookies())
+
+	cookie := resp.Cookies()[0]
+	assert.NotEqual(t, preID, postID)
+	assert.Equal(t, postID, cookie.Value)
+
+	assert.NoError(t, file.Remove("storage"))
+}
+
 type TestContext struct {
 	ctx     context.Context
 	next    nethttp.Handler

@@ -220,7 +220,7 @@ func (s *SessionGuardTestSuite) Test_InvalidKey() {
 	s.ErrorIs(err, errors.AuthInvalidKey)
 }
 
-func (s *SessionGuardTestSuite) TestLoginUsingID_RegenerateError() {
+func (s *SessionGuardTestSuite) Test_LoginUsingID_RegenerateError() {
 	s.mockSession.EXPECT().Regenerate(true).Return(assert.AnError).Once()
 
 	token, err := s.sessionGuard.LoginUsingID(1)
@@ -228,7 +228,7 @@ func (s *SessionGuardTestSuite) TestLoginUsingID_RegenerateError() {
 	s.ErrorIs(err, assert.AnError)
 }
 
-func (s *SessionGuardTestSuite) TestLogout_InvalidateError() {
+func (s *SessionGuardTestSuite) Test_Logout_InvalidateError() {
 	s.mockSession.EXPECT().Invalidate().Return(assert.AnError).Once()
 
 	s.ErrorIs(s.sessionGuard.Logout(), assert.AnError)
