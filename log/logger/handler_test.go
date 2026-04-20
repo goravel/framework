@@ -136,7 +136,7 @@ func (s *IOHandlerTestSuite) TestHandleWithAllFields() {
 	output := s.buffer.String()
 	s.Contains(output, "test.error: error message")
 	s.Contains(output, "[Code] ERR001")
-	s.Contains(output, "[Context] map[key:value]")
+	s.NotContains(output, "[Context]")
 	s.Contains(output, "[Domain] payment")
 	s.Contains(output, "[Hint] check balance")
 	s.Contains(output, "[Owner] team-a")
@@ -457,10 +457,8 @@ func TestIOHandlerJSONFormatWithAllFields(t *testing.T) {
 	assert.Equal(t, "check balance", result["hint"])
 	assert.Equal(t, "team-a", result["owner"])
 
-	// Verify context
-	context, ok := result["context"].(map[string]any)
-	assert.True(t, ok)
-	assert.Equal(t, "value", context["key"])
+	// Context values are not auto-dumped; use With() for explicit payload.
+	assert.Nil(t, result["context"])
 
 	// Verify request
 	request, ok := result["request"].(map[string]any)

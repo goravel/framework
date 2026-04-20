@@ -72,13 +72,6 @@ func (h *IOHandler) handleText(entry log.Entry) error {
 	if v := entry.Code(); v != "" {
 		_, _ = fmt.Fprintf(&b, "[Code] %+v\n", v)
 	}
-	if v := entry.Context(); v != nil {
-		values := make(map[any]any)
-		getContextValues(v, values)
-		if len(values) > 0 {
-			_, _ = fmt.Fprintf(&b, "[Context] %+v\n", values)
-		}
-	}
 	if v := entry.Domain(); v != "" {
 		_, _ = fmt.Fprintf(&b, "[Domain] %+v\n", v)
 	}
@@ -130,18 +123,6 @@ func (h *IOHandler) handleJSON(entry log.Entry) error {
 
 	if v := entry.Code(); v != "" {
 		data["code"] = v
-	}
-	if v := entry.Context(); v != nil {
-		values := make(map[any]any)
-		getContextValues(v, values)
-		if len(values) > 0 {
-			// Convert map[any]any to map[string]any for JSON serialization
-			stringValues := make(map[string]any)
-			for k, val := range values {
-				stringValues[fmt.Sprintf("%v", k)] = val
-			}
-			data["context"] = stringValues
-		}
 	}
 	if v := entry.Domain(); v != "" {
 		data["domain"] = v

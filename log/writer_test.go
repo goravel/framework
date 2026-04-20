@@ -396,11 +396,17 @@ func TestWriter_WithContext(t *testing.T) {
 	assert.Nil(t, err)
 
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, testContextKey("key"), "value")
-	log.WithContext(ctx).Info("Goravel")
+	ctx = context.WithValue(ctx, testContextKey("GoravelAuthJwt"), "secret-token")
+	log.WithContext(ctx).With(map[string]any{"key": "value"}).Info("Goravel")
 
-	assert.True(t, file.Contains(singleLog, "test.info: Goravel\n[Context] map[key:value]"))
-	assert.True(t, file.Contains(dailyLog, "test.info: Goravel\n[Context] map[key:value]"))
+	assert.True(t, file.Contains(singleLog, "test.info: Goravel"))
+	assert.True(t, file.Contains(dailyLog, "test.info: Goravel"))
+	assert.True(t, file.Contains(singleLog, "[With] map[key:value]"))
+	assert.True(t, file.Contains(dailyLog, "[With] map[key:value]"))
+	assert.False(t, file.Contains(singleLog, "GoravelAuthJwt"))
+	assert.False(t, file.Contains(singleLog, "secret-token"))
+	assert.False(t, file.Contains(dailyLog, "GoravelAuthJwt"))
+	assert.False(t, file.Contains(dailyLog, "secret-token"))
 
 	_ = file.Remove("storage")
 }
