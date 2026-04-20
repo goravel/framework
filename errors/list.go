@@ -21,6 +21,7 @@ var (
 	TelemetryFacadeNotSet   = New("telemetry facade is not initialized")
 
 	AuthEmptySecret             = New("authentication secret is missing or required")
+	AuthGuardMismatch           = New("authentication token guard mismatch")
 	AuthInvalidClaims           = New("authentication token contains invalid claims")
 	AuthInvalidKey              = New("authentication key is invalid")
 	AuthInvalidToken            = New("authentication token is invalid")
