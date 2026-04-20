@@ -107,6 +107,7 @@ func (s *SessionGuardTestSuite) TestCheck_LoginUsingID_Logout() {
 	s.False(s.sessionGuard.Check())
 	s.True(s.sessionGuard.Guest())
 
+	s.mockSession.EXPECT().Regenerate(true).Return(nil).Once()
 	s.mockSession.EXPECT().Put("auth_user_id", "1").Return(nil).Once()
 	token, err := s.sessionGuard.LoginUsingID(1)
 	s.Nil(err)
@@ -116,7 +117,7 @@ func (s *SessionGuardTestSuite) TestCheck_LoginUsingID_Logout() {
 	s.True(s.sessionGuard.Check())
 	s.False(s.sessionGuard.Guest())
 
-	s.mockSession.EXPECT().Forget("auth_user_id").Return(nil).Once()
+	s.mockSession.EXPECT().Invalidate().Return(nil).Once()
 	s.NoError(s.sessionGuard.Logout())
 
 	s.mockSession.EXPECT().Get("auth_user_id", nil).Return(nil).Once()
@@ -133,6 +134,7 @@ func (s *SessionGuardTestSuite) Test_Login() {
 	user.Name = "Goravel"
 
 	s.mockUserProvider.EXPECT().GetID(&user).Return("2", nil).Once()
+	s.mockSession.EXPECT().Regenerate(true).Return(nil).Once()
 	s.mockSession.EXPECT().Put("auth_user_id", "2").Return(nil).Once()
 	token, err := s.sessionGuard.Login(&user)
 	s.Nil(err)
@@ -142,7 +144,7 @@ func (s *SessionGuardTestSuite) Test_Login() {
 	s.True(s.sessionGuard.Check())
 	s.False(s.sessionGuard.Guest())
 
-	s.mockSession.EXPECT().Forget("auth_user_id").Return(nil).Once()
+	s.mockSession.EXPECT().Invalidate().Return(nil).Once()
 	s.NoError(s.sessionGuard.Logout())
 
 	s.mockSession.EXPECT().Get("auth_user_id", nil).Return(nil).Once()
@@ -167,7 +169,7 @@ func (s *SessionGuardTestSuite) Test_LoginFailed() {
 	s.False(s.sessionGuard.Check())
 	s.True(s.sessionGuard.Guest())
 
-	s.mockSession.EXPECT().Forget("auth_user_id").Return(nil).Once()
+	s.mockSession.EXPECT().Invalidate().Return(nil).Once()
 	s.NoError(s.sessionGuard.Logout())
 
 	s.mockSession.EXPECT().Get("auth_user_id", nil).Return(nil).Once()
@@ -216,4 +218,18 @@ func (s *SessionGuardTestSuite) Test_InvalidKey() {
 
 	s.NotNil(err)
 	s.ErrorIs(err, errors.AuthInvalidKey)
+}
+
+func (s *SessionGuardTestSuite) TestLoginUsingID_RegenerateError() {
+	s.mockSession.EXPECT().Regenerate(true).Return(assert.AnError).Once()
+
+	token, err := s.sessionGuard.LoginUsingID(1)
+	s.Empty(token)
+	s.ErrorIs(err, assert.AnError)
+}
+
+func (s *SessionGuardTestSuite) TestLogout_InvalidateError() {
+	s.mockSession.EXPECT().Invalidate().Return(assert.AnError).Once()
+
+	s.ErrorIs(s.sessionGuard.Logout(), assert.AnError)
 }

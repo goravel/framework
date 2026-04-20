@@ -77,16 +77,17 @@ func (r *SessionGuard) LoginUsingID(id any) (token string, err error) {
 		return "", errors.AuthInvalidKey
 	}
 
+	if err := r.session.Regenerate(true); err != nil {
+		return "", err
+	}
+
 	r.session.Put(sessionName, key)
 
 	return "", nil
 }
 
 func (r *SessionGuard) Logout() error {
-	sessionName := r.getSessionName()
-	r.session.Forget(sessionName)
-
-	return nil
+	return r.session.Invalidate()
 }
 
 func (r *SessionGuard) Parse(token string) (*contractsauth.Payload, error) {
