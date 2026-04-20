@@ -191,6 +191,7 @@ func (s *JwtGuardTestSuite) TestParse_GuardMismatch() {
 	payload, err := adminJwtGuard.Parse(userToken)
 	s.Nil(payload)
 	s.ErrorIs(err, errors.AuthGuardMismatch)
+	s.EqualError(err, errors.AuthGuardMismatch.Args(testAdminGuard, testUserGuard).Error())
 
 	guards, ok := s.mockContext.Value(ctxJwtKey).(Guards)
 	s.True(ok)
@@ -219,6 +220,7 @@ func (s *JwtGuardTestSuite) TestParse_GuardMismatch_Expired() {
 	payload, err := adminJwtGuard.Parse(userToken)
 	s.Nil(payload)
 	s.ErrorIs(err, errors.AuthGuardMismatch)
+	s.EqualError(err, errors.AuthGuardMismatch.Args(testAdminGuard, testUserGuard).Error())
 }
 
 func (s *JwtGuardTestSuite) TestUser_NoParse() {
