@@ -172,6 +172,57 @@ func (s *JwtGuardTestSuite) TestParse_Success() {
 	}, payload)
 }
 
+func (s *JwtGuardTestSuite) TestParse_GuardMismatch() {
+	testAdminGuard := "admin"
+
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.secret").Return("a").Once()
+	s.mockConfig.EXPECT().GetInt("auth.guards.admin.ttl").Return(2).Once()
+	s.mockConfig.EXPECT().GetInt("auth.guards.admin.refresh_ttl").Return(2).Once()
+
+	adminJwtGuard, err := NewJwtGuard(s.mockContext, testAdminGuard, s.mockUserProvider)
+	s.Require().Nil(err)
+
+	userToken, err := s.jwtGuard.LoginUsingID(1)
+	s.NoError(err)
+	s.NotEmpty(userToken)
+
+	s.mockCache.EXPECT().GetBool("jwt:disabled:"+userToken, false).Return(false).Once()
+
+	payload, err := adminJwtGuard.Parse(userToken)
+	s.Nil(payload)
+	s.ErrorIs(err, errors.AuthGuardMismatch)
+	s.EqualError(err, errors.AuthGuardMismatch.Args(testAdminGuard, testUserGuard).Error())
+
+	guards, ok := s.mockContext.Value(ctxJwtKey).(Guards)
+	s.True(ok)
+	s.Nil(guards[testAdminGuard])
+}
+
+func (s *JwtGuardTestSuite) TestParse_GuardMismatch_Expired() {
+	testAdminGuard := "admin"
+
+	s.mockConfig.EXPECT().GetString("auth.guards.admin.secret").Return("a").Once()
+	s.mockConfig.EXPECT().GetInt("auth.guards.admin.ttl").Return(2).Once()
+	s.mockConfig.EXPECT().GetInt("auth.guards.admin.refresh_ttl").Return(2).Once()
+
+	adminJwtGuard, err := NewJwtGuard(s.mockContext, testAdminGuard, s.mockUserProvider)
+	s.Require().Nil(err)
+
+	userToken, err := s.jwtGuard.LoginUsingID(1)
+	s.NoError(err)
+	s.NotEmpty(userToken)
+
+	carbon.SetTestNow(s.now.Copy().AddMinutes(3))
+	defer carbon.ClearTestNow()
+
+	s.mockCache.EXPECT().GetBool("jwt:disabled:"+userToken, false).Return(false).Once()
+
+	payload, err := adminJwtGuard.Parse(userToken)
+	s.Nil(payload)
+	s.ErrorIs(err, errors.AuthGuardMismatch)
+	s.EqualError(err, errors.AuthGuardMismatch.Args(testAdminGuard, testUserGuard).Error())
+}
+
 func (s *JwtGuardTestSuite) TestUser_NoParse() {
 	var user User
 	err := s.jwtGuard.User(user)

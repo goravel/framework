@@ -210,6 +210,10 @@ func (r *JwtGuard) Parse(token string) (*contractsauth.Payload, error) {
 				return nil, errors.AuthInvalidClaims
 			}
 
+			if claims.Subject != r.guard {
+				return nil, errors.AuthGuardMismatch.Args(r.guard, claims.Subject)
+			}
+
 			r.makeAuthContext(claims, "")
 
 			return &contractsauth.Payload{
@@ -229,6 +233,10 @@ func (r *JwtGuard) Parse(token string) (*contractsauth.Payload, error) {
 	claims, ok := tokenClaims.Claims.(*Claims)
 	if !ok {
 		return nil, errors.AuthInvalidClaims
+	}
+
+	if claims.Subject != r.guard {
+		return nil, errors.AuthGuardMismatch.Args(r.guard, claims.Subject)
 	}
 
 	r.makeAuthContext(claims, token)
