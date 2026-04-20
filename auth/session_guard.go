@@ -9,6 +9,7 @@ import (
 	"github.com/goravel/framework/contracts/http"
 	contractsession "github.com/goravel/framework/contracts/session"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/carbon"
 )
 
 type SessionGuard struct {
@@ -80,6 +81,7 @@ func (r *SessionGuard) LoginUsingID(id any) (token string, err error) {
 	if err := r.session.Regenerate(true); err != nil {
 		return "", err
 	}
+	r.reissueSessionCookie()
 
 	r.session.Put(sessionName, key)
 
@@ -87,7 +89,32 @@ func (r *SessionGuard) LoginUsingID(id any) (token string, err error) {
 }
 
 func (r *SessionGuard) Logout() error {
-	return r.session.Invalidate()
+	if err := r.session.Invalidate(); err != nil {
+		return err
+	}
+	r.reissueSessionCookie()
+
+	return nil
+}
+
+// reissueSessionCookie writes the current session ID to the response cookie.
+// Called after Regenerate/Invalidate so the rotated ID reaches the client
+// even on drivers that flush headers when the handler writes the body.
+func (r *SessionGuard) reissueSessionCookie() {
+	if configFacade == nil {
+		return
+	}
+
+	r.ctx.Response().Cookie(http.Cookie{
+		Name:     r.session.GetName(),
+		Value:    r.session.GetID(),
+		Expires:  carbon.Now().AddMinutes(configFacade.GetInt("session.lifetime", 120)).StdTime(),
+		Path:     configFacade.GetString("session.path"),
+		Domain:   configFacade.GetString("session.domain"),
+		Secure:   configFacade.GetBool("session.secure"),
+		HttpOnly: configFacade.GetBool("session.http_only"),
+		SameSite: configFacade.GetString("session.same_site"),
+	})
 }
 
 func (r *SessionGuard) Parse(token string) (*contractsauth.Payload, error) {

@@ -39,11 +39,7 @@ func StartSession() http.Middleware {
 		s.Start()
 		req.SetSession(s)
 
-		// Continue processing request
-		req.Next()
-
-		// Set session cookie in response using the current (post-handler)
-		// session ID so rotations via Regenerate/Invalidate reach the client.
+		// Set session cookie in response
 		config := session.ConfigFacade
 		ctx.Response().Cookie(http.Cookie{
 			Name:     s.GetName(),
@@ -55,6 +51,9 @@ func StartSession() http.Middleware {
 			HttpOnly: config.GetBool("session.http_only"),
 			SameSite: config.GetString("session.same_site"),
 		})
+
+		// Continue processing request
+		req.Next()
 
 		// Save session
 		if err = s.Save(); err != nil {
