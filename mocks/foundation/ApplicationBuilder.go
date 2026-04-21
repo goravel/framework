@@ -329,12 +329,12 @@ func (_c *ApplicationBuilder_WithFilters_Call) RunAndReturn(run func(func() []va
 	return _c
 }
 
-// WithGrpcClientCreds provides a mock function with given fields: _a0
-func (_m *ApplicationBuilder) WithGrpcClientCreds(_a0 func() map[string]credentials.TransportCredentials) foundation.ApplicationBuilder {
+// WithGrpcClientCredentials provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithGrpcClientCredentials(_a0 func() map[string]credentials.TransportCredentials) foundation.ApplicationBuilder {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
-		panic("no return value specified for WithGrpcClientCreds")
+		panic("no return value specified for WithGrpcClientCredentials")
 	}
 
 	var r0 foundation.ApplicationBuilder
@@ -349,30 +349,30 @@ func (_m *ApplicationBuilder) WithGrpcClientCreds(_a0 func() map[string]credenti
 	return r0
 }
 
-// ApplicationBuilder_WithGrpcClientCreds_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithGrpcClientCreds'
-type ApplicationBuilder_WithGrpcClientCreds_Call struct {
+// ApplicationBuilder_WithGrpcClientCredentials_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithGrpcClientCredentials'
+type ApplicationBuilder_WithGrpcClientCredentials_Call struct {
 	*mock.Call
 }
 
-// WithGrpcClientCreds is a helper method to define mock.On call
+// WithGrpcClientCredentials is a helper method to define mock.On call
 //   - _a0 func() map[string]credentials.TransportCredentials
-func (_e *ApplicationBuilder_Expecter) WithGrpcClientCreds(_a0 interface{}) *ApplicationBuilder_WithGrpcClientCreds_Call {
-	return &ApplicationBuilder_WithGrpcClientCreds_Call{Call: _e.mock.On("WithGrpcClientCreds", _a0)}
+func (_e *ApplicationBuilder_Expecter) WithGrpcClientCredentials(_a0 interface{}) *ApplicationBuilder_WithGrpcClientCredentials_Call {
+	return &ApplicationBuilder_WithGrpcClientCredentials_Call{Call: _e.mock.On("WithGrpcClientCredentials", _a0)}
 }
 
-func (_c *ApplicationBuilder_WithGrpcClientCreds_Call) Run(run func(_a0 func() map[string]credentials.TransportCredentials)) *ApplicationBuilder_WithGrpcClientCreds_Call {
+func (_c *ApplicationBuilder_WithGrpcClientCredentials_Call) Run(run func(_a0 func() map[string]credentials.TransportCredentials)) *ApplicationBuilder_WithGrpcClientCredentials_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(func() map[string]credentials.TransportCredentials))
 	})
 	return _c
 }
 
-func (_c *ApplicationBuilder_WithGrpcClientCreds_Call) Return(_a0 foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcClientCreds_Call {
+func (_c *ApplicationBuilder_WithGrpcClientCredentials_Call) Return(_a0 foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcClientCredentials_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ApplicationBuilder_WithGrpcClientCreds_Call) RunAndReturn(run func(func() map[string]credentials.TransportCredentials) foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcClientCreds_Call {
+func (_c *ApplicationBuilder_WithGrpcClientCredentials_Call) RunAndReturn(run func(func() map[string]credentials.TransportCredentials) foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcClientCredentials_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -473,12 +473,12 @@ func (_c *ApplicationBuilder_WithGrpcClientStatsHandlers_Call) RunAndReturn(run 
 	return _c
 }
 
-// WithGrpcServerCreds provides a mock function with given fields: _a0
-func (_m *ApplicationBuilder) WithGrpcServerCreds(_a0 func() credentials.TransportCredentials) foundation.ApplicationBuilder {
+// WithGrpcServerCredentials provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithGrpcServerCredentials(_a0 func() credentials.TransportCredentials) foundation.ApplicationBuilder {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
-		panic("no return value specified for WithGrpcServerCreds")
+		panic("no return value specified for WithGrpcServerCredentials")
 	}
 
 	var r0 foundation.ApplicationBuilder
@@ -493,30 +493,30 @@ func (_m *ApplicationBuilder) WithGrpcServerCreds(_a0 func() credentials.Transpo
 	return r0
 }
 
-// ApplicationBuilder_WithGrpcServerCreds_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithGrpcServerCreds'
-type ApplicationBuilder_WithGrpcServerCreds_Call struct {
+// ApplicationBuilder_WithGrpcServerCredentials_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithGrpcServerCredentials'
+type ApplicationBuilder_WithGrpcServerCredentials_Call struct {
 	*mock.Call
 }
 
-// WithGrpcServerCreds is a helper method to define mock.On call
+// WithGrpcServerCredentials is a helper method to define mock.On call
 //   - _a0 func() credentials.TransportCredentials
-func (_e *ApplicationBuilder_Expecter) WithGrpcServerCreds(_a0 interface{}) *ApplicationBuilder_WithGrpcServerCreds_Call {
-	return &ApplicationBuilder_WithGrpcServerCreds_Call{Call: _e.mock.On("WithGrpcServerCreds", _a0)}
+func (_e *ApplicationBuilder_Expecter) WithGrpcServerCredentials(_a0 interface{}) *ApplicationBuilder_WithGrpcServerCredentials_Call {
+	return &ApplicationBuilder_WithGrpcServerCredentials_Call{Call: _e.mock.On("WithGrpcServerCredentials", _a0)}
 }
 
-func (_c *ApplicationBuilder_WithGrpcServerCreds_Call) Run(run func(_a0 func() credentials.TransportCredentials)) *ApplicationBuilder_WithGrpcServerCreds_Call {
+func (_c *ApplicationBuilder_WithGrpcServerCredentials_Call) Run(run func(_a0 func() credentials.TransportCredentials)) *ApplicationBuilder_WithGrpcServerCredentials_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(func() credentials.TransportCredentials))
 	})
 	return _c
 }
 
-func (_c *ApplicationBuilder_WithGrpcServerCreds_Call) Return(_a0 foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcServerCreds_Call {
+func (_c *ApplicationBuilder_WithGrpcServerCredentials_Call) Return(_a0 foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcServerCredentials_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ApplicationBuilder_WithGrpcServerCreds_Call) RunAndReturn(run func(func() credentials.TransportCredentials) foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcServerCreds_Call {
+func (_c *ApplicationBuilder_WithGrpcServerCredentials_Call) RunAndReturn(run func(func() credentials.TransportCredentials) foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcServerCredentials_Call {
 	_c.Call.Return(run)
 	return _c
 }

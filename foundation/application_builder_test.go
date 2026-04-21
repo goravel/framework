@@ -19,10 +19,10 @@ import (
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/contracts/schedule"
 	"github.com/goravel/framework/contracts/validation"
+	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksschema "github.com/goravel/framework/mocks/database/schema"
 	mocksseeder "github.com/goravel/framework/mocks/database/seeder"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
-	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
 	mocksschedule "github.com/goravel/framework/mocks/schedule"
 	mocksvalidation "github.com/goravel/framework/mocks/validation"
@@ -180,14 +180,14 @@ func (s *ApplicationBuilderTestSuite) TestWithGrpcClientInterceptors() {
 
 func (s *ApplicationBuilderTestSuite) TestWithGrpcClientCreds() {
 	creds := credentials.NewTLS(&tls.Config{MinVersion: tls.VersionTLS12})
-	builder := s.builder.WithGrpcClientCreds(func() map[string]credentials.TransportCredentials {
+	builder := s.builder.WithGrpcClientCredentials(func() map[string]credentials.TransportCredentials {
 		return map[string]credentials.TransportCredentials{
 			"mtls": creds,
 		}
 	})
 
 	s.NotNil(builder)
-	s.NotNil(s.builder.grpcClientCreds)
+	s.NotNil(s.builder.grpcClientCredentials)
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithGrpcClientStatsHandlers() {
@@ -214,10 +214,10 @@ func (s *ApplicationBuilderTestSuite) TestWithGrpcServerInterceptors() {
 
 func (s *ApplicationBuilderTestSuite) TestWithGrpcServerCreds() {
 	creds := credentials.NewTLS(&tls.Config{MinVersion: tls.VersionTLS12})
-	builder := s.builder.WithGrpcServerCreds(func() credentials.TransportCredentials { return creds })
+	builder := s.builder.WithGrpcServerCredentials(func() credentials.TransportCredentials { return creds })
 
 	s.NotNil(builder)
-	s.NotNil(s.builder.grpcServerCreds)
+	s.NotNil(s.builder.grpcServerCredentials)
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithGrpcServerStatsHandlers() {

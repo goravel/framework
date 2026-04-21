@@ -28,10 +28,10 @@ type ApplicationBuilder struct {
 	configuredServiceProviders func() []foundation.ServiceProvider
 	eventToListeners           func() map[event.Event][]event.Listener
 	filters                    func() []validation.Filter
-	grpcClientCreds            func() map[string]credentials.TransportCredentials
+	grpcClientCredentials      func() map[string]credentials.TransportCredentials
 	grpcClientInterceptors     func() map[string][]grpc.UnaryClientInterceptor
 	grpcClientStatsHandlers    func() map[string][]stats.Handler
-	grpcServerCreds            func() credentials.TransportCredentials
+	grpcServerCredentials      func() credentials.TransportCredentials
 	grpcServerInterceptors     func() []grpc.UnaryServerInterceptor
 	grpcServerStatsHandlers    func() []stats.Handler
 	jobs                       func() []queue.Job
@@ -85,8 +85,8 @@ func (r *ApplicationBuilder) WithFilters(fn func() []validation.Filter) foundati
 	return r
 }
 
-func (r *ApplicationBuilder) WithGrpcClientCreds(fn func() map[string]credentials.TransportCredentials) foundation.ApplicationBuilder {
-	r.grpcClientCreds = fn
+func (r *ApplicationBuilder) WithGrpcClientCredentials(fn func() map[string]credentials.TransportCredentials) foundation.ApplicationBuilder {
+	r.grpcClientCredentials = fn
 
 	return r
 }
@@ -103,8 +103,8 @@ func (r *ApplicationBuilder) WithGrpcClientStatsHandlers(fn func() map[string][]
 	return r
 }
 
-func (r *ApplicationBuilder) WithGrpcServerCreds(fn func() credentials.TransportCredentials) foundation.ApplicationBuilder {
-	r.grpcServerCreds = fn
+func (r *ApplicationBuilder) WithGrpcServerCredentials(fn func() credentials.TransportCredentials) foundation.ApplicationBuilder {
+	r.grpcServerCredentials = fn
 
 	return r
 }

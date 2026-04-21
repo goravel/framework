@@ -28,16 +28,16 @@ type ApplicationBuilder interface {
 	WithEvents(func() map[event.Event][]event.Listener) ApplicationBuilder
 	// WithFilters sets the application's validation filters.
 	WithFilters(func() []validation.Filter) ApplicationBuilder
-	// WithGrpcClientCreds registers groups of gRPC client transport credentials
+	// WithGrpcClientCredentials registers groups of gRPC client transport credentials
 	// (e.g. mTLS). Keys are referenced via `grpc.servers.<name>.creds` to
 	// override the default insecure credentials on matching connections.
-	WithGrpcClientCreds(func() map[string]credentials.TransportCredentials) ApplicationBuilder
+	WithGrpcClientCredentials(func() map[string]credentials.TransportCredentials) ApplicationBuilder
 	// WithGrpcClientInterceptors sets the grouped gRPC client interceptors.
 	WithGrpcClientInterceptors(func() map[string][]grpc.UnaryClientInterceptor) ApplicationBuilder
 	// WithGrpcClientStatsHandlers sets the grouped gRPC client stats handlers.
 	WithGrpcClientStatsHandlers(func() map[string][]stats.Handler) ApplicationBuilder
-	// WithGrpcServerCreds sets the gRPC server transport credentials (e.g. TLS/mTLS).
-	WithGrpcServerCreds(func() credentials.TransportCredentials) ApplicationBuilder
+	// WithGrpcServerCredentials sets the gRPC server transport credentials (e.g. TLS/mTLS).
+	WithGrpcServerCredentials(func() credentials.TransportCredentials) ApplicationBuilder
 	// WithGrpcServerInterceptors sets the list of gRPC server interceptors.
 	WithGrpcServerInterceptors(func() []grpc.UnaryServerInterceptor) ApplicationBuilder
 	// WithGrpcServerStatsHandlers sets the list of gRPC server stats handlers.

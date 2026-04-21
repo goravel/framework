@@ -88,35 +88,35 @@ func (_c *Grpc_Client_Call) RunAndReturn(run func(context.Context, string) (*grp
 	return _c
 }
 
-// ClientCreds provides a mock function with given fields: _a0
-func (_m *Grpc) ClientCreds(_a0 map[string]credentials.TransportCredentials) {
+// ClientCredentials provides a mock function with given fields: _a0
+func (_m *Grpc) ClientCredentials(_a0 map[string]credentials.TransportCredentials) {
 	_m.Called(_a0)
 }
 
-// Grpc_ClientCreds_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClientCreds'
-type Grpc_ClientCreds_Call struct {
+// Grpc_ClientCredentials_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClientCredentials'
+type Grpc_ClientCredentials_Call struct {
 	*mock.Call
 }
 
-// ClientCreds is a helper method to define mock.On call
+// ClientCredentials is a helper method to define mock.On call
 //   - _a0 map[string]credentials.TransportCredentials
-func (_e *Grpc_Expecter) ClientCreds(_a0 interface{}) *Grpc_ClientCreds_Call {
-	return &Grpc_ClientCreds_Call{Call: _e.mock.On("ClientCreds", _a0)}
+func (_e *Grpc_Expecter) ClientCredentials(_a0 interface{}) *Grpc_ClientCredentials_Call {
+	return &Grpc_ClientCredentials_Call{Call: _e.mock.On("ClientCredentials", _a0)}
 }
 
-func (_c *Grpc_ClientCreds_Call) Run(run func(_a0 map[string]credentials.TransportCredentials)) *Grpc_ClientCreds_Call {
+func (_c *Grpc_ClientCredentials_Call) Run(run func(_a0 map[string]credentials.TransportCredentials)) *Grpc_ClientCredentials_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(map[string]credentials.TransportCredentials))
 	})
 	return _c
 }
 
-func (_c *Grpc_ClientCreds_Call) Return() *Grpc_ClientCreds_Call {
+func (_c *Grpc_ClientCredentials_Call) Return() *Grpc_ClientCredentials_Call {
 	_c.Call.Return()
 	return _c
 }
 
-func (_c *Grpc_ClientCreds_Call) RunAndReturn(run func(map[string]credentials.TransportCredentials)) *Grpc_ClientCreds_Call {
+func (_c *Grpc_ClientCredentials_Call) RunAndReturn(run func(map[string]credentials.TransportCredentials)) *Grpc_ClientCredentials_Call {
 	_c.Run(run)
 	return _c
 }
@@ -364,35 +364,35 @@ func (_c *Grpc_Server_Call) RunAndReturn(run func() *grpc.Server) *Grpc_Server_C
 	return _c
 }
 
-// ServerCreds provides a mock function with given fields: _a0
-func (_m *Grpc) ServerCreds(_a0 credentials.TransportCredentials) {
+// ServerCredentials provides a mock function with given fields: _a0
+func (_m *Grpc) ServerCredentials(_a0 credentials.TransportCredentials) {
 	_m.Called(_a0)
 }
 
-// Grpc_ServerCreds_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ServerCreds'
-type Grpc_ServerCreds_Call struct {
+// Grpc_ServerCredentials_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ServerCredentials'
+type Grpc_ServerCredentials_Call struct {
 	*mock.Call
 }
 
-// ServerCreds is a helper method to define mock.On call
+// ServerCredentials is a helper method to define mock.On call
 //   - _a0 credentials.TransportCredentials
-func (_e *Grpc_Expecter) ServerCreds(_a0 interface{}) *Grpc_ServerCreds_Call {
-	return &Grpc_ServerCreds_Call{Call: _e.mock.On("ServerCreds", _a0)}
+func (_e *Grpc_Expecter) ServerCredentials(_a0 interface{}) *Grpc_ServerCredentials_Call {
+	return &Grpc_ServerCredentials_Call{Call: _e.mock.On("ServerCredentials", _a0)}
 }
 
-func (_c *Grpc_ServerCreds_Call) Run(run func(_a0 credentials.TransportCredentials)) *Grpc_ServerCreds_Call {
+func (_c *Grpc_ServerCredentials_Call) Run(run func(_a0 credentials.TransportCredentials)) *Grpc_ServerCredentials_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(credentials.TransportCredentials))
 	})
 	return _c
 }
 
-func (_c *Grpc_ServerCreds_Call) Return() *Grpc_ServerCreds_Call {
+func (_c *Grpc_ServerCredentials_Call) Return() *Grpc_ServerCredentials_Call {
 	_c.Call.Return()
 	return _c
 }
 
-func (_c *Grpc_ServerCreds_Call) RunAndReturn(run func(credentials.TransportCredentials)) *Grpc_ServerCreds_Call {
+func (_c *Grpc_ServerCredentials_Call) RunAndReturn(run func(credentials.TransportCredentials)) *Grpc_ServerCredentials_Call {
 	_c.Run(run)
 	return _c
 }

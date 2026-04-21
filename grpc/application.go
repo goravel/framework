@@ -24,12 +24,12 @@ type Application struct {
 
 	// Server Options
 	unaryServerInterceptors []grpc.UnaryServerInterceptor
-	serverCreds             credentials.TransportCredentials
+	serverCredentials       credentials.TransportCredentials
 	serverStatsHandlers     []stats.Handler
 
 	// Client Options
 	unaryClientInterceptorGroups map[string][]grpc.UnaryClientInterceptor
-	clientCredsGroups            map[string]credentials.TransportCredentials
+	clientCredentialsGroups      map[string]credentials.TransportCredentials
 	clientStatsHandlerGroups     map[string][]stats.Handler
 
 	// Mutex protects the servers map
@@ -44,7 +44,7 @@ func NewApplication(config config.Config) *Application {
 		unaryServerInterceptors:      make([]grpc.UnaryServerInterceptor, 0),
 		serverStatsHandlers:          make([]stats.Handler, 0),
 		unaryClientInterceptorGroups: make(map[string][]grpc.UnaryClientInterceptor),
-		clientCredsGroups:            make(map[string]credentials.TransportCredentials),
+		clientCredentialsGroups:      make(map[string]credentials.TransportCredentials),
 		clientStatsHandlerGroups:     make(map[string][]stats.Handler),
 	}
 }
@@ -99,7 +99,7 @@ func (r *Application) Connect(server string) (*grpc.ClientConn, error) {
 	}
 
 	var dialOpts []grpc.DialOption
-	dialOpts = append(dialOpts, grpc.WithTransportCredentials(r.resolveClientCreds(server)))
+	dialOpts = append(dialOpts, grpc.WithTransportCredentials(r.resolveClientCredentials(server)))
 
 	if interceptors := r.getClientInterceptors(interceptorKeys); len(interceptors) > 0 {
 		dialOpts = append(dialOpts, grpc.WithChainUnaryInterceptor(interceptors...))
@@ -166,8 +166,8 @@ func (r *Application) Server() *grpc.Server {
 
 	var opts []grpc.ServerOption
 
-	if r.serverCreds != nil {
-		opts = append(opts, grpc.Creds(r.serverCreds))
+	if r.serverCredentials != nil {
+		opts = append(opts, grpc.Creds(r.serverCredentials))
 	}
 
 	if len(r.unaryServerInterceptors) > 0 {
@@ -215,12 +215,12 @@ func (r *Application) UnaryServerInterceptors(unaryServerInterceptors []grpc.Una
 	r.unaryServerInterceptors = append(r.unaryServerInterceptors, unaryServerInterceptors...)
 }
 
-func (r *Application) ServerCreds(creds credentials.TransportCredentials) {
+func (r *Application) ServerCredentials(creds credentials.TransportCredentials) {
 	if r.server != nil {
 		color.Warningln("[GRPC] Server already initialized; server credentials registration ignored.")
 		return
 	}
-	r.serverCreds = creds
+	r.serverCredentials = creds
 }
 
 func (r *Application) ServerStatsHandlers(handlers []stats.Handler) {
@@ -237,9 +237,9 @@ func (r *Application) UnaryClientInterceptorGroups(groups map[string][]grpc.Unar
 	}
 }
 
-func (r *Application) ClientCreds(groups map[string]credentials.TransportCredentials) {
+func (r *Application) ClientCredentials(groups map[string]credentials.TransportCredentials) {
 	for key, creds := range groups {
-		r.clientCredsGroups[key] = creds
+		r.clientCredentialsGroups[key] = creds
 	}
 }
 
@@ -259,21 +259,21 @@ func (r *Application) getClientInterceptors(keys []string) []grpc.UnaryClientInt
 	return result
 }
 
-// resolveClientCreds returns the transport credentials for the given server.
+// resolveClientCredentials returns the transport credentials for the given server.
 // When a credentials group is registered and referenced via the
 // `grpc.servers.<name>.creds` config key, those credentials are used;
 // otherwise insecure credentials are returned to preserve existing behavior.
-func (r *Application) resolveClientCreds(server string) credentials.TransportCredentials {
-	if len(r.clientCredsGroups) == 0 {
+func (r *Application) resolveClientCredentials(server string) credentials.TransportCredentials {
+	if len(r.clientCredentialsGroups) == 0 {
 		return insecure.NewCredentials()
 	}
 
-	credsKey := r.config.GetString(fmt.Sprintf("grpc.servers.%s.creds", server))
+	credsKey := r.config.GetString(fmt.Sprintf("grpc.servers.%s.credentials", server))
 	if credsKey == "" {
 		return insecure.NewCredentials()
 	}
 
-	creds, ok := r.clientCredsGroups[credsKey]
+	creds, ok := r.clientCredentialsGroups[credsKey]
 	if !ok {
 		color.Warningln(fmt.Sprintf("[GRPC] client credentials group %q is not registered for server %q; falling back to insecure credentials.", credsKey, server))
 		return insecure.NewCredentials()

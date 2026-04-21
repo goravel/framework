@@ -382,8 +382,8 @@ func TestServerCreds(t *testing.T) {
 		app := NewApplication(mockConfig)
 
 		creds := credentials.NewTLS(&tls.Config{MinVersion: tls.VersionTLS12})
-		app.ServerCreds(creds)
-		assert.Same(t, creds, app.serverCreds)
+		app.ServerCredentials(creds)
+		assert.Same(t, creds, app.serverCredentials)
 
 		server := app.Server()
 		assert.NotNil(t, server)
@@ -395,12 +395,12 @@ func TestServerCreds(t *testing.T) {
 
 		initialServer := app.Server()
 		got := color.CaptureOutput(func(io.Writer) {
-			app.ServerCreds(credentials.NewTLS(&tls.Config{MinVersion: tls.VersionTLS12}))
+			app.ServerCredentials(credentials.NewTLS(&tls.Config{MinVersion: tls.VersionTLS12}))
 		})
 
 		assert.Contains(t, got, "[GRPC] Server already initialized; server credentials registration ignored.")
 		assert.Same(t, initialServer, app.Server())
-		assert.Nil(t, app.serverCreds)
+		assert.Nil(t, app.serverCredentials)
 	})
 }
 
@@ -412,14 +412,14 @@ func TestClientCreds(t *testing.T) {
 		first := credentials.NewTLS(&tls.Config{ServerName: "first"})
 		second := credentials.NewTLS(&tls.Config{ServerName: "second"})
 
-		app.ClientCreds(map[string]credentials.TransportCredentials{"mtls": first})
-		app.ClientCreds(map[string]credentials.TransportCredentials{
+		app.ClientCredentials(map[string]credentials.TransportCredentials{"mtls": first})
+		app.ClientCredentials(map[string]credentials.TransportCredentials{
 			"mtls":  second,
 			"plain": credentials.NewTLS(&tls.Config{ServerName: "plain"}),
 		})
 
-		assert.Same(t, second, app.clientCredsGroups["mtls"])
-		assert.NotNil(t, app.clientCredsGroups["plain"])
+		assert.Same(t, second, app.clientCredentialsGroups["mtls"])
+		assert.NotNil(t, app.clientCredentialsGroups["plain"])
 	})
 
 	t.Run("connect applies registered credentials", func(t *testing.T) {
@@ -432,9 +432,9 @@ func TestClientCreds(t *testing.T) {
 		mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.servers.%s.host", name)).Return(host).Once()
 		mockConfig.EXPECT().Get(fmt.Sprintf("grpc.servers.%s.interceptors", name)).Return([]string{}).Once()
 		mockConfig.EXPECT().Get(fmt.Sprintf("grpc.servers.%s.stats_handlers", name)).Return([]string{}).Once()
-		mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.servers.%s.creds", name)).Return("mtls").Once()
+		mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.servers.%s.credentials", name)).Return("mtls").Once()
 
-		app.ClientCreds(map[string]credentials.TransportCredentials{
+		app.ClientCredentials(map[string]credentials.TransportCredentials{
 			"mtls": credentials.NewTLS(&tls.Config{ServerName: "mtls-service"}),
 		})
 
@@ -453,9 +453,9 @@ func TestClientCreds(t *testing.T) {
 		mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.servers.%s.host", name)).Return(host).Once()
 		mockConfig.EXPECT().Get(fmt.Sprintf("grpc.servers.%s.interceptors", name)).Return([]string{}).Once()
 		mockConfig.EXPECT().Get(fmt.Sprintf("grpc.servers.%s.stats_handlers", name)).Return([]string{}).Once()
-		mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.servers.%s.creds", name)).Return("unknown").Once()
+		mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.servers.%s.credentials", name)).Return("unknown").Once()
 
-		app.ClientCreds(map[string]credentials.TransportCredentials{
+		app.ClientCredentials(map[string]credentials.TransportCredentials{
 			"mtls": credentials.NewTLS(&tls.Config{ServerName: "mtls-service"}),
 		})
 
@@ -494,9 +494,9 @@ func TestClientCreds(t *testing.T) {
 		mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.servers.%s.host", name)).Return(host).Once()
 		mockConfig.EXPECT().Get(fmt.Sprintf("grpc.servers.%s.interceptors", name)).Return([]string{}).Once()
 		mockConfig.EXPECT().Get(fmt.Sprintf("grpc.servers.%s.stats_handlers", name)).Return([]string{}).Once()
-		mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.servers.%s.creds", name)).Return("").Once()
+		mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.servers.%s.credentials", name)).Return("").Once()
 
-		app.ClientCreds(map[string]credentials.TransportCredentials{
+		app.ClientCredentials(map[string]credentials.TransportCredentials{
 			"mtls": credentials.NewTLS(&tls.Config{ServerName: "mtls-service"}),
 		})
 
