@@ -9,6 +9,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/stats"
 
@@ -23,10 +24,12 @@ type Application struct {
 
 	// Server Options
 	unaryServerInterceptors []grpc.UnaryServerInterceptor
+	serverCreds             credentials.TransportCredentials
 	serverStatsHandlers     []stats.Handler
 
 	// Client Options
 	unaryClientInterceptorGroups map[string][]grpc.UnaryClientInterceptor
+	clientCredsGroups            map[string]credentials.TransportCredentials
 	clientStatsHandlerGroups     map[string][]stats.Handler
 
 	// Mutex protects the servers map
@@ -41,6 +44,7 @@ func NewApplication(config config.Config) *Application {
 		unaryServerInterceptors:      make([]grpc.UnaryServerInterceptor, 0),
 		serverStatsHandlers:          make([]stats.Handler, 0),
 		unaryClientInterceptorGroups: make(map[string][]grpc.UnaryClientInterceptor),
+		clientCredsGroups:            make(map[string]credentials.TransportCredentials),
 		clientStatsHandlerGroups:     make(map[string][]stats.Handler),
 	}
 }
@@ -95,7 +99,7 @@ func (r *Application) Connect(server string) (*grpc.ClientConn, error) {
 	}
 
 	var dialOpts []grpc.DialOption
-	dialOpts = append(dialOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	dialOpts = append(dialOpts, grpc.WithTransportCredentials(r.resolveClientCreds(server)))
 
 	if interceptors := r.getClientInterceptors(interceptorKeys); len(interceptors) > 0 {
 		dialOpts = append(dialOpts, grpc.WithChainUnaryInterceptor(interceptors...))
@@ -162,6 +166,10 @@ func (r *Application) Server() *grpc.Server {
 
 	var opts []grpc.ServerOption
 
+	if r.serverCreds != nil {
+		opts = append(opts, grpc.Creds(r.serverCreds))
+	}
+
 	if len(r.unaryServerInterceptors) > 0 {
 		opts = append(opts, grpc.ChainUnaryInterceptor(r.unaryServerInterceptors...))
 	}
@@ -207,6 +215,14 @@ func (r *Application) UnaryServerInterceptors(unaryServerInterceptors []grpc.Una
 	r.unaryServerInterceptors = append(r.unaryServerInterceptors, unaryServerInterceptors...)
 }
 
+func (r *Application) ServerCreds(creds credentials.TransportCredentials) {
+	if r.server != nil {
+		color.Warningln("[GRPC] Server already initialized; server credentials registration ignored.")
+		return
+	}
+	r.serverCreds = creds
+}
+
 func (r *Application) ServerStatsHandlers(handlers []stats.Handler) {
 	if r.server != nil {
 		color.Warningln("[GRPC] Server already initialized; server stats handler registration ignored.")
@@ -218,6 +234,12 @@ func (r *Application) ServerStatsHandlers(handlers []stats.Handler) {
 func (r *Application) UnaryClientInterceptorGroups(groups map[string][]grpc.UnaryClientInterceptor) {
 	for key, interceptors := range groups {
 		r.unaryClientInterceptorGroups[key] = append(r.unaryClientInterceptorGroups[key], interceptors...)
+	}
+}
+
+func (r *Application) ClientCreds(groups map[string]credentials.TransportCredentials) {
+	for key, creds := range groups {
+		r.clientCredsGroups[key] = creds
 	}
 }
 
@@ -235,6 +257,29 @@ func (r *Application) getClientInterceptors(keys []string) []grpc.UnaryClientInt
 		}
 	}
 	return result
+}
+
+// resolveClientCreds returns the transport credentials for the given server.
+// When a credentials group is registered and referenced via the
+// `grpc.servers.<name>.creds` config key, those credentials are used;
+// otherwise insecure credentials are returned to preserve existing behavior.
+func (r *Application) resolveClientCreds(server string) credentials.TransportCredentials {
+	if len(r.clientCredsGroups) == 0 {
+		return insecure.NewCredentials()
+	}
+
+	credsKey := r.config.GetString(fmt.Sprintf("grpc.servers.%s.creds", server))
+	if credsKey == "" {
+		return insecure.NewCredentials()
+	}
+
+	creds, ok := r.clientCredsGroups[credsKey]
+	if !ok {
+		color.Warningln(fmt.Sprintf("[GRPC] client credentials group %q is not registered for server %q; falling back to insecure credentials.", credsKey, server))
+		return insecure.NewCredentials()
+	}
+
+	return creds
 }
 
 func (r *Application) getClientStatsHandlers(keys []string) []stats.Handler {

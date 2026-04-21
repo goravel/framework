@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/stats"
 
 	"github.com/goravel/framework/contracts/console"
@@ -225,7 +226,9 @@ func (s *ApplicationTestSuite) TestConfigureGrpc() {
 			name: "without grpc configurations",
 			setup: func() {
 				builder := NewApplicationBuilder(s.app)
+				builder.grpcClientCreds = nil
 				builder.grpcClientInterceptors = nil
+				builder.grpcServerCreds = nil
 				builder.grpcServerInterceptors = nil
 				builder.grpcClientStatsHandlers = nil
 				builder.grpcServerStatsHandlers = nil
@@ -237,9 +240,13 @@ func (s *ApplicationTestSuite) TestConfigureGrpc() {
 			name: "with empty grpc configurations",
 			setup: func() {
 				builder := NewApplicationBuilder(s.app)
+				builder.grpcClientCreds = func() map[string]credentials.TransportCredentials {
+					return map[string]credentials.TransportCredentials{}
+				}
 				builder.grpcClientInterceptors = func() map[string][]grpc.UnaryClientInterceptor {
 					return map[string][]grpc.UnaryClientInterceptor{}
 				}
+				builder.grpcServerCreds = func() credentials.TransportCredentials { return nil }
 				builder.grpcServerInterceptors = func() []grpc.UnaryServerInterceptor {
 					return []grpc.UnaryServerInterceptor{}
 				}

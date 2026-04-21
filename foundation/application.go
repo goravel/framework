@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/stats"
 
 	"github.com/goravel/framework/config"
@@ -447,14 +448,24 @@ func (r *Application) configureEventListeners() {
 
 func (r *Application) configureGrpc() {
 	var (
+		grpcClientCreds         map[string]credentials.TransportCredentials
 		grpcClientInterceptors  map[string][]grpc.UnaryClientInterceptor
+		grpcServerCreds         credentials.TransportCredentials
 		grpcServerInterceptors  []grpc.UnaryServerInterceptor
 		grpcClientStatsHandlers map[string][]stats.Handler
 		grpcServerStatsHandlers []stats.Handler
 	)
 
+	if r.builder.grpcClientCreds != nil {
+		grpcClientCreds = r.builder.grpcClientCreds()
+	}
+
 	if r.builder.grpcClientInterceptors != nil {
 		grpcClientInterceptors = r.builder.grpcClientInterceptors()
+	}
+
+	if r.builder.grpcServerCreds != nil {
+		grpcServerCreds = r.builder.grpcServerCreds()
 	}
 
 	if r.builder.grpcServerInterceptors != nil {
@@ -469,17 +480,24 @@ func (r *Application) configureGrpc() {
 		grpcServerStatsHandlers = r.builder.grpcServerStatsHandlers()
 	}
 
-	if len(grpcClientInterceptors) > 0 || len(grpcServerInterceptors) > 0 ||
+	if len(grpcClientCreds) > 0 || len(grpcClientInterceptors) > 0 ||
+		grpcServerCreds != nil || len(grpcServerInterceptors) > 0 ||
 		len(grpcClientStatsHandlers) > 0 || len(grpcServerStatsHandlers) > 0 {
 		grpcFacade := r.MakeGrpc()
 		if grpcFacade == nil {
 			color.Errorln("gRPC facade not found, please install it first: ./artisan package:install Grpc")
 		} else {
+			if len(grpcClientCreds) > 0 {
+				grpcFacade.ClientCreds(grpcClientCreds)
+			}
 			if len(grpcClientInterceptors) > 0 {
 				grpcFacade.UnaryClientInterceptorGroups(grpcClientInterceptors)
 			}
 			if len(grpcServerInterceptors) > 0 {
 				grpcFacade.UnaryServerInterceptors(grpcServerInterceptors)
+			}
+			if grpcServerCreds != nil {
+				grpcFacade.ServerCreds(grpcServerCreds)
 			}
 			if len(grpcClientStatsHandlers) > 0 {
 				grpcFacade.ClientStatsHandlerGroups(grpcClientStatsHandlers)

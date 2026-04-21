@@ -6,6 +6,8 @@ import (
 	console "github.com/goravel/framework/contracts/console"
 	configuration "github.com/goravel/framework/contracts/foundation/configuration"
 
+	credentials "google.golang.org/grpc/credentials"
+
 	event "github.com/goravel/framework/contracts/event"
 
 	foundation "github.com/goravel/framework/contracts/foundation"
@@ -327,6 +329,54 @@ func (_c *ApplicationBuilder_WithFilters_Call) RunAndReturn(run func(func() []va
 	return _c
 }
 
+// WithGrpcClientCreds provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithGrpcClientCreds(_a0 func() map[string]credentials.TransportCredentials) foundation.ApplicationBuilder {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithGrpcClientCreds")
+	}
+
+	var r0 foundation.ApplicationBuilder
+	if rf, ok := ret.Get(0).(func(func() map[string]credentials.TransportCredentials) foundation.ApplicationBuilder); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(foundation.ApplicationBuilder)
+		}
+	}
+
+	return r0
+}
+
+// ApplicationBuilder_WithGrpcClientCreds_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithGrpcClientCreds'
+type ApplicationBuilder_WithGrpcClientCreds_Call struct {
+	*mock.Call
+}
+
+// WithGrpcClientCreds is a helper method to define mock.On call
+//   - _a0 func() map[string]credentials.TransportCredentials
+func (_e *ApplicationBuilder_Expecter) WithGrpcClientCreds(_a0 interface{}) *ApplicationBuilder_WithGrpcClientCreds_Call {
+	return &ApplicationBuilder_WithGrpcClientCreds_Call{Call: _e.mock.On("WithGrpcClientCreds", _a0)}
+}
+
+func (_c *ApplicationBuilder_WithGrpcClientCreds_Call) Run(run func(_a0 func() map[string]credentials.TransportCredentials)) *ApplicationBuilder_WithGrpcClientCreds_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func() map[string]credentials.TransportCredentials))
+	})
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithGrpcClientCreds_Call) Return(_a0 foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcClientCreds_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithGrpcClientCreds_Call) RunAndReturn(run func(func() map[string]credentials.TransportCredentials) foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcClientCreds_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // WithGrpcClientInterceptors provides a mock function with given fields: _a0
 func (_m *ApplicationBuilder) WithGrpcClientInterceptors(_a0 func() map[string][]grpc.UnaryClientInterceptor) foundation.ApplicationBuilder {
 	ret := _m.Called(_a0)
@@ -419,6 +469,54 @@ func (_c *ApplicationBuilder_WithGrpcClientStatsHandlers_Call) Return(_a0 founda
 }
 
 func (_c *ApplicationBuilder_WithGrpcClientStatsHandlers_Call) RunAndReturn(run func(func() map[string][]stats.Handler) foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcClientStatsHandlers_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithGrpcServerCreds provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithGrpcServerCreds(_a0 func() credentials.TransportCredentials) foundation.ApplicationBuilder {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithGrpcServerCreds")
+	}
+
+	var r0 foundation.ApplicationBuilder
+	if rf, ok := ret.Get(0).(func(func() credentials.TransportCredentials) foundation.ApplicationBuilder); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(foundation.ApplicationBuilder)
+		}
+	}
+
+	return r0
+}
+
+// ApplicationBuilder_WithGrpcServerCreds_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithGrpcServerCreds'
+type ApplicationBuilder_WithGrpcServerCreds_Call struct {
+	*mock.Call
+}
+
+// WithGrpcServerCreds is a helper method to define mock.On call
+//   - _a0 func() credentials.TransportCredentials
+func (_e *ApplicationBuilder_Expecter) WithGrpcServerCreds(_a0 interface{}) *ApplicationBuilder_WithGrpcServerCreds_Call {
+	return &ApplicationBuilder_WithGrpcServerCreds_Call{Call: _e.mock.On("WithGrpcServerCreds", _a0)}
+}
+
+func (_c *ApplicationBuilder_WithGrpcServerCreds_Call) Run(run func(_a0 func() credentials.TransportCredentials)) *ApplicationBuilder_WithGrpcServerCreds_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func() credentials.TransportCredentials))
+	})
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithGrpcServerCreds_Call) Return(_a0 foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcServerCreds_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithGrpcServerCreds_Call) RunAndReturn(run func(func() credentials.TransportCredentials) foundation.ApplicationBuilder) *ApplicationBuilder_WithGrpcServerCreds_Call {
 	_c.Call.Return(run)
 	return _c
 }
