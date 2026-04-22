@@ -9,7 +9,7 @@ import (
 	"github.com/goravel/framework/contracts/http"
 	contractsession "github.com/goravel/framework/contracts/session"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/session"
 )
 
 type SessionGuard struct {
@@ -23,13 +23,13 @@ func NewSessionGuard(ctx http.Context, name string, userProvider contractsauth.U
 	if ctx == nil {
 		return nil, errors.InvalidHttpContext.SetModule(errors.ModuleAuth)
 	}
-	session := ctx.Request().Session()
-	if session == nil {
+	s := ctx.Request().Session()
+	if s == nil {
 		return nil, errors.SessionDriverIsNotSet.SetModule(errors.ModuleAuth)
 	}
 
 	return &SessionGuard{
-		session:  session,
+		session:  s,
 		ctx:      ctx,
 		guard:    name,
 		provider: userProvider,
@@ -81,7 +81,7 @@ func (r *SessionGuard) LoginUsingID(id any) (token string, err error) {
 	if err := r.session.Regenerate(true); err != nil {
 		return "", err
 	}
-	r.reissueSessionCookie()
+	session.WriteCookie(r.ctx)
 
 	r.session.Put(sessionName, key)
 
@@ -92,29 +92,9 @@ func (r *SessionGuard) Logout() error {
 	if err := r.session.Invalidate(); err != nil {
 		return err
 	}
-	r.reissueSessionCookie()
+	session.WriteCookie(r.ctx)
 
 	return nil
-}
-
-// reissueSessionCookie writes the current session ID to the response cookie.
-// Called after Regenerate/Invalidate so the rotated ID reaches the client
-// even on drivers that flush headers when the handler writes the body.
-func (r *SessionGuard) reissueSessionCookie() {
-	if configFacade == nil {
-		return
-	}
-
-	r.ctx.Response().Cookie(http.Cookie{
-		Name:     r.session.GetName(),
-		Value:    r.session.GetID(),
-		Expires:  carbon.Now().AddMinutes(configFacade.GetInt("session.lifetime", 120)).StdTime(),
-		Path:     configFacade.GetString("session.path"),
-		Domain:   configFacade.GetString("session.domain"),
-		Secure:   configFacade.GetBool("session.secure"),
-		HttpOnly: configFacade.GetBool("session.http_only"),
-		SameSite: configFacade.GetString("session.same_site"),
-	})
 }
 
 func (r *SessionGuard) Parse(token string) (*contractsauth.Payload, error) {

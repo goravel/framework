@@ -16,6 +16,7 @@ import (
 	mockshttp "github.com/goravel/framework/mocks/http"
 	mockslog "github.com/goravel/framework/mocks/log"
 	mockssession "github.com/goravel/framework/mocks/session"
+	"github.com/goravel/framework/session"
 	"github.com/goravel/framework/support/carbon"
 )
 
@@ -62,6 +63,7 @@ func (s *SessionGuardTestSuite) SetupTest() {
 
 	cacheFacade = s.mockCache
 	configFacade = s.mockConfig
+	session.ConfigFacade = s.mockConfig
 
 	sessionGuard, err := NewSessionGuard(s.mockContext, testUserGuard, s.mockUserProvider)
 	s.Require().Nil(err)
