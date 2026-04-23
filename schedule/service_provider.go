@@ -49,19 +49,13 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (r *ServiceProvider) Boot(app foundation.Application) {
-	artisan := app.MakeArtisan()
-	if artisan == nil {
-		color.Debugln(errors.ConsoleFacadeNotSet.Error())
-		return
-	}
-
 	schedule := app.MakeSchedule()
 	if schedule == nil {
-		color.Debugln(errors.ScheduleFacadeNotSet.Error())
+		color.Warningln(errors.ScheduleFacadeNotSet.Error())
 		return
 	}
 
-	artisan.Register([]console.Command{
+	app.Commands([]console.Command{
 		scheduleconsole.NewList(schedule),
 		scheduleconsole.NewRun(schedule),
 	})

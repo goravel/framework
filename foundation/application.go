@@ -681,9 +681,12 @@ func (r *Application) baseServiceProviders() []foundation.ServiceProvider {
 }
 
 func (r *Application) registerCommands(commands []contractsconsole.Command) {
+	configFacades := r.MakeConfig()
 	artisanFacade := r.MakeArtisan()
 	if artisanFacade == nil {
-		color.Warningln(errors.ConsoleFacadeNotSet.Error())
+		if configFacades != nil && configFacades.GetBool("app.debug", false) {
+			color.Warningln(errors.ConsoleFacadeNotSet.Error())
+		}
 		return
 	}
 

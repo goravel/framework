@@ -42,15 +42,9 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (r *ServiceProvider) Boot(app foundation.Application) {
-	artisan := app.MakeArtisan()
-	if artisan == nil {
-		color.Debugln(errors.ConsoleFacadeNotSet.Error())
-		return
-	}
-
 	queue := app.MakeQueue()
 	if queue == nil {
-		color.Debugln(errors.QueueFacadeNotSet.Error())
+		color.Warningln(errors.QueueFacadeNotSet.Error())
 		return
 	}
 
@@ -59,7 +53,7 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 		return
 	}
 
-	artisan.Register([]console.Command{
+	app.Commands([]console.Command{
 		&queueconsole.JobMakeCommand{},
 		queueconsole.NewQueueRetryCommand(queue, json),
 		queueconsole.NewQueueFailedCommand(queue),

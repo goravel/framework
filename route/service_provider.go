@@ -34,19 +34,13 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (r *ServiceProvider) Boot(app foundation.Application) {
-	artisan := app.MakeArtisan()
-	if artisan == nil {
-		color.Debugln(errors.ConsoleFacadeNotSet.Error())
-		return
-	}
-
 	route := app.MakeRoute()
 	if route == nil {
-		color.Debugln(errors.RouteFacadeNotSet.Error())
+		color.Warningln(errors.RouteFacadeNotSet.Error())
 		return
 	}
 
-	artisan.Register([]console.Command{
+	app.Commands([]console.Command{
 		routeconsole.NewList(route),
 	})
 }
