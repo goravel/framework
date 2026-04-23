@@ -19,10 +19,10 @@ For every comment, determine which category it falls into before acting:
 
 ```
 Is the comment technically correct?
-├── No  → Decline and explain (no code change)
+├── No  → Decline and explain in a reply; do not resolve the thread
 └── Yes → Is it a question or a request for clarification?
-          ├── Yes → Answer in a reply (no code change)
-          └── No  → Apply the change
+          ├── Yes → Answer in a reply; do not resolve the thread
+          └── No  → Apply the change, push, reply, then resolve the thread
 ```
 
 ---
@@ -34,7 +34,8 @@ project conventions, a clarity issue, or a missed edge case.
 
 **Rules:**
 - Apply the minimal fix that addresses the concern. Do not refactor unrelated code.
-- After applying, reply to the comment with a one-sentence summary of what changed.
+- Push the updated branch before replying to the comment.
+- After pushing, reply with a one-sentence summary of what changed, then resolve the thread.
 - If the fix is non-trivial, briefly explain the approach taken.
 
 ---
@@ -54,6 +55,7 @@ Not every comment is correct. Push back when:
 - State the specific reason: wrong behavior, conflicts with `file:line`, performance trade-off, etc.
 - If appropriate, offer a counter-proposal.
 - Do not change the code to pacify a reviewer when you believe the original is correct.
+- Do not resolve the thread unless the user explicitly asks you to.
 
 **Example reply:**
 > This change would bypass the nil-check on line 42 and cause a panic when the
@@ -69,6 +71,7 @@ when Y?", "Is this thread-safe?". These need an answer, not a code change.
 
 **Rules:**
 - Reply with a direct answer.
+- Do not resolve the thread unless the user explicitly asks you to.
 - If the question reveals that the code is genuinely confusing, consider adding a
   comment or renaming — but only if it actually improves clarity, not just to
   satisfy the reviewer.
@@ -90,10 +93,20 @@ when Y?", "Is this thread-safe?". These need an answer, not a code change.
 3. **Group related changes** — if multiple comments touch the same file or
    function, batch the edits together before replying.
 
-4. **Reply to every comment** — resolved or not. Leaving a comment without a
-   reply signals that it was missed.
+4. **Handle reply-only comments** — if a comment does not require a code change,
+   or it is a question, reply directly and do not resolve the thread.
 
-5. **Mark threads resolved** after replying, using the GitHub GraphQL
+5. **Apply required code changes** for comments that identify valid issues.
+
+6. **Push the updated branch** if any code changed:
+   ```bash
+   git push
+   ```
+
+7. **Reply to changed comments** after pushing, with a concise summary of the
+   fix that landed.
+
+8. **Mark changed threads resolved** after replying, using the GitHub GraphQL
    `resolveReviewThread` mutation (requires the thread node ID):
    ```bash
    gh api graphql -f query='
@@ -109,17 +122,14 @@ when Y?", "Is this thread-safe?". These need an answer, not a code change.
    ```
    Alternatively, resolve threads directly in the GitHub UI.
 
-6. **Push the updated branch** if any code changed:
-   ```bash
-   git push
-   ```
-
 ---
 
 ## Guardrails
 
-- Never mark a comment as resolved without either applying the change or
-  explaining why you did not.
+- Never mark a comment as resolved unless you applied a code change for it,
+  pushed the branch, and replied with what changed.
+- Do not resolve question-only or no-change comments after replying unless the
+  user explicitly asks you to.
 - Never apply a change you believe is wrong just to close a thread.
 - Never reply with vague acknowledgements ("Sure!", "Done") — every reply
   must state what was done or why nothing was done.
