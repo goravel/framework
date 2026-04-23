@@ -2736,6 +2736,53 @@ func (_c *Application_PublicPath_Call) RunAndReturn(run func(...string) string) 
 	return _c
 }
 
+// PublishGroups provides a mock function with no fields
+func (_m *Application) PublishGroups() map[string]map[string]string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for PublishGroups")
+	}
+
+	var r0 map[string]map[string]string
+	if rf, ok := ret.Get(0).(func() map[string]map[string]string); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]map[string]string)
+		}
+	}
+
+	return r0
+}
+
+// Application_PublishGroups_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PublishGroups'
+type Application_PublishGroups_Call struct {
+	*mock.Call
+}
+
+// PublishGroups is a helper method to define mock.On call
+func (_e *Application_Expecter) PublishGroups() *Application_PublishGroups_Call {
+	return &Application_PublishGroups_Call{Call: _e.mock.On("PublishGroups")}
+}
+
+func (_c *Application_PublishGroups_Call) Run(run func()) *Application_PublishGroups_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Application_PublishGroups_Call) Return(_a0 map[string]map[string]string) *Application_PublishGroups_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Application_PublishGroups_Call) RunAndReturn(run func() map[string]map[string]string) *Application_PublishGroups_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Publishes provides a mock function with given fields: packageName, paths, groups
 func (_m *Application) Publishes(packageName string, paths map[string]string, groups ...string) {
 	_va := make([]interface{}, len(groups))
@@ -2782,6 +2829,53 @@ func (_c *Application_Publishes_Call) Return() *Application_Publishes_Call {
 
 func (_c *Application_Publishes_Call) RunAndReturn(run func(string, map[string]string, ...string)) *Application_Publishes_Call {
 	_c.Run(run)
+	return _c
+}
+
+// PublishesMap provides a mock function with no fields
+func (_m *Application) PublishesMap() map[string]map[string]string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for PublishesMap")
+	}
+
+	var r0 map[string]map[string]string
+	if rf, ok := ret.Get(0).(func() map[string]map[string]string); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]map[string]string)
+		}
+	}
+
+	return r0
+}
+
+// Application_PublishesMap_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PublishesMap'
+type Application_PublishesMap_Call struct {
+	*mock.Call
+}
+
+// PublishesMap is a helper method to define mock.On call
+func (_e *Application_Expecter) PublishesMap() *Application_PublishesMap_Call {
+	return &Application_PublishesMap_Call{Call: _e.mock.On("PublishesMap")}
+}
+
+func (_c *Application_PublishesMap_Call) Run(run func()) *Application_PublishesMap_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Application_PublishesMap_Call) Return(_a0 map[string]map[string]string) *Application_PublishesMap_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Application_PublishesMap_Call) RunAndReturn(run func() map[string]map[string]string) *Application_PublishesMap_Call {
+	_c.Call.Return(run)
 	return _c
 }
 

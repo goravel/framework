@@ -34,7 +34,7 @@ func (kernel Kernel) Schedule() []schedule.Event {
 `
 )
 
-func TestMakeCommand(t *testing.T) {
+func TestMakeCommand_Command(t *testing.T) {
 	defer func() {
 		assert.Nil(t, file.Remove("app"))
 	}()

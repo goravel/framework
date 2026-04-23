@@ -569,6 +569,7 @@ func Test_getFacadeDescription(t *testing.T) {
 func TestGetDependencyBindings(t *testing.T) {
 	t.Run("with InstallTogether", func(t *testing.T) {
 		expected := []string{
+			binding.Artisan,
 			binding.Log,
 			binding.Cache,
 			binding.Schema,
@@ -591,6 +592,7 @@ func TestGetDependencyBindings(t *testing.T) {
 
 	t.Run("without InstallTogether", func(t *testing.T) {
 		expected := []string{
+			binding.Artisan,
 			binding.Log,
 			binding.Cache,
 			binding.Orm,

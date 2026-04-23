@@ -67,6 +67,10 @@ type Application interface {
 	Json() Json
 	// Publishes register the given paths to be published by the "vendor:publish" command.
 	Publishes(packageName string, paths map[string]string, groups ...string)
+	// PublishesMap returns all publishable paths grouped by package name.
+	PublishesMap() map[string]map[string]string
+	// PublishGroups returns all publishable paths grouped by publish group.
+	PublishGroups() map[string]map[string]string
 	// Refresh reboots facades after changing config, if you want to restart the runners as well, please use the Restart method.
 	Refresh()
 	// Restart restarts the application.

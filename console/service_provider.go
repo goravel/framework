@@ -69,4 +69,26 @@ func (r *ServiceProvider) registerCommands(app foundation.Application) {
 		// },
 		// console.NewDeployCommand(configFacade, artisanFacade),
 	})
+
+	commands := []consolecontract.Command{
+		console.NewAboutCommand(app),
+		console.NewEnvEncryptCommand(),
+		console.NewEnvDecryptCommand(),
+		console.NewTestMakeCommand(),
+		console.NewPackageMakeCommand(),
+		console.NewProviderMakeCommand(),
+		console.NewPackageInstallCommand(binding.Bindings, app.MakeProcess(), app.Json()),
+		console.NewPackageUninstallCommand(binding.Bindings, app.MakeProcess(), app.Json()),
+		console.NewVendorPublishCommand(app.PublishesMap(), app.PublishGroups()),
+	}
+
+	storage := app.MakeStorage()
+	view := app.MakeView()
+	hash := app.MakeHash()
+
+	if storage != nil && view != nil && hash != nil {
+		commands = append(commands, console.NewUpCommand(storage), console.NewDownCommand(view, hash, storage))
+	}
+
+	artisanFacade.Register(commands)
 }

@@ -67,17 +67,35 @@ func TestServiceProviderRegister(t *testing.T) {
 
 func TestServiceProviderBoot(t *testing.T) {
 	provider := &ServiceProvider{}
-	app := mocksfoundation.NewApplication(t)
-	artisan := mocksconsole.NewArtisan(t)
-	route := mocksroute.NewRoute(t)
+	t.Run("artisan facade not set", func(t *testing.T) {
+		app := mocksfoundation.NewApplication(t)
+		app.EXPECT().MakeArtisan().Return(nil).Once()
 
-	app.EXPECT().MakeArtisan().Return(artisan).Once()
-	app.EXPECT().MakeRoute().Return(route).Once()
-	artisan.EXPECT().Register(mock.MatchedBy(func(commands []contractsconsole.Command) bool {
-		return len(commands) == 1 && commands[0] != nil
-	})).Once()
+		provider.Boot(app)
+	})
 
-	provider.Boot(app)
+	t.Run("route facade not set", func(t *testing.T) {
+		app := mocksfoundation.NewApplication(t)
+		artisan := mocksconsole.NewArtisan(t)
+		app.EXPECT().MakeArtisan().Return(artisan).Once()
+		app.EXPECT().MakeRoute().Return(nil).Once()
+
+		provider.Boot(app)
+	})
+
+	t.Run("register route commands", func(t *testing.T) {
+		app := mocksfoundation.NewApplication(t)
+		artisan := mocksconsole.NewArtisan(t)
+		route := mocksroute.NewRoute(t)
+
+		app.EXPECT().MakeArtisan().Return(artisan).Once()
+		app.EXPECT().MakeRoute().Return(route).Once()
+		artisan.EXPECT().Register(mock.MatchedBy(func(commands []contractsconsole.Command) bool {
+			return len(commands) == 1 && commands[0] != nil
+		})).Once()
+
+		provider.Boot(app)
+	})
 }
 
 func TestServiceProviderRunners(t *testing.T) {

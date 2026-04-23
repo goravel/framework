@@ -3,9 +3,9 @@ package middleware
 import (
 	"encoding/json"
 
+	goravelconsole "github.com/goravel/framework/console/console"
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/facades"
-	"github.com/goravel/framework/foundation/console"
 )
 
 func CheckForMaintenanceMode() http.Middleware {
@@ -26,7 +26,7 @@ func CheckForMaintenanceMode() http.Middleware {
 			return
 		}
 
-		var maintenanceOptions *console.MaintenanceOptions
+		var maintenanceOptions *goravelconsole.MaintenanceOptions
 		err = json.Unmarshal(content, &maintenanceOptions)
 
 		if err != nil {

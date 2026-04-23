@@ -133,40 +133,80 @@ func TestServiceProviderRegister(t *testing.T) {
 
 func TestServiceProviderBoot(t *testing.T) {
 	provider := &ServiceProvider{}
-	app := mocksfoundation.NewApplication(t)
-	artisan := mocksconsole.NewArtisan(t)
-	schedule := mocksschedule.NewSchedule(t)
+	t.Run("artisan facade not set", func(t *testing.T) {
+		app := mocksfoundation.NewApplication(t)
+		app.EXPECT().MakeArtisan().Return(nil).Once()
 
-	app.EXPECT().MakeArtisan().Return(artisan).Once()
-	app.EXPECT().MakeSchedule().Return(schedule).Twice()
-	artisan.EXPECT().Register(mock.MatchedBy(func(commands []contractsconsole.Command) bool {
-		if len(commands) != 2 || commands[0] == nil || commands[1] == nil {
-			return false
-		}
+		provider.Boot(app)
+	})
 
-		_, okList := commands[0].(interface{ Signature() string })
-		_, okRun := commands[1].(interface{ Signature() string })
+	t.Run("schedule facade not set", func(t *testing.T) {
+		app := mocksfoundation.NewApplication(t)
+		artisan := mocksconsole.NewArtisan(t)
 
-		return okList && okRun && commands[0].Signature() == "schedule:list" && commands[1].Signature() == "schedule:run"
-	})).Once()
+		app.EXPECT().MakeArtisan().Return(artisan).Once()
+		app.EXPECT().MakeSchedule().Return(nil).Once()
 
-	provider.Boot(app)
+		provider.Boot(app)
+	})
+
+	t.Run("register schedule commands", func(t *testing.T) {
+		app := mocksfoundation.NewApplication(t)
+		artisan := mocksconsole.NewArtisan(t)
+		schedule := mocksschedule.NewSchedule(t)
+
+		app.EXPECT().MakeArtisan().Return(artisan).Once()
+		app.EXPECT().MakeSchedule().Return(schedule).Once()
+		artisan.EXPECT().Register(mock.MatchedBy(func(commands []contractsconsole.Command) bool {
+			if len(commands) != 2 || commands[0] == nil || commands[1] == nil {
+				return false
+			}
+
+			_, okList := commands[0].(interface{ Signature() string })
+			_, okRun := commands[1].(interface{ Signature() string })
+
+			return okList && okRun && commands[0].Signature() == "schedule:list" && commands[1].Signature() == "schedule:run"
+		})).Once()
+
+		provider.Boot(app)
+	})
 }
 
 func TestServiceProviderRunners(t *testing.T) {
 	provider := &ServiceProvider{}
-	app := mocksfoundation.NewApplication(t)
-	config := mocksconfig.NewConfig(t)
-	schedule := mocksschedule.NewSchedule(t)
 
-	app.EXPECT().MakeConfig().Return(config).Once()
-	app.EXPECT().MakeSchedule().Return(schedule).Once()
+	t.Run("artisan facade not set", func(t *testing.T) {
+		app := mocksfoundation.NewApplication(t)
+		app.EXPECT().MakeArtisan().Return(nil).Once()
 
-	runners := provider.Runners(app)
+		runners := provider.Runners(app)
+		assert.Nil(t, runners)
+	})
 
-	assert.Len(t, runners, 1)
-	runner, ok := runners[0].(*ScheduleRunner)
-	assert.True(t, ok)
-	assert.Equal(t, config, runner.config)
-	assert.Equal(t, schedule, runner.schedule)
+	t.Run("schedule facade not set", func(t *testing.T) {
+		app := mocksfoundation.NewApplication(t)
+		app.EXPECT().MakeArtisan().Return(mocksconsole.NewArtisan(t)).Once()
+		app.EXPECT().MakeSchedule().Return(nil).Once()
+
+		runners := provider.Runners(app)
+		assert.Nil(t, runners)
+	})
+
+	t.Run("return schedule runner", func(t *testing.T) {
+		app := mocksfoundation.NewApplication(t)
+		config := mocksconfig.NewConfig(t)
+		schedule := mocksschedule.NewSchedule(t)
+
+		app.EXPECT().MakeArtisan().Return(mocksconsole.NewArtisan(t)).Once()
+		app.EXPECT().MakeSchedule().Return(schedule).Once()
+		app.EXPECT().MakeConfig().Return(config).Once()
+
+		runners := provider.Runners(app)
+
+		assert.Len(t, runners, 1)
+		runner, ok := runners[0].(*ScheduleRunner)
+		assert.True(t, ok)
+		assert.Equal(t, config, runner.config)
+		assert.Equal(t, schedule, runner.schedule)
+	})
 }

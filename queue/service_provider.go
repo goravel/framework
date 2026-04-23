@@ -6,6 +6,7 @@ import (
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
 	queueconsole "github.com/goravel/framework/queue/console"
+	"github.com/goravel/framework/support/color"
 )
 
 type ServiceProvider struct {
@@ -41,10 +42,27 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (r *ServiceProvider) Boot(app foundation.Application) {
-	app.MakeArtisan().Register([]console.Command{
+	artisan := app.MakeArtisan()
+	if artisan == nil {
+		color.Debugln(errors.ConsoleFacadeNotSet.Error())
+		return
+	}
+
+	queue := app.MakeQueue()
+	if queue == nil {
+		color.Debugln(errors.QueueFacadeNotSet.Error())
+		return
+	}
+
+	json := app.Json()
+	if json == nil {
+		return
+	}
+
+	artisan.Register([]console.Command{
 		&queueconsole.JobMakeCommand{},
-		queueconsole.NewQueueRetryCommand(app.MakeQueue(), app.GetJson()),
-		queueconsole.NewQueueFailedCommand(app.MakeQueue()),
+		queueconsole.NewQueueRetryCommand(queue, json),
+		queueconsole.NewQueueFailedCommand(queue),
 	})
 }
 

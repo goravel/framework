@@ -73,7 +73,7 @@ var (
 		Artisan: {
 			Description: "The CLI tool that comes with Goravel for interacting with the command line.",
 			PkgPath:     "github.com/goravel/framework/console",
-			IsBase:      true,
+			IsBase:      false,
 		},
 		Config: {
 			Description: "Gets and sets configuration values.",
