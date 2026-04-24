@@ -14,7 +14,6 @@ import (
 	"github.com/goravel/framework/errors"
 	mockscache "github.com/goravel/framework/mocks/cache"
 	mocksconfig "github.com/goravel/framework/mocks/config"
-	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksdb "github.com/goravel/framework/mocks/database/db"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	mockslog "github.com/goravel/framework/mocks/log"
@@ -109,17 +108,8 @@ var (
 func TestServiceProviderBoot(t *testing.T) {
 	provider := &ServiceProvider{}
 
-	t.Run("artisan facade not set", func(t *testing.T) {
-		app := mocksfoundation.NewApplication(t)
-		app.EXPECT().MakeArtisan().Return(nil).Once()
-
-		provider.Boot(app)
-	})
-
 	t.Run("queue facade not set", func(t *testing.T) {
 		app := mocksfoundation.NewApplication(t)
-		artisan := mocksconsole.NewArtisan(t)
-		app.EXPECT().MakeArtisan().Return(artisan).Once()
 		app.EXPECT().MakeQueue().Return(nil).Once()
 
 		provider.Boot(app)
@@ -127,9 +117,7 @@ func TestServiceProviderBoot(t *testing.T) {
 
 	t.Run("json facade not set", func(t *testing.T) {
 		app := mocksfoundation.NewApplication(t)
-		artisan := mocksconsole.NewArtisan(t)
 		queue := mocksqueue.NewQueue(t)
-		app.EXPECT().MakeArtisan().Return(artisan).Once()
 		app.EXPECT().MakeQueue().Return(queue).Once()
 		app.EXPECT().Json().Return(nil).Once()
 
@@ -138,14 +126,12 @@ func TestServiceProviderBoot(t *testing.T) {
 
 	t.Run("register queue commands", func(t *testing.T) {
 		app := mocksfoundation.NewApplication(t)
-		artisan := mocksconsole.NewArtisan(t)
 		queue := mocksqueue.NewQueue(t)
 		json := mocksfoundation.NewJson(t)
 
-		app.EXPECT().MakeArtisan().Return(artisan).Once()
 		app.EXPECT().MakeQueue().Return(queue).Once()
 		app.EXPECT().Json().Return(json).Once()
-		artisan.EXPECT().Register(mock.MatchedBy(func(commands []contractsconsole.Command) bool {
+		app.EXPECT().Commands(mock.MatchedBy(func(commands []contractsconsole.Command) bool {
 			return len(commands) == 3 && commands[0] != nil && commands[1] != nil && commands[2] != nil
 		})).Once()
 

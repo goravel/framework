@@ -133,18 +133,9 @@ func TestServiceProviderRegister(t *testing.T) {
 
 func TestServiceProviderBoot(t *testing.T) {
 	provider := &ServiceProvider{}
-	t.Run("artisan facade not set", func(t *testing.T) {
-		app := mocksfoundation.NewApplication(t)
-		app.EXPECT().MakeArtisan().Return(nil).Once()
-
-		provider.Boot(app)
-	})
 
 	t.Run("schedule facade not set", func(t *testing.T) {
 		app := mocksfoundation.NewApplication(t)
-		artisan := mocksconsole.NewArtisan(t)
-
-		app.EXPECT().MakeArtisan().Return(artisan).Once()
 		app.EXPECT().MakeSchedule().Return(nil).Once()
 
 		provider.Boot(app)
@@ -152,12 +143,10 @@ func TestServiceProviderBoot(t *testing.T) {
 
 	t.Run("register schedule commands", func(t *testing.T) {
 		app := mocksfoundation.NewApplication(t)
-		artisan := mocksconsole.NewArtisan(t)
 		schedule := mocksschedule.NewSchedule(t)
 
-		app.EXPECT().MakeArtisan().Return(artisan).Once()
 		app.EXPECT().MakeSchedule().Return(schedule).Once()
-		artisan.EXPECT().Register(mock.MatchedBy(func(commands []contractsconsole.Command) bool {
+		app.EXPECT().Commands(mock.MatchedBy(func(commands []contractsconsole.Command) bool {
 			if len(commands) != 2 || commands[0] == nil || commands[1] == nil {
 				return false
 			}
