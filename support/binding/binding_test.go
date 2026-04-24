@@ -16,6 +16,7 @@ func TestDependencies(t *testing.T) {
 	}...)
 
 	assert.ElementsMatch(t, []string{
+		binding.Artisan,
 		binding.Config,
 		binding.Log,
 	}, dependencies)

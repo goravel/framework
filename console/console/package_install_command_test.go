@@ -584,6 +584,7 @@ func TestGetDependencyBindings(t *testing.T) {
 		assert.Equal(t, expected, getDependencyBindings(binding.Testing, binding.Bindings, true))
 
 		expected = []string{
+			binding.Artisan,
 			binding.Log,
 			binding.Orm,
 		}
@@ -606,6 +607,7 @@ func TestGetDependencyBindings(t *testing.T) {
 		assert.Equal(t, expected, getDependencyBindings(binding.Testing, binding.Bindings, false))
 
 		expected = []string{
+			binding.Artisan,
 			binding.Log,
 			binding.Orm,
 		}

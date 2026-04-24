@@ -139,7 +139,7 @@ func (r *ServiceProvider) registerCommands(app foundation.Application) {
 
 	if artisan != nil && config != nil && log != nil && schema != nil && seeder != nil {
 		migrator := migration.NewMigrator(artisan, schema, config.GetString("database.migrations.table"))
-		artisan.Register([]contractsconsole.Command{
+		app.Commands([]contractsconsole.Command{
 			consolemigration.NewMigrateMakeCommand(app, migrator),
 			consolemigration.NewMigrateCommand(migrator),
 			consolemigration.NewMigrateRollbackCommand(migrator),
