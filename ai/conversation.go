@@ -31,7 +31,7 @@ type conversation struct {
 	pending []contractsai.Message
 }
 
-func NewConversation(ctx context.Context, agent contractsai.Agent, provider contractsai.Provider, model string, middlewares ...contractsai.Middleware) *conversation {
+func NewConversation(ctx context.Context, agent contractsai.Agent, provider contractsai.Provider, model string, middlewares []contractsai.Middleware) *conversation {
 	return &conversation{
 		ctx:         ctx,
 		agent:       agent,

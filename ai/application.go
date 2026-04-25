@@ -42,7 +42,7 @@ func (r *Application) Agent(agent contractsai.Agent, options ...contractsai.Opti
 	model := opts.Model
 	middlewares := slices.Clone(opts.Middlewares)
 
-	return NewConversation(r.ctx, agent, provider, model, middlewares...), nil
+	return NewConversation(r.ctx, agent, provider, model, middlewares), nil
 }
 
 func (r *Application) WithContext(ctx context.Context) contractsai.AI {

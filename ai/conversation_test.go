@@ -33,7 +33,7 @@ func (s *ConversationTestSuite) TestPrompt() {
 		mockAgent = mocksai.NewAgent(s.T())
 		mockAgent.EXPECT().Messages().Return(initial).Once()
 		mockProvider = mocksai.NewProvider(s.T())
-		conv = NewConversation(ctx, mockAgent, mockProvider, model)
+		conv = NewConversation(ctx, mockAgent, mockProvider, model, nil)
 	}
 
 	tests := []struct {
@@ -125,7 +125,7 @@ func (s *ConversationTestSuite) TestReset() {
 		mockAgent = mocksai.NewAgent(s.T())
 		mockAgent.EXPECT().Messages().Return(initial).Times(2)
 		mockProvider = mocksai.NewProvider(s.T())
-		conv = NewConversation(ctx, mockAgent, mockProvider, "model-z")
+		conv = NewConversation(ctx, mockAgent, mockProvider, "model-z", nil)
 	}
 
 	tests := []struct {
@@ -226,7 +226,7 @@ func (s *ConversationTestSuite) TestStream() {
 				return nil, assert.AnError
 			},
 		}
-		conv = NewConversation(ctx, agent, provider, model)
+		conv = NewConversation(ctx, agent, provider, model, nil)
 
 		stream, err := conv.Stream("hello")
 
@@ -255,7 +255,7 @@ func (s *ConversationTestSuite) TestStream() {
 				}), nil
 			},
 		}
-		conv = NewConversation(ctx, agent, provider, model)
+		conv = NewConversation(ctx, agent, provider, model, nil)
 
 		stream, err := conv.Stream("hi")
 		s.Require().NoError(err)
@@ -297,7 +297,7 @@ func (s *ConversationTestSuite) TestStream() {
 				}), nil
 			},
 		}
-		conv = NewConversation(ctx, agent, provider, model)
+		conv = NewConversation(ctx, agent, provider, model, nil)
 
 		stream, err := conv.Stream("hi")
 		s.Require().NoError(err)
@@ -314,7 +314,7 @@ func (s *ConversationTestSuite) TestMessagesClone() {
 	initial := []contractsai.Message{{Role: contractsai.RoleAssistant, Content: "seed"}}
 
 	agent := &agentStub{messages: initial}
-	conv := NewConversation(ctx, agent, &conversationProviderStub{}, "model")
+	conv := NewConversation(ctx, agent, &conversationProviderStub{}, "model", nil)
 
 	initial[0].Content = "mutated"
 
@@ -363,7 +363,7 @@ func (s *ConversationTestSuite) TestPromptToolInvocationLoop() {
 
 		tool := &stubTool{name: "get_weather", result: "Sunny, 25°C"}
 		agent := &agentStub{tools: []contractsai.Tool{tool}}
-		conv := NewConversation(ctx, agent, provider, "m")
+		conv := NewConversation(ctx, agent, provider, "m", nil)
 
 		resp, err := conv.Prompt("What's the weather in London?")
 		s.Require().NoError(err)
@@ -396,7 +396,7 @@ func (s *ConversationTestSuite) TestPromptToolInvocationLoop() {
 		records = nil
 
 		agent := &agentStub{tools: []contractsai.Tool{}}
-		conv := NewConversation(ctx, agent, provider, "m")
+		conv := NewConversation(ctx, agent, provider, "m", nil)
 
 		initialLen := len(conv.Messages())
 		_, err := conv.Prompt("do something")
@@ -414,7 +414,7 @@ func (s *ConversationTestSuite) TestPromptToolInvocationLoop() {
 
 		tool := &stubTool{name: "fail_tool", execErr: assert.AnError}
 		agent := &agentStub{tools: []contractsai.Tool{tool}}
-		conv := NewConversation(ctx, agent, provider, "m")
+		conv := NewConversation(ctx, agent, provider, "m", nil)
 
 		initialLen := len(conv.Messages())
 		_, err := conv.Prompt("do something")
@@ -435,7 +435,7 @@ func (s *ConversationTestSuite) TestPromptToolInvocationLoop() {
 
 		tool := &stubTool{name: "loop_tool", result: "result"}
 		agent := &agentStub{tools: []contractsai.Tool{tool}}
-		conv := NewConversation(ctx, agent, provider, "m")
+		conv := NewConversation(ctx, agent, provider, "m", nil)
 
 		initialLen := len(conv.Messages())
 		_, err := conv.Prompt("loop forever")
@@ -496,7 +496,7 @@ func (s *ConversationTestSuite) TestStreamToolInvocationLoop() {
 
 		tool := &stubTool{name: "get_weather", result: "Sunny, 25°C"}
 		agent := &agentStub{tools: []contractsai.Tool{tool}}
-		conv := NewConversation(ctx, agent, provider, "m")
+		conv := NewConversation(ctx, agent, provider, "m", nil)
 
 		stream, err := conv.Stream("What's the weather in London?")
 		s.Require().NoError(err)
@@ -538,7 +538,7 @@ func (s *ConversationTestSuite) TestStreamToolInvocationLoop() {
 		})
 
 		agent := &agentStub{tools: nil}
-		conv := NewConversation(ctx, agent, provider, "m")
+		conv := NewConversation(ctx, agent, provider, "m", nil)
 		initial := conv.Messages()
 
 		stream, err := conv.Stream("hello")
@@ -552,7 +552,7 @@ func (s *ConversationTestSuite) TestStreamToolInvocationLoop() {
 			events: []contractsai.StreamEvent{{Type: contractsai.StreamEventTypeDone}},
 		}})
 
-		conv := NewConversation(ctx, &agentStub{}, provider, "m")
+		conv := NewConversation(ctx, &agentStub{}, provider, "m", nil)
 
 		stream, err := conv.Stream("hello")
 		s.NoError(err)
@@ -573,7 +573,7 @@ func (s *ConversationTestSuite) TestStreamToolInvocationLoop() {
 
 		tool := &stubTool{name: "known_tool"}
 		agent := &agentStub{tools: []contractsai.Tool{tool}}
-		conv := NewConversation(ctx, agent, provider, "m")
+		conv := NewConversation(ctx, agent, provider, "m", nil)
 
 		stream, err := conv.Stream("hello")
 		s.NoError(err)
@@ -596,7 +596,7 @@ func (s *ConversationTestSuite) TestStreamToolInvocationLoop() {
 
 		tool := &stubTool{name: "loop_tool", result: "result"}
 		agent := &agentStub{tools: []contractsai.Tool{tool}}
-		conv := NewConversation(ctx, agent, provider, "m")
+		conv := NewConversation(ctx, agent, provider, "m", nil)
 
 		stream, err := conv.Stream("loop forever")
 		s.NoError(err)
@@ -630,7 +630,7 @@ func (s *ConversationTestSuite) TestExecuteTools_UsesProvidedContext() {
 	defer cancel()
 
 	tool := &stubTool{name: "get_weather", result: "Sunny"}
-	conv := NewConversation(ctx, &agentStub{tools: []contractsai.Tool{tool}}, &conversationProviderStub{}, "m")
+	conv := NewConversation(ctx, &agentStub{tools: []contractsai.Tool{tool}}, &conversationProviderStub{}, "m", nil)
 
 	results, err := conv.executeTools(streamCtx, []contractsai.Tool{tool}, []contractsai.ToolCall{{ID: "c1", Name: "get_weather", Args: map[string]any{"city": "London"}}})
 
@@ -659,7 +659,7 @@ func (s *ConversationTestSuite) TestPromptMiddleware() {
 			return next.Execute(ctx, prompt)
 		})
 
-		conv := NewConversation(ctx, &agentStub{}, provider, "m", middleware)
+		conv := NewConversation(ctx, &agentStub{}, provider, "m", []contractsai.Middleware{middleware})
 
 		resp, err := conv.Prompt("hello")
 		s.NoError(err)
@@ -683,7 +683,7 @@ func (s *ConversationTestSuite) TestPromptMiddleware() {
 			return &stubResponse{text: response.Text() + " after middleware"}, nil
 		})
 
-		conv := NewConversation(ctx, &agentStub{}, provider, "m", middleware)
+		conv := NewConversation(ctx, &agentStub{}, provider, "m", []contractsai.Middleware{middleware})
 
 		resp, err := conv.Prompt("hello")
 		s.NoError(err)
@@ -716,7 +716,7 @@ func (s *ConversationTestSuite) TestPromptMiddleware() {
 			return response, err
 		})
 
-		conv := NewConversation(ctx, &agentStub{}, provider, "m", first, second)
+		conv := NewConversation(ctx, &agentStub{}, provider, "m", []contractsai.Middleware{first, second})
 
 		_, err := conv.Prompt("hello")
 		s.NoError(err)
@@ -736,7 +736,7 @@ func (s *ConversationTestSuite) TestPromptMiddleware() {
 			return &stubResponse{text: "short circuit"}, nil
 		})
 
-		conv := NewConversation(ctx, &agentStub{}, provider, "m", middleware)
+		conv := NewConversation(ctx, &agentStub{}, provider, "m", []contractsai.Middleware{middleware})
 
 		resp, err := conv.Prompt("hello")
 		s.NoError(err)
@@ -755,7 +755,7 @@ func (s *ConversationTestSuite) TestPromptMiddleware() {
 			return next.Execute(ctx, prompt)
 		})
 
-		conv := NewConversation(ctx, &agentStub{}, provider, "m", middleware)
+		conv := NewConversation(ctx, &agentStub{}, provider, "m", []contractsai.Middleware{middleware})
 
 		resp, err := conv.Prompt("hello")
 		s.Equal(assert.AnError, err)
@@ -776,7 +776,7 @@ func (s *ConversationTestSuite) TestPromptMiddleware() {
 			return next.Execute(ctx, prompt)
 		})
 
-		conv := NewConversation(ctx, &agentStub{}, provider, "m", nilMiddleware, middleware)
+		conv := NewConversation(ctx, &agentStub{}, provider, "m", []contractsai.Middleware{nilMiddleware, middleware})
 
 		resp, err := conv.Prompt("hello")
 		s.NoError(err)
@@ -793,7 +793,7 @@ func (s *ConversationTestSuite) TestPromptThen() {
 		},
 	}
 
-	conv := NewConversation(ctx, &agentStub{}, provider, "m")
+	conv := NewConversation(ctx, &agentStub{}, provider, "m", nil)
 
 	resp, err := conv.Prompt("hello")
 	s.Require().NoError(err)
@@ -836,7 +836,7 @@ func (s *ConversationTestSuite) TestSharedMiddlewareAcrossPromptAndStream() {
 			return &stubResponse{text: "prompt done"}, nil
 		},
 	}
-	promptConv := NewConversation(ctx, &agentStub{}, promptProvider, "m", middleware)
+	promptConv := NewConversation(ctx, &agentStub{}, promptProvider, "m", []contractsai.Middleware{middleware})
 
 	resp, err := promptConv.Prompt("hello")
 	s.Require().NoError(err)
@@ -860,7 +860,7 @@ func (s *ConversationTestSuite) TestSharedMiddlewareAcrossPromptAndStream() {
 			}), nil
 		},
 	}
-	streamConv := NewConversation(ctx, &agentStub{}, streamProvider, "m", middleware)
+	streamConv := NewConversation(ctx, &agentStub{}, streamProvider, "m", []contractsai.Middleware{middleware})
 
 	stream, err := streamConv.Stream("hello")
 	s.Require().NoError(err)
@@ -888,7 +888,7 @@ func (s *ConversationTestSuite) TestStreamShortCircuitMiddlewareCommitsMessages(
 		return &stubResponse{text: "short stream"}, nil
 	})
 
-	conv := NewConversation(ctx, &agentStub{}, provider, "m", middleware)
+	conv := NewConversation(ctx, &agentStub{}, provider, "m", []contractsai.Middleware{middleware})
 
 	stream, err := conv.Stream("hello")
 	s.Require().NoError(err)
