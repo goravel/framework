@@ -209,17 +209,15 @@ func TestApplication_Agent_WithMiddleware(t *testing.T) {
 
 type applicationTestMiddleware struct{}
 
-func (m *applicationTestMiddleware) Handle(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.MiddlewareNext) (contractsai.Response, error) {
-	response, err := next(ctx, prompt)
+func (m *applicationTestMiddleware) Handle(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
+	response, err := next.Execute(ctx, prompt)
 	if err != nil {
 		return nil, err
 	}
 
-	return response.Then(func(response contractsai.Response) error {
+	return response.Then(func(response contractsai.Response) {
 		if stub, ok := response.(*middlewareResponse); ok {
 			stub.response = &stubResponse{text: response.Text() + " after middleware"}
 		}
-
-		return nil
 	}), nil
 }

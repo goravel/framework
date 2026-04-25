@@ -66,7 +66,7 @@ func (_c *Response_Text_Call) RunAndReturn(run func() string) *Response_Text_Cal
 }
 
 // Then provides a mock function with given fields: callback
-func (_m *Response) Then(callback func(ai.Response) error) ai.Response {
+func (_m *Response) Then(callback func(ai.Response)) ai.Response {
 	ret := _m.Called(callback)
 
 	if len(ret) == 0 {
@@ -74,7 +74,7 @@ func (_m *Response) Then(callback func(ai.Response) error) ai.Response {
 	}
 
 	var r0 ai.Response
-	if rf, ok := ret.Get(0).(func(func(ai.Response) error) ai.Response); ok {
+	if rf, ok := ret.Get(0).(func(func(ai.Response)) ai.Response); ok {
 		r0 = rf(callback)
 	} else {
 		if ret.Get(0) != nil {
@@ -91,14 +91,14 @@ type Response_Then_Call struct {
 }
 
 // Then is a helper method to define mock.On call
-//   - callback func(ai.Response) error
+//   - callback func(ai.Response)
 func (_e *Response_Expecter) Then(callback interface{}) *Response_Then_Call {
 	return &Response_Then_Call{Call: _e.mock.On("Then", callback)}
 }
 
-func (_c *Response_Then_Call) Run(run func(callback func(ai.Response) error)) *Response_Then_Call {
+func (_c *Response_Then_Call) Run(run func(callback func(ai.Response))) *Response_Then_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(func(ai.Response) error))
+		run(args[0].(func(ai.Response)))
 	})
 	return _c
 }
@@ -108,7 +108,7 @@ func (_c *Response_Then_Call) Return(_a0 ai.Response) *Response_Then_Call {
 	return _c
 }
 
-func (_c *Response_Then_Call) RunAndReturn(run func(func(ai.Response) error) ai.Response) *Response_Then_Call {
+func (_c *Response_Then_Call) RunAndReturn(run func(func(ai.Response)) ai.Response) *Response_Then_Call {
 	_c.Call.Return(run)
 	return _c
 }

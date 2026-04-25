@@ -268,12 +268,12 @@ func TestWithStreamRender(t *testing.T) {
 
 type optionTestMiddleware struct{}
 
-func (m *optionTestMiddleware) Handle(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.MiddlewareNext) (contractsai.Response, error) {
-	return next(ctx, prompt)
+func (m *optionTestMiddleware) Handle(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
+	return next.Execute(ctx, prompt)
 }
 
 type optionNilTestMiddleware struct{}
 
-func (m *optionNilTestMiddleware) Handle(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.MiddlewareNext) (contractsai.Response, error) {
-	return next(ctx, prompt)
+func (m *optionNilTestMiddleware) Handle(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
+	return next.Execute(ctx, prompt)
 }

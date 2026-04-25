@@ -24,9 +24,10 @@ type streamableTestResponse struct {
 func (r *streamableTestResponse) Text() string                      { return r.text }
 func (r *streamableTestResponse) Usage() contractsai.Usage          { return r.usage }
 func (r *streamableTestResponse) ToolCalls() []contractsai.ToolCall { return nil }
-func (r *streamableTestResponse) Then(callback func(contractsai.Response) error) contractsai.Response {
+
+func (r *streamableTestResponse) Then(callback func(contractsai.Response)) contractsai.Response {
 	if callback != nil {
-		_ = callback(r)
+		callback(r)
 	}
 
 	return r

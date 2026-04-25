@@ -11,10 +11,12 @@ type response struct {
 func (r *response) Text() string                      { return r.text }
 func (r *response) Usage() contractsai.Usage          { return r.usage }
 func (r *response) ToolCalls() []contractsai.ToolCall { return r.toolCalls }
-func (r *response) Then(callback func(contractsai.Response) error) contractsai.Response {
-	if callback != nil {
-		_ = callback(r)
+func (r *response) Then(callback func(contractsai.Response)) contractsai.Response {
+	if callback == nil {
+		return r
 	}
+
+	callback(r)
 
 	return r
 }
