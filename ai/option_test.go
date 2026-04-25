@@ -134,6 +134,15 @@ func TestWithMiddleware(t *testing.T) {
 			expected: &contractsai.Options{Middlewares: []contractsai.Middleware{middlewareA, middlewareB}},
 		},
 		{
+			name:    "skips typed nil middleware",
+			initial: &contractsai.Options{},
+			apply: func(options *contractsai.Options) {
+				var middleware *optionNilTestMiddleware
+				WithMiddleware(middleware, middlewareA)(options)
+			},
+			expected: &contractsai.Options{Middlewares: []contractsai.Middleware{middlewareA}},
+		},
+		{
 			name:    "panics on nil options",
 			nilOpts: true,
 			apply: func(options *contractsai.Options) {
@@ -259,6 +268,12 @@ func TestWithStreamRender(t *testing.T) {
 
 type optionTestMiddleware struct{}
 
-func (m *optionTestMiddleware) Handle(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
+func (m *optionTestMiddleware) Handle(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.MiddlewareNext) (contractsai.Response, error) {
+	return next(ctx, prompt)
+}
+
+type optionNilTestMiddleware struct{}
+
+func (m *optionNilTestMiddleware) Handle(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.MiddlewareNext) (contractsai.Response, error) {
 	return next(ctx, prompt)
 }

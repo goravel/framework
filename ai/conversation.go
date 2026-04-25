@@ -38,7 +38,7 @@ func NewConversation(ctx context.Context, agent contractsai.Agent, provider cont
 		messages:    slices.Clone(agent.Messages()),
 		provider:    provider,
 		model:       model,
-		middlewares: slices.Clone(middlewares),
+		middlewares: filterNilMiddlewares(middlewares),
 	}
 }
 
@@ -169,24 +169,19 @@ func (r *conversation) Prompt(input string) (contractsai.Response, error) {
 }
 
 func (r *conversation) prompt(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
-	next := func(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
-		return r.provider.Prompt(ctx, prompt)
-	}
-
-	for i := len(r.middlewares) - 1; i >= 0; i-- {
-		middleware := r.middlewares[i]
-		nextHandler := next
-		next = func(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
-			return middleware.Handle(ctx, prompt, nextHandler)
+	return r.runMiddlewarePipeline(ctx, prompt, func(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
+		response, err := r.provider.Prompt(ctx, prompt)
+		if err != nil {
+			return nil, err
 		}
-	}
 
-	return next(ctx, prompt)
+		return newResolvedMiddlewareResponse(response), nil
+	})
 }
 
 func (r *conversation) Stream(input string) (contractsai.StreamableResponse, error) {
 	tools := r.agent.Tools()
-	agentPrompt := contractsai.AgentPrompt{
+	initialPrompt := contractsai.AgentPrompt{
 		Agent: r,
 		Input: input,
 		Model: r.model,
@@ -199,9 +194,29 @@ func (r *conversation) Stream(input string) (contractsai.StreamableResponse, err
 	}
 
 	initialCtx, cancelInitial := context.WithCancel(r.ctx)
+	resolvedInitialPrompt, initialMiddlewareResponse, shortCircuitResponse, err := r.prepareStreamPrompt(initialCtx, initialPrompt)
+	if err != nil {
+		cancelInitial()
+		clearPending()
+		return nil, err
+	}
+
+	if shortCircuitResponse != nil {
+		cancelInitial()
+		return NewStreamableResponse(r.ctx, func(ctx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.Response, error) {
+			if err := ctx.Err(); err != nil {
+				return nil, err
+			}
+			if err := emit(contractsai.StreamEvent{Type: contractsai.StreamEventTypeDone}); err != nil {
+				return nil, err
+			}
+
+			return shortCircuitResponse, nil
+		}), nil
+	}
 
 	r.promptMu.Lock()
-	initialStream, err := r.provider.Stream(initialCtx, agentPrompt)
+	initialStream, err := r.provider.Stream(initialCtx, resolvedInitialPrompt)
 	r.promptMu.Unlock()
 	if err != nil {
 		cancelInitial()
@@ -227,16 +242,36 @@ func (r *conversation) Stream(input string) (contractsai.StreamableResponse, err
 		working := slices.Clone(r.messages)
 		r.mu.RUnlock()
 
-		agentPrompt := agentPrompt
+		agentPrompt := initialPrompt
 		useInitialStream := true
 
 		for i := range MaxToolCallIterations {
-			var innerStream contractsai.StreamableResponse
+			var (
+				innerStream        contractsai.StreamableResponse
+				middlewareResponse *middlewareResponse
+			)
+
 			if useInitialStream {
 				innerStream = initialStream
+				middlewareResponse = initialMiddlewareResponse
 				useInitialStream = false
 			} else {
-				innerStream, err = r.provider.Stream(streamCtx, agentPrompt)
+				resolvedPrompt, nextMiddlewareResponse, shortCircuitResponse, err := r.prepareStreamPrompt(streamCtx, agentPrompt)
+				if err != nil {
+					clearPending()
+					return nil, err
+				}
+				if shortCircuitResponse != nil {
+					if err := emit(contractsai.StreamEvent{Type: contractsai.StreamEventTypeDone}); err != nil {
+						clearPending()
+						return nil, err
+					}
+
+					return shortCircuitResponse, nil
+				}
+
+				middlewareResponse = nextMiddlewareResponse
+				innerStream, err = r.provider.Stream(streamCtx, resolvedPrompt)
 				if err != nil {
 					clearPending()
 					return nil, err
@@ -267,6 +302,12 @@ func (r *conversation) Stream(input string) (contractsai.StreamableResponse, err
 
 			toolCalls := resp.ToolCalls()
 			if len(toolCalls) == 0 {
+				finalResp, err := finalizeMiddlewareResponse(middlewareResponse, resp)
+				if err != nil {
+					clearPending()
+					return nil, err
+				}
+
 				if doneEvent != nil {
 					if err := emit(*doneEvent); err != nil {
 						clearPending()
@@ -274,18 +315,17 @@ func (r *conversation) Stream(input string) (contractsai.StreamableResponse, err
 					}
 				}
 
-				// No tool calls — commit history and return the final response.
 				if r.pending == nil {
 					working = append(working, contractsai.Message{Role: contractsai.RoleUser, Content: input})
 				}
-				working = append(working, contractsai.Message{Role: contractsai.RoleAssistant, Content: resp.Text()})
+				working = append(working, contractsai.Message{Role: contractsai.RoleAssistant, Content: finalResp.Text()})
 
 				r.mu.Lock()
 				r.messages = working
 				r.pending = nil
 				r.mu.Unlock()
 
-				return resp, nil
+				return finalResp, nil
 			}
 
 			if i == MaxToolCallIterations-1 {
@@ -293,7 +333,6 @@ func (r *conversation) Stream(input string) (contractsai.StreamableResponse, err
 				return nil, errors.AIToolCallLoopExceeded.Args(MaxToolCallIterations)
 			}
 
-			// Emit a tool_call event so the caller can observe the invocations.
 			if err := emit(contractsai.StreamEvent{
 				Type:      contractsai.StreamEventTypeToolCall,
 				ToolCalls: toolCalls,
@@ -308,8 +347,6 @@ func (r *conversation) Stream(input string) (contractsai.StreamableResponse, err
 				return nil, execErr
 			}
 
-			// Extend the working copy with the user message (first round only),
-			// the assistant tool-call message, and tool results.
 			if i == 0 {
 				working = append(working, contractsai.Message{Role: contractsai.RoleUser, Content: input})
 			}
@@ -324,7 +361,6 @@ func (r *conversation) Stream(input string) (contractsai.StreamableResponse, err
 			r.pending = working
 			r.mu.Unlock()
 
-			// On subsequent iterations Input is empty — history is in pending.
 			agentPrompt = contractsai.AgentPrompt{
 				Agent: r,
 				Input: "",
@@ -336,6 +372,73 @@ func (r *conversation) Stream(input string) (contractsai.StreamableResponse, err
 		clearPending()
 		return nil, errors.AIToolCallLoopExceeded.Args(MaxToolCallIterations)
 	}), nil
+}
+
+func (r *conversation) prepareStreamPrompt(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.AgentPrompt, *middlewareResponse, contractsai.Response, error) {
+	resolvedPrompt := prompt
+	deferredResponse := newDeferredMiddlewareResponse()
+	calledNext := false
+
+	response, err := r.runMiddlewarePipeline(ctx, prompt, func(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
+		calledNext = true
+		resolvedPrompt = prompt
+		return deferredResponse, nil
+	})
+	if err != nil {
+		return contractsai.AgentPrompt{}, nil, nil, err
+	}
+
+	if !calledNext {
+		return contractsai.AgentPrompt{}, nil, response, nil
+	}
+
+	return resolvedPrompt, deferredResponse, nil, nil
+}
+
+func (r *conversation) runMiddlewarePipeline(ctx context.Context, prompt contractsai.AgentPrompt, destination contractsai.MiddlewareNext) (contractsai.Response, error) {
+	next := destination
+
+	for i := len(r.middlewares) - 1; i >= 0; i-- {
+		middleware := r.middlewares[i]
+		nextHandler := next
+		next = func(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
+			return middleware.Handle(ctx, prompt, nextHandler)
+		}
+	}
+
+	response, err := next(ctx, prompt)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := middlewareResponseError(response); err != nil {
+		return nil, err
+	}
+	if middlewareResponse, ok := response.(*middlewareResponse); ok {
+		return middlewareResponse.Unwrap(), nil
+	}
+
+	return response, nil
+}
+
+func finalizeMiddlewareResponse(middlewareResponse *middlewareResponse, response contractsai.Response) (contractsai.Response, error) {
+	if middlewareResponse == nil {
+		return response, nil
+	}
+
+	if err := middlewareResponse.Resolve(response); err != nil {
+		return nil, err
+	}
+
+	return middlewareResponse.Unwrap(), nil
+}
+
+func middlewareResponseError(response contractsai.Response) error {
+	if middlewareResponse, ok := response.(*middlewareResponse); ok {
+		return middlewareResponse.Err()
+	}
+
+	return nil
 }
 
 func (r *conversation) Reset() {

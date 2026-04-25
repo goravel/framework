@@ -24,7 +24,7 @@ func (_m *Middleware) EXPECT() *Middleware_Expecter {
 }
 
 // Handle provides a mock function with given fields: ctx, prompt, next
-func (_m *Middleware) Handle(ctx context.Context, prompt ai.AgentPrompt, next ai.Next) (ai.Response, error) {
+func (_m *Middleware) Handle(ctx context.Context, prompt ai.AgentPrompt, next ai.MiddlewareNext) (ai.Response, error) {
 	ret := _m.Called(ctx, prompt, next)
 
 	if len(ret) == 0 {
@@ -33,10 +33,10 @@ func (_m *Middleware) Handle(ctx context.Context, prompt ai.AgentPrompt, next ai
 
 	var r0 ai.Response
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, ai.AgentPrompt, ai.Next) (ai.Response, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ai.AgentPrompt, ai.MiddlewareNext) (ai.Response, error)); ok {
 		return rf(ctx, prompt, next)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, ai.AgentPrompt, ai.Next) ai.Response); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ai.AgentPrompt, ai.MiddlewareNext) ai.Response); ok {
 		r0 = rf(ctx, prompt, next)
 	} else {
 		if ret.Get(0) != nil {
@@ -44,7 +44,7 @@ func (_m *Middleware) Handle(ctx context.Context, prompt ai.AgentPrompt, next ai
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, ai.AgentPrompt, ai.Next) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, ai.AgentPrompt, ai.MiddlewareNext) error); ok {
 		r1 = rf(ctx, prompt, next)
 	} else {
 		r1 = ret.Error(1)
@@ -61,14 +61,14 @@ type Middleware_Handle_Call struct {
 // Handle is a helper method to define mock.On call
 //   - ctx context.Context
 //   - prompt ai.AgentPrompt
-//   - next ai.Next
+//   - next ai.MiddlewareNext
 func (_e *Middleware_Expecter) Handle(ctx interface{}, prompt interface{}, next interface{}) *Middleware_Handle_Call {
 	return &Middleware_Handle_Call{Call: _e.mock.On("Handle", ctx, prompt, next)}
 }
 
-func (_c *Middleware_Handle_Call) Run(run func(ctx context.Context, prompt ai.AgentPrompt, next ai.Next)) *Middleware_Handle_Call {
+func (_c *Middleware_Handle_Call) Run(run func(ctx context.Context, prompt ai.AgentPrompt, next ai.MiddlewareNext)) *Middleware_Handle_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(ai.AgentPrompt), args[2].(ai.Next))
+		run(args[0].(context.Context), args[1].(ai.AgentPrompt), args[2].(ai.MiddlewareNext))
 	})
 	return _c
 }
@@ -78,7 +78,7 @@ func (_c *Middleware_Handle_Call) Return(_a0 ai.Response, _a1 error) *Middleware
 	return _c
 }
 
-func (_c *Middleware_Handle_Call) RunAndReturn(run func(context.Context, ai.AgentPrompt, ai.Next) (ai.Response, error)) *Middleware_Handle_Call {
+func (_c *Middleware_Handle_Call) RunAndReturn(run func(context.Context, ai.AgentPrompt, ai.MiddlewareNext) (ai.Response, error)) *Middleware_Handle_Call {
 	_c.Call.Return(run)
 	return _c
 }
