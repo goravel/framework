@@ -269,11 +269,11 @@ func TestWithStreamRender(t *testing.T) {
 type optionTestMiddleware struct{}
 
 func (m *optionTestMiddleware) Handle(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
-	return next.Execute(ctx, prompt)
+	return next(ctx, prompt)
 }
 
 type optionNilTestMiddleware struct{}
 
 func (m *optionNilTestMiddleware) Handle(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
-	return next.Execute(ctx, prompt)
+	return next(ctx, prompt)
 }

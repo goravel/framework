@@ -178,26 +178,26 @@ func TestApplication_WithContext(t *testing.T) {
 
 func TestApplication_Agent_WithMiddleware(t *testing.T) {
 	ctx := context.Background()
-	provider := mocksai.NewProvider(t)
+	mockProvider := mocksai.NewProvider(t)
 	config := contractsai.Config{
 		Default: "default",
 		Providers: map[string]contractsai.ProviderConfig{
-			"default": {Via: provider},
+			"default": {Via: mockProvider},
 		},
 	}
-	agent := mocksai.NewAgent(t)
-	agent.EXPECT().Messages().Return(nil).Once()
-	agent.EXPECT().Tools().Return(nil).Once()
+	mockAgent := mocksai.NewAgent(t)
+	mockAgent.EXPECT().Messages().Return(nil).Once()
+	mockAgent.EXPECT().Tools().Return(nil).Once()
 
 	middleware := &applicationTestMiddleware{}
 
 	app := NewApplication(ctx, config)
-	conv, err := app.Agent(agent, WithMiddleware(middleware))
+	conv, err := app.Agent(mockAgent, WithMiddleware(middleware))
 	assert.NoError(t, err)
 	convImpl, ok := conv.(*conversation)
 	assert.True(t, ok)
 
-	provider.EXPECT().
+	mockProvider.EXPECT().
 		Prompt(ctx, contractsai.AgentPrompt{Agent: convImpl, Input: "hello", Tools: nil}).
 		Return(&stubResponse{text: "before middleware"}, nil).
 		Once()
@@ -210,7 +210,7 @@ func TestApplication_Agent_WithMiddleware(t *testing.T) {
 type applicationTestMiddleware struct{}
 
 func (m *applicationTestMiddleware) Handle(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
-	response, err := next.Execute(ctx, prompt)
+	response, err := next(ctx, prompt)
 	if err != nil {
 		return nil, err
 	}

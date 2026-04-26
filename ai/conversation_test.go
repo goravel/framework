@@ -656,7 +656,7 @@ func (s *ConversationTestSuite) TestPromptMiddleware() {
 
 		middleware := promptMiddlewareFunc(func(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
 			prompt.Input = prompt.Input + " from middleware"
-			return next.Execute(ctx, prompt)
+			return next(ctx, prompt)
 		})
 
 		conv := NewConversation(ctx, &agentStub{}, provider, "m", []contractsai.Middleware{middleware})
@@ -675,7 +675,7 @@ func (s *ConversationTestSuite) TestPromptMiddleware() {
 		}
 
 		middleware := promptMiddlewareFunc(func(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
-			response, err := next.Execute(ctx, prompt)
+			response, err := next(ctx, prompt)
 			if err != nil {
 				return nil, err
 			}
@@ -705,13 +705,13 @@ func (s *ConversationTestSuite) TestPromptMiddleware() {
 
 		first := promptMiddlewareFunc(func(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
 			order = append(order, "first-before")
-			response, err := next.Execute(ctx, prompt)
+			response, err := next(ctx, prompt)
 			order = append(order, "first-after")
 			return response, err
 		})
 		second := promptMiddlewareFunc(func(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
 			order = append(order, "second-before")
-			response, err := next.Execute(ctx, prompt)
+			response, err := next(ctx, prompt)
 			order = append(order, "second-after")
 			return response, err
 		})
@@ -752,7 +752,7 @@ func (s *ConversationTestSuite) TestPromptMiddleware() {
 		}
 
 		middleware := promptMiddlewareFunc(func(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
-			return next.Execute(ctx, prompt)
+			return next(ctx, prompt)
 		})
 
 		conv := NewConversation(ctx, &agentStub{}, provider, "m", []contractsai.Middleware{middleware})
@@ -773,7 +773,7 @@ func (s *ConversationTestSuite) TestPromptMiddleware() {
 
 		var nilMiddleware *conversationNilTestMiddleware
 		middleware := promptMiddlewareFunc(func(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
-			return next.Execute(ctx, prompt)
+			return next(ctx, prompt)
 		})
 
 		conv := NewConversation(ctx, &agentStub{}, provider, "m", []contractsai.Middleware{nilMiddleware, middleware})
@@ -820,7 +820,7 @@ func (s *ConversationTestSuite) TestSharedMiddlewareAcrossPromptAndStream() {
 	middleware := promptMiddlewareFunc(func(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
 		prompt.Input += " via middleware"
 
-		response, err := next.Execute(ctx, prompt)
+		response, err := next(ctx, prompt)
 		if err != nil {
 			return nil, err
 		}
@@ -937,7 +937,7 @@ func (f promptMiddlewareFunc) Handle(ctx context.Context, prompt contractsai.Age
 type conversationNilTestMiddleware struct{}
 
 func (m *conversationNilTestMiddleware) Handle(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
-	return next.Execute(ctx, prompt)
+	return next(ctx, prompt)
 }
 
 // stubTool records calls and returns a fixed result or error.
