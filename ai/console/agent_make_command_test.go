@@ -56,5 +56,6 @@ func TestAgentMakeCommand(t *testing.T) {
 	assert.True(t, file.Contain("app/agents/user/support_agent.go", "type SupportAgent struct"))
 	assert.True(t, file.Contain("app/agents/user/support_agent.go", "func (r *SupportAgent) Instructions() string"))
 	assert.True(t, file.Contain("app/agents/user/support_agent.go", "func (r *SupportAgent) Messages() []ai.Message"))
+	assert.True(t, file.Contain("app/agents/user/support_agent.go", "func (r *SupportAgent) Middleware() []ai.Middleware"))
 	assert.NoError(t, file.Remove("app"))
 }

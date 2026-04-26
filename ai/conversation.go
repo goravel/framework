@@ -44,6 +44,10 @@ func NewConversation(ctx context.Context, agent contractsai.Agent, provider cont
 
 func (r *conversation) Instructions() string { return r.agent.Instructions() }
 
+func (r *conversation) Middleware() []contractsai.Middleware {
+	return slices.Clone(r.middlewares)
+}
+
 func (r *conversation) Messages() []contractsai.Message {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
