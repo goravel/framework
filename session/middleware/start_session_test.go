@@ -29,14 +29,12 @@ func testHttpSessionMiddleware(next nethttp.Handler, mockConfig *configmocks.Con
 
 func mockConfigFacade(mockConfig *configmocks.Config) {
 	mockConfig.EXPECT().GetString("session.default").Return("file").Once()
-	// Cookie-related reads only happen when the middleware emits a new
-	// Set-Cookie (no matching incoming cookie), so mark them optional.
-	mockConfig.EXPECT().GetInt("session.lifetime", 120).Return(120).Maybe()
-	mockConfig.EXPECT().GetString("session.path").Return("/").Maybe()
-	mockConfig.EXPECT().GetString("session.domain").Return("").Maybe()
-	mockConfig.EXPECT().GetBool("session.secure").Return(false).Maybe()
-	mockConfig.EXPECT().GetBool("session.http_only").Return(true).Maybe()
-	mockConfig.EXPECT().GetString("session.same_site").Return("").Maybe()
+	mockConfig.EXPECT().GetInt("session.lifetime", 120).Return(120).Once()
+	mockConfig.EXPECT().GetString("session.path").Return("/").Once()
+	mockConfig.EXPECT().GetString("session.domain").Return("").Once()
+	mockConfig.EXPECT().GetBool("session.secure").Return(false).Once()
+	mockConfig.EXPECT().GetBool("session.http_only").Return(true).Once()
+	mockConfig.EXPECT().GetString("session.same_site").Return("").Once()
 }
 
 func TestStartSession(t *testing.T) {
@@ -78,10 +76,8 @@ func TestStartSession(t *testing.T) {
 
 	resp, err = client.Do(req)
 	require.NoError(t, err)
-	// Incoming cookie already matches the loaded session ID — middleware
-	// skips emitting another Set-Cookie to avoid duplicating the header
-	// produced by any in-handler rotation.
-	assert.Empty(t, resp.Cookies())
+	assert.Equal(t, cookie.Name, resp.Cookies()[0].Name)
+	assert.Equal(t, cookie.Value, resp.Cookies()[0].Value)
 
 	assert.NoError(t, file.Remove("storage"))
 }

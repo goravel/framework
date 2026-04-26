@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/http"
@@ -16,7 +15,6 @@ import (
 	mockshttp "github.com/goravel/framework/mocks/http"
 	mockslog "github.com/goravel/framework/mocks/log"
 	mockssession "github.com/goravel/framework/mocks/session"
-	"github.com/goravel/framework/session"
 	"github.com/goravel/framework/support/carbon"
 )
 
@@ -26,7 +24,6 @@ type SessionGuardTestSuite struct {
 	mockCache        *mockscache.Cache
 	mockConfig       *mocksconfig.Config
 	mockContext      http.Context
-	mockResponse     *mockshttp.ContextResponse
 	mockDB           *mocksorm.Query
 	mockLog          *mockslog.Log
 	mockUserProvider *mocksauth.UserProvider
@@ -54,16 +51,13 @@ func (s *SessionGuardTestSuite) SetupTest() {
 	mockRequest := mockshttp.NewContextRequest(s.T())
 	mockRequest.EXPECT().Session().Return(s.mockSession)
 
-	s.mockResponse = mockshttp.NewContextResponse(s.T())
 	mockContext := mockshttp.NewContext(s.T())
 	mockContext.EXPECT().Request().Return(mockRequest)
-	mockContext.EXPECT().Response().Return(s.mockResponse).Maybe()
 
 	s.mockContext = mockContext
 
 	cacheFacade = s.mockCache
 	configFacade = s.mockConfig
-	session.ConfigFacade = s.mockConfig
 
 	sessionGuard, err := NewSessionGuard(s.mockContext, testUserGuard, s.mockUserProvider)
 	s.Require().Nil(err)
@@ -114,7 +108,6 @@ func (s *SessionGuardTestSuite) TestCheck_LoginUsingID_Logout() {
 	s.True(s.sessionGuard.Guest())
 
 	s.mockSession.EXPECT().Regenerate(true).Return(nil).Once()
-	s.expectReissueCookie()
 	s.mockSession.EXPECT().Put("auth_user_id", "1").Return(nil).Once()
 	token, err := s.sessionGuard.LoginUsingID(1)
 	s.Nil(err)
@@ -125,7 +118,6 @@ func (s *SessionGuardTestSuite) TestCheck_LoginUsingID_Logout() {
 	s.False(s.sessionGuard.Guest())
 
 	s.mockSession.EXPECT().Invalidate().Return(nil).Once()
-	s.expectReissueCookie()
 	s.NoError(s.sessionGuard.Logout())
 
 	s.mockSession.EXPECT().Get("auth_user_id", nil).Return(nil).Once()
@@ -143,7 +135,6 @@ func (s *SessionGuardTestSuite) Test_Login() {
 
 	s.mockUserProvider.EXPECT().GetID(&user).Return("2", nil).Once()
 	s.mockSession.EXPECT().Regenerate(true).Return(nil).Once()
-	s.expectReissueCookie()
 	s.mockSession.EXPECT().Put("auth_user_id", "2").Return(nil).Once()
 	token, err := s.sessionGuard.Login(&user)
 	s.Nil(err)
@@ -154,7 +145,6 @@ func (s *SessionGuardTestSuite) Test_Login() {
 	s.False(s.sessionGuard.Guest())
 
 	s.mockSession.EXPECT().Invalidate().Return(nil).Once()
-	s.expectReissueCookie()
 	s.NoError(s.sessionGuard.Logout())
 
 	s.mockSession.EXPECT().Get("auth_user_id", nil).Return(nil).Once()
@@ -180,7 +170,6 @@ func (s *SessionGuardTestSuite) Test_LoginFailed() {
 	s.True(s.sessionGuard.Guest())
 
 	s.mockSession.EXPECT().Invalidate().Return(nil).Once()
-	s.expectReissueCookie()
 	s.NoError(s.sessionGuard.Logout())
 
 	s.mockSession.EXPECT().Get("auth_user_id", nil).Return(nil).Once()
@@ -243,37 +232,4 @@ func (s *SessionGuardTestSuite) Test_Logout_InvalidateError() {
 	s.mockSession.EXPECT().Invalidate().Return(assert.AnError).Once()
 
 	s.ErrorIs(s.sessionGuard.Logout(), assert.AnError)
-}
-
-func (s *SessionGuardTestSuite) Test_LoginUsingID_ReissuesCookie() {
-	s.mockSession.EXPECT().Regenerate(true).Return(nil).Once()
-	s.mockSession.EXPECT().GetName().Return("goravel_session").Once()
-	s.mockSession.EXPECT().GetID().Return("new-session-id").Once()
-	s.mockSession.EXPECT().Put("auth_user_id", "1").Return(nil).Once()
-
-	s.mockConfig.EXPECT().GetInt("session.lifetime", 120).Return(120).Once()
-	s.mockConfig.EXPECT().GetString("session.path").Return("/").Once()
-	s.mockConfig.EXPECT().GetString("session.domain").Return("").Once()
-	s.mockConfig.EXPECT().GetBool("session.secure").Return(false).Once()
-	s.mockConfig.EXPECT().GetBool("session.http_only").Return(true).Once()
-	s.mockConfig.EXPECT().GetString("session.same_site").Return("").Once()
-
-	s.mockResponse.EXPECT().Cookie(mock.MatchedBy(func(c http.Cookie) bool {
-		return c.Name == "goravel_session" && c.Value == "new-session-id"
-	})).Return(s.mockResponse).Once()
-
-	_, err := s.sessionGuard.LoginUsingID(1)
-	s.Nil(err)
-}
-
-func (s *SessionGuardTestSuite) expectReissueCookie() {
-	s.mockSession.EXPECT().GetName().Return("goravel_session").Once()
-	s.mockSession.EXPECT().GetID().Return("session-id").Once()
-	s.mockConfig.EXPECT().GetInt("session.lifetime", 120).Return(120).Once()
-	s.mockConfig.EXPECT().GetString("session.path").Return("/").Once()
-	s.mockConfig.EXPECT().GetString("session.domain").Return("").Once()
-	s.mockConfig.EXPECT().GetBool("session.secure").Return(false).Once()
-	s.mockConfig.EXPECT().GetBool("session.http_only").Return(true).Once()
-	s.mockConfig.EXPECT().GetString("session.same_site").Return("").Once()
-	s.mockResponse.EXPECT().Cookie(mock.Anything).Return(s.mockResponse).Once()
 }

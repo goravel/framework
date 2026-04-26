@@ -32,20 +32,14 @@ func StartSession() http.Middleware {
 			return
 		}
 
-		incomingCookie := req.Cookie(s.GetName())
-		s.SetID(incomingCookie)
+		s.SetID(req.Cookie(s.GetName()))
 
 		// Start session
 		s.Start()
 		req.SetSession(s)
 
-		// Only write the session cookie when the client doesn't already have
-		// a matching one. Rotations triggered in the handler (e.g. login /
-		// logout) reissue the cookie themselves, so this avoids emitting a
-		// duplicate Set-Cookie header in that flow.
-		if incomingCookie != s.GetID() {
-			session.WriteCookie(ctx)
-		}
+		// Set session cookie in response
+		session.WriteCookie(ctx)
 
 		// Continue processing request
 		req.Next()
