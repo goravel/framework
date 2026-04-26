@@ -908,6 +908,29 @@ func (s *ConversationTestSuite) TestStreamShortCircuitMiddlewareCommitsMessages(
 	}, conv.Messages())
 }
 
+func (s *ConversationTestSuite) TestStreamShortCircuitMiddlewareRequiresResponse() {
+	ctx := context.Background()
+	providerCalled := false
+	provider := &conversationToolProviderStub{
+		streamFn: func(context.Context, contractsai.AgentPrompt) (contractsai.StreamableResponse, error) {
+			providerCalled = true
+			return nil, nil
+		},
+	}
+
+	middleware := promptMiddlewareFunc(func(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
+		return nil, nil
+	})
+
+	conv := NewConversation(ctx, &agentStub{}, provider, "m", []contractsai.Middleware{middleware})
+
+	stream, err := conv.Stream("hello")
+	s.Equal(errors.AIResponseIsNil, err)
+	s.Nil(stream)
+	s.False(providerCalled)
+	s.Empty(conv.Messages())
+}
+
 // stubResponse is a minimal Response with configurable text and tool calls.
 type stubResponse struct {
 	text      string

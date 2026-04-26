@@ -3,7 +3,6 @@ package ai
 import (
 	"context"
 	"encoding/json"
-	stderrors "errors"
 	"sync"
 
 	contractsai "github.com/goravel/framework/contracts/ai"
@@ -37,9 +36,8 @@ type streamableResponse struct {
 	events   []contractsai.StreamEvent
 	response contractsai.Response
 	err      error
-	thenErr  error
 
-	thenCallbacks []func(contractsai.Response) error
+	thenCallbacks []func(contractsai.Response)
 }
 
 func NewStreamableResponse(ctx context.Context, runner StreamRunner) contractsai.StreamableResponse {
@@ -90,7 +88,7 @@ func (r *streamableResponse) Each(callback func(contractsai.StreamEvent) error) 
 	}
 }
 
-func (r *streamableResponse) Then(callback func(contractsai.Response) error) contractsai.StreamableResponse {
+func (r *streamableResponse) Then(callback func(contractsai.Response)) contractsai.StreamableResponse {
 	if callback == nil {
 		return r
 	}
@@ -99,15 +97,7 @@ func (r *streamableResponse) Then(callback func(contractsai.Response) error) con
 	if r.finished && r.err == nil && r.response != nil {
 		response := r.response
 		r.mu.Unlock()
-
-		if err := callback(response); err != nil {
-			r.mu.Lock()
-			if r.err == nil {
-				r.err = err
-				r.thenErr = err
-			}
-			r.mu.Unlock()
-		}
+		callback(response)
 		return r
 	}
 
@@ -155,13 +145,7 @@ func (r *streamableResponse) HTTPResponse(ctx contractshttp.Context, options ...
 			return nil
 		})
 		if err != nil && hasProviderErrorEvent && !rendererFailed {
-			r.mu.Lock()
-			thenErr := r.thenErr
-			r.mu.Unlock()
-
-			if thenErr == nil || !stderrors.Is(err, thenErr) {
-				return nil
-			}
+			return nil
 		}
 
 		return err
@@ -175,10 +159,10 @@ type streamToolCallPayload struct {
 }
 
 type streamEventPayload struct {
-	Delta     string                   `json:"delta,omitempty"`
-	Usage     *streamUsagePayload      `json:"usage,omitempty"`
-	Error     string                   `json:"error,omitempty"`
-	ToolCalls []streamToolCallPayload  `json:"tool_calls,omitempty"`
+	Delta     string                  `json:"delta,omitempty"`
+	Usage     *streamUsagePayload     `json:"usage,omitempty"`
+	Error     string                  `json:"error,omitempty"`
+	ToolCalls []streamToolCallPayload `json:"tool_calls,omitempty"`
 }
 
 type streamUsagePayload struct {
@@ -259,13 +243,11 @@ func (r *streamableResponse) run(ctx context.Context) {
 }
 
 func (r *streamableResponse) complete(response contractsai.Response, err error) {
-	var callbacks []func(contractsai.Response) error
-	var thenErr error
+	var callbacks []func(contractsai.Response)
 
 	r.mu.Lock()
 	r.response = response
 	r.err = err
-	r.thenErr = nil
 	if err == nil && response != nil {
 		callbacks = append(callbacks, r.thenCallbacks...)
 	}
@@ -274,17 +256,12 @@ func (r *streamableResponse) complete(response contractsai.Response, err error) 
 
 	if err == nil && response != nil {
 		for _, callback := range callbacks {
-			if callbackErr := callback(response); callbackErr != nil {
-				err = callbackErr
-				thenErr = callbackErr
-				break
-			}
+			callback(response)
 		}
 	}
 
 	r.mu.Lock()
 	r.err = err
-	r.thenErr = thenErr
 	r.finished = true
 	cancel := r.cancel
 	r.cond.Broadcast()

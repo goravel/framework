@@ -381,6 +381,10 @@ func (r *conversation) prepareStreamPrompt(ctx context.Context, prompt contracts
 	}
 
 	if !calledNext {
+		if response == nil {
+			return contractsai.AgentPrompt{}, nil, nil, errors.AIResponseIsNil
+		}
+
 		return contractsai.AgentPrompt{}, nil, response, nil
 	}
 
