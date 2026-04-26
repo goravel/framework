@@ -132,7 +132,7 @@ func (_c *StreamableResponse_HTTPResponse_Call) RunAndReturn(run func(http.Conte
 }
 
 // Then provides a mock function with given fields: callback
-func (_m *StreamableResponse) Then(callback func(ai.Response) error) ai.StreamableResponse {
+func (_m *StreamableResponse) Then(callback func(ai.Response)) ai.StreamableResponse {
 	ret := _m.Called(callback)
 
 	if len(ret) == 0 {
@@ -140,7 +140,7 @@ func (_m *StreamableResponse) Then(callback func(ai.Response) error) ai.Streamab
 	}
 
 	var r0 ai.StreamableResponse
-	if rf, ok := ret.Get(0).(func(func(ai.Response) error) ai.StreamableResponse); ok {
+	if rf, ok := ret.Get(0).(func(func(ai.Response)) ai.StreamableResponse); ok {
 		r0 = rf(callback)
 	} else {
 		if ret.Get(0) != nil {
@@ -157,14 +157,14 @@ type StreamableResponse_Then_Call struct {
 }
 
 // Then is a helper method to define mock.On call
-//   - callback func(ai.Response) error
+//   - callback func(ai.Response)
 func (_e *StreamableResponse_Expecter) Then(callback interface{}) *StreamableResponse_Then_Call {
 	return &StreamableResponse_Then_Call{Call: _e.mock.On("Then", callback)}
 }
 
-func (_c *StreamableResponse_Then_Call) Run(run func(callback func(ai.Response) error)) *StreamableResponse_Then_Call {
+func (_c *StreamableResponse_Then_Call) Run(run func(callback func(ai.Response))) *StreamableResponse_Then_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(func(ai.Response) error))
+		run(args[0].(func(ai.Response)))
 	})
 	return _c
 }
@@ -174,7 +174,7 @@ func (_c *StreamableResponse_Then_Call) Return(_a0 ai.StreamableResponse) *Strea
 	return _c
 }
 
-func (_c *StreamableResponse_Then_Call) RunAndReturn(run func(func(ai.Response) error) ai.StreamableResponse) *StreamableResponse_Then_Call {
+func (_c *StreamableResponse_Then_Call) RunAndReturn(run func(func(ai.Response)) ai.StreamableResponse) *StreamableResponse_Then_Call {
 	_c.Call.Return(run)
 	return _c
 }
