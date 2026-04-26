@@ -72,6 +72,8 @@ when Y?", "Is this thread-safe?". These need an answer, not a code change.
 - If the question reveals that the code is genuinely confusing, consider adding a
   comment or renaming — but only if it actually improves clarity, not just to
   satisfy the reviewer.
+- If you only answer the question, do not mark the thread resolved. Leave it open
+  for the reviewer to decide whether the answer resolves their concern.
 - Never change code solely to signal that you read the comment.
 
 ---
@@ -93,8 +95,11 @@ when Y?", "Is this thread-safe?". These need an answer, not a code change.
 4. **Reply to every comment** — resolved or not. Leaving a comment without a
    reply signals that it was missed.
 
-5. **Mark threads resolved** after replying, using the GitHub GraphQL
-   `resolveReviewThread` mutation (requires the thread node ID):
+5. **Mark actioned threads resolved** after replying, using the GitHub GraphQL
+   `resolveReviewThread` mutation (requires the thread node ID). Resolve only
+   when you applied a code/docs change, or when you are explicitly declining an
+   incorrect request with a clear explanation. Do not resolve genuine question
+   threads when your only action was to reply with an answer.
    ```bash
    gh api graphql -f query='
      mutation {
@@ -120,6 +125,8 @@ when Y?", "Is this thread-safe?". These need an answer, not a code change.
 
 - Never mark a comment as resolved without either applying the change or
   explaining why you did not.
+- Never mark a genuine question thread resolved when the only action was an AI
+  reply. The reviewer owns closure for answer-only threads.
 - Never apply a change you believe is wrong just to close a thread.
 - Never reply with vague acknowledgements ("Sure!", "Done") — every reply
   must state what was done or why nothing was done.
