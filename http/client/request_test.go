@@ -341,7 +341,7 @@ func (s *RequestTestSuite) TestConcurrentRequests() {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		// Small delay to ensure context timeout triggers if set
-		time.Sleep(5 * time.Millisecond)
+		time.Sleep(2 * time.Second)
 		_, _ = w.Write(fmt.Appendf(nil, `{"message":"success-%s"}`, r.URL.Path))
 	}))
 	defer server.Close()
@@ -350,7 +350,7 @@ func (s *RequestTestSuite) TestConcurrentRequests() {
 	reqWithParams := s.request.Clone()
 	req := s.request.Clone()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
 	var wg sync.WaitGroup
