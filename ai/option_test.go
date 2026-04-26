@@ -1,6 +1,7 @@
 package ai
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -94,6 +95,72 @@ func TestWithModel(t *testing.T) {
 			for _, arg := range tt.args {
 				WithModel(arg)(tt.initial)
 			}
+			assert.Equal(t, tt.expected, tt.initial)
+		})
+	}
+}
+
+func TestWithMiddleware(t *testing.T) {
+	middlewareA := &optionTestMiddleware{}
+	middlewareB := &optionTestMiddleware{}
+
+	tests := []struct {
+		name     string
+		initial  *contractsai.Options
+		apply    func(*contractsai.Options)
+		expected *contractsai.Options
+		nilOpts  bool
+	}{
+		{
+			name:    "appends middleware while preserving options",
+			initial: &contractsai.Options{Provider: "openai", Model: "gpt-4"},
+			apply: func(options *contractsai.Options) {
+				WithMiddleware(middlewareA, middlewareB)(options)
+			},
+			expected: &contractsai.Options{
+				Provider:    "openai",
+				Model:       "gpt-4",
+				Middlewares: []contractsai.Middleware{middlewareA, middlewareB},
+			},
+		},
+		{
+			name: "appends to existing middleware",
+			initial: &contractsai.Options{
+				Middlewares: []contractsai.Middleware{middlewareA},
+			},
+			apply: func(options *contractsai.Options) {
+				WithMiddleware(middlewareB)(options)
+			},
+			expected: &contractsai.Options{Middlewares: []contractsai.Middleware{middlewareA, middlewareB}},
+		},
+		{
+			name:    "skips typed nil middleware",
+			initial: &contractsai.Options{},
+			apply: func(options *contractsai.Options) {
+				var middleware *optionNilTestMiddleware
+				WithMiddleware(middleware, middlewareA)(options)
+			},
+			expected: &contractsai.Options{Middlewares: []contractsai.Middleware{middlewareA}},
+		},
+		{
+			name:    "panics on nil options",
+			nilOpts: true,
+			apply: func(options *contractsai.Options) {
+				WithMiddleware(middlewareA)(options)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.nilOpts {
+				assert.Panics(t, func() {
+					tt.apply(nil)
+				})
+				return
+			}
+
+			tt.apply(tt.initial)
 			assert.Equal(t, tt.expected, tt.initial)
 		})
 	}
@@ -197,4 +264,16 @@ func TestWithStreamRender(t *testing.T) {
 			assert.Equal(t, tt.expectError, err)
 		})
 	}
+}
+
+type optionTestMiddleware struct{}
+
+func (m *optionTestMiddleware) Handle(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
+	return next(ctx, prompt)
+}
+
+type optionNilTestMiddleware struct{}
+
+func (m *optionNilTestMiddleware) Handle(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
+	return next(ctx, prompt)
 }

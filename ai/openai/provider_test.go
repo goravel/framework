@@ -526,7 +526,7 @@ func TestProviderStream(t *testing.T) {
 			var thenText string
 			var thenUsage usageCheck
 			var thenToolCalls []contractsai.ToolCall
-			stream.Then(func(resp contractsai.Response) error {
+			stream.Then(func(resp contractsai.Response) {
 				thenCalled++
 				thenText = resp.Text()
 				thenToolCalls = resp.ToolCalls()
@@ -537,8 +537,6 @@ func TestProviderStream(t *testing.T) {
 						total:  resp.Usage().Total(),
 					}
 				}
-
-				return nil
 			})
 
 			var events []contractsai.StreamEvent

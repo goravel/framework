@@ -25,6 +25,14 @@ func (r *streamableTestResponse) Text() string                      { return r.t
 func (r *streamableTestResponse) Usage() contractsai.Usage          { return r.usage }
 func (r *streamableTestResponse) ToolCalls() []contractsai.ToolCall { return nil }
 
+func (r *streamableTestResponse) Then(callback func(contractsai.Response)) contractsai.Response {
+	if callback != nil {
+		callback(r)
+	}
+
+	return r
+}
+
 type streamableTestUsage struct {
 	input  int
 	output int
@@ -186,10 +194,9 @@ func (s *StreamableResponseTestSuite) TestThen() {
 		stream := makeSuccessStream()
 		called := 0
 
-		stream.Then(func(resp contractsai.Response) error {
+		stream.Then(func(resp contractsai.Response) {
 			called++
 			s.Equal("final", resp.Text())
-			return nil
 		})
 
 		err := stream.Each(nil)
@@ -197,25 +204,14 @@ func (s *StreamableResponseTestSuite) TestThen() {
 		s.Equal(1, called)
 	})
 
-	s.Run("returns callback error from Then", func() {
-		stream := makeSuccessStream()
-		stream.Then(func(_ contractsai.Response) error {
-			return assert.AnError
-		})
-
-		err := stream.Each(nil)
-		s.Equal(assert.AnError, err)
-	})
-
 	s.Run("executes callback immediately when called after completion", func() {
 		stream := makeSuccessStream()
 		s.Require().NoError(stream.Each(nil))
 
 		called := 0
-		stream.Then(func(resp contractsai.Response) error {
+		stream.Then(func(resp contractsai.Response) {
 			called++
 			s.Equal("final", resp.Text())
-			return nil
 		})
 		s.Equal(1, called)
 	})
@@ -227,9 +223,8 @@ func (s *StreamableResponseTestSuite) TestThen() {
 		s.Require().Equal(assert.AnError, stream.Each(nil))
 
 		called := 0
-		stream.Then(func(_ contractsai.Response) error {
+		stream.Then(func(_ contractsai.Response) {
 			called++
-			return nil
 		})
 		s.Equal(0, called)
 	})
@@ -346,23 +341,6 @@ func (s *StreamableResponseTestSuite) TestHTTPResponse() {
 		}))
 
 		s.Equal(renderErr, streamErr)
-	})
-
-	s.Run("does not suppress then callback errors", func() {
-		thenErr := stderrors.New("then failed")
-		stream := NewStreamableResponse(context.Background(), func(ctx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.Response, error) {
-			if err := emit(contractsai.StreamEvent{Type: contractsai.StreamEventTypeError, Error: "provider failed"}); err != nil {
-				return nil, err
-			}
-
-			return &streamableTestResponse{text: "ok"}, nil
-		})
-		stream.Then(func(resp contractsai.Response) error {
-			return thenErr
-		})
-
-		_, streamErr := prepareHTTP(true, defaultStreamResponseCode, stream)
-		s.Equal(thenErr, streamErr)
 	})
 
 	s.Run("returns provider error when no error event is emitted", func() {

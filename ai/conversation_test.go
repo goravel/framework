@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	contractsai "github.com/goravel/framework/contracts/ai"
+	"github.com/goravel/framework/errors"
 	mocksai "github.com/goravel/framework/mocks/ai"
 )
 
@@ -32,7 +33,7 @@ func (s *ConversationTestSuite) TestPrompt() {
 		mockAgent = mocksai.NewAgent(s.T())
 		mockAgent.EXPECT().Messages().Return(initial).Once()
 		mockProvider = mocksai.NewProvider(s.T())
-		conv = NewConversation(ctx, mockAgent, mockProvider, model)
+		conv = NewConversation(ctx, mockAgent, mockProvider, model, nil)
 	}
 
 	tests := []struct {
@@ -124,7 +125,7 @@ func (s *ConversationTestSuite) TestReset() {
 		mockAgent = mocksai.NewAgent(s.T())
 		mockAgent.EXPECT().Messages().Return(initial).Times(2)
 		mockProvider = mocksai.NewProvider(s.T())
-		conv = NewConversation(ctx, mockAgent, mockProvider, "model-z")
+		conv = NewConversation(ctx, mockAgent, mockProvider, "model-z", nil)
 	}
 
 	tests := []struct {
@@ -225,7 +226,7 @@ func (s *ConversationTestSuite) TestStream() {
 				return nil, assert.AnError
 			},
 		}
-		conv = NewConversation(ctx, agent, provider, model)
+		conv = NewConversation(ctx, agent, provider, model, nil)
 
 		stream, err := conv.Stream("hello")
 
@@ -254,7 +255,7 @@ func (s *ConversationTestSuite) TestStream() {
 				}), nil
 			},
 		}
-		conv = NewConversation(ctx, agent, provider, model)
+		conv = NewConversation(ctx, agent, provider, model, nil)
 
 		stream, err := conv.Stream("hi")
 		s.Require().NoError(err)
@@ -296,7 +297,7 @@ func (s *ConversationTestSuite) TestStream() {
 				}), nil
 			},
 		}
-		conv = NewConversation(ctx, agent, provider, model)
+		conv = NewConversation(ctx, agent, provider, model, nil)
 
 		stream, err := conv.Stream("hi")
 		s.Require().NoError(err)
@@ -313,7 +314,7 @@ func (s *ConversationTestSuite) TestMessagesClone() {
 	initial := []contractsai.Message{{Role: contractsai.RoleAssistant, Content: "seed"}}
 
 	agent := &agentStub{messages: initial}
-	conv := NewConversation(ctx, agent, &conversationProviderStub{}, "model")
+	conv := NewConversation(ctx, agent, &conversationProviderStub{}, "model", nil)
 
 	initial[0].Content = "mutated"
 
@@ -362,7 +363,7 @@ func (s *ConversationTestSuite) TestPromptToolInvocationLoop() {
 
 		tool := &stubTool{name: "get_weather", result: "Sunny, 25°C"}
 		agent := &agentStub{tools: []contractsai.Tool{tool}}
-		conv := NewConversation(ctx, agent, provider, "m")
+		conv := NewConversation(ctx, agent, provider, "m", nil)
 
 		resp, err := conv.Prompt("What's the weather in London?")
 		s.Require().NoError(err)
@@ -395,7 +396,7 @@ func (s *ConversationTestSuite) TestPromptToolInvocationLoop() {
 		records = nil
 
 		agent := &agentStub{tools: []contractsai.Tool{}}
-		conv := NewConversation(ctx, agent, provider, "m")
+		conv := NewConversation(ctx, agent, provider, "m", nil)
 
 		initialLen := len(conv.Messages())
 		_, err := conv.Prompt("do something")
@@ -413,7 +414,7 @@ func (s *ConversationTestSuite) TestPromptToolInvocationLoop() {
 
 		tool := &stubTool{name: "fail_tool", execErr: assert.AnError}
 		agent := &agentStub{tools: []contractsai.Tool{tool}}
-		conv := NewConversation(ctx, agent, provider, "m")
+		conv := NewConversation(ctx, agent, provider, "m", nil)
 
 		initialLen := len(conv.Messages())
 		_, err := conv.Prompt("do something")
@@ -434,7 +435,7 @@ func (s *ConversationTestSuite) TestPromptToolInvocationLoop() {
 
 		tool := &stubTool{name: "loop_tool", result: "result"}
 		agent := &agentStub{tools: []contractsai.Tool{tool}}
-		conv := NewConversation(ctx, agent, provider, "m")
+		conv := NewConversation(ctx, agent, provider, "m", nil)
 
 		initialLen := len(conv.Messages())
 		_, err := conv.Prompt("loop forever")
@@ -495,7 +496,7 @@ func (s *ConversationTestSuite) TestStreamToolInvocationLoop() {
 
 		tool := &stubTool{name: "get_weather", result: "Sunny, 25°C"}
 		agent := &agentStub{tools: []contractsai.Tool{tool}}
-		conv := NewConversation(ctx, agent, provider, "m")
+		conv := NewConversation(ctx, agent, provider, "m", nil)
 
 		stream, err := conv.Stream("What's the weather in London?")
 		s.Require().NoError(err)
@@ -537,13 +538,28 @@ func (s *ConversationTestSuite) TestStreamToolInvocationLoop() {
 		})
 
 		agent := &agentStub{tools: nil}
-		conv := NewConversation(ctx, agent, provider, "m")
+		conv := NewConversation(ctx, agent, provider, "m", nil)
 		initial := conv.Messages()
 
 		stream, err := conv.Stream("hello")
 		s.Equal(assert.AnError, err)
 		s.Nil(stream)
 		s.Equal(initial, conv.Messages())
+	})
+
+	s.Run("returns error when stream finishes without a response", func() {
+		provider, _ := makeProvider([]streamCall{{
+			events: []contractsai.StreamEvent{{Type: contractsai.StreamEventTypeDone}},
+		}})
+
+		conv := NewConversation(ctx, &agentStub{}, provider, "m", nil)
+
+		stream, err := conv.Stream("hello")
+		s.NoError(err)
+
+		eachErr := stream.Each(nil)
+		s.Equal(errors.AIResponseIsNil, eachErr)
+		s.Empty(conv.Messages())
 	})
 
 	s.Run("returns error when tool is not found", func() {
@@ -557,7 +573,7 @@ func (s *ConversationTestSuite) TestStreamToolInvocationLoop() {
 
 		tool := &stubTool{name: "known_tool"}
 		agent := &agentStub{tools: []contractsai.Tool{tool}}
-		conv := NewConversation(ctx, agent, provider, "m")
+		conv := NewConversation(ctx, agent, provider, "m", nil)
 
 		stream, err := conv.Stream("hello")
 		s.NoError(err)
@@ -580,7 +596,7 @@ func (s *ConversationTestSuite) TestStreamToolInvocationLoop() {
 
 		tool := &stubTool{name: "loop_tool", result: "result"}
 		agent := &agentStub{tools: []contractsai.Tool{tool}}
-		conv := NewConversation(ctx, agent, provider, "m")
+		conv := NewConversation(ctx, agent, provider, "m", nil)
 
 		stream, err := conv.Stream("loop forever")
 		s.NoError(err)
@@ -614,7 +630,7 @@ func (s *ConversationTestSuite) TestExecuteTools_UsesProvidedContext() {
 	defer cancel()
 
 	tool := &stubTool{name: "get_weather", result: "Sunny"}
-	conv := NewConversation(ctx, &agentStub{tools: []contractsai.Tool{tool}}, &conversationProviderStub{}, "m")
+	conv := NewConversation(ctx, &agentStub{tools: []contractsai.Tool{tool}}, &conversationProviderStub{}, "m", nil)
 
 	results, err := conv.executeTools(streamCtx, []contractsai.Tool{tool}, []contractsai.ToolCall{{ID: "c1", Name: "get_weather", Args: map[string]any{"city": "London"}}})
 
@@ -627,6 +643,294 @@ func (s *ConversationTestSuite) TestExecuteTools_UsesProvidedContext() {
 	s.Same(streamCtx, tool.lastCtx)
 }
 
+func (s *ConversationTestSuite) TestPromptMiddleware() {
+	ctx := context.Background()
+
+	s.Run("mutates prompt before provider call", func() {
+		provider := &conversationToolProviderStub{
+			promptFn: func(_ context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
+				s.Equal("hello from middleware", prompt.Input)
+				return &stubResponse{text: "done"}, nil
+			},
+		}
+
+		middleware := promptMiddlewareFunc(func(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
+			prompt.Input = prompt.Input + " from middleware"
+			return next(ctx, prompt)
+		})
+
+		conv := NewConversation(ctx, &agentStub{}, provider, "m", []contractsai.Middleware{middleware})
+
+		resp, err := conv.Prompt("hello")
+		s.NoError(err)
+		s.Equal("done", resp.Text())
+	})
+
+	s.Run("mutates response after provider call", func() {
+		provider := &conversationToolProviderStub{
+			promptFn: func(_ context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
+				s.Equal("hello", prompt.Input)
+				return &stubResponse{text: "done"}, nil
+			},
+		}
+
+		middleware := promptMiddlewareFunc(func(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
+			response, err := next(ctx, prompt)
+			if err != nil {
+				return nil, err
+			}
+
+			return &stubResponse{text: response.Text() + " after middleware"}, nil
+		})
+
+		conv := NewConversation(ctx, &agentStub{}, provider, "m", []contractsai.Middleware{middleware})
+
+		resp, err := conv.Prompt("hello")
+		s.NoError(err)
+		s.Equal("done after middleware", resp.Text())
+		s.Equal([]contractsai.Message{
+			{Role: contractsai.RoleUser, Content: "hello"},
+			{Role: contractsai.RoleAssistant, Content: "done after middleware"},
+		}, conv.Messages())
+	})
+
+	s.Run("runs middleware in order", func() {
+		var order []string
+		provider := &conversationToolProviderStub{
+			promptFn: func(_ context.Context, _ contractsai.AgentPrompt) (contractsai.Response, error) {
+				order = append(order, "provider")
+				return &stubResponse{text: "done"}, nil
+			},
+		}
+
+		first := promptMiddlewareFunc(func(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
+			order = append(order, "first-before")
+			response, err := next(ctx, prompt)
+			order = append(order, "first-after")
+			return response, err
+		})
+		second := promptMiddlewareFunc(func(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
+			order = append(order, "second-before")
+			response, err := next(ctx, prompt)
+			order = append(order, "second-after")
+			return response, err
+		})
+
+		conv := NewConversation(ctx, &agentStub{}, provider, "m", []contractsai.Middleware{first, second})
+
+		_, err := conv.Prompt("hello")
+		s.NoError(err)
+		s.Equal([]string{"first-before", "second-before", "provider", "second-after", "first-after"}, order)
+	})
+
+	s.Run("can short circuit provider", func() {
+		calledProvider := false
+		provider := &conversationToolProviderStub{
+			promptFn: func(_ context.Context, _ contractsai.AgentPrompt) (contractsai.Response, error) {
+				calledProvider = true
+				return &stubResponse{text: "provider"}, nil
+			},
+		}
+
+		middleware := promptMiddlewareFunc(func(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
+			return &stubResponse{text: "short circuit"}, nil
+		})
+
+		conv := NewConversation(ctx, &agentStub{}, provider, "m", []contractsai.Middleware{middleware})
+
+		resp, err := conv.Prompt("hello")
+		s.NoError(err)
+		s.False(calledProvider)
+		s.Equal("short circuit", resp.Text())
+	})
+
+	s.Run("propagates provider errors through middleware", func() {
+		provider := &conversationToolProviderStub{
+			promptFn: func(_ context.Context, _ contractsai.AgentPrompt) (contractsai.Response, error) {
+				return nil, assert.AnError
+			},
+		}
+
+		middleware := promptMiddlewareFunc(func(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
+			return next(ctx, prompt)
+		})
+
+		conv := NewConversation(ctx, &agentStub{}, provider, "m", []contractsai.Middleware{middleware})
+
+		resp, err := conv.Prompt("hello")
+		s.Equal(assert.AnError, err)
+		s.Nil(resp)
+		s.Empty(conv.Messages())
+	})
+
+	s.Run("skips typed nil middleware", func() {
+		provider := &conversationToolProviderStub{
+			promptFn: func(_ context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
+				s.Equal("hello", prompt.Input)
+				return &stubResponse{text: "done"}, nil
+			},
+		}
+
+		var nilMiddleware *conversationNilTestMiddleware
+		middleware := promptMiddlewareFunc(func(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
+			return next(ctx, prompt)
+		})
+
+		conv := NewConversation(ctx, &agentStub{}, provider, "m", []contractsai.Middleware{nilMiddleware, middleware})
+
+		resp, err := conv.Prompt("hello")
+		s.NoError(err)
+		s.Equal("done", resp.Text())
+	})
+}
+
+func (s *ConversationTestSuite) TestPromptThen() {
+	ctx := context.Background()
+	provider := &conversationToolProviderStub{
+		promptFn: func(_ context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
+			s.Equal("hello", prompt.Input)
+			return &stubResponse{text: "done"}, nil
+		},
+	}
+
+	conv := NewConversation(ctx, &agentStub{}, provider, "m", nil)
+
+	resp, err := conv.Prompt("hello")
+	s.Require().NoError(err)
+
+	called := 0
+	returned := resp.Then(func(response contractsai.Response) {
+		called++
+		s.Equal("done", response.Text())
+	})
+
+	s.Equal("done", returned.Text())
+	s.Equal(1, called)
+}
+
+func (s *ConversationTestSuite) TestSharedMiddlewareAcrossPromptAndStream() {
+	ctx := context.Background()
+
+	var (
+		promptInputs []string
+		streamInputs []string
+		finalized    []string
+	)
+
+	middleware := promptMiddlewareFunc(func(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
+		prompt.Input += " via middleware"
+
+		response, err := next(ctx, prompt)
+		if err != nil {
+			return nil, err
+		}
+
+		return response.Then(func(response contractsai.Response) {
+			finalized = append(finalized, response.Text())
+		}), nil
+	})
+
+	promptProvider := &conversationToolProviderStub{
+		promptFn: func(_ context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
+			promptInputs = append(promptInputs, prompt.Input)
+			return &stubResponse{text: "prompt done"}, nil
+		},
+	}
+	promptConv := NewConversation(ctx, &agentStub{}, promptProvider, "m", []contractsai.Middleware{middleware})
+
+	resp, err := promptConv.Prompt("hello")
+	s.Require().NoError(err)
+	s.Equal("prompt done", resp.Text())
+	s.Equal([]string{"hello via middleware"}, promptInputs)
+	s.Equal([]string{"prompt done"}, finalized)
+
+	streamProvider := &conversationToolProviderStub{
+		streamFn: func(gotCtx context.Context, prompt contractsai.AgentPrompt) (contractsai.StreamableResponse, error) {
+			streamInputs = append(streamInputs, prompt.Input)
+			return NewStreamableResponse(gotCtx, func(_ context.Context, emit func(contractsai.StreamEvent) error) (contractsai.Response, error) {
+				if err := emit(contractsai.StreamEvent{Type: contractsai.StreamEventTypeTextDelta, Delta: "partial"}); err != nil {
+					return nil, err
+				}
+				s.Equal([]string{"prompt done"}, finalized)
+				if err := emit(contractsai.StreamEvent{Type: contractsai.StreamEventTypeDone}); err != nil {
+					return nil, err
+				}
+
+				return &stubResponse{text: "stream done"}, nil
+			}), nil
+		},
+	}
+	streamConv := NewConversation(ctx, &agentStub{}, streamProvider, "m", []contractsai.Middleware{middleware})
+
+	stream, err := streamConv.Stream("hello")
+	s.Require().NoError(err)
+	s.Equal([]string{"prompt done"}, finalized)
+
+	err = stream.Each(func(event contractsai.StreamEvent) error {
+		return nil
+	})
+	s.NoError(err)
+	s.Equal([]string{"hello via middleware"}, streamInputs)
+	s.Equal([]string{"prompt done", "stream done"}, finalized)
+}
+
+func (s *ConversationTestSuite) TestStreamShortCircuitMiddlewareCommitsMessages() {
+	ctx := context.Background()
+	providerCalled := false
+	provider := &conversationToolProviderStub{
+		streamFn: func(context.Context, contractsai.AgentPrompt) (contractsai.StreamableResponse, error) {
+			providerCalled = true
+			return nil, nil
+		},
+	}
+
+	middleware := promptMiddlewareFunc(func(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
+		return &stubResponse{text: "short stream"}, nil
+	})
+
+	conv := NewConversation(ctx, &agentStub{}, provider, "m", []contractsai.Middleware{middleware})
+
+	stream, err := conv.Stream("hello")
+	s.Require().NoError(err)
+
+	var events []contractsai.StreamEvent
+	err = stream.Each(func(event contractsai.StreamEvent) error {
+		events = append(events, event)
+		return nil
+	})
+
+	s.NoError(err)
+	s.False(providerCalled)
+	s.Equal([]contractsai.StreamEvent{{Type: contractsai.StreamEventTypeDone}}, events)
+	s.Equal([]contractsai.Message{
+		{Role: contractsai.RoleUser, Content: "hello"},
+		{Role: contractsai.RoleAssistant, Content: "short stream"},
+	}, conv.Messages())
+}
+
+func (s *ConversationTestSuite) TestStreamShortCircuitMiddlewareRequiresResponse() {
+	ctx := context.Background()
+	providerCalled := false
+	provider := &conversationToolProviderStub{
+		streamFn: func(context.Context, contractsai.AgentPrompt) (contractsai.StreamableResponse, error) {
+			providerCalled = true
+			return nil, nil
+		},
+	}
+
+	middleware := promptMiddlewareFunc(func(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
+		return nil, nil
+	})
+
+	conv := NewConversation(ctx, &agentStub{}, provider, "m", []contractsai.Middleware{middleware})
+
+	stream, err := conv.Stream("hello")
+	s.Equal(errors.AIResponseIsNil, err)
+	s.Nil(stream)
+	s.False(providerCalled)
+	s.Empty(conv.Messages())
+}
+
 // stubResponse is a minimal Response with configurable text and tool calls.
 type stubResponse struct {
 	text      string
@@ -637,6 +941,27 @@ type stubResponse struct {
 func (r *stubResponse) Text() string                      { return r.text }
 func (r *stubResponse) Usage() contractsai.Usage          { return r.usage }
 func (r *stubResponse) ToolCalls() []contractsai.ToolCall { return r.toolCalls }
+func (r *stubResponse) Then(callback func(contractsai.Response)) contractsai.Response {
+	if callback == nil {
+		return r
+	}
+
+	callback(r)
+
+	return r
+}
+
+type promptMiddlewareFunc func(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error)
+
+func (f promptMiddlewareFunc) Handle(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
+	return f(ctx, prompt, next)
+}
+
+type conversationNilTestMiddleware struct{}
+
+func (m *conversationNilTestMiddleware) Handle(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
+	return next(ctx, prompt)
+}
 
 // stubTool records calls and returns a fixed result or error.
 type stubTool struct {

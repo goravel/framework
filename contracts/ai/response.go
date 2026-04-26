@@ -7,6 +7,8 @@ type Response interface {
 	// ToolCalls returns any tool invocations the model requested.
 	// Returns nil or an empty slice when the model returns plain text.
 	ToolCalls() []ToolCall
+	// Then registers a callback against the resolved response.
+	Then(callback func(Response)) Response
 }
 
 // Usage contains token statistics for a response.

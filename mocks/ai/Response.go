@@ -65,6 +65,54 @@ func (_c *Response_Text_Call) RunAndReturn(run func() string) *Response_Text_Cal
 	return _c
 }
 
+// Then provides a mock function with given fields: callback
+func (_m *Response) Then(callback func(ai.Response)) ai.Response {
+	ret := _m.Called(callback)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Then")
+	}
+
+	var r0 ai.Response
+	if rf, ok := ret.Get(0).(func(func(ai.Response)) ai.Response); ok {
+		r0 = rf(callback)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(ai.Response)
+		}
+	}
+
+	return r0
+}
+
+// Response_Then_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Then'
+type Response_Then_Call struct {
+	*mock.Call
+}
+
+// Then is a helper method to define mock.On call
+//   - callback func(ai.Response)
+func (_e *Response_Expecter) Then(callback interface{}) *Response_Then_Call {
+	return &Response_Then_Call{Call: _e.mock.On("Then", callback)}
+}
+
+func (_c *Response_Then_Call) Run(run func(callback func(ai.Response))) *Response_Then_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func(ai.Response)))
+	})
+	return _c
+}
+
+func (_c *Response_Then_Call) Return(_a0 ai.Response) *Response_Then_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Response_Then_Call) RunAndReturn(run func(func(ai.Response)) ai.Response) *Response_Then_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ToolCalls provides a mock function with no fields
 func (_m *Response) ToolCalls() []ai.ToolCall {
 	ret := _m.Called()

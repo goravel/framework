@@ -175,3 +175,49 @@ func TestApplication_WithContext(t *testing.T) {
 	assert.Same(t, app.resolver, aiImpl.resolver)
 	assert.Equal(t, app.config, aiImpl.config)
 }
+
+func TestApplication_Agent_WithMiddleware(t *testing.T) {
+	ctx := context.Background()
+	mockProvider := mocksai.NewProvider(t)
+	config := contractsai.Config{
+		Default: "default",
+		Providers: map[string]contractsai.ProviderConfig{
+			"default": {Via: mockProvider},
+		},
+	}
+	mockAgent := mocksai.NewAgent(t)
+	mockAgent.EXPECT().Messages().Return(nil).Once()
+	mockAgent.EXPECT().Tools().Return(nil).Once()
+
+	middleware := &applicationTestMiddleware{}
+
+	app := NewApplication(ctx, config)
+	conv, err := app.Agent(mockAgent, WithMiddleware(middleware))
+	assert.NoError(t, err)
+	convImpl, ok := conv.(*conversation)
+	assert.True(t, ok)
+
+	mockProvider.EXPECT().
+		Prompt(ctx, contractsai.AgentPrompt{Agent: convImpl, Input: "hello", Tools: nil}).
+		Return(&stubResponse{text: "before middleware"}, nil).
+		Once()
+
+	resp, err := conv.Prompt("hello")
+	assert.NoError(t, err)
+	assert.Equal(t, "before middleware after middleware", resp.Text())
+}
+
+type applicationTestMiddleware struct{}
+
+func (m *applicationTestMiddleware) Handle(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
+	response, err := next(ctx, prompt)
+	if err != nil {
+		return nil, err
+	}
+
+	return response.Then(func(response contractsai.Response) {
+		if stub, ok := response.(*middlewareResponse); ok {
+			stub.response = &stubResponse{text: response.Text() + " after middleware"}
+		}
+	}), nil
+}
