@@ -112,6 +112,53 @@ func (_c *Agent_Messages_Call) RunAndReturn(run func() []ai.Message) *Agent_Mess
 	return _c
 }
 
+// Middleware provides a mock function with no fields
+func (_m *Agent) Middleware() []ai.Middleware {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Middleware")
+	}
+
+	var r0 []ai.Middleware
+	if rf, ok := ret.Get(0).(func() []ai.Middleware); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]ai.Middleware)
+		}
+	}
+
+	return r0
+}
+
+// Agent_Middleware_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Middleware'
+type Agent_Middleware_Call struct {
+	*mock.Call
+}
+
+// Middleware is a helper method to define mock.On call
+func (_e *Agent_Expecter) Middleware() *Agent_Middleware_Call {
+	return &Agent_Middleware_Call{Call: _e.mock.On("Middleware")}
+}
+
+func (_c *Agent_Middleware_Call) Run(run func()) *Agent_Middleware_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Agent_Middleware_Call) Return(_a0 []ai.Middleware) *Agent_Middleware_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Agent_Middleware_Call) RunAndReturn(run func() []ai.Middleware) *Agent_Middleware_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Tools provides a mock function with no fields
 func (_m *Agent) Tools() []ai.Tool {
 	ret := _m.Called()

@@ -19,6 +19,10 @@ func (r *DummyAgent) Messages() []ai.Message {
 	return nil
 }
 
+func (r *DummyAgent) Middleware() []ai.Middleware {
+	return nil
+}
+
 func (r *DummyAgent) Tools() []ai.Tool {
 	return nil
 }

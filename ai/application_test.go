@@ -95,6 +95,7 @@ func TestApplication_Agent(t *testing.T) {
 			config, provider := tt.setupConfig(t)
 			agent := mocksai.NewAgent(t)
 			agent.EXPECT().Messages().Return(nil).Once()
+			agent.EXPECT().Middleware().Return(nil).Once()
 
 			app := NewApplication(ctx, config)
 			conv, err := app.Agent(agent, tt.options...)
@@ -187,6 +188,7 @@ func TestApplication_Agent_WithMiddleware(t *testing.T) {
 	}
 	mockAgent := mocksai.NewAgent(t)
 	mockAgent.EXPECT().Messages().Return(nil).Once()
+	mockAgent.EXPECT().Middleware().Return(nil).Once()
 	mockAgent.EXPECT().Tools().Return(nil).Once()
 
 	middleware := &applicationTestMiddleware{}
@@ -205,6 +207,66 @@ func TestApplication_Agent_WithMiddleware(t *testing.T) {
 	resp, err := conv.Prompt("hello")
 	assert.NoError(t, err)
 	assert.Equal(t, "before middleware after middleware", resp.Text())
+}
+
+func TestApplication_Agent_WithDefaultMiddleware(t *testing.T) {
+	ctx := context.Background()
+	mockProvider := mocksai.NewProvider(t)
+	config := contractsai.Config{
+		Default: "default",
+		Providers: map[string]contractsai.ProviderConfig{
+			"default": {Via: mockProvider},
+		},
+	}
+	mockAgent := mocksai.NewAgent(t)
+	mockAgent.EXPECT().Messages().Return(nil).Once()
+	mockAgent.EXPECT().Middleware().Return([]contractsai.Middleware{&applicationTestMiddleware{}}).Once()
+	mockAgent.EXPECT().Tools().Return(nil).Once()
+
+	app := NewApplication(ctx, config)
+	conv, err := app.Agent(mockAgent)
+	assert.NoError(t, err)
+	convImpl, ok := conv.(*conversation)
+	assert.True(t, ok)
+
+	mockProvider.EXPECT().
+		Prompt(ctx, contractsai.AgentPrompt{Agent: convImpl, Input: "hello", Tools: nil}).
+		Return(&stubResponse{text: "before middleware"}, nil).
+		Once()
+
+	resp, err := conv.Prompt("hello")
+	assert.NoError(t, err)
+	assert.Equal(t, "before middleware after middleware", resp.Text())
+}
+
+func TestApplication_Agent_MergesDefaultMiddlewareWithOptions(t *testing.T) {
+	ctx := context.Background()
+	mockProvider := mocksai.NewProvider(t)
+	config := contractsai.Config{
+		Default: "default",
+		Providers: map[string]contractsai.ProviderConfig{
+			"default": {Via: mockProvider},
+		},
+	}
+	mockAgent := mocksai.NewAgent(t)
+	mockAgent.EXPECT().Messages().Return(nil).Once()
+	mockAgent.EXPECT().Middleware().Return([]contractsai.Middleware{&applicationTestMiddleware{}}).Once()
+	mockAgent.EXPECT().Tools().Return(nil).Once()
+
+	app := NewApplication(ctx, config)
+	conv, err := app.Agent(mockAgent, WithMiddleware(&applicationTestMiddleware{}))
+	assert.NoError(t, err)
+	convImpl, ok := conv.(*conversation)
+	assert.True(t, ok)
+
+	mockProvider.EXPECT().
+		Prompt(ctx, contractsai.AgentPrompt{Agent: convImpl, Input: "hello", Tools: nil}).
+		Return(&stubResponse{text: "before middleware"}, nil).
+		Once()
+
+	resp, err := conv.Prompt("hello")
+	assert.NoError(t, err)
+	assert.Equal(t, "before middleware after middleware after middleware", resp.Text())
 }
 
 type applicationTestMiddleware struct{}

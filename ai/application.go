@@ -40,7 +40,7 @@ func (r *Application) Agent(agent contractsai.Agent, options ...contractsai.Opti
 	}
 
 	model := opts.Model
-	middlewares := slices.Clone(opts.Middlewares)
+	middlewares := append(slices.Clone(agent.Middleware()), opts.Middlewares...)
 
 	return NewConversation(r.ctx, agent, provider, model, middlewares), nil
 }

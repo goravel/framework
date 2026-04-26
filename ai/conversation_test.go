@@ -203,13 +203,15 @@ func (r *conversationProviderStub) Stream(ctx context.Context, prompt contractsa
 
 // agentStub is a minimal Agent implementation for stream tests that avoids mock expectation tracking.
 type agentStub struct {
-	messages []contractsai.Message
-	tools    []contractsai.Tool
+	messages   []contractsai.Message
+	middleware []contractsai.Middleware
+	tools      []contractsai.Tool
 }
 
-func (a *agentStub) Instructions() string            { return "" }
-func (a *agentStub) Messages() []contractsai.Message { return a.messages }
-func (a *agentStub) Tools() []contractsai.Tool       { return a.tools }
+func (a *agentStub) Instructions() string                 { return "" }
+func (a *agentStub) Middleware() []contractsai.Middleware { return a.middleware }
+func (a *agentStub) Messages() []contractsai.Message      { return a.messages }
+func (a *agentStub) Tools() []contractsai.Tool            { return a.tools }
 
 func (s *ConversationTestSuite) TestStream() {
 	ctx := context.Background()
