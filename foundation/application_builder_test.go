@@ -2,10 +2,12 @@ package foundation
 
 import (
 	"context"
+	"crypto/tls"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/stats"
 
 	contractsconsole "github.com/goravel/framework/contracts/console"
@@ -17,10 +19,10 @@ import (
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/contracts/schedule"
 	"github.com/goravel/framework/contracts/validation"
+	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksschema "github.com/goravel/framework/mocks/database/schema"
 	mocksseeder "github.com/goravel/framework/mocks/database/seeder"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
-	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
 	mocksschedule "github.com/goravel/framework/mocks/schedule"
 	mocksvalidation "github.com/goravel/framework/mocks/validation"
@@ -176,6 +178,18 @@ func (s *ApplicationBuilderTestSuite) TestWithGrpcClientInterceptors() {
 	s.NotNil(s.builder.grpcClientInterceptors)
 }
 
+func (s *ApplicationBuilderTestSuite) TestWithGrpcClientCreds() {
+	creds := credentials.NewTLS(&tls.Config{MinVersion: tls.VersionTLS12})
+	builder := s.builder.WithGrpcClientCredentials(func() map[string]credentials.TransportCredentials {
+		return map[string]credentials.TransportCredentials{
+			"mtls": creds,
+		}
+	})
+
+	s.NotNil(builder)
+	s.NotNil(s.builder.grpcClientCredentials)
+}
+
 func (s *ApplicationBuilderTestSuite) TestWithGrpcClientStatsHandlers() {
 	handler := &mockStatsHandler{}
 	builder := s.builder.WithGrpcClientStatsHandlers(func() map[string][]stats.Handler {
@@ -196,6 +210,14 @@ func (s *ApplicationBuilderTestSuite) TestWithGrpcServerInterceptors() {
 
 	s.NotNil(builder)
 	s.NotNil(s.builder.grpcServerInterceptors)
+}
+
+func (s *ApplicationBuilderTestSuite) TestWithGrpcServerCreds() {
+	creds := credentials.NewTLS(&tls.Config{MinVersion: tls.VersionTLS12})
+	builder := s.builder.WithGrpcServerCredentials(func() credentials.TransportCredentials { return creds })
+
+	s.NotNil(builder)
+	s.NotNil(s.builder.grpcServerCredentials)
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithGrpcServerStatsHandlers() {
