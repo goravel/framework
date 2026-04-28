@@ -3,43 +3,53 @@ package image
 import (
 	"io"
 
-	sharedattachment "github.com/goravel/framework/ai/attachment"
+	"github.com/goravel/framework/ai/attachment"
 	contractsai "github.com/goravel/framework/contracts/ai"
 	contractsfilesystem "github.com/goravel/framework/contracts/filesystem"
+	"github.com/goravel/framework/facades"
 )
 
-type Option func(*sharedattachment.Metadata)
+var (
+	WithFilename = attachment.WithFilename
+	WithMimeType = attachment.WithMimeType
+)
 
-func WithFilename(filename string) Option {
-	return func(metadata *sharedattachment.Metadata) {
-		metadata.Filename = filename
+func FromByte(content []byte, options ...contractsai.AttachmentOption) contractsai.Attachment {
+	return attachment.FromBytes(contractsai.AttachmentKindImage, content, resolveOptions(options))
+}
+
+func FromBase64(content string, options ...contractsai.AttachmentOption) contractsai.Attachment {
+	return attachment.FromBase64(contractsai.AttachmentKindImage, content, resolveOptions(options))
+}
+
+func FromReader(reader io.Reader, options ...contractsai.AttachmentOption) contractsai.Attachment {
+	return attachment.FromReader(contractsai.AttachmentKindImage, reader, resolveOptions(options))
+}
+
+func FromPath(path string, options ...contractsai.AttachmentOption) contractsai.Attachment {
+	return attachment.FromPath(contractsai.AttachmentKindImage, path, resolveOptions(options))
+}
+
+func FromStorage(path string, disk string, options ...contractsai.AttachmentOption) contractsai.Attachment {
+	storage := facades.Storage()
+	var driver contractsfilesystem.Driver = storage
+	if disk != "" {
+		driver = storage.Disk(disk)
 	}
+
+	return attachment.FromStorage(contractsai.AttachmentKindImage, driver, path, resolveOptions(options))
 }
 
-func WithMimeType(mimeType string) Option {
-	return func(metadata *sharedattachment.Metadata) {
-		metadata.MimeType = mimeType
-	}
+func FromUrl(url string, options ...contractsai.AttachmentOption) contractsai.Attachment {
+	return attachment.FromUrl(contractsai.AttachmentKindImage, url, resolveOptions(options))
 }
 
-func New(content []byte, options ...Option) contractsai.Attachment {
-	return sharedattachment.FromBytes(contractsai.AttachmentKindImage, content, resolveMetadata(options))
+func FromUpload(file contractsfilesystem.File, options ...contractsai.AttachmentOption) contractsai.Attachment {
+	return attachment.FromUpload(contractsai.AttachmentKindImage, file, resolveOptions(options))
 }
 
-func FromReader(reader io.Reader, options ...Option) contractsai.Attachment {
-	return sharedattachment.FromReader(contractsai.AttachmentKindImage, reader, resolveMetadata(options))
-}
-
-func FromPath(path string, options ...Option) contractsai.Attachment {
-	return sharedattachment.FromPath(contractsai.AttachmentKindImage, path, resolveMetadata(options))
-}
-
-func FromStorage(storage contractsfilesystem.Driver, path string, options ...Option) contractsai.Attachment {
-	return sharedattachment.FromStorage(contractsai.AttachmentKindImage, storage, path, resolveMetadata(options))
-}
-
-func resolveMetadata(options []Option) sharedattachment.Metadata {
-	metadata := sharedattachment.Metadata{}
+func resolveOptions(options []contractsai.AttachmentOption) contractsai.AttachmentOptions {
+	metadata := contractsai.AttachmentOptions{}
 	for _, option := range options {
 		if option != nil {
 			option(&metadata)

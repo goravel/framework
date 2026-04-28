@@ -9,6 +9,13 @@ const (
 	AttachmentKindFile  AttachmentKind = "file"
 )
 
+type AttachmentOptions struct {
+	Filename string
+	MimeType string
+}
+
+type AttachmentOption func(options *AttachmentOptions)
+
 // Attachment is request-scoped content sent with a user prompt.
 type Attachment interface {
 	Kind() AttachmentKind

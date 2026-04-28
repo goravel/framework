@@ -3,8 +3,13 @@ package attachment
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"io"
+	"mime"
+	"net/http"
+	urlpkg "net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"sync"
 
@@ -14,11 +19,6 @@ import (
 	contractsfilesystem "github.com/goravel/framework/contracts/filesystem"
 	"github.com/goravel/framework/errors"
 )
-
-type Metadata struct {
-	Filename string
-	MimeType string
-}
 
 type Resolver func(context.Context) ([]byte, string, string, error)
 
@@ -33,7 +33,19 @@ type resolved struct {
 	err     error
 }
 
-func New(kind contractsai.AttachmentKind, resolver Resolver, metadata Metadata) contractsai.Attachment {
+func WithFilename(filename string) contractsai.AttachmentOption {
+	return func(options *contractsai.AttachmentOptions) {
+		options.Filename = filename
+	}
+}
+
+func WithMimeType(mimeType string) contractsai.AttachmentOption {
+	return func(options *contractsai.AttachmentOptions) {
+		options.MimeType = mimeType
+	}
+}
+
+func New(kind contractsai.AttachmentKind, resolver Resolver, metadata contractsai.AttachmentOptions) contractsai.Attachment {
 	return &resolved{
 		kind:     kind,
 		filename: metadata.Filename,
@@ -42,20 +54,35 @@ func New(kind contractsai.AttachmentKind, resolver Resolver, metadata Metadata) 
 	}
 }
 
-func FromBytes(kind contractsai.AttachmentKind, content []byte, metadata Metadata) contractsai.Attachment {
+func FromBytes(kind contractsai.AttachmentKind, content []byte, metadata contractsai.AttachmentOptions) contractsai.Attachment {
 	return New(kind, func(context.Context) ([]byte, string, string, error) {
 		return bytes.Clone(content), "", "", nil
 	}, metadata)
 }
 
-func FromReader(kind contractsai.AttachmentKind, reader io.Reader, metadata Metadata) contractsai.Attachment {
+func FromReader(kind contractsai.AttachmentKind, reader io.Reader, metadata contractsai.AttachmentOptions) contractsai.Attachment {
 	return New(kind, func(context.Context) ([]byte, string, string, error) {
 		content, err := io.ReadAll(reader)
 		return content, "", "", err
 	}, metadata)
 }
 
-func FromPath(kind contractsai.AttachmentKind, path string, metadata Metadata) contractsai.Attachment {
+func FromString(kind contractsai.AttachmentKind, content string, metadata contractsai.AttachmentOptions) contractsai.Attachment {
+	return FromBytes(kind, []byte(content), metadata)
+}
+
+func FromBase64(kind contractsai.AttachmentKind, content string, metadata contractsai.AttachmentOptions) contractsai.Attachment {
+	return New(kind, func(context.Context) ([]byte, string, string, error) {
+		decoded, err := base64.StdEncoding.DecodeString(content)
+		if err != nil {
+			return nil, "", "", err
+		}
+
+		return decoded, "", "", nil
+	}, metadata)
+}
+
+func FromPath(kind contractsai.AttachmentKind, path string, metadata contractsai.AttachmentOptions) contractsai.Attachment {
 	return New(kind, func(context.Context) ([]byte, string, string, error) {
 		file, err := os.Open(path)
 		if err != nil {
@@ -72,7 +99,7 @@ func FromPath(kind contractsai.AttachmentKind, path string, metadata Metadata) c
 	}, metadata)
 }
 
-func FromStorage(kind contractsai.AttachmentKind, storage contractsfilesystem.Driver, path string, metadata Metadata) contractsai.Attachment {
+func FromStorage(kind contractsai.AttachmentKind, storage contractsfilesystem.Driver, path string, metadata contractsai.AttachmentOptions) contractsai.Attachment {
 	return New(kind, func(ctx context.Context) ([]byte, string, string, error) {
 		driver := storage
 		if storageWithContext := driver.WithContext(ctx); storageWithContext != nil {
@@ -91,6 +118,67 @@ func FromStorage(kind contractsai.AttachmentKind, storage contractsfilesystem.Dr
 
 		return content, filepath.Base(path), mimeType, nil
 	}, metadata)
+}
+
+func FromUrl(kind contractsai.AttachmentKind, rawURL string, metadata contractsai.AttachmentOptions) contractsai.Attachment {
+	return New(kind, func(ctx context.Context) ([]byte, string, string, error) {
+		request, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
+		if err != nil {
+			return nil, "", "", err
+		}
+
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			return nil, "", "", err
+		}
+		defer errors.Ignore(response.Body.Close)
+
+		if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
+			return nil, "", "", errors.AIAttachmentUrlResponseNotOK.Args(response.StatusCode)
+		}
+
+		content, err := io.ReadAll(response.Body)
+		if err != nil {
+			return nil, "", "", err
+		}
+
+		mimeType := response.Header.Get("Content-Type")
+		if parsedMimeType, _, err := mime.ParseMediaType(mimeType); err == nil {
+			mimeType = parsedMimeType
+		}
+
+		return content, resolveURLFilename(rawURL), mimeType, nil
+	}, metadata)
+}
+
+func FromUpload(kind contractsai.AttachmentKind, file contractsfilesystem.File, metadata contractsai.AttachmentOptions) contractsai.Attachment {
+	return New(kind, func(context.Context) ([]byte, string, string, error) {
+		content, err := os.ReadFile(file.File())
+		if err != nil {
+			return nil, "", "", err
+		}
+
+		mimeType, err := file.MimeType()
+		if err != nil {
+			mimeType = mimetype.Detect(content).String()
+		}
+
+		return content, file.GetClientOriginalName(), mimeType, nil
+	}, metadata)
+}
+
+func resolveURLFilename(rawURL string) string {
+	parsedURL, err := urlpkg.Parse(rawURL)
+	if err != nil {
+		return ""
+	}
+
+	filename := path.Base(parsedURL.Path)
+	if filename == "." || filename == "/" {
+		return ""
+	}
+
+	return filename
 }
 
 func (r *resolved) Kind() contractsai.AttachmentKind { return r.kind }

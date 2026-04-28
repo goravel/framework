@@ -648,7 +648,7 @@ func (s *ConversationTestSuite) TestExecuteTools_UsesProvidedContext() {
 
 func (s *ConversationTestSuite) TestConversationOptions() {
 	ctx := context.Background()
-	attachment := document.New([]byte("report"), document.WithFilename("report.txt"))
+	attachment := document.FromByte([]byte("report"), document.WithFilename("report.txt"))
 
 	s.Run("passes attachments without persisting them", func() {
 		provider := &conversationToolProviderStub{

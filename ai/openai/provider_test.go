@@ -327,8 +327,8 @@ func TestProviderBuildMessagesWithAttachments(t *testing.T) {
 		Agent: mockAgent,
 		Input: "describe these",
 		Attachments: []contractsai.Attachment{
-			image.New([]byte("image"), image.WithFilename("photo.png"), image.WithMimeType("image/png")),
-			document.New([]byte("document"), document.WithFilename("report.txt"), document.WithMimeType("text/plain")),
+			image.FromByte([]byte("image"), image.WithFilename("photo.png"), image.WithMimeType("image/png")),
+			document.FromByte([]byte("document"), document.WithFilename("report.txt"), document.WithMimeType("text/plain")),
 		},
 	})
 	require.NoError(t, err)
@@ -358,7 +358,7 @@ func TestProviderBuildMessagesAttachesToActiveUserTurnOnFollowUp(t *testing.T) {
 	provider := &Provider{}
 	messages, err := provider.buildMessages(context.Background(), contractsai.AgentPrompt{
 		Agent:       mockAgent,
-		Attachments: []contractsai.Attachment{document.New([]byte("document"), document.WithFilename("report.txt"))},
+		Attachments: []contractsai.Attachment{document.FromByte([]byte("document"), document.WithFilename("report.txt"))},
 	})
 	require.NoError(t, err)
 	require.Len(t, messages, 3)

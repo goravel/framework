@@ -104,7 +104,7 @@ func (r *conversation) Prompt(input string, options ...contractsai.ConversationO
 	)
 
 	for i := range MaxToolCallIterations {
-		resp, err = r.prompt(r.ctx, agentPrompt, nil)
+		resp, err = r.prompt(r.ctx, agentPrompt)
 		if err != nil {
 			clearPending()
 			return nil, err
@@ -175,8 +175,8 @@ func (r *conversation) Prompt(input string, options ...contractsai.ConversationO
 	return resp, nil
 }
 
-func (r *conversation) prompt(ctx context.Context, prompt contractsai.AgentPrompt, middlewares []contractsai.Middleware) (contractsai.Response, error) {
-	return r.runMiddlewarePipeline(ctx, prompt, middlewares, contractsai.Next(func(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
+func (r *conversation) prompt(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
+	return r.runMiddlewarePipeline(ctx, prompt, contractsai.Next(func(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
 		response, err := r.provider.Prompt(ctx, prompt)
 		if err != nil {
 			return nil, err
@@ -203,7 +203,7 @@ func (r *conversation) Stream(input string, options ...contractsai.ConversationO
 	}
 
 	initialCtx, cancelInitial := context.WithCancel(r.ctx)
-	resolvedInitialPrompt, initialMiddlewareResponse, shortCircuitResponse, err := r.prepareStreamPrompt(initialCtx, initialPrompt, nil)
+	resolvedInitialPrompt, initialMiddlewareResponse, shortCircuitResponse, err := r.prepareStreamPrompt(initialCtx, initialPrompt)
 	if err != nil {
 		cancelInitial()
 		clearPending()
@@ -274,7 +274,7 @@ func (r *conversation) Stream(input string, options ...contractsai.ConversationO
 				middlewareResponse = initialMiddlewareResponse
 				useInitialStream = false
 			} else {
-				resolvedPrompt, nextMiddlewareResponse, shortCircuitResponse, err := r.prepareStreamPrompt(streamCtx, agentPrompt, nil)
+				resolvedPrompt, nextMiddlewareResponse, shortCircuitResponse, err := r.prepareStreamPrompt(streamCtx, agentPrompt)
 				if err != nil {
 					return nil, err
 				}
@@ -376,12 +376,12 @@ func (r *conversation) Stream(input string, options ...contractsai.ConversationO
 	}), nil
 }
 
-func (r *conversation) prepareStreamPrompt(ctx context.Context, prompt contractsai.AgentPrompt, middlewares []contractsai.Middleware) (contractsai.AgentPrompt, *middlewareResponse, contractsai.Response, error) {
+func (r *conversation) prepareStreamPrompt(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.AgentPrompt, *middlewareResponse, contractsai.Response, error) {
 	resolvedPrompt := prompt
 	deferredResponse := newDeferredMiddlewareResponse()
 	calledNext := false
 
-	response, err := r.runMiddlewarePipeline(ctx, prompt, middlewares, contractsai.Next(func(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
+	response, err := r.runMiddlewarePipeline(ctx, prompt, contractsai.Next(func(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
 		calledNext = true
 		resolvedPrompt = prompt
 		return deferredResponse, nil
@@ -401,9 +401,9 @@ func (r *conversation) prepareStreamPrompt(ctx context.Context, prompt contracts
 	return resolvedPrompt, deferredResponse, nil, nil
 }
 
-func (r *conversation) runMiddlewarePipeline(ctx context.Context, prompt contractsai.AgentPrompt, middlewares []contractsai.Middleware, destination contractsai.Next) (contractsai.Response, error) {
+func (r *conversation) runMiddlewarePipeline(ctx context.Context, prompt contractsai.AgentPrompt, destination contractsai.Next) (contractsai.Response, error) {
 	next := destination
-	activeMiddlewares := append(slices.Clone(r.middlewares), filterNilMiddlewares(middlewares)...)
+	activeMiddlewares := slices.Clone(r.middlewares)
 
 	for i := len(activeMiddlewares) - 1; i >= 0; i-- {
 		middleware := activeMiddlewares[i]
