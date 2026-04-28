@@ -5,9 +5,10 @@ import "context"
 // AgentPrompt carries all inputs the provider needs to call the model.
 // Agent.Instructions() returns the system prompt; Agent.Messages() returns the runtime conversation history.
 type AgentPrompt struct {
-	Agent Agent
-	Input string
-	Model string
+	Agent       Agent
+	Input       string
+	Model       string
+	Attachments []Attachment
 	// Tools lists the tools available to the model for this request.
 	Tools []Tool
 }

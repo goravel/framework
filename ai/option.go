@@ -24,6 +24,16 @@ func WithMiddleware(middlewares ...contractsai.Middleware) contractsai.Option {
 	}
 }
 
+func WithAttachments(attachments ...contractsai.Attachment) contractsai.PromptOption {
+	return contractsai.PromptOptionFunc(func(options *contractsai.PromptOptions) {
+		options.Attachments = append(options.Attachments, filterNilAttachments(attachments)...)
+	})
+}
+
+func WithAttachment(attachment contractsai.Attachment) contractsai.PromptOption {
+	return WithAttachments(attachment)
+}
+
 func filterNilMiddlewares(middlewares []contractsai.Middleware) []contractsai.Middleware {
 	filtered := make([]contractsai.Middleware, 0, len(middlewares))
 
@@ -38,15 +48,45 @@ func filterNilMiddlewares(middlewares []contractsai.Middleware) []contractsai.Mi
 	return filtered
 }
 
+func filterNilAttachments(attachments []contractsai.Attachment) []contractsai.Attachment {
+	if len(attachments) == 0 {
+		return nil
+	}
+
+	filtered := make([]contractsai.Attachment, 0, len(attachments))
+
+	for _, attachment := range attachments {
+		if isNilAttachment(attachment) {
+			continue
+		}
+
+		filtered = append(filtered, attachment)
+	}
+
+	if len(filtered) == 0 {
+		return nil
+	}
+
+	return filtered
+}
+
 func isNilMiddleware(middleware contractsai.Middleware) bool {
-	if middleware == nil {
+	return isNilInterface(middleware)
+}
+
+func isNilAttachment(attachment contractsai.Attachment) bool {
+	return isNilInterface(attachment)
+}
+
+func isNilInterface(value any) bool {
+	if value == nil {
 		return true
 	}
 
-	value := reflect.ValueOf(middleware)
-	switch value.Kind() {
+	reflectValue := reflect.ValueOf(value)
+	switch reflectValue.Kind() {
 	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
-		return value.IsNil()
+		return reflectValue.IsNil()
 	default:
 		return false
 	}

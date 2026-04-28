@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	frameworkai "github.com/goravel/framework/ai"
 	contractsai "github.com/goravel/framework/contracts/ai"
 	"github.com/goravel/framework/errors"
 	mocksai "github.com/goravel/framework/mocks/ai"
@@ -313,6 +314,60 @@ func TestProviderPrompt(t *testing.T) {
 	}
 }
 
+func TestProviderBuildMessagesWithAttachments(t *testing.T) {
+	mockAgent := mocksai.NewAgent(t)
+	mockAgent.EXPECT().Instructions().Return("").Once()
+	mockAgent.EXPECT().Messages().Return([]contractsai.Message{
+		{Role: contractsai.RoleUser, Content: "history"},
+	}).Once()
+
+	provider := &Provider{}
+	messages, err := provider.buildMessages(context.Background(), contractsai.AgentPrompt{
+		Agent: mockAgent,
+		Input: "describe these",
+		Attachments: []contractsai.Attachment{
+			frameworkai.Image([]byte("image"), frameworkai.WithFilename("photo.png"), frameworkai.WithMimeType("image/png")),
+			frameworkai.File([]byte("document"), frameworkai.WithFilename("report.txt"), frameworkai.WithMimeType("text/plain")),
+		},
+	})
+	require.NoError(t, err)
+	require.Len(t, messages, 2)
+
+	content := marshalUserContent(t, messages[1])
+	require.Len(t, content, 3)
+	assert.Equal(t, map[string]any{"text": "describe these", "type": "text"}, content[0])
+	assert.Equal(t, "image_url", content[1]["type"])
+	imageURL := content[1]["image_url"].(map[string]any)
+	assert.Equal(t, "data:image/png;base64,aW1hZ2U=", imageURL["url"])
+	assert.Equal(t, "file", content[2]["type"])
+	file := content[2]["file"].(map[string]any)
+	assert.Equal(t, "ZG9jdW1lbnQ=", file["file_data"])
+	assert.Equal(t, "report.txt", file["filename"])
+}
+
+func TestProviderBuildMessagesAttachesToActiveUserTurnOnFollowUp(t *testing.T) {
+	mockAgent := mocksai.NewAgent(t)
+	mockAgent.EXPECT().Instructions().Return("").Once()
+	mockAgent.EXPECT().Messages().Return([]contractsai.Message{
+		{Role: contractsai.RoleUser, Content: "question"},
+		{Role: contractsai.RoleAssistant, ToolCalls: []contractsai.ToolCall{{ID: "call-1", Name: "lookup"}}},
+		{Role: contractsai.RoleToolResult, Content: "result", ToolCallID: "call-1"},
+	}).Once()
+
+	provider := &Provider{}
+	messages, err := provider.buildMessages(context.Background(), contractsai.AgentPrompt{
+		Agent:       mockAgent,
+		Attachments: []contractsai.Attachment{frameworkai.File([]byte("document"), frameworkai.WithFilename("report.txt"))},
+	})
+	require.NoError(t, err)
+	require.Len(t, messages, 3)
+
+	content := marshalUserContent(t, messages[0])
+	require.Len(t, content, 2)
+	assert.Equal(t, map[string]any{"text": "question", "type": "text"}, content[0])
+	assert.Equal(t, "file", content[1]["type"])
+}
+
 func TestProviderStream(t *testing.T) {
 	type usageCheck struct {
 		input  int
@@ -606,6 +661,27 @@ func newChatServer(t *testing.T, status int, body string, captured chan<- captur
 	mux.HandleFunc("/v1/chat/completions", handler)
 
 	return httptest.NewServer(mux)
+}
+
+func marshalUserContent(t *testing.T, message goopenai.ChatCompletionMessageParamUnion) []map[string]any {
+	t.Helper()
+
+	data, err := json.Marshal(message)
+	require.NoError(t, err)
+
+	var raw map[string]any
+	require.NoError(t, json.Unmarshal(data, &raw))
+	content, ok := raw["content"].([]any)
+	require.True(t, ok)
+
+	parts := make([]map[string]any, 0, len(content))
+	for _, part := range content {
+		item, ok := part.(map[string]any)
+		require.True(t, ok)
+		parts = append(parts, item)
+	}
+
+	return parts
 }
 
 func messageText(content any) string {

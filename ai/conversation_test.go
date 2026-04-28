@@ -645,6 +645,55 @@ func (s *ConversationTestSuite) TestExecuteTools_UsesProvidedContext() {
 	s.Same(streamCtx, tool.lastCtx)
 }
 
+func (s *ConversationTestSuite) TestPromptOptions() {
+	ctx := context.Background()
+	attachment := File([]byte("report"), WithFilename("report.txt"))
+
+	s.Run("passes per-call model and attachments without persisting attachments", func() {
+		provider := &conversationToolProviderStub{
+			promptFn: func(_ context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
+				s.Equal("call-model", prompt.Model)
+				s.Equal([]contractsai.Attachment{attachment}, prompt.Attachments)
+				return &stubResponse{text: "done"}, nil
+			},
+		}
+
+		conv := NewConversation(ctx, &agentStub{}, provider, "default-model", nil)
+
+		resp, err := conv.Prompt("hello", WithModel("call-model"), WithAttachment(attachment))
+		s.NoError(err)
+		s.Equal("done", resp.Text())
+		s.Equal([]contractsai.Message{
+			{Role: contractsai.RoleUser, Content: "hello"},
+			{Role: contractsai.RoleAssistant, Content: "done"},
+		}, conv.Messages())
+	})
+
+	s.Run("keeps attachments on tool follow-up prompt", func() {
+		calls := 0
+		provider := &conversationToolProviderStub{
+			promptFn: func(_ context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
+				calls++
+				s.Equal([]contractsai.Attachment{attachment}, prompt.Attachments)
+				if calls == 1 {
+					return &stubResponse{toolCalls: []contractsai.ToolCall{{ID: "call-1", Name: "lookup"}}}, nil
+				}
+
+				s.Equal("", prompt.Input)
+				return &stubResponse{text: "finished"}, nil
+			},
+		}
+		tool := &stubTool{name: "lookup", result: "tool result"}
+		conv := NewConversation(ctx, &agentStub{tools: []contractsai.Tool{tool}}, provider, "default-model", nil)
+
+		resp, err := conv.Prompt("hello", WithAttachment(attachment))
+		s.NoError(err)
+		s.Equal("finished", resp.Text())
+		s.Equal(2, calls)
+		s.Len(conv.Messages(), 4)
+	})
+}
+
 func (s *ConversationTestSuite) TestPromptMiddleware() {
 	ctx := context.Background()
 
