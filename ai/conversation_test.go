@@ -661,7 +661,7 @@ func (s *ConversationTestSuite) TestConversationOptions() {
 
 		conv := NewConversation(ctx, &agentStub{}, provider, "default-model", nil)
 
-		resp, err := conv.Prompt("hello", WithAttachment(attachment))
+		resp, err := conv.Prompt("hello", WithAttachments(attachment))
 		s.NoError(err)
 		s.Equal("done", resp.Text())
 		s.Equal([]contractsai.Message{
@@ -687,7 +687,7 @@ func (s *ConversationTestSuite) TestConversationOptions() {
 		tool := &stubTool{name: "lookup", result: "tool result"}
 		conv := NewConversation(ctx, &agentStub{tools: []contractsai.Tool{tool}}, provider, "default-model", nil)
 
-		resp, err := conv.Prompt("hello", WithAttachment(attachment))
+		resp, err := conv.Prompt("hello", WithAttachments(attachment))
 		s.NoError(err)
 		s.Equal("finished", resp.Text())
 		s.Equal(2, calls)

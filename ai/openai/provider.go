@@ -303,7 +303,7 @@ func (r *Provider) buildUserMessage(ctx context.Context, input string, attachmen
 
 			parts = append(parts, goopenai.FileContentPart(goopenai.ChatCompletionContentPartFileFileParam{
 				FileData: goopenai.String(base64.StdEncoding.EncodeToString(content)),
-				Filename: goopenai.String(attachment.Filename()),
+				Filename: goopenai.String(attachment.FileName()),
 			}))
 		default:
 			return goopenai.ChatCompletionMessageParamUnion{}, errors.AIUnsupportedAttachmentKind.Args(attachment.Kind())

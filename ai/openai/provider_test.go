@@ -394,7 +394,7 @@ type namedAttachment struct {
 
 func (attachment namedAttachment) Kind() contractsai.AttachmentKind { return attachment.kind }
 
-func (attachment namedAttachment) Filename() string { return attachment.filename }
+func (attachment namedAttachment) FileName() string { return attachment.filename }
 
 func (attachment namedAttachment) MimeType() string { return attachment.mimeType }
 
@@ -405,7 +405,7 @@ func (attachment namedAttachment) Content(context.Context) ([]byte, error) {
 func (unsupportedAttachment) Kind() contractsai.AttachmentKind {
 	return contractsai.AttachmentKind("audio")
 }
-func (unsupportedAttachment) Filename() string { return "audio.mp3" }
+func (unsupportedAttachment) FileName() string { return "audio.mp3" }
 func (unsupportedAttachment) MimeType() string { return "audio/mpeg" }
 func (unsupportedAttachment) Content(context.Context) ([]byte, error) {
 	return []byte("audio"), nil

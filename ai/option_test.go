@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	aifile "github.com/goravel/framework/ai/file"
 	"github.com/stretchr/testify/assert"
 
 	contractsai "github.com/goravel/framework/contracts/ai"
@@ -166,6 +167,66 @@ func TestWithMiddleware(t *testing.T) {
 	}
 }
 
+func TestWithAttachments(t *testing.T) {
+	attachmentA := aifile.DocumentFromByte([]byte("a"))
+	attachmentB := aifile.DocumentFromByte([]byte("b"))
+
+	tests := []struct {
+		name     string
+		initial  *contractsai.ConversationOptions
+		apply    func(*contractsai.ConversationOptions)
+		expected *contractsai.ConversationOptions
+		nilOpts  bool
+	}{
+		{
+			name:    "appends attachments while preserving options",
+			initial: &contractsai.ConversationOptions{},
+			apply: func(options *contractsai.ConversationOptions) {
+				WithAttachments(attachmentA, attachmentB)(options)
+			},
+			expected: &contractsai.ConversationOptions{Attachments: []contractsai.Attachment{attachmentA, attachmentB}},
+		},
+		{
+			name:    "appends to existing attachments",
+			initial: &contractsai.ConversationOptions{Attachments: []contractsai.Attachment{attachmentA}},
+			apply: func(options *contractsai.ConversationOptions) {
+				WithAttachments(attachmentB)(options)
+			},
+			expected: &contractsai.ConversationOptions{Attachments: []contractsai.Attachment{attachmentA, attachmentB}},
+		},
+		{
+			name:    "skips typed nil attachments",
+			initial: &contractsai.ConversationOptions{},
+			apply: func(options *contractsai.ConversationOptions) {
+				var attachment *optionNilTestAttachment
+				WithAttachments(attachment, attachmentA)(options)
+			},
+			expected: &contractsai.ConversationOptions{Attachments: []contractsai.Attachment{attachmentA}},
+		},
+		{
+			name:    "panics on nil options",
+			nilOpts: true,
+			apply: func(options *contractsai.ConversationOptions) {
+				WithAttachments(attachmentA)(options)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.nilOpts {
+				assert.Panics(t, func() {
+					tt.apply(nil)
+				})
+				return
+			}
+
+			tt.apply(tt.initial)
+			assert.Equal(t, tt.expected, tt.initial)
+		})
+	}
+}
+
 func TestWithStreamCode(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -277,3 +338,15 @@ type optionNilTestMiddleware struct{}
 func (m *optionNilTestMiddleware) Handle(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
 	return next(ctx, prompt)
 }
+
+type optionNilTestAttachment struct{}
+
+func (a *optionNilTestAttachment) Kind() contractsai.AttachmentKind {
+	return contractsai.AttachmentKindFile
+}
+
+func (a *optionNilTestAttachment) FileName() string { return "" }
+
+func (a *optionNilTestAttachment) MimeType() string { return "" }
+
+func (a *optionNilTestAttachment) Content(context.Context) ([]byte, error) { return nil, nil }

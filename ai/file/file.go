@@ -22,15 +22,17 @@ import (
 	"github.com/goravel/framework/facades"
 )
 
-type Resolver func(context.Context) ([]byte, string, string, error)
+type resolver func(context.Context) ([]byte, string, string, error)
 
 var attachmentHTTPClient = &http.Client{Timeout: 30 * time.Second}
+
+const attachmentURLMaxBytes = 20 << 20
 
 type resolved struct {
 	kind     contractsai.AttachmentKind
 	filename string
 	mimeType string
-	resolver Resolver
+	resolver resolver
 
 	once    sync.Once
 	content []byte
@@ -120,7 +122,7 @@ func resolveOptions(options []contractsai.AttachmentOption) contractsai.Attachme
 	return metadata
 }
 
-func newAttachment(kind contractsai.AttachmentKind, resolver Resolver, metadata contractsai.AttachmentOptions) contractsai.Attachment {
+func newAttachment(kind contractsai.AttachmentKind, resolver resolver, metadata contractsai.AttachmentOptions) contractsai.Attachment {
 	return &resolved{
 		kind:     kind,
 		mimeType: metadata.MimeType,
@@ -214,10 +216,16 @@ func fromURL(kind contractsai.AttachmentKind, rawURL string, metadata contractsa
 		if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
 			return nil, "", "", errors.AIAttachmentUrlResponseNotOK.Args(response.StatusCode)
 		}
+		if response.ContentLength > attachmentURLMaxBytes {
+			return nil, "", "", errors.AIAttachmentUrlResponseTooLarge.Args(attachmentURLMaxBytes)
+		}
 
-		content, err := io.ReadAll(response.Body)
+		content, err := io.ReadAll(io.LimitReader(response.Body, attachmentURLMaxBytes+1))
 		if err != nil {
 			return nil, "", "", err
+		}
+		if int64(len(content)) > attachmentURLMaxBytes {
+			return nil, "", "", errors.AIAttachmentUrlResponseTooLarge.Args(attachmentURLMaxBytes)
 		}
 
 		mimeType := response.Header.Get("Content-Type")
@@ -261,7 +269,7 @@ func resolveURLFilename(rawURL string) string {
 
 func (r *resolved) Kind() contractsai.AttachmentKind { return r.kind }
 
-func (r *resolved) Filename() string { return r.filename }
+func (r *resolved) FileName() string { return r.filename }
 
 func (r *resolved) MimeType() string { return r.mimeType }
 

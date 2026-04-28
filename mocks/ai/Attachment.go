@@ -81,12 +81,12 @@ func (_c *Attachment_Content_Call) RunAndReturn(run func(context.Context) ([]byt
 	return _c
 }
 
-// Filename provides a mock function with no fields
-func (_m *Attachment) Filename() string {
+// FileName provides a mock function with no fields
+func (_m *Attachment) FileName() string {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for Filename")
+		panic("no return value specified for FileName")
 	}
 
 	var r0 string
@@ -99,29 +99,29 @@ func (_m *Attachment) Filename() string {
 	return r0
 }
 
-// Attachment_Filename_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Filename'
-type Attachment_Filename_Call struct {
+// Attachment_FileName_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FileName'
+type Attachment_FileName_Call struct {
 	*mock.Call
 }
 
-// Filename is a helper method to define mock.On call
-func (_e *Attachment_Expecter) Filename() *Attachment_Filename_Call {
-	return &Attachment_Filename_Call{Call: _e.mock.On("Filename")}
+// FileName is a helper method to define mock.On call
+func (_e *Attachment_Expecter) FileName() *Attachment_FileName_Call {
+	return &Attachment_FileName_Call{Call: _e.mock.On("FileName")}
 }
 
-func (_c *Attachment_Filename_Call) Run(run func()) *Attachment_Filename_Call {
+func (_c *Attachment_FileName_Call) Run(run func()) *Attachment_FileName_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run()
 	})
 	return _c
 }
 
-func (_c *Attachment_Filename_Call) Return(_a0 string) *Attachment_Filename_Call {
+func (_c *Attachment_FileName_Call) Return(_a0 string) *Attachment_FileName_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Attachment_Filename_Call) RunAndReturn(run func() string) *Attachment_Filename_Call {
+func (_c *Attachment_FileName_Call) RunAndReturn(run func() string) *Attachment_FileName_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -11,6 +11,7 @@ import (
 
 	"github.com/goravel/framework/ai/file"
 	contractsai "github.com/goravel/framework/contracts/ai"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation"
 	mocksfilesystem "github.com/goravel/framework/mocks/filesystem"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
@@ -18,7 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestFileConstructors(t *testing.T) {
+func TestImageFromByte(t *testing.T) {
 	attachment := file.ImageFromByte([]byte("png"), file.WithMimeType("image/png"))
 
 	assert.Equal(t, contractsai.AttachmentKindImage, attachment.Kind())
@@ -26,24 +27,24 @@ func TestFileConstructors(t *testing.T) {
 	content, err := attachment.Content(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, []byte("png"), content)
-	assert.Equal(t, "", attachment.Filename())
+	assert.Equal(t, "", attachment.FileName())
 }
 
-func TestFileByteAndStringConstructorsLeaveFilenameEmpty(t *testing.T) {
+func TestDocumentFromByteAndString_LeaveFileNameEmpty(t *testing.T) {
 	attachment := file.DocumentFromByte([]byte("report"))
 	content, err := attachment.Content(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, []byte("report"), content)
-	assert.Equal(t, "", attachment.Filename())
+	assert.Equal(t, "", attachment.FileName())
 
 	attachment = file.DocumentFromString("report")
 	content, err = attachment.Content(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, []byte("report"), content)
-	assert.Equal(t, "", attachment.Filename())
+	assert.Equal(t, "", attachment.FileName())
 }
 
-func TestFileStringAndBase64Constructors(t *testing.T) {
+func TestDocumentFromStringAndImageFromBase64(t *testing.T) {
 	attachment := file.DocumentFromString("report")
 	content, err := attachment.Content(context.Background())
 	require.NoError(t, err)
@@ -56,7 +57,7 @@ func TestFileStringAndBase64Constructors(t *testing.T) {
 	assert.Equal(t, "image/png", attachment.MimeType())
 }
 
-func TestFileReaderBuffersContentOnce(t *testing.T) {
+func TestDocumentFromReader_BuffersContentOnce(t *testing.T) {
 	reader := bytes.NewBufferString("document")
 	attachment := file.DocumentFromReader(reader)
 
@@ -67,11 +68,11 @@ func TestFileReaderBuffersContentOnce(t *testing.T) {
 
 	assert.Equal(t, []byte("document"), first)
 	assert.Equal(t, first, second)
-	assert.Equal(t, "", attachment.Filename())
+	assert.Equal(t, "", attachment.FileName())
 	assert.Equal(t, "text/plain; charset=utf-8", attachment.MimeType())
 }
 
-func TestFileFromPathUsesBasename(t *testing.T) {
+func TestDocumentFromPath_UsesBasename(t *testing.T) {
 	tempFile, err := os.CreateTemp(t.TempDir(), "report-*.txt")
 	require.NoError(t, err)
 	_, err = tempFile.WriteString("report")
@@ -83,11 +84,11 @@ func TestFileFromPathUsesBasename(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, []byte("report"), content)
-	assert.Equal(t, filepathBase(tempFile.Name()), attachment.Filename())
+	assert.Equal(t, filepathBase(tempFile.Name()), attachment.FileName())
 	assert.Equal(t, "text/plain; charset=utf-8", attachment.MimeType())
 }
 
-func TestImageFromPathUsesBasename(t *testing.T) {
+func TestImageFromPath_UsesBasename(t *testing.T) {
 	tempFile, err := os.CreateTemp(t.TempDir(), "chart-*.png")
 	require.NoError(t, err)
 	_, err = tempFile.Write([]byte("image"))
@@ -99,10 +100,10 @@ func TestImageFromPathUsesBasename(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, []byte("image"), content)
-	assert.Equal(t, filepathBase(tempFile.Name()), attachment.Filename())
+	assert.Equal(t, filepathBase(tempFile.Name()), attachment.FileName())
 }
 
-func TestFileFromStorageResolvesOnce(t *testing.T) {
+func TestDocumentFromStorage_ResolvesOnce(t *testing.T) {
 	originalApp := foundation.App
 	t.Cleanup(func() {
 		foundation.App = originalApp
@@ -128,11 +129,11 @@ func TestFileFromStorageResolvesOnce(t *testing.T) {
 
 	assert.Equal(t, []byte("report"), first)
 	assert.Equal(t, first, second)
-	assert.Equal(t, "report.txt", attachment.Filename())
+	assert.Equal(t, "report.txt", attachment.FileName())
 	assert.Equal(t, "text/plain", attachment.MimeType())
 }
 
-func TestFileFromStorageUsesDefaultDisk(t *testing.T) {
+func TestDocumentFromStorage_UsesDefaultDisk(t *testing.T) {
 	originalApp := foundation.App
 	t.Cleanup(func() {
 		foundation.App = originalApp
@@ -152,11 +153,11 @@ func TestFileFromStorageUsesDefaultDisk(t *testing.T) {
 	content, err := attachment.Content(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, []byte("report"), content)
-	assert.Equal(t, "report.txt", attachment.Filename())
+	assert.Equal(t, "report.txt", attachment.FileName())
 	assert.Equal(t, "text/plain", attachment.MimeType())
 }
 
-func TestFileFromUploadResolvesOnce(t *testing.T) {
+func TestDocumentFromUpload_ResolvesOnce(t *testing.T) {
 	ctx := context.Background()
 	tempFile, err := os.CreateTemp(t.TempDir(), "report-*.txt")
 	require.NoError(t, err)
@@ -173,11 +174,11 @@ func TestFileFromUploadResolvesOnce(t *testing.T) {
 	content, err := attachment.Content(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, []byte("report"), content)
-	assert.Equal(t, "report.txt", attachment.Filename())
+	assert.Equal(t, "report.txt", attachment.FileName())
 	assert.Equal(t, "text/plain", attachment.MimeType())
 }
 
-func TestFileFromURL(t *testing.T) {
+func TestDocumentFromURL(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		assert.Equal(t, "/files/report.txt", request.URL.Path)
 		writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
@@ -190,11 +191,11 @@ func TestFileFromURL(t *testing.T) {
 	content, err := attachment.Content(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, []byte("report"), content)
-	assert.Equal(t, "report.txt", attachment.Filename())
+	assert.Equal(t, "report.txt", attachment.FileName())
 	assert.Equal(t, "text/plain", attachment.MimeType())
 }
 
-func TestFileFromURLWithoutPathLeavesFilenameEmpty(t *testing.T) {
+func TestDocumentFromURL_WithoutPathLeavesFileNameEmpty(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Content-Type", "application/octet-stream")
 		_, err := io.WriteString(writer, "data")
@@ -206,11 +207,11 @@ func TestFileFromURLWithoutPathLeavesFilenameEmpty(t *testing.T) {
 	content, err := attachment.Content(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, []byte("data"), content)
-	assert.Equal(t, "", attachment.Filename())
+	assert.Equal(t, "", attachment.FileName())
 	assert.Equal(t, "application/octet-stream", attachment.MimeType())
 }
 
-func TestFileFromURLUsesDetectedMimeTypeWhenHeaderMissing(t *testing.T) {
+func TestDocumentFromURL_UsesDetectedMimeTypeWhenHeaderMissing(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		_, err := writer.Write([]byte("plain text"))
 		require.NoError(t, err)
@@ -221,8 +222,23 @@ func TestFileFromURLUsesDetectedMimeTypeWhenHeaderMissing(t *testing.T) {
 	content, err := attachment.Content(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, []byte("plain text"), content)
-	assert.Equal(t, "report.txt", attachment.Filename())
+	assert.Equal(t, "report.txt", attachment.FileName())
 	assert.Equal(t, "text/plain", attachment.MimeType())
+}
+
+func TestDocumentFromURL_ReturnsErrorWhenResponseTooLarge(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Content-Type", "text/plain")
+		writer.Header().Set("Content-Length", "20971521")
+		writer.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	attachment := file.DocumentFromURL(server.URL + "/report.txt")
+	content, err := attachment.Content(context.Background())
+
+	assert.Nil(t, content)
+	assert.Equal(t, errors.AIAttachmentUrlResponseTooLarge.Args(20<<20), err)
 }
 
 func filepathBase(path string) string {

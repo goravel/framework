@@ -30,10 +30,6 @@ func WithAttachments(attachments ...contractsai.Attachment) contractsai.Conversa
 	}
 }
 
-func WithAttachment(attachment contractsai.Attachment) contractsai.ConversationOption {
-	return WithAttachments(attachment)
-}
-
 func filterNilMiddlewares(middlewares []contractsai.Middleware) []contractsai.Middleware {
 	filtered := make([]contractsai.Middleware, 0, len(middlewares))
 

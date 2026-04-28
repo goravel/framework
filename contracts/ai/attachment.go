@@ -20,7 +20,7 @@ type AttachmentOption func(options *AttachmentOptions)
 // Attachment is request-scoped content sent with a user prompt.
 type Attachment interface {
 	Kind() AttachmentKind
-	Filename() string
+	FileName() string
 	MimeType() string
 	Content(ctx context.Context) ([]byte, error)
 }
