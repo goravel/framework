@@ -28,13 +28,13 @@ func testHttpSessionMiddleware(next nethttp.Handler, mockConfig *configmocks.Con
 }
 
 func mockConfigFacade(mockConfig *configmocks.Config) {
-	mockConfig.On("GetString", "session.default").Return("file").Once()
-	mockConfig.On("GetInt", "session.lifetime", 120).Return(120).Once()
-	mockConfig.On("GetString", "session.path").Return("/").Once()
-	mockConfig.On("GetString", "session.domain").Return("").Once()
-	mockConfig.On("GetBool", "session.secure").Return(false).Once()
-	mockConfig.On("GetBool", "session.http_only").Return(true).Once()
-	mockConfig.On("GetString", "session.same_site").Return("").Once()
+	mockConfig.EXPECT().GetString("session.default").Return("file").Once()
+	mockConfig.EXPECT().GetInt("session.lifetime", 120).Return(120).Once()
+	mockConfig.EXPECT().GetString("session.path").Return("/").Once()
+	mockConfig.EXPECT().GetString("session.domain").Return("").Once()
+	mockConfig.EXPECT().GetBool("session.secure").Return(false).Once()
+	mockConfig.EXPECT().GetBool("session.http_only").Return(true).Once()
+	mockConfig.EXPECT().GetString("session.same_site").Return("").Once()
 }
 
 func TestStartSession(t *testing.T) {

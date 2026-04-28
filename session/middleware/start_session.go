@@ -3,7 +3,6 @@ package middleware
 import (
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/session"
-	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/color"
 )
 
@@ -40,17 +39,7 @@ func StartSession() http.Middleware {
 		req.SetSession(s)
 
 		// Set session cookie in response
-		config := session.ConfigFacade
-		ctx.Response().Cookie(http.Cookie{
-			Name:     s.GetName(),
-			Value:    s.GetID(),
-			Expires:  carbon.Now().AddMinutes(config.GetInt("session.lifetime", 120)).StdTime(),
-			Path:     config.GetString("session.path"),
-			Domain:   config.GetString("session.domain"),
-			Secure:   config.GetBool("session.secure"),
-			HttpOnly: config.GetBool("session.http_only"),
-			SameSite: config.GetString("session.same_site"),
-		})
+		session.WriteCookie(ctx)
 
 		// Continue processing request
 		req.Next()
