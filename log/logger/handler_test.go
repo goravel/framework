@@ -110,7 +110,7 @@ func (s *IOHandlerTestSuite) TestHandle() {
 
 func (s *IOHandlerTestSuite) TestHandleWithAllFields() {
 	s.mockConfig.EXPECT().GetString("app.env").Return("test").Once()
-	s.mockConfig.EXPECT().Get("logging.context.exclude", []string{}).Return([]string{}).Once()
+	s.mockConfig.EXPECT().Get("logging.context.exclude", []any{}).Return([]any{}).Once()
 
 	handler := NewIOHandler(s.buffer, s.mockConfig, s.json, log.LevelDebug, FormatterText)
 
@@ -410,7 +410,7 @@ func TestIOHandlerJSONFormat(t *testing.T) {
 func TestIOHandlerJSONFormatWithAllFields(t *testing.T) {
 	mockConfig := mocksconfig.NewConfig(t)
 	mockConfig.EXPECT().GetString("app.env").Return("test").Once()
-	mockConfig.EXPECT().Get("logging.context.exclude", []string{}).Return([]string{}).Once()
+	mockConfig.EXPECT().Get("logging.context.exclude", []any{}).Return([]any{}).Once()
 
 	j := json.New()
 	buffer := new(bytes.Buffer)

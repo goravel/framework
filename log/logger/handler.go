@@ -9,6 +9,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/spf13/cast"
+
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/log"
@@ -57,7 +59,8 @@ func (h *IOHandler) contextValues(ctx any) map[string]any {
 		return nil
 	}
 	h.excludeOnce.Do(func() {
-		user, _ := h.config.Get("logging.context.exclude", []string{}).([]string)
+		excludeList, _ := h.config.Get("logging.context.exclude", []any{}).([]any)
+		user := cast.ToStringSlice(excludeList)
 		h.exclude = newExcludeSet(user)
 	})
 	return filterContext(raw, h.exclude)
