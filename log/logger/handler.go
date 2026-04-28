@@ -42,6 +42,7 @@ func NewIOHandler(w io.Writer, config config.Config, json foundation.Json, level
 	}
 }
 
+// Enabled reports whether the given level is enabled.
 func (h *IOHandler) Enabled(level log.Level) bool {
 	return level.Level() >= h.level.Level()
 }
