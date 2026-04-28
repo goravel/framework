@@ -37,12 +37,6 @@ type resolved struct {
 	err     error
 }
 
-func WithFilename(filename string) contractsai.AttachmentOption {
-	return func(options *contractsai.AttachmentOptions) {
-		options.Filename = filename
-	}
-}
-
 func WithMimeType(mimeType string) contractsai.AttachmentOption {
 	return func(options *contractsai.AttachmentOptions) {
 		options.MimeType = mimeType
@@ -129,7 +123,6 @@ func resolveOptions(options []contractsai.AttachmentOption) contractsai.Attachme
 func newAttachment(kind contractsai.AttachmentKind, resolver Resolver, metadata contractsai.AttachmentOptions) contractsai.Attachment {
 	return &resolved{
 		kind:     kind,
-		filename: metadata.Filename,
 		mimeType: metadata.MimeType,
 		resolver: resolver,
 	}

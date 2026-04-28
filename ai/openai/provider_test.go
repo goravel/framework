@@ -326,8 +326,8 @@ func TestProviderBuildMessagesWithAttachments(t *testing.T) {
 		Agent: mockAgent,
 		Input: "describe these",
 		Attachments: []contractsai.Attachment{
-			aifile.ImageFromByte([]byte("image"), aifile.WithFilename("photo.png"), aifile.WithMimeType("image/png")),
-			aifile.DocumentFromByte([]byte("document"), aifile.WithFilename("report.txt"), aifile.WithMimeType("text/plain")),
+			aifile.ImageFromByte([]byte("image"), aifile.WithMimeType("image/png")),
+			namedAttachment{kind: contractsai.AttachmentKindFile, filename: "report.txt", mimeType: "text/plain", content: []byte("document")},
 		},
 	})
 	require.NoError(t, err)
@@ -357,7 +357,7 @@ func TestProviderBuildMessagesAttachesToActiveUserTurnOnFollowUp(t *testing.T) {
 	provider := &Provider{}
 	messages, err := provider.buildMessages(context.Background(), contractsai.AgentPrompt{
 		Agent:       mockAgent,
-		Attachments: []contractsai.Attachment{aifile.DocumentFromByte([]byte("document"), aifile.WithFilename("report.txt"))},
+		Attachments: []contractsai.Attachment{namedAttachment{kind: contractsai.AttachmentKindFile, filename: "report.txt", content: []byte("document")}},
 	})
 	require.NoError(t, err)
 	require.Len(t, messages, 3)
@@ -384,6 +384,23 @@ func TestProviderBuildMessagesUnsupportedAttachmentKind(t *testing.T) {
 }
 
 type unsupportedAttachment struct{}
+
+type namedAttachment struct {
+	kind     contractsai.AttachmentKind
+	filename string
+	mimeType string
+	content  []byte
+}
+
+func (attachment namedAttachment) Kind() contractsai.AttachmentKind { return attachment.kind }
+
+func (attachment namedAttachment) Filename() string { return attachment.filename }
+
+func (attachment namedAttachment) MimeType() string { return attachment.mimeType }
+
+func (attachment namedAttachment) Content(context.Context) ([]byte, error) {
+	return attachment.content, nil
+}
 
 func (unsupportedAttachment) Kind() contractsai.AttachmentKind {
 	return contractsai.AttachmentKind("audio")
