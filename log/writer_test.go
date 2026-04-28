@@ -391,7 +391,7 @@ func TestWriter_WithContext(t *testing.T) {
 	mockConfig.EXPECT().GetString("logging.channels.single.formatter", "text").Return("text").Once()
 	// app.env is called twice per log write (once for each handler: single + daily)
 	mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
-	// logging.context.exclude is read per handler per log write (single + daily)
+	// logging.context.exclude is read once per handler on first non-empty context (single + daily)
 	mockConfig.EXPECT().Get("logging.context.exclude", []string{}).Return([]string{}).Twice()
 
 	log, err := NewApplication(context.Background(), nil, mockConfig, json.New(), nil)

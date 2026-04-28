@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
@@ -22,11 +23,13 @@ const (
 )
 
 type IOHandler struct {
-	writer    io.Writer
-	config    config.Config
-	json      foundation.Json
-	level     slog.Leveler
-	formatter string
+	writer      io.Writer
+	config      config.Config
+	json        foundation.Json
+	level       slog.Leveler
+	formatter   string
+	excludeOnce sync.Once
+	exclude     map[string]struct{}
 }
 
 func NewIOHandler(w io.Writer, config config.Config, json foundation.Json, level slog.Leveler, formatter string) *IOHandler {
@@ -39,7 +42,6 @@ func NewIOHandler(w io.Writer, config config.Config, json foundation.Json, level
 	}
 }
 
-// Enabled reports whether the handler handles records at the given level.
 func (h *IOHandler) Enabled(level log.Level) bool {
 	return level.Level() >= h.level.Level()
 }
@@ -53,8 +55,11 @@ func (h *IOHandler) contextValues(ctx any) map[string]any {
 	if len(raw) == 0 {
 		return nil
 	}
-	exclude, _ := h.config.Get("logging.context.exclude", []string{}).([]string)
-	return filterContextValues(raw, exclude)
+	h.excludeOnce.Do(func() {
+		user, _ := h.config.Get("logging.context.exclude", []string{}).([]string)
+		h.exclude = newExcludeSet(user)
+	})
+	return filterContext(raw, h.exclude)
 }
 
 // Handle handles the Record.
@@ -189,13 +194,7 @@ type ConsoleHandler struct {
 
 func NewConsoleHandler(config config.Config, json foundation.Json, level slog.Leveler, formatter string) *ConsoleHandler {
 	return &ConsoleHandler{
-		IOHandler: &IOHandler{
-			writer:    os.Stdout,
-			config:    config,
-			json:      json,
-			level:     level,
-			formatter: formatter,
-		},
+		IOHandler: NewIOHandler(os.Stdout, config, json, level, formatter),
 	}
 }
 

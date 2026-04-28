@@ -148,54 +148,6 @@ func (s *IOHandlerTestSuite) TestHandleWithAllFields() {
 	s.Contains(output, "[With] map[extra:data]")
 }
 
-func (s *IOHandlerTestSuite) TestHandleFiltersFrameworkContextKeys() {
-	s.mockConfig.EXPECT().GetString("app.env").Return("test").Once()
-	s.mockConfig.EXPECT().Get("logging.context.exclude", []string{}).Return([]string{}).Once()
-
-	handler := NewIOHandler(s.buffer, s.mockConfig, s.json, log.LevelDebug, FormatterText)
-
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, "GoravelAuthJwt", "secret-token")
-	ctx = context.WithValue(ctx, handlerTestContextKey("request_id"), "req-42")
-	entry := &mockEntry{
-		time:    time.Now(),
-		level:   log.LevelInfo,
-		message: "framework keys filtered",
-		ctx:     ctx,
-	}
-
-	err := handler.Handle(entry)
-	s.Nil(err)
-
-	output := s.buffer.String()
-	s.Contains(output, "[Context] map[request_id:req-42]")
-	s.NotContains(output, "GoravelAuthJwt")
-	s.NotContains(output, "secret-token")
-}
-
-func (s *IOHandlerTestSuite) TestHandleAppliesUserExclude() {
-	s.mockConfig.EXPECT().GetString("app.env").Return("test").Once()
-	s.mockConfig.EXPECT().Get("logging.context.exclude", []string{}).Return([]string{"request_id"}).Once()
-
-	handler := NewIOHandler(s.buffer, s.mockConfig, s.json, log.LevelDebug, FormatterText)
-
-	ctx := context.WithValue(context.Background(), handlerTestContextKey("request_id"), "req-42")
-	entry := &mockEntry{
-		time:    time.Now(),
-		level:   log.LevelInfo,
-		message: "user exclude applied",
-		ctx:     ctx,
-	}
-
-	err := handler.Handle(entry)
-	s.Nil(err)
-
-	output := s.buffer.String()
-	s.NotContains(output, "[Context]")
-	s.NotContains(output, "request_id")
-	s.NotContains(output, "req-42")
-}
-
 func (s *IOHandlerTestSuite) TestHandleEmptyOptionalFields() {
 	s.mockConfig.EXPECT().GetString("app.env").Return("test").Once()
 

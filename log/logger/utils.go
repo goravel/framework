@@ -3,29 +3,26 @@ package logger
 import (
 	"fmt"
 	"reflect"
-	"slices"
 	"unsafe"
 )
 
-// Framework-internal context keys filtered from log output by default.
-var defaultContextExcludeKeys = map[string]struct{}{
-	"GoravelAuthJwt":           {},
-	"goravel_http_client_name": {},
-	"locale":                   {},
-	"fallback_locale":          {},
+var defaultExcludeKeys = []string{
+	"GoravelAuthJwt",
+	"goravel_http_client_name",
+	"locale",
+	"fallback_locale",
 }
 
-// getContextValues walks ctx via reflection; the standard library exposes
-// no way to enumerate a context's key/value chain.
 func getContextValues(ctx any, out map[any]any) {
-	v := reflect.Indirect(reflect.ValueOf(ctx))
-	t := reflect.TypeOf(ctx)
-	if t.Kind() == reflect.Ptr {
-		t = t.Elem()
-	}
-	if t.Kind() != reflect.Struct {
+	rv := reflect.ValueOf(ctx)
+	if !rv.IsValid() || (rv.Kind() == reflect.Ptr && rv.IsNil()) {
 		return
 	}
+	v := reflect.Indirect(rv)
+	if !v.IsValid() || v.Kind() != reflect.Struct {
+		return
+	}
+	t := v.Type()
 
 	var key, val any
 	for i := 0; i < v.NumField(); i++ {
@@ -48,17 +45,25 @@ func getContextValues(ctx any, out map[any]any) {
 	}
 }
 
-func filterContextValues(values map[any]any, exclude []string) map[string]any {
+func newExcludeSet(user []string) map[string]struct{} {
+	s := make(map[string]struct{}, len(defaultExcludeKeys)+len(user))
+	for _, k := range defaultExcludeKeys {
+		s[k] = struct{}{}
+	}
+	for _, k := range user {
+		s[k] = struct{}{}
+	}
+	return s
+}
+
+func filterContext(values map[any]any, exclude map[string]struct{}) map[string]any {
 	if len(values) == 0 {
 		return nil
 	}
 	out := make(map[string]any, len(values))
 	for k, v := range values {
 		s := fmt.Sprintf("%v", k)
-		if _, skip := defaultContextExcludeKeys[s]; skip {
-			continue
-		}
-		if slices.Contains(exclude, s) {
+		if _, drop := exclude[s]; drop {
 			continue
 		}
 		out[s] = v
