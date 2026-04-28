@@ -2,6 +2,7 @@ package openai
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"strings"
 
@@ -45,7 +46,10 @@ func NewOpenAI(config contractsconfig.Config, provider string) (*Provider, error
 
 func (r *Provider) Prompt(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
 	model := r.resolveModel(prompt.Model)
-	messages := r.buildMessages(prompt)
+	messages, err := r.buildMessages(ctx, prompt)
+	if err != nil {
+		return nil, err
+	}
 
 	params := goopenai.ChatCompletionNewParams{
 		Model:    model,
@@ -81,7 +85,10 @@ func (r *Provider) Prompt(ctx context.Context, prompt contractsai.AgentPrompt) (
 
 func (r *Provider) Stream(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.StreamableResponse, error) {
 	model := r.resolveModel(prompt.Model)
-	messages := r.buildMessages(prompt)
+	messages, err := r.buildMessages(ctx, prompt)
+	if err != nil {
+		return nil, err
+	}
 
 	params := goopenai.ChatCompletionNewParams{
 		Model:    model,
@@ -204,15 +211,33 @@ func (r *Provider) resolveModel(model string) string {
 
 // buildMessages converts the conversation history and current input into the
 // slice of OpenAI message params that the API expects.
-func (r *Provider) buildMessages(prompt contractsai.AgentPrompt) []goopenai.ChatCompletionMessageParamUnion {
+func (r *Provider) buildMessages(ctx context.Context, prompt contractsai.AgentPrompt) ([]goopenai.ChatCompletionMessageParamUnion, error) {
 	var messages []goopenai.ChatCompletionMessageParamUnion
 	if instructions := prompt.Agent.Instructions(); instructions != "" {
 		messages = append(messages, goopenai.SystemMessage(instructions))
 	}
-	for _, m := range prompt.Agent.Messages() {
+	history := prompt.Agent.Messages()
+	attachmentIndex := -1
+	if prompt.Input == "" && len(prompt.Attachments) > 0 {
+		for i := len(history) - 1; i >= 0; i-- {
+			if history[i].Role == contractsai.RoleUser {
+				attachmentIndex = i
+				break
+			}
+		}
+	}
+	for i, m := range history {
 		switch m.Role {
 		case contractsai.RoleUser:
-			messages = append(messages, goopenai.UserMessage(m.Content))
+			if i == attachmentIndex {
+				message, err := r.buildUserMessage(ctx, m.Content, prompt.Attachments)
+				if err != nil {
+					return nil, err
+				}
+				messages = append(messages, message)
+			} else {
+				messages = append(messages, goopenai.UserMessage(m.Content))
+			}
 		case contractsai.RoleAssistant:
 			if len(m.ToolCalls) > 0 {
 				// Assistant message that requested tool invocations.
@@ -239,11 +264,61 @@ func (r *Provider) buildMessages(prompt contractsai.AgentPrompt) []goopenai.Chat
 			messages = append(messages, goopenai.ToolMessage(m.Content, m.ToolCallID))
 		}
 	}
-	if prompt.Input != "" {
-		messages = append(messages, goopenai.UserMessage(prompt.Input))
+	if prompt.Input != "" || len(prompt.Attachments) > 0 && attachmentIndex == -1 {
+		message, err := r.buildUserMessage(ctx, prompt.Input, prompt.Attachments)
+		if err != nil {
+			return nil, err
+		}
+		messages = append(messages, message)
 	}
 
-	return messages
+	return messages, nil
+}
+
+func (r *Provider) buildUserMessage(ctx context.Context, input string, attachments []contractsai.Attachment) (goopenai.ChatCompletionMessageParamUnion, error) {
+	if len(attachments) == 0 {
+		return goopenai.UserMessage(input), nil
+	}
+
+	parts := make([]goopenai.ChatCompletionContentPartUnionParam, 0, len(attachments)+1)
+	if input != "" {
+		parts = append(parts, goopenai.TextContentPart(input))
+	}
+	for _, attachment := range attachments {
+		switch attachment.Kind() {
+		case contractsai.AttachmentKindImage:
+			content, err := attachment.Content(ctx)
+			if err != nil {
+				return goopenai.ChatCompletionMessageParamUnion{}, err
+			}
+
+			parts = append(parts, goopenai.ImageContentPart(goopenai.ChatCompletionContentPartImageImageURLParam{
+				URL: r.dataURL(attachment.MimeType(), content),
+			}))
+		case contractsai.AttachmentKindFile:
+			content, err := attachment.Content(ctx)
+			if err != nil {
+				return goopenai.ChatCompletionMessageParamUnion{}, err
+			}
+
+			parts = append(parts, goopenai.FileContentPart(goopenai.ChatCompletionContentPartFileFileParam{
+				FileData: goopenai.String(base64.StdEncoding.EncodeToString(content)),
+				Filename: goopenai.String(attachment.FileName()),
+			}))
+		default:
+			return goopenai.ChatCompletionMessageParamUnion{}, errors.AIUnsupportedAttachmentKind.Args(attachment.Kind())
+		}
+	}
+
+	return goopenai.UserMessage(parts), nil
+}
+
+func (r *Provider) dataURL(mimeType string, content []byte) string {
+	if mimeType == "" {
+		mimeType = "application/octet-stream"
+	}
+
+	return "data:" + mimeType + ";base64," + base64.StdEncoding.EncodeToString(content)
 }
 
 // buildTools converts a slice of Tool definitions into OpenAI tool params.
