@@ -647,7 +647,9 @@ func (s *ConversationTestSuite) TestExecuteTools_UsesProvidedContext() {
 
 func (s *ConversationTestSuite) TestConversationOptions() {
 	ctx := context.Background()
-	attachment := File([]byte("report"), WithFilename("report.txt"))
+	attachment := NewAttachment(contractsai.AttachmentKindFile, func(context.Context) ([]byte, string, string, error) {
+		return []byte("report"), "", "", nil
+	}, WithFilename("report.txt"))
 
 	s.Run("passes per-call model and attachments without persisting attachments", func() {
 		provider := &conversationToolProviderStub{

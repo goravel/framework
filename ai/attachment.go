@@ -3,71 +3,26 @@ package ai
 import (
 	"bytes"
 	"context"
-	"io"
-	"os"
-	"path/filepath"
 	"sync"
 
 	"github.com/gabriel-vasile/mimetype"
 
 	contractsai "github.com/goravel/framework/contracts/ai"
-	contractsfilesystem "github.com/goravel/framework/contracts/filesystem"
-	"github.com/goravel/framework/errors"
 )
 
 type AttachmentOption func(*attachment)
+
+type AttachmentResolver func(context.Context) ([]byte, string, string, error)
 
 type attachment struct {
 	kind     contractsai.AttachmentKind
 	filename string
 	mimeType string
-	resolver func(context.Context) ([]byte, string, string, error)
+	resolver AttachmentResolver
 
 	once    sync.Once
 	content []byte
 	err     error
-}
-
-func Image(content []byte, options ...AttachmentOption) contractsai.Attachment {
-	return newAttachment(contractsai.AttachmentKindImage, func(context.Context) ([]byte, string, string, error) {
-		return bytes.Clone(content), "", "", nil
-	}, options...)
-}
-
-func ImageFromReader(reader io.Reader, options ...AttachmentOption) contractsai.Attachment {
-	return newAttachment(contractsai.AttachmentKindImage, func(context.Context) ([]byte, string, string, error) {
-		content, err := io.ReadAll(reader)
-		return content, "", "", err
-	}, options...)
-}
-
-func ImageFromPath(path string, options ...AttachmentOption) contractsai.Attachment {
-	return newAttachmentFromPath(contractsai.AttachmentKindImage, path, options...)
-}
-
-func ImageFromStorage(storage contractsfilesystem.Driver, path string, options ...AttachmentOption) contractsai.Attachment {
-	return newAttachmentFromStorage(contractsai.AttachmentKindImage, storage, path, options...)
-}
-
-func File(content []byte, options ...AttachmentOption) contractsai.Attachment {
-	return newAttachment(contractsai.AttachmentKindFile, func(context.Context) ([]byte, string, string, error) {
-		return bytes.Clone(content), "", "", nil
-	}, options...)
-}
-
-func FileFromReader(reader io.Reader, options ...AttachmentOption) contractsai.Attachment {
-	return newAttachment(contractsai.AttachmentKindFile, func(context.Context) ([]byte, string, string, error) {
-		content, err := io.ReadAll(reader)
-		return content, "", "", err
-	}, options...)
-}
-
-func FileFromPath(path string, options ...AttachmentOption) contractsai.Attachment {
-	return newAttachmentFromPath(contractsai.AttachmentKindFile, path, options...)
-}
-
-func FileFromStorage(storage contractsfilesystem.Driver, path string, options ...AttachmentOption) contractsai.Attachment {
-	return newAttachmentFromStorage(contractsai.AttachmentKindFile, storage, path, options...)
 }
 
 func WithFilename(filename string) AttachmentOption {
@@ -82,44 +37,7 @@ func WithMimeType(mimeType string) AttachmentOption {
 	}
 }
 
-func newAttachmentFromPath(kind contractsai.AttachmentKind, path string, options ...AttachmentOption) contractsai.Attachment {
-	return newAttachment(kind, func(context.Context) ([]byte, string, string, error) {
-		file, err := os.Open(path)
-		if err != nil {
-			return nil, "", "", err
-		}
-		defer errors.Ignore(file.Close)
-
-		content, err := io.ReadAll(file)
-		if err != nil {
-			return nil, "", "", err
-		}
-
-		return content, filepath.Base(path), mimetype.Detect(content).String(), nil
-	}, options...)
-}
-
-func newAttachmentFromStorage(kind contractsai.AttachmentKind, storage contractsfilesystem.Driver, path string, options ...AttachmentOption) contractsai.Attachment {
-	return newAttachment(kind, func(ctx context.Context) ([]byte, string, string, error) {
-		if storageWithContext := storage.WithContext(ctx); storageWithContext != nil {
-			storage = storageWithContext
-		}
-
-		content, err := storage.GetBytes(path)
-		if err != nil {
-			return nil, "", "", err
-		}
-
-		mimeType, err := storage.MimeType(path)
-		if err != nil {
-			mimeType = mimetype.Detect(content).String()
-		}
-
-		return content, filepath.Base(path), mimeType, nil
-	}, options...)
-}
-
-func newAttachment(kind contractsai.AttachmentKind, resolver func(context.Context) ([]byte, string, string, error), options ...AttachmentOption) contractsai.Attachment {
+func NewAttachment(kind contractsai.AttachmentKind, resolver AttachmentResolver, options ...AttachmentOption) contractsai.Attachment {
 	attachment := &attachment{kind: kind, resolver: resolver}
 	for _, option := range options {
 		option(attachment)

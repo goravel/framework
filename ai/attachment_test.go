@@ -1,4 +1,4 @@
-package ai
+package ai_test
 
 import (
 	"bytes"
@@ -8,12 +8,15 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	frameworkai "github.com/goravel/framework/ai"
+	"github.com/goravel/framework/ai/document"
+	"github.com/goravel/framework/ai/image"
 	contractsai "github.com/goravel/framework/contracts/ai"
 	mocksfilesystem "github.com/goravel/framework/mocks/filesystem"
 )
 
 func TestAttachmentConstructors(t *testing.T) {
-	image := Image([]byte("png"), WithFilename("avatar.png"), WithMimeType("image/png"))
+	image := image.New([]byte("png"), frameworkai.WithFilename("avatar.png"), frameworkai.WithMimeType("image/png"))
 
 	assert.Equal(t, contractsai.AttachmentKindImage, image.Kind())
 	assert.Equal(t, "avatar.png", image.Filename())
@@ -25,7 +28,7 @@ func TestAttachmentConstructors(t *testing.T) {
 
 func TestAttachmentReaderBuffersContentOnce(t *testing.T) {
 	reader := bytes.NewBufferString("document")
-	file := FileFromReader(reader, WithFilename("report.txt"))
+	file := document.FromReader(reader, frameworkai.WithFilename("report.txt"))
 
 	first, err := file.Content(context.Background())
 	require.NoError(t, err)
@@ -45,7 +48,7 @@ func TestAttachmentFromStorageResolvesOnce(t *testing.T) {
 	storage.EXPECT().GetBytes("docs/report.txt").Return([]byte("report"), nil).Once()
 	storage.EXPECT().MimeType("docs/report.txt").Return("text/plain", nil).Once()
 
-	file := FileFromStorage(storage, "docs/report.txt")
+	file := document.FromStorage(storage, "docs/report.txt")
 	first, err := file.Content(ctx)
 	require.NoError(t, err)
 	second, err := file.Content(ctx)
