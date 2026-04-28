@@ -1,6 +1,6 @@
-
 # Tests
 
+- Don't run `go test ./...` unless ask to run all tests explicitly.
 - Prefer `go test <pkg>` or `-run <TestName>` over `go test ./...` (slow).
 - Use table-driven tests covering happy path, failure, and edge cases.
 - Skip trivial getters/setters unless they contain non-trivial logic.

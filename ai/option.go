@@ -6,6 +6,12 @@ import (
 	contractsai "github.com/goravel/framework/contracts/ai"
 )
 
+type conversationOptionFunc func(options *contractsai.ConversationOptions)
+
+func (option conversationOptionFunc) ApplyConversation(options *contractsai.ConversationOptions) {
+	option(options)
+}
+
 func WithProvider(provider string) contractsai.Option {
 	return func(options *contractsai.Options) {
 		options.Provider = provider
@@ -24,13 +30,25 @@ func WithMiddleware(middlewares ...contractsai.Middleware) contractsai.Option {
 	}
 }
 
-func WithAttachments(attachments ...contractsai.Attachment) contractsai.PromptOption {
-	return contractsai.PromptOptionFunc(func(options *contractsai.PromptOptions) {
+func WithConversationModel(model string) contractsai.ConversationOption {
+	return conversationOptionFunc(func(options *contractsai.ConversationOptions) {
+		options.Model = model
+	})
+}
+
+func WithConversationMiddleware(middlewares ...contractsai.Middleware) contractsai.ConversationOption {
+	return conversationOptionFunc(func(options *contractsai.ConversationOptions) {
+		options.Middlewares = append(options.Middlewares, filterNilMiddlewares(middlewares)...)
+	})
+}
+
+func WithAttachments(attachments ...contractsai.Attachment) contractsai.ConversationOption {
+	return conversationOptionFunc(func(options *contractsai.ConversationOptions) {
 		options.Attachments = append(options.Attachments, filterNilAttachments(attachments)...)
 	})
 }
 
-func WithAttachment(attachment contractsai.Attachment) contractsai.PromptOption {
+func WithAttachment(attachment contractsai.Attachment) contractsai.ConversationOption {
 	return WithAttachments(attachment)
 }
 

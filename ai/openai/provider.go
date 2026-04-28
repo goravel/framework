@@ -285,21 +285,28 @@ func (r *Provider) buildUserMessage(ctx context.Context, input string, attachmen
 		parts = append(parts, goopenai.TextContentPart(input))
 	}
 	for _, attachment := range attachments {
-		content, err := attachment.Content(ctx)
-		if err != nil {
-			return goopenai.ChatCompletionMessageParamUnion{}, err
-		}
-
 		switch attachment.Kind() {
 		case contractsai.AttachmentKindImage:
+			content, err := attachment.Content(ctx)
+			if err != nil {
+				return goopenai.ChatCompletionMessageParamUnion{}, err
+			}
+
 			parts = append(parts, goopenai.ImageContentPart(goopenai.ChatCompletionContentPartImageImageURLParam{
 				URL: r.dataURL(attachment.MimeType(), content),
 			}))
 		case contractsai.AttachmentKindFile:
+			content, err := attachment.Content(ctx)
+			if err != nil {
+				return goopenai.ChatCompletionMessageParamUnion{}, err
+			}
+
 			parts = append(parts, goopenai.FileContentPart(goopenai.ChatCompletionContentPartFileFileParam{
 				FileData: goopenai.String(base64.StdEncoding.EncodeToString(content)),
 				Filename: goopenai.String(attachment.Filename()),
 			}))
+		default:
+			return goopenai.ChatCompletionMessageParamUnion{}, errors.AIUnsupportedAttachmentKind.Args(attachment.Kind())
 		}
 	}
 

@@ -645,7 +645,7 @@ func (s *ConversationTestSuite) TestExecuteTools_UsesProvidedContext() {
 	s.Same(streamCtx, tool.lastCtx)
 }
 
-func (s *ConversationTestSuite) TestPromptOptions() {
+func (s *ConversationTestSuite) TestConversationOptions() {
 	ctx := context.Background()
 	attachment := File([]byte("report"), WithFilename("report.txt"))
 
@@ -660,7 +660,7 @@ func (s *ConversationTestSuite) TestPromptOptions() {
 
 		conv := NewConversation(ctx, &agentStub{}, provider, "default-model", nil)
 
-		resp, err := conv.Prompt("hello", WithModel("call-model"), WithAttachment(attachment))
+		resp, err := conv.Prompt("hello", WithConversationModel("call-model"), WithAttachment(attachment))
 		s.NoError(err)
 		s.Equal("done", resp.Text())
 		s.Equal([]contractsai.Message{
@@ -691,6 +691,21 @@ func (s *ConversationTestSuite) TestPromptOptions() {
 		s.Equal("finished", resp.Text())
 		s.Equal(2, calls)
 		s.Len(conv.Messages(), 4)
+	})
+
+	s.Run("skips typed nil options", func() {
+		provider := &conversationToolProviderStub{
+			promptFn: func(_ context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
+				s.Equal("default-model", prompt.Model)
+				return &stubResponse{text: "done"}, nil
+			},
+		}
+		var nilOption *conversationNilTestOption
+		conv := NewConversation(ctx, &agentStub{}, provider, "default-model", nil)
+
+		resp, err := conv.Prompt("hello", nilOption)
+		s.NoError(err)
+		s.Equal("done", resp.Text())
 	})
 }
 
@@ -1013,6 +1028,10 @@ type conversationNilTestMiddleware struct{}
 func (m *conversationNilTestMiddleware) Handle(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
 	return next(ctx, prompt)
 }
+
+type conversationNilTestOption struct{}
+
+func (m *conversationNilTestOption) ApplyConversation(options *contractsai.ConversationOptions) {}
 
 // stubTool records calls and returns a fixed result or error.
 type stubTool struct {

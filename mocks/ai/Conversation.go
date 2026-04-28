@@ -68,7 +68,7 @@ func (_c *Conversation_Messages_Call) RunAndReturn(run func() []ai.Message) *Con
 }
 
 // Prompt provides a mock function with given fields: input, options
-func (_m *Conversation) Prompt(input string, options ...ai.PromptOption) (ai.Response, error) {
+func (_m *Conversation) Prompt(input string, options ...ai.ConversationOption) (ai.Response, error) {
 	_va := make([]interface{}, len(options))
 	for _i := range options {
 		_va[_i] = options[_i]
@@ -84,10 +84,10 @@ func (_m *Conversation) Prompt(input string, options ...ai.PromptOption) (ai.Res
 
 	var r0 ai.Response
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string, ...ai.PromptOption) (ai.Response, error)); ok {
+	if rf, ok := ret.Get(0).(func(string, ...ai.ConversationOption) (ai.Response, error)); ok {
 		return rf(input, options...)
 	}
-	if rf, ok := ret.Get(0).(func(string, ...ai.PromptOption) ai.Response); ok {
+	if rf, ok := ret.Get(0).(func(string, ...ai.ConversationOption) ai.Response); ok {
 		r0 = rf(input, options...)
 	} else {
 		if ret.Get(0) != nil {
@@ -95,7 +95,7 @@ func (_m *Conversation) Prompt(input string, options ...ai.PromptOption) (ai.Res
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string, ...ai.PromptOption) error); ok {
+	if rf, ok := ret.Get(1).(func(string, ...ai.ConversationOption) error); ok {
 		r1 = rf(input, options...)
 	} else {
 		r1 = ret.Error(1)
@@ -111,18 +111,18 @@ type Conversation_Prompt_Call struct {
 
 // Prompt is a helper method to define mock.On call
 //   - input string
-//   - options ...ai.PromptOption
+//   - options ...ai.ConversationOption
 func (_e *Conversation_Expecter) Prompt(input interface{}, options ...interface{}) *Conversation_Prompt_Call {
 	return &Conversation_Prompt_Call{Call: _e.mock.On("Prompt",
 		append([]interface{}{input}, options...)...)}
 }
 
-func (_c *Conversation_Prompt_Call) Run(run func(input string, options ...ai.PromptOption)) *Conversation_Prompt_Call {
+func (_c *Conversation_Prompt_Call) Run(run func(input string, options ...ai.ConversationOption)) *Conversation_Prompt_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]ai.PromptOption, len(args)-1)
+		variadicArgs := make([]ai.ConversationOption, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(ai.PromptOption)
+				variadicArgs[i] = a.(ai.ConversationOption)
 			}
 		}
 		run(args[0].(string), variadicArgs...)
@@ -135,7 +135,7 @@ func (_c *Conversation_Prompt_Call) Return(_a0 ai.Response, _a1 error) *Conversa
 	return _c
 }
 
-func (_c *Conversation_Prompt_Call) RunAndReturn(run func(string, ...ai.PromptOption) (ai.Response, error)) *Conversation_Prompt_Call {
+func (_c *Conversation_Prompt_Call) RunAndReturn(run func(string, ...ai.ConversationOption) (ai.Response, error)) *Conversation_Prompt_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -173,7 +173,7 @@ func (_c *Conversation_Reset_Call) RunAndReturn(run func()) *Conversation_Reset_
 }
 
 // Stream provides a mock function with given fields: input, options
-func (_m *Conversation) Stream(input string, options ...ai.PromptOption) (ai.StreamableResponse, error) {
+func (_m *Conversation) Stream(input string, options ...ai.ConversationOption) (ai.StreamableResponse, error) {
 	_va := make([]interface{}, len(options))
 	for _i := range options {
 		_va[_i] = options[_i]
@@ -189,10 +189,10 @@ func (_m *Conversation) Stream(input string, options ...ai.PromptOption) (ai.Str
 
 	var r0 ai.StreamableResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string, ...ai.PromptOption) (ai.StreamableResponse, error)); ok {
+	if rf, ok := ret.Get(0).(func(string, ...ai.ConversationOption) (ai.StreamableResponse, error)); ok {
 		return rf(input, options...)
 	}
-	if rf, ok := ret.Get(0).(func(string, ...ai.PromptOption) ai.StreamableResponse); ok {
+	if rf, ok := ret.Get(0).(func(string, ...ai.ConversationOption) ai.StreamableResponse); ok {
 		r0 = rf(input, options...)
 	} else {
 		if ret.Get(0) != nil {
@@ -200,7 +200,7 @@ func (_m *Conversation) Stream(input string, options ...ai.PromptOption) (ai.Str
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string, ...ai.PromptOption) error); ok {
+	if rf, ok := ret.Get(1).(func(string, ...ai.ConversationOption) error); ok {
 		r1 = rf(input, options...)
 	} else {
 		r1 = ret.Error(1)
@@ -216,18 +216,18 @@ type Conversation_Stream_Call struct {
 
 // Stream is a helper method to define mock.On call
 //   - input string
-//   - options ...ai.PromptOption
+//   - options ...ai.ConversationOption
 func (_e *Conversation_Expecter) Stream(input interface{}, options ...interface{}) *Conversation_Stream_Call {
 	return &Conversation_Stream_Call{Call: _e.mock.On("Stream",
 		append([]interface{}{input}, options...)...)}
 }
 
-func (_c *Conversation_Stream_Call) Run(run func(input string, options ...ai.PromptOption)) *Conversation_Stream_Call {
+func (_c *Conversation_Stream_Call) Run(run func(input string, options ...ai.ConversationOption)) *Conversation_Stream_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]ai.PromptOption, len(args)-1)
+		variadicArgs := make([]ai.ConversationOption, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(ai.PromptOption)
+				variadicArgs[i] = a.(ai.ConversationOption)
 			}
 		}
 		run(args[0].(string), variadicArgs...)
@@ -240,7 +240,7 @@ func (_c *Conversation_Stream_Call) Return(_a0 ai.StreamableResponse, _a1 error)
 	return _c
 }
 
-func (_c *Conversation_Stream_Call) RunAndReturn(run func(string, ...ai.PromptOption) (ai.StreamableResponse, error)) *Conversation_Stream_Call {
+func (_c *Conversation_Stream_Call) RunAndReturn(run func(string, ...ai.ConversationOption) (ai.StreamableResponse, error)) *Conversation_Stream_Call {
 	_c.Call.Return(run)
 	return _c
 }

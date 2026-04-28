@@ -368,6 +368,32 @@ func TestProviderBuildMessagesAttachesToActiveUserTurnOnFollowUp(t *testing.T) {
 	assert.Equal(t, "file", content[1]["type"])
 }
 
+func TestProviderBuildMessagesUnsupportedAttachmentKind(t *testing.T) {
+	mockAgent := mocksai.NewAgent(t)
+	mockAgent.EXPECT().Instructions().Return("").Once()
+	mockAgent.EXPECT().Messages().Return(nil).Once()
+
+	provider := &Provider{}
+	messages, err := provider.buildMessages(context.Background(), contractsai.AgentPrompt{
+		Agent:       mockAgent,
+		Attachments: []contractsai.Attachment{unsupportedAttachment{}},
+	})
+
+	assert.Nil(t, messages)
+	assert.Equal(t, errors.AIUnsupportedAttachmentKind.Args(contractsai.AttachmentKind("audio")), err)
+}
+
+type unsupportedAttachment struct{}
+
+func (unsupportedAttachment) Kind() contractsai.AttachmentKind {
+	return contractsai.AttachmentKind("audio")
+}
+func (unsupportedAttachment) Filename() string { return "audio.mp3" }
+func (unsupportedAttachment) MimeType() string { return "audio/mpeg" }
+func (unsupportedAttachment) Content(context.Context) ([]byte, error) {
+	return []byte("audio"), nil
+}
+
 func TestProviderStream(t *testing.T) {
 	type usageCheck struct {
 		input  int

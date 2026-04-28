@@ -38,6 +38,7 @@ var (
 	AIProviderContractNotFulfilled = New("%s.via must be contracts/ai.Provider or func() (contracts/ai.Provider, error)")
 	AIResponseIsNil                = New("ai: response is nil")
 	AIStreamRunnerRequired         = New("ai stream runner is required")
+	AIUnsupportedAttachmentKind    = New("ai: unsupported attachment kind %s")
 	AIToolCallLoopExceeded         = New("ai: tool call loop exceeded %d iterations")
 	AIToolExecutionFailed          = New("ai: tool %q execution failed: %v")
 	AIToolNotFound                 = New("ai: tool %q not found")

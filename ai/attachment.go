@@ -12,6 +12,7 @@ import (
 
 	contractsai "github.com/goravel/framework/contracts/ai"
 	contractsfilesystem "github.com/goravel/framework/contracts/filesystem"
+	"github.com/goravel/framework/errors"
 )
 
 type AttachmentOption func(*attachment)
@@ -87,7 +88,7 @@ func newAttachmentFromPath(kind contractsai.AttachmentKind, path string, options
 		if err != nil {
 			return nil, "", "", err
 		}
-		defer file.Close()
+		defer errors.Ignore(file.Close)
 
 		content, err := io.ReadAll(file)
 		if err != nil {
@@ -141,7 +142,7 @@ func (r *attachment) Content(ctx context.Context) ([]byte, error) {
 			return
 		}
 
-		r.content = bytes.Clone(content)
+		r.content = content
 		if r.filename == "" {
 			r.filename = filename
 		}

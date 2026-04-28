@@ -61,14 +61,14 @@ func (r *conversation) Messages() []contractsai.Message {
 
 func (r *conversation) Tools() []contractsai.Tool { return r.agent.Tools() }
 
-func (r *conversation) Prompt(input string, options ...contractsai.PromptOption) (contractsai.Response, error) {
+func (r *conversation) Prompt(input string, options ...contractsai.ConversationOption) (contractsai.Response, error) {
 	// Serialize concurrent calls to prevent one failure from corrupting
 	// history written by another in-flight Prompt.
 	r.promptMu.Lock()
 	defer r.promptMu.Unlock()
 
 	tools := r.agent.Tools()
-	promptOptions := r.applyPromptOptions(options)
+	conversationOptions := r.applyConversationOptions(options)
 
 	// Build an isolated working copy of the message history for this call.
 	// We do not touch r.messages until the entire call succeeds.
@@ -93,8 +93,8 @@ func (r *conversation) Prompt(input string, options ...contractsai.PromptOption)
 	agentPrompt := contractsai.AgentPrompt{
 		Agent:       r,
 		Input:       input,
-		Model:       promptOptions.Model,
-		Attachments: promptOptions.Attachments,
+		Model:       conversationOptions.Model,
+		Attachments: conversationOptions.Attachments,
 		Tools:       tools,
 	}
 
@@ -104,7 +104,7 @@ func (r *conversation) Prompt(input string, options ...contractsai.PromptOption)
 	)
 
 	for i := range MaxToolCallIterations {
-		resp, err = r.prompt(r.ctx, agentPrompt, promptOptions.Middlewares)
+		resp, err = r.prompt(r.ctx, agentPrompt, conversationOptions.Middlewares)
 		if err != nil {
 			clearPending()
 			return nil, err
@@ -151,8 +151,8 @@ func (r *conversation) Prompt(input string, options ...contractsai.PromptOption)
 		agentPrompt = contractsai.AgentPrompt{
 			Agent:       r,
 			Input:       "",
-			Model:       promptOptions.Model,
-			Attachments: promptOptions.Attachments,
+			Model:       conversationOptions.Model,
+			Attachments: conversationOptions.Attachments,
 			Tools:       tools,
 		}
 	}
@@ -186,14 +186,14 @@ func (r *conversation) prompt(ctx context.Context, prompt contractsai.AgentPromp
 	}))
 }
 
-func (r *conversation) Stream(input string, options ...contractsai.PromptOption) (contractsai.StreamableResponse, error) {
+func (r *conversation) Stream(input string, options ...contractsai.ConversationOption) (contractsai.StreamableResponse, error) {
 	tools := r.agent.Tools()
-	promptOptions := r.applyPromptOptions(options)
+	conversationOptions := r.applyConversationOptions(options)
 	initialPrompt := contractsai.AgentPrompt{
 		Agent:       r,
 		Input:       input,
-		Model:       promptOptions.Model,
-		Attachments: promptOptions.Attachments,
+		Model:       conversationOptions.Model,
+		Attachments: conversationOptions.Attachments,
 		Tools:       tools,
 	}
 	clearPending := func() {
@@ -203,7 +203,7 @@ func (r *conversation) Stream(input string, options ...contractsai.PromptOption)
 	}
 
 	initialCtx, cancelInitial := context.WithCancel(r.ctx)
-	resolvedInitialPrompt, initialMiddlewareResponse, shortCircuitResponse, err := r.prepareStreamPrompt(initialCtx, initialPrompt, promptOptions.Middlewares)
+	resolvedInitialPrompt, initialMiddlewareResponse, shortCircuitResponse, err := r.prepareStreamPrompt(initialCtx, initialPrompt, conversationOptions.Middlewares)
 	if err != nil {
 		cancelInitial()
 		clearPending()
@@ -274,7 +274,7 @@ func (r *conversation) Stream(input string, options ...contractsai.PromptOption)
 				middlewareResponse = initialMiddlewareResponse
 				useInitialStream = false
 			} else {
-				resolvedPrompt, nextMiddlewareResponse, shortCircuitResponse, err := r.prepareStreamPrompt(streamCtx, agentPrompt, promptOptions.Middlewares)
+				resolvedPrompt, nextMiddlewareResponse, shortCircuitResponse, err := r.prepareStreamPrompt(streamCtx, agentPrompt, conversationOptions.Middlewares)
 				if err != nil {
 					return nil, err
 				}
@@ -366,8 +366,8 @@ func (r *conversation) Stream(input string, options ...contractsai.PromptOption)
 			agentPrompt = contractsai.AgentPrompt{
 				Agent:       r,
 				Input:       "",
-				Model:       promptOptions.Model,
-				Attachments: promptOptions.Attachments,
+				Model:       conversationOptions.Model,
+				Attachments: conversationOptions.Attachments,
 				Tools:       tools,
 			}
 		}
@@ -425,17 +425,17 @@ func (r *conversation) runMiddlewarePipeline(ctx context.Context, prompt contrac
 	return response, nil
 }
 
-func (r *conversation) applyPromptOptions(options []contractsai.PromptOption) *contractsai.PromptOptions {
-	promptOptions := &contractsai.PromptOptions{Model: r.model}
+func (r *conversation) applyConversationOptions(options []contractsai.ConversationOption) *contractsai.ConversationOptions {
+	conversationOptions := &contractsai.ConversationOptions{Model: r.model}
 	for _, option := range options {
-		if option != nil {
-			option.ApplyPrompt(promptOptions)
+		if !isNilInterface(option) {
+			option.ApplyConversation(conversationOptions)
 		}
 	}
-	promptOptions.Attachments = filterNilAttachments(promptOptions.Attachments)
-	promptOptions.Middlewares = filterNilMiddlewares(promptOptions.Middlewares)
+	conversationOptions.Attachments = filterNilAttachments(conversationOptions.Attachments)
+	conversationOptions.Middlewares = filterNilMiddlewares(conversationOptions.Middlewares)
 
-	return promptOptions
+	return conversationOptions
 }
 
 func finalizeMiddlewareResponse(middlewareResponse *middlewareResponse, response contractsai.Response) contractsai.Response {
