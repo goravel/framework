@@ -20,35 +20,35 @@ func (_m *ConversationOption) EXPECT() *ConversationOption_Expecter {
 	return &ConversationOption_Expecter{mock: &_m.Mock}
 }
 
-// ApplyConversation provides a mock function with given fields: options
-func (_m *ConversationOption) ApplyConversation(options *ai.ConversationOptions) {
+// Execute provides a mock function with given fields: options
+func (_m *ConversationOption) Execute(options *ai.ConversationOptions) {
 	_m.Called(options)
 }
 
-// ConversationOption_ApplyConversation_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ApplyConversation'
-type ConversationOption_ApplyConversation_Call struct {
+// ConversationOption_Execute_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Execute'
+type ConversationOption_Execute_Call struct {
 	*mock.Call
 }
 
-// ApplyConversation is a helper method to define mock.On call
+// Execute is a helper method to define mock.On call
 //   - options *ai.ConversationOptions
-func (_e *ConversationOption_Expecter) ApplyConversation(options interface{}) *ConversationOption_ApplyConversation_Call {
-	return &ConversationOption_ApplyConversation_Call{Call: _e.mock.On("ApplyConversation", options)}
+func (_e *ConversationOption_Expecter) Execute(options interface{}) *ConversationOption_Execute_Call {
+	return &ConversationOption_Execute_Call{Call: _e.mock.On("Execute", options)}
 }
 
-func (_c *ConversationOption_ApplyConversation_Call) Run(run func(options *ai.ConversationOptions)) *ConversationOption_ApplyConversation_Call {
+func (_c *ConversationOption_Execute_Call) Run(run func(options *ai.ConversationOptions)) *ConversationOption_Execute_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(*ai.ConversationOptions))
 	})
 	return _c
 }
 
-func (_c *ConversationOption_ApplyConversation_Call) Return() *ConversationOption_ApplyConversation_Call {
+func (_c *ConversationOption_Execute_Call) Return() *ConversationOption_Execute_Call {
 	_c.Call.Return()
 	return _c
 }
 
-func (_c *ConversationOption_ApplyConversation_Call) RunAndReturn(run func(*ai.ConversationOptions)) *ConversationOption_ApplyConversation_Call {
+func (_c *ConversationOption_Execute_Call) RunAndReturn(run func(*ai.ConversationOptions)) *ConversationOption_Execute_Call {
 	_c.Run(run)
 	return _c
 }

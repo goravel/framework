@@ -93,7 +93,7 @@ func (r *conversation) Prompt(input string, options ...contractsai.ConversationO
 	agentPrompt := contractsai.AgentPrompt{
 		Agent:       r,
 		Input:       input,
-		Model:       conversationOptions.Model,
+		Model:       r.model,
 		Attachments: conversationOptions.Attachments,
 		Tools:       tools,
 	}
@@ -104,7 +104,7 @@ func (r *conversation) Prompt(input string, options ...contractsai.ConversationO
 	)
 
 	for i := range MaxToolCallIterations {
-		resp, err = r.prompt(r.ctx, agentPrompt, conversationOptions.Middlewares)
+		resp, err = r.prompt(r.ctx, agentPrompt, nil)
 		if err != nil {
 			clearPending()
 			return nil, err
@@ -151,7 +151,7 @@ func (r *conversation) Prompt(input string, options ...contractsai.ConversationO
 		agentPrompt = contractsai.AgentPrompt{
 			Agent:       r,
 			Input:       "",
-			Model:       conversationOptions.Model,
+			Model:       r.model,
 			Attachments: conversationOptions.Attachments,
 			Tools:       tools,
 		}
@@ -192,7 +192,7 @@ func (r *conversation) Stream(input string, options ...contractsai.ConversationO
 	initialPrompt := contractsai.AgentPrompt{
 		Agent:       r,
 		Input:       input,
-		Model:       conversationOptions.Model,
+		Model:       r.model,
 		Attachments: conversationOptions.Attachments,
 		Tools:       tools,
 	}
@@ -203,7 +203,7 @@ func (r *conversation) Stream(input string, options ...contractsai.ConversationO
 	}
 
 	initialCtx, cancelInitial := context.WithCancel(r.ctx)
-	resolvedInitialPrompt, initialMiddlewareResponse, shortCircuitResponse, err := r.prepareStreamPrompt(initialCtx, initialPrompt, conversationOptions.Middlewares)
+	resolvedInitialPrompt, initialMiddlewareResponse, shortCircuitResponse, err := r.prepareStreamPrompt(initialCtx, initialPrompt, nil)
 	if err != nil {
 		cancelInitial()
 		clearPending()
@@ -274,7 +274,7 @@ func (r *conversation) Stream(input string, options ...contractsai.ConversationO
 				middlewareResponse = initialMiddlewareResponse
 				useInitialStream = false
 			} else {
-				resolvedPrompt, nextMiddlewareResponse, shortCircuitResponse, err := r.prepareStreamPrompt(streamCtx, agentPrompt, conversationOptions.Middlewares)
+				resolvedPrompt, nextMiddlewareResponse, shortCircuitResponse, err := r.prepareStreamPrompt(streamCtx, agentPrompt, nil)
 				if err != nil {
 					return nil, err
 				}
@@ -366,7 +366,7 @@ func (r *conversation) Stream(input string, options ...contractsai.ConversationO
 			agentPrompt = contractsai.AgentPrompt{
 				Agent:       r,
 				Input:       "",
-				Model:       conversationOptions.Model,
+				Model:       r.model,
 				Attachments: conversationOptions.Attachments,
 				Tools:       tools,
 			}
@@ -426,14 +426,13 @@ func (r *conversation) runMiddlewarePipeline(ctx context.Context, prompt contrac
 }
 
 func (r *conversation) applyConversationOptions(options []contractsai.ConversationOption) *contractsai.ConversationOptions {
-	conversationOptions := &contractsai.ConversationOptions{Model: r.model}
+	conversationOptions := &contractsai.ConversationOptions{}
 	for _, option := range options {
 		if !isNilInterface(option) {
-			option.ApplyConversation(conversationOptions)
+			option(conversationOptions)
 		}
 	}
 	conversationOptions.Attachments = filterNilAttachments(conversationOptions.Attachments)
-	conversationOptions.Middlewares = filterNilMiddlewares(conversationOptions.Middlewares)
 
 	return conversationOptions
 }

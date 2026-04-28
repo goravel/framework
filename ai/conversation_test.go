@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/goravel/framework/ai/document"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
@@ -647,14 +648,12 @@ func (s *ConversationTestSuite) TestExecuteTools_UsesProvidedContext() {
 
 func (s *ConversationTestSuite) TestConversationOptions() {
 	ctx := context.Background()
-	attachment := NewAttachment(contractsai.AttachmentKindFile, func(context.Context) ([]byte, string, string, error) {
-		return []byte("report"), "", "", nil
-	}, WithFilename("report.txt"))
+	attachment := document.New([]byte("report"), document.WithFilename("report.txt"))
 
-	s.Run("passes per-call model and attachments without persisting attachments", func() {
+	s.Run("passes attachments without persisting them", func() {
 		provider := &conversationToolProviderStub{
 			promptFn: func(_ context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
-				s.Equal("call-model", prompt.Model)
+				s.Equal("default-model", prompt.Model)
 				s.Equal([]contractsai.Attachment{attachment}, prompt.Attachments)
 				return &stubResponse{text: "done"}, nil
 			},
@@ -662,7 +661,7 @@ func (s *ConversationTestSuite) TestConversationOptions() {
 
 		conv := NewConversation(ctx, &agentStub{}, provider, "default-model", nil)
 
-		resp, err := conv.Prompt("hello", WithConversationModel("call-model"), WithAttachment(attachment))
+		resp, err := conv.Prompt("hello", WithAttachment(attachment))
 		s.NoError(err)
 		s.Equal("done", resp.Text())
 		s.Equal([]contractsai.Message{
@@ -702,7 +701,7 @@ func (s *ConversationTestSuite) TestConversationOptions() {
 				return &stubResponse{text: "done"}, nil
 			},
 		}
-		var nilOption *conversationNilTestOption
+		var nilOption contractsai.ConversationOption
 		conv := NewConversation(ctx, &agentStub{}, provider, "default-model", nil)
 
 		resp, err := conv.Prompt("hello", nilOption)
@@ -1030,10 +1029,6 @@ type conversationNilTestMiddleware struct{}
 func (m *conversationNilTestMiddleware) Handle(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
 	return next(ctx, prompt)
 }
-
-type conversationNilTestOption struct{}
-
-func (m *conversationNilTestOption) ApplyConversation(options *contractsai.ConversationOptions) {}
 
 // stubTool records calls and returns a fixed result or error.
 type stubTool struct {

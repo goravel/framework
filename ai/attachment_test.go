@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	frameworkai "github.com/goravel/framework/ai"
 	"github.com/goravel/framework/ai/document"
 	"github.com/goravel/framework/ai/image"
 	contractsai "github.com/goravel/framework/contracts/ai"
@@ -16,7 +15,7 @@ import (
 )
 
 func TestAttachmentConstructors(t *testing.T) {
-	image := image.New([]byte("png"), frameworkai.WithFilename("avatar.png"), frameworkai.WithMimeType("image/png"))
+	image := image.New([]byte("png"), image.WithFilename("avatar.png"), image.WithMimeType("image/png"))
 
 	assert.Equal(t, contractsai.AttachmentKindImage, image.Kind())
 	assert.Equal(t, "avatar.png", image.Filename())
@@ -28,7 +27,7 @@ func TestAttachmentConstructors(t *testing.T) {
 
 func TestAttachmentReaderBuffersContentOnce(t *testing.T) {
 	reader := bytes.NewBufferString("document")
-	file := document.FromReader(reader, frameworkai.WithFilename("report.txt"))
+	file := document.FromReader(reader, document.WithFilename("report.txt"))
 
 	first, err := file.Content(context.Background())
 	require.NoError(t, err)

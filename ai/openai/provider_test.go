@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	frameworkai "github.com/goravel/framework/ai"
 	"github.com/goravel/framework/ai/document"
 	"github.com/goravel/framework/ai/image"
 	contractsai "github.com/goravel/framework/contracts/ai"
@@ -328,8 +327,8 @@ func TestProviderBuildMessagesWithAttachments(t *testing.T) {
 		Agent: mockAgent,
 		Input: "describe these",
 		Attachments: []contractsai.Attachment{
-			image.New([]byte("image"), frameworkai.WithFilename("photo.png"), frameworkai.WithMimeType("image/png")),
-			document.New([]byte("document"), frameworkai.WithFilename("report.txt"), frameworkai.WithMimeType("text/plain")),
+			image.New([]byte("image"), image.WithFilename("photo.png"), image.WithMimeType("image/png")),
+			document.New([]byte("document"), document.WithFilename("report.txt"), document.WithMimeType("text/plain")),
 		},
 	})
 	require.NoError(t, err)
@@ -359,7 +358,7 @@ func TestProviderBuildMessagesAttachesToActiveUserTurnOnFollowUp(t *testing.T) {
 	provider := &Provider{}
 	messages, err := provider.buildMessages(context.Background(), contractsai.AgentPrompt{
 		Agent:       mockAgent,
-		Attachments: []contractsai.Attachment{document.New([]byte("document"), frameworkai.WithFilename("report.txt"))},
+		Attachments: []contractsai.Attachment{document.New([]byte("document"), document.WithFilename("report.txt"))},
 	})
 	require.NoError(t, err)
 	require.Len(t, messages, 3)
