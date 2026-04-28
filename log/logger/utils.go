@@ -1,47 +1,67 @@
 package logger
 
 import (
+	"fmt"
 	"reflect"
+	"slices"
 	"unsafe"
 )
 
-// getContextValues gets all key-value pairs from the context
-func getContextValues(ctx any, values map[any]any) {
-	contextValues := reflect.Indirect(reflect.ValueOf(ctx))
-	contextKeys := reflect.TypeOf(ctx)
-	if contextKeys.Kind() == reflect.Ptr {
-		contextKeys = contextKeys.Elem()
-	}
+// Framework-internal context keys filtered from log output by default.
+var defaultContextExcludeKeys = map[string]struct{}{
+	"GoravelAuthJwt":           {},
+	"goravel_http_client_name": {},
+	"locale":                   {},
+	"fallback_locale":          {},
+}
 
-	if contextKeys.Kind() != reflect.Struct {
+// getContextValues walks ctx via reflection; the standard library exposes
+// no way to enumerate a context's key/value chain.
+func getContextValues(ctx any, out map[any]any) {
+	v := reflect.Indirect(reflect.ValueOf(ctx))
+	t := reflect.TypeOf(ctx)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	if t.Kind() != reflect.Struct {
 		return
 	}
 
-	value := struct {
-		Key any
-		Val any
-	}{}
-
-	for i := 0; i < contextValues.NumField(); i++ {
-		reflectValue := contextValues.Field(i)
-		if !reflectValue.CanAddr() {
+	var key, val any
+	for i := 0; i < v.NumField(); i++ {
+		f := v.Field(i)
+		if !f.CanAddr() {
 			continue
 		}
-
-		reflectValue = reflect.NewAt(reflectValue.Type(), unsafe.Pointer(reflectValue.UnsafeAddr())).Elem()
-		reflectField := contextKeys.Field(i)
-
-		switch reflectField.Name {
+		f = reflect.NewAt(f.Type(), unsafe.Pointer(f.UnsafeAddr())).Elem()
+		switch t.Field(i).Name {
 		case "Context":
-			getContextValues(reflectValue.Interface(), values)
+			getContextValues(f.Interface(), out)
 		case "key":
-			value.Key = reflectValue.Interface()
+			key = f.Interface()
 		case "val":
-			value.Val = reflectValue.Interface()
+			val = f.Interface()
 		}
 	}
-
-	if value.Key != nil {
-		values[value.Key] = value.Val
+	if key != nil {
+		out[key] = val
 	}
+}
+
+func filterContextValues(values map[any]any, exclude []string) map[string]any {
+	if len(values) == 0 {
+		return nil
+	}
+	out := make(map[string]any, len(values))
+	for k, v := range values {
+		s := fmt.Sprintf("%v", k)
+		if _, skip := defaultContextExcludeKeys[s]; skip {
+			continue
+		}
+		if slices.Contains(exclude, s) {
+			continue
+		}
+		out[s] = v
+	}
+	return out
 }

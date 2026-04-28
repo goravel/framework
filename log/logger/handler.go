@@ -44,6 +44,19 @@ func (h *IOHandler) Enabled(level log.Level) bool {
 	return level.Level() >= h.level.Level()
 }
 
+func (h *IOHandler) contextValues(ctx any) map[string]any {
+	if ctx == nil {
+		return nil
+	}
+	raw := make(map[any]any)
+	getContextValues(ctx, raw)
+	if len(raw) == 0 {
+		return nil
+	}
+	exclude, _ := h.config.Get("logging.context.exclude", []string{}).([]string)
+	return filterContextValues(raw, exclude)
+}
+
 // Handle handles the Record.
 func (h *IOHandler) Handle(entry log.Entry) error {
 	switch h.formatter {
@@ -72,12 +85,8 @@ func (h *IOHandler) handleText(entry log.Entry) error {
 	if v := entry.Code(); v != "" {
 		_, _ = fmt.Fprintf(&b, "[Code] %+v\n", v)
 	}
-	if v := entry.Context(); v != nil {
-		values := make(map[any]any)
-		getContextValues(v, values)
-		if len(values) > 0 {
-			_, _ = fmt.Fprintf(&b, "[Context] %+v\n", values)
-		}
+	if values := h.contextValues(entry.Context()); len(values) > 0 {
+		_, _ = fmt.Fprintf(&b, "[Context] %+v\n", values)
 	}
 	if v := entry.Domain(); v != "" {
 		_, _ = fmt.Fprintf(&b, "[Domain] %+v\n", v)
@@ -131,17 +140,8 @@ func (h *IOHandler) handleJSON(entry log.Entry) error {
 	if v := entry.Code(); v != "" {
 		data["code"] = v
 	}
-	if v := entry.Context(); v != nil {
-		values := make(map[any]any)
-		getContextValues(v, values)
-		if len(values) > 0 {
-			// Convert map[any]any to map[string]any for JSON serialization
-			stringValues := make(map[string]any)
-			for k, val := range values {
-				stringValues[fmt.Sprintf("%v", k)] = val
-			}
-			data["context"] = stringValues
-		}
+	if values := h.contextValues(entry.Context()); len(values) > 0 {
+		data["context"] = values
 	}
 	if v := entry.Domain(); v != "" {
 		data["domain"] = v

@@ -9,6 +9,10 @@ import (
 
 type testContextKey any
 
+// utilsContextKey mirrors the typed-string pattern used by translation/translator.go
+// (`type contextKey string`) so we exercise the stringification path.
+type utilsContextKey string
+
 func TestGetContextValues(t *testing.T) {
 	ctx := context.Background()
 	values := make(map[any]any)
@@ -32,4 +36,62 @@ func TestGetContextValues(t *testing.T) {
 		"c": map[string]any{"d": "e"},
 		"d": T{A: "a"},
 	}, values)
+}
+
+func TestFilterContextValues(t *testing.T) {
+	tests := []struct {
+		name    string
+		values  map[any]any
+		exclude []string
+		expect  map[string]any
+	}{
+		{
+			name:   "empty input returns nil",
+			values: map[any]any{},
+			expect: nil,
+		},
+		{
+			name: "default-exclude drops framework keys with empty user config",
+			values: map[any]any{
+				"GoravelAuthJwt":           "secret",
+				"goravel_http_client_name": "client-a",
+				"locale":                   "en",
+				"fallback_locale":          "en-US",
+				"request_id":               "req-1",
+			},
+			expect: map[string]any{"request_id": "req-1"},
+		},
+		{
+			name: "user exclude extends defaults",
+			values: map[any]any{
+				"GoravelAuthJwt": "secret",
+				"trace_id":       "t-1",
+				"request_id":     "req-1",
+			},
+			exclude: []string{"trace_id"},
+			expect:  map[string]any{"request_id": "req-1"},
+		},
+		{
+			name: "typed-string keys match by stringified form",
+			values: map[any]any{
+				utilsContextKey("locale"):     "en",
+				utilsContextKey("request_id"): "req-1",
+			},
+			expect: map[string]any{"request_id": "req-1"},
+		},
+		{
+			name: "non-string keys are kept under their %v form",
+			values: map[any]any{
+				42: "answer",
+			},
+			expect: map[string]any{"42": "answer"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := filterContextValues(tt.values, tt.exclude)
+			assert.Equal(t, tt.expect, result)
+		})
+	}
 }
