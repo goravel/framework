@@ -60,11 +60,20 @@ func filterContext(values map[any]any, exclude map[string]struct{}) map[string]a
 	if len(values) == 0 {
 		return nil
 	}
-	out := make(map[string]any, len(values))
+	var out map[string]any
 	for k, v := range values {
-		s := fmt.Sprintf("%v", k)
+		var s string
+		if value, ok := k.(string); ok {
+			s = value
+		} else {
+			s = fmt.Sprintf("%v", k)
+		}
+
 		if _, drop := exclude[s]; drop {
 			continue
+		}
+		if out == nil {
+			out = make(map[string]any)
 		}
 		out[s] = v
 	}
