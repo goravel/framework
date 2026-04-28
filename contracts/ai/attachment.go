@@ -12,6 +12,8 @@ const (
 type AttachmentOptions struct {
 	Filename string
 	MimeType string
+	// Only used by FromStorage.
+	Disk string
 }
 
 type AttachmentOption func(options *AttachmentOptions)

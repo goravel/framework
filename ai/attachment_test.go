@@ -13,52 +13,50 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/goravel/framework/ai/document"
-	"github.com/goravel/framework/ai/image"
+	aifile "github.com/goravel/framework/ai/file"
 	contractsai "github.com/goravel/framework/contracts/ai"
 	mocksfilesystem "github.com/goravel/framework/mocks/filesystem"
-	mocksfilesystemdriver "github.com/goravel/framework/mocks/filesystem"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 )
 
 func TestAttachmentConstructors(t *testing.T) {
-	image := image.FromByte([]byte("png"), image.WithFilename("avatar.png"), image.WithMimeType("image/png"))
+	attachment := aifile.ImageFromByte([]byte("png"), aifile.WithFilename("avatar.png"), aifile.WithMimeType("image/png"))
 
-	assert.Equal(t, contractsai.AttachmentKindImage, image.Kind())
-	assert.Equal(t, "avatar.png", image.Filename())
-	assert.Equal(t, "image/png", image.MimeType())
-	content, err := image.Content(context.Background())
+	assert.Equal(t, contractsai.AttachmentKindImage, attachment.Kind())
+	assert.Equal(t, "avatar.png", attachment.Filename())
+	assert.Equal(t, "image/png", attachment.MimeType())
+	content, err := attachment.Content(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, []byte("png"), content)
 }
 
 func TestAttachmentStringAndBase64Constructors(t *testing.T) {
-	file := document.FromString("report", document.WithFilename("report.txt"))
-	content, err := file.Content(context.Background())
+	attachment := aifile.DocumentFromString("report", aifile.WithFilename("report.txt"))
+	content, err := attachment.Content(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, []byte("report"), content)
-	assert.Equal(t, "report.txt", file.Filename())
+	assert.Equal(t, "report.txt", attachment.Filename())
 
-	image := image.FromBase64("aW1hZ2U=", image.WithMimeType("image/png"))
-	content, err = image.Content(context.Background())
+	attachment = aifile.ImageFromBase64("aW1hZ2U=", aifile.WithMimeType("image/png"))
+	content, err = attachment.Content(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, []byte("image"), content)
-	assert.Equal(t, "image/png", image.MimeType())
+	assert.Equal(t, "image/png", attachment.MimeType())
 }
 
 func TestAttachmentReaderBuffersContentOnce(t *testing.T) {
 	reader := bytes.NewBufferString("document")
-	file := document.FromReader(reader, document.WithFilename("report.txt"))
+	attachment := aifile.DocumentFromReader(reader, aifile.WithFilename("report.txt"))
 
-	first, err := file.Content(context.Background())
+	first, err := attachment.Content(context.Background())
 	require.NoError(t, err)
-	second, err := file.Content(context.Background())
+	second, err := attachment.Content(context.Background())
 	require.NoError(t, err)
 
 	assert.Equal(t, []byte("document"), first)
 	assert.Equal(t, first, second)
-	assert.Equal(t, "report.txt", file.Filename())
-	assert.Equal(t, "text/plain; charset=utf-8", file.MimeType())
+	assert.Equal(t, "report.txt", attachment.Filename())
+	assert.Equal(t, "text/plain; charset=utf-8", attachment.MimeType())
 }
 
 func TestAttachmentFromStorageResolvesOnce(t *testing.T) {
@@ -68,7 +66,7 @@ func TestAttachmentFromStorageResolvesOnce(t *testing.T) {
 	})
 
 	ctx := context.Background()
-	driver := mocksfilesystemdriver.NewDriver(t)
+	driver := mocksfilesystem.NewDriver(t)
 	storage := mocksfilesystem.NewStorage(t)
 	storage.EXPECT().Disk("docs").Return(driver).Once()
 	driver.EXPECT().WithContext(ctx).Return(driver).Once()
@@ -79,16 +77,16 @@ func TestAttachmentFromStorageResolvesOnce(t *testing.T) {
 	app.EXPECT().MakeStorage().Return(storage).Once()
 	foundation.App = app
 
-	file := document.FromStorage("report.txt", "docs")
-	first, err := file.Content(ctx)
+	attachment := aifile.DocumentFromStorage("report.txt", aifile.WithDisk("docs"))
+	first, err := attachment.Content(ctx)
 	require.NoError(t, err)
-	second, err := file.Content(ctx)
+	second, err := attachment.Content(ctx)
 	require.NoError(t, err)
 
 	assert.Equal(t, []byte("report"), first)
 	assert.Equal(t, first, second)
-	assert.Equal(t, "report.txt", file.Filename())
-	assert.Equal(t, "text/plain", file.MimeType())
+	assert.Equal(t, "report.txt", attachment.Filename())
+	assert.Equal(t, "text/plain", attachment.MimeType())
 }
 
 func TestAttachmentFromUploadResolvesOnce(t *testing.T) {
@@ -104,7 +102,7 @@ func TestAttachmentFromUploadResolvesOnce(t *testing.T) {
 	file.EXPECT().MimeType().Return("text/plain", nil).Once()
 	file.EXPECT().GetClientOriginalName().Return("report.txt").Once()
 
-	upload := document.FromUpload(file)
+	upload := aifile.DocumentFromUpload(file)
 	content, err := upload.Content(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, []byte("report"), content)
@@ -121,7 +119,7 @@ func TestAttachmentFromUrl(t *testing.T) {
 	}))
 	defer server.Close()
 
-	attachment := document.FromUrl(server.URL + "/files/report.txt")
+	attachment := aifile.DocumentFromURL(server.URL + "/files/report.txt")
 	content, err := attachment.Content(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, []byte("report"), content)

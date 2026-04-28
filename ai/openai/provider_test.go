@@ -13,8 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/goravel/framework/ai/document"
-	"github.com/goravel/framework/ai/image"
+	aifile "github.com/goravel/framework/ai/file"
 	contractsai "github.com/goravel/framework/contracts/ai"
 	"github.com/goravel/framework/errors"
 	mocksai "github.com/goravel/framework/mocks/ai"
@@ -327,8 +326,8 @@ func TestProviderBuildMessagesWithAttachments(t *testing.T) {
 		Agent: mockAgent,
 		Input: "describe these",
 		Attachments: []contractsai.Attachment{
-			image.FromByte([]byte("image"), image.WithFilename("photo.png"), image.WithMimeType("image/png")),
-			document.FromByte([]byte("document"), document.WithFilename("report.txt"), document.WithMimeType("text/plain")),
+			aifile.ImageFromByte([]byte("image"), aifile.WithFilename("photo.png"), aifile.WithMimeType("image/png")),
+			aifile.DocumentFromByte([]byte("document"), aifile.WithFilename("report.txt"), aifile.WithMimeType("text/plain")),
 		},
 	})
 	require.NoError(t, err)
@@ -358,7 +357,7 @@ func TestProviderBuildMessagesAttachesToActiveUserTurnOnFollowUp(t *testing.T) {
 	provider := &Provider{}
 	messages, err := provider.buildMessages(context.Background(), contractsai.AgentPrompt{
 		Agent:       mockAgent,
-		Attachments: []contractsai.Attachment{document.FromByte([]byte("document"), document.WithFilename("report.txt"))},
+		Attachments: []contractsai.Attachment{aifile.DocumentFromByte([]byte("document"), aifile.WithFilename("report.txt"))},
 	})
 	require.NoError(t, err)
 	require.Len(t, messages, 3)
