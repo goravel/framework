@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	aifile "github.com/goravel/framework/ai/file"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
@@ -648,7 +647,7 @@ func (s *ConversationTestSuite) TestExecuteTools_UsesProvidedContext() {
 
 func (s *ConversationTestSuite) TestConversationOptions() {
 	ctx := context.Background()
-	attachment := aifile.DocumentFromByte([]byte("report"))
+	attachment := DocumentFromByte([]byte("report"))
 
 	s.Run("passes attachments without persisting them", func() {
 		provider := &conversationToolProviderStub{

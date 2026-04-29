@@ -34,6 +34,9 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (r *ServiceProvider) Boot(app foundation.Application) {
+	storageFacade = app.MakeStorage()
+	httpFacade = app.MakeHttp()
+
 	app.Commands([]contractsconsole.Command{
 		&console.AgentMakeCommand{},
 	})

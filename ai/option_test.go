@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	aifile "github.com/goravel/framework/ai/file"
 	"github.com/stretchr/testify/assert"
 
 	contractsai "github.com/goravel/framework/contracts/ai"
@@ -168,8 +167,8 @@ func TestWithMiddleware(t *testing.T) {
 }
 
 func TestWithAttachments(t *testing.T) {
-	attachmentA := aifile.DocumentFromByte([]byte("a"))
-	attachmentB := aifile.DocumentFromByte([]byte("b"))
+	attachmentA := DocumentFromByte([]byte("a"))
+	attachmentB := DocumentFromByte([]byte("b"))
 
 	tests := []struct {
 		name     string

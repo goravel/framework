@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	aifile "github.com/goravel/framework/ai/file"
+	frameworkai "github.com/goravel/framework/ai"
 	contractsai "github.com/goravel/framework/contracts/ai"
 	"github.com/goravel/framework/errors"
 	mocksai "github.com/goravel/framework/mocks/ai"
@@ -326,7 +326,7 @@ func TestProviderBuildMessagesWithAttachments(t *testing.T) {
 		Agent: mockAgent,
 		Input: "describe these",
 		Attachments: []contractsai.Attachment{
-			aifile.ImageFromByte([]byte("image"), aifile.WithMimeType("image/png")),
+			frameworkai.ImageFromByte([]byte("image"), frameworkai.WithMimeType("image/png")),
 			namedAttachment{kind: contractsai.AttachmentKindFile, filename: "report.txt", mimeType: "text/plain", content: []byte("document")},
 		},
 	})

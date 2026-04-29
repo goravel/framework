@@ -1,4 +1,4 @@
-package file
+package ai
 
 import (
 	"bytes"
@@ -6,27 +6,29 @@ import (
 	"encoding/base64"
 	"io"
 	"mime"
-	"net/http"
 	urlpkg "net/url"
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"sync"
-	"time"
 
 	"github.com/gabriel-vasile/mimetype"
 
 	contractsai "github.com/goravel/framework/contracts/ai"
 	contractsfilesystem "github.com/goravel/framework/contracts/filesystem"
+	contractshttpclient "github.com/goravel/framework/contracts/http/client"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/facades"
 )
 
 type resolver func(context.Context) ([]byte, string, string, error)
 
-var attachmentHTTPClient = &http.Client{Timeout: 30 * time.Second}
-
 const attachmentURLMaxBytes = 20 << 20
+
+var (
+	storageFacade contractsfilesystem.Storage
+	httpFacade    contractshttpclient.Factory
+)
 
 type resolved struct {
 	kind     contractsai.AttachmentKind
@@ -52,66 +54,66 @@ func WithDisk(disk string) contractsai.AttachmentOption {
 }
 
 func DocumentFromByte(content []byte, options ...contractsai.AttachmentOption) contractsai.Attachment {
-	return fromBytes(contractsai.AttachmentKindFile, content, resolveOptions(options))
+	return fromBytes(contractsai.AttachmentKindFile, content, resolveAttachmentOptions(options))
 }
 
 func DocumentFromString(content string, options ...contractsai.AttachmentOption) contractsai.Attachment {
-	return fromString(contractsai.AttachmentKindFile, content, resolveOptions(options))
+	return fromString(contractsai.AttachmentKindFile, content, resolveAttachmentOptions(options))
 }
 
 func DocumentFromBase64(content string, options ...contractsai.AttachmentOption) contractsai.Attachment {
-	return fromBase64(contractsai.AttachmentKindFile, content, resolveOptions(options))
+	return fromBase64(contractsai.AttachmentKindFile, content, resolveAttachmentOptions(options))
 }
 
 func DocumentFromReader(reader io.Reader, options ...contractsai.AttachmentOption) contractsai.Attachment {
-	return fromReader(contractsai.AttachmentKindFile, reader, resolveOptions(options))
+	return fromReader(contractsai.AttachmentKindFile, reader, resolveAttachmentOptions(options))
 }
 
 func DocumentFromPath(path string, options ...contractsai.AttachmentOption) contractsai.Attachment {
-	return fromPath(contractsai.AttachmentKindFile, path, resolveOptions(options))
+	return fromPath(contractsai.AttachmentKindFile, path, resolveAttachmentOptions(options))
 }
 
 func DocumentFromStorage(path string, options ...contractsai.AttachmentOption) contractsai.Attachment {
-	return fromStorage(contractsai.AttachmentKindFile, path, resolveOptions(options))
+	return fromStorage(contractsai.AttachmentKindFile, path, resolveAttachmentOptions(options))
 }
 
 func DocumentFromURL(rawURL string, options ...contractsai.AttachmentOption) contractsai.Attachment {
-	return fromURL(contractsai.AttachmentKindFile, rawURL, resolveOptions(options))
+	return fromURL(contractsai.AttachmentKindFile, rawURL, resolveAttachmentOptions(options))
 }
 
 func DocumentFromUpload(file contractsfilesystem.File, options ...contractsai.AttachmentOption) contractsai.Attachment {
-	return fromUpload(contractsai.AttachmentKindFile, file, resolveOptions(options))
+	return fromUpload(contractsai.AttachmentKindFile, file, resolveAttachmentOptions(options))
 }
 
 func ImageFromByte(content []byte, options ...contractsai.AttachmentOption) contractsai.Attachment {
-	return fromBytes(contractsai.AttachmentKindImage, content, resolveOptions(options))
+	return fromBytes(contractsai.AttachmentKindImage, content, resolveAttachmentOptions(options))
 }
 
 func ImageFromBase64(content string, options ...contractsai.AttachmentOption) contractsai.Attachment {
-	return fromBase64(contractsai.AttachmentKindImage, content, resolveOptions(options))
+	return fromBase64(contractsai.AttachmentKindImage, content, resolveAttachmentOptions(options))
 }
 
 func ImageFromReader(reader io.Reader, options ...contractsai.AttachmentOption) contractsai.Attachment {
-	return fromReader(contractsai.AttachmentKindImage, reader, resolveOptions(options))
+	return fromReader(contractsai.AttachmentKindImage, reader, resolveAttachmentOptions(options))
 }
 
 func ImageFromPath(path string, options ...contractsai.AttachmentOption) contractsai.Attachment {
-	return fromPath(contractsai.AttachmentKindImage, path, resolveOptions(options))
+	return fromPath(contractsai.AttachmentKindImage, path, resolveAttachmentOptions(options))
 }
 
 func ImageFromStorage(path string, options ...contractsai.AttachmentOption) contractsai.Attachment {
-	return fromStorage(contractsai.AttachmentKindImage, path, resolveOptions(options))
+	return fromStorage(contractsai.AttachmentKindImage, path, resolveAttachmentOptions(options))
 }
 
 func ImageFromURL(rawURL string, options ...contractsai.AttachmentOption) contractsai.Attachment {
-	return fromURL(contractsai.AttachmentKindImage, rawURL, resolveOptions(options))
+	return fromURL(contractsai.AttachmentKindImage, rawURL, resolveAttachmentOptions(options))
 }
 
 func ImageFromUpload(file contractsfilesystem.File, options ...contractsai.AttachmentOption) contractsai.Attachment {
-	return fromUpload(contractsai.AttachmentKindImage, file, resolveOptions(options))
+	return fromUpload(contractsai.AttachmentKindImage, file, resolveAttachmentOptions(options))
 }
 
-func resolveOptions(options []contractsai.AttachmentOption) contractsai.AttachmentOptions {
+func resolveAttachmentOptions(options []contractsai.AttachmentOption) contractsai.AttachmentOptions {
 	metadata := contractsai.AttachmentOptions{}
 	for _, option := range options {
 		if option != nil {
@@ -177,14 +179,15 @@ func fromPath(kind contractsai.AttachmentKind, path string, metadata contractsai
 
 func fromStorage(kind contractsai.AttachmentKind, path string, metadata contractsai.AttachmentOptions) contractsai.Attachment {
 	return newAttachment(kind, func(ctx context.Context) ([]byte, string, string, error) {
-		storage := facades.Storage()
-		var driver contractsfilesystem.Driver = storage
+		if storageFacade == nil {
+			return nil, "", "", errors.StorageFacadeNotSet
+		}
+
+		var driver contractsfilesystem.Driver = storageFacade
 		if metadata.Disk != "" {
-			driver = storage.Disk(metadata.Disk)
+			driver = storageFacade.Disk(metadata.Disk)
 		}
-		if storageWithContext := driver.WithContext(ctx); storageWithContext != nil {
-			driver = storageWithContext
-		}
+		driver = driver.WithContext(ctx)
 
 		content, err := driver.GetBytes(path)
 		if err != nil {
@@ -202,25 +205,33 @@ func fromStorage(kind contractsai.AttachmentKind, path string, metadata contract
 
 func fromURL(kind contractsai.AttachmentKind, rawURL string, metadata contractsai.AttachmentOptions) contractsai.Attachment {
 	return newAttachment(kind, func(ctx context.Context) ([]byte, string, string, error) {
-		request, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
+		if httpFacade == nil {
+			return nil, "", "", errors.HttpClientConfigNotSet
+		}
+
+		response, err := httpFacade.WithContext(ctx).Get(rawURL)
 		if err != nil {
 			return nil, "", "", err
 		}
 
-		response, err := attachmentHTTPClient.Do(request)
+		if !response.Successful() {
+			return nil, "", "", errors.AIAttachmentUrlResponseNotOK.Args(response.Status())
+		}
+
+		contentLength := response.Header("Content-Length")
+		if contentLength != "" {
+			if size, err := strconv.ParseInt(contentLength, 10, 64); err == nil && size > attachmentURLMaxBytes {
+				return nil, "", "", errors.AIAttachmentUrlResponseTooLarge.Args(attachmentURLMaxBytes)
+			}
+		}
+
+		stream, err := response.Stream()
 		if err != nil {
 			return nil, "", "", err
 		}
-		defer errors.Ignore(response.Body.Close)
+		defer errors.Ignore(stream.Close)
 
-		if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
-			return nil, "", "", errors.AIAttachmentUrlResponseNotOK.Args(response.StatusCode)
-		}
-		if response.ContentLength > attachmentURLMaxBytes {
-			return nil, "", "", errors.AIAttachmentUrlResponseTooLarge.Args(attachmentURLMaxBytes)
-		}
-
-		content, err := io.ReadAll(io.LimitReader(response.Body, attachmentURLMaxBytes+1))
+		content, err := io.ReadAll(io.LimitReader(stream, attachmentURLMaxBytes+1))
 		if err != nil {
 			return nil, "", "", err
 		}
@@ -228,7 +239,7 @@ func fromURL(kind contractsai.AttachmentKind, rawURL string, metadata contractsa
 			return nil, "", "", errors.AIAttachmentUrlResponseTooLarge.Args(attachmentURLMaxBytes)
 		}
 
-		mimeType := response.Header.Get("Content-Type")
+		mimeType := response.Header("Content-Type")
 		if parsedMimeType, _, err := mime.ParseMediaType(mimeType); err == nil {
 			mimeType = parsedMimeType
 		}

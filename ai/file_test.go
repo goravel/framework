@@ -1,26 +1,23 @@
-package file_test
+package ai
 
 import (
 	"bytes"
 	"context"
 	"io"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"testing"
 
-	"github.com/goravel/framework/ai/file"
-	contractsai "github.com/goravel/framework/contracts/ai"
-	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/foundation"
-	mocksfilesystem "github.com/goravel/framework/mocks/filesystem"
-	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	contractsai "github.com/goravel/framework/contracts/ai"
+	"github.com/goravel/framework/errors"
+	mocksfilesystem "github.com/goravel/framework/mocks/filesystem"
+	mockshttpclient "github.com/goravel/framework/mocks/http/client"
 )
 
 func TestImageFromByte(t *testing.T) {
-	attachment := file.ImageFromByte([]byte("png"), file.WithMimeType("image/png"))
+	attachment := ImageFromByte([]byte("png"), WithMimeType("image/png"))
 
 	assert.Equal(t, contractsai.AttachmentKindImage, attachment.Kind())
 	assert.Equal(t, "image/png", attachment.MimeType())
@@ -30,14 +27,14 @@ func TestImageFromByte(t *testing.T) {
 	assert.Equal(t, "", attachment.FileName())
 }
 
-func TestDocumentFromByteAndString_LeaveFileNameEmpty(t *testing.T) {
-	attachment := file.DocumentFromByte([]byte("report"))
+func TestDocumentFromByteAndStringLeaveFileNameEmpty(t *testing.T) {
+	attachment := DocumentFromByte([]byte("report"))
 	content, err := attachment.Content(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, []byte("report"), content)
 	assert.Equal(t, "", attachment.FileName())
 
-	attachment = file.DocumentFromString("report")
+	attachment = DocumentFromString("report")
 	content, err = attachment.Content(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, []byte("report"), content)
@@ -45,21 +42,21 @@ func TestDocumentFromByteAndString_LeaveFileNameEmpty(t *testing.T) {
 }
 
 func TestDocumentFromStringAndImageFromBase64(t *testing.T) {
-	attachment := file.DocumentFromString("report")
+	attachment := DocumentFromString("report")
 	content, err := attachment.Content(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, []byte("report"), content)
 
-	attachment = file.ImageFromBase64("aW1hZ2U=", file.WithMimeType("image/png"))
+	attachment = ImageFromBase64("aW1hZ2U=", WithMimeType("image/png"))
 	content, err = attachment.Content(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, []byte("image"), content)
 	assert.Equal(t, "image/png", attachment.MimeType())
 }
 
-func TestDocumentFromReader_BuffersContentOnce(t *testing.T) {
+func TestDocumentFromReaderBuffersContentOnce(t *testing.T) {
 	reader := bytes.NewBufferString("document")
-	attachment := file.DocumentFromReader(reader)
+	attachment := DocumentFromReader(reader)
 
 	first, err := attachment.Content(context.Background())
 	require.NoError(t, err)
@@ -72,14 +69,14 @@ func TestDocumentFromReader_BuffersContentOnce(t *testing.T) {
 	assert.Equal(t, "text/plain; charset=utf-8", attachment.MimeType())
 }
 
-func TestDocumentFromPath_UsesBasename(t *testing.T) {
+func TestDocumentFromPathUsesBasename(t *testing.T) {
 	tempFile, err := os.CreateTemp(t.TempDir(), "report-*.txt")
 	require.NoError(t, err)
 	_, err = tempFile.WriteString("report")
 	require.NoError(t, err)
 	require.NoError(t, tempFile.Close())
 
-	attachment := file.DocumentFromPath(tempFile.Name())
+	attachment := DocumentFromPath(tempFile.Name())
 	content, err := attachment.Content(context.Background())
 	require.NoError(t, err)
 
@@ -88,14 +85,14 @@ func TestDocumentFromPath_UsesBasename(t *testing.T) {
 	assert.Equal(t, "text/plain; charset=utf-8", attachment.MimeType())
 }
 
-func TestImageFromPath_UsesBasename(t *testing.T) {
+func TestImageFromPathUsesBasename(t *testing.T) {
 	tempFile, err := os.CreateTemp(t.TempDir(), "chart-*.png")
 	require.NoError(t, err)
 	_, err = tempFile.Write([]byte("image"))
 	require.NoError(t, err)
 	require.NoError(t, tempFile.Close())
 
-	attachment := file.ImageFromPath(tempFile.Name())
+	attachment := ImageFromPath(tempFile.Name())
 	content, err := attachment.Content(context.Background())
 	require.NoError(t, err)
 
@@ -103,10 +100,10 @@ func TestImageFromPath_UsesBasename(t *testing.T) {
 	assert.Equal(t, filepathBase(tempFile.Name()), attachment.FileName())
 }
 
-func TestDocumentFromStorage_ResolvesOnce(t *testing.T) {
-	originalApp := foundation.App
+func TestDocumentFromStorageResolvesOnce(t *testing.T) {
+	originalStorageFacade := storageFacade
 	t.Cleanup(func() {
-		foundation.App = originalApp
+		storageFacade = originalStorageFacade
 	})
 
 	ctx := context.Background()
@@ -116,12 +113,9 @@ func TestDocumentFromStorage_ResolvesOnce(t *testing.T) {
 	driver.EXPECT().WithContext(ctx).Return(driver).Once()
 	driver.EXPECT().GetBytes("report.txt").Return([]byte("report"), nil).Once()
 	driver.EXPECT().MimeType("report.txt").Return("text/plain", nil).Once()
+	storageFacade = storage
 
-	app := mocksfoundation.NewApplication(t)
-	app.EXPECT().MakeStorage().Return(storage).Once()
-	foundation.App = app
-
-	attachment := file.DocumentFromStorage("report.txt", file.WithDisk("docs"))
+	attachment := DocumentFromStorage("report.txt", WithDisk("docs"))
 	first, err := attachment.Content(ctx)
 	require.NoError(t, err)
 	second, err := attachment.Content(ctx)
@@ -133,10 +127,10 @@ func TestDocumentFromStorage_ResolvesOnce(t *testing.T) {
 	assert.Equal(t, "text/plain", attachment.MimeType())
 }
 
-func TestDocumentFromStorage_UsesDefaultDisk(t *testing.T) {
-	originalApp := foundation.App
+func TestDocumentFromStorageUsesDefaultDisk(t *testing.T) {
+	originalStorageFacade := storageFacade
 	t.Cleanup(func() {
-		foundation.App = originalApp
+		storageFacade = originalStorageFacade
 	})
 
 	ctx := context.Background()
@@ -144,12 +138,9 @@ func TestDocumentFromStorage_UsesDefaultDisk(t *testing.T) {
 	storage.EXPECT().WithContext(ctx).Return(storage).Once()
 	storage.EXPECT().GetBytes("report.txt").Return([]byte("report"), nil).Once()
 	storage.EXPECT().MimeType("report.txt").Return("text/plain", nil).Once()
+	storageFacade = storage
 
-	app := mocksfoundation.NewApplication(t)
-	app.EXPECT().MakeStorage().Return(storage).Once()
-	foundation.App = app
-
-	attachment := file.DocumentFromStorage("report.txt")
+	attachment := DocumentFromStorage("report.txt")
 	content, err := attachment.Content(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, []byte("report"), content)
@@ -157,7 +148,7 @@ func TestDocumentFromStorage_UsesDefaultDisk(t *testing.T) {
 	assert.Equal(t, "text/plain", attachment.MimeType())
 }
 
-func TestDocumentFromUpload_ResolvesOnce(t *testing.T) {
+func TestDocumentFromUploadResolvesOnce(t *testing.T) {
 	ctx := context.Background()
 	tempFile, err := os.CreateTemp(t.TempDir(), "report-*.txt")
 	require.NoError(t, err)
@@ -170,7 +161,7 @@ func TestDocumentFromUpload_ResolvesOnce(t *testing.T) {
 	upload.EXPECT().MimeType().Return("text/plain", nil).Once()
 	upload.EXPECT().GetClientOriginalName().Return("report.txt").Once()
 
-	attachment := file.DocumentFromUpload(upload)
+	attachment := DocumentFromUpload(upload)
 	content, err := attachment.Content(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, []byte("report"), content)
@@ -179,63 +170,106 @@ func TestDocumentFromUpload_ResolvesOnce(t *testing.T) {
 }
 
 func TestDocumentFromURL(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		assert.Equal(t, "/files/report.txt", request.URL.Path)
-		writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		_, err := io.WriteString(writer, "report")
-		require.NoError(t, err)
-	}))
-	defer server.Close()
+	originalHTTPFacade := httpFacade
+	t.Cleanup(func() {
+		httpFacade = originalHTTPFacade
+	})
 
-	attachment := file.DocumentFromURL(server.URL + "/files/report.txt")
-	content, err := attachment.Content(context.Background())
+	request := mockshttpclient.NewRequest(t)
+	response := mockshttpclient.NewResponse(t)
+	responseStream := io.NopCloser(bytes.NewBufferString("report"))
+	ctx := context.Background()
+
+	httpFactory := mockshttpclient.NewFactory(t)
+	httpFactory.EXPECT().WithContext(ctx).Return(request).Once()
+	request.EXPECT().Get("https://example.com/files/report.txt").Return(response, nil).Once()
+	response.EXPECT().Successful().Return(true).Once()
+	response.EXPECT().Header("Content-Length").Return("").Once()
+	response.EXPECT().Stream().Return(responseStream, nil).Once()
+	response.EXPECT().Header("Content-Type").Return("text/plain; charset=utf-8").Once()
+	httpFacade = httpFactory
+
+	attachment := DocumentFromURL("https://example.com/files/report.txt")
+	content, err := attachment.Content(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, []byte("report"), content)
 	assert.Equal(t, "report.txt", attachment.FileName())
 	assert.Equal(t, "text/plain", attachment.MimeType())
 }
 
-func TestDocumentFromURL_WithoutPathLeavesFileNameEmpty(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		writer.Header().Set("Content-Type", "application/octet-stream")
-		_, err := io.WriteString(writer, "data")
-		require.NoError(t, err)
-	}))
-	defer server.Close()
+func TestDocumentFromURLWithoutPathLeavesFileNameEmpty(t *testing.T) {
+	originalHTTPFacade := httpFacade
+	t.Cleanup(func() {
+		httpFacade = originalHTTPFacade
+	})
 
-	attachment := file.DocumentFromURL(server.URL)
-	content, err := attachment.Content(context.Background())
+	request := mockshttpclient.NewRequest(t)
+	response := mockshttpclient.NewResponse(t)
+	ctx := context.Background()
+
+	httpFactory := mockshttpclient.NewFactory(t)
+	httpFactory.EXPECT().WithContext(ctx).Return(request).Once()
+	request.EXPECT().Get("https://example.com").Return(response, nil).Once()
+	response.EXPECT().Successful().Return(true).Once()
+	response.EXPECT().Header("Content-Length").Return("").Once()
+	response.EXPECT().Stream().Return(io.NopCloser(bytes.NewBufferString("data")), nil).Once()
+	response.EXPECT().Header("Content-Type").Return("application/octet-stream").Once()
+	httpFacade = httpFactory
+
+	attachment := DocumentFromURL("https://example.com")
+	content, err := attachment.Content(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, []byte("data"), content)
 	assert.Equal(t, "", attachment.FileName())
 	assert.Equal(t, "application/octet-stream", attachment.MimeType())
 }
 
-func TestDocumentFromURL_UsesDetectedMimeTypeWhenHeaderMissing(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		_, err := writer.Write([]byte("plain text"))
-		require.NoError(t, err)
-	}))
-	defer server.Close()
+func TestDocumentFromURLUsesDetectedMimeTypeWhenHeaderMissing(t *testing.T) {
+	originalHTTPFacade := httpFacade
+	t.Cleanup(func() {
+		httpFacade = originalHTTPFacade
+	})
 
-	attachment := file.DocumentFromURL(server.URL + "/report.txt")
-	content, err := attachment.Content(context.Background())
+	request := mockshttpclient.NewRequest(t)
+	response := mockshttpclient.NewResponse(t)
+	ctx := context.Background()
+
+	httpFactory := mockshttpclient.NewFactory(t)
+	httpFactory.EXPECT().WithContext(ctx).Return(request).Once()
+	request.EXPECT().Get("https://example.com/report.txt").Return(response, nil).Once()
+	response.EXPECT().Successful().Return(true).Once()
+	response.EXPECT().Header("Content-Length").Return("").Once()
+	response.EXPECT().Stream().Return(io.NopCloser(bytes.NewBufferString("plain text")), nil).Once()
+	response.EXPECT().Header("Content-Type").Return("").Once()
+	httpFacade = httpFactory
+
+	attachment := DocumentFromURL("https://example.com/report.txt")
+	content, err := attachment.Content(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, []byte("plain text"), content)
 	assert.Equal(t, "report.txt", attachment.FileName())
-	assert.Equal(t, "text/plain", attachment.MimeType())
+	assert.Equal(t, "text/plain; charset=utf-8", attachment.MimeType())
 }
 
-func TestDocumentFromURL_ReturnsErrorWhenResponseTooLarge(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		writer.Header().Set("Content-Type", "text/plain")
-		writer.Header().Set("Content-Length", "20971521")
-		writer.WriteHeader(http.StatusOK)
-	}))
-	defer server.Close()
+func TestDocumentFromURLReturnsErrorWhenResponseTooLarge(t *testing.T) {
+	originalHTTPFacade := httpFacade
+	t.Cleanup(func() {
+		httpFacade = originalHTTPFacade
+	})
 
-	attachment := file.DocumentFromURL(server.URL + "/report.txt")
-	content, err := attachment.Content(context.Background())
+	request := mockshttpclient.NewRequest(t)
+	response := mockshttpclient.NewResponse(t)
+	ctx := context.Background()
+
+	httpFactory := mockshttpclient.NewFactory(t)
+	httpFactory.EXPECT().WithContext(ctx).Return(request).Once()
+	request.EXPECT().Get("https://example.com/report.txt").Return(response, nil).Once()
+	response.EXPECT().Successful().Return(true).Once()
+	response.EXPECT().Header("Content-Length").Return("20971521").Once()
+	httpFacade = httpFactory
+
+	attachment := DocumentFromURL("https://example.com/report.txt")
+	content, err := attachment.Content(ctx)
 
 	assert.Nil(t, content)
 	assert.Equal(t, errors.AIAttachmentUrlResponseTooLarge.Args(20<<20), err)
