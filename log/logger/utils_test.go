@@ -50,6 +50,8 @@ func TestGetContextValues_TypedNilPointer(t *testing.T) {
 type structSentinelKey struct{}
 type otherStructSentinel struct{}
 type collidingNameKey string
+type collidingNameKey2 string
+type collidingNameKey3 string
 
 func TestFilterContextValues(t *testing.T) {
 	tests := []struct {
@@ -150,6 +152,19 @@ func TestFilterContextValues(t *testing.T) {
 			expect: map[string]any{
 				"session_id":              "from-string",
 				"logger.collidingNameKey": "from-typed",
+			},
+		},
+		{
+			name: "three-way label collision escalates every key",
+			values: map[any]any{
+				collidingNameKey("session_id"):  "from-typed-1",
+				collidingNameKey2("session_id"): "from-typed-2",
+				collidingNameKey3("session_id"): "from-typed-3",
+			},
+			expect: map[string]any{
+				"logger.collidingNameKey":  "from-typed-1",
+				"logger.collidingNameKey2": "from-typed-2",
+				"logger.collidingNameKey3": "from-typed-3",
 			},
 		},
 		{

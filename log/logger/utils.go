@@ -62,6 +62,7 @@ func filterContext(values map[any]any, exclude excludeSet) map[string]any {
 	}
 
 	escalate := func(rename func(any) string) {
+		var pending []any
 		for k, label := range labels {
 			if counts[label] <= 1 {
 				continue
@@ -69,6 +70,10 @@ func filterContext(values map[any]any, exclude excludeSet) map[string]any {
 			if _, plain := k.(string); plain {
 				continue
 			}
+			pending = append(pending, k)
+		}
+		for _, k := range pending {
+			label := labels[k]
 			next := rename(k)
 			if next == label {
 				continue
