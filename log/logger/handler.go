@@ -57,8 +57,8 @@ func (h *IOHandler) contextValues(ctx any) map[string]any {
 		return nil
 	}
 	h.excludeOnce.Do(func() {
-		user, _ := h.config.Get("logging.context.exclude", []any{}).([]any)
-		h.exclude = newExcludeSet(user)
+		userExclude, _ := h.config.Get("logging.context.exclude", []any{}).([]any)
+		h.exclude = newExcludeSet(userExclude)
 	})
 	return filterContext(raw, h.exclude)
 }
