@@ -143,6 +143,15 @@ func TestWithMiddleware(t *testing.T) {
 			expected: &contractsai.Options{Middlewares: []contractsai.Middleware{middlewareA}},
 		},
 		{
+			name:    "skips all typed nil middleware",
+			initial: &contractsai.Options{},
+			apply: func(options *contractsai.Options) {
+				var middleware *optionNilTestMiddleware
+				WithMiddleware(middleware)(options)
+			},
+			expected: &contractsai.Options{},
+		},
+		{
 			name:    "panics on nil options",
 			nilOpts: true,
 			apply: func(options *contractsai.Options) {
@@ -201,6 +210,15 @@ func TestWithAttachments(t *testing.T) {
 				WithAttachments(attachment, attachmentA)(options)
 			},
 			expected: &contractsai.ConversationOptions{Attachments: []contractsai.Attachment{attachmentA}},
+		},
+		{
+			name:    "skips all typed nil attachments",
+			initial: &contractsai.ConversationOptions{},
+			apply: func(options *contractsai.ConversationOptions) {
+				var attachment *optionNilTestAttachment
+				WithAttachments(attachment)(options)
+			},
+			expected: &contractsai.ConversationOptions{},
 		},
 		{
 			name:    "panics on nil options",

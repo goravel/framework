@@ -69,6 +69,20 @@ func TestDocumentFromReaderBuffersContentOnce(t *testing.T) {
 	assert.Equal(t, "text/plain; charset=utf-8", attachment.MimeType())
 }
 
+func TestDocumentFromReaderReturnsErrorWhenContentTooLarge(t *testing.T) {
+	originalAttachmentMaxBytes := attachmentMaxBytes
+	t.Cleanup(func() {
+		attachmentMaxBytes = originalAttachmentMaxBytes
+	})
+	attachmentMaxBytes = 3
+
+	attachment := DocumentFromReader(bytes.NewBufferString("document"))
+	content, err := attachment.Content(context.Background())
+
+	assert.Nil(t, content)
+	assert.Equal(t, errors.AIAttachmentTooLarge.Args(int64(3)), err)
+}
+
 func TestDocumentFromPathUsesBasename(t *testing.T) {
 	tempFile, err := os.CreateTemp(t.TempDir(), "report-*.txt")
 	require.NoError(t, err)
@@ -102,15 +116,19 @@ func TestImageFromPathUsesBasename(t *testing.T) {
 
 func TestDocumentFromStorageResolvesOnce(t *testing.T) {
 	originalStorageFacade := storageFacade
+	originalAttachmentMaxBytes := attachmentMaxBytes
 	t.Cleanup(func() {
 		storageFacade = originalStorageFacade
+		attachmentMaxBytes = originalAttachmentMaxBytes
 	})
 
 	ctx := context.Background()
 	driver := mocksfilesystem.NewDriver(t)
 	storage := mocksfilesystem.NewStorage(t)
+	attachmentMaxBytes = 20 << 20
 	storage.EXPECT().Disk("docs").Return(driver).Once()
 	driver.EXPECT().WithContext(ctx).Return(driver).Once()
+	driver.EXPECT().Size("report.txt").Return(int64(6), nil).Once()
 	driver.EXPECT().GetBytes("report.txt").Return([]byte("report"), nil).Once()
 	driver.EXPECT().MimeType("report.txt").Return("text/plain", nil).Once()
 	storageFacade = storage
@@ -129,13 +147,17 @@ func TestDocumentFromStorageResolvesOnce(t *testing.T) {
 
 func TestDocumentFromStorageUsesDefaultDisk(t *testing.T) {
 	originalStorageFacade := storageFacade
+	originalAttachmentMaxBytes := attachmentMaxBytes
 	t.Cleanup(func() {
 		storageFacade = originalStorageFacade
+		attachmentMaxBytes = originalAttachmentMaxBytes
 	})
 
 	ctx := context.Background()
 	storage := mocksfilesystem.NewStorage(t)
+	attachmentMaxBytes = 20 << 20
 	storage.EXPECT().WithContext(ctx).Return(storage).Once()
+	storage.EXPECT().Size("report.txt").Return(int64(6), nil).Once()
 	storage.EXPECT().GetBytes("report.txt").Return([]byte("report"), nil).Once()
 	storage.EXPECT().MimeType("report.txt").Return("text/plain", nil).Once()
 	storageFacade = storage
@@ -148,6 +170,29 @@ func TestDocumentFromStorageUsesDefaultDisk(t *testing.T) {
 	assert.Equal(t, "text/plain", attachment.MimeType())
 }
 
+func TestDocumentFromStorageReturnsErrorWhenContentTooLarge(t *testing.T) {
+	originalStorageFacade := storageFacade
+	originalAttachmentMaxBytes := attachmentMaxBytes
+	t.Cleanup(func() {
+		storageFacade = originalStorageFacade
+		attachmentMaxBytes = originalAttachmentMaxBytes
+	})
+
+	ctx := context.Background()
+	driver := mocksfilesystem.NewDriver(t)
+	storage := mocksfilesystem.NewStorage(t)
+	attachmentMaxBytes = 3
+	storage.EXPECT().WithContext(ctx).Return(driver).Once()
+	driver.EXPECT().Size("report.txt").Return(int64(8), nil).Once()
+	storageFacade = storage
+
+	attachment := DocumentFromStorage("report.txt")
+	content, err := attachment.Content(ctx)
+
+	assert.Nil(t, content)
+	assert.Equal(t, errors.AIAttachmentTooLarge.Args(int64(3)), err)
+}
+
 func TestDocumentFromUploadResolvesOnce(t *testing.T) {
 	ctx := context.Background()
 	tempFile, err := os.CreateTemp(t.TempDir(), "report-*.txt")
@@ -155,8 +200,14 @@ func TestDocumentFromUploadResolvesOnce(t *testing.T) {
 	_, err = tempFile.WriteString("report")
 	require.NoError(t, err)
 	require.NoError(t, tempFile.Close())
+	originalAttachmentMaxBytes := attachmentMaxBytes
+	t.Cleanup(func() {
+		attachmentMaxBytes = originalAttachmentMaxBytes
+	})
+	attachmentMaxBytes = 20 << 20
 
 	upload := mocksfilesystem.NewFile(t)
+	upload.EXPECT().Size().Return(int64(6), nil).Once()
 	upload.EXPECT().File().Return(tempFile.Name()).Once()
 	upload.EXPECT().MimeType().Return("text/plain", nil).Once()
 	upload.EXPECT().GetClientOriginalName().Return("report.txt").Once()
@@ -167,6 +218,23 @@ func TestDocumentFromUploadResolvesOnce(t *testing.T) {
 	assert.Equal(t, []byte("report"), content)
 	assert.Equal(t, "report.txt", attachment.FileName())
 	assert.Equal(t, "text/plain", attachment.MimeType())
+}
+
+func TestDocumentFromUploadReturnsErrorWhenContentTooLarge(t *testing.T) {
+	originalAttachmentMaxBytes := attachmentMaxBytes
+	t.Cleanup(func() {
+		attachmentMaxBytes = originalAttachmentMaxBytes
+	})
+	attachmentMaxBytes = 3
+
+	upload := mocksfilesystem.NewFile(t)
+	upload.EXPECT().Size().Return(int64(8), nil).Once()
+
+	attachment := DocumentFromUpload(upload)
+	content, err := attachment.Content(context.Background())
+
+	assert.Nil(t, content)
+	assert.Equal(t, errors.AIAttachmentTooLarge.Args(int64(3)), err)
 }
 
 func TestDocumentFromURL(t *testing.T) {
@@ -272,7 +340,7 @@ func TestDocumentFromURLReturnsErrorWhenResponseTooLarge(t *testing.T) {
 	content, err := attachment.Content(ctx)
 
 	assert.Nil(t, content)
-	assert.Equal(t, errors.AIAttachmentUrlResponseTooLarge.Args(20<<20), err)
+	assert.Equal(t, errors.AIAttachmentUrlResponseTooLarge.Args(int64(20<<20)), err)
 }
 
 func filepathBase(path string) string {

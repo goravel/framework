@@ -17,18 +17,12 @@ import (
 
 	contractsai "github.com/goravel/framework/contracts/ai"
 	contractsfilesystem "github.com/goravel/framework/contracts/filesystem"
-	contractshttpclient "github.com/goravel/framework/contracts/http/client"
 	"github.com/goravel/framework/errors"
 )
 
 type resolver func(context.Context) ([]byte, string, string, error)
 
-const attachmentURLMaxBytes = 20 << 20
-
-var (
-	storageFacade contractsfilesystem.Storage
-	httpFacade    contractshttpclient.Factory
-)
+const defaultAttachmentMaxBytes int64 = 20 << 20
 
 type resolved struct {
 	kind     contractsai.AttachmentKind
@@ -124,6 +118,36 @@ func resolveAttachmentOptions(options []contractsai.AttachmentOption) contractsa
 	return metadata
 }
 
+func currentAttachmentMaxBytes() int64 {
+	if attachmentMaxBytes <= 0 {
+		return defaultAttachmentMaxBytes
+	}
+
+	return attachmentMaxBytes
+}
+
+func validateAttachmentSize(size int64, tooLarge func(int64) error) error {
+	maxBytes := currentAttachmentMaxBytes()
+	if size > maxBytes {
+		return tooLarge(maxBytes)
+	}
+
+	return nil
+}
+
+func readAttachmentContent(reader io.Reader, tooLarge func(int64) error) ([]byte, error) {
+	maxBytes := currentAttachmentMaxBytes()
+	content, err := io.ReadAll(io.LimitReader(reader, maxBytes+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(content)) > maxBytes {
+		return nil, tooLarge(maxBytes)
+	}
+
+	return content, nil
+}
+
 func newAttachment(kind contractsai.AttachmentKind, resolver resolver, metadata contractsai.AttachmentOptions) contractsai.Attachment {
 	return &resolved{
 		kind:     kind,
@@ -140,7 +164,9 @@ func fromBytes(kind contractsai.AttachmentKind, content []byte, metadata contrac
 
 func fromReader(kind contractsai.AttachmentKind, reader io.Reader, metadata contractsai.AttachmentOptions) contractsai.Attachment {
 	return newAttachment(kind, func(context.Context) ([]byte, string, string, error) {
-		content, err := io.ReadAll(reader)
+		content, err := readAttachmentContent(reader, func(maxBytes int64) error {
+			return errors.AIAttachmentTooLarge.Args(maxBytes)
+		})
 		return content, "", "", err
 	}, metadata)
 }
@@ -168,7 +194,18 @@ func fromPath(kind contractsai.AttachmentKind, path string, metadata contractsai
 		}
 		defer errors.Ignore(file.Close)
 
-		content, err := io.ReadAll(file)
+		info, err := file.Stat()
+		if err == nil {
+			if err := validateAttachmentSize(info.Size(), func(maxBytes int64) error {
+				return errors.AIAttachmentTooLarge.Args(maxBytes)
+			}); err != nil {
+				return nil, "", "", err
+			}
+		}
+
+		content, err := readAttachmentContent(file, func(maxBytes int64) error {
+			return errors.AIAttachmentTooLarge.Args(maxBytes)
+		})
 		if err != nil {
 			return nil, "", "", err
 		}
@@ -189,8 +226,22 @@ func fromStorage(kind contractsai.AttachmentKind, path string, metadata contract
 		}
 		driver = driver.WithContext(ctx)
 
+		size, err := driver.Size(path)
+		if err == nil {
+			if err := validateAttachmentSize(size, func(maxBytes int64) error {
+				return errors.AIAttachmentTooLarge.Args(maxBytes)
+			}); err != nil {
+				return nil, "", "", err
+			}
+		}
+
 		content, err := driver.GetBytes(path)
 		if err != nil {
+			return nil, "", "", err
+		}
+		if err := validateAttachmentSize(int64(len(content)), func(maxBytes int64) error {
+			return errors.AIAttachmentTooLarge.Args(maxBytes)
+		}); err != nil {
 			return nil, "", "", err
 		}
 
@@ -218,10 +269,11 @@ func fromURL(kind contractsai.AttachmentKind, rawURL string, metadata contractsa
 			return nil, "", "", errors.AIAttachmentUrlResponseNotOK.Args(response.Status())
 		}
 
+		maxBytes := currentAttachmentMaxBytes()
 		contentLength := response.Header("Content-Length")
 		if contentLength != "" {
-			if size, err := strconv.ParseInt(contentLength, 10, 64); err == nil && size > attachmentURLMaxBytes {
-				return nil, "", "", errors.AIAttachmentUrlResponseTooLarge.Args(attachmentURLMaxBytes)
+			if size, err := strconv.ParseInt(contentLength, 10, 64); err == nil && size > maxBytes {
+				return nil, "", "", errors.AIAttachmentUrlResponseTooLarge.Args(maxBytes)
 			}
 		}
 
@@ -231,12 +283,12 @@ func fromURL(kind contractsai.AttachmentKind, rawURL string, metadata contractsa
 		}
 		defer errors.Ignore(stream.Close)
 
-		content, err := io.ReadAll(io.LimitReader(stream, attachmentURLMaxBytes+1))
+		content, err := io.ReadAll(io.LimitReader(stream, maxBytes+1))
 		if err != nil {
 			return nil, "", "", err
 		}
-		if int64(len(content)) > attachmentURLMaxBytes {
-			return nil, "", "", errors.AIAttachmentUrlResponseTooLarge.Args(attachmentURLMaxBytes)
+		if int64(len(content)) > maxBytes {
+			return nil, "", "", errors.AIAttachmentUrlResponseTooLarge.Args(maxBytes)
 		}
 
 		mimeType := response.Header("Content-Type")
@@ -250,7 +302,25 @@ func fromURL(kind contractsai.AttachmentKind, rawURL string, metadata contractsa
 
 func fromUpload(kind contractsai.AttachmentKind, file contractsfilesystem.File, metadata contractsai.AttachmentOptions) contractsai.Attachment {
 	return newAttachment(kind, func(context.Context) ([]byte, string, string, error) {
-		content, err := os.ReadFile(file.File())
+		size, err := file.Size()
+		if err == nil {
+			if err := validateAttachmentSize(size, func(maxBytes int64) error {
+				return errors.AIAttachmentTooLarge.Args(maxBytes)
+			}); err != nil {
+				return nil, "", "", err
+			}
+		}
+
+		path := file.File()
+		opened, err := os.Open(path)
+		if err != nil {
+			return nil, "", "", err
+		}
+		defer errors.Ignore(opened.Close)
+
+		content, err := readAttachmentContent(opened, func(maxBytes int64) error {
+			return errors.AIAttachmentTooLarge.Args(maxBytes)
+		})
 		if err != nil {
 			return nil, "", "", err
 		}

@@ -36,6 +36,7 @@ var (
 
 	AIProviderNotSupported          = New("ai provider not found: %s")
 	AIProviderContractNotFulfilled  = New("%s.via must be contracts/ai.Provider or func() (contracts/ai.Provider, error)")
+	AIAttachmentTooLarge            = New("ai: attachment exceeds %d bytes")
 	AIAttachmentUrlResponseNotOK    = New("ai: attachment url request failed with status %d")
 	AIAttachmentUrlResponseTooLarge = New("ai: attachment url response exceeds %d bytes")
 	AIResponseIsNil                 = New("ai: response is nil")

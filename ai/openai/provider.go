@@ -264,7 +264,7 @@ func (r *Provider) buildMessages(ctx context.Context, prompt contractsai.AgentPr
 			messages = append(messages, goopenai.ToolMessage(m.Content, m.ToolCallID))
 		}
 	}
-	if prompt.Input != "" || len(prompt.Attachments) > 0 && attachmentIndex == -1 {
+	if prompt.Input != "" || (len(prompt.Attachments) > 0 && attachmentIndex == -1) {
 		message, err := r.buildUserMessage(ctx, prompt.Input, prompt.Attachments)
 		if err != nil {
 			return nil, err
