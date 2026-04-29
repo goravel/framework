@@ -1,13 +1,8 @@
 package ai
 
 type Config struct {
-	Default     string                    `json:"default"`
-	Providers   map[string]ProviderConfig `json:"providers"`
-	Attachments AttachmentConfig          `json:"attachments"`
-}
-
-type AttachmentConfig struct {
-	MaxBytes int `json:"max_bytes"`
+	Default   string                    `json:"default"`
+	Providers map[string]ProviderConfig `json:"providers"`
 }
 
 type ProviderConfig struct {

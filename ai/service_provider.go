@@ -13,9 +13,8 @@ import (
 )
 
 var (
-	attachmentMaxBytes int64 = defaultAttachmentMaxBytes
-	storageFacade      contractsfilesystem.Storage
-	httpFacade         contractshttpclient.Factory
+	storageFacade contractsfilesystem.Storage
+	httpFacade    contractshttpclient.Factory
 )
 
 type ServiceProvider struct{}
@@ -42,15 +41,6 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (r *ServiceProvider) Boot(app foundation.Application) {
-	if config := app.MakeConfig(); config != nil {
-		attachmentMaxBytes = int64(config.GetInt("ai.attachments.max_bytes", int(defaultAttachmentMaxBytes)))
-		if attachmentMaxBytes <= 0 {
-			attachmentMaxBytes = defaultAttachmentMaxBytes
-		}
-	} else {
-		attachmentMaxBytes = defaultAttachmentMaxBytes
-	}
-
 	storageFacade = app.MakeStorage()
 	httpFacade = app.MakeHttp()
 

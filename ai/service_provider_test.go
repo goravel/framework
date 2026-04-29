@@ -118,16 +118,9 @@ func (s *ServiceProviderTestSuite) TestRegister() {
 func (s *ServiceProviderTestSuite) TestBoot() {
 	provider := &ServiceProvider{}
 	mockApp := mocksfoundation.NewApplication(s.T())
-	mockConfig := mocksconfig.NewConfig(s.T())
 	var storage contractsfilesystem.Storage
 	var httpFactory contractshttpclient.Factory
-	originalAttachmentMaxBytes := attachmentMaxBytes
-	s.T().Cleanup(func() {
-		attachmentMaxBytes = originalAttachmentMaxBytes
-	})
 
-	mockApp.EXPECT().MakeConfig().Return(mockConfig).Once()
-	mockConfig.EXPECT().GetInt("ai.attachments.max_bytes", int(defaultAttachmentMaxBytes)).Return(10).Once()
 	mockApp.EXPECT().MakeStorage().Return(storage).Once()
 	mockApp.EXPECT().MakeHttp().Return(httpFactory).Once()
 
@@ -138,5 +131,4 @@ func (s *ServiceProviderTestSuite) TestBoot() {
 	})).Once()
 
 	provider.Boot(mockApp)
-	s.Equal(int64(10), attachmentMaxBytes)
 }

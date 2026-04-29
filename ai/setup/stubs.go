@@ -26,12 +26,6 @@ func init() {
 		// Here you may configure each AI provider used by your application.
 		// A variety of drivers are available, and each provider may also
 		// configure the models available to your application.
-		"attachments": map[string]any{
-			// Maximum number of bytes read from path, storage, upload, reader,
-			// and URL-backed prompt attachments.
-			"max_bytes": config.Env("AI_ATTACHMENTS_MAX_BYTES", 20*1024*1024),
-		},
-
 		"providers": map[string]any{
 			"openai": map[string]any{
 				"key": "",
