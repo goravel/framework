@@ -47,11 +47,14 @@ func TestGetContextValues_TypedNilPointer(t *testing.T) {
 	assert.Empty(t, values)
 }
 
+type structSentinelKey struct{}
+type otherStructSentinel struct{}
+
 func TestFilterContextValues(t *testing.T) {
 	tests := []struct {
 		name   string
 		values map[any]any
-		user   []string
+		user   []any
 		expect map[string]any
 	}{
 		{
@@ -80,19 +83,45 @@ func TestFilterContextValues(t *testing.T) {
 			expect: map[string]any{"request_id": "req-1"},
 		},
 		{
-			name: "user-supplied keys extend defaults",
+			name: "user string entries extend defaults",
 			values: map[any]any{
 				"GoravelAuthJwt": "secret",
 				"trace_id":       "t-1",
 				"request_id":     "req-1",
 			},
-			user:   []string{"trace_id"},
+			user:   []any{"trace_id"},
 			expect: map[string]any{"request_id": "req-1"},
 		},
 		{
-			name:   "non-string keys kept under their %v form",
-			values: map[any]any{42: "answer"},
-			expect: map[string]any{"42": "answer"},
+			name: "struct-sentinel keys use short type name when unique",
+			values: map[any]any{
+				structSentinelKey{}: "user-42",
+				"request_id":        "req-1",
+			},
+			expect: map[string]any{
+				"logger.structSentinelKey": "user-42",
+				"request_id":               "req-1",
+			},
+		},
+		{
+			name: "distinct struct sentinels keep short names",
+			values: map[any]any{
+				structSentinelKey{}:   "from-logger",
+				otherStructSentinel{}: "from-other",
+			},
+			expect: map[string]any{
+				"logger.structSentinelKey":   "from-logger",
+				"logger.otherStructSentinel": "from-other",
+			},
+		},
+		{
+			name: "user can exclude a struct-sentinel by passing the value",
+			values: map[any]any{
+				structSentinelKey{}: "user-42",
+				"request_id":        "req-1",
+			},
+			user:   []any{structSentinelKey{}},
+			expect: map[string]any{"request_id": "req-1"},
 		},
 	}
 

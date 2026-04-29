@@ -9,8 +9,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/spf13/cast"
-
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/log"
@@ -31,7 +29,7 @@ type IOHandler struct {
 	level       slog.Leveler
 	formatter   string
 	excludeOnce sync.Once
-	exclude     map[string]struct{}
+	exclude     excludeSet
 }
 
 func NewIOHandler(w io.Writer, config config.Config, json foundation.Json, level slog.Leveler, formatter string) *IOHandler {
@@ -59,8 +57,7 @@ func (h *IOHandler) contextValues(ctx any) map[string]any {
 		return nil
 	}
 	h.excludeOnce.Do(func() {
-		excludeList, _ := h.config.Get("logging.context.exclude", []any{}).([]any)
-		user := cast.ToStringSlice(excludeList)
+		user, _ := h.config.Get("logging.context.exclude", []any{}).([]any)
 		h.exclude = newExcludeSet(user)
 	})
 	return filterContext(raw, h.exclude)
