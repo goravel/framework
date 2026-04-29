@@ -49,6 +49,7 @@ func TestGetContextValues_TypedNilPointer(t *testing.T) {
 
 type structSentinelKey struct{}
 type otherStructSentinel struct{}
+type collidingNameKey string
 
 func TestFilterContextValues(t *testing.T) {
 	tests := []struct {
@@ -122,6 +123,42 @@ func TestFilterContextValues(t *testing.T) {
 			},
 			user:   []any{structSentinelKey{}},
 			expect: map[string]any{"request_id": "req-1"},
+		},
+		{
+			name: "default excludes still apply when keys with the same label collide",
+			values: map[any]any{
+				"locale":                  "en",
+				utilsContextKey("locale"): "fr",
+				"request_id":              "req-1",
+			},
+			expect: map[string]any{"request_id": "req-1"},
+		},
+		{
+			name: "uncomparable user entries are ignored, not panicking",
+			values: map[any]any{
+				"request_id": "req-1",
+			},
+			user:   []any{[]string{"oops"}},
+			expect: map[string]any{"request_id": "req-1"},
+		},
+		{
+			name: "colliding labels escalate to qualified names",
+			values: map[any]any{
+				"session_id":                  "from-string",
+				collidingNameKey("session_id"): "from-typed",
+			},
+			expect: map[string]any{
+				"string": "from-string",
+				"github.com/goravel/framework/log/logger.collidingNameKey": "from-typed",
+			},
+		},
+		{
+			name: "user can exclude by qualified name without collision",
+			values: map[any]any{
+				structSentinelKey{}: "user-42",
+			},
+			user:   []any{"github.com/goravel/framework/log/logger.structSentinelKey"},
+			expect: nil,
 		},
 	}
 

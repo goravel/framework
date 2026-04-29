@@ -499,6 +499,33 @@ func TestIOHandlerJSONFormatWithAllFields(t *testing.T) {
 	assert.Equal(t, "error", root["message"])
 }
 
+type jsonStructSentinelKey struct{}
+
+func TestIOHandlerJSONFormat_StructSentinelContextKey(t *testing.T) {
+	mockConfig := mocksconfig.NewConfig(t)
+	mockConfig.EXPECT().GetString("app.env").Return("test").Once()
+	mockConfig.EXPECT().Get("logging.context.exclude", []any{}).Return([]any{}).Once()
+
+	j := json.New()
+	buffer := new(bytes.Buffer)
+	handler := NewIOHandler(buffer, mockConfig, j, log.LevelDebug, FormatterJson)
+
+	ctx := context.WithValue(context.Background(), jsonStructSentinelKey{}, "u-42")
+	err := handler.Handle(&mockEntry{
+		time:    time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
+		level:   log.LevelInfo,
+		message: "json struct sentinel",
+		ctx:     ctx,
+	})
+	assert.Nil(t, err)
+
+	var result map[string]any
+	assert.Nil(t, j.Unmarshal(buffer.Bytes(), &result))
+	ctxOut, ok := result["context"].(map[string]any)
+	assert.True(t, ok)
+	assert.Equal(t, "u-42", ctxOut["logger.jsonStructSentinelKey"])
+}
+
 func TestIOHandlerJSONFormatEmptyOptionalFields(t *testing.T) {
 	mockConfig := mocksconfig.NewConfig(t)
 	mockConfig.EXPECT().GetString("app.env").Return("test").Once()

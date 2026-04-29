@@ -6,7 +6,6 @@ import (
 	"unsafe"
 )
 
-// Framework-internal context keys filtered from log output by default.
 var defaultExcludeNames = []string{
 	"GoravelAuthJwt",
 	"goravel_http_client_name",
@@ -14,16 +13,14 @@ var defaultExcludeNames = []string{
 	"fallback_locale",
 }
 
-// excludeSet matches keys two ways: byID by Go identity (struct sentinels
-// passed as values) and byName by textual label (defaults + string entries).
 type excludeSet struct {
-	byID   map[any]struct{}
+	byKey  map[any]struct{}
 	byName map[string]struct{}
 }
 
 func newExcludeSet(user []any) excludeSet {
 	s := excludeSet{
-		byID:   map[any]struct{}{},
+		byKey:  map[any]struct{}{},
 		byName: make(map[string]struct{}, len(defaultExcludeNames)+len(user)),
 	}
 	for _, n := range defaultExcludeNames {
@@ -32,8 +29,10 @@ func newExcludeSet(user []any) excludeSet {
 	for _, k := range user {
 		if name, ok := k.(string); ok {
 			s.byName[name] = struct{}{}
-		} else {
-			s.byID[k] = struct{}{}
+			continue
+		}
+		if t := reflect.TypeOf(k); t != nil && t.Comparable() {
+			s.byKey[k] = struct{}{}
 		}
 	}
 	return s
@@ -43,36 +42,38 @@ func filterContext(values map[any]any, exclude excludeSet) map[string]any {
 	if len(values) == 0 {
 		return nil
 	}
-	// Pick short labels first; escalate any that collide to the full path.
 	labels := make(map[any]string, len(values))
-	seen := make(map[string]int, len(values))
+	seen := make(map[string]int)
 	for k := range values {
-		s := shortName(k)
-		labels[k] = s
-		seen[s]++
+		if _, drop := exclude.byKey[k]; drop {
+			continue
+		}
+		short := shortName(k)
+		if _, drop := exclude.byName[short]; drop {
+			continue
+		}
+		if qual := qualifiedName(k); qual != short {
+			if _, drop := exclude.byName[qual]; drop {
+				continue
+			}
+		}
+		labels[k] = short
+		seen[short]++
 	}
 
 	var out map[string]any
-	for k, v := range values {
-		if _, drop := exclude.byID[k]; drop {
-			continue
-		}
-		name := labels[k]
-		if seen[name] > 1 {
-			name = qualifiedName(k)
-		}
-		if _, drop := exclude.byName[name]; drop {
-			continue
+	for k, s := range labels {
+		if seen[s] > 1 {
+			s = qualifiedName(k)
 		}
 		if out == nil {
 			out = make(map[string]any)
 		}
-		out[name] = v
+		out[s] = values[k]
 	}
 	return out
 }
 
-// shortName returns the string content for string-kind keys, %T otherwise.
 func shortName(k any) string {
 	if s, ok := k.(string); ok {
 		return s
@@ -83,7 +84,6 @@ func shortName(k any) string {
 	return fmt.Sprintf("%T", k)
 }
 
-// qualifiedName escalates to import path + type name when shortName collides.
 func qualifiedName(k any) string {
 	if t := reflect.TypeOf(k); t != nil && t.PkgPath() != "" && t.Name() != "" {
 		return t.PkgPath() + "." + t.Name()
@@ -91,8 +91,6 @@ func qualifiedName(k any) string {
 	return fmt.Sprintf("%T", k)
 }
 
-// getContextValues walks ctx via reflection; the standard library exposes
-// no way to enumerate a context's key/value chain.
 func getContextValues(ctx any, out map[any]any) {
 	rv := reflect.ValueOf(ctx)
 	if !rv.IsValid() || (rv.Kind() == reflect.Ptr && rv.IsNil()) {
