@@ -142,14 +142,14 @@ func TestFilterContextValues(t *testing.T) {
 			expect: map[string]any{"request_id": "req-1"},
 		},
 		{
-			name: "colliding labels escalate to qualified names",
+			name: "colliding labels escalate typed keys to type name",
 			values: map[any]any{
-				"session_id":                  "from-string",
+				"session_id":                   "from-string",
 				collidingNameKey("session_id"): "from-typed",
 			},
 			expect: map[string]any{
-				"string": "from-string",
-				"github.com/goravel/framework/log/logger.collidingNameKey": "from-typed",
+				"session_id":              "from-string",
+				"logger.collidingNameKey": "from-typed",
 			},
 		},
 		{

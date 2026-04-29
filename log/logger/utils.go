@@ -43,7 +43,7 @@ func filterContext(values map[any]any, exclude excludeSet) map[string]any {
 		return nil
 	}
 	labels := make(map[any]string, len(values))
-	seen := make(map[string]int)
+	counts := make(map[string]int)
 	for k := range values {
 		if _, drop := exclude.byKey[k]; drop {
 			continue
@@ -58,18 +58,35 @@ func filterContext(values map[any]any, exclude excludeSet) map[string]any {
 			}
 		}
 		labels[k] = short
-		seen[short]++
+		counts[short]++
 	}
 
-	var out map[string]any
-	for k, s := range labels {
-		if seen[s] > 1 {
-			s = qualifiedName(k)
+	escalate := func(rename func(any) string) {
+		for k, label := range labels {
+			if counts[label] <= 1 {
+				continue
+			}
+			if _, plain := k.(string); plain {
+				continue
+			}
+			next := rename(k)
+			if next == label {
+				continue
+			}
+			counts[label]--
+			labels[k] = next
+			counts[next]++
 		}
+	}
+	escalate(typeName)
+	escalate(qualifiedName)
+
+	var out map[string]any
+	for k, label := range labels {
 		if out == nil {
 			out = make(map[string]any)
 		}
-		out[s] = values[k]
+		out[label] = values[k]
 	}
 	return out
 }
@@ -81,6 +98,10 @@ func shortName(k any) string {
 	if v := reflect.ValueOf(k); v.IsValid() && v.Kind() == reflect.String {
 		return v.String()
 	}
+	return fmt.Sprintf("%T", k)
+}
+
+func typeName(k any) string {
 	return fmt.Sprintf("%T", k)
 }
 
