@@ -6,6 +6,7 @@ var (
 	ConfigFacadeNotSet      = New("config facade is not initialized")
 	ConsoleFacadeNotSet     = New("console facade is not initialized, skipping artisan command execution")
 	DBFacadeNotSet          = New("db facade is not initialized")
+	HttpFacadeNotSet        = New("http facade is not initialized")
 	JSONParserNotSet        = New("JSON parser is not initialized")
 	LogFacadeNotSet         = New("log facade is not initialized")
 	OrmFacadeNotSet         = New("orm facade is not initialized")

@@ -197,7 +197,7 @@ func fromStorage(kind contractsai.AttachmentKind, path string, metadata contract
 func fromURL(kind contractsai.AttachmentKind, rawURL string, metadata contractsai.AttachmentOptions) contractsai.Attachment {
 	return newAttachment(kind, func(ctx context.Context) ([]byte, string, string, error) {
 		if httpFacade == nil {
-			return nil, "", "", errors.HttpClientConfigNotSet
+			return nil, "", "", errors.HttpFacadeNotSet
 		}
 
 		response, err := httpFacade.WithContext(ctx).Get(rawURL)

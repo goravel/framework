@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	contractsai "github.com/goravel/framework/contracts/ai"
+	"github.com/goravel/framework/errors"
 	mocksfilesystem "github.com/goravel/framework/mocks/filesystem"
 	mockshttpclient "github.com/goravel/framework/mocks/http/client"
 )
@@ -194,6 +195,20 @@ func TestDocumentFromURL(t *testing.T) {
 	assert.Equal(t, "text/plain", attachment.MimeType())
 }
 
+func TestDocumentFromURLReturnsErrorWhenHttpFacadeNotSet(t *testing.T) {
+	originalHTTPFacade := httpFacade
+	t.Cleanup(func() {
+		httpFacade = originalHTTPFacade
+	})
+	httpFacade = nil
+
+	attachment := DocumentFromURL("https://example.com/files/report.txt")
+	content, err := attachment.Content(context.Background())
+
+	assert.Nil(t, content)
+	assert.Equal(t, errors.HttpFacadeNotSet, err)
+}
+
 func TestDocumentFromURLWithoutPathLeavesFileNameEmpty(t *testing.T) {
 	originalHTTPFacade := httpFacade
 	t.Cleanup(func() {
@@ -245,6 +260,7 @@ func TestDocumentFromURLUsesDetectedMimeTypeWhenHeaderMissing(t *testing.T) {
 	assert.Equal(t, "report.txt", attachment.FileName())
 	assert.Equal(t, "text/plain; charset=utf-8", attachment.MimeType())
 }
+
 func filepathBase(path string) string {
 	index := bytes.LastIndexByte([]byte(path), os.PathSeparator)
 	if index == -1 {
