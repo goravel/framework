@@ -6,5 +6,11 @@ type Options struct {
 	Middlewares []Middleware
 }
 
-// Option applies conversation options for provider selection and model behavior.
+type ConversationOptions struct {
+	Attachments []Attachment
+}
+
+// Option applies AI options for provider selection and model behavior.
 type Option func(options *Options)
+
+type ConversationOption func(options *ConversationOptions)

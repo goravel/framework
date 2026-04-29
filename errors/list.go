@@ -6,6 +6,7 @@ var (
 	ConfigFacadeNotSet      = New("config facade is not initialized")
 	ConsoleFacadeNotSet     = New("console facade is not initialized, skipping artisan command execution")
 	DBFacadeNotSet          = New("db facade is not initialized")
+	HttpFacadeNotSet        = New("http facade is not initialized")
 	JSONParserNotSet        = New("JSON parser is not initialized")
 	LogFacadeNotSet         = New("log facade is not initialized")
 	OrmFacadeNotSet         = New("orm facade is not initialized")
@@ -36,8 +37,10 @@ var (
 
 	AIProviderNotSupported         = New("ai provider not found: %s")
 	AIProviderContractNotFulfilled = New("%s.via must be contracts/ai.Provider or func() (contracts/ai.Provider, error)")
+	AIAttachmentUrlResponseNotOK   = New("ai: attachment url request failed with status %d")
 	AIResponseIsNil                = New("ai: response is nil")
 	AIStreamRunnerRequired         = New("ai stream runner is required")
+	AIUnsupportedAttachmentKind    = New("ai: unsupported attachment kind %s")
 	AIToolCallLoopExceeded         = New("ai: tool call loop exceeded %d iterations")
 	AIToolExecutionFailed          = New("ai: tool %q execution failed: %v")
 	AIToolNotFound                 = New("ai: tool %q not found")

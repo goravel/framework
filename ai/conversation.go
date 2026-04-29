@@ -61,13 +61,14 @@ func (r *conversation) Messages() []contractsai.Message {
 
 func (r *conversation) Tools() []contractsai.Tool { return r.agent.Tools() }
 
-func (r *conversation) Prompt(input string) (contractsai.Response, error) {
+func (r *conversation) Prompt(input string, options ...contractsai.ConversationOption) (contractsai.Response, error) {
 	// Serialize concurrent calls to prevent one failure from corrupting
 	// history written by another in-flight Prompt.
 	r.promptMu.Lock()
 	defer r.promptMu.Unlock()
 
 	tools := r.agent.Tools()
+	conversationOptions := r.applyConversationOptions(options)
 
 	// Build an isolated working copy of the message history for this call.
 	// We do not touch r.messages until the entire call succeeds.
@@ -90,10 +91,11 @@ func (r *conversation) Prompt(input string) (contractsai.Response, error) {
 	}
 
 	agentPrompt := contractsai.AgentPrompt{
-		Agent: r,
-		Input: input,
-		Model: r.model,
-		Tools: tools,
+		Agent:       r,
+		Input:       input,
+		Model:       r.model,
+		Attachments: conversationOptions.Attachments,
+		Tools:       tools,
 	}
 
 	var (
@@ -147,10 +149,11 @@ func (r *conversation) Prompt(input string) (contractsai.Response, error) {
 		// On the next iteration Input is empty — the model continues from the
 		// tool results already in the pending history.
 		agentPrompt = contractsai.AgentPrompt{
-			Agent: r,
-			Input: "",
-			Model: r.model,
-			Tools: tools,
+			Agent:       r,
+			Input:       "",
+			Model:       r.model,
+			Attachments: conversationOptions.Attachments,
+			Tools:       tools,
 		}
 	}
 
@@ -183,13 +186,15 @@ func (r *conversation) prompt(ctx context.Context, prompt contractsai.AgentPromp
 	}))
 }
 
-func (r *conversation) Stream(input string) (contractsai.StreamableResponse, error) {
+func (r *conversation) Stream(input string, options ...contractsai.ConversationOption) (contractsai.StreamableResponse, error) {
 	tools := r.agent.Tools()
+	conversationOptions := r.applyConversationOptions(options)
 	initialPrompt := contractsai.AgentPrompt{
-		Agent: r,
-		Input: input,
-		Model: r.model,
-		Tools: tools,
+		Agent:       r,
+		Input:       input,
+		Model:       r.model,
+		Attachments: conversationOptions.Attachments,
+		Tools:       tools,
 	}
 	clearPending := func() {
 		r.mu.Lock()
@@ -359,10 +364,11 @@ func (r *conversation) Stream(input string) (contractsai.StreamableResponse, err
 			r.mu.Unlock()
 
 			agentPrompt = contractsai.AgentPrompt{
-				Agent: r,
-				Input: "",
-				Model: r.model,
-				Tools: tools,
+				Agent:       r,
+				Input:       "",
+				Model:       r.model,
+				Attachments: conversationOptions.Attachments,
+				Tools:       tools,
 			}
 		}
 
@@ -397,9 +403,10 @@ func (r *conversation) prepareStreamPrompt(ctx context.Context, prompt contracts
 
 func (r *conversation) runMiddlewarePipeline(ctx context.Context, prompt contractsai.AgentPrompt, destination contractsai.Next) (contractsai.Response, error) {
 	next := destination
+	activeMiddlewares := slices.Clone(r.middlewares)
 
-	for i := len(r.middlewares) - 1; i >= 0; i-- {
-		middleware := r.middlewares[i]
+	for i := len(activeMiddlewares) - 1; i >= 0; i-- {
+		middleware := activeMiddlewares[i]
 		nextHandler := next
 		next = contractsai.Next(func(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
 			return middleware.Handle(ctx, prompt, nextHandler)
@@ -416,6 +423,18 @@ func (r *conversation) runMiddlewarePipeline(ctx context.Context, prompt contrac
 	}
 
 	return response, nil
+}
+
+func (r *conversation) applyConversationOptions(options []contractsai.ConversationOption) *contractsai.ConversationOptions {
+	conversationOptions := &contractsai.ConversationOptions{}
+	for _, option := range options {
+		if !isNilInterface(option) {
+			option(conversationOptions)
+		}
+	}
+	conversationOptions.Attachments = filterNilAttachments(conversationOptions.Attachments)
+
+	return conversationOptions
 }
 
 func finalizeMiddlewareResponse(middlewareResponse *middlewareResponse, response contractsai.Response) contractsai.Response {
