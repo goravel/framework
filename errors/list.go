@@ -37,7 +37,9 @@ var (
 
 	AIProviderNotSupported         = New("ai provider not found: %s")
 	AIProviderContractNotFulfilled = New("%s.via must be contracts/ai.Provider or func() (contracts/ai.Provider, error)")
+	AIFacadeNotSet                 = New("ai facade is not initialized")
 	AIAttachmentUrlResponseNotOK   = New("ai: attachment url request failed with status %d")
+	AIProviderDoesNotSupportFiles  = New("ai: provider %s does not support files")
 	AIResponseIsNil                = New("ai: response is nil")
 	AIStreamRunnerRequired         = New("ai stream runner is required")
 	AIUnsupportedAttachmentKind    = New("ai: unsupported attachment kind %s")

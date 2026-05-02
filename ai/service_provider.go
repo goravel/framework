@@ -13,6 +13,7 @@ import (
 )
 
 var (
+	aiFacade      contractsai.AI
 	storageFacade contractsfilesystem.Storage
 	httpFacade    contractshttpclient.Factory
 )
@@ -41,6 +42,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (r *ServiceProvider) Boot(app foundation.Application) {
+	aiFacade = app.MakeAI()
 	storageFacade = app.MakeStorage()
 	httpFacade = app.MakeHttp()
 

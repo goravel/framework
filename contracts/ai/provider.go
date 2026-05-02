@@ -29,3 +29,7 @@ type Provider interface {
 	// Stream executes a streaming model request and returns a streamable response.
 	Stream(ctx context.Context, prompt AgentPrompt) (StreamableResponse, error)
 }
+
+type FileProvider interface {
+	PutFile(ctx context.Context, file StorableFile, options Options) (StoredFileResponse, error)
+}

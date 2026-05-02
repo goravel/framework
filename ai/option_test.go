@@ -367,3 +367,7 @@ func (a *optionNilTestAttachment) FileName() string { return "" }
 func (a *optionNilTestAttachment) MimeType() string { return "" }
 
 func (a *optionNilTestAttachment) Content(context.Context) ([]byte, error) { return nil, nil }
+
+func (a *optionNilTestAttachment) Put(...contractsai.Option) (contractsai.StoredFileResponse, error) {
+	return nil, nil
+}

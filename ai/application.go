@@ -5,6 +5,7 @@ import (
 	"slices"
 
 	contractsai "github.com/goravel/framework/contracts/ai"
+	"github.com/goravel/framework/errors"
 )
 
 var _ contractsai.AI = (*Application)(nil)
@@ -24,6 +25,32 @@ func NewApplication(ctx context.Context, config contractsai.Config) *Application
 }
 
 func (r *Application) Agent(agent contractsai.Agent, options ...contractsai.Option) (contractsai.Conversation, error) {
+	opts, _, provider, err := r.resolveProvider(options)
+	if err != nil {
+		return nil, err
+	}
+
+	model := opts.Model
+	middlewares := append(slices.Clone(agent.Middleware()), opts.Middlewares...)
+
+	return NewConversation(r.ctx, agent, provider, model, middlewares), nil
+}
+
+func (r *Application) putFile(file contractsai.StorableFile, options ...contractsai.Option) (contractsai.StoredFileResponse, error) {
+	opts, providerName, provider, err := r.resolveProvider(options)
+	if err != nil {
+		return nil, err
+	}
+
+	fileProvider, ok := provider.(contractsai.FileProvider)
+	if !ok {
+		return nil, errors.AIProviderDoesNotSupportFiles.Args(providerName)
+	}
+
+	return fileProvider.PutFile(r.ctx, file, *opts)
+}
+
+func (r *Application) resolveProvider(options []contractsai.Option) (*contractsai.Options, string, contractsai.Provider, error) {
 	opts := &contractsai.Options{}
 	for _, option := range options {
 		option(opts)
@@ -36,13 +63,10 @@ func (r *Application) Agent(agent contractsai.Agent, options ...contractsai.Opti
 
 	provider, err := r.resolver.New(providerName)
 	if err != nil {
-		return nil, err
+		return nil, "", nil, err
 	}
 
-	model := opts.Model
-	middlewares := append(slices.Clone(agent.Middleware()), opts.Middlewares...)
-
-	return NewConversation(r.ctx, agent, provider, model, middlewares), nil
+	return opts, providerName, provider, nil
 }
 
 func (r *Application) WithContext(ctx context.Context) contractsai.AI {

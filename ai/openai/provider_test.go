@@ -521,6 +521,9 @@ func (attachment namedAttachment) MimeType() string                 { return att
 func (attachment namedAttachment) Content(context.Context) ([]byte, error) {
 	return attachment.content, nil
 }
+func (attachment namedAttachment) Put(...contractsai.Option) (contractsai.StoredFileResponse, error) {
+	return nil, nil
+}
 
 func (unsupportedAttachment) Kind() contractsai.AttachmentKind {
 	return contractsai.AttachmentKind("audio")
@@ -529,6 +532,9 @@ func (unsupportedAttachment) FileName() string { return "audio.mp3" }
 func (unsupportedAttachment) MimeType() string { return "audio/mpeg" }
 func (unsupportedAttachment) Content(context.Context) ([]byte, error) {
 	return []byte("audio"), nil
+}
+func (unsupportedAttachment) Put(...contractsai.Option) (contractsai.StoredFileResponse, error) {
+	return nil, nil
 }
 
 func TestProviderStream(t *testing.T) {

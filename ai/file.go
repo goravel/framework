@@ -272,6 +272,19 @@ func (r *resolved) FileName() string { return r.filename }
 
 func (r *resolved) MimeType() string { return r.mimeType }
 
+func (r *resolved) Put(options ...contractsai.Option) (contractsai.StoredFileResponse, error) {
+	if aiFacade == nil {
+		return nil, errors.AIFacadeNotSet
+	}
+
+	application, ok := aiFacade.(*Application)
+	if !ok {
+		return nil, errors.AIFacadeNotSet
+	}
+
+	return application.putFile(r, options...)
+}
+
 func (r *resolved) Content(ctx context.Context) ([]byte, error) {
 	r.once.Do(func() {
 		content, filename, mimeType, err := r.resolver(ctx)

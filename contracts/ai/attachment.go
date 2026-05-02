@@ -17,10 +17,19 @@ type AttachmentOptions struct {
 
 type AttachmentOption func(options *AttachmentOptions)
 
-// Attachment is request-scoped content sent with a user prompt.
-type Attachment interface {
-	Kind() AttachmentKind
+type StorableFile interface {
 	FileName() string
 	MimeType() string
 	Content(ctx context.Context) ([]byte, error)
+}
+
+type StoredFileResponse interface {
+	ID() string
+}
+
+// Attachment is request-scoped content sent with a user prompt.
+type Attachment interface {
+	StorableFile
+	Kind() AttachmentKind
+	Put(options ...Option) (StoredFileResponse, error)
 }

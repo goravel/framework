@@ -1,6 +1,7 @@
 package openai
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -138,6 +139,25 @@ func (r *Provider) Stream(ctx context.Context, prompt contractsai.AgentPrompt) (
 			usage:     currentUsage,
 		}, nil
 	}), nil
+}
+
+func (r *Provider) PutFile(ctx context.Context, file contractsai.StorableFile, _ contractsai.Options) (contractsai.StoredFileResponse, error) {
+	content, err := file.Content(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	params := goopenai.FileNewParams{
+		File:    goopenai.File(bytes.NewReader(content), file.FileName(), file.MimeType()),
+		Purpose: goopenai.FilePurposeUserData,
+	}
+
+	upload, err := r.client.Files.New(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	return &storedFileResponse{id: upload.ID}, nil
 }
 
 func (r *Provider) resolveModel(model string) string {

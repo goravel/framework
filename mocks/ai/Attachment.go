@@ -216,6 +216,77 @@ func (_c *Attachment_MimeType_Call) RunAndReturn(run func() string) *Attachment_
 	return _c
 }
 
+// Put provides a mock function with given fields: options
+func (_m *Attachment) Put(options ...ai.Option) (ai.StoredFileResponse, error) {
+	_va := make([]interface{}, len(options))
+	for _i := range options {
+		_va[_i] = options[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Put")
+	}
+
+	var r0 ai.StoredFileResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(...ai.Option) (ai.StoredFileResponse, error)); ok {
+		return rf(options...)
+	}
+	if rf, ok := ret.Get(0).(func(...ai.Option) ai.StoredFileResponse); ok {
+		r0 = rf(options...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(ai.StoredFileResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(...ai.Option) error); ok {
+		r1 = rf(options...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Attachment_Put_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Put'
+type Attachment_Put_Call struct {
+	*mock.Call
+}
+
+// Put is a helper method to define mock.On call
+//   - options ...ai.Option
+func (_e *Attachment_Expecter) Put(options ...interface{}) *Attachment_Put_Call {
+	return &Attachment_Put_Call{Call: _e.mock.On("Put",
+		append([]interface{}{}, options...)...)}
+}
+
+func (_c *Attachment_Put_Call) Run(run func(options ...ai.Option)) *Attachment_Put_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]ai.Option, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(ai.Option)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Attachment_Put_Call) Return(_a0 ai.StoredFileResponse, _a1 error) *Attachment_Put_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Attachment_Put_Call) RunAndReturn(run func(...ai.Option) (ai.StoredFileResponse, error)) *Attachment_Put_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewAttachment creates a new instance of Attachment. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewAttachment(t interface {
