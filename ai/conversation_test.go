@@ -177,10 +177,16 @@ func (s *ConversationTestSuite) TestReset() {
 			}
 
 			s.Equal(tt.expectBefore, conv.Messages())
+			stateBefore := conv.providerState
+			conv.providerState.Set("foo", "bar")
 			conv.Reset()
 			resetMessages := conv.Messages()
 			s.Equal(tt.expectAfter, resetMessages)
-			s.NotSame(&tt.initial[0], &resetMessages[0])
+			if len(tt.expectAfter) > 0 {
+				s.NotSame(&tt.initial[0], &resetMessages[0])
+			}
+			s.Same(stateBefore, conv.providerState)
+			s.Nil(conv.providerState.Get("foo"))
 		})
 	}
 }

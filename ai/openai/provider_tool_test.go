@@ -1,9 +1,10 @@
 package openai
 
 import (
-	"context"
 	"bytes"
+	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -449,9 +450,9 @@ func readCapturedToolRequest(t *testing.T, captured <-chan capturedToolRequest) 
 
 func decodeToolBodyMap(t *testing.T, r *http.Request) map[string]any {
 	t.Helper()
-	body, err := ioReadAllTool(r.Body)
+	body, err := io.ReadAll(r.Body)
 	require.NoError(t, err)
-	r.Body = ioNopCloserTool(bytes.NewReader(body))
+	r.Body = io.NopCloser(bytes.NewReader(body))
 
 	var payload map[string]any
 	if err := json.Unmarshal(body, &payload); err != nil {
@@ -495,17 +496,3 @@ func (t *staticTool) Parameters() map[string]any { return t.params }
 func (t *staticTool) Execute(_ context.Context, _ map[string]any) (string, error) {
 	return "tool result", nil
 }
-
-func ioReadAllTool(r interface{ Read([]byte) (int, error) }) ([]byte, error) {
-	buf := new(bytes.Buffer)
-	_, err := buf.ReadFrom(r)
-	return buf.Bytes(), err
-}
-
-func ioNopCloserTool(r *bytes.Reader) *toolReadCloser {
-	return &toolReadCloser{Reader: r}
-}
-
-type toolReadCloser struct{ *bytes.Reader }
-
-func (r *toolReadCloser) Close() error { return nil }

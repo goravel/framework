@@ -66,7 +66,6 @@ func (r *Provider) Prompt(ctx context.Context, prompt contractsai.AgentPrompt) (
 	}
 
 	return &response{
-		id:        completion.ID,
 		text:      text,
 		toolCalls: toolCalls,
 		usage:     r.parseUsage(completion.Usage),
@@ -134,7 +133,6 @@ func (r *Provider) Stream(ctx context.Context, prompt contractsai.AgentPrompt) (
 		}
 
 		return &response{
-			id:        responseID,
 			text:      text.String(),
 			toolCalls: toolCalls,
 			usage:     currentUsage,
@@ -183,7 +181,7 @@ func (r *Provider) buildInput(ctx context.Context, prompt contractsai.AgentPromp
 	if prompt.ProviderState != nil {
 		previousResponseID, _ = prompt.ProviderState.Get(providerStateResponseID).(string)
 	}
-	if previousResponseID != "" && prompt.Input == "" && len(prompt.Attachments) == 0 {
+	if previousResponseID != "" && prompt.Input == "" {
 		if toolResultInput := r.buildToolResultInput(prompt.Agent.Messages()); len(toolResultInput) > 0 {
 			return toolResultInput, prompt.Agent.Instructions(), previousResponseID, nil
 		}

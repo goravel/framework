@@ -1,11 +1,13 @@
 package openai
 
 import (
-	"context"
 	"bytes"
+	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	goopenai "github.com/openai/openai-go/v3"
@@ -182,8 +184,8 @@ func TestProviderPrompt(t *testing.T) {
 					{Role: contractsai.RoleAssistant, Content: "history assistant"},
 				}).Once()
 			},
-			input:      "new input",
-			expectText: "assistant reply",
+			input:       "new input",
+			expectText:  "assistant reply",
 			expectUsage: usageCheck{input: 11, output: 7, total: 18},
 			expectRequest: normalizedCapturedRequest{
 				path:          "/responses",
@@ -233,7 +235,7 @@ func TestProviderPrompt(t *testing.T) {
 				path:          "/responses",
 				authorization: "Bearer test-key",
 				model:         "gpt-default",
-				messages: []normalizedMessage{{role: "user", content: "hello"}},
+				messages:      []normalizedMessage{{role: "user", content: "hello"}},
 			},
 		},
 	}
@@ -366,12 +368,12 @@ func TestProviderBuildInputDoesNotTreatEmptyAttachmentPromptAsToolContinuation(t
 	state := &providerStateStub{data: map[string]any{providerStateResponseID: "resp_prev"}}
 	mockAgent := mocksai.NewAgent(t)
 	mockAgent.EXPECT().Instructions().Return("").Once()
-	mockAgent.EXPECT().Messages().Return([]contractsai.Message{{Role: contractsai.RoleUser, Content: "history"}}).Once()
+	mockAgent.EXPECT().Messages().Return([]contractsai.Message{{Role: contractsai.RoleUser, Content: "history"}}).Twice()
 
 	provider := &Provider{}
 	input, _, previousResponseID, err := provider.buildInput(context.Background(), contractsai.AgentPrompt{
-		Agent:       mockAgent,
-		Attachments: []contractsai.Attachment{namedAttachment{kind: contractsai.AttachmentKindFile, filename: "report.txt", mimeType: "text/plain", content: []byte("document")}},
+		Agent:         mockAgent,
+		Attachments:   []contractsai.Attachment{namedAttachment{kind: contractsai.AttachmentKindFile, filename: "report.txt", mimeType: "text/plain", content: []byte("document")}},
 		ProviderState: state,
 	})
 	require.NoError(t, err)
@@ -382,6 +384,28 @@ func TestProviderBuildInputDoesNotTreatEmptyAttachmentPromptAsToolContinuation(t
 	require.Len(t, content, 2)
 	assert.Equal(t, map[string]any{"text": "history", "type": "input_text"}, content[0])
 	assert.Equal(t, map[string]any{"text": "File: report.txt\n\ndocument", "type": "input_text"}, content[1])
+}
+
+func TestProviderBuildInputIgnoresAttachmentsDuringToolContinuation(t *testing.T) {
+	state := &providerStateStub{data: map[string]any{providerStateResponseID: "resp_prev"}}
+	mockAgent := mocksai.NewAgent(t)
+	mockAgent.EXPECT().Instructions().Return("").Once()
+	mockAgent.EXPECT().Messages().Return([]contractsai.Message{
+		{Role: contractsai.RoleUser, Content: "question"},
+		{Role: contractsai.RoleAssistant, ToolCalls: []contractsai.ToolCall{{ID: "call-1", Name: "lookup"}}},
+		{Role: contractsai.RoleToolResult, Content: "result", ToolCallID: "call-1"},
+	}).Once()
+
+	provider := &Provider{}
+	input, _, previousResponseID, err := provider.buildInput(context.Background(), contractsai.AgentPrompt{
+		Agent:         mockAgent,
+		Attachments:   []contractsai.Attachment{namedAttachment{kind: contractsai.AttachmentKindFile, filename: "report.txt", content: []byte("document")}},
+		ProviderState: state,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "resp_prev", previousResponseID)
+	require.Len(t, input, 1)
+	assert.Equal(t, []normalizedMessage{{role: "tool", content: "result"}}, normalizeInputItems([]map[string]any{marshalInputItem(t, input[0])}))
 }
 
 func TestProviderPromptAndStreamSerializeAttachmentsTheSameWay(t *testing.T) {
@@ -486,9 +510,11 @@ func (attachment namedAttachment) Content(context.Context) ([]byte, error) {
 	return attachment.content, nil
 }
 
-func (unsupportedAttachment) Kind() contractsai.AttachmentKind { return contractsai.AttachmentKind("audio") }
-func (unsupportedAttachment) FileName() string                 { return "audio.mp3" }
-func (unsupportedAttachment) MimeType() string                 { return "audio/mpeg" }
+func (unsupportedAttachment) Kind() contractsai.AttachmentKind {
+	return contractsai.AttachmentKind("audio")
+}
+func (unsupportedAttachment) FileName() string { return "audio.mp3" }
+func (unsupportedAttachment) MimeType() string { return "audio/mpeg" }
 func (unsupportedAttachment) Content(context.Context) ([]byte, error) {
 	return []byte("audio"), nil
 }
@@ -551,8 +577,8 @@ func TestProviderStream(t *testing.T) {
 					{Role: contractsai.RoleAssistant, Content: "history assistant"},
 				}).Once()
 			},
-			input:      "new input",
-			expectText: "hello",
+			input:       "new input",
+			expectText:  "hello",
 			expectUsage: usageCheck{input: 4, output: 2, total: 6},
 			expectEvents: []normalizedStreamEvent{
 				{eventType: contractsai.StreamEventTypeTextDelta, delta: "hel"},
@@ -613,7 +639,7 @@ func TestProviderStream(t *testing.T) {
 				mockAgent.EXPECT().Instructions().Return("").Once()
 				mockAgent.EXPECT().Messages().Return(nil).Once()
 			},
-			input: "hello",
+			input:       "hello",
 			expectUsage: usageCheck{input: 6, output: 3, total: 9},
 			expectToolCalls: []contractsai.ToolCall{{
 				ID:      "call_1",
@@ -779,6 +805,18 @@ func marshalInputContent(t *testing.T, message any) []map[string]any {
 	return parts
 }
 
+func marshalInputItem(t *testing.T, item any) map[string]any {
+	t.Helper()
+
+	data, err := json.Marshal(item)
+	require.NoError(t, err)
+
+	var raw map[string]any
+	require.NoError(t, json.Unmarshal(data, &raw))
+
+	return raw
+}
+
 func messageText(content any) string {
 	switch val := content.(type) {
 	case string:
@@ -877,9 +915,9 @@ func normalizeCapturedStreamRequest(req capturedStreamRequest) normalizedCapture
 
 func decodeBodyMap(t *testing.T, r *http.Request) map[string]any {
 	t.Helper()
-	body, err := ioReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	require.NoError(t, err)
-	r.Body = ioNopCloser(bytes.NewReader(body))
+	r.Body = io.NopCloser(bytes.NewReader(body))
 
 	var payload map[string]any
 	if err := json.Unmarshal(body, &payload); err != nil {
@@ -983,11 +1021,11 @@ func responseBody(text string, output []map[string]any, inputTokens, outputToken
 		"model":  "gpt-test",
 		"output": output,
 		"usage": map[string]any{
-			"input_tokens":  inputTokens,
-			"input_tokens_details": map[string]any{"cached_tokens": 0},
-			"output_tokens": outputTokens,
+			"input_tokens":          inputTokens,
+			"input_tokens_details":  map[string]any{"cached_tokens": 0},
+			"output_tokens":         outputTokens,
 			"output_tokens_details": map[string]any{"reasoning_tokens": 0},
-			"total_tokens": totalTokens,
+			"total_tokens":          totalTokens,
 		},
 	}
 
@@ -1000,34 +1038,9 @@ func bodySequence(body string) []string {
 }
 
 func stringsJoin(parts []string) string {
-	return joinWith(parts, "")
+	return strings.Join(parts, "")
 }
 
 func stringsJoinLines(parts ...string) string {
-	return joinWith(parts, "\n")
+	return strings.Join(parts, "\n")
 }
-
-func joinWith(parts []string, sep string) string {
-	if len(parts) == 0 {
-		return ""
-	}
-	result := parts[0]
-	for i := 1; i < len(parts); i++ {
-		result += sep + parts[i]
-	}
-	return result
-}
-
-func ioReadAll(r interface{ Read([]byte) (int, error) }) ([]byte, error) {
-	buf := new(bytes.Buffer)
-	_, err := buf.ReadFrom(r)
-	return buf.Bytes(), err
-}
-
-func ioNopCloser(r *bytes.Reader) *readCloser {
-	return &readCloser{Reader: r}
-}
-
-type readCloser struct{ *bytes.Reader }
-
-func (r *readCloser) Close() error { return nil }

@@ -44,4 +44,16 @@ func TestProviderState(t *testing.T) {
 		assert.Equal(t, 123, state.Get("baz"))
 		assert.Len(t, state.data, 1)
 	})
+
+	t.Run("clear removes all values", func(t *testing.T) {
+		state := newProviderState()
+
+		state.Set("foo", "bar")
+		state.Set("baz", 123)
+		state.Clear()
+
+		assert.Nil(t, state.Get("foo"))
+		assert.Nil(t, state.Get("baz"))
+		assert.Nil(t, state.data)
+	})
 }

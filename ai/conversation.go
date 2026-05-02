@@ -15,14 +15,14 @@ import (
 const MaxToolCallIterations = 10
 
 type conversation struct {
-	ctx         context.Context
-	agent       contractsai.Agent
-	messages    []contractsai.Message
-	provider    contractsai.Provider
-	model       string
-	middlewares []contractsai.Middleware
-	providerState contractsai.ProviderState
-	mu          sync.RWMutex
+	ctx           context.Context
+	agent         contractsai.Agent
+	messages      []contractsai.Message
+	provider      contractsai.Provider
+	model         string
+	middlewares   []contractsai.Middleware
+	providerState *providerState
+	mu            sync.RWMutex
 	// promptMu serializes concurrent Prompt() calls so that a failure in one
 	// call cannot corrupt history being written by another concurrent call.
 	promptMu sync.Mutex
@@ -34,12 +34,12 @@ type conversation struct {
 
 func NewConversation(ctx context.Context, agent contractsai.Agent, provider contractsai.Provider, model string, middlewares []contractsai.Middleware) *conversation {
 	return &conversation{
-		ctx:         ctx,
-		agent:       agent,
-		messages:    slices.Clone(agent.Messages()),
-		provider:    provider,
-		model:       model,
-		middlewares: filterNilMiddlewares(middlewares),
+		ctx:           ctx,
+		agent:         agent,
+		messages:      slices.Clone(agent.Messages()),
+		provider:      provider,
+		model:         model,
+		middlewares:   filterNilMiddlewares(middlewares),
 		providerState: newProviderState(),
 	}
 }
@@ -93,11 +93,11 @@ func (r *conversation) Prompt(input string, options ...contractsai.ConversationO
 	}
 
 	agentPrompt := contractsai.AgentPrompt{
-		Agent:       r,
-		Input:       input,
-		Model:       r.model,
-		Attachments: conversationOptions.Attachments,
-		Tools:       tools,
+		Agent:         r,
+		Input:         input,
+		Model:         r.model,
+		Attachments:   conversationOptions.Attachments,
+		Tools:         tools,
 		ProviderState: r.providerState,
 	}
 
@@ -152,11 +152,11 @@ func (r *conversation) Prompt(input string, options ...contractsai.ConversationO
 		// On the next iteration Input is empty — the model continues from the
 		// tool results already in the pending history.
 		agentPrompt = contractsai.AgentPrompt{
-			Agent:       r,
-			Input:       "",
-			Model:       r.model,
-			Attachments: conversationOptions.Attachments,
-			Tools:       tools,
+			Agent:         r,
+			Input:         "",
+			Model:         r.model,
+			Attachments:   conversationOptions.Attachments,
+			Tools:         tools,
 			ProviderState: r.providerState,
 		}
 	}
@@ -194,11 +194,11 @@ func (r *conversation) Stream(input string, options ...contractsai.ConversationO
 	tools := r.agent.Tools()
 	conversationOptions := r.applyConversationOptions(options)
 	initialPrompt := contractsai.AgentPrompt{
-		Agent:       r,
-		Input:       input,
-		Model:       r.model,
-		Attachments: conversationOptions.Attachments,
-		Tools:       tools,
+		Agent:         r,
+		Input:         input,
+		Model:         r.model,
+		Attachments:   conversationOptions.Attachments,
+		Tools:         tools,
 		ProviderState: r.providerState,
 	}
 	clearPending := func() {
@@ -369,13 +369,13 @@ func (r *conversation) Stream(input string, options ...contractsai.ConversationO
 			r.mu.Unlock()
 
 			agentPrompt = contractsai.AgentPrompt{
-			Agent:       r,
-			Input:       "",
-			Model:       r.model,
-			Attachments: conversationOptions.Attachments,
-			Tools:       tools,
-			ProviderState: r.providerState,
-		}
+				Agent:         r,
+				Input:         "",
+				Model:         r.model,
+				Attachments:   conversationOptions.Attachments,
+				Tools:         tools,
+				ProviderState: r.providerState,
+			}
 		}
 
 		return nil, errors.AIToolCallLoopExceeded.Args(MaxToolCallIterations)
@@ -466,9 +466,13 @@ func (r *conversation) commitConversation(working []contractsai.Message, input s
 }
 
 func (r *conversation) Reset() {
+	r.promptMu.Lock()
+	defer r.promptMu.Unlock()
+
 	r.mu.Lock()
+	r.pending = nil
 	r.messages = slices.Clone(r.agent.Messages())
-	r.providerState = newProviderState()
+	r.providerState.Clear()
 	r.mu.Unlock()
 }
 

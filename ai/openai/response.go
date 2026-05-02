@@ -3,7 +3,6 @@ package openai
 import contractsai "github.com/goravel/framework/contracts/ai"
 
 type response struct {
-	id        string
 	text      string
 	usage     *usage
 	toolCalls []contractsai.ToolCall

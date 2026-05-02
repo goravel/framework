@@ -40,3 +40,10 @@ func (r *providerState) Set(key string, value any) {
 
 	r.data[key] = value
 }
+
+func (r *providerState) Clear() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.data = nil
+}
