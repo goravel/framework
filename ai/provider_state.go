@@ -26,16 +26,18 @@ func (r *providerState) Set(key string, value any) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if r.data == nil {
-		r.data = make(map[string]any)
-	}
-
 	if value == nil {
-		delete(r.data, key)
-		if len(r.data) == 0 {
-			r.data = nil
+		if r.data != nil {
+			delete(r.data, key)
+			if len(r.data) == 0 {
+				r.data = nil
+			}
 		}
 		return
+	}
+
+	if r.data == nil {
+		r.data = make(map[string]any)
 	}
 
 	r.data[key] = value
