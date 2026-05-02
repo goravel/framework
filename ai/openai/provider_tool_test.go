@@ -296,6 +296,16 @@ func TestProviderBuildTools(t *testing.T) {
 			for i, tool := range tools {
 				assert.Equal(t, "function", tool["type"])
 				assert.Equal(t, tt.expectInTools[i], tool["name"])
+				if tt.expectInTools[i] == "send_email" {
+					_, hasStrict := tool["strict"]
+					assert.False(t, hasStrict)
+					_, hasParameters := tool["parameters"]
+					assert.False(t, hasParameters)
+				}
+				if tt.expectInTools[i] == "get_weather" {
+					assert.Equal(t, true, tool["strict"])
+					assert.NotNil(t, tool["parameters"])
+				}
 			}
 		})
 	}

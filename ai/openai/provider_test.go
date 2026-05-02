@@ -362,6 +362,89 @@ func TestProviderBuildInputKeepsBinaryFileAttachmentsAsInputFiles(t *testing.T) 
 	assert.Equal(t, "report.pdf", content[0]["filename"])
 }
 
+func TestProviderBuildInputDoesNotTreatEmptyAttachmentPromptAsToolContinuation(t *testing.T) {
+	state := &providerStateStub{data: map[string]any{providerStateResponseID: "resp_prev"}}
+	mockAgent := mocksai.NewAgent(t)
+	mockAgent.EXPECT().Instructions().Return("").Once()
+	mockAgent.EXPECT().Messages().Return([]contractsai.Message{{Role: contractsai.RoleUser, Content: "history"}}).Once()
+
+	provider := &Provider{}
+	input, _, previousResponseID, err := provider.buildInput(context.Background(), contractsai.AgentPrompt{
+		Agent:       mockAgent,
+		Attachments: []contractsai.Attachment{namedAttachment{kind: contractsai.AttachmentKindFile, filename: "report.txt", mimeType: "text/plain", content: []byte("document")}},
+		ProviderState: state,
+	})
+	require.NoError(t, err)
+	assert.Empty(t, previousResponseID)
+	require.Len(t, input, 1)
+
+	content := marshalInputContent(t, input[0])
+	require.Len(t, content, 2)
+	assert.Equal(t, map[string]any{"text": "history", "type": "input_text"}, content[0])
+	assert.Equal(t, map[string]any{"text": "File: report.txt\n\ndocument", "type": "input_text"}, content[1])
+}
+
+func TestProviderPromptAndStreamSerializeAttachmentsTheSameWay(t *testing.T) {
+	attachments := []contractsai.Attachment{
+		frameworkai.ImageFromByte([]byte("image"), frameworkai.WithMimeType("image/png")),
+		namedAttachment{kind: contractsai.AttachmentKindFile, filename: "report.txt", mimeType: "text/plain", content: []byte("document")},
+	}
+
+	promptAgent := mocksai.NewAgent(t)
+	promptAgent.EXPECT().Instructions().Return("").Once()
+	promptAgent.EXPECT().Messages().Return(nil).Once()
+
+	streamAgent := mocksai.NewAgent(t)
+	streamAgent.EXPECT().Instructions().Return("").Once()
+	streamAgent.EXPECT().Messages().Return(nil).Once()
+
+	promptCaptured := make(chan capturedRequest, 1)
+	promptServer := newResponsesServer(t, http.StatusOK, bodySequence(responseBody("ok", nil, 1, 1, 2)), promptCaptured)
+	t.Cleanup(promptServer.Close)
+
+	provider := &Provider{
+		client: goopenai.NewClient(option.WithBaseURL(promptServer.URL), option.WithAPIKey("test-key")),
+		config: contractsai.ProviderConfig{},
+	}
+	provider.config.Models.Text.Default = "gpt-default"
+
+	_, err := provider.Prompt(context.Background(), contractsai.AgentPrompt{
+		Agent:       promptAgent,
+		Input:       "describe these",
+		Attachments: attachments,
+	})
+	require.NoError(t, err)
+
+	promptReq, ok := readCapturedRequest(t, promptCaptured)
+	require.True(t, ok)
+
+	streamCaptured := make(chan capturedStreamRequest, 1)
+	streamServer := newStreamingResponsesServer(t, http.StatusOK, "text/event-stream", stringsJoinLines(
+		`data: {"type":"response.completed","sequence_number":1,"response":{"id":"resp_1","object":"response","model":"gpt-test","output":[{"id":"msg_1","type":"message","role":"assistant","status":"completed","content":[{"type":"output_text","text":"ok","annotations":[],"logprobs":[]}]}],"usage":{"input_tokens":1,"input_tokens_details":{"cached_tokens":0},"output_tokens":1,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":2}}}`,
+		``,
+		`data: [DONE]`,
+		``,
+	), streamCaptured)
+	t.Cleanup(streamServer.Close)
+
+	provider.client = goopenai.NewClient(option.WithBaseURL(streamServer.URL), option.WithAPIKey("test-key"))
+
+	stream, err := provider.Stream(context.Background(), contractsai.AgentPrompt{
+		Agent:       streamAgent,
+		Input:       "describe these",
+		Attachments: attachments,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, stream)
+	require.NoError(t, stream.Each(func(contractsai.StreamEvent) error { return nil }))
+
+	streamReq, ok := readCapturedStreamRequest(t, streamCaptured)
+	require.True(t, ok)
+
+	assert.Equal(t, inputItemsFromBody(promptReq.body), inputItemsFromBody(streamReq.body))
+	assert.True(t, streamReq.stream)
+}
+
 func TestProviderBuildInputUnsupportedAttachmentKind(t *testing.T) {
 	mockAgent := mocksai.NewAgent(t)
 	mockAgent.EXPECT().Instructions().Return("").Once()
@@ -378,6 +461,16 @@ func TestProviderBuildInputUnsupportedAttachmentKind(t *testing.T) {
 }
 
 type unsupportedAttachment struct{}
+
+type providerStateStub struct{ data map[string]any }
+
+func (p *providerStateStub) Get(key string) any { return p.data[key] }
+func (p *providerStateStub) Set(key string, value any) {
+	if p.data == nil {
+		p.data = make(map[string]any)
+	}
+	p.data[key] = value
+}
 
 type namedAttachment struct {
 	kind     contractsai.AttachmentKind

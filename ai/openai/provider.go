@@ -183,8 +183,10 @@ func (r *Provider) buildInput(ctx context.Context, prompt contractsai.AgentPromp
 	if prompt.ProviderState != nil {
 		previousResponseID, _ = prompt.ProviderState.Get(providerStateResponseID).(string)
 	}
-	if previousResponseID != "" && prompt.Input == "" {
-		return r.buildToolResultInput(prompt.Agent.Messages()), prompt.Agent.Instructions(), previousResponseID, nil
+	if previousResponseID != "" && prompt.Input == "" && len(prompt.Attachments) == 0 {
+		if toolResultInput := r.buildToolResultInput(prompt.Agent.Messages()); len(toolResultInput) > 0 {
+			return toolResultInput, prompt.Agent.Instructions(), previousResponseID, nil
+		}
 	}
 
 	input := make([]responses.ResponseInputItemUnionParam, 0)
@@ -385,14 +387,13 @@ func (r *Provider) buildTools(tools []contractsai.Tool) []responses.ToolUnionPar
 	params := make([]responses.ToolUnionParam, 0, len(tools))
 	for _, tool := range tools {
 		fn := responses.FunctionToolParam{
-			Name:       tool.Name(),
-			Strict:     param.NewOpt(true),
-			Parameters: map[string]any{},
+			Name: tool.Name(),
 		}
 		if desc := tool.Description(); desc != "" {
 			fn.Description = param.NewOpt(desc)
 		}
 		if schema := tool.Parameters(); schema != nil {
+			fn.Strict = param.NewOpt(true)
 			fn.Parameters = schema
 		}
 		params = append(params, responses.ToolUnionParam{OfFunction: &fn})
