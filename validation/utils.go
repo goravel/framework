@@ -553,7 +553,7 @@ func structToMap(rv reflect.Value) map[string]any {
 // normalizeValue recursively converts reflect.Value to map[string]any / []any
 // so that dotGet and collectKeys can traverse nested data.
 func normalizeValue(rv reflect.Value) any {
-	if rv.Kind() == reflect.Ptr || rv.Kind() == reflect.Interface {
+	if rv.Kind() == reflect.Pointer || rv.Kind() == reflect.Interface {
 		if rv.IsNil() {
 			return nil
 		}

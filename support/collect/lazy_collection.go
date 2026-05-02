@@ -463,7 +463,7 @@ func (lc *LazyCollection[T]) Pluck(field string) *LazyCollection[any] {
 				input := lc.execute()
 				for item := range input {
 					v := reflect.ValueOf(item)
-					if v.Kind() == reflect.Ptr {
+					if v.Kind() == reflect.Pointer {
 						v = v.Elem()
 					}
 					if v.Kind() == reflect.Struct {

@@ -9,7 +9,7 @@ import (
 func getContextValues(ctx any, values map[any]any) {
 	contextValues := reflect.Indirect(reflect.ValueOf(ctx))
 	contextKeys := reflect.TypeOf(ctx)
-	if contextKeys.Kind() == reflect.Ptr {
+	if contextKeys.Kind() == reflect.Pointer {
 		contextKeys = contextKeys.Elem()
 	}
 
