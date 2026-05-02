@@ -108,6 +108,7 @@ func TestApplication_Agent(t *testing.T) {
 				Agent: convImpl,
 				Input: tt.promptInput,
 				Model: tt.expectedModel,
+				ProviderState: convImpl.providerState,
 			}
 
 			agent.EXPECT().Tools().Return(nil).Once()
@@ -200,7 +201,7 @@ func TestApplication_Agent_WithMiddleware(t *testing.T) {
 	assert.True(t, ok)
 
 	mockProvider.EXPECT().
-		Prompt(ctx, contractsai.AgentPrompt{Agent: convImpl, Input: "hello", Tools: nil}).
+		Prompt(ctx, contractsai.AgentPrompt{Agent: convImpl, Input: "hello", Tools: nil, ProviderState: convImpl.providerState}).
 		Return(&stubResponse{text: "before middleware"}, nil).
 		Once()
 
@@ -230,7 +231,7 @@ func TestApplication_Agent_WithDefaultMiddleware(t *testing.T) {
 	assert.True(t, ok)
 
 	mockProvider.EXPECT().
-		Prompt(ctx, contractsai.AgentPrompt{Agent: convImpl, Input: "hello", Tools: nil}).
+		Prompt(ctx, contractsai.AgentPrompt{Agent: convImpl, Input: "hello", Tools: nil, ProviderState: convImpl.providerState}).
 		Return(&stubResponse{text: "before middleware"}, nil).
 		Once()
 
@@ -260,7 +261,7 @@ func TestApplication_Agent_MergesDefaultMiddlewareWithOptions(t *testing.T) {
 	assert.True(t, ok)
 
 	mockProvider.EXPECT().
-		Prompt(ctx, contractsai.AgentPrompt{Agent: convImpl, Input: "hello", Tools: nil}).
+		Prompt(ctx, contractsai.AgentPrompt{Agent: convImpl, Input: "hello", Tools: nil, ProviderState: convImpl.providerState}).
 		Return(&stubResponse{text: "before middleware"}, nil).
 		Once()
 

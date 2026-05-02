@@ -2,6 +2,12 @@ package ai
 
 import "context"
 
+// ProviderState stores provider-scoped conversation state across prompt calls.
+type ProviderState interface {
+	Get(key string) any
+	Set(key string, value any)
+}
+
 // AgentPrompt carries all inputs the provider needs to call the model.
 // Agent.Instructions() returns the system prompt; Agent.Messages() returns the runtime conversation history.
 type AgentPrompt struct {
@@ -11,6 +17,8 @@ type AgentPrompt struct {
 	Attachments []Attachment
 	// Tools lists the tools available to the model for this request.
 	Tools []Tool
+	// ProviderState carries provider-scoped state for this conversation.
+	ProviderState ProviderState
 }
 
 // Provider defines low-level model interactions (text generation).

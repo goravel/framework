@@ -55,7 +55,7 @@ func (s *ConversationTestSuite) TestPrompt() {
 				mockResponse := mocksai.NewResponse(s.T())
 				mockResponse.EXPECT().ToolCalls().Return(nil).Once()
 				mockResponse.EXPECT().Text().Return("got it").Once()
-				mockProvider.EXPECT().Prompt(ctx, contractsai.AgentPrompt{Agent: conv, Input: "hello", Model: "model-x"}).Return(mockResponse, nil).Once()
+				mockProvider.EXPECT().Prompt(ctx, contractsai.AgentPrompt{Agent: conv, Input: "hello", Model: "model-x", ProviderState: conv.providerState}).Return(mockResponse, nil).Once()
 				return mockResponse
 			},
 			expectMessages: []contractsai.Message{
@@ -71,7 +71,7 @@ func (s *ConversationTestSuite) TestPrompt() {
 			input:   "fail",
 			setup: func() contractsai.Response {
 				mockAgent.EXPECT().Tools().Return(nil).Once()
-				mockProvider.EXPECT().Prompt(ctx, contractsai.AgentPrompt{Agent: conv, Input: "fail", Model: "model-y"}).Return(nil, assert.AnError).Once()
+				mockProvider.EXPECT().Prompt(ctx, contractsai.AgentPrompt{Agent: conv, Input: "fail", Model: "model-y", ProviderState: conv.providerState}).Return(nil, assert.AnError).Once()
 				return nil
 			},
 			expectMessages: []contractsai.Message{
@@ -89,7 +89,7 @@ func (s *ConversationTestSuite) TestPrompt() {
 				mockResponse := mocksai.NewResponse(s.T())
 				mockResponse.EXPECT().ToolCalls().Return(nil).Once()
 				mockResponse.EXPECT().Text().Return("").Once()
-				mockProvider.EXPECT().Prompt(ctx, contractsai.AgentPrompt{Agent: conv, Input: "", Model: "model-empty"}).Return(mockResponse, nil).Once()
+				mockProvider.EXPECT().Prompt(ctx, contractsai.AgentPrompt{Agent: conv, Input: "", Model: "model-empty", ProviderState: conv.providerState}).Return(mockResponse, nil).Once()
 				return mockResponse
 			},
 			expectMessages: []contractsai.Message{
@@ -145,7 +145,7 @@ func (s *ConversationTestSuite) TestReset() {
 			setup: func() {
 				mockAgent.EXPECT().Tools().Return(nil).Once()
 				response := mocksai.NewResponse(s.T())
-				mockProvider.EXPECT().Prompt(ctx, contractsai.AgentPrompt{Agent: conv, Input: "append", Model: "model-z"}).Return(response, nil).Once()
+				mockProvider.EXPECT().Prompt(ctx, contractsai.AgentPrompt{Agent: conv, Input: "append", Model: "model-z", ProviderState: conv.providerState}).Return(response, nil).Once()
 				response.EXPECT().ToolCalls().Return(nil).Once()
 				response.EXPECT().Text().Return("done").Once()
 			},
@@ -224,7 +224,7 @@ func (s *ConversationTestSuite) TestStream() {
 		var conv *conversation
 		provider := &conversationProviderStub{
 			streamFn: func(gotCtx context.Context, prompt contractsai.AgentPrompt) (contractsai.StreamableResponse, error) {
-				s.Equal(contractsai.AgentPrompt{Agent: conv, Input: "hello", Model: model, Tools: nil}, prompt)
+				s.Equal(contractsai.AgentPrompt{Agent: conv, Input: "hello", Model: model, Tools: nil, ProviderState: conv.providerState}, prompt)
 				return nil, assert.AnError
 			},
 		}
@@ -244,7 +244,7 @@ func (s *ConversationTestSuite) TestStream() {
 		var conv *conversation
 		provider := &conversationProviderStub{
 			streamFn: func(gotCtx context.Context, prompt contractsai.AgentPrompt) (contractsai.StreamableResponse, error) {
-				s.Equal(contractsai.AgentPrompt{Agent: conv, Input: "hi", Model: model, Tools: nil}, prompt)
+				s.Equal(contractsai.AgentPrompt{Agent: conv, Input: "hi", Model: model, Tools: nil, ProviderState: conv.providerState}, prompt)
 				return NewStreamableResponse(gotCtx, func(_ context.Context, emit func(contractsai.StreamEvent) error) (contractsai.Response, error) {
 					if err := emit(contractsai.StreamEvent{Type: contractsai.StreamEventTypeTextDelta, Delta: "partial"}); err != nil {
 						return nil, err
@@ -289,7 +289,7 @@ func (s *ConversationTestSuite) TestStream() {
 		var conv *conversation
 		provider := &conversationProviderStub{
 			streamFn: func(gotCtx context.Context, prompt contractsai.AgentPrompt) (contractsai.StreamableResponse, error) {
-				s.Equal(contractsai.AgentPrompt{Agent: conv, Input: "hi", Model: model, Tools: nil}, prompt)
+				s.Equal(contractsai.AgentPrompt{Agent: conv, Input: "hi", Model: model, Tools: nil, ProviderState: conv.providerState}, prompt)
 				return NewStreamableResponse(gotCtx, func(_ context.Context, emit func(contractsai.StreamEvent) error) (contractsai.Response, error) {
 					if err := emit(contractsai.StreamEvent{Type: contractsai.StreamEventTypeTextDelta, Delta: "partial"}); err != nil {
 						return nil, err
