@@ -164,6 +164,8 @@ func TestProviderPrompt(t *testing.T) {
 		name             string
 		status           int
 		body             string
+		responses        []string
+		repeatLastBody   bool
 		setup            func()
 		modelOverride    string
 		input            string
@@ -224,6 +226,11 @@ func TestProviderPrompt(t *testing.T) {
 			name:   "returns error when API fails",
 			status: http.StatusInternalServerError,
 			body:   `{"message":"boom","type":"server_error"}`,
+			responses: []string{
+				`{"message":"boom","type":"server_error"}`,
+				`{"message":"boom","type":"server_error"}`,
+			},
+			repeatLastBody: true,
 			setup: func() {
 				mockAgent.EXPECT().Instructions().Return("").Once()
 				mockAgent.EXPECT().Messages().Return(nil).Once()
@@ -245,7 +252,11 @@ func TestProviderPrompt(t *testing.T) {
 			beforeEach()
 
 			captured := make(chan capturedRequest, 1)
-			server := newResponsesServer(t, tt.status, bodySequence(tt.body), captured)
+			responses := tt.responses
+			if responses == nil {
+				responses = bodySequence(tt.body)
+			}
+			server := newResponsesServerWithOverflow(t, tt.status, responses, captured, tt.repeatLastBody)
 			t.Cleanup(server.Close)
 
 			provider := &Provider{
@@ -750,6 +761,10 @@ func TestProviderStream(t *testing.T) {
 }
 
 func newResponsesServer(t *testing.T, status int, responses []string, captured chan<- capturedRequest) *httptest.Server {
+	return newResponsesServerWithOverflow(t, status, responses, captured, false)
+}
+
+func newResponsesServerWithOverflow(t *testing.T, status int, responses []string, captured chan<- capturedRequest, repeatLastResponse bool) *httptest.Server {
 	t.Helper()
 
 	callCount := 0
@@ -766,10 +781,19 @@ func newResponsesServer(t *testing.T, status int, responses []string, captured c
 			}
 		}
 
-		body := ""
-		if callCount < len(responses) {
-			body = responses[callCount]
+		if callCount >= len(responses) {
+			if repeatLastResponse && len(responses) > 0 {
+				body := responses[len(responses)-1]
+				callCount++
+
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(status)
+				_, _ = w.Write([]byte(body))
+				return
+			}
+			t.Fatalf("unexpected extra response request: call %d exceeds configured responses %d", callCount+1, len(responses))
 		}
+		body := responses[callCount]
 		callCount++
 
 		w.Header().Set("Content-Type", "application/json")
@@ -920,9 +944,7 @@ func decodeBodyMap(t *testing.T, r *http.Request) map[string]any {
 	r.Body = io.NopCloser(bytes.NewReader(body))
 
 	var payload map[string]any
-	if err := json.Unmarshal(body, &payload); err != nil {
-		return nil
-	}
+	require.NoErrorf(t, json.Unmarshal(body, &payload), "failed to unmarshal request body: %s", string(body))
 
 	return payload
 }

@@ -43,10 +43,10 @@ func newToolResponsesServer(t *testing.T, responses []string, captured chan<- ca
 			}
 		}
 
-		body := ""
-		if callCount < len(responses) {
-			body = responses[callCount]
+		if callCount >= len(responses) {
+			t.Fatalf("unexpected extra response request: call %d exceeds configured responses %d", callCount+1, len(responses))
 		}
+		body := responses[callCount]
 		callCount++
 
 		w.Header().Set("Content-Type", "application/json")
@@ -455,9 +455,7 @@ func decodeToolBodyMap(t *testing.T, r *http.Request) map[string]any {
 	r.Body = io.NopCloser(bytes.NewReader(body))
 
 	var payload map[string]any
-	if err := json.Unmarshal(body, &payload); err != nil {
-		return nil
-	}
+	require.NoErrorf(t, json.Unmarshal(body, &payload), "failed to unmarshal request body: %s", string(body))
 
 	return payload
 }
