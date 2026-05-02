@@ -261,12 +261,16 @@ func (r *Provider) buildToolResultInput(history []contractsai.Message) []respons
 			continue
 		}
 
-		input = append([]responses.ResponseInputItemUnionParam{{OfFunctionCallOutput: &responses.ResponseInputItemFunctionCallOutputParam{
+		input = append(input, responses.ResponseInputItemUnionParam{OfFunctionCallOutput: &responses.ResponseInputItemFunctionCallOutputParam{
 			CallID: message.ToolCallID,
 			Output: responses.ResponseInputItemFunctionCallOutputOutputUnionParam{
 				OfString: param.NewOpt(message.Content),
 			},
-		}}}, input...)
+		}})
+	}
+
+	for left, right := 0, len(input)-1; left < right; left, right = left+1, right-1 {
+		input[left], input[right] = input[right], input[left]
 	}
 
 	return input

@@ -87,7 +87,7 @@ func TestProviderPromptWithTools(t *testing.T) {
 				mockAgent.EXPECT().Messages().Return(nil).Once()
 			},
 			tools: []contractsai.Tool{newStaticTool("get_weather", "Get the weather", nil)},
-			apiResponse: responseBody("", []map[string]any{{
+			apiResponse: responseBody(t, "", []map[string]any{{
 				"id":        "fc_1",
 				"type":      "function_call",
 				"call_id":   "call_1",
@@ -106,7 +106,7 @@ func TestProviderPromptWithTools(t *testing.T) {
 				mockAgent.EXPECT().Messages().Return(nil).Once()
 			},
 			tools:       []contractsai.Tool{newStaticTool("get_weather", "Get the weather", nil)},
-			apiResponse: responseBody("Hi there!", nil, 5, 3, 8),
+			apiResponse: responseBody(t, "Hi there!", nil, 5, 3, 8),
 			expectText:  "Hi there!",
 		},
 		{
@@ -117,7 +117,7 @@ func TestProviderPromptWithTools(t *testing.T) {
 				mockAgent.EXPECT().Messages().Return(nil).Once()
 			},
 			tools: []contractsai.Tool{newStaticTool("get_weather", "Get the weather", nil)},
-			apiResponse: responseBody("", []map[string]any{{
+			apiResponse: responseBody(t, "", []map[string]any{{
 				"id":        "fc_2",
 				"type":      "function_call",
 				"call_id":   "call_2",
@@ -210,7 +210,7 @@ func TestProviderBuildInput_ToolCallHistory(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			apiResponse := responseBody("ok", nil, 1, 1, 2)
+			apiResponse := responseBody(t, "ok", nil, 1, 1, 2)
 
 			mockAgent := mocksai.NewAgent(t)
 			mockAgent.EXPECT().Instructions().Return("").Once()
@@ -265,7 +265,7 @@ func TestProviderBuildTools(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			apiResponse := responseBody("ok", nil, 1, 1, 2)
+			apiResponse := responseBody(t, "ok", nil, 1, 1, 2)
 
 			mockAgent := mocksai.NewAgent(t)
 			mockAgent.EXPECT().Instructions().Return("").Once()
@@ -315,7 +315,7 @@ func TestProviderBuildTools(t *testing.T) {
 func TestConversationPromptUsesPreviousResponseIDForToolLoop(t *testing.T) {
 	captured := make(chan capturedToolRequest, 2)
 	server := newToolResponsesServer(t, []string{
-		responseBody("", []map[string]any{{
+		responseBody(t, "", []map[string]any{{
 			"id":        "fc_1",
 			"type":      "function_call",
 			"call_id":   "call_1",
@@ -323,7 +323,7 @@ func TestConversationPromptUsesPreviousResponseIDForToolLoop(t *testing.T) {
 			"arguments": `{"city":"London"}`,
 			"status":    "completed",
 		}}, 6, 3, 9),
-		responseBody("It is sunny.", nil, 4, 2, 6),
+		responseBody(t, "It is sunny.", nil, 4, 2, 6),
 	}, captured)
 	t.Cleanup(server.Close)
 

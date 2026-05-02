@@ -178,7 +178,7 @@ func TestProviderPrompt(t *testing.T) {
 		{
 			name:   "builds input with default model",
 			status: http.StatusOK,
-			body:   responseBody("assistant reply", nil, 11, 7, 18),
+			body:   responseBody(t, "assistant reply", nil, 11, 7, 18),
 			setup: func() {
 				mockAgent.EXPECT().Instructions().Return("system rule").Once()
 				mockAgent.EXPECT().Messages().Return([]contractsai.Message{
@@ -204,7 +204,7 @@ func TestProviderPrompt(t *testing.T) {
 		{
 			name:   "uses prompt model override",
 			status: http.StatusOK,
-			body:   responseBody("ok", nil, 1, 1, 2),
+			body:   responseBody(t, "ok", nil, 1, 1, 2),
 			setup: func() {
 				mockAgent.EXPECT().Instructions().Return("").Once()
 				mockAgent.EXPECT().Messages().Return(nil).Once()
@@ -225,10 +225,10 @@ func TestProviderPrompt(t *testing.T) {
 		{
 			name:   "returns error when API fails",
 			status: http.StatusInternalServerError,
-			body:   `{"message":"boom","type":"server_error"}`,
+			body:   `{"error":{"message":"boom","type":"server_error"}}`,
 			responses: []string{
-				`{"message":"boom","type":"server_error"}`,
-				`{"message":"boom","type":"server_error"}`,
+				`{"error":{"message":"boom","type":"server_error"}}`,
+				`{"error":{"message":"boom","type":"server_error"}}`,
 			},
 			repeatLastBody: true,
 			setup: func() {
@@ -281,6 +281,7 @@ func TestProviderPrompt(t *testing.T) {
 				var apiErr *goopenai.Error
 				require.ErrorAs(t, err, &apiErr)
 				assert.Equal(t, tt.status, apiErr.StatusCode)
+				assert.Equal(t, tt.expectErrMessage, apiErr.Message)
 
 				req, ok := readCapturedRequest(t, captured)
 				require.True(t, ok, "expected request payload")
@@ -434,7 +435,7 @@ func TestProviderPromptAndStreamSerializeAttachmentsTheSameWay(t *testing.T) {
 	streamAgent.EXPECT().Messages().Return(nil).Once()
 
 	promptCaptured := make(chan capturedRequest, 1)
-	promptServer := newResponsesServer(t, http.StatusOK, bodySequence(responseBody("ok", nil, 1, 1, 2)), promptCaptured)
+	promptServer := newResponsesServer(t, http.StatusOK, bodySequence(responseBody(t, "ok", nil, 1, 1, 2)), promptCaptured)
 	t.Cleanup(promptServer.Close)
 
 	provider := &Provider{
@@ -1021,7 +1022,9 @@ func normalizeEmptyToolCalls(events []normalizedStreamEvent) []normalizedStreamE
 	return events
 }
 
-func responseBody(text string, output []map[string]any, inputTokens, outputTokens, totalTokens int) string {
+func responseBody(t *testing.T, text string, output []map[string]any, inputTokens, outputTokens, totalTokens int) string {
+	t.Helper()
+
 	if output == nil {
 		output = []map[string]any{{
 			"id":     "msg_1",
@@ -1051,7 +1054,8 @@ func responseBody(text string, output []map[string]any, inputTokens, outputToken
 		},
 	}
 
-	encoded, _ := json.Marshal(body)
+	encoded, err := json.Marshal(body)
+	require.NoError(t, err)
 	return string(encoded)
 }
 
