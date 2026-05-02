@@ -21,6 +21,10 @@ import (
 
 type resolver func(context.Context) ([]byte, string, string, error)
 
+type fileUploader interface {
+	putFile(ctx context.Context, file contractsai.StorableFile, options ...contractsai.Option) (contractsai.StoredFileResponse, error)
+}
+
 type resolved struct {
 	kind     contractsai.AttachmentKind
 	filename string
@@ -44,63 +48,63 @@ func WithDisk(disk string) contractsai.AttachmentOption {
 	}
 }
 
-func DocumentFromByte(content []byte, options ...contractsai.AttachmentOption) contractsai.Attachment {
+func DocumentFromByte(content []byte, options ...contractsai.AttachmentOption) contractsai.UploadableAttachment {
 	return fromBytes(contractsai.AttachmentKindFile, content, resolveAttachmentOptions(options))
 }
 
-func DocumentFromString(content string, options ...contractsai.AttachmentOption) contractsai.Attachment {
+func DocumentFromString(content string, options ...contractsai.AttachmentOption) contractsai.UploadableAttachment {
 	return fromString(contractsai.AttachmentKindFile, content, resolveAttachmentOptions(options))
 }
 
-func DocumentFromBase64(content string, options ...contractsai.AttachmentOption) contractsai.Attachment {
+func DocumentFromBase64(content string, options ...contractsai.AttachmentOption) contractsai.UploadableAttachment {
 	return fromBase64(contractsai.AttachmentKindFile, content, resolveAttachmentOptions(options))
 }
 
-func DocumentFromReader(reader io.Reader, options ...contractsai.AttachmentOption) contractsai.Attachment {
+func DocumentFromReader(reader io.Reader, options ...contractsai.AttachmentOption) contractsai.UploadableAttachment {
 	return fromReader(contractsai.AttachmentKindFile, reader, resolveAttachmentOptions(options))
 }
 
-func DocumentFromPath(path string, options ...contractsai.AttachmentOption) contractsai.Attachment {
+func DocumentFromPath(path string, options ...contractsai.AttachmentOption) contractsai.UploadableAttachment {
 	return fromPath(contractsai.AttachmentKindFile, path, resolveAttachmentOptions(options))
 }
 
-func DocumentFromStorage(path string, options ...contractsai.AttachmentOption) contractsai.Attachment {
+func DocumentFromStorage(path string, options ...contractsai.AttachmentOption) contractsai.UploadableAttachment {
 	return fromStorage(contractsai.AttachmentKindFile, path, resolveAttachmentOptions(options))
 }
 
-func DocumentFromURL(rawURL string, options ...contractsai.AttachmentOption) contractsai.Attachment {
+func DocumentFromURL(rawURL string, options ...contractsai.AttachmentOption) contractsai.UploadableAttachment {
 	return fromURL(contractsai.AttachmentKindFile, rawURL, resolveAttachmentOptions(options))
 }
 
-func DocumentFromUpload(file contractsfilesystem.File, options ...contractsai.AttachmentOption) contractsai.Attachment {
+func DocumentFromUpload(file contractsfilesystem.File, options ...contractsai.AttachmentOption) contractsai.UploadableAttachment {
 	return fromUpload(contractsai.AttachmentKindFile, file, resolveAttachmentOptions(options))
 }
 
-func ImageFromByte(content []byte, options ...contractsai.AttachmentOption) contractsai.Attachment {
+func ImageFromByte(content []byte, options ...contractsai.AttachmentOption) contractsai.UploadableAttachment {
 	return fromBytes(contractsai.AttachmentKindImage, content, resolveAttachmentOptions(options))
 }
 
-func ImageFromBase64(content string, options ...contractsai.AttachmentOption) contractsai.Attachment {
+func ImageFromBase64(content string, options ...contractsai.AttachmentOption) contractsai.UploadableAttachment {
 	return fromBase64(contractsai.AttachmentKindImage, content, resolveAttachmentOptions(options))
 }
 
-func ImageFromReader(reader io.Reader, options ...contractsai.AttachmentOption) contractsai.Attachment {
+func ImageFromReader(reader io.Reader, options ...contractsai.AttachmentOption) contractsai.UploadableAttachment {
 	return fromReader(contractsai.AttachmentKindImage, reader, resolveAttachmentOptions(options))
 }
 
-func ImageFromPath(path string, options ...contractsai.AttachmentOption) contractsai.Attachment {
+func ImageFromPath(path string, options ...contractsai.AttachmentOption) contractsai.UploadableAttachment {
 	return fromPath(contractsai.AttachmentKindImage, path, resolveAttachmentOptions(options))
 }
 
-func ImageFromStorage(path string, options ...contractsai.AttachmentOption) contractsai.Attachment {
+func ImageFromStorage(path string, options ...contractsai.AttachmentOption) contractsai.UploadableAttachment {
 	return fromStorage(contractsai.AttachmentKindImage, path, resolveAttachmentOptions(options))
 }
 
-func ImageFromURL(rawURL string, options ...contractsai.AttachmentOption) contractsai.Attachment {
+func ImageFromURL(rawURL string, options ...contractsai.AttachmentOption) contractsai.UploadableAttachment {
 	return fromURL(contractsai.AttachmentKindImage, rawURL, resolveAttachmentOptions(options))
 }
 
-func ImageFromUpload(file contractsfilesystem.File, options ...contractsai.AttachmentOption) contractsai.Attachment {
+func ImageFromUpload(file contractsfilesystem.File, options ...contractsai.AttachmentOption) contractsai.UploadableAttachment {
 	return fromUpload(contractsai.AttachmentKindImage, file, resolveAttachmentOptions(options))
 }
 
@@ -115,7 +119,7 @@ func resolveAttachmentOptions(options []contractsai.AttachmentOption) contractsa
 	return metadata
 }
 
-func newAttachment(kind contractsai.AttachmentKind, resolver resolver, metadata contractsai.AttachmentOptions) contractsai.Attachment {
+func newAttachment(kind contractsai.AttachmentKind, resolver resolver, metadata contractsai.AttachmentOptions) contractsai.UploadableAttachment {
 	return &resolved{
 		kind:     kind,
 		mimeType: metadata.MimeType,
@@ -123,24 +127,24 @@ func newAttachment(kind contractsai.AttachmentKind, resolver resolver, metadata 
 	}
 }
 
-func fromBytes(kind contractsai.AttachmentKind, content []byte, metadata contractsai.AttachmentOptions) contractsai.Attachment {
+func fromBytes(kind contractsai.AttachmentKind, content []byte, metadata contractsai.AttachmentOptions) contractsai.UploadableAttachment {
 	return newAttachment(kind, func(context.Context) ([]byte, string, string, error) {
 		return bytes.Clone(content), "", "", nil
 	}, metadata)
 }
 
-func fromReader(kind contractsai.AttachmentKind, reader io.Reader, metadata contractsai.AttachmentOptions) contractsai.Attachment {
+func fromReader(kind contractsai.AttachmentKind, reader io.Reader, metadata contractsai.AttachmentOptions) contractsai.UploadableAttachment {
 	return newAttachment(kind, func(context.Context) ([]byte, string, string, error) {
 		content, err := io.ReadAll(reader)
 		return content, "", "", err
 	}, metadata)
 }
 
-func fromString(kind contractsai.AttachmentKind, content string, metadata contractsai.AttachmentOptions) contractsai.Attachment {
+func fromString(kind contractsai.AttachmentKind, content string, metadata contractsai.AttachmentOptions) contractsai.UploadableAttachment {
 	return fromBytes(kind, []byte(content), metadata)
 }
 
-func fromBase64(kind contractsai.AttachmentKind, content string, metadata contractsai.AttachmentOptions) contractsai.Attachment {
+func fromBase64(kind contractsai.AttachmentKind, content string, metadata contractsai.AttachmentOptions) contractsai.UploadableAttachment {
 	return newAttachment(kind, func(context.Context) ([]byte, string, string, error) {
 		decoded, err := base64.StdEncoding.DecodeString(content)
 		if err != nil {
@@ -151,7 +155,7 @@ func fromBase64(kind contractsai.AttachmentKind, content string, metadata contra
 	}, metadata)
 }
 
-func fromPath(kind contractsai.AttachmentKind, path string, metadata contractsai.AttachmentOptions) contractsai.Attachment {
+func fromPath(kind contractsai.AttachmentKind, path string, metadata contractsai.AttachmentOptions) contractsai.UploadableAttachment {
 	return newAttachment(kind, func(context.Context) ([]byte, string, string, error) {
 		file, err := os.Open(path)
 		if err != nil {
@@ -168,7 +172,7 @@ func fromPath(kind contractsai.AttachmentKind, path string, metadata contractsai
 	}, metadata)
 }
 
-func fromStorage(kind contractsai.AttachmentKind, path string, metadata contractsai.AttachmentOptions) contractsai.Attachment {
+func fromStorage(kind contractsai.AttachmentKind, path string, metadata contractsai.AttachmentOptions) contractsai.UploadableAttachment {
 	return newAttachment(kind, func(ctx context.Context) ([]byte, string, string, error) {
 		if storageFacade == nil {
 			return nil, "", "", errors.StorageFacadeNotSet
@@ -194,7 +198,7 @@ func fromStorage(kind contractsai.AttachmentKind, path string, metadata contract
 	}, metadata)
 }
 
-func fromURL(kind contractsai.AttachmentKind, rawURL string, metadata contractsai.AttachmentOptions) contractsai.Attachment {
+func fromURL(kind contractsai.AttachmentKind, rawURL string, metadata contractsai.AttachmentOptions) contractsai.UploadableAttachment {
 	return newAttachment(kind, func(ctx context.Context) ([]byte, string, string, error) {
 		if httpFacade == nil {
 			return nil, "", "", errors.HttpFacadeNotSet
@@ -229,7 +233,7 @@ func fromURL(kind contractsai.AttachmentKind, rawURL string, metadata contractsa
 	}, metadata)
 }
 
-func fromUpload(kind contractsai.AttachmentKind, file contractsfilesystem.File, metadata contractsai.AttachmentOptions) contractsai.Attachment {
+func fromUpload(kind contractsai.AttachmentKind, file contractsfilesystem.File, metadata contractsai.AttachmentOptions) contractsai.UploadableAttachment {
 	return newAttachment(kind, func(context.Context) ([]byte, string, string, error) {
 		path := file.File()
 		opened, err := os.Open(path)
@@ -272,17 +276,17 @@ func (r *resolved) FileName() string { return r.filename }
 
 func (r *resolved) MimeType() string { return r.mimeType }
 
-func (r *resolved) Put(options ...contractsai.Option) (contractsai.StoredFileResponse, error) {
-	if aiFacade == nil {
+// PutFile uploads a file through the configured AI provider and returns the stored provider file reference.
+func PutFile(ctx context.Context, file contractsai.StorableFile, options ...contractsai.Option) (contractsai.StoredFileResponse, error) {
+	if fileUploaderFacade == nil {
 		return nil, errors.AIFacadeNotSet
 	}
 
-	application, ok := aiFacade.(*Application)
-	if !ok {
-		return nil, errors.AIFacadeNotSet
-	}
+	return fileUploaderFacade.putFile(ctx, file, options...)
+}
 
-	return application.putFile(r, options...)
+func (r *resolved) Put(ctx context.Context, options ...contractsai.Option) (contractsai.StoredFileResponse, error) {
+	return PutFile(ctx, r, options...)
 }
 
 func (r *resolved) Content(ctx context.Context) ([]byte, error) {

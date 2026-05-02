@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"mime"
 	"path/filepath"
 	"strings"
@@ -148,7 +149,7 @@ func (r *Provider) PutFile(ctx context.Context, file contractsai.StorableFile, _
 	}
 
 	params := goopenai.FileNewParams{
-		File:    goopenai.File(bytes.NewReader(content), file.FileName(), file.MimeType()),
+		File:    goopenai.File(bytes.NewReader(content), r.uploadFilename(file), file.MimeType()),
 		Purpose: goopenai.FilePurposeUserData,
 	}
 
@@ -158,6 +159,41 @@ func (r *Provider) PutFile(ctx context.Context, file contractsai.StorableFile, _
 	}
 
 	return &storedFileResponse{id: upload.ID}, nil
+}
+
+func (r *Provider) uploadFilename(file contractsai.StorableFile) string {
+	if fileName := file.FileName(); fileName != "" {
+		return fileName
+	}
+
+	mediaType := file.MimeType()
+	if parsed, _, err := mime.ParseMediaType(mediaType); err == nil {
+		mediaType = parsed
+	}
+
+	extensions, err := mime.ExtensionsByType(mediaType)
+	if err == nil && len(extensions) > 0 {
+		return "attachment" + extensions[0]
+	}
+
+	return fmt.Sprintf("attachment%s", fallbackFileExtension(mediaType))
+}
+
+func fallbackFileExtension(mimeType string) string {
+	switch strings.ToLower(mimeType) {
+	case "text/plain", "text/plain; charset=utf-8":
+		return ".txt"
+	case "application/json":
+		return ".json"
+	case "application/pdf":
+		return ".pdf"
+	case "image/png":
+		return ".png"
+	case "image/jpeg":
+		return ".jpg"
+	default:
+		return ".bin"
+	}
 }
 
 func (r *Provider) resolveModel(model string) string {

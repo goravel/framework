@@ -30,6 +30,8 @@ type Provider interface {
 	Stream(ctx context.Context, prompt AgentPrompt) (StreamableResponse, error)
 }
 
+// FileProvider is implemented by providers that support storing files before they are referenced by prompts.
 type FileProvider interface {
+	// PutFile uploads the given file and returns the provider-managed file reference.
 	PutFile(ctx context.Context, file StorableFile, options Options) (StoredFileResponse, error)
 }

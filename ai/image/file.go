@@ -16,30 +16,30 @@ func WithDisk(disk string) contractsai.AttachmentOption {
 	return frameworkai.WithDisk(disk)
 }
 
-func FromByte(content []byte, options ...contractsai.AttachmentOption) contractsai.Attachment {
+func FromByte(content []byte, options ...contractsai.AttachmentOption) contractsai.UploadableAttachment {
 	return frameworkai.ImageFromByte(content, options...)
 }
 
-func FromBase64(content string, options ...contractsai.AttachmentOption) contractsai.Attachment {
+func FromBase64(content string, options ...contractsai.AttachmentOption) contractsai.UploadableAttachment {
 	return frameworkai.ImageFromBase64(content, options...)
 }
 
-func FromReader(reader io.Reader, options ...contractsai.AttachmentOption) contractsai.Attachment {
+func FromReader(reader io.Reader, options ...contractsai.AttachmentOption) contractsai.UploadableAttachment {
 	return frameworkai.ImageFromReader(reader, options...)
 }
 
-func FromPath(path string, options ...contractsai.AttachmentOption) contractsai.Attachment {
+func FromPath(path string, options ...contractsai.AttachmentOption) contractsai.UploadableAttachment {
 	return frameworkai.ImageFromPath(path, options...)
 }
 
-func FromStorage(path string, options ...contractsai.AttachmentOption) contractsai.Attachment {
+func FromStorage(path string, options ...contractsai.AttachmentOption) contractsai.UploadableAttachment {
 	return frameworkai.ImageFromStorage(path, options...)
 }
 
-func FromURL(rawURL string, options ...contractsai.AttachmentOption) contractsai.Attachment {
+func FromURL(rawURL string, options ...contractsai.AttachmentOption) contractsai.UploadableAttachment {
 	return frameworkai.ImageFromURL(rawURL, options...)
 }
 
-func FromUpload(file contractsfilesystem.File, options ...contractsai.AttachmentOption) contractsai.Attachment {
+func FromUpload(file contractsfilesystem.File, options ...contractsai.AttachmentOption) contractsai.UploadableAttachment {
 	return frameworkai.ImageFromUpload(file, options...)
 }

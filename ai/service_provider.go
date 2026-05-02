@@ -13,9 +13,9 @@ import (
 )
 
 var (
-	aiFacade      contractsai.AI
-	storageFacade contractsfilesystem.Storage
-	httpFacade    contractshttpclient.Factory
+	fileUploaderFacade fileUploader
+	storageFacade      contractsfilesystem.Storage
+	httpFacade         contractshttpclient.Factory
 )
 
 type ServiceProvider struct{}
@@ -42,7 +42,12 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (r *ServiceProvider) Boot(app foundation.Application) {
-	aiFacade = app.MakeAI()
+	instance, err := app.Make(binding.AI)
+	if err == nil {
+		fileUploaderFacade, _ = instance.(fileUploader)
+	} else {
+		fileUploaderFacade = nil
+	}
 	storageFacade = app.MakeStorage()
 	httpFacade = app.MakeHttp()
 
