@@ -552,7 +552,7 @@ func modelType(m any) reflect.Type {
 		return nil
 	}
 	t := reflect.TypeOf(m)
-	if t.Kind() == reflect.Ptr {
+	if t.Kind() == reflect.Pointer {
 		return t.Elem()
 	}
 	return t

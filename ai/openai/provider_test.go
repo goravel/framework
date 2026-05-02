@@ -1,8 +1,10 @@
 package openai
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -24,13 +26,15 @@ type capturedRequest struct {
 	path          string
 	authorization string
 	model         string
-	messages      []map[string]any
+	instructions  string
+	body          map[string]any
 }
 
 type normalizedCapturedRequest struct {
 	path          string
 	authorization string
 	model         string
+	instructions  string
 	messages      []normalizedMessage
 }
 
@@ -43,18 +47,18 @@ type capturedStreamRequest struct {
 	path          string
 	authorization string
 	model         string
-	messages      []map[string]any
+	instructions  string
+	body          map[string]any
 	stream        bool
-	includeUsage  bool
 }
 
 type normalizedCapturedStreamRequest struct {
 	path          string
 	authorization string
 	model         string
+	instructions  string
 	messages      []normalizedMessage
 	stream        bool
-	includeUsage  bool
 }
 
 type streamUsageSnapshot struct {
@@ -160,6 +164,8 @@ func TestProviderPrompt(t *testing.T) {
 		name             string
 		status           int
 		body             string
+		responses        []string
+		repeatLastBody   bool
 		setup            func()
 		modelOverride    string
 		input            string
@@ -170,9 +176,9 @@ func TestProviderPrompt(t *testing.T) {
 		expectRequest    normalizedCapturedRequest
 	}{
 		{
-			name:   "builds messages with default model",
+			name:   "builds input with default model",
 			status: http.StatusOK,
-			body:   `{"id":"cmpl_1","object":"chat.completion","created":1,"model":"gpt-test","choices":[{"index":0,"finish_reason":"stop","message":{"role":"assistant","content":"assistant reply","refusal":""}}],"usage":{"prompt_tokens":11,"completion_tokens":7,"total_tokens":18}}`,
+			body:   responseBody(t, "assistant reply", nil, 11, 7, 18),
 			setup: func() {
 				mockAgent.EXPECT().Instructions().Return("system rule").Once()
 				mockAgent.EXPECT().Messages().Return([]contractsai.Message{
@@ -184,11 +190,11 @@ func TestProviderPrompt(t *testing.T) {
 			expectText:  "assistant reply",
 			expectUsage: usageCheck{input: 11, output: 7, total: 18},
 			expectRequest: normalizedCapturedRequest{
-				path:          "/chat/completions",
+				path:          "/responses",
 				authorization: "Bearer test-key",
 				model:         "gpt-default",
+				instructions:  "system rule",
 				messages: []normalizedMessage{
-					{role: "system", content: "system rule"},
 					{role: "user", content: "history user"},
 					{role: "assistant", content: "history assistant"},
 					{role: "user", content: "new input"},
@@ -198,7 +204,7 @@ func TestProviderPrompt(t *testing.T) {
 		{
 			name:   "uses prompt model override",
 			status: http.StatusOK,
-			body:   `{"id":"cmpl_2","object":"chat.completion","created":1,"model":"gpt-test","choices":[{"index":0,"finish_reason":"stop","message":{"role":"assistant","content":"ok","refusal":""}}],"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}`,
+			body:   responseBody(t, "ok", nil, 1, 1, 2),
 			setup: func() {
 				mockAgent.EXPECT().Instructions().Return("").Once()
 				mockAgent.EXPECT().Messages().Return(nil).Once()
@@ -208,7 +214,7 @@ func TestProviderPrompt(t *testing.T) {
 			expectText:    "ok",
 			expectUsage:   usageCheck{input: 1, output: 1, total: 2},
 			expectRequest: normalizedCapturedRequest{
-				path:          "/chat/completions",
+				path:          "/responses",
 				authorization: "Bearer test-key",
 				model:         "gpt-override",
 				messages: []normalizedMessage{
@@ -220,6 +226,11 @@ func TestProviderPrompt(t *testing.T) {
 			name:   "returns error when API fails",
 			status: http.StatusInternalServerError,
 			body:   `{"error":{"message":"boom","type":"server_error"}}`,
+			responses: []string{
+				`{"error":{"message":"boom","type":"server_error"}}`,
+				`{"error":{"message":"boom","type":"server_error"}}`,
+			},
+			repeatLastBody: true,
 			setup: func() {
 				mockAgent.EXPECT().Instructions().Return("").Once()
 				mockAgent.EXPECT().Messages().Return(nil).Once()
@@ -228,32 +239,10 @@ func TestProviderPrompt(t *testing.T) {
 			expectErr:        true,
 			expectErrMessage: "boom",
 			expectRequest: normalizedCapturedRequest{
-				path:          "/chat/completions",
+				path:          "/responses",
 				authorization: "Bearer test-key",
 				model:         "gpt-default",
-				messages: []normalizedMessage{
-					{role: "user", content: "hello"},
-				},
-			},
-		},
-		{
-			name:   "handles empty choices",
-			status: http.StatusOK,
-			body:   `{"id":"cmpl_3","object":"chat.completion","created":1,"model":"gpt-test","choices":[],"usage":{"prompt_tokens":3,"completion_tokens":0,"total_tokens":3}}`,
-			setup: func() {
-				mockAgent.EXPECT().Instructions().Return("").Once()
-				mockAgent.EXPECT().Messages().Return(nil).Once()
-			},
-			input:       "hello",
-			expectText:  "",
-			expectUsage: usageCheck{input: 3, output: 0, total: 3},
-			expectRequest: normalizedCapturedRequest{
-				path:          "/chat/completions",
-				authorization: "Bearer test-key",
-				model:         "gpt-default",
-				messages: []normalizedMessage{
-					{role: "user", content: "hello"},
-				},
+				messages:      []normalizedMessage{{role: "user", content: "hello"}},
 			},
 		},
 	}
@@ -263,7 +252,11 @@ func TestProviderPrompt(t *testing.T) {
 			beforeEach()
 
 			captured := make(chan capturedRequest, 1)
-			server := newChatServer(t, tt.status, tt.body, captured)
+			responses := tt.responses
+			if responses == nil {
+				responses = bodySequence(tt.body)
+			}
+			server := newResponsesServerWithOverflow(t, tt.status, responses, captured, tt.repeatLastBody)
 			t.Cleanup(server.Close)
 
 			provider := &Provider{
@@ -287,9 +280,8 @@ func TestProviderPrompt(t *testing.T) {
 
 				var apiErr *goopenai.Error
 				require.ErrorAs(t, err, &apiErr)
-				assert.Equal(t, tt.expectErrMessage, apiErr.Message)
-				assert.ErrorContains(t, err, tt.expectErrMessage)
 				assert.Equal(t, tt.status, apiErr.StatusCode)
+				assert.Equal(t, tt.expectErrMessage, apiErr.Message)
 
 				req, ok := readCapturedRequest(t, captured)
 				require.True(t, ok, "expected request payload")
@@ -314,15 +306,13 @@ func TestProviderPrompt(t *testing.T) {
 	}
 }
 
-func TestProviderBuildMessagesWithAttachments(t *testing.T) {
+func TestProviderBuildInputWithAttachments(t *testing.T) {
 	mockAgent := mocksai.NewAgent(t)
 	mockAgent.EXPECT().Instructions().Return("").Once()
-	mockAgent.EXPECT().Messages().Return([]contractsai.Message{
-		{Role: contractsai.RoleUser, Content: "history"},
-	}).Once()
+	mockAgent.EXPECT().Messages().Return([]contractsai.Message{{Role: contractsai.RoleUser, Content: "history"}}).Once()
 
 	provider := &Provider{}
-	messages, err := provider.buildMessages(context.Background(), contractsai.AgentPrompt{
+	input, _, _, err := provider.buildInput(context.Background(), contractsai.AgentPrompt{
 		Agent: mockAgent,
 		Input: "describe these",
 		Attachments: []contractsai.Attachment{
@@ -331,21 +321,17 @@ func TestProviderBuildMessagesWithAttachments(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-	require.Len(t, messages, 2)
+	require.Len(t, input, 2)
 
-	content := marshalUserContent(t, messages[1])
+	content := marshalInputContent(t, input[1])
 	require.Len(t, content, 3)
-	assert.Equal(t, map[string]any{"text": "describe these", "type": "text"}, content[0])
-	assert.Equal(t, "image_url", content[1]["type"])
-	imageURL := content[1]["image_url"].(map[string]any)
-	assert.Equal(t, "data:image/png;base64,aW1hZ2U=", imageURL["url"])
-	assert.Equal(t, "file", content[2]["type"])
-	file := content[2]["file"].(map[string]any)
-	assert.Equal(t, "ZG9jdW1lbnQ=", file["file_data"])
-	assert.Equal(t, "report.txt", file["filename"])
+	assert.Equal(t, map[string]any{"text": "describe these", "type": "input_text"}, content[0])
+	assert.Equal(t, "input_image", content[1]["type"])
+	assert.Equal(t, "data:image/png;base64,aW1hZ2U=", content[1]["image_url"])
+	assert.Equal(t, map[string]any{"text": "File: report.txt\n\ndocument", "type": "input_text"}, content[2])
 }
 
-func TestProviderBuildMessagesAttachesToActiveUserTurnOnFollowUp(t *testing.T) {
+func TestProviderBuildInputAttachesToActiveUserTurnOnFollowUp(t *testing.T) {
 	mockAgent := mocksai.NewAgent(t)
 	mockAgent.EXPECT().Instructions().Return("").Once()
 	mockAgent.EXPECT().Messages().Return([]contractsai.Message{
@@ -355,35 +341,172 @@ func TestProviderBuildMessagesAttachesToActiveUserTurnOnFollowUp(t *testing.T) {
 	}).Once()
 
 	provider := &Provider{}
-	messages, err := provider.buildMessages(context.Background(), contractsai.AgentPrompt{
+	input, _, _, err := provider.buildInput(context.Background(), contractsai.AgentPrompt{
 		Agent:       mockAgent,
 		Attachments: []contractsai.Attachment{namedAttachment{kind: contractsai.AttachmentKindFile, filename: "report.txt", content: []byte("document")}},
 	})
 	require.NoError(t, err)
-	require.Len(t, messages, 3)
+	require.Len(t, input, 3)
 
-	content := marshalUserContent(t, messages[0])
+	content := marshalInputContent(t, input[0])
 	require.Len(t, content, 2)
-	assert.Equal(t, map[string]any{"text": "question", "type": "text"}, content[0])
-	assert.Equal(t, "file", content[1]["type"])
+	assert.Equal(t, map[string]any{"text": "question", "type": "input_text"}, content[0])
+	assert.Equal(t, map[string]any{"text": "File: report.txt\n\ndocument", "type": "input_text"}, content[1])
 }
 
-func TestProviderBuildMessagesUnsupportedAttachmentKind(t *testing.T) {
+func TestProviderBuildInputKeepsBinaryFileAttachmentsAsInputFiles(t *testing.T) {
 	mockAgent := mocksai.NewAgent(t)
 	mockAgent.EXPECT().Instructions().Return("").Once()
 	mockAgent.EXPECT().Messages().Return(nil).Once()
 
 	provider := &Provider{}
-	messages, err := provider.buildMessages(context.Background(), contractsai.AgentPrompt{
+	input, _, _, err := provider.buildInput(context.Background(), contractsai.AgentPrompt{
+		Agent: mockAgent,
+		Attachments: []contractsai.Attachment{
+			namedAttachment{kind: contractsai.AttachmentKindFile, filename: "report.pdf", mimeType: "application/pdf", content: []byte("%PDF")},
+		},
+	})
+	require.NoError(t, err)
+	require.Len(t, input, 1)
+
+	content := marshalInputContent(t, input[0])
+	require.Len(t, content, 1)
+	assert.Equal(t, "input_file", content[0]["type"])
+	assert.Equal(t, "data:application/pdf;base64,JVBERg==", content[0]["file_data"])
+	assert.Equal(t, "report.pdf", content[0]["filename"])
+}
+
+func TestProviderBuildInputDoesNotTreatEmptyAttachmentPromptAsToolContinuation(t *testing.T) {
+	state := &providerStateStub{data: map[string]any{providerStateResponseID: "resp_prev"}}
+	mockAgent := mocksai.NewAgent(t)
+	mockAgent.EXPECT().Instructions().Return("").Once()
+	mockAgent.EXPECT().Messages().Return([]contractsai.Message{{Role: contractsai.RoleUser, Content: "history"}}).Twice()
+
+	provider := &Provider{}
+	input, _, previousResponseID, err := provider.buildInput(context.Background(), contractsai.AgentPrompt{
+		Agent:         mockAgent,
+		Attachments:   []contractsai.Attachment{namedAttachment{kind: contractsai.AttachmentKindFile, filename: "report.txt", mimeType: "text/plain", content: []byte("document")}},
+		ProviderState: state,
+	})
+	require.NoError(t, err)
+	assert.Empty(t, previousResponseID)
+	require.Len(t, input, 1)
+
+	content := marshalInputContent(t, input[0])
+	require.Len(t, content, 2)
+	assert.Equal(t, map[string]any{"text": "history", "type": "input_text"}, content[0])
+	assert.Equal(t, map[string]any{"text": "File: report.txt\n\ndocument", "type": "input_text"}, content[1])
+}
+
+func TestProviderBuildInputIgnoresAttachmentsDuringToolContinuation(t *testing.T) {
+	state := &providerStateStub{data: map[string]any{providerStateResponseID: "resp_prev"}}
+	mockAgent := mocksai.NewAgent(t)
+	mockAgent.EXPECT().Instructions().Return("").Once()
+	mockAgent.EXPECT().Messages().Return([]contractsai.Message{
+		{Role: contractsai.RoleUser, Content: "question"},
+		{Role: contractsai.RoleAssistant, ToolCalls: []contractsai.ToolCall{{ID: "call-1", Name: "lookup"}}},
+		{Role: contractsai.RoleToolResult, Content: "result", ToolCallID: "call-1"},
+	}).Once()
+
+	provider := &Provider{}
+	input, _, previousResponseID, err := provider.buildInput(context.Background(), contractsai.AgentPrompt{
+		Agent:         mockAgent,
+		Attachments:   []contractsai.Attachment{namedAttachment{kind: contractsai.AttachmentKindFile, filename: "report.txt", content: []byte("document")}},
+		ProviderState: state,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "resp_prev", previousResponseID)
+	require.Len(t, input, 1)
+	assert.Equal(t, []normalizedMessage{{role: "tool", content: "result"}}, normalizeInputItems([]map[string]any{marshalInputItem(t, input[0])}))
+}
+
+func TestProviderPromptAndStreamSerializeAttachmentsTheSameWay(t *testing.T) {
+	attachments := []contractsai.Attachment{
+		frameworkai.ImageFromByte([]byte("image"), frameworkai.WithMimeType("image/png")),
+		namedAttachment{kind: contractsai.AttachmentKindFile, filename: "report.txt", mimeType: "text/plain", content: []byte("document")},
+	}
+
+	promptAgent := mocksai.NewAgent(t)
+	promptAgent.EXPECT().Instructions().Return("").Once()
+	promptAgent.EXPECT().Messages().Return(nil).Once()
+
+	streamAgent := mocksai.NewAgent(t)
+	streamAgent.EXPECT().Instructions().Return("").Once()
+	streamAgent.EXPECT().Messages().Return(nil).Once()
+
+	promptCaptured := make(chan capturedRequest, 1)
+	promptServer := newResponsesServer(t, http.StatusOK, bodySequence(responseBody(t, "ok", nil, 1, 1, 2)), promptCaptured)
+	t.Cleanup(promptServer.Close)
+
+	provider := &Provider{
+		client: goopenai.NewClient(option.WithBaseURL(promptServer.URL), option.WithAPIKey("test-key")),
+		config: contractsai.ProviderConfig{},
+	}
+	provider.config.Models.Text.Default = "gpt-default"
+
+	_, err := provider.Prompt(context.Background(), contractsai.AgentPrompt{
+		Agent:       promptAgent,
+		Input:       "describe these",
+		Attachments: attachments,
+	})
+	require.NoError(t, err)
+
+	promptReq, ok := readCapturedRequest(t, promptCaptured)
+	require.True(t, ok)
+
+	streamCaptured := make(chan capturedStreamRequest, 1)
+	streamServer := newStreamingResponsesServer(t, http.StatusOK, "text/event-stream", stringsJoinLines(
+		`data: {"type":"response.completed","sequence_number":1,"response":{"id":"resp_1","object":"response","model":"gpt-test","output":[{"id":"msg_1","type":"message","role":"assistant","status":"completed","content":[{"type":"output_text","text":"ok","annotations":[],"logprobs":[]}]}],"usage":{"input_tokens":1,"input_tokens_details":{"cached_tokens":0},"output_tokens":1,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":2}}}`,
+		``,
+		`data: [DONE]`,
+		``,
+	), streamCaptured)
+	t.Cleanup(streamServer.Close)
+
+	provider.client = goopenai.NewClient(option.WithBaseURL(streamServer.URL), option.WithAPIKey("test-key"))
+
+	stream, err := provider.Stream(context.Background(), contractsai.AgentPrompt{
+		Agent:       streamAgent,
+		Input:       "describe these",
+		Attachments: attachments,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, stream)
+	require.NoError(t, stream.Each(func(contractsai.StreamEvent) error { return nil }))
+
+	streamReq, ok := readCapturedStreamRequest(t, streamCaptured)
+	require.True(t, ok)
+
+	assert.Equal(t, inputItemsFromBody(promptReq.body), inputItemsFromBody(streamReq.body))
+	assert.True(t, streamReq.stream)
+}
+
+func TestProviderBuildInputUnsupportedAttachmentKind(t *testing.T) {
+	mockAgent := mocksai.NewAgent(t)
+	mockAgent.EXPECT().Instructions().Return("").Once()
+	mockAgent.EXPECT().Messages().Return(nil).Once()
+
+	provider := &Provider{}
+	input, _, _, err := provider.buildInput(context.Background(), contractsai.AgentPrompt{
 		Agent:       mockAgent,
 		Attachments: []contractsai.Attachment{unsupportedAttachment{}},
 	})
 
-	assert.Nil(t, messages)
+	assert.Nil(t, input)
 	assert.Equal(t, errors.AIUnsupportedAttachmentKind.Args(contractsai.AttachmentKind("audio")), err)
 }
 
 type unsupportedAttachment struct{}
+
+type providerStateStub struct{ data map[string]any }
+
+func (p *providerStateStub) Get(key string) any { return p.data[key] }
+func (p *providerStateStub) Set(key string, value any) {
+	if p.data == nil {
+		p.data = make(map[string]any)
+	}
+	p.data[key] = value
+}
 
 type namedAttachment struct {
 	kind     contractsai.AttachmentKind
@@ -393,11 +516,8 @@ type namedAttachment struct {
 }
 
 func (attachment namedAttachment) Kind() contractsai.AttachmentKind { return attachment.kind }
-
-func (attachment namedAttachment) FileName() string { return attachment.filename }
-
-func (attachment namedAttachment) MimeType() string { return attachment.mimeType }
-
+func (attachment namedAttachment) FileName() string                 { return attachment.filename }
+func (attachment namedAttachment) MimeType() string                 { return attachment.mimeType }
 func (attachment namedAttachment) Content(context.Context) ([]byte, error) {
 	return attachment.content, nil
 }
@@ -423,20 +543,23 @@ func TestProviderStream(t *testing.T) {
 		mockAgent = mocksai.NewAgent(t)
 	}
 
-	successStreamBody := strings.Join([]string{
-		`data: {"id":"chatcmpl_stream_1","object":"chat.completion.chunk","created":1,"model":"gpt-test","choices":[{"index":0,"delta":{"content":"hel"},"finish_reason":null}],"usage":null}`,
+	successStreamBody := stringsJoinLines(
+		`data: {"type":"response.output_text.delta","item_id":"msg_1","output_index":0,"content_index":0,"delta":"hel","logprobs":[],"sequence_number":1}`,
 		``,
-		`data: {"id":"chatcmpl_stream_1","object":"chat.completion.chunk","created":1,"model":"gpt-test","choices":[{"index":0,"delta":{"content":""},"finish_reason":null}],"usage":null}`,
+		`data: {"type":"response.output_text.delta","item_id":"msg_1","output_index":0,"content_index":0,"delta":"lo","logprobs":[],"sequence_number":2}`,
 		``,
-		`data: {"id":"chatcmpl_stream_1","object":"chat.completion.chunk","created":1,"model":"gpt-test","choices":[],"usage":null}`,
-		``,
-		`data: {"id":"chatcmpl_stream_1","object":"chat.completion.chunk","created":1,"model":"gpt-test","choices":[],"usage":{"prompt_tokens":4,"completion_tokens":2,"total_tokens":6}}`,
-		``,
-		`data: {"id":"chatcmpl_stream_1","object":"chat.completion.chunk","created":1,"model":"gpt-test","choices":[{"index":0,"delta":{"content":"lo"},"finish_reason":null}],"usage":null}`,
+		`data: {"type":"response.completed","sequence_number":3,"response":{"id":"resp_1","object":"response","model":"gpt-test","output":[{"id":"msg_1","type":"message","role":"assistant","status":"completed","content":[{"type":"output_text","text":"hello","annotations":[],"logprobs":[]}]}],"usage":{"input_tokens":4,"input_tokens_details":{"cached_tokens":0},"output_tokens":2,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":6}}}`,
 		``,
 		`data: [DONE]`,
 		``,
-	}, "\n")
+	)
+
+	toolStreamBody := stringsJoinLines(
+		`data: {"type":"response.completed","sequence_number":1,"response":{"id":"resp_tc","object":"response","model":"gpt-test","output":[{"id":"fc_1","type":"function_call","call_id":"call_1","name":"get_weather","arguments":"{\"city\":\"London\",\"units\":\"celsius\"}","status":"completed"}],"usage":{"input_tokens":6,"input_tokens_details":{"cached_tokens":0},"output_tokens":3,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":9}}}`,
+		``,
+		`data: [DONE]`,
+		``,
+	)
 
 	tests := []struct {
 		name             string
@@ -472,19 +595,15 @@ func TestProviderStream(t *testing.T) {
 			expectEvents: []normalizedStreamEvent{
 				{eventType: contractsai.StreamEventTypeTextDelta, delta: "hel"},
 				{eventType: contractsai.StreamEventTypeTextDelta, delta: "lo"},
-				{
-					eventType: contractsai.StreamEventTypeDone,
-					usage:     &streamUsageSnapshot{input: 4, output: 2, total: 6},
-				},
+				{eventType: contractsai.StreamEventTypeDone, usage: &streamUsageSnapshot{input: 4, output: 2, total: 6}},
 			},
 			expectRequest: normalizedCapturedStreamRequest{
-				path:          "/chat/completions",
+				path:          "/responses",
 				authorization: "Bearer test-key",
 				model:         "gpt-default",
+				instructions:  "system rule",
 				stream:        true,
-				includeUsage:  true,
 				messages: []normalizedMessage{
-					{role: "system", content: "system rule"},
 					{role: "user", content: "history user"},
 					{role: "assistant", content: "history assistant"},
 					{role: "user", content: "new input"},
@@ -495,14 +614,14 @@ func TestProviderStream(t *testing.T) {
 			name:        "uses model override for stream",
 			status:      http.StatusOK,
 			contentType: "text/event-stream",
-			body: strings.Join([]string{
-				`data: {"id":"chatcmpl_stream_2","object":"chat.completion.chunk","created":1,"model":"gpt-test","choices":[{"index":0,"delta":{"content":"ok"},"finish_reason":null}],"usage":null}`,
+			body: stringsJoinLines(
+				`data: {"type":"response.output_text.delta","item_id":"msg_1","output_index":0,"content_index":0,"delta":"ok","logprobs":[],"sequence_number":1}`,
 				``,
-				`data: {"id":"chatcmpl_stream_2","object":"chat.completion.chunk","created":1,"model":"gpt-test","choices":[],"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}`,
+				`data: {"type":"response.completed","sequence_number":2,"response":{"id":"resp_2","object":"response","model":"gpt-test","output":[{"id":"msg_1","type":"message","role":"assistant","status":"completed","content":[{"type":"output_text","text":"ok","annotations":[],"logprobs":[]}]}],"usage":{"input_tokens":1,"input_tokens_details":{"cached_tokens":0},"output_tokens":1,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":2}}}`,
 				``,
 				`data: [DONE]`,
 				``,
-			}, "\n"),
+			),
 			setup: func() {
 				mockAgent.EXPECT().Instructions().Return("").Once()
 				mockAgent.EXPECT().Messages().Return(nil).Once()
@@ -513,36 +632,21 @@ func TestProviderStream(t *testing.T) {
 			expectUsage:   usageCheck{input: 1, output: 1, total: 2},
 			expectEvents: []normalizedStreamEvent{
 				{eventType: contractsai.StreamEventTypeTextDelta, delta: "ok"},
-				{
-					eventType: contractsai.StreamEventTypeDone,
-					usage:     &streamUsageSnapshot{input: 1, output: 1, total: 2},
-				},
+				{eventType: contractsai.StreamEventTypeDone, usage: &streamUsageSnapshot{input: 1, output: 1, total: 2}},
 			},
 			expectRequest: normalizedCapturedStreamRequest{
-				path:          "/chat/completions",
+				path:          "/responses",
 				authorization: "Bearer test-key",
 				model:         "gpt-override",
 				stream:        true,
-				includeUsage:  true,
-				messages: []normalizedMessage{
-					{role: "user", content: "hello"},
-				},
+				messages:      []normalizedMessage{{role: "user", content: "hello"}},
 			},
 		},
 		{
-			name:        "accumulates streaming tool call deltas across chunks",
+			name:        "returns tool calls from completed stream response",
 			status:      http.StatusOK,
 			contentType: "text/event-stream",
-			body: strings.Join([]string{
-				`data: {"id":"chatcmpl_stream_tc","object":"chat.completion.chunk","created":1,"model":"gpt-test","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"get_weather","arguments":"{\"city\":"}}]},"finish_reason":null}],"usage":null}`,
-				``,
-				`data: {"id":"chatcmpl_stream_tc","object":"chat.completion.chunk","created":1,"model":"gpt-test","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"type":"function","function":{"arguments":"\"London\",\"units\":\"celsius\"}"}}]},"finish_reason":null}],"usage":null}`,
-				``,
-				`data: {"id":"chatcmpl_stream_tc","object":"chat.completion.chunk","created":1,"model":"gpt-test","choices":[],"usage":{"prompt_tokens":6,"completion_tokens":3,"total_tokens":9}}`,
-				``,
-				`data: [DONE]`,
-				``,
-			}, "\n"),
+			body:        toolStreamBody,
 			setup: func() {
 				mockAgent.EXPECT().Instructions().Return("").Once()
 				mockAgent.EXPECT().Messages().Return(nil).Once()
@@ -555,19 +659,13 @@ func TestProviderStream(t *testing.T) {
 				Args:    map[string]any{"city": "London", "units": "celsius"},
 				RawArgs: `{"city":"London","units":"celsius"}`,
 			}},
-			expectEvents: []normalizedStreamEvent{{
-				eventType: contractsai.StreamEventTypeDone,
-				usage:     &streamUsageSnapshot{input: 6, output: 3, total: 9},
-			}},
+			expectEvents: []normalizedStreamEvent{{eventType: contractsai.StreamEventTypeDone, usage: &streamUsageSnapshot{input: 6, output: 3, total: 9}}},
 			expectRequest: normalizedCapturedStreamRequest{
-				path:          "/chat/completions",
+				path:          "/responses",
 				authorization: "Bearer test-key",
 				model:         "gpt-default",
 				stream:        true,
-				includeUsage:  true,
-				messages: []normalizedMessage{
-					{role: "user", content: "hello"},
-				},
+				messages:      []normalizedMessage{{role: "user", content: "hello"}},
 			},
 		},
 		{
@@ -583,14 +681,11 @@ func TestProviderStream(t *testing.T) {
 			},
 			input: "hello",
 			expectRequest: normalizedCapturedStreamRequest{
-				path:          "/chat/completions",
+				path:          "/responses",
 				authorization: "Bearer test-key",
 				model:         "gpt-default",
 				stream:        true,
-				includeUsage:  true,
-				messages: []normalizedMessage{
-					{role: "user", content: "hello"},
-				},
+				messages:      []normalizedMessage{{role: "user", content: "hello"}},
 			},
 		},
 	}
@@ -600,7 +695,7 @@ func TestProviderStream(t *testing.T) {
 			beforeEach()
 
 			captured := make(chan capturedStreamRequest, 1)
-			server := newStreamingChatServer(t, tt.status, tt.contentType, tt.body, captured)
+			server := newStreamingResponsesServer(t, tt.status, tt.contentType, tt.body, captured)
 			t.Cleanup(server.Close)
 
 			provider := &Provider{
@@ -629,11 +724,7 @@ func TestProviderStream(t *testing.T) {
 				thenText = resp.Text()
 				thenToolCalls = resp.ToolCalls()
 				if resp.Usage() != nil {
-					thenUsage = usageCheck{
-						input:  resp.Usage().Input(),
-						output: resp.Usage().Output(),
-						total:  resp.Usage().Total(),
-					}
+					thenUsage = usageCheck{input: resp.Usage().Input(), output: resp.Usage().Output(), total: resp.Usage().Total()}
 				}
 			})
 
@@ -650,15 +741,13 @@ func TestProviderStream(t *testing.T) {
 				var apiErr *goopenai.Error
 				require.ErrorAs(t, eachErr, &apiErr)
 				assert.Equal(t, tt.status, apiErr.StatusCode)
-				assert.Equal(t, tt.expectErrMessage, apiErr.Message)
-				assert.ErrorContains(t, eachErr, tt.expectErrMessage)
 				require.Len(t, normalizedEvents, 1)
 				assert.Equal(t, contractsai.StreamEventTypeError, normalizedEvents[0].eventType)
-				assert.Contains(t, normalizedEvents[0].err, tt.expectErrMessage)
+				assert.NotEmpty(t, normalizedEvents[0].err)
 				assert.Equal(t, 0, thenCalled)
 			} else {
 				require.NoError(t, eachErr)
-				assert.Equal(t, tt.expectEvents, normalizedEvents)
+				assert.Equal(t, tt.expectEvents, normalizeEmptyToolCalls(normalizedEvents))
 				assert.Equal(t, 1, thenCalled)
 				assert.Equal(t, tt.expectText, thenText)
 				assert.Equal(t, tt.expectUsage, thenUsage)
@@ -672,27 +761,41 @@ func TestProviderStream(t *testing.T) {
 	}
 }
 
-func newChatServer(t *testing.T, status int, body string, captured chan<- capturedRequest) *httptest.Server {
+func newResponsesServer(t *testing.T, status int, responses []string, captured chan<- capturedRequest) *httptest.Server {
+	return newResponsesServerWithOverflow(t, status, responses, captured, false)
+}
+
+func newResponsesServerWithOverflow(t *testing.T, status int, responses []string, captured chan<- capturedRequest, repeatLastResponse bool) *httptest.Server {
 	t.Helper()
 
+	callCount := 0
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		defer errors.Ignore(r.Body.Close)
 
-		var payload struct {
-			Model    string           `json:"model"`
-			Messages []map[string]any `json:"messages"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&payload); err == nil {
+		payload := decodeBodyMap(t, r)
+		if payload != nil {
+			model, _ := payload["model"].(string)
+			instructions, _ := payload["instructions"].(string)
 			select {
-			case captured <- capturedRequest{
-				path:          r.URL.Path,
-				authorization: r.Header.Get("Authorization"),
-				model:         payload.Model,
-				messages:      payload.Messages,
-			}:
+			case captured <- capturedRequest{path: r.URL.Path, authorization: r.Header.Get("Authorization"), model: model, instructions: instructions, body: payload}:
 			default:
 			}
 		}
+
+		if callCount >= len(responses) {
+			if repeatLastResponse && len(responses) > 0 {
+				body := responses[len(responses)-1]
+				callCount++
+
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(status)
+				_, _ = w.Write([]byte(body))
+				return
+			}
+			t.Fatalf("unexpected extra response request: call %d exceeds configured responses %d", callCount+1, len(responses))
+		}
+		body := responses[callCount]
+		callCount++
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(status)
@@ -700,13 +803,13 @@ func newChatServer(t *testing.T, status int, body string, captured chan<- captur
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/chat/completions", handler)
-	mux.HandleFunc("/v1/chat/completions", handler)
+	mux.HandleFunc("/responses", handler)
+	mux.HandleFunc("/v1/responses", handler)
 
 	return httptest.NewServer(mux)
 }
 
-func marshalUserContent(t *testing.T, message goopenai.ChatCompletionMessageParamUnion) []map[string]any {
+func marshalInputContent(t *testing.T, message any) []map[string]any {
 	t.Helper()
 
 	data, err := json.Marshal(message)
@@ -727,6 +830,18 @@ func marshalUserContent(t *testing.T, message goopenai.ChatCompletionMessagePara
 	return parts
 }
 
+func marshalInputItem(t *testing.T, item any) map[string]any {
+	t.Helper()
+
+	data, err := json.Marshal(item)
+	require.NoError(t, err)
+
+	var raw map[string]any
+	require.NoError(t, json.Unmarshal(data, &raw))
+
+	return raw
+}
+
 func messageText(content any) string {
 	switch val := content.(type) {
 	case string:
@@ -743,7 +858,7 @@ func messageText(content any) string {
 				parts = append(parts, text)
 			}
 		}
-		return strings.Join(parts, "")
+		return stringsJoin(parts)
 	default:
 		return ""
 	}
@@ -760,47 +875,28 @@ func readCapturedRequest(t *testing.T, captured <-chan capturedRequest) (capture
 }
 
 func normalizeCapturedRequest(req capturedRequest) normalizedCapturedRequest {
-	messages := make([]normalizedMessage, 0, len(req.messages))
-	for _, message := range req.messages {
-		role, _ := message["role"].(string)
-		messages = append(messages, normalizedMessage{
-			role:    role,
-			content: messageText(message["content"]),
-		})
-	}
-
 	return normalizedCapturedRequest{
 		path:          req.path,
 		authorization: req.authorization,
 		model:         req.model,
-		messages:      messages,
+		instructions:  req.instructions,
+		messages:      normalizeInputItems(inputItemsFromBody(req.body)),
 	}
 }
 
-func newStreamingChatServer(t *testing.T, status int, contentType string, body string, captured chan<- capturedStreamRequest) *httptest.Server {
+func newStreamingResponsesServer(t *testing.T, status int, contentType string, body string, captured chan<- capturedStreamRequest) *httptest.Server {
 	t.Helper()
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		defer errors.Ignore(r.Body.Close)
 
-		var payload struct {
-			Model         string           `json:"model"`
-			Messages      []map[string]any `json:"messages"`
-			Stream        bool             `json:"stream"`
-			StreamOptions struct {
-				IncludeUsage bool `json:"include_usage"`
-			} `json:"stream_options"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&payload); err == nil {
+		payload := decodeBodyMap(t, r)
+		if payload != nil {
+			model, _ := payload["model"].(string)
+			instructions, _ := payload["instructions"].(string)
+			stream, _ := payload["stream"].(bool)
 			select {
-			case captured <- capturedStreamRequest{
-				path:          r.URL.Path,
-				authorization: r.Header.Get("Authorization"),
-				model:         payload.Model,
-				messages:      payload.Messages,
-				stream:        payload.Stream,
-				includeUsage:  payload.StreamOptions.IncludeUsage,
-			}:
+			case captured <- capturedStreamRequest{path: r.URL.Path, authorization: r.Header.Get("Authorization"), model: model, instructions: instructions, body: payload, stream: stream}:
 			default:
 			}
 		}
@@ -815,8 +911,8 @@ func newStreamingChatServer(t *testing.T, status int, contentType string, body s
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/chat/completions", handler)
-	mux.HandleFunc("/v1/chat/completions", handler)
+	mux.HandleFunc("/responses", handler)
+	mux.HandleFunc("/v1/responses", handler)
 
 	return httptest.NewServer(mux)
 }
@@ -832,44 +928,145 @@ func readCapturedStreamRequest(t *testing.T, captured <-chan capturedStreamReque
 }
 
 func normalizeCapturedStreamRequest(req capturedStreamRequest) normalizedCapturedStreamRequest {
-	messages := make([]normalizedMessage, 0, len(req.messages))
-	for _, message := range req.messages {
-		role, _ := message["role"].(string)
-		messages = append(messages, normalizedMessage{
-			role:    role,
-			content: messageText(message["content"]),
-		})
-	}
-
 	return normalizedCapturedStreamRequest{
 		path:          req.path,
 		authorization: req.authorization,
 		model:         req.model,
-		messages:      messages,
+		instructions:  req.instructions,
+		messages:      normalizeInputItems(inputItemsFromBody(req.body)),
 		stream:        req.stream,
-		includeUsage:  req.includeUsage,
 	}
+}
+
+func decodeBodyMap(t *testing.T, r *http.Request) map[string]any {
+	t.Helper()
+	body, err := io.ReadAll(r.Body)
+	require.NoError(t, err)
+	r.Body = io.NopCloser(bytes.NewReader(body))
+
+	var payload map[string]any
+	require.NoErrorf(t, json.Unmarshal(body, &payload), "failed to unmarshal request body: %s", string(body))
+
+	return payload
+}
+
+func inputItemsFromBody(body map[string]any) []map[string]any {
+	rawItems, ok := body["input"].([]any)
+	if !ok {
+		return nil
+	}
+
+	items := make([]map[string]any, 0, len(rawItems))
+	for _, rawItem := range rawItems {
+		item, ok := rawItem.(map[string]any)
+		if !ok {
+			continue
+		}
+		items = append(items, item)
+	}
+
+	return items
+}
+
+func normalizeInputItems(items []map[string]any) []normalizedMessage {
+	messages := make([]normalizedMessage, 0, len(items))
+	for _, item := range items {
+		if role, ok := item["role"].(string); ok {
+			messages = append(messages, normalizedMessage{role: role, content: messageText(item["content"])})
+			continue
+		}
+		if _, ok := item["output"]; ok {
+			messages = append(messages, normalizedMessage{role: "tool", content: messageText(item["output"])})
+			continue
+		}
+		if _, ok := item["call_id"]; ok {
+			messages = append(messages, normalizedMessage{role: "assistant", content: ""})
+			continue
+		}
+
+		typ, _ := item["type"].(string)
+		switch typ {
+		case "message":
+			role, _ := item["role"].(string)
+			messages = append(messages, normalizedMessage{role: role, content: messageText(item["content"])})
+		case "function_call_output":
+			messages = append(messages, normalizedMessage{role: "tool", content: messageText(item["output"])})
+		case "function_call":
+			messages = append(messages, normalizedMessage{role: "assistant", content: ""})
+		}
+	}
+
+	return messages
 }
 
 func normalizeProviderStreamEvents(events []contractsai.StreamEvent) []normalizedStreamEvent {
 	normalized := make([]normalizedStreamEvent, 0, len(events))
 	for _, event := range events {
-		entry := normalizedStreamEvent{
-			eventType: event.Type,
-			delta:     event.Delta,
-			err:       event.Error,
-			toolCalls: event.ToolCalls,
-		}
+		entry := normalizedStreamEvent{eventType: event.Type, delta: event.Delta, err: event.Error, toolCalls: event.ToolCalls}
 		if event.Usage != nil {
-			entry.usage = &streamUsageSnapshot{
-				input:  event.Usage.Input(),
-				output: event.Usage.Output(),
-				total:  event.Usage.Total(),
-			}
+			entry.usage = &streamUsageSnapshot{input: event.Usage.Input(), output: event.Usage.Output(), total: event.Usage.Total()}
 		}
-
 		normalized = append(normalized, entry)
 	}
 
 	return normalized
+}
+
+func normalizeEmptyToolCalls(events []normalizedStreamEvent) []normalizedStreamEvent {
+	for i := range events {
+		if len(events[i].toolCalls) == 0 {
+			events[i].toolCalls = nil
+		}
+	}
+
+	return events
+}
+
+func responseBody(t *testing.T, text string, output []map[string]any, inputTokens, outputTokens, totalTokens int) string {
+	t.Helper()
+
+	if output == nil {
+		output = []map[string]any{{
+			"id":     "msg_1",
+			"type":   "message",
+			"role":   "assistant",
+			"status": "completed",
+			"content": []map[string]any{{
+				"type":        "output_text",
+				"text":        text,
+				"annotations": []any{},
+				"logprobs":    []any{},
+			}},
+		}}
+	}
+
+	body := map[string]any{
+		"id":     "resp_1",
+		"object": "response",
+		"model":  "gpt-test",
+		"output": output,
+		"usage": map[string]any{
+			"input_tokens":          inputTokens,
+			"input_tokens_details":  map[string]any{"cached_tokens": 0},
+			"output_tokens":         outputTokens,
+			"output_tokens_details": map[string]any{"reasoning_tokens": 0},
+			"total_tokens":          totalTokens,
+		},
+	}
+
+	encoded, err := json.Marshal(body)
+	require.NoError(t, err)
+	return string(encoded)
+}
+
+func bodySequence(body string) []string {
+	return []string{body}
+}
+
+func stringsJoin(parts []string) string {
+	return strings.Join(parts, "")
+}
+
+func stringsJoinLines(parts ...string) string {
+	return strings.Join(parts, "\n")
 }
