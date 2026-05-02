@@ -735,7 +735,7 @@ func (r *Query) SharedLock() db.Query {
 
 func (r *Query) Sum(column string, dest any) error {
 	destValue := reflect.ValueOf(dest)
-	if destValue.Kind() != reflect.Ptr {
+	if destValue.Kind() != reflect.Pointer {
 		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
 	}
 
@@ -744,7 +744,7 @@ func (r *Query) Sum(column string, dest any) error {
 
 func (r *Query) Avg(column string, dest any) error {
 	destValue := reflect.ValueOf(dest)
-	if destValue.Kind() != reflect.Ptr {
+	if destValue.Kind() != reflect.Pointer {
 		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
 	}
 
@@ -753,7 +753,7 @@ func (r *Query) Avg(column string, dest any) error {
 
 func (r *Query) Min(column string, dest any) error {
 	destValue := reflect.ValueOf(dest)
-	if destValue.Kind() != reflect.Ptr {
+	if destValue.Kind() != reflect.Pointer {
 		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
 	}
 
@@ -762,7 +762,7 @@ func (r *Query) Min(column string, dest any) error {
 
 func (r *Query) Max(column string, dest any) error {
 	destValue := reflect.ValueOf(dest)
-	if destValue.Kind() != reflect.Ptr {
+	if destValue.Kind() != reflect.Pointer {
 		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
 	}
 
