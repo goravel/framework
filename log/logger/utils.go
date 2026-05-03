@@ -117,7 +117,7 @@ func qualifiedName(k any) string {
 
 func getContextValues(ctx any, out map[any]any) {
 	rv := reflect.ValueOf(ctx)
-	if !rv.IsValid() || (rv.Kind() == reflect.Ptr && rv.IsNil()) {
+	if !rv.IsValid() || (rv.Kind() == reflect.Pointer && rv.IsNil()) {
 		return
 	}
 	v := reflect.Indirect(rv)
