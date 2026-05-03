@@ -272,8 +272,7 @@ func (r *resolved) FileName() string { return r.filename }
 
 func (r *resolved) MimeType() string { return r.mimeType }
 
-// PutFile uploads a file through the configured AI provider and returns the stored provider file reference.
-func PutFile(ctx context.Context, file contractsai.StorableFile, options ...contractsai.Option) (contractsai.StoredFileResponse, error) {
+func (r *resolved) Put(ctx context.Context, options ...contractsai.Option) (contractsai.StoredFileResponse, error) {
 	if aiFacade == nil {
 		return nil, errors.AIFacadeNotSet
 	}
@@ -283,11 +282,7 @@ func PutFile(ctx context.Context, file contractsai.StorableFile, options ...cont
 		return nil, errors.AIFacadeNotSet
 	}
 
-	return application.putFile(ctx, file, options...)
-}
-
-func (r *resolved) Put(ctx context.Context, options ...contractsai.Option) (contractsai.StoredFileResponse, error) {
-	return PutFile(ctx, r, options...)
+	return application.putFile(ctx, r, options...)
 }
 
 func (r *resolved) Content(ctx context.Context) ([]byte, error) {
