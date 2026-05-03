@@ -3,6 +3,7 @@ package openai
 import (
 	"bytes"
 	"context"
+	"sync"
 
 	contractsai "github.com/goravel/framework/contracts/ai"
 )
@@ -26,7 +27,11 @@ type imageResponse struct {
 type fileResponse struct {
 	id       string
 	mimeType string
-	content  []byte
+	resolve  func(context.Context) ([]byte, string, error)
+
+	once    sync.Once
+	content []byte
+	err     error
 }
 
 func (r *response) Text() string                      { return r.text }
@@ -64,7 +69,29 @@ func (r *fileResponse) ID() string { return r.id }
 
 func (r *fileResponse) MimeType() string { return r.mimeType }
 
-func (r *fileResponse) Content(context.Context) ([]byte, error) { return bytes.Clone(r.content), nil }
+func (r *fileResponse) Content(ctx context.Context) ([]byte, error) {
+	r.once.Do(func() {
+		if r.resolve == nil {
+			return
+		}
+
+		content, mimeType, err := r.resolve(ctx)
+		if err != nil {
+			r.err = err
+			return
+		}
+
+		r.content = content
+		if r.mimeType == "" {
+			r.mimeType = mimeType
+		}
+	})
+	if r.err != nil {
+		return nil, r.err
+	}
+
+	return bytes.Clone(r.content), nil
+}
 
 type usage struct{ input, output, total int }
 
