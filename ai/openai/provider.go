@@ -250,7 +250,12 @@ func (r *Provider) GetFile(ctx context.Context, id string) (contractsai.FileResp
 		return nil, err
 	}
 
-	return &fileResponse{id: file.ID, content: content}, nil
+	mimeType := mime.TypeByExtension(filepath.Ext(file.Filename))
+	if mimeType == "" {
+		mimeType = response.Header.Get("Content-Type")
+	}
+
+	return &fileResponse{id: file.ID, mimeType: mimeType, content: content}, nil
 }
 
 func (r *Provider) DeleteFile(ctx context.Context, id string) error {

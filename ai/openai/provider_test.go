@@ -999,6 +999,7 @@ func TestProviderGetFile(t *testing.T) {
 	file, err := provider.GetFile(context.Background(), "file-123")
 	require.NoError(t, err)
 	assert.Equal(t, "file-123", file.ID())
+	assert.Equal(t, "text/plain; charset=utf-8", file.MimeType())
 
 	content, err := file.Content(context.Background())
 	require.NoError(t, err)

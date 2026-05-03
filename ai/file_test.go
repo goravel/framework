@@ -370,8 +370,51 @@ func TestDocumentFromIDGetAndDelete(t *testing.T) {
 	content, err := attachment.Content(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, []byte("report"), content)
+	assert.Equal(t, "text/plain", attachment.MimeType())
 
 	assert.NoError(t, attachment.Delete(ctx))
+}
+
+func TestDocumentFromIDPutRequiresID(t *testing.T) {
+	attachment := DocumentFromID("")
+
+	stored, err := attachment.Put(context.Background())
+	assert.Nil(t, stored)
+	assert.Equal(t, errors.AIStoredFileIDEmpty, err)
+}
+
+func TestDocumentFromIDContentCachesResolvedFile(t *testing.T) {
+	originalAIFacade := aiFacade
+	t.Cleanup(func() {
+		aiFacade = originalAIFacade
+	})
+
+	ctx := context.Background()
+	fileProvider := mocksai.NewFileProvider(t)
+	response := mocksai.NewFileResponse(t)
+	response.EXPECT().MimeType().Return("text/plain").Twice()
+	response.EXPECT().Content(ctx).Return([]byte("report"), nil).Once()
+
+	fileProvider.EXPECT().GetFile(ctx, "file-123").Return(response, nil).Once()
+
+	config := contractsai.Config{
+		Default: "openai",
+		Providers: map[string]contractsai.ProviderConfig{
+			"openai": {Via: uploadTestProvider{fileProvider: fileProvider}},
+		},
+	}
+	aiFacade = &Application{ctx: context.Background(), config: config, resolver: NewProviderResolver(config)}
+
+	attachment := DocumentFromID("file-123")
+	content, err := attachment.Content(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, []byte("report"), content)
+	assert.Equal(t, "text/plain", attachment.MimeType())
+
+	file, err := attachment.Get(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, response, file)
+	assert.Equal(t, "text/plain", file.MimeType())
 }
 
 func TestDocumentFromIDReturnsErrorWhenFacadeNotSet(t *testing.T) {
