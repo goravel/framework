@@ -43,7 +43,14 @@ func IsArtisan() bool {
 }
 
 func IsBootstrapSetup() bool {
-	data, err := os.ReadFile(filepath.Join(support.Config.Paths.Bootstrap, "app.go"))
+	bootstrapPath := strings.Trim(support.Config.Paths.Bootstrap, "/")
+	if bootstrapPath == "" {
+		return false
+	}
+
+	paths := append([]string{support.RelativePath}, strings.Split(bootstrapPath, "/")...)
+	paths = append(paths, "app.go")
+	data, err := os.ReadFile(filepath.Join(paths...))
 	if err != nil {
 		return false
 	}

@@ -98,6 +98,7 @@ type Application interface {
 	ModelPath(path ...string) string
 	// DatabasePath get the path to the database directory.
 	DatabasePath(path ...string) string
+	// DEPRECATED, use BasePath instead.
 	// ExecutablePath get the path to the executable of the running Goravel application.
 	ExecutablePath(path ...string) string
 	// FacadesPath get the path to the facade files.

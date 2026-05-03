@@ -391,16 +391,25 @@ func TestWriter_WithContext(t *testing.T) {
 	mockConfig.EXPECT().GetString("logging.channels.single.formatter", "text").Return("text").Once()
 	// app.env is called twice per log write (once for each handler: single + daily)
 	mockConfig.EXPECT().GetString("app.env").Return("test").Twice()
+	// logging.context.exclude is read once per handler on first non-empty context (single + daily)
+	mockConfig.EXPECT().Get("logging.context.exclude", []any{}).Return([]any{}).Twice()
 
 	log, err := NewApplication(context.Background(), nil, mockConfig, json.New(), nil)
 	assert.Nil(t, err)
 
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, testContextKey("key"), "value")
+	ctx = context.WithValue(ctx, testContextKey("GoravelAuthJwt"), "secret-token")
+	ctx = context.WithValue(ctx, testContextKey("request_id"), "req-42")
 	log.WithContext(ctx).Info("Goravel")
 
-	assert.True(t, file.Contains(singleLog, "test.info: Goravel\n[Context] map[key:value]"))
-	assert.True(t, file.Contains(dailyLog, "test.info: Goravel\n[Context] map[key:value]"))
+	assert.True(t, file.Contains(singleLog, "test.info: Goravel"))
+	assert.True(t, file.Contains(dailyLog, "test.info: Goravel"))
+	assert.True(t, file.Contains(singleLog, "[Context] map[request_id:req-42]"))
+	assert.True(t, file.Contains(dailyLog, "[Context] map[request_id:req-42]"))
+	assert.False(t, file.Contains(singleLog, "GoravelAuthJwt"))
+	assert.False(t, file.Contains(singleLog, "secret-token"))
+	assert.False(t, file.Contains(dailyLog, "GoravelAuthJwt"))
+	assert.False(t, file.Contains(dailyLog, "secret-token"))
 
 	_ = file.Remove("storage")
 }

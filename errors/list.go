@@ -6,6 +6,7 @@ var (
 	ConfigFacadeNotSet      = New("config facade is not initialized")
 	ConsoleFacadeNotSet     = New("console facade is not initialized, skipping artisan command execution")
 	DBFacadeNotSet          = New("db facade is not initialized")
+	HttpFacadeNotSet        = New("http facade is not initialized")
 	JSONParserNotSet        = New("JSON parser is not initialized")
 	LogFacadeNotSet         = New("log facade is not initialized")
 	OrmFacadeNotSet         = New("orm facade is not initialized")
@@ -26,6 +27,7 @@ var (
 	AiDocsFacadeNotFound = New("no AI docs found for the specified facade(s): %s")
 
 	AuthEmptySecret             = New("authentication secret is missing or required")
+	AuthGuardMismatch           = New("authentication token guard mismatch: expected %s, got %s")
 	AuthInvalidClaims           = New("authentication token contains invalid claims")
 	AuthInvalidKey              = New("authentication key is invalid")
 	AuthInvalidToken            = New("authentication token is invalid")
@@ -37,6 +39,18 @@ var (
 	AuthGuardDriverNotFound     = New("driver %s for guard %s was not found")
 	AuthProviderDriverNotFound  = New("driver %s for user provider %s was not found")
 	AuthUnsupportedDriverMethod = New("The method was not supported for the driver %s")
+
+	AIProviderNotSupported         = New("ai provider not found: %s")
+	AIProviderContractNotFulfilled = New("%s.via must be contracts/ai.Provider or func() (contracts/ai.Provider, error)")
+	AIFacadeNotSet                 = New("ai facade is not initialized")
+	AIAttachmentUrlResponseNotOK   = New("ai: attachment url request failed with status %d")
+	AIProviderDoesNotSupportFiles  = New("ai: provider %s does not support files")
+	AIResponseIsNil                = New("ai: response is nil")
+	AIStreamRunnerRequired         = New("ai stream runner is required")
+	AIUnsupportedAttachmentKind    = New("ai: unsupported attachment kind %s")
+	AIToolCallLoopExceeded         = New("ai: tool call loop exceeded %d iterations")
+	AIToolExecutionFailed          = New("ai: tool %q execution failed: %v")
+	AIToolNotFound                 = New("ai: tool %q not found")
 
 	CacheDriverNotSupported           = New("invalid driver: %s, only support memory, custom")
 	CacheForeverFailed                = New("cache forever is failed")
@@ -192,6 +206,7 @@ var (
 	ProviderRegisterFailed = New("failed to register provider '%s': %v")
 
 	QueueDriverFailedToPop           = New("failed to pop job from %s queue: %v")
+	QueueDriverFailedToReceive       = New("failed to receive jobs from %s queue: %v")
 	QueueDriverInvalid               = New("%s doesn't implement contracts/queue/driver")
 	QueueDriverNoJobFound            = New("no job found in %s queue")
 	QueueDriverNotSupported          = New("unknown queue driver: %s")
@@ -272,7 +287,10 @@ var (
 	ValidationEmptyData            = New("data can't be empty")
 	ValidationEmptyRules           = New("rules can't be empty")
 	ValidationFilterRegisterFailed = New("filter register failed: %v")
+	ValidationInvalidFilterType    = New("invalid filter type for field %s, must be string or []string")
+	ValidationInvalidRuleType      = New("invalid rule type for field %s, must be string or []string")
 	ValidationRuleRegisterFailed   = New("rule register failed: %v")
+	ValidationUnknownRule          = New("unknown validation rule: %s")
 
 	ViewTemplateNotExist = New("view template %s does not exist")
 )

@@ -2,6 +2,7 @@ package foundation
 
 import (
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/stats"
 
 	"github.com/goravel/framework/contracts/console"
@@ -27,8 +28,10 @@ type ApplicationBuilder struct {
 	configuredServiceProviders func() []foundation.ServiceProvider
 	eventToListeners           func() map[event.Event][]event.Listener
 	filters                    func() []validation.Filter
+	grpcClientCredentials      func() map[string]credentials.TransportCredentials
 	grpcClientInterceptors     func() map[string][]grpc.UnaryClientInterceptor
 	grpcClientStatsHandlers    func() map[string][]stats.Handler
+	grpcServerCredentials      func() credentials.TransportCredentials
 	grpcServerInterceptors     func() []grpc.UnaryServerInterceptor
 	grpcServerStatsHandlers    func() []stats.Handler
 	jobs                       func() []queue.Job
@@ -82,6 +85,12 @@ func (r *ApplicationBuilder) WithFilters(fn func() []validation.Filter) foundati
 	return r
 }
 
+func (r *ApplicationBuilder) WithGrpcClientCredentials(fn func() map[string]credentials.TransportCredentials) foundation.ApplicationBuilder {
+	r.grpcClientCredentials = fn
+
+	return r
+}
+
 func (r *ApplicationBuilder) WithGrpcClientInterceptors(fn func() map[string][]grpc.UnaryClientInterceptor) foundation.ApplicationBuilder {
 	r.grpcClientInterceptors = fn
 
@@ -90,6 +99,12 @@ func (r *ApplicationBuilder) WithGrpcClientInterceptors(fn func() map[string][]g
 
 func (r *ApplicationBuilder) WithGrpcClientStatsHandlers(fn func() map[string][]stats.Handler) foundation.ApplicationBuilder {
 	r.grpcClientStatsHandlers = fn
+
+	return r
+}
+
+func (r *ApplicationBuilder) WithGrpcServerCredentials(fn func() credentials.TransportCredentials) foundation.ApplicationBuilder {
+	r.grpcServerCredentials = fn
 
 	return r
 }

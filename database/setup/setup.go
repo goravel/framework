@@ -29,6 +29,7 @@ func main() {
 	databaseServiceProvider := "&database.ServiceProvider{}"
 	facadesPackage := setup.Paths().Facades().Package()
 	env := `
+DB_CONNECTION=
 DB_HOST=
 DB_PORT=
 DB_DATABASE=

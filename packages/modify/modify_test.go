@@ -2,6 +2,7 @@ package modify
 
 import (
 	"go/token"
+	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
@@ -565,6 +566,70 @@ func main() {
 
 			err := goFile.Format().Apply()
 			tt.assert(err)
+		})
+	}
+}
+
+func TestEnv(t *testing.T) {
+	tests := []struct {
+		name      string
+		setupFile bool
+		initial   string
+		key       string
+		value     string
+		expected  string
+		wantErr   bool
+	}{
+		{
+			name:      "update existing key",
+			setupFile: true,
+			initial:   "APP_NAME=Old\nAPP_ENV=local",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "APP_NAME=New\nAPP_ENV=local",
+		},
+		{
+			name:      "append key when not exists",
+			setupFile: true,
+			initial:   "APP_ENV=local",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "APP_ENV=local\nAPP_NAME=New",
+		},
+		{
+			name:      "update all duplicate keys",
+			setupFile: true,
+			initial:   "APP_NAME=Old\nAPP_ENV=local\nAPP_NAME=Legacy",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "APP_NAME=New\nAPP_ENV=local\nAPP_NAME=New",
+		},
+		{
+			name:    "return error when env file not exists",
+			key:     "APP_NAME",
+			value:   "New",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			envPath := filepath.Join(t.TempDir(), ".env")
+			if tt.setupFile {
+				assert.NoError(t, os.WriteFile(envPath, []byte(tt.initial), 0o644))
+			}
+
+			err := Env(envPath, tt.key, tt.value).Apply()
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.ErrorIs(t, err, os.ErrNotExist)
+				return
+			}
+
+			assert.NoError(t, err)
+			content, readErr := os.ReadFile(envPath)
+			assert.NoError(t, readErr)
+			assert.Equal(t, tt.expected, string(content))
 		})
 	}
 }

@@ -1,10 +1,21 @@
 package ai
 
 import (
+	"context"
+
 	"github.com/goravel/framework/ai/console"
+	contractsai "github.com/goravel/framework/contracts/ai"
 	"github.com/goravel/framework/contracts/binding"
 	contractsconsole "github.com/goravel/framework/contracts/console"
+	contractsfilesystem "github.com/goravel/framework/contracts/filesystem"
 	"github.com/goravel/framework/contracts/foundation"
+	contractshttpclient "github.com/goravel/framework/contracts/http/client"
+)
+
+var (
+	aiFacade      contractsai.AI
+	storageFacade contractsfilesystem.Storage
+	httpFacade    contractshttpclient.Factory
 )
 
 type ServiceProvider struct{}
@@ -20,21 +31,24 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 
 func (r *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(binding.AI, func(app foundation.Application) (any, error) {
-		return NewApplication(app.MakeConfig()), nil
+		config := app.MakeConfig()
+		var aiConfig contractsai.Config
+		if err := config.UnmarshalKey("ai", &aiConfig); err != nil {
+			return nil, err
+		}
+
+		return NewApplication(context.Background(), aiConfig), nil
 	})
 }
 
 func (r *ServiceProvider) Boot(app foundation.Application) {
-	r.registerCommands(app)
-}
+	aiFacade = app.MakeAI()
+	storageFacade = app.MakeStorage()
+	httpFacade = app.MakeHttp()
 
-func (r *ServiceProvider) registerCommands(app foundation.Application) {
-	artisan := app.MakeArtisan()
-	if artisan == nil {
-		return
-	}
-	artisan.Register([]contractsconsole.Command{
-		console.NewAiDocsInstallCommand(),
+	app.Commands([]contractsconsole.Command{
+    console.NewAiDocsInstallCommand(),
 		console.NewAiDocsUpdateCommand(),
+		&console.AgentMakeCommand{},
 	})
 }

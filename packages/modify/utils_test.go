@@ -7,11 +7,11 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/dave/dst"
+	"github.com/dave/dst/decorator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/dave/dst"
-	"github.com/dave/dst/decorator"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support"
 	supportfile "github.com/goravel/framework/support/file"
@@ -1839,6 +1839,49 @@ func Providers() []foundation.ServiceProvider {
 `,
 		},
 		{
+			name: "add provider from different package with alias",
+			appContent: `package bootstrap
+
+import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
+}
+`,
+			pkg:      "r github.com/goravel/redis",
+			provider: "&r.ServiceProvider{}",
+			expectedApp: `package bootstrap
+
+import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithProviders(Providers).WithConfig(config.Boot).Start()
+}
+`,
+			expectedProviders: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/foundation"
+	r "github.com/goravel/redis"
+)
+
+func Providers() []foundation.ServiceProvider {
+	return []foundation.ServiceProvider{
+		&r.ServiceProvider{},
+	}
+}
+`,
+		},
+		{
 			name: "add multiple providers sequentially",
 			appContent: `package bootstrap
 
@@ -3251,6 +3294,67 @@ func Providers() []foundation.ServiceProvider {
 `,
 			pkg:      "github.com/goravel/redis",
 			provider: "&redis.ServiceProvider{}",
+			expectedApp: `package bootstrap
+
+import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithProviders(Providers).WithConfig(config.Boot).Start()
+}
+`,
+			expectedProviders: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/foundation"
+
+	"goravel/app/providers"
+)
+
+func Providers() []foundation.ServiceProvider {
+	return []foundation.ServiceProvider{
+		&providers.AppServiceProvider{},
+	}
+}
+`,
+		},
+		{
+			name: "remove provider from different package with alias",
+			appContent: `package bootstrap
+
+import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithProviders(Providers).WithConfig(config.Boot).Start()
+}
+`,
+			providersContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/foundation"
+	r "github.com/goravel/redis"
+
+	"goravel/app/providers"
+)
+
+func Providers() []foundation.ServiceProvider {
+	return []foundation.ServiceProvider{
+		&providers.AppServiceProvider{},
+		&r.ServiceProvider{},
+	}
+}
+`,
+			pkg:      "r github.com/goravel/redis",
+			provider: "&r.ServiceProvider{}",
 			expectedApp: `package bootstrap
 
 import (

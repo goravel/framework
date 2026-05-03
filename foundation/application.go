@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/stats"
 
 	"github.com/goravel/framework/config"
@@ -96,17 +97,7 @@ func (r *Application) Boot() {
 	r.providerRepository.Register(r)
 	r.providerRepository.Boot(r)
 
-	r.registerCommands([]contractsconsole.Command{
-		console.NewAboutCommand(r),
-		console.NewEnvEncryptCommand(),
-		console.NewEnvDecryptCommand(),
-		console.NewTestMakeCommand(),
-		console.NewPackageMakeCommand(),
-		console.NewProviderMakeCommand(),
-		console.NewPackageInstallCommand(binding.Bindings, r.MakeProcess(), r.Json()),
-		console.NewPackageUninstallCommand(binding.Bindings, r.MakeProcess(), r.Json()),
-		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
-	})
+	r.registerCommands(r.defaultCommands())
 	r.bootArtisan()
 }
 
@@ -135,19 +126,7 @@ func (r *Application) Build() foundation.Application {
 	r.configureValidation()
 	r.configureRoutes()
 	r.configureRunners()
-	r.registerCommands([]contractsconsole.Command{
-		console.NewAboutCommand(r),
-		console.NewEnvEncryptCommand(),
-		console.NewEnvDecryptCommand(),
-		console.NewTestMakeCommand(),
-		console.NewPackageMakeCommand(),
-		console.NewProviderMakeCommand(),
-		console.NewPackageInstallCommand(binding.Bindings, r.MakeProcess(), r.Json()),
-		console.NewPackageUninstallCommand(binding.Bindings, r.MakeProcess(), r.Json()),
-		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
-		console.NewUpCommand(r),
-		console.NewDownCommand(r),
-	})
+	r.registerCommands(r.defaultCommands())
 	r.configureCallback()
 	r.bootArtisan()
 
@@ -201,7 +180,7 @@ func (r *Application) Refresh() {
 }
 
 func (r *Application) RegisterBaseServiceProviders() {
-	baseProviders := r.getBaseServiceProviders()
+	baseProviders := r.baseServiceProviders()
 	r.providerRepository.Add(baseProviders)
 	r.providerRepository.Register(r)
 }
@@ -469,14 +448,24 @@ func (r *Application) configureEventListeners() {
 
 func (r *Application) configureGrpc() {
 	var (
+		grpcClientCredentials   map[string]credentials.TransportCredentials
 		grpcClientInterceptors  map[string][]grpc.UnaryClientInterceptor
+		grpcServerCredentials   credentials.TransportCredentials
 		grpcServerInterceptors  []grpc.UnaryServerInterceptor
 		grpcClientStatsHandlers map[string][]stats.Handler
 		grpcServerStatsHandlers []stats.Handler
 	)
 
+	if r.builder.grpcClientCredentials != nil {
+		grpcClientCredentials = r.builder.grpcClientCredentials()
+	}
+
 	if r.builder.grpcClientInterceptors != nil {
 		grpcClientInterceptors = r.builder.grpcClientInterceptors()
+	}
+
+	if r.builder.grpcServerCredentials != nil {
+		grpcServerCredentials = r.builder.grpcServerCredentials()
 	}
 
 	if r.builder.grpcServerInterceptors != nil {
@@ -491,17 +480,24 @@ func (r *Application) configureGrpc() {
 		grpcServerStatsHandlers = r.builder.grpcServerStatsHandlers()
 	}
 
-	if len(grpcClientInterceptors) > 0 || len(grpcServerInterceptors) > 0 ||
+	if len(grpcClientCredentials) > 0 || len(grpcClientInterceptors) > 0 ||
+		grpcServerCredentials != nil || len(grpcServerInterceptors) > 0 ||
 		len(grpcClientStatsHandlers) > 0 || len(grpcServerStatsHandlers) > 0 {
 		grpcFacade := r.MakeGrpc()
 		if grpcFacade == nil {
 			color.Errorln("gRPC facade not found, please install it first: ./artisan package:install Grpc")
 		} else {
+			if len(grpcClientCredentials) > 0 {
+				grpcFacade.ClientCredentials(grpcClientCredentials)
+			}
 			if len(grpcClientInterceptors) > 0 {
 				grpcFacade.UnaryClientInterceptorGroups(grpcClientInterceptors)
 			}
 			if len(grpcServerInterceptors) > 0 {
 				grpcFacade.UnaryServerInterceptors(grpcServerInterceptors)
+			}
+			if grpcServerCredentials != nil {
+				grpcFacade.ServerCredentials(grpcServerCredentials)
 			}
 			if len(grpcClientStatsHandlers) > 0 {
 				grpcFacade.ClientStatsHandlerGroups(grpcClientStatsHandlers)
@@ -674,7 +670,31 @@ func (r *Application) configureValidation() {
 	}
 }
 
-func (r *Application) getBaseServiceProviders() []foundation.ServiceProvider {
+func (r *Application) defaultCommands() []contractsconsole.Command {
+	commands := []contractsconsole.Command{
+		console.NewAboutCommand(r),
+		console.NewEnvEncryptCommand(),
+		console.NewEnvDecryptCommand(),
+		console.NewTestMakeCommand(),
+		console.NewPackageMakeCommand(),
+		console.NewProviderMakeCommand(),
+		console.NewPackageInstallCommand(binding.Bindings, r.MakeProcess(), r.Json()),
+		console.NewPackageUninstallCommand(binding.Bindings, r.MakeProcess(), r.Json()),
+		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
+	}
+
+	storage := r.MakeStorage()
+	view := r.MakeView()
+	hash := r.MakeHash()
+
+	if storage != nil && view != nil && hash != nil {
+		commands = append(commands, console.NewUpCommand(storage), console.NewDownCommand(view, hash, storage))
+	}
+
+	return commands
+}
+
+func (r *Application) baseServiceProviders() []foundation.ServiceProvider {
 	return []foundation.ServiceProvider{
 		&config.ServiceProvider{},
 		&frameworkconsole.ServiceProvider{},
@@ -705,10 +725,14 @@ func (r *Application) setTimezone() {
 
 func setEnv() {
 	args := os.Args
+	isDebugBinary := strings.Contains(args[0], "__debug")
+	isTestDebugBinary := isDebugBinary && slices.ContainsFunc(args[1:], func(arg string) bool {
+		return strings.HasPrefix(arg, "-test.")
+	})
 
 	if strings.HasSuffix(args[0], ".test") ||
 		strings.HasSuffix(args[0], ".test.exe") ||
-		strings.Contains(args[0], "__debug") {
+		isTestDebugBinary {
 		support.RuntimeMode = support.RuntimeTest
 		support.DontVerifyAppKey = true
 	} else {
@@ -733,22 +757,45 @@ func setEnv() {
 		var (
 			relativePath string
 			envExist     bool
+			goModExist   bool
 			testEnv      = envFilePath
+			wg           sync.WaitGroup
 		)
 
-		for range 50 {
-			if _, err := os.Stat(testEnv); err == nil {
-				envExist = true
+		wg.Add(2)
+		go func() {
+			defer wg.Done()
 
-				break
-			} else {
-				testEnv = filepath.Join("..", testEnv)
-				relativePath = filepath.Join("..", relativePath)
+			for range 10 {
+				if _, err := os.Stat(testEnv); err == nil {
+					envExist = true
+					break
+				} else {
+					testEnv = filepath.Join("..", testEnv)
+				}
 			}
-		}
+
+		}()
+
+		go func() {
+			defer wg.Done()
+
+			for range 10 {
+				if _, err := os.Stat(filepath.Join(relativePath, "go.mod")); err == nil {
+					goModExist = true
+					break
+				} else {
+					relativePath = filepath.Join("..", relativePath)
+				}
+			}
+		}()
+
+		wg.Wait()
 
 		if envExist {
 			envFilePath = testEnv
+		}
+		if goModExist {
 			support.RelativePath = relativePath
 		}
 	}
@@ -780,7 +827,7 @@ func getEnvFilePath() string {
 		}
 
 		if arg == "--env" || arg == "-env" || arg == "-e" {
-			if len(args) >= index+1 && !strings.HasPrefix(args[index+1], "-") {
+			if index+1 < len(args) && !strings.HasPrefix(args[index+1], "-") {
 				envFilePath = args[index+1]
 				break
 			}

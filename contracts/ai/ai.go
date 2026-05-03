@@ -6,12 +6,16 @@ import "context"
 type AI interface {
 	// Agent creates a conversation bound to the resolved driver.
 	Agent(agent Agent, options ...Option) (Conversation, error)
+	// WithContext returns a new AI instance that carries the provided context for all operations.
+	WithContext(ctx context.Context) AI
 }
 
 // Conversation is a stateful chat session.
 type Conversation interface {
 	// Prompt sends a non-streaming input and updates the conversation history.
-	Prompt(ctx context.Context, input string) (Response, error)
+	Prompt(input string, options ...ConversationOption) (Response, error)
+	// Stream sends a streaming input and returns a streamable response object.
+	Stream(input string, options ...ConversationOption) (StreamableResponse, error)
 	// Messages returns current conversation history.
 	Messages() []Message
 	// Reset clears runtime history and restores initial agent messages.

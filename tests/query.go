@@ -16,6 +16,7 @@ import (
 	databasegorm "github.com/goravel/framework/database/gorm"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/process"
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/str"
 	"github.com/goravel/framework/testing/utils"
 	"github.com/goravel/mysql"
@@ -132,38 +133,54 @@ func NewTestQueryBuilder() *TestQueryBuilder {
 func (r *TestQueryBuilder) All(prefix string, singular bool) map[string]*TestQuery {
 	postgresTestQuery := r.Postgres(prefix, singular)
 	mysqlTestQuery := r.Mysql(prefix, singular)
-	sqlserverTestQuery := r.Sqlserver(prefix, singular)
 	sqliteTestQuery := r.Sqlite(prefix, singular)
 
-	return map[string]*TestQuery{
-		postgresTestQuery.Driver().Pool().Writers[0].Driver:  postgresTestQuery,
-		mysqlTestQuery.Driver().Pool().Writers[0].Driver:     mysqlTestQuery,
-		sqlserverTestQuery.Driver().Pool().Writers[0].Driver: sqlserverTestQuery,
-		sqliteTestQuery.Driver().Pool().Writers[0].Driver:    sqliteTestQuery,
+	queries := map[string]*TestQuery{
+		postgresTestQuery.Driver().Pool().Writers[0].Driver: postgresTestQuery,
+		mysqlTestQuery.Driver().Pool().Writers[0].Driver:    mysqlTestQuery,
+		sqliteTestQuery.Driver().Pool().Writers[0].Driver:   sqliteTestQuery,
 	}
+
+	if env.IsX86() {
+		sqlserverTestQuery := r.Sqlserver(prefix, singular)
+		queries[sqlserverTestQuery.Driver().Pool().Writers[0].Driver] = sqlserverTestQuery
+	}
+
+	return queries
 }
 
 func (r *TestQueryBuilder) AllWithTimezone(timezone string) map[string]*TestQuery {
 	postgresTestQuery := r.PostgresWithTimezone(timezone)
 	mysqlTestQuery := r.MysqlWithTimezone(timezone)
-	sqlserverTestQuery := r.SqlserverWithTimezone(timezone)
+
 	sqliteTestQuery := r.SqliteWithTimezone(timezone)
 
-	return map[string]*TestQuery{
-		postgresTestQuery.Driver().Pool().Writers[0].Driver:  postgresTestQuery,
-		mysqlTestQuery.Driver().Pool().Writers[0].Driver:     mysqlTestQuery,
-		sqlserverTestQuery.Driver().Pool().Writers[0].Driver: sqlserverTestQuery,
-		sqliteTestQuery.Driver().Pool().Writers[0].Driver:    sqliteTestQuery,
+	queries := map[string]*TestQuery{
+		postgresTestQuery.Driver().Pool().Writers[0].Driver: postgresTestQuery,
+		mysqlTestQuery.Driver().Pool().Writers[0].Driver:    mysqlTestQuery,
+		sqliteTestQuery.Driver().Pool().Writers[0].Driver:   sqliteTestQuery,
 	}
+
+	if env.IsX86() {
+		sqlserverTestQuery := r.SqlserverWithTimezone(timezone)
+		queries[sqlserverTestQuery.Driver().Pool().Writers[0].Driver] = sqlserverTestQuery
+	}
+
+	return queries
 }
 
 func (r *TestQueryBuilder) AllWithReadWrite() map[string]map[string]*TestQuery {
-	return map[string]map[string]*TestQuery{
-		postgres.Name:  r.PostgresWithReadWrite(),
-		mysql.Name:     r.MysqlWithReadWrite(),
-		sqlserver.Name: r.SqlserverWithReadWrite(),
-		sqlite.Name:    r.SqliteWithReadWrite(),
+	queries := map[string]map[string]*TestQuery{
+		postgres.Name: r.PostgresWithReadWrite(),
+		mysql.Name:    r.MysqlWithReadWrite(),
+		sqlite.Name:   r.SqliteWithReadWrite(),
 	}
+
+	if env.IsX86() {
+		queries[sqlserver.Name] = r.SqlserverWithReadWrite()
+	}
+
+	return queries
 }
 
 func (r *TestQueryBuilder) Mysql(prefix string, singular bool) *TestQuery {

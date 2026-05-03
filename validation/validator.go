@@ -1,93 +1,43 @@
 package validation
 
 import (
-	"net/url"
 	"reflect"
 	"time"
 
 	"github.com/go-viper/mapstructure/v2"
-	"github.com/gookit/validate"
 	"github.com/spf13/cast"
 
 	httpvalidate "github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/support/carbon"
-	"github.com/goravel/framework/support/maps"
 )
 
-func init() {
-	validate.Config(func(opt *validate.GlobalOption) {
-		opt.StopOnError = false
-		opt.SkipOnEmpty = true
-		opt.FieldTag = "form"
-		opt.RestoreRequestBody = true
-	})
-}
-
 type Validator struct {
-	instance *validate.Validation
-	data     validate.DataFace
+	data      *DataBag
+	errors    *Errors
+	validated map[string]any
 }
 
-func NewValidator(instance *validate.Validation, data validate.DataFace) *Validator {
-	instance.Validate()
-
-	return &Validator{instance: instance, data: data}
+func NewValidator(data *DataBag, errors *Errors, validated map[string]any) *Validator {
+	return &Validator{
+		data:      data,
+		errors:    errors,
+		validated: validated,
+	}
 }
 
 func (v *Validator) Bind(ptr any) error {
-	// Don't bind if there are errors
 	if v.Fails() {
 		return nil
 	}
 
-	// SafeData only contains the data that is defined in the rules,
-	// we want user can the original data that is not defined in the rules,
-	// so that user doesn't need to define rules for all fields.
-	data := v.instance.SafeData()
-	prtType := reflect.TypeOf(ptr)
-	if prtType.Kind() == reflect.Ptr {
-		prtType = prtType.Elem()
+	// Merge validated data with original unvalidated data.
+	// Original data provides fallback values for fields not in rules.
+	data := make(map[string]any)
+	for key, value := range v.data.All() {
+		data[key] = value
 	}
-
-	if formData, ok := v.data.(*validate.FormData); ok {
-		if values, ok := v.data.Src().(url.Values); ok {
-			for key, value := range values {
-				if _, exist := data[key]; !exist {
-					data[key] = value[0]
-				}
-			}
-
-			for key, value := range formData.Files {
-				if _, exist := data[key]; !exist {
-					for i := 0; i < prtType.NumField(); i++ {
-						field := prtType.Field(i)
-						if field.Tag.Get("form") == key {
-							if field.Type.Kind() == reflect.Slice {
-								data[key] = value
-							} else {
-								data[key] = value[0]
-							}
-						}
-					}
-				}
-			}
-		}
-	} else if _, ok := v.data.(*validate.MapData); ok {
-		values := v.data.Src().(map[string]any)
-		for key, value := range values {
-			if _, exist := data[key]; !exist {
-				data[key] = value
-			}
-		}
-	} else {
-		if srcMap := maps.FromStruct(v.data.Src()); len(srcMap) > 0 {
-			for key, value := range srcMap {
-				if _, exist := data[key]; !exist {
-					data[key] = value
-				}
-			}
-		}
-	}
+	// Validated data overrides
+	deepMerge(data, v.validated)
 
 	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
 		TagName:    "form",
@@ -103,15 +53,19 @@ func (v *Validator) Bind(ptr any) error {
 }
 
 func (v *Validator) Errors() httpvalidate.Errors {
-	if len(v.instance.Errors) == 0 {
+	if v.errors.IsEmpty() {
 		return nil
 	}
 
-	return NewErrors(v.instance.Errors)
+	return v.errors
 }
 
 func (v *Validator) Fails() bool {
-	return v.instance.IsFail()
+	return !v.errors.IsEmpty()
+}
+
+func (v *Validator) Validated() map[string]any {
+	return v.validated
 }
 
 func (v *Validator) castValue() mapstructure.DecodeHookFunc {
@@ -278,4 +232,25 @@ func castCarbon(from reflect.Value, transfrom func(carbon *carbon.Carbon) any) a
 	}
 
 	return c
+}
+
+// deepMerge recursively merges src into dst.
+// For overlapping keys where both values are map[string]any, it merges recursively.
+// Otherwise, the src value overwrites the dst value.
+func deepMerge(dst, src map[string]any) {
+	for key, srcVal := range src {
+		dstVal, exists := dst[key]
+		if !exists {
+			dst[key] = srcVal
+			continue
+		}
+
+		srcMap, srcOk := srcVal.(map[string]any)
+		dstMap, dstOk := dstVal.(map[string]any)
+		if srcOk && dstOk {
+			deepMerge(dstMap, srcMap)
+		} else {
+			dst[key] = srcVal
+		}
+	}
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/filesystem"
-	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/hash"
 	"github.com/goravel/framework/contracts/view"
 	"github.com/goravel/framework/errors"
@@ -16,7 +15,6 @@ import (
 )
 
 type DownCommand struct {
-	app     foundation.Application
 	view    view.View
 	hash    hash.Hash
 	storage filesystem.Storage
@@ -30,8 +28,8 @@ type MaintenanceOptions struct {
 	Status   int    `json:"status"`
 }
 
-func NewDownCommand(app foundation.Application) *DownCommand {
-	return &DownCommand{app, app.MakeView(), app.MakeHash(), app.MakeStorage()}
+func NewDownCommand(view view.View, hash hash.Hash, storage filesystem.Storage) *DownCommand {
+	return &DownCommand{view, hash, storage}
 }
 
 // Signature The name and signature of the console command.

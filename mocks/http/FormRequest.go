@@ -67,19 +67,19 @@ func (_c *FormRequest_Authorize_Call) RunAndReturn(run func(http.Context) error)
 }
 
 // Rules provides a mock function with given fields: ctx
-func (_m *FormRequest) Rules(ctx http.Context) map[string]string {
+func (_m *FormRequest) Rules(ctx http.Context) map[string]interface{} {
 	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Rules")
 	}
 
-	var r0 map[string]string
-	if rf, ok := ret.Get(0).(func(http.Context) map[string]string); ok {
+	var r0 map[string]interface{}
+	if rf, ok := ret.Get(0).(func(http.Context) map[string]interface{}); ok {
 		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]string)
+			r0 = ret.Get(0).(map[string]interface{})
 		}
 	}
 
@@ -104,12 +104,12 @@ func (_c *FormRequest_Rules_Call) Run(run func(ctx http.Context)) *FormRequest_R
 	return _c
 }
 
-func (_c *FormRequest_Rules_Call) Return(_a0 map[string]string) *FormRequest_Rules_Call {
+func (_c *FormRequest_Rules_Call) Return(_a0 map[string]interface{}) *FormRequest_Rules_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *FormRequest_Rules_Call) RunAndReturn(run func(http.Context) map[string]string) *FormRequest_Rules_Call {
+func (_c *FormRequest_Rules_Call) RunAndReturn(run func(http.Context) map[string]interface{}) *FormRequest_Rules_Call {
 	_c.Call.Return(run)
 	return _c
 }

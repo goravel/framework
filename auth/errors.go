@@ -13,5 +13,6 @@ var (
 	ErrorInvalidClaims           = errors.AuthInvalidClaims
 	ErrorInvalidToken            = errors.AuthInvalidToken
 	ErrorInvalidKey              = errors.AuthInvalidKey
+	ErrorGuardMismatch           = errors.AuthGuardMismatch
 	ErrorUnsupportedDriverMethod = errors.AuthUnsupportedDriverMethod
 )

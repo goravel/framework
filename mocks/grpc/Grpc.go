@@ -5,6 +5,8 @@ package grpc
 import (
 	context "context"
 
+	credentials "google.golang.org/grpc/credentials"
+
 	grpc "google.golang.org/grpc"
 
 	mock "github.com/stretchr/testify/mock"
@@ -83,6 +85,39 @@ func (_c *Grpc_Client_Call) Return(_a0 *grpc.ClientConn, _a1 error) *Grpc_Client
 
 func (_c *Grpc_Client_Call) RunAndReturn(run func(context.Context, string) (*grpc.ClientConn, error)) *Grpc_Client_Call {
 	_c.Call.Return(run)
+	return _c
+}
+
+// ClientCredentials provides a mock function with given fields: _a0
+func (_m *Grpc) ClientCredentials(_a0 map[string]credentials.TransportCredentials) {
+	_m.Called(_a0)
+}
+
+// Grpc_ClientCredentials_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClientCredentials'
+type Grpc_ClientCredentials_Call struct {
+	*mock.Call
+}
+
+// ClientCredentials is a helper method to define mock.On call
+//   - _a0 map[string]credentials.TransportCredentials
+func (_e *Grpc_Expecter) ClientCredentials(_a0 interface{}) *Grpc_ClientCredentials_Call {
+	return &Grpc_ClientCredentials_Call{Call: _e.mock.On("ClientCredentials", _a0)}
+}
+
+func (_c *Grpc_ClientCredentials_Call) Run(run func(_a0 map[string]credentials.TransportCredentials)) *Grpc_ClientCredentials_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(map[string]credentials.TransportCredentials))
+	})
+	return _c
+}
+
+func (_c *Grpc_ClientCredentials_Call) Return() *Grpc_ClientCredentials_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Grpc_ClientCredentials_Call) RunAndReturn(run func(map[string]credentials.TransportCredentials)) *Grpc_ClientCredentials_Call {
+	_c.Run(run)
 	return _c
 }
 
@@ -326,6 +361,39 @@ func (_c *Grpc_Server_Call) Return(_a0 *grpc.Server) *Grpc_Server_Call {
 
 func (_c *Grpc_Server_Call) RunAndReturn(run func() *grpc.Server) *Grpc_Server_Call {
 	_c.Call.Return(run)
+	return _c
+}
+
+// ServerCredentials provides a mock function with given fields: _a0
+func (_m *Grpc) ServerCredentials(_a0 credentials.TransportCredentials) {
+	_m.Called(_a0)
+}
+
+// Grpc_ServerCredentials_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ServerCredentials'
+type Grpc_ServerCredentials_Call struct {
+	*mock.Call
+}
+
+// ServerCredentials is a helper method to define mock.On call
+//   - _a0 credentials.TransportCredentials
+func (_e *Grpc_Expecter) ServerCredentials(_a0 interface{}) *Grpc_ServerCredentials_Call {
+	return &Grpc_ServerCredentials_Call{Call: _e.mock.On("ServerCredentials", _a0)}
+}
+
+func (_c *Grpc_ServerCredentials_Call) Run(run func(_a0 credentials.TransportCredentials)) *Grpc_ServerCredentials_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(credentials.TransportCredentials))
+	})
+	return _c
+}
+
+func (_c *Grpc_ServerCredentials_Call) Return() *Grpc_ServerCredentials_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Grpc_ServerCredentials_Call) RunAndReturn(run func(credentials.TransportCredentials)) *Grpc_ServerCredentials_Call {
+	_c.Run(run)
 	return _c
 }
 

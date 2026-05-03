@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support"
 )
 
 type Html struct {
@@ -21,7 +22,7 @@ func NewHtml(viewsPath string) *Html {
 }
 
 func (r *Html) Render(path string, data any) (string, error) {
-	templatePath := filepath.Join(r.viewsPath, path)
+	templatePath := filepath.Join(support.RelativePath, r.viewsPath, path)
 	tmpl, err := r.getTemplate(templatePath)
 	if err != nil {
 		return "", err

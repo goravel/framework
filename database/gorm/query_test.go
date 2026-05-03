@@ -860,7 +860,7 @@ func TestModelToStruct(t *testing.T) {
 			checkResult: func(t *testing.T, result any) {
 				assert.NotNil(t, result)
 				resultValue := reflect.ValueOf(result)
-				assert.True(t, resultValue.Kind() == reflect.Ptr)
+				assert.True(t, resultValue.Kind() == reflect.Pointer)
 				assert.False(t, resultValue.IsNil())
 				assert.Equal(t, reflect.Struct, resultValue.Elem().Kind())
 			},

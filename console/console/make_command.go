@@ -2,7 +2,6 @@ package console
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"github.com/goravel/framework/contracts/console"
@@ -14,6 +13,7 @@ import (
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
+	"github.com/goravel/framework/support/path"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -94,7 +94,7 @@ func (r *MakeCommand) populateStub(stub string, packageName, structName, signatu
 }
 
 func (r *MakeCommand) registerInKernel(make *supportconsole.Make) error {
-	if err := modify.GoFile(filepath.Join("app", "console", "kernel.go")).
+	if err := modify.GoFile(path.App("console", "kernel.go")).
 		Find(match.Imports()).Modify(modify.AddImport(make.GetPackageImportPath())).
 		Find(match.Commands()).Modify(modify.Register(fmt.Sprintf("&%s.%s{}", make.GetPackageName(), make.GetStructName()))).
 		Apply(); err != nil {

@@ -786,8 +786,13 @@ func (r *Query) Select(columns ...string) contractsorm.Query {
 	conditions.selectColumns = append(conditions.selectColumns, columns...)
 	conditions.selectColumns = collect.Unique(conditions.selectColumns)
 
-	// * may be added along with other columns, remove it.
-	if len(conditions.selectColumns) > 1 {
+	// (*, Associations) is accepted, but * should be removed when there are other columns.
+	filteredSelectColumns := collect.Of(conditions.selectColumns).Filter(func(item string, _ int) bool {
+		return item != Associations
+	}).All()
+
+	// * may be added along with other columns automatically, Distinct().Select("name") -> (*, name), * should be removed in this case.
+	if len(filteredSelectColumns) > 1 {
 		conditions.selectColumns = collect.Filter(conditions.selectColumns, func(column string, _ int) bool {
 			return column != "*"
 		})
@@ -821,7 +826,7 @@ func (r *Query) SharedLock() contractsorm.Query {
 
 func (r *Query) Sum(column string, dest any) error {
 	destValue := reflect.ValueOf(dest)
-	if destValue.Kind() != reflect.Ptr {
+	if destValue.Kind() != reflect.Pointer {
 		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
 	}
 
@@ -831,7 +836,7 @@ func (r *Query) Sum(column string, dest any) error {
 
 func (r *Query) Avg(column string, dest any) error {
 	destValue := reflect.ValueOf(dest)
-	if destValue.Kind() != reflect.Ptr {
+	if destValue.Kind() != reflect.Pointer {
 		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
 	}
 
@@ -841,7 +846,7 @@ func (r *Query) Avg(column string, dest any) error {
 
 func (r *Query) Min(column string, dest any) error {
 	destValue := reflect.ValueOf(dest)
-	if destValue.Kind() != reflect.Ptr {
+	if destValue.Kind() != reflect.Pointer {
 		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
 	}
 
@@ -851,7 +856,7 @@ func (r *Query) Min(column string, dest any) error {
 
 func (r *Query) Max(column string, dest any) error {
 	destValue := reflect.ValueOf(dest)
-	if destValue.Kind() != reflect.Ptr {
+	if destValue.Kind() != reflect.Pointer {
 		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
 	}
 
@@ -1974,7 +1979,7 @@ func (r *Query) update(values any) (*contractsdb.Result, error) {
 func buildSelectForCount(query *Query) *Query {
 	conditions := query.conditions
 
-	// If selectColumns only contains a raw select with spaces (rename), gorm will fail, but this case will appear when calling Paginate, so use COUNT(*) here.
+	// If selectColumns only contains a raw select with spaces (rename), gorm will fail, but this case will appear when calling Paginate.
 	// If there are multiple selectColumns, gorm will transform them into *, so no need to handle that case.
 	// For example: Select("name as n").Count() will fail, but Select("name", "age as a").Count() will be treated as Select("*").Count()
 	if len(conditions.selectColumns) == 1 && str.Of(conditions.selectColumns[0]).Trim().Contains(" ") {
@@ -2103,7 +2108,7 @@ func modelToStruct(model any) (any, error) {
 	}
 
 	modelValue := reflect.ValueOf(model)
-	if modelValue.Kind() == reflect.Ptr && modelValue.IsNil() {
+	if modelValue.Kind() == reflect.Pointer && modelValue.IsNil() {
 		// If the model is a pointer and is nil, we will create a new instance of the model
 		modelValue = reflect.New(modelValue.Type().Elem())
 	}
@@ -2113,7 +2118,7 @@ func modelToStruct(model any) (any, error) {
 		modelType = reflect.Indirect(modelValue).Elem().Type()
 	}
 
-	for modelType.Kind() == reflect.Slice || modelType.Kind() == reflect.Array || modelType.Kind() == reflect.Ptr {
+	for modelType.Kind() == reflect.Slice || modelType.Kind() == reflect.Array || modelType.Kind() == reflect.Pointer {
 		modelType = modelType.Elem()
 	}
 

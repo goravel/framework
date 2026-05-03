@@ -2148,7 +2148,7 @@ func (_c *ContextRequest_Url_Call) RunAndReturn(run func() string) *ContextReque
 }
 
 // Validate provides a mock function with given fields: rules, options
-func (_m *ContextRequest) Validate(rules map[string]string, options ...validation.Option) (validation.Validator, error) {
+func (_m *ContextRequest) Validate(rules map[string]interface{}, options ...validation.Option) (validation.Validator, error) {
 	_va := make([]interface{}, len(options))
 	for _i := range options {
 		_va[_i] = options[_i]
@@ -2164,10 +2164,10 @@ func (_m *ContextRequest) Validate(rules map[string]string, options ...validatio
 
 	var r0 validation.Validator
 	var r1 error
-	if rf, ok := ret.Get(0).(func(map[string]string, ...validation.Option) (validation.Validator, error)); ok {
+	if rf, ok := ret.Get(0).(func(map[string]interface{}, ...validation.Option) (validation.Validator, error)); ok {
 		return rf(rules, options...)
 	}
-	if rf, ok := ret.Get(0).(func(map[string]string, ...validation.Option) validation.Validator); ok {
+	if rf, ok := ret.Get(0).(func(map[string]interface{}, ...validation.Option) validation.Validator); ok {
 		r0 = rf(rules, options...)
 	} else {
 		if ret.Get(0) != nil {
@@ -2175,7 +2175,7 @@ func (_m *ContextRequest) Validate(rules map[string]string, options ...validatio
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(map[string]string, ...validation.Option) error); ok {
+	if rf, ok := ret.Get(1).(func(map[string]interface{}, ...validation.Option) error); ok {
 		r1 = rf(rules, options...)
 	} else {
 		r1 = ret.Error(1)
@@ -2190,14 +2190,14 @@ type ContextRequest_Validate_Call struct {
 }
 
 // Validate is a helper method to define mock.On call
-//   - rules map[string]string
+//   - rules map[string]interface{}
 //   - options ...validation.Option
 func (_e *ContextRequest_Expecter) Validate(rules interface{}, options ...interface{}) *ContextRequest_Validate_Call {
 	return &ContextRequest_Validate_Call{Call: _e.mock.On("Validate",
 		append([]interface{}{rules}, options...)...)}
 }
 
-func (_c *ContextRequest_Validate_Call) Run(run func(rules map[string]string, options ...validation.Option)) *ContextRequest_Validate_Call {
+func (_c *ContextRequest_Validate_Call) Run(run func(rules map[string]interface{}, options ...validation.Option)) *ContextRequest_Validate_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		variadicArgs := make([]validation.Option, len(args)-1)
 		for i, a := range args[1:] {
@@ -2205,7 +2205,7 @@ func (_c *ContextRequest_Validate_Call) Run(run func(rules map[string]string, op
 				variadicArgs[i] = a.(validation.Option)
 			}
 		}
-		run(args[0].(map[string]string), variadicArgs...)
+		run(args[0].(map[string]interface{}), variadicArgs...)
 	})
 	return _c
 }
@@ -2215,7 +2215,7 @@ func (_c *ContextRequest_Validate_Call) Return(_a0 validation.Validator, _a1 err
 	return _c
 }
 
-func (_c *ContextRequest_Validate_Call) RunAndReturn(run func(map[string]string, ...validation.Option) (validation.Validator, error)) *ContextRequest_Validate_Call {
+func (_c *ContextRequest_Validate_Call) RunAndReturn(run func(map[string]interface{}, ...validation.Option) (validation.Validator, error)) *ContextRequest_Validate_Call {
 	_c.Call.Return(run)
 	return _c
 }

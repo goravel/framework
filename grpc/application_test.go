@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
@@ -14,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/stats"
 
@@ -372,6 +374,139 @@ func TestServerStatsHandlers(t *testing.T) {
 
 	assert.Contains(t, got, "[GRPC] Server already initialized; server stats handler registration ignored.")
 	assert.Same(t, initialServer, app.Server(), "Server instance should be a singleton (frozen) after initialization")
+}
+
+func TestServerCreds(t *testing.T) {
+	t.Run("applied before server init", func(t *testing.T) {
+		mockConfig := configmock.NewConfig(t)
+		app := NewApplication(mockConfig)
+
+		creds := credentials.NewTLS(&tls.Config{MinVersion: tls.VersionTLS12})
+		app.ServerCredentials(creds)
+		assert.Same(t, creds, app.serverCredentials)
+
+		server := app.Server()
+		assert.NotNil(t, server)
+	})
+
+	t.Run("ignored after server init with warning", func(t *testing.T) {
+		mockConfig := configmock.NewConfig(t)
+		app := NewApplication(mockConfig)
+
+		initialServer := app.Server()
+		got := color.CaptureOutput(func(io.Writer) {
+			app.ServerCredentials(credentials.NewTLS(&tls.Config{MinVersion: tls.VersionTLS12}))
+		})
+
+		assert.Contains(t, got, "[GRPC] Server already initialized; server credentials registration ignored.")
+		assert.Same(t, initialServer, app.Server())
+		assert.Nil(t, app.serverCredentials)
+	})
+}
+
+func TestClientCreds(t *testing.T) {
+	t.Run("registers and overwrites across calls", func(t *testing.T) {
+		mockConfig := configmock.NewConfig(t)
+		app := NewApplication(mockConfig)
+
+		first := credentials.NewTLS(&tls.Config{ServerName: "first"})
+		second := credentials.NewTLS(&tls.Config{ServerName: "second"})
+
+		app.ClientCredentials(map[string]credentials.TransportCredentials{"mtls": first})
+		app.ClientCredentials(map[string]credentials.TransportCredentials{
+			"mtls":  second,
+			"plain": credentials.NewTLS(&tls.Config{ServerName: "plain"}),
+		})
+
+		assert.Same(t, second, app.clientCredentialsGroups["mtls"])
+		assert.NotNil(t, app.clientCredentialsGroups["plain"])
+	})
+
+	t.Run("connect applies registered credentials", func(t *testing.T) {
+		mockConfig := configmock.NewConfig(t)
+		app := NewApplication(mockConfig)
+
+		name := "mtls-service"
+		host := "127.0.0.1:3050"
+
+		mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.servers.%s.host", name)).Return(host).Once()
+		mockConfig.EXPECT().Get(fmt.Sprintf("grpc.servers.%s.interceptors", name)).Return([]string{}).Once()
+		mockConfig.EXPECT().Get(fmt.Sprintf("grpc.servers.%s.stats_handlers", name)).Return([]string{}).Once()
+		mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.servers.%s.credentials", name)).Return("mtls").Once()
+
+		app.ClientCredentials(map[string]credentials.TransportCredentials{
+			"mtls": credentials.NewTLS(&tls.Config{ServerName: "mtls-service"}),
+		})
+
+		conn, err := app.Client(context.Background(), name)
+		assert.NoError(t, err)
+		assert.NotNil(t, conn)
+	})
+
+	t.Run("connect falls back to insecure when creds key is missing", func(t *testing.T) {
+		mockConfig := configmock.NewConfig(t)
+		app := NewApplication(mockConfig)
+
+		name := "partial-service"
+		host := "127.0.0.1:3052"
+
+		mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.servers.%s.host", name)).Return(host).Once()
+		mockConfig.EXPECT().Get(fmt.Sprintf("grpc.servers.%s.interceptors", name)).Return([]string{}).Once()
+		mockConfig.EXPECT().Get(fmt.Sprintf("grpc.servers.%s.stats_handlers", name)).Return([]string{}).Once()
+		mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.servers.%s.credentials", name)).Return("unknown").Once()
+
+		app.ClientCredentials(map[string]credentials.TransportCredentials{
+			"mtls": credentials.NewTLS(&tls.Config{ServerName: "mtls-service"}),
+		})
+
+		got := color.CaptureOutput(func(io.Writer) {
+			conn, err := app.Client(context.Background(), name)
+			assert.NoError(t, err)
+			assert.NotNil(t, conn)
+		})
+		assert.Contains(t, got, `[GRPC] client credentials group "unknown" is not registered for server "partial-service"`)
+	})
+
+	t.Run("connect without registered groups skips config lookup", func(t *testing.T) {
+		mockConfig := configmock.NewConfig(t)
+		app := NewApplication(mockConfig)
+
+		name := "legacy-service"
+		host := "127.0.0.1:3051"
+
+		// No GetString for "creds" expected because no groups are registered.
+		mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.servers.%s.host", name)).Return(host).Once()
+		mockConfig.EXPECT().Get(fmt.Sprintf("grpc.servers.%s.interceptors", name)).Return([]string{}).Once()
+		mockConfig.EXPECT().Get(fmt.Sprintf("grpc.servers.%s.stats_handlers", name)).Return([]string{}).Once()
+
+		conn, err := app.Client(context.Background(), name)
+		assert.NoError(t, err)
+		assert.NotNil(t, conn)
+	})
+
+	t.Run("connect with registered groups but empty creds key falls back silently", func(t *testing.T) {
+		mockConfig := configmock.NewConfig(t)
+		app := NewApplication(mockConfig)
+
+		name := "insecure-service"
+		host := "127.0.0.1:3053"
+
+		mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.servers.%s.host", name)).Return(host).Once()
+		mockConfig.EXPECT().Get(fmt.Sprintf("grpc.servers.%s.interceptors", name)).Return([]string{}).Once()
+		mockConfig.EXPECT().Get(fmt.Sprintf("grpc.servers.%s.stats_handlers", name)).Return([]string{}).Once()
+		mockConfig.EXPECT().GetString(fmt.Sprintf("grpc.servers.%s.credentials", name)).Return("").Once()
+
+		app.ClientCredentials(map[string]credentials.TransportCredentials{
+			"mtls": credentials.NewTLS(&tls.Config{ServerName: "mtls-service"}),
+		})
+
+		got := color.CaptureOutput(func(io.Writer) {
+			conn, err := app.Client(context.Background(), name)
+			assert.NoError(t, err)
+			assert.NotNil(t, conn)
+		})
+		assert.NotContains(t, got, "falling back to insecure credentials")
+	})
 }
 
 func TestUnaryServerInterceptors_FreezeCheck(t *testing.T) {

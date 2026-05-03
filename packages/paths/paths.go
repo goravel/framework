@@ -105,7 +105,7 @@ func NewPath(path, main string, isModule bool) *Path {
 }
 
 func (r *Path) Abs(paths ...string) string {
-	paths = append(toSlice(r.path), paths...)
+	paths = append([]string{r.path}, paths...)
 
 	return Abs(paths...)
 }
@@ -125,11 +125,10 @@ func (r *Path) Package() string {
 
 // Import returns the sub-package import path, or the main package import path if no sub-package path is specified.
 // For example, if r.path is "app/http/controllers" and r.main is "github.com/goravel/goravel",
-// it returns "goravel/app/http/controllers". If r.path is empty, it returns "goravel".
+// it returns "github.com/goravel/goravel/app/http/controllers". If r.path is empty, it returns "github.com/goravel/goravel".
 // The path will be returned directly if it starts with "github.com/goravel/framework/", given it's a framework sub-package.
 func (r *Path) Import() string {
-	mainSlice := toSlice(r.main)
-	mainImport := mainSlice[len(mainSlice)-1]
+	mainImport := strings.Trim(strings.ReplaceAll(r.main, "\\", "/"), "/")
 
 	if r.path != "" {
 		if r.isModule {
@@ -137,6 +136,9 @@ func (r *Path) Import() string {
 		}
 
 		pathSlice := toSlice(r.path)
+		if mainImport == "" {
+			return strings.Join(pathSlice, "/")
+		}
 		importSlice := append([]string{mainImport}, pathSlice...)
 
 		return strings.Join(importSlice, "/")
@@ -146,18 +148,30 @@ func (r *Path) Import() string {
 }
 
 func (r *Path) String(paths ...string) string {
-	paths = append(toSlice(r.path), paths...)
+	fullPaths := toSlice(r.path)
+	for _, path := range paths {
+		fullPaths = append(fullPaths, toSlice(path)...)
+	}
 
-	return filepath.Join(paths...)
+	return filepath.Join(fullPaths...)
 }
 
 func Abs(paths ...string) string {
-	paths = append([]string{support.RelativePath}, paths...)
-	path := filepath.Join(paths...)
+	if len(paths) > 0 && filepath.IsAbs(paths[0]) {
+		return filepath.Join(paths...)
+	}
+
+	fullPaths := []string{support.RelativePath}
+	for _, path := range paths {
+		fullPaths = append(fullPaths, toSlice(path)...)
+	}
+
+	path := filepath.Join(fullPaths...)
 	abs, err := filepath.Abs(path)
 	if err != nil {
 		return path
 	}
+
 	return abs
 }
 

@@ -105,8 +105,8 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 
 		orm := app.MakeOrm()
 		if orm == nil {
-			// The Orm module will print the error message, so it's safe to return an empty schema.
-			return &databaseschema.Schema{}, nil
+			// The Orm module will print the error message, so it's safe to return a schema with nil values.
+			return databaseschema.NewSchema(config, log, nil, nil, nil)
 		}
 
 		driverCallback, exist := config.Get(fmt.Sprintf("database.connections.%s.via", orm.Name())).(func() (driver.Driver, error))

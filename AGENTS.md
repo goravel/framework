@@ -40,10 +40,17 @@ golangci-lint run                      # lint
 - Cache/Session/Queue: `goravel/redis`
 - Storage: `goravel/s3`, `oss`, `cos`, `minio`
 
-## AI Agent Code Rule
+## Planning Rules
 
-- Should use `any` instead of `interface{}`.
-- Avoid adding `mock.Anything` when writing test cases.
-- Use the testify `EXPECT` method when writing test cases.
-- Don't modify the files in the `mocks` directory, run the `go tool mockery` command to regenerate mocks instead if needed.
-- Don't run `go test ./...` if unnecessary, the command is a bit slow, run `go test` with the specific package or test function instead.
+- When asked to plan or investigate, produce a plan only — do not implement it until the user explicitly asks you to proceed.
+
+## Code Rules
+
+- Use `any` instead of `interface{}`.
+- Never edit `mocks/` directly; run `go tool mockery` to regenerate.
+- Follow standard Go formatting/naming; add comments where logic isn't self-evident. Go version is in go.mod.
+- Never create errors inline in logic (`fmt.Errorf`, `errors.New`, etc.). Declare all errors as named variables in `errors/list.go` using the framework's `New(...)` constructor. This centralises error messages to support future i18n.
+
+## Tests
+
+When writing/running tests, use the rules in `.agents/prompts/tests.md` for guidance.

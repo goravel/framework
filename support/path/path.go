@@ -3,7 +3,6 @@ package path
 import (
 	"github.com/goravel/framework/packages"
 	packagespaths "github.com/goravel/framework/packages/paths"
-	"github.com/goravel/framework/support"
 )
 
 func App(paths ...string) string {
@@ -27,8 +26,6 @@ func Database(paths ...string) string {
 }
 
 func Executable(paths ...string) string {
-	paths = append([]string{support.RootPath}, paths...)
-
 	return Base(paths...)
 }
 
