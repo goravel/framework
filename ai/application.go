@@ -36,6 +36,10 @@ func (r *Application) Agent(agent contractsai.Agent, options ...contractsai.Opti
 	return NewConversation(r.ctx, agent, provider, model, middlewares), nil
 }
 
+func (r *Application) Image(prompt string, options ...contractsai.Option) contractsai.ImageRequest {
+	return NewImageRequest(r.ctx, r, prompt, options...)
+}
+
 func (r *Application) putFile(ctx context.Context, file contractsai.StorableFile, options ...contractsai.Option) (contractsai.StoredFileResponse, error) {
 	_, providerName, provider, err := r.resolveProvider(options)
 	if err != nil {
@@ -48,6 +52,20 @@ func (r *Application) putFile(ctx context.Context, file contractsai.StorableFile
 	}
 
 	return fileProvider.PutFile(ctx, file)
+}
+
+func (r *Application) image(ctx context.Context, prompt contractsai.ImagePrompt, options ...contractsai.Option) (contractsai.ImageResponse, error) {
+	_, providerName, provider, err := r.resolveProvider(options)
+	if err != nil {
+		return nil, err
+	}
+
+	imageProvider, ok := provider.(contractsai.ImageProvider)
+	if !ok {
+		return nil, errors.AIProviderDoesNotSupportImages.Args(providerName)
+	}
+
+	return imageProvider.Image(ctx, prompt)
 }
 
 func (r *Application) resolveProvider(options []contractsai.Option) (*contractsai.Options, string, contractsai.Provider, error) {

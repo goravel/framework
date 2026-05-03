@@ -1,5 +1,7 @@
 package ai
 
+import "context"
+
 // Response exposes generated text and provider metadata.
 type Response interface {
 	Text() string
@@ -16,4 +18,12 @@ type Usage interface {
 	Input() int
 	Output() int
 	Total() int
+}
+
+// ImageResponse exposes generated image bytes and provider metadata.
+type ImageResponse interface {
+	Content(ctx context.Context) ([]byte, error)
+	MimeType() string
+	Usage() Usage
+	Then(callback func(ImageResponse)) ImageResponse
 }

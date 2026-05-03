@@ -3,12 +3,14 @@ package openai
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	goopenai "github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
@@ -70,6 +72,22 @@ type capturedFileUploadRequest struct {
 	body          []byte
 }
 
+type capturedImageRequest struct {
+	path          string
+	authorization string
+	contentType   string
+	body          []byte
+	formValues    map[string]string
+	files         []capturedImageFile
+}
+
+type capturedImageFile struct {
+	fieldName string
+	fileName  string
+	mimeType  string
+	body      []byte
+}
+
 type streamUsageSnapshot struct {
 	input  int
 	output int
@@ -117,22 +135,25 @@ func TestNewOpenAIUnmarshalError(t *testing.T) {
 			expectConfig: func() *contractsai.ProviderConfig {
 				cfg := contractsai.ProviderConfig{Key: "test-key", Url: "http://localhost:1234"}
 				cfg.Models.Text.Default = DefaultTextModel
+				cfg.Models.Image.Default = DefaultImageModel
 				return &cfg
 			}(),
 		},
 		{
-			name: "keeps configured default model",
+			name: "keeps configured default models",
 			setup: func() {
 				mockConfig.EXPECT().UnmarshalKey("ai.providers.openai", new(contractsai.ProviderConfig)).RunAndReturn(func(_ string, rawVal any) error {
 					cfg := rawVal.(*contractsai.ProviderConfig)
 					cfg.Key = "test-key"
 					cfg.Models.Text.Default = "gpt-custom"
+					cfg.Models.Image.Default = "gpt-image-custom"
 					return nil
 				}).Once()
 			},
 			expectConfig: func() *contractsai.ProviderConfig {
 				cfg := contractsai.ProviderConfig{Key: "test-key"}
 				cfg.Models.Text.Default = "gpt-custom"
+				cfg.Models.Image.Default = "gpt-image-custom"
 				return &cfg
 			}(),
 		},
@@ -152,6 +173,123 @@ func TestNewOpenAIUnmarshalError(t *testing.T) {
 			}
 			require.NotNil(t, provider)
 			assert.Equal(t, *tt.expectConfig, provider.config)
+		})
+	}
+}
+
+func TestProviderImage(t *testing.T) {
+	tests := []struct {
+		name          string
+		prompt        contractsai.ImagePrompt
+		response      string
+		status        int
+		expectError   error
+		expectPath    string
+		expectForm    map[string]string
+		expectFiles   []capturedImageFile
+		expectMime    string
+		expectContent []byte
+	}{
+		{
+			name: "generates image with defaults",
+			prompt: contractsai.ImagePrompt{
+				Prompt: "draw a cat",
+			},
+			status:   http.StatusOK,
+			response: imageResponseBody(t, "png", "image-bytes", 11, 7, 18),
+			expectPath: "/images/generations",
+			expectForm: map[string]string{
+				"prompt": "draw a cat",
+				"model":  "gpt-image-default",
+			},
+			expectMime:    "image/png",
+			expectContent: []byte("image-bytes"),
+		},
+		{
+			name: "uses explicit quality size and timeout",
+			prompt: contractsai.ImagePrompt{
+				Prompt:  "draw a cat",
+				Model:   "gpt-image-override",
+				Size:    contractsai.ImageSizeLandscape,
+				Quality: contractsai.ImageQualityHigh,
+				Timeout: int64(2 * time.Second),
+			},
+			status:   http.StatusOK,
+			response: imageResponseBody(t, "jpeg", "jpeg-bytes", 1, 2, 3),
+			expectPath: "/images/generations",
+			expectForm: map[string]string{
+				"prompt":  "draw a cat",
+				"model":   "gpt-image-override",
+				"size":    "1536x1024",
+				"quality": "high",
+			},
+			expectMime:    "image/jpeg",
+			expectContent: []byte("jpeg-bytes"),
+		},
+		{
+			name: "edits image when attachments provided",
+			prompt: contractsai.ImagePrompt{
+				Prompt:      "turn this into watercolor",
+				Size:        contractsai.ImageSizePortrait,
+				Quality:     contractsai.ImageQualityMedium,
+				Attachments: []contractsai.Attachment{namedAttachment{kind: contractsai.AttachmentKindImage, filename: "photo.png", mimeType: "image/png", content: []byte("source-image")}},
+			},
+			status:   http.StatusOK,
+			response: imageResponseBody(t, "webp", "webp-bytes", 4, 5, 9),
+			expectPath: "/images/edits",
+			expectForm: map[string]string{
+				"prompt":  "turn this into watercolor",
+				"model":   "gpt-image-default",
+				"size":    "1024x1536",
+				"quality": "medium",
+			},
+			expectFiles: []capturedImageFile{{fieldName: "image[]", fileName: "photo.png", mimeType: "image/png", body: []byte("source-image")}},
+			expectMime:  "image/webp",
+			expectContent: []byte("webp-bytes"),
+		},
+		{
+			name: "returns error for empty prompt",
+			prompt: contractsai.ImagePrompt{},
+			expectError: errors.AIImagePromptRequired,
+		},
+		{
+			name: "returns error for non image attachment",
+			prompt: contractsai.ImagePrompt{
+				Prompt:      "draw a cat",
+				Attachments: []contractsai.Attachment{namedAttachment{kind: contractsai.AttachmentKindFile, filename: "report.txt", mimeType: "text/plain", content: []byte("report")}},
+			},
+			expectError: errors.AIImageAttachmentRequired,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			captured := make(chan capturedImageRequest, 1)
+			server := newImagesServer(t, tt.status, tt.response, captured)
+			defer server.Close()
+
+			provider := &Provider{client: goopenai.NewClient(option.WithAPIKey("test-key"), option.WithBaseURL(server.URL))}
+			provider.config.Models.Image.Default = "gpt-image-default"
+
+			response, err := provider.Image(context.Background(), tt.prompt)
+			assert.Equal(t, tt.expectError, err)
+			if tt.expectError != nil {
+				assert.Nil(t, response)
+				return
+			}
+
+			require.NotNil(t, response)
+			content, contentErr := response.Content(context.Background())
+			require.NoError(t, contentErr)
+			assert.Equal(t, tt.expectContent, content)
+			assert.Equal(t, tt.expectMime, response.MimeType())
+
+			req, ok := readCapturedImageRequest(t, captured)
+			require.True(t, ok, "expected image request payload")
+			assert.Equal(t, tt.expectPath, req.path)
+			assert.Equal(t, "Bearer test-key", req.authorization)
+			assert.Equal(t, tt.expectForm, req.formValues)
+			assert.Equal(t, tt.expectFiles, req.files)
 		})
 	}
 }
@@ -1062,6 +1200,86 @@ func readCapturedFileUploadRequest(t *testing.T, captured <-chan capturedFileUpl
 	}
 }
 
+func newImagesServer(t *testing.T, status int, response string, captured chan<- capturedImageRequest) *httptest.Server {
+	t.Helper()
+
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		defer errors.Ignore(r.Body.Close)
+
+		capturedRequest := capturedImageRequest{
+			path:          r.URL.Path,
+			authorization: r.Header.Get("Authorization"),
+			contentType:   r.Header.Get("Content-Type"),
+		}
+
+		if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
+			reader, err := r.MultipartReader()
+			require.NoError(t, err)
+
+			capturedRequest.formValues = make(map[string]string)
+			for {
+				part, err := reader.NextPart()
+				if err == io.EOF {
+					break
+				}
+				require.NoError(t, err)
+
+				body, readErr := io.ReadAll(part)
+				require.NoError(t, readErr)
+
+				if part.FileName() != "" {
+					capturedRequest.files = append(capturedRequest.files, capturedImageFile{
+						fieldName: part.FormName(),
+						fileName:  part.FileName(),
+						mimeType:  part.Header.Get("Content-Type"),
+						body:      body,
+					})
+					continue
+				}
+
+				capturedRequest.formValues[part.FormName()] = string(body)
+			}
+		} else {
+			payload := decodeBodyMap(t, r)
+			capturedRequest.body, _ = json.Marshal(payload)
+			capturedRequest.formValues = make(map[string]string)
+			for key, value := range payload {
+				switch val := value.(type) {
+				case string:
+					capturedRequest.formValues[key] = val
+				}
+			}
+		}
+
+		select {
+		case captured <- capturedRequest:
+		default:
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(status)
+		_, _ = w.Write([]byte(response))
+	}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/images/generations", handler)
+	mux.HandleFunc("/v1/images/generations", handler)
+	mux.HandleFunc("/images/edits", handler)
+	mux.HandleFunc("/v1/images/edits", handler)
+
+	return httptest.NewServer(mux)
+}
+
+func readCapturedImageRequest(t *testing.T, captured <-chan capturedImageRequest) (capturedImageRequest, bool) {
+	t.Helper()
+	select {
+	case req := <-captured:
+		return req, true
+	default:
+		return capturedImageRequest{}, false
+	}
+}
+
 func decodeBodyMap(t *testing.T, r *http.Request) map[string]any {
 	t.Helper()
 	body, err := io.ReadAll(r.Body)
@@ -1175,6 +1393,28 @@ func responseBody(t *testing.T, text string, output []map[string]any, inputToken
 			"output_tokens":         outputTokens,
 			"output_tokens_details": map[string]any{"reasoning_tokens": 0},
 			"total_tokens":          totalTokens,
+		},
+	}
+
+	encoded, err := json.Marshal(body)
+	require.NoError(t, err)
+	return string(encoded)
+}
+
+func imageResponseBody(t *testing.T, format, content string, inputTokens, outputTokens, totalTokens int) string {
+	t.Helper()
+
+	body := map[string]any{
+		"created":       123,
+		"output_format": format,
+		"data": []map[string]any{{
+			"b64_json": base64.StdEncoding.EncodeToString([]byte(content)),
+		}},
+		"usage": map[string]any{
+			"input_tokens":         inputTokens,
+			"input_tokens_details": map[string]any{"image_tokens": 0, "text_tokens": inputTokens},
+			"output_tokens":        outputTokens,
+			"total_tokens":         totalTokens,
 		},
 	}
 

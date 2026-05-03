@@ -29,6 +29,14 @@ func init() {
 		"providers": map[string]any{
 			"openai": map[string]any{
 				"key": "",
+				"models": map[string]any{
+					"text": map[string]any{
+						"default": "",
+					},
+					"image": map[string]any{
+						"default": "",
+					},
+				},
 				"url": "",
 				"via": "",
 			},

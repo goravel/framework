@@ -3,6 +3,7 @@ package ai
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -335,6 +336,125 @@ func TestApplication_putFile(t *testing.T) {
 	}
 }
 
+func TestApplication_Image(t *testing.T) {
+	ctx := context.Background()
+	config := contractsai.Config{
+		Default: "default",
+		Providers: map[string]contractsai.ProviderConfig{
+			"default": {Via: mocksai.NewProvider(t)},
+		},
+	}
+
+	app := NewApplication(ctx, config)
+	request := app.Image("draw a cat", WithProvider("default"), WithModel("gpt-image-1"))
+
+	req, ok := request.(*imageRequest)
+	assert.True(t, ok)
+	assert.Equal(t, ctx, req.ctx)
+	assert.Equal(t, app, req.app)
+	assert.Equal(t, "draw a cat", req.prompt)
+	assert.Equal(t, "default", req.provider)
+	assert.Equal(t, "gpt-image-1", req.model)
+
+	assert.Same(t, req, request.Square())
+	assert.Same(t, req, request.Portrait())
+	assert.Same(t, req, request.Landscape())
+	assert.Same(t, req, request.Quality(contractsai.ImageQualityHigh))
+	assert.Same(t, req, request.Timeout(2*time.Second))
+
+	attachment := ImageFromByte([]byte("image"), WithMimeType("image/png"))
+	assert.Same(t, req, request.Attachments(attachment))
+	assert.Equal(t, contractsai.ImageSizeLandscape, req.size)
+	assert.Equal(t, contractsai.ImageQualityHigh, req.quality)
+	assert.Equal(t, 2*time.Second, req.timeout)
+	assert.Equal(t, []contractsai.Attachment{attachment}, req.attachments)
+}
+
+func TestImageRequest_Generate(t *testing.T) {
+	ctx := context.Background()
+	provider := &applicationImageProviderStub{}
+	config := contractsai.Config{
+		Default: "default",
+		Providers: map[string]contractsai.ProviderConfig{
+			"default": {Via: provider},
+		},
+	}
+
+	app := NewApplication(context.Background(), config)
+	attachment := ImageFromByte([]byte("image"), WithMimeType("image/png"))
+	response := &applicationImageResponseStub{}
+	provider.response = response
+
+	result, err := app.Image("draw a cat").
+		Landscape().
+		Quality(contractsai.ImageQualityHigh).
+		Attachments(attachment).
+		Timeout(3 * time.Second).
+		Generate()
+
+	require.NoError(t, err)
+	assert.Equal(t, response, result)
+	assert.Equal(t, ctx, provider.ctx)
+	assert.Equal(t, contractsai.ImagePrompt{
+		Prompt:      "draw a cat",
+		Size:        contractsai.ImageSizeLandscape,
+		Quality:     contractsai.ImageQualityHigh,
+		Attachments: []contractsai.Attachment{attachment},
+		Timeout:     int64(3 * time.Second),
+	}, provider.prompt)
+}
+
+func TestApplication_image(t *testing.T) {
+	tests := []struct {
+		name        string
+		options     []contractsai.Option
+		setup       func() contractsai.Config
+		expectError error
+	}{
+		{
+			name: "success",
+			options: []contractsai.Option{WithProvider("openai")},
+			setup: func() contractsai.Config {
+				provider := &applicationImageProviderStub{}
+				provider.response = &applicationImageResponseStub{}
+				return contractsai.Config{
+					Default: "default",
+					Providers: map[string]contractsai.ProviderConfig{
+						"default": {Via: mocksai.NewProvider(t)},
+						"openai":  {Via: provider},
+					},
+				}
+			},
+		},
+		{
+			name: "provider does not support images",
+			setup: func() contractsai.Config {
+				return contractsai.Config{
+					Default: "default",
+					Providers: map[string]contractsai.ProviderConfig{
+						"default": {Via: mocksai.NewProvider(t)},
+					},
+				}
+			},
+			expectError: errors.AIProviderDoesNotSupportImages.Args("default"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			app := NewApplication(context.Background(), tt.setup())
+			response, err := app.image(context.Background(), contractsai.ImagePrompt{Prompt: "draw a cat"}, tt.options...)
+			assert.Equal(t, tt.expectError, err)
+			if tt.expectError != nil {
+				assert.Nil(t, response)
+				return
+			}
+
+			require.NotNil(t, response)
+		})
+	}
+}
+
 type applicationTestMiddleware struct{}
 
 type uploadTestProvider struct {
@@ -351,6 +471,43 @@ func (p uploadTestProvider) Stream(context.Context, contractsai.AgentPrompt) (co
 
 func (p uploadTestProvider) PutFile(ctx context.Context, file contractsai.StorableFile) (contractsai.StoredFileResponse, error) {
 	return p.fileProvider.PutFile(ctx, file)
+}
+
+type applicationImageProviderStub struct {
+	ctx      context.Context
+	prompt   contractsai.ImagePrompt
+	response contractsai.ImageResponse
+	err      error
+}
+
+func (p *applicationImageProviderStub) Prompt(context.Context, contractsai.AgentPrompt) (contractsai.Response, error) {
+	return nil, nil
+}
+
+func (p *applicationImageProviderStub) Stream(context.Context, contractsai.AgentPrompt) (contractsai.StreamableResponse, error) {
+	return nil, nil
+}
+
+func (p *applicationImageProviderStub) Image(ctx context.Context, prompt contractsai.ImagePrompt) (contractsai.ImageResponse, error) {
+	p.ctx = ctx
+	p.prompt = prompt
+	return p.response, p.err
+}
+
+type applicationImageResponseStub struct{}
+
+func (r *applicationImageResponseStub) Content(context.Context) ([]byte, error) { return []byte("image"), nil }
+
+func (r *applicationImageResponseStub) MimeType() string { return "image/png" }
+
+func (r *applicationImageResponseStub) Usage() contractsai.Usage { return nil }
+
+func (r *applicationImageResponseStub) Then(callback func(contractsai.ImageResponse)) contractsai.ImageResponse {
+	if callback != nil {
+		callback(r)
+	}
+
+	return r
 }
 
 func (m *applicationTestMiddleware) Handle(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {

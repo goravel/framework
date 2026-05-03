@@ -96,6 +96,69 @@ func (_c *AI_Agent_Call) RunAndReturn(run func(ai.Agent, ...ai.Option) (ai.Conve
 	return _c
 }
 
+// Image provides a mock function with given fields: prompt, options
+func (_m *AI) Image(prompt string, options ...ai.Option) ai.ImageRequest {
+	_va := make([]interface{}, len(options))
+	for _i := range options {
+		_va[_i] = options[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, prompt)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Image")
+	}
+
+	var r0 ai.ImageRequest
+	if rf, ok := ret.Get(0).(func(string, ...ai.Option) ai.ImageRequest); ok {
+		r0 = rf(prompt, options...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(ai.ImageRequest)
+		}
+	}
+
+	return r0
+}
+
+// AI_Image_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Image'
+type AI_Image_Call struct {
+	*mock.Call
+}
+
+// Image is a helper method to define mock.On call
+//   - prompt string
+//   - options ...ai.Option
+func (_e *AI_Expecter) Image(prompt interface{}, options ...interface{}) *AI_Image_Call {
+	return &AI_Image_Call{Call: _e.mock.On("Image",
+		append([]interface{}{prompt}, options...)...)}
+}
+
+func (_c *AI_Image_Call) Run(run func(prompt string, options ...ai.Option)) *AI_Image_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]ai.Option, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(ai.Option)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *AI_Image_Call) Return(_a0 ai.ImageRequest) *AI_Image_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *AI_Image_Call) RunAndReturn(run func(string, ...ai.Option) ai.ImageRequest) *AI_Image_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // WithContext provides a mock function with given fields: ctx
 func (_m *AI) WithContext(ctx context.Context) ai.AI {
 	ret := _m.Called(ctx)

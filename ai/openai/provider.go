@@ -6,9 +6,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"mime"
 	"path/filepath"
 	"strings"
+	"time"
 
 	goopenai "github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
@@ -25,6 +27,7 @@ import (
 // The OpenAI provider will be moved into a separate package in the future.
 
 const DefaultTextModel = "gpt-5.4"
+const DefaultImageModel = "gpt-image-2"
 
 const providerStateResponseID = "openai.response_id"
 
@@ -47,8 +50,78 @@ func NewOpenAI(config contractsconfig.Config, provider string) (*Provider, error
 	if providerConfig.Models.Text.Default == "" {
 		providerConfig.Models.Text.Default = DefaultTextModel
 	}
+	if providerConfig.Models.Image.Default == "" {
+		providerConfig.Models.Image.Default = DefaultImageModel
+	}
 
 	return &Provider{client: goopenai.NewClient(opts...), config: providerConfig}, nil
+}
+
+func (r *Provider) Image(ctx context.Context, prompt contractsai.ImagePrompt) (contractsai.ImageResponse, error) {
+	if prompt.Prompt == "" {
+		return nil, errors.AIImagePromptRequired
+	}
+	for _, attachment := range prompt.Attachments {
+		if attachment.Kind() != contractsai.AttachmentKindImage {
+			return nil, errors.AIImageAttachmentRequired
+		}
+	}
+
+	requestOptions := make([]option.RequestOption, 0, 1)
+	if prompt.Timeout > 0 {
+		requestOptions = append(requestOptions, option.WithRequestTimeout(time.Duration(prompt.Timeout)))
+	}
+
+	if len(prompt.Attachments) == 0 {
+		params := goopenai.ImageGenerateParams{
+			Prompt: prompt.Prompt,
+			Model:  goopenai.ImageModel(r.resolveImageModel(prompt.Model)),
+		}
+		if size := r.resolveImageGenerateSize(prompt.Size); size != "" {
+			params.Size = size
+		}
+		if quality := r.resolveImageGenerateQuality(prompt.Quality); quality != "" {
+			params.Quality = quality
+		}
+
+		response, err := r.client.Images.Generate(ctx, params, requestOptions...)
+		if err != nil {
+			return nil, err
+		}
+
+		return r.parseImageResponse(response)
+	}
+
+	images := make([]io.Reader, 0, len(prompt.Attachments))
+	for _, attachment := range prompt.Attachments {
+		content, err := attachment.Content(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		images = append(images, goopenai.File(bytes.NewReader(content), r.uploadFilename(attachment), attachment.MimeType()))
+	}
+
+	params := goopenai.ImageEditParams{
+		Prompt: prompt.Prompt,
+		Model:  goopenai.ImageModel(r.resolveImageModel(prompt.Model)),
+		Image: goopenai.ImageEditParamsImageUnion{
+			OfFileArray: images,
+		},
+	}
+	if size := r.resolveImageEditSize(prompt.Size); size != "" {
+		params.Size = size
+	}
+	if quality := r.resolveImageEditQuality(prompt.Quality); quality != "" {
+		params.Quality = quality
+	}
+
+	response, err := r.client.Images.Edit(ctx, params, requestOptions...)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.parseImageResponse(response)
 }
 
 func (r *Provider) Prompt(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
@@ -202,6 +275,66 @@ func (r *Provider) resolveModel(model string) string {
 	}
 
 	return r.config.Models.Text.Default
+}
+
+func (r *Provider) resolveImageModel(model string) string {
+	if model != "" {
+		return model
+	}
+
+	return r.config.Models.Image.Default
+}
+
+func (r *Provider) resolveImageGenerateSize(size contractsai.ImageSize) goopenai.ImageGenerateParamsSize {
+	switch size {
+	case contractsai.ImageSizeSquare:
+		return goopenai.ImageGenerateParamsSize1024x1024
+	case contractsai.ImageSizePortrait:
+		return goopenai.ImageGenerateParamsSize1024x1536
+	case contractsai.ImageSizeLandscape:
+		return goopenai.ImageGenerateParamsSize1536x1024
+	default:
+		return ""
+	}
+}
+
+func (r *Provider) resolveImageEditSize(size contractsai.ImageSize) goopenai.ImageEditParamsSize {
+	switch size {
+	case contractsai.ImageSizeSquare:
+		return goopenai.ImageEditParamsSize1024x1024
+	case contractsai.ImageSizePortrait:
+		return goopenai.ImageEditParamsSize1024x1536
+	case contractsai.ImageSizeLandscape:
+		return goopenai.ImageEditParamsSize1536x1024
+	default:
+		return ""
+	}
+}
+
+func (r *Provider) resolveImageGenerateQuality(quality contractsai.ImageQuality) goopenai.ImageGenerateParamsQuality {
+	switch quality {
+	case contractsai.ImageQualityLow:
+		return goopenai.ImageGenerateParamsQualityLow
+	case contractsai.ImageQualityMedium:
+		return goopenai.ImageGenerateParamsQualityMedium
+	case contractsai.ImageQualityHigh:
+		return goopenai.ImageGenerateParamsQualityHigh
+	default:
+		return ""
+	}
+}
+
+func (r *Provider) resolveImageEditQuality(quality contractsai.ImageQuality) goopenai.ImageEditParamsQuality {
+	switch quality {
+	case contractsai.ImageQualityLow:
+		return goopenai.ImageEditParamsQualityLow
+	case contractsai.ImageQualityMedium:
+		return goopenai.ImageEditParamsQualityMedium
+	case contractsai.ImageQualityHigh:
+		return goopenai.ImageEditParamsQualityHigh
+	default:
+		return ""
+	}
 }
 
 func (r *Provider) buildRequest(ctx context.Context, prompt contractsai.AgentPrompt) (responses.ResponseNewParams, error) {
@@ -496,5 +629,60 @@ func (r *Provider) parseUsage(raw responses.ResponseUsage) *usage {
 		input:  int(raw.InputTokens),
 		output: int(raw.OutputTokens),
 		total:  int(raw.TotalTokens),
+	}
+}
+
+func (r *Provider) parseImageResponse(response *goopenai.ImagesResponse) (contractsai.ImageResponse, error) {
+	if response == nil || len(response.Data) == 0 {
+		return nil, errors.AIImageResponseIsEmpty
+	}
+
+	content, err := r.resolveImageContent(response.Data[0])
+	if err != nil {
+		return nil, err
+	}
+	if len(content) == 0 {
+		return nil, errors.AIImageResponseIsEmpty
+	}
+
+	mimeType := r.resolveImageMimeType(response.OutputFormat)
+	if mimeType == "" {
+		mimeType = "image/png"
+	}
+
+	return &imageResponse{
+		mimeType: mimeType,
+		content:  content,
+		usage: &usage{
+			input:  int(response.Usage.InputTokens),
+			output: int(response.Usage.OutputTokens),
+			total:  int(response.Usage.TotalTokens),
+		},
+	}, nil
+}
+
+func (r *Provider) resolveImageContent(image goopenai.Image) ([]byte, error) {
+	if image.B64JSON == "" {
+		return nil, errors.AIImageResponseIsEmpty
+	}
+
+	content, err := base64.StdEncoding.DecodeString(image.B64JSON)
+	if err != nil {
+		return nil, err
+	}
+
+	return content, nil
+}
+
+func (r *Provider) resolveImageMimeType(format goopenai.ImagesResponseOutputFormat) string {
+	switch format {
+	case goopenai.ImagesResponseOutputFormatJPEG:
+		return "image/jpeg"
+	case goopenai.ImagesResponseOutputFormatWebP:
+		return "image/webp"
+	case goopenai.ImagesResponseOutputFormatPNG:
+		return "image/png"
+	default:
+		return ""
 	}
 }

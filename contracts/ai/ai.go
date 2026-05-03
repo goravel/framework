@@ -6,6 +6,8 @@ import "context"
 type AI interface {
 	// Agent creates a conversation bound to the resolved driver.
 	Agent(agent Agent, options ...Option) (Conversation, error)
+	// Image creates a fluent image generation request bound to the resolved driver.
+	Image(prompt string, options ...Option) ImageRequest
 	// WithContext returns a new AI instance that carries the provided context for all operations.
 	WithContext(ctx context.Context) AI
 }
