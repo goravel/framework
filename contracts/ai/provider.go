@@ -52,4 +52,8 @@ type ImageProvider interface {
 type FileProvider interface {
 	// PutFile uploads the given file and returns the provider-managed file reference.
 	PutFile(ctx context.Context, file StorableFile) (StoredFileResponse, error)
+	// GetFile resolves a previously stored provider-managed file.
+	GetFile(ctx context.Context, id string) (FileResponse, error)
+	// DeleteFile removes a previously stored provider-managed file.
+	DeleteFile(ctx context.Context, id string) error
 }

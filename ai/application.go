@@ -54,6 +54,42 @@ func (r *Application) putFile(ctx context.Context, file contractsai.StorableFile
 	return fileProvider.PutFile(ctx, file)
 }
 
+func (r *Application) getFile(ctx context.Context, id string, options ...contractsai.Option) (contractsai.FileResponse, error) {
+	if id == "" {
+		return nil, errors.AIStoredFileIDEmpty
+	}
+
+	_, providerName, provider, err := r.resolveProvider(options)
+	if err != nil {
+		return nil, err
+	}
+
+	fileProvider, ok := provider.(contractsai.FileProvider)
+	if !ok {
+		return nil, errors.AIProviderDoesNotSupportFiles.Args(providerName)
+	}
+
+	return fileProvider.GetFile(ctx, id)
+}
+
+func (r *Application) deleteFile(ctx context.Context, id string, options ...contractsai.Option) error {
+	if id == "" {
+		return errors.AIStoredFileIDEmpty
+	}
+
+	_, providerName, provider, err := r.resolveProvider(options)
+	if err != nil {
+		return err
+	}
+
+	fileProvider, ok := provider.(contractsai.FileProvider)
+	if !ok {
+		return errors.AIProviderDoesNotSupportFiles.Args(providerName)
+	}
+
+	return fileProvider.DeleteFile(ctx, id)
+}
+
 func (r *Application) image(ctx context.Context, prompt contractsai.ImagePrompt, options ...contractsai.Option) (contractsai.ImageResponse, error) {
 	opts, providerName, provider, err := r.resolveProvider(options)
 	if err != nil {

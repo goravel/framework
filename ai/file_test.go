@@ -336,6 +336,58 @@ func TestDocumentFromURLUsesDetectedMimeTypeWhenHeaderMissing(t *testing.T) {
 	assert.Equal(t, "text/plain; charset=utf-8", attachment.MimeType())
 }
 
+func TestDocumentFromIDGetAndDelete(t *testing.T) {
+	originalAIFacade := aiFacade
+	t.Cleanup(func() {
+		aiFacade = originalAIFacade
+	})
+
+	ctx := context.Background()
+	fileProvider := mocksai.NewFileProvider(t)
+	response := mocksai.NewFileResponse(t)
+	response.EXPECT().ID().Return("file-123").Once()
+	response.EXPECT().MimeType().Return("text/plain").Once()
+	response.EXPECT().Content(ctx).Return([]byte("report"), nil).Once()
+
+	fileProvider.EXPECT().GetFile(ctx, "file-123").Return(response, nil).Once()
+	fileProvider.EXPECT().DeleteFile(ctx, "file-123").Return(nil).Once()
+
+	config := contractsai.Config{
+		Default: "openai",
+		Providers: map[string]contractsai.ProviderConfig{
+			"openai": {Via: uploadTestProvider{fileProvider: fileProvider}},
+		},
+	}
+	aiFacade = &Application{ctx: context.Background(), config: config, resolver: NewProviderResolver(config)}
+
+	attachment := DocumentFromID("file-123")
+	assert.Equal(t, "file-123", attachment.ID())
+
+	file, err := attachment.Get(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, "file-123", file.ID())
+
+	content, err := attachment.Content(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, []byte("report"), content)
+
+	assert.NoError(t, attachment.Delete(ctx))
+}
+
+func TestDocumentFromIDReturnsErrorWhenFacadeNotSet(t *testing.T) {
+	originalAIFacade := aiFacade
+	t.Cleanup(func() {
+		aiFacade = originalAIFacade
+	})
+	aiFacade = nil
+
+	attachment := DocumentFromID("file-123")
+	file, err := attachment.Get(context.Background())
+	assert.Nil(t, file)
+	assert.Equal(t, errors.AIFacadeNotSet, err)
+	assert.Equal(t, errors.AIFacadeNotSet, attachment.Delete(context.Background()))
+}
+
 func filepathBase(path string) string {
 	index := bytes.LastIndexByte([]byte(path), os.PathSeparator)
 	if index == -1 {

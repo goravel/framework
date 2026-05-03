@@ -43,3 +43,7 @@ func FromURL(rawURL string, options ...contractsai.AttachmentOption) contractsai
 func FromUpload(file contractsfilesystem.File, options ...contractsai.AttachmentOption) contractsai.Attachment {
 	return frameworkai.ImageFromUpload(file, options...)
 }
+
+func FromID(id string) contractsai.ProviderFile {
+	return frameworkai.ImageFromID(id)
+}

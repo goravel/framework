@@ -44,6 +44,7 @@ var (
 	AIImageAttachmentRequired      = New("ai: image attachments must all be image kind")
 	AIImagePromptRequired          = New("ai: image prompt is required")
 	AIImageResponseIsEmpty         = New("ai: image response is empty")
+	AIStoredFileIDEmpty            = New("ai: stored file id cannot be empty")
 	AIResponseIsNil                = New("ai: response is nil")
 	AIStreamRunnerRequired         = New("ai stream runner is required")
 	AIUnsupportedAttachmentKind    = New("ai: unsupported attachment kind %s")

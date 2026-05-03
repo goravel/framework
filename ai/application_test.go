@@ -459,6 +459,52 @@ func TestApplication_image(t *testing.T) {
 	}
 }
 
+func TestApplication_getFile(t *testing.T) {
+	ctx := context.WithValue(context.Background(), testCtxKey("get"), "success")
+	fileProvider := mocksai.NewFileProvider(t)
+	response := mocksai.NewFileResponse(t)
+	response.EXPECT().ID().Return("file-123").Once()
+	fileProvider.EXPECT().GetFile(ctx, "file-123").Return(response, nil).Once()
+
+	app := NewApplication(context.Background(), contractsai.Config{
+		Default: "openai",
+		Providers: map[string]contractsai.ProviderConfig{
+			"openai": {Via: uploadTestProvider{fileProvider: fileProvider}},
+		},
+	})
+
+	file, err := app.getFile(ctx, "file-123")
+	require.NoError(t, err)
+	assert.Equal(t, "file-123", file.ID())
+}
+
+func TestApplication_getFileReturnsErrorWhenIDEmpty(t *testing.T) {
+	app := NewApplication(context.Background(), contractsai.Config{})
+	file, err := app.getFile(context.Background(), "")
+	assert.Nil(t, file)
+	assert.Equal(t, errors.AIStoredFileIDEmpty, err)
+}
+
+func TestApplication_deleteFile(t *testing.T) {
+	ctx := context.WithValue(context.Background(), testCtxKey("delete"), "success")
+	fileProvider := mocksai.NewFileProvider(t)
+	fileProvider.EXPECT().DeleteFile(ctx, "file-123").Return(nil).Once()
+
+	app := NewApplication(context.Background(), contractsai.Config{
+		Default: "openai",
+		Providers: map[string]contractsai.ProviderConfig{
+			"openai": {Via: uploadTestProvider{fileProvider: fileProvider}},
+		},
+	})
+
+	assert.NoError(t, app.deleteFile(ctx, "file-123"))
+}
+
+func TestApplication_deleteFileReturnsErrorWhenIDEmpty(t *testing.T) {
+	app := NewApplication(context.Background(), contractsai.Config{})
+	assert.Equal(t, errors.AIStoredFileIDEmpty, app.deleteFile(context.Background(), ""))
+}
+
 type applicationTestMiddleware struct{}
 
 type uploadTestProvider struct {
@@ -475,6 +521,14 @@ func (p uploadTestProvider) Stream(context.Context, contractsai.AgentPrompt) (co
 
 func (p uploadTestProvider) PutFile(ctx context.Context, file contractsai.StorableFile) (contractsai.StoredFileResponse, error) {
 	return p.fileProvider.PutFile(ctx, file)
+}
+
+func (p uploadTestProvider) GetFile(ctx context.Context, id string) (contractsai.FileResponse, error) {
+	return p.fileProvider.GetFile(ctx, id)
+}
+
+func (p uploadTestProvider) DeleteFile(ctx context.Context, id string) error {
+	return p.fileProvider.DeleteFile(ctx, id)
 }
 
 type applicationImageProviderStub struct {
